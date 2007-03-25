@@ -1546,6 +1546,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"kaid_enable", "0", 0},
   {"kaid_macs", "", 0},
   {"kaid_uibind","34522",0},
+  {"kaid_orbport","34525",0},
+  {"kaid_orbdeepport","34523",0},
 #endif
 #ifdef HAVE_WTS
   {"language", "spanish", 0},
