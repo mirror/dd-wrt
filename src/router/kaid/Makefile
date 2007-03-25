@@ -12,10 +12,15 @@
 # $Id: Makefile,v 1.2 2004/06/25 02:31:56 honor Exp $
 #
 
+include $(TOP)/.config
 #CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include -Wall -I$(SRCBASE)/
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -s $(COPTS)
 #LDFLAGS	+= -L$(TOP)/nvram -lnvram -L$(TOP)/shared -lshared
+ifneq ($(CONFIG_LIBCPP),y)
+PRE_CFLAGS = -static
+STATIC = -static
+endif
 
 
 all:
