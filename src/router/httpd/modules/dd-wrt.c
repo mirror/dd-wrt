@@ -148,12 +148,11 @@ ej_show_routing (webs_t wp, int argc, char_t ** argv)
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"ospf\\\" %s >\" + route.ospf_mod + \"</option>\");\n//]]>\n</script>\n",
 	     nvram_selmatch (wp, "wk_mode",
 			     "ospf") ? "selected=\\\"selected\\\"" : "");
-#else
+#endif
   websWrite (wp,
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"router\\\" %s >\" + share.router + \"</option>\");\n//]]>\n</script>\n",
 	     nvram_selmatch (wp, "wk_mode",
 			     "router") ? "selected=\\\"selected\\\"" : "");
-#endif
   return;
 
 }

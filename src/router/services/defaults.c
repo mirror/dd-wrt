@@ -1011,6 +1011,8 @@ struct nvram_tuple srouter_defaults[] = {
   /* for dynamic route */
 #ifdef HAVE_DDLAN
   {"wk_mode", "zero", 0},	/* Network mode [gateway|router] */
+#elif HAVE_MAKSAT
+  {"wk_mode", "router", 0},	/* Network mode [gateway|router] */
 #else
   {"wk_mode", "gateway", 0},	/* Network mode [gateway|router] */
 #endif
