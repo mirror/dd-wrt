@@ -863,7 +863,7 @@ int brand = getRouterBrand ();
   
 int
 led_control (int type, int act)
-/* type: LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN, LED_SES, LED_SES2, LED_AOSS, LED_WLAN
+/* type: LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN, LED_SES, LED_SES2, LED_WLAN
  * act: LED_ON, LED_OFF, LED_FLASH */
 {
 #if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X86)
@@ -888,9 +888,8 @@ int	dmz_gpio = 0x0f;
 int	connected_gpio = 0x0f;
 int bridge_gpio = 0x0f;
 int vpn_gpio = 0x0f;
-int ses_gpio = 0x0f;
+int ses_gpio = 0x0f;  //use for SES1 (Linksys), AOSS (Buffalo) ....
 int	ses2_gpio = 0x0f;
-int aoss_gpio = 0x0f;
 int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware!
 
 	switch (getRouterBrand ())  //gpio definitions here: 0xYZ, Y=0:normal, Y=1:inverted, Z:gpio number (f=disabled)
@@ -918,22 +917,22 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 		break;
 	case ROUTER_BUFFALO_WBR2G54S:
 			diag_gpio = 0x01;
-			aoss_gpio = 0x06;
+			ses_gpio = 0x06;
 		break;
 	case ROUTER_BUFFALO_WLA2G54C:
 			diag_gpio = 0x14;
-			aoss_gpio = 0x13;
+			ses_gpio = 0x13;
 		break;
 	case ROUTER_BUFFALO_WHRG54S:
 	case ROUTER_BUFFALO_WLI_TX4_G54HP:
 			diag_gpio = 0x17;
 			bridge_gpio = 0x11;
-			aoss_gpio = 0x16;
+			ses_gpio = 0x16;
 		break;
 	case ROUTER_BUFFALO_WZRRSG54:
 			diag_gpio = 0x17;
 			vpn_gpio = 0x11;
-			aoss_gpio = 0x16;
+			ses_gpio = 0x16;
 		break;
 	case ROUTER_MOTOROLA:
 			power_gpio = 0x01;
@@ -944,16 +943,12 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 			connected_gpio = 0x10;
 			wlan_gpio = 0x13;
 		break;
-	case ROUTER_BRCM4702_GENERIC:
-		break;
 	case ROUTER_RT480W:
 			power_gpio = 0x15;
 			connected_gpio = 0x10;
 		break;
 	case ROUTER_MICROSOFT_MN700:
 			power_gpio = 0x06;
-		break;
-	case ROUTER_BUFFALO_WLAG54C:
 		break;
 	case ROUTER_ASUS_WL500G_PRE:
 			power_gpio = 0x11;
@@ -1009,9 +1004,6 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 			break;
 		case LED_SES2:
 				use_gpio = ses2_gpio;
-			break;
-		case LED_AOSS:
-				use_gpio = aoss_gpio;
 			break;
 		case LED_WLAN:
 				use_gpio = wlan_gpio;
