@@ -275,35 +275,6 @@ service_restart (void)
   eval ("rc", "restart");
 }
 
-int
-check_ses_led_main (int argc, char **argv)
-{
-  int i;
-  int times;
-  int interval;
-
-  times = atoi (argv[1]);
-  interval = atoi (argv[2]);
-
-  for (i = 0; i < times; i++)
-    {
-
-      /* White led */
-      //diag_led (SES_LED1, START_LED);
-      led_control (LED_SES, LED_ON);
-      usleep (1000000 * interval);
-      //diag_led (SES_LED1, STOP_LED);
-      led_control (LED_SES, LED_OFF);
-
-      /* Orange led */
-      //diag_led (SES_LED2, START_LED);
-      led_control (LED_SES2, LED_ON);
-      usleep (1000000 * interval);
-      //diag_led (SES_LED2, STOP_LED);
-      led_control (LED_SES2, LED_OFF);
-    }
-  return 0;
-}
 
 void
 period_check (int sig)
@@ -346,11 +317,11 @@ period_check (int sig)
   else
     state = !(val & gpio);
 
-/* 1 byte router's SES or AOSS button gpio number and polarity; Eko 25.nov.06
+/* 1 byte router's SES (AOSS) button gpio number and polarity; Eko 25.nov.06
 
   R R R P N N N N   = 0xXX
   ----- - -------
-    |   | gpio num (1111 = f = disable SES - AOSS button)
+    |   | gpio num (1111 = f = disable SES (AOSS) button)
     |   |
     |   |--- SES - AOSS button polarity (0: normal, 1 inversed)
     |
@@ -480,8 +451,7 @@ period_check (int sig)
 
 //              led_control (LED_SES, LED_OFF);         
 //              led_control (LED_SES2, LED_ON);         //enable orange led
-	  led_control (LED_AOSS, LED_FLASH);	//blink AOSS led
-	  led_control (LED_SES, LED_FLASH);	//when pressed, blink white SES led
+	  led_control (LED_SES, LED_FLASH);	//when pressed, blink white SES (AOSS) led
 
 //      switch (brand)
 //              {
@@ -506,8 +476,7 @@ period_check (int sig)
 #endif
 //              led_control (LED_SES, LED_ON);          //enable white led
 //              led_control (LED_SES2, LED_OFF);
-	  led_control (LED_AOSS, LED_FLASH);	//blink AOSS led
-	  led_control (LED_SES, LED_FLASH);	//when pressed, blink white SES led
+	  led_control (LED_SES, LED_FLASH);	//when pressed, blink white SES (AOSS) led
 
 	  ses_mode = 1;
 
