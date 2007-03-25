@@ -323,7 +323,6 @@ extern int autokill_wiviz_main (void);
 extern int run_wiviz_main (void);
 extern int watchdog_main (int argc, char *argv[]);
 extern int event_main (int argc, char **argv);
-extern int check_ses_led_main (int argc, char **argv);
 void cfe_default (void);
 //extern int nvram_restore(const char *path, char *mtd);
 
