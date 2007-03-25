@@ -29,5 +29,25 @@
 			</script>
 			</span>
 		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.kaid_orbport"); %></div>
+			<input size="5" maxlength="5" class="num" name="kaid_orbport" onblur="valid_range(this,1,65535,service.kaid_orbport)" value="<% nvram_get("kaid_orbport"); %>" />
+			<span class="default"><script type="text/javascript">
+			//<![CDATA[
+			document.write("(" + share.deflt + ": 34525, " + share.range + ": 1 - 65535)");
+			//]]>
+			</script>
+			</span>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.kaid_orbdeepport"); %></div>
+			<input size="5" maxlength="5" class="num" name="kaid_orbdeepport" onblur="valid_range(this,1,65535,service.kaid_orbdeepport)" value="<% nvram_get("kaid_orbdeepport"); %>" />
+			<span class="default"><script type="text/javascript">
+			//<![CDATA[
+			document.write("(" + share.deflt + ": 34523, " + share.range + ": 1 - 65535)");
+			//]]>
+			</script>
+			</span>
+		</div>
 	</div>
 </fieldset><br/>
