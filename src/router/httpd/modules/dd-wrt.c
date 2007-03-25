@@ -2682,10 +2682,17 @@ show_netmode (webs_t wp, char *prefix)
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"b-only\\\" %s>\" + wl_basic.b + \"</option>\");\n//]]>\n</script>\n",
 	     nvram_match (wl_net_mode,
 			  "b-only") ? "selected=\\\"selected\\\"" : "");
+#ifdef HAVE_MADWIFI
+  websWrite (wp,
+	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.bg + \"</option>\");\n//]]>\n</script>\n",
+	     nvram_match (wl_net_mode,
+			  "g-only") ? "selected=\\\"selected\\\"" : "");
+#else
   websWrite (wp,
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n//]]>\n</script>\n",
 	     nvram_match (wl_net_mode,
 			  "g-only") ? "selected=\\\"selected\\\"" : "");
+#endif
   if (has_mimo ())
     {
       websWrite (wp,
