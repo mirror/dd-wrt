@@ -15,10 +15,14 @@ if [ "$(nvram get kaid_enable)" = "1" ]; then
     USER="Username = $(nvram get kaid_user)"
     PASS="Password = $(nvram get kaid_pass)"
     UIBIND="UIBind = :$(nvram get kaid_uibind)"
+    ORBPORT="OrbPort = $(nvram get kaid_orbport)"
+    ORBDEEPPORT="OrbDeepPort = $(nvram get kaid_orbdeepport)"
     echo $DEVS >> /tmp/kaid.conf
     echo $USER >> /tmp/kaid.conf
     echo $PASS >> /tmp/kaid.conf
     echo $UIBIND >> /tmp/kaid.conf
+    echo $ORBPORT >> /tmp/kaid.conf
+    echo $ORBDEEPPORT >> /tmp/kaid.conf
     if [ "$(nvram get jffs_enable)" = "1" ]; then
 	echo ConfigCache = /jffs/kaiSystemConfig.txt >> /tmp/kaid.conf
 	echo CacheFile = /jffs/kaiEnginePersist.txt >> /tmp/kaid.conf
