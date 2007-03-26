@@ -704,7 +704,7 @@ start_single_service (void)
       if (nvram_match ("wl0_mode", "sta") 
 		|| nvram_match ("wl0_mode", "apsta") 
 		|| nvram_match ("wl0_mode", "apstawet")) 
-		stop_service ("wan");
+		start_service ("wan");
 #ifdef HAVE_MADWIFI
       start_service ("stabridge");
 #endif
