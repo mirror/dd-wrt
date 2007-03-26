@@ -1382,7 +1382,7 @@ static void start_nas_ap(char *prefix,char *type)
 void
 start_nas_lan (void)
 {
-  start_nas ("lan", "wl0");
+  start_nas_single ("lan", "wl0");
   syslog (LOG_INFO, "NAS : NAS lan (wl0 interface) successfully started\n");
 #ifdef HAVE_MSSID
   char *next;
@@ -1391,7 +1391,7 @@ start_nas_lan (void)
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
-      start_nas ("lan", var);
+      start_nas_single ("lan", var);
       syslog (LOG_INFO, "NAS : NAS lan (%s interface) successfully started\n",
 	      var);
     }
@@ -1404,7 +1404,7 @@ start_nas_lan (void)
 void
 start_nas_wan (void)
 {
-  start_nas ("wan", "wl0");
+  start_nas_single ("wan", "wl0");
   syslog (LOG_INFO, "NAS : NAS wan (wl0 interface) successfully started\n");
 #ifdef HAVE_MSSID
   char *next;
@@ -1419,13 +1419,13 @@ start_nas_wan (void)
 	  || nvram_match (vif, "wet")
 	  || nvram_match (vif, "apsta") || nvram_match (vif, "apstawet"))
 	{
-	  start_nas ("wan", var);
+	  start_nas_single ("wan", var);
 	  syslog (LOG_INFO,
 		  "NAS : NAS wan (%s interface) successfully started\n", var);
 	}
       else
 	{
-	  start_nas ("lan", var);
+	  start_nas_single ("lan", var);
 	  syslog (LOG_INFO,
 		  "NAS : NAS lan (%s interface) successfully started\n", var);
 	}
@@ -1434,7 +1434,26 @@ start_nas_wan (void)
 }
 
 int
-start_nas (char *type, char *prefix)
+start_nas (void)
+{
+	  if (nvram_match ("wl0_mode", "sta")
+      || nvram_match ("wl0_mode", "wet")
+      || nvram_match ("wl0_mode", "apsta")
+      || nvram_match ("wl0_mode", "apstawet"))
+    {
+      cprintf ("start nas wan\n");
+      start_service ("nas_wan");
+    }
+  	  else
+    {
+      cprintf ("start nas lan\n");
+      start_service ("nas_lan");
+    }
+return 1;
+}
+
+int
+start_nas_single (char *type, char *prefix)
 {
 
   char cfgfile[64];
