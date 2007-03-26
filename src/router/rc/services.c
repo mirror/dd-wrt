@@ -427,7 +427,7 @@ start_single_service (void)
 #ifdef HAVE_WOL
       startstop ("wol");
 #endif
-	start_service ("nas_wan");
+	start_service ("nas");
 
     }
 
