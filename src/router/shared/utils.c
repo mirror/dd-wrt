@@ -457,10 +457,24 @@ if (reg1=0x22 && reg2==0x1450)  //kendin switch
 	    
 	if (boardnum == 2 && nvram_match ("GemtekPmonVer", "10"))
 		{
+		if (startswith (et0, "00:0C:E5") ||
+		 startswith (et0, "00:0c:e5") ||
+		 startswith (et0, "00:0C:10") ||
+		 startswith (et0, "00:0c:10") ||
+		 startswith (et0, "00:0C:11") ||
+		 startswith (et0, "00:0c:11"))
+		{
+		cprintf ("router Motorola WE800G v1\n");
+		setRouter ("Motorola WE800G v1");
+		return ROUTER_MOTOROLA_WE800G;
+		}
+		else
+		{
 		cprintf ("router is Linksys wap54g v1\n");
 		setRouter ("Linksys WAP54G v1");
 		return ROUTER_WAP54G_V1;
 	    }
+    	}
 
 	if (boardnum == 2 && nvram_match ("GemtekPmonVer", "1"))
 		{
