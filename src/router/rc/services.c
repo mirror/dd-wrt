@@ -697,6 +697,10 @@ start_single_service (void)
 #ifdef HAVE_MADWIFI
       stop_service ("stabridge");
 #endif
+      if (nvram_match ("wl0_mode", "sta")
+	  || nvram_match ("wl0_mode", "apsta")
+	  || nvram_match ("wl0_mode", "apstawet"))
+      stop_service ("wan");
 #ifdef HAVE_VLANTAGGING
       stop_service ("bridgesif");
       stop_service ("vlantagging");
@@ -732,6 +736,10 @@ start_single_service (void)
       start_service ("vlantagging");
       start_service ("bridgesif");
 #endif
+      if (nvram_match ("wl0_mode", "sta")
+	  || nvram_match ("wl0_mode", "apsta")
+	  || nvram_match ("wl0_mode", "apstawet"))
+      start_service ("wan");
 #ifdef HAVE_MADWIFI
       start_service ("stabridge");
 #endif
@@ -756,6 +764,7 @@ start_single_service (void)
 #endif
 #endif
       start_service ("radio_timer");
+      startstop ("httpd");	//httpd will not accept connection anymore on wan/lan ip changes changes
     }
   else if (!strcmp (service, "dhcp_release"))
     {
