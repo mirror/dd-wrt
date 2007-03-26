@@ -99,7 +99,7 @@ start_services (void)
   handle = start_service_nofree ("httpd", handle);
   handle = start_service_nofree ("udhcpd", handle);
   handle = start_service_nofree ("dnsmasq", handle);
-
+// NAS is started in rc.c
 #ifdef HAVE_BIRD
   handle = start_service_nofree ("zebra", handle);
 #endif
@@ -156,12 +156,28 @@ start_services (void)
 
   dlclose (handle);
 
+/* dirty fix starts here: WDS does not connect from cold boot; we try to restart NAS */
 #ifndef HAVE_MADWIFI
-  start_service ("nas");
+/* nas mode select*/
+  if (nvram_match ("wl0_mode", "sta")
+      || nvram_match ("wl0_mode", "wet")
+      || nvram_match ("wl0_mode", "apsta")
+      || nvram_match ("wl0_mode", "apstawet"))
+    {
+      cprintf ("start nas wan\n");
+      start_service ("nas_wan");
+    }
+  else
+    {
+      cprintf ("start nas lan\n");
+      start_service ("nas_lan");
+    }
+/*end nas mode select */
 #ifdef HAVE_MSSID
   start_service ("guest_nas");
 #endif
 #endif
+/* fix ends here */
 
   cprintf ("done\n");
   return 0;
@@ -402,6 +418,9 @@ start_single_service (void)
     }
   else if (!strcmp (service, "management"))
     {
+      if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta")
+	  || nvram_match ("wl0_mode", "apsta")
+	  || nvram_match ("wl0_mode", "apstawet"))
 	stop_service ("nas");
 #ifdef HAVE_BIRD
       stop_service ("zebra");
@@ -427,7 +446,10 @@ start_single_service (void)
 #ifdef HAVE_WOL
       startstop ("wol");
 #endif
-	start_service ("nas");
+      if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta")
+	  || nvram_match ("wl0_mode", "apsta")
+	  || nvram_match ("wl0_mode", "apstawet"))
+	start_service ("nas_wan");
 
     }
 
@@ -636,8 +658,21 @@ start_single_service (void)
       start_service ("stabridge");
 #endif
 #ifndef HAVE_MADWIFI
-	  start_service ("nas");
-
+/* nas mode select*/
+      if (nvram_match ("wl0_mode", "sta")
+	  || nvram_match ("wl0_mode", "wet")
+	  || nvram_match ("wl0_mode", "apsta")
+	  || nvram_match ("wl0_mode", "apstawet"))
+	{
+	  cprintf ("start nas wan\n");
+	  start_service ("nas_wan");
+	}
+      else
+	{
+	  cprintf ("start nas lan\n");
+	  start_service ("nas_lan");
+	}
+/*end nas mode select */
 #ifdef HAVE_MSSID
       start_service ("guest_nas");
 #endif
@@ -701,7 +736,21 @@ start_single_service (void)
       start_service ("stabridge");
 #endif
 #ifndef HAVE_MADWIFI
-	  start_service ("nas");
+/* nas mode select*/
+      if (nvram_match ("wl0_mode", "sta")
+	  || nvram_match ("wl0_mode", "wet")
+	  || nvram_match ("wl0_mode", "apsta")
+	  || nvram_match ("wl0_mode", "apstawet"))
+	{
+	  cprintf ("start nas wan\n");
+	  start_service ("nas_wan");
+	}
+      else
+	{
+	  cprintf ("start nas lan\n");
+	  start_service ("nas_lan");
+	}
+/*end nas mode select */
 #ifdef HAVE_MSSID
       start_service ("guest_nas");
 #endif
