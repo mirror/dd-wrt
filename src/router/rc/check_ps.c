@@ -41,9 +41,6 @@ struct mon mons[] = {
   {"udhcpd", 1, M_LAN},
   {"dnsmasq", 1, M_LAN},
   {"dhcpfwd", 1, M_LAN},
-#ifndef HAVE_MSSID
-  {"nas", 1, M_LAN},
-#endif
 #ifdef HAVE_NOCAT
   {"splashd", 1, M_LAN},
 #endif
