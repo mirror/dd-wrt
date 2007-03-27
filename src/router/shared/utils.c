@@ -544,8 +544,16 @@ if (reg1=0x22 && reg2==0x1450)  //kendin switch
   if (boardnum == 42 &&
       nvram_match ("boardtype", "0x0472") && nvram_match ("cardbus", "1"))
     {
+	  if (nvram_match ("boot_hw_model", "WRT150N")
+	  {
+	  setRouter ("Linksys WRT150N");
+      return ROUTER_WRT300N;
+	  }
+	  else
+	  {
       setRouter ("Linksys WRT300N v1");
       return ROUTER_WRT300N;
+  	  }
     }
 
   if (boardnum == 42 &&
