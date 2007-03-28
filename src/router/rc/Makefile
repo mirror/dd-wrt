@@ -19,7 +19,7 @@ LDFLAGS	+= -s -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram
 endif
 
 OBJS := rc.c init.c servicemanager.c services.c stats.c crc.c http.c
-OBJS += resetbutton.c ntp.c listen.c check_ps.c process_monitor.c sendudp.c radio_timer.c watchdog.c event.c
+OBJS += resetbutton.c ntp.c listen.c check_ps.c process_monitor.c sendudp.c radio_timer.c watchdog.c event.c nvram.c
 
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
 REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
@@ -354,6 +354,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc getbridgeprio
 	cd $(INSTALLDIR)/sbin && ln -sf rc ipupdated
 	cd $(INSTALLDIR)/sbin && ln -sf rc redial
+	cd $(INSTALLDIR)/usr/sbin && ln -sf rc nvram
 	cd $(INSTALLDIR)/sbin && ln -sf rc hb_connect
 	cd $(INSTALLDIR)/sbin && ln -sf rc hb_disconnect
 ifneq ($(CONFIG_XSCALE),y)

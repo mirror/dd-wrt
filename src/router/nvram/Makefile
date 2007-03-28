@@ -49,7 +49,7 @@ endif
 
 vpath %.c $(SRCBASE)/shared/nvram
 
-all: libnvram.so nvram
+all: libnvram.so
 
 install: all
 	install -D libnvram.so $(INSTALLDIR)/lib/libnvram.so

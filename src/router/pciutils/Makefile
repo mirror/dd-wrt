@@ -41,6 +41,8 @@ lib: lib/config.h
 lib/config.h:
 	cd lib && ./configure $(PREFIX) $(VERSION)
 
+lib/libpci.a: lib
+
 lspci: lspci.o common.o lib/libpci.a
 setpci: setpci.o common.o lib/libpci.a
 
