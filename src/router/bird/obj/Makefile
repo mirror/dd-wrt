@@ -13,12 +13,12 @@ daemon: $(exedir)/bird
 client: $(exedir)/birdc
 
 subdir depend: .dir-stamp
-	set -e ; for a in $(dynamic-dirs) ; do $(MAKE) -C $$a $@ ; done
-	set -e ; for a in $(static-dirs) $(client-dirs) ; do $(MAKE) -C $$a -f $(srcdir_abs)/$$a/Makefile $@ ; done
 
-$(exedir)/bird: $(addsuffix /all.o, $(static-dirs)) conf/all.o
+$(exedir)/bird: 
+	set -e ; for a in $(dynamic-dirs) ; do $(MAKE) -C $$a subdir ; done
+	set -e ; for a in $(static-dirs) $(client-dirs) ; do $(MAKE) -C $$a -f $(srcdir_abs)/$$a/Makefile subdir ; done
 #	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
-	$(AR) arc -o $@.a $^
+	$(AR) arc -o $@.a $(addsuffix /all.o, $(static-dirs)) conf/all.o
 
 $(exedir)/birdc: client/all.o lib/birdlib.a
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS) $(CLIENT_LIBS)
