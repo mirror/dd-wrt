@@ -479,7 +479,7 @@ if (reg1=0x22 && reg2==0x1450)  //kendin switch
 	if (boardnum == 2 && nvram_match ("GemtekPmonVer", "1"))
 		{
 		cprintf ("router is Sitecom wl105b\n");
-		setRouter ("Sitecom WL-105b");
+		setRouter ("Sitecom WL-105(b)");
 		return ROUTER_SITECOM_WL105B;
 	    }
 
