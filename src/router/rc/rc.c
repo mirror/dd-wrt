@@ -882,6 +882,8 @@ main (int argc, char **argv)
     return start_main ("getbridge", argc, argv);
   else if (strstr (base, "watchdog"))
     return watchdog_main (argc, argv);
+  else if (strstr (base, "nvram"))
+    return nvram_main (argc, argv);
 //  else if (strstr (base, "reboot"))
 //    shutdown_system();
   return 1;
