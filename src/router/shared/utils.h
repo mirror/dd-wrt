@@ -149,7 +149,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_WRT54G3G 0x2b16
 
 //Sitecom WL-105(b) (4702 cpu, no switch, fccid: Gemtek MXF-A910910AB - no A-band)
-#define ROUTER_SITECOM_WL105B 0x2c00
+#define ROUTER_SITECOM_WL105B 0x2c10
 
 
 
