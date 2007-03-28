@@ -544,7 +544,7 @@ if (reg1=0x22 && reg2==0x1450)  //kendin switch
   if (boardnum == 42 &&
       nvram_match ("boardtype", "0x0472") && nvram_match ("cardbus", "1"))
     {
-	  if (nvram_match ("boot_hw_model", "WRT150N")
+	  if (nvram_match ("boot_hw_model", "WRT150N"))
 	  {
 	  setRouter ("Linksys WRT150N");
       return ROUTER_WRT300N;
@@ -998,6 +998,9 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 			power_gpio = 0x14;
 			diag_gpio = 0x15;
 			wlan_gpio = 0x16;
+		break;
+	case ROUTER_SITECOM_WL105B:
+			connected_gpio = 0x13;
 		break;
 	}
 	
