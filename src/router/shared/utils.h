@@ -148,8 +148,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Linksys WRT54G3G  (4712 cpu, 5325E switch, PCMCIA slot, fccid: Linksys Q87-WRT54G3G)
 #define ROUTER_WRT54G3G 0x2b16
 
-//Sitecom WL105B (4702 cpu, no switch, fccid: Gemtek MXF-A910910AB - no A-band)
-#define ROUTER_SITECOM_WL105B 0x2c0f
+//Sitecom WL-105(b) (4702 cpu, no switch, fccid: Gemtek MXF-A910910AB - no A-band)
+#define ROUTER_SITECOM_WL105B 0x2c00
 
 
 
