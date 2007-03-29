@@ -344,6 +344,7 @@ period_check (int sig)
       break;
     case ROUTER_BUFFALO_WBR2G54S:
     case ROUTER_ASUS_WL500G_PRE:
+    case ROUTER_WRT150N:
       sesgpio = 0x04;		//gpio 4, normal
       break;
     default:
