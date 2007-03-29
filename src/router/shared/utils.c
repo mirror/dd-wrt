@@ -1002,6 +1002,10 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 	case ROUTER_SITECOM_WL105B:
 			connected_gpio = 0x03;
 		break;
+	case ROUTER_BUFFALO_WZRG300N:
+			diag_gpio = 0x17;
+			bridge_gpio = 0x11;
+		break;
 	}
 	
 	switch (type)
