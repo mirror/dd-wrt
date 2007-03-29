@@ -547,7 +547,7 @@ if (reg1=0x22 && reg2==0x1450)  //kendin switch
 	  if (nvram_match ("boot_hw_model", "WRT150N"))
 	  {
 	  setRouter ("Linksys WRT150N");
-      return ROUTER_WRT300N;
+      return ROUTER_WRT150N;
 	  }
 	  else
 	  {
