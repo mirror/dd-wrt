@@ -130,6 +130,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       break;
     case ROUTER_BUFFALO_WBR54G:
     case ROUTER_BUFFALO_WBR2G54S:
+    case ROUTER_WRT150N:
     case ROUTER_WRT300N:
     case ROUTER_WRT350N:
       nvram_set ("wl0gpio0", "8");
@@ -166,6 +167,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
 
   switch (brand)
     {
+	case ROUTER_WRT150N:
     case ROUTER_WRT300N:
     case ROUTER_WRT350N:
     case ROUTER_BUFFALO_WZRG300N:
@@ -204,39 +206,6 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
 }
 
 
-/*
-static void
-enableAfterBurner (void)
-{
-
-  int boardflags;
-  int brand = getRouterBrand ();
-  switch (brand)
-    {
-    case ROUTER_LINKSYS_WRT55AG:
-    case ROUTER_WRT300N:
-    case ROUTER_WRT350N:
-    case ROUTER_MOTOROLA_V1:
-    case ROUTER_BUFFALO_WZRRSG54:
-      return;
-      break;
-    default:
-      if (nvram_get ("boardflags") == NULL)
-	return;
-      boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
-      fprintf (stderr, "boardflags are 0x0%X\n", boardflags);
-      if (!(boardflags & BFL_AFTERBURNER))
-	{
-	  boardflags |= BFL_AFTERBURNER;
-	  char ab[100];
-	  fprintf (stderr, "enable Afterburner....\n");
-	  sprintf (ab, "0x0%X", boardflags);
-	  nvram_set ("boardflags", ab);
-	  nvram_set ("need_commit", "1");
-	}
-    }
-}
-*/
 char wanifname[8], wlifname[8];
 #define BCM4712_CPUTYPE "0x4712"
 
@@ -406,6 +375,7 @@ start_sysinit (void)
 
     case ROUTER_BUFFALO_WZRG300N:
     case ROUTER_NETGEAR_WNR834B:
+    case ROUTER_WRT150N:
     case ROUTER_WRT300N:
     case ROUTER_WRTSL54GS:
       nvram_set ("wan_ifname", "eth1");

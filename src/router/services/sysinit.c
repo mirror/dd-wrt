@@ -514,6 +514,7 @@ start_restore_defaults (void)
     {
     case ROUTER_WRTSL54GS:
     case ROUTER_BUFFALO_WZRG300N:
+    case ROUTER_WRT150N:
     case ROUTER_WRT300N:
     case ROUTER_BUFFALO_WZRRSG54:
     case ROUTER_NETGEAR_WNR834B:
