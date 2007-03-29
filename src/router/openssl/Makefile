@@ -214,7 +214,7 @@ build_ssl:
 	@dir=ssl; target=all; $(BUILD_CMD)
 build_engines:
 	@dir=engines; target=all; $(BUILD_CMD)
-build_apps:
+build_apps: build_ssl build_crypto build_engines
 	@dir=apps; target=all; $(BUILD_CMD)
 build_tests:
 	@dir=test; target=all; $(BUILD_CMD)
