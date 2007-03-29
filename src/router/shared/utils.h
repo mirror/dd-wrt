@@ -151,6 +151,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 //Sitecom WL-105(b) (4702 cpu, no switch, fccid: Gemtek MXF-A910910AB - no A-band)
 #define ROUTER_SITECOM_WL105B 0x2c10
 
+//Linksys WRT150N (4704 cpu, BCM5325F switch), (fccid: Linksys Q87-WRT150N)
+#define ROUTER_WRT150N 0x2d16
 
 
 #define NVROUTER "DD_BOARD"
