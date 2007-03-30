@@ -983,6 +983,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_FONERA
   {"remote_management", "1", 0},	/* Remote Management [1|0] */
+#elif HAVE_LS2
+  {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_WHRAG108
   {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_RB500
@@ -1282,6 +1284,10 @@ struct nvram_tuple srouter_defaults[] = {
   {"remote_mgt_ssh", "1", 0},
 #elif HAVE_FONERA
   {"remote_mgt_ssh", "1", 0},
+#elif HAVE_LS2
+  {"remote_mgt_ssh", "1", 0},
+#elif HAVE_MAKSAT
+  {"remote_mgt_ssh", "1", 0},
 #elif HAVE_WHRAG108
   {"remote_mgt_ssh", "1", 0},
 #elif HAVE_X86
@@ -1570,6 +1576,8 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_MAGICBOX
   {"ip_conntrack_max", "32768", 0},
 #elif HAVE_FONERA
+  {"ip_conntrack_max", "4096", 0},
+#elif HAVE_LS2
   {"ip_conntrack_max", "4096", 0},
 #elif HAVE_WHRAG108
   {"ip_conntrack_max", "16384", 0},
