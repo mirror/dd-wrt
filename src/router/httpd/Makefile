@@ -268,6 +268,9 @@ endif
 ifeq ($(CONFIG_SKYTEL),y)
 CFLAGS += -DHAVE_SKYTEL
 endif
+ifeq ($(CONFIG_BUFFALO),y)
+CFLAGS += -DHAVE_BUFFALO
+endif
 
 ifeq ($(CONFIG_SKYTRON),y)
 CFLAGS += -DHAVE_SKYTRON
