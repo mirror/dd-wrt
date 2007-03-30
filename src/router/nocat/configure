@@ -5796,7 +5796,7 @@ done
 
 fi
 fi
-firewall=$ac_cv_prog_firewall
+firewall="iptables"
 if test -n "$firewall"; then
   echo "$as_me:$LINENO: result: $firewall" >&5
 echo "${ECHO_T}$firewall" >&6
@@ -5811,6 +5811,7 @@ test -n "$firewall" || firewall=""""
 
 
 fi;
+
 if test "$firewall" = ""; then
     { { echo "$as_me:$LINENO: error: No supported firewalls found in \$PATH." >&5
 echo "$as_me: error: No supported firewalls found in \$PATH." >&2;}
