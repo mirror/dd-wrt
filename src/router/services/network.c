@@ -2983,7 +2983,7 @@ start_hotplug_net (void)
 {
 #ifdef HAVE_MADWIFI
   return 0;
-#endif
+#else
 
 //      char *lan_ifname = nvram_safe_get("lan_ifname");
   char *interface, *action;
@@ -3023,6 +3023,7 @@ start_hotplug_net (void)
     }
   cprintf ("config done()\n");
   return 0;
+#endif
 }
 
 int

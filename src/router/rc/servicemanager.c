@@ -28,10 +28,11 @@
 #define SERVICE_MODULE "/lib/services.so"
 #define cprintf(fmt, args...)
 
-
-/*#define cprintf(fmt, args...) do { \
+/*
+#define cprintf(fmt, args...) do { \
 	FILE *fp = fopen("/dev/console", "w"); \
 	if (fp) { \
+		fprintf(fp,"%s (%d):%s ",__FILE__,__LINE__,__func__); \
 		fprintf(fp, fmt, ## args); \
 		fclose(fp); \
 	} \

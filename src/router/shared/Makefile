@@ -119,6 +119,9 @@ endif
 ifeq ($(CONFIG_BOESE),y)
 CFLAGS += -DBOESE=1
 endif
+ifeq ($(CONFIG_WILLIAM),y)
+CFLAGS += -DWILLIAM=1
+endif
 
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI -I../services -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
