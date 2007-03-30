@@ -62,6 +62,9 @@ endif
 ifeq ($(CONFIG_GEMTEK),y)
 CFLAGS += -DHAVE_GEMTEK
 endif
+ifeq ($(CONFIG_BUFFALO),y)
+CFLAGS += -DHAVE_BUFFALO
+endif
 ifeq ($(CONFIG_PPPOE),y)
 CFLAGS += -DHAVE_PPPOE
 endif
@@ -142,6 +145,9 @@ endif
 
 ifeq ($(CONFIG_FONERA),y)
 CFLAGS += -DHAVE_FONERA
+endif
+ifeq ($(CONFIG_LS2),y)
+CFLAGS += -DHAVE_LS2
 endif
 ifeq ($(CONFIG_WHRAG108),y)
 CFLAGS += -DHAVE_WHRAG108
