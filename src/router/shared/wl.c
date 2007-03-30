@@ -205,16 +205,21 @@ wifi_getrate (char *ifname)
   return wrq.u.bitrate.value;
 }
 
+#ifdef WILLAM
+#define OFFSET 0
+#else
+#define OFFSET 0
+#endif
 static u_int
 ieee80211_mhz2ieee (u_int freq)
 {
-  if (freq == 2484)
+  if (freq == 2484+OFFSET)
     return 14;
-  if (freq < 2484)
-    return (freq - 2407) / 5;
-  if (freq < 5000)
-    return 15 + ((freq - 2512) / 20);
-  return (freq - 5000) / 5;
+  if (freq < 2484+OFFSET)
+    return (freq - (2407+OFFSET)) / 5;
+  if (freq < (5000+OFFSET))
+    return 15 + ((freq - (2512+OFFSET)) / 20);
+  return (freq - (5000+OFFSET)) / 5;
 }
 
 int
