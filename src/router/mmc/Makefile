@@ -7,7 +7,7 @@ INCLUDE := -isystem $(LINUXDIR)/include
 CFLAGS  := -O2 -mtune=mips32 -mtune=mips32 -pipe -funit-at-a-time -DMODULE -D__KERNEL__ ${WARN} ${INCLUDE} -fno-pic -mno-abicalls -mlong-calls
 CC      := /opt/3.3.6/bin/mipsel-linux-uclibc-gcc
 
-${TARGET}.o: ${TARGET}.c
+${TARGET}.o: ${TARGET}.c log.c
 
 
 clean:
