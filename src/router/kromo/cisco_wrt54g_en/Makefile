@@ -304,9 +304,6 @@ ifneq ($(CONFIG_WIVIZ),y)
 endif
 
 
-ifeq ($(CONFIG_NEWMEDIA),y)
-	$(MAKE) -C $(SRCBASE)/router/kromo/newmedia/ install
-else
 
 ifeq ($(CONFIG_RAMON),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/newmedia/ install
@@ -321,7 +318,6 @@ else
 	$(MAKE) -C $(SRCBASE)/router/kromo/common/ install
 endif
 
-endif
 endif
 endif
 endif

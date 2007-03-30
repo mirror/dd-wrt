@@ -147,6 +147,9 @@ endif
 ifeq ($(CONFIG_BOESE),y)
 CFLAGS += -DBOESE=1
 endif
+ifeq ($(CONFIG_WILLIAM),y)
+CFLAGS += -DWILLIAM=1
+endif
 
 ifeq ($(CONFIG_MULTICAST),y)
 CFLAGS += -DHAVE_MULTICAST
