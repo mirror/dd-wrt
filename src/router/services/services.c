@@ -115,7 +115,7 @@ addHost (char *host, char *ip)
 void
 start_vpn_modules (void)
 {
-#if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X86)
+#if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X86) ||defined(HAVE_LS2)
   if ((nvram_match ("pptp_pass", "1") || nvram_match ("l2tp_pass", "1")
        || nvram_match ("ipsec_pass", "1")))
     {
@@ -162,7 +162,7 @@ start_vpn_modules (void)
 void
 stop_vpn_modules (void)
 {
-#if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X86)
+#if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_LS2)
   eval ("/sbin/rmmod", "nf_nat_pptp");
   syslog (LOG_INFO, "vpn modules : nf_nat_pptp successfully stopped\n");
   eval ("/sbin/rmmod", "nf_conntrack_pptp");

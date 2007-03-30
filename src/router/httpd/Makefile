@@ -62,6 +62,9 @@ endif
 ifeq ($(CONFIG_MULTICAST),y)
 CFLAGS += -DHAVE_MULTICAST
 endif
+ifeq ($(CONFIG_BUFFALO),y)
+CFLAGS += -DHAVE_BUFFALO
+endif
 ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
 OBJS += upgrade_rb500.c
@@ -111,6 +114,9 @@ CFLAGS += -DHAVE_CPUTEMP
 endif
 ifeq ($(CONFIG_FONERA),y)
 CFLAGS += -DHAVE_FONERA
+endif
+ifeq ($(CONFIG_LS2),y)
+CFLAGS += -DHAVE_LS2
 endif
 ifeq ($(CONFIG_WHRAG108),y)
 CFLAGS += -DHAVE_WHRAG108

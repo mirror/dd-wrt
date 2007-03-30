@@ -154,6 +154,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 //Linksys WRT150N (4704 cpu, BCM5325F switch), (fccid: Linksys Q87-WRT150N)
 #define ROUTER_WRT150N 0x2d16
 
+#define ROUTER_BOARD_LS2 0x2e01
+
 
 #define NVROUTER "DD_BOARD"
 

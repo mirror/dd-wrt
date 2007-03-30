@@ -3438,6 +3438,10 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
       eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
       eval ("erase", "nvram");
+#elif HAVE_LS2
+      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+      eval ("erase", "nvram");
 #elif HAVE_WHRAG108
       eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
       eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
@@ -4384,6 +4388,8 @@ ej_getrebootflags (webs_t wp, int argc, char_t ** argv)
 #elif HAVE_MAGICBOX
   websWrite (wp, "2");
 #elif HAVE_FONERA
+  websWrite (wp, "2");
+#elif HAVE_LS2
   websWrite (wp, "2");
 #elif HAVE_WHRAG108
   websWrite (wp, "2");
