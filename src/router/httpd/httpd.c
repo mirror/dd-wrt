@@ -1149,10 +1149,10 @@ main (int argc, char **argv)
 #ifdef FILTER_DEBUG
   debout = fopen ("/tmp/filterdebug.log", "wb");
 #endif
-
+cprintf("init nvram tab\n");
 /* SEG addition */
   Initnvramtab ();
-
+cprintf("done()\n");
 #ifdef HAVE_OPENSSL
   BIO *sbio;
   SSL_CTX *ctx = NULL;

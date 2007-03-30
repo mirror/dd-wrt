@@ -68,6 +68,9 @@ endif
 ifeq ($(CONFIG_PPPOE),y)
 CFLAGS += -DHAVE_PPPOE
 endif
+ifeq ($(CONFIG_BUFFALO),y)
+CFLAGS += -DHAVE_BUFFALO
+endif
 ifeq ($(CONFIG_BONDING),y)
 CFLAGS += -DHAVE_BONDING
 endif

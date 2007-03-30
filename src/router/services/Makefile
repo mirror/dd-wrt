@@ -261,6 +261,9 @@ endif
 ifeq ($(CONFIG_AQOS),y)
 CFLAGS += -DHAVE_AQOS
 endif
+ifeq ($(CONFIG_BUFFALO),y)
+CFLAGS += -DHAVE_BUFFALO
+endif
 
 ifeq ($(CONFIG_PPTP),y)
 CFLAGS += -DHAVE_PPTP

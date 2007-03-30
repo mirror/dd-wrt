@@ -70,6 +70,13 @@ ifeq ($(CONFIG_3COM),y)
 	cp 3com/images/* $(INSTALLDIR)/www/images
 endif
 
+ifeq ($(CONFIG_BUFFALO),y)
+	mkdir $(INSTALLDIR)/www/style/buffalo
+	cp buffalo/style.css $(INSTALLDIR)/www/style/buffalo
+	cp buffalo/common_buffalo.css $(INSTALLDIR)/www/style
+	cp buffalo/images/* $(INSTALLDIR)/www/images
+endif
+
 ifeq ($(CONFIG_RED),y)
 	mkdir $(INSTALLDIR)/www/style/red
 	cp red/style.css $(INSTALLDIR)/www/style/red
