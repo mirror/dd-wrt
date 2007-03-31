@@ -48,15 +48,15 @@ addEvent(window, "unload", function() {
 			<div>
 			<form>
 				<% tran("success.success_reboot"); %><br /><br />
-					<div align="center">
-						<script type="text/javascript">
-						//<![CDATA[
-							var bar1 = createBar(500,15,100,15,my_tab.scroll_count,"to_submit()");
-	            bar1.togglePause();
-	            //]]>
-	            </script>
-	        </div>
-	        <div id="mess" style="display:none"><br /><br />
+				<div align="center">
+					<script type="text/javascript">
+					//<![CDATA[
+						var bar1 = createBar(500,15,100,15,my_tab.scroll_count,"to_submit()");
+	            		bar1.togglePause();
+	            	//]]>
+	            	</script>
+	        	</div>
+	        	<div id="mess" style="display:none"><br /><br />
 	        	<div style="text-align:left"><% tran("success.alert1"); %>
 	        		<ul>
 	        			<li><% tran("success.alert2"); %></li>
