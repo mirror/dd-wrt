@@ -6763,10 +6763,10 @@ ej_statfs (webs_t wp, int argc, char_t ** argv)
   if ((statfs (argv[0], &sizefs) != 0) || (sizefs.f_type == 0x73717368))
     memset (&sizefs, 0, sizeof (sizefs));
 
-  websWrite (wp, "%s = {\n\
-			\tsize: %llu,\n\
-			\tfree: %llu\n\
-			};\n", argv[1], ((uint64_t) sizefs.f_bsize * sizefs.f_blocks), ((uint64_t) sizefs.f_bsize * sizefs.f_bfree));
+  websWrite (wp, "var %s = {\n\
+  	size: %llu,\n\
+  	free: %llu\n\
+  	};\n", argv[1], ((uint64_t) sizefs.f_bsize * sizefs.f_blocks), ((uint64_t) sizefs.f_bsize * sizefs.f_bfree));
 }
 
 #ifdef HAVE_RSTATS
