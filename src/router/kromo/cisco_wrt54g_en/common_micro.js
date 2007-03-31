@@ -516,37 +516,37 @@ var ie=(document.all) ? true : false;
 var N=-1;
 
 function createBar(w,h,speed,blocks,count,action) {
-	if !(ie||w3c)
-		return false;
-	
-	var t='<div class="progressbar" id="_xpbar'+(++N)+'" style="width:'+w+'px; height:'+h+'px;">';
-	t+='<span class="progressbarblock" id="blocks'+N+'" style="left:-'+(h*2+1)+'px;">';
-	for (i=0;i<blocks;i++) {
-		t+='<span class="progressbarblock" style="left:-'+((h*i)+i)+'px; width:'+h+'px; height:'+h+'px; ';
-		t+=(ie)?'filter:alpha(opacity='+(100-i*(100/blocks))+')':'-Moz-opacity:'+((100-i*(100/blocks))/100);
-		t+='"></span>';
+	if (ie||w3c) {	
+		var t='<div class="progressbar" id="_xpbar'+(++N)+'" style="width:'+w+'px; height:'+h+'px;">';
+		t+='<span class="progressbarblock" id="blocks'+N+'" style="left:-'+(h*2+1)+'px;">';
+		for (i=0;i<blocks;i++) {
+			t+='<span class="progressbarblock" style="left:-'+((h*i)+i)+'px; width:'+h+'px; height:'+h+'px; ';
+			t+=(ie)?'filter:alpha(opacity='+(100-i*(100/blocks))+')':'-Moz-opacity:'+((100-i*(100/blocks))/100);
+			t+='"></span>';
+		}
+		t+='</span></div>';
+		document.write(t);
+		var bA=(ie) ? document.all['blocks'+N] : document.getElementById('blocks'+N);
+		bA.bar=(ie) ? document.all['_xpbar'+N] : document.getElementById('_xpbar'+N);
+		bA.blocks=blocks;
+		bA.N=N;
+		bA.w=w;
+		bA.h=h;
+		bA.speed=speed;
+		bA.ctr=0;
+		bA.count=count;
+		bA.action=action;
+		bA.togglePause=togglePause;
+		bA.showBar=function() {
+			this.bar.style.visibility="visible";
+		}
+		bA.hideBar=function() {
+			this.bar.style.visibility="hidden";
+		}
+		bA.tid=setInterval('startBar('+N+')',speed);
+		return bA;
 	}
-	t+='</span></div>';
-	document.write(t);
-	var bA=(ie) ? document.all['blocks'+N] : document.getElementById('blocks'+N);
-	bA.bar=(ie) ? document.all['_xpbar'+N] : document.getElementById('_xpbar'+N);
-	bA.blocks=blocks;
-	bA.N=N;
-	bA.w=w;
-	bA.h=h;
-	bA.speed=speed;
-	bA.ctr=0;
-	bA.count=count;
-	bA.action=action;
-	bA.togglePause=togglePause;
-	bA.showBar=function() {
-		this.bar.style.visibility="visible";
-	}
-	bA.hideBar=function() {
-		this.bar.style.visibility="hidden";
-	}
-	bA.tid=setInterval('startBar('+N+')',speed);
-	return bA;
+	return false;
 }
 
 function startBar(bn) {
