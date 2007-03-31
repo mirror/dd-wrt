@@ -495,6 +495,9 @@
 #define IW_TXPOW_RELATIVE	0x0002	/* Value is in arbitrary units */
 #define IW_TXPOW_RANGE		0x1000	/* Range of value between min/max */
 
+#define IW_RATE_11N		0x1
+#define IW_RETRY_11N		0x2
+
 /* Retry limits and lifetime flags available */
 #define IW_RETRY_ON		0x0000	/* No details... */
 #define IW_RETRY_TYPE		0xF000	/* Type of parameter */
