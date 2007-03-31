@@ -93,7 +93,7 @@ function valid_range(I,start,end,M) {
 function valid_macs_all(I) {
 	if(I.value == "")
 		return true;
-
+	
 	if (I.value.length == 12) {
 		valid_macs_12(I);
 	} else if (I.value.length == 17) {
@@ -152,38 +152,38 @@ function valid_mac(I,T) {
 		}                                                       
 	}                       
 }
-function valid_macs_12(I){	
-	var m,m3;	
-	if(I.value == "")
+
+function valid_macs_12(I) {
+	var m,m3;
+	
+	if (I.value == "")
 		return true;
-	else if(I.value.length==12){
-		for(i=0;i<12;i++){			
-			m=parseInt(I.value.charAt(i), 16);			
-			if( isNaN(m) )				
-				break;		
-		}		
-		if( i!=12 ){
-
+		
+	if (I.value.length==12) {
+		for (i=0;i<12;i++) {
+			m=parseInt(I.value.charAt(i), 16);
+			if (isNaN(m)) break;
+		}
+		if (i!=12) {
 			alert(errmsg.err17);
-			I.value = I.defaultValue;		
-		}	
-	} else {		
-
+			I.value = I.defaultValue;
+		}
+	} else {
 		alert(errmsg.err18);
-		I.value = I.defaultValue;	
+		I.value = I.defaultValue;
 	}
+	
 	I.value = I.value.toUpperCase();
-	if(I.value == "FFFFFFFFFFFF"){
-
+	if (I.value == "FFFFFFFFFFFF") {
 		alert(errmsg.err19);
-		I.value = I.defaultValue;	
+		I.value = I.defaultValue;
 	}
 	m3 = I.value.charAt(1);
-	if((m3 & 1) == 1){                               
-
+	if ((m3 & 1) == 1) {
 		alert(errmsg.err16);
-		I.value = I.defaultValue;                       
-	}                                                      
+		I.value = I.defaultValue;
+	}
+	return true;
 }
 
 function valid_macs_17(I)
@@ -511,60 +511,66 @@ return g;
 
 
 
-var w3c=(document.getElementById)?true:false;
-var ie=(document.all)?true:false;
+var w3c=(document.getElementById) ? true : false;
+var ie=(document.all) ? true : false;
 var N=-1;
 
-function createBar(w,h,speed,blocks,count,action){
-if(ie||w3c){
-var t='<div class="progressbar" id="_xpbar'+(++N)+'" style="width:'+w+'px; height:'+h+'px;">';
-t+='<span class="progressbarblock" id="blocks'+N+'" style="left:-'+(h*2+1)+'px;">';
-for(i=0;i<blocks;i++){
-t+='<span class="progressbarblock" style="left:-'+((h*i)+i)+'px; width:'+h+'px; height:'+h+'px; '
-t+=(ie)?'filter:alpha(opacity='+(100-i*(100/blocks))+')':'-Moz-opacity:'+((100-i*(100/blocks))/100);
-t+='"></span>';
-}
-t+='</span></div>';
-document.write(t);
-var bA=(ie)?document.all['blocks'+N]:document.getElementById('blocks'+N);
-bA.bar=(ie)?document.all['_xpbar'+N]:document.getElementById('_xpbar'+N);
-bA.blocks=blocks;
-bA.N=N;
-bA.w=w;
-bA.h=h;
-bA.speed=speed;
-bA.ctr=0;
-bA.count=count;
-bA.action=action;
-bA.togglePause=togglePause;
-bA.showBar=function(){
-this.bar.style.visibility="visible";
-}
-bA.hideBar=function(){
-this.bar.style.visibility="hidden";
-}
-bA.tid=setInterval('startBar('+N+')',speed);
-return bA;
-}}
-
-function startBar(bn){
-var t=(ie)?document.all['blocks'+bn]:document.getElementById('blocks'+bn);
-if(parseInt(t.style.left)+t.h+1-(t.blocks*t.h+t.blocks)>t.w){
-t.style.left=-(t.h*2+1)+'px';
-t.ctr++;
-if(t.ctr>=t.count){
-eval(t.action);
-t.ctr=0;
-}}else t.style.left=(parseInt(t.style.left)+t.h+1)+'px';
+function createBar(w,h,speed,blocks,count,action) {
+	if !(ie||w3c)
+		return false;
+	
+	var t='<div class="progressbar" id="_xpbar'+(++N)+'" style="width:'+w+'px; height:'+h+'px;">';
+	t+='<span class="progressbarblock" id="blocks'+N+'" style="left:-'+(h*2+1)+'px;">';
+	for (i=0;i<blocks;i++) {
+		t+='<span class="progressbarblock" style="left:-'+((h*i)+i)+'px; width:'+h+'px; height:'+h+'px; ';
+		t+=(ie)?'filter:alpha(opacity='+(100-i*(100/blocks))+')':'-Moz-opacity:'+((100-i*(100/blocks))/100);
+		t+='"></span>';
+	}
+	t+='</span></div>';
+	document.write(t);
+	var bA=(ie) ? document.all['blocks'+N] : document.getElementById('blocks'+N);
+	bA.bar=(ie) ? document.all['_xpbar'+N] : document.getElementById('_xpbar'+N);
+	bA.blocks=blocks;
+	bA.N=N;
+	bA.w=w;
+	bA.h=h;
+	bA.speed=speed;
+	bA.ctr=0;
+	bA.count=count;
+	bA.action=action;
+	bA.togglePause=togglePause;
+	bA.showBar=function() {
+		this.bar.style.visibility="visible";
+	}
+	bA.hideBar=function() {
+		this.bar.style.visibility="hidden";
+	}
+	bA.tid=setInterval('startBar('+N+')',speed);
+	return bA;
 }
 
-function togglePause(){
-if(this.tid==0){
-this.tid=setInterval('startBar('+this.N+')',this.speed);
-}else{
-clearInterval(this.tid);
-this.tid=0;
-}}
+function startBar(bn) {
+	var t=(ie)?document.all['blocks'+bn]:document.getElementById('blocks'+bn);
+	if (parseInt(t.style.left)+t.h+1-(t.blocks*t.h+t.blocks)>t.w) {
+		t.style.left=-(t.h*2+1)+'px';
+		t.ctr++;
+		if (t.ctr>=t.count) {
+			eval(t.action);
+			t.ctr=0;
+		}
+	} else {
+		t.style.left=(parseInt(t.style.left)+t.h+1)+'px';
+	}
+}
+
+function togglePause() {
+	if (this.tid==0) {
+		this.tid=setInterval('startBar('+this.N+')',this.speed);
+	} else {
+		clearInterval(this.tid);
+		this.tid=0;
+	}
+}
 
 
 function change_style(id, newClass) {
@@ -704,6 +710,7 @@ function StatusUpdate(_url, _frequency) {
 		if(document.getElementsByName("refresh_button")) 
 			document.getElementsByName("refresh_button")[0].disabled = true;
 		timer = setTimeout(me.doUpdate, frequency);
+		return true;
 	}
 	
 	this.stop = function() {
