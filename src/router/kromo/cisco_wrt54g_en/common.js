@@ -1,20 +1,14 @@
 // Opera
-op = (navigator.userAgent.indexOf("Opera") != -1 && document.getElementById)
+var op = (navigator.userAgent.indexOf("Opera") != -1 && document.getElementById)
 
 // Internet Explorer e.g. IE4+
-ie4 = (document.all)
+var ie4 = (document.all)
 
 // Netscape version 4 :
-ns4 = (document.layers)
+var ns4 = (document.layers)
 
 // Mozila e.g. Netscape 6 upwards
-ns6 = (!document.all && document.getElementById)
-
-/*
-ie4 = ((navigator.appName == "Microsoft Internet Explorer") && (parseInt(navigator.appVersion) >= 4 ))
-ns4 = ((navigator.appName == "Netscape") && (parseInt(navigator.appVersion) < 6 ))
-ns6 = ((navigator.appName == "Netscape") && (parseInt(navigator.appVersion) >= 6 ))
-*/
+var ns6 = (!document.all && document.getElementById)
 
 // 0.0.0.0
 var ZERO_NO = 1;	// 0x0000 0001
@@ -68,7 +62,6 @@ function check_action(I,N) {
 			else
 				I.blur();
 		}
-
 	}
 }
 
@@ -89,16 +82,11 @@ function check_action1(I,T,N) {
 	}
 }
 function valid_range(I,start,end,M) {
-	//if(I.value == ""){
-	//	if(M == "IP" || M == "Port")
-	//		I.value = "0";
-	//}
 	M1 = unescape(M);
 	isdigit(I,M1);
 
 	d = parseInt(I.value, 10);
 	if ( !(d<=end && d>=start) ) {
-//		alert(M1 +" value is out of range ["+ start + " - " + end +"]");
 		alert(M1 + errmsg.err14 + start + " - " + end +"].");
 		I.value = I.defaultValue;
 	} else
@@ -114,7 +102,6 @@ function valid_macs_all(I) {
 	} else if (I.value.length == 17) {
 		valid_macs_17(I);
 	} else {
-//		alert("The MAC Address length is not correct.");
 		alert(errmsg.err5);
 		I.value = I.defaultValue;
 	}
@@ -131,8 +118,6 @@ function valid_macs_list(I) {
 		var mac = new Object;
 		mac.value = macs.shift();
 		if(!valid_macs_17(mac)) {
-//			alert("The MAC Address length is not correct.");
-//			alert(errmsg.err5 + "(" + mac + ")");
 			ret = false;
 		} else {
 			good_macs = good_macs + " " + mac.value;
@@ -157,14 +142,12 @@ function valid_mac(I,T) {
 	m1 =parseInt(I.value.charAt(0), 16);
 	m2 =parseInt(I.value.charAt(1), 16);
 	if( isNaN(m1) || isNaN(m2) ) {
-//		alert("The WAN MAC Address is out of range [00 - ff].");
 		alert(errmsg.err15);
 		I.value = I.defaultValue;
 	}
 	I.value = I.value.toUpperCase();
 	if(T == 0) {
 		if((m2 & 1) == 1){
-//			alert("The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E].");
 			alert(errmsg.err16);
 			I.value = I.defaultValue;
 		}
@@ -181,24 +164,20 @@ function valid_macs_12(I){
 				break;
 		}
 		if( i!=12 ){
-//			alert("The MAC Address is not correct.");
 			alert(errmsg.err17);
 			I.value = I.defaultValue;
 		}
 	} else {
-//		alert("The MAC Address length is not correct.");
 		alert(errmsg.err18);
 		I.value = I.defaultValue;
 	}
 	I.value = I.value.toUpperCase();
 	if(I.value == "FFFFFFFFFFFF"){
-//		alert("The MAC Address cannot be the broadcast address.");
 		alert(errmsg.err19);
 		I.value = I.defaultValue;
 	}
 	m3 = I.value.charAt(1);
 	if((m3 & 1) == 1){
-//		alert("The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E].");
 		alert(errmsg.err16);
 		I.value = I.defaultValue;
 	}
@@ -210,13 +189,9 @@ function valid_macs_17(I)
 	var mac = ignoreSpaces(oldmac);
 	if (mac == "") {
 		return true;
-		////alert("Enter MAC Address in (xx:xx:xx:xx:xx:xx) format.");
-		//alert(errmsg.err20);
-		//return false;
 	}
 	var m = mac.split(":");
 	if (m.length != 6) {
-//		alert("Invalid MAC address format");
 		alert(errmsg.err21);
 		I.value = I.defaultValue;
 		return false;
@@ -228,7 +203,6 @@ function valid_macs_17(I)
 			nameVal = pairs[i];
 			len = nameVal.length;
 			if (len < 1 || len > 2) {
-//				alert ("The WAN MAC Address is not correct.");
 				alert(errmsg.err22);
 				I.value = I.defaultValue;
 				return false;
@@ -238,7 +212,6 @@ function valid_macs_17(I)
 				if (ch >= '0' && ch <= '9' || ch >= 'a' && ch <= 'f') {
 					// nothing to do here
 				} else {
-//					alert ("Invalid hex value " + nameVal + " found in MAC address " + oldmac);
 					alert (errmsg.err23 + nameVal + errmsg.err24 + oldmac + ".");
 					I.value = I.defaultValue;
 					return false;
@@ -248,13 +221,11 @@ function valid_macs_17(I)
 	}
 	I.value = I.value.toUpperCase();
 	if(I.value == "FF:FF:FF:FF:FF:FF"){
-//		alert("The MAC Address cannot be the broadcast address.");
 		alert(errmsg.err19);
 		I.value = I.defaultValue;
 	}
 	m3 = I.value.charAt(1);
 	if((m3 & 1) == 1){
-//		alert("The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E].");
 		alert(errmsg.err16);
 		I.value = I.defaultValue;
 	}
@@ -278,7 +249,6 @@ function check_space(I,M1){
 	for(i=0 ; i<I.value.length; i++){
 		ch = I.value.charAt(i);
 		if(ch == ' ') {
-//			alert(M +" is not allowed to contain a space.");
 			alert(M+errmsg.err34);
 			I.value = I.defaultValue;
 			return false;
@@ -297,12 +267,10 @@ function valid_key(I,l){
 				break;
 		}
 		if( i!=l*2 ){
-//			alert("The key value is not correct.");
 			alert(errmsg.err25);
 			I.value = I.defaultValue;
 		}
 	} else{
-//		alert("The key length is not correct");
 		alert(errmsg.err26);
 		I.value = I.defaultValue;
 	}
@@ -332,7 +300,6 @@ function valid_mask(F,N,flag){
 
 	if(m[0] == "0" && m[1] == "0" && m[2] == "0" && m[3] == "0"){
 		if(flag & ZERO_NO){
-//			alert("Illegal subnet mask.");
 			alert(errmsg.err27);
 			return false;
 		} else if(flag & ZERO_OK){
@@ -342,7 +309,6 @@ function valid_mask(F,N,flag){
 
 	if(m[0] == "255" && m[1] == "255" && m[2] == "255" && m[3] == "255"){
 		if(flag & BCST_NO){
-//			alert("Illegal subnet mask.");
 			alert(errmsg.err27);
 			return false;
 		} else if(flag & BCST_OK){
@@ -358,7 +324,6 @@ function valid_mask(F,N,flag){
 		}
 	}
 	if(match0 > match1){
-//		alert("Illegal subnet mask.");
 		alert(errmsg.err27);
 		return false;
 	}
@@ -373,7 +338,6 @@ function isdigit(I,M) {
 
 		ch = I.value.charAt(i);
 		if(ch < '0' || ch > '9') {
-//			alert(M +" have illegal characters, must be [ 0 - 9 ].");
 			alert(M+errmsg.err28);
 			I.value = I.defaultValue;
 			return false;
@@ -387,7 +351,6 @@ function isascii(I,M) {
 	for(i=0 ; i<I.value.length; i++){
 		ch = I.value.charAt(i);
 		if(ch < ' ' || ch > '~'){
-//			alert(M +" have illegal ascii code.");
 			alert(M+errmsg.err29);
 			I.value = I.defaultValue;
 			return false;
@@ -403,7 +366,6 @@ function isxdigit(I,M) {
 		if(ch >= '0' && ch <= '9' || ch >= 'a' && ch <= 'f') {
 
 		} else {
-//			alert(M +" have illegal hexadecimal digits.");
 			alert(M+errmsg.err30);
 			I.value = I.defaultValue;
 			return false;
@@ -426,14 +388,12 @@ function valid_ip(F,N,M1,flag){
 		m[i] = eval(N+"_"+i).value
 
 	if(m[0] == 127 || m[0] == 224){
-//		alert(M+" value is illegal.");
 		alert(M+errmsg.err31);
 		return false;
 	}
 
 	if(m[0] == "0" && m[1] == "0" && m[2] == "0" && m[3] == "0"){
 		if(flag & ZERO_NO){
-//			alert(M+" value is illegal.");
 			alert(M+errmsg.err31);
 			return false;
 		}
@@ -441,7 +401,6 @@ function valid_ip(F,N,M1,flag){
 
 	if((m[0] != "0" || m[1] != "0" || m[2] != "0") && m[3] == "0"){
 		if(flag & MASK_NO){
-//			alert(M+" value is illegal.");
 			alert(M+errmsg.err31);
 			return false;
 		}
@@ -459,7 +418,6 @@ function valid_ip_str(I, M){
 	for(i=0;i<4;i++) {
 		m[i] = parseInt(ip_str[i], 10);
 		if( isNaN(m[i]) ) {
-//			alert(M+" value is illegal.");
 			alert(M+errmsg.err31);
 			I.value = I.defaultValue;
 			return false;
@@ -467,14 +425,12 @@ function valid_ip_str(I, M){
 	}
 
 	if(m[0] == 127 || m[0] == 224){
-//		alert(M+" value is illegal.");
 		alert(M+errmsg.err31);
 		I.value = I.defaultValue;
 		return false;
 	}
 
 	if((m[0] > "255" || m[1] > "255" || m[2] > "255") && m[3] > "255"){
-//		alert(M+" value is illegal.");
 		alert(M+errmsg.err31);
 		I.value = I.defaultValue;
 		return false;
@@ -497,13 +453,11 @@ function valid_ip_gw(F,I,N,G) {
 
 	for(i=0;i<4;i++){
 		if((IP[i] & NM[i]) != (GW[i] & NM[i])){
-//			alert("IP address and gateway is not at same subnet mask.");
 			alert(errmsg.err32);
 			return false;
 		}
 	}
 	if((IP[0] == GW[0]) && (IP[1] == GW[1]) && (IP[2] == GW[2]) && (IP[3] == GW[3])){
-//		alert("IP address and gateway can't be same.");
 		alert(errmsg.err33);
 		return false;
 	}
@@ -687,9 +641,6 @@ function setMeterBar(id, fraq, text) {
 			+ '<div class="text">' + fraq + '</div></div>' + (defined(text) ? text : "");
 	}
 }
-
-//function setTableContent(id, data, sortBy) {
-//}
 
 // Sets the content inside the tag given by its id
 function setElementContent(id, content) {

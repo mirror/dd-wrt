@@ -6,20 +6,6 @@ function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	apply(F);
 }
-
-function valid_macs_all(I) {
-	if(I.value == "")
-		return true;
-
-	if(I.value.length == 12) {
-		valid_macs_12(I);
-	} else if(I.value.length == 17) {
-		valid_macs_17(I);
-	} else {
-		alert(errmsg.err18);
-		I.value = I.defaultValue;
-	}
-}
 		
 		//]]>
 		</script>

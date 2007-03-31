@@ -1,7 +1,7 @@
-op = (navigator.userAgent.indexOf("Opera") != -1 && document.getElementById)
-ie4 = (document.all)
-ns4 = (document.layers)
-ns6 = (!document.all && document.getElementById)
+var op = (navigator.userAgent.indexOf("Opera") != -1 && document.getElementById)
+var ie4 = (document.all)
+var ns4 = (document.layers)
+var ns6 = (!document.all && document.getElementById)
 
 
 var ZERO_NO = 1;
@@ -91,17 +91,18 @@ function valid_range(I,start,end,M) {
 }
 
 function valid_macs_all(I) {
-	if(I.value == "") {
+	if(I.value == "")
 		return true;
-	} else if (I.value.length == 12) {
+
+	if (I.value.length == 12) {
 		valid_macs_12(I);
 	} else if (I.value.length == 17) {
 		valid_macs_17(I);
 	} else {
-
 		alert(errmsg.err5);
 		I.value = I.defaultValue;
 	}
+	return true;
 }
 
 function valid_macs_list(I) {
@@ -115,7 +116,6 @@ function valid_macs_list(I) {
 		var mac = new Object;
 		mac.value = macs.shift();
 		if(!valid_macs_17(mac)) {
-
 			ret = false;
 		} else {
 			good_macs = good_macs + " " + mac.value;
