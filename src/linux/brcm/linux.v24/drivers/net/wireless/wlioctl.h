@@ -733,6 +733,8 @@ typedef struct wl_instance_info {
 #define WLC_GET_KEY_SEQ				183
 /* #define WLC_GET_GMODE_PROTECTION_CTS		198 */ /* no longer supported */
 /* #define WLC_SET_GMODE_PROTECTION_CTS		199 */ /* no longer supported */
+#define WLC_SCB_DEAUTHENTICATE_FOR_REASON	201
+#define WLC_TKIP_COUNTERMEASURES		202
 #define WLC_GET_PIOMODE				203
 #define WLC_SET_PIOMODE				204
 #define WLC_SET_LED				209

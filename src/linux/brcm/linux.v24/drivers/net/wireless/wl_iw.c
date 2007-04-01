@@ -52,8 +52,25 @@ bcm_mkiovar(char *name, char *data, uint datalen, char *buf, uint buflen)
 
 	return len;
 }
+static int wl_ioctl(struct net_device *dev, int cmd, void *buf, int len)
+{
+	mm_segment_t old_fs = get_fs();
+	struct ifreq ifr;
+	int ret;
+	wl_ioctl_t ioc;
+	ioc.cmd = cmd;
+	ioc.buf = buf;
+	ioc.len = len;
+	strncpy(ifr.ifr_name, dev->name, IFNAMSIZ);
+	ifr.ifr_data = (caddr_t) &ioc;
+	set_fs(KERNEL_DS);
+	ret = dev->do_ioctl(dev,&ifr,SIOCDEVPRIVATE);
+	set_fs (old_fs);
+	return ret;
+}
 
-static int
+#define dev_wlc_ioctl(dev,cmd,arg,len) wl_ioctl(dev,cmd,arg,len)
+/*static int
 dev_wlc_ioctl(
 	struct net_device *dev,
 	int cmd,
@@ -73,7 +90,6 @@ dev_wlc_ioctl(
 	strcpy(ifr.ifr_name, dev->name);
 	ifr.ifr_data = (caddr_t) &ioc;
 
-	/* Must be up for virtually all useful ioctls */
 	dev_open(dev);
 
 	fs = get_fs();
@@ -82,7 +98,7 @@ dev_wlc_ioctl(
 	set_fs(fs);
 
 	return ret;
-}
+}*/
 
 /*
 set named driver variable to int value and return error indication
@@ -315,8 +331,10 @@ wl_iw_set_mode(
 	default:
 		return -EINVAL;
 	}
-	if ((error = dev_wlc_ioctl(dev, WLC_SET_INFRA, &infra, sizeof(infra))))
-		return error;
+	dev_wlc_ioctl(dev, WLC_SET_AP, &ap, sizeof(ap));
+
+	dev_wlc_ioctl(dev, WLC_SET_INFRA, &infra, sizeof(infra));
+
 
 	/* -EINPROGRESS: Call commit handler */
 	return -EINPROGRESS;
@@ -342,6 +360,10 @@ wl_iw_get_mode(
 
 	return 0;
 }
+const long channel_frequency[] = {
+	2412, 2417, 2422, 2427, 2432, 2437, 2442,
+	2447, 2452, 2457, 2462, 2467, 2472, 2484
+};
 
 static int
 wl_iw_get_range(
@@ -356,11 +378,13 @@ wl_iw_get_range(
 	wl_uint32_list_t *list = (wl_uint32_list_t *) channels;
 	wl_rateset_t rateset;
 	int error, i;
+	int k = 0;
 
-	WL_TRACE(("%s: SIOCGIWRANGE\n", dev->name));
 
 	if (!extra)
+		{
 		return -EINVAL;
+		}
 
 	dwrq->length = sizeof(struct iw_range);
 	memset(range, 0, sizeof(range));
@@ -369,6 +393,19 @@ wl_iw_get_range(
 	range->min_nwid = range->max_nwid = 0;
 
 	/* Set available channels/frequencies */
+
+/*	range->num_channels = NUM_CHANNELS;
+	for (i = 0; i < NUM_CHANNELS; i++) {
+		range->freq[k].i = i + 1;
+		range->freq[k].m = channel_frequency[i] * 100000;
+		range->freq[k].e = 1;
+		k++;
+		if (k >= IW_MAX_FREQUENCIES)
+			break;
+	}
+
+	range->num_frequency = range->num_channels;*/
+	
 	list->count = MAXCHANNEL;
 	if ((error = dev_wlc_ioctl(dev, WLC_GET_VALID_CHANNELS, channels, sizeof(channels))))
 		return error;
@@ -378,6 +415,7 @@ wl_iw_get_range(
 		range->freq[i].e = 6;
 	}
 	range->num_frequency = range->num_channels = i;
+
 
 	/* Link quality (use NDIS cutoffs) */
 	range->max_qual.qual = 5;
@@ -396,7 +434,6 @@ wl_iw_get_range(
 	/* Noise level (use noise) */
 	range->avg_qual.noise = 0x100 - 75;	/* -75 dBm */
 #endif /* WIRELESS_EXT > 11 */
-
 	/* Set available bitrates */
 	if ((error = dev_wlc_ioctl(dev, WLC_GET_CURR_RATESET, &rateset, sizeof(rateset))))
 		return error;
@@ -448,7 +485,7 @@ wl_iw_get_range(
 
 #if WIRELESS_EXT > 10
 	range->we_version_compiled = WIRELESS_EXT;
-	range->we_version_source = 18;
+	range->we_version_source = WIRELESS_EXT;
 
 	/* Only support retry limits */
 	range->retry_capa = IW_RETRY_LIMIT;
@@ -463,6 +500,7 @@ wl_iw_get_range(
 #endif /* WIRELESS_EXT > 10 */
 
 #if WIRELESS_EXT > 17
+
 	range->enc_capa = IW_ENC_CAPA_WPA;
 	range->enc_capa |= IW_ENC_CAPA_CIPHER_TKIP;
 	range->enc_capa |= IW_ENC_CAPA_CIPHER_CCMP;
@@ -796,7 +834,7 @@ wl_iw_get_scan(
 		if (bi->capability & (DOT11_CAP_ESS | DOT11_CAP_IBSS)) {
 			iwe.cmd = SIOCGIWMODE;
 			if (bi->capability & DOT11_CAP_ESS)
-				iwe.u.mode = IW_MODE_INFRA;
+				iwe.u.mode = IW_MODE_MASTER;
 			else
 				iwe.u.mode = IW_MODE_ADHOC;
 			event = iwe_stream_add_event(event, end, &iwe, IW_EV_UINT_LEN);
@@ -1348,11 +1386,9 @@ wl_iw_set_encode(
 		case WEP128_KEY_SIZE:
 			key.algo = CRYPTO_ALGO_WEP128;
 			break;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 14)
 		case TKIP_KEY_SIZE:
 			key.algo = CRYPTO_ALGO_TKIP;
 			break;
-#endif
 		case AES_KEY_SIZE:
 			key.algo = CRYPTO_ALGO_AES_CCM;
 			break;
@@ -1625,7 +1661,6 @@ wl_iw_set_wpaauth(
 	int paramval;
 	int val = 0;
 
-	WL_TRACE(("%s: SIOCSIWAUTH\n", dev->name));
 
 	paramid = vwrq->flags & IW_AUTH_INDEX;
 	paramval = vwrq->value;
@@ -1641,7 +1676,6 @@ wl_iw_set_wpaauth(
 		else if (paramval & IW_AUTH_WPA_VERSION_WPA2)
 			val = WPA2_AUTH_PSK | WPA2_AUTH_UNSPECIFIED;
 #endif /* BCMWPA2 */
-		WL_ERROR(("%s: %d: setting wpa_auth to %d\n", __FUNCTION__, __LINE__, val));
 		if ((error = dev_wlc_intvar_set(dev, "wpa_auth", val)))
 			return error;
 		break;
@@ -1657,18 +1691,26 @@ wl_iw_set_wpaauth(
 			val |= AES_ENABLED;
 
 		if (paramid == IW_AUTH_CIPHER_PAIRWISE) {
-			if ((error = dev_wlc_intvar_set(dev, "pwsec", val)))
+			if ((error = dev_wlc_intvar_set(dev, "wsec", val)))
+				{
 				return error;
-		}
+				}
+		}		
 		else {
-			if ((error = dev_wlc_intvar_set(dev, "gwsec", val)))
+			if ((error = dev_wlc_intvar_set(dev, "wsec", val)))
+				{
 				return error;
+				}
+
 		}
 		break;
 
 	case IW_AUTH_KEY_MGMT:
 		if ((error = dev_wlc_intvar_get(dev, "wpa_auth", &val)))
-			return error;
+				{
+				return error;
+				}
+
 
 		if (val & (WPA_AUTH_PSK | WPA_AUTH_UNSPECIFIED)) {	
 			if (paramval & IW_AUTH_KEY_MGMT_PSK)
@@ -1684,16 +1726,17 @@ wl_iw_set_wpaauth(
 				val = WPA2_AUTH_UNSPECIFIED;
 		}
 #endif /* BCMWPA2 */
-		WL_ERROR(("%s: %d: setting wpa_auth to %d\n", __FUNCTION__, __LINE__, val));
 		if ((error = dev_wlc_intvar_set(dev, "wpa_auth", val)))
-			return error;
+				{
+				return error;
+				}
+
 		break;
 	case IW_AUTH_TKIP_COUNTERMEASURES:
 		dev_wlc_bufvar_set(dev, "tkip_countermeasures", (char *)&paramval, 1);
 		break;
 	case IW_AUTH_80211_AUTH_ALG:
 		/* open shared */
-		WL_ERROR(("Setting the D11auth %d\n", paramval));
 		if (paramval & IW_AUTH_ALG_OPEN_SYSTEM)
 			val = 0;
 		else if (paramval & IW_AUTH_ALG_SHARED_KEY)
@@ -1701,21 +1744,28 @@ wl_iw_set_wpaauth(
 		else 
 			error = 1;
 		if (!error && (error = dev_wlc_intvar_set(dev, "auth", val)))
-			return error;
+				{
+				return error;
+				}
+
 		break;
 	case IW_AUTH_WPA_ENABLED:
 		
 		if (paramval == 0) {
 			if ((error = dev_wlc_intvar_get(dev, "wsec", &val)))
+				{
 				return error;
+				}
+
 			if (val & (TKIP_ENABLED | AES_ENABLED)) {
 				val &= ~(TKIP_ENABLED | AES_ENABLED);
 		 		dev_wlc_intvar_set(dev, "wsec", val);
 			}
 			val = 0;
-		WL_ERROR(("%s: %d: setting wpa_auth to %d\n", __FUNCTION__, __LINE__, val));
-			dev_wlc_intvar_set(dev, "wpa_auth", 0);
-			return error;
+			if ((dev_wlc_intvar_set(dev, "wpa_auth", 0)))
+				{
+				return error;
+				}
 		}
 
 		/* nothing really needs to be done if wpa_auth enabled */
@@ -1941,6 +1991,8 @@ const struct iw_handler_def wl_iw_handler_def =
 	};
 #endif /* WIRELESS_EXT > 12 */
 
+static int (*old_ioctl)(struct net_device *dev, struct ifreq *ifr, int cmd);
+
 int
 wl_iw_ioctl(
 	struct net_device *dev,
@@ -1954,10 +2006,13 @@ wl_iw_ioctl(
 	char *extra = NULL;
 	int token_size = 1, max_tokens = 0, ret = 0;
 
+
 	if (cmd < SIOCIWFIRST ||
 	    (cmd - SIOCIWFIRST) >= ARRAYSIZE(wl_iw_handler) ||
 	    !(handler = wl_iw_handler[cmd - SIOCIWFIRST]))
-		return -EOPNOTSUPP;
+		{
+		return old_ioctl(dev,rq,cmd);
+		}
 
 	switch (cmd) {
 
@@ -2221,22 +2276,6 @@ bcm_mw_to_qdbm(uint16 mw)
 	return (qdbm);
 }
 
-static int wl_ioctl(struct net_device *dev, int cmd, void *buf, int len)
-{
-	mm_segment_t old_fs = get_fs();
-	struct ifreq ifr;
-	int ret;
-	wl_ioctl_t ioc;
-	ioc.cmd = cmd;
-	ioc.buf = buf;
-	ioc.len = len;
-	strncpy(ifr.ifr_name, dev->name, IFNAMSIZ);
-	ifr.ifr_data = (caddr_t) &ioc;
-	set_fs(KERNEL_DS);
-	ret = dev->do_ioctl(dev,&ifr,SIOCDEVPRIVATE);
-	set_fs (old_fs);
-	return ret;
-}
 
 
 static struct iw_statistics wstats;
@@ -2282,9 +2321,8 @@ struct iw_statistics *wlcompat_get_wireless_stats(struct net_device *dev)
 
 	return &wstats;
 }
-static int (*old_ioctl)(struct net_device *dev, struct ifreq *ifr, int cmd);
-
 static struct net_device *dev;
+
 static int __init wlcompat_init()
 {
 	int found = 0, i;
@@ -2297,7 +2335,7 @@ static int __init wlcompat_init()
 	}
 	
 	if (!found) {
-		printk("No Broadcom devices found.\n");
+		printk(KERN_EMERG "No Broadcom Wireless Device found\n");
 		return -ENODEV;
 	}
 		
@@ -2306,9 +2344,9 @@ static int __init wlcompat_init()
 //	dev->do_ioctl = new_ioctl;
 	dev->do_ioctl = wl_iw_ioctl;
 	dev->wireless_handlers = (struct iw_handler_def *)&wl_iw_handler_def;
-//	dev->get_wireless_stats = wl_get_wireless_stats;
+	dev->get_wireless_stats = wlcompat_get_wireless_stats;
 
-	
+        printk(KERN_EMERG "Broadcom Wireless Extensions Driver for WEXT%d installed\n", WIRELESS_EXT);	
 #ifdef DEBUG
 	printk("broadcom driver private data: 0x%08x\n", dev->priv);
 #endif
