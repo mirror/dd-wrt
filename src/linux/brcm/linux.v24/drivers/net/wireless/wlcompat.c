@@ -993,6 +993,7 @@ static int new_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd) {
 		printk("   send: ->");
 		print_buffer(ioc->len, buf);
 		ret = old_ioctl(dev,ifr,cmd);
+
 		printk("   recv: ->");
 		print_buffer(ioc->len, buf);
 		printk("   ret: %d\n", ret);
@@ -1031,7 +1032,7 @@ static int __init wlcompat_init()
 	while (!found && (dev = dev_get_by_name(devname))) {
 		if ((dev->wireless_handlers == NULL) && ((wl_ioctl(dev, WLC_GET_MAGIC, &i, sizeof(i)) == 0) && i == WLC_IOCTL_MAGIC))
 			found = 1;
-		devname[2]++;
+		devname[3]++;
 	}
 	
 	if (!found) {
