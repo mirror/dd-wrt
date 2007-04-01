@@ -119,7 +119,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_WAP54G_V1 0x210f
 
 //Linksys WAP54G v2 (4712 cpu, no switch, fccid: Linksys Q87-WAP54GV2)
-#define ROUTER_WAP54G_V2 0x220f
+#define ROUTER_WAP54G_V2 0x2210
 
 //ViewSonic WAPBR-100 (4712 cpu, no switch, fccid: Viewsonic GSS-VS10407)
 #define ROUTER_VIEWSONIC_WAPBR_100 0x2317
