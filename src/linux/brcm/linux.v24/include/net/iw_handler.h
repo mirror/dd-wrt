@@ -1,10 +1,10 @@
 /*
  * This file define the new driver API for Wireless Extensions
  *
- * Version :	5	4.12.02
+ * Version :	6	21.6.04
  *
  * Authors :	Jean Tourrilhes - HPL - <jt@hpl.hp.com>
- * Copyright (c) 2001-2002 Jean Tourrilhes, All Rights Reserved.
+ * Copyright (c) 2001-2004 Jean Tourrilhes, All Rights Reserved.
  */
 
 #ifndef _IW_HANDLER_H
@@ -206,7 +206,7 @@
  * will be needed...
  * I just plan to increment with each new version.
  */
-#define IW_HANDLER_VERSION	5
+#define IW_HANDLER_VERSION	6
 
 /*
  * Changes :
@@ -224,11 +224,18 @@
  * V4 to V5
  * --------
  *	- Add new spy support : struct iw_spy_data & prototypes
+ *
+ * V5 to V6
+ * --------
+ *	- Change the way we get to spy_data method for added safety
+ *	- Remove spy #ifdef, they are always on -> cleaner code
+ *	- Add IW_DESCR_FLAG_NOMAX flag for very large requests
+ *	- Start migrating get_wireless_stats to struct iw_handler_def
  */
 
 /**************************** CONSTANTS ****************************/
 
-/* Enable enhanced spy support. Disable to reduce footprint */
+/* Enhanced spy support available */
 #define IW_WIRELESS_SPY
 #define IW_WIRELESS_THRSPY
 
@@ -258,6 +265,7 @@
 #define IW_DESCR_FLAG_EVENT	0x0002	/* Generate an event on SET */
 #define IW_DESCR_FLAG_RESTRICT	0x0004	/* GET : request is ROOT only */
 				/* SET : Omit payload from generated iwevent */
+#define IW_DESCR_FLAG_NOMAX	0x0008	/* GET : no limit on request size */
 /* Driver level flags */
 #define IW_DESCR_FLAG_WAIT	0x0100	/* Wait for driver event */
 
@@ -311,23 +319,25 @@ struct iw_handler_def
 	/* Array of handlers for standard ioctls
 	 * We will call dev->wireless_handlers->standard[ioctl - SIOCSIWNAME]
 	 */
-	iw_handler *		standard;
+	const iw_handler *	standard;
 
 	/* Array of handlers for private ioctls
 	 * Will call dev->wireless_handlers->private[ioctl - SIOCIWFIRSTPRIV]
 	 */
-	iw_handler *		private;
+	const iw_handler *	private;
 
 	/* Arguments of private handler. This one is just a list, so you
 	 * can put it in any order you want and should not leave holes...
 	 * We will automatically export that to user space... */
-	struct iw_priv_args *	private_args;
+	const struct iw_priv_args *	private_args;
 
-	/* Driver enhanced spy support */
-	long			spy_offset;	/* Spy data offset */
+	/* This field will be *removed* in the next version of WE */
+	long			spy_offset;	/* DO NOT USE */
 
-	/* In the long term, get_wireless_stats will move from
-	 * 'struct net_device' to here, to minimise bloat. */
+	/* New location of get_wireless_stats, to de-bloat struct net_device.
+	 * The old pointer in struct net_device will be gradually phased
+	 * out, and drivers are encouraged to use this one... */
+	struct iw_statistics*	(*get_wireless_stats)(struct net_device *dev);
 };
 
 /* ---------------------- IOCTL DESCRIPTION ---------------------- */
@@ -374,18 +384,29 @@ struct iw_ioctl_description
  */
 struct iw_spy_data
 {
-#ifdef IW_WIRELESS_SPY
 	/* --- Standard spy support --- */
 	int			spy_number;
 	u_char			spy_address[IW_MAX_SPY][ETH_ALEN];
 	struct iw_quality	spy_stat[IW_MAX_SPY];
-#ifdef IW_WIRELESS_THRSPY
 	/* --- Enhanced spy support (event) */
 	struct iw_quality	spy_thr_low;	/* Low threshold */
 	struct iw_quality	spy_thr_high;	/* High threshold */
 	u_char			spy_thr_under[IW_MAX_SPY];
-#endif /* IW_WIRELESS_THRSPY */
-#endif /* IW_WIRELESS_SPY */
+};
+
+/* --------------------- DEVICE WIRELESS DATA --------------------- */
+/*
+ * This is all the wireless data specific to a device instance that
+ * is managed by the core of Wireless Extensions.
+ * We only keep pointer to those structures, so that a driver is free
+ * to share them between instances.
+ * This structure should be initialised before registering the device.
+ * Access to this data follow the same rules as any other struct net_device
+ * data (i.e. valid as long as struct net_device exist, same locking rules).
+ */
+struct iw_public_data {
+	/* Driver enhanced spy support */
+	struct iw_spy_data *	spy_data;
 };
 
 /**************************** PROTOTYPES ****************************/

@@ -2,7 +2,7 @@
  * This file implement the Wireless Extensions APIs.
  *
  * Authors :	Jean Tourrilhes - HPL - <jt@hpl.hp.com>
- * Copyright (c) 1997-2003 Jean Tourrilhes, All Rights Reserved.
+ * Copyright (c) 1997-2005 Jean Tourrilhes, All Rights Reserved.
  *
  * (As all part of the Linux kernel, this file is GPL)
  */
@@ -48,6 +48,16 @@
  *	o Add common spy support : iw_handler_set_spy(), wireless_spy_update()
  *	o Add enhanced spy support : iw_handler_set_thrspy() and event.
  *	o Add WIRELESS_EXT version display in /proc/net/wireless
+ *
+ * v6 - 18.06.04 - Jean II
+ *	o Change get_spydata() method for added safety
+ *	o Remove spy #ifdef, they are always on -> cleaner code
+ *	o Allow any size GET request if user specifies length > max
+ *		and if request has IW_DESCR_FLAG_NOMAX flag or is SIOCGIWPRIV
+ *	o Start migrating get_wireless_stats to struct iw_handler_def
+ *	o Add wmb() in iw_handler_set_spy() for non-coherent archs/cpus
+ * Based on patch from Pavel Roskin <proski@gnu.org> :
+ *	o Fix kernel data leak to user space in private handler handling
  */
 
 /***************************** INCLUDES *****************************/
@@ -64,11 +74,7 @@
 
 /**************************** CONSTANTS ****************************/
 
-/* Enough lenience, let's make sure things are proper... */
-#define WE_STRICT_WRITE		/* Check write buffer size */
-/* I'll probably drop both the define and kernel message in the next version */
-
-/* Debuging stuff */
+/* Debugging stuff */
 #undef WE_IOCTL_DEBUG		/* Debug IOCTL API */
 #undef WE_EVENT_DEBUG		/* Debug Event dispatcher */
 #undef WE_SPY_DEBUG		/* Debug enhanced spy support */
@@ -131,14 +137,14 @@ static const struct iw_ioctl_description	standard_ioctl[] = {
 	{ IW_HEADER_TYPE_ADDR, 0, 0, 0, 0, 0},
 	/* SIOCGIWAP */
 	{ IW_HEADER_TYPE_ADDR, 0, 0, 0, 0, IW_DESCR_FLAG_DUMP},
-	/* -- hole -- */
-	{ IW_HEADER_TYPE_NULL, 0, 0, 0, 0, 0},
+	/* SIOCSIWMLME */
+	{ IW_HEADER_TYPE_POINT, 0, 1, sizeof(struct iw_mlme), sizeof(struct iw_mlme), 0},
 	/* SIOCGIWAPLIST */
-	{ IW_HEADER_TYPE_POINT, 0, (sizeof(struct sockaddr) + sizeof(struct iw_quality)), 0, IW_MAX_AP, 0},
+	{ IW_HEADER_TYPE_POINT, 0, (sizeof(struct sockaddr) + sizeof(struct iw_quality)), 0, IW_MAX_AP, IW_DESCR_FLAG_NOMAX},
 	/* SIOCSIWSCAN */
-	{ IW_HEADER_TYPE_PARAM, 0, 0, 0, 0, 0},
+	{ IW_HEADER_TYPE_POINT, 0, 1, 0, sizeof(struct iw_scan_req), 0},
 	/* SIOCGIWSCAN */
-	{ IW_HEADER_TYPE_POINT, 0, 1, 0, IW_SCAN_MAX_DATA, 0},
+	{ IW_HEADER_TYPE_POINT, 0, 1, 0, IW_SCAN_MAX_DATA, IW_DESCR_FLAG_NOMAX},
 	/* SIOCSIWESSID */
 	{ IW_HEADER_TYPE_POINT, 0, 1, 0, IW_ESSID_MAX_SIZE + 1, IW_DESCR_FLAG_EVENT},
 	/* SIOCGIWESSID */
@@ -179,6 +185,25 @@ static const struct iw_ioctl_description	standard_ioctl[] = {
 	{ IW_HEADER_TYPE_PARAM, 0, 0, 0, 0, 0},
 	/* SIOCGIWPOWER */
 	{ IW_HEADER_TYPE_PARAM, 0, 0, 0, 0, 0},
+	/* -- hole -- */
+	{ IW_HEADER_TYPE_NULL, 0, 0, 0, 0, 0},
+	/* -- hole -- */
+	{ IW_HEADER_TYPE_NULL, 0, 0, 0, 0, 0},
+	/* SIOCSIWGENIE */
+	{ IW_HEADER_TYPE_POINT, 0, 1, 0, IW_GENERIC_IE_MAX, 0},
+	/* SIOCGIWGENIE */
+	{ IW_HEADER_TYPE_POINT, 0, 1, 0, IW_GENERIC_IE_MAX, 0},
+	/* SIOCSIWAUTH */
+	{ IW_HEADER_TYPE_PARAM, 0, 0, 0, 0, 0},
+	/* SIOCGIWAUTH */
+	{ IW_HEADER_TYPE_PARAM, 0, 0, 0, 0, 0},
+	/* SIOCSIWENCODEEXT */
+	{ IW_HEADER_TYPE_POINT, 0, 1, sizeof(struct iw_encode_ext), sizeof(struct iw_encode_ext) + IW_ENCODING_TOKEN_MAX, 0},
+	/* SIOCGIWENCODEEXT */
+	{ IW_HEADER_TYPE_POINT, 0, 1, sizeof(struct iw_encode_ext), sizeof(struct iw_encode_ext) + IW_ENCODING_TOKEN_MAX, 0},
+	/* SIOCSIWPMKSA */
+	{ IW_HEADER_TYPE_POINT, 0, 1, sizeof(struct iw_pmksa), sizeof(struct iw_pmksa), 0},
+	/* -- hole -- */
 };
 static const int standard_ioctl_num = (sizeof(standard_ioctl) /
 				       sizeof(struct iw_ioctl_description));
@@ -198,12 +223,22 @@ static const struct iw_ioctl_description	standard_event[] = {
 	{ IW_HEADER_TYPE_ADDR, 0, 0, 0, 0, 0},
 	/* IWEVEXPIRED */
 	{ IW_HEADER_TYPE_ADDR, 0, 0, 0, 0, 0},
+	/* IWEVGENIE */
+	{ IW_HEADER_TYPE_POINT, 0, 1, 0, IW_GENERIC_IE_MAX, 0},
+	/* IWEVMICHAELMICFAILURE */
+	{ IW_HEADER_TYPE_POINT, 0, 1, 0, sizeof(struct iw_michaelmicfailure), 0},
+	/* IWEVASSOCREQIE */
+	{ IW_HEADER_TYPE_POINT, 0, 1, 0, IW_GENERIC_IE_MAX, 0},
+	/* IWEVASSOCRESPIE */
+	{ IW_HEADER_TYPE_POINT, 0, 1, 0, IW_GENERIC_IE_MAX, 0},
+	/* IWEVPMKIDCAND */
+	{ IW_HEADER_TYPE_POINT, 0, 1, 0, sizeof(struct iw_pmkid_cand), 0},
 };
 static const int standard_event_num = (sizeof(standard_event) /
 				       sizeof(struct iw_ioctl_description));
 
 /* Size (in bytes) of the various private data types */
-static const char priv_type_size[] = {
+static const char iw_priv_type_size[] = {
 	0,				/* IW_PRIV_TYPE_NONE */
 	1,				/* IW_PRIV_TYPE_BYTE */
 	1,				/* IW_PRIV_TYPE_CHAR */
@@ -270,12 +305,15 @@ static inline iw_handler get_handler(struct net_device *dev,
  */
 static inline struct iw_statistics *get_wireless_stats(struct net_device *dev)
 {
+	/* New location */
+	if((dev->wireless_handlers != NULL) &&
+	   (dev->wireless_handlers->get_wireless_stats != NULL))
+		return dev->wireless_handlers->get_wireless_stats(dev);
+
+	/* Old location, will be phased out in next WE */
 	return (dev->get_wireless_stats ?
 		dev->get_wireless_stats(dev) :
 		(struct iw_statistics *) NULL);
-	/* In the future, get_wireless_stats may move from 'struct net_device'
-	 * to 'struct iw_handler_def', to de-bloat struct net_device.
-	 * Definitely worse a thought... */
 }
 
 /* ---------------------------------------------------------------- */
@@ -310,14 +348,32 @@ static inline int call_commit_handler(struct net_device *	dev)
 
 /* ---------------------------------------------------------------- */
 /*
- * Number of private arguments
+ * Calculate size of private arguments
  */
 static inline int get_priv_size(__u16	args)
 {
 	int	num = args & IW_PRIV_SIZE_MASK;
 	int	type = (args & IW_PRIV_TYPE_MASK) >> 12;
 
-	return num * priv_type_size[type];
+	return num * iw_priv_type_size[type];
+}
+
+/* ---------------------------------------------------------------- */
+/*
+ * Re-calculate the size of private arguments
+ */
+static inline int adjust_priv_size(__u16		args,
+				   union iwreq_data *	wrqu)
+{
+	int	num = wrqu->data.length;
+	int	max = args & IW_PRIV_SIZE_MASK;
+	int	type = (args & IW_PRIV_TYPE_MASK) >> 12;
+
+	/* Make sure the driver doesn't goof up */
+	if (max < num)
+		num = max;
+
+	return num * iw_priv_type_size[type];
 }
 
 
@@ -350,11 +406,14 @@ static inline int sprintf_wireless_stats(char *buffer, struct net_device *dev)
 			       dev->name,
 			       stats->status,
 			       stats->qual.qual,
-			       stats->qual.updated & 1 ? '.' : ' ',
+			       stats->qual.updated & IW_QUAL_QUAL_UPDATED
+			       ? '.' : ' ',
 			       ((__u8) stats->qual.level),
-			       stats->qual.updated & 2 ? '.' : ' ',
+			       stats->qual.updated & IW_QUAL_LEVEL_UPDATED
+			       ? '.' : ' ',
 			       ((__u8) stats->qual.noise),
-			       stats->qual.updated & 4 ? '.' : ' ',
+			       stats->qual.updated & IW_QUAL_NOISE_UPDATED
+			       ? '.' : ' ',
 			       stats->discard.nwid,
 			       stats->discard.code,
 			       stats->discard.fragment,
@@ -470,13 +529,15 @@ static inline int ioctl_export_private(struct net_device *	dev,
 	/* Check NULL pointer */
 	if(iwr->u.data.pointer == NULL)
 		return -EFAULT;
-#ifdef WE_STRICT_WRITE
+
 	/* Check if there is enough buffer up there */
 	if(iwr->u.data.length < dev->wireless_handlers->num_private_args) {
-		printk(KERN_ERR "%s (WE) : Buffer for request SIOCGIWPRIV too small (%d<%d)\n", dev->name, iwr->u.data.length, dev->wireless_handlers->num_private_args);
+		/* User space can't know in advance how large the buffer
+		 * needs to be. Give it a hint, so that we can support
+		 * any size buffer we want somewhat efficiently... */
+		iwr->u.data.length = dev->wireless_handlers->num_private_args;
 		return -E2BIG;
 	}
-#endif	/* WE_STRICT_WRITE */
 
 	/* Set the number of available ioctls. */
 	iwr->u.data.length = dev->wireless_handlers->num_private_args;
@@ -505,7 +566,6 @@ static inline int ioctl_standard_call(struct net_device *	dev,
 	const struct iw_ioctl_description *	descr;
 	struct iw_request_info			info;
 	int					ret = -EINVAL;
-	int					user_size = 0;
 
 	/* Get the description of the IOCTL */
 	if((cmd - SIOCIWFIRST) >= standard_ioctl_num)
@@ -536,7 +596,13 @@ static inline int ioctl_standard_call(struct net_device *	dev,
 #endif	/* WE_SET_EVENT */
 	} else {
 		char *	extra;
+		int	extra_size;
+		int	user_length = 0;
 		int	err;
+
+		/* Calculate space needed by arguments. Always allocate
+		 * for max space. Easier, and won't last long... */
+		extra_size = descr->max_tokens * descr->token_size;
 
 		/* Check what user space is giving us */
 		if(IW_IS_SET(cmd)) {
@@ -554,18 +620,33 @@ static inline int ioctl_standard_call(struct net_device *	dev,
 			if(iwr->u.data.pointer == NULL)
 				return -EFAULT;
 			/* Save user space buffer size for checking */
-			user_size = iwr->u.data.length;
+			user_length = iwr->u.data.length;
+
+			/* Don't check if user_length > max to allow forward
+			 * compatibility. The test user_length < min is
+			 * implied by the test at the end. */
+
+			/* Support for very large requests */
+			if((descr->flags & IW_DESCR_FLAG_NOMAX) &&
+			   (user_length > descr->max_tokens)) {
+				/* Allow userspace to GET more than max so
+				 * we can support any size GET requests.
+				 * There is still a limit : -ENOMEM. */
+				extra_size = user_length * descr->token_size;
+				/* Note : user_length is originally a __u16,
+				 * and token_size is controlled by us,
+				 * so extra_size won't get negative and
+				 * won't overflow... */
+			}
 		}
 
 #ifdef WE_IOCTL_DEBUG
 		printk(KERN_DEBUG "%s (WE) : Malloc %d bytes\n",
-		       dev->name, descr->max_tokens * descr->token_size);
+		       dev->name, extra_size);
 #endif	/* WE_IOCTL_DEBUG */
 
-		/* Always allocate for max space. Easier, and won't last
-		 * long... */
-		extra = kmalloc(descr->max_tokens * descr->token_size,
-				GFP_KERNEL);
+		/* Create the kernel buffer */
+		extra = kmalloc(extra_size, GFP_KERNEL);
 		if (extra == NULL) {
 			return -ENOMEM;
 		}
@@ -591,14 +672,11 @@ static inline int ioctl_standard_call(struct net_device *	dev,
 
 		/* If we have something to return to the user */
 		if (!ret && IW_IS_GET(cmd)) {
-#ifdef WE_STRICT_WRITE
 			/* Check if there is enough buffer up there */
-			if(user_size < iwr->u.data.length) {
-				printk(KERN_ERR "%s (WE) : Buffer for request %04X too small (%d<%d)\n", dev->name, cmd, user_size, iwr->u.data.length);
+			if(user_length < iwr->u.data.length) {
 				kfree(extra);
 				return -E2BIG;
 			}
-#endif	/* WE_STRICT_WRITE */
 
 			err = copy_to_user(iwr->u.data.pointer, extra,
 					   iwr->u.data.length *
@@ -661,7 +739,7 @@ static inline int ioctl_private_call(struct net_device *	dev,
 				     iw_handler		handler)
 {
 	struct iwreq *			iwr = (struct iwreq *) ifr;
-	struct iw_priv_args *		descr = NULL;
+	const struct iw_priv_args *	descr = NULL;
 	struct iw_request_info		info;
 	int				extra_size = 0;
 	int				i;
@@ -701,7 +779,7 @@ static inline int ioctl_private_call(struct net_device *	dev,
 			   ((extra_size + offset) <= IFNAMSIZ))
 				extra_size = 0;
 		} else {
-			/* Size of set arguments */
+			/* Size of get arguments */
 			extra_size = get_priv_size(descr->get_args);
 
 			/* Does it fits in iwr ? */
@@ -771,6 +849,14 @@ static inline int ioctl_private_call(struct net_device *	dev,
 
 		/* If we have something to return to the user */
 		if (!ret && IW_IS_GET(cmd)) {
+
+			/* Adjust for the actual length if it's variable,
+			 * avoid leaking kernel bits outside. */
+			if (!(descr->get_args & IW_PRIV_SIZE_FIXED)) {
+				extra_size = adjust_priv_size(descr->get_args,
+							      &(iwr->u));
+			}
+
 			err = copy_to_user(iwr->u.data.pointer, extra,
 					   extra_size);
 			if (err)
@@ -1042,8 +1128,24 @@ void wireless_send_event(struct net_device *	dev,
  * One of the main advantage of centralising spy support here is that
  * it becomes much easier to improve and extend it without having to touch
  * the drivers. One example is the addition of the Spy-Threshold events.
- * Note : IW_WIRELESS_SPY is defined in iw_handler.h
  */
+
+/* ---------------------------------------------------------------- */
+/*
+ * Return the pointer to the spy data in the driver.
+ * Because this is called on the Rx path via wireless_spy_update(),
+ * we want it to be efficient...
+ */
+static inline struct iw_spy_data * get_spydata(struct net_device *dev)
+{
+	/* This is the new way */
+	if(dev->wireless_data)
+		return(dev->wireless_data->spy_data);
+
+	/* This is the old way. Doesn't work for multi-headed drivers.
+	 * It will be removed in the next version of WE. */
+	return (dev->priv + dev->wireless_handlers->spy_offset);
+}
 
 /*------------------------------------------------------------------*/
 /*
@@ -1054,15 +1156,25 @@ int iw_handler_set_spy(struct net_device *	dev,
 		       union iwreq_data *	wrqu,
 		       char *			extra)
 {
-#ifdef IW_WIRELESS_SPY
-	struct iw_spy_data *	spydata = (dev->priv +
-					   dev->wireless_handlers->spy_offset);
+	struct iw_spy_data *	spydata = get_spydata(dev);
 	struct sockaddr *	address = (struct sockaddr *) extra;
 
+	/* Make sure driver is not buggy or using the old API */
+	if(!spydata)
+		return -EOPNOTSUPP;
+
 	/* Disable spy collection while we copy the addresses.
-	 * As we don't disable interrupts, we need to do this to avoid races.
-	 * As we are the only writer, this is good enough. */
+	 * While we copy addresses, any call to wireless_spy_update()
+	 * will NOP. This is OK, as anyway the addresses are changing. */
 	spydata->spy_number = 0;
+
+	/* We want to operate without locking, because wireless_spy_update()
+	 * most likely will happen in the interrupt handler, and therefore
+	 * have its own locking constraints and needs performance.
+	 * The rtnl_lock() make sure we don't race with the other iw_handlers.
+	 * This make sure wireless_spy_update() "see" that the spy list
+	 * is temporarily disabled. */
+	wmb();
 
 	/* Are there are addresses to copy? */
 	if(wrqu->data.length > 0) {
@@ -1089,13 +1201,14 @@ int iw_handler_set_spy(struct net_device *	dev,
 			       spydata->spy_address[i][5]);
 #endif	/* WE_SPY_DEBUG */
 	}
+
+	/* Make sure above is updated before re-enabling */
+	wmb();
+
 	/* Enable addresses */
 	spydata->spy_number = wrqu->data.length;
 
 	return 0;
-#else /* IW_WIRELESS_SPY */
-	return -EOPNOTSUPP;
-#endif /* IW_WIRELESS_SPY */
 }
 
 /*------------------------------------------------------------------*/
@@ -1107,11 +1220,13 @@ int iw_handler_get_spy(struct net_device *	dev,
 		       union iwreq_data *	wrqu,
 		       char *			extra)
 {
-#ifdef IW_WIRELESS_SPY
-	struct iw_spy_data *	spydata = (dev->priv +
-					   dev->wireless_handlers->spy_offset);
+	struct iw_spy_data *	spydata = get_spydata(dev);
 	struct sockaddr *	address = (struct sockaddr *) extra;
 	int			i;
+
+	/* Make sure driver is not buggy or using the old API */
+	if(!spydata)
+		return -EOPNOTSUPP;
 
 	wrqu->data.length = spydata->spy_number;
 
@@ -1129,9 +1244,6 @@ int iw_handler_get_spy(struct net_device *	dev,
 	for(i = 0; i < spydata->spy_number; i++)
 		spydata->spy_stat[i].updated = 0;
 	return 0;
-#else /* IW_WIRELESS_SPY */
-	return -EOPNOTSUPP;
-#endif /* IW_WIRELESS_SPY */
 }
 
 /*------------------------------------------------------------------*/
@@ -1143,10 +1255,12 @@ int iw_handler_set_thrspy(struct net_device *	dev,
 			  union iwreq_data *	wrqu,
 			  char *		extra)
 {
-#ifdef IW_WIRELESS_THRSPY
-	struct iw_spy_data *	spydata = (dev->priv +
-					   dev->wireless_handlers->spy_offset);
+	struct iw_spy_data *	spydata = get_spydata(dev);
 	struct iw_thrspy *	threshold = (struct iw_thrspy *) extra;
+
+	/* Make sure driver is not buggy or using the old API */
+	if(!spydata)
+		return -EOPNOTSUPP;
 
 	/* Just do it */
 	memcpy(&(spydata->spy_thr_low), &(threshold->low),
@@ -1160,9 +1274,6 @@ int iw_handler_set_thrspy(struct net_device *	dev,
 #endif	/* WE_SPY_DEBUG */
 
 	return 0;
-#else /* IW_WIRELESS_THRSPY */
-	return -EOPNOTSUPP;
-#endif /* IW_WIRELESS_THRSPY */
 }
 
 /*------------------------------------------------------------------*/
@@ -1174,22 +1285,20 @@ int iw_handler_get_thrspy(struct net_device *	dev,
 			  union iwreq_data *	wrqu,
 			  char *		extra)
 {
-#ifdef IW_WIRELESS_THRSPY
-	struct iw_spy_data *	spydata = (dev->priv +
-					   dev->wireless_handlers->spy_offset);
+	struct iw_spy_data *	spydata = get_spydata(dev);
 	struct iw_thrspy *	threshold = (struct iw_thrspy *) extra;
+
+	/* Make sure driver is not buggy or using the old API */
+	if(!spydata)
+		return -EOPNOTSUPP;
 
 	/* Just do it */
 	memcpy(&(threshold->low), &(spydata->spy_thr_low),
 	       2 * sizeof(struct iw_quality));
 
 	return 0;
-#else /* IW_WIRELESS_THRSPY */
-	return -EOPNOTSUPP;
-#endif /* IW_WIRELESS_THRSPY */
 }
 
-#ifdef IW_WIRELESS_THRSPY
 /*------------------------------------------------------------------*/
 /*
  * Prepare and send a Spy Threshold event
@@ -1227,7 +1336,6 @@ static void iw_send_thrspy_event(struct net_device *	dev,
 	/* Send event to user space */
 	wireless_send_event(dev, SIOCGIWTHRSPY, &wrqu, (char *) &threshold);
 }
-#endif /* IW_WIRELESS_THRSPY */
 
 /* ---------------------------------------------------------------- */
 /*
@@ -1240,11 +1348,13 @@ void wireless_spy_update(struct net_device *	dev,
 			 unsigned char *	address,
 			 struct iw_quality *	wstats)
 {
-#ifdef IW_WIRELESS_SPY
-	struct iw_spy_data *	spydata = (dev->priv +
-					   dev->wireless_handlers->spy_offset);
+	struct iw_spy_data *	spydata = get_spydata(dev);
 	int			i;
 	int			match = -1;
+
+	/* Make sure driver is not buggy or using the old API */
+	if(!spydata)
+		return;
 
 #ifdef WE_SPY_DEBUG
 	printk(KERN_DEBUG "wireless_spy_update() :  offset %ld, spydata %p, address %02X:%02X:%02X:%02X:%02X:%02X\n", dev->wireless_handlers->spy_offset, spydata, address[0], address[1], address[2], address[3], address[4], address[5]);
@@ -1257,7 +1367,7 @@ void wireless_spy_update(struct net_device *	dev,
 			       sizeof(struct iw_quality));
 			match = i;
 		}
-#ifdef IW_WIRELESS_THRSPY
+
 	/* Generate an event if we cross the spy threshold.
 	 * To avoid event storms, we have a simple hysteresis : we generate
 	 * event only when we go under the low threshold or above the
@@ -1277,6 +1387,4 @@ void wireless_spy_update(struct net_device *	dev,
 			}
 		}
 	}
-#endif /* IW_WIRELESS_THRSPY */
-#endif /* IW_WIRELESS_SPY */
 }
