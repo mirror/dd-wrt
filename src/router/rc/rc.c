@@ -809,10 +809,8 @@ main (int argc, char **argv)
 
 #endif
     }
-#ifndef HAVE_MADWIFI
   else if (strstr (base, "wland"))
     return wland_main (argc, argv);
-#endif
 //  else if (strstr (base, "write_boot"))
 //    return write_boot ("/tmp/boot.bin", "pmon");
 

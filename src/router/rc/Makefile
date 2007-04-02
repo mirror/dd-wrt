@@ -155,10 +155,7 @@ endif
 ifeq ($(CONFIG_WHRAG108),y)
 CFLAGS += -DHAVE_WHRAG108
 endif
-
-ifneq ($(CONFIG_RB500),y)
 OBJS += wland.c
-endif
 ifeq ($(CONFIG_WIVIZ),y)
 OBJS += run_wiviz.c
 OBJS += autokill_wiviz.c
@@ -386,9 +383,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc misc	
 	cd $(INSTALLDIR)/sbin && ln -sf rc check_ses_led	
 	cd $(INSTALLDIR)/sbin && ln -sf rc setpasswd
-ifneq ($(CONFIG_RB500),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc wland
-endif
 #ifeq ($(CONFIG_MAGICBOX),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc watchdog
 #endif
