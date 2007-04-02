@@ -1020,9 +1020,11 @@ set_netmode (char *wif, char *dev)
   char turbo[16];
   char mode[16];
   char xr[16];
+  char rate[16];
   sprintf (mode, "%s_mode", dev);
   sprintf (net, "%s_net_mode", dev);
   sprintf (turbo, "%s_turbo", dev);
+  sprintf (rate, "%s_rate", dev);
   sprintf (xr, "%s_xr", dev);
   char *netmode = default_get (net, "mixed");
 //  fprintf (stderr, "set netmode of %s to %s\n", net, netmode);
@@ -1038,7 +1040,15 @@ set_netmode (char *wif, char *dev)
     if (!strcmp (netmode, "b-only"))
       eval ("iwpriv", dev, "mode", "2");
     if (!strcmp (netmode, "g-only"))
-      eval ("iwpriv", dev, "mode", "3");
+      {
+	eval ("iwpriv", dev, "mode", "3");
+	eval ("iwpriv", dev, "protmode", "0");
+      }
+    if (!strcmp (netmode, "bg-only"))
+      {
+	eval ("iwpriv", dev, "mode", "3");
+	eval ("iwpriv", dev, "protmode", "1");
+      }
     if (!strcmp (netmode, "a-only"))
       eval ("iwpriv", dev, "mode", "1");
   }
@@ -1068,6 +1078,19 @@ set_netmode (char *wif, char *dev)
       eval ("iwpriv", dev, "wmm", "0");
 
     }
+  char *r = default_get (rate, "0");
+
+  if (!strcmp (r, "0"))
+    {
+      if (!strcmp (netmode,"b-only"))
+	eval ("iwconfig", dev, "rate", "11", "auto");
+      else
+	eval ("iwconfig", dev, "rate", "54", "auto");
+    }
+  else if (!strcmp (r, "5.5"))
+    eval ("iwconfig", dev, "rate", "5500", "fixed");
+  else
+    eval ("iwconfig", dev, "rate", r, "fixed");
 }
 
 void
@@ -1170,12 +1193,12 @@ adjust_regulatory (int count)
     }
   }
 #ifndef HAVE_FONERA
-      char *wid = nvram_safe_get (bw);
-      int width = 20;
-      if (wid)
-	width = atoi (wid);
-      char buf[64];
-      setsysctrl (wif, "channelbw", (long) width);
+  char *wid = nvram_safe_get (bw);
+  int width = 20;
+  if (wid)
+    width = atoi (wid);
+  char buf[64];
+  setsysctrl (wif, "channelbw", (long) width);
 #endif
 
 
@@ -1231,7 +1254,7 @@ configure_single (int count)
 
 
   char *m;
-  char *first=NULL;
+  char *first = NULL;
   int vif = 0;
   char *vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
@@ -1252,7 +1275,8 @@ configure_single (int count)
 	  else
 	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
 		  "adhoc");
-	  if (!first)first=var;
+	  if (!first)
+	    first = var;
 	  vif = 1;
 	  strcat (iflist, " ");
 	  strcat (iflist, var);
@@ -1269,7 +1293,8 @@ configure_single (int count)
 //create original primary interface
   m = default_get (wl, "ap");
   cprintf ("mode %s\n", m);
-	  if (!first)first=dev;
+  if (!first)
+    first = dev;
   if (!strcmp (m, "wet") || !strcmp (m, "wdssta") || !strcmp (m, "sta"))
     {
       if (vif)
@@ -1538,10 +1563,10 @@ configure_single (int count)
       char wdsmacname[32] = { 0 };
       char *wdsdev;
       char *hwaddr;
-    
-      sprintf (wdsvarname, "%s_wds%d_enable", dev, (11-s));
-      sprintf (wdsdevname, "%s_wds%d_if", dev, (11-s));
-      sprintf (wdsmacname, "%s_wds%d_hwaddr", dev, (11-s));
+
+      sprintf (wdsvarname, "%s_wds%d_enable", dev, (11 - s));
+      sprintf (wdsdevname, "%s_wds%d_if", dev, (11 - s));
+      sprintf (wdsmacname, "%s_wds%d_hwaddr", dev, (11 - s));
       wdsdev = nvram_safe_get (wdsdevname);
       if (strlen (wdsdev) == 0)
 	continue;
