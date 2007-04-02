@@ -1100,9 +1100,9 @@ char wif[32];
 sprintf(wif,"wifi%d",count);
 sprintf(comp,"ath%d_compression",count);
 if (default_match(comp,"1","0"))
-    setsysctl(wif,"compression",1);
+    setsysctrl(wif,"compression",1);
 else
-    setsysctl(wif,"compression",0);
+    setsysctrl(wif,"compression",0);
 
 }
 
