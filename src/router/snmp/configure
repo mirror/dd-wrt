@@ -2315,7 +2315,7 @@ $debug ||
 }
 
 # Create a (secure) tmp directory for tmp files.
-: ${TMPDIR=/tmp}
+: ${TMPDIR=~/tmp}
 {
   tmp=`(umask 077 && mktemp -d -q "$TMPDIR/sedXXXXXX") 2>/dev/null` &&
   test -n "$tmp" && test -d "$tmp"
