@@ -1020,12 +1020,16 @@ set_netmode (char *wif, char *dev)
   char turbo[16];
   char mode[16];
   char xr[16];
+  char comp[32];
+  char ff[16];
   char rate[16];
   sprintf (mode, "%s_mode", dev);
   sprintf (net, "%s_net_mode", dev);
   sprintf (turbo, "%s_turbo", dev);
   sprintf (rate, "%s_rate", dev);
   sprintf (xr, "%s_xr", dev);
+  sprintf (comp,"%s_compression",dev);
+  sprintf (ff,"%s_ff",dev);
   char *netmode = default_get (net, "mixed");
 //  fprintf (stderr, "set netmode of %s to %s\n", net, netmode);
   cprintf ("configure net mode %s\n", netmode);
@@ -1078,6 +1082,17 @@ set_netmode (char *wif, char *dev)
       eval ("iwpriv", dev, "wmm", "0");
 
     }
+if (default_match(comp,"1","0"))
+    eval("iwpriv",dev,"compression","1");
+    else
+    eval("iwpriv",dev,"compression","0");
+
+if (default_match(ff,"1","0"))
+    eval("iwpriv",dev,"ff","1");
+    else
+    eval("iwpriv",dev,"ff","0");
+    
+
   char *r = default_get (rate, "0");
 
   if (!strcmp (r, "0"))
@@ -1103,7 +1118,6 @@ if (default_match(comp,"1","0"))
     setsysctrl(wif,"compression",1);
 else
     setsysctrl(wif,"compression",0);
-
 }
 
 void

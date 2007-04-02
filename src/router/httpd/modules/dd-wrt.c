@@ -3164,6 +3164,8 @@ save_prefix (webs_t wp, char *prefix)
   copytonv (wp, n);
   sprintf (n, "%s_compression", prefix);
   copytonv (wp, n);
+  sprintf (n, "%s_ff", prefix); // ff for fist fucking
+  copytonv (wp, n);
   sprintf (n, "%s_diversity", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_preamble", prefix);
@@ -3535,7 +3537,8 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   char wl_width[16];
   char wl_preamble[16];
   char wl_xr[16];
-  char wl_comp[16];
+  char wl_comp[32];
+  char wl_ff[16];
   char wl_isolate[32];
   sprintf (wl_turbo, "%s_turbo", prefix);
 //  sprintf (wl_xchanmode, "%s_xchanmode", prefix);
@@ -3545,6 +3548,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   sprintf (wl_txantenna, "%s_txantenna", prefix);
   sprintf (wl_width, "%s_channelbw", prefix);
   sprintf (wl_comp, "%s_compression", prefix);
+  sprintf (wl_ff, "%s_ff", prefix);
   sprintf (wl_preamble, "%s_preamble", prefix);
   sprintf (wl_xr, "%s_xr", prefix);
   show_rates(wp,prefix);
@@ -3554,6 +3558,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   showOption (wp, "wl_basic.preamble", wl_preamble);
   showOption (wp, "wl_basic.extrange", wl_xr);
   showOption (wp, "wl_basic.supergcomp",wl_comp);
+  showOption (wp, "wl_basic.supergff",wl_ff);
 
 //  showOption (wp, "wl_basic.extchannel", wl_xchanmode);
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2)
