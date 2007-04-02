@@ -103,9 +103,7 @@ start_services (void)
 #ifdef HAVE_BIRD
   handle = start_service_nofree ("zebra", handle);
 #endif
-#ifndef HAVE_MADWIFI
   handle = start_service_nofree ("wland", handle);
-#endif
   handle = start_service_nofree ("wshaper", handle);
   handle = start_service_nofree ("cron", handle);
   handle = start_service_nofree ("radio_timer", handle);
@@ -197,9 +195,7 @@ stop_services (void)
 #ifdef HAVE_BIRD
   handle = stop_service_nofree ("zebra", handle);
 #endif
-#ifndef HAVE_MADWIFI
   handle = stop_service_nofree ("wland", handle);
-#endif
 #ifdef HAVE_TELNET
 #ifdef HAVE_REGISTER
   if (isregistered ())

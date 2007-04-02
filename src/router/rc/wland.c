@@ -35,24 +35,11 @@
 #define TXPWR_MAX 251
 #define TXPWR_DEFAULT 28
 
-
 #define WLAND_INTERVAL 15
 
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
 
-/*
-static void join(char *ss)
-{
-if (ss==NULL)
-    return;
-wlc_ssid_t ssid;
-ssid.SSID_len = strlen(ss);
-if (ssid.SSID_len > sizeof(ssid.SSID))
-ssid.SSID_len = sizeof(ssid.SSID);
-strncpy(ssid.SSID, ss, ssid.SSID_len);
-wl_ioctl(get_wdev(), WLC_SET_SSID, &ssid, sizeof(ssid));
-}*/
 
 static char *
 get_wshaper_dev (void)
@@ -287,7 +274,7 @@ do_aqos_check (void)
 
 }
 #endif
-
+#ifndef HAVE_MADWIFI
 static int
 do_ap_check (void)
 {
@@ -350,21 +337,7 @@ do_client_check (void)
       nvram_set ("cur_state",
 		 "<span style=\"background-color: rgb(255, 0, 0);\">Nicht Verbunden</span>");
 
-//      nvram_set ("cur_state", "Nicht Verbunden");
 #endif
-      /*if (nvram_match("wl_mode", "wet"))
-         {
-
-         system("/bin/rm /tmp/bridged");
-         if (wl_probe("eth2"))
-         eval("brctl", "delif", "br0", "eth1"); //create bridge
-         else
-         eval("brctl", "delif", "br0", "eth2");
-         eval("wl","wet","1");
-         } */
-      /* let wl do this for us (no use in reinventing the wheel) */
-      //eval("/usr/sbin/wlconf", get_wdev(), "down");
-      //eval("/usr/sbin/wlconf", get_wdev(), "up"); 
       eval ("wl", "disassoc");
 #ifndef HAVE_MSSID
       eval ("wl", "join", nvram_safe_get ("wl_ssid"));
@@ -381,74 +354,72 @@ do_client_check (void)
 		 "<span style=\"background-color: rgb(135, 255, 51);\">Verbunden</span>");
       eval ("/sbin/check.sh");
 #endif
-    }				/*else if (nvram_match("wl_mode","bridge"))
-				   {
-				   FILE *in;
-				   in=fopen("/tmp/bridged","rb");
-
-				   if (in==NULL)
-				   {
-				   if (nvram_match("security_mode","wep") || nvram_match("security_mode","disabled"))
-				   {
-				   if (wl_probe("eth2"))
-				   eval("brctl", "addif", "br0", "eth1"); //create bridge
-				   else
-				   eval("brctl", "addif", "br0", "eth2");
-				   system("/bin/echo bridged>/tmp/bridged");
-
-				   if (fp!=NULL)fclose(fp);
-				   return 0;
-				   }
-
-				   system("/usr/sbin/wl assoc|grep BSSID:>/tmp/.associnfo");
-				   in=fopen("/tmp/.associnfo","rb");
-				   fscanf(in,"%s",mac);
-				   fscanf(in,"%s",mac);
-				   fclose(in);
-				   sprintf(buf,"/usr/sbin/wl sta_info %s>/tmp/.sta_info",mac);
-				   system(buf);
-				   fclose(fp);
-				   fp = NULL;
-				   if( (fp = fopen("/tmp/.sta_info", "r")) == NULL)
-				   return -1;
-				   len = fread(buf, 1, 1023, fp);
-				   buf[len] = 0;
-				   fclose(fp);
-				   //eval("/usr/sbin/wl","sta_info",mac,">/tmp/.sta_info");
-				   in=fopen("/tmp/bridged","rb");
-
-				   if (len>0 && strstr(buf,"AUTHORIZED") && in==NULL)
-				   {
-				   if (wl_probe("eth2"))
-				   eval("brctl", "addif", "br0", "eth1"); //create bridge
-				   else
-				   eval("brctl", "addif", "br0", "eth2");
-				   }
-				   system("/bin/echo bridged>/tmp/bridged");
-
-				   }
-				   if (in!=NULL)fclose(in);
-				   if (fp!=NULL)fclose(fp);
-
-				   }
-
-				   //unlink("/tmp/.xassocx");
-				 */
-  fclose (fp);
+    }	  
+    fclose (fp);
   return 0;
 }
+#endif
+
+#ifdef HAVE_MADWIFI
+static char assoclist[24*1024];
+
+static void do_madwifi_check(void)
+{
+  int c = getdevicecount ();
+  char dev[32];
+int i,s;
+for (i=0;i<c;i++)
+{
+  sprintf(dev,"ath%d",i);
+  for (s = 1; s <= 10; s++)
+    {
+      char wdsvarname[32] = { 0 };
+      char wdsdevname[32] = { 0 };
+      char wdsmacname[32] = { 0 };
+      char *wdsdev;
+      char *hwaddr;
+
+      sprintf (wdsvarname, "%s_wds%d_enable", dev, s);
+      sprintf (wdsdevname, "%s_wds%d_if", dev, s);
+      sprintf (wdsmacname, "%s_wds%d_hwaddr", dev, s);
+      wdsdev = nvram_safe_get (wdsdevname);
+      if (strlen (wdsdev) == 0)
+	continue;
+      if (nvram_match (wdsvarname, "0"))
+	continue;
+      hwaddr = nvram_get (wdsmacname);
+      if (hwaddr != NULL)
+	{
+	int count = getassoclist(wdsdevname,&assoclist[0]);
+	if (count<1)
+	    {
+	    eval("ifconfig",wdsdevname,"down");
+	    sleep(1);
+	    eval("ifconfig",wdsdevname,"up");
+	    }
+	}
+    }
+}
+
+}
+#endif
 
 static void
 do_wlan_check (void)
 {
-
+#ifdef HAVE_AQOS
+  do_aqos_check ();
+#endif
+#ifndef HAVE_MADWIFI
   if (nvram_invmatch ("wl0_mode", "ap"))
     do_client_check ();
   else
     do_ap_check ();
-#ifdef HAVE_AQOS
-  do_aqos_check ();
+#else
+
+   do_madwifi_check();
 #endif
+
 
 }
 
