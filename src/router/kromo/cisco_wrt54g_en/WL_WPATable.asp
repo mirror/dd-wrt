@@ -134,21 +134,21 @@ function ValidateKey(key, bit, index) {
 	return true;
 }
 
-function enable_idpeap() {
-	show_layer_ext(this, 'idtls', false)
-	show_layer_ext(this, 'idpeap', true)
-	show_layer_ext(this, 'idleap', false)
+function enable_idpeap(ifname) {
+	show_layer_ext(this, 'idtls' + ifname, false)
+	show_layer_ext(this, 'idpeap' + ifname, true)
+	show_layer_ext(this, 'idleap' + ifname, false)
 }
-function enable_idleap() {
-	show_layer_ext(this, 'idtls', false)
-	show_layer_ext(this, 'idpeap', false)
-	show_layer_ext(this, 'idleap', true)
+function enable_idleap(ifname) {
+	show_layer_ext(this, 'idtls' + ifname, false)
+	show_layer_ext(this, 'idpeap' + ifname, false)
+	show_layer_ext(this, 'idleap' + ifname, true)
 }
 
-function enable_idtls() {
-	show_layer_ext(this, 'idtls', true)
-	show_layer_ext(this, 'idpeap', false)
-	show_layer_ext(this, 'idleap', false)
+function enable_idtls(ifname) {
+	show_layer_ext(this, 'idtls' + ifname, true)
+	show_layer_ext(this, 'idpeap' + ifname, false)
+	show_layer_ext(this, 'idleap' + ifname, false)
 }
 
 addEvent(window, "load", function() {
@@ -157,9 +157,6 @@ addEvent(window, "load", function() {
 		if(F.security_mode.value == "wep" || F.security_mode.value == "radius") {
 			keyMode(F.wl_wep_bit.value, F);
 		}
-show_layer_ext(document.wpa.ath0_8021xtype, 'idpeap', <% nvram_else_match("ath0_8021xtype", "peap", "1", "0"); %> == 1);
-show_layer_ext(document.wpa.ath0_8021xtype, 'idtls', <% nvram_else_match("ath0_8021xtype", "tls", "1", "0"); %> == 1);
-show_layer_ext(document.wpa.ath0_8021xtype, 'idleap', <% nvram_else_match("ath0_8021xtype", "leap", "1", "0"); %> == 1);
 
 });
 
