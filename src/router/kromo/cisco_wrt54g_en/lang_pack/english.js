@@ -1629,6 +1629,7 @@ wl_basic.bridged="Bridged";
 wl_basic.turbo="Turbo Mode";
 wl_basic.extrange="Extended Range";
 wl_basic.supergcomp="Super G Compression";
+wl_basic.supergff="Super G Fast Framing";
 wl_basic.extchannel="Extended Channel Mode";
 wl_basic.outband="Outdoor Band";
 wl_basic.channel_width="Channel Width";
