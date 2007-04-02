@@ -3162,6 +3162,8 @@ save_prefix (webs_t wp, char *prefix)
 //  copytonv (wp, n);
   sprintf (n, "%s_outdoor", prefix);
   copytonv (wp, n);
+  sprintf (n, "%s_compression", prefix);
+  copytonv (wp, n);
   sprintf (n, "%s_diversity", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_preamble", prefix);
