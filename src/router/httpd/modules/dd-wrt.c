@@ -1801,11 +1801,11 @@ save_networking (webs_t wp)
       sprintf (var, "vlanifname%d", i);
       ifname = websGetVar (wp, var, NULL);
       if (!ifname)
-	return;
+	return 0;
       sprintf (var, "vlantag%d", i);
       tag = websGetVar (wp, var, NULL);
       if (!tag)
-	return;
+	return 0;
       strcat (buffer, ifname);
       strcat (buffer, ">");
       strcat (buffer, tag);
@@ -1829,11 +1829,11 @@ save_networking (webs_t wp)
       sprintf (var, "bondingifname%d", i);
       ifname = websGetVar (wp, var, NULL);
       if (!ifname)
-	return;
+	return 0;
       sprintf (var, "bondingattach%d", i);
       tag = websGetVar (wp, var, NULL);
       if (!tag)
-	return;
+	return 0;
       strcat (buffer, ifname);
       strcat (buffer, ">");
       strcat (buffer, tag);
@@ -1858,11 +1858,11 @@ save_networking (webs_t wp)
       sprintf (var, "bridgename%d", i);
       ifname = websGetVar (wp, var, NULL);
       if (!ifname)
-	return;
+	return 0;
       sprintf (var, "bridgestp%d", i);
       tag = websGetVar (wp, var, NULL);
       if (!tag)
-	return;
+	return 0;
       sprintf (var, "bridgeprio%d", i);
       prio = websGetVar (wp, var, NULL);
       if (!prio)
@@ -1898,11 +1898,11 @@ save_networking (webs_t wp)
       sprintf (var, "bridge%d", i);
       ifname = websGetVar (wp, var, NULL);
       if (!ifname)
-	return;
+	return 0;
       sprintf (var, "bridgeif%d", i);
       tag = websGetVar (wp, var, NULL);
       if (!tag)
-	return;
+	return 0;
       sprintf (var, "bridgeifprio%d", i);
       prio = websGetVar (wp, var, NULL);
       if (!prio)
@@ -2686,8 +2686,70 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
       websWrite (wp, "//]]>\n</script></select></div>\n");
     }
 }
+#ifdef HAVE_MADWIFI
+static char *ag_rates[]={"6","12","18","24","36","48","54"};
+static char *turbo_rates[]={"12","24","36","48","72","96","108"};
+static char *b_rates[]={"1","2","5.5","11"};
+static char *bg_rates[]={"1","2","5.5","6","11","12","18","24","36","48","54"};
+static char *xr_rates[]={"0.25","0.5","1","2","3","6","9","12","18","24","36","48","54"};
+
+void show_rates(webs_t wp, char *prefix)
+{
+websWrite(wp,"<div class=\"setting\">\n");
+websWrite(wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label3)</script></div>\n");
+websWrite(wp,"<select name=\"%s_rate\">\n",prefix);
+websWrite(wp,"<script type=\"text/javascript\">\n");
+websWrite(wp,"//<![CDATA[\n");
+char srate[32];
+sprintf(srate,"%s_rate",prefix);
+websWrite(wp,"document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n",nvram_match(srate,"0")?"selected":"");
+websWrite(wp,"//]]>\n");
+websWrite(wp,"</script>\n");
+char **rate;
+int len;
+char mode[32];
+sprintf(mode,"%s_net_mode",prefix);
+if (nvram_match(mode,"b-only"))
+    {
+    rate = b_rates;
+    len = sizeof(b_rates)/sizeof(char *);
+    }
+if (nvram_match(mode,"g-only"))
+    {
+    rate = ag_rates;
+    len = sizeof(ag_rates)/sizeof(char *);
+    }
+if (nvram_match(mode,"a-only"))
+    {
+    rate = ag_rates;
+    len = sizeof(ag_rates)/sizeof(char *);
+    }
+if (nvram_match(mode,"bg-mixed"))
+    {
+    rate = bg_rates;
+    len = sizeof(bg_rates)/sizeof(char *);
+    }
+if (nvram_match(mode,"mixed"))
+    {
+    rate = bg_rates;
+    len = sizeof(bg_rates)/sizeof(char *);
+    }
+int i;
+for (i=0;i<len;i++)
+    {
+    websWrite(wp,"<option value=\"%s\" %s >%s Mbps</option>\n",rate[i],nvram_match(srate,rate[i])?"selected":"0",rate[i]);
+    }
+websWrite(wp,"</select>\n");
+websWrite(wp,"<span class=\"default\">\n");
+websWrite(wp,"<script type=\"text/javascript\">\n");
+websWrite(wp,"//<![CDATA[\n");
+websWrite(wp,"document.write(\"(\" + share.deflt + \": \" + share.auto + \")\");\n");
+websWrite(wp,"//]]\n");
+websWrite(wp,"</script></span></div>\n");
 
 
+}
+#endif
 void
 show_netmode (webs_t wp, char *prefix)
 {
@@ -2719,9 +2781,13 @@ show_netmode (webs_t wp, char *prefix)
 			  "b-only") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_MADWIFI
   websWrite (wp,
-	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.bg + \"</option>\");\n//]]>\n</script>\n",
+	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n//]]>\n</script>\n",
 	     nvram_match (wl_net_mode,
 			  "g-only") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,
+	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n//]]>\n</script>\n",
+	     nvram_match (wl_net_mode,
+			  "bg-only") ? "selected=\\\"selected\\\"" : "");
 #else
   websWrite (wp,
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n//]]>\n</script>\n",
@@ -3077,6 +3143,8 @@ save_prefix (webs_t wp, char *prefix)
   sprintf (n, "%s_regdomain", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_turbo", prefix);
+  copytonv (wp, n);
+  sprintf (n, "%s_rate", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_xr", prefix);
   copytonv (wp, n);
@@ -3465,6 +3533,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   sprintf (wl_width, "%s_channelbw", prefix);
   sprintf (wl_preamble, "%s_preamble", prefix);
   sprintf (wl_xr, "%s_xr", prefix);
+  show_rates(wp,prefix);
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2)
   showOption (wp, "wl_basic.turbo", wl_turbo);
 #endif
