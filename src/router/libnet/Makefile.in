@@ -91,7 +91,7 @@ example: libnet install
 	cd example; make
 
 install: libnet
-	@true;
+	@true
 
 clean:
 	if test -f test/Makefile; then \
