@@ -3786,18 +3786,18 @@ show_80211X (webs_t wp, char *prefix)
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.xsuptype)</script></div>\n");
   websWrite (wp,
-	     "<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"peap\" onclick=\"enable_idpeap()\" %s />Peap&nbsp;\n",
-	     prefix, nvram_prefix_match ("8021xtype", prefix,
+	     "<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"peap\" onclick=\"enable_idpeap('%s')\" %s />Peap&nbsp;\n",
+	     prefix, prefix,nvram_prefix_match ("8021xtype", prefix,
 					 "peap") ? "checked=\"checked\"" :
 	     "");
   websWrite (wp,
-	     "<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"leap\" onclick=\"enable_idleap()\" %s />Leap&nbsp;\n",
-	     prefix, nvram_prefix_match ("8021xtype", prefix,
+	     "<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"leap\" onclick=\"enable_idleap('%s')\" %s />Leap&nbsp;\n",
+	     prefix, prefix,nvram_prefix_match ("8021xtype", prefix,
 					 "leap") ? "checked=\"checked\"" :
 	     "");
   websWrite (wp,
-	     "<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"tls\" onclick=\"enable_idtls()\" %s />TLS&nbsp;\n",
-	     prefix, nvram_prefix_match ("8021xtype", prefix,
+	     "<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"tls\" onclick=\"enable_idtls('%s')\" %s />TLS&nbsp;\n",
+	     prefix, prefix,nvram_prefix_match ("8021xtype", prefix,
 					 "tls") ? "checked=\"checked\"" : "");
   websWrite (wp, "</div>\n");
 
@@ -3805,7 +3805,7 @@ show_80211X (webs_t wp, char *prefix)
 
 
   //peap authentication
-  websWrite (wp, "<div id=\"idpeap\">\n");
+  websWrite (wp, "<div id=\"idpeap%s\">\n",prefix);
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(share.user)</script></div>\n");
@@ -3833,7 +3833,7 @@ show_80211X (webs_t wp, char *prefix)
   websWrite (wp, "</div>\n");
   websWrite (wp, "</div>\n");
   //leap authentication
-  websWrite (wp, "<div id=\"idleap\">\n");
+  websWrite (wp, "<div id=\"idleap%s\">\n",prefix);
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(share.user)</script></div>\n");
@@ -3850,7 +3850,7 @@ show_80211X (webs_t wp, char *prefix)
 
 
   //tls authentication
-  websWrite (wp, "<div id=\"idtls\">\n");
+  websWrite (wp, "<div id=\"idtls%s\">\n",prefix);
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(share.user)</script></div>\n");
@@ -3908,6 +3908,14 @@ show_80211X (webs_t wp, char *prefix)
   websWrite (wp, "</div>\n");
 
   websWrite (wp, "</div>\n");
+  websWrite (wp, "<script>\n//<![CDATA[\n ");
+//  websWrite (wp,"show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnetvifs\", %s);\n",var, vvar, nvram_match (ssid, "0") ? "true" : "false");
+  char peap[32];
+  sprintf(peap,"%s_8021xtype",prefix);
+  websWrite (wp,"show_layer_ext(document.wpa.%s_8021xtype, 'idpeap%s', %s);\n",prefix,prefix, nvram_match (peap, "peap") ? "true" : "false");
+  websWrite (wp,"show_layer_ext(document.wpa.%s_8021xtype, 'idtls%s', %s);\n",prefix,prefix, nvram_match (peap, "tls") ? "true" : "false");
+  websWrite (wp,"show_layer_ext(document.wpa.%s_8021xtype, 'idleap%s', %s);\n",prefix,prefix, nvram_match (peap, "leap") ? "true" : "false");
+  websWrite (wp, "//]]>\n</script>\n");
 
 }
 #endif
