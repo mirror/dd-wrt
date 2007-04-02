@@ -3533,6 +3533,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   char wl_width[16];
   char wl_preamble[16];
   char wl_xr[16];
+  char wl_comp[16];
   char wl_isolate[32];
   sprintf (wl_turbo, "%s_turbo", prefix);
 //  sprintf (wl_xchanmode, "%s_xchanmode", prefix);
@@ -3541,6 +3542,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   sprintf (wl_rxantenna, "%s_rxantenna", prefix);
   sprintf (wl_txantenna, "%s_txantenna", prefix);
   sprintf (wl_width, "%s_channelbw", prefix);
+  sprintf (wl_comp, "%s_compression", prefix);
   sprintf (wl_preamble, "%s_preamble", prefix);
   sprintf (wl_xr, "%s_xr", prefix);
   show_rates(wp,prefix);
@@ -3549,6 +3551,8 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 #endif
   showOption (wp, "wl_basic.preamble", wl_preamble);
   showOption (wp, "wl_basic.extrange", wl_xr);
+  showOption (wp, "wl_basic.supergcomp",wl_comp);
+
 //  showOption (wp, "wl_basic.extchannel", wl_xchanmode);
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2)
   if (nvram_match ("ath_regulatory", "1"))
