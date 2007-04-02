@@ -2706,7 +2706,10 @@ websWrite(wp,"document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"<
 websWrite(wp,"//]]>\n");
 websWrite(wp,"</script>\n");
 char **rate;
+char **showrates=NULL;
 int len;
+char turbo[32];
+sprintf(turbo,"%s_turbo",prefix);
 char mode[32];
 sprintf(mode,"%s_net_mode",prefix);
 if (nvram_match(mode,"b-only"))
@@ -2718,11 +2721,15 @@ if (nvram_match(mode,"g-only"))
     {
     rate = ag_rates;
     len = sizeof(ag_rates)/sizeof(char *);
+    if (nvram_match(turbo,"1"))
+	showrates=turbo_rates;
     }
 if (nvram_match(mode,"a-only"))
     {
     rate = ag_rates;
     len = sizeof(ag_rates)/sizeof(char *);
+    if (nvram_match(turbo,"1"))
+	showrates=turbo_rates;
     }
 if (nvram_match(mode,"bg-mixed"))
     {
@@ -2737,7 +2744,10 @@ if (nvram_match(mode,"mixed"))
 int i;
 for (i=0;i<len;i++)
     {
-    websWrite(wp,"<option value=\"%s\" %s >%s Mbps</option>\n",rate[i],nvram_match(srate,rate[i])?"selected":"0",rate[i]);
+    if (showrates)
+        websWrite(wp,"<option value=\"%s\" %s >%s Mbps</option>\n",rate[i],nvram_match(srate,rate[i])?"selected":"0",showrates[i]);
+    else
+	websWrite(wp,"<option value=\"%s\" %s >%s Mbps</option>\n",rate[i],nvram_match(srate,rate[i])?"selected":"0",rate[i]);
     }
 websWrite(wp,"</select>\n");
 websWrite(wp,"<span class=\"default\">\n");
