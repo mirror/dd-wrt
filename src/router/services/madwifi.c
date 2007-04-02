@@ -1093,6 +1093,19 @@ set_netmode (char *wif, char *dev)
     eval ("iwconfig", dev, "rate", r, "fixed");
 }
 
+static set_compression(int count)
+{
+char comp[32];
+char wif[32];
+sprintf(wif,"wifi%d",count);
+sprintf(comp,"ath%d_compression",count);
+if (default_match(comp,"1","0"))
+    setsysctl(wif,"compression",1);
+else
+    setsysctl(wif,"compression",0);
+
+}
+
 void
 setMacFilter (char *iface)
 {
@@ -1247,7 +1260,7 @@ configure_single (int count)
     return;
   if (!count)
     strcpy (iflist, dev);
-
+  set_compression(count);
 //create wds interface(s)
   int s;
 
