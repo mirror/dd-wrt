@@ -3471,7 +3471,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   showOption (wp, "wl_basic.preamble", wl_preamble);
   showOption (wp, "wl_basic.extrange", wl_xr);
 //  showOption (wp, "wl_basic.extchannel", wl_xchanmode);
-#if defined(HAVE_FONERA) || defined(HAVE_LS2)
+#if !defined(HAVE_FONERA) && !defined(HAVE_LS2)
   if (nvram_match ("ath_regulatory", "1"))
     {
       showOption (wp, "wl_basic.outband", wl_outdoor);
