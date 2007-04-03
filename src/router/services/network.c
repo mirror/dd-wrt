@@ -2136,6 +2136,14 @@ start_wan (int status)
 
       // Those are default options we use + user/passwd
       // By using user/password options we dont have to deal with chap/pap secrets files.
+      if (nvram_match("ppp_compression","1"))
+            {
+	    fprintf(fp,"mppc\n");
+	    }
+	    else
+	    {
+	    fprintf(fp,"nomppc\n");
+	    }
       fprintf (fp, "noipdefault\n"
 	       "noauth\n"
 	       "defaultroute\n"
@@ -2147,7 +2155,6 @@ start_wan (int status)
 	       "novj\n"
 	       "novjccomp\n"
 	       "nomppe\n"
-	       "nomppc\n"
 	       "usepeerdns\n"
 	       "user '%s'\n" "password '%s'\n", username, passwd);
 
@@ -2209,7 +2216,7 @@ start_wan (int status)
 		 "connect true\n" "ktune\n", idletime, atoi (idletime) * 2);
       else
 	fprintf (fp, "persist\n"
-		 "lcp-echo-interval 5\n" "lcp-echo-failure 3\n");
+		 "lcp-echo-interval 5\n" "lcp-echo-failure 10\n");
 
       fclose (fp);
 

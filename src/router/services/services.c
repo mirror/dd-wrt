@@ -231,7 +231,7 @@ start_pptpd (void)
 	   "proxyarp\n"
 	   "ipcp-accept-local\n"
 	   "ipcp-accept-remote\n"
-	   "lcp-echo-failure 3\n"
+	   "lcp-echo-failure 10\n"
 	   "lcp-echo-interval 5\n"
 	   "deflate 0\n"
 	   "auth\n"
