@@ -14,6 +14,7 @@
 #include <asm/io.h>
 
 
+
 #define DEVICE_NAME "mmc"
 #define DEVICE_NR(device) (MINOR(device))
 #define DEVICE_ON(device)
@@ -1015,7 +1016,6 @@ static adapter_found=0;
 static int mmc_init(void) {
 	int rc;
 
-	rc = mmc_hardware_init(); 
 
 	if ( rc != 0) {
 		log_error("mmc_init: got an error calling mmc_hardware_init: %02x", rc);
@@ -1026,22 +1026,29 @@ static int mmc_init(void) {
 	    printk(KERN_EMERG "mmc_init: trying old WRT54G gpio layout\n");
 	    setadapter(0);
 	    }
-	
+	rc = mmc_hardware_init(); 
+        if (rc==0)
 	rc = mmc_card_init();
 	if (rc!=0)
 	    {
 	    printk(KERN_EMERG "mmc_init: trying new WRT54G/GL gpio layout\n");
 	    setadapter(1);
+	    rc = mmc_hardware_init(); 
+            if (rc==0)
 	    rc = mmc_card_init();
 	    if (rc!=0)
 		{
 		printk(KERN_EMERG "mmc_init: Buffalo WHR gpio layout\n");
 		setadapter(2);
+		rc = mmc_hardware_init(); 
+                if (rc==0)
 		rc = mmc_card_init();
 		if (rc!=0)
 		    {
 		    printk(KERN_EMERG "mmc_init: Buffalo WHR gpio layout 2\n");
 		    setadapter(3);
+		    rc = mmc_hardware_init(); 
+		    if (rc==0)
 		    rc = mmc_card_init();
 		    if (rc!=0)
 			return -1;
