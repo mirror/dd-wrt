@@ -956,7 +956,7 @@ led_control (int type, int act)
       break;
     case ROUTER_BUFFALO_WLAH_G54:
       diag_gpio = 0x17;
-      ses_gpio = 0x16
+      ses_gpio = 0x16;
     break;    
     case ROUTER_BUFFALO_WAPM_HP_AM54G54:
       diag_gpio = 0x17;
