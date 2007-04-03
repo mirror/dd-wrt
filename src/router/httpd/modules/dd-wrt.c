@@ -3162,9 +3162,9 @@ save_prefix (webs_t wp, char *prefix)
 //  copytonv (wp, n);
   sprintf (n, "%s_outdoor", prefix);
   copytonv (wp, n);
-  sprintf (n, "%s_compression", prefix);
+  sprintf (n, "%s_compression", prefix); // Atheros SuperG header compression
   copytonv (wp, n);
-  sprintf (n, "%s_ff", prefix); // ff for fist fucking
+  sprintf (n, "%s_ff", prefix); // ff = 0, Atheros SuperG fast framing disabled, 1 fast framing enabled
   copytonv (wp, n);
   sprintf (n, "%s_diversity", prefix);
   copytonv (wp, n);
