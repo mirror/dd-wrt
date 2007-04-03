@@ -1,6 +1,6 @@
+#include <linux/kernel.h>
 #include <linux/delay.h>
 #include <linux/timer.h>
-
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/mm.h>
@@ -13,269 +13,23 @@
 #include <asm/uaccess.h>
 #include <asm/io.h>
 
-
-
 #define DEVICE_NAME "mmc"
 #define DEVICE_NR(device) (MINOR(device))
 #define DEVICE_ON(device)
 #define DEVICE_OFF(device)
 #define MAJOR_NR 121
-
 #include <linux/blk.h>
-#include "config.h"
 
-
-#define SD_DIV1 0x20
-#define SD_DISHIFT1 0x2
-
-#define SD_DIV4 0x04
-#define SD_DISHIFT4 0x5
-
-#define SD_DIVBUF 0x40
-#define SD_DISHIFTBUF 0x1
-
-#define SD_DIVBUF2 0x20
-#define SD_DISHIFTBUF2 0x2
-
-#define SD_DOWRT 0x10		// pin 4
-#define SD_DOSHIFTWRT 0x3
-
-#define SD_DOBUF 0x20		// pin 5
-#define SD_DOSHIFTBUF 0x2
-
-#define SD_DOBUF2 0x40		// pin 5
-#define SD_DOSHIFTBUF2 0x1
-
-/* GPIO pin 3 */
-#define SD_CLK 0x08
-/* GPIO pin 7 */
-#define SD_CS 0x80
-
-static int SD_DI = SD_DIV1;
-static int SHIFT_DI = SD_DISHIFT1;
-static int SD_DO = SD_DOWRT;
-static int SHIFT_DO = SD_DOSHIFTWRT;
-
-
-
-#if SD_DO == 0x10
-	#define SHIFT_DO 3
-#else
-#if SD_DO == 0x40
-	#define SHIFT_DO 1
-#endif
-#endif
-#if SD_DI == 0x04
-	#define SHIFT_DI 5
-#else
-#if SD_DI == 0x20
-	#define SHIFT_DI 2
-#endif
-#endif
-
-
-#include "log.c"
-
-
-
-MODULE_AUTHOR("Madsuk/Rohde (speedup Cyril CATTIAUX v1.3.3)");
-MODULE_DESCRIPTION("Driver MMC/SD-Cards");
+MODULE_AUTHOR("Madsuk/Rohde/Cyril CATTIAUX/Marc DENTY/rcichielo");
+MODULE_DESCRIPTION("Driver MMC/SD-Cards MOD 1.3.4");
 MODULE_SUPPORTED_DEVICE("WRT54G");
 MODULE_LICENSE("GPL");
 
-static int mp_max_init_tries = 30000;
-module_param(mp_max_init_tries, int, 0);
-MODULE_PARM_DESC(mp_max_init_tries, "Number of max CMD0 sent in card init loop.");
-static int mp_max_pwr_on_clocks = 80;
-module_param(mp_max_pwr_on_clocks, int, 0);
-MODULE_PARM_DESC(mp_max_pwr_on_clocks, "Number of max clocks sent to power on card.");
-
-/* we have only one device */
-static unsigned int hd_sizes[64];
-static unsigned int hd_blocksizes[64];
-static unsigned int hd_hardsectsizes[64];
-static unsigned int hd_maxsect[64];
-static struct hd_struct hd[64];
-
-//static struct timer_list mmc_timer;
-static int mmc_media_detect = 0;
-static int mmc_media_changed = 1;
-
-typedef unsigned int uint32;
-
-static unsigned char port_state = 0x00;
-static volatile unsigned char *gpioaddr_input = (unsigned char *)0xb8000060;
-static volatile unsigned char *gpioaddr_output = (unsigned char *)0xb8000064;
-static volatile unsigned char *gpioaddr_enable = (unsigned char *)0xb8000068;
-//static volatile unsigned char *gpioaddr_control = (unsigned char *)0xb800006c;
-
-static unsigned char ps_di, ps_di_clk, ps_clk;
-static unsigned char NOT_DI_NOT_CLK;
-static unsigned char DI_CLK;
-
-
-
-static void setadapter(int type)
-{
-switch(type)
-{
-case 0: // WRT V1
-SD_DI=SD_DIV1;
-SHIFT_DI=SD_DISHIFT1;
-SD_DO=SD_DOWRT;
-SHIFT_DO=SD_DOSHIFTWRT;
-break;
-case 1: // WRT V4/GL
-SD_DI=SD_DIV4;
-SHIFT_DI=SD_DISHIFT4;
-SD_DO=SD_DOWRT;
-SHIFT_DO=SD_DOSHIFTWRT;
-break;
-case 2: // Buffalo
-SD_DI=SD_DIVBUF;
-SHIFT_DI=SD_DISHIFTBUF;
-SD_DO=SD_DOBUF;
-SHIFT_DO=SD_DOSHIFTBUF;
-break;
-case 3: // Buffalo
-SD_DI=SD_DIVBUF2;
-SHIFT_DI=SD_DISHIFTBUF2;
-SD_DO=SD_DOBUF2;
-SHIFT_DO=SD_DOSHIFTBUF2;
-break;
-}
-NOT_DI_NOT_CLK=(~SD_DI) & (~SD_CLK);
-DI_CLK=SD_DI | SD_CLK;
-}
-
-
-
-#define GET_RESULT_DO(shift_do) result |= (  ((shift_do)>=0)?( ((*l_gpioaddr_input) & SD_DO) << (shift_do) ):( ((*l_gpioaddr_input) & SD_DO) >> (-(shift_do)) )  );
-#define SET_DI(bit_di,shift_di) di = (  ((shift_di)>=0)?( (data_out & bit_di) >> (shift_di) ):( (data_out & bit_di) << (-(shift_di)) )  );
-
-static inline void mmc_spi_cs_low(void) {
-  port_state &= ~(SD_CS);
-  ps_di =(port_state|SD_DI);
-  ps_di_clk =(port_state|DI_CLK);
-  ps_clk =(port_state|SD_CLK);
-  *gpioaddr_output = port_state;
-}
-
-static inline void mmc_spi_cs_high(void) {
-  port_state |= SD_CS;
-  ps_di =(port_state|SD_DI);
-  ps_di_clk =(port_state|DI_CLK);
-  ps_clk =(port_state|SD_CLK);
-  *gpioaddr_output = port_state;
-}
-
-static inline void mmc_spi_clk(void) {
-	// Send one CLK to SPI with DI high
-	*gpioaddr_output = ps_di;
-	*gpioaddr_output = ps_di_clk;
-}
-
-static inline void mmc_spi_io_ff_v(void) {
-	const unsigned char l_ps_di = ps_di;
-	const unsigned char l_ps_di_clk = ps_di_clk;
-	volatile unsigned char * const l_gpioaddr_output = (unsigned char *) gpioaddr_output;
-	
-	*l_gpioaddr_output = l_ps_di; *l_gpioaddr_output = l_ps_di_clk;
-	*l_gpioaddr_output = l_ps_di; *l_gpioaddr_output = l_ps_di_clk;
-	*l_gpioaddr_output = l_ps_di; *l_gpioaddr_output = l_ps_di_clk;
-	*l_gpioaddr_output = l_ps_di; *l_gpioaddr_output = l_ps_di_clk;
-	*l_gpioaddr_output = l_ps_di; *l_gpioaddr_output = l_ps_di_clk;
-	*l_gpioaddr_output = l_ps_di; *l_gpioaddr_output = l_ps_di_clk;
-	*l_gpioaddr_output = l_ps_di; *l_gpioaddr_output = l_ps_di_clk;
-	*l_gpioaddr_output = l_ps_di; *l_gpioaddr_output = l_ps_di_clk;
-}
-
-static inline unsigned char mmc_spi_io_ff(void) {
-	const unsigned char l_ps_di = ps_di;
-	const unsigned char l_ps_di_clk = ps_di_clk;
-	volatile unsigned char * const l_gpioaddr_output = (unsigned char *) gpioaddr_output;
-	volatile unsigned char * l_gpioaddr_input = (unsigned char *) gpioaddr_input;
-	unsigned char result = 0;
-	
-	*l_gpioaddr_output = l_ps_di; *l_gpioaddr_output = l_ps_di_clk;
-	GET_RESULT_DO(SHIFT_DO)
-	*l_gpioaddr_output = l_ps_di; *l_gpioaddr_output = l_ps_di_clk;
-	GET_RESULT_DO(SHIFT_DO-1)
-	*l_gpioaddr_output = l_ps_di; *l_gpioaddr_output = l_ps_di_clk;
-	GET_RESULT_DO(SHIFT_DO-2)
-	*l_gpioaddr_output = l_ps_di; *l_gpioaddr_output = l_ps_di_clk;
-	GET_RESULT_DO(SHIFT_DO-3)
-	*l_gpioaddr_output = l_ps_di; *l_gpioaddr_output = l_ps_di_clk;
-	GET_RESULT_DO(SHIFT_DO-4)
-	*l_gpioaddr_output = l_ps_di; *l_gpioaddr_output = l_ps_di_clk;
-	GET_RESULT_DO(SHIFT_DO-5)
-	*l_gpioaddr_output = l_ps_di; *l_gpioaddr_output = l_ps_di_clk;
-	GET_RESULT_DO(SHIFT_DO-6)
-	*l_gpioaddr_output = l_ps_di; *l_gpioaddr_output = l_ps_di_clk;
-	GET_RESULT_DO(SHIFT_DO-7)
-	
-	return result;
-}
-
-static inline void mmc_spi_io_v(const unsigned char data_out) {
-	unsigned char di;
-	const unsigned char l_port_state = port_state;
-	const unsigned char l_ps_clk = ps_clk;
-	volatile unsigned char * const l_gpioaddr_output = (unsigned char *) gpioaddr_output;
-
-	SET_DI(0x80,SHIFT_DI)
-	*l_gpioaddr_output = l_port_state|di; *l_gpioaddr_output = l_ps_clk|di;
-	SET_DI(0x40,SHIFT_DI-1)
-	*l_gpioaddr_output = l_port_state|di; *l_gpioaddr_output = l_ps_clk|di;
-	SET_DI(0x20,SHIFT_DI-2)
-	*l_gpioaddr_output = l_port_state|di; *l_gpioaddr_output = l_ps_clk|di;
-	SET_DI(0x10,SHIFT_DI-3)
-	*l_gpioaddr_output = l_port_state|di; *l_gpioaddr_output = l_ps_clk|di;
-	SET_DI(0x08,SHIFT_DI-4)
-	*l_gpioaddr_output = l_port_state|di; *l_gpioaddr_output = l_ps_clk|di;
-	SET_DI(0x04,SHIFT_DI-5)
-	*l_gpioaddr_output = l_port_state|di; *l_gpioaddr_output = l_ps_clk|di;
-	SET_DI(0x02,SHIFT_DI-6)
-	*l_gpioaddr_output = l_port_state|di; *l_gpioaddr_output = l_ps_clk|di;
-	SET_DI(0x01,SHIFT_DI-7)
-	*l_gpioaddr_output = l_port_state|di; *l_gpioaddr_output = l_ps_clk|di;
-}
-
-static unsigned char mmc_spi_io(unsigned char data_out) {
-	unsigned char result = 0;
-	unsigned char di;
-	const unsigned char l_port_state = port_state;
-	const unsigned char l_ps_clk= ps_clk;
-	volatile unsigned char * const l_gpioaddr_output = (unsigned char *) gpioaddr_output;
-	volatile unsigned char * const l_gpioaddr_input = (unsigned char *) gpioaddr_input;
-		
-	SET_DI(0x80,SHIFT_DI)
-	*l_gpioaddr_output = l_port_state|di; *l_gpioaddr_output = l_ps_clk|di;
-	GET_RESULT_DO(SHIFT_DO)
-	SET_DI(0x40,SHIFT_DI-1)
-	*l_gpioaddr_output = l_port_state|di; *l_gpioaddr_output = l_ps_clk|di;
-	GET_RESULT_DO(SHIFT_DO-1)
-	SET_DI(0x20,SHIFT_DI-2)
-	*l_gpioaddr_output = l_port_state|di; *l_gpioaddr_output = l_ps_clk|di;
-	GET_RESULT_DO(SHIFT_DO-2)
-	SET_DI(0x10,SHIFT_DI-3)
-	*l_gpioaddr_output = l_port_state|di; *l_gpioaddr_output = l_ps_clk|di;
-	GET_RESULT_DO(SHIFT_DO-3)
-	SET_DI(0x08,SHIFT_DI-4)
-	*l_gpioaddr_output = l_port_state|di; *l_gpioaddr_output = l_ps_clk|di;
-	GET_RESULT_DO(SHIFT_DO-4)
-	SET_DI(0x04,SHIFT_DI-5)
-	*l_gpioaddr_output = l_port_state|di; *l_gpioaddr_output = l_ps_clk|di;
-	GET_RESULT_DO(SHIFT_DO-5)
-	SET_DI(0x02,SHIFT_DI-6)
-	*l_gpioaddr_output = l_port_state|di; *l_gpioaddr_output = l_ps_clk|di;
-	GET_RESULT_DO(SHIFT_DO-6)
-	SET_DI(0x01,SHIFT_DI-7)
-	*l_gpioaddr_output = l_port_state|di; *l_gpioaddr_output = l_ps_clk|di;
-	GET_RESULT_DO(SHIFT_DO-7)
- 
-	return(result);
-}
+#include "config.h"
+#include "log.c"
+#include "mmc.h"
+#include "spi.c"
+#include "gpio.c"
 
 static inline int mmc_write_block(unsigned int dest_addr, unsigned char *data, int nbsectors) {
 	unsigned char r = 0;
@@ -287,21 +41,11 @@ static inline int mmc_write_block(unsigned int dest_addr, unsigned char *data, i
 	/* wait */
 	for (i = 0; i < 4; i++) mmc_spi_io_ff_v();
 
-#ifdef USE_CMD25	
-	mmc_spi_io(0x59);	/* CMD25 */
+#ifdef USE_CMD25
+	r = mmc_spi_send_cmd(25, dest_addr);
 #else
-	mmc_spi_io(0x58);	/* CMD24 */
+	r = mmc_spi_send_cmd(24, dest_addr);
 #endif
-	mmc_spi_io_v(0xff & (dest_addr >> 24)); /* msb */
-	mmc_spi_io_v(0xff & (dest_addr >> 16));
-	mmc_spi_io_v(0xff & (dest_addr >> 8));
-	mmc_spi_io_v(0xff & dest_addr); /* lsb */
-	mmc_spi_io_ff_v();	/* dummy CRC */
-	
-	for (i = 0; i < 9; i++) {
-		r = mmc_spi_io_ff();	/*  command response */
-		if (r != 0xff) break;
-	}
 	if (r != 0x00) {
 		mmc_spi_cs_high();
 		mmc_spi_io_ff_v();
@@ -393,23 +137,12 @@ static inline int mmc_read_block(unsigned char *data, unsigned int src_addr, int
 	mmc_spi_cs_low();
 	/* wait */
 	for (i = 0; i < 4; i++) mmc_spi_io_ff_v();
-	
 
 #ifdef USE_CMD18
-	mmc_spi_io_v(0x52);	/* CMD18 */
+	r = mmc_spi_send_cmd(18, src_addr);
 #else
-	mmc_spi_io_v(0x51);	/* CMD17 */
+	r = mmc_spi_send_cmd(17, src_addr);
 #endif
-	mmc_spi_io_v(0xff & (src_addr >> 24)); /* msb */
-	mmc_spi_io_v(0xff & (src_addr >> 16));
-	mmc_spi_io_v(0xff & (src_addr >> 8));
-	mmc_spi_io_v(0xff & src_addr); /* lsb */
-	mmc_spi_io_ff_v();	/* dummy CRC */
-
-	for (i = 0; i < 9; i++) {
-		r = mmc_spi_io_ff();	/*  command response */
-		if (r != 0xff) break;
-	}
 	if (r != 0x00) {
 		mmc_spi_cs_high();
 		mmc_spi_io_ff_v();
@@ -452,20 +185,7 @@ static inline int mmc_read_block(unsigned char *data, unsigned int src_addr, int
 	}
 	yield();
 	
-	mmc_spi_io_v(0x4c);	/* CMD12 */
-	mmc_spi_io_ff_v();	/* dummy args */
-	mmc_spi_io_ff_v();
-	mmc_spi_io_ff_v();
-	mmc_spi_io_ff_v();
-	mmc_spi_io_ff_v();	/* dummy CRC */
-	
-	mmc_spi_io_ff_v(); /* skipping stuff byte */
-	
-	/* skipping 1-8 bytes and get R1 */
-	for (i = 0; i < 9; i++) {
-		r = mmc_spi_io_ff();
-		if (r != 0xff) break;
-	}
+	r = mmc_spi_send_cmd_skip(12, 0xffffffff, 1);
 	if (r != 0x00) {
 		mmc_spi_cs_high();
 		mmc_spi_io_ff_v();
@@ -635,8 +355,9 @@ static int mmc_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 	}
 }
 
-// this function was contributed by: rcichielo from openwrt forums
 /**
+ * this function was contributed by: rcichielo from openwrt forums
+ *
  * Comments added by Marc DENTY on 2007-03-20
  *
  * Sequence to read a card's "CID" bytes (name, serial number etc)
@@ -654,6 +375,19 @@ static int mmc_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
  * 03h-08h Manufacturers's name in ascii
  * 0ah-0dh Card's 32 bit serial number 
  */
+/**
+ * Comments added by Cyril CATTIAUX on 2007-03-21
+ *
+ * CID format specification (from Sandisk SD Product Manual v1.9)
+ *
+ * cid[00   ] Manufacturer ID (unsigned byte)
+ * cid[01-02] OEM/Application ID (ASCII)
+ * cid[03-07] Product Name (ASCII)
+ * cid[08   ] Product Revistion (BCD coded number)
+ * cid[09-12] Serial Number (32-bit unsigned int)
+ * cid[13-14] Reserved(bit 12->15) - Manufacture Date(bit 0->11)
+ * cid[15   ] CRC7(bit 1->7) - Not used, allways 1 (bit 0)
+*/
 static int mmc_read_cid(unsigned char *cid) {
 	unsigned char r = 0;
         int i;
@@ -663,17 +397,7 @@ static int mmc_read_cid(unsigned char *cid) {
 	for (i = 0; i < 4; i++) mmc_spi_io_ff_v();
 	
 	/* issue CID (card identification data) read request */
-	mmc_spi_io_v(0x4a);
-	mmc_spi_io_v(0x00); /* param: 0x00000000 */
-	mmc_spi_io_v(0x00);
-	mmc_spi_io_v(0x00);
-	mmc_spi_io_v(0x00);
-	mmc_spi_io_ff_v();	/* dummy crc */
-	/* skip NR and get response */
-	for (i = 0; i < 9; i++) {
-		r = mmc_spi_io_ff();
-		if (r != 0xff) break;
-	}
+	r = mmc_spi_send_cmd(10, 0x00000000);
 	if (r != 0x00) {
 		mmc_spi_cs_high();
 		mmc_spi_io_ff_v();
@@ -718,17 +442,7 @@ static int mmc_set_blocklen(unsigned int len) {
         for (i = 0; i < 4; i++) mmc_spi_io_ff_v();
 
         /* issue CID (card identification data) read request */
-        mmc_spi_io_v(0x40 | 0x10);
-        mmc_spi_io_v((len >> 24) & 0xFF); 
-        mmc_spi_io_v((len >> 16) & 0xFF);
-        mmc_spi_io_v((len >>  8) & 0xFF);
-        mmc_spi_io_v(len & 0xFF);
-        mmc_spi_io_ff_v();      /* dummy crc */
-        /* skip NR and get response */
-        for (i = 0; i < 9; i++) {
-                r = mmc_spi_io_ff();
-                if (r != 0xff) break;
-        }
+        r = mmc_spi_send_cmd(16, len);
         if (r != 0x00) {
                 mmc_spi_cs_high();
                 mmc_spi_io_ff_v();
@@ -737,40 +451,51 @@ static int mmc_set_blocklen(unsigned int len) {
 	return 0;
 }
 
-static int mmc_card_init2(void) {
+extern unsigned long loops_per_jiffy;
+/**
+ * search the number of cycles (approximately) that this CPU can
+ * do per sec. (max arround 4,3GHz - be careful! if greater it will wrap arround.)
+*/
+static inline cycles_t get_cpu_cycles_per_sec(void) {	
+	return loops_per_jiffy*(HZ<<1);
+}
+#define KHz 1000
+
+static int mmc_card_init(void) {
 	unsigned char r = 0;
 	short i, j;
 	unsigned long flags;
+	cycles_t t1, t2, delta;
+
+	/* FREQUENCY LIMIT:
+	 This line gets a reference in CPU cycles to output a frequency of 380Khz
+	 (MMC specifications states that init phase must be done with a
+	 clock frequency slower than 400KHz to be backward compatible with
+	 traditionnal MMCs).
+	 380KHz*2 because we need the half period of a frequency of 380KHz :
+	*/
+	hfp_380khz = get_cpu_cycles_per_sec() / (380*KHz*2);
+	log_info("mmc_card_init: the period of a 380KHz frequency lasts %d CPU cycles", hfp_380khz<<1);
 
 	save_flags(flags);
 	cli();
 
 	log_info("mmc_card_init: powering card on. sending %d CLK", mp_max_pwr_on_clocks);
 	mmc_spi_cs_high();
-	for (i = 0; i < mp_max_pwr_on_clocks; i++) mmc_spi_clk();
+	t1 = get_cycles();
+	for (i = 0; i < mp_max_pwr_on_clocks; i++) mmc_spi_clk_fp(&last_clk, hfp_380khz);
+	t2 = get_cycles(); if (t1 > t2) delta = t1-t2; else delta = t2-t1;
+	log_info("mmc_card_init: %d CLK sent in %d CPU cycles", mp_max_pwr_on_clocks, delta);
 	mmc_spi_cs_low();
 	/* wait */
-	for (i = 0; i < 4; i++) mmc_spi_io_ff_v();
+	for (i = 0; i < 4; i++) mmc_spi_io_ff_v_fp(&last_clk, hfp_380khz);
 
 	log_info("mmc_card_init: resetting card (CMD0)");
-	mmc_spi_io_v(0x40);	/* CMD0 */
-	mmc_spi_io_v(0x00);	/* param: 0x00000000 */
-	mmc_spi_io_v(0x00);
-	mmc_spi_io_v(0x00);
-	mmc_spi_io_v(0x00);
-	mmc_spi_io_v(0x95);	/* CRC7 */
-
-	/* skipping NR and get response */
-	for (i = 0; i < 9; i++) {
-		r = mmc_spi_io_ff();
-#if LOG_LEVEL >= 5
-		log_trace("mmc_card_init: NR after CMD0 : %02x", r);
-#endif
-		if (r == 0x01) break;
-	}
 	
+	/* CMD0 - reset */
+	r = mmc_spi_send_cmd_crc7_fp(&last_clk, hfp_380khz, 0, 0x00000000, 0x95);	/* crc7 pre-computed to 0x95 */
 	mmc_spi_cs_high();
-	mmc_spi_io_ff_v();
+	mmc_spi_io_ff_v_fp(&last_clk, hfp_380khz);
 	if (r != 0x01) {
 		log_fatal("mmc_card_init: invalid response from card: %02x found, waiting for %02x", r, 0x01);
 		restore_flags(flags);
@@ -778,71 +503,24 @@ static int mmc_card_init2(void) {
 	}
 
 	log_info("mmc_card_init: doing initialization loop");
-	{
-	struct timeval t1, t2;
-	do_gettimeofday(&t1);
+
+	t1 = get_cycles();
 	for (j = 0; j < mp_max_init_tries; j++) {
 		mmc_spi_cs_low();
-#if 0
-		/* ACMD41 - sd init */
-		/* CMD55 */
-		mmc_spi_io_v(0x77);
-		mmc_spi_io_v(0x00); /* param: 0x00000000 */
-		mmc_spi_io_v(0x00);
-		mmc_spi_io_v(0x00);
-		mmc_spi_io_v(0x00);
-		mmc_spi_io_ff_v();	/* dummy crc */
-		/* skipping NR and get reponse */
-		for (i = 0; i < 9; i++) {
-			r = mmc_spi_io_ff(); 
-#if LOG_LEVEL >= 5
-			log_trace("mmc_card_init: NR after ACMD41.CMD55 : %02x", r);
-#endif
-			if (r != 0xff) break;
-		}
-		if (r != 0x01) {
-			mmc_spi_cs_high();
-			mmc_spi_io_ff_v();
-			log_fatal("mmc_card_init: ACMD41 failed in first part (CMD55) with status %02x", r);
-			return (4);
-		}
 		
-		/* CMD41 */
-		mmc_spi_io_v(0x69);
-		mmc_spi_io_v(0x00); /* param: 0x00000000 */
-		mmc_spi_io_v(0x00);
-		mmc_spi_io_v(0x00);
-		mmc_spi_io_v(0x00);
-		mmc_spi_io_ff_v();	/* dummy crc */
-#else
 		/* CMD1 - init */
-		mmc_spi_io_v(0x41);
-		mmc_spi_io_v(0x00); /* param: 0x00000000 */
-		mmc_spi_io_v(0x00);
-		mmc_spi_io_v(0x00);
-		mmc_spi_io_v(0x00);
-		mmc_spi_io_ff_v();	/* dummy crc */
-#endif
-		/* skipping NR and get reponse */
-		for (i = 0; i < 9; i++) {
-			r = mmc_spi_io_ff(); 
-#if LOG_LEVEL >= 5
-			log_trace("mmc_card_init: NR after ACMD41.CMD41 : %02x", r);
-#endif
-			if (r !=0xff) break;
-		}
+		r = mmc_spi_send_cmd_fp(&last_clk, hfp_380khz, 1, 0x00000000);
 		mmc_spi_cs_high();
-		mmc_spi_io_ff();
+		mmc_spi_io_ff_fp(&last_clk, hfp_380khz);
 		if ((r & 0x01) == 0) {
 			/* card is not idle anymore */
 			restore_flags(flags);
-			do_gettimeofday(&t2);
-			log_info("mmc_card_init: card inited successfully in %d tries (%d seconds %d usec).", j+1, t2.tv_sec-t1.tv_sec, t2.tv_usec-t1.tv_usec);
+			t2 = get_cycles(); if (t1 > t2) delta = t1-t2; else delta = t2-t1;
+			log_info("mmc_card_init: card inited successfully in %d tries (%d CPU cycles).", j+1, delta);
 			return(0);
 		}
-		yield();
 	}
-	}
+
 	restore_flags(flags);
 
 	log_error("mmc_card_init: card not successfully inited after %d tries.", j);
@@ -866,17 +544,7 @@ static int mmc_card_config(void) {
 	for (i = 0; i < 4; i++) mmc_spi_io_ff_v();
 
 	/* CMD9 - Query CSD (card specific data) */
-	mmc_spi_io_v(0x49);
-	mmc_spi_io_v(0x00);	/* dummy param */
-	mmc_spi_io_v(0x00);
-	mmc_spi_io_v(0x00);
-	mmc_spi_io_v(0x00);
-	mmc_spi_io_ff_v();	/* dummy CRC7 */
-	/* skip NR and get response */
-	for (i = 0; i < 9; i++) {
-		r = mmc_spi_io_ff();
-		if (r != 0xff) break;
-	}
+	r = mmc_spi_send_cmd(9, 0x00000000);
 	/* command response should be 0 */
 	if (r != 0x00) {
 		mmc_spi_cs_high();
@@ -904,8 +572,7 @@ static int mmc_card_config(void) {
 	}
 	mmc_spi_cs_high();
 	mmc_spi_io_ff();
-	/* if CRC == 0 return 3, CRC cannot be 0 ? */
-	if (r == 0x00) return(3);
+	
 /*
  * Among the useful data in the 16 byte packet is the capacity of the card. Unfortunately its a little cryptic and must be decoded thus:
  *
@@ -978,102 +645,92 @@ static int mmc_check_media_change(kdev_t dev) {
 }
 #endif
 
-static struct block_device_operations mmc_bdops =  {
-	open: mmc_open,
-	release: mmc_release,
-	ioctl: mmc_ioctl,
-#if 0
-	check_media_change: mmc_check_media_change,
-	revalidate: mmc_revalidate,
-#endif
-};
+/**
+ * Comments added by Cyril CATTIAUX on 2007-03-21
+ *
+ * CID format specification (from Sandisk SD Product Manual v1.9)
+ *
+ * cid[00   ] Manufacturer ID (unsigned byte)
+ * cid[01-02] OEM/Application ID (ASCII)
+ * cid[03-07] Product Name (ASCII)
+ * cid[08   ] Product Revision (BCD coded 2 digit number)
+ * cid[09-12] Serial Number (32-bit unsigned int)
+ * cid[13-14] Manufacture Date(bit 0->11) (BCD coded 3 digit number YYM offset from 2000) - Reserved(bit 12->15)
+ * cid[15   ] Not used, allways 1 (bit 0) - CRC7(bit 1->7)
+*/
+static void mmc_show_cid_info(void) {
+	int i, rc;
+	unsigned short tmps;
+	unsigned char  cid[16];
+	
+	char           manufacturer_id;
+	char           oem_id[3];
+	char           product_name[6];
+	unsigned char  product_revision_h, product_revision_l;
+	unsigned int   product_sn;
+	unsigned short product_date_y;
+	unsigned char  product_date_m;
 
-static struct gendisk hd_gendisk = {
-	major:		MAJOR_NR,
-	major_name:	DEVICE_NAME,
-	minor_shift:	6,
-	max_p:		64,
-	part:		hd,
-	sizes:		hd_sizes,
-	fops:		&mmc_bdops,
-};
-
-static int mmc_card_init(void)
-{
-int rc;
-	rc = mmc_card_init2();
-	if ( rc != 0) {
-		rc = mmc_card_init2(); 
-		if ( rc != 0) {
-			log_error("mmc_init: got an error calling mmc_card_init: %02x", rc);
-			return -1;
+	rc = mmc_read_cid(cid);
+	if (rc == 0) {
+		log_info("mmc_init: MMC/SD Card ID:");
+		for (i=0; i<16; i++) {
+			printk("%02x ", cid[i]);
 		}
+		manufacturer_id=cid[0];
+		strncpy(oem_id,       &cid[1], 2);
+		oem_id[2]='\0';
+		strncpy(product_name, &cid[3], 5);
+		product_name[5]='\0';
+		product_revision_h=(cid[8] >> 4) & 0xf;
+		product_revision_l=cid[8] & 0xf;
+		product_sn=(cid[9]<<24) + (cid[10]<<16) + (cid[11]<<8) + cid[12];
+		tmps=((cid[13]<<8) + cid[14]) & 0x0fff;
+		product_date_y=2000 + (((tmps >> 8) & 0xf) * 10) + ((tmps >> 4) & 0xf);
+		product_date_m=tmps & 0xf;
+		
+		log_info("Manufacturer ID   : %02x",  manufacturer_id);
+		log_info("OEM/Application ID: %s",    oem_id);
+		log_info("Product name      : %s",    product_name);
+		log_info("Product revision  : %d.%d", product_revision_h, product_revision_l);
+		log_info("Product SN        : %08x",  product_sn);
+		log_info("Product Date      : %d-%d", product_date_y, product_date_m);
+		
+	} else {
+		log_warn("mmc_init: impossible to get card indentification info for reason code: %02x", rc);
 	}
-return rc;
 }
 
-static adapter_found=0;
 static int mmc_init(void) {
 	int rc;
 
+	log_info("mmc_init: GPIO input addr: %08x", gpioaddr_input=(unsigned char*)get_addr_gpioin());
+	log_info("mmc_init: GPIO output addr: %08x", gpioaddr_output=(unsigned char*)get_addr_gpioout());
+	log_info("mmc_init: GPIO output enable addr: %08x", gpioaddr_enable=(unsigned char*)get_addr_gpioouten());
+	
+	if (gpioaddr_input==NULL || gpioaddr_output==NULL || gpioaddr_enable==NULL) {
+		log_fatal("Impossible to get GPIO addresses registers.");
+		return -1;
+	}
+	
+	rc = mmc_hardware_init(); 
 
 	if ( rc != 0) {
 		log_error("mmc_init: got an error calling mmc_hardware_init: %02x", rc);
 		return -1;
 	}
-	if (adapter_found==0)
-	    {
-	    printk(KERN_EMERG "mmc_init: trying old WRT54G gpio layout\n");
-	    setadapter(0);
-	    }
-	rc = mmc_hardware_init(); 
-        if (rc==0)
-	rc = mmc_card_init();
-	if (rc!=0)
-	    {
-	    printk(KERN_EMERG "mmc_init: trying new WRT54G/GL gpio layout\n");
-	    setadapter(1);
-	    rc = mmc_hardware_init(); 
-            if (rc==0)
-	    rc = mmc_card_init();
-	    if (rc!=0)
-		{
-		printk(KERN_EMERG "mmc_init: Buffalo WHR gpio layout\n");
-		setadapter(2);
-		rc = mmc_hardware_init(); 
-                if (rc==0)
-		rc = mmc_card_init();
-		if (rc!=0)
-		    {
-		    printk(KERN_EMERG "mmc_init: Buffalo WHR gpio layout 2\n");
-		    setadapter(3);
-		    rc = mmc_hardware_init(); 
-		    if (rc==0)
-		    rc = mmc_card_init();
-		    if (rc!=0)
-			return -1;
-		    }
-		}
-	    
-	    }
-	 
 
-	{
-		int i;
-		unsigned char cid[16];
-		rc = mmc_read_cid(cid);
-		if (rc == 0) {
-			log_info("mmc_init: MMC/SD Card ID:");
-			for (i=0; i<16; i++) {
-				printk("%02x ", cid[i]);
-			}
-			cid[9] = 0;
-			printk("\nManufacturer : %s, cardUID = %x",&cid[3], *(int*)(&cid[0x0a]));
-			printk("\n");
-		} else {
-			log_warn("mmc_init: impossible to get card indentification info for reason code: %02x", rc);
+	rc = mmc_card_init(); 
+	if ( rc != 0) {
+		// Give it an extra shot
+		rc = mmc_card_init(); 
+		if ( rc != 0) {
+			log_error("mmc_init: got an error calling mmc_card_init: %02x", rc);
+			return -1;
 		}
 	}
+
+	mmc_show_cid_info();
 	
 	memset(hd_sizes, 0, sizeof(hd_sizes));
 	memset(hd, 0, sizeof(hd));
@@ -1112,9 +769,9 @@ static void mmc_exit(void) {
 	hd[0].nr_sects = 0;
 }
 
-static void mmc_check_media(void) {
+static int mmc_check_media(void) {
 	int old_state;
-	int rc;
+	int rc=0;
 	old_state = mmc_media_detect; 
 
 	// TODO: Add card detection here
@@ -1122,17 +779,17 @@ static void mmc_check_media(void) {
 	if (old_state != mmc_media_detect)  {
 		mmc_media_changed = 1;
 		if (mmc_media_detect == 1) {
+			unsigned long flags;
+			local_irq_save(flags);
 			rc = mmc_init();
+			local_irq_restore(flags);
 			if (rc != 0) log_error("mmc_check_media: change detected but was not able to initialize new card: %02x", rc);
 		}
 		else  {
 			mmc_exit();
 		}
 	}
-
-	/* del_timer(&mmc_timer);
-	mmc_timer.expires = jiffies + 10*HZ;
-	add_timer(&mmc_timer); */
+	return rc;
 }
 
 static int __init mmc_driver_init(void) {
@@ -1148,19 +805,11 @@ static int __init mmc_driver_init(void) {
 	read_ahead[MAJOR_NR] = 8;
 	add_gendisk(&hd_gendisk);
 
-	mmc_check_media();
-
-	/*init_timer(&mmc_timer);
-	mmc_timer.expires = jiffies + HZ;
-	mmc_timer.function = (void *)mmc_check_media;
-	add_timer(&mmc_timer);*/
-
-	return 0;
+	return mmc_check_media();
 }
 
 static void __exit mmc_driver_exit(void) {
 	int i;
-	/*del_timer(&mmc_timer);*/
 
 	for (i = 0; i < (64); i++)
 		fsync_dev(MKDEV(MAJOR_NR, i));
