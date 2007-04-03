@@ -377,6 +377,8 @@ start_sysinit (void)
     case ROUTER_NETGEAR_WNR834B:
     case ROUTER_WRT150N:
     case ROUTER_WRT300N:
+    case ROUTER_BUFFALO_WLAH_G54: 
+    case ROUTER_BUFFALO_WAPM_HP_AM54G54:   
     case ROUTER_WRTSL54GS:
       nvram_set ("wan_ifname", "eth1");
       nvram_set ("wan_ifnames", "eth1");
