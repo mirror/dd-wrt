@@ -139,6 +139,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // swapped phy definition 
 #define ROUTER_BOARD_GATEWORX_SWAP 0x280f
 
+
+
 //Netgear WNR834B (4704 cpu, BCM5325 switch, cardbus radio,  fccid: Netgear PY306100032)
 #define ROUTER_NETGEAR_WNR834B 0x2917
 
@@ -156,6 +158,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 #define ROUTER_BOARD_LS2 0x2e01
 
+#define ROUTER_BUFFALO_WAPM_HP_AM54G54 0x2f05 // (only available on japanese market, dual radio 2.4 and 5 ghz broadcom)
+
+#define ROUTER_BUFFALO_WLAH_G54 0x3004 // (only available on japanese market, single radio 2.4 ghz)
 
 #define NVROUTER "DD_BOARD"
 
