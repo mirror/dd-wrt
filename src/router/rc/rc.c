@@ -314,7 +314,28 @@ main_loop (void)
 #ifdef HAVE_MMC
   if (nvram_match ("mmc_enable", "1"))
     {
-      if (!eval ("insmod", "mmc"))
+    int res = eval("insmod","mmc_wrt1");
+    if (res)
+	{
+	eval("rmmod","mmc_wrt1");
+        res = eval("insmod","mmc_wrt2");
+	}
+    if (res)
+        {
+	eval("rmmod","mmc_wrt2");
+        res = eval("insmod","mmc_buf1");
+	}
+    if (res)
+        {
+	eval("rmmod","mmc_buf1");
+        res = eval("insmod","mmc_buf2");
+	}
+    if (res)
+        {
+	eval("rmmod","mmc_buf2");
+	}    
+    
+      if (!res)
 	{
 	  //device detected
 	  eval ("insmod", "ext2");
