@@ -273,7 +273,7 @@ internal_getRouterBrand ()
       setRouter ("Buffalo WLA2-G54C / WLI3-TX1-G54");
       return ROUTER_BUFFALO_WLA2G54C;
     }
-  if (boardnum == 0 && nvram_match("melco_id","29090") && nvram_match("boardflags","0x10") && nvram_match("boardrev","0x10"))
+  if (boardnum == 0 && nvram_match("melco_id","29090") && nvram_match("boardflags","0x0010") && nvram_match("boardrev","0x10"))
     {
       cprintf ("router is Buffalo WLAH-G54\n");
       setRouter ("Buffalo WLAH-G54");
