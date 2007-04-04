@@ -682,7 +682,13 @@ setupSupplicant (char *prefix)
       char psk[16];
       sprintf (fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
       FILE *fp = fopen (fstr, "wb");
+#ifdef HAVE_MAKSAT
+      fprintf (fp, "ap_scan=1\n");
+#elif HAVE_NEWMEDIA
+      fprintf (fp, "ap_scan=1\n");
+#else
       fprintf (fp, "ap_scan=2\n");
+#endif
       fprintf (fp, "fast_reauth=1\n");
       fprintf (fp, "eapol_version=1\n");
       fprintf (fp, "ctrl_interface_group=0\n");
@@ -736,7 +742,11 @@ setupSupplicant (char *prefix)
       char ath[64];
       sprintf (fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
       FILE *fp = fopen (fstr, "wb");
+#ifdef HAVE_MAKSAT
+      fprintf (fp, "ap_scan=1\n");
+#else
       fprintf (fp, "ap_scan=2\n");
+#endif
       fprintf (fp, "fast_reauth=1\n");
       fprintf (fp, "eapol_version=1\n");
       fprintf (fp, "ctrl_interface_group=0\n");
