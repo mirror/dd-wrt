@@ -358,7 +358,6 @@ filterIP.ip_range="Intervallo IP";
 filter.titl="Restizioni D'Accesso";
 filter.h2="Accesso A Internet";
 filter.legend="Politica D'Accesso";
-filter.restore="Ripristino Al Default Di fabbrica";
 filter.pol="Politica";
 filter.polname="Nome Politica";
 filter.pcs="PC";

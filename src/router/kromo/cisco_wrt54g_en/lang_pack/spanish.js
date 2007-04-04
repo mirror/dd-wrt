@@ -478,7 +478,6 @@ filterIP.ip_range="Rango de IP";
 filter.titl="Restriciones de Acceso";
 filter.h2="Acceso a InternetInternet Access";
 filter.legend="Política de Acceso";
-filter.restore="Restaurar Valores de Fábrica";
 filter.pol="Política";
 filter.polname="Nombre de Política";
 filter.pcs="PCs";
