@@ -4085,11 +4085,15 @@ ej_do_pagehead (webs_t wp, int argc, char_t ** argv)	//Eko
   websWrite (wp,
 	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
 #endif
+  websWrite (wp,
+		 "\t\t<title>%s", nvram_get ("router_name"));	     
 	if (strlen(title) != 0)
 	{
   websWrite (wp,
-		 "\t\t<title>%s - %s</title>\n", nvram_get ("router_name"), live_translate (title));
+		 "- %s", live_translate (title));
 	}
+  websWrite (wp,
+		 "</title>\n");
 
 }
 
