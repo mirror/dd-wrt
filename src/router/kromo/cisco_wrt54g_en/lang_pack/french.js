@@ -21,6 +21,7 @@ share.disabled="Désactivé";
 share.usrname="Nom d\'utilisateur";
 share.passwd="Mot de passe";
 share.hostname="Nom d\'hôte";
+share.compression="Compression PPP";
 share.domainname="Nom de domaine";
 share.wandomainname="Nom de domaine WAN";
 share.landomainname="Nom de domaine LAN";
@@ -82,6 +83,7 @@ share.beacon="beacon";
 share.openn="Open";
 share.dtim="dtim";
 share.rates="Vitesse";
+share.rate="Vitesse";
 share.low="Faible";
 share.medium="Moyen";
 share.high="Haut";
@@ -158,6 +160,8 @@ share._168h="Toutes les semaines";
 share.days="Jours";
 share.standard="Standard";
 share.execscript="Exécuter un script";
+share.user="User";
+share.privatekey="Clé privée";
 
 sbutton.save="Enregistrer";
 sbutton.saving="Enregistré";
@@ -378,8 +382,8 @@ bmenu.statuBand="Bande Passante";
 bmenu.statuSysInfo="Système";
 
 
-
 // ******************************************* Alive.asp *******************************************//
+
 
 alive.titl="Keep Alive";
 alive.h2="Keep Alive";
@@ -403,6 +407,7 @@ halive.right4="Un maximum de 3 IPs séparées par un <em>ESPACE</em> est autorisé.
 
 // ******************************************* config.asp *******************************************//
 
+
 config.titl="Sauvegarde & Restauration";
 config.h2="Sauvegarde";
 config.legend="Sauvergarder la Configuration";
@@ -422,6 +427,7 @@ hconfig.right4="Cliquez sur le bouton <em>\"Parcourir...\"</em> pour sélectionne
 
 // ******************************************* DDNS.asp *******************************************//
 
+
 ddns.titl="DNS Dynamique"
 ddns.h2="Dynamic Domain Name System (DDNS)";
 ddns.legend="DNS Dynamique";
@@ -435,6 +441,7 @@ ddns.statu="Journal";
 ddns.system="DNS System";
 ddns.options="Options Supplémentaires";
 ddns.forceupd="Intervalle de mise à jour forcée";
+
 
 ddnsm.all_closed="Le serveur DDNS est actuellement ferm&#233;.";
 ddnsm.all_resolving="R&#233;solution du nom de domaine en cours ...";
@@ -453,6 +460,7 @@ hddns.right4="Saisir un nombre de jour après lequel la mise à jour sera forcée m
 
 // ******************************************* Diagnostics.asp *******************************************//
 
+
 diag.titl="Shell";
 diag.h2="Commande Shell";
 diag.legend="Invite de commandes";
@@ -467,6 +475,7 @@ hdiag.right2="Vous pouvez lancer des lignes de commandes grâce à la console d\'a
 
 
 // ******************************************* DMZ.asp *******************************************//
+
 
 dmz.titl="DMZ";
 dmz.h2="Zone démilitarisée (DMZ)";
@@ -483,6 +492,7 @@ hdmz.right2="L\'activation de cette option va exposer l\'hôte à Internet. Tous l
 
 // ******************************************* Factory_Defaults.asp *******************************************//
 
+
 factdef.titl="Paramètres usine";
 factdef.h2="Paramètres usine";
 factdef.legend="Réinitialiser les réglages du routeur";
@@ -498,6 +508,7 @@ hfactdef.right1="Cliquez sur <em>Oui</em> pour rétablir les valeurs par défaut d
 
 // ******************************************* FilterIPMAC.asp *******************************************//
 
+
 filterIP.titl="Liste des Ordinateurs";
 filterIP.h2="Liste des Ordinateurs";
 filterIP.h3="Saisissez l\'adresse MAC des ordinateurs au format: xx:xx:xx:xx:xx:xx";
@@ -508,6 +519,7 @@ filterIP.ip_range="Intervalle IP";
 
 
 // ******************************************* Filter.asp *******************************************//
+
 
 filter.titl="Restrictions d\'accès";
 filter.h2="Accès Internet";
@@ -543,6 +555,7 @@ hfilter.right16="Si vous souhaitez bloquer des sites Web à l\'aide de mots clés 
 
 // ******************************************* FilterSummary.asp *******************************************//
 
+
 filterSum.titl="Récapitulatif des Restrictions d\'accès";
 filterSum.h2="Récapitulatif de la Stratégie d\'accès à Internet";
 filterSum.polnum="N°";
@@ -551,6 +564,7 @@ filterSum.polday="Plage Horaire";
 
 
 // ******************************************* Firewall.asp *******************************************//
+
 
 firewall.titl="Pare-Feu";
 firewall.h2="Sécurité";
@@ -569,12 +583,12 @@ filter.port113="Filtre IDENT (port 113)";
 
 //help container
 
-hfirewall.right1="Firewall Protection:";
 hfirewall.right2="Activez cette fonctionnalité pour utiliser la technologie SPI (Stateful Packet Inspection) et procéder à une vérification plus poussée des paquets de données infiltrant votre environnement réseau.";
 
 
 
 // ******************************************* Forward.asp *******************************************//
+
 
 prforward.titl="Redirection plage de port";
 prforward.h2="Redirection plage de port";
@@ -588,9 +602,11 @@ hprforward.right2="Certaines applications nécessitent d\'ouvrir des ports spécif
 
 // ******************************************* P2P.asp *******************************************//
 
+
 p2p.titl="Appications Peer-to-Peer";
 p2p.h2="Client BitTorrent";
 p2p.legend="CTorrent";
+
 
 
 //help container
@@ -617,11 +633,12 @@ hpforward.right2="Certaines applications nécessitent d\'ouvrir des ports spécifi
 
 // ******************************************* Hotspot.asp *******************************************//
 
+
 hotspot.titl="Hotspot";
 hotspot.h2="Portail Hotspot";
 hotspot.legend="Chillispot";
-hotspot.hotspot="Chillispot";
 hotspot.nowifibridge="Séparer Wifi du Pont LAN";
+hotspot.hotspot="Chillispot";
 hotspot.pserver="IP/DNS Serveur Radius primaire";
 hotspot.bserver="IP/DNS Serveur Radius secondaire";
 hotspot.dns="IP / DNS";
@@ -633,6 +650,7 @@ hotspot.uamdns="UAM Any DNS";
 hotspot.allowuam="UAM Autorisé";
 hotspot.macauth="MACauth";
 hotspot.option="Options Supplémentaires";
+
 hotspot.fon_chilli="Gestion des Utilisateurs Locaux";
 hotspot.fon_user="Liste des Utilisateurs";
 
@@ -700,7 +718,9 @@ info.srv="Services";
 info.ap="Points d\'Access";
 
 
+
 // ******************************************* index_heartbeat.asp *******************************************//
+
 
 idx_h.srv="Serveur Heart Beat";
 idx_h.con_strgy="Stratégie de connexion";
@@ -710,6 +730,7 @@ idx_h.alive="Maintenir la connexion : rappel après";
 
 
 // ******************************************* index_l2tp.asp *******************************************//
+
 
 idx_l.srv="Serveur L2TP";
 
@@ -724,6 +745,7 @@ idx_pppoe.use_rp="Utiliser RP-PPPoE";
 
 // ******************************************* index_pptp.asp *******************************************//
 
+
 idx_pptp.srv="Utiliser DHCP";
 idx_pptp.wan_ip="Adresse IP WAN";
 idx_pptp.gateway="Passerelle";
@@ -733,11 +755,13 @@ idx_pptp.encrypt="Cryptage PPTP";
 
 // ******************************************* index_static.asp *******************************************//
 
+
 idx_static.dns="DNS Statique";
 
 
 
 // ******************************************* index.asp *******************************************//
+
 
 idx.titl="Configuration";
 idx.h2="Configuration WAN";
@@ -778,8 +802,6 @@ idx.portsetup="Gestion du Port WAN";
 idx.wanport="Affectation du Port WAN";
 
 
-
-
 //help container
 
 hidx.right2="Vous devez conserver cette option uniquement si votre FAI prend en charge le protocole DHCP ou si vous vous connectez via une adresse IP dynamique (cas des câblo-opérateurs).";
@@ -797,6 +819,7 @@ hidx.right18="Changez le fuseau horaire de votre réseau à partir du menu déroula
 // ******************************************* Join.asp *******************************************//
 
 
+
 //sshd.webservices
 join.titl="Rejoindre";
 join.mess1="Vous avez rejoint avec succès le réseau sans fil : ";
@@ -804,6 +827,7 @@ join.mess1="Vous avez rejoint avec succès le réseau sans fil : ";
 
 
 // ******************************************* Log_incoming.asp *******************************************//
+
 
 log_in.titl="Journal des connexions entrantes";
 log_in.h2="Journal des connexions entrantes";
@@ -824,6 +848,7 @@ log_out.th_port="Service/Port";
 
 
 // ******************************************* Log.asp *******************************************//
+
 
 log.titl="Journal";
 log.h2="Gestion du journal";
@@ -942,12 +967,14 @@ hmanagement.right2="Saisissez l\'intervalle de rafraichissement automatique de l
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymor) ******************************//
 
+
 portserv.titl="Gestion des Protocoles";
 portserv.h2="Gestion des Protocoles";
 
 
 
 // ******************************************* QoS.asp *******************************************//
+
 
 qos.titl="Qualité de Service";
 qos.h2="Qualité de Service (QoS)";
@@ -986,6 +1013,7 @@ hqos.right12="Vous pouvez contrôler la priorité du traffic en fonction du port e
 
 // ******************************************* RouteTable.asp *******************************************//
 
+
 routetbl.titl="Table de Routage";
 routetbl.h2="Table de Routage";
 routetbl.th1="IP Destination sur le LAN";
@@ -1020,6 +1048,7 @@ hroute.right10="Cette option détermine quelle portion de l\'adresse IP du réseau
 
 // ******************************************* Site_Survey.asp *******************************************//
 
+
 survey.titl="Réseaux Sans Fil à Portée";
 survey.h2="Réseaux Sans Fil à Portée";
 survey.thjoin="Rejoindre le réseau";
@@ -1027,6 +1056,7 @@ survey.thjoin="Rejoindre le réseau";
 
 
 // ******************************************* Services.asp *******************************************//
+
 
 service.titl="Services";
 service.h2="Gestion des Services";
@@ -1036,6 +1066,8 @@ service.kaid_legend="XBOX Kaid";
 service.kaid_srv="Démarrer Kaid";
 service.kaid_locdevnum="Nombre de console(s)";
 service.kaid_uibind="Port du démon";
+service.kaid_orbport="Port ORB";
+service.kaid_orbdeepport="ORB Deep Port";
 
 //DHCPd
 service.dhcp_legend="Client DHCP";
@@ -1147,6 +1179,7 @@ service.nstx_log="Activer Debug";
 
 // ******************************************* eop-tunnel.asp *******************************************//
 
+
 eoip.titl="Tunel EoIP";
 eoip.tunnel="Tunel";
 eoip.legend="Tunel IP sur Ethernet Over IP Tunel";
@@ -1160,7 +1193,10 @@ eoip.mssfix="mssfix";
 eoip.shaper="shaper";
 eoip.bridging="Bridging";
 
+
+
 // ******************************************* Sipath.asp + cgi *******************************************//
+
 
 sipath.titl="Généralités SiPath";
 sipath.phone_titl="Répertoire";
@@ -1169,6 +1205,7 @@ sipath.status_titl="Statut";
 
 
 // ******************************************* Status_Lan.asp *******************************************//
+
 
 status_lan.titl="Statut LAN";
 status_lan.h2="Réseau Local";
@@ -1235,12 +1272,14 @@ hstatus_router.right14="Ce sont les informations requise par votre provider afin
 
 // ******************************************* Status_Conntrack.asp *******************************************//
 
+
 status_conn.titl="Active IP Connections Table";
 status_conn.h2="Active IP Connections";
 
 
 
 // ******************************************* Status_SputnikAPD.asp *******************************************//
+
 
 status_sputnik.titl="Statut de l\'Agent Sputnik";
 status_sputnik.h2="Agent&trade; Sputnik&reg;";
@@ -1258,6 +1297,7 @@ hstatus_sputnik.right8="Le numéro de licence de votre centre de contrôle Sputnik
 
 
 // ******************************************* Status_Wireless.asp *******************************************//
+
 
 status_wireless.titl="Statut Sans Fil";
 status_wireless.h2="Informations Sans Fil";
@@ -1281,10 +1321,12 @@ hstatus_wireless.right4="Comme configuré dans l\'onglet Wireless, ce sont les no
 
 // ******************************************* Status_OpenVPN.asp *******************************************//
 
+
 status_openvpn.titl="Statut OpenVPN";
 
 
 // ******************************************* Triggering.asp *******************************************//
+
 
 trforward.titl="Port Triggering";
 trforward.h2="Port Triggering";
@@ -1304,6 +1346,7 @@ htrforward.right10="Enter the ending port number of the Triggered and Forwarded 
 
 
 // ******************************************* Upgrade.asp *******************************************//
+
 
 upgrad.titl="Mise à jour du Firmware";
 upgrad.h2="Gestion du Firmware";
@@ -1433,6 +1476,7 @@ wpa.radius_key="Clé RADIUS";
 wpa.algorithms="Cryptage WPA";
 wpa.shared_key="Clé WPA partagée";
 
+
 sec80211x.xsuptype="XSupplicant Type";
 sec80211x.servercertif="Certificat Public Serveur";
 sec80211x.clientcertif="Certificat Public Client";
@@ -1518,11 +1562,13 @@ wl_basic.label6="Sensibilité (ACK Timing)";
 wl_basic.ap="AP";
 wl_basic.client="Client";
 wl_basic.repeater="Repeater";
+wl_basic.repeaterbridge="Repeater Bridge";
 wl_basic.clientBridge="Pont Client";
 wl_basic.adhoc="Adhoc";
 wl_basic.wdssta="Station WDS";
-wl_basic.wdsap="Point d\'accès WDS";
+wl_basic.wdsap="Point d'accès WDS";
 wl_basic.mixed="Mixte";
+wl_basic.preamble="Short Preamble";
 wl_basic.b="B-uniquement";
 wl_basic.a="A-uniquement";
 wl_basic.g="G-uniquement";
@@ -1533,7 +1579,6 @@ wl_basic.radio="Radio";
 wl_basic.radiotimer="Programmation Emission Radio";
 wl_basic.radio_on="Sans fil On";
 wl_basic.radio_off="Sans fil Off";
-wl_basic.regulatory="Dénormalisation";
 
 wl_basic.h2_v24="Interface Sans fil";
 wl_basic.h2_vi="Interfaces Virtuelles";
@@ -1548,6 +1593,8 @@ wl_basic.unbridged="Unbridged";
 wl_basic.bridged="Bridged";
 wl_basic.turbo="Mode Turbo";
 wl_basic.extrange="Plage Etendue";
+wl_basic.supergcomp="Super G Compression";
+wl_basic.supergff="Super G Fast Framing";
 wl_basic.extchannel="Mode Canal Etendu";
 wl_basic.outband="Outdoor Band";
 wl_basic.channel_width="Channel Width";
@@ -1555,7 +1602,6 @@ wl_basic.channel_wide="Wide Channel";
 wl_basic.regulatory="Regulatory";
 wl_basic.specialmode="2.3 Ghz Mode";
 wl_basic.wifi_bonding="Wifi Bonding";
-
 
 //help container
 
