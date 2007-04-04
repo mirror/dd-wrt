@@ -867,7 +867,7 @@ void
 ej_show_paypal (webs_t wp, int argc, char_t ** argv)
 {
 #ifndef CONFIG_BRANDING
-  websWrite (wp, "<a href=\"http://www.dd-wrt.com/\">DD-WRT</a>");
+  websWrite (wp, "<a href=\"http://www.dd-wrt.com/\">DD-WRT</a><br />");
   websWrite (wp,
 	     "<form action=\"https://www.paypal.com/cgi-bin/webscr\" method=\"post\" target=\"_blank\">");
   websWrite (wp, "<input type=\"hidden\" name=\"cmd\" value=\"_xclick\" />");
