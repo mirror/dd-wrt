@@ -95,7 +95,18 @@ function init() {
 							<fieldset>
 							   <legend>Assign to Bridge</legend>
 							   <% show_bridgeifnames(); %>
-							</fieldset><br />
+							</fieldset>
+							<fieldset>
+							   <legend>Current Bridging Table</legend>
+							   	<table class="table center" cellspacing="5" id="Bridging_table" summary="current bridging table">
+								<tr>
+								<th width="18%">Bridge Name</script></th>
+								<th width="18%">STP enabled</script></th>
+								<th width="64%">Interfaces</script></th>
+								</tr>
+								</table>
+							</fieldset>
+							<br />
 							<% show_bondings(); %>
 							<% portsetup(); %>
 		
