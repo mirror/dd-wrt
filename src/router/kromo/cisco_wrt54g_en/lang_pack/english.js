@@ -387,7 +387,6 @@ bmenu.statuSysInfo="Sys-Info";
 
 
 // ******************************************* Alive.asp *******************************************//
-
 var alive = new Object();
 alive.titl="Keep Alive";
 alive.h2="Keep Alive";
@@ -410,7 +409,6 @@ halive.right4="A maximum of three IPs separated by a <em>SPACE</em> is allowed.<
 
 
 // ******************************************* config.asp *******************************************//
-
 var config = new Object();
 config.titl="Backup & Restore";
 config.h2="Backup Configuration";
@@ -430,7 +428,6 @@ hconfig.right4="Click the <em>Browse...</em> button to browse for a configuratio
 
 
 // ******************************************* DDNS.asp *******************************************//
-
 var ddns = new Object();
 ddns.titl="Dynamic DNS"
 ddns.h2="Dynamic Domain Name System (DDNS)";
@@ -463,7 +460,6 @@ hddns.right4="Type an integer number in the box to set the force update interval
 
 
 // ******************************************* Diagnostics.asp *******************************************//
-
 var diag = new Object();
 diag.titl="Diagnostics";
 diag.h2="Diagnostics";
@@ -479,7 +475,6 @@ hdiag.right2="You can run command lines via the web interface. Fill the text are
 
 
 // ******************************************* DMZ.asp *******************************************//
-
 var dmz = new Object();
 dmz.titl="DMZ";
 dmz.h2="Demilitarized Zone (DMZ)";
@@ -495,7 +490,6 @@ hdmz.right2="Enabling this option will expose the specified host to the Internet
 
 
 // ******************************************* Factory_Defaults.asp *******************************************//
-
 var factdef = new Object();
 factdef.titl="Factory Defaults";
 factdef.h2="Factory Defaults";
@@ -511,7 +505,6 @@ hfactdef.right1="This will reset all settings back to factory defaults. All of y
 
 
 // ******************************************* FilterIPMAC.asp *******************************************//
-
 var filterIP = new Object();
 filterIP.titl="List of PCs";
 filterIP.h2="List of PCs";
@@ -523,12 +516,10 @@ filterIP.ip_range="IP Range";
 
 
 // ******************************************* Filter.asp *******************************************//
-
 var filter = new Object();
 filter.titl="Access Restrictions";
 filter.h2="WAN Access";
 filter.legend="Access Policy";
-filter.restore="Restore Factory Defaults";
 filter.pol="Policy";
 filter.polname="Policy Name";
 filter.pcs="PCs";
@@ -559,7 +550,6 @@ hfilter.right16="You can block access to certain website by the keywords contain
 
 
 // ******************************************* FilterSummary.asp *******************************************//
-
 var filterSum = new Object();
 filterSum.titl="Access Restrictions Summary";
 filterSum.h2="Internet Policy Summary";
@@ -569,7 +559,6 @@ filterSum.polday="Time of Day";
 
 
 // ******************************************* Firewall.asp *******************************************//
-
 var firewall = new Object();
 firewall.titl="Firewall";
 firewall.h2="Security";
@@ -593,7 +582,6 @@ hfirewall.right2="Enable or disable the SPI firewall.";
 
 
 // ******************************************* Forward.asp *******************************************//
-
 var prforward = new Object();
 prforward.titl="Port Range Forwarding";
 prforward.h2="Port Range Forward";
@@ -606,7 +594,6 @@ hprforward.right2="Certain applications may require to open specific ports in or
 
 
 // ******************************************* P2P.asp *******************************************//
-
 var p2p = new Object();
 p2p.titl="Peer-to-Peer Apps";
 p2p.h2="BitTorrent Client";
@@ -621,7 +608,6 @@ p2p.ctorrent_srv="Ctorrent Service";
 
 
 // ******************************************* ForwardSpec.asp *******************************************//
-
 var pforward = new Object();
 pforward.titl="Port Forwarding";
 pforward.h2="Port Forward";
@@ -637,7 +623,6 @@ hpforward.right2="Certain applications may require to open specific ports in ord
 
 
 // ******************************************* Hotspot.asp *******************************************//
-
 var hotspot = new Object();
 hotspot.titl="Hotspot";
 hotspot.h2="Hotspot Portal";
@@ -714,7 +699,6 @@ hotspot.wifidog_authsrvpath="AuthServer Path";
 
 
 // ******************************************* Info.htm *******************************************//
-
 var info = new Object();
 info.titl="Info";
 info.h2="System Information";
@@ -725,7 +709,6 @@ info.ap="Access Point";
 
 
 // ******************************************* index_heartbeat.asp *******************************************//
-
 var idx_h = new Object();
 idx_h.srv="Heart Beat Server";
 idx_h.con_strgy="Connection Strategy";
@@ -735,21 +718,18 @@ idx_h.alive="Keep Alive: Redial Period";
 
 
 // ******************************************* index_l2tp.asp *******************************************//
-
 var idx_l = new Object();
 idx_l.srv="L2TP Server";
 
 
 
 // ******************************************* index_pppoe.asp *******************************************//
-
 var idx_pppoe = new Object();
 idx_pppoe.use_rp="Use RP PPPoE";
 
 
 
 // ******************************************* index_pptp.asp *******************************************//
-
 var idx_pptp = new Object();
 idx_pptp.srv="Use DHCP";
 idx_pptp.wan_ip="WAN IP Address";
@@ -759,14 +739,12 @@ idx_pptp.encrypt="PPTP Encyption";
 
 
 // ******************************************* index_static.asp *******************************************//
-
 var idx_static = new Object();
 idx_static.dns="Static DNS";
 
 
 
 // ******************************************* index.asp *******************************************//
-
 var idx = new Object();
 idx.titl="Setup";
 idx.h2="WAN Setup";
@@ -822,7 +800,6 @@ hidx.right18="Choose the time zone you are in and Summer Time (DST) period. The 
 
 
 // ******************************************* Join.asp *******************************************//
-
 var join = new Object();
 
 //sshd.webservices
@@ -832,7 +809,6 @@ join.mess1="Successfully joined the following network as a client: ";
 
 
 // ******************************************* Log_incoming.asp *******************************************//
-
 var log_in = new Object();
 log_in.titl="Incoming Log Table";
 log_in.h2="Incoming Log Table";
@@ -842,7 +818,6 @@ log_in.th_port="Destination Port Number";
 
 
 // ******************************************* Log_outgoing.asp *******************************************//
-
 var log_out = new Object();
 log_out.titl="Outgoing Log Table";
 log_out.h2="Outgoing Log Table";
@@ -853,7 +828,6 @@ log_out.th_port="Service/Port Number";
 
 
 // ******************************************* Log.asp *******************************************//
-
 var log = new Object();
 log.titl="Log";
 log.h2="Log Management";
@@ -866,7 +840,6 @@ log.accept="Accepted";
 
 
 // ******************************************* Management.asp *******************************************//
-
 var management = new Object();
 management.titl="Administration";
 management.h2="Router Management";
@@ -964,7 +937,6 @@ management.SIPatH_domain="SIP Domain";
 management.gui_style="Router GUI Style";
 
 
-
 //help container
 var hmanagement = new Object();
 hmanagement.right1="Auto-Refresh:";
@@ -973,7 +945,6 @@ hmanagement.right2="Adjusts the Web GUI automatic refresh interval. 0 disables t
 
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymor) *****************************************//
-
 var portserv = new Object();
 portserv.titl="Port Services";
 portserv.h2="Port Services";
@@ -981,7 +952,6 @@ portserv.h2="Port Services";
 
 
 // ******************************************* QoS.asp *******************************************//
-
 var qos = new Object();
 qos.titl="Quality of Service";
 qos.h2="Quality Of Service (QoS)";
@@ -1019,7 +989,6 @@ hqos.right12="You may control your data rate according to which physical LAN por
 
 
 // ******************************************* RouteTable.asp *******************************************//
-
 var routetbl = new Object();
 routetbl.titl="Routing Table";
 routetbl.h2="Routing Table Entry List";
@@ -1028,7 +997,6 @@ routetbl.th1="Destination LAN IP";
 
 
 // ******************************************* Routing.asp *******************************************//
-
 var route = new Object();
 route.titl="Routing";
 route.h2="Advanced Routing";
@@ -1054,7 +1022,6 @@ hroute.right10="Determines the host and the network portion.";
 
 
 // ******************************************* Site_Survey.asp *******************************************//
-
 var survey = new Object();
 survey.titl="Site Survey";
 survey.h2="Neighbor&#39;s Wireless Networks";
@@ -1063,7 +1030,6 @@ survey.thjoin="Join Site";
 
 
 // ******************************************* Services.asp *******************************************//
-
 var service = new Object();
 
 service.titl="Services";
@@ -1186,7 +1152,6 @@ service.nstx_ipenable="Bind to this IP only";
 service.nstx_log="Switch on debug messages";
 
 // ******************************************* eop-tunnel.asp *******************************************//
-
 var eoip = new Object();
 eoip.titl="EoIP Tunnel";
 eoip.tunnel="Tunnel";
@@ -1204,7 +1169,6 @@ eoip.bridging="Bridging";
 
 
 // ******************************************* Sipath.asp + cgi *******************************************//
-
 var sipath = new Object();
 sipath.titl="SiPath Overview";
 sipath.phone_titl="Phonebook";
@@ -1213,7 +1177,6 @@ sipath.status_titl="Status";
 
 
 // ******************************************* Status_Lan.asp *******************************************//
-
 var status_lan = new Object();
 status_lan.titl="LAN Status";
 status_lan.h2="Local Network";
@@ -1235,7 +1198,6 @@ hstatus_lan.right10="By clicking on any MAC address, you will obtain the Organiz
 
 
 // ******************************************* Status_Bandwidth.asp *******************************************//
-
 var status_band = new Object();
 status_band.titl="Bandwidth Monitoring";
 status_band.h2="Bandwidth Monitoring";
@@ -1249,7 +1211,6 @@ status_band.sys_up="Uptime";
 
 
 // ******************************************* Status_Router.asp *******************************************//
-
 var status_router = new Object();
 status_router.titl="Router Status";
 status_router.h2="Router Information";
@@ -1293,7 +1254,6 @@ hstatus_router.right14="This shows the information required by your ISP for conn
 
 
 // ******************************************* Status_Conntrack.asp *******************************************//
-
 var status_conn = new Object();
 status_conn.titl="Active IP Connections Table";
 status_conn.h2="Active IP Connections";
@@ -1301,7 +1261,6 @@ status_conn.h2="Active IP Connections";
 
 
 // ******************************************* Status_SputnikAPD.asp *******************************************//
-
 var status_sputnik = new Object();
 status_sputnik.titl="Sputnik Agent Status";
 status_sputnik.h2="Sputnik&reg; Agent&trade;";
@@ -1319,7 +1278,6 @@ hstatus_sputnik.right8="The license number of your Sputnik Control Center.";
 
 
 // ******************************************* Status_Wireless.asp *******************************************//
-
 var status_wireless = new Object();
 status_wireless.titl="Wireless Status";
 status_wireless.h2="Wireless";
@@ -1342,14 +1300,11 @@ hstatus_wireless.right4="As selected from the Wireless tab, this will display th
 
 
 // ******************************************* Status_OpenVPN.asp *******************************************//
-
 var status_openvpn = new Object();
 status_openvpn.titl="OpenVPN Status";
 
 
-
 // ******************************************* Triggering.asp *******************************************//
-
 var trforward = new Object();
 trforward.titl="Port Triggering";
 trforward.h2="Port Triggering";
@@ -1369,7 +1324,6 @@ htrforward.right10="Enter the ending port number of the Triggered and Forwarded 
 
 
 // ******************************************* Upgrade.asp *******************************************//
-
 var upgrad = new Object();
 upgrad.titl="Firmware Upgrade";
 upgrad.h2="Firmware Management";
@@ -1388,7 +1342,6 @@ hupgrad.right2="Click on the <em>Browse...</em> button to select the firmware fi
 
 
 // ******************************************* UPnP.asp *******************************************//
-
 var upnp = new Object();
 upnp.titl="UPnP";
 upnp.h2="Universal Plug and Play (UPnP)";
@@ -1409,7 +1362,6 @@ hupnp.right4="Allows applications to automatically setup port forwardings.";
 
 
 // ******************************************* VPN.asp *******************************************//
-
 var vpn = new Object();
 vpn.titl="VPN";
 vpn.h2="Virtual Private Network (VPN)";
@@ -1424,7 +1376,6 @@ hvpn.right1="You may choose to enable IPSec, PPTP and/or L2TP passthrough to all
 
 
 // ******************************************* Vlan.asp *******************************************//
-
 var vlan = new Object();
 vlan.titl="Virtual LAN";
 vlan.h2="Virtual Local Area Network (VLAN)";
@@ -1437,7 +1388,6 @@ vlan.trunk="Trunk";
 
 
 // ******************************************* WEP.asp *******************************************//
-
 var wep = new Object();
 wep.defkey="Default Transmit Key";
 wep.passphrase="Passphrase";
@@ -1445,7 +1395,6 @@ wep.passphrase="Passphrase";
 
 
 // ******************************************* WOL.asp *******************************************//
-
 var wol = new Object();
 wol.titl="WOL";
 wol.h2="Wake-On-LAN";
@@ -1473,7 +1422,6 @@ hwol.right6="IP Address is typically the broadcast address for the local network
 
 
 // ******************************************* WanMAC.asp *******************************************//
-
 var wanmac = new Object();
 wanmac.titl="MAC Address Clone";
 wanmac.h2="MAC Address Clone";
@@ -1517,7 +1465,6 @@ hwpa.right2="You may choose from Disable, WEP, WPA Personal, WPA Enterprise, or 
 
 
 // ******************************************* WL_FilterTable.asp *******************************************//
-
 var wl_filter = new Object();
 wl_filter.titl="MAC Address Filter List";
 wl_filter.h2="MAC Address Filter List";
@@ -1526,7 +1473,6 @@ wl_filter.h3="Enter MAC Address in this format&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:
 
 
 // ******************************************* WL_ActiveTable.asp *******************************************//
-
 var wl_active = new Object();
 wl_active.titl="Wireless Active Client MAC List";
 wl_active.h2="Wireless Client MAC List";
@@ -1537,7 +1483,6 @@ wl_active.inactive="Inactive PC";
 
 
 // ******************************************* Wireless_WDS.asp *******************************************//
-
 var wds = new Object();
 wds.titl="WDS";
 wds.h2="Wireless Distribution System";
@@ -1554,7 +1499,6 @@ wds.legend2="Extra Options";
 
 
 // ******************************************* Wireless_radauth.asp *******************************************//
-
 var radius = new Object();
 radius.titl="Radius";
 radius.h2="Remote Authentication Dial-In User Service";
@@ -1571,7 +1515,6 @@ radius.label8="Override Radius if server is unavailable";
 
 
 // ******************************************* Wireless_MAC.asp *******************************************//
-
 var wl_mac = new Object();
 wl_mac.titl="MAC Filter";
 wl_mac.h2="Wireless MAC Filter";
@@ -1584,7 +1527,6 @@ wl_mac.allow="Permit only PCs listed to access the wireless network";
 
 
 // ******************************************* Wireless_Basic.asp *******************************************//
-
 var wl_basic = new Object();
 wl_basic.titl="Wireless";
 wl_basic.h2="Wireless";
@@ -1648,7 +1590,6 @@ hwl_basic.right4="Adjusts the ack timing. 0 disables ack timing completely.";
 
 
 // ******************************************* Wireless_Advanced.asp *******************************************//
-
 var wl_adv = new Object();
 wl_adv.titl="Advanced Wireless Settings";
 wl_adv.h2="Advanced Wireless Settings";
@@ -1696,7 +1637,6 @@ hwl_basic.right6="Click any hour to enable or disable the radio signal (<em>gree
 
 
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//
-
 var fail = new Object();
 fail.mess1="The values you entered are invalid. Please try again.";
 fail.mess2="Upgrade failed.";
@@ -1704,7 +1644,6 @@ fail.mess2="Upgrade failed.";
 
 
 // ******************************************* Success*.asp / Reboot.asp  *******************************************//
-
 var success = new Object();
 success.saved="Settings saved.";
 success.restore="Settings restored.<br/>Unit is rebooting now. Please wait a moment...";
@@ -1724,7 +1663,6 @@ logout.message="You have successfully logged out.<br />Thank you for using DD-WR
 
 // *****************************************************		OLD PAGES 		************************************************************************//
 // **************************************************************** DHCPTable.asp **********************************************************************//
-
 var dhcp = new Object();
 dhcp.titl="DHCP Active IP Table";
 dhcp.h2="DHCP Active IP Table";
