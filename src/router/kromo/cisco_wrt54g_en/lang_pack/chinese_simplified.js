@@ -477,7 +477,6 @@ filterIP.ip_range="IP范围";
 filter.titl="访问限制";
 filter.h2="Internet访问";
 filter.legend="访问策略";
-filter.restore="恢复出厂默认设置";
 filter.pol="策略";
 filter.polname="策略名称";
 filter.pcs="PC";
