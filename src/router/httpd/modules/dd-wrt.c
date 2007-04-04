@@ -6929,7 +6929,7 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
   if (getifcount ("eth") == 1)
     return;
 #endif
-  websWrite (wp, "<h2>W<script type=\"text/javascript\">Capture(idx.portsetup)</script></h2>\n");
+  websWrite (wp, "<h2><script type=\"text/javascript\">Capture(idx.portsetup)</script></h2>\n");
   websWrite (wp, "<fieldset>\n");
   websWrite (wp,
 	     "<legend><script type=\"text/javascript\">Capture(idx.portsetup)</script></legend>\n");
