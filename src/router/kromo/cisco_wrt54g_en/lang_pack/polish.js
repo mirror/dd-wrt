@@ -362,7 +362,6 @@ filterIP.ip_range="Zakres IP";
 filter.titl="Kontrola Dostepu";
 filter.h2="Dostep do internetu";
 filter.legend="Reguly dostepu";
-filter.restore="Odtwarzaj fabryczne ustawienia";
 filter.pol="Regula";
 filter.polname="Nazwa reguly";
 filter.pcs="PC";

@@ -472,7 +472,6 @@ filterIP.ip_range="Faixa de IPs";
 filter.titl="Restrições de Acesso";
 filter.h2="Acesso à Internet";
 filter.legend="Políticas de Acesso";
-filter.restore="Restaurar Padrões de Fábrica";
 filter.pol="Políticas";
 filter.polname="Nome da Política";
 filter.pcs="PCs";
