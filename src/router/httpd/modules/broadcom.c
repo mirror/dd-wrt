@@ -2764,7 +2764,7 @@ struct gozila_action gozila_actions[] = {
   {"Networking", "del_vlan", "", 0, REFRESH, del_vlan},
   {"Networking", "del_bridge", "", 0, REFRESH, del_bridge},
   {"Networking", "del_bridgeif", "", 0, REFRESH, del_bridgeif},
-  {"Networking", "save_networking", "", 5, REFRESH, save_networking},
+  {"Networking", "save_networking", "", 5, RESTART, save_networking},
 #endif
   {"Wireless_Basic", "save", "", 5, RESTART, wireless_save},
 #ifdef HAVE_WIVIZ
