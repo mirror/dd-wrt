@@ -479,7 +479,6 @@ filterIP.ip_range="IP Bereich";
 filter.titl="Zugriffsbeschränkung";
 filter.h2="Internetzugriff";
 filter.legend="Zugriffsrichtlinie";
-filter.restore="Werkseinstellungen wiederherstellen";
 filter.pol="Richtlinie";
 filter.polname="Richtlinienname";
 filter.pcs="PCs";

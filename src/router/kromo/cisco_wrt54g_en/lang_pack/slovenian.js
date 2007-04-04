@@ -527,7 +527,6 @@ filterIP.ip_range="IP obseg";
 filter.titl="Omejitve dostopa";
 filter.h2="WAN dostop";
 filter.legend="Smernica dostopa";
-filter.restore="Obnovi privzete nastavitve";
 filter.pol="Smernica";
 filter.polname="Ime smernice";
 filter.pcs="PCji";
