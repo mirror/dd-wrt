@@ -1,5 +1,5 @@
 {wl_mac::<% show_wl_mac(); %>}
-{wl_ssid::<% nvram_get("wl0_ssid"); %>}
+{wl_ssid::<% getwirelessssid(); %>}
 {wl_channel::<% get_curchannel(); %>}
 {wl_radio::<% get_radio_state(); %>}
 {wl_xmit::<% get_txpower(); %>}

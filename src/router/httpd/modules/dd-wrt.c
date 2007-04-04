@@ -1778,6 +1778,40 @@ showOptions (webs_t wp, char *propname, char *names, char *select)
   websWrite (wp, "</select>\n");
 }
 
+#ifdef HAVE_MADWIFI
+void
+ej_show_wifiselect (webs_t wp, int argc, char_t ** argv)
+{
+  char *next;
+  char var[80];
+  int count = getifcount("wifi");
+  if (count<2)
+    return;
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(share.intrface)</script></div>\n");
+  websWrite (wp, "<select name=\"wifi_display\" onchange=\"refresh(this.form)\">\n");
+  int i;
+  for (i=0;i<count;i++)
+  {
+    sprintf(var,"ath%d",i);    
+    websWrite (wp,"<option value=\"%s\" %s >%s</option>\n</script>\n",
+	       var, nvram_match("wifi_display",var) ? "selected=\"selected\"" : "",
+	       var);
+    sprintf(var,"ath%d_vifs",i);
+    char *names = nvram_safe_get(var);
+    foreach (var, names, next)
+    {
+    websWrite (wp,"<option value=\"%s\" %s >%s</option>\n</script>\n",
+	       var, nvram_match("wifi_display",var) ? "selected=\"selected\"" : "",
+	       var);
+    }    
+  }
+  websWrite (wp, "</select>\n");
+  websWrite (wp, "</div>\n");
+	
+}
+#endif
+
 #ifdef HAVE_VLANTAGGING
 
 
@@ -4673,7 +4707,7 @@ extern double wifi_getrate (char *ifname);
 void
 ej_get_currate (webs_t wp, int argc, char_t ** argv)
 {
-  double rate = wifi_getrate ("ath0");
+  double rate = wifi_getrate (nvram_safe_get("wifi_display"));
   char scale;
   int divisor;
 
@@ -4695,14 +4729,16 @@ ej_get_currate (webs_t wp, int argc, char_t ** argv)
 	  divisor = KILO;
 	}
     }
-  if (nvram_match ("ath0_turbo", "1"))
+char mode[32];
+sprintf(mode,"%s_turbo",nvram_safe_get("wifi_display"));
+  if (nvram_match (mode, "1"))
     rate *= 2;
   if (rate > 0.0)
     {
       websWrite (wp, "%g %cb/s", rate / divisor, scale);
     }
   else
-    websWrite (wp, "%s", live_translate ("share.unknown"));
+    websWrite (wp, "%s", live_translate ("share.auto")); 
 
 }
 #endif
@@ -4802,7 +4838,8 @@ void
 ej_get_curchannel (webs_t wp, int argc, char_t ** argv)
 {
   char *dev = NULL;
-  int channel = wifi_getchannel ("ath0");
+  
+  int channel = wifi_getchannel (nvram_safe_get("wifi_display"));
   if (channel > 0 && channel < 1000)
     {
       websWrite (wp, "%d", channel);

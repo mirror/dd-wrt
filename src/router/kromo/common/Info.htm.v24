@@ -163,6 +163,12 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 
+function refresh(F)
+{
+F.submit();
+apply();
+}
+
 //]]>
 </script>
 	</head>
@@ -192,6 +198,11 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contentsInfo">
+				    <form name="Info" action="apply.cgi" method="<% get_http_method(); %>">
+							<input type="hidden" name="submit_button" value="Info" />
+							<input type="hidden" name="next_page" value="Info.htm" />
+                  					<input type="hidden" name="change_action" value="gozila_cgi" />
+							<input type="hidden" name="submit_type" value="refresh" />
 						<h2><% tran("info.h2"); %></h2>
 						<div class="col2l">
 							<fieldset>
@@ -249,7 +260,7 @@ addEvent(window, "unload", function() {
 							
 							<fieldset>
 								<legend><% tran("share.wireless"); %></legend>
-
+								<% show_wifiselect(); %>
 								<div class="setting">
 									<div class="label"><% tran("wl_basic.radio"); %></div>
 									<span id="wl_radio"><% get_radio_state(); %></span>&nbsp;
@@ -264,7 +275,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.ssid"); %></div>
-									<% nvram_get("wl0_ssid"); %>&nbsp;
+									<% getwirelessssid(); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.channel"); %></div>
@@ -453,6 +464,7 @@ addEvent(window, "unload", function() {
 							 //]]>
 							 </script>
 						</div>
+					    </form>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

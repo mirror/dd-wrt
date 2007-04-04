@@ -1996,6 +1996,11 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_RADLOCAL
   {"iradius_enable", "0", 0},
 #endif
+#ifdef HAVE_MADWIFI
+  {"wifi_display","ath0",0},
+#else
+  {"wifi_display","wl0",0},
+#endif
   {0, 0, 0}
 };
 
