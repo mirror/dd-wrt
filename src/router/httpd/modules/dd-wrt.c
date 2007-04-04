@@ -6623,7 +6623,7 @@ ej_ip_conntrack_table (webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp;
   int ip_count = 1;
-  char line[200];
+  char line[512];
   char protocol[5] = "";
   int timeout = 0;
   char srcip[16] = "";
