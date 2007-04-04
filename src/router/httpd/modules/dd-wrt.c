@@ -90,9 +90,9 @@ show_ipnetmask (webs_t wp, char *var)
 	     "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_2\" value=\"%d\" />.",
 	     var, get_single_ip (ipv, 2));
   websWrite (wp,
-	     "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_3\" value=\"%d\" />.",
+	     "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_3\" value=\"%d\" />",
 	     var, get_single_ip (ipv, 3));
-  websWrite (wp, "</div>\n");
+  websWrite (wp, "</div>\n<br />\n");
 
 }
 
