@@ -187,7 +187,7 @@ sbutton.wol="Wake Up";
 sbutton.add_wol="Add Host";
 sbutton.manual_wol="Manual Wake Up";
 sbutton.summary="Summary";
-sbutton.filterIP="Edit List of PCs";
+sbutton.filterIP="Edit List of clients";
 sbutton.filterMac="Edit MAC Filter List";
 sbutton.filterSer="Add/Edit Service";
 sbutton.reboot="Reboot Router";
@@ -506,11 +506,11 @@ hfactdef.right1="This will reset all settings back to factory defaults. All of y
 
 // ******************************************* FilterIPMAC.asp *******************************************//
 var filterIP = new Object();
-filterIP.titl="List of PCs";
-filterIP.h2="List of PCs";
-filterIP.h3="Enter MAC Address of the PCs in this format: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Enter the IP Address of the PCs";
-filterIP.h33="Enter the IP Range of the PCs";
+filterIP.titl="List of clients";
+filterIP.h2="List of clients";
+filterIP.h3="Enter MAC Address of the clients in this format: xx:xx:xx:xx:xx:xx";
+filterIP.h32="Enter the IP Address of the clients";
+filterIP.h33="Enter the IP Range of the clients";
 filterIP.ip_range="IP Range";
 
 
@@ -1477,8 +1477,8 @@ var wl_active = new Object();
 wl_active.titl="Wireless Active Client MAC List";
 wl_active.h2="Wireless Client MAC List";
 wl_active.h3="Enable MAC Filter";
-wl_active.active="Active PC";
-wl_active.inactive="Inactive PC";
+wl_active.active="Active clients";
+wl_active.inactive="Inactive clients";
 
 
 
@@ -1521,8 +1521,8 @@ wl_mac.h2="Wireless MAC Filter";
 wl_mac.legend="MAC Filter";
 wl_mac.label="Use Filter";
 wl_mac.label2="Filter Mode";
-wl_mac.deny="Prevent PCs listed from accessing the wireless network";
-wl_mac.allow="Permit only PCs listed to access the wireless network";
+wl_mac.deny="Prevent clients listed from accessing the wireless network";
+wl_mac.allow="Permit only clients listed to access the wireless network";
 
 
 
