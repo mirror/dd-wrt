@@ -5310,6 +5310,7 @@ struct ej_handler ej_handlers[] = {
   {"show_vlantagging", ej_show_vlantagging},
   {"show_bridgenames", ej_show_bridgenames},
   {"show_bridgeifnames", ej_show_bridgeifnames},
+  {"show_bridgetable", ej_show_bridgetable}, 
 #endif
 #ifdef HAVE_BONDING
   {"show_bondings", ej_show_bondings},

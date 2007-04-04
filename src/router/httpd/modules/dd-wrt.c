@@ -2349,6 +2349,54 @@ ej_show_bridgenames (webs_t wp, int argc, char_t ** argv)
   nvram_set ("bridges_count", var);
 }
 
+void
+ej_show_bridgetable (webs_t wp, int argc, char_t ** argv)
+{
+
+	FILE *f;
+	char buf[128];
+	char brname[32];
+	char brstp[8];
+	char brif[16];
+	int count = 0;
+
+	eval ("brctl", "show", ">", "/tmp/.brtable");
+
+	if ((f = fopen("/tmp/.brtable", "r")) != NULL)
+	 {
+
+		while (fgets(buf, sizeof(buf), f))
+		 {
+
+				if (count)  //skip line 0
+					{
+						strcpy (brname, "");
+						strcpy (brstp, "");
+						strcpy (brif, "");
+
+						if (strncmp (buf, "\t\t\t", 3) != 0)
+						{
+							if (count != 1)
+									websWrite (wp, "</td>\n</tr>\n");  //close
+							sscanf(buf, "%s %*s %s %s", brname, brstp, brif);
+							websWrite (wp, "<tr>\n <td>%s</td>\n <td>%s</td>\n <td>%s ", brname, brstp, brif);
+						}
+						else
+						{
+							sscanf(buf, "%s", brif);
+							websWrite (wp, "%s ", brif);
+						}
+					}
+			count++;
+		}
+
+	websWrite (wp, "</td>\n</tr>\n"); //close
+	fclose (f);
+	unlink ("/tmp/.brtable");
+	}
+return;
+}
+
 int
 del_bridgeif (webs_t wp)
 {
