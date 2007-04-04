@@ -478,7 +478,6 @@ filterIP.ip_range="IP Range";
 filter.titl="Toegang Beperking";
 filter.h2="Toegang Beperking";
 filter.legend="Toegangs Beleid";
-filter.restore="Herstel Fabricatie Instellingen";
 filter.pol="Beleid";
 filter.polname="Beleid Naam";
 filter.pcs="PCs";
