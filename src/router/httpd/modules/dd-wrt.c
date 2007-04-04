@@ -2062,6 +2062,7 @@ ej_show_bondings (webs_t wp, int argc, char_t ** argv)
   memset (buffer, 0, 256);
   memset (bondnames, 0, 256);
   memset (bufferif, 0, 512);
+  websWrite (wp, "<h2>Bonding</h2>\n");  
   websWrite (wp, "<fieldset>\n");
   websWrite (wp, "<legend>Bonding</legend>\n");
   websWrite (wp, "<div class=\"setting\">\n");
@@ -2152,7 +2153,7 @@ ej_show_bondings (webs_t wp, int argc, char_t ** argv)
   nvram_set ("bonding_count", var);
   websWrite (wp,
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"bond_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
-  websWrite (wp, "</fieldset> <br />\n");
+  websWrite (wp, "</fieldset><br />\n");
 }
 #endif
 void
@@ -6928,6 +6929,7 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
   if (getifcount ("eth") == 1)
     return;
 #endif
+  websWrite (wp, "<h2>W<script type=\"text/javascript\">Capture(idx.portsetup)</script></h2>\n");
   websWrite (wp, "<fieldset>\n");
   websWrite (wp,
 	     "<legend><script type=\"text/javascript\">Capture(idx.portsetup)</script></legend>\n");
