@@ -167,6 +167,7 @@ extern void ej_show_paypal (webs_t wp, int argc, char_t ** argv);
 extern void ej_show_vlantagging (webs_t wp, int argc, char_t ** argv);
 extern void ej_show_bondings (webs_t wp, int argc, char_t ** argv);
 extern void ej_show_bridgenames (webs_t wp, int argc, char_t ** argv);
+extern void ej_show_bridgetable (webs_t wp, int argc, char_t ** argv);
 extern void ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv);
 extern void ej_show_routing (webs_t wp, int argc, char_t ** argv);
 extern void ej_show_connectiontype (webs_t wp, int argc, char_t ** argv);
