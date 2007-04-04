@@ -100,10 +100,11 @@ function init() {
 							   <legend>Current Bridging Table</legend>
 							   	<table class="table center" cellspacing="5" id="Bridging_table" summary="current bridging table">
 								<tr>
-								<th width="18%">Bridge Name</script></th>
-								<th width="18%">STP enabled</script></th>
-								<th width="64%">Interfaces</script></th>
+								<th width="15%">Bridge Name</script></th>
+								<th width="15%">STP enabled</script></th>
+								<th width="70%">Interfaces</script></th>
 								</tr>
+								<% show_bridgetable(); %>
 								</table>
 							</fieldset>
 							<br />
