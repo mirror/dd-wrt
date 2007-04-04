@@ -476,7 +476,6 @@ filterIP.ip_range="IP範圍";
 filter.titl="訪問限制";
 filter.h2="Internet訪問";
 filter.legend="訪問策略";
-filter.restore="恢復出廠默認設置";
 filter.pol="策略";
 filter.polname="策略名稱";
 filter.pcs="PC";
