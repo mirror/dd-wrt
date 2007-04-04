@@ -2678,7 +2678,16 @@ static int execute (webs_t wp);
 }
 
 #endif
-
+static void save_wifi (webs_t wp)
+{
+fprintf(stderr,"save wifi\n");
+char *var = websGetVar(wp,"wifi_display",NULL);
+if (var)
+    {
+    fprintf(stderr,"save wifi as\n",var);
+    nvram_set("wifi_display",var);
+    }
+}
 enum
 {
   NOTHING,
@@ -2699,6 +2708,8 @@ struct gozila_action gozila_actions[] = {
 #endif
   {"WanMAC", "clone_mac", "", 1, REFRESH, clone_mac},	// for cisco style
   {"DHCPTable", "delete", "", 2, REFRESH, delete_leases},
+  {"Info","refresh","",0,REFRESH,save_wifi},
+  {"Status_Wireless","refresh","",0,REFRESH,save_wifi},
   {"Status", "release", "dhcp_release", 0, SYS_RESTART, dhcp_release},
   {"Status", "renew", "", 3, REFRESH, dhcp_renew},
   {"Status", "Connect", "start_pppoe", 1, RESTART, NULL},
@@ -2837,7 +2848,7 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   nvram_set ("action_service", "");
   nvram_set ("action_service_arg1", "");
 
-  cprintf ("submit_button=[%s] submit_type=[%s]\n", submit_button,
+  fprintf(stderr ,"submit_button=[%s] submit_type=[%s]\n", submit_button,
 	   submit_type);
   act = handle_gozila_action (submit_button, submit_type);
 
@@ -4586,7 +4597,13 @@ ej_get_txpower (webs_t wp, int argc, char_t ** argv)
 #ifndef HAVE_MADWIFI
   websWrite (wp, "%s mW", nvram_safe_get ("txpwr"));
 #else
-  websWrite (wp, "%s dBm", nvram_safe_get ("ath0_txpwrdbm"));
+  char mode[32];
+  char m[32];
+  strncpy(m,nvram_safe_get("wifi_display"),4);
+  m[4]=0;
+  sprintf(mode,"%s_txpwrdbm",m);
+
+  websWrite (wp, "%s dBm", nvram_safe_get (mode));
 #endif
 }
 
@@ -4594,20 +4611,8 @@ ej_get_txpower (webs_t wp, int argc, char_t ** argv)
 static void
 ej_getencryptionstatus (webs_t wp, int argc, char_t ** argv)
 {
-  char *next;
-  char var[80];
-#ifndef HAVE_MADWIFI
-  char *mode = "wl0";
-  char *vifs = "wl0_vifs";
-#else
-  char *mode = "ath0";
-  char *vifs = "wl0_vifs";
-#endif
+  char *mode = nvram_safe_get("wifi_display");
   showencstatus (wp, mode);
-  foreach (var, nvram_safe_get (vifs), next)
-  {
-    showencstatus (wp, var);
-  }
 }
 static void
 ej_getwirelessstatus (webs_t wp, int argc, char_t ** argv)
@@ -4615,7 +4620,12 @@ ej_getwirelessstatus (webs_t wp, int argc, char_t ** argv)
 #ifndef HAVE_MADWIFI
   char *mode = "wl0_mode";
 #else
-  char *mode = "ath0_mode";
+  char mode[32];
+  char m[32];
+  strncpy(m,nvram_safe_get("wifi_display"),4);
+  m[4]=0;
+  sprintf(mode,"%s_mode",m);
+
 #endif
   websWrite (wp, "<script type=\"text/javascript\">");
   if (nvram_match (mode, "wet") || nvram_match (mode, "sta")
@@ -4627,14 +4637,31 @@ ej_getwirelessstatus (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "</script>");
 }
 #endif
-
+static void
+ej_getwirelessssid (webs_t wp, int argc, char_t ** argv)
+{
+#ifndef HAVE_MADWIFI
+  char *mode = "wl0_ssid";
+#else
+  char mode[32];
+  char m[32];
+  strncpy(m,nvram_safe_get("wifi_display"),4);
+  m[4]=0;
+  sprintf(mode,"%s_ssid",m);
+#endif
+websWrite(wp,"%s",nvram_safe_get(mode));
+}
 static void
 ej_getwirelessmode (webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
   char *mode = "wl0_mode";
 #else
-  char *mode = "ath0_mode";
+  char mode[32];
+  char m[32];
+  strncpy(m,nvram_safe_get("wifi_display"),4);
+  m[4]=0;
+  sprintf(mode,"%s_mode",m);
 #endif
   websWrite (wp, "<script type=\"text/javascript\">");
   if (nvram_match (mode, "wet"))
@@ -4666,7 +4693,11 @@ ej_getwirelessnetmode (webs_t wp, int argc, char_t ** argv)
   char *mode = "wl0_net_mode";
 #endif
 #else
-  char *mode = "ath0_net_mode";
+  char mode[32];
+  char m[32];
+  strncpy(m,nvram_safe_get("wifi_display"),4);
+  m[4]=0;
+  sprintf(mode,"%s_net_mode",m);
 #endif
   websWrite (wp, "<script type=\"text/javascript\">");
   if (nvram_match (mode, "disabled"))
@@ -5273,6 +5304,7 @@ struct ej_handler ej_handlers[] = {
   {"getrebootflags", ej_getrebootflags},
   {"getwirelessmode", ej_getwirelessmode},
   {"getwirelessnetmode", ej_getwirelessnetmode},
+  {"getwirelessssid", ej_getwirelessssid},
   {"get_radio_state", ej_get_radio_state},
   {"dumparptable", ej_dumparptable},
 #ifdef HAVE_WIVIZ
@@ -5314,6 +5346,9 @@ struct ej_handler ej_handlers[] = {
 #endif
 #ifdef HAVE_BONDING
   {"show_bondings", ej_show_bondings},
+#endif
+#ifdef HAVE_MADWIFI
+  {"show_wifiselect",ej_show_wifiselect},
 #endif
   {NULL, NULL}
 };

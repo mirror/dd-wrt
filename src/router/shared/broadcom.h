@@ -161,6 +161,7 @@ extern void ej_show_wan_to_switch (webs_t wp, int argc, char_t ** argv);	/* Adde
 
 /* for status */
 extern int nvram_selmatch (webs_t wp, char *name, char *match);
+extern void ej_show_wifiselect (webs_t wp, int argc, char_t ** argv);
 extern void ej_portsetup (webs_t wp, int argc, char_t ** argv);
 extern void ej_bandwidth (webs_t wp, int argc, char_t ** argv);
 extern void ej_show_paypal (webs_t wp, int argc, char_t ** argv);
