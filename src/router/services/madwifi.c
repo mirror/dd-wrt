@@ -1447,7 +1447,6 @@ configure_single (int count)
 	eval ("iwpriv", var, "ap_bridge", "0");
       if (!strcmp (m, "wdssta") || !strcmp (m, "wdsap"))
 	eval ("iwpriv", var, "wds", "1");
-      setMacFilter (var);
       cnt++;
     }
 
@@ -1532,7 +1531,6 @@ configure_single (int count)
   sprintf (var, "%ddBm", newpower);
   eval ("iwconfig", dev, "txpower", var);
 
-  setMacFilter (dev);
   cprintf ("done()\n");
 
   cprintf ("setup encryption");
@@ -1632,9 +1630,9 @@ configure_single (int count)
 	setupHostAP (var, 0);
       else
 	setupSupplicant (var);
-
+      setMacFilter (var);
     }
-
+  setMacFilter (dev);
 
 }
 
