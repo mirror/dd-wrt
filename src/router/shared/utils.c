@@ -21,7 +21,6 @@
 #include <resolv.h>
 
 
-#ifndef TESTUTIL
 
 #include <utils.h>
 #include <bcmnvram.h>
@@ -2561,7 +2560,7 @@ route_del (char *name, int metric, char *dst, char *gateway, char *genmask)
 {
   return route_manip (SIOCDELRT, name, metric, dst, gateway, genmask);
 }
-#endif
+//#endif
 
 
 #ifdef HAVE_MADWIFI
@@ -3144,3 +3143,4 @@ lcdmessaged (char *dual, char *message)
 
 
 #endif
+

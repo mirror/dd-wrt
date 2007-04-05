@@ -111,65 +111,6 @@ err:
   return errno;
 }
 
-static int
-route_manip (int cmd, char *name, int metric, char *dst, char *gateway,
-	     char *genmask)
-{
-  int s;
-  struct rtentry rt;
-
-  cprintf
-    ("route(): cmd=[%s] name=[%s] ipaddr=[%s] netmask=[%s] gateway=[%s] metric=[%d]\n",
-     cmd == SIOCADDRT ? "ADD" : "DEL", name, dst, genmask, gateway, metric);
-
-  /* Open a raw socket to the kernel */
-  if ((s = socket (AF_INET, SOCK_DGRAM, 0)) < 0)
-    goto err;
-
-  /* Fill in rtentry */
-  memset (&rt, 0, sizeof (rt));
-  if (dst)
-    inet_aton (dst, &sin_addr (&rt.rt_dst));
-  if (gateway)
-    inet_aton (gateway, &sin_addr (&rt.rt_gateway));
-  if (genmask)
-    inet_aton (genmask, &sin_addr (&rt.rt_genmask));
-  rt.rt_metric = metric;
-  rt.rt_flags = RTF_UP;
-  if (sin_addr (&rt.rt_gateway).s_addr)
-    rt.rt_flags |= RTF_GATEWAY;
-  if (sin_addr (&rt.rt_genmask).s_addr == INADDR_BROADCAST)
-    rt.rt_flags |= RTF_HOST;
-  rt.rt_dev = name;
-
-  /* Force address family to AF_INET */
-  rt.rt_dst.sa_family = AF_INET;
-  rt.rt_gateway.sa_family = AF_INET;
-  rt.rt_genmask.sa_family = AF_INET;
-
-  if (ioctl (s, cmd, &rt) < 0)
-    goto err;
-
-  close (s);
-  return 0;
-
-err:
-  close (s);
-  perror (name);
-  return errno;
-}
-
-int
-route_add (char *name, int metric, char *dst, char *gateway, char *genmask)
-{
-  return route_manip (SIOCADDRT, name, metric, dst, gateway, genmask);
-}
-
-int
-route_del (char *name, int metric, char *dst, char *gateway, char *genmask)
-{
-  return route_manip (SIOCDELRT, name, metric, dst, gateway, genmask);
-}
 
 
 #define MAX_VLAN_GROUPS	16

@@ -210,14 +210,13 @@ validate_static_route (webs_t wp, char *value, struct variable *v)
 
   if (!strcmp (ipaddr, "0.0.0.0") && !strcmp (netmask, "0.0.0.0"))
     {
-      fprintf(stderr,"write nvram\n");
       tmp = 1;
       goto write_nvram;
     }
   if ((!strcmp (ipaddr, "0.0.0.0") || !strcmp (ipaddr, "")) &&
-      (!strcmp (netmask, "0.0.0.0") || !strcmp (netmask, "")))
+      (!strcmp (netmask, "0.0.0.0") || !strcmp (netmask, "")) &&
+      (!strcmp (gateway, "0.0.0.0") || !strcmp (gateway, "")))
     {
-      fprintf(stderr,"delete nvram\n");
       tmp = 0;
       goto write_nvram;
     }
@@ -251,19 +250,6 @@ validate_static_route (webs_t wp, char *value, struct variable *v)
 
       return;
     }
-  if (!strcmp (ifname, "lan"))
-    {
-      ifname = nvram_safe_get ("lan_ifname");
-      //if(!strcmp(gateway,"0.0.0.0") || !strcmp(gateway,""))
-      static_route_variables[2].argv = NULL;
-      //else
-      //      static_route_variables[2].argv = ARGV("lan_ipaddr", "lan_netmask");
-    }
-  else
-    {
-      ifname = get_wan_face ();
-      static_route_variables[2].argv = NULL;
-    }
   if (!valid_ipaddr (wp, ipaddr, &static_route_variables[0]) ||
       !valid_netmask (wp, netmask, &static_route_variables[1]) ||
       !valid_ipaddr (wp, gateway, &static_route_variables[2]))
@@ -278,6 +264,19 @@ validate_static_route (webs_t wp, char *value, struct variable *v)
   /* save old value in nvram */
 
 write_nvram:
+  if (!strcmp (ifname, "lan"))
+    {
+      ifname = nvram_safe_get ("lan_ifname");
+      //if(!strcmp(gateway,"0.0.0.0") || !strcmp(gateway,""))
+      static_route_variables[2].argv = NULL;
+      //else
+      //      static_route_variables[2].argv = ARGV("lan_ipaddr", "lan_netmask");
+    }
+  else
+    {
+      ifname = get_wan_face ();
+      static_route_variables[2].argv = NULL;
+    }
 
   for (i = 0; i < STATIC_ROUTE_PAGE; i++)
     {
@@ -299,6 +298,12 @@ write_nvram:
 
   if (!tmp)
     {
+      char met[16];
+      char ifn[16];
+      sscanf(old[atoi(page)],"%s:%s:%s:%s:%s",ipaddr,netmask,gateway,met,ifn);
+      fprintf(stderr,"deleting %s %s %s %s %s\n",ipaddr,netmask,gateway,met,ifn);
+      route_del (ifn, atoi (met) + 1, ipaddr, gateway, netmask);
+      
       snprintf (old[atoi (page)], sizeof (old[0]), "%s", "");
       snprintf (old_name[atoi (page)], sizeof (old_name[0]), "%s", "");
     }
@@ -391,6 +396,14 @@ delete_static_route (webs_t wp)
   {
     if (i == atoi (page))
       {
+/*      char ipaddr[20];
+      char netmask[20];
+      char gateway[20];
+      char met[16];
+      char ifn[16];
+      sscanf(word_name,"%s:%s:%s:%s:%s",ipaddr,netmask,gateway,met,ifn);
+      fprintf(stderr,"deleting2 %s %s %s %s %s\n",ipaddr,netmask,gateway,met,ifn);
+      route_del (ifn, atoi (met) + 1, ipaddr, gateway, netmask);*/
 	nvram_set ("action_service_arg1", word);
 	i++;
 	continue;
