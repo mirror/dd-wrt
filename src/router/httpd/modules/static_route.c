@@ -206,10 +206,18 @@ validate_static_route (webs_t wp, char *value, struct variable *v)
   if (!page || !ipaddr || !netmask || !gateway || !metric || !ifname)
     return;
 
-  if ((!strcmp (ipaddr, "0.0.0.0") || !strcmp (ipaddr, "")) &&
-      (!strcmp (netmask, "0.0.0.0") || !strcmp (netmask, "")) &&
-      (!strcmp (gateway, "0.0.0.0") || !strcmp (gateway, "")))
+// Allow Defaultroute here
+
+  if (!strcmp (ipaddr, "0.0.0.0") && !strcmp (netmask, "0.0.0.0"))
     {
+      fprintf(stderr,"write nvram\n");
+      tmp = 1;
+      goto write_nvram;
+    }
+  if ((!strcmp (ipaddr, "0.0.0.0") || !strcmp (ipaddr, "")) &&
+      (!strcmp (netmask, "0.0.0.0") || !strcmp (netmask, "")))
+    {
+      fprintf(stderr,"delete nvram\n");
       tmp = 0;
       goto write_nvram;
     }
