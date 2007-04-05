@@ -354,52 +354,76 @@ do_client_check (void)
 		 "<span style=\"background-color: rgb(135, 255, 51);\">Verbunden</span>");
       eval ("/sbin/check.sh");
 #endif
-    }	  
-    fclose (fp);
+    }
+  fclose (fp);
   return 0;
 }
 #endif
 
 #ifdef HAVE_MADWIFI
-static char assoclist[24*1024];
-
-static void do_madwifi_check(void)
+static char assoclist[24 * 1024];
+static int lastchans[256];
+static void
+do_madwifi_check (void)
 {
   int c = getdevicecount ();
   char dev[32];
-int i,s;
-for (i=0;i<c;i++)
-{
-  sprintf(dev,"ath%d",i);
-  for (s = 1; s <= 10; s++)
+  int i, s;
+  for (i = 0; i < c; i++)
     {
-      char wdsvarname[32] = { 0 };
-      char wdsdevname[32] = { 0 };
-      char wdsmacname[32] = { 0 };
-      char *wdsdev;
-      char *hwaddr;
-
-      sprintf (wdsvarname, "%s_wds%d_enable", dev, s);
-      sprintf (wdsdevname, "%s_wds%d_if", dev, s);
-      sprintf (wdsmacname, "%s_wds%d_hwaddr", dev, s);
-      wdsdev = nvram_safe_get (wdsdevname);
-      if (strlen (wdsdev) == 0)
-	continue;
-      if (nvram_match (wdsvarname, "0"))
-	continue;
-      hwaddr = nvram_get (wdsmacname);
-      if (hwaddr != NULL)
+      sprintf (dev, "ath%d", i);
+      for (s = 1; s <= 10; s++)
 	{
-	int count = getassoclist(wdsdevname,&assoclist[0]);
-	if (count<1)
+	  char wdsvarname[32] = { 0 };
+	  char wdsdevname[32] = { 0 };
+	  char wdsmacname[32] = { 0 };
+	  char *wdsdev;
+	  char *hwaddr;
+
+	  sprintf (wdsvarname, "%s_wds%d_enable", dev, s);
+	  sprintf (wdsdevname, "%s_wds%d_if", dev, s);
+	  sprintf (wdsmacname, "%s_wds%d_hwaddr", dev, s);
+	  wdsdev = nvram_safe_get (wdsdevname);
+	  if (strlen (wdsdev) == 0)
+	    continue;
+	  if (nvram_match (wdsvarname, "0"))
+	    continue;
+	  hwaddr = nvram_get (wdsmacname);
+	  if (hwaddr != NULL)
 	    {
-	    eval("ifconfig",wdsdevname,"down");
-	    sleep(1);
-	    eval("ifconfig",wdsdevname,"up");
+	      int count = getassoclist (wdsdevname, &assoclist[0]);
+	      if (count < 1)
+		{
+		  eval ("ifconfig", wdsdevname, "down");
+		  sleep (1);
+		  eval ("ifconfig", wdsdevname, "up");
+		}
 	    }
 	}
+      char mode[32];
+      sprintf (mode, "%s_mode", dev);
+      if (nvram_match (mode, "sta") || nvram_match (mode, "wdssta"))
+	{
+	  int chan = wifi_getchannel (dev);
+	  if (lastchans[i] == 0)
+	    lastchans[i] = chan;
+	  else
+	    {
+	      if (chan == lastchans[i])
+		{
+		  int count = getassoclist (dev, &assoclist[0]);
+		  if (count == 0)
+		    {
+		      eval ("ifconfig", dev, "down");
+		      sleep (1);
+		      eval ("ifconfig", dev, "up");
+
+		    }
+		}
+	    }
+	}
+
     }
-}
 
 }
 #endif
@@ -417,7 +441,7 @@ do_wlan_check (void)
     do_ap_check ();
 #else
 
-   do_madwifi_check();
+  do_madwifi_check ();
 #endif
 
 
@@ -445,6 +469,9 @@ wland_main (int argc, char **argv)
     }
 
   /* Most of time it goes to sleep */
+#ifdef HAVE_MADWIFI
+  memset (lastchans, 0, sizeof (lastchans));
+#endif
   while (1)
     {
       do_wlan_check ();
