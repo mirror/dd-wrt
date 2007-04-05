@@ -1,5 +1,5 @@
 #CC              = gcc
-CFLAGS          ?= -g -W -Wall -O3
+CFLAGS          = -fomit-frame-pointer -O3
 OPTFLAGS        = -D_FILE_OFFSET_BITS=64
 
 iCC             = /opt/intel/cc/9.0/bin/icc
@@ -15,7 +15,7 @@ mandir          = $(prefix)/man/man1
 datadir         = $(prefix)/share
 docdir          = $(datadir)/doc/aircrack-ng
 
-BINFILES        = aircrack-ng airdecap-ng packetforge-ng ivstools kstats
+BINFILES        = aircrack-ng airdecap-ng packetforge-ng ivstools kstats aircrack-ptw attacksim
 SBINFILES       = aireplay-ng airodump-ng
 SCRIPTS         = airmon-ng
 TESTFILES       = makeivs
@@ -24,7 +24,7 @@ DOCFILES        = ChangeLog INSTALL README LICENSE AUTHORS VERSION
 
 default:all
 
-all: aircrack-ng airoscan-ng airdecap-ng packetforge-ng aireplay-ng airodump-ng ivstools kstats makeivs
+all: aircrack-ng airoscan-ng airdecap-ng packetforge-ng aireplay-ng airodump-ng ivstools kstats makeivs aircrack-ptw attacksim
 
 aircrack-ng-opt: src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c
 	$(iCC) $(iCFLAGS) $(iOPTFLAGS) src/aircrack-ng.c src/crypto.c src/sha1-mmx.S src/common.c -o aircrack-ng-opt -lpthread
@@ -65,6 +65,13 @@ kstats: src/kstats.c
 
 makeivs: test/makeivs.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) test/makeivs.c -o makeivs
+
+aircrack-ptw: src/aircrack-ptw.c src/aircrack-ptw-lib.c src/aircrack-ptw-lib.h
+	$(CC) -o aircrack-ptw -Wall -fomit-frame-pointer -O3 -I$(TOP)/libpcap_noring -L$(TOP)/libpcap_noring src/aircrack-ptw.c src/aircrack-ptw-lib.c  $(TOP)/libpcap_noring/libpcap.a
+
+attacksim: src/attacksim.c src/aircrack-ptw-lib.c src/aircrack-ptw-lib.h
+	$(CC) -o attacksim -Wall -fomit-frame-pointer -O3 -I$(TOP)/libpcap_noring -L$(TOP)/libpcap_noring src/attacksim.c src/aircrack-ptw-lib.c $(TOP)/libpcap_noring/libpcap.a
+
 
 strip:
 	strip $(BINFILES) $(SBINFILES) $(TESTFILES)
