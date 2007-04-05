@@ -67,6 +67,9 @@ del_routes (char *route)
     metric = strsep (&ifname, ":");
     if (!metric || !ifname)
       continue;
+      
+    if (!strcmp(ipaddr,"0.0.0.0"))
+	eval("route","del","default","gw",gateway);
 
     route_del (ifname, atoi (metric) + 1, ipaddr, gateway, netmask);
   }

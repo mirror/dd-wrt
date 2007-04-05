@@ -55,6 +55,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"router_style", "buffalo", 0},
 #elif HAVE_3COM
   {"router_style", "3com", 0},
+#elif HAVE_MAKSAT
+  {"router_style", "maksat", 0},
 #else
   {"router_style", "elegant", 0},
 #endif

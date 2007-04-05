@@ -82,17 +82,37 @@ search_process (char *name, int count)
       return 1;
     }
 }
-
+void checkupgrade(void)
+{
+#ifndef HAVE_X86
+FILE *in=fopen("/tmp/firmware.bin","rb");
+if (in!=NULL)
+    {
+    fclose(in);
+    eval("rm","/tmp/cron.d/check_ps"); // deleting cron file to prevent double call of this
+    fprintf(stderr,"found firmware upgrade, flashing now, but we will wait for another 30 seconds\n");
+    sleep(30);
+#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2)
+    eval("write","/tmp/firmware.bin","rootfs");
+#else
+    eval("write","/tmp/firmware.bin","linux");
+#endif
+    fprintf(stderr,"done. rebooting now\n");
+    eval("kill","-9","1");
+    }
+#endif
+}
 int
 do_mon (void)
 {
   struct mon *v;
+  checkupgrade();
   void *handle = load_service (NULL);
   if (!handle)
     return 1;
   char service[64];
   void (*fptr) (void);
-
+  
   for (v = mons; v < &mons[sizeof (mons) / sizeof (*v)]; v++)
     {
       if (v->name == NULL)
