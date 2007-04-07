@@ -168,9 +168,10 @@ ifeq ($(CONFIG_34TELECOM),y)
 else
 
 ifeq ($(CONFIG_PWC),y)
-	cp ../windows_js/javascripts/window.js $(INSTALLDIR)/www/js
-	cp ../windows_js/javascripts/effects.js $(INSTALLDIR)/www/js
 	cp ../windows_js/javascripts/prototype.js $(INSTALLDIR)/www/js
+	cp ../windows_js/javascripts/effects.js $(INSTALLDIR)/www/js
+	cp ../windows_js/javascripts/window.js $(INSTALLDIR)/www/js
+	cp ../windows_js/javascripts/window.js $(INSTALLDIR)/www/js
 	mkdir -p $(INSTALLDIR)/www/style/pwc
 	mkdir -p $(INSTALLDIR)/www/style/pwc/default
 	cp ../windows_js/themes/default/* $(INSTALLDIR)/www/style/pwc/default
