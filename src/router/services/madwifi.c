@@ -1549,6 +1549,7 @@ configure_single (int count)
 	{
 	  ifconfig (dev, IFUP, NULL, NULL);
 	  br_add_interface (getBridge (dev), dev);
+	  eval ("ifconfig", dev, "0.0.0.0", "up");
 	}
       else
 	{
@@ -1559,7 +1560,6 @@ configure_single (int count)
 	  ifconfig (dev, IFUP, nvram_safe_get (ip), nvram_safe_get (mask));
 	}
     }
-  eval ("ifconfig", dev, "0.0.0.0", "up");
 
 // vif netconfig
   vifs = nvram_safe_get (wifivifs);
@@ -1577,6 +1577,7 @@ configure_single (int count)
 	    {
 	      ifconfig (var, IFUP, NULL, NULL);
 	      br_add_interface (getBridge (var), var);
+    	      eval ("ifconfig", var, "0.0.0.0", "up");
 	    }
 	  else
 	    {
@@ -1588,7 +1589,6 @@ configure_single (int count)
 			nvram_safe_get (mask));
 	    }
 	}
-      eval ("ifconfig", var, "0.0.0.0", "up");
     }
 
   for (s = 1; s <= 10; s++)
