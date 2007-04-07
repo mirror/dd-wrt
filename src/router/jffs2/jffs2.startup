@@ -10,13 +10,12 @@ if [ "$(nvram get clean_jffs2)" = "1" ]; then
     nvram set clean_jffs2=0
     nvram set sys_clean_jffs2=1
     nvram set need_commit=1
-    nvram set need_reboot=1
 fi
 if [ "$(nvram get enable_jffs2)" = "1" ]; then
     if [ "$(nvram get sys_enable_jffs2)" = "0" ]; then
     nvram set sys_enable_jffs2=1
     nvram set need_commit=1
-    nvram set need_reboot=1
+    startservice jffs2
     fi
 fi
 
@@ -26,7 +25,7 @@ if [ "$(nvram get enable_jffs2)" = "0" ]; then
 	    if [ "$(nvram get rstats_path)" = "/jffs/" ]; then
 	    	nvram set rstats_path=""		#force rstats files to the temp memory
 	    fi
+	    stopservice jffs2
 	    nvram set need_commit=1
-	    nvram set need_reboot=1
     fi
 fi
