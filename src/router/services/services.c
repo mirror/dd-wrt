@@ -4187,9 +4187,124 @@ getbridgeprio_main (int argc, char *argv[])
   if (argc < 2)
     {
       fprintf (stderr, "syntax: getbridgeprio [ifname]\n");
-      return -1;
+      return -1;}
     }
   char *bridge = getBridgePrio (argv[1]);
   fprintf (stdout, "%s\n", bridge);
   return 0;
 }
+
+void stop_jffs2(void)
+{
+eval("umount","/jffs");
+eval("rmmod","jffs2");
+}
+void start_jffs2(void)
+{
+#ifndef HAVE_RB500
+#ifndef HAVE_X86
+#ifdef HAVE_REGISTER
+  char *rwpart = "mtd5";
+#else
+  char *rwpart = "mtd4";
+#endif
+  int itworked = 0;
+  if (nvram_match ("sys_enable_jffs2", "1"))
+    {
+      if (nvram_match ("sys_clean_jffs2", "1"))
+	{
+	  nvram_set ("sys_clean_jffs2", "0");
+	  nvram_commit ();
+	  itworked = mtd_erase (rwpart);
+	  eval ("insmod", "crc32");
+	  eval ("insmod", "jffs2");
+
+#ifdef HAVE_REGISTER
+	  itworked +=
+	    mount ("/dev/mtdblock/5", "/jffs", "jffs2", MS_MGC_VAL, NULL);
+#else
+	  itworked +=
+	    mount ("/dev/mtdblock/4", "/jffs", "jffs2", MS_MGC_VAL, NULL);
+#endif
+	  if (itworked)
+	    {
+	      nvram_set ("jffs_mounted", "0");
+	    }
+	  else
+	    {
+	      nvram_set ("jffs_mounted", "1");
+	    }
+
+	}
+      else
+	{
+	  itworked = mtd_unlock (rwpart);
+	  eval ("insmod", "crc32");
+	  eval ("insmod", "jffs2");
+#ifdef HAVE_REGISTER
+	  itworked +=
+	    mount ("/dev/mtdblock/5", "/jffs", "jffs2", MS_MGC_VAL, NULL);
+#else
+	  itworked +=
+	    mount ("/dev/mtdblock/4", "/jffs", "jffs2", MS_MGC_VAL, NULL);
+#endif
+	  if (itworked)
+	    {
+	      nvram_set ("jffs_mounted", "0");
+	    }
+	  else
+	    {
+	      nvram_set ("jffs_mounted", "1");
+	    }
+
+	}
+    }
+
+#endif
+#endif
+}
+
+
+#ifdef HAVE_MMC
+void start_mmc(void)
+{
+  if (nvram_match ("mmc_enable", "1"))
+    {
+    int res = eval("insmod","mmc_wrt1");
+    if (res)
+	{
+	eval("rmmod","mmc_wrt1");
+        res = eval("insmod","mmc_wrt2");
+	}
+    if (res)
+        {
+	eval("rmmod","mmc_wrt2");
+        res = eval("insmod","mmc_buf1");
+	}
+    if (res)
+        {
+	eval("rmmod","mmc_buf1");
+        res = eval("insmod","mmc_buf2");
+	}
+    if (res)
+        {
+	eval("rmmod","mmc_buf2");
+	}    
+    
+      if (!res)
+	{
+	  //device detected
+	  eval ("insmod", "ext2");
+	  if (mount
+	      ("/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL, NULL))
+	    {
+	      //device not formated
+	      eval ("/sbin/mke2fs", "-F", "-b", "1024",
+		    "/dev/mmc/disc0/part1");
+	      mount ("/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL,
+		     NULL);
+	    }
+	}
+    }
+}
+#endif
