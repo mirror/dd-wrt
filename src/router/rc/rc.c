@@ -249,7 +249,9 @@ main_loop (void)
 
   set_ip_forward ('1');
   system ("/etc/preinit");	//sets default values for ip_conntrack
+#ifdef HAVE_JFFS2
   start_service("jffs2");
+#endif
 #ifdef HAVE_MMC
   start_service("mmc");
 #endif
