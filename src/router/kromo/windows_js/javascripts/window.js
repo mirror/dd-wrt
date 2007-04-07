@@ -1,4 +1,4 @@
-// Copyright (c) 2006 SÃ©bastien Gruhier (http://xilinus.com, http://itseb.com)
+// Copyright (c) 2006 Sébastien Gruhier (http://xilinus.com, http://itseb.com)
 // 
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
