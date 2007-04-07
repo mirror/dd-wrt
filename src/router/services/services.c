@@ -4195,7 +4195,7 @@ getbridgeprio_main (int argc, char *argv[])
   fprintf (stdout, "%s\n", bridge);
   return 0;
 }
-
+#ifdef HAVE_JFFS2
 void stop_jffs2(void)
 {
 eval("umount","/jffs");
@@ -4203,8 +4203,6 @@ eval("rmmod","jffs2");
 }
 void start_jffs2(void)
 {
-#ifndef HAVE_RB500
-#ifndef HAVE_X86
 #ifdef HAVE_REGISTER
   char *rwpart = "mtd5";
 #else
@@ -4262,10 +4260,8 @@ void start_jffs2(void)
 	}
     }
 
-#endif
-#endif
 }
-
+#endif
 
 #ifdef HAVE_MMC
 void start_mmc(void)
