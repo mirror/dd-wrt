@@ -2774,6 +2774,8 @@ static char *ag_rates[]={"6","12","18","24","36","48","54"};
 static char *turbo_rates[]={"12","24","36","48","72","96","108"};
 static char *b_rates[]={"1","2","5.5","11"};
 static char *bg_rates[]={"1","2","5.5","6","11","12","18","24","36","48","54"};
+static char *half_rates[]={"1","2","5.5","6","11","12","18","24"};
+static char *quarter_rates[]={"1","2","5.5","6","11","12"};
 static char *xr_rates[]={"0.25","0.5","1","2","3","6","9","12","18","24","36","48","54"};
 
 void show_rates(webs_t wp, char *prefix)
@@ -2794,6 +2796,9 @@ int len;
 char turbo[32];
 sprintf(turbo,"%s_turbo",prefix);
 char mode[32];
+char bw[16];
+sprintf (bw, "%s_channelbw", prefix);
+
 sprintf(mode,"%s_net_mode",prefix);
 if (nvram_match(mode,"b-only"))
     {
@@ -2806,6 +2811,16 @@ if (nvram_match(mode,"g-only"))
     len = sizeof(ag_rates)/sizeof(char *);
     if (nvram_match(turbo,"1"))
 	showrates=turbo_rates;
+    if (nvram_match(bw,"10"))
+	{
+	len = sizeof(half_rates)/sizeof(char *);
+	showrates=half_rates;
+	}
+    if (nvram_match(bw,"5"))
+	{
+	len = sizeof(quarter_rates)/sizeof(char *);
+	showrates=quarter_rates;
+	}
     }
 if (nvram_match(mode,"a-only"))
     {
@@ -2813,16 +2828,46 @@ if (nvram_match(mode,"a-only"))
     len = sizeof(ag_rates)/sizeof(char *);
     if (nvram_match(turbo,"1"))
 	showrates=turbo_rates;
+    if (nvram_match(bw,"10"))
+	{
+	len = sizeof(half_rates)/sizeof(char *);
+	showrates=half_rates;
+	}
+    if (nvram_match(bw,"5"))
+	{
+	len = sizeof(quarter_rates)/sizeof(char *);
+	showrates=quarter_rates;
+	}
     }
 if (nvram_match(mode,"bg-mixed"))
     {
     rate = bg_rates;
     len = sizeof(bg_rates)/sizeof(char *);
+    if (nvram_match(bw,"10"))
+	{
+	len = sizeof(half_rates)/sizeof(char *);
+	showrates=half_rates;
+	}
+    if (nvram_match(bw,"5"))
+	{
+	len = sizeof(quarter_rates)/sizeof(char *);
+	showrates=quarter_rates;
+	}
     }
 if (nvram_match(mode,"mixed"))
     {
     rate = bg_rates;
     len = sizeof(bg_rates)/sizeof(char *);
+    if (nvram_match(bw,"10"))
+	{
+	len = sizeof(half_rates)/sizeof(char *);
+	showrates=half_rates;
+	}
+    if (nvram_match(bw,"5"))
+	{
+	len = sizeof(quarter_rates)/sizeof(char *);
+	showrates=quarter_rates;
+	}
     }
 int i;
 for (i=0;i<len;i++)
