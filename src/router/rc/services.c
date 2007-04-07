@@ -617,7 +617,6 @@ start_single_service (void)
 	sleep (4);
 #endif
 #ifndef HAVE_MADWIFI
-	if (nvram_invmatch ("wl_net_mode", "disabled"))
       start_service ("wlconf");
 #endif
 #ifdef HAVE_VLANTAGGING
@@ -688,7 +687,6 @@ start_single_service (void)
 	sleep (4);
 #endif
 #ifndef HAVE_MADWIFI
-	if (nvram_invmatch ("wl_net_mode", "disabled"))
       start_service ("wlconf");
 #endif
 #ifdef HAVE_VLANTAGGING
