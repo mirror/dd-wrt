@@ -14,7 +14,7 @@ fi
 if [ "$(nvram get enable_jffs2)" = "1" ]; then
     if [ "$(nvram get sys_enable_jffs2)" = "0" ]; then
     nvram set sys_enable_jffs2=1
-    nvram set need_commit=1
+    nvram commit
     startservice jffs2
     fi
 fi
