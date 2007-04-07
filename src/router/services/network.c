@@ -626,6 +626,11 @@ isClient (void)
 void
 start_wlconf (void)
 {
+#ifdef HAVE_MSSID
+if (nvram_invmatch ("wl0_net_mode", "disabled"))
+#else
+if (nvram_invmatch ("wl_net_mode", "disabled"))
+#endif
   wlconf_up (nvram_safe_get ("wl0_ifname"));
 }
 
