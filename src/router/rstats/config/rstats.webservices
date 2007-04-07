@@ -1,4 +1,4 @@
-<script type="text/javascript">
+<!-- <script type="text/javascript">
 //<![CDATA[
 	function setRstatsVal(F) {
 		setElementActive("rstats_stime", true);
@@ -60,4 +60,4 @@
 			</select>
 		</div>
 	</div>
-</fieldset><br />
+</fieldset><br /> -->
