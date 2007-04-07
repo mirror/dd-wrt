@@ -1022,7 +1022,42 @@ start_hostapdwan (void)
 
 }
 
+static void set_rate(char *dev)
+{
+char rate[16];
+  char net[16];
+char bw[16];
+  sprintf (bw, "%s_channelbw", bw);
+  sprintf (net, "%s_net_mode", dev);
+  sprintf (rate, "%s_rate", dev);
+  char *r = default_get (rate, "0");
+  char *netmode = default_get (net, "mixed");
 
+if (nvram_match(bw,"10"))
+    if (atoi(r)>24)
+	{
+	nvram_set(rate,"0");
+	r="0";
+	}
+if (nvram_match(bw,"5"))
+    if (atoi(r)>12)
+	{
+	nvram_set(rate,"0");
+	r="0";
+	}
+  if (!strcmp (r, "0"))
+    {
+      if (!strcmp (netmode,"b-only"))
+	eval ("iwconfig", dev, "rate", "11", "auto");
+      else
+	eval ("iwconfig", dev, "rate", "54", "auto");
+    }
+  else if (!strcmp (r, "5.5"))
+    eval ("iwconfig", dev, "rate", "5500", "fixed");
+  else
+    eval ("iwconfig", dev, "rate", r, "fixed");
+
+}
 static void
 set_netmode (char *wif, char *dev)
 {
@@ -1032,11 +1067,9 @@ set_netmode (char *wif, char *dev)
   char xr[16];
   char comp[32];
   char ff[16];
-  char rate[16];
   sprintf (mode, "%s_mode", dev);
   sprintf (net, "%s_net_mode", dev);
   sprintf (turbo, "%s_turbo", dev);
-  sprintf (rate, "%s_rate", dev);
   sprintf (xr, "%s_xr", dev);
   sprintf (comp,"%s_compression",dev);
   sprintf (ff,"%s_ff",dev);
@@ -1103,19 +1136,6 @@ if (default_match(ff,"1","0"))
     eval("iwpriv",dev,"ff","0");
     
 
-  char *r = default_get (rate, "0");
-
-  if (!strcmp (r, "0"))
-    {
-      if (!strcmp (netmode,"b-only"))
-	eval ("iwconfig", dev, "rate", "11", "auto");
-      else
-	eval ("iwconfig", dev, "rate", "54", "auto");
-    }
-  else if (!strcmp (r, "5.5"))
-    eval ("iwconfig", dev, "rate", "5500", "fixed");
-  else
-    eval ("iwconfig", dev, "rate", r, "fixed");
 }
 
 static set_compression(int count)
@@ -1400,8 +1420,8 @@ configure_single (int count)
 	}
     }
 
-
-
+  
+  
   char macaddr[32];
   getMacAddr (dev, macaddr);
   nvram_set (athmac, macaddr);
@@ -1633,7 +1653,7 @@ configure_single (int count)
       setMacFilter (var);
     }
   setMacFilter (dev);
-
+  set_rate(dev);
 }
 
 
