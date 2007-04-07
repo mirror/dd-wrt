@@ -629,7 +629,7 @@ function openAboutWindow() {
 	win.focus();
 	*/
 	Dialog.alert( {url:"About.html", options:{method: 'get'}},
-				  {className: "ddwrt", width:500, okLabel:sbutton.clos, top:0, showEffect:Effect.ModalSlideDown, hideEffect:Effect.ModalSlideUp,
+				  {className: "ddwrt", width:500, okLabel:"Close", top:0, showEffect:Effect.ModalSlideDown, hideEffect:Effect.ModalSlideUp,
 				   showEffectOptions:{duration: 0.7, delay: 0.3}, hideEffectOptions:{duration: 0.3}}
 				 );
 }
