@@ -622,7 +622,7 @@ function openHelpWindowExt(url) {
 function openAboutWindow() {
 	Dialog.alert({url: "About.html", options: {method: 'get'}},  
                {className: "ddwrt", width:500, okLabel: "Close", top:0, 
-                showEffect: Effect.ModalSlideDown, hideEffect: Effect.ModalSlideUp});
+                showEffect: Effect.ModalSlideDown, hideEffect: Effect.ModalSlideUp, showEffectOptions: {duration: 0.7, delay: 0.3}, hideEffectOptions: {duration: 0.3}});
 }
 
 // Opens a new window in the center of the screen and closes it, if the parent window is unloaded
