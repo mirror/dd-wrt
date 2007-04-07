@@ -32,6 +32,8 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>		/* AhMan  March 18 2005 */
 #include <sys/socket.h>
+#include <sys/mount.h>
+
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <wait.h>
@@ -4187,7 +4189,7 @@ getbridgeprio_main (int argc, char *argv[])
   if (argc < 2)
     {
       fprintf (stderr, "syntax: getbridgeprio [ifname]\n");
-      return -1;}
+      return -1;
     }
   char *bridge = getBridgePrio (argv[1]);
   fprintf (stdout, "%s\n", bridge);
