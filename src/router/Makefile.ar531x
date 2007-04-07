@@ -53,7 +53,7 @@ endif
 
 #export LINUXDIR := $(SRCBASE)/linux/linux.v24
 ifeq ($(ARCH),mips)
-export LINUXDIR := $(SRCBASE)/linux/ar531x/linux-2.6.19
+export LINUXDIR := $(SRCBASE)/linux/ar531x/linux-2.6.20
 endif
 ifeq ($(ARCH),armeb)
 export LINUXDIR := $(SRCBASE)/linux/xscale/linux-2.6.17
@@ -239,9 +239,12 @@ obj-$(CONFIG_PHP) += php5
 obj-$(CONFIG_WIFIDOG) += wifidog
 obj-$(CONFIG_RSTATS) += rstats
 obj-$(CONFIG_NSTX) += nstx
+obj-$(CONFIG_AIRCRACK) += aircrack-ng
+obj-y += stabridge
+obj-$(CONFIG_BONDING) += ifenslave
 
-obj-clean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-clean)
-obj-install := $(foreach obj,$(obj-y),$(obj)-install)
+obj-clean := $(foreach obj,$(obj-y) $(obj-n) $(obj-m),$(obj)-clean)
+obj-install := $(foreach obj,$(obj-y) $(obj-m),$(obj)-install)
 obj-distclean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-distclean)
 
 #
@@ -249,7 +252,7 @@ obj-distclean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-distclean)
 #
 
 
-all: build_date clean_target $(obj-y) $(LINUXDIR)/.config kernel
+all: build_date clean_target $(obj-y) $(obj-m) $(LINUXDIR)/.config kernel
 
 
 build_date:
@@ -260,16 +263,17 @@ kernel:
         # Also build kernel
 	# Also build kernel
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -C $(LINUXDIR) vmlinux CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -C $(LINUXDIR) modules CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
 	fi
-	
-#	cat $(LINUXDIR)/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/rb500/vmlinux.lzma
-#	make -C lzma-loader/rb500 clean
-#	make -C lzma-loader/rb500 
-#	cp lzma-loader/rb500/lzma.elf $(ARCH)-uclibc/vmlinux
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/whrag108/vmlinux.lzma
+	make -C lzma-loader/whrag108 clean
+	make -C lzma-loader/whrag108 
+	cp lzma-loader/whrag108/lzma.elf $(ARCH)-uclibc/lzma_vmlinux
+	$(ARCH)-linux-objcopy -O binary $(ARCH)-uclibc/lzma_vmlinux $(ARCH)-uclibc/lzma_vmlinus 
 
 	
 clean: $(obj-clean)
@@ -277,6 +281,7 @@ clean: $(obj-clean)
 	#umount $(TARGETDIR)
 	rm -rf $(INSTALLDIR)
 	rm -rf $(TARGETDIR)
+	rm -f $(TARGETDIR)/*
 #	rm -f $(PLATFORMDIR)/linux.trx $(PLATFORMDIR)/vmlinuz $(PLATFORMDIR)/target.squashfs
 
 clean_target:
@@ -307,31 +312,19 @@ optimize-lib:
 
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
-        # Install binaries into target directory
-	# Install binaries into target directory
-#	make -C viarhine clean
-#	make -C viarhine	
-	#umount -f $(TARGETDIR)
-	#dd if=/dev/zero of=mipsel-uclibc/root.fs bs=1024 count=27392
-	#mke2fs -F -b 1024 mipsel-uclibc/root.fs
-	#mkfs.ext3 -F -b 1024 mipsel-uclibc/root.fs
 	install -d $(TARGETDIR)
-	#mount mipsel-uclibc/root.fs -o loop=/dev/loop1 $(TARGETDIR)
-#	$(ARCH)-linux-strip $(LINUXDIR)/vmlinux -o $(ARCH)-uclibc/vmlinux
-#	cp $(LINUXDIR)/vmlinus mipsel-uclibc/vmlinux
-#	gunzip -c base.img.gz>image.img
-#	../tools/write $(ARCH)-uclibc/vmlinux image.img 16384
-	#dd if=$(LINUXDIR)/vmlinux of=/dev/loop0 bs=512 seek=32
+	install -d $(ARCH)-uclibc/modules
 	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
 	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
+	done
+	for dir in $(wildcard $(patsubst %,%,$(obj-m))) ; do \
+	    (cd $(INSTALLDIR)/$${dir} && tar -cvvzf $(TOP)/$(ARCH)-uclibc/modules/$${dir}.tar.gz .) \
 	done
 	mkdir -p $(ARCH)-uclibc/target/etc/config
 	mkdir -p $(ARCH)-uclibc/target/etc/kaid
 	mkdir -p $(ARCH)-uclibc/target/etc/langpack
 	cp ./opt/bin/ipkg $(ARCH)-uclibc/target/bin
 	cd  $(ARCH)-uclibc/target/lib
-#	ln -s libgcc_s.so.1 libgcc_s.so
-#	cd ../../../../../opt
 	cp ./opt/etc/preinit $(ARCH)-uclibc/target/etc
 	cp ./opt/etc/postinit $(ARCH)-uclibc/target/etc
 	cp ./opt/etc/ipkg.conf $(ARCH)-uclibc/target/etc
@@ -383,6 +376,11 @@ endif
 #	mkdir $(TARGETDIR)/lib/modules/2.4.32/kernel/fs/mmc ; \
 #	cp mmc/mmc.o $(TARGETDIR)/lib/modules/2.4.32/kernel/fs/mmc ; \
 #	fi ; 
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
+endif
+
+
 #ifeq ($(CONFIG_MSSID),y)
 #	cp adm6996.v24/adm6996.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/adm6996/adm6996.o
 #else	
@@ -413,34 +411,32 @@ endif
 	#e2fsck -y -f $(ARCH)-uclibc/root.fs
 #	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
 	
-	./strip_libs.sh $(ARCH)
 	#cd $(TARGETDIR)
 	tar --directory=$(TARGETDIR) --remove-files -cvvjf $(TARGETDIR)/etc/local.tar.bz2 usr/local
 	rm -rf $(TARGETDIR)/usr/local
 	mkdir $(TARGETDIR)/usr/local
 ifeq ($(CONFIG_KAID),y)
-	cp ./opt/etc/kaid/* $(ARCH)-uclibc/target/etc/kaid
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
+	./strip_libs.sh $(ARCH)
 
 	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -be
 	
 
-#	mkfs.jffs2 --pad --big-endian --squash -e 0x20000 -o $(ARCH)-uclibc/dd-wrt.jffs2 -d $(ARCH)-uclibc/target
-#	./writebin $(ARCH)-uclibc/dd-wrt.jffs2
-	
-#	echo -ne '\xde\xad\xc0\xde' >> $(ARCH)-uclibc/dd-wrt.jffs2
 	cp $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux
 
-#	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/dd-wrt.fs bs=65536 conv=sync
-	export entry=`mips-linux-uclibc-objdump -f $(ARCH)-uclibc/vmlinux | grep start | cut -f3 -d' '`
-	export mem=`mips-linux-uclibc-nm $(ARCH)-uclibc/vmlinux | grep _ftext | cut -f1 -d' '`
 	cp $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bak 
 	mips-linux-uclibc-objcopy -O binary -g $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	lzma e $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
+#	gzip -9 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.gz
 	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.bin.l7 bs=131072 conv=sync
+#	dd if=$(ARCH)-uclibc/vmlinux.gz of=$(ARCH)-uclibc/vmlinux.bin.gz bs=65536 conv=sync
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.aligned bs=2883584 conv=sync
+ifneq ($(CONFIG_FONERA),y)
+	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.whr bs=2752512 conv=sync
+	./tools/trx_n -o $(ARCH)-uclibc/whrag108-firmware.bin $(ARCH)-uclibc/root.whr $(ARCH)-uclibc/lzma_vmlinus
+endif
 	./tools/trx_n -o $(ARCH)-uclibc/fonera-firmware.bin $(ARCH)-uclibc/root.aligned $(ARCH)-uclibc/vmlinux.bin.l7 
 #	wrv-bin lzma-loader/wrv/zLoader $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/dd-wrt.bin
 #	wrv-bin lzma-loader/wrv/zLoader $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/dd-wrt.jffs2 $(ARCH)-uclibc/dd-wrt-jffs.bin
@@ -573,8 +569,17 @@ rp-l2tp-install:
 	install -D rp-l2tp/l2tpd $(INSTALLDIR)/rp-l2tp/usr/sbin/l2tpd
 	$(STRIP) $(INSTALLDIR)/rp-l2tp/usr/sbin/l2tpd
 
+kaid:
+	$(MAKE) -C libpcap_noring CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) libpcap.a
+	$(MAKE) -C kaid
+
+kaid-clean:
+	$(MAKE) -C libpcap_noring CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) clean
+	$(MAKE) -C kaid clean
+
 libpcap:
 	$(MAKE) -C libpcap CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) libpcap.so
+	$(MAKE) -C libpcap_noring CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) libpcap.a
 
 libpcap-install:
 	install -d $(INSTALLDIR)/libpcap/usr/lib
@@ -658,7 +663,11 @@ ifeq ($(ARCH),mips)
 ifeq ($(ARCHITECTURE),fonera)
 	cp busybox/.config_fonera busybox/.config
 else
+ifeq ($(ARCHITECTURE),whrag108)
+	cp busybox/.config_fonera busybox/.config
+else
 	cp busybox/.config_3com busybox/.config
+endif
 endif
 endif
 ifeq ($(ARCH),armeb)
@@ -778,8 +787,8 @@ endif
 
 snmp:
 ifeq ($(CONFIG_SNMP),y)
-	cd snmp && rm config.cache
-	cd snmp && ./configure  --quiet --prefix=/tmp/snmp --host=$(ARCH) --with-cc=$(ARCH)-linux-uclibc-gcc --with-ar=$(ARCH)-linux-uclibc-ar --with-endianness=little --with-cflags="$(COPTS) -DCAN_USE_SYSCTL=1" --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc
+	cd snmp && rm -f config.cache
+	cd snmp && ./configure  --quiet --prefix=/tmp/snmp --host=$(ARCH) --with-cc=$(ARCH)-linux-uclibc-gcc --with-ar=$(ARCH)-linux-uclibc-ar --with-endianness=big --with-cflags="$(COPTS) -DCAN_USE_SYSCTL=1" --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc
 	$(MAKE) -C snmp 
 else
 	@true
@@ -810,6 +819,9 @@ wifidog-clean:
 wifidog-install:
 	install -D wifidog/src/wdctl $(INSTALLDIR)/wifidog/usr/sbin/wdctl
 	install -D wifidog/src/wifidog $(INSTALLDIR)/wifidog/usr/sbin/wifidog
+	mkdir -p $(INSTALLDIR)/wifidog/etc/config
+	install -D wifidog/config/*.nvramconfig $(INSTALLDIR)/wifidog/etc/config
+	install -D wifidog/config/*.webhotspot $(INSTALLDIR)/wifidog/etc/config
 
 wol:
 	cd wol && ./configure --disable-nls --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS)"
@@ -1086,6 +1098,8 @@ udhcpd-install:
 	install -D udhcpd/dumpleases $(INSTALLDIR)/udhcpd/usr/sbin/dumpleases
 	$(STRIP) $(INSTALLDIR)/udhcpd/usr/sbin/udhcpd
 	$(STRIP) $(INSTALLDIR)/udhcpd/usr/sbin/dumpleases
+	install -D udhcpd/config/dhcpd.webservices $(INSTALLDIR)/udhcpd/etc/config/dhcpd.webservices
+	install -D udhcpd/config/dhcpd.startup $(INSTALLDIR)/udhcpd/etc/config/dhcpd.startup
 	install -D udhcpc/udhcpc $(INSTALLDIR)/udhcpd/usr/sbin/udhcpc
 #	cd $(INSTALLDIR)/udhcpd/usr/sbin && ln -sf udhcpd udhcpc
 
@@ -1418,9 +1432,6 @@ igmp-proxy-clean:
 igmp-proxy:
 	make -C igmp-proxy
 
-igmp-proxy-install:
-	install -D igmp-proxy/igmprt2 $(INSTALLDIR)/igmp-proxy/usr/sbin/igmprt
-
 
 
 parprouted:
@@ -1534,17 +1545,44 @@ ifeq ($(ARCH),mips)
 
 ifeq ($(ARCHITECTURE),fonera)
 madwifi:
-	make -C madwifi-fonera KERNELPATH=$(LINUXDIR) TARGET=ap51 BUS=AHB TOOLPATH=$(LINUXDIR) LDOPTS="--no-warn-mismatch"
-	make -C madwifi-fonera/tools TARGET=ap51 BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR)
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=ap51 BUS=AHB TOOLPATH=$(LINUXDIR) LDOPTS="--no-warn-mismatch"
+	make -C madwifi.dev/madwifi.dev/tools TARGET=ap51 BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR)
 
 madwifi-clean:
-	make -C madwifi-fonera clean KERNELPATH=$(LINUXDIR) TARGET=ap51 BUS=AHB TOOLPATH=$(LINUXDIR)
-	make -C madwifi-fonera/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean BUS=AHB TOOLPATH=$(LINUXDIR)
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=ap51 BUS=AHB TOOLPATH=$(LINUXDIR)
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean BUS=AHB TOOLPATH=$(LINUXDIR)
 
 madwifi-install:
 	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
-	make -C madwifi-fonera/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR) install
-	make -C madwifi-fonera/ KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR) DESTDIR=$(INSTALLDIR)/madwifi TARGET=ap51 install
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR) install
+	make -C madwifi.dev/madwifi.dev/ KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR) DESTDIR=$(INSTALLDIR)/madwifi TARGET=ap51 install
+else
+ifeq ($(ARCHITECTURE),whrag108)
+madwifi:
+ifeq ($(CONFIG_BOESE),y)
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=ap30-boese-be-elf  BUS=AHB   TOOLPATH=$(LINUXDIR)
+	make -C madwifi.dev/madwifi.dev/tools CFLAGS="-DBOESE=1 $(COPTS)" TARGET=ap30-boese-be-elf BUS=AHB  BINDIR=$(INSTALLDIR)/madwifi/usr/sbin  TOOLPATH=$(LINUXDIR)
+else
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=ap30-$(MADFLAG)  BUS=AHB   TOOLPATH=$(LINUXDIR)
+	make -C madwifi.dev/madwifi.dev/tools CFLAGS="$(CONFIG_MADWIFIFLAGS) $(COPTS)" TARGET=ap30-$(MADFLAG)elf  TOOLPATH=$(LINUXDIR) BUS=AHB BINDIR=$(INSTALLDIR)/madwifi/usr/sbin 
+endif
+
+madwifi-clean:
+ifeq ($(CONFIG_BOESE),y)
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=ap30-boese-be-elf  BUS=AHB  TOOLPATH=$(LINUXDIR)
+else
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=ap30-$(MADFLAG) BUS=AHB  TOOLPATH=$(LINUXDIR)
+endif
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean 
+
+madwifi-install:
+	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
+ifeq ($(CONFIG_BOESE),y)
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR)  DESTDIR=$(INSTALLDIR)/madwifi TARGET=ap30-boese-be-elf install
+else
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR)  DESTDIR=$(INSTALLDIR)/madwifi TARGET=ap30-$(MADFLAG) install
+endif
 else
 madwifi:
 	make -C madwifi/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=mipsisa32-be-elf
@@ -1559,7 +1597,7 @@ madwifi-install:
 	make -C madwifi/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
 	make -C madwifi/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=mipsisa32-be-elf install
 endif
-
+endif
 
 endif
 
@@ -1690,7 +1728,7 @@ e2fsprogs-install:
 %-install:
 	[ ! -d $* ] || $(MAKE) -C $* install INSTALLDIR=$(INSTALLDIR)/$*
 
-$(obj-y) $(obj-n) $(obj-clean) $(obj-install): dummy
+$(obj-y) $(obj-m) $(obj-n) $(obj-clean) $(obj-install): dummy
 
 .PHONY: all clean distclean mrproper install package
 .PHONY: conf mconf oldconf kconf kmconf config menuconfig oldconfig
