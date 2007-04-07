@@ -5,7 +5,7 @@
 #
 # Base Features
 #
-
+#CONFIG_WIRELESS_TOOLS=y
 CONFIG_NOMESSAGE=y
 CONFIG_WIVIZ=y
 CONFIG_PWC=y
@@ -153,7 +153,7 @@ CONFIG_LIBUTIL=y
 # Environment
 #
 PLATFORM=mipsel
-LINUXDIR=$(SRCBASE)/linux/brcm/linux.v23
+LINUXDIR=$(SRCBASE)/linux/brcm/linux.v24
 LIBDIR=$(TOOLCHAIN)/lib
 USRLIBDIR=$(TOOLCHAIN)/usr/lib
 
