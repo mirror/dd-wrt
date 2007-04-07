@@ -4217,7 +4217,7 @@ void start_jffs2(void)
 	{
 	  nvram_set ("sys_clean_jffs2", "0");
 	  nvram_commit ();
-	  itworked = mtd_erase (rwpart);
+	  itworked = eval("mtd","erase",rwpart);
 	  eval ("insmod", "crc32");
 	  eval ("insmod", "jffs2");
 
@@ -4240,7 +4240,7 @@ void start_jffs2(void)
 	}
       else
 	{
-	  itworked = mtd_unlock (rwpart);
+	  itworked = eval("mtd","unlock",rwpart);
 	  eval ("insmod", "crc32");
 	  eval ("insmod", "jffs2");
 #ifdef HAVE_REGISTER
