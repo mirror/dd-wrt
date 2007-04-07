@@ -212,6 +212,11 @@ obj-y += ses
 obj-$(CONFIG_PRINTER_SERVER) += ippd
 obj-$(CONFIG_FTP) += proftpd
 obj-$(CONFIG_NSTX) += nstx
+obj-$(CONFIG_PCMCIA) += pcmcia 
+obj-$(CONFIG_PCMCIA) += microcom
+obj-$(CONFIG_PCMCIA) += gcom
+obj-$(CONFIG_PCMCIA) += nvtlstatus 
+obj-$(CONFIG_PCMCIA) += setserial
 
 
 
@@ -289,10 +294,10 @@ endif
 #	find $(TARGETDIR) -name "wl_*.o"  | xargs rm -rf
 	# quick n dirty - stuff Nikki's module where it belongs
 	#mkdir $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/adm6996
-	if [ "$(CONFIG_MMC)" = "y" ] ; then \
-	mkdir -p $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/mmc ; \
-	cp mmc/mmc.o $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/mmc ; \
-	fi ; 
+#if [ "$(CONFIG_MMC)" = "y" ] ; then \
+#mkdir -p $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/mmc ; \
+#cp mmc/mmc.o $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/mmc ; \
+#fi ; 
 #ifeq ($(CONFIG_MSSID),y)
 #	cp adm6996.v24/adm6996.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/adm6996/adm6996.o
 #else	
@@ -360,7 +365,15 @@ ifeq ($(CONFIG_USB),y)
 endif
 endif
 ifeq ($(CONFIG_PCMCIA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/pcmcia
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/pcmcia/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/char/pcmcia/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/char/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/host/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/serial/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/host
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/serial
 endif
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/pcmcia
@@ -816,7 +829,10 @@ mmc:
 	$(MAKE) -C mmc
 
 mmc-install:
-	install -D  mmc/mmc.o $(INSTALLDIR)/mmc/lib/modules/$(LINUXVER)/mmc.o
+	install -D  mmc/mmc_wrt1.o $(INSTALLDIR)/mmc/lib/modules/$(LINUXVER)/mmc_wrt1.o
+	install -D  mmc/mmc_wrt2.o $(INSTALLDIR)/mmc/lib/modules/$(LINUXVER)/mmc_wrt2.o
+	install -D  mmc/mmc_buf1.o $(INSTALLDIR)/mmc/lib/modules/$(LINUXVER)/mmc_buf1.o
+	install -D  mmc/mmc_buf2.o $(INSTALLDIR)/mmc/lib/modules/$(LINUXVER)/mmc_buf2.o
 	install -D  mmc/config/mmc.webconfig $(INSTALLDIR)/mmc/etc/config/mmc.webconfig
 	install -D  mmc/config/mmc.startup $(INSTALLDIR)/mmc/etc/config/mmc.startup
 	install -D  mmc/config/mmc.nvramconfig $(INSTALLDIR)/mmc/etc/config/mmc.nvramconfig
@@ -1558,6 +1574,74 @@ rflow-install:
 	install -D rflow/config/rflow.startup $(INSTALLDIR)/rflow/etc/config/rflow.startup
 	install -D rflow/config/macupd.startup $(INSTALLDIR)/rflow/etc/config/macupd.startup
 	install -D rflow/config/macupd.nvramconfig $(INSTALLDIR)/rflow/etc/config/macupd.nvramconfig	
+
+pcmcia-clean:
+	$(MAKE) -C pcmcia-cs-3.2.8 CC=$(CC) LINUXDIR=$(LINUXDIR) clean
+
+pcmcia:
+#	cd pcmcia-cs-3.2.8 && ./Configure
+	$(MAKE) -C pcmcia-cs-3.2.8 CC=$(CC) LINUXDIR=$(LINUXDIR) all 
+
+pcmcia-install:
+	install -D pcmcia-cs-3.2.8/cardmgr/cardmgr $(INSTALLDIR)/pcmcia/usr/sbin/cardmgr
+	install -D pcmcia-cs-3.2.8/cardmgr/cardctl $(INSTALLDIR)/pcmcia/usr/sbin/cardctl
+	install -D pcmcia-cs-3.2.8/etc/sysconfig/pcmcia $(INSTALLDIR)/pcmcia/etc/sysconfig/pcmcia
+	install -D pcmcia-cs-3.2.8/etc/config $(INSTALLDIR)/pcmcia/etc/pcmcia/config
+	$(STRIP) $(INSTALLDIR)/pcmcia/usr/sbin/cardmgr
+	$(STRIP) $(INSTALLDIR)/pcmcia/usr/sbin/cardctl
+	install pcmcia-cs-3.2.8/etc/*.* $(INSTALLDIR)/pcmcia/etc/pcmcia
+	install pcmcia-cs-3.2.8/etc/serial $(INSTALLDIR)/pcmcia/etc/pcmcia/serial 
+	install pcmcia-cs-3.2.8/etc/shared $(INSTALLDIR)/pcmcia/etc/pcmcia/shared 
+	install pcmcia-cs-3.2.8/etc/gprs_net $(INSTALLDIR)/pcmcia/etc/gprs_net
+	install pcmcia-cs-3.2.8/etc/huawei_gprs_net  $(INSTALLDIR)/pcmcia/etc/huawei_gprs_net
+	install pcmcia-cs-3.2.8/etc/pin_code $(INSTALLDIR)/pcmcia/etc/pin_code
+	install pcmcia-cs-3.2.8/etc/card_info $(INSTALLDIR)/pcmcia/etc/card_info
+	install pcmcia-cs-3.2.8/etc/card_hwver $(INSTALLDIR)/pcmcia/etc/card_hwver
+	install pcmcia-cs-3.2.8/etc/huawei_card_hwver $(INSTALLDIR)/pcmcia/etc/huawei_card_hwver
+	install pcmcia-cs-3.2.8/etc/search_net_opt $(INSTALLDIR)/pcmcia/etc/search_net_opt
+	install pcmcia-cs-3.2.8/etc/search_net_nov $(INSTALLDIR)/pcmcia/etc/search_net_nov
+	install pcmcia-cs-3.2.8/etc/cimi $(INSTALLDIR)/pcmcia/etc/cimi
+	install pcmcia-cs-3.2.8/etc/csca_u630 $(INSTALLDIR)/pcmcia/etc/csca_u630
+	install pcmcia-cs-3.2.8/etc/cis/SW_8xx_SER.dat $(INSTALLDIR)/pcmcia/etc/pcmcia/SW_8xx_SER.dat
+
+microcom-clean:
+	$(MAKE) -C microcom102 clean
+
+
+microcom:
+	$(MAKE) -C microcom102 microcom CC=$(CC)  
+	$(STRIP) $(INSTALLDIR)/microcom/usr/sbin/microcom
+
+microcom-install:
+	install -D microcom102/microcom $(INSTALLDIR)/microcom/usr/sbin/microcom
+
+gcom:
+	$(MAKE) -C gcom CC=$(CC)  
+	$(STRIP) $(INSTALLDIR)/gcom/usr/sbin/gcom
+
+gcom-install:
+	install -D gcom/gcom $(INSTALLDIR)/gcom/usr/sbin/gcom
+
+
+nvtlstatus-clean:
+	$(MAKE) -C nvtlstatus CC=$(CC) clean
+
+nvtlstatus:
+	$(MAKE) -C nvtlstatus CC=$(CC)  
+	$(STRIP) $(INSTALLDIR)/nvtlstatus/usr/sbin/nvtlstatus
+
+nvtlstatus-install:
+	install -D nvtlstatus/nvtlstatus $(INSTALLDIR)/nvtlstatus/usr/sbin/nvtlstatus
+
+setserial-clean:
+	$(MAKE) -C setserial-2.17 clean
+
+setserial:
+	$(MAKE) -C setserial-2.17 CC=$(CC)  
+
+setserial-install:
+	install -D setserial-2.17/setserial $(INSTALLDIR)/setserial/usr/sbin/setserial
+	$(STRIP) $(INSTALLDIR)/setserial/usr/sbin/setserial
 
 #
 # Generic rules
