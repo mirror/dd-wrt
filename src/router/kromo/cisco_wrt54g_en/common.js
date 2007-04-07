@@ -484,8 +484,8 @@ function fix_cr(F) {
 	var c = b.replace(re3, '\n');
 	var d = c.replace(re4, '&');
 	var e = d.replace(re5, '"');
-	var f = e.replace(re4, '>');
-	var g = f.replace(re5, '<');
+	var f = e.replace(re6, '>');
+	var g = f.replace(re7, '<');
 return g;
 }
 
