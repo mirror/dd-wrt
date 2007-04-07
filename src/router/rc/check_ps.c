@@ -98,7 +98,7 @@ if (in!=NULL)
     eval("write","/tmp/firmware.bin","linux");
 #endif
     fprintf(stderr,"done. rebooting now\n");
-    eval("kill","-3","1");
+    eval("killall","-3","init");
     }
 #endif
 }
