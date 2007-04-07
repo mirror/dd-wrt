@@ -4092,6 +4092,8 @@ ej_do_pagehead (webs_t wp, int argc, char_t ** argv)	//Eko
   websWrite (wp,
 	     "\t\t<script type=\"text/javascript\" src=\"js/window.js\"></script>\n");
   websWrite (wp,
+	     "\t\t<script type=\"text/javascript\" src=\"js/window_effects.js\"></script>\n");
+  websWrite (wp,
 	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/default.css\" />\n");
   websWrite (wp,
 	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
