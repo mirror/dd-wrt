@@ -620,18 +620,9 @@ function openHelpWindowExt(url) {
 }
 
 function openAboutWindow() {
-	/*
-	var width = 500;
-	var height = 650;
-	var top = Math.floor((screen.availHeight - height - 10) / 2);
-	var left = Math.floor((screen.availWidth - width) / 2);
-	var win = window.open("About.htm", 'DDWRT_About', 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=no,scrollbars=no,statusbar=no");
-	win.focus();
-	*/
-	Dialog.alert( {url:"About.html", options:{method: 'get'}},
-				  {className: "ddwrt", width:500, okLabel:"Close", top:0, showEffect:Effect.ModalSlideDown, hideEffect:Effect.ModalSlideUp,
-				   showEffectOptions:{duration: 0.7, delay: 0.3}, hideEffectOptions:{duration: 0.3}}
-				 );
+	Dialog.alert({url: "About.html", options: {method: 'get'}},  
+               {className: "ddwrt", width:500, okLabel: "Close", top:0, 
+                showEffect: Effect.ModalSlideDown, hideEffect: Effect.ModalSlideUp});
 }
 
 // Opens a new window in the center of the screen and closes it, if the parent window is unloaded
@@ -775,7 +766,7 @@ function apply(form, text, delay) {
     if(!text)
     	text=errmsg.err100;
 
-    Dialog.info(text, {windowParameters: {className: "ddwrt", width:250, height:100}, showProgress: true});
+    Dialog.info(text, {windowParameters: {className:"ddwrt", width:250, height:100}, showProgress:true});
     setTimeout(function(){form.submit();}, 2000);
 
     if(delay) {
