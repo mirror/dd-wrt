@@ -1,9 +1,9 @@
 VERSION = 2
 PATCHLEVEL = 6
 SUBLEVEL = 20
-EXTRAVERSION = .4
+EXTRAVERSION = .6
 NAME = Homicidal Dwarf Hamster
-
+TMPDIR = ~/tmp
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
 # More info can be located in ./README

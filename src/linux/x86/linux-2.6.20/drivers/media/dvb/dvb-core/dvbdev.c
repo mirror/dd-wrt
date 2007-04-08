@@ -204,8 +204,7 @@ int dvb_register_device(struct dvb_adapter *adap, struct dvb_device **pdvbdev,
 
 	int id;
 
-	if (mutex_lock_interruptible(&dvbdev_register_lock))
-		return -ERESTARTSYS;
+	mutex_lock(&dvbdev_register_lock);
 
 	if ((id = dvbdev_get_free_id (adap, type)) < 0) {
 		mutex_unlock(&dvbdev_register_lock);
@@ -302,8 +301,7 @@ int dvb_register_adapter(struct dvb_adapter *adap, const char *name, struct modu
 {
 	int num;
 
-	if (mutex_lock_interruptible(&dvbdev_register_lock))
-		return -ERESTARTSYS;
+	mutex_lock(&dvbdev_register_lock);
 
 	if ((num = dvbdev_get_free_adapter_num ()) < 0) {
 		mutex_unlock(&dvbdev_register_lock);
@@ -334,8 +332,7 @@ int dvb_unregister_adapter(struct dvb_adapter *adap)
 {
 	devfs_remove("dvb/adapter%d", adap->num);
 
-	if (mutex_lock_interruptible(&dvbdev_register_lock))
-		return -ERESTARTSYS;
+ 	mutex_lock(&dvbdev_register_lock);
 	list_del (&adap->list_head);
 	mutex_unlock(&dvbdev_register_lock);
 	return 0;
