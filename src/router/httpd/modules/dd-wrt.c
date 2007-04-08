@@ -3510,7 +3510,24 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 		 " 		<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"ath_regulatory\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
 		 nvram_match ("ath_regulatory", "0") ? "checked" : "");
       websWrite (wp, " 	</div>\n");
+#else
+#ifdef WILLIAM
+      websWrite (wp, " 	<div class=\"setting\">\n");
+      websWrite (wp,
+		 " 		<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regulatory)</script></div>\n");
+      websWrite (wp,
+		 " 		<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"ath_regulatory\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+		 nvram_match ("ath_regulatory", "1") ? "checked" : "");
+      websWrite (wp,
+		 " 		<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"ath_regulatory\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
+		 nvram_match ("ath_regulatory", "0") ? "checked" : "");
+      websWrite (wp, " 	</div>\n");
 #endif
+
+
+
+#endif
+
     }
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
