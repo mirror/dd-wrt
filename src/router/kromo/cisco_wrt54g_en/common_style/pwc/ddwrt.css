@@ -4,9 +4,6 @@
 	-moz-opacity: 0.6;
 	opacity: 0.6;
 }
-.ddwrt_sizer {
-	cursor: se-resize;
-}
 .ddwrt_close {
 	width: 23px;
 	height: 23px;
@@ -40,55 +37,58 @@
 .ddwrt_title {
 	float:left;
 	height:14px;
+	font-family: Tahoma, Arial, sans-serif;
 	font-size:14px;
 	text-align:center;
 	margin-top:2px;
 	width:100%;
-  color:#123456;
+	color:#123456;
 }
 .ddwrt_content {
 	overflow:auto;
 	color: #000000;
 	font-family: Tahoma, Arial, sans-serif;
-  font: 12px arial;
-	background:#fdfdfd;
+ 	font: 12px arial;
+	background: #fdfdfd;
 }
 .ddwrt_nw {
 	background: transparent url(ddwrt/left-top.gif) no-repeat 0 0;
-  width:10px;
-  height:25px;
+	width:10px;
+	height:25px;
 }
 .ddwrt_n {
-  background: transparent url(ddwrt/top-middle.gif) repeat-x 0 0;
-  height:25px;
+	background: transparent url(ddwrt/top-middle.gif) repeat-x 0 0;
+	height:25px;
 }
 .ddwrt_ne {
-  background: transparent url(ddwrt/right-top.gif) no-repeat 0 0;
-  width:10px;
-  height:25px;
+	background: transparent url(ddwrt/right-top.gif) no-repeat 0 0;
+	width:10px;
+	height:25px;
 }
 .ddwrt_w {
-  background: transparent url(ddwrt/frame-left.gif) repeat-y top left;
-  width:7px;
+	background: transparent url(ddwrt/frame-left.gif) repeat-y top left;
+	width:7px;
 }
 .ddwrt_e {
-  background: transparent url(ddwrt/frame-right.gif) repeat-y top right;
-  width:7px;
+	background: transparent url(ddwrt/frame-right.gif) repeat-y top right;
+	width:7px;
 }
 .ddwrt_sw {
-  background: transparent url(ddwrt/bottom-left-c.gif) no-repeat 0 0;
-  width:7px;
-  height:7px;
+	background: transparent url(ddwrt/bottom-left-c.gif) no-repeat 0 0;
+	width:7px;
+	height:7px;
 }
 .ddwrt_s {
-  background: transparent url(ddwrt/bottom-middle.gif) repeat-x 0 0;
-  height:7px;
+	background: transparent url(ddwrt/bottom-middle.gif) repeat-x 0 0;
+	height:7px;
 }
-.ddwrt_se,
-.ddwrt_sizer  {
-  background: transparent url(ddwrt/bottom-right-c.gif) no-repeat 0 0;
-  width:7px;
-  height:7px;
+.ddwrt_se, .ddwrt_sizer {
+	background: transparent url(ddwrt/bottom-right-c.gif) no-repeat 0 0;
+	width:7px;
+	height:7px;
+}
+.ddwrt_sizer {
+	cursor: se-resize;
 }
 
 
