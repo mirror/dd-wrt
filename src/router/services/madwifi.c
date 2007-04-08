@@ -1027,7 +1027,7 @@ static void set_rate(char *dev)
 char rate[16];
   char net[16];
 char bw[16];
-  sprintf (bw, "%s_channelbw", bw);
+  sprintf (bw, "%s_channelbw", dev);
   sprintf (net, "%s_net_mode", dev);
   sprintf (rate, "%s_rate", dev);
   char *r = default_get (rate, "0");
