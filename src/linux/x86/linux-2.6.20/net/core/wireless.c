@@ -476,16 +476,6 @@ static inline struct iw_statistics *get_wireless_stats(struct net_device *dev)
 		return dev->get_wireless_stats(dev);
 	}
 
-	/* Old location, field to be removed in next WE */
-	if(dev->get_wireless_stats) {
-		static int printed_message;
-
-		if (!printed_message++)
-			printk(KERN_DEBUG "%s (WE) : Driver using old /proc/net/wireless support, please fix driver !\n",
-				dev->name);
-
-		return dev->get_wireless_stats(dev);
-	}
 
 	/* Not found */
 	return (struct iw_statistics *) NULL;
