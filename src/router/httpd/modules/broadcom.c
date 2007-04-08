@@ -1933,8 +1933,8 @@ getFileString (FILE * in)
 }
 static char *directories[] = {
   "/etc/config",
-  "/jffs/config",
-  "/mmc/config"
+  "/jffs/etc/config",
+  "/mmc/etc/config"
 };
 
 struct variable **variables;
