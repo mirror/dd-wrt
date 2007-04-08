@@ -56,7 +56,7 @@ static int parse_redboot_partitions(struct mtd_info *master,
 	int numslots;
 	unsigned long offset;
 #ifdef CONFIG_MTD_REDBOOT_PARTS_UNALLOCATED
-	static char nullstring[] = "unallocated";
+	static char nullstring[] = "ddwrt";
 #endif
 
 	buf = vmalloc(master->erasesize);
