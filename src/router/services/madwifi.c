@@ -1022,35 +1022,43 @@ start_hostapdwan (void)
 
 }
 
-static void set_rate(char *dev)
+static void
+set_rate (char *dev)
 {
-char rate[16];
+  char rate[16];
   char net[16];
-char bw[16];
+  char bw[16];
   sprintf (bw, "%s_channelbw", dev);
   sprintf (net, "%s_net_mode", dev);
   sprintf (rate, "%s_rate", dev);
   char *r = default_get (rate, "0");
   char *netmode = default_get (net, "mixed");
 
-if (nvram_match(bw,"10"))
-    if (atoi(r)>24)
-	{
-	nvram_set(rate,"0");
-	r="0";
-	}
-if (nvram_match(bw,"5"))
-    if (atoi(r)>12)
-	{
-	nvram_set(rate,"0");
-	r="0";
-	}
+  if (nvram_match (bw, "10"))
+    if (atoi (r) > 24)
+      {
+	nvram_set (rate, "0");
+	r = "0";
+      }
+  if (nvram_match (bw, "5"))
+    if (atoi (r) > 12)
+      {
+	nvram_set (rate, "0");
+	r = "0";
+      }
   if (!strcmp (r, "0"))
     {
-      if (!strcmp (netmode,"b-only"))
+      if (!strcmp (netmode, "b-only"))
 	eval ("iwconfig", dev, "rate", "11", "auto");
       else
-	eval ("iwconfig", dev, "rate", "54", "auto");
+	{
+	  if (nvram_match (bw, "5"))
+	    eval ("iwconfig", dev, "rate", "12", "auto");
+	  else if (nvram_match (bw, "10"))
+	    eval ("iwconfig", dev, "rate", "24", "auto");
+	  else
+	    eval ("iwconfig", dev, "rate", "54", "auto");
+	}
     }
   else if (!strcmp (r, "5.5"))
     eval ("iwconfig", dev, "rate", "5500", "fixed");
@@ -1071,8 +1079,8 @@ set_netmode (char *wif, char *dev)
   sprintf (net, "%s_net_mode", dev);
   sprintf (turbo, "%s_turbo", dev);
   sprintf (xr, "%s_xr", dev);
-  sprintf (comp,"%s_compression",dev);
-  sprintf (ff,"%s_ff",dev);
+  sprintf (comp, "%s_compression", dev);
+  sprintf (ff, "%s_ff", dev);
   char *netmode = default_get (net, "mixed");
 //  fprintf (stderr, "set netmode of %s to %s\n", net, netmode);
   cprintf ("configure net mode %s\n", netmode);
@@ -1125,29 +1133,30 @@ set_netmode (char *wif, char *dev)
       eval ("iwpriv", dev, "wmm", "0");
 
     }
-if (default_match(comp,"1","0"))
-    eval("iwpriv",dev,"compression","1");
-    else
-    eval("iwpriv",dev,"compression","0");
+  if (default_match (comp, "1", "0"))
+    eval ("iwpriv", dev, "compression", "1");
+  else
+    eval ("iwpriv", dev, "compression", "0");
 
-if (default_match(ff,"1","0"))
-    eval("iwpriv",dev,"ff","1");
-    else
-    eval("iwpriv",dev,"ff","0");
-    
+  if (default_match (ff, "1", "0"))
+    eval ("iwpriv", dev, "ff", "1");
+  else
+    eval ("iwpriv", dev, "ff", "0");
+
 
 }
 
-static set_compression(int count)
+static
+set_compression (int count)
 {
-char comp[32];
-char wif[32];
-sprintf(wif,"wifi%d",count);
-sprintf(comp,"ath%d_compression",count);
-if (default_match(comp,"1","0"))
-    setsysctrl(wif,"compression",1);
-else
-    setsysctrl(wif,"compression",0);
+  char comp[32];
+  char wif[32];
+  sprintf (wif, "wifi%d", count);
+  sprintf (comp, "ath%d_compression", count);
+  if (default_match (comp, "1", "0"))
+    setsysctrl (wif, "compression", 1);
+  else
+    setsysctrl (wif, "compression", 0);
 }
 
 void
@@ -1304,7 +1313,7 @@ configure_single (int count)
     return;
   if (!count)
     strcpy (iflist, dev);
-  set_compression(count);
+  set_compression (count);
 //create wds interface(s)
   int s;
 
@@ -1420,8 +1429,8 @@ configure_single (int count)
 	}
     }
 
-  
-  
+
+
   char macaddr[32];
   getMacAddr (dev, macaddr);
   nvram_set (athmac, macaddr);
@@ -1597,7 +1606,7 @@ configure_single (int count)
 	    {
 	      ifconfig (var, IFUP, NULL, NULL);
 	      br_add_interface (getBridge (var), var);
-    	      eval ("ifconfig", var, "0.0.0.0", "up");
+	      eval ("ifconfig", var, "0.0.0.0", "up");
 	    }
 	  else
 	    {
@@ -1653,7 +1662,7 @@ configure_single (int count)
       setMacFilter (var);
     }
   setMacFilter (dev);
-  set_rate(dev);
+  set_rate (dev);
 }
 
 
