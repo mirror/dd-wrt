@@ -204,6 +204,10 @@ ifeq ($(CONFIG_MAKSAT),y)
 	cp -f maksat/help/HStatus.asp $(INSTALLDIR)/www/help/HStatus.asp
 	cp -f maksat/help/index.asp $(INSTALLDIR)/www/help/index.asp
 	cp -f maksat/common.js $(INSTALLDIR)/www/common.js
+	cp -f maksat/common.css $(INSTALLDIR)/www/style/common.css
+	cp maksat/images/* $(INSTALLDIR)/www/images
+	mkdir $(INSTALLDIR)/www/style/maksat
+	cp maksat/maksat/* $(INSTALLDIR)/www/style/maksat
 endif
 
 ifeq ($(CONFIG_KODATA),y)

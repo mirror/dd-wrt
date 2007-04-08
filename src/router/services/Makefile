@@ -32,6 +32,9 @@ endif
 ifeq ($(CONFIG_KAID),y)
 CFLAGS += -DHAVE_KAID
 endif
+ifeq ($(CONFIG_MMC),y)
+CFLAGS += -DHAVE_MMC
+endif
 ifeq ($(CONFIG_JFFS2),y)
 CFLAGS += -DHAVE_JFFS2
 endif
