@@ -620,18 +620,17 @@ function openHelpWindowExt(url) {
 }
 
 function openAboutWindow() {
-	
+	/*
 	var width = 500;
 	var height = 650;
 	var top = Math.floor((screen.availHeight - height - 10) / 2);
 	var left = Math.floor((screen.availWidth - width) / 2);
 	var win = window.open("About.htm", 'DDWRT_About', 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=no,scrollbars=no,statusbar=no");
 	win.focus();
-	/*
-	Dialog.alert({url: "About_test.html", options: {method: 'get'}},  
-               {className: "ddwrt", width:500, okLabel: "Close", top:0, 
+	*/
+	Dialog.alert({url: "About.htm", options: {method: 'get'}},  
+               {className: "ddwrt", width:500, okLabel: sbutton.clos, top:0, 
                 showEffect: Effect.ModalSlideDown, hideEffect: Effect.ModalSlideUp, showEffectOptions: {duration: 0.7, delay: 0.3}, hideEffectOptions: {duration: 0.3}});
-                */
 }
 
 // Opens a new window in the center of the screen and closes it, if the parent window is unloaded
