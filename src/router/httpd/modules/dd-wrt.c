@@ -2774,8 +2774,6 @@ static char *ag_rates[]={"6","12","18","24","36","48","54"};
 static char *turbo_rates[]={"12","24","36","48","72","96","108"};
 static char *b_rates[]={"1","2","5.5","11"};
 static char *bg_rates[]={"1","2","5.5","6","11","12","18","24","36","48","54"};
-static char *half_rates[]={"1","2","5.5","6","11","12","18","24"};
-static char *quarter_rates[]={"1","2","5.5","6","11","12"};
 static char *xr_rates[]={"0.25","0.5","1","2","3","6","9","12","18","24","36","48","54"};
 
 void show_rates(webs_t wp, char *prefix)
@@ -2811,16 +2809,6 @@ if (nvram_match(mode,"g-only"))
     len = sizeof(ag_rates)/sizeof(char *);
     if (nvram_match(turbo,"1"))
 	showrates=turbo_rates;
-    if (nvram_match(bw,"10"))
-	{
-	len = sizeof(half_rates)/sizeof(char *);
-	showrates=half_rates;
-	}
-    if (nvram_match(bw,"5"))
-	{
-	len = sizeof(quarter_rates)/sizeof(char *);
-	showrates=quarter_rates;
-	}
     }
 if (nvram_match(mode,"a-only"))
     {
@@ -2828,50 +2816,26 @@ if (nvram_match(mode,"a-only"))
     len = sizeof(ag_rates)/sizeof(char *);
     if (nvram_match(turbo,"1"))
 	showrates=turbo_rates;
-    if (nvram_match(bw,"10"))
-	{
-	len = sizeof(half_rates)/sizeof(char *);
-	showrates=half_rates;
-	}
-    if (nvram_match(bw,"5"))
-	{
-	len = sizeof(quarter_rates)/sizeof(char *);
-	showrates=quarter_rates;
-	}
     }
 if (nvram_match(mode,"bg-mixed"))
     {
     rate = bg_rates;
     len = sizeof(bg_rates)/sizeof(char *);
-    if (nvram_match(bw,"10"))
-	{
-	len = sizeof(half_rates)/sizeof(char *);
-	showrates=half_rates;
-	}
-    if (nvram_match(bw,"5"))
-	{
-	len = sizeof(quarter_rates)/sizeof(char *);
-	showrates=quarter_rates;
-	}
     }
 if (nvram_match(mode,"mixed"))
     {
     rate = bg_rates;
     len = sizeof(bg_rates)/sizeof(char *);
-    if (nvram_match(bw,"10"))
-	{
-	len = sizeof(half_rates)/sizeof(char *);
-	showrates=half_rates;
-	}
-    if (nvram_match(bw,"5"))
-	{
-	len = sizeof(quarter_rates)/sizeof(char *);
-	showrates=quarter_rates;
-	}
     }
 int i;
 for (i=0;i<len;i++)
     {
+    if (nvram_match(bw,"5") && atoi(rate[i])>12)
+	    break;
+
+    if (nvram_match(bw,"10") && atoi(rate[i])>24)
+	    break;
+    
     if (showrates)
         websWrite(wp,"<option value=\"%s\" %s >%s Mbps</option>\n",rate[i],nvram_match(srate,rate[i])?"selected":"0",showrates[i]);
     else
