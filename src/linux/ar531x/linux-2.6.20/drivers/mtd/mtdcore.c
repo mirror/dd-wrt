@@ -254,6 +254,7 @@ struct mtd_info *get_mtd_device_nm(const char *name)
 	mutex_lock(&mtd_table_mutex);
 
 	for (i = 0; i < MAX_MTD_DEVICES; i++) {
+//		printk(KERN_EMERG "pointers %X\n",mtd_table[i]);
 		if (mtd_table[i] && !strcmp(name, mtd_table[i]->name)) {
 			mtd = mtd_table[i];
 			break;
