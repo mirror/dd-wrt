@@ -158,7 +158,6 @@ strcat_r (const char *s1, const char *s2, char *buf)
 #define cprintf(fmt, args...) do { \
 	FILE *fp = fopen("/dev/console", "w"); \
 	if (fp) { \
-		fprintf(fp,"%s (%d) %s:",__FILE__,__LINE__,__func__); \
 		fprintf(fp, fmt, ## args); \
 		fclose(fp); \
 	} \

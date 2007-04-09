@@ -1615,6 +1615,7 @@ wl_adv.label16="Afterburner";
 wl_adv.label17="Wireless GUI Access";
 wl_adv.label18="WMM Support";
 wl_adv.label19="No-Acknowledgement";
+wl_adv.label20="Shortslot Override";
 wl_adv.table1="EDCA AP Parameters (AP to Client)";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";

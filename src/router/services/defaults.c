@@ -457,6 +457,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl_corerev", "", 0},	/* Current core revision */
   {"wl_phytypes", "", 0},	/* List of supported wireless bands (e.g. "ga") */
   {"wl_radioids", "", 0},	/* List of radio IDs */
+  {"wl_shortslot","auto",0},
 #ifdef HAVE_WTS
   {"wl_ssid", "www.wts.com.ve", 0},	/* Service set ID (network name) */
 #elif HAVE_DDLAN
