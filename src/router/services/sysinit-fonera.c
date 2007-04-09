@@ -66,10 +66,17 @@ start_sysinit (void)
   // fix for linux kernel 2.6
   mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
   eval ("mkdir", "/tmp/www");
+  eval ("mknod", "/dev/nvram", "c", "229", "0");
 
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
   eval ("/bin/tar", "-xzf", "/dev/mtdblock/3", "-C", "/");
+  FILE *in=fopen("/tmp/nvram/nvram.db","rb");
+  if (in!=NULL)
+    {
+    fclose(in);
+    eval("/usr/sbin/convertnvram");
+    }
   cprintf ("sysinit() var\n");
 
   /* /var */
