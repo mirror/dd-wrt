@@ -76,8 +76,6 @@ endif
 ifeq ($(ARCH),mips)
 libnvram.so: nvram_linux_gen.o nvram_convert.o
 	$(LD) -shared -o $@ $^
-convertnvram: convertnvram.o
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) -lnvram
 endif
 ifeq ($(ARCH),powerpc)
 libnvram.so: nvram_linux_gen.o nvram_convert.o
