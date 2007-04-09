@@ -152,6 +152,7 @@ start_sysinit (void)
  */
   eval ("mkdir", "/tmp/www");
   eval ("mknod", "/dev/gpio", "c", "127", "0");
+  eval ("mknod", "/dev/nvram", "c", "229", "0");
   eval ("mknod", "/dev/rtc", "c", "254", "0");
   eval ("mknod", "/dev/crypto", "c", "10", "70");
 
@@ -160,7 +161,6 @@ start_sysinit (void)
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
 //#ifdef HAVE_REGISTER
-  eval ("/bin/tar", "-xzf", "/dev/mtdblock/4", "-C", "/");
 //#else
 //  eval ("/bin/tar", "-xzf", "/dev/mtdblock/3", "-C", "/");
 //#endif
@@ -268,5 +268,12 @@ Configure mac addresses by reading data from eeprom
   eval ("hwclock", "-s");
   nvram_set ("use_crypto", "0");
   cprintf ("done\n");
+  eval ("/bin/tar", "-xzf", "/dev/mtdblock/4", "-C", "/");
+  FILE *in=fopen("/tmp/nvram/nvram.db","rb");
+  if (in!=NULL)
+    {
+    fclose(in);
+    eval("/usr/sbin/convertnvram");
+    }
   return 0;
 }
