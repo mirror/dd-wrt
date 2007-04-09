@@ -344,7 +344,6 @@ bmenu.vpn="VPN";
 bmenu.accrestriction="Restrictions d\'accès";
 bmenu.webaccess="Accès Internet";
 
-
 bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Redirection plage de port";
 bmenu.applicationspforwarding="Redirection de port";
@@ -370,7 +369,6 @@ bmenu.adminWol="WOL";
 bmenu.adminFactory="Paramètres usine";
 bmenu.adminUpgrade="Mise à jour";
 bmenu.adminBackup="Sauvegarde";
-
 
 bmenu.statu="Statut";
 bmenu.statuRouter="Routeur";
