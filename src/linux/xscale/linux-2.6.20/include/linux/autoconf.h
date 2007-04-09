@@ -1,7 +1,7 @@
 /*
  * Automatically generated C config: don't edit
- * Linux kernel version: 2.6.20.4
- * Fri Apr  6 05:20:54 2007
+ * Linux kernel version: 2.6.20.6
+ * Mon Apr  9 12:04:05 2007
  */
 #define AUTOCONF_INCLUDED
 #define CONFIG_BONDING_MODULE 1
@@ -401,7 +401,7 @@
 #define CONFIG_IMQ 1
 #define CONFIG_IP_NF_TARGET_ECN 1
 #define CONFIG_NET 1
-#define CONFIG_KERNELVERSION "2.6.20.4"
+#define CONFIG_KERNELVERSION "2.6.20.6"
 #define CONFIG_MODULE_UNLOAD 1
 #define CONFIG_FS_XIP 1
 #define CONFIG_NET_CLS_BASIC 1

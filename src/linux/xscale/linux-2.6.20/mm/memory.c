@@ -1342,7 +1342,38 @@ static inline int remap_pud_range(struct mm_struct *mm, pgd_t *pgd,
 	} while (pud++, addr = next, addr != end);
 	return 0;
 }
+/*
+int remap_page_range(unsigned long from, unsigned long phys_addr, unsigned long size, pgprot_t prot)
+{
+	int error = 0;
+	pgd_t * dir;
+	unsigned long beg = from;
+	unsigned long end = from + size;
+	struct mm_struct *mm = current->mm;
 
+	phys_addr -= from;
+	dir = pgd_offset(mm, from);
+	flush_cache_range(mm, beg, end);
+	if (from >= end)
+		BUG();
+
+	spin_lock(&mm->page_table_lock);
+	do {
+		pmd_t *pmd = pmd_alloc(mm, dir, from);
+		error = -ENOMEM;
+		if (!pmd)
+			break;
+		error = remap_pmd_range(mm, pmd, from, end - from, phys_addr + from, prot);
+		if (error)
+			break;
+		from = (from + PGDIR_SIZE) & PGDIR_MASK;
+		dir++;
+	} while (from && (from < end));
+	spin_unlock(&mm->page_table_lock);
+	flush_tlb_range(mm, beg, end);
+	return error;
+}
+*/
 /**
  * remap_pfn_range - remap kernel memory to userspace
  * @vma: user vma to map to
