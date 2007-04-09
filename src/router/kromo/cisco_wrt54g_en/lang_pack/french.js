@@ -368,7 +368,7 @@ bmenu.adminLog="Journal";
 bmenu.adminDiag="Shell";
 bmenu.adminWol="WOL";
 bmenu.adminFactory="Paramètres usine";
-bmenu.adminUpgrade="Mise à niveau";
+bmenu.adminUpgrade="Mise à jour";
 bmenu.adminBackup="Sauvegarde";
 
 
