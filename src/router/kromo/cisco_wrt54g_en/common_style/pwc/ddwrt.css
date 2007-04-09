@@ -49,7 +49,7 @@
 	color: #000000;
 	font-family: Tahoma, Arial, sans-serif;
  	font: 12px arial;
-	background: #fdfdfd;
+	background: transparent url(ddwrt/bg.gif) repeat 0 0;
 }
 .ddwrt_nw {
 	background: transparent url(ddwrt/left-top.gif) no-repeat 0 0;
@@ -102,10 +102,10 @@
 	width:400px;
 }
 .ddwrt_message {
-  font: 14px arial;
+	font: 12px arial;
 	text-align:center;
 	width:100%;
-	padding-bottom:10px;
+	padding:5px;
 }
 .ddwrt_buttons {
 	text-align:center;
