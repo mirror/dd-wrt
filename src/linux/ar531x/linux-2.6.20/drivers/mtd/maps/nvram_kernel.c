@@ -16,6 +16,7 @@
 //#include <asm/addrspace.h>
 #include <asm/io.h>
 #include <asm/uaccess.h>
+#include <asm/unaligned.h>
 #include <linux/devfs_fs_kernel.h>
 
 #include "nvram_linux.h"
@@ -112,7 +113,7 @@ _nvram_read(char *buf)
 	size_t len;
 //	ret = master->read(master, offset,
 //			   master->erasesize, &retlen, (void *)buf);
-
+//	printk(KERN_EMERG "pointer %X\n",nvram_mtd);
 	if (!nvram_mtd || nvram_mtd->read(nvram_mtd, nvram_mtd->size - NVRAM_SPACE, NVRAM_SPACE, &len, buf) ||
 	    len != NVRAM_SPACE ||
 	    header->magic != NVRAM_MAGIC) {
@@ -241,7 +242,6 @@ nvram_commit(void)
 	DECLARE_WAITQUEUE(wait, current);
 	wait_queue_head_t wait_q;
 	struct erase_info erase;
-//	printk(KERN_EMERG "commit\n");
 
 	if (!nvram_mtd) {
 		printk("nvram_commit: NVRAM not found\n");
@@ -293,23 +293,25 @@ nvram_commit(void)
 		erase.callback = erase_callback;
 		erase.priv = (u_long) &wait_q;
 
-		set_current_state(TASK_INTERRUPTIBLE);
-		add_wait_queue(&wait_q, &wait);
 
 		/* Unlock sector blocks */
 		if (nvram_mtd->unlock)
 			nvram_mtd->unlock(nvram_mtd, offset, nvram_mtd->erasesize);
 
-		if ((ret = nvram_mtd->erase(nvram_mtd, &erase))) {
-			set_current_state(TASK_RUNNING);
-			remove_wait_queue(&wait_q, &wait);
-			printk("nvram_commit: erase error\n");
-			goto done;
+		if (!(ret = nvram_mtd->erase(nvram_mtd, &erase))) {
+				set_current_state(TASK_UNINTERRUPTIBLE);
+				add_wait_queue(&wait_q, &wait);
+				if (erase.state != MTD_ERASE_DONE &&
+				    erase.state != MTD_ERASE_FAILED)
+					schedule();
+				remove_wait_queue(&wait_q, &wait);
+				set_current_state(TASK_RUNNING);
+				if (erase.state == MTD_ERASE_FAILED)
+				    {
+				    printk("nvram_commit: erase error\n");
+				    goto done;
+				    }
 		}
-
-		/* Wait for erase to finish */
-		schedule();
-		remove_wait_queue(&wait_q, &wait);
 	}
 
 	/* Write partition up to end of data area */
@@ -451,6 +453,31 @@ dev_nvram_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsign
 static int
 dev_nvram_mmap(struct file *file, struct vm_area_struct *vma)
 {
+int i;
+if (nvram_mtd==NULL)
+{
+#ifdef CONFIG_MTD
+	/* Find associated MTD device */
+	for (i = 0; i < MAX_MTD_DEVICES; i++) {
+		nvram_mtd = get_mtd_device(NULL, i);
+		if (nvram_mtd) {
+			if (!strcmp(nvram_mtd->name, "nvram") &&
+			    nvram_mtd->size >= NVRAM_SPACE) 
+				break;
+			put_mtd_device(nvram_mtd);
+		}
+	}
+	if (i >= MAX_MTD_DEVICES)
+		nvram_mtd = NULL;
+#endif
+	/* Initialize hash table */
+	_nvram_init();
+
+
+}
+
+
+
 	unsigned long offset = virt_to_phys(nvram_buf);
 	if (remap_pfn_range(vma,vma->vm_start, offset>>PAGE_SHIFT, vma->vm_end-vma->vm_start,
 			     vma->vm_page_prot))
@@ -509,6 +536,7 @@ dev_nvram_exit(void)
 static int __init
 dev_nvram_init(void)
 {
+        struct mtd_info *nvram_copy = NULL;
 	int order = 0, ret = 0;
 	struct page *page, *end;
 	unsigned int i;
@@ -520,22 +548,6 @@ dev_nvram_init(void)
 	for (page = virt_to_page(nvram_buf); page <= end; page++)
 		mem_map_reserve(page);
 
-#ifdef CONFIG_MTD
-//	printk(KERN_EMERG "searching for nvram\n");
-	/* Find associated MTD device */
-	for (i = 0; i < MAX_MTD_DEVICES; i++) {
-		nvram_mtd = get_mtd_device(NULL, i);
-		if (nvram_mtd) {
-			if (!strcmp(nvram_mtd->name, "nvram") &&
-			    nvram_mtd->size >= NVRAM_SPACE) 
-				break;
-			put_mtd_device(nvram_mtd);
-		}
-	}
-	if (i >= MAX_MTD_DEVICES)
-		nvram_mtd = NULL;
-
-#endif
 
 	/* Initialize hash table lock */
 	spin_lock_init(&nvram_lock);
@@ -548,9 +560,6 @@ dev_nvram_init(void)
 		ret = nvram_major;
 		goto err;
 	}
-
-	/* Initialize hash table */
-	_nvram_init();
 
 	/* Create /dev/nvram handle */
 
