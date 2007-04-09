@@ -49,13 +49,18 @@ endif
 
 vpath %.c $(SRCBASE)/shared/nvram
 
-all: libnvram.so
+all: libnvram.so convertnvram
 
 install: all
 	install -D libnvram.so $(INSTALLDIR)/lib/libnvram.so
 	$(STRIP) $(INSTALLDIR)/lib/libnvram.so
-#	install -D nvram $(INSTALLDIR)/usr/sbin/nvram
-#	$(STRIP) $(INSTALLDIR)/usr/sbin/nvram
+ifeq ($(ARCH),armeb)
+	install -D convertnvram $(INSTALLDIR)/usr/sbin/convertnvram
+endif
+ifeq ($(ARCH),mips)
+	install -D convertnvram $(INSTALLDIR)/usr/sbin/convertnvram
+endif
+
 
 clean:
 	rm -f *.o *.a *.so nvram
@@ -65,12 +70,14 @@ libnvram.so: nvram_linux_gen.o nvram_convert.o
 	$(LD) -shared -o $@ $^
 endif
 ifeq ($(ARCH),armeb)
-libnvram.so: nvram_linux_gen.o nvram_convert.o
+libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
 endif
 ifeq ($(ARCH),mips)
 libnvram.so: nvram_linux_gen.o nvram_convert.o
 	$(LD) -shared -o $@ $^
+convertnvram: convertnvram.o
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) -lnvram
 endif
 ifeq ($(ARCH),powerpc)
 libnvram.so: nvram_linux_gen.o nvram_convert.o
@@ -80,5 +87,7 @@ ifeq ($(ARCH),mipsel)
 libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
 endif
+convertnvram: convertnvram.o
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) -lnvram
 nvram: main.o
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) -lnvram
