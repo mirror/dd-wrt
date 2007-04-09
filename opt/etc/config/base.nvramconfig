@@ -188,6 +188,7 @@
  "wl_rate"  "802.11g Rate"  "CHOICE" "13"  "0"  "1000000"  "2000000"  "5500000"  "6000000"  "9000000"  "11000000"  "12000000"  "18000000"  "24000000"  "36000000"  "48000000"  "54000000"  "FALSE" "0"  
  "wl_rateset"  "802.11g Supported Rates"  "CHOICE" "3"  "all"  "default" "12"  "FALSE" "0"  
  "wl_frag"  "802.11g Fragmentation Threshold"  "RANGE"  "256"  "2346"  "FALSE" "0"  
+ "wl_shortslot" "shortslot setting" "CHOICE" "3" "auto" "long" "short" "FALSE" "0"
  "wl_rts"  "802.11g RTS Threshold"  "RANGE"  "0"  "2347"  "FALSE" "0"  
  "wl_dtim"  "802.11g DTIM Period"  "RANGE"  "1"  "255"  "FALSE" "0"  
  "wl_bcn"  "802.11g Beacon Interval"  "RANGE"  "1"  "65535"  "FALSE" "0"  
