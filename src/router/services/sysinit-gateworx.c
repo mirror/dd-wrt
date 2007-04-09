@@ -274,6 +274,8 @@ Configure mac addresses by reading data from eeprom
     {
     fclose(in);
     eval("/usr/sbin/convertnvram");
+    eval("/usr/sbin/mtd","erase","nvram");
+    nvram_commit();
     }
   return 0;
 }
