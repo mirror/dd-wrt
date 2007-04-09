@@ -414,6 +414,27 @@ addEvent(window, "load", function() {
 									</script></span>
 								</div>
 								<div class="setting">
+									<div class="label"><% tran("wl_adv.label20"); %></div>
+									<select name="wl_shortslot">
+										<script type="text/javascript">
+										//<![CDATA[
+										document.write("<option value=\"long\" <% nvram_selected("wl_shortslot", "long", "js"); %>>" + wl_adv.lng + "</option>");
+										document.write("<option value=\"short\" <% nvram_selected("wl_shortslot", "short", "js"); %>>" + wl_adv.shrt + "</option>");
+										//]]>
+										</script>
+										<script type="text/javascript">
+									//<![CDATA[
+									document.write("<option value=\"auto\" <% nvram_selected("wl_shortslot", "auto", "js"); %>>" + share.auto + "</option>");
+									//]]>
+									</script>
+									</select>
+									<span class="default"><script type="text/javascript">
+									//<![CDATA[
+									document.write("(" + share.deflt + ": " + share.auto + ")");
+									//]]>
+									</script></span>
+								</div>
+								<div class="setting">
 									<div class="label"><% tran("wl_adv.label15"); %></div>
 									<input class="num" name="txpwr" size="6" maxlength="3" onblur="valid_range(this,0,251,wl_adv.label15)" value='<% nvram_selget("txpwr"); %>' />
 									<span class="default"><script type="text/javascript">

@@ -534,6 +534,14 @@ wlconf_up (char *name)
   else if (!strcmp (afterburner, "auto"))
     eval ("wl", "afterburner_override", "-1");
 
+  char *shortslot = nvram_safe_get("wl0_shortslot"); 
+
+  if (!strcmp (afterburner, "auto"))
+    eval ("wl", "shortslot_override", "-1");
+  else if (!strcmp (afterburner, "long"))
+    eval ("wl", "shortslot_override", "0");
+  else if (!strcmp (afterburner, "short"))
+    eval ("wl", "shortslot_override", "1");
 
 
 
