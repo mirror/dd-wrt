@@ -260,7 +260,6 @@ nvram_commit (void)
 	  return ret;
 	}
     }
-fprintf(stderr,"MAGIC %X\n",NVRAM_MAGIC);
   ret = ioctl (nvram_fd, NVRAM_MAGIC, NULL);
 
   if (ret < 0)
