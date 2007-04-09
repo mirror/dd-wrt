@@ -2704,7 +2704,7 @@ start_wan_done (char *wan_ifname)
     {
       br_del_interface (nvram_safe_get ("lan_ifname"), get_wdev ());
 //      eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
-      ifconfig (get_wdev, IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
+      ifconfig (get_wdev (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
     }
   stop_chilli ();
   start_chilli ();
