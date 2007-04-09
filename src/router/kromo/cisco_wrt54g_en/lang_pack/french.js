@@ -1637,6 +1637,7 @@ wl_adv.label16="SpeedBooster";
 wl_adv.label17="Accès à la console an sans fil";
 wl_adv.label18="Support de WMM";
 wl_adv.label19="No-Acknowledgement";
+wl_adv.label20="Mode Shortslot";
 wl_adv.table1="Paramètres EDCA AP (AP vers Client)";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
