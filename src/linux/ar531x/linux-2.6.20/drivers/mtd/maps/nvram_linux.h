@@ -163,7 +163,7 @@ extern int nvram_getall(char *buf, int count);
 #define NVRAM_MAGIC			0x48534C46	/* 'NVFL' */
 #define NVRAM_VERSION		1
 #define NVRAM_HEADER_SIZE	sizeof(struct nvram_header)
-#define NVRAM_SPACE			0x10000
+#define NVRAM_SPACE			0x08000
 
 #define	NVRAM_CRC_MASK		0x000000ff
 #define	NVRAM_CRC_SHIFT		0

@@ -232,7 +232,7 @@ spiflash_erase (struct mtd_info *mtd,struct erase_info *instr)
 	int finished = FALSE;
 
 #ifdef SPIFLASH_DEBUG
-   	printk (KERN_DEBUG "%s(addr = 0x%.8x, len = %d)\n",__FUNCTION__,instr->addr,instr->len);
+   	printk (KERN_EMERG "%s(addr = 0x%.8x, len = %d)\n",__FUNCTION__,instr->addr,instr->len);
 #endif
 
    	/* sanity checks */
@@ -260,9 +260,11 @@ spiflash_erase (struct mtd_info *mtd,struct erase_info *instr)
 			finished = TRUE;
 		}
 	} while (!finished);
+
 	spin_unlock(&spidata->mutex);
 
    	instr->state = MTD_ERASE_DONE;
+
    	if (instr->callback) instr->callback (instr);
 
 #ifdef SPIFLASH_DEBUG
