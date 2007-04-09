@@ -151,6 +151,7 @@
  "upgrade_delay"  "Delay to wait during Upgrade"  "NULL" "TRUE" "0"
  "wl_distance" "ACK Timing" "NULL" "TRUE" "0"
  "wl_enable"  "Enable Wireless"  "CHOICE" "2"  "0" "1"  "TRUE" "0"
+ "wl_shortslot" "shortslot setting" "CHOICE" "3" "auto" "long" "short" "FALSE" "0"
  "wl_ssid"  "Network NAME SSID"  "NAME"  "32"  "TRUE" "3"
  "wl_closed"  "Network Type"  "CHOICE" "2" "0"  "1"  "FALSE" "3"
  "wl_country"  "Country"  "CHOICE" "11"  "Worldwide"  "Thailand"  "Israel"  "Jordan"  "China"  "Japan"  "USA"  "Europe"  "USA Low"  "Japan High"  "All"  "FALSE" "0"
