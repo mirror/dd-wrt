@@ -10,6 +10,7 @@
 #include <linux/bootmem.h>
 #include "wrapper.h"
 #include <linux/fs.h>
+#include <linux/mm.h>
 #include <linux/miscdevice.h>
 #include <linux/mtd/mtd.h>
 //#include <asm/addrspace.h>
@@ -451,12 +452,9 @@ static int
 dev_nvram_mmap(struct file *file, struct vm_area_struct *vma)
 {
 	unsigned long offset = virt_to_phys(nvram_buf);
-//	printk(KERN_EMERG "remap\n");
 	if (remap_pfn_range(vma,vma->vm_start, offset>>PAGE_SHIFT, vma->vm_end-vma->vm_start,
 			     vma->vm_page_prot))
 		{
-//		printk(KERN_EMERG "error\n");
-
 		return -EAGAIN;
 		}
 	return 0;
