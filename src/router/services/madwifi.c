@@ -1035,13 +1035,13 @@ set_rate (char *dev)
   char *netmode = default_get (net, "mixed");
 
   if (nvram_match (bw, "10"))
-    if (atoi (r) > 24)
+    if (atof (r) > 27.0)
       {
 	nvram_set (rate, "0");
 	r = "0";
       }
   if (nvram_match (bw, "5"))
-    if (atoi (r) > 12)
+    if (atof (r) > 13.5)
       {
 	nvram_set (rate, "0");
 	r = "0";
@@ -1049,21 +1049,22 @@ set_rate (char *dev)
   if (!strcmp (r, "0"))
     {
       if (!strcmp (netmode, "b-only"))
-	eval ("iwconfig", dev, "rate", "11", "auto");
+	eval ("iwconfig", dev, "rate", "11000", "auto");
       else
 	{
 	  if (nvram_match (bw, "5"))
-	    eval ("iwconfig", dev, "rate", "12", "auto");
+	    eval ("iwconfig", dev, "rate", "13500", "auto");
 	  else if (nvram_match (bw, "10"))
-	    eval ("iwconfig", dev, "rate", "24", "auto");
+	    eval ("iwconfig", dev, "rate", "27000", "auto");
 	  else
-	    eval ("iwconfig", dev, "rate", "54", "auto");
+	    eval ("iwconfig", dev, "rate", "54000", "auto");
 	}
     }
-  else if (!strcmp (r, "5.5"))
-    eval ("iwconfig", dev, "rate", "5500", "fixed");
-  else
-    eval ("iwconfig", dev, "rate", r, "fixed");
+  double ratef = atof(r)*1000.0;
+  int integerrate = (int)ratef;
+  char set[32];
+  sprintf(set,"%d",integerrate);
+  eval ("iwconfig", dev, "rate",set, "fixed");
 
 }
 static void
@@ -1171,7 +1172,7 @@ setMacFilter (char *iface)
   if (nvram_match (nvvar, "deny"))
     {
       set80211param (iface, IEEE80211_PARAM_MACCMD,
-		     IEEE80211_MACCMD_POLICY_ALLOW);
+		     IEEE80211_MACCMD_POLICY_DENY);
       char nvlist[32];
       sprintf (nvlist, "%s_maclist", iface);
 
@@ -1190,7 +1191,7 @@ setMacFilter (char *iface)
   if (nvram_match (nvvar, "allow"))
     {
       set80211param (iface, IEEE80211_PARAM_MACCMD,
-		     IEEE80211_MACCMD_POLICY_DENY);
+		     IEEE80211_MACCMD_POLICY_ALLOW);
       char nvlist[32];
       sprintf (nvlist, "%s_maclist", iface);
 
@@ -1546,14 +1547,6 @@ configure_single (int count)
     }
 
 
-//  int maxpower = getMaxPower (dev);
-//  if (maxpower == -1)
-//    maxpower = 28;
-//  sprintf (maxp, "%d", maxpower);     //set maximum power 
-//  char max_power[32];
-//  sprintf (max_power, "%s_maxpower", dev);
-//  cprintf ("maxpower configured to %s\n", maxp);
-//  nvram_set (max_power, maxp);
 
   cprintf ("adjust power\n");
 
@@ -1571,6 +1564,7 @@ configure_single (int count)
 
 
 
+  setMacFilter (dev);
 
   if (strcmp (m, "sta") && strcmp (m, "infra"))
     {
@@ -1597,6 +1591,8 @@ configure_single (int count)
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
+      setMacFilter (var);
+    
       sprintf (mode, "%s_mode", var);
       m = default_get (mode, "ap");
 
@@ -1661,9 +1657,7 @@ configure_single (int count)
 	setupHostAP (var, 0);
       else
 	setupSupplicant (var);
-      setMacFilter (var);
     }
-  setMacFilter (dev);
   set_rate (dev);
 }
 
