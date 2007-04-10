@@ -1236,6 +1236,7 @@ adjust_regulatory (int count)
     setsysctrl (wif, "turbo", tb);
     long regulatory = atol (nvram_safe_get ("ath_regulatory"));
     {
+#if !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108)
       if (regulatory == 0)
 	{
 	  setsysctrl (wif, "regulatory", regulatory);
@@ -1245,6 +1246,7 @@ adjust_regulatory (int count)
 	  setsysctrl (wif, "antennagain", 0);
 	}
       else
+#endif
 	{
 	  sprintf (country, "%s_regdomain", dev);
 	  setsysctrl (wif, "regulatory", 1);
