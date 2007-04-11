@@ -1277,6 +1277,7 @@ static int b44_set_mac_addr(struct net_device *dev, void *p)
 {
 	struct b44 *bp = dev->priv;
 	struct sockaddr *addr = p;
+	u32 val;
 
 	if (netif_running(dev))
 		return -EBUSY;
