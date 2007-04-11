@@ -1276,6 +1276,7 @@ static int b44_set_mac_addr(struct net_device *dev, void *p)
 {
 	struct b44 *bp = dev->priv;
 	struct sockaddr *addr = p;
+	u32 val;
 
 	if (netif_running(dev))
 		return -EBUSY;
@@ -1283,8 +1284,12 @@ static int b44_set_mac_addr(struct net_device *dev, void *p)
 	memcpy(dev->dev_addr, addr->sa_data, dev->addr_len);
 
 	spin_lock_irq(&bp->lock);
-	__b44_set_mac_addr(bp);
-	spin_unlock_irq(&bp->lock);
+
+	val = br32(B44_RXCONFIG);  
+ 	if (!(val & RXCONFIG_CAM_ABSENT))  
+ 	  __b44_set_mac_addr(bp);  
+
+ 	spin_unlock_irq(&bp->lock);
 
 	return 0;
 }
@@ -1470,7 +1475,7 @@ static void __b44_set_rx_mode(struct net_device *dev)
 
 	val = br32(B44_RXCONFIG);
 	val &= ~(RXCONFIG_PROMISC | RXCONFIG_ALLMULTI);
-	if (dev->flags & IFF_PROMISC) {
+	if ((dev->flags & IFF_PROMISC) || (val & RXCONFIG_CAM_ABSENT)) {
 		val |= RXCONFIG_PROMISC;
 		bw32(B44_RXCONFIG, val);
 	} else {
