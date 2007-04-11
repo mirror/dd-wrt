@@ -294,6 +294,7 @@ ej_show_wan_domain (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
+#ifndef HAVE_MADWIFI
 void
 ej_show_wl_mac (webs_t wp, int argc, char_t ** argv)
 {
@@ -308,6 +309,16 @@ ej_show_wl_mac (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "%s", wl_mac);
   return;
 }
+#else
+void
+ej_show_wl_mac (webs_t wp, int argc, char_t ** argv)
+{
+  char *wifmac = sprintf ("%s_hwaddr", nvram_safe_get ("wifi_display"));
+
+  websWrite (wp, "%s", nvram_safe_get (wifmac));
+  return;
+}
+#endif
 
 int
 stop_ppp (webs_t wp)
