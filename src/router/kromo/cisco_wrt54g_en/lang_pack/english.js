@@ -1583,7 +1583,8 @@ wl_basic.channel_wide="Wide Channel";
 wl_basic.regulatory="Regulatory";
 wl_basic.specialmode="2.3 Ghz Mode";
 wl_basic.wifi_bonding="Wifi Bonding";
-
+wl_basic.sifstime="OFDM SIFS Time";
+wl_basic.preambletime="OFDM Preamble Time";
 //help container
 var hwl_basic = new Object();
 hwl_basic.right2="If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.";
