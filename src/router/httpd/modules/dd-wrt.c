@@ -3305,8 +3305,18 @@ save_prefix (webs_t wp, char *prefix)
 #endif
   sprintf (n, "%s_regdomain", prefix);
   copytonv (wp, n);
+
   sprintf (turbo, "%s_turbo", prefix);
-  copytonv (wp, turbo);
+  char *tw = websGetVar (wp, turbo, NULL);
+  int turbochanged = 0;
+
+  if (tw && !nvram_match (turbo, tw))
+    {
+      turbochanged = 1;
+    }
+  if (tw)
+    nvram_set (turbo, tw);
+
   sprintf (n, "%s_rate", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_xr", prefix);
@@ -3399,7 +3409,7 @@ save_prefix (webs_t wp, char *prefix)
 //#endif
 	}
     }
-  if (cbwchanged || chanchanged)
+  if (cbwchanged || chanchanged || turbochanged)
     {
       if (nvram_match (turbo, "1"))
 	{
