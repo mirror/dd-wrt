@@ -336,10 +336,10 @@ bmenu.wirelessSecurity="Wireless Security";
 bmenu.wirelessMac="MAC Filter";
 bmenu.wirelessAdvanced="Advanced Settings";
 bmenu.wirelessWds="WDS";
-bmenu.wirelessWds0="ATH0-WDS";
-bmenu.wirelessWds1="ATH1-WDS";
-bmenu.wirelessWds2="ATH2-WDS";
-bmenu.wirelessWds3="ATH3-WDS";
+bmenu.wirelessWds0="Ath0-WDS";
+bmenu.wirelessWds1="Ath1-WDS";
+bmenu.wirelessWds2="Ath2-WDS";
+bmenu.wirelessWds3="Ath3-WDS";
 
 bmenu.security="Security";
 bmenu.firwall="Firewall";
@@ -1241,6 +1241,9 @@ status_router.wanuptime="Connection Uptime";
 status_router.leasetime="Remaining Lease Time";
 status_router.notavail="Not available";
 status_router.legend6="Space Usage";
+status_router.inpvolt="Board Input Voltage";
+status_router.cputemp="CPU Temperature";
+
 
 //help container
 var hstatus_router = new Object();

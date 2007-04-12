@@ -336,10 +336,10 @@ bmenu.wirelessSecurity="Brez¾ièna za¹èita";
 bmenu.wirelessMac="Filter MAC";
 bmenu.wirelessAdvanced="Napredne nastavitve";
 bmenu.wirelessWds="WDS";
-bmenu.wirelessWds0="ATH0-WDS";
-bmenu.wirelessWds1="ATH1-WDS";
-bmenu.wirelessWds2="ATH2-WDS";
-bmenu.wirelessWds3="ATH3-WDS";
+bmenu.wirelessWds0="Ath0-WDS";
+bmenu.wirelessWds1="Ath1-WDS";
+bmenu.wirelessWds2="Ath2-WDS";
+bmenu.wirelessWds3="Ath3-WDS";
 
 bmenu.security="Za¹èita";
 bmenu.firwall="Po¾arni zid";
@@ -1241,6 +1241,8 @@ status_router.wanuptime=" Trajanje povezave";
 status_router.leasetime="Preostali èas zakupa";
 status_router.notavail="Ni na voljo";
 status_router.legend6="Uporaba prostora";
+status_router.inpvolt="Napajalna napetost";
+status_router.cputemp="Temperature procesorja";
 
 //help container
 
