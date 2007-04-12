@@ -254,7 +254,7 @@ internal_getRouterBrand ()
     {
       cprintf ("router is asus\n");
       setRouter ("Asus WL-500g Deluxe");
-      return ROUTER_ASUS;
+      return ROUTER_ASUS_WL500GD;
     }
 
   if (nvram_match ("boardnum", "00") &&
@@ -987,6 +987,9 @@ led_control (int type, int act)
       break;
     case ROUTER_MICROSOFT_MN700:
       power_gpio = 0x06;
+      break;
+    case ROUTER_ASUS_WL500GD:
+      diag_gpio = 0x10;  //power led off to indicate factory defaults
       break;
     case ROUTER_ASUS_WL500G_PRE:
       power_gpio = 0x11;
