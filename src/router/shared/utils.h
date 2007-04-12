@@ -28,7 +28,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_LINKSYS_WRT55AG 0x0316
 
 // Asus WL-500G-Deluxe (5365 cpu), (fccid: Asus MSQWL500GD)
-#define ROUTER_ASUS 0x0406
+#define ROUTER_ASUS_WL500GD 0x0406
 
 // Buffalo WBR-G54, WLA-G54 (4702 cpu)
 #define ROUTER_BUFFALO_WBR54G 0x0504
