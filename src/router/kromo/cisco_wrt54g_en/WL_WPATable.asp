@@ -185,7 +185,6 @@ addEvent(window, "load", function() {
                	<input type="hidden" name="wl_wep_last" />
                	<input type="hidden" name="filter_mac_value" />
                	
-               	<h2><% tran("wpa.h2"); %></h2>
              		<% show_security(); %><br />
              		
              		<div class="submitFooter">
