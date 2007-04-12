@@ -1256,12 +1256,13 @@ status_router.wanuptime="Connexion démarrée depuis";
 status_router.leasetime="Renouvellement du bail dans";
 status_router.notavail="Indisponible";
 status_router.legend6="Partitions Disponibles";
-status_router.inpvolt="Board Input Voltage";
-status_router.cputemp="CPU Temperature";
+status_router.inpvolt="Tension";
+status_router.cputemp="Température CPU";
+
 
 //help container
 
-hstatus_router.right2="Nom du routeur que vous avez configuré dans l\'onglet <i>Setup</i>.";
+hstatus_router.right2="Nom du routeur bmenu.wirelessWds0que vous avez configuré dans l\'onglet <i>Setup</i>.";
 hstatus_router.right4="Adresse Mac vue par votre provider Internet";
 hstatus_router.right6="Firmware utilisé sur votre routeur";
 hstatus_router.right8="Ceci est la date reçue depuis le serveur ntp configurable dans l\'onglet <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em>.";
