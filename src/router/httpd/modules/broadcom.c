@@ -4474,7 +4474,7 @@ ej_get_cputemp (webs_t wp, int argc, char_t ** argv)
 
   if (fp == NULL)
     {
-      websWrite (wp, "N/A");	//no i2c lm75 found
+      websWrite (wp, "%s", live_translate ("status_router.notavail"));	//no i2c lm75 found
       return;
     }
   int temp;
@@ -4482,7 +4482,7 @@ ej_get_cputemp (webs_t wp, int argc, char_t ** argv)
   fclose (fp);
   int high = temp / TEMP_MUL;
   int low = (temp - (high * TEMP_MUL)) / (TEMP_MUL / 10);
-  websWrite (wp, "%d.%d C", high, low);	//no i2c lm75 found
+  websWrite (wp, "%d.%d &#176;C", high, low);	//no i2c lm75 found
 }
 
 
@@ -4490,8 +4490,10 @@ static void
 ej_show_cpu_temperature (webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\">CPU Temperature</div>\n");
-  websWrite (wp, "<span id=\"cpu_temp\"></span>&nbsp;\n");
+  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_router.cputemp)</script></div>\n");
+  websWrite (wp, "<span id=\"cpu_temp\">");
+  ej_get_cputemp (wp, argc, argv);
+  websWrite (wp, "</span>&nbsp;\n");
   websWrite (wp, "</div>\n");
 }
 #endif
@@ -4506,7 +4508,7 @@ ej_get_voltage (webs_t wp, int argc, char_t ** argv)
 
   if (fp == NULL)
     {
-      websWrite (wp, "N/A");	//no i2c lm75 found
+      websWrite (wp, "%s", live_translate ("status_router.notavail"));	//no i2c lm75 found
       return;
     }
   int temp;
@@ -4515,7 +4517,7 @@ ej_get_voltage (webs_t wp, int argc, char_t ** argv)
 //temp*=564;
   int high = temp / 1000;
   int low = (temp - (high * 1000)) / 100;
-  websWrite (wp, "%d.%d Volt", high, low);	//no i2c lm75 found
+  websWrite (wp, "%d.%d V", high, low);	//no i2c lm75 found
 }
 
 
@@ -4523,8 +4525,10 @@ static void
 ej_show_voltage (webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\">Board Voltage</div>\n");
-  websWrite (wp, "<span id=\"voltage\"></span>&nbsp;\n");
+  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_router.inpvolt)</script></div>\n");
+  websWrite (wp, "<span id=\"voltage\">");
+  ej_get_voltage (wp, argc, argv);
+  websWrite (wp, "</span>&nbsp;\n");
   websWrite (wp, "</div>\n");
 }
 #endif
