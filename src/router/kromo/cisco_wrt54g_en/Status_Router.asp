@@ -139,6 +139,7 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("status_router.sys_up"); %></div>
 									<span id="uptime_up"></span>&nbsp;
 								</div>
+								<% show_voltage(); %>
 							</fieldset><br />
 							
 							<fieldset>
@@ -156,7 +157,6 @@ addEvent(window, "unload", function() {
 									<span id="uptime_load"></span>&nbsp;
 								</div>
 								<% show_cpu_temperature(); %>
-								<% show_voltage(); %>
 							</fieldset><br />
 							
 							<fieldset>
