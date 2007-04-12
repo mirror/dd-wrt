@@ -1256,6 +1256,8 @@ status_router.wanuptime="Connexion démarrée depuis";
 status_router.leasetime="Renouvellement du bail dans";
 status_router.notavail="Indisponible";
 status_router.legend6="Partitions Disponibles";
+status_router.inpvolt="Board Input Voltage";
+status_router.cputemp="CPU Temperature";
 
 //help container
 
