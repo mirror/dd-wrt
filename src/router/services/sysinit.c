@@ -537,7 +537,7 @@ start_restore_defaults (void)
     case ROUTER_NETGEAR_WNR834B:
       linux_overrides = generic;
       break;
-    case ROUTER_ASUS:
+    case ROUTER_ASUS_WL500GD:
       linux_overrides = vlan;
       break;
     case ROUTER_WRT350N:
@@ -787,12 +787,6 @@ start_restore_defaults (void)
 	    }
 	}
     }
-/*	if (brand==ROUTER_ASUS)
-	{
-	if(!nvram_get("boardflags")||nvram_match("boardflags", ""))
-		nvram_set("boardflags", "0x0388");
-
-	}*/
 
   if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X
       || brand == ROUTER_LINKSYS_WRT55AG)
@@ -1369,7 +1363,7 @@ check_cfe_nv (void)
   switch (getRouterBrand ())
     {
 
-    case ROUTER_ASUS:
+    case ROUTER_ASUS_WL500GD:
       ret += check_nv ("wl0_ifname", "eth1");
       return 0;
       break;
