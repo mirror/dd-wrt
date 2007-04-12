@@ -2783,7 +2783,8 @@ static char *bg_rates[] =
   { "1", "2", "5.5", "6", "11", "12", "18", "24", "36", "48", "54" };
 static char *xr_rates[] =
   { "0.25", "0.5", "1", "2", "3", "6", "9", "12", "18", "24", "36", "48",
-"54" };
+  "54"
+};
 static char *half_rates[] = { "3", "4.5", "6", "9", "12", "18", "24", "27" };
 static char *quarter_rates[] =
   { "1.5", "2", "3", "4.5", "6", "9", "12", "13.5" };
@@ -3328,8 +3329,18 @@ save_prefix (webs_t wp, char *prefix)
 //  copytonv (wp, n);
   sprintf (n, "%s_rxantenna", prefix);
   copytonv (wp, n);
+
   sprintf (chanbw, "%s_channelbw", prefix);
-  copytonv (wp, chanbw);
+  char *cbw = websGetVar (wp, chanbw, NULL);
+  int cbwchanged = 0;
+
+  if (cbw && !nvram_match (chanbw, cbw))
+    {
+      cbwchanged = 1;
+    }
+  if (cbw)
+    nvram_set (chanbw, cbw);
+
   sprintf (n, "%s_xr", prefix);
   copytonv (wp, n);
   sprintf (sifs, "%s_sifstime", prefix);
@@ -3372,6 +3383,7 @@ save_prefix (webs_t wp, char *prefix)
 	}
 #endif
     }
+  int chanchanged = 0;
 #ifndef HAVE_MADWIFI
   if (!strcmp (prefix, "wl0"))
 #endif
@@ -3380,34 +3392,36 @@ save_prefix (webs_t wp, char *prefix)
       sprintf (n, "%s_net_mode", prefix);
       if (!nvram_match (n, websGetVar (wp, n, "")))
 	{
-	  //  if (!strcmp(check,"g-only") || !strcmp(check,"a-only") || !strcmp(check,"mixed") || !strcmp(check,"bg-mixed"))
-	  {
-	    if (nvram_match (turbo, "1"))
-	      {
-		nvram_set (sifs, "8");
-		nvram_set (preamble, "14");
-	      }
-	    else if (nvram_match (chanbw, "5"))
-	      {
-		nvram_set (sifs, "64");
-		nvram_set (preamble, "80");
-	      }
-	    else if (nvram_match (chanbw, "10"))
-	      {
-		nvram_set (sifs, "32");
-		nvram_set (preamble, "40");
-	      }
-	    else
-	      {
-		nvram_set (sifs, "16");
-		nvram_set (preamble, "20");
-	      }
-	  }
+	  chanchanged = 1;
 	  copytonv (wp, n);
 //#ifndef HAVE_MADWIFI
 	  convert_wl_gmode (nvram_safe_get (n));
 //#endif
 	}
+    }
+  if (cbwchanged || chanchanged)
+    {
+      if (nvram_match (turbo, "1"))
+	{
+	  nvram_set (sifs, "8");
+	  nvram_set (preamble, "14");
+	}
+      else if (nvram_match (chanbw, "5"))
+	{
+	  nvram_set (sifs, "64");
+	  nvram_set (preamble, "80");
+	}
+      else if (nvram_match (chanbw, "10"))
+	{
+	  nvram_set (sifs, "32");
+	  nvram_set (preamble, "40");
+	}
+      else
+	{
+	  nvram_set (sifs, "16");
+	  nvram_set (preamble, "20");
+	}
+
     }
   sprintf (n, "%s_nbw", prefix);
   copytonv (wp, n);
