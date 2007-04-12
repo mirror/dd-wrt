@@ -122,7 +122,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
 
   switch (brand)
     {
-	case ROUTER_ASUS:
+	case ROUTER_ASUS_WL500GD:
     case ROUTER_ASUS_WL500G_PRE:
     case ROUTER_WRT54G:
     case ROUTER_MOTOROLA:
@@ -502,7 +502,7 @@ start_sysinit (void)
 		"diag switch-core switch-adm";
 
 	      break;
-	    case ROUTER_ASUS:
+	    case ROUTER_ASUS_WL500GD:
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") : "diag";
