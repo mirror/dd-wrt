@@ -1041,6 +1041,8 @@ service.kaid_legend="XBOX Kaid";
 service.kaid_srv="Zaèni Kaid";
 service.kaid_locdevnum="©tevilo lokalnih naprav";
 service.kaid_uibind="Vrata upor. vmesnika";
+service.kaid_orbport="ORB vrata";
+service.kaid_orbdeepport="Vrata ORB \"Deep Port\"";
 
 //DHCPd
 service.dhcp_legend="DHCP odjemalec";
@@ -1242,7 +1244,7 @@ status_router.leasetime="Preostali èas zakupa";
 status_router.notavail="Ni na voljo";
 status_router.legend6="Uporaba prostora";
 status_router.inpvolt="Napajalna napetost";
-status_router.cputemp="Temperature procesorja";
+status_router.cputemp="Temperatura procesorja";
 
 //help container
 
@@ -1666,9 +1668,9 @@ logout.message="Uspe¹no ste se odjavili.<br />Hvala, da uporabljate DD-WRT !";
 // *****************************************************		OLD PAGES 		************************************************************************//
 // **************************************************************** DHCPTable.asp **********************************************************************//
 
-dhcp.titl="DHCP tabela aktivnih IP";
-dhcp.h2="DHCP tabela aktivnih IP";
-dhcp.server="DHCP stre¾nikov IP naslov :";
+dhcp.titl="DHCP: tabela aktivnih IP";
+dhcp.h2="DHCP: tabela aktivnih IP";
+dhcp.server="IP naslov DHCP stre¾nika :";
 dhcp.tclient="Odjemalèevo gostiteljevo ime";
 
 
