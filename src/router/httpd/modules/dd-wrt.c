@@ -1535,17 +1535,17 @@ ej_show_security_single (webs_t wp, int argc, char_t ** argv, char *prefix)
   if (vifs == NULL)
     return;
   sprintf (ssid, "%s_ssid", prefix);
+  websWrite (wp, "<h2><script type=\"text/javascript\">Capture(wpa.h2)</script> %s</h2>\n", prefix);
   websWrite (wp, "<fieldset>\n");
   //cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
   websWrite (wp,
 	     "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [%s] HWAddr [%s]</legend>\n",
 	     prefix, nvram_safe_get (ssid), nvram_safe_get (mac));
   show_security_prefix (wp, argc, argv, prefix);
-  websWrite (wp, "</fieldset>\n");
+  websWrite (wp, "</fieldset>\n<br />\n");
   foreach (var, vifs, next)
   {
     sprintf (ssid, "%s_ssid", var);
-    websWrite (wp, "<br />\n");
     websWrite (wp, "<fieldset>\n");
     //cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
     websWrite (wp,
@@ -1553,7 +1553,7 @@ ej_show_security_single (webs_t wp, int argc, char_t ** argv, char *prefix)
 	       var, nvram_get (ssid));
     rep (var, '.', 'X');
     show_security_prefix (wp, argc, argv, var);
-    websWrite (wp, "</fieldset>\n");
+    websWrite (wp, "</fieldset>\n<br />\n");
   }
 
 }
