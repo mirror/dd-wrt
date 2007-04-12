@@ -230,7 +230,7 @@ main_loop (void)
 #ifndef HAVE_RB500
   switch (brand)
     {
-    case ROUTER_ASUS:
+    case ROUTER_ASUS_WL500GD:
     case ROUTER_MOTOROLA:
     case ROUTER_RT480W:
     case ROUTER_WRT350N:
