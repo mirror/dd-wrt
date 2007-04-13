@@ -196,7 +196,7 @@ main_loop (void)
 	    }
 	}
     }
-  else if (brand == ROUTER_ROUTER_WZRG144NH)
+  else if (brand == ROUTER_BUFFALO_WZRG144NH)
     {
       if (nvram_match ("fullswitch", "1")
 	  && (nvram_invmatch ("wl0_mode", "ap")
