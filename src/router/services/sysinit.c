@@ -421,6 +421,14 @@ start_restore_defaults (void)
     {0, 0, 0}
   };
 
+  struct nvram_tuple wzr144nhvlan[] = {
+    {"lan_ifname", "br0", 0},
+    {"lan_ifnames", "vlan2 eth1 eth2 eth3", 0},
+    {"wan_ifname", "vlan1", 0},
+    {"wan_ifnames", "vlan1", 0},
+    {0, 0, 0}
+  };
+
   struct nvram_tuple generic_2[] = {
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "eth1 eth2", 0},
@@ -541,8 +549,10 @@ start_restore_defaults (void)
       linux_overrides = vlan;
       break;
     case ROUTER_WRT350N:
-    case ROUTER_BUFFALO_WZRG144NH:
       linux_overrides = wrt350vlan;
+      break;
+    case ROUTER_BUFFALO_WZRG144NH:
+      linux_overrides = wzr144nhvlan;
       break;
     case ROUTER_BUFFALO_WLI2_TX1_G54:
     case ROUTER_MOTOROLA_WE800G:
@@ -707,7 +717,7 @@ start_restore_defaults (void)
       nvram_set ("lan_ipaddr", "192.168.0.1");
     }
 #endif
-  if (brand == ROUTER_WRT350N || brand==ROUTER_BUFFALO_WZRG144NH)
+  if (brand == ROUTER_WRT350N)
     {
 
       if (!nvram_get ("vlan1ports") || nvram_match ("vlan1ports", ""))
@@ -722,7 +732,22 @@ start_restore_defaults (void)
 	    }
 	}
     }
-  else
+  else  if (brand==ROUTER_BUFFALO_WZRG144NH)
+
+  {
+      if (!nvram_get ("vlan1ports") || nvram_match ("vlan1ports", ""))
+	{
+	  nvram_set ("vlan1ports", "4 8");
+	}
+      if (nvram_invmatch ("fullswitch", "1"))
+	{
+	  if (!nvram_get ("vlan2ports") || nvram_match ("vlan2ports", ""))
+	    {
+	      nvram_set ("vlan2ports", "0 1 2 3 8");
+	    }
+	}
+ 
+  }else
     {
       if (!nvram_get ("vlan0hwname") || nvram_match ("vlan0hwname", ""))
 	nvram_set ("vlan0hwname", "et0");

@@ -178,25 +178,7 @@ main_loop (void)
   nvram_set ("vlan1ports", "");
 #else
 
-  if (brand != ROUTER_WRT350N && brand!=ROUTER_BUFFALO_WZRG144NH)
-    {
-      if (nvram_match ("fullswitch", "1")
-	  && (nvram_invmatch ("wl0_mode", "ap")
-	      || nvram_match ("wan_proto", "disabled")))
-	{
-	  nvram_set ("vlan0ports", "0 1 2 3 4 5*");
-	  nvram_set ("vlan1ports", "");
-	}
-      else
-	{
-	  if (nvram_match ("vlan0ports", "0 1 2 3 4 5*"))
-	    {
-	      nvram_set ("vlan0ports", "");
-	      nvram_set ("vlan1ports", "");
-	    }
-	}
-    }
-  else
+  if (brand == ROUTER_WRT350N)
     {
       if (nvram_match ("fullswitch", "1")
 	  && (nvram_invmatch ("wl0_mode", "ap")
@@ -214,6 +196,44 @@ main_loop (void)
 	    }
 	}
     }
+  else if (brand == ROUTER_ROUTER_WZRG144NH)
+    {
+      if (nvram_match ("fullswitch", "1")
+	  && (nvram_invmatch ("wl0_mode", "ap")
+	      || nvram_match ("wan_proto", "disabled")))
+	{
+	  nvram_set ("vlan1ports", "");
+	  nvram_set ("vlan2ports", "0 1 2 3 4 8*");
+	}
+      else
+	{
+	  if (nvram_match ("vlan2ports", "0 1 2 3 4 8*"))
+	    {
+	      nvram_set ("vlan1ports", "");
+	      nvram_set ("vlan2ports", "");
+	    }
+	}
+    }
+  else
+    {
+      if (nvram_match ("fullswitch", "1")
+	  && (nvram_invmatch ("wl0_mode", "ap")
+	      || nvram_match ("wan_proto", "disabled")))
+	{
+	  nvram_set ("vlan0ports", "0 1 2 3 4 5*");
+	  nvram_set ("vlan1ports", "");
+	}
+      else
+	{
+	  if (nvram_match ("vlan0ports", "0 1 2 3 4 5*"))
+	    {
+	      nvram_set ("vlan0ports", "");
+	      nvram_set ("vlan1ports", "");
+	    }
+	}
+    }
+
+
 
 
 
@@ -251,10 +271,10 @@ main_loop (void)
   set_ip_forward ('1');
   system ("/etc/preinit");	//sets default values for ip_conntrack
 #ifdef HAVE_JFFS2
-  start_service("jffs2");
+  start_service ("jffs2");
 #endif
 #ifdef HAVE_MMC
-  start_service("mmc");
+  start_service ("mmc");
 #endif
 
   start_service ("mkfiles");
@@ -597,9 +617,7 @@ main (int argc, char **argv)
   else if (strstr (base, "erase"))
     {
       int brand = getRouterBrand ();
-      if (brand == ROUTER_MOTOROLA || brand == ROUTER_MOTOROLA_V1 
- 	          || brand == ROUTER_MOTOROLA_WE800G || brand == ROUTER_RT210W 
- 	          || brand == ROUTER_BUFFALO_WZRRSG54)   //these routers have problem erasing nvram, so we only software restore defaults
+      if (brand == ROUTER_MOTOROLA || brand == ROUTER_MOTOROLA_V1 || brand == ROUTER_MOTOROLA_WE800G || brand == ROUTER_RT210W || brand == ROUTER_BUFFALO_WZRRSG54)	//these routers have problem erasing nvram, so we only software restore defaults
 	{
 	  if (argv[1] && strcmp (argv[1], "nvram"))
 	    {
