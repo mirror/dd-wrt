@@ -58,6 +58,37 @@ function bond_del_submit(F,I) {
 function init() {
 
 }
+
+function setBRCTLTable() {
+	var table = document.getElementById("Bridging_table");
+	var val = arguments;
+	cleanTable(table);
+	for(var i = 0; i < val.length; i = i + 3) {
+		
+		var row = table.insertRow(-1);
+		row.insertCell(-1).innerHTML = val[i];
+		row.insertCell(-1).innerHTML = val[i + 1];
+		row.insertCell(-1).innerHTML = val[i + 2];
+	}
+}
+
+var update;
+
+addEvent(window, "load", function() {
+	setBRCTLTable(<% show_bridgetable(); %>);
+	
+	update = new StatusUpdate("Networking.live.asp", <% nvram_get("refresh_time"); %>);
+	
+	update.onUpdate("bridges_table", function(u) {
+		eval('setBRCTLTable(' + u.bridges_table + ')');
+	});
+
+	update.start();
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
+});
 		
 		//]]>
 		</script>
