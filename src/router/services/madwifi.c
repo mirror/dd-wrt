@@ -1221,8 +1221,8 @@ adjust_regulatory (int count)
   char gain[32];
   char country[64];
   char bw[16];
-  char sifs[16];
-  char preamble[16];
+  char sifs[32];
+  char preamble[32];
   sprintf (wif, "wifi%d", count);
   sprintf (dev, "ath%d", count);
   sprintf (turbo, "%s_turbo", dev);
@@ -1239,8 +1239,8 @@ adjust_regulatory (int count)
   {
     long tb = atol (nvram_safe_get (turbo));
     setsysctrl (wif, "turbo", tb);
-    long s = atol (default_get (sifs,"16"));
-    long p = atol (default_get (preamble,"20"));
+    long s = atol (nvram_default_get (sifs,"16"));
+    long p = atol (nvram_default_get (preamble,"20"));
     setsysctrl(wif,"sifstime",s);
     setsysctrl(wif,"preambletime",p);
 
