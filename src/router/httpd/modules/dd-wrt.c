@@ -2415,9 +2415,9 @@ ej_show_bridgetable (webs_t wp, int argc, char_t ** argv)
 	      if (strncmp (buf, "\t\t\t", 3) != 0)
 		{
 		  if (count != 1)
-		    websWrite (wp, "</td>\n</tr>\n");	//close
+		    websWrite (wp, "\',");	//close
 		  sscanf (buf, "%s %*s %s %s", brname, brstp, brif);
-		  websWrite (wp, "<tr>\n <td>%s</td>\n <td>%s</td>\n <td>%s ",
+		  websWrite (wp, "\'%s\',\'%s\',\'%s ",
 			     brname, brstp, brif);
 		}
 	      else
@@ -2429,7 +2429,7 @@ ej_show_bridgetable (webs_t wp, int argc, char_t ** argv)
 	  count++;
 	}
 
-      websWrite (wp, "</td>\n</tr>\n");	//close
+      websWrite (wp, "\'");	//close
       fclose (f);
       unlink ("/tmp/.brtable");
     }
