@@ -1242,7 +1242,7 @@ adjust_regulatory (int count)
     long s = atol (default_get (sifs,"16"));
     long p = atol (default_get (preamble,"20"));
     setsysctrl(wif,"sifstime",s);
-    setsysctrl(wif,"preambletime",s);
+    setsysctrl(wif,"preambletime",p);
 
     long regulatory = atol (nvram_safe_get ("ath_regulatory"));
     {
