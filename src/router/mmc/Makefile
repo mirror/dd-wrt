@@ -9,10 +9,10 @@ CC      := /opt/3.3.6/bin/mipsel-linux-uclibc-gcc
 
 
 all:
-	$(CC) $(CFLAGS) -DONE -c -o mmc_wrt1.o mmc.c
-	$(CC) $(CFLAGS) -DTWO -c -o mmc_wrt2.o mmc.c
-	$(CC) $(CFLAGS) -DTHREE -c -o mmc_buf1.o mmc.c
-	$(CC) $(CFLAGS) -DFOUR -c -o mmc_buf2.o mmc.c
+	$(CC) $(CFLAGS) -c -o mmc.o mmcold.c
+#	$(CC) $(CFLAGS) -DTWO -c -o mmc_wrt2.o mmc.c
+#	$(CC) $(CFLAGS) -DTHREE -c -o mmc_buf1.o mmc.c
+#	$(CC) $(CFLAGS) -DFOUR -c -o mmc_buf2.o mmc.c
 
 clean:
 	rm -f mmc.o
