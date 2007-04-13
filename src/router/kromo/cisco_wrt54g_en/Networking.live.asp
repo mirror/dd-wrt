@@ -1,0 +1,1 @@
+{bridges_table::<% show_bridgetable(); %>}
