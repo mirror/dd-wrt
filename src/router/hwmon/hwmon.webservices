@@ -3,11 +3,11 @@
 		<div class="setting">
 			<div class="label"><script type="text/javascript">Capture(service.hwmon_critemp)</script></div>
 			<input class="num" maxlength="3" size="3" name="hwmon_temp_max" value="<% nvram_get("hwmon_temp_max"); %>" />
-			<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": 60)")</script></span>
+			<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": 60 &#176;C)")</script></span>
 		</div>
 		<div class="setting">
 			<div class="label"><script type="text/javascript">Capture(service.hwmon_hystemp)</script></div>
 			<input class="num" maxlength="3" size="3" name="hwmon_temp_hyst" value="<% nvram_get("hwmon_temp_hyst"); %>" />
-			<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": 50)")</script></span>
+			<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": 50 &#176;C)")</script></span>
 		</div>
 </fieldset><br />
