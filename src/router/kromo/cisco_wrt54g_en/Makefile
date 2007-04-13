@@ -292,6 +292,7 @@ endif
 
 ifneq ($(CONFIG_VLANTAGGING),y)
 	rm -f $(INSTALLDIR)/www/Networking.asp
+	rm -f $(INSTALLDIR)/www/Networking.live.asp
 endif
 
 ifneq ($(BACKUP_RESTORE_SUPPORT),1)
