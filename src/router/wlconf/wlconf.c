@@ -1026,10 +1026,10 @@ wlconf(char *name)
 		}
 
 		/* band | BW | CTRL SB | Channel */
-		fprintf(stderr,"%X, %X, %X\n",nbw,nctrlsb,channel);
+//		fprintf(stderr,"%X, %X, %X\n",nbw,nctrlsb,channel);
 		chanspec |= ((bandtype << WL_CHANSPEC_BAND_SHIFT) |
 		             (nbw | nctrlsb | channel));
-		fprintf(stderr,"spec %X\n",chanspec);
+//		fprintf(stderr,"spec %X\n",chanspec);
 
 		WL_IOVAR_SETINT(name, "chanspec", (uint32)chanspec);
 	}
@@ -1362,7 +1362,7 @@ wlconf(char *name)
 				chanspec_t chanspec = wlconf_auto_chanspec(name);
 				if (chanspec != 0)
 					{
-					fprintf(stderr,"auto chanspec %X\n",chanspec);
+//					fprintf(stderr,"auto chanspec %X\n",chanspec);
 					WL_IOVAR_SETINT(name, "chanspec", chanspec);
 					}
 			}
