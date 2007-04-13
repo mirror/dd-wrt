@@ -135,7 +135,6 @@ addEvent(window, "unload", function() {
 								<th width="15%">STP enabled</script></th>
 								<th width="70%">Interfaces</script></th>
 								</tr>
-								<% show_bridgetable(); %>
 								</table>
 							</fieldset>
 							<br />
