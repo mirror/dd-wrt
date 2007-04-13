@@ -135,7 +135,14 @@ addEvent(window, "unload", function() {
 								<th width="15%">STP enabled</script></th>
 								<th width="70%">Interfaces</script></th>
 								</tr>
-								</table>
+								</table><br />
+								<div class="center">
+									<script type="text/javascript">
+									//<![CDATA[
+									document.write("<input class=\"button\" type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload();\" />");
+									//]]>
+									</script>
+								</div>
 							</fieldset>
 							<br />
 							<% show_bondings(); %>
