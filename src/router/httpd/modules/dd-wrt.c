@@ -3281,6 +3281,8 @@ save_prefix (webs_t wp, char *prefix)
   char turbo[80];
   char chanbw[80];
   char preamble[80];
+  int turbochanged = 0;
+  int cbwchanged = 0;
   sprintf (n, "%s_ssid", prefix);
   copytonv (wp, n);
   if (!strcmp (prefix, "wl0"))
@@ -3308,7 +3310,6 @@ save_prefix (webs_t wp, char *prefix)
 
   sprintf (turbo, "%s_turbo", prefix);
   char *tw = websGetVar (wp, turbo, NULL);
-  int turbochanged = 0;
 
   if (tw && !nvram_match (turbo, tw))
     {
@@ -3342,7 +3343,6 @@ save_prefix (webs_t wp, char *prefix)
 
   sprintf (chanbw, "%s_channelbw", prefix);
   char *cbw = websGetVar (wp, chanbw, NULL);
-  int cbwchanged = 0;
 
   if (cbw && !nvram_match (chanbw, cbw))
     {
@@ -3409,6 +3409,7 @@ save_prefix (webs_t wp, char *prefix)
 //#endif
 	}
     }
+#ifdef HAVE_MADWIFI
   if (cbwchanged || chanchanged || turbochanged)
     {
       if (nvram_match (turbo, "1"))
@@ -3433,6 +3434,7 @@ save_prefix (webs_t wp, char *prefix)
 	}
 
     }
+#endif
   sprintf (n, "%s_nbw", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_nctrlsb", prefix);
