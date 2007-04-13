@@ -541,6 +541,7 @@ start_restore_defaults (void)
       linux_overrides = vlan;
       break;
     case ROUTER_WRT350N:
+    case ROUTER_BUFFALO_WZRG144NH:
       linux_overrides = wrt350vlan;
       break;
     case ROUTER_BUFFALO_WLI2_TX1_G54:
@@ -706,7 +707,7 @@ start_restore_defaults (void)
       nvram_set ("lan_ipaddr", "192.168.0.1");
     }
 #endif
-  if (brand == ROUTER_WRT350N)
+  if (brand == ROUTER_WRT350N || brand==ROUTER_BUFFALO_WZRG144NH)
     {
 
       if (!nvram_get ("vlan1ports") || nvram_match ("vlan1ports", ""))

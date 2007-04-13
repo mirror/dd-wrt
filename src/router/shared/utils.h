@@ -162,6 +162,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 #define ROUTER_BUFFALO_WLAH_G54 0x3004 // (only available on japanese market, single radio 2.4 ghz)
 
+#define ROUTER_BUFFALO_WZRG144NH 0x3107 // (only available on japanese market, 802.11n, Gigabit switch. similar to WRT350N)
+
 #define NVROUTER "DD_BOARD"
 
 extern char *getBridge(char *ifname);

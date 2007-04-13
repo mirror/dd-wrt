@@ -171,6 +171,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
 	case ROUTER_WRT150N:
     case ROUTER_WRT300N:
     case ROUTER_WRT350N:
+    case ROUTER_BUFFALO_WZRG144NH:
     case ROUTER_BUFFALO_WZRG300N:
     case ROUTER_NETGEAR_WNR834B:
       eval ("insmod", "wl");	//load module
@@ -387,6 +388,7 @@ start_sysinit (void)
       break;
 
     case ROUTER_WRT350N:
+    case ROUTER_BUFFALO_WZRG144NH:
       nvram_set ("wan_ifname", "vlan2");
       nvram_set ("wan_ifnames", "vlan2");
       nvram_set ("pppoe_wan_ifname", "vlan2");
@@ -448,6 +450,7 @@ start_sysinit (void)
 	  switch (brand)
 	    {
 	    case ROUTER_WRT350N:
+	    case ROUTER_BUFFALO_WZRG144NH:
 	      modules = "diag bcm57xxlsys";
 	      break;
 	    case ROUTER_LINKSYS_WRT55AG:
@@ -493,6 +496,7 @@ start_sysinit (void)
 	  switch (brand)
 	    {
 	    case ROUTER_WRT350N:
+	    case ROUTER_BUFFALO_WZRG144NH:
 	      modules = "diag bcm57xxlsys";
 	      break;
 	    case ROUTER_LINKSYS_WRT55AG:
