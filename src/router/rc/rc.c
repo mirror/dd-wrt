@@ -178,7 +178,7 @@ main_loop (void)
   nvram_set ("vlan1ports", "");
 #else
 
-  if (brand != ROUTER_WRT350N)
+  if (brand != ROUTER_WRT350N && brand!=ROUTER_BUFFALO_WZRG144NH)
     {
       if (nvram_match ("fullswitch", "1")
 	  && (nvram_invmatch ("wl0_mode", "ap")
@@ -234,6 +234,7 @@ main_loop (void)
     case ROUTER_MOTOROLA:
     case ROUTER_RT480W:
     case ROUTER_WRT350N:
+    case ROUTER_BUFFALO_WZRG144NH:
     case ROUTER_DELL_TRUEMOBILE_2300_V2:
       start_service ("config_vlan");
       break;
