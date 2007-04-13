@@ -4268,8 +4268,8 @@ void start_mmc(void)
 {
   if (nvram_match ("mmc_enable", "1"))
     {
-    int res = eval("insmod","mmc_wrt1");
-    if (res)
+    int res = eval("insmod","mmc");
+/*    if (res)
 	{
 	eval("rmmod","mmc_wrt1");
         res = eval("insmod","mmc_wrt2");
@@ -4287,7 +4287,7 @@ void start_mmc(void)
     if (res)
         {
 	eval("rmmod","mmc_buf2");
-	}    
+	}    */
     
       if (!res)
 	{
