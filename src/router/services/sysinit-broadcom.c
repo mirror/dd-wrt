@@ -388,10 +388,14 @@ start_sysinit (void)
       break;
 
     case ROUTER_WRT350N:
-    case ROUTER_BUFFALO_WZRG144NH:
       nvram_set ("wan_ifname", "vlan2");
       nvram_set ("wan_ifnames", "vlan2");
       nvram_set ("pppoe_wan_ifname", "vlan2");
+      break;
+    case ROUTER_BUFFALO_WZRG144NH:
+      nvram_set ("wan_ifname", "vlan1");
+      nvram_set ("wan_ifnames", "vlan1");
+      nvram_set ("pppoe_wan_ifname", "vlan1");
       break;
 
     case ROUTER_ASUS_WL500G_PRE:
