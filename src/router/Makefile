@@ -829,10 +829,11 @@ mmc:
 	$(MAKE) -C mmc
 
 mmc-install:
-	install -D  mmc/mmc_wrt1.o $(INSTALLDIR)/mmc/lib/modules/$(LINUXVER)/mmc_wrt1.o
-	install -D  mmc/mmc_wrt2.o $(INSTALLDIR)/mmc/lib/modules/$(LINUXVER)/mmc_wrt2.o
-	install -D  mmc/mmc_buf1.o $(INSTALLDIR)/mmc/lib/modules/$(LINUXVER)/mmc_buf1.o
-	install -D  mmc/mmc_buf2.o $(INSTALLDIR)/mmc/lib/modules/$(LINUXVER)/mmc_buf2.o
+#	install -D  mmc/mmc_wrt1.o $(INSTALLDIR)/mmc/lib/modules/$(LINUXVER)/mmc_wrt1.o
+#	install -D  mmc/mmc_wrt2.o $(INSTALLDIR)/mmc/lib/modules/$(LINUXVER)/mmc_wrt2.o
+#	install -D  mmc/mmc_buf1.o $(INSTALLDIR)/mmc/lib/modules/$(LINUXVER)/mmc_buf1.o
+#	install -D  mmc/mmc_buf2.o $(INSTALLDIR)/mmc/lib/modules/$(LINUXVER)/mmc_buf2.o
+	install -D  mmc/mmc.o $(INSTALLDIR)/mmc/lib/modules/$(LINUXVER)/mmc.o
 	install -D  mmc/config/mmc.webconfig $(INSTALLDIR)/mmc/etc/config/mmc.webconfig
 	install -D  mmc/config/mmc.startup $(INSTALLDIR)/mmc/etc/config/mmc.startup
 	install -D  mmc/config/mmc.nvramconfig $(INSTALLDIR)/mmc/etc/config/mmc.nvramconfig
