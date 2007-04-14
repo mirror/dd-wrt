@@ -32,9 +32,9 @@ MODULE_LICENSE ("GPL");
 
 #define SD_DIV1 0x20
 #define SD_DIV4 0x04
-#define SD_DIBUF 0x40
+#define SD_DIBUF 0x20
 #define SD_DOWRT 0x10
-#define SD_DOBUF 0x20
+#define SD_DOBUF 0x40
 #define SD_CLK 0x08
 #define SD_CS 0x80
 
@@ -596,8 +596,16 @@ static int
 mmc_hardware_init (void)
 {
   unsigned char gpio_outen;
+// OLD HACK ADDED
+  unsigned char gpio_control; 
 
   // Set inputs/outputs here
+
+  gpio_control = *gpioaddr_control;
+
+  gpio_control = (gpio_control & ~(SD_DI | SD_CLK | SD_CS | SD_DO));
+  *gpioaddr_control = gpio_control;
+ 
   gpio_outen = *gpioaddr_enable;
 
   gpio_outen = (gpio_outen | SD_DI | SD_CLK | SD_CS) & ~SD_DO;
