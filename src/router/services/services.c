@@ -3357,7 +3357,7 @@ start_igmp_proxy (void)
 #endif
 #endif
 #endif
-    , get_wan_face (),
+    get_wan_face (),
     NULL
   };
 
