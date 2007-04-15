@@ -1385,7 +1385,7 @@ void
 start_nas_lan (void)
 {
   start_nas_single ("lan", "wl0");
-  syslog (LOG_INFO, "NAS : NAS lan (wl0 interface) successfully started\n");
+
 #ifdef HAVE_MSSID
   char *next;
   char var[80];
@@ -1394,8 +1394,6 @@ start_nas_lan (void)
     foreach (var, vifs, next)
     {
       start_nas_single ("lan", var);
-      syslog (LOG_INFO, "NAS : NAS lan (%s interface) successfully started\n",
-	      var);
     }
 #endif
 
@@ -1407,7 +1405,7 @@ void
 start_nas_wan (void)
 {
   start_nas_single ("wan", "wl0");
-  syslog (LOG_INFO, "NAS : NAS wan (wl0 interface) successfully started\n");
+
 #ifdef HAVE_MSSID
   char *next;
   char var[80];
@@ -1422,14 +1420,10 @@ start_nas_wan (void)
 	  || nvram_match (vif, "apsta") || nvram_match (vif, "apstawet"))
 	{
 	  start_nas_single ("wan", var);
-	  syslog (LOG_INFO,
-		  "NAS : NAS wan (%s interface) successfully started\n", var);
 	}
       else
 	{
 	  start_nas_single ("lan", var);
-	  syslog (LOG_INFO,
-		  "NAS : NAS lan (%s interface) successfully started\n", var);
 	}
     }
 #endif
@@ -1518,9 +1512,17 @@ start_nas_single (char *type, char *prefix)
     if (auth_mode == NULL)
       return 0;			//no nas required
     if (0 == strcmp (nvram_safe_get (apmode), "ap"))
+    	{
       mode = "-A";
+      syslog (LOG_INFO,
+		  "NAS : NAS lan (%s interface) successfully started\n", prefix);      
+  		}
     else
+    	{
       mode = "-S";
+      syslog (LOG_INFO,
+		  "NAS : NAS wan (%s interface) successfully started\n", prefix);
+  		}
 
     char rekey[32];
     char ssid[32];
