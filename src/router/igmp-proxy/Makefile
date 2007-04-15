@@ -31,4 +31,8 @@ clean:
 	
 
 install:
+ifeq ($(ARCH),mipsel)
+	install -D igmprt2 $(INSTALLDIR)/usr/sbin/igmprt
+else
 	if test -e "brcm/Makefile"; then install -D brcm/igmprt-$(ARCH) $(INSTALLDIR)/usr/sbin/igmprt; else install -D igmprt2 $(INSTALLDIR)/usr/sbin/igmprt; fi
+endif
