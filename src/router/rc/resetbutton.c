@@ -399,22 +399,6 @@ period_check (int sig)
 		  eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
 		  eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
 		  eval ("erase", "nvram");
-#elif HAVE_FONERA
-		  eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-		  eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
-		  eval ("erase", "nvram");
-#elif HAVE_LS2
-		  eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-		  eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
-		  eval ("erase", "nvram");
-#elif HAVE_WHRAG108
-		  eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-		  eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
-		  eval ("erase", "nvram");
-#elif HAVE_XSCALE
-		  eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-		  eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
-		  eval ("erase", "nvram");
 #else
           nvram_set ("sv_restore_defaults", "1");
           nvram_commit ();
