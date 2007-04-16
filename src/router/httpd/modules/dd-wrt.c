@@ -2934,10 +2934,10 @@ show_netmode (webs_t wp, char *prefix)
 		 nvram_match (wl_net_mode,
 			      "bg-mixed") ? "selected=\\\"selected\\\"" : "");
     }
-  websWrite (wp,
 #ifdef HAVE_WHRAG108
   if (!strcmp(prefix,"ath1"))
 #endif
+  websWrite (wp,
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"b-only\\\" %s>\" + wl_basic.b + \"</option>\");\n//]]>\n</script>\n",
 	     nvram_match (wl_net_mode,
 			  "b-only") ? "selected=\\\"selected\\\"" : "");
