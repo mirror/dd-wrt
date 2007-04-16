@@ -386,7 +386,7 @@ list_channelsext (const char *ifname, int allchans)
 	    continue;
 	}
       //filter out B/G channels if mode isnt g-only, b-only or mixed
-      if (IEEE80211_IS_CHAN_G (&achans.ic_chans[i]))
+      if (IEEE80211_IS_CHAN_ANYG (&achans.ic_chans[i]) || IEEE80211_IS_CHAN_B (&achans.ic_chans[i]))
 	{
 #ifdef HAVE_WHRAG108
   if (!strcmp(ifname,"ath0"))
@@ -397,6 +397,8 @@ list_channelsext (const char *ifname, int allchans)
 	      && nvram_invmatch (wl_mode, "b-only"))
 	    continue;
 	}
+
+
       //filter out channels which are not supporting turbo mode if turbo is enabled
       if (!IEEE80211_IS_CHAN_STURBO (&achans.ic_chans[i]) && !IEEE80211_IS_CHAN_DTURBO (&achans.ic_chans[i]))
 	{
