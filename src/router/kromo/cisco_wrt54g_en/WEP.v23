@@ -10,8 +10,8 @@
 <div class="setting">
 	<div class="label"><% tran("share.encrypt"); %></div>
 	<select name="wl_wep_bit" size="1" onchange="keyMode(this.form.wl_wep_bit.selectedIndex,this.form)">
-		<option value="64" <% nvram_selmatch("wl_wep_bit", "64", "selected"); %> >64 bits 10 hex digits</option>
-		<option value="128" <% nvram_selmatch("wl_wep_bit", "128", "selected"); %> >128 bits 26 hex digits</option>
+		<option value="64" <% nvram_selected("wl_wep_bit", "64"); %> >64 bits 10 hex digits</option>
+		<option value="128" <% nvram_selected("wl_wep_bit", "128"); %> >128 bits 26 hex digits</option>
 	</select>
 </div>
 <div class="setting">
