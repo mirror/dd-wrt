@@ -377,6 +377,10 @@ list_channelsext (const char *ifname, int allchans)
       //filter out A channels if mode isnt A-Only or mixed
       if (IEEE80211_IS_CHAN_A (&achans.ic_chans[i]))
 	{
+#ifdef HAVE_WHRAG108
+  if (!strcmp(ifname,"ath1"))
+	continue;
+#endif
 	  if (nvram_invmatch (wl_mode, "a-only")
 	      && nvram_invmatch (wl_mode, "mixed"))
 	    continue;
@@ -384,6 +388,10 @@ list_channelsext (const char *ifname, int allchans)
       //filter out B/G channels if mode isnt g-only, b-only or mixed
       if (IEEE80211_IS_CHAN_G (&achans.ic_chans[i]))
 	{
+#ifdef HAVE_WHRAG108
+  if (!strcmp(ifname,"ath0"))
+	continue;
+#endif
 	  if (nvram_invmatch (wl_mode, "g-only")
 	      && nvram_invmatch (wl_mode, "mixed")
 	      && nvram_invmatch (wl_mode, "b-only"))

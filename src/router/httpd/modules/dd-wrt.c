@@ -2935,19 +2935,31 @@ show_netmode (webs_t wp, char *prefix)
 			      "bg-mixed") ? "selected=\\\"selected\\\"" : "");
     }
   websWrite (wp,
+#ifdef HAVE_WHRAG108
+  if (!strcmp(prefix,"ath1"))
+#endif
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"b-only\\\" %s>\" + wl_basic.b + \"</option>\");\n//]]>\n</script>\n",
 	     nvram_match (wl_net_mode,
 			  "b-only") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_MADWIFI
+#ifdef HAVE_WHRAG108
+  if (!strcmp(prefix,"ath1"))
+#endif
   websWrite (wp,
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n//]]>\n</script>\n",
 	     nvram_match (wl_net_mode,
 			  "g-only") ? "selected=\\\"selected\\\"" : "");
+#ifdef HAVE_WHRAG108
+  if (!strcmp(prefix,"ath1"))
+#endif
   websWrite (wp,
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n//]]>\n</script>\n",
 	     nvram_match (wl_net_mode,
 			  "bg-only") ? "selected=\\\"selected\\\"" : "");
 #else
+#ifdef HAVE_WHRAG108
+  if (!strcmp(prefix,"ath1"))
+#endif
   websWrite (wp,
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n//]]>\n</script>\n",
 	     nvram_match (wl_net_mode,
@@ -2963,11 +2975,20 @@ show_netmode (webs_t wp, char *prefix)
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2)
 #ifndef HAVE_MADWIFI
   if (nvram_match ("wl0_phytypes", "ga") || nvram_match ("wl0_phytypes", "a"))
+    websWrite (wp,
+	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n//]]>\n</script>\n",
+	       nvram_match (wl_net_mode,
+			    "a-only") ? "selected=\\\"selected\\\"" : "");
+#else
+#ifdef HAVE_WHRAG108
+  if (!strcmp(prefix,"ath0"))
 #endif
     websWrite (wp,
 	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n//]]>\n</script>\n",
 	       nvram_match (wl_net_mode,
 			    "a-only") ? "selected=\\\"selected\\\"" : "");
+#endif
+
 #endif
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
