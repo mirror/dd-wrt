@@ -433,6 +433,7 @@ do_madwifi_check (void)
 static void setACK(void)
 {
   char *v;
+  char *name = get_wdev();
   if ((v = nvram_get ("wl0_distance")))
     {
       rw_reg_t reg;
