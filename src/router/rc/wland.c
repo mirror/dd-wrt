@@ -428,6 +428,32 @@ do_madwifi_check (void)
 }
 #endif
 
+#ifndef HAVE_MSSID
+
+static void setACK(void)
+{
+  char *v;
+  if ((v = nvram_get ("wl0_distance")))
+    {
+      rw_reg_t reg;
+      uint32 shm;
+
+      int val = atoi (v);
+      val = 9 + (val / 150) + ((val % 150) ? 1 : 0);
+
+      shm = 0x10;
+      shm |= (val << 16);
+      WL_IOCTL (name, 197, &shm, sizeof (shm));
+
+      reg.byteoff = 0x684;
+      reg.val = val + 510;
+      reg.size = 2;
+      WL_IOCTL (name, 102, &reg, sizeof (reg));
+    }
+
+}
+#endif
+
 static void
 do_wlan_check (void)
 {
@@ -443,7 +469,9 @@ do_wlan_check (void)
 
   do_madwifi_check ();
 #endif
-
+#ifndef HAVE_MSSID
+setACK();
+#endif
 
 }
 
