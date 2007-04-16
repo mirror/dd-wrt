@@ -3348,7 +3348,6 @@ start_igmp_proxy (void)
 #ifndef HAVE_FONERA
 #ifndef HAVE_WHRAG108
 #ifndef HAVE_LS2
-    "-f",
     "-i",
 #endif
 #endif
