@@ -4431,7 +4431,7 @@ start_pppoeserver (void)
 	  fprintf (fp, "%s * %s %s\n", nvram_safe_get ("pppoeserver_user"), nvram_safe_get ("pppoeserver_pass"), nvram_safe_get ("pppoeserver_ip"));
 //	  fprintf (fp, "test * test 192.168.0.2\n");	// todo, make configureable (ip, user and password)
 	  fclose (fp);
-	  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"));	//todo, make interface and base address configurable, see networking page options
+	  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"), "-R",nvram_safe_get("pppoeserver_remoteaddr"));	//todo, make interface and base address configurable, see networking page options
 	}
       else
 	{
@@ -4550,7 +4550,7 @@ start_pppoeserver (void)
 	  fp = fopen ("/tmp/ppp/radius/servers", "wb");
 	  fprintf (fp, "%s %s\n",nvram_safe_get ("pppoeserver_authserverip"),nvram_safe_get ("pppoeserver_sharedkey"));	//todo, shared secret for radius server, see above for server name, must be identical
 	  fclose (fp);
-	  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"), "-R",nvram_safe_get("pppoe_remoteaddr"));	//todo, make interface and base address configurable, remote addr as well, see networking page options
+	  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"), "-R",nvram_safe_get("pppoeserver_remoteaddr"));	//todo, make interface and base address configurable, remote addr as well, see networking page options
 	}
     }
 }
