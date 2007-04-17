@@ -181,7 +181,7 @@ PPPOEConnectDevice(void)
     return conn->sessionSocket;
 }
 
-static void
+/*static void
 PPPOESendConfig(int mtu,
 		u_int32_t asyncmap,
 		int pcomp,
@@ -200,7 +200,7 @@ PPPOESendConfig(int mtu,
 	return;
     }
     strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
-    info("set mtu rp-pppoe to %s (%d)\n",ifname,mtu);
+//    info("set mtu rp-pppoe to %s (%d)\n",ifname,mtu);
     ifr.ifr_mtu = mtu;
     if (ioctl(sock, SIOCSIFMTU, &ifr) < 0) {
 	error("Couldn't set interface MTU to %d: %m", mtu);
@@ -208,7 +208,7 @@ PPPOESendConfig(int mtu,
     }
     (void) close (sock);
 }
-
+*/
 static void
 PPPOERecvConfig(int mru,
 		u_int32_t asyncmap,
@@ -441,7 +441,7 @@ struct channel pppoe_channel = {
     disconnect: &PPPOEDisconnectDevice,
     establish_ppp: &generic_establish_ppp,
     disestablish_ppp: &generic_disestablish_ppp,
-    send_config: &PPPOESendConfig,
+    send_config: NULL,
     recv_config: &PPPOERecvConfig,
     close: NULL,
     cleanup: NULL
