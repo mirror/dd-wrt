@@ -11,4 +11,4 @@
  "pppoeserver_authserverport" "" "RANGE"  "1"  "65535"  "FALSE" "0"  
  "pppoeserver_acctserverip" "" "NULL"  "TRUE" "0" 
  "pppoeserver_acctserverport" "" "RANGE"  "1"  "65535"  "FALSE" "0"
- "pppoeencryption" "" "CHOICE"  "2" "0"  "1"  "FALSE" "0"
+ "pppoeserver_encryption" "" "CHOICE"  "2" "0"  "1"  "FALSE" "0"
