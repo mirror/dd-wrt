@@ -4336,79 +4336,172 @@ start_mmc (void)
 void
 start_pppoeserver (void)
 {
-  FILE *fp;
-  mkdir ("/tmp/ppp", 0777);
-  fp = fopen ("/tmp/ppp/options", "wb");
-  fprintf (fp, "lock\n");
-  fprintf (fp, "crtscts\n");
-  fprintf (fp, "nobsdcomp\n");	//todo optionaly configurable
-  fprintf (fp, "nodeflate\n");	//todo ...
-  fprintf (fp, "nopcomp\n");
-  fclose (fp);
-  fp = fopen ("/tmp/ppp/pppoe-server-options", "wb");
-  fprintf (fp, "auth\n");
-  fprintf (fp, "require-chap\n");
-  fprintf (fp, "default-mru\n");
-  fprintf (fp, "default-asyncmap\n");
-  fprintf (fp, "lcp-echo-interval 60\n");	//todo optionally configurable
-  fprintf (fp, "lcp-echo-failure 5\n");	// todo optionally configureable
-  struct dns_lists *dns_list = get_dns_list ();
-  if (!dns_list || dns_list->num_servers == 0)
+  if (nvram_default_match ("pppoeserver_enabled", "1", "0"))
     {
-      if (nvram_invmatch ("lan_ipaddr", ""))
-	fprintf (fp, "ms-dns %s\n", nvram_safe_get ("lan_ipaddr"));
-    }
-  else if (nvram_match ("local_dns", "1"))
-    {
-      if (dns_list
-	  && (nvram_invmatch ("lan_ipaddr", "")
-	      || strlen (dns_list->dns_server[0]) > 0
-	      || strlen (dns_list->dns_server[1]) > 0
-	      || strlen (dns_list->dns_server[2]) > 0))
+      if (nvram_default_match ("pppoeradius_enabled", "1", "0"))
 	{
+	  FILE *fp;
+	  mkdir ("/tmp/ppp", 0777);
+	  fp = fopen ("/tmp/ppp/options", "wb");
+	  fprintf (fp, "lock\n");
+	  fprintf (fp, "crtscts\n");
+	  fprintf (fp, "nobsdcomp\n");	//todo optionaly configurable
+	  fprintf (fp, "nodeflate\n");	//todo ...
+	  fprintf (fp, "nopcomp\n");
+	  fclose (fp);
+	  fp = fopen ("/tmp/ppp/pppoe-server-options", "wb");
+	  fprintf (fp, "auth\n");
+	  fprintf (fp, "require-chap\n");
+	  fprintf (fp, "default-mru\n");
+	  fprintf (fp, "default-asyncmap\n");
+	  fprintf (fp, "lcp-echo-interval 60\n");	//todo optionally configurable
+	  fprintf (fp, "lcp-echo-failure 5\n");	// todo optionally configureable
+	  struct dns_lists *dns_list = get_dns_list ();
+	  if (!dns_list || dns_list->num_servers == 0)
+	    {
+	      if (nvram_invmatch ("lan_ipaddr", ""))
+		fprintf (fp, "ms-dns %s\n", nvram_safe_get ("lan_ipaddr"));
+	    }
+	  else if (nvram_match ("local_dns", "1"))
+	    {
+	      if (dns_list
+		  && (nvram_invmatch ("lan_ipaddr", "")
+		      || strlen (dns_list->dns_server[0]) > 0
+		      || strlen (dns_list->dns_server[1]) > 0
+		      || strlen (dns_list->dns_server[2]) > 0))
+		{
 
-	  if (nvram_invmatch ("lan_ipaddr", ""))
-	    fprintf (fp, "ms-dns %s\n", nvram_safe_get ("lan_ipaddr"));
-	  if (strlen (dns_list->dns_server[0]) > 0)
-	    fprintf (fp, "ms-dns %s\n %s", dns_list->dns_server[0]);
-	  if (strlen (dns_list->dns_server[1]) > 0)
-	    fprintf (fp, "ms-dns %s\n %s", dns_list->dns_server[1]);
-	  if (strlen (dns_list->dns_server[2]) > 0)
-	    fprintf (fp, "ms-dns %s\n %s", dns_list->dns_server[2]);
+		  if (nvram_invmatch ("lan_ipaddr", ""))
+		    fprintf (fp, "ms-dns %s\n",
+			     nvram_safe_get ("lan_ipaddr"));
+		  if (strlen (dns_list->dns_server[0]) > 0)
+		    fprintf (fp, "ms-dns %s\n %s", dns_list->dns_server[0]);
+		  if (strlen (dns_list->dns_server[1]) > 0)
+		    fprintf (fp, "ms-dns %s\n %s", dns_list->dns_server[1]);
+		  if (strlen (dns_list->dns_server[2]) > 0)
+		    fprintf (fp, "ms-dns %s\n %s", dns_list->dns_server[2]);
 
-	  fprintf (fp, "\n");
+		  fprintf (fp, "\n");
+		}
+	    }
+	  else
+	    {
+	      if (dns_list
+		  && (strlen (dns_list->dns_server[0]) > 0
+		      || strlen (dns_list->dns_server[1]) > 0
+		      || strlen (dns_list->dns_server[2]) > 0))
+		{
+		  if (strlen (dns_list->dns_server[0]) > 0)
+		    fprintf (fp, "ms-dns  %s", dns_list->dns_server[0]);
+		  if (strlen (dns_list->dns_server[1]) > 0)
+		    fprintf (fp, "ms-dns  %s", dns_list->dns_server[1]);
+		  if (strlen (dns_list->dns_server[2]) > 0)
+		    fprintf (fp, "ms-dns  %s", dns_list->dns_server[2]);
+
+		  fprintf (fp, "\n");
+		}
+	    }
+
+	  if (dns_list)
+	    free (dns_list);
+	  fprintf (fp, "noipdefault\n");
+	  fprintf (fp, "nodefaultroute\n");
+	  fprintf (fp, "noproxyarp\n");
+	  fprintf (fp, "noktune\n");
+	  fprintf (fp, "netmask 255.255.255.255\n");
+	  fclose (fp);
+	  fp = fopen ("/tmp/ppp/chap-secrets", "wb");
+	  fprintf (fp, "test * test 192.168.0.2\n");	// todo, make configureable (ip, user and password)
+	  fclose (fp);
+	  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"));	//todo, make interface and base address configurable, see networking page options
+	}
+      else
+	{
+	  FILE *fp;
+	  mkdir ("/tmp/ppp", 0777);
+	  fp = fopen ("/tmp/ppp/options", "wb");
+	  fprintf (fp, "lock\n");
+	  fprintf (fp, "crtscts\n");
+	  fprintf (fp, "nobsdcomp\n");	//todo optionaly configurable
+	  fprintf (fp, "nodeflate\n");	//todo ...
+	  fprintf (fp, "nopcomp\n");
+	  fprintf (fp, "idle 600\n");	//todo ...
+	  struct dns_lists *dns_list = get_dns_list ();
+	  if (!dns_list || dns_list->num_servers == 0)
+	    {
+	      if (nvram_invmatch ("lan_ipaddr", ""))
+		fprintf (fp, "ms-dns %s\n", nvram_safe_get ("lan_ipaddr"));
+	    }
+	  else if (nvram_match ("local_dns", "1"))
+	    {
+	      if (dns_list
+		  && (nvram_invmatch ("lan_ipaddr", "")
+		      || strlen (dns_list->dns_server[0]) > 0
+		      || strlen (dns_list->dns_server[1]) > 0
+		      || strlen (dns_list->dns_server[2]) > 0))
+		{
+
+		  if (nvram_invmatch ("lan_ipaddr", ""))
+		    fprintf (fp, "ms-dns %s\n",
+			     nvram_safe_get ("lan_ipaddr"));
+		  if (strlen (dns_list->dns_server[0]) > 0)
+		    fprintf (fp, "ms-dns %s\n %s", dns_list->dns_server[0]);
+		  if (strlen (dns_list->dns_server[1]) > 0)
+		    fprintf (fp, "ms-dns %s\n %s", dns_list->dns_server[1]);
+		  if (strlen (dns_list->dns_server[2]) > 0)
+		    fprintf (fp, "ms-dns %s\n %s", dns_list->dns_server[2]);
+
+		  fprintf (fp, "\n");
+		}
+	    }
+	  else
+	    {
+	      if (dns_list
+		  && (strlen (dns_list->dns_server[0]) > 0
+		      || strlen (dns_list->dns_server[1]) > 0
+		      || strlen (dns_list->dns_server[2]) > 0))
+		{
+		  if (strlen (dns_list->dns_server[0]) > 0)
+		    fprintf (fp, "ms-dns  %s", dns_list->dns_server[0]);
+		  if (strlen (dns_list->dns_server[1]) > 0)
+		    fprintf (fp, "ms-dns  %s", dns_list->dns_server[1]);
+		  if (strlen (dns_list->dns_server[2]) > 0)
+		    fprintf (fp, "ms-dns  %s", dns_list->dns_server[2]);
+
+		  fprintf (fp, "\n");
+		}
+	    }
+
+	  if (dns_list)
+	    free (dns_list);
+	  fclose (fp);
+	  fp = fopen ("/tmp/ppp/pppoe-server-options", "wb");
+	  fprintf (fp, "login\n");
+	  fprintf (fp, "require-chap\n");
+	  fprintf (fp, "require-mschap-v2\n");
+	  fprintf (fp, "default-mru\n");
+	  fprintf (fp, "default-asyncmap\n");
+	  fprintf (fp, "lcp-echo-interval 60\n");	//todo optionally configurable
+	  fprintf (fp, "lcp-echo-failure 5\n");	// todo optionally configureable
+	  fprintf (fp, "noipdefault\n");
+	  fprintf (fp, "noreplacedefaultroute\n");
+	  fprintf (fp, "noproxyarp\n");
+	  fprintf (fp, "noktune\n");
+	  fprintf (fp, "netmask 255.255.255.255\n");
+	  fprintf (fp, "plugin radius.so\n");
+	  fprintf (fp, "plugin radattr.so\n");
+	  fclose (fp);
+	  mkdir ("/tmp/ppp/radius", 0777);
+	  fp = fopen ("/tmp/ppp/radius/radiusclient.conf", "wb");
+	  fprintf (fp, "authserver 192.168.0.111:1812\n");	//todo make values configureable
+	  fprintf (fp, "acctserver 192.168.0.111:1813\n");	//todo make values configureable
+	  fclose (fp);
+	  fp = fopen ("/tmp/ppp/radius/servers", "wb");
+	  fprintf (fp, "192.168.0.111 test\n");	//todo, shared secret for radius server, see above for server name, must be identical
+	  fclose (fp);
+	  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"));	//todo, make interface and base address configurable, see networking page options
 	}
     }
-  else
-    {
-      if (dns_list
-	  && (strlen (dns_list->dns_server[0]) > 0
-	      || strlen (dns_list->dns_server[1]) > 0
-	      || strlen (dns_list->dns_server[2]) > 0))
-	{
-	  if (strlen (dns_list->dns_server[0]) > 0)
-	    fprintf (fp, "ms-dns  %s", dns_list->dns_server[0]);
-	  if (strlen (dns_list->dns_server[1]) > 0)
-	    fprintf (fp, "ms-dns  %s", dns_list->dns_server[1]);
-	  if (strlen (dns_list->dns_server[2]) > 0)
-	    fprintf (fp, "ms-dns  %s", dns_list->dns_server[2]);
-
-	  fprintf (fp, "\n");
-	}
-    }
-
-  if (dns_list)
-    free (dns_list);
-  fprintf (fp, "noipdefault\n");
-  fprintf (fp, "nodefaultroute\n");
-  fprintf (fp, "noproxyarp\n");
-  fprintf (fp, "noktune\n");
-  fprintf (fp, "netmask 255.255.255.255\n");
-  fclose (fp);
-  fp = fopen ("/tmp/ppp/chap-secrets", "wb");
-  fprintf (fp, "test * test 192.168.0.2\n");	// todo, make configureable (ip, user and password)
-  fclose (fp);
-  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"));	//todo, make interface and base address configurable, see networking page options
 }
 
 void
