@@ -4346,10 +4346,22 @@ start_pppoeserver (void)
 	  fprintf (fp, "lock\n");
 	  fprintf (fp, "crtscts\n");
 	  if (nvram_default_match ("pppoeserver_bsdcomp", "0", "0"))
-	  		fprintf (fp, "nobsdcomp\n");	//todo optionaly configurable
+	  		fprintf (fp, "nobsdcomp\n");	
+	  else
+	  		fprintf (fp, "bsdcomp\n");	
 	  if (nvram_default_match ("pppoeserver_deflate", "0", "0"))
-	  		fprintf (fp, "nodeflate\n");	//todo ...
-	  fprintf (fp, "nopcomp\n");
+	  		fprintf (fp, "nodeflate\n");	
+	    else
+	  		fprintf (fp, "deflate\n");	
+	  if (nvram_default_match ("pppoeserver_lzs", "0", "0"))
+	  		fprintf (fp, "nolzs\n");	
+	    else
+	  		fprintf (fp, "lzs\n");	
+	  if (nvram_default_match ("pppoeserver_mppc", "0", "0"))
+	  		fprintf (fp, "nomppc\n");	
+	    else
+	  		fprintf (fp, "mppc\n");	
+    	  fprintf (fp, "nopcomp\n");
 	  fprintf (fp, "idle %s\n", nvram_safe_get ("pppoeserver_idle"));	//todo ...
 	  if (nvram_default_match("pppoeserver_encryption","1","0")) // make it configureable
 	  fprintf (fp, "mppe\n");
@@ -4429,9 +4441,21 @@ start_pppoeserver (void)
 	  fprintf (fp, "lock\n");
 	  fprintf (fp, "crtscts\n");
 	  if (nvram_default_match ("pppoeserver_bsdcomp", "0", "0"))
-	  		fprintf (fp, "nobsdcomp\n");	//todo optionaly configurable
+	  		fprintf (fp, "nobsdcomp\n");	
+	  else
+	  		fprintf (fp, "bsdcomp\n");	
 	  if (nvram_default_match ("pppoeserver_deflate", "0", "0"))
-	  		fprintf (fp, "nodeflate\n");	//todo ...
+	  		fprintf (fp, "nodeflate\n");	
+	    else
+	  		fprintf (fp, "deflate\n");	
+	  if (nvram_default_match ("pppoeserver_lzs", "0", "0"))
+	  		fprintf (fp, "nolzs\n");	
+	    else
+	  		fprintf (fp, "lzs\n");	
+	  if (nvram_default_match ("pppoeserver_mppc", "0", "0"))
+	  		fprintf (fp, "nomppc\n");	
+	    else
+	  		fprintf (fp, "mppc\n");	
 	  fprintf (fp, "nopcomp\n");
 	  fprintf (fp, "idle %s\n", nvram_safe_get ("pppoeserver_idle"));	//todo ...
 	  if (nvram_default_match("pppoeserver_encryption","1","0")) // make it configureable

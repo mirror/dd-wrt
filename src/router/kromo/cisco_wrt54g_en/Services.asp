@@ -46,6 +46,12 @@ function checked(F) {
 	if (F._pppoeserver_bsdcomp) {
 		(F._pppoeserver_bsdcomp.checked == true) ? F.pppoeserver_bsdcomp.value = 1 : F.pppoeserver_bsdcomp.value = 0;
 	}
+	if (F._pppoeserver_lzs) {
+		(F._pppoeserver_lzs.checked == true) ? F.pppoeserver_lzs.value = 1 : F.pppoeserver_lzs.value = 0;
+	}
+	if (F._pppoeserver_mppc) {
+		(F._pppoeserver_mppc.checked == true) ? F.pppoeserver_mppc.value = 1 : F.pppoeserver_mppc.value = 0;
+	}
 	
 	if (F._pppoeserver_encryption) {
 		(F._pppoeserver_encryption.checked == true) ? F.pppoeserver_encryption.value = 1 : F.pppoeserver_encryption.value = 0;
