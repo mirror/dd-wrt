@@ -4400,7 +4400,6 @@ start_pppoeserver (void)
   if (dns_list)
     free (dns_list);
   fprintf (fp, "noipdefault\n");
-  fprintf (fp, "noipx\n");
   fprintf (fp, "nodefaultroute\n");
   fprintf (fp, "noproxyarp\n");
   fprintf (fp, "noktune\n");
