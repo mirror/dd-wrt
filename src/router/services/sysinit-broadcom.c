@@ -122,7 +122,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
 
   switch (brand)
     {
-	case ROUTER_ASUS_WL500GD:
+    case ROUTER_ASUS_WL500GD:
     case ROUTER_ASUS_WL500G_PRE:
     case ROUTER_WRT54G:
     case ROUTER_MOTOROLA:
@@ -160,7 +160,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_BUFFALO_WLA2G54C:
       nvram_set ("wl0gpio0", "0");
       nvram_set ("wl0gpio5", "2");
-      break;      
+      break;
     }
 #endif
 
@@ -168,7 +168,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
 
   switch (brand)
     {
-	case ROUTER_WRT150N:
+    case ROUTER_WRT150N:
     case ROUTER_WRT300N:
     case ROUTER_WRT350N:
     case ROUTER_BUFFALO_WZRG144NH:
@@ -370,7 +370,7 @@ start_sysinit (void)
       nvram_set ("port_swap", "1");
       eval ("gpio", "disable", "7");
       break;
-      
+
     case ROUTER_MOTOROLA_V1:
       eval ("gpio", "disable", "7");
       break;
@@ -379,8 +379,8 @@ start_sysinit (void)
     case ROUTER_NETGEAR_WNR834B:
     case ROUTER_WRT150N:
     case ROUTER_WRT300N:
-    case ROUTER_BUFFALO_WLAH_G54: 
-    case ROUTER_BUFFALO_WAPM_HP_AM54G54:   
+    case ROUTER_BUFFALO_WLAH_G54:
+    case ROUTER_BUFFALO_WAPM_HP_AM54G54:
     case ROUTER_WRTSL54GS:
       nvram_set ("wan_ifname", "eth1");
       nvram_set ("wan_ifnames", "eth1");
@@ -418,18 +418,18 @@ start_sysinit (void)
       nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
       nvram_set ("wan_ifnames", "eth2");
       break;
-      
-	case ROUTER_DELL_TRUEMOBILE_2300_V2:  //we must fix cfe defaults with CR added
-	  nvram_set ("vlan0hwname", "et0");
-	  nvram_set ("vlan1hwname", "et0");
-	  nvram_set ("et0mdcport", "0");
-	  nvram_set ("et0phyaddr", "30"); 
-	  nvram_set ("gpio2", "adm_eecs");
-	  nvram_set ("gpio3", "adm_eesk");
-	  nvram_set ("gpio4", "adm_eedi");
-	  nvram_set ("gpio5", "adm_rc");
-	  nvram_unset ("gpio6");
-	  break;
+
+    case ROUTER_DELL_TRUEMOBILE_2300_V2:	//we must fix cfe defaults with CR added
+      nvram_set ("vlan0hwname", "et0");
+      nvram_set ("vlan1hwname", "et0");
+      nvram_set ("et0mdcport", "0");
+      nvram_set ("et0phyaddr", "30");
+      nvram_set ("gpio2", "adm_eecs");
+      nvram_set ("gpio3", "adm_eesk");
+      nvram_set ("gpio4", "adm_eedi");
+      nvram_set ("gpio5", "adm_rc");
+      nvram_unset ("gpio6");
+      break;
 
     }
 
@@ -480,10 +480,10 @@ start_sysinit (void)
 
 	      break;
 	    case ROUTER_WRT54G3G:
-		modules =
-		  nvram_invmatch ("ct_modules",
-				  "") ? nvram_safe_get ("ct_modules") :
-		  "diag switch-core switch-robo pcmcia_core yenta_socket ds serial_cs usbcore usb-ohci usbserial sierra";
+	      modules =
+		nvram_invmatch ("ct_modules",
+				"") ? nvram_safe_get ("ct_modules") :
+		"diag switch-core switch-robo pcmcia_core yenta_socket ds serial_cs usbcore usb-ohci usbserial sierra";
 	      break;
 
 	    default:
@@ -587,10 +587,10 @@ start_sysinit (void)
   led_control (LED_SES, LED_OFF);
   led_control (LED_BRIDGE, LED_OFF);
   led_control (LED_WLAN, LED_OFF);
-  
-  if (brand==ROUTER_WRT54G3G)
+
+  if (brand == ROUTER_WRT54G3G)
     {
-    eval("cardmgr");
+      eval ("cardmgr");
     }
 
   cprintf ("done\n");
