@@ -457,7 +457,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl_corerev", "", 0},	/* Current core revision */
   {"wl_phytypes", "", 0},	/* List of supported wireless bands (e.g. "ga") */
   {"wl_radioids", "", 0},	/* List of radio IDs */
-  {"wl_shortslot","auto",0},
+  {"wl_shortslot", "auto", 0},
 #ifdef HAVE_WTS
   {"wl_ssid", "www.wts.com.ve", 0},	/* Service set ID (network name) */
 #elif HAVE_DDLAN
@@ -1030,9 +1030,9 @@ struct nvram_tuple srouter_defaults[] = {
   /* for mac clone */
   {"mac_clone_enable", "0", 0},	/* User define WAN interface MAC address */
   {"def_hwaddr", "00:00:00:00:00:00", 0},	/* User define WAN interface MAC address */
-  
-    /* for mac addresses */
-  {"port_swap", "0", 0},	/* used to set mac addresses from et0macaddr or et1macaddr*/
+
+  /* for mac addresses */
+  {"port_swap", "0", 0},	/* used to set mac addresses from et0macaddr or et1macaddr */
 
   /* for DDNS */
   // for dyndns
@@ -1560,9 +1560,9 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_KAID
   {"kaid_enable", "0", 0},
   {"kaid_macs", "", 0},
-  {"kaid_uibind","34522",0},
-  {"kaid_orbport","34525",0},
-  {"kaid_orbdeepport","34523",0},
+  {"kaid_uibind", "34522", 0},
+  {"kaid_orbport", "34525", 0},
+  {"kaid_orbdeepport", "34523", 0},
 #endif
 #ifdef HAVE_WTS
   {"language", "spanish", 0},
@@ -2004,9 +2004,9 @@ struct nvram_tuple srouter_defaults[] = {
   {"iradius_enable", "0", 0},
 #endif
 #ifdef HAVE_MADWIFI
-  {"wifi_display","ath0",0},
+  {"wifi_display", "ath0", 0},
 #else
-  {"wifi_display","wl0",0},
+  {"wifi_display", "wl0", 0},
 #endif
   {0, 0, 0}
 };

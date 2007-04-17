@@ -511,7 +511,7 @@ start_restore_defaults (void)
   int brand = getRouterBrand ();
 #else
   int brand = getRouterBrand ();
-  
+
   if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
     {
 //      nvram_unset("sv_restore_defaults");
@@ -539,8 +539,8 @@ start_restore_defaults (void)
     case ROUTER_BUFFALO_WZRG300N:
     case ROUTER_WRT150N:
     case ROUTER_WRT300N:
-    case ROUTER_BUFFALO_WLAH_G54: 
-    case ROUTER_BUFFALO_WAPM_HP_AM54G54:   
+    case ROUTER_BUFFALO_WLAH_G54:
+    case ROUTER_BUFFALO_WAPM_HP_AM54G54:
     case ROUTER_BUFFALO_WZRRSG54:
     case ROUTER_NETGEAR_WNR834B:
       linux_overrides = generic;
@@ -732,9 +732,9 @@ start_restore_defaults (void)
 	    }
 	}
     }
-  else  if (brand==ROUTER_BUFFALO_WZRG144NH)
+  else if (brand == ROUTER_BUFFALO_WZRG144NH)
 
-  {
+    {
       if (!nvram_get ("vlan1ports") || nvram_match ("vlan1ports", ""))
 	{
 	  nvram_set ("vlan1ports", "4 8");
@@ -746,27 +746,28 @@ start_restore_defaults (void)
 	      nvram_set ("vlan2ports", "0 1 2 3 8");
 	    }
 	}
- 
-  }else
+
+    }
+  else
     {
       if (!nvram_get ("vlan0hwname") || nvram_match ("vlan0hwname", ""))
 	nvram_set ("vlan0hwname", "et0");
       if (!nvram_get ("vlan1hwname") || nvram_match ("vlan1hwname", ""))
 	nvram_set ("vlan1hwname", "et0");
 
-	  switch (brand)
-	    {
-		case ROUTER_MOTOROLA:
-		case ROUTER_MOTOROLA_V1:
-		case ROUTER_MOTOROLA_WE800G:
-		case ROUTER_RT210W:
-			if (et0mac != NULL)
-				nvram_set ("et0macaddr", et0mac);
-			if (et1mac != NULL)
-				nvram_set ("et1macaddr", et1mac);
-		  break;
-	  	}	
-	
+      switch (brand)
+	{
+	case ROUTER_MOTOROLA:
+	case ROUTER_MOTOROLA_V1:
+	case ROUTER_MOTOROLA_WE800G:
+	case ROUTER_RT210W:
+	  if (et0mac != NULL)
+	    nvram_set ("et0macaddr", et0mac);
+	  if (et1mac != NULL)
+	    nvram_set ("et1macaddr", et1mac);
+	  break;
+	}
+
       if (!nvram_get ("vlan0ports") || nvram_match ("vlan0ports", ""))
 	{
 	  switch (brand)

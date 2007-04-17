@@ -35,6 +35,9 @@ endif
 ifeq ($(CONFIG_MMC),y)
 CFLAGS += -DHAVE_MMC
 endif
+ifeq ($(CONFIG_PPPOESERVER),y)
+CFLAGS += -DHAVE_PPPOESERVER
+endif
 ifeq ($(CONFIG_JFFS2),y)
 CFLAGS += -DHAVE_JFFS2
 endif

@@ -534,7 +534,7 @@ wlconf_up (char *name)
   else if (!strcmp (afterburner, "auto"))
     eval ("wl", "afterburner_override", "-1");
 
-  char *shortslot = nvram_safe_get("wl0_shortslot"); 
+  char *shortslot = nvram_safe_get ("wl0_shortslot");
 
   if (!strcmp (afterburner, "auto"))
     eval ("wl", "shortslot_override", "-1");
@@ -556,7 +556,7 @@ wlconf_up (char *name)
       if (v == 0)
 	{
 #ifdef HAVE_MSSID
-	    wlc_noack (0);
+	  wlc_noack (0);
 #else
 	  eval ("/etc/txackset.sh", "0");	// disable ack timing
 #endif
@@ -565,7 +565,7 @@ wlconf_up (char *name)
       else
 	{
 #ifdef HAVE_MSSID
-	    wlc_noack (1);
+	  wlc_noack (1);
 #else
 	  eval ("/etc/txackset.sh", "1");	// enable ack timing
 #endif
@@ -573,7 +573,7 @@ wlconf_up (char *name)
 
 
 #ifdef HAVE_MSSID
-       set_wlc_slottime (val);
+      set_wlc_slottime (val);
 #else
       val = 9 + (val / 150) + ((val % 150) ? 1 : 0);
 
@@ -635,11 +635,11 @@ void
 start_wlconf (void)
 {
 #ifdef HAVE_MSSID
-if (nvram_invmatch ("wl0_net_mode", "disabled"))
+  if (nvram_invmatch ("wl0_net_mode", "disabled"))
 #else
-if (nvram_invmatch ("wl_net_mode", "disabled"))
+  if (nvram_invmatch ("wl_net_mode", "disabled"))
 #endif
-  wlconf_up (nvram_safe_get ("wl0_ifname"));
+    wlconf_up (nvram_safe_get ("wl0_ifname"));
 }
 
 //#ifdef HAVE_PORTSETUP
@@ -1902,8 +1902,8 @@ start_wan (int status)
     case ROUTER_BUFFALO_WZRRSG54:
     case ROUTER_WRTSL54GS:
     case ROUTER_WRT300N:
-    case ROUTER_BUFFALO_WLAH_G54: 
-    case ROUTER_BUFFALO_WAPM_HP_AM54G54:   
+    case ROUTER_BUFFALO_WLAH_G54:
+    case ROUTER_BUFFALO_WAPM_HP_AM54G54:
     case ROUTER_WRT150N:
     case ROUTER_BUFFALO_WZRG300N:
     case ROUTER_NETGEAR_WNR834B:
@@ -2151,14 +2151,14 @@ start_wan (int status)
 
       // Those are default options we use + user/passwd
       // By using user/password options we dont have to deal with chap/pap secrets files.
-      if (nvram_match("ppp_compression","1"))
-            {
-	    fprintf(fp,"mppc\n");
-	    }
-	    else
-	    {
-	    fprintf(fp,"nomppc\n");
-	    }
+      if (nvram_match ("ppp_compression", "1"))
+	{
+	  fprintf (fp, "mppc\n");
+	}
+      else
+	{
+	  fprintf (fp, "nomppc\n");
+	}
       fprintf (fp, "noipdefault\n"
 	       "noauth\n"
 	       "defaultroute\n"
@@ -2825,7 +2825,8 @@ stop_wan (void)
   cprintf ("done\n");
 }
 
-void start_set_routes (void)
+void
+start_set_routes (void)
 {
   char word[80], *tmp;
   char *ipaddr, *netmask, *gateway, *metric, *ifname;
@@ -2848,8 +2849,8 @@ void start_set_routes (void)
     metric = strsep (&ifname, ":");
     if (!metric || !ifname)
       continue;
-    if (!strcmp(ipaddr,"0.0.0.0"))
-	eval("route","add","default","gw",gateway);
+    if (!strcmp (ipaddr, "0.0.0.0"))
+      eval ("route", "add", "default", "gw", gateway);
     route_add (ifname, atoi (metric) + 1, ipaddr, gateway, netmask);
   }
 }

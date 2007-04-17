@@ -58,9 +58,12 @@ start_stabridge (void)
       eval ("insmod", "ebtable_broute");
       eval ("insmod", "ebt_arpnat");
       eval ("insmod", "ebt_broute");
-      eval ("ebtables", "-t", "nat", "-A", "PREROUTING", "--in-interface", getWET (),"-j", "arpnat", "--arpnat-target", "ACCEPT");
-      eval ("ebtables", "-t", "nat", "-A", "POSTROUTING", "--out-interface", getWET (),"-j", "arpnat", "--arpnat-target", "ACCEPT");
-      eval ("ebtables", "-t", "broute", "-A", "BROUTING", "--protocol", "0x888e","--in-interface",getWET(), "-j","DROP");
+      eval ("ebtables", "-t", "nat", "-A", "PREROUTING", "--in-interface",
+	    getWET (), "-j", "arpnat", "--arpnat-target", "ACCEPT");
+      eval ("ebtables", "-t", "nat", "-A", "POSTROUTING", "--out-interface",
+	    getWET (), "-j", "arpnat", "--arpnat-target", "ACCEPT");
+      eval ("ebtables", "-t", "broute", "-A", "BROUTING", "--protocol",
+	    "0x888e", "--in-interface", getWET (), "-j", "DROP");
     }
 }
 
@@ -74,9 +77,12 @@ stop_stabridge (void)
   if (nvram_match ("wl0_mode", "wet"))
 #endif
     {
-      eval ("ebtables", "-t", "broute", "-D", "BROUTING", "--protocol", "0x888e","--in-interface",getWET(), "-j","DROP");
-      eval ("ebtables", "-t", "nat", "-D", "POSTROUTING", "--out-interface", getWET (),"-j", "arpnat", "--arpnat-target", "ACCEPT");
-      eval ("ebtables", "-t", "nat", "-D", "PREROUTING", "--in-interface", getWET (),"-j", "arpnat", "--arpnat-target", "ACCEPT");
+      eval ("ebtables", "-t", "broute", "-D", "BROUTING", "--protocol",
+	    "0x888e", "--in-interface", getWET (), "-j", "DROP");
+      eval ("ebtables", "-t", "nat", "-D", "POSTROUTING", "--out-interface",
+	    getWET (), "-j", "arpnat", "--arpnat-target", "ACCEPT");
+      eval ("ebtables", "-t", "nat", "-D", "PREROUTING", "--in-interface",
+	    getWET (), "-j", "arpnat", "--arpnat-target", "ACCEPT");
       eval ("rmmod", "ebt_broute");
       eval ("rmmod", "ebt_arpnat");
       eval ("rmmod", "ebtable_broute");
