@@ -4338,7 +4338,7 @@ start_pppoeserver (void)
 {
   if (nvram_default_match ("pppoeserver_enabled", "1", "0"))
     {
-      if (nvram_default_match ("pppoeradius_enabled", "1", "0"))
+      if (nvram_default_match ("pppoeradius_enabled", "0", "0"))
 	{
 	  FILE *fp;
 	  mkdir ("/tmp/ppp", 0777);
@@ -4375,11 +4375,11 @@ start_pppoeserver (void)
 		    fprintf (fp, "ms-dns %s\n",
 			     nvram_safe_get ("lan_ipaddr"));
 		  if (strlen (dns_list->dns_server[0]) > 0)
-		    fprintf (fp, "ms-dns %s\n %s", dns_list->dns_server[0]);
+		    fprintf (fp, "ms-dns %s\n", dns_list->dns_server[0]);
 		  if (strlen (dns_list->dns_server[1]) > 0)
-		    fprintf (fp, "ms-dns %s\n %s", dns_list->dns_server[1]);
+		    fprintf (fp, "ms-dns %s\n", dns_list->dns_server[1]);
 		  if (strlen (dns_list->dns_server[2]) > 0)
-		    fprintf (fp, "ms-dns %s\n %s", dns_list->dns_server[2]);
+		    fprintf (fp, "ms-dns %s\n", dns_list->dns_server[2]);
 
 		  fprintf (fp, "\n");
 		}
@@ -4392,11 +4392,11 @@ start_pppoeserver (void)
 		      || strlen (dns_list->dns_server[2]) > 0))
 		{
 		  if (strlen (dns_list->dns_server[0]) > 0)
-		    fprintf (fp, "ms-dns  %s", dns_list->dns_server[0]);
+		    fprintf (fp, "ms-dns  %s\n", dns_list->dns_server[0]);
 		  if (strlen (dns_list->dns_server[1]) > 0)
-		    fprintf (fp, "ms-dns  %s", dns_list->dns_server[1]);
+		    fprintf (fp, "ms-dns  %s\n", dns_list->dns_server[1]);
 		  if (strlen (dns_list->dns_server[2]) > 0)
-		    fprintf (fp, "ms-dns  %s", dns_list->dns_server[2]);
+		    fprintf (fp, "ms-dns  %s\n", dns_list->dns_server[2]);
 
 		  fprintf (fp, "\n");
 		}
@@ -4445,11 +4445,11 @@ start_pppoeserver (void)
 		    fprintf (fp, "ms-dns %s\n",
 			     nvram_safe_get ("lan_ipaddr"));
 		  if (strlen (dns_list->dns_server[0]) > 0)
-		    fprintf (fp, "ms-dns %s\n %s", dns_list->dns_server[0]);
+		    fprintf (fp, "ms-dns %s\n", dns_list->dns_server[0]);
 		  if (strlen (dns_list->dns_server[1]) > 0)
-		    fprintf (fp, "ms-dns %s\n %s", dns_list->dns_server[1]);
+		    fprintf (fp, "ms-dns %s\n", dns_list->dns_server[1]);
 		  if (strlen (dns_list->dns_server[2]) > 0)
-		    fprintf (fp, "ms-dns %s\n %s", dns_list->dns_server[2]);
+		    fprintf (fp, "ms-dns %s\n", dns_list->dns_server[2]);
 
 		  fprintf (fp, "\n");
 		}
@@ -4462,11 +4462,11 @@ start_pppoeserver (void)
 		      || strlen (dns_list->dns_server[2]) > 0))
 		{
 		  if (strlen (dns_list->dns_server[0]) > 0)
-		    fprintf (fp, "ms-dns  %s", dns_list->dns_server[0]);
+		    fprintf (fp, "ms-dns  %s\n", dns_list->dns_server[0]);
 		  if (strlen (dns_list->dns_server[1]) > 0)
-		    fprintf (fp, "ms-dns  %s", dns_list->dns_server[1]);
+		    fprintf (fp, "ms-dns  %s\n", dns_list->dns_server[1]);
 		  if (strlen (dns_list->dns_server[2]) > 0)
-		    fprintf (fp, "ms-dns  %s", dns_list->dns_server[2]);
+		    fprintf (fp, "ms-dns  %s\n", dns_list->dns_server[2]);
 
 		  fprintf (fp, "\n");
 		}
@@ -4484,7 +4484,7 @@ start_pppoeserver (void)
 	  fprintf (fp, "lcp-echo-interval 60\n");	//todo optionally configurable
 	  fprintf (fp, "lcp-echo-failure 5\n");	// todo optionally configureable
 	  fprintf (fp, "noipdefault\n");
-	  fprintf (fp, "noreplacedefaultroute\n");
+	  fprintf (fp, "nodefaultroute\n");
 	  fprintf (fp, "noproxyarp\n");
 	  fprintf (fp, "noktune\n");
 	  fprintf (fp, "netmask 255.255.255.255\n");
