@@ -38,6 +38,14 @@ function checked(F) {
 	if (F._nstx_log) {
 		(F._nstx_log.checked == true) ? F.nstx_log.value = 1 : F.nstx_log.value = 0;
 	}
+	
+	if (F._pppoeserver_nodflate) {
+		(F._pppoeserver_nodflate.checked == true) ? F.pppoeserver_nodflate.value = 1 : F.pppoeserver_nodflate.value = 0;
+	}
+	
+	if (F._pppoeserver_nobsdcomp) {
+		(F._pppoeserver_nobsdcomp.checked == true) ? F.pppoeserver_nobsdcomp.value = 1 : F.pppoeserver_nobsdcomp.value = 0;
+	}
 }
 
 function lease_add_submit(F) {
