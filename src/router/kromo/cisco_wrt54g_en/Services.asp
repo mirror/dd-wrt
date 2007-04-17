@@ -156,6 +156,11 @@ addEvent(window, "load", function() {
 							<input type="hidden" name="dhcpd_usejffs" />
 							<input type="hidden" name="dhcpd_usenvram" />
 							<input type="hidden" name="nstx_log" />
+							<input type="hidden" name="pppoeserver_deflate" />
+							<input type="hidden" name="pppoeserver_bsdcomp" />
+							<input type="hidden" name="pppoeserver_lzs" />
+							<input type="hidden" name="pppoeserver_mppc" />
+							<input type="hidden" name="pppoeserver_encryption" />
 							
 							<h2><% tran("service.h2"); %></h2>
 							<% show_modules(".webservices"); %>
