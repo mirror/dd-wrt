@@ -4487,7 +4487,7 @@ start_pppoeserver (void)
 	  fprintf (fp, "default-mru\n");
 	  fprintf (fp, "default-asyncmap\n");
 	  fprintf (fp, "lcp-echo-interval %s\n", nvram_safe_get ("pppoeserver_lcpechoint"));	//todo optionally configurable
- 	  fprintf (fp, "lcp-echo-failure %s\n", nvram_default_match ("pppoeserver_lcpechofail"));	// todo optionally configureable
+ 	  fprintf (fp, "lcp-echo-failure %s\n", nvram_safe_get ("pppoeserver_lcpechofail"));	// todo optionally configureable
 	  fprintf (fp, "noipdefault\n");
 	  fprintf (fp, "nodefaultroute\n");
 	  fprintf (fp, "noproxyarp\n");
@@ -4515,7 +4515,7 @@ start_pppoeserver (void)
 //	  fprintf (fp, "authserver 192.168.0.111:1812\n");	//todo make values configureable
 //	  fprintf (fp, "acctserver 192.168.0.111:1813\n");	//todo make values configureable
 	  fprintf (fp, "authserver %s:%s\n", nvram_safe_get ("pppoeserver_authserverip"), nvram_safe_get ("pppoeserver_authserverport"));	//todo make values configureable
-	  fprintf (fp, "acctserver %s:%s\n", nvram_safe_get ("pppoeserver_acctserverip"), nvram_safe_get ("pppoeserver_acctserverport")););	//todo make values configureable
+	  fprintf (fp, "acctserver %s:%s\n", nvram_safe_get ("pppoeserver_acctserverip"), nvram_safe_get ("pppoeserver_acctserverport"));	//todo make values configureable
 	  fclose (fp);
 	  fp = fopen ("/tmp/ppp/radius/servers", "wb");
 	  fprintf (fp, "192.168.0.111 test\n");	//todo, shared secret for radius server, see above for server name, must be identical
