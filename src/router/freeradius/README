@@ -1,0 +1,134 @@
+1. INTRODUCTION
+
+  The FreeRADIUS Server Project is a high performance and highly
+configurable GPL'd free RADIUS server. It is stable, and is currently
+being used in many deployments with millions of users.
+
+  Please see the main web page (http://www.freeradius.org) for more
+information.
+
+2. INSTALLATION
+
+  To install the server, please see the INSTALL file in this
+directory.
+
+  Version 1.1.4 contains a few key improvements over previous
+versions.  The most important is the addition of the
+Cleartext-Password attribute.  Using this attribute can make your
+configuration MUCH simpler, and MUCH easier to understand.  Please
+read "man rlm_pap" for more details.
+
+  New users of FreeRADIUS should prefer using Cleartext-Password over
+User-Password.  That is, if the documentation or a web page says to
+configure User-Password in a database or server configuration file,
+the documentation is likely out of date, and you should use
+User-Password instead.
+
+  The main differences between 1.1.3 and 1.1.4 are significantly
+improved functionality in rlm_pap.  The module is MUCH smarter, which
+means that many previous complicated configurations are now almost
+trivial to do.  Please read "man rlm_pap" for details.
+
+  Existing deployments of FreeRADIUS will NOT be affected by this
+change to rlm_pap.  Existing configurations will work as before.
+However, we do recommend reading the rlm_pap "man" page, to see how
+your configuration may be made simpler by using the new functionality.
+
+  The differences between 1.0.x and 1.1.0 are documented in the file
+doc/ChangeLog.  What these differences mean for an administrator
+upgrading from 1.0.x are as follows:
+
+  * You MUST use the new dictionaries.  This is NOT done by default,
+    because you may have edited the installed version of /etc/raddb/dictionary.
+    If you have not edited /etc/raddb/dictionary, then you can make
+    the server use the new dictionaries by copying the
+    raddb/dictionary file from this directory to /etc/raddb.  Without
+    this change, the server WILL NOT WORK PROPERLY.
+
+  * Sites using SQL for logging should look into using the new
+    rlm_sql_log module.  See it's "man" page for details.
+
+  * Sites using rlm_x99_token will have to update their configuration
+    to use rlm_otp.
+
+3. DEBUGGING THE SERVER
+
+  Run the server in debugging mode, (radiusd -X) and READ the output.
+We really can't emphasize this enough.
+
+  Read the FAQ.  Many questions are answered there.
+
+  Read the configuration files.  Many parts of the server have NO
+documentation, other than comments in the configuration file.
+
+  Search the mailing lists.  There is a Google link on the bottom of
+  the page:
+
+	http://www.freeradius.org/list/users.html
+
+  Type some key words into the search box, and you should find
+discussions about common problems and solution.
+
+
+  See the Wiki
+
+	http://wiki.freeradius.org
+
+4. ADDITIONAL INFORMATION
+
+  See 'doc/README' for more information about FreeRADIUS.
+
+  There is now an O'Reilly book available, which we recommend for
+people new to RADIUS.  It covers an earlier version of the server, but
+much of the information is applicable to this version also.
+
+http://www.amazon.com/exec/obidos/ASIN/0596003226/freeradiusorg-20/
+
+  It contains information about RADIUS in general, and FreeRADIUS in
+particular.
+
+
+  For other RADIUS information, the Livington internet site had a lot
+of information on radius online.  Unfortunately Livingston, and the
+site, don't exist anymore but there's a copy of the site still at:
+
+	http://portmasters.com/www.livingston.com/
+
+  Especially worth a read is the "RADIUS for Unix administrators guide"
+
+HTML:  http://portmasters.com/tech/docs/radius/1185title.html
+PDF:   http://portmasters.com/tech/docs/pdf/radius.pdf
+
+
+5. PROBLEMS AND CONCERNS
+
+  We understand that the server may be difficult to configure,
+install, or administer.  It is, after all, a complex system with many
+different configuration possibilities.  If you have any comments, bug
+reports, problems, or concerns, please send them to the
+'freeradius-users' list (see the URL above).  We will do our best to
+answer your questions, to fix the problems, and to generally improve
+the server in any way we can.
+
+  What you should NOT do is complain that the developers aren't
+answering your questions quickly enough, or fixing the problems
+quickly enough, or that they're being mean for telling you to do some
+work yourself.  FreeRADIUS is the cumulative effort of many years of
+work by many people, and you've gotten it for free.  No one gets paid
+to work on FreeRADIUS, and no one is getting paid to answer your
+questions.  This is free software, and the only way it gets better is
+if you contribute work back to the project.
+
+  We will note that the people who complain the loudest about the
+developers being mean usually can't program, can't write
+documentation, won't pay others to do that work, demand that their
+every desire be satisifed immediately by the developers for free, and
+worst of all, don't understand why their attitude is unproductive.
+They seem to believe that because they've received something (the
+server) for free, that they have every right to demand more free
+support and development from the list.  That's simply not true.
+
+  So please submit bug reports, suggestions, or patches.  That
+feedback gives the developers a guide as to where they should focus
+their work.  If you like the server, feel free to mail the list and
+say so.

@@ -1,0 +1,13 @@
+#
+# $Id: Makefile.in,v 1.1.10.1 2006/02/10 19:47:16 nbk Exp $
+#
+
+TARGET     = @targetname@
+SRCS       = rlm_pam.c
+HEADERS    =
+RLM_LIBS   = @pam_ldflags@
+RLM_CFLAGS = @pam_cflags@
+
+include ../rules.mak
+
+$(LT_OBJS): $(HEADERS)

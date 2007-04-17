@@ -1,0 +1,13 @@
+#
+# $Id: Makefile.in,v 1.2.10.1 2006/02/10 19:47:19 nbk Exp $
+#
+
+TARGET     = @targetname@
+SRCS       = rlm_unix.c cache.c compat.c
+HEADERS    =
+RLM_LIBS   = @unix_ldflags@
+RLM_CFLAGS = @unix_cflags@
+
+include ../rules.mak
+
+$(LT_OBJS): $(HEADERS)

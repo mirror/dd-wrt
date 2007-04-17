@@ -1,0 +1,73 @@
+#! /bin/sh
+
+set -e
+
+case "$1" in
+  configure)
+	if ! id freerad >/dev/null 2>&1; then
+		addgroup --system freerad || true
+		groups freerad 2>/dev/null || adduser --system --no-create-home --home /etc/freeradius --ingroup freerad --disabled-password freerad
+
+		# make sure there is a user and group 'freerad'
+		groups freerad |grep freerad >/dev/null
+
+		# put user freerad in group shadow, so the daemon can auth locally
+		adduser freerad shadow
+	fi
+
+	update-rc.d freeradius defaults 50 >/dev/null
+
+	if [ ! -d /var/log/freeradius ]; then
+		mkdir -p /var/log/freeradius
+	fi
+
+	if [ ! -f /var/log/freeradius/radius.log ]; then
+		touch /var/log/freeradius/radius.log
+	fi
+
+	if [ ! -f /var/log/freeradius/radwtmp ]; then
+		touch /var/log/freeradius/radwtmp
+	fi
+
+	if [ ! -d /var/run/freeradius ]; then
+		mkdir /var/run/freeradius
+	fi
+
+	chown -R freerad:freerad /var/log/freeradius
+	chown -R freerad:freerad /var/run/freeradius
+	chgrp -R freerad /etc/freeradius
+
+	# Leave the file /etc/freeradius/dictionary with the default
+	# permissions: it should not contain secrets, and this allows
+	# to run radclient with a non-privileged user.
+	find /etc/freeradius -type d -exec chmod 2751 {} \;
+	find /etc/freeradius -type f \! -name dictionary -exec chmod 640 {} \;
+
+	if [ -z "$2" ]; then
+		action="start"
+	else
+		action="restart"
+	fi
+
+	if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+		invoke-rc.d freeradius $action || true
+	else
+		/etc/init.d/freeradius $action
+	fi
+	;;
+  abort-upgrade)
+	;;
+  abort-remove)
+	if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+		invoke-rc.d freeradius start || true
+	else
+		/etc/init.d/freeradius start
+	fi
+	;;
+  abort-deconfigure)
+	;;
+esac
+
+#DEBHELPER#
+
+exit 0
