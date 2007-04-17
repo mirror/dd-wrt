@@ -4357,7 +4357,7 @@ start_pppoeserver (void)
 	  fprintf (fp, "default-mru\n");
 	  fprintf (fp, "default-asyncmap\n");
 	  fprintf (fp, "lcp-echo-interval %s\n", nvram_safe_get ("pppoeserver_lcpechoint"));	//todo optionally configurable
- 	  fprintf (fp, "lcp-echo-failure %s\n", nvram_default_match ("pppoeserver_lcpechofail"));	// todo optionally configureable
+ 	  fprintf (fp, "lcp-echo-failure %s\n", nvram_safe_get ("pppoeserver_lcpechofail"));	// todo optionally configureable
 	  struct dns_lists *dns_list = get_dns_list ();
 	  if (!dns_list || dns_list->num_servers == 0)
 	    {
@@ -4430,7 +4430,7 @@ start_pppoeserver (void)
 	  if (nvram_default_match ("pppoeserver_nodflate", "0", "0"))
 	  		fprintf (fp, "nodeflate\n");	//todo ...
 	  fprintf (fp, "nopcomp\n");
-	  fprintf (fp, "idle %s\n", nvram_safe_get ("pppoeserver_idle");	//todo ...
+	  fprintf (fp, "idle %s\n", nvram_safe_get ("pppoeserver_idle"));	//todo ...
 	  struct dns_lists *dns_list = get_dns_list ();
 	  if (!dns_list || dns_list->num_servers == 0)
 	    {
