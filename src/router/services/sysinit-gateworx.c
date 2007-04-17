@@ -269,13 +269,13 @@ Configure mac addresses by reading data from eeprom
   nvram_set ("use_crypto", "0");
   cprintf ("done\n");
   eval ("/bin/tar", "-xzf", "/dev/mtdblock/4", "-C", "/");
-  FILE *in=fopen("/tmp/nvram/nvram.db","rb");
-  if (in!=NULL)
+  FILE *in = fopen ("/tmp/nvram/nvram.db", "rb");
+  if (in != NULL)
     {
-    fclose(in);
-    eval("/usr/sbin/convertnvram");
-    eval("/usr/sbin/mtd","erase","nvram");
-    nvram_commit();
+      fclose (in);
+      eval ("/usr/sbin/convertnvram");
+      eval ("/usr/sbin/mtd", "erase", "nvram");
+      nvram_commit ();
     }
   return 0;
 }

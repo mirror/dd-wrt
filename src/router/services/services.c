@@ -546,8 +546,7 @@ start_dhcpfwd (void)
       else if (strcmp (wan_proto, "dhcp") == 0
 	       || strcmp (wan_proto, "static") == 0)
 	{
-	  fprintf (fp, "if	%s	false	true	true\n",
-		   wan_ifname);
+	  fprintf (fp, "if	%s	false	true	true\n", wan_ifname);
 	}
 #ifdef HAVE_PPTP
       else if (strcmp (wan_proto, "pptp") == 0)
@@ -569,8 +568,7 @@ start_dhcpfwd (void)
 #endif
       else
 	{
-	  fprintf (fp, "if	%s	false	true	true\n",
-		   wan_ifname);
+	  fprintf (fp, "if	%s	false	true	true\n", wan_ifname);
 	}
 
       fprintf (fp, "name	%s	ws-c\n",
@@ -1432,7 +1430,7 @@ start_nas_wan (void)
 int
 start_nas (void)
 {
-	  if (nvram_match ("wl0_mode", "sta")
+  if (nvram_match ("wl0_mode", "sta")
       || nvram_match ("wl0_mode", "wet")
       || nvram_match ("wl0_mode", "apsta")
       || nvram_match ("wl0_mode", "apstawet"))
@@ -1440,12 +1438,12 @@ start_nas (void)
       cprintf ("start nas wan\n");
       start_service ("nas_wan");
     }
-  	  else
+  else
     {
       cprintf ("start nas lan\n");
       start_service ("nas_lan");
     }
-return 1;
+  return 1;
 }
 
 int
@@ -1512,17 +1510,19 @@ start_nas_single (char *type, char *prefix)
     if (auth_mode == NULL)
       return 0;			//no nas required
     if (0 == strcmp (nvram_safe_get (apmode), "ap"))
-    	{
-      mode = "-A";
-      syslog (LOG_INFO,
-		  "NAS : NAS lan (%s interface) successfully started\n", prefix);      
-  		}
+      {
+	mode = "-A";
+	syslog (LOG_INFO,
+		"NAS : NAS lan (%s interface) successfully started\n",
+		prefix);
+      }
     else
-    	{
-      mode = "-S";
-      syslog (LOG_INFO,
-		  "NAS : NAS wan (%s interface) successfully started\n", prefix);
-  		}
+      {
+	mode = "-S";
+	syslog (LOG_INFO,
+		"NAS : NAS wan (%s interface) successfully started\n",
+		prefix);
+      }
 
     char rekey[32];
     char ssid[32];
@@ -3930,15 +3930,15 @@ start_bonding (void)
     eval ("ifconfig", tag, "0.0.0.0", "up");
     eval ("ifenslave", tag, port);
   }
-  int c=atoi(nvram_safe_get("bonding_number"));
+  int c = atoi (nvram_safe_get ("bonding_number"));
   int i;
-  for (i=0;i<c;i++)
+  for (i = 0; i < c; i++)
     {
-    sprintf(word,"bond%d",i);
-    char *br=getRealBridge(word);
-    if (br)
-	eval("brctl","addif",br,word);
-	
+      sprintf (word, "bond%d", i);
+      char *br = getRealBridge (word);
+      if (br)
+	eval ("brctl", "addif", br, word);
+
     }
 }
 void
@@ -3950,12 +3950,12 @@ stop_bonding (void)
       char bond[32];
       sprintf (bond, "bond%d", i);
       if (ifexists (bond))
-      {
-      char *br=getRealBridge(bond);
-      if (br)
-	eval("brctl","delif",br,bond);
-	eval ("ifconfig", bond, "down");
-      }
+	{
+	  char *br = getRealBridge (bond);
+	  if (br)
+	    eval ("brctl", "delif", br, bond);
+	  eval ("ifconfig", bond, "down");
+	}
     }
   eval ("rmmod", "bonding");
 }
@@ -4176,6 +4176,7 @@ getBridge (char *ifname)
 {
   return nvram_safe_get ("lan_ifname");
 }
+
 char *
 getRealBridge (char *ifname)
 {
@@ -4214,13 +4215,17 @@ getbridgeprio_main (int argc, char *argv[])
   fprintf (stdout, "%s\n", bridge);
   return 0;
 }
+
 #ifdef HAVE_JFFS2
-void stop_jffs2(void)
+void
+stop_jffs2 (void)
 {
-eval("umount","/jffs");
-eval("rmmod","jffs2");
+  eval ("umount", "/jffs");
+  eval ("rmmod", "jffs2");
 }
-void start_jffs2(void)
+
+void
+start_jffs2 (void)
 {
 #ifdef HAVE_REGISTER
   char *rwpart = "mtd5";
@@ -4234,7 +4239,7 @@ void start_jffs2(void)
 	{
 	  nvram_set ("sys_clean_jffs2", "0");
 	  nvram_commit ();
-	  itworked = eval("mtd","erase",rwpart);
+	  itworked = eval ("mtd", "erase", rwpart);
 	  eval ("insmod", "crc32");
 	  eval ("insmod", "jffs2");
 
@@ -4257,7 +4262,7 @@ void start_jffs2(void)
 	}
       else
 	{
-	  itworked = eval("mtd","unlock",rwpart);
+	  itworked = eval ("mtd", "unlock", rwpart);
 	  eval ("insmod", "crc32");
 	  eval ("insmod", "jffs2");
 #ifdef HAVE_REGISTER
@@ -4283,11 +4288,12 @@ void start_jffs2(void)
 #endif
 
 #ifdef HAVE_MMC
-void start_mmc(void)
+void
+start_mmc (void)
 {
   if (nvram_match ("mmc_enable", "1"))
     {
-    int res = eval("insmod","mmc");
+      int res = eval ("insmod", "mmc");
 /*    if (res)
 	{
 	eval("rmmod","mmc_wrt1");
@@ -4307,7 +4313,7 @@ void start_mmc(void)
         {
 	eval("rmmod","mmc_buf2");
 	}    */
-    
+
       if (!res)
 	{
 	  //device detected
@@ -4324,4 +4330,92 @@ void start_mmc(void)
 	}
     }
 }
+#endif
+
+#ifdef HAVE_PPPOESERVER
+void
+start_pppoeserver (void)
+{
+  FILE *fp;
+  fp = fopen ("/tmp/ppp/options", "wb");
+  fprintf (fp, "lock\n");
+  fprintf (fp, "crtscts\n");
+  fprintf (fp, "nobsdcomp\n");	//todo optionaly configurable
+  fprintf (fp, "nodeflate\n");	//todo ...
+  fprintf (fp, "nopcomp\n");
+  fclose (fp);
+  fp = fopen ("/tmp/ppp/pppoe-server-options", "wb");
+  fprintf (fp, "auth\n");
+  fprintf (fp, "require-chap\n");
+  fprintf (fp, "default-mru\n");
+  fprintf (fp, "default-asyncmap\n");
+  fprintf (fp, "lcp-echo-interval 60\n");	//todo optionally configurable
+  fprintf (fp, "lcp-echo-failure 5\n");	// todo optionally configureable
+  struct dns_lists *dns_list = get_dns_list ();
+  if (!dns_list || dns_list->num_servers == 0)
+    {
+      if (nvram_invmatch ("lan_ipaddr", ""))
+	fprintf (fp, "ms-dns %s\n", nvram_safe_get ("lan_ipaddr"));
+    }
+  else if (nvram_match ("local_dns", "1"))
+    {
+      if (dns_list
+	  && (nvram_invmatch ("lan_ipaddr", "")
+	      || strlen (dns_list->dns_server[0]) > 0
+	      || strlen (dns_list->dns_server[1]) > 0
+	      || strlen (dns_list->dns_server[2]) > 0))
+	{
+
+	  if (nvram_invmatch ("lan_ipaddr", ""))
+	    fprintf (fp, "ms-dns %s\n", nvram_safe_get ("lan_ipaddr"));
+	  if (strlen (dns_list->dns_server[0]) > 0)
+	    fprintf (fp, "ms-dns %s\n %s", dns_list->dns_server[0]);
+	  if (strlen (dns_list->dns_server[1]) > 0)
+	    fprintf (fp, "ms-dns %s\n %s", dns_list->dns_server[1]);
+	  if (strlen (dns_list->dns_server[2]) > 0)
+	    fprintf (fp, "ms-dns %s\n %s", dns_list->dns_server[2]);
+
+	  fprintf (fp, "\n");
+	}
+    }
+  else
+    {
+      if (dns_list
+	  && (strlen (dns_list->dns_server[0]) > 0
+	      || strlen (dns_list->dns_server[1]) > 0
+	      || strlen (dns_list->dns_server[2]) > 0))
+	{
+	  if (strlen (dns_list->dns_server[0]) > 0)
+	    fprintf (fp, "ms-dns  %s", dns_list->dns_server[0]);
+	  if (strlen (dns_list->dns_server[1]) > 0)
+	    fprintf (fp, "ms-dns  %s", dns_list->dns_server[1]);
+	  if (strlen (dns_list->dns_server[2]) > 0)
+	    fprintf (fp, "ms-dns  %s", dns_list->dns_server[2]);
+
+	  fprintf (fp, "\n");
+	}
+    }
+
+  if (dns_list)
+    free (dns_list);
+  fprintf (fp, "noipdefault\n");
+  fprintf (fp, "noipx\n");
+  fprintf (fp, "nodefaultroute\n");
+  fprintf (fp, "noproxyarp\n");
+  fprintf (fp, "noktune\n");
+  fprintf (fp, "netmask 255.255.255.255\n");
+  fclose (fp);
+  fp = fopen ("/tmp/ppp/chap-secrets", "wb");
+  fprintf (fp, "test * test 192.168.0.2\n");	// todo, make configureable (ip, user and password)
+  fclose (fp);
+  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"));	//todo, make interface and base address configurable, see networking page options
+}
+
+void
+stop_pppoeserver (void)
+{
+  killall ("pppoe-server", SIGTERM);
+
+}
+
 #endif

@@ -169,13 +169,13 @@ start_sysinit (void)
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
   eval ("/bin/tar", "-xzf", "/dev/mtdblock/3", "-C", "/");
-  FILE *in=fopen("/tmp/nvram/nvram.db","rb");
-  if (in!=NULL)
+  FILE *in = fopen ("/tmp/nvram/nvram.db", "rb");
+  if (in != NULL)
     {
-    fclose(in);
-    eval("/usr/sbin/convertnvram");
-    eval("/usr/sbin/mtd","erase","nvram");
-    nvram_commit();
+      fclose (in);
+      eval ("/usr/sbin/convertnvram");
+      eval ("/usr/sbin/mtd", "erase", "nvram");
+      nvram_commit ();
     }
   cprintf ("sysinit() var\n");
 
