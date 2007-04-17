@@ -46,6 +46,10 @@ function checked(F) {
 	if (F._pppoeserver_nobsdcomp) {
 		(F._pppoeserver_nobsdcomp.checked == true) ? F.pppoeserver_nobsdcomp.value = 1 : F.pppoeserver_nobsdcomp.value = 0;
 	}
+	
+	if (F._pppoeserver_encryption) {
+		(F._pppoeserver_encryption.checked == true) ? F.pppoeserver_encryption.value = 1 : F.pppoeserver_encryption.value = 0;
+	}
 }
 
 function lease_add_submit(F) {
