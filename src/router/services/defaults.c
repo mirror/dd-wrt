@@ -2014,6 +2014,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"pppoe_remoteaddr","192.168.1.2",0},
   {"pppoeserver_nobsdcomp", "1", 0},
   {"pppoeserver_nodflate", "1", 0},
+  {"pppoeserver_encryption", "0", 0},
   {"pppoeserver_lcpechoint", "60", 0},
   {"pppoeserver_lcpechofail", "5", 0},
   {"pppoeserver_user", "user", 0},
