@@ -16,3 +16,4 @@
  "pppoeserver_encryption" "" "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "pppoeradius_enabled" "" "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "pppoeserver_sharedkey" "" "PASSWORD" "63" "TRUE" "0" 
+ "pppoeserver_remoteaddr" "" "NULL" "TRUE" "0" 
