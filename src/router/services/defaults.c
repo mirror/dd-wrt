@@ -2012,6 +2012,18 @@ struct nvram_tuple srouter_defaults[] = {
   {"pppoeserver_enabled", "0", 0},
   {"pppoeradius_enabled", "0", 0},
   {"pppoe_remoteaddr","192.168.1.2",0},
+  {"pppoeserver_nobsdcomp", "1", 0},
+  {"pppoeserver_nodflate", "1", 0},
+  {"pppoeserver_lcpechoint", "60", 0},
+  {"pppoeserver_lcpechofail", "5", 0},
+  {"pppoeserver_user", "user", 0},
+  {"pppoeserver_user", "pass", 0},
+  {"pppoeserver_ip", "192.168.1.1", 0},
+  {"ppoeserver_idle", "600", 0},
+  {"pppoeserver_authserverip", "192.168.1.1", 0},
+  {"pppoeserver_authserverport", "1812", 0},
+  {"pppoeserver_acctserverip", "192.168.1.1", 0},
+  {"pppoeserver_acctserverport", "1813", 0},
 #endif
   {0, 0, 0}
 };
