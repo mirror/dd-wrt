@@ -4345,8 +4345,10 @@ start_pppoeserver (void)
 	  fp = fopen ("/tmp/ppp/options", "wb");
 	  fprintf (fp, "lock\n");
 	  fprintf (fp, "crtscts\n");
-	  fprintf (fp, "nobsdcomp\n");	//todo optionaly configurable
-	  fprintf (fp, "nodeflate\n");	//todo ...
+	  if (nvram_default_match ("pppoeserver_nobsdcomp", "0", "0"))
+	  		fprintf (fp, "nobsdcomp\n");	//todo optionaly configurable
+	  if (nvram_default_match ("pppoeserver_nodflate", "0", "0"))
+	  		fprintf (fp, "nodeflate\n");	//todo ...
 	  fprintf (fp, "nopcomp\n");
 	  fclose (fp);
 	  fp = fopen ("/tmp/ppp/pppoe-server-options", "wb");
@@ -4354,8 +4356,8 @@ start_pppoeserver (void)
 	  fprintf (fp, "require-chap\n");
 	  fprintf (fp, "default-mru\n");
 	  fprintf (fp, "default-asyncmap\n");
-	  fprintf (fp, "lcp-echo-interval 60\n");	//todo optionally configurable
-	  fprintf (fp, "lcp-echo-failure 5\n");	// todo optionally configureable
+	  fprintf (fp, "lcp-echo-interval %s\n", nvram_safe_get ("pppoeserver_lcpechoint"));	//todo optionally configurable
+ 	  fprintf (fp, "lcp-echo-failure %s\n", nvram_default_match ("pppoeserver_lcpechofail"));	// todo optionally configureable
 	  struct dns_lists *dns_list = get_dns_list ();
 	  if (!dns_list || dns_list->num_servers == 0)
 	    {
@@ -4411,7 +4413,8 @@ start_pppoeserver (void)
 	  fprintf (fp, "netmask 255.255.255.255\n");
 	  fclose (fp);
 	  fp = fopen ("/tmp/ppp/chap-secrets", "wb");
-	  fprintf (fp, "test * test 192.168.0.2\n");	// todo, make configureable (ip, user and password)
+	  fprintf (fp, "%s * %s %s\n", nvram_safe_get ("pppoeserver_user"), nvram_safe_get ("pppoeserver_pass"), nvram_safe_get ("pppoeserver_ip"));
+//	  fprintf (fp, "test * test 192.168.0.2\n");	// todo, make configureable (ip, user and password)
 	  fclose (fp);
 	  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"));	//todo, make interface and base address configurable, see networking page options
 	}
@@ -4422,10 +4425,12 @@ start_pppoeserver (void)
 	  fp = fopen ("/tmp/ppp/options", "wb");
 	  fprintf (fp, "lock\n");
 	  fprintf (fp, "crtscts\n");
-	  fprintf (fp, "nobsdcomp\n");	//todo optionaly configurable
-	  fprintf (fp, "nodeflate\n");	//todo ...
+	  if (nvram_default_match ("pppoeserver_nobsdcomp", "0", "0"))
+	  		fprintf (fp, "nobsdcomp\n");	//todo optionaly configurable
+	  if (nvram_default_match ("pppoeserver_nodflate", "0", "0"))
+	  		fprintf (fp, "nodeflate\n");	//todo ...
 	  fprintf (fp, "nopcomp\n");
-	  fprintf (fp, "idle 600\n");	//todo ...
+	  fprintf (fp, "idle %s\n", nvram_safe_get ("pppoeserver_idle");	//todo ...
 	  struct dns_lists *dns_list = get_dns_list ();
 	  if (!dns_list || dns_list->num_servers == 0)
 	    {
@@ -4481,8 +4486,8 @@ start_pppoeserver (void)
 	  fprintf (fp, "require-mschap-v2\n");
 	  fprintf (fp, "default-mru\n");
 	  fprintf (fp, "default-asyncmap\n");
-	  fprintf (fp, "lcp-echo-interval 60\n");	//todo optionally configurable
-	  fprintf (fp, "lcp-echo-failure 5\n");	// todo optionally configureable
+	  fprintf (fp, "lcp-echo-interval %s\n", nvram_safe_get ("pppoeserver_lcpechoint"));	//todo optionally configurable
+ 	  fprintf (fp, "lcp-echo-failure %s\n", nvram_default_match ("pppoeserver_lcpechofail"));	// todo optionally configureable
 	  fprintf (fp, "noipdefault\n");
 	  fprintf (fp, "nodefaultroute\n");
 	  fprintf (fp, "noproxyarp\n");
@@ -4507,8 +4512,10 @@ start_pppoeserver (void)
 	  fprintf (fp, "radius_timeout\t10\n");
 	  fprintf (fp, "radius_retries\t3\n");
 	  fprintf (fp, "login_local\t/bin/login\n");
-	  fprintf (fp, "authserver 192.168.0.111:1812\n");	//todo make values configureable
-	  fprintf (fp, "acctserver 192.168.0.111:1813\n");	//todo make values configureable
+//	  fprintf (fp, "authserver 192.168.0.111:1812\n");	//todo make values configureable
+//	  fprintf (fp, "acctserver 192.168.0.111:1813\n");	//todo make values configureable
+	  fprintf (fp, "authserver %s:%s\n", nvram_safe_get ("pppoeserver_authserverip"), nvram_safe_get ("pppoeserver_authserverport"));	//todo make values configureable
+	  fprintf (fp, "acctserver %s:%s\n", nvram_safe_get ("pppoeserver_acctserverip"), nvram_safe_get ("pppoeserver_acctserverport")););	//todo make values configureable
 	  fclose (fp);
 	  fp = fopen ("/tmp/ppp/radius/servers", "wb");
 	  fprintf (fp, "192.168.0.111 test\n");	//todo, shared secret for radius server, see above for server name, must be identical
