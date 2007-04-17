@@ -1,0 +1,17 @@
+AC_INIT(rlm_sqlcounter.c)
+AC_REVISION($Revision: 1.2.6.1 $)
+AC_DEFUN(modname,[rlm_sqlcounter])
+
+if test x$with_[]modname != xno; then
+
+	dnl  This module doesn't need any autoconf test which is not already
+	dnl  in top-level configure.
+
+	targetname=modname
+else
+	targetname=
+	echo \*\*\* module modname is disabled.
+fi
+
+AC_SUBST(targetname)
+AC_OUTPUT(Makefile)

@@ -1,0 +1,160 @@
+AC_INIT(sql_oracle.c)
+AC_REVISION($Revision: 1.7 $)
+AC_DEFUN(modname,[rlm_sql_oracle])
+
+
+if test x$with_[]modname != xno; then
+
+	AC_PROG_CC
+	AC_PROG_CPP
+
+	targetname=modname   # we might change this later.
+
+	AC_SUBST(ORACLE_LIBS)
+	AC_SUBST(ORACLE_INCLUDE)
+
+	AC_MSG_CHECKING([for oci.h])
+
+	dnl #
+	dnl # See if the user passed in the oracle_home_dir option and
+	dnl # use that first.  If not, use $ORACLE_HOME.  If that's
+	dnl # not defined, give up.  There's no point in blindly
+	dnl # hunting around for Oracle - there's no standard place
+	dnl # for it.  Any sane Oracle user/developer should have $ORACLE_HOME
+	dnl # defined anyways.
+	dnl #
+
+	AC_TRY_COMPILE([#include <oci.h>],
+		[ int a = 1;],
+		ORACLE_INCLUDE=" ",
+		ORACLE_INCLUDE=
+	)
+
+	# Look for Oracle8i.
+	if test "x$ORACLE_INCLUDE" = "x"; then
+		old_CFLAGS="$CFLAGS"
+
+		AC_LOCATE_DIR(oracle_home_dir,oci.h)
+
+		for try in $oracle_home_dir $oracle_include_dir; do
+			CFLAGS="$old_CFLAGS -I${try}/rdbms/demo -I${try}/rdbms/public -I${try}/plsql/public -I${try}/network/public -I${try}/oci/include"
+			AC_TRY_COMPILE([#include <oci.h>],
+				[ int a = 1; ],
+				OHOME=$try,
+				OHOME=
+			)
+			if test "x$OHOME" != "x"; then
+				break;
+			fi
+		done
+
+		if test "x$OHOME" = "x" -a "x$ORACLE_HOME" != "x"; then
+			CFLAGS="$old_CFLAGS -I${ORACLE_HOME}/rdbms/demo -I${ORACLE_HOME}/rdbms/public -I${ORACLE_HOME}/plsql/public -I${ORACLE_HOME}/network/public -I${ORACLE_HOME}/oci/include"
+			AC_TRY_COMPILE([#include <oci.h>],
+				[ int a = 1; ],
+				OHOME=$ORACLE_HOME,
+				OHOME=
+			)
+		fi
+
+		CFLAGS="$old_CFLAGS"
+
+		if test "x$OHOME" != "x"; then
+			ORACLE_HOME=$OHOME
+			ORACLE_INCLUDE="-I${ORACLE_HOME}/rdbms/demo -I${ORACLE_HOME}/rdbms/public -I${ORACLE_HOME}/plsql/public -I${ORACLE_HOME}/network/public -I${ORACLE_HOME}/oci/include"
+		fi
+	fi     ##  this section sets $ORACLE_HOME, if found.
+
+	# not Oracle8i, try older.
+	if test "x$ORACLE_INCLUDE" = "x"; then
+		old_CFLAGS="$CFLAGS"
+
+		AC_LOCATE_DIR(oracle_include_dir,oci.h)
+
+		for try in /usr/local/include/oracle /usr/local/oracle/include $oracle_include_dir; do
+			CFLAGS="$old_CFLAGS -I$try"
+			AC_TRY_COMPILE([#include <oci.h>],
+				[ int a = 1; ],
+				ORACLE_INCLUDE="-I$try",
+				ORACLE_INCLUDE=
+			)
+			if test "x$ORACLE_INCLUDE" != "x"; then
+				break;
+			fi
+		done
+		CFLAGS="$old_CFLAGS"
+	fi
+
+	if test "x$ORACLE_INCLUDE" = "x"; then
+		AC_MSG_RESULT(no)
+		AC_MSG_WARN([oracle headers not found.  Use --with-oracle-home-dir=<path>.])
+		targetname=   # disabled module
+	else
+		sql_oracle_cflags="${sql_oracle_cflags} ${ORACLE_INCLUDE}"
+		AC_MSG_RESULT(yes)
+
+
+		## is this set, from above?
+		if test "x$ORACLE_HOME" != "x"; then
+			## we must have an Oracle8i tree
+
+			# FIXME: we might do some checking, just to be nice
+			ORACLE_LIBS="-L$ORACLE_HOME/lib -lclntsh -lm"
+
+		else
+			AC_MSG_CHECKING([for oracle_init in -loracleclient])
+
+			dnl #
+			dnl #  Look for it in a number of directories.
+			dnl #
+			old_LIBS="$LIBS"
+
+			AC_LOCATE_DIR(oracle_lib_dir,[oracleclient.so])
+			AC_LOCATE_DIR(oracle_lib_dir,[oracleclient.a])
+
+			for try in /usr/lib/oracle /usr/local/lib/oracle /usr/local/oracle/lib $oracle_lib_dir; do
+				LIBS="$old_LIBS -L$try -loracleclient"
+				AC_TRY_LINK([extern char oracle_init();],
+					[ oracle_init()],
+					ORACLE_LIBS="-L$try -loracleclient",
+					ORACLE_LIBS=
+				)
+				if test "x$ORACLE_LIBS" != "x"; then
+					break;
+				fi
+			done
+			LIBS="$old_LIBS"
+
+			dnl #
+			dnl #  If one or the other isn't found, disable
+			dnl #  them both..
+			dnl #  If both are found, enable them both.
+			dnl #
+			if test "x$ORACLE_LIBS" = "x"; then
+				AC_MSG_RESULT(no)
+				ORACLE_INCLUDE=
+			fi
+		fi
+
+		if test "x$ORACLE_LIBS" = "x"; then
+			AC_MSG_WARN([oracle libraries not found.  Use --with-oracle-lib-dir=<path>.])
+			targetname=   # disabled module
+		else
+			sql_oracle_ldflags="$sql_oracle_ldflags $ORACLE_LIBS"
+			AC_MSG_RESULT(yes)
+		fi
+	fi
+
+	if test "x$targetname" = "x"; then
+		AC_MSG_WARN([sql submodule 'oracle' disabled])
+	fi
+
+else
+	targetname=
+	echo \*\*\* module modname is disabled.
+fi
+
+AC_SUBST(sql_oracle_ldflags)
+AC_SUBST(sql_oracle_cflags)
+AC_SUBST(targetname)
+AC_OUTPUT(Makefile)

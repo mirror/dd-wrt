@@ -1,0 +1,10 @@
+#
+# $Id: Makefile.in,v 1.1.10.2 2006/06/12 14:54:18 nbk Exp $
+#
+
+TARGET      = @targetname@
+SRCS        = rlm_sqlcounter.c
+
+include ../rules.mak
+
+$(LT_OBJS): $(HEADERS)

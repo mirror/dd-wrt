@@ -1,0 +1,33 @@
+#
+# $Id: Makefile.in,v 1.2.2.1.2.2 2006/05/25 16:24:42 nbk Exp $
+#
+
+TARGET		= @targetname@
+SRCS		= rlm_sql.c sql.c
+HEADERS		= rlm_sql.h conf.h
+RLM_INSTALL	= install-drivers
+RLM_CFLAGS	= $(INCLTDL) -I$(top_builddir)/src/modules/rlm_sql
+RLM_LIBS	= $(LIBLTDL)
+RLM_SUBDIRS	= drivers
+
+#
+#  Not using shared libraries, add in ALL known static modules
+# at build time.
+#
+#ifneq ($(USE_SHARED_LIBS),yes)
+#RLM_LIBS	+= $(shell for x in drivers/rlm_*/rlm_*.la;do echo -dlpreopen $$x;done)
+#endif
+
+# this uses the RLM_CFLAGS and RLM_LIBS and SRCS defs to make TARGET.
+include ../rules.mak
+
+$(LT_OBJS): $(HEADERS)
+
+install-drivers:
+	@$(MAKE) $(MFLAGS) WHAT_TO_MAKE=install common
+
+common:
+	@for dir in $(RLM_SUBDIRS); do \
+		echo "Making $(WHAT_TO_MAKE) in $$dir..."; \
+		$(MAKE) $(MFLAGS) -C $$dir $(WHAT_TO_MAKE) || exit $$?; \
+	done
