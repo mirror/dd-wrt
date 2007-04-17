@@ -73,11 +73,11 @@
 			</div>
 			<div id="idpppoerad">
 			<div class="setting">
-				<div class="label">Auth Server IP</div>
+				<div class="label">Radius Server IP</div>
 				<input maxlength="15" size="24" name="pppoeserver_authserverip" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_authserverip"); %>" />
 			</div>
 			<div class="setting">
-				<div class="label">Auth Server Port</div>
+				<div class="label">Radius Authentication Port</div>
 				<input size="5" maxlength="5" class="num" name="pppoeserver_authserverport" value="<% nvram_get("pppoeserver_authserverport"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
@@ -86,17 +86,17 @@
 				</script></span>
 			</div>			
 			<div class="setting">
-				<div class="label">Acct Server IP</div>
-				<input maxlength="15" size="24" name="pppoeserver_acctserverip" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_acctserverip"); %>" />
-			</div>
-			<div class="setting">
-				<div class="label">Acct Server Port</div>
-				<input size="5" maxlength="5" class="num" name="pppoeserver_authserverport" value="<% nvram_get("pppoeserver_authserverport"); %>" />
+				<div class="label">Radius Accounting Port</div>
+				<input size="5" maxlength="5" class="num" name="pppoeserver_acctserverport" value="<% nvram_get("pppoeserver_acctserverport"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
 				document.write("(" + share.deflt + ": 1813)");
 				//]]>
 				</script></span>
+			</div>
+			<div class="setting">
+				<div class="label">Radius Shared Key</div>
+				<input size="20" maxlength="63" type="password" name="pppoeserver_sharedkey" value="d6nw5v1x2pc7st9m" />
 			</div>
 			</div>
 	</div>	
