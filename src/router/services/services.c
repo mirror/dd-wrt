@@ -4496,7 +4496,7 @@ start_pppoeserver (void)
 	  fprintf (fp, "auth_order\tradius\n");
 	  fprintf (fp, "login_tries\t4\n");
 	  fprintf (fp, "login_timeout\t60\n");
-	  fprintf (fp, "nologin\/etc/nologin\n");
+	  fprintf (fp, "nologin\t/etc/nologin\n");
 	  fprintf (fp, "issue\t/etc/issue\n");
 	  fprintf (fp, "servers\t/tmp/ppp/radius/servers\n");
 	  fprintf (fp, "dictionary\t/etc/dictionary\n");
@@ -4513,7 +4513,7 @@ start_pppoeserver (void)
 	  fp = fopen ("/tmp/ppp/radius/servers", "wb");
 	  fprintf (fp, "192.168.0.111 test\n");	//todo, shared secret for radius server, see above for server name, must be identical
 	  fclose (fp);
-	  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"));	//todo, make interface and base address configurable, see networking page options
+	  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"), "-R",nvram_safe_get("pppoe_remoteaddr"));	//todo, make interface and base address configurable, remote addr as well, see networking page options
 	}
     }
 }

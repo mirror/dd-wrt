@@ -2011,6 +2011,7 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_PPPOESERVER
   {"pppoeserver_enabled", "0", 0},
   {"pppoeradius_enabled", "0", 0},
+  {"pppoe_remoteaddr","192.168.1.2",0},
 #endif
   {0, 0, 0}
 };
