@@ -59,6 +59,12 @@
 				</script></span>
 			</div>
 			<div class="setting">
+				<div class="label">Radius Auth.</div>
+				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="1" <% nvram_selmatch("pppoeradius_enabled", "1", "checked"); %> onclick="show_layer_ext(this, 'idpppoerad', true)" /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="0" <% nvram_selmatch("pppoeradius_enabled", "0", "checked"); %> onclick="show_layer_ext(this, 'idpppoerad', false)" /><% tran("share.disable"); %>
+			</div>
+			<div id="idpppoerad">
+			<div class="setting">
 				<div class="label">Auth Server IP</div>
 				<input maxlength="15" size="24" name="pppoeserver_authserverip" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_authserverip"); %>" />
 			</div>
@@ -83,6 +89,7 @@
 				document.write("(" + share.deflt + ": 1813)");
 				//]]>
 				</script></span>
+			</div>
 			</div>
 	</div>	
 </fieldset><br/>
