@@ -2025,8 +2025,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"ppoeserver_idle", "600", 0},
   {"pppoeserver_authserverip", "192.168.1.1", 0},
   {"pppoeserver_authserverport", "1812", 0},
-  {"pppoeserver_acctserverip", "192.168.1.1", 0},
   {"pppoeserver_acctserverport", "1813", 0},
+  {"pppoeserver_sharedkey", "", 0},
 #endif
   {0, 0, 0}
 };
