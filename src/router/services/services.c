@@ -4545,10 +4545,10 @@ start_pppoeserver (void)
 //	  fprintf (fp, "authserver 192.168.0.111:1812\n");	//todo make values configureable
 //	  fprintf (fp, "acctserver 192.168.0.111:1813\n");	//todo make values configureable
 	  fprintf (fp, "authserver %s:%s\n", nvram_safe_get ("pppoeserver_authserverip"), nvram_safe_get ("pppoeserver_authserverport"));	//todo make values configureable
-	  fprintf (fp, "acctserver %s:%s\n", nvram_safe_get ("pppoeserver_acctserverip"), nvram_safe_get ("pppoeserver_acctserverport"));	//todo make values configureable
+	  fprintf (fp, "acctserver %s:%s\n", nvram_safe_get ("pppoeserver_authserverip"), nvram_safe_get ("pppoeserver_acctserverport"));	//todo make values configureable
 	  fclose (fp);
 	  fp = fopen ("/tmp/ppp/radius/servers", "wb");
-	  fprintf (fp, "192.168.0.111 test\n");	//todo, shared secret for radius server, see above for server name, must be identical
+	  fprintf (fp, "%s %s\n",nvram_safe_get ("pppoeserver_authserverip"),nvram_safe_get ("pppoeserver_sharedkey"));	//todo, shared secret for radius server, see above for server name, must be identical
 	  fclose (fp);
 	  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"), "-R",nvram_safe_get("pppoe_remoteaddr"));	//todo, make interface and base address configurable, remote addr as well, see networking page options
 	}
