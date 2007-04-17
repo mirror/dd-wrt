@@ -1,0 +1,13 @@
+#
+# $Id: Makefile.in,v 1.1.8.1.2.1 2006/02/10 19:47:15 nbk Exp $
+#
+
+TARGET     = @targetname@
+SRCS       = rlm_krb5.c
+HEADERS    =
+RLM_LIBS   = @krb5_ldflags@
+RLM_CFLAGS = @krb5_cflags@ -I/usr/include/et
+
+include ../rules.mak
+
+$(LT_OBJS): $(HEADERS)

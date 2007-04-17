@@ -1,0 +1,25 @@
+#! /bin/sh
+
+set -e
+
+case "$1" in
+	remove)
+		;;
+	purge)
+		update-rc.d -f freeradius remove >/dev/null
+		if [ -d /var/log/freeradius ]
+		then
+			rm -rf /var/log/freeradius
+		fi
+		rmdir --ignore-fail-on-non-empty /etc/freeradius
+		deluser freerad shadow || true
+		deluser freerad || true
+		delgroup freerad || true
+		;;
+	*)
+		;;
+esac
+
+#DEBHELPER#
+
+exit 0

@@ -1,0 +1,49 @@
+#
+# $Id: Makefile.in,v 1.12.2.2.2.4 2006/05/25 16:24:41 nbk Exp $
+#
+
+TARGET      = @targetname@
+SRCS        = rlm_eap.c eap.c mem.c state.c
+HEADERS     = eap.h rlm_eap.h
+RLM_CFLAGS  = $(INCLTDL) -Ilibeap
+CLIENTLIBS  = libeap/libeap.la
+RLM_LIBS    = libeap/libeap.la $(LIBLTDL)
+RLM_INSTALL = install-subdirs
+RLM_SUBDIRS = libeap @eaptypes@
+RLM_UTILS   = radeapclient
+
+#
+# Not using shared libraries, add in ALL known static modules
+# at build time.
+#
+#ifneq ($(USE_SHARED_LIBS),yes)
+#RLM_LIBS  += $(shell for x in types/rlm_eap*/rlm_eap*.la;do echo -dlpreopen $$x;done)
+#endif
+
+.PHONY: all install-subdirs common
+
+#
+# We need libeap.la before we can build anything else
+#
+all: common
+
+$(LT_OBJS): $(HEADERS)
+
+radeapclient: radeapclient.lo $(CLIENTLIBS)
+	$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) $(RLM_LDFLAGS) -o radeapclient radeapclient.lo $(CLIENTLIBS) $(LIBS) $(OPENSSL_LIBS)
+
+radeapclient.lo: radeapclient.c $(HEADERS)
+	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) $(RLM_CFLAGS) -c radeapclient.c
+
+install-subdirs:
+	@$(MAKE) $(MFLAGS) WHAT_TO_MAKE=install common
+	$(LIBTOOL) --mode=install $(INSTALL) -m 755 $(INSTALLSTRIP) radeapclient$(EXEEXT) $(R)$(bindir)
+
+common:
+	@for dir in $(RLM_SUBDIRS); do  \
+		echo "Making $(WHAT_TO_MAKE) in $$dir..."; \
+		$(MAKE) $(MFLAGS) -C $$dir $(WHAT_TO_MAKE) || exit $$?; \
+	done
+
+## this uses the RLM_CFLAGS and RLM_LIBS and SRCS defs to make TARGET.
+include ../rules.mak
