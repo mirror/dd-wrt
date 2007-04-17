@@ -49,11 +49,11 @@ PPPD_PATH=$(sbindir)/pppd
 
 
 # Kernel-mode plugin gets installed here.
-PLUGIN_DIR=/etc/ppp/plugins
+PLUGIN_DIR=/usr/lib
 PLUGIN_PATH=$(PLUGIN_DIR)/rp-pppoe.so
 
 # Configuration file paths
-PPPOESERVER_PPPD_OPTIONS=/etc/ppp/pppoe-server-options
+PPPOESERVER_PPPD_OPTIONS=/tmp/ppp/pppoe-server-options
 
 PATHS='-DPPPOE_PATH="$(PPPOE_PATH)"' '-DPPPD_PATH="$(PPPD_PATH)"' \
 	'-DPLUGIN_PATH="$(PLUGIN_PATH)"' \
