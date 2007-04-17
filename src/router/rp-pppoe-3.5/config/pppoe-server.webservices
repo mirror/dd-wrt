@@ -27,7 +27,10 @@
 				<div class="label">Nobsdcomp</div>
 				<input type="checkbox" value="1" name="_pppoeserver_nobsdcomp" <% nvram_checked("pppoeserver_nobsdcomp", "1"); %> />
 			</div>
-
+			<div class="setting">
+				<div class="label">PPPoE Encryption</div>
+				<input type="checkbox" value="1" name="_pppoeserver_encryption" <% nvram_checked("pppoeserver_encryption", "1"); %> />
+			</div>
 			<div class="setting">
 				<div class="label">LCP Echo Interval</div>
 				<input size="5" maxlength="5" class="num" name="pppoeserver_lcpechoint" value="<% nvram_get("pppoeserver_lcpechoint"); %>" />
