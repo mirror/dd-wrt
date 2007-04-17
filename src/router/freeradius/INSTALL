@@ -1,0 +1,128 @@
+1. INSTALLATION
+
+  Ignore this file if you have a pre-installed binary package.
+
+
+1a. SIMPLE INSTALLATION
+
+  If you do not need to modify the default configuration, then take
+the following steps to build and install the server:
+
+
+	$ ./configure
+	$ make
+	$ make install
+
+  Note that as of 1.0.0, the location of the dictionary files has
+changed, to /usr/local/share/freeradius/dictionary.  Please ensure
+that /etc/raddb/dictionary is THE SAME as ./raddb/dictionary.  If not,
+you will have to copy it over by hand;
+
+	 $ cp ./raddb/dictionary /etc/raddb/dictionary
+
+  If you see errors like 'invalid keyword "ATTRIB_NMC"', then you
+should update the main dictionary file as described above.
+
+  Once the main dictionary file has been updated, and the server has
+been verified to work, all of the other (old) dictionary files in
+/etc/raddb may be deleted.
+
+
+1b. CUSTOM INSTALLATION
+
+  FreeRADIUS has autoconf support. This means you have to run
+./configure, and then run make.  To see which configuration options
+are supported, run './configure --help', and read it's output.  The
+following list is a selection from the available flags:
+
+  --enable-shared[=PKGS]  build shared libraries [default=yes]
+  --enable-static[=PKGS]  build static libraries [default=yes]
+  --enable-fast-install[=PKGS]  optimize for fast installation [default=yes]
+  --with-logdir=DIR       Directory for logfiles [LOCALSTATEDIR/log] 
+  --with-radacctdir=PATH  Directory for detail files [LOGDIR/radacct] 
+  --with-raddbdir=DIR     Directory for config files [SYSCONFDIR/raddb] 
+  --with-threads          Use threads, if available.  (default=yes) 
+  --with-snmp             Compile in SNMP support. (default=yes)
+  --disable-ltdl-install  Do not install libltdl
+  --with-experimental-modules      Use experimental and unstable modules. (default=no) 
+  --enable-developer      Turns on super-duper-extra-compile-warnings
+                              when using gcc.
+  --with-edir             Compile with support for Novell eDirectory
+                              integration.
+
+  Now type "make". The binaries will be compiled.
+
+  Then do "make install". That will install the binaries, the 'man'
+pages, and MAY install the configuration files.  If you have not
+installed a RADIUS server before, then the configuration files for
+FreeRADIUS will be installed.  If you already have a RADIUS server
+installed, then FreeRADIUS WILL NOT over-write your current
+configuration.  It will warn you about the files it could not install.
+
+  If you DO see a warning message about files that could not be
+installed, then you should manually 'diff' the files.  There MAY be
+changes in the dictionary files which are REQUIRED for a new version
+of the software.  These files will NOT be installed over your current
+configuration, so you MUST verify and install any problem files by
+hand.
+
+  It is EXTREMELY helpful to read the output of both 'configure',
+'make', and 'make install'.  If a particular module you expected to be
+installed was NOT installed, then the output of the
+'configure;make;make install' sequence will tell you why that module
+was not installed.  Please do NOT post questions to the FreeRADIUS
+users list without carefully reading the output of this process.
+
+
+2. RUNNING THE SERVER
+
+  If the server builds and installs, but doesn't run correctly, then
+you may use debugging mode to figure out the problem. 
+
+  This is your BEST HOPE for understanding the problem.  Read ALL of
+the messages which are printed to the screen, the answer to your
+problem will often be in a warning or error message.
+
+  We really can't emphasize that last sentence enough.  Configuring a
+RADIUS server for complex local authentication isn't a trivial task.
+Your ONLY method for debugging it is to read the debug messages, where
+the server will tell you exactly what it's doing, and why.  You should
+then compare its behaviour to what you intended, and edit the
+configuration files as appropriate.
+
+  If you don't use debugging mode, then you will look dumb when you
+ask questions on the 'freeradius-users' list, and the answer to your
+question was contained in the debug messages you posted to the list.
+
+   Since the main developers of FreeRADIUS use debugging mode to track
+down their configuration problems with the server, it's a good idea
+for you to use it, too.  If you don't, there is little hope for you to
+solve ANY configuration problem related to the server.
+
+  To start the server in debugging mode, do:
+
+	$ radiusd -X
+
+  You should see a lot of text printed on the screen as it starts up.
+If you don't, or if you see error messages, please read the FAQ:
+
+	http://www.freeradius.org/faq/
+
+  If the server says "Ready to process requests.", then it is running
+properly.  From another shell (or another window), type:
+
+	$ radtest test test localhost 0 testing123
+
+  You should see the server print out more messages as it receives the
+request, and responds to it.  The 'radtest' program should receive the
+response within a few seconds.  It doesn't matter if the
+authentication request is accepted or rejected, what matters is that
+the server received the request, and responded to it.
+
+  You can now edit the 'radiusd.conf' file for your local system.
+Please read the ENTIRE file carefully, as many configuration options
+are only documented in comments in the file.
+
+  Configuring and running the server MAY be complicated.  Please read
+the documentation in the doc/ directory for further information.  If
+you have any issues, the FAQ is also a good place to check.

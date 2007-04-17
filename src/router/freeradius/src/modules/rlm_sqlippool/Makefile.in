@@ -1,0 +1,14 @@
+#
+# $Id: Makefile.in,v 1.3.2.3 2006/06/12 14:54:18 nbk Exp $
+#
+
+TARGET      = @targetname@
+SRCS        = rlm_sqlippool.c
+HEADERS     = $(top_builddir)/src/modules/rlm_sql/rlm_sql.h
+RLM_CFLAGS  = -I$(top_builddir)/src/modules/rlm_sql -I$(top_builddir)/libltdl
+RLM_LIBS    =
+RLM_INSTALL =
+
+include ../rules.mak
+
+$(LT_OBJS): $(HEADERS)

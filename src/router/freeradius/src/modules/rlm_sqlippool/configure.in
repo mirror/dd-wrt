@@ -1,0 +1,23 @@
+#
+# Autoconf input file.
+#
+# Version:	$Id: configure.in,v 1.1.2.3 2006/06/12 15:04:29 nbk Exp $
+#
+
+AC_INIT(rlm_sqlippool.c)
+AC_REVISION($Revision: 1.1.2.3 $)
+AC_DEFUN(modname,[rlm_sqlippool])
+
+if test x$with_[]modname != xno; then
+
+	dnl  This module doesn't need any autoconf test which is not already
+	dnl  in top-level configure.
+
+	targetname=modname
+else
+	targetname=
+	echo \*\*\* module modname is disabled.
+fi
+
+AC_SUBST(targetname)
+AC_OUTPUT(Makefile)

@@ -1,0 +1,17 @@
+# -*- text -*-
+#
+#	As posted to the list.
+#
+#	Version: $Id: dictionary.aruba,v 1.2.2.1 2005/11/30 22:17:20 aland Exp $
+#
+VENDOR		Aruba				14823
+BEGIN-VENDOR	Aruba
+
+ATTRIBUTE	Aruba-User-Role				1	string
+ATTRIBUTE	Aruba-User-Vlan				2	integer
+ATTRIBUTE	Aruba-Priv-Admin-User			3	integer
+ATTRIBUTE	Aruba-Admin-Role			4	string
+ATTRIBUTE	Aruba-Essid-Name			5	string
+ATTRIBUTE	Aruba-Location-Id			6	string
+
+END-VENDOR	Aruba

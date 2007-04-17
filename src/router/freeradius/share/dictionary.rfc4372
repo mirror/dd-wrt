@@ -1,0 +1,8 @@
+# -*- text -*-
+#
+#	Attributes and values defined in RFC 4372.
+#	http://www.ietf.org/rfc/4372.txt
+#
+#	$Id: dictionary.rfc4372,v 1.1.2.2 2007/04/08 06:34:10 aland Exp $
+#
+ATTRIBUTE	Chargeable-User-Identity		89	string
