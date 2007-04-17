@@ -88,6 +88,9 @@ endif
 ifeq ($(CONFIG_MMC),y)
 CFLAGS += -DHAVE_MMC
 endif
+ifeq ($(CONFIG_PPPOESERVER),y)
+CFLAGS += -DHAVE_PPPOESERVER
+endif
 ifeq ($(CONFIG_MAKSAT),y)
 CFLAGS += -DHAVE_MAKSAT
 endif

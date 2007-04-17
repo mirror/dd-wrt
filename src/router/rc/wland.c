@@ -455,6 +455,17 @@ static void setACK(void)
 }
 #endif
 
+/*static void setShortSlot(void)
+{
+  char *shortslot = nvram_safe_get ("wl0_shortslot");
+
+  else if (!strcmp (afterburner, "long"))
+    eval ("wl", "shortslot_override", "0");
+  else if (!strcmp (afterburner, "short"))
+    eval ("wl", "shortslot_override", "1");
+
+}*/
+
 static void
 do_wlan_check (void)
 {

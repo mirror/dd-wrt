@@ -130,6 +130,10 @@ start_services (void)
   handle = start_service_nofree ("snmp", handle);
 #endif
 
+#ifdef HAVE_PPPOESERVER
+  handle = start_service_nofree ("pppoeserver", handle);
+#endif
+
 #ifdef HAVE_WOL
   handle = start_service_nofree ("wol", handle);
 #endif
@@ -222,6 +226,11 @@ stop_services (void)
 
 #ifdef HAVE_CHILLI
   handle = stop_service_nofree ("chilli", handle);
+#endif
+
+
+#ifdef HAVE_PPPOESERVER
+  handle = stop_service_nofree ("pppoeserver", handle);
 #endif
 
 #ifdef HAVE_SNMP
@@ -357,6 +366,9 @@ start_single_service (void)
 #endif
 #ifdef HAVE_NSTX
       startstop ("nstxd");
+#endif
+#ifdef HAVE_PPPOESERVER
+      startstop ("pppoeserver");
 #endif
       startstop ("dnsmasq");
       startstop ("udhcpd");
