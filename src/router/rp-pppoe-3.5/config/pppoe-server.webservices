@@ -1,0 +1,85 @@
+
+<fieldset>
+	<legend>PPPoE Server</legend>
+	<div class="setting">
+		<div class="label">RP-PPPoE Server Daemon</div>
+		<input class="spaceradio" type="radio" name="pppoeserver_enabled" value="1" <% nvram_selmatch("pppoeserver_enabled", "1", "checked"); %> onclick="show_layer_ext(this, 'idnstx', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="pppoeserver_enabled" value="0" <% nvram_selmatch("pppoeserver_enabled", "0", "checked"); %> onclick="show_layer_ext(this, 'idnstx', false)" /><% tran("share.disable"); %>
+	</div>
+	<div id="idpppoesrv">
+			<div class="setting">
+				<div class="label">Username</div>
+				<input maxlength="63" size="40" name="pppoeserver_user"  value="<% nvram_get("pppoeserver_user"); %>" />
+			</div>
+			<div class="setting">
+				<div class="label">Password</div>
+				<input  maxlength="63" size="40" name="pppoeserver_pass"  value="<% nvram_get("pppoeserver_pass"); %>" />
+			</div>
+			<div class="setting">
+				<div class="label">Server IP</div>
+				<input maxlength="15" size="24" name="pppoeserver_ip" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_ip"); %>" />
+			</div>
+			<div class="setting">
+				<div class="label">Nodeflate</div>
+				<input type="checkbox" value="1" name="pppoeserver_nodflate" <% nvram_checked("pppoeserver_nodflate", "1"); %> />
+			</div>
+			<div class="setting">
+				<div class="label">Nobsdcomp</div>
+				<input type="checkbox" value="1" name="pppoeserver_nobsdcomp" <% nvram_checked("pppoeserver_nobsdcomp", "1"); %> />
+			</div>
+
+			<div class="setting">
+				<div class="label">LCP Echo Interval</div>
+				<input size="5" maxlength="5" class="num" name="pppoeserver_lcpechoint" value="<% nvram_get("pppoeserver_lcpechoint"); %>" />
+				<span class="default"><script type="text/javascript">
+				//<![CDATA[
+				document.write("(" + share.deflt + ": 60)");
+				//]]>
+				</script></span>
+			</div>	
+			<div class="setting">
+				<div class="label">LCP Echo Failure</div>
+				<input size="5" maxlength="5" class="num" name="pppoeserver_lcpechofail" value="<% nvram_get("pppoeserver_lcpechofail"); %>" />
+				<span class="default"><script type="text/javascript">
+				//<![CDATA[
+				document.write("(" + share.deflt + ": 5)");
+				//]]>
+				</script></span>
+			</div>
+			<div class="setting">
+				<div class="label">Idle Time</div>
+				<input size="5" maxlength="5" class="num" name="ppoeserver_idle" value="<% nvram_get("ppoeserver_idle"); %>" />
+				<span class="default"><script type="text/javascript">
+				//<![CDATA[
+				document.write("(" + share.deflt + ": 600)");
+				//]]>
+				</script></span>
+			</div>
+			<div class="setting">
+				<div class="label">Auth Server IP</div>
+				<input maxlength="15" size="24" name="pppoeserver_authserverip" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_authserverip"); %>" />
+			</div>
+			<div class="setting">
+				<div class="label">Idle Time</div>
+				<input size="5" maxlength="5" class="num" name="pppoeserver_authserverport" value="<% nvram_get("pppoeserver_authserverport"); %>" />
+				<span class="default"><script type="text/javascript">
+				//<![CDATA[
+				document.write("(" + share.deflt + ": 1812)");
+				//]]>
+				</script></span>
+			</div>			
+			<div class="setting">
+				<div class="label">Acct Server IP</div>
+				<input maxlength="15" size="24" name="pppoeserver_acctserverip" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_acctserverip"); %>" />
+			</div>
+			<div class="setting">
+				<div class="label">Idle Time</div>
+				<input size="5" maxlength="5" class="num" name="pppoeserver_authserverport" value="<% nvram_get("pppoeserver_authserverport"); %>" />
+				<span class="default"><script type="text/javascript">
+				//<![CDATA[
+				document.write("(" + share.deflt + ": 1813)");
+				//]]>
+				</script></span>
+			</div>
+	</div>	
+</fieldset><br/>
