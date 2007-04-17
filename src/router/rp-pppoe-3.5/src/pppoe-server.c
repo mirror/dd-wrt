@@ -1400,7 +1400,6 @@ main(int argc, char **argv)
 	}
 	exit(0);
     }
-fprintf(stderr,"open interfaces\n");
     /* Open all the interfaces */
     for (i=0; i<NumInterfaces; i++) {
 	interfaces[i].sock = openInterface(interfaces[i].name, Eth_PPPOE_Discovery, interfaces[i].mac);
@@ -1409,7 +1408,6 @@ fprintf(stderr,"open interfaces\n");
     /* Ignore SIGPIPE */
     signal(SIGPIPE, SIG_IGN);
 
-fprintf(stderr,"create selector\n");
     /* Create event selector */
     event_selector = Event_CreateSelector();
     if (!event_selector) {
@@ -1428,7 +1426,6 @@ fprintf(stderr,"create selector\n");
 	rp_fatal("control_init failed");
     }
 #endif
-fprintf(stderr,"create event handler\n");
 
     /* Create event handler for each interface */
     for (i = 0; i<NumInterfaces; i++) {
