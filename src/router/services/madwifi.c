@@ -1060,11 +1060,11 @@ set_rate (char *dev)
 	    eval ("iwconfig", dev, "rate", "54000", "auto");
 	}
     }
-  double ratef = atof(r)*1000.0;
-  int integerrate = (int)ratef;
+  double ratef = atof (r) * 1000.0;
+  int integerrate = (int) ratef;
   char set[32];
-  sprintf(set,"%d",integerrate);
-  eval ("iwconfig", dev, "rate",set, "fixed");
+  sprintf (set, "%d", integerrate);
+  eval ("iwconfig", dev, "rate", set, "fixed");
 
 }
 static void
@@ -1239,10 +1239,10 @@ adjust_regulatory (int count)
   {
     long tb = atol (nvram_safe_get (turbo));
     setsysctrl (wif, "turbo", tb);
-    long s = atol (nvram_default_get (sifs,"16"));
-    long p = atol (nvram_default_get (preamble,"20"));
-    setsysctrl(wif,"sifstime",s);
-    setsysctrl(wif,"preambletime",p);
+    long s = atol (nvram_default_get (sifs, "16"));
+    long p = atol (nvram_default_get (preamble, "20"));
+    setsysctrl (wif, "sifstime", s);
+    setsysctrl (wif, "preambletime", p);
 
     long regulatory = atol (nvram_safe_get ("ath_regulatory"));
     {
@@ -1601,7 +1601,7 @@ configure_single (int count)
     foreach (var, vifs, next)
     {
       setMacFilter (var);
-    
+
       sprintf (mode, "%s_mode", var);
       m = default_get (mode, "ap");
 
