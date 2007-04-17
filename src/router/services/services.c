@@ -4397,8 +4397,6 @@ start_pppoeserver (void)
 		    fprintf (fp, "ms-dns %s\n", dns_list->dns_server[1]);
 		  if (strlen (dns_list->dns_server[2]) > 0)
 		    fprintf (fp, "ms-dns %s\n", dns_list->dns_server[2]);
-
-		  fprintf (fp, "\n");
 		}
 	    }
 	  else
@@ -4415,7 +4413,6 @@ start_pppoeserver (void)
 		  if (strlen (dns_list->dns_server[2]) > 0)
 		    fprintf (fp, "ms-dns  %s\n", dns_list->dns_server[2]);
 
-		  fprintf (fp, "\n");
 		}
 	    }
 
@@ -4487,8 +4484,6 @@ start_pppoeserver (void)
 		    fprintf (fp, "ms-dns %s\n", dns_list->dns_server[1]);
 		  if (strlen (dns_list->dns_server[2]) > 0)
 		    fprintf (fp, "ms-dns %s\n", dns_list->dns_server[2]);
-
-		  fprintf (fp, "\n");
 		}
 	    }
 	  else
@@ -4504,8 +4499,6 @@ start_pppoeserver (void)
 		    fprintf (fp, "ms-dns  %s\n", dns_list->dns_server[1]);
 		  if (strlen (dns_list->dns_server[2]) > 0)
 		    fprintf (fp, "ms-dns  %s\n", dns_list->dns_server[2]);
-
-		  fprintf (fp, "\n");
 		}
 	    }
 
