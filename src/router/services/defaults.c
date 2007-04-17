@@ -2008,6 +2008,10 @@ struct nvram_tuple srouter_defaults[] = {
 #else
   {"wifi_display", "wl0", 0},
 #endif
+#ifdef HAVE_PPPOESERVER
+  {"pppoeserver_enabled","0",0},
+  {"pppoeradius_enabled","0",0},
+#endif
   {0, 0, 0}
 };
 
