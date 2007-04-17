@@ -63,7 +63,7 @@
 				<input maxlength="15" size="24" name="pppoeserver_authserverip" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_authserverip"); %>" />
 			</div>
 			<div class="setting">
-				<div class="label">Idle Time</div>
+				<div class="label">Auth Server Port</div>
 				<input size="5" maxlength="5" class="num" name="pppoeserver_authserverport" value="<% nvram_get("pppoeserver_authserverport"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
@@ -76,7 +76,7 @@
 				<input maxlength="15" size="24" name="pppoeserver_acctserverip" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_acctserverip"); %>" />
 			</div>
 			<div class="setting">
-				<div class="label">Idle Time</div>
+				<div class="label">Acct Server Port</div>
 				<input size="5" maxlength="5" class="num" name="pppoeserver_authserverport" value="<% nvram_get("pppoeserver_authserverport"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
