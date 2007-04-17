@@ -21,11 +21,11 @@
 			</div>
 			<div class="setting">
 				<div class="label">Nodeflate</div>
-				<input type="checkbox" value="1" name="pppoeserver_nodflate" <% nvram_checked("pppoeserver_nodflate", "1"); %> />
+				<input type="checkbox" value="1" name="_pppoeserver_nodflate" <% nvram_checked("pppoeserver_nodflate", "1"); %> />
 			</div>
 			<div class="setting">
 				<div class="label">Nobsdcomp</div>
-				<input type="checkbox" value="1" name="pppoeserver_nobsdcomp" <% nvram_checked("pppoeserver_nobsdcomp", "1"); %> />
+				<input type="checkbox" value="1" name="_pppoeserver_nobsdcomp" <% nvram_checked("pppoeserver_nobsdcomp", "1"); %> />
 			</div>
 
 			<div class="setting">
