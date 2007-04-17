@@ -20,15 +20,23 @@
 				<input maxlength="15" size="24" name="pppoeserver_ip" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_ip"); %>" />
 			</div>
 			<div class="setting">
-				<div class="label">Nodeflate</div>
-				<input type="checkbox" value="1" name="_pppoeserver_nodflate" <% nvram_checked("pppoeserver_nodflate", "1"); %> />
+				<div class="label">Deflate Compression</div>
+				<input type="checkbox" value="1" name="_pppoeserver_deflate" <% nvram_checked("pppoeserver_deflate", "1"); %> />
 			</div>
 			<div class="setting">
-				<div class="label">Nobsdcomp</div>
-				<input type="checkbox" value="1" name="_pppoeserver_nobsdcomp" <% nvram_checked("pppoeserver_nobsdcomp", "1"); %> />
+				<div class="label">BSD Compression</div>
+				<input type="checkbox" value="1" name="_pppoeserver_bsdcomp" <% nvram_checked("pppoeserver_bsdcomp", "1"); %> />
 			</div>
 			<div class="setting">
-				<div class="label">PPPoE Encryption</div>
+				<div class="label">LZS Stac Compression</div>
+				<input type="checkbox" value="1" name="_pppoeserver_lzs" <% nvram_checked("pppoeserver_lzs", "1"); %> />
+			</div>
+			<div class="setting">
+				<div class="label">MPPC Compression</div>
+				<input type="checkbox" value="1" name="_pppoeserver_mppc" <% nvram_checked("pppoeserver_mppc", "1"); %> />
+			</div>
+			<div class="setting">
+				<div class="label">MPPE PPPoE Encryption</div>
 				<input type="checkbox" value="1" name="_pppoeserver_encryption" <% nvram_checked("pppoeserver_encryption", "1"); %> />
 			</div>
 			<div class="setting">
