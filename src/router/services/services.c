@@ -4493,6 +4493,20 @@ start_pppoeserver (void)
 	  fclose (fp);
 	  mkdir ("/tmp/ppp/radius", 0777);
 	  fp = fopen ("/tmp/ppp/radius/radiusclient.conf", "wb");
+	  fprintf (fp, "auth_order\tradius\n");
+	  fprintf (fp, "login_tries\t4\n");
+	  fprintf (fp, "login_timeout\t60\n");
+	  fprintf (fp, "nologin\/etc/nologin\n");
+	  fprintf (fp, "issue\t/etc/issue\n");
+	  fprintf (fp, "servers\t/tmp/ppp/radius/servers\n");
+	  fprintf (fp, "dictionary\t/etc/dictionary\n");
+	  fprintf (fp, "login_radius\t/usr/local/sbin/login.radius\n");
+	  fprintf (fp, "seqfile\t/var/run/radius.seq\n");
+	  fprintf (fp, "mapfile\t/etc/port-id-map\n");
+	  fprintf (fp, "default_realm\n");
+	  fprintf (fp, "radius_timeout\t10\n");
+	  fprintf (fp, "radius_retries\t3\n");
+	  fprintf (fp, "login_local\t/bin/login\n");
 	  fprintf (fp, "authserver 192.168.0.111:1812\n");	//todo make values configureable
 	  fprintf (fp, "acctserver 192.168.0.111:1813\n");	//todo make values configureable
 	  fclose (fp);
