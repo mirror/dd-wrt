@@ -4337,6 +4337,7 @@ void
 start_pppoeserver (void)
 {
   FILE *fp;
+  mkdir ("/tmp/ppp", 0777);
   fp = fopen ("/tmp/ppp/options", "wb");
   fprintf (fp, "lock\n");
   fprintf (fp, "crtscts\n");
