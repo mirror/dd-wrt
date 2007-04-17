@@ -4342,7 +4342,7 @@ start_pppoeserver (void)
 	{
 	  FILE *fp;
 	  mkdir ("/tmp/ppp", 0777);
-	  fp = fopen ("/tmp/ppp/options", "wb");
+	  fp = fopen ("/tmp/ppp/pppoe-server-options", "wb");
 	  fprintf (fp, "lock\n");
 	  fprintf (fp, "crtscts\n");
 	  if (nvram_default_match ("pppoeserver_nobsdcomp", "0", "0"))
@@ -4350,8 +4350,11 @@ start_pppoeserver (void)
 	  if (nvram_default_match ("pppoeserver_nodflate", "0", "0"))
 	  		fprintf (fp, "nodeflate\n");	//todo ...
 	  fprintf (fp, "nopcomp\n");
-	  fclose (fp);
-	  fp = fopen ("/tmp/ppp/pppoe-server-options", "wb");
+	  fprintf (fp, "idle 600\n");	//todo ...
+	  if (nvram_default_match("pppoeencryption","1","0")) // make it configureable
+	  fprintf (fp, "mppe\n");
+	  else
+	  fprintf (fp, "nomppe\n");
 	  fprintf (fp, "auth\n");
 	  fprintf (fp, "require-chap\n");
 	  fprintf (fp, "default-mru\n");
@@ -4422,7 +4425,7 @@ start_pppoeserver (void)
 	{
 	  FILE *fp;
 	  mkdir ("/tmp/ppp", 0777);
-	  fp = fopen ("/tmp/ppp/options", "wb");
+	  fp = fopen ("/tmp/ppp/pppoe-server-options", "wb");
 	  fprintf (fp, "lock\n");
 	  fprintf (fp, "crtscts\n");
 	  if (nvram_default_match ("pppoeserver_nobsdcomp", "0", "0"))
@@ -4431,6 +4434,11 @@ start_pppoeserver (void)
 	  		fprintf (fp, "nodeflate\n");	//todo ...
 	  fprintf (fp, "nopcomp\n");
 	  fprintf (fp, "idle %s\n", nvram_safe_get ("pppoeserver_idle"));	//todo ...
+	  if (nvram_default_match("pppoeencryption","1","0")) // make it configureable
+	  fprintf (fp, "mppe\n");
+	  else
+	  fprintf (fp, "nomppe\n");
+
 	  struct dns_lists *dns_list = get_dns_list ();
 	  if (!dns_list || dns_list->num_servers == 0)
 	    {
@@ -4479,8 +4487,6 @@ start_pppoeserver (void)
 
 	  if (dns_list)
 	    free (dns_list);
-	  fclose (fp);
-	  fp = fopen ("/tmp/ppp/pppoe-server-options", "wb");
 	  fprintf (fp, "login\n");
 	  fprintf (fp, "require-chap\n");
 	  fprintf (fp, "require-mschap-v2\n");
