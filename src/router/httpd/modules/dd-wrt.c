@@ -3956,6 +3956,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
 
 // ACK timing
+#ifdef HAVE_MADWIFI  //temp fix for v24 broadcom ACKnot working
   sprintf (power, "%s_distance", prefix);
   websWrite (wp, "<br />\n");
   websWrite (wp, "<div class=\"setting\">\n");
@@ -3968,6 +3969,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 2000 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
   websWrite (wp, "</div>\n");
 //end ACK timing
+#endif
 
   showbridgesettings (wp, prefix);
   websWrite (wp, "</fieldset>\n");
