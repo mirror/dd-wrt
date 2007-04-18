@@ -48,14 +48,14 @@
 #include <cyutils.h>
 #include <code_pattern.h>
 #include <cy_conf.h>
-#include <mkfiles.h>
+//#include <mkfiles.h>
 #include <typedefs.h>
 #include <bcmnvram.h>
 #include <bcmutils.h>
 #include <shutils.h>
 #include <wlutils.h>
 #include <cy_conf.h>
-#include <ledcontrol.h>
+//#include <ledcontrol.h>
 
 
 #define WL_IOCTL(name, cmd, buf, len) (ret = wl_ioctl((name), (cmd), (buf), (len)))

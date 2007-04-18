@@ -29,7 +29,7 @@
 #include <netconf.h>
 #include <shutils.h>
 #include <rc.h>
-#include <ledcontrol.h>
+#include "ledcontrol.h"
 
 #include <code_pattern.h>
 #include <cy_conf.h>
