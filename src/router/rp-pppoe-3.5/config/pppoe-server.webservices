@@ -8,16 +8,8 @@
 	</div>
 	<div id="idpppoesrv">
 			<div class="setting">
-				<div class="label">Username</div>
-				<input maxlength="63" size="40" name="pppoeserver_user"  value="<% nvram_get("pppoeserver_user"); %>" />
-			</div>
-			<div class="setting">
-				<div class="label">Password</div>
-				<input  maxlength="63" size="40" name="pppoeserver_pass"  value="<% nvram_get("pppoeserver_pass"); %>" />
-			</div>
-			<div class="setting">
-				<div class="label">Server IP</div>
-				<input maxlength="15" size="24" name="pppoeserver_ip" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_ip"); %>" />
+				<div class="label">Remote Start IP</div>
+				<input maxlength="15" size="24" name="pppoeserver_remoteaddr" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_remoteaddr"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label">Deflate Compression</div>
@@ -67,10 +59,6 @@
 				</script></span>
 			</div>
 			<div class="setting">
-				<div class="label">Remote Start IP</div>
-				<input maxlength="15" size="24" name="pppoeserver_remoteaddr" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_remoteaddr"); %>" />
-			</div>
-			<div class="setting">
 				<div class="label">Radius Auth.</div>
 				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="1" <% nvram_selmatch("pppoeradius_enabled", "1", "checked"); %> onclick="toggle_layer_ext(this, 'idpppoerad', 'idpppoelocal', true)" /><% tran("share.enable"); %>&nbsp;
 				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="0" <% nvram_selmatch("pppoeradius_enabled", "0", "checked"); %> onclick="toggle_layer_ext(this, 'idpppoerad', 'idpppoelocal', false)" /><% tran("share.disable"); %>
@@ -106,9 +94,17 @@
 			
 			<div id="idpppoelocal">
 			<div class="setting">
-				<div class="label">Local User MAnagement</div>
-				here commes the table....
+				<div class="label">Local User Management (CHAP Secrets)</div>
+				<textarea id="chap_sectrets" name="pppoeserver_chaps" cols="60" rows="3">&nbsp;</textarea>
+				<script type="text/javascript">
+				//<![CDATA[
+				var var_pppoeserver_chaps = fix_cr( '<% nvram_get("pppoeserver_chaps"); %>' );
+				document.getElementById("pppoeserver_chaps").value = var_pppoeserver_chaps;
+				//]]>
+				</script>
+				<span class="default">(user * pass ip_to_assign)</span>
 			</div>
+
 			</div>
 	</div>	
 </fieldset><br/>
