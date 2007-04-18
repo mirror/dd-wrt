@@ -556,7 +556,7 @@ wlconf_up (char *name)
       if (v == 0)
 	{
 #ifdef HAVE_MSSID
-	  wlc_noack (0);
+	 // wlc_noack (0);
 #else
 	  eval ("/etc/txackset.sh", "0");	// disable ack timing
 #endif
@@ -565,7 +565,7 @@ wlconf_up (char *name)
       else
 	{
 #ifdef HAVE_MSSID
-	  wlc_noack (1);
+	//  wlc_noack (1);
 #else
 	  eval ("/etc/txackset.sh", "1");	// enable ack timing
 #endif
@@ -573,7 +573,7 @@ wlconf_up (char *name)
 
 
 #ifdef HAVE_MSSID
-      set_wlc_slottime (val);
+    //  set_wlc_slottime (val);
 #else
       val = 9 + (val / 150) + ((val % 150) ? 1 : 0);
 
