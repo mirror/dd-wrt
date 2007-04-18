@@ -1115,8 +1115,23 @@ service.rflow_srv1="RFlow";
 service.rflow_srv2="MACupd";
 
 //pppoe-relay.webservices
-service.pppoe_legend="PPPOE Relay";
-service.pppoe_srv="Relay";
+service.pppoe_legend="PPPoE Relais ";
+service.pppoe_srv="Relais ";
+
+//pppoe-server.webservices
+service.pppoesrv_legend="Serveur PPPoE";
+service.pppoesrv_srv="Serveur RP-PPPoE";
+service.pppoesrv_compr="Compression";
+service.pppoesrv_remoteaddr="Remote Start IP";
+service.pppoesrv_lcpei="LCP Echo Interval";
+service.pppoesrv_lcpef="LCP Echo Failure";
+service.pppoesrv_idlet="Idle Time";
+service.pppoesrv_radauth="Authentification Radius";
+service.pppoesrv_radip="IP Serveur Radius";
+service.pppoesrv_radauthport="Port Authentification Radius";
+service.pppoesrv_radaccport="Radius Accounting Port";
+service.pppoesrv_radkey="Clé Partagée Radius";
+service.pppoesrv_chaps="Local User Management (CHAP Secrets)";
 
 //snmp.webservices
 service.snmp_legend="SNMP";
@@ -1603,6 +1618,8 @@ wl_basic.channel_wide="Wide Channel";
 wl_basic.regulatory="Regulatory";
 wl_basic.specialmode="2.3 Ghz Mode";
 wl_basic.wifi_bonding="Wifi Bonding";
+wl_basic.sifstime="OFDM SIFS Time";
+wl_basic.preambletime="OFDM Preamble Time";
 
 //help container
 
