@@ -318,6 +318,7 @@ set_regdomain (unsigned long int base_addr, int code)
 #include <bcmnvram.h>
 #include <bcmutils.h>
 #include <shutils.h>
+#include <utils.h>
 #include <unistd.h>
 
 #include "wireless.h"
