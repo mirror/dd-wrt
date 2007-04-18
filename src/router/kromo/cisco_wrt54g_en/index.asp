@@ -58,10 +58,6 @@ function valid_value(F) {
 					return false;
 			}
 	
-			if(F.now_proto.value == "static") {
-				if(!valid_ip(F,"F.wan_gateway","Gateway",ZERO_NO|MASK_NO))
-					return false;
-			}
 	
 			if(pptp_dhcp != "skip" && F.now_proto.value == "pptp") {
 				if (F.pptp_use_dhcp.value == "0") {
