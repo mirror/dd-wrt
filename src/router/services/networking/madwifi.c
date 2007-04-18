@@ -1101,7 +1101,7 @@ set_netmode (char *wif, char *dev)
 	eval ("iwpriv", dev, "mode", "3");
 	eval ("iwpriv", dev, "protmode", "0");
       }
-    if (!strcmp (netmode, "bg-only"))
+    if (!strcmp (netmode, "bg-mixed"))
       {
 	eval ("iwpriv", dev, "mode", "3");
 	eval ("iwpriv", dev, "protmode", "1");

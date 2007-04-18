@@ -2955,7 +2955,7 @@ show_netmode (webs_t wp, char *prefix)
   websWrite (wp,
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n//]]>\n</script>\n",
 	     nvram_match (wl_net_mode,
-			  "bg-only") ? "selected=\\\"selected\\\"" : "");
+			  "bg-mixed") ? "selected=\\\"selected\\\"" : "");
 #else
 #ifdef HAVE_WHRAG108
   if (!strcmp(prefix,"ath1"))
