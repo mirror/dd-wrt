@@ -16,7 +16,7 @@ CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libip
 CFLAGS  += $(COPTS) -fpic
 
 OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o iptable.o defaults.o \
-       pppoeserver.o
+       bridgetools.o igmp.o  
 
 
 ifneq ($(CONFIG_XSCALE),y)
@@ -25,22 +25,27 @@ endif
 
 ifeq ($(CONFIG_RSTATS),y)
 CFLAGS += -DHAVE_RSTATS
+OBJS += rstats.o
 endif
 
 ifeq ($(CONFIG_NSTX),y)
 CFLAGS += -DHAVE_NSTX
+OBJS += nstx.o
 endif
 ifeq ($(CONFIG_KAID),y)
 CFLAGS += -DHAVE_KAID
 endif
 ifeq ($(CONFIG_MMC),y)
 CFLAGS += -DHAVE_MMC
+OBJS += mmc.o
 endif
 ifeq ($(CONFIG_PPPOESERVER),y)
 CFLAGS += -DHAVE_PPPOESERVER
+OBJS += pppoeserver.o
 endif
 ifeq ($(CONFIG_JFFS2),y)
 CFLAGS += -DHAVE_JFFS2
+OBJS += jffs.o
 endif
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO
@@ -51,6 +56,7 @@ CFLAGS += -DHAVE_USB
 endif
 ifeq ($(CONFIG_VLANTAGGING),y)
 CFLAGS += -DHAVE_VLANTAGGING
+OBJS += vlantagging.o
 endif
 ifeq ($(CONFIG_GW700),y)
 CFLAGS += -DHAVE_GW700
@@ -93,9 +99,11 @@ CFLAGS += -DHAVE_SAMBA
 endif
 ifeq ($(CONFIG_WIFIDOG),y)
 CFLAGS += -DHAVE_WIFIDOG
+OBJS += wifidog.o
 endif
 ifeq ($(CONFIG_BONDING),y)
 CFLAGS += -DHAVE_BONDING
+OBJS += bonding.o
 endif
 ifeq ($(CONFIG_RADLOCAL),y)
 CFLAGS += -DHAVE_RADLOCAL
@@ -131,6 +139,7 @@ OBJS += ppp.o
 endif
 ifeq ($(CONFIG_PPPOERELAY),y)
 CFLAGS += -DHAVE_PPPOERELAY
+OBJS += pppoerelay.o
 endif
 
 ifeq ($(CONFIG_DDLAN),y)
@@ -170,6 +179,7 @@ CFLAGS += -DHAVE_FON
 endif
 ifeq ($(CONFIG_UPNP),y)
 CFLAGS += -DHAVE_UPNP
+OBJS += upnp.o
 endif
 ifeq ($(CONFIG_CHILLILOCAL),y)
 CFLAGS += -DHAVE_CHILLILOCAL
@@ -265,6 +275,7 @@ endif
 
 ifeq ($(CONFIG_TELNET),y)
 CFLAGS += -DHAVE_TELNET
+OBJS += telnet.o
 endif
 
 
@@ -280,6 +291,7 @@ CFLAGS += -DHAVE_PPTP
 endif
 ifeq ($(CONFIG_PPTPD),y)
 CFLAGS += -DHAVE_PPTPD
+OBJS += pptp.o
 endif
 
 ifeq ($(CONFIG_BOOT_WAIT_ON),y)
@@ -340,6 +352,7 @@ endif
 
 ifeq ($(CONFIG_NOCAT),y)
 CFLAGS += -DHAVE_NOCAT
+OBJS += nocat.o
 endif
 
 ifeq ($(CONFIG_SER),y)
