@@ -164,6 +164,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 #define ROUTER_BUFFALO_WZRG144NH 0x3117 // (only available on japanese market, 802.11n, Gigabit switch. similar to WRT350N)
 
+//U.S.Robotics USR5430 bridge (4712 cpu, no switch, fccid: ?)
+#define ROUTER_USR_5430 0x320f
+
 #define NVROUTER "DD_BOARD"
 
 extern char *getBridge(char *ifname);
