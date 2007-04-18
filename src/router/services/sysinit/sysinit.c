@@ -1145,19 +1145,7 @@ start_nvram (void)
   nvram_set ("dist_type", DIST);
 #endif
 
-  strcpy (style, nvram_safe_get ("router_style"));
-
   {
-    if (endswith (style, ".css"))
-      {
-	for (i = 0; i < strlen (style); i++)
-	  if (style[i] == '.')
-	    style[i] = 0;
-      }
-    nvram_set ("router_style", style);
-
-    if (nvram_match ("router_style", "") || (nvram_get ("router_style") == NULL))	//if still not set, force to elegant
-      nvram_set ("router_style", "elegant");
 
 #ifdef DIST
     if (nvram_match ("dist_type", "micro"))	//if dist_type micro, force to elegant

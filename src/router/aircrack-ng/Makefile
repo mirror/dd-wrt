@@ -17,7 +17,7 @@ docdir          = $(datadir)/doc/aircrack-ng
 
 BINFILES        = aircrack-ng airdecap-ng packetforge-ng ivstools kstats aircrack-ptw attacksim
 SBINFILES       = aireplay-ng airodump-ng
-SCRIPTS         = airmon-ng
+SCRIPTS         = airmon-ng scan scantidy
 TESTFILES       = makeivs
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt aircrack-ng-opt-prof prof/*
 DOCFILES        = ChangeLog INSTALL README LICENSE AUTHORS VERSION
