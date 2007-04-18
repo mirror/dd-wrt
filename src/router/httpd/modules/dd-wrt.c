@@ -3599,7 +3599,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
 //wireless mode
   websWrite (wp,
-	     "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_v24)</script></h2>\n");
+	     "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_v24)</script> %s</h2>\n", prefix);
   websWrite (wp, "<fieldset>\n");
   websWrite (wp,
 	     "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [%s] HWAddr [%s]</legend>\n",
