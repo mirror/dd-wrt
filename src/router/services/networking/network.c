@@ -439,7 +439,7 @@ wlconf_up (char *name)
 
   char tmp[100];
   int phytype, gmode, val, ret;
-  char *afterburner;
+
 #ifdef HAVE_MADWIFI
   return -1;
 #endif
@@ -526,23 +526,23 @@ wlconf_up (char *name)
   WL_IOCTL (name, WLC_SET_ANTDIV, &val, sizeof (val));
 
   /* search for "afterburner" string */
-  afterburner = nvram_safe_get ("wl0_afterburner");
+  char *afterburner = nvram_safe_get ("wl0_afterburner");
+  
   if (!strcmp (afterburner, "on"))
     eval ("wl", "afterburner_override", "1");
   else if (!strcmp (afterburner, "off"))
     eval ("wl", "afterburner_override", "0");
-  else if (!strcmp (afterburner, "auto"))
+  else  //auto
     eval ("wl", "afterburner_override", "-1");
 
   char *shortslot = nvram_safe_get ("wl0_shortslot");
 
-  if (!strcmp (shortslot, "auto"))
-    eval ("wl", "shortslot_override", "-1");
-  else if (!strcmp (shortslot, "long"))
+  if (!strcmp (shortslot, "long"))
     eval ("wl", "shortslot_override", "0");
   else if (!strcmp (shortslot, "short"))
     eval ("wl", "shortslot_override", "1");
-
+  else  //auto
+    eval ("wl", "shortslot_override", "-1"); 
 
 
   // Set ACK Timing. Thx to Nbd
