@@ -29,7 +29,7 @@
 #include <sys/types.h>
 #include <bcmnvram.h>
 #include <shutils.h>
-#include <snmp.h>
+#include "snmp.h"
 #include <signal.h>
 #include <utils.h>
 

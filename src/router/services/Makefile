@@ -15,7 +15,8 @@ endif
 CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
 CFLAGS  += $(COPTS) -fpic
 
-OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o iptable.o defaults.o
+OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o iptable.o defaults.o \
+       pppoeserver.o
 
 
 ifneq ($(CONFIG_XSCALE),y)
@@ -374,13 +375,13 @@ ifeq ($(CONFIG_SPUTNIK_APD),y)
 CFLAGS += -DHAVE_SPUTNIK_APD
 endif
 
-vpath %.c $(TOP)/shared $(SRCBASE)/rts/src
+vpath %.c sysinit services tools networking $(TOP)/shared $(SRCBASE)/rts/src
 
 all: services.so services.a
 
 clean:
 	rm -f *.o *.a *.so
-	rm -f *.c~
+	rm -f *.c~ services/*.c~ networking/*.c~ tools/*.c~ sysinit/*.c~
 
 install: all
 	install -d $(INSTALLDIR)/usr/lib	

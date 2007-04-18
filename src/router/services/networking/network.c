@@ -74,7 +74,7 @@ typedef u_int8_t __u8;
 #include <wlutils.h>
 #include <utils.h>
 #include <rc.h>
-#include <ledcontrol.h>
+#include "ledcontrol.h"
 #include <cy_conf.h>
 #include <cymac.h>
 #include <bcmutils.h>
@@ -2476,6 +2476,7 @@ start_wan_done (char *wan_ifname)
       char *gateway = nvram_match ("wan_proto",
 				   "pptp") ? nvram_safe_get ("pptp_get_ip") :
 	nvram_safe_get ("wan_gateway");
+      if (strcmp(gateway,"0.0.0.0"))
       while (route_add (wan_ifname, 0, "0.0.0.0", gateway, "0.0.0.0")
 	     && timeout--)
 	{
@@ -2485,6 +2486,7 @@ start_wan_done (char *wan_ifname)
 	      printf ("Wait ppp interface to init (3) ...\n");
 	      sleep (1);
 	    }
+	    else break;
 
 	}
     }
