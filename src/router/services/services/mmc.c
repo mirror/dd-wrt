@@ -2,6 +2,7 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
+#include <sys/mount.h>
 
 void
 start_mmc (void)
