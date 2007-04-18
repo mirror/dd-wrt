@@ -2,37 +2,37 @@
 <fieldset>
 	<legend>PPPoE Server</legend>
 	<div class="setting">
-		<div class="label">RP-PPPoE Server Daemon</div>
+		<div class="label"><% tran("service.pppoesrv_srv"); %></div>
 		<input class="spaceradio" type="radio" name="pppoeserver_enabled" value="1" <% nvram_selmatch("pppoeserver_enabled", "1", "checked"); %> onclick="show_layer_ext(this, 'idpppoesrv', true)" /><% tran("share.enable"); %>&nbsp;
 		<input class="spaceradio" type="radio" name="pppoeserver_enabled" value="0" <% nvram_selmatch("pppoeserver_enabled", "0", "checked"); %> onclick="show_layer_ext(this, 'idpppoesrv', false)" /><% tran("share.disable"); %>
 	</div>
 	<div id="idpppoesrv">
 			<div class="setting">
-				<div class="label">Remote Start IP</div>
+				<div class="label"><% tran("service.pppoesrv_remoteaddr"); %></div>
 				<input maxlength="15" size="24" name="pppoeserver_remoteaddr" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_remoteaddr"); %>" />
 			</div>
 			<div class="setting">
-				<div class="label">Deflate Compression</div>
+				<div class="label">Deflate <% tran("service.pppoesrv_compr"); %></div>
 				<input type="checkbox" value="1" name="_pppoeserver_deflate" <% nvram_checked("pppoeserver_deflate", "1"); %> />
 			</div>
 			<div class="setting">
-				<div class="label">BSD Compression</div>
+				<div class="label">BSD <% tran("service.pppoesrv_compr"); %></div>
 				<input type="checkbox" value="1" name="_pppoeserver_bsdcomp" <% nvram_checked("pppoeserver_bsdcomp", "1"); %> />
 			</div>
 			<div class="setting">
-				<div class="label">LZS Stac Compression</div>
+				<div class="label">LZS Stac <% tran("service.pppoesrv_compr"); %></div>
 				<input type="checkbox" value="1" name="_pppoeserver_lzs" <% nvram_checked("pppoeserver_lzs", "1"); %> />
 			</div>
 			<div class="setting">
-				<div class="label">MPPC Compression</div>
+				<div class="label">MPPC <% tran("service.pppoesrv_compr"); %></div>
 				<input type="checkbox" value="1" name="_pppoeserver_mppc" <% nvram_checked("pppoeserver_mppc", "1"); %> />
 			</div>
 			<div class="setting">
-				<div class="label">MPPE PPPoE Encryption</div>
+				<div class="label">MPPE PPPoE <% tran("share.encrypt"); %></div>
 				<input type="checkbox" value="1" name="_pppoeserver_encryption" <% nvram_checked("pppoeserver_encryption", "1"); %> />
 			</div>
 			<div class="setting">
-				<div class="label">LCP Echo Interval</div>
+				<div class="label"><% tran("service.pppoesrv_lcpei"); %></div>
 				<input size="5" maxlength="5" class="num" name="pppoeserver_lcpechoint" value="<% nvram_get("pppoeserver_lcpechoint"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
@@ -41,7 +41,7 @@
 				</script></span>
 			</div>	
 			<div class="setting">
-				<div class="label">LCP Echo Failure</div>
+				<div class="label"><% tran("service.pppoesrv_lcpef"); %></div>
 				<input size="5" maxlength="5" class="num" name="pppoeserver_lcpechofail" value="<% nvram_get("pppoeserver_lcpechofail"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
@@ -50,7 +50,7 @@
 				</script></span>
 			</div>
 			<div class="setting">
-				<div class="label">Idle Time</div>
+				<div class="label"><% tran("service.pppoesrv_idlet"); %></div>
 				<input size="5" maxlength="5" class="num" name="ppoeserver_idle" value="<% nvram_get("ppoeserver_idle"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
@@ -59,17 +59,17 @@
 				</script></span>
 			</div>
 			<div class="setting">
-				<div class="label">Radius Auth.</div>
+				<div class="label"><% tran("service.pppoesrv_radauth"); %></div>
 				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="1" <% nvram_selmatch("pppoeradius_enabled", "1", "checked"); %> onclick="toggle_layer_ext(this, 'idpppoerad', 'idpppoelocal', true)" /><% tran("share.enable"); %>&nbsp;
 				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="0" <% nvram_selmatch("pppoeradius_enabled", "0", "checked"); %> onclick="toggle_layer_ext(this, 'idpppoerad', 'idpppoelocal', false)" /><% tran("share.disable"); %>
 			</div>
 			<div id="idpppoerad">
 			<div class="setting">
-				<div class="label">Radius Server IP</div>
+				<div class="label"><% tran("service.pppoesrv_radip"); %></div>
 				<input maxlength="15" size="24" name="pppoeserver_authserverip" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_authserverip"); %>" />
 			</div>
 			<div class="setting">
-				<div class="label">Radius Authentication Port</div>
+				<div class="label"><% tran("service.pppoesrv_radauthport"); %></div>
 				<input size="5" maxlength="5" class="num" name="pppoeserver_authserverport" value="<% nvram_get("pppoeserver_authserverport"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
@@ -78,7 +78,7 @@
 				</script></span>
 			</div>			
 			<div class="setting">
-				<div class="label">Radius Accounting Port</div>
+				<div class="label"><% tran("service.pppoesrv_radaccport"); %></div>
 				<input size="5" maxlength="5" class="num" name="pppoeserver_acctserverport" value="<% nvram_get("pppoeserver_acctserverport"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
@@ -87,14 +87,14 @@
 				</script></span>
 			</div>
 			<div class="setting">
-				<div class="label">Radius Shared Key</div>
+				<div class="label"><% tran("service.pppoesrv_radkey"); %></div>
 				<input size="20" maxlength="63" type="password" name="pppoeserver_sharedkey" value="d6nw5v1x2pc7st9m" />
 			</div>
 			</div>
 			
 			<div id="idpppoelocal">
 			<div class="setting">
-				<div class="label">Local User Management (CHAP Secrets)</div>
+				<div class="label"><% tran("service.pppoesrv_chaps"); %></div>
 				<textarea id="chap_sectrets" name="pppoeserver_chaps" cols="60" rows="3">&nbsp;</textarea>
 				<script type="text/javascript">
 				//<![CDATA[
@@ -102,9 +102,27 @@
 				document.getElementById("pppoeserver_chaps").value = var_pppoeserver_chaps;
 				//]]>
 				</script>
-				<span class="default">(user * pass ip_to_assign)</span>
+				<span class="default">(Format: user * pass assign_ip)</span>
 			</div>
-
+			<table class="table center" summary="chap secrets table">
+			<tr>
+				<th colspan="4"><% tran("service.pppoesrv_chaps"); %></th>
+			</tr>
+			<tr>
+				<th width="30%"><% tran("share.hostname"); %></th>
+				<th width="30%"><% tran("share.passwd"); %></th>
+				<th width="30%"><% tran("share.ip"); %></th>
+				<th><% tran("share.del"); %></th>
+			</tr>
+			<% show_chaps(); %>
+			</table><br />
+			<div class="center">
+				<script type="text/javascript">
+				//<![CDATA[
+				document.write("<input class=\"button\" type=\"button\" name=\"add_button\" value=\"" + sbutton.add + "\" onclick=\"chap_user_add_submit(this.form);\" />");
+				//]]>
+				</script>
+			</div>
 			</div>
 	</div>	
 </fieldset><br/>
