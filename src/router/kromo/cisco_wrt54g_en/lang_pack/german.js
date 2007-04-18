@@ -1024,6 +1024,21 @@ service.rflow_srv2="MACupd";
 service.pppoe_legend="PPPOE-Relay";
 service.pppoe_srv="Relay";
 
+//pppoe-server.webservices
+service.pppoesrv_legend="PPPoE Server";
+service.pppoesrv_srv="RP-PPPoE Server Daemon";
+service.pppoesrv_compr="Compression";
+service.pppoesrv_remoteaddr="Remote Start IP";
+service.pppoesrv_lcpei="LCP Echo Interval";
+service.pppoesrv_lcpef="LCP Echo Failure";
+service.pppoesrv_idlet="Idle Time";
+service.pppoesrv_radauth="Radius Authentication";
+service.pppoesrv_radip="Radius Server IP";
+service.pppoesrv_radauthport="Radius Authentication Port";
+service.pppoesrv_radaccport="Radius Accounting Port";
+service.pppoesrv_radkey="Radius Shared Key";
+service.pppoesrv_chaps="Local User Management (CHAP Secrets)";
+
 //snmp.webservices
 service.snmp_legend="SNMP";
 service.snmp_srv="SNMP";

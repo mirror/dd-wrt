@@ -1093,7 +1093,22 @@ service.rflow_srv2="MACupd";
 
 //pppoe-relay.webservices
 service.pppoe_legend="PPPOE posredovanje";
-service.pppoe_srv="posredovanje";
+service.pppoe_srv="Posredovanje";
+
+//pppoe-server.webservices
+service.pppoesrv_legend="PPPoE stre¾nik";
+service.pppoesrv_srv="Demon RP-PPPoE stre¾nik";
+service.pppoesrv_compr="kompresija";
+service.pppoesrv_remoteaddr="Oddaljeni zaèetni IP";
+service.pppoesrv_lcpei="LCP Echo interval";
+service.pppoesrv_lcpef="LCP Echo neuspeh";
+service.pppoesrv_idlet="Nedejavni èas";
+service.pppoesrv_radauth="Radius avtentikacija";
+service.pppoesrv_radip="Radius stre¾nikov IP";
+service.pppoesrv_radauthport="Radius vrata za avtentikacijo";
+service.pppoesrv_radaccport="Radius vrata za raèune";
+service.pppoesrv_radkey="Radius deljeni kljuè";
+service.pppoesrv_chaps="Lokalno upr. raèunov (CHAP skrivnosti)";
 
 //snmp.webservices
 service.snmp_legend="SNMP";
@@ -1584,6 +1599,8 @@ wl_basic.channel_wide="©iroki kanali";
 wl_basic.regulatory="Regulatorski";
 wl_basic.specialmode="2.3 Ghz naèin";
 wl_basic.wifi_bonding="Wifi vezanje";
+wl_basic.sifstime="OFDM SIFS èas";
+wl_basic.preambletime="OFDM Preamble èas";
 
 //help container
 
