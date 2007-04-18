@@ -70,6 +70,12 @@ function lease_remove_submit(F) {
 	F.submit();
 }
 
+function chap_user_add_submit(F) {
+	F.submit_type.value = "chap_user_add";
+	checked(F);
+	F.submit();
+}
+
 function to_reboot(F) {
 	F.change_action.value = "";
 	F.submit_type.value = "";
