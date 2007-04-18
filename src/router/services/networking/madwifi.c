@@ -1165,46 +1165,54 @@ setMacFilter (char *iface)
 {
   char *next;
   char var[32];
-  set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_FLUSH);
+  eval("ifconfig",iface,"down");
+  eval("iwpriv",iface,"maccmd","3");
+//  set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_FLUSH);
 
   char nvvar[32];
   sprintf (nvvar, "%s_macmode", iface);
   if (nvram_match (nvvar, "deny"))
     {
-      set80211param (iface, IEEE80211_PARAM_MACCMD,
-		     IEEE80211_MACCMD_POLICY_DENY);
+      eval("iwpriv",iface,"maccmd","2");
+//      set80211param (iface, IEEE80211_PARAM_MACCMD,
+//		     IEEE80211_MACCMD_POLICY_DENY);
+      eval("ifconfig",iface,"up");
       char nvlist[32];
       sprintf (nvlist, "%s_maclist", iface);
 
       foreach (var, nvram_safe_get (nvlist), next)
       {
-	char ea[ETHER_ADDR_LEN];
+        eval("iwpriv",iface,"addmac",var);
+/*	char ea[ETHER_ADDR_LEN];
 	if (ether_atoe (var, ea))
 	  {
 	    struct sockaddr sa;
 	    memcpy (sa.sa_data, ea, IEEE80211_ADDR_LEN);
 	    do80211priv (iface, IEEE80211_IOCTL_ADDMAC, &sa,
 			 sizeof (struct sockaddr));
-	  }
+	  }*/
       }
     }
   if (nvram_match (nvvar, "allow"))
     {
-      set80211param (iface, IEEE80211_PARAM_MACCMD,
-		     IEEE80211_MACCMD_POLICY_ALLOW);
+      eval("iwpriv",iface,"maccmd","1");
+//      set80211param (iface, IEEE80211_PARAM_MACCMD,
+//		     IEEE80211_MACCMD_POLICY_ALLOW);
+      eval("ifconfig",iface,"up");
       char nvlist[32];
       sprintf (nvlist, "%s_maclist", iface);
 
       foreach (var, nvram_safe_get (nvlist), next)
       {
-	char ea[ETHER_ADDR_LEN];
+        eval("iwpriv",iface,"addmac",var);
+/*	char ea[ETHER_ADDR_LEN];
 	if (ether_atoe (var, ea))
 	  {
 	    struct sockaddr sa;
 	    memcpy (sa.sa_data, ea, IEEE80211_ADDR_LEN);
 	    do80211priv (iface, IEEE80211_IOCTL_ADDMAC, &sa,
 			 sizeof (struct sockaddr));
-	  }
+	  }*/
       }
     }
 
@@ -1244,7 +1252,7 @@ adjust_regulatory (int count)
     setsysctrl (wif, "sifstime", s);
     setsysctrl (wif, "preambletime", p);
 
-    long regulatory = atol (nvram_safe_get ("ath_regulatory"));
+    long regulatory = atol (nvram_default_get ("ath_regulatory","0"));
     {
 #if !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108)
       if (regulatory == 0)
@@ -1282,8 +1290,7 @@ adjust_regulatory (int count)
 
 }
 
-static void
-configure_single (int count)
+static void configure_single (int count)
 {
   char *next;
   char var[80];
