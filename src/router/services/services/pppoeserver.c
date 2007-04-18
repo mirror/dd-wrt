@@ -101,9 +101,7 @@ start_pppoeserver (void)
 	  fprintf (fp, "netmask 255.255.255.255\n");
 	  fclose (fp);
 	  fp = fopen ("/tmp/ppp/chap-secrets", "wb");
-	  fprintf (fp, "%s * %s %s\n", nvram_safe_get ("pppoeserver_user"),
-		   nvram_safe_get ("pppoeserver_pass"),
-		   nvram_safe_get ("pppoeserver_ip"));
+	  fprintf (fp, "%s", nvram_safe_get ("pppoeserver_chaps"));
 	  fclose (fp);
 	  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"), "-R", nvram_safe_get ("pppoeserver_remoteaddr"));	//todo, make interface and base address configurable, see networking page options
 	}
