@@ -4,8 +4,8 @@
 	<div class="center"><img src="images/wifidog.png" alt="wifidog logo" /></div><br />
 	<div class="setting">
 		<div class="label"><% tran("hotspot.wifidog_srv"); %></div>
-		<input class="spaceradio" type="radio" name="wd_enable" value="1" <% nvram_selmatch("wd_enable", "1", "checked"); %> onclick="show_layer_ext(this, 'idwifidog', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="wd_enable" value="0" <% nvram_selmatch("wd_enable", "0", "checked"); %> onclick="show_layer_ext(this, 'idwifidog', false)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="wd_enable" value="1" <% nvram_checked("wd_enable", "1"); %> onclick="show_layer_ext(this, 'idwifidog', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="wd_enable" value="0" <% nvram_checked("wd_enable", "0"); %> onclick="show_layer_ext(this, 'idwifidog', false)" /><% tran("share.disable"); %>
 	</div>
 	<div id="idwifidog">
 		<div class="setting">
@@ -70,8 +70,8 @@
 		</div>
 		<div class="setting">	
 			<div class="label"><% tran("hotspot.wifidog_authsrvssl"); %></div>
-			<input class="spaceradio" type="radio" name="wd_sslavailable" value="1" <% nvram_selmatch("wd_sslavailable", "1", "checked"); %> onclick="show_layer_ext(this, 'idwifidogssl', true)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="wd_sslavailable" value="0" <% nvram_selmatch("wd_sslavailable", "0", "checked"); %> onclick="show_layer_ext(this, 'idwifidogssl', false)" /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" name="wd_sslavailable" value="1" <% nvram_checked("wd_sslavailable", "1"); %> onclick="show_layer_ext(this, 'idwifidogssl', true)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="wd_sslavailable" value="0" <% nvram_checked("wd_sslavailable", "0"); %> onclick="show_layer_ext(this, 'idwifidogssl', false)" /><% tran("share.disable"); %>
 		</div>
 		<div id="idwifidogssl">
 			<div class="setting">	
