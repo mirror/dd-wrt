@@ -47,4 +47,3 @@ start_mmc (void)
     }
 }
 #endif
-

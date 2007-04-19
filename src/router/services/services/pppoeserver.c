@@ -17,7 +17,7 @@ start_pppoeserver (void)
 	  FILE *fp;
 	  mkdir ("/tmp/ppp", 0777);
 	  fp = fopen ("/tmp/ppp/pppoe-server-options", "wb");
-	//  fprintf (fp, "crtscts\n");
+	  //  fprintf (fp, "crtscts\n");
 	  if (nvram_default_match ("pppoeserver_bsdcomp", "0", "0"))
 	    fprintf (fp, "nobsdcomp\n");
 	  else
@@ -99,36 +99,36 @@ start_pppoeserver (void)
 	  fprintf (fp, "noktune\n");
 	  fprintf (fp, "netmask 255.255.255.255\n");
 	  fclose (fp);
-	
-	//parse chaps from nvram to file
-	static char word[256];
-  	char *next, *wordlist;
-  	char *user, *pass, *ip, *enable;
-  	wordlist = nvram_safe_get ("pppoeserver_chaps");
-  	
- 	fp = fopen ("/tmp/ppp/chap-secrets", "wb");
 
-  foreach (word, wordlist, next)
-  {
-	pass = word;
-	user = strsep (&pass, ":");
-	if (!user || !pass)
-	  continue;
-	  
-	ip = pass;
-	pass = strsep (&ip, ":");
-	if (!pass || !ip)
-	  continue;
-	  
-	enable = ip;
-	ip = strsep (&enable, ":");
-	if (!ip || !enable)
-	  continue;
+	  //parse chaps from nvram to file
+	  static char word[256];
+	  char *next, *wordlist;
+	  char *user, *pass, *ip, *enable;
+	  wordlist = nvram_safe_get ("pppoeserver_chaps");
 
-	if (!strcmp (enable, "on"))	
-		fprintf (fp, "%s * %s %s\n", user, pass, ip);
-	  
-	}
+	  fp = fopen ("/tmp/ppp/chap-secrets", "wb");
+
+	  foreach (word, wordlist, next)
+	  {
+	    pass = word;
+	    user = strsep (&pass, ":");
+	    if (!user || !pass)
+	      continue;
+
+	    ip = pass;
+	    pass = strsep (&ip, ":");
+	    if (!pass || !ip)
+	      continue;
+
+	    enable = ip;
+	    ip = strsep (&enable, ":");
+	    if (!ip || !enable)
+	      continue;
+
+	    if (!strcmp (enable, "on"))
+	      fprintf (fp, "%s * %s %s\n", user, pass, ip);
+
+	  }
 	  fclose (fp);
 //end parsing
 	  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"), "-R", nvram_safe_get ("pppoeserver_remoteaddr"));	//todo, make interface and base address configurable, see networking page options
@@ -138,7 +138,7 @@ start_pppoeserver (void)
 	  FILE *fp;
 	  mkdir ("/tmp/ppp", 0777);
 	  fp = fopen ("/tmp/ppp/pppoe-server-options", "wb");
-//	  fprintf (fp, "crtscts\n");
+//        fprintf (fp, "crtscts\n");
 	  if (nvram_default_match ("pppoeserver_bsdcomp", "0", "0"))
 	    fprintf (fp, "nobsdcomp\n");
 	  else

@@ -55,4 +55,3 @@ stop_igmp_proxy (void)
   return ret;
 }
 #endif
-

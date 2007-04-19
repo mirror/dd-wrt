@@ -198,4 +198,3 @@ stop_pptpd (void)
   return ret;
 }
 #endif
-

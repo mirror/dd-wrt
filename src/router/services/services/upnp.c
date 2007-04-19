@@ -45,4 +45,3 @@ stop_upnp (void)
   return 0;
 }
 #endif
-
