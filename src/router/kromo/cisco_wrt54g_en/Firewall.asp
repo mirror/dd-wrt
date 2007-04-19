@@ -139,9 +139,9 @@ addEvent(window, "load", function() {
 									<select name="log_level">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"0\" <% nvram_selected("log_level", "0", "js"); %> >" + share.low + "</option>");
-										document.write("<option value=\"1\" <% nvram_selected("log_level", "1", "js"); %> >" + share.medium + "</option>");
-										document.write("<option value=\"2\" <% nvram_selected("log_level", "2", "js"); %> >" + share.high + "</option>");
+										document.write("<option value=\"0\" <% nvram_selected_js("log_level", "0"); %> >" + share.low + "</option>");
+										document.write("<option value=\"1\" <% nvram_selected_js("log_level", "1"); %> >" + share.medium + "</option>");
+										document.write("<option value=\"2\" <% nvram_selected_js("log_level", "2); %> >" + share.high + "</option>");
 										//]]>
 										</script>
 									</select>
@@ -157,8 +157,8 @@ addEvent(window, "load", function() {
 										<select name="log_dropped">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"0\" <% nvram_selected("log_dropped", "0", "js"); %> >" + share.disable + "</option>");
-										document.write("<option value=\"1\" <% nvram_selected("log_dropped", "1", "js"); %> >" + share.enable + "</option>");
+										document.write("<option value=\"0\" <% nvram_selected_js("log_dropped", "0"); %> >" + share.disable + "</option>");
+										document.write("<option value=\"1\" <% nvram_selected_js("log_dropped", "1"); %> >" + share.enable + "</option>");
 										//]]>
 										</script>
 										</select>
@@ -168,8 +168,8 @@ addEvent(window, "load", function() {
 										<select name="log_rejected">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"0\" <% nvram_selected("log_rejected", "0", "js"); %> >" + share.disable + "</option>");
-										document.write("<option value=\"1\" <% nvram_selected("log_rejected", "1", "js"); %> >" + share.enable + "</option>");
+										document.write("<option value=\"0\" <% nvram_selected_js("log_rejected", "0"); %> >" + share.disable + "</option>");
+										document.write("<option value=\"1\" <% nvram_selected_js("log_rejected", "1"); %> >" + share.enable + "</option>");
 										//]]>
 										</script>
 										</select>
@@ -179,8 +179,8 @@ addEvent(window, "load", function() {
 										<select name="log_accepted">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"0\" <% nvram_selected("log_accepted", "0", "js"); %> >" + share.disable + "</option>");
-										document.write("<option value=\"1\" <% nvram_selected("log_accepted", "1", "js"); %> >" + share.enable + "</option>");
+										document.write("<option value=\"0\" <% nvram_selected_js("log_accepted", "0"); %> >" + share.disable + "</option>");
+										document.write("<option value=\"1\" <% nvram_selected_js("log_accepted", "1"); %> >" + share.enable + "</option>");
 										//]]>
 										</script>
 										</select>

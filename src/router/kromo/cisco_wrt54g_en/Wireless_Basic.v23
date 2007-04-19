@@ -71,10 +71,10 @@ addEvent(window, "load", function() {
                     <select name="wl_mode" onchange="show_layer_ext(this, 'idssid', this.value=='ap' || this.value=='infra');">
                       <script type="text/javascript">
                       //<![CDATA[
-                      document.write("<option value=\"ap\" <% nvram_selected("wl_mode", "ap", "js"); %>>" + wl_basic.ap + "</option>");
-                      document.write("<option value=\"sta\" <% nvram_selected("wl_mode", "sta", "js"); %>>" + wl_basic.client + "</option>");
-                      document.write("<option value=\"wet\" <% nvram_selected("wl_mode", "wet", "js"); %>>" + wl_basic.clientBridge + "</option>");
-                      document.write("<option value=\"infra\" <% nvram_selected("wl_mode", "infra", "js"); %>>" + wl_basic.adhoc + "</option>");
+                      document.write("<option value=\"ap\" <% nvram_selected_js("wl_mode", "ap"); %>>" + wl_basic.ap + "</option>");
+                      document.write("<option value=\"sta\" <% nvram_selected_js("wl_mode", "sta"); %>>" + wl_basic.client + "</option>");
+                      document.write("<option value=\"wet\" <% nvram_selected_js("wl_mode", "wet"); %>>" + wl_basic.clientBridge + "</option>");
+                      document.write("<option value=\"infra\" <% nvram_selected_js("wl_mode", "infra"); %>>" + wl_basic.adhoc + "</option>");
                       //]]>
                       </script>
                     </select>
@@ -84,10 +84,10 @@ addEvent(window, "load", function() {
                     <select name="wl_net_mode" onchange="SelWL(this.form.wl_net_mode.selectedIndex,this.form)">
                       <script type="text/javascript">
                       //<![CDATA[
-                      document.write("<option value=\"disabled\" <% nvram_selected("wl_net_mode", "disabled", "js"); %>>" + share.disable +"</option>");
-                      document.write("<option value=\"mixed\" <% nvram_selected("wl_net_mode", "mixed", "js"); %>>" + wl_basic.mixed + "</option>");
-                      document.write("<option value=\"b-only\" <% nvram_selected("wl_net_mode", "b-only", "js"); %>>" + wl_basic.b + "</option>");
-                      document.write("<option value=\"g-only\" <% nvram_selected("wl_net_mode", "g-only", "js"); %>>" + wl_basic.g + "</option>");
+                      document.write("<option value=\"disabled\" <% nvram_selected_js("wl_net_mode", "disabled"); %>>" + share.disable +"</option>");
+                      document.write("<option value=\"mixed\" <% nvram_selected_js("wl_net_mode", "mixed"); %>>" + wl_basic.mixed + "</option>");
+                      document.write("<option value=\"b-only\" <% nvram_selected_js("wl_net_mode", "b-only"); %>>" + wl_basic.b + "</option>");
+                      document.write("<option value=\"g-only\" <% nvram_selected_js("wl_net_mode", "g-only"); %>>" + wl_basic.g + "</option>");
                       //]]>
                       </script>
                     </select>
