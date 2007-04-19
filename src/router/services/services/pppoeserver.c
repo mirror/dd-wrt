@@ -37,7 +37,7 @@ start_pppoeserver (void)
 	  fprintf (fp, "nopcomp\n");
 	  fprintf (fp, "idle %s\n", nvram_safe_get ("pppoeserver_idle"));	//todo ...
 	  if (nvram_default_match ("pppoeserver_encryption", "1", "0"))	// make it configureable
-	    fprintf (fp, "require-mppe-128\n");
+	    fprintf (fp, "mppe required,no56,no40\n");
 	  else
 	    fprintf (fp, "nomppe\n");
 	  fprintf (fp, "auth\n");
@@ -158,7 +158,7 @@ start_pppoeserver (void)
 	  fprintf (fp, "nopcomp\n");
 	  fprintf (fp, "idle %s\n", nvram_safe_get ("pppoeserver_idle"));	//todo ...
 	  if (nvram_default_match ("pppoeserver_encryption", "1", "0"))	// make it configureable
-	    fprintf (fp, "require-mppe-128\n");
+	    fprintf (fp, "mppe required,no56,no40\n");
 	  else
 	    fprintf (fp, "nomppe\n");
 
