@@ -2789,8 +2789,10 @@ struct gozila_action gozila_actions[] = {
 #endif
   {"Services", "add_lease", "", 0, REFRESH, lease_add},
   {"Services", "remove_lease", "", 0, REFRESH, lease_remove},
+#ifdef HAVE_PPPOESERVER
   {"Services", "add_chap_user", "", 0, REFRESH, chap_user_add}, 
   {"Services", "remove_chap_user", "", 0, REFRESH, chap_user_remove},
+#endif
 #ifdef HAVE_CHILLILOCAL
   {"Hotspot", "add_user", "", 0, REFRESH, user_add},
   {"Hotspot", "remove_user", "", 0, REFRESH, user_remove},
