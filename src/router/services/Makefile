@@ -183,6 +183,7 @@ OBJS += upnp.o
 endif
 ifeq ($(CONFIG_CHILLILOCAL),y)
 CFLAGS += -DHAVE_CHILLILOCAL
+OBJS += chillispot.o
 endif
 
 ifeq ($(CONFIG_TFTP),y)
@@ -397,6 +398,7 @@ all: services.so services.a
 clean:
 	rm -f *.o *.a *.so
 	rm -f *.c~ services/*.c~ networking/*.c~ tools/*.c~ sysinit/*.c~
+	rm -f *.h~ services/*.h~ networking/*.h~ tools/*.h~ sysinit/*.h~
 
 install: all
 	install -d $(INSTALLDIR)/usr/lib	
