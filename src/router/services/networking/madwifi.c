@@ -1111,17 +1111,8 @@ set_netmode (char *wif, char *dev)
     if (!strcmp (netmode, "a-only"))
       eval ("iwpriv", dev, "mode", "1");
   }
-  if (default_match (turbo, "1", "0"))
+  if (default_match (turbo, "0", "0"))
     {
-      if (nvram_match (mode, "sta") || nvram_match (mode, "wet")
-	  || nvram_match (mode, "wdssta"))
-	{
-	  eval ("iwpriv", dev, "mode", "5");
-	}
-    }
-  else
-    {
-//    fprintf(stderr,"set xr %s = %s\n",turbo,nvram_safe_get(turbo));
       char *ext = nvram_get (xr);
       if (ext)
 	{
@@ -1135,7 +1126,6 @@ set_netmode (char *wif, char *dev)
 	    }
 	}
       eval ("iwpriv", dev, "wmm", "0");
-
     }
   if (default_match (comp, "1", "0"))
     eval ("iwpriv", dev, "compression", "1");
