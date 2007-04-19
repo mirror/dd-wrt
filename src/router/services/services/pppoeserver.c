@@ -100,9 +100,40 @@ start_pppoeserver (void)
 	  fprintf (fp, "noktune\n");
 	  fprintf (fp, "netmask 255.255.255.255\n");
 	  fclose (fp);
-	  fp = fopen ("/tmp/ppp/chap-secrets", "wb");
-	  fprintf (fp, "%s", nvram_safe_get ("pppoeserver_chaps"));
+	
+	//parse chaps from nvram to file
+	static char word[256];
+  	char *next, *wordlist;
+  	char *user, *pass, *ip, *enable;
+  	wordlist = nvram_safe_get ("pppoeserver_chaps");
+  	
+ 	fp = fopen ("/tmp/ppp/chap-secrets", "wb");
+
+  foreach (word, wordlist, next)
+  {
+    if (which-- == 0)
+      {
+	pass = word;
+	user = strsep (&pass, ":");
+	if (!user || !pass)
+	  continue;
+	  
+	ip = pass;
+	pass = strsep (&ip, ":");
+	if (!pass || !ip)
+	  continue;
+	  
+	enable = ip;
+	ip = strsep (&enable, ":");
+	if (!ip || !enable)
+	  continue;
+
+	if (!strcmp (enable, "on"))	
+		fprintf (fp, "%s * %s %s\n", user, pass, ip);
+	  
+	}
 	  fclose (fp);
+//end parsing
 	  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"), "-R", nvram_safe_get ("pppoeserver_remoteaddr"));	//todo, make interface and base address configurable, see networking page options
 	}
       else
