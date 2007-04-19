@@ -16,7 +16,7 @@ CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libip
 CFLAGS  += $(COPTS) -fpic
 
 OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o iptable.o defaults.o \
-       bridgetools.o igmp.o
+       bridgetools.o igmp.o wpa.o
 
 
 ifneq ($(CONFIG_XSCALE),y)
@@ -321,6 +321,7 @@ endif
 
 ifeq ($(CONFIG_BIRD),y)
 CFLAGS += -DHAVE_BIRD
+OBJS += routing.o
 endif
 
 ifeq ($(CONFIG_PPP),y)
@@ -329,6 +330,7 @@ endif
 
 ifeq ($(CONFIG_ZEBRA),y)
 CFLAGS += -DHAVE_ZEBRA
+OBJS += routing.o
 endif
 
 ifeq ($(CONFIG_WSHAPER),y)

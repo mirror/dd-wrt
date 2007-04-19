@@ -1847,6 +1847,7 @@ wan_valid (char *ifname)
   return 0;
 }
 
+int start_force_to_dial (void);
 
 void
 start_wan (int status)

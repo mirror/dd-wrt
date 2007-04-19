@@ -26,4 +26,3 @@ start_nstxd (void)
 }
 
 #endif
-

@@ -38,4 +38,3 @@ stop_telnetd (void)
   return ret;
 }
 #endif
-

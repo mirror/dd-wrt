@@ -65,4 +65,3 @@ stop_wifidog (void)
 }
 
 #endif
-
