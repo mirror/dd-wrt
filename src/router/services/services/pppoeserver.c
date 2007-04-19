@@ -111,8 +111,6 @@ start_pppoeserver (void)
 
   foreach (word, wordlist, next)
   {
-    if (which-- == 0)
-      {
 	pass = word;
 	user = strsep (&pass, ":");
 	if (!user || !pass)
