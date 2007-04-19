@@ -2022,7 +2022,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"pppoeserver_lcpechofail", "5", 0},
   {"pppoeserver_chaps", "", 0},
   {"pppoeserver_chapsnum", "0", 0},
-  {"ppoeserver_idle", "600", 0},
+  {"pppoeserver_idle", "600", 0},
   {"pppoeserver_authserverip", "192.168.1.1", 0},
   {"pppoeserver_authserverport", "1812", 0},
   {"pppoeserver_acctserverport", "1813", 0},
