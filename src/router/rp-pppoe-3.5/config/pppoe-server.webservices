@@ -51,7 +51,7 @@
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_idlet"); %></div>
-				<input size="5" maxlength="5" class="num" name="ppoeserver_idle" value="<% nvram_get("pppoeserver_idle"); %>" />
+				<input size="5" maxlength="5" class="num" name="pppoeserver_idle" value="<% nvram_get("pppoeserver_idle"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
 				document.write("(" + share.deflt + ": 600)");
