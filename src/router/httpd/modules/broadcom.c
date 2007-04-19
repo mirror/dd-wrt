@@ -4412,15 +4412,15 @@ struct mime_handler mime_handlers[] = {
  * Example:
  * wan_proto=dhcp
  * <% nvram_selected("wan_proto", "dhcp",); %> produces: selected="selected"
- * <% nvram_selected("wan_proto", "dhcp", "js"); %> produces: selected=\"selected\"
+ * <% nvram_selected_js("wan_proto", "dhcp"); %> produces: selected=\"selected\"
  * <% nvram_selected("wan_proto", "static"); %> does not produce
  */
 static void
 ej_nvram_selected (webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *match, *javascript;
+  char *name, *match;
   int args;
-  args = ejArgs (argc, argv, "%s %s %s", &name, &match, &javascript);
+  args = ejArgs (argc, argv, "%s %s", &name, &match);
   if (args < 2)
     {
       websError (wp, 400, "Insufficient args\n");
@@ -4429,15 +4429,29 @@ ej_nvram_selected (webs_t wp, int argc, char_t ** argv)
 
   if (nvram_match (name, match))
     {
-      if (args == 3 && javascript != NULL && !strcmp (javascript, "js"))
-	websWrite (wp, "selected=\\\"selected\\\"");
-      else
 	websWrite (wp, "selected=\"selected\"");
     }
   return;
 }
 
+static void
+ej_nvram_selected_js (webs_t wp, int argc, char_t ** argv)
+{
+  char *name, *match;
+  int args;
+  args = ejArgs (argc, argv, "%s %s", &name, &match);
+  if (args < 2)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
 
+  if (nvram_match (name, match))
+    {
+	websWrite (wp, "selected=\\\"selected\\\"");
+    }
+  return;
+}
 
 
 
@@ -4480,38 +4494,48 @@ ej_tran (webs_t wp, int argc, char_t ** argv)
  * Example:
  * wan_proto=dhcp
  * <% nvram_checked("wan_proto", "dhcp"); %> produces: checked="checked"
- * <% nvram_checked("wan_proto", "dhcp", "js"); %> produces: checked=\"checked\"
+ * <% nvram_checked_js("wan_proto", "dhcp"); %> produces: checked=\"checked\"
  * <% nvram_checked("wan_proto", "static"); %> does not produce
  */
 static void
 ej_nvram_checked (webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *match, *javascript;
+  char *name, *match;
   int args;
-  cprintf ("args\n");
-  args = ejArgs (argc, argv, "%s %s %s", &name, &match, &javascript);
+
+  args = ejArgs (argc, argv, "%s %s", &name, &match);
   if (args < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-  cprintf ("match()\n");
+
   if (nvram_match (name, match))
     {
-      cprintf ("javascript check\n");
-      if (args == 3 && javascript != NULL && !strcmp (javascript, "js"))
-	{
-	  cprintf ("write js\n");
-	  websWrite (wp, "checked=\\\"checked\\\"");
-
-	}
-      else
-	{
-	  cprintf ("write non js\n");
 	  websWrite (wp, "checked=\"checked\"");
 	}
+
+  return;
+}
+
+static void
+ej_nvram_checked_js (webs_t wp, int argc, char_t ** argv)
+{
+  char *name, *match;
+  int args;
+
+  args = ejArgs (argc, argv, "%s %s", &name, &match);
+  if (args < 2)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
     }
 
+  if (nvram_match (name, match))
+    {
+	  websWrite (wp, "checked=\\\"checked\\\"");
+	}
+ 
   return;
 }
 
@@ -5297,7 +5321,9 @@ struct ej_handler ej_handlers[] = {
   {"show_forward_spec", ej_show_forward_spec},
   {"show_triggering", ej_show_triggering},
   {"nvram_selected", ej_nvram_selected},
+  {"nvram_selected_js", ej_nvram_selected_js},
   {"nvram_checked", ej_nvram_checked},
+  {"nvram_checked_js", ej_nvram_checked_js},
   {"get_qossvcs", ej_get_qossvcs2},
   {"get_qosips", ej_get_qosips2},
   {"get_qosmacs", ej_get_qosmacs2},
