@@ -173,6 +173,7 @@ addEvent(window, "load", function() {
 							<input type="hidden" name="pppoeserver_lzs" />
 							<input type="hidden" name="pppoeserver_mppc" />
 							<input type="hidden" name="pppoeserver_encryption" />
+							<input type="hidden" name="pppoeserver_chaps" />
 							
 							<h2><% tran("service.h2"); %></h2>
 							<% show_modules(".webservices"); %>
