@@ -200,8 +200,8 @@ extern void ej_ip_conntrack_table (webs_t wp, int argc, char_t ** argv);
 extern void ej_gethostnamebyip (webs_t wp, int argc, char_t ** argv);
 
 /*for pppoeserver*/
-extern void show_chaps_table (webs_t wp, char *type, int which)
-extern void validate_chaps (webs_t wp, char *value, struct variable *v)
+extern void show_chaps_table (webs_t wp, char *type, int which);
+extern void validate_chaps (webs_t wp, char *value, struct variable *v);
 
 
 /*for dhcp */
