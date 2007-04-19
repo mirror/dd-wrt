@@ -3,8 +3,8 @@
 	<legend>PPPoE Server</legend>
 	<div class="setting">
 		<div class="label"><% tran("service.pppoesrv_srv"); %></div>
-		<input class="spaceradio" type="radio" name="pppoeserver_enabled" value="1" <% nvram_selmatch("pppoeserver_enabled", "1", "checked"); %> onclick="show_layer_ext(this, 'idpppoesrv', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="pppoeserver_enabled" value="0" <% nvram_selmatch("pppoeserver_enabled", "0", "checked"); %> onclick="show_layer_ext(this, 'idpppoesrv', false)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="pppoeserver_enabled" value="1" <% nvram_checked("pppoeserver_enabled", "1"); %> onclick="show_layer_ext(this, 'idpppoesrv', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="pppoeserver_enabled" value="0" <% nvram_checked("pppoeserver_enabled", "0"); %> onclick="show_layer_ext(this, 'idpppoesrv', false)" /><% tran("share.disable"); %>
 	</div>
 	<div id="idpppoesrv">
 			<div class="setting">
@@ -60,8 +60,8 @@
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_radauth"); %></div>
-				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="1" <% nvram_selmatch("pppoeradius_enabled", "1", "checked"); %> onclick="toggle_layer_ext(this, 'idpppoerad', 'idpppoelocal', true)" /><% tran("share.enable"); %>&nbsp;
-				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="0" <% nvram_selmatch("pppoeradius_enabled", "0", "checked"); %> onclick="toggle_layer_ext(this, 'idpppoerad', 'idpppoelocal', false)" /><% tran("share.disable"); %>
+				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="1" <% nvram_checked("pppoeradius_enabled", "1"); %> onclick="toggle_layer_ext(this, 'idpppoerad', 'idpppoelocal', true)" /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="0" <% nvram_checked("pppoeradius_enabled", "0"); %> onclick="toggle_layer_ext(this, 'idpppoerad', 'idpppoelocal', false)" /><% tran("share.disable"); %>
 			</div>
 			<div id="idpppoerad">
 			<div class="setting">
