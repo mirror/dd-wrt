@@ -93,17 +93,6 @@
 			</div>
 			
 			<div id="idpppoelocal">
-			<div class="setting">
-				<div class="label"><% tran("service.pppoesrv_chaps"); %></div>
-				<textarea id="chap_sectrets" name="pppoeserver_chaps" cols="60" rows="3">&nbsp;</textarea>
-				<script type="text/javascript">
-				//<![CDATA[
-				var var_pppoeserver_chaps = fix_cr( '<% nvram_get("pppoeserver_chaps"); %>' );
-				document.getElementById("pppoeserver_chaps").value = var_pppoeserver_chaps;
-				//]]>
-				</script>
-				<span class="default">(Format: user * pass assign_ip)</span>
-			</div>
 			<table class="table center" summary="chap secrets table">
 			<tr>
 				<th colspan="4"><% tran("service.pppoesrv_chaps"); %></th>
@@ -112,7 +101,7 @@
 				<th width="30%"><% tran("share.hostname"); %></th>
 				<th width="30%"><% tran("share.passwd"); %></th>
 				<th width="30%"><% tran("share.ip"); %></th>
-				<th><% tran("share.del"); %></th>
+				<th><% tran("share.enable"); %></th>
 			</tr>
 			<% show_chaps(); %>
 			</table><br />
@@ -120,6 +109,7 @@
 				<script type="text/javascript">
 				//<![CDATA[
 				document.write("<input class=\"button\" type=\"button\" name=\"add_button\" value=\"" + sbutton.add + "\" onclick=\"chap_user_add_submit(this.form);\" />");
+				document.write("<input class=\"button\" type=\"button\" name=\"del_button\" value=\"" + sbutton.remove + "\" onclick=\"chap_user_remove_submit(this.form);\" />");
 				//]]>
 				</script>
 			</div>
