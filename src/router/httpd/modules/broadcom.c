@@ -3354,6 +3354,7 @@ ej_show_chaps (webs_t wp, int argc, char_t ** argv)
 	 i);
       show_chaps_table (wp, "pass", i);
       websWrite (wp, "\" /></td>\n");
+      websWrite (wp, "<td>\n");
       FWSHOW1
 	("<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"",
 	 i);
