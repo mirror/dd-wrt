@@ -14,10 +14,10 @@
 		<select name="ses_button" onchange="setSESVal(this.form);">
 				<script type="text/javascript">
 				//<![CDATA[
-					document.write('<option value="0" <% nvram_selected("ses_button", "0", "js"); %> >' + share.disabled + '</option>');
-					document.write('<option value="1" <% nvram_selected("ses_button", "1", "js"); %> >' + sbutton.reboot + '</option>');
-					document.write('<option value="2" <% nvram_selected("ses_button", "2", "js"); %> >' + service.ses_toggleradio + '</option>');
-					document.write('<option value="3" <% nvram_selected("ses_button", "3", "js"); %> >' + share.execscript + '</option>');
+					document.write('<option value="0" <% nvram_selected_js("ses_button", "0"); %> >' + share.disabled + '</option>');
+					document.write('<option value="1" <% nvram_selected_js("ses_button", "1"); %> >' + sbutton.reboot + '</option>');
+					document.write('<option value="2" <% nvram_selected_js("ses_button", "2"); %> >' + service.ses_toggleradio + '</option>');
+					document.write('<option value="3" <% nvram_selected_js("ses_button", "3"); %> >' + share.execscript + '</option>');
 				//]]>
 				</script>
 			</select>
