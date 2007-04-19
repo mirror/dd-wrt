@@ -34,4 +34,3 @@ stop_pppoerelay (void)
   killall ("pppoe-relay", SIGTERM);
 }
 #endif
-

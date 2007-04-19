@@ -93,4 +93,3 @@ br_set_stp_state (const char *br, int stp_state)
     }
 }
 #endif
-

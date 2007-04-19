@@ -5,6 +5,7 @@
 #include <syslog.h>
 #include <signal.h>
 #include <errno.h>
+#include <wlutils.h>
 
 #ifdef HAVE_ZEBRA
 int
@@ -438,4 +439,3 @@ stop_zebra (void)
 }
 
 #endif
-

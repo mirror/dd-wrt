@@ -73,5 +73,3 @@ start_jffs2 (void)
 
 }
 #endif
-
-
