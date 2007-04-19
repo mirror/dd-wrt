@@ -326,6 +326,11 @@ endif
 OBJS  += site_survey.c
 #endif
 
+ifeq ($(CONFIG_PPPOESERVER),y)
+CFLAGS += -DHAVE_PPPOESERVER
+OBJS += chaps.c
+endif
+
 #OBJS += http.o
 
 ifneq ($(CONFIG_NOSSL),y)
