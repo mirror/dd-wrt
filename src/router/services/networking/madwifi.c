@@ -1061,12 +1061,14 @@ set_rate (char *dev)
 	    eval ("iwconfig", dev, "rate", "54000", "auto");
 	}
     }
-  double ratef = atof (r) * 1000.0;
-  int integerrate = (int) ratef;
-  char set[32];
-  sprintf (set, "%d", integerrate);
-  eval ("iwconfig", dev, "rate", set, "fixed");
-
+  else
+    {
+      double ratef = atof (r) * 1000.0;
+      int integerrate = (int) ratef;
+      char set[32];
+      sprintf (set, "%d", integerrate);
+      eval ("iwconfig", dev, "rate", set, "fixed");
+    }
 }
 static void
 set_netmode (char *wif, char *dev)
@@ -1166,24 +1168,24 @@ setMacFilter (char *iface)
 {
   char *next;
   char var[32];
-  eval("ifconfig",iface,"down");
-  eval("iwpriv",iface,"maccmd","3");
+  eval ("ifconfig", iface, "down");
+  eval ("iwpriv", iface, "maccmd", "3");
 //  set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_FLUSH);
 
   char nvvar[32];
   sprintf (nvvar, "%s_macmode", iface);
   if (nvram_match (nvvar, "deny"))
     {
-      eval("iwpriv",iface,"maccmd","2");
+      eval ("iwpriv", iface, "maccmd", "2");
 //      set80211param (iface, IEEE80211_PARAM_MACCMD,
-//		     IEEE80211_MACCMD_POLICY_DENY);
-      eval("ifconfig",iface,"up");
+//                   IEEE80211_MACCMD_POLICY_DENY);
+      eval ("ifconfig", iface, "up");
       char nvlist[32];
       sprintf (nvlist, "%s_maclist", iface);
 
       foreach (var, nvram_safe_get (nvlist), next)
       {
-        eval("iwpriv",iface,"addmac",var);
+	eval ("iwpriv", iface, "addmac", var);
 /*	char ea[ETHER_ADDR_LEN];
 	if (ether_atoe (var, ea))
 	  {
@@ -1196,16 +1198,16 @@ setMacFilter (char *iface)
     }
   if (nvram_match (nvvar, "allow"))
     {
-      eval("iwpriv",iface,"maccmd","1");
+      eval ("iwpriv", iface, "maccmd", "1");
 //      set80211param (iface, IEEE80211_PARAM_MACCMD,
-//		     IEEE80211_MACCMD_POLICY_ALLOW);
-      eval("ifconfig",iface,"up");
+//                   IEEE80211_MACCMD_POLICY_ALLOW);
+      eval ("ifconfig", iface, "up");
       char nvlist[32];
       sprintf (nvlist, "%s_maclist", iface);
 
       foreach (var, nvram_safe_get (nvlist), next)
       {
-        eval("iwpriv",iface,"addmac",var);
+	eval ("iwpriv", iface, "addmac", var);
 /*	char ea[ETHER_ADDR_LEN];
 	if (ether_atoe (var, ea))
 	  {
@@ -1253,7 +1255,7 @@ adjust_regulatory (int count)
     setsysctrl (wif, "sifstime", s);
     setsysctrl (wif, "preambletime", p);
 
-    long regulatory = atol (nvram_default_get ("ath_regulatory","0"));
+    long regulatory = atol (nvram_default_get ("ath_regulatory", "0"));
     {
 #if !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108)
       if (regulatory == 0)
@@ -1291,7 +1293,8 @@ adjust_regulatory (int count)
 
 }
 
-static void configure_single (int count)
+static void
+configure_single (int count)
 {
   char *next;
   char var[80];
