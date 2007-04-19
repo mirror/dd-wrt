@@ -3,8 +3,8 @@
 	<legend><% tran("service.rflow_legend"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.rflow_srv1"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="rflow_enable" <% nvram_selmatch("rflow_enable","1","checked"); %> onclick="show_layer_ext(this, 'idrflow', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="rflow_enable" <% nvram_selmatch("rflow_enable","0","checked"); %> onclick="show_layer_ext(this, 'idrflow', false)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" value="1" name="rflow_enable" <% nvram_checked("rflow_enable","1"); %> onclick="show_layer_ext(this, 'idrflow', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="rflow_enable" <% nvram_checked("rflow_enable","0"); %> onclick="show_layer_ext(this, 'idrflow', false)" /><% tran("share.disable"); %>
 	</div>
 	<div id="idrflow">
 		<div class="setting">
@@ -24,8 +24,8 @@
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("service.rflow_srv2"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="macupd_enable" <% nvram_selmatch("macupd_enable","1","checked"); %> onclick="show_layer_ext(this, 'idMACupd', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="macupd_enable" <% nvram_selmatch("macupd_enable","0","checked"); %> onclick="show_layer_ext(this, 'idMACupd', false)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" value="1" name="macupd_enable" <% nvram_checked("macupd_enable","1"); %> onclick="show_layer_ext(this, 'idMACupd', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="macupd_enable" <% nvram_checked("macupd_enable","0"); %> onclick="show_layer_ext(this, 'idMACupd', false)" /><% tran("share.disable"); %>
 	</div>
 	<div id="idMACupd">
 		<div class="setting">
@@ -46,10 +46,10 @@
 	<div class="setting">
 		<div class="label"><% tran("share.intrface"); %></div>
 		<select name="rflow_if">
-		    <option value="br0" <% nvram_selmatch("rflow_if","br0","selected"); %>>LAN &amp; WLAN</option>
-		    <option value="<% nvram_get("wan_ifname"); %>" <% nvram_selmatch("rflow_if","<% nvram_get("wan_ifname"); %>","selected"); %>>WAN</option>
-		    <option value="<% nvram_get("wl0_ifname"); %>" <% nvram_selmatch("rflow_if","<% nvram_get("wl0_ifname"); %>","selected"); %>>WLAN</option>
-		    <option value="vlan0" <% nvram_selmatch("rflow_if","vlan0","selected"); %>>LAN</option>
+		    <option value="br0" <% nvram_selected("rflow_if","br0"); %>>LAN &amp; WLAN</option>
+		    <option value="<% nvram_get("wan_ifname"); %>" <% nvram_selmatch("rflow_if","<% nvram_get("wan_ifname"); %>","selected=\"selected\""); %>>WAN</option>
+		    <option value="<% nvram_get("wl0_ifname"); %>" <% nvram_selmatch("rflow_if","<% nvram_get("wl0_ifname"); %>","selected=\"selected\""); %>>WLAN</option>
+		    <option value="vlan0" <% nvram_selected("rflow_if","vlan0"); %>>LAN</option>
 		</select>
 	</div>
 	<div class="setting">
