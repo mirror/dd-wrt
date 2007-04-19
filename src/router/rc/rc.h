@@ -79,7 +79,6 @@ extern int stop_chilli (void);
 
 
 extern int check_process (char *name);
-static int wlconf_up (char *name);
 extern int stop_l2tp (void);
 extern int start_udhcpd (void);
 extern int stop_udhcpd (void);
