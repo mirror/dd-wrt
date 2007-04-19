@@ -141,7 +141,7 @@ addEvent(window, "load", function() {
 										//<![CDATA[
 										document.write("<option value=\"0\" <% nvram_selected_js("log_level", "0"); %> >" + share.low + "</option>");
 										document.write("<option value=\"1\" <% nvram_selected_js("log_level", "1"); %> >" + share.medium + "</option>");
-										document.write("<option value=\"2\" <% nvram_selected_js("log_level", "2); %> >" + share.high + "</option>");
+										document.write("<option value=\"2\" <% nvram_selected_js("log_level", "2"); %> >" + share.high + "</option>");
 										//]]>
 										</script>
 									</select>
