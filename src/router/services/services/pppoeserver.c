@@ -17,8 +17,7 @@ start_pppoeserver (void)
 	  FILE *fp;
 	  mkdir ("/tmp/ppp", 0777);
 	  fp = fopen ("/tmp/ppp/pppoe-server-options", "wb");
-	  fprintf (fp, "lock\n");
-	  fprintf (fp, "crtscts\n");
+	//  fprintf (fp, "crtscts\n");
 	  if (nvram_default_match ("pppoeserver_bsdcomp", "0", "0"))
 	    fprintf (fp, "nobsdcomp\n");
 	  else
@@ -139,8 +138,7 @@ start_pppoeserver (void)
 	  FILE *fp;
 	  mkdir ("/tmp/ppp", 0777);
 	  fp = fopen ("/tmp/ppp/pppoe-server-options", "wb");
-	  fprintf (fp, "lock\n");
-	  fprintf (fp, "crtscts\n");
+//	  fprintf (fp, "crtscts\n");
 	  if (nvram_default_match ("pppoeserver_bsdcomp", "0", "0"))
 	    fprintf (fp, "nobsdcomp\n");
 	  else
