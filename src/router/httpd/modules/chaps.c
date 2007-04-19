@@ -7,16 +7,14 @@
 
 
 /* Example:
- * name:[on|off]:[tcp|udp|both]:8000:80>100
+ * name:pass:ip:on
  */
 
  
 void
 validate_chaps (webs_t wp, char *value, struct variable *v)
 {
-#ifndef HAVE_PPPOESERVER
-	return;
-#else
+
   int i, error = 0;
   char *buf, *cur;
   int count, sof;
@@ -112,14 +110,12 @@ validate_chaps (webs_t wp, char *value, struct variable *v)
     nvram_set (v->name, buf);
   free (buf);
 }
-#endif 
+
  
 void
 show_chaps_table (webs_t wp, char *type, int which)
 {
-#ifndef HAVE_PPPOESERVER
-	return;
-#else
+
   static char word[256];
   char *next, *wordlist;
   char *user, *pass, *ip, *enable;
@@ -175,7 +171,6 @@ show_chaps_table (webs_t wp, char *type, int which)
   else
     websWrite (wp, "");
     
-#endif
 }
 
 
