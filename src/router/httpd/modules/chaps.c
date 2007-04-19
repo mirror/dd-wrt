@@ -36,7 +36,7 @@ validate_chaps (webs_t wp, char *value, struct variable *v)
     {
 
       char chap_user[] = "userXXX";
-      char shap_pass[] = "passXXX";
+      char chap_pass[] = "passXXX";
       char chap_ip[] = "ipXXX";
       char chap_enable[] = "enableXXX";
       char *user = "", new_user[200] = "", *pass = "", new_pass[200] = "", *ip = "", *enable = "";
