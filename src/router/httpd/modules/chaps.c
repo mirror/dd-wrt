@@ -115,7 +115,7 @@ validate_chaps (webs_t wp, char *value, struct variable *v)
 #endif 
  
 void
-show_chaps (webs_t wp, char *type, int which)
+show_chaps_table (webs_t wp, char *type, int which)
 {
 #ifndef HAVE_PPPOESERVER
 	return;
