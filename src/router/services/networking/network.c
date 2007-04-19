@@ -527,12 +527,12 @@ wlconf_up (char *name)
 
   /* search for "afterburner" string */
   char *afterburner = nvram_safe_get ("wl0_afterburner");
-  
+
   if (!strcmp (afterburner, "on"))
     eval ("wl", "afterburner_override", "1");
   else if (!strcmp (afterburner, "off"))
     eval ("wl", "afterburner_override", "0");
-  else  //auto
+  else				//auto
     eval ("wl", "afterburner_override", "-1");
 
   char *shortslot = nvram_safe_get ("wl0_shortslot");
@@ -541,8 +541,8 @@ wlconf_up (char *name)
     eval ("wl", "shortslot_override", "0");
   else if (!strcmp (shortslot, "short"))
     eval ("wl", "shortslot_override", "1");
-  else  //auto
-    eval ("wl", "shortslot_override", "-1"); 
+  else				//auto
+    eval ("wl", "shortslot_override", "-1");
 
 
   // Set ACK Timing. Thx to Nbd
@@ -556,7 +556,7 @@ wlconf_up (char *name)
       if (v == 0)
 	{
 #ifdef HAVE_MSSID
-	 // wlc_noack (0);
+	  // wlc_noack (0);
 #else
 	  eval ("/etc/txackset.sh", "0");	// disable ack timing
 #endif
@@ -565,7 +565,7 @@ wlconf_up (char *name)
       else
 	{
 #ifdef HAVE_MSSID
-	//  wlc_noack (1);
+	  //  wlc_noack (1);
 #else
 	  eval ("/etc/txackset.sh", "1");	// enable ack timing
 #endif
@@ -573,7 +573,7 @@ wlconf_up (char *name)
 
 
 #ifdef HAVE_MSSID
-    //  set_wlc_slottime (val);
+      //  set_wlc_slottime (val);
 #else
       val = 9 + (val / 150) + ((val % 150) ? 1 : 0);
 
@@ -1811,7 +1811,9 @@ stop_lan (void)
 	  continue;
 	if (!ifexists (name))
 	  continue;
+#ifndef HAVE_MADWIFI
 	eval ("wlconf", name, "down");
+#endif
 	ifconfig (name, 0, NULL, NULL);
 	br_del_interface (lan_ifname, name);
 	//eval ("brctl", "delif", lan_ifname, name);
@@ -1820,8 +1822,10 @@ stop_lan (void)
       //eval ("brctl", "delbr", lan_ifname);
     }
   /* Bring down specific interface */
+#ifndef HAVE_MADWIFI
   else if (strcmp (lan_ifname, ""))
     eval ("wlconf", lan_ifname, "down");
+#endif
 #ifdef HAVE_MICRO
   br_shutdown ();
 #endif
@@ -2477,19 +2481,20 @@ start_wan_done (char *wan_ifname)
       char *gateway = nvram_match ("wan_proto",
 				   "pptp") ? nvram_safe_get ("pptp_get_ip") :
 	nvram_safe_get ("wan_gateway");
-      if (strcmp(gateway,"0.0.0.0"))
-      while (route_add (wan_ifname, 0, "0.0.0.0", gateway, "0.0.0.0")
-	     && timeout--)
-	{
-	  if ((nvram_match ("wan_proto", "pppoe"))
-	      && nvram_match ("ppp_demand", "1"))
-	    {
-	      printf ("Wait ppp interface to init (3) ...\n");
-	      sleep (1);
-	    }
-	    else break;
+      if (strcmp (gateway, "0.0.0.0"))
+	while (route_add (wan_ifname, 0, "0.0.0.0", gateway, "0.0.0.0")
+	       && timeout--)
+	  {
+	    if ((nvram_match ("wan_proto", "pppoe"))
+		&& nvram_match ("ppp_demand", "1"))
+	      {
+		printf ("Wait ppp interface to init (3) ...\n");
+		sleep (1);
+	      }
+	    else
+	      break;
 
-	}
+	  }
     }
 
   /* Delete all default routes */
