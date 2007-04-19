@@ -2887,6 +2887,12 @@ show_rates (webs_t wp, char *prefix)
     {
       rate = bg_rates;
       len = sizeof (bg_rates) / sizeof (char *);
+      if (nvram_match (turbo, "1"))
+        {
+        rate = ag_rates;
+        len = sizeof (ag_rates) / sizeof (char *);
+	showrates = turbo_rates;
+	}
       if (nvram_match (bw, "10"))
 	{
 	  rate = half_rates;
