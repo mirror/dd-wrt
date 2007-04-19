@@ -50,9 +50,9 @@ addEvent(window, "load", function() {
 									<select name="log_level">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"0\" <% nvram_selected("log_level", "0", "js"); %> >" + share.low + "</option>");
-										document.write("<option value=\"1\" <% nvram_selected("log_level", "1", "js"); %> >" + share.medium + "</option>");
-										document.write("<option value=\"2\" <% nvram_selected("log_level", "2", "js"); %> >" + share.high + "</option>");
+										document.write("<option value=\"0\" <% nvram_selected_js("log_level", "0"); %> >" + share.low + "</option>");
+										document.write("<option value=\"1\" <% nvram_selected_js("log_level", "1"); %> >" + share.medium + "</option>");
+										document.write("<option value=\"2\" <% nvram_selected_js("log_level", "2"); %> >" + share.high + "</option>");
 										//]]>
 										</script>
 									</select>

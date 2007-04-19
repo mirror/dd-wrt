@@ -110,10 +110,10 @@ function valid_wpa_psk(I) {
                  <select name="auth_mode" onchange=SelMode(this.form.auth_mode.selectedIndex,this.form)>
                		<script type="text/javascript">
                		//<![CDATA[
-               		document.write("<option value=\"disabled\" <% nvram_selected("auth_mode", "disabled", "js"); %>>" + share.disable + "</option>");
-									document.write("<option value=\"psk\" <% nvram_selected("auth_mode", "psk", "js"); %>>" + wpa.psk + "</option>");
-									document.write("<option value=\"wpa\" <% nvram_selected("auth_mode", "wpa", "js"); %>>" + wpa.wpa + "</option>");
-									document.write("<option value=\"radius\" <% nvram_selected("auth_mode", "radius", "js"); %>>" + wpa.radius + "</option>");
+               		document.write("<option value=\"disabled\" <% nvram_selected_js("auth_mode", "disabled"); %>>" + share.disable + "</option>");
+									document.write("<option value=\"psk\" <% nvram_selected_js("auth_mode", "psk"); %>>" + wpa.psk + "</option>");
+									document.write("<option value=\"wpa\" <% nvram_selected_js("auth_mode", "wpa"); %>>" + wpa.wpa + "</option>");
+									document.write("<option value=\"radius\" <% nvram_selected_js("auth_mode", "radius"); %>>" + wpa.radius + "</option>");
 									//]]>
 									</script>
                  </select>
