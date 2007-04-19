@@ -71,7 +71,13 @@ function lease_remove_submit(F) {
 }
 
 function chap_user_add_submit(F) {
-	F.submit_type.value = "chap_user_add";
+	F.submit_type.value = "add_chap_user";
+	checked(F);
+	F.submit();
+}
+
+function chap_user_remove_submit(F) {
+	F.submit_type.value = "remove_chap_user";
 	checked(F);
 	F.submit();
 }
