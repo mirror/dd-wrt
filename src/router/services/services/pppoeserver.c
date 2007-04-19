@@ -41,7 +41,7 @@ start_pppoeserver (void)
 	  else
 	    fprintf (fp, "nomppe\n");
 	  fprintf (fp, "auth\n");
-	  fprintf (fp, "require-chap\n");
+	  fprintf (fp, "require-mschap-v2\n");
 	  fprintf (fp, "default-mru\n");
 	  fprintf (fp, "default-asyncmap\n");
 	  fprintf (fp, "lcp-echo-interval %s\n",
@@ -207,7 +207,6 @@ start_pppoeserver (void)
 	  if (dns_list)
 	    free (dns_list);
 	  fprintf (fp, "login\n");
-	  fprintf (fp, "require-chap\n");
 	  fprintf (fp, "require-mschap-v2\n");
 	  fprintf (fp, "default-mru\n");
 	  fprintf (fp, "default-asyncmap\n");
