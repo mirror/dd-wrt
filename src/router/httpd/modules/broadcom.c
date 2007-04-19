@@ -2313,7 +2313,12 @@ Initnvramtab ()
 		      tmp->argv[i] = NULL;
 		    }
 #endif
-
+#ifdef HAVE_PPPOESERVER
+		  if (!stricmp (tmpstr, "CHAPTABLE"))
+		    {
+		      tmp->validate = validate_chaps;
+		    }
+#endif
 		  free (tmpstr);
 		  tmpstr = getFileString (in);
 		  if (!stricmp (tmpstr, "TRUE"))
@@ -2784,6 +2789,8 @@ struct gozila_action gozila_actions[] = {
 #endif
   {"Services", "add_lease", "", 0, REFRESH, lease_add},
   {"Services", "remove_lease", "", 0, REFRESH, lease_remove},
+  {"Services", "add_chap_user", "", 0, REFRESH, chap_user_add}, 
+  {"Services", "remove_chap_user", "", 0, REFRESH, chap_user_remove},
 #ifdef HAVE_CHILLILOCAL
   {"Hotspot", "add_user", "", 0, REFRESH, user_add},
   {"Hotspot", "remove_user", "", 0, REFRESH, user_remove},
@@ -3217,6 +3224,60 @@ ej_show_triggering (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
+#ifdef HAVE_PPPOESERVER
+
+static void
+ej_show_chaps (webs_t wp, int argc, char_t ** argv)
+
+{
+  int i;
+  char buffer[1024], *count;
+  int c = 0;
+  count = nvram_safe_get ("pppoeserver_chapsnum");
+  if (count == NULL || strlen (count) == 0)
+    {
+      websWrite (wp, "<tr>\n");
+      websWrite (wp,
+		 "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
+      websWrite (wp, "</tr>\n");
+    }
+  c = atoi (count);
+  if (c <= 0)
+    {
+      websWrite (wp, "<tr>\n");
+      websWrite (wp,
+		 "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
+      websWrite (wp, "</tr>\n");
+    }
+  for (i = 0; i < c; i++)
+    {
+      websWrite (wp, "<tr><td>\n");
+      FWSHOW1
+	("<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+	 i);
+      port_forward_spec (wp, "user", i);
+      websWrite (wp, "\" /></td>\n");
+      websWrite (wp, "<td>\n");
+      FWSHOW1
+	("<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+	 i);
+      port_forward_spec (wp, "pass", i);
+      websWrite (wp, "\" /></td>\n");
+      FWSHOW1
+	("<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"",
+	 i);
+      port_forward_spec (wp, "ip", i);
+      websWrite (wp, "\" /></td>\n");
+      websWrite (wp, "<td>\n");
+      FWSHOW1 ("<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
+      port_forward_spec (wp, "enable", i);
+      websWrite (wp, " /></td>\n");
+      websWrite (wp, "</tr>\n");
+    }
+  return;
+}
+
+#endif
 
 //SEG DD-WRT addition
 static void
@@ -5334,7 +5395,10 @@ struct ej_handler ej_handlers[] = {
   {"show_bondings", ej_show_bondings},
 #endif
 #ifdef HAVE_MADWIFI
-  {"show_wifiselect",ej_show_wifiselect},
+  {"show_wifiselect", ej_show_wifiselect},
+#endif
+#ifdef HAVE_PPPOESERVER
+  {"show_chaps", ej_show_chaps},
 #endif
   {NULL, NULL}
 };
