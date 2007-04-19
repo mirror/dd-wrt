@@ -98,7 +98,7 @@
 				<th colspan="4"><% tran("service.pppoesrv_chaps"); %></th>
 			</tr>
 			<tr>
-				<th width="30%"><% tran("share.hostname"); %></th>
+				<th width="30%"><% tran("share.user"); %></th>
 				<th width="30%"><% tran("share.passwd"); %></th>
 				<th width="30%"><% tran("share.ip"); %></th>
 				<th><% tran("share.enable"); %></th>
