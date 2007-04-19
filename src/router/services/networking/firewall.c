@@ -2523,6 +2523,9 @@ app_udp_settable (void)
 }
 
 int
+isregistered (void);
+
+int
 #ifdef DEVELOPE_ENV
 main (void)
 #else

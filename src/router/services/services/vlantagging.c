@@ -254,5 +254,3 @@ getbridgeprio_main (int argc, char *argv[])
   fprintf (stdout, "%s\n", bridge);
   return 0;
 }
-
-
