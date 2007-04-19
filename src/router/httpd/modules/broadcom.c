@@ -3255,22 +3255,22 @@ ej_show_chaps (webs_t wp, int argc, char_t ** argv)
       FWSHOW1
 	("<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",
 	 i);
-      port_forward_spec (wp, "user", i);
+      show_chaps_table (wp, "user", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
       FWSHOW1
 	("<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",
 	 i);
-      port_forward_spec (wp, "pass", i);
+      show_chaps_table (wp, "pass", i);
       websWrite (wp, "\" /></td>\n");
       FWSHOW1
 	("<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"",
 	 i);
-      port_forward_spec (wp, "ip", i);
+      show_chaps_table (wp, "ip", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
       FWSHOW1 ("<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
-      port_forward_spec (wp, "enable", i);
+      show_chaps_table (wp, "enable", i);
       websWrite (wp, " /></td>\n");
       websWrite (wp, "</tr>\n");
     }

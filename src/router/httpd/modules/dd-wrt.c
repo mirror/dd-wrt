@@ -837,7 +837,7 @@ lease_add (webs_t wp)
 {
   return macro_add ("static_leasenum");
 }
-
+#ifdef HAVE_PPPOESERVER
 int
 chap_user_add (webs_t wp)
 {
@@ -849,6 +849,7 @@ chap_user_remove (webs_t wp)
 {
   return macro_rem ("pppoeserver_chapsnum", "pppoeserver_chaps");
 }
+#endif
 
 int
 forwardspec_remove (webs_t wp)
