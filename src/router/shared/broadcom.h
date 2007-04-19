@@ -199,6 +199,10 @@ extern void ej_dumpip_conntrack (webs_t wp, int argc, char_t ** argv);
 extern void ej_ip_conntrack_table (webs_t wp, int argc, char_t ** argv);
 extern void ej_gethostnamebyip (webs_t wp, int argc, char_t ** argv);
 
+/*for pppoeserver*/
+extern void show_chaps_table (webs_t wp, char *type, int which)
+extern void validate_chaps (webs_t wp, char *value, struct variable *v)
+
 
 /*for dhcp */
 extern char *dhcp_reltime (char *buf, time_t t);
@@ -438,6 +442,8 @@ extern int forward_add (webs_t wp);
 extern int forward_remove (webs_t wp);
 extern int lease_add (webs_t wp);
 extern int lease_remove (webs_t wp);
+extern int chap_user_add (webs_t wp);
+extern int chap_user_remove (webs_t wp);
 #ifdef HAVE_CHILLILOCAL
 extern int user_add (webs_t wp);
 extern int user_remove (webs_t wp);
