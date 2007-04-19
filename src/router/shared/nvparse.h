@@ -14,6 +14,7 @@
 
 #ifndef _nvparse_h_
 #define _nvparse_h_
+#include <netconf.h>
 
 /* 256 entries per list */
 #define MAX_NVPARSE 256
