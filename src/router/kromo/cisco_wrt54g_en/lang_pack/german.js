@@ -134,7 +134,7 @@ share.never="niemals";
 share.unknown="Unbekannt";
 share.expired="abgelaufen";
 share.standard="Standard";
-
+share.user="Nutzer";
 
 sbutton.save="Einstellungen speichern";
 sbutton.saving="Gespeichert";
