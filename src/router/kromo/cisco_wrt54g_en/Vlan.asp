@@ -20,7 +20,7 @@ function SelSpeed(F,I) {
 }
 
 function SelVLAN(F,I) {
-	var j=0;
+	var i,j=0;
 	if(eval("F."+I+"vlan16").checked == true) {
 		for(i=0;i<16;i++)
 			choose_enable(eval("F."+I+"vlan"+i));
@@ -49,7 +49,7 @@ function SelVLAN(F,I) {
 }
 
 function init() {
-	for(k=0;k<5;k++) {
+	(var k=0;k<5;k++) {
 		SelSpeed(document.vlan, "port"+k);
 		SelVLAN(document.vlan, "port"+k);
 	}
