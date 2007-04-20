@@ -872,9 +872,6 @@ redial_main (int argc, char **argv)
 #ifdef HAVE_PPPOE
 	      if (nvram_match ("wan_proto", "pppoe"))
 		{
-		  stop_service ("pppoe");
-		  //killps("pppoecd","-9");
-		  killall ("pppoecd", SIGKILL);
 		  sleep (1);
 		  start_service ("wan_redial");
 		}
