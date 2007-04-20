@@ -712,6 +712,7 @@ idx.summt_opt2="first Sun Apr - last Sun Oct";
 idx.summt_opt3="last Sun Mar - last Sun Oct";
 idx.summt_opt4="last Sun Oct - last Sun Mar";
 idx.summt_opt5="2nd Sun Mar - first Sun Nov";
+idx.ntp_client="NTP客户端";
 
 
 
@@ -804,9 +805,6 @@ management.loop_srv="Loopback";
 
 management.wifi_legend="802.1x";
 management.wifi_srv="802.1x";
-
-management.ntp_legend="NTP客户端";
-management.ntp_srv="NTP";
 
 management.rst_legend="复位按钮";
 management.rst_srv="复位按钮";

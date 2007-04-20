@@ -783,6 +783,7 @@ idx.summt_opt4="zadnja ned. okt. - zadnja ned. mar.";
 idx.summt_opt5="druga ned. mar. - prva ned. nov.";
 idx.portsetup="Nastavitev vrat";
 idx.wanport="Dodelitev WAN vrat";
+idx.ntp_client="NTP odjemalec";
 
 
 //help container
@@ -874,9 +875,6 @@ management.loop_srv="Povratna zanka";
 
 management.wifi_legend="802.1x";
 management.wifi_srv="802.1x";
-
-management.ntp_legend="NTP odjemalec";
-management.ntp_srv="NTP";
 
 management.rst_legend="Gumb za ponastavitev";
 management.rst_srv="Gumb za ponastavitev";

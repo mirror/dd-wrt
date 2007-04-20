@@ -798,6 +798,7 @@ idx.summt_opt4="Dernier Dim. Octobre - Dernier Dim. Mars";
 idx.summt_opt5="2ème Dim. Mars - Premier Dim. Novembre";
 idx.portsetup="Gestion du Port WAN";
 idx.wanport="Affectation du Port WAN";
+idx.ntp_client="Client NTP";
 
 
 //help container
@@ -893,9 +894,6 @@ management.loop_srv="Loopback";
 
 management.wifi_legend="802.1x";
 management.wifi_srv="802.1x";
-
-management.ntp_legend="Client NTP";
-management.ntp_srv="NTP";
 
 management.rst_legend="Bouton d\'initialisation";
 management.rst_srv="Bouton d\'initialisation";
