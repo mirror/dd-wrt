@@ -1462,6 +1462,7 @@ start_pptp (int status)
       fprintf (fp, "nobsdcomp\n");	// Disables BSD-Compress  compression
       fprintf (fp, "nodeflate\n");	// Disables Deflate compression
       fprintf (fp, "lcp-echo-interval 0\n");	// Don't send an LCP echo-request frame to the peer
+      fprintf (fp, "noipdefault\n");
       fprintf (fp, "lock\n");
       fprintf (fp, "noauth");
 
@@ -1554,7 +1555,7 @@ start_pptp (int status)
 		nvram_safe_get ("wan_ipaddr"),
 		nvram_safe_get ("wan_netmask"));
     }
-
+  fprintf(stderr,"start pptpd\n");
   ret = _eval (pptp_argv, NULL, 0, NULL);
 
 
