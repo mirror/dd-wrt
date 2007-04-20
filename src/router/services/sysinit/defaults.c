@@ -2020,6 +2020,18 @@ struct nvram_tuple srouter_defaults[] = {
   {"pppoeserver_acctserverport", "1813", 0},
   {"pppoeserver_sharedkey", "", 0},
 #endif
+#ifdef HAVE_MILKFISH
+  {"openser_cfg", "/var/openser/milkfish_openser.cfg", 0},	/* MILKFISH SETTING */
+  {"milkfish_fromdomain", "", 0}, 				/* MILKFISH SETTING */
+  {"milkfish_fromswitch", "off", 0},				/* MILKFISH SETTING */
+  {"milkfish_username", "", 0},					/* MILKFISH SETTING */
+  {"milkfish_password", "", 0},					/* MILKFISH SETTING */
+  {"milkfish_routerid", "", 0},					/* MILKFISH SETTING */
+  {"milkfish_ppptime", "off", 0},				/* MILKFISH SETTING */
+  {"milkfish_audit", "off", 0},					/* MILKFISH SETTING */
+  {"milkfish_dynsip", "off", 0},				/* MILKFISH SETTING */
+  {"milkfish_siptrace", "off", 0},				/* MILKFISH SETTING */
+#endif
   {0, 0, 0}
 };
 

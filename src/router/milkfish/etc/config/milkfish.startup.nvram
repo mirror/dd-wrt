@@ -1,0 +1,75 @@
+#!/bin/sh
+# The Milkfish Environment SIP Control
+# Author: budrus@users.berlios.de
+# Website: milkfish.berlios.de
+# License: GPL
+
+## set some nvram variables - mostly went into /services/defaults.c
+#if [ -z "$(nvram get openser_cfg)" ] ; then
+#    nvram set openser_cfg=/var/openser/milkfish_openser.cfg
+#    nvram set need_commit=1
+#fi
+#if [ -z "$(nvram get sip_domain)" ] ; then
+#    nvram set sip_domain=192.168.1.1
+#    nvram set need_commit=1
+#fi
+#if [ -z "$(nvram get milkfish_fromdomain)" ] ; then
+#    nvram set milkfish_fromdomain=
+#    nvram set need_commit=1
+#fi
+#if [ -z "$(nvram get milkfish_fromswitch)" ] ; then
+#    nvram set milkfish_fromswitch=off
+#    nvram set need_commit=1
+#fi
+#if [ -z "$(nvram get milkfish_username)" ] ; then
+#    nvram set milkfish_username=
+#    nvram set need_commit=1
+#fi
+#if [ -z "$(nvram get milkfish_password)" ] ; then
+#    nvram set milkfish_password=
+#    nvram set need_commit=1
+#fi
+if [ -z "$(nvram get milkfish_routerid)" ] ; then
+    nvram get et0macaddr > /tmp/routerid.txt
+    nvram set milkfish_routerid=$(md5sum /tmp/routerid.txt | awk '{print $1}')
+    nvram set need_commit=1
+fi
+#if [ -z "$(nvram get milkfish_ppptime)" ] ; then
+#    nvram set milkfish_ppptime=off
+#    nvram set need_commit=1
+#fi
+#if [ -z "$(nvram get milkfish_audit)" ] ; then
+#    nvram set milkfish_audit=off
+#    nvram set need_commit=1
+#fi
+#if [ -z "$(nvram get milkfish_dynsip)" ] ; then
+#    nvram set milkfish_dynsip=off
+#    nvram set need_commit=1
+#fi
+#if [ -z "$(nvram get milkfish_siptrace)" ] ; then
+#    nvram set milkfish_siptrace=off
+#    nvram set need_commit=1
+#fi
+#if [ -z "$(nvram get sip_port)" ]; then
+#    nvram set sip_port=5060
+#    nvram set need_commit=1
+#fi
+
+# Start the milkfish services
+$(which milkfish_services) start
+
+#dbtet module setup
+mkdir -p /var/openser/dbtext/
+cp /etc/openser/dbtext/aliases /var/openser/dbtext/
+cp /etc/openser/dbtext/location /var/openser/dbtext/
+cp /etc/openser/dbtext/subscriber /var/openser/dbtext/
+cp /etc/openser/dbtext/version /var/openser/dbtext/
+cp /etc/openser/dbtext/uri /var/openser/dbtext/
+cp /etc/openser/dbtext/grp /var/openser/dbtext/
+
+# firewall configuration
+WAN=$(nvram get wan_iface)
+iptables -t nat -A prerouting_rule -i $WAN -p udp --dport 5060 -j ACCEPT
+iptables        -A input_rule      -i $WAN -p udp --dport 5060 -j ACCEPT
+
+exit 0

@@ -113,10 +113,6 @@ ipup_main (int argc, char **argv)
   if ((value = getenv ("MTU")))
     nvram_set ("wan_run_mtu", value);
   start_wan_done (wan_ifname);
-#ifdef HAVE_SER
-  cprintf ("starting sipath ip-up script\n");
-  eval ("/etc/ppp/ip-up", getenv ("IPREMOTE"), getenv ("IPLOCAL"));
-#endif
   cprintf ("done\n");
   return 0;
 }
