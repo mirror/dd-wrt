@@ -780,7 +780,7 @@ nat_postrouting (void)
 	       nvram_safe_get ("lan_ipaddr"));
 #ifdef HAVE_PPPOESERVER
   if (nvram_match("pppoeserver_enabled","1"))
-    save2file ("-I POSTROUTING -s %s/%s -j SNAT --to-source=%s\n",nvram_safe_get("pppoeserver_remotenet"),nvram_safe_get("pppoeserver_remotemask"),nvram_safe_get("lan_ipaddr"));   
+    save2file ("-I POSTROUTING -s %s/%s -j SNAT --to-source=%s\n",nvram_safe_get("pppoeserver_remotenet"),nvram_safe_get("pppoeserver_remotemask"),nvram_safe_get("wan_ipaddr"));   
 #endif
   if (nvram_match ("wk_mode", "gateway"))
     {
