@@ -59,9 +59,6 @@
 				<dt><% tran("management.wifi_legend"); %></dt>
 				<dd>A limited 802.1x server needed to fulfill WPA handshake requirements to allow Windows XP clients to work with WPA.</dd>
 				
-				<dt><% tran("management.ntp_legend"); %></dt>
-				<dd>Synchronize the clock of the router with an NTP time server.</dd>
-				
 				<dt><% tran("management.rst_legend"); %></dt>
 				<dd>This feature controls the resetbuttond process. The reset button initiates actions depending on how long you press it.
 					<ul>

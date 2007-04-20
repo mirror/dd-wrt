@@ -686,6 +686,7 @@ idx.summt_opt2="first Sun Apr - last Sun Oct";
 idx.summt_opt3="last Sun Mar - last Sun Oct";
 idx.summt_opt4="last Sun Oct - last Sun Mar";
 idx.summt_opt5="2nd Sun Mar - first Sun Nov";
+idx.ntp_client="Cliente NTP";
 
 hidx.right2="Estas configurações são comumente usadas por provedores à Cabo.";
 hidx.right4="Insira o Host Name fornecido pelo seu ISP.";
@@ -761,8 +762,6 @@ management.loop_legend="Loopback";
 management.loop_srv="Loopback";
 management.wifi_legend="802.1x";
 management.wifi_srv="802.1x";
-management.ntp_legend="Cliente NTP";
-management.ntp_srv="NTP";
 management.rst_legend="Botão de Reset";
 management.rst_srv="Botão de Reset";
 management.routing_legend="Roteamento";
