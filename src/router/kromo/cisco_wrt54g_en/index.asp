@@ -393,11 +393,11 @@ addEvent(window, "load", function() {
 									<select name="daylight_time">
 									<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"0\" <% nvram_selected_js("daylight_time", "0"); %>>" + idx.summt_opt1 + "</option>");
-										document.write("<option value=\"1\" <% nvram_selected_js("daylight_time", "1"); %>>" + idx.summt_opt2 + "</option>");
-										document.write("<option value=\"2\" <% nvram_selected_js("daylight_time", "2"); %>>" + idx.summt_opt3 + "</option>");
-										document.write("<option value=\"3\" <% nvram_selected_js("daylight_time", "3"); %>>" + idx.summt_opt4 + "</option>");
-										document.write("<option value=\"4\" <% nvram_selected_js("daylight_time", "4"); %>>" + idx.summt_opt5 + "</option>");
+										document.write("<option value=\"1\" <% nvram_selected_js("daylight_time", "1"); %>>" + idx.summt_opt1 + "</option>");
+										document.write("<option value=\"2\" <% nvram_selected_js("daylight_time", "2"); %>>" + idx.summt_opt2 + "</option>");
+										document.write("<option value=\"3\" <% nvram_selected_js("daylight_time", "3"); %>>" + idx.summt_opt3 + "</option>");
+										document.write("<option value=\"4\" <% nvram_selected_js("daylight_time", "4"); %>>" + idx.summt_opt4 + "</option>");
+										document.write("<option value=\"5\" <% nvram_selected_js("daylight_time", "5"); %>>" + idx.summt_opt5 + "</option>");
 										//]]>
 									</script>
 									</select>
