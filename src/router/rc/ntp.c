@@ -76,17 +76,18 @@ do_ntp (void)			// called from ntp_main and process_monitor_main; called every h
 {
   struct timeval tv;
   float fofs;
-  int dst, i;
+  int dst;
   char *servers;
-  char *tzon, *tdst;
+  char tzon[16], tdst[4];
 
   if (!nvram_match ("ntp_enable", "1"))
     return 0;
 
 //convert old timezone format into new
+	
 	if (strlen (nvram_safe_get("time_zone")) > 6)
 	{
-		sscanf (nvram_safe_get ("time_zone"), "%s %*d %s", &tzon, &tdst);
+		sscanf (nvram_safe_get("time_zone"), "%s %*d %s", tzon, tdst);
 		nvram_set ("time_zone", tzon);
 		nvram_set ("daylight_time", tdst);
 	}
