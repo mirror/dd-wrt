@@ -181,7 +181,7 @@ bound (void)
     {
       chomp (value);
       if (nvram_match ("wan_proto", "pptp")
-	  && nvram_match ("pptp_usedhcp", "1"))
+	  && nvram_match ("pptp_use_dhcp", "1"))
 	strcpy (temp_wan_ipaddr, value);
       else
 	{
@@ -194,7 +194,7 @@ bound (void)
     {
       chomp (value);
       if (nvram_match ("wan_proto", "pptp")
-	  && nvram_match ("pptp_usedhcp", "1"))
+	  && nvram_match ("pptp_use_dhcp", "1"))
 	strcpy (temp_wan_netmask, value);
       else
 	{
@@ -247,7 +247,7 @@ bound (void)
 	   nvram_safe_get ("wan_ipaddr"), nvram_safe_get ("wan_netmask"));
 
 
-  if (nvram_match ("wan_proto", "pptp") && nvram_match ("pptp_usedhcp", "1"))
+  if (nvram_match ("wan_proto", "pptp") && nvram_match ("pptp_use_dhcp", "1"))
     ifconfig (wan_ifname, IFUP, temp_wan_ipaddr, temp_wan_netmask);
   else
     ifconfig (wan_ifname, IFUP, nvram_safe_get ("wan_ipaddr"),
@@ -281,7 +281,7 @@ bound (void)
 #endif
 #ifdef HAVE_PPTP
   else if (nvram_match ("wan_proto", "pptp")
-	   && nvram_match ("pptp_usedhcp", "1"))
+	   && nvram_match ("pptp_use_dhcp", "1"))
     {
       int i = 0;
       /* Delete all default routes */
@@ -290,7 +290,7 @@ bound (void)
       // Add the route to the PPTP server on the wan interface for pptp client to reach it
       if (nvram_match ("wan_gateway", "0.0.0.0")
 	  || nvram_match ("wan_netmask", "0.0.0.0"))
-	route_add (wan_ifname, 0, nvram_safe_get ("pptp_server_ip"), NULL,
+	route_add (wan_ifname, 0, nvram_safe_get ("pptp_server_ip"),temp_wan_ipaddr ,
 		   "255.255.255.255");
       else
 	route_add (wan_ifname, 0, nvram_safe_get ("pptp_server_ip"),
