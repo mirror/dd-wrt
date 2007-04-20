@@ -294,7 +294,7 @@ bound (void)
       // Add the route to the PPTP server on the wan interface for pptp client to reach it
       if (nvram_match ("wan_gateway", "0.0.0.0")
 	  || nvram_match ("wan_netmask", "0.0.0.0"))
-	route_add (wan_ifname, 0, nvram_safe_get ("pptp_server_ip"),temp_wan_gatway ,
+	route_add (wan_ifname, 0, nvram_safe_get ("pptp_server_ip"),temp_wan_gateway ,
 		   "255.255.255.255");
       else
 	route_add (wan_ifname, 0, nvram_safe_get ("pptp_server_ip"),
