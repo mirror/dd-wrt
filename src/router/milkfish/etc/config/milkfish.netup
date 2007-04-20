@@ -1,0 +1,82 @@
+#!/bin/sh
+######################################################################
+# This program is free software; you can redistribute it and/or      #
+# modify it under the terms of the GNU General Public License as     #
+# published by the Free Software Foundation; either version 2 of the #
+# License, or (at your option) any later version.                    #
+#                                                                    #
+# This program is distributed in the hope that it will be useful,    #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of     #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the      #
+# GNU General Public License for more details.                       #
+#                                                                    #
+# You should have received a copy of the GNU General Public License  #
+# along with this program; if not, write to the                      #
+# Free Software Foundation, Inc.,                                    #
+# 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA             #
+######################################################################
+# This file is part of a Milkfish Embedded OpenSER SIP Router Setup  #
+# More information can be found at http://www.milkfish.org           #
+#                                                                    #
+# The Milkfish Environment - /etc/config/milkfish.netup              #
+#                                                                    #
+# Built/Version:  20070318                                           #
+# Author/Contact: Michael Poehnl <budrus@sipwerk.com>                #
+# Copyright (C) 2007 by sipwerk - All rights reserved.               #
+#                                                                    #
+# Please note that this software is under development and comes with #
+# absolutely no warranty, to the extend permitted by applicable law. #
+######################################################################
+
+# get the network addresses and netmasks
+# openwrt with sleep for wan to come up
+#sleep 10
+#WAN=$(/usr/sbin/nvram get wan_ifname)
+# dd-wrt
+WAN=$(/usr/sbin/nvram get wan_iface)
+LAN=$(/usr/sbin/nvram get lan_ifname)
+LANADDR=$(/sbin/ifconfig $LAN|awk 'sub("inet addr:","") {print $1}')
+WANADDR=$(/sbin/ifconfig $WAN|awk 'sub("inet addr:","") {print $1}')
+MASK=$(/sbin/ifconfig $LAN|awk 'sub("Mask:","") {print $4}')
+
+# needed for milkfish implementation of scheduled pppoe reconnects
+/bin/date +'%H:%M:%S %y-%m-%d - ip-up' >> /var/log/ip-up.log
+
+# kill openser and rtpproxy if running
+if [ -e /var/run/openser.pid ] ; then
+  /usr/sbin/openserctl stop
+fi
+if [ -e /var/run/rtpproxy.pid ]; then
+  /usr/bin/killall rtpproxy
+fi
+sleep 3
+
+# start rtpproxy
+/usr/bin/rtpproxy -l $LANADDR/$WANADDR
+
+# pimp openser.cfg and start openser
+/bin/sed "s/fix_nated_contact(\"[0-9.]*\"/fix_nated_contact(\"$WANADDR\"/g" /etc/openser/milkfish_openser.cfg > /var/openser/milkfish_openser.cfg.tmp
+/bin/sed "s/listen=udp:\w*:5060 #lan/listen=udp:$LAN:5060 #lan/g" /var/openser/milkfish_openser.cfg.tmp > /var/openser/milkfish_openser.cfg.tmp2
+/bin/sed "s/listen=udp:\w*:5060 #wan/listen=udp:$WAN:5060 #wan/g" /var/openser/milkfish_openser.cfg.tmp2 > /var/openser/milkfish_openser.cfg.tmp
+/bin/sed "s/listen=tcp:\w*:5061/listen=tcp:$WAN:5061/g" /var/openser/milkfish_openser.cfg.tmp > /var/openser/milkfish_openser.cfg.tmp2
+/bin/sed "s/(src_ip==[0-9./]*/(src_ip==$LANADDR\/$MASK)/g" /var/openser/milkfish_openser.cfg.tmp2 > /var/openser/milkfish_openser.cfg.tmp
+if [ "$MASK" = 255.0.0.0 ]; then
+  NET=$(/sbin/ifconfig $LAN|awk 'sub("inet addr:","") {print $1}' | cut -f1 -d.)
+elif [ "$MASK" = 255.255.0.0 ]; then
+  NET=$(/sbin/ifconfig $LAN|awk 'sub("inet addr:","") {print $1}' | cut -f1-2 -d.)
+elif [ "$MASK" = 255.255.255.0 ]; then
+  NET=$(/sbin/ifconfig $LAN|awk 'sub("inet addr:","") {print $1}' | cut -f1-3 -d.)
+fi
+NET=$(/bin/echo $NET | /bin/sed "s/[.]/.0*/g")
+NET=0*$NET 
+/bin/sed "s/sip:(.+)@[0-9.*]*/sip:(.+)@$NET/g" /var/openser/milkfish_openser.cfg.tmp > /var/openser/milkfish_openser.cfg.tmp2
+if [ $(/usr/sbin/nvram get milkfish_fromswitch) = on ] ; then
+  /bin/sed "s/2@[a-zA-Z0-9.]*/2@$(/usr/sbin/nvram get milkfish_fromdomain)/g" /var/openser/milkfish_openser.cfg.tmp2 > /var/openser/milkfish_openser.cfg
+else
+  /bin/sed "s/2@[a-zA-Z0-9.]*/2@$WANADDR/g" /var/openser/milkfish_openser.cfg.tmp2 > /var/openser/milkfish_openser.cfg
+fi
+rm /var/openser/milkfish_openser.cfg.tmp
+rm /var/openser/milkfish_openser.cfg.tmp2
+sleep 3
+# start openser
+/usr/sbin/openserctl start
