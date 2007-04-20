@@ -1,0 +1,328 @@
+# $Id: ChangeLog,v 1.12 2005/10/27 10:44:27 miconda Exp $
+
+===================== Changes since release 0.9.4 ============================
+
+* 2005-10-00 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+* 2005-10-00 Daniel-Constantin Mierla <daniel@voice-system.ro>
+* 2005-10-00 Elena-Ramona Modroiu <ramona@voice-system.ro>
+- modules' documentation updated to list the route types where the exported
+  functions can be used
+
+* 2005-09-15 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- maxfwd: max_limit of MAX-FORWARDS cannot exceed 256 (as per RFC)
+
+* 2005-09-11 Klaus Darilion <klaus.mailinglists@pernau.at>
+- postgres: adding transaction rollback for failed queries (postgres module
+  encapsulates every query into transaction. If the query failed, the
+  transcation was not finished, thus a new database connection was created
+  on the next query)
+
+* 2005-09-09 Elena-Ramona Modroiu <ramona@voice-system.ro>
+- avpops: avp_write() allow $hdr(name) to be coherent with avp_printf()
+- avpops: old format $hdr[name] is still valid
+
+* 2005-09-07 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- tm: t_flush_flags() - flush to T (UAS side) only the global flags
+
+* 2005-09-07 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- core: return code is printed to a string as signed int (was printed unsigned
+  until now)
+
+* 2005-09-06 Juha Heinanen <jh@tutpro.com>
+- domain: is_uri_host_local() can now be called also from failure route,
+  where it checks host part of first branch (which thus must have been earlier
+  appended to the transaction)
+
+* 2005-09-05 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- acc: DB support is compiled by default
+- acc: DB support disabled by default (db_url=0)
+- tm: inconsistency in "tw_append: parameter definition fixed: "msg(body)"
+  proprietary specifier migrated to $rb pseudo variable; message body must
+  be deal separately since it have a special status in the fifo/unix syntax.
+
+* 2005-09-01 Juha Heinanen <jh@tutpro.com>
+- lcr: Request-URI user part can be modified between load_gws() and first
+  next_gw() calls.
+
+* 2005-09-03 Elena-Ramona Modroiu <ramona@voice-system.ro>
+- xlog: xlog() prints to level 'L_ERR' if the first parameter is omitted
+
+* 2005-09-02 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- core: full suppor for per-branch flags
+- registrar: may use the branch flags for NAT marking
+- registrar: new module parameter "use_branch_flags": if enabled the branch
+  flags will be used for NAT flag.
+- tm: new param "branch_flag_mask" which defined which flags shall be
+  considered to be branch flags; it's bit mask in 2, 10 or 16 base;
+
+* 2005-09-02 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- core: new global parameter 'log_name' to set the id to be printed in
+  syslog - the value must be a string and has effect only when openser runs
+  in daemon mode (fork=yes), after daemonize. Default value is argv[0].
+
+* 2005-09-01 Juha Heinanen <jh@tutpro.com>
+- auth: append_rpid_hf function can now be called from branch_route block.
+
+* 2005-08-31 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- core: "drop" statement has special meaning in some route types (by default
+  it's equivalent to "exit"):
+    - BRANCH ROUTE - the request branch is discarded (not fwd);
+    - ONREPLY ROUTE - if provisional reply (<200), it will be discarded (not
+      fwd, not stored, but only timers updated)
+
+* 2005-08-29 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- core: new internal core function for checking if a module function may or
+  may be not called from a script route (based on route type); all route
+  inclusions are followed, but avoiding potential loops.
+- core: new command line parameter (-C) - similar to (-c), but additioanly
+  force the above described checking. (-C implies -c)
+- tm: t_was_cancelled() - says if the transaction was cancelled or
+  not from the UAC side.
+- tm: request fwd functions break if the transaction was already cancelled.
+- cpl-c: CPL interpreter stop floowing the negative replies in proxy node if
+  the INVITE was cancelled.
+
+* 2005-08-29 Juha Heinanen <jh@tutpro.com>
+- auth: append_rpid_hf function can now be called from branch_route block.
+
+* 2005-08-26 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- core: new pseudo-variables:
+    - $rP - transport protocol of RURI
+    - $dd - dst_uri domain
+    - $dp - dst_uri port
+    - $dP - dst_uri transport protocol
+- core: new core functions to manage next hop destination address (dst_uri)
+    - setdsturi("uri") - set the value of dst_uri - the value of the parameter
+      must be a valid sip uri
+    - resetdsturi() - reset dst_uri
+    - isdsturiset() - test if there is a dst_uri address set
+- avpops: avp_write() and avp_pushto() can access and set dst_uri field (if
+  set, this is the next hop, regardless of r-uri address) via '$duri'
+
+* 2005-08-25 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- core: in failure route will be visible the RURI of the selected branch
+  (so far was all the time the RURI of the first branch).
+- core: dst_uri (per branch) available in branch route - it can be also changed
+
+* 2005-08-24 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- tm: new function t_check_trans(): checks if the request belongs to a
+  transacation as follows:
+     - non-CANCEL;non-ACK - checks if the the transaction already exists
+       (retransmission)
+     - ACK - returns true if it's local e2e ACK; false otherwise;
+     - CANCEL - returns true if the coresponding INVITE transaction exists.
+
+* 2005-08-23 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- core: branch_route[] support added (route blocks to be executed for each
+  branch)
+
+* 2005-08-20 Juha Heinanen <jh@tutpro.com>
+- lcr: added support for gateway prefixes.
+
+* 2005-08-19 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- tm: local builded requests (CANCEL and ACK) use UAC info (instead of UAS)
+  if FL_USE_UAC_TO or FL_USE_UAC_CSEQ flags are set
+- uac: proper TO mangling in sequential request due FROM magling in initial
+  request. By this, FROM mangling may be used in full automatic mode - all
+  sequential replies and requests (in all directions) will be automatically
+  fixed.
+
+* 2005-08-15 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- tm: delayed CANCEL feature added - cancelled transactions will be marked to be
+  able to cancel delayed replies
+- tm: proper timer cancelation for cancelled T_UAC with no received reply;
+
+* 2005-08-12 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- uac: encoded FROM URI stored in RR hdr and not in FROM anymore (uses new RR
+  API)
+- uac: some TM callbacks replaced with RR callback - more efficient (as
+  selective)
+- uac: XOR used to mix together old and new URI - reduces the result size.
+
+* 2005-08-12 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- core: add_local_rport() - new function to add 'rport' parameter to the Via
+  header generated by server (according to RFC3581, issue reported by Ranveer
+  Kunal)
+
+* 2005-08-11 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- rr: enhancements which opens the road for a dialog awareness support:
+    - RR API added - exported functions:
+      add_rr_param()
+      check_route_param()
+      is_direction()
+      get_route_param()
+      register_rrcb()
+- rr: callbacks added - can be registered callbacks to be executed when local
+  Route is found and processed.
+
+* 2005-08-11 Klaus Darilion <klaus.mailinglists@pernau.at>
+- postgres: reconnect to database server (patch from Michael Ulitskiy)
+- lcr: URI scheme and transport protocol can now be specified for gateways
+  (port from ser)
+- lcr: allow usage of from_gw in reply routes
+- misc: postgresqldb.sh - emulate proprietary mysql functions in postgres
+  used by lcr module
+- misc: sc (openserctl) - support for lcr module to add/show/delete GWs,
+  routes. IP addresses can be entered in dotted quad format, support for URI
+  scheme and transport parameter
+
+* 2005-08-10 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- dispatcher: support for round robin distribution per process (alg=4)
+
+* 2005-08-09 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- core: various resolver/dns related options can now be set from cfg (credits
+  go to Andrei Pelinescu-Onciul):
+    - dns_try-ipv6=yes|no
+    - dns_retr_time= time(in s)
+    - dns_retr_no = no.
+    - dns_use_search_list=yes|no
+    - dns_server_no= no
+
+* 2005-08-08 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- dispatcher: added a new flag parameter which can be used (for now) to
+  select only the  username or the username, host and port when hashing
+  after an uri
+- dispatcher: improved uri hashing (password is ignored, port is used only
+  if sip and port != 5060 or sips and port!=5061) (credits to Andrei
+  Pelinescu-Onciul)
+  
+* 2005-08-07 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- avpops: flags for is_avp_set() to check if the value is number or string
+
+* 2005-08-03 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- core: new pseudo-varibles: $au - auth username; $ar - auth realm
+
+* 2005-08-01 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- rr: new function is_direction("upstream|downstream") to detect message flow
+  direction
+- rr: added Route generic parameter parser
+
+* 2005-07-29 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- gen_ha1 renamed as openser_gen_ha1 at installation and packaging to avoid
+  conflicts with SER packages (credits to Klaus Darilion)
+
+* 2005-07-29 Elena-Ramona Modroiu <ramona@voice-system.ro>
+- uac: pseudo-variables support in uac_replace_from()
+
+* 2005-07-29 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- avpops: is_avp_set("name") to test if an avp exists
+- avpops: allow hexadecimal format for integer values of avp_write(),
+  avp_check() and avp_op() (to ease bitwise operations)
+
+* 2005-07-26 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- avpops: db-related function can take the URI parameter from an AVP
+- group: is_user_in() can take the URI parameter form an AVP
+
+* 2005-07-26 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- core: added default onreply_route in config (port from ser)
+
+* 2005-07-25 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- core: old 'break' removed, 'return' must be used from now on. 'break' is
+  now valid only to end a 'case' block in a 'switch' statement
+
+* 2005-07-14 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- nathelper: posibility of mangling the IP address of the SDP origin
+  description (o=): via new flag "0x08" in fix_nated_sdp() and via new flag
+  "o" in force_rtp_proxy()
+- tm: tw_append definition migrated to pseudo-variables; now anything that
+  can be defined via pseudo-variables (headers, avps, message and system info)
+  can be also written to fifo/unix sockets
+
+* 2005-07-14 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- usrloc: versioning policy changed and added checking of table version
+
+* 2005-07-13 Elena-Ramona Modroiu <ramona@voice-system.ro>
+- avpops: added avp_op() - for integer operations with avps
+- avpops: avp_copy() can do now string-int and viceversa conversions
+- avpops: more operators for avp_check()
+- core: new signed-int to str and viceversa conversion functions
+
+* 2005-07-13 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- acc: acc_extra definition migrated to pseudo-variables
+
+* 2005-07-12 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- core: allow 'return' with no parameters, equivalent to 'return(1)' as
+  replacement for 'break'
+
+* 2005-07-12 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- nathelper: possibility to send natpings per user with OPTIONS messages
+  (stateless)
+
+* 2005-07-10 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- core: 'switch' statement in config file to test the returned code 'retcode'
+
+* 2005-07-09 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- misc: added sc.dbtext - openserctl-like script for use with dbtext
+  (contributed by Cesc Santasusana)
+
+* 2005-07-08 Elena-Ramona Modroiu <ramona@voice-system.ro>
+- textops: added support to chech method value against a list in is_method()
+  (e.g., is_method("INVITE|CANCEL|BYE"))
+
+* 2005-06-08 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- core: define in config.h for default radiusclient configuration file set to
+  "/usr/local/etc/radiusclient-ng/radiusclient.conf"
+- auth_radius, avp_radius: possibility to use STRING/ID name and STRING/NUMBER
+  value in SIP-AVP
+- auth_radius: backward compatibility with RPID RADIUS AVP dropped
+
+* 2005-07-05 Elena-Ramona Modroiu <ramona@voice-system.ro>
+- core: merged method types from parse_methods.c with msg_parser.c
+- core: method type is cached in cseq header structure
+- textops: new function is_method() to check the method value using types
+
+* 2005-07-04 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- dispatcher: added new function ds_select_domain() which replaces the
+  host:port in R-URI with selected destination address
+
+* 2005-07-02 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- enum: support for compound NAPTRs and lookup of multiple service types with
+  a single DNS lookup (patch by Klaus Darilion)
+
+* 2005-06-30 Elena-Ramona Modroiu <ramona@voice-system.ro>
+- avpops: new function avp_subst() to apply perl/sed-like subst to AVP
+
+* 2005-06-29 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- acc: accounting failed transactions - failed transactions can be logged
+  one by one marking them with a special flag
+
+* 2005-06-28 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- acc: call leg accounting support -- proper CDR generation in case of forward
+  and redirect on server.
+
+* 2005-06-28 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- core: config 'mpath' parameter to specify the common path for modules
+- core: config 'retcode' variable to check the code returned by last function
+  executed
+
+* 2005-06-27 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- textops: subst(), subst_uri() and subst_user() have support for
+  pseudo-variables
+
+* 2005-06-24 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- uac_redirect: new module for handling redirect replies (3xx) on server
+  (written by Bogdan-Andrei Iancu).
+
+* 2005-06-23 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- core: xlog specifiers moved in core and made availabe as pseudo-variables
+- xlog: uses pseudo-variables to print log messages
+- avpops: new method avp_printf() that prints a formatted string which can
+  include pseudo-variables
+
+* 2005-06-18 Daniel-Constantin Mierla <daniel@voice-system.ro>
+- xlog: support for color printing using escape sequences (patch by
+  iwolfsberger@gmx.net)
+
+* 2005-06-17 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- avpops: support for dst_ip (patch by evan.borgstrom@ca.mci.com)
+
+* 2005-06-17 Bogdan-Andrei Iancu <bogdan@voice-system.ro>
+- lcr: imported module in the trunk (written by Juha Heinanen)
+- uac: imported module in the trunk (written by Elena-Ramona Modroiu)
+- core: added TLS support (by Cesc Santasusana, originaly written by
+  Peter Griffiths)
+
+====================== 2005-06-14 Release 0.9.4 ==============================
+
+* 2005-06-14
+ - Initial release of OpenSER (v0.9.4) spawned from SER branch 0.9.0
