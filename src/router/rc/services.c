@@ -368,6 +368,7 @@ start_single_service (void)
       startstop ("nstxd");
 #endif
 #ifdef HAVE_PPPOESERVER
+      startstop ("firewall");
       startstop ("pppoeserver");
 #endif
       startstop ("dnsmasq");

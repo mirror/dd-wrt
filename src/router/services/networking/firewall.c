@@ -778,7 +778,10 @@ nat_postrouting (void)
       && (nvram_match ("wan_proto", "disabled")))
     save2file ("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
 	       nvram_safe_get ("lan_ipaddr"));
-
+#ifdef HAVE_PPPOESERVER
+  if (nvran_match("pppoeserver_enabled","1"))
+    save2file ("-I POSTROUTING -s %s/%s -j SNAT --to-source=%s\n",nvram_safe_get("pppoeserver_remotenet"),nvram_safe_get("pppoeserver_remotemask"),nvram_safe_get("lan_ipaddr"));   
+#endif
   if (nvram_match ("wk_mode", "gateway"))
     {
 //      if (strlen (wanface) > 0)
@@ -2082,7 +2085,13 @@ filter_table (void)
       save2file (":grp_%d - [0:0]\n", seq);
       save2file (":advgrp_%d - [0:0]\n", seq);
     }
-
+#ifdef HAVE_PPPOESERVER
+  if (nvram_match("pppoeserver_enabled","1"))
+    {
+      save2file ("-I INPUT -s %s/%s -j ACCEPT\n",nvram_safe_get("pppoeserver_remotenet"),nvram_safe_get("pppoeserver_remotemask"));
+      save2file ("-I FORWARD -s %s/%s -j ACCEPT\n",nvram_safe_get("pppoeserver_remotenet"),nvram_safe_get("pppoeserver_remotemask"));
+    }
+#endif
   if (nvram_match ("chilli_enable", "1"))
     {
       save2file ("-I INPUT -m state --state NEW -i tun0 -j ACCEPT\n");
