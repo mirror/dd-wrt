@@ -62,10 +62,9 @@ function valid(F) {
 		F.week3.checked == false &&
 		F.week4.checked == false &&
 		F.week5.checked == false &&
-		F.week6.checked == false
-	){
-		alert(filter.mess2);
-		return false;
+		F.week6.checked == false) {
+			alert(filter.mess2);
+			return false;
 	}
 	if(F.time_all[1].checked == true){
 		start = (parseInt(F.start_hour.value, 10)) * 60 + parseInt(F.start_min.value, 10);
@@ -125,17 +124,18 @@ var sorton = function(x,y){
 	else return 1;
 }
 
-services=new Array();
-services_length=0;
+var services=new Array();
+var services_length=0;
 /* Init. services data structure */
 <% filter_port_services_get("all_list", "0"); %>
 services.sort(sorton);
 
-servport_name0 = "<% filter_port_services_get("service", "0"); %>";
-servport_name1 = "<% filter_port_services_get("service", "1"); %>";
-servport_name2 = "<% filter_port_services_get("service", "2"); %>";
-servport_name3 = "<% filter_port_services_get("service", "3"); %>";
-p2p_value = "<% filter_port_services_get("p2p", "0"); %>";
+var servport_name0 = "<% filter_port_services_get("service", "0"); %>";
+var servport_name1 = "<% filter_port_services_get("service", "1"); %>";
+var servport_name2 = "<% filter_port_services_get("service", "2"); %>";
+var servport_name3 = "<% filter_port_services_get("service", "3"); %>";
+var p2p_value = "<% filter_port_services_get("p2p", "0"); %>";
+
 function search_service_index(name) {
 	for(var i=0; i<services_length ; i++){
 		if(name == services[i].name){
@@ -214,21 +214,20 @@ function Status(F,I) {
 	var start = '';
 	var end = '';
 	var total = F.elements.length;
-	for(i=0 ; i < total ; i++){
+	for(var i=0 ; i < total ; i++){
 		if(F.elements[i].name == "blocked_service0")
 			start = i;
 		if(F.elements[i].name == "url7")
 			end = i;
 	}
-	if(start == '' || end == '')
-		return true;
+	if(start == '' || end == '') return true;
 
 	if(I == "deny" ) {
-		for(i = start; i<=end ;i++) {
+		for(i = start; i<=end; i++) {
 			choose_disable(F.elements[i]);
 		}
 	} else {
-		for(i = start; i<=end ;i++) {
+		for(i = start; i<=end; i++) {
 			choose_enable(F.elements[i]);
 		}
 		choose_disable(document.filters.port0_start);
@@ -240,6 +239,7 @@ function Status(F,I) {
 		choose_disable(document.filters.port3_start);
 		choose_disable(document.filters.port3_end);
 	}
+	return true;
 }
 
 function SelFilter(num,F) {
