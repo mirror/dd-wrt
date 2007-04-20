@@ -1555,7 +1555,6 @@ start_pptp (int status)
 		nvram_safe_get ("wan_ipaddr"),
 		nvram_safe_get ("wan_netmask"));
     }
-  fprintf(stderr,"start pptpd\n");
   ret = _eval (pptp_argv, NULL, 0, NULL);
 
 
