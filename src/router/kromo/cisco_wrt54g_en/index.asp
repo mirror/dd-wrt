@@ -237,7 +237,9 @@ function init() {
 		document.setup.now_proto.value == "l2tp" ||
 		document.setup.now_proto.value == "heartbeat")
 			ppp_enable_disable(document.setup,'<% nvram_get("ppp_demand"); %>');
-
+	if (document.setup.now_proto.value == "pptp")
+	    pptpUseDHCP(document.setup, '<% nvram_get("pptp_use_dhcp"); %>')
+	    
 	dhcp_enable_disable(document.setup,'<% nvram_get("lan_proto"); %>');
 	setDNSMasq(document.setup);
 }
