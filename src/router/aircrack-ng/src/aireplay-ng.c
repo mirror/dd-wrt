@@ -30,6 +30,7 @@
 #include <sys/time.h>
 
 #include <netpacket/packet.h>
+#include <linux/if.h>
 #include <linux/if_ether.h>
 #include <linux/wireless.h>
 #include <arpa/inet.h>

@@ -1,0 +1,14 @@
+#!/bin/sh
+if test x$1 = x
+then
+        echo "Usage $0 interace [--band=abg] [--channel=xxxx]"
+        echo "channel = frequency"
+        echo "Band can be a / b / g / ab / ag / bg / abg"
+        echo
+	exit
+fi
+trap "/usr/sbin/scantidy ${1}"  1 2 3 6
+mode=`nvram get ath${1}_net_mode`
+
+/usr/sbin/wlanconfig mon${1} create wlandev wifi${1} wlanmode monitor
+/usr/sbin/airodump-ng mon${1} ${2} ${3}
