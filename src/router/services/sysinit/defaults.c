@@ -68,25 +68,15 @@ struct nvram_tuple srouter_defaults[] = {
 
   /* Miscellaneous parameters */
   {"timer_interval", "3600", 0},	/* Timer interval in seconds */
-  {"time_zone", "+01 1 3", 0},	/* Time zone (GNU TZ format) */
-  {"daylight_time", "1", 0},	/* Automatically adjust clock for daylight */
+  {"time_zone", "+01", 0},	/* Time zone (GNU TZ format) */
+  {"daylight_time", "3", 0},	/* Automatically adjust clock for daylight */
 
 #ifdef HAVE_SKYTRON
   {"ntp_server", "ntp0.fau.de", 0},	/* NTP server *//* Modify */
-  {"time_zone", "+01 1 3", 0},	/* Time zone (GNU TZ format) */
-  {"daylight_time", "1", 0},	/* Automatically adjust clock for daylight */
 #else
   {"ntp_server", "", 0},	/* NTP server *//* Modify */
 
-// changed by Eko
-// #if COUNTRY == JAPAN
-//  {"time_zone", "+09 1 0", 0},        /* Time zone (GNU TZ format) Japan */
-//  {"daylight_time", "0", 0},  /* Automatically adjust clock for daylight */
-// #else
-//  {"time_zone", "-08 1 1", 0},        /* Time zone (GNU TZ format) USA */
-//  {"daylight_time", "1", 0},  /* Automatically adjust clock for daylight */
 
-// added 26.03.
   {"refresh_time", "3", 0},	/* GUI Auto-Refresh interval */
 
 #endif
