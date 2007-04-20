@@ -107,10 +107,10 @@ validate_wan_ipaddr (webs_t wp, char *value, struct variable *v)
   if (!strcmp (wan_proto, "pptp") && !strcmp ("0.0.0.0", wan_ipaddr))
     {				// Sveasoft: allow 0.0.0.0 for pptp IP addr
       pptp_skip_check = TRUE;
-      nvram_set ("pptp_usedhcp", "1");
+      nvram_set ("pptp_use_dhcp", "1");
     }
   else
-    nvram_set ("pptp_usedhcp", "0");
+    nvram_set ("pptp_use_dhcp", "0");
 
 
   if (FALSE == pptp_skip_check && !valid_ipaddr (wp, wan_ipaddr, &which[0]))
