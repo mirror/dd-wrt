@@ -247,6 +247,9 @@ function init() {
 	setDNSMasq(document.setup);
 }
 
+addEvent(window, "load", function() {
+	show_layer_ext(document.setup.ntp_enable, 'idntp', <% nvram_else_match("ntp_enable", "1", "1", "0"); %> == 1);
+});
 		//]]>
 		</script>
 	</head>
@@ -311,8 +314,8 @@ function init() {
 				
 								<div class="setting">
 									<div class="label"><% tran("idx.stp"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvram_selmatch("lan_stp", "1", "checked"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="lan_stp" <% nvram_selmatch("lan_stp", "0", "checked"); %> /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvram_checked("lan_stp", "1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="lan_stp" <% nvram_checked("lan_stp", "0"); %> /><% tran("share.disable"); %>
 								</div>
 							</fieldset><br />
 				
@@ -380,6 +383,11 @@ function init() {
 							<fieldset>
 								<legend><% tran("idx.legend3"); %></legend>
 								<div class="setting">
+									<div class="label"><% tran("idx.ntp_client"); %></div>
+									<input class="spaceradio" type="radio" name="ntp_enable" id="ntp_enable" value="1" <% nvram_checked("ntp_enable", "1"); %> onclick="show_layer_ext(this, 'idntp', true)" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="ntp_enable" id="ntp_enable" value="0" <% nvram_checked("ntp_enable", "0"); %> onclick="show_layer_ext(this, 'idntp', false)" /><% tran("share.disable"); %>
+								</div>
+								<div class="setting">
 									<div class="label"><% tran("idx.timeset"); %></div>
 									<select name="time_zone">
 										<% show_timeoptions(); %>
@@ -388,6 +396,10 @@ function init() {
 								<div class="setting">
 									<div class="label"><% tran("idx.localtime"); %></div>
 									<input class="spaceradio" type="checkbox" value="1" name="_daylight_time" <% nvram_checked("daylight_time", "1"); %> />
+								</div>
+								<div class="setting" id="idntp">
+									<div class="label"><% tran("share.srvip"); %></div>
+									<input maxlength="32" size="25" name="ntp_server" value="<% nvram_get("ntp_server"); %>" />
 								</div>
 							</fieldset><br />
 							
