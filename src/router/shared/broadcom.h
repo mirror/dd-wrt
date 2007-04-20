@@ -202,6 +202,7 @@ extern void ej_gethostnamebyip (webs_t wp, int argc, char_t ** argv);
 /*for pppoeserver*/
 extern void show_chaps_table (webs_t wp, char *type, int which);
 extern void validate_chaps (webs_t wp, char *value, struct variable *v);
+extern void ej_show_chaps (webs_t wp, int argc, char_t ** argv);
 
 
 /*for dhcp */
