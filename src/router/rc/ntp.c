@@ -78,7 +78,7 @@ do_ntp (void)			// called from ntp_main and process_monitor_main; called every h
   float fofs;
   int dst, i;
   char *servers;
-  char tzon[8], tdst[2];
+  char *tzon, *tdst;
 
   if (!nvram_match ("ntp_enable", "1"))
     return 0;
@@ -92,8 +92,8 @@ do_ntp (void)			// called from ntp_main and process_monitor_main; called every h
 	}
 	
     
-  sscanf (nvram_safe_get ("time_zone"), "%f", &fofs));
-  sscanf (nvram_safe_get ("daylight_time"), "%d", &dst));
+  sscanf (nvram_safe_get ("time_zone"), "%f", &fofs);
+  sscanf (nvram_safe_get ("daylight_time"), "%d", &dst);
 
 
   if (((servers = nvram_get ("ntp_server")) == NULL) || (*servers == 0))
