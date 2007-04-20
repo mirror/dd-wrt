@@ -174,7 +174,7 @@ bound (void)
 {
   char *wan_ifname = safe_getenv ("interface");
   char *value;
-  char temp_wan_ipaddr[16], temp_wan_netmask[16];
+  char temp_wan_ipaddr[16], temp_wan_netmask[16],temp_wan_gateway[16];
   int changed = 0;
 
   if ((value = getenv ("ip")))
@@ -206,9 +206,13 @@ bound (void)
   if ((value = getenv ("router")))
     {
       chomp (value);
-
+      if (nvram_match ("wan_proto", "pptp")
+	  && nvram_match ("pptp_use_dhcp", "1"))
+	strcpy (temp_wan_gateway, value);
+      else{
       if (nvram_invmatch ("wan_gateway", value))
 	changed = 1;
+       }
       nvram_set ("wan_gateway", value);
     }
   if ((value = getenv ("dns")))
@@ -290,7 +294,7 @@ bound (void)
       // Add the route to the PPTP server on the wan interface for pptp client to reach it
       if (nvram_match ("wan_gateway", "0.0.0.0")
 	  || nvram_match ("wan_netmask", "0.0.0.0"))
-	route_add (wan_ifname, 0, nvram_safe_get ("pptp_server_ip"),temp_wan_ipaddr ,
+	route_add (wan_ifname, 0, nvram_safe_get ("pptp_server_ip"),temp_wan_gatway ,
 		   "255.255.255.255");
       else
 	route_add (wan_ifname, 0, nvram_safe_get ("pptp_server_ip"),
