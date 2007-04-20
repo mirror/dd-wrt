@@ -4254,26 +4254,18 @@ ej_show_timeoptions (webs_t wp, int argc, char_t ** argv)	//Eko
     "+14:00"
   };
 
-  int i, j;
-  char str[11];
-
-  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+  int i;
 
   for (i = 0; i < 37; i++)
     {
-      for (j = 0; j < 5; j++)
-	{
-	  sprintf (str, "%s 1 %d", timediffs[i], j + 1);
-
 	  websWrite (wp,
-		     "document.write(\"<option value=\\\"%s\\\" %s>UTC%s / \" + idx.summt_opt%d + \"</option>\");\n",
-		     str, nvram_match ("time_zone",
-				       str) ? "selected=\\\"selected\\\"" :
-		     "", timezones[i], j + 1);
-	}
+		     "<option value=\"%s\" %s>UTC%s</option>\");\n",
+		     timediffs[i], nvram_match ("time_zone",
+				       timediffs[i]) ? "selected=\"selected\"" :
+		     "", timezones[i]);
+
     }
 
-  websWrite (wp, "//]]>\n</script>\n");
 }
 
 
