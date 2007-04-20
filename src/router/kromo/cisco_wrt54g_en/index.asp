@@ -138,7 +138,7 @@ function dhcp_enable_disable(F,T) {
 	var start = '';
 	var end = '';
  	var total = F.elements.length;
-	for(i=0 ; i < total ; i++) {
+	for(var i=0 ; i < total ; i++) {
 		if(F.elements[i].name == "dhcp_start")
 			start = i;
 		if(F.elements[i].name == "wan_wins_3")
