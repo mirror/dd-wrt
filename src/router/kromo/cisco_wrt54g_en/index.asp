@@ -194,11 +194,6 @@ function SelDHCPFWD(num,F) {
 
 function to_submit(F) {
 	if(valid_value(F)) {
-		if(F._daylight_time.checked == false)
-			F.daylight_time.value = 0;
-		else
-			F.daylight_time.value = 1;
-
 		if(F._dhcp_dnsmasq) {
 			if(F._dhcp_dnsmasq.checked == false)
 				F.dhcp_dnsmasq.value = 0;
@@ -275,7 +270,6 @@ addEvent(window, "load", function() {
 							<input type="hidden" name="dns_dnsmasq" value="0" />
 							<input type="hidden" name="auth_dnsmasq" value="0" />
 							<input type="hidden" name="fullswitch" value="0" />
-							<input type="hidden" name="daylight_time" value="0" />
 							<input type="hidden" name="lan_ipaddr" value="4" />
 							<h2><% nvram_else_match("wl_mode", "ap", "<script type="text/javascript">Capture(idx.h2);</script>", "<script type="text/javascript">Capture(idx.h22);</script>"); %></h2>
 
@@ -387,6 +381,7 @@ addEvent(window, "load", function() {
 									<input class="spaceradio" type="radio" name="ntp_enable" id="ntp_enable" value="1" <% nvram_checked("ntp_enable", "1"); %> onclick="show_layer_ext(this, 'idntp', true)" /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" name="ntp_enable" id="ntp_enable" value="0" <% nvram_checked("ntp_enable", "0"); %> onclick="show_layer_ext(this, 'idntp', false)" /><% tran("share.disable"); %>
 								</div>
+								<div id="idntp">
 								<div class="setting">
 									<div class="label"><% tran("idx.timeset"); %></div>
 									<select name="time_zone">
@@ -394,12 +389,23 @@ addEvent(window, "load", function() {
 									</select>
 								</div>
 								<div class="setting">
-									<div class="label"><% tran("idx.localtime"); %></div>
-									<input class="spaceradio" type="checkbox" value="1" name="_daylight_time" <% nvram_checked("daylight_time", "1"); %> />
+									<div class="label"><% tran("idx.dsttime"); %></div>
+									<select name="daylight_time">
+									<script type="text/javascript">
+										//<![CDATA[
+										document.write("<option value=\"0\" <% nvram_selected_js("daylight_time", "0"); %>>" + idx.summt_opt1 + "</option>");
+										document.write("<option value=\"1\" <% nvram_selected_js("daylight_time", "1"); %>>" + idx.summt_opt2 + "</option>");
+										document.write("<option value=\"2\" <% nvram_selected_js("daylight_time", "2"); %>>" + idx.summt_opt3 + "</option>");
+										document.write("<option value=\"3\" <% nvram_selected_js("daylight_time", "3"); %>>" + idx.summt_opt4 + "</option>");
+										document.write("<option value=\"4\" <% nvram_selected_js("daylight_time", "4"); %>>" + idx.summt_opt5 + "</option>");
+										//]]>
+									</script>
+									</select>
 								</div>
-								<div class="setting" id="idntp">
+								<div class="setting">
 									<div class="label"><% tran("share.srvip"); %></div>
 									<input maxlength="32" size="25" name="ntp_server" value="<% nvram_get("ntp_server"); %>" />
+								</div>
 								</div>
 							</fieldset><br />
 							
