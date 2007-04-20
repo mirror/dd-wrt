@@ -175,9 +175,8 @@ show_chaps_table (webs_t wp, char *type, int which)
 
 
 
-static void
+void
 ej_show_chaps (webs_t wp, int argc, char_t ** argv)
-
 {
   int i;
   char buffer[1024], *count;
