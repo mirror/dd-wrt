@@ -841,12 +841,18 @@ lease_add (webs_t wp)
 int
 chap_user_add (webs_t wp)
 {
+  char *var = websGetVar(wp,"pppoeserver_enabled",NULL);
+  if (var!=NULL)
+    nvram_set("pppoeserver_enabled",var);
   return macro_add ("pppoeserver_chapsnum");
 }
 
 int
 chap_user_remove (webs_t wp)
 {
+  char *var = websGetVar(wp,"pppoeserver_enabled",NULL);
+  if (var!=NULL)
+    nvram_set("pppoeserver_enabled",var);
   return macro_rem ("pppoeserver_chapsnum", "pppoeserver_chaps");
 }
 #endif
