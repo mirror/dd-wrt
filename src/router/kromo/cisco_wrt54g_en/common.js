@@ -951,40 +951,8 @@ function show_layer_ext(obj, id, state)
 
 function toggle_layer_ext(obj, id1, id2, state)
 {
-	if(!obj) return;
-	if(state){
-		visibility_style1='visible';
-		display_style1='block';
-		visibility_style2='hidden';
-		display_style2='none';
-	} else {
-		visibility_style1='hidden';
-		display_style1='none';
-		visibility_style2='visible';
-		display_style2='block';
-	}
-	// Show/hide the layer
-	if(ie4)
-	{
-		eval("document.all." + id1 + ".style.visibility='" + visibility_style1 + "'");
-		eval("document.all." + id1 + ".style.display='" + display_style1 + "'");
-		eval("document.all." + id2 + ".style.visibility='" + visibility_style2 + "'");
-		eval("document.all." + id2 + ".style.display='" + display_style2 + "'");
-	}
-	if(ns4)
-	{
-		eval("document." + id1 + ".visibility='" + visibility_style1 + "'");
-		eval("document." + id1 + ".display='" + display_style1 + "'");
-		eval("document." + id2 + ".visibility='" + visibility_style2 + "'");
-		eval("document." + id2 + ".display='" + display_style2 + "'");
-	}
-	if(ns6 || op)
-	{
-		eval("document.getElementById('" + id1 + "').style.visibility='" + visibility_style1 + "'");
-		eval("document.getElementById('" + id1 + "').style.display='" + display_style1 + "'");
-		eval("document.getElementById('" + id2 + "').style.visibility='" + visibility_style2 + "'");
-		eval("document.getElementById('" + id2 + "').style.display='" + display_style2 + "'");
-	}
+	show_layer_ext(obj, id1, state)
+	show_layer_ext(obj, id2, !state)
 }
 
 
