@@ -19,14 +19,13 @@ endif
 #
 # Paths
 #
-SER_MODULES:=sl tm rr maxfwd usrloc registrar dbtext textops nathelper
-SER_MODULE_FILES:=$(foreach module,$(SER_MODULES),ser/modules/$(module)/$(module).so)
+OPENSER_MODULES := sl tm rr maxfwd usrloc registrar dbtext textops exec auth auth_db nathelper
+OPENSER_MODULE_FILES := $(foreach module,$(OPENSER_MODULES),openser/modules/$(module)/$(module).so)
 
 # Source bases
 export PLATFORM LINUXDIR LIBDIR USRLIBDIR
 export TOP := $(shell pwd)
 export SRCBASE := $(shell (cd $(TOP)/.. && pwd -P))
-
 #
 # Cross-compile environment variables
 #
@@ -172,7 +171,8 @@ obj-$(CONFIG_BIRD) += bird
 obj-$(CONFIG_DDNS) += inadyn
 obj-$(CONFIG_OTHERS) += others
 obj-$(CONFIG_EOU) += eou
-obj-$(CONFIG_SER) += ser
+obj-$(CONFIG_OPENSER) += openser
+obj-$(CONFIG_MILKFISH) += milkfish
 obj-$(CONFIG_NOCAT) += nocat
 obj-$(CONFIG_RTPPROXY) += rtpproxy
 obj-$(CONFIG_SAMBA) += samba
@@ -840,57 +840,53 @@ mmc-install:
 
 mmc-clean:
 	$(MAKE) -C mmc clean
-ser:
 
-	$(MAKE) -C ser modules all utils/gen_ha1/gen_ha1 ARCH=mipsel CFLAGS="$(COPTS)" extra_defs="-DUSE_PTHREAD_MUTEX "
+openser:
+	$(MAKE) -C openser all utils/gen_ha1/gen_ha1 ARCH=mipsel CFLAGS="$(COPTS)" extra_defs="-DNEED_PRINTF -DUSE_PTHREAD_MUTEX " prefix=/
 
+openser-install:
+	install -D openser/openser $(INSTALLDIR)/openser/usr/sbin/openser
+	install -D openser/utils/gen_ha1/gen_ha1 $(INSTALLDIR)/openser/usr/sbin/openser_gen_ha1
+	mkdir -p $(INSTALLDIR)/openser/usr/lib/openser/modules
+	cp -a $(OPENSER_MODULE_FILES) $(INSTALLDIR)/openser/usr/lib/openser/modules/
+	mv $(INSTALLDIR)/openser/usr/lib/openser/modules/nathelper.so $(INSTALLDIR)/openser/usr/lib/openser/modules/milkfish_nathelper.so
+	install -D openser/scripts/sc $(INSTALLDIR)/openser/usr/sbin/openserctl
+	install -D openser/scripts/sc.dbtext $(INSTALLDIR)/openser/usr/sbin/dbtextctl
 
-ser-install:
-#	$(MAKE) -C ser install ARCH=mipsel CC=mipsel-linux-uclibc-gcc CFLAGS="-Os -pipe -mips32 -mtune=mips32" BASEDIR=$(INSTALLDIR)
-	
-	install -D ser/openser $(INSTALLDIR)/ser/usr/sbin/openser
-	mkdir -p $(INSTALLDIR)/ser/usr/lib/openser/modules
-	mkdir -p $(INSTALLDIR)/ser/etc/config 
-	cp -a ser/etc/config/* $(INSTALLDIR)/ser/etc/config/
-	cp -a $(SER_MODULE_FILES) $(INSTALLDIR)/ser/usr/lib/openser/modules/
-	install -D ser/scripts/sc $(INSTALLDIR)/ser/usr/sbin/serctl
-	mkdir -p $(INSTALLDIR)/ser/etc/openser
-	install -D ser/etc/milkfish_openser.cfg $(INSTALLDIR)/ser/etc/openser/milkfish_openser.cfg
+openser-clean:
+	$(MAKE) -C openser clean
+	rm -rf $(INSTALLDIR)/openser/*
 
-	install -d -m0755 $(INSTALLDIR)/ser/etc/openser/dbtext
-	install -m0644 ser/etc/openser/dbtext/aliases $(INSTALLDIR)/ser/etc/openser/dbtext/
-	install -m0644 ser/etc/openser/dbtext/aliases.empty $(INSTALLDIR)/ser/etc/openser/dbtext/
-	install -m0644 ser/etc/openser/dbtext/grp $(INSTALLDIR)/ser/etc/openser/dbtext/
-	install -m0644 ser/etc/openser/dbtext/grp.empty $(INSTALLDIR)/ser/etc/openser/dbtext/
-	install -m0644 ser/etc/openser/dbtext/location $(INSTALLDIR)/ser/etc/openser/dbtext/
-	install -m0644 ser/etc/openser/dbtext/location.empty $(INSTALLDIR)/ser/etc/openser/dbtext/
-	install -m0644 ser/etc/openser/dbtext/subscriber $(INSTALLDIR)/ser/etc/openser/dbtext/
-	install -m0644 ser/etc/openser/dbtext/subscriber.empty $(INSTALLDIR)/ser/etc/openser/dbtext/
-	install -m0644 ser/etc/openser/dbtext/uri $(INSTALLDIR)/ser/etc/openser/dbtext/
-	install -m0644 ser/etc/openser/dbtext/uri.empty $(INSTALLDIR)/ser/etc/openser/dbtext/
-	install -m0644 ser/etc/openser/dbtext/version $(INSTALLDIR)/ser/etc/openser/dbtext/
-	install -D ser/etc/ip-up $(INSTALLDIR)/ser/etc/ppp/ip-up
-	install -d -m0755 $(INSTALLDIR)/ser/etc/init.d
-	install -m0755 ser/etc/S37mf_services $(INSTALLDIR)/ser/etc/init.d/
-	install -m0755 ser/etc/S38milkfish_sip_ini $(INSTALLDIR)/ser/etc/init.d/
-	install -m0755 ser/etc/S78milkfish_sip $(INSTALLDIR)/ser/etc/init.d/
-	install -d -m0755 $(INSTALLDIR)/ser/usr/sbin
-	install -m0755 ser/etc/milkfish_services $(INSTALLDIR)/ser/usr/sbin/
-	install -d -m0755 $(INSTALLDIR)/ser/usr/lib
-	install -m0644 ser/etc/milkfish_functions.sh $(INSTALLDIR)/ser/usr/lib/		
-	install -d -m0755 $(INSTALLDIR)/ser/usr/sbin
-	install -m0755 ser/etc/mf_sip_tracer.sh $(INSTALLDIR)/ser/usr/sbin/
+milkfish:
+	@true
 
+milkfish-install:
+	install -d -m0755 $(INSTALLDIR)/milkfish/etc/openser
+	install -m0644 milkfish/etc/openser/milkfish_openser.cfg $(INSTALLDIR)/milkfish/etc/openser/milkfish_openser.cfg
+	install -d -m0755 $(INSTALLDIR)/milkfish/etc/openser/dbtext
+	install -m0644 milkfish/etc/openser/dbtext/aliases $(INSTALLDIR)/milkfish/etc/openser/dbtext/
+	install -m0644 milkfish/etc/openser/dbtext/aliases.empty $(INSTALLDIR)/milkfish/etc/openser/dbtext/
+	install -m0644 milkfish/etc/openser/dbtext/grp $(INSTALLDIR)/milkfish/etc/openser/dbtext/
+	install -m0644 milkfish/etc/openser/dbtext/grp.empty $(INSTALLDIR)/milkfish/etc/openser/dbtext/
+	install -m0644 milkfish/etc/openser/dbtext/location $(INSTALLDIR)/milkfish/etc/openser/dbtext/
+	install -m0644 milkfish/etc/openser/dbtext/location.empty $(INSTALLDIR)/milkfish/etc/openser/dbtext/
+	install -m0644 milkfish/etc/openser/dbtext/subscriber $(INSTALLDIR)/milkfish/etc/openser/dbtext/
+	install -m0644 milkfish/etc/openser/dbtext/subscriber.empty $(INSTALLDIR)/milkfish/etc/openser/dbtext/
+	install -m0644 milkfish/etc/openser/dbtext/uri $(INSTALLDIR)/milkfish/etc/openser/dbtext/
+	install -m0644 milkfish/etc/openser/dbtext/uri.empty $(INSTALLDIR)/milkfish/etc/openser/dbtext/
+	install -m0644 milkfish/etc/openser/dbtext/version $(INSTALLDIR)/milkfish/etc/openser/dbtext/
+	install -d -m0755 $(INSTALLDIR)/milkfish/etc/config
+	install -m0755 milkfish/etc/config/milkfish.startup $(INSTALLDIR)/milkfish/etc/config/
+	install -m0755 milkfish/etc/config/milkfish.netup $(INSTALLDIR)/milkfish/etc/config/
+	install -d -m0755 $(INSTALLDIR)/milkfish/usr/sbin
+	install -m0755 milkfish/usr/sbin/milkfish_services $(INSTALLDIR)/milkfish/usr/sbin/
+	install -m0755 milkfish/usr/sbin/mf_sip_tracer.sh $(INSTALLDIR)/milkfish/usr/sbin
+	install -d -m0755 $(INSTALLDIR)/milkfish/usr/lib
+	install -m0644 milkfish/usr/lib/milkfish_functions.sh $(INSTALLDIR)/milkfish/usr/lib/
 
-	mv $(INSTALLDIR)/ser/usr/lib/openser/modules/nathelper.so $(INSTALLDIR)/ser/usr/lib/openser/modules/milkfish_nathelper.so
+milkfish-clean:
+	rm -rf $(INSTALLDIR)/milkfish/*
 
-
-
-
-ser-clean:
-	$(MAKE) -C ser clean
-	rm -rf $(INSTALLDIR)/ser/*
-	rm -rf $(INSTALLDIR)/www/*
 
 ctorrent-clean:
 	make -C ctorrent clean
