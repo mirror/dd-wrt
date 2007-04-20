@@ -6,6 +6,7 @@
 #include <utils.h>
 #include <malloc.h>
 #include <sys/stat.h>
+#include <syslog.h>
 
 void add_pppoe_natrule(void)
 {
@@ -265,12 +266,15 @@ start_pppoeserver (void)
 	  fclose (fp);
 	  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"), "-R", nvram_safe_get ("pppoeserver_remoteaddr"));	//todo, make interface and base address configurable, remote addr as well, see networking page options
 	}
+	syslog (LOG_INFO, "rp-pppoe : pppoe server successfully started\n");
     }
 }
 
 void
 stop_pppoeserver (void)
 {
+  if (pidof ("pppoe-server") > 0)
+    syslog (LOG_INFO, "rp-pppoe : pppoe server successfully stopped\n");
   killall ("pppoe-server", SIGTERM);
   del_pppoe_natrule();    
 }
