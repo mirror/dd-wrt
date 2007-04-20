@@ -7,11 +7,28 @@
 #include <malloc.h>
 #include <sys/stat.h>
 
+void add_pppoe_natrule(void)
+{
+char mask[128];
+sprintf(mask,"%s/%s",nvram_safe_get("pppoeserver_remotenet"),nvram_safe_get("pppoeserver_remotemask"));
+eval("iptables","-A","INPUT","-i",get_wan_face(),"-s",mask,"-j","DROP");
+eval("iptables","-t","nat","-A","POSTROUTING","-s",mask,"-j","SNAT","--to-source",nvram_safe_get("wan_ipaddr"));
+}
+
+void del_pppoe_natrule(void)
+{
+char mask[128];
+sprintf(mask,"%s/%s",nvram_safe_get("pppoeserver_remotenet"),nvram_safe_get("pppoeserver_remotemask"));
+eval("iptables","-D","INPUT","-i",get_wan_face(),"-s",mask,"-j","DROP");
+eval("iptables","-t","nat","-D","POSTROUTING","-s",mask,"-j","SNAT","--to-source",nvram_safe_get("wan_ipaddr"));
+}
+
 void
 start_pppoeserver (void)
 {
   if (nvram_default_match ("pppoeserver_enabled", "1", "0"))
     {
+    add_pppoe_natrule();
       if (nvram_default_match ("pppoeradius_enabled", "0", "0"))
 	{
 	  FILE *fp;
@@ -255,7 +272,7 @@ void
 stop_pppoeserver (void)
 {
   killall ("pppoe-server", SIGTERM);
-
+  del_pppoe_natrule();    
 }
 
 #endif
