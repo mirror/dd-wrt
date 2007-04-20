@@ -78,19 +78,23 @@ do_ntp (void)			// called from ntp_main and process_monitor_main; called every h
   float fofs;
   int dst, i;
   char *servers;
+  char tzon[8], tdst[2];
 
   if (!nvram_match ("ntp_enable", "1"))
     return 0;
 
-  if (sscanf (nvram_safe_get ("time_zone"), "%f %*d %d", &fofs, &dst) != 2)
-    {
-      fprintf (stderr, "invalid timezone\n");
-      return 1;			// OFS[.5] UNK DSTIDX
-    }
-  if (((i = atoi (nvram_safe_get ("dstcode"))) > 0) && (i <= 5))
-    dst = i;
-  if (!nvram_match ("daylight_time", "1"))
-    dst = 0;
+//convert old timezone format into new
+	if (strlen (nvram_safe_get("time_zone")) > 6)
+	{
+		sscanf (nvram_safe_get ("time_zone"), "%s %*d %s", &tzon, &tdst);
+		nvram_set ("time_zone", tzon);
+		nvram_set ("daylight_time", tdst);
+	}
+	
+    
+  sscanf (nvram_safe_get ("time_zone"), "%f", &fofs));
+  sscanf (nvram_safe_get ("daylight_time"), "%d", &dst));
+
 
   if (((servers = nvram_get ("ntp_server")) == NULL) || (*servers == 0))
     servers = "209.81.9.7 207.46.130.100 192.36.144.23 pool.ntp.org";
