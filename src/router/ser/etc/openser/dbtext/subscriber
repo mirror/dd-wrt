@@ -1,1 +1,0 @@
-phplib_id(str) username(str) domain(str) password(str) first_name(str,null) last_name(str,null) phone(str,null) email_address(str) datetime_created(int,null) datetime_modified(int,null) confirmation(str,null) flag(str,null) sendnotification(str,null) greeting(str,null) ha1(str) ha1b(str) allow_find(str) timezone(str,null) rpid(str,null) domn(int,null) uuid(str,null)
