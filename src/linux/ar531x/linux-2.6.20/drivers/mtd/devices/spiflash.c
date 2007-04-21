@@ -112,7 +112,7 @@ struct spiflash_data {
 	struct 	mtd_partition  *parsed_parts;     /* parsed partitions */
 	void 	*spiflash_readaddr; /* memory mapped data for read  */
 	void 	*spiflash_mmraddr;  /* memory mapped register space */
-	spinlock_t mutex;
+//	spinlock_t mutex;
 };
 
 static struct spiflash_data *spidata;
@@ -241,7 +241,7 @@ spiflash_erase (struct mtd_info *mtd,struct erase_info *instr)
 	ptr_opcode = &stm_opcodes[SPI_SECTOR_ERASE];
 
 	temp = ((__u32)instr->addr << 8) | (__u32)(ptr_opcode->code);
-	spin_lock(&spidata->mutex);
+//	spin_lock(&spidata->mutex);
 	spiflash_sendcmd(SPI_WRITE_ENABLE);
 	do {
 		schedule();
@@ -261,7 +261,7 @@ spiflash_erase (struct mtd_info *mtd,struct erase_info *instr)
 		}
 	} while (!finished);
 
-	spin_unlock(&spidata->mutex);
+//	spin_unlock(&spidata->mutex);
 
    	instr->state = MTD_ERASE_DONE;
 
@@ -290,10 +290,10 @@ spiflash_read (struct mtd_info *mtd, loff_t from,size_t len,size_t *retlen,u_cha
    	/* we always read len bytes */
    	*retlen = len;
 
+//	spin_lock(&spidata->mutex);
 	read_addr = (u_char *)(spidata->spiflash_readaddr + from);
-	spin_lock(&spidata->mutex);
 	memcpy(buf, read_addr, len);
-	spin_unlock(&spidata->mutex);
+//	spin_unlock(&spidata->mutex);
 
    	return (0);
 }
@@ -332,7 +332,7 @@ spiflash_write (struct mtd_info *mtd,loff_t to,size_t len,size_t *retlen,const u
 			xact_len -= (page_offset - STM_PAGE_SIZE);
 		}
 
-		spin_lock(&spidata->mutex);
+//		spin_lock(&spidata->mutex);
 		spiflash_sendcmd(SPI_WRITE_ENABLE);
 
 		do {
@@ -374,7 +374,7 @@ spiflash_write (struct mtd_info *mtd,loff_t to,size_t len,size_t *retlen,const u
 				finished = TRUE;
 			}
 		} while (!finished);
-		spin_unlock(&spidata->mutex);
+//		spin_unlock(&spidata->mutex);
 
 		bytes_left -= xact_len;
 		to += xact_len;
@@ -576,7 +576,7 @@ spiflash_init (void)
   	if (!spidata)
 		return (-ENXIO);
 
-	spin_lock_init(&spidata->mutex);
+//	spin_lock_init(&spidata->mutex);
 	platform_driver_register(&spiflash_driver);
 
 	return 0;

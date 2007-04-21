@@ -165,11 +165,11 @@ const char *get_system_type(void)
 	switch (mips_machtype) {
 #ifdef CONFIG_ATHEROS_AR5312
 	case MACH_ATHEROS_AR5312:
-		return "Atheros AR5312\n";
+		return "Atheros AR5312";
 #endif
 #ifdef CONFIG_ATHEROS_AR5315
 	case MACH_ATHEROS_AR5315:
-		return "Atheros AR5315\n";
+		return "Atheros AR5315";
 #endif
 	}
 	return "Atheros (unknown)";
