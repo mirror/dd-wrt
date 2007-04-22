@@ -1,8 +1,8 @@
-#ifdef HAVE_VLANTAGGING
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
 
+#ifdef HAVE_VLANTAGGING
 
 void
 start_vlantagging (void)
