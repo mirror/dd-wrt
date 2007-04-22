@@ -1419,7 +1419,7 @@ start_lan (void)
       eval ("ifconfig", "eth0:0", "down");
 //add fallback ip
       eval ("ifconfig", staticlan, "169.254.255.1", "netmask",
-	    "255.255.255.0");
+	    "255.255.0.0");
 
 #ifdef HAVE_FONERA
     }
@@ -1986,7 +1986,7 @@ start_wan (int status)
     {
       eval ("ifconfig", "br0:0", "down");
       eval ("ifconfig", staticlan, "169.254.255.1", "netmask",
-	    "255.255.255.0");
+	    "255.255.0.0");
     }
   else
     eval ("ifconfig", staticlan, "0.0.0.0", "down");
