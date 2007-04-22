@@ -4769,10 +4769,9 @@ ej_getwirelessssid (webs_t wp, int argc, char_t ** argv)
   char *mode = "wl0_ssid";
 #else
   char mode[32];
-  char m[32];
-  strncpy(m,nvram_safe_get("wifi_display"),4);
-  sprintf(mode,"%s_ssid",m);
+  sprintf(mode,"%s_ssid",nvram_safe_get("wifi_display"));
 #endif
+//fprintf(stderr,"Wireles SSID %s -> %s\n",mode,nvram_safe_get(mode));
 websWrite(wp,"%s",nvram_safe_get(mode));
 }
 static void
