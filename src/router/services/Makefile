@@ -16,7 +16,7 @@ CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libip
 CFLAGS  += $(COPTS) -fpic
 
 OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o iptable.o defaults.o \
-       bridgetools.o igmp.o wpa.o
+       bridgetools.o igmp.o wpa.o vlantagging.o
 
 
 ifneq ($(CONFIG_XSCALE),y)
@@ -56,7 +56,6 @@ CFLAGS += -DHAVE_USB
 endif
 ifeq ($(CONFIG_VLANTAGGING),y)
 CFLAGS += -DHAVE_VLANTAGGING
-OBJS += vlantagging.o
 endif
 ifeq ($(CONFIG_GW700),y)
 CFLAGS += -DHAVE_GW700
