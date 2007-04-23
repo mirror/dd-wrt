@@ -72,14 +72,19 @@ addEvent(window, "load", function() {
 							
 							<h2><% tran("service.pppoesrv_legend"); %></h2>
 
-<fieldset>
-	<legend><% tran("service.pppoesrv_legend"); %></legend>
-	<div class="setting">
-		<div class="label"><% tran("service.pppoesrv_srv"); %></div>
-		<input class="spaceradio" type="radio" name="pppoeserver_enabled" value="1" <% nvram_checked("pppoeserver_enabled", "1"); %> onclick="show_layer_ext(this, 'idpppoesrv', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="pppoeserver_enabled" value="0" <% nvram_checked("pppoeserver_enabled", "0"); %> onclick="show_layer_ext(this, 'idpppoesrv', false)" /><% tran("share.disable"); %>
-	</div>
-	<div id="idpppoesrv">
+	<fieldset>
+		<legend><% tran("service.pppoesrv_legend"); %></legend>
+			<div class="setting">
+			<div class="label"><% tran("service.pppoesrv_srv"); %></div>
+				<input class="spaceradio" type="radio" name="pppoeserver_enabled" value="1" <% nvram_checked("pppoeserver_enabled", "1"); %> onclick="show_layer_ext(this, 'idpppoesrv', true)" /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="pppoeserver_enabled" value="0" <% nvram_checked("pppoeserver_enabled", "0"); %> onclick="show_layer_ext(this, 'idpppoesrv', false)" /><% tran("share.disable"); %>
+			</div>
+	</fieldset><br />
+	
+<div id="idpppoesrv">
+
+	<fieldset>
+		<legend><% tran("service.pppoesrv_srvopt"); %></legend>
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_remoteaddr"); %></div>
 				<input maxlength="15" size="24" name="pppoeserver_remoteaddr" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_remoteaddr"); %>" />
@@ -144,7 +149,11 @@ addEvent(window, "load", function() {
 				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="1" <% nvram_checked("pppoeradius_enabled", "1"); %> onclick="toggle_layer_ext(this, 'idpppoerad', 'idpppoelocal', true)" />Radius&nbsp;
 				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="0" <% nvram_checked("pppoeradius_enabled", "0"); %> onclick="toggle_layer_ext(this, 'idpppoerad', 'idpppoelocal', false)" /><% tran("service.pppoesrv_chaps"); %>
 			</div>
-			<div id="idpppoerad">
+	</fieldset><br />
+
+<div id="idpppoerad">
+	<fieldset>
+		<legend>Radius <% tran("service.pppoesrv_auth"); %></legend>
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_radip"); %></div>
 				<input maxlength="15" size="24" name="pppoeserver_authserverip" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_authserverip"); %>" />
@@ -171,13 +180,13 @@ addEvent(window, "load", function() {
 				<div class="label"><% tran("service.pppoesrv_radkey"); %></div>
 				<input size="20" maxlength="63" type="password" name="pppoeserver_sharedkey" value="d6nw5v1x2pc7st9m" />
 			</div>
-			</div>
-			
-			<div id="idpppoelocal">
+	</fieldset>
+</div>
+
+<div id="idpppoelocal">
+	<fieldset>
+		<legend><% tran("service.pppoesrv_chaps"); %></legend>
 			<table class="table center" summary="chap secrets table">
-			<tr>
-				<th colspan="4"><% tran("service.pppoesrv_chaps"); %></th>
-			</tr>
 			<tr>
 				<th width="30%"><% tran("share.user"); %></th>
 				<th width="30%"><% tran("share.passwd"); %></th>
@@ -194,9 +203,11 @@ addEvent(window, "load", function() {
 				//]]>
 				</script>
 			</div>
-			</div>
-	</div>	
-</fieldset><br/>
+	</fieldset>
+</div>
+
+</div>
+<br/>
 
 							
 							<div class="submitFooter">

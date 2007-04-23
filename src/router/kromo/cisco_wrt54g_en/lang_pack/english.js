@@ -374,6 +374,7 @@ bmenu.adminUpgrade="Firmware Upgrade";
 bmenu.adminBackup="Backup";
 
 bmenu.services="Services";
+bmenu.servicesServices="Services";
 bmenu.servicesPpoesrv="PPPoE Server";
 bmenu.servicesHotspot="Hotspot";
 
@@ -1096,6 +1097,7 @@ service.pppoe_srv="Relay";
 //pppoe-server.webservices
 service.pppoesrv_legend="PPPoE Server";
 service.pppoesrv_srv="RP-PPPoE Server Daemon";
+service.pppoesrv_srvopt="RP-PPPoE Server Options";
 service.pppoesrv_compr="Compression";
 service.pppoesrv_remoteaddr="Remote Start IP";
 service.pppoesrv_remotenet="Remote Network IP";
