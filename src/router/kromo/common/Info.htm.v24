@@ -183,7 +183,9 @@ apply();
 						<div id="menuMain">
 							<ul id="menuMainList">
 								<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
+								<% haswifi("<!--"); %>
 								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
+								<% haswifi("-->"); %>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
 								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
