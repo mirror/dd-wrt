@@ -377,7 +377,7 @@ bmenu.services="Services";
 bmenu.servicesServices="Services";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesHotspot="Hotspot";
-bmenu.servicesMilkfish="Milkfish"
+bmenu.servicesMilkfish="Milkfish";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
