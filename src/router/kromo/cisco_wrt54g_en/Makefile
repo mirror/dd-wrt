@@ -293,6 +293,7 @@ endif
 ifneq ($(CONFIG_VLANTAGGING),y)
 	rm -f $(INSTALLDIR)/www/Networking.asp
 	rm -f $(INSTALLDIR)/www/Networking.live.asp
+	rm -f $(INSTALLDIR)/www/help/HNetworking.asp	
 endif
 
 ifneq ($(BACKUP_RESTORE_SUPPORT),1)
@@ -302,6 +303,7 @@ endif
 ifneq ($(CONFIG_UPNP),y)
 	rm -f $(INSTALLDIR)/www/UPnP.asp
 	rm -f $(INSTALLDIR)/www/UPnP.live.asp
+	rm -f $(INSTALLDIR)/www/help/HUPnP.asp
 endif
 
 ifneq ($(CONFIG_NOCAT),y)
@@ -319,9 +321,11 @@ endif
 
 ifneq ($(CONFIG_PPPOESERVER),y)
 	rm -f $(INSTALLDIR)/www/PPPoE_Server.asp
+	rm -f $(INSTALLDIR)/www/help/HPPPoE_Server.asp
 endif
 ifneq ($(CONFIG_MILKFISH),y)
 	rm -f $(INSTALLDIR)/www/Milkfish.asp
+	rm -f $(INSTALLDIR)/www/help/Milkfish.asp
 endif
 
 ifeq ($(CONFIG_RAMON),y)
