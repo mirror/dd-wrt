@@ -39,23 +39,6 @@ function checked(F) {
 		(F._nstx_log.checked == true) ? F.nstx_log.value = 1 : F.nstx_log.value = 0;
 	}
 	
-	if (F._pppoeserver_deflate) {
-		(F._pppoeserver_deflate.checked == true) ? F.pppoeserver_deflate.value = 1 : F.pppoeserver_deflate.value = 0;
-	}
-	
-	if (F._pppoeserver_bsdcomp) {
-		(F._pppoeserver_bsdcomp.checked == true) ? F.pppoeserver_bsdcomp.value = 1 : F.pppoeserver_bsdcomp.value = 0;
-	}
-	if (F._pppoeserver_lzs) {
-		(F._pppoeserver_lzs.checked == true) ? F.pppoeserver_lzs.value = 1 : F.pppoeserver_lzs.value = 0;
-	}
-	if (F._pppoeserver_mppc) {
-		(F._pppoeserver_mppc.checked == true) ? F.pppoeserver_mppc.value = 1 : F.pppoeserver_mppc.value = 0;
-	}
-	
-	if (F._pppoeserver_encryption) {
-		(F._pppoeserver_encryption.checked == true) ? F.pppoeserver_encryption.value = 1 : F.pppoeserver_encryption.value = 0;
-	}
 }
 
 function lease_add_submit(F) {
@@ -70,17 +53,6 @@ function lease_remove_submit(F) {
 	F.submit();
 }
 
-function chap_user_add_submit(F) {
-	F.submit_type.value = "add_chap_user";
-	checked(F);
-	F.submit();
-}
-
-function chap_user_remove_submit(F) {
-	F.submit_type.value = "remove_chap_user";
-	checked(F);
-	F.submit();
-}
 
 function to_reboot(F) {
 	F.change_action.value = "";
@@ -120,8 +92,6 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.setup.nstx_ipenable, 'idnstxip', <% nvram_else_match("nstx_ipenable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.nstxd_enable, 'idnstx', <% nvram_else_match("nstxd_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.oet1_en, 'idoet', <% nvram_else_match("oet1_en", "1", "1", "0"); %> == 1);
-		toggle_layer_ext(document.setup.pppoeradius_enabled, 'idpppoerad', 'idpppoelocal', <% nvram_else_match("pppoeradius_enabled", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.pppoeserver_enabled, 'idpppoesrv', <% nvram_else_match("pppoeserver_enabled", "1", "1", "0"); %> == 1);
 		
 		if(document.setup.rstats_enable) {
 			rstats_select = '*user';
@@ -152,7 +122,7 @@ addEvent(window, "load", function() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-					<% do_menu("Management.asp","Services.asp"); %>
+					<% do_menu("Services.asp","Services.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
@@ -168,12 +138,6 @@ addEvent(window, "load", function() {
 							<input type="hidden" name="dhcpd_usejffs" />
 							<input type="hidden" name="dhcpd_usenvram" />
 							<input type="hidden" name="nstx_log" />
-							<input type="hidden" name="pppoeserver_deflate" />
-							<input type="hidden" name="pppoeserver_bsdcomp" />
-							<input type="hidden" name="pppoeserver_lzs" />
-							<input type="hidden" name="pppoeserver_mppc" />
-							<input type="hidden" name="pppoeserver_encryption" />
-							<input type="hidden" name="pppoeserver_chaps" />
 							
 							<h2><% tran("service.h2"); %></h2>
 							<% show_modules(".webservices"); %>

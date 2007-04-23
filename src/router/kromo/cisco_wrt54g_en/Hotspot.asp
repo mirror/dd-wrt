@@ -45,7 +45,7 @@ addEvent(window, "load", function() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-					<% do_menu("Management.asp","Hotspot.asp"); %>
+					<% do_menu("Services.asp","Hotspot.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
