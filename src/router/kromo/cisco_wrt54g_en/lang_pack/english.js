@@ -375,6 +375,8 @@ bmenu.adminFactory="Factory Defaults";
 bmenu.adminUpgrade="Firmware Upgrade";
 bmenu.adminBackup="Backup";
 
+bmenu.services="Services";
+bmenu.pppoesrv="PPPoE Server";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
