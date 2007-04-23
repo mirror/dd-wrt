@@ -375,7 +375,7 @@ bmenu.adminBackup="Backup";
 
 bmenu.services="Services";
 bmenu.servicesServices="Services";
-bmenu.servicesPpoesrv="PPPoE Server";
+bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesHotspot="Hotspot";
 
 bmenu.statu="Status";
