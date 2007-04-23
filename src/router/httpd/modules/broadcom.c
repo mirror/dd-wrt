@@ -3973,21 +3973,14 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 #endif
 #endif
   char menu[9][11][32] =
-    { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp",
-       "eop-tunnel.asp", "Networking.asp", "", "", "", ""},
-  {"Wireless_Basic.asp", "Wireless_radauth.asp", "WL_WPATable.asp",
-   "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "",
-   "", "", ""},
-  {"Sipath.asp", "cgi-bin-mf-phonebook.html", "cgi-bin-mf-status.html", "",
-   "", "", "", "", "", "", ""},
+    { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp","eop-tunnel.asp", "Networking.asp", "", "", "", ""},
+  {"Wireless_Basic.asp", "Wireless_radauth.asp", "WL_WPATable.asp","Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "","", "", ""},
+  {"Services.asp", "PPPoE_Server.asp", "Hotspot.asp" , "Milkfish.asp", "", "", "", "", "", "", ""},
+  {"Sipath.asp", "cgi-bin-mf-phonebook.html", "cgi-bin-mf-status.html", "","", "", "", "", "", "", ""},
   {"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", ""},
   {"Filters.asp", "", "", "", "", "", "", "", "", "", ""},
-  {"Forward.asp", "ForwardSpec.asp", "Triggering.asp", "UPnP.asp", "DMZ.asp",
-   "QoS.asp", "P2P.asp", "", "", "", ""},
-  {"Management.asp", "Alive.asp",
-   "Diagnostics.asp", "Wol.asp", "Factory_Defaults.asp", "Upgrade.asp",
-   "config.asp", "", "", "", ""},
-  {"Services.asp", "PPPoE_Server.asp", "Hotspot.asp" , "Milkfish.asp", "", "", "", "", "", "", ""},
+  {"Forward.asp", "ForwardSpec.asp", "Triggering.asp", "UPnP.asp", "DMZ.asp","QoS.asp", "P2P.asp", "", "", "", ""},
+  {"Management.asp", "Alive.asp","Diagnostics.asp", "Wol.asp", "Factory_Defaults.asp", "Upgrade.asp","config.asp", "", "", "", ""},
   {"Status_Router.asp", "Status_Lan.asp", "Status_Wireless.asp",
    "Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp",
    "Info.htm", "", "", "", ""}
