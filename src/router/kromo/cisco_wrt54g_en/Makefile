@@ -317,7 +317,9 @@ ifneq ($(CONFIG_WIVIZ),y)
 	rm -f $(INSTALLDIR)/www/Wiviz.live.asp
 endif
 
-
+ifneq ($(CONFIG_PPPOESERVER),y)
+	rm -f $(INSTALLDIR)/www/PPPoE_Server.asp
+endif
 
 ifeq ($(CONFIG_RAMON),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/newmedia/ install
