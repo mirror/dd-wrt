@@ -331,6 +331,10 @@ CFLAGS += -DHAVE_PPPOESERVER
 OBJS += chaps.c
 endif
 
+ifeq ($(CONFIG_MILKFISH),y)
+CFLAGS += -DHAVE_MILKFISH
+endif
+
 #OBJS += http.o
 
 ifneq ($(CONFIG_NOSSL),y)
