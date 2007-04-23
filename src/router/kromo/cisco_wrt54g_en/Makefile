@@ -320,6 +320,9 @@ endif
 ifneq ($(CONFIG_PPPOESERVER),y)
 	rm -f $(INSTALLDIR)/www/PPPoE_Server.asp
 endif
+ifneq ($(CONFIG_MILKFISH),y)
+	rm -f $(INSTALLDIR)/www/Milkfish.asp
+endif
 
 ifeq ($(CONFIG_RAMON),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/newmedia/ install
