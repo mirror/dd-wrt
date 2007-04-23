@@ -3987,7 +3987,7 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   {"Management.asp", "Alive.asp",
    "Diagnostics.asp", "Wol.asp", "Factory_Defaults.asp", "Upgrade.asp",
    "config.asp", "", "", "", ""},
-  {"Services.asp", "PPPoE_Server.asp", "Hotspot.asp" , "", "", "", "", "", "", "", ""},
+  {"Services.asp", "PPPoE_Server.asp", "Hotspot.asp" , "Milkfish.asp", "", "", "", "", "", "", ""},
   {"Status_Router.asp", "Status_Lan.asp", "Status_Wireless.asp",
    "Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp",
    "Info.htm", "", "", "", ""}
@@ -4009,7 +4009,7 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   {"admin", "adminManagement", "adminAlive",
    "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup",
    "", "", ""},
-  {"services", "servicesServices", "servicesPppoesrv", "servicesHotspot", "", "", "", "", "", ""},
+  {"services", "servicesServices", "servicesPppoesrv", "servicesHotspot", "servicesMilkish", "", "", "", "", ""},
   {"statu", "statuRouter", "statuLAN", "statuWLAN", "statuSputnik",
    "statuVPN", "statuBand", "statuSysInfo", "", "", ""}
   };
@@ -4067,7 +4067,10 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 	      if (!strcmp (menu[i][j], "PPPoE_Server.asp"))
 		j++;
 #endif
-
+#ifndef HAVE_MILKFISH
+	      if (!strcmp (menu[i][j], "Milkfish.asp"))
+		j++;
+#endif
 #ifndef HAVE_VLANTAGGING
 	      if (!strcmp (menu[i][j], "Networking.asp"))
 		j++;
