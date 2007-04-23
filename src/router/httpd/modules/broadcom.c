@@ -2879,8 +2879,8 @@ struct gozila_action gozila_actions[] = {
   {"Services", "add_lease", "", 0, REFRESH, lease_add},
   {"Services", "remove_lease", "", 0, REFRESH, lease_remove},
 #ifdef HAVE_PPPOESERVER
-  {"Services", "add_chap_user", "", 0, REFRESH, chap_user_add}, 
-  {"Services", "remove_chap_user", "", 0, REFRESH, chap_user_remove},
+  {"PPPoE_Server", "add_chap_user", "", 0, REFRESH, chap_user_add}, 
+  {"PPPoE_Server", "remove_chap_user", "", 0, REFRESH, chap_user_remove},
 #endif
 #ifdef HAVE_CHILLILOCAL
   {"Hotspot", "add_user", "", 0, REFRESH, user_add},
@@ -3040,9 +3040,12 @@ struct apply_action apply_actions[] = {
 
   /* MANAGEMENT */
   {"Management", "management", 0, SYS_RESTART, NULL},
-  {"Hotspot", "hotspot", 0, SERVICE_RESTART, NULL},
   {"Services", "services", 0, SERVICE_RESTART, NULL},
   {"Alive", "alive", 0, SERVICE_RESTART, NULL},
+  
+  /* SERVICES*/
+  {"PPPoE_Server", "services", 0, SERVICE_RESTART, NULL},
+  {"Hotspot", "hotspot", 0, SERVICE_RESTART, NULL},
 
   /* APP & GAMING */
   {"Forward", "forward", 0, SERVICE_RESTART, NULL},
@@ -3969,9 +3972,9 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   int wifi = haswifi ();
 #endif
 #endif
-  char menu[8][11][32] =
+  char menu[9][11][32] =
     { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp",
-       "eop-tunnel.asp", "Networking.asp", "", "", ""},
+       "eop-tunnel.asp", "Networking.asp", "", "", "", ""},
   {"Wireless_Basic.asp", "Wireless_radauth.asp", "WL_WPATable.asp",
    "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "",
    "", "", ""},
@@ -3981,18 +3984,19 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   {"Filters.asp", "", "", "", "", "", "", "", "", "", ""},
   {"Forward.asp", "ForwardSpec.asp", "Triggering.asp", "UPnP.asp", "DMZ.asp",
    "QoS.asp", "P2P.asp", "", "", "", ""},
-  {"Management.asp", "Hotspot.asp", "Services.asp", "Alive.asp",
+  {"Management.asp", "Alive.asp",
    "Diagnostics.asp", "Wol.asp", "Factory_Defaults.asp", "Upgrade.asp",
-   "config.asp", "", ""},
+   "config.asp", "", "", "", ""},
+  {"Services.asp", "PPPoE_Server.asp", "Hotspot.asp" , "", "", "", "", "", "", "", ""},
   {"Status_Router.asp", "Status_Lan.asp", "Status_Wireless.asp",
    "Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp",
    "Info.htm", "", "", "", ""}
   };
 
 /* real name is bmenu.menuname[i][j] */
-  char menuname[8][11][32] =
+  char menuname[9][11][32] =
     { {"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting",
-       "setupvlan", "setupeop", "networking", "", "", ""},
+       "setupvlan", "setupeop", "networking", "", "", "", ""},
   {"wireless", "wirelessBasic", "wirelessRadius", "wirelessSecurity",
    "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", "", ""},
   {"sipath", "sipathoverview", "sipathphone", "sipathstatus", "", "", "", "",
@@ -4002,9 +4006,10 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   {"applications", "applicationsprforwarding", "applicationspforwarding",
    "applicationsptriggering", "applicationsUpnp", "applicationsDMZ",
    "applicationsQoS", "applicationsP2P", "", "", ""},
-  {"admin", "adminManagement", "adminHotspot", "adminServices", "adminAlive",
+  {"admin", "adminManagement", "adminAlive",
    "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup",
-   ""},
+   "", "", ""},
+  {"services", "servicesPppoesrv", "servicesHotspot", "", "", "", "", "", "", ""},
   {"statu", "statuRouter", "statuLAN", "statuWLAN", "statuSputnik",
    "statuVPN", "statuBand", "statuSysInfo", "", "", ""}
   };
@@ -4058,6 +4063,11 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 	      if (!strcmp (menu[i][j], "eop-tunnel.asp"))
 		j++;
 #endif
+#ifndef HAVE_PPPOESERVER
+	      if (!strcmp (menu[i][j], "PPPoE_Server.asp"))
+		j++;
+#endif
+
 #ifndef HAVE_VLANTAGGING
 	      if (!strcmp (menu[i][j], "Networking.asp"))
 		j++;
