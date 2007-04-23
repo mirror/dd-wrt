@@ -4031,7 +4031,7 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, " <div id=\"menuMain\">\n");
   websWrite (wp, "  <ul id=\"menuMainList\">\n");
 
-  for (i = 0; i < 8; i++)
+  for (i = 0; i < 9; i++)
     {
 #ifdef HAVE_MADWIFI
       if (!wifi && !strcmp (menu[i][0], "Wireless_Basic.asp"))
