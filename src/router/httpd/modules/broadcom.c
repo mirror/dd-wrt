@@ -3973,9 +3973,9 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 #endif
 #endif
   char menu[9][11][32] =
-    { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp","eop-tunnel.asp", "Networking.asp", "", "", "", ""},
+    { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp", "Networking.asp", "","", "", "", ""},
   {"Wireless_Basic.asp", "Wireless_radauth.asp", "WL_WPATable.asp","Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "","", "", ""},
-  {"Services.asp", "PPPoE_Server.asp", "Hotspot.asp" , "Milkfish.asp", "", "", "", "", "", "", ""},
+  {"Services.asp", "PPPoE_Server.asp", "Hotspot.asp" , "Milkfish.asp","eop-tunnel.asp", "", "", "", "", "", ""},
   {"Sipath.asp", "cgi-bin-mf-phonebook.html", "cgi-bin-mf-status.html", "","", "", "", "", "", "", ""},
   {"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", ""},
   {"Filters.asp", "", "", "", "", "", "", "", "", "", ""},
