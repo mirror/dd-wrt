@@ -35,6 +35,16 @@ function chap_user_remove_submit(F) {
 	F.submit();
 }
 
+function to_submit(F) {
+	F.change_action.value = "";
+	F.submit_type.value = "";
+	F.save_button.value = sbutton.saving;
+	checked(F);
+	apply(F);
+}
+
+
+
 addEvent(window, "load", function() {
 
 		toggle_layer_ext(document.setup.pppoeradius_enabled, 'idpppoerad', 'idpppoelocal', <% nvram_else_match("pppoeradius_enabled", "1", "1", "0"); %> == 1);
