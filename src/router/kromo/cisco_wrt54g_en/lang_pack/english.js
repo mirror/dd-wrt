@@ -365,8 +365,6 @@ bmenu.sipathstatus="Status";
 
 bmenu.admin="Administration";
 bmenu.adminManagement="Management";
-bmenu.adminHotspot="Hotspot";
-bmenu.adminServices="Services";
 bmenu.adminAlive="Keep Alive";
 bmenu.adminLog="Log";
 bmenu.adminDiag="Commands";
@@ -376,7 +374,8 @@ bmenu.adminUpgrade="Firmware Upgrade";
 bmenu.adminBackup="Backup";
 
 bmenu.services="Services";
-bmenu.pppoesrv="PPPoE Server";
+bmenu.servicesPpoesrv="PPPoE Server";
+bmenu.servicesHotspot="Hotspot";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
