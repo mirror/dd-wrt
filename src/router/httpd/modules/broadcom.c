@@ -4009,7 +4009,7 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   {"admin", "adminManagement", "adminAlive",
    "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup",
    "", "", ""},
-  {"services", "servicesServices", "servicesPppoesrv", "servicesHotspot", "servicesMilkish", "", "", "", "", ""},
+  {"services", "servicesServices", "servicesPppoesrv", "servicesHotspot", "servicesMilkish", "", "", "", "", "", ""},
   {"statu", "statuRouter", "statuLAN", "statuWLAN", "statuSputnik",
    "statuVPN", "statuBand", "statuSysInfo", "", "", ""}
   };
