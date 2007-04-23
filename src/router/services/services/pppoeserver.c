@@ -8,20 +8,35 @@
 #include <sys/stat.h>
 #include <syslog.h>
 
-void add_pppoe_natrule(void)
+void
+add_pppoe_natrule (void)
 {
-char mask[128];
-sprintf(mask,"%s/%s",nvram_safe_get("pppoeserver_remotenet"),nvram_safe_get("pppoeserver_remotemask"));
-eval("iptables","-A","INPUT","-i",get_wan_face(),"-s",mask,"-j","DROP");
-eval("iptables","-t","nat","-A","POSTROUTING","-s",mask,"-j","SNAT","--to-source",nvram_safe_get("wan_ipaddr"));
+
+  if (nvram_match ("wan_proto", "disabled"))
+    {
+      char mask[128];
+      sprintf (mask, "%s/%s", nvram_safe_get ("pppoeserver_remotenet"),
+	       nvram_safe_get ("pppoeserver_remotemask"));
+      eval ("iptables", "-A", "INPUT", "-i", nvram_get ("lan_ipaddr"), "-s",
+	    mask, "-j", "DROP");
+      eval ("iptables", "-t", "nat", "-A", "POSTROUTING", "-s", mask, "-j",
+	    "SNAT", "--to-source", nvram_get ("lan_ipaddr"));
+    }
 }
 
-void del_pppoe_natrule(void)
+void
+del_pppoe_natrule (void)
 {
-char mask[128];
-sprintf(mask,"%s/%s",nvram_safe_get("pppoeserver_remotenet"),nvram_safe_get("pppoeserver_remotemask"));
-eval("iptables","-D","INPUT","-i",get_wan_face(),"-s",mask,"-j","DROP");
-eval("iptables","-t","nat","-D","POSTROUTING","-s",mask,"-j","SNAT","--to-source",nvram_safe_get("wan_ipaddr"));
+  if (nvram_match ("wan_proto", "disabled"))
+    {
+      char mask[128];
+      sprintf (mask, "%s/%s", nvram_safe_get ("pppoeserver_remotenet"),
+	       nvram_safe_get ("pppoeserver_remotemask"));
+      eval ("iptables", "-D", "INPUT", "-i", nvram_get ("lan_ipaddr"), "-s",
+	    mask, "-j", "DROP");
+      eval ("iptables", "-t", "nat", "-D", "POSTROUTING", "-s", mask, "-j",
+	    "SNAT", "--to-source", nvram_get ("lan_ipaddr"));
+    }
 }
 
 void
@@ -29,7 +44,7 @@ start_pppoeserver (void)
 {
   if (nvram_default_match ("pppoeserver_enabled", "1", "0"))
     {
-    add_pppoe_natrule();
+      add_pppoe_natrule ();
       if (nvram_default_match ("pppoeradius_enabled", "0", "0"))
 	{
 	  FILE *fp;
@@ -266,7 +281,7 @@ start_pppoeserver (void)
 	  fclose (fp);
 	  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"), "-R", nvram_safe_get ("pppoeserver_remoteaddr"));	//todo, make interface and base address configurable, remote addr as well, see networking page options
 	}
-	syslog (LOG_INFO, "rp-pppoe : pppoe server successfully started\n");
+      syslog (LOG_INFO, "rp-pppoe : pppoe server successfully started\n");
     }
 }
 
@@ -276,7 +291,7 @@ stop_pppoeserver (void)
   if (pidof ("pppoe-server") > 0)
     syslog (LOG_INFO, "rp-pppoe : pppoe server successfully stopped\n");
   killall ("pppoe-server", SIGTERM);
-  del_pppoe_natrule();    
+  del_pppoe_natrule ();
 }
 
 #endif
