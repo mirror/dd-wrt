@@ -360,8 +360,6 @@ bmenu.sipathstatus="Statut";
 
 bmenu.admin="Administration";
 bmenu.adminManagement="Gestion";
-bmenu.adminHotspot="Hotspot";
-bmenu.adminServices="Services";
 bmenu.adminAlive="Keep Alive";
 bmenu.adminLog="Journal";
 bmenu.adminDiag="Shell";
@@ -369,6 +367,12 @@ bmenu.adminWol="WOL";
 bmenu.adminFactory="Paramètres usine";
 bmenu.adminUpgrade="Mise à jour";
 bmenu.adminBackup="Sauvegarde";
+
+bmenu.services="Services";
+bmenu.servicesServices="Services";
+bmenu.servicesPppoesrv="Serveur PPPoE";
+bmenu.servicesHotspot="Hotspot";
+bmenu.servicesMilkfish="Milkfish";
 
 bmenu.statu="Statut";
 bmenu.statuRouter="Routeur";
@@ -1119,6 +1123,7 @@ service.pppoe_srv="Relais ";
 //pppoe-server.webservices
 service.pppoesrv_legend="Serveur PPPoE";
 service.pppoesrv_srv="Serveur RP-PPPoE";
+service.pppoesrv_srvopt="Options du serveur RP-PPPoE";
 service.pppoesrv_compr="Compression";
 service.pppoesrv_remoteaddr="Remote Start IP";
 service.pppoesrv_remotenet="Remote Network IP";
