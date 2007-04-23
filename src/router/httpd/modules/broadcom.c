@@ -3988,12 +3988,10 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 
 /* real name is bmenu.menuname[i][j] */
   char menuname[9][11][32] =
-    { {"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting",
-       "setupvlan", "setupeop", "networking", "", "", "", ""},
-  {"wireless", "wirelessBasic", "wirelessRadius", "wirelessSecurity",
-   "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", "", ""},
-  {"sipath", "sipathoverview", "sipathphone", "sipathstatus", "", "", "", "",
-   "", "", ""},
+    { {"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting","setupvlan", "networking", "","", "", "", ""},
+  {"wireless", "wirelessBasic", "wirelessRadius", "wirelessSecurity","wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", "", ""},
+  {"services", "servicesServices", "servicesPppoesrv", "servicesHotspot", "servicesMilkfish", "setupeop", "", "", "", "", ""},
+  {"sipath", "sipathoverview", "sipathphone", "sipathstatus", "", "", "", "","", "", ""},
   {"security", "firwall", "vpn", "", "", "", "", "", "", "", ""},
   {"accrestriction", "webaccess", "", "", "", "", "", "", "", "", ""},
   {"applications", "applicationsprforwarding", "applicationspforwarding",
@@ -4002,7 +4000,6 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   {"admin", "adminManagement", "adminAlive",
    "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup",
    "", "", ""},
-  {"services", "servicesServices", "servicesPppoesrv", "servicesHotspot", "servicesMilkfish", "", "", "", "", "", ""},
   {"statu", "statuRouter", "statuLAN", "statuWLAN", "statuSputnik",
    "statuVPN", "statuBand", "statuSysInfo", "", "", ""}
   };
