@@ -42,16 +42,16 @@ addEvent(window, "load", function() {
 	<fieldset>
 		<legend><% tran("bmenu.servicesMilkfish"); %></legend>
 			<div class="setting">
-			<div class="label">bmenu.servicesMilkfish"); %></div>
+			<div class="label"><% tran("bmenu.servicesMilkfish"); %></div>
 				<input class="spaceradio" type="radio" name="milkfish_enabled" value="1" <% nvram_checked("milkfish_enabled", "1"); %> onclick="show_layer_ext(this, 'idmilkfish', true)" /><% tran("share.enable"); %>&nbsp;
 				<input class="spaceradio" type="radio" name="milkfish_enabled" value="0" <% nvram_checked("milkfish_enabled", "0"); %> onclick="show_layer_ext(this, 'idmilkfish', false)" /><% tran("share.disable"); %>
 			</div>
 	</fieldset><br />
 	
-<div id="idpppoesrv">
+<div id="idmilkfish">
 
 	<fieldset>
-		<legend>bmenu.servicesMilkfish</legend>
+		<legend><% tran("bmenu.servicesMilkfish"); %></legend>
 
 	</fieldset>
 	
