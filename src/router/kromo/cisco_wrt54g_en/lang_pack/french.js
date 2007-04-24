@@ -371,6 +371,7 @@ bmenu.adminBackup="Sauvegarde";
 bmenu.services="Services";
 bmenu.servicesServices="Services";
 bmenu.servicesPppoesrv="Serveur PPPoE";
+bmenu.servicesPptp="PPTP";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Milkfish";
 
@@ -456,7 +457,7 @@ ddnsm.all_noip="Connexion WAN non détect&#233;e";
 //help container
 
 hddns.right2="DDNS vous permet d\'attribuer un nom de domaine et d\'hôte fixe à une adresse IP Internet dynamique. Cela peut s\'avérer utile si vous hébergez votre propre site Web, un serveur FTP ou tout autre type de serveur derrière le routeur. <br /><br />Avant d\'opter pour cette fonctionnalité, vous devez souscrire à un service DDNS auprès de fournisseurs spécialisés, tels que DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com ou alors choisissez <em>Personalisé</em> si vous connaissez tous les paramètres.";
-hddns.right4="Saisir un nombre de jour après lequel la mise à jour sera forcée même si l'adresse IP reste inchangée. Les mises à jour doivent se faire automatiquement quand votre adresse IP change. Renseignez-vous après de votre fourisseur DDNS pour connaître sa politique contre les abus; vous éviterez ainsi d'avoir votre compte bloqué.";
+hddns.right4="Saisir un nombre de jour après lequel la mise à jour sera forcée même si l'adresse IP reste inchangée. Les mises à jour doivent se faire automatiquement quand votre adresse IP change. Renseignez-vous auprès de votre fournisseur DDNS pour connaître sa politique contre les abus; vous éviterez ainsi d'avoir votre compte bloqué.";
 
 
 
@@ -599,7 +600,7 @@ prforward.app="Application";
 
 //help container
 
-hprforward.right2="Certaines applications nécessitent d\'ouvrir des ports spécifiques pour fonctionner correctement. Il peut s\'agir de certains jeux en ligne, les serveurs type FTP, messagerie, web etc ... Certaines applications Internet peuvent n\'exiger aucun transfert. Quand une demande sur un port bien précis venant d\'Internet se présente au niveau du routeur, celui-ci transfert les données vers l\'ordinateur adéquate. En raison des problématiques de sécurité, vous pouvez activer ou désactiver les transferts de connexion quand ils ne sont pas nécessaires grâce à la case à cocher <em>" + share.enable +"</em>.";
+hprforward.right2="Certaines applications nécessitent d\'ouvrir des ports spécifiques pour fonctionner correctement. Il peut s\'agir de certains jeux en ligne, les serveurs type FTP, messagerie, web etc ... Certaines applications Internet peuvent n\'exiger aucun transfert. Quand une demande sur un port bien précis venant d\'Internet se présente au niveau du routeur, celui-ci transfert les données vers l\'ordinateur adéquat. En raison des problématiques de sécurité, vous pouvez activer ou désactiver les transferts de connexion quand ils ne sont pas nécessaires grâce à la case à cocher <em>" + share.enable +"</em>.";
 
 
 // ******************************************* P2P.asp *******************************************//
@@ -629,7 +630,7 @@ pforward.to="vers le Port";
 
 //help container
 
-hpforward.right2="Certaines applications nécessitent d\'ouvrir des ports spécifiques pour fonctionner correctement. Il peut s\'agir de certains jeux en ligne, les serveurs type FTP, messagerie, web etc ... Certaines applications Internet peuvent n\'exiger aucun transfert. Quand une demande sur un port bien précis venant d\'Internet se présente au niveau du routeur, celui-ci transfert les données vers l\'ordinateur adéquate. En raison des problématiques de sécurité, vous pouvez activer ou désactiver les transferts de connexion quand ils ne sont pas nécessaires grâce à la case à cocher <em>" + share.enable +"</em>.";
+hpforward.right2="Certaines applications nécessitent d\'ouvrir des ports spécifiques pour fonctionner correctement. Il peut s\'agir de certains jeux en ligne, les serveurs type FTP, messagerie, web etc ... Certaines applications Internet peuvent n\'exiger aucun transfert. Quand une demande sur un port bien précis venant d\'Internet se présente au niveau du routeur, celui-ci transfert les données vers l\'ordinateur adéquat. En raison des problématiques de sécurité, vous pouvez activer ou désactiver les transferts de connexion quand ils ne sont pas nécessaires grâce à la case à cocher <em>" + share.enable +"</em>.";
 
 
 
@@ -717,7 +718,7 @@ info.titl="Information";
 info.h2="Information du Système";
 info.wlanmac="WLAN MAC";
 info.srv="Services";
-info.ap="Points d\'Access";
+info.ap="Points d'Accès";
 
 
 
@@ -726,7 +727,7 @@ info.ap="Points d\'Access";
 
 idx_h.srv="Serveur Heart Beat";
 idx_h.con_strgy="Stratégie de connexion";
-idx_h.max_idle="Connexion à la demande : délai d\'inactivité maximal";
+idx_h.max_idle="Connexion à la demande : délai d'inactivité maximal";
 idx_h.alive="Maintenir la connexion : rappel après";
 
 
@@ -810,7 +811,7 @@ idx.ntp_client="Client NTP";
 hidx.right2="Vous devez conserver cette option uniquement si votre FAI prend en charge le protocole DHCP ou si vous vous connectez via une adresse IP dynamique (cas des câblo-opérateurs).";
 hidx.right4="Saisissez le nom d\'hôte du routeur qui vous est fourni pour votre FAI. Dans la plupart des cas, vous pourrez laisser ce champ vide.";
 hidx.right6="Saisissez le nom de domaine du routeur qui vous est fourni pour votre FAI. Dans la plupart des cas, vous pourrez laisser ce champ vide.";
-hidx.right8="Saisissez l\'dresse IP du routeur.";
+hidx.right8="Saisissez l'adresse IP du routeur.";
 hidx.right10="Saisissez le masque de sous-réseau du routeur.";
 hidx.right12="Vous pouvez utiliser le routeur en tant que serveur DHCP de votre réseau. Un serveur DHCP permet d\'attribuer automatiquement une adresse IP à chaque ordinateur de votre réseau.";
 hidx.right14="Saisissez une valeur de début pour la publication d\'adresses IP sur le serveur DHCP.";
@@ -1025,7 +1026,7 @@ routetbl.th1="IP Destination sur le LAN";
 
 route.titl="Routage";
 route.h2="Routage Avancé";
-route.mod="Mode de Fonctonnement";
+route.mod="Mode de Fonctionnement";
 route.bgp_legend="Paramètres BGP";
 route.bgp_ip="Neighbor IP";
 route.bgp_as="Neighbor AS#";
@@ -1247,10 +1248,10 @@ hstatus_lan.right10="En cliquant sur n\'importe quelle adresse Mac, vous obtiend
 
 // ******************************************* Status_Router.asp *******************************************//
 
-status_router.titl="Statut du Router";
-status_router.h2="Informations Router";
+status_router.titl="Statut du Routeur";
+status_router.h2="Informations Routeur";
 status_router.legend="Système";
-status_router.sys_model="Modèle du Router";
+status_router.sys_model="Modèle du Routeur";
 status_router.sys_firmver="Version du Firmware";
 status_router.sys_time="Heure courante";
 status_router.sys_up="Système démarré depuis";
@@ -1282,13 +1283,13 @@ status_router.cputemp="Température CPU";
 
 //help container
 
-hstatus_router.right2="Nom du routeur bmenu.wirelessWds0que vous avez configuré dans l\'onglet <i>Setup</i>.";
+hstatus_router.right2="Nom du routeur que vous avez configuré dans l'onglet <em>Setup</em>.";
 hstatus_router.right4="Adresse Mac vue par votre provider Internet";
 hstatus_router.right6="Firmware utilisé sur votre routeur";
-hstatus_router.right8="Ceci est la date reçue depuis le serveur ntp configurable dans l\'onglet <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em>.";
-hstatus_router.right10="Temps écoulé depuis le dernier démarrage/redémarrage du routeur.";
+hstatus_router.right8="Ceci est la date reçue depuis le serveur ntp configurable dans l'onglet <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em>.";
+hstatus_router.right10="Temps écoulé depuis le dernier arrêt/relance du routeur.";
 hstatus_router.right12="Ce sont 3 nombres qui mesurent la charge de votre routeur sur une période de 1, 5 et 15 minutes.";
-hstatus_router.right14="Ce sont les informations requise par votre provider afin de vous connecter à Internet, configurée dans l\'onglet Setup. Vous pouvez connecter votre routeur à Internet en cliquant sur <em>Connect</em> ou le déconnecter en cliquant sur <em>Disconnect</em>.";
+hstatus_router.right14="Ce sont les informations requises par votre FAI afin de vous connecter à Internet et qui sont configurées dans l'onglet <em>Setup</em>. Vous pouvez connecter votre routeur à Internet en cliquant sur <em>Connect</em> ou le déconnecter en cliquant sur <em>Disconnect</em>.";
 
 
 // ******************************************* Status_Conntrack.asp *******************************************//
@@ -1400,7 +1401,7 @@ upnp.msg2="Etes vous sûr de vouloir effacer toutes les régles UPNP ?";
 
 //help container
 
-hupnp.right2="Cliquer sur le bouton de suppression pour effacer une régle de redirection de port.";
+hupnp.right2="Cliquer sur le bouton de suppression pour effacer une règle de redirection de port.";
 hupnp.right4="Permet aux applications de créer automatiquement des redirections de ports.";
 
 
@@ -1657,7 +1658,7 @@ wl_adv.label14="Préambule";
 wl_adv.reference="Référence de bruit";
 wl_adv.label15="Puissance Xmit";
 wl_adv.label16="SpeedBooster";
-wl_adv.label17="Accès à la console an sans fil";
+wl_adv.label17="Accès à la console par WIFI";
 wl_adv.label18="Support de WMM";
 wl_adv.label19="No-Acknowledgement";
 wl_adv.label20="Mode Shortslot";
