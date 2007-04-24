@@ -1,0 +1,761 @@
+diff -urN 1/README 2/README
+--- 1/README	2005-08-26 14:56:53.000000000 +0200
++++ 2/README	2006-05-30 01:51:29.000000000 +0200
+@@ -66,6 +66,10 @@
+ * Lots of bugs fixed, particularly in the area of demand-dialled and
+   persistent connections.
+ 
++* The rp-pppoe plugin now accepts any interface name (that isn't an
++  existing pppd option name) without putting "nic-" on the front of
++  it, not just eth*, nas*, tap* and br*.
++
+ 
+ What was new in ppp-2.4.3.
+ **************************
+@@ -272,4 +276,4 @@
+ 	ftp://ftp.samba.org/pub/ppp/
+ 
+ 
+-($Id: README,v 1.36 2005/08/26 12:56:53 paulus Exp $)
++($Id: README,v 1.37 2006/05/29 23:51:29 paulus Exp $)
+diff -urN 1/chat/Makefile.linux 2/chat/Makefile.linux
+--- 1/chat/Makefile.linux	2004-11-03 12:51:47.000000000 +0100
++++ 2/chat/Makefile.linux	2006-06-04 07:07:46.000000000 +0200
+@@ -1,6 +1,6 @@
+-#	$Id: Makefile.linux,v 1.13 2004/11/03 11:51:47 paulus Exp $
++#	$Id: Makefile.linux,v 1.15 2006/06/04 05:07:46 paulus Exp $
+ 
+-DESTDIR = @DESTDIR@
++DESTDIR = $(INSTROOT)@DESTDIR@
+ BINDIR = $(DESTDIR)/sbin
+ MANDIR = $(DESTDIR)/share/man/man8
+ 
+@@ -24,7 +24,7 @@
+ 	$(CC) -c $(CFLAGS) -o chat.o chat.c
+ 
+ install: chat
+-	mkdir -p $(BINDIR)
++	mkdir -p $(BINDIR) $(MANDIR)
+ 	$(INSTALL) -s -c chat $(BINDIR)
+ 	$(INSTALL) -c -m 644 chat.8 $(MANDIR)
+ 
+diff -urN 1/linux/Makefile.top 2/linux/Makefile.top
+--- 1/linux/Makefile.top	2004-10-31 23:25:16.000000000 +0100
++++ 2/linux/Makefile.top	2006-06-04 07:04:14.000000000 +0200
+@@ -1,10 +1,10 @@
+ # PPP top-level Makefile for Linux.
+ 
+-DESTDIR = @DESTDIR@
++DESTDIR = $(INSTROOT)@DESTDIR@
+ BINDIR = $(DESTDIR)/sbin
+ INCDIR = $(DESTDIR)/include
+ MANDIR = $(DESTDIR)/share/man
+-ETCDIR = @SYSCONF@/ppp
++ETCDIR = $(INSTROOT)@SYSCONF@/ppp
+ 
+ # uid 0 = root
+ INSTALL= install
+diff -urN 1/pppd/Makefile.linux 2/pppd/Makefile.linux
+--- 1/pppd/Makefile.linux	2005-07-12 03:50:23.000000000 +0200
++++ 2/pppd/Makefile.linux	2006-06-04 07:07:46.000000000 +0200
+@@ -1,10 +1,10 @@
+ #
+ # pppd makefile for Linux
+-# $Id: Makefile.linux,v 1.68 2005/07/12 01:50:23 paulus Exp $
++# $Id: Makefile.linux,v 1.69 2006/06/04 05:07:46 paulus Exp $
+ #
+ 
+ # Default installation locations
+-DESTDIR = @DESTDIR@
++DESTDIR = $(INSTROOT)@DESTDIR@
+ BINDIR = $(DESTDIR)/sbin
+ MANDIR = $(DESTDIR)/share/man/man8
+ INCDIR = $(DESTDIR)/include
+diff -urN 1/pppd/auth.c 2/pppd/auth.c
+--- 1/pppd/auth.c	2005-08-28 07:22:48.000000000 +0200
++++ 2/pppd/auth.c	2006-06-18 13:26:00.000000000 +0200
+@@ -68,7 +68,7 @@
+  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  */
+ 
+-#define RCSID	"$Id: auth.c,v 1.108 2005/08/28 05:22:48 paulus Exp $"
++#define RCSID	"$Id: auth.c,v 1.112 2006/06/18 11:26:00 paulus Exp $"
+ 
+ #include <stdio.h>
+ #include <stddef.h>
+@@ -409,6 +409,7 @@
+ {
+     FILE *ufile;
+     int l;
++    uid_t euid;
+     char u[MAXNAMELEN], p[MAXSECRETLEN];
+     char *fname;
+ 
+@@ -418,9 +419,14 @@
+     fname = strdup(*argv);
+     if (fname == NULL)
+ 	novm("+ua file name");
+-    seteuid(getuid());
++    euid = geteuid();
++    if (seteuid(getuid()) == -1) {
++	option_error("unable to reset uid before opening %s: %m", fname);
++	return 0;
++    }
+     ufile = fopen(fname, "r");
+-    seteuid(0);
++    if (seteuid(euid) == -1)
++	fatal("unable to regain privileges: %m");
+     if (ufile == NULL) {
+ 	option_error("unable to open user login data file %s", fname);
+ 	return 0;
+@@ -746,8 +752,8 @@
+ 	    set_allowed_addrs(unit, NULL, NULL);
+ 	} else if (!wo->neg_upap || uselogin || !null_login(unit)) {
+ 	    warn("peer refused to authenticate: terminating link");
+-	    lcp_close(unit, "peer refused to authenticate");
+ 	    status = EXIT_PEER_AUTH_FAILED;
++	    lcp_close(unit, "peer refused to authenticate");
+ 	    return;
+ 	}
+     }
+@@ -906,8 +912,8 @@
+     /*
+      * Authentication failure: take the link down
+      */
+-    lcp_close(unit, "Authentication failed");
+     status = EXIT_PEER_AUTH_FAILED;
++    lcp_close(unit, "Authentication failed");
+ }
+ 
+ /*
+@@ -984,8 +990,8 @@
+      * is no point in persisting without any way to get updated
+      * authentication secrets.
+      */
+-    lcp_close(unit, "Failed to authenticate ourselves to peer");
+     status = EXIT_AUTH_TOPEER_FAILED;
++    lcp_close(unit, "Failed to authenticate ourselves to peer");
+ }
+ 
+ /*
+@@ -1149,9 +1155,9 @@
+     diff = maxoctets - used;
+     if(diff < 0) {
+ 	notice("Traffic limit reached. Limit: %u Used: %u", maxoctets, used);
++	status = EXIT_TRAFFIC_LIMIT;
+ 	lcp_close(0, "Traffic limit");
+ 	need_holdoff = 0;
+-	status = EXIT_TRAFFIC_LIMIT;
+     } else {
+         TIMEOUT(check_maxoctets, NULL, maxoctets_timeout);
+     }
+@@ -1181,9 +1187,9 @@
+     if (tlim <= 0) {
+ 	/* link is idle: shut it down. */
+ 	notice("Terminating connection due to lack of activity.");
++	status = EXIT_IDLE_TIMEOUT;
+ 	lcp_close(0, "Link inactive");
+ 	need_holdoff = 0;
+-	status = EXIT_IDLE_TIMEOUT;
+     } else {
+ 	TIMEOUT(check_idle, NULL, tlim);
+     }
+diff -urN 1/pppd/cbcp.c 2/pppd/cbcp.c
+--- 1/pppd/cbcp.c	2004-10-28 02:15:36.000000000 +0200
++++ 2/pppd/cbcp.c	2006-05-22 02:04:07.000000000 +0200
+@@ -33,7 +33,7 @@
+  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  */
+ 
+-#define RCSID	"$Id: cbcp.c,v 1.16 2004/10/28 00:15:36 paulus Exp $"
++#define RCSID	"$Id: cbcp.c,v 1.17 2006/05/22 00:04:07 paulus Exp $"
+ 
+ #include <stdio.h>
+ #include <string.h>
+@@ -483,6 +483,6 @@
+     cbcp_state *us;
+ {
+     persist = 0;
+-    lcp_close(0, "Call me back, please");
+     status = EXIT_CALLBACK;
++    lcp_close(0, "Call me back, please");
+ }
+diff -urN 1/pppd/chap_ms.c 2/pppd/chap_ms.c
+--- 1/pppd/chap_ms.c	2004-11-15 23:13:26.000000000 +0100
++++ 2/pppd/chap_ms.c	2006-05-21 13:56:40.000000000 +0200
+@@ -74,7 +74,7 @@
+  *
+  */
+ 
+-#define RCSID	"$Id: chap_ms.c,v 1.34 2004/11/15 22:13:26 paulus Exp $"
++#define RCSID	"$Id: chap_ms.c,v 1.36 2006/05/21 11:56:40 paulus Exp $"
+ 
+ #ifdef CHAPMS
+ 
+@@ -98,7 +98,7 @@
+ 
+ 
+ static void	ascii2unicode __P((char[], int, u_char[]));
+-static void	NTPasswordHash __P((char *, int, u_char[MD4_SIGNATURE_SIZE]));
++static void	NTPasswordHash __P((u_char *, int, u_char[MD4_SIGNATURE_SIZE]));
+ static void	ChallengeResponse __P((u_char *, u_char *, u_char[24]));
+ static void	ChapMS_NT __P((u_char *, char *, int, u_char[24]));
+ static void	ChapMS2_NT __P((u_char *, u_char[16], char *, char *, int,
+@@ -390,7 +390,7 @@
+ 	 * chapms[2]_verify_response.
+ 	 */
+ 	if (!strncmp(p, "E=", 2))
+-		err = strtol(p, NULL, 10); /* Remember the error code. */
++		err = strtol(p+2, NULL, 10); /* Remember the error code. */
+ 	else
+ 		goto print_msg; /* Message is badly formatted. */
+ 
+@@ -507,7 +507,7 @@
+ }
+ 
+ static void
+-NTPasswordHash(char *secret, int secret_len, u_char hash[MD4_SIGNATURE_SIZE])
++NTPasswordHash(u_char *secret, int secret_len, u_char hash[MD4_SIGNATURE_SIZE])
+ {
+ #ifdef __NetBSD__
+     /* NetBSD uses the libc md4 routines which take bytes instead of bits */
+@@ -518,7 +518,13 @@
+     MD4_CTX		md4Context;
+ 
+     MD4Init(&md4Context);
+-    MD4Update(&md4Context, (unsigned char *)secret, mdlen);
++    /* MD4Update can take at most 64 bytes at a time */
++    while (mdlen > 512) {
++	MD4Update(&md4Context, secret, 512);
++	secret += 64;
++	mdlen -= 512;
++    }
++    MD4Update(&md4Context, secret, mdlen);
+     MD4Final(hash, &md4Context);
+ 
+ }
+@@ -532,7 +538,7 @@
+ 
+     /* Hash the Unicode version of the secret (== password). */
+     ascii2unicode(secret, secret_len, unicodePassword);
+-    NTPasswordHash((char *)unicodePassword, secret_len * 2, PasswordHash);
++    NTPasswordHash(unicodePassword, secret_len * 2, PasswordHash);
+ 
+     ChallengeResponse(rchallenge, PasswordHash, NTResponse);
+ }
+@@ -549,7 +555,7 @@
+ 
+     /* Hash the Unicode version of the secret (== password). */
+     ascii2unicode(secret, secret_len, unicodePassword);
+-    NTPasswordHash((char *)unicodePassword, secret_len * 2, PasswordHash);
++    NTPasswordHash(unicodePassword, secret_len * 2, PasswordHash);
+ 
+     ChallengeResponse(Challenge, PasswordHash, NTResponse);
+ }
+@@ -637,8 +643,8 @@
+ 
+     /* Hash (x2) the Unicode version of the secret (== password). */
+     ascii2unicode(secret, secret_len, unicodePassword);
+-    NTPasswordHash((char *)unicodePassword, secret_len * 2, PasswordHash);
+-    NTPasswordHash((char *)PasswordHash, sizeof(PasswordHash),
++    NTPasswordHash(unicodePassword, secret_len * 2, PasswordHash);
++    NTPasswordHash(PasswordHash, sizeof(PasswordHash),
+ 		   PasswordHashHash);
+ 
+     GenerateAuthenticatorResponse(PasswordHashHash, NTResponse, PeerChallenge,
+diff -urN 1/pppd/lcp.c 2/pppd/lcp.c
+--- 1/pppd/lcp.c	2004-11-15 09:37:30.000000000 +0100
++++ 2/pppd/lcp.c	2006-05-22 02:04:07.000000000 +0200
+@@ -40,7 +40,7 @@
+  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  */
+ 
+-#define RCSID	"$Id: lcp.c,v 1.75 2004/11/14 22:53:42 carlsonj Exp $"
++#define RCSID	"$Id: lcp.c,v 1.76 2006/05/22 00:04:07 paulus Exp $"
+ 
+ /*
+  * TODO:
+@@ -1305,8 +1305,8 @@
+ 	if (looped_back) {
+ 	    if (++try.numloops >= lcp_loopbackfail) {
+ 		notice("Serial line is looped back.");
+-		lcp_close(f->unit, "Loopback detected");
+ 		status = EXIT_LOOPBACK;
++		lcp_close(f->unit, "Loopback detected");
+ 	    }
+ 	} else
+ 	    try.numloops = 0;
+@@ -2233,8 +2233,8 @@
+     if (f->state == OPENED) {
+ 	info("No response to %d echo-requests", lcp_echos_pending);
+         notice("Serial link appears to be disconnected.");
+-        lcp_close(f->unit, "Peer not responding");
+ 	status = EXIT_PEER_DEAD;
++	lcp_close(f->unit, "Peer not responding");
+     }
+ }
+ 
+diff -urN 1/pppd/main.c 2/pppd/main.c
+--- 1/pppd/main.c	2005-08-26 01:59:34.000000000 +0200
++++ 2/pppd/main.c	2006-06-04 05:52:50.000000000 +0200
+@@ -66,7 +66,7 @@
+  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  */
+ 
+-#define RCSID	"$Id: main.c,v 1.152 2005/08/25 23:59:34 paulus Exp $"
++#define RCSID	"$Id: main.c,v 1.153 2006/06/04 03:52:50 paulus Exp $"
+ 
+ #include <stdio.h>
+ #include <ctype.h>
+@@ -242,6 +242,7 @@
+ static void open_ccp __P((int));
+ static void bad_signal __P((int));
+ static void holdoff_end __P((void *));
++static void forget_child __P((int pid, int status));
+ static int reap_kids __P((void));
+ static void childwait_end __P((void *));
+ 
+@@ -1711,7 +1712,7 @@
+ 		    continue;
+ 		fatal("error waiting for script %s: %m", prog);
+ 	    }
+-	    reap_kids();
++	    forget_child(pid, status);
+ 	}
+ 	return pid;
+     }
+@@ -1789,6 +1790,35 @@
+ }
+ 
+ /*
++ * forget_child - clean up after a dead child
++ */
++static void
++forget_child(pid, status)
++    int pid, status;
++{
++    struct subprocess *chp, **prevp;
++
++    for (prevp = &children; (chp = *prevp) != NULL; prevp = &chp->next) {
++        if (chp->pid == pid) {
++	    --n_children;
++	    *prevp = chp->next;
++	    break;
++	}
++    }
++    if (WIFSIGNALED(status)) {
++        warn("Child process %s (pid %d) terminated with signal %d",
++	     (chp? chp->prog: "??"), pid, WTERMSIG(status));
++    } else if (debug)
++        dbglog("Script %s finished (pid %d), status = 0x%x",
++	       (chp? chp->prog: "??"), pid,
++	       WIFEXITED(status) ? WEXITSTATUS(status) : status);
++    if (chp && chp->done)
++        (*chp->done)(chp->arg);
++    if (chp)
++        free(chp);
++}
++
++/*
+  * reap_kids - get status from any dead child processes,
+  * and log a message for abnormal terminations.
+  */
+@@ -1796,29 +1826,11 @@
+ reap_kids()
+ {
+     int pid, status;
+-    struct subprocess *chp, **prevp;
+ 
+     if (n_children == 0)
+ 	return 0;
+     while ((pid = waitpid(-1, &status, WNOHANG)) != -1 && pid != 0) {
+-	for (prevp = &children; (chp = *prevp) != NULL; prevp = &chp->next) {
+-	    if (chp->pid == pid) {
+-		--n_children;
+-		*prevp = chp->next;
+-		break;
+-	    }
+-	}
+-	if (WIFSIGNALED(status)) {
+-	    warn("Child process %s (pid %d) terminated with signal %d",
+-		 (chp? chp->prog: "??"), pid, WTERMSIG(status));
+-	} else if (debug)
+-	    dbglog("Script %s finished (pid %d), status = 0x%x",
+-		   (chp? chp->prog: "??"), pid,
+-		   WIFEXITED(status) ? WEXITSTATUS(status) : status);
+-	if (chp && chp->done)
+-	    (*chp->done)(chp->arg);
+-	if (chp)
+-	    free(chp);
++        forget_child(pid, status);
+     }
+     if (pid == -1) {
+ 	if (errno == ECHILD)
+diff -urN 1/pppd/md4.c 2/pppd/md4.c
+--- 1/pppd/md4.c	1998-11-07 07:55:41.000000000 +0100
++++ 2/pppd/md4.c	2006-05-21 08:43:44.000000000 +0200
+@@ -249,7 +249,8 @@
+     byte = count >> 3;
+     bit =  count & 7;
+     /* Copy X into XX since we need to modify it */
+-    for (i=0;i<=byte;i++)   XX[i] = X[i];
++    if (count)
++      for (i=0;i<=byte;i++) XX[i] = X[i];
+     for (i=byte+1;i<64;i++) XX[i] = 0;
+     /* Add padding '1' bit and low-order zeros in last byte */
+     mask = 1 << (7 - bit);
+diff -urN 1/pppd/options.c 2/pppd/options.c
+--- 1/pppd/options.c	2005-07-13 14:31:36.000000000 +0200
++++ 2/pppd/options.c	2006-06-18 13:26:00.000000000 +0200
+@@ -40,7 +40,7 @@
+  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  */
+ 
+-#define RCSID	"$Id: options.c,v 1.98 2005/07/13 12:31:36 paulus Exp $"
++#define RCSID	"$Id: options.c,v 1.100 2006/06/18 11:26:00 paulus Exp $"
+ 
+ #include <ctype.h>
+ #include <stdio.h>
+@@ -399,16 +399,20 @@
+     option_t *opt;
+     int oldpriv, n;
+     char *oldsource;
++    uid_t euid;
+     char *argv[MAXARGS];
+     char args[MAXARGS][MAXWORDLEN];
+     char cmd[MAXWORDLEN];
+ 
+-    if (check_prot)
+-	seteuid(getuid());
++    euid = geteuid();
++    if (check_prot && seteuid(getuid()) == -1) {
++	option_error("unable to drop privileges to open %s: %m", filename);
++	return 0;
++    }
+     f = fopen(filename, "r");
+     err = errno;
+-    if (check_prot)
+-	seteuid(0);
++    if (check_prot && seteuid(euid) == -1)
++	fatal("unable to regain privileges");
+     if (f == NULL) {
+ 	errno = err;
+ 	if (!must_exist) {
+@@ -1510,15 +1514,19 @@
+     char **argv;
+ {
+     int fd, err;
++    uid_t euid;
+ 
+-    if (!privileged_option)
+-	seteuid(getuid());
++    euid = geteuid();
++    if (!privileged_option && seteuid(getuid()) == -1) {
++	option_error("unable to drop permissions to open %s: %m", *argv);
++	return 0;
++    }
+     fd = open(*argv, O_WRONLY | O_APPEND | O_CREAT | O_EXCL, 0644);
+     if (fd < 0 && errno == EEXIST)
+ 	fd = open(*argv, O_WRONLY | O_APPEND);
+     err = errno;
+-    if (!privileged_option)
+-	seteuid(0);
++    if (!privileged_option && seteuid(euid) == -1)
++	fatal("unable to regain privileges: %m");
+     if (fd < 0) {
+ 	errno = err;
+ 	option_error("Can't open log file %s: %m", *argv);
+diff -urN 1/pppd/patchlevel.h 2/pppd/patchlevel.h
+--- 1/pppd/patchlevel.h	2005-08-28 09:10:06.000000000 +0200
++++ 2/pppd/patchlevel.h	2006-06-28 02:21:23.000000000 +0200
+@@ -1,4 +1,4 @@
+-/* $Id: patchlevel.h,v 1.64 2005/08/28 07:10:06 paulus Exp $ */
++/* $Id: patchlevel.h,v 1.66 2006/06/28 00:21:23 paulus Exp $ */
+ 
+-#define VERSION		"2.4.4b1"
+-#define DATE		"28 August 2005"
++#define VERSION		"2.4.4"
++#define DATE		"28 June 2006"
+diff -urN 1/pppd/plugins/Makefile.linux 2/pppd/plugins/Makefile.linux
+--- 1/pppd/plugins/Makefile.linux	2005-08-29 00:49:20.000000000 +0200
++++ 2/pppd/plugins/Makefile.linux	2006-06-04 07:04:14.000000000 +0200
+@@ -4,7 +4,7 @@
+ LDFLAGS	= -shared
+ INSTALL	= install
+ 
+-DESTDIR = @DESTDIR@
++DESTDIR = $(INSTROOT)@DESTDIR@
+ BINDIR = $(DESTDIR)/sbin
+ MANDIR = $(DESTDIR)/share/man/man8
+ LIBDIR = $(DESTDIR)/lib/pppd/$(VERSION)
+diff -urN 1/pppd/plugins/passprompt.c 2/pppd/plugins/passprompt.c
+--- 1/pppd/plugins/passprompt.c	2003-05-01 09:22:07.000000000 +0200
++++ 2/pppd/plugins/passprompt.c	2006-06-16 01:57:02.000000000 +0200
+@@ -50,7 +50,7 @@
+     }
+     if (!kid) {
+ 	/* we are the child, exec the program */
+-	char *argv[4], fdstr[32];
++	char *argv[5], fdstr[32];
+ 	sys_close();
+ 	closelog();
+ 	close(p[0]);
+diff -urN 1/pppd/plugins/pppoatm/pppoatm.c 2/pppd/plugins/pppoatm/pppoatm.c
+--- 1/pppd/plugins/pppoatm/pppoatm.c	2004-11-06 07:55:28.000000000 +0100
++++ 2/pppd/plugins/pppoatm/pppoatm.c	2006-05-21 14:44:41.000000000 +0200
+@@ -133,7 +133,7 @@
+ 	int fd;
+ 	struct atm_qos qos;
+ 
+-	system ("/sbin/modprobe pppoatm");
++	system ("/sbin/modprobe -q pppoatm");
+ 
+ 	if (!device_got_set)
+ 		no_device_given_pppoatm();
+diff -urN 1/pppd/plugins/radius/Makefile.linux 2/pppd/plugins/radius/Makefile.linux
+--- 1/pppd/plugins/radius/Makefile.linux	2004-11-14 08:02:31.000000000 +0100
++++ 2/pppd/plugins/radius/Makefile.linux	2006-06-04 07:04:14.000000000 +0200
+@@ -3,7 +3,7 @@
+ # Copyright 2002 Roaring Penguin Software Inc.
+ #
+ 
+-DESTDIR = @DESTDIR@
++DESTDIR = $(INSTROOT)@DESTDIR@
+ MANDIR = $(DESTDIR)/share/man/man8
+ LIBDIR = $(DESTDIR)/lib/pppd/$(VERSION)
+ 
+diff -urN 1/pppd/plugins/radius/radius.c 2/pppd/plugins/radius/radius.c
+--- 1/pppd/plugins/radius/radius.c	2005-07-10 12:28:55.000000000 +0200
++++ 2/pppd/plugins/radius/radius.c	2006-05-22 02:01:40.000000000 +0200
+@@ -24,7 +24,7 @@
+ *
+ ***********************************************************************/
+ static char const RCSID[] =
+-"$Id: radius.c,v 1.30 2005/07/10 10:28:55 paulus Exp $";
++"$Id: radius.c,v 1.31 2006/05/22 00:01:40 paulus Exp $";
+ 
+ #include "pppd.h"
+ #include "chap-new.h"
+@@ -1019,6 +1019,10 @@
+ 	    av_type = PW_ACCT_IDLE_TIMEOUT;
+ 	    break;
+ 
++	case EXIT_CALLBACK:
++	    av_type = PW_CALLBACK;
++	    break;
++	    
+ 	case EXIT_CONNECT_TIME:
+ 	    av_type = PW_ACCT_SESSION_TIMEOUT;
+ 	    break;
+diff -urN 1/pppd/plugins/rp-pppoe/Makefile.linux 2/pppd/plugins/rp-pppoe/Makefile.linux
+--- 1/pppd/plugins/rp-pppoe/Makefile.linux	2004-11-14 08:58:37.000000000 +0100
++++ 2/pppd/plugins/rp-pppoe/Makefile.linux	2006-06-04 07:07:46.000000000 +0200
+@@ -10,10 +10,10 @@
+ # This program may be distributed according to the terms of the GNU
+ # General Public License, version 2 or (at your option) any later version.
+ #
+-# $Id: Makefile.linux,v 1.6 2004/11/14 07:58:37 paulus Exp $
++# $Id: Makefile.linux,v 1.7 2006/06/04 05:07:46 paulus Exp $
+ #***********************************************************************
+ 
+-DESTDIR = @DESTDIR@
++DESTDIR = $(INSTROOT)@DESTDIR@
+ BINDIR = $(DESTDIR)/sbin
+ LIBDIR = $(DESTDIR)/lib/pppd/$(PPPDVERSION)
+ 
+diff -urN 1/pppd/plugins/rp-pppoe/plugin.c 2/pppd/plugins/rp-pppoe/plugin.c
+--- 1/pppd/plugins/rp-pppoe/plugin.c	2005-08-25 12:51:27.000000000 +0200
++++ 2/pppd/plugins/rp-pppoe/plugin.c	2006-05-30 01:29:16.000000000 +0200
+@@ -22,7 +22,7 @@
+ ***********************************************************************/
+ 
+ static char const RCSID[] =
+-"$Id: plugin.c,v 1.14 2005/08/25 10:51:27 paulus Exp $";
++"$Id: plugin.c,v 1.15 2006/05/29 23:29:16 paulus Exp $";
+ 
+ #define _GNU_SOURCE 1
+ #include "pppoe.h"
+@@ -253,16 +253,14 @@
+     int fd;
+     struct ifreq ifr;
+ 
+-    /* Only do it if name is "ethXXX", "nasXXX", "tapXXX" or "nic-XXXX.
+-       In latter case strip off the "nic-" */
+-    /* Thanks to Russ Couturier for this fix */
++    /*
++     * Take any otherwise-unrecognized option as a possible device name,
++     * and test if it is the name of a network interface with a
++     * hardware address whose sa_family is ARPHRD_ETHER.
++     */
+     if (strlen(cmd) > 4 && !strncmp(cmd, "nic-", 4)) {
+ 	/* Strip off "nic-" */
+ 	cmd += 4;
+-    } else if (strlen(cmd) < 4
+-	       || (strncmp(cmd, "eth", 3) && strncmp(cmd, "nas", 3)
+-		   && strncmp(cmd, "tap", 3) && strncmp(cmd, "br", 2))) {
+-	return 0;
+     }
+ 
+     /* Open a socket */
+@@ -280,8 +278,9 @@
+ 		r = 0;
+ 	    } else {
+ 		if (ifr.ifr_hwaddr.sa_family != ARPHRD_ETHER) {
+-		    error("Interface %s not Ethernet", cmd);
+-		    r=0;
++		    if (doit)
++			error("Interface %s not Ethernet", cmd);
++		    r = 0;
+ 		}
+ 	    }
+ 	}
+@@ -289,7 +288,7 @@
+ 
+     /* Close socket */
+     close(fd);
+-    if (r) {
++    if (r && doit) {
+ 	strncpy(devnam, cmd, sizeof(devnam));
+ 	if (the_channel != &pppoe_channel) {
+ 
+diff -urN 1/pppd/plugins/winbind.c 2/pppd/plugins/winbind.c
+--- 1/pppd/plugins/winbind.c	2005-07-12 09:34:43.000000000 +0200
++++ 2/pppd/plugins/winbind.c	2006-06-04 08:15:32.000000000 +0200
+@@ -296,15 +296,18 @@
+ 
+ 	if (forkret == 0) {
+ 		/* child process */
++		uid_t uid;
++
+ 		close(child_out[0]);
+ 		close(child_in[1]);
+ 
+ 		/* run winbind as the user that invoked pppd */
+ 		setgid(getgid());
+-		setuid(getuid());
++		uid = getuid();
++		if (setuid(uid) == -1 || getuid() != uid)
++			fatal("pppd/winbind: could not setuid to %d: %m", uid);
+ 		execl("/bin/sh", "sh", "-c", ntlm_auth, NULL);  
+-		perror("pppd/winbind: could not exec /bin/sh");
+-		exit(1);
++		fatal("pppd/winbind: could not exec /bin/sh: %m");
+ 	}
+ 
+         /* parent */
+diff -urN 1/pppd/pppd.8 2/pppd/pppd.8
+--- 1/pppd/pppd.8	2005-08-28 07:21:24.000000000 +0200
++++ 2/pppd/pppd.8	2006-06-16 02:01:23.000000000 +0200
+@@ -1,5 +1,5 @@
+ .\" manual page [] for pppd 2.4
+-.\" $Id: pppd.8,v 1.87 2005/08/28 05:21:24 paulus Exp $
++.\" $Id: pppd.8,v 1.88 2006/06/16 00:01:23 paulus Exp $
+ .\" SH section heading
+ .\" SS subsection heading
+ .\" LP paragraph
+@@ -1791,7 +1791,10 @@
+ .TP
+ .B SIGINT, SIGTERM
+ These signals cause pppd to terminate the link (by closing LCP),
+-restore the serial device settings, and exit.
++restore the serial device settings, and exit.  If a connector or
++disconnector process is currently running, pppd will send the same
++signal to its process group, so as to terminate the connector or
++disconnector process.
+ .TP
+ .B SIGHUP
+ This signal causes pppd to terminate the link, restore the serial
+@@ -1800,6 +1803,8 @@
+ serial device and start another connection (after the holdoff period).
+ Otherwise pppd will exit.  If this signal is received during the
+ holdoff period, it causes pppd to end the holdoff period immediately.
++If a connector or disconnector process is running, pppd will send the
++same signal to its process group.
+ .TP
+ .B SIGUSR1
+ This signal toggles the state of the \fIdebug\fR option.
+diff -urN 1/pppd/sha1.c 2/pppd/sha1.c
+--- 1/pppd/sha1.c	2004-10-25 01:28:02.000000000 +0200
++++ 2/pppd/sha1.c	2006-05-21 08:59:24.000000000 +0200
+@@ -121,18 +121,17 @@
+     j = (context->count[0] >> 3) & 63;
+     if ((context->count[0] += len << 3) < (len << 3)) context->count[1]++;
+     context->count[1] += (len >> 29);
+-    if ((j + len) > 63) {
+-	memcpy(&context->buffer[j], data, (i = 64-j));
++    i = 64 - j;
++    while (len >= i) {
++	memcpy(&context->buffer[j], data, i);
+ 	SHA1_Transform(context->state, context->buffer);
+-	for ( ; i + 63 < len; i += 64) {
+-	    SHA1_Transform(context->state, &data[i]);
+-	}
++	data += i;
++	len -= i;
++	i = 64;
+ 	j = 0;
+     }
+-    else
+-	i = 0;
+ 
+-    memcpy(&context->buffer[j], &data[i], len - i);
++    memcpy(&context->buffer[j], data, len);
+ }
+ 
+ 
+diff -urN 1/pppd/tty.c 2/pppd/tty.c
+--- 1/pppd/tty.c	2005-07-12 03:09:05.000000000 +0200
++++ 2/pppd/tty.c	2006-06-04 09:04:57.000000000 +0200
+@@ -68,7 +68,7 @@
+  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  */
+ 
+-#define RCSID	"$Id: tty.c,v 1.24 2005/07/12 01:09:05 paulus Exp $"
++#define RCSID	"$Id: tty.c,v 1.25 2006/06/04 07:04:57 paulus Exp $"
+ 
+ #include <stdio.h>
+ #include <ctype.h>
+@@ -563,12 +563,16 @@
+ 			int err, prio;
+ 
+ 			prio = privopen? OPRIO_ROOT: tty_options[0].priority;
+-			if (prio < OPRIO_ROOT)
+-				seteuid(uid);
++			if (prio < OPRIO_ROOT && seteuid(uid) == -1) {
++				error("Unable to drop privileges before opening %s: %m\n",
++				      devnam);
++				status = EXIT_OPEN_FAILED;
++				goto errret;
++			}
+ 			real_ttyfd = open(devnam, O_NONBLOCK | O_RDWR, 0);
+ 			err = errno;
+-			if (prio < OPRIO_ROOT)
+-				seteuid(0);
++			if (prio < OPRIO_ROOT && seteuid(0) == -1)
++				fatal("Unable to regain privileges");
+ 			if (real_ttyfd >= 0)
+ 				break;
+ 			errno = err;
+diff -urN 1/pppdump/Makefile.linux 2/pppdump/Makefile.linux
+--- 1/pppdump/Makefile.linux	2004-10-31 02:36:52.000000000 +0200
++++ 2/pppdump/Makefile.linux	2006-06-04 07:04:14.000000000 +0200
+@@ -1,4 +1,4 @@
+-DESTDIR = @DESTDIR@
++DESTDIR = $(INSTROOT)@DESTDIR@
+ BINDIR = $(DESTDIR)/sbin
+ MANDIR = $(DESTDIR)/share/man/man8
+ 
+diff -urN 1/pppstats/Makefile.linux 2/pppstats/Makefile.linux
+--- 1/pppstats/Makefile.linux	2004-10-31 23:09:03.000000000 +0100
++++ 2/pppstats/Makefile.linux	2006-06-04 07:07:46.000000000 +0200
+@@ -1,8 +1,8 @@
+ #
+ # pppstats makefile
+-# $Id: Makefile.linux,v 1.8 2004/10/31 22:09:03 paulus Exp $
++# $Id: Makefile.linux,v 1.9 2006/06/04 05:07:46 paulus Exp $
+ #
+-DESTDIR = @DESTDIR@
++DESTDIR = $(INSTROOT)@DESTDIR@
+ BINDIR = $(DESTDIR)/sbin
+ MANDIR = $(DESTDIR)/share/man/man8
+ 
