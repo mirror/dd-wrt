@@ -109,7 +109,7 @@ List any webservers, that you would like connecting clients to be able to access
 			<ul>
 				<li><a href="HWPA.asp"><% tran("bmenu.wirelessSecurity"); %></a></li>
 				<li><a href="HWireless.asp"><% tran("bmenu.wirelessBasic"); %></a></li>
-				<li><a href="HServices.asp"><% tran("bmenu.adminServices"); %></a></li>
+				<li><a href="HServices.asp"><% tran("bmenu.servicesServices"); %></a></li>
 			</ul>
 		</div>
 	</body>

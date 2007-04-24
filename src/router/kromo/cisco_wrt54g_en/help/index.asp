@@ -27,6 +27,15 @@
 						<li><a href="HWDS.asp"><% tran("bmenu.wirelessWds"); %></a></li>
 					</ul>
 				</dd>
+				<dt><% tran("bmenu.services"); %></dt>
+				<dd>
+					<ul>
+						<li><a href="HServices.asp"><% tran("bmenu.servicesServices"); %></a></li>
+						<li><a href="HPPPoE_Server.asp"><% tran("bmenu.servicesPppoesrv"); %></a></li>
+						<li><a href="HPPTP.asp"><% tran("bmenu.servicesPptp"); %></a></li>
+						<li><a href="HHotspot.asp"><% tran("bmenu.servicesHotspot"); %></a></li>
+					</ul>
+				</dd>
 				<dt><% tran("bmenu.security"); %></dt>
 				<dd>
 					<ul>
@@ -55,8 +64,6 @@
 				<dd>
 					<ul>
 						<li><a href="HManagement.asp"><% tran("bmenu.adminManagement"); %></a></li>
-						<li><a href="HHotspot.asp"><% tran("bmenu.adminHotspot"); %></a></li>
-						<li><a href="HServices.asp"><% tran("bmenu.adminServices"); %></a></li>
 						<li><a href="HAlive.asp"><% tran("bmenu.adminAlive"); %></a></li>
 						<li><a href="HDiagnostics.asp"><% tran("bmenu.adminDiag"); %></a></li>
 						<li><a href="HWol.asp"><% tran("bmenu.adminWol"); %></a></li>
