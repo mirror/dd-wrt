@@ -4050,16 +4050,17 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 #endif
 	      if ((!vlan_supp) && !strcmp (menu[i][j], "Vlan.asp"))	//jump over VLANs if vlan not supported
 		j++;
-#ifndef HAVE_EOP_TUNNEL
-	      if (!strcmp (menu[i][j], "eop-tunnel.asp"))
-		j++;
-#endif
+
 #ifndef HAVE_PPPOESERVER
 	      if (!strcmp (menu[i][j], "PPPoE_Server.asp"))
 		j++;
 #endif
 #ifndef HAVE_MILKFISH
 	      if (!strcmp (menu[i][j], "Milkfish.asp"))
+		j++;
+#endif
+#ifndef HAVE_EOP_TUNNEL
+	      if (!strcmp (menu[i][j], "eop-tunnel.asp"))
 		j++;
 #endif
 #ifndef HAVE_VLANTAGGING
