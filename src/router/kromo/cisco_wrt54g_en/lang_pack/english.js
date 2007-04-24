@@ -376,6 +376,7 @@ bmenu.adminBackup="Backup";
 bmenu.services="Services";
 bmenu.servicesServices="Services";
 bmenu.servicesPppoesrv="PPPoE Server";
+bmenu.servicesPptp="PPTP";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Milkfish";
 
