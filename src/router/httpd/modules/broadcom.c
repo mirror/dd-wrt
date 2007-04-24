@@ -3045,6 +3045,7 @@ struct apply_action apply_actions[] = {
   
   /* SERVICES*/
   {"PPPoE_Server", "services", 0, SERVICE_RESTART, NULL},
+  {"PPTP", "services", 0, SERVICE_RESTART, NULL}, 
   {"Hotspot", "hotspot", 0, SERVICE_RESTART, NULL},
 
   /* APP & GAMING */
@@ -3975,7 +3976,7 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   char menu[9][11][32] =
     { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp", "Networking.asp", "","", "", "", ""},
   {"Wireless_Basic.asp", "Wireless_radauth.asp", "WL_WPATable.asp","Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "","", "", ""},
-  {"Services.asp", "PPPoE_Server.asp", "Hotspot.asp" , "Milkfish.asp","eop-tunnel.asp", "", "", "", "", "", ""},
+  {"Services.asp", "PPPoE_Server.asp", "PPTP.asp", "Hotspot.asp" , "Milkfish.asp","eop-tunnel.asp", "", "", "", "", ""},
   {"Sipath.asp", "cgi-bin-mf-phonebook.html", "cgi-bin-mf-status.html", "","", "", "", "", "", "", ""},
   {"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", ""},
   {"Filters.asp", "", "", "", "", "", "", "", "", "", ""},
@@ -3990,7 +3991,7 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   char menuname[9][11][32] =
     { {"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting","setupvlan", "networking", "","", "", "", ""},
   {"wireless", "wirelessBasic", "wirelessRadius", "wirelessSecurity","wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", "", ""},
-  {"services", "servicesServices", "servicesPppoesrv", "servicesHotspot", "servicesMilkfish", "setupeop", "", "", "", "", ""},
+  {"services", "servicesServices", "servicesPppoesrv", "servicesPptp", "servicesHotspot", "servicesMilkfish", "setupeop", "", "", "", ""},
   {"sipath", "sipathoverview", "sipathphone", "sipathstatus", "", "", "", "","", "", ""},
   {"security", "firwall", "vpn", "", "", "", "", "", "", "", ""},
   {"accrestriction", "webaccess", "", "", "", "", "", "", "", "", ""},
