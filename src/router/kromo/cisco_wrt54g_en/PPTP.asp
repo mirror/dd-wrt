@@ -42,10 +42,10 @@ addEvent(window, "load", function() {
 							<input type="hidden" name="commit" value="1" />
 							
 							
-<h2><% tran("service.pptp_legend"); %></h2>
+<h2><% tran("service.pptp_srv"); %></h2>
 
 <fieldset>
-	<legend><% tran("service.pptp_legend"); %></legend>
+	<legend><% tran("service.pptp_srv"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.pptp_srv"); %></div>
 		<input class="spaceradio" type="radio" name="pptpd_enable" value="1" <% nvram_checked("pptpd_enable", "1"); %> onclick="show_layer_ext(this, 'idpptp', true)" /><% tran("share.enable"); %>&nbsp;
@@ -58,7 +58,7 @@ addEvent(window, "load", function() {
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.pptp_client"); %></div>
-			<input size="25" name="pptpd_rip" value="<% nvram_get("pptpd_rip"); %>" />
+			<input size="60" name="pptpd_rip" value="<% nvram_get("pptpd_rip"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.pptp_chap"); %></div>

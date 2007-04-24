@@ -85,7 +85,7 @@
 			<h4><% tran("share.seealso"); %></h4>
 			<ul>
 				<li><a href="HSetup.asp"><% tran("bmenu.setupbasic"); %></a></li>
-				<li><a href="HServices.asp"><% tran("bmenu.adminServices"); %></a></li>
+				<li><a href="HServices.asp"><% tran("bmenu.servicesServices"); %></a></li>
 			</ul>
 		</div>
 	</body>
