@@ -739,7 +739,6 @@ ifeq ($(CONFIG_PPTPD),y)
 	install -D pptpd/pptpd $(INSTALLDIR)/pptpd/usr/sbin/pptpd
 	install -D pptpd/pptpctrl $(INSTALLDIR)/pptpd/usr/sbin/pptpctrl
 	install -D pptpd/bcrelay $(INSTALLDIR)/pptpd/usr/sbin/bcrelay
-	install -D pptpd/config/pptp.webservices $(INSTALLDIR)/pptpd/etc/config/pptp.webservices
 else
         # So that generic rule does not take precedence
 	@true
@@ -1156,7 +1155,6 @@ ifneq ($(CONFIG_NEWMEDIA),y)
 	install -D pptp-client/config/pptpd_client.ip-up $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.ip-up
 	install -D pptp-client/config/pptpd_client.ip-down $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.ip-down
 	install -D pptp-client/config/pptpd_client.nvramconfig $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.nvramconfig
-	install -D pptp-client/config/pptpd_client.webservices $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.webservices
 	install -D pptp-client/config/pptpd_client.options $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.options
 	install -D pptp-client/config/pptpd_client.sh $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.sh
 	install -D pptp-client/config/pptpd_client.startup $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.startup
