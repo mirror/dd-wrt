@@ -347,9 +347,6 @@ period_check (int sig)
     case ROUTER_WRT150N:
       sesgpio = 0x04;		//gpio 4, normal
       break;
-    case ROUTER_WRT350N:
-      sesgpio = 0x08;		//gpio 8, normal
-      break;
     default:
       sesgpio = 0x0f;		//gpio unknown, disabled
     }
