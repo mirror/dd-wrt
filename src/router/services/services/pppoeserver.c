@@ -70,11 +70,17 @@ start_pppoeserver (void)
 	  fprintf (fp, "nopcomp\n");
 	  fprintf (fp, "idle %s\n", nvram_safe_get ("pppoeserver_idle"));	//todo ...
 	  if (nvram_default_match ("pppoeserver_encryption", "1", "0"))	// make it configureable
+	    {
 	    fprintf (fp, "mppe required,no56,no40\n");
+	    fprintf (fp, "refuse-eap\n");
+	    fprintf (fp, "refuse-pap\n");
+	    fprintf (fp, "refuse-chap\n");
+	    fprintf (fp, "refuse-mschap\n");
+	    fprintf (fp, "require-mschap-v2\n");
+	    }
 	  else
 	    fprintf (fp, "nomppe\n");
 	  fprintf (fp, "auth\n");
-	  fprintf (fp, "require-mschap-v2\n");
 	  fprintf (fp, "default-mru\n");
 	  fprintf (fp, "default-asyncmap\n");
 	  fprintf (fp, "lcp-echo-interval %s\n",
@@ -191,9 +197,16 @@ start_pppoeserver (void)
 	  fprintf (fp, "nopcomp\n");
 	  fprintf (fp, "idle %s\n", nvram_safe_get ("pppoeserver_idle"));	//todo ...
 	  if (nvram_default_match ("pppoeserver_encryption", "1", "0"))	// make it configureable
+	    {
 	    fprintf (fp, "mppe required,no56,no40\n");
+	    fprintf (fp, "refuse-eap\n");
+	    fprintf (fp, "refuse-pap\n");
+	    fprintf (fp, "refuse-chap\n");
+	    fprintf (fp, "refuse-mschap\n");
+	    }
 	  else
 	    fprintf (fp, "nomppe\n");
+	    fprintf (fp, "require-mschap-v2\n");
 
 	  struct dns_lists *dns_list = get_dns_list ();
 	  if (!dns_list || dns_list->num_servers == 0)
