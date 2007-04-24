@@ -49,7 +49,7 @@ function SelVLAN(F,I) {
 }
 
 function init() {
-	(var k=0;k<5;k++) {
+	for(var k=0; k<5; k++) {
 		SelSpeed(document.vlan, "port"+k);
 		SelVLAN(document.vlan, "port"+k);
 	}
