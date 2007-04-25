@@ -953,6 +953,20 @@ portserv.h2="Port Services";
 
 
 
+// ******************************************* Networking.asp *******************************************//
+var networking = new Object();
+networking.h2="VLAN Tagging";
+networking.legend="Tagging";
+networking.h22="Bridging";
+networking.legend2="Create Bridge";
+networking.legend3="Assign to Bridge";
+networking.legend4="Current Bridging Table";
+networking.brname="Bridge Name";
+networking.stp="STP enabled";
+networking.iface="Interfaces";
+
+
+
 // ******************************************* QoS.asp *******************************************//
 var qos = new Object();
 qos.titl="Quality of Service";

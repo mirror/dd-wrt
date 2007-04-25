@@ -112,28 +112,28 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1" />
 
-							<h2>VLAN Tagging</h2>
+							<h2><% tran("networking.h2"); %></h2>
 							<fieldset>
-							   <legend>Tagging</legend>
+							   <legend><% tran("networking.legend"); %></legend>
 							   <% show_vlantagging(); %>
 							</fieldset><br />
 
-							<h2>Bridging</h2>
+							<h2><% tran("networking.h22"); %></h2>
 							<fieldset>
-							   <legend>Create Bridge</legend>
+							   <legend><% tran("networking.legend2"); %></legend>
 							   <% show_bridgenames(); %>
 							</fieldset>
 							<fieldset>
-							   <legend>Assign to Bridge</legend>
+							   <legend><% tran("networking.legend3"); %></legend>
 							   <% show_bridgeifnames(); %>
 							</fieldset>
 							<fieldset>
-							   <legend>Current Bridging Table</legend>
+							   <legend><% tran("networking.legend4"); %></legend>
 							   	<table class="table center" cellspacing="5" id="Bridging_table" summary="current bridging table">
 								<tr>
-								<th width="15%">Bridge Name</script></th>
-								<th width="15%">STP enabled</script></th>
-								<th width="70%">Interfaces</script></th>
+								<th width="15%"><% tran("networking.brname"); %></th>
+								<th width="15%"><% tran("networking.stp"); %></th>
+								<th width="70%"><% tran("networking.iface"); %></th>
 								</tr>
 								</table><br />
 								<div class="center">
