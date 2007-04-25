@@ -965,6 +965,19 @@ hmanagement.right1="Rafraîchissement auto:";
 hmanagement.right2="Saisissez l\'intervalle de rafraichissement automatique de la console d\'administration (seules certaines pages bénéficient de cette fonction). La valeur 0 désactive cette fonctionnalité et bascule le rafraichissement en mode manuel.";
 
 
+// ******************************************* Networking.asp *******************************************//
+
+networking.h2="VLAN Tagging";
+networking.legend="Tagging";
+networking.h22="Bridging";
+networking.legend2="Créer un Pont";
+networking.legend3="Assigné à un Pont";
+networking.legend4="Table des Ponts";
+networking.brname="Nom du Pont";
+networking.stp="STP activé";
+networking.iface="Interfaces";
+
+
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymor) ******************************//
 
