@@ -75,6 +75,7 @@ function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	checked(F);
 	apply(F);
+	return true;
 }
 
 addEvent(window, "load", function() {
