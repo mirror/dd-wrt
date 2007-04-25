@@ -3357,6 +3357,7 @@ ej_show_languages (webs_t wp, int argc, char_t ** argv)
   if (directory == NULL)
     return;
   struct dirent *entry;
+  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
   while ((entry = readdir (directory)) != NULL)
     {
       sprintf (buf, "/www/lang_pack/%s", entry->d_name);
@@ -3368,11 +3369,11 @@ ej_show_languages (webs_t wp, int argc, char_t ** argv)
 	continue;
       strcpy (buf, entry->d_name);
       buf[strlen (buf) - 3] = 0;	//strip .js
-      websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n\
-		 		document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");\n\
-		 		\n//]]>\n</script>\n", buf, nvram_match ("language", buf) ? "selected=\\\"selected\\\"" : "", buf);
+      websWrite (wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");\n",
+		 		 buf, nvram_match ("language", buf) ? "selected=\\\"selected\\\"" : "", buf);
     }
   closedir (directory);
+  websWrite (wp, "//]]>\n</script>\n");
   return;
 }
 
