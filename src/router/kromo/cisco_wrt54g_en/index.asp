@@ -138,12 +138,14 @@ function dhcp_enable_disable(F,T) {
 	var start = '';
 	var end = '';
  	var total = F.elements.length;
+	
 	for(var i=0 ; i < total ; i++) {
 		if(F.elements[i].name == "dhcp_start")
 			start = i;
 		if(F.elements[i].name == "wan_wins_3")
 			end = i;
 	}
+	
 	if(start == '' || end == '')
 		return true;
 
@@ -156,6 +158,7 @@ function dhcp_enable_disable(F,T) {
 			choose_enable(F.elements[i]);
 		}
 	}
+	return true;
 }
 
 function ppp_enable_disable(F,I) {
