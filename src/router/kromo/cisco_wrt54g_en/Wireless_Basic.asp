@@ -149,6 +149,8 @@ function to_submit(F) {
 	apply(F);
 }
 
+var update;
+
 addEvent(window, "load", function() {
 	wl_enable_disable(document.wireless,'<% nvram_else_match("wl0_gmode","-1","0","1"); %>');
 	var wl_mode = "<% nvram_get("wl0_mode"); %>";
@@ -159,6 +161,15 @@ addEvent(window, "load", function() {
 	}
 	var wl_net_mode = "<% nvram_get("wl0_net_mode"); %>";
 	SelWL(wl_net_mode,document.wireless);
+	
+	update = new StatusbarUpdate();
+	update.start();
+	
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
+
 });
 
 		//]]>

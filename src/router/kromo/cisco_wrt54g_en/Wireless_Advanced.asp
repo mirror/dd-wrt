@@ -175,6 +175,8 @@ function setWMM(val) {
 	setElementsActive("wl_wme_no_ack", "_wl_wme_sta_vo5", val == "on");
 }
 
+var update;
+
 addEvent(window, "load", function() {
 	setRadioTable();
 	setWMM("<% nvram_get("wl_wme"); %>");
@@ -185,6 +187,14 @@ addEvent(window, "load", function() {
 	setElementActive( "document.wireless.wl_rate", !(wl_net_mode=="n-only") );
 
 	if("<% nvram_get("wl0_phytype"); %>"=="n") create_nrate('<% nvram_get("wl0_nbw"); %>',document.wireless);
+	
+	update = new StatusbarUpdate();
+	update.start();
+
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
 
 });
 		

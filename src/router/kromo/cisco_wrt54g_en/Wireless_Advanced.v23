@@ -140,12 +140,23 @@ function setWMM(val) {
 	setElementsActive("wl_wme_no_ack", "_wl_wme_sta_vo5", val == "on");
 }
 
+var update;
+
 addEvent(window, "load", function() {
 	setRadioTable();
 	setWMM("<% nvram_get("wl_wme"); %>");
 	show_layer_ext(document.wireless.wl_wme, 'idwl_wme', <% nvram_else_match("wl_wme", "on", "1", "0"); %> == 1);
 	show_layer_ext(document.wireless.radio_timer_enable, 'radio', <% nvram_else_match("radio_timer_enable", "1", "1", "0"); %> == 1);
 	initWlTimer('<% nvram_get("radio0_on_time"); %>');
+	
+	update = new StatusbarUpdate();
+	update.start();
+	
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
+
 });
 		
 		//]]>

@@ -54,7 +54,21 @@ function init() {
 		SelVLAN(document.vlan, "port"+k);
 	}
 }
-		
+
+var update;
+
+addEvent(window, "load", function() {
+	
+	update = new StatusbarUpdate();
+	update.start();
+
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
+
+});
+	
 		//]]>
 		</script>
 	</head>
