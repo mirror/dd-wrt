@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 27.jan.2007				//
+//				Slovenian translation DD-WRT by Eko, last revision: 26.apr.2007, svn 6826	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 // IMPORTANT: for live values use UTF-8 Unicode Character Set
 
@@ -365,8 +365,6 @@ bmenu.sipathstatus="Status";
 
 bmenu.admin="Administracija";
 bmenu.adminManagement="Upravljanje";
-bmenu.adminHotspot="Hotspot";
-bmenu.adminServices="Storitve";
 bmenu.adminAlive="Ohrani ¾ivo";
 bmenu.adminLog="Dnevnik";
 bmenu.adminDiag="Diagnostika";
@@ -375,6 +373,12 @@ bmenu.adminFactory="Privzete nast.";
 bmenu.adminUpgrade="Posodabljanje";
 bmenu.adminBackup="Varnostna kop.";
 
+bmenu.services="Storitve"";
+bmenu.servicesServices="Storitve"";
+bmenu.servicesPppoesrv="PPPoE stre¾nik";
+bmenu.servicesPptp="PPTP";
+bmenu.servicesHotspot="Hotspot";
+bmenu.servicesMilkfish="Milkfish";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Usmerjalnik";
@@ -627,8 +631,8 @@ hpforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za 
 hotspot.titl="Hotspot";
 hotspot.h2="Hotspot portal";
 hotspot.legend="Chillispot";
-hotspot.hotspot="Chillispot";
 hotspot.nowifibridge="Loèi WiFi od LAN mosta";
+hotspot.hotspot="Chillispot";
 hotspot.pserver="IP/DNS glavnega Radius stre¾nika";
 hotspot.bserver="IP/DNS nadomestnega Radius stre¾nika";
 hotspot.dns="DNS IP";
@@ -935,7 +939,6 @@ management.SIPatH_domain="SIP domena";
 management.gui_style="Stil usmerjalnikovega uporabni¹kega vmesnika";
 
 
-
 //help container
 
 hmanagement.right1="Samodejno osve¾evanje:";
@@ -947,6 +950,20 @@ hmanagement.right2="Nastavite interval samodejnega osve¾evanja. 0 (niè) popolnom
 
 portserv.titl="Storitve vrat";
 portserv.h2="Storitve vrat";
+
+
+
+// ******************************************* Networking.asp *******************************************//
+
+networking.h2="VLAN tagging";
+networking.legend="Tagging";
+networking.h22="Premo¹èanje";
+networking.legend2="Ustvari most";
+networking.legend3="Dodeli k mostu";
+networking.legend4="Trenutna tabela mostov";
+networking.brname="Ime mosta";
+networking.stp="STP omogoèen";
+networking.iface="Vmesniki";
 
 
 
@@ -1096,6 +1113,7 @@ service.pppoe_srv="Posredovanje";
 //pppoe-server.webservices
 service.pppoesrv_legend="PPPoE stre¾nik";
 service.pppoesrv_srv="Demon RP-PPPoE stre¾nik";
+service.pppoesrv_srvopt="RP-PPPoE stre¾nik: mo¾nosti";
 service.pppoesrv_compr="kompresija";
 service.pppoesrv_remoteaddr="Oddaljeni zaèetni IP";
 service.pppoesrv_remotenet="IP oddaljene mre¾e";
@@ -1184,7 +1202,6 @@ eoip.bridging="premo¹èanje";
 
 
 
-
 // ******************************************* Sipath.asp + cgi *******************************************//
 
 sipath.titl="SiPath pregled";
@@ -1261,6 +1278,7 @@ status_router.legend6="Uporaba prostora";
 status_router.inpvolt="Napajalna napetost";
 status_router.cputemp="Temperatura procesorja";
 
+
 //help container
 
 hstatus_router.right2="To je ime usmerjalnika, kot ste ga doloèili v zavihku <i>Nemestitev</i>.";
@@ -1321,7 +1339,6 @@ hstatus_wireless.right4="Tu je prikazan uporabljeni brez¾ièni naèin, kot je izbr
 // ******************************************* Status_OpenVPN.asp *******************************************//
 
 status_openvpn.titl="OpenVPN status";
-
 
 
 // ******************************************* Triggering.asp *******************************************//
@@ -1456,6 +1473,7 @@ hwanmac.right2="nekateri ponudniki medmere¾ja zahtevajo, da prijavite va¹ MAC na
 
 
 // ******************************************* WL_WPATable.asp / WPA.asp / Radius.asp *******************************************//
+
 
 wpa.titl="Brez¾ièna za¹èita";
 wpa.h2="Brez¾ièna za¹èita";
@@ -1601,7 +1619,6 @@ wl_basic.specialmode="2.3 Ghz naèin";
 wl_basic.wifi_bonding="Wifi vezanje";
 wl_basic.sifstime="OFDM SIFS èas";
 wl_basic.preambletime="OFDM Preamble èas";
-
 //help container
 
 hwl_basic.right2="Èe ¾elite prepovedati vstop odjemalcem G, izberite <em>Samo-B</em> naèin. Èe ¾elite izkljuèiti brez¾ièno omre¾je, izberite <em>Onemogoèie</em>.";
@@ -1636,6 +1653,7 @@ wl_adv.label16="Afterburner";
 wl_adv.label17="Brez¾ièni dostop do uporabni¹kega vmesnika";
 wl_adv.label18="WMM podpora";
 wl_adv.label19="Brez potrditve";
+wl_adv.label20="Razveljavi Shortslot";
 wl_adv.table1="EDCA AP parameteri (AP do odjemalca)";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmaks";
