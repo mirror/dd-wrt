@@ -4309,7 +4309,7 @@ ej_show_wanipinfo (webs_t wp, int argc, char_t ** argv)	//Eko
       wan_ipaddr = nvram_safe_get ("wan_ipaddr");
     }
 
-    websWrite (wp, " IP: %s", wan_ipaddr);
+    websWrite (wp, "&nbsp;IP: %s", wan_ipaddr);
     
  return;
 }
