@@ -160,6 +160,7 @@ addEvent(window, "load", function() {
 					</div>
 				</div>
 				<div id="floatKiller"></div>
+				<div id="statusInfo">
 				<div class="info"><% tran("share.firmware"); %>: 
 					<script type="text/javascript">
 					//<![CDATA[
