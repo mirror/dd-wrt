@@ -51,7 +51,16 @@ addEvent(window, "load", function() {
 					</div>
 				</div>
 				<div id="floatKiller"></div>
-				<% do_statusinfo(); %>
+				<div class="info"><% tran("share.firmware"); %>: 
+					<script type="text/javascript">
+					//<![CDATA[
+					document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");
+					//]]>
+					</script>
+				</div>
+				<div class="info"><% tran("share.time"); %>:  <span id="uptime"><% get_uptime(); %></span></div>
+				<div class="info">WAN <span id="ipinfo"><% show_wanipinfo(); %></span></div>
+				</div>
 			</div>
 		</div>
 	</body>
