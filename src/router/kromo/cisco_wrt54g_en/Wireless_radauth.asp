@@ -18,12 +18,22 @@ function setRad(val) {
 	setElementsActive("wl_radmactype", "_radius_override", val == "1");
 }
 
+var update;
+
 addEvent(window, "load", function() {
 	setRad("<% nvram_get("wl_radauth"); %>");
 	if ("ap" != "<% nvram_get("wl_mode"); %>"){
 		setElementsActive("wl_radauth", "_radius_override", false);
 		alert(errmsg.err49);
 	}
+	
+	update = new StatusbarUpdate();
+	update.start();
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
+
 });
 
 		//]]>

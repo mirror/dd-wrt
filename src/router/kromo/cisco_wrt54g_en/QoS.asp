@@ -115,7 +115,21 @@ function to_submit(F) {
 function init() {
 	qos_grey(<% nvram_get("wshaper_enable"); %>,document.QoS);
 }
-		
+	
+var update;
+
+addEvent(window, "load", function() {
+	
+	update = new StatusbarUpdate();
+	update.start();
+
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
+
+});
+	
 			//]]>
 		</script>
 	</head>

@@ -11,13 +11,21 @@ function to_submit(F) {
 	apply(F);
 }
 
-
+var update;
 
 addEvent(window, "load", function() {
 
 		show_layer_ext(document.setup.pptpd_enable, 'idpptp', <% nvram_else_match("pptpd_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvram_else_match("pptpd_client_enable", "1", "1", "0"); %> == 1);
 		
+		update = new StatusbarUpdate();
+		update.start();
+		
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
+
 });
 		
 		//]]>
