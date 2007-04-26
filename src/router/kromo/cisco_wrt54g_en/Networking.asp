@@ -122,11 +122,11 @@ addEvent(window, "unload", function() {
 							<fieldset>
 							   <legend><% tran("networking.legend2"); %></legend>
 							   <% show_bridgenames(); %>
-							</fieldset>
+							</fieldset><br />
 							<fieldset>
 							   <legend><% tran("networking.legend3"); %></legend>
 							   <% show_bridgeifnames(); %>
-							</fieldset>
+							</fieldset><br />
 							<fieldset>
 							   <legend><% tran("networking.legend4"); %></legend>
 							   	<table class="table center" cellspacing="5" id="Bridging_table" summary="current bridging table">
