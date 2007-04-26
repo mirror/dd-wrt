@@ -4278,16 +4278,23 @@ ej_show_timeoptions (webs_t wp, int argc, char_t ** argv)	//Eko
 
 
 void
-ej_do_statusinfo (webs_t wp, int argc, char_t ** argv)	//Eko
+ej_show_wanipinfo (webs_t wp, int argc, char_t ** argv)	//Eko
 {
   char *wan_ipaddr;
-  int wan_link = check_wan_link (0);
+  int wan_link;
+  
+  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "apstawet")
+      || nvram_match ("wan_proto", "disabled"))
+    {
+      websWrite (wp, ": %s", live_translate ("share.disabled"));
+	return;
+    }
+  
+  wan_link = check_wan_link (0);
 
   if (nvram_match ("wan_proto", "pptp"))
     {
-      wan_ipaddr =
-	wan_link ? nvram_safe_get ("pptp_get_ip") :
-	nvram_safe_get ("wan_ipaddr");
+      wan_ipaddr =	wan_link ? nvram_safe_get ("pptp_get_ip") :	nvram_safe_get ("wan_ipaddr");
     }
   else if (!strcmp (nvram_safe_get ("wan_proto"), "pppoe"))
     {
@@ -4295,43 +4302,15 @@ ej_do_statusinfo (webs_t wp, int argc, char_t ** argv)	//Eko
     }
   else if (nvram_match ("wan_proto", "l2tp"))
     {
-      wan_ipaddr =
-	wan_link ? nvram_safe_get ("l2tp_get_ip") :
-	nvram_safe_get ("wan_ipaddr");
+      wan_ipaddr =	wan_link ? nvram_safe_get ("l2tp_get_ip") :	nvram_safe_get ("wan_ipaddr");
     }
   else
     {
       wan_ipaddr = nvram_safe_get ("wan_ipaddr");
     }
 
-  websWrite (wp, "<div id=\"statusInfo\">\n");
-  websWrite (wp,
-	     "<div class=\"info\"><script type=\"text/javascript\">Capture(share.firmware)</script>: ");
-  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n\
-				document.write(\"<a title=\\\"\" + share.about + \"\\\" href=\\\"javascript:openAboutWindow()\\\">");
-  ej_get_firmware_version (wp, argc, argv);
-  websWrite (wp, "</a>\");\n");
-  websWrite (wp, "//]]>\n</script></div>\n");
-  websWrite (wp,
-	     "<div class=\"info\"><script type=\"text/javascript\">Capture(share.time)</script>: ");
-  ej_get_uptime (wp, argc, argv);
-  websWrite (wp, "</div>\n");
-  websWrite (wp, "<div class=\"info\">WAN");
-
-  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "apstawet")
-      || nvram_match ("wan_proto", "disabled"))
-    {
-      websWrite (wp,
-		 ": <script type=\"text/javascript\">Capture(share.disabled)</script></div>\n");
-    }
-  else
-    {
-      websWrite (wp, " IP: %s</div>\n", wan_ipaddr);
-    }
-//      websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">\n//<![CDATA[\n\
-//                              document.write(\"<a href=\\\"javascript:lgout()\\\">\"+ share.logout + \"</a>\");\n\
-//                              \n//]]>\n</script></div>\n"); 
-  websWrite (wp, "</div>\n");
+    websWrite (wp, " IP: %s", wan_ipaddr));
+ 
 }
 
 
@@ -5430,7 +5409,7 @@ struct ej_handler ej_handlers[] = {
   {"do_pagehead", ej_do_pagehead},	//Eko
   {"do_hpagehead", ej_do_hpagehead},	//Eko
   {"show_timeoptions", ej_show_timeoptions},	//Eko
-  {"do_statusinfo", ej_do_statusinfo},	//Eko
+  {"show_wanipinfo", ej_show_wanipinfo},	//Eko
   {"show_clocks", ej_show_clocks},
   {"getrebootflags", ej_getrebootflags},
   {"getwirelessmode", ej_getwirelessmode},
