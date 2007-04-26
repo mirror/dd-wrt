@@ -7361,7 +7361,7 @@ show_macfilter_if (webs_t wp, char *ifname)
   websWrite (wp, "//]]>\n");
   websWrite (wp, "</script>\n");
   websWrite (wp, "</div>\n");
-  websWrite (wp, "</fieldset>\n");
+  websWrite (wp, "</fieldset><br />\n");
 }
 
 void
