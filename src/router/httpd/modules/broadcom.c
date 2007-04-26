@@ -3990,7 +3990,7 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 
 /* real name is bmenu.menuname[i][j] */
   char menuname[9][11][32] =
-    { {"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting","setupvlan", "networking", "","", "", "", ""},
+    { {"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting","setupvlan", "networking", "", "", "", ""},
   {"wireless", "wirelessBasic", "wirelessRadius", "wirelessSecurity","wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", "", ""},
   {"services", "servicesServices", "servicesPppoesrv", "servicesPptp", "servicesHotspot", "servicesMilkfish", "setupeop", "", "", "", ""},
   {"sipath", "sipathoverview", "sipathphone", "sipathstatus", "", "", "", "","", "", ""},
@@ -4309,8 +4309,9 @@ ej_show_wanipinfo (webs_t wp, int argc, char_t ** argv)	//Eko
       wan_ipaddr = nvram_safe_get ("wan_ipaddr");
     }
 
-    websWrite (wp, " IP: %s", wan_ipaddr));
- 
+    websWrite (wp, " IP: %s", wan_ipaddr);
+    
+ return;
 }
 
 
