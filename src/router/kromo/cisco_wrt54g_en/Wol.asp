@@ -246,10 +246,20 @@ function callDump() {
 	}
 }
 
+var update;
+
 addEvent(window, "load", function() {
 	setAvailableHostsTable();
 	setWolHostsTable();
 	show_layer_ext(document.ping.wol_enable, 'idwol', <% nvram_else_match("wol_enable", "1", "1", "0"); %> == 1);
+	
+	update = new StatusbarUpdate();
+	update.start();
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
+
 });
 	
 		//]]>

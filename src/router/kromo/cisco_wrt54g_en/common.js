@@ -769,6 +769,58 @@ function StatusUpdate(_url, _frequency) {
 	}
 }
 
+//Statusbar live
+function StatusbarUpdate() {
+	var request;
+	var timer;
+	var url = "Statusinfo.live.asp";
+	var frequency = 5000;
+	var me = this;
+	var callbacks = new Object();
+	var updates = new Object();
+
+	this.start = function() {
+		if(!window.XMLHttpRequest && !window.ActiveXObject) return false;
+		timer = setTimeout(me.doUpdate, frequency);
+		return true;
+	}
+
+	this.stop = function() {
+		clearTimeout(timer);
+		request = null;
+	}
+
+	this.onUpdate = function(id, func) {
+		callbacks[id] = func;
+	}
+
+	this.doUpdate = function() {
+		if(request && request.readyState < 4) return;
+		if(window.XMLHttpRequest) request = new XMLHttpRequest();
+		if(window.ActiveXObject) request = new ActiveXObject("Microsoft.XMLHTTP");
+		request.open("GET", url, true);
+		request.onreadystatechange = function() {
+			if(request.readyState < 4 || request.status != 200) return;
+			var activeCallbacks = new Array();
+			var regex = /\{(\w+)::([^\}]*)\}/g;
+			while(result = regex.exec(request.responseText)) {
+				var key = result[1];
+				var value = result[2];
+				if(defined(updates[key]) && updates[key] == value) continue;
+				updates[key] = value;
+				if(defined(callbacks[key])) activeCallbacks.push(callbacks[key]);
+				setElementContent(key, value);
+			}
+			for(var i = 0; i < activeCallbacks.length; i++) { (activeCallbacks[i])(updates); }
+			timer = setTimeout(me.doUpdate, frequency);
+		}
+		request.send("");
+
+	}
+
+}
+
+
 // Gray all form when submitting
 function apply(form, text, delay) {
     if(!text)

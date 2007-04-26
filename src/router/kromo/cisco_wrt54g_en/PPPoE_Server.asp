@@ -43,13 +43,21 @@ function to_submit(F) {
 	apply(F);
 }
 
-
+var update;
 
 addEvent(window, "load", function() {
 
 		toggle_layer_ext(document.setup.pppoeradius_enabled, 'idpppoerad', 'idpppoelocal', <% nvram_else_match("pppoeradius_enabled", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pppoeserver_enabled, 'idpppoesrv', <% nvram_else_match("pppoeserver_enabled", "1", "1", "0"); %> == 1);
 		
+		update = new StatusbarUpdate();
+		update.start();
+		
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
+
 });
 		
 		//]]>

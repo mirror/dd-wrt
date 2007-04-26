@@ -247,9 +247,21 @@ function init() {
 	setDNSMasq(document.setup);
 }
 
+var update;
+
 addEvent(window, "load", function() {
 	show_layer_ext(document.setup.ntp_enable, 'idntp', <% nvram_else_match("ntp_enable", "1", "1", "0"); %> == 1);
+	
+	update = new StatusbarUpdate();
+	update.start();
+	
 });
+
+addEvent(window, "unload", function() {
+	update.stop();
+
+});
+
 		//]]>
 		</script>
 	</head>

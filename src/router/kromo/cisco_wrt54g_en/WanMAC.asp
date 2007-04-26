@@ -19,9 +19,20 @@ function SelMac(val) {
 	setElementsActive("def_hwaddr", "def_whwaddr_5", val == "1");
 }
 
+var update;
+
 addEvent(window, "load", function() {
 	SelMac("<% nvram_get("mac_clone_enable"); %>");
 	<% onload("MACClone", "document.mac.mac_clone_enable[0].checked = true; SelMac(1);"); %>
+	
+	update = new StatusbarUpdate();
+	update.start();
+	
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
+
 });
     
 		//]]>

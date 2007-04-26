@@ -1,7 +1,9 @@
 #!/bin/sh
 cat<<EOF
 <% do_pagehead("sipath.phone_titl"); %>
-		<script type="text/javascript"><!--
+		<script type="text/javascript">
+		//<![CDATA[
+		<!--
 
 function navarr(){}
 navset=new navarr();
@@ -42,7 +44,22 @@ function ini() {
     }
   }
 }
-		//--></script>
+		//-->
+var update;
+
+addEvent(window, "load", function() {
+	
+	update = new StatusbarUpdate();
+	update.start();
+
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
+
+});			
+		//]]>
+		</script>
 	</head>
 	
 	<body onload="if(null!=window.ini)window.ini()">

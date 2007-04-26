@@ -38,11 +38,22 @@ function setFirewall(val) {
 	setElementsActive("_block_proxy", "log_level", val == "on");
 }
 
+var update;
+
 addEvent(window, "load", function() {
 	setFirewall("<% nvram_get("filter"); %>");
 	//show_layer_ext(document.firewall.log_enable, 'idfilter', <% nvram_else_match("filter", "on", "on", "off"); %> == 'on');
 	show_layer_ext(document.firewall.log_enable, 'idlog1', <% nvram_else_match("log_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.firewall.log_enable, 'idlog2', <% nvram_else_match("log_enable", "1", "1", "0"); %> == 1);
+	
+	update = new StatusbarUpdate();
+	update.start();
+	
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
+
 });
 
 		//]]>

@@ -11,10 +11,21 @@ function setDMZ(val) {
 	setElementActive("dmz_ipaddr", val == "1");
 }
 
+var update;
+
 addEvent(window, "load", function() {
 	setDMZ("<% nvram_get("dmz_enable"); %>");
+	
+	update = new StatusbarUpdate();
+	update.start();
+	
 });
-		
+	
+addEvent(window, "unload", function() {
+	update.stop();
+
+});
+	
 		//]]>
 		</script>
 	</head>
