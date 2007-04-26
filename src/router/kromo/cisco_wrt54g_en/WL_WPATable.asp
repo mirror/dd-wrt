@@ -151,12 +151,22 @@ function enable_idtls(ifname) {
 	show_layer_ext(this, 'idleap' + ifname, false)
 }
 
+var update;
+
 addEvent(window, "load", function() {
 	var F = document.forms[0];
 	if(F.security_mode && F.wl_wep_bit)
 		if(F.security_mode.value == "wep" || F.security_mode.value == "radius") {
 			keyMode(F.wl_wep_bit.value, F);
 		}
+		
+	update = new StatusbarUpdate();
+	update.start();
+
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
 
 });
 

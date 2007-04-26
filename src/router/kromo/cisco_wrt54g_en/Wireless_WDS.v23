@@ -40,9 +40,19 @@ function setWDS(val) {
 	}
 }
 
+var update;
+
 addEvent(window, "load", function() {
 	var wds = "1";
 	setElementsActive("wl_br1_nat", "wl_br1_netmask3", "<% nvram_get("wl_br1_enable"); %>" == 1);
+	
+	update = new StatusbarUpdate();
+	update.start();
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
+
 });
 
 		//]]>

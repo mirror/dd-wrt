@@ -132,6 +132,8 @@ function to_submit(F) {
 	apply(F);
 }
 
+var update;
+
 addEvent(window, "load", function() {
 	port_enable_disable(document.setup, "<% nvram_get("remote_management"); %>");
 	if (document.setup.remote_mgt_ssh)
@@ -144,6 +146,14 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.cron_enable, 'idcron', <% nvram_else_match("cron_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.samba_mount, 'idsamba', <% nvram_else_match("samba_mount", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.enable_jffs2, 'idjffs2', <% nvram_else_match("enable_jffs2", "1", "1", "0"); %> == 1);
+
+	update = new StatusbarUpdate();
+	update.start();
+	
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
 
 });
 		

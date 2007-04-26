@@ -78,6 +78,8 @@ function to_submit(F) {
 	return true;
 }
 
+var update;
+
 addEvent(window, "load", function() {
 
 		show_layer_ext(document.setup.sshd_enable, 'idssh', <% nvram_else_match("sshd_enable", "1", "1", "0"); %> == 1);
@@ -111,8 +113,17 @@ addEvent(window, "load", function() {
 			setRstatsVal(document.setup);
 			show_layer_ext(document.setup.rstats_enable, 'idrstats', <% nvram_else_match("rstats_enable", "1", "1", "0"); %> == 1);
 		}
-});
 		
+	update = new StatusbarUpdate();
+	update.start();
+	
+});
+	
+addEvent(window, "unload", function() {
+	update.stop();
+
+});
+	
 		//]]>
 		</script>
 	</head>

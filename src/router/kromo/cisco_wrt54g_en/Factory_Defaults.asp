@@ -11,6 +11,20 @@ function to_submit(F) {
 		apply(F);
 	}
 }
+
+var update;
+
+addEvent(window, "load", function() {
+	
+	update = new StatusbarUpdate();
+	update.start();
+
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
+
+});
 		
 		//]]>
 		</script>
