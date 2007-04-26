@@ -10,6 +10,8 @@ function to_submit(F) {
 	apply(F);
 }
 
+var update;
+
 addEvent(window, "load", function() {
 		show_layer_ext(document.eop.oet1_en, 'idoet1', <% nvram_else_match("oet1_en", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.eop.oet1_bridged, 'idbridged1', <% nvram_else_match("oet1_bridged", "1", "0", "1"); %> == 1);
@@ -31,7 +33,17 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.eop.oet9_bridged, 'idbridged9', <% nvram_else_match("oet9_bridged", "1", "0", "1"); %> == 1);
 		show_layer_ext(document.eop.oet10_en, 'idoet10', <% nvram_else_match("oet10_en", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.eop.oet10_bridged, 'idbridged10', <% nvram_else_match("oet10_bridged", "1", "0", "1"); %> == 1);
+		
+		update = new StatusbarUpdate();
+		update.start();
+		
 });
+
+addEvent(window, "unload", function() {
+	update.stop();
+
+});
+
 		//]]>
 		</script>
 	</head>
