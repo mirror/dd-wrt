@@ -101,7 +101,7 @@
 					</script>
 				</div>
 				<div class="info"><% tran("share.time"); %>:  <span id="uptime"><% get_uptime(); %></span></div>
-				<div class="info">WAN <span id="ipinfo"><% show_wanipinfo(); %></span></div>
+				<div class="info">WAN<span id="ipinfo"><% show_wanipinfo(); %></span></div>
 				</div>
 			</div>
 		</div>
