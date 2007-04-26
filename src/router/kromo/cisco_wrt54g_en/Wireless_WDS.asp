@@ -468,7 +468,7 @@ document.write("<option value='<%% nvram_selmatch("%s_br1_nat", "2", "selected")
 					//]]>
 					</script>
 				</div>
-				<div class="info"><% tran("share.time"); %>:  <span id="uptime"><%% get_uptime(); %%></span></div>
+				<div class="info"><%% tran("share.time"); %%>:  <span id="uptime"><%% get_uptime(); %%></span></div>
 				<div class="info">WAN <span id="ipinfo"><%% show_wanipinfo(); %%></span></div>
 				</div>
 			</div>
