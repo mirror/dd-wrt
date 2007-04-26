@@ -178,24 +178,24 @@ addEvent(window, "load", function() {
             <div id="main">
                <div id="contents">
                   <form name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
-                  	<input type="hidden" name="submit_button" value="Wireless_Basic" />
-                  	<input type="hidden" name="action" value="Apply" />
-                  	<input type="hidden" name="change_action" value="gozila_cgi" />
-                  	<input type="hidden" name="submit_type" />
-                  	
-                  	<input type="hidden" name="wl0_nctrlsb" />
-                  	<input type="hidden" name="iface" />
-                  	
-                  	<% show_wireless(); %>
-                  	
-                  	<br />
-                  	<div class="submitFooter">
-                  		<script type="text/javascript">
-                  		//<![CDATA[
-                  		submitFooterButton(1,1);
-                  		//]]>
-                  		</script>
-                  	</div>
+				  	<input type="hidden" name="submit_button" value="Wireless_Basic" />
+				  	<input type="hidden" name="action" value="Apply" />
+				  	<input type="hidden" name="change_action" value="gozila_cgi" />
+				  	<input type="hidden" name="submit_type" />
+				  	
+				  	<input type="hidden" name="wl0_nctrlsb" />
+				  	<input type="hidden" name="iface" />
+				  	
+				  	<% show_wireless(); %>
+				  	
+				  	<br />
+				  	<div class="submitFooter">
+				  		<script type="text/javascript">
+				  		//<![CDATA[
+				  		submitFooterButton(1,1);
+				  		//]]>
+				  		</script>
+				  	</div>
                   </form>
                 </div>
               </div>
@@ -210,19 +210,19 @@ addEvent(window, "load", function() {
               		</dl><br />
              		<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HWireless.asp')"><% tran("share.more"); %></a>
              	</div>
-            </div>
-						<div id="floatKiller"></div>
-				<div class="info"><% tran("share.firmware"); %>: 
-					<script type="text/javascript">
-					//<![CDATA[
-					document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");
-					//]]>
-					</script>
-				</div>
-				<div class="info"><% tran("share.time"); %>:  <span id="uptime"><% get_uptime(); %></span></div>
-				<div class="info">WAN<span id="ipinfo"><% show_wanipinfo(); %></span></div>
-				</div>
-				</div>
+              </div>
+			<div id="floatKiller"></div>
+			<div class="info"><% tran("share.firmware"); %>: 
+				<script type="text/javascript">
+				//<![CDATA[
+				document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");
+				//]]>
+				</script>
+			</div>
+			<div class="info"><% tran("share.time"); %>:  <span id="uptime"><% get_uptime(); %></span></div>
+			<div class="info">WAN<span id="ipinfo"><% show_wanipinfo(); %></span></div>
+			</div>
+			</div>
 		</div>
 	</body>
 </html>
