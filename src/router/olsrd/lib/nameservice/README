@@ -1,0 +1,125 @@
+---------------------------------------------------------------------
+NAMESERVICE PLUGIN FOR OLSRD
+by Bruno Randolf <bruno.randolf@4g-systems.biz>
+---------------------------------------------------------------------
+
+a simple DNS replacement for OLSR networks
+
+this plugin distributes host name (DNS) information over OLSR. every 
+node which runs the olsr daemon can announce it's own name, names for
+other IP adresses it is associated with (HNAs) and if it is running
+a "real" nameserver which can resolve other (internet) names (upstream 
+dns server).
+
+the nodes in the network collect this information and write the host 
+names to a file (possibly /etc/hosts), and the 3 nearest upstream 
+nameservers to another file (possibly /etc/resolv.conf).
+
+these files can be used to resolve hostnames on the local system and/or
+be read by a DNS server like "dnsmasq", to make the names available 
+via the ordinary DNS protocol to other clients as well.
+
+the default location of the hosts file is
+"/var/run/hosts_olsr" on unixes
+"C:\WINDOWS\hosts_olsr" on windows
+
+
+---------------------------------------------------------------------
+PLUGIN PARAMETERS (PlParam)
+---------------------------------------------------------------------
+
+PlParam "name" "my-name.mesh"
+	the name of this OLSR node (main address).
+	can be specified multiple times for different names.
+
+PlParam "IP.ADDR" "another-name.mesh"
+	a name for a specified IP address.
+	the IP address has to be either from one of the olsr 
+	interfaces or within a HNA network we announce.
+	can be specified multiple times.
+
+PlParam "hosts-file" "/path/to/hosts_file"
+	which file to write to (usually /etc/hosts).
+	(default: /var/run/hosts_olsr)
+
+PlParam "suffix" ".olsr"
+	local suffix which is appended to all received names.
+	(default: "")
+
+PlParam "add-hosts" "/path/to/file"
+	copy contents of this additional hosts file to output file.
+	this is practical if you alreay use your /etc/hosts file.
+
+PlParam "dns-server" "IP.ADDR"
+	anounce that this IP has a full (upstream) DNS server. if 
+	IP.ADDR is not specified (""), the main address is used.
+	nodes which don't know a nameserver will automatically use
+	this nameserver.
+
+PlParam "resolv-file" "/path/to/resolv.conf"
+	path to resolv.conf file (usually /etc/resolv.conf)
+	if set, the 3 nearest (best ETX) upstream nameservers annonced 
+	by other nodes in the network are written to this file
+
+PlParam "interval" "SEC"
+	interval for sending NAME messages in seconds.
+	(default: 120 - 2 minutes)
+
+PlParam "timeout" "SEC"
+	validity time for received NAME messages in seconds.
+	(default: 3600 - 1 hour)
+
+
+---------------------------------------------------------------------
+SAMPLE CONFIG
+---------------------------------------------------------------------
+
+add in /etc/olsrd.conf:
+
+LoadPlugin "olsrd_nameservice.so.0.2"
+{
+	PlParam "name" "thisismyname"
+	PlParam "hosts-file" "/etc/hosts"
+	PlParam "resolv-file" "/etc/resolv.conf"
+}
+
+
+---------------------------------------------------------------------
+USING THE NAME INFORMATION
+---------------------------------------------------------------------
+
+to use the name information distributed by the plugin actually for
+name resolution you can do one of the following.
+
+UNIX VARIANTS:
+
+* overwrite /etc/hosts
+	be sure you have nothing in /etc/hosts which you still need and
+	configure the plugin with PlParam "host-file" "/etc/hosts"
+
+* link /etc/hosts
+	ln -s /var/run/hosts_olsr /etc/hosts
+
+* use dnsmasq
+	if you want to make the names available via ordinary DNS
+	you can use dnsmasq to read the hosts file and serve it to
+	users. add "addn-hosts=/var/run/hosts_olsr" to dnsmasq.conf 
+	and restart dnsmasq
+
+WINDOWS:
+
+* overwrite C:\WINDOWS\system32\drivers\etc\hosts
+	be sure you have nothing in the file which you still need 
+	and configure the plugin with
+	PlParam "filename" "C:\WINDOWS\system32\drivers\etc\hosts"
+
+
+---------------------------------------------------------------------
+TODO
+---------------------------------------------------------------------
+  
+  * implement a small DNS server into the plugin?
+  * or make dynamic DNS updates for bind?
+
+---------------------------------------------------------------------
+EOF / 20.04.2005

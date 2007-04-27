@@ -1,0 +1,44 @@
+#
+# FREEBSD SPECIFIC CONFIGURATION
+#
+
+DESTDIR ?= /usr/local
+SBINDIR = $(DESTDIR)/sbin
+ETCDIR = $(DESTDIR)/etc
+LIBDIR = $(DESTDIR)/lib
+DOCDIR = $(DESTDIR)/share/doc
+MANDIR = $(DESTDIR)/man
+
+SRCS +=		$(wildcard src/bsd/*.c) $(wildcard src/unix/*.c)
+HDRS +=		$(wildcard src/bsd/*.h) $(wildcard src/unix/*.h)
+
+LIBS =
+
+CFLAGS +=	-DOLSRD_GLOBAL_CONF_FILE=\"$(CFGFILE)\"
+
+ifdef NO_80211
+CFLAGS += -DFBSD_NO_80211=1
+endif
+
+ifdef LIBNET
+
+CFLAGS +=	-DSPOOF -I$(DESTDIR)/include
+LIBS +=		-L$(DESTDIR)/lib -lnet
+
+endif
+
+ifdef OLSRD_PLUGIN
+CFLAGS +=	-fPIC
+LDFLAGS +=	-fPIC
+endif
+
+PLUGIN_FULLNAME ?= $(PLUGIN_NAME).so.$(PLUGIN_VER)
+INSTALL_LIB =	install -m 755 $(PLUGIN_FULLNAME) $(LIBDIR)/$(PLUGIN_FULLNAME); \
+		/sbin/ldconfig
+
+OS_LIB_PTHREAD = -pthread
+OS_LIB_DYNLOAD =
+
+# Local Variables:
+# mode: makefile
+# End:
