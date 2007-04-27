@@ -2,13 +2,6 @@
 		<script type="text/javascript">
 		//<![CDATA[
 
-function to_submit(F) {
-	F.change_action.value="gozila_cgi";
-	F.submit_type.value = "save_networking";
-	F.save_button.value = sbutton.saving;
-	apply(F);
-}
-
 function vlan_add_submit(F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "add_vlan";
@@ -55,10 +48,6 @@ function bond_del_submit(F,I) {
 	F.submit();
 }
 
-function init() {
-
-}
-
 function setBRCTLTable() {
 	var table = document.getElementById("Bridging_table");
 	var val = arguments;
@@ -70,6 +59,13 @@ function setBRCTLTable() {
 		row.insertCell(-1).innerHTML = val[i + 1];
 		row.insertCell(-1).innerHTML = val[i + 2];
 	}
+}
+
+function to_submit(F) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "save_networking";
+	F.save_button.value = sbutton.saving;
+	apply(F);
 }
 
 var update;
@@ -94,7 +90,7 @@ addEvent(window, "unload", function() {
 		</script>
 	</head>
 
-	<body class="gui" onload="init()">
+	<body class="gui">
 		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
@@ -166,7 +162,7 @@ addEvent(window, "unload", function() {
 					</div>
 				</div>
 				<div id="floatKiller"></div>
-				<div id="statusInfo">
+				<div id="statusInfo"></div>
 				<div class="info"><% tran("share.firmware"); %>: 
 					<script type="text/javascript">
 					//<![CDATA[

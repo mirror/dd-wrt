@@ -5,7 +5,7 @@
 
 var clk = <% get_clkfreq(); %>;
 var rest_default = <% nvram_get("sv_restore_defaults"); %>;
-my_tab = new getTimeOut(clk, rest_default, <% getrebootflags(); %>);
+var my_tab = new getTimeOut(clk, rest_default, <% getrebootflags(); %>);
 var submit_button = "<% get_web_page_name(); %>";
 var timer = setTimeout("message()", my_tab.wait_time * 1000);
 var browserName=navigator.appName;
