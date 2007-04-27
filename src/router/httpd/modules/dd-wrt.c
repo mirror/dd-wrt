@@ -1765,39 +1765,6 @@ ej_show_dhcpd_settings (webs_t wp, int argc, char_t ** argv)
 }
 
 
-static void
-showOption (webs_t wp, char *propname, char *nvname)
-{
-  websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp,
-	     "<div class=\"label\"><script type=\"text/javascript\">Capture(%s)</script></div><select name=\"%s\">\n",
-	     propname, nvname);
-  websWrite (wp,
-	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n//]]>\n</script>\n",
-	     nvram_match (nvname, "0") ? "selected=\\\"selected\\\"" : "");
-  websWrite (wp,
-	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"1\\\" %s >\" + share.enabled + \"</option>\");\n//]]>\n</script>\n</select>\n",
-	     nvram_match (nvname, "1") ? "selected=\\\"selected\\\"" : "");
-  websWrite (wp, "</div>\n");
-
-}
-
-
-static void
-showOptions (webs_t wp, char *propname, char *names, char *select)
-{
-  char *next;
-  char var[80];
-  websWrite (wp, "<select name=\"%s\">\n", propname);
-  foreach (var, names, next)
-  {
-    websWrite (wp,
-	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n//]]>\n</script>\n",
-	       var, !strcmp (var, select) ? "selected=\\\"selected\\\"" : "",
-	       var);
-  }
-  websWrite (wp, "</select>\n");
-}
 
 #ifdef HAVE_MADWIFI
 void
@@ -1835,7 +1802,112 @@ ej_show_wifiselect (webs_t wp, int argc, char_t ** argv)
 
 }
 #endif
+static void
+showOption (webs_t wp, char *propname, char *nvname)
+{
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(%s)</script></div><select name=\"%s\">\n",
+	     propname, nvname);
+  websWrite (wp,
+	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n//]]>\n</script>\n",
+	     nvram_match (nvname, "0") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,
+	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"1\\\" %s >\" + share.enabled + \"</option>\");\n//]]>\n</script>\n</select>\n",
+	     nvram_match (nvname, "1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp, "</div>\n");
 
+}
+
+
+static void
+showOptions (webs_t wp, char *propname, char *names, char *select)
+{
+  char *next;
+  char var[80];
+  websWrite (wp, "<select name=\"%s\">\n", propname);
+  foreach (var, names, next)
+  {
+    websWrite (wp,
+	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n//]]>\n</script>\n",
+	       var, !strcmp (var, select) ? "selected=\\\"selected\\\"" : "",
+	       var);
+  }
+  websWrite (wp, "</select>\n");
+}
+static void
+showOptionsLabel (webs_t wp, char *labelname,char *propname, char *names, char *select)
+{
+websWrite(wp,"<div class=\"setting\">\n");
+websWrite(wp,"<div class=\"label\">%s</div>",labelname);
+showOptions(wp,propname,names,select);
+websWrite(wp,"</div>\n");
+
+}
+void show_inputlabel(webs_t wp,char *labelname,char *propertyname,int propertysize)
+{
+websWrite(wp,"<div class=\"setting\">\n");
+websWrite(wp,"<div class=\"label\">%s</div>",labelname);
+websWrite(wp,"<input size=\"%d\" name=\"%s\" value=\"%s\" />\n",propertysize,propertyname,nvram_safe_get(propertyname));
+websWrite(wp,"</div>\n");
+}
+#ifdef HAVE_OLSRD
+void ej_show_olsrd(webs_t wp,int argc,char_t **argv)
+{
+if (nvram_match("wk_mode","olsrd"))
+{
+websWrite(wp,"<fieldset>\n");
+websWrite(wp,"<legend>OLSRD Routing</legend>\n");
+show_inputlabel(wp,"Poll Rate","olsrd_pollsize",5);
+show_inputlabel(wp,"TCP Redundancy","olsrd_redundancy",5);
+show_inputlabel(wp,"MPR Coverage","olsrd_coverage",5);
+show_inputlabel(wp,"Link Quality Fish Eye","olsrd_lqfisheye",5);
+show_inputlabel(wp,"Link Quality Window Size","olsrd_lqwinsize",5);
+show_inputlabel(wp,"Link Quality Dijkstra Limit","olsrd_lqdijkstralimit",5);
+show_inputlabel(wp,"Link Quality Level","olsrd_lqlevel",5);
+showOption(wp,"olsrd.hysteresis","olsrd_hysteresis");
+int realcount = atoi(nvram_safe_get("olsrd_count"));
+char *wordlist = nvram_safe_get("olsrd_interfaces");
+char *next;
+char word[64];
+int count=0;
+  foreach (word, wordlist, next)
+  {
+    char *interface = word;
+    if (!interface)
+      break;  
+    char *hellointerval = strsep (&interface, ">");
+    if (!hellointerval)
+      break;  
+    char *hellovaliditytime = strsep (&hellointerval, ">");
+    if (!hellovaliditytime)
+      break;  
+    char *tcinterval = strsep (&hellovaliditytime, ">");
+    if (!tcinterval)
+      break;  
+    char *tcvaliditytime = strsep (&tcintercal,">");
+    if (!tcvaliditytime)
+      break;  
+    char *midinterval = strsep(&tcvaliditytime,">");
+    if (!midinterval)
+      break;  
+    char *midvaliditytime = strsep(&midinterval,">");
+    if (!midvaliditytime)
+      break;  
+    char *hnainterval = strsep(&midvaliditytime,">");
+    if (!hnainterval)
+      break;  
+    char *hnavaliditytime = strsep(&hnainterval,">");
+    if (!hnavaliditytime)
+      break;  
+     count++;
+  }
+websWrite(wp,"</fieldset>\n");
+
+}
+}
+
+#endif
 #ifdef HAVE_VLANTAGGING
 
 
