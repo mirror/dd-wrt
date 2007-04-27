@@ -232,7 +232,10 @@ function to_submit(F) {
 	}
 }
 
-function init() {
+var update;
+
+addEvent(window, "load", function() {
+
 	mtu_enable_disable(document.setup,'<% nvram_get("mtu_enable"); %>');
 
 	if (document.setup.now_proto.value == "pppoe" ||
@@ -245,11 +248,7 @@ function init() {
 	    
 	dhcp_enable_disable(document.setup,'<% nvram_get("lan_proto"); %>');
 	setDNSMasq(document.setup);
-}
-
-var update;
-
-addEvent(window, "load", function() {
+	
 	show_layer_ext(document.setup.ntp_enable, 'idntp', <% nvram_else_match("ntp_enable", "1", "1", "0"); %> == 1);
 	
 	update = new StatusbarUpdate();
@@ -266,7 +265,7 @@ addEvent(window, "unload", function() {
 		</script>
 	</head>
 
-	<body class="gui" onload="init();">
+	<body class="gui">
 	<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
@@ -464,7 +463,7 @@ addEvent(window, "unload", function() {
 					</div>
 				</div>
 				<div id="floatKiller"></div>
-				<div id="statusInfo">
+				<div id="statusInfo"></div>
 				<div class="info"><% tran("share.firmware"); %>: 
 					<script type="text/javascript">
 					//<![CDATA[

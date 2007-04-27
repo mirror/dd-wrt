@@ -93,21 +93,6 @@ function valid(F) {
 	return true;
 }
 
-function init() {
-	day_enable_disable(document.filters, "<% filter_tod_get("day_all_init"); %>");
-	time_enable_disable(document.filters, "<% filter_tod_get("time_all_init"); %>");
-	setBlockedServicesValue();
-	Status(document.filters, "<% filter_policy_get("f_status","onload_status"); %>");
-	choose_disable(document.filters.port0_start);
-	choose_disable(document.filters.port0_end);
-	choose_disable(document.filters.port1_start);
-	choose_disable(document.filters.port1_end);
-	choose_disable(document.filters.port2_start);
-	choose_disable(document.filters.port2_end);
-	choose_disable(document.filters.port3_start);
-	choose_disable(document.filters.port3_end);
-}
-
 function service(id, name, port_start, port_end, protocol) {
 	this.id = id;
 	this.name = name;
@@ -267,6 +252,19 @@ var update;
 
 addEvent(window, "load", function() {
 	
+	day_enable_disable(document.filters, "<% filter_tod_get("day_all_init"); %>");
+	time_enable_disable(document.filters, "<% filter_tod_get("time_all_init"); %>");
+	setBlockedServicesValue();
+	Status(document.filters, "<% filter_policy_get("f_status","onload_status"); %>");
+	choose_disable(document.filters.port0_start);
+	choose_disable(document.filters.port0_end);
+	choose_disable(document.filters.port1_start);
+	choose_disable(document.filters.port1_end);
+	choose_disable(document.filters.port2_start);
+	choose_disable(document.filters.port2_end);
+	choose_disable(document.filters.port3_start);
+	choose_disable(document.filters.port3_end);
+	
 	update = new StatusbarUpdate();
 	update.start();
 
@@ -281,7 +279,7 @@ addEvent(window, "unload", function() {
 		</script>
 	</head>
 
-	<body class="gui" onload="init()">
+	<body class="gui">
 		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
@@ -518,7 +516,7 @@ addEvent(window, "unload", function() {
 					</div>
 				</div>
 				<div id="floatKiller"></div>
-				<div id="statusInfo">
+				<div id="statusInfo"></div>
 				<div class="info"><% tran("share.firmware"); %>: 
 					<script type="text/javascript">
 					//<![CDATA[
