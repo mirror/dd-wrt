@@ -112,13 +112,11 @@ function to_submit(F) {
 	apply(F);
 }
 
-function init() {
-	qos_grey(<% nvram_get("wshaper_enable"); %>,document.QoS);
-}
-	
 var update;
 
 addEvent(window, "load", function() {
+	
+	qos_grey(<% nvram_get("wshaper_enable"); %>,document.QoS);
 	
 	update = new StatusbarUpdate();
 	update.start();
@@ -134,7 +132,7 @@ addEvent(window, "unload", function() {
 		</script>
 	</head>
 
-	<body class="gui" onload="init()">
+	<body class="gui">
 		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
@@ -511,7 +509,7 @@ addEvent(window, "unload", function() {
 					</div>
 				</div>
 				<div id="floatKiller"></div>
-				<div id="statusInfo">
+				<div id="statusInfo"></div>
 				<div class="info"><% tran("share.firmware"); %>: 
 					<script type="text/javascript">
 					//<![CDATA[

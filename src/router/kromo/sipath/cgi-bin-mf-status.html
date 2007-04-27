@@ -3,7 +3,6 @@ cat<<EOF
 <% do_pagehead("sipath.status_titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-		<!--
 
 function navarr(){}
 navset=new navarr();
@@ -44,7 +43,6 @@ function ini() {
     }
   }
 }
-//-->
 
 var update;
 
@@ -76,7 +74,8 @@ addEvent(window, "unload", function() {
                </div>
 				<% do_menu("Sipath.asp","cgi-bin-mf-status.html"); %>
             </div>
-               <script type="text/javascript"><!--
+               <script type="text/javascript">
+				//<![CDATA[
 function help(e) {
   if (!e) e = event;
   // (virt)KeyVal is Konqueror, charCode is Moz/Firefox, else MSIE, Netscape, Opera
@@ -101,7 +100,7 @@ if (document.all) {
 else {
   document.onkeypress = help;
 }
-//-->
+//]]>
 </script>
 
 EOF
@@ -316,7 +315,6 @@ cat<<EOF
 					</div>
 				</div>
 				<div id="floatKiller"></div>
-				<div id="statusInfo">
 				<div class="info"><% tran("share.firmware"); %>: 
 					<script type="text/javascript">
 					//<![CDATA[
