@@ -120,6 +120,7 @@ include rules/pptp-client.mk
 include rules/freeradius.mk
 include rules/netstatnat.mk
 include rules/pppd.mk
+include rules/ppp.mk
 include rules/ipupdate.mk
 include rules/inadyn.mk
 include rules/zebra.mk
