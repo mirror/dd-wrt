@@ -1,0 +1,2 @@
+wlconf: nvram shared
+
