@@ -1,0 +1,39 @@
+CHANGELOG AS OF 0.2.2
+
+0.2.6 -------------------------------------------------
+
+Minor updates
+
+UPDATES
+Some simple code rewrites and bugfixes.
+Route deletion using IPv6 should work now.
+
+
+0.2.5 -------------------------------------------------
+
+Lots of updates.
+
+REWRITES
+
+Rewritten queuing structure.
+Route information is removed from main tab.
+
+PIGGYBACKING
+
+The front-end now supports piggybacked messages.
+
+
+0.2.2 -------------------------------------------------
+
+HELLO PARSING ERROR
+
+The parsing of HELLO messages didnt handle grous of neighbors
+bigger than 1 if there existed more than one group. This because
+the implementation did not check for several IP addresses but
+just incremented the struct-array index. A kindof ugly hack fixed
+this.
+
+MESSAGE RECIEVING
+
+Recieving of messages not complete - fixed. One could risk just recieving
+half a message the way it used to be implemented.

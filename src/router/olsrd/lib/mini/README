@@ -1,0 +1,36 @@
+---------------------------------------------------------------------
+MINI PLUGIN FOR OLSRD
+by Bruno Randolf <bruno.randolf@4g-systems.biz>
+---------------------------------------------------------------------
+
+This is a minimal example plugin to demonstrate the functions a plugin
+must implement. It documents the minimal requirements for the new
+plugin interface and is a good start for creating new plugins and 
+testing the plugin loader.
+
+This plugin does nothing, except printing messages when it is loaded
+and unloaded.
+
+
+---------------------------------------------------------------------
+PLUGIN PARAMETERS (PlParam)
+---------------------------------------------------------------------
+
+PlParam "test" "anything"
+	just for a test: print the parameter.
+
+
+---------------------------------------------------------------------
+SAMPLE CONFIG
+---------------------------------------------------------------------
+
+add in /etc/olsrd.conf:
+
+LoadPlugin "olsrd_mini.so.0.1"
+{
+	PlParam "test" "hello"
+}
+
+
+---------------------------------------------------------------------
+EOF / 26.05.2005

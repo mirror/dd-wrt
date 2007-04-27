@@ -1,0 +1,17 @@
+0.2.1: Immo 'FaUl' Wehrenberg <immo@chaostreff-dortmund.de>:
+	* now check (most of the) return-values of syscalls, improvement still
+	  possible...
+	* added support for new zebra-protocoll-format (with
+	  ZEBRA_HEADER_MARKER and ZCLIENT_VERSION) if new 
+	  quagga-headers are found)
+	* Code Cleanup (removed lot of debug and test-stuff)
+	* fixed return-bug in zebra_send_command
+	* added copyright-stuff 
+	* removed memleak in zebra_add/delete_v4_route
+
+0.2.0: Immo 'FaUl' Wehrenberg <immo@chaostreff-dortmund.de>:
+	* Initial release, too :-) 
+	* Added support for route-export to the zebra/quagga
+	
+0.1.0: Immo 'FaUl' Wehrenberg <immo@chaostreff-dortmund.de>:
+	* Initial release
