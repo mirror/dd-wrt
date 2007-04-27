@@ -1,7 +1,7 @@
-/* This file is auto generated, version 69 */
+/* This file is auto generated, version 73 */
 #define UTS_MACHINE "arm"
-#define UTS_VERSION "#69 Sun Apr 15 19:25:35 CEST 2007"
-#define LINUX_COMPILE_TIME "19:25:35"
+#define UTS_VERSION "#73 Thu Apr 26 13:51:46 CEST 2007"
+#define LINUX_COMPILE_TIME "13:51:46"
 #define LINUX_COMPILE_BY "root"
 #define LINUX_COMPILE_HOST "dd-wrt"
 #define LINUX_COMPILE_DOMAIN "FBNRIE"
