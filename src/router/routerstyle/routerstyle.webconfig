@@ -12,6 +12,7 @@ function previewStyle(val) {
 		t.removeAttribute("href");
 		t.setAttribute("href", newStyle);
 	}
+	return true;
 }
 document.forms[0].onreset = function() { 
 	previewStyle("<% nvram_get("router_style"); %>"); 
