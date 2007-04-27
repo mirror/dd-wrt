@@ -3,7 +3,6 @@ cat<<EOF
 <% do_pagehead("sipath.phone_titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-		<!--
 
 function navarr(){}
 navset=new navarr();
@@ -44,7 +43,7 @@ function ini() {
     }
   }
 }
-		//-->
+
 var update;
 
 addEvent(window, "load", function() {
@@ -74,7 +73,8 @@ addEvent(window, "unload", function() {
 				</div>
 
 
-		<script type="text/javascript"><!--
+		<script type="text/javascript">
+		//<![CDATA[
 function help(e) {
   if (!e) e = event;
   // (virt)KeyVal is Konqueror, charCode is Moz/Firefox, else MSIE, Netscape, Opera
@@ -99,7 +99,8 @@ if (document.all) {
 else {
   document.onkeypress = help;
 }
-//--></script>
+		//]]>
+		</script>
 
 EOF
 
@@ -662,7 +663,6 @@ cat<<EOF
 					</div>
 				</div>
 				<div id="floatKiller"></div>
-				<div id="statusInfo">
 				<div class="info"><% tran("share.firmware"); %>: 
 					<script type="text/javascript">
 					//<![CDATA[

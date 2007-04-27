@@ -460,7 +460,7 @@ document.write("<option value='<%% nvram_selmatch("%s_br1_nat", "2", "selected")
 					</div>
 				</div>
 				<div id="floatKiller"></div>
-				<div id="statusInfo">
+				<div id="statusInfo"></div>
 				<div class="info"><%% tran("share.firmware"); %%>: 
 					<script type="text/javascript">
 					//<![CDATA[

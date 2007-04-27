@@ -28,16 +28,18 @@ function valid_value(F)
 	return true;
 }
 
-function init() {
+addEvent(window, "load", function() {
+	
 	<% onload("WL_ActiveTable", "setTimeout('opener.window.location.reload();',500);"); %>
 	window.focus();
-}
+
+});
 		
 		//]]>
 		</script>
 	</head>
 	
-	<body onload="init()">
+	<body>
 		<form action="apply.cgi" method="<% get_http_method(); %>">
 			<input type="hidden" name="submit_button" value="WL_ActiveTable" />
 			<input type="hidden" name="action" value="Apply" />

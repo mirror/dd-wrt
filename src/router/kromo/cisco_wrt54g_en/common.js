@@ -524,7 +524,7 @@ function createBar(w,h,speed,blocks,count,action) {
 	if (ie||w3c) {	
 		var t='<div class="progressbar" id="_xpbar'+(++N)+'" style="width:'+w+'px; height:'+h+'px;">';
 		t+='<span class="progressbarblock" id="blocks'+N+'" style="left:-'+(h*2+1)+'px;">';
-		for (i=0;i<blocks;i++) {
+		for (var i=0;i<blocks;i++) {
 			t+='<span class="progressbarblock" style="left:-'+((h*i)+i)+'px; width:'+h+'px; height:'+h+'px; ';
 			t+=(ie)?'filter:alpha(opacity='+(100-i*(100/blocks))+')':'-Moz-opacity:'+((100-i*(100/blocks))/100);
 			t+='"></span>';
@@ -581,7 +581,7 @@ function togglePause() {
 
 // 03/03/06 : Botho - Change style of the element in param
 function change_style(id, newClass) {
-   identity=document.getElementById(id);
+   var identity=document.getElementById(id);
    identity.className=newClass;
 }
 
