@@ -1,7 +1,7 @@
 /*
  * Automatically generated C config: don't edit
- * Linux kernel version: 2.6.20.6
- * Mon Apr  9 12:04:05 2007
+ * Linux kernel version: 2.6.20.7
+ * Tue Apr 24 16:27:48 2007
  */
 #define AUTOCONF_INCLUDED
 #define CONFIG_BONDING_MODULE 1
@@ -37,6 +37,7 @@
 #define CONFIG_NFS_COMMON 1
 #define CONFIG_MTD_MAP_BANK_WIDTH_4 1
 #define CONFIG_IOMAP_COPY 1
+#define CONFIG_PPP_MPPE_MPPC 1
 #define CONFIG_HW_CONSOLE 1
 #define CONFIG_XSCALE_PMU 1
 #define CONFIG_NF_NAT_IRC 1
@@ -234,7 +235,6 @@
 #define CONFIG_IP_MULTIPLE_TABLES 1
 #define CONFIG_RPCSEC_GSS_KRB5_MODULE 1
 #define CONFIG_ZBOOT_ROM_TEXT 0x0
-#define CONFIG_PPP_MPPE 1
 #define CONFIG_RTC_HCTOSYS_DEVICE "rtc0"
 #define CONFIG_PPPOE 1
 #define CONFIG_IXP4XX_WATCHDOG 1
@@ -401,7 +401,7 @@
 #define CONFIG_IMQ 1
 #define CONFIG_IP_NF_TARGET_ECN 1
 #define CONFIG_NET 1
-#define CONFIG_KERNELVERSION "2.6.20.6"
+#define CONFIG_KERNELVERSION "2.6.20.7"
 #define CONFIG_MODULE_UNLOAD 1
 #define CONFIG_FS_XIP 1
 #define CONFIG_NET_CLS_BASIC 1
