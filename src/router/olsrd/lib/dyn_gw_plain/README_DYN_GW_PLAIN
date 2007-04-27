@@ -1,0 +1,17 @@
+DYNAMIC INTERNET GATEWAY PLAIN PLUGIN FOR olsr.org olsrd
+by Andreas Tønnesen(andreto@olsr.org)
+additions by Sven-Ola Tuecke
+
+This plugin is without Ping/libthread. It is the plain dyn_gw!
+
+HOW TO USE
+
+Add an entry like this to your olsrd configuration file:
+
+LoadPlugin "olsrd_dyn_gw_plain.so.0.4"
+{
+}
+
+ABOUT
+
+Plugin is IPv4 only.

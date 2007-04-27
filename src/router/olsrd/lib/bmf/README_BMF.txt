@@ -1,0 +1,586 @@
+BASIC MULTICAST FORWARDING PLUGIN FOR OLSRD
+by Erik Tromp (erik.tromp@nl.thalesgroup.com, erik_tromp@hotmail.com)
+Version 1.3
+
+1. Introduction
+---------------
+
+The Basic Multicast Forwarding Plugin floods IP-multicast and
+IP-local-broadcast traffic over an OLSRD network. It uses the
+Multi-Point Relays (MPRs) as identified by the OLSR protocol
+to optimize the flooding of multicast and local broadcast packets
+to all the hosts in the network. To prevent broadcast storms, a
+history of packets is kept; only packets that have not been seen
+in the past 3-6 seconds are forwarded.
+
+
+2. How to build and install
+---------------------------
+
+Download the olsr-bmf-v1.3.tar.gz file and save it into your OLSRD
+base install directory.
+
+Change directory (cd) to your OLSRD base install directory.
+
+At the command prompt, type:
+
+  tar -zxvf ./olsr-bmf-v1.3.tar.gz
+
+then type:
+
+  make build_all
+
+followed by:
+
+  make install_all
+
+Next, turn on the possibility to create a tuntap interface (see also
+/usr/src/linux/Documentation/networking/tuntap.txt):
+
+  mkdir /dev/net # if it doesn't exist already
+  mknod /dev/net/tun c 10 200
+  
+Set permissions, e.g.:
+
+  chmod 0700 /dev/net/tun
+
+To configure BMF in OLSR, you must edit the file /etc/olsrd.conf
+to load the BMF plugin. For example, add the following lines:
+
+  LoadPlugin "olsrd_bmf.so.1.3"
+  {
+    # No PlParam entries required for basic operation
+  }
+
+
+3. How to run
+-------------
+
+After building and installing OLSRD with the BMF plugin, run the
+olsrd daemon by entering at the shell prompt:
+
+  olsrd
+
+Look at the output; it should list the BMF plugin, e.g.:
+
+  ---------- Plugin loader ----------
+  Library: olsrd_bmf.so.1.3
+  OLSRD Basic Multicast Forwarding plugin 1.3 (Dec 18 2006 11:23:51)
+    (C) Thales Communications Huizen, Netherlands
+    Erik Tromp (erik.tromp@nl.thalesgroup.com)
+  Checking plugin interface version...  4 - OK
+  Trying to fetch plugin init function... OK
+  Trying to fetch param function... OK
+  Sending parameters...
+  "NonOlsrIf"/"eth0"... OK
+  Running plugin_init function...
+  OLSRD Basic Multicast Forwarding (BMF) plugin: opened 6 sockets
+  ---------- LIBRARY LOADED ----------
+
+
+4. How to check if it works
+---------------------------
+
+Enter the following command on the command prompt:
+  
+  ping 224.0.0.1
+    
+All OLSR-BMF hosts in the OLSR network should respond. For example,
+assume we have three hosts, with IP addresses 192.168.151.50,
+192.168.151.53 and 192.168.151.55. On host 192.168.151.50 we enter
+the following ping command:
+
+root@IsdbServer:~# ping 224.0.0.1
+PING 224.0.0.1 (224.0.0.1) from 192.168.151.50 eth1: 56(84) bytes of data.
+64 bytes from 192.168.151.50: icmp_seq=1 ttl=64 time=0.511 ms
+64 bytes from 192.168.151.53: icmp_seq=1 ttl=64 time=4.67 ms (DUP!)
+64 bytes from 192.168.151.55: icmp_seq=1 ttl=63 time=10.7 ms (DUP!)
+64 bytes from 192.168.151.50: icmp_seq=2 ttl=64 time=0.076 ms
+64 bytes from 192.168.151.53: icmp_seq=2 ttl=64 time=1.23 ms (DUP!)
+64 bytes from 192.168.151.55: icmp_seq=2 ttl=63 time=1.23 ms (DUP!)
+64 bytes from 192.168.151.50: icmp_seq=3 ttl=64 time=0.059 ms
+64 bytes from 192.168.151.53: icmp_seq=3 ttl=64 time=2.94 ms (DUP!)
+64 bytes from 192.168.151.55: icmp_seq=3 ttl=63 time=5.62 ms (DUP!)
+64 bytes from 192.168.151.50: icmp_seq=4 ttl=64 time=0.158 ms
+64 bytes from 192.168.151.53: icmp_seq=4 ttl=64 time=1.14 ms (DUP!)
+64 bytes from 192.168.151.55: icmp_seq=4 ttl=63 time=1.16 ms (DUP!)
+
+We can see the response from the originating host (192.168.151.50)
+(it is normal behaviour for hosts sending multicast packets to
+receive their own packets). We can also see the responses by the
+other hosts (correctly seen as DUPlicates by ping).
+
+
+5. How does it work
+-------------------
+
+In the IP header there is room for only two IP-addresses:
+* the destination IP address (in our case either a multicast
+  IP-address 224.0.0.0...239.255.255.255, or a local broadcast
+  address e.g. 192.168.1.255), and
+* the source IP address (the originator).
+
+For optimized flooding, however, we need more information. Let's
+assume we are the BMF process on one host. We will need to know which
+host forwarded the IP packet to us. Since OLSR keeps track of which
+hosts select our host as MPR (see the olsr_lookup_mprs_set(...) function),
+we can determine if the host that forwarded the packet, has selected us as
+MPR. If so, we must also forward the packet, changing the 'forwarded-by'
+IP-address to that of us. If not, we do not forward the packet.
+
+Because we need more information than fits in a normal IP-header, the
+original packets are encapsulated into a new IP packet. Encapsulated
+packets are transported in UDP, port 50698. The source address of the
+encapsulation packet is set to the address of the forwarder instead of
+the originator. Of course, the payload of the encapsulation packet is
+the original IP packet.
+
+For local reception, each received encapsulated packets is unpacked
+and passed into a tuntap interface which is specially created for
+this purpose.
+
+There are other flooding solutions available that do not use
+encapsulation. The problem with these solutions is that they cannot
+prevent duplicates of forwarded packets to enter the IP stack. For
+example, if a host is receiving flooded (unencapsulated, native IP)
+packets via two MPR hosts, there is no way to stop the reception of
+the packets coming in via the second MPR host. To prevent this, BMF
+uses a combination of encapsulated flooding and local reception via
+a tuntap interface.
+
+Here is in short how the flooding works (see also the
+BmfEncapsulatedPacketReceived(...) function; details with respect to
+the forwarding towards non-OLSR enabled hosts are omitted):
+  
+  On all OLSR-enabled interfaces, setup reception of packets
+    on UDP port 50698.
+  Upon reception of such a packet:
+    If the received packet was sent by myself, drop it.
+    If the packet was recently seen, drop it.
+    Unpack the encapsulated packet and send a copy to myself via the
+      TunTap interface.
+    If I am an MPR for the host that forwarded the packet to me,
+      forward the packet to all OLSR-enabled interfaces *including*
+      the interface on which it was received.
+
+
+6. Advanced configuration
+-------------------------
+
+All configuration of BMF is done via the "LoadPlugin" section in
+the /etc/olsrd.conf file.
+
+The following gives an overview of all plugin parameters that can be
+configured:
+
+  LoadPlugin "olsrd_bmf.so.1.3"
+  {
+    # Specify the name of the BMF network interface.
+    # Defaults to "bmf0".
+    PlParam "BmfInterface" "mybmf0"
+
+    # Specify the type of the BMF network interface: either "tun" or
+    # "tap". Defaults to "tun".
+    PlParam "BmfInterfaceType" "tap"
+
+    # Specify the IP address and mask for the BMF network interface.
+    # By default, the IP address of the first OLSR interface is copied.
+    # The default prefix length is 32.
+    PlParam "BmfInterfaceIp" "10.10.10.234/24"
+
+    # Enable or disable the flooding of local broadcast packets
+    # (e.g. packets with IP destination 192.168.1.255). Either "yes"
+    # or "no". Defaults to "yes".
+    PlParam "DoLocalBroadcast" "no"
+
+    # Enable or disable the capturing packets on the OLSR-enabled
+    # interfaces (in promiscuous mode). Either "yes" or "no". Defaults
+    # to "no".
+    # The multicast (and, if configured, local broadcast) packets sent on
+    # the non-OLSR network interfaces and on the BMF network interface will
+    # always be flooded over the OLSR network.
+    # If this parameter is "yes", also the packets sent on the OLSR-enabled
+    # network interfaces will be flooded over the OLSR network.
+    # NOTE: This parameter should be set consistently on all hosts throughout
+    # the network. If not, hosts may receive multicast packets in duplicate.
+    PlParam "CapturePacketsOnOlsrInterfaces" "yes"
+
+    # List of non-OLSR interfaces to include
+    PlParam     "NonOlsrIf"  "eth2"
+    PlParam     "NonOlsrIf"  "eth3"
+  }
+
+BmfInterfaceIp
+--------------
+
+By default, the BMF network interface will get the IP address of the
+first OLSR interface, with a prefix length of 32. Having two network
+interfaces with the same IP address may seem strange, but it is not
+a problem, since the BMF network interface is not used in any point-to-
+point routing.
+
+The advantage of assigning a known OLSR IP address to the BMF network
+interface is that multicast packets, sent via the BMF network interface,
+get a known IP source address, to which the receivers of the packets
+can reply. That is useful when using, for example, the command
+"ping 224.0.0.1".
+
+An advantage of using a prefix length of 32 is that the Linux IP
+stack will not automatically enter a subnet routing entry (via the BMF
+network interface) into the kernel routing table. Such a routing entry
+would be useless, because the BMF network interface does not forward
+point-to-point traffic.
+
+If you configure a specific IP address and mask via the "BmfInterfaceIp"
+parameter, BMF will cause the specified IP host address to be advertised
+into the OLSR network via the HNA mechanism, so that the other hosts in
+the network know how to route back.
+
+CapturePacketsOnOlsrInterfaces
+------------------------------
+
+If "CapturePacketsOnOlsrInterfaces" is set to "yes", any multicast
+or local broadcast IP packet, sent by an application on *any* OLSR
+interface, will be flooded over the OLSR network. Each OLSR host
+will receive the packet on its BMF network interface, "bmf0". The
+OLSR-interfaces will be in promiscuous mode to capture the multicast
+or local broadcast packets.
+
+For example, if "eth1" is an OLSR interface, the following command
+will result in one response from each OLSR host in the network:
+
+  ping -I eth1 224.0.0.1
+
+A disadvantage of this configuration is that a host may, in rare
+cases, receive a multicast packet twice. This is best explained
+by looking at the following network diagram:
+
+        eth0   eth0
+      A ----------- B
+ eth1 |            / eth1
+      |           /
+ eth0 |          /
+      C --------+
+        eth1
+
+Suppose host A is running a ping session that is sending ping
+packets on "eth1". The BMF process on host A will see the outgoing
+packets on "eth1", encapsulates these packets and sends the
+encapsulated packets on "eth0". Let's assume we are using the link
+quality extensions of OLSR, and the 2-hop path A - B - C is better
+(in terms of ETX) than the 1-hop path A - C. In that case host B is
+an MPR for host A. Host B receives the encapsulated packets of host A
+on its "eth0" interface, and, since it is an MPR, it decides to
+forward them on "eth1".
+
+In most cases, host C will receive the original, unencapsulated
+ping packet on its "eth0" interface before the encapsulated
+ping packet from host B arrives on its "eth1" interface. When the
+encapsulated packet from B arrives, the BMF process will then see
+that it is a duplicate and discard it.
+
+However, in the IP world, there are no guarantees, so it may
+happen that host C receives the encapsulated packet from host B
+first. That packet is then unpacked and locally delivered to the
+BMF network interface "bmf0". When the original, unencapsulated
+packet then comes in on "eth0", there is no way to stop it from
+being received (for a second time) by the Linux IP stack.
+
+As said, this may be a rare case. Besides, most applications
+can deal with a duplicate reception of the same packet. But if
+you're a purist and want everything to work correct, you should
+leave "CapturePacketsOnOlsrInterfaces" to its default value "no".
+
+A disadvantage of leaving "CapturePacketsOnOlsrInterfaces" to its
+default value "no" is that all multicast traffic must go via the
+BMF network interface "bmf0". However, this should not be a problem,
+since a route to all multicast addresses via the BMF network
+interface "bmf0" is automatically added when BMF is started.
+
+
+7. Adding non-OLSR interfaces to the multicast flooding
+-------------------------------------------------------
+
+As a special feature, it is possible to also forward from and to
+non-OLSR interfaces.
+
+If you have network interfaces on which OLSR is *not* running, but you *do*
+want to forward multicast and local-broadcast IP packets, specify these
+interfaces one by one as "NonOlsrIf" parameters in the BMF plugin section
+of /etc/olsrd.conf. For example:
+
+  LoadPlugin "olsrd_bmf.so.1.3"
+  {
+    # Non-OLSR interfaces to participate in the multicast flooding
+    PlParam     "NonOlsrIf"  "eth2"
+    PlParam     "NonOlsrIf"  "eth3"
+  }
+
+If an interface is listed both as "NonOlsrIf" for BMF, and in the
+Interfaces { ... } section of olsrd.conf, it will be seen by BMF
+as an OLSR-enabled interface.
+
+
+8. Interworking with other multicast routers
+--------------------------------------------
+
+In a typical interworking configuration there is a network of OLSR hosts
+in which one host acts as a gateway to a fixed infrastructure network.
+Usually that host will be advertising a default route via the HNA
+mechanism, e.g. by adding the following lines to its /etc/olsrd.conf
+file:
+
+  Hna4
+  {
+  #   Internet gateway:
+      0.0.0.0      0.0.0.0
+  }
+
+Alternatively, the gateway is running OLSRDs dynamic internet gateway
+plugin; read the file ../../lib/dyn_gw/README_DYN_GW .
+
+The gateway host will usually have at least one OLSR-interface, and
+at least one non-OLSR interface, running a third-party routing protocol
+like OSPF.
+
+It is beyond the scope of this document to deal with the interworking
+between BMF and all possible multicast routing daemons. As an example,
+let's assume the gateway is running the mrouted multicast daemon (which
+implements the DVMRP protocol). Also, assume that all the IP addresses
+in the OLSR network are within the IP subnet 10.0.0.0/8 . Then mrouted
+on the gateway needs to be configured to accept IGMP requests from IP
+clients within the 10.0.0.0/8 subnet on the BMF network interface
+("bmf0"). This is easily configured by adding a line to the
+/etc/mrouted.conf configuration file:
+
+  phyint bmf0 altnet 10.0.0.0/8
+
+Not strictly necessary, but clean, is to disable the DVMRP protocol
+on the OLSR interfaces, as no DVMRP routers are expected inside the
+OLSR network. Suppose the gateway is running OLSR on "eth1", then
+add the following line /etc/mrouted.conf :
+
+  phyint eth1 disable
+
+Finally, mrouted does not accept interfaces with prefix length 32.
+Therefore, override the default IP address and prefix length of
+the BMF network interface, by editing the /etc/olsrd.conf file.
+For example:
+
+  LoadPlugin "olsrd_bmf.so.1.3"
+  {
+      PlParam "BmfInterfaceIp" "10.10.10.4/24"
+  }
+
+Note that it is not necessary, and even incorrect, to pass the
+non-OLSR interface to BMF as a "NonOlsrIf" parameter in the
+"LoadPlugin" section of the gateway host. When the mrouted
+multicast daemon is running, the forwarding of multicast traffic
+between the OLSR interface and the non-OLSR interface is done by
+the Linux kernel.
+
+The remaining text in this section has nothing to do with BMF or
+OLSR, but is added to give a number of helpful hints you might
+need when your multicast interworking, for some reason, is not working.
+
+When using the mrouted multicast daemon, there is a useful command,
+mrinfo, that gives information about what mrouted thinks of its
+neighbor hosts. For example:
+
+  root@node-4:/# mrinfo
+  127.0.0.1 (localhost.localdomain) [DVMRPv3 compliant]:
+    10.1.2.4 -> 10.1.2.2 (10.1.2.2) [1/1/querier]
+    10.0.6.4 -> 0.0.0.0 (local) [1/1/disabled]
+    10.255.255.253 -> 0.0.0.0 (local) [1/1/querier/leaf]
+
+In this example, the line starting with "10.1.2.4" is for the
+non-OLSR interface "eth0", on which mrouted has found an
+mrouted-neighbor host "10.1.2.2". The next line is for the OLSR
+interface "eth1", which is disabled for mrouted. The last line
+is for the BMF interface "bmf0". It is clear that mrouted sees no
+mrouted-neighbors on that interface (leaf).
+
+To see what multicast traffic has flown through the gateway, view
+the files /proc/net/ip_mr_vif and /proc/net/ip_mr_cache:
+
+  root@node-4:/# cat /proc/net/ip_mr_vif
+  Interface      BytesIn  PktsIn  BytesOut PktsOut Flags Local    Remote
+   0 eth0          27832      98     14200      50 00000 0402010A 00000000
+   2 bmf0          14484      51     13916      49 00000 FDFFFF0A 00000000
+  root@node-4:/# cat /proc/net/ip_mr_cache
+  Group    Origin   Iif     Pkts    Bytes    Wrong Oifs
+  4D4237EA C747010A 0         51    14484        0  2:1
+  4D4237EA C702010A 0         51    14484        0  2:1
+  4D4237EA C84C000A 2         53    15052        0  0:1
+
+From the above we can deduce that traffic from input interface 0
+(Iif 0, "eth0") is forwarded on output interface 2 (Oifs 2, = "bmf0"),
+and traffic from input interface 2 (Iif 2, "bmf0") is forwarded on
+output interface 0 (Oifs 0, "eth0"). The ":1" behind the Oifs numbers
+indicates the TTL thresholds, in this case packets with TTL value 1
+or less will not be forwarded.
+
+When you are connecting an OLSR-BMF network to another multicast network
+(e.g. a DVMRP network), you might be surprised that, when you ping the
+all-routers multicast address 224.0.0.1 from within the OLSR network,
+only the OLSR hosts respond. This is, however, compliant behaviour:
+packets with their destination IP address in the range 224.0.0.0 -
+224.0.0.255 are not routed by normal multicast protocols (i.e. their
+TTL is implicitly assumed to be 1).
+
+
+9. Testing in a lab environment
+-------------------------------
+
+When using equipment like switches or hubs, usually all the hosts see each
+other. In an OLSR lab environment, we sometimes want to simulate the
+situation that some hosts in the network cannot directly see other hosts
+(as 1-hop neighbors) but only indirectly (as 2- or more-hop neighbors).
+To simulate that situation, the iptables tool is often used. For BMF,
+however, that is nog enough.
+
+For OLSR testing, setup iptables on each host to drop packets from
+all other hosts which are not direct (1-hop) neigbors. For example, to
+drop all packets from the hosts with MAC addresses 00:0C:29:51:32:88,
+00:0C:29:61:34:B7 and 00:0C:29:28:0E:CC, enter at the shell prompt:
+
+  iptables -A INPUT -m mac --mac-source 00:0C:29:51:32:88 -j DROP
+  iptables -A INPUT -m mac --mac-source 00:0C:29:61:34:B7 -j DROP
+  iptables -A INPUT -m mac --mac-source 00:0C:29:28:0E:CC -j DROP
+
+For BMF testing, edit the file /etc/olsrd.conf, and specify the MAC
+addresses of the hosts we do not want to see. (Even though packets from
+these hosts are dropped by iptables, they are still received on network
+interfaces if they are in promiscuous mode.) For example:
+
+  LoadPlugin "olsrd_bmf.so.1.3"
+  {
+    # Drop all packets received from the following MAC sources
+    PlParam     "DropMac"    "00:0C:29:51:32:88" # RemoteClient1
+    PlParam     "DropMac"    "00:0C:29:61:34:B7" # SimpleClient1
+    PlParam     "DropMac"    "00:0C:29:28:0E:CC" # SimpleClient2
+  }
+
+
+
+10. Common problems, FAQ
+------------------------
+
+---------
+Question:
+On which platforms does BMF currently compile?
+
+Answer:
+Only on Linux. No compilation on Windows (yet). The oldest Linux
+kernel on which the BMF plugin was tested was version 2.4.18.
+
+
+---------
+Question:
+When starting OLSRD with the BMF plugin, I can see the following
+error message:
+
+OLSRD Basic Multicast Forwarding (BMF) plugin: error opening /dev/net/tun: No such file or directory
+
+Wat to do?
+
+Answer:
+Turn on the possibility to create a tuntap interface; see section 2 of this
+file.
+
+---------
+Question:
+When starting OLSRD with the BMF plugin, I can see the following
+error message:
+
+OLSRD Basic Multicast Forwarding (BMF) plugin: error opening /dev/net/tun: No such device
+
+Wat to do?
+
+Answer:
+First, turn on the possibility to create a tuntap interface; see section 2 of this
+file. Check if the device is there:
+ 
+  ~ # ls -l /dev/net/tun
+  crw-------    1 root     root      10, 200 Sep  9  2006 /dev/net/tun
+
+If the device is there, but the error message remains to appear, the
+tap/tun device is not compiled in your kernel. Try the command:
+
+  modprobe tun
+
+If "modprobe tun" says something like "module tun not found", then either
+it is not compiled at all or it is not compiled into the kernel. 
+
+
+---------
+Question:
+I have enabled BMF, but my multicast application is not receiving any
+multicast packets.
+
+Answer:
+Many multicast applications must be configured to listen to a specific
+network interface. Make sure that your multicast application is listening on
+the BMF network interface, either by specifying the interface name itself
+(e.g. "bmf0") or by specifying its IP address.
+
+
+11. Version history
+-------------------
+
+18 Dec 2006: Version 1.3
+* Added the possibility to configure the BMF network interface:
+  name (e.g. "bmf0"), type (tun or tap), IP address and subnet
+  mask.
+* Flooding of local broadcast packets (e.g. with destination
+  IP address 192.168.1.255) can now be turned off by configuration.
+* When an application sends packets to the BMF network interface, BMF
+  also floods these packets over the OLSR network.
+* Removed the TTL decrementing so that equipment connected to
+  a non-OLSR interface can still send their IGMP messages (TTL = 1)
+  to a fixed multicast router (running e.g. mrouted - DVMRP)
+  connected to a non-OLSR interface on another host in
+  the OLSR network. In this way, a whole OLSR network, including
+  its non-OLSR capable hosts, can be made multicast-routable
+  from a fixed multicast-enabled IP network.
+  For an example of such a configuration read section 8 above.
+* Removed the check for 'IsNullMacAddress' when creating a network
+  interface object. The check was not necessary and prevented
+  BMF to work on non-ethernet interfaces such as ppp.
+* Bug fix: in case there are multiple OLSR interfaces, when an
+  application sends packets to one OLSR interface, BMF did not
+  flood these packets via the other OLSR interfaces. This is
+  fixed. Also, packets sent to an OLSR interface are transmitted
+  on the non-OLSR interfaces.
+
+23 Oct 2006: Version 1.2
+* Packets to a local broadcast destination have their destination
+  IP address adapted to the subnet on which they are forwarded.
+  This makes it possible to use broadcast-based services (such as
+  NetBIOS) across different IP subnets.
+* The code to relate fragments with their main IP packet did not
+  work when the fragment arrived earlier than the main packet.
+  This would cause fragments of BMF-packets to be falsely forwarded.
+  For now, removed the forwarding of IP fragments. (Who's using
+  IP-fragments anyway?)
+* Packets are forwarded from one non-OLSR interface to the other
+  non-OLSR interfaces.
+* Various small optimizations and style improvements.
+
+12 Jul 2006: Version 1.1
+* Major updates in code forwarding from and to non-OLSR enabled
+  network interfaces.
+* Debug level 9 gives a better indication of what happens to each
+  handled multicast/broadcast packet. To run the olsr daemon with
+  debug level 9, run "olsrd -d 9".
+* Can now deal with network interface removal ("ifdown eth1") and
+  addition ("ifup eth1").
+* CRC-calculation for duplicate detection is done over first 256
+  bytes in packet instead of over full packet length.
+* CRC calculated only on captured packets, and is subsequently
+  passed on in a special OLSR-BMF encapsulation header.
+* Deals correctly with fragmented packets
+
+27 Apr 2006: Version 1.0.1
+* First release.
+
