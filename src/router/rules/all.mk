@@ -136,7 +136,7 @@ include rules/wpa_supplicant.mk
 include rules/madwifi.mk
 include rules/sputnik.mk
 include rules/openvpn.mk
-include rules/net-tools
+include rules/net-tools.mk
 include rules/wireless-tools.mk
 include rules/olsrd.mk
 include rules/tcpdump.mk
