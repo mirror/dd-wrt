@@ -1807,15 +1807,14 @@ showOption (webs_t wp, char *propname, char *nvname)
 {
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
-	     "<div class=\"label\"><script type=\"text/javascript\">Capture(%s)</script></div><select name=\"%s\">\n",
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(%s)</script></div>\n<select name=\"%s\">\n",
 	     propname, nvname);
-  websWrite (wp,
-	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n//]]>\n</script>\n",
+  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+  websWrite (wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n",
 	     nvram_match (nvname, "0") ? "selected=\\\"selected\\\"" : "");
-  websWrite (wp,
-	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"1\\\" %s >\" + share.enabled + \"</option>\");\n//]]>\n</script>\n</select>\n",
+  websWrite (wp, "document.write(\"<option value=\\\"1\\\" %s >\" + share.enabled + \"</option>\");\n</select>\n",
 	     nvram_match (nvname, "1") ? "selected=\\\"selected\\\"" : "");
-  websWrite (wp, "</div>\n");
+  websWrite (wp, "//]]>\n</script>\n</div>\n");
 
 }
 
