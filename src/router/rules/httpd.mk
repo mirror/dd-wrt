@@ -1,4 +1,4 @@
-httpd: nvram shared hsiab matrixssl www-install
+httpd: nvram shared hsiab matrixssl www
 	$(MAKE) -C httpd
 
 httpd-clean:
