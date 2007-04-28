@@ -13,11 +13,13 @@ clean:
 install:
 	install -d $(INSTALLDIR)/etc
 	install -d $(INSTALLDIR)/etc/config
-	install -d $(INSTALLDIR)/../www
-	install -d $(INSTALLDIR)/../www/www
 	cp $(MODULE)*.nvramconfig $(INSTALLDIR)/etc/config
 	cp $(MODULE)*.startup $(INSTALLDIR)/etc/config
 	cp $(MODULE)*.firewall $(INSTALLDIR)/etc/config
+
+www-install:
+	install -d $(INSTALLDIR)/../www
+	install -d $(INSTALLDIR)/../www/www
 	cp $(MODULE)*.asp $(INSTALLDIR)/../www/www
 
 all: install
