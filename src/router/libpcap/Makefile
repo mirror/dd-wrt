@@ -111,7 +111,7 @@ shared: libpcap.$(DYEXT)
 #
 libpcap.so: $(OBJ)
 	@rm -f $@
-	$(LD) -shared -o $@.`cat VERSION` $(OBJ)
+	$(LD) -shared -o $@ $(OBJ)
 
 # the following rule succeeds, but the result is untested.
 libpcap.dylib: $(OBJ)
