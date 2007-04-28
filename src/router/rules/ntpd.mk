@@ -1,5 +1,5 @@
 ntpd:
-	cd ntpd && ./configure --host=armeb-linux CFLAGS="$(COPTS)" --prefix=/usr
+	cd ntpd && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS)" --prefix=/usr
 	make   -C ntpd
 
 ntpd-clean:

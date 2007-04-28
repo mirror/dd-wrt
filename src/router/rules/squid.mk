@@ -1,5 +1,5 @@
 squid:
-	cd squid && ./configure --target=armeb-linux --host=armeb-linux --prefix=/usr
+	cd squid && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr
 	make -C squid
 
 squid-install:
