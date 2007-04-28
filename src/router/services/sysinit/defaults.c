@@ -1231,6 +1231,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"chilli_macauth", "0", 0},
   {"chilli_additional", "", 0},
 #else
+  {"chilli_net","192.168.182.0/24",0},
   {"chilli_enable", "0", 0},
   {"chilli_nowifibridge", "0", 0},
   {"chilli_url", "", 0},
