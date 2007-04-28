@@ -1,5 +1,5 @@
 gpsd:
-	cd gpsd && ./configure --host=armeb-linux --disable-fv18 --disable-python --disable-tripmate --disable-earthmate --disable-shared --without-x CFLAGS="$(COPTS) -I../ncurses/include -L../ncurses/lib" --prefix=/usr 
+	cd gpsd && ./configure --host=$(ARCH)-linux --disable-fv18 --disable-python --disable-tripmate --disable-earthmate --disable-shared --without-x CFLAGS="$(COPTS) -I../ncurses/include -L../ncurses/lib" --prefix=/usr 
 	make  -C gpsd
 
 gpsd-clean:

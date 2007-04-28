@@ -148,6 +148,15 @@ include rules/ncurses.mk
 include rules/iftop.mk
 include rules/iptraf.mk
 include rules/squid.mk
+include rules/rstats.mk
+include rules/proftpd.mk
+include rules/ippd.mk
+include rules/pcmcia.mk
+include rules/gcom.mk
+include rules/setserial.mk
+include rules/microcom.mk
+include rules/nvtlstatus.mk
+include rules/ctorrent.mk
 
 # Generic rules
 #
