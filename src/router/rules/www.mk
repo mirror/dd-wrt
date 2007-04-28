@@ -1,6 +1,7 @@
-www www-%: eop-tunnel-install
-
-
+www www-%: 
+ifeq ($(CONFIG_EOP_TUNNEL),y)
+	$(MAKE) -C eop-tunnel install
+endif
 ifeq ($(KROMOGUI),y)
 	$(MAKE) -C kromo/$(WEB_PAGE) $* INSTALLDIR=$(INSTALLDIR)/www
 else
