@@ -164,5 +164,5 @@ include rules/squid.mk
 %-install:
 	[ ! -d $* ] || $(MAKE) -C $* install INSTALLDIR=$(INSTALLDIR)/$*
 
-$(obj-y) $(obj-n) $(obj-clean) $(obj-install): dummy
+$(obj-y) $(obj-m) $(obj-n) $(obj-clean) $(obj-install): dummy
 

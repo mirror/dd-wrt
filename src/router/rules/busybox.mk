@@ -13,7 +13,15 @@ ifeq ($(ARCH),mipsel)
 	cp busybox/.config_rb532 busybox/.config
 endif
 ifeq ($(ARCH),mips)
+ifeq ($(ARCHITECTURE),fonera)
+	cp busybox/.config_fonera busybox/.config
+else
+ifeq ($(ARCHITECTURE),whrag108)
+	cp busybox/.config_fonera busybox/.config
+else
 	cp busybox/.config_3com busybox/.config
+endif
+endif
 endif
 ifeq ($(ARCH),armeb)
 	cp busybox/.config_xscale busybox/.config
