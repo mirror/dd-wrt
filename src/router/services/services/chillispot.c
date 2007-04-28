@@ -113,6 +113,8 @@ start_chilli (void)
     fprintf (fp, "uamanydns\n");
   if (nvram_invmatch ("chilli_uamallowed", ""))
     fprintf (fp, "uamallowed %s\n", nvram_get ("chilli_uamallowed"));
+  if (nvram_invmatch ("chilli_net", ""))
+    fprintf (fp, "net %s\n", nvram_get ("chilli_net"));
   if (nvram_match ("chilli_macauth", "1"))
     fprintf (fp, "macauth\n");
 #ifndef HAVE_FON
