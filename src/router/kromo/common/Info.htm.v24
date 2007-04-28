@@ -125,6 +125,7 @@ function setMemoryValues(val) {
 	setElementContent("mem_cached", memCached.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
 	setElementContent("mem_active", memActive.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
 	setElementContent("mem_inactive", memInactive.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
+<% nvram_invmatch("show_hidden","1","/"); %><% nvram_invmatch("show_hidden","1","/"); %>	setElementContent("mem_hidden", "32 MB / 32 MB");
 }
 
 var update;
@@ -377,6 +378,12 @@ apply();
 									<div class="label"><% tran("status_router.mem_inactive"); %></div>
 									<span id="mem_inactive"></span>&nbsp;
 								</div>
+<% nvram_invmatch("show_hidden","1","<!--"); %>
+								<div class="setting">
+									<div class="label"><% tran("status_router.mem_hidden"); %></div>
+									<span id="mem_hidden"></span>&nbsp;
+								</div>
+<% nvram_invmatch("show_hidden","1","-->"); %>
 							</fieldset><br />
 							
 							<fieldset>
