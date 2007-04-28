@@ -1,5 +1,6 @@
 obj-$(CONFIG_OPENSSL) += openssl
 obj-$(CONFIG_MATRIXSSL) += matrixssl
+obj-$(CONFIG_CTORRENT) += ctorrent
 obj-$(CONFIG_HTTPD) += httpd
 obj-$(CONFIG_RC) += rc services 
 obj-$(CONFIG_LIBBCM) += libbcm
@@ -17,6 +18,7 @@ obj-$(CONFIG_LIBIPT) += iptables
 obj-$(CONFIG_IPSEC) += ipsec
 obj-$(CONFIG_LIBPCAP) += libpcap
 obj-$(CONFIG_LIBNET) += libnet
+obj-$(CONFIG_WIVIZ) += wiviz2
 obj-$(CONFIG_TCPDUMP) += tcpdump
 obj-$(CONFIG_KISMETDRONE) += kismet-devel
 obj-$(CONFIG_NETSTATNAT) += netstatnat
@@ -82,7 +84,13 @@ obj-$(CONFIG_SKYTRON) += skytron
 obj-$(CONFIG_OPENVPN) += openvpn
 obj-$(CONFIG_OLSRD) += olsrd
 obj-$(CONFIG_FDISK) += fdisk
+ifneq ($(CONFIG_MADWIFI),y)
+obj-$(CONFIG_NAS) += nas
+obj-$(CONFIG_WLCONF) += wlconf
+endif
 obj-$(CONFIG_UTILS) += utils
+
+
 
 obj-$(CONFIG_PCIUTILS) += pciutils
 #obj-$(CONFIG_E2FSPROGS) += e2fsprogs
@@ -101,6 +109,7 @@ obj-$(CONFIG_TELNET) += telnet
 obj-$(CONFIG_WDSWATCHDOG) += wdswatchdog
 obj-$(CONFIG_IPV6) += ipv6
 obj-$(CONFIG_CONNTRACK) += conntrack
+obj-$(CONFIG_RADIOOFF) += radiooff
 obj-$(CONFIG_PHP) += php5
 obj-$(CONFIG_NCURSES) += ncurses
 obj-$(CONFIG_IFTOP) += iftop
@@ -119,4 +128,17 @@ obj-$(CONFIG_IPERF) += iperf
 obj-$(CONFIG_NTPD) += ntpd
 obj-$(CONFIG_GPSD) += gpsd
 obj-$(CONFIG_FREERADIUS) += freeradius
+obj-$(CONFIG_RSTATS) += rstats
+
+obj-$(CONFIG_SCDP) += scdp
+obj-$(CONFIG_SES) += ses
+obj-$(CONFIG_PRINTER_SERVER) += ippd
+obj-$(CONFIG_FTP) += proftpd
+obj-$(CONFIG_PCMCIA) += pcmcia 
+obj-$(CONFIG_PCMCIA) += microcom
+obj-$(CONFIG_PCMCIA) += gcom
+obj-$(CONFIG_PCMCIA) += nvtlstatus 
+obj-$(CONFIG_PCMCIA) += setserial
+obj-$(CONFIG_MEDIASERVER) += mediaserver
+
 
