@@ -10,8 +10,10 @@ void
 stop_olsrd (void)
 {
   if (pidof ("olsrd") > 0)
+    {
     syslog (LOG_INFO, "olsrd : olsrd daemon successfully stopped\n");
-  killall ("olsrd", SIGTERM);
+    killall ("olsrd", SIGTERM);
+    }
 }
 
 void
@@ -19,7 +21,7 @@ start_olsrd (void)
 {
   if (!nvram_match ("wk_mode", "olsrd"))
     return;
-
+  stop_olsrd();
   char net[64];
   strcpy (net, nvram_safe_get ("lan_ipaddr"));
   int a, b, c, d;
@@ -43,7 +45,7 @@ start_olsrd (void)
 	   nvram_match ("olsrd_hysteresis", "1") ? "yes" : "no");
   if (nvram_match ("olsrd_hysteresis", "0"))
     fprintf (fp, "LinkQualityLevel\t%s\n",
-	     nvram_safe_get ("olsrd_lqwinsize"));
+	     nvram_safe_get ("olsrd_lqlevel"));
   fprintf (fp, "LoadPlugin \"olsrd_dyn_gw_plain.so\"\n");
   fprintf (fp, "{\n");
   fprintf (fp, "}\n");

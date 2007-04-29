@@ -106,6 +106,10 @@ start_services (void)
 #ifdef HAVE_BIRD
   handle = start_service_nofree ("zebra", handle);
 #endif
+#ifdef HAVE_OLSRD
+  handle = start_service_nofree ("olsrd", handle);
+#endif
+
   handle = start_service_nofree ("wland", handle);
   handle = start_service_nofree ("wshaper", handle);
   handle = start_service_nofree ("cron", handle);
@@ -199,6 +203,9 @@ stop_services (void)
   handle = stop_service_nofree ("tftpd", handle);
 #endif
   handle = stop_service_nofree ("syslog", handle);
+#ifdef HAVE_OLSRD
+  handle = stop_service_nofree ("olsrd", handle);
+#endif
 #ifdef HAVE_BIRD
   handle = stop_service_nofree ("zebra", handle);
 #endif
@@ -319,6 +326,9 @@ start_single_service (void)
 #ifdef HAVE_BIRD
       startstop ("zebra");
 #endif
+#ifdef HAVE_OLSRD
+      startstop ("olsrd");
+#endif
       startstop ("firewall");
       startstop ("httpd");	//httpd will not accept connection anymore on wan/lan ip changes changes
     }
@@ -334,6 +344,9 @@ start_single_service (void)
     {
 #ifdef HAVE_BIRD
       startstop ("zebra");
+#endif
+#ifdef HAVE_OLSRD
+      startstop ("olsrd");
 #endif
     }
   else if (!strcmp (service, "hotspot"))
@@ -505,6 +518,9 @@ start_single_service (void)
 #ifdef HAVE_BIRD
       start_service ("zebra");
 #endif
+#ifdef HAVE_OLSRD
+      startstop("olsrd");
+#endif
     }
   else if (!strcmp (service, "alive"))
     {
@@ -585,6 +601,9 @@ start_single_service (void)
       stop_service ("wan");
 #ifdef HAVE_BIRD
       stop_service ("zebra");
+#endif
+#ifdef HAVE_OLSRD
+      stop_service ("olsrd");
 #endif
 #ifdef HAVE_UPNP
       stop_service ("upnp");
