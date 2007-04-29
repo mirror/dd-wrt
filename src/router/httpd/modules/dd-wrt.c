@@ -1989,7 +1989,7 @@ if (var==NULL)
   if (!strcmp (var, "olsr"))
     {
       websWrite (wp, "<fieldset>\n");
-      show_legend (wp, "OLSRD Routing");
+      show_legend (wp, "OLSR Routing");
       show_inputlabel (wp, "Poll Rate", "olsrd_pollsize", 5);
       show_inputlabel (wp, "TC Redundancy", "olsrd_redundancy", 5);
       show_inputlabel (wp, "MPR Coverage", "olsrd_coverage", 5);
