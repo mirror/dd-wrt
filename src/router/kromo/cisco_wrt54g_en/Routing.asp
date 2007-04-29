@@ -29,6 +29,11 @@ function SelMode(num,F) {
 	F.wk_mode.value = F.wk_mode.options[num].value;
 	F.submit();
 }
+function olsrd_add_submit(F) {
+	F.submit_type.value = "add_olsrd";
+	F.submit();
+}
+
 
 function to_submit(F) {
 	if (F.routing_bgp_neighbor_ip != null) {
