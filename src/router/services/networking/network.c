@@ -2861,9 +2861,12 @@ start_set_routes (void)
     metric = strsep (&ifname, ":");
     if (!metric || !ifname)
       continue;
-    if (!strcmp (ipaddr, "0.0.0.0") && strcmp(gateway,"0.0.0.0"))
+    if (!strcmp (ipaddr, "0.0.0.0") && !strcmp(gateway,"0.0.0.0"))
+      continue;
+    if (!strcmp (ipaddr, "0.0.0.0"))
       eval ("route", "add", "default", "gw", gateway);
-    route_add (ifname, atoi (metric) + 1, ipaddr, gateway, netmask);
+    else
+      route_add (ifname, atoi (metric) + 1, ipaddr, gateway, netmask);
   }
 }
 
