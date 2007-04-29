@@ -115,10 +115,15 @@ ej_static_route_setting (webs_t wp, int argc, char_t ** argv)
 
   return;
 }
+extern int save_olsrd(webs_t wp);
 
 void
 validate_static_route (webs_t wp, char *value, struct variable *v)
 {
+#ifdef HAVE_OLSRD
+save_olsrd(wp);
+#endif
+
   int i, tmp = 1;
   char word[256], *next;
   char buf[1000] = "", *cur = buf;
@@ -300,10 +305,12 @@ write_nvram:
     {
       char met[16];
       char ifn[16];
-      sscanf(old[atoi(page)],"%s:%s:%s:%s:%s",ipaddr,netmask,gateway,met,ifn);
-      fprintf(stderr,"deleting %s %s %s %s %s\n",ipaddr,netmask,gateway,met,ifn);
+      sscanf (old[atoi (page)], "%s:%s:%s:%s:%s", ipaddr, netmask, gateway,
+	      met, ifn);
+      fprintf (stderr, "deleting %s %s %s %s %s\n", ipaddr, netmask, gateway,
+	       met, ifn);
       route_del (ifn, atoi (met) + 1, ipaddr, gateway, netmask);
-      
+
       snprintf (old[atoi (page)], sizeof (old[0]), "%s", "");
       snprintf (old_name[atoi (page)], sizeof (old_name[0]), "%s", "");
     }

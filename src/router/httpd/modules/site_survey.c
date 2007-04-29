@@ -107,27 +107,29 @@ ej_dump_site_survey (webs_t wp, int argc, char_t ** argv)
 	break;
 
 // fix for " in SSID
-	char *tssid = (site_survey_lists[i].SSID[0] == 0) ? "hidden" : site_survey_lists[i].SSID;
-	int pos = 0;
-	int tpos;
-	int ssidlen = strlen (tssid);
-	
-	while (pos < ssidlen)
-	{
-		if (tssid[pos] == '\"')
-		{
-			for (tpos = ssidlen; tpos > pos - 1; tpos--)
-				tssid[tpos + 1] = tssid[tpos];
+      char *tssid =
+	(site_survey_lists[i].SSID[0] ==
+	 0) ? "hidden" : site_survey_lists[i].SSID;
+      int pos = 0;
+      int tpos;
+      int ssidlen = strlen (tssid);
 
-			tssid[pos] = '\\';
-			pos++;
-			ssidlen++;
-		}
-		pos++;
+      while (pos < ssidlen)
+	{
+	  if (tssid[pos] == '\"')
+	    {
+	      for (tpos = ssidlen; tpos > pos - 1; tpos--)
+		tssid[tpos + 1] = tssid[tpos];
+
+	      tssid[pos] = '\\';
+	      pos++;
+	      ssidlen++;
+	    }
+	  pos++;
 	}
 // end fix for " in SSID
-	
-	
+
+
       if (site_survey_lists[i].rate_count == 4)
 	rates = "4(b)";
       else if (site_survey_lists[i].rate_count == 12)
