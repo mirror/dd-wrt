@@ -1591,7 +1591,7 @@ configure_single (int count)
 
   setMacFilter (dev);
 
-  if (strcmp (m, "sta") && strcmp (m, "infra"))
+  if (strcmp (m, "sta"))
     {
       char bridged[32];
       sprintf (bridged, "%s_bridged", dev);
@@ -1621,7 +1621,7 @@ configure_single (int count)
       sprintf (mode, "%s_mode", var);
       m = default_get (mode, "ap");
 
-      if (strcmp (m, "sta") && strcmp (m, "infra"))
+      if (strcmp (m, "sta"))
 	{
 	  char bridged[32];
 	  sprintf (bridged, "%s_bridged", var);
