@@ -33,6 +33,11 @@ function olsrd_add_submit(F) {
 	F.submit_type.value = "add_olsrd";
 	F.submit();
 }
+function olsrd_del_submit(F,num) {
+	F.submit_type.value = "del_olsrd";
+	F.olsrd_delcount.value = num;
+	F.submit();
+}
 
 
 function to_submit(F) {
@@ -81,7 +86,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="submit_type" />
-							
+							<input type="hidden" name="olsrd_delcount" />
 							<input type="hidden" name="static_route" />
 							<h2><% tran("route.h2"); %></h2>
 							<fieldset>

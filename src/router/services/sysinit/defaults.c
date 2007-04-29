@@ -2034,6 +2034,17 @@ struct nvram_tuple srouter_defaults[] = {
   {"milkfish_dynsip", "off", 0},				/* MILKFISH SETTING */
   {"milkfish_siptrace", "off", 0},				/* MILKFISH SETTING */
 #endif
+#ifdef HAVE_OLSRD
+  {"olsrd_pollsize","0.1",0},
+  {"olsrd_redundancy","2",0},
+  {"olsrd_coverage","7",0},
+  {"olsrd_lqfisheye","1",0},
+  {"olsrd_lqwinsize","100",0},
+  {"olsrd_lqdijkstramin","0",0},
+  {"olsrd_lqdijkstramax","5.0",0},
+  {"olsrd_lqlevel","2",0},
+  {"olsrd_hysteresis","0",0},  
+#endif
   {0, 0, 0}
 };
 

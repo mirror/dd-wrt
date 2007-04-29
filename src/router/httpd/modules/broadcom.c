@@ -56,7 +56,7 @@ int error_value = 0;
 int browser_method;
 int debug_value = 0;
 
-#define FASTWEB  //use this do disable number of arguments checking
+#define FASTWEB			//use this do disable number of arguments checking
 
 //static char * rfctime(const time_t *timep);
 //static char * reltime(unsigned int seconds);
@@ -421,8 +421,8 @@ ej_onload (webs_t wp, int argc, char_t ** argv)
   struct onload *v;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s %s", &type, &arg);
-#else  
+  ejArgs (argc, argv, "%s %s", &type, &arg);
+#else
   if (ejArgs (argc, argv, "%s %s", &type, &arg) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
@@ -468,15 +468,15 @@ ej_prefix_ip_get (webs_t wp, int argc, char_t ** argv)
   int type;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s %d", &name, &type);
-#else  
+  ejArgs (argc, argv, "%s %d", &name, &type);
+#else
   if (ejArgs (argc, argv, "%s %d", &name, &type) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
-    
+
   if (type == 1)
     websWrite (wp, "%d.%d.%d.", get_single_ip (nvram_safe_get (name), 0),
 	       get_single_ip (nvram_safe_get (name), 1),
@@ -568,7 +568,7 @@ ej_nvram_get (webs_t wp, int argc, char_t ** argv)
   char *name;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s", &name);
+  ejArgs (argc, argv, "%s", &name);
 #else
   if (ejArgs (argc, argv, "%s", &name) < 1)
     {
@@ -616,8 +616,8 @@ ej_nvram_real_get (webs_t wp, int argc, char_t ** argv)
   char *name;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s", &name);
-#else  
+  ejArgs (argc, argv, "%s", &name);
+#else
   if (ejArgs (argc, argv, "%s", &name) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
@@ -643,8 +643,8 @@ ej_nvram_selget (webs_t wp, int argc, char_t ** argv)
   char *name;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s", &name);
-#else  
+  ejArgs (argc, argv, "%s", &name);
+#else
   if (ejArgs (argc, argv, "%s", &name) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
@@ -687,7 +687,7 @@ ej_nvram_mac_get (webs_t wp, int argc, char_t ** argv)
   int i;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s", &name);
+  ejArgs (argc, argv, "%s", &name);
 #else
   if (ejArgs (argc, argv, "%s", &name) < 1)
     {
@@ -727,8 +727,8 @@ ej_nvram_gozila_get (webs_t wp, int argc, char_t ** argv)
   char *name, *type;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s", &name);
-#else  
+  ejArgs (argc, argv, "%s", &name);
+#else
   if (ejArgs (argc, argv, "%s", &name) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
@@ -746,7 +746,7 @@ ej_webs_get (webs_t wp, int argc, char_t ** argv)
   char *name, *value;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s", &name);
+  ejArgs (argc, argv, "%s", &name);
 #else
   if (ejArgs (argc, argv, "%s", &name) < 1)
     {
@@ -754,7 +754,7 @@ ej_webs_get (webs_t wp, int argc, char_t ** argv)
       return;
     }
 #endif
-    
+
   value = websGetVar (wp, name, NULL);
 
   if (value)
@@ -775,15 +775,15 @@ ej_get_single_ip (webs_t wp, int argc, char_t ** argv)
   int which;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s %d", &name, &which);
+  ejArgs (argc, argv, "%s %d", &name, &which);
 #else
-	if (ejArgs (argc, argv, "%s %d", &name, &which) < 1)
+  if (ejArgs (argc, argv, "%s %d", &name, &which) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
-    
+
   c = nvram_safe_get (name);
   if (c)
     {
@@ -813,7 +813,7 @@ ej_get_single_mac (webs_t wp, int argc, char_t ** argv)
   int mac;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s %d", &name, &which);
+  ejArgs (argc, argv, "%s %d", &name, &which);
 #else
   if (ejArgs (argc, argv, "%s %d", &name, &which) < 1)
     {
@@ -870,8 +870,8 @@ ej_nvram_selmatch (webs_t wp, int argc, char_t ** argv)
   char *name, *match, *output;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s %s %s", &name, &match, &output);
-#else  
+  ejArgs (argc, argv, "%s %s %s", &name, &match, &output);
+#else
   if (ejArgs (argc, argv, "%s %s %s", &name, &match, &output) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
@@ -893,7 +893,7 @@ ej_nvram_else_selmatch (webs_t wp, int argc, char_t ** argv)
   char *type;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s %s %s %s", &name, &match, &output1, &output2);
+  ejArgs (argc, argv, "%s %s %s %s", &name, &match, &output1, &output2);
 #else
   if (ejArgs (argc, argv, "%s %s %s %s", &name, &match, &output1, &output2) <
       4)
@@ -902,7 +902,7 @@ ej_nvram_else_selmatch (webs_t wp, int argc, char_t ** argv)
       return;
     }
 #endif
-    
+
   type = GOZILA_GET (name);
 
   if (!type)
@@ -939,8 +939,8 @@ ej_nvram_else_match (webs_t wp, int argc, char_t ** argv)
   char *name, *match, *output1, *output2;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s %s %s %s", &name, &match, &output1, &output2);
-#else  
+  ejArgs (argc, argv, "%s %s %s %s", &name, &match, &output1, &output2);
+#else
   if (ejArgs (argc, argv, "%s %s %s %s", &name, &match, &output1, &output2) <
       4)
     {
@@ -948,7 +948,7 @@ ej_nvram_else_match (webs_t wp, int argc, char_t ** argv)
       return;
     }
 #endif
-    
+
   if (nvram_match (name, match))
     websWrite (wp, output1);
   else
@@ -969,15 +969,15 @@ ej_nvram_match (webs_t wp, int argc, char_t ** argv)
   char *name, *match, *output;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s %s %s", &name, &match, &output);
-#else  
+  ejArgs (argc, argv, "%s %s %s", &name, &match, &output);
+#else
   if (ejArgs (argc, argv, "%s %s %s", &name, &match, &output) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
-    
+
   if (nvram_match (name, match))
     websWrite (wp, output);
 
@@ -990,8 +990,8 @@ ej_haswifi (webs_t wp, int argc, char_t ** argv)
   char *output;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s", &output);
-#else  
+  ejArgs (argc, argv, "%s", &output);
+#else
   if (ejArgs (argc, argv, "%s", &output) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
@@ -1017,15 +1017,15 @@ ej_nvram_invmatch (webs_t wp, int argc, char_t ** argv)
   char *name, *invmatch, *output;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s %s %s", &name, &invmatch, &output);
-#else  
+  ejArgs (argc, argv, "%s %s %s", &name, &invmatch, &output);
+#else
   if (ejArgs (argc, argv, "%s %s %s", &name, &invmatch, &output) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
-    
+
   if (nvram_invmatch (name, invmatch))
     websWrite (wp, output);
 
@@ -1044,8 +1044,8 @@ ej_support_match (webs_t wp, int argc, char_t ** argv)
   char *name, *value, *output;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s %s %s", &name, &value, &output);
-#else  
+  ejArgs (argc, argv, "%s %s %s", &name, &value, &output);
+#else
   if (ejArgs (argc, argv, "%s %s %s", &name, &value, &output) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
@@ -1100,15 +1100,15 @@ ej_support_invmatch (webs_t wp, int argc, char_t ** argv)
   char *name, *value, *output;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s %s %s", &name, &value, &output);
-#else  
+  ejArgs (argc, argv, "%s %s %s", &name, &value, &output);
+#else
   if (ejArgs (argc, argv, "%s %s %s", &name, &value, &output) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-#endif    
-  
+#endif
+
 #ifdef HAVE_HTTPS
   if (do_ssl)
     {
@@ -1199,8 +1199,8 @@ ej_support_elsematch (webs_t wp, int argc, char_t ** argv)
   char *name, *value, *output1, *output2;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s %s %s %s", &name, &value, &output1, &output2);
-#else  
+  ejArgs (argc, argv, "%s %s %s %s", &name, &value, &output1, &output2);
+#else
   if (ejArgs (argc, argv, "%s %s %s %s", &name, &value, &output1, &output2) <
       3)
     {
@@ -1257,7 +1257,7 @@ ej_scroll (webs_t wp, int argc, char_t ** argv)
   int y;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s %d", &type, &y);
+  ejArgs (argc, argv, "%s %d", &type, &y);
 #else
   if (ejArgs (argc, argv, "%s %d", &type, &y) < 2)
     {
@@ -1287,8 +1287,8 @@ ej_nvram_list (webs_t wp, int argc, char_t ** argv)
   char word[256], *next;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s %d", &name, &which);
-#else  
+  ejArgs (argc, argv, "%s %d", &name, &which);
+#else
   if (ejArgs (argc, argv, "%s %d", &name, &which) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
@@ -1318,15 +1318,15 @@ ej_get_dns_ip (webs_t wp, int argc, char_t ** argv)
   char word[256], *next;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s %d %d", &name, &which, &count);
-#else  
+  ejArgs (argc, argv, "%s %d %d", &name, &which, &count);
+#else
   if (ejArgs (argc, argv, "%s %d %d", &name, &which, &count) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
-    
+
   foreach (word, nvram_safe_get (name), next)
   {
     if (which-- == 0)
@@ -2770,14 +2770,15 @@ static int execute (webs_t wp);
 }
 
 #endif
-static void save_wifi (webs_t wp)
+static void
+save_wifi (webs_t wp)
 {
-fprintf(stderr,"save wifi\n");
-char *var = websGetVar(wp,"wifi_display",NULL);
-if (var)
+  fprintf (stderr, "save wifi\n");
+  char *var = websGetVar (wp, "wifi_display", NULL);
+  if (var)
     {
-    fprintf(stderr,"save wifi as\n",var);
-    nvram_set("wifi_display",var);
+      fprintf (stderr, "save wifi as\n", var);
+      nvram_set ("wifi_display", var);
     }
 }
 enum
@@ -2800,8 +2801,8 @@ struct gozila_action gozila_actions[] = {
 #endif
   {"WanMAC", "clone_mac", "", 1, REFRESH, clone_mac},	// for cisco style
   {"DHCPTable", "delete", "", 2, REFRESH, delete_leases},
-  {"Info","refresh","",0,REFRESH,save_wifi},
-  {"Status_Wireless","refresh","",0,REFRESH,save_wifi},
+  {"Info", "refresh", "", 0, REFRESH, save_wifi},
+  {"Status_Wireless", "refresh", "", 0, REFRESH, save_wifi},
   {"Status", "release", "dhcp_release", 0, SYS_RESTART, dhcp_release},
   {"Status", "renew", "", 3, REFRESH, dhcp_renew},
   {"Status", "Connect", "start_pppoe", 1, RESTART, NULL},
@@ -2826,7 +2827,8 @@ struct gozila_action gozila_actions[] = {
   {"Filters", "save", "filters", 1, SYS_RESTART, save_policy},
   {"Filters", "delete", "filters", 1, SYS_RESTART, single_delete_policy},
   {"FilterSummary", "delete", "filters", 1, REFRESH, summary_delete_policy},
-  {"Routing", "del", "static_route_del", 1, SERVICE_RESTART, delete_static_route},
+  {"Routing", "del", "static_route_del", 1, SERVICE_RESTART,
+   delete_static_route},
   {"RouteStatic", "del", "static_route_del", 1, SYS_RESTART,
    delete_static_route},
 //  {"WL_WEPTable", "key_64", "", 1, REFRESH, generate_key_64}, //OBSOLETE
@@ -2860,6 +2862,10 @@ struct gozila_action gozila_actions[] = {
   {"Networking", "add_bond", "", 0, REFRESH, add_bond},
   {"Networking", "del_bond", "", 0, REFRESH, del_bond},
 #endif
+#ifdef HAVE_OLSRD
+  {"Routing", "add_olsrd", "", 0, REFRESH, add_olsrd},
+  {"Routing", "del_olsrd", "", 0, REFRESH, del_olsrd},
+#endif
 #ifdef HAVE_VLANTAGGING
   {"Networking", "add_vlan", "", 0, REFRESH, add_vlan},
   {"Networking", "add_bridge", "", 0, REFRESH, add_bridge},
@@ -2879,7 +2885,7 @@ struct gozila_action gozila_actions[] = {
   {"Services", "add_lease", "", 0, REFRESH, lease_add},
   {"Services", "remove_lease", "", 0, REFRESH, lease_remove},
 #ifdef HAVE_PPPOESERVER
-  {"PPPoE_Server", "add_chap_user", "", 0, REFRESH, chap_user_add}, 
+  {"PPPoE_Server", "add_chap_user", "", 0, REFRESH, chap_user_add},
   {"PPPoE_Server", "remove_chap_user", "", 0, REFRESH, chap_user_remove},
 #endif
 #ifdef HAVE_CHILLILOCAL
@@ -2944,7 +2950,7 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   nvram_set ("action_service", "");
   nvram_set ("action_service_arg1", "");
 
-  fprintf(stderr ,"submit_button=[%s] submit_type=[%s]\n", submit_button,
+  fprintf (stderr, "submit_button=[%s] submit_type=[%s]\n", submit_button,
 	   submit_type);
   act = handle_gozila_action (submit_button, submit_type);
 
@@ -3042,10 +3048,10 @@ struct apply_action apply_actions[] = {
   {"Management", "management", 0, SYS_RESTART, NULL},
   {"Services", "services", 0, SERVICE_RESTART, NULL},
   {"Alive", "alive", 0, SERVICE_RESTART, NULL},
-  
-  /* SERVICES*/
+
+  /* SERVICES */
   {"PPPoE_Server", "services", 0, SERVICE_RESTART, NULL},
-  {"PPTP", "services", 0, SERVICE_RESTART, NULL}, 
+  {"PPTP", "services", 0, SERVICE_RESTART, NULL},
   {"Hotspot", "hotspot", 0, SERVICE_RESTART, NULL},
 
   /* APP & GAMING */
@@ -3369,8 +3375,11 @@ ej_show_languages (webs_t wp, int argc, char_t ** argv)
 	continue;
       strcpy (buf, entry->d_name);
       buf[strlen (buf) - 3] = 0;	//strip .js
-      websWrite (wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");\n",
-		 		 buf, nvram_match ("language", buf) ? "selected=\\\"selected\\\"" : "", buf);
+      websWrite (wp,
+		 "document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");\n",
+		 buf, nvram_match ("language",
+				   buf) ? "selected=\\\"selected\\\"" : "",
+		 buf);
     }
   closedir (directory);
   websWrite (wp, "//]]>\n</script>\n");
@@ -3901,7 +3910,7 @@ live_translate (char *tran)
 
   strcpy (temp1, tran);
   strcat (temp1, "=\"");
-  
+
   int len = strlen (temp1);
 
   fp = fopen (buf, "r");
@@ -3918,8 +3927,8 @@ live_translate (char *tran)
 	}
     }
   fclose (fp);
-  
-  fp = fopen ("/www/lang_pack/english.js", "r");  //if not found, try english
+
+  fp = fopen ("/www/lang_pack/english.js", "r");	//if not found, try english
 
   while (fgets (temp, 256, fp) != NULL)
     {
@@ -3932,9 +3941,9 @@ live_translate (char *tran)
 	  return temp2;
 	}
     }
-  fclose (fp);  
-  
-  return "Error"; //not found
+  fclose (fp);
+
+  return "Error";		//not found
 
 }
 
@@ -3945,8 +3954,8 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   char *mainmenu, *submenu;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s %s", &mainmenu, &submenu);
-#else  
+  ejArgs (argc, argv, "%s %s", &mainmenu, &submenu);
+#else
   if (ejArgs (argc, argv, "%s %s", &mainmenu, &submenu) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
@@ -3975,14 +3984,21 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 #endif
 #endif
   char menu[9][11][32] =
-    { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp", "Networking.asp", "","", "", "", ""},
-  {"Wireless_Basic.asp", "Wireless_radauth.asp", "WL_WPATable.asp","Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "","", "", ""},
-  {"Services.asp", "PPPoE_Server.asp", "PPTP.asp", "Hotspot.asp" , "Milkfish.asp","eop-tunnel.asp", "", "", "", "", ""},
-  {"Sipath.asp", "cgi-bin-mf-phonebook.html", "cgi-bin-mf-status.html", "","", "", "", "", "", "", ""},
+    { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp",
+       "Networking.asp", "", "", "", "", ""},
+  {"Wireless_Basic.asp", "Wireless_radauth.asp", "WL_WPATable.asp",
+   "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "",
+   "", "", ""},
+  {"Services.asp", "PPPoE_Server.asp", "PPTP.asp", "Hotspot.asp",
+   "Milkfish.asp", "eop-tunnel.asp", "", "", "", "", ""},
+  {"Sipath.asp", "cgi-bin-mf-phonebook.html", "cgi-bin-mf-status.html", "",
+   "", "", "", "", "", "", ""},
   {"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", ""},
   {"Filters.asp", "", "", "", "", "", "", "", "", "", ""},
-  {"Forward.asp", "ForwardSpec.asp", "Triggering.asp", "UPnP.asp", "DMZ.asp","QoS.asp", "P2P.asp", "", "", "", ""},
-  {"Management.asp", "Alive.asp","Diagnostics.asp", "Wol.asp", "Factory_Defaults.asp", "Upgrade.asp","config.asp", "", "", "", ""},
+  {"Forward.asp", "ForwardSpec.asp", "Triggering.asp", "UPnP.asp", "DMZ.asp",
+   "QoS.asp", "P2P.asp", "", "", "", ""},
+  {"Management.asp", "Alive.asp", "Diagnostics.asp", "Wol.asp",
+   "Factory_Defaults.asp", "Upgrade.asp", "config.asp", "", "", "", ""},
   {"Status_Router.asp", "Status_Lan.asp", "Status_Wireless.asp",
    "Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp",
    "Info.htm", "", "", "", ""}
@@ -3990,10 +4006,14 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 
 /* real name is bmenu.menuname[i][j] */
   char menuname[9][11][32] =
-    { {"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting","setupvlan", "networking", "", "", "", ""},
-  {"wireless", "wirelessBasic", "wirelessRadius", "wirelessSecurity","wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", "", ""},
-  {"services", "servicesServices", "servicesPppoesrv", "servicesPptp", "servicesHotspot", "servicesMilkfish", "setupeop", "", "", "", ""},
-  {"sipath", "sipathoverview", "sipathphone", "sipathstatus", "", "", "", "","", "", ""},
+    { {"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting",
+       "setupvlan", "networking", "", "", "", ""},
+  {"wireless", "wirelessBasic", "wirelessRadius", "wirelessSecurity",
+   "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", "", ""},
+  {"services", "servicesServices", "servicesPppoesrv", "servicesPptp",
+   "servicesHotspot", "servicesMilkfish", "setupeop", "", "", "", ""},
+  {"sipath", "sipathoverview", "sipathphone", "sipathstatus", "", "", "", "",
+   "", "", ""},
   {"security", "firwall", "vpn", "", "", "", "", "", "", "", ""},
   {"accrestriction", "webaccess", "", "", "", "", "", "", "", "", ""},
   {"applications", "applicationsprforwarding", "applicationspforwarding",
@@ -4135,8 +4155,8 @@ ej_do_pagehead (webs_t wp, int argc, char_t ** argv)	//Eko
   char *title;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s", &title);
-#else  
+  ejArgs (argc, argv, "%s", &title);
+#else
   if (ejArgs (argc, argv, "%s", &title) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
@@ -4190,15 +4210,12 @@ ej_do_pagehead (webs_t wp, int argc, char_t ** argv)	//Eko
   websWrite (wp,
 	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
 #endif
-  websWrite (wp,
-		 "\t\t<title>%s", nvram_get ("router_name"));	     
-	if (strlen(title) != 0)
-	{
-  websWrite (wp,
-		 "- %s", live_translate (title));
-	}
-  websWrite (wp,
-		 "</title>\n");
+  websWrite (wp, "\t\t<title>%s", nvram_get ("router_name"));
+  if (strlen (title) != 0)
+    {
+      websWrite (wp, "- %s", live_translate (title));
+    }
+  websWrite (wp, "</title>\n");
 
 }
 
@@ -4208,7 +4225,7 @@ ej_do_hpagehead (webs_t wp, int argc, char_t ** argv)	//Eko
   char *htitle;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s", &htitle);
+  ejArgs (argc, argv, "%s", &htitle);
 #else
   if (ejArgs (argc, argv, "%s", &htitle) < 1)
     {
@@ -4231,11 +4248,9 @@ ej_do_hpagehead (webs_t wp, int argc, char_t ** argv)	//Eko
 	     "\t\t<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
   websWrite (wp,
 	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">\n");
-  websWrite (wp,
-		 "\t\t<title>%s", live_translate ("share.help"));
-  websWrite (wp,
-		 " - %s</title>\n", live_translate (htitle));
-  websWrite (wp, "\t</head>\n");		 
+  websWrite (wp, "\t\t<title>%s", live_translate ("share.help"));
+  websWrite (wp, " - %s</title>\n", live_translate (htitle));
+  websWrite (wp, "\t</head>\n");
 
 }
 
@@ -4264,11 +4279,11 @@ ej_show_timeoptions (webs_t wp, int argc, char_t ** argv)	//Eko
 
   for (i = 0; i < 37; i++)
     {
-	  websWrite (wp,
-		     "<option value=\"%s\" %s>UTC%s</option>\");\n",
-		     timediffs[i], nvram_match ("time_zone",
-				       timediffs[i]) ? "selected=\"selected\"" :
-		     "", timezones[i]);
+      websWrite (wp,
+		 "<option value=\"%s\" %s>UTC%s</option>\");\n",
+		 timediffs[i], nvram_match ("time_zone",
+					    timediffs[i]) ?
+		 "selected=\"selected\"" : "", timezones[i]);
 
     }
 
@@ -4282,19 +4297,21 @@ ej_show_wanipinfo (webs_t wp, int argc, char_t ** argv)	//Eko
 {
   char *wan_ipaddr;
   int wan_link;
-  
+
   if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "apstawet")
       || nvram_match ("wan_proto", "disabled"))
     {
       websWrite (wp, ": %s", live_translate ("share.disabled"));
-	return;
+      return;
     }
-  
+
   wan_link = check_wan_link (0);
 
   if (nvram_match ("wan_proto", "pptp"))
     {
-      wan_ipaddr =	wan_link ? nvram_safe_get ("pptp_get_ip") :	nvram_safe_get ("wan_ipaddr");
+      wan_ipaddr =
+	wan_link ? nvram_safe_get ("pptp_get_ip") :
+	nvram_safe_get ("wan_ipaddr");
     }
   else if (!strcmp (nvram_safe_get ("wan_proto"), "pppoe"))
     {
@@ -4302,16 +4319,18 @@ ej_show_wanipinfo (webs_t wp, int argc, char_t ** argv)	//Eko
     }
   else if (nvram_match ("wan_proto", "l2tp"))
     {
-      wan_ipaddr =	wan_link ? nvram_safe_get ("l2tp_get_ip") :	nvram_safe_get ("wan_ipaddr");
+      wan_ipaddr =
+	wan_link ? nvram_safe_get ("l2tp_get_ip") :
+	nvram_safe_get ("wan_ipaddr");
     }
   else
     {
       wan_ipaddr = nvram_safe_get ("wan_ipaddr");
     }
 
-    websWrite (wp, "&nbsp;IP: %s", wan_ipaddr);
-    
- return;
+  websWrite (wp, "&nbsp;IP: %s", wan_ipaddr);
+
+  return;
 }
 
 
@@ -4445,18 +4464,18 @@ ej_nvram_selected (webs_t wp, int argc, char_t ** argv)
   char *name, *match;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s %s", &name, &match);
-#else  
+  ejArgs (argc, argv, "%s %s", &name, &match);
+#else
   if (ejArgs (argc, argv, "%s %s", &name, &match) < 2);
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return;
-    }
+  {
+    websError (wp, 400, "Insufficient args\n");
+    return;
+  }
 #endif
-    
+
   if (nvram_match (name, match))
     {
-	websWrite (wp, "selected=\"selected\"");
+      websWrite (wp, "selected=\"selected\"");
     }
   return;
 }
@@ -4467,18 +4486,18 @@ ej_nvram_selected_js (webs_t wp, int argc, char_t ** argv)
   char *name, *match;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s %s", &name, &match);
-#else  
+  ejArgs (argc, argv, "%s %s", &name, &match);
+#else
   if (ejArgs (argc, argv, "%s %s", &name, &match) < 2);
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return;
-    }
+  {
+    websError (wp, 400, "Insufficient args\n");
+    return;
+  }
 #endif
 
   if (nvram_match (name, match))
     {
-	websWrite (wp, "selected=\\\"selected\\\"");
+      websWrite (wp, "selected=\\\"selected\\\"");
     }
   return;
 }
@@ -4513,11 +4532,11 @@ ej_tran (webs_t wp, int argc, char_t ** argv)
   char *name;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s", &name);
-#else  
-  if (ejArgs (argc, argv, "%s", &name) !=1)
+  ejArgs (argc, argv, "%s", &name);
+#else
+  if (ejArgs (argc, argv, "%s", &name) != 1)
     return;
-#endif    
+#endif
   websWrite (wp, "<script type=\"text/javascript\">Capture(%s)</script>",
 	     name);
   return;
@@ -4536,31 +4555,8 @@ ej_nvram_checked (webs_t wp, int argc, char_t ** argv)
   char *name, *match;
 
 #ifdef FASTWEB
-	ejArgs (argc, argv, "%s %s", &name, &match);
-#else  
-  if (ejArgs (argc, argv, "%s %s", &name, &match) < 2)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return;
-    }
-#endif    
-
-  if (nvram_match (name, match))
-    {
-	  websWrite (wp, "checked=\"checked\"");
-	}
-
-  return;
-}
-
-static void
-ej_nvram_checked_js (webs_t wp, int argc, char_t ** argv)
-{
-  char *name, *match;
-  
-#ifdef FASTWEB
-	ejArgs (argc, argv, "%s %s", &name, &match);
-#else  
+  ejArgs (argc, argv, "%s %s", &name, &match);
+#else
   if (ejArgs (argc, argv, "%s %s", &name, &match) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
@@ -4570,9 +4566,32 @@ ej_nvram_checked_js (webs_t wp, int argc, char_t ** argv)
 
   if (nvram_match (name, match))
     {
-	  websWrite (wp, "checked=\\\"checked\\\"");
-	}
- 
+      websWrite (wp, "checked=\"checked\"");
+    }
+
+  return;
+}
+
+static void
+ej_nvram_checked_js (webs_t wp, int argc, char_t ** argv)
+{
+  char *name, *match;
+
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s %s", &name, &match);
+#else
+  if (ejArgs (argc, argv, "%s %s", &name, &match) < 2)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+#endif
+
+  if (nvram_match (name, match))
+    {
+      websWrite (wp, "checked=\\\"checked\\\"");
+    }
+
   return;
 }
 
@@ -4612,7 +4631,8 @@ static void
 ej_show_cpu_temperature (webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_router.cputemp)</script></div>\n");
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(status_router.cputemp)</script></div>\n");
   websWrite (wp, "<span id=\"cpu_temp\">");
   ej_get_cputemp (wp, argc, argv);
   websWrite (wp, "</span>&nbsp;\n");
@@ -4647,7 +4667,8 @@ static void
 ej_show_voltage (webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_router.inpvolt)</script></div>\n");
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(status_router.inpvolt)</script></div>\n");
   websWrite (wp, "<span id=\"voltage\">");
   ej_get_voltage (wp, argc, argv);
   websWrite (wp, "</span>&nbsp;\n");
@@ -4710,9 +4731,9 @@ ej_get_txpower (webs_t wp, int argc, char_t ** argv)
 #else
   char mode[32];
   char m[32];
-  strncpy(m,nvram_safe_get("wifi_display"),4);
-  m[4]=0;
-  sprintf(mode,"%s_txpwrdbm",m);
+  strncpy (m, nvram_safe_get ("wifi_display"), 4);
+  m[4] = 0;
+  sprintf (mode, "%s_txpwrdbm", m);
 
   websWrite (wp, "%s dBm", nvram_safe_get (mode));
 #endif
@@ -4722,7 +4743,7 @@ ej_get_txpower (webs_t wp, int argc, char_t ** argv)
 static void
 ej_getencryptionstatus (webs_t wp, int argc, char_t ** argv)
 {
-  char *mode = nvram_safe_get("wifi_display");
+  char *mode = nvram_safe_get ("wifi_display");
   showencstatus (wp, mode);
 }
 static void
@@ -4733,9 +4754,9 @@ ej_getwirelessstatus (webs_t wp, int argc, char_t ** argv)
 #else
   char mode[32];
   char m[32];
-  strncpy(m,nvram_safe_get("wifi_display"),4);
-  m[4]=0;
-  sprintf(mode,"%s_mode",m);
+  strncpy (m, nvram_safe_get ("wifi_display"), 4);
+  m[4] = 0;
+  sprintf (mode, "%s_mode", m);
 
 #endif
   websWrite (wp, "<script type=\"text/javascript\">");
@@ -4755,10 +4776,10 @@ ej_getwirelessssid (webs_t wp, int argc, char_t ** argv)
   char *mode = "wl0_ssid";
 #else
   char mode[32];
-  sprintf(mode,"%s_ssid",nvram_safe_get("wifi_display"));
+  sprintf (mode, "%s_ssid", nvram_safe_get ("wifi_display"));
 #endif
 //fprintf(stderr,"Wireles SSID %s -> %s\n",mode,nvram_safe_get(mode));
-websWrite(wp,"%s",nvram_safe_get(mode));
+  websWrite (wp, "%s", nvram_safe_get (mode));
 }
 static void
 ej_getwirelessmode (webs_t wp, int argc, char_t ** argv)
@@ -4768,9 +4789,9 @@ ej_getwirelessmode (webs_t wp, int argc, char_t ** argv)
 #else
   char mode[32];
   char m[32];
-  strncpy(m,nvram_safe_get("wifi_display"),4);
-  m[4]=0;
-  sprintf(mode,"%s_mode",m);
+  strncpy (m, nvram_safe_get ("wifi_display"), 4);
+  m[4] = 0;
+  sprintf (mode, "%s_mode", m);
 #endif
   websWrite (wp, "<script type=\"text/javascript\">");
   if (nvram_match (mode, "wet"))
@@ -4804,9 +4825,9 @@ ej_getwirelessnetmode (webs_t wp, int argc, char_t ** argv)
 #else
   char mode[32];
   char m[32];
-  strncpy(m,nvram_safe_get("wifi_display"),4);
-  m[4]=0;
-  sprintf(mode,"%s_net_mode",m);
+  strncpy (m, nvram_safe_get ("wifi_display"), 4);
+  m[4] = 0;
+  sprintf (mode, "%s_net_mode", m);
 #endif
   websWrite (wp, "<script type=\"text/javascript\">");
   if (nvram_match (mode, "disabled"))
@@ -5453,7 +5474,7 @@ struct ej_handler ej_handlers[] = {
   {"show_vlantagging", ej_show_vlantagging},
   {"show_bridgenames", ej_show_bridgenames},
   {"show_bridgeifnames", ej_show_bridgeifnames},
-  {"show_bridgetable", ej_show_bridgetable}, 
+  {"show_bridgetable", ej_show_bridgetable},
 #endif
 #ifdef HAVE_BONDING
   {"show_bondings", ej_show_bondings},
@@ -5464,6 +5485,10 @@ struct ej_handler ej_handlers[] = {
 #ifdef HAVE_PPPOESERVER
   {"show_chaps", ej_show_chaps},
 #endif
+#ifdef HAVE_OLSRD
+  {"show_olsrd", ej_show_olsrd},
+#endif
+
   {NULL, NULL}
 };
 #endif /* !WEBS */
@@ -5538,7 +5563,7 @@ static void
 ej_tf_upnp (webs_t wp, int argc, char_t ** argv)
 {
   int i;
-  int len, pos, count; 
+  int len, pos, count;
   char s[32];
   char *temp;
 
@@ -5548,22 +5573,22 @@ ej_tf_upnp (webs_t wp, int argc, char_t ** argv)
 	{
 	  websWrite (wp, (i > 0) ? ",'" : "'");
 	  sprintf (s, "forward_port%d", i);
-	  
+
 // fix: some entries are missing the desc. - this breaks the upnp.asp page, so we add ,*
 	  temp = nvram_safe_get (s);
 	  count = 0;
 	  len = strlen (temp);
-	  
+
 	  for (pos = len; pos != 0; pos--)
-	  {
-		  if (temp[pos] == ',')
-		  	count++;
-	  }
-  
+	    {
+	      if (temp[pos] == ',')
+		count++;
+	    }
+
 	  tf_webWriteJS (wp, nvram_safe_get (s));
 	  if (count == 2)
-	  	websWrite (wp, ",*");
-	  	
+	    websWrite (wp, ",*");
+
 	  websWrite (wp, "'");
 	}
     }
