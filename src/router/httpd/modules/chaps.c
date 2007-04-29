@@ -10,7 +10,7 @@
  * name:pass:ip:on
  */
 
- 
+
 void
 validate_chaps (webs_t wp, char *value, struct variable *v)
 {
@@ -21,7 +21,7 @@ validate_chaps (webs_t wp, char *value, struct variable *v)
   struct variable chaps_variables[] = {
   {longname: "CHAP User", argv:ARGV ("30")},
   {longname: "CHAP Pass", argv:ARGV ("30")},
-  {longname: "Assign IP", NULL},
+  {longname:"Assign IP", NULL},
   }, *which;
   buf = nvram_safe_get ("pppoeserver_chapsnum");
   if (buf == NULL || strlen (buf) == 0)
@@ -39,7 +39,8 @@ validate_chaps (webs_t wp, char *value, struct variable *v)
       char chap_pass[] = "passXXX";
       char chap_ip[] = "ipXXX";
       char chap_enable[] = "enableXXX";
-      char *user = "", new_user[200] = "", *pass = "", new_pass[200] = "", *ip = "", *enable = "";
+      char *user = "", new_user[200] = "", *pass = "", new_pass[200] =
+	"", *ip = "", *enable = "";
 
       snprintf (chap_user, sizeof (chap_user), "user%d", i);
       snprintf (chap_pass, sizeof (chap_pass), "pass%d", i);
@@ -59,7 +60,7 @@ validate_chaps (webs_t wp, char *value, struct variable *v)
       if (!strcmp (ip, "0") || !strcmp (ip, ""))
 	continue;
 
-      /* check name*/
+      /* check name */
       if (strcmp (user, ""))
 	{
 	  if (!valid_name (wp, user, &which[0]))
@@ -72,7 +73,7 @@ validate_chaps (webs_t wp, char *value, struct variable *v)
 	      httpd_filter_name (user, new_user, sizeof (new_user), SET);
 	    }
 	}
-	
+
       if (strcmp (pass, ""))
 	{
 	  if (!valid_name (wp, pass, &which[1]))
@@ -97,7 +98,8 @@ validate_chaps (webs_t wp, char *value, struct variable *v)
       if (sv_valid_ipaddr (ip))
 	{
 	  cur += snprintf (cur, buf + sof - cur, "%s%s:%s:%s:%s",
-			   cur == buf ? "" : " ", new_user, new_pass, ip, enable);
+			   cur == buf ? "" : " ", new_user, new_pass, ip,
+			   enable);
 	}
       else
 	{
@@ -111,7 +113,7 @@ validate_chaps (webs_t wp, char *value, struct variable *v)
   free (buf);
 }
 
- 
+
 void
 show_chaps_table (webs_t wp, char *type, int which)
 {
@@ -132,17 +134,17 @@ show_chaps_table (webs_t wp, char *type, int which)
 	user = strsep (&pass, ":");
 	if (!user || !pass)
 	  continue;
-	  
+
 	ip = pass;
 	pass = strsep (&ip, ":");
 	if (!pass || !ip)
 	  continue;
-	  
+
 	enable = ip;
 	ip = strsep (&enable, ":");
 	if (!ip || !enable)
 	  continue;
-	  
+
 
 	if (!strcmp (type, "user"))
 	  {
@@ -170,7 +172,7 @@ show_chaps_table (webs_t wp, char *type, int which)
     websWrite (wp, "0.0.0.0");
   else
     websWrite (wp, "");
-    
+
 }
 
 
@@ -219,7 +221,8 @@ ej_show_chaps (webs_t wp, int argc, char_t ** argv)
       show_chaps_table (wp, "ip", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      CHAPSHOW ("<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
+      CHAPSHOW ("<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ",
+		i);
       show_chaps_table (wp, "enable", i);
       websWrite (wp, " /></td>\n");
       websWrite (wp, "</tr>\n");

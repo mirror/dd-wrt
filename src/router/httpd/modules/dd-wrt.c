@@ -149,6 +149,12 @@ ej_show_routing (webs_t wp, int argc, char_t ** argv)
 	     nvram_selmatch (wp, "wk_mode",
 			     "ospf") ? "selected=\\\"selected\\\"" : "");
 #endif
+#ifdef HAVE_OLSRD
+  websWrite (wp,
+	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"olsrd\\\" %s >\" + route.olsrd_mod + \"</option>\");\n//]]>\n</script>\n",
+	     nvram_selmatch (wp, "wk_mode",
+			     "olsrd") ? "selected=\\\"selected\\\"" : "");
+#endif
   websWrite (wp,
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"static\\\" %s >\" + share.router + \"</option>\");\n//]]>\n</script>\n",
 	     nvram_selmatch (wp, "wk_mode",
@@ -837,22 +843,23 @@ lease_add (webs_t wp)
 {
   return macro_add ("static_leasenum");
 }
+
 #ifdef HAVE_PPPOESERVER
 int
 chap_user_add (webs_t wp)
 {
-  char *var = websGetVar(wp,"pppoeserver_enabled",NULL);
-  if (var!=NULL)
-    nvram_set("pppoeserver_enabled",var);
+  char *var = websGetVar (wp, "pppoeserver_enabled", NULL);
+  if (var != NULL)
+    nvram_set ("pppoeserver_enabled", var);
   return macro_add ("pppoeserver_chapsnum");
 }
 
 int
 chap_user_remove (webs_t wp)
 {
-  char *var = websGetVar(wp,"pppoeserver_enabled",NULL);
-  if (var!=NULL)
-    nvram_set("pppoeserver_enabled",var);
+  char *var = websGetVar (wp, "pppoeserver_enabled", NULL);
+  if (var != NULL)
+    nvram_set ("pppoeserver_enabled", var);
   return macro_rem ("pppoeserver_chapsnum", "pppoeserver_chaps");
 }
 #endif
@@ -1810,11 +1817,13 @@ showOption (webs_t wp, char *propname, char *nvname)
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(%s)</script></div>\n<select name=\"%s\">\n",
 	     propname, nvname);
   websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-  websWrite (wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n",
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n",
 	     nvram_match (nvname, "0") ? "selected=\\\"selected\\\"" : "");
-  websWrite (wp, "document.write(\"<option value=\\\"1\\\" %s >\" + share.enabled + \"</option>\");\n</select>\n",
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"1\\\" %s >\" + share.enabled + \"</option>\");\n",
 	     nvram_match (nvname, "1") ? "selected=\\\"selected\\\"" : "");
-  websWrite (wp, "//]]>\n</script>\n</div>\n");
+  websWrite (wp, "//]]>\n</script>\n</select>\n</div>\n");
 
 }
 
@@ -1835,75 +1844,220 @@ showOptions (webs_t wp, char *propname, char *names, char *select)
   websWrite (wp, "</select>\n");
 }
 static void
-showOptionsLabel (webs_t wp, char *labelname,char *propname, char *names, char *select)
+showOptionsLabel (webs_t wp, char *labelname, char *propname, char *names,
+		  char *select)
 {
-websWrite(wp,"<div class=\"setting\">\n");
-websWrite(wp,"<div class=\"label\">%s</div>",labelname);
-showOptions(wp,propname,names,select);
-websWrite(wp,"</div>\n");
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp, "<div class=\"label\">%s</div>", labelname);
+  showOptions (wp, propname, names, select);
+  websWrite (wp, "</div>\n");
 
 }
-void show_inputlabel(webs_t wp,char *labelname,char *propertyname,int propertysize)
+
+void
+show_inputlabel (webs_t wp, char *labelname, char *propertyname,
+		 int propertysize)
 {
-websWrite(wp,"<div class=\"setting\">\n");
-websWrite(wp,"<div class=\"label\">%s</div>",labelname);
-websWrite(wp,"<input size=\"%d\" name=\"%s\" value=\"%s\" />\n",propertysize,propertyname,nvram_safe_get(propertyname));
-websWrite(wp,"</div>\n");
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp, "<div class=\"label\">%s</div>", labelname);
+  websWrite (wp, "<input size=\"%d\" name=\"%s\" value=\"%s\" />\n",
+	     propertysize, propertyname, nvram_safe_get (propertyname));
+  websWrite (wp, "</div>\n");
 }
+
+void
+show_custominputlabel (webs_t wp, char *labelname, char *propertyname,char *property,
+		 int propertysize)
+{
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp, "<div class=\"label\">%s</div>", labelname);
+  websWrite (wp, "<input size=\"%d\" name=\"%s\" value=\"%s\" />\n",
+	     propertysize, propertyname, property);
+  websWrite (wp, "</div>\n");
+}
+
+void
+show_legend (webs_t wp, char *labelname)
+{
+  websWrite (wp, "<legend>%s</legend>\n", labelname);
+}
+
 #ifdef HAVE_OLSRD
-void ej_show_olsrd(webs_t wp,int argc,char_t **argv)
+int
+add_olsrd (webs_t wp)
 {
-if (nvram_match("wk_mode","olsrd"))
-{
-websWrite(wp,"<fieldset>\n");
-websWrite(wp,"<legend>OLSRD Routing</legend>\n");
-show_inputlabel(wp,"Poll Rate","olsrd_pollsize",5);
-show_inputlabel(wp,"TCP Redundancy","olsrd_redundancy",5);
-show_inputlabel(wp,"MPR Coverage","olsrd_coverage",5);
-show_inputlabel(wp,"Link Quality Fish Eye","olsrd_lqfisheye",5);
-show_inputlabel(wp,"Link Quality Window Size","olsrd_lqwinsize",5);
-show_inputlabel(wp,"Link Quality Dijkstra Limit","olsrd_lqdijkstralimit",5);
-show_inputlabel(wp,"Link Quality Level","olsrd_lqlevel",5);
-showOption(wp,"olsrd.hysteresis","olsrd_hysteresis");
-int realcount = atoi(nvram_safe_get("olsrd_count"));
-char *wordlist = nvram_safe_get("olsrd_interfaces");
-char *next;
-char word[64];
-int count=0;
-  foreach (word, wordlist, next)
-  {
-    char *interface = word;
-    if (!interface)
-      break;  
-    char *hellointerval = strsep (&interface, ">");
-    if (!hellointerval)
-      break;  
-    char *hellovaliditytime = strsep (&hellointerval, ">");
-    if (!hellovaliditytime)
-      break;  
-    char *tcinterval = strsep (&hellovaliditytime, ">");
-    if (!tcinterval)
-      break;  
-    char *tcvaliditytime = strsep (&tcintercal,">");
-    if (!tcvaliditytime)
-      break;  
-    char *midinterval = strsep(&tcvaliditytime,">");
-    if (!midinterval)
-      break;  
-    char *midvaliditytime = strsep(&midinterval,">");
-    if (!midvaliditytime)
-      break;  
-    char *hnainterval = strsep(&midvaliditytime,">");
-    if (!hnainterval)
-      break;  
-    char *hnavaliditytime = strsep(&hnainterval,">");
-    if (!hnavaliditytime)
-      break;  
-     count++;
-  }
-websWrite(wp,"</fieldset>\n");
-
+  char *ifname = websGetVar (wp, "olsrd_ifname", NULL);
+  if (ifname == NULL)
+    return;
+  char *wordlist = nvram_safe_get ("olsrd_interfaces");
+  char *addition = ">5.0>90.0>2.0>270.0>15.0>90.0>15.0>90.0>";
+  char *newadd = (char *) malloc (strlen(wordlist)+strlen (addition) + strlen (ifname) + 2);
+  if (strlen(wordlist)>0)
+    {
+    strcpy(newadd,wordlist);
+    strcat(newadd," ");
+    strcat(newadd,ifname);
+    }else
+    {
+    strcpy (newadd, ifname);
+    }
+  strcat (newadd, addition);
+  nvram_set ("olsrd_interfaces", newadd);
+  nvram_commit ();
+  free(newadd);
+  return 0;
 }
+
+int
+del_olsrd (webs_t wp)
+{
+  char *del = websGetVar (wp, "olsrd_delcount", NULL);
+  if (del == NULL)
+    return;
+  int d = atoi(del);
+  char *wordlist = nvram_safe_get ("olsrd_interfaces");
+  char *newlist=(char*)malloc(strlen(wordlist)+1);
+  memset(newlist,0,strlen(wordlist));
+      char *next;
+      char word[128];
+      int count=0;
+      foreach (word, wordlist, next)
+      {
+      if (count!=d)
+      sprintf(newlist,"%s %s",newlist,word);
+      count++;
+      }
+  nvram_set ("olsrd_interfaces", newlist);
+  nvram_commit ();
+  free(newlist);
+  return 0;
+}
+int
+save_olsrd (webs_t wp)
+{
+fprintf(stderr,"save olsrd\n");
+      char *wordlist = nvram_safe_get ("olsrd_interfaces");
+      char *newlist =(char*)malloc(strlen(wordlist)+512);
+      memset(newlist,0,strlen(wordlist)+512);
+      char *next;
+      char word[64];
+      foreach (word, wordlist, next)
+      {
+	char *interface = word;
+	char *dummy=interface;
+	strsep (&dummy, ">");
+	char valuename[32];
+
+	sprintf(valuename,"%s_hellointerval",interface);
+	char *hellointerval=websGetVar(wp,valuename,"0");
+	sprintf(valuename,"%s_hellovaliditytime",interface);
+	char *hellovaliditytime=websGetVar(wp,valuename,"0");
+
+	sprintf(valuename,"%s_tcinterval",interface);
+	char *tcinterval=websGetVar(wp,valuename,"0");
+	sprintf(valuename,"%s_tcvaliditytime",interface);
+	char *tcvaliditytime=websGetVar(wp,valuename,"0");
+
+	sprintf(valuename,"%s_midinterval",interface);
+	char *midinterval=websGetVar(wp,valuename,"0");
+	sprintf(valuename,"%s_midvaliditytime",interface);
+	char *midvaliditytime=websGetVar(wp,valuename,"0");
+
+	sprintf(valuename,"%s_hnainterval",interface);
+	char *hnainterval=websGetVar(wp,valuename,"0");
+	sprintf(valuename,"%s_hnavaliditytime",interface);
+	char *hnavaliditytime=websGetVar(wp,valuename,"0");
+	sprintf(newlist,"%s %s>%s>%s>%s>%s>%s>%s>%s>%s>",newlist,interface,hellointerval,hellovaliditytime,tcinterval,tcvaliditytime,midinterval,midvaliditytime,hnainterval,hnavaliditytime);
+      }
+  nvram_set ("olsrd_interfaces", newlist);
+  nvram_commit ();
+  free(newlist);
+  return 0;
+}
+
+void
+ej_show_olsrd (webs_t wp, int argc, char_t ** argv)
+{
+  if (nvram_match ("wk_mode", "olsrd"))
+    {
+      websWrite (wp, "<fieldset>\n");
+      show_legend (wp, "OLSRD Routing");
+      show_inputlabel (wp, "Poll Rate", "olsrd_pollsize", 5);
+      show_inputlabel (wp, "TC Redundancy", "olsrd_redundancy", 5);
+      show_inputlabel (wp, "MPR Coverage", "olsrd_coverage", 5);
+      show_inputlabel (wp, "Link Quality Fish Eye", "olsrd_lqfisheye", 5);
+      show_inputlabel (wp, "Link Quality Window Size", "olsrd_lqwinsize", 5);
+      show_inputlabel (wp, "Link Quality Dijkstra Min",
+		       "olsrd_lqdijkstramin", 5);
+      show_inputlabel (wp, "Link Quality Dijkstra Max",
+		       "olsrd_lqdijkstramax", 5);
+      show_inputlabel (wp, "Link Quality Level", "olsrd_lqlevel", 5);
+      showOption (wp, "route.olsrd_hysteresis", "olsrd_hysteresis");
+      char *wordlist = nvram_safe_get ("olsrd_interfaces");
+      char *next;
+      char word[128];
+      int count = 0;
+      foreach (word, wordlist, next)
+      {
+	char *interface = word;
+	char *hellointerval=interface;
+	strsep (&hellointerval, ">");
+	char *hellovaliditytime=hellointerval;
+	strsep (&hellovaliditytime, ">");
+	char *tcinterval = hellovaliditytime;
+	strsep (&tcinterval, ">");
+	char *tcvaliditytime=tcinterval;
+	strsep (&tcvaliditytime, ">");
+	char *midinterval=tcvaliditytime;
+	strsep (&midinterval, ">");
+	char *midvaliditytime=midinterval;
+	strsep (&midvaliditytime, ">");
+	char *hnainterval = midvaliditytime;
+	strsep (&hnainterval, ">");
+	char *hnavaliditytime=hnainterval;
+	strsep (&hnavaliditytime, ">");
+	websWrite (wp, "<fieldset>\n");
+	show_legend (wp, interface);
+	char valuename[32];
+	sprintf(valuename,"%s_hellointerval",interface);
+	show_custominputlabel (wp, "Hello Interval", valuename,hellointerval, 5);
+	sprintf(valuename,"%s_hellovaliditytime",interface);
+	show_custominputlabel (wp, "Hello Validity Time", valuename,hellovaliditytime, 5);
+
+	sprintf(valuename,"%s_tcinterval",interface);
+	show_custominputlabel (wp, "TC Interval", valuename,tcinterval, 5);
+	sprintf(valuename,"%s_tcvaliditytime",interface);
+	show_custominputlabel (wp, "TC Validity Time",valuename,tcvaliditytime, 5);
+
+	sprintf(valuename,"%s_midinterval",interface);
+	show_custominputlabel (wp, "MID Interval", valuename,midinterval, 5);
+	sprintf(valuename,"%s_midvaliditytime",interface);
+	show_custominputlabel (wp, "MID Validity Time", valuename,midvaliditytime, 5);
+
+	sprintf(valuename,"%s_hnainterval",interface);
+	show_custominputlabel (wp, "HNA Interval", valuename,hnainterval, 5);
+	sprintf(valuename,"%s_hnavaliditytime",interface);
+	show_custominputlabel (wp, "HNA Validity Time", valuename,hnavaliditytime, 5);
+	websWrite (wp,
+		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"olsrd_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+		   count);
+
+	websWrite (wp, "</fieldset>\n");
+	count++;
+      }
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp, "<div class=\"label\">New Interface</div>\n");
+      char buffer[256];
+      memset (buffer, 0, 256);
+      getIfList (buffer, NULL);
+      showOptions (wp, "olsrd_ifname", buffer, "");
+      websWrite (wp, "&nbsp;&nbsp;");
+      websWrite (wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"olsrd_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+      websWrite (wp, "</div>\n");
+
+      websWrite (wp, "</fieldset>\n");
+
+    }
 }
 
 #endif
@@ -2508,8 +2662,7 @@ ej_show_bridgetable (webs_t wp, int argc, char_t ** argv)
 		  if (count != 1)
 		    websWrite (wp, "\',");	//close
 		  sscanf (buf, "%s %*s %s %s", brname, brstp, brif);
-		  websWrite (wp, "\'%s\',\'%s\',\'%s ",
-			     brname, brstp, brif);
+		  websWrite (wp, "\'%s\',\'%s\',\'%s ", brname, brstp, brif);
 		}
 	      else
 		{
@@ -2967,10 +3120,10 @@ show_rates (webs_t wp, char *prefix)
       rate = bg_rates;
       len = sizeof (bg_rates) / sizeof (char *);
       if (nvram_match (turbo, "1"))
-        {
-        rate = ag_rates;
-        len = sizeof (ag_rates) / sizeof (char *);
-	showrates = turbo_rates;
+	{
+	  rate = ag_rates;
+	  len = sizeof (ag_rates) / sizeof (char *);
+	  showrates = turbo_rates;
 	}
       if (nvram_match (bw, "10"))
 	{
@@ -3032,35 +3185,35 @@ show_netmode (webs_t wp, char *prefix)
 			      "bg-mixed") ? "selected=\\\"selected\\\"" : "");
     }
 #ifdef HAVE_WHRAG108
-  if (!strcmp(prefix,"ath1"))
+  if (!strcmp (prefix, "ath1"))
 #endif
-  websWrite (wp,
-	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"b-only\\\" %s>\" + wl_basic.b + \"</option>\");\n//]]>\n</script>\n",
-	     nvram_match (wl_net_mode,
-			  "b-only") ? "selected=\\\"selected\\\"" : "");
+    websWrite (wp,
+	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"b-only\\\" %s>\" + wl_basic.b + \"</option>\");\n//]]>\n</script>\n",
+	       nvram_match (wl_net_mode,
+			    "b-only") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_WHRAG108
-  if (!strcmp(prefix,"ath1"))
+  if (!strcmp (prefix, "ath1"))
 #endif
-  websWrite (wp,
-	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n//]]>\n</script>\n",
-	     nvram_match (wl_net_mode,
-			  "g-only") ? "selected=\\\"selected\\\"" : "");
+    websWrite (wp,
+	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n//]]>\n</script>\n",
+	       nvram_match (wl_net_mode,
+			    "g-only") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_WHRAG108
-  if (!strcmp(prefix,"ath1"))
+  if (!strcmp (prefix, "ath1"))
 #endif
-  websWrite (wp,
-	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n//]]>\n</script>\n",
-	     nvram_match (wl_net_mode,
-			  "bg-mixed") ? "selected=\\\"selected\\\"" : "");
+    websWrite (wp,
+	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n//]]>\n</script>\n",
+	       nvram_match (wl_net_mode,
+			    "bg-mixed") ? "selected=\\\"selected\\\"" : "");
 #else
 #ifdef HAVE_WHRAG108
-  if (!strcmp(prefix,"ath1"))
+  if (!strcmp (prefix, "ath1"))
 #endif
-  websWrite (wp,
-	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n//]]>\n</script>\n",
-	     nvram_match (wl_net_mode,
-			  "g-only") ? "selected=\\\"selected\\\"" : "");
+    websWrite (wp,
+	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n//]]>\n</script>\n",
+	       nvram_match (wl_net_mode,
+			    "g-only") ? "selected=\\\"selected\\\"" : "");
 #endif
   if (has_mimo ())
     {
@@ -3078,7 +3231,7 @@ show_netmode (webs_t wp, char *prefix)
 			    "a-only") ? "selected=\\\"selected\\\"" : "");
 #else
 #ifdef HAVE_WHRAG108
-  if (!strcmp(prefix,"ath0"))
+  if (!strcmp (prefix, "ath0"))
 #endif
     websWrite (wp,
 	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n//]]>\n</script>\n",
@@ -3695,7 +3848,8 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
 //wireless mode
   websWrite (wp,
-	     "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_v24)</script> %s</h2>\n", prefix);
+	     "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_v24)</script> %s</h2>\n",
+	     prefix);
   websWrite (wp, "<fieldset>\n");
   websWrite (wp,
 	     "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [%s] HWAddr [%s]</legend>\n",
@@ -3795,7 +3949,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
       websWrite (wp,
 		 "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
 		 wl_mode);
-	  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");	 
+      websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
       websWrite (wp,
 		 "document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n",
 		 nvram_match (wl_mode,
@@ -3831,7 +3985,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 		 nvram_match (wl_mode,
 			      "wdsap") ? "selected=\\\"selected\\\"" : "");
 #endif
-	  websWrite (wp, "//]]>\n</script>\n");
+      websWrite (wp, "//]]>\n</script>\n");
       websWrite (wp, "</select>\n");
       websWrite (wp, "</div>\n");
     }
@@ -3930,7 +4084,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp,
 	     "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n",
 	     nvram_match (wl_width, "5") ? "selected=\\\"selected\\\"" : "");
-  websWrite (wp, "//]]>\n</script>\n");	     
+  websWrite (wp, "//]]>\n</script>\n");
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
 #endif
@@ -3951,7 +4105,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.secondary + \"</option>\");\n",
 	     nvram_match (wl_txantenna,
 			  "2") ? "selected=\\\"selected\\\"" : "");
-  websWrite (wp, "//]]>\n</script>\n");			 
+  websWrite (wp, "//]]>\n</script>\n");
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
 
@@ -3984,7 +4138,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.sifstime)</script></div>\n");
   websWrite (wp,
 	     "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,99999999,wl_basic.sifstime)\" value=\"%s\" />\n",
-	     wl_sifstime, nvram_default_get (wl_sifstime,"16"));
+	     wl_sifstime, nvram_default_get (wl_sifstime, "16"));
   websWrite (wp, "</div>\n");
 
   websWrite (wp, "<div class=\"setting\">\n");
@@ -3992,7 +4146,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.preambletime)</script></div>\n");
   websWrite (wp,
 	     "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,99999999,wl_basic.preambletime)\" value=\"%s\" />\n",
-	     wl_preambletime, nvram_default_get (wl_preambletime,"20"));
+	     wl_preambletime, nvram_default_get (wl_preambletime, "20"));
   websWrite (wp, "</div>\n");
 #endif
 
@@ -4061,7 +4215,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
 
 // ACK timing
-#ifdef HAVE_MADWIFI  //temp fix for v24 broadcom ACKnot working
+#ifdef HAVE_MADWIFI		//temp fix for v24 broadcom ACKnot working
   sprintf (power, "%s_distance", prefix);
   websWrite (wp, "<br />\n");
   websWrite (wp, "<div class=\"setting\">\n");
