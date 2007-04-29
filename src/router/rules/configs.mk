@@ -53,7 +53,6 @@ obj-$(CONFIG_SPUTNIK_APD) += sputnik
 ##################################################################
 CONFIG_OTHERS=y
 #obj-$(CONFIG_ADM6996) += adm6996
-CONFIG_L2TP=y
 obj-$(CONFIG_L2TP) += rp-l2tp
 
 obj-$(CONFIG_CHILLISPOT) += chillispot
