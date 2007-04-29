@@ -46,6 +46,9 @@ start_olsrd (void)
   if (nvram_match ("olsrd_hysteresis", "0"))
     fprintf (fp, "LinkQualityLevel\t%s\n",
 	     nvram_safe_get ("olsrd_lqlevel"));
+  else
+    fprintf (fp, "LinkQualityLevel\t0\n");
+  
   fprintf (fp, "LoadPlugin \"olsrd_dyn_gw_plain.so\"\n");
   fprintf (fp, "{\n");
   fprintf (fp, "}\n");
