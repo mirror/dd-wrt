@@ -88,6 +88,7 @@ addEvent(window, "unload", function() {
 									</select>
 								</div>
 							</fieldset><br />
+							<% show_olsrd(); %>
 							<% nvram_else_selmatch("wk_mode","bgp","","<!--"); %>
 							
 							<fieldset>
