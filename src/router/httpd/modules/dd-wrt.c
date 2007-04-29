@@ -1866,8 +1866,8 @@ show_inputlabel (webs_t wp, char *labelname, char *propertyname,
 }
 
 void
-show_custominputlabel (webs_t wp, char *labelname, char *propertyname,char *property,
-		 int propertysize)
+show_custominputlabel (webs_t wp, char *labelname, char *propertyname,
+		       char *property, int propertysize)
 {
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp, "<div class=\"label\">%s</div>", labelname);
@@ -1890,21 +1890,24 @@ add_olsrd (webs_t wp)
   if (ifname == NULL)
     return;
   char *wordlist = nvram_safe_get ("olsrd_interfaces");
-  char *addition = ">5.0>90.0>2.0>270.0>15.0>90.0>15.0>90.0>";
-  char *newadd = (char *) malloc (strlen(wordlist)+strlen (addition) + strlen (ifname) + 2);
-  if (strlen(wordlist)>0)
+  char *addition = ">5.0>90.0>2.0>270.0>15.0>90.0>15.0>90.0";
+  char *newadd =
+    (char *) malloc (strlen (wordlist) + strlen (addition) + strlen (ifname) +
+		     2);
+  if (strlen (wordlist) > 0)
     {
-    strcpy(newadd,wordlist);
-    strcat(newadd," ");
-    strcat(newadd,ifname);
-    }else
+      strcpy (newadd, wordlist);
+      strcat (newadd, " ");
+      strcat (newadd, ifname);
+    }
+  else
     {
-    strcpy (newadd, ifname);
+      strcpy (newadd, ifname);
     }
   strcat (newadd, addition);
   nvram_set ("olsrd_interfaces", newadd);
   nvram_commit ();
-  free(newadd);
+  free (newadd);
   return 0;
 }
 
@@ -1914,71 +1917,78 @@ del_olsrd (webs_t wp)
   char *del = websGetVar (wp, "olsrd_delcount", NULL);
   if (del == NULL)
     return;
-  int d = atoi(del);
+  int d = atoi (del);
   char *wordlist = nvram_safe_get ("olsrd_interfaces");
-  char *newlist=(char*)malloc(strlen(wordlist)+1);
-  memset(newlist,0,strlen(wordlist));
-      char *next;
-      char word[128];
-      int count=0;
-      foreach (word, wordlist, next)
-      {
-      if (count!=d)
-      sprintf(newlist,"%s %s",newlist,word);
-      count++;
-      }
+  char *newlist = (char *) malloc (strlen (wordlist) + 1);
+  memset (newlist, 0, strlen (wordlist));
+  char *next;
+  char word[128];
+  int count = 0;
+  foreach (word, wordlist, next)
+  {
+    if (count != d)
+      sprintf (newlist, "%s %s", newlist, word);
+    count++;
+  }
   nvram_set ("olsrd_interfaces", newlist);
   nvram_commit ();
-  free(newlist);
+  free (newlist);
   return 0;
 }
+
 int
 save_olsrd (webs_t wp)
 {
-fprintf(stderr,"save olsrd\n");
-      char *wordlist = nvram_safe_get ("olsrd_interfaces");
-      char *newlist =(char*)malloc(strlen(wordlist)+512);
-      memset(newlist,0,strlen(wordlist)+512);
-      char *next;
-      char word[64];
-      foreach (word, wordlist, next)
-      {
-	char *interface = word;
-	char *dummy=interface;
-	strsep (&dummy, ">");
-	char valuename[32];
+  fprintf (stderr, "save olsrd\n");
+  char *wordlist = nvram_safe_get ("olsrd_interfaces");
+  char *newlist = (char *) malloc (strlen (wordlist) + 512);
+  memset (newlist, 0, strlen (wordlist) + 512);
+  char *next;
+  char word[64];
+  foreach (word, wordlist, next)
+  {
+    char *interface = word;
+    char *dummy = interface;
+    strsep (&dummy, ">");
+    char valuename[32];
 
-	sprintf(valuename,"%s_hellointerval",interface);
-	char *hellointerval=websGetVar(wp,valuename,"0");
-	sprintf(valuename,"%s_hellovaliditytime",interface);
-	char *hellovaliditytime=websGetVar(wp,valuename,"0");
+    sprintf (valuename, "%s_hellointerval", interface);
+    char *hellointerval = websGetVar (wp, valuename, "0");
+    sprintf (valuename, "%s_hellovaliditytime", interface);
+    char *hellovaliditytime = websGetVar (wp, valuename, "0");
 
-	sprintf(valuename,"%s_tcinterval",interface);
-	char *tcinterval=websGetVar(wp,valuename,"0");
-	sprintf(valuename,"%s_tcvaliditytime",interface);
-	char *tcvaliditytime=websGetVar(wp,valuename,"0");
+    sprintf (valuename, "%s_tcinterval", interface);
+    char *tcinterval = websGetVar (wp, valuename, "0");
+    sprintf (valuename, "%s_tcvaliditytime", interface);
+    char *tcvaliditytime = websGetVar (wp, valuename, "0");
 
-	sprintf(valuename,"%s_midinterval",interface);
-	char *midinterval=websGetVar(wp,valuename,"0");
-	sprintf(valuename,"%s_midvaliditytime",interface);
-	char *midvaliditytime=websGetVar(wp,valuename,"0");
+    sprintf (valuename, "%s_midinterval", interface);
+    char *midinterval = websGetVar (wp, valuename, "0");
+    sprintf (valuename, "%s_midvaliditytime", interface);
+    char *midvaliditytime = websGetVar (wp, valuename, "0");
 
-	sprintf(valuename,"%s_hnainterval",interface);
-	char *hnainterval=websGetVar(wp,valuename,"0");
-	sprintf(valuename,"%s_hnavaliditytime",interface);
-	char *hnavaliditytime=websGetVar(wp,valuename,"0");
-	sprintf(newlist,"%s %s>%s>%s>%s>%s>%s>%s>%s>%s>",newlist,interface,hellointerval,hellovaliditytime,tcinterval,tcvaliditytime,midinterval,midvaliditytime,hnainterval,hnavaliditytime);
-      }
+    sprintf (valuename, "%s_hnainterval", interface);
+    char *hnainterval = websGetVar (wp, valuename, "0");
+    sprintf (valuename, "%s_hnavaliditytime", interface);
+    char *hnavaliditytime = websGetVar (wp, valuename, "0");
+    sprintf (newlist, "%s %s>%s>%s>%s>%s>%s>%s>%s>%s", newlist, interface,
+	     hellointerval, hellovaliditytime, tcinterval, tcvaliditytime,
+	     midinterval, midvaliditytime, hnainterval, hnavaliditytime);
+  }
   nvram_set ("olsrd_interfaces", newlist);
   nvram_commit ();
-  free(newlist);
+  free (newlist);
   return 0;
 }
 
 void
 ej_show_olsrd (webs_t wp, int argc, char_t ** argv)
 {
-  if (nvram_match ("wk_mode", "olsrd"))
+fprintf(stderr,"getvar %s\n",websGetVar (wp, "wk_mode", ""));
+char *var=websGetVar (wp, "wk_mode", NULL);
+if (var==NULL)
+    var=nvram_safe_get("wk_mode");
+  if (!strcmp (var, "olsrd"))
     {
       websWrite (wp, "<fieldset>\n");
       show_legend (wp, "OLSRD Routing");
@@ -2000,44 +2010,49 @@ ej_show_olsrd (webs_t wp, int argc, char_t ** argv)
       foreach (word, wordlist, next)
       {
 	char *interface = word;
-	char *hellointerval=interface;
+	char *hellointerval = interface;
 	strsep (&hellointerval, ">");
-	char *hellovaliditytime=hellointerval;
+	char *hellovaliditytime = hellointerval;
 	strsep (&hellovaliditytime, ">");
 	char *tcinterval = hellovaliditytime;
 	strsep (&tcinterval, ">");
-	char *tcvaliditytime=tcinterval;
+	char *tcvaliditytime = tcinterval;
 	strsep (&tcvaliditytime, ">");
-	char *midinterval=tcvaliditytime;
+	char *midinterval = tcvaliditytime;
 	strsep (&midinterval, ">");
-	char *midvaliditytime=midinterval;
+	char *midvaliditytime = midinterval;
 	strsep (&midvaliditytime, ">");
 	char *hnainterval = midvaliditytime;
 	strsep (&hnainterval, ">");
-	char *hnavaliditytime=hnainterval;
+	char *hnavaliditytime = hnainterval;
 	strsep (&hnavaliditytime, ">");
 	websWrite (wp, "<fieldset>\n");
 	show_legend (wp, interface);
 	char valuename[32];
-	sprintf(valuename,"%s_hellointerval",interface);
-	show_custominputlabel (wp, "Hello Interval", valuename,hellointerval, 5);
-	sprintf(valuename,"%s_hellovaliditytime",interface);
-	show_custominputlabel (wp, "Hello Validity Time", valuename,hellovaliditytime, 5);
+	sprintf (valuename, "%s_hellointerval", interface);
+	show_custominputlabel (wp, "Hello Interval", valuename, hellointerval,
+			       5);
+	sprintf (valuename, "%s_hellovaliditytime", interface);
+	show_custominputlabel (wp, "Hello Validity Time", valuename,
+			       hellovaliditytime, 5);
 
-	sprintf(valuename,"%s_tcinterval",interface);
-	show_custominputlabel (wp, "TC Interval", valuename,tcinterval, 5);
-	sprintf(valuename,"%s_tcvaliditytime",interface);
-	show_custominputlabel (wp, "TC Validity Time",valuename,tcvaliditytime, 5);
+	sprintf (valuename, "%s_tcinterval", interface);
+	show_custominputlabel (wp, "TC Interval", valuename, tcinterval, 5);
+	sprintf (valuename, "%s_tcvaliditytime", interface);
+	show_custominputlabel (wp, "TC Validity Time", valuename,
+			       tcvaliditytime, 5);
 
-	sprintf(valuename,"%s_midinterval",interface);
-	show_custominputlabel (wp, "MID Interval", valuename,midinterval, 5);
-	sprintf(valuename,"%s_midvaliditytime",interface);
-	show_custominputlabel (wp, "MID Validity Time", valuename,midvaliditytime, 5);
+	sprintf (valuename, "%s_midinterval", interface);
+	show_custominputlabel (wp, "MID Interval", valuename, midinterval, 5);
+	sprintf (valuename, "%s_midvaliditytime", interface);
+	show_custominputlabel (wp, "MID Validity Time", valuename,
+			       midvaliditytime, 5);
 
-	sprintf(valuename,"%s_hnainterval",interface);
-	show_custominputlabel (wp, "HNA Interval", valuename,hnainterval, 5);
-	sprintf(valuename,"%s_hnavaliditytime",interface);
-	show_custominputlabel (wp, "HNA Validity Time", valuename,hnavaliditytime, 5);
+	sprintf (valuename, "%s_hnainterval", interface);
+	show_custominputlabel (wp, "HNA Interval", valuename, hnainterval, 5);
+	sprintf (valuename, "%s_hnavaliditytime", interface);
+	show_custominputlabel (wp, "HNA Validity Time", valuename,
+			       hnavaliditytime, 5);
 	websWrite (wp,
 		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"olsrd_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 		   count);
@@ -2052,7 +2067,8 @@ ej_show_olsrd (webs_t wp, int argc, char_t ** argv)
       getIfList (buffer, NULL);
       showOptions (wp, "olsrd_ifname", buffer, "");
       websWrite (wp, "&nbsp;&nbsp;");
-      websWrite (wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"olsrd_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+      websWrite (wp,
+		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"olsrd_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
       websWrite (wp, "</div>\n");
 
       websWrite (wp, "</fieldset>\n");
