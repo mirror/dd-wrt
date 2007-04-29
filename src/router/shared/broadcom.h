@@ -135,6 +135,7 @@ extern int has_mimo (void);
 
 
 /* for index */
+extern void ej_show_olsrd (webs_t wp, int argc, char_t ** argv);
 extern void ej_list_mac_layers (webs_t wp, int argc, char_t ** argv);
 extern void ej_show_macfilter (webs_t wp, int argc, char_t ** argv);
 extern void ej_getregcode (webs_t wp, int argc, char_t ** argv);
@@ -182,6 +183,8 @@ extern void ej_nvram_status_get (webs_t wp, int argc, char_t ** argv);
 extern void ej_nvram_get_len (webs_t wp, int argc, char_t ** argv);
 extern void ej_dhcp_remaining_time (webs_t wp, int argc, char_t ** argv);
 extern int dhcp_renew (webs_t wp);
+extern int add_olsrd (webs_t wp);
+extern int del_olsrd (webs_t wp);
 extern int save_macmode (webs_t wp);
 extern int dhcp_release (webs_t wp);
 extern int stop_ppp (webs_t wp);
