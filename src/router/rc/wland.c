@@ -428,6 +428,33 @@ do_madwifi_check (void)
 }
 #endif
 
+#ifdef HAVE_MADWIFI
+/*static HAL_MIB_STATS laststats[16];
+void detectACK(void)
+{
+int count = getdevicecount();
+int i;
+int s = socket(AF_INET, SOCK_DGRAM, 0);
+for (i=0;i<count;i++)
+{
+char wifi[16];
+sprintf(wifi,"wifi%d",i);
+struct ifreq ifr;
+strcpy(ifr.ifr_name, wifi);
+ifr.ifr_data = (caddr_t) &laststats[i];
+if (ioctl(s, SIOCGATHMIBSTATS, &ifr) < 0)
+    {
+    fprintf(stderr,"Error while gettting mib stats\n");
+    return;
+    }
+}
+
+close(s);
+}
+*/
+#endif
+
+
 #ifndef HAVE_MSSID
 
 static void setACK(void)
