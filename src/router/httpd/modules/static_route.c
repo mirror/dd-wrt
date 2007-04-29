@@ -213,7 +213,7 @@ save_olsrd(wp);
 
 // Allow Defaultroute here
 
-  if (!strcmp (ipaddr, "0.0.0.0") && !strcmp (netmask, "0.0.0.0"))
+  if (!strcmp (ipaddr, "0.0.0.0") && !strcmp (netmask, "0.0.0.0") && strcmp (gateway, "0.0.0.0"))
     {
       tmp = 1;
       goto write_nvram;
