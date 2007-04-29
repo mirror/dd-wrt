@@ -5,6 +5,7 @@
 #
 # Base Features
 #
+CONFIG_SES=y
 CONFIG_WIVIZ=y
 CONFIG_NOMESSAGE=y
 CONFIG_PWC=y
