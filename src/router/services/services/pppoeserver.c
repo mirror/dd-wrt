@@ -302,9 +302,11 @@ void
 stop_pppoeserver (void)
 {
   if (pidof ("pppoe-server") > 0)
+  {
     syslog (LOG_INFO, "rp-pppoe : pppoe server successfully stopped\n");
-  killall ("pppoe-server", SIGTERM);
-  del_pppoe_natrule ();
+    killall ("pppoe-server", SIGTERM);
+    del_pppoe_natrule ();
+  }
 }
 
 #endif
