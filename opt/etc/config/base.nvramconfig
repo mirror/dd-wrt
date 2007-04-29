@@ -154,7 +154,7 @@
  "port_trigger"  "TCP/UDP Port Trigger"  "PORTTRIGGER"  "FALSE" "0"  
  "static_route"  "Static Route"  "STATICROUTE"  "FALSE" "0"  
  "wifi_select" " " "NULL" "TRUE" "0"
- "wk_mode"  "Working Mode"  "DYNAMICROUTE"  "5" "gateway" "bgp" "router"  "ospf" "static" "FALSE" "0"  
+ "wk_mode"  "Working Mode"  "DYNAMICROUTE"  "6" "gateway" "olsrd" "bgp" "router"  "ospf" "static" "FALSE" "0"  
  "dmz_enable"  "DMZ enable"  "CHOICE" "2" "0"  "1"  "FALSE" "0"  
  "dmz_ipaddr"  "DMZ LAN IP Address"  "RANGE"  "0" "255"  "FALSE" "0"  
  "mac_clone_enable"  "User define WAN MAC Address"  "CHOICE" "2" "0" "1"  "TRUE" "0"  
