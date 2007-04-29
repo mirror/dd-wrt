@@ -385,6 +385,10 @@ ifeq ($(CONFIG_MATRIXSSL),y)
 CFLAGS += -DHAVE_HTTPS
 
 endif
+ifeq ($(CONFIG_OLSRD),y)
+CFLAGS += -DHAVE_OLSRD
+OBJS += olsrd.o
+endif
 
 ifeq ($(CONFIG_MILKFISH),y)
 CFLAGS += -DHAVE_MILKFISH
