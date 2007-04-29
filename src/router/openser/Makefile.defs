@@ -418,6 +418,9 @@ endif
 ifeq ($(ARCH), arm)
 	use_fast_lock=yes
 endif
+ifeq ($(ARCH), armeb)
+	use_fast_lock=yes
+endif
 
 ifeq ($(ARCH), ppc)
 	use_fast_lock=yes
