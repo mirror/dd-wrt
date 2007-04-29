@@ -59,9 +59,6 @@ EXTRAVERSION =
 
 RELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 OS = $(shell uname -s | sed -e s/SunOS/solaris/ | tr "[A-Z]" "[a-z]")
-ARCH = $(shell uname -m |sed -e s/i.86/i386/ -e s/sun4u/sparc64/  \
-			-e s/armv4l/arm/ -e "s/Power Macintosh/ppc/" -e "s/cobalt/mips2/" \
-			-e s/amd64/x86_64/ )
 OSREL = $(shell uname -r)
 
 # TLS support
@@ -431,6 +428,10 @@ ifeq ($(ARCH), ppc64)
 endif
 
 ifeq ($(ARCH), mips)
+# mips1 arch. (e.g. R3000) - no hardware locking support
+	use_fast_lock=no
+endif
+ifeq ($(ARCH), mipsel)
 # mips1 arch. (e.g. R3000) - no hardware locking support
 	use_fast_lock=no
 endif
