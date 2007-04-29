@@ -19,7 +19,7 @@ stop_olsrd (void)
 void
 start_olsrd (void)
 {
-  if (!nvram_match ("wk_mode", "olsrd"))
+  if (!nvram_match ("wk_mode", "olsr"))
     return;
   stop_olsrd();
   char net[64];

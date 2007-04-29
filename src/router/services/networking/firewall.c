@@ -1770,7 +1770,10 @@ filter_input (void)
   /* Sveasoft mod - accept OSPF protocol broadcasts */
   if (nvram_match ("wk_mode", "ospf"))
     save2file ("-A INPUT -p ospf -j ACCEPT\n");
-
+#ifdef HAVE_OLSRD
+  if (nvram_match ("wk_mode", "olsr"))
+    save2file ("-A INPUT -p udp --dport 698 -j ACCEPT\n");
+#endif
   /* Sveasoft mod - default for br1/separate subnet WDS type */
   if (nvram_match ("wl_br1_enable", "1") && nvram_invmatch ("wl_br1_nat", "1")
       && nvram_invmatch ("wl_br1_nat", "2"))
@@ -1939,7 +1942,13 @@ filter_forward (void)
       save2file ("-A FORWARD -p tcp --sport 179 -j ACCEPT\n");	// BGP port
       save2file ("-A FORWARD -p tcp --dport 179 -j ACCEPT\n");	// BGP port
     }
-
+#ifdef HAVE_OLSRD
+  if (nvram_match ("wk_mode", "olsr"))
+    {
+    save2file ("-A FORWARD -p udp --dport 698 -j ACCEPT\n");
+    save2file ("-A FORWARD -p udp --sport 698 -j ACCEPT\n");
+    }
+#endif
   /* Sveasoft mod - FORWARD br1 to br0, protecting br0 */
   if (nvram_match ("wl_br1_enable", "1"))
     {
