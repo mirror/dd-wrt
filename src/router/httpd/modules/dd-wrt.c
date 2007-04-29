@@ -1939,7 +1939,6 @@ del_olsrd (webs_t wp)
 int
 save_olsrd (webs_t wp)
 {
-  fprintf (stderr, "save olsrd\n");
   char *wordlist = nvram_safe_get ("olsrd_interfaces");
   char *newlist = (char *) malloc (strlen (wordlist) + 512);
   memset (newlist, 0, strlen (wordlist) + 512);
@@ -1984,7 +1983,6 @@ save_olsrd (webs_t wp)
 void
 ej_show_olsrd (webs_t wp, int argc, char_t ** argv)
 {
-fprintf(stderr,"getvar %s\n",websGetVar (wp, "wk_mode", ""));
 char *var=websGetVar (wp, "wk_mode", NULL);
 if (var==NULL)
     var=nvram_safe_get("wk_mode");
