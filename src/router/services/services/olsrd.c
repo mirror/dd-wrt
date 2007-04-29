@@ -30,7 +30,7 @@ start_olsrd (void)
   fprintf (fp, "IpVersion\t4\n");
   fprintf (fp, "AllowNoInt\tyes\n");
   fprintf (fp, "Pollrate\t%s\n", nvram_safe_get ("olsrd_pollsize"));
-  fprintf (fp, "Tcredundancy\t%s\n", nvram_safe_get ("olsrd_redundancy"));
+  fprintf (fp, "TcRedundancy\t%s\n", nvram_safe_get ("olsrd_redundancy"));
   fprintf (fp, "MprCoverage\t%s\n", nvram_safe_get ("olsrd_coverage"));
   fprintf (fp, "LinkQualityFishEye\t%s\n",
 	   nvram_safe_get ("olsrd_lqfisheye"));
@@ -39,9 +39,11 @@ start_olsrd (void)
   fprintf (fp, "LinkQualityDjikstraLimit\t%s %s\n",
 	   nvram_safe_get ("olsrd_lqdjikstramin"),
 	   nvram_safe_get ("olsrd_lqdjikstramax"));
-  fprintf (fp, "LinkQualityLevel\t%s\n", nvram_safe_get ("olsrd_lqwinsize"));
   fprintf (fp, "UseHysteresis\t%s\n",
 	   nvram_match ("olsrd_hysteresis", "1") ? "yes" : "no");
+  if (nvram_match ("olsrd_hysteresis", "0"))
+    fprintf (fp, "LinkQualityLevel\t%s\n",
+	     nvram_safe_get ("olsrd_lqwinsize"));
   fprintf (fp, "LoadPlugin \"olsrd_dyn_gw_plain.so\"\n");
   fprintf (fp, "{\n");
   fprintf (fp, "}\n");
