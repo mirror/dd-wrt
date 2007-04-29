@@ -151,9 +151,9 @@ ej_show_routing (webs_t wp, int argc, char_t ** argv)
 #endif
 #ifdef HAVE_OLSRD
   websWrite (wp,
-	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"olsrd\\\" %s >\" + route.olsrd_mod + \"</option>\");\n//]]>\n</script>\n",
+	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"olsr\\\" %s >\" + route.olsrd_mod + \"</option>\");\n//]]>\n</script>\n",
 	     nvram_selmatch (wp, "wk_mode",
-			     "olsrd") ? "selected=\\\"selected\\\"" : "");
+			     "olsr") ? "selected=\\\"selected\\\"" : "");
 #endif
   websWrite (wp,
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"static\\\" %s >\" + share.router + \"</option>\");\n//]]>\n</script>\n",
@@ -1986,7 +1986,7 @@ ej_show_olsrd (webs_t wp, int argc, char_t ** argv)
 char *var=websGetVar (wp, "wk_mode", NULL);
 if (var==NULL)
     var=nvram_safe_get("wk_mode");
-  if (!strcmp (var, "olsrd"))
+  if (!strcmp (var, "olsr"))
     {
       websWrite (wp, "<fieldset>\n");
       show_legend (wp, "OLSRD Routing");
