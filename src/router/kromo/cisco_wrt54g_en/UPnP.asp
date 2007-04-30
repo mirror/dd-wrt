@@ -161,7 +161,7 @@ addEvent(window, "unload", function() {
 								<table class="table center" cellspacing="6" id="upnp_table" summary="UPnP table">
 									<tr>
 										<th width="30%"><% tran("share.descr"); %></th>
-										<th><% tran("share.enabled"); %>?</th>
+										<th><% tran("share.enabled"); %></th>
 										<th><% tran("share.from"); %>&nbsp;(WAN)</th>
 										<th><% tran("share.to"); %>&nbsp;(LAN)</th>
 										<th><% tran("share.ip"); %></th>
