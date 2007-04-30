@@ -116,7 +116,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_WRT350N 0x2016
 
 //Linksys WAP54G v1 (4702 cpu, no switch, fccid: Linksys PKW-WAP54G)
-#define ROUTER_WAP54G_V1 0x210f
+#define ROUTER_WAP54G_V1 0x2110
 
 //Linksys WAP54G v2 (4712 cpu, no switch, fccid: Linksys Q87-WAP54GV2)
 #define ROUTER_WAP54G_V2 0x2210
