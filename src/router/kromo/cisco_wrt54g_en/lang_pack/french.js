@@ -364,7 +364,7 @@ bmenu.adminAlive="Keep Alive";
 bmenu.adminLog="Journal";
 bmenu.adminDiag="Shell";
 bmenu.adminWol="WOL";
-bmenu.adminFactory="Paramètres usine";
+bmenu.adminFactory="Reset";
 bmenu.adminUpgrade="Mise à jour";
 bmenu.adminBackup="Sauvegarde";
 
@@ -1185,7 +1185,7 @@ service.ssh_password="Password Login";
 service.ssh_key="Authorized Keys";
 
 //radiooff.webservices
-service.radiooff_legend="Fonction du Bouton SES";
+service.radiooff_legend="Fonction du Bouton SES / AOSS / EZ-SETUP";
 service.radiooff_srv="Gérer l\'émission radio";
 
 //ses.webservices
