@@ -2005,12 +2005,12 @@ if (var==NULL)
       websWrite (wp, "<div class=\"setting\">\n");
       websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(route.olsrd_lqdmin)</script></div>");
       websWrite (wp, "<input class=\"num\" size=\"5\" maxlength=\"5\" name=\"olsrd_lqdijkstramin\" onblur=\"olsrd_checkDijkstra(this.form, this)\" value=\"%s\" />\n",
-    		  nvram_safe_get (olsrd_lqdijkstramin));
+    		  nvram_safe_get ("olsrd_lqdijkstramin"));
       websWrite (wp, "</div>\n");
       websWrite (wp, "<div class=\"setting\">\n");
       websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(route.olsrd_lqdmax)</script></div>");
       websWrite (wp, "<input class=\"num\" size=\"5\" maxlength=\"5\" name=\"olsrd_lqdijkstramax\" onblur=\"olsrd_checkDijkstra(this.form, this)\" value=\"%s\" />\n",
-    		  nvram_safe_get (olsrd_lqdijkstramax));
+    		  nvram_safe_get ("olsrd_lqdijkstramax"));
       websWrite (wp, "</div>\n");
       
       showOptionsLabel (wp, "route.olsrd_lqlvl", "olsrd_lqlevel",
