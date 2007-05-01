@@ -1834,15 +1834,17 @@ showOptions (webs_t wp, char *propname, char *names, char *select)
   char *next;
   char var[80];
   websWrite (wp, "<select name=\"%s\">\n", propname);
+  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
   foreach (var, names, next)
   {
-    websWrite (wp,
-	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n//]]>\n</script>\n",
+    websWrite (wp, 
+    	   "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n",
 	       var, !strcmp (var, select) ? "selected=\\\"selected\\\"" : "",
 	       var);
   }
-  websWrite (wp, "</select>\n");
+  websWrite (wp, "//]]>\n</script>\n</select>\n");
 }
+
 static void
 showOptionsLabel (webs_t wp, char *labelname, char *propname, char *names,
 		  char *select)
@@ -1859,7 +1861,7 @@ show_inputlabel (webs_t wp, char *labelname, char *propertyname,
 		 int propertysize)
 {
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\">%s</div>", labelname);
+  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(%s)</script></div>", labelname);
   websWrite (wp, "<input size=\"%d\" name=\"%s\" value=\"%s\" />\n",
 	     propertysize, propertyname, nvram_safe_get (propertyname));
   websWrite (wp, "</div>\n");
@@ -1877,9 +1879,10 @@ show_custominputlabel (webs_t wp, char *labelname, char *propertyname,
 }
 
 void
-show_legend (webs_t wp, char *labelname)
+show_legend (webs_t wp, char *labelname, int translate)
 {
-  websWrite (wp, "<legend>%s</legend>\n", labelname);
+  websWrite (wp, "<legend>%s%s%s</legend>\n",
+		  !strcmp (translate, 1) ? "<script type=\"text/javascript\">Capture(" : "", labelname, !strcmp (translate, 1) ? ")</script>" : "");
 }
 
 #ifdef HAVE_OLSRD
@@ -1989,17 +1992,15 @@ if (var==NULL)
   if (!strcmp (var, "olsr"))
     {
       websWrite (wp, "<fieldset>\n");
-      show_legend (wp, "OLSR Routing");
-      show_inputlabel (wp, "Poll Rate", "olsrd_pollsize", 5);
-      show_inputlabel (wp, "TC Redundancy", "olsrd_redundancy", 5);
-      show_inputlabel (wp, "MPR Coverage", "olsrd_coverage", 5);
-      show_inputlabel (wp, "Link Quality Fish Eye", "olsrd_lqfisheye", 5);
-      show_inputlabel (wp, "Link Quality Window Size", "olsrd_lqwinsize", 5);
-      show_inputlabel (wp, "Link Quality Dijkstra Min",
-		       "olsrd_lqdijkstramin", 5);
-      show_inputlabel (wp, "Link Quality Dijkstra Max",
-		       "olsrd_lqdijkstramax", 5);
-      show_inputlabel (wp, "Link Quality Level", "olsrd_lqlevel", 5);
+      show_legend (wp, "route.olsrd_legend", 1);
+      show_inputlabel (wp, "route.olsrd_poll", "olsrd_pollsize", 5);
+      show_inputlabel (wp, "route.olsrd_tc", "olsrd_redundancy", 5);
+      show_inputlabel (wp, "route.olsrd_mpr", "olsrd_coverage", 5);
+      show_inputlabel (wp, "route.olsrd_lqfe", "olsrd_lqfisheye", 5);
+      show_inputlabel (wp, "route.olsrd_lqws", "olsrd_lqwinsize", 5);
+      show_inputlabel (wp, "route.olsrd_lqdmin", "olsrd_lqdijkstramin", 5);
+      show_inputlabel (wp, "route.olsrd_lqdmax", "olsrd_lqdijkstramax", 5);
+      show_inputlabel (wp, "route.olsrd_lqlvl", "olsrd_lqlevel", 5);
       showOption (wp, "route.olsrd_hysteresis", "olsrd_hysteresis");
       char *wordlist = nvram_safe_get ("olsrd_interfaces");
       char *next;
@@ -2025,7 +2026,7 @@ if (var==NULL)
 	char *hnavaliditytime = hnainterval;
 	strsep (&hnavaliditytime, ">");
 	websWrite (wp, "<fieldset>\n");
-	show_legend (wp, interface);
+	show_legend (wp, interface, 0);
 	char valuename[32];
 	sprintf (valuename, "%s_hellointerval", interface);
 	show_custominputlabel (wp, "Hello Interval", valuename, hellointerval,
@@ -2059,7 +2060,7 @@ if (var==NULL)
 	count++;
       }
       websWrite (wp, "<div class=\"setting\">\n");
-      websWrite (wp, "<div class=\"label\">New Interface</div>\n");
+      websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(route.olsrd_newiface)</script></div>\n");
       char buffer[256];
       memset (buffer, 0, 256);
       getIfList (buffer, NULL);
@@ -2068,9 +2069,7 @@ if (var==NULL)
       websWrite (wp,
 		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"olsrd_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
       websWrite (wp, "</div>\n");
-
-      websWrite (wp, "</fieldset>\n");
-
+      websWrite (wp, "</fieldset><br />\n");
     }
 }
 
