@@ -1881,11 +1881,18 @@ show_custominputlabel (webs_t wp, char *labelname, char *propertyname,
 void
 show_legend (webs_t wp, char *labelname, int *translate)
 {
-	char buf[2];
+/*	char buf[2];
 	sprintf(buf,"%d",translate);
 	websWrite (wp, "<legend>%s%s%s</legend>\n",
 		!strcmp (buf, "1") ? "<script type=\"text/javascript\">Capture(" : "", labelname, !strcmp (buf, "1") ? ")</script>" : "");
+*/
+	if (translate)
+		websWrite (wp, "<legend><script type=\"text/javascript\">Capture(%s)</script></legend>\n", labelname);
+	else
+		websWrite (wp, "<legend>%s</legend>\n", labelname);
+			
 }
+
 
 #ifdef HAVE_OLSRD
 int
