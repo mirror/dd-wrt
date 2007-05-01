@@ -1858,12 +1858,12 @@ showOptionsLabel (webs_t wp, char *labelname, char *propname, char *names,
 
 void
 show_inputlabel (webs_t wp, char *labelname, char *propertyname,
-		 int propertysize)
+		 int propertysize, char *inputclassname, int inputmaxlength)
 {
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(%s)</script></div>", labelname);
-  websWrite (wp, "<input size=\"%d\" name=\"%s\" value=\"%s\" />\n",
-	     propertysize, propertyname, nvram_safe_get (propertyname));
+  websWrite (wp, "<input class=\"%s\" size=\"%d\" maxlength=\"%d\" name=\"%s\" value=\"%s\" />\n",
+		  inputclassname, propertysize, inputmaxlength, propertyname, nvram_safe_get (propertyname));
   websWrite (wp, "</div>\n");
 }
 
@@ -1995,14 +1995,26 @@ if (var==NULL)
     {
       websWrite (wp, "<fieldset>\n");
       show_legend (wp, "route.olsrd_legend", 1);
-      show_inputlabel (wp, "route.olsrd_poll", "olsrd_pollsize", 5);
-      show_inputlabel (wp, "route.olsrd_tc", "olsrd_redundancy", 5);
-      show_inputlabel (wp, "route.olsrd_mpr", "olsrd_coverage", 5);
-      show_inputlabel (wp, "route.olsrd_lqfe", "olsrd_lqfisheye", 5);
-      show_inputlabel (wp, "route.olsrd_lqws", "olsrd_lqwinsize", 5);
-      show_inputlabel (wp, "route.olsrd_lqdmin", "olsrd_lqdijkstramin", 5);
-      show_inputlabel (wp, "route.olsrd_lqdmax", "olsrd_lqdijkstramax", 5);
-      show_inputlabel (wp, "route.olsrd_lqlvl", "olsrd_lqlevel", 5);
+      show_inputlabel (wp, "route.olsrd_poll", "olsrd_pollsize", 5, "num", 5);
+      showOptionsLabel (wp, "route.olsrd_tc", "olsrd_redundancy",
+    		  "0 1 2", nvram_default_get ("olsrd_redundancy", "2"));
+      show_inputlabel (wp, "route.olsrd_mpr", "olsrd_coverage", 5, "num", 5);
+      showOption (wp, "route.olsrd_lqfe", "olsrd_lqfisheye");
+      show_inputlabel (wp, "route.olsrd_lqws", "olsrd_lqwinsize", 5, "num", 5);
+      
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(route.olsrd_lqdmin)</script></div>");
+      websWrite (wp, "<input class=\"num\" size=\"5\" maxlength=\"5\" name=\"olsrd_lqdijkstramin\" onblur=\"olsrd_checkDijkstra(this.form, this)\" value=\"%s\" />\n",
+    		  nvram_safe_get (olsrd_lqdijkstramin));
+      websWrite (wp, "</div>\n");
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(route.olsrd_lqdmax)</script></div>");
+      websWrite (wp, "<input class=\"num\" size=\"5\" maxlength=\"5\" name=\"olsrd_lqdijkstramax\" onblur=\"olsrd_checkDijkstra(this.form, this)\" value=\"%s\" />\n",
+    		  nvram_safe_get (olsrd_lqdijkstramax));
+      websWrite (wp, "</div>\n");
+      
+      showOptionsLabel (wp, "route.olsrd_lqlvl", "olsrd_lqlevel",
+    		  "0 1 2", nvram_default_get ("olsrd_lqlevel", "2"));
       showOption (wp, "route.olsrd_hysteresis", "olsrd_hysteresis");
       char *wordlist = nvram_safe_get ("olsrd_interfaces");
       char *next;
