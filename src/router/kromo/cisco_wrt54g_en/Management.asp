@@ -103,8 +103,10 @@ function to_submit(F) {
 			F._remote_mgt_https.checked == false;
 		if(F.http_enable.checked == false && F.https_enable.checked == true)
 			F._remote_mgt_https.checked == true;
-		if(F._remote_mgt_https.checked == true) F.remote_mgt_https.value = 1;
-		else 	 F.remote_mgt_https.value = 0;
+		if(F._remote_mgt_https.checked == true)
+			F.remote_mgt_https.value = 1;
+		else
+			F.remote_mgt_https.value = 0;
 	}
 	
 	if(F._https_enable) {
@@ -130,6 +132,7 @@ function to_submit(F) {
 
 	F.save_button.value = sbutton.saving;
 	apply(F);
+	return true;
 }
 
 var update;
