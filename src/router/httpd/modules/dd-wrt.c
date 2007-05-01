@@ -1850,7 +1850,7 @@ showOptionsLabel (webs_t wp, char *labelname, char *propname, char *names,
 		  char *select)
 {
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\">%s</div>", labelname);
+  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(%s)</script></div>", labelname);
   showOptions (wp, propname, names, select);
   websWrite (wp, "</div>\n");
 
