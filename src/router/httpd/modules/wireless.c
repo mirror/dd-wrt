@@ -1580,6 +1580,10 @@ generate_wep_key (webs_t wp, int key, char *prefix)
 int
 generate_key_64 (webs_t wp)
 {
+	char *var = websGetVar (wp, "wl_wep_bit", NULL);
+  	if (var != NULL)
+    	nvram_set ("wl_wep_bit", var);	
+
   int ret;
   cprintf ("gen wep key 64");
   generate_key = 1;
@@ -1595,6 +1599,10 @@ generate_key_64 (webs_t wp)
 int
 generate_key_128 (webs_t wp)
 {
+	char *var = websGetVar (wp, "wl_wep_bit", NULL);
+  	if (var != NULL)
+    	nvram_set ("wl_wep_bit", var);
+    	
   int ret;
   cprintf ("gen wep key 128");
   generate_key = 1;
