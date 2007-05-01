@@ -1038,6 +1038,9 @@ led_control (int type, int act)
       diag_gpio = 0x17;
       bridge_gpio = 0x11;
       break;
+    case ROUTER_WRT300N:
+      diag_gpio = 0x11;  //power led blink to indicate fac.def.
+      break;
     }
 
   switch (type)
