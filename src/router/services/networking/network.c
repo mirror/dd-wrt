@@ -2162,13 +2162,16 @@ start_wan (int status)
 	}
       else
 	{
+	  fprintf (fp, "noccp\n");
 	  fprintf (fp, "nomppc\n");
 	}
       fprintf (fp, "noipdefault\n"
 	       "noauth\n"
 	       "defaultroute\n"
 	       "noaccomp\n"
-	       "noccp\n" "nobsdcomp\n" "nodeflate\n" "maxfail 0\n"
+	       "nobsdcomp\n" 
+	       "nodeflate\n" 
+	       "maxfail 0\n"
 //             "nocrtscts\n"
 //             "lock\n"
 	       "nopcomp\n"
