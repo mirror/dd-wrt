@@ -1,16 +1,16 @@
 ifeq ($(ARCH),mipsel)
 madwifi:
-	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=mips-le-elf
-	make -C madwifi.dev/madwifi.dev/tools TARGET=mips-le-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=mipsisa32-le-elf
+	make -C madwifi.dev/madwifi.dev/tools TARGET=mipsisa32-le-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
 
 madwifi-clean:
-	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=mips-le-elf
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=mipsisa32-le-elf
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
 
 madwifi-install:
 	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
-	make -C madwifi/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
-	make -C madwifi/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=mips-le-elf install
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=mipsisa32-le-elf install
 endif
 
 ifeq ($(ARCH),armeb)
