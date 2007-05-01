@@ -299,6 +299,7 @@ errmsg.err56="La valeur du port est en dehors de l\'intervalle [0 - 65535].";
 
 // Routing.asp error messages
 errmsg.err57="Effacer cette entrée ?";
+errmsg.err103=" doit être inférieur à ";
 
 // Status_Lan.asp error messages
 errmsg.err58="Cliquez pour effacer le bail.";
