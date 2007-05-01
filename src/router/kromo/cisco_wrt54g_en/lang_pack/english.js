@@ -299,6 +299,7 @@ errmsg.err56="Port value is out of range [0 - 65535]";
 
 // Routing.asp error messages
 errmsg.err57="Delete the Entry ?";
+errmsg.err103=" must be lower than ";
 
 // Status_Lan.asp error messages
 errmsg.err58="Click to delete lease";
