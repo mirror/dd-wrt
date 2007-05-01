@@ -41,11 +41,10 @@ function olsrd_del_submit(F,num) {
 	F.submit();
 }
 
-function olsrd_checkDijkstra(F,I) {
+function olsrd_checkDijkstra(F) {
 	if (F.olsrd_lqdijkstramin && F.olsrd_lqdijkstramax) {
 		if (F.olsrd_lqdijkstramin.value>F.olsrd_lqdijkstramax.value) {
 			alert(route.olsrd_lqdmin + errmsg.err103 + route.olsrd_lqdmax +".");
-			I.focus();
 		}
 	}
 }
