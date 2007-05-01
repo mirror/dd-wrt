@@ -325,7 +325,7 @@ ifneq ($(CONFIG_PPPOESERVER),y)
 endif
 ifneq ($(CONFIG_MILKFISH),y)
 	rm -f $(INSTALLDIR)/www/Milkfish.asp
-	rm -f $(INSTALLDIR)/www/help/Milkfish.asp
+	rm -f $(INSTALLDIR)/www/help/HMilkfish.asp
 endif
 
 ifeq ($(CONFIG_RAMON),y)
