@@ -29,16 +29,26 @@ function SelMode(num,F) {
 	F.wk_mode.value = F.wk_mode.options[num].value;
 	F.submit();
 }
+
 function olsrd_add_submit(F) {
 	F.submit_type.value = "add_olsrd";
 	F.submit();
 }
+
 function olsrd_del_submit(F,num) {
 	F.submit_type.value = "del_olsrd";
 	F.olsrd_delcount.value = num;
 	F.submit();
 }
 
+function olsrd_checkDijkstra(F,I) {
+	if (F.olsrd_lqdijkstramin && F.olsrd_lqdijkstramax) {
+		if (F.olsrd_lqdijkstramin.value>F.olsrd_lqdijkstramax.value) {
+			alert(route.olsrd_lqdmin + errmsg.err103 + route.olsrd_lqdmax +".");
+			I.focus();
+		}
+	}
+}
 
 function to_submit(F) {
 	if (F.routing_bgp_neighbor_ip != null) {
