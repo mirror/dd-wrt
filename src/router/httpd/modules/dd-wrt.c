@@ -6117,6 +6117,10 @@ get_svc (char *svc, char *protocol, char *ports)
 int
 qos_add_svc (webs_t wp)
 {
+	char *var = websGetVar (wp, "wshaper_enable", NULL);
+  	if (var != NULL)
+    	nvram_set ("wshaper_enable", var);	
+	
   char protocol[100] = { 0 }, ports[100] =
   {
   0};
@@ -6159,6 +6163,10 @@ qos_add_svc (webs_t wp)
 int
 qos_add_ip (webs_t wp)
 {
+	char *var = websGetVar (wp, "wshaper_enable", NULL);
+  	if (var != NULL)
+    	nvram_set ("wshaper_enable", var);	
+
   char *add_ip0 = websGetVar (wp, "svqos_ipaddr0", NULL);
   char *add_ip1 = websGetVar (wp, "svqos_ipaddr1", NULL);
   char *add_ip2 = websGetVar (wp, "svqos_ipaddr2", NULL);
@@ -6191,6 +6199,10 @@ qos_add_ip (webs_t wp)
 int
 qos_add_mac (webs_t wp)
 {
+	char *var = websGetVar (wp, "wshaper_enable", NULL);
+  	if (var != NULL)
+    	nvram_set ("wshaper_enable", var);
+    	
   char *add_mac0 = websGetVar (wp, "svqos_hwaddr0", NULL);
   char *add_mac1 = websGetVar (wp, "svqos_hwaddr1", NULL);
   char *add_mac2 = websGetVar (wp, "svqos_hwaddr2", NULL);
