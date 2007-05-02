@@ -96,7 +96,7 @@ ej_static_route_setting (webs_t wp, int argc, char_t ** argv)
 	  }
 	else if (!strcmp (arg, "lan") && nvram_match ("lan_ifname", ifname))
 	  {
-	    websWrite (wp, "selected=\selected\"");
+	    websWrite (wp, "selected=\"selected\"");
 	    return;
 	  }
 	else if (!strcmp (arg, "wan") && nvram_match ("wan_ifname", ifname))
