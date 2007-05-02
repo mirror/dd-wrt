@@ -361,6 +361,7 @@ do_client_check (void)
 #endif
 
 #ifdef HAVE_MADWIFI
+static int notstarted[32];
 static char assoclist[24 * 1024];
 static int lastchans[256];
 static void
@@ -414,11 +415,53 @@ do_madwifi_check (void)
 		  int count = getassoclist (dev, &assoclist[0]);
 		  if (count == 0)
 		    {
+		      char *next;
+		      char var[80];
+		      char *vifs;
+		      char mode[32];
+		      char *m;
+		      char wifivifs[32];
+		      sprintf (wifivifs, "%s_vifs", dev);
+		      vifs = nvram_safe_get (wifivifs);
+		      if (vifs != NULL && strlen (vifs) > 0)
+			{
+			  foreach (var, vifs, next)
+			  {
+			    fprintf(stderr,"shutting down %s\n",var);
+			    eval ("ifconfig", var, "down");
+			  }
+			}
+
+		      notstarted[i] = 0;
+			    fprintf(stderr,"restarting %s\n",dev);
 		      eval ("ifconfig", dev, "down");
 		      sleep (1);
 		      eval ("ifconfig", dev, "up");
 
 		    }
+		  else if (!notstarted[i])
+		    {
+		      notstarted[i] = 1;
+		      char *next;
+		      char var[80];
+		      char *vifs;
+		      char mode[32];
+		      char *m;
+		      char wifivifs[32];
+
+		      sprintf (wifivifs, "%s_vifs", dev);
+		      vifs = nvram_safe_get (wifivifs);
+		      if (vifs != NULL && strlen (vifs) > 0)
+			{
+			  foreach (var, vifs, next)
+			  {
+		           fprintf(stderr,"restarting %s\n",var);
+			    eval ("ifconfig", var, "up");
+			  }
+			}
+
+		    }
+
 		}
 	    }
 	}
@@ -457,10 +500,11 @@ close(s);
 
 #ifndef HAVE_MSSID
 
-static void setACK(void)
+static void
+setACK (void)
 {
   char *v;
-  char *name = get_wdev();
+  char *name = get_wdev ();
   if ((v = nvram_get ("wl0_distance")))
     {
       rw_reg_t reg;
@@ -509,7 +553,7 @@ do_wlan_check (void)
   do_madwifi_check ();
 #endif
 #ifndef HAVE_MSSID
-setACK();
+  setACK ();
 #endif
 
 }
@@ -538,6 +582,7 @@ wland_main (int argc, char **argv)
   /* Most of time it goes to sleep */
 #ifdef HAVE_MADWIFI
   memset (lastchans, 0, sizeof (lastchans));
+  memset (notstarted, 0, sizeof (notstarted));
 #endif
   while (1)
     {
