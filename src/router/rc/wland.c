@@ -406,14 +406,17 @@ do_madwifi_check (void)
       if (nvram_match (mode, "sta") || nvram_match (mode, "wdssta"))
 	{
 	  int chan = wifi_getchannel (dev);
-	  if (lastchans[i] == 0)
+	  fprintf(stderr,"chan %d %d\n",chan,lastchans[i]);
+	  if (lastchans[i] == 0 && chan<1000)
 	    lastchans[i] = chan;
 	  else
 	    {
+//	  fprintf(stderr,"chan2 %d %d\n",chan,lastchans[i]);
 	      if (chan == lastchans[i])
 		{
 		  int count = getassoclist (dev, &assoclist[0]);
-		  if (count == 0)
+//	  fprintf(stderr,"count %d\n",count);
+		  if (count == 0 || count==-1)
 		    {
 		      char *next;
 		      char var[80];
@@ -427,7 +430,7 @@ do_madwifi_check (void)
 			{
 			  foreach (var, vifs, next)
 			  {
-			    fprintf(stderr,"shutting down %s\n",var);
+//			    fprintf(stderr,"shutting down %s\n",var);
 			    eval ("ifconfig", var, "down");
 			  }
 			}
@@ -455,7 +458,7 @@ do_madwifi_check (void)
 			{
 			  foreach (var, vifs, next)
 			  {
-		           fprintf(stderr,"restarting %s\n",var);
+//		           fprintf(stderr,"restarting %s\n",var);
 			    eval ("ifconfig", var, "up");
 			  }
 			}
@@ -463,6 +466,8 @@ do_madwifi_check (void)
 		    }
 
 		}
+		lastchans[i] = chan;
+
 	    }
 	}
 
@@ -581,8 +586,8 @@ wland_main (int argc, char **argv)
 
   /* Most of time it goes to sleep */
 #ifdef HAVE_MADWIFI
-  memset (lastchans, 0, sizeof (lastchans));
-  memset (notstarted, 0, sizeof (notstarted));
+  memset (lastchans, 0, 256*4);
+  memset (notstarted, 0, 32*4);
 #endif
   while (1)
     {
