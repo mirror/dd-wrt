@@ -99,6 +99,12 @@ start_olsrd (void)
     fprintf (fp, "\tHnaValidityTime\t%s\n", hnavaliditytime);
     fprintf (fp, "}\n");
   }
+if (strlen(nvram_safe_get("olsrd_hna"))>0)
+    {
+    fprintf(fp,"Hna4{\n");
+    fprintf(fp,"%s\n",nvram_safe_get("olsrd_hna"));
+    fprintf(fp,"}\n");
+    }
   fclose (fp);
   eval ("olsrd");
 
