@@ -295,6 +295,13 @@ eval("insmod","crypto_null");
     eval ("insmod", "tulip");
   else if (detect ("tulip"))
     eval ("insmod", "tulip");
+  else if (detect ("DECchip 21142"))
+    eval ("insmod", "tulip");
+
+  if (detect ("DGE-530T"))
+    eval ("insmod", "skge");
+  else if (detect ("D-Link Gigabit"))
+    eval ("insmod", "skge");
 
   if (detect ("SiS900"))	// Sis 900
     eval ("insmod", "sis900");
