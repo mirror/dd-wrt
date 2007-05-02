@@ -1072,7 +1072,7 @@ set_rate (char *dev)
     }
 }
 static void
-set_netmode (char *wif, char *dev)
+set_netmode (char *wif, char *dev, char *use)
 {
   char net[16];
   char turbo[16];
@@ -1090,41 +1090,41 @@ set_netmode (char *wif, char *dev)
 //  fprintf (stderr, "set netmode of %s to %s\n", net, netmode);
   cprintf ("configure net mode %s\n", netmode);
 
-  eval ("iwconfig", dev, "channel", "0");
+  eval ("iwconfig", use, "channel", "0");
 //  else
   {
-    eval ("iwpriv", dev, "turbo", "0");
-    eval ("iwpriv", dev, "xr", "0");
+    eval ("iwpriv", use, "turbo", "0");
+    eval ("iwpriv", use, "xr", "0");
     if (!strcmp (netmode, "mixed"))
-      eval ("iwpriv", dev, "mode", "0");
+      eval ("iwpriv", use, "mode", "0");
     if (!strcmp (netmode, "b-only"))
-      eval ("iwpriv", dev, "mode", "2");
+      eval ("iwpriv", use, "mode", "2");
     if (!strcmp (netmode, "g-only"))
       {
-	eval ("iwpriv", dev, "mode", "3");
-	eval ("iwpriv", dev, "protmode", "0");
+	eval ("iwpriv", use, "mode", "3");
+	eval ("iwpriv", use, "protmode", "0");
       }
     if (!strcmp (netmode, "bg-mixed"))
       {
-	eval ("iwpriv", dev, "mode", "3");
-	eval ("iwpriv", dev, "protmode", "1");
+	eval ("iwpriv", use, "mode", "3");
+	eval ("iwpriv", use, "protmode", "1");
       }
     if (!strcmp (netmode, "a-only"))
-      eval ("iwpriv", dev, "mode", "1");
+      eval ("iwpriv", use, "mode", "1");
   }
   if (default_match (turbo, "1", "0"))
     {
-	{
-	  if (!strcmp (netmode, "g-only"))
-	    {
-	      eval ("iwpriv", dev, "mode", "6");
-	    }
-	  if (!strcmp (netmode, "a-only"))
-	    {
-	      eval ("iwpriv", dev, "mode", "5");
-	    }
-	  eval ("iwpriv", dev, "turbo", "1");
-	}
+      {
+	if (!strcmp (netmode, "g-only"))
+	  {
+	    eval ("iwpriv", use, "mode", "6");
+	  }
+	if (!strcmp (netmode, "a-only"))
+	  {
+	    eval ("iwpriv", use, "mode", "5");
+	  }
+	eval ("iwpriv", use, "turbo", "1");
+      }
     }
   else
     {
@@ -1133,24 +1133,24 @@ set_netmode (char *wif, char *dev)
 	{
 	  if (strcmp (ext, "1") == 0)
 	    {
-	      eval ("iwpriv", dev, "xr", "1");
+	      eval ("iwpriv", use, "xr", "1");
 	    }
 	  else
 	    {
-	      eval ("iwpriv", dev, "xr", "0");
+	      eval ("iwpriv", use, "xr", "0");
 	    }
 	}
-      eval ("iwpriv", dev, "wmm", "0");
+      eval ("iwpriv", use, "wmm", "0");
     }
   if (default_match (comp, "1", "0"))
-    eval ("iwpriv", dev, "compression", "1");
+    eval ("iwpriv", use, "compression", "1");
   else
-    eval ("iwpriv", dev, "compression", "0");
+    eval ("iwpriv", use, "compression", "0");
 
   if (default_match (ff, "1", "0"))
-    eval ("iwpriv", dev, "ff", "1");
+    eval ("iwpriv", use, "ff", "1");
   else
-    eval ("iwpriv", dev, "ff", "0");
+    eval ("iwpriv", use, "ff", "0");
 
 
 }
@@ -1437,8 +1437,19 @@ configure_single (int count)
   m = default_get (wl, "ap");
   char maxp[16];
 
-  //confige net mode
-  set_netmode (wif, dev);
+  vifs = nvram_safe_get (wifivifs);
+  char *useif = NULL;
+  if (vifs != NULL)
+    foreach (var, vifs, next)
+    {
+      if (!useif)
+	useif = var;
+    }
+
+  //config net mode
+  if (useif)
+    set_netmode (wif, dev, useif);
+  set_netmode (wif, dev, dev);
 
 
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
@@ -1467,7 +1478,7 @@ configure_single (int count)
 
   int distance = atoi (default_get (sens, "2000"));	//to meter
   if (distance > 0)
-    setdistance (wif,distance);	//sets the receiver sensitivity
+    setdistance (wif, distance);	//sets the receiver sensitivity
   int rx = atoi (default_get (rxantenna, "1"));
   int tx = atoi (default_get (txantenna, "1"));
   int diva = atoi (default_get (diversity, "0"));
@@ -1610,39 +1621,48 @@ configure_single (int count)
 	  ifconfig (dev, IFUP, nvram_safe_get (ip), nvram_safe_get (mask));
 	}
     }
-
+  if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
+    setupHostAP (dev, 0);
+  else
+    setupSupplicant (dev);
 // vif netconfig
   vifs = nvram_safe_get (wifivifs);
-  if (vifs != NULL)
-    foreach (var, vifs, next)
+  if (vifs != NULL && strlen (vifs) > 0)
     {
-      setMacFilter (var);
+      foreach (var, vifs, next)
+      {
+	setMacFilter (var);
 
-      sprintf (mode, "%s_mode", var);
-      m = default_get (mode, "ap");
+	sprintf (mode, "%s_mode", var);
+	char *m2 = default_get (mode, "ap");
 
-      if (strcmp (m, "sta"))
-	{
-	  char bridged[32];
-	  sprintf (bridged, "%s_bridged", var);
-	  if (default_match (bridged, "1", "1"))
-	    {
-	      ifconfig (var, IFUP, NULL, NULL);
-	      br_add_interface (getBridge (var), var);
-	      eval ("ifconfig", var, "0.0.0.0", "up");
-	    }
-	  else
-	    {
-	      char ip[32];
-	      char mask[32];
-	      sprintf (ip, "%s_ipaddr", var);
-	      sprintf (mask, "%s_netmask", var);
-	      ifconfig (var, IFUP, nvram_safe_get (ip),
-			nvram_safe_get (mask));
-	    }
-	}
+	if (strcmp (m2, "sta"))
+	  {
+	    char bridged[32];
+	    sprintf (bridged, "%s_bridged", var);
+	    if (default_match (bridged, "1", "1"))
+	      {
+		ifconfig (var, IFUP, NULL, NULL);
+		br_add_interface (getBridge (var), var);
+		if (!strcmp (m, "sta") || !strcmp (m, "wdssta")
+		    || !strcmp (m, "wet"))
+		  eval ("ifconfig", var, "0.0.0.0", "down");
+	      }
+	    else
+	      {
+		char ip[32];
+		char mask[32];
+		sprintf (ip, "%s_ipaddr", var);
+		sprintf (mask, "%s_netmask", var);
+		ifconfig (var, IFUP, nvram_safe_get (ip),
+			  nvram_safe_get (mask));
+		if (!strcmp (m, "sta") || !strcmp (m, "wdssta")
+		    || !strcmp (m, "wet"))
+		  eval ("ifconfig", var, "down");
+	      }
+	  }
+      }
     }
-
   for (s = 1; s <= 10; s++)
     {
       char wdsvarname[32] = { 0 };
@@ -1666,12 +1686,7 @@ configure_single (int count)
 	}
     }
   //setup encryption
-  m = default_get (wl, "ap");
 
-  if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
-    setupHostAP (dev, 0);
-  else
-    setupSupplicant (dev);
   vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
     foreach (var, vifs, next)
@@ -1686,6 +1701,82 @@ configure_single (int count)
   set_rate (dev);
 }
 
+void
+start_vifs (void)
+{
+  char *next;
+  char var[80];
+  char *vifs;
+  char mode[32];
+  char *m;
+  char wifivifs[32];
+  int c = getdevicecount ();
+  int count = 0;
+  for (count = 0; count < c; count++)
+    {
+      sprintf (wifivifs, "ath%d_vifs", count);
+      vifs = nvram_safe_get (wifivifs);
+      if (vifs != NULL && strlen (vifs) > 0)
+	{
+	  foreach (var, vifs, next)
+	  {
+	    setMacFilter (var);
+
+	    sprintf (mode, "%s_mode", var);
+	    m = default_get (mode, "ap");
+
+	    if (strcmp (m, "sta"))
+	      {
+		char bridged[32];
+		sprintf (bridged, "%s_bridged", var);
+		if (default_match (bridged, "1", "1"))
+		  {
+		    ifconfig (var, IFUP, NULL, NULL);
+		    br_add_interface (getBridge (var), var);
+		    eval ("ifconfig", var, "0.0.0.0", "up");
+		  }
+		else
+		  {
+		    char ip[32];
+		    char mask[32];
+		    sprintf (ip, "%s_ipaddr", var);
+		    sprintf (mask, "%s_netmask", var);
+		    ifconfig (var, IFUP, nvram_safe_get (ip),
+			      nvram_safe_get (mask));
+		  }
+	      }
+	  }
+	}
+    }
+
+}
+
+void
+stop_vifs (void)
+{
+  char *next;
+  char var[80];
+  char *vifs;
+  char mode[32];
+  char *m;
+  char wifivifs[32];
+  int c = getdevicecount ();
+  int count = 0;
+  for (count = 0; count < c; count++)
+    {
+      sprintf (wifivifs, "ath%d_vifs", count);
+      vifs = nvram_safe_get (wifivifs);
+      if (vifs != NULL && strlen (vifs) > 0)
+	{
+	  foreach (var, vifs, next)
+	  {
+	    eval ("ifconfig", var, "down");
+
+	  }
+	}
+    }
+
+}
 
 void
 configure_wifi (void)		//madwifi implementation for atheros based cards
