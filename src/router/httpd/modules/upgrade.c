@@ -218,9 +218,9 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
 	  if (check_hw_type () == BCM4712_CHIP && ver1 < ver3)
 	    {
 	      cprintf
-		("The old firmware version cann't support bcm4712 chipset\n");
+		("The old firmware version can't support bcm4712 chipset\n");
 	      cprintf
-		("Cann't downgrade to this old firmware version (%s), must be above %s(included)\n",
+		("Can't downgrade to this old firmware version (%s), must be above %s(included)\n",
 		 ver, BCM4712_CHIP_SUPPORT_VERSION_FROM);
 	      goto write_data;
 	    }
