@@ -56,7 +56,7 @@ ifeq ($(ARCH),mips)
 export LINUXDIR := $(SRCBASE)/linux/brcm63xx/linux-2.6.17
 endif
 ifeq ($(ARCH),i386)
-export LINUXDIR := $(SRCBASE)/linux/x86/linux-2.6.19
+export LINUXDIR := $(SRCBASE)/linux/x86/linux-2.6.20
 endif
 ifeq ($(ARCH),armeb)
 export LINUXDIR := $(SRCBASE)/linux/xscale/linux-2.6.17
@@ -231,12 +231,15 @@ obj-$(CONFIG_CONNTRACK) += conntrack
 obj-$(CONFIG_PHP) += php5
 obj-$(CONFIG_WIFIDOG) += wifidog
 obj-$(CONFIG_CTORRENT) += ctorrent
-#obj-y += hwmon
+obj-$(CONFIG_CPUTEMP) += hwmon
 obj-$(CONFIG_RSTATS) += rstats
 obj-$(CONFIG_EOP_TUNNEL) += eop-tunnel
 obj-$(CONFIG_AIRCRACK) += aircrack-ng
 obj-$(CONFIG_BONDING) += ifenslave
 obj-$(CONFIG_WIVIZ) += wiviz2
+obj-$(CONFIG_NCURSES) += ncurses
+obj-$(CONFIG_IFTOP) += iftop
+obj-$(CONFIG_IPTRAF) += iptraf
 obj-y += stabridge
 obj-y += net-tools
 
@@ -261,10 +264,10 @@ kernel:
         # Also build kernel
 	# Also build kernel
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -C $(LINUXDIR) bzImage CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) bzImage CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -C $(LINUXDIR) modules CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
 	fi
 	#armeb-linux-uclibc-strip --remove-section=.note --remove-section=.comment $(LINUXDIR)/vmlinux
 	#armeb-linux-uclibc-objcopy -O binary $(LINUXDIR)/vmlinux vmlinux.bin 
@@ -280,6 +283,9 @@ clean: $(obj-clean)
 	rm -f .config.old .config.cmd
 	#umount $(TARGETDIR)
 	rm -rf $(TARGETDIR)
+	rm -rf $(INSTALLDIR)
+	rm -rf $(ARCH)-uclibc/root.grub
+	rm -f $(ARCH)-uclibc/*
 #	rm -f $(PLATFORMDIR)/linux.trx $(PLATFORMDIR)/vmlinuz $(PLATFORMDIR)/target.squashfs
 
 clean_target:
@@ -412,16 +418,15 @@ endif
 #find $(TARGETDIR)/lib/modules -name *.ko -exec mipsel-linux-strip --strip-unneeded --remove-section=.comment {} +		
 	#e2fsck -y -f $(ARCH)-uclibc/root.fs
 	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
-	./strip_libs.sh $(ARCH)
 	#cd $(TARGETDIR)
 	tar --directory=$(TARGETDIR) --remove-files -cvvjf $(TARGETDIR)/etc/local.tar.bz2 usr/local
 	rm -rf $(TARGETDIR)/usr/local
 	mkdir $(TARGETDIR)/usr/local
 ifeq ($(CONFIG_KAID),y)
-	cp ./opt/etc/kaid/* $(ARCH)-uclibc/target/etc/kaid
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
+	./strip_libs.sh $(ARCH)
 
 	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -le
 	mkfs.jffs2 --pad --big-endian --squash -e 0x20000 -o $(ARCH)-uclibc/dd-wrt.jffs2 -d $(ARCH)-uclibc/target
@@ -765,8 +770,8 @@ endif
 
 snmp:
 ifeq ($(CONFIG_SNMP),y)
-	cd snmp && rm config.cache
-	cd snmp && ./configure  --quiet --prefix=/tmp/snmp --host=$(ARCH) --with-cc=$(ARCH)-linux-uclibc-gcc --with-ar=$(ARCH)-linux-uclibc-ar --with-endianness=little --with-cflags="$(COPTS) -DCAN_USE_SYSCTL=1" --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc
+	cd snmp && rm -f config.cache
+	cd snmp && ./configure  --quiet --prefix=/tmp/snmp --host=$(ARCH) --with-cc=$(ARCH)-linux-uclibc-gcc --with-ar=$(ARCH)-linux-uclibc-ar --with-endianness=little --with-cflags="$(COPTS) -DCAN_USE_SYSCTL=1"                                         --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,ucd_snmp --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc
 	$(MAKE) -C snmp 
 else
 	@true
@@ -1065,6 +1070,8 @@ else
 	rm -f $(INSTALLDIR)/ppp/usr/sbin/pppoe-relay
 endif
 ifeq ($(CONFIG_PPPOESERVER),y)
+	install -D rp-pppoe-3.5/config/pppoe-server.nvramconfig $(INSTALLDIR)/ppp/etc/config/pppoe-server.nvramconfig
+#	install -D rp-pppoe-3.5/config/pppoe-server.webservices $(INSTALLDIR)/ppp/etc/config/pppoe-server.webservices
 	install -D rp-pppoe-3.5/src/pppoe-server $(INSTALLDIR)/ppp/usr/sbin/pppoe-server
 	$(STRIP) $(INSTALLDIR)/ppp/usr/sbin/pppoe-server
 else
@@ -1209,6 +1216,8 @@ endif
 
 pppd-clean pppd-distclean: pppd-symlinks
 	$(MAKE) -C pppd.new/pppd clean
+	$(MAKE) -C pppd.new/pppd/plugins/rp-pppoe clean
+	$(MAKE) -C pppd.new/pppd/plugins/radius clean
 
 pppd-install:
 	install -D pppd.new/pppd/pppd $(INSTALLDIR)/pppd/usr/sbin/pppd
@@ -1222,12 +1231,12 @@ ifeq ($(CONFIG_RADIUSPLUGIN),y)
 	install -D pppd.new/pppd/plugins/radius/radius.so $(INSTALLDIR)/pppd/usr/lib/radius.so
 	install -D pppd.new/pppd/plugins/radius/radattr.so $(INSTALLDIR)/pppd/usr/lib/radattr.so
 	install -D pppd.new/pppd/plugins/radius/radrealms.so $(INSTALLDIR)/pppd/usr/lib/radrealms.so
-	install -d $(INSTALLDIR)/pppd/etc/radiusclient
-	cp pppd.new/pppd/plugins/radius/etc/issue $(INSTALLDIR)/pppd/etc/radiusclient/issue
-	cp pppd.new/pppd/plugins/radius/etc/port-id-map $(INSTALLDIR)/pppd/etc/radiusclient/port-id-map
-	cp pppd.new/pppd/plugins/radius/etc/dictionary $(INSTALLDIR)/pppd/etc/radiusclient/dictionary
-	cp pppd.new/pppd/plugins/radius/etc/dictionary.microsoft $(INSTALLDIR)/pppd/etc/radiusclient/dictionary.microsoft
-	chmod 0644 $(INSTALLDIR)/pppd/etc/radiusclient/*
+	install -d $(INSTALLDIR)/pppd/etc
+	cp pppd.new/pppd/plugins/radius/etc/issue $(INSTALLDIR)/pppd/etc/issue
+	cp pppd.new/pppd/plugins/radius/etc/port-id-map $(INSTALLDIR)/pppd/etc/port-id-map
+	cp pppd.new/pppd/plugins/radius/etc/dictionary $(INSTALLDIR)/pppd/etc/dictionary
+	cp pppd.new/pppd/plugins/radius/etc/dictionary.microsoft $(INSTALLDIR)/pppd/etc/dictionary.microsoft
+	chmod 0644 $(INSTALLDIR)/pppd/etc/*
 else
 	rm -rf $(INSTALLDIR)/pppd/usr/lib/pppd/rad*.so
 	rm -rf $(INSTALLDIR)/pppd/etc/radiusclient
@@ -1236,7 +1245,7 @@ endif
 
 #	$(STRIP) $(INSTALLDIR)/pppd/usr/sbin/pppd
 ifeq ($(CONFIG_PPPSTATS),y)
-	$(STRIP) $(INSTALLDIR)/pppd/usr/sbin/pppstats
+	$(STRIP) $(INSTALLDIR)/pppd.new/usr/sbin/pppstats
 endif
 
 ipupdate-install:
@@ -1419,9 +1428,6 @@ igmp-proxy-clean:
 
 igmp-proxy:
 	make -C igmp-proxy
-
-igmp-proxy-install:
-	install -D igmp-proxy/igmprt2 $(INSTALLDIR)/igmp-proxy/usr/sbin/igmprt
 
 
 
@@ -1664,6 +1670,45 @@ e2fsprogs:
 e2fsprogs-install:
 	mkdir -p $(INSTALLDIR)/e2fsprogs/sbin
 	cp e2fsprogs/misc/mke2fs.static $(INSTALLDIR)/e2fsprogs/sbin/mke2fs
+
+ncurses:
+	cd ncurses && ./configure --host=$(ARCH)-linux-uclibc --with-shared CFLAGS="$(COPTS)" \
+		--enable-echo \
+		--enable-const \
+		--enable-overwrite \
+		--disable-rpath \
+		--without-ada \
+		--without-cxx \
+		--without-cxx-binding \
+		--without-debug \
+		--without-profile \
+		--without-progs \
+		--with-normal \
+		--with-shared \
+		--with-terminfo-dirs=/etc/terminfo \
+		--with-default-terminfo-dir=/etc/terminfo 
+	make -C ncurses
+
+ncurses-install:
+	make -C ncurses install.libs DESTDIR=$(INSTALLDIR)/ncurses
+	rm -rf $(INSTALLDIR)/ncurses/usr/include
+	rm -f $(INSTALLDIR)/ncurses/usr/lib/*.a
+
+iftop: ncurses
+	cd iftop && ./configure --host=$(ARCH)-linux --with-libpcap="$(TOP)/libpcap_noring" CFLAGS="$(COPTS) -I$(TOP)/libpcap_noring -I$(TOP)/ncurses/include" LDFLAGS="-L$(TOP)/ncurses/lib -L$(TOP)/libpcap_noring" CPPFLAGS="$(COPTS) -I$(TOP)/libpcap_noring -I$(TOP)/ncurses/include"
+	make -C iftop
+
+iftop-install:
+	install -D iftop/iftop $(INSTALLDIR)/iftop/usr/sbin/iftop
+
+iptraf:
+	make -C iptraf/src
+
+iptraf-clean:
+	make -C iptraf/src clean
+
+iptraf-install:
+	make -C iptraf/src install
 
 #pciutils-install:
 #	install -D pciutils/lspci $(INSTALLDIR)/pciutils/sbin/lspci
