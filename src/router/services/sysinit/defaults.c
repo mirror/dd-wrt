@@ -1231,7 +1231,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"chilli_macauth", "0", 0},
   {"chilli_additional", "", 0},
 #else
-  {"chilli_net","192.168.182.0/24",0},
+  {"chilli_net", "192.168.182.0/24", 0},
   {"chilli_enable", "0", 0},
   {"chilli_nowifibridge", "0", 0},
   {"chilli_url", "", 0},
@@ -2004,9 +2004,9 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_PPPOESERVER
   {"pppoeserver_enabled", "0", 0},
   {"pppoeradius_enabled", "0", 0},
-  {"pppoeserver_remoteaddr","10.10.10.1",0},
-  {"pppoeserver_remotenet","10.10.10.0",0},
-  {"pppoeserver_remotemask","255.255.255.0",0},
+  {"pppoeserver_remoteaddr", "10.10.10.1", 0},
+  {"pppoeserver_remotenet", "10.10.10.0", 0},
+  {"pppoeserver_remotemask", "255.255.255.0", 0},
   {"pppoeserver_bsdcomp", "0", 0},
   {"pppoeserver_deflate", "0", 0},
   {"pppoeserver_lzs", "0", 0},
@@ -2024,26 +2024,26 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #ifdef HAVE_MILKFISH
   {"openser_cfg", "/var/openser/milkfish_openser.cfg", 0},	/* MILKFISH SETTING */
-  {"milkfish_fromdomain", "", 0}, 				/* MILKFISH SETTING */
-  {"milkfish_fromswitch", "off", 0},				/* MILKFISH SETTING */
-  {"milkfish_username", "", 0},					/* MILKFISH SETTING */
-  {"milkfish_password", "", 0},					/* MILKFISH SETTING */
-  {"milkfish_routerid", "", 0},					/* MILKFISH SETTING */
-  {"milkfish_ppptime", "off", 0},				/* MILKFISH SETTING */
-  {"milkfish_audit", "off", 0},					/* MILKFISH SETTING */
-  {"milkfish_dynsip", "off", 0},				/* MILKFISH SETTING */
-  {"milkfish_siptrace", "off", 0},				/* MILKFISH SETTING */
+  {"milkfish_fromdomain", "", 0},	/* MILKFISH SETTING */
+  {"milkfish_fromswitch", "off", 0},	/* MILKFISH SETTING */
+  {"milkfish_username", "", 0},	/* MILKFISH SETTING */
+  {"milkfish_password", "", 0},	/* MILKFISH SETTING */
+  {"milkfish_routerid", "", 0},	/* MILKFISH SETTING */
+  {"milkfish_ppptime", "off", 0},	/* MILKFISH SETTING */
+  {"milkfish_audit", "off", 0},	/* MILKFISH SETTING */
+  {"milkfish_dynsip", "off", 0},	/* MILKFISH SETTING */
+  {"milkfish_siptrace", "off", 0},	/* MILKFISH SETTING */
 #endif
 #ifdef HAVE_OLSRD
-  {"olsrd_pollsize","0.1",0},
-  {"olsrd_redundancy","2",0},
-  {"olsrd_coverage","7",0},
-  {"olsrd_lqfisheye","1",0},
-  {"olsrd_lqwinsize","100",0},
-  {"olsrd_lqdijkstramin","0",0},
-  {"olsrd_lqdijkstramax","5.0",0},
-  {"olsrd_lqlevel","2",0},
-  {"olsrd_hysteresis","0",0},  
+  {"olsrd_pollsize", "0.1", 0},
+  {"olsrd_redundancy", "2", 0},
+  {"olsrd_coverage", "7", 0},
+  {"olsrd_lqfisheye", "1", 0},
+  {"olsrd_lqwinsize", "100", 0},
+  {"olsrd_lqdijkstramin", "0", 0},
+  {"olsrd_lqdijkstramax", "5.0", 0},
+  {"olsrd_lqlevel", "2", 0},
+  {"olsrd_hysteresis", "0", 0},
 #endif
   {0, 0, 0}
 };
