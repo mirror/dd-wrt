@@ -2005,6 +2005,7 @@ if (var==NULL)
     {
       websWrite (wp, "<fieldset>\n");
       show_legend (wp, "route.olsrd_legend", 1);
+      show_inputlabel (wp, "route.olsrd_hna", "olsrd_hna", 32, "num", 32);
       show_inputlabel (wp, "route.olsrd_poll", "olsrd_pollsize", 5, "num", 5);
       showOptionsLabel (wp, "route.olsrd_tc", "olsrd_redundancy",
     		  "0 1 2", nvram_default_get ("olsrd_redundancy", "2"));
