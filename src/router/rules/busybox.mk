@@ -5,13 +5,14 @@ busybox: busybox-config rc net-tools
 ifeq ($(CONFIG_DIST),"micro")
 	cp busybox/.config_micro busybox/.config
 	cd busybox && make oldconfig
-endif
+else
 ifeq ($(CONFIG_DIST),"mini")
 	cp busybox/.config_mini busybox/.config
 	cd busybox && make oldconfig
 else
 	cp busybox/.config_std busybox/.config
 	cd busybox && make oldconfig
+endif
 endif
 ifeq ($(ARCH),i386)
 	cp busybox/.config_wrap busybox/.config
