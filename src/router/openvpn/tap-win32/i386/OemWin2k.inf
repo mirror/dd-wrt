@@ -1,5 +1,5 @@
 ; ****************************************************************************
-; * Copyright (C) 2002-2005 OpenVPN Solutions LLC                            *
+; * Copyright (C) 2002-2006 OpenVPN Solutions LLC                            *
 ; *  This program is free software; you can redistribute it and/or modify    *
 ; *  it under the terms of the GNU General Public License version 2          *
 ; *  as published by the Free Software Foundation.                           *
@@ -9,6 +9,11 @@
 ; cd \WINDDK\3790\tools\chkinf
 ; chkinf c:\src\openvpn\tap-win32\i386\oemwin2k.inf
 ; OUTPUT -> file:///c:/WINDDK/3790/tools/chkinf/htm/c%23+src+openvpn+tap-win32+i386+__OemWin2k.htm
+
+; INSTALL/REMOVE DRIVER
+;   tapinstall install OemWin2k.inf TAP0801
+;   tapinstall update OemWin2k.inf TAP0801
+;   tapinstall remove TAP0801
 
 ;*********************************************************
 ; Note to Developers:
@@ -46,7 +51,7 @@
 
 ; This version number should match the version
 ; number given in SOURCES.
-   DriverVer=05/15/2004,8.00.00.0001
+   DriverVer=09/13/2006,8.00.00.0004
 
 [Strings]
    DeviceDescription = "TAP-Win32 Adapter V8"
@@ -91,22 +96,28 @@
    HKR, ,               ProductName,  0, "%DeviceDescription%"
 
 [tap0801.params.reg]
-   HKR, Ndi\params\MTU,                ParamDesc, 0, "MTU"
-   HKR, Ndi\params\MTU,                Type,      0, "int"
-   HKR, Ndi\params\MTU,                Default,   0, "1500"
-   HKR, Ndi\params\MTU,                Optional,  0, "0"
-   HKR, Ndi\params\MTU,                Min,       0, "100"
-   HKR, Ndi\params\MTU,                Max,       0, "1500"
-   HKR, Ndi\params\MTU,                Step,      0, "1"
-   HKR, Ndi\params\MediaStatus,        ParamDesc, 0, "Media Status"
-   HKR, Ndi\params\MediaStatus,        Type,      0, "enum"
-   HKR, Ndi\params\MediaStatus,        Default,   0, "0"
-   HKR, Ndi\params\MediaStatus,        Optional,  0, "0"
-   HKR, Ndi\params\MediaStatus\enum,   "0",       0, "Application Controlled"
-   HKR, Ndi\params\MediaStatus\enum,   "1",       0, "Always Connected"
-   HKR, Ndi\params\MAC,                ParamDesc, 0, "MAC Address"
-   HKR, Ndi\params\MAC,                Type,      0, "edit"
-   HKR, Ndi\params\MAC,                Optional,  0, "1"
+   HKR, Ndi\params\MTU,                  ParamDesc, 0, "MTU"
+   HKR, Ndi\params\MTU,                  Type,      0, "int"
+   HKR, Ndi\params\MTU,                  Default,   0, "1500"
+   HKR, Ndi\params\MTU,                  Optional,  0, "0"
+   HKR, Ndi\params\MTU,                  Min,       0, "100"
+   HKR, Ndi\params\MTU,                  Max,       0, "1500"
+   HKR, Ndi\params\MTU,                  Step,      0, "1"
+   HKR, Ndi\params\MediaStatus,          ParamDesc, 0, "Media Status"
+   HKR, Ndi\params\MediaStatus,          Type,      0, "enum"
+   HKR, Ndi\params\MediaStatus,          Default,   0, "0"
+   HKR, Ndi\params\MediaStatus,          Optional,  0, "0"
+   HKR, Ndi\params\MediaStatus\enum,     "0",       0, "Application Controlled"
+   HKR, Ndi\params\MediaStatus\enum,     "1",       0, "Always Connected"
+   HKR, Ndi\params\MAC,                  ParamDesc, 0, "MAC Address"
+   HKR, Ndi\params\MAC,                  Type,      0, "edit"
+   HKR, Ndi\params\MAC,                  Optional,  0, "1"
+   HKR, Ndi\params\AllowNonAdmin,        ParamDesc, 0, "Non-Admin Access"
+   HKR, Ndi\params\AllowNonAdmin,        Type,      0, "enum"
+   HKR, Ndi\params\AllowNonAdmin,        Default,   0, "1"
+   HKR, Ndi\params\AllowNonAdmin,        Optional,  0, "0"
+   HKR, Ndi\params\AllowNonAdmin\enum,   "0",       0, "Not Allowed"
+   HKR, Ndi\params\AllowNonAdmin\enum,   "1",       0, "Allowed"
 
 ;----------------------------------------------------------------
 ;                             Service Section
