@@ -18,7 +18,7 @@ OUT=$H/20
 IN=/y/openvpn/20/openvpn
 
 # Already built OpenSSL tree.
-SSL=$H/openssl-0.9.7i
+SSL=$H/openssl-0.9.7l
 
 # Already built LZO tree.
 LZO=$H/lzo-1.08
@@ -30,7 +30,7 @@ DMALLOC=$H/dmalloc-5.4.2
 
 # TAP binaries should be here: tap0801.sys and tapinstall.exe
 # These must be built with MS DDK.
-TAPBIN=$H/tapbin
+TAPBIN=$H/tapbin-0804
 
 # u2d.c should exist here.
 SCRIPTS=$IN/install-win32
