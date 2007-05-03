@@ -1,7 +1,22 @@
 OpenVPN
 Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
 
-$Id: ChangeLog 999 2006-04-12 09:07:59Z james $
+$Id: ChangeLog 1330 2006-10-01 11:45:06Z james $
+
+2006.10.01 -- Version 2.0.9
+
+* Windows installer updated with OpenSSL 0.9.7l DLLs to fix
+  published vulnerabilities.
+
+* Fixed TAP-Win32 bug that caused BSOD on Windows Vista
+  (Henry Nestler).  The TAP-Win32 driver has now been
+  upgraded to version 8.4.
+	
+2006.09.12 -- Version 2.0.8
+
+* Windows installer updated with OpenSSL 0.9.7k DLLs to fix
+  RSA Signature Forgery (CVE-2006-4339).
+* No changes to OpenVPN source code between 2.0.7 and 2.0.8.
 
 2006.04.12 -- Version 2.0.7
 
@@ -160,7 +175,7 @@ $Id: ChangeLog 999 2006-04-12 09:07:59Z james $
   the OpenSSL error queue is not properly flushed, which can result in
   another unrelated client instance on the server seeing the error and
   responding to it, resulting in disconnection of the unrelated client
-  (CAN-2005-2532).
+  (CAN-2005-2532).  Credit: Mike Ireton.
 * Security Fix -- DoS attack against server by authenticated client.
   A malicious client in "dev tap" ethernet bridging mode could
   theoretically flood the server with packets appearing to come from

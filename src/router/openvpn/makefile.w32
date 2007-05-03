@@ -34,8 +34,10 @@
 #########################################################
 # Change these to point to your OpenSSL, LZO, and
 # (optionally) dmalloc top-level directories.
+# If you are using the prebuild script, set the OpenSSL
+# lib path in the prebuild script, not here.
 
-OPENSSL = /c/src/openssl-0.9.7g
+OPENSSL = /c/src/openssl-0.9.7k
 LZO = /c/src/lzo-1.08
 DMALLOC = /c/src/dmalloc-5.4.2
 

@@ -9,10 +9,13 @@
 # defined.
 HOME			= .
 RANDFILE		= $ENV::HOME/.rnd
+openssl_conf		= openssl_init
 
+[ openssl_init ]
 # Extra OBJECT IDENTIFIER info:
 #oid_file		= $ENV::HOME/.oid
 oid_section		= new_oids
+engines                 = engine_section
 
 # To use this configuration file with the "-extfile" option of the
 # "openssl x509" utility, name here the section containing the
@@ -179,11 +182,13 @@ basicConstraints=CA:FALSE
 # keyUsage = nonRepudiation, digitalSignature, keyEncipherment
 
 # This will be displayed in Netscape's comment listbox.
-nsComment			= "OpenSSL Generated Certificate"
+nsComment			= "Easy-RSA Generated Certificate"
 
 # PKIX recommendations harmless if included in all certificates.
 subjectKeyIdentifier=hash
 authorityKeyIdentifier=keyid,issuer:always
+extendedKeyUsage=clientAuth
+keyUsage = digitalSignature
 
 # This stuff is for subjectAltName and issuerAltname.
 # Import the email address.
@@ -204,7 +209,7 @@ authorityKeyIdentifier=keyid,issuer:always
 # JY ADDED -- Make a cert with nsCertType set to "server"
 basicConstraints=CA:FALSE
 nsCertType			= server
-nsComment			= "OpenSSL Generated Server Certificate"
+nsComment			= "Easy-RSA Generated Server Certificate"
 subjectKeyIdentifier=hash
 authorityKeyIdentifier=keyid,issuer:always
 extendedKeyUsage=serverAuth
@@ -261,3 +266,20 @@ basicConstraints = CA:true
 
 # issuerAltName=issuer:copy
 authorityKeyIdentifier=keyid:always,issuer:always
+
+[ engine_section ]
+#
+# If you are using PKCS#11
+# Install engine_pkcs11 of opensc (www.opensc.org)
+# And uncomment the following
+# verify that dynamic_path points to the correct location
+#
+#pkcs11 = pkcs11_section
+
+[ pkcs11_section ]
+engine_id = pkcs11
+dynamic_path = /usr/lib/engines/engine_pkcs11.so
+MODULE_PATH = $ENV::PKCS11_MODULE_PATH
+PIN = $ENV::PKCS11_PIN
+init = 0
+
