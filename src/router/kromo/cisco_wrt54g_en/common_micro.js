@@ -3,13 +3,10 @@ var ie4 = (document.all)
 var ns4 = (document.layers)
 var ns6 = (!document.all && document.getElementById)
 
-
 var ZERO_NO = 1;
 var ZERO_OK = 2;
-
 var MASK_NO = 4;
 var MASK_OK = 8;
-
 var BCST_NO = 16;
 var BCST_OK = 32;
 
@@ -35,58 +32,55 @@ function choose_disable(dis_object) {
 function check_action(I,N) {
 	if(ns4){
 		if(N == 0){
-			if(EN_DIS == 1) 
+			if(EN_DIS == 1)
 				I.focus();
-			else 
+			else
 				I.blur();
 		} else if(N == 1){
-			if(EN_DIS1 == 1) 
+			if(EN_DIS1 == 1)
 				I.focus();
-			else 
+			else
 				I.blur();
 		} else if(N == 2){
-			if(EN_DIS2 == 1) 
+			if(EN_DIS2 == 1)
 				I.focus();
-			else 
+			else
 				I.blur();
 		} else if(N == 3){
-			if(EN_DIS3 == 1) 
+			if(EN_DIS3 == 1)
 				I.focus();
 			else
 				I.blur();
 		}
-			
 	}
 }
 
 function check_action1(I,T,N) {
 	if(ns4){
 		if(N == 0){
-			if(EN_DIS == 1) 
+			if(EN_DIS == 1)
 				I.focus();
-			else 
+			else
 				I.value = I.defaultChecked;
 		}
 		if(N == 1){
-			if(EN_DIS1 == 1) 
+			if(EN_DIS1 == 1)
 				I.focus();
-			else 
+			else
 				I.value = I.defaultChecked;
 		}
 	}
 }
 function valid_range(I,start,end,M) {
-
 	M1 = unescape(M);
 	isdigit(I,M1);
 
-	d = parseInt(I.value, 10);	
-	if ( !(d<=end && d>=start) ) {		
-
+	d = parseInt(I.value, 10);
+	if ( !(d<=end && d>=start) ) {
 		alert(M1 + errmsg.err14 + start + " - " + end +"].");
-		I.value = I.defaultValue;		
-	} else 
-		I.value = d;
+		I.value = I.defaultValue;
+	} else
+		I.value = d;	// strip 0
 
 }
 
@@ -111,7 +105,7 @@ function valid_macs_list(I) {
 	var macs = I.value.split(" ");
 	var ret = true;
 	var good_macs = "";
-	
+
 	while (macs.length > 0) {
 		var mac = new Object;
 		mac.value = macs.shift();
@@ -144,13 +138,12 @@ function valid_mac(I,T) {
 		I.value = I.defaultValue;
 	}
 	I.value = I.value.toUpperCase();
-	if(T == 0) {                                                                       
-		if((m2 & 1) == 1){                               
-
+	if(T == 0) {
+		if((m2 & 1) == 1){
 			alert(errmsg.err16);
-			I.value = I.defaultValue;                       
-		}                                                       
-	}                       
+			I.value = I.defaultValue;
+		}
+	}
 }
 
 function valid_macs_12(I) {
@@ -192,13 +185,11 @@ function valid_macs_17(I)
 	var mac = ignoreSpaces(oldmac);
 	if (mac == "") {
 		return true;
-
 	}
 	var m = mac.split(":");
 	if (m.length != 6) {
-
 		alert(errmsg.err21);
-		I.value = I.defaultValue;		
+		I.value = I.defaultValue;
 		return false;
 	}
 	var idx = oldmac.indexOf(':');
@@ -208,36 +199,32 @@ function valid_macs_17(I)
 			nameVal = pairs[i];
 			len = nameVal.length;
 			if (len < 1 || len > 2) {
-
 				alert(errmsg.err22);
-				I.value = I.defaultValue;		
+				I.value = I.defaultValue;
 				return false;
 			}
 			for(iln = 0; iln < len; iln++) {
 				ch = nameVal.charAt(iln).toLowerCase();
 				if (ch >= '0' && ch <= '9' || ch >= 'a' && ch <= 'f') {
-
+					// nothing to do here
 				} else {
-
 					alert (errmsg.err23 + nameVal + errmsg.err24 + oldmac + ".");
-					I.value = I.defaultValue;		
+					I.value = I.defaultValue;
 					return false;
 				}
-			}	
+			}
 		}
 	}
 	I.value = I.value.toUpperCase();
 	if(I.value == "FF:FF:FF:FF:FF:FF"){
-
 		alert(errmsg.err19);
-		I.value = I.defaultValue;	
+		I.value = I.defaultValue;
 	}
 	m3 = I.value.charAt(1);
-	if((m3 & 1) == 1){                               
-
+	if((m3 & 1) == 1){
 		alert(errmsg.err16);
-		I.value = I.defaultValue;                       
-	}                                                       
+		I.value = I.defaultValue;
+	}
 	return true;
 }
 
@@ -258,9 +245,8 @@ function check_space(I,M1){
 	for(i=0 ; i<I.value.length; i++){
 		ch = I.value.charAt(i);
 		if(ch == ' ') {
-
 			alert(M+errmsg.err34);
-			I.value = I.defaultValue;	
+			I.value = I.defaultValue;
 			return false;
 		}
 	}
@@ -268,23 +254,21 @@ function check_space(I,M1){
 	return true;
 }
 
-function valid_key(I,l){	
-	var m;	
-	if(I.value.length==l*2)	{		
-		for(i=0;i<l*2;i++) {			 
+function valid_key(I,l){
+	var m;
+	if(I.value.length==l*2)	{
+		for(i=0;i<l*2;i++) {
 			m=parseInt(I.value.charAt(i), 16);
-			if( isNaN(m) )				
-				break;		
-		}		
-		if( i!=l*2 ){		
-
+			if( isNaN(m) )
+				break;
+		}
+		if( i!=l*2 ){
 			alert(errmsg.err25);
-			I.value = I.defaultValue;		
-		}	
-	} else{		
-
+			I.value = I.defaultValue;
+		}
+	} else{
 		alert(errmsg.err26);
-		I.value = I.defaultValue;	
+		I.value = I.defaultValue;
 	}
 }
 
@@ -312,7 +296,6 @@ function valid_mask(F,N,flag){
 
 	if(m[0] == "0" && m[1] == "0" && m[2] == "0" && m[3] == "0"){
 		if(flag & ZERO_NO){
-
 			alert(errmsg.err27);
 			return false;
 		} else if(flag & ZERO_OK){
@@ -322,7 +305,6 @@ function valid_mask(F,N,flag){
 
 	if(m[0] == "255" && m[1] == "255" && m[2] == "255" && m[3] == "255"){
 		if(flag & BCST_NO){
-
 			alert(errmsg.err27);
 			return false;
 		} else if(flag & BCST_OK){
@@ -338,7 +320,6 @@ function valid_mask(F,N,flag){
 		}
 	}
 	if(match0 > match1){
-
 		alert(errmsg.err27);
 		return false;
 	}
@@ -353,9 +334,8 @@ function isdigit(I,M) {
 
 		ch = I.value.charAt(i);
 		if(ch < '0' || ch > '9') {
-
 			alert(M+errmsg.err28);
-			I.value = I.defaultValue;	
+			I.value = I.defaultValue;
 			return false;
 		}
 	}
@@ -367,9 +347,8 @@ function isascii(I,M) {
 	for(i=0 ; i<I.value.length; i++){
 		ch = I.value.charAt(i);
 		if(ch < ' ' || ch > '~'){
-
 			alert(M+errmsg.err29);
-			I.value = I.defaultValue;	
+			I.value = I.defaultValue;
 			return false;
 		}
 	}
@@ -381,11 +360,10 @@ function isxdigit(I,M) {
 	for(i=0 ; i<I.value.length; i++){
 		ch = I.value.charAt(i).toLowerCase();
 		if(ch >= '0' && ch <= '9' || ch >= 'a' && ch <= 'f') {
-				
-		} else {
 
+		} else {
 			alert(M+errmsg.err30);
-			I.value = I.defaultValue;	
+			I.value = I.defaultValue;
 			return false;
 		}
 	}
@@ -406,14 +384,12 @@ function valid_ip(F,N,M1,flag){
 		m[i] = eval(N+"_"+i).value
 
 	if(m[0] == 127 || m[0] == 224){
-
 		alert(M+errmsg.err31);
 		return false;
 	}
 
 	if(m[0] == "0" && m[1] == "0" && m[2] == "0" && m[3] == "0"){
 		if(flag & ZERO_NO){
-
 			alert(M+errmsg.err31);
 			return false;
 		}
@@ -421,7 +397,6 @@ function valid_ip(F,N,M1,flag){
 
 	if((m[0] != "0" || m[1] != "0" || m[2] != "0") && m[3] == "0"){
 		if(flag & MASK_NO){
-
 			alert(M+errmsg.err31);
 			return false;
 		}
@@ -432,29 +407,26 @@ function valid_ip(F,N,M1,flag){
 
 function valid_ip_str(I, M){
 	if(I.value == "" || I.value == " ") return true;
-	
+
 	var m = new Array(4);
 	var ip_str = I.value.split(".");
 
 	for(i=0;i<4;i++) {
 		m[i] = parseInt(ip_str[i], 10);
 		if( isNaN(m[i]) ) {
-
 			alert(M+errmsg.err31);
 			I.value = I.defaultValue;
 			return false;
 		}
 	}
-	
-	if(m[0] == 127 || m[0] == 224){
 
+	if(m[0] == 127 || m[0] == 224){
 		alert(M+errmsg.err31);
 		I.value = I.defaultValue;
 		return false;
 	}
 
 	if((m[0] > "255" || m[1] > "255" || m[2] > "255") && m[3] > "255"){
-
 		alert(M+errmsg.err31);
 		I.value = I.defaultValue;
 		return false;
@@ -467,7 +439,7 @@ function valid_ip_gw(F,I,N,G) {
 	var IP = new Array(4);
 	var NM = new Array(4);
 	var GW = new Array(4);
-	
+
 	for(i=0;i<4;i++)
 		IP[i] = eval(I+"_"+i).value
 	for(i=0;i<4;i++)
@@ -477,17 +449,15 @@ function valid_ip_gw(F,I,N,G) {
 
 	for(i=0;i<4;i++){
 		if((IP[i] & NM[i]) != (GW[i] & NM[i])){
-
 			alert(errmsg.err32);
 			return false;
 		}
 	}
 	if((IP[0] == GW[0]) && (IP[1] == GW[1]) && (IP[2] == GW[2]) && (IP[3] == GW[3])){
-
 		alert(errmsg.err33);
 		return false;
 	}
-	
+
 	return true;
 }
 
@@ -510,9 +480,8 @@ return g;
 }
 
 
-
-var w3c=(document.getElementById) ? true : false;
-var ie=(document.all) ? true : false;
+var w3c=(document.getElementById)?true:false;
+var ie=(document.all)?true:false;
 var N=-1;
 
 function createBar(w,h,speed,blocks,count,action) {
@@ -581,8 +550,8 @@ function change_style(id, newClass) {
 
 function Capture(obj)
 {
-	document.write(obj);	
-}	
+	document.write(obj);
+}
 
 
 function defined(val) {
@@ -592,7 +561,6 @@ function defined(val) {
 function cleanTable(table) {
 	for(var i = table.rows.length - 1; i > 0; i--) table.deleteRow(i);
 }
-
 
 function openHelpWindow(url) {
 	var top = 30;
@@ -621,7 +589,6 @@ function openAboutWindow() {
 	win.focus();
 }
 
-
 function openWindow(url, width, height, title) {
 	if (!title) title=url.replace(/\.asp/, "");
 	var top = Math.floor((screen.availHeight - height - 10) / 2);
@@ -630,8 +597,6 @@ function openWindow(url, width, height, title) {
 	addEvent(window, "unload", function() { if(!win.closed) win.close(); });
 	win.focus();
 }
-
-
 
 function setMeterBar(id, fraq, text) {
 	if(isNaN(fraq)) fraq = 0;
@@ -647,25 +612,21 @@ function setMeterBar(id, fraq, text) {
 	}
 }
 
-
 function setElementContent(id, content) {
 	if(!document.getElementById(id)) return;
 	document.getElementById(id).innerHTML = content;
 }
-
 
 function setElementVisible(id, state) {
 	if(!document.getElementById(id)) return;
 	document.getElementById(id).style.display = (state ? "" : "none");
 }
 
-
 function setElementActive(name, state) {
 	var elements = document.getElementsByName(name);
 	if(!elements) return;
 	for(var i = 0; i < elements.length; i++) { elements[i].disabled = !state; }
 }
-
 
 function setElementsActive(firstName, lastName, state) {
 	if(!document.forms[0].elements[firstName] || !document.forms[0].elements[lastName]) return;
@@ -679,7 +640,6 @@ function setElementsActive(firstName, lastName, state) {
 	}
 }
 
-
 function addEvent(object, type, func) {
 	if(object.addEventListener)
 		object.addEventListener(type, func, false);
@@ -687,14 +647,12 @@ function addEvent(object, type, func) {
 		object.attachEvent("on" + type, func);
 }
 
-
 function removeEvent(object, type, func) {
 	if(object.removeEventListener)
 		object.removeEventListener(type, func, false);
 	else if (object.detachEvent)
 		object.detachEvent("on" + type, func);
 }
-
 
 function StatusUpdate(_url, _frequency) {
 	var request;
@@ -704,22 +662,25 @@ function StatusUpdate(_url, _frequency) {
 	var me = this;
 	var callbacks = new Object();
 	var updates = new Object();
-	
+
 	this.start = function() {
 		if((!window.XMLHttpRequest && !window.ActiveXObject) || frequency == 0) return false;
-		if(document.getElementsByName("refresh_button")) 
+		if(document.getElementsByName("refresh_button")) {
 			document.getElementsByName("refresh_button")[0].disabled = true;
+			document.getElementsByName("refresh_button")[0].style.background = '#DADADA';
+			document.getElementsByName("refresh_button")[0].style.cursor = "default";
+		}
 		timer = setTimeout(me.doUpdate, frequency);
 		return true;
 	}
-	
+
 	this.stop = function() {
 		clearTimeout(timer);
-		if(document.getElementsByName("refresh_button")) 
+		if(document.getElementsByName("refresh_button"))
 			document.getElementsByName("refresh_button")[0].disabled = false;
 		request = null;
 	}
-	
+
 	this.onUpdate = function(id, func) {
 		callbacks[id] = func;
 	}
@@ -734,7 +695,7 @@ function StatusUpdate(_url, _frequency) {
 			var activeCallbacks = new Array();
 			var regex = /\{(\w+)::([^\}]*)\}/g;
 			while(result = regex.exec(request.responseText)) {
-				var key = result[1]; 
+				var key = result[1];
 				var value = result[2];
 				if(defined(updates[key]) && updates[key] == value) continue;
 				updates[key] = value;
@@ -746,13 +707,12 @@ function StatusUpdate(_url, _frequency) {
 		}
 		request.send("");
 	}
-	
+
 	this.forceUpdate = function() {
 		this.stop();
 		this.doUpdate();
 	}
 }
-
 
 function StatusbarUpdate() {
 	var request;
@@ -804,18 +764,33 @@ function StatusbarUpdate() {
 
 }
 
-function apply(form) {
-	form.submit();
-	for (i = 0; i < form.elements.length; i++) {
-		if(defined(form.elements[i].disabled)) 
-			form.elements[i].disabled = true;
+
+function apply(form, text, delay) {
+    if(!text)
+    	text=errmsg.err100;
+
+    Dialog.info(text, {windowParameters: {className:"ddwrt", width:250, height:100}, showProgress:true});
+    setTimeout(function(){form.submit();}, 2000);
+
+    if(delay) {
+    	setTimeout(function(){infoTimeout(text, delay);}, 1000);
+    }
+}
+
+function infoTimeout(text, delay) {
+	delay--;
+	if (delay > 0) {
+		Dialog.setInfoMessage(text+" "+delay+"s ...");
+		setTimeout(function(){infoTimeout(text, delay);}, 1000);
 	}
-	if (form.contents) document.getElementById("contents").style.color = '#999999';
+	else {
+		Dialog.setInfoMessage(text);
+	}
 }
 
 
 function getOUIFromMAC(mac) {
-	
+
 	var top = 30;
 	var left = Math.floor(screen.availWidth * .66) - 10;
 	var width = 700
@@ -829,13 +804,12 @@ function getOUIFromMAC(mac) {
 	win.focus();
 }
 
- 
 function getTimeOut(clk, rest_default, flags) {
 
 	var wait_time = 60;
 	var scroll_count = (wait_time / 5) - 3;
 	var coef = 1.1;
-	
+
 	if (rest_default == 1) {
 		coef = 1.5;
 	}
@@ -845,18 +819,17 @@ function getTimeOut(clk, rest_default, flags) {
 	if (flags==2) {
 		coef = coef * 1.8;
 	}
-	
+
 	this.wait_time = coef * wait_time * (125 / clk);
 	this.scroll_count = this.wait_time / 5 - 3;
 
 }
 
-
 function setElementMask(id, state) {
 
 	var OldInput = document.getElementById(id);
 	if(!OldInput) return;
-	
+
 	var val = OldInput.value;
 	var val_maxlength = OldInput.maxlength;
 	var val_size = OldInput.size;
@@ -875,11 +848,11 @@ function setElementMask(id, state) {
 		newInput.setAttribute('type', 'text');
 	else
 		newInput.setAttribute('type', 'password');
-	
+
 	parent.removeChild(OldInput);
 	parent.insertBefore(newInput, sibling);
 	newInput.focus();
-	
+
 }
 
 var windo = {
@@ -888,7 +861,7 @@ var windo = {
 			return {height: window.innerHeight, width: window.innerWidth};
 		else if (document.documentElement && document.documentElement.clientHeight)
 			return {height: document.documentElement.clientHeight, width: document.documentElement.clientWidth};
-		
+
 		return {Height: document.body.clientHeight,	width: document.body.clientWidth};
 	}
 
@@ -904,6 +877,7 @@ function show_layer_ext(obj, id, state)
 		visibility_style='hidden';
 		display_style='none';
 	}
+	
 	if(ie4)
 	{
 		eval("document.all." + id + ".style.visibility='" + visibility_style + "'");
@@ -926,6 +900,7 @@ function toggle_layer_ext(obj, id1, id2, state)
 	show_layer_ext(obj, id1, state)
 	show_layer_ext(obj, id2, !state)
 }
+
 
 function lgout() {
 	document.forms[0].action.value = "Logout";
@@ -954,12 +929,12 @@ function scaleSize(num)
 
 function DisplayDiv(current,evt,h,w,text)
 {
-	var width = w;
 	var height = h;
-	
+	var width = w;
+
 	text = text.replace(/&lt;/gi,'<');
 	text = text.replace(/&gt;/gi,'>');
-	
+
 	if(document.all) {
 		if(document.readyState == 'complete') {
 			document.all.bulle.innerHTML = '<table class="bulle" cellspacing="0"><tr><td class="bulle">' + text + '</td></tr></table>';
@@ -968,7 +943,6 @@ function DisplayDiv(current,evt,h,w,text)
 			document.all.bulle.style.visibility = 'visible';
 		}
 	}
-	
 	else if(document.getElementById) {
 		document.getElementById('bulle').innerHTML = '<table class="bulle" cellspacing="0"><tr><td class="bulle">' + text + '</td></tr></table>';
 		document.getElementById('bulle').style.left = evt.pageX + width + 'px';
