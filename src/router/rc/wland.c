@@ -436,7 +436,7 @@ do_madwifi_check (void)
 			}
 
 		      notstarted[i] = 0;
-			    fprintf(stderr,"restarting %s\n",dev);
+//			    fprintf(stderr,"restarting %s\n",dev);
 		      eval ("ifconfig", dev, "down");
 		      sleep (1);
 		      eval ("ifconfig", dev, "up");
