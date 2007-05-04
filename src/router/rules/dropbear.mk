@@ -4,5 +4,7 @@ dropbear: zlib
 
 dropbear-install:
 	@true
+ifeq ($(CONFIG_DROPBEAR_SSHD),y)
 	install -D dropbear/config/sshd.webservices $(INSTALLDIR)/dropbear/etc/config/sshd.webservices
+endif
 
