@@ -508,6 +508,7 @@ static int
 mmc_card_config (void)
 {
   unsigned char r = 0;
+  unsigned char div;
   short i;
   unsigned char csd[32];
   unsigned int c_size;
@@ -573,6 +574,14 @@ mmc_card_config (void)
   blocknr = (c_size + 1) * mult;
   block_len = 1;
   block_len <<= read_bl_len;
+	if(block_len > 512)
+        {
+          div = block_len / 512; 
+          printk ("Work around for large cards \(>= 1gb\) !\n");
+          printk ("Attention : Card reports to have a block_len of %i bytes, cutting down to 512 bytes %i!\n", block_len, div);
+          block_len = 512;
+          blocknr = blocknr * div;
+        }
   size = block_len * blocknr;
   size >>= 10;
 
