@@ -1453,7 +1453,10 @@ start_pptp (int status)
 	  start_redial ();
 	}
       if (nvram_match ("pptp_encrypt", "0"))
-	fprintf (fp, "nomppe\n");	// Disable mppe negotiation
+      {
+		fprintf (fp, "nomppe\n");	// Disable mppe negotiation
+		fprintf (fp, "noccp\n");	// Disable CCP (Compression Control Protocol)
+	  }
       fprintf (fp, "default-asyncmap\n");	// Disable  asyncmap  negotiation
       fprintf (fp, "nopcomp\n");	// Disable protocol field compression
       fprintf (fp, "noaccomp\n");	// Disable Address/Control compression
@@ -1464,7 +1467,7 @@ start_pptp (int status)
       fprintf (fp, "lcp-echo-interval 0\n");	// Don't send an LCP echo-request frame to the peer
       fprintf (fp, "noipdefault\n");
       fprintf (fp, "lock\n");
-      fprintf (fp, "noauth");
+      fprintf (fp, "noauth\n");
 
       if (nvram_invmatch ("pptp_extraoptions", ""))
 	fprintf (fp, "%s\n", nvram_safe_get ("pptp_extraoptions"));
