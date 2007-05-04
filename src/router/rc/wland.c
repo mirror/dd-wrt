@@ -406,7 +406,7 @@ do_madwifi_check (void)
       if (nvram_match (mode, "sta") || nvram_match (mode, "wdssta"))
 	{
 	  int chan = wifi_getchannel (dev);
-	  fprintf(stderr,"chan %d %d\n",chan,lastchans[i]);
+//	  fprintf(stderr,"chan %d %d\n",chan,lastchans[i]);
 	  if (lastchans[i] == 0 && chan<1000)
 	    lastchans[i] = chan;
 	  else
