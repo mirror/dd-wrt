@@ -919,8 +919,8 @@ program_suffix=NONE
 program_transform_name=s,x,x,
 silent=
 site=
-srcdir=/src
-verbose=yes
+srcdir=
+verbose=
 x_includes=NONE
 x_libraries=NONE
 
