@@ -3,7 +3,7 @@ wifidog:
 	$(MAKE) -C wifidog
 
 wifidog-clean:
-	make  -C wifidog clean
+	if test -e "wifidog/Makefile"; then make -C wifidog clean; fi
 
 wifidog-install:
 	install -D wifidog/src/wdctl $(INSTALLDIR)/wifidog/usr/sbin/wdctl
