@@ -1046,6 +1046,7 @@ route.bgp_legend="Paramètres BGP";
 route.bgp_ip="Neighbor IP";
 route.bgp_as="Neighbor AS#";
 route.rip2_mod="Routage RIP2";
+route.olsrd_hna="Host Net Announce";
 route.olsrd_mod="Routage OLSR";
 route.olsrd_legend="Routage OLSR (Optimized Link State Routing)";
 route.olsrd_poll="Poll Rate";
