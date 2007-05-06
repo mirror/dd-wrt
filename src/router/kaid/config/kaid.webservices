@@ -17,7 +17,8 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.passwd"); %></div>
-			<input type="password" value="d6nw5v1x2pc7st9m" name="kaid_pass" size="20" maxlength="20" />
+			<input type="password" id="kaid_pass" value="<% nvram_get("kaid_pass"); %>" name="kaid_pass" size="20" maxlength="20" />&nbsp;&nbsp;&nbsp;
+			<input type="checkbox" name="_kaid_pass_unmask" value="0" onclick="setElementMask('kaid_pass', this.checked)" />&nbsp;<% tran("share.unmask"); %>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.kaid_uibind"); %></div>
