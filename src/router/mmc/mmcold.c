@@ -19,7 +19,7 @@
 
 #include <linux/blk.h>
 
-MODULE_AUTHOR ("Madsuk/Rohde & Sebastian Gottschall (autodetection for newer models)");
+MODULE_AUTHOR ("Madsuk/Rohde, Sebastian Gottschall (autodetection for newer models), Eko (Asus support)");
 MODULE_DESCRIPTION ("Driver MMC/SD-Cards");
 MODULE_SUPPORTED_DEVICE ("WRT54G");
 MODULE_LICENSE ("GPL");
@@ -30,16 +30,19 @@ MODULE_LICENSE ("GPL");
 //#define SD_CS 0x80
 
 
-#define SD_DIV1 0x20
-#define SD_DIV4 0x04
-#define SD_DIBUF 0x20
-#define SD_DOWRT 0x10
-#define SD_DOBUF 0x40
-#define SD_CLK 0x08
-#define SD_CS 0x80
+#define SD_DIV1 0x20  //Linksys: gpio5
+#define SD_DIV4 0x04  //Linksys: gpio2
+#define SD_DIBUF 0x20 //Buffalo: gpio5
+#define SD_DIASU 0x20 //Asus: gpio5
+#define SD_DOWRTASU 0x10 //Linksys: gpio4
+#define SD_DOBUF 0x40 //Buffalo: gpio5
+#define SD_CLKWRTBUF 0x08  //Linksys, Buffalo: gpio3
+#define SD_CLKASU 0x02  //Asus: gpio1
+#define SD_CS 0x80  //Linksys, Buffalo, Asus: gpio7
 
 static int SD_DI = SD_DIV1;
-static int SD_DO = SD_DOWRT;
+static int SD_DO = SD_DOWRTASU;
+static int SD_CLK = SD_CLKWRTBUF;
 
 /* we have only one device */
 static int hd_sizes[1 << 6];
@@ -577,8 +580,8 @@ mmc_card_config (void)
 	if(block_len > 512)
         {
           div = block_len / 512; 
-          printk ("Work around for large cards \(>= 1gb\) !\n");
-          printk ("Attention : Card reports to have a block_len of %i bytes, cutting down to 512 bytes %i!\n", block_len, div);
+          printk ("Work around for large cards >= 1gb !\n");
+          printk ("Attention : Card reports to have a block_len of %i bytes, cutting down to %i x 512 bytes !\n", block_len, div);
           block_len = 512;
           blocknr = blocknr * div;
         }
@@ -675,18 +678,27 @@ mmc_init (void)
       rc = mmc_hardware_init ();
       if (rc != 0)
         {
-        SD_DI = SD_DIBUF;		//try second one
+        SD_DI = SD_DIBUF;		//try buffalo
         rc = mmc_hardware_init ();
         if (rc != 0)
           {
-            printk ("mmc: error in mmc_hardware_init (%d)\n", rc);
-            return -1;
+            SD_DI = SD_DIASU;		//try asus
+            SD_CLK = SD_CLKASU;
+        	rc = mmc_hardware_init ();
+        	if (rc != 0)
+          	  {
+            	printk ("mmc: error in mmc_hardware_init (%d)\n", rc);
+            	return -1;
+          	  }
           }
         }
     }
 
   rc = mmc_card_init ();
-  if (rc != 0)
+  if (rc != 0)  //reset signals and try again
+  	SD_DI = SD_DIV1;
+	SD_DO = SD_DOWRTASU;
+	SD_CLK = SD_CLKWRTBUF;
     {
       // Give v1 an extra shot
       rc = mmc_card_init ();
@@ -713,11 +725,25 @@ mmc_init (void)
 			                    		rc = mmc_card_init ();
 			                    		if (rc != 0)
 			                   			  {
-			                        		printk ("mmc: This board has no MMC mod installed!\n");
-			                        		return -1;
+			                        		printk ("mmc: Device does not use Buffalo layout, trying to use Asus layout\n");
+			                  				SD_DI = SD_DIASU;	 //try asus
+			                  				SD_DO = SD_DOWRTASU; //set asus
+			                  				SD_CLK = SD_CLKASU;  //set asus
+			                  				mmc_hardware_init ();
+			                  				rc = mmc_card_init ();
+			                  				if (rc != 0)
+			                    			  {
+			                    					//give Asus an extra shot
+			                    					rc = mmc_card_init ();
+			                    					if (rc != 0)
+			                   			  			{
+			                        				printk ("mmc: This board has no MMC mod installed!\n");
+			                        				return -1;
+			                    		   			}
+			                    			  }
 			                    		   }
 			                    }
-                  	}
+                  	  }
               }
         }
     }
