@@ -1128,7 +1128,7 @@ start_cron (void)
       fp = fopen ("/tmp/cron.d/cron_jobs", "w");
       char *cron_job = nvram_safe_get ("cron_jobs");
       
-      for (i = 0, i < (strlen(cron_job)), i++)
+      for (i = 0; i < (strlen(cron_job)); i++)
       {
 	      fprintf (fp, "%c", cron_job[i]);
 	  }
