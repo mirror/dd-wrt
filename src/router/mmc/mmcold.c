@@ -35,7 +35,7 @@ MODULE_LICENSE ("GPL");
 #define SD_DIBUF 0x20
 #define SD_DOWRT 0x10
 #define SD_DOBUF 0x40
-#define SD_CLK 0x02  //just for test... (orig 0x08)
+#define SD_CLK 0x08
 #define SD_CS 0x80
 
 static int SD_DI = SD_DIV1;
