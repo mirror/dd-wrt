@@ -1102,7 +1102,6 @@ int
 start_cron (void)
 {
   int ret = 0;
-  int i;
   struct stat buf;
 
   // Sveasoft 2003-12-15 only start if enabled
@@ -1126,14 +1125,8 @@ start_cron (void)
   if (nvram_invmatch ("cron_jobs", ""))
     {
       fp = fopen ("/tmp/cron.d/cron_jobs", "w");
-      char *cron_job = nvram_safe_get ("cron_jobs");
-      
-      for (i = 0; i < (strlen(cron_job)); i++)
-      {
-	      fprintf (fp, "%c", cron_job[i]);
-	  }
-	      
-	  fprintf (fp, "\n");
+
+      fprintf (fp, "%s\n", nvram_safe_get ("cron_jobs"));
 
       fclose (fp);
     }
