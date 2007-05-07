@@ -12,6 +12,8 @@ function to_submit(F, I) {
 		F.startup.value = sbutton.saving;
 	else if (I == "firewall")
 		F.startup.value = sbutton.saving;
+	else if (I == "custom")
+		F.startup.value = sbutton.saving;
 	
 	apply(F);
 }
@@ -107,13 +109,28 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 							<% nvram_match("rc_firewall", "", "-->"); %>
-							
+
+							<% nvram_match("rc_custom", "", "<!--"); %>
+							<fieldset>
+								<legend><% tran("diag.custom"); %></legend>
+								<pre id="custom"><% nvram_get("rc_custom"); %></pre><br />
+								<div class="center">
+									<script type="text/javascript">
+									//<![CDATA[
+									document.write("<input class=\"button\" type=\"button\" name=\"button_custom\" value=\"" + sbutton.cptotext + "\" onclick=\"this.form.ping_ip.value = document.getElementById('custom').firstChild.data\" />")
+									//]]>
+									</script>
+								</div>
+							</fieldset><br />
+							<% nvram_match("rc_custom", "", "-->"); %>
+														
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
 								document.write("<input class=\"button\" type=\"button\" name=\"ping\" value=\"" + sbutton.runcmd + "\" onclick=\"to_submit(this.form, 'start');\" />")
 								document.write("<input class=\"button\" type=\"button\" name=\"startup\" value=\"" + sbutton.startup + "\" onclick=\"to_submit(this.form, 'startup');\" />")
 								document.write("<input class=\"button\" type=\"button\" name=\"firewall\" value=\"" + sbutton.firewall + "\" onclick=\"to_submit(this.form, 'firewall');\" />")
+								document.write("<input class=\"button\" type=\"button\" name=\"custom\" value=\"" + sbutton.custom + "\" onclick=\"to_submit(this.form, 'custom');\" />")
 								//]]>
 								</script>
 							</div>
