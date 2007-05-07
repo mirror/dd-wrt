@@ -506,6 +506,12 @@ main_loop (void)
 	  start_service ("wlconf");
 #endif
 #endif
+#ifndef HAVE_MADWIFI
+  start_service ("nas");
+#ifdef HAVE_MSSID
+  start_service ("guest_nas");
+#endif
+#endif
 #ifdef HAVE_CHILLI
 	  start_service ("chilli");
 #endif
