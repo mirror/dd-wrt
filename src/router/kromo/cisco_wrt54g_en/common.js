@@ -94,6 +94,17 @@ function valid_range(I,start,end,M) {
 
 }
 
+function valid_psk_lenght(I) {
+	if(I.value == "")
+		return true;
+	
+	if (I.value.length < 8 || I.value.length > 64) {
+		alert(errmsg.err39);
+		I.value = I.defaultValue;
+	}
+	return true;
+}
+
 function valid_macs_all(I) {
 	if(I.value == "")
 		return true;
