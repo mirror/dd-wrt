@@ -428,6 +428,7 @@ extern int qos_save (webs_t wp);
 extern int ping_wol (webs_t wp);
 extern int ping_startup (webs_t wp);
 extern int ping_firewall (webs_t wp);
+extern int ping_custom (webs_t wp);
 /* end Sveasoft additions */
 
 
