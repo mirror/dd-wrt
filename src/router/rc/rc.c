@@ -382,19 +382,16 @@ main_loop (void)
 	      nvram_match ("wl0_akm", "psk psk2"))
 	    {
 	      eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
-#ifndef HAVE_MADWIFI
+
 	  	  stop_service ("nas");
 #ifdef HAVE_MSSID
           stop_service ("guest_nas");
 #endif
-#endif
 	      sleep (4);
 	      start_service ("wlconf");
-#ifndef HAVE_MADWIFI
 	      start_service ("nas");
 #ifdef HAVE_MSSID
           start_service ("guest_nas");
-#endif
 #endif
 
 	    }
@@ -433,9 +430,6 @@ main_loop (void)
 #ifdef HAVE_VLANTAGGING
 	  stop_service ("bridgesif");
 	  stop_service ("vlantagging");
-#endif
-#ifndef HAVE_MADWIFI
-      eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
 #endif
 #ifndef HAVE_MADWIFI
   	  stop_service ("nas");
