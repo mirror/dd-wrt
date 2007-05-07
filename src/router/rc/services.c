@@ -164,14 +164,14 @@ start_services (void)
 #endif
 
   dlclose (handle);
-
+/*
 #ifndef HAVE_MADWIFI
   start_service ("nas");
 #ifdef HAVE_MSSID
   start_service ("guest_nas");
 #endif
 #endif
-
+*/
   cprintf ("done\n");
   return 0;
 }
