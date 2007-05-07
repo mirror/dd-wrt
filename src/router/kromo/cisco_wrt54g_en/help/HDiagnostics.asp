@@ -14,7 +14,7 @@
 				<dd>You can save some command lines to be executed at startup's router. Fill the text area with commands (only one command by row) and click <em>Save Startup</em>.</dd>
 				<dt><% tran("diag.firewall"); %></dt>
 				<dd>Each time the firewall is started, it can run some custom iptables instructions. Fill the text area with firewall's instructions (only one command by row) and click <em>Save Firewall</em>.<br/><br/>
-				<dt><% tran("diag.firewall"); %></dt>
+				<dt><% tran("diag.custom"); %></dt>
 				<dd>Custom script is stored in /tmp/custom.sh file. You can run it manually or use cron to call it. Fill the text area with script's instructions (only one command by row) and click <em>Save Firewall</em>.<br/><br/>
 				
 					<div class="note">
