@@ -4325,7 +4325,7 @@ show_preshared (webs_t wp, char *prefix)
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.shared_key)</script></div>\n");
   sprintf (var, "%s_wpa_psk", prefix);
   websWrite (wp,
-	     "<input type=\"password\" id=\"%s_wpa_psk\" name=\"%s_wpa_psk\" maxlength=\"64\" size=\"32\" value=\"",
+	     "<input type=\"password\" id=\"%s_wpa_psk\" name=\"%s_wpa_psk\" onblur=\"valid_psk_lenght(this)\" maxlength=\"64\" size=\"32\" value=\"",
 	     prefix, prefix);
   tf_webWriteESCNV (wp, var);
   websWrite (wp, "\" />&nbsp;&nbsp;&nbsp;\n");
