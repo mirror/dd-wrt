@@ -88,10 +88,14 @@ ping_custom (webs_t wp)
   char *custom = websGetVar (wp, "ping_ip", NULL);
 
   // filter Windows <cr>ud
+  unlink ("/tmp/custon.sh");
   removeLineBreak (custom);
   nvram_set ("rc_custom", custom);
+  if (nvram_invmatch ("rc_custom", ""))
+  {
   nvram2file ("rc_custom", "/tmp/custom.sh");
   chmod ("/tmp/custom.sh", 0700);
+  }
   //diag_ping_start(wp);
 
   return 0;
