@@ -472,6 +472,7 @@ diag.legend="Command Shell";
 diag.cmd="Commands";
 diag.startup="Startup";
 diag.firewall="Firewall";
+diag.custom="Custom Script";
 
 //help container
 var hdiag = new Object();
