@@ -382,8 +382,20 @@ main_loop (void)
 	      nvram_match ("wl0_akm", "psk psk2"))
 	    {
 	      eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
+#ifndef HAVE_MADWIFI
+	  	  stop_service ("nas");
+#ifdef HAVE_MSSID
+          stop_service ("guest_nas");
+#endif
+#endif
 	      sleep (4);
 	      start_service ("wlconf");
+#ifndef HAVE_MADWIFI
+	      start_service ("nas");
+#ifdef HAVE_MSSID
+          start_service ("guest_nas");
+#endif
+#endif
 
 	    }
 #endif
@@ -412,10 +424,24 @@ main_loop (void)
 #ifdef HAVE_BONDING
 	  stop_service ("bonding");
 #endif
+
+#ifndef HAVE_MADWIFI
+     eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
+#endif
+
 	  stop_service ("lan");
 #ifdef HAVE_VLANTAGGING
 	  stop_service ("bridgesif");
 	  stop_service ("vlantagging");
+#endif
+#ifndef HAVE_MADWIFI
+      eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
+#endif
+#ifndef HAVE_MADWIFI
+  	  stop_service ("nas");
+#ifdef HAVE_MSSID
+  	  stop_service ("guest_nas");
+#endif
 #endif
 #ifndef HAVE_RB500
 	  cprintf ("STOP RESETBUTTON\n");
@@ -453,7 +479,9 @@ main_loop (void)
 	    }
 #endif
 	  start_service ("setup_vlans");
-#ifdef HAVE_VLANTAGGING
+#ifndef HAVE_MADWIFI
+      start_service ("wlconf");
+#endif
 	  start_service ("bridging");
 #endif
 	  start_service ("lan");
@@ -463,6 +491,12 @@ main_loop (void)
 #ifdef HAVE_VLANTAGGING
 	  start_service ("vlantagging");
 	  start_service ("bridgesif");
+#endif
+#ifndef HAVE_MADWIFI
+      start_service ("nas");
+#ifdef HAVE_MSSID
+      start_service ("guest_nas");
+#endif
 #endif
 #ifdef HAVE_REGISTER
 	  start_service ("mkfiles");
@@ -501,17 +535,7 @@ main_loop (void)
 	      cprintf ("start modules\n");
 	      start_service ("modules");
 	    }
-#ifdef HAVE_MSSID
-#ifndef HAVE_MADWIFI
-	  start_service ("wlconf");
-#endif
-#endif
-#ifndef HAVE_MADWIFI
-  start_service ("nas");
-#ifdef HAVE_MSSID
-  start_service ("guest_nas");
-#endif
-#endif
+
 #ifdef HAVE_CHILLI
 	  start_service ("chilli");
 #endif
