@@ -422,6 +422,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"ppp_static_ip", "", 0},	/* PPPoE Static IP */
   {"ppp_get_ac", "", 0},	/* PPPoE Server ac name */
   {"ppp_get_srv", "", 0},	/* PPPoE Server service name */
+  {"ppp_mppe", "", 0},		/* PPPoE mppe parameters */
 
   /* Wireless parameters */
 
@@ -1110,6 +1111,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"expert_mode", "0", 0},
   {"rc_startup", "", 0},
   {"rc_firewall", "", 0},
+  {"rc_custom", "", 0},
   {"rc_shutdown", "", 0},
 #ifdef HAVE_MADWIFI
   {"ath0_txpwrdbm", "16", 0},
