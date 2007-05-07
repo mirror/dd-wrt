@@ -2843,6 +2843,7 @@ struct gozila_action gozila_actions[] = {
   {"Wireless_WDS", "save", "", 5, REFRESH, save_wds},
   {"Ping", "startup", "", 1, SYS_RESTART, ping_startup},
   {"Ping", "firewall", "", 1, SYS_RESTART, ping_firewall},
+  {"Ping", "custom", "", 0, REFRESH, ping_custom},
   {"QoS", "add_svc", "", 0, REFRESH, qos_add_svc},
   {"QoS", "add_ip", "", 0, REFRESH, qos_add_ip},
   {"QoS", "add_mac", "", 0, REFRESH, qos_add_mac},
