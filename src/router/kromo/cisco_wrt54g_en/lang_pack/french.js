@@ -183,6 +183,7 @@ sbutton.cptotext="Editer";
 sbutton.runcmd="Exécutez la commande";
 sbutton.startup="Sauver Démarrage";
 sbutton.firewall="Sauver Pare-feu";
+sbutton.custom="Sauver Script Perso";
 sbutton.wol="Réveiller";
 sbutton.add_wol="Ajouter l\'hôte";
 sbutton.manual_wol="Réveil manuel";
@@ -471,6 +472,7 @@ diag.legend="Invite de commandes";
 diag.cmd="Commande";
 diag.startup="Démarrage";
 diag.firewall="Pare-feu";
+diag.custom="Script Perso";
 
 //help container
 
