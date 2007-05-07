@@ -16,10 +16,10 @@
  "ppp_demand"  "Connect on Demand"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"  
  "ppp_idletime"  "Max Idle Time"  "RANGE"  "0"  "9999"  "FALSE" "0"  
  "ppp_redialperiod"  "Redial Period"  "RANGE"  "1"  "9999"  "FALSE" "0"  
- "ppp_service"  "Service Name"  "NAME"  "63"  "TRUE" "0"  	// 2003-03-19 by honor
+ "ppp_service"  "Service Name"  "NAME"  "63"  "TRUE" "3"  	// 2003-03-19 by honor
  "ppp_static"  "Enable /Disable Static IP"  "CHOICE" "2" "0"  "1"  "TRUE" "0"  
  "ppp_compression"  " "  "CHOICE" "2" "0"  "1"  "TRUE" "0" 
- "ppp_mppe"  "Mppe parameters"  "NAME"  "63"  "FALSE" "0" 
+ "ppp_mppe"  "Mppe parameters"  "NAME"  "63"  "TRUE" "3" 
  "ppp_static_ip"  "Static IP"  "MERGEIPADDRS" "FALSE" "0"  
  "wan_dns"  "WAN DNS Server"  "DNS"  "FALSE" "3"   
  "lan_proto"  "LAN Protocol"  "CHOICE" "2"  "dhcp"  "static"  "FALSE" "3"   
