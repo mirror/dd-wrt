@@ -462,6 +462,11 @@ addEvent(window, "unload", function() {
 									<input size="30" maxlength="79" name="host4" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","4"); %>" />&nbsp;&nbsp;&nbsp;
 									<input size="30" maxlength="79" name="host5" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","5"); %>" />
 								</div>
+								<div class="setting center">
+									<input size="30" maxlength="79" name="host6" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","6"); %>" />&nbsp;&nbsp;&nbsp;
+									<input size="30" maxlength="79" name="host7" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","7"); %>" />&nbsp;&nbsp;&nbsp;
+									<input size="30" maxlength="79" name="host8" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","8"); %>" />
+								</div>
 							</fieldset><br />
 							
 							<fieldset>
