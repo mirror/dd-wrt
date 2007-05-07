@@ -18,7 +18,7 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("service.pptpd_encry"); %></div>
-	<input size="40" maxlength="63" onblur="valid_name(this,service.pptpd_encry)" name="ppp_mppe" value="<% nvram_get("ppp_mppe"); %>" />
+	<input size="27" maxlength="63" onblur="valid_name(this,service.pptpd_encry)" name="ppp_mppe" value="<% nvram_get("ppp_mppe"); %>" />
 </div>
 
 <!--
