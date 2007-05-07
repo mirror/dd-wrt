@@ -4073,6 +4073,10 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 	      if (!strcmp (menu[i][j], "PPPoE_Server.asp"))
 		j++;
 #endif
+#ifdef HAVE_MICRO
+	      if (!strcmp (menu[i][j], "PPTP.asp"))	//jump over PPTP in micro build
+		j++;
+#endif
 #ifndef HAVE_MILKFISH
 	      if (!strcmp (menu[i][j], "Milkfish.asp"))
 		j++;
