@@ -90,7 +90,7 @@ function valid_range(I,start,end,M) {
 
 }
 
-function valid_psk_lenght(I) {
+function valid_psk_length(I) {
 	if(I.value == "")
 		return true;
 	
