@@ -422,6 +422,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"ppp_static_ip", "", 0},	/* PPPoE Static IP */
   {"ppp_get_ac", "", 0},	/* PPPoE Server ac name */
   {"ppp_get_srv", "", 0},	/* PPPoE Server service name */
+  {"ppp_compression", "0", 0},		/* PPPoE compr. */
   {"ppp_mppe", "", 0},		/* PPPoE mppe parameters */
 
   /* Wireless parameters */
