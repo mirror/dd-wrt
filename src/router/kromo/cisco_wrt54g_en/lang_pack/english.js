@@ -183,6 +183,7 @@ sbutton.cptotext="Edit";
 sbutton.runcmd="Run Commands";
 sbutton.startup="Save Startup";
 sbutton.firewall="Save Firewall";
+sbutton.custom="Save Custom Script";
 sbutton.wol="Wake Up";
 sbutton.add_wol="Add Host";
 sbutton.manual_wol="Manual Wake Up";
