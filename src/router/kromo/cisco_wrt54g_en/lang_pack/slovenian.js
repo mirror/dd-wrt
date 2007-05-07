@@ -183,6 +183,7 @@ sbutton.cptotext="Kopiraj v polje z besedilom";
 sbutton.runcmd="Za¾eni ukaze";
 sbutton.startup="Shrani zagon";
 sbutton.firewall="Shrani po¾arni zid";
+sbutton.custom="Shrani skript po meri";
 sbutton.wol="Zbujanje";
 sbutton.add_wol="Dodaj gostitelja";
 sbutton.manual_wol="Roèno zbujanje";
@@ -299,6 +300,7 @@ errmsg.err56="Vrednost vrat je izven obmoèja [0 - 65535]";
 
 // Routing.asp error messages
 errmsg.err57="Zbri¹em vnos ?";
+errmsg.err103=" mora biti manj¹i kot ";
 
 // Status_Lan.asp error messages
 errmsg.err58="Kliknite za brisanje zakupa";
@@ -471,6 +473,7 @@ diag.legend="Ukazna lupina";
 diag.cmd="Ukazi";
 diag.startup="Zagon";
 diag.firewall="Po¾arni zid";
+diag.custom="Skript po meri";
 
 //help container
 
@@ -639,6 +642,7 @@ hotspot.dns="DNS IP";
 hotspot.url="Preusmerjeni URL";
 hotspot.dhcp="DHCP vmesnik";
 hotspot.radnas="Radius NAS ID";
+hotspot.net="Oddaljena mre¾a";
 hotspot.uam="UAM skrivnost";
 hotspot.uamdns="UAM vsak DNS";
 hotspot.allowuam="UAM dopu¹èeni";
@@ -1021,6 +1025,19 @@ route.bgp_legend="BGP nastavitve";
 route.bgp_ip="Sosednji IP";
 route.bgp_as="Sosednji AS#";
 route.rip2_mod="RIP2 usmerjalnik";
+route.olsrd_mod="OLSR usmerjalnik";
+route.olsrd_legend="OLSR usmerjanje (Optimized Link State Routing)";
+route.olsrd_poll="Poll Rate";
+route.olsrd_hna="Host Net Announce";
+route.olsrd_tc="TC Redundancy";
+route.olsrd_mpr="MPR Coverage";
+route.olsrd_lqfe="Kvaliteta zveze: Fish Eye";
+route.olsrd_lqws="Kvaliteta zveze: Window Size";
+route.olsrd_lqdmin="Kvaliteta zveze: Dijkstra min";
+route.olsrd_lqdmax="Kvaliteta zveze: Dijkstra maks";
+route.olsrd_lqlvl="Nivo kvalitete zveze";
+route.olsrd_hysteresis="Histereza";
+route.olsrd_newiface="Nov vmesnik";
 route.ospf_mod="OSPF usmerjalnik";
 route.gateway_legend="Dinamièno usmerjanje";
 route.static_legend="Statièno usmerjanje";
@@ -1265,6 +1282,7 @@ status_router.mem_buf="Medpomnilniki";
 status_router.mem_cached="Predpomnilnik";
 status_router.mem_active="Dejavno";
 status_router.mem_inactive="Nedejavno";
+status_router.mem_hidden="Hidden";
 status_router.legend4="Mre¾a";
 status_router.net_maxports="IP filter: najveèje ¹tevilo vrat";
 status_router.net_conntrack="Aktivne IP povezave";
