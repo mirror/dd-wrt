@@ -83,6 +83,21 @@ ping_firewall (webs_t wp)
 }
 
 int
+ping_custom (webs_t wp)
+{
+  char *custom = websGetVar (wp, "ping_ip", NULL);
+
+  // filter Windows <cr>ud
+  removeLineBreak (custom);
+  nvram_set ("rc_custom", custom);
+  nvram2file ("rc_custom", "/tmp/custom.sh");
+  chmod ("/tmp/custom.sh", 0700);
+  //diag_ping_start(wp);
+
+  return 0;
+}
+
+int
 ping_wol (webs_t wp)
 {
   int ret = 0;
