@@ -18,7 +18,8 @@
  "ppp_redialperiod"  "Redial Period"  "RANGE"  "1"  "9999"  "FALSE" "0"  
  "ppp_service"  "Service Name"  "NAME"  "63"  "TRUE" "0"  	// 2003-03-19 by honor
  "ppp_static"  "Enable /Disable Static IP"  "CHOICE" "2" "0"  "1"  "TRUE" "0"  
- "ppp_compression"  " "  "CHOICE" "2" "0"  "1"  "TRUE" "0"  
+ "ppp_compression"  " "  "CHOICE" "2" "0"  "1"  "TRUE" "0" 
+ "ppp_mppe"  "Mppe parameters"  "NAME"  "63"  "FALSE" "0" 
  "ppp_static_ip"  "Static IP"  "MERGEIPADDRS" "FALSE" "0"  
  "wan_dns"  "WAN DNS Server"  "DNS"  "FALSE" "3"   
  "lan_proto"  "LAN Protocol"  "CHOICE" "2"  "dhcp"  "static"  "FALSE" "3"   
@@ -40,6 +41,7 @@
  "status_auth" "Status Site Authentication" "NULL"  "FALSE" "0" 
  "rc_startup"  "Startup Script"  "NULL"  "FALSE" "0"  
  "rc_firewall"  "Firewall Script"  "NULL"    "FALSE" "0"  
+ "rc_custom"  "Custom Script"  "NULL"    "FALSE" "0" 
  "lan_gateway"  "LAN Gateway"  "MERGEIPADDRS"   "FALSE" "0"  
  "sv_localdns"  "Local DNS"  "MERGEIPADDRS"   "FALSE" "0"  
  "lan_domain"  "LAN Domain Name"  "NAME"  "255"  "TRUE" "0"  
