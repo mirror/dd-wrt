@@ -1,4 +1,4 @@
-#ifdef HAVE_RSTATS
+#ifdef HAVE_OLSRD
 #include <stdlib.h>
 #include <bcmnvram.h>
 #include <shutils.h>
