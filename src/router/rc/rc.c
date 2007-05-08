@@ -404,9 +404,6 @@ main_loop (void)
 	  cprintf ("STOP SERVICES\n");
 	  stop_services ();
 #ifndef HAVE_MADWIFI
-#ifdef HAVE_MSSID
-      stop_service ("guest_nas");
-#endif
       stop_service ("nas");
 #endif
 	  cprintf ("STOP WAN\n");
