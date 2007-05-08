@@ -467,7 +467,9 @@ main_loop (void)
 #ifndef HAVE_MADWIFI
       start_service ("wlconf");
 #endif
-	  start_service ("bridging");
+#ifdef HAVE_VLANTAGGING
+      start_service ("bridging");
+#endif
 	  start_service ("lan");
 #ifdef HAVE_BONDING
 	  start_service ("bonding");
