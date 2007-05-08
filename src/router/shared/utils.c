@@ -288,10 +288,10 @@ internal_getRouterBrand ()
       setRouter ("Buffalo WAPM-HP-AM54G54");
       return ROUTER_BUFFALO_WAPM_HP_AM54G54;    
     }
-  if (nvram_match ("boardnum", "00") && nvram_match ("boardrev", "0x11") && nvram_match ("boardtype", "0x048e") && nvram_match ("melco_id", "32093"))	// strange variant of this router, just saw it once in my life
+  if (nvram_match ("boardnum", "00") && nvram_match ("boardrev", "0x11") && nvram_match ("boardtype", "0x048e") && nvram_match ("melco_id", "32093")) 	
     {
-      cprintf ("router is Buffalo WHR-G54S\n");
-      setRouter ("Buffalo WHR-G54S");
+      cprintf ("router is Buffalo WHR-G125\n");
+      setRouter ("Buffalo WHR-G125");
       return ROUTER_BUFFALO_WHRG54S;
     }
        
