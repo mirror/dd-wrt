@@ -190,7 +190,7 @@ stop_services (void)
 #ifdef HAVE_NSTX
   handle = stop_service_nofree ("nstxd", handle);
 #endif
-  handle = stop_service_nofree ("nas", handle);
+
 #ifdef HAVE_UPNP
   handle = stop_service_nofree ("upnp", handle);
 #endif
@@ -684,7 +684,6 @@ start_single_service (void)
 #endif
 
 #ifndef HAVE_MADWIFI
-
 #ifdef HAVE_MSSID
       stop_service ("guest_nas");
 #endif
