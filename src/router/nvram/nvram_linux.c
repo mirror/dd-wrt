@@ -122,8 +122,8 @@ nvram_get (const char *name)
     free (off);
   //unlock();
 
-fprintf(stderr,"nvram_get %s = %s\n",name,value!=NULL?value:"");
-fprintf(stderr,"NVRAM_GET(%s)=%s\n",name,value);
+//fprintf(stderr,"nvram_get %s = %s\n",name,value!=NULL?value:"");
+//fprintf(stderr,"NVRAM_GET(%s)=%s\n",name,value);
   return value;
 }
 
@@ -207,7 +207,7 @@ _nvram_set (const char *name, const char *value)
 int
 nvram_set (const char *name, const char *value)
 {
-fprintf(stderr,"nvram_set %s=%s\n",name,value);
+//fprintf(stderr,"nvram_set %s=%s\n",name,value);
 
   extern struct nvram_convert nvram_converts[];
   struct nvram_convert *v;
