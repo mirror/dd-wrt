@@ -164,14 +164,7 @@ start_services (void)
 #endif
 
   dlclose (handle);
-/*
-#ifndef HAVE_MADWIFI
-  start_service ("nas");
-#ifdef HAVE_MSSID
-  start_service ("guest_nas");
-#endif
-#endif
-*/
+
   cprintf ("done\n");
   return 0;
 }
@@ -427,7 +420,9 @@ start_single_service (void)
     }
   else if (!strcmp (service, "management"))
     {
+#ifndef HAVE_MADWIFI 	    
 	stop_service ("nas");
+#endif
 #ifdef HAVE_BIRD
       stop_service ("zebra");
 #endif
@@ -452,7 +447,12 @@ start_single_service (void)
 #ifdef HAVE_WOL
       startstop ("wol");
 #endif
-	start_service ("nas");
+#ifndef HAVE_MADWIFI
+      start_service ("nas");
+#ifdef HAVE_MSSID
+      start_service ("guest_nas");
+#endif
+#endif
 
     }
 
@@ -617,10 +617,6 @@ start_single_service (void)
 #endif
 
 #ifndef HAVE_MADWIFI
-
-#ifdef HAVE_MSSID
-      stop_service ("guest_nas");
-#endif
       stop_service ("nas");
 #endif
 #ifdef HAVE_MADWIFI
@@ -668,7 +664,6 @@ start_single_service (void)
 #endif
 #ifndef HAVE_MADWIFI
 	  start_service ("nas");
-
 #ifdef HAVE_MSSID
       start_service ("guest_nas");
 #endif
@@ -684,9 +679,6 @@ start_single_service (void)
 #endif
 
 #ifndef HAVE_MADWIFI
-#ifdef HAVE_MSSID
-      stop_service ("guest_nas");
-#endif
       stop_service ("nas");
 #endif
 #ifdef HAVE_MADWIFI
