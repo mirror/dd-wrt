@@ -496,6 +496,7 @@ main_loop (void)
 #ifdef HAVE_MSSID
       start_service ("guest_nas");
 #endif
+#endif
 	  cprintf ("ifconfig wl up\n");
 
 	  if (nvram_match ("wl0_mode", "sta")
