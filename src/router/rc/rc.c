@@ -348,6 +348,7 @@ main_loop (void)
 
 	  state = IDLE;
 	  break;
+	  
 	case RESTART:
 	  lcdmessage ("RESTART SYSTEM");
 	  start_service ("overclocking");
@@ -372,6 +373,7 @@ main_loop (void)
 #endif
 
 	  cprintf ("RESTART\n");
+
 #ifndef HAVE_MADWIFI
 	  if (nvram_match ("wl0_akm", "wpa") ||
 	      nvram_match ("wl0_akm", "psk") ||
@@ -382,20 +384,12 @@ main_loop (void)
 	      nvram_match ("wl0_akm", "psk psk2"))
 	    {
 	      eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
-
-	  	  stop_service ("nas");
-#ifdef HAVE_MSSID
-          stop_service ("guest_nas");
-#endif
 	      sleep (4);
-	      start_service ("wlconf");
-	      start_service ("nas");
-#ifdef HAVE_MSSID
-          start_service ("guest_nas");
-#endif
-
+//	      start_service ("wlconf");
 	    }
 #endif
+
+
 	  /* Fall through */
 	case STOP:
 	  lcdmessage ("STOPPING SERVICES");
@@ -409,6 +403,12 @@ main_loop (void)
 		  1);
 	  cprintf ("STOP SERVICES\n");
 	  stop_services ();
+#ifndef HAVE_MADWIFI
+#ifdef HAVE_MSSID
+      stop_service ("guest_nas");
+#endif
+      stop_service ("nas");
+#endif
 	  cprintf ("STOP WAN\n");
 	  stop_service ("wan");
 	  cprintf ("STOP LAN\n");
@@ -422,21 +422,12 @@ main_loop (void)
 	  stop_service ("bonding");
 #endif
 
-#ifndef HAVE_MADWIFI
-     eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
-#endif
-
 	  stop_service ("lan");
 #ifdef HAVE_VLANTAGGING
 	  stop_service ("bridgesif");
 	  stop_service ("vlantagging");
 #endif
-#ifndef HAVE_MADWIFI
-  	  stop_service ("nas");
-#ifdef HAVE_MSSID
-  	  stop_service ("guest_nas");
-#endif
-#endif
+
 #ifndef HAVE_RB500
 	  cprintf ("STOP RESETBUTTON\n");
 	  if ((brand & 0x000f) != 0x000f)
@@ -485,11 +476,7 @@ main_loop (void)
 	  start_service ("vlantagging");
 	  start_service ("bridgesif");
 #endif
-#ifndef HAVE_MADWIFI
-      start_service ("nas");
-#ifdef HAVE_MSSID
-      start_service ("guest_nas");
-#endif
+
 #endif
 #ifdef HAVE_REGISTER
 	  start_service ("mkfiles");
@@ -505,6 +492,11 @@ main_loop (void)
 	  diag_led (DIAG, STOP_LED);
 	  cprintf ("set led release wan control\n");
 	  SET_LED (RELEASE_WAN_CONTROL);
+#ifndef HAVE_MADWIFI
+      start_service ("nas");
+#ifdef HAVE_MSSID
+      start_service ("guest_nas");
+#endif
 	  cprintf ("ifconfig wl up\n");
 
 	  if (nvram_match ("wl0_mode", "sta")
