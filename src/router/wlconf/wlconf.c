@@ -481,8 +481,10 @@ wlconf_get_bsscfgs(char* ifname, char* prefix)
 	strncpy(bsscfg->ifname, ifname, PREFIX_LEN-1);
 	strcpy(bsscfg->prefix, prefix);
 	bclist->count = 1;
-
+	
 	/* additional virtual BSS Configs from wlX_vifs */
+	if (nvram_match(strcat_r(prefix, "mode", tmp),"ap") || nvram_match(strcat_r(prefix, "mode", tmp),"apsta"))
+	{
 	foreach(var, nvram_safe_get(strcat_r(prefix, "vifs", tmp)), next) {
 		if (bclist->count == WL_MAXBSSCFG) {
 			WLCONF_DBG("wlconf(%s): exceeded max number of BSS Configs (%d)"
@@ -501,6 +503,7 @@ wlconf_get_bsscfgs(char* ifname, char* prefix)
 		strncpy(bsscfg->ifname, var, PREFIX_LEN-1);
 		snprintf(bsscfg->prefix, PREFIX_LEN, "%s_", bsscfg->ifname);
 		bclist->count++;
+	}
 	}
 
 	return bclist;
