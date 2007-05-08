@@ -477,7 +477,6 @@ main_loop (void)
 	  start_service ("bridgesif");
 #endif
 
-#endif
 #ifdef HAVE_REGISTER
 	  start_service ("mkfiles");
 #endif
