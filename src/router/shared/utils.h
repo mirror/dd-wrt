@@ -167,6 +167,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 //U.S.Robotics USR5430 bridge (4712 cpu, no switch, fccid: ?)
 #define ROUTER_USR_5430 0x3210
 
+#define ROUTER_BOARD_MERAKI 0x330f
+
 #define NVROUTER "DD_BOARD"
 
 extern char *getBridge(char *ifname);
