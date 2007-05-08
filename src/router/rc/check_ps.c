@@ -95,7 +95,7 @@ if (in!=NULL)
     eval("rm","/tmp/cron.d/check_ps"); // deleting cron file to prevent double call of this
     fprintf(stderr,"found firmware upgrade, flashing now, but we will wait for another 30 seconds\n");
     sleep(30);
-#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2)
+#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_MERAKI) || defined(HAVE_LS2)
     eval("write","/tmp/firmware.bin","rootfs");
 #else
     eval("write","/tmp/firmware.bin","linux");
