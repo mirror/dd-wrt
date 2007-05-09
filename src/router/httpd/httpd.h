@@ -84,7 +84,7 @@ struct mime_handler {
 typedef struct
 {
   char *path;			/* Web page URL path */
-  unsigned char *page;		/* Web page data */
+  unsigned long offset;		/* Web page data */
   int size;			/* Size of web page in bytes */
 //  int csize;			/* Size of web page in bytes */
 } websRomPageIndexType;
@@ -132,7 +132,7 @@ extern char *websGetVar(webs_t wp, char *var, char *d);
 extern int ejArgs(int argc, char_t **argv, char_t *fmt, ...);
 
 /* GoAhead 2.1 Embedded JavaScript compatibility */
-extern char *getWebsFile(char *path);
+extern FILE *getWebsFile(char *path);
 extern int getWebsFileLen(char *path);
 
 extern void do_ej(char *path, webs_t stream);

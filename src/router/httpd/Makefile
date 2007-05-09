@@ -383,6 +383,7 @@ clean:
 	#rm -rf $(SRCBASE)/../tools/src/code_header.o	
 
 install:
+	install -D www $(INSTALLDIR)/etc/www
 	install -D httpd $(INSTALLDIR)/usr/sbin/httpd
 ifneq ($(CONFIG_NOSSL),y)
 	install -d $(INSTALLDIR)/etc
@@ -395,6 +396,8 @@ cert:
 httpd: cgi.c ej.c httpd.c broadcom.c \
        index.c status.c dhcp.c log.c filters.c forward.c dynamic_route.c static_route.c wireless.c ddns.c \
        find_pattern.c lib.c $(ADDOBJ) diag.c sysinfo.c wepkey.c md5c.c getservice.c dd-wrt.c nvramsr.c $(OBJS)
+	gcc -o write_web write_web.c
+	./write_web www 
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 #	ar arc -o $@ $^
 	rm -f ../rc/rc
