@@ -3334,7 +3334,8 @@ ej_show_styles (webs_t wp, int argc, char_t ** argv)
   while ((entry = readdir (directory)) != NULL)
     {
       sprintf (buf, "style/%s/style.css", entry->d_name);
-      if (getWebsFile (buf) == NULL)
+      FILE *web=getWebsFile (buf); 
+      if (web == NULL)
 	{
 	  sprintf (buf, "/www/style/%s/style.css", entry->d_name);
 	  FILE *test = fopen (buf, "rb");
@@ -3342,6 +3343,8 @@ ej_show_styles (webs_t wp, int argc, char_t ** argv)
 	    continue;
 	  fclose (test);
 	}
+      fclose(web);
+      
       websWrite (wp, "<option value=\"%s\" %s>%s</option>\n", entry->d_name,
 		 nvram_match ("router_style",
 			      entry->d_name) ? "selected=\"selected\"" : "",

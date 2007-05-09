@@ -502,8 +502,8 @@ do_file (char *path, webs_t stream)	//jimmy, https, 8/4/2003
       vfsclose (e);
     }
 #else
-  char *buf = getWebsFile (path);
-  if (buf == NULL)
+  FILE *web = getWebsFile (path);
+  if (web == NULL)
     {
       FILE *fp;
       int c;
@@ -520,9 +520,9 @@ do_file (char *path, webs_t stream)	//jimmy, https, 8/4/2003
       int len = getWebsFileLen (path);
       for (i = 0; i < len; i++)
 	{
-	  wfputc (buf[i], stream);
+	  wfputc (getc(web), stream);
 	}
-//     free(buf);
+     fclose(web);
     }
 #endif
 }
