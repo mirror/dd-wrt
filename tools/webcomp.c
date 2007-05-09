@@ -111,6 +111,7 @@ static int compile(char_t *fileList, char_t *prefix)
  *	Open each input file and compile each web page
  */
 	nFile = 0;
+	fprintf(stdout, "static unsigned char pages[] = {\n");
 	while (fgets(file, sizeof(file), lp) != NULL) {
 		if ((p = strchr(file, '\n')) || (p = strchr(file, '\r'))) {
 			*p = '\0';
@@ -133,7 +134,6 @@ static int compile(char_t *fileList, char_t *prefix)
 			fprintf(stderr, "Can't open file %s\n", file);
 			return -1;
 		}
-		fprintf(stdout, "static unsigned char page_%d[] = {\n", nFile);
 		
 		while ((len = read(fd, buf, sizeof(buf))) > 0) {
 			p = buf;
@@ -146,11 +146,11 @@ static int compile(char_t *fileList, char_t *prefix)
 				fprintf(stdout, "\n");
 			}
 		}
-		fprintf(stdout, "    0 };\n\n");
 
 		close(fd);
 		nFile++;
 	}
+	fprintf(stdout, "    0 };\n\n");
 	fclose(lp);
 
 /*
@@ -163,6 +163,7 @@ static int compile(char_t *fileList, char_t *prefix)
 		return -1;
 	}
 	nFile = 0;
+	long offset=0;
 	while (fgets(file, sizeof(file), lp) != NULL) {
 		if ((p = strchr(file, '\n')) || (p = strchr(file, '\r'))) {
 			*p = '\0';
@@ -201,8 +202,9 @@ static int compile(char_t *fileList, char_t *prefix)
 			continue;
 		}*/
 		
-		fprintf(stdout, "    { \"%s\", page_%d, %d },\n", cp, nFile, 
+		fprintf(stdout, "    { \"%s\", %ld, %d },\n", cp, offset, 
 			sbuf.st_size);
+		offset+=sbuf.st_size;
 		nFile++;
 	}
 	fclose(lp); 
