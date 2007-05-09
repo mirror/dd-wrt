@@ -141,7 +141,7 @@ addEvent(window, "unload", function() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-					<% do_menu("Forward.asp","UPnP.asp"); %>
+					<% do_menu("ForwardSpec.asp","UPnP.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
