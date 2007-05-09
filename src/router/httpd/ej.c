@@ -336,7 +336,7 @@ LzmaDecode(lzma_workspace, LZMA_WORKSPACE_SIZE, LZMA_LC, LZMA_LP, LZMA_PB, web->
 return buf;
 }
 */
-char *
+FILE *
 getWebsFile (char *path)
 {
   char *buf = NULL;
@@ -345,13 +345,14 @@ getWebsFile (char *path)
     {
       if (!strcmp (websRomPageIndex[i].path, path))
 	{
-	  buf = websRomPageIndex[i].page;
-	  break;
+	  FILE *web=fopen("/etc/www","rb");
+	  fseek(web,websRomPageIndex[i].offset,0);
+	  return web;
 	}
       i++;
     }
 
-  return buf;
+  return NULL;
 }
 
 int
@@ -376,8 +377,8 @@ do_ej (char *path, webs_t stream)	// jimmy, https, 8/4/2003
 {
 
 //open file and read into memory
-
-  char *buffer = NULL;
+  char *buffer=NULL;
+  FILE  *fp = NULL;
 #ifdef HAVE_VFS
   entry *e;
 #endif
@@ -400,14 +401,15 @@ do_ej (char *path, webs_t stream)	// jimmy, https, 8/4/2003
 //fprintf(stderr,"try to find %s from %s\n",path,websRomPageIndex[i].path);
 	  if (!strcmp (websRomPageIndex[i].path, path))
 	    {
-	      buffer = websRomPageIndex[i].page;
+	      fp = fopen("/etc/www","rb");
+	      fseek(fp,websRomPageIndex[i].offset,SEEK_SET);   
 	      len = websRomPageIndex[i].size;
 	      break;
 	    }
 	  i++;
 	}
       int le = 0;
-      if (buffer == NULL)
+      if (fp == NULL)
 	{
 	  le = 1;
 	  FILE *in = fopen (path, "rb");
@@ -420,6 +422,13 @@ do_ej (char *path, webs_t stream)	// jimmy, https, 8/4/2003
 	  fread (buffer, 1, len, in);
 	  buffer[len] = 0;
 	  fclose (in);
+	}else
+	{
+	  le = 1;
+	  buffer = (char *) malloc (len + 1);
+	  fread (buffer, 1, len, fp);
+	  buffer[len] = 0;
+	  fclose (fp);
 	}
       /*if (x)
          {
@@ -450,14 +459,7 @@ do_ej (char *path, webs_t stream)	// jimmy, https, 8/4/2003
     }
 #endif
 
-
-
-
-//do_ej
-//fprintf(stderr,"do_ej_buffer\n");
-
   do_ej_buffer (buffer, stream);
-//fprintf(stderr,"do_ej_buffer done\n");
   if (le)
     free (buffer);
 }
