@@ -3353,27 +3353,20 @@ ej_show_styles (webs_t wp, int argc, char_t ** argv)
   closedir (directory);
   return;
 }
-
+extern websRomPageIndexType *websRomPageIndex;
 static void
 ej_show_languages (webs_t wp, int argc, char_t ** argv)
 {
-  DIR *directory;
   char buf[256];
-  directory = opendir ("/www/lang_pack");
-  if (directory == NULL)
-    return;
-  struct dirent *entry;
   websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-  while ((entry = readdir (directory)) != NULL)
+  int i=0;
+  while (websRomPageIndex[i++].path != NULL)
     {
-      sprintf (buf, "/www/lang_pack/%s", entry->d_name);
-      FILE *test = fopen (buf, "rb");
-      if (test == NULL)
+      if (!strncmp (websRomPageIndex[i].path, "/www/lang_pack/",strlen("/www/lang_pack/")))
+    {
+      if (strlen (websRomPageIndex[i].path) < 4)
 	continue;
-      fclose (test);
-      if (strlen (entry->d_name) < 4)
-	continue;
-      strcpy (buf, entry->d_name);
+      strcpy (buf, websRomPageIndex[i].path);
       buf[strlen (buf) - 3] = 0;	//strip .js
       websWrite (wp,
 		 "document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");\n",
@@ -3381,7 +3374,7 @@ ej_show_languages (webs_t wp, int argc, char_t ** argv)
 				   buf) ? "selected=\\\"selected\\\"" : "",
 		 buf);
     }
-  closedir (directory);
+    }
   websWrite (wp, "//]]>\n</script>\n");
   return;
 }
