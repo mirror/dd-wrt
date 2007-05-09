@@ -1,0 +1,601 @@
+This is flex.info, produced by makeinfo version 4.5 from flex.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* flex: (flex).      Fast lexical analyzer generator (lex replacement).
+END-INFO-DIR-ENTRY
+
+
+   The flex manual is placed under the same licensing conditions as the
+rest of flex:
+
+   Copyright (C) 1990, 1997 The Regents of the University of California.
+All rights reserved.
+
+   This code is derived from software contributed to Berkeley by Vern
+Paxson.
+
+   The United States Government has rights in this work pursuant to
+contract no. DE-AC03-76SF00098 between the United States Department of
+Energy and the University of California.
+
+   Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  1.  Redistributions of source code must retain the above copyright
+     notice, this list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the
+     distribution.
+   Neither the name of the University nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+   THIS SOFTWARE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+
+File: flex.info,  Node: Concept Index,  Next: Index of Functions and Macros,  Prev: Indices,  Up: Indices
+
+Concept Index
+=============
+
+* Menu:
+
+* $ as normal character in patterns:     Patterns.
+* %array, advantages of:                 Matching.
+* %array, use of:                        Matching.
+* %array, with C++:                      Matching.
+* %option nowrap:                        Generated Scanner.
+* %pointer, and unput():                 Actions.
+* %pointer, use of:                      Matching.
+* %top:                                  Definitions Section.
+* %{ and %}, in Definitions Section:     Definitions Section.
+* %{ and %}, in Rules Section:           Actions.
+* <<EOF>>, use of:                       EOF.
+* [] in patterns:                        Patterns.
+* ^ as non-special character in patterns: Patterns.
+* accessor functions, use of:            Accessor Methods.
+* actions:                               Actions.
+* actions, embedded C strings:           Actions.
+* actions, redefining YY_BREAK:          Misc Macros.
+* actions, use of { and }:               Actions.
+* aliases, how to define:                Definitions Section.
+* arguments, command-line:               Scanner Options.
+* array, default size for yytext:        User Values.
+* backing up, eliminating:               Performance.
+* backing up, eliminating by adding error rules: Performance.
+* backing up, eliminating with catch-all rule: Performance.
+* backing up, example of eliminating:    Performance.
+* BEGIN:                                 Actions.
+* BEGIN, explanation:                    Start Conditions.
+* beginning of line, in patterns:        Patterns.
+* bison, bridging with flex:             Bison Bridge.
+* bison, parser:                         Bison Bridge.
+* bison, scanner to be called from bison: Bison Bridge.
+* BOL, checking the BOL flag:            Misc Macros.
+* BOL, in patterns:                      Patterns.
+* BOL, setting it:                       Misc Macros.
+* braces in patterns:                    Patterns.
+* bugs, reporting:                       Reporting Bugs.
+* C code in flex input:                  Definitions Section.
+* C++:                                   Cxx.
+* C++ and %array:                        User Values.
+* C++ I/O, customizing:                  How do I use my own I/O classes in a C++ scanner?.
+* C++ scanners, including multiple scanners: Cxx.
+* C++ scanners, use of:                  Cxx.
+* c++, experimental form of scanner class: Cxx.
+* C++, multiple different scanners:      Cxx.
+* C-strings, in actions:                 Actions.
+* case-insensitive, effect on character classes: Patterns.
+* character classes in patterns:         Patterns.
+* character classes in patterns, syntax of: Patterns.
+* character classes, equivalence of:     Patterns.
+* clearing an input buffer:              Multiple Input Buffers.
+* command-line options:                  Scanner Options.
+* comments in flex input:                Definitions Section.
+* comments in the input:                 Comments in the Input.
+* comments, discarding:                  Actions.
+* comments, example of scanning C comments: Start Conditions.
+* comments, in actions:                  Actions.
+* comments, in rules section:            Comments in the Input.
+* comments, syntax of:                   Comments in the Input.
+* comments, valid uses of:               Comments in the Input.
+* compressing whitespace:                Actions.
+* concatenation, in patterns:            Patterns.
+* copyright of flex:                     Copyright.
+* counting characters and lines:         Simple Examples.
+* customizing I/O in C++ scanners:       How do I use my own I/O classes in a C++ scanner?.
+* default rule <1>:                      Matching.
+* default rule:                          Simple Examples.
+* defining pattern aliases:              Definitions Section.
+* Definitions, in flex input:            Definitions Section.
+* deleting lines from input:             Actions.
+* discarding C comments:                 Actions.
+* distributing flex:                     Copyright.
+* ECHO:                                  Actions.
+* ECHO, and yyout:                       Generated Scanner.
+* embedding C code in flex input:        Definitions Section.
+* end of file, in patterns:              Patterns.
+* end of line, in negated character classes: Patterns.
+* end of line, in patterns:              Patterns.
+* end-of-file, and yyrestart():          Generated Scanner.
+* EOF and yyrestart():                   Generated Scanner.
+* EOF in patterns, syntax of:            Patterns.
+* EOF, example using multiple input buffers: Multiple Input Buffers.
+* EOF, explanation:                      EOF.
+* EOF, pushing back:                     Actions.
+* EOL, in negated character classes:     Patterns.
+* EOL, in patterns:                      Patterns.
+* error messages, end of buffer missed:  Lex and Posix.
+* error reporting, diagnostic messages:  Diagnostics.
+* error reporting, in C++:               Cxx.
+* error rules, to eliminate backing up:  Performance.
+* escape sequences in patterns, syntax of: Patterns.
+* exiting with yyterminate():            Actions.
+* experimental form of c++ scanner class: Cxx.
+* extended scope of start conditions:    Start Conditions.
+* file format:                           Format.
+* file format, serialized tables:        Tables File Format.
+* flushing an input buffer:              Multiple Input Buffers.
+* flushing the internal buffer:          Actions.
+* format of flex input:                  Format.
+* format of input file:                  Format.
+* freeing tables:                        Loading and Unloading Serialized Tables.
+* getting current start state with YY_START: Start Conditions.
+* halting with yyterminate():            Actions.
+* handling include files with multiple input buffers: Multiple Input Buffers.
+* header files, with C++:                Cxx.
+* include files, with C++:               Cxx.
+* input file, Definitions section:       Definitions Section.
+* input file, Rules Section:             Rules Section.
+* input file, user code Section:         User Code Section.
+* input():                               Actions.
+* input(), and C++:                      Actions.
+* input, format of:                      Format.
+* input, matching:                       Matching.
+* keywords, for performance:             Performance.
+* lex (traditional) and POSIX:           Lex and Posix.
+* LexerInput, overriding:                How do I use my own I/O classes in a C++ scanner?.
+* LexerOutput, overriding:               How do I use my own I/O classes in a C++ scanner?.
+* limitations of flex:                   Limitations.
+* literal text in patterns, syntax of:   Patterns.
+* loading tables at runtime:             Loading and Unloading Serialized Tables.
+* m4:                                    M4 Dependency.
+* Makefile, example of implicit rules:   Makefiles and Flex.
+* Makefile, explicit example:            Makefiles and Flex.
+* Makefile, syntax:                      Makefiles and Flex.
+* matching C-style double-quoted strings: Start Conditions.
+* matching, and trailing context:        Matching.
+* matching, length of:                   Matching.
+* matching, multiple matches:            Matching.
+* member functions, C++:                 Cxx.
+* memory management:                     Memory Management.
+* memory, allocating input buffers:      Multiple Input Buffers.
+* memory, considerations for reentrant scanners: Init and Destroy Functions.
+* memory, deleting input buffers:        Multiple Input Buffers.
+* memory, for start condition stacks:    Start Conditions.
+* memory, serialized tables <1>:         Loading and Unloading Serialized Tables.
+* memory, serialized tables:             Serialized Tables.
+* methods, c++:                          Cxx.
+* minimal scanner:                       Matching.
+* multiple input streams:                Multiple Input Buffers.
+* name definitions, not POSIX:           Lex and Posix.
+* negating ranges in patterns:           Patterns.
+* newline, matching in patterns:         Patterns.
+* non-POSIX features of flex:            Lex and Posix.
+* nowrap, %option:                       Generated Scanner.
+* NULL character in patterns, syntax of: Patterns.
+* octal characters in patterns:          Patterns.
+* options, command-line:                 Scanner Options.
+* overriding LexerInput:                 How do I use my own I/O classes in a C++ scanner?.
+* overriding LexerOutput:                How do I use my own I/O classes in a C++ scanner?.
+* overriding the memory routines:        Overriding The Default Memory Management.
+* Pascal-like language:                  Simple Examples.
+* pattern aliases, defining:             Definitions Section.
+* pattern aliases, expansion of:         Patterns.
+* pattern aliases, how to define:        Definitions Section.
+* pattern aliases, use of:               Definitions Section.
+* patterns and actions on different lines: Lex and Posix.
+* patterns, character class equivalence: Patterns.
+* patterns, end of line:                 Patterns.
+* patterns, grouping and precedence:     Patterns.
+* patterns, in rules section:            Patterns.
+* patterns, invalid trailing context:    Patterns.
+* patterns, matching:                    Matching.
+* patterns, precedence of operators:     Patterns.
+* patterns, repetitions with grouping:   Patterns.
+* patterns, special characters treated as non-special: Patterns.
+* patterns, syntax:                      Patterns.
+* patterns, tuning for performance:      Performance.
+* patterns, valid character classes:     Patterns.
+* performance optimization, matching longer tokens: Performance.
+* performance optimization, recognizing keywords: Performance.
+* performance, backing up:               Performance.
+* performance, considerations:           Performance.
+* performance, using keywords:           Performance.
+* popping an input buffer:               Multiple Input Buffers.
+* POSIX and lex:                         Lex and Posix.
+* POSIX comp;compliance:                 Lex and Posix.
+* POSIX, character classes in patterns, syntax of: Patterns.
+* preprocessor macros, for use in actions: Actions.
+* pushing an input buffer:               Multiple Input Buffers.
+* pushing back characters with unput:    Actions.
+* pushing back characters with unput():  Actions.
+* pushing back characters with yyless:   Actions.
+* pushing back EOF:                      Actions.
+* ranges in patterns:                    Patterns.
+* ranges in patterns, negating:          Patterns.
+* recognizing C comments:                Start Conditions.
+* reentrant scanners, multiple interleaved scanners: Reentrant Uses.
+* reentrant scanners, recursive invocation: Reentrant Uses.
+* reentrant, accessing flex variables:   Global Replacement.
+* reentrant, accessor functions:         Accessor Methods.
+* reentrant, API explanation:            Reentrant Overview.
+* reentrant, calling functions:          Extra Reentrant Argument.
+* reentrant, example of:                 Reentrant Example.
+* reentrant, explanation:                Reentrant.
+* reentrant, extra data:                 Extra Data.
+* reentrant, initialization:             Init and Destroy Functions.
+* regular expressions, in patterns:      Patterns.
+* REJECT:                                Actions.
+* REJECT, calling multiple times:        Actions.
+* REJECT, performance costs:             Performance.
+* reporting bugs:                        Reporting Bugs.
+* restarting the scanner:                Lex and Posix.
+* RETURN, within actions:                Generated Scanner.
+* rules, default:                        Simple Examples.
+* rules, in flex input:                  Rules Section.
+* scanner, definition of:                Introduction.
+* sections of flex input:                Format.
+* serialization:                         Serialized Tables.
+* serialization of tables:               Creating Serialized Tables.
+* serialized tables, multiple scanners:  Creating Serialized Tables.
+* stack, input buffer pop:               Multiple Input Buffers.
+* stack, input buffer push:              Multiple Input Buffers.
+* stacks, routines for manipulating:     Start Conditions.
+* start condition, applying to multiple patterns: Start Conditions.
+* start conditions:                      Start Conditions.
+* start conditions, behavior of default rule: Start Conditions.
+* start conditions, exclusive:           Start Conditions.
+* start conditions, for different interpretations of same input: Start Conditions.
+* start conditions, in patterns:         Patterns.
+* start conditions, inclusive:           Start Conditions.
+* start conditions, inclusive v.s. exclusive: Start Conditions.
+* start conditions, integer values:      Start Conditions.
+* start conditions, multiple:            Start Conditions.
+* start conditions, special wildcard condition: Start Conditions.
+* start conditions, use of a stack:      Start Conditions.
+* start conditions, use of wildcard condition (<*>): Start Conditions.
+* start conditions, using BEGIN:         Start Conditions.
+* stdin, default for yyin:               Generated Scanner.
+* stdout, as default for yyout:          Generated Scanner.
+* strings, scanning strings instead of files: Multiple Input Buffers.
+* tables, creating serialized:           Creating Serialized Tables.
+* tables, file format:                   Tables File Format.
+* tables, freeing:                       Loading and Unloading Serialized Tables.
+* tables, loading and unloading:         Loading and Unloading Serialized Tables.
+* terminating with yyterminate():        Actions.
+* token:                                 Matching.
+* trailing context, in patterns:         Patterns.
+* trailing context, limits of:           Patterns.
+* trailing context, matching:            Matching.
+* trailing context, performance costs:   Performance.
+* trailing context, variable length:     Performance.
+* unput():                               Actions.
+* unput(), and %pointer:                 Actions.
+* unput(), pushing back characters:      Actions.
+* user code, in flex input:              User Code Section.
+* username expansion:                    Simple Examples.
+* using integer values of start condition names: Start Conditions.
+* verbatim text in patterns, syntax of:  Patterns.
+* warning, dangerous trailing context:   Limitations.
+* warning, rule cannot be matched:       Diagnostics.
+* warnings, diagnostic messages:         Diagnostics.
+* whitespace, compressing:               Actions.
+* yacc interface:                        Yacc.
+* yacc, interface:                       Yacc.
+* YY_CURRENT_BUFFER, and multiple buffers Finally, the macro: Multiple Input Buffers.
+* YY_EXTRA_TYPE, defining your own type: Extra Data.
+* YY_FLUSH_BUFFER():                     Actions.
+* YY_INPUT:                              Generated Scanner.
+* YY_INPUT, overriding:                  Generated Scanner.
+* YY_START, example:                     Start Conditions.
+* YY_USER_ACTION to track each time a rule is matched: Misc Macros.
+* yyalloc, overriding:                   Overriding The Default Memory Management.
+* yyfree, overriding:                    Overriding The Default Memory Management.
+* yyin:                                  Generated Scanner.
+* yyinput():                             Actions.
+* yyleng:                                Matching.
+* yyleng, modification of:               Actions.
+* yyless():                              Actions.
+* yyless(), pushing back characters:     Actions.
+* yylex(), in generated scanner:         Generated Scanner.
+* yylex(), overriding:                   Generated Scanner.
+* yylex, overriding the prototype of:    Generated Scanner.
+* yylineno, in a reentrant scanner:      Reentrant Functions.
+* yylineno, performance costs:           Performance.
+* yymore():                              Actions.
+* yymore() to append token to previous token: Actions.
+* yymore(), mega-kludge:                 Actions.
+* yymore, and yyleng:                    Actions.
+* yymore, performance penalty of:        Actions.
+* yyout:                                 Generated Scanner.
+* yyrealloc, overriding:                 Overriding The Default Memory Management.
+* yyrestart():                           Generated Scanner.
+* yyterminate():                         Actions.
+* yytext:                                Matching.
+* yytext, default array size:            User Values.
+* yytext, memory considerations:         A Note About yytext And Memory.
+* yytext, modification of:               Actions.
+* yytext, two types of:                  Matching.
+* yywrap():                              Generated Scanner.
+* yywrap, default for:                   Generated Scanner.
+* |, in actions:                         Actions.
+* |, use of:                             Actions.
+
+
+File: flex.info,  Node: Index of Functions and Macros,  Next: Index of Variables,  Prev: Concept Index,  Up: Indices
+
+Index of Functions and Macros
+=============================
+
+   This is an index of functions and preprocessor macros that look like
+functions.  For macros that expand to variables or constants, see *Note
+Index of Variables::.
+
+* Menu:
+
+* BEGIN:                                 Start Conditions.
+* debug (C++ only):                      Cxx.
+* LexerError (C++ only):                 Cxx.
+* LexerInput (C++ only):                 Cxx.
+* LexerOutput (C++ only):                Cxx.
+* lineno (C++ only):                     Cxx.
+* set_debug (C++ only):                  Cxx.
+* switch_streams (C++ only):             Cxx.
+* YY_AT_BOL:                             Misc Macros.
+* yy_create_buffer:                      Multiple Input Buffers.
+* yy_delete_buffer:                      Multiple Input Buffers.
+* yy_flush_buffer:                       Multiple Input Buffers.
+* yy_new_buffer:                         Multiple Input Buffers.
+* YY_NEW_FILE  (now obsolete):           EOF.
+* yy_pop_state:                          Start Conditions.
+* yy_push_state:                         Start Conditions.
+* yy_scan_buffer:                        Multiple Input Buffers.
+* yy_scan_bytes:                         Multiple Input Buffers.
+* yy_scan_string:                        Multiple Input Buffers.
+* yy_set_bol:                            Misc Macros.
+* yy_set_interactive:                    Misc Macros.
+* yy_switch_to_buffer:                   Multiple Input Buffers.
+* yy_top_state:                          Start Conditions.
+* yyFlexLexer constructor (C++ only):    Cxx.
+* yyget_debug:                           Reentrant Functions.
+* yyget_extra <1>:                       Reentrant Functions.
+* yyget_extra:                           Extra Data.
+* yyget_in:                              Reentrant Functions.
+* yyget_leng:                            Reentrant Functions.
+* yyget_lineno:                          Reentrant Functions.
+* yyget_out:                             Reentrant Functions.
+* yyget_text:                            Reentrant Functions.
+* YYLeng (C++ only):                     Cxx.
+* yylex (C++ version):                   Cxx.
+* yylex (reentrant version):             Bison Bridge.
+* yylex_destroy:                         Init and Destroy Functions.
+* yylex_init:                            Init and Destroy Functions.
+* yypop_buffer_state:                    Multiple Input Buffers.
+* yypush_buffer_state:                   Multiple Input Buffers.
+* yyrestart:                             User Values.
+* yyset_debug:                           Reentrant Functions.
+* yyset_extra <1>:                       Reentrant Functions.
+* yyset_extra:                           Extra Data.
+* yyset_in:                              Reentrant Functions.
+* yyset_lineno:                          Reentrant Functions.
+* yyset_out:                             Reentrant Functions.
+* yytables_destroy:                      Loading and Unloading Serialized Tables.
+* yytables_fload:                        Loading and Unloading Serialized Tables.
+* YYText (C++ only):                     Cxx.
+
+
+File: flex.info,  Node: Index of Variables,  Next: Index of Data Types,  Prev: Index of Functions and Macros,  Up: Indices
+
+Index of Variables
+==================
+
+   This is an index of variables, constants, and preprocessor macros
+that expand to variables or constants.
+
+* Menu:
+
+* INITIAL:                               Start Conditions.
+* YY_CURRENT_BUFFER:                     User Values.
+* YY_END_OF_BUFFER_CHAR:                 Multiple Input Buffers.
+* YY_NUM_RULES:                          Misc Macros.
+* YY_START <1>:                          User Values.
+* YY_START:                              Start Conditions.
+* yyextra:                               Extra Data.
+* yyin:                                  User Values.
+* yyleng:                                User Values.
+* yylloc:                                Bison Bridge.
+* YYLMAX:                                User Values.
+* yylval:                                Bison Bridge.
+* yylval, with yacc:                     Yacc.
+* yyout:                                 User Values.
+* yyscanner (reentrant only):            Extra Reentrant Argument.
+* yytext <1>:                            User Values.
+* yytext:                                Matching.
+
+
+File: flex.info,  Node: Index of Data Types,  Next: Index of Hooks,  Prev: Index of Variables,  Up: Indices
+
+Index of Data Types
+===================
+
+* Menu:
+
+* FlexLexer (C++ only):                  Cxx.
+* YY_BUFFER_STATE:                       Multiple Input Buffers.
+* YY_EXTRA_TYPE (reentrant only):        Extra Data.
+* yy_size_t:                             Multiple Input Buffers.
+* yyFlexLexer (C++ only):                Cxx.
+* YYLTYPE:                               Bison Bridge.
+* yyscan_t (reentrant only):             About yyscan_t.
+* YYSTYPE:                               Bison Bridge.
+
+
+File: flex.info,  Node: Index of Hooks,  Next: Index of Scanner Options,  Prev: Index of Data Types,  Up: Indices
+
+Index of Hooks
+==============
+
+   This is an index of "hooks" that the user may define. These hooks
+typically  correspond to specific locations in the generated scanner,
+and may be used to insert arbitrary code.
+
+* Menu:
+
+* YY_BREAK:                              Misc Macros.
+* YY_USER_ACTION:                        Misc Macros.
+* YY_USER_INIT:                          Misc Macros.
+
+
+File: flex.info,  Node: Index of Scanner Options,  Prev: Index of Hooks,  Up: Indices
+
+Index of Scanner Options
+========================
+
+* Menu:
+
+* -+:                                    Code-Level And API Options.
+* --7bit:                                Options Affecting Scanner Behavior.
+* --8bit:                                Options Affecting Scanner Behavior.
+* --align:                               Options for Scanner Speed and Size.
+* --always-interactive:                  Options Affecting Scanner Behavior.
+* --array:                               Code-Level And API Options.
+* --backup:                              Debugging Options.
+* --batch:                               Options Affecting Scanner Behavior.
+* --bison-bridge:                        Code-Level And API Options.
+* --bison-locations:                     Code-Level And API Options.
+* --c++:                                 Code-Level And API Options.
+* --case-insensitive:                    Options Affecting Scanner Behavior.
+* --debug:                               Debugging Options.
+* --default:                             Options Affecting Scanner Behavior.
+* --ecs:                                 Options for Scanner Speed and Size.
+* --fast:                                Options for Scanner Speed and Size.
+* --full:                                Options for Scanner Speed and Size.
+* --header-file:                         Options for Specifing Filenames.
+* --help:                                Miscellaneous Options.
+* --interactive:                         Options Affecting Scanner Behavior.
+* --lex-compat:                          Options Affecting Scanner Behavior.
+* --main:                                Code-Level And API Options.
+* --meta-ecs:                            Options for Scanner Speed and Size.
+* --never-interactive:                   Options Affecting Scanner Behavior.
+* --nodefault:                           Debugging Options.
+* --noline:                              Code-Level And API Options.
+* --nounistd:                            Code-Level And API Options.
+* --nowarn:                              Debugging Options.
+* --option-ansi-definitions:             Code-Level And API Options.
+* --option-ansi-prototypes:              Code-Level And API Options.
+* --outfile:                             Options for Specifing Filenames.
+* --perf-report:                         Debugging Options.
+* --pointer:                             Code-Level And API Options.
+* --posix:                               Options Affecting Scanner Behavior.
+* --prefix:                              Code-Level And API Options.
+* --read:                                Options for Scanner Speed and Size.
+* --reentrant:                           Code-Level And API Options.
+* --skel:                                Options for Specifing Filenames.
+* --stack:                               Options Affecting Scanner Behavior.
+* --stdinit:                             Options Affecting Scanner Behavior.
+* --stdout:                              Options for Specifing Filenames.
+* --tables-file:                         Options for Specifing Filenames.
+* --tables-verify:                       Options for Specifing Filenames.
+* --trace:                               Debugging Options.
+* --verbose:                             Debugging Options.
+* --version:                             Miscellaneous Options.
+* --warn:                                Debugging Options.
+* --yyclass:                             Code-Level And API Options.
+* --yylineno:                            Options Affecting Scanner Behavior.
+* --yywrap:                              Options Affecting Scanner Behavior.
+* -7:                                    Options Affecting Scanner Behavior.
+* -8:                                    Options Affecting Scanner Behavior.
+* -b:                                    Debugging Options.
+* -B:                                    Options Affecting Scanner Behavior.
+* -c:                                    Miscellaneous Options.
+* -C:                                    Options for Scanner Speed and Size.
+* -Ca:                                   Options for Scanner Speed and Size.
+* -Ce:                                   Options for Scanner Speed and Size.
+* -CF:                                   Options for Scanner Speed and Size.
+* -Cf:                                   Options for Scanner Speed and Size.
+* -Cm:                                   Options for Scanner Speed and Size.
+* -Cr:                                   Options for Scanner Speed and Size.
+* -d:                                    Debugging Options.
+* -F:                                    Options for Scanner Speed and Size.
+* -f:                                    Options for Scanner Speed and Size.
+* -h:                                    Miscellaneous Options.
+* -I:                                    Options Affecting Scanner Behavior.
+* -i:                                    Options Affecting Scanner Behavior.
+* -L:                                    Code-Level And API Options.
+* -l:                                    Options Affecting Scanner Behavior.
+* -n:                                    Miscellaneous Options.
+* -o:                                    Options for Specifing Filenames.
+* -p:                                    Debugging Options.
+* -P:                                    Code-Level And API Options.
+* -R:                                    Code-Level And API Options.
+* -s:                                    Debugging Options.
+* -T:                                    Debugging Options.
+* -t:                                    Options for Specifing Filenames.
+* -V:                                    Miscellaneous Options.
+* -v:                                    Debugging Options.
+* -w:                                    Debugging Options.
+* -X:                                    Options Affecting Scanner Behavior.
+* 7bit:                                  Options Affecting Scanner Behavior.
+* 8bit:                                  Options Affecting Scanner Behavior.
+* align:                                 Options for Scanner Speed and Size.
+* always-interactive:                    Options Affecting Scanner Behavior.
+* ansi-definitions:                      Code-Level And API Options.
+* ansi-prototypes:                       Code-Level And API Options.
+* array:                                 Code-Level And API Options.
+* backup:                                Debugging Options.
+* batch:                                 Options Affecting Scanner Behavior.
+* bison-bridge:                          Code-Level And API Options.
+* bison-locations:                       Code-Level And API Options.
+* c++:                                   Code-Level And API Options.
+* case-insensitive:                      Options Affecting Scanner Behavior.
+* debug:                                 Debugging Options.
+* default:                               Options Affecting Scanner Behavior.
+* ecs:                                   Options for Scanner Speed and Size.
+* fast:                                  Options for Scanner Speed and Size.
+* full:                                  Options for Scanner Speed and Size.
+* header-file:                           Options for Specifing Filenames.
+* interactive:                           Options Affecting Scanner Behavior.
+* lex-compat:                            Options Affecting Scanner Behavior.
+* main:                                  Code-Level And API Options.
+* meta-ecs:                              Options for Scanner Speed and Size.
+* nodefault:                             Debugging Options.
+* noline:                                Code-Level And API Options.
+* nounistd:                              Code-Level And API Options.
+* nowarn:                                Debugging Options.
+* noyyalloc:                             Overriding The Default Memory Management.
+* outfile:                               Options for Specifing Filenames.
+* perf-report:                           Debugging Options.
+* pointer:                               Code-Level And API Options.
+* posix:                                 Options Affecting Scanner Behavior.
+* prefix:                                Code-Level And API Options.
+* read:                                  Options for Scanner Speed and Size.
+* reentrant:                             Code-Level And API Options.
+* stack:                                 Options Affecting Scanner Behavior.
+* stdinit:                               Options Affecting Scanner Behavior.
+* stdout:                                Options for Specifing Filenames.
+* tables-file:                           Options for Specifing Filenames.
+* tables-verify:                         Options for Specifing Filenames.
+* trace:                                 Debugging Options.
+* verbose:                               Debugging Options.
+* warn:                                  Debugging Options.
+* yyclass:                               Code-Level And API Options.
+* yylineno:                              Options Affecting Scanner Behavior.
+* yywrap:                                Options Affecting Scanner Behavior.
+
+

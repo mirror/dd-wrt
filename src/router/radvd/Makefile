@@ -74,7 +74,7 @@ SED = /usr/bin/sed
 TAR = /bin/tar
 VERSION = 0.7.2
 YACC = bison -y
-LDADD = libfl.a ../iproute2/lib/inet_ntop.o ../iproute2/lib/inet_pton.o
+LDADD = flex/libfl.a ../iproute2/lib/inet_ntop.o ../iproute2/lib/inet_pton.o
 
 DEFS =  -DPATH_RADVD_CONF=\"$(PATH_RADVD_CONF)\" \
 	-DPATH_RADVD_LOG=\"$(PATH_RADVD_LOG)\" -DLOG_FACILITY=$(LOG_FACILITY) \
@@ -178,6 +178,10 @@ uninstall-sbinPROGRAMS:
 	list='$(sbin_PROGRAMS)'; for p in $$list; do \
 	  rm -f $(DESTDIR)$(sbindir)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`; \
 	done
+
+libfl.a:
+	cd flex && ./configure --disable-nls --prefix=/usr --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS)"
+	make -C flex libfl.a
 
 .c.o:
 	$(COMPILE) -c $<
@@ -310,7 +314,7 @@ install-am: all-am
 install: install-am
 uninstall-am: uninstall-sbinPROGRAMS
 uninstall: uninstall-am
-all-am: Makefile $(PROGRAMS) config.h
+all-am: libfl.a Makefile $(PROGRAMS) config.h
 all-redirect: all-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) AM_INSTALL_PROGRAM_FLAGS=-s install

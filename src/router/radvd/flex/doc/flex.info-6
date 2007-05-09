@@ -1,0 +1,1134 @@
+This is flex.info, produced by makeinfo version 4.5 from flex.texi.
+
+INFO-DIR-SECTION Programming
+START-INFO-DIR-ENTRY
+* flex: (flex).      Fast lexical analyzer generator (lex replacement).
+END-INFO-DIR-ENTRY
+
+
+   The flex manual is placed under the same licensing conditions as the
+rest of flex:
+
+   Copyright (C) 1990, 1997 The Regents of the University of California.
+All rights reserved.
+
+   This code is derived from software contributed to Berkeley by Vern
+Paxson.
+
+   The United States Government has rights in this work pursuant to
+contract no. DE-AC03-76SF00098 between the United States Department of
+Energy and the University of California.
+
+   Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  1.  Redistributions of source code must retain the above copyright
+     notice, this list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the
+     distribution.
+   Neither the name of the University nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+
+   THIS SOFTWARE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+
+File: flex.info,  Node: unnamed-faq-76,  Next: unnamed-faq-77,  Prev: unnamed-faq-75,  Up: FAQ
+
+unnamed-faq-76
+==============
+
+
+     To: "Frescatore, David (CRD, TAD)" <frescatore@exc01crdge.crd.ge.com>
+     Subject: Re: FLEX 2.5 & THE YEAR 2000
+     In-reply-to: Your message of Wed, 03 Jun 1998 11:26:22 PDT.
+     Date: Wed, 03 Jun 1998 10:22:26 PDT
+     From: Vern Paxson <vern>
+     
+     > I am researching the Y2K problem with General Electric R&D
+     > and need to know if there are any known issues concerning
+     > the above mentioned software and Y2K regardless of version.
+     
+     There shouldn't be, all it ever does with the date is ask the system
+     for it and then print it out.
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-77,  Next: unnamed-faq-78,  Prev: unnamed-faq-76,  Up: FAQ
+
+unnamed-faq-77
+==============
+
+
+     To: "Hans Dermot Doran" <htd@ibhdoran.com>
+     Subject: Re: flex problem
+     In-reply-to: Your message of Wed, 15 Jul 1998 21:30:13 PDT.
+     Date: Tue, 21 Jul 1998 14:23:34 PDT
+     From: Vern Paxson <vern>
+     
+     > To overcome this, I gets() the stdin into a string and lex the string. The
+     > string is lexed OK except that the end of string isn't lexed properly
+     > (yy_scan_string()), that is the lexer dosn't recognise the end of string.
+     
+     Flex doesn't contain mechanisms for recognizing buffer endpoints.  But if
+     you use fgets instead (which you should anyway, to protect against buffer
+     overflows), then the final \n will be preserved in the string, and you can
+     scan that in order to find the end of the string.
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-78,  Next: unnamed-faq-79,  Prev: unnamed-faq-77,  Up: FAQ
+
+unnamed-faq-78
+==============
+
+
+     To: soumen@almaden.ibm.com
+     Subject: Re: Flex++ 2.5.3 instance member vs. static member
+     In-reply-to: Your message of Mon, 27 Jul 1998 02:10:04 PDT.
+     Date: Tue, 28 Jul 1998 01:10:34 PDT
+     From: Vern Paxson <vern>
+     
+     > %{
+     > int mylineno = 0;
+     > %}
+     > ws      [ \t]+
+     > alpha   [A-Za-z]
+     > dig     [0-9]
+     > %%
+     >
+     > Now you'd expect mylineno to be a member of each instance of class
+     > yyFlexLexer, but is this the case?  A look at the lex.yy.cc file seems to
+     > indicate otherwise; unless I am missing something the declaration of
+     > mylineno seems to be outside any class scope.
+     >
+     > How will this work if I want to run a multi-threaded application with each
+     > thread creating a FlexLexer instance?
+     
+     Derive your own subclass and make mylineno a member variable of it.
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-79,  Next: unnamed-faq-80,  Prev: unnamed-faq-78,  Up: FAQ
+
+unnamed-faq-79
+==============
+
+
+     To: Adoram Rogel <adoram@hybridge.com>
+     Subject: Re: More than 32K states change hangs
+     In-reply-to: Your message of Tue, 04 Aug 1998 16:55:39 PDT.
+     Date: Tue, 04 Aug 1998 22:28:45 PDT
+     From: Vern Paxson <vern>
+     
+     > Vern Paxson,
+     >
+     > I followed your advice, posted on Usenet bu you, and emailed to me
+     > personally by you, on how to overcome the 32K states limit. I'm running
+     > on Linux machines.
+     > I took the full source of version 2.5.4 and did the following changes in
+     > flexdef.h:
+     > #define JAMSTATE -327660
+     > #define MAXIMUM_MNS 319990
+     > #define BAD_SUBSCRIPT -327670
+     > #define MAX_SHORT 327000
+     >
+     > and compiled.
+     > All looked fine, including check and bigcheck, so I installed.
+     
+     Hmmm, you shouldn't increase MAX_SHORT, though looking through my email
+     archives I see that I did indeed recommend doing so.  Try setting it back
+     to 32700; that should suffice that you no longer need -Ca.  If it still
+     hangs, then the interesting question is - where?
+     
+     > Compiling the same hanged program with a out-of-the-box (RedHat 4.2
+     > distribution of Linux)
+     > flex 2.5.4 binary works.
+     
+     Since Linux comes with source code, you should diff it against what
+     you have to see what problems they missed.
+     
+     > Should I always compile with the -Ca option now ? even short and simple
+     > filters ?
+     
+     No, definitely not.  It's meant to be for those situations where you
+     absolutely must squeeze every last cycle out of your scanner.
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-80,  Next: unnamed-faq-81,  Prev: unnamed-faq-79,  Up: FAQ
+
+unnamed-faq-80
+==============
+
+
+     To: "Schmackpfeffer, Craig" <Craig.Schmackpfeffer@usa.xerox.com>
+     Subject: Re: flex output for static code portion
+     In-reply-to: Your message of Tue, 11 Aug 1998 11:55:30 PDT.
+     Date: Mon, 17 Aug 1998 23:57:42 PDT
+     From: Vern Paxson <vern>
+     
+     > I would like to use flex under the hood to generate a binary file
+     > containing the data structures that control the parse.
+     
+     This has been on the wish-list for a long time.  In principle it's
+     straight-forward - you redirect mkdata() et al's I/O to another file,
+     and modify the skeleton to have a start-up function that slurps these
+     into dynamic arrays.  The concerns are (1) the scanner generation code
+     is hairy and full of corner cases, so it's easy to get surprised when
+     going down this path :-( ; and (2) being careful about buffering so
+     that when the tables change you make sure the scanner starts in the
+     correct state and reading at the right point in the input file.
+     
+     > I was wondering if you know of anyone who has used flex in this way.
+     
+     I don't - but it seems like a reasonable project to undertake (unlike
+     numerous other flex tweaks :-).
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-81,  Next: unnamed-faq-82,  Prev: unnamed-faq-80,  Up: FAQ
+
+unnamed-faq-81
+==============
+
+
+     Received: from 131.173.17.11 (131.173.17.11 [131.173.17.11])
+     	by ee.lbl.gov (8.9.1/8.9.1) with ESMTP id AAA03838
+     	for <vern@ee.lbl.gov>; Thu, 20 Aug 1998 00:47:57 -0700 (PDT)
+     Received: from hal.cl-ki.uni-osnabrueck.de (hal.cl-ki.Uni-Osnabrueck.DE [131.173.141.2])
+     	by deimos.rz.uni-osnabrueck.de (8.8.7/8.8.8) with ESMTP id JAA34694
+     	for <vern@ee.lbl.gov>; Thu, 20 Aug 1998 09:47:55 +0200
+     Received: (from georg@localhost) by hal.cl-ki.uni-osnabrueck.de (8.6.12/8.6.12) id JAA34834 for vern@ee.lbl.gov; Thu, 20 Aug 1998 09:47:54 +0200
+     From: Georg Rehm <georg@hal.cl-ki.uni-osnabrueck.de>
+     Message-Id: <199808200747.JAA34834@hal.cl-ki.uni-osnabrueck.de>
+     Subject: "flex scanner push-back overflow"
+     To: vern@ee.lbl.gov
+     Date: Thu, 20 Aug 1998 09:47:54 +0200 (MEST)
+     Reply-To: Georg.Rehm@CL-KI.Uni-Osnabrueck.DE
+     X-NoJunk: Do NOT send commercial mail, spam or ads to this address!
+     X-URL: http://www.cl-ki.uni-osnabrueck.de/~georg/
+     X-Mailer: ELM [version 2.4ME+ PL28 (25)]
+     MIME-Version: 1.0
+     Content-Type: text/plain; charset=US-ASCII
+     Content-Transfer-Encoding: 7bit
+     
+     Hi Vern,
+     
+     Yesterday, I encountered a strange problem: I use the macro processor m4
+     to include some lengthy lists into a .l file. Following is a flex macro
+     definition that causes some serious pain in my neck:
+     
+     AUTHOR           ("A. Boucard / L. Boucard"|"A. Dastarac / M. Levent"|"A.Boucaud / L.Boucaud"|"Abderrahim Lamchichi"|"Achmat Dangor"|"Adeline Toullier"|"Adewale Maja-Pearce"|"Ahmed Ziri"|"Akram Ellyas"|"Alain Bihr"|"Alain Gresh"|"Alain Guillemoles"|"Alain Joxe"|"Alain Morice"|"Alain Renon"|"Alain Zecchini"|"Albert Memmi"|"Alberto Manguel"|"Alex De Waal"|"Alfonso Artico"| [...])
+     
+     The complete list contains about 10kB. When I try to "flex" this file
+     (on a Solaris 2.6 machine, using a modified flex 2.5.4 (I only increased
+     some of the predefined values in flexdefs.h) I get the error:
+     
+     myflex/flex -8  sentag.tmp.l
+     flex scanner push-back overflow
+     
+     When I remove the slashes in the macro definition everything works fine.
+     As I understand it, the double quotes escape the slash-character so it
+     really means "/" and not "trailing context". Furthermore, I tried to
+     escape the slashes with backslashes, but with no use, the same error message
+     appeared when flexing the code.
+     
+     Do you have an idea what's going on here?
+     
+     Greetings from Germany,
+     	Georg
+     --
+     Georg Rehm                                     georg@cl-ki.uni-osnabrueck.de
+     Institute for Semantic Information Processing, University of Osnabrueck, FRG
+
+
+File: flex.info,  Node: unnamed-faq-82,  Next: unnamed-faq-83,  Prev: unnamed-faq-81,  Up: FAQ
+
+unnamed-faq-82
+==============
+
+
+     To: Georg.Rehm@CL-KI.Uni-Osnabrueck.DE
+     Subject: Re: "flex scanner push-back overflow"
+     In-reply-to: Your message of Thu, 20 Aug 1998 09:47:54 PDT.
+     Date: Thu, 20 Aug 1998 07:05:35 PDT
+     From: Vern Paxson <vern>
+     
+     > myflex/flex -8  sentag.tmp.l
+     > flex scanner push-back overflow
+     
+     Flex itself uses a flex scanner.  That scanner is running out of buffer
+     space when it tries to unput() the humongous macro you've defined.  When
+     you remove the '/'s, you make it small enough so that it fits in the buffer;
+     removing spaces would do the same thing.
+     
+     The fix is to either rethink how come you're using such a big macro and
+     perhaps there's another/better way to do it; or to rebuild flex's own
+     scan.c with a larger value for
+     
+     	#define YY_BUF_SIZE 16384
+     
+     - Vern
+
+
+File: flex.info,  Node: unnamed-faq-83,  Next: unnamed-faq-84,  Prev: unnamed-faq-82,  Up: FAQ
+
+unnamed-faq-83
+==============
+
+
+     To: Jan Kort <jan@research.techforce.nl>
+     Subject: Re: Flex
+     In-reply-to: Your message of Fri, 04 Sep 1998 12:18:43 +0200.
+     Date: Sat, 05 Sep 1998 00:59:49 PDT
+     From: Vern Paxson <vern>
+     
+     > %%
+     >
+     > "TEST1\n"       { fprintf(stderr, "TEST1\n"); yyless(5); }
+     > ^\n             { fprintf(stderr, "empty line\n"); }
+     > .               { }
+     > \n              { fprintf(stderr, "new line\n"); }
+     >
+     > %%
+     > -- input ---------------------------------------
+     > TEST1
+     > -- output --------------------------------------
+     > TEST1
+     > empty line
+     > ------------------------------------------------
+     
+     IMHO, it's not clear whether or not this is in fact a bug.  It depends
+     on whether you view yyless() as backing up in the input stream, or as
+     pushing new characters onto the beginning of the input stream.  Flex
+     interprets it as the latter (for implementation convenience, I'll admit),
+     and so considers the newline as in fact matching at the beginning of a
+     line, as after all the last token scanned an entire line and so the
+     scanner is now at the beginning of a new line.
+     
+     I agree that this is counter-intuitive for yyless(), given its
+     functional description (it's less so for unput(), depending on whether
+     you're unput()'ing new text or scanned text).  But I don't plan to
+     change it any time soon, as it's a pain to do so.  Consequently,
+     you do indeed need to use yy_set_bol() and YY_AT_BOL() to tweak
+     your scanner into the behavior you desire.
+     
+     Sorry for the less-than-completely-satisfactory answer.
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-84,  Next: unnamed-faq-85,  Prev: unnamed-faq-83,  Up: FAQ
+
+unnamed-faq-84
+==============
+
+
+     To: Patrick Krusenotto <krusenot@mac-info-link.de>
+     Subject: Re: Problems with restarting flex-2.5.2-generated scanner
+     In-reply-to: Your message of Thu, 24 Sep 1998 10:14:07 PDT.
+     Date: Thu, 24 Sep 1998 23:28:43 PDT
+     From: Vern Paxson <vern>
+     
+     > I am using flex-2.5.2 and bison 1.25 for Solaris and I am desperately
+     > trying to make my scanner restart with a new file after my parser stops
+     > with a parse error. When my compiler restarts, the parser always
+     > receives the token after the token (in the old file!) that caused the
+     > parser error.
+     
+     I suspect the problem is that your parser has read ahead in order
+     to attempt to resolve an ambiguity, and when it's restarted it picks
+     up with that token rather than reading a fresh one.  If you're using
+     yacc, then the special "error" production can sometimes be used to
+     consume tokens in an attempt to get the parser into a consistent state.
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-85,  Next: unnamed-faq-86,  Prev: unnamed-faq-84,  Up: FAQ
+
+unnamed-faq-85
+==============
+
+
+     To: Henric Jungheim <junghelh@pe-nelson.com>
+     Subject: Re: flex 2.5.4a
+     In-reply-to: Your message of Tue, 27 Oct 1998 16:41:42 PST.
+     Date: Tue, 27 Oct 1998 16:50:14 PST
+     From: Vern Paxson <vern>
+     
+     > This brings up a feature request:  How about a command line
+     > option to specify the filename when reading from stdin?  That way one
+     > doesn't need to create a temporary file in order to get the "#line"
+     > directives to make sense.
+     
+     Use -o combined with -t (per the man page description of -o).
+     
+     > P.S., Is there any simple way to use non-blocking IO to parse multiple
+     > streams?
+     
+     Simple, no.
+     
+     One approach might be to return a magic character on EWOULDBLOCK and
+     have a rule
+     
+     	.*<magic-character>	// put back .*, eat magic character
+     
+     This is off the top of my head, not sure it'll work.
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-86,  Next: unnamed-faq-87,  Prev: unnamed-faq-85,  Up: FAQ
+
+unnamed-faq-86
+==============
+
+
+     To: "Repko, Billy D" <billy.d.repko@intel.com>
+     Subject: Re: Compiling scanners
+     In-reply-to: Your message of Wed, 13 Jan 1999 10:52:47 PST.
+     Date: Thu, 14 Jan 1999 00:25:30 PST
+     From: Vern Paxson <vern>
+     
+     > It appears that maybe it cannot find the lfl library.
+     
+     The Makefile in the distribution builds it, so you should have it.
+     It's exceedingly trivial, just a main() that calls yylex() and
+     a yyrap() that always returns 1.
+     
+     > %%
+     >       \n      ++num_lines; ++num_chars;
+     >       .       ++num_chars;
+     
+     You can't indent your rules like this - that's where the errors are coming
+     from.  Flex copies indented text to the output file, it's how you do things
+     like
+     
+     	int num_lines_seen = 0;
+     
+     to declare local variables.
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-87,  Next: unnamed-faq-88,  Prev: unnamed-faq-86,  Up: FAQ
+
+unnamed-faq-87
+==============
+
+
+     To: Erick Branderhorst <Erick.Branderhorst@asml.nl>
+     Subject: Re: flex input buffer
+     In-reply-to: Your message of Tue, 09 Feb 1999 13:53:46 PST.
+     Date: Tue, 09 Feb 1999 21:03:37 PST
+     From: Vern Paxson <vern>
+     
+     > In the flex.skl file the size of the default input buffers is set.  Can you
+     > explain why this size is set and why it is such a high number.
+     
+     It's large to optimize performance when scanning large files.  You can
+     safely make it a lot lower if needed.
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-88,  Next: unnamed-faq-90,  Prev: unnamed-faq-87,  Up: FAQ
+
+unnamed-faq-88
+==============
+
+
+     To: "Guido Minnen" <guidomi@cogs.susx.ac.uk>
+     Subject: Re: Flex error message
+     In-reply-to: Your message of Wed, 24 Feb 1999 15:31:46 PST.
+     Date: Thu, 25 Feb 1999 00:11:31 PST
+     From: Vern Paxson <vern>
+     
+     > I'm extending a larger scanner written in Flex and I keep running into
+     > problems. More specifically, I get the error message:
+     > "flex: input rules are too complicated (>= 32000 NFA states)"
+     
+     Increase the definitions in flexdef.h for:
+     
+     #define JAMSTATE -32766 /* marks a reference to the state that always j
+     ams */
+     #define MAXIMUM_MNS 31999
+     #define BAD_SUBSCRIPT -32767
+     
+     recompile everything, and it should all work.
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-90,  Next: unnamed-faq-91,  Prev: unnamed-faq-88,  Up: FAQ
+
+unnamed-faq-90
+==============
+
+
+     To: "Dmitriy Goldobin" <gold@ems.chel.su>
+     Subject: Re: FLEX trouble
+     In-reply-to: Your message of Mon, 31 May 1999 18:44:49 PDT.
+     Date: Tue, 01 Jun 1999 00:15:07 PDT
+     From: Vern Paxson <vern>
+     
+     >   I have a trouble with FLEX. Why rule "/*".*"*/" work properly,=20
+     > but rule "/*"(.|\n)*"*/" don't work ?
+     
+     The second of these will have to scan the entire input stream (because
+     "(.|\n)*" matches an arbitrary amount of any text) in order to see if
+     it ends with "*/", terminating the comment.  That potentially will overflow
+     the input buffer.
+     
+     >   More complex rule "/*"([^*]|(\*/[^/]))*"*/ give an error
+     > 'unrecognized rule'.
+     
+     You can't use the '/' operator inside parentheses.  It's not clear
+     what "(a/b)*" actually means.
+     
+     >   I now use workaround with state <comment>, but single-rule is
+     > better, i think.
+     
+     Single-rule is nice but will always have the problem of either setting
+     restrictions on comments (like not allowing multi-line comments) and/or
+     running the risk of consuming the entire input stream, as noted above.
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-91,  Next: unnamed-faq-92,  Prev: unnamed-faq-90,  Up: FAQ
+
+unnamed-faq-91
+==============
+
+
+     Received: from mc-qout4.whowhere.com (mc-qout4.whowhere.com [209.185.123.18])
+     	by ee.lbl.gov (8.9.3/8.9.3) with SMTP id IAA05100
+     	for <vern@ee.lbl.gov>; Tue, 15 Jun 1999 08:56:06 -0700 (PDT)
+     Received: from Unknown/Local ([?.?.?.?]) by my-deja.com; Tue Jun 15 08:55:43 1999
+     To: vern@ee.lbl.gov
+     Date: Tue, 15 Jun 1999 08:55:43 -0700
+     From: "Aki Niimura" <neko@my-deja.com>
+     Message-ID: <KNONDOHDOBGAEAAA@my-deja.com>
+     Mime-Version: 1.0
+     Cc:
+     X-Sent-Mail: on
+     Reply-To:
+     X-Mailer: MailCity Service
+     Subject: A question on flex C++ scanner
+     X-Sender-Ip: 12.72.207.61
+     Organization: My Deja Email  (http://www.my-deja.com:80)
+     Content-Type: text/plain; charset=us-ascii
+     Content-Transfer-Encoding: 7bit
+     
+     Dear Dr. Paxon,
+     
+     I have been using flex for years.
+     It works very well on many projects.
+     Most case, I used it to generate a scanner on C language.
+     However, one project I needed to generate  a scanner
+     on C++ lanuage. Thanks to your enhancement, flex did
+     the job.
+     
+     Currently, I'm working on enhancing my previous project.
+     I need to deal with multiple input streams (recursive
+     inclusion) in this scanner (C++).
+     I did similar thing for another scanner (C) as you
+     explained in your documentation.
+     
+     The generated scanner (C++) has necessary methods:
+     - switch_to_buffer(struct yy_buffer_state *b)
+     - yy_create_buffer(istream *is, int sz)
+     - yy_delete_buffer(struct yy_buffer_state *b)
+     
+     However, I couldn't figure out how to access current
+     buffer (yy_current_buffer).
+     
+     yy_current_buffer is a protected member of yyFlexLexer.
+     I can't access it directly.
+     Then, I thought yy_create_buffer() with is = 0 might
+     return current stream buffer. But it seems not as far
+     as I checked the source. (flex 2.5.4)
+     
+     I went through the Web in addition to Flex documentation.
+     However, it hasn't been successful, so far.
+     
+     It is not my intention to bother you, but, can you
+     comment about how to obtain the current stream buffer?
+     
+     Your response would be highly appreciated.
+     
+     Best regards,
+     Aki Niimura
+     
+     --== Sent via Deja.com http://www.deja.com/ ==--
+     Share what you know. Learn what you don't.
+
+
+File: flex.info,  Node: unnamed-faq-92,  Next: unnamed-faq-93,  Prev: unnamed-faq-91,  Up: FAQ
+
+unnamed-faq-92
+==============
+
+
+     To: neko@my-deja.com
+     Subject: Re: A question on flex C++ scanner
+     In-reply-to: Your message of Tue, 15 Jun 1999 08:55:43 PDT.
+     Date: Tue, 15 Jun 1999 09:04:24 PDT
+     From: Vern Paxson <vern>
+     
+     > However, I couldn't figure out how to access current
+     > buffer (yy_current_buffer).
+     
+     Derive your own subclass from yyFlexLexer.
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-93,  Next: unnamed-faq-94,  Prev: unnamed-faq-92,  Up: FAQ
+
+unnamed-faq-93
+==============
+
+
+     To: "Stones, Darren" <Darren.Stones@nectech.co.uk>
+     Subject: Re: You're the man to see?
+     In-reply-to: Your message of Wed, 23 Jun 1999 11:10:29 PDT.
+     Date: Wed, 23 Jun 1999 09:01:40 PDT
+     From: Vern Paxson <vern>
+     
+     > I hope you can help me.  I am using Flex and Bison to produce an interpreted
+     > language.  However all goes well until I try to implement an IF statement or
+     > a WHILE.  I cannot get this to work as the parser parses all the conditions
+     > eg. the TRUE and FALSE conditons to check for a rule match.  So I cannot
+     > make a decision!!
+     
+     You need to use the parser to build a parse tree (= abstract syntax trwee),
+     and when that's all done you recursively evaluate the tree, binding variables
+     to values at that time.
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-94,  Next: unnamed-faq-95,  Prev: unnamed-faq-93,  Up: FAQ
+
+unnamed-faq-94
+==============
+
+
+     To: Petr Danecek <petr@ics.cas.cz>
+     Subject: Re: flex - question
+     In-reply-to: Your message of Mon, 28 Jun 1999 19:21:41 PDT.
+     Date: Fri, 02 Jul 1999 16:52:13 PDT
+     From: Vern Paxson <vern>
+     
+     > file, it takes an enormous amount of time. It is funny, because the
+     > source code has only 12 rules!!! I think it looks like an exponencial
+     > growth.
+     
+     Right, that's the problem - some patterns (those with a lot of
+     ambiguity, where yours has because at any given time the scanner can
+     be in the middle of all sorts of combinations of the different
+     rules) blow up exponentially.
+     
+     For your rules, there is an easy fix.  Change the ".*" that comes fater
+     the directory name to "[^ ]*".  With that in place, the rules are no
+     longer nearly so ambiguous, because then once one of the directories
+     has been matched, no other can be matched (since they all require a
+     leading blank).
+     
+     If that's not an acceptable solution, then you can enter a start state
+     to pick up the .*\n after each directory is matched.
+     
+     Also note that for speed, you'll want to add a ".*" rule at the end,
+     otherwise rules that don't match any of the patterns will be matched
+     very slowly, a character at a time.
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-95,  Next: unnamed-faq-96,  Prev: unnamed-faq-94,  Up: FAQ
+
+unnamed-faq-95
+==============
+
+
+     To: Tielman Koekemoer <tielman@spi.co.za>
+     Subject: Re: Please help.
+     In-reply-to: Your message of Thu, 08 Jul 1999 13:20:37 PDT.
+     Date: Thu, 08 Jul 1999 08:20:39 PDT
+     From: Vern Paxson <vern>
+     
+     > I was hoping you could help me with my problem.
+     >
+     > I tried compiling (gnu)flex on a Solaris 2.4 machine
+     > but when I ran make (after configure) I got an error.
+     >
+     > --------------------------------------------------------------
+     > gcc -c -I. -I. -g -O parse.c
+     > ./flex -t -p  ./scan.l >scan.c
+     > sh: ./flex: not found
+     > *** Error code 1
+     > make: Fatal error: Command failed for target `scan.c'
+     > -------------------------------------------------------------
+     >
+     > What's strange to me is that I'm only
+     > trying to install flex now. I then edited the Makefile to
+     > and changed where it says "FLEX = flex" to "FLEX = lex"
+     > ( lex: the native Solaris one ) but then it complains about
+     > the "-p" option. Is there any way I can compile flex without
+     > using flex or lex?
+     >
+     > Thanks so much for your time.
+     
+     You managed to step on the bootstrap sequence, which first copies
+     initscan.c to scan.c in order to build flex.  Try fetching a fresh
+     distribution from ftp.ee.lbl.gov.  (Or you can first try removing
+     ".bootstrap" and doing a make again.)
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-96,  Next: unnamed-faq-97,  Prev: unnamed-faq-95,  Up: FAQ
+
+unnamed-faq-96
+==============
+
+
+     To: Tielman Koekemoer <tielman@spi.co.za>
+     Subject: Re: Please help.
+     In-reply-to: Your message of Fri, 09 Jul 1999 09:16:14 PDT.
+     Date: Fri, 09 Jul 1999 00:27:20 PDT
+     From: Vern Paxson <vern>
+     
+     > First I removed .bootstrap (and ran make) - no luck. I downloaded the
+     > software but I still have the same problem. Is there anything else I
+     > could try.
+     
+     Try:
+     
+     	cp initscan.c scan.c
+     	touch scan.c
+     	make scan.o
+     
+     If this last tries to first build scan.c from scan.l using ./flex, then
+     your "make" is broken, in which case compile scan.c to scan.o by hand.
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-97,  Next: unnamed-faq-98,  Prev: unnamed-faq-96,  Up: FAQ
+
+unnamed-faq-97
+==============
+
+
+     To: Sumanth Kamenani <skamenan@crl.nmsu.edu>
+     Subject: Re: Error
+     In-reply-to: Your message of Mon, 19 Jul 1999 23:08:41 PDT.
+     Date: Tue, 20 Jul 1999 00:18:26 PDT
+     From: Vern Paxson <vern>
+     
+     > I am getting a compilation error. The error is given as "unknown symbol- yylex".
+     
+     The parser relies on calling yylex(), but you're instead using the C++ scanning
+     class, so you need to supply a yylex() "glue" function that calls an instance
+     scanner of the scanner (e.g., "scanner->yylex()").
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-98,  Next: unnamed-faq-99,  Prev: unnamed-faq-97,  Up: FAQ
+
+unnamed-faq-98
+==============
+
+
+     To: daniel@synchrods.synchrods.COM (Daniel Senderowicz)
+     Subject: Re: lex
+     In-reply-to: Your message of Mon, 22 Nov 1999 11:19:04 PST.
+     Date: Tue, 23 Nov 1999 15:54:30 PST
+     From: Vern Paxson <vern>
+     
+     Well, your problem is the
+     
+     switch (yybgin-yysvec-1) {      /* witchcraft */
+     
+     at the beginning of lex rules.  "witchcraft" == "non-portable".  It's
+     assuming knowledge of the AT&T lex's internal variables.
+     
+     For flex, you can probably do the equivalent using a switch on YYSTATE.
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-99,  Next: unnamed-faq-100,  Prev: unnamed-faq-98,  Up: FAQ
+
+unnamed-faq-99
+==============
+
+
+     To: archow@hss.hns.com
+     Subject: Re: Regarding distribution of flex and yacc based grammars
+     In-reply-to: Your message of Sun, 19 Dec 1999 17:50:24 +0530.
+     Date: Wed, 22 Dec 1999 01:56:24 PST
+     From: Vern Paxson <vern>
+     
+     > When we provide the customer with an object code distribution, is it
+     > necessary for us to provide source
+     > for the generated C files from flex and bison since they are generated by
+     > flex and bison ?
+     
+     For flex, no.  I don't know what the current state of this is for bison.
+     
+     > Also, is there any requrirement for us to neccessarily  provide source for
+     > the grammar files which are fed into flex and bison ?
+     
+     Again, for flex, no.
+     
+     See the file "COPYING" in the flex distribution for the legalese.
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-100,  Next: unnamed-faq-101,  Prev: unnamed-faq-99,  Up: FAQ
+
+unnamed-faq-100
+===============
+
+
+     To: Martin Gallwey <gallweym@hyperion.moe.ul.ie>
+     Subject: Re: Flex, and self referencing rules
+     In-reply-to: Your message of Sun, 20 Feb 2000 01:01:21 PST.
+     Date: Sat, 19 Feb 2000 18:33:16 PST
+     From: Vern Paxson <vern>
+     
+     > However, I do not use unput anywhere. I do use self-referencing
+     > rules like this:
+     >
+     > UnaryExpr               ({UnionExpr})|("-"{UnaryExpr})
+     
+     You can't do this - flex is *not* a parser like yacc (which does indeed
+     allow recursion), it is a scanner that's confined to regular expressions.
+     
+     		Vern
+
+
+File: flex.info,  Node: unnamed-faq-101,  Next: What is the difference between YYLEX_PARAM and YY_DECL?,  Prev: unnamed-faq-100,  Up: FAQ
+
+unnamed-faq-101
+===============
+
+
+     To: slg3@lehigh.edu (SAMUEL L. GULDEN)
+     Subject: Re: Flex problem
+     In-reply-to: Your message of Thu, 02 Mar 2000 12:29:04 PST.
+     Date: Thu, 02 Mar 2000 23:00:46 PST
+     From: Vern Paxson <vern>
+     
+     If this is exactly your program:
+     
+     > digit [0-9]
+     > digits {digit}+
+     > whitespace [ \t\n]+
+     >
+     > %%
+     > "[" { printf("open_brac\n");}
+     > "]" { printf("close_brac\n");}
+     > "+" { printf("addop\n");}
+     > "*" { printf("multop\n");}
+     > {digits} { printf("NUMBER = %s\n", yytext);}
+     > whitespace ;
+     
+     then the problem is that the last rule needs to be "{whitespace}" !
+     
+     		Vern
+
+
+File: flex.info,  Node: What is the difference between YYLEX_PARAM and YY_DECL?,  Next: Why do I get "conflicting types for yylex" error?,  Prev: unnamed-faq-101,  Up: FAQ
+
+What is the difference between YYLEX_PARAM and YY_DECL?
+=======================================================
+
+   YYLEX_PARAM is not a flex symbol. It is for Bison. It tells Bison to
+pass extra params when it calls yylex() from the parser.
+
+   YY_DECL is the Flex declaration of yylex. The default is similar to
+this:
+
+
+     #define int yy_lex ()
+
+
+File: flex.info,  Node: Why do I get "conflicting types for yylex" error?,  Next: How do I access the values set in a Flex action from within a Bison action?,  Prev: What is the difference between YYLEX_PARAM and YY_DECL?,  Up: FAQ
+
+Why do I get "conflicting types for yylex" error?
+=================================================
+
+   This is a compiler error regarding a generated Bison parser, not a
+Flex scanner.  It means you need a prototype of yylex() in the top of
+the Bison file.  Be sure the prototype matches YY_DECL.
+
+
+File: flex.info,  Node: How do I access the values set in a Flex action from within a Bison action?,  Prev: Why do I get "conflicting types for yylex" error?,  Up: FAQ
+
+How do I access the values set in a Flex action from within a Bison action?
+===========================================================================
+
+   With $1, $2, $3, etc. These are called "Semantic Values" in the
+Bison manual.  See *Note Top: (bison)Top.
+
+
+File: flex.info,  Node: Appendices,  Next: Indices,  Prev: FAQ,  Up: Top
+
+Appendices
+**********
+
+* Menu:
+
+* Makefiles and Flex::
+* Bison Bridge::
+* M4 Dependency::
+
+
+File: flex.info,  Node: Makefiles and Flex,  Next: Bison Bridge,  Prev: Appendices,  Up: Appendices
+
+Makefiles and Flex
+==================
+
+   In this appendix, we provide tips for writing Makefiles to build
+your scanners.
+
+   In a traditional build environment, we say that the `.c' files are
+the sources, and the `.o' files are the intermediate files. When using
+`flex', however, the `.l' files are the sources, and the generated `.c'
+files (along with the `.o' files) are the intermediate files.  This
+requires you to carefully plan your Makefile.
+
+   Modern `make' programs understand that `foo.l' is intended to
+generate `lex.yy.c' or `foo.c', and will behave accordingly(1).  The
+following Makefile does not explicitly instruct `make' how to build
+`foo.c' from `foo.l'. Instead, it relies on the implicit rules of the
+`make' program to build the intermediate file, `scan.c':
+
+
+         # Basic Makefile -- relies on implicit rules
+         # Creates "myprogram" from "scan.l" and "myprogram.c"
+         #
+         LEX=flex
+         myprogram: scan.o myprogram.o
+         scan.o: scan.l
+
+   For simple cases, the above may be sufficient. For other cases, you
+may have to explicitly instruct `make' how to build your scanner.  The
+following is an example of a Makefile containing explicit rules:
+
+
+         # Basic Makefile -- provides explicit rules
+         # Creates "myprogram" from "scan.l" and "myprogram.c"
+         #
+         LEX=flex
+         myprogram: scan.o myprogram.o
+                 $(CC) -o $@  $(LDFLAGS) $^
+     
+         myprogram.o: myprogram.c
+                 $(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $^
+     
+         scan.o: scan.c
+                 $(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $^
+     
+         scan.c: scan.l
+                 $(LEX) $(LFLAGS) -o $@ $^
+     
+         clean:
+                 $(RM) *.o scan.c
+
+   Notice in the above example that `scan.c' is in the `clean' target.
+This is because we consider the file `scan.c' to be an intermediate
+file.
+
+   Finally, we provide a realistic example of a `flex' scanner used
+with a `bison' parser(2).  There is a tricky problem we have to deal
+with. Since a `flex' scanner will typically include a header file
+(e.g., `y.tab.h') generated by the parser, we need to be sure that the
+header file is generated BEFORE the scanner is compiled. We handle this
+case in the following example:
+
+
+         # Makefile example -- scanner and parser.
+         # Creates "myprogram" from "scan.l", "parse.y", and "myprogram.c"
+         #
+         LEX     = flex
+         YACC    = bison -y
+         YFLAGS  = -d
+         objects = scan.o parse.o myprogram.o
+     
+         myprogram: $(objects)
+         scan.o: scan.l parse.c
+         parse.o: parse.y
+         myprogram.o: myprogram.c
+
+   In the above example, notice the line,
+
+
+         scan.o: scan.l parse.c
+
+   , which lists the file `parse.c' (the generated parser) as a
+dependency of `scan.o'. We want to ensure that the parser is created
+before the scanner is compiled, and the above line seems to do the
+trick. Feel free to experiment with your specific implementation of
+`make'.
+
+   For more details on writing Makefiles, see *Note Top: (make)Top.
+
+   ---------- Footnotes ----------
+
+   (1) GNU `make' and GNU `automake' are two such programs that provide
+implicit rules for flex-generated scanners.
+
+   (2) This example also applies to yacc parsers.
+
+
+File: flex.info,  Node: Bison Bridge,  Next: M4 Dependency,  Prev: Makefiles and Flex,  Up: Appendices
+
+C Scanners with Bison Parsers
+=============================
+
+   This section describes the `flex' features useful when integrating
+`flex' with `GNU bison'(1).  Skip this section if you are not using
+`bison' with your scanner.  Here we discuss only the `flex' half of the
+`flex' and `bison' pair.  We do not discuss `bison' in any detail.  For
+more information about generating `bison' parsers, see *Note Top:
+(bison)Top.
+
+   A compatible `bison' scanner is generated by declaring `%option
+bison-bridge' or by supplying `--bison-bridge' when invoking `flex'
+from the command line.  This instructs `flex' that the macro `yylval'
+may be used. The data type for `yylval', `YYSTYPE', is typically
+defined in a header file, included in section 1 of the `flex' input
+file.  For a list of functions and macros available, *Note
+bison-functions::.
+
+   The declaration of yylex becomes,
+
+
+           int yylex ( YYSTYPE * lvalp, yyscan_t scanner );
+
+   If `%option bison-locations' is specified, then the declaration
+becomes,
+
+
+           int yylex ( YYSTYPE * lvalp, YYLTYPE * llocp, yyscan_t scanner );
+
+   Note that the macros `yylval' and `yylloc' evaluate to pointers.
+Support for `yylloc' is optional in `bison', so it is optional in
+`flex' as well. The following is an example of a `flex' scanner that is
+compatible with `bison'.
+
+
+         /* Scanner for "C" assignment statements... sort of. */
+         %{
+         #include "y.tab.h"  /* Generated by bison. */
+         %}
+     
+         %option bison-bridge bison-locations
+         %
+     
+         [[:digit:]]+  { yylval->num = atoi(yytext);   return NUMBER;}
+         [[:alnum:]]+  { yylval->str = strdup(yytext); return STRING;}
+         "="|";"       { return yytext[0];}
+         .  {}
+         %
+
+   As you can see, there really is no magic here. We just use `yylval'
+as we would any other variable. The data type of `yylval' is generated
+by `bison', and included in the file `y.tab.h'. Here is the
+corresponding `bison' parser:
+
+
+         /* Parser to convert "C" assignments to lisp. */
+         %{
+         /* Pass the argument to yyparse through to yylex. */
+         #define YYPARSE_PARAM scanner
+         #define YYLEX_PARAM   scanner
+         %}
+         %locations
+         %pure_parser
+         %union {
+             int num;
+             char* str;
+         }
+         %token <str> STRING
+         %token <num> NUMBER
+         %%
+         assignment:
+             STRING '=' NUMBER ';' {
+                 printf( "(setf %s %d)", $1, $3 );
+            }
+         ;
+
+   ---------- Footnotes ----------
+
+   (1) The features described here are purely optional, and are by no
+means the only way to use flex with bison.  We merely provide some glue
+to ease development of your parser-scanner pair.
+
+
+File: flex.info,  Node: M4 Dependency,  Prev: Bison Bridge,  Up: Appendices
+
+M4 Dependency
+=============
+
+   The macro processor `m4'(1) must be installed wherever flex is
+installed.  `flex' invokes `m4', found by searching the directories in
+the `PATH' environment variable. Any code you place in section 1 or in
+the actions will be sent through m4. Please follow these rules to
+protect your code from unwanted `m4' processing.
+
+   * Do not use symbols that begin with, `m4_', such as, `m4_define',
+     or `m4_include', since those are reserved for `m4' macro names. If
+     for some reason you need m4_ as a prefix, use a preprocessor
+     #define to get your symbol past m4 unmangled.
+
+   * Do not use the strings `[[' or `]]' anywhere in your code. The
+     former is not valid in C, except within comments and strings, but
+     the latter is valid in code such as `x[y[z]]'. The solution is
+     simple. To get the literal string `"]]"', use `"]""]"'. To get the
+     array notation `x[y[z]]', use `x[y[z] ]'.
+
+
+   `m4' is only required at the time you run `flex'. The generated
+scanner is ordinary C or C++, and does _not_ require `m4'.
+
+   ---------- Footnotes ----------
+
+   (1) The use of m4 is subject to change in future revisions of flex.
+It is not part of the public API of flex. Do not depend on it.
+
+
+File: flex.info,  Node: Indices,  Prev: Appendices,  Up: Top
+
+Indices
+*******
+
+* Menu:
+
+* Concept Index::
+* Index of Functions and Macros::
+* Index of Variables::
+* Index of Data Types::
+* Index of Hooks::
+* Index of Scanner Options::
+
