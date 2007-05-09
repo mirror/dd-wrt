@@ -339,6 +339,7 @@ return buf;
 FILE *
 getWebsFile (char *path)
 {
+cprintf("opening %s\n",path);
   char *buf = NULL;
   int i = 0;
   while (websRomPageIndex[i].path != NULL)
