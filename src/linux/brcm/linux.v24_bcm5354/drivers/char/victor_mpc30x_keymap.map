@@ -1,0 +1,102 @@
+# Victor Interlink MP-C303/304 keyboard keymap
+#
+# Copyright (C) 2003  Yoichi Yuasa <yuasa@hh.iij4u.or.jp>
+#
+# This file is subject to the terms and conditions of the GNU General Public
+# License.  See the file "COPYING" in the main directory of this archive
+# for more details.
+keymaps 0-1,4-5,8-9,12
+alt_is_meta
+strings as usual
+compose as usual for "iso-8859-1"
+
+# First line
+keycode 89 = Escape
+keycode  9 = Delete
+
+# 2nd line
+keycode 73 = one              exclam
+keycode 18 = two              quotedbl
+keycode 92 = three            numbersign
+	control	keycode 92 = Escape
+keycode 53 = four             dollar
+	control	keycode 53 = Control_backslash
+keycode 21 = five             percent
+	control	keycode 21 = Control_bracketright
+keycode 50 = six              ampersand
+	control	keycode 50 = Control_underscore
+keycode 48 = seven            apostrophe
+keycode 51 = eight            parenleft
+keycode 16 = nine             parenright
+keycode 80 = zero             asciitilde
+	control	keycode 80 = nul
+keycode 49 = minus            equal
+keycode 30 = asciicircum      asciitilde
+	control	keycode 30 = Control_asciicircum
+keycode  5 = backslash        bar
+	control	keycode  5 = Control_backslash
+keycode 13 = BackSpace
+# 3rd line
+keycode 57 = Tab
+keycode 74 = q
+keycode 26 = w
+keycode 81 = e
+keycode 29 = r
+keycode 37 = t
+keycode 45 = y
+keycode 72 = u
+keycode 24 = i
+keycode 32 = o
+keycode 41 = p
+keycode  1 = at               grave
+	control	keycode  1 = nul
+keycode 54 = bracketleft      braceleft
+keycode 63 = Return
+	alt	keycode 63 = Meta_Control_m
+# 4th line
+keycode 23 = Caps_Lock
+keycode 34 = a
+keycode 66 = s
+keycode 52 = d
+keycode 20 = f
+keycode 84 = g
+keycode 67 = h
+keycode 64 = j
+keycode 17 = k
+keycode 83 = l
+keycode 22 = semicolon        plus
+keycode 61 = colon            asterisk
+	control keycode 61 = Control_g
+keycode 65 = bracketright     braceright
+	control	keycode 65 = Control_bracketright
+# 5th line
+keycode 91 = Shift
+keycode 76 = z
+keycode 68 = x
+keycode 28 = c
+keycode 36 = v
+keycode 44 = b
+keycode 19 = n
+keycode 27 = m
+keycode 35 = comma            less
+keycode  3 = period           greater
+	control	keycode  3 = Compose
+keycode 38 = slash            question
+	control	keycode 38 = Delete
+	shift	control	keycode 38 = Delete
+keycode  6 = backslash        underscore
+	control	keycode  6 = Control_backslash
+keycode 55 = Up
+	alt keycode 55 = PageUp
+keycode 14 = Shift
+# 6th line
+keycode 56 = Control
+keycode 42 = Alt
+keycode 33 = space
+	control	keycode 33 = nul
+keycode  7 = Left
+	alt keycode  7 = Home
+keycode 31 = Down
+	alt keycode 31 = PageDown
+keycode 47 = Right
+	alt keycode 47 = End
