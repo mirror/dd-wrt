@@ -3353,16 +3353,17 @@ ej_show_styles (webs_t wp, int argc, char_t ** argv)
   closedir (directory);
   return;
 }
-extern websRomPageIndexType *websRomPageIndex;
+extern websRomPageIndexType websRomPageIndex[];
 static void
 ej_show_languages (webs_t wp, int argc, char_t ** argv)
 {
   char buf[256];
   websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
   int i=0;
-  while (websRomPageIndex[i++].path != NULL)
+  while (websRomPageIndex[i].path != NULL)
     {
-      if (!strncmp (websRomPageIndex[i].path, "/www/lang_pack/",strlen("/www/lang_pack/")))
+    cprintf("checking %s\n",websRomPageIndex[i].path);
+      if (!strncmp (websRomPageIndex[i].path, "lang_pack/",strlen("lang_pack/")))
     {
       if (strlen (websRomPageIndex[i].path) < 4)
 	continue;
@@ -3374,6 +3375,7 @@ ej_show_languages (webs_t wp, int argc, char_t ** argv)
 				   buf) ? "selected=\\\"selected\\\"" : "",
 		 buf);
     }
+    i++;
     }
   websWrite (wp, "//]]>\n</script>\n");
   return;
@@ -3898,7 +3900,7 @@ live_translate (char *tran)
   char temp[256], temp1[256], *temp2;
   char *lang = getLanguageName ();
   char buf[64];
-  sprintf (buf, "/www/%s", lang);
+  sprintf (buf, "%s", lang);
   free (lang);
 
   strcpy (temp1, tran);
@@ -3922,7 +3924,7 @@ live_translate (char *tran)
     }
   fclose (fp);
 
-  fp = getWebsFile("/www/lang_pack/english.js");	//if not found, try english
+  fp = getWebsFile("lang_pack/english.js");	//if not found, try english
   if (fp==NULL)
     return "Error";
 
