@@ -79,8 +79,8 @@ addEvent(window, "unload", function() {
 									<select name="erase">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"0\" <% nvram_selmatch("erase", "0", "selected"); %> >" + upgrad.resetOff + "</option>");
-										document.write("<option value=\"1\" <% nvram_selmatch("erase", "1", "selected"); %> >" + upgrad.resetOn + "</option>");
+										document.write("<option value=\"0\" >" + upgrad.resetOff + "</option>");
+										document.write("<option value=\"1\" >" + upgrad.resetOn + "</option>");
 										//]]>
 										</script>
 									</select>
