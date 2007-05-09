@@ -7736,7 +7736,8 @@ do_filtertable (char *path, webs_t stream)
   char *webfile=(char*)malloc(len);
   fread(webfile,len,1,web);
   sprintf (temp, webfile, ifname, ifname, ifname, ifname);
-  fclose(webfile);
+  free(webfile);
+  fclose(web);
   do_ej_buffer (temp, stream);
 }
 
@@ -7779,7 +7780,8 @@ do_wds (char *path, webs_t stream)
       else
 	temp[ai++] = webfile[i];
     }
-  fclose(webfile);
+  free(webfile);
+  fclose(web);
   do_ej_buffer (temp, stream);
 }
 
