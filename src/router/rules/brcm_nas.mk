@@ -4,7 +4,7 @@ nas nas-clean nas-distclean:
 
 nas-install:
 ifeq ($(CONFIG_MSSID),y)
-	install -D nas/nas.6000 $(INSTALLDIR)/nas/usr/sbin/nas
+	install -D nas/nas $(INSTALLDIR)/nas/usr/sbin/nas
 else
 	install -D nas/nas.v23 $(INSTALLDIR)/nas/usr/sbin/nas
 endif
