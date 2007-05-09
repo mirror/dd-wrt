@@ -1,0 +1,15 @@
+Index: hnddma.c
+===================================================================
+--- hnddma.c	(revision 5696)
++++ hnddma.c	(working copy)
+@@ -212,6 +212,10 @@
+ 
+ 	/* old chips w/o sb is no longer supported */
+ 	ASSERT(sbh != NULL);
++	
++	if ((sb_coreflagshi(sbh, 0, 0) & SBTMH_DMA64) == SBTMH_DMA64) {
++		printk("DMA64 supported!\n");
++	}
+ 
+ 	/* check arguments */
+ 	ASSERT(ISPOWEROF2(ntxd));
