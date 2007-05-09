@@ -1,0 +1,191 @@
+#!/usr/bin/perl
+# A patch-like utility
+# Designed for patching different version of jffs2 with the same hpatch file
+#
+# Copyright (C) 2004, Ferenc Havasi
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+$filename_tmp1="file1.tmp";
+$filename_tmp2="file2.tmp";
+
+$filename_in="";
+$filename_out=$filename_tmp1;
+$filename_cnt=0;
+
+# Modes:
+# 0: expecting =
+# 1: normal_cmd
+# 2: skip until =
+# 3: expecting F (first state)
+$mode=3;
+
+%rules = ();
+
+sub file_end {
+  if (($mode!=2)&&($modified==1)) {
+    while (<SRC>) {
+      print DST $_;
+    }
+    close(SRC);
+    close(DST);
+    if ($cmd_name ne "") { $rules{"$cmd_name"}=1; }
+    $filename_result=$filename_out;
+    if ($filename_result ne $filename_in_save) {
+      open(RES,"<$filename_result") or die "Cannot open $filename_result.\n";
+      open(DST,">$filename_in_save") or die "Cannot open $filename_in_save.\n";
+      while (<RES>) {
+        print DST $_;
+      }
+      close(DST);
+      close(RES);
+    }
+    unlink($filename_tmp1) && unlink($filename_tmp2);
+  }
+  else {
+    close(SRC);
+    close(DST);
+    $filename_result=$filename_in;
+    if ($filename_result ne $filename_in_save) {
+      open(RES,"<$filename_result") or die "Cannot open $filename_result.\n";
+      open(DST,">$filename_in_save") or die "Cannot open $filename_in_save.\n";
+      while (<RES>) {
+        print DST $_;
+      }
+      close(DST);
+      close(RES);
+    }
+    unlink($filename_tmp1);
+  }
+  $modified=0;
+  foreach $rulename (keys %rules) {
+    if ($rules{"$rulename"}==0) { print(STDERR "On $filename_in_save error applying rule $rulename.\n"); }
+  }
+  %rules = ();
+}
+
+if ($#ARGV<0) {
+  print ("usage: hpatch hpatch_file\n");
+  exit;
+}
+
+open(CMD,"<$ARGV[0]") or die "Cannot open $ARGV[0].\n";
+$cmd_linenum=0;
+
+while (chomp($cmd_line=<CMD>)) {
+  $cmd_linenum++;
+  if ($cmd_line eq "") {next;}
+  #$cmd_line =~ s/\#.*//;
+  $cmd_line =~ s/\ *$//;
+  if ($cmd_line eq "") {next;}
+  if ($cmd_line =~ /^F(.*)/) {
+    $tmp_filename_in=$1;
+    if ($mode!=3) {
+      file_end();
+    }
+    $filename_in=$tmp_filename_in;
+    $filename_in_save=$filename_in;
+    open(SRC,"<$filename_in") or die "Cannot open $filename_in.\n";
+    open(DST,">$filename_out") or die "Cannot open $filename_out.\n";;
+    $modified=0;
+    $mode=0;
+    next;
+  }
+  if ($mode==3) {die "error: F expression expected in line $cmd_linenum\n";}
+  if ($cmd_line =~ /^=(.*)/) {
+    $tmp_cmd_name=$1;
+    if (($mode!=2)&&($modified==1)) {
+      while (<SRC>) {
+        print DST $_;
+      }
+      close(SRC);
+      close(DST);
+      if (($cmd_name ne "")) {$rules{"$cmd_name"}=1;};
+      $filename_cnt++;
+      if ($filename_cnt%2==1) {
+        $filename_in=$filename_tmp1;
+        $filename_out=$filename_tmp2;
+      }
+      else {
+        $filename_in=$filename_tmp2;
+        $filename_out=$filename_tmp1;
+      }
+    }
+    else {
+      close(SRC);
+      close(DST);
+    }
+    $mode=1;
+    $cmd_name=$tmp_cmd_name;
+    if (($cmd_name ne "")) {
+      if ($rules{"$cmd_name"}==1) {
+        $mode=2;
+      }
+      else {
+        $rules{"$cmd_name"}=0;	
+      }
+    }
+    open(SRC,"<$filename_in") or die "Cannot open $filename_in.\n";
+    open(DST,">$filename_out") or die "Cannot open $filename_out.\n";
+    $modified=0;
+    next;
+  }
+  if ($mode == 0) {die "error: = expression expected in line $cmd_linenum\n";}
+  if ($mode == 2) {next;}
+  if ($cmd_line =~ /^!(.*)/) {
+    print "$1\n";
+    $modified=1;
+    next;
+  }
+  if ($cmd_line =~ /^\?(.*)/) {
+    $search_str=$1;
+    $found=0;
+    while (<SRC>) {
+      print DST $_;
+      if (index($_,$search_str)>=0) {$found=1; last;}
+    }
+    if ($found==0) { $mode=2; }
+    next;
+  }
+  if ($cmd_line =~ /^\+(.*)/) {
+    print DST "$1\n";
+    $modified=1;
+    next;
+  }
+  if ($cmd_line =~ /^\-(.*)/) {
+    $search_str=$1;
+    $found=0;
+    while (<SRC>) {
+      if (index($_,$search_str)>=0) {$saved_line=$_; $found=1; $modified=1; last;}
+      print DST $_;
+    }
+    if ($found==0) { $mode=2; }
+    next;
+  }
+  if ($cmd_line =~ /^i(.*)/) {
+    $filename_inc=$1;
+    open(INCSRC,"<$filename_inc") or die "Cannot open $filename_inc.\n";
+    while (<INCSRC>) {
+      print DST $_;
+    }
+    next;
+  }
+  if ($cmd_line =~ /^I/) {
+    print DST $saved_line;
+    next;
+  }
+}
+file_end();
+close(CMD);
