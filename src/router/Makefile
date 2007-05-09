@@ -195,9 +195,9 @@ ifneq ($(CONFIG_DIST),"micro")
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/wireless/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 endif
 ifeq ($(CONFIG_MSSID),y)
-#	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/bcm57xx/*
+ifneq ($(CONFIG_BCM5354),y)
 	cp bcm57xx/bcm57xx.o $(TARGETDIR)/lib/modules/$(LINUXVER)/bcm57xxlsys.o
-#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+endif
 endif
 #endif
 #	mv $(TARGETDIR)/lib/modules/2.4.33-pre3/kernel/fs/fat/* $(TARGETDIR)/lib/modules/2.4.33-pre3
@@ -255,6 +255,9 @@ endif
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/pcmcia
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/netfilter
+ifneq ($(CONFIG_JFFS2),y)
+	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/jffs2.o
+endif
 	rm -f $(TARGETDIR)/usr/lib/libpcap.so
 	mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/*.o		
         # Prepare filesystem
@@ -263,6 +266,9 @@ endif
 #	$(MAKE) -C $(LINUXDIR)/scripts/squashfs mksquashfs
 	cd $(TARGETDIR)  &&  find . -iname "CVS" | xargs rm -rf
 	cd $(TARGETDIR)  &&  find . -iname ".svn" | xargs rm -rf
+ifeq ($(CONFIG_OPENSSL),y)
+	rm -f $(TARGETDIR)/usr/sbin/openssl
+endif
 ifeq ($(CONFIG_KAID),y)
 	make -C kaid/src
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
