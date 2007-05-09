@@ -190,32 +190,30 @@ mtd_write (const char *path, const char *mtd)
       fprintf (stderr, "%s: File is too small (%ld bytes)\n", path, count);
       goto fail;
     }
+  sysinfo (&info);
 #ifdef HAVE_MAGICBOX
   trx.magic = STORE32_LE (trx.magic);
   trx.len = STORE32_LE (trx.len);
   trx.crc32 = STORE32_LE (trx.crc32);
-#endif
-#ifdef HAVE_FONERA
+#elif HAVE_FONERA
   trx.magic = STORE32_LE (trx.magic);
   trx.len = STORE32_LE (trx.len);
   trx.crc32 = STORE32_LE (trx.crc32);
-#endif
-#ifdef HAVE_MERAKI
+  info.freeram=64; //fix, must be flashed in erase blocks
+#elif HAVE_MERAKI
   trx.magic = STORE32_LE (trx.magic);
   trx.len = STORE32_LE (trx.len);
   trx.crc32 = STORE32_LE (trx.crc32);
-#endif
-#ifdef HAVE_LS2
+  info.freeram=64; //fix, must be flashed in erase blocks
+#elif HAVE_LS2
   trx.magic = STORE32_LE (trx.magic);
   trx.len = STORE32_LE (trx.len);
   trx.crc32 = STORE32_LE (trx.crc32);
-#endif
-#ifdef HAVE_WHRAG108
+#elif HAVE_WHRAG108
   trx.magic = STORE32_LE (trx.magic);
   trx.len = STORE32_LE (trx.len);
   trx.crc32 = STORE32_LE (trx.crc32);
-#endif
-#ifdef HAVE_XSCALE
+#elif HAVE_XSCALE
   trx.magic = STORE32_LE (trx.magic);
   trx.len = STORE32_LE (trx.len);
   trx.crc32 = STORE32_LE (trx.crc32);
@@ -246,7 +244,6 @@ mtd_write (const char *path, const char *mtd)
 
 
   /* See if we have enough memory to store the whole file */
-  sysinfo (&info);
   fprintf (stderr, "freeram=[%ld] bufferram=[%ld]\n", info.freeram,
 	   info.bufferram);
   if (info.freeram >= (trx.len + 1 * 1024 * 1024))
