@@ -34,12 +34,14 @@ remake:
 
 install:
 	install -d $(INSTALLDIR)/usr/sbin
+	cp wiviz $(INSTALLDIR)/usr/sbin
+
+wwwinstall:
 	install -d $(INSTALLDIR)/../www/www
 	install -d $(INSTALLDIR)/../www/www/style
 	install -d $(INSTALLDIR)/../www/www/js
 	install -d $(INSTALLDIR)/../www/www/images
 	install -d $(INSTALLDIR)/../www/www/images/wiviz
-	cp wiviz $(INSTALLDIR)/usr/sbin
 	cp www/wiviz2/wiviz2.css $(INSTALLDIR)/../www/www/style/wiviz2.css
 	cp www/wiviz2/wiviz2.js $(INSTALLDIR)/../www/www/js/wiviz2.js
 	cp www/wiviz2/*.gif $(INSTALLDIR)/../www/www/images/wiviz
