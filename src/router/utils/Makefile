@@ -66,9 +66,9 @@ ifneq ($(CONFIG_MADWIFI),y)
 
 ifeq ($(CONFIG_MSSID),y)
 ifneq ($(CONFIG_BCM5354),y)
-	install wl_mimo $(INSTALLDIR)/usr/sbin
+	install -D wl_mimo $(INSTALLDIR)/usr/sbin/wl
 else
-	install wl $(INSTALLDIR)/usr/sbin
+	install -D wl $(INSTALLDIR)/usr/sbin/wl
 endif
 else
 	install -D wl.v23 $(INSTALLDIR)/usr/sbin/wl
