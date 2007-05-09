@@ -195,7 +195,7 @@ start_nas_lan (void)
   char *next;
   char var[80];
   char *vifs = nvram_safe_get ("wl0_vifs");
-  if (vifs != NULL)
+  if (strlen (vifs))
     foreach (var, vifs, next)
     {
       start_nas_single ("lan", var);
@@ -216,7 +216,7 @@ start_nas_wan (void)
   char var[80];
   char vif[16];
   char *vifs = nvram_safe_get ("wl0_vifs");
-  if (vifs != NULL)
+  if (strlen (vifs))
     foreach (var, vifs, next)
     {
       sprintf (vif, "%s_mode", var);
