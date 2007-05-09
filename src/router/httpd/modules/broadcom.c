@@ -3906,8 +3906,9 @@ live_translate (char *tran)
 
   int len = strlen (temp1);
 
-  fp = fopen (buf, "r");
-
+  fp = getWebsFile(buf);
+  if (fp==NULL)
+    return "Error";
   while (fgets (temp, 256, fp) != NULL)
     {
       if ((memcmp (temp, temp1, len)) == 0)
@@ -3921,7 +3922,9 @@ live_translate (char *tran)
     }
   fclose (fp);
 
-  fp = fopen ("/www/lang_pack/english.js", "r");	//if not found, try english
+  fp = getWebsFile("/www/lang_pack/english.js");	//if not found, try english
+  if (fp==NULL)
+    return "Error";
 
   while (fgets (temp, 256, fp) != NULL)
     {
