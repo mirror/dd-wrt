@@ -3365,15 +3365,17 @@ ej_show_languages (webs_t wp, int argc, char_t ** argv)
     cprintf("checking %s\n",websRomPageIndex[i].path);
       if (!strncmp (websRomPageIndex[i].path, "lang_pack/",strlen("lang_pack/")))
     {
-      if (strlen (websRomPageIndex[i].path) < 4)
+    cprintf("found language\n");
+      if (strlen (websRomPageIndex[i].path) < 14)
 	continue;
       strcpy (buf, websRomPageIndex[i].path);
-      buf[strlen (buf) - 3] = 0;	//strip .js
+      char *mybuf = &buf[strlen("lang_pack/")];
+      mybuf[strlen (mybuf) - 3] = 0;	//strip .js
       websWrite (wp,
 		 "document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");\n",
-		 buf, nvram_match ("language",
-				   buf) ? "selected=\\\"selected\\\"" : "",
-		 buf);
+		 mybuf, nvram_match ("language",
+				   mybuf) ? "selected=\\\"selected\\\"" : "",
+		 mybuf);
     }
     i++;
     }
