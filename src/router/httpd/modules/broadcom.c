@@ -2773,7 +2773,7 @@ save_wifi (webs_t wp)
   char *var = websGetVar (wp, "wifi_display", NULL);
   if (var)
     {
-      fprintf (stderr, "save wifi as\n", var);
+      fprintf (stderr, "save wifi as\n");
       nvram_set ("wifi_display", var);
     }
 }
