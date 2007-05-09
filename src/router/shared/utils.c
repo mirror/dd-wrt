@@ -443,6 +443,13 @@ internal_getRouterBrand ()
 	  return ROUTER_RT210W;
 	}
     }
+      
+	if (nvram_match ("boardtype", "bcm94710r4") && nvram_match ("boardnum", ""))
+    {
+      cprintf ("router is Belkin unknown (RT21000W)\n");
+	  setRouter ("Belkin unknown (RT21000W)");
+	  return ROUTER_RT210W;
+	}
 
   if (nvram_match ("boardtype", "0x0101"))
     {
