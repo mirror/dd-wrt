@@ -432,13 +432,15 @@ start_sysinit (void)
       nvram_unset ("gpio6");
       break;
       
-ifdef HAVE_MSSID      
+#ifdef HAVE_MSSID      
 	case ROUTER_ASUS_WL500GD:
 	  if (nvram_match ("wl_mode", "sta"))
 	  	nvram_set ("wl_mode", "apsta");
 	  if (nvram_match ("wl0_mode", "sta"))
+	  	{
 	  	nvram_set ("wl0_mode", "apsta");
-	  cprintf ("Dirty fix for Asus wl500gd: sta -> apsta\n");
+	    cprintf ("Dirty fix for Asus wl500gd: sta -> apsta\n");
+ 	 	}
 	  break;
 #endif
 
