@@ -6292,7 +6292,7 @@ qos_save (webs_t wp)
   data = websGetVar (wp, field, NULL);
   nvram_set ("qos_type", data);
 
-  nvram_commit ();
+  //nvram_commit ();
 
   memset (svqos_var, 0, sizeof (svqos_var));
 
@@ -6336,7 +6336,7 @@ qos_save (webs_t wp)
 
   if (strlen (svqos_var) <= sizeof (svqos_var))
     nvram_set ("svqos_svcs", svqos_var);
-  nvram_commit ();
+  //nvram_commit ();
   memset (svqos_var, 0, sizeof (svqos_var));
 
   /* IP priorities */
@@ -6364,7 +6364,7 @@ qos_save (webs_t wp)
 
   if (strlen (svqos_var) <= sizeof (svqos_var))
     nvram_set ("svqos_ips", svqos_var);
-  nvram_commit ();
+  //nvram_commit ();
   memset (svqos_var, 0, sizeof (svqos_var));
 
   /* MAC priorities */
@@ -6391,7 +6391,7 @@ qos_save (webs_t wp)
 
   if (strlen (svqos_var) <= sizeof (svqos_var))
     nvram_set ("svqos_macs", svqos_var);
-  nvram_commit ();
+  //nvram_commit ();
 
   /* adm6996 LAN port priorities */
   nvram_set ("svqos_port1prio", websGetVar (wp, "svqos_port1prio", NULL));
