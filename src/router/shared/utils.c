@@ -255,7 +255,7 @@ internal_getRouterBrand ()
 
   if (boardnum == 45 && nvram_match ("boardtype", "bcm95365r"))
     {
-      cprintf ("router is asus\n");
+      cprintf ("router is Asus WL-500GD\n");
       setRouter ("Asus WL-500g Deluxe");
       return ROUTER_ASUS_WL500GD;
     }
@@ -263,7 +263,7 @@ internal_getRouterBrand ()
   if (nvram_match ("boardnum", "00") &&
       nvram_match ("boardtype", "0x0101") && nvram_match ("boardrev", "0x10"))
     {
-      cprintf ("router is buffalo wbr2\n");
+      cprintf ("router is Buffalo wbr2\n");
       setRouter ("Buffalo WBR2-G54 / WBR2-G54S");
       return ROUTER_BUFFALO_WBR2G54S;
     }
@@ -446,9 +446,16 @@ internal_getRouterBrand ()
       
 	if (nvram_match ("boardtype", "bcm94710r4") && nvram_match ("boardnum", ""))
     {
-      cprintf ("router is Belkin unknown (RT21000W)\n");
-	  setRouter ("Belkin unknown (RT21000W)");
-	  return ROUTER_RT210W;
+      cprintf ("router is Askey board RT2100W\n");
+	  setRouter ("Askey board RT2100W)");
+	  return ROUTER_BRCM4702_GENERIC;
+	}
+	
+	if (nvram_match ("boardtype", "0x0100") && nvram_match ("boardnum", ""))
+    {
+      cprintf ("router is Askey board RT2240W\n");
+	  setRouter ("Askey board RT2240W");
+	  return ROUTER_BRCM4702_GENERIC;
 	}
 
   if (nvram_match ("boardtype", "0x0101"))
