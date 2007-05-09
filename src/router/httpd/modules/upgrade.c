@@ -26,6 +26,7 @@
 
 #include <broadcom.h>
 #include <cyutils.h>
+#include <shutils.h>
 
 #define MIN_BUF_SIZE    4096
 #define CODE_PATTERN_ERROR 9999
@@ -344,7 +345,7 @@ do_upgrade_post (char *url, webs_t stream, int len, char *boundary)	//jimmy, htt
    */
   if (nvram_match ("sv_restore_defaults", "1"))
     {
-      system2 ("/sbin/erase nvram");
+	  eval ("erase", "nvram");
     }
 
   /* Slurp anything remaining in the request */
