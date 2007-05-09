@@ -40,6 +40,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BUFFALO_WLA2G54C 0x0710
 
 // Buffalo WHR-G54S (fccid: Buffalo FDI-04600264-0) and WHR-HP-G54 (fccid: Buffalo FDI-09101577-0)
+// Buffalo WHR-G125, WHR-HP-G125 (fccid: Buffalo FDI-09101584-0) (5354 cpu)
 #define ROUTER_BUFFALO_WHRG54S 0x0804
 
 // Buffalo WZR-RS-G54 (4704 cpu), WZR-G54, WZR-HP-G54 (4704 cpu, fccid: Buffalo FDI-09101457-0), WHR3-AG54, WVR-G54-NF, WHR2-A54G54
@@ -51,8 +52,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Motorola WR850G v2/v3, WR850GP (4712 cpu, ADM6996 switch, fccid Motorola ACQWR850GV2)
 #define ROUTER_MOTOROLA 0x0b15
 
-// RT210W generic and branded (fccid: Askey H8N-RT210W), (4702 cpu)
-// Siemens se505 v1, Belkin F5D7230-4 v1000
+// RT210W and RT211W generic and branded (fccid: Askey H8N-RT210W, H8N-RT211W), (4702 cpu)
+// H8N-RT210W: Siemens se505 v1, Belkin F5D7230-4 v1000, v1xxx < 1444
+// H8N-RT211W: Belkin F5D7130
 #define ROUTER_RT210W 0x0c0f
 
 // RT480W generic and branded (4712 cpu, ADM6996 switch, fccid: Askey H8N-RT480W),
@@ -68,7 +70,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Generic BRCM 4702 boards: Asus WL300g (fccid: Asus MSQWL300G), Asus WL500g (fccid: Asus MSQWL500G)
 #define ROUTER_BRCM4702_GENERIC 0x0f0f
 
-//Buffalo WLI_TX4_G54HP bridge
+// Buffalo WLI_TX4_G54HP bridge
 #define ROUTER_BUFFALO_WLI_TX4_G54HP 0x1004
 
 // Microsoft MN-700 (4702 cpu), (fccid: Microsoft C3KMN700)
@@ -83,65 +85,63 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Linksys WRTSL54GS (4704 cpu, BCM5325E switch), (fccid: Linksys Q87-WTSLGS, same without USB: Q87-WRTH54GS) 
 #define ROUTER_WRTSL54GS 0x1416
 
-//Buffalo WZR-G300N MIMO Router (radio fccid: Buffalo FDI-09101466-0)
+// Buffalo WZR-G300N MIMO Router (radio fccid: Buffalo FDI-09101466-0)
 #define ROUTER_BUFFALO_WZRG300N 0x1504
 
-//Linksys WRT300N v1 (4704 cpu, BCM5325F switch), (fccid: Linksys Q87-WRT300N or Q87-WRT300NV1)
+// Linksys WRT300N v1 (4704 cpu, BCM5325F switch), (fccid: Linksys Q87-WRT300N or Q87-WRT300NV1)
 #define ROUTER_WRT300N 0x1616
 
-//Buffalo WHR-AM54G54
+// Buffalo WHR-AM54G54
 #define ROUTER_BUFFALO_WHRAM54G54 0x170f
 
-//Magicbox PowerPC board
+// Magicbox PowerPC board
 #define ROUTER_BOARD_MAGICBOX 0x1801
 
-//Magicbox PowerPC board 2.0
+// Magicbox PowerPC board 2.0
 //#define ROUTER_BOARD_MAGICBOX20 0x1901
 
-//Buffalo WLI2-TX1-G54 Access point (4702 cpu, no switch)
+// Buffalo WLI2-TX1-G54 Access point (4702 cpu, no switch)
 #define ROUTER_BUFFALO_WLI2_TX1_G54 0x1a10
 
 // NMN A/B/G Router Protoype (266 Mhz Xscale, four minipci)
 #define ROUTER_BOARD_GATEWORX 0x1b04
 
-//Motorola WE800G v1 (4702 cpu, no switch, minipci radio, fccid: Motorola ACQWE800G, F2NWE800G)
+// Motorola WE800G v1 (4702 cpu, no switch, minipci radio, fccid: Motorola ACQWE800G, F2NWE800G)
 #define ROUTER_MOTOROLA_WE800G 0x1c10
 
-//Generic x86 PC / WRAP / Soekris
+// Generic x86 PC / WRAP / Soekris
 #define ROUTER_BOARD_X86 0x1e0f
 
 #define ROUTER_SUPERGERRY 0x1f0f
 
-//Linksys WRT350N (4705 cpu, Gbit switch, PCMCIA radio card, fccid: Linksys Q87-WRT350N)
+// Linksys WRT350N (4705 cpu, Gbit switch, PCMCIA radio card, fccid: Linksys Q87-WRT350N)
 #define ROUTER_WRT350N 0x2016
 
-//Linksys WAP54G v1 (4702 cpu, no switch, fccid: Linksys PKW-WAP54G)
+// Linksys WAP54G v1 (4702 cpu, no switch, fccid: Linksys PKW-WAP54G)
 #define ROUTER_WAP54G_V1 0x2110
 
-//Linksys WAP54G v2 (4712 cpu, no switch, fccid: Linksys Q87-WAP54GV2)
+// Linksys WAP54G v2 (4712 cpu, no switch, fccid: Linksys Q87-WAP54GV2)
 #define ROUTER_WAP54G_V2 0x2210
 
-//ViewSonic WAPBR-100 (4712 cpu, no switch, fccid: Viewsonic GSS-VS10407)
+// ViewSonic WAPBR-100 (4712 cpu, no switch, fccid: Viewsonic GSS-VS10407)
 #define ROUTER_VIEWSONIC_WAPBR_100 0x2317
 
-//Dell TrueMobile 2300 (v1) (4702 cpu, BCM5325 switch, mini pci radio, fccid: Gemtek MXF-R920401G)
+// Dell TrueMobile 2300 (v1) (4702 cpu, BCM5325 switch, mini pci radio, fccid: Gemtek MXF-R920401G)
 #define ROUTER_DELL_TRUEMOBILE_2300 0x2410
 
-//Dell TrueMobile 2300 (v2) (4712 cpu, ADM6996 switch, fccid: Gemtek MXF-R921212G)
+// Dell TrueMobile 2300 (v2) (4712 cpu, ADM6996 switch, fccid: Gemtek MXF-R921212G)
 #define ROUTER_DELL_TRUEMOBILE_2300_V2 0x2510
 
-//Fonera (Atheros SoC, no switch, fccid: Accton HED-FON2100)
+// Fonera (Atheros SoC, no switch, fccid: Accton HED-FON2100)
 #define ROUTER_BOARD_FONERA 0x2601
 
-//Buffalo WHR-HP-AG108 (Atheros A+G, Kendin KS8895XA switch, fccid: Buffalo FDI-09101540-0)
+// Buffalo WHR-HP-AG108 (Atheros A+G, Kendin KS8895XA switch, fccid: Buffalo FDI-09101540-0)
 #define ROUTER_BOARD_WHRAG108 0x2701
 
 // swapped phy definition 
 #define ROUTER_BOARD_GATEWORX_SWAP 0x280f
 
-
-
-//Netgear WNR834B (4704 cpu, BCM5325 switch, cardbus radio,  fccid: Netgear PY306100032)
+// Netgear WNR834B (4704 cpu, BCM5325 switch, cardbus radio,  fccid: Netgear PY306100032)
 #define ROUTER_NETGEAR_WNR834B 0x2917
 
 // swapped phy definition and Kendin switch
@@ -150,23 +150,27 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Linksys WRT54G3G  (4712 cpu, 5325E switch, PCMCIA slot, fccid: Linksys Q87-WRT54G3G)
 #define ROUTER_WRT54G3G 0x2b16
 
-//Sitecom WL-105(b) (4702 cpu, no switch, fccid: Gemtek MXF-A910910AB - no A-band)
+// Sitecom WL-105(b) (4702 cpu, no switch, fccid: Gemtek MXF-A910910AB - no A-band)
 #define ROUTER_SITECOM_WL105B 0x2c10
 
-//Linksys WRT150N (4704 cpu, BCM5325F switch), (fccid: Linksys Q87-WRT150N)
+// Linksys WRT150N (4704 cpu, BCM5325F switch), (fccid: Linksys Q87-WRT150N)
 #define ROUTER_WRT150N 0x2d16
 
 #define ROUTER_BOARD_LS2 0x2e01
 
-#define ROUTER_BUFFALO_WAPM_HP_AM54G54 0x2f05 // (only available on japanese market, dual radio 2.4 and 5 ghz broadcom)
+// Buffalo WAPM-HP-AM54G54 (only available on japanese market, dual radio 2.4 and 5 ghz broadcom)
+#define ROUTER_BUFFALO_WAPM_HP_AM54G54 0x2f05 
 
-#define ROUTER_BUFFALO_WLAH_G54 0x3004 // (only available on japanese market, single radio 2.4 ghz)
+// Buffalo WLAH-G54 (only available on japanese market, single radio 2.4 ghz)
+#define ROUTER_BUFFALO_WLAH_G54 0x3004 
 
-#define ROUTER_BUFFALO_WZRG144NH 0x3117 // (only available on japanese market, 802.11n, Gigabit switch. similar to WRT350N)
+// Buffalo WZR-G144HH(only available on japanese market, 802.11n, Gigabit switch. similar to WRT350N)
+#define ROUTER_BUFFALO_WZRG144NH 0x3117 
 
-//U.S.Robotics USR5430 bridge (4712 cpu, no switch, fccid: ?)
+// U.S.Robotics USR5430 bridge (4712 cpu, no switch, fccid: ?)
 #define ROUTER_USR_5430 0x3210
 
+// Meraki Mini (Atheros SoC, no switch, fccid: Meraki UDX-MERAKI-MINI)
 #define ROUTER_BOARD_MERAKI 0x330f
 
 #define NVROUTER "DD_BOARD"
