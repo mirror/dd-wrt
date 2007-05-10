@@ -447,14 +447,14 @@ internal_getRouterBrand ()
 	if (nvram_match ("boardtype", "bcm94710r4") && nvram_match ("boardnum", ""))
     {
       cprintf ("router is Askey board RT2100W\n");
-	  setRouter ("Askey board RT2100W)");
+	  setRouter ("Askey board RT2100W-D65)");
 	  return ROUTER_BRCM4702_GENERIC;
 	}
 	
 	if (nvram_match ("boardtype", "0x0100") && nvram_match ("boardnum", ""))
     {
-      cprintf ("router is Askey board RT2240W\n");
-	  setRouter ("Askey board RT2240W");
+      cprintf ("router is Askey board RT2206D\n");
+	  setRouter ("Askey board RT2206D-D56");
 	  return ROUTER_BRCM4702_GENERIC;
 	}
 
