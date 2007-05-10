@@ -7749,9 +7749,10 @@ do_wds (char *path, webs_t stream)
   strcpy (ifname, temp2);
   ifname[indexof (ifname, '.')] = 0;
   FILE *web = getWebsFile ("Wireless_WDS.asp");
-  unsigned int len = getWebsFileLen("WL_FilterTable.asp");
+  unsigned int len = getWebsFileLen("Wireless_WDS.asp");
   char *webfile=(char*)malloc(len);
   fread(webfile,len,1,web);
+  fclose(web);
  
   char temp[32768];
   memset (temp, 0, 32768);
@@ -7781,7 +7782,6 @@ do_wds (char *path, webs_t stream)
 	temp[ai++] = webfile[i];
     }
   free(webfile);
-  fclose(web);
   do_ej_buffer (temp, stream);
 }
 
