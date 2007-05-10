@@ -38,9 +38,9 @@ start_olsrd (void)
 	   nvram_safe_get ("olsrd_lqfisheye"));
   fprintf (fp, "LinkQualityWinSize\t%s\n",
 	   nvram_safe_get ("olsrd_lqwinsize"));
-  fprintf (fp, "LinkQualityDjikstraLimit\t%s %s\n",
-	   nvram_safe_get ("olsrd_lqdjikstramin"),
-	   nvram_safe_get ("olsrd_lqdjikstramax"));
+  fprintf (fp, "LinkQualityDijkstraLimit\t%s %s\n",
+	   nvram_safe_get ("olsrd_lqdijkstramin"),
+	   nvram_safe_get ("olsrd_lqdijkstramax"));
   fprintf (fp, "UseHysteresis\t%s\n",
 	   nvram_match ("olsrd_hysteresis", "1") ? "yes" : "no");
   if (nvram_match ("olsrd_hysteresis", "0"))

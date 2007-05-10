@@ -35,6 +35,9 @@ endif
 ifeq ($(CONFIG_KAID),y)
 CFLAGS += -DHAVE_KAID
 endif
+ifeq ($(CONFIG_SPUTNIK),y)
+CFLAGS += -DHAVE_SPUTNIK
+endif
 ifeq ($(CONFIG_MMC),y)
 CFLAGS += -DHAVE_MMC
 OBJS += mmc.o
