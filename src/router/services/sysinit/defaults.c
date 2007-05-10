@@ -55,6 +55,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"router_style", "buffalo", 0},
 #elif HAVE_3COM
   {"router_style", "3com", 0},
+#elif HAVE_SPUTNIK
+  {"router_style", "red", 0},
 #elif HAVE_MAKSAT
   {"router_style", "maksat", 0},
 #else
@@ -140,6 +142,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"lan_ipaddr", "192.168.1.4", 0},	/* LAN IP address */
 #elif HAVE_GW700
   {"lan_ipaddr", "192.168.108.1", 0},	/* LAN IP address */
+#elif HAVE_SPUTNIK
+  {"lan_ipaddr", "192.168.180.1", 0},	/* LAN IP address */
 #else
   {"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
 #endif
@@ -158,6 +162,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"lan_domain", "", 0},	/* LAN domain name */
 #endif
   {"lan_lease", "86400", 0},	/* LAN lease time in seconds */
+//  {"lan_lease", "1440", 0},	/* LAN lease time in seconds */
 
   /* WAN H/W parameters */
 
@@ -1770,11 +1775,21 @@ struct nvram_tuple srouter_defaults[] = {
 */
 #endif
 #ifdef HAVE_SPUTNIK_APD
+  
+#ifdef HAVE_SPUTNIK
+  {"sputnik_mjid_type", "0", 0},
+  {"sputnik_mjid", "sputnik@wifi.sputnik.com", 0},
+  {"sputnik_mode", "standard", 0},
+  {"sputnik_done", "0", 0},
+  {"sputnik_rereg", "1", 0},
+  {"apd_enable", "1", 0},
+#else
   {"sputnik_mjid_type", "0", 0},
   {"sputnik_mjid", "", 0},
   {"sputnik_mode", "standard", 0},
   {"sputnik_done", "0", 0},
   {"apd_enable", "0", 0},
+#endif
 #endif
 
   {"upgrade_delay", "300", 0},
