@@ -557,7 +557,7 @@ void igmp_read_data(igmp_router_t *igmprt)
 		case IGMP_HOST_MEMBERSHIP_REPORT:
 			igmprt_received_v1_report(igmprt, ifp, igmp);
 			break;
-		case IGMP_HOST_NEW_MEMBERSHIP_REPORT:
+		case IGMPV2_HOST_MEMBERSHIP_REPORT:
                         /* ******* zg 2007-01-04 porting WAG54Gv3 Source code ******* */
                         /* ******* To fix cdrouter v3.4 item 295(cdrouter_mcast_11) bug ******* */
 			//igmprt_received_v2_report(igmprt, ifp, igmp);
