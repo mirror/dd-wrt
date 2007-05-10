@@ -703,7 +703,11 @@ start_restore_defaults (void)
 	  nvram_set ("vlan0ports", "3 2 1 0 5*");
 	  nvram_set ("vlan1ports", "4 5");
 	}
+#ifdef HAVE_SPUTNIK
+      nvram_set ("lan_ipaddr", "192.168.180.1");
+#else
       nvram_set ("lan_ipaddr", "192.168.1.1");
+#endif
     }
 #else
   if (restore_defaults)
