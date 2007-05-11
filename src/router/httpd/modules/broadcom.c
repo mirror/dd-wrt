@@ -1026,7 +1026,7 @@ ej_nvram_invmatch (webs_t wp, int argc, char_t ** argv)
     }
 #endif
 
-  if (nvram_invmatch (name, invmatch))
+  if (!nvram_match (name, invmatch))
     websWrite (wp, output);
 
   return;
