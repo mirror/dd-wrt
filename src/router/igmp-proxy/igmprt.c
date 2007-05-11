@@ -1255,7 +1255,7 @@ igmprt_init (igmp_router_t * igmprt)
 			  igmprt->config.bothstream_ifaceName[1]) != 0)
 	
 	{
-	  printf ("the ifr_name is %s no math\n", ifr->ifr_name);
+//	  printf ("the ifr_name is %s no math\n", ifr->ifr_name);
 	  continue;
 	}
       
@@ -1360,7 +1360,7 @@ igmprt_init (igmp_router_t * igmprt)
 	
 	{
 	  bothstream[0] = 1;
-	  printf ("set the bothstream0 sussess\n");
+//	  printf ("set the bothstream0 sussess\n");
 	}
       
       else
@@ -1368,7 +1368,7 @@ igmprt_init (igmp_router_t * igmprt)
 	
 	{
 	  bothstream[1] = 1;
-	  printf ("set the bothstream1 sussess\n");
+//	  printf ("set the bothstream1 sussess\n");
 	}
       if (bothstream[0])
 	
