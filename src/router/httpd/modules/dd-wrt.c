@@ -3613,11 +3613,12 @@ save_prefix (webs_t wp, char *prefix)
   copytonv (wp, n);
   sprintf (n, "ath_regulatory");
   copytonv (wp, n);
+  sprintf (n, "%s_scanlist",prefix);
+  copytonv(wp,n);
 #ifdef HAVE_MAKSAT
   sprintf (n, "ath_specialmode");
   copytonv (wp, n);
-  sprintf (n, "%s_scanlist",prefix);
-  copytonv(wp,n);
+
 #endif
   sprintf (n, "%s_regdomain", prefix);
   copytonv (wp, n);
