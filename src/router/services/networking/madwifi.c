@@ -1023,6 +1023,56 @@ start_hostapdwan (void)
     }
 
 }
+#define SIOCSSCANLIST  		(SIOCDEVPRIVATE+4)
+
+static void set_scanlist(char *dev,char *wif)
+{
+char var[32];
+char *next;
+struct iwreq iwr;
+char scanlist[32];
+unsigned short list[1024];
+sprintf(scanlist,"%s_scanlist",dev);
+char *sl = default_get(scanlist,"default");
+memset (list, 0, 1024*sizeof (unsigned short));
+int c=0;
+if (strcmp(sl,"default"))
+    {
+    foreach (var, sl, next)
+	{
+	u_int16_t chan = atoi(var);
+	fprintf(stderr,"scanlist %d\n",chan);
+	list[c++]=chan;
+	}
+    }else
+    c=1;
+
+  memset (&iwr, 0, sizeof (struct iwreq));
+  strncpy (iwr.ifr_name, wif, IFNAMSIZ);
+//  if (c*sizeof(unsigned short) < IFNAMSIZ)
+//    {
+//      /*
+//       * Argument data fits inline; put it there.
+//       */
+//      memcpy (iwr.u.name, &list[0], c*sizeof(unsigned short));
+//    }else
+    {
+      /*
+       * Argument data too big for inline transfer; setup a
+       * parameter block instead; the kernel will transfer
+       * the data for the driver.
+       */
+      iwr.u.data.pointer = &list[0];
+      iwr.u.data.length = 1024*sizeof(unsigned short);
+    }
+
+int r=ioctl (getsocket (), SIOCSSCANLIST, &iwr);
+if (r<0)
+    {
+    fprintf(stderr,"error while setting scanlist on %s, %d\n",wif,r);
+    }
+}
+
 
 static void
 set_rate (char *dev)
@@ -1466,6 +1516,9 @@ configure_single (int count)
 	  sprintf (freq, "%sM", ch);
 	  eval ("iwconfig", dev, "freq", freq);
 	}
+    }else
+    {
+    set_scanlist(dev,wif);
     }
 
 
