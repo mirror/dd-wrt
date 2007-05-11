@@ -141,7 +141,6 @@ int nvram_default_match (char *var, char *match, char *def)
   if (v == NULL || strlen (v) == 0)
     {
       nvram_set (var, def);
-      nvram_commit ();
     }
   return nvram_match (var, match);
 }
@@ -151,7 +150,6 @@ char *nvram_default_get (char *var, char *def)
   if (v == NULL || strlen (v) == 0)
     {
       nvram_set (var, def);
-      nvram_commit ();
     }
   return nvram_safe_get (var);
 }
