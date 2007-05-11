@@ -23,3 +23,7 @@ else
 	install -D openvpn/config2/openvpn.webservices $(INSTALLDIR)/openvpn/etc/config/openvpn.webservices
 endif
 
+openvpn-clean:
+	@true
+
+
