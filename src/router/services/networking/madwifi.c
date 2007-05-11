@@ -1036,11 +1036,18 @@ sprintf(scanlist,"%s_scanlist",dev);
 char *sl = default_get(scanlist,"default");
 memset (list, 0, 1024*sizeof (unsigned short));
 int c=0;
-if (strcmp(sl,"default"))
+if (strlen(sl)>0 && strcmp(sl,"default"))
     {
     foreach (var, sl, next)
 	{
-	u_int16_t chan = atoi(var);
+	int ch = atoi(var);
+	if (ch<1000 || ch >7000)
+	    {
+	    c=1;
+	    break;
+	    }
+	u_int16_t chan = ch;
+
 //	fprintf(stderr,"scanlist %d\n",chan);
 	list[c++]=chan;
 	}
@@ -1049,13 +1056,6 @@ if (strcmp(sl,"default"))
 
   memset (&iwr, 0, sizeof (struct iwreq));
   strncpy (iwr.ifr_name, wif, IFNAMSIZ);
-//  if (c*sizeof(unsigned short) < IFNAMSIZ)
-//    {
-//      /*
-//       * Argument data fits inline; put it there.
-//       */
-//      memcpy (iwr.u.name, &list[0], c*sizeof(unsigned short));
-//    }else
     {
       /*
        * Argument data too big for inline transfer; setup a
