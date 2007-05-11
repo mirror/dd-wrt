@@ -24,6 +24,7 @@ else
 endif
 
 openvpn-clean:
-	@true
+	if test -e "openvpn/Makefile"; then make -C openvpn clean; fi
+
 
 
