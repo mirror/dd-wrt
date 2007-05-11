@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
  * $Id:
- * NVRAM Emulation Library for platforms who cannot support nvram based settings in any way
+ * NVRAM Emulation Library for platforms which cannot support nvram flash based settings in any way
  */
 
 #include <stdio.h>
