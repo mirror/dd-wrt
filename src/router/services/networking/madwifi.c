@@ -1041,7 +1041,7 @@ if (strcmp(sl,"default"))
     foreach (var, sl, next)
 	{
 	u_int16_t chan = atoi(var);
-	fprintf(stderr,"scanlist %d\n",chan);
+//	fprintf(stderr,"scanlist %d\n",chan);
 	list[c++]=chan;
 	}
     }else
