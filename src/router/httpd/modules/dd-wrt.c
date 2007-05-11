@@ -3616,6 +3616,8 @@ save_prefix (webs_t wp, char *prefix)
 #ifdef HAVE_MAKSAT
   sprintf (n, "ath_specialmode");
   copytonv (wp, n);
+  sprintf (n, "%s_scanlist",prefix);
+  copytonv(wp,n);
 #endif
   sprintf (n, "%s_regdomain", prefix);
   copytonv (wp, n);
@@ -4254,7 +4256,20 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 					 "1") ? "checked=\"checked\"" : "");
       websWrite (wp, "</div>\n");
     }
-
+#ifdef HAVE_MADWIFI
+if (nvram_match(wl_mode,"sta") || nvram_match(wl_mode,"wdssta") || nvram_match(wl_mode,"wet"))
+    {
+  char wl_scanlist[32];    
+  sprintf (wl_scanlist, "%s_scanlist", prefix);
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.scanlist)</script></div>\n");
+  websWrite (wp,
+	     "<input name=\"%s\" size=\"32\" maxlength=\"512\" value=\"%s\" />\n",
+	     wl_scanlist, nvram_default_get (wl_scanlist, "default"));
+  websWrite (wp, "</div>\n");
+    }
+#endif
 
 // ACK timing
 #ifdef HAVE_MADWIFI		//temp fix for v24 broadcom ACKnot working
