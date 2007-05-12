@@ -4,6 +4,7 @@ wifidog:
 
 wifidog-clean:
 	if test -e "wifidog/Makefile"; then make -C wifidog clean; fi
+	@true
 
 wifidog-install:
 	install -D wifidog/src/wdctl $(INSTALLDIR)/wifidog/usr/sbin/wdctl
