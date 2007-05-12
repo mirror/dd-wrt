@@ -1665,16 +1665,16 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
   /* WME parameters */
   /* EDCA parameters for STA */
-  {"wl_wme_sta_bk", "15 1023 7 0 0 off", 0},	/* WME STA AC_BK paramters */
-  {"wl_wme_sta_be", "15 1023 3 0 0 off", 0},	/* WME STA AC_BE paramters */
-  {"wl_wme_sta_vi", "7 15 2 6016 3008 off", 0},	/* WME STA AC_VI paramters */
-  {"wl_wme_sta_vo", "3 7 2 3264 1504 off", 0},	/* WME STA AC_VO paramters */
+  {"wl_wme_sta_bk", "15 1023 7 0 0 off off", 0},	/* WME STA AC_BK paramters */
+  {"wl_wme_sta_be", "15 1023 3 0 0 off off", 0},	/* WME STA AC_BE paramters */
+  {"wl_wme_sta_vi", "7 15 2 6016 3008 off off", 0},	/* WME STA AC_VI paramters */
+  {"wl_wme_sta_vo", "3 7 2 3264 1504 off off", 0},	/* WME STA AC_VO paramters */
 
   /* EDCA parameters for AP */
-  {"wl_wme_ap_bk", "15 1023 7 0 0 off", 0},	/* WME AP AC_BK paramters */
-  {"wl_wme_ap_be", "15 63 3 0 0 off", 0},	/* WME AP AC_BE paramters */
-  {"wl_wme_ap_vi", "7 15 1 6016 3008 off", 0},	/* WME AP AC_VI paramters */
-  {"wl_wme_ap_vo", "3 7 1 3264 1504 off", 0},	/* WME AP AC_VO paramters */
+  {"wl_wme_ap_bk", "15 1023 7 0 0 off off", 0},	/* WME AP AC_BK paramters */
+  {"wl_wme_ap_be", "15 63 3 0 0 off off", 0},	/* WME AP AC_BE paramters */
+  {"wl_wme_ap_vi", "7 15 1 6016 3008 off off", 0},	/* WME AP AC_VI paramters */
+  {"wl_wme_ap_vo", "3 7 1 3264 1504 off off", 0},	/* WME AP AC_VO paramters */
   {"wl_wme_no_ack", "off", 0},	/* WME No-Acknowledgmen mode */
   {"wl_wme_apsd", "on", 0},	/* WME APSD mode */
 
