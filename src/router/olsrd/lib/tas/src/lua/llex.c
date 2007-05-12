@@ -1,5 +1,5 @@
 /*
-** $Id: llex.c,v 1.1 2005/04/12 17:17:26 tlopatic Exp $
+** $Id: llex.c,v 1.2 2007/04/20 13:46:03 bernd67 Exp $
 ** Lexical Analyzer
 ** See Copyright Notice in lua.h
 */
@@ -21,9 +21,10 @@
 #include "lzio.h"
 
 
-
 #define next(LS) (LS->current = zgetc(LS->z))
 
+static void luaX_error (LexState *ls, const char *s, const char *token) __attribute__((noreturn));
+static void luaX_lexerror (LexState *ls, const char *s, int token) __attribute__((noreturn));
 
 
 /* ORDER RESERVED */
@@ -58,7 +59,6 @@ void luaX_checklimit (LexState *ls, int val, int limit, const char *msg) {
   }
 }
 
-
 void luaX_errorline (LexState *ls, const char *s, const char *token, int line) {
   lua_State *L = ls->L;
   char buff[MAXSRC];
@@ -66,7 +66,6 @@ void luaX_errorline (LexState *ls, const char *s, const char *token, int line) {
   luaO_pushfstring(L, "%s:%d: %s near `%s'", buff, line, s, token); 
   luaD_throw(L, LUA_ERRSYNTAX);
 }
-
 
 static void luaX_error (LexState *ls, const char *s, const char *token) {
   luaX_errorline(ls, s, token, ls->linenumber);

@@ -3,7 +3,7 @@
 #
 # Lines starting with a # are discarded
 #
-# This file was shipped with olsrd 0.X.X
+# This file was shipped with olsrd 0.5.0-unoffical
 #
 
 # This file is an example of a typical
@@ -14,13 +14,26 @@
 # Debug level(0-9)
 # If set to 0 the daemon runs in the background
 
-DebugLevel	2
+DebugLevel	0
 
 
 # Fisheye mechanism for TC messages 0=off, 1=on
 
 LinkQualityFishEye 1
 
+
+# Don't recalculate the Dijkstra-table for every incoming topology 
+# control packet. There is no need to recalculate the whole table 
+# if a minor change occured several hops away. Small CPUs will start
+# to glow if you do this in a mesh of considerable size. Rather the table 
+# should be recalculated if a change occured in the neighborhood 
+# of this node. The first number is the number of hops. Nodes within 
+# this number of hops trigger a recalculation of the table. If the 
+# number is 0 no incoming topology control packet will trigger 
+# a recalculation of the table. The second number (floating point!) 
+# is the length ot the interval until the table is recalculated anyway.    
+
+LinkQualityDijkstraLimit 1 6.0
 
 
 # IP version to use (4 or 6)
@@ -141,10 +154,6 @@ LinkQualityWinSize	100
 
 Pollrate	0.05
 
-# Interval to poll network interfaces for configuration 
-# changes. Defaults to 2.5 seconds
-
-NicChgsPollInt  3.0
 
 # TC redundancy
 # Specifies how much neighbor info should
@@ -204,6 +213,14 @@ MprCoverage	5
 #   PlParam     "Ping"       "194.25.2.129"
 #}
 
+LoadPlugin "olsrd_httpinfo.so.0.1"
+{
+    PlParam     "port"   "8080"
+    PlParam     "Host"   "127.0.0.1"
+#    PlParam     "Host"   "80.23.53.22"
+#    PlParam     "Net"    "10.0.0.0 255.0.0.0"
+#    PlParam     "Net"    "192.168.0.0 255.255.0.0"
+}
 
 
 # Interfaces and their rules
@@ -215,18 +232,10 @@ MprCoverage	5
 # !!CHANGE THE INTERFACE LABEL(s) TO MATCH YOUR INTERFACE(s)!!
 # (eg. wlan0 or eth1):
 
-Interface "XXX" "YYY"
+#Interface "eth0" "eth1" "eth2" "wlan0" "ath0" "rausb0"
+
+Interface "rausb0"
 {
-
-    # Olsrd can autodetect changes in NIC
-    # configurations(IP address changes etc.). 
-    # This is Enabled by default and the interval
-    # to poll for changes on is defined by 
-    # NicChgsPollInt.
-    # This polling can be disabled pr. NIC by setting
-    # AutoDetectChanges to no.
-
-    # AutoDetectChanges            yes
 
     # IPv4 broadcast address to use. The
     # one usefull example would be 255.255.255.255
@@ -263,8 +272,12 @@ Interface "XXX" "YYY"
     # HELLO validity time
     HelloValidityTime	200.0
 
-    # TC interval in seconds(float)
-    TcInterval        0.5
+
+    # TC interval in seconds(float) 0.5 is only viable when
+    # LinkQualityFishEye is enabled. Otherwise larger networks would
+    # suffocate from a massive protocol overhead of TC-messages
+
+    TcInterval        2.5
 
     # TC validity time
     TcValidityTime	250.0
@@ -273,7 +286,7 @@ Interface "XXX" "YYY"
     MidInterval	5.0
 
     # MID validity time
-    MidValidityTime	100.0
+    MidValidityTime	300.0
 
     # HNA interval in seconds(float)
     HnaInterval	5.0
@@ -282,31 +295,13 @@ Interface "XXX" "YYY"
     HnaValidityTime 	100.0
 
 
-    # When multiple links exist between hosts
-    # the weight of interface is used to determine
-    # the link to use. Normally the weight is
-    # automatically calculated by olsrd based
-    # on the characteristics of the interface,
-    # but here you can specify a fixed value.
-    # Olsrd will choose links with the lowest value.
-    # Note:
-    # Interface weight is used only when LinkQualityLevel is set to 0.
-    # For any other value of LinkQualityLevel, the interface ETX
-    # value is used instead.
-    # Weight 0
 
-
-    # If a certain route should be preferred 
-    # or ignored by the mesh, the Link Quality 
-    # value of a node can be multiplied with a factor 
-    # entered here. In the example the route 
-    # using 192.168.0.1 would rather be ignored.
-    # A multiplier of 0.5 will result in a small
-    # (bad) LinkQuality value and a high (bad)
-    # ETX value.
-    # Note:
-    # Link quality multiplier is used only when
-    # LinkQualityLevel is > 0.
+    # If a certain route should be preferred or ignored by the mesh, the
+    # Link Quality value of a node can be multiplied with a factor entered
+    # here. In the example the route using 192.168.0.1 would rather be
+    # ignored.  A multiplier of 0.5 will result in a small (bad) LinkQuality
+    # value and a high (bad) ETX value.  Note: Link quality multiplier is
+    # used only when LinkQualityLevel is > 0.
 
     # LinkQualityMult 192.168.0.1 0.5
 

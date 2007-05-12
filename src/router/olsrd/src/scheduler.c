@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: scheduler.c,v 1.37 2007/01/31 12:36:50 bernd67 Exp $
+ * $Id: scheduler.c,v 1.39 2007/04/25 22:08:16 bernd67 Exp $
  */
 
 
@@ -77,7 +77,7 @@ signal_link_changes(olsr_bool val)
 }
 
 static void 
-trigger_dijkstra(void *dummy)
+trigger_dijkstra(void *foo __attribute__((unused)))
 {
   OLSR_PRINTF(3, "Triggering Dijkstra\n");
 
@@ -98,7 +98,7 @@ trigger_dijkstra(void *dummy)
  */
 
 void
-scheduler()
+scheduler(void)
 {
   struct timespec remainder_spec;
   struct timespec sleeptime_spec;
@@ -132,13 +132,12 @@ scheduler()
   interval.tv_sec = interval_usec / 1000000;
   interval.tv_usec = interval_usec % 1000000;
 
-  OLSR_PRINTF(1, "Scheduler started - polling every %0.2f seconds\n", pollrate)
-  OLSR_PRINTF(3, "Max jitter is %f\n\n", olsr_cnf->max_jitter)
+  OLSR_PRINTF(1, "Scheduler started - polling every %0.2f seconds\n", pollrate);
+  OLSR_PRINTF(3, "Max jitter is %f\n\n", olsr_cnf->max_jitter);
 
   /* Main scheduler event loop */
   for(;;)
     {
-
       /* Update now_times */
       now_times = times(&tms_buf);
 
@@ -170,7 +169,7 @@ scheduler()
       /* Check for changes in topology */
       if(link_changes)
         {
-	  OLSR_PRINTF(3, "ANSN UPDATED %d\n\n", get_local_ansn())
+	  OLSR_PRINTF(3, "ANSN UPDATED %d\n\n", get_local_ansn());
 	  increase_local_ansn();
           link_changes = OLSR_FALSE;
 	}
@@ -201,7 +200,7 @@ scheduler()
 	      if(entry->trigger != NULL)
 		*(entry->trigger) = 0;
 	      
-	      //OLSR_PRINTF(3, "Since_last jitter: %0.2f\n", entry->since_last)
+	      //OLSR_PRINTF(3, "Since_last jitter: %0.2f\n", entry->since_last);
 
 	    }
 
@@ -278,7 +277,7 @@ olsr_register_scheduler_event(void (*event_function)(void *),
 {
   struct event_entry *new_entry;
 
-  OLSR_PRINTF(3, "Scheduler event registered int: %0.2f\n", interval)
+  OLSR_PRINTF(3, "Scheduler event registered int: %0.2f\n", interval);
 
   /* check that this entry is not added already */
   new_entry = event_functions;
@@ -314,7 +313,7 @@ olsr_register_scheduler_event(void (*event_function)(void *),
 
 /*
  *
- *@param initial how long utnil the first generation
+ *@param initial how long until the first generation
  *@param trigger pointer to a boolean indicating that
  *this function should be triggered immediatley
  */
@@ -322,7 +321,7 @@ int
 olsr_remove_scheduler_event(void (*event_function)(void *), 
 			    void *par,
 			    float interval, 
-			    float initial, 
+			    float initial __attribute__((unused)), 
 			    olsr_u8_t *trigger)
 {
   struct event_entry *entry, *prev;

@@ -51,8 +51,8 @@ union hello_message
 
 union tc_message
 {
-  struct tcmsg v4;
-  struct tcmsg6 v6;
+  struct olsr_tcmsg v4;
+  struct olsr_tcmsg6 v6;
 };
 
 

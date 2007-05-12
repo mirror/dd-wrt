@@ -36,10 +36,12 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: unistd.h,v 1.5 2004/11/21 01:21:10 tlopatic Exp $
+ * $Id: unistd.h,v 1.6 2007/05/09 00:30:04 bernd67 Exp $
  */
 
 #if !defined TL_UNISTD_H_INCLUDED
+
+#include <stddef.h>
 
 #define TL_UNISTD_H_INCLUDED
 
@@ -52,9 +54,12 @@ char *StrError(unsigned int ErrNo);
 
 int getpid(void);
 
-#define IPTOS_TOS(x) (x & 0x1e)
-#define IPTOS_PREC(x) (x & 0xe0)
+#define IPTOS_TOS(x) ((x) & 0x1e)
+#define IPTOS_PREC(x) ((x) & 0xe0)
 
 int isatty(int fd);
+
+typedef long ssize_t;
+ssize_t write(int fd, const void *buf, size_t count);
 
 #endif

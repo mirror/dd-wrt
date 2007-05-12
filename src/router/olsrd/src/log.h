@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: log.h,v 1.5 2004/11/21 11:28:56 kattemat Exp $
+ * $Id: log.h,v 1.6 2007/04/20 13:46:04 bernd67 Exp $
  */
 
 /* 
@@ -55,7 +55,7 @@ void
 olsr_openlog(const char *ident);
 
 void
-olsr_syslog(int level, char *format, ...);
+olsr_syslog(int level, char *format, ...) __attribute__((format(printf,2,3)));
 
 
 #endif

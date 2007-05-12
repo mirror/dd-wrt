@@ -36,15 +36,15 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: log.c,v 1.4 2004/11/21 01:21:10 tlopatic Exp $
+ * $Id: log.c,v 1.5 2007/04/25 22:23:09 bernd67 Exp $
  */
 
 #include "../log.h"
 
-void olsr_openlog(const char *Id)
+void olsr_openlog(const char *Id __attribute__((unused)))
 {
 }
 
-void olsr_syslog(int Level, char *Format, ...)
+void olsr_syslog(int Level __attribute__((unused)), char *Format __attribute__((unused)), ...)
 {
 }

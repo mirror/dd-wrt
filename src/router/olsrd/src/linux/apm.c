@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: apm.c,v 1.16 2006/11/26 00:32:14 bernd67 Exp $
+ * $Id: apm.c,v 1.18 2007/04/25 22:08:17 bernd67 Exp $
  */
 
 /*
@@ -128,18 +128,19 @@ apm_init(void)
   struct olsr_apm_info ainfo;
 
   method = -1;
-  OLSR_PRINTF(3, "Initializing APM\n")
+  OLSR_PRINTF(3, "Initializing APM\n");
 
   if(((fd_index = acpi_probe()) >= 0) && apm_read_acpi(&ainfo))
     method = USE_ACPI;
   else if(apm_read_apm(&ainfo))
     method = USE_APM;
   
-  if(method)
+  if(method != -1)
     apm_printinfo(&ainfo);
 
   return method;
 }
+
 
 void
 apm_printinfo(struct olsr_apm_info *ainfo)
@@ -147,35 +148,24 @@ apm_printinfo(struct olsr_apm_info *ainfo)
   OLSR_PRINTF(5, "APM info:\n\tAC status %d\n\tBattery percentage %d%%\n\tBattery time left %d mins\n\n",
 	      ainfo->ac_line_status,
 	      ainfo->battery_percentage,
-	      ainfo->battery_time_left)
-
-  return;
+	      ainfo->battery_time_left);
 }
-
 
 
 int
 apm_read(struct olsr_apm_info *ainfo)
 {
-
   switch(method)
     {
     case(USE_APM):
       return apm_read_apm(ainfo);
-      break;
     case(USE_ACPI):
       return apm_read_acpi(ainfo);
-      break;
     default:
-      return 0;
       break;
     }
-
-  return 1;
+  return 0;
 }
-
-
-
 
 
 static int
@@ -190,14 +180,14 @@ apm_read_apm(struct olsr_apm_info *ainfo)
   if((apm_procfile = fopen(APM_PROC, "r")) == NULL)
     return 0;
 
-  if(fgets(buffer, sizeof(buffer) - 1, apm_procfile) == NULL)
+  if(fgets(buffer, sizeof(buffer), apm_procfile) == NULL)
     {
       fclose(apm_procfile);
       /* Try re-opening the file */
       if((apm_procfile = fopen(APM_PROC, "r")) != NULL)
 	return 0;
 
-      if(fgets(buffer, sizeof(buffer) - 1, apm_procfile) == NULL)
+      if(fgets(buffer, sizeof(buffer), apm_procfile) == NULL)
 	{
 	  /* Giving up */
 	  fprintf(stderr, "OLSRD: Could not read APM info - setting willingness to default");
@@ -205,8 +195,8 @@ apm_read_apm(struct olsr_apm_info *ainfo)
 	  return 0;
 	}
     }
+  fclose(apm_procfile);
 
-  buffer[sizeof(buffer) - 1] = '\0';
 
   //printf("READ: %s\n", buffer);
 
@@ -245,18 +235,14 @@ apm_read_apm(struct olsr_apm_info *ainfo)
   ainfo->battery_percentage = lainfo.battery_percentage;
   ainfo->battery_time_left = lainfo.battery_time;
   
-  fclose(apm_procfile);
-
   return 1;
 }
-
 
 
 static int
 apm_read_acpi(struct olsr_apm_info *ainfo)
 {
   FILE *fd;
-  char s1[32], s2[32], s3[32], s4[32], inbuff[127];
   int bat_max = 5000; /* Find some sane value */
   int bat_val = 0;
   
@@ -271,22 +257,19 @@ apm_read_acpi(struct olsr_apm_info *ainfo)
       return 1;
     }
 
-
   /* Get maxvalue */
   if((fd = fopen(acpi_info[fd_index], "r")) == NULL) 
     return 0;
-
-  fgets(inbuff, 127, fd);
-  while(!feof(fd)) 
+  
+  for(;;) 
     {
-      sscanf(inbuff, "%s %s %s %s", s1, s2, s3, s4);
-	
-      if (!strcasecmp(s2, "full")) 
-	{
-	  bat_max = atoi(s4);
-	}
+      char s1[32], s2[32], s3[32], s4[32], inbuff[127];
+      if (fgets(inbuff, sizeof(inbuff), fd) == NULL)
+        break;
 
-      fgets(inbuff, 127, fd);
+      sscanf(inbuff, "%s %s %s %s", s1, s2, s3, s4);	
+      if (!strcasecmp(s2, "full")) 
+	  bat_max = atoi(s4);
     }
   fclose(fd);
 
@@ -295,22 +278,18 @@ apm_read_acpi(struct olsr_apm_info *ainfo)
     return 0;
 
   /* Extract battery status */
-  fgets(inbuff, 127, fd);
-  while(!feof(fd)) 
+  for(;;)
     {
+      char s1[32], s2[32], s3[32], s4[32], inbuff[127];
+      if (fgets(inbuff, sizeof(inbuff), fd) == NULL)
+        break;
       sscanf(inbuff, "%s %s %s %s", s1, s2, s3, s4);
 
       /* find remaining juice */
       if(!strcasecmp(s1, "Remaining")) 
-	{
 	  bat_val = atoi(s3);
-	}
-
-      fgets(inbuff, 127, fd);
     }
-
   fclose(fd);
-
 
   ainfo->ac_line_status = OLSR_BATTERY_POWERED;
   ainfo->battery_percentage = bat_val * 100 / bat_max;
@@ -319,56 +298,55 @@ apm_read_acpi(struct olsr_apm_info *ainfo)
 }
 
 
-
 static int
 acpi_probe(void)
 {
-  char s1[32], s2[32];
-  FILE *fd;
-  olsr_u16_t i;
+  unsigned int i;
   
-
   /* First check for AC power */
 
   for(i = 0; i < ACPI_AC_CNT; i++)
     {
+      char s1[32], s2[32];
+      int rc;
+      FILE *fd = fopen(acpi_ac[i], "r");
+  
       /* Try opening the info file */
-      if((fd = fopen(acpi_ac[i], "r")) == NULL)
+      if(fd == NULL)
 	continue;
       
       /* Extract info */
-      if(fscanf(fd, "%s %s", s1, s2) < 2)
-	{
-	  fclose(fd);
-	  continue;
-	}
-      
+      rc = fscanf(fd, "%s %s", s1, s2);
+
       /* Close info entry */
       fclose(fd);
 
+      if(rc < 2)
+	  continue;
+      
       /* Running on AC power */
       if(!strcasecmp(s2, "on-line"))
 	return -1;
-
     }
 
-  /* Only checking the first found batery entry... */
+  /* Only checking the first found battery entry... */
   for(i = 0; i < ACPI_BT_CNT; i ++)
     {
-
+      char s1[32], s2[32];
+      int rc;
+      FILE *fd = fopen(acpi_info[i], "r");
+  
       /* Try opening the info file */
-      if((fd = fopen(acpi_info[i], "r")) == NULL)
+      if(fd == NULL)
 	continue;
 
       /* Extract info */
-      if(fscanf(fd, "%s %s", s1, s2) < 2)
-	{
-	  fclose(fd);
-	  continue;
-	}
-
+      rc = fscanf(fd, "%s %s", s1, s2);
       /* Close info entry */
       fclose(fd);
+
+      if(rc < 2)
+	  continue;
 
       /* Check if battery is present */
       if((!strcasecmp(s1, "present:")) && (!strcasecmp(s2, "no"))) 
@@ -379,11 +357,9 @@ acpi_probe(void)
 	continue;
 
       fclose(fd);
-
       return i;
     }
 
   /* No battery found */
   return -1;
 }
-

@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_pgraph.h,v 1.1 2005/07/13 21:45:08 kattemat Exp $
+ * $Id: olsrd_pgraph.h,v 1.2 2007/04/20 13:46:03 bernd67 Exp $
  */
 
 /*
@@ -73,7 +73,7 @@
 extern struct in_addr ipc_accept_ip;
 extern int ipc_port;
 
-char netmask[5];
+extern char netmask[5];
 
 /* Event function to register with the sceduler */
 int
@@ -81,18 +81,6 @@ pcf_event(int, int, int);
 
 void
 ipc_action(int);
-
-static void inline
-ipc_print_neigh_link(struct neighbor_entry *neighbor);
-
-static void inline
-ipc_print_tc_link(struct tc_entry *entry, struct topo_dst *dst_entry);
-
-static void inline
-ipc_print_net(union olsr_ip_addr *, union olsr_ip_addr *, union hna_netmask *);
-
-int
-ipc_send(char *, int);
 
 char *
 olsr_netmask_to_string(union hna_netmask *);

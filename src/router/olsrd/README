@@ -1,6 +1,6 @@
 
 +====================================================================+
-| README - olsr.org OLSR daemon 0.4.10, 23.11.05                     |
+| README - olsr.org OLSR daemon 0.5.0, 02.04.2007                    |
 +====================================================================+
 
 Andreas Tonnesen(andreto@olsr.org)
@@ -135,11 +135,6 @@ it with custom actions.
     shared key can participate in the routing.
     You need to have the OpenSSL libs installed to use this plugin.
 
-  - Power plugin. A plugin that uses OLSRs MPR flooding to spread information
-    about the power status of nodes. Meant as an example plugin for code
-    reference only.
-
-
 ========================
  * LINK QUALITY ROUTING
 ========================
@@ -153,10 +148,16 @@ hops. Have a look at the README-Link-Quality.html file for details.
  * KNOWN PROBLEMS
 ==================
 
+There is no synchronization concept (and thus - and for Gods sake -  no
+code). Some plugins use threads for concurrency so this should be solved.
 
 ===============
  * FUTURE WORK
 ===============
+
+Future work concentrates on reduction of ressource (ab)use nad to make
+it more scalable. Of course additional useful plugins are always
+appreciated.
 
 Future releases of the 0.4 series will be maintainance releases focused
 on bugfixing. Work will soon begin on a 0.5 series where we will focus
@@ -202,14 +203,18 @@ olsrd		+/+	+/+	+/+	+/+	+/+	?
 olsr_switch	+/+	+/+	+/+	+/+	+/+	?
 ------------------------------------------------------------
 PLUGINS
+bmf		+/+	+/?	+/+	+/+	+/+	?
 dot_draw	+/+	+/?	+/+	+/+	+/+	?
 dyn_gw		+/+	+/?	+/-	+/-	+/-	?
+dyn_gw_plain	+/+	+/?	+/-	+/-	+/-	?
 httpinfo	+/+	+/+	+/+	+/+	+/+	?
 mini		+/+	+/?	+/+	+/+	+/+	?
 nameservice	+/+	+/?	+/+	+/+	+/+	?
-powerinfo	+/+	+/+	+/-	+/-	+/-	?
+pgraph		+/+	+/+	+/+	+/+	+/+	?
+quagga		+/+	-/-	+/+	+/+	+/+	?
 secure		+/+	+/+	+/+	+/+	+/+	?
 tas		+/+	-	-	-	-	?
+txtinfo		+/+	+/+	+/+	+/+	+/+	?
 ------------------------------------------------------------
 
 LEGEND:   +/+ = compiles/runs
@@ -439,4 +444,4 @@ limitations with respect to testing and maturity apply. Building and
 installing works in the same was as on FreeBSD.
 
 
-$Id: README,v 1.17 2007/02/05 21:49:43 bernd67 Exp $
+$Id: README,v 1.18 2007/04/03 08:46:44 bernd67 Exp $

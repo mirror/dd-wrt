@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: lq_avl.c,v 1.8 2007/03/29 00:05:50 tlopatic Exp $
+ * $Id: lq_avl.c,v 1.9 2007/04/20 14:23:41 bernd67 Exp $
  */
 
 #include <stddef.h>
@@ -427,7 +427,7 @@ static void post_delete(struct avl_tree *tree, struct avl_node *node)
   post_delete(tree, parent->parent);
 }
 
-static inline struct avl_node *local_min(struct avl_node *node)
+static struct avl_node *local_min(struct avl_node *node)
 {
   while (node->left != NULL)
     node = node->left;

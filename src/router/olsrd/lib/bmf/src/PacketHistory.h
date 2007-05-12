@@ -39,7 +39,6 @@
  *              multicast IP packets.
  * Created    : 29 Jun 2006
  *
- * $Id: PacketHistory.h,v 1.2 2007/02/10 17:05:56 bernd67 Exp $ 
  * ------------------------------------------------------------------------- */
 
 #include <sys/types.h> /* ssize_t */

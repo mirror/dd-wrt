@@ -38,13 +38,12 @@
  * Description: Multicast forwarding functions
  * Created    : 29 Jun 2006
  *
- * $Id: Bmf.h,v 1.2 2007/02/10 17:05:55 bernd67 Exp $ 
  * ------------------------------------------------------------------------- */
 
 /* BMF plugin data */
 #define PLUGIN_NAME "OLSRD Basic Multicast Forwarding (BMF) plugin"
 #define PLUGIN_NAME_SHORT "OLSRD BMF"
-#define PLUGIN_VERSION "1.3 (" __DATE__ " " __TIME__ ")"
+#define PLUGIN_VERSION "1.4 (" __DATE__ " " __TIME__ ")"
 #define PLUGIN_COPYRIGHT "  (C) Thales Communications Huizen, Netherlands"
 #define PLUGIN_AUTHOR "  Erik Tromp (erik.tromp@nl.thalesgroup.com)"
 #define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION "\n" PLUGIN_COPYRIGHT "\n" PLUGIN_AUTHOR
@@ -52,8 +51,11 @@
 /* UDP-Port on which multicast packets are encapsulated */
 #define BMF_ENCAP_PORT 50698
 
+/* Forward declaration of OLSR interface type */
 struct interface;
 
+void BmfPError(char* format, ...) __attribute__((format(printf, 1, 2)));
+union olsr_ip_addr* MainAddressOf(union olsr_ip_addr* ip);
 int InterfaceChange(struct interface* interf, int action);
 int InitBmf(struct interface* skipThisIntf);
 void CloseBmf(void);

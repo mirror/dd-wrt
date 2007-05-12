@@ -38,7 +38,6 @@
  * Description: BMF and IP packet processing functions
  * Created    : 29 Jun 2006
  *
- * $Id: Packet.h,v 1.2 2007/02/10 17:05:56 bernd67 Exp $ 
  * ------------------------------------------------------------------------- */
 
 /* System includes */
@@ -67,7 +66,7 @@ struct TEncapHeader
   u_int32_t futureExpansion3;
 } __attribute__((__packed__));
 
-#define	ENCAP_HDR_LEN (sizeof(struct TEncapHeader))
+#define	ENCAP_HDR_LEN ((int)sizeof(struct TEncapHeader))
 
 struct TSaveTtl
 {
@@ -75,11 +74,19 @@ struct TSaveTtl
   u_int16_t check;
 } __attribute__((__packed__));
 
-int GetIpPacketLength(unsigned char* buffer);
-int GetIpHeaderLength(unsigned char* buffer);
-int GetIpTtl(unsigned char* buffer);
-void SaveTtlAndChecksum(unsigned char* buffer, struct TSaveTtl* sttl);
-void RestoreTtlAndChecksum(unsigned char* buffer, struct TSaveTtl* sttl);
-void DecreaseTtlAndUpdateHeaderChecksum(unsigned char* buffer);
+int IsIpFragment(unsigned char* ipPacket);
+u_int16_t GetTotalLength(unsigned char* ipPacket);
+unsigned int GetHeaderLength(unsigned char* ipPacket);
+u_int8_t GetTtl(unsigned char* ipPacket);
+void SaveTtlAndChecksum(unsigned char* ipPacket, struct TSaveTtl* sttl);
+void RestoreTtlAndChecksum(unsigned char* ipPacket, struct TSaveTtl* sttl);
+void DecreaseTtlAndUpdateHeaderChecksum(unsigned char* ipPacket);
+u_int16_t GetEtherType(unsigned char* ethernetFrame);
+struct ip* GetIpHeader(unsigned char* ethernetFrame);
+unsigned char* GetIpPacket(unsigned char* ethernetFrame);
+u_int16_t GetFrameLength(unsigned char* ethernetFrame);
+void SetFrameSourceMac(unsigned char* ethernetFrame, unsigned char* srcMac);
+unsigned char* GetEthernetFrame(unsigned char* encapsulationUdpData);
+u_int16_t GetEncapsulationUdpDataLength(unsigned char* encapsulationUdpData);
 
 #endif /* _BMF_PACKET_H */

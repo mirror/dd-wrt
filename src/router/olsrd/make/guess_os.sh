@@ -17,7 +17,7 @@ else
 		freebsd*)	arch=fbsd ;;
 		netbsd*)	arch=nbsd ;;
 		openbsd*)	arch=obsd ;;
-		darwin*)		arch=osx ;;
+		darwin*)	arch=osx ;;
 		cygwin_*)	arch=win32 ;;
 		Windows_*)	arch=win32 ;;
 		*)		arch="UNKNOWN" ;;

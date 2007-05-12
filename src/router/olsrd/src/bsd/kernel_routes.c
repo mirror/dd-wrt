@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: kernel_routes.c,v 1.9 2007/02/14 09:09:16 kattemat Exp $
+ * $Id: kernel_routes.c,v 1.11 2007/05/02 07:41:20 bernd67 Exp $
  */
 
 
@@ -68,7 +68,7 @@ static int add_del_route(struct rt_entry *dest, int add)
   inet_ntop(AF_INET, &dest->rt_router.v4, Str3, 16);
 
   OLSR_PRINTF(1, "%s IPv4 route to %s/%s via %s.\n",
-    (add != 0) ? "Adding" : "Removing", Str1, Str2, Str3)
+    (add != 0) ? "Adding" : "Removing", Str1, Str2, Str3);
 
   memset(buff, 0, sizeof (buff));
   memset(&sin, 0, sizeof (sin));
@@ -184,8 +184,8 @@ static int add_del_route6(struct rt_entry *dest, int add)
   inet_ntop(AF_INET6, &dest->rt_dst.v6, Str1, 40);
   inet_ntop(AF_INET6, &dest->rt_router.v6, Str2, 40);
 
-  OLSR_PRINTF(1, "%s IPv6 route to %s/%d via %s.\n",
-    (add != 0) ? "Adding" : "Removing", Str1, dest->rt_mask.v6, Str2)
+  OLSR_PRINTF(1, "%s IPv6 route to %s/%d via %s.\n", 
+    (add != 0) ? "Adding" : "Removing", Str1, dest->rt_mask.v6, Str2);
 
   memset(buff, 0, sizeof (buff));
   memset(&sin6, 0, sizeof (sin6));

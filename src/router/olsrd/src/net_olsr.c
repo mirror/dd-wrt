@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: net_olsr.c,v 1.19 2007/02/10 19:59:51 bernd67 Exp $
+ * $Id: net_olsr.c,v 1.22 2007/04/25 22:08:09 bernd67 Exp $
  */
 
 #include "net_olsr.h"
@@ -77,8 +77,6 @@ struct ptf
 
 static struct ptf *ptf_list;
 
-static char ipv6_buf[100]; /* for address coversion */
-
 static struct deny_address_entry *deny_entries;
 
 static const char * const deny_ipv4_defaults[] =
@@ -104,16 +102,15 @@ net_set_disp_pack_out(olsr_bool val)
 void
 init_net(void)
 {
-  union olsr_ip_addr addr;
-  int i;
-
   /* Block invalid addresses */
   if(olsr_cnf->ip_version == AF_INET)
     {
+      union olsr_ip_addr addr;
+      int i;
       /* IPv4 */
       for(i = 0; deny_ipv4_defaults[i] != NULL; i++)
 	{
-	  if(inet_pton(olsr_cnf->ip_version, deny_ipv4_defaults[i], &addr) < 0)
+	  if(inet_pton(olsr_cnf->ip_version, deny_ipv4_defaults[i], &addr) <= 0)
 	    {
 	      fprintf(stderr, "Error converting fixed IP %s for deny rule!!\n",
 		      deny_ipv4_defaults[i]);
@@ -124,10 +121,12 @@ init_net(void)
     }
   else 
     {
+      union olsr_ip_addr addr;
+      int i;
       /* IPv6 */
       for(i = 0; deny_ipv6_defaults[i] != NULL; i++)
 	{
-	  if(inet_pton(olsr_cnf->ip_version, deny_ipv6_defaults[i], &addr) < 0)
+	  if(inet_pton(olsr_cnf->ip_version, deny_ipv6_defaults[i], &addr) <= 0)
 	    {
 	      fprintf(stderr, "Error converting fixed IP %s for deny rule!!\n",
 		      deny_ipv6_defaults[i]);
@@ -250,7 +249,7 @@ net_output_pending(struct interface *ifp)
  *  success
  */
 int
-net_outbuffer_push(struct interface *ifp, olsr_u8_t *data, olsr_u16_t size)
+net_outbuffer_push(struct interface *ifp, const void *data, const olsr_u16_t size)
 {
   if((ifp->netbuf.pending + size) > ifp->netbuf.maxsize)
     return 0;
@@ -274,7 +273,7 @@ net_outbuffer_push(struct interface *ifp, olsr_u8_t *data, olsr_u16_t size)
  *  success
  */
 int
-net_outbuffer_push_reserved(struct interface *ifp, olsr_u8_t *data, olsr_u16_t size)
+net_outbuffer_push_reserved(struct interface *ifp, const void *data, const olsr_u16_t size)
 {
   if((ifp->netbuf.pending + size) > (ifp->netbuf.maxsize + ifp->netbuf.reserved))
     return 0;
@@ -294,7 +293,7 @@ net_outbuffer_push_reserved(struct interface *ifp, olsr_u8_t *data, olsr_u16_t s
  * @return the number of bytes available in the buffer or
  */
 int
-net_outbuffer_bytes_left(struct interface *ifp)
+net_outbuffer_bytes_left(const struct interface *ifp)
 {
   return ifp->netbuf.maxsize - ifp->netbuf.pending;
 }
@@ -417,11 +416,9 @@ net_output(struct interface *ifp)
   /*
    *Call possible packet transform functions registered by plugins  
    */
-  tmp_ptf_list = ptf_list;
-  while(tmp_ptf_list != NULL)
+  for (tmp_ptf_list = ptf_list; tmp_ptf_list != NULL; tmp_ptf_list = tmp_ptf_list->next)
     {
       tmp_ptf_list->function(ifp->netbuf.buff, &ifp->netbuf.pending);
-      tmp_ptf_list = tmp_ptf_list->next;
     }
 
   /*
@@ -508,7 +505,7 @@ olsr_prefix_to_netmask(union olsr_ip_addr *adr, olsr_u16_t prefix)
     }
 
 #ifdef DEBUG
-  OLSR_PRINTF(3, "Prefix %d = Netmask: %s\n", prefix, olsr_ip_to_string(adr))
+  OLSR_PRINTF(3, "Prefix %d = Netmask: %s\n", prefix, olsr_ip_to_string(adr));
 #endif
 
   return 1;
@@ -547,7 +544,7 @@ olsr_netmask_to_prefix(union olsr_ip_addr *adr)
     }
 
 #ifdef DEBUG
-  OLSR_PRINTF(3, "Netmask: %s = Prefix %d\n", olsr_ip_to_string(adr), prefix)
+  OLSR_PRINTF(3, "Netmask: %s = Prefix %d\n", olsr_ip_to_string(adr), prefix);
 #endif
 
   return prefix;
@@ -585,18 +582,14 @@ sockaddr_to_string(struct sockaddr *address_to_convert)
  *@return a char pointer to the string containing the IP
  */
 
-char *
-ip_to_string(olsr_u32_t *address)
+const char *
+ip_to_string(const olsr_u32_t *address)
 {
-
   struct in_addr in;
   in.s_addr=*address;
   return(inet_ntoa(in));
   
 }
-
-
-
 
 /**
  *Converts the 32bit olsr_u32_t datatype to
@@ -608,36 +601,36 @@ ip_to_string(olsr_u32_t *address)
  *@return a char pointer to the string containing the IP
  */
 
-char *
-ip6_to_string(struct in6_addr *addr6)
+const char *
+ip6_to_string(const struct in6_addr *addr6)
 {
-  return (char *)inet_ntop(AF_INET6, addr6, ipv6_buf, sizeof(ipv6_buf));
+  static char ipv6_buf[INET6_ADDRSTRLEN]; /* for address coversion */
+  return inet_ntop(AF_INET6, addr6, ipv6_buf, sizeof(ipv6_buf));
 }
 
 
-char *
-olsr_ip_to_string(union olsr_ip_addr *addr)
+const char *
+olsr_ip_to_string(const union olsr_ip_addr *addr)
 {
   static int index = 0;
-  static char buff[4][100];
-  char *ret;
-  struct in_addr in;
+  static char buff[4][INET6_ADDRSTRLEN > INET_ADDRSTRLEN ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN];
+  const char *ret;
   
   if(olsr_cnf->ip_version == AF_INET)
     {
-      in.s_addr=addr->v4;
-      ret = inet_ntoa(in);
+#if 0
+      struct in_addr in;
+      in.s_addr = addr->v4;
+      ret = inet_ntop(AF_INET, &in, buff[index], sizeof(buff[index]));
+#else
+      ret = inet_ntop(AF_INET, &addr->v6, buff[index], sizeof(buff[index]));
+#endif
     }
   else
     {
       /* IPv6 */
-      ret = (char *)inet_ntop(AF_INET6, &addr->v6, ipv6_buf, sizeof(ipv6_buf));
+      ret = inet_ntop(AF_INET6, &addr->v6, buff[index], sizeof(buff[index]));
     }
-
-  strncpy(buff[index], ret, 100);
-
-  ret = buff[index];
-
   index = (index + 1) & 3;
 
   return ret;
@@ -656,7 +649,7 @@ olsr_add_invalid_address(union olsr_ip_addr *adr)
 
   deny_entries = new_entry;
 
-  OLSR_PRINTF(1, "Added %s to IP deny set\n", olsr_ip_to_string(&new_entry->addr))
+  OLSR_PRINTF(1, "Added %s to IP deny set\n", olsr_ip_to_string(&new_entry->addr));
   return;
 }
 
@@ -679,7 +672,7 @@ olsr_validate_address(union olsr_ip_addr *adr)
       if(COMP_IP(adr, &deny_entry->addr))
 	{
 	  OLSR_PRINTF(1, "Validation of address %s failed!\n",
-		      olsr_ip_to_string(adr))
+		      olsr_ip_to_string(adr));
 	  return OLSR_FALSE;
 	}
 

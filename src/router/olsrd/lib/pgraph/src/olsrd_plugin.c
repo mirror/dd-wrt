@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_plugin.c,v 1.1 2005/07/13 21:45:08 kattemat Exp $
+ * $Id: olsrd_plugin.c,v 1.2 2007/04/20 13:46:03 bernd67 Exp $
  */
 
 /*
@@ -78,7 +78,7 @@ my_fini(void);
  * Do not alter unless you know what you are doing!
  */
 int 
-olsrd_plugin_interface_version()
+olsrd_plugin_interface_version(void)
 {
   return PLUGIN_INTERFACE_VERSION;
 }
@@ -88,7 +88,7 @@ olsrd_plugin_interface_version()
  *Constructor
  */
 void
-my_init()
+my_init(void)
 {
   /* Print plugin info to stdout */
   printf("%s\n", MOD_DESC);
@@ -104,7 +104,7 @@ my_init()
  *Destructor
  */
 void
-my_fini()
+my_fini(void)
 {
 
   /* Calls the destruction function

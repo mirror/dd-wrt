@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: compat.c,v 1.12 2005/03/21 02:17:36 tlopatic Exp $
+ * $Id: compat.c,v 1.15 2007/05/09 00:30:04 bernd67 Exp $
  */
 
 /*
@@ -100,7 +100,7 @@ int nanosleep(struct timespec *Req, struct timespec *Rem)
   return 0;
 }
 
-void gettimeofday(struct timeval *TVal, void *TZone)
+void gettimeofday(struct timeval *TVal, void *TZone __attribute__((unused)))
 {
   SYSTEMTIME SysTime;
   FILETIME FileTime;
@@ -118,7 +118,7 @@ void gettimeofday(struct timeval *TVal, void *TZone)
   TVal->tv_usec = (unsigned int)(Ticks % 10000000) / 10;
 }
 
-long times(struct tms *Dummy)
+long times(struct tms *Dummy __attribute__((unused)))
 {
   return (long)GetTickCount();
 }
@@ -165,7 +165,7 @@ void WinSockPError(char *Str)
 
 // XXX - not thread-safe, which is okay for our purposes
  
-void *dlopen(char *Name, int Flags)
+void *dlopen(char *Name, int Flags __attribute__((unused)))
 {
 #if !defined WINCE
   return (void *)LoadLibrary(Name);
@@ -363,7 +363,7 @@ static int inet_pton6(const char *src, unsigned char *dst)
   return (1);
 }
 
-int inet_pton(int af, char *src, void *dst)
+int inet_pton(int af, const char *src, void *dst)
 {
   switch (af)
   {
@@ -477,7 +477,7 @@ static char *inet_ntop6(const unsigned char *src, char *dst, int size)
   return strcpy(dst, tmp);
 }
 
-char *inet_ntop(int af, void *src, char *dst, int size)
+char *inet_ntop(int af, const void *src, char *dst, int size)
 {
   switch (af)
   {
@@ -521,4 +521,20 @@ int isatty(int fd)
 #else
   return 0;
 #endif
+}
+
+#define CHUNK_SIZE 512
+
+/* and we emulate a real write(2) syscall using send() */
+ssize_t write(int fd, const void *buf, size_t count)
+{
+  size_t written = 0;
+  while (written < count) {
+    ssize_t rc = send(fd, buf+written, min(count-written, CHUNK_SIZE), 0);
+    if (rc <= 0) {
+      break;
+    }
+    written += rc;
+  }
+  return written;
 }

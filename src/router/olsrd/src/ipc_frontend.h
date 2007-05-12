@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: ipc_frontend.h,v 1.12 2004/11/21 11:28:56 kattemat Exp $
+ * $Id: ipc_frontend.h,v 1.13 2007/04/20 13:46:04 bernd67 Exp $
  */
 
 /*
@@ -98,8 +98,6 @@ struct ipc_net_msg
 };
 
 
-int ipc_connection;
-int ipc_sock;
 olsr_bool ipc_active;
 
 olsr_bool
@@ -107,9 +105,6 @@ ipc_check_allowed_ip(union olsr_ip_addr *);
 
 void
 ipc_accept(int);
-
-int
-ipc_send_all_routes(void);
 
 void
 frontend_msgparser(union olsr_message *, struct interface *, union olsr_ip_addr *);

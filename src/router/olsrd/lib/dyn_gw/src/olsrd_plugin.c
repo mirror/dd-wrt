@@ -37,10 +37,11 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_plugin.c,v 1.12 2005/05/29 12:47:40 br1 Exp $
+ * $Id: olsrd_plugin.c,v 1.14 2007/04/20 14:19:44 bernd67 Exp $
  */
 
 #include "olsrd_plugin.h"
+#include "olsrd_dyn_gw.h"
 #include <stdio.h>
 
 #define PLUGIN_NAME    "OLSRD dynamic gateway plugin"
@@ -64,7 +65,7 @@ my_init(void);
  * Do not alter unless you know what you are doing!
  */
 int 
-olsrd_plugin_interface_version()
+olsrd_plugin_interface_version(void)
 {
   return PLUGIN_INTERFACE_VERSION;
 }
@@ -74,7 +75,7 @@ olsrd_plugin_interface_version()
  *Constructor
  */
 void
-my_init()
+my_init(void)
 {
   /* Print plugin info to stdout */
   printf("%s\n", MOD_DESC);

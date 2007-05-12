@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: neighbor_table.c,v 1.30 2006/01/07 08:16:20 kattemat Exp $
+ * $Id: neighbor_table.c,v 1.32 2007/04/25 22:08:09 bernd67 Exp $
  */
 
 
@@ -56,12 +56,11 @@ struct neighbor_entry neighbortable[HASHSIZE];
 
 
 void
-olsr_init_neighbor_table()
+olsr_init_neighbor_table(void)
 {
   int i;
 
   olsr_register_timeout_function(&olsr_time_out_neighborhood_tables);
-
   for(i = 0; i < HASHSIZE; i++)
     {
       neighbortable[i].next = &neighbortable[i];
@@ -437,30 +436,20 @@ olsr_time_out_two_hop_neighbors(struct neighbor_entry  *neighbor)
     }
 }
 
-
-
-
-
 void
-olsr_time_out_neighborhood_tables()
+olsr_time_out_neighborhood_tables(void)
 {
-  olsr_u8_t              index;
+  olsr_u8_t index;
   
   for(index=0;index<HASHSIZE;index++)
     {
-      struct neighbor_entry *entry = neighbortable[index].next;
-
-      while(entry != &neighbortable[index])
+      struct neighbor_entry *entry;
+      for(entry = neighbortable[index].next; entry != &neighbortable[index]; entry = entry->next)
 	{	  
 	  olsr_time_out_two_hop_neighbors(entry);
-	  entry = entry->next;
 	}
     }
 }
-
-
-
-
 
 /**
  *Prints the registered neighbors and two hop neighbors
@@ -469,7 +458,7 @@ olsr_time_out_neighborhood_tables()
  *@return nada
  */
 void
-olsr_print_neighbor_table()
+olsr_print_neighbor_table(void)
 {
   int i;
   char *fstr;
@@ -478,42 +467,37 @@ olsr_print_neighbor_table()
               nowtm->tm_hour,
               nowtm->tm_min,
               nowtm->tm_sec,
-              (int)now.tv_usec/10000)
+              (int)now.tv_usec/10000);
 
   if (olsr_cnf->ip_version == AF_INET)
-  {
-    OLSR_PRINTF(1, "IP address       LQ     NLQ    SYM   MPR   MPRS  will\n")
-    fstr = "%-15s  %5.3f  %5.3f  %s  %s  %s  %d\n";
-  }
-
+    {
+      OLSR_PRINTF(1, "IP address       LQ     NLQ    SYM   MPR   MPRS  will\n");
+      fstr = "%-15s  %5.3f  %5.3f  %s  %s  %s  %d\n";
+    }
   else
-  {
-    OLSR_PRINTF(1, "IP address                               LQ     NLQ    SYM   MPR   MPRS  will\n")
-    fstr = "%-39s  %5.3f  %5.3f  %s  %s  %s  %d\n";
-  }
+    {
+      OLSR_PRINTF(1, "IP address                               LQ     NLQ    SYM   MPR   MPRS  will\n");
+      fstr = "%-39s  %5.3f  %5.3f  %s  %s  %s  %d\n";
+    }
 
   for (i = 0; i < HASHSIZE; i++)
     {
       struct neighbor_entry *neigh;
-      for(neigh = neighbortable[i].next; neigh != &neighbortable[i];
-	  neigh = neigh->next)
+      for(neigh = neighbortable[i].next; neigh != &neighbortable[i]; neigh = neigh->next)
 	{
-	  struct link_entry *link =
-            get_best_link_to_neighbor(&neigh->neighbor_main_addr);
-	  double best_lq, inv_best_lq;
+	  struct link_entry *link = get_best_link_to_neighbor(&neigh->neighbor_main_addr);
+	  if(link)
+            {
+              double best_lq = link->neigh_link_quality;
+              double inv_best_lq = link->loss_link_quality;
 
-	  if(!link) 
-	    continue;
-
-	  best_lq = link->neigh_link_quality;
-	  inv_best_lq = link->loss_link_quality;
-
-          OLSR_PRINTF(1, fstr, olsr_ip_to_string(&neigh->neighbor_main_addr),
-                      inv_best_lq, best_lq,
-                      (neigh->status == SYM) ? "YES " : "NO  ",
-                      neigh->is_mpr ? "YES " : "NO  ", 
-		      olsr_lookup_mprs_set(&neigh->neighbor_main_addr) == NULL ? "NO  " : "YES ",
-                      neigh->willingness)
+              OLSR_PRINTF(1, fstr, olsr_ip_to_string(&neigh->neighbor_main_addr),
+                          inv_best_lq, best_lq,
+                          (neigh->status == SYM) ? "YES " : "NO  ",
+                          neigh->is_mpr ? "YES " : "NO  ", 
+                          olsr_lookup_mprs_set(&neigh->neighbor_main_addr) == NULL ? "NO  " : "YES ",
+                          neigh->willingness);
+            }
         }
     }
 }

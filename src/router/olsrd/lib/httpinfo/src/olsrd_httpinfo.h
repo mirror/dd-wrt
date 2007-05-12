@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_httpinfo.h,v 1.28 2005/05/29 12:47:41 br1 Exp $
+ * $Id: olsrd_httpinfo.h,v 1.29 2007/04/20 14:06:18 bernd67 Exp $
  */
 
 /*
@@ -80,9 +80,6 @@ struct http_stats
 
 extern struct olsrd_config *olsr_cfg;
 
-
-char *
-olsr_ip_to_string(union olsr_ip_addr *);
 
 char *
 olsr_netmask_to_string(union hna_netmask *);

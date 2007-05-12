@@ -1,5 +1,5 @@
 /*
-** $Id: lparser.c,v 1.1 2005/04/12 17:17:27 tlopatic Exp $
+** $Id: lparser.c,v 1.2 2007/04/20 13:46:03 bernd67 Exp $
 ** Lua Parser
 ** See Copyright Notice in lua.h
 */
@@ -51,6 +51,7 @@ typedef struct BlockCnt {
 */
 static void chunk (LexState *ls);
 static void expr (LexState *ls, expdesc *v);
+static void error_expected (LexState *ls, int token) __attribute__((noreturn));
 
 
 

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: socket_parser.c,v 1.23 2005/05/29 12:47:45 br1 Exp $
+ * $Id: socket_parser.c,v 1.27 2007/05/08 23:43:17 bernd67 Exp $
  */
 
 #include <unistd.h>
@@ -60,9 +60,6 @@ struct olsr_socket_entry *olsr_socket_entries;
 
 static int hfd = 0;
 
-static struct timeval tvp = {0, 0};
-static fd_set ibits;
-
 /**
  * Add a socket and handler to the socketset
  * beeing used in the main select(2) loop
@@ -81,7 +78,7 @@ add_olsr_socket(int fd, void(*pf)(int))
       fprintf(stderr, "Bogus socket entry - not registering...\n");
       return;
     }
-  OLSR_PRINTF(2, "Adding OLSR socket entry %d\n", fd)
+  OLSR_PRINTF(2, "Adding OLSR socket entry %d\n", fd);
 
   new_entry = olsr_malloc(sizeof(struct olsr_socket_entry), "Socket entry");
 
@@ -114,7 +111,7 @@ remove_olsr_socket(int fd, void(*pf)(int))
       olsr_syslog(OLSR_LOG_ERR, "Bogus socket entry - not processing...\n");
       return 0;
     }
-  OLSR_PRINTF(1, "Removing OLSR socket entry %d\n", fd)
+  OLSR_PRINTF(1, "Removing OLSR socket entry %d\n", fd);
 
   entry = olsr_socket_entries;
   prev_entry = NULL;
@@ -157,11 +154,15 @@ remove_olsr_socket(int fd, void(*pf)(int))
 
 
 void
-poll_sockets()
+poll_sockets(void)
 {
   int n;
   struct olsr_socket_entry *olsr_sockets;
-  static struct tms tms_buf;
+  /* Global buffer for times(2) calls. Do not remopve since at least OpenBSD needs it. */
+  struct tms tms_buf;
+  fd_set ibits;
+  struct timeval tvp = {0, 0};
+
 
   /* If there are no registered sockets we
    * do not call select(2)
@@ -172,11 +173,10 @@ poll_sockets()
   FD_ZERO(&ibits);
   
   /* Adding file-descriptors to FD set */
-  olsr_sockets = olsr_socket_entries;
-  while(olsr_sockets)
+  
+  for(olsr_sockets = olsr_socket_entries; olsr_sockets; olsr_sockets = olsr_sockets->next)
     {
-      FD_SET(olsr_sockets->fd, &ibits);
-      olsr_sockets = olsr_sockets->next;
+      FD_SET((unsigned int)olsr_sockets->fd, &ibits); /* And we cast here since we get a warning on Win32 */    
     }
       
   /* Runnig select on the FD set */
@@ -187,27 +187,22 @@ poll_sockets()
   /* Did somethig go wrong? */
   if (n < 0) 
     {
-      if(errno == EINTR)
-	return;
-
-      olsr_syslog(OLSR_LOG_ERR, "select: %m");
-      OLSR_PRINTF(1, "Error select: %s", strerror(errno))
+      if(errno != EINTR) {
+        const char * const err_msg = strerror(errno);
+        olsr_syslog(OLSR_LOG_ERR, "select: %s", err_msg);
+        OLSR_PRINTF(1, "Error select: %s", err_msg);
+      }
       return;
     }
 
   /* Update time since this is much used by the parsing functions */
-  gettimeofday(&now, NULL);      
+  gettimeofday(&now, NULL);
   now_times = times(&tms_buf);
 
-  olsr_sockets = olsr_socket_entries;
-  while(olsr_sockets)
+  for(olsr_sockets = olsr_socket_entries;olsr_sockets;olsr_sockets = olsr_sockets->next)
     {
       if(FD_ISSET(olsr_sockets->fd, &ibits))
-	{
 	  olsr_sockets->process_function(olsr_sockets->fd);
-	}
-      olsr_sockets = olsr_sockets->next;
-    }
-  	
+    }  	
 }
 

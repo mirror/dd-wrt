@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: kernel_routes.c,v 1.20 2007/01/31 12:36:50 bernd67 Exp $
+ * $Id: kernel_routes.c,v 1.22 2007/04/25 22:08:17 bernd67 Exp $
  */
 
 
@@ -73,7 +73,7 @@ olsr_ioctl_add_route(struct rt_entry *destination)
 
   OLSR_PRINTF(1, "(ioctl)Adding route with metric %d to %s/%s via %s/%s.\n",
               destination->rt_metric, dst_str, mask_str, router_str,
-              destination->rt_if->int_name)
+              destination->rt_if->int_name);
   
   memset(&kernel_route, 0, sizeof(struct rtentry));
 
@@ -170,7 +170,7 @@ olsr_ioctl_add_route6(struct rt_entry *destination)
 
   OLSR_PRINTF(2, "(ioctl)Adding route: %s(hopc %d)\n", 
 	      olsr_ip_to_string(&destination->rt_dst), 
-	      destination->rt_metric + 1)
+	      destination->rt_metric + 1);
   
 
   memset(&zeroaddr, 0, olsr_cnf->ipsize); /* Use for comparision */
@@ -201,8 +201,8 @@ olsr_ioctl_add_route6(struct rt_entry *destination)
 
 
   
-  //OLSR_PRINTF(3, "Adding route to %s using gw ", olsr_ip_to_string((union olsr_ip_addr *)&kernel_route.rtmsg_dst))
-  //OLSR_PRINTF(3, "%s\n", olsr_ip_to_string((union olsr_ip_addr *)&kernel_route.rtmsg_gateway))
+  //OLSR_PRINTF(3, "Adding route to %s using gw ", olsr_ip_to_string((union olsr_ip_addr *)&kernel_route.rtmsg_dst));
+  //OLSR_PRINTF(3, "%s\n", olsr_ip_to_string((union olsr_ip_addr *)&kernel_route.rtmsg_gateway));
 
   if((tmp = ioctl(olsr_cnf->ioctl_s, SIOCADDRT, &kernel_route)) >= 0)
     {
@@ -241,7 +241,7 @@ olsr_ioctl_del_route(struct rt_entry *destination)
   inet_ntop(AF_INET, &destination->rt_router.v4, router_str, 16);
 
   OLSR_PRINTF(1, "(ioctl)Deleting route with metric %d to %s/%s via %s.\n",
-              destination->rt_metric, dst_str, mask_str, router_str)
+              destination->rt_metric, dst_str, mask_str, router_str);
   
   memset(&kernel_route,0,sizeof(struct rtentry));
 
@@ -309,10 +309,10 @@ olsr_ioctl_del_route6(struct rt_entry *destination)
 
   OLSR_PRINTF(2, "(ioctl)Deleting route: %s(hopc %d)\n", 
 	      olsr_ip_to_string(&destination->rt_dst), 
-	      destination->rt_metric)
+	      destination->rt_metric);
 
 
-  OLSR_PRINTF(1, "Deleting route: %s\n", olsr_ip_to_string(&tmp_addr))
+  OLSR_PRINTF(1, "Deleting route: %s\n", olsr_ip_to_string(&tmp_addr));
 
   memset(&kernel_route,0,sizeof(struct in6_rtmsg));
 
@@ -346,16 +346,14 @@ olsr_ioctl_del_route6(struct rt_entry *destination)
 
 
 int
-delete_all_inet_gws()
-{
-  struct rtentry kernel_route;
-  
+delete_all_inet_gws(void)
+{  
   int s;
   char buf[BUFSIZ], *cp, *cplim;
   struct ifconf ifc;
   struct ifreq *ifr;
   
-  OLSR_PRINTF(1, "Internet gateway detected...\nTrying to delete default gateways\n")
+  OLSR_PRINTF(1, "Internet gateway detected...\nTrying to delete default gateways\n");
   
   /* Get a socket */
   if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
@@ -375,20 +373,20 @@ delete_all_inet_gws()
     }
 
   ifr = ifc.ifc_req;
-#define size(p) (sizeof (p))
   cplim = buf + ifc.ifc_len; /*skip over if's with big ifr_addr's */
-  for (cp = buf; cp < cplim;cp += sizeof (ifr->ifr_name) + size(ifr->ifr_addr)) 
+  for (cp = buf; cp < cplim;cp += sizeof (ifr->ifr_name) + sizeof(ifr->ifr_addr)) 
     {
+      struct rtentry kernel_route;
       ifr = (struct ifreq *)cp;
       
       
       if(strcmp(ifr->ifr_ifrn.ifrn_name, "lo") == 0)
 	{
-	  OLSR_PRINTF(1, "Skipping loopback...\n")
+          OLSR_PRINTF(1, "Skipping loopback...\n");
 	  continue;
 	}
 
-      OLSR_PRINTF(1, "Trying 0.0.0.0/0 %s...", ifr->ifr_ifrn.ifrn_name)
+      OLSR_PRINTF(1, "Trying 0.0.0.0/0 %s...", ifr->ifr_ifrn.ifrn_name);
       
       
       memset(&kernel_route,0,sizeof(struct rtentry));
@@ -420,9 +418,9 @@ delete_all_inet_gws()
       //printf("Inserting route entry on device %s\n\n", kernel_route.rt_dev);
       
       if((ioctl(s, SIOCDELRT, &kernel_route)) < 0)
-	OLSR_PRINTF(1, "NO\n")
+         OLSR_PRINTF(1, "NO\n");
       else
-	OLSR_PRINTF(1, "YES\n")
+         OLSR_PRINTF(1, "YES\n");
 
 
       free(kernel_route.rt_dev);
