@@ -36,12 +36,12 @@
  *              multicast IP packets.
  * Created    : 29 Jun 2006
  *
- * $Id: PacketHistory.c,v 1.2 2007/02/10 17:05:56 bernd67 Exp $ 
  * ------------------------------------------------------------------------- */
 
 #include "PacketHistory.h"
 
 /* System includes */
+#include <stddef.h> /* NULL */
 #include <assert.h> /* assert() */
 #include <string.h> /* memset */
 #include <sys/types.h> /* u_int16_t, u_int32_t */
@@ -50,7 +50,7 @@
 /* OLSRD includes */
 #include "olsr.h" /* olsr_printf */
 
-/* Plugin includes */
+/* NULLPlugin includes */
 #include "Packet.h"
 
 static u_int32_t PacketHistory[HISTORY_TABLE_SIZE];
@@ -146,23 +146,23 @@ static u_int32_t CalcCrc32(unsigned char* buffer, ssize_t len)
 
 /* -------------------------------------------------------------------------
  * Function   : PacketCrc32
- * Description: Calculates the CRC-32 value for an Ethernet packet
- * Input      : ethPkt - the Ethernet packet
- *              len - the number of octets in the Ethernet packet
+ * Description: Calculates the CRC-32 value for an Ethernet frame
+ * Input      : ethernetFrame - the Ethernet frame
+ *              len - the number of octets in the Ethernet frame
  * Output     : none
  * Return     : 32-bits hash value
  * Data Used  : none
  * Notes      : The source and destination MAC address are not taken into account
  *              in the CRC calculation.
  * ------------------------------------------------------------------------- */
-u_int32_t PacketCrc32(unsigned char* ethPkt, ssize_t len)
+u_int32_t PacketCrc32(unsigned char* ethernetFrame, ssize_t len)
 {
   ssize_t nCrcBytes;
   struct TSaveTtl sttl;
-  struct iphdr* iph;
+  struct ip* ipHeader;
   u_int32_t result;
 
-  assert(ethPkt != NULL);
+  assert(ethernetFrame != NULL);
 
   /* Start CRC calculation at ethertype; skip source and destination MAC 
    * addresses, and ethertype.
@@ -183,15 +183,15 @@ u_int32_t PacketCrc32(unsigned char* ethPkt, ssize_t len)
     nCrcBytes = CRC_UPTO_NBYTES;
   }
 
-  SaveTtlAndChecksum(ethPkt, &sttl);
+  SaveTtlAndChecksum(GetIpPacket(ethernetFrame), &sttl);
 
-  iph = (struct iphdr*) (ethPkt + IP_HDR_OFFSET);
-  iph->ttl = 0xFF; /* fixed value of TTL for CRC-32 calculation */
-  iph->check = 0x5A5A; /* fixed value of IP header checksum for CRC-32 calculation */
+  ipHeader = GetIpHeader(ethernetFrame);
+  ipHeader->ip_ttl = 0xFF; /* fixed value of TTL for CRC-32 calculation */
+  ipHeader->ip_sum = 0x5A5A; /* fixed value of IP header checksum for CRC-32 calculation */
 
-  result = CalcCrc32(ethPkt + IP_HDR_OFFSET, nCrcBytes);
+  result = CalcCrc32(ethernetFrame + IP_HDR_OFFSET, nCrcBytes);
 
-  RestoreTtlAndChecksum(ethPkt, &sttl);
+  RestoreTtlAndChecksum(GetIpPacket(ethernetFrame), &sttl);
   return result;
 }
 
@@ -209,7 +209,7 @@ u_int16_t Hash16(u_int32_t hash32)
  * Return     : none
  * Data Used  : PacketHistory
  * ------------------------------------------------------------------------- */
-void InitPacketHistory()
+void InitPacketHistory(void)
 {
   memset(PacketHistory, 0, sizeof(PacketHistory));
   GenerateCrc32Table();
@@ -277,7 +277,7 @@ int CheckAndMarkRecentPacket(u_int16_t hash16)
  * Return     : none
  * Data Used  : PacketHistory
  * ------------------------------------------------------------------------- */
-void PrunePacketHistory(void* useless)
+void PrunePacketHistory(void* useless __attribute__((unused)))
 {
   uint i;
   for (i = 0; i < HISTORY_TABLE_SIZE; i++)

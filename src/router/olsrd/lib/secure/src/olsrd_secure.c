@@ -33,7 +33,7 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: olsrd_secure.c,v 1.21 2007/01/31 12:36:49 bernd67 Exp $
+ * $Id: olsrd_secure.c,v 1.25 2007/05/09 17:41:17 bernd67 Exp $
  */
 
 
@@ -115,7 +115,7 @@ MD5_checksum(const olsr_u8_t *data, const olsr_u16_t data_len, olsr_u8_t *hashbu
  */
 
 int
-secure_plugin_init()
+secure_plugin_init(void)
 {
   struct interface *ints;
   int i;
@@ -174,7 +174,7 @@ secure_plugin_init()
 
 
 int
-plugin_ipc_init()
+plugin_ipc_init(void)
 {
   return 1;
 }
@@ -184,7 +184,7 @@ plugin_ipc_init()
  * destructor - called at unload
  */
 void
-secure_plugin_exit()
+secure_plugin_exit(void)
 {
 }
 
@@ -193,14 +193,14 @@ secure_plugin_exit()
  *Scheduled event
  */
 void
-olsr_event()
+olsr_event(void)
 {
 
 }
 
 
 int
-ipc_send(char *data, int size)
+ipc_send(char *data __attribute__((unused)), int size __attribute__((unused)))
 {
   return 1;
 }
@@ -358,7 +358,7 @@ packet_parser(int fd)
  *
  */
 int
-check_auth(char *pck, int *size)
+check_auth(char *pck, int *size __attribute__((unused)))
 {
 
   olsr_printf(3, "[ENC]Checking packet for challenge response message...\n");
@@ -426,7 +426,7 @@ add_signature(olsr_u8_t *pck, int *size)
   
   /* Add timestamp */
   msg->sig.timestamp = htonl(now.tv_sec);
-  olsr_printf(3, "[ENC]timestamp: %d\n", now.tv_sec);
+  olsr_printf(3, "[ENC]timestamp: %ld\n", now.tv_sec);
   
   /* Set the new size */
   *size = *size + sizeof(struct s_olsrmsg);
@@ -593,7 +593,7 @@ validate_packet(char *pck, int *size)
       return 0;
     }
 
-  olsr_printf(1, "[ENC]Received timestamp %d diff: %d\n", rec_time, now.tv_sec - rec_time);
+  olsr_printf(1, "[ENC]Received timestamp %ld diff: %ld\n", rec_time, now.tv_sec - rec_time);
 
   /* Remove signature message */
   *size = packetsize;
@@ -684,7 +684,7 @@ send_challenge(union olsr_ip_addr *new_host)
   memcpy(&cmsg.destination, new_host, olsr_cnf->ipsize);
   cmsg.challenge = htonl(challenge);
 
-  olsr_printf(3, "[ENC]Size: %d\n", sizeof(struct challengemsg));
+  olsr_printf(3, "[ENC]Size: %lu\n", (unsigned long)sizeof(struct challengemsg));
 
   {
   olsr_u8_t checksum_cache[512 + KEYLENGTH];
@@ -704,7 +704,7 @@ send_challenge(union olsr_ip_addr *new_host)
 	      challenge);
 
   /* Add to buffer */
-  net_outbuffer_push(olsr_in_if, (olsr_u8_t *)&cmsg, sizeof(struct challengemsg));
+  net_outbuffer_push(olsr_in_if, &cmsg, sizeof(struct challengemsg));
 
   /* Send the request */
   net_output(olsr_in_if);
@@ -752,7 +752,7 @@ parse_cres(char *in_msg)
       return 0;
     }
 
-  olsr_printf(3, "[ENC]Challenge: 0x%x\n", ntohl(msg->challenge));
+  olsr_printf(3, "[ENC]Challenge: 0x%lx\n", (unsigned long)ntohl(msg->challenge)); /* ntohl() returns a unsignedlong onwin32 */
 
   /* Check signature */
 
@@ -979,7 +979,7 @@ parse_challenge(char *in_msg)
 	}
     }
 
-  olsr_printf(3, "[ENC]Challenge: 0x%x\n", ntohl(msg->challenge));
+  olsr_printf(3, "[ENC]Challenge: 0x%lx\n", (unsigned long)ntohl(msg->challenge)); /* ntohl() returns a unsignedlong onwin32 */
 
   /* Check signature */
 
@@ -1056,7 +1056,7 @@ send_cres(union olsr_ip_addr *to, union olsr_ip_addr *from, olsr_u32_t chal_in, 
 
   /* set timestamp */
   crmsg.timestamp = now.tv_sec;
-  olsr_printf(3, "[ENC]Timestamp %d\n", crmsg.timestamp);
+  olsr_printf(3, "[ENC]Timestamp %ld\n", crmsg.timestamp);
 
   /* Fill subheader */
   memcpy(&crmsg.destination, to, olsr_cnf->ipsize);
@@ -1099,7 +1099,7 @@ send_cres(union olsr_ip_addr *to, union olsr_ip_addr *from, olsr_u32_t chal_in, 
 	      challenge);
 
   /* Add to buffer */
-  net_outbuffer_push(olsr_in_if, (olsr_u8_t *)&crmsg, sizeof(struct c_respmsg));
+  net_outbuffer_push(olsr_in_if, &crmsg, sizeof(struct c_respmsg));
   /* Send the request */
   net_output(olsr_in_if);
 
@@ -1135,7 +1135,7 @@ send_rres(union olsr_ip_addr *to, union olsr_ip_addr *from, olsr_u32_t chal_in)
 
   /* set timestamp */
   rrmsg.timestamp = now.tv_sec;
-  olsr_printf(3, "[ENC]Timestamp %d\n", rrmsg.timestamp);
+  olsr_printf(3, "[ENC]Timestamp %ld\n", rrmsg.timestamp);
 
   /* Fill subheader */
   memcpy(&rrmsg.destination, to, olsr_cnf->ipsize);
@@ -1176,7 +1176,7 @@ send_rres(union olsr_ip_addr *to, union olsr_ip_addr *from, olsr_u32_t chal_in)
 	      olsr_ip_to_string(to));
 
   /* add to buffer */
-  net_outbuffer_push(olsr_in_if, (olsr_u8_t *)&rrmsg, sizeof(struct r_respmsg));
+  net_outbuffer_push(olsr_in_if, &rrmsg, sizeof(struct r_respmsg));
 
   /* Send the request */
   net_output(olsr_in_if);
@@ -1218,7 +1218,7 @@ lookup_timestamp_entry(union olsr_ip_addr *adr)
  *@return nada
  */
 void
-timeout_timestamps(void* foo)
+timeout_timestamps(void* foo __attribute__((unused)))
 {
   struct stamp *tmp_list;
   struct stamp *entry_to_delete;

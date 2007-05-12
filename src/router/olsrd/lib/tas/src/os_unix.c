@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: os_unix.c,v 1.5 2005/11/15 23:46:20 tlopatic Exp $
+ * $Id: os_unix.c,v 1.6 2007/04/19 23:01:32 bernd67 Exp $
  */
 
 #if defined linux
@@ -107,7 +107,7 @@ int addrLen(int family)
 
 void os_now(struct timeStamp *timeStamp)
 {
-  time((time_t *)&timeStamp->time);
+  timeStamp->time = time(NULL);
 }
 
 int timedOut(struct timeStamp *timeStamp, int sec)

@@ -1,5 +1,5 @@
 /*
-** $Id: lbaselib.c,v 1.1 2005/04/12 17:17:26 tlopatic Exp $
+** $Id: lbaselib.c,v 1.2 2007/04/20 13:46:03 bernd67 Exp $
 ** Basic library
 ** See Copyright Notice in lua.h
 */
@@ -75,7 +75,7 @@ static int luaB_tonumber (lua_State *L) {
   return 1;
 }
 
-
+static int luaB_error (lua_State *L)  __attribute__((noreturn));
 static int luaB_error (lua_State *L) {
   int level = luaL_optint(L, 2, 1);
   luaL_checkany(L, 1);
@@ -86,7 +86,7 @@ static int luaB_error (lua_State *L) {
     lua_pushvalue(L, 1);
     lua_concat(L, 2);
   }
-  return lua_error(L);
+  lua_error(L);
 }
 
 

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsr.h,v 1.25 2007/01/31 12:36:50 bernd67 Exp $
+ * $Id: olsr.h,v 1.26 2007/04/20 13:46:04 bernd67 Exp $
  */
 
 
@@ -60,7 +60,7 @@ olsr_process_changes(void);
 void
 init_msg_seqno(void);
 
-inline olsr_u16_t
+olsr_u16_t
 get_msg_seqno(void);
 
 int
@@ -101,6 +101,6 @@ void *
 olsr_malloc(size_t, const char *);
 
 int
-olsr_printf(int, char *, ...);
+olsr_printf(int, char *, ...) __attribute__((format(printf,2,3)));
 
 #endif

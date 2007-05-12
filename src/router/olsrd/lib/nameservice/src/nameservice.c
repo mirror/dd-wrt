@@ -30,7 +30,7 @@
  *
  */
 
-/* $Id: nameservice.c,v 1.18 2007/02/06 21:07:11 bernd67 Exp $ */
+/* $Id: nameservice.c,v 1.23 2007/04/28 19:58:49 bernd67 Exp $ */
 
 /*
  * Dynamic linked library for UniK OLSRd
@@ -104,7 +104,7 @@ static struct rt_entry *host_lookup_routing_table(union olsr_ip_addr *);
  * do initialization
  */
 void
-name_constructor() 
+name_constructor(void) 
 {
 	int i;
 	
@@ -187,7 +187,7 @@ olsrd_plugin_register_param(char *key, char *value)
 		if (strlen(value) == 0) {
             my_forwarders = add_name_to_list(my_forwarders, "", NAME_FORWARDER, NULL);
             olsr_printf(1,"\nNAME PLUGIN: parameter dns-server: (main address)");
-        } else if (inet_pton(olsr_cnf->ip_version, value, &ip)) {
+        } else if (inet_pton(olsr_cnf->ip_version, value, &ip) > 0) {
             my_forwarders = add_name_to_list(my_forwarders, "", NAME_FORWARDER, &ip);
             olsr_printf(1,"\nNAME PLUGIN: parameter dns-server: (%s)", value);
         } else {
@@ -208,7 +208,7 @@ olsrd_plugin_register_param(char *key, char *value)
 		// assume this is an IP address and hostname
 		union olsr_ip_addr ip;
 		
-		if (inet_pton(olsr_cnf->ip_version, key, &ip) == 1) {
+		if (inet_pton(olsr_cnf->ip_version, key, &ip) > 0) {
 			// the IP is validated later
             my_names = add_name_to_list(my_names, value, NAME_HOST, &ip);
 			olsr_printf(1,"\nNAME PLUGIN: parameter name %s (%s)", value, key);
@@ -257,18 +257,17 @@ add_name_to_list(struct name_entry *my_list, char *value, int type, const union 
  *   - register_olsr_data() then then finally calls this function
  */
 int
-name_init()
+name_init(void)
 {
 	struct name_entry *name;
 	union olsr_ip_addr ipz;
-
-	memset(&ipz, 0, sizeof(ipz));
-
     int ret;
+
     //regex string for validating the hostnames
     char *regex_name = "^[[:alnum:]_.-]+$";
     //regex string for the service line
     char *regex_service = olsr_malloc(256*sizeof(char) + strlen(my_suffix), "new *char from name_init for regex_service");
+	memset(&ipz, 0, sizeof(ipz));
 
     //compile the regex from the string
 	if ((ret = regcomp(&regex_t_name, regex_name , REG_EXTENDED)) != 0)
@@ -390,7 +389,7 @@ remove_nonvalid_names_from_list(struct name_entry *my_list, int type)
  * XXX: should I delete the hosts/services/resolv.conf files on exit?
  */
 void
-name_destructor()
+name_destructor(void)
 {
 	olsr_printf(2, "NAME PLUGIN: exit. cleaning up...\n");
 	
@@ -412,15 +411,13 @@ void
 free_all_list_entries(struct db_entry **this_db_list) 
 {
 	int i;
-	struct db_entry **tmp;
-	struct db_entry *to_delete;
 	
 	for(i = 0; i < HASHSIZE; i++)
 	{
-		tmp = &list[i];
+        struct db_entry **tmp = &this_db_list[i];
 		while(*tmp != NULL)
 		{
-			to_delete = *tmp;
+            struct db_entry *to_delete = *tmp;
 			*tmp = (*tmp)->next;
 			free_name_entry_list(&to_delete->names);
 			free(to_delete);
@@ -440,7 +437,7 @@ free_all_list_entries(struct db_entry **this_db_list)
  * and write changes to file
  */
 void
-olsr_timeout()
+olsr_timeout(void)
 {
     timeout_old_names(list, &name_table_changed);
     timeout_old_names(forwarder_list, &forwarder_table_changed);
@@ -488,7 +485,7 @@ timeout_old_names(struct db_entry **this_list, olsr_bool *this_table_changed)
  * Scheduled event: generate and send NAME packet
  */
 void
-olsr_event(void *foo)
+olsr_event(void *foo __attribute__((unused)))
 {
 	union olsr_message *message = (union olsr_message*)buffer;
 	struct interface *ifn;
@@ -531,10 +528,10 @@ olsr_event(void *foo)
 			message->v6.olsr_msgsize = htons(namesize);
 		}
 		
-		if(net_outbuffer_push(ifn, (olsr_u8_t *)message, namesize) != namesize ) {
+		if(net_outbuffer_push(ifn, message, namesize) != namesize ) {
 			/* send data and try again */
 			net_output(ifn);
-			if(net_outbuffer_push(ifn, (olsr_u8_t *)message, namesize) != namesize ) {
+			if(net_outbuffer_push(ifn, message, namesize) != namesize ) {
 				olsr_printf(1, "NAME PLUGIN: could not send on interface: %s\n", ifn->int_name);
 			}
 		}
@@ -679,9 +676,9 @@ decap_namemsg(struct name *from_packet, struct name_entry **to, olsr_bool *this_
 	struct name_entry *tmp;
 	struct name_entry *already_saved_name_entries;
     char *name = (char*)from_packet + sizeof(struct name);
-	olsr_printf(4, "\nNAME PLUGIN: decapsulating received name, service or forwarder \n");
     int type_of_from_packet = ntohs(from_packet->type);
     unsigned int len_of_name = ntohs(from_packet->len);
+	olsr_printf(4, "\nNAME PLUGIN: decapsulating received name, service or forwarder \n");
     
     // don't insert the received entry again, if it has already been inserted in the hash table. 
     // Instead only the validity time is set in insert_new_name_in_list function, which calls this one
@@ -833,7 +830,7 @@ insert_new_name_in_list(union olsr_ip_addr *originator, struct db_entry **this_l
  * write names to a file in /etc/hosts compatible format
  */
 void
-write_hosts_file()
+write_hosts_file(void)
 {
 	int hash;
 	struct name_entry *name;
@@ -914,7 +911,7 @@ write_hosts_file()
  * http://me.olsr:80|tcp|my little homepage
  */
 void
-write_services_file()
+write_services_file(void)
 {
 	int hash;
 	struct name_entry *name;
@@ -972,7 +969,7 @@ write_services_file()
  * best means the 3 with the best etx value in routing table
  */
 void
-write_resolv_file()
+write_resolv_file(void)
 {
 	int hash;
 	struct name_entry *name, *tmp_dns, *last_dns, *dnslist = NULL;
@@ -1280,7 +1277,7 @@ allowed_hostname_or_ip_in_service(char *service_line, regmatch_t *hostname_or_ip
     }
     
     //ip in service-line is allowed 
-    if (inet_pton(olsr_cnf->ip_version, hostname_or_ip, &olsr_ip)) {
+    if (inet_pton(olsr_cnf->ip_version, hostname_or_ip, &olsr_ip) > 0) {
         if (allowed_ip(&olsr_ip)) {
             olsr_printf(2, "NAME PLUGIN: ip %s in service %s is OK\n", olsr_ip_to_string(&olsr_ip), service_line);
             free(hostname_or_ip);

@@ -36,7 +36,6 @@
  *              and local broadcast packets are dropped.
  * Created    : 29 Jun 2006
  *
- * $Id: DropList.c,v 1.2 2007/02/10 17:05:55 bernd67 Exp $ 
  * ------------------------------------------------------------------------- */
 
 
@@ -44,7 +43,8 @@
 
 /* System includes */
 #include <assert.h> /* assert() */
-#include <stdio.h> /* NULL */
+#include <stddef.h> /* NULL */
+#include <stdio.h> /* sscanf */
 #include <stdlib.h> /* malloc */
 #include <string.h> /* memcmp */
 

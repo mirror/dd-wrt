@@ -22,6 +22,9 @@ endif
 ifeq ($(ARCH),x86_64)
 GENERATE_PIC = true
 endif
+ifeq ($(ARCH),alpha)
+GENERATE_PIC = true
+endif
 
 ifdef GENERATE_PIC
 CFLAGS +=	-fPIC

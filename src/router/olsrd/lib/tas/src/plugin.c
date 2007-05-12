@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: plugin.c,v 1.7 2006/01/07 08:17:45 kattemat Exp $
+ * $Id: plugin.c,v 1.8 2007/04/20 13:46:03 bernd67 Exp $
  */
 
 #include <string.h>
@@ -465,7 +465,7 @@ int olsrd_plugin_interface_version(void)
   return 4;
 }
 
-int olsrd_plugin_init()
+int olsrd_plugin_init(void)
 {
   ipAddrLen = olsr_cnf->ipsize;
   mainAddr = &olsr_cnf->main_addr;

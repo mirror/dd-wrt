@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_dot_draw.c,v 1.22 2006/04/11 18:43:12 kattemat Exp $
+ * $Id: olsrd_dot_draw.c,v 1.23 2007/04/20 14:06:18 bernd67 Exp $
  */
 
 /*
@@ -98,26 +98,23 @@ pcf_event(int, int, int);
 static void
 ipc_action(int);
 
-static void inline
+static void
 ipc_print_neigh_link(struct neighbor_entry *neighbor);
 
-static void inline
+static void
 ipc_print_tc_link(struct tc_entry *entry, struct topo_dst *dst_entry);
 
-static void inline
+static void
 ipc_print_net(union olsr_ip_addr *, union olsr_ip_addr *, union hna_netmask *);
 
 static int
-ipc_send(char *, int);
+ipc_send(const char *, int);
 
 static int
-ipc_send_str(char *);
+ipc_send_str(const char *);
 
 static double 
 calc_etx(double, double);
-
-static void inline
-ipc_print_neigh_link(struct neighbor_entry *);
 
 
 /**
@@ -127,11 +124,13 @@ ipc_print_neigh_link(struct neighbor_entry *);
  *function in uolsrd_plugin.c
  */
 int
-olsrd_plugin_init()
+olsrd_plugin_init(void)
 {
   /* Initial IPC value */
   ipc_open = 0;
   ipc_socket_up = 0;
+  ipc_socket = -1;
+  ipc_connection = -1;
 
   /* Register the "ProcessChanges" function */
   register_pcf(&pcf_event);
@@ -146,19 +145,19 @@ olsrd_plugin_init()
  * destructor - called at unload
  */
 void
-olsr_plugin_exit()
+olsr_plugin_exit(void)
 {
   if(ipc_open)
     close(ipc_socket);
 }
 
 
-static void inline
+static void
 ipc_print_neigh_link(struct neighbor_entry *neighbor)
 {
   char buf[256];
-  char* adr;
-  double etx=0.0;
+  const char* adr;
+  double etx = 0.0;
   char* style = "solid";
   struct link_entry* link;
   adr = olsr_ip_to_string(&olsr_cnf->main_addr);
@@ -188,7 +187,7 @@ ipc_print_neigh_link(struct neighbor_entry *neighbor)
 
 
 static int
-plugin_ipc_init()
+plugin_ipc_init(void)
 {
   struct sockaddr_in sin;
   olsr_u32_t yes = 1;
@@ -249,40 +248,35 @@ plugin_ipc_init()
 
 
 static void
-ipc_action(int fd)
+ipc_action(int fd __attribute__((unused)))
 {
   struct sockaddr_in pin;
-  socklen_t addrlen;
-  char *addr;  
-
-  addrlen = sizeof(struct sockaddr_in);
+  socklen_t addrlen = sizeof(struct sockaddr_in);
 
   if (ipc_open)
     {
-      while(close(ipc_connection) == -1) 
-        {
-          olsr_printf(1, "(DOT DRAW) Error on closing previously active TCP connection on fd %d: %s\n", ipc_connection, strerror(errno));
-          if (errno != EINTR)
-            {
-	      break;
-            }
-        }
+      int rc;
+      do {
+        rc = close(ipc_connection);
+      } while (rc == -1 && (errno == EINTR || errno == EAGAIN));
+      if (rc == -1) {
+        olsr_printf(1, "(DOT DRAW) Error on closing previously active TCP connection on fd %d: %s\n", ipc_connection, strerror(errno));
+      }
       ipc_open = 0;
     }
   
   if ((ipc_connection = accept(ipc_socket, (struct sockaddr *)  &pin, &addrlen)) == -1)
     {
       olsr_printf(1, "(DOT DRAW)IPC accept: %s\n", strerror(errno));
-      exit(1);
     }
   else
     {
-      addr = inet_ntoa(pin.sin_addr);
+      char *addr = inet_ntoa(pin.sin_addr);
       if(ntohl(pin.sin_addr.s_addr) != ntohl(ipc_accept_ip.s_addr))
 	{
 	  olsr_printf(1, "Front end-connection from foregin host(%s) not allowed!\n", addr);
 	  close(ipc_connection);
-	  return;
+          ipc_connection = -1;
 	}
       else
 	{
@@ -395,11 +389,11 @@ calc_etx(double loss, double neigh_loss)
 }
 
 
-static void inline
+static void
 ipc_print_tc_link(struct tc_entry *entry, struct topo_dst *dst_entry)
 {
   char buf[256];
-  char* adr;
+  const char* adr;
   double etx = calc_etx( dst_entry->link_quality, dst_entry->inverse_link_quality );
 
   adr = olsr_ip_to_string(&entry->T_last_addr);
@@ -412,10 +406,10 @@ ipc_print_tc_link(struct tc_entry *entry, struct topo_dst *dst_entry)
 }
 
 
-static void inline
+static void
 ipc_print_net(union olsr_ip_addr *gw, union olsr_ip_addr *net, union hna_netmask *mask)
 {
-  char *adr;
+  const char *adr;
 
   adr = olsr_ip_to_string(gw);
   ipc_send_str("\"");
@@ -438,7 +432,7 @@ ipc_print_net(union olsr_ip_addr *gw, union olsr_ip_addr *net, union hna_netmask
 }
 
 static int
-ipc_send_str(char *data)
+ipc_send_str(const char *data)
 {
   if(!ipc_open)
     return 0;
@@ -447,16 +441,17 @@ ipc_send_str(char *data)
 
 
 static int
-ipc_send(char *data, int size)
+ipc_send(const char *data, int size)
 {
   if(!ipc_open)
     return 0;
 
 #if defined __FreeBSD__ || defined __NetBSD__ || defined __OpenBSD__ || defined __MacOSX__
-  if (send(ipc_connection, data, size, 0) < 0) 
+#define FLAGS 0
 #else
-  if (send(ipc_connection, data, size, MSG_NOSIGNAL) < 0) 
+#define FLAGS MSG_NOSIGNAL
 #endif
+  if (send(ipc_connection, data, size, FLAGS) == -1)
     {
       olsr_printf(1, "(DOT DRAW)IPC connection lost!\n");
       close(ipc_connection);

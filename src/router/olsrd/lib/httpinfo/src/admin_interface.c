@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: admin_interface.c,v 1.7 2006/09/18 18:55:30 kattemat Exp $
+ * $Id: admin_interface.c,v 1.8 2007/04/20 14:06:18 bernd67 Exp $
  */
 
 /*
@@ -45,26 +45,32 @@
  */
 
 
+#include "olsr.h"
 #include "olsrd_httpinfo.h"
 #include "olsr_cfg.h"
 #include "admin_html.h"
 #include "admin_interface.h"
+#include "local_hna_set.h" /* add_local_hna4_entry() */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
+#if 0
 extern int netsprintf(char *str, const char* format, ...);
 #define sprintf netsprintf
 #define NETDIRECT
+#endif
+
 
 int
-build_admin_body(char *buf, olsr_u32_t bufsize)
+build_admin_body(char *buf, olsr_u32_t bufsize __attribute__((unused)))
 {
   int size = 0, i = 0;
 
   while(admin_frame[i] && strcmp(admin_frame[i], "<!-- BASICSETTINGS -->\n"))
     {
-      size += sprintf(&buf[size], admin_frame[i]);
+      size += snprintf(&buf[size], bufsize-size, admin_frame[i]);
       i++;
     }
   
@@ -72,69 +78,69 @@ build_admin_body(char *buf, olsr_u32_t bufsize)
     return size;
 
 
-  size += sprintf(&buf[size], "<tr>\n");
+  size += snprintf(&buf[size], bufsize-size, "<tr>\n");
 
-  size += sprintf(&buf[size], admin_basic_setting_int,
+  size += snprintf(&buf[size], bufsize-size, admin_basic_setting_int,
 		  "Debug level:", "debug_level", 2, olsr_cnf->debug_level);
-  size += sprintf(&buf[size], admin_basic_setting_float,
+  size += snprintf(&buf[size], bufsize-size, admin_basic_setting_float,
 		  "Pollrate:", "pollrate", 4, olsr_cnf->pollrate);
-  size += sprintf(&buf[size], admin_basic_setting_string,
+  size += snprintf(&buf[size], bufsize-size, admin_basic_setting_string,
 		  "TOS:", "tos", 6, "TBD");
 
-  size += sprintf(&buf[size], "</tr>\n");
-  size += sprintf(&buf[size], "<tr>\n");
+  size += snprintf(&buf[size], bufsize-size, "</tr>\n");
+  size += snprintf(&buf[size], bufsize-size, "<tr>\n");
 
-  size += sprintf(&buf[size], admin_basic_setting_int,
+  size += snprintf(&buf[size], bufsize-size, admin_basic_setting_int,
 		  "TC redundancy:", "tc_redundancy", 1, olsr_cnf->tc_redundancy);
-  size += sprintf(&buf[size], admin_basic_setting_int,
+  size += snprintf(&buf[size], bufsize-size, admin_basic_setting_int,
 		  "MPR coverage:", "mpr_coverage", 1, olsr_cnf->mpr_coverage);
-  size += sprintf(&buf[size], admin_basic_setting_int,
+  size += snprintf(&buf[size], bufsize-size, admin_basic_setting_int,
 		  "Willingness:", "willingness", 1, olsr_cnf->willingness);
 
-  size += sprintf(&buf[size], "</tr>\n");
-  size += sprintf(&buf[size], "<tr>\n");
+  size += snprintf(&buf[size], bufsize-size, "</tr>\n");
+  size += snprintf(&buf[size], bufsize-size, "<tr>\n");
 
   if(olsr_cnf->use_hysteresis)
     {
-      size += sprintf(&buf[size], admin_basic_setting_float,
+      size += snprintf(&buf[size], bufsize-size, admin_basic_setting_float,
 		      "Hyst scaling:", "hyst_scaling", 4, olsr_cnf->hysteresis_param.scaling);
 
-      size += sprintf(&buf[size], admin_basic_setting_float,
+      size += snprintf(&buf[size], bufsize-size, admin_basic_setting_float,
 		      "Lower thr:", "hyst_lower", 4, olsr_cnf->hysteresis_param.thr_low);
-      size += sprintf(&buf[size], admin_basic_setting_float,
+      size += snprintf(&buf[size], bufsize-size, admin_basic_setting_float,
 		      "Upper thr:", "hyst_upper", 4, olsr_cnf->hysteresis_param.thr_high);
     }
   else
     {
-      size += sprintf(&buf[size], "<td>Hysteresis disabled</td>\n");
+      size += snprintf(&buf[size], bufsize-size, "<td>Hysteresis disabled</td>\n");
     }
 
-  size += sprintf(&buf[size], "</tr>\n");
-  size += sprintf(&buf[size], "<tr>\n");
+  size += snprintf(&buf[size], bufsize-size, "</tr>\n");
+  size += snprintf(&buf[size], bufsize-size, "<tr>\n");
   
   if(olsr_cnf->lq_level)
     {
-      size += sprintf(&buf[size], admin_basic_setting_int,
+      size += snprintf(&buf[size], bufsize-size, admin_basic_setting_int,
 		      "LQ level:", "lq_level", 1, olsr_cnf->lq_level);
-      size += sprintf(&buf[size], admin_basic_setting_int,
+      size += snprintf(&buf[size], bufsize-size, admin_basic_setting_int,
 		      "LQ winsize:", "lq_wsize", 2, olsr_cnf->lq_wsize);
     }
   else
     {
-      size += sprintf(&buf[size], "<td>LQ disabled</td>\n");
+      size += snprintf(&buf[size], bufsize-size, "<td>LQ disabled</td>\n");
     }
 
 
-  size += sprintf(&buf[size], "</tr>\n");
-  size += sprintf(&buf[size], "<tr>\n");
+  size += snprintf(&buf[size], bufsize-size, "</tr>\n");
+  size += snprintf(&buf[size], bufsize-size, "<tr>\n");
 
-  size += sprintf(&buf[size], "</tr>\n");
+  size += snprintf(&buf[size], bufsize-size, "</tr>\n");
   
   i++;
 
   while(admin_frame[i] && strcmp(admin_frame[i], "<!-- HNAENTRIES -->\n"))
     {
-      size += sprintf(&buf[size], admin_frame[i]);
+      size += snprintf(&buf[size], bufsize-size, admin_frame[i]);
       i++;
     }
 
@@ -149,7 +155,7 @@ build_admin_body(char *buf, olsr_u32_t bufsize)
       
       for(hna4 = olsr_cnf->hna4_entries; hna4; hna4 = hna4->next)
 	{
-	  size += sprintf(&buf[size], admin_frame[i], 
+	  size += snprintf(&buf[size], bufsize-size, admin_frame[i], 
 			  olsr_ip_to_string((union olsr_ip_addr *)&hna4->net),
 			  olsr_ip_to_string((union olsr_ip_addr *)&hna4->netmask),
 			  olsr_ip_to_string((union olsr_ip_addr *)&hna4->net),
@@ -162,7 +168,7 @@ build_admin_body(char *buf, olsr_u32_t bufsize)
 	
       for(hna6 = olsr_cnf->hna6_entries; hna6; hna6 = hna6->next)
 	{
-	  size += sprintf(&buf[size], admin_frame[i], 
+	  size += snprintf(&buf[size], bufsize-size, admin_frame[i], 
 			  olsr_ip_to_string((union olsr_ip_addr *)&hna6->net),
 			  "TBD"/*hna6->prefix_len*/);
 	}
@@ -172,7 +178,7 @@ build_admin_body(char *buf, olsr_u32_t bufsize)
 
   while(admin_frame[i])
     {
-      size += sprintf(&buf[size], admin_frame[i]);
+      size += snprintf(&buf[size], bufsize-size, admin_frame[i]);
       i++;
     }
   
@@ -334,7 +340,7 @@ process_param(char *key, char *value)
 	  return -1;
 	}
       add_local_hna4_entry((union olsr_ip_addr *)&curr_hna_net,
-			   (union hna_netmask *)&in.s_addr);
+			   (union olsr_ip_addr *)&in.s_addr);
       
       return 1;
     }
@@ -366,7 +372,7 @@ process_param(char *key, char *value)
 	}
 
       remove_local_hna4_entry((union olsr_ip_addr *)&net.s_addr,
-			      (union hna_netmask *)&mask.s_addr);
+			      (union olsr_ip_addr *)&mask.s_addr);
 
       return 1;
     }
@@ -378,10 +384,11 @@ process_param(char *key, char *value)
 }
 
 int
-process_set_values(char *data, olsr_u32_t data_size, char *buf, olsr_u32_t bufsize)
+process_set_values(char *data, olsr_u32_t data_size, char *buf, olsr_u32_t bufsize __attribute__((unused)))
 {
   int size = 0;
-  int i, val_start, key_start;
+  int val_start, key_start;
+  olsr_u32_t i;
 
   printf("Dynamic Data: %s\n", data);
 
@@ -403,7 +410,7 @@ process_set_values(char *data, olsr_u32_t data_size, char *buf, olsr_u32_t bufsi
 	  data[i] = '\0';
 	  if(!process_param(&data[key_start], &data[val_start]))
 	    {
-	      size += sprintf(&buf[size], "<h2>FAILED PROCESSING!</h2><br>Key: %s Value: %s<br>\n", 
+	      size += snprintf(&buf[size], bufsize-size, "<h2>FAILED PROCESSING!</h2><br>Key: %s Value: %s<br>\n", 
 			      &data[key_start], &data[val_start]);
 	      return -1;
 	    }
@@ -416,7 +423,7 @@ process_set_values(char *data, olsr_u32_t data_size, char *buf, olsr_u32_t bufsi
 
   if(!process_param(&data[key_start], &data[val_start]))
     {
-      size += sprintf(&buf[size], "<b>FAILED PROCESSING!</b><br>Key: %s Value: %s<br>\n", 
+      size += snprintf(&buf[size], bufsize-size, "<b>FAILED PROCESSING!</b><br>Key: %s Value: %s<br>\n", 
 		      &data[key_start], &data[val_start]);
       return -1;
     }
@@ -424,8 +431,8 @@ process_set_values(char *data, olsr_u32_t data_size, char *buf, olsr_u32_t bufsi
   printf("Key: %s\nValue: %s\n", 
 	 &data[key_start], &data[val_start]);
 
-  size += sprintf(&buf[size], "<h2>UPDATE SUCESSFULL!</h2><br>Press BACK and RELOAD in your browser to return to the plugin<br>\n</body>\n</html>\n");
-  size += sprintf(&buf[size], "\n</body>\n</html>\n");
+  size += snprintf(&buf[size], bufsize-size, "<h2>UPDATE SUCESSFULL!</h2><br>Press BACK and RELOAD in your browser to return to the plugin<br>\n</body>\n</html>\n");
+  size += snprintf(&buf[size], bufsize-size, "\n</body>\n</html>\n");
 
   return size;
 }

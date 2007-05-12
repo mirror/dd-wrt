@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: net.c,v 1.32 2007/03/14 14:01:13 bernd67 Exp $
+ * $Id: net.c,v 1.36 2007/05/02 07:41:20 bernd67 Exp $
  */
 
 #include "defs.h"
@@ -58,6 +58,9 @@
 #include <netinet/ip_icmp.h>
 #include <netinet/icmp_var.h>
 #include <netinet/icmp6.h>
+#include <netinet6/in6_var.h> /* For struct in6_ifreq */
+#include <ifaddrs.h>
+#include <sys/uio.h>
 #endif
 
 #ifdef __FreeBSD__
@@ -97,7 +100,7 @@ static int gateway;
 static int set_sysctl_int(char *name, int new)
 {
   int old;
-#if __MacOSX__
+#if __MacOSX__ || __OpenBSD__
   size_t len = sizeof (old);
 #else
   unsigned int len = sizeof (old);
@@ -486,7 +489,7 @@ join_mcast(struct interface *ifs, int sock)
   COPY_IP(&mcastreq.ipv6mr_multiaddr, &ifs->int6_multaddr.sin6_addr);
   mcastreq.ipv6mr_interface = ifs->if_index;
 
-  OLSR_PRINTF(3, "Interface %s joining multicast %s...",	ifs->int_name, olsr_ip_to_string((union olsr_ip_addr *)&ifs->int6_multaddr.sin6_addr))
+  OLSR_PRINTF(3, "Interface %s joining multicast %s...",	ifs->int_name, olsr_ip_to_string((union olsr_ip_addr *)&ifs->int6_multaddr.sin6_addr));
 
   /* rfc 3493 */
 #ifdef IPV6_JOIN_GROUP
@@ -524,7 +527,7 @@ join_mcast(struct interface *ifs, int sock)
     }
 
 
-  OLSR_PRINTF(3, "OK\n")
+  OLSR_PRINTF(3, "OK\n");
   return 0;
 }
 
@@ -542,7 +545,7 @@ int get_ipv6_address(char *ifname, struct sockaddr_in6 *saddr6, int scope_in)
 
   if (getifaddrs(&ifap) != 0)
     {
-      OLSR_PRINTF(3, "get_ipv6_address: getifaddrs() failed.\n")
+      OLSR_PRINTF(3, "get_ipv6_address: getifaddrs() failed.\n");
       return 0;
     }
 
@@ -639,7 +642,7 @@ olsr_sendto(int s,
   context = libnet_init(LIBNET_LINK, iface->int_name, errbuf);
   if (context == NULL)
     {
-      OLSR_PRINTF (1, "libnet init: %s\n", libnet_geterror (context))
+      OLSR_PRINTF (1, "libnet init: %s\n", libnet_geterror (context));
       return (0);
     }
 
@@ -659,7 +662,7 @@ olsr_sendto(int s,
 			      udp_tag);				/* pblock */
   if (udp_tag == -1)
     {
-      OLSR_PRINTF (1, "libnet UDP header: %s\n", libnet_geterror (context))
+      OLSR_PRINTF (1, "libnet UDP header: %s\n", libnet_geterror (context));
 	return (0);
     }
 
@@ -678,7 +681,7 @@ olsr_sendto(int s,
 			      ip_tag);				/* pblock */
   if (ip_tag == -1)
     {
-      OLSR_PRINTF (1, "libnet IP header: %s\n", libnet_geterror (context))
+      OLSR_PRINTF (1, "libnet IP header: %s\n", libnet_geterror (context));
       return (0);
     }
 
@@ -691,14 +694,14 @@ olsr_sendto(int s,
 				     ether_tag);  		/* pblock tag */
   if (ether_tag == -1)
     {
-      OLSR_PRINTF (1, "libnet ethernet header: %s\n", libnet_geterror (context))
+      OLSR_PRINTF (1, "libnet ethernet header: %s\n", libnet_geterror (context));
       return (0);
     }
  
   status = libnet_write (context);
   if (status == -1)
     {
-      OLSR_PRINTF (1, "libnet packet write: %s\n", libnet_geterror (context))
+      OLSR_PRINTF (1, "libnet packet write: %s\n", libnet_geterror (context));
       return (0);
     }
 
@@ -863,11 +866,11 @@ calculate_if_metric(char *ifname)
 
       if(ioctl(olsr_cnf->ioctl_s, SIOCGIFMEDIA, &ifm) < 0)
 	{
-	  OLSR_PRINTF(1, "Error SIOCGIFMEDIA(%s)\n", ifm.ifm_name)
+	  OLSR_PRINTF(1, "Error SIOCGIFMEDIA(%s)\n", ifm.ifm_name);
 	  return WEIGHT_ETHERNET_DEFAULT;
 	}
 
-      OLSR_PRINTF(1, "%s: STATUS 0x%08x\n", ifm.ifm_name, ifm.ifm_status)
+      OLSR_PRINTF(1, "%s: STATUS 0x%08x\n", ifm.ifm_name, ifm.ifm_status);
 #endif
       return WEIGHT_ETHERNET_DEFAULT;
     }

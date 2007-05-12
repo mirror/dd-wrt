@@ -1,5 +1,5 @@
 /*
-** $Id: lapi.c,v 1.1 2005/04/12 17:17:26 tlopatic Exp $
+** $Id: lapi.c,v 1.2 2007/04/20 13:46:03 bernd67 Exp $
 ** Lua API
 ** See Copyright Notice in lua.h
 */
@@ -805,7 +805,6 @@ LUA_API int lua_error (lua_State *L) {
   api_checknelems(L, 1);
   luaG_errormsg(L);
   lua_unlock(L);
-  return 0;  /* to avoid warnings */
 }
 
 

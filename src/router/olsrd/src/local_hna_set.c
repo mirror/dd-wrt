@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: local_hna_set.c,v 1.12 2007/02/10 19:27:32 bernd67 Exp $
+ * $Id: local_hna_set.c,v 1.13 2007/04/20 13:46:04 bernd67 Exp $
  */
 
 #include "defs.h"
@@ -106,9 +106,9 @@ remove_local_hna4_entry(union olsr_ip_addr *net, union olsr_ip_addr *mask)
 int
 remove_local_hna6_entry(union olsr_ip_addr *net, olsr_u16_t prefix_len)
 {
-  struct hna6_entry *h6 = olsr_cnf->hna6_entries, *h6prev = NULL;
+  struct hna6_entry *h6, *h6prev = NULL;
 
-  while(h6)
+  for(h6 = olsr_cnf->hna6_entries; h6; h6 = h6->next)
     {
       if((memcmp(net, &h6->net, olsr_cnf->ipsize) == 0) && 
 	 (prefix_len == h6->prefix_len))
@@ -123,9 +123,7 @@ remove_local_hna6_entry(union olsr_ip_addr *net, olsr_u16_t prefix_len)
 	  return 1;
 	}
       h6prev = h6;
-      h6 = h6->next;
     }
-
   return 0;
 }
 
@@ -171,19 +169,16 @@ find_local_hna6_entry(union olsr_ip_addr *net, olsr_u16_t prefix_len)
 
 
 int
-check_inet_gw()
+check_inet_gw(void)
 {
-  struct hna4_entry *h4 = olsr_cnf->hna4_entries;
-
   if(olsr_cnf->ip_version == AF_INET)
     {
-      while(h4)
+      struct hna4_entry *h4;
+      for(h4 = olsr_cnf->hna4_entries; h4; h4 = h4->next)
 	{
 	  if(h4->netmask.v4 == 0 && h4->net.v4 == 0)
 	    return 1;
-	  h4 = h4->next;
 	}
-      return 0;
     }
   return 0;
 

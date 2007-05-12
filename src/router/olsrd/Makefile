@@ -35,14 +35,16 @@
 # to the project. For more information see the website or contact
 # the copyright holders.
 #
-# $Id: Makefile,v 1.78 2007/04/02 09:40:48 tlopatic Exp $
+# $Id: Makefile,v 1.84 2007/05/01 21:36:50 bernd67 Exp $
 
-VERS =		0.5.0
-
-CFLAGS +=	-DVERSION=\"$(VERS)\"
+VERS =		0.5.1pre
 
 TOPDIR = .
 include Makefile.inc
+
+CFLAGS +=	-DVERSION=\"$(VERS)\"
+
+MAKECMD = $(MAKE) OS="$(OS)" WARNINGS="$(WARNINGS)"
 
 LIBS +=		$(OS_LIB_DYNLOAD)
 
@@ -62,27 +64,26 @@ olsrd:		$(OBJS) $(CFGOBJS)
 		$(CC) $(LDFLAGS) -o $@ $(OBJS) $(CFGOBJS) $(LIBS)
 
 cfgparser:	$(CFGDEPS)
-		$(MAKE) -C $(CFGDIR)
+		$(MAKECMD) -C $(CFGDIR)
 
 switch:		
-		$(MAKE) -C $(SWITCHDIR)
+		$(MAKECMD) -C $(SWITCHDIR)
 
 $(CFGOBJS):
-		$(MAKE) -C $(CFGDIR)
+		$(MAKECMD) -C $(CFGDIR)
 
 .PHONY: help libs clean_libs libs_clean clean uberclean install_libs libs_install install_bin install_olsrd install build_all install_all clean_all
 
 clean:
 		-rm -f $(OBJS) $(SRCS:%.c=%.d) olsrd olsrd.exe
-		$(MAKE) -C $(CFGDIR) clean
-		$(MAKE) -C $(SWITCHDIR) clean
+		$(MAKECMD) -C $(CFGDIR) clean
+		$(MAKECMD) -C $(SWITCHDIR) clean
 
 uberclean:	clean clean_libs
 		-rm -f $(TAGFILE)
-		-rm -f src/*.[od~] 
-		-rm -f src/linux/*.[od~] src/unix/*.[od~] src/win32/*.[od~] src/bsd/*.[od~]
-		$(MAKE) -C $(CFGDIR) uberclean
-		$(MAKE) -C $(SWITCHDIR) clean
+		find . \( -name '*.[od]' -o -name '*~' \) -print | xargs -r rm -f
+		$(MAKECMD) -C $(CFGDIR) uberclean
+		$(MAKECMD) -C $(SWITCHDIR) clean
 
 install: install_olsrd
 
@@ -123,60 +124,60 @@ rpm:
 #
 
 libs: 
-		$(MAKE) -C lib LIBDIR=$(LIBDIR)
+		$(MAKECMD) -C lib LIBDIR=$(LIBDIR)
 
 libs_clean clean_libs:
-		$(MAKE) -C lib LIBDIR=$(LIBDIR) clean
+		$(MAKECMD) -C lib LIBDIR=$(LIBDIR) clean
 
 libs_install install_libs:
-		$(MAKE) -C lib LIBDIR=$(LIBDIR) install
+		$(MAKECMD) -C lib LIBDIR=$(LIBDIR) install
 
 httpinfo:
-		$(MAKE) -C lib/httpinfo clean
-		$(MAKE) -C lib/httpinfo 
-		$(MAKE) -C lib/httpinfo DESTDIR=$(DESTDIR) install 
+		$(MAKECMD) -C lib/httpinfo clean
+		$(MAKECMD) -C lib/httpinfo 
+		$(MAKECMD) -C lib/httpinfo DESTDIR=$(DESTDIR) install 
 
 tas:
-		$(MAKE) -C lib/tas clean
-		$(MAKE) -C lib/tas DESTDIR=$(DESTDIR) install
+		$(MAKECMD) -C lib/tas clean
+		$(MAKECMD) -C lib/tas DESTDIR=$(DESTDIR) install
 
 dot_draw:
-		$(MAKE) -C lib/dot_draw clean
-		$(MAKE) -C lib/dot_draw DESTDIR=$(DESTDIR) install
+		$(MAKECMD) -C lib/dot_draw clean
+		$(MAKECMD) -C lib/dot_draw DESTDIR=$(DESTDIR) install
 
 nameservice:
-		$(MAKE) -C lib/nameservice clean
-		$(MAKE) -C lib/nameservice DESTDIR=$(DESTDIR) install
+		$(MAKECMD) -C lib/nameservice clean
+		$(MAKECMD) -C lib/nameservice DESTDIR=$(DESTDIR) install
 
 dyn_gw:
-		$(MAKE) -C lib/dyn_gw clean
-		$(MAKE) -C lib/dyn_gw
-		$(MAKE) -C lib/dyn_gw DESTDIR=$(DESTDIR) install
+		$(MAKECMD) -C lib/dyn_gw clean
+		$(MAKECMD) -C lib/dyn_gw
+		$(MAKECMD) -C lib/dyn_gw DESTDIR=$(DESTDIR) install
 
 dyn_gw_plain:
-		$(MAKE) -C lib/dyn_gw_plain clean
-		$(MAKE) -C lib/dyn_gw_plain
-		$(MAKE) -C lib/dyn_gw_plain DESTDIR=$(DESTDIR) install
+		$(MAKECMD) -C lib/dyn_gw_plain clean
+		$(MAKECMD) -C lib/dyn_gw_plain
+		$(MAKECMD) -C lib/dyn_gw_plain DESTDIR=$(DESTDIR) install
 
 secure:
-		$(MAKE) -C lib/secure clean
-		$(MAKE) -C lib/secure
-		$(MAKE) -C lib/secure DESTDIR=$(DESTDIR) install
+		$(MAKECMD) -C lib/secure clean
+		$(MAKECMD) -C lib/secure
+		$(MAKECMD) -C lib/secure DESTDIR=$(DESTDIR) install
 
 pgraph:
-		$(MAKE) -C lib/pgraph clean
-		$(MAKE) -C lib/pgraph 
-		$(MAKE) -C lib/pgraph DESTDIR=$(DESTDIR) install 
+		$(MAKECMD) -C lib/pgraph clean
+		$(MAKECMD) -C lib/pgraph 
+		$(MAKECMD) -C lib/pgraph DESTDIR=$(DESTDIR) install 
 
 bmf:
-		$(MAKE) -C lib/bmf clean
-		$(MAKE) -C lib/bmf 
-		$(MAKE) -C lib/bmf DESTDIR=$(DESTDIR) install 
+		$(MAKECMD) -C lib/bmf clean
+		$(MAKECMD) -C lib/bmf 
+		$(MAKECMD) -C lib/bmf DESTDIR=$(DESTDIR) install 
 
 quagga:
-		$(MAKE) -C lib/quagga clean
-		$(MAKE) -C lib/quagga 
-		$(MAKE) -C lib/quagga DESTDIR=$(DESTDIR) install 
+		$(MAKECMD) -C lib/quagga clean
+		$(MAKECMD) -C lib/quagga 
+		$(MAKECMD) -C lib/quagga DESTDIR=$(DESTDIR) install 
 
 
 build_all:	cfgparser olsrd libs

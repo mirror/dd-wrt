@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_conf.c,v 1.51 2007/03/14 13:59:30 bernd67 Exp $
+ * $Id: olsrd_conf.c,v 1.53 2007/04/28 20:46:32 bernd67 Exp $
  */
 
 
@@ -419,7 +419,7 @@ olsrd_free_cnf(struct olsrd_config *cnf)
 
 
 struct olsrd_config *
-olsrd_get_default_cnf()
+olsrd_get_default_cnf(void)
 {
   cnf = malloc(sizeof(struct olsrd_config));
   if (cnf == NULL)
@@ -481,7 +481,7 @@ set_default_cnf(struct olsrd_config *cnf)
 
 
 struct if_config_options *
-get_default_if_config()
+get_default_if_config(void)
 {
   struct if_config_options *io = malloc(sizeof(struct if_config_options));
   struct in6_addr in6;
@@ -731,6 +731,4 @@ void win32_stdio_hack(unsigned int handle)
   // setbuf(stdout, NULL);
   setbuf(stderr, NULL);
 }
-#else
-void win32_stdio_hack(unsigned int handle) {}
 #endif

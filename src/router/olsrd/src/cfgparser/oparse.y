@@ -38,7 +38,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: oparse.y,v 1.31 2007/01/31 12:36:50 bernd67 Exp $
+ * $Id: oparse.y,v 1.32 2007/04/20 13:46:05 bernd67 Exp $
  */
 
 
@@ -54,6 +54,12 @@
 #include "olsrd_conf.h"
 
 #define PARSER_DEBUG 0
+
+#if PARSER_DEBUG
+#define PARSER_DEBUG_PRINTF(x, ...)   printf(x, ##args)
+#else
+#define PARSER_DEBUG_PRINTF(x, ...)   do { } while (0)
+#endif
 
 #define YYSTYPE struct conf_token *
 
@@ -305,7 +311,7 @@ ipchost: TOK_HOSTLABEL TOK_IP4_ADDR
   struct in_addr in;
   struct ipc_host *ipch;
 
-  if(PARSER_DEBUG) printf("\tIPC host: %s\n", $2->string);
+  PARSER_DEBUG_PRINTF("\tIPC host: %s\n", $2->string);
   
   if(inet_aton($2->string, &in) == 0)
     {
@@ -330,7 +336,7 @@ ipcnet: TOK_NETLABEL TOK_IP4_ADDR TOK_IP4_ADDR
   struct in_addr in1, in2;
   struct ipc_net *ipcn;
 
-  if(PARSER_DEBUG) printf("\tIPC net: %s/%s\n", $2->string, $3->string);
+  PARSER_DEBUG_PRINTF("\tIPC net: %s/%s\n", $2->string, $3->string);
   
   if(inet_aton($2->string, &in1) == 0)
     {
@@ -364,7 +370,7 @@ iifweight:       TOK_IFWEIGHT TOK_INTEGER
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = cnf->interfaces;
 
-  if(PARSER_DEBUG) printf("Fixed willingness: %d\n", $2->integer);
+  PARSER_DEBUG_PRINTF("Fixed willingness: %d\n", $2->integer);
 
   while(ifcnt)
     {
@@ -385,7 +391,7 @@ isetip4br: TOK_IP4BROADCAST TOK_IP4_ADDR
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = cnf->interfaces;
 
-  if(PARSER_DEBUG) printf("\tIPv4 broadcast: %s\n", $2->string);
+  PARSER_DEBUG_PRINTF("\tIPv4 broadcast: %s\n", $2->string);
 
   if(inet_aton($2->string, &in) == 0)
     {
@@ -442,7 +448,7 @@ isetip6mults: TOK_IP6MULTISITE TOK_IP6_ADDR
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = cnf->interfaces;
 
-  if(PARSER_DEBUG) printf("\tIPv6 site-local multicast: %s\n", $2->string);
+  PARSER_DEBUG_PRINTF("\tIPv6 site-local multicast: %s\n", $2->string);
 
   if(inet_pton(AF_INET6, $2->string, &in6) < 0)
     {
@@ -471,7 +477,7 @@ isetip6multg: TOK_IP6MULTIGLOBAL TOK_IP6_ADDR
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = cnf->interfaces;
 
-  if(PARSER_DEBUG) printf("\tIPv6 global multicast: %s\n", $2->string);
+  PARSER_DEBUG_PRINTF("\tIPv6 global multicast: %s\n", $2->string);
 
   if(inet_pton(AF_INET6, $2->string, &in6) < 0)
     {
@@ -497,7 +503,7 @@ isethelloint: TOK_HELLOINT TOK_FLOAT
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = cnf->interfaces;
 
-  if(PARSER_DEBUG) printf("\tHELLO interval: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("\tHELLO interval: %0.2f\n", $2->floating);
 
   while(ifcnt)
     {
@@ -515,7 +521,7 @@ isethelloval: TOK_HELLOVAL TOK_FLOAT
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = cnf->interfaces;
 
-  if(PARSER_DEBUG) printf("\tHELLO validity: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("\tHELLO validity: %0.2f\n", $2->floating);
 
   while(ifcnt)
     {
@@ -533,7 +539,7 @@ isettcint: TOK_TCINT TOK_FLOAT
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = cnf->interfaces;
 
-  if(PARSER_DEBUG) printf("\tTC interval: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("\tTC interval: %0.2f\n", $2->floating);
 
   while(ifcnt)
     {
@@ -550,7 +556,7 @@ isettcval: TOK_TCVAL TOK_FLOAT
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = cnf->interfaces;
   
-  if(PARSER_DEBUG) printf("\tTC validity: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("\tTC validity: %0.2f\n", $2->floating);
   while(ifcnt)
     {
       ifs->cnf->tc_params.validity_time = $2->floating;
@@ -568,7 +574,7 @@ isetmidint: TOK_MIDINT TOK_FLOAT
   struct olsr_if *ifs = cnf->interfaces;
 
 
-  if(PARSER_DEBUG) printf("\tMID interval: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("\tMID interval: %0.2f\n", $2->floating);
   while(ifcnt)
     {
       ifs->cnf->mid_params.emission_interval = $2->floating;
@@ -585,7 +591,7 @@ isetmidval: TOK_MIDVAL TOK_FLOAT
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = cnf->interfaces;
 
-  if(PARSER_DEBUG) printf("\tMID validity: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("\tMID validity: %0.2f\n", $2->floating);
   while(ifcnt)
     {
       ifs->cnf->mid_params.validity_time = $2->floating;
@@ -602,7 +608,7 @@ isethnaint: TOK_HNAINT TOK_FLOAT
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = cnf->interfaces;
   
-  if(PARSER_DEBUG) printf("\tHNA interval: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("\tHNA interval: %0.2f\n", $2->floating);
   while(ifcnt)
     {
       ifs->cnf->hna_params.emission_interval = $2->floating;
@@ -619,7 +625,7 @@ isethnaval: TOK_HNAVAL TOK_FLOAT
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = cnf->interfaces;
 
-  if(PARSER_DEBUG) printf("\tHNA validity: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("\tHNA validity: %0.2f\n", $2->floating);
   while(ifcnt)
     {
       ifs->cnf->hna_params.validity_time = $2->floating;
@@ -636,7 +642,7 @@ isetautodetchg: TOK_AUTODETCHG TOK_BOOLEAN
   int ifcnt = ifs_in_curr_cfg;
   struct olsr_if *ifs = cnf->interfaces;
 
-  if(PARSER_DEBUG) printf("\tAutodetect changes: %s\n", $2->boolean ? "YES" : "NO");
+  PARSER_DEBUG_PRINTF("\tAutodetect changes: %s\n", $2->boolean ? "YES" : "NO");
   while(ifcnt)
     {
       ifs->cnf->autodetect_chg = $2->boolean;
@@ -673,7 +679,7 @@ idebug:       TOK_DEBUGLEVEL TOK_INTEGER
 {
 
   cnf->debug_level = $2->integer;
-  if(PARSER_DEBUG) printf("Debug level: %d\n", cnf->debug_level);
+  PARSER_DEBUG_PRINTF("Debug level: %d\n", cnf->debug_level);
   free($2);
 }
 ;
@@ -691,7 +697,7 @@ iipversion:    TOK_IPVERSION TOK_INTEGER
       YYABORT;
     }
 
-  if(PARSER_DEBUG) printf("IpVersion: %d\n", $2->integer);
+  PARSER_DEBUG_PRINTF("IpVersion: %d\n", $2->integer);
   free($2);
 }
 ;
@@ -702,7 +708,7 @@ ihna4entry:     TOK_IP4_ADDR TOK_IP4_ADDR
   struct hna4_entry *h = malloc(sizeof(struct hna4_entry));
   struct in_addr in;
 
-  if(PARSER_DEBUG) printf("HNA IPv4 entry: %s/%s\n", $1->string, $2->string);
+  PARSER_DEBUG_PRINTF("HNA IPv4 entry: %s/%s\n", $1->string, $2->string);
 
   if(h == NULL)
     {
@@ -740,7 +746,7 @@ ihna6entry:     TOK_IP6_ADDR TOK_INTEGER
   struct hna6_entry *h = malloc(sizeof(struct hna6_entry));
   struct in6_addr in6;
 
-  if(PARSER_DEBUG) printf("HNA IPv6 entry: %s/%d\n", $1->string, $2->integer);
+  PARSER_DEBUG_PRINTF("HNA IPv6 entry: %s/%d\n", $1->string, $2->integer);
 
   if(h == NULL)
     {
@@ -755,7 +761,7 @@ ihna6entry:     TOK_IP6_ADDR TOK_INTEGER
     }
   memcpy(&h->net, &in6, sizeof(struct in6_addr));
 
-  if(($2->integer < 0) || ($2->integer > 128))
+  if($2->integer > 128)
     {
       fprintf(stderr, "ihna6entry: Illegal IPv6 prefix length %d\n", $2->integer);
       return -1;
@@ -775,7 +781,7 @@ ihna6entry:     TOK_IP6_ADDR TOK_INTEGER
 
 ifstart: TOK_INTERFACE
 {
-  if(PARSER_DEBUG) printf("setting ifs_in_curr_cfg = 0\n");
+  PARSER_DEBUG_PRINTF("setting ifs_in_curr_cfg = 0\n");
   ifs_in_curr_cfg = 0;
 }
 ;
@@ -812,7 +818,7 @@ ifnick: TOK_STRING
 
 bnoint: TOK_NOINT TOK_BOOLEAN
 {
-  if(PARSER_DEBUG) printf("Noint set to %d\n", $2->boolean);
+  PARSER_DEBUG_PRINTF("Noint set to %d\n", $2->boolean);
 
   cnf->allow_no_interfaces = $2->boolean;
 
@@ -822,7 +828,7 @@ bnoint: TOK_NOINT TOK_BOOLEAN
 
 atos: TOK_TOS TOK_INTEGER
 {
-  if(PARSER_DEBUG) printf("TOS: %d\n", $2->integer);
+  PARSER_DEBUG_PRINTF("TOS: %d\n", $2->integer);
   cnf->tos = $2->integer;
 
   free($2);
@@ -834,7 +840,7 @@ awillingness: TOK_WILLINGNESS TOK_INTEGER
 {
   cnf->willingness_auto = OLSR_FALSE;
 
-  if(PARSER_DEBUG) printf("Willingness: %d\n", $2->integer);
+  PARSER_DEBUG_PRINTF("Willingness: %d\n", $2->integer);
   cnf->willingness = $2->integer;
 
   free($2);
@@ -849,11 +855,11 @@ busehyst: TOK_USEHYST TOK_BOOLEAN
   cnf->use_hysteresis = $2->boolean;
   if(cnf->use_hysteresis)
     {
-      if(PARSER_DEBUG) printf("Hysteresis enabled\n");
+      PARSER_DEBUG_PRINTF("Hysteresis enabled\n");
     }
   else
     {
-      if(PARSER_DEBUG) printf("Hysteresis disabled\n");
+      PARSER_DEBUG_PRINTF("Hysteresis disabled\n");
     }
   free($2);
 
@@ -864,7 +870,7 @@ busehyst: TOK_USEHYST TOK_BOOLEAN
 fhystscale: TOK_HYSTSCALE TOK_FLOAT
 {
   cnf->hysteresis_param.scaling = $2->floating;
-  if(PARSER_DEBUG) printf("Hysteresis Scaling: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("Hysteresis Scaling: %0.2f\n", $2->floating);
   free($2);
 }
 ;
@@ -873,7 +879,7 @@ fhystscale: TOK_HYSTSCALE TOK_FLOAT
 fhystupper: TOK_HYSTUPPER TOK_FLOAT
 {
   cnf->hysteresis_param.thr_high = $2->floating;
-  if(PARSER_DEBUG) printf("Hysteresis UpperThr: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("Hysteresis UpperThr: %0.2f\n", $2->floating);
   free($2);
 }
 ;
@@ -882,14 +888,14 @@ fhystupper: TOK_HYSTUPPER TOK_FLOAT
 fhystlower: TOK_HYSTLOWER TOK_FLOAT
 {
   cnf->hysteresis_param.thr_low = $2->floating;
-  if(PARSER_DEBUG) printf("Hysteresis LowerThr: %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("Hysteresis LowerThr: %0.2f\n", $2->floating);
   free($2);
 }
 ;
 
 fpollrate: TOK_POLLRATE TOK_FLOAT
 {
-  if(PARSER_DEBUG) printf("Pollrate %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("Pollrate %0.2f\n", $2->floating);
   cnf->pollrate = $2->floating;
 
   free($2);
@@ -898,7 +904,7 @@ fpollrate: TOK_POLLRATE TOK_FLOAT
 
 fnicchgspollrt: TOK_NICCHGSPOLLRT TOK_FLOAT
 {
-  if(PARSER_DEBUG) printf("NIC Changes Pollrate %0.2f\n", $2->floating);
+  PARSER_DEBUG_PRINTF("NIC Changes Pollrate %0.2f\n", $2->floating);
   cnf->nic_chgs_pollrate = $2->floating;
 
   free($2);
@@ -907,7 +913,7 @@ fnicchgspollrt: TOK_NICCHGSPOLLRT TOK_FLOAT
 
 atcredundancy: TOK_TCREDUNDANCY TOK_INTEGER
 {
-  if(PARSER_DEBUG) printf("TC redundancy %d\n", $2->integer);
+  PARSER_DEBUG_PRINTF("TC redundancy %d\n", $2->integer);
   cnf->tc_redundancy = $2->integer;
   free($2);
 }
@@ -915,7 +921,7 @@ atcredundancy: TOK_TCREDUNDANCY TOK_INTEGER
 
 amprcoverage: TOK_MPRCOVERAGE TOK_INTEGER
 {
-  if(PARSER_DEBUG) printf("MPR coverage %d\n", $2->integer);
+  PARSER_DEBUG_PRINTF("MPR coverage %d\n", $2->integer);
   cnf->mpr_coverage = $2->integer;
   free($2);
 }
@@ -923,7 +929,7 @@ amprcoverage: TOK_MPRCOVERAGE TOK_INTEGER
 
 alq_level: TOK_LQ_LEVEL TOK_INTEGER
 {
-  if(PARSER_DEBUG) printf("Link quality level %d\n", $2->integer);
+  PARSER_DEBUG_PRINTF("Link quality level %d\n", $2->integer);
   cnf->lq_level = $2->integer;
   free($2);
 }
@@ -931,7 +937,7 @@ alq_level: TOK_LQ_LEVEL TOK_INTEGER
 
 alq_fish: TOK_LQ_FISH TOK_INTEGER
 {
-  if(PARSER_DEBUG) printf("Link quality fish eye %d\n", $2->integer);
+  PARSER_DEBUG_PRINTF("Link quality fish eye %d\n", $2->integer);
   cnf->lq_fish = $2->integer;
   free($2);
 }
@@ -939,7 +945,7 @@ alq_fish: TOK_LQ_FISH TOK_INTEGER
 
 alq_dlimit: TOK_LQ_DLIMIT TOK_INTEGER TOK_FLOAT
 {
-  if(PARSER_DEBUG) printf("Link quality dijkstra limit %d, %0.2f\n", $2->integer, $3->floating);
+  PARSER_DEBUG_PRINTF("Link quality dijkstra limit %d, %0.2f\n", $2->integer, $3->floating);
   cnf->lq_dlimit = $2->integer;
   cnf->lq_dinter = $3->floating;
   free($2);
@@ -948,7 +954,7 @@ alq_dlimit: TOK_LQ_DLIMIT TOK_INTEGER TOK_FLOAT
 
 alq_wsize: TOK_LQ_WSIZE TOK_INTEGER
 {
-  if(PARSER_DEBUG) printf("Link quality window size %d\n", $2->integer);
+  PARSER_DEBUG_PRINTF("Link quality window size %d\n", $2->integer);
   cnf->lq_wsize = $2->integer;
   free($2);
 }
@@ -958,8 +964,7 @@ bclear_screen: TOK_CLEAR_SCREEN TOK_BOOLEAN
 {
   cnf->clear_screen = $2->boolean;
 
-  if (PARSER_DEBUG)
-    printf("Clear screen %s\n", cnf->clear_screen ? "enabled" : "disabled");
+  PARSER_DEBUG_PRINTF("Clear screen %s\n", cnf->clear_screen ? "enabled" : "disabled");
 
   free($2);
 }
@@ -979,7 +984,7 @@ plblock: TOK_PLUGIN TOK_STRING
 
   pe->params = NULL;
   
-  if(PARSER_DEBUG) printf("Plugin: %s\n", $2->string);
+  PARSER_DEBUG_PRINTF("Plugin: %s\n", $2->string);
 
   /* Queue */
   pe->next = cnf->plugins;
@@ -999,7 +1004,7 @@ plparam: TOK_PLPARAM TOK_STRING TOK_STRING
       YYABORT;
     }
   
-  if(PARSER_DEBUG) printf("Plugin param key:\"%s\" val: \"%s\"\n", $2->string, $3->string);
+  PARSER_DEBUG_PRINTF("Plugin param key:\"%s\" val: \"%s\"\n", $2->string, $3->string);
   
   pp->key = $2->string;
   pp->value = $3->string;
@@ -1015,7 +1020,7 @@ plparam: TOK_PLPARAM TOK_STRING TOK_STRING
 
 vcomment:       TOK_COMMENT
 {
-    //if(PARSER_DEBUG) printf("Comment\n");
+    //PARSER_DEBUG_PRINTF("Comment\n");
 }
 ;
 
