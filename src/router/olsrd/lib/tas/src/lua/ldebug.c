@@ -1,5 +1,5 @@
 /*
-** $Id: ldebug.c,v 1.1 2005/04/12 17:17:26 tlopatic Exp $
+** $Id: ldebug.c,v 1.2 2007/04/20 13:46:03 bernd67 Exp $
 ** Debug Interface
 ** See Copyright Notice in lua.h
 */
@@ -547,7 +547,6 @@ int luaG_ordererror (lua_State *L, const TObject *p1, const TObject *p2) {
     luaG_runerror(L, "attempt to compare two %s values", t1);
   else
     luaG_runerror(L, "attempt to compare %s with %s", t1, t2);
-  return 0;
 }
 
 

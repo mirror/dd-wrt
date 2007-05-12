@@ -1,5 +1,5 @@
 /*
-** $Id: lauxlib.c,v 1.1 2005/04/12 17:17:26 tlopatic Exp $
+** $Id: lauxlib.c,v 1.2 2007/04/20 13:46:03 bernd67 Exp $
 ** Auxiliary functions for building Lua libraries
 ** See Copyright Notice in lua.h
 */
@@ -50,11 +50,11 @@ LUALIB_API int luaL_argerror (lua_State *L, int narg, const char *extramsg) {
   if (strcmp(ar.namewhat, "method") == 0) {
     narg--;  /* do not count `self' */
     if (narg == 0)  /* error is in the self argument itself? */
-      return luaL_error(L, "calling `%s' on bad self (%s)", ar.name, extramsg);
+      luaL_error(L, "calling `%s' on bad self (%s)", ar.name, extramsg);
   }
   if (ar.name == NULL)
     ar.name = "?";
-  return luaL_error(L, "bad argument #%d to `%s' (%s)",
+  luaL_error(L, "bad argument #%d to `%s' (%s)",
                         narg, ar.name, extramsg);
 }
 
@@ -62,10 +62,11 @@ LUALIB_API int luaL_argerror (lua_State *L, int narg, const char *extramsg) {
 LUALIB_API int luaL_typerror (lua_State *L, int narg, const char *tname) {
   const char *msg = lua_pushfstring(L, "%s expected, got %s",
                                     tname, lua_typename(L, lua_type(L,narg)));
-  return luaL_argerror(L, narg, msg);
+  luaL_argerror(L, narg, msg);
 }
 
 
+static void tag_error (lua_State *L, int narg, int tag) __attribute__((noreturn));
 static void tag_error (lua_State *L, int narg, int tag) {
   luaL_typerror(L, narg, lua_typename(L, tag)); 
 }
@@ -91,7 +92,7 @@ LUALIB_API int luaL_error (lua_State *L, const char *fmt, ...) {
   lua_pushvfstring(L, fmt, argp);
   va_end(argp);
   lua_concat(L, 2);
-  return lua_error(L);
+  lua_error(L);
 }
 
 /* }====================================================== */

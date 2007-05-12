@@ -1,5 +1,5 @@
 /*
-** $Id: lauxlib.h,v 1.1 2005/04/12 17:17:26 tlopatic Exp $
+** $Id: lauxlib.h,v 1.2 2007/04/20 13:46:03 bernd67 Exp $
 ** Auxiliary functions for building Lua libraries
 ** See Copyright Notice in lua.h
 */
@@ -31,8 +31,8 @@ LUALIB_API void luaL_openlib (lua_State *L, const char *libname,
                                const luaL_reg *l, int nup);
 LUALIB_API int luaL_getmetafield (lua_State *L, int obj, const char *e);
 LUALIB_API int luaL_callmeta (lua_State *L, int obj, const char *e);
-LUALIB_API int luaL_typerror (lua_State *L, int narg, const char *tname);
-LUALIB_API int luaL_argerror (lua_State *L, int numarg, const char *extramsg);
+LUALIB_API int luaL_typerror (lua_State *L, int narg, const char *tname) __attribute__((noreturn));
+LUALIB_API int luaL_argerror (lua_State *L, int numarg, const char *extramsg) __attribute__((noreturn));
 LUALIB_API const char *luaL_checklstring (lua_State *L, int numArg, size_t *l);
 LUALIB_API const char *luaL_optlstring (lua_State *L, int numArg,
                                            const char *def, size_t *l);
@@ -48,7 +48,7 @@ LUALIB_API void  luaL_getmetatable (lua_State *L, const char *tname);
 LUALIB_API void *luaL_checkudata (lua_State *L, int ud, const char *tname);
 
 LUALIB_API void luaL_where (lua_State *L, int lvl);
-LUALIB_API int luaL_error (lua_State *L, const char *fmt, ...);
+LUALIB_API int luaL_error (lua_State *L, const char *fmt, ...) __attribute__((noreturn));
 
 LUALIB_API int luaL_findstring (const char *st, const char *const lst[]);
 

@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_dyn_gw.c,v 1.19 2007/01/30 16:48:34 bernd67 Exp $
+ * $Id: olsrd_dyn_gw.c,v 1.21 2007/05/08 23:49:00 bernd67 Exp $
  */
 
 /*
@@ -87,7 +87,6 @@ struct ThreadPara
   void *(*Func)(void *);
   void *Arg;
 };
-
 #endif
 
 
@@ -102,8 +101,6 @@ struct ping_list {
 
 static struct ping_list *
 add_to_ping_list(char *, struct ping_list *);
-
-//struct ping_list *the_ping_list = NULL;
 
 struct hna_list {
   union olsr_ip_addr hna_net;
@@ -121,8 +118,8 @@ static struct hna_list *
 
 struct hna_list *the_hna_list = NULL;
 
-static void *
-looped_checks(void *foo);
+static void
+looped_checks(void *) __attribute__((noreturn));
 
 static int
 check_gw(union olsr_ip_addr *, union olsr_ip_addr *,struct ping_list *);
@@ -130,8 +127,9 @@ check_gw(union olsr_ip_addr *, union olsr_ip_addr *,struct ping_list *);
 static int
 ping_is_possible(struct ping_list *);
 
-   
-     
+/* Event function to register with the scheduler */
+static void
+olsr_event_doing_hna(void *);
 
 /**
  * read config file parameters
@@ -197,7 +195,7 @@ olsrd_plugin_register_param(char *key, char *value)
  *It is ran _after_ register_olsr_param
  */
 int
-olsrd_plugin_init()
+olsrd_plugin_init(void)
 {
   pthread_t ping_thread;
   
@@ -214,7 +212,7 @@ olsrd_plugin_init()
     olsr_printf(1, "HNA Internet gateway deleted\n");
   }*/
 
-  pthread_create(&ping_thread, NULL, looped_checks, NULL);
+  pthread_create(&ping_thread, NULL, (void *(*)(void *))looped_checks, NULL);
   
   /* Register the GW check */
   olsr_register_scheduler_event(&olsr_event_doing_hna, NULL, 3, 4, NULL);
@@ -227,8 +225,8 @@ olsrd_plugin_init()
  * Scheduled event to update the hna table,
  * called from olsrd main thread to keep the hna table thread-safe
  */
-void
-olsr_event_doing_hna(void *foo)
+static void
+olsr_event_doing_hna(void *foo __attribute__((unused)))
 {
 	struct hna_list *li;
 	/*
@@ -265,76 +263,57 @@ olsr_event_doing_hna(void *foo)
  * reiterated every "Interval" sec (as given in the config or 
  * the default value)
  */
-static void *
-looped_checks(void *foo)
+static void
+looped_checks(void *foo __attribute__((unused)))
 {
-	/*
-	struct hna_list {
-  union olsr_ip_addr hna_net;
-  union hna_netmask hna_netmask;
-  struct ping_list *ping_hosts;
-  int hna_added;
-  int probe_ok;
-  struct hna_list *next;
-};
-	*/
-	struct hna_list *li;
-	
   for(;;) {
+    struct hna_list *li;
     struct timespec remainder_spec;
     /* the time to wait in "Interval" sec (see connfig), default=5sec */
-    struct timespec sleeptime_spec  = {(time_t) check_interval, 0L };
+    struct timespec sleeptime_spec  = { check_interval, 0L };
 
-    li=the_hna_list;
-    while(li){
-	    /* check for gw in table entry and if Ping IPs are given also do pings */
-	    li->probe_ok = check_gw(&li->hna_net,&li->hna_netmask,li->ping_hosts);
-	    //has_available_gw = check_gw(&gw_net, &gw_netmask);
-	    
-	    li=li->next;
+    for(li = the_hna_list; li; li = li->next){
+      /* check for gw in table entry and if Ping IPs are given also do pings */
+      li->probe_ok = check_gw(&li->hna_net,&li->hna_netmask,li->ping_hosts);
+      //has_available_gw = check_gw(&gw_net, &gw_netmask);
     }
 
     while(nanosleep(&sleeptime_spec, &remainder_spec) < 0)
       sleeptime_spec = remainder_spec;
   }
-  return NULL;
+  // return NULL;
 }
+
 
 
 static int
 check_gw(union olsr_ip_addr *net, union olsr_ip_addr *mask, struct ping_list *the_ping_list)
 {
-    char buff[1024], iface[16];
+    char buf[1024], iface[16];
     olsr_u32_t gate_addr, dest_addr, netmask;
     unsigned int iflags;
-    int num, metric, refcnt, use;
+    int metric, refcnt, use;
     int retval = 0;
 
     FILE *fp = fopen(PROCENTRY_ROUTE, "r");
-
     if (!fp) 
       {
         perror(PROCENTRY_ROUTE);
         olsr_printf(1, "INET (IPv4) not configured in this system.\n");
 	return -1;
-      }
-    
-    rewind(fp);
+      }    
 
     /*
     olsr_printf(1, "Genmask         Destination     Gateway         "
                 "Flags Metric Ref    Use Iface\n");
     */
-    while (fgets(buff, 1023, fp))
-	{	
-	num = sscanf(buff, "%15s %128X %128X %X %d %d %d %128X \n",
-		     iface, &dest_addr, &gate_addr,
-		     &iflags, &refcnt, &use, &metric, &netmask);
-
+    while (fgets(buf, sizeof(buf), fp))
+      {	
+	int num = sscanf(buf, "%15s %128X %128X %X %d %d %d %128X \n",
+                         iface, &dest_addr, &gate_addr,
+                         &iflags, &refcnt, &use, &metric, &netmask);
 	if (num < 8)
-	  {
 	    continue;
-	  }
 
 	/*
 	olsr_printf(1, "%-15s ", olsr_ip_to_string((union olsr_ip_addr *)&netmask));
@@ -346,33 +325,34 @@ check_gw(union olsr_ip_addr *net, union olsr_ip_addr *mask, struct ping_list *th
 		    metric, refcnt, use, iface);
 	*/
 
-		if( (iflags & RTF_UP) &&
-		   (metric == 0) &&
-		   (netmask == mask->v4) && 
-		   (dest_addr == net->v4))
-		{
-			if ( ((mask->v4==INET_PREFIX)&&(net->v4==INET_NET))&&(!(iflags & RTF_GATEWAY)))
-				return retval;
-			/* don't ping, if there was no "Ping" IP addr in the config file */
-			if (the_ping_list != NULL) {  
-				/*validate the found inet gw by pinging*/ 
-				if (ping_is_possible(the_ping_list)) {
-					olsr_printf(1, "HNA[%08x/%08x](ping is possible) VIA %s detected in routing table.\n", dest_addr,netmask,iface);
-					retval=1;      
-				}
-			} else {
-				olsr_printf(1, "HNA[%08x/%08x] VIA %s detected in routing table.\n", dest_addr,netmask,iface);
-				retval=1;      
-			}
-		}
+        if( (iflags & RTF_UP) &&
+            (metric == 0) &&
+            (netmask == mask->v4) && 
+            (dest_addr == net->v4))
+          {
+            if ( ((mask->v4==INET_PREFIX)&&(net->v4==INET_NET))&&(!(iflags & RTF_GATEWAY)))
+              {
+                fclose(fp);  
+                return retval;
+              }
+            /* don't ping, if there was no "Ping" IP addr in the config file */
+            if (the_ping_list != NULL) {  
+              /*validate the found inet gw by pinging*/ 
+              if (ping_is_possible(the_ping_list)) {
+                olsr_printf(1, "HNA[%08x/%08x](ping is possible) VIA %s detected in routing table.\n", dest_addr,netmask,iface);
+                retval=1;      
+              }
+            } else {
+              olsr_printf(1, "HNA[%08x/%08x] VIA %s detected in routing table.\n", dest_addr,netmask,iface);
+              retval=1;      
+            }
+          }
+      }
 
-	}//while
-
-	fclose(fp);  
-  
-	if(retval == 0){
-		olsr_printf(1, "HNA[%08x/%08x] is invalid\n", net->v4,mask->v4);
-	}  
+    fclose(fp);      
+    if(retval == 0){
+      olsr_printf(1, "HNA[%08x/%08x] is invalid\n", net->v4,mask->v4);
+    }  
     return retval;
 }
 
@@ -380,16 +360,15 @@ static int
 ping_is_possible(struct ping_list *the_ping_list) 
 {
   struct ping_list *list;
-  for (list = the_ping_list; list != NULL; list = list->next) {
-    char ping_command[50] = "ping -c 1 -q ";
-    strcat(ping_command, list->ping_address);
+  for(list = the_ping_list; list; list = list->next) {
+    char ping_command[50];
+    snprintf(ping_command, sizeof(ping_command), "ping -c 1 -q %s", list->ping_address);
     olsr_printf(1, "\nDo ping on %s ...\n", list->ping_address);
     if (system(ping_command) == 0) {
       olsr_printf(1, "...OK\n\n");
       return 1;      
-    } else {
-      olsr_printf(1, "...FAILED\n\n");
     }
+    olsr_printf(1, "...FAILED\n\n");
   }
   return 0;
 }
@@ -398,8 +377,8 @@ ping_is_possible(struct ping_list *the_ping_list)
 static struct ping_list *
 add_to_ping_list(char *ping_address, struct ping_list *the_ping_list)
 {
-  struct ping_list *new = (struct ping_list *) malloc(sizeof(struct ping_list));
-  if(new == NULL)
+  struct ping_list *new = malloc(sizeof(struct ping_list));
+  if(!new)
   {
     fprintf(stderr, "DYN GW: Out of memory!\n");
     exit(0);
@@ -414,7 +393,7 @@ add_to_ping_list(char *ping_address, struct ping_list *the_ping_list)
 static struct hna_list *
 add_to_hna_list(struct hna_list * list_root, union olsr_ip_addr *hna_net, union olsr_ip_addr *hna_netmask )
 {
-  struct hna_list *new = (struct hna_list *) malloc(sizeof(struct hna_list));
+  struct hna_list *new = malloc(sizeof(struct hna_list));
   if(new == NULL)
   {
     fprintf(stderr, "DYN GW: Out of memory!\n");
@@ -428,14 +407,10 @@ add_to_hna_list(struct hna_list * list_root, union olsr_ip_addr *hna_net, union 
   new->probe_ok=0;
   new->ping_hosts=NULL;
   new->next=list_root;  
-
   return new;
 }
 
-
-
 #ifdef WIN32
-
 /*
  * Windows ptread compat stuff
  */
@@ -457,7 +432,7 @@ static unsigned long __stdcall ThreadWrapper(void *Para)
   return 0;
 }
 
-int pthread_create(HANDLE *Hand, void *Attr, void *(*Func)(void *), void *Arg)
+int pthread_create(HANDLE *Hand, void *Attr __attribute__((unused)), void *(*Func)(void *), void *Arg)
 {
   struct ThreadPara *Para;
   unsigned long ThreadId;
@@ -478,7 +453,7 @@ int pthread_create(HANDLE *Hand, void *Attr, void *(*Func)(void *), void *Arg)
   return 0;
 }
 
-int pthread_kill(HANDLE Hand, int Sig)
+int pthread_kill(HANDLE Hand, int Sig __attribute__((unused)))
 {
   if (!TerminateThread(Hand, 0))
     return -1;
@@ -486,7 +461,7 @@ int pthread_kill(HANDLE Hand, int Sig)
   return 0;
 }
 
-int pthread_mutex_init(HANDLE *Hand, void *Attr)
+int pthread_mutex_init(HANDLE *Hand, void *Attr __attribute__((unused)))
 {
   *Hand = CreateMutex(NULL, FALSE, NULL);
 

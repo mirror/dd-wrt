@@ -35,12 +35,12 @@
  * Description: IP packet characterization functions
  * Created    : 29 Jun 2006
  *
- * $Id: Address.c,v 1.2 2007/02/10 17:05:55 bernd67 Exp $ 
  * ------------------------------------------------------------------------- */
  
 #include "Address.h"
 
 /* System includes */
+#include <stddef.h> /* NULL */
 #include <assert.h> /* assert() */
 #include <netinet/ip.h> /* struct ip */
 #include <netinet/udp.h> /* struct udphdr */
@@ -99,130 +99,49 @@ int IsMulticast(union olsr_ip_addr* ipAddress)
 }
 
 /* -------------------------------------------------------------------------
- * Function   : IsLocalBroadcast
- * Description: Check if an IP address is a local broadcast address for a
- *              given network interface
- * Input      : destIp, broadAddr
- * Output     : none
- * Return     : true (1) or false (0)
- * Data Used  : none
- * ------------------------------------------------------------------------- */
-int IsLocalBroadcast(union olsr_ip_addr* destIp, struct sockaddr* broadAddr)
-{
-  struct sockaddr_in* sin;
-  
-  assert(destIp != NULL && broadAddr != NULL);
-
-  /* Cast down to correct sockaddr subtype */
-  sin = (struct sockaddr_in*)broadAddr;
-
-  return COMP_IP(&(sin->sin_addr.s_addr), destIp);
-}
-
-/* -------------------------------------------------------------------------
  * Function   : IsOlsrOrBmfPacket
- * Description: Check if an ethernet packet is an OLSR packet or a BMF packet
- * Input      : intf, ethPkt, len
+ * Description: Check if an IP packet is either an OLSR packet or a BMF packet
+ * Input      : ipPacket
  * Output     : none
  * Return     : true (1) or false (0)
  * Data Used  : none
- * Assumption : len >= IP_HDR_OFFSET + GetIpHeaderLength(ethPkt)
  * ------------------------------------------------------------------------- */
-int IsOlsrOrBmfPacket(struct TBmfInterface* intf, unsigned char* ethPkt, size_t len)
+int IsOlsrOrBmfPacket(unsigned char* ipPacket)
 {
-  struct ip* ipData;
+  struct ip* ipHeader;
   unsigned int ipHeaderLen;
-  struct udphdr* udpData;
+  struct udphdr* udpHeader;
   u_int16_t destPort;
 
-  assert(ethPkt != NULL);
+  assert(ipPacket != NULL);
 
-  /* Consider OLSR and BMF packets not to be local broadcast
-   * OLSR packets are UDP - port 698
+  /* OLSR packets are UDP - port 698
    * OLSR-BMF packets are UDP - port 50698
-   * OLSR-Autodetect probe packets are UDP - port 51698
-   * Fragments of the above packets are also not local broadcast */
+   * OLSR-Autodetect probe packets are UDP - port 51698 */
 
-  ipData = (struct ip*) (ethPkt + IP_HDR_OFFSET);
-  if (ipData->ip_p != SOL_UDP)
+  /* Check if UDP */
+  ipHeader = (struct ip*) ipPacket;
+  if (ipHeader->ip_p != SOL_UDP)
   {
+    /* Not UDP */
     return 0;
   }
 
-  /* Check if the packet is an IP-fragment */
-  if ((ntohs(ipData->ip_off) & IP_OFFMASK) != 0)
+  /* The total length must be at least large enough to store the UDP header */
+  ipHeaderLen = GetHeaderLength(ipPacket);
+  if (GetTotalLength(ipPacket) < ipHeaderLen + sizeof(struct udphdr))
   {
-#if 0
-    int i;
-    for (i = 0; i < FRAGMENT_HISTORY_SIZE; i++)
-    {
-      /* Quick-access pointer */
-      struct TFragmentHistory* entry = &intf->fragmentHistory[i];
-
-      /* Match */
-      if (entry->ipId == ntohs(ipData->ip_id) &&
-          entry->ipProto == ipData->ip_p &&
-          entry->ipSrc.s_addr == ntohl(ipData->ip_src.s_addr) &&
-          entry->ipDst.s_addr == ntohl(ipData->ip_dst.s_addr))
-      {
-        /* Found matching history entry, so packet is assumed to be a fragment
-         * of an earlier OLSR/OLSR-BMF/OLSR-Autodetect packet */
-
-        /* More fragments? If not, invalidate entry */
-        if (((ntohs(ipData->ip_off) & IP_MF) == 0))
-        {
-          memset(entry, 0, sizeof(struct TFragmentHistory));
-        }
-
-        return 1;
-      }
-    }
-
-    /* Matching history entry not found, so packet is not assumed to be a fragment
-     * of an earlier OLSR/OLSR-BMF/OLSR-Autodetect packet */
-#endif
-    /* OOPS! IP-fragments may come in earlier than their main packet. In that case,
-     * their relation with the main packet is not detected by the above code, resulting
-     * in stray fragments being forwarded all ove the network. Solution for now is to
-     * not forward any IP-fragments at all. */
-    /*return 0;*/
-    return 1;
-  }
-
-  /* The packet is the first (or only) IP-fragment */
-
-  /* Check length first */
-  ipHeaderLen = ipData->ip_hl << 2;
-  if (len < IP_HDR_OFFSET + ipHeaderLen + sizeof(struct udphdr))
-  {
+    /* Not long enough */
     return 0;
   }
 
   /* Go into the UDP header and check port number */
-  udpData = (struct udphdr*) (ethPkt + IP_HDR_OFFSET + ipHeaderLen);
-  destPort = ntohs(udpData->dest);
+  udpHeader = (struct udphdr*) (ipPacket + ipHeaderLen);
+  destPort = ntohs(udpHeader->dest);
 
   if (destPort == OLSRPORT || destPort == BMF_ENCAP_PORT || destPort == 51698)
       /* TODO: #define for 51698 */
   {
-#if 0
-    /* If more fragments are expected, keep a record in the fragment history */
-    if ((ntohs(ipData->ip_off) & IP_MF) != 0)
-    {
-      /* Quick-access pointer */
-      struct TFragmentHistory* entry = &intf->fragmentHistory[intf->nextFragmentHistoryEntry];
-
-      /* Store in fragment history */
-      entry->ipId = ntohs(ipData->ip_id);
-      entry->ipProto = ipData->ip_p;
-      entry->ipSrc.s_addr = ntohl(ipData->ip_src.s_addr);
-      entry->ipDst.s_addr = ntohl(ipData->ip_dst.s_addr);
-
-      /* Advance to next entry */
-      intf->nextFragmentHistoryEntry++;
-      intf->nextFragmentHistoryEntry %= FRAGMENT_HISTORY_SIZE;
-    }
-#endif
     return 1;
   }
 

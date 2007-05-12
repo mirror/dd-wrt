@@ -36,21 +36,17 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: hysteresis.h,v 1.8 2006/12/14 11:29:19 bernd67 Exp $
+ * $Id: hysteresis.h,v 1.9 2007/04/20 13:46:04 bernd67 Exp $
  */
-
-
 #ifndef _OLSR_HYSTERESIS
 #define _OLSR_HYSTERESIS
 
 #include "link_set.h"
 
-
-
-inline float
+float
 olsr_hyst_calc_stability(float);
 
-inline int
+int
 olsr_process_hysteresis(struct link_entry *);
 
 float

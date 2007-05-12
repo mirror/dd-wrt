@@ -247,7 +247,7 @@ struct neigh_info
 };
 
 
-struct tcmsg 
+struct olsr_tcmsg 
 {
   olsr_u16_t        ansn;
   olsr_u16_t        reserved;
@@ -265,7 +265,7 @@ struct neigh_info6
 };
 
 
-struct tcmsg6
+struct olsr_tcmsg6
 {
   olsr_u16_t           ansn;
   olsr_u16_t           reserved;
@@ -366,7 +366,7 @@ struct olsrmsg
   union 
   {
     struct hellomsg hello;
-    struct tcmsg    tc;
+    struct olsr_tcmsg    tc;
     struct hnamsg   hna;
     struct midmsg   mid;
   } message;
@@ -390,7 +390,7 @@ struct olsrmsg6
   union 
   {
     struct hellomsg6 hello;
-    struct tcmsg6    tc;
+    struct olsr_tcmsg6    tc;
     struct hnamsg6   hna;
     struct midmsg6   mid;
   } message;

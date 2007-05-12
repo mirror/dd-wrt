@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_plugin.c,v 1.13 2007/02/04 22:37:36 bernd67 Exp $
+ * $Id: olsrd_plugin.c,v 1.16 2007/05/09 00:22:47 bernd67 Exp $
  */
 
 /*
@@ -49,9 +49,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <netinet/in.h>
+#ifndef WIN32
+#include <arpa/nameser.h>
+#endif
+
 #include "olsrd_httpinfo.h"
 
+
 int http_port = 0;
+int resolve_ip_addresses = 0;
 
 static void __attribute__ ((constructor)) 
 my_init(void);
@@ -59,14 +66,13 @@ my_init(void);
 static void __attribute__ ((destructor)) 
 my_fini(void);
 
-
 /*
  * Defines the version of the plugin interface that is used
  * THIS IS NOT THE VERSION OF YOUR PLUGIN!
  * Do not alter unless you know what you are doing!
  */
 int 
-olsrd_plugin_interface_version()
+olsrd_plugin_interface_version(void)
 {
   return PLUGIN_INTERFACE_VERSION;
 }
@@ -77,11 +83,11 @@ olsrd_plugin_interface_version()
  *Constructor
  */
 static void
-my_init()
+my_init(void)
 {
   /* Print plugin info to stdout */
   printf("%s\n", MOD_DESC);
-  
+
   return;
 }
 
@@ -89,7 +95,7 @@ my_init()
  *Destructor
  */
 static void
-my_fini()
+my_fini(void)
 {
 
   /* Calls the destruction function
@@ -166,6 +172,15 @@ olsrd_plugin_register_param(char *key, char *value)
       return 1;
       
     }
-
+  if(!strcasecmp(key, "resolve"))
+    {
+        if (!strcasecmp (value, "yes")) {
+            resolve_ip_addresses = 1;
+        } else if (!strcasecmp (value, "no")) {
+            resolve_ip_addresses = 0;
+        } else {
+            return 0;
+        }
+    }
   return 1;
 }

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: net.h,v 1.3 2004/11/21 10:50:52 kattemat Exp $
+ * $Id: net.h,v 1.4 2007/04/20 13:46:05 bernd67 Exp $
  */
 
 
@@ -54,8 +54,5 @@
 #include <syslog.h>
 #include <netinet/in.h>
 #include "../olsr_protocol.h"
-
-extern int
-olsr_printf(int, char *, ...);
 
 #endif

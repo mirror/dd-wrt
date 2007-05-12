@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: packet.c,v 1.21 2006/01/07 08:16:20 kattemat Exp $
+ * $Id: packet.c,v 1.22 2007/04/25 22:08:09 bernd67 Exp $
  */
 
 
@@ -94,7 +94,7 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
   int                     link;
 
 #ifdef DEBUG
-  OLSR_PRINTF(3, "\tBuilding HELLO on interface %d\n", outif->if_nr)
+  OLSR_PRINTF(3, "\tBuilding HELLO on interface %d\n", outif->if_nr);
 #endif
 
   message->neighbors=NULL;
@@ -106,7 +106,7 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
 
   message->willingness = olsr_cnf->willingness;
 #ifdef DEBUG
-  OLSR_PRINTF(3, "Willingness: %d\n", olsr_cnf->willingness)
+  OLSR_PRINTF(3, "Willingness: %d\n", olsr_cnf->willingness);
 #endif
 
   /* Set TTL */
@@ -115,7 +115,7 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
   COPY_IP(&message->source_addr, &olsr_cnf->main_addr);
 
 #ifdef DEBUG
-      OLSR_PRINTF(5, "On link:\n")
+  OLSR_PRINTF(5, "On link:\n");
 #endif
 
   /* Get the links of this interface */
@@ -193,8 +193,8 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
       /* Set the main address */
       COPY_IP(&message_neighbor->main_address, &links->neighbor->neighbor_main_addr);
 #ifdef DEBUG
-      OLSR_PRINTF(5, "Added: %s - ", olsr_ip_to_string(&message_neighbor->address))
-      OLSR_PRINTF(5, " status %d\n", message_neighbor->status)
+      OLSR_PRINTF(5, "Added: %s - ", olsr_ip_to_string(&message_neighbor->address));
+      OLSR_PRINTF(5, " status %d\n", message_neighbor->status);
 #endif
       message_neighbor->next=message->neighbors;
       message->neighbors=message_neighbor;	    
@@ -207,7 +207,7 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
 
 
 #ifdef DEBUG
-      OLSR_PRINTF(5, "Not on link:\n")
+    OLSR_PRINTF(5, "Not on link:\n");
 #endif
 
   /* Add the rest of the neighbors if running on multiple interfaces */
@@ -291,8 +291,8 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
 
 	    COPY_IP(&message_neighbor->main_address, &neighbor->neighbor_main_addr);
 #ifdef DEBUG
-	    OLSR_PRINTF(5, "Added: %s - ", olsr_ip_to_string(&message_neighbor->address))
-	    OLSR_PRINTF(5, " status  %d\n", message_neighbor->status)
+	    OLSR_PRINTF(5, "Added: %s - ", olsr_ip_to_string(&message_neighbor->address));
+	    OLSR_PRINTF(5, " status  %d\n", message_neighbor->status);
 #endif
 	    message_neighbor->next=message->neighbors;
 	    message->neighbors=message_neighbor;	    
@@ -428,7 +428,7 @@ olsr_build_tc_packet(struct tc_message *message)
       if(sending_tc)
 	{
 	  /* Send empty TC */
-	  OLSR_PRINTF(3, "No more MPR selectors - will send empty TCs\n")
+	  OLSR_PRINTF(3, "No more MPR selectors - will send empty TCs\n");
 	  set_empty_tc_timer(GET_TIMESTAMP((olsr_cnf->max_tc_vtime*3)*1000));
 
 	  sending_tc = OLSR_FALSE;

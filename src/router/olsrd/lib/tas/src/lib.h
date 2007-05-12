@@ -37,8 +37,11 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: lib.h,v 1.2 2005/04/12 19:57:26 tlopatic Exp $
+ * $Id: lib.h,v 1.3 2007/04/20 13:46:03 bernd67 Exp $
  */
+
+#ifndef _OLSRD_TAS_LIB_H
+#define _OLSRD_TAS_LIB_H
 
 #define DEBUG_MESSAGE 1
 #define DEBUG_SESSION 2
@@ -47,10 +50,12 @@
 #define DEBUG_LUA 16
 #define DEBUG_QUANTUM 32
 
-extern void error(char *form, ...);
-extern void debug(int facility, char *form, ...);
+extern void error(char *form, ...) __attribute__((format(printf,1,2)));
+extern void debug(int facility, char *form, ...) __attribute__((format(printf,2,3)));
 extern char *strdupAdd(const char *string, int add);
 extern char *myStrdup(const char *string);
 extern void chomp(char *line, int len);
 extern char *intToString(char *buff, unsigned int val);
 extern int stringToInt(unsigned int *val, const char *buff);
+
+#endif

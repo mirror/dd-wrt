@@ -29,7 +29,7 @@
  *
  */
 
-/* $Id: olsrd_plugin.h,v 1.1 2005/05/29 12:47:45 br1 Exp $ */
+/* $Id: olsrd_plugin.h,v 1.2 2007/04/20 13:46:04 bernd67 Exp $ */
 
 /*
  * Example plugin for olsrd.org OLSR daemon
@@ -47,6 +47,13 @@
 /****************************************************************************
  *                Functions that the plugin MUST provide                    *
  ****************************************************************************/
+
+#if 1
+/* We hide them from the compiler here to allow the plugins itself to declare them
+ * as they also implement them if we activate -Wredundant-decls.
+ * Normally we leave it seen so that we enforce a check by the compiler if they are
+ * identical.
+ */
 
 /**
  * Plugin interface version
@@ -70,6 +77,6 @@ olsrd_plugin_register_param(char *key, char *value);
  */
 int
 olsrd_plugin_init(void);
-
+#endif
 
 #endif

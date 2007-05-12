@@ -1,6 +1,10 @@
 # programs
-CCACHE =        $(shell sh -c "type -path ccache")
+CCACHE ?=       $(shell sh -c "type -path ccache")
+ifeq ($(origin CC),default)
+CC = 		$(CCACHE) gcc
+else
 CC ?= 		$(CCACHE) gcc
+endif
 STRIP ?=	strip
 BISON ?=	bison
 FLEX ?=		flex
@@ -20,9 +24,31 @@ INCLUDES =	-Isrc -I$(TOPDIR)/src
 
 # add gcc warnings and optimizations if CFLAGS not set
 ifndef CFLAGS
-CFLAGS +=	-Wall -Wmissing-prototypes -Wstrict-prototypes \
-		-Wmissing-declarations -Wsign-compare
-CFLAGS +=	-O2 -g
+ifndef WARNINGS
+WARNINGS +=	-Wall
+WARNINGS +=	-Wextra
+WARNINGS +=	-Wold-style-definition
+WARNINGS +=	-Wdeclaration-after-statement
+WARNINGS +=	-Wmissing-prototypes
+WARNINGS +=	-Wstrict-prototypes
+WARNINGS +=	-Wmissing-declarations
+WARNINGS +=	-Wsign-compare
+WARNINGS +=	-Waggregate-return
+WARNINGS +=	-Wmissing-noreturn
+WARNINGS +=	-Wmissing-format-attribute
+WARNINGS +=	-Wno-multichar
+WARNINGS +=	-Wno-deprecated-declarations
+#WARNINGS +=	-Wredundant-decls
+WARNINGS +=	-Wnested-externs
+#WARNINGS +=	-Wunreachable-code
+WARNINGS +=	-Winline
+WARNINGS +=	-Wdisabled-optimization
+#WARNINGS +=	-Werror
+WARNINGS :=	$(shell CC="$(CC)" $(TOPDIR)/gcc-warnings $(WARNINGS))
+endif
+CFLAGS +=	$(WARNINGS)
+CFLAGS +=	-O2
+CFLAGS +=	-g
 endif
 
 ifdef OLSRD_PLUGIN
@@ -44,7 +70,9 @@ HDRS +=		$(wildcard *.h)
 all: default_target
 
 # OS detection
-OS =		$(shell sh $(TOPDIR)/make/guess_os.sh)
+ifeq ($(OS),)
+OS :=		$(shell sh $(TOPDIR)/make/guess_os.sh)
+endif
 ifeq ($(OS),UNKNOWN)
 all: help
 else

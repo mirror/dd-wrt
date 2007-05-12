@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: rebuild_packet.c,v 1.19 2005/05/28 16:01:14 kattemat Exp $
+ * $Id: rebuild_packet.c,v 1.21 2007/04/25 22:08:13 bernd67 Exp $
  */
 
 
@@ -230,15 +230,15 @@ mid_chgestruct(struct mid_message *mmsg, union olsr_message *m)
       
       if(olsr_cnf->debug_level > 1)
 	{
-	  OLSR_PRINTF(3, "Alias list for %s: ", ip_to_string(&mmsg->mid_origaddr.v4))
-	  OLSR_PRINTF(3, "%s", ip_to_string(&mmsg->addr.v4))
+	  OLSR_PRINTF(3, "Alias list for %s: ", ip_to_string(&mmsg->mid_origaddr.v4));
+	  OLSR_PRINTF(3, "%s", ip_to_string(&mmsg->addr.v4));
 	  alias_tmp = mmsg->mid_addr;
 	  while(alias_tmp)
 	    {
-	      OLSR_PRINTF(3, " - %s", ip_to_string(&alias_tmp->alias_addr.v4))
+	      OLSR_PRINTF(3, " - %s", ip_to_string(&alias_tmp->alias_addr.v4));
 	      alias_tmp = alias_tmp->next;
 	    }
-	  OLSR_PRINTF(3, "\n")
+	  OLSR_PRINTF(3, "\n");
 	}
     }
   else
@@ -282,16 +282,16 @@ mid_chgestruct(struct mid_message *mmsg, union olsr_message *m)
 
       if(olsr_cnf->debug_level > 1)
 	{
-	  OLSR_PRINTF(3, "Alias list for %s", ip6_to_string(&mmsg->mid_origaddr.v6))
-	  OLSR_PRINTF(3, "%s", ip6_to_string(&mmsg->addr.v6))
+	  OLSR_PRINTF(3, "Alias list for %s", ip6_to_string(&mmsg->mid_origaddr.v6));
+	  OLSR_PRINTF(3, "%s", ip6_to_string(&mmsg->addr.v6));
 
 	  alias_tmp = mmsg->mid_addr;
 	  while(alias_tmp)
 	    {
-	      OLSR_PRINTF(3, " - %s", ip6_to_string(&alias_tmp->alias_addr.v6))
+	      OLSR_PRINTF(3, " - %s", ip6_to_string(&alias_tmp->alias_addr.v6));
 	      alias_tmp = alias_tmp->next;
 	    }
-	  OLSR_PRINTF(3, "\n")
+	  OLSR_PRINTF(3, "\n");
 	}
     }
 
@@ -381,7 +381,7 @@ hello_chgestruct(struct hello_message *hmsg, union olsr_message *m)
       /* Willingness */
       hmsg->willingness = m->v4.message.hello.willingness;
 
-      OLSR_PRINTF(3, "Got HELLO vtime: %f htime: %f\n", hmsg->vtime, hmsg->htime)
+      OLSR_PRINTF(3, "Got HELLO vtime: %f htime: %f\n", hmsg->vtime, hmsg->htime);
 
       for (hinf = m->v4.message.hello.hell_info; 
 	   (char *)hinf < ((char *)m + (ntohs(m->v4.olsr_msgsize))); 
@@ -425,7 +425,7 @@ hello_chgestruct(struct hello_message *hmsg, union olsr_message *m)
       /* Willingness */
       hmsg->willingness = m->v6.message.hello.willingness;
 
-      OLSR_PRINTF(3, "Got HELLO vtime: %f htime: %f\n", hmsg->vtime, hmsg->htime)
+      OLSR_PRINTF(3, "Got HELLO vtime: %f htime: %f\n", hmsg->vtime, hmsg->htime);
 
 
       for (hinf6 = m->v6.message.hello.hell_info; 
@@ -479,7 +479,7 @@ tc_chgestruct(struct tc_message *tmsg, union olsr_message *m, union olsr_ip_addr
   if(olsr_cnf->ip_version == AF_INET)
     {
       /* IPv4 */
-      struct tcmsg *tc;
+      struct olsr_tcmsg *tc;
       struct neigh_info *mprsaddr, *maddr;
 
       tc = &m->v4.message.tc;
@@ -498,7 +498,7 @@ tc_chgestruct(struct tc_message *tmsg, union olsr_message *m, union olsr_ip_addr
       /* Get vtime */
       tmsg->vtime = ME_TO_DOUBLE(m->v4.olsr_vtime);
 
-      OLSR_PRINTF(3, "Got TC vtime: %f\n", tmsg->vtime)
+      OLSR_PRINTF(3, "Got TC vtime: %f\n", tmsg->vtime);
 
       COPY_IP(&tmsg->originator, &m->v4.originator);
       tmsg->packet_seq_number = ntohs(m->v4.seqno);
@@ -520,7 +520,7 @@ tc_chgestruct(struct tc_message *tmsg, union olsr_message *m, union olsr_ip_addr
   else
     {
       /* IPv6 */
-      struct tcmsg6 *tc6;
+      struct olsr_tcmsg6 *tc6;
       struct neigh_info6 *mprsaddr6, *maddr6;
 
       tc6 = &m->v6.message.tc;
@@ -540,7 +540,7 @@ tc_chgestruct(struct tc_message *tmsg, union olsr_message *m, union olsr_ip_addr
       /* Get vtime */
       tmsg->vtime = ME_TO_DOUBLE(m->v6.olsr_vtime);
 
-      OLSR_PRINTF(3, "Got TC vtime: %f\n", tmsg->vtime)
+      OLSR_PRINTF(3, "Got TC vtime: %f\n", tmsg->vtime);
 
       COPY_IP(&tmsg->originator, &m->v6.originator);
       tmsg->packet_seq_number = ntohs(m->v6.seqno);

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: print_packet.c,v 1.9 2006/01/07 08:16:20 kattemat Exp $
+ * $Id: print_packet.c,v 1.10 2007/04/22 20:25:48 bernd67 Exp $
  */
 
 #include "print_packet.h"
@@ -55,10 +55,10 @@ static void
 print_hnamsg(FILE *, olsr_u8_t *, olsr_16_t);
 
 static void
-print_tcmsg(FILE *, olsr_u8_t *, olsr_16_t);
+print_olsr_tcmsg(FILE *, olsr_u8_t *, olsr_16_t);
 
 static void
-print_tcmsg_lq(FILE *, olsr_u8_t *, olsr_16_t);
+print_olsr_tcmsg_lq(FILE *, olsr_u8_t *, olsr_16_t);
 
 static void
 print_hellomsg(FILE *, olsr_u8_t *, olsr_16_t);
@@ -131,13 +131,13 @@ print_olsr_serialized_message(FILE *handle, union olsr_message *msg)
 		   ntohs(msg->v4.olsr_msgsize));
       break;
     case(TC_MESSAGE):
-      print_tcmsg(handle,
+      print_olsr_tcmsg(handle,
 		  (olsr_cnf->ip_version == AF_INET) ? 
 		  (olsr_u8_t *)&msg->v4.message : (olsr_u8_t *)&msg->v6.message,
 		  ntohs(msg->v4.olsr_msgsize));
       break;
     case(LQ_TC_MESSAGE):
-      print_tcmsg_lq(handle,
+      print_olsr_tcmsg_lq(handle,
 		     (olsr_cnf->ip_version == AF_INET) ? 
 		     (olsr_u8_t *)&msg->v4.message : (olsr_u8_t *)&msg->v6.message,
 		     ntohs(msg->v4.olsr_msgsize));
@@ -323,11 +323,11 @@ print_hellomsg_lq(FILE *handle, olsr_u8_t *data, olsr_16_t totsize)
 }
 
 static void
-print_tcmsg_lq(FILE *handle, olsr_u8_t *data, olsr_16_t totsize)
+print_olsr_tcmsg_lq(FILE *handle, olsr_u8_t *data, olsr_16_t totsize)
 {
   int remsize = totsize - ((olsr_cnf->ip_version == AF_INET) ? OLSR_MSGHDRSZ_IPV4 : OLSR_MSGHDRSZ_IPV6);
   
-  fprintf(handle, "    +ANSN: %d\n", htons(((struct tcmsg *)data)->ansn));
+  fprintf(handle, "    +ANSN: %d\n", htons(((struct olsr_tcmsg *)data)->ansn));
 
   data += 4;
   remsize -= 4;
@@ -347,11 +347,11 @@ print_tcmsg_lq(FILE *handle, olsr_u8_t *data, olsr_16_t totsize)
 
 
 static void
-print_tcmsg(FILE *handle, olsr_u8_t *data, olsr_16_t totsize)
+print_olsr_tcmsg(FILE *handle, olsr_u8_t *data, olsr_16_t totsize)
 {
   int remsize = totsize - ((olsr_cnf->ip_version == AF_INET) ? OLSR_MSGHDRSZ_IPV4 : OLSR_MSGHDRSZ_IPV6);
   
-  fprintf(handle, "    +ANSN: %d\n", htons(((struct tcmsg *)data)->ansn));
+  fprintf(handle, "    +ANSN: %d\n", htons(((struct olsr_tcmsg *)data)->ansn));
 
   data += 4;
   remsize -= 4;

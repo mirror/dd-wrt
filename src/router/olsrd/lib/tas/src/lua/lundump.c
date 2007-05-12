@@ -1,5 +1,5 @@
 /*
-** $Id: lundump.c,v 1.1 2005/04/12 17:17:35 tlopatic Exp $
+** $Id: lundump.c,v 1.2 2007/04/20 13:46:03 bernd67 Exp $
 ** load pre-compiled Lua chunks
 ** See Copyright Notice in lua.h
 */
@@ -25,6 +25,8 @@ typedef struct {
  int swap;
  const char* name;
 } LoadState;
+
+static void unexpectedEOZ (LoadState* S) __attribute__((noreturn));
 
 static void unexpectedEOZ (LoadState* S)
 {

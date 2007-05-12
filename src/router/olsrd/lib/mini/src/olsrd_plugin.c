@@ -29,7 +29,7 @@
  *
  */
 
-/* $Id: olsrd_plugin.c,v 1.2 2005/05/29 12:47:41 br1 Exp $ */
+/* $Id: olsrd_plugin.c,v 1.3 2007/04/20 13:46:02 bernd67 Exp $ */
 
  /*
  * Example plugin for olsrd.org OLSR daemon
@@ -43,6 +43,8 @@
 #include "olsrd_plugin.h"
 #include "olsr.h"
 
+#define PLUGIN_INTERFACE_VERSION 1
+
 
 /****************************************************************************
  *                Functions that the plugin MUST provide                    *
@@ -53,9 +55,9 @@
  * Used by main olsrd to check plugin interface version
  */
 int 
-olsrd_plugin_interface_version()
+olsrd_plugin_interface_version(void)
 {
-	return OLSRD_PLUGIN_INTERFACE_VERSION;
+	return PLUGIN_INTERFACE_VERSION;
 }
 
 
@@ -79,7 +81,7 @@ olsrd_plugin_register_param(char *key, char *value)
  * Called after all parameters are passed
  */
 int
-olsrd_plugin_init()
+olsrd_plugin_init(void)
 {
 	printf("*** MINI: plugin_init\n");
 	
@@ -107,7 +109,7 @@ my_fini(void);
  * Optional Private Constructor
  */
 static void
-my_init()
+my_init(void)
 {
 	printf("*** MINI: constructor\n");
 }
@@ -117,7 +119,7 @@ my_init()
  * Optional Private Destructor
  */
 static void
-my_fini()
+my_fini(void)
 {
 	printf("*** MINI: destructor\n");
 }

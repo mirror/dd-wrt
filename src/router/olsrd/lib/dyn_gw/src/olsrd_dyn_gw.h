@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_dyn_gw.h,v 1.11 2005/05/29 12:47:40 br1 Exp $
+ * $Id: olsrd_dyn_gw.h,v 1.12 2007/04/20 14:06:18 bernd67 Exp $
  */
 
 #ifndef _OLSRD_PLUGIN_TEST
@@ -50,13 +50,13 @@
 
 #define PROCENTRY_ROUTE "/proc/net/route"
 
-/* Timeout function to register with the scheduler */
-void
-olsr_timeout(void);
+int
+olsrd_plugin_init(void);
 
+int 
+olsrd_plugin_interface_version(void);
 
-/* Event function to register with the scheduler */
-void
-olsr_event_doing_hna(void *);
+int
+olsrd_plugin_register_param(char *key, char *value);
 
 #endif

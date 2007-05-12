@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: glua.c,v 1.3 2005/11/15 23:46:19 tlopatic Exp $
+ * $Id: glua.c,v 1.4 2007/04/20 13:46:03 bernd67 Exp $
  */
 
 #include "lua/lua.h"
@@ -229,7 +229,7 @@ int lspToLua(const char *rootDir, const char *lspFileName,
   return 0;
 }
 
-static int luaWriter(lua_State *lua, const void *buff, int len, FILE *file)
+static int luaWriter(lua_State *lua __attribute__((unused)), const void *buff, int len, FILE *file)
 {
   return fwrite(buff, len, 1, file) == 1;
 }
