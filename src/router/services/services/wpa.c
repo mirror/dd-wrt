@@ -14,7 +14,7 @@
 
 int start_nas_single (char *type, char *prefix);
 
-#define HAVE_NASCONF  //use this to parse nas parameters from conf file. 
+// #define HAVE_NASCONF  //use this to parse nas parameters from conf file. 
 
 static void
 convert_wds (void)
