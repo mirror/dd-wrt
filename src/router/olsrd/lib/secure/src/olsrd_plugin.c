@@ -33,7 +33,7 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: olsrd_plugin.c,v 1.10 2005/05/29 12:47:43 br1 Exp $
+ * $Id: olsrd_plugin.c,v 1.11 2007/04/20 13:46:03 bernd67 Exp $
  */
 
 
@@ -63,18 +63,17 @@ my_fini(void);
  * Do not alter unless you know what you are doing!
  */
 int 
-olsrd_plugin_interface_version()
+olsrd_plugin_interface_version(void)
 {
   return OLSRD_PLUGIN_INTERFACE_VERSION;
 }
-
 
 
 /**
  *Constructor
  */
 static void
-my_init()
+my_init(void)
 {
   /* Print plugin info to stdout */
   /* We cannot use olsr_printf yet! */
@@ -86,7 +85,7 @@ my_init()
  *Destructor
  */
 static void
-my_fini()
+my_fini(void)
 {
 
   /* Calls the destruction function
@@ -112,7 +111,7 @@ olsrd_plugin_register_param(char *key, char *value)
 
 
 int
-olsrd_plugin_init() {
+olsrd_plugin_init(void) {
   /* Calls the initialization function
    * olsr_plugin_init()
    * This function should be present in your

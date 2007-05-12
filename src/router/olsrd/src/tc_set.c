@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: tc_set.c,v 1.24 2006/01/07 08:16:20 kattemat Exp $
+ * $Id: tc_set.c,v 1.26 2007/04/25 22:08:17 bernd67 Exp $
  */
 
 
@@ -55,11 +55,10 @@ struct tc_entry tc_table[HASHSIZE];
  */
 
 int
-olsr_init_tc()
+olsr_init_tc(void)
 {
   int index;
- 
-  OLSR_PRINTF(5, "TC: init topo\n")
+  OLSR_PRINTF(5, "TC: init topo\n");
 
   olsr_register_timeout_function(&olsr_time_out_tc_set);
 
@@ -86,7 +85,7 @@ int
 olsr_tc_delete_entry_if_empty(struct tc_entry *entry)
 {
 
-  //OLSR_PRINTF(1, "TC: del entry if empty\n")
+  //OLSR_PRINTF(1, "TC: del entry if empty\n");
 
   if(entry->destinations.next == &entry->destinations)
     {
@@ -94,7 +93,7 @@ olsr_tc_delete_entry_if_empty(struct tc_entry *entry)
       DEQUEUE_ELEM(entry);
       //entry->prev->next = entry->next;
       //entry->next->prev = entry->prev;
-      OLSR_PRINTF(1, "TC-SET: Deleting empty entry %s ->\n", olsr_ip_to_string(&entry->T_last_addr))
+      OLSR_PRINTF(1, "TC-SET: Deleting empty entry %s ->\n", olsr_ip_to_string(&entry->T_last_addr));
       free(entry);
       return 1;
     }
@@ -118,7 +117,7 @@ olsr_lookup_tc_entry(union olsr_ip_addr *adr)
   struct tc_entry *entries;
   olsr_u32_t hash;
 
-  //OLSR_PRINTF(1, "TC: lookup entry\n")
+  //OLSR_PRINTF(1, "TC: lookup entry\n");
 
   hash = olsr_hashing(adr);
 
@@ -149,7 +148,7 @@ olsr_add_tc_entry(union olsr_ip_addr *adr)
   struct tc_entry *new_entry;
   olsr_u32_t hash;
 
-  OLSR_PRINTF(1, "TC: adding entry %s\n", olsr_ip_to_string(adr))
+  OLSR_PRINTF(1, "TC: adding entry %s\n", olsr_ip_to_string(adr));
 
   hash = olsr_hashing(adr);
 
@@ -189,7 +188,7 @@ olsr_tc_delete_mprs(struct tc_entry *entry, struct tc_message *msg)
   struct topo_dst *tmp_dsts, *dst_to_del;
   int retval;
 
-  //OLSR_PRINTF(5, "TC: deleting MPRS\n")
+  //OLSR_PRINTF(5, "TC: deleting MPRS\n");
 
   tmp_dsts = entry->destinations.next;
   retval = 0;
@@ -235,7 +234,7 @@ olsr_tc_update_mprs(struct tc_entry *entry, struct tc_message *msg)
   struct topo_dst *new_topo_dst, *existing_dst;
   int retval;
 
-  //OLSR_PRINTF(1, "TC: update MPRS\n")
+  //OLSR_PRINTF(1, "TC: update MPRS\n");
 
   retval = 0;
 
@@ -305,7 +304,7 @@ olsr_tc_update_mprs(struct tc_entry *entry, struct tc_message *msg)
                     retval = 1;
 
                   else
-                    OLSR_PRINTF(3, "Skipping Dijkstra (4)\n")
+                    OLSR_PRINTF(3, "Skipping Dijkstra (4)\n");
                 }
 
               saved_lq = existing_dst->saved_inverse_link_quality;
@@ -326,7 +325,7 @@ olsr_tc_update_mprs(struct tc_entry *entry, struct tc_message *msg)
                     retval = 1;
 
                   else
-                    OLSR_PRINTF(3, "Skipping Dijkstra (5)\n")
+                    OLSR_PRINTF(3, "Skipping Dijkstra (5)\n");
                 }
             }
 	}
@@ -352,7 +351,7 @@ olsr_tc_lookup_dst(struct tc_entry *entry, union olsr_ip_addr *dst_addr)
 {
   struct topo_dst *dsts;
   
-  //OLSR_PRINTF(1, "TC: lookup dst\n")
+  //OLSR_PRINTF(1, "TC: lookup dst\n");
 
   for(dsts = entry->destinations.next; 
       dsts != &entry->destinations; 
@@ -364,11 +363,6 @@ olsr_tc_lookup_dst(struct tc_entry *entry, union olsr_ip_addr *dst_addr)
   return NULL;
 }
 
-
-
-
-
-
 /**
  * Time out entries
  *
@@ -376,28 +370,27 @@ olsr_tc_lookup_dst(struct tc_entry *entry, union olsr_ip_addr *dst_addr)
  */
 
 void
-olsr_time_out_tc_set()
+olsr_time_out_tc_set(void)
 {
-  int index, deleted;
-  struct tc_entry *entry, *entry2;
-  struct topo_dst *dst_entry, *dst_to_delete;
-
+  int index;
 
   for(index=0;index<HASHSIZE;index++)
     {
       /* For all TC entries */
-      entry = tc_table[index].next;
+      struct tc_entry *entry = tc_table[index].next;
       while(entry != &tc_table[index])
 	{
+          struct tc_entry *entry2;
 	  //printf("INDEX: %d\n", index);
 	  /* For all destination entries of that TC entry */
-	  deleted = 0;
-	  dst_entry = entry->destinations.next;
+	  int deleted = 0;
+	  struct topo_dst *dst_entry = entry->destinations.next;
 	  while(dst_entry != &entry->destinations)
 	    {
 	      /* If timed out - delete */
 	      if(TIMED_OUT(dst_entry->T_time))
 		{
+                  struct topo_dst *dst_to_delete;
 		  deleted = 1;
 		  /* Dequeue */
 		  DEQUEUE_ELEM(dst_entry);
@@ -420,8 +413,6 @@ olsr_time_out_tc_set()
 	    olsr_tc_delete_entry_if_empty(entry2);
 	}
     }
-
-  return;
 }
 
 
@@ -429,11 +420,9 @@ olsr_time_out_tc_set()
  *Print the topology table to stdout
  */
 int
-olsr_print_tc_table()
+olsr_print_tc_table(void)
 {
   int i;
-  struct tc_entry *entry;
-  struct topo_dst *dst_entry;
   char *fstr;
   float etx;
   
@@ -441,49 +430,39 @@ olsr_print_tc_table()
               nowtm->tm_hour,
               nowtm->tm_min,
               nowtm->tm_sec,
-              (int)now.tv_usec / 10000)
+              (int)now.tv_usec / 10000);
 
   if (olsr_cnf->ip_version == AF_INET)
-  {
-    OLSR_PRINTF(1, "Source IP addr   Dest IP addr     LQ     ILQ    ETX\n")
-    fstr = "%-15s  %-15s  %5.3f  %5.3f  %.2f\n";
-  }
-
+    {
+      OLSR_PRINTF(1, "Source IP addr   Dest IP addr     LQ     ILQ    ETX\n");
+      fstr = "%-15s  %-15s  %5.3f  %5.3f  %.2f\n";
+    }
   else
-  {
-    OLSR_PRINTF(1, "Source IP addr                Dest IP addr                    LQ     ILQ    ETX\n")
-    fstr = "%-30s%-30s  %5.3f  %5.3f  %.2f\n";
-  }
+    {
+      OLSR_PRINTF(1, "Source IP addr                Dest IP addr                    LQ     ILQ    ETX\n");
+      fstr = "%-30s%-30s  %5.3f  %5.3f  %.2f\n";
+    }
 
   for (i = 0; i < HASHSIZE; i++)
-  {
-    entry = tc_table[i].next;
-
-    while (entry != &tc_table[i])
     {
-      dst_entry = entry->destinations.next;
+      struct tc_entry *entry;
+      for(entry = tc_table[i].next;entry != &tc_table[i];entry = entry->next)
+        {
+          struct topo_dst *dst_entry;
+          for(dst_entry = entry->destinations.next;dst_entry != &entry->destinations;dst_entry = dst_entry->next)
+            {
+              if (dst_entry->link_quality < MIN_LINK_QUALITY ||
+                  dst_entry->inverse_link_quality < MIN_LINK_QUALITY)
+                etx = 0.0;
+              else
+                etx = 1.0 / (dst_entry->link_quality * dst_entry->inverse_link_quality);
 
-      while(dst_entry != &entry->destinations)
-      {
-        if (dst_entry->link_quality < MIN_LINK_QUALITY ||
-            dst_entry->inverse_link_quality < MIN_LINK_QUALITY)
-          etx = 0.0;
-
-        else
-          etx = 1.0 / (dst_entry->link_quality *
-                       dst_entry->inverse_link_quality);
-
-        OLSR_PRINTF(1, fstr, olsr_ip_to_string(&entry->T_last_addr),
-                    olsr_ip_to_string(&dst_entry->T_dest_addr),
-                    dst_entry->link_quality, dst_entry->inverse_link_quality,
-                    etx)
-
-        dst_entry = dst_entry->next;
-      }
-
-      entry = entry->next;
+              OLSR_PRINTF(1, fstr, olsr_ip_to_string(&entry->T_last_addr),
+                          olsr_ip_to_string(&dst_entry->T_dest_addr),
+                          dst_entry->link_quality, dst_entry->inverse_link_quality,
+                          etx);
+            }
+        }
     }
-  }
-
   return 1;
 }

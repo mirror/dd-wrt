@@ -58,7 +58,7 @@ static int has_inet_gateway;
  * Used by main olsrd to check plugin interface version
  */
 int 
-olsrd_plugin_interface_version()
+olsrd_plugin_interface_version(void)
 {
   return OLSRD_PLUGIN_INTERFACE_VERSION;
 }
@@ -68,7 +68,7 @@ olsrd_plugin_interface_version()
  * Called for all plugin parameters
  */
 int
-olsrd_plugin_register_param(char *key, char *value)
+olsrd_plugin_register_param(char *key __attribute__((unused)), char *value __attribute__((unused)))
 {
   return 1;
 }
@@ -78,7 +78,7 @@ olsrd_plugin_register_param(char *key, char *value)
  * Called after all parameters are passed
  */
 int
-olsrd_plugin_init()
+olsrd_plugin_init(void)
 {
   gw_net.v4 = INET_NET;
   gw_netmask.v4 = INET_PREFIX;
@@ -167,7 +167,7 @@ check_gw(union olsr_ip_addr *net, union olsr_ip_addr *mask)
  * Scheduled event to update the hna table,
  * called from olsrd main thread to keep the hna table thread-safe
  */
-void olsr_event(void* foo)
+void olsr_event(void* foo __attribute__((unused)))
 {
   int res = check_gw(&gw_net, &gw_netmask);
   if (1 == res && 0 == has_inet_gateway) {

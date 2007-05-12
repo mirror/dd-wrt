@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: main.c,v 1.92 2007/02/24 11:54:24 kattemat Exp $
+ * $Id: main.c,v 1.96 2007/05/08 23:10:37 bernd67 Exp $
  */
 
 #include <unistd.h>
@@ -62,21 +62,21 @@ struct olsrd_config *olsr_cnf;  /* The global configuration */
 
 #ifdef WIN32
 #define close(x) closesocket(x)
-int __stdcall SignalHandler(unsigned long signal);
+int __stdcall SignalHandler(unsigned long signal) __attribute__((noreturn));
 void ListInterfaces(void);
 void DisableIcmpRedirects(void);
 olsr_bool olsr_win32_end_request = OLSR_FALSE;
 olsr_bool olsr_win32_end_flag = OLSR_FALSE;
 #else
 static void
-olsr_shutdown(int);
+olsr_shutdown(int) __attribute__((noreturn));
 #endif
 
 /*
  * Local function prototypes
  */
 void
-olsr_reconfigure(int);
+olsr_reconfigure(int) __attribute__((noreturn));
 
 static void
 print_usage(void);
@@ -105,16 +105,16 @@ main(int argc, char *argv[])
   char conf_file_name[FILENAME_MAX];
   struct tms tms_buf;
 
+#ifdef WIN32
+  WSADATA WsaData;
+  int len;
+#endif
+
   /* Stop the compiler from complaining */
   (void)copyright_string;
 
   debug_handle = stdout;
   olsr_argv = argv;
-
-#ifdef WIN32
-  WSADATA WsaData;
-  int len;
-#endif
 
   setbuf(stdout, NULL);
   setbuf(stderr, NULL);
@@ -301,7 +301,7 @@ main(int argc, char *argv[])
     {
       if(apm_init() < 0)
 	{
-	  OLSR_PRINTF(1, "Could not read APM info - setting default willingness(%d)\n", WILL_DEFAULT)
+	  OLSR_PRINTF(1, "Could not read APM info - setting default willingness(%d)\n", WILL_DEFAULT);
 
 	  olsr_syslog(OLSR_LOG_ERR, "Could not read APM info - setting default willingness(%d)\n", WILL_DEFAULT);
 
@@ -312,19 +312,19 @@ main(int argc, char *argv[])
 	{
 	  olsr_cnf->willingness = olsr_calculate_willingness();
 
-	  OLSR_PRINTF(1, "Willingness set to %d - next update in %.1f secs\n", olsr_cnf->willingness, olsr_cnf->will_int)
+	  OLSR_PRINTF(1, "Willingness set to %d - next update in %.1f secs\n", olsr_cnf->willingness, olsr_cnf->will_int);
 	}
     }
 
   /* Set ipsize */
   if(olsr_cnf->ip_version == AF_INET6)
     {
-      OLSR_PRINTF(1, "Using IP version 6\n")
+      OLSR_PRINTF(1, "Using IP version 6\n");
       olsr_cnf->ipsize = sizeof(struct in6_addr);
     }
   else
     {
-      OLSR_PRINTF(1, "Using IP version 4\n")
+      OLSR_PRINTF(1, "Using IP version 4\n");
       olsr_cnf->ipsize = sizeof(olsr_u32_t);
     }
 
@@ -380,7 +380,7 @@ main(int argc, char *argv[])
   /* Load plugins */
   olsr_load_plugins();
 
-  OLSR_PRINTF(1, "Main address: %s\n\n", olsr_ip_to_string(&olsr_cnf->main_addr))
+  OLSR_PRINTF(1, "Main address: %s\n\n", olsr_ip_to_string(&olsr_cnf->main_addr));
 
   /* Start syslog entry */
   olsr_syslog(OLSR_LOG_INFO, "%s successfully started", SOFTWARE_VERSION);
@@ -407,9 +407,11 @@ main(int argc, char *argv[])
   /* Starting scheduler */
   scheduler();
 
+  /* Stop the compiler from complaining */
+  (void)copyright_string;
+
   /* Like we're ever going to reach this ;-) */
   return 1;
-
 } /* main */
 
 
@@ -421,7 +423,7 @@ main(int argc, char *argv[])
  */
 #ifndef WIN32
 void
-olsr_reconfigure(int signal)
+olsr_reconfigure(int signal __attribute__((unused)))
 {
   if(!fork())
     {
@@ -467,7 +469,7 @@ olsr_shutdown(int signal)
 
   olsr_delete_all_kernel_routes();
 
-  OLSR_PRINTF(1, "Closing sockets...\n")
+  OLSR_PRINTF(1, "Closing sockets...\n");
 
   /* front-end IPC socket */
   if(olsr_cnf->open_ipc)
@@ -493,7 +495,7 @@ olsr_shutdown(int signal)
 
   olsr_syslog(OLSR_LOG_INFO, "%s stopped", SOFTWARE_VERSION);
 
-  OLSR_PRINTF(1, "\n <<<< %s - terminating >>>>\n           http://www.olsr.org\n", SOFTWARE_VERSION)
+  OLSR_PRINTF(1, "\n <<<< %s - terminating >>>>\n           http://www.olsr.org\n", SOFTWARE_VERSION);
 
   exit(olsr_cnf->exit_value);
 }
@@ -502,18 +504,19 @@ olsr_shutdown(int signal)
  * Print the command line usage
  */
 static void
-print_usage()
+print_usage(void)
 {
 
-  fprintf(stderr, "An error occured somewhere between your keyboard and your chair!\n"); 
-  fprintf(stderr, "usage: olsrd [-f <configfile>] [ -i interface1 interface2 ... ]\n");
-  fprintf(stderr, "  [-d <debug_level>] [-ipv6] [-multi <IPv6 multicast address>]\n"); 
-  fprintf(stderr, "  [-lql <LQ level>] [-lqw <LQ winsize>]\n"); 
-  fprintf(stderr, "  [-bcast <broadcastaddr>] [-ipc] [-dispin] [-dispout] [-delgw]\n");
-  fprintf(stderr, "  [-hint <hello interval (secs)>] [-tcint <tc interval (secs)>]\n");
-  fprintf(stderr, "  [-midint <mid interval (secs)>] [-hnaint <hna interval (secs)>]\n");
-  fprintf(stderr, "  [-T <Polling Rate (secs)>] [-nofork] [-hemu <ip_address>] \n"); 
-  fprintf(stderr, "  [-lql <LQ level>] [-lqw <LQ winsize>]\n");
+  fprintf(stderr,
+          "An error occured somwhere between your keyboard and your chair!\n"
+          "usage: olsrd [-f <configfile>] [ -i interface1 interface2 ... ]\n"
+          "  [-d <debug_level>] [-ipv6] [-multi <IPv6 multicast address>]\n"
+          "  [-lql <LQ level>] [-lqw <LQ winsize>]\n"
+          "  [-bcast <broadcastaddr>] [-ipc] [-dispin] [-dispout] [-delgw]\n"
+          "  [-hint <hello interval (secs)>] [-tcint <tc interval (secs)>]\n"
+          "  [-midint <mid interval (secs)>] [-hnaint <hna interval (secs)>]\n"
+          "  [-T <Polling Rate (secs)>] [-nofork] [-hemu <ip_address>]\n"
+          "  [-lql <LQ level>] [-lqw <LQ winsize>]\n");
 }
 
 
@@ -789,7 +792,7 @@ olsr_process_arguments(int argc, char *argv[],
 	  struct in6_addr in6;
 	  NEXT_ARG;
           CHECK_ARGC;
-	  if(inet_pton(AF_INET6, *argv, &in6) < 0)
+	  if(inet_pton(AF_INET6, *argv, &in6) <= 0)
 	    {
 	      fprintf(stderr, "Failed converting IP address %s\n", *argv);
 	      exit(EXIT_FAILURE);
@@ -810,7 +813,7 @@ olsr_process_arguments(int argc, char *argv[],
       
 	  NEXT_ARG;
           CHECK_ARGC;
-	  if(inet_pton(AF_INET, *argv, &in) < 0)
+	  if(inet_pton(AF_INET, *argv, &in) <= 0)
 	    {
 	      fprintf(stderr, "Failed converting IP address %s\n", *argv);
 	      exit(EXIT_FAILURE);

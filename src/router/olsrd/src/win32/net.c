@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: net.c,v 1.20 2006/11/05 23:03:56 bernd67 Exp $
+ * $Id: net.c,v 1.22 2007/04/25 22:24:09 bernd67 Exp $
  */
 
 #if defined WINCE
@@ -97,7 +97,7 @@ gethemusocket(struct sockaddr_in *pin)
   return (sock);
 }
 
-int getsocket(struct sockaddr *Addr, int BuffSize, char *Int)
+int getsocket(struct sockaddr *Addr, int BuffSize, char *Int __attribute__((unused)))
 {
   int Sock;
   int On = 1;
@@ -148,7 +148,7 @@ int getsocket(struct sockaddr *Addr, int BuffSize, char *Int)
   return Sock;
 }
 
-int getsocket6(struct sockaddr_in6 *Addr, int BuffSize, char *Int)
+int getsocket6(struct sockaddr_in6 *Addr, int BuffSize, char *Int __attribute__((unused)))
 {
   int Sock;
   int On = 1;
@@ -228,7 +228,7 @@ int enable_ip_forwarding(int Ver)
     return -1;
   }
 
-  OLSR_PRINTF(3, "Routing enabled.\n")
+  OLSR_PRINTF(3, "Routing enabled.\n");
 
   return 0;
 }
@@ -259,7 +259,7 @@ int disable_ip_forwarding(int Ver)
     return -1;
   }
 
-  OLSR_PRINTF(3, "Routing disabled, count = %u.\n", Count)
+  OLSR_PRINTF(3, "Routing disabled, count = %u.\n", Count);
 
   return 0;
 }
@@ -343,7 +343,7 @@ int join_mcast(struct interface *Nic, int Sock)
   COPY_IP(&McastReq.ipv6mr_multiaddr, &Nic->int6_multaddr.sin6_addr);
   McastReq.ipv6mr_interface = Nic->if_index;
 
-  OLSR_PRINTF(3, "Interface %s joining multicast %s...", Nic->int_name, olsr_ip_to_string((union olsr_ip_addr *)&Nic->int6_multaddr.sin6_addr))
+  OLSR_PRINTF(3, "Interface %s joining multicast %s...", Nic->int_name, olsr_ip_to_string((union olsr_ip_addr *)&Nic->int6_multaddr.sin6_addr));
   /* Send multicast */
   if(setsockopt(Sock, 
 		IPPROTO_IPV6, 
@@ -392,7 +392,7 @@ int join_mcast(struct interface *Nic, int Sock)
     }
 
 
-  OLSR_PRINTF(3, "OK\n")
+  OLSR_PRINTF(3, "OK\n");
   return 0;
 }
 
@@ -421,7 +421,7 @@ ssize_t
 olsr_recvfrom(int  s, 
 	      void *buf, 
 	      size_t len, 
-	      int flags, 
+	      int flags __attribute__((unused)), 
 	      struct sockaddr *from,
 	      socklen_t *fromlen)
 {

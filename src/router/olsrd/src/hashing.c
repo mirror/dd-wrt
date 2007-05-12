@@ -36,9 +36,8 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: hashing.c,v 1.10 2007/01/31 12:36:50 bernd67 Exp $
+ * $Id: hashing.c,v 1.11 2007/04/20 13:46:04 bernd67 Exp $
  */
-
 
 #include "olsr_protocol.h"
 #include "hashing.h"

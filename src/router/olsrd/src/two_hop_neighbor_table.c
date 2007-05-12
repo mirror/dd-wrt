@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: two_hop_neighbor_table.c,v 1.16 2005/05/29 12:47:46 br1 Exp $
+ * $Id: two_hop_neighbor_table.c,v 1.18 2007/04/25 22:08:17 bernd67 Exp $
  */
 
 
@@ -54,7 +54,7 @@ struct neighbor_2_entry two_hop_neighbortable[HASHSIZE];
  *Initialize 2 hop neighbor table
  */
 int
-olsr_init_two_hop_table()
+olsr_init_two_hop_table(void)
 {
   int index;
 
@@ -242,7 +242,7 @@ olsr_lookup_two_hop_neighbor_table_mid(union olsr_ip_addr *dest)
  *@return nada
  */
 void
-olsr_print_two_hop_neighbor_table()
+olsr_print_two_hop_neighbor_table(void)
 {
   int i;
 
@@ -250,9 +250,9 @@ olsr_print_two_hop_neighbor_table()
               nowtm->tm_hour,
               nowtm->tm_min,
               nowtm->tm_sec,
-              (int)now.tv_usec)
+              (int)now.tv_usec);
 
-  OLSR_PRINTF(1, "IP addr (2-hop)  IP addr (1-hop)  TLQ\n")
+  OLSR_PRINTF(1, "IP addr (2-hop)  IP addr (1-hop)  TLQ\n");
 
   for (i = 0; i < HASHSIZE; i++)
     {
@@ -272,18 +272,18 @@ olsr_print_two_hop_neighbor_table()
               if (first)
                 {
                   OLSR_PRINTF(1, "%-15s  ",
-                              olsr_ip_to_string(&neigh2->neighbor_2_addr))
+                              olsr_ip_to_string(&neigh2->neighbor_2_addr));
                   first = OLSR_FALSE;
                 }
 
               else
-                OLSR_PRINTF(1, "                 ")
+                OLSR_PRINTF(1, "                 ");
 
               total_lq = entry->path_link_quality;
 
               OLSR_PRINTF(1, "%-15s  %5.3f\n",
                           olsr_ip_to_string(&neigh->neighbor_main_addr),
-                          total_lq)
+                          total_lq);
             }
 	}
     }

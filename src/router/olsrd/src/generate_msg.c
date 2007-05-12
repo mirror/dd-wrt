@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: generate_msg.c,v 1.24 2006/01/07 08:16:20 kattemat Exp $
+ * $Id: generate_msg.c,v 1.25 2007/04/20 13:46:04 bernd67 Exp $
  */
 
 #include "generate_msg.h"
@@ -121,7 +121,7 @@ generate_hna(void *p)
 
 
 void
-generate_stdout_pulse(void *foo)
+generate_stdout_pulse(void *foo __attribute__((unused)))
 {
   if(olsr_cnf->debug_level == 0)
     return;

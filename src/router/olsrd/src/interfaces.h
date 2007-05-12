@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: interfaces.h,v 1.38 2007/02/10 19:59:51 bernd67 Exp $
+ * $Id: interfaces.h,v 1.39 2007/04/20 13:46:04 bernd67 Exp $
  */
 
 
@@ -111,7 +111,7 @@ struct vtimes
  */
 struct olsr_netbuf
 {
-  olsr_u8_t *buff;/* Pointer to the allocated buffer */
+  olsr_u8_t *buff;     /* Pointer to the allocated buffer */
   int bufsize;    /* Size of the buffer */
   int maxsize;    /* Max bytes of payload that can be added to the buffer */
   int pending;    /* How much data is currently pending in the buffer */

@@ -11,9 +11,6 @@ strndup(const char *ptr, size_t size)
   size_t len = strlen(ptr);
   char *ret = NULL;
 
-  if(!len)
-    return NULL;
-
   if(len > size)
     len = size;
 

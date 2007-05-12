@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: scheduler.h,v 1.12 2006/01/07 08:16:20 kattemat Exp $
+ * $Id: scheduler.h,v 1.13 2007/04/20 13:46:04 bernd67 Exp $
  */
 
 
@@ -84,6 +84,6 @@ int
 olsr_remove_scheduler_event(void (*)(void *), void *, float, float, olsr_u8_t *);
 
 void
-scheduler(void);
+scheduler(void) __attribute__((noreturn));
 
 #endif

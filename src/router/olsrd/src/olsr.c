@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsr.c,v 1.50 2007/02/04 22:47:45 bernd67 Exp $
+ * $Id: olsr.c,v 1.54 2007/04/25 22:08:09 bernd67 Exp $
  */
 
 /**
@@ -88,7 +88,7 @@ static olsr_u16_t message_seqno;
  *Initialize the message sequence number as a random value
  */
 void
-init_msg_seqno()
+init_msg_seqno(void)
 {
   message_seqno = random() & 0xFFFF;
 }
@@ -98,8 +98,8 @@ init_msg_seqno()
  *
  *@return the seqno
  */
-inline olsr_u16_t
-get_msg_seqno()
+olsr_u16_t
+get_msg_seqno(void)
 {
   return message_seqno++;
 }
@@ -110,7 +110,7 @@ register_pcf(int (*f)(int, int, int))
 {
   struct pcf *new_pcf;
 
-  OLSR_PRINTF(1, "Registering pcf function\n")
+  OLSR_PRINTF(1, "Registering pcf function\n");
 
   new_pcf = olsr_malloc(sizeof(struct pcf), "New PCF");
 
@@ -129,18 +129,17 @@ register_pcf(int (*f)(int, int, int))
  *@return 0
  */
 void
-olsr_process_changes()
+olsr_process_changes(void)
 {
-
   struct pcf *tmp_pc_list;
 
 #ifdef DEBUG
   if(changes_neighborhood)
-    OLSR_PRINTF(3, "CHANGES IN NEIGHBORHOOD\n")
+    OLSR_PRINTF(3, "CHANGES IN NEIGHBORHOOD\n");
   if(changes_topology)
-    OLSR_PRINTF(3, "CHANGES IN TOPOLOGY\n")
+    OLSR_PRINTF(3, "CHANGES IN TOPOLOGY\n");
   if(changes_hna)
-    OLSR_PRINTF(3, "CHANGES IN HNA\n")
+    OLSR_PRINTF(3, "CHANGES IN HNA\n");
 #endif
   
   if(!changes_force &&
@@ -255,9 +254,8 @@ olsr_process_changes()
  *Also initalizes other variables
  */
 void
-olsr_init_tables()
-{
-  
+olsr_init_tables(void)
+{  
   changes_topology = OLSR_FALSE;
   changes_neighborhood = OLSR_FALSE;
   changes_hna = OLSR_FALSE;
@@ -290,14 +288,8 @@ olsr_init_tables()
   olsr_init_mid_set();
 
   /* Initialize HNA set */
-  olsr_init_hna_set();
-  
+  olsr_init_hna_set();  
 }
-
-
-
-
-
 
 /**
  *Check if a message is to be forwarded and forward
@@ -325,17 +317,18 @@ olsr_forward_message(union olsr_message *m,
   if(!olsr_check_dup_table_fwd(originator, seqno, &in_if->ip_addr))
     {
 #ifdef DEBUG
-      OLSR_PRINTF(3, "Message already forwarded!\n")
+      OLSR_PRINTF(3, "Message already forwarded!\n");
 #endif
       return 0;
     }
 
   /* Lookup sender address */
-  if(!(src = mid_lookup_main_addr(from_addr)))
+  src = mid_lookup_main_addr(from_addr);
+  if(!src)
     src = from_addr;
 
-
-  if(NULL == (neighbor=olsr_lookup_neighbor_table(src)))
+  neighbor=olsr_lookup_neighbor_table(src);
+  if(!neighbor)
     return 0;
 
   if(neighbor->status != SYM)
@@ -349,11 +342,10 @@ olsr_forward_message(union olsr_message *m,
   if(olsr_lookup_mprs_set(src) == NULL)
     {
 #ifdef DEBUG
-      OLSR_PRINTF(5, "Forward - sender %s not MPR selector\n", olsr_ip_to_string(src))
+      OLSR_PRINTF(5, "Forward - sender %s not MPR selector\n", olsr_ip_to_string(src));
 #endif
       return 0;
     }
-
 
   /* Treat TTL hopcnt */
   if(olsr_cnf->ip_version == AF_INET)
@@ -369,14 +361,10 @@ olsr_forward_message(union olsr_message *m,
       m->v6.ttl--; 
     }
 
-
-
   /* Update dup forwarded */
   olsr_set_dup_forward(originator, seqno);
 
   /* Update packet data */
-
-
   msgsize = ntohs(m->v4.olsr_msgsize);
 
   /* looping trough interfaces */
@@ -387,37 +375,33 @@ olsr_forward_message(union olsr_message *m,
 	  /*
 	   * Check if message is to big to be piggybacked
 	   */
-	  if(net_outbuffer_push(ifn, (olsr_u8_t *)m, msgsize) != msgsize)
+	  if(net_outbuffer_push(ifn, m, msgsize) != msgsize)
 	    {
 	      /* Send */
 	      net_output(ifn);
 	      /* Buffer message */
 	      set_buffer_timer(ifn);
 	      
-	      if(net_outbuffer_push(ifn, (olsr_u8_t *)m, msgsize) != msgsize)
+	      if(net_outbuffer_push(ifn, m, msgsize) != msgsize)
 		{
-		  OLSR_PRINTF(1, "Received message to big to be forwarded in %s(%d bytes)!", ifn->int_name, msgsize)
+		  OLSR_PRINTF(1, "Received message to big to be forwarded in %s(%d bytes)!", ifn->int_name, msgsize);
 		  olsr_syslog(OLSR_LOG_ERR, "Received message to big to be forwarded on %s(%d bytes)!", ifn->int_name, msgsize);
 		}
-
 	    }
 	}
-      
       else
 	{
 	  /* No forwarding pending */
 	  set_buffer_timer(ifn);
 	  
-	  if(net_outbuffer_push(ifn, (olsr_u8_t *)m, msgsize) != msgsize)
+	  if(net_outbuffer_push(ifn, m, msgsize) != msgsize)
 	    {
-	      OLSR_PRINTF(1, "Received message to big to be forwarded in %s(%d bytes)!", ifn->int_name, msgsize)
+	      OLSR_PRINTF(1, "Received message to big to be forwarded in %s(%d bytes)!", ifn->int_name, msgsize);
 	      olsr_syslog(OLSR_LOG_ERR, "Received message to big to be forwarded on %s(%d bytes)!", ifn->int_name, msgsize);
 	    }
 	}
     }
-
   return 1;
-
 }
 
 
@@ -431,13 +415,10 @@ set_buffer_timer(struct interface *ifn)
   jitter *= olsr_cnf->max_jitter;
 
   ifn->fwdtimer = GET_TIMESTAMP(jitter*1000);
-
 }
 
-
-
 void
-olsr_init_willingness()
+olsr_init_willingness(void)
 {
   if(olsr_cnf->willingness_auto)
     olsr_register_scheduler_event(&olsr_update_willingness, 
@@ -445,18 +426,16 @@ olsr_init_willingness()
 }
 
 void
-olsr_update_willingness(void *foo)
+olsr_update_willingness(void *foo __attribute__((unused)))
 {
-  int tmp_will;
-
-  tmp_will = olsr_cnf->willingness;
+  int tmp_will = olsr_cnf->willingness;
 
   /* Re-calculate willingness */
   olsr_cnf->willingness = olsr_calculate_willingness();
 
   if(tmp_will != olsr_cnf->willingness)
     {
-      OLSR_PRINTF(1, "Local willingness updated: old %d new %d\n", tmp_will, olsr_cnf->willingness)
+      OLSR_PRINTF(1, "Local willingness updated: old %d new %d\n", tmp_will, olsr_cnf->willingness);
     }
 }
 
@@ -470,7 +449,7 @@ olsr_update_willingness(void *foo)
  */
 
 olsr_u8_t
-olsr_calculate_willingness()
+olsr_calculate_willingness(void)
 {
   struct olsr_apm_info ainfo;
 
@@ -582,7 +561,7 @@ olsr_status_to_string(olsr_u8_t status)
 void
 olsr_exit(const char *msg, int val)
 {
-  OLSR_PRINTF(1, "OLSR EXIT: %s\n", msg)
+  OLSR_PRINTF(1, "OLSR EXIT: %s\n", msg);
   olsr_syslog(OLSR_LOG_ERR, "olsrd exit: %s\n", msg);
   fflush(stdout);
   olsr_cnf->exit_value = val;
@@ -607,9 +586,10 @@ olsr_malloc(size_t size, const char *id)
 
   if((ptr = malloc(size)) == 0) 
     {
-      OLSR_PRINTF(1, "OUT OF MEMORY: %s\n", strerror(errno))
-      olsr_syslog(OLSR_LOG_ERR, "olsrd: out of memory!: %m\n");
-      olsr_exit((char *)id, EXIT_FAILURE);
+      const char * const err_msg = strerror(errno);
+      OLSR_PRINTF(1, "OUT OF MEMORY: %s\n", err_msg);
+      olsr_syslog(OLSR_LOG_ERR, "olsrd: out of memory!: %s\n", err_msg);
+      olsr_exit(id, EXIT_FAILURE);
     }
   return ptr;
 }
@@ -624,17 +604,12 @@ olsr_malloc(size_t size, const char *id)
 int
 olsr_printf(int loglevel, char *format, ...)
 {
-  va_list arglist;
-
   if((loglevel <= olsr_cnf->debug_level) && debug_handle)
     {
+      va_list arglist;
       va_start(arglist, format);
-      
       vfprintf(debug_handle, format, arglist);
-      
       va_end(arglist);
     }
-
-
   return 0;
 }

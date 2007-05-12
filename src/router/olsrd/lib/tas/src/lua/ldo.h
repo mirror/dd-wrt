@@ -1,5 +1,5 @@
 /*
-** $Id: ldo.h,v 1.1 2005/04/12 17:17:26 tlopatic Exp $
+** $Id: ldo.h,v 1.2 2007/04/20 13:46:03 bernd67 Exp $
 ** Stack and Call structure of Lua
 ** See Copyright Notice in lua.h
 */
@@ -53,7 +53,7 @@ void luaD_reallocCI (lua_State *L, int newsize);
 void luaD_reallocstack (lua_State *L, int newsize);
 void luaD_growstack (lua_State *L, int n);
 
-void luaD_throw (lua_State *L, int errcode);
+void luaD_throw (lua_State *L, int errcode) __attribute__((noreturn));
 int luaD_rawrunprotected (lua_State *L, Pfunc f, void *ud);
 
 

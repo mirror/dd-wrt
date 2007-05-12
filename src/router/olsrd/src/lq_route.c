@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: lq_route.c,v 1.45 2007/03/29 00:05:50 tlopatic Exp $
+ * $Id: lq_route.c,v 1.46 2007/04/25 22:08:09 bernd67 Exp $
  */
 
 #include "defs.h"
@@ -594,7 +594,7 @@ void olsr_calculate_lq_routing_table(void)
               nowtm->tm_hour,
               nowtm->tm_min,
               nowtm->tm_sec,
-              (int)now.tv_usec/10000)
+              (int)now.tv_usec/10000);
 
   for (node = list_get_next(node); node != NULL; node = list_get_next(node))
   {
@@ -609,7 +609,7 @@ void olsr_calculate_lq_routing_table(void)
          walker = walker->prev)
     {
       OLSR_PRINTF(2, "%s:%s <- ", olsr_ip_to_string(&walker->addr),
-                  etx_to_string(walker->path_etx))
+                  etx_to_string(walker->path_etx));
       hops++;
     }
 
@@ -618,7 +618,7 @@ void olsr_calculate_lq_routing_table(void)
     if (walker != NULL)
     {
       OLSR_PRINTF(2, "%s:%s (one-hop)\n", olsr_ip_to_string(&walker->addr),
-                  etx_to_string(walker->path_etx))
+                  etx_to_string(walker->path_etx));
 
       // node reachable => add to the set of unprocessed nodes
       // for HNA processing
@@ -628,7 +628,7 @@ void olsr_calculate_lq_routing_table(void)
 
     else
     {
-      OLSR_PRINTF(2, "%s FAILED\n", olsr_ip_to_string(&vert->addr))
+      OLSR_PRINTF(2, "%s FAILED\n", olsr_ip_to_string(&vert->addr));
       continue;
     }
 

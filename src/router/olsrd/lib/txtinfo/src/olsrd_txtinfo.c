@@ -40,7 +40,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_txtinfo.c,v 1.2 2007/03/27 03:59:27 tlopatic Exp $
+ * $Id: olsrd_txtinfo.c,v 1.6 2007/05/09 17:29:53 bernd67 Exp $
  */
 
 /*
@@ -101,21 +101,24 @@ send_info(int neighonly);
 static void
 ipc_action(int);
 
-static void inline
+static void
 ipc_print_neigh_link(void);
 
-static void inline
+static void
 ipc_print_routes(void);
 
-static void inline
+static void
 ipc_print_topology(void);
 
-static void inline
+static void
 ipc_print_hna(void);
+
+static void
+ipc_print_mid(void);
 
 #define TXT_IPC_BUFSIZE 256
 static int 
-ipc_sendf(const char* format, ...);
+ipc_sendf(const char* format, ...) __attribute__((format(printf, 1, 2)));
 
 /**
  *Do initialization here
@@ -124,7 +127,7 @@ ipc_sendf(const char* format, ...);
  *function in uolsrd_plugin.c
  */
 int
-olsrd_plugin_init()
+olsrd_plugin_init(void)
 {
   /* Initial IPC value */
   ipc_open = 0;
@@ -139,7 +142,7 @@ olsrd_plugin_init()
  * destructor - called at unload
  */
 void
-olsr_plugin_exit()
+olsr_plugin_exit(void)
 {
   if(ipc_open)
     close(ipc_socket);
@@ -148,7 +151,7 @@ olsr_plugin_exit()
 
 
 static int
-plugin_ipc_init()
+plugin_ipc_init(void)
 {
   struct sockaddr_in sin;
   olsr_u32_t yes = 1;
@@ -239,6 +242,10 @@ ipc_action(int fd)
     }
   else
     {
+      fd_set rfds;
+      struct timeval tv = {0,0};
+      int neighonly = 0;
+
       addr = inet_ntoa(pin.sin_addr);
       if(ntohl(pin.sin_addr.s_addr) != ntohl(ipc_accept_ip.s_addr))
 	{
@@ -254,14 +261,11 @@ ipc_action(int fd)
 #endif
       
       /* purge read buffer to prevent blocking on linux*/
-      fd_set rfds;
       FD_ZERO(&rfds);
-      FD_SET(ipc_connection, &rfds);
-      struct timeval tv = {0,0};
-      int neighonly = 0;
+      FD_SET((unsigned int)ipc_connection, &rfds); /* Win32 needs the cast here */
       if(select(ipc_connection+1, &rfds, NULL, NULL, &tv)) {
         char requ[128];
-        ssize_t s = recv(ipc_connection, &requ, sizeof(requ), 0);
+        ssize_t s = recv(ipc_connection, (void*)&requ, sizeof(requ), 0); /* Win32 needs the cast here */
         if (0 < s) {
           requ[s] = 0;
           /* To print out neighbours only on the Freifunk Status
@@ -280,7 +284,7 @@ ipc_action(int fd)
   }
 }
 
-static void inline
+static void
 ipc_print_neigh_link(void)
 {
   struct neighbor_entry *neigh;
@@ -339,7 +343,7 @@ ipc_print_neigh_link(void)
 }
 
 
-static void inline
+static void
 ipc_print_routes(void)
 {
   int size = 0, index;
@@ -383,7 +387,7 @@ ipc_print_routes(void)
 
 }
 
-static void inline
+static void
 ipc_print_topology(void)
 {
   olsr_u8_t index;
@@ -420,20 +424,21 @@ ipc_print_topology(void)
   ipc_sendf("\n");
 }
 
-static void inline
+static void
 ipc_print_hna(void)
 {
   int size;
   olsr_u8_t index;
   struct hna_entry *tmp_hna;
   struct hna_net *tmp_net;
+  struct hna4_entry *hna4;
+  struct hna6_entry *hna6;
 
   size = 0;
 
   ipc_sendf("Table: HNA\nNetwork\tNetmask\tGateway\n");
 
   /* Announced HNA entries */
-	struct hna4_entry *hna4;
 	for(hna4 = olsr_cnf->hna4_entries; hna4; hna4 = hna4->next)
 	  {
 			ipc_sendf("%s\t%s\t%s\n",
@@ -441,7 +446,6 @@ ipc_print_hna(void)
 			  olsr_ip_to_string(&hna4->netmask),
 				olsr_ip_to_string(&olsr_cnf->main_addr));
 	  }
-	struct hna6_entry *hna6;
 	for(hna6 = olsr_cnf->hna6_entries; hna6; hna6 = hna6->next)
 	  {
 			ipc_sendf("%s\t%d\t%s\n",
@@ -485,6 +489,46 @@ ipc_print_hna(void)
 
 }
 
+static void
+ipc_print_mid(void)
+{
+    olsr_u8_t index;
+    unsigned short is_first;
+    struct mid_entry *entry;
+    struct mid_address *alias;
+
+    ipc_sendf("Table: MID\nIP\tAliases\n");
+
+    /* MID */
+    for( index = 0; index < HASHSIZE; index++ )
+    {
+        entry = mid_set[index].next;
+
+        while( entry != &mid_set[index] )
+        {
+            ipc_sendf( olsr_ip_to_string( &entry->main_addr ) );
+            alias = entry->aliases;
+            is_first = 1;
+
+            while( alias )
+            {
+                ipc_sendf( "%s%s",
+                    ( is_first ? "\t" : ";" ),
+                    olsr_ip_to_string( &alias->alias )
+                );
+
+                alias = alias->next_alias;
+                is_first = 0;
+            }
+
+            entry = entry->next;
+            ipc_sendf("\n");
+        }
+    }
+
+	ipc_sendf("\n");
+}
+
 
 static void 
 send_info(int neighonly)
@@ -504,6 +548,9 @@ send_info(int neighonly)
 	
  	/* hna */
 	if (!neighonly) ipc_print_hna();
+
+ 	/* mid */
+	if (!neighonly) ipc_print_mid();
 
 	/* routes */
 	if (!neighonly) ipc_print_routes();

@@ -35,7 +35,7 @@
 # to the project. For more information see the website or contact
 # the copyright holders.
 #
-# $Id: Makefile,v 1.10 2005/05/25 13:50:22 br1 Exp $
+# $Id: Makefile,v 1.11 2007/05/09 17:30:42 bernd67 Exp $
 
 OLSRD_PLUGIN =	true
 PLUGIN_NAME =	olsrd_nameservice
@@ -44,6 +44,10 @@ PLUGIN_VER =	0.2
 TOPDIR = ../..
 include $(TOPDIR)/Makefile.inc
 
+ifeq ($(OS),win32)
+default_target install clean:
+	@echo "**** We use the regex library here. Does Win32 has something like this?"
+else
 default_target: $(PLUGIN_FULLNAME)
 
 $(PLUGIN_FULLNAME): $(OBJS)
@@ -55,3 +59,4 @@ install:	$(PLUGIN_FULLNAME)
 
 clean:
 		rm -f $(OBJS) $(SRCS:%.c=%.d) $(PLUGIN_FULLNAME)
+endif

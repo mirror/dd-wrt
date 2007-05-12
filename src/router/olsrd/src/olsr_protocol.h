@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsr_protocol.h,v 1.21 2006/01/12 11:00:49 kattemat Exp $
+ * $Id: olsr_protocol.h,v 1.22 2007/04/22 20:25:48 bernd67 Exp $
  */
 
 /*
@@ -253,7 +253,7 @@ struct neigh_info
 } __attribute__ ((packed));
 
 
-struct tcmsg 
+struct olsr_tcmsg 
 {
   olsr_u16_t        ansn;
   olsr_u16_t        reserved;
@@ -272,7 +272,7 @@ struct neigh_info6
 } __attribute__ ((packed));
 
 
-struct tcmsg6
+struct olsr_tcmsg6
 {
   olsr_u16_t           ansn;
   olsr_u16_t           reserved;
@@ -373,7 +373,7 @@ struct olsrmsg
   union 
   {
     struct hellomsg hello;
-    struct tcmsg    tc;
+    struct olsr_tcmsg    tc;
     struct hnamsg   hna;
     struct midmsg   mid;
   } message;
@@ -397,7 +397,7 @@ struct olsrmsg6
   union 
   {
     struct hellomsg6 hello;
-    struct tcmsg6    tc;
+    struct olsr_tcmsg6    tc;
     struct hnamsg6   hna;
     struct midmsg6   mid;
   } message;

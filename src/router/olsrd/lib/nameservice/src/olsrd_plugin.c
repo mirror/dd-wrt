@@ -29,7 +29,7 @@
  *
  */
 
-/* $Id: olsrd_plugin.c,v 1.11 2005/05/29 12:47:42 br1 Exp $ */
+/* $Id: olsrd_plugin.c,v 1.12 2007/04/20 13:46:02 bernd67 Exp $ */
 
 /*
  * Dynamic linked library for olsr.org olsrd
@@ -40,7 +40,6 @@
 
 #include "olsrd_plugin.h"
 #include "nameservice.h"
-
 
 #define PLUGIN_NAME    "OLSRD nameservice plugin"
 #define PLUGIN_VERSION "0.2"
@@ -54,22 +53,21 @@ my_init(void);
 static void __attribute__ ((destructor)) 
 my_fini(void);
 
-
 int 
-olsrd_plugin_interface_version()
+olsrd_plugin_interface_version(void)
 {
 	return OLSRD_PLUGIN_INTERFACE_VERSION;
 }
 
-
-int olsrd_plugin_init()
+int
+olsrd_plugin_init(void)
 {
 	return name_init();
 }
 
 
 static void
-my_init()
+my_init(void)
 {
 	/* Print plugin info to stdout */
 	printf("%s\n", MOD_DESC);
@@ -81,7 +79,7 @@ my_init()
 
 
 static void
-my_fini()
+my_fini(void)
 {
 	name_destructor();
 }

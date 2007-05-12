@@ -38,11 +38,13 @@
  * Description: Functions to open and close sockets
  * Created    : 29 Jun 2006
  *
- * $Id: NetworkInterfaces.h,v 1.2 2007/02/10 17:05:56 bernd67 Exp $ 
  * ------------------------------------------------------------------------- */
 
 /* System includes */
 #include <netinet/in.h> /* struct in_addr */
+
+/* OLSR includes */
+#include "olsr_types.h" /* olsr_ip_addr */
 
 /* Plugin includes */
 #include "Packet.h" /* IFHWADDRLEN */
@@ -59,6 +61,10 @@ struct TBmfInterface
    * Only used for OLSR-enabled interfaces; set to -1 if interface is not OLSR-enabled. */
   int encapsulatingSkfd;
 
+  /* File descriptor of UDP packet socket, used for listening to encapsulation packets.
+   * Used only when PlParam "BmfMechanism" is set to "UnicastPromiscuous". */
+  int listeningSkfd;
+
   unsigned char macAddr[IFHWADDRLEN];
 
   char ifName[IFNAMSIZ];
@@ -68,10 +74,10 @@ struct TBmfInterface
   struct interface* olsrIntf;
 
   /* IP address of this network interface */
-  struct sockaddr intAddr;
+  union olsr_ip_addr intAddr;
 
   /* Broadcast address of this network interface */
-  struct sockaddr broadAddr;
+  union olsr_ip_addr broadAddr;
 
   #define FRAGMENT_HISTORY_SIZE 10
   struct TFragmentHistory
@@ -83,6 +89,11 @@ struct TBmfInterface
   } fragmentHistory [FRAGMENT_HISTORY_SIZE];
 
   int nextFragmentHistoryEntry;
+
+  /* Number of received and transmitted BMF packets on this interface */
+  u_int32_t nBmfPacketsRx;
+  u_int32_t nBmfPacketsRxDup;
+  u_int32_t nBmfPacketsTx;
 
   /* Next element in list */
   struct TBmfInterface* next; 
@@ -97,6 +108,9 @@ extern int EtherTunTapFd;
 
 extern char EtherTunTapIfName[];
 
+/* 10.255.255.253 in host byte order */
+#define ETHERTUNTAPDEFAULTIP 0x0AFFFFFD
+
 extern u_int32_t EtherTunTapIp;
 extern u_int32_t EtherTunTapIpMask;
 extern u_int32_t EtherTunTapIpBroadcast;
@@ -106,15 +120,29 @@ extern int CapturePacketsOnOlsrInterfaces;
 enum TTunOrTap { TT_TUN = 0, TT_TAP };
 extern enum TTunOrTap TunOrTap;
 
+enum TBmfMechanism { BM_BROADCAST = 0, BM_UNICAST_PROMISCUOUS };
+extern enum TBmfMechanism BmfMechanism;
+
 int SetBmfInterfaceName(const char* ifname);
 int SetBmfInterfaceType(const char* iftype);
 int SetBmfInterfaceIp(const char* ip);
 int SetCapturePacketsOnOlsrInterfaces(const char* enable);
+int SetBmfMechanism(const char* mechanism);
+int DeactivateSpoofFilter(void);
+void RestoreSpoofFilter(void);
+struct link_entry* GetBestNeighbor(
+  struct TBmfInterface* intf,
+  union olsr_ip_addr* source,
+  union olsr_ip_addr* forwardedBy,
+  union olsr_ip_addr* forwardedTo,
+  int* multipleNeighbors);
 int CreateBmfNetworkInterfaces(struct interface* skipThisIntf);
 void AddInterface(struct interface* newIntf);
 void CloseBmfNetworkInterfaces(void);
 int AddNonOlsrBmfIf(const char* ifName);
 int IsNonOlsrBmfIf(const char* ifName);
-void CheckAndUpdateLocalBroadcast(unsigned char* buffer, struct sockaddr* broadAddr);
+void CheckAndUpdateLocalBroadcast(unsigned char* ipPacket, union olsr_ip_addr* broadAddr);
+void AddMulticastRoute(void);
+void DeleteMulticastRoute(void);
 
 #endif /* _BMF_NETWORKINTERFACES_H */

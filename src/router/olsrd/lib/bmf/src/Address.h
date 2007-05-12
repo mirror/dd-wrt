@@ -38,7 +38,6 @@
  * Description: IP packet characterization functions
  * Created    : 29 Jun 2006
  *
- * $Id: Address.h,v 1.2 2007/02/10 17:05:55 bernd67 Exp $ 
  * ------------------------------------------------------------------------- */
 
 #include "olsr_types.h" /* olsr_ip_addr */
@@ -50,7 +49,6 @@ extern int EnableLocalBroadcast;
 
 int DoLocalBroadcast(const char* enable);
 int IsMulticast(union olsr_ip_addr* ipAddress);
-int IsLocalBroadcast(union olsr_ip_addr* destIp, struct sockaddr* broadAddr);
-int IsOlsrOrBmfPacket(struct TBmfInterface* intf, unsigned char* ethPkt, size_t len);
+int IsOlsrOrBmfPacket(unsigned char* ipPacket);
 
 #endif /* _BMF_ADDRESS_H */

@@ -38,7 +38,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: oscan.lex,v 1.21 2006/04/17 18:31:09 kattemat Exp $
+ * $Id: oscan.lex,v 1.22 2007/04/20 13:46:05 bernd67 Exp $
  */
 
 
@@ -74,7 +74,7 @@ struct conf_token *
 get_conf_token(void);
 
 struct conf_token *
-get_conf_token()
+get_conf_token(void)
 {
   struct conf_token *t = malloc(sizeof(struct conf_token));
 

@@ -1,6 +1,6 @@
 BASIC MULTICAST FORWARDING PLUGIN FOR OLSRD
 by Erik Tromp (erik.tromp@nl.thalesgroup.com, erik_tromp@hotmail.com)
-Version 1.3
+Version 1.4
 
 1. Introduction
 ---------------
@@ -17,14 +17,14 @@ in the past 3-6 seconds are forwarded.
 2. How to build and install
 ---------------------------
 
-Download the olsr-bmf-v1.3.tar.gz file and save it into your OLSRD
+Download the olsr-bmf-v1.4.tar.gz file and save it into your OLSRD
 base install directory.
 
 Change directory (cd) to your OLSRD base install directory.
 
 At the command prompt, type:
 
-  tar -zxvf ./olsr-bmf-v1.3.tar.gz
+  tar -zxvf ./olsr-bmf-v1.4.tar.gz
 
 then type:
 
@@ -47,7 +47,7 @@ Set permissions, e.g.:
 To configure BMF in OLSR, you must edit the file /etc/olsrd.conf
 to load the BMF plugin. For example, add the following lines:
 
-  LoadPlugin "olsrd_bmf.so.1.3"
+  LoadPlugin "olsrd_bmf.so.1.4"
   {
     # No PlParam entries required for basic operation
   }
@@ -64,8 +64,8 @@ olsrd daemon by entering at the shell prompt:
 Look at the output; it should list the BMF plugin, e.g.:
 
   ---------- Plugin loader ----------
-  Library: olsrd_bmf.so.1.3
-  OLSRD Basic Multicast Forwarding plugin 1.3 (Dec 18 2006 11:23:51)
+  Library: olsrd_bmf.so.1.4
+  OLSRD Basic Multicast Forwarding plugin 1.4 (Mar 30 2007 14:30:57)
     (C) Thales Communications Huizen, Netherlands
     Erik Tromp (erik.tromp@nl.thalesgroup.com)
   Checking plugin interface version...  4 - OK
@@ -84,14 +84,14 @@ Look at the output; it should list the BMF plugin, e.g.:
 Enter the following command on the command prompt:
   
   ping 224.0.0.1
-    
+
 All OLSR-BMF hosts in the OLSR network should respond. For example,
 assume we have three hosts, with IP addresses 192.168.151.50,
 192.168.151.53 and 192.168.151.55. On host 192.168.151.50 we enter
 the following ping command:
 
 root@IsdbServer:~# ping 224.0.0.1
-PING 224.0.0.1 (224.0.0.1) from 192.168.151.50 eth1: 56(84) bytes of data.
+PING 224.0.0.1 (224.0.0.1) 56(84) bytes of data.
 64 bytes from 192.168.151.50: icmp_seq=1 ttl=64 time=0.511 ms
 64 bytes from 192.168.151.53: icmp_seq=1 ttl=64 time=4.67 ms (DUP!)
 64 bytes from 192.168.151.55: icmp_seq=1 ttl=63 time=10.7 ms (DUP!)
@@ -109,6 +109,22 @@ We can see the response from the originating host (192.168.151.50)
 (it is normal behaviour for hosts sending multicast packets to
 receive their own packets). We can also see the responses by the
 other hosts (correctly seen as DUPlicates by ping).
+
+Note: when using an older version of ping than the standard from
+iputils-20020927, as found in most current Linux distributions, you may want
+to test BMF by specifying the output interface to the ping command:
+
+  ping -I bmf0 224.0.0.1
+
+Older versions of 'ping' (e.g. as found in iputils-20020124) may bind to the
+autoselected source address, which may be incorrect. Since BMF re-uses
+one of the existing IP addresses for the "bmf0" network interface, the
+older-version ping command may 'autobind' to the wrong interface.
+
+See also the note in the iputils-20020927/RELNOTES file:
+"* Mads Martin Jørgensen <mmj@suse.de>: ping should not bind to autoselected
+  source address, it used to work when routing changes. Return classic
+  behaviour, option -B is added to enforce binding."
 
 
 5. How does it work
@@ -173,7 +189,7 @@ the /etc/olsrd.conf file.
 The following gives an overview of all plugin parameters that can be
 configured:
 
-  LoadPlugin "olsrd_bmf.so.1.3"
+  LoadPlugin "olsrd_bmf.so.1.4"
   {
     # Specify the name of the BMF network interface.
     # Defaults to "bmf0".
@@ -204,6 +220,15 @@ configured:
     # NOTE: This parameter should be set consistently on all hosts throughout
     # the network. If not, hosts may receive multicast packets in duplicate.
     PlParam "CapturePacketsOnOlsrInterfaces" "yes"
+
+    # The forwarding mechanism to use. Either "Broadcast" or
+    # "UnicastPromiscuous". Defaults to "Broadcast".
+    # In the "UnicastPromiscuous" mode, packets are forwarded (unicast) to the
+    # best candidate neighbor; other neighbors listen promiscuously. IP-local
+    # broadcast is not used. This saves air time on 802.11 WLAN networks,
+    # on which unicast packets are usually sent at a much higher bit rate
+    # than broadcast packets (which are sent at a basic bit rate).
+    PlParam "BmfMechanism" "UnicastPromiscuous"
 
     # List of non-OLSR interfaces to include
     PlParam     "NonOlsrIf"  "eth2"
@@ -309,7 +334,7 @@ want to forward multicast and local-broadcast IP packets, specify these
 interfaces one by one as "NonOlsrIf" parameters in the BMF plugin section
 of /etc/olsrd.conf. For example:
 
-  LoadPlugin "olsrd_bmf.so.1.3"
+  LoadPlugin "olsrd_bmf.so.1.4"
   {
     # Non-OLSR interfaces to participate in the multicast flooding
     PlParam     "NonOlsrIf"  "eth2"
@@ -367,7 +392,7 @@ Therefore, override the default IP address and prefix length of
 the BMF network interface, by editing the /etc/olsrd.conf file.
 For example:
 
-  LoadPlugin "olsrd_bmf.so.1.3"
+  LoadPlugin "olsrd_bmf.so.1.4"
   {
       PlParam "BmfInterfaceIp" "10.10.10.4/24"
   }
@@ -436,8 +461,8 @@ When using equipment like switches or hubs, usually all the hosts see each
 other. In an OLSR lab environment, we sometimes want to simulate the
 situation that some hosts in the network cannot directly see other hosts
 (as 1-hop neighbors) but only indirectly (as 2- or more-hop neighbors).
-To simulate that situation, the iptables tool is often used. For BMF,
-however, that is nog enough.
+To simulate that situation, the iptables tool is often used (see
+www.netfilter.org). For BMF, however, that is nog enough.
 
 For OLSR testing, setup iptables on each host to drop packets from
 all other hosts which are not direct (1-hop) neigbors. For example, to
@@ -453,7 +478,7 @@ addresses of the hosts we do not want to see. (Even though packets from
 these hosts are dropped by iptables, they are still received on network
 interfaces if they are in promiscuous mode.) For example:
 
-  LoadPlugin "olsrd_bmf.so.1.3"
+  LoadPlugin "olsrd_bmf.so.1.4"
   {
     # Drop all packets received from the following MAC sources
     PlParam     "DropMac"    "00:0C:29:51:32:88" # RemoteClient1
@@ -461,6 +486,8 @@ interfaces if they are in promiscuous mode.) For example:
     PlParam     "DropMac"    "00:0C:29:28:0E:CC" # SimpleClient2
   }
 
+See also the notes in the 'packet' manpage ("Packet sockets are not
+subject to the input or output firewall chains").
 
 
 10. Common problems, FAQ
@@ -488,6 +515,7 @@ Answer:
 Turn on the possibility to create a tuntap interface; see section 2 of this
 file.
 
+
 ---------
 Question:
 When starting OLSRD with the BMF plugin, I can see the following
@@ -509,8 +537,16 @@ tap/tun device is not compiled in your kernel. Try the command:
 
   modprobe tun
 
-If "modprobe tun" says something like "module tun not found", then either
+If "modprobe tun" says something like "modprobe: Can't locate module tun", then either
 it is not compiled at all or it is not compiled into the kernel. 
+
+Note: if you do not want to receive multicast packets, only forward the packets
+that other hosts send, then you do not need the tuntap interface. This could be the
+case if your host is purely an OLSR router; normally no traffic will be directed
+to the router itself. In that case you can ignore this error message. Beware, though,
+that you will then not be able to do the simple 'ping 224.0.0.1' test (as described in
+section 4. How to check if it works) to check for the presence of all OLSR-BMF routers
+in the network. 
 
 
 ---------
@@ -527,6 +563,28 @@ the BMF network interface, either by specifying the interface name itself
 
 11. Version history
 -------------------
+
+31 Mar 2007: Version 1.4
+* Optimized the standard forwarding mechanism in such a way that
+  retransmissions of packets are only done on those network interfaces
+  that make a host a multi-point relay (MPR) for the sender. I.e.:
+  retransmitting a packet on a network interface is not done if that
+  does not lead to any new hosts being reached.
+* Optimized the standard forwarding mechanism such that, if the network
+  topology indicates there is only one neighbor on an interface, packets are
+  sent to the specific IP address (unicast) of that neighbor. If the network
+  topology indicates there are multiple neighbors, then BMF will still send
+  packets to the IP local-broadcast address.
+* Introduced a new forwarding mechanism, using only IP-unicast to
+  forward packets. Packets are forwarded to the best candidate neighbor;
+  other neighbors listen promiscuously. IP-local broadcast is not used.
+  This saves air time on 802.11 WLAN networks, on which unicast packets are
+  usually sent at a much higher bit rate than broadcast packets (which are
+  sent at a basic bit rate).
+  This mechanism can be activated by specifying the following plugin
+  parameter:
+    PlParam "BmfMechanism" "UnicastPromiscuous"
+  See also section 6 - Advanced configuration.
 
 18 Dec 2006: Version 1.3
 * Added the possibility to configure the BMF network interface:
@@ -572,7 +630,8 @@ the BMF network interface, either by specifying the interface name itself
   network interfaces.
 * Debug level 9 gives a better indication of what happens to each
   handled multicast/broadcast packet. To run the olsr daemon with
-  debug level 9, run "olsrd -d 9".
+  debug level 9, run "olsrd -d 9"; if you're only interested in
+  BMF debug messages, run "olsrd -d 9 | grep -i bmf".
 * Can now deal with network interface removal ("ifdown eth1") and
   addition ("ifup eth1").
 * CRC-calculation for duplicate detection is done over first 256
