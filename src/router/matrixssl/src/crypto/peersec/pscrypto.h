@@ -1,11 +1,11 @@
 /*
  *	pscrypto.h
- *	Release $Name: MATRIXSSL_1_8_2_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_3_OPEN $
  *
  *	Internal definitions for PeerSec Networks MatrixSSL cryptography provider
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -215,8 +215,11 @@ typedef struct {
 } rc4_key;
 #endif /* USE_ARC4 */
 
+
 #define SSL_DES3_KEY_LEN	24
 #define SSL_DES3_IV_LEN		8
+#define SSL_DES_KEY_LEN		8
+
 #ifdef USE_3DES
 
 typedef struct {
@@ -227,10 +230,10 @@ typedef struct {
 	A block cipher CBC structure
  */
 typedef struct {
-	int32					blocklen;
+	int32				blocklen;
 	unsigned char		IV[8];
 	des3_key			key;
-	int32					explicitIV; /* 1 if yes */
+	int32				explicitIV; /* 1 if yes */
 } des3_CBC;
 
 extern int32 des3_setup(const unsigned char *key, int32 keylen, int32 num_rounds,

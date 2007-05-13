@@ -1,13 +1,13 @@
 /*
  *	sslv3.c
- *	Release $Name: MATRIXSSL_1_8_2_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_3_OPEN $
  *
  *	SSLv3.0 specific code per http://wp.netscape.com/eng/ssl3.
  *	Primarily dealing with secret generation, message authentication codes
  *	and handshake hashing.
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify

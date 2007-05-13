@@ -1,7 +1,7 @@
 #
 #	MatrixSSL example applications makefile
 #	Builds optimized by default, see comments below for debug.
-#	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved
+#	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved
 #
 
 CC 	= gcc
@@ -70,7 +70,7 @@ endif
 
 all: compile
 
-compile: $(REF_OBJS) $(REF_EXE) $(CLIENT_OBJS) $(CLIENT_EXE)
+compile: $(REF_OBJS) $(REF_EXE) $(CLIENT_OBJS) $(CLIENT_EXE) 
 
 #
 # Manual dependencies

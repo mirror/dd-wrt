@@ -46,7 +46,7 @@ DFLAGS	= -g -Wall -Winline -Wdisabled-optimization -DDEBUG
 STRIP	= test
 else
 #DFLAGS	= -Os
-DFLAGS	= $(COPTS)
+DFLAGS	= $(COPTS) 
 endif
 
 ifdef MATRIXSSL_PROFILE
@@ -64,8 +64,16 @@ endif
 #
 #	Compile options
 #
+include $(TOP)/.config
+
 SHARED	= -shared 
-CFLAGS  = $(DFLAGS) -DLINUX -I./
+CFLAGS  = $(DFLAGS) -fPIC -DLINUX -I./
+ifeq ($(CONFIG_MSSID),y)
+CFLAGS	+= -I$(SRCBASE)/include.v24 
+else
+CFLAGS	+= -I$(SRCBASE)/include.v23
+endif
+
 LDFLAGS += -lc -lpthread
 
 #

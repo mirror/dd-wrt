@@ -1,11 +1,11 @@
 /*
  *	rsa.c
- *	Release $Name: MATRIXSSL_1_8_2_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_3_OPEN $
  *
  *	RSA crypto
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -380,7 +380,9 @@ int32 matrixRsaDecryptPub(psPool_t *pool, sslRsaKey_t *key,
 			RSA_PUBLIC) < 0 || ptLen != inlen) {
 		return -1;
 	}
-	ptLen = sslUnpadRSA(in, inlen, out, outlen, RSA_PUBLIC);
+	if ((ptLen = sslUnpadRSA(in, inlen, out, outlen, RSA_PUBLIC)) < 0) {
+		return ptLen;
+	}
 	return 0;
 }
 

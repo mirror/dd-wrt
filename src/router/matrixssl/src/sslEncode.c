@@ -1,11 +1,11 @@
 /*
  *	sslEncode.c
- *	Release $Name: MATRIXSSL_1_8_2_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_3_OPEN $
  *
  *	Secure Sockets Layer message encoding
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -54,7 +54,6 @@ static int32 writeClientKeyExchange(ssl_t *ssl, sslBuf_t *out);
 static int32 writeServerHello(ssl_t *ssl, sslBuf_t *out);
 static int32 writeServerHelloDone(ssl_t *ssl, sslBuf_t *out);
 #endif /* USE_SERVER_SIDE_SSL */
-
 
 static int32 sslWritePad(unsigned char *p, unsigned char padLen);
 static int32 secureWriteAdditions(ssl_t *ssl, int32 numRecs);
@@ -760,7 +759,6 @@ static int32 writeChangeCipherSpec(ssl_t *ssl, sslBuf_t *out)
 	end = out->buf + out->size;
 	messageSize = ssl->recordHeadLen + 1;
 
-	
 	if ((rc = writeRecordHeader(ssl, SSL_RECORD_TYPE_CHANGE_CIPHER_SPEC, 0,
 			&messageSize, &padLen, &encryptStart, &end, &c)) < 0) {
 		return rc;
@@ -783,6 +781,7 @@ static int32 writeChangeCipherSpec(ssl_t *ssl, sslBuf_t *out)
 	data now
 */
 	sslActivateWriteCipher(ssl);
+
 
 	return SSL_SUCCESS;
 }
@@ -836,7 +835,8 @@ static int32 writeFinished(ssl_t *ssl, sslBuf_t *out)
 		matrixX509FreeCert(ssl->sec.cert);
 		ssl->sec.cert = NULL;
 	}
-#endif /* USE_CLIENT_SIDE */
+#endif /* USE_CLIENT_SIDE_SSL */
+
 	return SSL_SUCCESS;
 }
 
