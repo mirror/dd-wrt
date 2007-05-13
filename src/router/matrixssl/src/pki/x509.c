@@ -1,11 +1,11 @@
 /*
  *	x509.c
- *	Release $Name: MATRIXSSL_1_8_2_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_3_OPEN $
  *
  *	DER/BER coding
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -54,7 +54,6 @@
 #define EXT_AUTH_KEY_ID			4
 #define EXT_ALT_SUBJECT_NAME	5
 
-
 static const struct {
 		unsigned char	hash[16];
 		int32			id;
@@ -72,18 +71,17 @@ static const struct {
 	{ { 0 }, -1 } /* Must be last for proper termination */
 };
 
-static int32 matrixX509ValidateCertInternal(psPool_t *pool, 
-						sslRsaCert_t *subjectCert, 
-						sslRsaCert_t *issuerCert, int32 chain);
+
 static int32 getExplicitExtensions(psPool_t *pool, unsigned char **pp, 
 								 int32 len, int32 expVal,
 								 v3extensions_t *extensions);
+static int32 matrixX509ValidateCertInternal(psPool_t *pool, 
+						sslRsaCert_t *subjectCert, 
+						sslRsaCert_t *issuerCert, int32 chain);
 #ifdef USE_FILE_SYSTEM
-static int32 parseList(psPool_t *pool, char *list, const char *sep,
+static int32 parseList(psPool_t *pool, const char *list, const char *sep,
 					   char **item);
-static int32 readCertChain(psPool_t *pool, char *certFiles, sslKeys_t *lkeys);
 #endif /* USE_FILE_SYSTEM */
-
 
 /******************************************************************************/
 /*
@@ -95,8 +93,9 @@ static int32 readCertChain(psPool_t *pool, char *certFiles, sslKeys_t *lkeys);
 	The private key is stored in a crypto provider specific structure
 */
 #ifdef USE_FILE_SYSTEM
-int32 matrixRsaReadKeys(sslKeys_t **keys, char *certFile, char *privFile,
-					  char *privPass, char *trustedCAFiles)
+int32 matrixRsaReadKeys(sslKeys_t **keys, const char *certFile,
+						const char *privFile, const char *privPass,
+						const char *trustedCAFiles)
 {
 	return matrixRsaReadKeysEx(PEERSEC_BASE_POOL, keys, certFile, privFile,
 		privPass, trustedCAFiles);
@@ -173,8 +172,9 @@ void matrixRsaFreeKeys(sslKeys_t *keys)
 	expose this API at the matrixSsl.h level due to the pool parameter. This
 	is strictly an API that commerical users will have access to
 */
-int32 matrixRsaReadKeysEx(psPool_t *pool, sslKeys_t **keys, char *certFile,
-				char *privFile, char *privPass, char *trustedCAFiles)
+int32 matrixRsaReadKeysEx(psPool_t *pool, sslKeys_t **keys,
+				const char *certFile, const char *privFile,
+				const char *privPass, const char *trustedCAFiles)
 {
 	sslKeys_t		*lkeys;
 	unsigned char	*privKeyMem;
@@ -195,7 +195,7 @@ int32 matrixRsaReadKeysEx(psPool_t *pool, sslKeys_t **keys, char *certFile,
 	Load certificate files.  Any additional certificate files should chain
 	to the root CA held on the other side.
 */
-	rc = readCertChain(pool, certFile, lkeys);
+	rc = readCertChain(pool, certFile, &lkeys->cert);
 	if (rc < 0 ) {
 		matrixRsaFreeKeys(lkeys);
 		return rc;
@@ -208,14 +208,16 @@ int32 matrixRsaReadKeysEx(psPool_t *pool, sslKeys_t **keys, char *certFile,
 		rc = matrixRsaReadPrivKey(pool, privFile, privPass, &privKeyMem,
 			&privKeyMemLen);
 		if (rc < 0) {
-			matrixStrDebugMsg("Error reading private key file: %s\n", privFile);
+			matrixStrDebugMsg("Error reading private key file: %s\n",
+				(char*)privFile);
 			matrixRsaFreeKeys(lkeys);
 			return rc;
 		}
 		rc = matrixRsaParsePrivKey(pool, privKeyMem, privKeyMemLen,
 			&lkeys->cert.privKey);
 		if (rc < 0) {
-			matrixStrDebugMsg("Error parsing private key file: %s\n", privFile);
+			matrixStrDebugMsg("Error parsing private key file: %s\n",
+				(char*)privFile);
 			psFree(privKeyMem);
 			matrixRsaFreeKeys(lkeys);
 			return rc;
@@ -231,7 +233,7 @@ int32 matrixRsaReadKeysEx(psPool_t *pool, sslKeys_t **keys, char *certFile,
 		if (matrixX509ReadCert(pool, trustedCAFiles, &caCert, &caCertLen,
 				&chain) < 0 || caCert == NULL) {
 			matrixStrDebugMsg("Error reading CA cert files %s\n",
-				trustedCAFiles);
+				(char*)trustedCAFiles);
 			matrixRsaFreeKeys(lkeys);
 			return -1;
 		}
@@ -244,7 +246,8 @@ int32 matrixRsaReadKeysEx(psPool_t *pool, sslKeys_t **keys, char *certFile,
 */
 			if (matrixX509ParseCert(pool, caStream, chain[i], &currCert) < 0) {
 				matrixX509FreeCert(currCert);
-				matrixStrDebugMsg("Error parsing CA cert %s\n", trustedCAFiles);
+				matrixStrDebugMsg("Error parsing CA cert %s\n",
+					(char*)trustedCAFiles);
 				caStream += chain[i]; caCertLen -= chain[i];
 				i++;
 				continue;
@@ -269,7 +272,8 @@ int32 matrixRsaReadKeysEx(psPool_t *pool, sslKeys_t **keys, char *certFile,
 	one ended up being valid.
 */
 	if (trustedCAFiles != NULL && lkeys->caCerts == NULL) {
-		matrixStrDebugMsg("No valid CA certs in %s\n", trustedCAFiles);
+		matrixStrDebugMsg("No valid CA certs in %s\n",
+			(char*)trustedCAFiles);
 		matrixRsaFreeKeys(lkeys);
 		return -1;
 	}
@@ -283,8 +287,8 @@ int32 matrixRsaReadKeysEx(psPool_t *pool, sslKeys_t **keys, char *certFile,
  *	over the wire.  Caller must free 'out' if this function returns success (0)
  *	Parse .pem files according to http://www.faqs.org/rfcs/rfc1421.html
  */
-int32 matrixX509ReadCert(psPool_t *pool, char *fileName, unsigned char **out,
-						int32 *outLen, sslChainLen_t *chain)
+int32 matrixX509ReadCert(psPool_t *pool, const char *fileName,
+					unsigned char **out, int32 *outLen, sslChainLen_t *chain)
 {
 	int32			certBufLen, rc, certChainLen, i;
 	unsigned char	*oneCert[MAX_CHAIN_LENGTH];
@@ -340,7 +344,7 @@ int32 matrixX509ReadCert(psPool_t *pool, char *fileName, unsigned char **out,
 					end++;
 				}
 			} else {
-				psFree(certBuf);
+				psFree(certPtr);
 				rc = -1;
 				goto err;
 			}
@@ -358,6 +362,13 @@ int32 matrixX509ReadCert(psPool_t *pool, char *fileName, unsigned char **out,
 			}
 			certChainLen += (*chain)[i];
 			i++;
+			if (i == MAX_CHAIN_LENGTH) { 
+				matrixIntDebugMsg("Exceeded maximum cert chain length of %d\n", 
+					MAX_CHAIN_LENGTH); 
+				psFree(certPtr); 
+				rc = -1; 
+				goto err; 
+			} 
 		}
 		psFree(certPtr);
 /*
@@ -398,7 +409,8 @@ err:
 	product.  It extracts only the public key from a certificate file for use
 	in the lower level encrypt/decrypt RSA routines
 */
-int32 matrixX509ReadPubKey(psPool_t *pool, char *certFile, sslRsaKey_t **key)
+int32 matrixX509ReadPubKey(psPool_t *pool, const char *certFile,
+						   sslRsaKey_t **key)
 {
 	unsigned char	*certBuf;
 	sslChainLen_t	chain;
@@ -406,7 +418,8 @@ int32 matrixX509ReadPubKey(psPool_t *pool, char *certFile, sslRsaKey_t **key)
 
 	certBuf = NULL;
 	if (matrixX509ReadCert(pool, certFile, &certBuf, &certBufLen, &chain) < 0) {
-		matrixStrDebugMsg("Unable to read certificate file %s\n", certFile);
+		matrixStrDebugMsg("Unable to read certificate file %s\n",
+			(char*)certFile);
 		if (certBuf) psFree(certBuf);
 		return -1;
 	}
@@ -426,7 +439,8 @@ int32 matrixX509ReadPubKey(psPool_t *pool, char *certFile, sslRsaKey_t **key)
 	HOWERVER, in both cases the first in the list must be the identifying
 	cert of the application. Each subsequent cert is the parent of the previous
 */
-static int32 readCertChain(psPool_t *pool, char *certFiles, sslKeys_t *lkeys)
+int32 readCertChain(psPool_t *pool, const char *certFiles,
+					sslLocalCert_t *lkeys)
 {
 	sslLocalCert_t	*currCert;
 	unsigned char	*certBin, *tmp;
@@ -438,7 +452,7 @@ static int32 readCertChain(psPool_t *pool, char *certFiles, sslKeys_t *lkeys)
 	}
 
 	if (matrixX509ReadCert(pool, certFiles, &certBin, &certLen, &chain) < 0) {
-		matrixStrDebugMsg("Error reading cert file %s\n", certFiles);
+		matrixStrDebugMsg("Error reading cert file %s\n", (char*)certFiles);
 		return -1;
 	}
 /*
@@ -449,7 +463,7 @@ static int32 readCertChain(psPool_t *pool, char *certFiles, sslKeys_t *lkeys)
 	tmp = certBin;
 	while (chain[i] != 0) {
 		if (i == 0) {
-			currCert = &lkeys->cert;
+			currCert = lkeys;
 		} else {
 			currCert->next = psMalloc(pool, sizeof(sslLocalCert_t));
 			if (currCert->next == NULL) {
@@ -474,7 +488,8 @@ static int32 readCertChain(psPool_t *pool, char *certFiles, sslKeys_t *lkeys)
 /*
  *	Strtok substitute
  */
-static int32 parseList(psPool_t *pool, char *list, const char *sep, char **item)
+static int32 parseList(psPool_t *pool, const char *list, const char *sep,
+					   char **item)
 {
 	int32	start, listLen;
 	char	*tmp;
@@ -521,9 +536,11 @@ int32 matrixRsaParseKeysMem(psPool_t *pool, sslKeys_t **keys,
 {
 	sslKeys_t		*lkeys;
 	sslLocalCert_t	*current, *next;
-	sslRsaCert_t	*currentCA, *nextCA;
 	unsigned char	*binPtr;
 	int32			len, lenOh, i;
+#ifdef USE_CLIENT_SIDE_SSL
+	sslRsaCert_t	*currentCA, *nextCA;
+#endif /* USE_CLIENT_SIDE_SSL */
 
 	*keys = lkeys = psMalloc(pool, sizeof(sslKeys_t));
 	if (lkeys == NULL) {
@@ -1366,7 +1383,6 @@ static int32 getExplicitExtensions(psPool_t *pool, unsigned char **pp,
 				p = p + extensions->sk.len;
 				break;
 #endif /* USE_FULL_CERT_PARSE */
-
 /*
 			Unsupported or skipping because USE_FULL_CERT_PARSE is undefined
 */
@@ -1577,8 +1593,7 @@ int32 matrixX509UserValidator(psPool_t *pool, sslRsaCert_t *subjectCert,
 		current->subjectAltName.dns = (char*)subjectCert->extensions.san.dns;
 		current->subjectAltName.uri = (char*)subjectCert->extensions.san.uri;
 		current->subjectAltName.email = (char*)subjectCert->extensions.san.email;
-
-
+	
 		if (subjectCert->certAlgorithm == OID_RSA_MD5 ||
 				subjectCert->certAlgorithm == OID_RSA_MD2) {
 			current->sigHashLen = SSL_MD5_HASH_SIZE;

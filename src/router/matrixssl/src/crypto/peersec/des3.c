@@ -1,11 +1,11 @@
 /*
  *	des3.c
- *	Release $Name: MATRIXSSL_1_8_2_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_3_OPEN $
  *
  *	3DES block cipher implementation for low memory usage
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -238,7 +238,7 @@ static void deskey(const unsigned char *key, short edf, ulong32 *keyout);
 
 /******************************************************************************/
 /*
-	Init the 3DES block cipher context for EDE mode.
+	Init the 3DES block cipher context for CBC-EDE mode.
 	IV should point to 8 bytes of initialization vector
 	Key should point to 24 bytes of data
 */
@@ -729,7 +729,6 @@ void generate3DESKey(unsigned char *pass, int32 passlen, unsigned char *salt,
 }
 
 
-
 #ifdef PEERSEC_TEST
 
 int32 matrixDes3Test()
@@ -787,6 +786,7 @@ int32 matrixDesTest()
 
 	return CRYPT_OK;
 }
+
 #endif /* PEERSEC_TEST */
 
 #endif /* USE_3DES */

@@ -95,8 +95,9 @@ extern "C" {
 MATRIXPUBLIC int	matrixSslOpen(void);
 MATRIXPUBLIC void	matrixSslClose(void);
 
-MATRIXPUBLIC int	matrixSslReadKeys(sslKeys_t **keys, char *certFile,
-						char *privFile, char *privPass, char *trustedCAFile);
+MATRIXPUBLIC int32	matrixSslReadKeys(sslKeys_t **keys, const char *certFile,
+						const char *privFile, const char *privPass,
+						const char *trustedCAFile);
 
 MATRIXPUBLIC int	matrixSslReadKeysMem(sslKeys_t **keys,
 						unsigned char *certBuf, int certLen,

@@ -1,6 +1,6 @@
 /*
  *	pkiInternal.h
- *	Release $Name: MATRIXSSL_1_8_2_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_3_OPEN $
  *	
  *	Public header file for MatrixSSL PKI extension
  *	Implementations interacting with the PKI portion of the
@@ -8,7 +8,7 @@
  *	used in this file.
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -130,7 +130,6 @@ typedef struct {
 	char	hash[SSL_SHA1_HASH_SIZE];
 } DNattributes_t;
 
-
 #ifdef USE_X509
 
 typedef struct {
@@ -153,10 +152,9 @@ typedef struct {
 	int32			keyLen;
 	unsigned char	*keyId;
 	DNattributes_t	attribs;
-	int32		serialNumLen;
+		int32		serialNumLen;
 	unsigned char	*serialNum;
 } extAuthKeyId_t;
-
 /*
 	FUTURE:  add support for the other extensions
 */
@@ -225,9 +223,11 @@ extern void psFreeDNStruct(DNattributes_t *dn);
 #endif /* USE_RSA */
 
 #ifdef USE_FILE_SYSTEM
-extern int32 psGetFileBin(psPool_t *pool, char *fileName, unsigned char **bin,
-				 int32 *binLen);
-extern int32 base64encodeAndWrite(psPool_t *pool, char *fileName,
+extern int32 readCertChain(psPool_t *pool, const char *certFiles,
+						   sslLocalCert_t *lkeys);
+extern int32 psGetFileBin(psPool_t *pool, const char *fileName,
+							unsigned char **bin, int32 *binLen);
+extern int32 base64encodeAndWrite(psPool_t *pool, const char *fileName,
 							unsigned char *bin, int32 binLen, int32 fileType,
 							char *hexCipherIV, int32 hexCipherIVLen);
 #endif /* USE_FILE_SYSTEM */
