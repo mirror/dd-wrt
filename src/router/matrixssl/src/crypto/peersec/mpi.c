@@ -1,11 +1,11 @@
 /*	
  *	mpi.c
- *	Release $Name: MATRIXSSL_1_8_2_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_3_OPEN $
  *
  *	multiple-precision integer library
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -31,8 +31,6 @@
 
 #include "../cryptoLayer.h"
 #include <stdarg.h>
-
-#ifndef USE_MPI2
 
 static int32 mp_exptmod_fast (psPool_t *pool, mp_int * G, mp_int * X,
 				mp_int * P, mp_int * Y, int32 redmode);
@@ -222,6 +220,7 @@ void _mp_clear_multi(mp_int *mp0, mp_int *mp1, mp_int *mp2, mp_int *mp3,
 				  mp_int *mp4, mp_int *mp5, mp_int *mp6, mp_int *mp7)
 {
 	int32		n		= 0;		/* Number of ok inits */
+
 	mp_int	*tempArray[9];
 	
 	tempArray[0] = mp0;
@@ -3668,4 +3667,4 @@ int32 mp_add_d (mp_int * a, mp_digit b, mp_int * c)
 
 /******************************************************************************/
 
-#endif /* USE_MPI2 */
+

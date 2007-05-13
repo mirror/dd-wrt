@@ -1,11 +1,11 @@
 /*
  *	matrixSsl.c
- *	Release $Name: MATRIXSSL_1_8_2_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_3_OPEN $
  *
  *	Secure Sockets Layer session management
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -94,8 +94,9 @@ void matrixSslClose(void)
 	Wrappers around the RSA versions.  Necessary to keep API backwards compat
 */
 #ifdef USE_FILE_SYSTEM
-int32 matrixSslReadKeys(sslKeys_t **keys, char *certFile,
-						char *privFile, char *privPass, char *trustedCAFile)
+int32 matrixSslReadKeys(sslKeys_t **keys, const char *certFile,
+						const char *privFile, const char *privPass,
+						const char *trustedCAFile)
 {
 	return matrixRsaReadKeys(keys, certFile, privFile, privPass, trustedCAFile);
 }
@@ -192,6 +193,11 @@ int32 matrixSslNewSession(ssl_t **ssl, sslKeys_t *keys, sslSessionId_t *session,
 		}
 		lssl->hsState = SSL_HS_CLIENT_HELLO;
 	} else {
+/*
+		Client is first to set protocol version information based on
+		compile and/or the 'flags' parameter so header information in
+		the handshake messages will be correctly set.
+*/
 		lssl->majVer = SSL3_MAJ_VER;
 		lssl->minVer = SSL3_MIN_VER;
 		lssl->hsState = SSL_HS_SERVER_HELLO;

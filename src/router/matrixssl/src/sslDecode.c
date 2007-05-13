@@ -1,11 +1,11 @@
 /*
  *	sslDecode.c
- *	Release $Name: MATRIXSSL_1_8_2_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_3_OPEN $
  *
  *	Secure Sockets Layer message decoding
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -95,6 +95,7 @@ decodeMore:
 */
 		return SSL_SUCCESS;
 	}
+
 	if (end - c < SSL2_HEADER_LEN) {
 		return SSL_PARTIAL;
 	}
@@ -158,6 +159,7 @@ decodeMore:
 	if (end - c < ssl->rec.len) {
 		return SSL_PARTIAL;
 	}
+
 /*
 	Make sure we have enough room to hold the decoded record
 */
@@ -492,9 +494,10 @@ static int32 parseSSLHandshake(ssl_t *ssl, char *inbuf, int32 len)
 #endif /* USE_SERVER_SIDE_SSL */
 
 #ifdef USE_CLIENT_SIDE_SSL
-	int32			sessionIdLen, certMatch, certTypeLen;
-	sslRsaCert_t	*cert, *currentCert, *subjectCert;
-	int32			valid, i, certLen, certChainLen, anonCheck;
+	int32			sessionIdLen, certMatch, certTypeLen, i;
+	sslRsaCert_t	*subjectCert;
+	int32			valid, certLen, certChainLen, anonCheck;
+	sslRsaCert_t	*cert, *currentCert;
 #endif /* USE_CLIENT_SIDE_SSL */
 
 	rc = SSL_SUCCESS;
@@ -517,7 +520,7 @@ parseHandshake:
 			(hsType != SSL_HS_CLIENT_HELLO || ssl->hsState != SSL_HS_DONE)) {
 
 /*
-		A mismatch is also possible in the client authentication case.
+		A mismatch is possible in the client authentication case.
 		The optional CERTIFICATE_REQUEST may be appearing instead of 
 		SERVER_HELLO_DONE.
 */
@@ -576,7 +579,7 @@ parseHandshake:
 	SSLv2:
 		1 byte type
 */
-	if (ssl->rec.majVer == SSL3_MAJ_VER) {
+	if (ssl->rec.majVer >= SSL3_MAJ_VER) {
 		if (end - c < 3) {
 			ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
 			matrixStrDebugMsg("Invalid length of handshake message\n", NULL);
@@ -614,7 +617,7 @@ parseHandshake:
 	case SSL_HS_CLIENT_HELLO:
 /*
 		First two bytes are the highest supported major and minor SSL versions
-		We support only 3.0 (other options are 2.0 or 3.1)
+		We support only 3.0 (support 3.1 in commercial version)
 */
 		if (end - c < 2) {
 			ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
@@ -623,9 +626,8 @@ parseHandshake:
 		}
 		ssl->reqMajVer = *c; c++;
 		ssl->reqMinVer = *c; c++;
-
-		if (ssl->reqMajVer == SSL3_MAJ_VER) {
-			ssl->majVer = SSL3_MAJ_VER;
+		if (ssl->reqMajVer >= SSL3_MAJ_VER) {
+			ssl->majVer = ssl->reqMajVer;
 			ssl->minVer = SSL3_MIN_VER;
 
 		} else {
@@ -1188,7 +1190,6 @@ parseHandshake:
 		break;
 
 	case SSL_HS_CERTIFICATE: 
-
 		if (end - c < 3) {
 			ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
 			matrixStrDebugMsg("Invalid Certificate message\n", NULL);

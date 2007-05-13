@@ -1,11 +1,11 @@
 /*	
  *	mpi.h
- *	Release $Name: MATRIXSSL_1_8_2_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_3_OPEN $
  *
  *	multiple-precision integer library
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -411,7 +411,6 @@ extern int32 mp_montgomery_reduce(mp_int *a, mp_int *m, mp_digit mp);
 /*
 	d = a**b (mod c)
  */
-/* TODO - we never define this */
 extern int32 mp_exptmod(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c, mp_int *d);
 
 /******************************************************************************/
@@ -484,4 +483,5 @@ extern void bn_reverse(unsigned char *s, int32 len);
 #endif /* __cplusplus */
 
 #endif /* _h_MPI */
+
 
