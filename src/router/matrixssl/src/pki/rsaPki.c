@@ -1,11 +1,11 @@
 /*
  *	rsaPki.c
- *	Release $Name: MATRIXSSL_1_8_2_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_3_OPEN $
  *
  *	RSA key and cert reading
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -40,7 +40,6 @@
 	#include <signal.h>
 #endif /* USE_FILE_SYSTEM */
 #endif /* WINCE */
-
 /*
 	For our purposes USE_RSA is used to indicate RSA private key handling.
 	USE_X509 indicates certificate handling and those blocks should be
@@ -94,7 +93,7 @@ void matrixPkiClose(void)
 	actually doing a 'binary' file read.  Only using the 'r' attribute since
 	all the cert and key files are text.
 */
-int32 psGetFileBin(psPool_t *pool, char *fileName, unsigned char **bin,
+int32 psGetFileBin(psPool_t *pool, const char *fileName, unsigned char **bin,
 				 int32 *binLen)
 {
 	FILE	*fp;
@@ -131,8 +130,8 @@ int32 psGetFileBin(psPool_t *pool, char *fileName, unsigned char **bin,
  *	If password is provided, we only deal with 3des cbc encryption
  *	Function allocates key on success.  User must free.
  */
-int32 matrixRsaReadPrivKey(psPool_t *pool, char *fileName, char *password,
-						   unsigned char **keyMem, int32 *keyMemLen)
+int32 matrixRsaReadPrivKey(psPool_t *pool, const char *fileName,
+				const char *password, unsigned char **keyMem, int32 *keyMemLen)
 {
 	unsigned char	*keyBuf, *DERout, *start, *end;
 	int32			keyBufLen, rc, DERlen, PEMlen = 0;

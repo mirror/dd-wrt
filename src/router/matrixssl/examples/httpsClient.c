@@ -1,12 +1,12 @@
 /*
  *	httpClient.c
- *	Release $Name: MATRIXSSL_1_8_2_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_3_OPEN $
  *
  *	Simple example program for MatrixSSL
  *	Sends a HTTPS request and echos the response back to the sender.
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2007. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -339,10 +339,12 @@ promptAndExit:
 static int certChecker(sslCertInfo_t *cert, void *arg)
 {
 	sslCertInfo_t	*next;
+	sslKeys_t		*keys;
 /*
 	Make sure we are checking the last cert in the chain
 */
 	next = cert;
+	keys = arg;
 	while (next->next != NULL) {
 		next = next->next;
 	}
