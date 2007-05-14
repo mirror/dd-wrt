@@ -394,7 +394,8 @@ list_channelsext (const char *ifname, int allchans)
 #endif
 	  if (nvram_invmatch (wl_mode, "g-only")
 	      && nvram_invmatch (wl_mode, "mixed")
-	      && nvram_invmatch (wl_mode, "b-only"))
+	      && nvram_invmatch (wl_mode, "b-only")
+	      && nvram_invmatch (wl_mode, "bg-mixed"))
 	    continue;
 	}
 
