@@ -188,6 +188,10 @@ ifeq ($(CONFIG_NEWMEDIA),y)
 	cp -f nmn/nmn_logo.png $(INSTALLDIR)/www/style/logo.png
 endif
 
+ifeq ($(CONFIG_SPUTNIK),y)
+	cp -f sputnik/logo.png $(INSTALLDIR)/www/style
+endif
+
 ifeq ($(CONFIG_GGEW),y)
 	cp -f ggew/logo.png $(INSTALLDIR)/www/style/logo.png
 endif
