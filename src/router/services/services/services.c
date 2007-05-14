@@ -1120,14 +1120,23 @@ start_cron (void)
 
   /* Additional options */
   FILE *fp;
+  int i = 0;
   unlink ("/tmp/cron.d/cron_jobs");
-
+  
   if (nvram_invmatch ("cron_jobs", ""))
     {
       fp = fopen ("/tmp/cron.d/cron_jobs", "w");
+      char *cron_job = nvram_safe_get ("cron_jobs");
 
-      fprintf (fp, "%s\n", nvram_safe_get ("cron_jobs"));
-
+      do
+		{
+	  	if (cron_job[i] != 0x0D)  //strip dos CRs
+	    	fprintf (fp, "%c", cron_job[i]);
+		}
+      while (cron_job[++i]);
+	      
+	  fprintf (fp, "\n");  //extra new line at the end
+ 
       fclose (fp);
     }
 
