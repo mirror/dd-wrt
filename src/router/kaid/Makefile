@@ -18,8 +18,8 @@ include $(TOP)/.config
 CFLAGS	+= -s $(COPTS)
 #LDFLAGS	+= -L$(TOP)/nvram -lnvram -L$(TOP)/shared -lshared
 ifneq ($(CONFIG_LIBCPP),y)
-PRE_CFLAGS = -static
-STATIC = -static
+export PRE_CFLAGS:= -static
+export STATIC:= -static
 endif
 
 
