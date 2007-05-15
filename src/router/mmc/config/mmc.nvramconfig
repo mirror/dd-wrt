@@ -5,4 +5,3 @@
  "mmc_do" "data out" "RANGE"  "0"  "9"  "FALSE" "0"
  "mmc_clk" "clock" "RANGE"  "0"  "9"  "FALSE" "0"
  "mmc_cs" "chip select" "RANGE"  "0"  "9"  "FALSE" "0"
- 
