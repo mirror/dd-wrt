@@ -149,7 +149,9 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.cron_enable, 'idcron', <% nvram_else_match("cron_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.samba_mount, 'idsamba', <% nvram_else_match("samba_mount", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.enable_jffs2, 'idjffs2', <% nvram_else_match("enable_jffs2", "1", "1", "0"); %> == 1);
-
+	show_layer_ext(document.setup.mmc_enable0, 'idmmc', <% nvram_else_match("mmc_enable0", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.mmc_gpio, 'idmmcgpio', <% nvram_else_match("mmc_gpio", "1", "1", "0"); %> == 1);
+	
 	update = new StatusbarUpdate();
 	update.start();
 	
