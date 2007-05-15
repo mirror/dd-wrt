@@ -56,7 +56,7 @@ start_mmc (void)
      	  sprintf (ddclk, "DDCLK=0x%X", 1 << mmc_clk);     	  
      	  sprintf (ddcs, "DDCS0=0x%X", 1 << mmc_cs);
      	 
-     	 if (mmc_di && mmc_do && mmc_clk && mmc_cs)  //eval only if not all 0  
+     	 if ((mmc_di + mmc_do + mmc_clk + mmc_cs) > 5)  //eval only if at least 0, 1, 2, 3
      	 	{     	  
 			 syslog (LOG_DEBUG, "MMC: starting, %s, %s, %s, %s\n", dddi, dddo, ddclk, ddcs);
 	     	 res = eval("insmod","mmc", dddi, dddo, ddclk, ddcs);  //eval("insmod","mmc", "DDDI=0x04", "DDDO=0x10", "DDCLK=0x08", "DDCS=0x80");
