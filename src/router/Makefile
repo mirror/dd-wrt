@@ -260,6 +260,7 @@ ifneq ($(CONFIG_JFFS2),y)
 endif
 	rm -f $(TARGETDIR)/usr/lib/libpcap.so
 	mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/*.o		
+	cp ./mmc/mmc.o $(TARGETDIR)/lib/modules/$(LINUXVER)
         # Prepare filesystem
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
         # Make sure mksquashfs-2.0 is used
