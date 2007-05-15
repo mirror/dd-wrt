@@ -15,58 +15,14 @@
 		<div id="idmmcgpio">		
 			<div class="setting">
 				<div class="label"><% tran("management.mmc_gpiopins"); %></div>
-				&nbsp;&nbsp;DI:
-				<select name="mmc_di">
-					<option value="0" <% nvram_selected("mmc_di", "0"); %>> 0</option>"
-					<option value="1" <% nvram_selected("mmc_di", "1"); %>> 1</option>"
-					<option value="2" <% nvram_selected("mmc_di", "2"); %>> 2</option>"
-					<option value="3" <% nvram_selected("mmc_di", "3"); %>> 3</option>"
-					<option value="4" <% nvram_selected("mmc_di", "4"); %>> 4</option>"
-					<option value="5" <% nvram_selected("mmc_di", "5"); %>> 5</option>"
-					<option value="6" <% nvram_selected("mmc_di", "6"); %>> 6</option>"
-					<option value="7" <% nvram_selected("mmc_di", "7"); %>> 7</option>"
-					<option value="8" <% nvram_selected("mmc_di", "8"); %>> 8</option>"
-					<option value="9" <% nvram_selected("mmc_di", "9"); %>> 9</option>"
-				</select>
-				&nbsp;&nbsp;D0:
-				<select name="mmc_do">
-					<option value="0" <% nvram_selected("mmc_do", "0"); %>> 0</option>"
-					<option value="1" <% nvram_selected("mmc_do", "1"); %>> 1</option>"
-					<option value="2" <% nvram_selected("mmc_do", "2"); %>> 2</option>"
-					<option value="3" <% nvram_selected("mmc_do", "3"); %>> 3</option>"
-					<option value="4" <% nvram_selected("mmc_do", "4"); %>> 4</option>"
-					<option value="5" <% nvram_selected("mmc_do", "5"); %>> 5</option>"
-					<option value="6" <% nvram_selected("mmc_do", "6"); %>> 6</option>"
-					<option value="7" <% nvram_selected("mmc_do", "7"); %>> 7</option>"
-					<option value="8" <% nvram_selected("mmc_do", "8"); %>> 8</option>"
-					<option value="9" <% nvram_selected("mmc_do", "9"); %>> 9</option>"
-				</select>
-				&nbsp;&nbsp;CLK:
-				<select name="mmc_clk">
-					<option value="0" <% nvram_selected("mmc_clk", "0"); %>> 0</option>"
-					<option value="1" <% nvram_selected("mmc_clk", "1"); %>> 1</option>"
-					<option value="2" <% nvram_selected("mmc_clk", "2"); %>> 2</option>"
-					<option value="3" <% nvram_selected("mmc_clk", "3"); %>> 3</option>"
-					<option value="4" <% nvram_selected("mmc_clk", "4"); %>> 4</option>"
-					<option value="5" <% nvram_selected("mmc_clk", "5"); %>> 5</option>"
-					<option value="6" <% nvram_selected("mmc_clk", "6"); %>> 6</option>"
-					<option value="7" <% nvram_selected("mmc_clk", "7"); %>> 7</option>"
-					<option value="8" <% nvram_selected("mmc_clk", "8"); %>> 8</option>"
-					<option value="9" <% nvram_selected("mmc_clk", "9"); %>> 9</option>"
-				</select>
-				&nbsp;&nbsp;CS:
-				<select name="mmc_cs">
-					<option value="0" <% nvram_selected("mmc_cs", "0"); %>> 0</option>"
-					<option value="1" <% nvram_selected("mmc_cs", "1"); %>> 1</option>"
-					<option value="2" <% nvram_selected("mmc_cs", "2"); %>> 2</option>"
-					<option value="3" <% nvram_selected("mmc_cs", "3"); %>> 3</option>"
-					<option value="4" <% nvram_selected("mmc_cs", "4"); %>> 4</option>"
-					<option value="5" <% nvram_selected("mmc_cs", "5"); %>> 5</option>"
-					<option value="6" <% nvram_selected("mmc_cs", "6"); %>> 6</option>"
-					<option value="7" <% nvram_selected("mmc_cs", "7"); %>> 7</option>"
-					<option value="8" <% nvram_selected("mmc_cs", "8"); %>> 8</option>"
-					<option value="9" <% nvram_selected("mmc_cs", "9"); %>> 9</option>"
-				</select>
+				DI:
+               <input class="num" name="mmc_di" size="2" maxlength="1" onblur="valid_range(this,0,9,management.mmc_gpiopins)" value='<% nvram_selget("mmc_di"); %>' />
+				&nbsp;&nbsp;&nbsp;D0:
+               <input class="num" name="mmc_do" size="2" maxlength="1" onblur="valid_range(this,0,9,management.mmc_gpiopins)" value='<% nvram_selget("mmc_do"); %>' />
+				&nbsp;&nbsp;&nbsp;CLK:
+               <input class="num" name="mmc_clk" size="2" maxlength="1" onblur="valid_range(this,0,9,management.mmc_gpiopins)" value='<% nvram_selget("mmc_clk"); %>' />
+				&nbsp;&nbsp;&nbsp;CS:
+               <input class="num" name="mmc_cs" size="2" maxlength="1" onblur="valid_range(this,0,9,management.mmc_gpiopins)" value='<% nvram_selget("mmc_cs"); %>' />
 			</div>
 		</div>	
 		<div class="setting">
