@@ -12,7 +12,7 @@ start_mmc (void)
 {
   if (nvram_match ("mmc_enable", "1"))
     {
-      int res;
+      int res = 1;
       int mmc_di = 0, mmc_do = 0, mmc_clk = 0, mmc_cs = 0;
       char dddi[16], dddo[16], ddclk[16], ddcs[16];
       
@@ -54,7 +54,7 @@ start_mmc (void)
      	  sprintf (dddi, "DDDI=0x%X", 1 << mmc_di);
      	  sprintf (dddo, "DDDO=0x%X", 1 << mmc_do);
      	  sprintf (ddclk, "DDCLK=0x%X", 1 << mmc_clk);     	  
-     	  sprintf (ddcs, "DDCS0=0x%X", 1 << mmc_cs);
+     	  sprintf (ddcs, "DDCS=0x%X", 1 << mmc_cs);
      	 
      	 if ((mmc_di + mmc_do + mmc_clk + mmc_cs) > 5)  //eval only if at least 0, 1, 2, 3
      	 	{     	  
@@ -101,6 +101,7 @@ start_mmc (void)
 	}
     }
 }
+
 #endif
 
 
