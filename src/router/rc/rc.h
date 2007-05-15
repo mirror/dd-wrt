@@ -241,6 +241,10 @@ extern int start_pptpd (void);
 extern int stop_pptpd (void);
 #endif
 
+#ifdef HAVE_MMC
+extern void start_mmc (void);
+#endif
+
 #ifdef HAVE_SNMP
 extern int start_snmp (void);
 extern int stop_snmp (void);
