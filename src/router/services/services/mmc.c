@@ -4,6 +4,8 @@
 #include <utils.h>
 #include <sys/mount.h>
 #include <syslog.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 void
 start_mmc (void)
