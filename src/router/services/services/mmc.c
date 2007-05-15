@@ -3,6 +3,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <sys/mount.h>
+#include <syslog.h>
 
 void
 start_mmc (void)
@@ -26,7 +27,7 @@ start_mmc (void)
         	{
         	case ROUTER_WRT54G:
         		if (nvram_match ("boardtype", "0x0467")) //v4 or GL
-        		  mmc_di=2;
+        		  mmc_di = 2;
         		else	
         		  mmc_di = 5;
 				mmc_do = 4;
@@ -51,10 +52,13 @@ start_mmc (void)
      	  sprintf (dddi, "DDDI=0x%X", 1 << mmc_di);
      	  sprintf (dddo, "DDDO=0x%X", 1 << mmc_do);
      	  sprintf (ddclk, "DDCLK=0x%X", 1 << mmc_clk);     	  
-     	  sprintf (ddsc, "DDCS0=0x%X", 1 << mmc_cs);
+     	  sprintf (ddcs, "DDCS0=0x%X", 1 << mmc_cs);
      	 
-     	 if (mmc_di && mmc_do && mmc_clk && mmc_cs)  //eval only if not all 0       	  
-     	 	res = eval("insmod","mmc", dddi, dddo, ddclk, ddcs);  //eval("insmod","mmc", "DDDI=0x04", "DDDO=0x10", "DDCLK=0x08", "DDCS=0x80");
+     	 if (mmc_di && mmc_do && mmc_clk && mmc_cs)  //eval only if not all 0  
+     	 	{     	  
+			 syslog (LOG_DEBUG, "MMC: starting, %s, %s, %s, %s\n", dddi, dddo, ddclk, ddcs);
+	     	 res = eval("insmod","mmc", dddi, dddo, ddclk, ddcs);  //eval("insmod","mmc", "DDDI=0x04", "DDDO=0x10", "DDCLK=0x08", "DDCS=0x80");
+     	    }
  
      	     
 /*      res = eval ("insmod", "mmc"); */     
