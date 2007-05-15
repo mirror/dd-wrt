@@ -1575,6 +1575,13 @@ struct nvram_tuple srouter_defaults[] = {
   {"macupd_interval", "10", 0},
   {"mmc_enable", "0", 0},
   {"mmc_enable0", "0", 0},
+#ifdef HAVE_MMC
+  {"mmc_gpio", "0", 0},
+  {"mmc_di", "0", 0},
+  {"mmc_do", "0", 0},
+  {"mmc_clk", "0", 0},
+  {"mmc_cs", "0", 0},    
+#endif
 #ifdef HAVE_RB500
   {"ip_conntrack_max", "32768", 0},
 #elif HAVE_XSCALE
