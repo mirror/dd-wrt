@@ -57,11 +57,12 @@ start_mmc (void)
      	  sprintf (ddcs, "DDCS=0x%X", 1 << mmc_cs);
      	 
      	 if ((mmc_di + mmc_do + mmc_clk + mmc_cs) > 5)  //eval only if at least 0, 1, 2, 3
-     	 	{     	  
-			 syslog (LOG_DEBUG, "MMC: starting, %s, %s, %s, %s\n", dddi, dddo, ddclk, ddcs);
 	     	 res = eval("insmod","mmc", dddi, dddo, ddclk, ddcs);  //eval("insmod","mmc", "DDDI=0x04", "DDDO=0x10", "DDCLK=0x08", "DDCS=0x80");
-     	    }
  
+     	 if (!res)
+     	 	syslog (LOG_DEBUG, "MMC started on gpio: DI=%d, DO=%d, CLK=%d, CS=%d\n", mmc_di, mmc_do, mmc_clk, mmc_cs);
+     	 else
+     	 	syslog (LOG_DEBUG, "MMC not detected");
      	     
 /*      res = eval ("insmod", "mmc"); */     
       
