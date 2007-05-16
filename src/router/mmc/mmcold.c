@@ -718,55 +718,15 @@ mmc_init (void)
 
     if (rc != 0)
     {
-        SD_DI = SD_DIV4;		//try second one
-        rc = mmc_hardware_init ();
-        if (rc != 0)
-        {
-            SD_DI = SD_DIBUF;		//try second one
-            rc = mmc_hardware_init ();
-            if (rc != 0)
-            {
-                printk ("mmc: error in mmc_hardware_init (%d)\n", rc);
-                return -1;
-            }
-        }
+        printk ("mmc: error in mmc_hardware_init (%d)\n", rc);
+        return -1;
     }
 
     rc = mmc_card_init ();
     if (rc != 0)
     {
-        // Give v1 an extra shot
-        rc = mmc_card_init ();
-        if (rc != 0)
-        {
-            printk ("mmc: Device does not use v1 GPIO layout, trying to use v4 layout\n");
-            SD_DI = SD_DIV4;	//try v4 layout
-            mmc_hardware_init ();
-            rc = mmc_card_init ();
-            if (rc != 0)
-            {
-                //give v4 an extra shot
-                rc = mmc_card_init ();
-                if (rc != 0)
-                {
-                    printk ("mmc: Device does not use v4 layout, trying to use Buffalo layout\n");
-                    SD_DI = SD_DIBUF;	//try buffalo
-                    SD_DO = SD_DOBUF; //set buffalo data out
-                    mmc_hardware_init ();
-                    rc = mmc_card_init ();
-                    if (rc != 0)
-                    {
-                        //give Buffalo an extra shot
-                        rc = mmc_card_init ();
-                        if (rc != 0)
-                        {
-                            printk ("mmc: This board has no MMC mod installed!\n");
-                            return -1;
-                        }
-                    }
-                }
-            }
-        }
+        printk ("mmc: This board has no MMC mod installed!\n");
+        return -1;
     }
 
     memset (hd_sizes, 0, sizeof (hd_sizes));
@@ -838,7 +798,6 @@ mmc_check_media (void)
 static int
 mmc_driver_init (void)
 {
-
 
     int rc;
 
