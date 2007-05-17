@@ -28,11 +28,14 @@ static int DDCS = -1;
 
 MODULE_AUTHOR ("Madsuk/Rohde & Sebastian Gottschall (autodetection for newer models)");
 MODULE_DESCRIPTION ("Driver MMC/SD-Cards");
-MODULE_SUPPORTED_DEVICE ("WRT54G, WHR-HP, WHR-G54S, ASUS");
+MODULE_SUPPORTED_DEVICE ("WRT54G, WHR-HP, WHR-G54S, WL-500GD");
 MODULE_LICENSE ("GPL");
 
 /* Tornado & Eko - MODULE_PARM added for user defined GPIO's
 Usage - insmod mmc DDDI=0x04 DDDO=0x10 DDCLK=0x08 DDCS=0x80 */
+
+//16.May.07 - Eko - more cleanup
+//17.May.07 - Eko - loops inversion: gain 0.5% speed :(
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,5,52))
 MODULE_PARM(DDDI,"i");
@@ -53,24 +56,14 @@ MODULE_PARM_DESC(DDCLK, "GPIO CLK Value");
 MODULE_PARM_DESC(DDCS, "GPIO CS Value.");
 
 
-//#define SD_DI 0x04
-//#define SD_DO 0x10
-//#define SD_CLK 0x08
-//#define SD_CS 0x80
-
-
-#define SD_DIV1 0x20
-#define SD_DIV4 0x04
-#define SD_DIBUF 0x20
-#define SD_DOWRT 0x10
-#define SD_DOBUF 0x40
+#define SD_DI_TMP 0x04
+#define SD_DO_TMP 0x10
 #define SD_CLK_TMP 0x08
 #define SD_CS_TMP 0x80
-//#define SD_CLK 0x08
-//#define SD_CS 0x80
 
-static int SD_DI = SD_DIV1;
-static int SD_DO = SD_DOWRT;
+
+static int SD_DI = SD_DI_TMP;
+static int SD_DO = SD_DO_TMP;
 static int SD_CLK = SD_CLK_TMP;
 static int SD_CS = SD_CS_TMP;
 
@@ -169,7 +162,7 @@ mmc_spi_i (void)
 
     port_state |= SD_DI;
 
-    for (i = 0; i < 8; i++)
+    for (i = 8; i; i--)
     {
         *gpioaddr_output = port_state;
 
@@ -204,15 +197,16 @@ mmc_write_block (unsigned int dest_addr, unsigned char *data)
     ab1 = 0xff & (address >> 8);
     ab0 = 0xff & address;
     mmc_spi_cs_low ();
-    for (i = 0; i < 4; i++)
+    for (i = 4; i; i--)
         mmc_spi_io (0xff);
+
     mmc_spi_io (0x58);
     mmc_spi_io (ab3);		/* msb */
     mmc_spi_io (ab2);
     mmc_spi_io (ab1);
     mmc_spi_io (ab0);		/* lsb */
     mmc_spi_io (0xff);
-    for (i = 0; i < 8; i++)
+    for (i = 8; i; i--)
     {
         r = mmc_spi_io (0xff);
         if (r == 0x00)
@@ -226,12 +220,12 @@ mmc_write_block (unsigned int dest_addr, unsigned char *data)
     }
 
     mmc_spi_io (0xfe);
-    for (i = 0; i < 512; i++)
+    for (i = 512; i; i--)
         mmc_spi_o (*data++);
-    for (i = 0; i < 2; i++)
+    for (i = 2; i; i--)
         mmc_spi_io (0xff);
 
-    for (i = 0; i < 1000000; i++)
+    for (i = 1000000; i; i--)
     {
         r = mmc_spi_io (0xff);
         if (r == 0xff)
@@ -264,7 +258,7 @@ mmc_read_block (unsigned char *data, unsigned int src_addr)
     ab0 = 0xff & address;
 
     mmc_spi_cs_low ();
-    for (i = 0; i < 4; i++)
+    for (i = 4; i; i--)
         mmc_spi_io (0xff);
     mmc_spi_io (0x51);
     mmc_spi_io (ab3);		/* msb */
@@ -273,7 +267,7 @@ mmc_read_block (unsigned char *data, unsigned int src_addr)
     mmc_spi_io (ab0);		/* lsb */
 
     mmc_spi_io (0xff);
-    for (i = 0; i < 8; i++)
+    for (i = 8; i; i--)
     {
         r = mmc_spi_io (0xff);
         if (r == 0x00)
@@ -285,7 +279,7 @@ mmc_read_block (unsigned char *data, unsigned int src_addr)
         mmc_spi_io (0xff);
         return (1);
     }
-    for (i = 0; i < 100000; i++)
+    for (i = 100000; i; i--)
     {
         r = mmc_spi_io (0xff);
         if (r == 0xfe)
@@ -297,11 +291,11 @@ mmc_read_block (unsigned char *data, unsigned int src_addr)
         mmc_spi_io (0xff);
         return (2);
     }
-    for (i = 0; i < 512; i++)
+    for (i = 512; i; i--)
     {
         *data++ = mmc_spi_i ();
     }
-    for (i = 0; i < 2; i++)
+    for (i = 2; i; i--)
     {
         r = mmc_spi_io (0xff);
     }
@@ -487,16 +481,16 @@ mmc_card_init (void)
     cli ();
 
     mmc_spi_cs_high ();
-    for (i = 0; i < 20; i++)
+    for (i = 20; i; i--)
         mmc_spi_io (0xff);
 
     mmc_spi_cs_low ();
 
     mmc_spi_io (0x40);
-    for (i = 0; i < 4; i++)
+    for (i = 4; i; i--)
         mmc_spi_io (0x00);
     mmc_spi_io (0x95);
-    for (i = 0; i < 8; i++)
+    for (i = 8; i; i--)
     {
         r = mmc_spi_io (0xff);
         if (r == 0x01)
@@ -510,15 +504,15 @@ mmc_card_init (void)
         return (1);
     }
 
-    for (j = 0; j < 10000; j++)
+    for (j = 10000; j; j--)
     {
         mmc_spi_cs_low ();
 
         mmc_spi_io (0x41);
-        for (i = 0; i < 4; i++)
+        for (i = 4; i; i--)
             mmc_spi_io (0x00);
         mmc_spi_io (0xff);
-        for (i = 0; i < 8; i++)
+        for (i = 8; i; i--)
         {
             r = mmc_spi_io (0xff);
             if (r == 0x00)
@@ -553,13 +547,13 @@ mmc_card_config (void)
     unsigned int size = 0;
 
     mmc_spi_cs_low ();
-    for (i = 0; i < 4; i++)
+    for (i = 4; i; i--)
         mmc_spi_io (0xff);
     mmc_spi_io (0x49);
-    for (i = 0; i < 4; i++)
+    for (i = 4; i; i--)
         mmc_spi_io (0x00);
     mmc_spi_io (0xff);
-    for (i = 0; i < 8; i++)
+    for (i = 8; i; i--)
     {
         r = mmc_spi_io (0xff);
         if (r == 0x00)
@@ -571,7 +565,7 @@ mmc_card_config (void)
         mmc_spi_io (0xff);
         return (1);
     }
-    for (i = 0; i < 8; i++)
+    for (i = 8; i; i--)
     {
         r = mmc_spi_io (0xff);
         if (r == 0xfe)
@@ -588,7 +582,7 @@ mmc_card_config (void)
         r = mmc_spi_io (0xff);
         csd[i] = r;
     }
-    for (i = 0; i < 2; i++)
+    for (i = 2; i; i--)
     {
         r = mmc_spi_io (0xff);
     }
@@ -715,19 +709,14 @@ mmc_init (void)
     int rc;
 
     rc = mmc_hardware_init ();
-
+	if (rc != 0)
+		rc = mmc_hardware_init (); //another shot
+		
+	rc = mmc_card_init ();
     if (rc != 0)
-    {
-        printk ("mmc: error in mmc_hardware_init (%d)\n", rc);
-        return -1;
-    }
-
-    rc = mmc_card_init ();
-    if (rc != 0)
-    {
-        printk ("mmc: This board has no MMC mod installed!\n");
-        return -1;
-    }
+    	rc = mmc_card_init ();  //another shot
+    	
+    	
 
     memset (hd_sizes, 0, sizeof (hd_sizes));
     rc = mmc_card_config ();
@@ -769,7 +758,7 @@ static int
 mmc_check_media (void)
 {
     int old_state;
-    int rc=0;
+    int rc = 0;
 
     old_state = mmc_media_detect;
 
@@ -799,6 +788,7 @@ static int
 mmc_driver_init (void)
 {
 
+
     int rc;
 
     if (DDDI != -1)
@@ -813,11 +803,7 @@ mmc_driver_init (void)
     if (DDCS != -1)
         SD_CS = DDCS;
 
-    printk("SD_DI is 0x%x DDDI is 0x%x\n", SD_DI, DDDI);
-    printk("SD_DO is 0x%x DDDO is 0x%x\n", SD_DO, DDDO);
-    printk("SD_CLK is 0x%x DDCLK is 0x%x\n", SD_CLK, DDCLK);
-    printk("SD_CS is 0x%x DDCS is 0x%x\n", SD_CS, DDCS);
-
+    printk("mmc: starting module with: SD_DI=0x%x, SD_DO=0x%x, SD_CLK=0x%x, SD_CS=0x%x\n", SD_DI, SD_DO, SD_CLK, SD_CS);
 
     rc = devfs_register_blkdev (MAJOR_NR, DEVICE_NAME, &mmc_bdops);
     if (rc < 0)
