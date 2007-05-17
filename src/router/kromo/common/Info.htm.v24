@@ -410,6 +410,16 @@ apply();
 									//]]>
 									</script>
 								</div>
+								
+								<div class="setting">
+									<div class="label">MMC</div>
+									<script type="text/javascript">
+									//<![CDATA[
+									<% statfs("/mmc", "mmc"); %>
+									document.write( ((<% nvram_get("mmc_enable0"); %>) && (mmc.size)) ? (scaleSize(mmc.size) + ' / ' + scaleSize(mmc.free)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
+									//]]>
+									</script>
+								</div>
 							</fieldset><br />
 							
 						</div><br clear="all" />
