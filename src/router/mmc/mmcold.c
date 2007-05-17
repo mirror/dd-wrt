@@ -711,20 +711,31 @@ mmc_init (void)
     rc = mmc_hardware_init ();
 	if (rc != 0)
 		rc = mmc_hardware_init (); //another shot
-		
+	
+	if (rc != 0)
+		{
+		printk ("mmc: error in mmc_hardware_init (%d)\n", rc); 
+ 		return -1; 
+		}
+			
 	rc = mmc_card_init ();
     if (rc != 0)
     	rc = mmc_card_init ();  //another shot
-    	
-    	
+
+	if (rc != 0)
+		{
+		printk ("mmc: this board has no MMC mod installed!\n", rc); 
+ 		return -1; 
+		}    	
 
     memset (hd_sizes, 0, sizeof (hd_sizes));
     rc = mmc_card_config ();
+
     if (rc != 0)
-    {
+    	{
         printk ("mmc: error in mmc_card_config (%d)\n", rc);
         return -1;
-    }
+    	}
 
 
     blk_size[MAJOR_NR] = hd_sizes;
