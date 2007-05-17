@@ -3,7 +3,6 @@
 #include <shutils.h>
 #include <utils.h>
 #include <sys/mount.h>
-#include <syslog.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -58,11 +57,8 @@ start_mmc (void)
      	 
      	 if ((mmc_di + mmc_do + mmc_clk + mmc_cs) > 5)  //eval only if at least 0, 1, 2, 3
 	     	 res = eval("insmod","mmc", dddi, dddo, ddclk, ddcs);  //eval("insmod","mmc", "DDDI=0x04", "DDDO=0x10", "DDCLK=0x08", "DDCS=0x80");
- 
-     	 if (!res)
-     	 	syslog (LOG_DEBUG, "MMC started on gpio: DI=%d, DO=%d, CLK=%d, CS=%d\n", mmc_di, mmc_do, mmc_clk, mmc_cs);
-     	 else
-     	 	syslog (LOG_DEBUG, "MMC not detected");
+
+	     	 
      	     
 /*      res = eval ("insmod", "mmc"); */     
       
