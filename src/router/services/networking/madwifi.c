@@ -1676,6 +1676,8 @@ configure_single (int count)
     }
     else
     {
+      char bridged[32];
+      sprintf (bridged, "%s_bridged", dev);
       if (default_match (bridged, "0", "1") && strcmp(getSTA(),dev))
         {
 	  char ip[32];
