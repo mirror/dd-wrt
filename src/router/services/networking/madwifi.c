@@ -1674,6 +1674,17 @@ configure_single (int count)
 	  ifconfig (dev, IFUP, nvram_safe_get (ip), nvram_safe_get (mask));
 	}
     }
+    else
+    {
+      if (default_match (bridged, "0", "1") && strcmp(getSTA(),dev))
+        {
+	  char ip[32];
+	  char mask[32];
+	  sprintf (ip, "%s_ipaddr", dev);
+	  sprintf (mask, "%s_netmask", dev);
+	  ifconfig (dev, IFUP, nvram_safe_get (ip), nvram_safe_get (mask));	
+	}
+    }
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
     setupHostAP (dev, 0);
   else
