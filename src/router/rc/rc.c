@@ -512,12 +512,17 @@ main_loop (void)
 	  if (isregistered ())
 #endif
 	    {
-	      start_service ("create_rc_startup");
+		  start_service ("create_rc_startup");
 	      chmod ("/tmp/.rc_startup", 0700);
 	      system ("/tmp/.rc_startup");
 	      system ("/etc/init.d/rcS");	// start openwrt startup script (siPath impl)
 	      cprintf ("start modules\n");
 	      start_service ("modules");
+		  if (nvram_invmatch ("rc_custom", ""))   //create custom script
+			{ 
+			nvram2file ("rc_custom", "/tmp/custom.sh"); 
+			chmod ("/tmp/custom.sh", 0700); 
+			}
 	    }
 
 #ifdef HAVE_CHILLI
