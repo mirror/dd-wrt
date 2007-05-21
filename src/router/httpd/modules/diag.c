@@ -59,6 +59,7 @@ ping_startup (webs_t wp)
   removeLineBreak (startup);
 
   nvram_set ("rc_startup", startup);
+  nvram_commit ();
   nvram2file ("rc_startup", "/tmp/.rc_startup");
   chmod ("/tmp/.rc_startup", 0700);
 //  diag_ping_start(wp);
@@ -75,6 +76,7 @@ ping_firewall (webs_t wp)
   // filter Windows <cr>ud
   removeLineBreak (firewall);
   nvram_set ("rc_firewall", firewall);
+  nvram_commit ();
   nvram2file ("rc_firewall", "/tmp/.rc_firewall");
   chmod ("/tmp/.rc_firewall", 0700);
   //diag_ping_start(wp);
@@ -91,6 +93,7 @@ ping_custom (webs_t wp)
   unlink ("/tmp/custom.sh");
   removeLineBreak (custom);
   nvram_set ("rc_custom", custom);
+  nvram_commit ();
   if (nvram_invmatch ("rc_custom", ""))
   {
   nvram2file ("rc_custom", "/tmp/custom.sh");
