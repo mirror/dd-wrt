@@ -109,7 +109,7 @@ getAuthMode (char *prefix)
 {
   char akm[32];
   sprintf (akm, "%s_akm", prefix);
-  if (nvram_match (akm, "disabled") || nvram_get (akm) == NULL
+  if (nvram_match (akm, "disabled") || (nvram_match (akm, "wep") || nvram_get (akm) == NULL
       || strlen (nvram_safe_get (akm)) == 0)
     return NULL;
   if (nvram_match (akm, "radius"))
