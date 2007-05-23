@@ -67,7 +67,6 @@ search_process (char *name, int count)
 {
   int c = 0;
 
-
   c = count_processes (name);
   if (!c)
     {
@@ -85,7 +84,34 @@ search_process (char *name, int count)
       return 1;
     }
 }
-void checkupgrade(void)
+
+void checknas (void)  //for broadcom v24 only
+{
+#ifndef HAVE_MADWIFI
+#ifdef HAVE_MSSID
+
+	char buf[32];
+	FILE *fnas = fopen ("/tmp/.nas", "r");
+	
+	if (fnas == NULL)
+		return;
+
+	fgets (buf, sizeof (buf), fnas);
+	fclose (fnas);
+
+	if (strlen (buf) != count_processes ("nas"))  //restart all nas processes
+		{
+		stop_service ("nas");
+		start_service ("nas");
+		}
+		
+	return;
+	 
+#endif
+#endif	
+}
+
+void checkupgrade (void)
 {
 #ifndef HAVE_X86
 FILE *in=fopen("/tmp/firmware.bin","rb");
@@ -109,7 +135,8 @@ int
 do_mon (void)
 {
   struct mon *v;
-  checkupgrade();
+  checkupgrade ();
+  checknas ();
   void *handle = load_service (NULL);
   if (!handle)
     return 1;
