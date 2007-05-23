@@ -239,6 +239,9 @@ start_nas_wan (void)
 int
 start_nas (void)
 {
+#ifdef HAVE_MSSID
+	unlink ("/tmp/.nas");
+#endif
   if (nvram_match ("wl0_mode", "sta")
       || nvram_match ("wl0_mode", "wet")
       || nvram_match ("wl0_mode", "apsta")
@@ -259,7 +262,9 @@ start_nas (void)
 int
 start_nas_single (char *type, char *prefix)
 {
-
+#ifdef HAVE_MSSID
+	FILE *fnas;
+#endif
 #ifdef HAVE_NASCONF
   char conffile[64];
   FILE *conf;
@@ -327,16 +332,22 @@ start_nas_single (char *type, char *prefix)
     if (0 == strcmp (nvram_safe_get (apmode), "ap"))
       {
 	mode = "-A";
-	syslog (LOG_INFO,
-		"NAS : NAS lan (%s interface) successfully started\n",
-		prefix);
+	syslog (LOG_INFO, "NAS : NAS lan (%s interface) successfully started\n", prefix);
+#ifdef HAVE_MSSID
+	fnas = fopen ("/tmp/.nas", "a");
+	fputc ('L', fnas);  //L as LAN
+	fclose (fnas); 
+#endif
       }
     else
       {
 	mode = "-S";
-	syslog (LOG_INFO,
-		"NAS : NAS wan (%s interface) successfully started\n",
-		prefix);
+	syslog (LOG_INFO, "NAS : NAS wan (%s interface) successfully started\n", prefix);
+#ifdef HAVE_MSSID
+	fnas = fopen ("/tmp/.nas", "a");
+	fputc ('W', fnas);  //W as WAN
+	fclose (fnas); 
+#endif
       }
 
     char rekey[32];
@@ -465,7 +476,6 @@ stop_nas (void)
 
   while (pidof ("nas") > 0)
     {
-      syslog (LOG_INFO, "NAS : NAS daemon successfully stopped\n");
       /* NAS sometimes won't exit properly on a normal kill */
       //int ret = killps("nas",NULL);
       ret = killall ("nas", SIGTERM);
@@ -474,7 +484,12 @@ stop_nas (void)
       killall ("nas", SIGKILL);
     }
     
+    syslog (LOG_INFO, "NAS : NAS daemon successfully stopped\n");
+    
 // clean
+#ifdef HAVE_MSSID
+	unlink ("/tmp/.nas");
+#endif
 	unlink ("/tmp/nas.wl0wan.pid");
 	unlink ("/tmp/nas.wl0lan.pid");
 #ifdef HAVE_NASCONF
