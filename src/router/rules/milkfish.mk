@@ -24,6 +24,7 @@ milkfish-install:
 	install -m0755 milkfish/usr/sbin/mf_sip_tracer.sh $(INSTALLDIR)/milkfish/usr/sbin
 	install -d -m0755 $(INSTALLDIR)/milkfish/usr/lib
 	install -m0644 milkfish/usr/lib/milkfish_functions.sh $(INSTALLDIR)/milkfish/usr/lib/
-	install -D  milkfish/etc/config/mmc.nvramconfig $(INSTALLDIR)/milkfish/etc/config/mmc.nvramconfig
+	install -D  milkfish/etc/config/milkfish.nvramconfig $(INSTALLDIR)/milkfish/etc/config/milkfish.nvramconfig
+	
 milkfish-clean:
 	rm -rf $(INSTALLDIR)/milkfish/*
