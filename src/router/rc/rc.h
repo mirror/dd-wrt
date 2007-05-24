@@ -99,6 +99,11 @@ extern int start_splashd (void);
 extern int stop_splashd (void);
 #endif
 
+#ifdef HAVE_MILKFISH
+extern void start_milkfish (void);
+extern void stop_milkfish (void);
+#endif
+
 /* lonewolf mods */
 extern int flush_interfaces (void);
 extern int start_nonstd_interfaces (void);
