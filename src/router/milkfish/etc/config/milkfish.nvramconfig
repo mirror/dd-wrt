@@ -1,0 +1,9 @@
+ "milkfish_enabled" "enable Milkfish" "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "milkfish_username" "username"  "NAME"  "255"  "TRUE" "3"
+ "milkfish_password" "passw"  "NAME"  "255"  "TRUE" "3"
+ "milkfish_fromswitch" "fromsw"   "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "milkfish_fromdomain" "from domain"  "NAME"  "255"  "TRUE" "3"
+ "milkfish_dynsip" "home sip"   "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "milkfish_homesip" "hoem sip addr"  "NAME"  "255"  "TRUE" "3"
+ "milkfish_audip" "audit"   "CHOICE" "2" "0" "1"  "FALSE" "0" 
+ 
