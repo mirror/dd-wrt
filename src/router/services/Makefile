@@ -399,6 +399,7 @@ endif
 
 ifeq ($(CONFIG_MILKFISH),y)
 CFLAGS += -DHAVE_MILKFISH
+OBJS += milkfish.o
 endif
 
 ifeq ($(CONFIG_SPUTNIK_APD),y)
