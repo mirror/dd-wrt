@@ -543,6 +543,7 @@ start_restore_defaults (void)
     case ROUTER_BUFFALO_WAPM_HP_AM54G54:
     case ROUTER_BUFFALO_WZRRSG54:
     case ROUTER_NETGEAR_WNR834B:
+    case ROUTER_ASUS_WL500G:
       linux_overrides = generic;
       break;
     case ROUTER_ASUS_WL500GD:

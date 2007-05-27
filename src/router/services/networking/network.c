@@ -1916,6 +1916,7 @@ start_wan (int status)
     case ROUTER_RT210W:
     case ROUTER_BRCM4702_GENERIC:
     case ROUTER_DELL_TRUEMOBILE_2300:
+    case ROUTER_ASUS_WL500G:
       if (!strcmp (nvram_safe_get ("pppoe_wan_ifname"), ""))
 	pppoe_wan_ifname = "eth1";
       break;
