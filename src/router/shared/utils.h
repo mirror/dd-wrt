@@ -67,7 +67,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // NMN A/B/G Router Protoype (266 Mhz Xscale, dual minipci)
 #define ROUTER_BOARD_XSCALE 0x0e01
 
-// Generic BRCM 4702 boards: Asus WL300g (fccid: Asus MSQWL300G), Asus WL500g (fccid: Asus MSQWL500G)
+// Generic BRCM 4702 boards: e.g. Asus WL300g (fccid: Asus MSQWL300G)
 #define ROUTER_BRCM4702_GENERIC 0x0f0f
 
 // Buffalo WLI_TX4_G54HP bridge
@@ -172,6 +172,10 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 // Meraki Mini (Atheros SoC, no switch, fccid: Meraki UDX-MERAKI-MINI)
 #define ROUTER_BOARD_MERAKI 0x330f
+
+// Asus WL500g (4702 cpu, fccid: Asus MSQWL500G)
+#define ROUTER_ASUS_WL500G 0x3406
+
 
 #define NVROUTER "DD_BOARD"
 
