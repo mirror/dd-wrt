@@ -1058,7 +1058,7 @@ led_control (int type, int act)
     case ROUTER_WRT300N:
       diag_gpio = 0x11;  //power led blink to indicate fac.def.
       break;
-    case ROUER_ASUS_WL500G:
+    case ROUTER_ASUS_WL500G:
       power_gpio = 0x10;
       diag_gpio = 0x00;  //power led off to indicate factory defaults
       break;
