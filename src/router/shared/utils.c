@@ -236,7 +236,7 @@ internal_getRouterBrand ()
     {
       cprintf ("router is Asus WL300g / WL500g\n");
       setRouter ("Asus WL-300g / WL-500g");
-      return ROUTER_BRCM4702_GENERIC;
+      return ROUTER_ASUS_WL500G;
     }
 
   if (boardnum == 44 && nvram_match ("boardtype", "bcm94710ap"))
@@ -1057,6 +1057,10 @@ led_control (int type, int act)
       break;
     case ROUTER_WRT300N:
       diag_gpio = 0x11;  //power led blink to indicate fac.def.
+      break;
+    case ROUER_ASUS_WL500G:
+      power_gpio = 0x10;
+      diag_gpio = 0x00;  //power led off to indicate factory defaults
       break;
     }
 
@@ -2200,6 +2204,7 @@ check_vlan_support (void)
     case ROUTER_BUFFALO_WLI2_TX1_G54:
     case ROUTER_BUFFALO_WLI_TX4_G54HP:
     case ROUTER_BRCM4702_GENERIC:
+    case ROUTER_ASUS_WL500G:
       return 0;
       break;
     }
