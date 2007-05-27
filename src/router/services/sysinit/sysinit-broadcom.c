@@ -334,6 +334,7 @@ start_sysinit (void)
       break;
 
     case ROUTER_BRCM4702_GENERIC:
+    case ROUTER_ASUS_WL500G:
       setup_4712 ();
       nvram_set ("wan_ifname", "eth1");	// fix for Belkin f5d7230 v1000 WAN problem.
       nvram_set ("wan_ifnames", "eth1");
