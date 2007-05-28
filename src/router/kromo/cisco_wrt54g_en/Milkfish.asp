@@ -81,7 +81,7 @@ addEvent(window, "unload", function() {
 		</div>
 		<div id="idmilkfish_dynsip">
 		<div class="setting">
-			<div class="label">HomeSIP Address</div>
+			<div class="label">Home SIP Address</div>
 			<input size="27" name="milkfish_homesipaddr" value="<% nvram_get("milkfish_homesipaddr"); %>" />
 		</div>
 		</div>
@@ -95,7 +95,11 @@ addEvent(window, "unload", function() {
 
 	<fieldset>
 		<legend>SIP Phonebook</legend>
-
+				<script type="text/javascript">
+				//<![CDATA[
+				document.write("<input class=\"button\" type=\"button\" value=\"Open SIP Phonebook\" onclick=\"openWindow('Milkfish_phonebook.asp', 590, 730);\" />");
+				//]]>
+				</script>
 	</fieldset>
 	
 <br />
@@ -104,6 +108,12 @@ addEvent(window, "unload", function() {
 
 	<fieldset>
 		<legend>SIP Database</legend>
+				<script type="text/javascript">
+				//<![CDATA[
+				document.write("<input class=\"button\" type=\"button\" value=\"Open SIP Database\" onclick=\"openWindow('Milkfish_database.asp', 590, 730);\" />");
+				//]]>
+				</script>
+
 
 	</fieldset>
 	
@@ -113,6 +123,12 @@ addEvent(window, "unload", function() {
 
 	<fieldset>
 		<legend>SIP Messaging</legend>
+				<script type="text/javascript">
+				//<![CDATA[
+				document.write("<input class=\"button\" type=\"button\" value=\"Open SIP Messaging\" onclick=\"openWindow('Milkfish_messaging.asp', 590, 730);\" />");
+				//]]>
+				</script>
+
 
 	</fieldset>
 	
@@ -126,7 +142,7 @@ addEvent(window, "unload", function() {
 
 	<fieldset>
 		<legend>Current Status</legend>
-
+		Here comes the SIP status...
 	</fieldset>
 	<br />
 							
