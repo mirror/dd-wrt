@@ -57,7 +57,7 @@ ifeq ($(CONFIG_WIKAR),y)
 endif
 
 ifeq ($(CONFIG_SPUTNIK_APD),y)
-	cp sputnik/*.gif $(INSTALLDIR)/www/images
+	cp sputnik/sputnik.png $(INSTALLDIR)/www/images
 endif
 ifeq ($(CONFIG_WIFIDOG),y)
 	cp wifidog/*.png $(INSTALLDIR)/www/images
