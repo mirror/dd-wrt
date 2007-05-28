@@ -9,7 +9,7 @@
 
 <body>
 
-<img class='logo' id='logo' src='images/wiviz/wiviz2logo-smaller.gif' height=75 width=207>
+<img class='logo' id='logo' src='images/wiviz/wiviz2logo-smaller.png' height=75 width=207>
 
 <div class='mainarea' id='mainarea'>
 </div>
