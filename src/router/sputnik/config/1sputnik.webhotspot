@@ -1,7 +1,7 @@
 
 <fieldset>
 	<legend><% tran("hotspot.sputnik_legend"); %></legend>
-	<div class="center"><img src="images/sputnik.gif" alt="sputnik logo" /></div><br />
+	<div class="center"><img src="images/sputnik.png" alt="sputnik logo" /></div><br />
 	<div class="setting">
 		<div class="label"><% tran("hotspot.sputnik_srv"); %></div>
 		<input class="spaceradio" type="radio" name="apd_enable" value="1" <% nvram_checked("apd_enable", "1"); %> onclick="show_layer_ext(this, 'idsputnik', true)" /><% tran("share.enable"); %>&nbsp;
