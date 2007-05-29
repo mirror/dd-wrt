@@ -78,4 +78,24 @@ do_mssid (char *lan_ifname)
     }
   close(s);
 }
+
+void set_vifsmac(char *mac)
+{
+  struct ifreq ifr;
+  int s;
+  char *next;
+  char var[80];
+  char *vifs = nvram_safe_get ("wl0_vifs");
+  if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+    return;
+  if (vifs != NULL)
+    foreach (var, vifs, next)
+    {
+      ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
+      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+      strncpy (ifr.ifr_name, var, IFNAMSIZ);
+      ioctl (s, SIOCSIFHWADDR, &ifr);
+    }
+close(s);
+}
 #endif
