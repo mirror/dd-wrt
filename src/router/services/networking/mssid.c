@@ -30,20 +30,37 @@
 #include <bcmutils.h>
 #include <shutils.h>
 #include "libbridge.h"
+#include <net/if.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <net/if_arp.h>
+#include <linux/sockios.h>
+#include <linux/ethtool.h>
+
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 void
 do_mssid (char *lan_ifname)
 {
   //bridge the virtual interfaces too
+  struct ifreq ifr;
+  int s;
   char *next;
   char var[80];
   char *vifs = nvram_safe_get ("wl0_vifs");
+  if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+    return;
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
       char bridged[32];
       sprintf (bridged, "%s_bridged", var);
+      
+      ether_atoe (nvram_safe_get("wl0_hwaddr"), ifr.ifr_hwaddr.sa_data);
+      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+      strncpy (ifr.ifr_name, var, IFNAMSIZ);
+      ioctl (s, SIOCSIFHWADDR, &ifr);
+      
       if (nvram_match (bridged, "1"))
 	{
 	  ifconfig (var, IFUP, NULL, NULL);
@@ -59,5 +76,6 @@ do_mssid (char *lan_ifname)
 	}
       //  eval ("brctl", "addif", lan_ifname, var);
     }
+  close(s);
 }
 #endif
