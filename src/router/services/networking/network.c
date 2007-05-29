@@ -1075,7 +1075,9 @@ start_lan (void)
     perror ("Write wireless mac fail : ");
   else
     cprintf ("Write wireless mac successfully\n");
-
+#ifdef HAVE_MSSID
+    set_vifsmac(mac);
+#endif
 #endif
   if (nvram_match ("wl_mode", "sta"))
     {
@@ -1203,6 +1205,9 @@ start_lan (void)
 	      perror ("Write wireless mac fail : ");
 	    else
 	      cprintf ("Write wireless mac successfully\n");
+#ifdef HAVE_MSSID
+    set_vifsmac(mac);
+#endif
 
 #else
 

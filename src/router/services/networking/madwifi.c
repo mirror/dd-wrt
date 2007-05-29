@@ -117,6 +117,9 @@ vt_ar5211_eeprom_read (unsigned char *mem,
 
   return 1;
 }
+#ifdef HAVE_MSSID
+extern void set_vifsmac(char *mac);
+#endif
 
 static int
 vt_ar5211_eeprom_write (unsigned char *mem,
