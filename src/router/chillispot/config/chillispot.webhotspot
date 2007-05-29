@@ -46,19 +46,19 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.radnas"); %></div>
-			<input class="text" maxLength="100" size="25" name="chilli_radiusnasid" value="<% nvram_get("chilli_radiusnasid"); %>" />
+			<input class="text" maxLength="500" size="25" name="chilli_radiusnasid" value="<% nvram_get("chilli_radiusnasid"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.uam"); %></div>
-			<input class="text" maxLength="100" size="25" name="chilli_uamsecret" value="<% nvram_get("chilli_uamsecret"); %>" />
+			<input class="text" maxLength="500" size="25" name="chilli_uamsecret" value="<% nvram_get("chilli_uamsecret"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.uamdns"); %></div>
-			<input class="text" maxLength="100" size="25" name="chilli_uamanydns" value="<% nvram_get("chilli_uamanydns"); %>" />
+			<input class="text" maxLength="500" size="25" name="chilli_uamanydns" value="<% nvram_get("chilli_uamanydns"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.allowuam"); %></div>
-			<input class="text" maxLength="100" size="25" name="chilli_uamallowed" value="<% nvram_get("chilli_uamallowed"); %>" />
+			<input class="text" maxLength="500" size="25" name="chilli_uamallowed" value="<% nvram_get("chilli_uamallowed"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.macauth"); %></div>
