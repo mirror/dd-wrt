@@ -35,7 +35,6 @@
 #include <arpa/inet.h>
 #include <net/if_arp.h>
 #include <linux/sockios.h>
-#include <linux/ethtool.h>
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
