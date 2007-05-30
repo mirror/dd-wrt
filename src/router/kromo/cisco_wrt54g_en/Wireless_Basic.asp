@@ -154,7 +154,7 @@ var update;
 addEvent(window, "load", function() {
 	wl_enable_disable(document.wireless,'<% nvram_else_match("wl0_gmode","-1","0","1"); %>');
 	var wl_mode = "<% nvram_get("wl0_mode"); %>";
-        if (wl_mode=="ap" || wl_mode=="infra")
+	   if (wl_mode=="ap" || wl_mode=="infra")
 	{
 	    if (wl_phytype == 'n')
 		InitBW('<% nvram_get("wl0_nbw"); %>' ,document.wireless);
@@ -178,17 +178,17 @@ addEvent(window, "unload", function() {
 
 	<body class="gui">
 	<% showad(); %>
-      <div id="wrapper">
-         <div id="content">
-            <div id="header">
-               <div id="logo">
-                  <h1><% show_control(); %></h1>
-               </div>
-               <% do_menu("Wireless_Basic.asp","Wireless_Basic.asp"); %>
-            </div>
-            <div id="main">
-               <div id="contents">
-                  <form name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
+	 <div id="wrapper">
+	    <div id="content">
+		  <div id="header">
+			<div id="logo">
+			   <h1><% show_control(); %></h1>
+			</div>
+			<% do_menu("Wireless_Basic.asp","Wireless_Basic.asp"); %>
+		  </div>
+		  <div id="main">
+			<div id="contents">
+			   <form name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
 				  	<input type="hidden" name="submit_button" value="Wireless_Basic" />
 				  	<input type="hidden" name="action" value="Apply" />
 				  	<input type="hidden" name="change_action" value="gozila_cgi" />
@@ -207,21 +207,21 @@ addEvent(window, "unload", function() {
 				  		//]]>
 				  		</script>
 				  	</div>
-                  </form>
-                </div>
-              </div>
-              <div id="helpContainer">
-              	<div id="help">
-              		<div><h2><% tran("share.help"); %></h2></div>
-              		<dl>
-              			<dt class="term"><% tran("wl_basic.label2"); %>:</dt>
-              			<dd class="definition"><% tran("hwl_basic.right2"); %></dd>
-              			<dt class="term"><% tran("hwl_basic.right3"); %></dt>
-              			<dd class="definition"><% tran("hwl_basic.right4"); %></dd>
-              		</dl><br />
-             		<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HWireless.asp')"><% tran("share.more"); %></a>
-             	</div>
-              </div>
+			   </form>
+			 </div>
+			</div>
+			<div id="helpContainer">
+				<div id="help">
+					<div><h2><% tran("share.help"); %></h2></div>
+					<dl>
+						<dt class="term"><% tran("wl_basic.label2"); %>:</dt>
+						<dd class="definition"><% tran("hwl_basic.right2"); %></dd>
+						<dt class="term"><% tran("hwl_basic.right3"); %></dt>
+						<dd class="definition"><% tran("hwl_basic.right4"); %></dd>
+					</dl><br />
+					<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HWireless.asp')"><% tran("share.more"); %></a>
+				</div>
+			</div>
 			<div id="floatKiller"></div>
 			<div id="statusInfo">
 			<div class="info"><% tran("share.firmware"); %>: 

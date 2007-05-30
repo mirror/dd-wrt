@@ -8,5 +8,5 @@
 				<% tran("logout.message"); %><br />
 			</form>
 		</div>
-  </body>
+	/body>
 </html>

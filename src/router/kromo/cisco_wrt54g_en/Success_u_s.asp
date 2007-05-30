@@ -57,33 +57,33 @@ addEvent(window, "unload", function() {
 							bar1.togglePause();
 						//]]>
 						</script>
-	            	</div>
-            		<div id="mess" style="display:none"><br /><br />
-	            		<div style="text-align:left">
-	            			<script type="text/javascript">
-	            			//<![CDATA[
+				</div>
+				<div id="mess" style="display:none"><br /><br />
+					<div style="text-align:left">
+						<script type="text/javascript">
+						//<![CDATA[
 
-	            				if (rest_default == 1) {
-	            					Capture(success.alert_reset);
-	            				}
-	            				Capture(success.alert1);
-	            			
+							if (rest_default == 1) {
+								Capture(success.alert_reset);
+							}
+							Capture(success.alert1);
+						
 										//]]>
 										</script>
-	            			<ul>
-	            				<li><% tran("success.alert2"); %></li>
-	            				<li><% tran("success.alert3"); %></li>
-	            			</ul>
-	            		</div>
-		            	<script type="text/javascript">
-		            	//<![CDATA[
+						<ul>
+							<li><% tran("success.alert2"); %></li>
+							<li><% tran("success.alert3"); %></li>
+						</ul>
+					</div>
+					<script type="text/javascript">
+					//<![CDATA[
 
 							document.write("<input class=\"button\" type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />");
 							if (browserName == "Microsoft Internet Explorer")
 								document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"opener=self;self.close();\" />");
 						//]]>
 						</script>
-	            	</div>
+				</div>
 				</form>
 			</div>
 		</div>

@@ -17,7 +17,7 @@ function valid_mtu(I) {
 		end = 1492;
 	} else if (wan_proto == "pptp" || wan_proto == "l2tp") {
 		start = 1200;
-        end = 1400;
+		end = 1400;
 	} else {
 		start = 576;
 		end = 1500;
