@@ -152,7 +152,7 @@ addEvent(window, "load", function() {
 		eval('setDHCPTable(' + u.dhcp_leases + ')');
 	});
 	update.onUpdate("lan_proto", function(u) {
-		setElementVisible("dhcp", u.wl_mode_short == "ap" && u.lan_proto == "dhcp");
+		setElementVisible("dhcp", u.lan_proto == "dhcp");
 	});
 	update.start();
 });
