@@ -3614,7 +3614,21 @@ save_prefix (webs_t wp, char *prefix)
   sprintf (n, "ath_regulatory");
   copytonv (wp, n);
   sprintf (n, "%s_scanlist",prefix);
-  copytonv(wp,n);
+  {      
+    char *sl = websGetVar (wp, n, NULL);
+    if (sl)
+    {
+	char *slc=(char*)malloc(strlen(sl)+1);
+	strcpy(slc,sl);
+	int i,sllen=strlen(slc);
+	for (i=0;i<sllen;i++)
+	    {
+	    if (slc[i]==';')slc[i]=' ';
+	    if (slc[i]==',')slc[i]=' ';
+	    }
+	nvram_set(n,slc);
+    }
+  }  
 #ifdef HAVE_MAKSAT
   sprintf (n, "ath_specialmode");
   copytonv (wp, n);
@@ -7749,8 +7763,9 @@ do_filtertable (char *path, webs_t stream)
   char temp[4096];
   memset (temp, 0, 4096);
   unsigned int len = getWebsFileLen("WL_FilterTable.asp");
-  char *webfile=(char*)malloc(len);
+  char *webfile=(char*)malloc(len+1);
   fread(webfile,len,1,web);
+  webfile[len]=0;
   sprintf (temp, webfile, ifname, ifname, ifname, ifname);
   free(webfile);
   fclose(web);
@@ -7766,8 +7781,9 @@ do_wds (char *path, webs_t stream)
   ifname[indexof (ifname, '.')] = 0;
   FILE *web = getWebsFile ("Wireless_WDS.asp");
   unsigned int len = getWebsFileLen("Wireless_WDS.asp");
-  char *webfile=(char*)malloc(len);
+  char *webfile=(char*)malloc(len+1);
   fread(webfile,len,1,web);
+  webfile[len]=0;
   fclose(web);
  
   char temp[32768];

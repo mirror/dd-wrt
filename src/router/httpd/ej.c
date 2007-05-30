@@ -348,10 +348,12 @@ cprintf("opening %s\n",path);
 	{
 	  FILE *web=fopen("/etc/www","rb");
 	  fseek(web,websRomPageIndex[i].offset,0);
+cprintf("found %s\n",path);
 	  return web;
 	}
       i++;
     }
+cprintf("not found %s\n",path);
 
   return NULL;
 }
