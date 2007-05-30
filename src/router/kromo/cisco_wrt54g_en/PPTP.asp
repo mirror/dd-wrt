@@ -96,7 +96,7 @@ addEvent(window, "unload", function() {
 			<input size="27" name="pptpd_client_srvip" value="<% nvram_get("pptpd_client_srvip"); %>" />
 		</div>
 		<div class="setting">
-	        <div class="label"><% tran("service.pptpd_subnet"); %></div>
+			<div class="label"><% tran("service.pptpd_subnet"); %></div>
 			<input type="hidden" name="pptpd_client_srvsub" value="0.0.0.0" />
 			<input size="3" maxlength="3" class="num" name="pptpd_client_srvsub_0" onblur="valid_range(this,0,255,service.pptpd_subnet)" value="<% get_single_ip("pptpd_client_srvsub","0"); %>" />.<input size="3" maxlength="3" class="num" name="pptpd_client_srvsub_1" onblur="valid_range(this,0,255,service.pptpd_subnet)" value="<% get_single_ip("pptpd_client_srvsub","1"); %>" />.<input size="3" maxlength="3" class="num" name="pptpd_client_srvsub_2" onblur="valid_range(this,0,255,service.pptpd_subnet)" value="<% get_single_ip("pptpd_client_srvsub","2"); %>" />.<input size="3" maxlength="3" class="num" name="pptpd_client_srvsub_3" onblur="valid_range(this,0,255,service.pptpd_subnet)" value="<% get_single_ip("pptpd_client_srvsub","3"); %>" />
 		</div>

@@ -94,24 +94,24 @@ addEvent(window, "unload", function() {
 							<fieldset>
 							   <legend><% tran("vlan.legend"); %></legend>
 							   <table class="table center vlan" summary="virtual lan table">
-  								<tbody>
-  									<tr>
-  										<th rowspan="2"><% tran("vlan.legend"); %></th>
-  										<th colspan="5"><% tran("share.port"); %></th>
-  										<th rowspan="2"><% tran("vlan.bridge"); %></th>
-  									</tr>
-  									<tr>
-  										<th>W</th>
-  										<th>1</th>
-  										<th>2</th>
-  										<th>3</th>
-  										<th>4</th>
-  									</tr>
-  									<% port_vlan_table(); %>
-  								</tbody>
-  							 </table>
-  						</fieldset>
-  							 <br/>
+								<tbody>
+									<tr>
+										<th rowspan="2"><% tran("vlan.legend"); %></th>
+										<th colspan="5"><% tran("share.port"); %></th>
+										<th rowspan="2"><% tran("vlan.bridge"); %></th>
+									</tr>
+									<tr>
+										<th>W</th>
+										<th>1</th>
+										<th>2</th>
+										<th>3</th>
+										<th>4</th>
+									</tr>
+									<% port_vlan_table(); %>
+								</tbody>
+							 </table>
+						</fieldset>
+							 <br/>
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[

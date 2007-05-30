@@ -174,31 +174,31 @@ addEvent(window, "unload", function() {
 		</script>
 	</head>
 
-   <body class="gui">
-   	<% showad(); %>
-      <div id="wrapper">
-        <div id="content">
-          <div id="header">
-          	<div id="logo"><h1><% show_control(); %></h1></div>
-            <% do_menu("Wireless_Basic.asp","WL_WPATable.asp"); %>
-          </div>
-          <div id="main">
-            <div id="contents">
-              <form name="wpa" action="apply.cgi" method="<% get_http_method(); %>">
-              	<input type="hidden" name="submit_button" value="WL_WPATable" />
-               	<input type="hidden" name="action" value="Apply" />
-               	<input type="hidden" name="change_action" value="gozila_cgi" />
-               	<input type="hidden" name="submit_type" />
-               	
-               	<input type="hidden" name="security_varname" />
-               	<input type="hidden" name="security_mode_last" />
-               	<input type="hidden" name="wl_wep_last" />
-               	<input type="hidden" name="filter_mac_value" />
-               	
-             		<% show_security(); %><br />
-             		
-             		<div class="submitFooter">
-	             		<script type="text/javascript">
+	<body class="gui">
+	<% showad(); %>
+		<div id="wrapper">
+		<div id="content">
+		<div id="header">
+			<div id="logo"><h1><% show_control(); %></h1></div>
+			<% do_menu("Wireless_Basic.asp","WL_WPATable.asp"); %>
+		</div>
+		<div id="main">
+			<div id="contents">
+			<form name="wpa" action="apply.cgi" method="<% get_http_method(); %>">
+				<input type="hidden" name="submit_button" value="WL_WPATable" />
+				<input type="hidden" name="action" value="Apply" />
+				<input type="hidden" name="change_action" value="gozila_cgi" />
+				<input type="hidden" name="submit_type" />
+				
+				<input type="hidden" name="security_varname" />
+				<input type="hidden" name="security_mode_last" />
+				<input type="hidden" name="wl_wep_last" />
+				<input type="hidden" name="filter_mac_value" />
+				
+				<% show_security(); %><br />
+				
+				<div class="submitFooter">
+					<script type="text/javascript">
 									//<![CDATA[
 									submitFooterButton(1);
 									//]]>
@@ -208,15 +208,15 @@ addEvent(window, "unload", function() {
 					</div>
 				</div>
 				<div id="helpContainer">
-               <div id="help">
-                  <div><h2><% tran("share.help"); %></h2></div>
-                  <dl>
-                     <dt class="term"><% tran("wpa.secmode"); %>:</dt>
-                     <dd class="definition"><% tran("hwpa.right2"); %></dd>
-                  </dl><br />
-                  <a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HWPA.asp')"><% tran("share.more"); %></a>
-               </div>
-            </div>
+			<div id="help">
+			   <div><h2><% tran("share.help"); %></h2></div>
+			   <dl>
+				 <dt class="term"><% tran("wpa.secmode"); %>:</dt>
+				 <dd class="definition"><% tran("hwpa.right2"); %></dd>
+			   </dl><br />
+			   <a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HWPA.asp')"><% tran("share.more"); %></a>
+			</div>
+			</div>
 			<div id="floatKiller"></div>
 			<div id="statusInfo">
 				<div class="info"><% tran("share.firmware"); %>: 

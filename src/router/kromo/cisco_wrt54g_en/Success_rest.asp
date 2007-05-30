@@ -57,26 +57,26 @@ addEvent(window, "unload", function() {
 							bar1.togglePause();
 						//]]>
 						</script>
-	        </div>
-          <div id="mess" style="display:none"><br /><br />
-	        	<div style="text-align:left">
-	          <% tran("success.alert_reset"); %>
+			</div>
+		<div id="mess" style="display:none"><br /><br />
+			<div style="text-align:left">
+			<% tran("success.alert_reset"); %>
 						<% tran("success.alert1"); %>
-	          <ul>
-	          	<li><% tran("success.alert2"); %></li>
-	          	<li><% tran("success.alert3"); %></li>
-	          </ul>
-	        </div>
-		      <script type="text/javascript">
-		      //<![CDATA[
-		      	document.write("<input class=\"button\" type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit();\" />");
-		        if (browserName == "Microsoft Internet Explorer")
-		        	document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"opener=self;self.close();\" />");
-		      //]]>
-		      </script>
-	        </div>
-	      </form>
-	    </div>
-	  </div>
+			<ul>
+				<li><% tran("success.alert2"); %></li>
+				<li><% tran("success.alert3"); %></li>
+			</ul>
+			</div>
+			<script type="text/javascript">
+			//<![CDATA[
+				document.write("<input class=\"button\" type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit();\" />");
+				if (browserName == "Microsoft Internet Explorer")
+				document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"opener=self;self.close();\" />");
+			//]]>
+			</script>
+			</div>
+		</form>
+		</div>
+	</div>
 	</body>
 </html>

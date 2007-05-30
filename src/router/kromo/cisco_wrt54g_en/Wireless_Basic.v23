@@ -56,111 +56,111 @@ addEvent(window, "unload", function() {
   <body class="gui">
   	<% showad(); %>
     <div id="wrapper">
-      <div id="content">
-        <div id="header">
-          <div id="logo">
-            <h1><% show_control(); %></h1>
-          </div>
-          <% do_menu("Wireless_Basic.asp","Wireless_Basic.asp"); %>
-        </div>
-        <div id="main">
-          <div id="contents">
-            <form name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
-                <input type="hidden" name="submit_button" value="Wireless_Basic" />
-                <input type="hidden" name="action" value="Apply" />
-                <input type="hidden" name="change_action" />
-                <input type="hidden" name="submit_type" />
-                <input type="hidden" name="commit" value="1" />
-                
-                <h2><% tran("wl_basic.h2"); %></h2>
-                
-                <fieldset>
-                  <legend><% tran("wl_basic.legend"); %></legend>
-                  <div class="setting">
-                    <div class="label"><% tran("wl_basic.label"); %></div>
-                    <select name="wl_mode" onchange="show_layer_ext(this, 'idssid', this.value=='ap' || this.value=='infra');">
-                      <script type="text/javascript">
-                      //<![CDATA[
-                      document.write("<option value=\"ap\" <% nvram_selected_js("wl_mode", "ap"); %>>" + wl_basic.ap + "</option>");
-                      document.write("<option value=\"sta\" <% nvram_selected_js("wl_mode", "sta"); %>>" + wl_basic.client + "</option>");
-                      document.write("<option value=\"wet\" <% nvram_selected_js("wl_mode", "wet"); %>>" + wl_basic.clientBridge + "</option>");
-                      document.write("<option value=\"infra\" <% nvram_selected_js("wl_mode", "infra"); %>>" + wl_basic.adhoc + "</option>");
-                      //]]>
-                      </script>
-                    </select>
-                  </div>
-                  <div class="setting">
-                    <div class="label"><% tran("wl_basic.label2"); %></div>
-                    <select name="wl_net_mode" onchange="SelWL(this.form.wl_net_mode.selectedIndex,this.form)">
-                      <script type="text/javascript">
-                      //<![CDATA[
-                      document.write("<option value=\"disabled\" <% nvram_selected_js("wl_net_mode", "disabled"); %>>" + share.disable +"</option>");
-                      document.write("<option value=\"mixed\" <% nvram_selected_js("wl_net_mode", "mixed"); %>>" + wl_basic.mixed + "</option>");
-                      document.write("<option value=\"b-only\" <% nvram_selected_js("wl_net_mode", "b-only"); %>>" + wl_basic.b + "</option>");
-                      document.write("<option value=\"g-only\" <% nvram_selected_js("wl_net_mode", "g-only"); %>>" + wl_basic.g + "</option>");
-                      //]]>
-                      </script>
-                    </select>
-                  </div>
-                  <div class="setting">
-                    <div class="label"><% tran("wl_basic.label3"); %></div>
-                    <input name="wl_ssid" size="20" maxlength="32" onblur="valid_name(this,'SSID')" value="<% nvram_get("wl_ssid"); %>" />
-                  </div>
-                  
-                  <div id="idssid">
-	                  <div class="setting">
-	                    <div class="label"><% tran("wl_basic.label4"); %></div>
-	                    <select name="wl_channel" onFocus="check_action(this,0)">
-	                      <script type="text/javascript">
-	                      //<![CDATA[
-	                        var max_channel = 14;
-	                        var wl_channel = "<% nvram_get("wl_channel"); %>";
-	                        var buf = "";
-	                        var freq = new Array("Auto","2.412","2.417","2.422","2.427","2.432","2.437","2.442","2.447","2.452","2.457","2.462","2.467","2.472","2.484");
-	                        for(var i=0; i<=max_channel ; i++){
-	                          if(i == wl_channel) buf = "selected";
-	                          else buf = "";
-	                          if(i==0){
-	                            document.write("<option value="+i+" "+buf+">Auto</option>");
-	                          }
-	                          else{
-	                            if(i<10)
-	                              document.write("<option value="+i+" "+buf+">&nbsp;&nbsp;"+i+" - "+freq[i]+"&nbsp;GHz</option>");
-	                            else
-	                              document.write("<option value="+i+" "+buf+">"+i+" - "+freq[i]+"&nbsp;GHz</option>");
-	                          }
-	                        }
-	                      //]]>
-	                      </script>
-	                    </select>
-	                  </div>
-	                  <div class="setting">
-	                    <div class="label"><% tran("wl_basic.label5"); %></div>
-	                    <input class="spaceradio" type="radio" value="0" name="wl_closed" <% nvram_checked("wl_closed","0"); %>><% tran("share.enable"); %></input>&nbsp;
-	                    <input class="spaceradio" type="radio" value="1" name="wl_closed" <% nvram_checked("wl_closed","1"); %>><% tran("share.disable"); %></input>
-	                  </div>
-                  </div>
-                  <div class="setting">
-                    <div class="label"><% tran("wl_basic.label6"); %></div>
-                    <input class="num" name="wl_distance" size="8" maxlength="8" onblur="valid_range(this,0,99999999,wl_basic.label6)" value="<% nvram_get("wl_distance"); %>" />
-                    <span class="default"><script type="text/javascript">
-                    //<![CDATA[
-                    document.write("(" + share.deflt + ": 2000 " + share.meters + ")");
-                    //]]>
-                    </script></span>
-                  </div>
-                </fieldset><br />
-                
-                <div class="submitFooter">
-                    <script type="text/javascript">
-                    //<![CDATA[
-                    submitFooterButton(1,1);
-                    //]]>
-                    </script>
-                </div>
-              </form>
-          </div>
-        </div>
+	 <div id="content">
+	   <div id="header">
+		<div id="logo">
+		  <h1><% show_control(); %></h1>
+		</div>
+		<% do_menu("Wireless_Basic.asp","Wireless_Basic.asp"); %>
+	   </div>
+	   <div id="main">
+		<div id="contents">
+		  <form name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
+			 <input type="hidden" name="submit_button" value="Wireless_Basic" />
+			 <input type="hidden" name="action" value="Apply" />
+			 <input type="hidden" name="change_action" />
+			 <input type="hidden" name="submit_type" />
+			 <input type="hidden" name="commit" value="1" />
+			 
+			 <h2><% tran("wl_basic.h2"); %></h2>
+			 
+			 <fieldset>
+			   <legend><% tran("wl_basic.legend"); %></legend>
+			   <div class="setting">
+				<div class="label"><% tran("wl_basic.label"); %></div>
+				<select name="wl_mode" onchange="show_layer_ext(this, 'idssid', this.value=='ap' || this.value=='infra');">
+				  <script type="text/javascript">
+				  //<![CDATA[
+				  document.write("<option value=\"ap\" <% nvram_selected_js("wl_mode", "ap"); %>>" + wl_basic.ap + "</option>");
+				  document.write("<option value=\"sta\" <% nvram_selected_js("wl_mode", "sta"); %>>" + wl_basic.client + "</option>");
+				  document.write("<option value=\"wet\" <% nvram_selected_js("wl_mode", "wet"); %>>" + wl_basic.clientBridge + "</option>");
+				  document.write("<option value=\"infra\" <% nvram_selected_js("wl_mode", "infra"); %>>" + wl_basic.adhoc + "</option>");
+				  //]]>
+				  </script>
+				</select>
+			   </div>
+			   <div class="setting">
+				<div class="label"><% tran("wl_basic.label2"); %></div>
+				<select name="wl_net_mode" onchange="SelWL(this.form.wl_net_mode.selectedIndex,this.form)">
+				  <script type="text/javascript">
+				  //<![CDATA[
+				  document.write("<option value=\"disabled\" <% nvram_selected_js("wl_net_mode", "disabled"); %>>" + share.disable +"</option>");
+				  document.write("<option value=\"mixed\" <% nvram_selected_js("wl_net_mode", "mixed"); %>>" + wl_basic.mixed + "</option>");
+				  document.write("<option value=\"b-only\" <% nvram_selected_js("wl_net_mode", "b-only"); %>>" + wl_basic.b + "</option>");
+				  document.write("<option value=\"g-only\" <% nvram_selected_js("wl_net_mode", "g-only"); %>>" + wl_basic.g + "</option>");
+				  //]]>
+				  </script>
+				</select>
+			   </div>
+			   <div class="setting">
+				<div class="label"><% tran("wl_basic.label3"); %></div>
+				<input name="wl_ssid" size="20" maxlength="32" onblur="valid_name(this,'SSID')" value="<% nvram_get("wl_ssid"); %>" />
+			   </div>
+			   
+			   <div id="idssid">
+				   <div class="setting">
+					<div class="label"><% tran("wl_basic.label4"); %></div>
+					<select name="wl_channel" onFocus="check_action(this,0)">
+					  <script type="text/javascript">
+					  //<![CDATA[
+					    var max_channel = 14;
+					    var wl_channel = "<% nvram_get("wl_channel"); %>";
+					    var buf = "";
+					    var freq = new Array("Auto","2.412","2.417","2.422","2.427","2.432","2.437","2.442","2.447","2.452","2.457","2.462","2.467","2.472","2.484");
+					    for(var i=0; i<=max_channel ; i++){
+						 if(i == wl_channel) buf = "selected";
+						 else buf = "";
+						 if(i==0){
+						   document.write("<option value="+i+" "+buf+">Auto</option>");
+						 }
+						 else{
+						   if(i<10)
+							document.write("<option value="+i+" "+buf+">&nbsp;&nbsp;"+i+" - "+freq[i]+"&nbsp;GHz</option>");
+						   else
+							document.write("<option value="+i+" "+buf+">"+i+" - "+freq[i]+"&nbsp;GHz</option>");
+						 }
+					    }
+					  //]]>
+					  </script>
+					</select>
+				   </div>
+				   <div class="setting">
+					<div class="label"><% tran("wl_basic.label5"); %></div>
+					<input class="spaceradio" type="radio" value="0" name="wl_closed" <% nvram_checked("wl_closed","0"); %>><% tran("share.enable"); %></input>&nbsp;
+					<input class="spaceradio" type="radio" value="1" name="wl_closed" <% nvram_checked("wl_closed","1"); %>><% tran("share.disable"); %></input>
+				   </div>
+			   </div>
+			   <div class="setting">
+				<div class="label"><% tran("wl_basic.label6"); %></div>
+				<input class="num" name="wl_distance" size="8" maxlength="8" onblur="valid_range(this,0,99999999,wl_basic.label6)" value="<% nvram_get("wl_distance"); %>" />
+				<span class="default"><script type="text/javascript">
+				//<![CDATA[
+				document.write("(" + share.deflt + ": 2000 " + share.meters + ")");
+				//]]>
+				</script></span>
+			   </div>
+			 </fieldset><br />
+			 
+			 <div class="submitFooter">
+				<script type="text/javascript">
+				//<![CDATA[
+				submitFooterButton(1,1);
+				//]]>
+				</script>
+			 </div>
+		    </form>
+		</div>
+	   </div>
 				<div id="helpContainer">
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
