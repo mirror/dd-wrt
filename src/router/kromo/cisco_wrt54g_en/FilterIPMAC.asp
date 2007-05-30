@@ -58,7 +58,7 @@ function to_submit(F) {
 			</div>
 			<br />
 			<div>
-            	<h3><% tran("filterIP.h32"); %></h3>
+				<h3><% tran("filterIP.h32"); %></h3>
 				<div class="setting">
 					<div class="label">IP 01</div>
 					<% prefix_ip_get("lan_ipaddr",1); %><input class="num" size="3" maxlength="3" name="ip0" onblur="valid_range(this,0,254,'IP')" value="<% filter_ip_get("ip",0); %>" />
