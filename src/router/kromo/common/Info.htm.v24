@@ -136,7 +136,7 @@ addEvent(window, "load", function() {
 <% haswifi("/"); %><% haswifi("/"); %>	setWirelessTable(<% active_wireless(1); %>);
 <% haswifi("/"); %><% haswifi("/"); %>	setWDSTable(<% active_wds(1); %>);
 	setDHCPTable(<% dumpleases(1); %>);
-	setElementVisible("dhcp", "<% nvram_get("wl0_mode"); %>" == "ap" && "<% nvram_get("lan_proto"); %>" == "dhcp");
+	setElementVisible("dhcp", "<% nvram_get("lan_proto"); %>" == "dhcp");
 
 	update = new StatusUpdate("Info.live.htm", <% nvram_get("refresh_time"); %>);
 	update.onUpdate("packet_info", function(u) {
