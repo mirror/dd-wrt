@@ -38,7 +38,7 @@ addEvent(window, "load", function() {
 		//]]>
 		</script>
 	</head>
-	
+
 	<body>
 		<form action="apply.cgi" method="<% get_http_method(); %>">
 			<input type="hidden" name="submit_button" value="WL_ActiveTable" />

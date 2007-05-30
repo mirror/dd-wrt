@@ -32,48 +32,48 @@ addEvent(window, "unload", function() {
 					
 					<fieldset>
 						<legend><% tran("share.info"); %></legend>
-                        <div class="setting">
-                        	<div class="label"><% tran("status_sputnik.manage"); %></div>
-                        	<span id="sputnik_status"><% sputnik_apd_status("scc_server"); %></span>&nbsp;
-                        </div>
-                        <div class="setting">
-                        	<div class="label"><% tran("share.state"); %></div>
-                        	<span id="sputnik_state"><% sputnik_apd_status("phase"); %></span>&nbsp;
-                        </div>
-                        <div class="setting">
-                        	<div class="label"><% tran("status_sputnik.license"); %></div>
-                        	<span id="sputnik_serial"><% sputnik_apd_status("lsk_serial"); %></span>&nbsp;
-                        </div>
-                    
-                    </fieldset><br />
-                    
-                    <div class="submitFooter">
-                    	<script type="text/javascript">
+					<div class="setting">
+						<div class="label"><% tran("status_sputnik.manage"); %></div>
+						<span id="sputnik_status"><% sputnik_apd_status("scc_server"); %></span>&nbsp;
+					</div>
+					<div class="setting">
+						<div class="label"><% tran("share.state"); %></div>
+						<span id="sputnik_state"><% sputnik_apd_status("phase"); %></span>&nbsp;
+					</div>
+					<div class="setting">
+						<div class="label"><% tran("status_sputnik.license"); %></div>
+						<span id="sputnik_serial"><% sputnik_apd_status("lsk_serial"); %></span>&nbsp;
+					</div>
+
+				</fieldset><br />
+
+				<div class="submitFooter">
+					<script type="text/javascript">
 											//<![CDATA[
 											var autoref = <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
 											submitFooterButton(0,0,0,autoref);
 											//]]>
 											</script>
-                    </div>
-                </div>
-            </div>
-            <div id="helpContainer">
-               <div id="help">
-                  <div><h2><% tran("share.help"); %></h2></div>
-                  <dl>
-                     <dt class="term"><% tran("hstatus_sputnik.right1"); %>:</dt>
-                     <dd class="definition"><% tran("hstatus_sputnik.right2"); %></dd>
-                     <dt class="term"><% tran("status_sputnik.manage"); %>:</dt>
-                     <dd class="definition"><% tran("hstatus_sputnik.right4"); %></dd>
-                     <dt class="term"><% tran("share.state"); %>:</dt>
-                     <dd class="definition"><% tran("hstatus_sputnik.right6"); %></dd>
-                     <dt class="term"><% tran("status_sputnik.license"); %>:</dt>
-                     <dd class="definition"><% tran("hstatus_sputnik.right8"); %></dd>
-                  </dl><br />
-                  
-                  <!--<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HSputnikStatus.asp');"><% tran("share.more"); %></a>-->
-               </div>
-            </div>
+				</div>
+			 </div>
+		  </div>
+		  <div id="helpContainer">
+			<div id="help">
+			   <div><h2><% tran("share.help"); %></h2></div>
+			   <dl>
+				 <dt class="term"><% tran("hstatus_sputnik.right1"); %>:</dt>
+				 <dd class="definition"><% tran("hstatus_sputnik.right2"); %></dd>
+				 <dt class="term"><% tran("status_sputnik.manage"); %>:</dt>
+				 <dd class="definition"><% tran("hstatus_sputnik.right4"); %></dd>
+				 <dt class="term"><% tran("share.state"); %>:</dt>
+				 <dd class="definition"><% tran("hstatus_sputnik.right6"); %></dd>
+				 <dt class="term"><% tran("status_sputnik.license"); %>:</dt>
+				 <dd class="definition"><% tran("hstatus_sputnik.right8"); %></dd>
+			   </dl><br />
+			   
+			   <!--<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HSputnikStatus.asp');"><% tran("share.more"); %></a>-->
+			</div>
+		  </div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
 				<div class="info"><% tran("share.firmware"); %>: 

@@ -395,7 +395,7 @@ addEvent(window, "unload", function() {
 								<legend><% tran("filter.legend3"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("filter.catchall"); %></div>
-  									<input class="spaceradio" type="checkbox" name="_filter_p2p" value="1" <% nvram_checked("filter_p2p", "1"); %> />
+									<input class="spaceradio" type="checkbox" name="_filter_p2p" value="1" <% nvram_checked("filter_p2p", "1"); %> />
 								</div>
 								<div class="setting">
 									<select size="1" name="blocked_service0" onchange="onchange_blockedServices(blocked_service0.selectedIndex, port0_start, port0_end)">
@@ -487,10 +487,10 @@ addEvent(window, "unload", function() {
 							
 							<div class="submitFooter">
 								<script type="text/javascript">
-	            	//<![CDATA[
-	            	submitFooterButton(1,1);
-	            	//]]>
-	            	</script>
+								//<![CDATA[
+								submitFooterButton(1,1);
+								//]]>
+								</script>
 							</div>
 						</form>
 					</div>

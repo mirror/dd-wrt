@@ -29,7 +29,7 @@ function do_join (F,SSID) {
 			<input type="hidden" name="wl_ssid" />
 			<input type="hidden" name="wl_mode" />
 			<h2><% tran("survey.h2"); %></h2>
-        	<table class="center table" cellspacing="5">
+			<table class="center table" cellspacing="5">
 				<tr>
 				   <th width="25%"><% tran("share.ssid"); %></th>
 				   <th width="7%">Mode</th>

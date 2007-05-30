@@ -32,11 +32,11 @@
 			Monitoring<br>
 			<center>Channel setting</center> 
 			<form name="channelform" action="apply.cgi" method="<% get_http_method(); %>" />
-			        	<input type="hidden" name="action" value="Apply" />
-                  		<input type="hidden" name="change_action" value="gozila_cgi" />
-                  		<input type="hidden" name="submit_button" value="Wiviz_Survey" />
-	          			<input type="hidden" name="submit_type" value="Set" />
-	          			<input type="hidden" name="commit" value="1" />
+				   	<input type="hidden" name="action" value="Apply" />
+					<input type="hidden" name="change_action" value="gozila_cgi" />
+					<input type="hidden" name="submit_button" value="Wiviz_Survey" />
+						<input type="hidden" name="submit_type" value="Set" />
+						<input type="hidden" name="commit" value="1" />
 			<select name='hopseq' onChange='this.form.submit()'>
 				<option value='1' <% nvram_selected("hopseq","1"); %> >1</option>
 				<option value='2' <% nvram_selected("hopseq","2"); %> >2</option>
@@ -149,42 +149,42 @@
 		</div>
 	</div> -->
 <!--	<div class='expando'>
-	    <div class='slidingheader' id='configuration' onClick='toggleExpando(this)'>
+		<div class='slidingheader' id='configuration' onClick='toggleExpando(this)'>
 			Local Configuration
-	    </div>
-	    <div class='slidingbody'>
-	        <center>Actions</center>
-	        <a href='javascript:centerObj(selfrouterdiv)' class='action'>Select this router</a>
-	        <a href='javascript:commit(this)' class='action'>Commit NVRAM changes</a>
-	        <center>Radio Settings</center>
-	        <form action='/cgi-bin/wiviz2-radio.cgi' method='get' id='radioform'>
-	        SSID:<br>
-	        <input type='text' name='ssid' width=100% maxlength=32><br>
-	        Channel: <input type='text' name='channel' size=2 value='6'><br>
-	        Encryption:<br>
-	        <select name='encryption'>
-	        <option value='none'>Open</option>
-	        <option value='wep'>WEP</option>
-	        <option value='noch' selected='selected'>Don't change</option>
-	        </select><br>
-	        Key (blank=unchanged):<br>
-	        <input type='text' width=100% name='key'><br>
-	        Mode:<br>
-	        <select name='mode'>
-	        <option value='ap'>Access point</option>
-	        <option value='sta'>Client mode</option>
-	        <option value='noch'>Don't change</option>
-	        </select><br>
-	        <input type='submit' value='Apply changes' onclick="alert('Unimplemented')">
-	        </form>
-	    </div>
+		</div>
+		<div class='slidingbody'>
+			<center>Actions</center>
+			<a href='javascript:centerObj(selfrouterdiv)' class='action'>Select this router</a>
+			<a href='javascript:commit(this)' class='action'>Commit NVRAM changes</a>
+			<center>Radio Settings</center>
+			<form action='/cgi-bin/wiviz2-radio.cgi' method='get' id='radioform'>
+			SSID:<br>
+			<input type='text' name='ssid' width=100% maxlength=32><br>
+			Channel: <input type='text' name='channel' size=2 value='6'><br>
+			Encryption:<br>
+			<select name='encryption'>
+			<option value='none'>Open</option>
+			<option value='wep'>WEP</option>
+			<option value='noch' selected='selected'>Don't change</option>
+			</select><br>
+			Key (blank=unchanged):<br>
+			<input type='text' width=100% name='key'><br>
+			Mode:<br>
+			<select name='mode'>
+			<option value='ap'>Access point</option>
+			<option value='sta'>Client mode</option>
+			<option value='noch'>Don't change</option>
+			</select><br>
+			<input type='submit' value='Apply changes' onclick="alert('Unimplemented')">
+			</form>
+		</div>
 	</div> -->
 	
 		<div class='expando'>
-	    <div class='slidingheader' id='configuration' onClick="self.close()">
+		<div class='slidingheader' id='configuration' onClick="self.close()">
 			Close
-	    </div>
-	   </div>
+		</div>
+		</div>
 	
 </div> 
 <div class='poweredby'>By Nate True<br>Powered by DD-WRT</div>

@@ -79,10 +79,10 @@ addEvent(window, "unload", function() {
 							</fieldset><br />
 							<div class="submitFooter">
 								<script type="text/javascript">
-	            	//<![CDATA[
-	            	submitFooterButton(1,1);
-	            	//]]>
-	            	</script>
+					//<![CDATA[
+					submitFooterButton(1,1);
+					//]]>
+					</script>
 							</div>
 						</form>
 					</div>
