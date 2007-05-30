@@ -21,12 +21,11 @@ ifeq ($(CONFIG_IPTABLES),y)
 #	$(STRIP) $(INSTALLDIR)/iptables/usr/sbin/iptables-restore
 	ln -sf /usr/sbin/iptables $(INSTALLDIR)/iptables/usr/sbin/iptables-restore
 
-	ifeq ($(CONFIG_L7),y)
-		install -d $(INSTALLDIR)/iptables/etc/l7-protocols
-		cp -rp l7/* $(INSTALLDIR)/iptables/etc/l7-protocols/
-		rm -f $(INSTALLDIR)/iptables/etc/l7-protocols/CHANGELOG
-	endif
-
+        ifeq ($(CONFIG_L7),y)
+		  install -d $(INSTALLDIR)/iptables/etc/l7-protocols
+		  cp -rp l7/* $(INSTALLDIR)/iptables/etc/l7-protocols/
+		  rm -f $(INSTALLDIR)/iptables/etc/l7-protocols/CHANGELOG
+        endif
 else
         # So that generic rule does not take precedence
 	@true
