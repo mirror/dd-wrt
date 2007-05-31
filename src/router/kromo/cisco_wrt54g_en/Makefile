@@ -329,6 +329,9 @@ ifneq ($(CONFIG_PPPOESERVER),y)
 endif
 ifneq ($(CONFIG_MILKFISH),y)
 	rm -f $(INSTALLDIR)/www/Milkfish.asp
+	rm -f $(INSTALLDIR)/www/Milkfish_phonebook.asp
+	rm -f $(INSTALLDIR)/www/Milkfish_database.asp
+	rm -f $(INSTALLDIR)/www/Milkfish_messaging.asp
 	rm -f $(INSTALLDIR)/www/help/HMilkfish.asp
 endif
 
