@@ -134,7 +134,8 @@ function submit_manual_wol(F) {
 	apply(F);
 }
 function to_submit(F) {
-    submit_manual_wol(F);
+	F.save_button.value = sbutton.saving;
+	apply(F);
 }
 
 function valid(F) {
