@@ -13,7 +13,7 @@ stop_milkfish (void)
     syslog (LOG_INFO, "Milkfish service successfully stopped\n");
     
   killall ("rtpproxy", SIGTERM);
-  killall ("openserctl", SIGTERM) 
+  killall ("openserctl", SIGTERM);
 }
 
 void
