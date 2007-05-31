@@ -2903,9 +2903,9 @@ struct gozila_action gozila_actions[] = {
   {"Ping", "start", "start_ping", 1, SERVICE_RESTART, diag_ping_start},
   {"Ping", "stop", "", 0, REFRESH, diag_ping_stop},
   {"Ping", "clear", "", 0, REFRESH, diag_ping_clear},
-//  {"Traceroute", "start", "start_traceroute", 1, SYS_RESTART, diag_traceroute_start},
-//  {"Traceroute", "stop", "", 0, REFRESH, diag_traceroute_stop},
-//  {"Traceroute", "clear", "", 0, REFRESH, diag_traceroute_clear},
+#ifdef HAVE_MILKFISH
+//
+#endif
 };
 
 struct gozila_action *
@@ -3064,7 +3064,9 @@ struct apply_action apply_actions[] = {
   /* SECURITY */
   {"Firewall", "filters", 0, SERVICE_RESTART, NULL},
   {"VPN", "filters", 0, SERVICE_RESTART, NULL},
-
+#ifdef HAVE_MILKFISH
+  {"Milkfish", "milkfish", 0, SERVICE_RESTART, NULL},
+#endif
 /* Obsolete 
  * {"WL_WEPTable", "", 0, SERVICE_RESTART, NULL},
  * {"Security", "", 1, RESTART, NULL},
