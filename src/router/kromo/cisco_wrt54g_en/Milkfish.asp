@@ -101,7 +101,7 @@ addEvent(window, "unload", function() {
 		<legend>SIP Phonebook</legend>
 				<script type="text/javascript">
 				//<![CDATA[
-				document.write("<input class=\"button\" type=\"button\" value=\"Open SIP Phonebook\" onclick=\"openWindow('Milkfish_phonebook.asp', 590, 730);\" />");
+				document.write("<input class=\"button\" type=\"button\" value=\"Open SIP Phonebook\" onclick=\"openWindow('Milkfish_phonebook.asp', 820, 730);\" />");
 				//]]>
 				</script>
 	</fieldset>
@@ -114,7 +114,7 @@ addEvent(window, "unload", function() {
 		<legend>SIP Database</legend>
 				<script type="text/javascript">
 				//<![CDATA[
-				document.write("<input class=\"button\" type=\"button\" value=\"Open SIP Database\" onclick=\"openWindow('Milkfish_database.asp', 590, 730);\" />");
+				document.write("<input class=\"button\" type=\"button\" value=\"Open SIP Database\" onclick=\"openWindow('Milkfish_database.asp', 820, 730);\" />");
 				//]]>
 				</script>
 
@@ -129,7 +129,7 @@ addEvent(window, "unload", function() {
 		<legend>SIP Messaging</legend>
 				<script type="text/javascript">
 				//<![CDATA[
-				document.write("<input class=\"button\" type=\"button\" value=\"Open SIP Messaging\" onclick=\"openWindow('Milkfish_messaging.asp', 590, 730);\" />");
+				document.write("<input class=\"button\" type=\"button\" value=\"Open SIP Messaging\" onclick=\"openWindow('Milkfish_messaging.asp', 820, 730);\" />");
 				//]]>
 				</script>
 
