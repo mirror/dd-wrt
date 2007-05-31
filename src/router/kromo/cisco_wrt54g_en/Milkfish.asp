@@ -67,8 +67,8 @@ addEvent(window, "unload", function() {
 		</div>
 		<div class="setting">
 			<div class="label">From-Substitution</div>
-			<input class="spaceradio" type="radio" name="milkfish_fromswitch" value="1" <% nvram_checked("milkfish_fromswitch", "1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="milkfish_fromswitch" value="0" <% nvram_checked("milkfish_fromswitch", "0"); %> /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" name="milkfish_fromswitch" value="on" <% nvram_checked("milkfish_fromswitch", "on"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="milkfish_fromswitch" value="off" <% nvram_checked("milkfish_fromswitch", "off"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
 			<div class="label">From-Domain</div>
@@ -76,8 +76,8 @@ addEvent(window, "unload", function() {
 		</div>
 		<div class="setting">
 			<div class="label">Home SIP</div>
-			<input class="spaceradio" type="radio" name="milkfish_dynsip" value="1" <% nvram_checked("milkfish_dynsip", "1"); %> onclick="show_layer_ext(this, 'idmilkfish_dynsip', true)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="milkfish_dynsip" value="0" <% nvram_checked("milkfish_dynsip", "0"); %> onclick="show_layer_ext(this, 'idmilkfish_dynsip', false)" /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" name="milkfish_dynsip" value="on" <% nvram_checked("milkfish_dynsip", "on"); %> onclick="show_layer_ext(this, 'idmilkfish_dynsip', true)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="milkfish_dynsip" value="off" <% nvram_checked("milkfish_dynsip", "off"); %> onclick="show_layer_ext(this, 'idmilkfish_dynsip', false)" /><% tran("share.disable"); %>
 		</div>
 		<div id="idmilkfish_dynsip">
 		<div class="setting">
@@ -87,10 +87,14 @@ addEvent(window, "unload", function() {
 		</div>
 		<div class="setting">
 			<div class="label">Milkfish Audit</div>
-			<input class="spaceradio" type="radio" name="milkfish_audit" value="1" <% nvram_checked("milkfish_audit", "1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="milkfish_audit" value="0" <% nvram_checked("milkfish_audit", "0"); %> /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" name="milkfish_audit" value="on" <% nvram_checked("milkfish_audit", "on"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="milkfish_audit" value="off" <% nvram_checked("milkfish_audit", "off"); %> /><% tran("share.disable"); %>
 		</div>
-
+		<div class="setting">
+			<div class="label">Milkfish SIPtrace</div>
+			<input class="spaceradio" type="radio" name="milkfish_siptrace" value="on" <% nvram_checked("milkfish_siptrace", "on"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="milkfish_siptrace" value="off" <% nvram_checked("milkfish_siptrace", "off"); %> /><% tran("share.disable"); %>
+		</div>
 	<br />
 
 	<fieldset>
