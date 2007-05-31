@@ -2050,6 +2050,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"pppoeserver_sharedkey", "", 0},
 #endif
 #ifdef HAVE_MILKFISH
+  {"milkfish_enabled", "0", 0},	/* MILKFISH enable|disable */
   {"openser_cfg", "/var/openser/milkfish_openser.cfg", 0},	/* MILKFISH SETTING */
   {"milkfish_fromdomain", "", 0},	/* MILKFISH SETTING */
   {"milkfish_fromswitch", "off", 0},	/* MILKFISH SETTING */
