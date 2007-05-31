@@ -162,7 +162,9 @@ start_services (void)
 #ifdef HAVE_PPPOERELAY
   handle = start_service_nofree ("pppoerelay", handle);
 #endif
-
+#ifdef HAVE_MILKFISH
+  handle = start_service_nofree ("milkfish", handle);	
+#endif
   dlclose (handle);
 
   cprintf ("done\n");
