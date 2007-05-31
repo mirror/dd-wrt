@@ -610,6 +610,13 @@ start_single_service (void)
 #endif
       stop_service ("cron");
     }
+#ifdef HAVE_MIKLFISH
+  else if (!strcmp (service, "milkfish"))
+    {
+	  stop_service ("milkfish");
+	  start_service ("milkfish");
+	}
+#endif
   else if (!strcmp (service, "wireless"))
     {
 #ifndef HAVE_MADWIFI
