@@ -5,7 +5,7 @@
 
 VERSION  = 0.9.7
 
-CC = mipsel-linux-uclibc-gcc
+#CC = mipsel-linux-uclibc-gcc
 # UNWANTED = -DDISCARD_INFO -DDISCARD_CMD_SOCKET
 NETBIOS = -DDROP_NETBIOS # -DALLOW_WINS
 # PROF  = -pg -fprofile-arcs -D_DEBUG
