@@ -86,14 +86,22 @@ inline static int tsl(fl_lock_t* lock)
 			: "=r"(val) : "r"(lock):"memory"
 	);
 	
-#elif defined __CPU_arm
+#elif defined (__CPU_arm)
 	asm volatile(
 			"# here \n\t"
 			"swpb %0, %1, [%2] \n\t"
 			: "=r" (val)
 			: "r"(1), "r" (lock) : "memory"
 	);
-	
+
+#elif defined(__CPU_armeb)
+	asm volatile(
+			"# here \n\t"
+			"swpb %0, %1, [%2] \n\t"
+			: "=r" (val)
+			: "r"(1), "r" (lock) : "memory"
+	);
+
 #elif defined(__CPU_ppc) || defined(__CPU_ppc64)
 	asm volatile(
 			"1: lwarx  %0, 0, %2\n\t"
@@ -192,6 +200,13 @@ inline static void release_lock(fl_lock_t* lock)
 			: "memory"
 	);
 #elif defined __CPU_arm
+	asm volatile(
+		" str %0, [%1] \n\r" 
+		: /*no outputs*/ 
+		: "r"(0), "r"(lock)
+		: "memory"
+	);
+#elif defined __CPU_armeb
 	asm volatile(
 		" str %0, [%1] \n\r" 
 		: /*no outputs*/ 
