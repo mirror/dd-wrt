@@ -81,11 +81,6 @@ int
 start_services (void)
 {
   void *handle = NULL;
-#ifdef HAVE_SER
-  nvram_set ("sipgate", "1");
-#else
-  nvram_set ("sipgate", "0");
-#endif
 #ifdef HAVE_CPUTEMP
   handle = start_service_nofree ("hwmon", handle);
 #endif
