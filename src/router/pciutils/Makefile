@@ -60,7 +60,7 @@ clean:
 
 install: all
 # -c is ignored on Linux, but required on FreeBSD
-#	$(DIRINSTALL) -m 755 $(ROOT)/sbin $(PREFIX)/share $(MANDIR)/man8
+	$(DIRINSTALL) -m 755 $(ROOT)/sbin $(PREFIX)/share
 	$(INSTALL) -c -m 755 lspci setpci $(ROOT)/sbin
 	if [ ! -f $(PREFIX)/share/pci.ids -o pci.ids -nt $(PREFIX)/share/pci.ids ] ; then \
 		$(INSTALL) -c -m 644 pci.ids $(PREFIX)/share ; \
