@@ -361,9 +361,6 @@ ifeq ($(CONFIG_DDLAN),y)
 endif
 
 
-#ifeq ($(CONFIG_SER),y)
-#	$(MAKE) -C $(SRCBASE)/router/kromo/sipath/ install
-#endif
 
 	../../../../tools/strip $(INSTALLDIR)/www/*.asp
 	../../../../tools/strip $(INSTALLDIR)/www/*.htm
