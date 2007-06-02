@@ -20,7 +20,7 @@ function to_submit(F) {
 		<input type="hidden" name="commit" value="1" />
 			<div id="main">
 				<div id="contentsInfo">
-					<h2>Mikfish SIP database</h2>
+					<h2>Milkfish SIP database</h2>
 					Not yet  .....
 					<br />
 					<br />
