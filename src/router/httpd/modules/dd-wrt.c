@@ -436,6 +436,41 @@ ej_get_clkfreq (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "unknown");
   return;
 }
+#elif HAVE_MERAKI
+void
+ej_get_clkfreq (webs_t wp, int argc, char_t ** argv)
+{
+  FILE *fp = fopen ("/proc/cpuinfo", "rb");
+  if (fp == NULL)
+    {
+      websWrite (wp, "unknown");
+      return;
+    }
+  int cnt = 0;
+  int b = 0;
+  while (b != EOF)
+    {
+      b = getc (fp);
+      if (b == ':')
+	cnt++;
+      if (cnt == 4)
+	{
+	  getc (fp);
+	  char cpuclk[4];
+	  cpuclk[0] = getc (fp);
+	  cpuclk[1] = getc (fp);
+	  cpuclk[2] = getc (fp);
+	  cpuclk[3] = 0;
+	  websWrite (wp, cpuclk);
+	  fclose (fp);
+	  return;
+	}
+    }
+
+  fclose (fp);
+  websWrite (wp, "unknown");
+  return;
+}
 #elif HAVE_LS2
 void
 ej_get_clkfreq (webs_t wp, int argc, char_t ** argv)
@@ -3261,7 +3296,7 @@ show_netmode (webs_t wp, char *prefix)
 		 nvram_match (wl_net_mode,
 			      "n-only") ? "selected=\\\"selected\\\"" : "");
     }
-#if !defined(HAVE_FONERA) && !defined(HAVE_LS2)
+#if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
 #ifndef HAVE_MADWIFI
   if (nvram_match ("wl0_phytypes", "ga") || nvram_match ("wl0_phytypes", "a"))
     websWrite (wp,
@@ -3943,7 +3978,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 //  sprintf (maxpower, "%s_maxpower", prefix);
   if (!strcmp (prefix, "ath0"))	//show client only on first interface
     {
-#if !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108)
+#if !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_MERAKI)
 
       websWrite (wp, " 	<div class=\"setting\">\n");
       websWrite (wp,
@@ -4112,7 +4147,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   sprintf (wl_sifstime, "%s_sifstime", prefix);
   sprintf (wl_xr, "%s_xr", prefix);
   show_rates (wp, prefix);
-#if !defined(HAVE_FONERA) && !defined(HAVE_LS2)
+#if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
   showOption (wp, "wl_basic.turbo", wl_turbo);
 #endif
   showOption (wp, "wl_basic.preamble", wl_preamble);
@@ -4122,14 +4157,14 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
 
 //  showOption (wp, "wl_basic.extchannel", wl_xchanmode);
-#if !defined(HAVE_FONERA) && !defined(HAVE_LS2)
+#if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
   if (nvram_match ("ath_regulatory", "1"))
     {
       showOption (wp, "wl_basic.outband", wl_outdoor);
     }
 #endif
   showOption (wp, "wl_basic.diversity", wl_diversity);
-#ifndef HAVE_FONERA
+#if !defined(HAVE_FONERA) 
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" >\n",
 	     wl_width);
@@ -5471,13 +5506,15 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
 	  websWrite (wp, "'%s','%s','%3dM','%d','%d','%d'",
 		     mac, ifname,
 		     ((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) /
-		      2) * turbo, si->isi_noise + si->isi_rssi, si->isi_noise,
+		      //2) * turbo, -95 + si->isi_rssi,-95,
+		      2) * turbo, si->isi_noise + si->isi_rssi,si->isi_noise,
 		     si->isi_rssi);
 	}
       else
 	{
 	  websWrite (wp, "'%s','%s','N/A','%d','%d','%d'",
 		     mac, ifname,
+		     //-95 + si->isi_rssi, -95,
 		     si->isi_noise + si->isi_rssi, si->isi_noise,
 		     si->isi_rssi);
 	}
