@@ -3660,10 +3660,10 @@ static void set_tainted(struct obj_file *f, int fd, char *m_name,
 	static int first = 1;
 	if (fd < 0 && !kernel_has_tainted)
 		return;		/* New modutils on old kernel */
-	printf("Warning: loading %s will taint the kernel: %s%s\n",
-			m_name, text1, text2);
+/*	printf("Warning: loading %s will taint the kernel: %s%s\n",
+			m_name, text1, text2); */
 	if (first) {
-		printf("  See %s for information about tainted modules\n", TAINT_URL);
+/*		printf("  See %s for information about tainted modules\n", TAINT_URL); */
 		first = 0;
 	}
 	if (fd >= 0) {
