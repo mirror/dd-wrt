@@ -1280,6 +1280,7 @@ start_lan (void)
 		led_control (LED_BRIDGE, LED_ON);
 #ifdef HAVE_MSSID
 		enable_dhcprelay (lan_ifname);
+		do_mssid (lan_ifname);
 #endif
 	      }
 
