@@ -483,7 +483,7 @@ wlconf_get_bsscfgs(char* ifname, char* prefix)
 	bclist->count = 1;
 	
 	/* additional virtual BSS Configs from wlX_vifs */
-	if (nvram_match(strcat_r(prefix, "mode", tmp),"ap") || nvram_match(strcat_r(prefix, "mode", tmp),"apsta"))
+	if (nvram_match(strcat_r(prefix, "mode", tmp),"ap") || nvram_match(strcat_r(prefix, "mode", tmp),"apsta") || nvram_match(strcat_r(prefix, "mode", tmp),"apstawet"))
 	{
 	foreach(var, nvram_safe_get(strcat_r(prefix, "vifs", tmp)), next) {
 		if (bclist->count == WL_MAXBSSCFG) {
