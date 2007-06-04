@@ -1310,8 +1310,8 @@ adjust_regulatory (int count)
     setsysctrl (wif, "turbo", tb);
     long s = atol (nvram_default_get (sifs, "16"));
     long p = atol (nvram_default_get (preamble, "20"));
-    setsysctrl (wif, "sifstime", s);
-    setsysctrl (wif, "preambletime", p);
+//    setsysctrl (wif, "sifstime", s);
+//    setsysctrl (wif, "preambletime", p);
 
     long regulatory = atol (nvram_default_get ("ath_regulatory", "0"));
     {
