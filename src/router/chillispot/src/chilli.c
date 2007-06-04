@@ -2017,8 +2017,10 @@ int cb_redir_getstate(struct redir_t *redir, struct in_addr *addr,
   conn->hisip = appconn->hisip;
   memcpy(conn->sessionid, appconn->sessionid, REDIR_SESSIONID_LEN);
   
-  //strncpy(conn->userurl, appconn->userurl, REDIR_MAXCHAR);
-  //conn->userurl[REDIR_MAXCHAR-1] = 0;
+  /*
+  strncpy(conn->userurl, appconn->userurl, REDIR_MAXCHAR);
+  conn->userurl[REDIR_MAXCHAR-1] = 0;
+  */
   
   /* Stuff needed for status */
   conn->input_octets    = appconn->input_octets;
