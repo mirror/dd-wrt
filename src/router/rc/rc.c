@@ -426,11 +426,7 @@ main_loop (void)
 #endif
 
 #ifndef HAVE_RB500
-	  cprintf ("STOP RESETBUTTON\n");
-	  if ((brand & 0x000f) != 0x000f)
-	    {
-	      stop_service ("resetbutton");
-	    }
+      stop_service ("resetbutton");
 #endif
 	  start_service ("create_rc_shutdown");
 	  system ("/tmp/.rc_shutdown");
@@ -455,10 +451,7 @@ main_loop (void)
 		  1);
 	  start_service ("ipv6");
 #ifndef HAVE_RB500
-	  if ((brand & 0x000f) != 0x000f)
-	    {
-	      start_service ("resetbutton");
-	    }
+      start_service ("resetbutton");
 #endif
 	  start_service ("setup_vlans");
 #ifndef HAVE_MADWIFI
@@ -755,19 +748,7 @@ main (int argc, char **argv)
   else if (strstr (base, "resetbutton"))
     {
 #ifndef HAVE_RB500
-
-      int brand = getRouterBrand ();
-      if ((brand & 0x000f) != 0x000f)
-	{
 	  return resetbutton_main (argc, argv);
-	}
-      else
-	{
-	  fprintf (stderr,
-		   "Your router model doesnt support the resetbutton!\n");
-	  return 0;
-	}
-
 #endif
     }
   else if (strstr (base, "wland"))
