@@ -56,7 +56,7 @@ do_mssid (char *lan_ifname)
       char bridged[32];
       sprintf (bridged, "%s_bridged", var);
       
-	if (nvram_match ("wl0_mode", "apsta") || nvram_match ("wl0_mode", "apstawet"))
+	if (nvram_match ("wl0_mode", "apsta"))
 	  ether_atoe (nvram_safe_get("wan_hwaddr"), ifr.ifr_hwaddr.sa_data);
 	else
 	  ether_atoe (nvram_safe_get("wl0_hwaddr"), ifr.ifr_hwaddr.sa_data);
