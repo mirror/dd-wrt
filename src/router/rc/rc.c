@@ -502,20 +502,7 @@ main_loop (void)
 	  cprintf ("set led release wan control\n");
 	  SET_LED (RELEASE_WAN_CONTROL);
 	  
-	  if (nvram_match ("wl0_mode", "sta")
-	      || nvram_match ("wl0_mode", "wet")
-	      || nvram_match ("wl0_mode", "apsta")
-	      || nvram_match ("wl0_mode", "apstawet")) 
-		{
-#ifndef HAVE_MADWIFI
-	  stop_service ("nas");
-	  start_service ("nas");
-#ifdef HAVE_MSSID
-      start_service ("guest_nas");
-#endif
-#endif
-		}
-            
+          
 	  cprintf ("create rc file\n");
 #ifdef HAVE_REGISTER
 	  if (isregistered ())
