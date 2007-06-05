@@ -225,7 +225,21 @@ start_sysinit (void)
   eval ("insmod", "cryptodev");
   eval ("insmod", "ixp4xx", "init_crypto=0");
 
-  eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
+/*  eval ("insmod", "wlan");
+  eval ("insmod", "ath_hal");
+  eval ("insmod", "ath_dfs");
+  eval ("insmod", "ath_rate_atheros");
+  eval ("insmod", "wlan_scan_sta");
+  eval ("insmod", "wlan_scan_ap");
+  eval ("insmod", "wlan_acl");
+  eval ("insmod", "wlan_ccmp");
+  eval ("insmod", "wlan_tkip");
+  eval ("insmod", "wlan_wep");
+  eval ("insmod", "wlan_xauth");*/
+  eval ("insmod", "ath_pci");
+  
+
+ // eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
 
   if (ifexists ("wifi0"))
     eval ("ifconfig", "wifi0", "up");
