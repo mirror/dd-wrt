@@ -2404,8 +2404,7 @@ start_wan (int status)
     }
   cprintf ("wep handling\n");
 #ifndef HAVE_MSSID
-  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta")
-      || nvram_match ("wl0_mode", "apsta"))
+  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta"))
     {
       system2 ("wl wep sw");
       sleep (1);
