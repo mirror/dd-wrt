@@ -396,18 +396,15 @@ start_sysinit (void)
     case ROUTER_WRTSL54GS:
       nvram_set ("wan_ifname", "eth1");
       nvram_set ("wan_ifnames", "eth1");
-      nvram_set ("pppoe_wan_ifname", "eth1");
       break;
 
     case ROUTER_WRT350N:
       nvram_set ("wan_ifname", "vlan2");
       nvram_set ("wan_ifnames", "vlan2");
-      nvram_set ("pppoe_wan_ifname", "vlan2");
       break;
     case ROUTER_BUFFALO_WZRG144NH:
       nvram_set ("wan_ifname", "vlan1");
       nvram_set ("wan_ifnames", "vlan1");
-      nvram_set ("pppoe_wan_ifname", "vlan1");
       break;
 
     case ROUTER_ASUS_WL500G_PRE:
@@ -417,7 +414,6 @@ start_sysinit (void)
       nvram_set ("wl0_ifname", "eth2");
       nvram_set ("wan_ifname", "vlan1");	// fix for Asus WL500gPremium WAN problem.
       nvram_set ("wan_ifnames", "vlan1");
-      nvram_set ("pppoe_wan_ifname", "vlan1");
       nvram_set ("vlan1ports", "0 5");
       break;
 
@@ -456,11 +452,12 @@ start_sysinit (void)
 
     }
 
-
   /* ifnames */
   strcpy (wanifname, nvram_safe_get ("wan_ifname"));
   strcpy (wlifname, nvram_safe_get ("wl0_ifname"));
 
+  /* set pppoe_wan_ifname */
+  nvram_set ("pppoe_wan_ifname", wanifname); 
 
   /* Modules */
   uname (&name);
