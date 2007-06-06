@@ -32,6 +32,10 @@ ifeq ($(CONFIG_NSTX),y)
 CFLAGS += -DHAVE_NSTX
 OBJS += nstx.o
 endif
+ifeq ($(CONFIG_DNSMASQ),y)
+CFLAGS += -DHAVE_DNSMASQ
+OBJS += dnsmasq.o
+endif
 ifeq ($(CONFIG_KAID),y)
 CFLAGS += -DHAVE_KAID
 endif
