@@ -527,7 +527,8 @@ start_restore_defaults (void)
 
   if (restore_defaults)
     cprintf ("Restoring defaults...");
-
+    nvram_unset ("wan_to_lan");  //important for some AP
+    
 //    }
 
 /* Delete dynamically generated variables */
