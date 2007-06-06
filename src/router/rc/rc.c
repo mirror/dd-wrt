@@ -375,18 +375,7 @@ main_loop (void)
 	  cprintf ("RESTART\n");
 
 #ifndef HAVE_MADWIFI
-	  if (nvram_match ("wl0_akm", "wpa") ||
-	      nvram_match ("wl0_akm", "psk") ||
-	      nvram_match ("wl0_akm", "radius") ||
-	      nvram_match ("wl0_akm", "psk2") ||
-	      nvram_match ("wl0_akm", "wpa2") ||
-	      nvram_match ("wl0_akm", "wpa wpa2") ||
-	      nvram_match ("wl0_akm", "psk psk2"))
-	    {
 	      eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
-	      sleep (4);
-//	      start_service ("wlconf");
-	    }
 #endif
 
 
@@ -455,6 +444,13 @@ main_loop (void)
 #endif
 	  start_service ("setup_vlans");
 #ifndef HAVE_MADWIFI
+	if (nvram_match ("wl0_mode", "apstawet"))  //temporary fix for repeater-bridge mode init problem
+		{
+		  nvram_set ("wl0_mode", "wet");
+	      start_service ("wlconf");
+		  eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
+		  nvram_set ("wl0_mode", "apstawet");
+		}
       start_service ("wlconf");
 #endif
 
