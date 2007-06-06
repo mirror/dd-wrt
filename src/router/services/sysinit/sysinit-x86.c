@@ -315,7 +315,12 @@ eval("insmod","crypto_null");
 //  eval ("insmod", "ath_hal");
 //  eval ("insmod", "wlan");
 //  eval ("insmod", "ath_rate_sample");
+//  if (isGrep("/sbin/lspci -v","EMP-8602"))
+//  eval ("insmod", "ath_pci","powerfix=7", "rfkill=0", "autocreate=none");
+//  else
   eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
+
+
 
 
 /*  eval ("insmod", "wlan_acl");

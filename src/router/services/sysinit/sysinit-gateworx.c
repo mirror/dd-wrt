@@ -236,8 +236,10 @@ start_sysinit (void)
   eval ("insmod", "wlan_tkip");
   eval ("insmod", "wlan_wep");
   eval ("insmod", "wlan_xauth");*/
-  eval ("insmod", "ath_pci");
-  
+//  if (isGrep("/sbin/lspci -v","EMP-8602"))
+//  eval ("insmod", "ath_pci","powerfix=7", "rfkill=0", "autocreate=none");
+//  else
+  eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
 
  // eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
 
