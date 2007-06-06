@@ -223,7 +223,8 @@ start_nas_wan (void)
       sprintf (vif, "%s_mode", var);
       if (nvram_match (vif, "sta")
 	  || nvram_match (vif, "wet")
-	  || nvram_match (vif, "apsta") || nvram_match (vif, "apstawet"))
+	  || nvram_match (vif, "apsta")
+	  || nvram_match (vif, "apstawet"))
 	{
 	  start_nas_single ("wan", var);
 	}
