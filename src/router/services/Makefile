@@ -319,6 +319,7 @@ CFLAGS += -DHAVE_RADVD
 endif
 
 ifeq ($(CONFIG_DHCPFORWARD),y)
+OBJS += dhcpforward.o
 CFLAGS += -DHAVE_DHCPFWD
 endif
 ifeq ($(CONFIG_PPPD),y)
@@ -385,6 +386,7 @@ CFLAGS += -DHAVE_DHCPFORWARD
 endif
 
 ifeq ($(CONFIG_DHCPRELAY),y)
+
 CFLAGS += -DHAVE_DHCPRELAY
 endif
 
