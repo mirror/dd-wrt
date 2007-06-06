@@ -499,7 +499,7 @@ destroy_wds (char *ifname)
   for (s = 1; s <= 10; s++)
     {
       char dev[16];
-      sprintf (dev, "wdsath%s.%d", ifname, s);
+      sprintf (dev, "wds%s.%d", ifname, s);
       if (ifexists (dev))
 	{
 	  br_del_interface ("br0", dev);
