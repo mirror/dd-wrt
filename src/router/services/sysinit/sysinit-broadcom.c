@@ -360,6 +360,12 @@ start_sysinit (void)
       nvram_set ("wan_ifname", "eth0");	//WAN to nonexist. iface.
       nvram_set ("wan_ifnames", "eth0");
       nvram_set ("port_swap", "1");
+      if (nvram_match ("wan_to_lan", "yes"))  // = no lan
+      	{
+	    nvram_set ("lan_ifnames", "eth2");
+      	nvram_set ("wan_ifname", "eth1");
+      	nvram_set ("wan_ifnames", "eth1");
+  		}
       break;
 
     case ROUTER_MOTOROLA_WE800G:
@@ -369,6 +375,12 @@ start_sysinit (void)
       nvram_set ("wan_ifnames", "eth0");
       nvram_set ("port_swap", "1");
       eval ("gpio", "disable", "7");
+      if (nvram_match ("wan_to_lan", "yes"))  // = no lan
+      	{
+	    nvram_set ("lan_ifnames", "eth2");
+      	nvram_set ("wan_ifname", "eth1");
+      	nvram_set ("wan_ifnames", "eth1");
+  		}
       break;
 
     case ROUTER_MOTOROLA_V1:
@@ -414,10 +426,16 @@ start_sysinit (void)
     case ROUTER_VIEWSONIC_WAPBR_100:
     case ROUTER_USR_5430:
     case ROUTER_BUFFALO_WLI_TX4_G54HP:
-      nvram_set ("lan_ifnames", "eth0 eth1");	// fix for interfaces
+      nvram_set ("lan_ifnames", "eth0 eth1");
       nvram_set ("wl0_ifname", "eth1");
       nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
       nvram_set ("wan_ifnames", "eth2");
+      if (nvram_match ("wan_to_lan", "yes"))  // = no lan
+      	{
+	    nvram_set ("lan_ifnames", "eth1");
+      	nvram_set ("wan_ifname", "eth0");
+      	nvram_set ("wan_ifnames", "eth0");
+  		}
       break;
 
     case ROUTER_DELL_TRUEMOBILE_2300_V2:	//we must fix cfe defaults with CR added
