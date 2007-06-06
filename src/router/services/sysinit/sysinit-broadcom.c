@@ -360,7 +360,7 @@ start_sysinit (void)
       nvram_set ("wan_ifname", "eth0");	//WAN to nonexist. iface.
       nvram_set ("wan_ifnames", "eth0");
       nvram_set ("port_swap", "1");
-      if (nvram_match ("wan_to_lan", "yes"))  // = no lan
+      if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))  // = no lan
       	{
 	    nvram_set ("lan_ifnames", "eth2");
       	nvram_set ("wan_ifname", "eth1");
@@ -375,7 +375,7 @@ start_sysinit (void)
       nvram_set ("wan_ifnames", "eth0");
       nvram_set ("port_swap", "1");
       eval ("gpio", "disable", "7");
-      if (nvram_match ("wan_to_lan", "yes"))  // = no lan
+      if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))  // = no lan
       	{
 	    nvram_set ("lan_ifnames", "eth2");
       	nvram_set ("wan_ifname", "eth1");
@@ -426,7 +426,7 @@ start_sysinit (void)
       nvram_set ("wl0_ifname", "eth1");
       nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
       nvram_set ("wan_ifnames", "eth2");
-      if (nvram_match ("wan_to_lan", "yes"))  // = no lan
+      if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))  // = no lan
       	{
 	    nvram_set ("lan_ifnames", "eth1");
       	nvram_set ("wan_ifname", "eth0");
