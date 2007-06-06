@@ -418,6 +418,8 @@ extern int getifcount (const char *ifprefix);
 extern int getIfList (char *buffer, char *ifprefix);
 extern int ifexists (const char *ifname);
 extern void getinterfacelist (const char *ifprefix, char *buffer);
+int isGrep(char *string,char *cmp);
+int softkill (char *name);
 
 #define MAX_WDS_DEVS 10
 #endif

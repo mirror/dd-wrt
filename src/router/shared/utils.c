@@ -2989,6 +2989,26 @@ killall (const char *name, int sig)
   return -2;
 }
 
+int isGrep(char *string,char *cmp)
+{
+  char devcall[128];
+  int res;
+  sprintf (devcall, "%s|grep \"%s\"|/bin/wc -l",string,cmp);
+//system(devcall);
+  FILE *in = popen (devcall, "rb");
+  fscanf (in, "%d", &res);
+  fclose (in);
+  return res > 0 ? 1 : 0;
+
+}
+
+int
+softkill (char *name)
+{
+  killall (name, SIGKILL);
+  return 0;
+}
+
 #ifdef HAVE_X86
 
 static int fd;
