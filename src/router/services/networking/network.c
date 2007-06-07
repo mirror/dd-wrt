@@ -2007,7 +2007,9 @@ start_wan (int status)
     }
   else
     perror ("Write WAN mac fail : ");
-
+#ifdef HAVE_MSSID
+    set_vifsmac(mac);  //in apsta mode: wanface=wireless, set vifs to same mac
+#endif
 
 #endif
 //fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
