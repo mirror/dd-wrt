@@ -281,6 +281,9 @@ start_single_service (void)
   else if (!strcmp (service, "index"))
     {
       unlink ("/tmp/ppp/log");
+#ifndef HAVE_MADWIFI
+      stop_service ("nas");
+#endif
 #ifdef HAVE_MADWIFI
       stop_service ("stabridge");
 #endif
@@ -313,6 +316,12 @@ start_single_service (void)
 #endif
       startstop ("udhcpd");
       startstop ("dnsmasq");
+#ifndef HAVE_MADWIFI
+      start_service ("nas");
+#ifdef HAVE_MSSID
+      start_service ("guest_nas");
+#endif
+#endif
 #ifdef HAVE_BIRD
       startstop ("zebra");
 #endif
@@ -459,6 +468,9 @@ start_single_service (void)
 	   || !strcmp (service, "start_heartbeat"))
     {
       unlink ("/tmp/ppp/log");
+#ifndef HAVE_MADWIFI
+      stop_service ("nas");
+#endif
 #ifdef HAVE_MADWIFI
       stop_service ("stabridge");
 #endif
@@ -488,6 +500,12 @@ start_single_service (void)
       start_service ("wan_boot");
 #ifdef HAVE_MADWIFI
       start_service ("stabridge");
+#endif
+#ifndef HAVE_MADWIFI
+      start_service ("nas");
+#ifdef HAVE_MSSID
+      start_service ("guest_nas");
+#endif
 #endif
     }
   else if (!strcmp (service, "stop_pppoe") || !strcmp (service, "stop_pptp")
