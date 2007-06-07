@@ -1980,7 +1980,8 @@ start_wan (int status)
 #endif
 
 //fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
-
+  unsigned char mac[20];
+  
   if (nvram_match ("mac_clone_enable", "1") &&
       nvram_invmatch ("def_hwaddr", "00:00:00:00:00:00") &&
       nvram_invmatch ("def_hwaddr", ""))
@@ -1990,17 +1991,12 @@ start_wan (int status)
 #ifndef HAVE_MADWIFI
   else
     {
-      unsigned char mac[20];
       if (nvram_match ("port_swap", "1"))
 	strcpy (mac, nvram_safe_get ("et1macaddr"));
       else
 	strcpy (mac, nvram_safe_get ("et0macaddr"));
       MAC_ADD (mac);		// The wan mac equal lan mac add 1
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
-#ifdef HAVE_MSSID
-	if (nvram_match ("wl0_mode", "apsta"))
-    	set_vifsmac(mac);  //in apsta mode: wanface=wireless, set vifs to same mac
-#endif
     }
 
   if (memcmp (ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN))
@@ -2011,7 +2007,14 @@ start_wan (int status)
     }
   else
     perror ("Write WAN mac fail : ");
-
+    
+#ifdef HAVE_MSSID
+	if (nvram_match ("wl0_mode", "apsta"))
+		{
+		ether_etoa (ifr.ifr_hwaddr.sa_data, mac);	
+    	set_vifsmac(mac);  //in apsta mode: wanface=wireless, set vifs to same mac
+		}
+#endif
 
 #endif
 //fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
