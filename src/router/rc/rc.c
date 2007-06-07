@@ -465,7 +465,13 @@ main_loop (void)
 	  start_service ("vlantagging");
 	  start_service ("bridgesif");
 #endif
-
+	  cprintf ("start wan boot\n");
+	  start_service ("wan_boot");
+	  cprintf ("diag STOP LED\n");
+	  diag_led (DIAG, STOP_LED);
+	  cprintf ("set led release wan control\n");
+	  SET_LED (RELEASE_WAN_CONTROL);
+	  
 	  if (nvram_match ("wl0_mode", "sta")
 	      || nvram_match ("wl0_mode", "wet")
 	      || nvram_match ("wl0_mode", "apsta")
@@ -475,7 +481,9 @@ main_loop (void)
 	      cprintf ("ifconfig wl up\n");
 	      eval ("/sbin/ifconfig", get_wdev (), "up");
 	    }
-	    
+#ifdef HAVE_MADWIFI
+	  start_service ("stabridge");
+#endif	    
 #ifndef HAVE_MADWIFI
       start_service ("nas");
 #ifdef HAVE_MSSID
@@ -486,18 +494,8 @@ main_loop (void)
 #ifdef HAVE_REGISTER
 	  start_service ("mkfiles");
 #endif
-#ifdef HAVE_MADWIFI
-	  start_service ("stabridge");
-#endif
 	  cprintf ("start services\n");
 	  start_services ();
-	  cprintf ("start wan boot\n");
-	  start_service ("wan_boot");
-	  cprintf ("diaG STOP LED\n");
-	  diag_led (DIAG, STOP_LED);
-	  cprintf ("set led release wan control\n");
-	  SET_LED (RELEASE_WAN_CONTROL);
-	  
           
 	  cprintf ("create rc file\n");
 #ifdef HAVE_REGISTER
