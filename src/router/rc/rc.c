@@ -376,8 +376,17 @@ main_loop (void)
 
 #ifndef HAVE_MADWIFI
 	      eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
+#ifdef HAVE_MSSID	  
+  char *next;
+  char var[80];
+  char *vifs = nvram_safe_get ("wl0_vifs");
+  if (vifs != NULL)
+    foreach (var, vifs, next)
+    {
+      eval ("ifconfig", var, "down");
+    }	  
 #endif
-
+#endif
 
 	  /* Fall through */
 	case STOP:
@@ -391,6 +400,7 @@ main_loop (void)
 		  "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:",
 		  1);
 	  cprintf ("STOP SERVICES\n");
+	  
 	  stop_services ();
 #ifndef HAVE_MADWIFI
       stop_service ("nas");
