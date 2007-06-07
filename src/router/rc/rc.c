@@ -465,8 +465,12 @@ main_loop (void)
 	  start_service ("vlantagging");
 	  start_service ("bridgesif");
 #endif
+	  cprintf ("start services\n");
+	  start_services ();
+	  
 	  cprintf ("start wan boot\n");
 	  start_service ("wan_boot");
+	  
 	  cprintf ("diag STOP LED\n");
 	  diag_led (DIAG, STOP_LED);
 	  cprintf ("set led release wan control\n");
@@ -494,8 +498,6 @@ main_loop (void)
 #ifdef HAVE_REGISTER
 	  start_service ("mkfiles");
 #endif
-	  cprintf ("start services\n");
-	  start_services ();
           
 	  cprintf ("create rc file\n");
 #ifdef HAVE_REGISTER
