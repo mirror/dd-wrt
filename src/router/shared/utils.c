@@ -19,6 +19,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <resolv.h>
+#include <signal.h>
 
 
 
