@@ -305,9 +305,9 @@ start_udhcpd (void)
   if (nvram_match ("local_dns", "1"))
   	{
 	if (nvram_match ("port_swap", "1"))
-		fprintf (fp, "%s %s %s\n", nvram_safe_get ("lan_ipaddr"), nvram_safe_get ("et0macaddr"), nvram_safe_get ("router_name"));
-	else
 		fprintf (fp, "%s %s %s\n", nvram_safe_get ("lan_ipaddr"), nvram_safe_get ("et1macaddr"), nvram_safe_get ("router_name"));
+	else
+		fprintf (fp, "%s %s %s\n", nvram_safe_get ("lan_ipaddr"), nvram_safe_get ("et0macaddr"), nvram_safe_get ("router_name"));
 	}
   int leasenum = atoi (nvram_safe_get ("static_leasenum"));
   if (leasenum > 0)
