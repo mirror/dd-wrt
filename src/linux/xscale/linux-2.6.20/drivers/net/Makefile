@@ -11,40 +11,45 @@ OSAL_DIR := $(IX_XSCALE_SW)/../ixp_osal
 
 CFLAGS_ixp400_eth.o	= -DWall \
 			  -I$(IX_XSCALE_SW)/src/include \
-			  -I$(OSAL_DIR)/ \
-			  -I$(OSAL_DIR)/os/linux/include/ \
-			  -I$(OSAL_DIR)/os/linux/include/modules/ \
-			  -I$(OSAL_DIR)/os/linux/include/modules/ioMem/ \
-			  -I$(OSAL_DIR)/os/linux/include/modules/core/ \
-			  -I$(OSAL_DIR)/os/linux/include/modules/bufferMgt/ \
-			  -I$(OSAL_DIR)/os/linux/include/core/  \
-			  -I$(OSAL_DIR)/os/linux/include/platforms/ \
-			  -I$(OSAL_DIR)/os/linux/include/platforms/ixp400/ \
-			  -I$(OSAL_DIR)/os/linux/include/platforms/ixp400/ixp425 \
-			  -I$(OSAL_DIR)/os/linux/include/platforms/ixp400/ixp465 \
-			  -I$(OSAL_DIR)/os/linux/include/core/ \
-			  -I$(OSAL_DIR)/include/ \
-			  -I$(OSAL_DIR)/include/modules/ \
-			  -I$(OSAL_DIR)/include/modules/bufferMgt/ \
-			  -I$(OSAL_DIR)/include/modules/ioMem/ \
-			  -I$(OSAL_DIR)/include/modules/core/ \
-			  -I$(OSAL_DIR)/include/platforms/ \
-			  -I$(OSAL_DIR)/include/platforms/ixp400/ \
-			  -I$(OSAL_DIR)/include/platforms/ixp400/ixp425 \
-			  -I$(OSAL_DIR)/include/platforms/ixp400/ixp465
+	-I$(OSAL_DIR)/ \
+	-I$(OSAL_DIR)/common/include/ \
+	-I$(OSAL_DIR)/common/include/modules/ioMem \
+	-I$(OSAL_DIR)/common/include/modules/ddk \
+	-I$(OSAL_DIR)/common/include/modules/bufferMgt \
+	-I$(OSAL_DIR)/common/os/linux/include/modules/ioMem \
+	-I$(OSAL_DIR)/common/os/linux/include/modules/ddk \
+	-I$(OSAL_DIR)/common/os/linux/include/modules/bufferMgt \
+	-I$(OSAL_DIR)/common/os/linux/include/core \
+	-I$(OSAL_DIR)/include/ \
+	-I$(OSAL_DIR)/include/modules/ \
+	-I$(OSAL_DIR)/include/modules/bufferMgt/ \
+	-I$(OSAL_DIR)/include/modules/ioMem/ \
+	-I$(OSAL_DIR)/include/modules/core/ \
+	-I$(OSAL_DIR)/include/platforms/ \
+	-I$(OSAL_DIR)/include/platforms/ixp400/ \
+	-I$(OSAL_DIR)/include/platforms/ixp400/ixp425 \
+	-I$(OSAL_DIR)/include/platforms/ixp400/ixp465 \
+	-DENABLE_IOMEM \
+	-DENABLE_BUFFERMGT 
 
-ifeq ($(CONFIG_ARCH_IXDP465),y)
+ifeq ($(CONFIG_CPU_IXP46X),y)
 CFLAGS_ixp400_eth.o += -D__ixp46X
+CFLAGS_ixp400_eth.o += -I$(OSAL_DIR)/platforms/ixp46X/include
+CFLAGS_ixp400_eth.o += -I$(OSAL_DIR)/platforms/ixp46X/os/linux/include
+else
+ifeq ($(CONFIG_CPU_IXP43X),y)
+CFLAGS_ixp400_eth.o += -D__ixp43X
 else
 CFLAGS_ixp400_eth.o += -D__ixp42X
+CFLAGS_ixp400_eth.o += -I$(OSAL_DIR)/platforms/ixp42X/include
+CFLAGS_ixp400_eth.o += -I$(OSAL_DIR)/platforms/ixp42X/os/linux/include
+endif
 endif
 
 ifeq ($(CPU_IXP46X),y)
-CFLAGS_ixp400_eth.o += -D__ixp46X
 CFLAGS_ixp400_eth.o += -DIX_DEVICE=ixp46X
 CFLAGS_ixp400_eth.o += -DIX_PLATFORM=ixdp46x
 else
-CFLAGS_ixp400_eth.o += -D__ixp42X
 CFLAGS_ixp400_eth.o += -DIX_DEVICE=ixp42X
 CFLAGS_ixp400_eth.o += -DIX_PLATFORM=ixdp42x
 endif
