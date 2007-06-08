@@ -4,12 +4,12 @@
  * @brief Implementation of the EthDB feature control API
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -60,10 +60,10 @@
  */
 IxEthDBPortDefinition ixEthDBPortDefinitions[IX_ETH_DB_NUMBER_OF_PORTS] = 
 {
-    /*    id       type              capabilities */
-    {   /* 0 */    IX_ETH_NPE,       IX_ETH_NO_CAPABILITIES },    /* Ethernet NPE B */
-    {   /* 1 */    IX_ETH_NPE,       IX_ETH_NO_CAPABILITIES },    /* Ethernet NPE C */
-    {   /* 2 */    IX_ETH_NPE,       IX_ETH_NO_CAPABILITIES }     /* Ethernet NPE A or WAN Port */
+    /*    id       type       */
+    {   /* 0 */    IX_ETH_NPE },    /* Ethernet NPE B */
+    {   /* 1 */    IX_ETH_NPE },    /* Ethernet NPE C */
+    {   /* 2 */    IX_ETH_NPE }     /* Ethernet NPE A or WAN Port */
 };
 
 /**
@@ -161,7 +161,7 @@ void ixEthDBFeatureCapabilityScan(void)
             {
                 /* initialize and empty NPE response mutex */
                 ixOsalMutexInit(&portInfo->npeAckLock);
-
+		ixOsalMutexLock(&portInfo->npeAckLock, IX_OSAL_WAIT_FOREVER);
                 /* check NPE response to GetStatus */
                 msg.data[0] = IX_ETHNPE_NPE_GETSTATUS << 24;
                 msg.data[1] = 0;
@@ -279,8 +279,8 @@ void ixEthDBFeatureCapabilityScan(void)
                 ixOsalMemSet (defaultPriorityTable, 0, sizeof (defaultPriorityTable));
                 ixEthDBPriorityMappingTableSet(portIndex, defaultPriorityTable);
 
-                /* by default we turn off invalid source MAC address filtering */
-                ixEthDBFirewallInvalidAddressFilterEnable(portIndex, FALSE);
+                /* by default we turn on invalid source MAC address filtering */
+                ixEthDBFirewallInvalidAddressFilterEnable(portIndex, TRUE);
 
                 /* Notify VLAN tagging is disabled */
 		if (ixEthDBIngressVlanTaggingEnabledSet(portIndex, IX_ETH_DB_DISABLE_VLAN)

@@ -6,12 +6,12 @@
  * Description: C file for Synchronous Serial Port (SSP) Access component (IxSspAcc)
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -46,7 +46,7 @@
  * -- End of Copyright Notice --
  */
 
-#if defined (__ixp46X)
+#if defined (__ixp46X) || defined (__ixp43X)
 
 #include "IxOsal.h"
 #include "IxSspAcc.h"
@@ -220,15 +220,16 @@ ixSspAccInit (
     IX_SSP_STATUS temp_return = 0;
     
     /* Check if the hardware supports SSP. By reading the device type, it can be
-        determined if the hardware supports SSP. Currenlty only the IXP46X supports
-        SSP. */
-    if(IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X != ixFeatureCtrlDeviceRead())
+        determined if the hardware supports SSP. Currenlty only the IXP46X and
+        IXP43X support SSP. */
+    if((IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X != ixFeatureCtrlDeviceRead()) &&
+       (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X != ixFeatureCtrlDeviceRead()))
     {
         ixOsalLog (IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR,
             "ixSspAccInit: This hardware does not support SSP!\n",
             0,0,0,0,0,0);
         return IX_SSP_NOT_SUPORTED;
-    } /* end of device detected is not IXP46X */
+    } /* end of device detected is not IXP46X or IXP43X */
 
     /* Check if the initVarsSelected is NULL */
     if(NULL == initVarsSelected)
@@ -1179,4 +1180,4 @@ PRIVATE void ixSspAccInterruptDetected (
     return;
 } /* end of ixSspAccInterruptDetected */
 
-#endif /* __ixp46X */
+#endif /* __ixp46X || __ixp43X */

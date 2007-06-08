@@ -8,12 +8,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -68,8 +68,8 @@
 /* Sleep timer is set to 1ms */
 #define IX_CLIENT_SLEEP_IN_MS  1
 
-/* XScale tick is 66MHz */
-#define IX_DMA_CODELET_XSCALE_TICK 66
+/* XScale tick is 66.666666 MHz */
+#define IX_DMA_CODELET_XSCALE_TICK IX_OSAL_IXP400_TIME_STAMP_RESOLUTION/1000000
 
 /* Decimal point */
 #define IX_DMA_CODELET_DECIMAL_POINT 3
@@ -465,7 +465,7 @@ PRIVATE void ixDmaAccCodeletReportAverageTime(UINT16 tLength)
     }
         
     averageTick = (averageTick/PERFORMANCE_LOOP_NUM) / 
-	           IX_DMA_CODELET_XSCALE_TICK;
+	           (IX_DMA_CODELET_XSCALE_TICK);
 
     printf ("\nAverage Rate (in Mbps) : ");
     ratioPrintf (IX_DMA_CODELET_DECIMAL_POINT, 
@@ -482,7 +482,7 @@ PRIVATE void ixDmaAccCodeletReportAverageTime(UINT16 tLength)
  */ 
 PRIVATE void ratioPrintf (int decimalPoint, UINT64 param1, UINT64 param2)
 {
-    UINT64 number = param1 / param2;
+    UINT64 number = IX_OSAL_UDIV64_32(param1, param2);
     unsigned char tempStr[30];
     unsigned char *pStr = &tempStr[29];
     int count = 0;
@@ -491,8 +491,8 @@ PRIVATE void ratioPrintf (int decimalPoint, UINT64 param1, UINT64 param2)
     while (number != 0)
     {
 	count++;
-	*(--pStr) = (number % 10) + '0';
-	number /= 10;
+	*(--pStr) = IX_OSAL_UMOD64_32(number, 10) + '0';
+	number = IX_OSAL_UDIV64_32(number, 10);
     }
 
     if (*pStr == 0)
@@ -508,12 +508,12 @@ PRIVATE void ratioPrintf (int decimalPoint, UINT64 param1, UINT64 param2)
     }
 
     printf ("%s.", pStr); 
-    param1 %= param2;
+    param1 = IX_OSAL_UMOD64_32(param1, param2);
     while (decimalPoint-- != 0)
     {
 	param1 *= 10;
-	printf ("%d", (unsigned int) (param1 / param2));
-	param1 %= param2;
+	printf ("%d", (unsigned int) IX_OSAL_UDIV64_32(param1, param2));
+	param1 = IX_OSAL_UMOD64_32(param1, param2);
     }
 }
 

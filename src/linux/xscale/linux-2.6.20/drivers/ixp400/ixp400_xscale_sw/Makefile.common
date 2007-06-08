@@ -1,12 +1,12 @@
 # This file is for common macros used in all Makefiles.
 #
 # @par
-# IXP400 SW Release Crypto version 2.3
+# IXP400 SW Release Crypto version 2.4
 # 
 # -- Copyright Notice --
 # 
 # @par
-# Copyright (c) 2001-2005, Intel Corporation.
+# Copyright (c) 2001-2007, Intel Corporation.
 # All rights reserved.
 # 
 # @par
@@ -50,6 +50,13 @@ force:
 # In a Tornado environment, WIND_HOST_TYPE should be set
 ifeq ($(WIND_HOST_TYPE), x86-win32)
   IX_HOST_OS := windows
+  #Cancel of the definition of VXSHELL in this IXP400 Makefile. Use the "smart"
+  #dummy proof approach to dertermine base on host type and VX_VERSION
+  VXSHELL :=
+
+  ifneq ($(VX_VERSION), vx55)
+      VXSHELL := ZSH
+  endif
 else
   ifeq ($(WIND_HOST_TYPE), sun4-solaris2)
     IX_HOST_OS := solaris
@@ -141,7 +148,7 @@ endif
 
 METRICS_DIR := metrics
 
-OUTPUT_DIRS := lib ixp46X ixp46X/lib $(OBJ_DIR) \
+OUTPUT_DIRS := lib ixp46X ixp46X/lib ixp43X ixp43X/lib $(OBJ_DIR) \
         $(foreach c, $(COMPONENTS), $(OBJ_DIR)/$c $(OBJ_DIR)/$c/test)
 OUTPUT_DIRS += $(OBJ_DIR)/codelets \
         $(CODELETS_COMPONENTS:%=$(OBJ_DIR)/codelets/%)

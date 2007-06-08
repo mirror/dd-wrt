@@ -12,12 +12,12 @@
 *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -856,7 +856,7 @@ ixAtmdAccRxVcFreeReplenish (IxAtmConnId connId,
     }
 
     IX_ATMDACC_PARAMS_CHECK(
-    if ( (IX_OSAL_MBUF_MLEN(mbufPtr) < (int) vcDescriptor->cellSize) )
+    if ( (IX_OSAL_MBUF_MLEN(mbufPtr) <  vcDescriptor->cellSize) )
     {
         return IX_FAIL;
     });

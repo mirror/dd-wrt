@@ -9,12 +9,12 @@
  * Design Notes:
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -98,7 +98,7 @@ PUBLIC UINT32 ixEthAccNewSrcMask;
  *
  */
 
-IxEthAccPortDataInfo ixEthAccPortData[IX_ETH_ACC_NUMBER_OF_PORTS];
+IxEthAccPortDataInfo ixEthAccPortData[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
 
 PUBLIC IxEthAccStatus ixEthAccInit()
 {
@@ -115,17 +115,27 @@ PUBLIC IxEthAccStatus ixEthAccInit()
    */
   if (ixEthHssAccCoExistInit() != IX_ETH_ACC_SUCCESS)
   {
-      IX_ETH_ACC_WARNING_LOG("ixEthAccInit: Co-exist features init failed\n", 0, 0, 0, 0, 0, 0);
+      IX_ETH_ACC_FATAL_LOG("ixEthAccInit: Co-exist features init failed\n", 0, 0, 0, 0, 0, 0);
       
       return IX_ETH_ACC_FAIL;
   }
+
+   /* 
+    * Initialize port mapping table
+    */
+   if (ixEthNpePortMapCreate() != IX_ETH_NPE_SUCCESS)
+   {
+       IX_ETH_ACC_FATAL_LOG("ixEthAccInit: failed to build port mapping lookup table\n", 0, 0, 0, 0, 0, 0);
+      
+       return IX_ETH_ACC_FAIL;
+   }
 
   /*
    * Initialize Control plane
    */
   if (ixEthDBInit() != IX_ETH_ACC_SUCCESS)
   {
-      IX_ETH_ACC_WARNING_LOG("ixEthAccInit: EthDB init failed\n", 0, 0, 0, 0, 0, 0);
+      IX_ETH_ACC_FATAL_LOG("ixEthAccInit: EthDB init failed\n", 0, 0, 0, 0, 0, 0);
       
       return IX_ETH_ACC_FAIL;
   }
@@ -144,7 +154,7 @@ PUBLIC IxEthAccStatus ixEthAccInit()
    */
    if ( ixEthAccInitDataPlane()  != IX_ETH_ACC_SUCCESS )
    {
-      IX_ETH_ACC_WARNING_LOG("ixEthAccInit: data plane init failed\n", 0, 0, 0, 0, 0, 0);
+      IX_ETH_ACC_FATAL_LOG("ixEthAccInit: data plane init failed\n", 0, 0, 0, 0, 0, 0);
       
        return IX_ETH_ACC_FAIL;
    }
@@ -154,7 +164,7 @@ PUBLIC IxEthAccStatus ixEthAccInit()
     */
    if ( ixEthAccMiiInit() != IX_ETH_ACC_SUCCESS )
    {
-      IX_ETH_ACC_WARNING_LOG("ixEthAccInit: Mii init failed\n", 0, 0, 0, 0, 0, 0);
+      IX_ETH_ACC_FATAL_LOG("ixEthAccInit: Mii init failed\n", 0, 0, 0, 0, 0, 0);
       
        return IX_ETH_ACC_FAIL;
    }
@@ -164,7 +174,7 @@ PUBLIC IxEthAccStatus ixEthAccInit()
     */
    if (ixEthAccMacMemInit() != IX_ETH_ACC_SUCCESS)
    {
-      IX_ETH_ACC_WARNING_LOG("ixEthAccInit: Mac init failed\n", 0, 0, 0, 0, 0, 0);
+      IX_ETH_ACC_FATAL_LOG("ixEthAccInit: Mac init failed\n", 0, 0, 0, 0, 0, 0);
       
      return IX_ETH_ACC_FAIL;
    }
@@ -174,7 +184,7 @@ PUBLIC IxEthAccStatus ixEthAccInit()
     */
    if (ixOsalMutexInit(&ixEthAccControlInterfaceMutex) != IX_SUCCESS)
    {
-       IX_ETH_ACC_WARNING_LOG("ixEthAccInit: Control plane interface lock initialization failed\n", 0, 0, 0, 0, 0, 0);
+       IX_ETH_ACC_FATAL_LOG("ixEthAccInit: Control plane interface lock initialization failed\n", 0, 0, 0, 0, 0, 0);
 
        return IX_ETH_ACC_FAIL;
    }
@@ -184,16 +194,16 @@ PUBLIC IxEthAccStatus ixEthAccInit()
     */
    if (ixEthAccMacRecoveryLoopStart() !=  IX_ETH_ACC_SUCCESS)
    {
-       IX_ETH_ACC_WARNING_LOG("ixEthAccInit: Mac recovery thread failed to be spawned\n", 0, 0, 0, 0, 0, 0);
+       IX_ETH_ACC_FATAL_LOG("ixEthAccInit: Mac recovery thread failed to be spawned\n", 0, 0, 0, 0, 0, 0);
 
        return IX_ETH_ACC_FAIL;
    }
 
    /* map the qmgr interrupt registers used for rx queue interrupt disable/enable */
    ixEthAccQMIntEnableBaseAddress = 
-       (UINT32)IX_OSAL_MEM_MAP(IX_OSAL_IXP400_QMGR_PHYS_BASE + IX_ETH_ACC_QMGR_LOWQ_INT_ENABLE_REG_OFFSET,sizeof(UINT32));
+       (UINT32)IX_OSAL_MEM_MAP(IX_ETH_ACC_QMGR_PHY_BASE_ADDRESS + IX_ETH_ACC_QMGR_LOWQ_INT_ENABLE_REG_OFFSET,sizeof(UINT32));
    ixEthAccQMIntStatusBaseAddress = 
-       (UINT32)IX_OSAL_MEM_MAP(IX_OSAL_IXP400_QMGR_PHYS_BASE + IX_ETH_ACC_QMGR_LOWQ_INT_STATUS_REG_OFFSET,sizeof(UINT32));
+       (UINT32)IX_OSAL_MEM_MAP(IX_ETH_ACC_QMGR_PHY_BASE_ADDRESS + IX_ETH_ACC_QMGR_LOWQ_INT_STATUS_REG_OFFSET,sizeof(UINT32));
 
    /* initialiasation is complete */
    ixEthAccServiceInit = TRUE;
@@ -208,19 +218,22 @@ PUBLIC IxEthAccStatus ixEthAccInit()
 PUBLIC IxEthAccStatus
 ixEthAccUninit (void)
 {
+    UINT32 portIndex;
     IxEthAccPortId portId;
     IxEthAccStatus Status = IX_ETH_ACC_SUCCESS;
+
     if ( IX_ETH_ACC_IS_SERVICE_INITIALIZED() ) 
     {
        /* check none of the port is still active */
-       for (portId = 0; portId < IX_ETH_ACC_NUMBER_OF_PORTS; portId++)
+       for (portIndex = 0; portIndex < IxEthAccPortInfo->IxEthAccNumberOfPorts; portIndex++)
        {
-           if ( IX_ETH_IS_PORT_INITIALIZED(portId) )
+	   portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
+           if ( IX_ETH_IS_PORT_INITIALIZED(portId))
            {
 	       if (ixEthAccMacState[portId].portDisableState == ACTIVE)
 	       {
-				IX_ETH_ACC_WARNING_LOG("ixEthAccUnload: port %u still active, bail out\n", portId, 0, 0, 0, 0, 0);
-				return IX_ETH_ACC_FAIL;
+			IX_ETH_ACC_WARNING_LOG("ixEthAccUnload: port %u still active, bail out\n", portId, 0, 0, 0, 0, 0);
+			return IX_ETH_ACC_FAIL;
 	       }
                /* Unconfigure the queues configured by swConfigSet in QswConfig */
                if (IX_ETH_ACC_SUCCESS != ixEthAccQueuesUnconfig ())
@@ -256,9 +269,9 @@ ixEthAccUninit (void)
        IX_OSAL_MEM_UNMAP(ixEthAccQMIntStatusBaseAddress);
 
        /* set all ports as uninitialized */
-       for (portId = 0; portId < IX_ETH_ACC_NUMBER_OF_PORTS; portId++)
+       for (portIndex = 0; portIndex < IxEthAccPortInfo->IxEthAccNumberOfPorts; portIndex++)
        {
-          ixEthAccPortData[portId].portInitialized = FALSE;
+          ixEthAccPortData[IX_ETHNPE_INDEX_TO_PORT_ID(portIndex)].portInitialized = FALSE;
        }
 	
        /*Unload the database*/
@@ -284,10 +297,11 @@ ixEthAccUninit (void)
 
 
 
-PUBLIC IxEthAccStatus ixEthAccPortInit( IxEthAccPortId portId)
+PUBLIC IxEthAccStatus ixEthAccPortInit(IxEthAccPortId portId)
 {
-   IxEthNpePortId npePort = 0;
-   
+   UINT32 portIndex = 0;
+   UINT32 npePort;
+
    if ( ! IX_ETH_ACC_IS_SERVICE_INITIALIZED() ) 
    {
        IX_ETH_ACC_WARNING_LOG("EthAcc: Service Not Initialized. Cannot initialize Eth port %d.\n",(INT32) portId,0,0,0,0,0);
@@ -322,21 +336,21 @@ PUBLIC IxEthAccStatus ixEthAccPortInit( IxEthAccPortId portId)
 
    /* Update the npe count if this port is from an NPE that hasn't already been initialized */
    /* Note: npeCount must be updated before configuring this port's queues */
-   for (npePort = 0 ; npePort < IX_ETHNPE_NUM_PORTS_PER_NPE ; npePort++)
+   for (npePort = 0; npePort < IxEthAccPortInfo->port[portIndex].IxEthNpeNumberOfPortPerNpe; npePort++)
    {
        if (IX_ETH_IS_PORT_INITIALIZED(
               IX_ETHNPE_NODE_AND_PORT_TO_PHYSICAL_ID(IX_ETHNPE_PHYSICAL_ID_TO_NODE(portId), npePort))
           )
            break;
    }
-   if(npePort == IX_ETHNPE_NUM_PORTS_PER_NPE)
+   if(npePort == IxEthAccPortInfo->port[portIndex].IxEthNpeNumberOfPortPerNpe)
    {
        ixEthAccDataInfo.npeCount++;
    }
 
    if ( ixEthAccQMgrQueuesConfig(portId) != IX_ETH_ACC_SUCCESS )
    {
-      IX_ETH_ACC_WARNING_LOG("ixEthAcc: queue config failed for port %d\n", portId, 0, 0, 0, 0, 0);
+      IX_ETH_ACC_FATAL_LOG("ixEthAcc: queue config failed for port %d\n", portId, 0, 0, 0, 0, 0);
 	  
       return IX_ETH_ACC_FAIL;
    }

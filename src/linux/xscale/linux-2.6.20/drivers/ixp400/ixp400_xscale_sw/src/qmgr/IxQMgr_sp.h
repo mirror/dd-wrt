@@ -29,12 +29,12 @@
  *
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -168,10 +168,7 @@
 * @internal
 *
 */
-#if defined(__ixp42X) || defined(__ixp46X)
 #define IX_QMGR_MAX_NUM_QUEUES  (64)
-#endif /* __ixp42X */
-
 
 /**
 *
@@ -201,10 +198,7 @@
 * @internal
 *
 */
-#if defined(__ixp42X) || defined(__ixp46X)
 #define IX_QMGR_MAX_QID IX_QMGR_QUEUE_63
-#endif /* __ixp42X */
-
 
 /**
 *
@@ -221,7 +215,6 @@
 *
 */
 #define IX_QMGR_MIN_QUE_2ND_GROUP_QID (32)
-
 
 /**
 *
@@ -501,7 +494,6 @@
  */
 #define IX_QMGR_ENTRY_INDEX_OUT_OF_BOUNDS (17)
 
- 
 /**
  *
  * @ingroup IxQMgrPrivateAPI
@@ -577,9 +569,7 @@
 #define IX_QMGR_QUEUE_61 (61)    /**< Queue Number 61 */
 #define IX_QMGR_QUEUE_62 (62)    /**< Queue Number 62 */
 #define IX_QMGR_QUEUE_63 (63)    /**< Queue Number 63 */
-#if defined(__ixp42X) || defined(__ixp46X)
 #define IX_QMGR_QUEUE_INVALID (64)     /**< HwQ Queue Number Delimiter */
-#endif /* __ixp42X */
 
 /*
  * Typedefs
@@ -606,12 +596,10 @@ typedef UINT32 IxQMgrQId;
  *
  * A queues status is defined by its relative fullness or relative emptiness.
  */
-#if defined(__ixp42X) || defined(__ixp46X)
 /* Each of the queues 0-31 have Nearly Empty, Nearly Full, Empty, Full,
  * Underflow and Overflow status flags. Queues 32-63 have just Nearly Empty and
  * Full status flags.
  */
-#endif /* __ixp42X */
 /* The flags bit positions are outlined below:
  *        
  *        OF - bit-5<br> 
@@ -692,7 +680,8 @@ typedef enum
 {
     IX_QMGR_Q_ENTRY_SIZE1 = 1,   /**< 1 word entry       */
     IX_QMGR_Q_ENTRY_SIZE2 = 2,   /**< 2 word entry       */
-    IX_QMGR_Q_ENTRY_SIZE4 = 4    /**< 4 word entry       */
+    IX_QMGR_Q_ENTRY_SIZE4 = 4,   /**< 4 word entry       */
+    IX_QMGR_Q_ENTRY_SIZE_INVALID /**< Invalid queue entry size */
 } IxQMgrQEntrySizeInWords;
 
 /**
@@ -772,7 +761,6 @@ typedef enum
   IX_QMGR_Q_PRIORITY_INVALID /**< Invalid Priority level */
 } IxQMgrPriority;
 
-#if defined(__ixp42X) || defined(__ixp46X)
 /**
  * @ingroup IxQMgrPrivateAPI
  *
@@ -795,7 +783,6 @@ typedef enum
   IX_QMGR_TYPE_REALTIME_SPORADIC   /**< Sporadic callbacks-only run if no
                                         periodic callbacks are in progress    */
 } IxQMgrType;
-#endif /* __ixp42X */
 
 /**
  * @ingroup IxQMgrPrivateAPI
@@ -925,6 +912,32 @@ ixQMgrQConfig (char *qName,
 	       IxQMgrQEntrySizeInWords qEntrySizeInWords);
 
 /**
+ *
+ * @ingroup IxQMgrPrivateAPI
+ * 
+ * @fn ixQMgrQUnconfig (IxQMgrQId qId)
+ *
+ * @brief Unconfigures the configured hardware queue.
+ *
+ * This function is called by a client to cleanup the specififc queue
+ * configuration. The qId is checked for valid value. This function must 
+ * be called by each access layer component to unconfigure the specific queues.
+ * This function must be called after ixQMgrInit and ixQMgrQConfig APIs.
+ *
+ * @param qId @ref IxQMgrQId [in]  - the qId of the configured queue
+ *
+ * @return @li IX_SUCCESS, a specified queue has been successfully deconfigured.
+ * @return @li IX_FAIL, IxQMgr has not been initialised.
+ * @return @li IX_QMGR_INVALID_Q_ID, invalid queue id
+ * @return @li IX_QMGR_Q_NOT_CONFIGURED, queue not configured
+ *
+ * @internal
+ *
+ */
+PUBLIC IX_STATUS 
+ixQMgrQUnconfig (IxQMgrQId qId);
+
+/**
  * @ingroup IxQMgrPrivateAPI
  * 
  * @fn ixQMgrQSizeInEntriesGet (IxQMgrQId qId,
@@ -1047,11 +1060,9 @@ ixQMgrAvailableSramAddressGet (UINT32 *address,
  * is the address of the bottom of available SRAM. Available SRAM extends from address
  * from address to address + sizeOfFreeSram.
  */
-#if defined(__ixp42X) || defined(__ixp46X)
 /* There is one memory map block for which the available SRAM can be determined. This block
  * is for queues 0-63
  */
-#endif /* __ixp42X */
 /*
  * This function replaces the now deprecated function @ref ixQMgrAvailableSramAddressGet.
  *
@@ -1230,10 +1241,8 @@ ixQMgrQRead (IxQMgrQId qId,
 	return ixQMgrQReadMWordsMinus1(qId, entryPtr);
     }
 
-#if defined(__ixp42X) || defined(__ixp46X)
     /* underflow is available for lower queues only */
     if (qId < IX_QMGR_MIN_QUE_2ND_GROUP_QID)
-#endif /* __ixp42X */
     {
 	/* the counter of queue entries is decremented. In happy 
 	 * day scenario there are many entries in the queue
@@ -1441,9 +1450,7 @@ ixQMgrQBurstRead (IxQMgrQId qId,
     infoPtr->qReadCount = 0;
 
     /* Check if underflow occurred on the read */
-#if defined(__ixp42X) || defined(__ixp46X)
     if (nullCheckEntry == 0 && qId < IX_QMGR_MIN_QUE_2ND_GROUP_QID)
-#endif /* __ixp42X */
     {
 	/* get the queue status */
 	UINT32 status = IX_QMGR_INLINE_READ_LONG(infoPtr->qUOStatRegAddr);
@@ -1595,10 +1602,8 @@ ixQMgrQWrite (IxQMgrQId qId,
  	entrySize = infoPtr->qEntrySizeInWords;
     }
 
-#if defined(__ixp42X) || defined(__ixp46X)
     /* overflow is available for lower queues only */
     if (qId < IX_QMGR_MIN_QUE_2ND_GROUP_QID)
-#endif /* __ixp42X */
     {
 	qSize = infoPtr->qSizeInEntries;
 	/* increment the current number of entries in the queue
@@ -1768,9 +1773,7 @@ ixQMgrQBurstWrite (IxQMgrQId qId,
     }
 
     /* Check if overflow occurred on the write operation */
-#if defined(__ixp42X) || defined(__ixp46X)
     if (qId < IX_QMGR_MIN_QUE_2ND_GROUP_QID)
-#endif /* __ixp42X */
     {
 	/* get the queue status */
 	status = IX_QMGR_INLINE_READ_LONG(infoPtr->qUOStatRegAddr);
@@ -1913,7 +1916,6 @@ PUBLIC IX_STATUS
 ixQMgrQStatusGet (IxQMgrQId qId,
 		  IxQMgrQStatus *qStatus);
 #else
-#if defined(__ixp42X) || defined(__ixp46X)
 extern UINT32 ixQMgrHwQIfQueLowStatRegAddr[];
 extern UINT32 ixQMgrHwQIfQueLowStatBitsOffset[];
 extern UINT32 ixQMgrHwQIfQueLowStatBitsMask;
@@ -1921,7 +1923,6 @@ extern UINT32 ixQMgrHwQIfQueUppStat0RegAddr;
 extern UINT32 ixQMgrHwQIfQueUppStat1RegAddr;
 extern UINT32 ixQMgrHwQIfQueUppStat0BitMask[];
 extern UINT32 ixQMgrHwQIfQueUppStat1BitMask[];
-#endif /* __ixp42X */
 
 IX_QMGR_INLINE PUBLIC IX_STATUS
 ixQMgrQStatusGet (IxQMgrQId qId,
@@ -1935,7 +1936,6 @@ ixQMgrQStatusGet (IxQMgrQId qId,
     ;
 #else
 {
-#if defined(__ixp42X) || defined(__ixp46X)
     /* read the status of a queue in the range 0-31 */
     if (qId < IX_QMGR_MIN_QUE_2ND_GROUP_QID)
     {
@@ -1975,8 +1975,6 @@ ixQMgrQStatusGet (IxQMgrQId qId,
 	    *qStatus |= IX_QMGR_Q_STATUS_F_BIT_MASK;
 	}
     }
-#endif /* __ixp42X */
-
     return IX_SUCCESS;
 }
 #endif
@@ -1997,10 +1995,8 @@ ixQMgrQStatusGet (IxQMgrQId qId,
  * This function is called to set the dispatch priority of queue. The effect of
  * this function is to add a priority change request to a queue.
  */
-#if defined(__ixp42X) || defined(__ixp46X)
 /* This queue is serviced by @a ixQMgrDispatcherLoopRunB0 or @a ixQMgrDispatcherLoopRunB0LLP.
  */
-#endif /* __ixp42X */
 /*
  * @li Re-entrant   : Yes
  * @li ISR Callable : Yes
@@ -2080,7 +2076,6 @@ ixQMgrNotificationEnable (IxQMgrQId qId,
 PUBLIC IX_STATUS
 ixQMgrNotificationDisable (IxQMgrQId qId);
 
-#if defined(__ixp42X) || defined(__ixp46X)
 /**
  *
  * @ingroup IxQMgrPrivateAPI
@@ -2089,8 +2084,8 @@ ixQMgrNotificationDisable (IxQMgrQId qId);
  *
  * @brief Run the callback dispatcher.
  *
- * Optimised for features introduced in IXP42X B0 silicon and supported 
- * on IXP46X processor. This is the default dispatcher for IXP42X B0 and 
+ * Optimised for features introduced in IXP42X  silicon and supported 
+ * on IXP46X processor. This is the default dispatcher for IXP42X  and 
  * IXP46X silicon. The function runs the dispatcher for a group of queues.
  * Callbacks are made for interrupts that have occurred on queues within
  * the group that have registered callbacks. The order in which queues are
@@ -2123,9 +2118,9 @@ ixQMgrDispatcherLoopRunB0 (IxQMgrDispatchGroup group);
  *
  * @brief Run the callback dispatcher.
  *
- * This is a version of the optimised dispatcher for IXP42X B0 and IXP46X silicon, 
+ * This is a version of the optimised dispatcher for IXP42X  and IXP46X silicon, 
  * @a ixQMgrDispatcherLoopRunB0, with added support for livelock prevention. 
- * This dispatcher will only be used for the IXP42X B0 or IXP46X silicon if 
+ * This dispatcher will only be used for the IXP42X  or IXP46X silicon if 
  * feature control indicates that IX_FEATURECTRL_ORIGB0_DISPATCHER is set to   
  * IX_FEATURE_CTRL_SWCONFIG_DISABLED. Otherwise the @a ixQMgrDispatcherLoopRunB0 
  * dispatcher will be used (Default). 
@@ -2157,8 +2152,6 @@ ixQMgrDispatcherLoopRunB0 (IxQMgrDispatchGroup group);
  */
 PUBLIC void
 ixQMgrDispatcherLoopRunB0LLP (IxQMgrDispatchGroup group);
-#endif /* __ixp42X */
-
 
 /**
  *
@@ -2190,7 +2183,6 @@ ixQMgrNotificationCallbackSet (IxQMgrQId qId,
 			       IxQMgrCallback callback,
 			       IxQMgrCallbackId callbackId);
 
-#if defined(__ixp42X) || defined(__ixp46X)
 /**
  *
  * @ingroup IxQMgrPrivateAPI
@@ -2198,7 +2190,7 @@ ixQMgrNotificationCallbackSet (IxQMgrQId qId,
  * @fn ixQMgrStickyInterruptRegEnable(void)
  *
  * @brief Enable HwQ's sticky interrupt register behaviour only available
- *        on B0 Silicon. 
+ *        on  Silicon. 
  * 
  * When HwQ's sticky interrupt register is enabled, interrupt register bit will
  * only be cleared when a '1' is written to interrupt register bit and the
@@ -2319,11 +2311,6 @@ ixQMgrPeriodicDone(void);
  */
 PUBLIC void
 ixQMgrLLPShow(int resetStats);
-#endif /* __ixp42X */
 
-			       
 #endif /* IXQMGR_SP_H */
 
-/**
- * @} defgroup IxQMgrPrivateAPI
- */			       

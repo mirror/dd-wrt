@@ -8,12 +8,12 @@
  * sub-component of the IXP400 Parity Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -85,28 +85,32 @@
 
 /*
  * Master/Slave for a South AHB Bus Transaction
- *
+ * ixp46X/ixp43X  device
  * PMU Device # Name                Master  Slave
  * ------------ ---------------     ------  -----
  * 0            X-Scale BIU         Y       N
  * 1            PCI                 Y       Y
  * 2            AHB Bridge          Y       N
  * 3            Expansion Bus       Y       Y
- * 4            USBH                Y       Y
+ * 4            USBH0               Y       Y
  * 5            MCU                 N       Y
  * 6            APB Bridge          N       Y
  * 7            AQM                 N       Y
  * 8            RSA                 N       Y
+ * 8            USBH1               Y       Y
  */
+
 #define IXP400_PARITYENACC_PMU_PMSS_XSCALE_BIU        (0)
 #define IXP400_PARITYENACC_PMU_PMSS_PBC               (1)
 #define IXP400_PARITYENACC_PMU_PMSS_AHB_BRIDGE        (2)
 #define IXP400_PARITYENACC_PMU_PMSS_EBC               (3)
-#define IXP400_PARITYENACC_PMU_PMSS_USBH              (4)
+#define IXP400_PARITYENACC_PMU_PMSS_USBH0             (4)
 #define IXP400_PARITYENACC_PMU_PMSS_MCU               (5)
 #define IXP400_PARITYENACC_PMU_PMSS_APB_BRIDGE        (6)
 #define IXP400_PARITYENACC_PMU_PMSS_AQM               (7)
 #define IXP400_PARITYENACC_PMU_PMSS_RSA               (8)
+#define IXP400_PARITYENACC_PMU_PMSS_USBH1             (8)
+
 
 /*
  * Master/Slave for a North AHB Bus Transaction
@@ -114,7 +118,8 @@
  * PMU Device # Name                Master  Slave
  * ------------ ---------------     ------  -----
  * 0            NPE-A               Y       N
- * 1            NPE-B               Y       N
+ * 1            NPE-B               Y       N (__ixp46X)
+ * 1            NPE-B               N       N (__ixp43X)
  * 2            NPE-C               Y       N
  * 3            MCU                 N       Y
  * 4            AHB Bridge          N       Y
@@ -183,7 +188,8 @@ static UINT32 ixParityENAccPmuESouthAhbMaster[] =
     IXP400_PARITYENACC_PMUE_AHBS_MST_PBC,         /* 1 */
     IXP400_PARITYENACC_PMUE_AHBS_MST_AHB_BRIDGE,  /* 2 */
     IXP400_PARITYENACC_PMUE_AHBS_MST_EBC,         /* 3 */
-    IXP400_PARITYENACC_PMUE_AHBS_MST_USBH         /* 4 */
+    IXP400_PARITYENACC_PMUE_AHBS_MST_USBH0,       /* 4 */
+    IXP400_PARITYENACC_PMUE_AHBS_MST_USBH1        /* 5 */
 };
 
 /* Slave on North AHB Bus */
@@ -200,11 +206,12 @@ static UINT32 ixParityENAccPmuESouthAhbSlave[] =
     IXP400_PARITYENACC_PMUE_AHBS_SLV_PBC,         /* 1 */
     IXP400_PARITYENACC_PMUE_AHBS_SLV_INVALID,     /* 2 */
     IXP400_PARITYENACC_PMUE_AHBS_SLV_EBC,         /* 3 */
-    IXP400_PARITYENACC_PMUE_AHBS_SLV_USBH,        /* 4 */
+    IXP400_PARITYENACC_PMUE_AHBS_SLV_USBH0,       /* 4 */
     IXP400_PARITYENACC_PMUE_AHBS_SLV_MCU,         /* 5 */
     IXP400_PARITYENACC_PMUE_AHBS_SLV_APB_BRIDGE,  /* 6 */
     IXP400_PARITYENACC_PMUE_AHBS_SLV_AQM,         /* 7 */
-    IXP400_PARITYENACC_PMUE_AHBS_SLV_RSA          /* 8 */
+    IXP400_PARITYENACC_PMUE_AHBS_SLV_RSA,         /* 8 */
+    IXP400_PARITYENACC_PMUE_AHBS_SLV_USBH1        /* 8 */
 };
 
 #endif /* IXPARITYENACCPMUE_P_H */

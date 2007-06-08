@@ -9,12 +9,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -90,9 +90,7 @@
 /* size (in words) of single State Information entry (ctxt reg address|data) */
 #define IX_NPEDL_STATE_INFO_ENTRY_SIZE            2
 
-#if defined(__ixp42X) || defined(__ixp46X)
 #define IX_NPEDL_RESET_NPE_PARITY  0x0800
-#endif /* __ixp42X */
 
 #define IX_NPEDL_PARITY_BIT_MASK   0x3F00FFFF
 #define IX_NPEDL_CONFIG_CTRL_REG_MASK  0x3F3FFFFF
@@ -163,14 +161,12 @@ typedef enum
   IX_NPEDL_MEM_TYPE_DATA
 } IxNpeDlNpeMemType;
 
-#if defined(__ixp42X) || defined(__ixp46X)
 /* used to hold a reset value for a particular ECS register */
 typedef struct
 {
     UINT32 regAddr;
     UINT32 regResetVal;
 } IxNpeDlEcsRegResetValue;
-#endif /* __ixp42X */
 
 /* prototype of function to write either Instruction or Data memory */
 typedef IX_STATUS (*IxNpeDlNpeMgrMemWrite) (UINT32 npeBaseAddress,
@@ -208,16 +204,13 @@ static IxNpeDlNpeInfo ixNpeDlNpeInfo[] =
 	IX_NPEDL_INS_MEMSIZE_WORDS_NPEB,
 	IX_NPEDL_DATA_MEMSIZE_WORDS_NPEB
     }
-#if defined(__ixp42X) || defined(__ixp46X)
     ,{
 	0,
 	IX_NPEDL_INS_MEMSIZE_WORDS_NPEC,
 	IX_NPEDL_DATA_MEMSIZE_WORDS_NPEC
     }
-#endif /* __ixp42X */
 };
 
-#if defined(__ixp42X) || defined(__ixp46X)
 /* contains Reset values for Context Store Registers  */
 static UINT32 ixNpeDlCtxtRegResetValues[] =
 {
@@ -244,7 +237,6 @@ static IxNpeDlEcsRegResetValue ixNpeDlEcsRegResetValues[] =
     {IX_NPEDL_ECS_DBG_CTXT_REG_2,   IX_NPEDL_ECS_DBG_CTXT_REG_2_RESET},
     {IX_NPEDL_ECS_INSTRUCT_REG,     IX_NPEDL_ECS_INSTRUCT_REG_RESET}
 };
-#endif /* __ixp42X */
 
 static IxNpeDlNpeMgrStats ixNpeDlNpeMgrStats;
 
@@ -287,31 +279,51 @@ ixNpeDlNpeMgrBaseAddressGet (IxNpeDlNpeId npeId)
 void
 ixNpeDlNpeMgrInit (void)
 {
+
+    IX_STATUS status = IX_SUCCESS;
+
     /* Only map the memory once */
     if (!ixNpeDlMemInitialised)
     {
 	UINT32 virtAddr;
+
+	if (IX_SUCCESS == (status = ixNpeDlNpePresentCheck(IX_NPEDL_NPEID_NPEA, "ixNpeDlNpeMgrInit")))
+	{
 
 	/* map the register memory for NPE-A */
 	virtAddr = (UINT32) IX_OSAL_MEM_MAP (IX_NPEDL_NPEBASEADDRESS_NPEA,
 					    IX_OSAL_IXP400_NPEA_MAP_SIZE); 
 	IX_OSAL_ASSERT(virtAddr);
 	ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEA].baseAddress = virtAddr;
+      
+        }
+       
+        if ( IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X != ixFeatureCtrlDeviceRead() )
+        {
 
-	/* map the register memory for NPE-B */
-	virtAddr = (UINT32) IX_OSAL_MEM_MAP (IX_NPEDL_NPEBASEADDRESS_NPEB,
-					    IX_OSAL_IXP400_NPEB_MAP_SIZE); 
-	IX_OSAL_ASSERT(virtAddr);
-	ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEB].baseAddress = virtAddr;
+            if (IX_SUCCESS == (status = ixNpeDlNpePresentCheck(IX_NPEDL_NPEID_NPEB,"ixNpeDlNpeMgrInit"))) 
+            {
 
-#if defined(__ixp42X) || defined(__ixp46X)
+	        /* map the register memory for NPE-B */
+	        virtAddr = (UINT32) IX_OSAL_MEM_MAP (IX_NPEDL_NPEBASEADDRESS_NPEB,IX_OSAL_IXP400_NPEB_MAP_SIZE);
+	        IX_OSAL_ASSERT(virtAddr);
+	        ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEB].baseAddress = virtAddr;
+
+            }
+
+        }
+
+        if (IX_SUCCESS == (status = ixNpeDlNpePresentCheck(IX_NPEDL_NPEID_NPEC, 
+"ixNpeDlNpeMgrInit")))
+        {
+
 	/* map the register memory for NPE-C */
 	virtAddr = (UINT32) IX_OSAL_MEM_MAP (IX_NPEDL_NPEBASEADDRESS_NPEC,
 					    IX_OSAL_IXP400_NPEC_MAP_SIZE); 
 	IX_OSAL_ASSERT(virtAddr);
 	ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEC].baseAddress = virtAddr;
-#endif /* __ixp42X */
 
+        }
 	ixNpeDlMemInitialised = TRUE;
     }
 }
@@ -323,22 +335,35 @@ ixNpeDlNpeMgrInit (void)
 IX_STATUS
 ixNpeDlNpeMgrUninit (void)
 {
+    IX_STATUS status = IX_SUCCESS;
     if (!ixNpeDlMemInitialised)
     {
 	return IX_FAIL;
     }
-
-    IX_OSAL_MEM_UNMAP (ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEA].baseAddress);
-    IX_OSAL_MEM_UNMAP (ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEB].baseAddress);
-#if defined(__ixp42X) || defined(__ixp46X)
-    IX_OSAL_MEM_UNMAP (ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEC].baseAddress);
-#endif /* __ixp42X */
-
-    ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEA].baseAddress = 0;
-    ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEB].baseAddress = 0;
-#if defined(__ixp42X) || defined(__ixp46X)
-    ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEC].baseAddress = 0;
-#endif /* __ixp42X */
+    
+    if (IX_SUCCESS == (status = ixNpeDlNpePresentCheck(IX_NPEDL_NPEID_NPEA,
+"ixNpeDlNpeMgrUninit")))
+    {
+        IX_OSAL_MEM_UNMAP (ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEA].baseAddress);
+        ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEA].baseAddress = 0;
+    }
+        
+    if ( IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X != ixFeatureCtrlDeviceRead() )
+    {
+        if (IX_SUCCESS == (status = ixNpeDlNpePresentCheck(IX_NPEDL_NPEID_NPEB,
+"ixNpeDlNpeMgrUninit")))
+        {
+            IX_OSAL_MEM_UNMAP (ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEB].baseAddress);
+            ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEB].baseAddress = 0;
+        }
+    
+    }   
+    if (IX_SUCCESS == (status = ixNpeDlNpePresentCheck(IX_NPEDL_NPEID_NPEC,
+"ixNpeDlNpeMgrUninit")))
+    {
+        IX_OSAL_MEM_UNMAP (ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEC].baseAddress);
+        ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEC].baseAddress = 0;
+    }
 
     ixNpeDlMemInitialised = FALSE;
 
@@ -362,6 +387,13 @@ ixNpeDlNpeMgrImageLoad (
     
     IX_NPEDL_TRACE0 (IX_NPEDL_FN_ENTRY_EXIT,
 		     "Entering ixNpeDlNpeMgrImageLoad\n");
+
+    if (IX_FAIL == (status = ixNpeDlNpePresentCheck(npeId,
+"ixNpeDlNpeMgrImageLoad")))
+    {
+       IX_NPEDL_ERROR_REPORT (" Npe is disabled in the silicon \n");
+       return status;
+    }
 
     /* get base memory address of NPE from npeId */
     npeBaseAddress = ixNpeDlNpeMgrBaseAddressGet (npeId);
@@ -446,7 +478,14 @@ ixNpeDlNpeMgrMemLoad (
 
     IX_NPEDL_TRACE0 (IX_NPEDL_FN_ENTRY_EXIT,
 		     "Entering ixNpeDlNpeMgrMemLoad\n");
-    
+   
+    if (IX_FAIL == (status = ixNpeDlNpePresentCheck(npeId,
+"ixNpeDlNpeMgrMemLoad")))
+    {
+       IX_NPEDL_ERROR_REPORT (" Npe is disabled in the silicon \n");
+       return status;
+    }
+ 
     /*
      * select NPE EXCTL reg read/write commands depending on memory
      * type (instruction/data) to be accessed
@@ -634,7 +673,6 @@ ixNpeDlNpeMgrNpeReset (
     IX_STATUS status = IX_SUCCESS;
     UINT32 ixNpeConfigCtrlRegVal;
     
-#if defined(__ixp42X) || defined(__ixp46X)
     IxNpeDlCtxtRegNum ctxtReg; /* identifies Context Store reg (0-3) */
     UINT32 ctxtNum;            /* identifies Context number (0-16)   */
     UINT32 regAddr;
@@ -642,11 +680,17 @@ ixNpeDlNpeMgrNpeReset (
     UINT32 localIndex;
     UINT32 indexMax;
     IxFeatureCtrlReg unitFuseReg;
-#endif /* __ixp42X */
     
     IX_NPEDL_TRACE0 (IX_NPEDL_FN_ENTRY_EXIT, 
 		     "Entering ixNpeDlNpeMgrNpeReset\n");
-    
+   
+    if (IX_FAIL == (status = ixNpeDlNpePresentCheck(npeId,
+"ixNpeDlNpeMgrNpeReset")))
+    {
+       IX_NPEDL_ERROR_REPORT (" Npe is disabled in the silicon \n");
+       return status;
+    }
+ 
     /* get base memory address of NPE from npeId */
     npeBaseAddress = ixNpeDlNpeMgrBaseAddressGet (npeId);
 
@@ -658,7 +702,6 @@ ixNpeDlNpeMgrNpeReset (
     /* disable the parity interrupt */
     IX_NPEDL_REG_WRITE (npeBaseAddress, IX_NPEDL_REG_OFFSET_CTL, (ixNpeConfigCtrlRegVal & IX_NPEDL_PARITY_BIT_MASK));
     
-#if defined(__ixp42X) || defined(__ixp46X)
     ixNpeDlNpeMgrDebugInstructionPreExec (npeBaseAddress);
 
     /*
@@ -800,9 +843,6 @@ ixNpeDlNpeMgrNpeReset (
     unitFuseReg &= (~(IX_NPEDL_RESET_NPE_PARITY << npeId));
     ixFeatureCtrlWrite (unitFuseReg);
     
-#endif /* __ixp42X */
-
-
     /*
      * Call NpeMgr function to stop the NPE again after the Feature Control
      * has unfused and Un-Reset the NPE and its associated Coprocessors
@@ -835,6 +875,13 @@ ixNpeDlNpeMgrNpeStart (
 
     IX_NPEDL_TRACE0 (IX_NPEDL_FN_ENTRY_EXIT, 
 		     "Entering ixNpeDlNpeMgrNpeStart\n");
+
+    if (IX_FAIL == (status = ixNpeDlNpePresentCheck(npeId,
+"ixNpeDlNpeMgrNpeStart")))
+    {
+       IX_NPEDL_ERROR_REPORT (" Npe is disabled in the silicon \n");
+       return status;
+    }
 
     /* get base memory address of NPE from npeId */
     npeBaseAddress = ixNpeDlNpeMgrBaseAddressGet (npeId);
@@ -904,7 +951,14 @@ ixNpeDlNpeMgrNpeStop (
     
     IX_NPEDL_TRACE0 (IX_NPEDL_FN_ENTRY_EXIT,
 		     "Entering ixNpeDlNpeMgrNpeStop\n");
-    
+   
+    if (IX_FAIL == (status = ixNpeDlNpePresentCheck(npeId,
+"ixNpeDlNpeMgrNpeStop")))
+    {
+       IX_NPEDL_ERROR_REPORT (" Npe is disabled in the silicon \n");
+       return status;
+    }
+ 
     /* get base memory address of NPE from npeId */
     npeBaseAddress = ixNpeDlNpeMgrBaseAddressGet (npeId);
 
@@ -1000,6 +1054,15 @@ ixNpeDlNpeMgrStatsReset (void)
 PUBLIC UINT32 ixNpeDlDataMemRead(UINT32 npeId, UINT32 dataMemAddress)
 {
 	UINT32 npeBaseAddress;
+        IX_STATUS status = IX_SUCCESS;
+ 
+    if (IX_FAIL == (status = ixNpeDlNpePresentCheck(npeId,
+"ixNpeDlDataMemRead")))
+    {
+       IX_NPEDL_ERROR_REPORT (" Npe is disabled in the silicon \n");
+       return status;
+    }
+
 		/* get base memory address of NPE from npeId */
   npeBaseAddress = ixNpeDlNpeMgrBaseAddressGet (npeId);
   return ixNpeDlNpeMgrDataMemRead (npeBaseAddress, dataMemAddress);

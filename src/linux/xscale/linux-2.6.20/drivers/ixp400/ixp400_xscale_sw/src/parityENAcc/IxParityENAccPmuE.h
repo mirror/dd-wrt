@@ -8,12 +8,12 @@
  * component of the IXP400 Parity Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -87,8 +87,11 @@ typedef enum  /* IxParityENAccPmuEAHBErrorMaster */
     /* AHB Bridge */
     IXP400_PARITYENACC_PMUE_AHBS_MST_AHB_BRIDGE = IX_PARITYENACC_AHBS_MST_AHB_BRIDGE,
 
-    /* USB Host Controller */
-    IXP400_PARITYENACC_PMUE_AHBS_MST_USBH = IX_PARITYENACC_AHBS_MST_USBH,
+    /* USB Host Controller 0 */
+    IXP400_PARITYENACC_PMUE_AHBS_MST_USBH0 = IX_PARITYENACC_AHBS_MST_USBH0,
+
+    /* USB Host Controller 1 */
+    IXP400_PARITYENACC_PMUE_AHBS_MST_USBH1 = IX_PARITYENACC_AHBS_MST_USBH1,
 
     /* Invalid Master */
     IXP400_PARITYENACC_PMUE_AHBS_MST_INVALID
@@ -124,8 +127,11 @@ typedef enum  /* IxParityENAccPmuEAHBErrorSlave */
     /* RSA */
     IXP400_PARITYENACC_PMUE_AHBS_SLV_RSA = IX_PARITYENACC_AHBS_SLV_RSA,
 
-    /* USB Host Controller */
-    IXP400_PARITYENACC_PMUE_AHBS_SLV_USBH = IX_PARITYENACC_AHBS_SLV_USBH,
+    /* USB Host Controller 0 */
+    IXP400_PARITYENACC_PMUE_AHBS_SLV_USBH0 = IX_PARITYENACC_AHBS_SLV_USBH0,
+
+    /* USB Host Controller 1 */
+    IXP400_PARITYENACC_PMUE_AHBS_SLV_USBH1 = IX_PARITYENACC_AHBS_SLV_USBH1,
 
     /* Invalid Slave */
     IXP400_PARITYENACC_PMUE_AHBS_SLV_INVALID
@@ -154,5 +160,9 @@ ixParityENAccPmuEInit (void);
 IX_STATUS 
 ixParityENAccPmuEAHBTransactionStatus (
     IxParityENAccPmuEAHBErrorTransaction *ixPmuAhbTransactionStatus);
+
+/* Function to unload the component */
+IX_STATUS
+ixParityENAccPmuEUnload(void);
 
 #endif /* IXPARITYENACCPMUE_H */

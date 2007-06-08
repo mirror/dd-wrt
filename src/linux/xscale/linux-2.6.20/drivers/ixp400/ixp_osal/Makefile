@@ -267,7 +267,7 @@ include $(SRC_DIRS:%=%/component.mk)
 
 # include test directory if want integration test suite
 ifdef IX_OSAL_INTEG_TEST
-include test/component.mk
+include common/test/component.mk
 endif
 
 
@@ -276,27 +276,18 @@ endif
 # Platform makefiles
 #
 
-PLATFORM_MAIN_DIR := $(MAIN_SRC_PREFIX)/platforms/$(IX_OSAL_MK_PLATFORM)
-PLATFORM_OS_DIR := $(OS_SRC_PREFIX)/platforms/$(IX_OSAL_MK_PLATFORM)
 
-# PLATFORM_OBJ lists all of the object files in the platform components with path info
-PLATFORM_OBJ := $($(IX_OSAL_MK_PLATFORM)_OBJ:%=$(OBJ_BASE_DIR)/$(PLATFORM_MAIN_DIR)/%) \
-								$( foreach m, $(PLATFORM_DEVICE), $($(m)_OBJ:%=$(OBJ_BASE_DIR)/$(PLATFORM_MAIN_DIR)/$(m)/%) ) \
-								$($(IX_OSAL_MK_PLATFORM)_os_OBJ:%=$(OBJ_BASE_DIR)/$(PLATFORM_OS_DIR)/%) \
-								$( foreach m, $(PLATFORM_DEVICE), $($(m)_os_OBJ:%=$(OBJ_BASE_DIR)/$(PLATFORM_OS_DIR)/$(m)/%) )
-
+PLATFORM_MAIN_DIR := platforms/$(IX_OSAL_MK_TGT_DEVICE)/src
+PLATFORM_OBJ := $(platform_OBJ:%=$(OBJ_BASE_DIR)/platforms/$(IX_OSAL_MK_TGT_DEVICE)/os/$(IX_OSAL_MK_TARGET_OS)/src/%)
 
 ################################################################
 # Test makefiles
 #
 ifdef IX_OSAL_INTEG_TEST
-TEST_MAIN_DIR := test
-TEST_OBJ := $(test_OBJ:%=$(OBJ_BASE_DIR)/test/%)  
+TEST_MAIN_DIR := common/test
+TEST_OBJ := $(test_OBJ:%=$(OBJ_BASE_DIR)/common/test/%)  
 endif
 
-
-# The correct CFLAGS on a per file basis (in the compile rule) and not globally.
-# CFLAGS += $($(IX_OSAL_MK_PLATFORM)_os_CFLAGS)
 
 
 ################################################################
@@ -327,9 +318,6 @@ MODULE_OS_BASE_DIR := $(OS_SRC_PREFIX)/modules
 MODULE_OBJ := $(foreach m, $(MODULES), $($(m)_OBJ:%=$(OBJ_BASE_DIR)/$(MODULE_MAIN_BASE_DIR)/$(m)/%)) \
               $(foreach m, $(MODULES), $($(m)_os_OBJ:%=$(OBJ_BASE_DIR)/$(MODULE_OS_BASE_DIR)/$(m)/%))
 
-# The correct CFLAGS on a per file basis (in the compile rule), not globally
-# CFLAGS += $(foreach m, $(MODULES), $($(m)_os_CFLAGS)) \
-#           $(foreach m, $(MODULES), $($(m)_shared_CFLAGS))
 
 endif
 
@@ -353,13 +341,27 @@ endif
 usage:
 	$(ECHO_BLANKLINE)
 	@echo $(ECHO_QUOTE)-------------------------------------------- $(ECHO_QUOTE) 
-	@echo $(ECHO_QUOTE)osal/Makefile usage (for vxworks and linux) $(ECHO_QUOTE) 
+	@echo $(ECHO_QUOTE)osal/Makefile usage (for linux) $(ECHO_QUOTE) 
 	@echo $(ECHO_QUOTE)-------------------------------------------- $(ECHO_QUOTE) 
 	@echo $(ECHO_QUOTE)Requirements: $(ECHO_QUOTE) 
-	@echo $(ECHO_QUOTE) - set IX_TARGET to one of the: vxle, vxbe, linuxle, linuxbe $(ECHO_QUOTE) 
+	@echo $(ECHO_QUOTE) - IX_TARGET       : [linuxle | linuxbe] $(ECHO_QUOTE) 
+	@echo $(ECHO_QUOTE) - IX_LINUXVER     : 2.6 $(ECHO_QUOTE) 
+	@echo $(ECHO_QUOTE) - LINUX_SRC       : <Path of Linux kernel src> $(ECHO_QUOTE) 
+	@echo $(ECHO_QUOTE) - IX_OSAL_OS_LEVEL: [kernel_space | user_space] $(ECHO_QUOTE) 
+	@echo $(ECHO_QUOTE) - IX_TARGET       : linuxle $(ECHO_QUOTE) 
+	@echo $(ECHO_QUOTE) - IX_OSAL_PLATFORM: platform_name $(ECHO_QUOTE) 
+	@echo $(ECHO_QUOTE) - IX_HW_COHERENT_MEMORY: 1 $(ECHO_QUOTE) 
+	@echo $(ECHO_QUOTE) - IX_OSAL_INTEG_TEST: [1 | 0] $(ECHO_QUOTE) 
 	@echo $(ECHO_QUOTE) - source the same environment.tcsh as ixp400_xscale$(ECHO_QUOTE) 
 	@echo $(ECHO_QUOTE)-------------------------------------------- $(ECHO_QUOTE) 
+	@echo $(ECHO_QUOTE)osal/Makefile usage (for vxworks) $(ECHO_QUOTE) 
+	@echo $(ECHO_QUOTE)-------------------------------------------- $(ECHO_QUOTE) 
+	@echo $(ECHO_QUOTE)Requirements: $(ECHO_QUOTE) 
+	@echo $(ECHO_QUOTE) - IX_TARGET: [vxle | vxbe] $(ECHO_QUOTE) 
+	@echo $(ECHO_QUOTE) - Source env_scripts/env_vxworksXY_xscale.bat in ixp_osal/ $(ECHO_QUOTE) 
+	@echo $(ECHO_QUOTE)-------------------------------------------- $(ECHO_QUOTE) 
 	@echo $(ECHO_QUOTE)Build commands: $(ECHO_QUOTE) 
+	@echo $(ECHO_QUOTE)make lkm:      to build osal as a loadable module$(ECHO_QUOTE) 
 	@echo $(ECHO_QUOTE)make libosal:  to build osal library$(ECHO_QUOTE) 
 	@echo $(ECHO_QUOTE)make clean:    to remove library and dependency files $(ECHO_QUOTE) 
 	$(ECHO_BLANKLINE)
@@ -408,7 +410,7 @@ Makefile: $(OUTPUT_DIR_FLAGS)
 
 # Place CFLAGS to pass the target os name to the C code
 CFLAGS += -DIX_OSAL_TARGET_OS_EXT=_$(IX_OSAL_MK_TARGET_OS)
-CFLAGS += -DIX_OSAL_PLATFORM_EXT=_$(IX_OSAL_MK_PLATFORM)
+CFLAGS += -DIX_OSAL_PLATFORM_EXT=_$(IX_OSAL_MK_TGT_DEVICE)
 
 # Place CFLAGS supplied by the host buildSystem (e.g. xscale_sw for IXP400) here.
 

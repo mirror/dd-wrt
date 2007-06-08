@@ -54,10 +54,12 @@ PATH=$WIND_BASE/host/$WIND_HOST_TYPE/bin:$DIABLIB/SUNS/bin:$PATH
 #NOTE: All flag definitions below are case sensitive
 
 # For IXDP425 platform, set IX_DEVICE to ixp42X
-# For IXDP465 platform, set IX_DEVICE to ixp42X or ixp46X
+# For KIXRP435 platform, set IX_DEVICE to ixp43X
+# For IXDP465 platform, set IX_DEVICE to ixp46X
 IX_DEVICE=ixp42X
 
 # For IXDP425 platform, set IX_PLATFORM to ixdp42x
+# For KIXRP435 platform, set IX_PLATFORM to kixrp43x
 # For IXDP465 platform, set IX_PLATFORM to ixdp46x
 IX_PLATFORM=ixdp42x
 

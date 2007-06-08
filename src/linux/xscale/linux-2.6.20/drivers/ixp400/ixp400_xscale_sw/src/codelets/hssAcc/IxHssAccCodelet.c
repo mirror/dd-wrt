@@ -7,12 +7,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -80,12 +80,6 @@
  * #defines and macros used in this file.
  */
 
-/**
- * NPE-A Image 
- */
-
-#define IX_HSSACC_CODELET_NPEA_IMAGE_ID IX_NPEDL_NPEIMAGE_NPEA_HSS_2_PORT
-
 /*
  * Typedefs whose scope is limited to this file.
  */
@@ -142,20 +136,42 @@ ixHssAccCodeletMain (IxHssAccCodeletOperation operationType,
         return IX_FAIL;
     }
 
-    /* Check HSS Port Mode */
-    if ((IX_HSSACC_CODELET_HSS_PORT_0_ONLY > portMode) &&
-        (IX_HSSACC_CODELET_DUAL_PORTS < portMode))
+    /*  Check for the Silicon type */
+    if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == ixFeatureCtrlDeviceRead ()||
+        IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X == ixFeatureCtrlDeviceRead ())
     {
-	printf ("Invalid portMode option! \n");
-        printf ("Please choose one of the following options: \n");
-        printf ("%u : HSS Port 0 Only.\n", 
-		IX_HSSACC_CODELET_HSS_PORT_0_ONLY);
-        printf ("%u : HSS Port 1 Only.\n", 
-		IX_HSSACC_CODELET_HSS_PORT_1_ONLY);
-        printf ("%u : Both HSS Port 0 and 1. \n", 
-		IX_HSSACC_CODELET_DUAL_PORTS);
+    /* Check HSS Port Mode */
+        if ((IX_HSSACC_CODELET_HSS_PORT_0_ONLY > portMode) || 
+        (IX_HSSACC_CODELET_DUAL_PORTS < portMode))
+        {
+	    printf ("Invalid portMode option! \n");
+            printf ("Please choose one of the following options: \n");
+            printf ("%u : HSS Port 0 Only.\n", 
+		    IX_HSSACC_CODELET_HSS_PORT_0_ONLY);
+            printf ("%u : HSS Port 1 Only.\n", 
+		    IX_HSSACC_CODELET_HSS_PORT_1_ONLY);
+            printf ("%u : Both HSS Port 0 and 1. \n", 
+		    IX_HSSACC_CODELET_DUAL_PORTS);
 
-        return IX_FAIL;
+            return IX_FAIL;
+        }
+    }
+    else 
+    {
+        if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X == ixFeatureCtrlDeviceRead ())
+        {
+            /* Check HSS Port Mode */
+            if ((IX_HSSACC_CODELET_HSS_PORT_0_ONLY > portMode) || 
+            (IX_HSSACC_CODELET_HSS_PORT_0_ONLY < portMode))
+            {
+	        printf ("Invalid portMode option! \n");
+                printf ("Please choose the following option for IXP 43X: \n");
+                printf ("%u : HSS Port 0 Only.\n", 
+		        IX_HSSACC_CODELET_HSS_PORT_0_ONLY);
+     
+                return IX_FAIL;
+            }
+        }
     }
 
     /* Check Verify Mode */
@@ -461,7 +477,8 @@ ixHssAccCodeletInit (void)
 #endif
 
     /*  Check for the Silicon type */
-    if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == ixFeatureCtrlDeviceRead ())
+    if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == ixFeatureCtrlDeviceRead ()||
+        IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X == ixFeatureCtrlDeviceRead ())
     {
         if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA)==
                                         IX_FEATURE_CTRL_COMPONENT_DISABLED)
@@ -474,10 +491,26 @@ ixHssAccCodeletInit (void)
     /*Initialize and Start NPE-A */
     printf ("Initializing and starting NPE-A ...");
         
-    if (IX_SUCCESS != ixNpeDlNpeInitAndStart (IX_HSSACC_CODELET_NPEA_IMAGE_ID))
+    /*  Check for the Silicon type */
+    if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == ixFeatureCtrlDeviceRead ()||
+        IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X == ixFeatureCtrlDeviceRead ())
     {
-        printf ("Error initialising and starting NPE A!\n");
-        return (IX_FAIL);
+        if (IX_SUCCESS != ixNpeDlNpeInitAndStart (IX_NPEDL_NPEIMAGE_NPEA_HSS_2_PORT))
+        {
+            printf ("Error initialising and starting NPE A!\n");
+            return (IX_FAIL);
+        }
+    }
+    else 
+    {
+        if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X == ixFeatureCtrlDeviceRead ())
+        {
+            if (IX_SUCCESS != ixNpeDlNpeInitAndStart (IX_NPEDL_NPEIMAGE_NPEA_HSS_TSLOT_SWITCH))
+            {
+            printf ("Error initialising and starting NPE A!\n");
+            return (IX_FAIL);
+            }
+        }
     }
    
     printf (" successful.\n");

@@ -6,12 +6,12 @@
  * @brief Private header file for AtmSch component.
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -49,13 +49,18 @@
 #ifndef IXATMSCH_P_H
 #define IXATMSCH_P_H
 
-#include "IxOsalTypes.h"
+#include "IxOsal.h"
 #include "IxAtmTypes.h"
 
 /*
  * Defines
  */
-#define IX_ATMSCH_nS_PER_SECOND      1000000000
+/* The Value of IX_ATMSCH_nS_PER_SECOND is currently defined to be 
+ * a 32 bit value.Because the current Port rate Value cannot be defined 
+ * more than 32 bits.In Future when faster Phy's are supported this
+ * value can be defined do be more than 32 bits value. 
+ */
+#define IX_ATMSCH_nS_PER_SECOND      1000000000 /* Value should be < 32 bits */
 #define IX_ATMSCH_MAX_TABLE_ENTRIES  10
 #define IX_ATMSCH_NULL_INDEX         -1
 #define IX_ATMSCH_UINT_MASK          0x8000000000000000ULL
@@ -122,13 +127,13 @@ ixAtmSchedulingInit(void);
 void
 ixAtmSchCellTimeSet(IxAtmLogicalPort port, UINT64 cellTime );
 
-UINT32
+UINT64
 ixAtmSchCellTimeGet(IxAtmLogicalPort port);
 
 void
 ixAtmSchMinCellsSet(IxAtmLogicalPort port, UINT64 minCellsToSchedule);
 
-UINT32
+UINT64
 ixAtmSchMinCellsGet(IxAtmLogicalPort port);
 
 void

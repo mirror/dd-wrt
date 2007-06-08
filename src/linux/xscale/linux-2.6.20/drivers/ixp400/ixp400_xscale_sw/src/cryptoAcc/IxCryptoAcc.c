@@ -10,12 +10,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -249,126 +249,112 @@ ixCryptoAccInit (void)
     ixCryptoAccCoProcessorExist[IX_CRYPTO_AES_COPROCESSOR] =
     ixCryptoAccCoProcessorExist[IX_CRYPTO_HASH_COPROCESSOR] = FALSE;
         
-    /* If not IXP42X A0 stepping, proceed to check for existence of coprocessors */ 
-    if ((IX_FEATURE_CTRL_SILICON_TYPE_A0 != 
-        (ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK))
-        || (IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X != ixFeatureCtrlDeviceRead ()))
+    /* If crypto hardware accelerator is enabled, check for existence of
+     * NPE C, DES, AES and HASH coprocessors
+     */       
+    if (IX_CRYPTO_ACC_CFG_CRYPTO_NPE_ACC_EN == componentConfig
+        || IX_CRYPTO_ACC_CFG_CRYPTO_WEP_NPE_ACC_EN == componentConfig)
     {
-
-        /* If crypto hardware accelerator is enabled, check for existence of
-         * NPE C, DES, AES and HASH coprocessors
-         */       
-        if (IX_CRYPTO_ACC_CFG_CRYPTO_NPE_ACC_EN == componentConfig
-            || IX_CRYPTO_ACC_CFG_CRYPTO_WEP_NPE_ACC_EN == componentConfig)
+        if (IX_FEATURE_CTRL_COMPONENT_DISABLED == 
+            ixFeatureCtrlComponentCheck (IX_FEATURECTRL_NPEC))
+        {               
+            IX_CRYPTO_ACC_LOG (
+                IX_OSAL_LOG_LVL_ERROR,
+                IX_OSAL_LOG_DEV_STDERR,
+                "The NPE C coprocessor does not exist. The configurations"
+                " of IX_CRYPTO_ACC_CFG_CRYPTO_NPE_ACC_EN or"
+                " IX_CRYPTO_ACC_CFG_CRYPTO_WEP_NPE_ACC_EN is not allowed.\n",
+                0,0,0,0,0,0);
+             
+            return IX_CRYPTO_ACC_STATUS_FAIL;
+        } /* else-if ixFeatureCtrlComponentCheck (IX_FEATURECTRL_NPEC) */
+        else
         {
             if (IX_FEATURE_CTRL_COMPONENT_DISABLED == 
-                ixFeatureCtrlComponentCheck (IX_FEATURECTRL_NPEC))
-            {               
+                ixFeatureCtrlComponentCheck (IX_FEATURECTRL_DES))
+            {
                 IX_CRYPTO_ACC_LOG (
-                    IX_OSAL_LOG_LVL_ERROR,
-                    IX_OSAL_LOG_DEV_STDERR,
-                    "The NPE C coprocessor does not exist. The configurations"
-                    " of IX_CRYPTO_ACC_CFG_CRYPTO_NPE_ACC_EN or"
-                    " IX_CRYPTO_ACC_CFG_CRYPTO_WEP_NPE_ACC_EN is not allowed.\n",
+                    IX_OSAL_LOG_LVL_WARNING,
+                    IX_OSAL_LOG_DEV_STDOUT,
+                    "Warning: The DES coprocessor does not exist\n",
                     0,0,0,0,0,0);
-                
-                return IX_CRYPTO_ACC_STATUS_FAIL;
-            } /* else-if ixFeatureCtrlComponentCheck (IX_FEATURECTRL_NPEC) */
+            }
             else
             {
-                if (IX_FEATURE_CTRL_COMPONENT_DISABLED == 
-                    ixFeatureCtrlComponentCheck (IX_FEATURECTRL_DES))
-                {
-                    IX_CRYPTO_ACC_LOG (
-                        IX_OSAL_LOG_LVL_WARNING,
-                        IX_OSAL_LOG_DEV_STDOUT,
-                        "Warning: The DES coprocessor does not exist\n",
-                        0,0,0,0,0,0);
-                }
-                else
-                {
-                    ixCryptoAccCoProcessorExist[IX_CRYPTO_DES_COPROCESSOR] = TRUE;
-                }
-    
-                if ( IX_FEATURE_CTRL_COMPONENT_DISABLED ==
-                    ixFeatureCtrlComponentCheck (IX_FEATURECTRL_HASH))
-                {
-                    IX_CRYPTO_ACC_LOG (
-                        IX_OSAL_LOG_LVL_WARNING,
-                        IX_OSAL_LOG_DEV_STDOUT,
-                        "Warning: The HASH coprocessor does not exist\n",
-                        0,0,0,0,0,0);
-                }
-                else
-                {
-                    ixCryptoAccCoProcessorExist[IX_CRYPTO_HASH_COPROCESSOR] = TRUE;
-                }
+                ixCryptoAccCoProcessorExist[IX_CRYPTO_DES_COPROCESSOR] = TRUE;
+            }
+ 
+            if ( IX_FEATURE_CTRL_COMPONENT_DISABLED ==
+                 ixFeatureCtrlComponentCheck (IX_FEATURECTRL_HASH))
+            {
+                IX_CRYPTO_ACC_LOG (
+                    IX_OSAL_LOG_LVL_WARNING,
+                    IX_OSAL_LOG_DEV_STDOUT,
+                    "Warning: The HASH coprocessor does not exist\n",
+                    0,0,0,0,0,0);
+            }
+            else
+            {
+                ixCryptoAccCoProcessorExist[IX_CRYPTO_HASH_COPROCESSOR] = TRUE;
+            }
         
-                if (IX_FEATURE_CTRL_COMPONENT_DISABLED ==
-                    ixFeatureCtrlComponentCheck (IX_FEATURECTRL_AES))
-                {
-                    IX_CRYPTO_ACC_LOG (
-                        IX_OSAL_LOG_LVL_WARNING,
-                        IX_OSAL_LOG_DEV_STDOUT,
-                        "Warning: The AES coprocessor does not exist\n",
-                        0,0,0,0,0,0);
-                }
-                else
-                {
-                    ixCryptoAccCoProcessorExist[IX_CRYPTO_AES_COPROCESSOR] = TRUE;
-                }
-                
-                /* Check if DES/HASH/AES coprocessors exist */
-                if (!ixCryptoAccCoProcessorExist[IX_CRYPTO_DES_COPROCESSOR] &&
-                    !ixCryptoAccCoProcessorExist[IX_CRYPTO_HASH_COPROCESSOR] && 
-                    !ixCryptoAccCoProcessorExist[IX_CRYPTO_AES_COPROCESSOR])
-                {
-                    IX_CRYPTO_ACC_LOG (
-                        IX_OSAL_LOG_LVL_ERROR,
-                        IX_OSAL_LOG_DEV_STDERR,
-                        "All cryptographic coprocessor in NPE C does not exist." 
-                        " The configurations of IX_CRYPTO_ACC_CFG_CRYPTO_NPE_ACC_EN"
-                        " or IX_CRYPTO_ACC_CFG_CRYPTO_WEP_NPE_ACC_EN is not"
-                        " allowed.\n",
-                        0,0,0,0,0,0);
-                    
-                    return IX_CRYPTO_ACC_STATUS_FAIL;
-                }
-                
-            } /* end of if ixFeatureCtrlComponentCheck (IX_FEATURECTRL_NPEC) */
-        } /* end of if (componentConfig) */
-        
-        /* If WEP NPE access is enabled, check for existence of AAL 
-         * coprocessor and NPE A.
-         */
-        if (IX_CRYPTO_ACC_CFG_WEP_NPE_ACC_EN == componentConfig
-            || IX_CRYPTO_ACC_CFG_CRYPTO_WEP_NPE_ACC_EN == componentConfig)
-        {  
-            if ((IX_FEATURE_CTRL_COMPONENT_DISABLED == 
-                ixFeatureCtrlComponentCheck (IX_FEATURECTRL_NPEA)) ||
-                (IX_FEATURE_CTRL_COMPONENT_DISABLED == 
-                    ixFeatureCtrlComponentCheck (IX_FEATURECTRL_AAL)))
-            {                
+            if (IX_FEATURE_CTRL_COMPONENT_DISABLED ==
+                ixFeatureCtrlComponentCheck (IX_FEATURECTRL_AES))
+            {
+                IX_CRYPTO_ACC_LOG (
+                    IX_OSAL_LOG_LVL_WARNING,
+                    IX_OSAL_LOG_DEV_STDOUT,
+                    "Warning: The AES coprocessor does not exist\n",
+                    0,0,0,0,0,0);
+            }
+            else
+            {
+                ixCryptoAccCoProcessorExist[IX_CRYPTO_AES_COPROCESSOR] = TRUE;
+            }
+               
+            /* Check if DES/HASH/AES coprocessors exist */
+            if (!ixCryptoAccCoProcessorExist[IX_CRYPTO_DES_COPROCESSOR] &&
+                !ixCryptoAccCoProcessorExist[IX_CRYPTO_HASH_COPROCESSOR] && 
+                !ixCryptoAccCoProcessorExist[IX_CRYPTO_AES_COPROCESSOR])
+            {
                 IX_CRYPTO_ACC_LOG (
                     IX_OSAL_LOG_LVL_ERROR,
                     IX_OSAL_LOG_DEV_STDERR,
-                    "The NPEA/AAL coprocessor does not exist and the"
-                    " configurations of IX_CRYPTO_ACC_CFG_WEP_NPE_ACC_EN or"
-                    " IX_CRYPTO_ACC_CFG_CRYPTO_WEP_NPE_ACC_EN is not allowed.\n",
+                    "All cryptographic coprocessor in NPE C does not exist." 
+                    " The configurations of IX_CRYPTO_ACC_CFG_CRYPTO_NPE_ACC_EN"
+                    " or IX_CRYPTO_ACC_CFG_CRYPTO_WEP_NPE_ACC_EN is not"
+                    " allowed.\n",
                     0,0,0,0,0,0);
-                
+                  
                 return IX_CRYPTO_ACC_STATUS_FAIL;
-            } /* else of if ixFeatureCtrlComponentCheck (IX_FEATURECTRL_NPEA) */
-        } /* end of if (componentConfig) */
-    } /* else-if (!=A0 stepping || !=IXP42X) */
-    else
-    {
-        /* IXP42X A0 does not have feature control on coprocessors and does not
-         * have AES coprocessor */
-        ixCryptoAccCoProcessorExist[IX_CRYPTO_DES_COPROCESSOR] =
-        ixCryptoAccCoProcessorExist[IX_CRYPTO_HASH_COPROCESSOR] = TRUE;
-    } /* end of if (!=A0 stepping || !=IXP42X) */
-       
+            }
+                
+        } /* end of if ixFeatureCtrlComponentCheck (IX_FEATURECTRL_NPEC) */
+    } /* end of if (componentConfig) */
+        
+    /* If WEP NPE access is enabled, check for existence of AAL 
+     * coprocessor and NPE A.
+     */
+    if (IX_CRYPTO_ACC_CFG_WEP_NPE_ACC_EN == componentConfig
+        || IX_CRYPTO_ACC_CFG_CRYPTO_WEP_NPE_ACC_EN == componentConfig)
+    {  
+        if ((IX_FEATURE_CTRL_COMPONENT_DISABLED == 
+            ixFeatureCtrlComponentCheck (IX_FEATURECTRL_NPEA)) ||
+            (IX_FEATURE_CTRL_COMPONENT_DISABLED == 
+                ixFeatureCtrlComponentCheck (IX_FEATURECTRL_AAL)))
+        {                
+            IX_CRYPTO_ACC_LOG (
+                IX_OSAL_LOG_LVL_ERROR,
+                IX_OSAL_LOG_DEV_STDERR,
+                "The NPEA/AAL coprocessor does not exist and the"
+                " configurations of IX_CRYPTO_ACC_CFG_WEP_NPE_ACC_EN or"
+                " IX_CRYPTO_ACC_CFG_CRYPTO_WEP_NPE_ACC_EN is not allowed.\n",
+                0,0,0,0,0,0);
+              
+            return IX_CRYPTO_ACC_STATUS_FAIL;
+        } /* else of if ixFeatureCtrlComponentCheck (IX_FEATURECTRL_NPEA) */
+    } /* end of if (componentConfig) */
+    
     /* Check if the access component has been intialized, if not, 
      * initialize Descriptor Mgmt, CCD Mgmt, Statistics, QAccess 
      * and PKE modules.

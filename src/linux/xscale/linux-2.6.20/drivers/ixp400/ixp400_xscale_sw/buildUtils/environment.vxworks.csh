@@ -53,10 +53,12 @@ setenv PATH $WIND_BASE/host/$WIND_HOST_TYPE/bin:$DIABLIB/SUNS/bin:$PATH
 #NOTE: All flag definitions below are case sensitive
 
 # For IXDP425 platform, set IX_DEVICE to ixp42X
+# For KIXRP435 platform, set IX_DEVICE to ixp43X
 # For IXDP465 platform, set IX_DEVICE to ixp42X or ixp46X
 setenv IX_DEVICE ixp42X
 
 # For IXDP425 platform, set IX_PLATFORM to ixdp42x
+# For KIXRP435 platform, set IX_PLATFORM to kixrp43x
 # For IXDP465 platform, set IX_PLATFORM to ixdp46x
 setenv IX_PLATFORM ixdp42x
 
@@ -64,3 +66,5 @@ setenv IX_PLATFORM ixdp42x
 # For Little endian, set IX_TARGET to vxle
 setenv IX_TARGET vxbe
 
+# For vxWorks 5.5.1, set VX_VERSION to vx55. Otherwise comment it out.
+setenv VX_VERSION vx55

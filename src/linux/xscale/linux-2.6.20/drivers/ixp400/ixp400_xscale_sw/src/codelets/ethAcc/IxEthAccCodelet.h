@@ -7,12 +7,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -130,7 +130,7 @@
  *
  * <pre>
  *  <i> Usage :
- *      >ixEthAccCodeletMain (operationType,inPort,outPort)
+ *      >ixEthAccCodeletMain (operationType,inPort,outPort,disableStats)
  *      Where operationType:
  *           1 = To sink received frames as fast as possible for available ports.
  *           2 = To software loopback received frames to the same port for available ports.
@@ -146,6 +146,15 @@
  *           9 = To transmit frames received on inPort through outPort, using
  *               802.3 <=> 802.11 frame header conversions for frames matching certain
  *               MAC addresses
+ *
+ *      Where inPort and outPort are Ethernet portId:
+ *           0 = NPE-B
+ *           1 = NPE-C
+ *           2 = NPE-A
+ *
+ *	Where disableStats:
+ *	     0 = Enable statistic polling task thread from running.
+ *	     1 = disable statistic polling task thread.
  * </i>
  * </pre>
  *
@@ -156,7 +165,7 @@
  *
  * <pre>
  * <i>  Usage :
- *      >insmod ixp400_codelets_ethAcc.o operationType=<x> inPort=<y> outPort=<z>
+ *      >insmod ixp400_codelets_ethAcc.o operationType=<x> inPort=<y> outPort=<z> disableStats=<i>
  *      Where x:
  *           1 = To sink received frames as fast as possible for available ports.
  *           2 = To software loopback received frames to the same port for available ports.
@@ -172,10 +181,19 @@
  *           9 = To transmit frames received on inPort (y) through outPort (z), using
  *               802.3 <=> 802.11 frame header conversions for frames matching certain
  *               MAC addresses
+ *
+ *      Where inPort and outPort are Ethernet portId:
+ *           0 = NPE-B
+ *           1 = NPE-C
+ *           2 = NPE-A
+ *               
+ *	Where i:
+ *	     0 = Enable statistic polling task thread from running.
+ *	     1 = Disable statistic polling task thread. 
  * </i>
  * </pre>
  *
- * <b> WinCE User Guide </b><br>
+ * <b> WinCE* User Guide </b><br>
  * The Ethernet Access Codelet uses serial console to print out menus and accept input from
  * users. Users need to choose and enter which operation to be executed from the menus.
  *
@@ -208,7 +226,7 @@
  * The default MAC setup will be:
  * <UL>
  *	<LI>Promiscuous mode enabled (for learning example)
- *	<LI>Frame Check Sequence appended for all frames generated on the XScale
+ *	<LI>Frame Check Sequence appended for all frames generated on the Intel XScale(R) processor
  * </UL>
  *
  * <P>
@@ -260,9 +278,9 @@
 /**
  * @ingroup IxEthAccCodelet 
  *
- * @def IX_ETHACC_CODELET_NPEB_MAC
+ * @def IX_ETHACC_CODELET_NPEA_MAC
  *
- * @brief Hard-encoded MAC address for NPEB.  
+ * @brief Hard-encoded MAC address for NPEA.  
  */
 #define IX_ETHACC_CODELET_NPEA_MAC {{0x2, 0x0, 0x6, 0x7, 0x8, 0x9}}
 
@@ -291,11 +309,7 @@
  *
  * @brief Size of receive MBuf pool.  
  */
-#ifdef __ixp46X
-#define IX_ETHACC_CODELET_RX_MBUF_POOL_SIZE   (512*3)
-#else
-#define IX_ETHACC_CODELET_RX_MBUF_POOL_SIZE   (512*2)
-#endif
+#define IX_ETHACC_CODELET_RX_MBUF_POOL_SIZE   (512*IX_ETHACC_CODELET_MAX_PORT)
 
 /**
  * @ingroup IxEthAccCodelet 
@@ -313,7 +327,7 @@
  *
  * @brief Number of Ethernet Ports supported for this codelet.
  */
-#define IX_ETHACC_CODELET_MAX_PORT IX_ETH_ACC_NUMBER_OF_PORTS
+#define IX_ETHACC_CODELET_MAX_PORT IX_ETHNPE_MAX_NUMBER_OF_PORTS
 
 /**
  * @ingroup IxEthAccCodelet 
@@ -323,7 +337,8 @@
  * @brief Size of MBuf pool.
  */
 #define IX_ETHACC_CODELET_MBUF_POOL_SIZE \
-  ((IX_ETHACC_CODELET_RX_MBUF_POOL_SIZE + IX_ETHACC_CODELET_TX_MBUF_POOL_SIZE) \
+  (((IX_ETHACC_CODELET_RX_MBUF_POOL_SIZE/IX_ETHACC_CODELET_MAX_PORT) \
+   + IX_ETHACC_CODELET_TX_MBUF_POOL_SIZE) \
   * IX_ETHACC_CODELET_MAX_PORT)
 
 /**
@@ -331,7 +346,7 @@
  *
  * @def IX_ETHACC_CODELET_PCK_SIZE
  *
- * @brief Size of MBuf packet (recommaended size for ethAcc component)
+ * @brief Size of MBuf packet (recommended size for ethAcc component)
  */
 #define IX_ETHACC_CODELET_PCK_SIZE IX_ETHACC_RX_MBUF_MIN_SIZE
 
@@ -405,7 +420,7 @@
 /**
  * @ingroup IxEthAccCodelet 
  *
- * @def IX_ETHACC_CODELET_RX_FCS_STRIP
+ * @def IX_ETHACC_CODELET_RX_FCS_APPEND
  *
  * @brief Append FCS for outgoing frames.
  *        To undefine, change to #undef. 
@@ -425,8 +440,8 @@
  * @li Jumbo frames (9K bytes). 
  * Note that different encapsulation types may
  * extend the MTU size of 9000. The NPE firmware
- * compares onlu the overall ethernet frame size (MSDU), with may be
- * stripped from the FCS at the time of comparrison. The frame size is 
+ * compares only the overall ethernet frame size (MSDU), with may be
+ * stripped from the FCS at the time of comparison. The frame size is 
  * affected by other operations which changes the frame size, like the 
  * addition or the removal of VLAN tags.
  *
@@ -483,7 +498,8 @@ typedef enum
  *
  * @fn ixEthAccCodeletMain(IxEthAccCodeletOperation operationType,
  *                         IxEthAccPortId inPort,
- *                         IxEthAccPortId outPort)
+ *                         IxEthAccPortId outPort,
+ *			   int disableStats)
  *
  * @brief This function is used as a single point of execution for EthAcc codelet.
  *
@@ -497,7 +513,8 @@ typedef enum
 PUBLIC IX_STATUS
 ixEthAccCodeletMain(IxEthAccCodeletOperation operationType,
                     IxEthAccPortId inPort,
-                    IxEthAccPortId outPort);
+                    IxEthAccPortId outPort,
+		    int disableStats);
 
 #endif /* IXETHACCCODELET_H */
 

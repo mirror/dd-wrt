@@ -1,11 +1,11 @@
 # 
 # @par
-# IXP400 SW Release Crypto version 2.3
+# IXP400 SW Release Crypto version 2.4
 # 
 # -- Copyright Notice --
 # 
 # @par
-# Copyright (c) 2001-2005, Intel Corporation.
+# Copyright (c) 2001-2007, Intel Corporation.
 # All rights reserved.
 # 
 # @par
@@ -52,8 +52,15 @@ codelets_ethAcc_OBJ := IxEthAccCodeletMain.o \
 	IxEthAccCodeletSwBridgeWiFi.o
 
 codelets_ethAcc_CFLAGS := -Isrc/ethAcc -Isrc/ethAcc/include
-codelets_ethAcc_test_DEPS := ethAcc ethDB ethMii qmgr npeMh npeDl featureCtrl
+codelets_ethAcc_test_DEPS := ethAcc ethDB ethMii hssAcc qmgr npeMh npeDl featureCtrl
 
+ifneq ($(IX_DEVICE), ixp42X)
+codelets_ethAcc_test_DEPS += errHdlAcc parityENAcc
+endif
+
+ifeq ($(IX_PLATFORM),kixrp43x)
+codelets_ethAcc_CFLAGS += -D__kixrp435
+endif
 
 ifeq ($(IX_TARGET_OS), linux)
 codelets_ethAcc_OBJ += IxEthAccCodeletSymbols.o

@@ -52,10 +52,12 @@ set PATH=%WIND_BASE%\host\%WIND_HOST_TYPE%\bin;%DIABLIB%\WIN32\bin;%PATH%
 rem NOTE: All flag definitions below are case sensitive
 
 rem For IXDP425 platform, set IX_DEVICE to ixp42X
-rem For IXDP465 platform, set IX_DEVICE to ixp42X or ixp46X
+rem For KIXRP435 platform, set IX_DEVICE to ixp43X
+rem For IXDP465 platform, set IX_DEVICE to ixp46X
 set IX_DEVICE=ixp42X
 
 rem For IXDP425 platform, set IX_PLATFORM to ixdp42x 
+rem For KIXRP435 platform, set IX_PLATFORM to kixrp43x
 rem For IXDP465 platform, set IX_PLATFORM to ixdp46x
 set IX_PLATFORM=ixdp42x
 
@@ -63,3 +65,5 @@ rem For Big endian, set IX_TARGET to vxbe
 rem For Little endian, set IX_TARGET to vxle
 set IX_TARGET=vxbe
 
+rem For vxWorks 5.5.1, set VX_VERSION to vx55. Otherwise comment it out.
+set VX_VERSION=vx55

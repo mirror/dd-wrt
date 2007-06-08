@@ -1,10 +1,10 @@
 # @par 
-# IXP400 SW Release Crypto version 2.3
+# IXP400 SW Release Crypto version 2.4
 # 
 # -- Copyright Notice --
 # 
 # @par
-# Copyright (c) 2001-2005, Intel Corporation.
+# Copyright (c) 2001-2007, Intel Corporation.
 # All rights reserved.
 # 
 # @par
@@ -46,12 +46,7 @@ qmgr_OBJ := IxQMgrQCfg.o \
 	 IxQMgrQAccess.o \
 	 IxQMgrAsmRoutines.o
 
-ifeq ($(IX_DEVICE),$(findstring $(IX_DEVICE), ixp42X ixp46X ))
 qmgr_OBJ += IxQMgrHwQIfIxp400.o
-endif
-ifeq ($(IX_DEVICE),$(findstring $(IX_DEVICE), ixp5XX ))
-qmgr_OBJ += IxQMgrHwQIfIxp500.o
-endif
 
 ifeq ($(IX_TARGET_OS),linux)
 qmgr_OBJ += IxQMgrSymbols.o

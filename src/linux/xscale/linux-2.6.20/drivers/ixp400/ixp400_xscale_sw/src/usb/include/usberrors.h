@@ -8,12 +8,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -107,6 +107,9 @@
 
 /** no STALL capability */
 #define IX_USB_NO_STALL_CAPABILITY      (IX_USB_ERROR_BASE + 12)
+
+/** device is not received SET_CONFIGURATION message **/
+#define IX_USB_DEVICE_NOT_CONFIGURED    (IX_USB_ERROR_BASE + 13) 
 
 #endif /* usberrors_H */
 

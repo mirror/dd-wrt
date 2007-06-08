@@ -8,12 +8,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -62,7 +62,7 @@
 /*
  * Put the user defined include files required
  */
-#include "IxOsalTypes.h"
+#include "IxOsal.h"
 #include "IxNpeMicrocode.h"
 
 /*
@@ -108,7 +108,6 @@
  *        is not meant for the device in use
  */
 #define IX_NPEDL_DEVICE_ERR 6 
-
 
 /**
  * @defgroup ImageID Intel (R) IXP Image ID Definition
@@ -232,36 +231,21 @@ typedef UINT8 IxNpeDlDeviceId;
 /**
  * @brief NpeId numbers to identify the system's NPEs
  */
-#if defined(__ixp42X) || defined(__ixp46X)
-/* @note In this context, for B0 Silicon of the Intel (R) IXP42X Product Line:<br>
+/* @note In this context, the Intel (R) IXP42X Product Line:<br>
  *      - NPE-A has HDLC, HSS, AAL and UTOPIA Coprocessors.<br>
  *      - NPE-B has Ethernet Coprocessor.<br>
  *      - NPE-C has Ethernet, AES, DES and HASH Coprocessors.<br>
  *      - Intel (R) IXP4XX Product Line of Network Processors
  *        have different combinations of coprocessors.
  */
-#endif /* __ixp42X */
 
 typedef enum
 {
   IX_NPEDL_NPEID_NPEA = 0,    /**< Identifies NPE A */
   IX_NPEDL_NPEID_NPEB,        /**< Identifies NPE B */
-#if defined(__ixp42X) || defined(__ixp46X)
   IX_NPEDL_NPEID_NPEC,        /**< Identifies NPE C */
-#endif /* __ixp42X */
   IX_NPEDL_NPEID_MAX          /**< Total Number of NPEs */
 } IxNpeDlNpeId;
-
-/**
- * @brief NPE Port ID numbers to identify NPE A, B or C
- * This will be removed once updates have been made to ethDB
- */
-typedef enum
-{
-  IX_NPEB_PORT = 0,  /**< Identifies NPE B */
-  IX_NPEC_PORT,      /**< Identifies NPE C */
-  IX_NPEA_PORT       /**< Identifies NPE A */
-} IxNpePortId;
 
 /*
  * Structs
@@ -318,8 +302,7 @@ typedef struct
  *           occured during download
  *         - IX_NPEDL_DEVICE_ERR if the image being loaded is not meant for 
  *           the device currently running.
- */
-/*         - IX_FAIL if NPE is not available or image is failed to be located.
+ *         - IX_FAIL if NPE is not available or image is failed to be located.
  *           A warning is issued if the NPE is not present.
  */
 PUBLIC IX_STATUS
@@ -368,8 +351,7 @@ ixNpeDlNpeInitAndStart (UINT32 imageId);
  *           occured during download
  *         - IX_NPEDL_DEVICE_ERR if the image being loaded is not meant for 
  *           the device currently running.
- */
-/*         - IX_FAIL if NPE is not available or image is failed to be located.
+ *         - IX_FAIL if NPE is not available or image is failed to be located.
  *           A warning is issued if the NPE is not present.
  */
 PUBLIC IX_STATUS

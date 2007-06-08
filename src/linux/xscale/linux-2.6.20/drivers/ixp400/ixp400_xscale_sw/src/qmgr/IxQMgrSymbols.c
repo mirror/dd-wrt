@@ -8,12 +8,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -54,15 +54,14 @@
 #include "IxQMgr_sp.h"
 #include "IxQMgrQAccess_p.h"
 #include "IxQMgrQCfg_p.h"
-#if defined(__ixp42X) || defined(__ixp46X)
 #include "IxQMgrHwQIfIxp400_p.h"
-#endif /* __ixp42X */
 			    
 EXPORT_SYMBOL(ixQMgrInit);
 EXPORT_SYMBOL(ixQMgrUnload);
 EXPORT_SYMBOL(ixQMgrShow);
 EXPORT_SYMBOL(ixQMgrQShow);
 EXPORT_SYMBOL(ixQMgrQConfig);
+EXPORT_SYMBOL(ixQMgrQUnconfig);
 EXPORT_SYMBOL(ixQMgrQSizeInEntriesGet);
 EXPORT_SYMBOL(ixQMgrWatermarkSet);
 EXPORT_SYMBOL(ixQMgrAvailableSramAddressGet);
@@ -85,8 +84,6 @@ EXPORT_SYMBOL(ixQMgrHwQIfBaseAddressSet);
 EXPORT_SYMBOL(ixQMgrQReadMWordsMinus1);
 EXPORT_SYMBOL(ixQMgrHwQIfQInterruptRegRead);
 EXPORT_SYMBOL(ixQMgrHwQIfQInterruptRegWrite);
-
-#if defined(__ixp42X) || defined(__ixp46X)
 EXPORT_SYMBOL(ixQMgrDispatcherLoopRunB0);
 EXPORT_SYMBOL(ixQMgrDispatcherLoopRunB0LLP);
 EXPORT_SYMBOL(ixQMgrStickyInterruptRegEnable);
@@ -94,12 +91,10 @@ EXPORT_SYMBOL(ixQMgrCallbackTypeSet);
 EXPORT_SYMBOL(ixQMgrCallbackTypeGet);
 EXPORT_SYMBOL(ixQMgrPeriodicDone);
 EXPORT_SYMBOL(ixQMgrLLPShow);
-#endif /* __ixp42X */
 
 extern volatile UINT32 * ixQMgrHwQIfQueAccRegAddr[];
 EXPORT_SYMBOL(ixQMgrHwQIfQueAccRegAddr);
 
-#if defined(__ixp42X) || defined(__ixp46X)
 extern UINT32 ixQMgrHwQIfQueLowStatRegAddr[];
 extern UINT32 ixQMgrHwQIfQueLowStatBitsOffset[];
 extern UINT32 ixQMgrHwQIfQueLowStatBitsMask;
@@ -114,7 +109,6 @@ EXPORT_SYMBOL(ixQMgrHwQIfQueUppStat0RegAddr);
 EXPORT_SYMBOL(ixQMgrHwQIfQueUppStat1RegAddr);
 EXPORT_SYMBOL(ixQMgrHwQIfQueUppStat0BitMask);
 EXPORT_SYMBOL(ixQMgrHwQIfQueUppStat1BitMask);
-#endif /* __ixp42X */
 
 extern UINT32 hwQBaseAddress;
 EXPORT_SYMBOL(hwQBaseAddress);

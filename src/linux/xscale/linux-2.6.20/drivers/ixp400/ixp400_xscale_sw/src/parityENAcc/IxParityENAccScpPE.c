@@ -8,12 +8,12 @@
  * of the IXP400 Parity Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -48,7 +48,7 @@
  * -- End of Copyright Notice --
  */
 
-#if defined(__ixp46X)
+#if defined(__ixp46X) || defined(__ixp43X)
 
 /* 
  * System defined include files
@@ -165,4 +165,28 @@ ixParityENAccSwcpPEIsr (void)
         ixParityENAccSwcpPEConfig.swcpIsrInfo.swcpIsr);
 } /* end of ixParityENAccSwcpPEIsr() function */
 
-#endif /* __ixp46X */
+IX_STATUS 
+ixParityENAccSwcpPEUnload(void)
+{
+    UINT32 lockKey;
+    UINT32 status = IX_SUCCESS;
+    IxParityENAccSwcpPEConfigOption ixSwcpPDCfg;
+    
+    ixSwcpPDCfg = IXP400_PARITYENACC_PE_DISABLE;
+    ixParityENAccSwcpPEDetectionConfigure(ixSwcpPDCfg);
+
+    /* Unbind the IRQ */    
+    lockKey = ixOsalIrqLock();
+    if (IX_SUCCESS != ixOsalIrqUnbind ((UINT32) IRQ_IXP400_INTC_PARITYENACC_SWCP))
+    {
+        IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDERR,
+            "ixParityENAccSwcpPEUnload(): "\
+            "Can't unbind the SWCP ISR to IRQ_IXP400_INTC_PARITYENACC_SWCP!!!\n",0,0,0,0,0,0);
+        status = IX_FAIL;
+    }    
+    ixOsalIrqUnlock(lockKey);
+
+    return status;
+} /* end of ixParityENAccSwcpPEUnload() function */
+
+#endif /* __ixp46X || __ixp43X */

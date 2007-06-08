@@ -10,12 +10,12 @@
 
 /** 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -81,7 +81,7 @@ ixUSBEP0InterruptHandler(EPStatusData *epData);
 PRIVATE void 
 ixUSBEP0TokenDecode(USBDevice *device);
 
-PRIVATE void 
+PRIVATE UINT32 
 ixUSBEP0SetupPacketDecode(USBDevice *device);
 
 PRIVATE void 

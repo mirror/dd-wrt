@@ -8,12 +8,12 @@
  * configuration
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -59,6 +59,7 @@
 #include "IxEthDB.h"
 #include "IxEthAccCodelet.h"
 #include "IxEthAccCodelet_p.h"
+#include "IxEthDBPortDefs.h"
 
 /*
  * Static local variables.
@@ -126,21 +127,15 @@ PRIVATE void ixEthAccCodeletDBMaintenanceTask (void* arg, void** ptrRetObj)
 IX_STATUS 
 ixEthAccCodeletDBLearningRun(BOOL validPorts[])
 {
+    UINT32 portIndex;
     IxEthAccPortId portId;
     IxEthDBPortId portPtr;
-#ifdef __ixp46X
     IxEthDBMacAddr staticMacAddress[IX_ETHACC_CODELET_MAX_PORT] = 
 	{{{0,1,2,3,4,5}}, {{6,7,8,9,0,1}}, {{2,3,4,5,6,7}}};
 
     IxEthDBMacAddr dynamMacAddress[IX_ETHACC_CODELET_MAX_PORT] = 
 	{{{0xa,0xb,0xc,0xd,0xe,0xf}}, {{0x0,0xb,0x3,0xc,0x4,0xd}}, {{0x0,0xc,0x4,0xd,0x5,0xe}}};
-#else
-    IxEthDBMacAddr staticMacAddress[IX_ETHACC_CODELET_MAX_PORT] = 
-	{{{0,1,2,3,4,5}}, {{6,7,8,9,0,1}}};
 
-    IxEthDBMacAddr dynamMacAddress[IX_ETHACC_CODELET_MAX_PORT] = 
-	{{{0xa,0xb,0xc,0xd,0xe,0xf}}, {{0x0,0xb,0x3,0xc,0x4,0xd}}};
-#endif
     if (ixEthAccCodeletDBMaintenanceStart()
 	!= IX_SUCCESS)
     {
@@ -149,8 +144,9 @@ ixEthAccCodeletDBLearningRun(BOOL validPorts[])
     }
 
     /* configure all existing ports */
-    for (portId = 0; portId < IX_ETHACC_CODELET_MAX_PORT; portId++)
+    for (portIndex = 0; portIndex < IX_ETHACC_NUMBER_OF_PORTS; portIndex++)
     {
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
 	if (validPorts[portId])
 	{
 	    /* Configure the port */
@@ -222,8 +218,10 @@ ixEthAccCodeletDBLearningRun(BOOL validPorts[])
 	    }
 	}
     }
- 
-    ixEthDBFilteringDatabaseShowAll();
+    /* Sleep a second for the learnt entry to propagate before perform databaseShow*/
+    ixOsalSleep(1000);
+
+    ixEthDBFilteringDatabaseShowRecords(IX_ETH_DB_ALL_PORTS,IX_ETH_DB_ALL_RECORD_TYPES);
 
     /* Wait 4 minutes over aging time (for safety) and verify that the 
      * dynamic entries have been removed 
@@ -233,10 +231,11 @@ ixEthAccCodeletDBLearningRun(BOOL validPorts[])
     
     ixOsalSleep((IX_ETH_DB_LEARNING_ENTRY_AGE_TIME + 180) * 1000);
      
-    ixEthDBFilteringDatabaseShowAll();
+    ixEthDBFilteringDatabaseShowRecords(IX_ETH_DB_ALL_PORTS,IX_ETH_DB_ALL_RECORD_TYPES);
     
-    for (portId = 0; portId < IX_ETHACC_CODELET_MAX_PORT; portId++)
+    for (portIndex = 0; portIndex < IX_ETHACC_NUMBER_OF_PORTS; portIndex++)
     {
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
 	if (validPorts[portId])
 	{
 	    if(ixEthDBFilteringEntryDelete(&staticMacAddress[portId])

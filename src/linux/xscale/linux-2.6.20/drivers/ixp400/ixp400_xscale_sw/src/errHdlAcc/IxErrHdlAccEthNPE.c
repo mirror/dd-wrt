@@ -8,12 +8,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -62,6 +62,7 @@
 #include "IxQMgr.h"
 #include "IxQueueAssignments.h"
 #include "IxEthNpe.h"
+#include "IxFeatureCtrl.h"
 
 extern IX_STATUS ixNpeDlNpeMgrNpeStop (IxNpeDlNpeId npeId);
 
@@ -80,7 +81,7 @@ PRIVATE BOOL ixErrHdlAccNpePollThreadRun;
 PRIVATE IX_ERRHDLACC_ETHNPE_MBUF_INFO ixErrHdlAccEthNpeRXFREEmBufDMEMAddr[]=
 {
 
-#if defined(__ixp46X)
+#if defined(__ixp46X) || defined(__ixp43X)
 /* The following DMEM address is obtained from the RxAHB_MbufPRootBuf 
 symbol in the Ethernet NPE Image for IXP46X & IXP400 SW Version 2.3. 
 This is platform dependable & IXP400 SW Version dependable. */
@@ -277,6 +278,7 @@ PUBLIC void ixErrHdlAccEthNPERecoveryJob(ixErrHdlAccEvent* eventStruct)
  UINT32 npeID, npeImageID = 0, ethPort, irqlock;
  
  irqlock = ixOsalIrqLock();
+
  npeID = eventStruct->priv;
 
  /* Obtain Ethernet Port ID from the NPE Id*/
@@ -297,15 +299,16 @@ PUBLIC void ixErrHdlAccEthNPERecoveryJob(ixErrHdlAccEvent* eventStruct)
   eventStruct->numRxMBufLost++;
  }
 
- irqlock = ixOsalIrqLock();
-
  /* Obtain NPE Image ID base on the NPE ID*/
  ixErrHdlAccNpeIdGetIndex(npeID, &npeImageID, NULL);
+
+
  /* Begin NPE Polling task*/
  ixErrHdlAccNPEMHPollThreadInit();
+
  /* Download and start the NPE with the previous
     downloaded image*/
- ixOsalIrqUnlock(irqlock);
+ 
  if(ixNpeDlNpeInitAndStart(npeImageID) != IX_SUCCESS)
  {
    IX_ERRHDLACC_ETH_RELOAD_ABORT(eventStruct, 
@@ -315,7 +318,6 @@ PUBLIC void ixErrHdlAccEthNPERecoveryJob(ixErrHdlAccEvent* eventStruct)
                           0, 0, 0, 0, 0, 0);
    return;
  }
-
  /* Update NPE Core OUTFIFO interrupt enabling*/
  ixNpeMhConfigStateRestore(npeID);
 
@@ -332,7 +334,6 @@ PUBLIC void ixErrHdlAccEthNPERecoveryJob(ixErrHdlAccEvent* eventStruct)
                             0, 0, 0, 0, 0, 0);
      return;
  }  
-
  ixErrHdlAccNPEMHPoll();
 
  /* Restore ixEthDB Features to the reset NPE*/
@@ -348,10 +349,10 @@ PUBLIC void ixErrHdlAccEthNPERecoveryJob(ixErrHdlAccEvent* eventStruct)
  ixErrHdlAccNPEMHPoll();
 
  irqlock = ixOsalIrqLock();
-
  /* Force AQM Conditonal Event flag update*/
  if( IX_ETH_ACC_SUCCESS != ixEthAccQMStatusUpdate(ethPort))
  {
+   ixOsalIrqUnlock(irqlock);
    IX_ERRHDLACC_ETH_RELOAD_ABORT(eventStruct, 
    IX_ERRHDLACC_EVT_NPE_ETH_AQMQUEUEUPDATE_FAIL);
    IX_ERRHDLACC_FATAL_LOG("ixErrHdlAccEthNPERecoveryJob:"
@@ -359,10 +360,9 @@ PUBLIC void ixErrHdlAccEthNPERecoveryJob(ixErrHdlAccEvent* eventStruct)
                           0, 0, 0, 0, 0, 0);
    return;    
  }
-
  /* Restore MAC configurations*/
  ixOsalIrqUnlock(irqlock);
-
+ 
  if(IX_ETH_ACC_SUCCESS != ixEthAccMacStateRestore(ethPort))
  {
    IX_ERRHDLACC_ETH_RELOAD_ABORT(eventStruct, 
@@ -372,16 +372,15 @@ PUBLIC void ixErrHdlAccEthNPERecoveryJob(ixErrHdlAccEvent* eventStruct)
                           0, 0, 0, 0, 0, 0);
    return;    
  }
-
+ 
  irqlock = ixOsalIrqLock();
+ 
  /* Re-establish TX and RX of the Ethernet data path*/
  IX_ERRHDLACC_ETH_RELOAD_DONE(eventStruct);
 
  /* Restore Parity Control enable bit*/
  ixParityENAccParityNPEConfigReUpdate(npeID);
-
  ixOsalIrqUnlock(irqlock);
-
  return;
 }
 PRIVATE IX_STATUS ixErrHdlAccNPEMHPollThreadInit(void)
@@ -410,16 +409,18 @@ Fast NPEMH polling Thread during recovery
 */
 PRIVATE void ixErrHdlAccNPEMHPoll(void)
 {
-  UINT32 npeID, irqlock;
+  UINT32 irqlock;
   irqlock = ixOsalIrqLock();
-  /* Poll for NPE A, NPE B and NPE C*/
-  for (npeID = 0; npeID < IX_ERRHDLACC_NPEMH_ID_MAX_POLL; npeID++)
-		{
-    /* NPE Message OutFIFO Poll (receive)*/
-				ixNpeMhMessagesReceive(npeID);
-		}
+  /* NPE Message OutFIFO Poll (receive) for all NPE's */
+  ixNpeMhMessagesReceive(IX_NPEDL_NPEID_NPEA);
+  /* NPE B is not present in IXP43X */
+  if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X != ixFeatureCtrlDeviceRead())
+  {
+      ixNpeMhMessagesReceive(IX_NPEDL_NPEID_NPEB);
+  }
+  ixNpeMhMessagesReceive(IX_NPEDL_NPEID_NPEC);
   ixOsalIrqUnlock(irqlock);
- return;
+  return;
 }
 /*
 Fast NPEMH polling Thread during recovery

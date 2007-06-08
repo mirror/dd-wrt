@@ -10,12 +10,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -50,7 +50,7 @@
  * -- End of Copyright Notice --
  */
 
-#if defined(__ixp46X)
+#if defined(__ixp46X)     
 /* PKE is not supported in IXP42X platform */
 #ifndef IXCRYPTOACCPKEHASH_P_H
 #define IXCRYPTOACCPKEHASH_P_H

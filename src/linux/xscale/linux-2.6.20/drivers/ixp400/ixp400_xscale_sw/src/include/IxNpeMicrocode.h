@@ -1,5 +1,5 @@
 /**
- * @date   July 12, 2006
+ * @date   February 26, 2007
  *
  * @brief  IXP400 NPE Microcode Image file
  *
@@ -9,12 +9,12 @@
  * IXP400 Access Driver software library.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -50,7 +50,7 @@
 */
 
 /**
- * @defgroup IxNpeMicrocode IXP400 NPE Microcode Image Library
+ * @defgroup IxNpeMicrocode Intel (R) IXP400 NPE Microcode Image Library
  *
  * @brief Library containing a set of NPE firmware images, for use
  * with NPE Downloader s/w component
@@ -84,29 +84,11 @@
 
 #if IX_NPE_IMAGE_INCLUDE
 /**
- * @def IX_NPEDL_NPEIMAGE_NPEA_HSS0
- *
- * @brief NPE Image Id for NPE-A with HSS-0 Only feature.  It supports 32 channelized and 4 packetized.
- */
-#define IX_NPEDL_NPEIMAGE_NPEA_HSS0 0x00010000
-#endif
-
-#if IX_NPE_IMAGE_INCLUDE
-/**
  * @def IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_SPHY_1_PORT
  *
  * @brief NPE Image Id for NPE-A with HSS-0 and ATM feature. For HSS, it supports 16/32 channelized and 4/0 packetized. For ATM, it supports AAL5, AAL0 and OAM for UTOPIA SPHY, 1 logical port, 32 VCs. It also has Fast Path support.
  */
 #define IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_SPHY_1_PORT 0x00020000
-#endif
-
-#if IX_NPE_IMAGE_INCLUDE
-/**
- * @def IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_MPHY_1_PORT
- *
- * @brief NPE Image Id for NPE-A with HSS-0 and ATM feature. For HSS, it supports 16/32 channelized and 4/0 packetized. For ATM, it supports AAL5, AAL0 and OAM for UTOPIA MPHY, 1 logical port, 32 VCs. It also has Fast Path support.
- */
-#define IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_MPHY_1_PORT 0x00030000
 #endif
 
 #if IX_NPE_IMAGE_INCLUDE
@@ -425,7 +407,7 @@
 #endif
 
 /* Number of NPE firmware images in this library */
-#define IX_NPE_MICROCODE_AVAILABLE_VERSIONS_COUNT 36
+#define IX_NPE_MICROCODE_AVAILABLE_VERSIONS_COUNT 34
 
 /* Location of Microcode Images */
 #ifdef IX_NPE_MICROCODE_FIRMWARE_INCLUDED

@@ -8,12 +8,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -59,7 +59,7 @@
 #ifndef IXNPEMH_H
 #define IXNPEMH_H
 
-#include "IxOsalTypes.h"
+#include "IxOsal.h"
 
 /*
  * #defines for function return types, etc.
@@ -84,25 +84,20 @@
  * @enum IxNpeMhNpeId
  *
  * @brief The ID of a particular NPE.
- */
-#if defined(__ixp42X) || defined(__ixp46X)
-/* @note In this context, for B0 Silicon of the Intel (R) IXP42X Product Line :<br> 
+ *
+ * @note In this context, the Intel (R) IXP42X Product Line :<br> 
  *      - NPE-A has HDLC, HSS, AAL and UTOPIA Coprocessors.<br> 
  *      - NPE-B has Ethernet Coprocessor.<br>
  *      - NPE-C has Ethernet, AES, DES and HASH Coprocessors.<br>
  *      - Intel (R) IXP4XX Product Line of Network Processors 
  *        have different combinations of coprocessors.
  */
-#endif /* __ixp42X */
- 
 
 typedef enum
 {
   IX_NPEMH_NPEID_NPEA = 0,    /**< Identifies NPE A */
   IX_NPEMH_NPEID_NPEB,        /**< Identifies NPE B */
-#if defined(__ixp42X) || defined(__ixp46X)
   IX_NPEMH_NPEID_NPEC,        /**< Identifies NPE C */
-#endif /* defined(__ixp42X) || defined(__ixp46X) && !defined(__ixp5XX) */
   IX_NPEMH_NUM_NPES           /**< Number of NPEs */
 } IxNpeMhNpeId;
 
@@ -321,12 +316,12 @@ PUBLIC IX_STATUS ixNpeMhUnsolicitedCallbackForRangeRegister (
  * of knowing that the NPE has actually read the message, but once in the
  * incoming message queue it will be safe to assume that the NPE will
  * process it.
- * <P>The inFIFO may fill up sometimes if the Xscale is sending messages
- * faster than the NPE can handle them. This forces us to retry attempts 
- * to send the message until the NPE services the inFIFO. The client should
- * specify a ceiling value for the number of retries suitable to their
- * needs. IX_NPEMH_SEND_RETRIES_DEFAULT can be used as a default value for
- * the <i>maxSendRetries</i> parameter for this function. Each retry
+ * <P>The inFIFO may fill up sometimes if the Intel XScale(R) processor is 
+ * sending messages faster than the NPE can handle them. This forces us to
+ * retry attempts to send the message until the NPE services the inFIFO. The
+ * client should specify a ceiling value for the number of retries suitable 
+ * to their needs. IX_NPEMH_SEND_RETRIES_DEFAULT can be used as a default 
+ * value for the <i>maxSendRetries</i> parameter for this function. Each retry
  * exceeding this default number will incur a blocking delay of 1 microsecond,
  * to avoid consuming too much AHB bus bandwidth while performing retries.
  * <P>Note this function <B>must</B> only be used for messages.
@@ -390,12 +385,12 @@ PUBLIC IX_STATUS ixNpeMhMessageSend (
  * ixNpeMhInitialize()) to handle the response message corresponding to the
  * message sent.  Response messages will be handled in the order they are
  * received.<P>
- * <P>The inFIFO may fill up sometimes if the Xscale is sending messages
- * faster than the NPE can handle them. This forces us to retry attempts 
- * to send the message until the NPE services the inFIFO. The client should
- * specify a ceiling value for the number of retries suitable to their
- * needs. IX_NPEMH_SEND_RETRIES_DEFAULT can be used as a default value for
- * the <i>maxSendRetries</i> parameter for this function. Each retry
+ * <P>The inFIFO may fill up sometimes if the Intel XScale(R) processor is 
+ * sending messages faster than the NPE can handle them. This forces us to 
+ * retry attempts to send the message until the NPE services the inFIFO. The
+ * client should specify a ceiling value for the number of retries suitable
+ * to their needs. IX_NPEMH_SEND_RETRIES_DEFAULT can be used as a default
+ * value for the <i>maxSendRetries</i> parameter for this function. Each retry
  * exceeding this default number will incur a blocking delay of 1 microsecond,
  * to avoid consuming too much AHB bus bandwidth while performing retries.
  * <P> This function will return timeout status if NPE hang / halt 

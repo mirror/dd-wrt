@@ -38,31 +38,36 @@
 # 
 # @par
 # -- End of Copyright Notice --
-# Change the following line to point to your linux kernel source tree
+# Change the following line to your linux kernel source tree
 setenv linuxbe_KERNEL_DIR /path/to/the/be/os/linux-2.6
-setenv linuxle_KERNEL_DIR /path/to/the/le/os/linux-2.6
 
-# Change the following line to point to the root of your Monta Vista install
-setenv HARDHAT_BASE /opt/montavista/pro
+# Change the following line to your toolchain bin directory
+setenv CROSSCOMPILER_DIR /path/to/the/toolchain/bin
+
+# Change the below to specify the prefix of your cross compiler
+# E.g: if armv5b-linux-gcc is your C cross compiler, then the prefix is
+# armv5b-linux
+setenv IX_LINUX_CROSSCOMPILER armv5b-linux-
 
 # You may want to edit the following to point to your ixp400_xscale_sw
 # directory. Otherwise you must source this file from that directory.
 setenv IX_XSCALE_SW /path/to/the/ixp400_xscale_sw
 
-setenv PATH /usr/bin:$HARDHAT_BASE/host/bin:$HARDHAT_BASE/devkit/arm/xscale_be/bin:$HARDHAT_BASE/devkit/arm/xscale_le/bin:$PATH
+setenv PATH /usr/bin:$CROSSCOMPILER_DIR:$PATH
 
 #NOTE: All flag definitions below are case sensitive
 
 # For IXDP425 platform, set IX_DEVICE to ixp42X
-# For IXDP465 platform, set IX_DEVICE to ixp42X or ixp46X
+# For KIXRP435 platform, set IX_DEVICE to ixp43X
+# For IXDP465 platform, set IX_DEVICE to ixp46X
 setenv IX_DEVICE ixp42X
 
 # For IXDP425 platform, set IX_PLATFORM to ixdp42x
+# For KIXRP435 platform, set IX_PLATFORM to kixrp43x
 # For IXDP465 platform, set IX_PLATFORM to ixdp46x
 setenv IX_PLATFORM ixdp42x
 
-# For Big endian, set IX_TARGET to linuxbe
-# For Little endian, set IX_TARGET to linuxle
+# For Big endian, set IX_TARGET to linuxbe (This version only support big-endian)
 setenv IX_TARGET linuxbe
 
-setenv IX_LINUXVER 2.6
+setenv IX_KBUILD_CROSSCOMPILE "ARCH=arm CROSS_COMPILE=${IX_LINUX_CROSSCOMPILER}"

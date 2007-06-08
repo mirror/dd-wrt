@@ -10,12 +10,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -92,15 +92,14 @@
 
 #define IX_ETH_ACC_PUBLIC
 
-
-#define IX_ETH_ACC_IS_PORT_VALID(port) ((port) <  IX_ETH_ACC_NUMBER_OF_PORTS  ? TRUE : FALSE )
-
-
+#define IX_ETH_ACC_IS_PORT_VALID(port) \
+	((port > IxEthAccPortInfo->IxEthAccNumberOfPorts) || \
+	(IxEthEthPortIdToLogicalIdTable[port] == 0xff) ? FALSE : TRUE)
 
 #ifndef NDEBUG
 #define IX_ETH_ACC_FATAL_LOG(a,b,c,d,e,f,g)   { ixOsalLog ( IX_OSAL_LOG_LVL_FATAL,IX_OSAL_LOG_DEV_STDOUT,a,b,c,d,e,f,g);}
 #define IX_ETH_ACC_WARNING_LOG(a,b,c,d,e,f,g) { ixOsalLog ( IX_OSAL_LOG_LVL_WARNING,IX_OSAL_LOG_DEV_STDOUT,a,b,c,d,e,f,g);}
-#define IX_ETH_ACC_DEBUG_LOG(a,b,c,d,e,f,g)   { ixOsalLog ( IX_OSAL_LOG_LVL_FATAL,IX_OSAL_LOG_DEV_STDOUT,a,b,c,d,e,f,g);}
+#define IX_ETH_ACC_DEBUG_LOG(a,b,c,d,e,f,g)   { ixOsalLog ( IX_OSAL_LOG_LVL_DEBUG1,IX_OSAL_LOG_DEV_STDOUT,a,b,c,d,e,f,g);}
 #else
 #define IX_ETH_ACC_FATAL_LOG(a,b,c,d,e,f,g)   { ixOsalLog ( IX_OSAL_LOG_LVL_FATAL,IX_OSAL_LOG_DEV_STDOUT,a,b,c,d,e,f,g);}
 #define IX_ETH_ACC_WARNING_LOG(a,b,c,d,e,f,g) { ixOsalLog ( IX_OSAL_LOG_LVL_WARNING,IX_OSAL_LOG_DEV_STDOUT,a,b,c,d,e,f,g);}
@@ -167,7 +166,6 @@ void  ixEthTxFrameQMCallback(IxQMgrQId, IxQMgrCallbackId);
 
 IX_ETH_ACC_PUBLIC
 void  ixEthTxFrameDoneQMCallback(IxQMgrQId, IxQMgrCallbackId );
-
 
 /**
  * @struct  ixEthAccRxDataStats
@@ -389,10 +387,11 @@ extern UINT32 ixEthAccTrafficStopRequestCount;
 #define IX_ETH_ACC_INVALIDATE_CACHE(addr,size)  IX_OSAL_CACHE_INVALIDATE((addr),(size))
 
 
-#define IX_ETH_ACC_MEMSET(start,value,size) memset(start,value,size)
+#define IX_ETH_ACC_MEMSET(start,value,size) ixOsalMemSet(start,value,size)
 
 /* defines related to QMgr interrupt registers
  */
+#define IX_ETH_ACC_QMGR_PHY_BASE_ADDRESS IX_OSAL_IXP400_QMGR_PHYS_BASE
 #define IX_ETH_ACC_QMGR_LOWQ_INT_ENABLE_REG_OFFSET (0x430)
 #define IX_ETH_ACC_QMGR_LOWQ_INT_STATUS_REG_OFFSET (0x438)
 
@@ -440,6 +439,9 @@ extern UINT32 ixEthAccTrafficStopRequestCount;
         }                                                        \
     } while(0)
 
+/* Expansion Bus Register Address and size*/
+#define IX_ETH_ACC_EXP_BUS_REGS_PHYS_BASE IX_OSAL_IXP400_EXP_BUS_REGS_PHYS_BASE 
+#define IX_ETH_ACC_EXP_REG_MAP_SIZE IX_OSAL_IXP400_EXP_REG_MAP_SIZE
 
 #endif /* ndef IxEthAcc_p_H */
 

@@ -8,12 +8,12 @@
  * of the IXP400 Parity Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -48,7 +48,7 @@
  * -- End of Copyright Notice --
  */
 
-#if defined(__ixp46X)
+#if defined(__ixp46X) || defined(__ixp43X)
 #define IXPARITYENACCNPEPE_C
 /* 
  * System defined include files
@@ -63,245 +63,449 @@
 #include "IxParityENAccIcE.h"
 #include "IxParityENAccNpePE.h"
 #include "IxParityENAccNpePE_p.h"
+#include "IxParityENAccMain.h"
+#include "IxFeatureCtrl.h"
+
+/*
+ * Declare your global variables here 
+ */
+
+/* Configuration( Write Enable ) bits used for Parity Detection */
+static UINT32 npePDCfgFlags;
+
+/* Used to modify value of NPE control register */
+static UINT32 npePDCfgStatus = 0;
+
+/* Virtual base addresses of EBC*/
+static UINT32 ebcVirtualBaseAddr  = 0;
+
+/* Value of EBC Config Register 1 */
+static UINT32 ebcConfigReg1Value  = 0;
+
+/* Virtual base addresses of NPEA, NPEB, NPEC and EBC*/
+static UINT32 ixNpeAVirtualBaseAddr = 0;
+static UINT32 ixNpeBVirtualBaseAddr = 0;
+static UINT32 ixNpeCVirtualBaseAddr = 0;
+static UINT32 ixNpeEbcVirtualBaseAddr = 0;
 
 /*
  * NPE sub-module level functions definitions
  */
-
-IX_STATUS
-ixParityENAccNpePEInit (IxParityENAccInternalCallback ixNpePECallback)
+IX_STATUS 
+ixParityENAccNpeInit(IxParityENAccPENpeId ixNpeId, IxParityENAccInternalCallback ixNpePECallback );
+IX_STATUS 
+ixParityENAccNpeInit(IxParityENAccPENpeId ixNpeId, IxParityENAccInternalCallback ixNpePECallback )
 {
+
     UINT32 npeAVirtualBaseAddr = 0;
     UINT32 npeBVirtualBaseAddr = 0;
     UINT32 npeCVirtualBaseAddr = 0;
-    UINT32 ebcVirtualBaseAddr  = 0;
-    UINT32 ebcConfigReg1Value  = 0;
-
-    /*
-     * These Bits are to be combined always with the Parity Error Detection 
-     * configuration bits.  Otherwise their effect is Nullified
-     */
-    UINT32 npePDCfgFlags  = IXP400_PARITYENACC_NPE_CONTROL_IPEWE | 
-                            IXP400_PARITYENACC_NPE_CONTROL_DPEWE |
-                            IXP400_PARITYENACC_NPE_CONTROL_EEEWE;
-    UINT32 npePDCfgStatus = 0;
-
+    INT32  lockKey;
+        
     register IxParityENAccNpePEConfig *npeAPEConfig = 
         &ixParityENAccNpePEConfig[IXP400_PARITYENACC_PE_NPE_A];
+    
     register IxParityENAccNpePEConfig *npeBPEConfig = 
         &ixParityENAccNpePEConfig[IXP400_PARITYENACC_PE_NPE_B];
+    
     register IxParityENAccNpePEConfig *npeCPEConfig = 
         &ixParityENAccNpePEConfig[IXP400_PARITYENACC_PE_NPE_C];
 
-    /* Verify parameters */
-    if ((IxParityENAccInternalCallback)NULL == ixNpePECallback)
+    switch(ixNpeId)
     {
+    
+        case IXP400_PARITYENACC_PE_NPE_A:
 
-        return IX_FAIL;
-    } /* end of if */
+            /* Memory mapping of the NPE-A registers */
+            if ((UINT32)NULL == (npeAVirtualBaseAddr = 
+                (UINT32) IX_OSAL_MEM_MAP (IXP400_PARITYENACC_NPEA_BASEADDR,
+                                          IXP400_PARITYENACC_NPE_MEMMAP_SIZE)))
+            {
+                IX_OSAL_MEM_UNMAP(ebcVirtualBaseAddr);
+                return IX_FAIL;
+            } /* end of if */
 
-    /* Memory mapping of the NPE-A registers */
-    if ((UINT32)NULL == (npeAVirtualBaseAddr = (UINT32) IX_OSAL_MEM_MAP (
-                                                IXP400_PARITYENACC_NPEA_BASEADDR,
-                                                IXP400_PARITYENACC_NPE_MEMMAP_SIZE)))
-    {
-        return IX_FAIL;
-    } /* end of if */
+            ixNpeAVirtualBaseAddr = npeAVirtualBaseAddr;
 
-    /* Memory mapping of the NPE-B registers */
-    if ((UINT32)NULL == (npeBVirtualBaseAddr = (UINT32) IX_OSAL_MEM_MAP (
-                                                IXP400_PARITYENACC_NPEB_BASEADDR,
-                                                IXP400_PARITYENACC_NPE_MEMMAP_SIZE)))
-    {
-        IX_OSAL_MEM_UNMAP(npeAVirtualBaseAddr);
-        return IX_FAIL;
-    } /* end of if */
+            /* 
+             * Fetch the NPE Error Handling Enable Status from Expansion 
+             * Bus Controller Config Register #1
+             */
 
-    /* Memory mapping of the NPE-C registers */
-    if ((UINT32)NULL == (npeCVirtualBaseAddr = (UINT32) IX_OSAL_MEM_MAP (
-                                                IXP400_PARITYENACC_NPEC_BASEADDR,
-                                                IXP400_PARITYENACC_NPE_MEMMAP_SIZE)))
-    {
-        IX_OSAL_MEM_UNMAP(npeAVirtualBaseAddr);
-        IX_OSAL_MEM_UNMAP(npeBVirtualBaseAddr);
-        return IX_FAIL;
-    } /* end of if */
+            ixParityENAccNpePEErrorHandlingEnable[IXP400_PARITYENACC_PE_NPE_A] = IXP400_PARITYENACC_VAL_BIT_CHECK(ebcConfigReg1Value,
+                 IXP400_PARITYENACC_NPE_EXPCNFG1_NPEA_ERREN);
 
-    /* Memory mapping of the Expansion Bus Controller Config Register #1 */
-    if ((UINT32)NULL == (ebcVirtualBaseAddr =  (UINT32) IX_OSAL_MEM_MAP (
-                                                IXP400_PARITYENACC_EBC_BASEADDR,
-                                                IXP400_PARITYENACC_EBC_MEMMAP_SIZE)))
-    {
-        IX_OSAL_MEM_UNMAP(npeAVirtualBaseAddr);
-        IX_OSAL_MEM_UNMAP(npeBVirtualBaseAddr);
-        IX_OSAL_MEM_UNMAP(npeCVirtualBaseAddr);
-        return IX_FAIL;
-    } /* end of if */
+            /* Virtual Addresses assignment for NPE-A Registers */
+            npeAPEConfig->npePERegisters.npeStatusRegister  = 
+            npeAVirtualBaseAddr + IXP400_PARITYENACC_NPE_STATUS_OFFSET;
+            npeAPEConfig->npePERegisters.npeControlRegister = 
+            npeAVirtualBaseAddr + IXP400_PARITYENACC_NPE_CONTROL_OFFSET;
 
+            /* Register main module internal callback routines for NPEs */
+            npeAPEConfig->npePECallback = ixNpePECallback;
 
-    /* 
-     * Fetch the NPE Error Handling Enable Status from Expansion Bus Controller
-     * Config Register #1
-     */
+            /* Interrupt Service Routine(s) Info for NPEs */
+            npeAPEConfig->npeIsrInfo.npeInterruptId = 
+                IRQ_IXP400_INTC_PARITYENACC_NPEA;
+            npeAPEConfig->npeIsrInfo.npeIsr = ixParityENAccNpePENpeAIsr;
 
-    /* Enable the NPE Error Handling Bits for Parity Error Interrupt Generation for EXT ERR */
-    IXP400_PARITYENACC_REG_BIT_SET(ebcVirtualBaseAddr, IXP400_PARITYENACC_NPE_EXPCNFG1_NPEA_ERREN);
-    IXP400_PARITYENACC_REG_BIT_SET(ebcVirtualBaseAddr, IXP400_PARITYENACC_NPE_EXPCNFG1_NPEB_ERREN);
-    IXP400_PARITYENACC_REG_BIT_SET(ebcVirtualBaseAddr, IXP400_PARITYENACC_NPE_EXPCNFG1_NPEC_ERREN);
+            /*
+             * Disable parity error detection for the IMEM, DMEM and Ext Error 
+             * of all the NPEs
+             */
 
-    IXP400_PARITYENACC_REG_READ(ebcVirtualBaseAddr, &ebcConfigReg1Value);
+            /* 
+             * Enable the Write Enable Bits to clear off IMEM, DMEM & Ext 
+             * Error bits
+             */
+            IXP400_PARITYENACC_REG_READ(npeAPEConfig->npePERegisters.
+                 npeControlRegister, &npePDCfgStatus);
 
-    ixParityENAccNpePEErrorHandlingEnable[IXP400_PARITYENACC_PE_NPE_A] = 
-        IXP400_PARITYENACC_VAL_BIT_CHECK(ebcConfigReg1Value,
-            IXP400_PARITYENACC_NPE_EXPCNFG1_NPEA_ERREN);
+            IXP400_PARITYENACC_VAL_BIT_SET(npePDCfgStatus, npePDCfgFlags);
+            IXP400_PARITYENACC_VAL_BIT_CLEAR(npePDCfgStatus, 
+            IXP400_PARITYENACC_NPE_CONTROL_IPE |
+            IXP400_PARITYENACC_NPE_CONTROL_DPE | 
+            IXP400_PARITYENACC_NPE_CONTROL_EEE);
 
-    ixParityENAccNpePEErrorHandlingEnable[IXP400_PARITYENACC_PE_NPE_B] = 
-        IXP400_PARITYENACC_VAL_BIT_CHECK(ebcConfigReg1Value,
+            IXP400_PARITYENACC_REG_BIT_SET(npeAPEConfig->npePERegisters.
+                npeControlRegister, npePDCfgStatus);
+
+            /* Install NPE-A Interrupt Service Routines */
+            lockKey = ixOsalIrqLock();
+
+            if ((IX_SUCCESS != ixOsalIrqBind (
+                (UINT32) IRQ_IXP400_INTC_PARITYENACC_NPEA,
+                (IxOsalVoidFnVoidPtr) ixParityENAccNpePENpeAIsr, 
+                (void *) NULL)) ||
+                (IX_FAIL == ixParityENAccIcInterruptDisable(
+                IXP400_PARITYENACC_INTC_NPEA_PARITY_INTERRUPT)))
+            {
+                ixOsalIrqUnlock(lockKey);
+                IX_OSAL_MEM_UNMAP(npeAVirtualBaseAddr);
+                IX_OSAL_MEM_UNMAP(ebcVirtualBaseAddr);
+                return IX_FAIL;
+            } /* end of if */
+
+            ixOsalIrqUnlock(lockKey);
+        break;     
+    
+        case IXP400_PARITYENACC_PE_NPE_B:    
+    
+        /* Memory mapping of the NPE-B registers */
+        if ((UINT32)NULL == (npeBVirtualBaseAddr = (UINT32) IX_OSAL_MEM_MAP (
+            IXP400_PARITYENACC_NPEB_BASEADDR,
+            IXP400_PARITYENACC_NPE_MEMMAP_SIZE)))
+        {
+            IX_OSAL_MEM_UNMAP(npeAVirtualBaseAddr);
+            IX_OSAL_MEM_UNMAP(ebcVirtualBaseAddr);
+            return IX_FAIL;
+        } /* end of if */
+
+        ixNpeBVirtualBaseAddr = npeBVirtualBaseAddr;
+
+        /* 
+         * Fetch the NPE Error Handling Enable Status from Expansion Bus 
+         * Controller Config Register #1
+         */
+
+        ixParityENAccNpePEErrorHandlingEnable[IXP400_PARITYENACC_PE_NPE_B] = 
+            IXP400_PARITYENACC_VAL_BIT_CHECK(ebcConfigReg1Value,
             IXP400_PARITYENACC_NPE_EXPCNFG1_NPEB_ERREN);
 
-    ixParityENAccNpePEErrorHandlingEnable[IXP400_PARITYENACC_PE_NPE_C] = 
+        /* Virtual Addresses assignment for NPE-B Registers */
+        npeBPEConfig->npePERegisters.npeStatusRegister  = 
+        npeBVirtualBaseAddr + IXP400_PARITYENACC_NPE_STATUS_OFFSET;
+        npeBPEConfig->npePERegisters.npeControlRegister = 
+        npeBVirtualBaseAddr + IXP400_PARITYENACC_NPE_CONTROL_OFFSET;
+
+        /* Register main module internal callback routines for NPEs */
+        npeBPEConfig->npePECallback = ixNpePECallback;
+
+        /* Interrupt Service Routine(s) Info for NPEs */
+        npeBPEConfig->npeIsrInfo.npeInterruptId = 
+            IRQ_IXP400_INTC_PARITYENACC_NPEB;
+        npeBPEConfig->npeIsrInfo.npeIsr = ixParityENAccNpePENpeBIsr;
+
+        /*
+         * Disable parity error detection for the IMEM, DMEM and Ext Error 
+         * of all the NPEs
+         */
+
+        /* 
+         * Enable the Write Enable Bits to clear off IMEM, DMEM & Ext Error bits
+         */
+        IXP400_PARITYENACC_REG_READ(npeBPEConfig->npePERegisters.
+            npeControlRegister, &npePDCfgStatus);
+
+        IXP400_PARITYENACC_VAL_BIT_SET(npePDCfgStatus, npePDCfgFlags);
+        IXP400_PARITYENACC_VAL_BIT_CLEAR(npePDCfgStatus, 
+            IXP400_PARITYENACC_NPE_CONTROL_IPE |
+            IXP400_PARITYENACC_NPE_CONTROL_DPE | 
+            IXP400_PARITYENACC_NPE_CONTROL_EEE);
+
+        IXP400_PARITYENACC_REG_BIT_SET(npeBPEConfig->npePERegisters.
+            npeControlRegister, npePDCfgStatus);
+
+        /* Install NPE-B Interrupt Service Routines */
+        lockKey = ixOsalIrqLock();
+
+        if ((IX_SUCCESS != ixOsalIrqBind (
+            (UINT32) IRQ_IXP400_INTC_PARITYENACC_NPEB,
+            (IxOsalVoidFnVoidPtr) ixParityENAccNpePENpeBIsr, 
+            (void *) NULL)) ||
+            (IX_FAIL == ixParityENAccIcInterruptDisable(
+            IXP400_PARITYENACC_INTC_NPEB_PARITY_INTERRUPT)))
+        {
+            if (IX_SUCCESS != 
+                ixOsalIrqUnbind ((UINT32) IRQ_IXP400_INTC_PARITYENACC_NPEA))
+            {
+                IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING, 
+                IX_OSAL_LOG_DEV_STDERR,
+                "WARNING: ixParityENAccNpeInit(): "\
+                "Can't unbind the NPEA ISR to IRQ_IXP400_INTC_PARITYENACC_NPEA!!!\n",0,0,0,0,0,0);
+            } 
+            ixOsalIrqUnlock(lockKey);
+            IX_OSAL_MEM_UNMAP(npeAVirtualBaseAddr);
+            IX_OSAL_MEM_UNMAP(npeBVirtualBaseAddr);
+            IX_OSAL_MEM_UNMAP(ebcVirtualBaseAddr);
+            return IX_FAIL;
+        } /* end of if */
+
+        ixOsalIrqUnlock(lockKey);
+
+        break; 
+        
+        case IXP400_PARITYENACC_PE_NPE_C:    
+
+        /* Memory mapping of the NPE-C registers */
+        if ((UINT32)NULL == (npeCVirtualBaseAddr = 
+            (UINT32) IX_OSAL_MEM_MAP (
+            IXP400_PARITYENACC_NPEC_BASEADDR,
+            IXP400_PARITYENACC_NPE_MEMMAP_SIZE)))
+        {
+            IX_OSAL_MEM_UNMAP(npeAVirtualBaseAddr);
+            /* NPE B is not present in IXP43X */
+            if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X != ixFeatureCtrlDeviceRead())
+            {
+                IX_OSAL_MEM_UNMAP(npeBVirtualBaseAddr);
+            }
+            IX_OSAL_MEM_UNMAP(ebcVirtualBaseAddr);
+            return IX_FAIL;
+        } /* end of if */
+
+        ixNpeCVirtualBaseAddr = npeCVirtualBaseAddr;
+
+        /* 
+         * Fetch the NPE Error Handling Enable Status from Expansion 
+         * Bus Controller Config Register #1
+         */
+        ixParityENAccNpePEErrorHandlingEnable[IXP400_PARITYENACC_PE_NPE_C] = 
         IXP400_PARITYENACC_VAL_BIT_CHECK(ebcConfigReg1Value,
             IXP400_PARITYENACC_NPE_EXPCNFG1_NPEC_ERREN);
 
-    /* Virtual Addresses assignment for NPE-A/B/C Registers */
-    npeAPEConfig->npePERegisters.npeStatusRegister  = 
-        npeAVirtualBaseAddr + IXP400_PARITYENACC_NPE_STATUS_OFFSET;
-    npeAPEConfig->npePERegisters.npeControlRegister = 
-        npeAVirtualBaseAddr + IXP400_PARITYENACC_NPE_CONTROL_OFFSET;
-
-    npeBPEConfig->npePERegisters.npeStatusRegister  = 
-        npeBVirtualBaseAddr + IXP400_PARITYENACC_NPE_STATUS_OFFSET;
-    npeBPEConfig->npePERegisters.npeControlRegister = 
-        npeBVirtualBaseAddr + IXP400_PARITYENACC_NPE_CONTROL_OFFSET;
-
-    npeCPEConfig->npePERegisters.npeStatusRegister  = 
+        /* Virtual Addresses assignment for NPE-C Registers */
+        npeCPEConfig->npePERegisters.npeStatusRegister  = 
         npeCVirtualBaseAddr + IXP400_PARITYENACC_NPE_STATUS_OFFSET;
-    npeCPEConfig->npePERegisters.npeControlRegister = 
+        npeCPEConfig->npePERegisters.npeControlRegister = 
         npeCVirtualBaseAddr + IXP400_PARITYENACC_NPE_CONTROL_OFFSET;
 
-    /* Register main module internal callback routines for NPEs */
-    npeAPEConfig->npePECallback = ixNpePECallback;
-    npeBPEConfig->npePECallback = ixNpePECallback;
-    npeCPEConfig->npePECallback = ixNpePECallback;
+        /* Register main module internal callback routines for NPEs */
+        npeCPEConfig->npePECallback = ixNpePECallback;
 
-    /* Interrupt Service Routine(s) Info for NPEs */
-    npeAPEConfig->npeIsrInfo.npeInterruptId = IRQ_IXP400_INTC_PARITYENACC_NPEA;
-    npeAPEConfig->npeIsrInfo.npeIsr = ixParityENAccNpePENpeAIsr;
+        /* Interrupt Service Routine(s) Info for NPEs */
+        npeCPEConfig->npeIsrInfo.npeInterruptId = 
+            IRQ_IXP400_INTC_PARITYENACC_NPEC;
+        npeCPEConfig->npeIsrInfo.npeIsr = ixParityENAccNpePENpeCIsr;
 
-    npeBPEConfig->npeIsrInfo.npeInterruptId = IRQ_IXP400_INTC_PARITYENACC_NPEB;
-    npeBPEConfig->npeIsrInfo.npeIsr = ixParityENAccNpePENpeBIsr;
+        /*
+         * Disable parity error detection for the IMEM, DMEM and Ext Error 
+         * of all the NPEs
+         */
 
-    npeCPEConfig->npeIsrInfo.npeInterruptId = IRQ_IXP400_INTC_PARITYENACC_NPEC;
-    npeCPEConfig->npeIsrInfo.npeIsr = ixParityENAccNpePENpeCIsr;
+        /* 
+         * Enable the Write Enable Bits to clear off IMEM, DMEM & Ext Error bits
+         */
+        IXP400_PARITYENACC_REG_READ(npeCPEConfig->npePERegisters.
+            npeControlRegister, &npePDCfgStatus);
 
-    /*
-     * Disable parity error detection for the IMEM, DMEM and Ext Error 
-     * of all the NPEs
-     */
+        IXP400_PARITYENACC_VAL_BIT_SET(npePDCfgStatus, npePDCfgFlags);
+        IXP400_PARITYENACC_VAL_BIT_CLEAR(npePDCfgStatus, 
+        IXP400_PARITYENACC_NPE_CONTROL_IPE |
+        IXP400_PARITYENACC_NPE_CONTROL_DPE | 
+        IXP400_PARITYENACC_NPE_CONTROL_EEE);
 
-    /* 
-     * Enable the Write Enable Bits to clear off IMEM, DMEM & Ext Error bits
-     */
-    IXP400_PARITYENACC_REG_READ(npeAPEConfig->npePERegisters.npeControlRegister, &npePDCfgStatus);
+        IXP400_PARITYENACC_REG_BIT_SET(npeCPEConfig->npePERegisters.
+            npeControlRegister, npePDCfgStatus);
 
-    IXP400_PARITYENACC_VAL_BIT_SET(npePDCfgStatus, npePDCfgFlags);
-    IXP400_PARITYENACC_VAL_BIT_CLEAR(npePDCfgStatus, IXP400_PARITYENACC_NPE_CONTROL_IPE |
-        IXP400_PARITYENACC_NPE_CONTROL_DPE | IXP400_PARITYENACC_NPE_CONTROL_EEE);
-
-    IXP400_PARITYENACC_REG_BIT_SET(npeAPEConfig->npePERegisters.npeControlRegister, npePDCfgStatus);
-
-
-    IXP400_PARITYENACC_REG_READ(npeBPEConfig->npePERegisters.npeControlRegister, &npePDCfgStatus);
-
-    IXP400_PARITYENACC_VAL_BIT_SET(npePDCfgStatus, npePDCfgFlags);
-    IXP400_PARITYENACC_VAL_BIT_CLEAR(npePDCfgStatus, IXP400_PARITYENACC_NPE_CONTROL_IPE |
-        IXP400_PARITYENACC_NPE_CONTROL_DPE | IXP400_PARITYENACC_NPE_CONTROL_EEE);
-
-    IXP400_PARITYENACC_REG_BIT_SET(npeBPEConfig->npePERegisters.npeControlRegister, npePDCfgStatus);
-
-
-    IXP400_PARITYENACC_REG_READ(npeCPEConfig->npePERegisters.npeControlRegister, &npePDCfgStatus);
-
-    IXP400_PARITYENACC_VAL_BIT_SET(npePDCfgStatus, npePDCfgFlags);
-    IXP400_PARITYENACC_VAL_BIT_CLEAR(npePDCfgStatus, IXP400_PARITYENACC_NPE_CONTROL_IPE |
-        IXP400_PARITYENACC_NPE_CONTROL_DPE | IXP400_PARITYENACC_NPE_CONTROL_EEE);
-
-    IXP400_PARITYENACC_REG_BIT_SET(npeCPEConfig->npePERegisters.npeControlRegister, npePDCfgStatus);
-
-    /* Install NPE-A/B/C Interrupt Service Routines */
-    {
-        INT32 lockKey = ixOsalIrqLock();
-        if ((IX_SUCCESS != ixOsalIrqBind ((UINT32) IRQ_IXP400_INTC_PARITYENACC_NPEA,
-                            (IxOsalVoidFnVoidPtr) ixParityENAccNpePENpeAIsr, (void *) NULL)) ||
+        /* Install NPE-C Interrupt Service Routines */
+        lockKey = ixOsalIrqLock();
+        if ((IX_SUCCESS != ixOsalIrqBind (
+            (UINT32) IRQ_IXP400_INTC_PARITYENACC_NPEC,
+            (IxOsalVoidFnVoidPtr) ixParityENAccNpePENpeCIsr, (void *) NULL))||
             (IX_FAIL == ixParityENAccIcInterruptDisable(
-                            IXP400_PARITYENACC_INTC_NPEA_PARITY_INTERRUPT)))
+                 IXP400_PARITYENACC_INTC_NPEC_PARITY_INTERRUPT)))
         {
-            ixOsalIrqUnlock(lockKey);
-            IX_OSAL_MEM_UNMAP(npeAVirtualBaseAddr);
-            IX_OSAL_MEM_UNMAP(npeBVirtualBaseAddr);
-            IX_OSAL_MEM_UNMAP(npeCVirtualBaseAddr);
-            IX_OSAL_MEM_UNMAP(ebcVirtualBaseAddr);
-            return IX_FAIL;
-        } /* end of if */
+            if (IX_SUCCESS != 
+               ixOsalIrqUnbind ((UINT32) IRQ_IXP400_INTC_PARITYENACC_NPEA))
+            {
+                IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING, 
+                IX_OSAL_LOG_DEV_STDERR,
+                "WARNING: ixParityENAccNpeInit(): "\
+                "Can't unbind the NPEA ISR to IRQ_IXP400_INTC_PARITYENACC_NPEA!!!\n",0,0,0,0,0,0);
+            } 
 
-        if ((IX_SUCCESS != ixOsalIrqBind ((UINT32) IRQ_IXP400_INTC_PARITYENACC_NPEB,
-                            (IxOsalVoidFnVoidPtr) ixParityENAccNpePENpeBIsr, (void *) NULL)) ||
-            (IX_FAIL == ixParityENAccIcInterruptDisable(
-                            IXP400_PARITYENACC_INTC_NPEB_PARITY_INTERRUPT)))
-        {
-            ixOsalIrqUnbind((UINT32) IRQ_IXP400_INTC_PARITYENACC_NPEA);
+            /* NPE B is not present in IXP43X */
+            if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X != ixFeatureCtrlDeviceRead())
+            {
+                if (IX_SUCCESS != 
+                    ixOsalIrqUnbind ((UINT32) IRQ_IXP400_INTC_PARITYENACC_NPEB))
+                {
+                    IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING,
+                    IX_OSAL_LOG_DEV_STDERR,
+                    "WARNING: ixParityENAccNpeInit(): "\
+                    "Can't unbind the NPEB ISR to "\
+                    "IRQ_IXP400_INTC_PARITYENACC_NPEB!!!\n",0,0,0,0,0,0);
+                } 
+
+            }
 
             ixOsalIrqUnlock(lockKey);
             IX_OSAL_MEM_UNMAP(npeAVirtualBaseAddr);
-            IX_OSAL_MEM_UNMAP(npeBVirtualBaseAddr);
-            IX_OSAL_MEM_UNMAP(npeCVirtualBaseAddr);
-            IX_OSAL_MEM_UNMAP(ebcVirtualBaseAddr);
-            return IX_FAIL;
-        } /* end of if */
-
-        if ((IX_SUCCESS != ixOsalIrqBind ((UINT32) IRQ_IXP400_INTC_PARITYENACC_NPEC,
-                            (IxOsalVoidFnVoidPtr) ixParityENAccNpePENpeCIsr, (void *) NULL))||
-            (IX_FAIL == ixParityENAccIcInterruptDisable(
-                            IXP400_PARITYENACC_INTC_NPEC_PARITY_INTERRUPT)))
-        {
-            ixOsalIrqUnbind((UINT32) IRQ_IXP400_INTC_PARITYENACC_NPEA);
-            ixOsalIrqUnbind((UINT32) IRQ_IXP400_INTC_PARITYENACC_NPEB);
-
-            ixOsalIrqUnlock(lockKey);
-            IX_OSAL_MEM_UNMAP(npeAVirtualBaseAddr);
-            IX_OSAL_MEM_UNMAP(npeBVirtualBaseAddr);
+            /* NPE B is not present in IXP43X */
+            if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X != ixFeatureCtrlDeviceRead())
+            {
+                 IX_OSAL_MEM_UNMAP(npeBVirtualBaseAddr);
+            }
             IX_OSAL_MEM_UNMAP(npeCVirtualBaseAddr);
             IX_OSAL_MEM_UNMAP(ebcVirtualBaseAddr);
             return IX_FAIL;
         } /* end of if */
         ixOsalIrqUnlock(lockKey);
+   
+        break;
+        default:
+            IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING,
+                IX_OSAL_LOG_DEV_STDERR,
+                "WARNING: ixParityENAccNpeInit(): "\
+                "Wrong NPE ID Selected \n",0,0,0,0,0,0);
+        break;
     }
 
     return IX_SUCCESS;
+
+}
+
+
+
+IX_STATUS
+ixParityENAccNpePEInit (IxParityENAccInternalCallback ixNpePECallback)
+{
+
+    IxParityENAccPENpeId ixNpeId;
+    IX_STATUS status = IX_SUCCESS;
+
+    /*
+     * These Bits are to be combined always with the Parity Error Detection 
+     * configuration bits.  Otherwise their effect is Nullified
+     */
+    npePDCfgFlags  = IXP400_PARITYENACC_NPE_CONTROL_IPEWE | 
+                     IXP400_PARITYENACC_NPE_CONTROL_DPEWE |
+                     IXP400_PARITYENACC_NPE_CONTROL_EEEWE;
+    
+    /* Verify parameters */
+    if ((IxParityENAccInternalCallback)NULL == ixNpePECallback)
+    {
+        return IX_FAIL;
+    } /* end of if */
+
+    /* Memory mapping of the Expansion Bus Controller Config Register #1 */
+    if ((UINT32)NULL == (ebcVirtualBaseAddr =  
+                        (UINT32) IX_OSAL_MEM_MAP (
+                        IXP400_PARITYENACC_EBC_BASEADDR,
+                        IXP400_PARITYENACC_EBC_MEMMAP_SIZE)))
+    {
+        return IX_FAIL;
+    } /* end of if */
+
+    ixNpeEbcVirtualBaseAddr = ebcVirtualBaseAddr;
+
+    /* Enable the NPE Error Handling Bits for Parity Error Interrupt 
+     * Generation for EXT ERR 
+     */
+    IXP400_PARITYENACC_REG_BIT_SET(ebcVirtualBaseAddr, 
+        IXP400_PARITYENACC_NPE_EXPCNFG1_NPEA_ERREN);
+    
+    if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X != ixFeatureCtrlDeviceRead())
+    {
+        IXP400_PARITYENACC_REG_BIT_SET(ebcVirtualBaseAddr, 
+            IXP400_PARITYENACC_NPE_EXPCNFG1_NPEB_ERREN);
+    }
+
+    IXP400_PARITYENACC_REG_BIT_SET(ebcVirtualBaseAddr, 
+        IXP400_PARITYENACC_NPE_EXPCNFG1_NPEC_ERREN);
+
+    IXP400_PARITYENACC_REG_READ(ebcVirtualBaseAddr, &ebcConfigReg1Value);
+
+    for (ixNpeId = IXP400_PARITYENACC_PE_NPE_A; 
+         ixNpeId < IXP400_PARITYENACC_PE_NPE_MAX;
+         ixNpeId++) 
+    {
+        /* NPE B is not present in IXP43X */
+        if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X == ixFeatureCtrlDeviceRead())
+        {    
+            if (ixNpeId == IXP400_PARITYENACC_PE_NPE_B)
+            {
+                continue;
+            }
+        }
+        
+        status = ixParityENAccNpeInit(ixNpeId, ixNpePECallback );
+        if (status != IX_SUCCESS)
+        {
+
+            IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_ERROR, 
+            IX_OSAL_LOG_DEV_STDERR,
+            "ixParityENAccNpePEInit failed while initializing NPE %u \n",\
+            ixNpeId, 0,0,0,0,0);
+            return IX_FAIL;
+        } 
+ 
+    }
+
+    return IX_SUCCESS;
+
 } /* end of ixParityENAccNpePEInit() function */
+
 
 IX_STATUS
 ixParityENAccNpePEDetectionConfigure (
     IxParityENAccPENpeId ixNpeId,
     IxParityENAccNpePEConfigOption ixNpePDCfg)
 {
-    UINT32 npePDCfgFlags  = IXP400_PARITYENACC_NPE_CONTROL_IPE |
-                            IXP400_PARITYENACC_NPE_CONTROL_DPE |
-                            IXP400_PARITYENACC_NPE_CONTROL_EEE ;
+    IX_STATUS status;
+    UINT32 npePDCfgTempFlags  = IXP400_PARITYENACC_NPE_CONTROL_IPE |
+                                IXP400_PARITYENACC_NPE_CONTROL_DPE |
+                                IXP400_PARITYENACC_NPE_CONTROL_EEE ;
 
     /* These WE bits are essential to update other flags */
     UINT32 npePDCtlFlags  = IXP400_PARITYENACC_NPE_CONTROL_IPEWE | 
                             IXP400_PARITYENACC_NPE_CONTROL_DPEWE |
                             IXP400_PARITYENACC_NPE_CONTROL_EEEWE |
                             IXP400_PARITYENACC_NPE_CONTROL_PPWE; 
-    UINT32 npePDCfgStatus = 0;
+    UINT32 npePDCfgTempStatus = 0;
     UINT32 npeTmpPDCfgStatus = 0;
 
     /* Validate parameters */
-    if (ixNpeId >= IXP400_PARITYENACC_PE_NPE_MAX)
+    status = ixParityENAccCheckNpeIdValidity (ixNpeId);
+    if (status != IX_SUCCESS)
     {
-        return IX_FAIL;
-    } /* end of if */
+
+        IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR,
+                "ixParityENAccNpePEDetectionConfigure(): "
+                "Invalid NPE ID\n",0,0,0,0,0,0);
+        return status;
+
+    }
 
     /* Get current parity detection configuration */
 #ifdef __vxworks
@@ -324,31 +528,31 @@ ixParityENAccNpePEDetectionConfigure (
     /* Enable parity error detection */
     if (IXP400_PARITYENACC_PE_ENABLE == ixNpePDCfg.ideEnabled)
     {
-        IXP400_PARITYENACC_VAL_BIT_SET(npePDCfgStatus, npePDCfgFlags);
+        IXP400_PARITYENACC_VAL_BIT_SET(npePDCfgTempStatus, npePDCfgTempFlags);
     } 
     /* Disable parity error detection */
     else
     {
-        IXP400_PARITYENACC_VAL_BIT_CLEAR(npePDCfgStatus,npePDCfgFlags);
+        IXP400_PARITYENACC_VAL_BIT_CLEAR(npePDCfgTempStatus,npePDCfgTempFlags);
     } /* end of if */
 
     /* Odd parity polarity */
     if (IX_PARITYENACC_ODD_PARITY == ixNpePDCfg.parityOddEven)
     {
-        IXP400_PARITYENACC_VAL_BIT_SET(npePDCfgStatus,IXP400_PARITYENACC_NPE_CONTROL_PP);
+        IXP400_PARITYENACC_VAL_BIT_SET(npePDCfgTempStatus,IXP400_PARITYENACC_NPE_CONTROL_PP);
     }
     else
     {
-        IXP400_PARITYENACC_VAL_BIT_CLEAR(npePDCfgStatus,IXP400_PARITYENACC_NPE_CONTROL_PP);
+        IXP400_PARITYENACC_VAL_BIT_CLEAR(npePDCfgTempStatus,IXP400_PARITYENACC_NPE_CONTROL_PP);
     } /* end of if */
 
     /* Always include these bits for the parity error config changes to take place */
-    IXP400_PARITYENACC_VAL_BIT_SET(npePDCfgStatus, npePDCtlFlags);
+    IXP400_PARITYENACC_VAL_BIT_SET(npePDCfgTempStatus, npePDCtlFlags);
 
     /* Set the new configuration */
     IXP400_PARITYENACC_REG_WRITE (
         ixParityENAccNpePEConfig[ixNpeId].npePERegisters.npeControlRegister,
-        npePDCfgStatus);
+        npePDCfgTempStatus);
 
     IXP400_PARITYENACC_REG_READ(
         ixParityENAccNpePEConfig[ixNpeId].npePERegisters.npeControlRegister,
@@ -358,7 +562,7 @@ ixParityENAccNpePEDetectionConfigure (
      * These WE bits are read as zeros only so we need to clear them off from the value
      * we have just written so that compare gives correct result.
      */
-    IXP400_PARITYENACC_VAL_BIT_CLEAR(npePDCfgStatus, npePDCtlFlags);
+    IXP400_PARITYENACC_VAL_BIT_CLEAR(npePDCfgTempStatus, npePDCtlFlags);
 
     /*
      * The extra bits other than the parity detection control bits/flags, if any, needs
@@ -380,13 +584,12 @@ ixParityENAccNpePEDetectionConfigure (
      */
     {
         UINT32 npeTmpNonPDCfgStatus  = npeTmpPDCfgStatus;
-        IXP400_PARITYENACC_VAL_BIT_CLEAR(npeTmpNonPDCfgStatus, npePDCfgStatus);
+        IXP400_PARITYENACC_VAL_BIT_CLEAR(npeTmpNonPDCfgStatus, npePDCfgTempStatus);
         IXP400_PARITYENACC_VAL_BIT_CLEAR(npeTmpPDCfgStatus, npeTmpNonPDCfgStatus);
     }
-
-    if (npeTmpPDCfgStatus == npePDCfgStatus)
+    if (npeTmpPDCfgStatus == npePDCfgTempStatus)
     {
-        /* Enable/Disable the corresponding interrupt at Interrupt Controller */
+        /* enable/Disable the corresponding interrupt at Interrupt Controller */
         if (IXP400_PARITYENACC_PE_ENABLE == ixNpePDCfg.ideEnabled)
         {
             return ixParityENAccIcInterruptEnable( 
@@ -410,6 +613,9 @@ ixParityENAccNpePEDetectionConfigure (
     {
         return IX_FAIL;
     } /* end of if */
+
+    return IX_SUCCESS;
+
 } /* end of ixParityENAccNpePEDetectionConfigure() function */
 
 
@@ -418,9 +624,23 @@ ixParityENAccNpePEParityErrorContextFetch (
     IxParityENAccPENpeId ixNpeId,
     IxParityENAccNpePEParityErrorContext *ixNpePECMsg)
 {
+   
+    IX_STATUS status;
+ 
     /* Validate parameters */
-    if ((ixNpeId >= IXP400_PARITYENACC_PE_NPE_MAX) ||
-        ((IxParityENAccNpePEParityErrorContext *)NULL == ixNpePECMsg))
+    status = ixParityENAccCheckNpeIdValidity (ixNpeId);
+    if (status != IX_SUCCESS)
+    {
+
+        IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR,
+                "ixParityENAccNpePEParityErrorContextFetch(): "
+                "Invalid NPE ID\n",0,0,0,0,0,0);
+        return status;
+
+    }
+ 
+    
+    if ( (IxParityENAccNpePEParityErrorContext *)NULL == ixNpePECMsg )
     {
         return IX_FAIL;
     } /* end of if */
@@ -477,12 +697,21 @@ ixParityENAccNpePEParityErrorContextFetch (
 IX_STATUS
 ixParityENAccNpePEParityInterruptClear (IxParityENAccPENpeId ixNpeId)
 {
-    /* Validate parameters */
-    if (ixNpeId >= IXP400_PARITYENACC_PE_NPE_MAX)
-    {
-        return IX_FAIL;
-    } /* end of if */
 
+    IX_STATUS status;
+
+    /* Validate parameters */
+    status = ixParityENAccCheckNpeIdValidity (ixNpeId);
+    if (status != IX_SUCCESS)
+    {
+
+        IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR,
+                "ixParityENAccNpePEParityInterruptClear(): "
+                "Invalid NPE ID\n",0,0,0,0,0,0);
+        return status;
+
+    }
+ 
     /* Disable the interrupt from triggering further */
     return ixParityENAccIcInterruptDisable(
                (IXP400_PARITYENACC_PE_NPE_A == ixNpeId) ? 
@@ -504,6 +733,16 @@ ixParityENAccNpePEParityErrorStatusGet (void)
      */
     for (; ixNpeId < IXP400_PARITYENACC_PE_NPE_MAX; ixNpeId++)
     {
+        /* NPE B is not present in IXP43X */
+        if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X == ixFeatureCtrlDeviceRead())
+        {
+            if (ixNpeId == IXP400_PARITYENACC_PE_NPE_B)
+            {
+                continue;
+            }
+       
+        }
+ 
         IXP400_PARITYENACC_REG_READ(
             ixParityENAccNpePEConfig[ixNpeId].npePERegisters.npeControlRegister,
             &ixParityENAccNpePEConfig[ixNpeId].npeParityErrorStatus.\
@@ -577,4 +816,83 @@ ixParityENAccNpePENpeCIsr(void)
     return;
 } /* end of ixParityENAccNpePENpeCIsr() function */
 
-#endif /* __ixp46X */
+IX_STATUS 
+ixParityENAccNpePEUnload(void)
+{
+    UINT32 lockKey;
+    UINT32 status = IX_SUCCESS;
+    IxParityENAccPENpeId ixNpeId;
+    IxParityENAccNpePEConfigOption ixNpePDCfg;
+
+    /* Disable NPE even and odd parity erros */
+    for( ixNpeId = IXP400_PARITYENACC_PE_NPE_A; 
+         ixNpeId < IXP400_PARITYENACC_PE_NPE_MAX;
+	 ixNpeId++)
+    {
+
+        /* if IXP43X device NPE B is disabled Hence skip the disabling */
+        if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X == ixFeatureCtrlDeviceRead())
+        {
+            if (ixNpeId == IXP400_PARITYENACC_PE_NPE_B)
+            {
+                continue;
+            }
+        }
+
+        ixNpePDCfg.ideEnabled    = IXP400_PARITYENACC_PE_DISABLE;
+        ixNpePDCfg.parityOddEven = IX_PARITYENACC_EVEN_PARITY;
+        ixParityENAccNpePEDetectionConfigure(ixNpeId,ixNpePDCfg);
+    }
+
+    /* Unbind the IRQs */
+    lockKey = ixOsalIrqLock();
+    if (IX_SUCCESS != 
+        ixOsalIrqUnbind ((UINT32) IRQ_IXP400_INTC_PARITYENACC_NPEA))
+    {
+        IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING, 
+        IX_OSAL_LOG_DEV_STDERR,
+        "ixParityENAccNpePEUnload(): "\
+        "Can't unbind the NPEA ISR to IRQ_IXP400_INTC_PARITYENACC_NPEA!!!\n",
+        0,0,0,0,0,0);
+        status = IX_FAIL;
+    }
+    
+    /* if IXP43X device NPE B is disabled Hence skip the Unbinding IRQ */
+    if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X != ixFeatureCtrlDeviceRead())
+    {
+        if (IX_SUCCESS != 
+            ixOsalIrqUnbind ((UINT32) IRQ_IXP400_INTC_PARITYENACC_NPEB))
+        {
+            IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING, 
+            IX_OSAL_LOG_DEV_STDERR,
+            "ixParityENAccNpePEUnload(): "\
+            "Can't unbind the NPEB ISR to IRQ_IXP400_INTC_PARITYENACC_NPEB!!!              \n",0,0,0,0,0,0);
+            status = IX_FAIL;
+        }
+    }
+    if (IX_SUCCESS != 
+        ixOsalIrqUnbind ((UINT32) IRQ_IXP400_INTC_PARITYENACC_NPEC))
+    {
+        IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDERR,
+            "ixParityENAccNpePEUnload(): "\
+            "Can't unbind the NPEC ISR to IRQ_IXP400_INTC_PARITYENACC_NPEC!!!\n",0,0,0,0,0,0);
+        status = IX_FAIL;
+    }    
+    ixOsalIrqUnlock(lockKey);
+
+    /* Unmap the memory */
+    IX_OSAL_MEM_UNMAP(ixNpeAVirtualBaseAddr);
+
+    /* if IXP43X device NPE B is disabled Hence skip Unmapping memory */
+    if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X != ixFeatureCtrlDeviceRead())
+    {
+        IX_OSAL_MEM_UNMAP(ixNpeBVirtualBaseAddr);
+    }
+
+    IX_OSAL_MEM_UNMAP(ixNpeCVirtualBaseAddr);
+    IX_OSAL_MEM_UNMAP(ixNpeEbcVirtualBaseAddr);
+
+    return status;
+} /* end of the ixParityENAccNpePEUnload() function */
+
+#endif /* __ixp46X || __ixp43X */

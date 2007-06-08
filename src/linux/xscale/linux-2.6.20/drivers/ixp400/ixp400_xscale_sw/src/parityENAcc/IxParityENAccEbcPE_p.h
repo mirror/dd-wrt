@@ -8,12 +8,12 @@
  * component of the IXP400 Parity Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -57,10 +57,18 @@
  * #defines and macros used in this file.
  */
 /* IRQ Level for the EBC */
+#if !defined(__ixp43X)
 #define IRQ_IXP400_INTC_PARITYENACC_EBC   (IX_OSAL_IXP400_EBC_IRQ_LVL)
+#else /* define dummy values for IXP 43X */
+#define IRQ_IXP400_INTC_PARITYENACC_EBC   0
+#endif
 
 /* Base Addresses for EBC Control and Status Registers */
+#if !defined(__ixp43X)
 #define IXP400_PARITYENACC_EBC_BASEADDR   (IX_OSAL_IXP400_EXP_BUS_REGS_PHYS_BASE)
+#else /* define dummy value for IXP 43X */
+#define IXP400_PARITYENACC_EBC_BASEADDR   0
+#endif
 
 /*
  * Address Range for EBC registers 

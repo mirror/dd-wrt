@@ -4,12 +4,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -769,53 +769,6 @@ IxEthDBStatus ixEthDBEventProcessorPauseModeSet (BOOL pauseEnable);
 /**
  * @ingroup IxEthDB
  *
- * @fn IxEthDBStatus ixEthDBFilteringDatabaseShow(IxEthDBPortId  portID)
- *
- * @brief This function displays the Mac Ethernet MAC address filtering tables.
- *
- * It displays the MAC address, port ID, entry type (dynamic/static),and age for 
- * the given port ID.
- *
- * - Reentrant    - no
- * - ISR Callable - no
- *
- * @param portID @ref IxEthDBPortId [in] - port ID to display the MAC address entries
- *
- * @retval IX_ETH_DB_SUCCESS operation completed successfully
- * @retval IX_ETH_DB_INVALID_PORT portID is invalid
- * @retval IX_ETH_DB_PORT_UNINITIALIZED port ID is not initialized
- * @retval IX_ETH_DB_FAIL record browser failed due to an internal busy or lock condition
- *
- * @note this function is deprecated and kept for compatibility reasons; use @ref ixEthDBFilteringDatabaseShowRecords instead
- * 
- * @see ixEthDBFilteringDatabaseShowRecords
- */
-IX_ETH_DB_PUBLIC 
-IxEthDBStatus ixEthDBFilteringDatabaseShow(IxEthDBPortId portID);
-
-/** 
- * @ingroup IxEthDB
- *
- * @fn void ixEthDBFilteringDatabaseShowAll(void)
- *
- * @brief Displays the MAC address recorded in the filtering database for all registered
- * ports (see IxEthDBPortDefs.h), grouped by port ID.
- *
- * - Reentrant    - no
- * - ISR Callable - no
- *
- * @retval void
- *
- * @note this function is deprecated and kept for compatibility reasons; use @ref ixEthDBFilteringDatabaseShowRecords instead
- * 
- * @see ixEthDBFilteringDatabaseShowRecords
- */
-IX_ETH_DB_PUBLIC 
-void ixEthDBFilteringDatabaseShowAll(void);
-
-/**
- * @ingroup IxEthDB
- *
  * @fn IxEthDBStatus ixEthDBFilteringDatabaseShowRecords(IxEthDBPortId portID, IxEthDBRecordType recordFilter)
  *
  * @brief This function displays per port database records, given a record type filter
@@ -883,7 +836,7 @@ IxEthDBStatus ixEthDBFilteringDatabaseShowRecords(IxEthDBPortId portID, IxEthDBR
     IxEthDBPortMap portMap;
     
     // clear all ports from port map
-    memset(portMap, 0, sizeof (portMap)); 
+    ixOsalMemSet(portMap, 0, sizeof (portMap)); 
     
     // include portID in port map 
     portMap[portID / 8] = 1 << (portID % 8);

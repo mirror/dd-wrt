@@ -4,12 +4,12 @@
  * @brief Public definition of the ports and port capabilities
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -66,24 +66,11 @@ typedef enum
 } IxEthDBPortType;
 
 /** 
- * @brief Port capabilities - used by ixEthAccDatabaseMaintenance to decide whether it
- * should manually age entries or not depending on the port capabilities.
- *
- * Ethernet NPEs have aging capabilities, meaning that they will age the entries
- * automatically (by themselves).*/
-typedef enum
-{
-    IX_ETH_NO_CAPABILITIES = 0,   /**< no aging capabilities */
-    IX_ETH_ENTRY_AGING     = 0x1  /**< aging capabilities present */
-} IxEthDBPortCapability;
-
-/** 
- * @brief Port Definition - a structure contains the Port type and capabilities 
+ * @brief Port Definition - a structure contains the Port type 
  */
 typedef struct
 {
     IxEthDBPortType type;
-    IxEthDBPortCapability capabilities;
 } IxEthDBPortDefinition;
 
 
@@ -92,6 +79,7 @@ typedef struct
  * @brief number of supported ports 
  */
 #define IX_ETH_DB_NUMBER_OF_PORTS (3)
+
 
 /** 
  * @brief Port definitions structure, indexed on the port ID

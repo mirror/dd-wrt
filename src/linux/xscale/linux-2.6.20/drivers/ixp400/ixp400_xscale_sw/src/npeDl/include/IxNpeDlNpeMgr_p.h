@@ -7,12 +7,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -64,7 +64,7 @@
  * Put the user defined include files required.
  */
 #include "IxNpeDl.h"
-#include "IxOsalTypes.h"
+#include "IxOsal.h"
 
 
 /*
@@ -254,6 +254,15 @@ ixNpeDlNpeMgrStatsShow (void);
 void
 ixNpeDlNpeMgrStatsReset (void);
 
+/**
+ * @fn IX_STATUS ixNpeDlNpePresentCheck(IxNpeDlNpeId npeId, char *apiCallingFunctionName)
+ *
+ * @brief This function will check presence of NPE's in silicon 
+ *
+ * @return IX_STATUS
+ */
+IX_STATUS
+ixNpeDlNpePresentCheck(IxNpeDlNpeId npeId, char *apiCallingFunctionName);
 
 #endif /* IXNPEDLIMAGEMGR_P_H */
 

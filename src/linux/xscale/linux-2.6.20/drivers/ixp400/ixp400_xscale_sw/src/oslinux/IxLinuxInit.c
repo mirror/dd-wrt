@@ -1,11 +1,11 @@
 /*
  * @par 
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -226,7 +226,7 @@ int ixNpe_dev_release (struct inode *inode, struct file *file)
 	    
 	    while (temp != NULL)
 	    {
-		memcpy(currentPosition, temp->data, temp->size);
+		ixOsalMemCopy(currentPosition, temp->data, temp->size);
 		
 		/* increment pointers */
 		currentPosition = (UINT32 *)((UINT32)currentPosition + temp->size);

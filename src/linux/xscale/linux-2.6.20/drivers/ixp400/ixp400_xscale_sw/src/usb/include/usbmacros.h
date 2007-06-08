@@ -8,12 +8,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -290,6 +290,18 @@ reg32Set(volatile UINT32 *reg_ptr, UINT32 val);
         return IX_FAIL;                             \
     }
 
+/** sanity checks for device cofigure status */         
+#define CHECK_DEVICE_CONFIGURED(device)                   \
+    if (!CONTEXT(device)->configured)                     \
+    {                                                     \
+        device->lastError = IX_USB_DEVICE_NOT_CONFIGURED; \
+	ixOsalLog(IX_OSAL_LOG_LVL_ERROR,		  \
+                  IX_OSAL_LOG_DEV_STDERR,		  \
+                  "Device is not configured\n",		  \
+                  0, 0, 0, 0, 0, 0); 			  \
+        return IX_FAIL;                                   \
+    }
+
 /** sanity check for endpoint existence */
 #define CHECK_ENDPOINT(device, endpointNumber)  \
     if (endpointNumber >= NUM_ENDPOINTS)        \
@@ -385,6 +397,8 @@ reg32Set(volatile UINT32 *reg_ptr, UINT32 val);
 
 #endif
 
+#define IX_USB_HAS_VERBOSE_TRACE_MACRO
+
 #ifndef __doxygen_HIDE
 
 #define IX_HWEMU_TRACE(format, a, b, c, d, e, f) if (0); /* nothing */
@@ -420,7 +434,7 @@ reg32Set(volatile UINT32 *reg_ptr, UINT32 val);
 
 #endif /* IX_USB_HAS_VERBOSE_TRACE_MACRO */
 
-#ifdef IX_USB_HAS_VERBOSE_2_TRACE_MACRO
+#ifndef IX_USB_HAS_VERBOSE_2_TRACE_MACRO
 
 #define IX_USB_VERBOSE2_TRACE(format, a, b, c, d, e, f)        \
         (ixOsalLog (IX_OSAL_LOG_LVL_DEBUG1,                    \

@@ -4,12 +4,12 @@
  * @brief   IxAtmCodelet scenarios header file.
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -57,7 +57,7 @@
 /**
  * @ingroup Codelets
  *
- * @defgroup IxAtmCodelet IXP400 ATM Codelet (IxAtmCodelet) API
+ * @defgroup IxAtmCodelet Intel (R) IXP400 ATM Codelet (IxAtmCodelet) API
  *
  * This codelet demonstrates an example implementation of a working Atm
  * driver that makes use of the AtmdAcc component, as well as demonstrating how
@@ -123,7 +123,7 @@
  * </i>
  * </pre>
  *
- * Note for VxWorks* and Unix* Usage:
+ * Note for VxWorks* and UNIX* Usage:
  * @li IX_ATM_CODELET_SWLOOPBACK_PORT_RATE and IX_ATM_CODELET_REMOTELOOPBACK_PORT_RATE
  *    defined in this header file allows the user to change the port rate
  *    (in cells/sec) accordingly. The port rate works when using ADSL 
@@ -198,8 +198,8 @@
  *     <br>
  *     <b>Buffer management</b>
  *     In this mode a simple buffering mechanism is used; mbufs are allocated 
- *     from the vxWorks pool as needed for RxFree replenishing/Tx and are 
- *     returned to the vxWorks pool for TxDone/Rx <br>
+ *     from the VxWorks* pool as needed for RxFree replenishing/Tx and are 
+ *     returned to the VxWorks* pool for TxDone/Rx <br>
  *     <br>
  *     <b>Interrupt/Task based processing </b>
  *     In this mode of operation the IxQMgrDispatcher is hooked to interupts. 
@@ -224,7 +224,7 @@
  *     <br>
  *     <b>Buffer management</b>
  *     In this mode a more complex buffering mechanism is used; mbufs are 
- *     allocated from the vxWorks pool and stored in a software queue. These
+ *     allocated from the VxWorks* pool and stored in a software queue. These
  *     mbufs are fetched from this software queue as needed for RxFree 
  *     replenishing/Tx and are returned to the software queue for 
  *     TxDone/Rx.<br>
@@ -266,7 +266,7 @@
  *
  * <b>BufMan</b>
  * This sub-component implements the intefaces used internally for getting and
- * returning vxWorks mbufs.
+ * returning VxWorks* mbufs.
  *
  * <b>UTOPIA Recieve and Transmit PHY addresses</b>
  * In this codelet UTOPIA Phy Addresses are assigned numbers starting at
@@ -409,6 +409,17 @@
  *
  */
 #define IX_ATMCODELET_QMGR_DISPATCHER_THREAD_STACK_SIZE 10240
+
+/**
+ * @ingroup IxAtmCodelet
+ *
+ * @def   IX_ATMCODELET_UTOPIA_LB_THREAD_PRIORITY
+ *
+ * @brief Recommended priority of UTOPIA loopback thread (for 
+ * AAL0 and AAL5 type cells) 
+ *
+ */
+#define IX_ATMCODELET_UTOPIA_LB_THREAD_PRIORITY 10
 
 /*
  * Variable declarations global to this file. Externs are followed by
