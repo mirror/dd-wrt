@@ -8,12 +8,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -307,29 +307,23 @@ ixHssAccInit (void)
     IX_HSSACC_TRACE0 (IX_HSSACC_FN_ENTRY_EXIT, 
 		      "Entering ixHssAccInit\n");
 
-    /* If not IXP42X A0 stepping, proceed to check for existence of coprocessors */ 
-    if ((IX_FEATURE_CTRL_SILICON_TYPE_A0 != 
-        (ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK))
-        || (IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X != ixFeatureCtrlDeviceRead ()))
-    {
-  
     /* Check for HSS & HDLC port being present before proceeding*/
-        if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_HSS)== 
-	        IX_FEATURE_CTRL_COMPONENT_DISABLED)
-        {
-	    IX_HSSACC_REPORT_ERROR("Warning: the HSS Port component you"
-	        " specified does not exist\n");
-            return IX_FAIL;
-        }
-    
-        if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_HDLC)== 
-	        IX_FEATURE_CTRL_COMPONENT_DISABLED)
-        {
-	    IX_HSSACC_REPORT_ERROR("Warning: the HDLC Port component you"
-	        " specified does not exist\n");
-            return IX_FAIL; 
-        }
+    if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_HSS)== 
+        IX_FEATURE_CTRL_COMPONENT_DISABLED)
+    {
+        IX_HSSACC_REPORT_ERROR("Warning: the HSS Port component you"
+            " specified does not exist\n");
+        return IX_FAIL;
     }
+    
+    if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_HDLC)== 
+        IX_FEATURE_CTRL_COMPONENT_DISABLED)
+    {
+        IX_HSSACC_REPORT_ERROR("Warning: the HDLC Port component you"
+            " specified does not exist\n");
+        return IX_FAIL; 
+    }
+    
  
     if (IX_SUCCESS != ixNpeDlLoadedImageFunctionalityGet (IX_NPEDL_NPEID_NPEA, 
 							  &imageId))
@@ -341,9 +335,7 @@ ixHssAccInit (void)
     }
     else
     {
-	if (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_HSS0)
-           || (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_SPHY_1_PORT ))
-	   || (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_MPHY_1_PORT))
+	if ((imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_SPHY_1_PORT))
            || (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_HSS_TSLOT_SWITCH )))
 	{
 	    /* Enabling HSS port 0 only */
@@ -360,9 +352,19 @@ ixHssAccInit (void)
 	}
 	else if (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_HSS_2_PORT )) 
 	{
-	    /* Enabling dual HSS ports */
-	    hssPortMax = IX_HSSACC_DUAL_HSS_PORTS;
-	    hssQmqsMax = IX_HSSACC_MAX_NUM_QMQS;
+            if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X == ixFeatureCtrlDeviceRead ())
+	    {
+	        IX_HSSACC_REPORT_ERROR("ixHssAccInit:This image is not supported in IXP43X"
+	        " as it supports only single HSS port(HSS port 0)\n");
+                status = IX_FAIL;
+
+	    }
+	    else
+	    {	
+	        /* Enabling dual HSS ports */
+	        hssPortMax = IX_HSSACC_DUAL_HSS_PORTS;
+	        hssQmqsMax = IX_HSSACC_MAX_NUM_QMQS;
+	    }
 	}
 	else
 	{
@@ -408,7 +410,7 @@ ixHssAccInit (void)
       || (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_ETH_HDRCONV_HSSCHAN_COEXIST))
       || (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_MPHY_4_PORT))) 
     {
-       ixHssAccServiceType = IX_HSSACC_CHANNELIZED;
+        ixHssAccServiceType = IX_HSSACC_CHANNELIZED;
     }
 
 
@@ -423,22 +425,22 @@ if ( IX_SUCCESS == ixEthHssAccCoExistCheck())
     if ( TRUE == ixEthHssAccCoexistEnable )
     {
 
-    if (FALSE == ixEthHssComMutexInitDone )    
-    {
-        printf("Initializing common mutex for ETH-HSS coexist \n"); 
-        if (IX_SUCCESS != ixOsalMutexInit (&ixEthHssCoexistLock))
+        if (FALSE == ixEthHssComMutexInitDone )    
         {
-            /* Log error message in debugging mode */
-            ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
+            printf("Initializing common mutex for ETH-HSS coexist \n"); 
+            if (IX_SUCCESS != ixOsalMutexInit (&ixEthHssCoexistLock))
+            {
+                /* Log error message in debugging mode */
+                ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
             		   IX_OSAL_LOG_DEV_STDERR,
                        "ETH-HSS common mutex initialization failed.\n",
                        0, 0, 0, 0, 0, 0);
 
-            /* Mutex initialization failed */
-            return IX_FAIL;
-        } /* end of if (ixOsalMutexInit) */
-        ixEthHssComMutexInitDone = TRUE; 
-    }
+                /* Mutex initialization failed */
+                return IX_FAIL;
+            } /* end of if (ixOsalMutexInit) */
+            ixEthHssComMutexInitDone = TRUE; 
+        }
 
     }
 

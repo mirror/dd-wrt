@@ -9,12 +9,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -61,7 +61,7 @@
 #define IXNPEMHSOLICITEDCBMGR_P_H
 
 #include "IxNpeMh.h"
-#include "IxOsalTypes.h"
+#include "IxOsal.h"
 
 /*
  * #defines for function return types, etc.

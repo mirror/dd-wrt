@@ -10,12 +10,12 @@
  * Design Notes:
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -131,10 +131,10 @@ extern IxEthAccPortDataInfo   ixEthAccPortData[];
 extern IxEthAccInfo   ixEthAccDataInfo;
 
 /* Lock used when writing to the RxFree queue for a port */
-PRIVATE IxOsalFastMutex rxWriteMutex[IX_ETH_ACC_NUMBER_OF_PORTS];
+PRIVATE IxOsalFastMutex rxWriteMutex[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
 
 /* Lock used when writing to the TX queue for a port */
-PRIVATE IxOsalFastMutex txWriteMutex[IX_ETH_ACC_NUMBER_OF_PORTS];
+PRIVATE IxOsalFastMutex txWriteMutex[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
 
 UINT32 ixEthAccTxSubmitBusyCount=IX_ETH_ACC_TX_FRAME_SUBMIT_NOT_BUSY;
 
@@ -886,26 +886,27 @@ ixEthAccRxFreeFromSwQ(IxEthAccPortId portId)
 IX_ETH_ACC_PUBLIC
 IxEthAccStatus ixEthAccInitDataPlane()
 {	
-    IxEthNpePhysicalId physicalId;
-    
+    UINT32 portIndex;
+    IxEthAccPortId portId;
+
     /* 
      * Initialize the service and register callback to other services.
      */
-
     IX_ETH_ACC_MEMSET(&ixEthAccDataStats, 
 		      0, 
 		      sizeof(ixEthAccDataStats));
 
     /* init port data */
-    for(physicalId=0; physicalId < IX_ETH_ACC_NUMBER_OF_PORTS; physicalId++)
+    for(portIndex=0; portIndex < IxEthAccPortInfo->IxEthAccNumberOfPorts; portIndex++)
     {
-	ixOsalFastMutexInit(&txWriteMutex[physicalId]);
-	ixOsalFastMutexInit(&rxWriteMutex[physicalId]);
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
+	ixOsalFastMutexInit(&txWriteMutex[portId]);
+	ixOsalFastMutexInit(&rxWriteMutex[portId]);
 
-	IX_ETH_ACC_MEMSET(&ixEthAccPortData[physicalId], 
+	IX_ETH_ACC_MEMSET(&ixEthAccPortData[portId], 
 			  0, 
-			  sizeof(ixEthAccPortData[physicalId]));
-	ixEthAccPortData[physicalId].ixEthAccTxData.schDiscipline = FIFO_NO_PRIORITY;
+			  sizeof(IxEthAccPortDataInfo));
+	ixEthAccPortData[portId].ixEthAccTxData.schDiscipline = FIFO_NO_PRIORITY;
     }
     ixEthAccDataInfo.schDiscipline = FIFO_NO_PRIORITY;
     ixEthAccDataInfo.rxQMCbTypeSet = UNREGISTERED;
@@ -939,6 +940,7 @@ IxEthAccStatus ixEthAccPortTxDoneCallbackRegister(IxEthAccPortId portId,
     {
 	return (IX_ETH_ACC_INVALID_ARG);
     }
+
     ixEthAccPortData[portId].ixEthAccTxData.txBufferDoneCallbackFn = txCallbackFn;
     ixEthAccPortData[portId].ixEthAccTxData.txCallbackTag = callbackTag;
     return (IX_ETH_ACC_SUCCESS);
@@ -951,13 +953,13 @@ IxEthAccStatus ixEthAccPortRxCallbackRegister(IxEthAccPortId portId,
 					      rxCallbackFn, 
 					      UINT32 callbackTag)
 {	
-    IxEthAccPortId port;
+    UINT32 portIndex;
     IxEthAccStatus status;
-
     if (!IX_ETH_ACC_IS_SERVICE_INITIALIZED())
     {
 	return (IX_ETH_ACC_FAIL);
     }
+
     if (!IX_ETH_ACC_IS_PORT_VALID(portId))
     {
 	return (IX_ETH_ACC_INVALID_PORT);
@@ -967,7 +969,7 @@ IxEthAccStatus ixEthAccPortRxCallbackRegister(IxEthAccPortId portId,
     {
 	return (IX_ETH_ACC_PORT_UNINITIALIZED);
     }
-    
+   
     /* Check for null function pointer here. */
     if (rxCallbackFn == NULL)
     {
@@ -977,12 +979,13 @@ IxEthAccStatus ixEthAccPortRxCallbackRegister(IxEthAccPortId portId,
     /* Check the user is not changing the callback type
      * when the port is enabled. 
     */
+
     if (ixEthAccMacState[portId].portDisableState == ACTIVE)
     {
-	for (port = 0; port < IX_ETH_ACC_NUMBER_OF_PORTS; port++)
+	for (portIndex = 0; portIndex < IxEthAccPortInfo->IxEthAccNumberOfPorts; portIndex++)
 	{
-	    if ((ixEthAccMacState[port].portDisableState == ACTIVE)
-		&& (ixEthAccPortData[port].ixEthAccRxData.rxMultiBufferCallbackInUse == TRUE))
+	    if ((ixEthAccMacState[IX_ETHNPE_INDEX_TO_PORT_ID(portIndex)].portDisableState == ACTIVE)
+		&& (ixEthAccPortData[IX_ETHNPE_INDEX_TO_PORT_ID(portIndex)].ixEthAccRxData.rxMultiBufferCallbackInUse == TRUE))
 	    {
 		/* one of the active ports has a different rx callback type.
 		 * Changing the callback type when the port is enabled
@@ -1035,17 +1038,18 @@ IxEthAccStatus ixEthAccPortMultiBufferRxCallbackRegister(
 			 rxCallbackFn, 
 			 UINT32 callbackTag)
 {
-    IxEthAccPortId port;
+    UINT32 portIndex;
     IxEthAccStatus status;
-
     if (!IX_ETH_ACC_IS_SERVICE_INITIALIZED())
     {
 	return (IX_ETH_ACC_FAIL);
     }
+
     if (!IX_ETH_ACC_IS_PORT_VALID(portId))
     {
 	return (IX_ETH_ACC_INVALID_PORT);
     }
+
     if (!IX_ETH_IS_PORT_INITIALIZED(portId))
     {
 	return (IX_ETH_ACC_PORT_UNINITIALIZED);
@@ -1062,10 +1066,10 @@ IxEthAccStatus ixEthAccPortMultiBufferRxCallbackRegister(
     */
     if (ixEthAccMacState[portId].portDisableState == ACTIVE)
     {
-	for (port = 0; port < IX_ETH_ACC_NUMBER_OF_PORTS; port++)
+	for (portIndex = 0; portIndex < IxEthAccPortInfo->IxEthAccNumberOfPorts; portIndex++)
 	{
-	    if ((ixEthAccMacState[port].portDisableState == ACTIVE)
-		&& (ixEthAccPortData[port].ixEthAccRxData.rxMultiBufferCallbackInUse == FALSE))
+	    if ((ixEthAccMacState[IX_ETHNPE_INDEX_TO_PORT_ID(portIndex)].portDisableState == ACTIVE)
+		&& (ixEthAccPortData[IX_ETHNPE_INDEX_TO_PORT_ID(portIndex)].ixEthAccRxData.rxMultiBufferCallbackInUse == FALSE))
 	    {
 		/* one of the active ports has a different rx callback type.
 		 * Changing the callback type when the port is enabled
@@ -1084,6 +1088,7 @@ IxEthAccStatus ixEthAccPortMultiBufferRxCallbackRegister(
 
     if(ixEthAccDataInfo.rxQMCbTypeSet != MULTIBUFFER)
     {
+
         /* update the qmgr callback for rx queues 
            if priority scheduling is enabled for Rx, use the priority callback
          */
@@ -1107,6 +1112,7 @@ IxEthAccStatus ixEthAccPortMultiBufferRxCallbackRegister(
         }
         ixEthAccDataInfo.rxQMCbTypeSet = MULTIBUFFER;
     }
+
     ixEthAccPortData[portId].ixEthAccRxData.rxMultiBufferCallbackInUse = TRUE;
 
     return (IX_ETH_ACC_SUCCESS);
@@ -1167,49 +1173,49 @@ IxEthAccStatus ixEthAccPortTxFrameSubmit(IxEthAccPortId portId,
 	FIFO_NO_PRIORITY)
     {
 	/*
-	 * Add The Tx Buffer to the H/W Tx Q if possible  
-	 * (the priority is passed to the NPE, because
-	 * the NPE is able to reorder the frames 
-	 * before transmission to the underlying hardware)
-	 */
-	qStatus = ixEthAccQmgrTxWrite(portId,
-				      qBuffer,
-				      IX_ETH_ACC_TX_DEFAULT_PRIORITY);
+         * Add The Tx Buffer to the H/W Tx Q if possible
+         * (the priority is passed to the NPE, because
+         * the NPE is able to reorder the frames
+         * before transmission to the underlying hardware)
+         */
+        qStatus = ixEthAccQmgrTxWrite(portId,
+                                      qBuffer,
+                                      IX_ETH_ACC_TX_DEFAULT_PRIORITY);
 
-	if (qStatus == IX_SUCCESS)
-	{
-	    TX_STATS_INC(portId,txQOK);
-
-            /* To indicate frame submission is done */
-            ixEthAccTxSubmitBusyCount--;
-
-	    /*  
-	     * "best case" scenario : Buffer added to h/w Q.
-	     */
-	    return (IX_SUCCESS);
-	}
-	else if (qStatus == IX_QMGR_Q_OVERFLOW)
-	{
-	    /*
-	     * We were unable to write the buffer to the 
-	     * appropriate H/W Q,  Save it in the sw Q.
-	     * (use the default priority queue regardless of 
-	     * input parameter)
-	     */
-	    priority = IX_ETH_ACC_TX_DEFAULT_PRIORITY;
-	}
-	else 
-	{
-	    /* unexpected qmgr error */
-	    TX_INC(portId,txUnexpectedError);
-	    IX_ETH_ACC_FATAL_LOG(
-		"ixEthAccPortTxFrameSubmit:Error: In port=%u, qStatus = %u\n", 
-		(UINT32)portId, (UINT32)qStatus, 0, 0, 0, 0);
+        if (qStatus == IX_SUCCESS)
+        {
+            TX_STATS_INC(portId,txQOK);
 
             /* To indicate frame submission is done */
             ixEthAccTxSubmitBusyCount--;
 
-	    return (IX_ETH_ACC_FAIL);
+            /*
+             * "best case" scenario : Buffer added to h/w Q.
+             */
+            return (IX_SUCCESS);
+        }
+        else if (qStatus == IX_QMGR_Q_OVERFLOW)
+        {
+            /*
+             * We were unable to write the buffer to the
+             * appropriate H/W Q,  Save it in the sw Q.
+             * (use the default priority queue regardless of
+             * input parameter)
+             */
+            priority = IX_ETH_ACC_TX_DEFAULT_PRIORITY;
+        }
+        else
+        {
+            /* unexpected qmgr error */
+            TX_INC(portId,txUnexpectedError);
+            IX_ETH_ACC_FATAL_LOG(
+                "ixEthAccPortTxFrameSubmit:Error: In port=%u, qStatus = %u\n",
+                (UINT32)portId, (UINT32)qStatus, 0, 0, 0, 0);
+
+            /* To indicate frame submission is done */
+            ixEthAccTxSubmitBusyCount--;
+
+            return (IX_ETH_ACC_FAIL);    
 	}
     }
     else if (ixEthAccPortData[portId].ixEthAccTxData.schDiscipline == 
@@ -1482,12 +1488,12 @@ IX_ETH_ACC_PUBLIC
 IxEthAccStatus ixEthAccRxSchedulingDisciplineSetPriv(IxEthAccSchedulerDiscipline
 						 sched)
 {
-    int port;
+    UINT32 portIndex;
 
     /* cannot change the scheduling discipline while any port is active */
-    for (port = 0; port < IX_ETH_ACC_NUMBER_OF_PORTS; port++)
+    for (portIndex = 0; portIndex < IX_ETHACC_NUMBER_OF_PORTS; portIndex++)
     {
-        if (ixEthAccMacState[port].portDisableState == ACTIVE)
+        if (ixEthAccMacState[IX_ETHNPE_INDEX_TO_PORT_ID(portIndex)].portDisableState == ACTIVE)
         {
             return IX_ETH_ACC_FAIL;
         }
@@ -1496,13 +1502,6 @@ IxEthAccStatus ixEthAccRxSchedulingDisciplineSetPriv(IxEthAccSchedulerDiscipline
     switch(sched)
     {
         case  FIFO_PRIORITY:
-            /* priority scheduling discipline not supported on IXP42X A0 HW */
-            if( (IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X == ixFeatureCtrlDeviceRead ())
-                && (IX_FEATURE_CTRL_SILICON_TYPE_A0 ==
-               (ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK)))
-            {
-	        return (IX_ETH_ACC_FAIL);
-            } 
             if(ixEthAccDataInfo.rxQMCbTypeSet == NORMAL)
             {
                 ixEthAccQMgrRxCallbacksRegister(
@@ -1557,7 +1556,7 @@ ixEthAccRxFrameProcess(IxEthAccPortId portId, IX_OSAL_MBUF *mbufPtr)
 
 #ifndef NDEBUG
     /* Prudent to at least check the port is within range */
-    if (portId >= IX_ETH_ACC_NUMBER_OF_PORTS)
+    if (!IX_ETH_ACC_IS_PORT_VALID(portId))
     {
 	ixEthAccDataStats.unexpectedError++;
 	IX_ETH_ACC_FATAL_LOG(
@@ -1704,7 +1703,7 @@ UINT32 ixEthAccRxPriorityPoll(UINT32 reserved, UINT32 maxQEntries)
      * always terminate on a null entry, whatever the result of Burst read is.
      */
     UINT32 rxQEntry[IX_ETH_ACC_MAX_RX_MBUF_CONSUME_PER_CALLBACK + 1];
-    
+
     /* NPE Soft-Reset :Traffic Force to Halt*/
     if (ixEthAccTrafficStopRequestCount > IX_ETH_ACC_NO_STOP_REQUEST) 
     {
@@ -1864,7 +1863,8 @@ UINT32 ixEthAccRxMultiBufferPriorityPoll(UINT32 reserved, UINT32 maxQEntries)
     UINT32     qEntry;
     UINT32     nextQEntry;
     UINT32     *qEntryPtr;
-    UINT32     portId;
+    UINT32     portIndex;
+    UINT32     portId = 0;
     UINT32     rxQReadStatus;
     UINT32     qEntriesProcessed = 0;
 
@@ -1874,15 +1874,16 @@ UINT32 ixEthAccRxMultiBufferPriorityPoll(UINT32 reserved, UINT32 maxQEntries)
      * always terminate on a null entry, whatever the result of Burst read is.
      */
     UINT32 rxQEntry[IX_ETH_ACC_MAX_RX_MBUF_CONSUME_PER_CALLBACK + 1];
-    static IX_OSAL_MBUF *rxMbufPortArray[IX_ETH_ACC_NUMBER_OF_PORTS][IX_ETH_ACC_MAX_RX_MBUF_CONSUME_PER_CALLBACK + 1];
-    IX_OSAL_MBUF **rxMbufPtr[IX_ETH_ACC_NUMBER_OF_PORTS];
+    static IX_OSAL_MBUF *rxMbufPortArray[IX_ETHNPE_MAX_NUMBER_OF_PORTS][IX_ETH_ACC_MAX_RX_MBUF_CONSUME_PER_CALLBACK + 1];
+    IX_OSAL_MBUF **rxMbufPtr[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
     if (ixEthAccTrafficStopRequestCount > IX_ETH_ACC_NO_STOP_REQUEST) 
     {
        return qEntriesProcessed;
     }
 
-    for (portId = 0; portId < IX_ETH_ACC_NUMBER_OF_PORTS; portId++)
+    for (portIndex = 0; portIndex < IxEthAccPortInfo->IxEthAccNumberOfPorts; portIndex++)
     {
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
         rxMbufPtr[portId] = rxMbufPortArray[portId];
     }
 
@@ -1979,8 +1980,9 @@ UINT32 ixEthAccRxMultiBufferPriorityPoll(UINT32 reserved, UINT32 maxQEntries)
 	}
     }
     /* check if any of the the arrays contains any entry */
-    for (portId = 0; portId < IX_ETH_ACC_NUMBER_OF_PORTS; portId++)
+    for (portIndex = 0; portIndex < IxEthAccPortInfo->IxEthAccNumberOfPorts; portIndex++)
     {
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
         if (rxMbufPtr[portId] != rxMbufPortArray[portId])
         {
             /* add a last NULL pointer at the end of the 
@@ -2047,10 +2049,10 @@ void ixEthRxFrameQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId)
      * always terminate on a null entry, whatever the result of Burst read is.
      */
     UINT32 rxQEntry[IX_ETH_ACC_MAX_RX_MBUF_CONSUME_PER_CALLBACK + 1];
-
     /* 
      * Indication of the number of times the callback is used.
      */
+
     IX_ETH_ACC_STATS_INC(ixEthAccDataStats.rxCallbackCounter);
     do
     {
@@ -2172,6 +2174,7 @@ void ixEthRxMultiBufferQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId)
     UINT32     nextQEntry;
     UINT32     *qEntryPtr;
     UINT32     portId;
+    UINT32     portIndex;
     UINT32     rxQReadStatus;
     /*
      * Design note : entries are read in a static buffer, This buffer contains
@@ -2179,11 +2182,11 @@ void ixEthRxMultiBufferQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId)
      * always terminate on a null entry, whatever the result of Burst read is.
      */
     static UINT32 rxQEntry[IX_ETH_ACC_MAX_RX_MBUF_CONSUME_PER_CALLBACK + 1];
-    static IX_OSAL_MBUF *rxMbufPortArray[IX_ETH_ACC_NUMBER_OF_PORTS][IX_ETH_ACC_MAX_RX_MBUF_CONSUME_PER_CALLBACK + 1];
-    IX_OSAL_MBUF **rxMbufPtr[IX_ETH_ACC_NUMBER_OF_PORTS];
-    
-    for (portId = 0; portId < IX_ETH_ACC_NUMBER_OF_PORTS; portId++)
+    static IX_OSAL_MBUF *rxMbufPortArray[IX_ETHNPE_MAX_NUMBER_OF_PORTS][IX_ETH_ACC_MAX_RX_MBUF_CONSUME_PER_CALLBACK + 1];
+    IX_OSAL_MBUF **rxMbufPtr[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
+    for (portIndex = 0; portIndex < IxEthAccPortInfo->IxEthAccNumberOfPorts; portIndex++)
     {
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
 	rxMbufPtr[portId] = rxMbufPortArray[portId];
     }
 
@@ -2275,8 +2278,9 @@ void ixEthRxMultiBufferQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId)
 	}
 
 	/* check if any of the the arrays contains any entry */
-	for (portId = 0; portId < IX_ETH_ACC_NUMBER_OF_PORTS; portId++)
+	for (portIndex = 0; portIndex < IxEthAccPortInfo->IxEthAccNumberOfPorts; portIndex++)
 	{
+	    portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
 	    if (rxMbufPtr[portId] != rxMbufPortArray[portId])
 	    {
 		/* add a last NULL pointer at the end of the 
@@ -2328,7 +2332,7 @@ void ixEthRxFreeQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId)
     /*note that due to the fact that we are working off an Empty threshold, this callback
       need only write a single entry to the Rx Free queue in order to re-arm the notification
     */
-    
+
     RX_STATS_INC(portId,rxFreeLowCallback);
     
     /* 
@@ -2415,7 +2419,6 @@ ixEthTxFrameQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId)
     IX_STATUS	   qStatus = IX_SUCCESS;
     IxEthAccTxPriority highestPriority;
 
-    
     /*
      * We have reached a low threshold on the Tx Q, and are being asked to 
      * supply a buffer for transmission from our S/W TX queues
@@ -2512,7 +2515,6 @@ ixEthTxFrameDoneQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId)
     /* 
      * Indication that Tx frames have been transmitted from the NPE.
      */
-    
     IX_ETH_ACC_STATS_INC(ixEthAccDataStats.txDoneCallbackCounter);
 
     /* NPE Soft-Reset :Traffic Force to Halt*/
@@ -2566,10 +2568,9 @@ ixEthTxFrameDoneQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId)
 	     */
 	    portId = IX_ETHNPE_NODE_AND_PORT_TO_PHYSICAL_ID(IX_ETHNPE_QM_Q_RXENET_NPEID_VAL(qEntry),IX_ETHNPE_QM_Q_PID_VAL(qEntry));
 
-
 #ifndef NDEBUG
 	    /* Prudent to at least check the port is within range */
-	    if (portId >= IX_ETH_ACC_NUMBER_OF_PORTS)
+	    if (!IX_ETH_ACC_IS_PORT_VALID(portId))
 	    {
 		ixEthAccDataStats.unexpectedError++;
 		IX_ETH_ACC_FATAL_LOG(
@@ -2602,7 +2603,8 @@ void ixEthAccDataPlaneShow(void)
     UINT32 numTxDoneQEntries;
     UINT32 numRxQEntries;
     UINT32 numRxFreeQEntries;
-    UINT32 portId;
+    UINT32 portIndex;
+    IxEthAccPortId portId;
 #ifndef NDEBUG
     UINT32 priority;
     UINT32 numBuffersInRx=0;
@@ -2615,8 +2617,8 @@ void ixEthAccDataPlaneShow(void)
     UINT32 key;
 
     /* snapshot of stats */
-    IxEthAccTxDataStats tx[IX_ETH_ACC_NUMBER_OF_PORTS];
-    IxEthAccRxDataStats rx[IX_ETH_ACC_NUMBER_OF_PORTS];
+    IxEthAccTxDataStats tx[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
+    IxEthAccRxDataStats rx[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
     IxEthAccDataPlaneStats stats;
 
     if (!IX_ETH_ACC_IS_SERVICE_INITIALIZED())
@@ -2627,16 +2629,17 @@ void ixEthAccDataPlaneShow(void)
     /* get a reliable snapshot */
     key = ixOsalIrqLock();
 
-    for(portId=0; portId < IX_ETH_ACC_NUMBER_OF_PORTS; portId++)
+    for(portIndex=0; portIndex < IxEthAccPortInfo->IxEthAccNumberOfPorts; portIndex++)
     {
-	memcpy(&tx[portId], 
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
+	ixOsalMemCopy(&tx[portId], 
 	       &ixEthAccPortData[portId].ixEthAccTxData.stats,
-	       sizeof(tx[portId]));
-	memcpy(&rx[portId], 
+	       sizeof(IxEthAccTxDataStats));
+	ixOsalMemCopy(&rx[portId], 
 	       &ixEthAccPortData[portId].ixEthAccRxData.stats,
-	       sizeof(rx[portId]));
+	       sizeof(IxEthAccRxDataStats));
     }
-    memcpy(&stats, &ixEthAccDataStats, sizeof(stats));
+    ixOsalMemCopy(&stats, &ixEthAccDataStats, sizeof(stats));
     
     ixOsalIrqUnlock(key);
 
@@ -2645,8 +2648,9 @@ void ixEthAccDataPlaneShow(void)
 #endif
 
     /* print snapshot */
-    for(portId=0; portId < IX_ETH_ACC_NUMBER_OF_PORTS; portId++)
+    for(portIndex=0; portIndex < IxEthAccPortInfo->IxEthAccNumberOfPorts; portIndex++)
     {
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
 	if(!IX_ETH_IS_PORT_INITIALIZED(portId))
 	{
 	    continue ;
@@ -2757,7 +2761,8 @@ void ixEthAccDataPlaneShow(void)
 	    rx[portId].rxFreeRepDelayed - 
 	    rx[portId].rxFrameClientCallback - 
 	    rx[portId].rxSwQDuringDisable - 
-	    rx[portId].rxDuringDisable;
+	    rx[portId].rxDuringDisable -
+	    rx[portId].rxFiltered;
 
 	printf("# Rx Buffers currently for reception    : %u\n", 
 	       numBuffersInRx);	
@@ -2798,8 +2803,9 @@ void ixEthAccDataPlaneShow(void)
     printf("\n");
     printf("Hardware queues callbacks :\n");   
 
-    for(portId=0; portId < IX_ETH_ACC_NUMBER_OF_PORTS; portId++)
+    for(portIndex=0; portIndex < IxEthAccPortInfo->IxEthAccNumberOfPorts; portIndex++)
     {
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
 	rxFreeCallbackCounter += rx[portId].rxFreeLowCallback;
 	txCallbackCounter += tx[portId].txLowThreshCallback;
     }
@@ -2828,8 +2834,9 @@ void ixEthAccDataPlaneShow(void)
     ixQMgrQNumEntriesGet( IX_ETH_ACC_TX_DONE_Q, &numTxDoneQEntries);
     printf("Transmit Done Queue           : %u \n",numTxDoneQEntries);
 
-    for(portId=0; portId < IX_ETH_ACC_NUMBER_OF_PORTS; portId++)
+    for(portIndex=0; portIndex < IxEthAccPortInfo->IxEthAccNumberOfPorts; portIndex++)
     {
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
 	/* only show queue info for supported ports */
         if(IX_ETH_ACC_FAIL == ixEthAccSingleEthNpeCheck(portId))
         {
@@ -2862,8 +2869,9 @@ void ixEthAccDataPlaneShow(void)
 	   (ixEthAccDataInfo.schDiscipline == 
 	    FIFO_PRIORITY ) ? "Enabled" : "Disabled");
 
-    for(portId=0; portId < IX_ETH_ACC_NUMBER_OF_PORTS; portId++)
+    for(portIndex=0; portIndex < IxEthAccPortInfo->IxEthAccNumberOfPorts; portIndex++)
     {
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
 	printf("Tx QoS Discipline port %u      : %s\n", 
 	       portId,
 	       (ixEthAccPortData[portId].ixEthAccTxData.schDiscipline == 
@@ -2872,8 +2880,9 @@ void ixEthAccDataPlaneShow(void)
     printf("\n");
 
     printf("MIBII Statistics: \n");
-    for(portId=0; portId < IX_ETH_ACC_NUMBER_OF_PORTS; portId++)
+    for(portIndex=0; portIndex < IxEthAccPortInfo->IxEthAccNumberOfPorts; portIndex++)
     {
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
       /* Only show MIBII stats for initialized Ethernet port */
       if (IX_ETH_IS_PORT_INITIALIZED(portId))
       {	

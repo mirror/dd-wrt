@@ -17,12 +17,12 @@
  *       ixAtmCodeletShow
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -160,7 +160,7 @@ ixAtmCodeletSystemInit (UINT32 numPorts,
 			IxAtmCodeletMode mode)
 {
     IX_STATUS retval = IX_SUCCESS;
-#if IX_UTOPIAMODE == 1
+#ifdef IX_UTOPIAMODE 
     IxAtmmPhyMode phyMode = IX_ATMM_SPHY_MODE;
 #else
     IxAtmmPhyMode phyMode = IX_ATMM_MPHY_MODE;
@@ -286,7 +286,7 @@ ixAtmCodeletInit (UINT32 numPorts,
     IX_STATUS retval;
     IxAtmmPortCfg portCfgs[IX_UTOPIA_MAX_PORTS];
     IxAtmmUtopiaLoopbackMode loopbackMode;
-#if IX_UTOPIAMODE == 1
+#ifdef IX_UTOPIAMODE 
     IxAtmmPhyMode phyMode = IX_ATMM_SPHY_MODE;
 #else
     IxAtmmPhyMode phyMode = IX_ATMM_MPHY_MODE;
@@ -662,6 +662,6 @@ ixAtmCodeletDispatchTask (void *arg, void **ptrRetObj)
 	/* ATM RxFree queues         */
 	(*dispatcherFunc) (IX_QMGR_QUEUPP_GROUP);
        
-	ixOsalSleep(0);
+	ixOsalYield();
     }
 }                        

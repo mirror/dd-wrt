@@ -8,12 +8,12 @@
  * of the IXP400 Parity Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -48,7 +48,7 @@
  * -- End of Copyright Notice --
  */
 
-#if defined(__ixp46X)
+#if defined(__ixp46X) || defined(__ixp43X)
 
 /* 
  * System defined include files
@@ -62,6 +62,8 @@
 #include "IxParityENAccEbcPE.h"
 #include "IxParityENAccEbcPE_p.h"
 
+/* Virtual base address of EBC */
+static UINT32 ixEbcVirtualBaseAddr = 0;
 
 /*
  * EBC sub-module level functions definitions
@@ -89,6 +91,8 @@ ixParityENAccEbcPEInit (IxParityENAccInternalCallback ixEbcPECallback)
         return IX_FAIL;
     } /* end of if */
 
+    ixEbcVirtualBaseAddr = ebcVirtualBaseAddr;
+    
     /* Virtual Addresses assignment for EBC Registers */
     ebcPERegisters->expTimingCs[IXP400_PARITYENACC_PE_EBC_CHIPSEL0] = 
         ebcVirtualBaseAddr + IXP400_PARITYENACC_EBC_TIMING_CS0_OFFSET;
@@ -389,4 +393,47 @@ ixParityENAccEbcPEParityErrorStatusGet (void)
     } /* end of for */
 } /* end of ixParityENAccEbcPEParityErrorStatusGet() function */
 
-#endif /* __ixp46X */
+IX_STATUS 
+ixParityENAccEbcPEUnload(void)
+{
+    UINT32 lockKey;
+    UINT32 status = IX_SUCCESS;
+    IxParityENAccChipSelectId  ebcCsId;
+    IxParityENAccEbcPEConfigOption ixEbcPDCfg;
+
+    /* Disable expansion Bus Controller erros with chip-select option */
+    for( ebcCsId = IXP400_PARITYENACC_PE_EBC_CHIPSEL0; 
+         ebcCsId < IXP400_PARITYENACC_PE_EBC_CHIPSEL_MAX;
+	 ebcCsId++)
+    {
+        ixEbcPDCfg.ebcCsExtSource = IXP400_PARITYENACC_PE_EBC_CS;
+	ixEbcPDCfg.ebcInOrOutbound.ebcCsEnabled = IXP400_PARITYENACC_PE_DISABLE;
+	ixEbcPDCfg.ebcCsId = ebcCsId;
+	ixEbcPDCfg.parityOddEven = IX_PARITYENACC_EVEN_PARITY;
+	ixParityENAccEbcPEDetectionConfigure(ixEbcPDCfg);
+    }
+    
+    /* Disable expansion bus controller parity errors with EXT Master option */
+    ixEbcPDCfg.ebcCsExtSource = IXP400_PARITYENACC_PE_EBC_EXTMST;
+    ixEbcPDCfg.ebcInOrOutbound.ebcExtMstEnabled = IXP400_PARITYENACC_PE_DISABLE;
+    ixEbcPDCfg.ebcCsId = IX_PARITYENACC_EVEN_PARITY;
+    ixParityENAccEbcPEDetectionConfigure(ixEbcPDCfg);
+
+    /* Unbind the IRQ */    
+    lockKey = ixOsalIrqLock();
+    if (IX_SUCCESS != ixOsalIrqUnbind ((UINT32) IRQ_IXP400_INTC_PARITYENACC_EBC))
+    {
+        IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDERR,
+            "ixParityENAccEbcPEUnload(): "\
+            "Can't unbind the EBC ISR to IRQ_IXP400_INTC_PARITYENACC_EBC!!!\n",0,0,0,0,0,0);
+	status = IX_FAIL;
+    }
+    ixOsalIrqUnlock(lockKey);
+
+    /* Unmap the memory */
+    IX_OSAL_MEM_UNMAP(ixEbcVirtualBaseAddr);
+    
+    return status;
+} /* end of ixParityENAccEbcPEUnload() function */   
+
+#endif /* __ixp46X || __ixp43X */

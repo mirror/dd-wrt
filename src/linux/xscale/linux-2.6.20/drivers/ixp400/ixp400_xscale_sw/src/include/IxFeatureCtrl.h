@@ -8,12 +8,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -51,15 +51,14 @@
    Doxygen group definitions
    ------------------------------------------------------ */
 /**
- * @defgroup IxFeatureCtrlAPI Intel(R) IXP Software Feature Control (featureCtrl) Public API
+ * @defgroup IxFeatureCtrlAPI Intel (R) IXP400 Software Feature Control (featureCtrl) Public API
  *
- * @brief The Public API for the IXP Feature Control.
+ * @brief The Public API for the IXP400 Feature Control.
  * 
  */
 
-
 /**
- * @defgroup IxFeatureCtrlSwConfig Software Configuration for featureCtrl Component
+ * @defgroup IxFeatureCtrlSwConfig Intel (R) IXP400 Software Configuration for featureCtrl Component
  *
  * @ingroup IxFeatureCtrlAPI 
  *
@@ -85,8 +84,6 @@
  * #defines and macros
  */
 
-
-
 /*************************************************************
  * The following are IxFeatureCtrlComponentCheck return values.
  ************************************************************/
@@ -111,7 +108,6 @@
  */
 #define  IX_FEATURE_CTRL_COMPONENT_ENABLED  1
 
-#if defined(__ixp42X) || defined(__ixp46X)
 /***********************************************************************************
  * Product ID in Intel XScale(R) Processor CP15 - Register 0
  *  - It contains information on the maximum Intel XScale(R) Processor Frequency and
@@ -125,11 +121,13 @@
  *              IX_FEATURE_CTRL_SILICON_TYPE_A0 )
  *          if( (productId & IX_FEATURE_CTRL_XSCALE_FREQ_MASK) == 
  *              IX_FEATURE_CTRL_XSCALE_FREQ_533 )    
+ *
+ *  Register mapping for IXP42X & IXP46X processors are shown below.
  * 
- *  31 28 27 24 23 20 19 16 15 12 11        9 8                            4 3              0  
- *  ----------------------------------------------------------------------------------------- 
+ *  31 28 27 24 23 20 19 16 15 12 11        9 8                                 4 3              0  
+ *  ---------------------------------------------------------------------------------------------- 
  * | 0x6 | 0x9 | 0x0 | 0x5 | 0x4 | Device ID | Intel XScale(R) Processor Freq Id | Si Stepping Id |    
- *  -----------------------------------------------------------------------------------------
+ *  ----------------------------------------------------------------------------------------------
  *
  *   Maximum Achievable Intel XScale(R) Processor Frequency Id :  533MHz  - 0x1C 
  *                                                  400MHz  - 0x1D 
@@ -143,9 +141,21 @@
  *                               B       - 0x1 
  *  
  *  Intel XScale(R) Processor freq Id - Device ID [11:9] : IXP42X processor - 0x0
- *                                           IXP46X processor - 0x1
+ *                                                         IXP46X processor - 0x1
+ *
+ *  Register mapping for IXP43X processor is shown below.
+ *
+ *  31 28 27 24 23 20 19 16 15      13 12       10 9                    4 3              0  
+ *  -------------------------------------------------------------------------------------- 
+ * | 0x6 | 0x9 | 0x0 | 0x5 | Core Gen | Core Rev  |       Product ID     | Si Stepping Id |    
+ *  --------------------------------------------------------------------------------------
+ * 
+ *  Core Gen       : 0x2
+ *  Core Rev       : 0x0
+ *  Product ID     : 0x4
+ *  Si Stepping Id : 0x1
+ *
  *************************************************************************************/
-#endif /* __ixp42X */
 
 /**
  * @ingroup IxFeatureCtrlAPI 
@@ -156,7 +166,6 @@
  */
 #define IX_FEATURE_CTRL_SILICON_TYPE_A0   0
 
-#if defined(__ixp42X) || defined(__ixp46X)
 /**
  * @ingroup IxFeatureCtrlAPI 
  *
@@ -165,7 +174,19 @@
  * @brief This is the value of B0 Silicon in product ID.
  */
 #define IX_FEATURE_CTRL_SILICON_TYPE_B0   1
+
+
+#if defined(__ixp42X) 
+/**
+ * @ingroup IxFeatureCtrlAPI 
+ *
+ * @def IX_FEATURE_CTRL_SILICON_TYPE_B1
+ *
+ * @brief This is the value of B1 Silicon in product ID for IXP 425.
+ */
+#define IX_FEATURE_CTRL_SILICON_TYPE_B1   2 
 #endif /* __ixp42X */
+
 
 /**
  * @ingroup IxFeatureCtrlAPI 
@@ -183,9 +204,12 @@
  *
  * @brief This is the mask of silicon stepping in product ID.
  */
-#if defined(__ixp42X) || defined(__ixp46X)
+#if defined(__ixp43X)
+#define IX_FEATURE_CTRL_DEVICE_TYPE_MASK  (0x3F)
+#else
 #define IX_FEATURE_CTRL_DEVICE_TYPE_MASK  (0x7)
-#endif /* __ixp42X */
+#endif /* __ixp43X */
+
 
 /**
  * @ingroup IxFeatureCtrlAPI
@@ -194,11 +218,12 @@
  *
  * @brief This is the mask of silicon stepping in product ID.
  */
-#if defined(__ixp42X) || defined(__ixp46X)
+#if defined(__ixp43X)
+#define IX_FEATURE_CTRL_DEVICE_TYPE_OFFSET  4
+#else
 #define IX_FEATURE_CTRL_DEVICE_TYPE_OFFSET  9
-#endif /* __ixp42X */
+#endif /* __ixp43X */
 
-#if defined(__ixp42X) || defined(__ixp46X)
 /**
  * @ingroup IxFeatureCtrlAPI 
  *
@@ -275,8 +300,7 @@
  */
 #define IX_FEATURECTRL_REG_UTOPIA_4PHY   0x3
 
-#endif /* __ixp42X */
-#if defined(__ixp46X)
+#if defined(__ixp46X) 
 /**
  * @ingroup IxFeatureCtrlAPI
  *
@@ -322,6 +346,54 @@
 #define IX_FEATURECTRL_REG_XSCALE_266FREQ   0x3
 
 #endif /* __ixp46X */
+
+#if defined(__ixp43X) 
+/**
+ * @ingroup IxFeatureCtrlAPI
+ *
+ * @def IX_FEATURECTRL_REG_XSCALE_533FREQ
+ *
+ * @brief Maximum  frequency available to Intel (R) IXP46X Product Line of Network
+ * Processors is 533 MHz.
+ *
+ */
+#define IX_FEATURECTRL_REG_XSCALE_533FREQ   0x0
+
+/**
+ * @ingroup IxFeatureCtrlAPI
+ *
+ * @def IX_FEATURECTRL_REG_XSCALE_400FREQ
+ *
+ * @brief Maximum  frequency available to Intel (R) IXP46X Product Line of Network
+ * Processors is 400 MHz.
+ *
+ */
+#define IX_FEATURECTRL_REG_XSCALE_400FREQ   0x1
+
+/**
+ * @ingroup IxFeatureCtrlAPI
+ *
+ * @def IX_FEATURECTRL_REG_XSCALE_667FREQ
+ *
+ * @brief Maximum  frequency available to Intel (R) IXP46X Product Line of Network
+ * Processors is 667 MHz.
+ *
+ */
+#define IX_FEATURECTRL_REG_XSCALE_667FREQ   0x2
+
+/**
+ * @ingroup IxFeatureCtrlAPI
+ *
+ * @def IX_FEATURECTRL_REG_XSCALE_266FREQ
+ *
+ * @brief Maximum  frequency available to Intel (R) IXP46X Product Line of Network
+ * Processors is 266 MHz.
+ *
+ */
+#define IX_FEATURECTRL_REG_XSCALE_266FREQ   0x3
+
+#endif /* __ixp43X */
+
 
 
 /**
@@ -392,10 +464,9 @@
  */
 typedef enum
 {
-#if defined(__ixp42X) || defined(__ixp46X)
     IX_FEATURE_CTRL_SW_BUILD_IXP42X = 0, /**<Build type is IXP42X */
     IX_FEATURE_CTRL_SW_BUILD_IXP46X,     /**<Build type is IXP46X */
-#endif /* __ixp42X */
+    IX_FEATURE_CTRL_SW_BUILD_IXP43X,     /**<Build type is IXP43X */
     IX_FEATURE_CTRL_SW_BUILD_MAX      /**<Max build types */
 } IxFeatureCtrlBuildDevice;
 
@@ -411,14 +482,11 @@ typedef enum
 typedef enum
 {
     IX_FEATURECTRL_ETH_LEARNING = 0,       /**< EthDB Learning Feature */
-#if defined(__ixp42X) || defined(__ixp46X)
     IX_FEATURECTRL_ORIGB0_DISPATCHER,  /**< IXP42X B0 Silicon and IXP46X processor dispatcher without 
                                             livelock prevention functionality Feature */
-#endif /* __ixp42X */
     IX_FEATURECTRL_SWCONFIG_MAX    /**< Maximum boudary for IxFeatureCtrlSwConfig  */
 } IxFeatureCtrlSwConfig;
 
-#if defined(__ixp42X) || defined(__ixp46X)
 /************************************************************************
  * IXP400 Feature Control Register
  * - It contains the information (available/unavailable) of IXP425&IXP46X
@@ -452,6 +520,7 @@ typedef enum
  *   13             NPE C
  *   14             PCI Controller
  *   15             ECC/TimeSync Coprocessor -  Only applicable to IXP46X
+ *   15             ECC Only -  Only applicable to IXP43X
  *  16-17           Utopia PHY Limit Status : 0x0 - 32 PHY
  *                                            0x1 - 16 PHY
  *                                            0x2 -  8 PHY
@@ -466,17 +535,30 @@ typedef enum
  *                                        0x1 - 667 MHz
  *                                        0x2 - 400 MHz
  *                                        0x3 - 266 MHz
- *  24-31           Reserved
+ *
+ *  Portions below are only applicable to IXP43X
+ *   18             USB Host Controller Disable( Both 0 & 1)
+ *   19             NPE A Ethernet - 0 for Enable if Utopia = 1
+ *   20-21          Reserved
+ *   22-23          Processor frequency : 0x0 - 533 MHz
+ *                                        0x1 - 400 MHz
+ *                                        0x2 - 667 MHz
+ *                                        0x3 - 266 MHz
+ *
+ *   24              Crystal Oscillator Bypass
+ *                      0 = Crystal oscillator Enabled (default)
+ *                      1 = Crystal oscillator Bypass
+ *  25-31           Reserved
  *
  ************************************************************************/
-/*Section generic to both IXP42X and IXP46X*/
+/*Section generic to IXP42X, IXP43X and IXP46X*/
 
 /**
  * @ingroup IxFeatureCtrlAPI
  *
  * @enum IxFeatureCtrlComponentType
  *
- * @brief Enumeration for components availavble
+ * @brief Enumeration for components available
  *
  */
 typedef enum
@@ -491,24 +573,35 @@ typedef enum
     IX_FEATURECTRL_HSS,       /**<bit location for HSS Coprocessor*/
     IX_FEATURECTRL_UTOPIA,    /**<bit location for UTOPIA Coprocessor*/
     IX_FEATURECTRL_ETH0,      /**<bit location for Ethernet 0 Coprocessor*/
-    IX_FEATURECTRL_ETH1,      /**<bit location for Ethernet 1 Coprocessor*/
+    IX_FEATURECTRL_ETH1,      /**<bit location for Ethernet 1 Coprocessor / In IXP43X refers to NPE C Ethernet Disable */
     IX_FEATURECTRL_NPEA,      /**<bit location for NPE A*/
     IX_FEATURECTRL_NPEB,      /**<bit location for NPE B*/
     IX_FEATURECTRL_NPEC,      /**<bit location for NPE C*/
     IX_FEATURECTRL_PCI,       /**<bit location for PCI Controller*/
-    IX_FEATURECTRL_ECC_TIMESYNC,     /**<bit location for TimeSync Coprocessor*/
+    IX_FEATURECTRL_ECC_TIMESYNC,     /**<bit location for TimeSync Coprocessor (Applicable only to IXP46X) */
     IX_FEATURECTRL_UTOPIA_PHY_LIMIT, /**<bit location for Utopia PHY Limit Status*/
     IX_FEATURECTRL_UTOPIA_PHY_LIMIT_BIT2, /**<2nd bit of PHY limit status*/
     IX_FEATURECTRL_USB_HOST_CONTROLLER, /**<bit location for USB host controller*/
     IX_FEATURECTRL_NPEA_ETH,  /**<bit location for NPE-A Ethernet Disable*/
     IX_FEATURECTRL_NPEB_ETH,  /**<bit location for NPE-B Ethernet 1-3 Coprocessors Disable*/
     IX_FEATURECTRL_RSA,       /**<bit location for RSA Crypto block Coprocessors Disable*/
-    IX_FEATURECTRL_XSCALE_MAX_FREQ, /**<bit location for Intel XScale(R) Processor max frequency*/
-    IX_FEATURECTRL_XSCALE_MAX_FREQ_BIT2, /**<2nd xscale max freq bit NOT TO BE USED */
+    IX_FEATURECTRL_XSCALE_MAX_FREQ, /**<bit location for Intel XScale(R) processor max frequency*/
+    IX_FEATURECTRL_XSCALE_MAX_FREQ_BIT2, /**<2nd Intel XScale(R) processor  max freq bit NOT TO BE USED */
+    IX_FEATURECTRL_CRYSTAL_OSC_BYPASS, /**< bit location for Crystal Oscillator Bypass */    
     IX_FEATURECTRL_MAX_COMPONENTS
 } IxFeatureCtrlComponentType;
-#endif /* __ixp42X */
 
+/**
+ * @ingroup IxFeatureCtrlAPI 
+ *
+ * @def  IX_FEATURECTRL_ECC
+ *
+ * @brief This value indicates the bit location for ECC in IXP43X Feature Control
+ *        register. The bit location for ECC is the same as IX_FEATURECTRL_ECC_TIMESYNC  
+ *        bit in IXP46X Feature Control register.
+ *
+ */
+#define IX_FEATURECTRL_ECC IX_FEATURECTRL_ECC_TIMESYNC
 
 /**
  * @ingroup IxFeatureCtrlDeviceId
@@ -521,21 +614,17 @@ typedef enum
  *          with formats used in the npe image ImageID. This is indicated by the  
  *          first nibble of the image ID. This should also be in sync with the
  *          with what is defined in CP15.  Current available formats are
- */
-#if defined(__ixp42X) || defined(__ixp46X)
-/*          - IXP42X - 0000
- *          - IXP46X - 0001
- */
-#endif /* __ixp42X */
-/*
  *
+ *          - IXP42X - 0000
+ *          - IXP46X - 0001
+ *          - IXP43X - 0004
  */
+
 typedef enum
 {
-#if defined(__ixp42X) || defined(__ixp46X)
     IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X = 0, /**<Device type is IXP42X */
     IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X, /**<Device type is IXP46X */
-#endif /* __ixp42X */
+    IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X = 4, /**<Device type is IXP43X */
     IX_FEATURE_CTRL_DEVICE_TYPE_MAX /**<Max devices */
 } IxFeatureCtrlDeviceId;
 
@@ -572,7 +661,6 @@ typedef UINT32 IxFeatureCtrlProductId;
  * Prototypes for interface functions
  */
 
-
 /**
  * @ingroup IxFeatureCtrlAPI
  *
@@ -597,15 +685,12 @@ ixFeatureCtrlDeviceRead (void);
  *
  * @brief This function refers to  the value set by the compiler flag to determine
  *        the type of device the software is built for.
- */
-#if defined(__ixp42X) || defined(__ixp46X)
-/* The function reads the compiler flag to determine the device the software is
+ *
+ * The function reads the compiler flag to determine the device the software is
  * built for. When the user executes build in the command line, 
  * a compile time flag (__ixp42X/__ixp46X) is set. This API reads this 
  * flag and returns the software build type to the calling client.
- */
-#endif /* __ixp42X */
-/*
+ *
  * @return
  *      - IxFeatureCtrlBuildDevice - the type of device software is built for.
  */
@@ -662,7 +747,6 @@ ixFeatureCtrlHwCapabilityRead (void);
  */ 
 PUBLIC IX_STATUS
 ixFeatureCtrlComponentCheck (IxFeatureCtrlComponentType componentType);
-
 
 /**
  * @ingroup IxFeatureCtrlAPI 
@@ -741,10 +825,7 @@ ixFeatureCtrlSwConfigurationWrite (IxFeatureCtrlSwConfig swConfigType, BOOL enab
 PUBLIC void
 ixFeatureCtrlSwVersionShow (void);
 
-
-#if defined(__ixp42X) || defined(__ixp46X)
 #include "../featureCtrl/include/IxFeatureCtrl_sp.h"
-#endif /* __ixp42X */
 
 #endif /* IXFEATURECTRL_H */
 

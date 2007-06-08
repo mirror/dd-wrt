@@ -1,11 +1,11 @@
 /*
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Intel Copyright Notice --
  * 
  * @par
- * Copyright (c) 2002-2005 Intel Corporation All Rights Reserved.
+ * Copyright (c) 2002-2007 Intel Corporation All Rights Reserved.
  * 
  * @par
  * The source code contained or described herein and all documents

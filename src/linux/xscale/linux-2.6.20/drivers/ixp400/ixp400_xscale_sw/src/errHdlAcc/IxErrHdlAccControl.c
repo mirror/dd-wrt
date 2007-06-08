@@ -8,12 +8,12 @@
  *
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -126,7 +126,7 @@ PRIVATE ixErrHdlAccEvent ixErrHdlAccInitEventTable[]=
 PRIVATE IxErrHdlAccNPEImageRecoveryInfo
 ixErrHdlAccNPEImageRecoveryInfoTable[]= {
 /* NPEID, Functional ID  Major_version Minor_Version Recovery_ID*/
-#if defined(__ixp46X)
+#if defined(__ixp46X) || defined(__ixp43X)
 /* The following Etherrnet NPE Image are for IXP46X Platform 
 & IXP400 SW Version 2.3. This is platform dependable & 
 IXP400 SW Version dependable. */

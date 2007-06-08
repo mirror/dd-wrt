@@ -8,12 +8,12 @@
  * of the IXP400 Parity Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -48,7 +48,7 @@
  * -- End of Copyright Notice --
  */
 
-#if defined(__ixp46X)
+#if defined(__ixp46X) || defined(__ixp43X)
 
 /* 
  * System defined include files
@@ -61,6 +61,9 @@
 #include "IxParityENAccIcE.h"
 #include "IxParityENAccMcuPE.h"
 #include "IxParityENAccMcuPE_p.h"
+
+/* Virtual base address of MCU */
+static UINT32 ixMcuVirtualBaseAddr = 0;
 
 /*
  * MCU Sub-module level functions definitions
@@ -84,6 +87,8 @@ ixParityENAccMcuPEInit (IxParityENAccInternalCallback ixMcuPECallback)
     {
         return IX_FAIL;
     } /* end of if */
+
+    ixMcuVirtualBaseAddr = virtualBaseAddr;
 
     /* Virtual Addresses assignment for MCU Registers */
     ixParityENAccMcuPEConfig.mcuPERegisters.mcuEccr  = 
@@ -504,4 +509,33 @@ ixParityENAccMcuPEParityErrorStatusTransform (
                 IXP400_PARITYENACC_MCU_ERR_ADDRESS_MASK);
 } /* end of ixParityENAccMcuPEParityErrorStatusTransform() function */
 
-#endif /* __ixp46X */
+IX_STATUS 
+ixParityENAccMcuPEUnload(void)
+{
+    UINT32 lockKey;
+    UINT32 status = IX_SUCCESS;
+    IxParityENAccMcuPEConfigOption ixMcuPDCfg;
+    
+    ixMcuPDCfg.singlebitDetectEnabled = IXP400_PARITYENACC_PE_DISABLE;
+    ixMcuPDCfg.singlebitCorrectionEnabled = IXP400_PARITYENACC_PE_DISABLE;
+    ixMcuPDCfg.multibitDetectionEnabled =  IXP400_PARITYENACC_PE_DISABLE;
+    ixParityENAccMcuPEDetectionConfigure(ixMcuPDCfg);
+
+    /* Unbind the IRQ */    
+    lockKey = ixOsalIrqLock();
+    if (IX_SUCCESS != ixOsalIrqUnbind ((UINT32) IRQ_IXP400_INTC_PARITYENACC_MCU))
+    {
+        IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDERR,
+            "ixParityENAccMcuPEUnload(): "\
+            "Can't unbind the MCU ISR to IRQ_IXP400_INTC_PARITYENACC_MCU!!!\n",0,0,0,0,0,0);
+        status = IX_FAIL;
+    }
+    ixOsalIrqUnlock(lockKey);
+
+    /* Unmap the memory */
+    IX_OSAL_MEM_UNMAP(ixMcuVirtualBaseAddr);
+
+    return status;
+} /* end of ixParityENAccMcuPEUnload() function */
+
+#endif /* __ixp46X || __ixp43X */

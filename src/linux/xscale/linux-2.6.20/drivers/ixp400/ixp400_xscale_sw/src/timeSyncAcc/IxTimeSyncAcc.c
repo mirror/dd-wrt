@@ -8,12 +8,12 @@
  * Clock Synchronisation Protocol Hardware Assist.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -1372,6 +1372,99 @@ ixTimeSyncAccShow(void)
 
     return IX_TIMESYNCACC_SUCCESS;
 } /* end of ixTimeSyncAccShow() function */
+
+/* This function can be used to uninitilaze the timesyncAcc component 
+ * from the client application. It performs the following tasks as part
+ * of unintialization:
+ *  => Unmaps the memory of Block and Register level registers 
+ *     starting base address.
+ *  => Unbinds the timesyncAcc IRQ
+ *  => Resets the fused out state of all NPEs to false.
+ *  => Resets the 1588 Hardware Assist block enabled flag to false and 
+ *     also destroys the system time mutex.
+ */
+PUBLIC IxTimeSyncAccStatus 
+ixTimeSyncAccUnInit(void) 
+{    
+    UINT32 lockKey;
+    UINT32 blRegsVirtualBaseAddr = (UINT32) NULL;
+    UINT32 plRegsVirtualBaseAddr = (UINT32) NULL;
+    IxTimeSyncAccStatus status = IX_TIMESYNCACC_SUCCESS;
+
+    if (TRUE == ixTs1588HardwareAssistEnabled)
+    {
+        /* Unbind the TimeSyncAcc IRQ */
+        lockKey = ixOsalIrqLock();
+        if (IX_SUCCESS !=
+            ixOsalIrqUnbind ((UINT32) IRQ_IXP400_INTC_TSYNC))
+        {
+            ixOsalLog(IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDERR,
+            "ixTimeSyncAccUnInit(): "\
+            "Can't unbind the TimeSyncAcc ISR to IRQ_IXP400_INTC_TSYNC!!!\n",
+            0,0,0,0,0,0);
+            status = IX_TIMESYNCACC_FAILED;
+        }
+        ixOsalIrqUnlock(lockKey);
+
+        /* Get the Virtual address of Block and Register level registers */
+	blRegsVirtualBaseAddr = 
+		IX_OSAL_MMAP_PHYS_TO_VIRT(IXP400_TIMESYNCACC_BLREGS_BASEADDR);
+        if ((UINT32)NULL == blRegsVirtualBaseAddr)
+        {
+            ixOsalLog(IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDERR,
+            "ixTimeSyncAccUnInit(): "\
+            "Physical to Virtual address conversion for Block level register base failed!!!\n",
+            0,0,0,0,0,0);
+            status = IX_TIMESYNCACC_FAILED;
+        }
+	plRegsVirtualBaseAddr = 
+		IX_OSAL_MMAP_PHYS_TO_VIRT(IXP400_TIMESYNCACC_PLREGS_BASEADDR);
+        if ((UINT32)NULL == plRegsVirtualBaseAddr)
+        {
+            ixOsalLog(IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDERR,
+            "ixTimeSyncAccUnInit(): "\
+            "Physical to Virtual address conversion for Register level register base failed!!!\n",
+            0,0,0,0,0,0);
+            status = IX_TIMESYNCACC_FAILED;
+        }
+	
+	/* Unmap the memory for Block and Register level registers */
+        IX_OSAL_MEM_UNMAP(blRegsVirtualBaseAddr);
+        IX_OSAL_MEM_UNMAP(plRegsVirtualBaseAddr);
+
+        /* Reset the Fused-Out States of NPEs to False */
+        if (IX_FEATURE_CTRL_COMPONENT_ENABLED == 
+            ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA))
+        {
+            ixTsNpeEnabled[IXP400_TIMESYNCACC_NPEA] = FALSE;
+        }
+        if (IX_FEATURE_CTRL_COMPONENT_ENABLED == 
+            ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB))
+        {
+            ixTsNpeEnabled[IXP400_TIMESYNCACC_NPEB] = FALSE;
+        }
+        if (IX_FEATURE_CTRL_COMPONENT_ENABLED == 
+            ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEC))
+        {
+            ixTsNpeEnabled[IXP400_TIMESYNCACC_NPEC] = FALSE;
+        }
+
+        /* Destroy the system time mutex */
+        ixOsalMutexDestroy(&ixTsSysTimeMutex);
+	
+	/* Reset the 1588 Hardware Assist block enabled flag */
+        ixTs1588HardwareAssistEnabled = FALSE;
+    }
+    else
+    {
+        ixOsalLog(IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR,
+            "ixTimeSyncAcc Component Not Intialized!!!\n", 0,0,0,0,0,0);
+
+        return IX_TIMESYNCACC_FAILED;
+    }
+    
+    return status;
+} /* end of ixTimeSyncAccUnInit() function */
 
 #endif /* __ixp46X */
 

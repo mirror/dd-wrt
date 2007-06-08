@@ -6,12 +6,12 @@
  * @file IxEthNpe.h
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -57,33 +57,98 @@
  * @{
  */
 
-/*--------------------------------------------------------------------------
- * Total number of ethernet NPEs supported
- *------------------------------------------------------------------------*/
+#include <IxNpeDl.h>
+#include <IxOsal.h>
+
 /**
- * @def IX_ETHNPE_NUM_NPES
+ * @ingroup IxEthNpe
+ * @brief Definition of the Ethernet NPE port status
  */
-#define IX_ETHNPE_NUM_NPES	 	(3)
+typedef enum /* IxEthNpeStatus */
+{
+    IX_ETH_NPE_SUCCESS = IX_SUCCESS, /**< return success*/
+    IX_ETH_NPE_FAIL = IX_FAIL, /**< return fail*/
+    IX_ETH_NPE_INVALID_LOGICAL_ID, /**< return invalid logical ID*/
+    IX_ETH_NPE_INVALID_PORT_ID, /**< return invalid Ethernet port ID*/
+    IX_ETH_NPE_INVALID_PHY_ADDR /**< return invalid physical address*/
+} IxEthNpeStatus;
+
+
+/**
+ * @ingroup IxEthNpe
+ * @enum IxEthNpePortId
+ * @brief Definition of the Intel IXP400 Software Mac Ethernet device.
+ */
+typedef enum IxEthNpePortId
+{
+	IX_ETH_PORT_1 = 0, /**< Ethernet Port 1 */
+	IX_ETH_PORT_2 = 1, /**< Ethernet port 2 */
+	IX_ETH_PORT_3 = 2  /**< Ethernet port 3 */
+}IxEthNpePortId;
+
+
+/**
+ * @ingroup IxEthNpe
+ * @def IX_ETHNPE_NPE_MAX_ID
+ * @brief defines an unknown port value.
+ */
+#define IX_ETHNPE_UNKNOWN_PORT (0xff)
 
 /*--------------------------------------------------------------------------
- * Maximum number of ports per NPE supported
+ * Ethernet NPE's maximum ID number
  *------------------------------------------------------------------------*/
 /**
- * @def IX_ETHNPE_NUM_PORTS_PER_NPE
+ * @ingroup IxEthNpe
+ *
+ * @def IX_ETHNPE_NPE_MAX_ID
+ *
+ * @brief This defines the maximum ID of NPEs in Intel(R) IXP4XX product line  
+ * 
+ * The maximum number of NPEs currently is 3, add on for range checking and structure size assignment.
+ *
  */
-#define IX_ETHNPE_NUM_PORTS_PER_NPE     (1)
+
+#define IX_ETHNPE_NPE_MAX_ID  	IX_NPEDL_NPEID_MAX
 
 /*--------------------------------------------------------------------------
- * Total number of ethernet ports on all NPEs supported
+ * Total number of Ethernet ports on all NPEs supported
+ *------------------------------------------------------------------------*/
+/**
+ * @ingroup IxEthNpe
+ *
+ * @def IX_ETHNPE_MAX_NUMBER_OF_PORTS
+ *
+ * @brief This defines the maximum number of Ethernet port in Intel(R) IXP4XX product line  
+ * 
+ * The maximum number of Ethernet port currently is 3, add on for structure size assignment.
+ *
+ */
+#define IX_ETHNPE_MAX_NUMBER_OF_PORTS 	(3)
+
+
+/*--------------------------------------------------------------------------
+ * Total number of Ethernet ports on all NPEs supported
  *------------------------------------------------------------------------*/
 /**
  * @def IX_ETHNPE_NUM_PHYSICAL_PORTS
+ * @brief This defines the number of Ethernet ports for the specific network processor.
+ * This macro will be deprecated in the future release.
  */
 #ifdef __ixp46X
 #define IX_ETHNPE_NUM_PHYSICAL_PORTS 	(3)
 #else
 #define IX_ETHNPE_NUM_PHYSICAL_PORTS 	(2)
 #endif
+
+/**
+ * @ingroup IxEthNpe
+ *
+ * @brief This defines the highest MII address of any attached PHYs 
+ * 
+ * The maximum number for PHY address is 31, add on for range checking.
+ *
+ */
+#define IX_ETHNPE_MII_MAX_ADDR   (32)
 
 /*--------------------------------------------------------------------------
  * NPE Logical PortID field conversions and data types
@@ -95,26 +160,6 @@
  *        Bits:   | 7   6 | 5   4 | 3   2   1   0 | 
  *        Field:  | RSVD  | NPEID |    PORT ID    |
  */
-
-/**
- * @brief NPE Node ID (ID of the NPE)
- */
-typedef UINT8 IxEthNpeNodeId;
-
-/**
- * @brief NPE Port ID (port number on an NPE)
- */
-typedef UINT8 IxEthNpePortId;
-
-/**
- * @brief Logical Port ID including both NPE and port numbers
- */
-typedef UINT8 IxEthNpeLogicalId;
-
-/**
- * @brief Physical Port ID (index into array of all physical ports)
- */
-typedef UINT32 IxEthNpePhysicalId;
 
 /**
  * @def IX_ETHNPE_NODE_AND_PORT_TO_LOGICAL_ID
@@ -132,92 +177,188 @@ typedef UINT32 IxEthNpePhysicalId;
 #define IX_ETHNPE_LOGICAL_ID_TO_PORT(id)		(id & 0xF)
 
 /**
- * @def IxEthNpePorts
- * @brief Port logical ID array
+ * @def IxEthNpePortMapLocation
+ * @brief An index to IxEthNpePortMap array 
+ *        based on the Intel® IXP4XX Product Line chosen  
  */
-static const
-IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
+typedef enum
 {
-    IX_ETHNPE_NODE_AND_PORT_TO_LOGICAL_ID(1,0), /* physical port 0 */
-    IX_ETHNPE_NODE_AND_PORT_TO_LOGICAL_ID(2,0)  /* physical port 1 */
-#ifdef __ixp46X
-    ,
-    IX_ETHNPE_NODE_AND_PORT_TO_LOGICAL_ID(0,0) /* physical port 2 */
-#endif
-};
+  IXP42X_PORT_MAP=0,  /*index to IxEthNpePortMap table for Intel IXP42X default port information */
+  IXP46X_PORT_MAP=1,  /*index to IxEthNpePortMap table for Intel IXP46X default port information */
+  IXP43X_PORT_MAP=2   /*index to IxEthNpePortMap table for Intel IXP43X default port information */
+}IxEthNpePortMapLocation;
+
+
+/**
+ * @def IxEthNpePortInfo
+ * @brief Port information per NPE
+ */
+typedef struct
+{
+  UINT8 IxEthNpeNodeId; 			/* ID of the NPE */
+  UINT8 IxEthNpeNumberOfPortPerNpe;
+  UINT8 IxEthAccMiiPhyAddress; 	/* definition of physical addresses */
+  UINT8 IxEthNpeLogicalId; 	/* definition of logical ID including both NPE and port numbers */
+  IxEthNpePortId portId; 	/* definition of Intel® IXP400 Product Line Ethernet MAC device */
+} IxEthNpePortInfo;
+
+/**
+ * @def IxEthNpePortMapping
+ * @brief Port information per architecture 
+ */
+typedef struct   
+{
+  UINT32 IxEthNpeNumberOfNpes; 	/* number of NPEs in particular Intel® IXP4XX Product Line */
+  UINT32 IxEthAccNumberOfPorts; 	/* total number of Ethernet ports on all NPEs supported */
+  IxEthNpePortInfo port[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
+}IxEthNpePortMapping; 
+
+/**
+ * @def IxEthNpePortMap
+ * @brief A default port mapping information of Intel® IXP4XX Product Line 
+ */
+static const IxEthNpePortMapping IxEthNpePortMap[] =   {
+/* Intel® IXP42X Product Line */
+{ 2, 2, {
+	  { 1, 1, 0, 0x10, IX_ETH_PORT_1 }, /* NPE B */
+	  { 2, 1, 1, 0x20, IX_ETH_PORT_2 }, /* NPE C */
+	  {0xff, 0xff, 0xff, 0xff, 0xff  }  /* Null entry */
+        }
+},
+/* Intel® IXP46X Product Line */
+{ 3, 3, {
+	  { 1, 1, 0, 0x10, IX_ETH_PORT_1 }, /* NPE B */
+	  { 2, 1, 1, 0x20, IX_ETH_PORT_2 }, /* NPE C */
+	  { 0, 1, 2, 0x00, IX_ETH_PORT_3 }  /* NPE A */
+	}
+},
+/* Intel® IXP43X Product Line */
+{ 2, 2, {
+	  { 2, 1, 1, 0x20, IX_ETH_PORT_2 }, /* NPE C */
+	  { 0, 1, 2, 0x00, IX_ETH_PORT_3 }, /* NPE A*/
+	  { 0xff, 0xff, 0xff, 0xff, 0xff }  /* Null entry */
+	}
+}
+}; /* end of IxEthNpePortMap[] list */
+
+
+/**
+ * @ingroup IxEthNpe
+ * @array IxEthNpePortIdTable
+ * @brief a lookup table for port index to Ethernet port Id conversion.
+ */
+extern IxEthNpePortId IxEthNpePortIdTable[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
+
+/**
+ * @ingroup IxEthNpe
+ * @array IxEthNpePortIndexTable
+ * @brief a lookup table for Ethernet port Id to port index conversion.
+ */
+extern UINT32 IxEthNpePortIndexTable[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
+
+/**
+ * @ingroup IxEthNpe
+ * @array IxEthEthPortIdToLogicalIdTable
+ * @brief a lookup table for Ethernet port ID to logical ID conversion.
+ */
+extern UINT32 IxEthEthPortIdToLogicalIdTable[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
+
+
+/**
+ * @ingroup IxEthNpe
+ * @array IxEthLogicalIdToEthPortIdTable
+ * @brief a lookup table for logical ID to Ethernet port ID conversion.
+ */
+extern UINT32 IxEthLogicalIdToEthPortIdTable[IX_ETHNPE_NPE_MAX_ID];
+
+
+/**
+ * @ingroup IxEthNpe
+ * @array IxEthEthPortIdToPhyAddressTable
+ * @brief a lookup table for Physical address to Ethernet port ID conversion.
+ */
+extern UINT32 IxEthEthPortIdToPhyAddressTable[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
+
 
 /**
  * @def IX_ETHNPE_LOGICAL_ID_TO_PHYSICAL_ID
- * @brief This hard-coded conversion depends on how IxEthNpePorts
+ * @brief This hard-coded conversion depends on how IxEthNpePortMap
  *        is defined and must be updated accordingly
  */
-#define IX_ETHNPE_LOGICAL_ID_TO_PHYSICAL_ID(id) \
-            IX_ETHNPE_NODE_AND_PORT_TO_PHYSICAL_ID( \
-                IX_ETHNPE_LOGICAL_ID_TO_NODE(id), \
-                IX_ETHNPE_LOGICAL_ID_TO_PORT(id) )
+#define IX_ETHNPE_LOGICAL_ID_TO_PHYSICAL_ID(id)	(IxEthLogicalIdToEthPortIdTable[IX_ETHNPE_LOGICAL_ID_TO_NODE(id)])
 
 /**
  * @def IX_ETHNPE_NODE_AND_PORT_TO_PHYSICAL_ID
- * @brief This hard-coded conversion depends on how IxEthNpePorts
+ * @brief This hard-coded conversion depends on how IxEthNpePortMap
  *        is defined and must be updated accordingly
  */
 #define IX_ETHNPE_NODE_AND_PORT_TO_PHYSICAL_ID(npe,port) \
-            npe ? npe - 1 : 2
+            (IxEthLogicalIdToEthPortIdTable[npe])
 
 /**
  * @def IX_ETHNPE_PHYSICAL_ID_TO_LOGICAL_ID
  */
-#define IX_ETHNPE_PHYSICAL_ID_TO_LOGICAL_ID(index)	(IxEthNpePorts[index])
+#define IX_ETHNPE_PHYSICAL_ID_TO_LOGICAL_ID(index) \
+	    (IxEthEthPortIdToLogicalIdTable[index])
 
 /**
  * @def IX_ETHNPE_PHYSICAL_ID_TO_NODE
  */
 #define IX_ETHNPE_PHYSICAL_ID_TO_NODE(index) \
-            (IX_ETHNPE_LOGICAL_ID_TO_NODE(IxEthNpePorts[index]))
+            (IX_ETHNPE_LOGICAL_ID_TO_NODE(IxEthEthPortIdToLogicalIdTable[index]))
 
 /**
  * @def IX_ETHNPE_PHYSICAL_ID_TO_PORT
  */
 #define IX_ETHNPE_PHYSICAL_ID_TO_PORT(index) \
-            (IX_ETHNPE_LOGICAL_ID_TO_PORT(IxEthNpePorts[index]))
+            (IX_ETHNPE_LOGICAL_ID_TO_PORT(IxEthEthPortIdToLogicalIdTable[index]))
 
+/**
+ * @def IX_ETHNPE_INDEX_TO_PORT_ID
+ */
+#define IX_ETHNPE_INDEX_TO_PORT_ID(index) (IxEthNpePortIdTable[index])
+
+/**
+ * @def IX_ETHNPE_INDEX_TO_PORT_ID
+ */
+#define IX_ETHNPE_PORT_ID_TO_INDEX(portId) (IxEthNpePortIndexTable[portId])
 
 /*--------------------------------------------------------------------------
- * APB Message IDs - Intel XScale(R) Processor ->NPE
+ * APB Message IDs - Intel XScale(R) Core ->NPE
  *------------------------------------------------------------------------*/
 
 /**
  * @def IX_ETHNPE_NPE_GETSTATUS
  *
- * @brief Request from the Intel XScale(R) Processor client for the NPE to return the 
- * firmware version of the currently executing image.
+ * @brief Request from the Intel XScale(R) Core  client for the NPE to return the firmware
+ * version of the currently executing image.
  *
  * Acknowledgment message id is same as the request message id. 
- * NPE returns the firmware version ID to Intel XScale(R) Processor .
+ * NPE returns the firmware version ID to Intel XScale(R) Core .
  */
 #define IX_ETHNPE_NPE_GETSTATUS                 0x00
 
 /**
  * @def IX_ETHNPE_EDB_SETPORTADDRESS
  *
- * @brief Request from the Intel XScale(R) Processor client for the NPE to set the 
- * Ethernet port's port ID and MAC address. 
+ * @brief Request from the Intel XScale(R) Core  client for the NPE to set the Ethernet 
+ * port's port ID and MAC address. 
  */
 #define IX_ETHNPE_EDB_SETPORTADDRESS            0x01
 
 /**
  * @def IX_ETHNPE_EDB_GETMACADDRESSDATABASE
  *
- * @brief Request from Intel XScale(R) Processor client to the NPE requesting upload of 
+ * @brief Request from Intel XScale(R) Core  client to the NPE requesting upload of 
  * Ethernet Filtering Database or Header Conversion Database from NPE's 
- * data memory to Intel XScale(R) Processor accessible SDRAM.
+ * data memory to Intel XScale(R) Core  accessible SDRAM.
  */
 #define IX_ETHNPE_EDB_GETMACADDRESSDATABASE     0x02
 
 /**
  * @def IX_ETHNPE_EDB_SETMACADDRESSSDATABASE
  *
- * @brief Request from Intel XScale(R) Processor client to the NPE requesting download of 
+ * @brief Request from Intel XScale(R) Core  client to the NPE requesting download of 
  * Ethernet Filtering Database or Header Conversion Database from SDRAM
  * to the NPE's datamemory.
  */
@@ -226,8 +367,8 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_GETSTATS
  *
- * @brief Request from the Intel XScale(R) Processor client for the current MAC port 
- * statistics data to be written to the (empty) statistics structure and the specified 
+ * @brief Request from the Intel XScale(R) Core  client for the current MAC port statistics 
+ * data to be written to the (empty) statistics structure and the specified
  * location in externa memory.
  */
 #define IX_ETHNPE_GETSTATS                      0x04
@@ -235,8 +376,8 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_RESETSTATS
  *
- * @brief Request from the Intel XScale(R) Processor client to the NPE to reset all of 
- * its internal MAC port statistics state variables. 
+ * @brief Request from the Intel XScale(R) Core  client to the NPE to reset all of its internal 
+ * MAC port statistics state variables. 
  *
  * As a side effect, this message entails an implicit request that the NPE
  *  write the current MAC port statistics into the MAC statistics structure 
@@ -247,47 +388,47 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_SETMAXFRAMELENGTHS
  *
- * @brief Request from the Intel XScale(R) Processor client to the NPE to configure 
- * maximum framelengths and block sizes in receive and transmit direction.
+ * @brief Request from the Intel XScale(R) Core  client to the NPE to configure maximum framelengths
+ * and block sizes in receive and transmit direction.
  */
 #define IX_ETHNPE_SETMAXFRAMELENGTHS            0x06
 
 /**
  * @def IX_ETHNPE_VLAN_SETRXTAGMODE
  *
- * @brief Request from the Intel XScale(R) Processor client to the NPE to configure VLAN 
- * frame type filtering and VLAN the tagging mode for the receiver.
+ * @brief Request from the Intel XScale(R) Core  client to the NPE to configure VLAN frame type
+ * filtering and VLAN the tagging mode for the receiver.
  */
 #define IX_ETHNPE_VLAN_SETRXTAGMODE             0x07
 
 /**
  * @def IX_ETHNPE_VLAN_SETDEFAULTRXVID
  *
- * @brief Request from the Intel XScale(R) Processor client to the NPE to set receiver's 
- * default VLAN tag (PVID)and internal traffic class.
+ * @brief Request from the Intel XScale(R) Core  client to the NPE to set receiver's default 
+ * VLAN tag (PVID)and internal traffic class.
  */
 #define IX_ETHNPE_VLAN_SETDEFAULTRXVID          0x08
 
 /**
  * @def IX_ETHNPE_VLAN_SETPORTVLANTABLEENTRY
  *
- * @brief Request from the Intel XScale(R) Processor client to the NPE to configure VLAN 
- * Port membership and Tx tagging for 8 consecutive VLANID's.
+ * @brief Request from the Intel XScale(R) Core  client to the NPE to configure VLAN Port 
+ * membership and Tx tagging for 8 consecutive VLANID's.
  */
 #define IX_ETHNPE_VLAN_SETPORTVLANTABLEENTRY    0x09
 
 /**
  * @def IX_ETHNPE_VLAN_SETPORTVLANTABLERANGE
- * 
- * @brief Request from the Intel XScale(R) Processor client to the NPE to configure VLAN 
- * Port membership and Tx tagging for a range of VLANID's.
+ *
+ * @brief Request from the Intel XScale(R) Core  client to the NPE to configure VLAN Port
+ * membership and Tx tagging for a range of VLANID's.
  */
 #define IX_ETHNPE_VLAN_SETPORTVLANTABLERANGE    0x0A
 
 /**
  * @def IX_ETHNPE_VLAN_SETRXQOSENTRY
  *
- * @brief Request from the Intel XScale(R) Processor client to the NPE to map a user priority
+ * @brief Request from the Intel XScale(R) Core  client to the NPE to map a user priority
  * to QoS class and an AQM queue number.
  */
 #define IX_ETHNPE_VLAN_SETRXQOSENTRY            0x0B
@@ -295,7 +436,7 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_VLAN_SETPORTIDEXTRACTIONMODE
  *
- * @brief Request from the Intel XScale(R) Processor client to the NPE to enable or disable
+ * @brief Request from the Intel XScale(R) Core  client to the NPE to enable or disable
  * portID extraction from VLAN-tagged frames for the specified port.
  */
 #define IX_ETHNPE_VLAN_SETPORTIDEXTRACTIONMODE  0x0C
@@ -303,7 +444,7 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_STP_SETBLOCKINGSTATE
  *
- * @brief Request from the Intel XScale(R) Processor client to the NPE to block or unblock
+ * @brief Request from the Intel XScale(R) Core  client to the NPE to block or unblock
  * forwarding for spanning tree BPDUs.
  */
 #define IX_ETHNPE_STP_SETBLOCKINGSTATE          0x0D
@@ -311,7 +452,7 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_FW_SETFIREWALLMODE
  *
- * @brief Request from the Intel XScale(R) Processor client to the NPE to configure firewall
+ * @brief Request from the Intel XScale(R) Core  client to the NPE to configure firewall
  * services modes of operation and/or download Ethernet Firewall Database from
  * SDRAM to NPE.
  */
@@ -320,8 +461,8 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_PC_SETFRAMECONTROLDURATIONID 
  *
- * @brief Request from the Intel XScale(R) Processor client to the NPE to set global frame 
- * control and duration/ID field for the 802.3 to 802.11 protocol header conversion
+ * @brief Request from the Intel XScale(R) Core  client to the NPE to set global frame control
+ * and duration/ID field for the 802.3 to 802.11 protocol header conversion
  * service.
  */
 #define IX_ETHNPE_PC_SETFRAMECONTROLDURATIONID  0x0F
@@ -329,8 +470,8 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_PC_SETAPMACTABLE
  *
- * @brief Request from the Intel XScale(R) Processor client to the NPE to update a 
- * block/section range of the AP MAC Address Table.
+ * @brief Request from the Intel XScale(R) Core  client to the NPE to update a block/section/
+ * range of the AP MAC Address Table.
  */
 #define IX_ETHNPE_PC_SETAPMACTABLE              0x11
 
@@ -344,8 +485,8 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_PC_SETBSSIDTABLE
  *
- * @brief Request from the Intel XScale(R) Processor client to the NPE to update a 
- *  block/section range of the BSSID MAC Address Table.
+ * @brief Request from the Intel XScale(R) Core  client to the NPE to update a block/section/
+ * range of the BSSID MAC Address Table.
  */
 #define IX_ETHNPE_PC_SETBSSIDTABLE              0x13
 
@@ -353,16 +494,16 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_ADDRESS_FILTER_CONFIG
  *
- * @brief Notification from the Intel XScale(R) Processor client to the NPE telling the
- * NPE the address (multicast+unicast) filtering configuration.
+ * @brief Notification from the Intel XScale(R) Core client to the NPE telling the NPE the 
+ * address (multicast+unicast) filtering configuration.
  */
 #define IX_ETHNPE_ADDRESS_FILTER_CONFIG          0x14 
 
 /**
  * @def IX_ETHNPE_APPENDFCSCONFIG
  *
- * @brief Notification from the Intel XScale(R) Processor client to the NPE telling the 
- * NPE the MAC FCS append configuration
+ * @brief Notification from the Intel XScale(R) Core  client to the NPE telling the NPE the 
+ * MAC FCS append configuration
  */
 #define IX_ETHNPE_APPENDFCSCONFIG              0x15
 
@@ -375,7 +516,7 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 #define IX_ETHNPE_NOTIFY_MAC_RECOVERY_DONE     0x16
 
 /*--------------------------------------------------------------------------
- * APB Message IDs - NPE->Intel XScale(R) Processor 
+ * APB Message IDs - NPE->Intel XScale(R) Core 
  *------------------------------------------------------------------------*/
 
 /**
@@ -820,7 +961,7 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_ACC_RXFREE_BUFFER_LENGTH_MIN
  * 
- * @brief Macro to check the minimum length of a rx free buffer
+ * @brief Macro to check the minimum length of a Rx free buffer
  */
 #define IX_ETHNPE_ACC_RXFREE_BUFFER_LENGTH_MIN (128)
 
@@ -828,7 +969,7 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
  * @def IX_ETHNPE_ACC_RXFREE_BUFFER_LENGTH_MASK
  * 
  * @brief Mask to apply to the mbuf length before submitting it to the NPE
- * (the NPE handles only rx free mbufs which are multiple of 64)
+ * (the NPE handles only Rx free mbufs which are multiple of 64)
  * 
  * @sa IX_ETHNPE_ACC_RXFREE_BUFFER_LENGTH_MASK
  */

@@ -11,12 +11,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -168,7 +168,7 @@
  * @brief Default resources usage for RxVcFree replenish mechanism
  *
  * This constant is used to tell IxAtmDAcc to allocate and use
- * the minimum of resources for rx free replenish.
+ * the minimum of resources for Rx free replenish.
  *
  * @sa ixAtmdAccRxVcConnect
  */
@@ -247,7 +247,7 @@
  *
  * @brief IxAtmdAcc Pdu status :
  *
- * IxAtmdAccPduStatus is used during a RX operation to indicate
+ * IxAtmdAccPduStatus is used during a Rx operation to indicate
  * the status of the received PDU
  *
  */
@@ -323,7 +323,7 @@ typedef enum
 typedef unsigned int IxAtmdAccUserId;
 
 /* ------------------------------------------------------
-   Part of the IxAtmdAcc interface related to RX traffic
+   Part of the IxAtmdAcc interface related to Rx traffic
    ------------------------------------------------------ */
 
 /**
@@ -350,7 +350,7 @@ typedef unsigned int IxAtmdAccUserId;
  * @param status @ref IxAtmdAccPduStatus [in] - an indication about the PDU validity.
  *        In the case of AAL0 the only possibile value is
  *        AAL0_VALID, in this case the client may optionally determine
- *        that an rx timeout occured by checking if the mbuf is
+ *        that an Rx timeout occured by checking if the mbuf is
  *        compleletly or only partially filled, the later case
  *        indicating a timeout.
  *        In the case of OAM the only possible value is OAM valid.
@@ -358,7 +358,7 @@ typedef unsigned int IxAtmdAccUserId;
  *        the mbuf is released during a disconnect process.
  * @param clp @ref IxAtmdAccClpStatus [in] - clp indication for this PDU.
  *        For AAL5/AAL0_48 this information
- *        is set if the clp bit of any rx cell is set
+ *        is set if the clp bit of any Rx cell is set
  *        For AAL0-52/OAM the client may inspect the CLP in individual
  *        cell headers in the PDU, and this parameter is set to 0.
  * @param *mbufPtr @ref IX_OSAL_MBUF [in] - depending on the servive type a pointer to
@@ -409,7 +409,7 @@ typedef void (*IxAtmdAccRxVcRxCallback) (IxAtmLogicalPort port,
 typedef void (*IxAtmdAccRxVcFreeLowCallback) (IxAtmdAccUserId userId);
 
 /* ------------------------------------------------------
-   Part of the IxAtmdAcc interface related to TX traffic
+   Part of the IxAtmdAcc interface related to Tx traffic
    ------------------------------------------------------ */
 
 /**
@@ -547,7 +547,7 @@ PUBLIC void
 ixAtmdAccStatsReset (void);
 
 /* ------------------------------------------------------
-   Part of the IxAtmdAcc interface related to RX traffic
+   Part of the IxAtmdAcc interface related to Rx traffic
    ------------------------------------------------------ */
 
 /**
@@ -573,7 +573,7 @@ ixAtmdAccStatsReset (void);
  * internal resources and a Connection Id to be used in further API calls
  * related to this VCC.
  *
- * The function will setup VC receive service on the specified rx queue.
+ * The function will setup VC receive service on the specified Rx queue.
  *
  * This function is blocking and makes use internal locks, and hence
  * should not be called from an interrupt context.
@@ -708,9 +708,9 @@ PUBLIC IX_STATUS ixAtmdAccRxVcConnect (IxAtmLogicalPort port,
  * Mbufs provided to this interface need to be able to hold at least one
  * full cell payload (48/52 bytes, depending on service type).
  * Chained buffers with a size less than the size supported by the hardware
- * will be returned through the rx callback provided during the connect step.
+ * will be returned through the Rx callback provided during the connect step.
  *
- * Failing to invoke this function prior to enabling the RX traffic
+ * Failing to invoke this function prior to enabling the Rx traffic
  * can result in packet loss.
  *
  * This function is not reentrant for the same connId.
@@ -719,7 +719,7 @@ PUBLIC IX_STATUS ixAtmdAccRxVcConnect (IxAtmLogicalPort port,
  * invoked from an interrupt context.
  *
  * @note - Over replenish is detected, and extra mbufs are returned through
- *         the rx callback provided during the connect step.
+ *         the Rx callback provided during the connect step.
  *
  * @note - Mbuf provided to the replenish function should have a length greater or
  *         equal to 48/52 bytes according to service type.
@@ -777,14 +777,14 @@ PUBLIC IX_STATUS ixAtmdAccRxVcFreeReplenish (IxAtmConnId connId,
                                     unsigned int numberOfMbufs,
                                     IxAtmdAccRxVcFreeLowCallback callback)
  *
- * @brief Configure the RX Free threshold value and register a callback
+ * @brief Configure the Rx Free threshold value and register a callback
  * to handle threshold notifications.
  *
  * The function ixAtmdAccRxVcFreeLowCallbackRegister sets the threshold value for
- * a particular RX VC. When the number of buffers reaches this threshold
+ * a particular Rx VC. When the number of buffers reaches this threshold
  * the callback is invoked.
  *
- * This function should be called once per VC before RX traffic is
+ * This function should be called once per VC before Rx traffic is
  * enabled.This function will fail if the curent level of the free buffers
  * is equal or less than the threshold value.
  *
@@ -824,8 +824,8 @@ PUBLIC IX_STATUS ixAtmdAccRxVcFreeLowCallbackRegister (IxAtmConnId connId,
  * @fn ixAtmdAccRxVcFreeEntriesQuery (IxAtmConnId connId,
                          unsigned int *numberOfMbufsPtr)
  *
- * @brief Get the number of rx mbufs the system can accept to replenish the
- *       the rx reception mechanism on a particular channel
+ * @brief Get the number of Rx mbufs the system can accept to replenish the
+ *       the Rx reception mechanism on a particular channel
  *
  * The ixAtmdAccRxVcFreeEntriesQuery function is used to retrieve the current
  * number of available mbuf entries for reception, on a per-VC basis. This
@@ -859,7 +859,7 @@ PUBLIC IX_STATUS ixAtmdAccRxVcFreeEntriesQuery (IxAtmConnId connId,
  *
  * @fn ixAtmdAccRxVcEnable (IxAtmConnId connId)
  *
- * @brief Start the RX service on a VC.
+ * @brief Start the Rx service on a VC.
  *
  * This functions kicks-off the traffic reception for a particular VC.
  * Once invoked, incoming PDUs will be made available by the hardware
@@ -873,7 +873,7 @@ PUBLIC IX_STATUS ixAtmdAccRxVcFreeEntriesQuery (IxAtmConnId connId,
  * @a ixAtmdAccRxVcEnable() function is invoked.
  *
  * Before using this function, the @a ixAtmdAccRxVcFreeReplenish() function
- * has to be used to replenish the RX Free queue. If not, incoming traffic
+ * has to be used to replenish the Rx Free queue. If not, incoming traffic
  * may be discarded.and in the case of interrupt driven reception the
  * @a IxAtmdAccRxVcFreeLowCallback() callback may be invoked as a side effect
  * during a replenish action.
@@ -906,7 +906,7 @@ PUBLIC IX_STATUS ixAtmdAccRxVcEnable (IxAtmConnId connId);
  * 
  * @fn ixAtmdAccRxVcDisable (IxAtmConnId connId)
  *
- * @brief Stop the RX service on a VC.
+ * @brief Stop the Rx service on a VC.
  *
  * This functions stops the traffic reception for a particular VC connection.
  *
@@ -946,7 +946,7 @@ PUBLIC IX_STATUS ixAtmdAccRxVcDisable (IxAtmConnId connId);
  * 
  * @fn ixAtmdAccRxVcTryDisconnect (IxAtmConnId connId)
  *
- * @brief Disconnect a VC from the RX service.
+ * @brief Disconnect a VC from the Rx service.
  *
  * This function deregisters the VC and guarantees that all resources
  * associated with this VC are free. After its execution, the connection
@@ -972,7 +972,7 @@ PUBLIC IX_STATUS ixAtmdAccRxVcDisable (IxAtmConnId connId);
 PUBLIC IX_STATUS ixAtmdAccRxVcTryDisconnect (IxAtmConnId connId);
 
 /* ------------------------------------------------------
-   Part of the IxAtmdAcc interface related to TX traffic
+   Part of the IxAtmdAcc interface related to Tx traffic
    ------------------------------------------------------ */
 
 /**
@@ -1108,8 +1108,8 @@ PUBLIC IX_STATUS ixAtmdAccTxVcConnect (IxAtmLogicalPort port,
  * active AAL0/AAL5 connection will be scheduled independantly of the
  * AAL0/AAL5 traffic for that connection.
  *
- * When transmission is complete, the TX Done mechanism will give the
- * owmnership of these buffers back to the customer. The tx done mechanism
+ * When transmission is complete, the Tx Done mechanism will give the
+ * ownership of these buffers back to the customer. The Tx done mechanism
  * must be in operation before transmission is attempted.
  *
  * For AAL0/OAM submitted AAL0 PDUs must be a multiple of the cell data

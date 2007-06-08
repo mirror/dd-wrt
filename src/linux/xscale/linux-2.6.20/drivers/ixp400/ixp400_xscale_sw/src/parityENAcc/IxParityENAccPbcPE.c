@@ -8,12 +8,12 @@
  * of the IXP400 Parity Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -48,7 +48,7 @@
  * -- End of Copyright Notice --
  */
 
-#if defined(__ixp46X)
+#if defined(__ixp46X) || defined(__ixp43X)
 
 /* 
  * System defined include files
@@ -62,6 +62,8 @@
 #include "IxParityENAccPbcPE.h"
 #include "IxParityENAccPbcPE_p.h"
 
+/* Virtual base address of PBC */
+static UINT32 ixPbcVirtualBaseAddr = 0;
 
 /*
  * PBC sub-module level functions definitions
@@ -87,6 +89,8 @@ ixParityENAccPbcPEInit(IxParityENAccInternalCallback ixPbcPECallback)
     {
         return IX_FAIL;
     } /* end of if */
+
+    ixPbcVirtualBaseAddr = pbcVirtualBaseAddr;
 
     /* Virtual Addresses assignment for PBC Control and Status Registers */
     pbcPERegisters->pciCrpAdCbe = 
@@ -414,4 +418,31 @@ ixParityENAccPbcPEParityErrorStatusClear (void)
         IXP400_PARITYENACC_PBC_ISR_PPE);
 } /* end of ixParityENAccPbcPEParityErrorStatusClear() function */
 
-#endif /* __ixp46X */
+IX_STATUS 
+ixParityENAccPbcPEUnload(void)
+{
+    UINT32 lockKey;
+    UINT32 status = IX_SUCCESS;
+    IxParityENAccPEConfigOption ixPbcPDCfg;
+
+    ixPbcPDCfg = IXP400_PARITYENACC_PE_DISABLE;
+    ixParityENAccPbcPEDetectionConfigure(ixPbcPDCfg);
+
+    /* Unbind the IRQ */    
+    lockKey = ixOsalIrqLock();
+    if (IX_SUCCESS != ixOsalIrqUnbind ((UINT32) IRQ_IXP400_INTC_PARITYENACC_PBC))
+    {
+        IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDERR,
+            "ixParityENAccPbcPEUnload(): "\
+            "Can't unbind the PBC ISR to IRQ_IXP400_INTC_PARITYENACC_PBC!!!\n",0,0,0,0,0,0);
+        status = IX_FAIL;
+    }    
+    ixOsalIrqUnlock(lockKey);
+
+    /* Unmap the memory */
+    IX_OSAL_MEM_UNMAP(ixPbcVirtualBaseAddr);
+
+    return status;
+} /* end of ixParityENAccPbcPEUnload() function */
+
+#endif /* __ixp46X || __ixp43X */

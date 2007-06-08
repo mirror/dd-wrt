@@ -1,12 +1,12 @@
 /*
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -61,6 +61,10 @@
 #define IX_ETH_ACC_MAC_0_BASE IX_OSAL_IXP400_ETH_MAC_B0_PHYS_BASE   /* Phy Base Address MAC on NPEB*/
 #define IX_ETH_ACC_MAC_1_BASE IX_OSAL_IXP400_ETH_MAC_C0_PHYS_BASE   /* Phy Base Address MAC on NPEC*/
 #define IX_ETH_ACC_MAC_2_BASE IX_OSAL_IXP400_ETH_MAC_A0_PHYS_BASE   /* Phy Base Address MAC on NPEA*/
+
+#define IX_ETH_ACC_MAC_0_MAP_SIZE IX_OSAL_IXP400_ETH_MAC_B0_MAP_SIZE
+#define IX_ETH_ACC_MAC_1_MAP_SIZE IX_OSAL_IXP400_ETH_MAC_C0_MAP_SIZE
+#define IX_ETH_ACC_MAC_2_MAP_SIZE IX_OSAL_IXP400_ETH_MAC_A0_MAP_SIZE
 
 #define IX_ETH_ACC_MAC_TX_CNTRL1       0x000
 #define IX_ETH_ACC_MAC_TX_CNTRL2       0x004

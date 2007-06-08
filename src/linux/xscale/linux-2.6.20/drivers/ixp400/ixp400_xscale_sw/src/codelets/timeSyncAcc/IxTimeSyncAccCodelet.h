@@ -8,12 +8,12 @@
  * @brief This is the header file for Intel (R) IXP400 Software Time Sync Access Codelet
  *
  * @par 
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -236,7 +236,7 @@
  *
  * @brief APB clock frequency in MHz (66 MHz) 
  */
-#define	IX_TIMESYNCACC_CODELET_APB_CLOCK_FREQUENCY (66666666)
+#define	IX_TIMESYNCACC_CODELET_APB_CLOCK_FREQUENCY IX_OSAL_IXP400_TIME_STAMP_RESOLUTION 
 
 /**
  * @def IX_TIMESYNCACC_CODELET_FSV_DEFAULT

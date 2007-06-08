@@ -9,12 +9,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -142,8 +142,10 @@ PUBLIC IX_STATUS ixNpeMhInitialize (
  * Function definition: ixNpeMhUnload
  */
 
-PUBLIC IX_STATUS ixNpeMhUnload (void)
+PUBLIC IX_STATUS ixNpeMhUnload (void)    
 {
+    IxNpeMhNpeId npeId;
+
     IX_NPEMH_TRACE0 (IX_NPEMH_FN_ENTRY_EXIT, "Entering "
                      "ixNpeMhUnload\n");
 
@@ -154,12 +156,18 @@ PUBLIC IX_STATUS ixNpeMhUnload (void)
 
     /* Uninitialize the Configuration module */
     ixNpeMhConfigUninit ();
+
     /* Reset the NpeMhShow */
-    ixNpeMhShowReset (IX_NPEMH_NPEID_NPEA);
-    ixNpeMhShowReset (IX_NPEMH_NPEID_NPEB);
-#if defined(__ixp42X) || defined(__ixp46X)
-    ixNpeMhShowReset (IX_NPEMH_NPEID_NPEC);
-#endif
+    for(npeId = 0; npeId < IX_NPEMH_NUM_NPES;npeId++)
+    {
+    
+       /* check the npeId parameter */
+       if (ixNpeMhConfigNpeIdIsValid (npeId))
+       { 
+          ixNpeMhShowReset (npeId);
+       }
+
+    }
 
     ixNpeMhUnsolicitedCbMgrUninitialize ();
     ixNpeMhSolicitedCbMgrUninitialize ();

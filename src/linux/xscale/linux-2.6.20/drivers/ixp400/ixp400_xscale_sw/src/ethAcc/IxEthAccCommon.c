@@ -9,12 +9,12 @@
  * Design Notes:
  *
  * @par 
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -67,6 +67,24 @@
 #include "IxNpeDl.h"	
 #include "IxAccCommon.h"
 
+/* 
+* @brief MACROS
+*/
+#define IX_ETH_ACC_QM_QUEUE_UPDATE(queueId) \
+{ \
+  UINT32 qData; \
+  if (ixQMgrQRead(queueId, &qData) == IX_SUCCESS) \
+  { \
+      if(qData > 0) \
+      { \
+       if (ixQMgrQWrite(queueId, &qData) != IX_SUCCESS) \
+       { \
+         return (IX_ETH_ACC_FAIL); \
+       } \
+      } \
+  } \
+}
+
 /**
  * @addtogroup IxEthAccPri
  *@{
@@ -74,7 +92,23 @@
 
 extern IxEthAccInfo   ixEthAccDataInfo;
 
+/**
+ * @brief port mapping lookup tables 
+ *
+ */
+IxEthAccPortId IxEthNpePortIdTable[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
+UINT32 IxEthNpePortIndexTable[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
+UINT32 IxEthEthPortIdToLogicalIdTable[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
+UINT32 IxEthLogicalIdToEthPortIdTable[IX_ETHNPE_NPE_MAX_ID];
+UINT32 IxEthEthPortIdToPhyAddressTable [IX_ETHNPE_MAX_NUMBER_OF_PORTS];
+IxEthNpePortMapping *IxEthAccPortInfo;
 
+/**
+ * @brief Flag for port map lookup table initialization.
+ * TRUE - port map lookup table has been built
+ * FALSE - port map lookup table has not built
+ */
+IX_ETH_ACC_PRIVATE BOOL ixEthNpePortMapInit = FALSE;
 
 /**
  * @brief Stores Rx Queue info for all rx queues
@@ -242,7 +276,7 @@ ixEthAccQMgrQueueSetup(IxEthAccQregInfo *qInfoDes)
 
     /* If queue is already configured, continue anyway */
     if(ret != IX_SUCCESS && ret != IX_QMGR_Q_ALREADY_CONFIGURED)
-    {
+    {   
 	return IX_ETH_ACC_FAIL;
     }
 	
@@ -332,7 +366,7 @@ IxEthAccStatus ixEthAccGetRxQueueList(IxEthAccPortId portId, IxEthAccRxQueue *rx
     BOOL completelySorted = FALSE;
     UINT32 rxQueue = 0;
     UINT32 sortIterations = 0;
-    IxEthNpeNodeId ixNpeId = IX_ETHNPE_PHYSICAL_ID_TO_NODE(portId);
+    UINT32 ixNpeId = IX_ETHNPE_PHYSICAL_ID_TO_NODE(portId);
 
     /* 
      * Queue Selection step:
@@ -353,7 +387,6 @@ IxEthAccStatus ixEthAccGetRxQueueList(IxEthAccPortId portId, IxEthAccRxQueue *rx
 				ixEthDBTrafficClass,
 				&ixEthDBPropertyType,
 				(void *)&ixEthDBParameter);
-
 	if (ixEthDBStatus == IX_ETH_DB_SUCCESS)
 	{
 	    /* This port and QoS class are mapped to 
@@ -517,14 +550,13 @@ IxEthAccStatus ixEthAccQMgrQueuesConfig(IxEthAccPortId portId)
     /* Rx queue list stored globally */
     IxEthAccRxQueue *rxQueues = ixEthAccRxQueues;
     IxEthAccStatus ret = IX_ETH_ACC_SUCCESS;
-    IxEthNpeNodeId ixNpeId = IX_ETHNPE_PHYSICAL_ID_TO_NODE(portId);
-
+    UINT32 ixNpeId = IX_ETHNPE_PHYSICAL_ID_TO_NODE(portId);
 
     /* Configure the TxDone Queue
      * Note that the TxDone queue is shared by all ports
      * ixEthAccQMgrQueueSetup makes sure it is not configured again
      */ 
-    memcpy(&qInfoDes, &ixEthAccQmgrTxDoneTemplate, sizeof(qInfoDes));
+    ixOsalMemCopy(&qInfoDes, &ixEthAccQmgrTxDoneTemplate, sizeof(qInfoDes));
     /* setup the TxDone Queue watermark level from the static table */
     qInfoDes.AlmostFullThreshold = ixEthAccQueueNFWatermarkTable[ixEthAccDataInfo.npeCount];
     ret = ixEthAccQMgrQueueSetup(&qInfoDes);
@@ -533,12 +565,12 @@ IxEthAccStatus ixEthAccQMgrQueuesConfig(IxEthAccPortId portId)
 
     /* Configure the TX and RxFree Queues for this port
      */ 
-    memcpy(&rxFreeQInfoDes, &ixEthAccQmgrRxFreeTemplate, sizeof(rxFreeQInfoDes));
+    ixOsalMemCopy(&rxFreeQInfoDes, &ixEthAccQmgrRxFreeTemplate, sizeof(rxFreeQInfoDes));
     ixEthAccPortData[portId].ixEthAccRxData.rxFreeQueueSource \
         = rxFreeQInfoDes.qConditionSource;
     rxFreeQInfoDes.callbackTag = portId;
 
-    memcpy(&txQInfoDes, &ixEthAccQmgrTxTemplate, sizeof(txQInfoDes));
+    ixOsalMemCopy(&txQInfoDes, &ixEthAccQmgrTxTemplate, sizeof(txQInfoDes));
     ixEthAccPortData[portId].ixEthAccTxData.txQueueSource \
         = txQInfoDes.qConditionSource;
     txQInfoDes.callbackTag = portId;
@@ -562,10 +594,10 @@ IxEthAccStatus ixEthAccQMgrQueuesConfig(IxEthAccPortId portId)
     /* Get RX queue list */
     ret = ixEthAccGetRxQueueList(portId, rxQueues);    
 
-    if(ret) return (ret);
+   if(ret) return (ret);
 
     /* get RX queue template for the queues */
-    memcpy(&qInfoDes, &ixEthAccQmgrRxTemplate, sizeof(qInfoDes));
+    ixOsalMemCopy(&qInfoDes, &ixEthAccQmgrRxTemplate, sizeof(qInfoDes));
 
     /* go through all the queues configuring with proper parameters:
      * - queue ID (from rxQueues list)
@@ -624,13 +656,14 @@ IxEthAccStatus ixEthAccQueuesUnconfig (void)
 {
     IxEthAccStatus ret = IX_ETH_ACC_SUCCESS;
     IxEthAccQregInfo qInfoDes;
+    UINT32 portIndex;
     IxEthAccPortId portId;
     UINT32 rxQueue = 0;
     /* Rx queue list stored globally */
     IxEthAccRxQueue *rxQueues = ixEthAccRxQueues;
 
     /* Get RX queue list */
-    ret = ixEthAccGetRxQueueList(0, rxQueues);    
+    ret = ixEthAccGetRxQueueList(IX_ETHNPE_INDEX_TO_PORT_ID(0), rxQueues);    
     if(ret) return (ret);
 
     /* un configure the Rx queues */
@@ -638,22 +671,23 @@ IxEthAccStatus ixEthAccQueuesUnconfig (void)
 	 (rxQueues[rxQueue].npeCount != 0) && (ret == IX_ETH_ACC_SUCCESS);
 	 rxQueue++)
     {
-	memset(&qInfoDes, 0, sizeof(IxEthAccQregInfo));
+	ixOsalMemSet(&qInfoDes, 0, sizeof(IxEthAccQregInfo));
 	qInfoDes.qId = rxQueues[rxQueue].qId;
 	ret = ixEthAccQMgrQueueUnsetup (&qInfoDes);
     }
 
     /* clear the rxQueues data structure */
-    memset(rxQueues, 0, sizeof(ixEthAccRxQueues));
+    ixOsalMemSet(rxQueues, 0, sizeof(ixEthAccRxQueues));
 
     /* un configure the TxDone queue */
     ret = ixEthAccQMgrQueueUnsetup(&ixEthAccQmgrTxDoneTemplate);
 
     /* un configure the RxFree and Tx queues */
-    for (portId = 0;
-         portId < IX_ETH_ACC_NUM_PORTS;
-        ++portId)
+    for (portIndex = 0;
+         portIndex < IX_ETHACC_NUMBER_OF_PORTS;
+        ++portIndex)
     {
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
         ixQMgrNotificationDisable(ixEthAccPortData[portId].ixEthAccTxData.txQueue);
         ixQMgrNotificationDisable(ixEthAccPortData[portId].ixEthAccRxData.rxFreeQueue);
     }
@@ -795,7 +829,7 @@ IxEthAccStatus ixEthAccQMgrRxCallbacksRegister(IxQMgrCallback ixQMgrCallback,
  *
  * @note The following conditions must all be true to pass:
  *  - The port's associated NPE exists
- *  - An ethernet NPE image is loaded
+ *  - An Ethernet NPE image is loaded
  *  - For ports 1-3 on NPEB, the correct 4port image is loaded
  *    and the (1-3 ports) are enabled in hardware
  *  - The Ethernet coprocessor exists for the port
@@ -807,8 +841,8 @@ IxEthAccStatus ixEthAccSingleEthNpeCheck(IxEthAccPortId physicalId)
 {
     UINT8 functionalityId;
 
-    IxEthNpeNodeId npeId = IX_ETHNPE_PHYSICAL_ID_TO_NODE(physicalId);
-    IxEthNpePortId portId = IX_ETHNPE_PHYSICAL_ID_TO_PORT(physicalId);
+    UINT32 npeId = IX_ETHNPE_PHYSICAL_ID_TO_NODE(physicalId);
+    UINT32 portId = IX_ETHNPE_PHYSICAL_ID_TO_PORT(physicalId);
     
     if (IX_SUCCESS != ixNpeDlLoadedImageFunctionalityGet(npeId, &functionalityId))
     {
@@ -816,68 +850,103 @@ IxEthAccStatus ixEthAccSingleEthNpeCheck(IxEthAccPortId physicalId)
     }
     else
     {
-        /* If not IXP42X A0 stepping, proceed to check for existence of NPEs and ethernet coprocessors */ 
-        if ((IX_FEATURE_CTRL_SILICON_TYPE_A0 != 
-            (ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK))
-            || (IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X != ixFeatureCtrlDeviceRead ()))
-        {
+        /* Check for existence of NPEs and Ethernet coprocessors */ 
+	/* If it is IXP42X or IXP46X, check NPE B coprocessor (IX_FEATURECTRL_ETH0) 
+         * for ethernet enable or disable
+         */ 
+	if((IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X == ixFeatureCtrlDeviceRead ()) ||
+	    (IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == ixFeatureCtrlDeviceRead ()))
+	{
             switch(npeId)
             {
-              case IX_NPEDL_NPEID_NPEA: 
-                if ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA) ==
-                     IX_FEATURE_CTRL_COMPONENT_DISABLED) ||
-                     ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA_ETH) ==
-                     IX_FEATURE_CTRL_COMPONENT_DISABLED) || 
-                     (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH0) ==
-                     IX_FEATURE_CTRL_COMPONENT_DISABLED)))
-                {
-                    return IX_ETH_ACC_FAIL;
-                }
-                break;
-
-              case IX_NPEDL_NPEID_NPEB: 
-                if ( (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB) ==
-                     IX_FEATURE_CTRL_COMPONENT_DISABLED) )
-                {
-                    return IX_ETH_ACC_FAIL;
-                }
-                if (portId == 0)
-                {
-                    if( ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH0) ==
-                        IX_FEATURE_CTRL_COMPONENT_DISABLED)
+                case IX_NPEDL_NPEID_NPEA: 
+                    if ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA) ==
+                        IX_FEATURE_CTRL_COMPONENT_DISABLED) ||
+                        ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA_ETH) ==
+                        IX_FEATURE_CTRL_COMPONENT_DISABLED) || 
+                        (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH0) ==
+                        IX_FEATURE_CTRL_COMPONENT_DISABLED)))
                     {
-                        return IX_ETH_ACC_FAIL;	    
+                       return IX_ETH_ACC_FAIL;
                     }
-                }
-                else /* ports 1-3 */
-                {
-                    if( ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB_ETH) ==
-                        IX_FEATURE_CTRL_COMPONENT_DISABLED)
+                    break;
+
+                case IX_NPEDL_NPEID_NPEB: 
+                    if ( (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB) ==
+                         IX_FEATURE_CTRL_COMPONENT_DISABLED) )
                     {
-                        return IX_ETH_ACC_FAIL;	    
+                        return IX_ETH_ACC_FAIL;
                     }
+                    if (portId == 0)
+                    {
+                        if( ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH0) ==
+                            IX_FEATURE_CTRL_COMPONENT_DISABLED)
+                        {
+                            return IX_ETH_ACC_FAIL;	    
+                    	}
+               	    }
+                    else /* ports 1-3 */
+                    {
+                        if( ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB_ETH) ==
+                            IX_FEATURE_CTRL_COMPONENT_DISABLED)
+                        {
+                            return IX_ETH_ACC_FAIL;	    
+                        }
 
-                }
-                break;
+                    }
+                    break;
 
-              case IX_NPEDL_NPEID_NPEC: 
-                if ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEC) ==
-                     IX_FEATURE_CTRL_COMPONENT_DISABLED) ||
-                     ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH1) ==
-                     IX_FEATURE_CTRL_COMPONENT_DISABLED) ||
-                     (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH0) ==
-                     IX_FEATURE_CTRL_COMPONENT_DISABLED)))
-                {
+              	case IX_NPEDL_NPEID_NPEC: 
+                    if ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEC) ==
+                         IX_FEATURE_CTRL_COMPONENT_DISABLED) ||
+                         ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH1) ==
+                         IX_FEATURE_CTRL_COMPONENT_DISABLED) ||
+                         (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH0) ==
+                         IX_FEATURE_CTRL_COMPONENT_DISABLED)))
+                    {
+                        return IX_ETH_ACC_FAIL;
+                    }
+                    break;
+
+              	default: /* invalid NPE */
                     return IX_ETH_ACC_FAIL;
-                }
-                break;
+            	} /* switch */
+	    } /* if IXP46X or IXP42X */
 
-              default: /* invalid NPE */
-                return IX_ETH_ACC_FAIL;
-            }
-        }
+	    /* If it is IXP43X, check NPE C coprocessor (IX_FEATURECTRL_ETH1) 
+		for ethernet enable or disable*/ 
+	    if(IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X == ixFeatureCtrlDeviceRead ())
+	    {
+            	switch(npeId)
+            	{
+              	    case IX_NPEDL_NPEID_NPEA: 
+                	if ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA) ==
+                     	     IX_FEATURE_CTRL_COMPONENT_DISABLED) ||
+                     	     ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA_ETH) ==
+                     	     IX_FEATURE_CTRL_COMPONENT_DISABLED) || 
+                     	     (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH1) ==
+                     	     IX_FEATURE_CTRL_COMPONENT_DISABLED)))
+                	{
+                    	    return IX_ETH_ACC_FAIL;
+                	}
+                	break;
+
+              	    case IX_NPEDL_NPEID_NPEC: 
+                	if ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEC) ==
+                             IX_FEATURE_CTRL_COMPONENT_DISABLED) ||
+                      	     ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH1) ==
+                             IX_FEATURE_CTRL_COMPONENT_DISABLED) ))
+                        {
+                    	     return IX_ETH_ACC_FAIL;
+                	}
+                	break;
+
+              	    default: /* invalid NPE */
+                	return IX_ETH_ACC_FAIL;
+            	} /* switch */
+	    } /* if IXP43X */
         return IX_ETH_ACC_SUCCESS;
-    }
+    }/* else */
 }
 
 /**
@@ -900,6 +969,7 @@ void ixEthAccStatsShow(IxEthAccPortId portId)
     ixEthAccDataPlaneShow();
 }
 
+
 /**
  * This function is responsible to activate Flag Bus status from AQM to
  * NPE. Only Rx Queue, RxFree and TxDone Queue are involved.
@@ -908,8 +978,6 @@ void ixEthAccStatsShow(IxEthAccPortId portId)
 IX_ETH_ACC_PUBLIC IxEthAccStatus 
 ixEthAccQMStatusUpdate(IxEthAccPortId portId)
 {  
-   UINT32 rxFreeId = 0; 
-   UINT32 qEntry = 0;
    UINT32 rxQueue = 0;
    IxEthAccRxQueue *rxQueues = ixEthAccRxQueues;
    IxEthAccStatus ret = IX_ETH_ACC_SUCCESS;
@@ -929,43 +997,22 @@ ixEthAccQMStatusUpdate(IxEthAccPortId portId)
 
     if (!IX_ETH_IS_PORT_INITIALIZED(portId))
     {
-	return (IX_ETH_ACC_PORT_UNINITIALIZED);
+	      return (IX_ETH_ACC_PORT_UNINITIALIZED);
     }
  
    /* 
-    * (1) Read an entry from TxDone Queue.
-    * (2) If there is any entry, write the entry back to TxDone Queue. 
+    * Force Queue Event Bus Cond. Trigger at TxDone Queue.
     */
-    if (ixQMgrQRead(IX_ETH_ACC_TX_DONE_Q, &qEntry) == IX_SUCCESS)
-    { 
-      /* Avoid qEntry=0 (NULL) to be written to HwQ. */
-      if(qEntry > 0)
-      {
-       if (ixQMgrQWrite(IX_ETH_ACC_TX_DONE_Q, &qEntry) != IX_SUCCESS)
-       {
-         return (IX_ETH_ACC_FAIL);        
-       } 
-      }
-    }
+    IX_ETH_ACC_QM_QUEUE_UPDATE(IX_ETH_ACC_TX_DONE_Q);
 
     /* 
-    * (1) Read an entry from RxFree Queue, then
-    * (2) If thre is any entry, write the entry back to RxFree Queue. 
-    */ 
-    rxFreeId = IX_ETH_ACC_PORT_TO_RX_FREE_Q_ID(portId);
-    
-    if (ixQMgrQRead(rxFreeId, &qEntry) == IX_SUCCESS)
-    {
-       /* Avoid qEntry=0 (NULL) to be written to HwQ. */
-       if(qEntry > 0)
-       {
-        if (ixQMgrQWrite(rxFreeId, &qEntry) != IX_SUCCESS)
-        {
-          return (IX_ETH_ACC_FAIL);        
-        } 
-       }
-    }
-   
+    * Force Queue Event Bus Cond. Trigger at Tx Queue.
+    */
+    IX_ETH_ACC_QM_QUEUE_UPDATE(IX_ETH_ACC_PORT_TO_TX_Q_ID(portId));
+    /* 
+    * Force Queue Event Bus Cond. Trigger at Rx Queue.
+    */
+    IX_ETH_ACC_QM_QUEUE_UPDATE(IX_ETH_ACC_PORT_TO_RX_FREE_Q_ID(portId));
    /* 
     * (1) Read an entry from Rx Queue.
     * (2) If there is any entry, write the entry back to Rx Queue. 
@@ -974,32 +1021,25 @@ ixEthAccQMStatusUpdate(IxEthAccPortId portId)
     /* Get RX queue list */
     ret = ixEthAccGetRxQueueList(portId, rxQueues);    
 
-    if(ret) return (ret);
+    if(ret) 
+    {
+      return (ret);
+    }
 
     for (rxQueue = 0;
 	 (rxQueues[rxQueue].npeCount != 0);
 	 rxQueue++)
     {
-      if (ixQMgrQRead(rxQueues[rxQueue].qId, &qEntry) == IX_SUCCESS)
-      {
-        /* Avoid qEntry=0 (NULL) to be written to HwQ. */
-        if(qEntry > 0)
-        {
-	 if (ixQMgrQWrite(rxQueues[rxQueue].qId, &qEntry) != IX_SUCCESS)
-         {
-           return (IX_ETH_ACC_FAIL);        
-         }
-        }
-      }	       
+      IX_ETH_ACC_QM_QUEUE_UPDATE(rxQueues[rxQueue].qId);
+               
     }
-
    return (IX_ETH_ACC_SUCCESS);
 }
 
 /**
  * @fn ixEthHssAccCoExistInit(void)
  *
- * @brief Check ethernet&hss co-existence services initialized and init mutex
+ * @brief Check Ethernet&hss co-existence services initialized and init mutex
  *
  * @return IxEthAccStatus
  *
@@ -1062,7 +1102,7 @@ ixEthHssAccCoExistInit(void)
 /**
  * @fn ixEthHssAccCoExistUninit(void)
  *
- * @brief Check ethernet&hss co-existence services uninitialized
+ * @brief Check Ethernet&hss co-existence services uninitialized
  *
  * @return IxEthAccStatus
  *
@@ -1096,3 +1136,143 @@ ixEthHssAccCoExistUninit(void)
     return IX_ETH_ACC_SUCCESS;
 }
 
+
+/**
+ * @fn ixEthNpePortMapCreate(void)
+ *
+ * @brief Select the default port parameters for particular Intel(R) IXP4XX Product Line, 
+ *        setup lookup tables for Ethernet PortId => LogicalId, 
+ * 	  LogicalId => Ethernet PortId and 
+ *        Ethernet PortId => Physical Address conversions.
+ *
+ * @param none
+ *
+ * @return IxEthNpeStatus
+ *
+ * @internal
+ */
+IxEthNpeStatus
+ixEthNpePortMapCreate(void)
+{
+    UINT32 npeCount;
+    UINT32 portCount;
+    IxFeatureCtrlDeviceId deviceId = ixFeatureCtrlDeviceRead();
+
+    if (ixEthNpePortMapInit)
+    {
+        /* redundant */
+	return IX_ETH_NPE_SUCCESS;
+    }
+
+    switch(deviceId)
+    {
+	case IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X:
+
+	    IxEthAccPortInfo = (IxEthNpePortMapping *)&IxEthNpePortMap[IXP42X_PORT_MAP];
+	    break;
+
+        case IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X:
+
+	    IxEthAccPortInfo = (IxEthNpePortMapping *)&IxEthNpePortMap[IXP46X_PORT_MAP];
+	    break;
+
+	case IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X:
+
+	    IxEthAccPortInfo = (IxEthNpePortMapping *)&IxEthNpePortMap[IXP43X_PORT_MAP];
+	    break;
+
+	default:
+	    IX_ETH_ACC_WARNING_LOG("ixEthNpePortUpdate: Unknown FeatureCtrl deviceId %d is used, \
+	        failed to build port mapping lookup table\n", (UINT32) deviceId, 0, 0, 0, 0, 0);
+	    return (IX_ETH_NPE_FAIL);
+	    break;
+    }
+
+    /* Initialize lookup table */
+    for (npeCount = 0; npeCount < IX_ETHNPE_NPE_MAX_ID; npeCount++)
+    {
+	IxEthLogicalIdToEthPortIdTable[npeCount] = IX_ETHNPE_UNKNOWN_PORT;
+	IxEthNpePortIndexTable[npeCount] = IX_ETHNPE_UNKNOWN_PORT;
+	IxEthNpePortIdTable[npeCount] = IX_ETHNPE_UNKNOWN_PORT;
+    }
+
+    for (portCount = 0; portCount < IX_ETHNPE_MAX_NUMBER_OF_PORTS; portCount++)
+    {
+	IxEthEthPortIdToLogicalIdTable[portCount] = IX_ETHNPE_UNKNOWN_PORT;
+	IxEthEthPortIdToPhyAddressTable[portCount] = IX_ETHNPE_UNKNOWN_PORT;
+    }
+
+    /* Insert default port mapping information into lookup table */
+    for (npeCount = 0; npeCount < IxEthAccPortInfo->IxEthNpeNumberOfNpes; npeCount++)
+    {
+	IxEthLogicalIdToEthPortIdTable[IxEthAccPortInfo->port[npeCount].IxEthNpeNodeId] = 
+					IxEthAccPortInfo->port[npeCount].portId;
+	IxEthEthPortIdToLogicalIdTable[IxEthAccPortInfo->port[npeCount].portId] =
+					IxEthAccPortInfo->port[npeCount].IxEthNpeLogicalId;
+	IxEthEthPortIdToPhyAddressTable[IxEthAccPortInfo->port[npeCount].portId] = 
+					IxEthAccPortInfo->port[npeCount].IxEthAccMiiPhyAddress;
+	IxEthNpePortIdTable[npeCount] = IxEthAccPortInfo->port[npeCount].portId;
+	IxEthNpePortIndexTable[IxEthAccPortInfo->port[npeCount].portId] = npeCount;
+    }
+
+#ifndef NDEBUG  
+ 	IX_ETH_ACC_DEBUG_LOG("Logical ID to Ethernet Port ID conversion\n"
+		"Usage: IX_ETHNPE_LOGICAL_ID_TO_PHYSICAL_ID(logicalID)\n"
+		"Logical ID\tPort ID\n"
+		"==========\t=======\n",0,0,0,0,0,0);
+    for (npeCount = 0; npeCount < IxEthAccPortInfo->IxEthNpeNumberOfNpes; npeCount++)
+    {
+ 	IX_ETH_ACC_DEBUG_LOG("    %u    \t   %u  \n", npeCount, IX_ETHNPE_LOGICAL_ID_TO_PHYSICAL_ID((npeCount<<4)),0,0,0,0);
+    }
+
+ 	IX_ETH_ACC_DEBUG_LOG("NPE Node and Port ID to Ethernet Port ID conversion\n"
+		"Usage: IX_ETHNPE_NODE_AND_PORT_TO_PHYSICAL_ID(nodeID,portID)\n"
+		"NPE Node and portID\tPort ID\n"
+		"===================\t=======\n",0,0,0,0,0,0);
+    for (npeCount = 0; npeCount < IxEthAccPortInfo->IxEthNpeNumberOfNpes; npeCount++)
+    {
+	IX_ETH_ACC_DEBUG_LOG("     %u,     0     \t   %u  \n", npeCount, IX_ETHNPE_NODE_AND_PORT_TO_PHYSICAL_ID(npeCount,0),0,0,0,0);
+    }
+
+	IX_ETH_ACC_DEBUG_LOG("Ethernet port ID to Logical ID conversion\n"
+		"Usage: IX_ETHNPE_PHYSICAL_ID_TO_LOGICAL_ID(portId)\n"
+		"portId\tLogical ID\n"
+		"======\t==========\n",0,0,0,0,0,0);
+    for (npeCount = 0; npeCount < IxEthAccPortInfo->IxEthAccNumberOfPorts; npeCount++)
+    {
+	IX_ETH_ACC_DEBUG_LOG("   %u  \t    %u    \n", npeCount, IX_ETHNPE_PHYSICAL_ID_TO_LOGICAL_ID(npeCount),0,0,0,0);
+    }	
+#endif
+    return IX_ETH_NPE_SUCCESS;
+}  
+
+
+/**
+ * @fn ixEthAccMiiPortIdPhyAddrSet(ixEthAccPortId portId, UINT32 phyAddr)
+ *
+ * @brief Update an IxEthEthPortIdToPhyAddressTable entry 
+ *
+ * @param IxEthAccPortId portId[in] Ethernet port ID
+ * 	  UINT32 phyAddr[in] Physical address 
+ *
+ * @return IxEthAccStatus
+ *
+ * @external
+ */
+IX_ETH_ACC_PUBLIC IxEthAccStatus
+ixEthAccMiiPortIdPhyAddrSet(IxEthAccPortId portId, UINT32 phyAddr)
+{
+    if (IXP400_ETH_ACC_MII_MAX_ADDR <= phyAddr)
+    {
+	return (IX_ETH_NPE_INVALID_PHY_ADDR);
+    }
+
+    if (!IX_ETH_ACC_IS_PORT_VALID(portId))
+    {
+	return (IX_ETH_NPE_INVALID_PORT_ID);
+    }
+
+    IxEthEthPortIdToPhyAddressTable[portId] = phyAddr;
+
+    return IX_ETH_ACC_SUCCESS;
+}

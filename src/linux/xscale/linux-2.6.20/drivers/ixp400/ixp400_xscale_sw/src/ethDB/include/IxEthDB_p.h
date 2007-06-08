@@ -4,12 +4,12 @@
  * @brief Private MAC learning API
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -56,6 +56,9 @@
 
 #include "IxEthDBMessages_p.h"
 #include "IxEthDBLog_p.h"
+
+/* Port ID number to identify NPE A */
+#define IX_NPEA_PORT  2
 
 #if ((CPU==SIMSPARCSOLARIS) || (CPU==SIMLINUX))
 
@@ -199,6 +202,12 @@ extern int overflowEvent;
 /* trees */
 #define RIGHT (1)
 #define LEFT  (-1)
+
+/* Ethernet Hardware enabling macro*/
+extern UINT32 ixEthDBEthNPEEnabled[];
+#define IX_ETH_DB_ETH_NPE_ENABLED      (0x01)
+#define IX_ETH_DB_ETH_NPE_DISABLED     (0x02)
+#define IX_ETH_DB_ETH_NPE_UNDETERMINED (0x00) 
 
 /* macros */
 #define MIN(a, b) ((a) < (b) ? (a) : (b))

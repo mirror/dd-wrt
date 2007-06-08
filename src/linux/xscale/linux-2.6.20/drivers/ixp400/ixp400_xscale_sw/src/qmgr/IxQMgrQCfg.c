@@ -11,12 +11,12 @@
  * 
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -63,20 +63,15 @@
 #include "IxQMgr_sp.h"
 #include "IxQMgrQCfg_p.h"
 #include "IxQMgrDefines_p.h"
-
-#if defined(__ixp42X) || defined(__ixp46X)
 #include "IxQMgrHwQIfIxp400_p.h"
-#endif /* __ixp42X */
 
 /*
  * #defines and macros used in this file.
  */
-
 #define IX_QMGR_MIN_ENTRY_SIZE_IN_WORDS 16
 
 /* Size of SRAM in a qmgr memory map block in bytes
  */
-
 #define IX_QMGR_HWQ_SRAM_SIZE_IN_BYTES 0x4000
 
 /*
@@ -108,6 +103,16 @@ typedef struct
 } IxQMgrCfgQ;
 
 /*
+ * This struct contains the essential parameters 
+ * required to reconfigure a queue using the proper 
+ * config parameters from IxQMgrCfgQ structure.
+ */
+typedef struct
+{
+    UINT32 freeSramAddress; /* Actual SRAM base address of a configured queue */
+}IxQMgrRecfgQ;
+
+/*
  * Variable declarations global to this file. Externs are followed by
  * statics.
  */
@@ -118,22 +123,41 @@ extern UINT32 * ixQMgrHwQIfQueAccRegAddr[];
  */
 IxQMgrQInlinedReadWriteInfo ixQMgrQInlinedReadWriteInfo[IX_QMGR_MAX_NUM_QUEUES];
 
+/* 
+ * Store data required to configure a queue
+ */
 static IxQMgrCfgQ cfgQueueInfo[IX_QMGR_MAX_NUM_QUEUES];
+
+/* 
+ * Store data required to re-configure a queue
+ */
+static IxQMgrRecfgQ reCfgQueueInfo[IX_QMGR_MAX_NUM_QUEUES]; 
+
+/*
+ * This flag is used to check whether the call is being made for 
+ * Config or Reconfig purpose 
+ */
+BOOL reCfgFlag = FALSE;
 
 /* This pointer holds the starting address of HwQ SRAM not used by
  * the HwQ queues.
  */
-
-#if defined(__ixp42X) || defined(__ixp46X)
 static UINT32 freeSramAddress[IX_QMGR_MEM_MAP_BLOCK_MAX] = {0};
-#endif /* __ixp42X */
 
 /* 4 words of zeroed memory for inline access */
 static UINT32 zeroedPlaceHolder[4] = { 0, 0, 0, 0 };
 
 static BOOL cfgInitialized = FALSE;
 
+/* 
+ * Mutex variable used during configuartion of a queue 
+ */
 static IxOsalMutex ixQMgrQCfgMutex;
+
+/* 
+ * Mutex variable used during Un-configuartion of a queue 
+ */
+static IxOsalMutex ixQMgrQUncfgMutex;
 
 /*
  * Statistics
@@ -189,6 +213,8 @@ ixQMgrQCfgInit (void)
 	cfgQueueInfo[qIndex].qSizeInWords = 0;
 	cfgQueueInfo[qIndex].qEntrySizeInWords = 0;
 	cfgQueueInfo[qIndex].isConfigured = FALSE;
+ 
+        reCfgQueueInfo[qIndex].freeSramAddress = 0;
 
 	/* Statistics */
 	stats.qStats[qIndex].isConfigured = FALSE;
@@ -205,6 +231,7 @@ ixQMgrQCfgInit (void)
     }
     
     ixOsalMutexInit(&ixQMgrQCfgMutex);
+    ixOsalMutexInit(&ixQMgrQUncfgMutex);
 
     cfgInitialized = TRUE;
 }
@@ -218,6 +245,7 @@ ixQMgrQCfgUninit (void)
     cfgInitialized = FALSE;
 
     ixOsalMutexDestroy (&ixQMgrQCfgMutex);
+    ixOsalMutexDestroy (&ixQMgrQUncfgMutex);
 
     for (qIndex = 0; qIndex < IX_QMGR_MAX_NUM_QUEUES; qIndex++)
     {
@@ -251,90 +279,140 @@ ixQMgrQConfig (char *qName,
 {
     UINT32 hwQLocalBaseAddress;
     UINT32 block;
-
+    UINT32 *pSramBaseAddress;
+    
     if (!cfgInitialized)
     {
         return IX_FAIL;
     }
-    
-    /* Validate parameters */
-    if (!IX_QMGR_QID_IS_VALID(qId))
+     
+    /* Check for wild card parameters to reconfigure a queue */
+    if(IX_QMGR_QID_IS_VALID(qId) && (NULL == qName) && 
+       (IX_QMGR_Q_SIZE_INVALID == qSizeInWords) &&
+       (IX_QMGR_Q_ENTRY_SIZE_INVALID == qEntrySizeInWords))
     {
-	return IX_QMGR_INVALID_Q_ID;
-    }
-    
-    else if (NULL == qName)
-    {
-	return IX_QMGR_PARAMETER_ERROR;
-    }
-    
-    else if (strlen (qName) > IX_QMGR_MAX_QNAME_LEN)
-    {
-	return IX_QMGR_PARAMETER_ERROR;
-    }
-
-    else if (!qSizeInWordsIsOk (qSizeInWords))
-    {
-	return IX_QMGR_INVALID_QSIZE;
-    }
-
-    else if (!qEntrySizeInWordsIsOk (qEntrySizeInWords))
-    {
-	return IX_QMGR_INVALID_Q_ENTRY_SIZE;
-    }
-    
-    else if (cfgQueueInfo[qId].isConfigured)
-    {
-	return IX_QMGR_Q_ALREADY_CONFIGURED;
-    }
-   
-    ixOsalMutexLock(&ixQMgrQCfgMutex, IX_OSAL_WAIT_FOREVER);
-
-    /* Write the config register */
-    ixQMgrHwQIfQueCfgWrite (qId,
-			   qSizeInWords,
-			   qEntrySizeInWords,
-			   freeSramAddress);
-
-
-    strcpy (cfgQueueInfo[qId].qName, qName);
-    cfgQueueInfo[qId].qSizeInWords = qSizeInWords;
-    cfgQueueInfo[qId].qEntrySizeInWords = qEntrySizeInWords;
-
-    /* store pre-computed information in the same cache line
-     * to facilitate inlining of QRead and QWrite functions 
-     * in IxQMgr.h
-     */
-    ixQMgrQInlinedReadWriteInfo[qId].qReadCount = 0;
-    ixQMgrQInlinedReadWriteInfo[qId].qWriteCount = 0;
-    ixQMgrQInlinedReadWriteInfo[qId].qEntrySizeInWords = qEntrySizeInWords;
-    ixQMgrQInlinedReadWriteInfo[qId].qSizeInEntries = 
-		(UINT32)qSizeInWords / (UINT32)qEntrySizeInWords;
-
-    /* Determine which memory map block the queue is in
-     */
-    block = qId / IX_QMGR_NUM_QUEUES_PER_MEM_MAP_BLOCK;
+        if (reCfgQueueInfo[qId].freeSramAddress == 0)
+        {
+            return IX_QMGR_Q_NOT_CONFIGURED;
+        }
+     
+        if (cfgQueueInfo[qId].isConfigured)
+        {
+            return IX_QMGR_Q_ALREADY_CONFIGURED;
+        }
+        
+        ixOsalMutexLock(&ixQMgrQCfgMutex, IX_OSAL_WAIT_FOREVER);
+        
+        qName = cfgQueueInfo[qId].qName;
+        qSizeInWords = cfgQueueInfo[qId].qSizeInWords;
+        qEntrySizeInWords = cfgQueueInfo[qId].qEntrySizeInWords;
+        pSramBaseAddress = &reCfgQueueInfo[qId].freeSramAddress; 
+       
+        reCfgFlag = TRUE;
  
-    /* Calculate the new freeSramAddress from the size of the queue
-     * currently being configured.
-     */
-    freeSramAddress[block] += (qSizeInWords * IX_QMGR_NUM_BYTES_PER_WORD);
+        /* Write the config register */
+        ixQMgrHwQIfQueCfgWrite (qId,
+	  		        qSizeInWords,
+			        qEntrySizeInWords,
+			        pSramBaseAddress);
 
-    /* Get the virtual SRAM address */
-    ixQMgrHwQIfBaseAddressGet (&hwQLocalBaseAddress);
+        /* store pre-computed information in the same cache line
+         * to facilitate inlining of QRead and QWrite functions 
+         * in IxQMgr.h
+         */
+        ixQMgrQInlinedReadWriteInfo[qId].qReadCount = 0;
+        ixQMgrQInlinedReadWriteInfo[qId].qWriteCount = 0;
+        ixQMgrQInlinedReadWriteInfo[qId].qEntrySizeInWords = qEntrySizeInWords;
+        ixQMgrQInlinedReadWriteInfo[qId].qSizeInEntries = 
+	                 (UINT32)qSizeInWords / (UINT32)qEntrySizeInWords;
 
-    /* Determine if configuring and allocating sram space to this queue means that 
-     * the amount of sram space used has not exceeded the total amount of sram available
-     */ 
-    IX_OSAL_ASSERT((freeSramAddress[block] - 
-                   (hwQLocalBaseAddress + (IX_QMGR_QUEBUFFER0_SPACE_OFFSET))) <=
-	           IX_QMGR_QUE_BUFFER_SPACE_SIZE);
+        /* The queue is now configured */
+        cfgQueueInfo[qId].isConfigured = TRUE;
+        
+        ixOsalMutexUnlock(&ixQMgrQCfgMutex);
+    }
+    else
+    {
+        /* Validate parameters */
+        if (!IX_QMGR_QID_IS_VALID(qId))
+        {
+	    return IX_QMGR_INVALID_Q_ID; 
+        }
+    
+        else if (NULL == qName)
+        {
+	    return IX_QMGR_PARAMETER_ERROR;
+        }
+    
+        else if (strlen (qName) > IX_QMGR_MAX_QNAME_LEN)
+        {
+	    return IX_QMGR_PARAMETER_ERROR;
+        }
 
-    /* The queue is now configured */
-    cfgQueueInfo[qId].isConfigured = TRUE;
+        else if (!qSizeInWordsIsOk (qSizeInWords))
+        {
+	    return IX_QMGR_INVALID_QSIZE;
+        }
 
-    ixOsalMutexUnlock(&ixQMgrQCfgMutex);
+        else if (!qEntrySizeInWordsIsOk (qEntrySizeInWords))
+        {
+	    return IX_QMGR_INVALID_Q_ENTRY_SIZE;
+        }
+    
+        else if (cfgQueueInfo[qId].isConfigured)
+        {
+	    return IX_QMGR_Q_ALREADY_CONFIGURED;
+        }
+   
+        ixOsalMutexLock(&ixQMgrQCfgMutex, IX_OSAL_WAIT_FOREVER);
 
+        pSramBaseAddress = freeSramAddress;
+        reCfgQueueInfo[qId].freeSramAddress = *pSramBaseAddress;
+        
+        /* Write the config register */
+        ixQMgrHwQIfQueCfgWrite (qId,
+	    		        qSizeInWords,
+			        qEntrySizeInWords,
+			        freeSramAddress);
+
+        strcpy (cfgQueueInfo[qId].qName, qName);
+        cfgQueueInfo[qId].qSizeInWords = qSizeInWords;
+        cfgQueueInfo[qId].qEntrySizeInWords = qEntrySizeInWords;
+
+        /* store pre-computed information in the same cache line
+         * to facilitate inlining of QRead and QWrite functions 
+         * in IxQMgr.h
+         */
+        ixQMgrQInlinedReadWriteInfo[qId].qReadCount = 0;
+        ixQMgrQInlinedReadWriteInfo[qId].qWriteCount = 0;
+        ixQMgrQInlinedReadWriteInfo[qId].qEntrySizeInWords = qEntrySizeInWords;
+        ixQMgrQInlinedReadWriteInfo[qId].qSizeInEntries = 
+	    	    (UINT32)qSizeInWords / (UINT32)qEntrySizeInWords;
+
+        /* Determine which memory map block the queue is in
+         */
+        block = qId / IX_QMGR_NUM_QUEUES_PER_MEM_MAP_BLOCK;
+ 
+        /* Calculate the new freeSramAddress from the size of the queue
+         * currently being configured.
+         */
+        freeSramAddress[block] += (qSizeInWords * IX_QMGR_NUM_BYTES_PER_WORD);
+
+        /* Get the virtual SRAM address */
+        ixQMgrHwQIfBaseAddressGet (&hwQLocalBaseAddress);
+
+        /* Determine if configuring and allocating sram space to this queue means that 
+         * the amount of sram space used has not exceeded the total amount of sram available
+         */ 
+        IX_OSAL_ASSERT((freeSramAddress[block] - 
+                       (hwQLocalBaseAddress + (IX_QMGR_QUEBUFFER0_SPACE_OFFSET))) <=
+	               IX_QMGR_QUE_BUFFER_SPACE_SIZE);
+    
+        /* The queue is now configured */
+        cfgQueueInfo[qId].isConfigured = TRUE;
+        
+        ixOsalMutexUnlock(&ixQMgrQCfgMutex);
+    }
 #ifndef NDEBUG
     /* Update statistics */
     stats.qStats[qId].isConfigured = TRUE;
@@ -343,9 +421,68 @@ ixQMgrQConfig (char *qName,
     return IX_SUCCESS;
 }
 
+IX_STATUS 
+ixQMgrQUnconfig (IxQMgrQId qId)
+{
+    volatile UINT32 *cfgAddress = NULL;
+    UINT8 retVal = IX_SUCCESS;
+
+    if (!cfgInitialized)
+    {
+        return IX_FAIL;
+    }
+    
+    /* Validate the qId parameter */
+    if (!IX_QMGR_QID_IS_VALID(qId))
+    {
+	return IX_QMGR_INVALID_Q_ID;
+    }
+    else if (!cfgQueueInfo[qId].isConfigured)
+    {
+	return IX_QMGR_Q_NOT_CONFIGURED;
+    }
+   
+    ixOsalMutexLock(&ixQMgrQUncfgMutex, IX_OSAL_WAIT_FOREVER);
+
+    /* Disable the Notification to the queue */
+    retVal = ixQMgrNotificationDisable (qId);
+    if(IX_SUCCESS != retVal && IX_QMGR_Q_NOT_CONFIGURED != retVal)
+    {
+       IX_QMGR_LOG_WARNING1("Failed to Disable Notification the queue - %d\n", qId);
+    }
+    
+    /* Calculate and Reset the config register value */
+    cfgAddress = (UINT32*)(hwQBaseAddress +
+			IX_QMGR_Q_CONFIG_ADDR_GET(qId));
+
+    ixQMgrHwQIfWordWrite (cfgAddress, 0); 
+
+    /* Reset the stored pre-computed information in the cache line */
+    ixQMgrQInlinedReadWriteInfo[qId].qReadCount = 0;
+    ixQMgrQInlinedReadWriteInfo[qId].qWriteCount = 0;
+    ixQMgrQInlinedReadWriteInfo[qId].qEntrySizeInWords = 0;
+    ixQMgrQInlinedReadWriteInfo[qId].qSizeInEntries = 0;
+
+    cfgQueueInfo[qId].isConfigured = FALSE;
+ 
+    ixOsalMutexUnlock(&ixQMgrQUncfgMutex);
+
+#ifndef NDEBUG
+    /* Update statistics */
+    stats.qStats[qId].isConfigured = FALSE;
+    stats.qStats[qId].qName = "" ;
+#endif
+
+    return IX_SUCCESS;
+}
+
 IxQMgrQSizeInWords
 ixQMgrQSizeInWordsGet (IxQMgrQId qId)
 {
+    if (!ixQMgrQIsConfigured(qId))
+    {
+        return IX_QMGR_Q_SIZE_INVALID;
+    }
     /* No parameter checking as this is used on the data path */
     return (cfgQueueInfo[qId].qSizeInWords);
 }
@@ -373,6 +510,10 @@ ixQMgrQSizeInEntriesGet (IxQMgrQId qId,
 IxQMgrQEntrySizeInWords
 ixQMgrQEntrySizeInWordsGet (IxQMgrQId qId)
 {
+    if (!ixQMgrQIsConfigured(qId))
+    {
+        return IX_QMGR_Q_ENTRY_SIZE_INVALID;
+    }
     /* No parameter checking as this is used on the data path */
     return (cfgQueueInfo[qId].qEntrySizeInWords);
 }
@@ -500,6 +641,11 @@ ixQMgrQCfgQStatsGet (IxQMgrQId qId)
     UINT32 baseAddress;
     UINT32 readPtr;
     UINT32 writePtr;
+
+    if (!ixQMgrQIsConfigured(qId))
+    {
+        return (IxQMgrQCfgStats*)IX_QMGR_Q_NOT_CONFIGURED;
+    }
 
     stats.qStats[qId].qSizeInWords = cfgQueueInfo[qId].qSizeInWords;
     stats.qStats[qId].qEntrySizeInWords = cfgQueueInfo[qId].qEntrySizeInWords;

@@ -8,12 +8,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -90,7 +90,7 @@
  */
 IX_STATUS
 ixEthAccCodeletInit(IxEthAccCodeletOperation operationType, 
-                    IxEthAccPortId inPort, IxEthAccPortId outPort);
+                    IxEthAccPortId inPort, IxEthAccPortId outPort, int disableStats);
 
 /**
  *
@@ -347,6 +347,7 @@ IX_STATUS ixEthAccCodeletPortMultiBufferUnconfigure(IxEthAccPortId portId);
 /* PHY setup */
 IX_STATUS ixEthAccCodeletLinkUpCheck(IxEthAccPortId portId);
 IX_STATUS ixEthAccCodeletPhyInit(void);
+IX_STATUS ixEthAccCodeletPhyUninit(void);
 IX_STATUS ixEthAccCodeletLinkLoopbackEnable(IxEthAccPortId portId);
 IX_STATUS ixEthAccCodeletLinkLoopbackDisable(IxEthAccPortId portId);
 IX_STATUS ixEthAccCodeletLinkSlowSpeedSet(IxEthAccPortId portId);

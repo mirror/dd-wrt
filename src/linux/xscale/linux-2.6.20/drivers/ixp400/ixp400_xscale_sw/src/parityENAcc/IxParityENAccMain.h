@@ -8,12 +8,12 @@
  * Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -134,15 +134,6 @@ do {                                                            \
 } while (0)
 
 /*
-* This macro checks the validity of the NPE ID
-*/
-#define IX400_PARITYENACC_CHECK_NPEID_VALIDITY(npeId)         \
-do {                                                          \
-    if (npeId < 0 || npeId > 2)                               \
-    {                                                         \
-       return IX_PARITYENACC_INVALID_PARAMETERS;  }  \
-} while (0)
-/*
  * Typedefs used in this file
  */
 
@@ -245,5 +236,8 @@ ixPbcPEInternalCallback (UINT32 irqNum, IxParityENAccPEIsr isrAddr);
 
 void 
 ixSwcpPEInternalCallback (UINT32 irqNum, IxParityENAccPEIsr isrAddr);
+
+IX_STATUS
+ixParityENAccCheckNpeIdValidity(UINT32 npeID);
 
 #endif /* IXPARITYENACCMAIN_H */

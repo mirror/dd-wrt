@@ -7,12 +7,12 @@
  * 
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -269,59 +269,50 @@ ixAtmmUtopiaInit (unsigned numPorts,
 	return IX_ATMM_RET_ALREADY_INITIALIZED;
     }
 
-    /* Check silicon type. 
-     * Do not perform feature checkings only if
-     * IXP42X - A0 silicon. 
-     */
-    if ((IX_FEATURE_CTRL_SILICON_TYPE_A0 != 
-        (ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK))
-        || (IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X != ixFeatureCtrlDeviceRead ()))
-    {
-	/* Read the hardware capability register */
-	ctrlRegister = ixFeatureCtrlHwCapabilityRead(); 
+    /* Read the hardware capability register */
+    ctrlRegister = ixFeatureCtrlHwCapabilityRead(); 
 
-	/* Shift 16bits to the left and mask for bit 16 and 17 */
-	ctrlRegister = (ctrlRegister >> IX_FEATURECTRL_UTOPIA_PHY_LIMIT) & 0x3; 
+    /* Shift 16bits to the left and mask for bit 16 and 17 */
+    ctrlRegister = (ctrlRegister >> IX_FEATURECTRL_UTOPIA_PHY_LIMIT) & 0x3; 
 	
-	switch(ctrlRegister)
-	{
-	    case IX_FEATURECTRL_REG_UTOPIA_32PHY:
-		/* Verify the numPort is valid */
-		/* Note: Currently can support only 24 utopia ports */
-		if (numPorts > IX_ATMM_MAX_24UTOPIA_PORTS)
-		{
-		    printf("Unable to support more than 24 ports\n");
-		    return IX_FAIL;
-		}
-		break;
-	    case IX_FEATURECTRL_REG_UTOPIA_16PHY:
-		/* Verify the numPort is valid */
-		if (numPorts > IX_ATMM_MAX_16UTOPIA_PORTS)
-		{
-		    printf("Unable to support more than 16 ports\n");
-		    return IX_FAIL;
-		}
-		break;
-	    case IX_FEATURECTRL_REG_UTOPIA_8PHY:
-		/* Verify the numPort is valid */
-		if (numPorts > IX_ATMM_MAX_8UTOPIA_PORTS)
-		{
-		    printf("Unable to support more than 8 ports\n");
-		    return IX_FAIL;
-		}
-		break;
-	    case IX_FEATURECTRL_REG_UTOPIA_4PHY:
-		/* Verify the numPort is valid */
-		if (numPorts > IX_ATMM_MAX_4UTOPIA_PORTS)
-		{
-		    printf("Unable to support more than 4 ports\n");
-		    return IX_FAIL;
-		}
-		break;
-	    default:
-		printf("Invalid Control Register value\n");
-		return IX_FAIL;
-	}
+    switch(ctrlRegister)
+    {
+        case IX_FEATURECTRL_REG_UTOPIA_32PHY:
+            /* Verify the numPort is valid */
+	    /* Note: Currently can support only 24 utopia ports */
+	    if (numPorts > IX_ATMM_MAX_24UTOPIA_PORTS)
+	    {
+	        printf("Unable to support more than 24 ports\n");
+	        return IX_FAIL;
+            }	
+	    break;
+	case IX_FEATURECTRL_REG_UTOPIA_16PHY:
+	    /* Verify the numPort is valid */
+	    if (numPorts > IX_ATMM_MAX_16UTOPIA_PORTS)
+	    {
+	        printf("Unable to support more than 16 ports\n");
+	        return IX_FAIL;
+	    }
+	    break;
+	case IX_FEATURECTRL_REG_UTOPIA_8PHY:
+	    /* Verify the numPort is valid */
+	    if (numPorts > IX_ATMM_MAX_8UTOPIA_PORTS)
+	    {
+	        printf("Unable to support more than 8 ports\n");
+	        return IX_FAIL;
+	    }
+	    break;
+        case IX_FEATURECTRL_REG_UTOPIA_4PHY:
+            /* Verify the numPort is valid */
+	    if (numPorts > IX_ATMM_MAX_4UTOPIA_PORTS)
+	    {
+	        printf("Unable to support more than 4 ports\n");
+	        return IX_FAIL;
+	    }
+	    break;
+	default:
+            printf("Invalid Control Register value\n");
+	    return IX_FAIL;
     }
 
     retval = ixAtmmUtopiaCfgInit (numPorts, phyMode, portCfgs, loopbackMode);

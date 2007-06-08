@@ -8,12 +8,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -48,7 +48,6 @@
  * -- End of Copyright Notice --
  *
  */
-
 #ifndef IxEthAcc_H
 #define IxEthAcc_H
 
@@ -59,7 +58,7 @@
 /**
  * @defgroup IxEthAcc Intel (R) IXP400 Software Ethernet Access (IxEthAcc) API
  *
- * @brief ethAcc is a library that does provides access to the internal IXP4XX 
+ * @brief ethAcc is a library that does provides access to the internal Intel IXP4XX 
  * Product Line of Network Processors 10/100Bt Ethernet MACs.
  *
  *@{
@@ -83,16 +82,40 @@ typedef enum /* IxEthAccStatus */
 
 /**
  * @ingroup IxEthAcc
- * @enum IxEthAccPortId
- * @brief Definition of the IXP400 Mac Ethernet device.
+ *
+ * @def IX_ETH_ACC_NUMBER_OF_PORTS
+ *
+ * @brief  Definition of the number of ports available in a specific Intel IXP4XX product line
+ * This does not reflect the maximum value of Ethernet port ID 
+ * This macro will be deprecated in future release.
+ * 
  */
-typedef enum  
-{
-	IX_ETH_PORT_1 = 0, /**< Ethernet Port 1 */
-	IX_ETH_PORT_2 = 1, /**< Ethernet port 2 */
-	IX_ETH_PORT_3 = 2 /**< Ethernet port 3 */
-} IxEthAccPortId;
+#ifdef __ixp46X
+#define IX_ETH_ACC_NUMBER_OF_PORTS (3)
+#else 
+#define IX_ETH_ACC_NUMBER_OF_PORTS (2)
+#endif
 
+/**
+ * @ingroup IxEthAcc
+ *
+ * @def IX_ETHACC_NUMBER_OF_PORTS
+ *
+ * @brief  Definition of the number of ports available in a specific Intel IXP4XX product line
+ * The value is only determinable during run-time
+ * This does not reflect the maximum value of Ethernet port ID.
+ * 
+ */
+#define IX_ETHACC_NUMBER_OF_PORTS (IxEthAccPortInfo->IxEthAccNumberOfPorts)   
+
+
+/**
+ * @ingroup IxEthAcc
+ * @enum IxEthAccPortId
+ * @brief Definition of the Intel IXP400 Software Mac Ethernet device.
+ * 
+ */
+typedef enum IxEthNpePortId IxEthAccPortId;
 
 /**
  * @ingroup IxEthAcc
@@ -104,15 +127,6 @@ typedef enum
  */
 #define ixEthAccUnload ixEthAccUninit
 
-/**
- * @ingroup IxEthAcc
- *
- * @def IX_ETH_ACC_NUMBER_OF_PORTS
- *
- * @brief  Definition of the number of ports
- *
- */
-#define IX_ETH_ACC_NUMBER_OF_PORTS (IX_ETHNPE_NUM_PHYSICAL_PORTS)
 
 /**
  * @ingroup IxEthAcc
@@ -218,6 +232,15 @@ typedef struct
     UINT8  ixDestMac[IX_IEEE803_MAC_ADDRESS_SIZE]; /**< Destination MAC address */
     UINT8  ixSourceMac[IX_IEEE803_MAC_ADDRESS_SIZE]; /**< Source MAC address */
 } IxEthAccNe;
+
+/**
+ * @ingroup IxEthAcc
+ * @struct IxEthAccPortInfo
+ * @brief a local copy of port information.
+ * 
+ * This structure pointer points to the port mapping information from IxEthNpePortMap[index].
+ */
+extern IxEthNpePortMapping *IxEthAccPortInfo;
 
 /**
  * @ingroup IxEthAcc
@@ -458,10 +481,10 @@ typedef struct
  * This mask applies to @a IX_ETHACC_NE_FLAGS.
  * Certain frames, which should normally be fully filtered by the NPE to due
  * the destination MAC address being on the same segment as the Rx port are
- * still forwarded to the XScale (although the payload is invalid) in order
- * to learn the MAC address of the transmitting station, if this is unknown.
- * Normally EthAcc will filter and recycle these framess internally and no
- * frames with the FILTER bit set will be received by the client.
+ * still forwarded to the Intel XScale(R) processor (although the payload is 
+ * invalid) in order to learn the MAC address of the transmitting station, if this
+ * is unknown. Normally EthAcc will filter and recycle these frames internally 
+ * and no frames with the FILTER bit set will be received by the client.
  *
  * @sa IX_ETHACC_NE_FLAGS
  *
@@ -613,9 +636,11 @@ typedef struct
  * @brief This defines the highest MII address of any attached PHYs 
  * 
  * The maximum number for PHY address is 31, add on for range checking.
+ * This is maintained to provide backward compatibility. It will be  
+ * deprecated in future release.
  *
  */
-#define IXP400_ETH_ACC_MII_MAX_ADDR   (32)
+#define IXP400_ETH_ACC_MII_MAX_ADDR   (IX_ETHNPE_MII_MAX_ADDR)
 
 /**
  * @ingroup IxEthAcc
@@ -706,13 +731,38 @@ ixEthAccUninit (void);
  * @param portId  @ref IxEthAccPortId [in]
  *
  * @return IxEthAccStatus
- * @li @a IX_ETH_ACC_SUCCESS: if the ethernet port is not present, a warning is issued.
+ * @li @a IX_ETH_ACC_SUCCESS: if the Ethernet port is not present, a warning is issued.
  * @li @a IX_ETH_ACC_FAIL : The NPE processor has failed to initialize.
  * @li @a IX_ETH_ACC_INVALID_PORT : portId is invalid.
  *
  * <hr>
  */
 PUBLIC IxEthAccStatus ixEthAccPortInit(IxEthAccPortId portId);
+
+
+/**
+ * @ingroup IxEthAcc
+ *
+ * @fn ixEthAccMiiPortIdPhyAddrSet(ixEthAccPortId portId, UINT32 phyAddr)
+ *
+ * @brief Update a IxEthEthPortIdToPhyAddressTable entry by mapping the portId to the phyAddr 
+ * 
+ * @li Reentrant    - no
+ * @li ISR Callable - no
+ *
+ * This should be called to update the Ethernet port ID to physical address mapping 
+ * when the mapping is different from default value defined at IxEthNpePortMap 
+ * structure in IxEthNpe.h.
+ *
+ * @param IxEthAccPortId portId[in] Ethernet port ID
+ * 	  UINT32 phyAddr[in] Physical address 
+ *
+ * @return IxEthAccStatus
+ * @li @a IX_ETH_ACC_SUCCESS: The entry in IxEthEthPortIdToPhyAddressTable has been updated
+ * @li @a IX_ETH_ACC_INVALID_PORT : portId or physical address is invalid. 
+ * @external
+ */
+PUBLIC IxEthAccStatus ixEthAccMiiPortIdPhyAddrSet(IxEthAccPortId portId, UINT32 phyAddr);
 
 
 /*************************************************************************
@@ -1869,7 +1919,7 @@ ixEthAccPortTxFrameAppendFCSDisable(IxEthAccPortId portId);
  *
  * The FCS is not striped from the receive buffer. 
  * The received frame length includes the FCS size (4 bytes). ie. 
- * A minimum sized ethernet frame shall have a length of 64bytes.
+ * A minimum sized Ethernet frame shall have a length of 64bytes.
  *
  * Frame FCS validity checks are still carried out on all received frames.
  *
@@ -2627,7 +2677,7 @@ PUBLIC IxEthAccStatus ixEthAccMibIIStatsClear(IxEthAccPortId portId);
  *
  * @fn ixEthAccMacInit(IxEthAccPortId portId)
  * 
- * @brief Initializes the ethernet MAC settings 
+ * @brief Initializes the Ethernet MAC settings 
  * 
  * @li Reentrant    - no
  * @li ISR Callable - no
@@ -2647,7 +2697,7 @@ PUBLIC IxEthAccStatus ixEthAccMacInit(IxEthAccPortId portId);
  *
  * @fn ixEthAccMacUninit (IxEthAccPortId portId)
  *
- * @brief Un-Initializes the ethernet MAC settings
+ * @brief Un-Initializes the Ethernet MAC settings
  *
  * @li Reentrant    - no
  * @li ISR Callable - no

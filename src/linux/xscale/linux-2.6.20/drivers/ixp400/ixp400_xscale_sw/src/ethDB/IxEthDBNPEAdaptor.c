@@ -4,12 +4,12 @@
  * @brief Routines that read and write learning/search trees in NPE-specific format
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -279,8 +279,7 @@ void ixEthDBNPESyncScan(IxEthDBPortId portID, void *eltBaseAddress, UINT32 eltSi
             entryPortID = IX_ETHNPE_LOGICAL_ID_TO_PHYSICAL_ID(IX_EDB_NPE_NODE_PORT_ID(eltNodeAddress));
 
             /* check only active entries belonging to this port */
-            if (ixEthDBPortInfo[portID].agingEnabled && IX_EDB_NPE_NODE_ACTIVE(eltNodeAddress) && (portID == entryPortID)
-                && ((ixEthDBPortDefinitions[portID].capabilities & IX_ETH_ENTRY_AGING) == 0))
+            if (ixEthDBPortInfo[portID].agingEnabled && IX_EDB_NPE_NODE_ACTIVE(eltNodeAddress) && (portID == entryPortID))
             {
                 /* search record */
                 HashNode *node = ixEthDBSearch((IxEthDBMacAddr *) eltNodeAddress, IX_ETH_DB_ALL_FILTERING_RECORDS);

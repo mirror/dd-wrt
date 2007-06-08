@@ -7,12 +7,12 @@
  * Codelet that implements the link layer configuration and control
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -61,6 +61,17 @@
 #include "IxEthAccCodelet.h"
 #include "IxEthAccCodelet_p.h"
 
+/*
+ * Variable declarations global to this file only.
+ */
+PRIVATE IxOsalMutex ixEthAccCodeletPhyUpdateTaskRunning;
+PRIVATE volatile BOOL ixEthAccCodeletPhyUpdateTaskStopTrigger;
+
+/*
+ * Function prototype
+ */
+PRIVATE void linkStatusMonitor (void *arg, void **ptrRetObj);
+
 /* The Eth PHY Configuration (100/10 Mbps , Full/Half Duplex, 
  * with/without autonegotiation).
  */
@@ -69,6 +80,7 @@ typedef struct
     BOOL speed100;	/**< 100 Mbits */
     BOOL fullDuplex;	/**< Full Duplex */
     BOOL autonegotiate;	/**< Autonegotiation */
+    BOOL syncPhyMac;    /**< Synchronize MAC duplex mode with PHY status */
 } IxEthAccCodeletPhyConf;
 
 /* Default PHY Configuration parameters */
@@ -76,11 +88,13 @@ PRIVATE IxEthAccCodeletPhyConf ixEthAccCodeletPhyConf =
 {
     TRUE,	/* 100 Mbits */
     TRUE,	/* Full duplex */
-    TRUE	/* Autonegotiate */
+    TRUE,	/* Autonegotiate */
+#ifdef __kixrp435
+    FALSE	/* MAC duplex mode will not be updated according to current PHY status */
+#else
+    TRUE 	/* MAC duplex mode will be updated according to current PHY status */    
+#endif
 };
-
-/* Mapping of the Logical Port ID to the MII Port ID */
-PRIVATE UINT32 ixEthAccCodeletPhyAddresses[IX_ETHACC_CODELET_MAX_PORT];
 
 /*
  * Function definition: ixEthAccCodeletLinkUpCheck()
@@ -97,7 +111,7 @@ IX_STATUS ixEthAccCodeletLinkUpCheck(IxEthAccPortId portId)
    BOOL autoneg;
 
    /* get the status */
-   ixEthMiiLinkStatus(ixEthAccCodeletPhyAddresses[portId], 
+   ixEthMiiLinkStatus(IxEthEthPortIdToPhyAddressTable[portId], 
 		      &linkUp, 
 		      &speed, 
 		      &fullDuplex, 
@@ -106,13 +120,13 @@ IX_STATUS ixEthAccCodeletLinkUpCheck(IxEthAccPortId portId)
    if (!linkUp)
    {
           unsigned int retry = 20; /* 20 retries */
-          printf("Wait for PHY %u to be ready ...\n", portId);
+          printf("Wait for PHY %u to be ready ...\n", IxEthEthPortIdToPhyAddressTable[portId]);
           while ((!linkUp) && (retry-- > 0))
           {
             ixOsalSleep(100);  /* 100 milliseconds */
 
 	    /* get the status again */
-            ixEthMiiLinkStatus(ixEthAccCodeletPhyAddresses[portId], 
+            ixEthMiiLinkStatus(IxEthEthPortIdToPhyAddressTable[portId], 
 			       &linkUp, 
 			       &speed, 
 			       &fullDuplex, 
@@ -128,6 +142,7 @@ IX_STATUS ixEthAccCodeletLinkUpCheck(IxEthAccPortId portId)
    return returnStatus;
 }
 
+
 /**
  * Function definition: ixEthAccCodeletLinkMonitor()
  *
@@ -140,21 +155,55 @@ ixEthAccCodeletLinkMonitor(IxEthAccPortId portId)
 {
     BOOL speed, linkUp, fullDuplex, autoneg;
     /* get the link status */
-    ixEthMiiLinkStatus(ixEthAccCodeletPhyAddresses[portId], 
-		       &linkUp,
-		       &speed,
-		       &fullDuplex,
-		       &autoneg);
-    
-    /* Set the MAC duplex mode */
-    if(fullDuplex)
+    if(ixEthAccCodeletPhyConf.syncPhyMac)
     {
-	ixEthAccPortDuplexModeSet (portId, IX_ETH_ACC_FULL_DUPLEX);
+      ixEthMiiLinkStatus(IxEthEthPortIdToPhyAddressTable[portId], 
+		         &linkUp,
+		         &speed,
+		         &fullDuplex,
+		         &autoneg);
+      /* Set the MAC duplex mode */
+      if(fullDuplex)
+      {
+	  ixEthAccPortDuplexModeSet (portId, IX_ETH_ACC_FULL_DUPLEX);
+      }
+      else
+      {
+	  ixEthAccPortDuplexModeSet (portId, IX_ETH_ACC_HALF_DUPLEX);
+      }
     }
-    else
+}
+
+void
+linkStatusMonitor (void *arg, void **ptrRetObj)
+{
+    UINT32 portIndex;
+
+    ixEthAccCodeletPhyUpdateTaskStopTrigger = FALSE;
+    if (ixOsalMutexLock (&ixEthAccCodeletPhyUpdateTaskRunning,
+			 IX_OSAL_WAIT_FOREVER) != IX_SUCCESS)
     {
-	ixEthAccPortDuplexModeSet (portId, IX_ETH_ACC_HALF_DUPLEX);
+        printf("CodeletMain: Error starting Phy update thread! Failed to lock mutex.\n");
+        return;
     }
+
+	/*
+	 * Start the infinite loop
+	 */
+    while (1)
+    {
+        if(ixEthAccCodeletPhyUpdateTaskStopTrigger)
+        {
+		break;
+	}
+        for (portIndex = 0; portIndex < IX_ETHACC_NUMBER_OF_PORTS; portIndex++)
+	{
+            ixOsalSleep (5000/IX_ETHACC_NUMBER_OF_PORTS);
+            ixEthAccCodeletLinkMonitor(IX_ETHNPE_INDEX_TO_PORT_ID(portIndex));
+	}
+    }
+
+    ixOsalMutexUnlock (&ixEthAccCodeletPhyUpdateTaskRunning);  
 }
 
 /**
@@ -172,9 +221,16 @@ IX_STATUS ixEthAccCodeletPhyInit(void)
    UINT32 phyNoAddr;
    UINT32 ixEthAccCodeletMaxPhyNo;
    unsigned int portId;
+   IxOsalThread phyStatusThread;
+   IxOsalThreadAttr threadAttr;
+
+   threadAttr.name      = "Codelet Phy Status";
+   threadAttr.stackSize = 32 * 1024; /* 32kbytes */
+   threadAttr.priority  = 128;
+
 
    /* Scan for available Ethernet PHYs on the board */
-   if(ixEthMiiPhyScan(phyPresent,IX_ETHACC_CODELET_MAX_PORT) == IX_FAIL)
+   if(ixEthMiiPhyScan(phyPresent,IXP400_ETH_ACC_MII_MAX_ADDR) == IX_FAIL)
    {	
        return (IX_FAIL);
    }
@@ -190,24 +246,32 @@ IX_STATUS ixEthAccCodeletPhyInit(void)
 	* highest address is connected to NPE C.
 	*/
        ixEthAccCodeletMaxPhyNo = 0;
-       for(phyNoAddr=0, phyNo=0;
-	   phyNoAddr<IXP400_ETH_ACC_MII_MAX_ADDR; 
+       for(phyNoAddr=0, phyNo=IX_ETHNPE_INDEX_TO_PORT_ID(0);
+	   (phyNoAddr<IXP400_ETH_ACC_MII_MAX_ADDR) && (phyNo < IX_ETHNPE_MAX_NUMBER_OF_PORTS) ; 
 	   phyNoAddr++)
        {
 	   if(phyPresent[phyNoAddr])
-	   {
-	       ixEthAccCodeletPhyAddresses[phyNo++] = phyNoAddr;
+	   {	   
+	       IxEthEthPortIdToPhyAddressTable[phyNo++] = phyNoAddr;
                ixEthAccCodeletMaxPhyNo = phyNo;
 
-	       if(ixEthAccCodeletMaxPhyNo == IX_ETHACC_CODELET_MAX_PORT)
+	       if(ixEthAccCodeletMaxPhyNo == IX_ETHNPE_MAX_NUMBER_OF_PORTS)
 	       {
 		   break;
 	       }
 	   }
        }
    }
-    
-   for(phyNo=0; 
+#ifdef __kixrp435
+   /* For KIXRP43X, hardcode Phy Addr 1 for NPE-C and Phy Addr 5 for NPE-A */     
+   IxEthEthPortIdToPhyAddressTable[IX_ETH_PORT_2] = 1;
+   IxEthEthPortIdToPhyAddressTable[IX_ETH_PORT_3] = 5;
+   ixEthAccCodeletMaxPhyNo = 3;
+   ixEthAccPortDuplexModeSet(IX_ETH_PORT_2,IX_ETH_ACC_FULL_DUPLEX);
+   ixEthAccPortDuplexModeSet(IX_ETH_PORT_3,IX_ETH_ACC_FULL_DUPLEX);
+#endif    
+
+   for(phyNo=IX_ETHNPE_INDEX_TO_PORT_ID(0); 
        phyNo<ixEthAccCodeletMaxPhyNo; 
        phyNo++)
    {
@@ -216,79 +280,93 @@ IX_STATUS ixEthAccCodeletPhyInit(void)
 
        if (ixFeatureCtrlDeviceRead() == IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X)
        {
-           if ((ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK) == 
-             IX_FEATURE_CTRL_SILICON_TYPE_B0)
-           {
-	       /*Only when Ethernet is available, then add dynamic entries */
-               if (((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH0) == 
-                     IX_FEATURE_CTRL_COMPONENT_ENABLED) && (0 == portId)) ||
-                   ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH1) == 
-                     IX_FEATURE_CTRL_COMPONENT_ENABLED) && (1 == portId)))
-	       {
-                   ixEthMiiPhyReset(ixEthAccCodeletPhyAddresses[portId]);
-
-		   /* Set each phy properties */
-		   ixEthMiiPhyConfig(ixEthAccCodeletPhyAddresses[portId],
-				  ixEthAccCodeletPhyConf.speed100, 
-				  ixEthAccCodeletPhyConf.fullDuplex, 
-				  ixEthAccCodeletPhyConf.autonegotiate);
-	           /* wait until the link is up before setting the MAC duplex
-	  	    * mode, the PHY duplex mode may change after autonegotiation 
-		    */
-	           (void)ixEthAccCodeletLinkUpCheck(portId);
-	           (void)ixEthAccCodeletLinkMonitor(portId);
-	       
-	           printf("\nPHY %d configuration:\n", portId);
-	           ixEthMiiPhyShow(ixEthAccCodeletPhyAddresses[portId]);
-               } 
-           }
-           else if ((ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK) == 
-                  IX_FEATURE_CTRL_SILICON_TYPE_A0) 
-           {
-               ixEthMiiPhyReset(ixEthAccCodeletPhyAddresses[portId]);
+	   /*Only when Ethernet is available, then add dynamic entries */
+           if (((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH0) == 
+                 IX_FEATURE_CTRL_COMPONENT_ENABLED) && (0 == portId)) ||
+               ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH1) == 
+                 IX_FEATURE_CTRL_COMPONENT_ENABLED) && (1 == portId)))
+	   {
+               ixEthMiiPhyReset(IxEthEthPortIdToPhyAddressTable[portId]);
 
 	       /* Set each phy properties */
-	       ixEthMiiPhyConfig(ixEthAccCodeletPhyAddresses[portId],
-			         ixEthAccCodeletPhyConf.speed100, 
-			         ixEthAccCodeletPhyConf.fullDuplex, 
-			         ixEthAccCodeletPhyConf.autonegotiate);
+	       ixEthMiiPhyConfig(IxEthEthPortIdToPhyAddressTable[portId],
+	        		  ixEthAccCodeletPhyConf.speed100, 
+				  ixEthAccCodeletPhyConf.fullDuplex, 
+				  ixEthAccCodeletPhyConf.autonegotiate);
 	       /* wait until the link is up before setting the MAC duplex
 	        * mode, the PHY duplex mode may change after autonegotiation 
-		*/
+	        */
 	       (void)ixEthAccCodeletLinkUpCheck(portId);
 	       (void)ixEthAccCodeletLinkMonitor(portId);
 	       
-	       printf("\nPHY %d configuration:\n", portId);
-	       ixEthMiiPhyShow(ixEthAccCodeletPhyAddresses[portId]);
+	       printf("\nPHY %d configuration:\n", IxEthEthPortIdToPhyAddressTable[portId]);
+	       ixEthMiiPhyShow(IxEthEthPortIdToPhyAddressTable[portId]);
            }
-           else
-           {
-               printf("LinkSetup: Error. Operation for other silicon stepping is undefined!.\n");
-               return (IX_FAIL);
-           }
+
        }
-       else if (ixFeatureCtrlDeviceRead() == IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X)
+       else if ((ixFeatureCtrlDeviceRead() == IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X) ||
+		 (ixFeatureCtrlDeviceRead() == IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X) )
        {
-           ixEthMiiPhyReset(ixEthAccCodeletPhyAddresses[portId]);
+           ixEthMiiPhyReset(IxEthEthPortIdToPhyAddressTable[portId]);
 
            /* Set each phy properties */
-           ixEthMiiPhyConfig(ixEthAccCodeletPhyAddresses[portId],
+           ixEthMiiPhyConfig(IxEthEthPortIdToPhyAddressTable[portId],
                              ixEthAccCodeletPhyConf.speed100,
                              ixEthAccCodeletPhyConf.fullDuplex,
                              ixEthAccCodeletPhyConf.autonegotiate);
+
 	   /* wait until the link is up before setting the MAC duplex
 	    * mode, the PHY duplex mode may change after autonegotiation 
 	    */
 	   (void)ixEthAccCodeletLinkUpCheck(portId);
 	   (void)ixEthAccCodeletLinkMonitor(portId);
 	   
-	   printf("\nPHY %d configuration:\n", portId);
-	   ixEthMiiPhyShow(ixEthAccCodeletPhyAddresses[portId]);
+	   printf("\nPHY %d configuration:\n",IxEthEthPortIdToPhyAddressTable[portId]);
+	   ixEthMiiPhyShow(IxEthEthPortIdToPhyAddressTable[portId]);
        }
+   }
+
+   if(ixEthAccCodeletPhyConf.syncPhyMac)
+   {
+      ixOsalMutexInit (&ixEthAccCodeletPhyUpdateTaskRunning);
+      if (ixOsalThreadCreate(&phyStatusThread,
+		             &threadAttr,
+		             (IxOsalVoidFnVoidPtr) linkStatusMonitor,
+		            NULL) != IX_SUCCESS)
+      {
+	  printf("CodeletMain: Error spawning stats task\n");
+	  return (IX_FAIL);
+      }
+      /* Start the thread */
+      if (ixOsalThreadStart(&phyStatusThread) != IX_SUCCESS)
+      {
+	  printf("CodeletMain: Error failed to start the Phy status update thread\n");
+          return IX_FAIL;
+      }  
    }
    return (IX_SUCCESS);
 }
 
+IX_STATUS ixEthAccCodeletPhyUninit(void)
+{
+   if(ixEthAccCodeletPhyConf.syncPhyMac)
+   {
+      if (!ixEthAccCodeletPhyUpdateTaskStopTrigger)
+      {
+	  ixEthAccCodeletPhyUpdateTaskStopTrigger = TRUE;
+	  if (ixOsalMutexLock (&ixEthAccCodeletPhyUpdateTaskRunning, 
+			       IX_OSAL_WAIT_FOREVER)
+	      != IX_SUCCESS)
+	  {
+	      printf("CodeletMain: Error stopping Phy Update thread!\n");
+	      return (IX_FAIL);
+	  }
+	  ixOsalMutexUnlock (&ixEthAccCodeletPhyUpdateTaskRunning);
+	  ixOsalMutexDestroy(&ixEthAccCodeletPhyUpdateTaskRunning);
+      }
+   }
+   return (IX_SUCCESS);
+}
 
 /**
  * Function definition: ixEthAccCodeletLinkLoopbackEnable()
@@ -300,13 +378,13 @@ IX_STATUS ixEthAccCodeletPhyInit(void)
 IX_STATUS ixEthAccCodeletLinkLoopbackEnable(IxEthAccPortId portId)
 {
     /* force the PHY setup to 100 Mb full Duplex */
-    ixEthMiiPhyConfig(ixEthAccCodeletPhyAddresses[portId],
+    ixEthMiiPhyConfig(IxEthEthPortIdToPhyAddressTable[portId],
 		      TRUE, 
 		      TRUE, 
 		      FALSE);
 
     /* Enable PHY Loopback */
-    ixEthMiiPhyLoopbackEnable(ixEthAccCodeletPhyAddresses[portId]);
+    ixEthMiiPhyLoopbackEnable(IxEthEthPortIdToPhyAddressTable[portId]);
 
     /* Get the link status. This is only used to display the current
      * state of the link on the console
@@ -327,13 +405,13 @@ IX_STATUS ixEthAccCodeletLinkLoopbackEnable(IxEthAccPortId portId)
 IX_STATUS ixEthAccCodeletLinkLoopbackDisable(IxEthAccPortId portId)
 {
     /* Disable PHY Loopback */
-    ixEthMiiPhyLoopbackDisable(ixEthAccCodeletPhyAddresses[portId]);
+    ixEthMiiPhyLoopbackDisable(IxEthEthPortIdToPhyAddressTable[portId]);
 
     /* reset the PHY */
-    ixEthMiiPhyReset(ixEthAccCodeletPhyAddresses[portId]);
+    ixEthMiiPhyReset(IxEthEthPortIdToPhyAddressTable[portId]);
 
     /* Set the phy properties */
-    ixEthMiiPhyConfig(ixEthAccCodeletPhyAddresses[portId],
+    ixEthMiiPhyConfig(IxEthEthPortIdToPhyAddressTable[portId],
 		      ixEthAccCodeletPhyConf.speed100, 
 		      ixEthAccCodeletPhyConf.fullDuplex, 
 		      ixEthAccCodeletPhyConf.autonegotiate);
@@ -342,8 +420,8 @@ IX_STATUS ixEthAccCodeletLinkLoopbackDisable(IxEthAccPortId portId)
     (void)ixEthAccCodeletLinkUpCheck(portId);
     (void)ixEthAccCodeletLinkMonitor(portId);
 
-    printf("\nPHY %d configuration:\n", portId);
-    ixEthMiiPhyShow(ixEthAccCodeletPhyAddresses[portId]);
+    printf("\nPHY %d configuration:\n", IxEthEthPortIdToPhyAddressTable[portId]);
+    ixEthMiiPhyShow(IxEthEthPortIdToPhyAddressTable[portId]);
 
     return (IX_SUCCESS);
 }
@@ -359,24 +437,24 @@ IX_STATUS ixEthAccCodeletLinkSlowSpeedSet(IxEthAccPortId portId)
 {
    BOOL speed, linkUp, fullDuplex, autoneg;
     /* get current duplex mode  */
-   ixEthMiiLinkStatus(ixEthAccCodeletPhyAddresses[portId], 
+   ixEthMiiLinkStatus(IxEthEthPortIdToPhyAddressTable[portId], 
 		       &linkUp, 
 		       &speed, 
 		       &fullDuplex, 
 		       &autoneg);
     /* set 10 Mbit, current duplex mode, no negotiation */
-    ixEthMiiPhyConfig(ixEthAccCodeletPhyAddresses[portId],
+    ixEthMiiPhyConfig(IxEthEthPortIdToPhyAddressTable[portId],
 		      FALSE, 
 		      fullDuplex, 
 		      FALSE);
-    ixEthMiiPhyReset(ixEthAccCodeletPhyAddresses[portId]);
+    ixEthMiiPhyReset(IxEthEthPortIdToPhyAddressTable[portId]);
 
     /* get the link status */
     (void)ixEthAccCodeletLinkUpCheck(portId);
     (void)ixEthAccCodeletLinkMonitor(portId);
 
-    printf("\nPHY %d configuration:\n", portId);
-    ixEthMiiPhyShow(ixEthAccCodeletPhyAddresses[portId]);
+    printf("\nPHY %d configuration:\n", IxEthEthPortIdToPhyAddressTable[portId]);
+    ixEthMiiPhyShow(IxEthEthPortIdToPhyAddressTable[portId]);
 
     return (IX_SUCCESS);
 }
@@ -391,12 +469,12 @@ IX_STATUS ixEthAccCodeletLinkSlowSpeedSet(IxEthAccPortId portId)
 IX_STATUS ixEthAccCodeletLinkDefaultSpeedSet(IxEthAccPortId portId)
 {
     /* set default values */
-    ixEthMiiPhyConfig(ixEthAccCodeletPhyAddresses[portId],
+    ixEthMiiPhyConfig(IxEthEthPortIdToPhyAddressTable[portId],
 		      ixEthAccCodeletPhyConf.speed100, 
 		      ixEthAccCodeletPhyConf.fullDuplex, 
 		      ixEthAccCodeletPhyConf.autonegotiate);
 
-    ixEthMiiPhyReset(ixEthAccCodeletPhyAddresses[portId]);
+    ixEthMiiPhyReset(IxEthEthPortIdToPhyAddressTable[portId]);
 
     /* get the link status */
     (void)ixEthAccCodeletLinkUpCheck(portId);

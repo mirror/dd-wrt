@@ -8,12 +8,12 @@
  *
  * Design Notes:
  *
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -50,10 +50,11 @@
 
 #include "IxOsal.h"
 #include "IxEthAcc.h"
+#include "IxFeatureCtrl.h"
+
 #include "IxEthAcc_p.h"
 #include "IxEthAccMac_p.h"
 #include "IxEthAccMii_p.h"
-
 
 PRIVATE UINT32 miiBaseAddressVirt;
 PRIVATE IxOsalMutex miiAccessLock;
@@ -160,6 +161,7 @@ ixEthAccMdioStatusRead(UINT32 *data)
 /********************************************************************
  * ixEthAccMiiInit
  */
+
 IxEthAccStatus
 ixEthAccMiiInit()
 {
@@ -168,12 +170,24 @@ ixEthAccMiiInit()
 	return IX_ETH_ACC_FAIL;
     }
 
-    /* Use NPE-B MAC coprocessor for MII since all IXP4XX product line
+    /* Use NPE-B MAC coprocessor for MII since IXP42X and IXP46X product line
      * only has this MAC coprocessor to communicate with PHY through
      * MDIO interface.
      */
-    miiBaseAddressVirt = (UINT32) IX_OSAL_MEM_MAP(IX_ETH_ACC_MAC_0_BASE, IX_OSAL_IXP400_ETH_MAC_B0_MAP_SIZE);
-    
+    if( (IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X == ixFeatureCtrlDeviceRead ()) || 
+	(IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == ixFeatureCtrlDeviceRead ()) )
+    {
+    	miiBaseAddressVirt = (UINT32) IX_OSAL_MEM_MAP(IX_ETH_ACC_MAC_0_BASE, IX_ETH_ACC_MAC_0_MAP_SIZE);
+    }
+    if( IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X == ixFeatureCtrlDeviceRead () ) 
+    {
+    /* Use NPE-C MAC coprocessor for MII since IXP43X product line
+     * only has this MAC coprocessor to communicate with PHY through
+     * MDIO interface.
+     */  
+    miiBaseAddressVirt = (UINT32) IX_OSAL_MEM_MAP(IX_ETH_ACC_MAC_1_BASE, IX_ETH_ACC_MAC_1_MAP_SIZE);  
+    }
+
     if (miiBaseAddressVirt == 0)
     {
         ixOsalLog(IX_OSAL_LOG_LVL_FATAL, 

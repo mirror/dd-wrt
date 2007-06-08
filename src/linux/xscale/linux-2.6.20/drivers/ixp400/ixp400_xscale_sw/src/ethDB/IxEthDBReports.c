@@ -4,12 +4,12 @@
  * @brief Implementation of the public API
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -96,116 +96,6 @@ IxEthDBStatus ixEthDBDependencyPortMapShow(IxEthDBPortId portID, IxEthDBPortMap 
     printf("%s (%s)\n", firstPort ? "" : "}", mapSelf ? "self" : mapNone ? "none" : "group");
     
     return IX_ETH_DB_SUCCESS;
-}
-
-/**
- * @brief displays all the filtering records belonging to a port
- *
- * @param portID ID of the port to display
- *
- * Note that this function is documented in the main component
- * header file, IxEthDB.h.
- *
- * @warning deprecated, use @ref ixEthDBFilteringDatabaseShowRecords() 
- * instead. Calling this function is equivalent to calling
- * ixEthDBFilteringDatabaseShowRecords(portID, IX_ETH_DB_FILTERING_RECORD)
- */
-IX_ETH_DB_PUBLIC
-IxEthDBStatus ixEthDBFilteringDatabaseShow(IxEthDBPortId portID)
-{
-    IxEthDBStatus local_result;
-    HashIterator iterator;
-    PortInfo *portInfo;
-    UINT32 recordCount = 0;
-
-    IX_ETH_DB_CHECK_PORT(portID);
-
-    IX_ETH_DB_CHECK_SINGLE_NPE(portID);
-
-    portInfo = &ixEthDBPortInfo[portID];
-
-    /* display table header */
-    printf("Ethernet database records for port ID [%d]\n", portID);
-    
-    ixEthDBDependencyPortMapShow(portID, portInfo->dependencyPortMap);
-    
-    if (ixEthDBPortDefinitions[portID].type == IX_ETH_NPE)
-    {
-        printf("NPE updates are %s\n\n", portInfo->updateMethod.updateEnabled ? "enabled" : "disabled");
-    }
-    else
-    {
-        printf("updates disabled (not an NPE)\n\n");
-    }
-
-    printf("    MAC address    |   Age  | Type \n");
-    printf("___________________________________\n");
-
-    /* browse database */
-    BUSY_RETRY(ixEthDBInitHashIterator(&dbHashtable, &iterator));
-
-    while (IS_ITERATOR_VALID(&iterator))
-    {
-      MacDescriptor *descriptor = (MacDescriptor *) iterator.node->data;
-
-      if (descriptor->portID == portID && descriptor->type == IX_ETH_DB_FILTERING_RECORD)
-      {
-          recordCount++;
-
-          /* display entry */
-          printf(" %02X:%02X:%02X:%02X:%02X:%02X | %5d  | %s\n",
-              descriptor->macAddress[0],
-              descriptor->macAddress[1],
-              descriptor->macAddress[2],
-              descriptor->macAddress[3],
-              descriptor->macAddress[4],
-              descriptor->macAddress[5],
-              descriptor->recordData.filteringData.age,
-              descriptor->recordData.filteringData.staticEntry ? "static" : "dynamic");
-      }
-
-      /* move to the next record */
-      BUSY_RETRY_WITH_RESULT(ixEthDBIncrementHashIterator(&dbHashtable, &iterator), local_result);
-
-      /* debug */
-      if (local_result == IX_ETH_DB_BUSY)
-      {
-          return IX_ETH_DB_FAIL;
-      }
-    }
-
-    /* display number of records */
-    printf("\nFound %d records\n", recordCount);
-
-    return IX_ETH_DB_SUCCESS;
-}
-
-/**
- * @brief displays all the filtering records belonging to all the ports
- *
- * Note that this function is documented in the main component
- * header file, IxEthDB.h.
- *
- * @warning deprecated, use @ref ixEthDBFilteringDatabaseShowRecords() 
- * instead. Calling this function is equivalent to calling
- * ixEthDBFilteringDatabaseShowRecords(IX_ETH_DB_ALL_PORTS, IX_ETH_DB_FILTERING_RECORD)
- */
-IX_ETH_DB_PUBLIC
-void ixEthDBFilteringDatabaseShowAll()
-{
-    IxEthDBPortId portIndex;
-
-    printf("\nEthernet learning/filtering database: listing %d ports\n\n", (UINT32) IX_ETH_DB_NUMBER_OF_PORTS);
-
-    for (portIndex = 0 ; portIndex < IX_ETH_DB_NUMBER_OF_PORTS ; portIndex++)
-    {
-        ixEthDBFilteringDatabaseShow(portIndex);
-
-        if (portIndex < IX_ETH_DB_NUMBER_OF_PORTS - 1)
-        {
-            printf("\n");
-        }
-    }
 }
 
 /**

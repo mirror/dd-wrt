@@ -8,12 +8,12 @@
  * component
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -177,13 +177,11 @@ ixEthAccCodeletPortConfigure(IxEthAccPortId portId,
 {
     IxEthAccMacAddr npeMacAddr1 = IX_ETHACC_CODELET_NPEB_MAC;
     IxEthAccMacAddr npeMacAddr2 = IX_ETHACC_CODELET_NPEC_MAC;
-#ifdef __ixp46X
     IxEthAccMacAddr npeMacAddr3 = IX_ETHACC_CODELET_NPEA_MAC;
-#endif
     IxEthAccMacAddr npeMacAddr;
 			     
     /* Clear stats */
-    memset(&ixEthAccCodeletStats[portId], 
+    ixOsalMemSet(&ixEthAccCodeletStats[portId], 
 	   0, 
 	   sizeof(ixEthAccCodeletStats[portId]));
 
@@ -265,24 +263,22 @@ ixEthAccCodeletPortConfigure(IxEthAccPortId portId,
 #else
     if (portId == IX_ETH_PORT_1)
     {
-	memcpy(npeMacAddr.macAddress, 
+	ixOsalMemCopy(npeMacAddr.macAddress, 
 	       npeMacAddr1.macAddress, 
 	       IX_IEEE803_MAC_ADDRESS_SIZE);
     }
     else if (portId == IX_ETH_PORT_2)
     {
-	memcpy(npeMacAddr.macAddress, 
+	ixOsalMemCopy(npeMacAddr.macAddress, 
 	       npeMacAddr2.macAddress, 
 	       IX_IEEE803_MAC_ADDRESS_SIZE);
     }
-#ifdef __ixp46X
     else if (portId == IX_ETH_PORT_3)
     {
-	memcpy(npeMacAddr.macAddress, 
+	ixOsalMemCopy(npeMacAddr.macAddress, 
 	       npeMacAddr3.macAddress, 
 	       IX_IEEE803_MAC_ADDRESS_SIZE);
     }
-#endif
     else
     {
 	printf("PortSetup: Unsupported port!\n");

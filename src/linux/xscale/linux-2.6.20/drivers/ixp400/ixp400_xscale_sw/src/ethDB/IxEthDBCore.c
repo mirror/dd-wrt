@@ -1,15 +1,15 @@
 /**
- * @file IxEthDBDBCore.c
+ * @file IxEthDBCore.c
  *
  * @brief Database support functions
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -44,7 +44,11 @@
  * -- End of Copyright Notice --
  */
 
+#include "IxAccCommon.h"
 #include "IxEthDB_p.h"
+
+/* Ethernet NPE Enable status flag variable*/
+UINT32 ixEthDBEthNPEEnabled[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
 
 /* list of database hashtables */
 IX_ETH_DB_PUBLIC HashTable dbHashtable;
@@ -86,6 +90,7 @@ IX_ETH_DB_PUBLIC
 IxEthDBStatus ixEthDBInit(void)
 {
     IxEthDBStatus result;
+    UINT32 npeId = 0;
 
     if (ethDBInitializationComplete)
     {
@@ -93,9 +98,21 @@ IxEthDBStatus ixEthDBInit(void)
         return IX_ETH_DB_SUCCESS;
     }
 
+    for( npeId = 0; npeId < IX_ETHNPE_MAX_NUMBER_OF_PORTS; npeId++)
+    {
+      	/* Set the default to undetermined, Check will be done run-time*/
+      	ixEthDBEthNPEEnabled[npeId] = IX_ETH_DB_ETH_NPE_UNDETERMINED;
+    }
+    
     /* trap an invalid port definition structure */
     IX_ETH_DB_PORTS_ASSERTION;
     
+    /* Build port mapping lookup tables */
+   if (ixEthNpePortMapCreate() != IX_ETH_NPE_SUCCESS)
+   {
+       return IX_ETH_DB_FAIL;
+   }
+
     /* memory management */
     ixEthDBInitMemoryPools();
     

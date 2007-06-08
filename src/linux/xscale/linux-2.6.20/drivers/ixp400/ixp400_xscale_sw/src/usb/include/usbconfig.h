@@ -10,12 +10,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -141,7 +141,7 @@
 /** define to enable compile-time assertion macro */
 #define IX_USB_HAS_CT_ASSERT_MACRO
 
-/** define to enable interrupt handler binding for VxWorks */
+/** define to enable interrupt handler binding for VxWorks* */
 #define IX_USB_HAS_INT_BIND_MACRO
 
 /* hardware emulation specifics */

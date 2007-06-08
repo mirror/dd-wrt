@@ -14,12 +14,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -170,19 +170,13 @@ ixUSBDriverInit(USBDevice *device)
         return IX_FAIL;
     }
 
-    /* If not IXP42X A0 stepping, proceed to check for existence of usb component */ 
-    if ((IX_FEATURE_CTRL_SILICON_TYPE_A0 != 
-        (ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK))
-        || (IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X != ixFeatureCtrlDeviceRead ()))
+    /* Check for USB device being present before proceeding*/
+    if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_USB)==
+        IX_FEATURE_CTRL_COMPONENT_DISABLED)
     {
-
-        /* Check for USB device being present before proceeding*/
-        if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_USB)==
-	        IX_FEATURE_CTRL_COMPONENT_DISABLED)
-        {
-	    IX_USB_TRACE("Warning: the USB component you specified "
-                "does not exist\n", 0, 0, 0, 0, 0, 0);
-        }
+        IX_USB_TRACE("Error: the USB component you specified "
+            "does not exist\n", 0, 0, 0, 0, 0, 0);
+        return IX_FAIL;
     }
     
     context                = CONTEXT(device);
@@ -234,6 +228,7 @@ ixUSBDriverInit(USBDevice *device)
 
     /* device is initially disabled */
     context->enabled = FALSE;
+    context->configured = FALSE; /*Set device configured to FALSE till SET_CONFIGURATION message received*/
 
     /* set UDC registers to base I/O address */
     registers          = (UDCRegisters *)(device->baseIOAddress);
@@ -529,6 +524,7 @@ ixUSBDeviceEnable(USBDevice *device, BOOL enableDevice)
 
         /* mark as disabled */
         context->enabled = FALSE;
+        context->configured = FALSE; 
 
         /* disable UDC */
         REG_SET(&registers->UDCCR, UDCCR & ~UDC_UDCCR_UDE);
@@ -795,6 +791,11 @@ ixUSBBufferSubmit(USBDevice *device,
     CHECK_DEVICE(device);
 
     CHECK_DEVICE_ENABLED(device);
+    
+    if(ENDPOINT_0 != destinationEndpoint)
+    {
+        CHECK_DEVICE_CONFIGURED(device); /*return error if SET_CONFIGURATION not received */
+    }
 
     CHECK_ENDPOINT(device, destinationEndpoint);
 
@@ -1190,6 +1191,7 @@ ixUSBInterruptHandler(USBDevice *device)
 
         /* reset endpoint 0 state */
         ixUSBEP0StateReset(device);
+        context->configured = FALSE;
     }
 
     /* Suspend? */
@@ -1352,6 +1354,7 @@ ixUSBEP0InterruptHandler(EPStatusData *epData)
     EP0ControlData *ep0Control = &context->ep0ControlData;
     UINT32 UDCCS0              = REG_GET(&registers->UDCCS0);
     static UINT32 controlWriteError = FALSE;
+    UINT32 bRequest = 0;
 
     IX_HWEMU_TRACE("Ep0 handler: UDCCS0 is 0x%08X\n", UDCCS0, 0, 0, 0, 0, 0);
 
@@ -1504,7 +1507,12 @@ ixUSBEP0InterruptHandler(EPStatusData *epData)
 	else
 	{
 		/* decode the transfer type and direction from packet */
-		ixUSBEP0SetupPacketDecode(device);
+		bRequest = ixUSBEP0SetupPacketDecode(device);
+		/* Set configured flag to TRUE on receiving SET_CONFIGURATION message from host driver*/
+                if(bRequest == SET_CONFIGURATION_REQUEST) 
+        	{
+            	    context->configured = TRUE;
+        	}
 	}
 
 	IX_USB_VERBOSE4_TRACE("Read SETUP packet, %d bytes\n", offset, 0, 0, 0, 0, 0);
@@ -1776,7 +1784,7 @@ ixUSBEP0TokenDecode(USBDevice *device)
  *
  * @internal
  */
-PRIVATE void 
+PRIVATE UINT32 
 ixUSBEP0SetupPacketDecode(USBDevice *device)
 {
     EP0ControlData *ep0Data = EP0CONTROL(device);
@@ -1838,6 +1846,7 @@ ixUSBEP0SetupPacketDecode(USBDevice *device)
             cwInitiated++;            
         }
     }
+    return(controlPacket->bRequest); 
 }
 
 /**

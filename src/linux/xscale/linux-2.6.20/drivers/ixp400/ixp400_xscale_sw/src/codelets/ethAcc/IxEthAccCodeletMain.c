@@ -24,12 +24,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -112,7 +112,11 @@ UINT64 __inline__ IX_ETHACC_CODELET_MULDIV(UINT64 A, UINT64 B, UINT64 C)
     return ((((A)*(B)) + (( (INT64) C)+1)/2) / (C));
 }
 #else
-    #define IX_ETHACC_CODELET_MULDIV(A,B,C) ((((A)*(B)) + ((C)+1)/2) / (C))
+    #define IX_ETHACC_CODELET_MULDIV(A,B,C) 				\
+    	({ 								\
+	   UINT64 x = (((A)*(B)) + IX_OSAL_UDIV64_32((C)+1,2));		\
+	   IX_OSAL_UDIV64_32(x, (C));					\
+	})								
 #endif
 
 /* 
@@ -174,7 +178,8 @@ PRIVATE IX_STATUS ixEthAccCodeletLoop(void);
 PUBLIC IX_STATUS
 ixEthAccCodeletMain(IxEthAccCodeletOperation operationType, 
 		    IxEthAccPortId inPort, 
-		    IxEthAccPortId outPort)
+		    IxEthAccPortId outPort, 
+		    int disableStats)
 {
     if( inPort >= IX_ETHACC_CODELET_MAX_PORT ||
 	outPort >= IX_ETHACC_CODELET_MAX_PORT)
@@ -184,7 +189,7 @@ ixEthAccCodeletMain(IxEthAccCodeletOperation operationType,
 	return IX_FAIL ;
     }
  
-    if (IX_SUCCESS != ixEthAccCodeletInit(operationType,inPort,outPort))
+    if (IX_SUCCESS != ixEthAccCodeletInit(operationType,inPort,outPort,disableStats))
     {
 	printf("ixEthAccCodeletInit() fails ! Exit \n") ;
 	return IX_FAIL ;
@@ -307,27 +312,28 @@ ixEthAccCodeletMain(IxEthAccCodeletOperation operationType,
  */
 IX_STATUS ixEthAccCodeletInit(IxEthAccCodeletOperation operationType,
                     IxEthAccPortId inPort,
-                    IxEthAccPortId outPort)
+                    IxEthAccPortId outPort, 
+		    int disableStats)
 {  
     IxEthAccPortId portId;
-
+    UINT32 portIndex;
     IxOsalThread statsPollThread;
     IxOsalThreadAttr threadAttr;
+    IxFeatureCtrlDeviceId deviceId;
 
     threadAttr.name      = "Codelet Stats";
     threadAttr.stackSize = 32 * 1024; /* 32kbytes */
     threadAttr.priority  = 128;
 
-
-#ifdef __ixp46X
     /* Set the expansion bus fuse register to enable MUX for NPEA MII */
+    if ((ixFeatureCtrlDeviceRead() == IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X) ||
+        (ixFeatureCtrlDeviceRead() == IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X) )
     {
         UINT32 expbusCtrlReg;
         expbusCtrlReg = ixFeatureCtrlRead ();
         expbusCtrlReg |= ((unsigned long)1<<8);
         ixFeatureCtrlWrite (expbusCtrlReg);
     }
-#endif
 
     /* check the component is already initialized */
     if(ixEthAccCodeletInitialised) 
@@ -370,54 +376,46 @@ IX_STATUS ixEthAccCodeletInit(IxEthAccCodeletOperation operationType,
 
     /* Check Silicon stepping */
     printf("Checking Silicon stepping...\n");
+    deviceId = ixFeatureCtrlDeviceRead();
 
-    if (ixFeatureCtrlDeviceRead() == IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X)
+    switch(deviceId)
     {
-
-        if ((ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK) == 
-           IX_FEATURE_CTRL_SILICON_TYPE_B0)
+       
+        case IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X:
+        
+        /*
+         * We only enable port when its corresponding  
+         * Eth Coprocessor is available.
+         */
+        if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH0) == 
+           IX_FEATURE_CTRL_COMPONENT_ENABLED)
         {
-            /*
-             * If it is B0 Silicon, we only enable port when its corresponding  
-             * Eth Coprocessor is available.
-             */
-            if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH0) == 
-                IX_FEATURE_CTRL_COMPONENT_ENABLED)
-            {
-                ixEthAccCodeletHardwareExists[IX_ETH_PORT_1] = TRUE;
-            }
-
-            if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH1) == 
-               IX_FEATURE_CTRL_COMPONENT_ENABLED)
-            {
-                ixEthAccCodeletHardwareExists[IX_ETH_PORT_2] = TRUE;
-            }
-        }
-        else if ((ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK) == 
-                  IX_FEATURE_CTRL_SILICON_TYPE_A0) 
-        {
-            /*
-             * If it is A0 Silicon, we enable both as both Eth Coprocessors 
-             * are available. 
-             */ 
             ixEthAccCodeletHardwareExists[IX_ETH_PORT_1] = TRUE;
+        }
+
+        if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH1) == 
+            IX_FEATURE_CTRL_COMPONENT_ENABLED)
+        {
             ixEthAccCodeletHardwareExists[IX_ETH_PORT_2] = TRUE;
         }
-        else
-        {
-            printf("CodeletMain: Error. Operation for other silicon stepping is undefined!.\n");
-            return (IX_FAIL);
-        }
-    }
-    else if (ixFeatureCtrlDeviceRead() == IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X)
-    {
-        ixEthAccCodeletHardwareExists[IX_ETH_PORT_1] = TRUE;
-        ixEthAccCodeletHardwareExists[IX_ETH_PORT_2] = TRUE;
-#ifdef __ixp46X
-        ixEthAccCodeletHardwareExists[IX_ETH_PORT_3] = TRUE;
-#endif
-    }
+        break;
 
+        case IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X:
+             ixEthAccCodeletHardwareExists[IX_ETH_PORT_1] = TRUE;
+             ixEthAccCodeletHardwareExists[IX_ETH_PORT_2] = TRUE;
+             ixEthAccCodeletHardwareExists[IX_ETH_PORT_3] = TRUE;
+             break;
+
+        case IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X:
+             ixEthAccCodeletHardwareExists[IX_ETH_PORT_2] = TRUE;
+             ixEthAccCodeletHardwareExists[IX_ETH_PORT_3] = TRUE;
+     	     break;
+
+        default:
+	    printf("CodeletMain: Error. Operation for silicon Id %d is undefined!.\n",deviceId);
+            return (IX_FAIL);
+	    break;
+    }
     /***********************************************************************
      *
      * System initialisation done. Now initialise Access components. 
@@ -479,7 +477,6 @@ IX_STATUS ixEthAccCodeletInit(IxEthAccCodeletOperation operationType,
 	    return (IX_FAIL);
 	}
     }
-#ifdef __ixp46X
     if (ixEthAccCodeletHardwareExists[IX_ETH_PORT_3])
     {
         if ((operationType == IX_ETHACC_CODELET_BRIDGE_WIFI) && (inPort == IX_ETH_PORT_3))
@@ -494,7 +491,6 @@ IX_STATUS ixEthAccCodeletInit(IxEthAccCodeletOperation operationType,
 	    return (IX_FAIL);
 	}
     }
-#endif
 
     printf ("Initialising Access Layers\n");
 
@@ -533,8 +529,9 @@ IX_STATUS ixEthAccCodeletInit(IxEthAccCodeletOperation operationType,
      ***********************************************************************/
 
     /* Configure all available ports */
-    for (portId = 0; portId < IX_ETHACC_CODELET_MAX_PORT; portId++)
-    {
+    for (portIndex = 0; portIndex < IX_ETHACC_NUMBER_OF_PORTS; portIndex++)
+    {   
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
 	if (ixEthAccCodeletHardwareExists[portId])
 	{
 	    if(ixEthAccCodeletPortInit(portId) != IX_ETH_ACC_SUCCESS)
@@ -574,22 +571,26 @@ IX_STATUS ixEthAccCodeletInit(IxEthAccCodeletOperation operationType,
      */
     ixEthAccCodeletTrafficPollEnabled = FALSE;
 
-    if (ixOsalThreadCreate(&statsPollThread,
+    if(disableStats == 0)
+    {
+    	if (ixOsalThreadCreate(&statsPollThread,
 			   &threadAttr,
 			   (IxOsalVoidFnVoidPtr) ixEthAccCodeletStatsPollTask,
 			   NULL)	
-	!= IX_SUCCESS)
-    {
-	printf("CodeletMain: Error spawning stats task\n");
-	return (IX_FAIL);
+		!= IX_SUCCESS)
+    	{
+	    printf("CodeletMain: Error spawning stats task\n");
+	    return (IX_FAIL);
+    	}
+    
+     	/* Start the thread */
+    	if (ixOsalThreadStart(&statsPollThread) != IX_SUCCESS)
+    	{
+	    printf("CodeletMain: Error failed to start the stats thread\n");
+        	return IX_FAIL;
+    	}
     }
 
-     /* Start the thread */
-    if (ixOsalThreadStart(&statsPollThread) != IX_SUCCESS)
-    {
-	printf("CodeletMain: Error failed to start the stats thread\n");
-        return IX_FAIL;
-    }
     ixEthAccCodeletInitialised = TRUE;
     return (IX_SUCCESS);
 }
@@ -602,7 +603,7 @@ IX_STATUS ixEthAccCodeletInit(IxEthAccCodeletOperation operationType,
 
 IX_STATUS ixEthAccCodeletUninit(void)
 {  
-    IxEthAccPortId portId;
+    IxEthAccPortId portIndex;
     IxEthAccStatus status;
 
     if(!ixEthAccCodeletInitialised) 
@@ -624,12 +625,12 @@ IX_STATUS ixEthAccCodeletUninit(void)
 	ixOsalMutexUnlock (&ixEthAccCodeletStatsPollTaskRunning);
     }
 
-    for (portId = IX_ETH_PORT_1; portId < IX_ETHACC_CODELET_MAX_PORT; portId++)
+    for (portIndex = 0; portIndex < IX_ETHACC_NUMBER_OF_PORTS; portIndex++)
     {
-	status = ixEthAccPortDisable (portId);
+	status = ixEthAccPortDisable (IX_ETHNPE_INDEX_TO_PORT_ID(portIndex));
 	if (IX_ETH_ACC_SUCCESS != status)
 	{
-	    printf("CodeletMain: Failed to disable port %d, error code %d\n", portId, status); 
+	    printf("CodeletMain: Failed to disable port %d, error code %d\n", IX_ETHNPE_INDEX_TO_PORT_ID(portIndex), status); 
 	    return (IX_FAIL);
 	} 
     }
@@ -640,24 +641,36 @@ IX_STATUS ixEthAccCodeletUninit(void)
 	return (IX_FAIL);
     }
 
+    if (ixEthAccCodeletPhyUninit() != IX_SUCCESS)
+    {
+	printf("CodeletMain: Error stopping Phy Uninit task!\n");
+	return (IX_FAIL);
+    }
+
     if (ixEthAccUninit() != IX_SUCCESS)
     {
 	printf("CodeletMain: Failed to uninitialize Ethernet Access Layer!\n");
 	return (IX_FAIL);
     }
 
-#ifdef __ixp46X
-    if (ixNpeDlNpeStopAndReset(IX_NPEDL_NPEID_NPEA) != IX_SUCCESS)
-    {
-	printf("CodeletMain: Failed to stop and reset NPE A!\n");
-	return (IX_FAIL);
+    if( (IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == ixFeatureCtrlDeviceRead ()) ||
+	 IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X == ixFeatureCtrlDeviceRead () )
+    {	
+    	if (ixNpeDlNpeStopAndReset(IX_NPEDL_NPEID_NPEA) != IX_SUCCESS)
+    	{
+	    printf("CodeletMain: Failed to stop and reset NPE A!\n");
+	    return (IX_FAIL);
+	}
     }
-#endif
 
-    if (ixNpeDlNpeStopAndReset(IX_NPEDL_NPEID_NPEB) != IX_SUCCESS)
-    {
-	printf("CodeletMain: Failed to stop and reset NPE B!\n");
-	return (IX_FAIL);
+    if( (IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == ixFeatureCtrlDeviceRead ()) ||
+	 IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X == ixFeatureCtrlDeviceRead () )
+    {	
+    	if (ixNpeDlNpeStopAndReset(IX_NPEDL_NPEID_NPEB) != IX_SUCCESS)
+    	{
+	    printf("CodeletMain: Failed to stop and reset NPE B!\n");
+    	    return (IX_FAIL);
+    	}
     }
 
     if (ixNpeDlNpeStopAndReset(IX_NPEDL_NPEID_NPEC) != IX_SUCCESS)
@@ -711,13 +724,15 @@ IX_STATUS ixEthAccCodeletUninit(void)
 IX_STATUS 
 ixEthAccCodeletRxSink(void)
 {
-    IxEthAccPortId portId;
- 
+    UINT32 portIndex;
+    UINT32 portId;
+
     IX_ETHACC_IS_CODELET_INITIALISED();
 
     /* Configure all available ports and start traffic */
-    for (portId = 0; portId < IX_ETHACC_CODELET_MAX_PORT; portId++)
+    for (portIndex = 0; portIndex < IX_ETHACC_NUMBER_OF_PORTS; portIndex++)
     {
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
 	if (ixEthAccCodeletHardwareExists[portId])
 	{
 	    if (ixEthAccCodeletRxSinkStart(portId) 
@@ -743,8 +758,9 @@ ixEthAccCodeletRxSink(void)
     }
     
     /* Stop traffic and unconfigure all available ports */
-    for (portId = 0; portId < IX_ETHACC_CODELET_MAX_PORT; portId++)
+    for (portIndex = 0; portIndex < IX_ETHACC_NUMBER_OF_PORTS; portIndex++)
     {
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
 	if (ixEthAccCodeletHardwareExists[portId])
 	{
 	    if (ixEthAccCodeletRxSinkStop(portId) 
@@ -777,19 +793,21 @@ ixEthAccCodeletRxSink(void)
 IX_STATUS 
 ixEthAccCodeletSwLoopback(void)
 {
-    IxEthAccPortId portId;
- 
+    UINT32 portIndex;
+    UINT32 portId;
+
     IX_ETHACC_IS_CODELET_INITIALISED();
 
     /* Configure all available ports */
-    for (portId = 0; portId < IX_ETHACC_CODELET_MAX_PORT; portId++)
-    {
+    for (portIndex = 0; portIndex < IX_ETHACC_NUMBER_OF_PORTS; portIndex++)
+    {  
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
 	if (ixEthAccCodeletHardwareExists[portId])
 	{
 	    if (ixEthAccCodeletSwLoopbackStart(portId) 
 		!= IX_ETH_ACC_SUCCESS)
 	    {
-		printf("CodeletMain: Failed to configure the RX Sink Operation Port %u\n",
+		printf("CodeletMain: Failed to configure the Sw Loopback Operation Port %u\n",
 		       (UINT32)portId);
 		return IX_FAIL;
 	    }
@@ -808,14 +826,15 @@ ixEthAccCodeletSwLoopback(void)
     }
 
     /* Stop traffic and unconfigure all available ports */
-    for (portId = 0; portId < IX_ETHACC_CODELET_MAX_PORT; portId++)
+    for (portIndex = 0; portIndex < IX_ETHACC_NUMBER_OF_PORTS; portIndex++)
     {
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
 	if (ixEthAccCodeletHardwareExists[portId])
 	{
 	    if (ixEthAccCodeletSwLoopbackStop(portId) 
 		!= IX_ETH_ACC_SUCCESS)
 	    {
-		printf("CodeletMain: Failed to unconfigure the RX Sink Operation Port %u\n",
+		printf("CodeletMain: Failed to unconfigure the Sw Loopback Operation Port %u\n",
 		       (UINT32)portId);
 		return IX_FAIL;
 	    }
@@ -828,7 +847,6 @@ ixEthAccCodeletSwLoopback(void)
     {
 	printf("CodeletMain: Warning! Not all buffers are accounted for\n");
     }
-
     return (IX_SUCCESS);
 }
 
@@ -907,8 +925,9 @@ ixEthAccCodeletTxGenRxSinkLoopback(IxEthAccPortId inPort,
 IX_STATUS
 ixEthAccCodeletPhyLoopback(void)
 {
-    IxEthAccPortId portId;
- 
+    UINT32 portIndex;
+    UINT32 portId;
+
     IX_ETHACC_IS_CODELET_INITIALISED();
 
 #if defined(__linux) && (IX_ETH_CODELET_QMGR_DISPATCH_MODE==TRUE)
@@ -920,8 +939,9 @@ ixEthAccCodeletPhyLoopback(void)
     printf("*********************************************************************\n\n");
 #endif    /* Configure all available ports */
 
-    for (portId = 0; portId < IX_ETHACC_CODELET_MAX_PORT; portId++)
+    for (portIndex = 0; portIndex < IX_ETHACC_NUMBER_OF_PORTS; portIndex++)
     {
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
 	if (ixEthAccCodeletHardwareExists[portId])
 	{
 	    if (ixEthAccCodeletPhyLoopbackStart(portId) 
@@ -945,8 +965,9 @@ ixEthAccCodeletPhyLoopback(void)
     }
 
     /* Stop traffic and unconfigure all available ports */
-    for (portId = 0; portId < IX_ETHACC_CODELET_MAX_PORT; portId++)
+    for (portIndex = 0; portIndex < IX_ETHACC_NUMBER_OF_PORTS; portIndex++)
     {
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
 	if (ixEthAccCodeletHardwareExists[portId])
 	{
 	    if (ixEthAccCodeletPhyLoopbackStop(portId) 
@@ -987,8 +1008,6 @@ ixEthAccCodeletSwBridge(IxEthAccPortId inPort,
 	/* Bridge operation only works 
 	 * when two Eth NPEs are available
 	 *
-	 * B0 silicon may have only one eth coprocessor
-	 * A0 silicon has two Eth coprocessors
 	 */
 	printf("\n*********************************************************************\n");
 	printf ("Bridge operation needs two Eth coprocessors.\n");
@@ -1054,8 +1073,6 @@ ixEthAccCodeletSwBridgeQoS(IxEthAccPortId inPort,
 	/* Bridge operation only works 
 	 * when both Eth NPEs are available
 	 *
-	 * B0 silicon may have only one eth coprocessor
-	 * A0 silicon has two Eth coprocessors
 	 */
 	printf("\n*********************************************************************\n");
 	printf ("Bridge operation needs two Eth coprocessors.\n");
@@ -1121,8 +1138,6 @@ ixEthAccCodeletSwBridgeFirewall(IxEthAccPortId inPort,
 	/* Bridge operation only works 
 	 * when both Eth NPEs are available
 	 *
-	 * B0 silicon may have only one eth coprocessor
-	 * A0 silicon has two Eth coprocessors
 	 */
 	printf("\n*********************************************************************\n");
 	printf ("Bridge operation needs two Eth coprocessors.\n");
@@ -1189,8 +1204,6 @@ ixEthAccCodeletSwBridgeWiFi(IxEthAccPortId inPort,
 	/* Bridge operation only works 
 	 * when both Eth NPEs are available
 	 *
-	 * B0 silicon may have only one eth coprocessor
-	 * A0 silicon has two Eth coprocessors
 	 */
 	printf("\n*********************************************************************\n");
 	printf ("Bridge operation needs two Eth coprocessors.\n");
@@ -1198,6 +1211,28 @@ ixEthAccCodeletSwBridgeWiFi(IxEthAccPortId inPort,
 	printf("\n*********************************************************************\n");
 	return IX_FAIL ; 
     }
+
+    /* to demonstate 802.11 to 802.3 header conversion, 
+     * invalid source address filtering behavior has to be turned off.
+     * This prevent WiFi packet from been filtered by NPE
+     */
+     if (IX_ETH_DB_SUCCESS != ixEthDBFeatureEnable(outPort, 
+        					   IX_ETH_DB_FIREWALL, 
+						   TRUE))
+     {
+         printf("CodeletMain: Error enabling firewall on port %d\n",outPort);
+	 return (IX_FAIL);
+     }
+
+     ixEthDBFirewallInvalidAddressFilterEnable(outPort, FALSE);
+
+     if (IX_ETH_DB_SUCCESS != ixEthDBFeatureEnable(outPort, 
+        					   IX_ETH_DB_FIREWALL, 
+						   FALSE))
+     {
+         printf("CodeletMain: Error disabling firewall on port %d\n",outPort);
+	 return (IX_FAIL);
+     }
 
     if ( ixEthAccCodeletSwBridgeWiFiStart(inPort, 
 					      outPort)
@@ -1269,7 +1304,8 @@ ixEthAccCodeletDBLearning(void)
 void ixEthAccCodeletShow(void)
 {
     static IxEthEthObjStats *portStats = NULL;
-    UINT32 portNo;
+    UINT32 portIndex;
+    UINT32 portId;
 
     if (!ixEthAccCodeletInitialised)
     {
@@ -1290,16 +1326,17 @@ void ixEthAccCodeletShow(void)
 	}
     }
 
-    for(portNo=0; portNo<IX_ETHACC_CODELET_MAX_PORT; portNo++)
+    for(portIndex=0; portIndex< IX_ETHACC_NUMBER_OF_PORTS; portIndex++)
     {
-	if (ixEthAccCodeletHardwareExists[portNo])
+	portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
+	if (ixEthAccCodeletHardwareExists[portId])
 	{
-	    memset(portStats, 0, sizeof(IxEthEthObjStats));
+	    ixOsalMemSet(portStats, 0, sizeof(IxEthEthObjStats));
 	    
-	    printf("\nStatistics for port %d:\n", portNo);
-	    if(ixEthAccMibIIStatsGetClear(portNo, portStats) != IX_ETH_ACC_SUCCESS)
+	    printf("\nStatistics for port %d:\n", portId);
+	    if(ixEthAccMibIIStatsGetClear(portId, portStats) != IX_ETH_ACC_SUCCESS)
 	    {
-		printf("Unable to retrieve statistics for port %d!\n", portNo);
+		printf("Unable to retrieve statistics for port %d!\n", portId);
 	    }
 	    else
 	    {
@@ -1386,7 +1423,8 @@ void ixEthAccCodeletShow(void)
  */
 PRIVATE void ixEthAccCodeletStatsPollTask(void* arg, void** ptrRetObj)
 {
-    int portNo = 0;
+    UINT32 portIndex = 0;
+    IxEthAccPortId portId;
     static char stillRunning[] = "|/-\\";
     static int  stillRunningIndex = 0;
     static char displayString[20 + (21 * IX_ETHACC_CODELET_MAX_PORT)];
@@ -1427,15 +1465,15 @@ PRIVATE void ixEthAccCodeletStatsPollTask(void* arg, void** ptrRetObj)
 #ifdef __wince
 	printf("\r");
 #endif
-	for(portNo=0; portNo<IX_ETHACC_CODELET_MAX_PORT; portNo++)
+	for(portIndex=0; portIndex< IX_ETHACC_NUMBER_OF_PORTS; portIndex++)
 	{
-	    printf("Port%d Rates:        |",portNo);
+	    printf("Port%d Rates:        |",IX_ETHNPE_INDEX_TO_PORT_ID(portIndex));
 	}
 	printf("\n");
 #ifdef __wince
 	printf("\r");
 #endif
-	for(portNo=0; portNo<IX_ETHACC_CODELET_MAX_PORT; portNo++)
+	for(portIndex=0; portIndex< IX_ETHACC_NUMBER_OF_PORTS; portIndex++)
 	{
 	    printf("=====================");
 	}
@@ -1445,10 +1483,10 @@ PRIVATE void ixEthAccCodeletStatsPollTask(void* arg, void** ptrRetObj)
 #endif
 
 	/* reset the stats */
-	for(portNo=0; portNo<IX_ETHACC_CODELET_MAX_PORT; portNo++)
+	for(portIndex=0; portIndex< IX_ETHACC_NUMBER_OF_PORTS; portIndex++)
 	{
-	    ixEthAccCodeletStats[portNo].rxCount=0;
-	    ixEthAccCodeletStats[portNo].txCount=0;
+	    ixEthAccCodeletStats[IX_ETHNPE_INDEX_TO_PORT_ID(portIndex)].rxCount=0;
+	    ixEthAccCodeletStats[IX_ETHNPE_INDEX_TO_PORT_ID(portIndex)].txCount=0;
 	}
 
 	while (ixEthAccCodeletTrafficPollEnabled)
@@ -1469,15 +1507,16 @@ PRIVATE void ixEthAccCodeletStatsPollTask(void* arg, void** ptrRetObj)
 		stringPtr = displayString;
 		*stringPtr++ = '\r';
 
-		for(portNo=0; portNo<IX_ETHACC_CODELET_MAX_PORT; portNo++)
+		for(portIndex=0; portIndex< IX_ETHACC_NUMBER_OF_PORTS; portIndex++)
 		{
+		    portId = IX_ETHNPE_INDEX_TO_PORT_ID(portIndex);
 		    /* get a snapshot */
 		    busTimestampEnd = ixOsalTimestampGet();
-		    rxCount = ixEthAccCodeletStats[portNo].rxCount;
-		    txCount = ixEthAccCodeletStats[portNo].txCount;
+		    rxCount = ixEthAccCodeletStats[portId].rxCount;
+		    txCount = ixEthAccCodeletStats[portId].txCount;
 		    /* Got stats, now clear counters */
-		    ixEthAccCodeletStats[portNo].rxCount=0;
-		    ixEthAccCodeletStats[portNo].txCount=0;
+		    ixEthAccCodeletStats[portId].rxCount=0;
+		    ixEthAccCodeletStats[portId].txCount=0;
 
 		    /* get the measurement interval using a unsigned
 		     * subtraction in order to handle wrap-around. The time unit 

@@ -8,12 +8,12 @@
  * component of the IXP400 Parity Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -48,7 +48,7 @@
  * -- End of Copyright Notice --
  */
 
-#if defined(__ixp46X)
+#if defined(__ixp46X) || defined(__ixp43X)
 
 /* 
  * System defined include files
@@ -60,6 +60,9 @@
  */
 #include "IxParityENAccPmuE.h"
 #include "IxParityENAccPmuE_p.h"
+
+/* Virtual base address of PMU */
+static UINT32 ixPmuVirtualBaseAddr = 0;
 
 /*
  * PMU sub-module level functions definitions
@@ -75,6 +78,8 @@ ixParityENAccPmuEInit (void)
         return IX_FAIL;
     } /* end of if */
 
+    ixPmuVirtualBaseAddr = ixParityENAccPmuEPmsr;
+    
     return IX_SUCCESS;
 } /* end of ixParityENAccPmuEInit() function */
 
@@ -104,7 +109,8 @@ ixParityENAccPmuEAHBTransactionStatus (
             case IXP400_PARITYENACC_PMU_PMSS_PBC:
             case IXP400_PARITYENACC_PMU_PMSS_AHB_BRIDGE:
             case IXP400_PARITYENACC_PMU_PMSS_EBC:
-            case IXP400_PARITYENACC_PMU_PMSS_USBH:
+            case IXP400_PARITYENACC_PMU_PMSS_USBH0:
+            case IXP400_PARITYENACC_PMU_PMSS_USBH1:
             {
                 ixPmuAhbTransactionStatus->ahbErrorMaster = 
                     ixParityENAccPmuESouthAhbMaster[pmuPmsrStatus];
@@ -130,11 +136,15 @@ ixParityENAccPmuEAHBTransactionStatus (
         {
             case IXP400_PARITYENACC_PMU_PMSS_PBC:
             case IXP400_PARITYENACC_PMU_PMSS_EBC:
-            case IXP400_PARITYENACC_PMU_PMSS_USBH:
             case IXP400_PARITYENACC_PMU_PMSS_MCU:
             case IXP400_PARITYENACC_PMU_PMSS_APB_BRIDGE:
             case IXP400_PARITYENACC_PMU_PMSS_AQM:
+            case IXP400_PARITYENACC_PMU_PMSS_USBH0:
+#if defined(__ixp43X)
             case IXP400_PARITYENACC_PMU_PMSS_RSA:
+#else
+            case IXP400_PARITYENACC_PMU_PMSS_USBH1:
+#endif
             {
                 ixPmuAhbTransactionStatus->ahbErrorSlave = 
                     ixParityENAccPmuESouthAhbSlave[pmuPmsrStatus];
@@ -174,7 +184,9 @@ ixParityENAccPmuEAHBTransactionStatus (
         switch (pmuPmsrStatus)
         {
             case IXP400_PARITYENACC_PMU_PMSN_NPE_A:
+#if !defined(__ixp43X)
             case IXP400_PARITYENACC_PMU_PMSN_NPE_B:
+#endif
             case IXP400_PARITYENACC_PMU_PMSN_NPE_C:
             {
                 ixPmuAhbTransactionStatus->ahbErrorMaster = 
@@ -234,4 +246,13 @@ ixParityENAccPmuEAHBTransactionStatus (
     return IX_SUCCESS;
 } /* end of ixParityENAccPmuEAHBTransactionStatus() function */
 
-#endif /* __ixp46X */
+IX_STATUS 
+ixParityENAccPmuEUnload(void)
+{
+    /* Unmap the memory */
+    IX_OSAL_MEM_UNMAP(ixPmuVirtualBaseAddr);
+
+    return IX_SUCCESS;
+}/* end of ixParityENAccPmuEUnload() function */
+
+#endif /* __ixp46X || __ixp43X */

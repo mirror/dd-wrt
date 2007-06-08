@@ -10,12 +10,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -76,10 +76,9 @@
 #define DISCONNECT_RETRY_COUNT     (200)
 #define UTOPIA_PORT_RATE           (53 * 1000000)
 #define SINGLE_PORT_SPHY_IMAGE_ID  IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_SPHY_1_PORT
-#define SINGLE_PORT_MPHY_IMAGE_ID  IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_MPHY_1_PORT
 #define MULTI_PORT_MPHY_IMAGE_ID   IX_NPEDL_NPEIMAGE_NPEA_ATM_MPHY_12_PORT
 
-#if IX_UTOPIAMODE == 1
+#ifdef IX_UTOPIAMODE
 #define IX_ATM_CODELET_NPEA_IMAGE_ID SINGLE_PORT_SPHY_IMAGE_ID 
 #define IX_ATM_CODELET_PHY_MODE IX_ATMM_SPHY_MODE
 #else

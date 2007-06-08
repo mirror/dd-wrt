@@ -24,12 +24,12 @@
  * 
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -118,7 +118,7 @@ ixAtmSchedulingInit(void)
     IxAtmLogicalPort i;
 
     /* Initialise the scheduling info for all ports */
-    memset(portSchedulingInfo, 0, sizeof(portSchedulingInfo));
+    ixOsalMemSet(portSchedulingInfo, 0, sizeof(portSchedulingInfo));
 
     for (i=0; i<IX_UTOPIA_MAX_PORTS; i++) 
     {
@@ -147,7 +147,7 @@ ixAtmSchCellTimeSet(IxAtmLogicalPort port, UINT64 cellTime)
 
 /************************************************************************/
 
-UINT32
+UINT64
 ixAtmSchCellTimeGet(IxAtmLogicalPort port)
 {
     return portSchedulingInfo[port].timePerCell;
@@ -163,7 +163,7 @@ ixAtmSchMinCellsSet(IxAtmLogicalPort port, UINT64 minCellsToSchedule)
 
 /************************************************************************/
 
-UINT32
+UINT64
 ixAtmSchMinCellsGet(IxAtmLogicalPort port)
 {
     return portSchedulingInfo[port].minCellsToSchedule;
@@ -568,8 +568,9 @@ ixAtmSchTableUpdate(IxAtmLogicalPort port,
 		}
 		else 
 		{		   
-		    numUbrToSend = ((ixAtmSchVcTable[schRtQueueHead].schInfo.cet - 
-				     ixAtmSchTime[port]) / timePerCell) + 1;
+		    numUbrToSend = ixAtmSchVcTable[schRtQueueHead].schInfo.cet - 
+				     ixAtmSchTime[port];
+		    numUbrToSend = IX_OSAL_UDIV64_32(numUbrToSend, timePerCell) + 1;
 		}
 	    }
 	    else 

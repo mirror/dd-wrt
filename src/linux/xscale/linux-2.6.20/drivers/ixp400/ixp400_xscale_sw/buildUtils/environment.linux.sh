@@ -38,34 +38,38 @@
 # 
 # @par
 # -- End of Copyright Notice --
-# Change the following line to point to your linux kernel source tree
+# Change the following line to your linux kernel source tree
 linuxbe_KERNEL_DIR=/path/to/the/be/os/linux-2.6
-linuxle_KERNEL_DIR=/path/to/the/le/os/linux-2.6
 
-# Change the following line to point to the root of your Monta Vista install
-HARDHAT_BASE=/opt/montavista/pro
+# Change the following line to your toolchain bin directory
+CROSSCOMPILER_DIR=/path/to/the/toolchain/bin
+
+# Change the below to specify the prefix of your cross compiler
+# E.g: if armv5b-linux-gcc is your C cross compiler, then the prefix is
+# armv5b-linux-
+IX_LINUX_CROSSCOMPILER=armv5b-linux-
 
 # You may want to edit the following to point to your ixp400_xscale_sw
 # directory. Otherwise you must source this file from that directory.
 IX_XSCALE_SW=/path/to/the/ixp400_xscale_sw
 
-PATH=/usr/bin:$HARDHAT_BASE/host/bin:$HARDHAT_BASE/devkit/arm/xscale_be/bin:$HARDHAT_BASE/devkit/arm/xscale_le/bin:$PATH
+PATH=/usr/bin:$CROSSCOMPILER_DIR:$PATH
 
 #NOTE: All flag definitions below are case sensitive
 
 # For IXDP425 platform, set IX_DEVICE to ixp42X
-# For IXDP465 platform, set IX_DEVICE to ixp42X or ixp46X
+# For KIXRP435 platform, set IX_DEVICE to ixp43X
+# For IXDP465 platform, set IX_DEVICE to ixp46X
 IX_DEVICE=ixp42X
 
 # For IXDP425 platform, set IX_PLATFORM to ixdp42x
+# For KIXRP435 platform, set IX_PLATFORM to kixrp43x
 # For IXDP465 platform, set IX_PLATFORM to ixdp46x
 IX_PLATFORM=ixdp42x
 
-# For Big endian, set IX_TARGET to linuxbe
-# For Little endian, set IX_TARGET to linuxle
+# For Big endian, set IX_TARGET to linuxbe (this version only support big-endian)
 IX_TARGET=linuxbe
 
-IX_LINUXVER=2.6
-
-export linuxbe_KERNEL_DIR linuxle_KERNEL_DIR HARDHAT_BASE IX_XSCALE_SW PATH IX_DEVICE IX_PLATFORM IX_TARGET
-export IX_LINUXVER
+export linuxbe_KERNEL_DIR HARDHAT_BASE IX_XSCALE_SW PATH IX_DEVICE IX_PLATFORM IX_TARGET
+export IX_LINUX_CROSSCOMPILER
+export IX_KBUILD_CROSSCOMPILE="ARCH=arm CROSS_COMPILE=${IX_LINUX_CROSSCOMPILER}"

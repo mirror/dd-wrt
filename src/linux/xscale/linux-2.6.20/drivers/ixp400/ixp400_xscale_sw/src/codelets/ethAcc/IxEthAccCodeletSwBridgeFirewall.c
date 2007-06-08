@@ -8,12 +8,12 @@
  * with a Firewall set at the NPE level.
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -187,7 +187,7 @@ IX_STATUS ixEthAccCodeletSwBridgeFirewallStart(IxEthAccPortId firstPortId,
         /* Add firewall entry for first port */
 	if ((featureSet1 & IX_ETH_DB_ADDRESS_MASKING) == 0)
 	  {
-	    memcpy( macAddr.macAddress,
+	    ixOsalMemCopy( macAddr.macAddress,
 		    ixEthAccCodeletFirewallMacAddress.macAddress,
 		    IX_IEEE803_MAC_ADDRESS_SIZE);
 	    macAddr.macAddress[IX_IEEE803_MAC_ADDRESS_SIZE-1] = (UINT8)addressCount;	
@@ -222,7 +222,7 @@ IX_STATUS ixEthAccCodeletSwBridgeFirewallStart(IxEthAccPortId firstPortId,
         /* Add firewall entry for second port */
 	if ((featureSet2 & IX_ETH_DB_ADDRESS_MASKING) == 0)
 	  {
-	    memcpy( macAddr.macAddress,
+	    ixOsalMemCopy( macAddr.macAddress,
 		    ixEthAccCodeletFirewallMacAddress.macAddress,
 		    IX_IEEE803_MAC_ADDRESS_SIZE);
 	    macAddr.macAddress[IX_IEEE803_MAC_ADDRESS_SIZE-1] = (UINT8)addressCount;	

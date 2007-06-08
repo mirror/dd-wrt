@@ -8,12 +8,12 @@
  * @brief  Codelet for IXP46X Time Sync Access Component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -597,7 +597,7 @@ PRIVATE IX_OSAL_MBUF
 	}
 
 	/* initialize mBuf */
-	memset (mBufPtr, 0, sizeof (IX_OSAL_MBUF));
+	ixOsalMemSet (mBufPtr, 0, sizeof (IX_OSAL_MBUF));
 
 	/* Allocate cache-aligned memory for mbuf data */
 	dataPtr = (UINT8 *) IX_OSAL_CACHE_DMA_MALLOC (IX_TIMESYNCACC_CODELET_UDP_FRAME_LEN);
@@ -611,7 +611,7 @@ PRIVATE IX_OSAL_MBUF
 	}
 
 	/* initialize mBuf's data buffer */
-	memset (dataPtr, 0, IX_TIMESYNCACC_CODELET_UDP_FRAME_LEN);
+	ixOsalMemSet (dataPtr, 0, IX_TIMESYNCACC_CODELET_UDP_FRAME_LEN);
 
 	/* Fill in mbuf header fields */
 	IX_OSAL_MBUF_MDATA (mBufPtr) = dataPtr;
@@ -838,7 +838,7 @@ ixTimeSyncAccCodeletPortConfigure (IxEthAccPortId portId)
 	}
 
 	/* setup MAC address */
-	memcpy (npeMacAddr.macAddress, 
+	ixOsalMemCopy (npeMacAddr.macAddress, 
 		&ixTimeSyncAccCodeletNpeMacAddr[portId], 
 		IX_IEEE803_MAC_ADDRESS_SIZE);  
 
@@ -898,7 +898,7 @@ ixTimeSyncAccCodeletNewThreadCreate (
 	}
 	
 	/* zero out the thread attribute buffer */
-	memset ((void *)&threadAttr, 0, sizeof (IxOsalThreadAttr));
+	ixOsalMemSet ((void *)&threadAttr, 0, sizeof (IxOsalThreadAttr));
 
 	/* setup thread attribute */
 	threadAttr.name = label;
@@ -1027,7 +1027,7 @@ ixTimeSyncAccCodeletPTPMsgBuild (UINT8 control)
 							
 	compPtr = ixTimeSyncAccCodeletPtpMsgData;
 
-	memset (compPtr, 0, IX_TIMESYNCACC_CODELET_UDP_FRAME_LEN); 
+	ixOsalMemSet (compPtr, 0, IX_TIMESYNCACC_CODELET_UDP_FRAME_LEN); 
 
 	compPtr[12] = IX_TIMESYNCACC_CODELET_MSB_VALUE(IX_TIMESYNCACC_CODELET_IP_DATAGRAM);
 	compPtr[13] = IX_TIMESYNCACC_CODELET_LSB_VALUE(IX_TIMESYNCACC_CODELET_IP_DATAGRAM);
@@ -1127,7 +1127,7 @@ ixTimeSyncAccCodeletPTPMsgTransmit ()
 		}
 		
 		/* copy PTP message data to mBuf's data buffer */	
-		memcpy (IX_OSAL_MBUF_MDATA(mBufPtr), 
+		ixOsalMemCopy (IX_OSAL_MBUF_MDATA(mBufPtr), 
 			ixTimeSyncAccCodeletPtpMsgData, 
 			IX_TIMESYNCACC_CODELET_UDP_FRAME_LEN);
 
@@ -1301,7 +1301,7 @@ ixTimeSyncAccCodeletPTPMsgCheck (void)
 	     channel++)
 	{
 		/* initialize ptpMsgData buffer */
-		memset ((void *)&ptpMsgData, 0xff, sizeof (IxTimeSyncAccPtpMsgData));
+		ixOsalMemSet ((void *)&ptpMsgData, 0xff, sizeof (IxTimeSyncAccPtpMsgData));
 
 		/* check if any PTP message is received */
 		tsStatus = ixTimeSyncAccPTPRxPoll (channel, &ptpMsgData);	
@@ -1326,7 +1326,7 @@ ixTimeSyncAccCodeletPTPMsgCheck (void)
 		}
 		
 		/* initialize ptpMsgData buffer */
-		memset ((void *)&ptpMsgData, 0xff, sizeof (IxTimeSyncAccPtpMsgData));
+		ixOsalMemSet ((void *)&ptpMsgData, 0xff, sizeof (IxTimeSyncAccPtpMsgData));
 
 		/* check if any PTP message is transmitted */
 		tsStatus = ixTimeSyncAccPTPTxPoll (channel, &ptpMsgData);	

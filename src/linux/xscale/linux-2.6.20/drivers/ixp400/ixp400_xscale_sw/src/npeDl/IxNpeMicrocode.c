@@ -53,7 +53,7 @@
  * image #defines used in the code below
  */
 #define IX_NPEFW_VERSION_ID "2_3_0c"
-#include "IxNpeMicrocode.h"
+#include "../include/IxNpeMicrocode.h"
 
 
 #ifndef IX_NPEDL_READ_MICROCODE_FROM_FILE

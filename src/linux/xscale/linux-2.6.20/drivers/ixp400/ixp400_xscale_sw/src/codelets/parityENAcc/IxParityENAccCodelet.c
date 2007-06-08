@@ -8,12 +8,12 @@
  * @brief  Codelet for IXP46X Parity Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -48,7 +48,7 @@
  * -- End of Copyright Notice --
  */
 
-#if defined(__ixp46X)
+#if defined(__ixp46X) || defined(__ixp43X)
 
 /********************************************************************* 
  *	user include file 
@@ -187,7 +187,7 @@ ixParityENAccCodeletMain (
 #endif
 
 	/* initialize local parityENAcc configuration buffer */
-	memcpy (&pENConfig, &ixParityENAccCodeletConfig, sizeof (IxParityENAccHWParityConfig));
+	ixOsalMemCopy (&pENConfig, &ixParityENAccCodeletConfig, sizeof (IxParityENAccHWParityConfig));
 
 	/* initialize Parity Error Notifier Access Component */
 	pENStatus = ixParityENAccInit ();
@@ -293,7 +293,7 @@ ixParityENAccCodeletQuit ()
 	ixParityENAccCodeletTerminate = TRUE;
 
 	/* initialize local parityENAcc configuration buffer */
-	memcpy (&pENConfig, &ixParityENAccCodeletConfig, sizeof (IxParityENAccHWParityConfig));
+	ixOsalMemCopy (&pENConfig, &ixParityENAccCodeletConfig, sizeof (IxParityENAccHWParityConfig));
 
 	/* disable MCU parity error detection */
 	if (IX_SUCCESS != ixParityENAccCodeletParityConfigure (&pENConfig))
@@ -545,7 +545,7 @@ ixParityENAccCodeletSDRAMScanTask ()
 	UINT32 size;
 
 	/* initialize sysinfo buffer */
-	memset (&sysInfo, 0, sizeof (struct sysinfo));
+	ixOsalMemSet (&sysInfo, 0, sizeof (struct sysinfo));
 
 	/* get total memory size */
 	si_meminfo (&sysInfo);
@@ -682,7 +682,7 @@ ixParityENAccCodeletNewThreadCreate (
 	}
 
 	/* zero out the thread attribute buffer */
-	memset ((void *)&memScanThreadAttr, 0, sizeof (IxOsalThreadAttr));
+	ixOsalMemSet ((void *)&memScanThreadAttr, 0, sizeof (IxOsalThreadAttr));
 
 	/* setup thread attribute */
 	memScanThreadAttr.name = label;
@@ -1001,7 +1001,7 @@ ixParityENAccCodeletParityErrHandler ()
 	do 
 	{
 		/* initialize IxParityENAccParityErrorContextMessage buffer */
-		memset (&pENContext, 0xFF, sizeof (IxParityENAccParityErrorContextMessage));
+		ixOsalMemSet (&pENContext, 0xFF, sizeof (IxParityENAccParityErrorContextMessage));
 
 		/* get parity error context */
 		pENStatus = ixParityENAccParityErrorContextGet (&pENContext);
@@ -1092,7 +1092,7 @@ ixParityENAccCodeletDataAbortHandler ()
 		IX_PARITYENACC_CODELET_BIT_MASK_CHECK (statusReg, IX_PARITYENACC_CODELET_DATA_CACHE_PARITY_ERR);
 
 	/* initialize IxParityENAccParityErrorContextMessage buffer */
-	memset (&pENContext, 0xFF, sizeof (IxParityENAccParityErrorContextMessage));
+	ixOsalMemSet (&pENContext, 0xFF, sizeof (IxParityENAccParityErrorContextMessage));
 
 	/* get parity error context */
 	pENStatus = ixParityENAccParityErrorContextGet (&pENContext);
@@ -1227,5 +1227,5 @@ ixParityENAccCodeletShutDownTask ()
 
 } /* end of ixParityENAccCodeletShutDownTask function */ 
 
-#endif /* __ixp46X */
+#endif /* __ixp46X || __ixp43X */
 

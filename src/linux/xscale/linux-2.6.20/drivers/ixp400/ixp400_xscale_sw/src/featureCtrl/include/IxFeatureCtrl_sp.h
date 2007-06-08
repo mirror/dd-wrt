@@ -7,12 +7,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -54,7 +54,6 @@
  * 
  */
 
-  
 #ifndef IXFEATURECTRL_P_H
 #define IXFEATURECTRL_P_H
 
@@ -69,7 +68,6 @@
  * #defines and macros
  */
  
-
 /*
  * Prototypes for interface functions
  */
@@ -80,8 +78,6 @@
  * @fn IxFeatureCtrlReg ixFeatureCtrlRead (void)
  */ 
 
-
-#if defined(__ixp42X) || defined(__ixp46X)
 /* @brief This function reads out the CURRENT value of Feature Control Register.
  *        The current value may not be the same as that of the hardware component 
  *        availability.    
@@ -90,7 +86,6 @@
  * A value of '1' in bit means the hardware component is not available.  A value of '0'   
  * means the hardware component is available.
  */
-#endif /* __ixp42X */
  
 /*
  * @return 
@@ -107,8 +102,6 @@ ixFeatureCtrlRead (void);
  *
  * @fn void ixFeatureCtrlWrite (IxFeatureCtrlReg expUnitReg)
  */ 
-
-#if defined(__ixp42X) || defined(__ixp46X)
 /*
  * @brief This function write the value stored in IxFeatureCtrlReg expUnitReg  
  *        to the Feature Control Register. 
@@ -118,7 +111,6 @@ ixFeatureCtrlRead (void);
  * bit will software disable the respective hardware component. A '0' will mean that  
  * the hardware component will remain to be operable.
  */
-#endif /* __ixp42X */
 
 /*
  * @param expUnitReg @ref IxFeatureCtrlReg [in] - The value to be written to GCU Software
@@ -131,7 +123,6 @@ ixFeatureCtrlRead (void);
  */ 
 void
 ixFeatureCtrlWrite (IxFeatureCtrlReg expUnitReg);
-
 
 #endif  /* IXFEATURECTRL_SP_H */
  

@@ -11,12 +11,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -102,7 +102,7 @@
 * @brief All PDUs
 *
 * This constant is used to tell IxAtmDAcc to process all PDUs from
-* the RX queue or the TX Done
+* the Rx queue or the Tx Done
 *
 * @sa IxAtmdAccRxDispatcher
 * @sa IxAtmdAccTxDoneDispatcher
@@ -111,7 +111,7 @@
 #define IX_ATMDACC_ALLPDUS 0xffffffff
 
 /* ------------------------------------------------------
-   Part of the IxAtmdAcc interface related to RX traffic
+   Part of the IxAtmdAcc interface related to Rx traffic
    ------------------------------------------------------ */
 
 /**
@@ -131,7 +131,7 @@
  * @sa ixAtmdAccRxVcConnect
  * @sa ixAtmdAccRxDispatcherRegister
  *
- * @param rxQueueId @ref IxAtmRxQueueId [in] indicates which RX queue to has Pdus to process.
+ * @param rxQueueId @ref IxAtmRxQueueId [in] indicates which Rx queue to has Pdus to process.
  * @param numberOfPdusToProcess unsigned int [in] indicates the minimum number of
  *        PDUs available to process all PDUs from the queue.
  * @param reservedPtr unsigned int* [out] pointer to a int location which can
@@ -147,7 +147,7 @@ typedef IX_STATUS (*IxAtmdAccRxDispatcher) (IxAtmRxQueueId rxQueueId,
                          unsigned int *reservedPtr);
 
 /* ------------------------------------------------------
-   Part of the IxAtmdAcc interface related to TX traffic
+   Part of the IxAtmdAcc interface related to Tx traffic
    ------------------------------------------------------ */
 
 /**
@@ -329,7 +329,7 @@ typedef IX_STATUS (*IxAtmdAccTxSchVcIdGetCallback) (IxAtmLogicalPort port,
                                int *vcId);
 
 /* ------------------------------------------------------
-   Part of the IxAtmdAcc interface related to RX traffic
+   Part of the IxAtmdAcc interface related to Rx traffic
    ------------------------------------------------------ */
 
 /**
@@ -359,13 +359,13 @@ typedef IX_STATUS (*IxAtmdAccTxSchVcIdGetCallback) (IxAtmLogicalPort port,
  * @sa ixAtmdAccRxDispatch
  * @sa IxAtmdAccRxDispatcher
  *
- * @param queueId @ref IxAtmRxQueueId [in] RX queue identification
+ * @param queueId @ref IxAtmRxQueueId [in] Rx queue identification
  * @param callback @ref IxAtmdAccRxDispatcher [in] function triggering the delivery of incoming
  *        traffic. This parameter cannot be a null pointer.
  *
  * @return @li IX_SUCCESS Successful call to @a ixAtmdAccRxDispatcherRegister()
  * @return @li IX_FAIL error in the parameters, or there is an
- *             already active RX VC for this queue or some unspecified
+ *             already active Rx VC for this queue or some unspecified
  *             internal error occurred.
  *
  */
@@ -383,7 +383,7 @@ PUBLIC IX_STATUS ixAtmdAccRxDispatcherRegister (
  * @brief UnRegister a notification callback to be invoked when there is
  * at least one entry on a particular Rx queue.
  *
- * @param queueId @ref IxAtmRxQueueId [in] RX queue identification
+ * @param queueId @ref IxAtmRxQueueId [in] Rx queue identification
  *
  * @return @li IX_SUCCESS Successful call
  * @return @li IX_FAIL error in the parameters
@@ -406,7 +406,7 @@ ixAtmdAccRxDispatcherUnregister (IxAtmRxQueueId atmdQueueId);
  * Rx stream.
  *
  * The @a IxAtmdAccRxDispatch() function is used to process received Pdus
- * available from one of the two incoming RX streams. When this function
+ * available from one of the two incoming Rx streams. When this function
  * is invoked, the incoming traffic (up to the number of PDUs passed as
  * a parameter) will be transferred to the IxAtmdAcc users through the
  * callback @a IxAtmdAccRxVcRxCallback(), as registered during the
@@ -422,7 +422,7 @@ ixAtmdAccRxDispatcherUnregister (IxAtmRxQueueId atmdQueueId);
  * This should be used to control when received pdus are handed off from
  * the hardware to Aal users from a particluar stream. The function can
  * be used from a timer context, or can be registered as a callback in
- * response to an rx stream threshold event, or can be used inside an
+ * response to an Rx stream threshold event, or can be used inside an
  * active polling mechanism which is under user control.
  *
  * @note - The signature of this function is directly compatible with the
@@ -432,9 +432,9 @@ ixAtmdAccRxDispatcherUnregister (IxAtmRxQueueId atmdQueueId);
  * @sa IxAtmdAccRxVcRxCallback
  * @sa ixAtmdAccRxVcFreeEntriesQuery
  *
- * @param rxQueueId @ref IxAtmRxQueueId [in] - indicates which RX queue to process.
+ * @param rxQueueId @ref IxAtmRxQueueId [in] - indicates which Rx queue to process.
  * @param numberOfPdusToProcess unsigned int [in] - indicates the maxiumum number of PDU to
- *     remove from the RX queue. A value of IX_ATMDACC_ALLPDUS indicates
+ *     remove from the Rx queue. A value of IX_ATMDACC_ALLPDUS indicates
  *     to process all PDUs from the queue. This includes at least the PDUs
  *     in the queue when the fuction is invoked. Because of real-time
  *     constraints, there is no guarantee thatthe queue will be empty
@@ -447,7 +447,7 @@ ixAtmdAccRxDispatcherUnregister (IxAtmRxQueueId atmdQueueId);
  *     pointer.
  *
  * @return @li IX_SUCCESS the number of PDUs as indicated in
- *     numberOfPdusProcessedPtr are removed from the RX queue and the VC callback
+ *     numberOfPdusProcessedPtr are removed from the Rx queue and the VC callback
  *     are called.
  * @return @li IX_FAIL invalid parameters or some unspecified internal
  *     error occured.
@@ -464,14 +464,14 @@ PUBLIC IX_STATUS ixAtmdAccRxDispatch (IxAtmRxQueueId rxQueueId,
  * @fn ixAtmdAccRxLevelQuery (IxAtmRxQueueId rxQueueId,
                      unsigned int *numberOfPdusPtr)
  *
- * @brief Query the number of entries in a particular RX queue.
+ * @brief Query the number of entries in a particular Rx queue.
  *
  * This function is used to retrieve the number of pdus received by
  * the hardware and ready for distribution to users.
  *
- * @param rxQueueId @ref IxAtmRxQueueId [in] - indicates which of two RX queues to query.
+ * @param rxQueueId @ref IxAtmRxQueueId [in] - indicates which of two Rx queues to query.
  * @param numberOfPdusPtr unsigned int* [out] - Pointer to store the number of available
- *        PDUs in the RX queue. This parameter cannot be a null pointer.
+ *        PDUs in the Rx queue. This parameter cannot be a null pointer.
  *
  * @return @li IX_SUCCESS the value in numberOfPdusPtr specifies the
  *         number of incoming pdus waiting in this queue
@@ -492,14 +492,14 @@ PUBLIC IX_STATUS ixAtmdAccRxLevelQuery (IxAtmRxQueueId rxQueueId,
  * @fn ixAtmdAccRxQueueSizeQuery (IxAtmRxQueueId rxQueueId,
                      unsigned int *numberOfPdusPtr)
  *
- * @brief Query the size of a particular RX queue.
+ * @brief Query the size of a particular Rx queue.
  *
  * This function is used to retrieve the number of pdus the system is
  * able to queue when reception is complete.
  *
- * @param rxQueueId @ref IxAtmRxQueueId [in] - indicates which of two RX queues to query.
+ * @param rxQueueId @ref IxAtmRxQueueId [in] - indicates which of two Rx queues to query.
  * @param numberOfPdusPtr unsigned int* [out] - Pointer to store the number of pdus
- *         the system is able to queue in the RX queue. This parameter
+ *         the system is able to queue in the Rx queue. This parameter
  *         cannot be a null pointer.
  *
  * @return @li IX_SUCCESS the value in numberOfPdusPtr specifies the
@@ -515,7 +515,7 @@ PUBLIC IX_STATUS ixAtmdAccRxQueueSizeQuery (IxAtmRxQueueId rxQueueId,
                      unsigned int *numberOfPdusPtr);
 
 /* ------------------------------------------------------
-   Part of the IxAtmdAcc interface related to TX traffic
+   Part of the IxAtmdAcc interface related to Tx traffic
    ------------------------------------------------------ */
 
 /**
@@ -822,12 +822,12 @@ PUBLIC IX_STATUS ixAtmdAccPortTxProcess (IxAtmLogicalPort port,
  * @sa ixAtmdAccTxDoneLevelQuery
  *
  * @param numberOfPdusToProcess unsigned int [in] - maxiumum number of pdus to remove
- *     from the TX Done queue
+ *     from the Tx Done queue
  * @param *numberOfPdusProcessedPtr unsigned int [out] - number of pdus removed from
- *     the TX Done queue. This parameter cannot be a null pointer.
+ *     the Tx Done queue. This parameter cannot be a null pointer.
  *
  * @return @li IX_SUCCESS the number of pdus as indicated in
- *     numberOfPdusToProcess are removed from the TX Done hardware
+ *     numberOfPdusToProcess are removed from the Tx Done hardware
  *     and passed to the user through the Tx Done callback registered
  *     during a call to @a ixAtmdAccTxVcConnect()
  * @return @li IX_FAIL invalid parameters or numberOfPdusProcessedPtr is
@@ -1994,7 +1994,7 @@ PUBLIC IX_STATUS ixAtmdAccPortEnable (IxAtmLogicalPort port);
  *         from an interrupt context
  *
  * @note - The response from hardware is done through the txDone mechanism
- *         to ensure the synchrnisation with tx resources. Therefore, the
+ *         to ensure the synchrnisation with Tx resources. Therefore, the
  *         txDone mechanism needs to be serviced to make a PortDisable complete.
  *
  * @sa ixAtmdAccPortEnable

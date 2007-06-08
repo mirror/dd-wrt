@@ -8,12 +8,12 @@
  * component of the IXP400 Parity Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -58,7 +58,11 @@
  */
 
 /* IRQ Level for the SWCP */
+#if !defined(__ixp43X)
 #define IRQ_IXP400_INTC_PARITYENACC_SWCP  IX_OSAL_IXP400_SWCP_IRQ_LVL
+#else /* define dummy value for IXP 43X */
+#define IRQ_IXP400_INTC_PARITYENACC_SWCP  0 
+#endif
 
 
 /*

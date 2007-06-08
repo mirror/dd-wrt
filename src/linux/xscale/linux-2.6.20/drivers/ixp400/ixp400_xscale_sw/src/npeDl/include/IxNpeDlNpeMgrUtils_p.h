@@ -7,12 +7,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -64,7 +64,7 @@
  * Put the user defined include files required.
  */
 #include "IxNpeDl.h"
-#include "IxOsalTypes.h"
+#include "IxOsal.h"
 #include "IxNpeDlNpeMgrEcRegisters_p.h"
 
 
@@ -293,7 +293,6 @@ ixNpeDlNpeMgrDebugInstructionExec (UINT32 npeBaseAddress,
 void
 ixNpeDlNpeMgrDebugInstructionPostExec (UINT32 npeBaseAddress);
 
-#if defined(__ixp42X) || defined(__ixp46X)
 /**
  * @fn IX_STATUS ixNpeDlNpeMgrPhysicalRegWrite (UINT32 npeBaseAddress,
                                                 UINT32 regAddr,
@@ -335,7 +334,6 @@ ixNpeDlNpeMgrDebugInstructionPostExec (UINT32 npeBaseAddress);
 IX_STATUS
 ixNpeDlNpeMgrPhysicalRegWrite (UINT32 npeBaseAddress, UINT32 regAddr,
 			       UINT32 regValue, BOOL verify);
-#endif
 
 /**
  * @fn IX_STATUS ixNpeDlNpeMgrCtxtRegWrite (UINT32 npeBaseAddress,

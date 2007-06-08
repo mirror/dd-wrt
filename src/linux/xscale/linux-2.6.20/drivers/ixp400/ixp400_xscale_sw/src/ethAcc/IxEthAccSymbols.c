@@ -8,12 +8,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -115,6 +115,7 @@ EXPORT_SYMBOL(ixEthAccQMgrRxNotificationEnable);
 EXPORT_SYMBOL(ixEthAccQMgrRxNotificationDisable);
 EXPORT_SYMBOL(ixEthAccQMgrRxQEntryGet);
 
+EXPORT_SYMBOL(ixEthAccMiiPortIdPhyAddrSet);
 extern UINT32 ixEthDBAddressCompare(UINT8 *mac1, UINT8 *mac2);
 EXPORT_SYMBOL(ixEthDBAddressCompare);              
 EXPORT_SYMBOL(ixEthRxMultiBufferQMCallback);
@@ -122,5 +123,10 @@ EXPORT_SYMBOL(ixEthRxFrameQMCallback);
 EXPORT_SYMBOL(ixEthAccRxMultiBufferPriorityPoll);
 EXPORT_SYMBOL(ixEthAccRxPriorityPoll);
 EXPORT_SYMBOL(ixEthTxFrameDoneQMCallback);
+EXPORT_SYMBOL(IxEthNpePortIdTable);
+EXPORT_SYMBOL(IxEthNpePortIndexTable);
+EXPORT_SYMBOL(IxEthEthPortIdToLogicalIdTable);
+EXPORT_SYMBOL(IxEthEthPortIdToPhyAddressTable);
+EXPORT_SYMBOL(IxEthAccPortInfo);
 
 #endif /* __linux */

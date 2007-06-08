@@ -8,12 +8,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -60,6 +60,7 @@
 #define __IX_ACC_COMMON_H__
 
 #include "IxOsal.h"
+#include "IxEthNpe.h"
 
 /**
  * @ingroup IxAccCommon
@@ -121,4 +122,27 @@ extern IxOsalMutex ixEthHssCoexistLock;
          } \
     } while (0);
 
+/**
+ * @ingroup IxAccCommon
+ *
+ * @fn ixEthNpePortMapCreate(void)
+ *
+ * @brief Select the default port parameters for particular Intel(R) IXP4XX Product Line, 
+ *        setup lookup tables for port conversions
+ * 	  Ethernet PortId => LogicalId, 
+ * 	  LogicalId => Ethernet PortId,  
+ *        Ethernet PortId => Physical Address 
+ *
+ * @param none
+ *
+ * @return IxEthAccStatus
+ * IX_ETH_NPE_SUCCESS - port mapping lookup table successfully built
+ * IX_ETH_NPE_FAIL - unknown featureCtrl device ID, failed to get default port mapping
+ * @internal
+ */
+IxEthNpeStatus ixEthNpePortMapCreate(void);
+
 #endif /* __IX_ACC_COMMON_H__ */
+
+
+

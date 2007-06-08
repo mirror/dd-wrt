@@ -40,40 +40,46 @@ EXTRA_CFLAGS += \
 	-DXSCALE=33 \
 	-DSIMSPARCSOLARIS=0 \
 	-DNDEBUG \
+	-DENABLE_IOMEM \
+	-DENABLE_BUFFERMGT \
+	-DIX_OSAL_OEM_FAST_MUTEX \
 	-I$(IXP400_DIR) \
 	-I$(IX_XSCALE_SW)/src/include \
 	-I$(OSAL_DIR)/ \
-	-I$(OSAL_DIR)/os/linux/include/ \
-	-I$(OSAL_DIR)/os/linux/include/core/  \
-	-I$(OSAL_DIR)/os/linux/include/modules/ \
-	-I$(OSAL_DIR)/os/linux/include/modules/ioMem/ \
-	-I$(OSAL_DIR)/os/linux/include/modules/core/ \
-	-I$(OSAL_DIR)/os/linux/include/modules/ddk/ \
-	-I$(OSAL_DIR)/os/linux/include/modules/bufferMgt/ \
-	-I$(OSAL_DIR)/os/linux/include/platforms/ \
-	-I$(OSAL_DIR)/os/linux/include/platforms/ixp400/
-ifeq ($(CPU_IXP46X),y)
+	-I$(OSAL_DIR)/common/include/ \
+
 EXTRA_CFLAGS += \
-	-I$(OSAL_DIR)/os/linux/include/platforms/ixp400/ixp465/
-else
-EXTRA_CFLAGS += \
-	-I$(OSAL_DIR)/os/linux/include/platforms/ixp400/ixp425/
-endif
-EXTRA_CFLAGS += \
+	-I$(ROOTDIR)/. \
+	-I$(IX_XSCALE_SW)/src/include \
+	-I$(OSAL_DIR)/ \
+	-I$(OSAL_DIR)/common/include/ \
+	-I$(OSAL_DIR)/common/include/modules/ioMem \
+	-I$(OSAL_DIR)/common/include/modules/ddk \
+	-I$(OSAL_DIR)/common/include/modules/bufferMgt \
+	-I$(OSAL_DIR)/common/os/linux/include/modules/ioMem \
+	-I$(OSAL_DIR)/common/os/linux/include/modules/ddk \
+	-I$(OSAL_DIR)/common/os/linux/include/modules/bufferMgt \
+	-I$(OSAL_DIR)/common/os/linux/include/core \
 	-I$(OSAL_DIR)/include/ \
 	-I$(OSAL_DIR)/include/modules/ \
 	-I$(OSAL_DIR)/include/modules/bufferMgt/ \
 	-I$(OSAL_DIR)/include/modules/ioMem/ \
 	-I$(OSAL_DIR)/include/modules/core/ \
 	-I$(OSAL_DIR)/include/platforms/ \
-	-I$(OSAL_DIR)/include/platforms/ixp400/
+	-I$(OSAL_DIR)/include/platforms/ixp400/ \
+	-I$(OSAL_DIR)/include/platforms/ixp400/ixp425 \
+	-I$(OSAL_DIR)/include/platforms/ixp400/ixp465 \
+
 ifeq ($(CPU_IXP46X),y)
-EXTRA_CFLAGS += \
-	-I$(OSAL_DIR)/include/platforms/ixp400/ixp465/
+EXTRA_CFLAGS += -D__ixp46X
+EXTRA_CFLAGS += -I$(OSAL_DIR)/platforms/ixp46X/include
+EXTRA_CFLAGS += -I$(OSAL_DIR)/platforms/ixp46X/os/linux/include
 else
-EXTRA_CFLAGS += \
-	-I$(OSAL_DIR)/include/platforms/ixp400/ixp425/
+EXTRA_CFLAGS += -D__ixp42X
+EXTRA_CFLAGS += -I$(OSAL_DIR)/platforms/ixp42X/include
+EXTRA_CFLAGS += -I$(OSAL_DIR)/platforms/ixp42X/os/linux/include
 endif
+
 EXTRA_CFLAGS += \
 	-I$(IX_XSCALE_SW)/src/include \
 	-I$(IX_XSCALE_SW)/src/errHdlAcc/include \
@@ -90,26 +96,32 @@ EXTRA_CFLAGS += \
 
 
 ixp400-objs += \
-	ixp_osal/os/linux/src/core/IxOsalOsThread.o \
-	ixp_osal/os/linux/src/core/IxOsalOsCacheMMU.o \
-	ixp_osal/os/linux/src/core/IxOsalOsServices.o \
-	ixp_osal/os/linux/src/core/IxOsalOsSemaphore.o  \
-	ixp_osal/os/linux/src/core/IxOsalOsMsgQ.o \
-	ixp_osal/os/linux/src/core/IxOsalOsSymbols.o \
-	ixp_osal/os/linux/src/modules/bufferMgt/IxOsalOsBufferMgtSymbols.o \
-	ixp_osal/os/linux/src/modules/ddk/IxOsalOsDdkClk.o  \
-	ixp_osal/os/linux/src/modules/ddk/IxOsalOsDdkIrq.o \
-	ixp_osal/os/linux/src/modules/ddk/IxOsalOsDdkPci.o  \
-	ixp_osal/os/linux/src/modules/ddk/IxOsalOsDdkSymbols.o	\
-	ixp_osal/os/linux/src/modules/ioMem/IxOsalOsIoMem.o  \
-	ixp_osal/os/linux/src/modules/ioMem/IxOsalOsIoMemSymbols.o \
-	ixp_osal/os/linux/src/platforms/ixp400/IxOsalOsIxp400.o \
-	ixp_osal/os/linux/src/platforms/ixp400/IxOsalOsIxp400Symbols.o
+	ixp_osal/common/os/linux/src/core/IxOsalOsMsgQ.o \
+	ixp_osal/common/os/linux/src/core/IxOsalOsSemaphore.o \
+	ixp_osal/common/os/linux/src/core/IxOsalOsServices.o \
+	ixp_osal/common/os/linux/src/core/IxOsalOsSymbols.o \
+	ixp_osal/common/os/linux/src/core/IxOsalOsThread.o \
+	ixp_osal/common/os/linux/src/modules/bufferMgt/IxOsalOsBufferMgtSymbols.o \
+	ixp_osal/common/os/linux/src/modules/ddk/IxOsalOsDdkClk.o \
+	ixp_osal/common/os/linux/src/modules/ddk/IxOsalOsDdkCacheMMU.o \
+	ixp_osal/common/os/linux/src/modules/ddk/IxOsalOsDdkIrq.o \
+	ixp_osal/common/os/linux/src/modules/ddk/IxOsalOsDdkPci.o \
+	ixp_osal/common/os/linux/src/modules/ddk/IxOsalOsDdkSymbols.o \
+	ixp_osal/common/os/linux/src/modules/ioMem/IxOsalOsIoMem.o \
+	ixp_osal/common/os/linux/src/modules/ioMem/IxOsalOsIoMemSymbols.o \
+
+#	ixp_osal/common/os/linux/src/core/IxOsalOsSpinLock.o \
+	
 	
 ixp400-objs += \
-	ixp_osal/src/core/IxOsalTime.o \
-	ixp_osal/src/modules/ioMem/IxOsalIoMem.o \
-	ixp_osal/src/modules/bufferMgt/IxOsalBufferMgt.o
+	ixp_osal/common/src/core/IxOsalTime.o \
+	ixp_osal/common/src/modules/ioMem/IxOsalIoMem.o \
+	ixp_osal/common/src/modules/bufferMgt/IxOsalBufferMgt.o
+
+
+
+
+
 ixp400-objs += \
 	ixp400_xscale_sw/src/oslinux/IxLinuxInit.o
 ixp400-objs += \
@@ -122,6 +134,12 @@ ixp400-objs += \
 	ixp400_xscale_sw/src/qmgr/IxQMgrHwQIfIxp400.o \
 	ixp400_xscale_sw/src/qmgr/IxQMgrQAccess.o \
 	ixp400_xscale_sw/src/qmgr/IxQMgrSymbols.o
+
+ixp400-objs += \
+	ixp_osal/platforms/ixp42X/os/linux/src/IxOsalOsOem.o \
+	ixp_osal/platforms/ixp42X/os/linux/src/IxOsalOsOemSymbols.o 
+
+
 
 ifeq ($(CPU_IXP46X),y)
 

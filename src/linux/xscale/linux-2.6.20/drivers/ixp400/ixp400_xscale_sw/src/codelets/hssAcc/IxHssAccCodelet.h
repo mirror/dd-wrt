@@ -7,12 +7,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -87,9 +87,9 @@
  *
  * In Packetised-raw mode service (client 1 and 3), Rx counter will be bigger than 
  * Tx counter because in this service, idle packets are received by Intel XScale(R)
- * Core and causes Rx counter to be bigger than Tx counter. As for packetised-HDLC
+ * processor and causes Rx counter to be bigger than Tx counter. As for packetised-HDLC
  * service, idle packets are handled in HDLC coprocessor and not passed to Intel 
- * XScale(R) Core (Hence, Rx counter not increased).     
+ * XScale(R) processor (Hence, Rx counter not increased).     
  *
  * <b> Limitations </b><br>
  * When executing Packetised service on both HSS ports of 266MHz Intel (R) IXP42X
@@ -117,6 +117,7 @@
  *           1 = HSS Port 0 Only.
  *           2 = HSS Port 1 Only.
  *           3 = HSS Port 0 and 1.
+ *	     Note :IXP43X supports only HSS Port 0
  *
  *      Where verifyMode:
  *           1 = codelet verifies traffic received in hardware loopback mode.
@@ -142,6 +143,7 @@
  *           1 = HSS Port 0 Only.
  *           2 = HSS Port 1 Only.
  *           3 = HSS Port 0 and 1.
+ *	     Note :IXP43X supports only HSS Port 0
  *
  *      Where c:
  *           1 = codelet verifies traffic received in hardware loopback mode.
@@ -150,7 +152,7 @@
  * </i>
  * </pre>
  *
- * <b> WinCE User Guide </b><br>
+ * <b> WinCE* User Guide </b><br>
  * The HSS Access Codelet uses serial console to print out menus and accept input from
  * users. Users need to choose and enter which operation to be executed from the menus.
  *
@@ -169,6 +171,7 @@
  *           2 = HSS Port 1 Only.
  *           3 = HSS Port 0 and 1.
  *         100 = Exit HSS access codelet. 
+ *	     Note :IXP43X supports only HSS Port 0
  *
  *      Menu 3: Choose if codelet should or shouldn't verify traffic. 
  *      Where c:
@@ -189,25 +192,25 @@
  * <P>
  * The channelised service operates quite differently.  As voice data is
  * very sensitive to latency using mbufs for transferral of the data
- * between Intel XScale(R) Core and NPE is not very appropriate.  Instead,
+ * between Intel XScale(R) processor and NPE is not very appropriate.  Instead,
  * circular buffers are used whereby the NPE reads data from a block of SDRAM
- * that the Intel XScale(R) Core writes to, and writes data to a block of 
- * SDRAM that Intel XScale(R) Core reads from.  On receive, the NPE writes 
- * directly into a circular buffer that Intel XScale(R) Core subsequently 
+ * that the Intel XScale(R) processor writes to, and writes data to a block of 
+ * SDRAM that Intel XScale(R) processor reads from.  On receive, the NPE writes 
+ * directly into a circular buffer that Intel XScale(R) processor subsequently 
  * reads the data from. Each channel has its own circular buffer, and all 
  * these buffers are stored contiguously. On transmit, the NPE takes a 
- * circular list of pointers from Intel XScale(R) Core and transmits the data 
+ * circular list of pointers from Intel XScale(R) processor and transmits the data 
  * referenced by these pointers. Each list of pointers contains a pointer for
  * each channel, and the circular list of pointers contains multiple lists 
- * stored contiguously. This is to allow Intel XScale(R) Core to transmit voice 
+ * stored contiguously. This is to allow Intel XScale(R) processor to transmit voice 
  * samples without having to copy data, as only the pointer to the data blocks
- * needs to be written to SDRAM.  The NPE lets Intel XScale(R) Core know, in 
+ * needs to be written to SDRAM.  The NPE lets Intel XScale(R) processor know, in 
  * the form of Tx and Rx offsets, where in the blocks of SDRAM it is currently 
- * reading from and writing to. This enables Intel XScale(R) Core to co-ordinate 
+ * reading from and writing to. This enables Intel XScale(R) processor to co-ordinate 
  * its reading and writing activities to maintain the data flow. The Tx offset 
- * lets Intel XScale(R) Core know the list offset into the Tx circular pointer 
+ * lets Intel XScale(R) processor know the list offset into the Tx circular pointer 
  * list that the NPE will next use to transmit. The Rx offset lets Intel 
- * XScale(R) Core know the byte offset into each channel's Rx circular buffer 
+ * XScale(R) processor know the byte offset into each channel's Rx circular buffer 
  * that the NPE will next receive data into.
  * <P>
  * <B>Caching</B>
@@ -216,7 +219,7 @@
  * channelised and packetised buffers.  To allow for this, buffers need to
  * be flushed before transmit, and invalidated after receive.  Flushing the
  * buffers before transmit ensures the NPE reads and transmits the correct
- * data.  Invalidating the buffers after receive ensures Intel XScale(R) Core
+ * data.  Invalidating the buffers after receive ensures Intel XScale(R) processor
  * reads and processes the correct data.  In the case of the Codelet, all data
  * is flushed and invalidated as every byte is being written to on transmit
  * and every byte is verified on receive.  In a real application flushing
@@ -251,7 +254,7 @@
  * @{
  */
 
-#include "IxOsalTypes.h"
+#include "IxOsal.h"
 #include "IxHssAccCodelet_p.h"
 
 /*

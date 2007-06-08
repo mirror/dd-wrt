@@ -4,12 +4,12 @@
  * @brief Utility functions
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -53,9 +53,23 @@ IX_ETH_DB_PUBLIC
 IxEthDBStatus ixEthDBSingleEthNpeCheck(IxEthDBPortId portID)
 {
     UINT8 functionalityId;
-
-    IxEthNpeNodeId npeId = IX_ETHNPE_PHYSICAL_ID_TO_NODE(portID);
+    UINT32 npeId = IX_ETHNPE_PHYSICAL_ID_TO_NODE(portID);
    
+    if(IX_ETH_DB_ETH_NPE_ENABLED == ixEthDBEthNPEEnabled[npeId])
+    {
+       /* Eth NPE is enabled in the IXDP4XX*/
+       return IX_ETH_DB_SUCCESS; 
+    }
+    else
+    {
+	if((IX_ETH_DB_ETH_NPE_DISABLED == ixEthDBEthNPEEnabled[npeId])
+	    || (npeId > IX_NPEDL_NPEID_MAX))
+	{
+            /* Eth NPE is disabled in the IXDP4XX*/
+	    return IX_ETH_DB_FAIL;
+        }
+    }
+
     if (IX_SUCCESS != ixNpeDlLoadedImageFunctionalityGet(npeId, &functionalityId))
     {
         return IX_ETH_DB_FAIL;
@@ -63,66 +77,109 @@ IxEthDBStatus ixEthDBSingleEthNpeCheck(IxEthDBPortId portID)
     else
     {
 
-        /* If not IXP42X A0 stepping, proceed to check for existence of NPEs and ethernet coprocessors */
-        if ((IX_FEATURE_CTRL_SILICON_TYPE_A0 !=
-            (ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK))
-            || (IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X != ixFeatureCtrlDeviceRead ()))
-        {
+	/* If it is IXP42X or IXP46X, check NPE B coprocessor (IX_FEATURECTRL_ETH0) 
+	   for ethernet enable or disable*/ 
+	if((IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X == ixFeatureCtrlDeviceRead ()) ||
+	    (IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == ixFeatureCtrlDeviceRead ()))
+	{
             switch(npeId)
             {
-              case IX_NPEDL_NPEID_NPEA:
-                if ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA) ==
-                     IX_FEATURE_CTRL_COMPONENT_DISABLED) ||
-                     ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA_ETH) ==
-                     IX_FEATURE_CTRL_COMPONENT_DISABLED) ||
-                     (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH0) ==
-                     IX_FEATURE_CTRL_COMPONENT_DISABLED)))
+                case IX_NPEDL_NPEID_NPEA:
+                    if ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA) ==
+                        IX_FEATURE_CTRL_COMPONENT_DISABLED) ||
+                        ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA_ETH) ==
+                        IX_FEATURE_CTRL_COMPONENT_DISABLED) ||
+                        (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH0) ==
+                        IX_FEATURE_CTRL_COMPONENT_DISABLED)))
                 {
+                    ixEthDBEthNPEEnabled[npeId] = IX_ETH_DB_ETH_NPE_DISABLED;
                     return IX_ETH_DB_FAIL;
                 }
                 break;
 
-              case IX_NPEDL_NPEID_NPEB:
-                if ( (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB) ==
-                     IX_FEATURE_CTRL_COMPONENT_DISABLED) )
-                {
-                    return IX_ETH_DB_FAIL;
-                }
-                if (portID == 0)
-                {
-                    if( ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH0) ==
-                        IX_FEATURE_CTRL_COMPONENT_DISABLED)
+              	case IX_NPEDL_NPEID_NPEB:
+                    if ( (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB) ==
+                        IX_FEATURE_CTRL_COMPONENT_DISABLED) )
                     {
+                        ixEthDBEthNPEEnabled[npeId] = IX_ETH_DB_ETH_NPE_DISABLED;
                         return IX_ETH_DB_FAIL;
                     }
-                }
-                else /* ports 1-3 */
-                {
-                    if( ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB_ETH) ==
-                        IX_FEATURE_CTRL_COMPONENT_DISABLED)
+                    if (portID == 0)
                     {
+                        if( ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH0) ==
+                            IX_FEATURE_CTRL_COMPONENT_DISABLED)
+                    	{
+                            ixEthDBEthNPEEnabled[npeId] = IX_ETH_DB_ETH_NPE_DISABLED;
+                            return IX_ETH_DB_FAIL;
+                    	}
+                    }
+                    else /* ports 1-3 */
+               	    {
+                        if( ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB_ETH) ==
+                            IX_FEATURE_CTRL_COMPONENT_DISABLED)
+                    	{
+                            ixEthDBEthNPEEnabled[npeId] = IX_ETH_DB_ETH_NPE_DISABLED;
+                            return IX_ETH_DB_FAIL;
+                    	}
+
+                    }
+               	    break;
+
+              	case IX_NPEDL_NPEID_NPEC:
+                    if ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEC) ==
+                        IX_FEATURE_CTRL_COMPONENT_DISABLED) ||
+                        ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH1) ==
+                        IX_FEATURE_CTRL_COMPONENT_DISABLED) ||
+                        (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH0) ==
+                        IX_FEATURE_CTRL_COMPONENT_DISABLED)))
+                    {
+                        ixEthDBEthNPEEnabled[npeId] = IX_ETH_DB_ETH_NPE_DISABLED;
                         return IX_ETH_DB_FAIL;
                     }
+                    break;
 
-                }
-                break;
+              	default: /* invalid NPE */
+                    return IX_ETH_DB_FAIL;
+            } /*end of switch*/
+	} /* end of IXP42X || IXP46X */
+	/* If it is IXP43X, check NPE C coprocessor (IX_FEATURECTRL_ETH1) 
+	 * for ethernet enable or disable
+         */ 
+	if(IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X == ixFeatureCtrlDeviceRead ())
+	{
+            switch(npeId)
+            {
+                case IX_NPEDL_NPEID_NPEA: 
+               	if ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA) ==
+               	     IX_FEATURE_CTRL_COMPONENT_DISABLED) ||
+               	     ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA_ETH) ==
+              	     IX_FEATURE_CTRL_COMPONENT_DISABLED) || 
+               	     (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH1) ==
+                     	     IX_FEATURE_CTRL_COMPONENT_DISABLED)))
+               	{
+                    ixEthDBEthNPEEnabled[npeId] = IX_ETH_DB_ETH_NPE_DISABLED;
+                    return IX_ETH_DB_FAIL;
+               	}
+               	break;
 
-              case IX_NPEDL_NPEID_NPEC:
-                if ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEC) ==
-                     IX_FEATURE_CTRL_COMPONENT_DISABLED) ||
-                     ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH1) ==
-                     IX_FEATURE_CTRL_COMPONENT_DISABLED) ||
-                     (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH0) ==
-                     IX_FEATURE_CTRL_COMPONENT_DISABLED)))
+                case IX_NPEDL_NPEID_NPEC: 
+               	if ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEC) ==
+                    IX_FEATURE_CTRL_COMPONENT_DISABLED) ||
+               	    ((ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH1) ==
+                    IX_FEATURE_CTRL_COMPONENT_DISABLED) ))
                 {
+                    ixEthDBEthNPEEnabled[npeId] = IX_ETH_DB_ETH_NPE_DISABLED;
                     return IX_ETH_DB_FAIL;
                 }
                 break;
 
-              default: /* invalid NPE */
-                return IX_ETH_DB_FAIL;
-            }
-        }
+              	default: /* invalid NPE */
+                    return IX_ETH_DB_FAIL;
+            } /* switch */
+        } /* if IXP43X */
+
+        /* Eth NPE is enabled in the IXDP4XX platform*/
+        ixEthDBEthNPEEnabled[npeId] = IX_ETH_DB_ETH_NPE_ENABLED;
 
         return IX_ETH_DB_SUCCESS;
     }
