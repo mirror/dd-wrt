@@ -7,14 +7,77 @@
 #include "common.h"
 #include "iksemel.h"
 
+enum cons_e {
+	C_CDATA = 0,
+	C_TAG_START,
+	C_TAG,
+	C_TAG_END,
+	C_ATTRIBUTE,
+	C_ATTRIBUTE_1,
+	C_ATTRIBUTE_2,
+	C_VALUE,
+	C_VALUE_APOS,
+	C_VALUE_QUOT,
+	C_WHITESPACE,
+	C_ENTITY,
+	C_COMMENT,
+	C_COMMENT_1,
+	C_COMMENT_2,
+	C_COMMENT_3,
+	C_MARKUP,
+	C_MARKUP_1,
+	C_SECT,
+	C_SECT_CDATA,
+	C_SECT_CDATA_1,
+	C_SECT_CDATA_2,
+	C_SECT_CDATA_3,
+	C_SECT_CDATA_4,
+	C_SECT_CDATA_C,
+	C_SECT_CDATA_E,
+	C_SECT_CDATA_E2,
+	C_PI
+};
 
+/* if you add a variable here, dont forget changing iks_parser_reset */
+struct iksparser_struct {
+	ikstack *s;
+	void *user_data;
+	iksTagHook *tagHook;
+	iksCDataHook *cdataHook;
+	iksDeleteHook *deleteHook;
+	/* parser context */
+	char *stack;
+	size_t stack_pos;
+	size_t stack_max;
+
+	enum cons_e context;
+	enum cons_e oldcontext;
+
+	char *tag_name;
+	enum ikstagtype tagtype;
+
+	unsigned int attmax;
+	unsigned int attcur;
+	int attflag;
+	char **atts;
+	int valflag;
+
+	unsigned int entpos;
+	char entity[8];
+
+	unsigned long nr_bytes;
+	unsigned long nr_lines;
+
+	int uni_max;
+	int uni_len;
+};
 
 iksparser *
 iks_sax_new (void *user_data, iksTagHook *tagHook, iksCDataHook *cdataHook)
 {
 	iksparser *prs;
 
-	prs = (iksparser*)malloc (sizeof (iksparser));
+	prs = iks_malloc (sizeof (iksparser));
 	if (NULL == prs) return NULL;
 	memset (prs, 0, sizeof (iksparser));
 	prs->user_data = user_data;
@@ -69,7 +132,7 @@ iks_nr_lines (iksparser *prs)
 static int
 stack_init (iksparser *prs)
 {
-	prs->stack = (char*)malloc (128);
+	prs->stack = iks_malloc (128);
 	if (!prs->stack) return 0;
 	prs->stack_max = 128;
 	prs->stack_pos = 0;
@@ -88,11 +151,11 @@ stack_expand (iksparser *prs, int len)
 	} else {
 		need = prs->stack_max + (need * 1.2);
 	}
-	tmp = (char*)malloc (need);
+	tmp = iks_malloc (need);
 	if (!tmp) return 0;
 	diff = tmp - prs->stack;
 	memcpy (tmp, prs->stack, prs->stack_max);
-	free (prs->stack);
+	iks_free (prs->stack);
 	prs->stack = tmp;
 	prs->stack_max = need;
 	prs->tag_name += diff;
@@ -281,7 +344,7 @@ sax_core (iksparser *prs, char *buf, int len)
 				}
 				if (!prs->atts) {
 					prs->attmax = 12;
-					prs->atts = (char**)malloc (sizeof(char *) * 2 * 12);
+					prs->atts = iks_malloc (sizeof(char *) * 2 * 12);
 					if (!prs->atts) return IKS_NOMEM;
 					memset (prs->atts, 0, sizeof(char *) * 2 * 12);
 					prs->attcur = 0;
@@ -289,7 +352,7 @@ sax_core (iksparser *prs, char *buf, int len)
 					if (prs->attcur >= (prs->attmax * 2)) {
 						void *tmp;
 						prs->attmax += 12;
-						tmp = (void*)malloc (sizeof(char *) * 2 * prs->attmax);
+						tmp = iks_malloc (sizeof(char *) * 2 * prs->attmax);
 						if (!tmp) return IKS_NOMEM;
 						memset (tmp, 0, sizeof(char *) * 2 * prs->attmax);
 						memcpy (tmp, prs->atts, sizeof(char *) * prs->attcur);
@@ -564,7 +627,7 @@ void
 iks_parser_delete (iksparser *prs)
 {
 	if (prs->deleteHook) prs->deleteHook (prs->user_data);
-	if (prs->stack) free (prs->stack);
-	if (prs->atts) free (prs->atts);
-	if (prs->s) iks_stack_delete (prs->s); else free (prs);
+	if (prs->stack) iks_free (prs->stack);
+	if (prs->atts) iks_free (prs->atts);
+	if (prs->s) iks_stack_delete (prs->s); else iks_free (prs);
 }

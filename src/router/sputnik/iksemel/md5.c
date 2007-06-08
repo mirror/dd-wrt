@@ -74,7 +74,7 @@ void iks_md5_reset(iksmd5 *md5)
 
 iksmd5 *iks_md5_new(void)
 {
-	iksmd5 *md5 = (iksmd5*)malloc(sizeof(iksmd5));
+	iksmd5 *md5 = malloc(sizeof(iksmd5));
 
 	if (!md5)
 		return NULL;
