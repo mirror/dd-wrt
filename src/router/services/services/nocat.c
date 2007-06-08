@@ -95,7 +95,10 @@ mk_nocat_conf (void)
   fprintf (fp, "GatewayName\t%s\n", nvram_safe_get ("NC_GatewayName"));
   fprintf (fp, "GatewayAddr\t%s\n", nvram_safe_get ("lan_ipaddr"));
   fprintf (fp, "GatewayPort\t%s\n", nvram_safe_get ("NC_GatewayPort"));
-  fprintf (fp, "GatewayMAC\t%s\n", nvram_safe_get ("et0macaddr"));
+  if (nvram_match ("port_swap", "1"))
+    fprintf (fp, "GatewayMAC\t%s\n", nvram_safe_get ("et1macaddr"));
+  else
+    fprintf (fp, "GatewayMAC\t%s\n", nvram_safe_get ("et0macaddr"));
   fprintf (fp, "GatewayPassword\t%s\n", nvram_safe_get ("NC_Password"));
   fprintf (fp, "GatewayMode\t%s\n", nvram_safe_get ("NC_GatewayMode"));
   fprintf (fp, "DocumentRoot\t%s\n", nvram_safe_get ("NC_DocumentRoot"));
