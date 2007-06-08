@@ -118,7 +118,7 @@ iks_load (const char *fname, iks **xptr)
 
 	*xptr = NULL;
 
-	buf = (char*)malloc (FILE_IO_BUF_SIZE);
+	buf = iks_malloc (FILE_IO_BUF_SIZE);
 	if (!buf) return IKS_NOMEM;
 	ret = IKS_NOMEM;
 	prs = iks_dom_new (xptr);
@@ -151,7 +151,7 @@ iks_load (const char *fname, iks **xptr)
 		}
 		iks_parser_delete (prs);
 	}
-	free (buf);
+	iks_free (buf);
 	return ret;
 }
 
@@ -172,7 +172,7 @@ iks_save (const char *fname, iks *x)
 			if (fputs (data, f) >= 0) ret = IKS_OK;
 			fclose (f);
 		}
-		free (data);
+		iks_free (data);
 	}
 	return ret;
 }

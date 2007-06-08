@@ -159,7 +159,7 @@ iks_sasl_challenge (struct stream_data *data, iks *challenge)
 				nonce_end = strchr (nonce, '"');
 			} while (*(nonce - 1) == '\\');
 		} else {
-			free (b);
+			iks_free (b);
 			return;
 		}
 		charset = strstr (b, "charset");
@@ -204,7 +204,7 @@ iks_sasl_challenge (struct stream_data *data, iks *challenge)
 		i = iks_strlen (data->auth_username) + iks_strlen (realm) +
 			iks_strlen (nonce) + iks_strlen (data->server) +
 			CNONCE_LEN*8 + 136;
-		response = (char*)malloc (i);
+		response = iks_malloc (i);
 		sprintf (response, "username=\"%s\",realm=\"%s\",nonce=\"%s\""
 			",cnonce=\"%s\",nc=00000001,qop=auth,digest-uri=\""
 			"xmpp/%s\",response=%s,charset=utf-8",
@@ -215,13 +215,13 @@ iks_sasl_challenge (struct stream_data *data, iks *challenge)
 		x = iks_new ("response");
 		iks_insert_cdata (x, response_coded, 0);
 
-		free (response);
-		free (response_coded);
+		iks_free (response);
+		iks_free (response_coded);
 	}
 	iks_insert_attrib (x, "xmlns", IKS_NS_XMPP_SASL);
 	iks_send (data->prs, x);
 	iks_delete (x);
-	free (b);
+	iks_free (b);
 }
 
 static int
@@ -481,13 +481,13 @@ iks_send_header (iksparser *prs, const char *to)
 	int len, err;
 
 	len = 91 + strlen (data->name_space) + 6 + strlen (to) + 16 + 1;
-	msg = (char*)malloc (len);
+	msg = iks_malloc (len);
 	if (!msg) return IKS_NOMEM;
 	sprintf (msg, "<?xml version='1.0'?>"
 		"<stream:stream xmlns:stream='http://etherx.jabber.org/streams' xmlns='"
 		"%s' to='%s' version='1.0'>", data->name_space, to);
 	err = iks_send_raw (prs, msg);
-	free (msg);
+	iks_free (msg);
 	if (err) return err;
 	data->server = to;
 	return IKS_OK;
@@ -504,28 +504,6 @@ iks_send_raw (iksparser *prs, const char *xmlstr)
 {
 	struct stream_data *data = iks_user_data (prs);
 	int ret;
-if (data==NULL)
-    {
-    fprintf(stderr,"ups we have a problem, data is NULL\n");
-    return -1;
-    }
-    
-if (data->trans==NULL)
-{
-    fprintf(stderr,"ups we have a problem, trans is NULL\n");
-    return -1;
-}    
-
-if (data->trans->send==NULL)
-{
-    fprintf(stderr,"ups we have a problem, send is NULL\n");
-    return -1;
-}    
-if (data->sock==NULL)
-{
-    fprintf(stderr,"ups we have a problem, session is NULL\n");
-    return -1;
-}    
 
 #ifdef HAVE_GNUTLS
 	if (data->flags & SF_SECURE) {
@@ -598,15 +576,15 @@ iks_start_sasl (iksparser *prs, enum ikssasltype type, char *username, char *pas
 	switch (type) {
 		case IKS_SASL_PLAIN: {
 			int len = iks_strlen (username) + iks_strlen (pass) + 2;
-			char *s = (char*)malloc (80+len);
+			char *s = iks_malloc (80+len);
 			char *base64;
 
 			iks_insert_attrib (x, "mechanism", "PLAIN");
 			sprintf (s, "%c%s%c%s", 0, username, 0, pass);
 			base64 = iks_base64_encode (s, len);
 			iks_insert_cdata (x, base64, 0);
-			free (base64);
-			free (s);
+			iks_free (base64);
+			iks_free (s);
 			break;
 		}
 		case IKS_SASL_DIGEST_MD5: {

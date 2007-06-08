@@ -36,7 +36,7 @@ find_space (ikstack *s, ikschunk *c, size_t size)
 		if (c->size - c->used >= size) return c;
 		if (!c->next) {
 			if ((c->size * 2) > size) size = c->size * 2;
-			c->next = (ikschunk*)malloc (sizeof (ikschunk) + size);
+			c->next = iks_malloc (sizeof (ikschunk) + size);
 			if (!c->next) return NULL;
 			s->allocated += sizeof (ikschunk) + size;
 			c = c->next;
@@ -63,7 +63,7 @@ iks_stack_new (size_t meta_chunk, size_t data_chunk)
 	if (data_chunk & ALIGN_MASK) data_chunk = ALIGN (data_chunk);
 
 	len = sizeof (ikstack) + meta_chunk + data_chunk + (sizeof (ikschunk) * 2);
-	s = (ikstack*)malloc (len);
+	s = iks_malloc (len);
 	if (!s) return NULL;
 	s->allocated = len;
 	s->meta = (ikschunk *) ((char *) s + sizeof (ikstack));
@@ -189,14 +189,14 @@ iks_stack_delete (ikstack *s)
 	c = s->meta->next;
 	while (c) {
 		tmp = c->next;
-		free (c);
+		iks_free (c);
 		c = tmp;
 	}
 	c = s->data->next;
 	while (c) {
 		tmp = c->next;
-		free (c);
+		iks_free (c);
 		c = tmp;
 	}
-	free (s);
+	iks_free (s);
 }

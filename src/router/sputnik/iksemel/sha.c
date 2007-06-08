@@ -22,7 +22,7 @@ iks_sha_new (void)
 {
 	iksha *sha;
 
-	sha = (iksha*)malloc (sizeof (iksha));
+	sha = iks_malloc (sizeof (iksha));
 	if (!sha) return NULL;
 	iks_sha_reset (sha);
 	return sha;
@@ -82,7 +82,7 @@ iks_sha_print (iksha *sha, char *hash)
 void
 iks_sha_delete (iksha *sha)
 {
-	free (sha);
+	iks_free (sha);
 }
 
 void
@@ -93,7 +93,7 @@ iks_sha (const char *data, char *hash)
 	sha = iks_sha_new ();
 	iks_sha_hash (sha, data, strlen (data), 1);
 	iks_sha_print (sha, hash);
-	free (sha);
+	iks_free (sha);
 }
 
 static void
