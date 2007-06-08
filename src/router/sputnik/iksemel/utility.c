@@ -9,8 +9,8 @@
 
 /*****  malloc wrapper  *****/
 
-static void *(*my_malloc_func)(size_t size);
-static void (*my_free_func)(void *ptr);
+static void *(*my_malloc_func)(size_t size) = NULL;
+static void (*my_free_func)(void *ptr) = NULL;
 
 void *
 iks_malloc (size_t size)
