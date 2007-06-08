@@ -9,8 +9,33 @@
 
 /*****  malloc wrapper  *****/
 
+static void *(*my_malloc_func)(size_t size);
+static void (*my_free_func)(void *ptr);
 
+void *
+iks_malloc (size_t size)
+{
+	if (my_malloc_func)
+		return my_malloc_func (size);
+	else
+		return malloc (size);
+}
 
+void
+iks_free (void *ptr)
+{
+	if (my_free_func)
+		my_free_func (ptr);
+	else
+		free (ptr);
+}
+
+void
+iks_set_mem_funcs (void *(*malloc_func)(size_t size), void (*free_func)(void *ptr))
+{
+	my_malloc_func = malloc_func;
+	my_free_func = free_func;
+}
 
 /*****  NULL-safe Functions  *****/
 

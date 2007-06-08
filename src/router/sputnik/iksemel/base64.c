@@ -21,7 +21,7 @@ char *iks_base64_decode(const char *buf)
 		return NULL;
 
 	index = iks_strlen(buf)*6 / 8 + 1;
-	save = res = (char*)malloc(index);
+	save = res = iks_malloc(index);
 	memset(res, 0, index);
 	index = 0;
 
@@ -65,7 +65,7 @@ char *iks_base64_encode(const char *buf, int len)
 	int k, t;
 
 	len = (len > 0) ? (len) : (iks_strlen(buf));
-	save = res = (char*)malloc((len*8) / 6 + 4);
+	save = res = iks_malloc((len*8) / 6 + 4);
 
 	for (k = 0; k < len/3; ++k) {
 		*res++ = base64_charset[*buf >> 2];
