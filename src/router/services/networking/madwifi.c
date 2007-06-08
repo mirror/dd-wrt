@@ -1080,18 +1080,27 @@ if (r<0)
 static void
 set_rate (char *dev)
 {
-  char rate[16];
-  char net[16];
-  char bw[16];
-  char xr[16];
+  char rate[32];
+  char net[32];
+  char bw[32];
+  char xr[32];
+  char turbo[32];
+  
   sprintf (bw, "%s_channelbw", dev);
   sprintf (net, "%s_net_mode", dev);
   sprintf (rate, "%s_rate", dev);
   sprintf (xr, "%s_xr", dev);
+  sprintf (turbo, "%s_turbo", dev);
   char *r = default_get (rate, "0");
   char *netmode = default_get (net, "mixed");
 
   if (nvram_match (bw, "20") && nvram_match(xr,"0"))
+    if (atof (r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r)==3.0f || atof(r)==4.5f || atof(r)==9.0f || atof(r) == 13.5f)
+      {
+	nvram_set (rate, "0");
+	r = "0";
+      }
+  if (nvram_match (turbo,"1"))
     if (atof (r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r)==3.0f || atof(r)==4.5f || atof(r)==9.0f || atof(r) == 13.5f)
       {
 	nvram_set (rate, "0");
