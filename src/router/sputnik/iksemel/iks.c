@@ -428,7 +428,7 @@ escape_size (char *src, size_t len)
 	size_t sz;
 	char c;
 	int i;
-	if (src==NULL)return 0;
+
 	sz = 0;
 	for (i = 0; i < len; i++) {
 		c = src[i];
@@ -447,8 +447,6 @@ escape_size (char *src, size_t len)
 static char *
 my_strcat (char *dest, char *src, size_t len)
 {
-if (dest==NULL)return NULL;
-if (src==NULL)return dest;
 	if (0 == len) len = strlen (src);
 	memcpy (dest, src, len);
 	return dest + len;
@@ -493,7 +491,7 @@ iks_string (ikstack *s, iks *x)
 		if (s) {
 			return iks_stack_strdup (s, IKS_CDATA_CDATA (x), IKS_CDATA_LEN (x));
 		} else {
-			ret = (char*)malloc (IKS_CDATA_LEN (x));
+			ret = iks_malloc (IKS_CDATA_LEN (x));
 			memcpy (ret, IKS_CDATA_CDATA (x), IKS_CDATA_LEN (x));
 			return ret;
 		}
@@ -541,8 +539,8 @@ iks_string (ikstack *s, iks *x)
 		}
 	}
 
-	if (s) ret = iks_stack_alloc (s, (size*2) + 1);
-	else ret = (char*)malloc ((size*2) + 1);
+	if (s) ret = iks_stack_alloc (s, size + 1);
+	else ret = iks_malloc (size + 1);
 
 	if (!ret) return NULL;
 
@@ -607,7 +605,6 @@ iks_string (ikstack *s, iks *x)
 
 	return ret;
 }
-
 
 /*****  Copying  *****/
 
