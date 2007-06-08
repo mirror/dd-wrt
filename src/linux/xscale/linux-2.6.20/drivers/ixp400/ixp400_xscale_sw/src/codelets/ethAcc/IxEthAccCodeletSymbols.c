@@ -7,12 +7,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -82,6 +82,11 @@ MODULE_PARM_DESC(inPort, "EthAcc Codelet input port selection for tests\n");
 int outPort = 1;
 MODULE_PARM(outPort, "i");
 MODULE_PARM_DESC(outPort, "EthAcc Codelet output port selection for tests\n");
+int disableStats = 0;
+MODULE_PARM(disableStats, "i");
+MODULE_PARM_DESC(disableStats, "EthAcc Codelet disable statistic polling task \n"
+					"\t0 - Enable\n"
+					"\t1 - Disable\n");
 
 DECLARE_MUTEX_LOCKED(__codlet_getchar);
 DECLARE_MUTEX_LOCKED(__codlet_end);
@@ -98,7 +103,7 @@ void ixEthAccCodelet_wait(void)
 
 static void operation_func(void *unused)
 {
-    ixEthAccCodeletMain(operationType,inPort,outPort);
+    ixEthAccCodeletMain(operationType,inPort,outPort,disableStats);
     up(&__codlet_end);
 }
 

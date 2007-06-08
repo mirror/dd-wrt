@@ -4,12 +4,12 @@
  * @brief this file contains the public API of @ref IxErrHdlAcc component
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -51,7 +51,7 @@
 #define IxErrHdlAcc_H
 #include "IxOsal.h"
  /**
- * @defgroup IxErrHdlAcc IXP400 Soft-Error Handler Driver (ixErrHdlAcc) API
+ * @defgroup IxErrHdlAcc Intel (R) IXP400 Soft-Error Handler Driver (ixErrHdlAcc) API
  *
  * @brief The public API  for the IXP400 Soft-Error Handler Driver (ixErrHdlAcc)
  *

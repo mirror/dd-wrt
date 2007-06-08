@@ -8,12 +8,12 @@
  * of the IXP400 Parity Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -101,5 +101,9 @@ ixParityENAccSwcpPEParityInterruptClear (void);
 IX_STATUS
 ixParityENAccSwcpPEParityErrorContextFetch(
     IxParityENAccSwcpPEParityErrorContext *ixSwcpPECMsg);
+
+/* Function to unload the component */
+IX_STATUS
+ixParityENAccSwcpPEUnload(void);
 
 #endif /* IXPARITYENACCSPCPE_H */

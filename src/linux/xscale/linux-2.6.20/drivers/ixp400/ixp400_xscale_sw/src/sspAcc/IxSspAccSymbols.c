@@ -9,12 +9,12 @@
  * @version $Revision: 1.6 $
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -50,7 +50,7 @@
  */
 
 #if __linux
-#if defined(__ixp46X)
+#if defined (__ixp46X) || defined (__ixp43X)
 #include <linux/module.h>
 #include "IxSspAcc.h"
 
@@ -82,5 +82,5 @@ EXPORT_SYMBOL(ixSspAccSSPBusyCheck);
 EXPORT_SYMBOL(ixSspAccTxFIFOLevelGet);
 EXPORT_SYMBOL(ixSspAccRxFIFOLevelGet);
 EXPORT_SYMBOL(ixSspAccRxFIFOOverrunCheck);
-#endif /* __ixp46X */
+#endif /* __ixp46X || __ixp43X */
 #endif /* __linux */

@@ -8,12 +8,12 @@
  * module builds.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -48,13 +48,14 @@
  * -- End of Copyright Notice --
  */
 
-#if defined(__ixp46X)
+#if defined(__ixp46X) || defined(__ixp43X)
 #ifdef __linux
 
 #include <linux/module.h>
 #include "IxParityENAcc.h"
 
 EXPORT_SYMBOL(ixParityENAccInit);
+EXPORT_SYMBOL(ixParityENAccUnload);
 EXPORT_SYMBOL(ixParityENAccCallbackRegister);
 EXPORT_SYMBOL(ixParityENAccParityDetectionConfigure);
 EXPORT_SYMBOL(ixParityENAccParityDetectionQuery);
@@ -67,4 +68,4 @@ EXPORT_SYMBOL(ixParityENAccParityNPEConfigReUpdate);
 EXPORT_SYMBOL(ixParityENAccNPEParityErrorCheck);
 
 #endif /* end of #ifdef __linux */
-#endif /* __ixp46X */
+#endif /* __ixp46X || __ixp43X */

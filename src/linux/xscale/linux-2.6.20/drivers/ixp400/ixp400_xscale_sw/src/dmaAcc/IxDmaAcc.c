@@ -6,12 +6,12 @@
  * @brief   API of the IXP400 DMA Access Driver Component (IxDma)
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -78,67 +78,61 @@ static IxDmaAccStats dmaStats;     /* Instantiate statistics data structure */
 PUBLIC IX_STATUS
 ixDmaAccInit(IxNpeDlNpeId npeId)
 {
-  #if((CPU!=SIMSPARCSOLARIS) && (CPU!=SIMLINUX))
-    /* If not IXP42X A0 stepping, proceed to check for existence of coprocessors */ 
-    if ((IX_FEATURE_CTRL_SILICON_TYPE_A0 != 
-        (ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK))
-        || (IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X != ixFeatureCtrlDeviceRead ()))
-    {
-      /*
-       * Check whether NPE is present 
-       */
-      if (IX_NPEDL_NPEID_NPEA == npeId)
-	{  
-            /* Check whether NPE A is present */ 
-            if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA)== 
-	        IX_FEATURE_CTRL_COMPONENT_DISABLED)
-            {   
-	        /* NPE A does not present */
-	        ixOsalLog (IX_OSAL_LOG_LVL_WARNING,
-	        		   IX_OSAL_LOG_DEV_STDOUT, 
+    #if((CPU!=SIMSPARCSOLARIS) && (CPU!=SIMLINUX))
+    /*
+     * Check whether NPE is present 
+     */
+    if (IX_NPEDL_NPEID_NPEA == npeId)
+    {  
+        /* Check whether NPE A is present */ 
+        if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA)== 
+            IX_FEATURE_CTRL_COMPONENT_DISABLED)
+        {   
+            /* NPE A does not present */
+            ixOsalLog (IX_OSAL_LOG_LVL_WARNING,
+                       IX_OSAL_LOG_DEV_STDOUT, 
                        "Warning:NPEA does not present.\n",
-	                   0,0,0,0,0,0);
-                return IX_FAIL;
-            }
-        } 
-       else if (IX_NPEDL_NPEID_NPEB == npeId)
-	 {  
-	    /* Check whether NPE B is present */ 
-            if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB)== 
-	        IX_FEATURE_CTRL_COMPONENT_DISABLED)
-            {   
-  	        /* NPE B does not present */
-	        ixOsalLog (IX_OSAL_LOG_LVL_WARNING,
-	        		   IX_OSAL_LOG_DEV_STDOUT,
-                       "Warning:NPEB does not present.\n",
-	                   0,0,0,0,0,0);
-                return IX_FAIL; 
-            }
-         } 
-      else if (IX_NPEDL_NPEID_NPEC == npeId)
-	{ 
-	    /* Check whether NPE C is present */ 
-            if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEC)== 
-	        IX_FEATURE_CTRL_COMPONENT_DISABLED)
-            {   
-	        /* NPE C does not present */
-	        ixOsalLog (IX_OSAL_LOG_LVL_WARNING,
-	        		   IX_OSAL_LOG_DEV_STDOUT, 
-                       "Warning:NPEC does not present.\n",
-	                   0,0,0,0,0,0);	        
-                return IX_FAIL;
-            } 
-	}
-        else
-	  {
-             /* Invalid NPE ID */
-             ixOsalLog (IX_OSAL_LOG_LVL_WARNING,
-             		  	IX_OSAL_LOG_DEV_STDOUT,
-                        "ixDmaAccInit : invalid Npe ID.\n",
-                        0,0,0,0,0,0);             
-             return IX_FAIL;
-          }  
+	               0,0,0,0,0,0);
+            return IX_FAIL;
+        }
     } 
+    else if (IX_NPEDL_NPEID_NPEB == npeId)
+    {  
+        /* Check whether NPE B is present */ 
+        if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB)== 
+            IX_FEATURE_CTRL_COMPONENT_DISABLED)
+        {   
+            /* NPE B does not present */
+            ixOsalLog (IX_OSAL_LOG_LVL_WARNING,
+                       IX_OSAL_LOG_DEV_STDOUT,
+                       "Warning:NPEB does not present.\n",
+	               0,0,0,0,0,0);
+            return IX_FAIL; 
+        }
+    } 
+    else if (IX_NPEDL_NPEID_NPEC == npeId)
+    { 
+        /* Check whether NPE C is present */ 
+        if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEC)== 
+            IX_FEATURE_CTRL_COMPONENT_DISABLED)
+        {   
+            /* NPE C does not present */
+            ixOsalLog (IX_OSAL_LOG_LVL_WARNING,
+                       IX_OSAL_LOG_DEV_STDOUT, 
+                       "Warning:NPEC does not present.\n",
+	               0,0,0,0,0,0);	        
+            return IX_FAIL;
+        } 
+    }
+    else
+    {
+        /* Invalid NPE ID */
+        ixOsalLog (IX_OSAL_LOG_LVL_WARNING,
+                   IX_OSAL_LOG_DEV_STDOUT,
+                   "ixDmaAccInit : invalid Npe ID.\n",
+                   0,0,0,0,0,0);             
+        return IX_FAIL;
+    }  
   #endif
     /* Check if ixDmaInit has been initialized already*/
     if( TRUE == ixDmaAccInitDone )
@@ -275,63 +269,57 @@ ixDmaAccUninit (IxNpeDlNpeId npeId)
 	IX_STATUS status;
     /*Check wheather the NPE is present*/
     #if((CPU!=SIMSPARCSOLARIS) && (CPU!=SIMLINUX))
-        if (IX_FEATURE_CTRL_SILICON_TYPE_B0 ==
-            (ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK))
+    if (IX_NPEDL_NPEID_NPEA == npeId)
+    {
+        /* Check whether NPE A is present */
+        if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA)==
+                IX_FEATURE_CTRL_COMPONENT_DISABLED)
         {
-            if (IX_NPEDL_NPEID_NPEA == npeId)
-            {
-                /* Check whether NPE A is present */
-                if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA)==
-                        IX_FEATURE_CTRL_COMPONENT_DISABLED)
-                {
-                    /* NPE A does not present */
-                    ixOsalLog (IX_OSAL_LOG_LVL_WARNING,
-                            IX_OSAL_LOG_DEV_STDOUT,
-                            "Warning:NPEA does not present.\n",
-                            0,0,0,0,0,0);
-                    return IX_FAIL; 
-                }
-            }
-
-            else if (IX_NPEDL_NPEID_NPEB == npeId)
-            {
-                /* Check whether NPE B is present */
-                if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB)==
-                        IX_FEATURE_CTRL_COMPONENT_DISABLED)
-                {
-                    /* NPE B does not present */
-                    ixOsalLog (IX_OSAL_LOG_LVL_WARNING,
-                           IX_OSAL_LOG_DEV_STDOUT,
-                           "Warning:NPEB does not present.\n",
-                           0,0,0,0,0,0);
-                    return IX_FAIL;
-                }
-            }
-
-            else if (IX_NPEDL_NPEID_NPEC == npeId)
-            {
-                /* Check whether NPE C is present */
-                if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEC)==
-                        IX_FEATURE_CTRL_COMPONENT_DISABLED)
-                {
-                /* NPE C does not present */
-                        ixOsalLog (IX_OSAL_LOG_LVL_WARNING,
-                               IX_OSAL_LOG_DEV_STDOUT,
-                                "Warning:NPEC does not present.\n",
-                                0,0,0,0,0,0);
-                        return IX_FAIL;
-                }
-            }
-            else
-            {
-                /* Invalid NPE ID */
-                ixOsalLog (IX_OSAL_LOG_LVL_WARNING,
-                        IX_OSAL_LOG_DEV_STDOUT,
-                        "ixDmaAccUninit : invalid Npe ID.\n",
+            /* NPE A does not present */
+            ixOsalLog (IX_OSAL_LOG_LVL_WARNING,
+                       IX_OSAL_LOG_DEV_STDOUT,
+                       "Warning:NPEA does not present.\n",
                         0,0,0,0,0,0);
-                return IX_FAIL;
-            }
+            return IX_FAIL; 
         }
+    }
+    else if (IX_NPEDL_NPEID_NPEB == npeId)
+    {
+        /* Check whether NPE B is present */
+        if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB)==
+                IX_FEATURE_CTRL_COMPONENT_DISABLED)
+        {
+            /* NPE B does not present */
+            ixOsalLog (IX_OSAL_LOG_LVL_WARNING,
+                       IX_OSAL_LOG_DEV_STDOUT,
+                       "Warning:NPEB does not present.\n",
+                       0,0,0,0,0,0);
+            return IX_FAIL;
+        }
+    }
+    else if (IX_NPEDL_NPEID_NPEC == npeId)
+    {
+        /* Check whether NPE C is present */
+        if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEC)==
+                IX_FEATURE_CTRL_COMPONENT_DISABLED)
+        {
+            /* NPE C does not present */
+            ixOsalLog (IX_OSAL_LOG_LVL_WARNING,
+                       IX_OSAL_LOG_DEV_STDOUT,
+                       "Warning:NPEC does not present.\n",
+                       0,0,0,0,0,0);
+            return IX_FAIL;
+        }
+    }
+    else
+    {
+        /* Invalid NPE ID */
+        ixOsalLog (IX_OSAL_LOG_LVL_WARNING,
+                   IX_OSAL_LOG_DEV_STDOUT,
+                   "ixDmaAccUninit : invalid Npe ID.\n",
+                   0,0,0,0,0,0);
+        return IX_FAIL;
+    }
 
     #endif
 

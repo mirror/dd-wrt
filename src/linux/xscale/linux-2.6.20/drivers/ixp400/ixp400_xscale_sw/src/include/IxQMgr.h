@@ -6,12 +6,12 @@
  * @brief This file contains the public API of IxQMgr component.
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -50,9 +50,9 @@
    Doxygen group definitions
    ------------------------------------------------------ */
 /**
- * @defgroup IxQMgrAPI IXP Queue Manager (qmgr) Public API
+ * @defgroup IxQMgrAPI Intel (R) IXP400 Software Queue Manager (IxQMgr) API
  *
- * @brief The public API for the IXP qmgr component.
+ * @brief The public API for the IXP400 qmgr component.
  *
  * IxQMgr is a low level public interface to the Queue Manager
  *
@@ -104,7 +104,6 @@ typedef enum
     IX_QMGR_GROUP_MAX
 } IxQMgrDispatchGroup;
 
-#if defined(__ixp42X) || defined(__ixp46X)
 /**
  * @ingroup IxQMgrAPI
  * 
@@ -136,7 +135,6 @@ typedef enum
  *
  */
 #define IX_QMGR_QUEUPP_GROUP IX_QMGR_GROUP_Q32_TO_Q63 
-#endif /* __ixp42X */
 
 /**
  * @ingroup IxQMgrAPI
@@ -150,9 +148,7 @@ typedef enum
  * @param group @ref IxQMgrDispatchGroup [in] - the group of the 
  *                  queue of which the dispatcher will run   
  */
-#if defined(__ixp42X) || defined(__ixp46X)
 typedef void (*IxQMgrDispatcherFuncPtr)(IxQMgrDispatchGroup group);
-#endif /* __ixp42X */
 
 /*
  * Function Prototypes
@@ -232,14 +228,11 @@ ixQMgrShow (void);
  * @fn ixQMgrDispatcherLoopGet (IxQMgrDispatcherFuncPtr *qDispatcherFuncPtr)
  *
  * @brief Get QMgr DispatcherLoopRun for respective silicon device
- */
-#if defined(__ixp42X) || defined(__ixp46X)
-/* This function gets a function pointer to ixQMgrDispatcherLoopRunB0() for IXP42X B0
+ *
+ * This function gets a function pointer to ixQMgrDispatcherLoopRunB0() for IXP42X B0
  * Silicon. However if live lock prevention is enabled a function pointer to
  * ixQMgrDispatcherLoopRunB0LLP() is given.
- */
-#endif /* __ixp42X */
-/*
+ *
  * @param *qDispatchFuncPtr @ref IxQMgrDispatcherFuncPtr [out]  - 
  *              the function pointer of QMgr Dispatcher
  *
@@ -247,9 +240,7 @@ ixQMgrShow (void);
 PUBLIC void
 ixQMgrDispatcherLoopGet (IxQMgrDispatcherFuncPtr *qDispatcherFuncPtr);
 
-#if defined(__ixp42X) || defined(__ixp46X)
 #include "../qmgr/IxQMgr_sp.h"
-#endif /* __ixp42X */
 
 /**
  * @ingroup IxQMgrAPI

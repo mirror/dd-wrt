@@ -7,12 +7,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -75,7 +75,7 @@
  *    - Authentication calculation and check, using MD5
  *    - Combined encryption and decryption, using DES CBC and SHA1
  *    - CCM for 802.11i
- *    - ARC4 with WEP CRC computations on XScale
+ *    - ARC4 with WEP CRC computations on the Intel XScale(R) processor
  *    - ARC4 with WEP CRC computations on NPE
  *    - Pseudo-random number generator (RNG) on PKE Crypto Engine
  *    - Hashing (SHA1) on PKE Crypto Engine
@@ -149,8 +149,8 @@
  *
  * <B>Notes for Performance Benchmarking:</B>
  * <PRE>
- *       - Data are generated in XScale with random payload. No explicit
- * verification of payload will be carried out in the codelet.
+ *       - Data are generated in the Intel XScale(R) processor with random payload.
+ * No explicit verification of payload will be carried out in the codelet.
  *
  *       - Encrypted data are sent to NPE again for decryption and same
  * applies to authentication operation. Data payload is verified implicitly
@@ -158,10 +158,12 @@
  *
  *       - Throughput rate is captured from the point where data is sent to
  * NPE for processing to the point where NPE completes the encryption and/or
- * authentication operation and notifies XScale through callback.
+ * authentication operation and notifies the Intel XScale(R) processor through 
+ * callback.
  *
  *       - No external data generator or benchmarking devices involved in this
- * codelet. Throughput rate is captured using XScale timestamp.
+ * codelet. Throughput rate is captured using the Intel XScale(R) processor
+ * timestamp.
  *
  *       - Performance of PKE functions are captured from the time the function
  * is called until the PKE has finished the operations and callback is invoked.
@@ -190,11 +192,11 @@
  *            6 : Encryption and Decryption using AES(CBC)
  *            7 : Encryption and Decryption using AES(CTR)
  *            8 : Encryption and Decryption using AES-CCM
- *            9 : Encryption and Decryption using ARC4 on XScale
+ *            9 : Encryption and Decryption using ARC4 on Intel XScale(R) processor
  *            10 : Encryption and Decryption using ARC4 on WAN-NPE
  *            11 : Authentication calculation and verification using MD5
  *            12 : Authentication calculation and verification using SHA1
- *            13 : Authentication calculation and verification WEP CRC on XScale
+ *            13 : Authentication calculation and verification WEP CRC on Intel XScale(R) processor
  *            14 : Authentication calculation and verification WEP CRC on WAN-NPE
  *            15 : A combined mode of operation using DES(ECB) + MD5
  *            16 : A combined mode of operation using DES(CBC) + MD5
@@ -210,7 +212,7 @@
  *            26 : A combined mode of operation using AES(ECB) + SHA1
  *            27 : A combined mode of operation using AES(CBC) + SHA1
  *            28 : A combined mode of operation using AES(CTR) + SHA1
- *            29 : A combined mode of operation using ARC4 + WEP CRC on XScale
+ *            29 : A combined mode of operation using ARC4 + WEP CRC on Intel XScale(R) processor
  *            30 : A combined mode of operation using ARC4 + WEP CRC on WAN-NPE
  *            31 : PKE RNG pseudo-random number
  *            32 : PKE SHA1 hashing operation
@@ -263,11 +265,11 @@
  *            6 : Encryption and Decryption using AES(CBC)
  *            7 : Encryption and Decryption using AES(CTR)
  *            8 : Encryption and Decryption using AES-CCM
- *            9 : Encryption and Decryption using ARC4 on XScale
+ *            9 : Encryption and Decryption using ARC4 on Intel XScale(R) processor
  *            10 : Encryption and Decryption using ARC4 on WAN-NPE
  *            11 : Authentication calculation and verification using MD5
  *            12 : Authentication calculation and verification using SHA1
- *            13 : Authentication calculation and verification WEP CRC on XScale
+ *            13 : Authentication calculation and verification WEP CRC on Intel XScale(R) processor
  *            14 : Authentication calculation and verification WEP CRC on WAN-NPE
  *            15 : A combined mode of operation using DES(ECB) + MD5
  *            16 : A combined mode of operation using DES(CBC) + MD5
@@ -283,7 +285,7 @@
  *            26 : A combined mode of operation using AES(ECB) + SHA1
  *            27 : A combined mode of operation using AES(CBC) + SHA1
  *            28 : A combined mode of operation using AES(CTR) + SHA1
- *            29 : A combined mode of operation using ARC4 + WEP CRC on XScale
+ *            29 : A combined mode of operation using ARC4 + WEP CRC on Intel XScale(R) processor
  *            30 : A combined mode of operation using ARC4 + WEP CRC on WAN-NPE
  *            31 : PKE RNG pseudo-random number
  *            32 : PKE SHA1 hashing operation
@@ -435,8 +437,9 @@
  *
  * @def   IX_CRYPTOACC_CODELET_XSCALE_TICK
  *
- * @brief The XScale tick is 66 MHz. The ixOsalOsIxp400TimestampResolutionGet()
- *        function returns 66666666, thus need to divide by a million.
+ * @brief The Intel XScale(R) processor tick is 66 MHz. The 
+ *        ixOsalOsIxp400TimestampResolutionGet() fuction returns
+ *        66666666, thus need to divide by a million.
  *
  */
 #define IX_CRYPTOACC_CODELET_XSCALE_TICK \
@@ -551,9 +554,9 @@
  *
  * Note: <BR>
  * 1. QMgr dispatcher can be run in both poll mode and interrupt mode in 
- *    vxWorks platform. 
+ *    VxWorks* platform. 
  *
- * 2. In linux platform (with Linux* kernel 2.4 and below), QMgr Dispatcher is 
+ * 2. In Linux* platform (with Linux* kernel 2.4 and below), QMgr Dispatcher is 
  *    NOT advisible to run in poll mode. Task scheduling in poll mode runs
  *    tasks sequentially (non-preemptive) that cause the performance rate to  
  *    drop tremendously. Thus the performance rate displayed in Linux* platform  
@@ -621,11 +624,11 @@
  *       6 : Encryption and Decryption using AES(CBC)
  *       7 : Encryption and Decryption using AES(CTR)
  *       8 : Encryption and Decryption using AES-CCM
- *       9 : Encryption and Decryption using ARC4 on XScale
+ *       9 : Encryption and Decryption using ARC4 on Intel XScale(R) processor
  *       10 : Encryption and Decryption using ARC4 on WAN-NPE
  *       11 : Authentication calculation and verification using MD5
  *       12 : Authentication calculation and verification using SHA1
- *       13 : Authentication calculation and verification WEP CRC on XScale
+ *       13 : Authentication calculation and verification WEP CRC on Intel XScale(R) processor
  *       14 : Authentication calculation and verification WEP CRC on WAN-NPE
  *       15 : A combined mode of operation using DES(ECB) + MD5
  *       16 : A combined mode of operation using DES(CBC) + MD5
@@ -641,7 +644,7 @@
  *       26 : A combined mode of operation using AES(ECB) + SHA1
  *       27 : A combined mode of operation using AES(CBC) + SHA1
  *       28 : A combined mode of operation using AES(CTR) + SHA1
- *       29 : A combined mode of operation using ARC4 + WEP CRC on XScale
+ *       29 : A combined mode of operation using ARC4 + WEP CRC on Intel XScale(R) processor
  *       30 : A combined mode of operation using ARC4 + WEP CRC on WAN-NPE
  *       31 : PKE RNG pseudo-random number
  *       32 : PKE SHA1 hashing operation

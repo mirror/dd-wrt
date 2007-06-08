@@ -9,12 +9,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -76,19 +76,19 @@
 /* Macro functions definition*/
 #define IX_ERRHDLACC_ETH_RELOAD_ABORT(eventStruct, errorCode) do {   \
     ixErrHdlAccEvent* event = eventStruct;                           \
+    ixEthDBEventProcessorPauseModeSet(FALSE);                        \
     event->lastEvtStatus = errorCode;                                \
     event->numFail++;                                                \
     ixEthAccStartRequest();                                          \
-    ixEthDBEventProcessorPauseModeSet(FALSE);                        \
     ixErrHdlAccNpePollThreadRun = FALSE;                             \
     } while(0)
                                                               
 #define IX_ERRHDLACC_ETH_RELOAD_DONE(eventStruct) do{     \
    ixErrHdlAccEvent* event = eventStruct;                 \
+   ixEthDBEventProcessorPauseModeSet(FALSE);              \
    event->lastEvtStatus = IX_ERRHDLACC_EVT_STOP_SUCCESS;  \
    event->numPass++;                                      \
    ixEthAccStartRequest();                                \
-   ixEthDBEventProcessorPauseModeSet(FALSE);              \
    ixErrHdlAccNpePollThreadRun = FALSE;                   \
    } while(0)  
                                 

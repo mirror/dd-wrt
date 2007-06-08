@@ -10,12 +10,12 @@
  * @version 1
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -594,18 +594,18 @@ ixTimeSyncAccTargetTimeGet(IxTimeSyncAccTimeValue *targetTime);
  * Auxiliary Time Stamp registers. Thus to register for both Master and Slave time
  * stamp interrupts either the same callback or two separate callbacks the API has
  * to be invoked twice.
- *       2) On the IXDP465 Development Platform, the Auxiliary Timestamp signal for 
- * slave mode is tied to GPIO 8 pin. This signal is software routed by default to 
- * PCI for backwards compatibility with the IXDP425 Development Platform. This
- * routing must be disabled for the auxiliary slave time stamp register to work 
- * properly. The following commands may be used to accomplish this. However, refer
- * to the IXDP465 Development Platform Users Guide or the BSP/LSP documentation for
- * more specific information.
+ *       2) On the Intel (R) IXDP465 Development Platform, the Auxiliary Timestamp
+ * signal for slave mode is tied to GPIO 8 pin. This signal is software routed by 
+ * default to PCI for backwards compatibility with the Intel (R) IXDP425 Development
+ * Platform. This routing must be disabled for the auxiliary slave time stamp
+ * register to work properly. The following commands may be used to accomplish this. 
+ * However, refer to the Intel (R) IXDP465 Development Platform Users Guide or the
+ * BSP/LSP documentation for more specific information.
  *
  * For Linux* (at the Redboot prompt i.e., before loading zImage):
  *     mfill -b 0x54100000 -1 -l 1 -p 8
  *     mfill -b 0x54100001 -1 -l 1 -p 0x7f
- * For vxWorks*, at the prompt:
+ * For VxWorks*, at the prompt:
  *     intDisable(25)
  *     ixdp400FpgaIODetach(8)
  * </pre>
@@ -775,6 +775,31 @@ ixTimeSyncAccStatsReset(void);
  */
 PUBLIC IxTimeSyncAccStatus
 ixTimeSyncAccShow(void);
+ 
+/**
+ * @ingroup IxTimeSyncAcc
+ *
+ * @fn IxTimeSyncAccStatus ixTimeSyncAccUnInit(void)
+ *
+ * @brief This API is used to unintialize the timesyncAcc component 
+ *        from the client application
+ * 
+ * It performs the following tasks as part of unintialization:
+ *  => Unmaps the memory of Block and Register level registers 
+ *     starting base address.
+ *  => Unbinds the timesyncAcc IRQ 
+ *  => Resets the fused out state of all NPEs to false.
+ *  => Resets the 1588 Hardware Assist block enabled flag to false and 
+ *     also destroys the system time mutex.
+ *            
+ * @li Reentrant    : yes
+ * @li ISR Callable : no
+ *
+ * @return @li IX_TIMESYNCACC_SUCCESS - Operation is successful
+ *         @li IX_TIMESYNCACC_FAILED - Internal error occurred
+ */
+PUBLIC IxTimeSyncAccStatus  
+ixTimeSyncAccUnInit(void); 
 
 #endif /* __ixp46X */
 #endif /* IXTIMESYNCACC_H */

@@ -7,12 +7,12 @@
  *
  * 
  * @par
- * IXP400 SW Release version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -64,47 +64,40 @@
  * This string will be updated with each customer release of the IXP400
  * Software.
  */
-#define IX_VERSION_ID "2_3_1"
-
-/**
- * This string will be updated with each customer release of the IXP400
- * ADSL driver package.
- */
-#define IX_VERSION_ADSL_ID "1_14"
-
+#define IX_VERSION_ID "2_4"
 
 /**
  * This string will be updated with each customer release of the IXP400
  * USB Client driver package.
  */
-#define IX_VERSION_USBRNDIS_ID "1_11"
+#define IX_VERSION_USBRNDIS_ID "1_12"
 
 /**
  * This string will be updated with each customer release of the IXP400
  * I2C Linux* driver package.
  */
-#define IX_VERSION_I2C_LINUX_ID "1_0"
+#define IX_VERSION_I2C_LINUX_ID "1_1"
 
 /**
  * @brief Linux* Ethernet Driver Patch Version Identifier String
  *
  * This string will be updated with each release of Linux* Ethernet Patch
  */
-#define LINUX_ETHERNET_DRIVER_PATCH_ID "1_6"
+#define LINUX_ETHERNET_DRIVER_PATCH_ID "1_7"
 
 /**
  * @brief Linux* Ethernet Readme version Identifier String
  *
  * This string will be updated with each release of Linux* Ethernet Readme
  */
-#define LINUX_ETHERNET_README_ID "1_6"
+#define LINUX_ETHERNET_README_ID "1_7"
 
 /**
  * @brief Linux* I2C driver Readme version Identifier String
  *
  * This string will be updated with each release of Linux* I2C Driver Readme
  */
-#define LINUX_I2C_DRIVER_README_ID "1_0"
+#define LINUX_I2C_DRIVER_README_ID "1_1"
 
 /**
  * @brief Internal Release Identifier String
@@ -112,17 +105,17 @@
  * This string will be updated with each internal release (SQA drop)
  * of the IXP400 Software.
  */
-#define IX_VERSION_INTERNAL_ID "SQA1_1"
+#define IX_VERSION_INTERNAL_ID "SQA2_1"
 
 /**
  * @brief Compatible Tornado Version Identifier
  */
-#define IX_VERSION_COMPATIBLE_TORNADO "Tornado2_2_1-PNE2_2"
+#define IX_VERSION_COMPATIBLE_TORNADO "Tornado2_2_1"
 
 /**
  * @brief Compatible Linux* Version Identifier
  */
-#define IX_VERSION_COMPATIBLE_LINUX "MVL4_0"
+#define IX_VERSION_COMPATIBLE_LINUX "LINUX_2_6_16_11"
 
 
 #endif /* IXVERSIONID_H */

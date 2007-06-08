@@ -10,12 +10,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -94,20 +94,22 @@ IX_STATUS ixEthAccCodeletSwBridgeWiFiStart(IxEthAccPortId wifiPortId,
 					       IxEthAccPortId bridgedPortId)
 {
     IxEthDBFeature featureSet = 0;
+    UINT32 firstPortCbTag = wifiPortId | (bridgedPortId << 16);
+    UINT32 secondPortCbTag = bridgedPortId | (wifiPortId << 16);
 
     ixEthAccCodeletWiFiRecStaData.recType = IX_ETH_DB_WIFI_AP_TO_STA;
     ixEthAccCodeletWiFiRecStaData.vlanTagFlag = IX_ETH_DB_WIFI_VLAN_NOTAG;
     ixEthAccCodeletWiFiRecStaData.padLength = IX_ETH_DB_WIFI_MIN_PAD_SIZE; 
     ixEthAccCodeletWiFiRecStaData.logicalPortID = 0x0E; 
-    memset(ixEthAccCodeletWiFiRecStaData.gatewayMacAddr, 0, IX_IEEE803_MAC_ADDRESS_SIZE);
-    memcpy(ixEthAccCodeletWiFiRecStaData.bssid, &ixEthAccCodeletWiFiBSSIDMacAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemSet(ixEthAccCodeletWiFiRecStaData.gatewayMacAddr, 0, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(ixEthAccCodeletWiFiRecStaData.bssid, &ixEthAccCodeletWiFiBSSIDMacAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
 
     ixEthAccCodeletWiFiRecApData.recType = IX_ETH_DB_WIFI_AP_TO_AP;
     ixEthAccCodeletWiFiRecApData.vlanTagFlag = IX_ETH_DB_WIFI_VLAN_NOTAG; 
     ixEthAccCodeletWiFiRecApData.padLength = IX_ETH_DB_WIFI_MIN_PAD_SIZE; 
     ixEthAccCodeletWiFiRecApData.logicalPortID = 0x0E; 
-    memcpy(ixEthAccCodeletWiFiRecApData.gatewayMacAddr, &ixEthAccCodeletWiFiGwMacAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
-    memcpy(ixEthAccCodeletWiFiRecApData.bssid, &ixEthAccCodeletWiFiBSSIDMacAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(ixEthAccCodeletWiFiRecApData.gatewayMacAddr, &ixEthAccCodeletWiFiGwMacAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(ixEthAccCodeletWiFiRecApData.bssid, &ixEthAccCodeletWiFiBSSIDMacAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
 
     if (wifiPortId == bridgedPortId)
     {
@@ -119,26 +121,26 @@ IX_STATUS ixEthAccCodeletSwBridgeWiFiStart(IxEthAccPortId wifiPortId,
 
     /* Perform basic port configuration (actual callbacks will be registered later, 
      * in ixEthAccCodeletSwWiFiBridgeStart) */
-    if ( ixEthAccCodeletPortConfigure(wifiPortId,
-                                      ixEthAccCodeletBridgeRxCB,
-                                      NULL,
-                                      ixEthAccCodeletBridgeTxCB,
-                                      0 /* no callback tag */) != IX_SUCCESS)
+
+    /* Configure and register the traffic callbacks for both ports */
+    if ( ixEthAccCodeletPortConfigure(wifiPortId, 
+				      ixEthAccCodeletBridgeRxCB, 
+				      (IxEthAccPortMultiBufferRxCallback) NULL,
+				      ixEthAccCodeletBridgeTxCB,
+                                      firstPortCbTag) != IX_SUCCESS)
     {
-        printf("SwBridgeWiFi: Failed to configure Port %u\n",
-               wifiPortId);
-        return (IX_FAIL);
+	printf("SwBridge: Failed to configure Port %u\n", wifiPortId);
+	return (IX_FAIL);
     }
 
-    if ( ixEthAccCodeletPortConfigure(bridgedPortId,
-                                      ixEthAccCodeletBridgeRxCB,
-                                      NULL,
-                                      ixEthAccCodeletBridgeTxCB,
-                                      0 /* no callback tag */) != IX_SUCCESS)
+    if ( ixEthAccCodeletPortConfigure(bridgedPortId, 
+				      ixEthAccCodeletWiFiBridgeRxCB, 
+				      (IxEthAccPortMultiBufferRxCallback) NULL,
+				      ixEthAccCodeletBridgeTxCB,
+                                      secondPortCbTag) != IX_SUCCESS)
     {
-        printf("SwBridgeWiFi: Failed to configure Port %u\n",
-               bridgedPortId);
-        return (IX_FAIL);
+	printf("SwBridge: Failed to configure Port %u\n", bridgedPortId);
+	return (IX_FAIL);
     }
 
     /* Enable the Port in EthDB in order to configure and download the
@@ -277,30 +279,6 @@ IX_STATUS ixEthAccCodeletSwBridgeWiFiStart(IxEthAccPortId wifiPortId,
 IX_STATUS ixEthAccCodeletSwWiFiBridgeStart(IxEthAccPortId wifiPortId, 
 				       IxEthAccPortId bridgedPortId)
 {
-    UINT32 firstPortCbTag = wifiPortId | (bridgedPortId << 16);
-    UINT32 secondPortCbTag = bridgedPortId | (wifiPortId << 16);
-
-    /* Configure and register the traffic callbacks for both ports */
-    if ( ixEthAccCodeletPortConfigure(wifiPortId, 
-				      ixEthAccCodeletBridgeRxCB, 
-				      (IxEthAccPortMultiBufferRxCallback) NULL,
-				      ixEthAccCodeletBridgeTxCB,
-                                      firstPortCbTag) != IX_SUCCESS)
-    {
-	printf("SwBridge: Failed to configure Port %u\n", wifiPortId);
-	return (IX_FAIL);
-    }
-
-    if ( ixEthAccCodeletPortConfigure(bridgedPortId, 
-				      ixEthAccCodeletWiFiBridgeRxCB, 
-				      (IxEthAccPortMultiBufferRxCallback) NULL,
-				      ixEthAccCodeletBridgeTxCB,
-                                      secondPortCbTag) != IX_SUCCESS)
-    {
-	printf("SwBridge: Failed to configure Port %u\n", bridgedPortId);
-	return (IX_FAIL);
-    }
-
     /* Enable the traffic over both ports */
     if ( ixEthAccPortEnable(wifiPortId) != IX_SUCCESS)
     {

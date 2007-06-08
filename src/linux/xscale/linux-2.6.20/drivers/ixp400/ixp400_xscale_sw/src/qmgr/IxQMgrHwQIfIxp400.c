@@ -13,12 +13,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -139,6 +139,12 @@ UINT32 hwQBaseAddress = 0;
  * This flag indicates to the dispatcher that sticky interrupts are currently enabled.
  */
 extern BOOL stickyEnabled;
+
+/*
+ * This flag is used to check whether the call is being made for Config or Reconfig
+ * purpose 
+ */
+extern BOOL reCfgFlag;
 
 /* Store addresses and bit-masks for certain queue access and status registers.
  * This is to facilitate inlining of QRead, QWrite and QStatusGet functions
@@ -532,9 +538,17 @@ ixQMgrHwQIfQueCfgWrite (IxQMgrQId qId,
     qCfg |= (hwQBufferSize&IX_QMGR_SIZE_MASK) << IX_QMGR_Q_CONFIG_BSIZE_OFFSET;
 
     /* baseAddress, calculated relative to hwQBaseAddress and start address  */
-    baseAddress = freeSRAMAddress[qId / IX_QMGR_NUM_QUEUES_PER_MEM_MAP_BLOCK] -
-	(hwQBaseAddress + IX_QMGR_QUECONFIG0_BASE_OFFSET);
-		   
+    if(reCfgFlag)
+    {
+        baseAddress = *freeSRAMAddress -
+            (hwQBaseAddress + IX_QMGR_QUECONFIG0_BASE_OFFSET);
+    }
+    else
+    {
+        baseAddress = freeSRAMAddress[qId / IX_QMGR_NUM_QUEUES_PER_MEM_MAP_BLOCK] -
+	    (hwQBaseAddress + IX_QMGR_QUECONFIG0_BASE_OFFSET);
+    }
+
     /* Verify base address aligned to a 16 word boundary */
     if ((baseAddress % IX_QMGR_BASE_ADDR_16_WORD_ALIGN) != 0)
     {
@@ -543,16 +557,16 @@ ixQMgrHwQIfQueCfgWrite (IxQMgrQId qId,
     /* Now convert it to a 16 word pointer as required by QUECONFIG register */
     baseAddress >>= IX_QMGR_BASE_ADDR_16_WORD_SHIFT;
     
-    
     qCfg |= (baseAddress << IX_QMGR_Q_CONFIG_BADDR_OFFSET);
-
 
     cfgAddress = (UINT32*)(hwQBaseAddress +
 			IX_QMGR_Q_CONFIG_ADDR_GET(qId));
 
-
     /* NOTE: High and Low watermarks are set to zero */
     ixQMgrHwQIfWordWrite (cfgAddress, qCfg);
+
+    /* Reset the reconfig flag */
+    reCfgFlag = FALSE;
 }
 
 void

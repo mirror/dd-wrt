@@ -9,12 +9,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -142,9 +142,12 @@ void ixNpeMhReceiveInitialize (void)
     /* for each NPE ... */
     for (npeId = 0; npeId < IX_NPEMH_NUM_NPES; npeId++)
     {
-        /* register our internal ISR for the NPE to handle "outFIFO not */
-        /* empty" interrupts */
-        ixNpeMhConfigIsrRegister (npeId, ixNpeMhReceiveIsr);
+        if( TRUE == ixNpeMhConfigNpeIdIsValid(npeId) )
+        {
+            /* register our internal ISR for the NPE to handle "outFIFO not */
+            /* empty" interrupts */
+            ixNpeMhConfigIsrRegister (npeId, ixNpeMhReceiveIsr);
+        }
     }
 
     IX_NPEMH_TRACE0 (IX_NPEMH_FN_ENTRY_EXIT, "Exiting "
@@ -164,10 +167,13 @@ void ixNpeMhReceiveUninitialize (void)
     /* for each NPE ... */
     for (npeId = 0; npeId < IX_NPEMH_NUM_NPES; npeId++)
     {
-        /* unregister and set ISR to NULL */
-        ixNpeMhConfigIsrUnregister (npeId);
+        if( TRUE == ixNpeMhConfigNpeIdIsValid(npeId) )
+        {
+            /* unregister and set ISR to NULL */
+            ixNpeMhConfigIsrUnregister (npeId);
+        }
     }
-
+    
     IX_NPEMH_TRACE0 (IX_NPEMH_FN_ENTRY_EXIT, "Exiting "
                      "ixNpeMhReceiveUninitialize\n");
 }

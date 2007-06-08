@@ -9,12 +9,12 @@
  * Design Notes:
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -51,6 +51,7 @@
 
 #include "IxOsal.h"
 #include "IxNpeMh.h"
+#include "IxFeatureCtrl.h"
 #include "IxEthDB.h"
 #include "IxEthDBPortDefs.h"
 #include "IxEthNpe.h"
@@ -58,11 +59,18 @@
 #include "IxEthAccDataPlane_p.h"
 #include "IxEthAcc_p.h"
 #include "IxEthAccMac_p.h"
+#include "IxErrHdlAcc.h"
 
 /* Maximum number of retries during ixEthAccPortDisable, which
  * is approximately 10 seconds
 */
 #define IX_ETH_ACC_MAX_RETRY 500 
+
+/* Maximum retries during wait for NPE Soft-Reset*/
+#define IX_ETH_ACC_MAX_WAIT_FOR_NPE_SOFT_RESET_TRY (3)
+
+/* Delay between polling to wait for NPE Soft-Reset completion*/
+#define IX_ETH_ACC_POLL_NPE_SWRESET_MS        (50)
 
 /* Maximum number of retries during ixEthAccPortDisable when expecting 
  * timeout
@@ -84,13 +92,13 @@
 #define  IX_ETH_NPE_MCAST_ADDR1_SHL                    (8)
 #define  IX_ETH_NPE_MCAST_MASK1_SHL                    (0)
 
-PUBLIC IxEthAccMacState ixEthAccMacState[IX_ETH_ACC_NUMBER_OF_PORTS];
+PUBLIC IxEthAccMacState ixEthAccMacState[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
 
-PRIVATE UINT32 ixEthAccMacBase[IX_ETH_ACC_NUMBER_OF_PORTS];
+PRIVATE UINT32 ixEthAccMacBase[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
 
-PRIVATE IxEthAccMacAddr ixEthAccUcastMacAddr[IX_ETH_ACC_NUMBER_OF_PORTS];
-PRIVATE IxEthAccMacAddr ixEthAccMcastMacAddr[IX_ETH_ACC_NUMBER_OF_PORTS];
-PRIVATE IxEthAccMacAddr ixEthAccMcastMacMask[IX_ETH_ACC_NUMBER_OF_PORTS];
+PRIVATE IxEthAccMacAddr ixEthAccUcastMacAddr[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
+PRIVATE IxEthAccMacAddr ixEthAccMcastMacAddr[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
+PRIVATE IxEthAccMacAddr ixEthAccMcastMacMask[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
 
 PRIVATE BOOL ixEthAccMacRecoveryLoopShutdown = FALSE;
 PRIVATE IxOsalMutex                   macRecoveryEventQueueLock;
@@ -192,34 +200,32 @@ PRIVATE void
 ixEthAccPortAddressFilterConfigCallback (IxNpeMhNpeId npeId,
 					 IxNpeMhMessage msg);
 
-IX_OSAL_MBUF_POOL *ixEthAccMacPortDisablePool[ IX_ETH_ACC_NUMBER_OF_PORTS];
+IX_OSAL_MBUF_POOL *ixEthAccMacPortDisablePool[ IX_ETHNPE_MAX_NUMBER_OF_PORTS];
 
 IxEthAccStatus
 ixEthAccMacMemInit(void)
 {
-    ixEthAccMacBase[IX_ETH_PORT_1] =
-	(UINT32) IX_OSAL_MEM_MAP(IX_ETH_ACC_MAC_0_BASE, 
-				 IX_OSAL_IXP400_ETH_MAC_B0_MAP_SIZE);
+    if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == ixFeatureCtrlDeviceRead () || 
+	IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X == ixFeatureCtrlDeviceRead () )
+    {
+    	ixEthAccMacBase[IX_ETH_PORT_1] =
+		(UINT32) IX_OSAL_MEM_MAP(IX_ETH_ACC_MAC_0_BASE, 
+				 IX_ETH_ACC_MAC_0_MAP_SIZE);
+    	if (ixEthAccMacBase[IX_ETH_PORT_1] == 0)
+    	{
+		ixOsalLog(IX_OSAL_LOG_LVL_FATAL, 
+		  	IX_OSAL_LOG_DEV_STDOUT, 
+		  	"EthAcc: Could not map MAC I/O memory\n", 
+		  	0, 0, 0, 0, 0 ,0);
+	
+		return IX_ETH_ACC_FAIL;
+    	}
+    }
+
     ixEthAccMacBase[IX_ETH_PORT_2] =
 	(UINT32) IX_OSAL_MEM_MAP(IX_ETH_ACC_MAC_1_BASE, 
-				 IX_OSAL_IXP400_ETH_MAC_C0_MAP_SIZE);
-#ifdef __ixp46X
-    ixEthAccMacBase[IX_ETH_PORT_3] =
-	(UINT32) IX_OSAL_MEM_MAP(IX_ETH_ACC_MAC_2_BASE, 
-				 IX_OSAL_IXP400_ETH_MAC_A0_MAP_SIZE);
-    if (ixEthAccMacBase[IX_ETH_PORT_3] == 0)
-    {
-	ixOsalLog(IX_OSAL_LOG_LVL_FATAL, 
-		  IX_OSAL_LOG_DEV_STDOUT, 
-		  "EthAcc: Could not map MAC I/O memory\n", 
-		  0, 0, 0, 0, 0 ,0);
-	
-	return IX_ETH_ACC_FAIL;
-    }
-#endif
-    
-    if (ixEthAccMacBase[IX_ETH_PORT_1] == 0
-	|| ixEthAccMacBase[IX_ETH_PORT_2] == 0)
+				 IX_ETH_ACC_MAC_1_MAP_SIZE);
+    if (ixEthAccMacBase[IX_ETH_PORT_2] == 0)
     {
 	ixOsalLog(IX_OSAL_LOG_LVL_FATAL, 
 		  IX_OSAL_LOG_DEV_STDOUT, 
@@ -229,6 +235,25 @@ ixEthAccMacMemInit(void)
 	return IX_ETH_ACC_FAIL;
     }
 
+#if defined (__ixp46X) || defined (__ixp43X) /* BSP of IXP42X doesn't define the below macro */
+    if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == ixFeatureCtrlDeviceRead () || 
+	IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X == ixFeatureCtrlDeviceRead () )
+    {
+    	ixEthAccMacBase[IX_ETH_PORT_3] =
+		(UINT32) IX_OSAL_MEM_MAP(IX_ETH_ACC_MAC_2_BASE, 
+				 IX_ETH_ACC_MAC_2_MAP_SIZE);
+    	if (ixEthAccMacBase[IX_ETH_PORT_3] == 0)
+    	{
+		ixOsalLog(IX_OSAL_LOG_LVL_FATAL, 
+			  IX_OSAL_LOG_DEV_STDOUT, 
+		  	"EthAcc: Could not map MAC I/O memory\n", 
+		  	0, 0, 0, 0, 0 ,0);
+	
+		return IX_ETH_ACC_FAIL;
+    	}
+    }
+#endif
+    
     /* init mac recovery event queue lock */
     ixOsalMutexInit(&macRecoveryEventQueueLock);
 
@@ -238,14 +263,22 @@ ixEthAccMacMemInit(void)
 void
 ixEthAccMacUnload(void)
 {
-    IX_OSAL_MEM_UNMAP(ixEthAccMacBase[IX_ETH_PORT_1]);
+    if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == ixFeatureCtrlDeviceRead () || 
+	IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X == ixFeatureCtrlDeviceRead () )
+    {
+    	IX_OSAL_MEM_UNMAP(ixEthAccMacBase[IX_ETH_PORT_1]);
+    	ixEthAccMacBase[IX_ETH_PORT_1] = 0;
+    }
+
     IX_OSAL_MEM_UNMAP(ixEthAccMacBase[IX_ETH_PORT_2]);
-#ifdef __ixp46X
-    IX_OSAL_MEM_UNMAP(ixEthAccMacBase[IX_ETH_PORT_3]);
-    ixEthAccMacBase[IX_ETH_PORT_3] = 0;
-#endif    
     ixEthAccMacBase[IX_ETH_PORT_2] = 0;
-    ixEthAccMacBase[IX_ETH_PORT_1] = 0;
+
+    if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == ixFeatureCtrlDeviceRead () || 
+	IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X == ixFeatureCtrlDeviceRead () )
+    {
+    	IX_OSAL_MEM_UNMAP(ixEthAccMacBase[IX_ETH_PORT_3]);
+    	ixEthAccMacBase[IX_ETH_PORT_3] = 0;
+    }
 }
 
 IxEthAccStatus
@@ -286,7 +319,7 @@ ixEthAccPortEnablePriv(IxEthAccPortId portId)
         return IX_ETH_ACC_SUCCESS;
     }
 
-    /* enable ethernet database for this port */
+    /* enable Ethernet database for this port */
     if (ixEthDBPortEnable(portId) != IX_ETH_DB_SUCCESS)
     {
         printf("EthAcc: (Mac) cannot enable port %d, EthDB failure\n", portId);
@@ -317,23 +350,23 @@ typedef void (*IxEthAccPortDisableRx)(IxEthAccPortId portId,
 				      IX_OSAL_MBUF * mBufPtr,
 				      BOOL useMultiBufferCallback);
 static IxEthAccPortRxCallback 
-ixEthAccPortDisableFn[IX_ETH_ACC_NUMBER_OF_PORTS];
+ixEthAccPortDisableFn[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
 static IxEthAccPortMultiBufferRxCallback 
-ixEthAccPortDisableMultiBufferFn[IX_ETH_ACC_NUMBER_OF_PORTS];
+ixEthAccPortDisableMultiBufferFn[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
 static IxEthAccPortDisableRx
-ixEthAccPortDisableRxTable[IX_ETH_ACC_NUMBER_OF_PORTS];
+ixEthAccPortDisableRxTable[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
 static UINT32 
-ixEthAccPortDisableCbTag[IX_ETH_ACC_NUMBER_OF_PORTS];
+ixEthAccPortDisableCbTag[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
 static UINT32 
-ixEthAccPortDisableMultiBufferCbTag[IX_ETH_ACC_NUMBER_OF_PORTS];
+ixEthAccPortDisableMultiBufferCbTag[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
 
 static IxEthAccPortTxDoneCallback 
-ixEthAccPortDisableTxDoneFn[IX_ETH_ACC_NUMBER_OF_PORTS];
+ixEthAccPortDisableTxDoneFn[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
 static UINT32 
-ixEthAccPortDisableTxDoneCbTag[IX_ETH_ACC_NUMBER_OF_PORTS];
+ixEthAccPortDisableTxDoneCbTag[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
 
 static UINT32 
-ixEthAccPortDisableUserBufferCount[IX_ETH_ACC_NUMBER_OF_PORTS];
+ixEthAccPortDisableUserBufferCount[IX_ETHNPE_MAX_NUMBER_OF_PORTS];
 
 /* 
  * PortDisable private callbacks functions. They handle the user 
@@ -553,7 +586,7 @@ ixEthAccPortDisablePriv(IxEthAccPortId portId)
     /* disable MAC receive first */
     ixEthAccPortRxDisablePriv(portId);
 
-    /* disable ethernet database for this port - It is done now to avoid
+    /* disable Ethernet database for this port - It is done now to avoid
      * issuing ELT maintenance after requesting 'port disable' in an NPE 
      */
     if (ixEthDBPortDisable(portId) != IX_ETH_DB_SUCCESS)
@@ -882,6 +915,7 @@ ixEthAccPortMacDefaultConfigSet(IxEthAccPortId portId)
     /* Reconfigure the MAC core registers */
     REG_WRITE(ixEthAccMacBase[portId],
 	      IX_ETH_ACC_MAC_TX_CNTRL2,
+	      IX_ETH_ACC_TX_MAX_RETRIES_DEFAULT &
 	      IX_ETH_ACC_TX_CNTRL2_RETRIES_MASK);
 
     REG_WRITE(ixEthAccMacBase[portId],
@@ -1051,7 +1085,7 @@ ixEthAccNpeLoopbackMessageCallback (IxNpeMhNpeId npeId,
 
 #ifndef NDEBUG
     /* Prudent to at least check the port is within range */
-    if (portId >= IX_ETH_ACC_NUMBER_OF_PORTS)
+    if (!IX_ETH_ACC_IS_PORT_VALID(portId))
     {
         IX_ETH_ACC_FATAL_LOG("IXETHACC:ixEthAccNpeLoopbackMessageCallback: Illegal port: %u\n",
             (UINT32) portId, 0, 0, 0, 0, 0);
@@ -1072,7 +1106,7 @@ ixEthAccNotifyMacRecoveryDoneMessageCallback (IxNpeMhNpeId npeId,
 
 #ifndef NDEBUG
     /* Prudent to at least check the port is within range */
-    if (portId >= IX_ETH_ACC_NUMBER_OF_PORTS)
+    if (!IX_ETH_ACC_IS_PORT_VALID(portId))
     {
 	IX_ETH_ACC_FATAL_LOG("IXETHACC:ixEthAccNotifyMacRecoveryDoneMessageCallback: Illegal port: %u\n", 
             (UINT32) portId, 0, 0, 0, 0, 0);
@@ -1105,7 +1139,6 @@ ixEthAccNpeLoopbackEnablePriv(IxEthAccPortId portId)
         | (IX_ETHNPE_PHYSICAL_ID_TO_LOGICAL_ID(portId) << IX_ETH_ACC_MAC_PORTID_SHL)
 	| 0x01;
     message.data[1] = 0;
-    
     npeMhStatus = ixNpeMhMessageWithResponseSend(IX_ETHNPE_PHYSICAL_ID_TO_NODE(portId), 
 		message,
 		IX_ETHNPE_SETLOOPBACK_MODE_ACK,
@@ -1399,7 +1432,7 @@ ixEthAccPortUnicastMacAddressSetPriv (IxEthAccPortId portId,
 	return IX_ETH_ACC_FAIL;
     }
 	
-    /* update the MAC address in the ethernet database */
+    /* update the MAC address in the Ethernet database */
     if (ixEthDBPortAddressSet(portId, (IxEthDBMacAddr *) macAddr) != IX_ETH_DB_SUCCESS)
     {
         return IX_ETH_ACC_FAIL;
@@ -1562,7 +1595,7 @@ ixEthAccPortMulticastAddressJoinPriv (IxEthAccPortId portId,
       specified port*/
     i=ixEthAccMacState[portId].mcastAddrIndex;
     
-    memcpy(&ixEthAccMacState[portId].mcastAddrsTable[i],
+    ixOsalMemCopy(&ixEthAccMacState[portId].mcastAddrsTable[i],
 	   &macAddr->macAddress,
 	   IX_IEEE803_MAC_ADDRESS_SIZE);
     
@@ -1596,7 +1629,7 @@ ixEthAccPortMulticastAddressJoinAllPriv (IxEthAccPortId portId)
     /* remove all entries from the database and
     *  insert a multicast entry
     */
-    memcpy(&ixEthAccMacState[portId].mcastAddrsTable[0],
+    ixOsalMemCopy(&ixEthAccMacState[portId].mcastAddrsTable[0],
 	   &mcastMacAddr.macAddress,
 	   IX_IEEE803_MAC_ADDRESS_SIZE);
 
@@ -1651,7 +1684,7 @@ ixEthAccPortMulticastAddressLeavePriv (IxEthAccPortId portId,
 	    /*Copy down all entries above the current entry*/
 	    while(i<ixEthAccMacState[portId].mcastAddrIndex)
 	    {
-		memcpy(&ixEthAccMacState[portId].mcastAddrsTable[i],
+		ixOsalMemCopy(&ixEthAccMacState[portId].mcastAddrsTable[i],
 		       &ixEthAccMacState[portId].mcastAddrsTable[i+1], 
 		       IX_IEEE803_MAC_ADDRESS_SIZE);
                 i++;
@@ -1759,6 +1792,7 @@ ixEthAccPortDuplexModeSetPriv (IxEthAccPortId portId,
 {
     UINT32 txregval;
     UINT32 rxregval;
+    UINT32 randTimeSlotOffset;
 
     /*This is bit 1 of the transmit control reg, set to 1 for half
       duplex, 0 for full duplex*/
@@ -1779,6 +1813,13 @@ ixEthAccPortDuplexModeSetPriv (IxEthAccPortId portId,
     
     if (mode ==  IX_ETH_ACC_FULL_DUPLEX)
     {
+        /* In full-duplex mode, we set minimum time-slot 
+         * for the back-off algorithm.
+         */
+        REG_WRITE(ixEthAccMacBase[portId],
+	          IX_ETH_ACC_MAC_SLOT_TIME,
+	          IX_ETH_ACC_MAC_SLOT_TIME_DEFAULT);
+
 	/*Clear half duplex bit in TX*/
 	REG_WRITE(ixEthAccMacBase[portId],
 		  IX_ETH_ACC_MAC_TX_CNTRL1,
@@ -1789,11 +1830,30 @@ ixEthAccPortDuplexModeSetPriv (IxEthAccPortId portId,
 	REG_WRITE(ixEthAccMacBase[portId],
 		  IX_ETH_ACC_MAC_RX_CNTRL1,
 		  rxregval | IX_ETH_ACC_RX_CNTRL1_PAUSE_EN);
+
 	ixEthAccMacState[portId].fullDuplex = TRUE;
 	
     }
     else if (mode ==  IX_ETH_ACC_HALF_DUPLEX)
     {
+        /* Back-off algorithm in half-duplex mode has to be random.
+         * To enhance such randomness, we use time stamp and 
+         * LSB of MAC addr as the random offset of the time slot.
+         * 
+         * Slot time offset =
+         * (((MAC ^ Timestamp)&0xFF)*Timestamp) & 0x7F
+         */
+       UINT32 timeStampValue = ixOsalTimestampGet();
+       if(timeStampValue==0)
+       {
+         timeStampValue = 1;
+       }
+       randTimeSlotOffset = ((ixEthAccUcastMacAddr[portId].macAddress[5]^timeStampValue)*
+	  		      timeStampValue) & 0x7F;
+       REG_WRITE(ixEthAccMacBase[portId],
+	          IX_ETH_ACC_MAC_SLOT_TIME,
+	          IX_ETH_ACC_MAC_SLOT_TIME_DEFAULT + randTimeSlotOffset);
+
 	/*Set half duplex bit in TX*/
 	REG_WRITE(ixEthAccMacBase[portId],
 		  IX_ETH_ACC_MAC_TX_CNTRL1,
@@ -1968,7 +2028,7 @@ ixEthAccPortRxFrameAppendFCSConfigCallback (IxNpeMhNpeId npeId,
 
 #ifndef NDEBUG
     /* Prudent to at least check the port is within range */
-    if (portId >= IX_ETH_ACC_NUMBER_OF_PORTS)
+    if(!IX_ETH_ACC_IS_PORT_VALID(portId))
     {
         IX_ETH_ACC_FATAL_LOG("IXETHACC:ixEthAccPortRxFrameAppendFCSConfigCallback: Illegal port: %u\n",
             (UINT32) portId, 0, 0, 0, 0, 0);
@@ -2013,7 +2073,6 @@ ixEthAccPortRxFrameAppendFCSEnablePriv (IxEthAccPortId portId)
         | (IX_ETHNPE_PHYSICAL_ID_TO_LOGICAL_ID(portId) << IX_ETH_ACC_MAC_PORTID_SHL)
         | 0x01;
     message.data[1] = 0;
-
     npeMhStatus = ixNpeMhMessageWithResponseSend(IX_ETHNPE_PHYSICAL_ID_TO_NODE(portId),
                 message,
                 IX_ETHNPE_APPENDFCSCONFIG_ACK,
@@ -2070,7 +2129,6 @@ ixEthAccPortRxFrameAppendFCSDisablePriv (IxEthAccPortId portId)
         | (IX_ETHNPE_PHYSICAL_ID_TO_LOGICAL_ID(portId) << IX_ETH_ACC_MAC_PORTID_SHL)
         | 0x00;
     message.data[1] = 0;
-
     npeMhStatus = ixNpeMhMessageWithResponseSend(IX_ETHNPE_PHYSICAL_ID_TO_NODE(portId),
                 message,
                 IX_ETHNPE_APPENDFCSCONFIG_ACK,
@@ -2104,7 +2162,7 @@ ixEthAccMacNpeStatsMessageCallback (IxNpeMhNpeId npeId,
     IxEthAccPortId portId = IX_ETHNPE_NODE_AND_PORT_TO_PHYSICAL_ID(npeId,0);
 #ifndef NDEBUG
     /* Prudent to at least check the port is within range */
-    if (portId >= IX_ETH_ACC_NUMBER_OF_PORTS)
+    if(!IX_ETH_ACC_IS_PORT_VALID(portId))
     {
         IX_ETH_ACC_FATAL_LOG(
      "IXETHACC:ixEthAccMacNpeStatsMessageCallback: Illegal port: %u\n",
@@ -2233,11 +2291,9 @@ ixEthAccMibIIStatsGet (IxEthAccPortId portId,
     }
 
     IX_OSAL_CACHE_INVALIDATE(retStats, sizeof(IxEthEthObjStats));
-
     message.data[0] = IX_ETHNPE_GETSTATS << IX_ETH_ACC_MAC_MSGID_SHL
         | (IX_ETHNPE_PHYSICAL_ID_TO_LOGICAL_ID(portId) << IX_ETH_ACC_MAC_PORTID_SHL);
     message.data[1] = (UINT32) IX_OSAL_MMU_VIRT_TO_PHYS(retStats);
-
     /* Permit only one task to request MIB statistics Get operation
        at a time */
     ixOsalMutexLock(&ixEthAccMacState[portId].MIBStatsGetAccessLock, IX_OSAL_WAIT_FOREVER);
@@ -2277,7 +2333,7 @@ ixEthAccMacNpeStatsResetMessageCallback (IxNpeMhNpeId npeId,
     IxEthAccPortId portId = IX_ETHNPE_NODE_AND_PORT_TO_PHYSICAL_ID(npeId,0);
 #ifndef NDEBUG
     /* Prudent to at least check the port is within range */
-    if (portId >= IX_ETH_ACC_NUMBER_OF_PORTS)
+    if (!IX_ETH_ACC_IS_PORT_VALID(portId))
     {
         IX_ETH_ACC_FATAL_LOG(
      "IXETHACC:ixEthAccMacNpeStatsResetMessageCallback: Illegal port: %u\n",
@@ -2401,7 +2457,7 @@ ixEthAccMibIIShow (IxEthAccPortId portId)
     return IX_ETH_ACC_FAIL;
   }
  
-  memset(portStats, 0, sizeof(IxEthEthObjStats));
+  ixOsalMemSet(portStats, 0, sizeof(IxEthEthObjStats));
 	    
   printf("\nStatistics for port %d:\n", portId);
   if(ixEthAccMibIIStatsGetClear(portId, portStats) != IX_ETH_ACC_SUCCESS)
@@ -2494,10 +2550,11 @@ ixEthAccMibIIShow (IxEthAccPortId portId)
     printf("\n");
   }
   
+  IX_OSAL_CACHE_DMA_FREE(portStats);
   return IX_ETH_ACC_SUCCESS;
 }
 
-/* Initialize the ethernet MAC settings */
+/* Initialize the Ethernet MAC settings */
 IxEthAccStatus
 ixEthAccMacInit(IxEthAccPortId portId)
 {
@@ -2560,7 +2617,7 @@ ixEthAccMacInit(IxEthAccPortId portId)
 	/* fill the payload of the Rx mbuf used in portDisable */
         IX_OSAL_MBUF_MLEN(ixEthAccMacState[portId].portDisableRxMbufPtr) = IX_ETHACC_RX_MBUF_MIN_SIZE;
  
-        memset(IX_OSAL_MBUF_MDATA(ixEthAccMacState[portId].portDisableRxMbufPtr), 
+        ixOsalMemSet(IX_OSAL_MBUF_MDATA(ixEthAccMacState[portId].portDisableRxMbufPtr), 
 	       0xAA, 
 	       IX_ETHACC_RX_MBUF_MIN_SIZE);
 
@@ -2569,7 +2626,7 @@ ixEthAccMacInit(IxEthAccPortId portId)
         IX_OSAL_MBUF_PKT_LEN(ixEthAccMacState[portId].portDisableTxMbufPtr) = 64;
 
         data = (UINT8 *) IX_OSAL_MBUF_MDATA(ixEthAccMacState[portId].portDisableTxMbufPtr);
-        memset(data, 0xBB, 64);
+        ixOsalMemSet(data, 0xBB, 64);
         data[0] = 0x00; /* unicast destination MAC address */
         data[6] = 0x00; /* unicast source MAC address */
         data[12] = 0x08; /* typelength : IP frame */
@@ -2715,7 +2772,7 @@ ixEthAccMacStateUpdate(IxEthAccPortId portId)
     {
 	ixEthAccPortTxFrameAppendPaddingDisablePriv (portId);
     }
-    
+    ixOsalYield();
     if(ixEthAccMacState[portId].promiscuous)
     {
 	ixEthAccPortPromiscuousModeSetPriv(portId);
@@ -2780,7 +2837,7 @@ ixEthAccPortAddressFilterConfigCallback (IxNpeMhNpeId npeId,
 
 #ifndef NDEBUG
     /* Prudent to at least check the port is within range */
-    if (portId >= IX_ETH_ACC_NUMBER_OF_PORTS)
+    if (!IX_ETH_ACC_IS_PORT_VALID(portId))
     {
         IX_ETH_ACC_FATAL_LOG("IXETHACC: ixEthAccPortAddressFilterConfigCallback: Illegal port: %u\n",
             (UINT32) portId, 0, 0, 0, 0, 0);
@@ -2874,10 +2931,10 @@ ixEthAccMulticastAddressSet(IxEthAccPortId portId)
 	 * allow all packets, and enable the mcast and
 	 * bcast detection.
 	 */
-	memset(&addressMask.macAddress,
+	ixOsalMemSet(&addressMask.macAddress,
 	       0, 
 	       IX_IEEE803_MAC_ADDRESS_SIZE);
-	memset(&address.macAddress, 
+	ixOsalMemSet(&address.macAddress, 
 	       0, 
 	       IX_IEEE803_MAC_ADDRESS_SIZE);
     }
@@ -2890,10 +2947,10 @@ ixEthAccMulticastAddressSet(IxEthAccPortId portId)
 	     */
 	    IxEthAccMacAddr macAddr = {{0x1,0x0,0x0,0x0,0x0,0x0}};
 
-	    memcpy(addressMask.macAddress, 
+	    ixOsalMemCopy(addressMask.macAddress, 
 		   macAddr.macAddress, 
 		   IX_IEEE803_MAC_ADDRESS_SIZE);
-	    memcpy(address.macAddress, 
+	    ixOsalMemCopy(address.macAddress, 
 		   macAddr.macAddress,
 		   IX_IEEE803_MAC_ADDRESS_SIZE);
 	}
@@ -2903,10 +2960,10 @@ ixEthAccMulticastAddressSet(IxEthAccPortId portId)
 	     * Promiscuous Mode is cleared, Broadcast filtering
 	     * is configured.
 	     */
-	    memset(addressMask.macAddress, 
+	    ixOsalMemSet(addressMask.macAddress, 
 		   IX_ETH_ACC_MAC_ALL_BITS_SET, 
 		   IX_IEEE803_MAC_ADDRESS_SIZE);
-	    memset(address.macAddress, 
+	    ixOsalMemSet(address.macAddress, 
 		   IX_ETH_ACC_MAC_ALL_BITS_SET,
 		   IX_IEEE803_MAC_ADDRESS_SIZE);
 	}
@@ -2915,10 +2972,10 @@ ixEthAccMulticastAddressSet(IxEthAccPortId portId)
 	    /* build a mask and an address which mix all entreis
 	     * from the list of multicast addresses
 	     */
-	    memset(alwaysClearBits.macAddress, 
+	    ixOsalMemSet(alwaysClearBits.macAddress, 
 		   0, 
 		   IX_IEEE803_MAC_ADDRESS_SIZE);
-	    memset(alwaysSetBits.macAddress, 
+	    ixOsalMemSet(alwaysSetBits.macAddress, 
 		   IX_ETH_ACC_MAC_ALL_BITS_SET, 
 		   IX_IEEE803_MAC_ADDRESS_SIZE);
 	    
@@ -3037,7 +3094,9 @@ void  ixEthAccMacRecoveryLoop(void *unused1)
 	  IxEthAccMacRecoveryEvent local_event;
 	  IxEthAccPortId portId;
 	  IxNpeMhNpeId npeId;
-	  
+#if defined (__ixp46X) || defined(__ixp43X)
+          UINT32 status, mask;
+#endif	  
 	  /* lock queue */
 	  ixOsalMutexLock(&macRecoveryEventQueueLock, IX_OSAL_WAIT_FOREVER);
 	  	  
@@ -3055,13 +3114,50 @@ void  ixEthAccMacRecoveryLoop(void *unused1)
 
 	  portId = local_event.portID;
 	  npeId  = local_event.npeId;
- 	  
+
+ 
 	  /* Permit only one task to recover MAC at a time */
 	  ixOsalMutexLock(&ixEthAccMacState[portId].macRecoveryLock, IX_OSAL_WAIT_FOREVER);
-	  
+
+ /* Only applicable on the IXDP465 & IXDP435 and when 
+             hardware NPE parity error is enabled*/
+#if defined (__ixp46X)  || defined(__ixp43X)
+         
+          mask = (0x01<<npeId);  
+     
+          if( IX_SUCCESS == ixErrHdlAccStatusGet(&status))
+         {
+           /* NPE soft-reset in progress*/
+           UINT32 waitForResetCnt = 0;
+           /* NPE Error detected*/
+           if((status&mask)!= 0)
+           {
+            /* Wait for NPE Soft-Reset completion*/
+            while(waitForResetCnt < IX_ETH_ACC_MAX_WAIT_FOR_NPE_SOFT_RESET_TRY
+                  && (status&mask)!= 0 )
+           {
+             waitForResetCnt++;
+             ixOsalSleep(IX_ETH_ACC_POLL_NPE_SWRESET_MS);
+             /* Poll the status of the NPE soft-reset*/
+             ixErrHdlAccStatusGet(&status);
+            }
+
+           ixOsalMutexUnlock(&ixEthAccMacState[portId].macRecoveryLock);	 
+ 
+           /*Do Ethernet MAC Reset now*/
+           ixEthAccPortMacReset(portId); 
+           continue;		  
+          }
+        }
+#endif
 	  /* Perform MAC Reset */
 	  ixEthAccPortMacReset(portId);
-	  
+
+          /* Prevention of npeMH control messaging failure.
+            De-schedule the current task to allow for any pending/suspend npeMH 
+            polling task to take place.*/
+	  ixOsalYield();
+
 	  /* Contruct message to notify NPE that MAC reset has been done */
 	  message.data[0] = ((IX_ETHNPE_NOTIFY_MAC_RECOVERY_DONE<<IX_ETH_ACC_MAC_MSGID_SHL) | (portId<<16));
 	  message.data[1] = 0;          
@@ -3074,7 +3170,6 @@ void  ixEthAccMacRecoveryLoop(void *unused1)
 	     != IX_SUCCESS)
 	    {
 	      ixOsalMutexUnlock(&ixEthAccMacState[portId].macRecoveryLock);        
-	      printf("EthAcc: (Mac) NotifyMACRecovery failed to send NPE message\n");        
 	      return;
 	    }
 	  	  

@@ -12,12 +12,12 @@
  * @li Phy Loopback
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -187,7 +187,7 @@ ixEthAccCodeletLoopbackTxCB(UINT32 cbTag,
 			    IX_OSAL_MBUF* mBufPtr)
 {
     /* Put the mbuf back in the rx free pool */
-    if(cbTag < IX_ETHACC_CODELET_MAX_PORT)
+    if(IX_ETHNPE_PHYSICAL_ID_TO_LOGICAL_ID(cbTag) < IX_ETHNPE_UNKNOWN_PORT)
     {
 	ixEthAccCodeletStats[cbTag].txCount++;
 
@@ -223,7 +223,7 @@ PRIVATE void
 ixEthAccCodeletLoopbackRxCB(UINT32 cbTag, IX_OSAL_MBUF** mBufPtr)
 {
     /* Transmit the buffer back on the port it was received on*/
-    if(cbTag < IX_ETHACC_CODELET_MAX_PORT )
+    if(IX_ETHNPE_PHYSICAL_ID_TO_LOGICAL_ID(cbTag) < IX_ETHNPE_UNKNOWN_PORT )
     {
 	while (NULL != *mBufPtr)
 	{
@@ -335,7 +335,7 @@ ixEthAccCodeletTxGenRxSinkStart(IxEthAccPortId portId)
 	IX_OSAL_MBUF_MLEN(mBufPtr) = IX_ETHACC_CODELET_TXGEN_PCK_LEN;
 	IX_OSAL_MBUF_PKT_LEN(mBufPtr) = IX_ETHACC_CODELET_TXGEN_PCK_LEN;
 	
-	memcpy(IX_OSAL_MBUF_MDATA(mBufPtr), 
+	ixOsalMemCopy(IX_OSAL_MBUF_MDATA(mBufPtr), 
 	       &compData[0], 
 	       IX_ETHACC_CODELET_TXGEN_PCK_LEN);
 	
@@ -390,7 +390,7 @@ ixEthAccCodeletPortLoopbackStop(IxEthAccPortId portId)
     /* disable traffic */
     if(ixEthAccPortDisable(portId) 
        != IX_ETH_ACC_SUCCESS)
-    {
+    {   
 	printf("Loopbacks: Error Disabling port %u\n",
 	       (UINT32)portId);
 	return (IX_FAIL);
@@ -407,6 +407,7 @@ ixEthAccCodeletPortLoopbackStop(IxEthAccPortId portId)
 IX_STATUS 
 ixEthAccCodeletSwLoopbackStart(IxEthAccPortId portId)
 {
+
     if (ixEthAccCodeletPortConfigure(portId,
 				     NULL,
 				     ixEthAccCodeletLoopbackRxCB,
@@ -561,12 +562,14 @@ ixEthAccCodeletPhyLoopbackStart(IxEthAccPortId portId)
 IX_STATUS 
 ixEthAccCodeletPhyLoopbackStop(IxEthAccPortId portId)
 {
-    if (ixEthAccCodeletPortLoopbackStop(portId)
-	!= IX_SUCCESS)
+    /* register the datapath TxDone callbacks */
+    if(ixEthAccPortTxDoneCallbackRegister(portId,
+					  ixEthAccCodeletMemPoolFreeTxCB,
+					  portId) != IX_ETH_ACC_SUCCESS)
     {
-	printf("Loopbacks: Failed to disable port %u\n",
+	printf("PortSetup: Failed to register Tx done callback for port %u\n",
 	       (UINT32)portId);
-	return IX_FAIL;
+	return (IX_FAIL);
     }
 
     if (ixEthAccCodeletLinkLoopbackDisable(portId)
@@ -577,5 +580,15 @@ ixEthAccCodeletPhyLoopbackStop(IxEthAccPortId portId)
 	return IX_FAIL;
     }
 
+    if (ixEthAccCodeletPortLoopbackStop(portId)
+	!= IX_SUCCESS)
+    {
+	printf("Loopbacks: Failed to disable port %u\n",
+	       (UINT32)portId);
+	return IX_FAIL;
+    }
+
     return IX_SUCCESS;
 }
+
+

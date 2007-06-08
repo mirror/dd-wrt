@@ -8,12 +8,12 @@
  * of the IXP400 Parity Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -48,7 +48,7 @@
  * -- End of Copyright Notice --
  */
 
-#if defined(__ixp46X)
+#if defined(__ixp46X) || defined(__ixp43X)
 
 /* 
  * System defined include files
@@ -61,6 +61,9 @@
 #include "IxParityENAccIcE.h"
 #include "IxParityENAccAqmPE.h"
 #include "IxParityENAccAqmPE_p.h"
+
+/* Virtual base address of AQM */
+static UINT32 ixAqmVirtualBaseAddr = 0;
 
 void
 ixParityENAccAqmPERegDump(void);
@@ -88,6 +91,8 @@ ixParityENAccAqmPEInit (IxParityENAccInternalCallback ixAqmPECallback)
     {
         return IX_FAIL;
     } /* end of if */
+
+    ixAqmVirtualBaseAddr = aqmVirtualBaseAddr;
 
     /* Virtual Addresses assignment for AQM Registers */
     ixParityENAccAqmPEConfig.aqmPERegisters.aqmQueAddErr  = 
@@ -245,4 +250,32 @@ ixParityENAccAqmPEIsr(void)
         ixParityENAccAqmPEConfig.aqmIsrInfo.aqmIsr);
 } /* end of ixParityENAccAqmPEIsr() function */
 
-#endif /* __ixp46X */
+IX_STATUS 
+ixParityENAccAqmPEUnload(void)
+{
+    UINT32 lockKey;
+    UINT32 status = IX_SUCCESS;
+    
+    IxParityENAccAqmPEConfigOption ixAqmPDCfg;
+    
+    ixAqmPDCfg = IXP400_PARITYENACC_PE_DISABLE;
+    ixParityENAccAqmPEDetectionConfigure(ixAqmPDCfg);
+
+    /* Unbind the IRQ */    
+    lockKey = ixOsalIrqLock();
+    if (IX_SUCCESS != ixOsalIrqUnbind ((UINT32) IRQ_IXP400_INTC_PARITYENACC_AQM))
+    {
+        IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDERR,
+            "ixParityENAccAqmPEUnload(): "\
+            "Can't unbind the AQM ISR to IRQ_IXP400_INTC_PARITYENACC_AQM!!!\n",0,0,0,0,0,0);
+	status = IX_FAIL;
+    }
+    ixOsalIrqUnlock(lockKey);
+
+    /* Unmap the memory */
+    IX_OSAL_MEM_UNMAP(ixAqmVirtualBaseAddr);
+
+    return status;
+} /* end of ixParityENAccAqmPEUnload() function */
+
+#endif /* __ixp46X || __ixp43X */

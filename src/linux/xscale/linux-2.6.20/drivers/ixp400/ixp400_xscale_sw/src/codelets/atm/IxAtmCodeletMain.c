@@ -6,12 +6,12 @@
  * @brief   IxAtmCodelet scenarios.
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -221,7 +221,11 @@ ixAtmCodeletMainUtopiaLoopbackRun (void)
     /*Set attributes of thread*/
     threadAttr.name = pThreadName;
     threadAttr.stackSize = IX_ATMCODELET_QMGR_DISPATCHER_THREAD_STACK_SIZE;
+#ifdef __linux
     threadAttr.priority = IX_ATMCODELET_QMGR_DISPATCHER_PRIORITY;
+#else
+    threadAttr.priority = IX_ATMCODELET_UTOPIA_LB_THREAD_PRIORITY;
+#endif
 
     if (ixOsalThreadCreate(&tid,
 			   &threadAttr,
@@ -706,8 +710,11 @@ ixAtmCodeletAal0SduSendTask (void)
 
 	    t0 = ixOsalTimestampGet(); /* get t0 time stamp value */
 	}
-
-	ixOsalSleep (loopSleepTime);
+#ifdef __linux
+        ixOsalSleep (loopSleepTime);
+#else
+        ixOsalYield();
+#endif
     }
 }
 

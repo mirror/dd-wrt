@@ -8,12 +8,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -69,7 +69,7 @@ EXPORT_SYMBOL(ixCryptoAccHashKeyGenerate);
 EXPORT_SYMBOL(ixCryptoAccCtxCipherKeyUpdate);
 EXPORT_SYMBOL(ixCryptoAccUninit);
 
-#if defined(__ixp46X)
+#if defined(__ixp46X)     /* PKE codes symbol only applicable for IXP46X platform */
 
 EXPORT_SYMBOL(ixCryptoAccPkePseudoRandomNumberGet);
 EXPORT_SYMBOL(ixCryptoAccPkeHashPerform);

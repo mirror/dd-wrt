@@ -8,12 +8,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -838,10 +838,12 @@ ixHssAccComClkCRCreate (IxHssAccClkSpeed clkRate, unsigned *clkCR)
     else
     {
 	/* Check whether to use the clock divider values for 425 or 465 */
+	/* IXP43X uses same clock Divider Value of 465 */
         deviceId =  ixFeatureCtrlDeviceRead();
         if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X == deviceId)
 	    clk = ixHssAcc42XComSysClk133M[clkRate];
-        else if(IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == deviceId)
+        else if((IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == deviceId) ||
+	        (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X == deviceId))
 	    clk = ixHssAcc46XComSysClk133M[clkRate];
         else
 	{

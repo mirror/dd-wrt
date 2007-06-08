@@ -9,12 +9,12 @@
  *	  builds.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -50,7 +50,7 @@
  */
 
 #ifdef __linux
-#if defined (__ixp46X)
+#if defined (__ixp46X) || defined(__ixp43X)
 
 /* include files */
 
@@ -89,7 +89,7 @@ static void __exit parityENAccCodeletExitModule (void)
 module_init (parityENAccCodeletInitModule);
 module_exit (parityENAccCodeletExitModule);
 
-#endif /* __ixp46X */
+#endif  /* __ixp46X || __ixp43X */
 #endif	/* end of #ifdef __linux */
 
 

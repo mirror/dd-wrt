@@ -8,12 +8,12 @@
  * Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -59,7 +59,7 @@
 #ifndef IXPARITYENACC_H
 #define IXPARITYENACC_H
 
-#if defined(__ixp46X)
+#if defined(__ixp46X) || defined(__ixp43X)
 
 #include "IxOsal.h"
 
@@ -367,7 +367,9 @@ typedef enum  /**< IxParityENAccAHBErrorMaster */
   IX_PARITYENACC_AHBS_MST_PBC,         /**< PCI Bus Controller */
   IX_PARITYENACC_AHBS_MST_EBC,         /**< Expansion Bus Controller */
   IX_PARITYENACC_AHBS_MST_AHB_BRIDGE,  /**< AHB Bridge */
-  IX_PARITYENACC_AHBS_MST_USBH         /**< USB Host Controller */
+  IX_PARITYENACC_AHBS_MST_USBH0,        /**< USB Host Controller 0 */
+  IX_PARITYENACC_AHBS_MST_USBH1        /**< USB Host Controller 1 for IXP 43X 
+                                        only */
 } IxParityENAccAHBErrorMaster;
 
 /**
@@ -385,10 +387,12 @@ typedef enum  /**< IxParityENAccAHBErrorSlave */
   IX_PARITYENACC_AHBS_SLV_MCU,         /**< Intel XScale(R) Processor Bus Interface Unit */
   IX_PARITYENACC_AHBS_SLV_APB_BRIDGE,  /**< APB Bridge */
   IX_PARITYENACC_AHBS_SLV_AQM,         /**< AQM */
-  IX_PARITYENACC_AHBS_SLV_RSA,         /**< RSA (Crypto Bus) */
+  IX_PARITYENACC_AHBS_SLV_RSA,         /**< RSA (Crypto Bus) for IXP 46X only */
   IX_PARITYENACC_AHBS_SLV_PBC,         /**< PCI Bus Controller */
   IX_PARITYENACC_AHBS_SLV_EBC,         /**< Expansion Bus Controller */
-  IX_PARITYENACC_AHBS_SLV_USBH         /**< USB Host Controller */
+  IX_PARITYENACC_AHBS_SLV_USBH0,        /**< USB Host Controller 0 */
+  IX_PARITYENACC_AHBS_SLV_USBH1        /**< USB Host Controller 1 for IXP 43X 
+                                        only */
 } IxParityENAccAHBErrorSlave;
 
 /**
@@ -486,6 +490,27 @@ typedef void (*IxParityENAccCallback) (void);
  */
 
 PUBLIC IxParityENAccStatus ixParityENAccInit(void);
+
+/**
+ * @ingroup IxParityENAcc
+ *
+ * @fn IxParityENAccStatus ixParityENAccUnload(void)
+ *
+ * @brief This function unloads the IxParityENAcc component.
+ *
+ * This function unloads the IxParityENAcc component.
+ * It disables all error detections, unbind all IRQs and disables 
+ * the enabled interrupts. It can be called only after ixParityENAccInit.
+ *
+ * @li Re-entrant   : No
+ * @li ISR Callable : No
+ * 
+ * @return @li IX_PARITYENACC_SUCCESS - Unload is successful
+ *         @li IX_PARITYENACC_NOT_INITIALISED - The access layer has not 
+ *             been initialized
+ */
+
+PUBLIC IxParityENAccStatus ixParityENAccUnload(void);
 
 /**
  * @ingroup IxParityENAcc
@@ -862,7 +887,7 @@ PUBLIC IxParityENAccStatus ixParityENAccParityNPEConfigReUpdate(UINT32 npeID);
 PUBLIC IxParityENAccStatus
 ixParityENAccNPEParityErrorCheck(UINT32 npeID,IxParityENAccParityErrorContextMessage * const pecMessage);
 #endif /* IXPARITYENACC_H */
-#endif /* __ixp46X */
+#endif /* __ixp46X || __ixp43X */
 
 /**
  * @} defgroup IxParityENAcc

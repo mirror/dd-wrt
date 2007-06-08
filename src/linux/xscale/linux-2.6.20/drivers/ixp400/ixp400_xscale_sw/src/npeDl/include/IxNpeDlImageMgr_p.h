@@ -8,12 +8,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -64,7 +64,7 @@
  * Put the user defined include files required.
  */
 #include "IxNpeDl.h"
-#include "IxOsalTypes.h"
+#include "IxOsal.h"
 
 
 /*
@@ -164,8 +164,6 @@
 #define IX_NPEDL_MINOR_FROM_IMAGEID_GET(imageId) \
     (((imageId) >> IX_NPEDL_IMAGEID_MINOR_OFFSET) & \
      IX_NPEDL_NPEIMAGE_FIELD_MASK)
-
-
 
 /*
  * Prototypes for interface functions

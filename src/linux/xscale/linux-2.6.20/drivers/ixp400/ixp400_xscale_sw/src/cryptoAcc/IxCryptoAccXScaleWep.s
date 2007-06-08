@@ -5,12 +5,12 @@
  *
  * Assembly-coded ARC4 and combined AR4/CRC routines.
  *
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -91,6 +91,18 @@
  */
 #ifdef __LITTLE_ENDIAN
 
+#ifdef VX_VERSION55
+#define GetB0(r,h)      r
+#define GetB1(r,h)      r, LSR h##8
+#define GetB2(r,h)      r, LSR h##16
+#define GetB3(r,h)      r, LSR h##24
+
+#define PutB0(r,h)      r
+#define PutB1(r,h)      r, LSL h##8
+#define PutB2(r,h)      r, LSL h##16
+#define PutB3(r,h)      r, LSL h##24
+
+#else
 #define GetB0(r,h)      r
 #define GetB1(r,h)      r, LSR h/**/8
 #define GetB2(r,h)      r, LSR h/**/16
@@ -100,9 +112,22 @@
 #define PutB1(r,h)      r, LSL h/**/8
 #define PutB2(r,h)      r, LSL h/**/16
 #define PutB3(r,h)      r, LSL h/**/24
+#endif /* VX_VERSION55 */
 
 #else
 
+#ifdef VX_VERSION55
+#define GetB0(r,h)      r, LSR h##24
+#define GetB1(r,h)      r, LSR h##16
+#define GetB2(r,h)      r, LSR h##8
+#define GetB3(r,h)      r
+
+#define PutB0(r,h)      r, LSL h##24
+#define PutB1(r,h)      r, LSL h##16
+#define PutB2(r,h)      r, LSL h##8
+#define PutB3(r,h)      r
+
+#else
 #define GetB0(r,h)      r, LSR h/**/24
 #define GetB1(r,h)      r, LSR h/**/16
 #define GetB2(r,h)      r, LSR h/**/8
@@ -112,6 +137,7 @@
 #define PutB1(r,h)      r, LSL h/**/16
 #define PutB2(r,h)      r, LSL h/**/8
 #define PutB3(r,h)      r
+#endif /* VX_VERSION55 */
 
 #endif
 

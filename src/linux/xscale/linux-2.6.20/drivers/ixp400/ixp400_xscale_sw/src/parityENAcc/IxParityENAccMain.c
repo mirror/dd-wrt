@@ -8,12 +8,12 @@
  * Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -48,7 +48,7 @@
  * -- End of Copyright Notice --
  */
 
-#if defined(__ixp46X)
+#if defined(__ixp46X) || defined(__ixp43X)
 
 /*
  * System include files
@@ -131,6 +131,9 @@ ixParityENAccModulesInit (void);
 void 
 ixParityENAccInvokeClientCallback (UINT32 irqNum);
 
+void
+ixParityENAccResetCommonStats(void);
+
 /*
  * Local functions definitions
  */
@@ -173,8 +176,9 @@ void ixParityENAccInvokeClientCallback (UINT32 irqNum)
 IX_STATUS
 ixParityENAccConfigInit (void)
 {
-    /* Check for IXP46X device */
-    if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X != ixFeatureCtrlDeviceRead())
+    /* Check for IXP46X || IXP43X device */
+    if ( (IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X != ixFeatureCtrlDeviceRead()) && 
+       (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X != ixFeatureCtrlDeviceRead()) )
     {
         IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR, 
             "ixParityENAccConfigInit(): "
@@ -182,18 +186,36 @@ ixParityENAccConfigInit (void)
         return IX_FAIL;
     } /* end of if */
 
-    /* Find the fused-out module status
-     *
-     * NOTE: Feature Control uses #define IX_FEATURECTRL_ECC_TIMESYNC 
-     * for both the ECC feature of SDRAM Controller and TimeSync.
-     */
-    if (IX_FEATURE_CTRL_COMPONENT_DISABLED == 
-        ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ECC_TIMESYNC))
+    if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == ixFeatureCtrlDeviceRead())
     {
-        IXP400_PARITYENACC_VAL_BIT_SET(ixParityENAccFusedModules,
-            IXP400_PARITYENACC_FUSED_MODULE_MCU_ECC);
-    } /* end of if */
-
+       /* Find the fused-out module status
+        *
+        * NOTE: For IXP46X, feature Control uses 
+        * #define IX_FEATURECTRL_ECC_TIMESYNC for the ECC feature 
+        * of SDRAM Controller and Timesync.
+        */
+       if (IX_FEATURE_CTRL_COMPONENT_DISABLED == 
+          ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ECC_TIMESYNC))
+       {
+          IXP400_PARITYENACC_VAL_BIT_SET(ixParityENAccFusedModules,
+             IXP400_PARITYENACC_FUSED_MODULE_MCU_ECC);
+       } /* end of if */
+    }
+    else    
+    {
+       /* Find the fused-out module status
+        *
+        * NOTE: For IXP43X, feature Control uses #define IX_FEATURECTRL_ECC
+        * for the ECC feature of SDRAM Controller.
+        */
+       if (IX_FEATURE_CTRL_COMPONENT_DISABLED == 
+          ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ECC))
+       {
+          IXP400_PARITYENACC_VAL_BIT_SET(ixParityENAccFusedModules,
+             IXP400_PARITYENACC_FUSED_MODULE_MCU_ECC);
+       } /* end of if */
+    }
+ 
     if (IX_FEATURE_CTRL_COMPONENT_DISABLED == 
         ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA))
     {
@@ -214,7 +236,6 @@ ixParityENAccConfigInit (void)
         IXP400_PARITYENACC_VAL_BIT_SET(ixParityENAccFusedModules,
             IXP400_PARITYENACC_FUSED_MODULE_NPEC);
     } /* end of if */
-
     return IX_SUCCESS;
 } /* end of ixParityENAccConfigInit() function */
 
@@ -240,12 +261,19 @@ ixParityENAccModulesInit (void)
         return IX_FAIL;
     } /* end of if */
 
-    if (IX_SUCCESS != ixParityENAccSwcpPEInit(ixSwcpPEInternalCallback))
+    if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == ixFeatureCtrlDeviceRead())
     {
-        IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_DEBUG2, IX_OSAL_LOG_DEV_STDOUT,
-            "ixParityENAccModulesInit(): SWCP Configuration failed\n",0,0,0,0,0,0);
-        return IX_FAIL;
-    } /* end of if */
+
+        if (IX_SUCCESS != ixParityENAccSwcpPEInit(ixSwcpPEInternalCallback))
+        {
+            IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_DEBUG2, 
+            IX_OSAL_LOG_DEV_STDOUT,
+            "ixParityENAccModulesInit(): SWCP Configuration failed\n",0,0,0,
+            0,0,0);
+            return IX_FAIL;
+        } /* end of if */
+
+    }
 
     if (IX_SUCCESS != ixParityENAccAqmPEInit(ixAqmPEInternalCallback))
     {
@@ -268,12 +296,19 @@ ixParityENAccModulesInit (void)
         return IX_FAIL;
     } /* end of if */
 
-    if (IX_SUCCESS != ixParityENAccEbcPEInit(ixEbcPEInternalCallback))
+    if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == ixFeatureCtrlDeviceRead())
     {
-        IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_DEBUG2, IX_OSAL_LOG_DEV_STDOUT,
-            "ixParityENAccModulesInit(): EBC Configuration failed\n",0,0,0,0,0,0);
-        return IX_FAIL;
-    } /* end of if */
+    
+        if (IX_SUCCESS != ixParityENAccEbcPEInit(ixEbcPEInternalCallback))
+        {
+            IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_DEBUG2, 
+            IX_OSAL_LOG_DEV_STDOUT,
+            "ixParityENAccModulesInit(): EBC Configuration failed\n",0,0,
+            0,0,0,0);
+            return IX_FAIL;
+        } /* end of if */
+
+    }
 
     if (IX_SUCCESS != ixParityENAccPmuEInit())
     {
@@ -284,6 +319,53 @@ ixParityENAccModulesInit (void)
 
     return IX_SUCCESS;
 } /* end of ixParityENAccModulesInit() function */
+
+void 
+ixParityENAccResetCommonStats(void)
+{
+    /* Local instance of the configuration status of the hardware blocks */
+    IxParityENAccParityConfigStatus ixTempParityENAccParityConfigStatus = 
+    {
+       /* NPE-A Configuration */
+       { IX_PARITYENACC_DISABLE, IX_PARITYENACC_EVEN_PARITY },
+       /* NPE-B Configuration */ 
+       { IX_PARITYENACC_DISABLE, IX_PARITYENACC_EVEN_PARITY },
+       /* NPE-C Configuration */ 
+       { IX_PARITYENACC_DISABLE, IX_PARITYENACC_EVEN_PARITY },
+       /* MCU ECC Configuration */
+       { IX_PARITYENACC_DISABLE, IX_PARITYENACC_DISABLE, IX_PARITYENACC_DISABLE },
+       /* SWCP Configuration */ 
+       IX_PARITYENACC_DISABLE, 
+       /* AQM Configuration */
+       IX_PARITYENACC_DISABLE,
+       /* PBC Configuration */
+       { IX_PARITYENACC_DISABLE, IX_PARITYENACC_DISABLE },
+       /* EBC Configuration */ 
+       {
+           IX_PARITYENACC_DISABLE, IX_PARITYENACC_DISABLE,
+           IX_PARITYENACC_DISABLE, IX_PARITYENACC_DISABLE,
+           IX_PARITYENACC_DISABLE, IX_PARITYENACC_DISABLE,
+           IX_PARITYENACC_DISABLE, IX_PARITYENACC_DISABLE,
+           IX_PARITYENACC_DISABLE, IX_PARITYENACC_EVEN_PARITY
+       }
+    };
+
+    IxParityENAccPEParityErrorStats ixTempParityENAccPEParityErrorStats =
+    {
+        { 0,0,0 },  /* NPE Stats */
+        { 0,0,0 },  /* MCU Stats */
+        { 0,0 },    /* PBC Stats */
+        { 0,0 },    /* EBC Stats */
+        0,          /* SWCP Stats */
+        0           /* AQM Stats */
+    };
+
+    /* Reset the parity config status to init time values */
+    ixParityENAccParityConfigStatus = ixTempParityENAccParityConfigStatus;
+
+    /* Reset the parity error statistics to init time values */
+    ixParityENAccPEParityErrorStats = ixTempParityENAccPEParityErrorStats;
+} /* end of ixParityENAccResetCommonStats() function */
 
 void
 ixMcuPEInternalCallback (UINT32 irqNum, IxParityENAccPEIsr isrAddr)
@@ -374,6 +456,28 @@ ixSwcpPEInternalCallback (UINT32 irqNum, IxParityENAccPEIsr isrAddr)
     } /* end of if */
 } /* end of ixSwcpPEInternalCallback() function */
 
+IX_STATUS
+ixParityENAccCheckNpeIdValidity(UINT32 npeId)
+{
+
+    if (npeId < IXP400_PARITYENACC_PE_NPE_A || 
+        npeId > IXP400_PARITYENACC_PE_NPE_C)
+    {                                                         
+       return IX_PARITYENACC_INVALID_PARAMETERS;    
+    }
+    
+    if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X == ixFeatureCtrlDeviceRead ())
+    {
+        if (npeId == IXP400_PARITYENACC_PE_NPE_B) 
+        {
+            return IX_PARITYENACC_INVALID_PARAMETERS;    
+        }
+    }
+
+    return IX_SUCCESS;
+
+}
+
 /*
  * -------------------------------------------------------------------------- *
  *                            Public API definitions                          *
@@ -432,7 +536,7 @@ ixParityENAccCallbackRegister (IxParityENAccCallback parityErrNfyCallback)
     } /* end of if */
 
     /* Clear off the contents to zeros */
-    memset((void *) &nullCfgStatus, 0, sizeof(IxParityENAccParityConfigStatus));
+    ixOsalMemSet((void *) &nullCfgStatus, 0, sizeof(IxParityENAccParityConfigStatus));
 
     /* 
      * Verify for the parity error detection disable state
@@ -474,16 +578,29 @@ ixParityENAccCallbackRegister (IxParityENAccCallback parityErrNfyCallback)
 
 PUBLIC IxParityENAccStatus ixParityENAccParityNPEConfigReUpdate(UINT32 npeID)
 {
-	  UINT32 npeFuseBit;
-	  IxParityENAccNpePEConfigOption ixNpePDCfg;
-	  static UINT32 npeIDToFuseBitMapTable[]=
-	  {
-	  	IXP400_PARITYENACC_FUSED_MODULE_NPEA,
-	  	IXP400_PARITYENACC_FUSED_MODULE_NPEB,
-	  	IXP400_PARITYENACC_FUSED_MODULE_NPEC
-	  };  
-    IX400_PARITYENACC_CHECK_NPEID_VALIDITY(npeID);
-	  /* Not initialised before? */
+    UINT32 npeFuseBit;
+    IX_STATUS status;
+    IxParityENAccNpePEConfigOption ixNpePDCfg;
+    static UINT32 npeIDToFuseBitMapTable[]=
+    {
+  	IXP400_PARITYENACC_FUSED_MODULE_NPEA,
+  	IXP400_PARITYENACC_FUSED_MODULE_NPEB,
+  	IXP400_PARITYENACC_FUSED_MODULE_NPEC
+    };  
+   
+    /* Check for valid NPE Id */ 
+    status = ixParityENAccCheckNpeIdValidity (npeID);
+    if (status != IX_SUCCESS)
+    {
+
+        IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR,
+                "ixParityENAccParityNPEConfigReUpdate(): "
+                "Invalid NPE ID\n",0,0,0,0,0,0);
+        return status;
+
+    }
+  
+    /* Not initialised before? */
     if (FALSE == ixParityENAccInitStatus)
     {
         return IX_PARITYENACC_NOT_INITIALISED;
@@ -535,6 +652,7 @@ ixParityENAccParityDetectionConfigure (
     BOOL ixPbcPrevInitTgtEnableCurrInitAndTgtDisable = FALSE;
     BOOL ixPbcPrevInitEnableCurrInitDisable = FALSE;
     BOOL ixPbcPrevTgtEnableCurrTgtDisable   = FALSE;
+    BOOL ixParityENAccIXP46XCompDisabled = FALSE;
     IX_STATUS ixReturnStatus = IX_SUCCESS;
 
     /* Not initialised before? */
@@ -547,6 +665,16 @@ ixParityENAccParityDetectionConfigure (
     {
         return IX_PARITYENACC_INVALID_PARAMETERS;
     } /* end of if */
+
+    /*
+     * In IXP43X , sub components like NPE B, SWCP, EBC are not
+     * present in silicon.Hence we use this variable to, not initialize
+     * these sub components in IXP43X
+     */ 
+    if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X == ixFeatureCtrlDeviceRead())
+    {
+        ixParityENAccIXP46XCompDisabled = TRUE;
+    }
 
     /*
      * Change in parity type on NPE-A/B/C?
@@ -586,6 +714,7 @@ ixParityENAccParityDetectionConfigure (
          ((hwParityConfig->npeBConfig.parityOddEven != 
          ixParityENAccParityConfigStatus.npeBConfig.parityOddEven) &&
           (hwParityConfig->npeBConfig.ideEnabled == IX_PARITYENACC_ENABLE))) &&
+         ( FALSE == ixParityENAccIXP46XCompDisabled ) &&
         (FALSE == IXP400_PARITYENACC_VAL_BIT_CHECK(ixParityENAccFusedModules,
                      IXP400_PARITYENACC_FUSED_MODULE_NPEB)))
     {
@@ -683,7 +812,8 @@ ixParityENAccParityDetectionConfigure (
     /*
      * Change in configuration of SWCP?
      */
-    if (hwParityConfig->swcpEnabled != ixParityENAccParityConfigStatus.swcpEnabled)
+    if ( (hwParityConfig->swcpEnabled != ixParityENAccParityConfigStatus.
+         swcpEnabled )  && (FALSE == ixParityENAccIXP46XCompDisabled) )
     {
         ixSwcpPDCfg = hwParityConfig->swcpEnabled;
         if (IX_SUCCESS == ixParityENAccSwcpPEDetectionConfigure(ixSwcpPDCfg))
@@ -817,6 +947,7 @@ ixParityENAccParityDetectionConfigure (
         ixParityENAccParityConfigStatus.ebcConfig.ebcCs0Enabled) ||
         ((hwParityConfig->ebcConfig.parityOddEven != 
           ixParityENAccParityConfigStatus.ebcConfig.parityOddEven) &&
+         ( FALSE == ixParityENAccIXP46XCompDisabled ) &&
          (ixParityENAccParityConfigStatus.ebcConfig.ebcCs0Enabled ==
          IX_PARITYENACC_ENABLE)))
     {
@@ -848,6 +979,7 @@ ixParityENAccParityDetectionConfigure (
         ixParityENAccParityConfigStatus.ebcConfig.ebcCs1Enabled) ||
         ((hwParityConfig->ebcConfig.parityOddEven != 
           ixParityENAccParityConfigStatus.ebcConfig.parityOddEven) &&
+         ( FALSE == ixParityENAccIXP46XCompDisabled ) &&
          (hwParityConfig->ebcConfig.ebcCs1Enabled == IX_PARITYENACC_ENABLE)))
     {
         ixEbcPDCfg.ebcCsExtSource = IXP400_PARITYENACC_PE_EBC_CS;
@@ -878,6 +1010,7 @@ ixParityENAccParityDetectionConfigure (
         ixParityENAccParityConfigStatus.ebcConfig.ebcCs2Enabled) ||
         ((hwParityConfig->ebcConfig.parityOddEven != 
           ixParityENAccParityConfigStatus.ebcConfig.parityOddEven) &&
+         ( FALSE == ixParityENAccIXP46XCompDisabled ) &&
          (hwParityConfig->ebcConfig.ebcCs2Enabled == IX_PARITYENACC_ENABLE)))
     {
         ixEbcPDCfg.ebcCsExtSource = IXP400_PARITYENACC_PE_EBC_CS;
@@ -908,6 +1041,7 @@ ixParityENAccParityDetectionConfigure (
         ixParityENAccParityConfigStatus.ebcConfig.ebcCs3Enabled) ||
         ((hwParityConfig->ebcConfig.parityOddEven != 
           ixParityENAccParityConfigStatus.ebcConfig.parityOddEven) &&
+         ( FALSE == ixParityENAccIXP46XCompDisabled ) &&
          (hwParityConfig->ebcConfig.ebcCs3Enabled == IX_PARITYENACC_ENABLE)))
     {
         ixEbcPDCfg.ebcCsExtSource = IXP400_PARITYENACC_PE_EBC_CS;
@@ -938,6 +1072,7 @@ ixParityENAccParityDetectionConfigure (
         ixParityENAccParityConfigStatus.ebcConfig.ebcCs4Enabled) ||
         ((hwParityConfig->ebcConfig.parityOddEven != 
           ixParityENAccParityConfigStatus.ebcConfig.parityOddEven) &&
+         ( FALSE == ixParityENAccIXP46XCompDisabled ) &&
          (hwParityConfig->ebcConfig.ebcCs4Enabled == IX_PARITYENACC_ENABLE)))
     {
         ixEbcPDCfg.ebcCsExtSource = IXP400_PARITYENACC_PE_EBC_CS;
@@ -968,6 +1103,7 @@ ixParityENAccParityDetectionConfigure (
         ixParityENAccParityConfigStatus.ebcConfig.ebcCs5Enabled) ||
         ((hwParityConfig->ebcConfig.parityOddEven != 
           ixParityENAccParityConfigStatus.ebcConfig.parityOddEven) &&
+         ( FALSE == ixParityENAccIXP46XCompDisabled ) &&
          (hwParityConfig->ebcConfig.ebcCs5Enabled == IX_PARITYENACC_ENABLE)))
     {
         ixEbcPDCfg.ebcCsExtSource = IXP400_PARITYENACC_PE_EBC_CS;
@@ -998,6 +1134,7 @@ ixParityENAccParityDetectionConfigure (
         ixParityENAccParityConfigStatus.ebcConfig.ebcCs6Enabled) ||
         ((hwParityConfig->ebcConfig.parityOddEven != 
           ixParityENAccParityConfigStatus.ebcConfig.parityOddEven) &&
+         ( FALSE == ixParityENAccIXP46XCompDisabled ) &&
          (hwParityConfig->ebcConfig.ebcCs6Enabled == IX_PARITYENACC_ENABLE)))
     {
         ixEbcPDCfg.ebcCsExtSource = IXP400_PARITYENACC_PE_EBC_CS;
@@ -1028,6 +1165,7 @@ ixParityENAccParityDetectionConfigure (
         ixParityENAccParityConfigStatus.ebcConfig.ebcCs7Enabled) ||
         ((hwParityConfig->ebcConfig.parityOddEven != 
           ixParityENAccParityConfigStatus.ebcConfig.parityOddEven) &&
+         ( FALSE == ixParityENAccIXP46XCompDisabled ) &&
          (hwParityConfig->ebcConfig.ebcCs7Enabled == IX_PARITYENACC_ENABLE)))
     {
         ixEbcPDCfg.ebcCsExtSource = IXP400_PARITYENACC_PE_EBC_CS;
@@ -1058,6 +1196,7 @@ ixParityENAccParityDetectionConfigure (
          ixParityENAccParityConfigStatus.ebcConfig.ebcExtMstEnabled) ||
         ((hwParityConfig->ebcConfig.parityOddEven != 
           ixParityENAccParityConfigStatus.ebcConfig.parityOddEven) &&
+         ( FALSE == ixParityENAccIXP46XCompDisabled ) &&
          (hwParityConfig->ebcConfig.ebcExtMstEnabled == IX_PARITYENACC_ENABLE)))
     {
         ixEbcPDCfg.ebcCsExtSource = IXP400_PARITYENACC_PE_EBC_EXTMST;
@@ -1110,7 +1249,7 @@ ixParityENAccParityDetectionQuery(
     } /* end of if */
 
     /* Return the current config status of all hardware blocks */
-    memcpy((void *)hwParityConfig, (void *)&ixParityENAccParityConfigStatus,
+    ixOsalMemCopy((void *)hwParityConfig, (void *)&ixParityENAccParityConfigStatus,
         sizeof(IxParityENAccHWParityConfig));
 
     return IX_PARITYENACC_SUCCESS;
@@ -1484,6 +1623,7 @@ ixParityENAccParityErrorInterruptClear (
 {
     /* Local variables */
     IxParityENAccPbcPEParityErrorContext ixPbcPECMsg;
+    BOOL invalidParitySrc = FALSE;
 
     /* Not initialised before? */
     if (FALSE == ixParityENAccInitStatus)
@@ -1495,6 +1635,40 @@ ixParityENAccParityErrorInterruptClear (
     {
         return IX_PARITYENACC_INVALID_PARAMETERS;
     } /* end of if */
+
+    /* check for sub components not present in IXP43X */
+    if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X == ixFeatureCtrlDeviceRead())
+    {
+
+        switch (pecMessage->pecParitySource)
+        {
+
+            case IX_PARITYENACC_NPE_B_IMEM:
+            case IX_PARITYENACC_NPE_B_DMEM:
+            case IX_PARITYENACC_NPE_B_EXT:
+            case IX_PARITYENACC_SWCP:
+            case IX_PARITYENACC_EBC_CS:
+            case IX_PARITYENACC_EBC_EXTMST:
+                invalidParitySrc = TRUE;
+            break;
+
+            default:
+            break;
+
+        }
+
+        if ( TRUE == invalidParitySrc )
+        {   
+ 
+            IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_ERROR, 
+            IX_OSAL_LOG_DEV_STDERR,
+            "ixParityENAccParityErrorInterruptClear(): "
+            "Invalid Parity Source: %0x\n", pecMessage->pecParitySource, 
+            0,0,0,0,0);
+            return IX_PARITYENACC_INVALID_PARAMETERS;
+        }
+
+    }
 
     /* Delegate to the respective sub-module */
     switch (pecMessage->pecParitySource)
@@ -1636,7 +1810,7 @@ ixParityENAccStatsGet (
     } /* end of if */
 
     /* Return Parity Error Stats for all hardware blocks */
-    memcpy((void *)ixParityErrorStats, (void *)&ixParityENAccPEParityErrorStats,
+    ixOsalMemCopy((void *)ixParityErrorStats, (void *)&ixParityENAccPEParityErrorStats,
         sizeof(IxParityENAccParityErrorStats));
 
     return IX_PARITYENACC_SUCCESS;
@@ -1669,15 +1843,21 @@ ixParityENAccStatsShow (void)
         "PBC Parity Errors (Initiator=%u, Target=%u)\n",
         ixParityENAccPEParityErrorStats.pbcStats.parityErrorsPciInitiator,
         ixParityENAccPEParityErrorStats.pbcStats.parityErrorsPciTarget,0,0,0,0);
+    
+    if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == ixFeatureCtrlDeviceRead())
+    {
 
-    IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_USER, IX_OSAL_LOG_DEV_STDOUT,
-        "EBC Parity Errors (Ext Master=%u, ChipSelect=%u)\n",
-        ixParityENAccPEParityErrorStats.ebcStats.parityErrorsInbound,
-        ixParityENAccPEParityErrorStats.ebcStats.parityErrorsOutbound,0,0,0,0);
+        IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_USER, IX_OSAL_LOG_DEV_STDOUT,
+            "EBC Parity Errors (Ext Master=%u, ChipSelect=%u)\n",
+            ixParityENAccPEParityErrorStats.ebcStats.parityErrorsInbound,
+            ixParityENAccPEParityErrorStats.ebcStats.parityErrorsOutbound,0,
+            0,0,0);
 
-    IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_USER, IX_OSAL_LOG_DEV_STDOUT,
-        "SWCP Parity Errors (%u)\n",
-        ixParityENAccPEParityErrorStats.swcpStats,0,0,0,0,0);
+        IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_USER, IX_OSAL_LOG_DEV_STDOUT,
+            "SWCP Parity Errors (%u)\n",
+            ixParityENAccPEParityErrorStats.swcpStats,0,0,0,0,0);
+
+    }
 
     IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_USER, IX_OSAL_LOG_DEV_STDOUT,
         "AQM Parity Errors (%u)\n",
@@ -1697,7 +1877,7 @@ ixParityENAccStatsReset (void)
     } /* end of if */
 
     /* Clear off Parity Error Stats for all hardware blocks */
-    memset((void *)&ixParityENAccPEParityErrorStats, 0, 
+    ixOsalMemSet((void *)&ixParityENAccPEParityErrorStats, 0, 
         sizeof(ixParityENAccPEParityErrorStats));
 
     return IX_PARITYENACC_SUCCESS;
@@ -1708,6 +1888,7 @@ ixParityENAccNPEParityErrorCheck(UINT32 npeID,
     IxParityENAccParityErrorContextMessage * const pecMessage)
 {
     /* Local Variables */
+    IX_STATUS status;
     IxParityENAccIcParityInterruptStatus ixIcParityInterruptStatus =
     { FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE };
     IxParityENAccNpePEParityErrorContext  ixNpePECMsg;
@@ -1723,7 +1904,14 @@ ixParityENAccNPEParityErrorCheck(UINT32 npeID,
         return IX_PARITYENACC_INVALID_PARAMETERS;
     } /* end of if */
 
-    IX400_PARITYENACC_CHECK_NPEID_VALIDITY(npeID);
+    status = ixParityENAccCheckNpeIdValidity(npeID);
+    if (status != IX_SUCCESS)
+    {
+        IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR,
+                "ixParityENAccNPEParityErrorCheck(): "
+                "Invalid NPE ID\n",0,0,0,0,0,0);
+        return status; 
+    }
 
     /* Get the pending parity interrupts status */
     if (IX_SUCCESS != ixParityENAccIcInterruptStatusGet(
@@ -1873,5 +2061,107 @@ ixParityENAccNPEParityErrorCheck(UINT32 npeID,
      return IX_PARITYENACC_NO_PARITY;
 } /* end of ixParityENAccNPEParityErrorCheck() function */ 
 
+PUBLIC IxParityENAccStatus 
+ixParityENAccUnload(void) 
+{    
+    if (TRUE == ixParityENAccInitStatus)
+    {
+        /* Reset the IxParityENAcc module initialisation status */
+        ixParityENAccInitStatus = FALSE;
 
-#endif /* __ixp46X */
+        /* Unload the NPE parity error detection component */
+        if(IX_SUCCESS != ixParityENAccNpePEUnload())
+        {
+            IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDERR,
+                "ixParityENAccNpePEUnload(): "\
+                "Can't unload the NPE parity error detection component!!!\n",0,0,0,0,0,0);
+        }		
+	
+        /* Unload the AQM parity error detection component */
+        if(IX_SUCCESS != ixParityENAccAqmPEUnload())
+        {
+            IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDERR,
+                "ixParityENAccAqmPEUnload(): "\
+                "Can't unload the AQM parity error detection component!!!\n",0,0,0,0,0,0);
+        }		
+			
+        /* Unload the EBC parity error detection component , skip 
+         * if it is IXP43X processor
+         */
+        if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X != ixFeatureCtrlDeviceRead ())
+        {
+            if(IX_SUCCESS != ixParityENAccEbcPEUnload())
+            {
+                IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDERR,
+                    "ixParityENAccEbcPEUnload(): "\
+                    "Can't unload the EBC parity error detection component!!!\n",0,0,0,0,0,0);
+            }	
+        }	
+	
+        /* Unload the PBC parity error detection component */
+        if(IX_SUCCESS != ixParityENAccPbcPEUnload())
+        {
+            IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDERR,
+                "ixParityENAccPbcPEUnload(): "\
+                "Can't unload the PBC parity error detection component!!!\n",0,0,0,0,0,0);
+        }		
+
+        /* Unload the MCU parity error detection component */
+        if(IX_SUCCESS != ixParityENAccMcuPEUnload())
+        {
+            IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDERR,
+                "ixParityENAccMcuPEUnload(): "\
+                "Can't unload the MCU parity error detection component!!!\n",0,0,0,0,0,0);
+        }
+	
+        /* Unload the SWCP parity error detection component , skip
+         * unloading if it is IXP43X processor since SWCP processor 
+         * is not found in IXP43X is not available
+         */
+        if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP43X != ixFeatureCtrlDeviceRead ())
+        {
+            if(IX_SUCCESS != ixParityENAccSwcpPEUnload())
+            {
+                IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDERR,
+                    "ixParityENAccSwcpPEUnload(): "\
+                    "Can't unload the SWCP parity error detection component!!!\n",0,0,0,0,0,0);
+            }
+        }		
+
+        /* Unload the PMU parity error detection component */
+        if(IX_SUCCESS != ixParityENAccPmuEUnload())
+        {
+            IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDERR,
+                "ixParityENAccPmuEUnload(): "\
+                "Can't unload the PMU parity error detection component!!!\n",0,0,0,0,0,0);
+        }		
+
+        /* Unload the INTC parity error detection component */
+        if(IX_SUCCESS != ixParityENAccIcEUnload())
+        {
+            IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDERR,
+                "ixParityENAccIcEUnload(): "\
+                "Can't unload the INTC parity error detection component!!!\n",0,0,0,0,0,0);
+        }		
+        
+	/* Reset the common statistics */
+        ixParityENAccResetCommonStats();
+	
+        /* Reset the Client callback routine */
+        ixParityENAccClientCb = NULL; 
+        
+        /* Reset the Fused-Out Modules */
+        ixParityENAccFusedModules = 0;
+    }
+    else
+    {
+        IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR,
+            "IxParityENAcc Component Not Intialized...Can't Unload!!!\n", 0,0,0,0,0,0);
+
+        return IX_PARITYENACC_NOT_INITIALISED;
+    }
+    
+    return IX_PARITYENACC_SUCCESS;
+} /* end of ixParityENAccUnload() function */
+
+#endif /* __ixp46X || __ixp43X */

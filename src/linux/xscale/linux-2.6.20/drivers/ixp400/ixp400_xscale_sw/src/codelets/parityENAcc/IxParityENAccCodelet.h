@@ -9,12 +9,12 @@
  *	  Access Codelet
  *
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -52,7 +52,7 @@
 #ifndef IXPARITYENACCCODELET_H
 #define IXPARITYENACCCODELET_H
 
-#if defined (__ixp46X)
+#if defined (__ixp46X) || defined(__ixp43X)
 
 /**
  * @ingroup Codelets
@@ -84,7 +84,7 @@
  *		     reboot the board after detecting multi-bit ECC error, etc. 
  *	
  *	- how to determine whether the data abort is due to multi bit ECC 
- *	  error initiated when XScale accesses SDRAM.
+ *	  error initiated when the Intel XScale(R) processor accesses SDRAM.
  *
  * </PRE>
  *
@@ -315,10 +315,11 @@
 #elif defined(__linux)
 	/**
  	 * @def IX_PARITYENACC_CODELET_REBOOT()
- 	 *
+ 	 * New Timesys kernel does not support machine_restart()
  	 * @brief map to reboot function
  	 */
-	#define IX_PARITYENACC_CODELET_REBOOT()	 (machine_restart(NULL))
+	 /* #define IX_PARITYENACC_CODELET_REBOOT() (machine_restart(NULL))*/
+	#define IX_PARITYENACC_CODELET_REBOOT()	 
 
 	/**
  	 * @def IX_PARITYENACC_CODELET_SDRAM_SCAN_START_OFFSET
@@ -359,7 +360,7 @@
  * sleep all the time. It will only be invoked when board reboot is
  * requested. This task is mainly used to reboot the board. 
  *
- * In vxworks, a data abort handler is hooked up to DATA ABORT 
+ * In VxWorks*, a data abort handler is hooked up to DATA ABORT 
  * exception vector. This data abort handler will be called when
  * data abort occurs. This data abort handler will determine whether
  * the data abort is triggered by multi-bit ECC error. The board will 
@@ -424,5 +425,5 @@ PUBLIC void ixParityENAccCodeletQuit (void);
 	extern char *sysMemTop (void);
 #endif
 	
-#endif /* __ixp46X */
+#endif  /* __ixp46X || __ixp43X */
 #endif  /* end of IXPARITYENACCCODELET_H */

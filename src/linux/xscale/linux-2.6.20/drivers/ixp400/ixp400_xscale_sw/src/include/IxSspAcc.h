@@ -6,12 +6,12 @@
  * @version $Revision: 0.1 $
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -56,7 +56,7 @@
 #ifndef IXSSPACC_H
 #define IXSSPACC_H
 
-#if defined(__ixp46X)
+#if defined (__ixp46X) || defined (__ixp43X)
 
 #include "IxOsal.h"
 
@@ -418,12 +418,12 @@ typedef struct
  * @return 
  *      - IX_SSP_SUCCESS - Successfully initialize and enable the SSP
  *									serial port.
- *		- IX_SSP_RX_FIFO_HANDLER_MISSING - interrupt mode is selected but RX FIFO
+ *		- IX_SSP_RX_FIFO_HANDLER_MISSING - interrupt mode is selected but Rx FIFO
  *									handler pointer is NULL
- *		- IX_SSP_TX_FIFO_HANDLER_MISSING - interrupt mode is selected but TX FIFO
+ *		- IX_SSP_TX_FIFO_HANDLER_MISSING - interrupt mode is selected but Tx FIFO
  *									handler pointer is NULL
  *		- IX_SSP_RX_FIFO_OVERRUN_HANDLER_MISSING - interrupt mode is selected but
- *									RX FIFO Overrun handler pointer is NULL
+ *									Rx FIFO Overrun handler pointer is NULL
  *		- IX_SSP_RX_FIFO_NOT_EMPTY - Rx FIFO not empty, data size change is not
  *			                        allowed.
  *		- IX_SSP_TX_FIFO_NOT_EMPTY - Tx FIFO not empty, data size change is not
@@ -1269,5 +1269,5 @@ PUBLIC IX_SSP_STATUS
 ixSspAccRxFIFOOverrunCheck (
 	void);
 
-#endif /* __ixp46X */
+#endif /* __ixp46X || __ixp43X */
 #endif /* IXSSPACC_H */

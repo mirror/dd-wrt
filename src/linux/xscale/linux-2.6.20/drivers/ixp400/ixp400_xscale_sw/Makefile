@@ -2,12 +2,12 @@
 # Top level xscale_sw Makefile, will call OSAL & BSP Makefile
 # 
 # @par
-# IXP400 SW Release Crypto version 2.3
+# IXP400 SW Release Crypto version 2.4
 # 
 # -- Copyright Notice --
 # 
 # @par
-# Copyright (c) 2001-2005, Intel Corporation.
+# Copyright (c) 2001-2007, Intel Corporation.
 # All rights reserved.
 # 
 # @par
@@ -46,18 +46,31 @@
 # "controlled countries", as defined by US export laws.
 #
 
-include Makefile_ixp46X
-
-linuxbe_COMPONENTS += linux
 # Target OS selection
-
 ifneq (,$(filter $(IX_TARGET), linuxbe linuxle))
 IX_TARGET_OS := linux
 else
 IX_TARGET_OS := vxworks
 endif
 
-include Makefile_ixp46X
+ifndef IX_LINUXVER
+IX_LINUXVER := 2.6
+endif
+
+ifeq ($(IX_DEVICE), ixp43X)
+    include Makefile_ixp43X
+else
+ifeq ($(IX_DEVICE), ixp46X)
+    include Makefile_ixp46X
+else
+ifeq ($(IX_DEVICE), ixp42X)
+    include Makefile_ixp42X
+else
+    @exit 1
+    @echo "Error: IX_DEVICE not defined"
+endif
+endif
+endif
 
 
 
@@ -72,16 +85,6 @@ ALL_COMPONENTS += $(CODELETS_COMPONENTS:%=codelets_%)
 
 BSP_DIR := $(WIND_BASE)/target/config/$(BSP)
 
-# Windows paths must use '\' as seperator for the MSDOS 'cd' command
-ifeq ($(IX_HOST_OS),windows)
-ifeq ($(VXSHELL),ZSH)
- BSP_DIR := $(subst \,/,$(BSP_DIR))
- WIND_BASE := $(subst \,/,$(WIND_BASE))
-else
- BSP_DIR := $(subst /,\,$(BSP_DIR))
-endif
-endif
-
 
 ################################################################
 # Linux kernel source
@@ -93,10 +96,23 @@ LINUX_SRC := $($(IX_TARGET)_KERNEL_DIR)
 
 include Makefile.common
 
+# Windows paths must use '\' as seperator for the MSDOS 'cd' command
+ifeq ($(IX_HOST_OS),windows)
+ifeq ($(VXSHELL),ZSH)
+ BSP_DIR := $(subst \,/,$(BSP_DIR))
+ WIND_BASE := $(subst \,/,$(WIND_BASE))
+ IX_XSCALE_SW := $(subst \,/,$(IX_XSCALE_SW))
+else
+ BSP_DIR := $(subst /,\,$(BSP_DIR))
+ WIND_BASE := $(subst /,\,$(WIND_BASE))
+ IX_XSCALE_SW := $(subst /,\,$(IX_XSCALE_SW))
+endif
+endif
+
 ################################################################
 # OSAL selection
 
-OSAL_DIR := $(IX_XSCALE_SW)/../ixp_osal
+OSAL_SRCDIR := $(IX_XSCALE_SW)/../ixp_osal
 ifeq ($(IX_TARGET_OS),linux)
 OSAL_IMAGE := ../ixp_osal/lib/$(IX_TGT_DEVICE)/$(IX_TARGET_OS)/$(IX_TARGET)/libosal.a
 OSAL_MODULE := ../ixp_osal/lib/$(IX_TGT_DEVICE)/$(IX_TARGET_OS)/$(IX_TARGET)/ixp_osal.o
@@ -107,15 +123,15 @@ endif
 
 .PHONY: osal_build
 osal_build :
-	echo cd into $(OSAL_DIR)
-	cd $(OSAL_DIR) $(CMD_SEP) $(MAKE) libosal IX_TARGET=$(IX_TARGET)
+	echo cd into $(OSAL_SRCDIR)
+	cd $(OSAL_SRCDIR) $(CMD_SEP) $(MAKE) libosal IX_TARGET=$(IX_TARGET) IX_LINUXVER=${IX_LINUXVER}
 
 $(OSAL_IMAGE) : osal_build
 
 .PHONY: osal_module
 osal_module :
-	echo cd into $(OSAL_DIR)
-	cd $(OSAL_DIR) $(CMD_SEP) $(MAKE) module IX_TARGET=$(IX_TARGET)
+	echo cd into $(OSAL_SRCDIR)
+	cd $(OSAL_SRCDIR) $(CMD_SEP) $(MAKE) module IX_TARGET=$(IX_TARGET) IX_LINUXVER=${IX_LINUXVER}
 
 $(OSAL_MODULE) : osal_module
 
@@ -128,7 +144,11 @@ ifeq ($(IX_TARGET_OS),vxworks)
 # Suffix for Tornado tool names
 ifeq ($(IX_TARGET),vxsim)
 ifeq ($(IX_HOST_OS),solaris)
-VX_TOOL_SUFFIX = sparc
+ifeq ($(VX_VERSION), vx55)
+  VX_TOOL_SUFFIX = simso
+else
+  VX_TOOL_SUFFIX = sparc
+endif #VX_VERSION
 else # Linux or Windows
 VX_TOOL_SUFFIX = pentium
 endif
@@ -159,7 +179,11 @@ endif
 ifeq ($(TOOL_FAMILY),diab)
 LD := dld
 AR := dar
-VXWORKS_VER := vxworks62
+ifeq ($(VX_VERSION), vx55)
+  VXWORKS_VER := vxworks55
+else
+  VXWORKS_VER := vxworks62
+endif #VX_VERSION
 NM := ddump -M
 else
 LD := $(CC)
@@ -171,9 +195,17 @@ ifeq ($(VXSHELL),ZSH)
 # use default munch command
 else
 ifeq ($(TOOL_FAMILY),diab)
-MUNCH := wtxtcl $(WIND_HOST_BASE)/host/resource/hutils/tcl/munch.tcl -c $(VX_TOOL_SUFFIX)
+  ifeq ($(VX_VERSION), vx55)
+    MUNCH := wtxtcl $(WIND_HOST_BASE)/host/src/hutils/munch.tcl -c $(VX_TOOL_SUFFIX)
+  else
+    MUNCH := wtxtcl $(WIND_HOST_BASE)/host/resource/hutils/tcl/munch.tcl -c $(VX_TOOL_SUFFIX)
+  endif #VX_VERSION
 else
-MUNCH := wtxtcl $(WIND_HOST_BASE)/host/resource/hutils/tcl/munch.tcl -asm $(VX_TOOL_SUFFIX)
+  ifeq ($(VX_VERSION), vx55)
+    MUNCH := wtxtcl $(WIND_HOST_BASE)/host/src/hutils/munch.tcl -asm $(VX_TOOL_SUFFIX)
+  else
+    MUNCH := wtxtcl $(WIND_HOST_BASE)/host/resource/hutils/tcl/munch.tcl -asm $(VX_TOOL_SUFFIX)
+  endif #VX_VERSION
 endif
 endif
 
@@ -190,9 +222,9 @@ else # IX_TARGET_OS == vxworks
 
 # Linux tool names
 ifeq ($(IX_TARGET), linuxbe)
-LINUX_CROSS_COMPILE := $(HARDHAT_BASE)/devkit/arm/xscale_be/bin/xscale_be-
+LINUX_CROSS_COMPILE := ${IX_LINUX_CROSSCOMPILER}
 else
-LINUX_CROSS_COMPILE := $(HARDHAT_BASE)/devkit/arm/xscale_le/bin/xscale_le-
+LINUX_CROSS_COMPILE := ${IX_LINUX_CROSSCOMPILER}
 endif
 
 LD := $(LINUX_CROSS_COMPILE)ld
@@ -221,13 +253,22 @@ CFLAGS := -DRW_MULTI_THREAD -D_REENTRANT -D_WRS_KERNEL \
 	-I$(BSP_DIR) \
 	-I$(BSP_DIR)/../all
 
+
+# Set additions to the compiler flag based on vxWorks version chosen
+ifeq ($(VX_VERSION),vx55)
+  CFLAGS += -DVX_VERSION55
+endif #VX_VERSION
+
 ifeq ($(TOOL_FAMILY),diab)
 # compiler flags using Diab compiler
   DIAB_CFLAGS := -w -Xdialect-ansi -Xno-common -D__vxworks -D_DIAB_TOOL 
   MAKE_DEP_FLAG := -Xmake-dependency
 else
 # compiler flags using GNU compiler
-  GNU_CFLAGS := -Wall -ansi -fno-common -fno-builtin -finline-limit=750
+  GNU_CFLAGS := -Wall -ansi -fno-common -fno-builtin
+  ifneq ($(VX_VERSION), vx55)
+    GNU_CFLAGS += -finline-limit=750
+  endif #VX_VERSION
   MAKE_DEP_FLAG := -M
 endif
 
@@ -251,7 +292,7 @@ endif
 
 ifeq ($(IX_LINUXVER),2.6) #kernel 2.6 CFLAGS
 CFLAGS := -D__KERNEL__ -I$(LINUX_SRC)/include -Wall -Wno-trigraphs -fno-common -pipe -msoft-float -DMODULE\
- -Isrc/include -D__linux -DCPU=33 -DXSCALE=33 $(LINUX_MACH_CFLAGS) -mabi=apcs-gnu
+ -Isrc/include -D__linux -DCPU=33 -DXSCALE=33 $(LINUX_MACH_CFLAGS) 
 else
 CFLAGS := -D__KERNEL__ -I$(LINUX_SRC)/include -Wall -Wno-trigraphs -fno-common -pipe -mshort-load-bytes -msoft-float\
  -DMODULE -Isrc/include -D__linux -DCPU=33 -DXSCALE=33 $(LINUX_MACH_CFLAGS) -mapcs-32
@@ -290,17 +331,17 @@ endif
 
 ifndef IX_MPHY
 ifndef IX_NPE_HSS_MPHY4PORT
-CFLAGS += -DIX_UTOPIAMODE=1
+CFLAGS += -DIX_UTOPIAMODE
 endif
 endif
 
 ifdef IX_MPHYSINGLEPORT
-CFLAGS += -DIX_MPHYSINGLEPORT=1
+CFLAGS += -DIX_MPHYSINGLEPORT
 endif
 
-#ifdef IX_HSSETH_COEXIST
-CFLAGS += -DIX_HSSETH_COEXIST=1
-#endif
+ifdef IX_HSSETH_COEXIST
+CFLAGS += -DIX_HSSETH_COEXIST
+endif
 
 ifdef IX_NPE_HSS_MPHY4PORT
 CFLAGS += -DIX_NPE_HSS_MPHY4PORT
@@ -356,50 +397,53 @@ else
     CFLAGS += -DCPU=XSCALE -DCPU_XSCALE -DARMMMU=ARMMMU_XSCALE \
       	-DARMCACHE=ARMCACHE_XSCALE
     GNU_CFLAGS += -mno-sched-prolog -mcpu=xscale
+    ifeq ($(VX_VERSION), vx55)
+      GNU_CFLAGS += -mapcs-32
+    endif #VX_VERSION
     ifeq ($(IX_TARGET),vxle)
       CFLAGS += -DARMEL -D__ARMEL__ -DLITTLE_ENDIAN_MODE
       DIAB_CFLAGS += -tARMXLS:$(VXWORKS_VER)
-      GNU_CFLAGS += -txscale -Wa,-EL
+      ifeq ($(VX_VERSION), vx55)
+        GNU_CFLAGS += -mlittle-endian
+      else
+        GNU_CFLAGS += -txscale -Wa,-EL
+      endif #VX_VERSION
       ifeq ($(TOOL_FAMILY),diab)
         LDFLAGS += -tARMXLS:$(VXWORKS_VER)
       else
-        LDFLAGS += -txscale -Wa,-EL
+        ifeq ($(VX_VERSION), vx55)
+          LDFLAGS += -mlittle-endian
+        else
+          LDFLAGS += -txscale -Wa,-EL
+        endif #VX_VERSION
       endif
     else # $(IX_TARGET) == vxle
       CFLAGS += -DARMEB -D__ARMEB__ -DBIG_ENDIAN_MODE
       DIAB_CFLAGS += -tARMXES:$(VXWORKS_VER)
-      GNU_CFLAGS += -txscalebe -Wa,-EB
+      ifeq ($(VX_VERSION), vx55)
+        GNU_CFLAGS += -mbig-endian
+      else
+        GNU_CFLAGS += -txscalebe -Wa,-EB
+      endif #VX_VERSION
       ifeq ($(TOOL_FAMILY),diab)
         LDFLAGS += -tARMXES:$(VXWORKS_VER)
       else
-        LDFLAGS += -txscalebe -Wa,-EB
+        ifeq ($(VX_VERSION), vx55)
+          LDFLAGS += -mbig-endian
+        else
+          LDFLAGS += -txscalebe -Wa,-EB
+        endif #VX_VERSION
       endif
     endif # $(IX_TARGET) == vxle
   endif # $(IX_TARGET_OS) == vxworks
 endif # $(IX_TARGET) == vxsim
 
-CFLAGS += -I$(OSAL_DIR)/ \
-          -I$(OSAL_DIR)/os/$(IX_TARGET_OS)/include/ \
-          -I$(OSAL_DIR)/os/$(IX_TARGET_OS)/include/modules/ \
-          -I$(OSAL_DIR)/os/$(IX_TARGET_OS)/include/modules/ioMem/ \
-          -I$(OSAL_DIR)/os/$(IX_TARGET_OS)/include/modules/core/ \
-          -I$(OSAL_DIR)/os/$(IX_TARGET_OS)/include/modules/bufferMgt/ \
-          -I$(OSAL_DIR)/os/$(IX_TARGET_OS)/include/core/  \
-          -I$(OSAL_DIR)/os/$(IX_TARGET_OS)/include/platforms/ \
-          -I$(OSAL_DIR)/os/$(IX_TARGET_OS)/include/platforms/ixp400/ \
-          -I$(OSAL_DIR)/os/$(IX_TARGET_OS)/include/core/ \
-          -I$(OSAL_DIR)/include/ \
-          -I$(OSAL_DIR)/include/modules/ \
-          -I$(OSAL_DIR)/include/modules/bufferMgt/ \
-          -I$(OSAL_DIR)/include/modules/ioMem/ \
-          -I$(OSAL_DIR)/include/modules/core/ \
-          -I$(OSAL_DIR)/include/platforms/ \
-          -I$(OSAL_DIR)/include/platforms/ixp400/ \
-          -I$(OSAL_DIR)/include/platforms/ixp400/$(IX_TGT_DEVICE)/ \
-          -I$(OSAL_DIR)/os/$(IX_TARGET_OS)/include/platforms/ixp400/$(IX_TGT_DEVICE)/
-
-CFLAGS += $(IX_CFLAGS) 
+CFLAGS += $(IX_CFLAGS)
+IX_OSAL_MK_TARGET_ENDIAN := $(IX_TARGET)
+include $(OSAL_SRCDIR)/platforms/$(IX_TGT_DEVICE)/os/$(IX_TARGET_OS)/make/OsalConfig.mk
+CFLAGS += ${OSAL_INCLUDES} ${OSAL_CFLAGS}
 LDFLAGS += $(IX_LDFLAGS)
+
 
 ################################################################
 # Other commands
@@ -464,7 +508,7 @@ ECHO_QUOTE := # cmd.exe's echo command doesn't need quotes
 ECHO_BACKSLASH := \# comment needed to keep \ away from end of line
 SAFE_QUOTE := "# " this comment is here to fix emacs syntax highlighting 
 ECHO_BLANKLINE := @cmd.exe /c echo.
-RMDIR := rmdir /q /s 
+RMDIR := rm -f -r
 RM := vxrm 
 # Windows doesn't have a 'touch' command. Warning! Unlike Unix touch,
 # this will overwrite the existing file!
@@ -525,6 +569,7 @@ usage:
 	$(ECHO_BLANKLINE)
 	@echo $(ECHO_QUOTE)Targets:$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)--------$(ECHO_QUOTE)
+ifeq ($(IX_TARGET_OS),vxworks)
 	@echo $(ECHO_QUOTE)make vxWorks COMP=(component)$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  builds a vxWorks OS image containing component code and $(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  and component dependencies$(ECHO_QUOTE)
@@ -547,6 +592,8 @@ usage:
 	@echo $(ECHO_QUOTE)make lib COMP=(component)$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  builds a library of component code$(ECHO_QUOTE)
 	$(ECHO_BLANKLINE)
+endif
+ifeq ($(IX_TARGET_OS),linux)
 	@echo $(ECHO_QUOTE)make module COMP=(component)$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  builds a linux kernel module of component code$(ECHO_QUOTE)
 	$(ECHO_BLANKLINE)
@@ -555,28 +602,7 @@ usage:
 	$(ECHO_BLANKLINE)
 	@echo $(ECHO_QUOTE)make modules$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  builds all of the linux kernel modules$(ECHO_QUOTE)
-	$(ECHO_BLANKLINE)
-	@echo $(ECHO_QUOTE)make check COMP=(component) VXTARGET=(vxworks target) VXPROC=(vxworks processor number)$(ECHO_QUOTE)
-	@echo $(ECHO_QUOTE)  builds and runs a component unit test, diffs the output$(ECHO_QUOTE)
-	@echo $(ECHO_QUOTE)  against src/(component)/test/expected.out.$(ECHO_QUOTE)
-	$(ECHO_BLANKLINE)
-	@echo $(ECHO_QUOTE)make coverage COMP=(component) VXTARGET=(vxworks target) VXPROC=(vxworks processor number)$(ECHO_QUOTE)
-	@echo $(ECHO_QUOTE)  builds and runs a component unit test, writes code coverage$(ECHO_QUOTE)
-	@echo $(ECHO_QUOTE)  data to $(METRICS_DIR)/. This target will include only $(ECHO_QUOTE)
-	@echo $(ECHO_QUOTE)  production code for a single component.$(ECHO_QUOTE)
-	$(ECHO_BLANKLINE)
-	@echo $(ECHO_QUOTE)make run-coverage COMP=(component) VXTARGET=(vxworks target) VXPROC=(vxworks processor number)$(ECHO_QUOTE)
-	@echo $(ECHO_QUOTE)  similar to 'make coverage', but can include unit test code$(ECHO_QUOTE)
-	@echo $(ECHO_QUOTE)  and other components if they are built with USE_REAL_TEST=1$(ECHO_QUOTE)
-	$(ECHO_BLANKLINE)
-	@echo $(ECHO_QUOTE)make metrics COMP=(component)$(ECHO_QUOTE)
-	@echo $(ECHO_QUOTE)  generates a code complexity metrics (cyclomatic complexity,$(ECHO_QUOTE)
-	@echo $(ECHO_QUOTE)  branch depth) report in $(METRICS_DIR)/.$(ECHO_QUOTE)
-	$(ECHO_BLANKLINE)
-	@echo $(ECHO_QUOTE)make memusage$(ECHO_QUOTE)
-	@echo $(ECHO_QUOTE)  generates a memory usage statistics report in $(METRIC_DIR)$(ECHO_QUOTE)
-	@echo $(ECHO_QUOTE)  If COMP is defined, generates a detailed report for that component.$(ECHO_QUOTE)
-	$(ECHO_BLANKLINE)
+endif
 	@echo $(ECHO_QUOTE)make lib/(armobjs or simsoobjs)/(component)/(filename).o$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  compiles a single source file from src/(component)$(ECHO_QUOTE)
 	$(ECHO_BLANKLINE)
@@ -585,19 +611,26 @@ usage:
 	$(ECHO_BLANKLINE)
 	@echo $(ECHO_QUOTE)make all$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  Compiles everything that can be built on the current host OS.$(ECHO_QUOTE)
+ifeq ($(IX_TARGET_OS),linux)
 	@echo $(ECHO_QUOTE)    For linux this is equivalent to$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)      'make modules'$(ECHO_QUOTE)
+endif
+ifeq ($(IX_TARGET_OS),vxworks)
 	@echo $(ECHO_QUOTE)    For vxWorks it's equivalent to$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)      'make IX_TARGET=vxsim loadable-all'$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)      'make IX_TARGET=vxle loadable-all vxWorks-all'$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)      'make IX_TARGET=vxbe loadable-all vxWorks-all'$(ECHO_QUOTE)
+endif
 	$(ECHO_BLANKLINE)
 	@echo $(ECHO_QUOTE)Macros / Environment Variables:$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)-------------------------------$(ECHO_QUOTE)
+ifeq ($(IX_TARGET_OS),vxworks)
 	@echo $(ECHO_QUOTE)WIND_BASE, WIND_HOST_BASE$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  For vxWorks builds : The root of the Tornado installation$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  and the directory containing the \"host\" directory$(ECHO_QUOTE)
 	$(ECHO_BLANKLINE)
+endif
+ifeq ($(IX_TARGET_OS),linux)
 	@echo $(ECHO_QUOTE)linuxbe_KERNEL_DIR, linuxle_KERNEL_DIR, LINUX_SRC$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  For linux builds : The linux kernel source code directory for big and$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  little-endian builds respectively. If LINUX_SRC is set, it will override$(ECHO_QUOTE)
@@ -606,33 +639,39 @@ usage:
 	@echo $(ECHO_QUOTE)HARDHAT_BASE$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  For linux builds : the root of the Monta Vista development environment install.$(ECHO_QUOTE)
 	$(ECHO_BLANKLINE)
+endif
 	@echo $(ECHO_QUOTE)IX_TARGET$(ECHO_QUOTE)
+ifeq ($(IX_TARGET_OS),vxworks)
 	@echo $(ECHO_QUOTE)  Set to \"vxbe\" or \"vxle\" to build for XScale, \"vxsim\" for Solaris,$(ECHO_QUOTE)
+endif
+ifeq ($(IX_TARGET_OS),linux)
 	@echo $(ECHO_QUOTE)  \"linuxbe\" or \"linuxle\" for linux targets.$(ECHO_QUOTE)
+endif
 	$(ECHO_BLANKLINE)
 	@echo $(ECHO_QUOTE)COMP$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  Selects a single component to build. Valid components are:$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  $(strip $(ALL_COMPONENTS))$(ECHO_QUOTE)
 	$(ECHO_BLANKLINE)
+ifeq ($(IX_TARGET_OS),vxworks)
 	@echo $(ECHO_QUOTE)IX_INCLUDE_ALL_OBJS$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  Define this to include all access library code, and all code for the selected$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  component and all its dependencies in a vxWorks OS image. Otherwise only$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  object files that are referenced by code in the selected component will$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  be included.$(ECHO_QUOTE)
 	$(ECHO_BLANKLINE)
+endif
 	@echo $(ECHO_QUOTE)IX_BYPASS_DEPS$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  Define this to disable the automatic tracking of header file dependencies.$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  This will speed up builds but may not recompile all files affected by an edit.$(ECHO_QUOTE)
 	$(ECHO_BLANKLINE)
 	@echo $(ECHO_QUOTE)IX_BYPASS_NPE$(ECHO_QUOTE)
-	@echo $(ECHO_QUOTE)  Define this to disable building of NPE microcode. This is the default if$(ECHO_QUOTE)
-	@echo $(ECHO_QUOTE)  IX_TARGET is vxsim.$(ECHO_QUOTE)
+	@echo $(ECHO_QUOTE)  Define this to disable building of NPE microcode.$(ECHO_QUOTE)
+ifeq ($(IX_TARGET_OS),vxworks)
+	@echo $(ECHO_QUOTE)  This is the default if IX_TARGET is vxsim.$(ECHO_QUOTE)
+endif
 	$(ECHO_BLANKLINE)
 	@echo $(ECHO_QUOTE)IX_CFLAGS$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  Additional compiler flags.$(ECHO_QUOTE)
-	$(ECHO_BLANKLINE)
-	@echo $(ECHO_QUOTE)IX_CONTROLLED_COUNTRY_BUILD$(ECHO_QUOTE)
-	@echo $(ECHO_QUOTE)  Define this to disable all cryptography support, including for the \"release\" target.$(ECHO_QUOTE)
 	$(ECHO_BLANKLINE)
 	@echo $(ECHO_QUOTE)IX_ENSURE_OFF$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  Define this to disable the IX_ENSURE macro$(ECHO_QUOTE)
@@ -650,14 +689,14 @@ usage:
 	@echo $(ECHO_QUOTE)  Define to disable compiler optimisations$(ECHO_QUOTE)
 	$(ECHO_BLANKLINE)
 	@echo $(ECHO_QUOTE)IX_NOSYM$(ECHO_QUOTE)
-	@echo $(ECHO_QUOTE)  Define to omit symbol information from the build. Default for Linux.$(ECHO_QUOTE)
+	@echo $(ECHO_QUOTE)  Define to omit symbol information from the build.$(ECHO_QUOTE)
+ifeq ($(IX_TARGET_OS),linux)
+	@echo $(ECHO_QUOTE)  Default for Linux.$(ECHO_QUOTE)
+endif
 	$(ECHO_BLANKLINE)
 	@echo $(ECHO_QUOTE)IX_EXTRA_WARNINGS$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  Define to enable additional compiler warnings (This will cause a lot of$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  warnings due to OS header files).$(ECHO_QUOTE)
-	$(ECHO_BLANKLINE)
-	@echo $(ECHO_QUOTE)USE_REAL_TEST$(ECHO_QUOTE)
-	@echo $(ECHO_QUOTE)  Define to use the Rational Realtime Test compiler$(ECHO_QUOTE)
 	$(ECHO_BLANKLINE)
 
 ################################################################
@@ -976,7 +1015,7 @@ else
 		-o  $(PATTERN_OBJ_DIR)/ctdt.o
 endif # ifeq ($(TOOL_FAMILY),diab)
 	$(LD) $(LDFLAGS) $(LOADABLE_RULE_OBJ) $(PATTERN_OBJ_DIR)/ctdt.o\
-	$(NPE_PRODUCTION_HEADER_OBJ) -L$(OBJ_DIR) -L$(OSAL_DIR)/lib/$(IX_TGT_DEVICE)/$(IX_TARGET_OS)/$(IX_TARGET) $($*_test_DEPS:%=-l%) -losal -o $@
+	$(NPE_PRODUCTION_HEADER_OBJ) -L$(OBJ_DIR) -L$(OSAL_SRCDIR)/lib/$(IX_TGT_DEVICE)/$(IX_TARGET_OS)/$(IX_TARGET) $($*_test_DEPS:%=-l%) -losal -o $@
 ifdef USE_REAL_TEST
 	$(RM) rtrtobjlist.lst TP.out TP.o products.h # Left behind by attolcc
 endif # ifdef USE_REAL_TEST
@@ -1025,7 +1064,7 @@ $(ALL_COMPONENTS:%=$(OBJ_DIR)/ixp400_%.ko): $(OBJ_DIR)/ixp400_%.ko : $(OBJ_DIR)/
 	@echo ' ' >> $(OBJ_DIR)/Makefile
 	@echo 'default:' >> $(OBJ_DIR)/Makefile
 	@echo -ne "\t" >> $(OBJ_DIR)/Makefile
-	@echo 'make -C $(LINUX_SRC) M=$(shell pwd)/$(OBJ_DIR) V=1 modules' >> $(OBJ_DIR)/Makefile
+	@echo 'make ${IX_KBUILD_CROSSCOMPILE} -C $(LINUX_SRC) M=$(shell pwd)/$(OBJ_DIR) V=1 modules' >> $(OBJ_DIR)/Makefile
 	make -C $(OBJ_DIR)
 
 # Rule to build the module.  Correct dependency info for this rule is provided by %-component-dependencies.d.
@@ -1347,7 +1386,7 @@ $(IX_DEVICE_FAMILY) : $(OBJ_DIR)/$(IX_DEVICE_FAMILY).o
 	@echo ' ' >> $(OBJ_DIR)/Makefile
 	@echo 'default:' >> $(OBJ_DIR)/Makefile
 	@echo -ne "\t" >> $(OBJ_DIR)/Makefile
-	@echo 'make -C $(LINUX_SRC) M=$(shell pwd)/$(OBJ_DIR) V=1 modules' >> $(OBJ_DIR)/Makefile
+	@echo 'make ${IX_KBUILD_CROSSCOMPILE} -C $(LINUX_SRC) M=$(shell pwd)/$(OBJ_DIR) V=1 modules' >> $(OBJ_DIR)/Makefile
 	make -C $(OBJ_DIR)
 else
 $(IX_DEVICE_FAMILY) : $(OBJ_DIR)/$(IX_DEVICE_FAMILY).o
@@ -1373,7 +1412,7 @@ endif
 
 osal_clean:
 	$(MAKEFILE_TRACE) Deleting all build products in osal
-	$(RMDIR) $(OSAL_DIR)/lib/$(IX_TGT_DEVICE)/$(IX_TARGET_OS)/$(IX_TARGET)
+	$(RMDIR) $(OSAL_SRCDIR)/lib/$(IX_TGT_DEVICE)/$(IX_TARGET_OS)/$(IX_TARGET)
 
 
 

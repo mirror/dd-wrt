@@ -9,12 +9,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -112,7 +112,8 @@ IxNpeMhConfigNpeInfo ixNpeMhConfigNpeInfo[IX_NPEMH_NUM_NPES] =
         0,
         NULL,
         FALSE
-    },
+    }
+    ,
     {
         0,
         IX_NPEMH_NPEB_INT,
@@ -124,7 +125,6 @@ IxNpeMhConfigNpeInfo ixNpeMhConfigNpeInfo[IX_NPEMH_NUM_NPES] =
         NULL,
         FALSE
     }
-#if defined(__ixp42X) || defined(__ixp46X)
 	,
     {
         0,
@@ -137,7 +137,6 @@ IxNpeMhConfigNpeInfo ixNpeMhConfigNpeInfo[IX_NPEMH_NUM_NPES] =
         NULL,
         FALSE
     }
-#endif /* __ixp42X */
 };
 
 PRIVATE IxNpeMhConfigStats ixNpeMhConfigStats[IX_NPEMH_NUM_NPES];
@@ -161,33 +160,41 @@ void ixNpeMhConfigIsr (void *parameter)
 {
     IxNpeMhNpeId npeId = (IxNpeMhNpeId)parameter;
     UINT32 ofint;
-    volatile UINT32 *statusReg =
-        (UINT32 *)ixNpeMhConfigNpeInfo[npeId].statusRegister;
+    volatile UINT32 *statusReg;
 
-    IX_NPEMH_TRACE0 (IX_NPEMH_FN_ENTRY_EXIT, "Entering "
+    /* Added this checking for ixp43X enabling as npe B is not available */
+    if( TRUE == ixNpeMhConfigNpeIdIsValid(npeId) )
+    {
+
+        statusReg =  (UINT32 *)ixNpeMhConfigNpeInfo[npeId].statusRegister;
+
+        IX_NPEMH_TRACE0 (IX_NPEMH_FN_ENTRY_EXIT, "Entering "
                      "ixNpeMhConfigIsr\n");
 
-    /* get the OFINT (OutFifo interrupt) bit of the status register */
-    IX_NPEMH_REGISTER_READ_BITS (statusReg, &ofint, IX_NPEMH_NPE_STAT_OFINT);
+        /* get the OFINT (OutFifo interrupt) bit of the status register */
+        IX_NPEMH_REGISTER_READ_BITS (statusReg, &ofint, 
+                     IX_NPEMH_NPE_STAT_OFINT);
 
-    /* if the OFINT status bit is set */
-    if (ofint)
-    {
-        /* if there is an ISR registered for this NPE */
-        if (ixNpeMhConfigNpeInfo[npeId].isr != NULL)
+        /* if the OFINT status bit is set */
+        if (ofint)
         {
-            /* invoke the ISR routine */
-            ixNpeMhConfigNpeInfo[npeId].isr (npeId);
-        }
-        else
-        {
-            /* if we don't service the interrupt the NPE will continue */
-            /* to trigger the interrupt indefinitely */
-            IX_NPEMH_ERROR_REPORT ("No ISR registered to service "
+            /* if there is an ISR registered for this NPE */
+            if (ixNpeMhConfigNpeInfo[npeId].isr != NULL)
+            {
+                /* invoke the ISR routine */
+                ixNpeMhConfigNpeInfo[npeId].isr (npeId);
+            }
+            else
+            {
+                /* if we don't service the interrupt the NPE will continue */
+                /* to trigger the interrupt indefinitely */
+                IX_NPEMH_ERROR_REPORT ("No ISR registered to service "
                                    "interrupt\n");
+            }
         }
-    }
 
+    }
+    
     IX_NPEMH_TRACE0 (IX_NPEMH_FN_ENTRY_EXIT, "Exiting "
                      "ixNpeMhConfigIsr\n");
 }
@@ -211,13 +218,18 @@ void ixNpeMhConfigInitialize (
                      IX_OSAL_IXP400_NPEA_MAP_SIZE);
     IX_OSAL_ASSERT (virtualAddr[IX_NPEMH_NPEID_NPEA]);
 
-    /* Request a mapping for the NPE-B config register address space */
-    virtualAddr[IX_NPEMH_NPEID_NPEB] =
-        (UINT32) IX_OSAL_MEM_MAP (IX_NPEMH_NPEB_BASE,
-                     IX_OSAL_IXP400_NPEB_MAP_SIZE);
-    IX_OSAL_ASSERT (virtualAddr[IX_NPEMH_NPEID_NPEB]);
+    /* Added this checking for ixp43X enabling as npe B is not available */
+    if( TRUE == ixNpeMhConfigNpeIdIsValid(IX_NPEMH_NPEID_NPEB) )
+    {
 
-#if defined(__ixp42X) || defined(__ixp46X)
+        /* Request a mapping for the NPE-B config register address space */
+        virtualAddr[IX_NPEMH_NPEID_NPEB] =
+            (UINT32) IX_OSAL_MEM_MAP (IX_NPEMH_NPEB_BASE,
+                     IX_OSAL_IXP400_NPEB_MAP_SIZE);
+        IX_OSAL_ASSERT (virtualAddr[IX_NPEMH_NPEID_NPEB]);
+
+    }
+
 
     /* Request a mapping for the NPE-C config register address space */
     virtualAddr[IX_NPEMH_NPEID_NPEC] =
@@ -225,53 +237,64 @@ void ixNpeMhConfigInitialize (
                      IX_OSAL_IXP400_NPEC_MAP_SIZE);
     IX_OSAL_ASSERT (virtualAddr[IX_NPEMH_NPEID_NPEC]);
 
-#endif /* __ixp42X */
     /* for each NPE ... */
     for (npeId = 0; npeId < IX_NPEMH_NUM_NPES; npeId++)
     {
-        /* declare a convenience pointer */
-        IxNpeMhConfigNpeInfo *npeInfo = &ixNpeMhConfigNpeInfo[npeId];
     
-        /* store the virtual addresses of the NPE registers for later use */
-        npeInfo->virtualRegisterBase  = virtualAddr[npeId];
-        npeInfo->statusRegister  = virtualAddr[npeId] + IX_NPEMH_NPESTAT_OFFSET;
-        npeInfo->controlRegister = virtualAddr[npeId] + IX_NPEMH_NPECTL_OFFSET;
-        npeInfo->inFifoRegister  = virtualAddr[npeId] + IX_NPEMH_NPEFIFO_OFFSET;
-        npeInfo->outFifoRegister = virtualAddr[npeId] + IX_NPEMH_NPEFIFO_OFFSET;
+        /* Added this checking for ixp43X enabling as npe B is not available */
+        if( TRUE == ixNpeMhConfigNpeIdIsValid(npeId) )
+        {
 
-        /* for test purposes - to verify the register addresses */
-        IX_NPEMH_TRACE2 (IX_NPEMH_DEBUG, "NPE %d status register  = "
+            /* declare a convenience pointer */
+            IxNpeMhConfigNpeInfo *npeInfo = &ixNpeMhConfigNpeInfo[npeId];
+    
+            /* store the virtual addresses of the NPE registers for later use */
+            npeInfo->virtualRegisterBase  = virtualAddr[npeId];
+            npeInfo->statusRegister  = virtualAddr[npeId] + 
+                                       IX_NPEMH_NPESTAT_OFFSET;
+            npeInfo->controlRegister = virtualAddr[npeId] + 
+                                       IX_NPEMH_NPECTL_OFFSET;
+            npeInfo->inFifoRegister  = virtualAddr[npeId] + 
+                                       IX_NPEMH_NPEFIFO_OFFSET;
+            npeInfo->outFifoRegister = virtualAddr[npeId] + 
+                                       IX_NPEMH_NPEFIFO_OFFSET;
+
+            /* for test purposes - to verify the register addresses */
+            IX_NPEMH_TRACE2 (IX_NPEMH_DEBUG, "NPE %d status register  = "
                          "0x%08X\n", npeId, npeInfo->statusRegister);
-        IX_NPEMH_TRACE2 (IX_NPEMH_DEBUG, "NPE %d control register = "
+            IX_NPEMH_TRACE2 (IX_NPEMH_DEBUG, "NPE %d control register = "
                          "0x%08X\n", npeId, npeInfo->controlRegister);
-        IX_NPEMH_TRACE2 (IX_NPEMH_DEBUG, "NPE %d inFifo register  = "
+            IX_NPEMH_TRACE2 (IX_NPEMH_DEBUG, "NPE %d inFifo register  = "
                          "0x%08X\n", npeId, npeInfo->inFifoRegister);
-        IX_NPEMH_TRACE2 (IX_NPEMH_DEBUG, "NPE %d outFifo register = "
+            IX_NPEMH_TRACE2 (IX_NPEMH_DEBUG, "NPE %d outFifo register = "
                          "0x%08X\n", npeId, npeInfo->outFifoRegister);
 
-        /* initialise a mutex for this NPE */
-        (void) ixOsalMutexInit (&npeInfo->mutex);
+            /* initialise a mutex for this NPE */
+            (void) ixOsalMutexInit (&npeInfo->mutex);
 
-        /* if we should service the NPE's "outFIFO not empty" interrupt */
-        if (npeInterrupts == IX_NPEMH_NPEINTERRUPTS_YES)
-        {
-            /* NPE MH is in interrupt mode*/
-            ixNpeMhIsIRQBind = TRUE;
+            /* if we should service the NPE's "outFIFO not empty" interrupt */
+            if (npeInterrupts == IX_NPEMH_NPEINTERRUPTS_YES)
+            {
+                /* NPE MH is in interrupt mode*/
+                ixNpeMhIsIRQBind = TRUE;
 
-            /* connect our ISR to the NPE interrupt */
-            (void) ixOsalIrqBind (
+                /* connect our ISR to the NPE interrupt */
+                (void) ixOsalIrqBind (
                        npeInfo->interruptId, ixNpeMhConfigIsr, (void *)npeId);
             
-             /* enable the NPE's "outFIFO not empty" interrupt */ 
-            ixNpeMhConfigNpeInterruptEnable (npeId); 
-        }
-        else
-        {
-            /* NPE MH is in polling mode*/
-            ixNpeMhIsIRQBind = FALSE;
-            /* disable the NPE's "outFIFO not empty" interrupt */
-            ixNpeMhConfigNpeInterruptDisable (npeId);
-        }
+                /* enable the NPE's "outFIFO not empty" interrupt */ 
+                ixNpeMhConfigNpeInterruptEnable (npeId); 
+            }
+            else
+            {
+                /* NPE MH is in polling mode*/
+                ixNpeMhIsIRQBind = FALSE;
+                /* disable the NPE's "outFIFO not empty" interrupt */
+                ixNpeMhConfigNpeInterruptDisable (npeId);
+            }
+
+        } /* end of if( TRUE == ixNpeMhConfigNpeIdIsValid(npeId) ) */
+
     }
 
     /* This will be used in ixNpeMhConfigUninit() */
@@ -289,21 +312,22 @@ void ixNpeMhConfigInitialize (
 
 IX_STATUS ixNpeMhConfigStateRestore(IxNpeMhNpeId npeId)
 {
- if( ixNpeMhConfigNpeIdIsValid(npeId) == TRUE)
- {
+     if( TRUE == ixNpeMhConfigNpeIdIsValid(npeId) )
+     {
 	  if(ixNpeMhIsIRQBind == TRUE)
 	  {
 	    /* enable the NPE's "outFIFO not empty" interrupt */ 
-     ixNpeMhConfigNpeInterruptEnable (npeId); 
-   }
-   else
-   { 
-    	/* disable the NPE's "outFIFO not empty" interrupt */
-     ixNpeMhConfigNpeInterruptDisable (npeId);  	
-   }
-   return IX_SUCCESS;
- }
-	return IX_FAIL;
+            ixNpeMhConfigNpeInterruptEnable (npeId); 
+          }
+          else
+          { 
+    	    /* disable the NPE's "outFIFO not empty" interrupt */
+            ixNpeMhConfigNpeInterruptDisable (npeId);  	
+          }
+          return IX_SUCCESS;
+     }
+     return IX_FAIL;
+
 }
 
 /*
@@ -320,23 +344,31 @@ void ixNpeMhConfigUninit (void)
     /* for each NPE ... */
     for (npeId = 0; npeId < IX_NPEMH_NUM_NPES; npeId++)
     {
-        /* declare a convenience pointer */
-        IxNpeMhConfigNpeInfo *npeInfo = &ixNpeMhConfigNpeInfo[npeId];
-
-        /* Disconnect our ISR to the NPE interrupt */
-        if (IX_NPEMH_NPEINTERRUPTS_YES == ixNpeMhConfigInterrupts)
+        /* Added this checking for ixp43X enabling as npe B is not available */
+        if( TRUE == ixNpeMhConfigNpeIdIsValid(npeId) )
         {
-            ixNpeMhConfigNpeInterruptDisable (npeId);
-            ixOsalIrqUnbind (npeInfo->interruptId);
+
+            /* declare a convenience pointer */
+            IxNpeMhConfigNpeInfo *npeInfo = &ixNpeMhConfigNpeInfo[npeId];
+
+            /* Disconnect our ISR to the NPE interrupt */
+            if (IX_NPEMH_NPEINTERRUPTS_YES == ixNpeMhConfigInterrupts)
+            {
+                ixNpeMhConfigNpeInterruptDisable (npeId);
+                ixOsalIrqUnbind (npeInfo->interruptId);
+            }
+
+            ixOsalMutexDestroy(&npeInfo->mutex);
+
+            IX_OSAL_MEM_UNMAP (npeInfo->virtualRegisterBase);
+
+	    npeInfo->virtualRegisterBase = 0;
+	    npeInfo->statusRegister	 = 0;
+	    npeInfo->controlRegister     = 0;
+	    npeInfo->inFifoRegister	 = 0;
+	    npeInfo->outFifoRegister	 = 0;
         }
 
-        ixOsalMutexDestroy(&npeInfo->mutex);
-
-        IX_OSAL_MEM_UNMAP (npeInfo->virtualRegisterBase);
-        IX_OSAL_MEM_UNMAP (npeInfo->statusRegister);
-        IX_OSAL_MEM_UNMAP (npeInfo->controlRegister);
-        IX_OSAL_MEM_UNMAP (npeInfo->inFifoRegister);
-        IX_OSAL_MEM_UNMAP (npeInfo->outFifoRegister);
     }
 
     /* Reset this parameter here which was set during Init */
@@ -392,9 +424,7 @@ BOOL ixNpeMhConfigNpeInterruptEnable (
     IxNpeMhNpeId npeId)
 {
     UINT32 ofe;
-    volatile UINT32 *controlReg =
-        (UINT32 *)ixNpeMhConfigNpeInfo[npeId].controlRegister;
-    
+    volatile UINT32 *controlReg = (UINT32 *)ixNpeMhConfigNpeInfo[npeId].controlRegister;
 	
     /* get the OFE (OutFifoEnable) bit of the control register */
     IX_NPEMH_REGISTER_READ_BITS (controlReg, &ofe, IX_NPEMH_NPE_CTL_OFE);
@@ -468,7 +498,21 @@ BOOL ixNpeMhConfigNpeIdIsValid (
     IxNpeMhNpeId npeId)
 {
     /* check that the npeId parameter is within the range of valid IDs */
-    return (npeId >= 0 && npeId < IX_NPEMH_NUM_NPES);
+    if (npeId >= 0 && npeId < IX_NPEMH_NUM_NPES)
+    {
+#if defined(__ixp43X)
+        if (npeId == IX_NPEMH_NPEID_NPEB)
+        {
+           return FALSE;
+        }
+#endif 
+        return TRUE;
+    }
+    else
+    {
+       return FALSE;
+    }
+
 }
 
 /*
@@ -481,8 +525,8 @@ void ixNpeMhConfigLockGet (
     IX_NPEMH_TRACE0 (IX_NPEMH_FN_ENTRY_EXIT, "Entering "
                      "ixNpeMhConfigLockGet\n");
 
-	/* ensure no interrupt is running */
-       ixNpeMhirqlockKey = ixOsalIrqLock();
+    /* ensure no interrupt is running */
+    ixNpeMhirqlockKey = ixOsalIrqLock();
 
     /* disable the NPE's "outFIFO not empty" interrupt */
     if(ixNpeMhIsIRQBind == TRUE) 
@@ -528,8 +572,7 @@ IX_STATUS ixNpeMhConfigInFifoWrite (
     IxNpeMhNpeId npeId,
     IxNpeMhMessage message)
 {
-    volatile UINT32 *npeInFifo =
-        (UINT32 *)ixNpeMhConfigNpeInfo[npeId].inFifoRegister;
+    volatile UINT32 *npeInFifo = (UINT32 *)ixNpeMhConfigNpeInfo[npeId].inFifoRegister;
     UINT32 retriesCount = 0;
 
     /* write the first word of the message to the NPE's inFIFO */
@@ -561,8 +604,9 @@ IX_STATUS ixNpeMhConfigInFifoWrite (
 
     /* update statistical info */
     ixNpeMhConfigStats[npeId].inFifoWrites++;
-    
-    return IX_SUCCESS;
+ 
+ return IX_SUCCESS;
+
 }
 
 /*
@@ -573,10 +617,9 @@ IX_STATUS ixNpeMhConfigOutFifoRead (
     IxNpeMhNpeId npeId,
     IxNpeMhMessage *message)
 {
-    volatile UINT32 *npeOutFifo =
-        (UINT32 *)ixNpeMhConfigNpeInfo[npeId].outFifoRegister;
+    volatile UINT32 *npeOutFifo = (UINT32 *)ixNpeMhConfigNpeInfo[npeId].outFifoRegister;
     UINT32 retriesCount = 0;
-
+    
     /* read the first word of the message from the NPE's outFIFO */
     IX_NPEMH_REGISTER_READ (npeOutFifo, &message->data[0]);
 
@@ -606,7 +649,7 @@ IX_STATUS ixNpeMhConfigOutFifoRead (
 
     /* update statistical info */
     ixNpeMhConfigStats[npeId].outFifoReads++;
-    
+
     return IX_SUCCESS;
 }
 
@@ -617,6 +660,7 @@ IX_STATUS ixNpeMhConfigOutFifoRead (
 void ixNpeMhConfigShow (
     IxNpeMhNpeId npeId)
 {
+
     /* show the message fifo read counter */
     IX_NPEMH_SHOW ("Message FIFO reads",
            ixNpeMhConfigStats[npeId].outFifoReads);
@@ -650,6 +694,7 @@ void ixNpeMhConfigShow (
            (ixNpeMhConfigOutFifoIsFull (npeId) ? 
            (int) "FULL" : (int) "NOT FULL"),
            0, 0, 0, 0);
+
 }
 
 /*
@@ -659,6 +704,7 @@ void ixNpeMhConfigShow (
 void ixNpeMhConfigShowReset (
     IxNpeMhNpeId npeId)
 {
+
     /* reset the message fifo read counter */
     ixNpeMhConfigStats[npeId].outFifoReads = 0;
 
@@ -670,6 +716,8 @@ void ixNpeMhConfigShowReset (
 
     /* reset the max outFIFO empty retries counter */
     ixNpeMhConfigStats[npeId].maxOutFifoEmptyRetries = 0;
+
 }
+
 
 

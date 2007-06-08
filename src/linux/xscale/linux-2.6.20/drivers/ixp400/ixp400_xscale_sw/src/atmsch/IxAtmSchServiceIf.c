@@ -16,12 +16,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -257,7 +257,15 @@ ixAtmSchPortModelInitialize( IxAtmLogicalPort port,
 	schPortRate[port] = portRate;
 
 	/* set the time between cell */
-	ixAtmSchCellTimeSet(port, (IX_ATMSCH_nS_PER_SECOND/ portRate));
+	if (portRate > IX_ATMSCH_nS_PER_SECOND)
+	{
+	    ixAtmSchCellTimeSet(port, 0);
+	}
+	else
+	{
+	    ixAtmSchCellTimeSet(port, IX_ATMSCH_nS_PER_SECOND /
+		(UINT32)portRate);
+	}
 
 	/* Set the min cell that can be scheduled */
         ixAtmSchMinCellsSet(port, minCellsToSchedule);
@@ -306,7 +314,15 @@ ixAtmSchPortRateModify( IxAtmLogicalPort port,
     thisRtVc = ixAtmSchRtQueueHead[port];
 
     schPortRate[port] = portRate;
-    ixAtmSchCellTimeSet(port, IX_ATMSCH_nS_PER_SECOND/portRate);
+
+    if (portRate > IX_ATMSCH_nS_PER_SECOND)
+    {
+    	ixAtmSchCellTimeSet(port, 0);
+    }
+    else
+    {
+	ixAtmSchCellTimeSet(port, IX_ATMSCH_nS_PER_SECOND/(UINT32)portRate);
+    }
 
     return IX_SUCCESS;
 }
@@ -396,7 +412,15 @@ ixAtmSchRtVcInsert (IxAtmLogicalPort port, IxAtmSchedulerVcId vcId)
      * additional check */
 
     /* Calculate #microseconds between each VBR cell for PCR and SCR */
-    ixAtmSchVcTable[vcId].schInfo.usPcr = IX_ATMSCH_nS_PER_SECOND/ schTd[vcId].pcr;
+    if (schTd[vcId].pcr > IX_ATMSCH_nS_PER_SECOND)
+    {
+	ixAtmSchVcTable[vcId].schInfo.usPcr = 0;
+    }
+    else
+    {
+	ixAtmSchVcTable[vcId].schInfo.usPcr = IX_ATMSCH_nS_PER_SECOND/ 
+	    (UINT32)schTd[vcId].pcr;
+    }
     ixAtmSchVcTable[vcId].schInfo.pcr = schTd[vcId].pcr;
 
     /* insert the ATM service category for that VC */
@@ -405,7 +429,15 @@ ixAtmSchRtVcInsert (IxAtmLogicalPort port, IxAtmSchedulerVcId vcId)
     if (schTd[vcId].atmService != IX_ATM_CBR)
     {
 	/* This is for VBR */
-	ixAtmSchVcTable[vcId].schInfo.usScr = IX_ATMSCH_nS_PER_SECOND/ schTd[vcId].scr;
+	if (schTd[vcId].scr > IX_ATMSCH_nS_PER_SECOND)
+	{
+	    ixAtmSchVcTable[vcId].schInfo.usScr = 0;
+	}
+	else
+	{
+	    ixAtmSchVcTable[vcId].schInfo.usScr = IX_ATMSCH_nS_PER_SECOND/ 
+	    	(UINT32)schTd[vcId].scr;
+	}
 	ixAtmSchVcTable[vcId].schInfo.scr = schTd[vcId].scr;
 
 	if (schTd[vcId].mbs > 0)

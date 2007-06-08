@@ -11,12 +11,12 @@
 *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -125,14 +125,8 @@ ixAtmdAccInit (void)
 
     if (returnStatus == IX_SUCCESS)
     {
-      /* Do not perform feature checkings only if
-       * IXP42X - A0 silicon. 
-       */
-      if ((IX_FEATURE_CTRL_SILICON_TYPE_A0 != 
-        (ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK))
-        || (IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X != ixFeatureCtrlDeviceRead ()))
-      {
-	if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_UTOPIA)== 
+        /* Check for presence of components */
+        if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_UTOPIA)== 
 	    IX_FEATURE_CTRL_COMPONENT_DISABLED)
 	{
 	    ixOsalLog (IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR,
@@ -149,7 +143,6 @@ ixAtmdAccInit (void)
 		     " not exist\n", 0,0,0,0,0,0);
             return IX_FAIL;
         }
-      }
     } 
 
     return returnStatus;

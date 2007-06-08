@@ -9,12 +9,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -70,10 +70,7 @@
 #include "IxQMgrQAccess_p.h"
 #include "IxQMgrQCfg_p.h"
 #include "IxQMgrDefines_p.h"
-
-#if defined(__ixp42X) || defined(__ixp46X)
 #include "IxQMgrHwQIfIxp400_p.h"
-#endif /* __ixp42X */
 
 /*
  * Global variables and extern definitions
@@ -150,10 +147,8 @@ ixQMgrQReadMWordsMinus1 (IxQMgrQId qId,
 	*(++entry) = IX_OSAL_READ_LONG(++qAccRegAddr);
     }
     
-#if defined(__ixp42X) || defined(__ixp46X)
     /* underflow is available for lower queues only */
     if (qId < IX_QMGR_MIN_QUE_2ND_GROUP_QID)
-#endif /* __ixp42X */
     {
 	/* get the queue status */
 	status = IX_OSAL_READ_LONG(infoPtr->qUOStatRegAddr);
@@ -337,9 +332,7 @@ ixQMgrQNumEntriesGet (IxQMgrQId qId,
 	 */
 	ixQMgrHwQIfQueStatRead (qId, &qStatus);
 
-#if defined(__ixp42X) || defined(__ixp46X)
 	if (qId < IX_QMGR_MIN_QUE_2ND_GROUP_QID)
-#endif /* __ixp42X */
 	{
 	    if (qStatus & IX_QMGR_Q_STATUS_E_BIT_MASK)
 	    {
@@ -363,7 +356,6 @@ ixQMgrQNumEntriesGet (IxQMgrQId qId,
 		return IX_QMGR_WARNING;
 	    }
 	}
-#if defined(__ixp42X) || defined(__ixp46X)
 	else /* It is an upper queue which does not have an empty status bit maintained */
 	{
 	    if (qStatus & IX_QMGR_Q_STATUS_F_BIT_MASK)
@@ -380,7 +372,6 @@ ixQMgrQNumEntriesGet (IxQMgrQId qId,
 	        return IX_QMGR_WARNING;
 	    }
 	}
-#endif /* __ixp42X */
     }
     else
     {
@@ -411,10 +402,8 @@ ixQMgrQRead (IxQMgrQId qId,
         return ixQMgrQReadMWordsMinus1(qId, entryPtr);
     }
 
-#if defined(__ixp42X) || defined(__ixp46X)
     /* underflow is available for lower queues only */
     if (qId < IX_QMGR_MIN_QUE_2ND_GROUP_QID)
-#endif /* __ixp42X */
     {
         /* the counter of queue entries is decremented. In happy 
          * day scenario there are many entries in the queue
@@ -560,9 +549,7 @@ ixQMgrQBurstRead (IxQMgrQId qId,
     infoPtr->qWriteCount = 0;
 
     /* Check if underflow occurred on the read */
-#if defined(__ixp42X) || defined(__ixp46X)
     if (nullCheckEntry == 0 && qId < IX_QMGR_MIN_QUE_2ND_GROUP_QID)
-#endif /* __ixp42X */
     {
         /* get the queue status */
         UINT32 status = IX_OSAL_READ_LONG(infoPtr->qUOStatRegAddr);
@@ -604,10 +591,8 @@ ixQMgrQWrite (IxQMgrQId qId,
         entrySize = infoPtr->qEntrySizeInWords;
     }
 
-#if defined(__ixp42X) || defined(__ixp46X)
     /* overflow is available for lower queues only */
     if (qId < IX_QMGR_MIN_QUE_2ND_GROUP_QID)
-#endif /* __ixp42X */
     {
         qSize = infoPtr->qSizeInEntries;
         /* increment the current number of entries in the queue
@@ -718,9 +703,7 @@ ixQMgrQBurstWrite (IxQMgrQId qId,
     }
 
     /* Check if overflow occurred on the write operation */
-#if defined(__ixp42X) || defined(__ixp46X)
     if (qId < IX_QMGR_MIN_QUE_2ND_GROUP_QID)
-#endif /* __ixp42X */
     {
         /* get the queue status */
         status = IX_OSAL_READ_LONG(infoPtr->qUOStatRegAddr);
@@ -746,7 +729,6 @@ PUBLIC IX_STATUS
 ixQMgrQStatusGet (IxQMgrQId qId,
           IxQMgrQStatus *qStatus)
 {
-#if defined(__ixp42X) || defined(__ixp46X)
     /* read the status of a queue in the range 0-31 */
     if (qId < IX_QMGR_MIN_QUE_2ND_GROUP_QID)
     {
@@ -816,8 +798,6 @@ ixQMgrQStatusGet (IxQMgrQId qId,
             *qStatus |= IX_QMGR_Q_STATUS_F_BIT_MASK;
         }
     }
-#endif /* __ixp42X */
-    
     return IX_SUCCESS;
 }
      

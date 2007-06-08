@@ -14,12 +14,12 @@
  * by EthDB in IxEthDBQoS.h.
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -66,9 +66,7 @@
 #ifndef IxQueueAssignments_H
 #define IxQueueAssignments_H
 
-#if defined(__ixp42X) || defined(__ixp46X)
 #include "IxQMgr.h"
-#endif /* __ixp42X */
 
 /***************************************************************************
  *  Queue assignments for ATM
@@ -83,14 +81,16 @@
  * Define this macro to enable MPHY mode
  *
  * Default(No Switch) = MultiPHY Utopia2
- * IX_UTOPIAMODE = 1 for single Phy Utopia1
- * IX_MPHYSINGLEPORT = 1 for single Phy Utopia2 
+ * Define IX_UTOPIAMODE for single Phy Utopia1
+ * Define IX_MPHYSINGLEPORT for single Phy Utopia2 
  */
 #define IX_NPE_MPHYMULTIPORT 1
-#if IX_UTOPIAMODE == 1
+
+#if defined(IX_UTOPIAMODE)
 #undef  IX_NPE_MPHYMULTIPORT
 #endif
-#if IX_MPHYSINGLEPORT == 1
+
+#if defined(IX_MPHYSINGLEPORT)
 #undef  IX_NPE_MPHYMULTIPORT
 #endif
 
@@ -100,7 +100,7 @@
  *
  * @def IX_NPE_A_TXDONE_QUEUE_HIGHWATERMARK
  *
- * @brief The NPE reserves the High Watermark for its operation. But it must be set by the Xscale
+ * @brief The NPE reserves the High Watermark for its operation. But it must be set by the Intel XScale(R) processor
  */
 #define IX_NPE_A_TXDONE_QUEUE_HIGHWATERMARK  2
 
@@ -524,8 +524,6 @@
 #define IX_DMA_NPE_C_REQUEST_QID IX_QMGR_QUEUE_25   /**< Queue Id for NPE C DMA Request */
 #define IX_DMA_NPE_C_DONE_QID    IX_QMGR_QUEUE_27   /**< Queue Id for NPE C DMA Done    */
 
-
-#if defined(__ixp42X) || defined(__ixp46X)
 /*****************************************************************************************
  * Queue assignments for Ethernet
  *
@@ -615,8 +613,6 @@
 *
 */
 #define IX_ETH_ACC_TX_DONE_Q    (IX_QMGR_QUEUE_31)
-
-#endif /* __ixp42X */
 
 /*****************************************************************************************
  * Queue assignments for Crypto

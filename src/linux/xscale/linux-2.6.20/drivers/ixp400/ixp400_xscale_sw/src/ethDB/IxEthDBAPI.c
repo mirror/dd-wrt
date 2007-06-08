@@ -4,12 +4,12 @@
  * @brief Implementation of the public API
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -190,11 +190,7 @@ void ixEthDBDatabaseMaintenance()
 
             if (ixEthDBPortInfo[descriptor->portID].agingEnabled && (staticEntry == FALSE))
             {
-                /* manually increment the age if the port has no such capability */
-                if ((ixEthDBPortDefinitions[descriptor->portID].capabilities & IX_ETH_ENTRY_AGING) == 0)
-                {
                     *age += (IX_ETH_DB_MAINTENANCE_TIME / 60);
-                }
 
                 /* age entry if it exceeded the maximum time to live */
                 if (*age >= (IX_ETH_DB_LEARNING_ENTRY_AGE_TIME / 60))

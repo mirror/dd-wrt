@@ -8,12 +8,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -186,56 +186,56 @@
 /**
  * @def IX_HSSACC_TX_FRM_SYNC_ERR
  *
- * @brief HSS port TX Frame Sync error
+ * @brief HSS port Tx Frame Sync error
  */
 #define IX_HSSACC_TX_FRM_SYNC_ERR 1
 
 /**
  * @def IX_HSSACC_TX_OVER_RUN_ERR
  *
- * @brief HSS port TX over-run error
+ * @brief HSS port Tx over-run error
  */
 #define IX_HSSACC_TX_OVER_RUN_ERR 2
 
 /**
  * @def IX_HSSACC_CHANNELISED_SW_TX_ERR
  *
- * @brief NPE software error in channelised TX
+ * @brief NPE software error in channelised Tx
  */
 #define IX_HSSACC_CHANNELISED_SW_TX_ERR 3
 
 /**
  * @def IX_HSSACC_PACKETISED_SW_TX_ERR
  *
- * @brief NPE software error in packetised TX
+ * @brief NPE software error in packetised Tx
  */
 #define IX_HSSACC_PACKETISED_SW_TX_ERR 4
 
 /**
  * @def IX_HSSACC_RX_FRM_SYNC_ERR
  *
- * @brief HSS port RX Frame Sync error
+ * @brief HSS port Rx Frame Sync error
  */
 #define IX_HSSACC_RX_FRM_SYNC_ERR 5
 
 /**
  * @def IX_HSSACC_RX_OVER_RUN_ERR
  *
- * @brief HSS port RX over-run error
+ * @brief HSS port Rx over-run error
  */
 #define IX_HSSACC_RX_OVER_RUN_ERR 6
 
 /**
  * @def IX_HSSACC_CHANNELISED_SW_RX_ERR
  *
- * @brief NPE software error in channelised RX
+ * @brief NPE software error in channelised Rx
  */
 #define IX_HSSACC_CHANNELISED_SW_RX_ERR 7
 
 /**
  * @def IX_HSSACC_PACKETISED_SW_RX_ERR
  *
- * @brief NPE software error in packetised TX
+ * @brief NPE software error in packetised Tx
  */
 #define IX_HSSACC_PACKETISED_SW_RX_ERR 8
 
@@ -396,8 +396,8 @@ typedef enum
  */
 typedef enum
 {
-    IX_HSSACC_LSB_ENDIAN,    /**< TX/RX Least Significant Bit first */
-    IX_HSSACC_MSB_ENDIAN,    /**< TX/RX Most Significant Bit first */
+    IX_HSSACC_LSB_ENDIAN,    /**< Tx/Rx Least Significant Bit first */
+    IX_HSSACC_MSB_ENDIAN,    /**< Tx/Rx Most Significant Bit first */
     IX_HSSACC_ENDIAN_MAX     /**< Delimiter for the purposes of error checks */
 } IxHssAccBitEndian;
 
@@ -421,8 +421,8 @@ typedef enum
  */
 typedef enum
 {
-    IX_HSSACC_SOF_FBIT,  /**< Framing bit transmitted and expected on rx */
-    IX_HSSACC_SOF_DATA,  /**< Framing bit not transmitted nor expected on rx */
+    IX_HSSACC_SOF_FBIT,  /**< Framing bit transmitted and expected on Rx */
+    IX_HSSACC_SOF_DATA,  /**< Framing bit not transmitted nor expected on Rx */
     IX_HSSACC_SOF_MAX    /**< Delimiter for error checks */
 } IxHssAccSOFType;
 
@@ -549,48 +549,48 @@ typedef enum
  */
 typedef enum
 {
-    IX_HSSACC_HDLC_IDLE_ONES,    /**< idle tx/rx will be a succession of ones */
-    IX_HSSACC_HDLC_IDLE_FLAGS    /**< idle tx/rx will be repeated flags */
+    IX_HSSACC_HDLC_IDLE_ONES,    /**< idle Tx/Rx will be a succession of ones */
+    IX_HSSACC_HDLC_IDLE_FLAGS    /**< idle Tx/Rx will be repeated flags */
 } IxHssAccPktHdlcIdleType;
 
 /**
  * @brief Structure containing HSS port configuration parameters
  *
- * Note: All of these are used for TX. Only some are specific to RX.
+ * Note: All of these are used for Tx. Only some are specific to Rx.
  *
  */
 typedef struct
 {
-    IxHssAccFrmSyncType frmSyncType;     /**< frame sync pulse type (tx/rx) */
+    IxHssAccFrmSyncType frmSyncType;     /**< frame sync pulse type (Tx/Rx) */
     IxHssAccFrmSyncEnable frmSyncIO;     /**< how the frame sync pulse is 
-					    used (tx/rx) */
+					    used (Tx/Rx) */
     IxHssAccClkEdge frmSyncClkEdge;      /**< frame sync clock edge type 
-					    (tx/rx) */
-    IxHssAccClkEdge dataClkEdge;         /**< data clock edge type (tx/rx) */
-    IxHssAccClkDir clkDirection;         /**< clock direction (tx/rx) */
+					    (Tx/Rx) */
+    IxHssAccClkEdge dataClkEdge;         /**< data clock edge type (Tx/Rx) */
+    IxHssAccClkDir clkDirection;         /**< clock direction (Tx/Rx) */
     IxHssAccFrmPulseUsage frmPulseUsage; /**< whether to use the frame sync 
-					    pulse or not (tx/rx) */
+					    pulse or not (Tx/Rx) */
     IxHssAccDataRate dataRate;           /**< data rate in relation to the 
-					    clock (tx/rx) */
-    IxHssAccDataPolarity dataPolarity;   /**< data polarity type (tx/rx) */
-    IxHssAccBitEndian dataEndianness;    /**< data endianness (tx/rx) */
-    IxHssAccDrainMode drainMode;         /**< tx pin open drain mode (tx) */
-    IxHssAccSOFType fBitUsage;           /**< start of frame types (tx/rx) */
+					    clock (Tx/Rx) */
+    IxHssAccDataPolarity dataPolarity;   /**< data polarity type (Tx/Rx) */
+    IxHssAccBitEndian dataEndianness;    /**< data endianness (Tx/Rx) */
+    IxHssAccDrainMode drainMode;         /**< Tx pin open drain mode (Tx) */
+    IxHssAccSOFType fBitUsage;           /**< start of frame types (Tx/Rx) */
     IxHssAccDataEnable dataEnable;       /**< whether or not to drive the data 
-					    pins (tx) */
+					    pins (Tx) */
     IxHssAccTxSigType voice56kType;      /**< how to drive the data pins for 
-					    voice56k type (tx) */
+					    voice56k type (Tx) */
     IxHssAccTxSigType unassignedType;    /**< how to drive the data pins for 
-					    unassigned type (tx) */
-    IxHssAccFbType fBitType;             /**< how to drive the Fbit (tx) */
+					    unassigned type (Tx) */
+    IxHssAccFbType fBitType;             /**< how to drive the Fbit (Tx) */
     IxHssAcc56kEndianness voice56kEndian;/**< 56k data endianness when using 
-					    the 56k type (tx) */
+					    the 56k type (Tx) */
     IxHssAcc56kSel voice56kSel;          /**< 56k data transmission type when 
-					    using the 56k type (tx) */
+					    using the 56k type (Tx) */
     unsigned frmOffset;                  /**< frame pulse offset in bits wrt 
-					    the first timeslot (0-1023) (tx/rx) */
+					    the first timeslot (0-1023) (Tx/Rx) */
     unsigned maxFrmSize;                 /**< frame size in bits (1-1024) 
-					    (tx/rx) */
+					    (Tx/Rx) */
 } IxHssAccPortConfig;
 
 /**
@@ -599,19 +599,19 @@ typedef struct
  */
 typedef struct
 {
-    IxHssAccPortConfig txPortConfig; /**< HSS tx port configuration */
-    IxHssAccPortConfig rxPortConfig; /**< HSS rx port configuration */
+    IxHssAccPortConfig txPortConfig; /**< HSS Tx port configuration */
+    IxHssAccPortConfig rxPortConfig; /**< HSS Rx port configuration */
     unsigned numChannelised;         /**< The number of channelised 
 					timeslots (0-32) */
     unsigned hssPktChannelCount;     /**< The number of packetised 
 					clients (0 - 4) */
     UINT8 channelisedIdlePattern;    /**< The byte to be transmitted on 
 					channelised service when there 
-					is no client data to tx */
+					is no client data to Tx */
     BOOL loopback;                   /**< The HSS loopback state */
     unsigned packetizedIdlePattern;  /**< The data to be transmitted on 
 					packetised service when there is 
-					no client data to tx */
+					no client data to Tx */
     IxHssAccClkSpeed clkSpeed;       /**< The HSS clock speed */
 } IxHssAccConfigParams;
 
@@ -681,7 +681,7 @@ typedef void (*IxHssAccLastErrorCallback) (unsigned lastHssError,
 /**
  * @typedef IxHssAccPktRxCallback
  * @brief  Prototype of the clients function to accept notification of 
- * packetised rx
+ * packetised Rx
  *
  * This function is registered through the ixHssAccPktPortConnect. hssPktAcc will pass
  * received data in the form of mbufs to the client.  The mbuf passed back
@@ -748,7 +748,7 @@ typedef void (*IxHssAccPktTxDoneCallback) (IX_OSAL_MBUF *buffer,
 /**
  * @typedef IxHssAccChanRxCallback
  * @brief Prototype of the clients function to accept notification of 
- * channelised rx
+ * channelised Rx
  *
  * This callback, if defined by the client in the connect, will get called
  * in the context of an IRQ. The IRQ will be triggered when the hssSyncQMQ
@@ -910,19 +910,19 @@ ixHssAccUninit (void);
  * will occur between HDLC and HSS co-processors i.e. post-HDLC processing for
  * transmit and pre-HDLC processing for receive, for the specified HDLC Termination
  * Point
- * @param blockSizeInWords unsigned [in] -  The max tx/rx block size 
+ * @param blockSizeInWords unsigned [in] -  The max Tx/Rx block size 
  * @param rawIdleBlockPattern UINT32 [in] -  Tx idle pattern in raw mode 
  * @param hdlcTxFraming @ref IxHssAccPktHdlcFraming [in] - This structure contains 
  * the following information required by the NPE to configure the HDLC 
- * co-processor for TX
+ * co-processor for Tx
  * @param hdlcRxFraming @ref IxHssAccPktHdlcFraming [in] -  This structure contains 
  * the following information required by the NPE to configure the HDLC 
- * co-processor for RX
+ * co-processor for Rx
  * @param frmFlagStart unsigned - Number of flags to precede to 
  * transmitted flags (0-2).
  * @param rxCallback @ref IxHssAccPktRxCallback [in] - Pointer to 
  * the clients packet receive function.
- * @param rxUserId @ref IxHssAccPktUserId [in] - The client supplied rx value
+ * @param rxUserId @ref IxHssAccPktUserId [in] - The client supplied Rx value
  * to be passed back as an argument to the supplied rxCallback
  * @param rxFreeLowCallback @ref IxHssAccPktRxFreeLowCallback [in] - Pointer to 
  * the clients Rx free buffer request function.  If NULL, assume client will 
@@ -968,9 +968,9 @@ ixHssAccPktPortConnect (IxHssAccHssPort hssPortId,
            IxHssAccHdlcPort hdlcPortId)
  *
  * @brief This function is responsible for enabling a packetised service
- * for the specified HSS/HDLC port combination. It enables the RX flow. The
+ * for the specified HSS/HDLC port combination. It enables the Rx flow. The
  * client must have already connected to a packetised service and is responsible 
- * for ensuring an adequate amount of RX mbufs have been supplied to the access
+ * for ensuring an adequate amount of Rx mbufs have been supplied to the access
  * component before enabling the packetised service. This function must be called
  * on a given port before any call to ixHssAccPktPortTx on the same port. 
  * No other HssAccPacketised interface should be called while this interface is 
@@ -996,7 +996,7 @@ ixHssAccPktPortEnable (IxHssAccHssPort hssPortId,
            IxHssAccHdlcPort hdlcPortId)
  *
  * @brief This function is responsible for disabling a packetised service
- * for the specified HSS/HDLC port combination. It disables the RX flow. 
+ * for the specified HSS/HDLC port combination. It disables the Rx flow. 
  * The client must have already connected to and enabled a packetised service 
  * for the specified HDLC port. This disable interface can be called before a
  * disconnect, but is not required to.
@@ -1025,7 +1025,7 @@ ixHssAccPktPortDisable (IxHssAccHssPort hssPortId,
  *
  * @brief This function is responsible for disconnecting a client from one
  * of the 4 available HDLC ports. It is not required that the Rx Flow 
- * has been disabled before calling this function.  If the RX Flow has not been
+ * has been disabled before calling this function.  If the Rx Flow has not been
  * disabled, the disconnect will disable it before proceeding with the
  * disconnect.  No other HssAccPacketised 
  * interface should be called while this interface is being processed.
@@ -1082,7 +1082,7 @@ ixHssAccPktPortIsDisconnectComplete (IxHssAccHssPort hssPortId,
 	      IX_OSAL_MBUF *buffer)
  *
  * @brief Function which the client calls at regular intervals to provide
- * mbufs to the access component for RX. A connection should exist for
+ * mbufs to the access component for Rx. A connection should exist for
  * the specified hssPortId/hdlcPortId combination before attempting to call this 
  * interface. Also, the connection should not be in a disconnecting state.
  *
@@ -1199,10 +1199,10 @@ ixHssAccPktPortTx (IxHssAccHssPort hssPortId,
  * @param numTxBytesPerBlk unsigned [in] - The size of the Tx data, in
  * bytes, that each pointer within the PtrList points to.
  * @param rxCallback @ref IxHssAccChanRxCallback [in] - A client function
- * pointer to be called back to handle the actual tx/rx of channelised
+ * pointer to be called back to handle the actual Tx/Rx of channelised
  * data. If this is not NULL, an ISR will call this function. If this
  * pointer is NULL, it implies that the client will use a polling mechanism
- * to detect when the tx and rx of channelised data is to occur. The client
+ * to detect when the Tx and Rx of channelised data is to occur. The client
  * will use hssChanAccStatus for this.
  *
  * @return
@@ -1229,7 +1229,7 @@ ixHssAccChanConnect (IxHssAccHssPort hssPortId,
  * @fn IX_STATUS ixHssAccChanPortEnable (IxHssAccHssPort hssPortId)
  *
  * @brief This function is responsible for enabling a channelised service
- * for the specified HSS port. It enables the NPE RX flow. The client must
+ * for the specified HSS port. It enables the NPE Rx flow. The client must
  * have already connected to a channelised service before enabling the
  * channelised service. No other HssAccChannelised 
  * interface should be called while this interface is being processed.
@@ -1253,7 +1253,7 @@ ixHssAccChanPortEnable (IxHssAccHssPort hssPortId);
  * @fn IX_STATUS ixHssAccChanPortDisable (IxHssAccHssPort hssPortId)
  *
  * @brief This function is responsible for disabling a channelised service
- * for the specified HSS port. It disables the NPE RX flow. The client must
+ * for the specified HSS port. It disables the NPE Rx flow. The client must
  * have already connected to and enabled a channelised service for the
  * specified HSS port. This disable interface can be called before a
  * disconnect, but is not required to. No other HssAccChannelised 
@@ -1278,7 +1278,7 @@ ixHssAccChanPortDisable (IxHssAccHssPort hssPortId);
  * @fn IX_STATUS ixHssAccChanDisconnect (IxHssAccHssPort hssPortId)
  *
  * @brief This function allows the client to Disconnect from a channelised
- * service. If the NPE RX Flow has not been disabled, the disconnect will
+ * service. If the NPE Rx Flow has not been disabled, the disconnect will
  * disable it before proceeding with other disconnect functionality.
  * No other HssAccChannelised interface should be called while this 
  * interface is being processed.

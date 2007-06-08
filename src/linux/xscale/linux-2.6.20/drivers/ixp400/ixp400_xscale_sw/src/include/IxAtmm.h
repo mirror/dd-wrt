@@ -7,12 +7,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release Crypto version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -63,7 +63,7 @@
  * Put the user defined include files required
  */
 #include "IxAtmSch.h"
-#include "IxOsalTypes.h"
+#include "IxOsal.h"
 
 /*
  * #defines and macros used in this file.
@@ -383,7 +383,7 @@ ixAtmmUtopiaUninit (void);
  *
  *  This function is reentrant.
  *
- *  @note The minimum tx rate that will be accepted is 424 bit/s which equates
+ *  @note The minimum Tx rate that will be accepted is 424 bit/s which equates
  *        to 1 cell (53 bytes) per second.
  *
  * @param port @ref IxAtmLogicalPort [in] - Identifies the port which is to be
@@ -564,9 +564,9 @@ ixAtmmPortEnable(IxAtmLogicalPort port);
  *
  * @note - When a port is disabled, Rx and Tx VC Connect requests will fail
  *
- * @note - This function call does not stop RX traffic. It is supposed
+ * @note - This function call does not stop Rx traffic. It is supposed
  *        that this function is invoked when a serious problem
- *        is detected (e.g. physical layer broken). Then, the RX traffic
+ *        is detected (e.g. physical layer broken). Then, the Rx traffic
  *        is not passing.
  *
  * @note - This function is blocking until the hw acknowledge that the
