@@ -475,6 +475,11 @@ main_loop (void)
 	  start_service ("vlantagging");
 	  start_service ("bridgesif");
 #endif
+
+#ifdef HAVE_REGISTER
+	  start_service ("mkfiles");
+#endif
+
 	  cprintf ("start services\n");
 	  start_services ();
 	  
@@ -505,9 +510,6 @@ main_loop (void)
 #endif
 #endif
 
-#ifdef HAVE_REGISTER
-	  start_service ("mkfiles");
-#endif
           
 	  cprintf ("create rc file\n");
 #ifdef HAVE_REGISTER
