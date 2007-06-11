@@ -7,7 +7,12 @@
 #include <errno.h>
 #include <wlutils.h>
 
-#ifdef HAVE_ZEBRA
+#ifdef HAVE_QUAGGA
+
+int zebra_ospf_init(void);
+int zebra_bgp_init(void);
+int zebra_ripd_init(void);
+
 int
 zebra_init (void)
 {
@@ -18,16 +23,22 @@ zebra_init (void)
     }
   else if (nvram_match ("wk_mode", "ospf"))
     {
-      return zebra_ospf_init ();
+      zebra_ospf_init ();
+      syslog (LOG_INFO, "zebra : zebra (ospf) successfully initiated\n");
+    }
+  else if (nvram_match ("wk_mode", "bgp"))
+    {
+      zebra_bgp_init ();
       syslog (LOG_INFO, "zebra : zebra (ospf) successfully initiated\n");
     }
   else if (nvram_match ("wk_mode", "router"))
     {
-      return zebra_ripd_init ();
+      zebra_ripd_init ();
       syslog (LOG_INFO, "zebra : zebra (router) successfully initiated\n");
     }
   else
     return 0;
+return 0;
 }
 
 
@@ -86,8 +97,8 @@ zebra_ospf_init (void)
       || nvram_match ("ospfd_copt", "1"))
     {
       fprintf (fp, "!\n");
-      fprintf (fp, "password %s\n", nvram_safe_get ("http_passwd"));
-      fprintf (fp, "enable password %s\n", nvram_safe_get ("http_passwd"));
+//      fprintf (fp, "password %s\n", nvram_safe_get ("http_passwd"));
+//     fprintf (fp, "enable password %s\n", nvram_safe_get ("http_passwd"));
       fprintf (fp, "!\n!\n!\n");
 
       fprintf (fp, "interface %s\n!\n", lf);
@@ -250,6 +261,60 @@ zebra_ripd_init (void)
 
   return ret1 + ret2;
 }
+int
+zebra_bgp_init (void)
+{
+
+  char *lt = nvram_safe_get ("dr_lan_tx");
+  char *lr = nvram_safe_get ("dr_lan_rx");
+  char *wt = nvram_safe_get ("dr_wan_tx");
+  char *wr = nvram_safe_get ("dr_wan_rx");
+  char *lf = nvram_safe_get ("lan_ifname");
+  char *wf = get_wan_face ();
+
+  FILE *fp;
+  int ret1, ret2;
+
+//      printf("Start zebra\n");
+  if (!strcmp (lt, "0") && !strcmp (lr, "0") &&
+      !strcmp (wt, "0") && !strcmp (wr, "0"))
+    {
+      printf ("zebra disabled.\n");
+      return 0;
+    }
+
+  /* Write configuration file based on current information */
+  if (!(fp = fopen ("/tmp/zebra.conf", "w")))
+    {
+      perror ("/tmp/zebra.conf");
+      return errno;
+    }
+  fclose (fp);
+
+  if (!(fp = fopen ("/tmp/bgpd.conf", "w")))
+    {
+      perror ("/tmp/bgpd.conf");
+      return errno;
+    }
+  fprintf (fp, "router bgp\n");
+  fprintf (fp, "  network %s\n", lf);
+  fprintf (fp, "  network %s\n", wf);
+  fprintf (fp, "neighbor %s local-as %s\n", lf,nvram_safe_get ("routing_bgp_as")); 
+  fprintf (fp, "neighbor %s local-as %s\n", wf,nvram_safe_get ("routing_bgp_as")); 
+  fprintf (fp, "neighbor %s remote-as %s\n",
+		   nvram_safe_get ("routing_bgp_neighbor_ip"),
+		   nvram_safe_get ("routing_bgp_neighbor_as"));
+  fprintf (fp,"access-list all permit any\n");
+
+  fflush (fp);
+  fclose (fp);
+
+  ret1 = eval ("zebra", "-d", "-f", "/tmp/zebra.conf");
+  ret2 = eval ("bgpd", "-d", "-f", "/tmp/bgpd.conf");
+
+  return ret1 + ret2;
+}
+
 #endif
 
 #ifdef HAVE_BIRD
@@ -395,7 +460,7 @@ start_zebra (void)
   if (bird_init () != 0)
     return -1;
 
-#elif defined(HAVE_ZEBRA)
+#elif defined(HAVE_QUAGGA)
 
   if (zebra_init () != 0)
     return -1;
@@ -409,10 +474,10 @@ int
 stop_zebra (void)
 {
   int ret1;
+#ifdef HAVE_QUAGGA
   if (pidof ("zebra") > 0 || pidof ("ripd") > 0 || pidof ("ospfd") > 0)
     syslog (LOG_INFO,
 	    "zebra : zebra (ripd and ospfd) daemon successfully stopped\n");
-#ifdef HAVE_ZEBRA
   int ret2, ret3;
   ret1 = killall ("zebra", SIGTERM);
   ret2 = killall ("ripd", SIGTERM);

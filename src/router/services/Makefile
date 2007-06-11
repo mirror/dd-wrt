@@ -344,8 +344,8 @@ ifeq ($(CONFIG_PPP),y)
 CFLAGS += -DHAVE_PPP
 endif
 
-ifeq ($(CONFIG_ZEBRA),y)
-CFLAGS += -DHAVE_ZEBRA
+ifeq ($(CONFIG_QUAGGA),y)
+CFLAGS += -DHAVE_QUAGGA
 OBJS += routing.o
 endif
 
