@@ -139,5 +139,6 @@ obj-$(CONFIG_PCMCIA) += gcom
 obj-$(CONFIG_PCMCIA) += nvtlstatus 
 obj-$(CONFIG_PCMCIA) += setserial
 obj-$(CONFIG_MEDIASERVER) += mediaserver
+obj-$(CONFIG_QUAGGA) += quagga
 
 
