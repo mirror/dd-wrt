@@ -127,7 +127,6 @@ obj-$(CONFIG_IPERF) += iperf
 obj-$(CONFIG_NTPD) += ntpd
 obj-$(CONFIG_GPSD) += gpsd
 obj-$(CONFIG_FREERADIUS) += freeradius
-obj-$(CONFIG_RSTATS) += rstats
 
 obj-$(CONFIG_SCDP) += scdp
 obj-$(CONFIG_SES) += ses
