@@ -119,7 +119,6 @@ ifeq ($(CONFIG_FONERA),y)
 CFLAGS += -DHAVE_FONERA
 endif
 ifeq ($(CONFIG_MERAKI),y)
-CFLAGS += -DHAVE_FONERA
 CFLAGS += -DHAVE_MERAKI
 endif
 ifeq ($(CONFIG_LS2),y)
@@ -175,6 +174,9 @@ endif
 
 ifeq ($(CONFIG_BIRD),y)
 CFLAGS += -DHAVE_BIRD
+endif
+ifeq ($(CONFIG_QUAGGA),y)
+CFLAGS += -DHAVE_QUAGGA
 endif
 ifeq ($(CONFIG_PPTP),y)
 CFLAGS += -DHAVE_PPTP
