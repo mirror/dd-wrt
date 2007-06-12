@@ -3965,7 +3965,6 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
     }
 #endif
 
-  int sipgate = nvram_match ("sipgate", "1");
   int vlan_supp = check_vlan_support ();
 #ifdef HAVE_SPUTNIK_APD
   int sputnik = nvram_match ("apd_enable", "1");
@@ -3985,7 +3984,7 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   int wifi = haswifi ();
 #endif
 #endif
-  char menu[9][11][32] =
+  char menu[8][11][32] =
     { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp",
        "Networking.asp", "", "", "", "", ""},
   {"Wireless_Basic.asp", "Wireless_radauth.asp", "WL_WPATable.asp",
@@ -3993,8 +3992,6 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
    "", "", ""},
   {"Services.asp", "PPPoE_Server.asp", "PPTP.asp", "Hotspot.asp",
    "Milkfish.asp", "eop-tunnel.asp", "", "", "", "", ""},
-  {"Sipath.asp", "cgi-bin-mf-phonebook.html", "cgi-bin-mf-status.html", "",
-   "", "", "", "", "", "", ""},
   {"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", ""},
   {"Filters.asp", "", "", "", "", "", "", "", "", "", ""},
   {"ForwardSpec.asp", "Forward.asp", "Triggering.asp", "UPnP.asp", "DMZ.asp",
@@ -4007,15 +4004,13 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   };
 
 /* real name is bmenu.menuname[i][j] */
-  char menuname[9][11][32] =
+  char menuname[8][11][32] =
     { {"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting",
        "setupvlan", "networking", "", "", "", ""},
   {"wireless", "wirelessBasic", "wirelessRadius", "wirelessSecurity",
    "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", "", ""},
   {"services", "servicesServices", "servicesPppoesrv", "servicesPptp",
    "servicesHotspot", "servicesMilkfish", "setupeop", "", "", "", ""},
-  {"sipath", "sipathoverview", "sipathphone", "sipathstatus", "", "", "", "",
-   "", "", ""},
   {"security", "firwall", "vpn", "", "", "", "", "", "", "", ""},
   {"accrestriction", "webaccess", "", "", "", "", "", "", "", "", ""},
   {"applications", "applicationspforwarding", "applicationsprforwarding",
@@ -4045,14 +4040,12 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, " <div id=\"menuMain\">\n");
   websWrite (wp, "  <ul id=\"menuMainList\">\n");
 
-  for (i = 0; i < 9; i++)
+  for (i = 0; i < 8; i++)
     {
 #ifdef HAVE_MADWIFI
       if (!wifi && !strcmp (menu[i][0], "Wireless_Basic.asp"))
 	i++;
 #endif
-      if ((!sipgate) && (!strcmp (menu[i][0], "Sipath.asp")))	//jump over Sipath
-	i++;
       if (!strcmp (menu[i][0], mainmenu))
 	{
 	  websWrite (wp,
