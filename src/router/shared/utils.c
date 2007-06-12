@@ -3018,25 +3018,23 @@ char up[32];
 char down[32];
 char ups[32];
 char downs[32];
-char net[32];
 sprintf(up,"1:%d",base);
 sprintf(down,"1:%d",base+1);
 sprintf(ups,"%skbit",upstream);
 sprintf(downs,"%skbit",downstream);
-sprintf(net,"%s/32",ip);
 
 if (nvram_match("qos_type","0"))
     {
     eval("tc","class","add","dev","imq0","parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","src",net,"flowid",up);
+    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","src",ip,"flowid",up);
     eval("tc","class","add","dev","imq0","parent","1:","classid",down,"htb","rate",downs,"ceil",downs);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","dst",net,"flowid",down);
+    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","dst",ip,"flowid",down);
     }else
     {
     eval("tc","class","add","dev","imq0","parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","src",net,"flowid",up);
+    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","src",ip,"flowid",up);
     eval("tc","class","add","dev","imq0","parent","1:","classid",down,"htb","rate",downs,"ceil",downs);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","dst",net,"flowid",down);
+    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","dst",ip,"flowid",down);
     }
     
 }
@@ -3051,7 +3049,6 @@ char up[32];
 char down[32];
 char ups[32];
 char downs[32];
-char net[32];
 char oct2[32];
 char oct4[32];
 char doct2[32];
