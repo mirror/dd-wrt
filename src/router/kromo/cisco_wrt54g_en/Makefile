@@ -196,6 +196,12 @@ ifeq ($(CONFIG_GGEW),y)
 	cp -f ggew/logo.png $(INSTALLDIR)/www/style/logo.png
 endif
 
+ifeq ($(CONFIG_MAKSAT_CORAL_ELEGANT),y)
+	mkdir $(INSTALLDIR)/www/style/maksat_coral_elegant
+	cp maksat/style-coral.css $(INSTALLDIR)/www/style/maksat_coral_elegant/style.css
+	cp maksat/common-coral.css $(INSTALLDIR)/www/style
+endif
+
 ifeq ($(CONFIG_MAKSAT),y)
 	cp -f maksat/logo.png $(INSTALLDIR)/www/style/logo.png
 	cp -f maksat/logo.png $(INSTALLDIR)/www/images/logo.png
@@ -213,6 +219,16 @@ ifeq ($(CONFIG_MAKSAT),y)
 	mkdir $(INSTALLDIR)/www/style/maksat
 	cp maksat/maksat/* $(INSTALLDIR)/www/style/maksat
 endif
+
+ifeq ($(CONFIG_MAKSAT_CORAL),y)
+	cp -f maksat/logo-coral.png $(INSTALLDIR)/www/style/logo-coral.png
+	cp -f maksat/logo-coral.png $(INSTALLDIR)/www/images/logo-coral.png
+	cp maksat_coral/images/* $(INSTALLDIR)/www/images
+	cp -f maksat/logo-coral.png $(INSTALLDIR)/www/images/logo-coral.png
+	mkdir $(INSTALLDIR)/www/style/maksat_coral
+	cp maksat_coral/maksat_coral/* $(INSTALLDIR)/www/style/maksat_coral
+endif
+
 
 ifeq ($(CONFIG_KODATA),y)
 	cp -f kodata/logo.png $(INSTALLDIR)/www/style/logo.png
