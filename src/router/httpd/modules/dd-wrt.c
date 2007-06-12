@@ -151,6 +151,20 @@ ej_show_routing (webs_t wp, int argc, char_t ** argv)
 	     nvram_selmatch (wp, "wk_mode",
 			     "ospf") ? "selected=\\\"selected\\\"" : "");
 #endif
+#ifdef HAVE_QUAGGA
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"bgp\\\" %s >BGP</option>\");\n",
+	     nvram_selmatch (wp, "wk_mode",
+			     "bgp") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"router\\\" %s >\" + route.rip2_mod + \"</option>\");\n",
+	     nvram_selmatch (wp, "wk_mode",
+			     "router") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"ospf\\\" %s >\" + route.ospf_mod + \"</option>\");\n",
+	     nvram_selmatch (wp, "wk_mode",
+			     "ospf") ? "selected=\\\"selected\\\"" : "");
+#endif
 #ifdef HAVE_OLSRD
   websWrite (wp,
 	     "document.write(\"<option value=\\\"olsr\\\" %s >\" + route.olsrd_mod + \"</option>\");\n",
@@ -3103,8 +3117,7 @@ static char *xr_rates[] =
   "54"
 };
 static char *half_rates[] = { "3", "4.5", "6", "9", "12", "18", "24", "27" };
-static char *quarter_rates[] =
-  { "1.5", "2", "3", "4.5", "6", "9", "12", "13.5" };
+static char *quarter_rates[] = { "1.5", "2", "3", "4.5", "6", "9", "12", "13.5" };
 
 
 
