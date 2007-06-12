@@ -171,11 +171,11 @@ do_aqos_check (void)
     return 0;
 
   FILE *arp = fopen ("/proc/net/arp", "rb");
-  char ip_buf[16];
+  char ip_buf[32];
   char hw_buf[16];
   char cmd[1024];
   char fl_buf[16];
-  char mac_buf[18];
+  char mac_buf[32];
   char mask_buf[16];
   char dev_buf[16];
   char *wdev = get_wshaper_dev ();
@@ -216,7 +216,7 @@ do_aqos_check (void)
 	{
 	
 	  char addition[128];
-	  sprintf(addition,"echo %s >>/tmp/aqos_macs",mac_buf);
+	  sprintf(addition,"echo "%s" >>/tmp/aqos_macs",mac_buf);
 	  system2(addition);
 	  //create default rule for mac
 	  add_usermac(mac_buf,qosidx,defaulup,defauldown);
@@ -226,7 +226,7 @@ do_aqos_check (void)
       if (!cip && strlen(ip_buf)>0)
 	{
 	  char addition[128];
-	  sprintf(addition,"echo %s >>/tmp/aqos_ips",ip_buf);
+	  sprintf(addition,"echo "%s" >>/tmp/aqos_ips",ip_buf);
 	  system2(addition);
 	  //create default rule for ip
 	  add_userip(ip_buf,qosidx,defaulup,defauldown);
