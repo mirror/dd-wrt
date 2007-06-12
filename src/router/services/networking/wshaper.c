@@ -197,76 +197,10 @@ svqos_set_ports (void)
 
 #ifdef HAVE_AQOS
 
-void add_userip(char *ip, int idx,char *upstream,char *downstream)
-{
-int base = 120+idx;
-char up[32];
-char down[32];
-char ups[32];
-char downs[32];
-char net[32];
-sprintf(up,"1:%d",base);
-sprintf(down,"1:%d",base+1);
-sprintf(ups,"%skbit",upstream);
-sprintf(downs,"%skbit",downstream);
-sprintf(net,"%s/32",ip);
+extern void add_userip(char *ip, int idx,char *upstream,char *downstream);
+extern void add_usermac(char *mac, int idx,char *upstream,char *downstream);
 
-if (nvram_match("qos_type","0"))
-    {
-    eval("tc","class","add","dev","imq0","parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","src",net,"flowid",up);
-    eval("tc","class","add","dev","imq0","parent","1:","classid",down,"htb","rate",downs,"ceil",downs);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","src",net,"flowid",down);
-    }else
-    {
-    eval("tc","class","add","dev","imq0","parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","src",net,"flowid",up);
-    eval("tc","class","add","dev","imq0","parent","1:","classid",down,"htb","rate",downs,"ceil",downs);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","src",net,"flowid",down);
-    }
-    
-}
 
-void add_usermac(char *mac, int idx)
-{
-char octet[6];
-ether_atoe (mac, octet);
-
-int base = 120+idx;
-char up[32];
-char down[32];
-char ups[32];
-char downs[32];
-char net[32];
-char oct2[32];
-char oct4[32];
-char doct2[32];
-char doct4[32];
-sprintf(up,"1:%d",base);
-sprintf(down,"1:%d",base+1);
-sprintf(ups,"%skbit",upstream);
-sprintf(downs,"%skbit",downstream);
-
-sprintf(oct2,"%X%X",octet[4],octet[5]);
-sprintf(oct4,"%X%X%X%X",octet[0],octet[1],octet[2],octet[3]);
-
-sprintf(doct4,"%X%X%X%X",octet[2],octet[3],octet[4],octet[5]);
-sprintf(doct2,"%X%X",octet[0],octet[1]);
-
-if (nvram_match("qos_type","0"))
-    {
-    eval("tc","class","add","dev","imq0","parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","u16","0x0800","0xFFFF","at","-2","match","u16",oct2,"0xFFFF","at","-4","match","u32",oct4,"0xFFFFFFFF","at","-8","flowid",up);
-    eval("tc","class","add","dev","imq0","parent","1:","classid",down,"htb","rate",downs,"ceil",downs);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","u16","0x0800","0xFFFF","at","-2","match","u32",doct4,"0xFFFFFFFF","at","-12","match","u16",doct2,"0xFFFF","at","-14","flowid",down);
-    }else
-    {
-    eval("tc","class","add","dev","imq0","parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","u16","0x0800","0xFFFF","at","-2","match","u16",oct2,"0xFFFF","at","-4","match","u32",oct4,"0xFFFFFFFF","at","-8","flowid",up);
-    eval("tc","class","add","dev","imq0","parent","1:","classid",down,"htb","rate",downs,"ceil",downs);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","u16","0x0800","0xFFFF","at","-2","match","u32",doct4,"0xFFFFFFFF","at","-12","match","u16",doct2,"0xFFFF","at","-14","flowid",down);
-    }
-}
 
 
 #endif
@@ -277,9 +211,9 @@ svqos_iptables (void)
   char *qos_svcs = nvram_safe_get ("svqos_svcs");
   char *qos_ipaddr = nvram_safe_get ("svqos_ips");
   char *qos_mac = nvram_safe_get ("svqos_macs");
-  char name[32], type[32], data[32], level[32];
+  char name[32], type[32], data[32], level[32],level2[32];;
   char cmd[1024];
-  int ilevel;
+  int ilevel,ilevel2;
   char *dev = get_wshaper_dev ();
 #ifdef HAVE_AQOS
   FILE *outips;
@@ -377,12 +311,12 @@ svqos_iptables (void)
       eval ("insmod", "ebt_dnat");
     }
 #endif
-
+int qosidx=0;
   do
     {
+#ifndef HAVE_AQOS
       if (sscanf (qos_mac, "%31s %31s |", data, level) < 2)
 	break;
-#ifndef HAVE_AQOS
       if (strcmp (dev, "br0"))
 	{
 
@@ -451,12 +385,14 @@ svqos_iptables (void)
 #endif
 	}
 #else
-//eval("rmmod","ipt_connrate");
-//eval("insmod","ipt_connrate");
-      ilevel = atoi (level) * 1000 / 8;	//convert to integer, kbits to bits
+      if (sscanf (qos_mac, "%31s %31s %31s |", data, level,level2) < 2)
+	break;
+//      ilevel = atoi (level) * 1000 / 8;	//convert to integer, kbits to bits
       fprintf (outmacs, "%s\n", data);
+      add_usermac(data,qosidx,level,level2);
+      qosidx+=2;
 
-      snprintf (cmd, 1023,
+/*      snprintf (cmd, 1023,
 		"/usr/sbin/iptables -t mangle -D PREROUTING -i br0 -m mac --mac-source %s -m connrate --connrate ! 0:%d -j DROP",
 		data, ilevel);
       system2 (cmd);
@@ -466,7 +402,7 @@ svqos_iptables (void)
 		data, ilevel);
 
       system2 (cmd);
-
+*/
       /*      snprintf(cmd, 1023, "/usr/sbin/iptables -t mangle -D PREROUTING -j CONNMARK --save-mark");
          system(cmd);
 
@@ -481,9 +417,9 @@ svqos_iptables (void)
   do
     {
 
+#ifndef HAVE_AQOS
       if (sscanf (qos_ipaddr, "%31s %31s |", data, level) < 2)
 	break;
-#ifndef HAVE_AQOS
       snprintf (cmd, 1023,
 		"/usr/sbin/iptables -t mangle -A SVQOS_OUT -s %s -m mark --mark 0 -j MARK --set-mark %s",
 		data, level);
@@ -504,13 +440,17 @@ svqos_iptables (void)
 		data, level);
       system2 (cmd);
 #else
+      if (sscanf (qos_ipaddr, "%31s %31s %31s |", data, level,level2) < 2)
+	break;
       fprintf (outips, "%s\n", data);
 
-      ilevel = atoi (level) * 1000 / 8;
+//      ilevel = atoi (level) * 1000 / 8;
 //eval("rmmod","ipt_connrate");
 //eval("insmod","ipt_connrate");
+      add_userip(data,qosidx,level,level2);
+      qosidx+=2;
 
-      snprintf (cmd, 1023,
+/*      snprintf (cmd, 1023,
 		"/usr/sbin/iptables -t mangle -A PREROUTING -i br0 -s %s -m connrate --connrate ! 0:%d -j DROP",
 		data, ilevel);
       system2 (cmd);
@@ -529,7 +469,7 @@ svqos_iptables (void)
 		"/usr/sbin/iptables -t mangle -A POSTROUTING -d %s -m connrate --connrate ! 0:%d -j DROP",
 		data, ilevel);
       system2 (cmd);
-
+*/
 
 #endif
 
