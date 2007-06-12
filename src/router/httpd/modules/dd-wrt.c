@@ -6278,9 +6278,11 @@ qos_add_ip (webs_t wp)
   /* if this ip exists, return an error */
   if (strstr (svqos_ips, add_ip))
     return -1;
-
+#ifdef HAVE_AQOS
+  snprintf (new_ip, 4095, "%s %s 100 100 |", svqos_ips, add_ip);
+#else
   snprintf (new_ip, 4095, "%s %s 30 |", svqos_ips, add_ip);
-
+#endif
   if (strlen (new_ip) >= sizeof (new_ip))
     return -1;
 
@@ -6315,9 +6317,11 @@ qos_add_mac (webs_t wp)
   /* if this mac exists, return an error */
   if (strstr (svqos_macs, add_mac))
     return -1;
-
+#ifdef HAVE_AQOS
+  snprintf (new_mac, 4095, "%s %s 100 100 |", svqos_macs, add_mac);
+#else
   snprintf (new_mac, 4095, "%s %s 30 |", svqos_macs, add_mac);
-
+#endif
   if (strlen (new_mac) >= sizeof (new_mac))
     return -1;
 
@@ -6351,9 +6355,13 @@ qos_save (webs_t wp)
   data = websGetVar (wp, field, NULL);
   nvram_set ("enable_game", data);
 
-  snprintf (field, 31, "default_level");
+  snprintf (field, 31, "default_uplevel");
   data = websGetVar (wp, field, NULL);
-  nvram_set ("default_level", data);
+  nvram_set ("default_uplevel", data);
+
+  snprintf (field, 31, "default_downlevel");
+  data = websGetVar (wp, field, NULL);
+  nvram_set ("default_downlevel", data);
 
   snprintf (field, 31, "wshaper_downlink");
   data = websGetVar (wp, field, NULL);

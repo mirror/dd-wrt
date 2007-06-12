@@ -65,7 +65,7 @@ do_ap_watchdog (void)
     WLAND_INTERVAL ? atoi (nvram_safe_get ("apwatchdog_interval")) :
     WLAND_INTERVAL;
 
-  system ("/usr/sbin/wl assoclist 2>&1 > /tmp/.assoclist");
+  system2 ("/usr/sbin/wl assoclist 2>&1 > /tmp/.assoclist");
   stat ("/tmp/.assoclist", &s);
   unlink ("/tmp/.assoclist");
 
@@ -167,6 +167,9 @@ containsMAC (char *ip)
 static int
 do_aqos_check (void)
 {
+  if (!nvram_invmatch ("wshaper_enable", "0"))
+    return 0;
+
   FILE *arp = fopen ("/proc/net/arp", "rb");
   char ip_buf[16];
   char hw_buf[16];
@@ -199,6 +202,8 @@ do_aqos_check (void)
 	 (arp, "%s %s %s %s %s %s", ip_buf, hw_buf, fl_buf, mac_buf, mask_buf,
 	  dev_buf) != EOF)
     {
+      memset(mac_buf,0,18);
+      memset(ip_buf,0,16);
       cmac = containsMAC (mac_buf);
       cip = containsIP (ip_buf);
 
@@ -207,27 +212,27 @@ do_aqos_check (void)
 	continue;
 //cprintf("nothing found for %s %s\n",ip_buf,mac_buf);
 
-      if (!cmac)
+      if (!cmac && strlen(mac_buf)>0)
 	{
-	  char addition[64];
-	  sprintf(addition,"echo %s>>/tmp/aqos_macs",cmac);
-	  system(addition);
+	
+	  char addition[128];
+	  sprintf(addition,"echo %s >>/tmp/aqos_macs",mac_buf);
+	  system2(addition);
 	  //create default rule for mac
 	  add_usermac(mac_buf,qosidx,defaulup,defauldown);
 	  qosidx+=2;
 
 	}
-      if (!cip)
+      if (!cip && strlen(ip_buf)>0)
 	{
-	  char addition[64];
-	  sprintf(addition,"echo %s>>/tmp/aqos_ips",cip);
-	  system(addition);
+	  char addition[128];
+	  sprintf(addition,"echo %s >>/tmp/aqos_ips",ip_buf);
+	  system2(addition);
 	  //create default rule for ip
 	  add_userip(ip_buf,qosidx,defaulup,defauldown);
 	  qosidx+=2;
 	}
     }
-
   fclose (arp);
 
 }
@@ -276,7 +281,7 @@ do_client_check (void)
 //  char mac[512];
   int len;
 
-  system ("/usr/sbin/wl assoc 2>&1 > /tmp/.xassocx");
+  system2 ("/usr/sbin/wl assoc 2>&1 > /tmp/.xassocx");
   if ((fp = fopen ("/tmp/.xassocx", "r")) == NULL)
     return -1;
 
