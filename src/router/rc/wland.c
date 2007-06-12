@@ -133,10 +133,10 @@ containsIP (char *ip)
       cprintf ("found %s/%s\n", net, i);
       if (compareNet (net, i, ip))
 	{
-	  printf ("%s/%s fits to %s\n", net, i, ip);
+//	  printf ("%s/%s fits to %s\n", net, i, ip);
 	  return 1;
 	}
-      printf ("%s/%s dosnt fit to %s\n", net, i, ip);
+//      printf ("%s/%s dosnt fit to %s\n", net, i, ip);
     }
   fclose (in);
 //cprintf("no ip found\n");
