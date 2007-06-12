@@ -1726,7 +1726,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"sip_domain", "", 0},
 #endif
 #ifdef HAVE_AQOS
-  {"default_level", "5000", 0},	//set a useful value to prevent deadlock
+  {"default_uplevel", "1000", 0},	//set a useful value to prevent deadlock
+  {"default_downlevel", "16000", 0},	//set a useful value to prevent deadlock
 #endif
   {"static_leases", "", 0},
   {"static_leasenum", "0", 0},
