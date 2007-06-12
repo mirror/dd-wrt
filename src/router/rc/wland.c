@@ -142,6 +142,7 @@ containsIP (char *ip)
 //cprintf("no ip found\n");
   return 0;
 }
+static int qosidx=0;
 
 int
 containsMAC (char *ip)
@@ -177,18 +178,20 @@ do_aqos_check (void)
   char *wdev = get_wshaper_dev ();
   int cmac;
   int defaultlevel;
-  char *defaul;
+  char *defaulup;
+  char *defauldown;
   int cip;
   if (arp == NULL)
     {
       cprintf ("/proc/net/arp missing, check kernel config\n");
       return;
     }
-  defaul = nvram_safe_get ("default_level");
-
-  if (defaul == NULL || strlen (defaul) == 0)
+  defaulup = nvram_safe_get ("default_uplevel");
+  defauldown = nvram_safe_get ("default_downlevel");
+  if (defaulup == NULL || strlen (defaulup) == 0)
     return;
-  defaultlevel = atoi (defaul) * 1000 / 8;
+  if (defauldown == NULL || strlen (defauldown) == 0)
+    return;
   while (fgetc (arp) != '\n');
 
 //fscanf(arp,"%s %s %s %s %s %s",ip_buf,hw_buf,fl_buf,mac_buf,mask_buf,dev_buf); //skip first line
@@ -199,30 +202,6 @@ do_aqos_check (void)
       cmac = containsMAC (mac_buf);
       cip = containsIP (ip_buf);
 
-      snprintf (cmd, 1023,
-		"/usr/sbin/iptables -t mangle -D PREROUTING -i br0 -m mac --mac-source %s -m connrate --connrate ! 0:%d -j DROP > /dev/null",
-		mac_buf, defaultlevel);
-      system (cmd);
-      snprintf (cmd, 1023,
-		"/usr/sbin/iptables -t mangle -D PREROUTING -i br0 -s %s -m connrate --connrate ! 0:%d -j DROP 2>&1 > /dev/null",
-		ip_buf, defaultlevel);
-      system (cmd);
-      snprintf (cmd, 1023,
-		"/usr/sbin/iptables -t mangle -D PREROUTING -i br0 -d %s -m connrate --connrate ! 0:%d -j DROP 2>&1 > /dev/null",
-		ip_buf, defaultlevel);
-      system (cmd);
-      snprintf (cmd, 1023,
-		"/usr/sbin/iptables -t mangle -D POSTROUTING -s %s -m connrate --connrate ! 0:%d -j DROP 2>&1 > /dev/null",
-		ip_buf, defaultlevel);
-      system (cmd);
-      snprintf (cmd, 1023,
-		"/usr/sbin/iptables -t mangle -D POSTROUTING -d %s -m connrate --connrate ! 0:%d -j DROP 2>&1 > /dev/null",
-		ip_buf, defaultlevel);
-      system (cmd);
-//snprintf(cmd, 1023, "/usr/sbin/iptables -t nat -D PREROUTING -s %s -m connrate --connrate ! 0:%d -j DROP 2>&1 > /dev/null", mac_buf, default_level);
-//system(cmd);
-//snprintf(cmd, 1023, "/usr/sbin/iptables -t nat -D POSTROUTING -d %s -m connrate --connrate ! 0:%d -j DROP 2>&1 > /dev/null", mac_buf, default_level);
-//system(cmd);
 
       if (cip || cmac)
 	continue;
@@ -230,43 +209,22 @@ do_aqos_check (void)
 
       if (!cmac)
 	{
+	  char addition[64];
+	  sprintf(addition,"echo %s>>/tmp/aqos_macs",cmac);
+	  system(addition);
 	  //create default rule for mac
-	  snprintf (cmd, 1023,
-		    "/usr/sbin/iptables -t mangle -A PREROUTING -i br0 -m mac --mac-source %s -m connrate --connrate ! 0:%d -j DROP > /dev/null",
-		    mac_buf, defaultlevel);
-	  system (cmd);
-
-	  //   snprintf(cmd, 1023, "/usr/sbin/iptables -t nat -A PREROUTING -s %s -m connrate --connrate ! 0:%d -j DROP 2>&1 > /dev/null", data, ilevel);
-	  //    system(cmd);
-
-
-//    snprintf(cmd, 1023, "/usr/sbin/iptables -t nat -A POSTROUTING -d %s -m connrate --connrate ! 0:%d -j DROP 2>&1 > /dev/null", data, ilevel);
-//    system(cmd);
+	  add_usermac(mac_buf,qosidx,defaulup,defauldown);
+	  qosidx+=2;
 
 	}
       if (!cip)
 	{
+	  char addition[64];
+	  sprintf(addition,"echo %s>>/tmp/aqos_ips",cip);
+	  system(addition);
 	  //create default rule for ip
-	  snprintf (cmd, 1023,
-		    "/usr/sbin/iptables -t mangle -A PREROUTING -i br0 -s %s -m connrate --connrate ! 0:%d -j DROP 2>&1 > /dev/null",
-		    ip_buf, defaultlevel);
-	  system (cmd);
-
-	  snprintf (cmd, 1023,
-		    "/usr/sbin/iptables -t mangle -A PREROUTING -i br0 -d %s -m connrate --connrate ! 0:%d -j DROP 2>&1 > /dev/null",
-		    ip_buf, defaultlevel);
-	  system (cmd);
-
-	  snprintf (cmd, 1023,
-		    "/usr/sbin/iptables -t mangle -A POSTROUTING -s %s -m connrate --connrate ! 0:%d -j DROP 2>&1 > /dev/null",
-		    ip_buf, defaultlevel);
-	  system (cmd);
-
-	  snprintf (cmd, 1023,
-		    "/usr/sbin/iptables -t mangle -A POSTROUTING -d %s -m connrate --connrate ! 0:%d -j DROP 2>&1 > /dev/null",
-		    ip_buf, defaultlevel);
-	  system (cmd);
-
+	  add_userip(ip_buf,qosidx,defaulup,defauldown);
+	  qosidx+=2;
 	}
     }
 

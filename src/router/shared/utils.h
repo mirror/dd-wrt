@@ -396,6 +396,12 @@ void lcdmessaged (char *dual, char *message);
 #define lcdmessage(a)
 #define lcdmessaged(a,b)
 #endif
+
+#ifdef HAVE_AQOS
+extern void add_usermac(char *mac, int idx,char *upstream,char *downstream);
+extern void add_userip(char *ip, int idx,char *upstream,char *downstream);
+#endif
+
 void getHostName (char *buf, char *ip);
 int ishexit (char c);
 int haswifi (void);

@@ -3009,7 +3009,82 @@ softkill (char *name)
   killall (name, SIGKILL);
   return 0;
 }
+#ifdef HAVE_AQOS
 
+void add_userip(char *ip, int idx,char *upstream,char *downstream)
+{
+int base = 120+idx;
+char up[32];
+char down[32];
+char ups[32];
+char downs[32];
+char net[32];
+sprintf(up,"1:%d",base);
+sprintf(down,"1:%d",base+1);
+sprintf(ups,"%skbit",upstream);
+sprintf(downs,"%skbit",downstream);
+sprintf(net,"%s/32",ip);
+
+if (nvram_match("qos_type","0"))
+    {
+    eval("tc","class","add","dev","imq0","parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
+    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","src",net,"flowid",up);
+    eval("tc","class","add","dev","imq0","parent","1:","classid",down,"htb","rate",downs,"ceil",downs);
+    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","src",net,"flowid",down);
+    }else
+    {
+    eval("tc","class","add","dev","imq0","parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
+    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","src",net,"flowid",up);
+    eval("tc","class","add","dev","imq0","parent","1:","classid",down,"htb","rate",downs,"ceil",downs);
+    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","src",net,"flowid",down);
+    }
+    
+}
+
+void add_usermac(char *mac, int idx,char *upstream,char *downstream)
+{
+unsigned char octet[6];
+ether_atoe (mac, octet);
+
+int base = 120+idx;
+char up[32];
+char down[32];
+char ups[32];
+char downs[32];
+char net[32];
+char oct2[32];
+char oct4[32];
+char doct2[32];
+char doct4[32];
+sprintf(up,"1:%d",base);
+sprintf(down,"1:%d",base+1);
+sprintf(ups,"%skbit",upstream);
+sprintf(downs,"%skbit",downstream);
+
+sprintf(oct2,"%X%X",octet[4],octet[5]);
+sprintf(oct4,"%X%X%X%X",octet[0],octet[1],octet[2],octet[3]);
+
+sprintf(doct4,"%X%X%X%X",octet[2],octet[3],octet[4],octet[5]);
+sprintf(doct2,"%X%X",octet[0],octet[1]);
+
+if (nvram_match("qos_type","0"))
+    {
+    eval("tc","class","add","dev","imq0","parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
+    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","u16","0x0800","0xFFFF","at","-2","match","u16",oct2,"0xFFFF","at","-4","match","u32",oct4,"0xFFFFFFFF","at","-8","flowid",up);
+    eval("tc","class","add","dev","imq0","parent","1:","classid",down,"htb","rate",downs,"ceil",downs);
+    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","u16","0x0800","0xFFFF","at","-2","match","u32",doct4,"0xFFFFFFFF","at","-12","match","u16",doct2,"0xFFFF","at","-14","flowid",down);
+    }else
+    {
+    eval("tc","class","add","dev","imq0","parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
+    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","u16","0x0800","0xFFFF","at","-2","match","u16",oct2,"0xFFFF","at","-4","match","u32",oct4,"0xFFFFFFFF","at","-8","flowid",up);
+    eval("tc","class","add","dev","imq0","parent","1:","classid",down,"htb","rate",downs,"ceil",downs);
+    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","u16","0x0800","0xFFFF","at","-2","match","u32",doct4,"0xFFFFFFFF","at","-12","match","u16",doct2,"0xFFFF","at","-14","flowid",down);
+    }
+
+}
+
+
+#endif
 #ifdef HAVE_X86
 
 static int fd;
