@@ -220,6 +220,7 @@ ifeq ($(CONFIG_MAKSAT),y)
 	cp maksat/maksat/* $(INSTALLDIR)/www/style/maksat
 endif
 
+
 ifeq ($(CONFIG_MAKSAT_CORAL),y)
 	cp -f maksat/logo-coral.png $(INSTALLDIR)/www/style/logo-coral.png
 	cp -f maksat/logo-coral.png $(INSTALLDIR)/www/images/logo-coral.png
