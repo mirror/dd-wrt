@@ -700,7 +700,12 @@ start_restore_defaults (void)
 #ifndef HAVE_FON
   if (restore_defaults)
     {
-      if (nvram_match ("boardnum", "WAP54GV3_8M_0614"))
+	  if (brand == ROUTER_MOTOROLA)
+	{
+	  nvram_set ("vlan0ports", "0 1 2 3 5*");
+	  nvram_set ("vlan1ports", "4 5");
+	}    
+	  if (nvram_match ("boardnum", "WAP54GV3_8M_0614"))
 	{
 	  nvram_set ("vlan0ports", "3 2 1 0 5*");
 	  nvram_set ("vlan1ports", "4 5");
