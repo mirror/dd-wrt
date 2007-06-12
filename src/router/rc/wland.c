@@ -142,7 +142,7 @@ containsIP (char *ip)
 //cprintf("no ip found\n");
   return 0;
 }
-static int qosidx=0;
+static int qosidx=1000;
 
 int
 containsMAC (char *ip)
@@ -541,7 +541,7 @@ wland_main (int argc, char **argv)
       /* parent process should just die */
       _exit (0);
     }
-
+qosidx=1000;
   /* Most of time it goes to sleep */
 #ifdef HAVE_MADWIFI
   memset (lastchans, 0, 256*4);
