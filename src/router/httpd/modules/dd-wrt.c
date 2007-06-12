@@ -7057,7 +7057,7 @@ void
 ej_get_qosips2 (webs_t wp, int argc, char_t ** argv)
 {
   char *qos_ips = nvram_safe_get ("svqos_ips");
-  char ip[32], level[32];
+  char ip[32], level[32],level2[32];
   int no_ips = 0, i = 0;
 
 // calc # of ips
@@ -7084,9 +7084,8 @@ ej_get_qosips2 (webs_t wp, int argc, char_t ** argv)
   /* IP format is "data level | data level |" ..etc */
   for (i = 0; i < no_ips && qos_ips && qos_ips[0]; i++)
     {
-      if (sscanf (qos_ips, "%31s %31s ", ip, level) < 2)
+      if (sscanf (qos_ips, "%31s %31s %31s ", ip, level,level2) < 3)
 	break;
-
       websWrite (wp, "<tr>\n\
 					<td>\n\
 						<input type=\"checkbox\" name=\"svqos_ipdel%d\" />\n\
@@ -7099,7 +7098,7 @@ ej_get_qosips2 (webs_t wp, int argc, char_t ** argv)
 					<td>\n\
 						<input name=\"svqos_ipdown%d\" class=\"num\" size=\"5\" maxlength=\"5\" value=\"%s\" /> \n\
 					</td>\n\
-				</tr>\n", i, i, ip, ip, i, level);
+				</tr>\n", i, i, ip, ip, i, level,i,level2);
 
       qos_ips = strpbrk (++qos_ips, "|");
       qos_ips++;
@@ -7174,7 +7173,7 @@ void
 ej_get_qosmacs2 (webs_t wp, int argc, char_t ** argv)
 {
   char *qos_macs = nvram_safe_get ("svqos_macs");
-  char mac[32], level[32];
+  char mac[32], level[32],level2[32];
   int no_macs = 0, i = 0;
 
 
@@ -7201,10 +7200,9 @@ ej_get_qosmacs2 (webs_t wp, int argc, char_t ** argv)
   /* IP format is "data level | data level |" ..etc */
   for (i = 0; i < no_macs && qos_macs && qos_macs[0]; i++)
     {
-      if (sscanf (qos_macs, "%31s %31s ", mac, level) < 2)
+      if (sscanf (qos_macs, "%31s %31s %31s ", mac, level,level2) < 3)
 	break;
-
-      websWrite (wp, "<tr>\n\
+     websWrite (wp, "<tr>\n\
 					<td>\n\
 						<input type=\"checkbox\" name=\"svqos_macdel%d\" />\n\
 						<input type=\"hidden\" name=\"svqos_mac%d\" value=\"%s\" />\n\
@@ -7216,7 +7214,7 @@ ej_get_qosmacs2 (webs_t wp, int argc, char_t ** argv)
 					<td>\n\
 						<input name=\"svqos_macdown%d\" class=\"num\" size=\"5\" maxlength=\"5\" value=\"%s\" /> \n\
 					</td>\n\
-				</tr>\n", i, i, mac, mac, i, level);
+				</tr>\n", i, i, mac, mac, i, level,i,level2);
 
       qos_macs = strpbrk (++qos_macs, "|");
       qos_macs++;
