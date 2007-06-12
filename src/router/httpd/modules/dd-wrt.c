@@ -6333,7 +6333,7 @@ qos_save (webs_t wp)
 {
   char svqos_var[4096] = { 0 };
   char field[32] = { 0 };
-  char *name, *data, *level, *delete;
+  char *name, *data, *level,*level2, *delete;
   int no_svcs = atoi (websGetVar (wp, "svqos_nosvcs", NULL));
   int no_ips = atoi (websGetVar (wp, "svqos_noips", NULL));
   int no_macs = atoi (websGetVar (wp, "svqos_nomacs", NULL));
@@ -6432,13 +6432,25 @@ qos_save (webs_t wp)
       snprintf (field, 31, "svqos_ip%d", i);
       data = websGetVar (wp, field, NULL);
 
+#ifndef HAVE_AQOS
       snprintf (field, 31, "svqos_ipprio%d", i);
       level = websGetVar (wp, field, NULL);
-
       if (strlen (svqos_var) > 0)
 	sprintf (svqos_var, "%s %s %s |", svqos_var, data, level);
       else
 	sprintf (svqos_var, "%s %s |", data, level);
+#else
+      snprintf (field, 31, "svqos_ipup%d", i);
+      level = websGetVar (wp, field, NULL);
+      snprintf (field, 31, "svqos_ipdown%d", i);
+      level2 = websGetVar (wp, field, NULL);
+      if (strlen (svqos_var) > 0)
+	sprintf (svqos_var, "%s %s %s %s |", svqos_var, data, level,level2);
+      else
+	sprintf (svqos_var, "%s %s %s |", data, level,level2);
+
+
+#endif
 
     }
 
@@ -6459,6 +6471,7 @@ qos_save (webs_t wp)
       snprintf (field, 31, "svqos_mac%d", i);
       data = websGetVar (wp, field, NULL);
 
+#ifndef HAVE_AQOS
       snprintf (field, 31, "svqos_macprio%d", i);
       level = websGetVar (wp, field, NULL);
 
@@ -6466,6 +6479,18 @@ qos_save (webs_t wp)
 	sprintf (svqos_var, "%s %s %s |", svqos_var, data, level);
       else
 	sprintf (svqos_var, "%s %s |", data, level);
+#else
+      snprintf (field, 31, "svqos_macup%d", i);
+      level = websGetVar (wp, field, NULL);
+      snprintf (field, 31, "svqos_macdown%d", i);
+      level2 = websGetVar (wp, field, NULL);
+
+      if (strlen (svqos_var) > 0)
+	sprintf (svqos_var, "%s %s %s %s |", svqos_var, data, level,level2);
+      else
+	sprintf (svqos_var, "%s %s %s |", data, level,level2);
+#endif
+
 
     }
 
@@ -7045,7 +7070,8 @@ ej_get_qosips2 (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "<tr>\n\
   					<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n\
   					<th><script type=\"text/javascript\">Capture(qos.ipmask)</script></th>\n\
-  					<th><script type=\"text/javascript\">Capture(qos.maxrate_b)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n\
   				</tr>\n");
 
 // write HTML data
@@ -7069,8 +7095,10 @@ ej_get_qosips2 (webs_t wp, int argc, char_t ** argv)
 					</td>\n\
 					<td><em>%s</em></td>\n\
 					<td>\n\
-						<input name=\"svqos_ipprio%d\" class=\"num\" size=\"5\" maxlength=\"5\" value=\"%s\" /> \n\
-						</select>\n\
+						<input name=\"svqos_ipup%d\" class=\"num\" size=\"5\" maxlength=\"5\" value=\"%s\" /> \n\
+					</td>\n\
+					<td>\n\
+						<input name=\"svqos_ipdown%d\" class=\"num\" size=\"5\" maxlength=\"5\" value=\"%s\" /> \n\
 					</td>\n\
 				</tr>\n", i, i, ip, ip, i, level);
 
@@ -7160,7 +7188,8 @@ ej_get_qosmacs2 (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "<tr>\n\
   					<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n\
   					<th><script type=\"text/javascript\">Capture(share.mac)</script></th>\n\
-  					<th><script type=\"text/javascript\">Capture(qos.maxrate_b)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(qos.maxuprate_b)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(qos.maxdownrate_b)</script></th>\n\
   				</tr>\n");
 
   // write HTML data
@@ -7183,7 +7212,10 @@ ej_get_qosmacs2 (webs_t wp, int argc, char_t ** argv)
 					</td>\n\
 					<td><em>%s</em></td>\n\
 					<td>\n\
-						<input name=\"svqos_macprio%d\" class=\"num\" size=\"5\" maxlength=\"5\" value=\"%s\" /> \n\
+						<input name=\"svqos_macup%d\" class=\"num\" size=\"5\" maxlength=\"5\" value=\"%s\" /> \n\
+					</td>\n\
+					<td>\n\
+						<input name=\"svqos_macdown%d\" class=\"num\" size=\"5\" maxlength=\"5\" value=\"%s\" /> \n\
 					</td>\n\
 				</tr>\n", i, i, mac, mac, i, level);
 
