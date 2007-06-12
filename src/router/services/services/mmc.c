@@ -47,6 +47,12 @@ start_mmc (void)
 				mmc_clk = 3;
 				mmc_cs = 7;
            	   break;
+			case ROUTER_BUFFALO_WZRRSG54:
+				mmc_di = 5;
+				mmc_do = 4;
+				mmc_clk = 3;
+				mmc_cs = 7;
+           	   break;
 			}
 		}
         
