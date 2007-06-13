@@ -266,6 +266,9 @@ endif
 ifeq ($(CONFIG_BIRD),y)
 CFLAGS += -DHAVE_BIRD
 endif
+ifeq ($(CONFIG_QUAGGA),y)
+CFLAGS += -DHAVE_QUAGGA
+endif
 
 ifeq ($(CONFIG_PPP),y)
 CFLAGS += -DHAVE_PPP

@@ -99,7 +99,7 @@ start_services (void)
   handle = start_service_nofree ("udhcpd", handle);
   handle = start_service_nofree ("dnsmasq", handle);
 
-#ifdef HAVE_BIRD
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
   handle = start_service_nofree ("zebra", handle);
 #endif
 #ifdef HAVE_OLSRD
@@ -197,7 +197,7 @@ stop_services (void)
 #ifdef HAVE_OLSRD
   handle = stop_service_nofree ("olsrd", handle);
 #endif
-#ifdef HAVE_BIRD
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
   handle = stop_service_nofree ("zebra", handle);
 #endif
   handle = stop_service_nofree ("wland", handle);
@@ -323,7 +323,7 @@ start_single_service (void)
       start_service ("guest_nas");
 #endif
 #endif
-#ifdef HAVE_BIRD
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
       startstop ("zebra");
 #endif
 #ifdef HAVE_OLSRD
@@ -342,7 +342,7 @@ start_single_service (void)
 /* Sveasoft addition */
   else if (!strcmp (service, "router"))
     {
-#ifdef HAVE_BIRD
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
       startstop ("zebra");
 #endif
 #ifdef HAVE_OLSRD
@@ -430,7 +430,7 @@ start_single_service (void)
 #ifndef HAVE_MADWIFI 	    
 	stop_service ("nas");
 #endif
-#ifdef HAVE_BIRD
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
       stop_service ("zebra");
 #endif
       stop_service ("cron");
@@ -444,7 +444,7 @@ start_single_service (void)
 #ifdef HAVE_PPTPD
       startstop ("pptpd");
 #endif
-#ifdef HAVE_BIRD
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
       start_service ("zebra");
 #endif
       startstop ("firewall");
@@ -526,12 +526,12 @@ start_single_service (void)
     }
   else if (!strcmp (service, "routing"))
     {
-#ifdef HAVE_BIRD
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
       stop_service ("zebra");
 #endif
       startstop ("firewall");
       start_service ("set_routes");
-#ifdef HAVE_BIRD
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
       start_service ("zebra");
 #endif
 #ifdef HAVE_OLSRD
@@ -602,7 +602,7 @@ start_single_service (void)
     {
       stop_service ("wan");
       stop_service ("httpd");
-#ifdef HAVE_BIRD
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
       stop_service ("zebra");
 #endif
 #ifdef HAVE_UPNP
@@ -615,7 +615,7 @@ start_single_service (void)
   else if (!strcmp (service, "http_upgrade"))
     {
       stop_service ("wan");
-#ifdef HAVE_BIRD
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
       stop_service ("zebra");
 #endif
 #ifdef HAVE_OLSRD
