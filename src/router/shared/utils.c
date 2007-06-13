@@ -3011,6 +3011,15 @@ softkill (char *name)
 }
 #ifdef HAVE_AQOS
 
+static char *
+get_wshaper_dev (void)
+{
+  if (nvram_match ("wshaper_dev", "WAN"))
+    return get_wan_face ();
+  else
+    return "br0";
+}
+
 void add_userip(char *ip, int idx,char *upstream,char *downstream)
 {
 int base = 120+idx;
@@ -3025,14 +3034,14 @@ sprintf(downs,"%skbit",downstream);
 
 if (nvram_match("qos_type","0"))
     {
-    eval("tc","class","add","dev","imq0","parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","src",ip,"flowid",up);
+    eval("tc","class","add","dev",get_wshaper_dev(),"parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
+    eval("tc","filter","add","dev",get_wshaper_dev(),"parent","1:","protocol","ip","prio","1","u32","match","ip","src",ip,"flowid",up);
     eval("tc","class","add","dev","imq0","parent","1:","classid",down,"htb","rate",downs,"ceil",downs);
     eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","dst",ip,"flowid",down);
     }else
     {
-    eval("tc","class","add","dev","imq0","parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","src",ip,"flowid",up);
+    eval("tc","class","add","dev",get_wshaper_dev(),"parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
+    eval("tc","filter","add","dev",get_wshaper_dev(),"parent","1:","protocol","ip","prio","1","u32","match","ip","src",ip,"flowid",up);
     eval("tc","class","add","dev","imq0","parent","1:","classid",down,"htb","rate",downs,"ceil",downs);
     eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","dst",ip,"flowid",down);
     }
@@ -3066,14 +3075,14 @@ sprintf(doct2,"%X%X",octet[0],octet[1]);
 
 if (nvram_match("qos_type","0"))
     {
-    eval("tc","class","add","dev","imq0","parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","u16","0x0800","0xFFFF","at","-2","match","u16",oct2,"0xFFFF","at","-4","match","u32",oct4,"0xFFFFFFFF","at","-8","flowid",up);
+    eval("tc","class","add","dev",get_wshaper_dev(),"parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
+    eval("tc","filter","add","dev",get_wshaper_dev(),"parent","1:","protocol","ip","prio","1","u32","match","u16","0x0800","0xFFFF","at","-2","match","u16",oct2,"0xFFFF","at","-4","match","u32",oct4,"0xFFFFFFFF","at","-8","flowid",up);
     eval("tc","class","add","dev","imq0","parent","1:","classid",down,"htb","rate",downs,"ceil",downs);
     eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","u16","0x0800","0xFFFF","at","-2","match","u32",doct4,"0xFFFFFFFF","at","-12","match","u16",doct2,"0xFFFF","at","-14","flowid",down);
     }else
     {
-    eval("tc","class","add","dev","imq0","parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","u16","0x0800","0xFFFF","at","-2","match","u16",oct2,"0xFFFF","at","-4","match","u32",oct4,"0xFFFFFFFF","at","-8","flowid",up);
+    eval("tc","class","add","dev",get_wshaper_dev(),"parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
+    eval("tc","filter","add","dev",get_wshaper_dev(),"parent","1:","protocol","ip","prio","1","u32","match","u16","0x0800","0xFFFF","at","-2","match","u16",oct2,"0xFFFF","at","-4","match","u32",oct4,"0xFFFFFFFF","at","-8","flowid",up);
     eval("tc","class","add","dev","imq0","parent","1:","classid",down,"htb","rate",downs,"ceil",downs);
     eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","u16","0x0800","0xFFFF","at","-2","match","u32",doct4,"0xFFFFFFFF","at","-12","match","u16",doct2,"0xFFFF","at","-14","flowid",down);
     }
