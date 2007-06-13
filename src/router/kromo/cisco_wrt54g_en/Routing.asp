@@ -123,8 +123,7 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset>
 							<% nvram_else_selmatch("wk_mode","ospf","","-->"); %>
-							<% nvram_else_selmatch("wk_mode","bgp","","-->"); %>							<% nvram_else_selmatch("wk_mode","bgp","","<!--"); %>
-							
+							<% nvram_else_selmatch("wk_mode","bgp","","<!--"); %>							
 							<fieldset>
 								<legend><% tran("route.bgp_legend"); %></legend>
 								<div class="setting">
