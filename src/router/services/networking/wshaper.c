@@ -200,10 +200,48 @@ svqos_set_ports (void)
 extern void add_userip(char *ip, int idx,char *upstream,char *downstream);
 extern void add_usermac(char *mac, int idx,char *upstream,char *downstream);
 
+void aqos_tables(void)
+{
+  char *qos_ipaddr = nvram_safe_get ("svqos_ips");
+  char *qos_mac = nvram_safe_get ("svqos_macs");
+  FILE *outips;
+  FILE *outmacs;
+  outips = fopen ("/tmp/aqos_ips", "wb");
+  outmacs = fopen ("/tmp/aqos_macs", "wb");
+  char level[32],level2[32],data[32];
+int qosidx=0;
+  do
+    {
+      if (sscanf (qos_mac, "%31s %31s %31s |", data, level,level2) < 2)
+	break;
+      fprintf (outmacs, "%s\n", data);
+      add_usermac(data,qosidx,level,level2);
+      qosidx+=2;
 
+
+    }
+  while ((qos_mac = strpbrk (++qos_mac, "|")) && qos_mac++);
+  do
+    {
+      if (sscanf (qos_ipaddr, "%31s %31s %31s |", data, level,level2) < 2)
+	break;
+      fprintf (outips, "%s\n", data);
+
+      add_userip(data,qosidx,level,level2);
+      qosidx+=2;
+
+    }
+  while ((qos_ipaddr = strpbrk (++qos_ipaddr, "|")) && qos_ipaddr++);
+  fclose (outips);
+  fclose (outmacs);
+
+
+}
 
 
 #endif
+
+
 
 int
 svqos_iptables (void)
@@ -215,13 +253,6 @@ svqos_iptables (void)
   char cmd[1024];
   int ilevel,ilevel2;
   char *dev = get_wshaper_dev ();
-#ifdef HAVE_AQOS
-  FILE *outips;
-  FILE *outmacs;
-
-  outips = fopen ("/tmp/aqos_ips", "wb");
-  outmacs = fopen ("/tmp/aqos_macs", "wb");
-#endif
 
   system2 ("/usr/sbin/iptables -t mangle -F SVQOS_OUT");
   system2 ("/usr/sbin/iptables -t mangle -X SVQOS_OUT");
@@ -311,10 +342,9 @@ svqos_iptables (void)
       eval ("insmod", "ebt_dnat");
     }
 #endif
-int qosidx=0;
+#ifndef HAVE_AQOS
   do
     {
-#ifndef HAVE_AQOS
       if (sscanf (qos_mac, "%31s %31s |", data, level) < 2)
 	break;
       if (strcmp (dev, "br0"))
@@ -384,40 +414,16 @@ int qosidx=0;
 	  system2 (cmd);
 #endif
 	}
-#else
-      if (sscanf (qos_mac, "%31s %31s %31s |", data, level,level2) < 2)
-	break;
-//      ilevel = atoi (level) * 1000 / 8;	//convert to integer, kbits to bits
-      fprintf (outmacs, "%s\n", data);
-      add_usermac(data,qosidx,level,level2);
-      qosidx+=2;
-
-/*      snprintf (cmd, 1023,
-		"/usr/sbin/iptables -t mangle -D PREROUTING -i br0 -m mac --mac-source %s -m connrate --connrate ! 0:%d -j DROP",
-		data, ilevel);
-      system2 (cmd);
-
-      snprintf (cmd, 1023,
-		"/usr/sbin/iptables -t mangle -A PREROUTING -i br0 -m mac --mac-source %s -m connrate --connrate ! 0:%d -j DROP",
-		data, ilevel);
-
-      system2 (cmd);
-*/
-      /*      snprintf(cmd, 1023, "/usr/sbin/iptables -t mangle -D PREROUTING -j CONNMARK --save-mark");
-         system(cmd);
-
-         snprintf(cmd, 1023, "/usr/sbin/iptables -t mangle -A PREROUTING -j CONNMARK --save-mark");
-         system(cmd); */
-#endif
 
     }
   while ((qos_mac = strpbrk (++qos_mac, "|")) && qos_mac++);
+#endif
 
   /* ipaddr format is "ipaddr level | ipaddr level |" ..etc */
+#ifndef HAVE_AQOS
   do
     {
 
-#ifndef HAVE_AQOS
       if (sscanf (qos_ipaddr, "%31s %31s |", data, level) < 2)
 	break;
       snprintf (cmd, 1023,
@@ -439,47 +445,12 @@ int qosidx=0;
 		"/usr/sbin/iptables -t mangle -A SVQOS_IN -d %s -m mark --mark 0 -j MARK --set-mark %s",
 		data, level);
       system2 (cmd);
-#else
-      if (sscanf (qos_ipaddr, "%31s %31s %31s |", data, level,level2) < 2)
-	break;
-      fprintf (outips, "%s\n", data);
 
-//      ilevel = atoi (level) * 1000 / 8;
-//eval("rmmod","ipt_connrate");
-//eval("insmod","ipt_connrate");
-      add_userip(data,qosidx,level,level2);
-      qosidx+=2;
-
-/*      snprintf (cmd, 1023,
-		"/usr/sbin/iptables -t mangle -A PREROUTING -i br0 -s %s -m connrate --connrate ! 0:%d -j DROP",
-		data, ilevel);
-      system2 (cmd);
-
-      snprintf (cmd, 1023,
-		"/usr/sbin/iptables -t mangle -A PREROUTING -i br0 -d %s -m connrate --connrate ! 0:%d -j DROP",
-		data, ilevel);
-      system2 (cmd);
-
-      snprintf (cmd, 1023,
-		"/usr/sbin/iptables -t mangle -A POSTROUTING -s %s -m connrate --connrate ! 0:%d -j DROP",
-		data, ilevel);
-      system2 (cmd);
-
-      snprintf (cmd, 1023,
-		"/usr/sbin/iptables -t mangle -A POSTROUTING -d %s -m connrate --connrate ! 0:%d -j DROP",
-		data, ilevel);
-      system2 (cmd);
-*/
-
-#endif
 
     }
   while ((qos_ipaddr = strpbrk (++qos_ipaddr, "|")) && qos_ipaddr++);
-
-#ifdef HAVE_AQOS
-  fclose (outips);
-  fclose (outmacs);
 #endif
+
   /* services format is "name type data level | name type data level |" ..etc */
   do
     {
@@ -659,7 +630,9 @@ start_wshaper (void)
     ret = eval ("/usr/sbin/svqos", dl_val, ul_val, dev_val, mtu_val, "0");
   else
     ret = eval ("/usr/sbin/svqos2", ul_val, dl_val, dev_val, mtu_val, "0");
-
+#ifdef HAVE_AQOS
+  aqos_tables();
+#endif
 #endif
   return ret;
 }
