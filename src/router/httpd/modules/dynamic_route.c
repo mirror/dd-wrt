@@ -178,7 +178,7 @@ validate_dynamic_route (webs_t wp, char *value, struct variable *v)
   else
     nvram_set ("dyn_default", "0");
 
-  if (nvram_match ("expert_mode", "1") && nvram_match ("wk_mode", "ospf"))
+  if (nvram_match ("wk_mode", "ospf"))
     {
       nvram_set ("zebra_conf", websGetVar (wp, "zebra_conf", ""));
       nvram_set ("ospfd_conf", websGetVar (wp, "ospfd_conf", ""));
