@@ -108,7 +108,22 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 							<% show_olsrd(); %>
-							<% nvram_else_selmatch("wk_mode","bgp","","<!--"); %>
+							<% nvram_else_selmatch("wk_mode","ospf","","<!--"); %>
+							<fieldset>
+								<legend><% tran("route.ospf_legend"); %></legend>
+								<div class="setting">
+								    <div class="label"><% tran("route.ospf_conf"); %></div>
+								    <textarea cols="60" rows="4" id="ospfd_conf" name="ospfd_conf"></textarea>
+								    <script type="text/javascript">
+								    //<![CDATA[
+								    var ospfd_conf = fix_cr( '<% nvram_get("ospfd_conf"); %>' );
+								    document.getElementById("ospfd_conf").value = ospfd_conf;
+								    //]]>
+								    </script>
+								</div>
+							</fieldset>
+							<% nvram_else_selmatch("wk_mode","ospf","","-->"); %>
+							<% nvram_else_selmatch("wk_mode","bgp","","-->"); %>							<% nvram_else_selmatch("wk_mode","bgp","","<!--"); %>
 							
 							<fieldset>
 								<legend><% tran("route.bgp_legend"); %></legend>
