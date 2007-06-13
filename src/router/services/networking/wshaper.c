@@ -634,6 +634,7 @@ start_wshaper (void)
   aqos_tables();
 #endif
 #endif
+  nvram_set("qos_done","1");
   return ret;
 }
 
@@ -641,7 +642,7 @@ int
 stop_wshaper (void)
 {
   int ret = 0;
-
+  nvram_set("qos_done","0");
 #ifdef HAVE_WSHAPER
   char script_name[] = "/usr/sbin/wshaper";
 #elif defined(HAVE_SVQOS)
