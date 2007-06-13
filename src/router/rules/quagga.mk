@@ -12,4 +12,4 @@ quagga-install:
 	rm -f $(INSTALLDIR)/quagga/usr/lib/*.la
 
 quagga-clean:
-	$(MAKE) -C quagga clean
+	if test -e "quagga/Makefile"; then $(MAKE) -C quagga clean; fi
