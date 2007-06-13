@@ -214,7 +214,7 @@ do_aqos_check (void)
 	continue;
 //cprintf("nothing found for %s %s\n",ip_buf,mac_buf);
 
-      if (!cmac && strlen(mac_buf)>0 && str)
+      if (!cmac && strlen(mac_buf)>0)
 	{
 	
 	  char addition[128];
