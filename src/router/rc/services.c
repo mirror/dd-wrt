@@ -81,6 +81,7 @@ int
 start_services (void)
 {
   void *handle = NULL;
+  nvram_set("qos_done","0");
 #ifdef HAVE_CPUTEMP
   handle = start_service_nofree ("hwmon", handle);
 #endif

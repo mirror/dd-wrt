@@ -134,6 +134,7 @@ containsIP (char *ip)
       if (compareNet (net, i, ip))
 	{
 //	  printf ("%s/%s fits to %s\n", net, i, ip);
+	  fclose (in);
 	  return 1;
 	}
 //      printf ("%s/%s dosnt fit to %s\n", net, i, ip);
@@ -156,7 +157,10 @@ containsMAC (char *ip)
   while (fscanf (in, "%s", buf_ip) != EOF)
     {
       if (!strcmp (buf_ip, ip))
+        {
+	fclose (in);
 	return 1;
+	}
     }
   fclose (in);
 //cprintf("no mac found\n");
@@ -168,6 +172,8 @@ static int
 do_aqos_check (void)
 {
   if (!nvram_invmatch ("wshaper_enable", "0"))
+    return 0;
+  if (nvram_match("qos_done","0"))
     return 0;
 
   FILE *arp = fopen ("/proc/net/arp", "rb");
@@ -200,19 +206,22 @@ do_aqos_check (void)
   while (fgetc (arp) != '\n');
 
 //fscanf(arp,"%s %s %s %s %s %s",ip_buf,hw_buf,fl_buf,mac_buf,mask_buf,dev_buf); //skip first line
-  fprintf(stderr,"reading arp table\n");
+  //fprintf(stderr,"reading arp table\n");
   while (fscanf
 	 (arp, "%s %s %s %s %s %s", ip_buf, hw_buf, fl_buf, mac_buf, mask_buf,
 	  dev_buf) == 6)
     {
-//  fprintf(stderr,"reading mac/ip table\n");
+// fprintf(stderr,"reading mac/ip table\n");
       cmac = containsMAC (mac_buf);
       cip = containsIP (ip_buf);
 
 
       if (cip || cmac)
+        {
+//	fprintf(stderr,"ip's already added, continue\n");
 	continue;
-//cprintf("nothing found for %s %s\n",ip_buf,mac_buf);
+	}
+//fprintf(stderr,"nothing found for %s %s\n",ip_buf,mac_buf);
 
       if (!cmac && strlen(mac_buf)>0)
 	{
@@ -220,21 +229,27 @@ do_aqos_check (void)
 	  char addition[128];
 	  sprintf(addition,"echo \"%s\" >>/tmp/aqos_macs",mac_buf);
 	  system2(addition);
+//	  fprintf(stderr,"addition mac %s\n",addition);
 	  //create default rule for mac
 	  add_usermac(mac_buf,qosidx,defaulup,defauldown);
 	  qosidx+=2;
-
+//	  fprintf(stderr,"done mac\n");
 	}
       if (!cip && strlen(ip_buf)>0)
 	{
 	  char addition[128];
-	  sprintf(addition,"echo \"%s\" >>/tmp/aqos_ips",ip_buf);
+	  char ipnet[32];
+	  sprintf(ipnet,"%s/32",ip_buf);
+	  sprintf(addition,"echo \"%s\" >>/tmp/aqos_ips",ipnet);
 	  system2(addition);
+//	  fprintf(stderr,"addition ip %s\n",addition);
 	  //create default rule for ip
-	  add_userip(ip_buf,qosidx,defaulup,defauldown);
+	  add_userip(ipnet,qosidx,defaulup,defauldown);
+//	  fprintf(stderr,"done ip\n");
 	  qosidx+=2;
 	}
     }
+//fprintf(stderr,"done with arp\n");
   fclose (arp);
 
 }
