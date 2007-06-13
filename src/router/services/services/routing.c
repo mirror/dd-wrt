@@ -439,7 +439,7 @@ bird_init (void)
 
 }
 #endif /* HAVE_BIRD */
-#ifdef HAVE_BIRD
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 /* Written by Sparq in 2002/07/16 */
 int
 start_zebra (void)
