@@ -146,11 +146,11 @@ ej_show_routing (webs_t wp, int argc, char_t ** argv)
 	     "document.write(\"<option value=\\\"router\\\" %s >\" + route.rip2_mod + \"</option>\");\n",
 	     nvram_selmatch (wp, "wk_mode",
 			     "router") ? "selected=\\\"selected\\\"" : "");
+#endif
   websWrite (wp,
 	     "document.write(\"<option value=\\\"ospf\\\" %s >\" + route.ospf_mod + \"</option>\");\n",
 	     nvram_selmatch (wp, "wk_mode",
 			     "ospf") ? "selected=\\\"selected\\\"" : "");
-#endif
 #ifdef HAVE_QUAGGA
   websWrite (wp,
 	     "document.write(\"<option value=\\\"bgp\\\" %s >BGP</option>\");\n",
