@@ -189,21 +189,23 @@ do_aqos_check (void)
       cprintf ("/proc/net/arp missing, check kernel config\n");
       return;
     }
+ // fprintf(stderr,"get level definition\n");
   defaulup = nvram_safe_get ("default_uplevel");
   defauldown = nvram_safe_get ("default_downlevel");
   if (defaulup == NULL || strlen (defaulup) == 0)
     return;
   if (defauldown == NULL || strlen (defauldown) == 0)
     return;
+//  fprintf(stderr,"skip first line in arp\n");
   while (fgetc (arp) != '\n');
 
 //fscanf(arp,"%s %s %s %s %s %s",ip_buf,hw_buf,fl_buf,mac_buf,mask_buf,dev_buf); //skip first line
+  fprintf(stderr,"reading arp table\n");
   while (fscanf
 	 (arp, "%s %s %s %s %s %s", ip_buf, hw_buf, fl_buf, mac_buf, mask_buf,
-	  dev_buf) != EOF)
+	  dev_buf) == 6)
     {
-      memset(mac_buf,0,18);
-      memset(ip_buf,0,16);
+//  fprintf(stderr,"reading mac/ip table\n");
       cmac = containsMAC (mac_buf);
       cip = containsIP (ip_buf);
 
@@ -212,7 +214,7 @@ do_aqos_check (void)
 	continue;
 //cprintf("nothing found for %s %s\n",ip_buf,mac_buf);
 
-      if (!cmac && strlen(mac_buf)>0)
+      if (!cmac && strlen(mac_buf)>0 && str)
 	{
 	
 	  char addition[128];
