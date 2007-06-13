@@ -546,7 +546,9 @@ wland_main (int argc, char **argv)
       /* parent process should just die */
       _exit (0);
     }
+#ifdef HAVE_AQOS
 qosidx=1000;
+#endif
   /* Most of time it goes to sleep */
 #ifdef HAVE_MADWIFI
   memset (lastchans, 0, 256*4);
