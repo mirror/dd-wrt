@@ -188,9 +188,6 @@ apply();
 								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
 								<% haswifi("-->"); %>
 								<li><a href="Services.asp"><% tran("bmenu.services"); %></a></li>
-								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
-								<% nvram_invmatch("sipgate","1","-->"); %>
 								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
 								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
 								<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
