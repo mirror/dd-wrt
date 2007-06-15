@@ -40,7 +40,7 @@
 
 #define	SES_LED_CHECK_TIMES	"9999"	/* How many times to check? */
 #define	SES_LED_CHECK_INTERVAL	"1"	/* Wait interval seconds */
-#define RESET_WAIT		3	/* seconds */
+#define RESET_WAIT		1	/* seconds */
 #define RESET_WAIT_COUNT	RESET_WAIT * 10	/* 10 times a second */
 
 #define NORMAL_INTERVAL		1	/* second */
@@ -369,7 +369,6 @@ period_check (int sig)
 	  alarmtimer (0, URGENT_INTERVAL);
 	  mode = 1;
 	}
-      else
 	{			/* Whenever it is pushed steady */
 	  if (++count > RESET_WAIT_COUNT)
 	    {
