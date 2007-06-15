@@ -87,6 +87,7 @@ extern int br_del_bridge (const char *brname);
 extern int br_add_interface (const char *br, const char *dev);
 extern int br_del_interface (const char *br, const char *dev);
 extern int br_set_stp_state (const char *br, int stp_state);
+void start_set_routes (void);
 
 
 #define PTABLE_MAGIC 0xbadc0ded
@@ -2828,8 +2829,7 @@ stop_wan (void)
   cprintf ("done\n");
 }
 
-void
-start_set_routes (void)
+void start_set_routes (void)
 {
   char word[80], *tmp;
   char *ipaddr, *netmask, *gateway, *metric, *ifname;
