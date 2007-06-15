@@ -64,7 +64,7 @@ static char *LastConnectionError_allowedValueList[] = { "ERROR_NONE", "ERROR_UNK
 static char *PortMappingProtocol_allowedValueList[] = { "TCP", "UDP", NULL };
 
 static VarTemplate StateVariables[] = {
-    { "ConnectionType", "IP_Routed", VAR_STRING|VAR_LIST,  (allowedValue) { PossibleConnectionTypes_allowedValueList }  },
+    { "ConnectionType", "IP_Routed", VAR_STRING },
     { "PossibleConnectionTypes", "", VAR_EVENTED|VAR_STRING|VAR_LIST,  (allowedValue) { PossibleConnectionTypes_allowedValueList } },
     { "ConnectionStatus", "", VAR_EVENTED|VAR_STRING|VAR_LIST,  (allowedValue) { ConnectionStatus_allowedValueList } },
     { "Uptime", "", VAR_ULONG },
