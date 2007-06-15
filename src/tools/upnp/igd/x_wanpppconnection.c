@@ -63,14 +63,14 @@ extern int DeletePortMapping(UFILE *, PService, PAction, pvar_entry_t, int);
 /* VAR_ offsets are include from wanppp.h */
 
 
-char *WANPPPConnection_PossibleConnectionTypes_allowedValueList[] = { "Unconfigured", "IP_Routed", "DHCP_Spoofed", "PPPOE_Bridged", "PPTP_Relay", "L2TP_Relay", "PPOE_Relay", NULL };
+char *WANPPPConnection_PossibleConnectionTypes_allowedValueList[] = { "Unconfigured", "IP_Routed", "DHCP_Spoofed", "PPPoE_Bridged", "PPTP_Relay", "L2TP_Relay", "PPPoE_Relay", NULL };
 static char *ConnectionStatus_allowedValueList[] = { "Unconfigured", "Connecting", "Authenticating", "Connected", "PendingDisconnect", "Disconnecting", "Disconnected", NULL };
 static char *LastConnectionError_allowedValueList[] = { "ERROR_NONE", "ERROR_UNKNOWN", NULL };
 static char *PortMappingProtocol_allowedValueList[] = { "TCP", "UDP", NULL };
 
 
 static VarTemplate StateVariables[] = {
-    { "ConnectionType", "IP_Routed", VAR_STRING|VAR_LIST,  (allowedValue) { WANPPPConnection_PossibleConnectionTypes_allowedValueList }  },
+    { "ConnectionType", "IP_Routed", VAR_STRING },
     { "PossibleConnectionTypes", "", VAR_EVENTED|VAR_STRING|VAR_LIST,  (allowedValue) { WANPPPConnection_PossibleConnectionTypes_allowedValueList } },
     { "ConnectionStatus", "Unconfigured", VAR_EVENTED|VAR_STRING|VAR_LIST,  (allowedValue) { ConnectionStatus_allowedValueList } },
     { "Uptime", "", VAR_ULONG },
