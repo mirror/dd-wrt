@@ -4,789 +4,789 @@
 
 // ******************************************* COMMON SHARE LABEL *******************************************//
 
-lang_charset.set="big5";
+lang_charset.set="Big5";
 
-share.firmware="固件";
-share.time="時間";
-share.interipaddr="Internet IP地址";
-share.more="更多...";
-share.help="説明";
-share.enable="啟用";
-share.enabled="已啟用";
-share.disable="禁用";
-share.disabled="已禁用";
-share.usrname="用戶名";
-share.passwd="密碼";
-share.hostname="主機名";
-share.domainname="功能變數名稱";
+share.firmware="洞砰";
+share.time="丁";
+share.interipaddr="Internet IP";
+share.more="...";
+share.help="弧";
+share.enable="币ノ";
+share.enabled="币ノ";
+share.disable="窽ノ";
+share.disabled="窽ノ";
+share.usrname="ノめ";
+share.passwd="盞絏";
+share.hostname="诀";
+share.domainname="跑计嘿";
 share.wandomainname="WAN Domain Name";
 share.landomainname="LAN Domain Name";
-share.statu="狀態";
-share.start="開始";
-share.end="結束";
-share.proto="協議";
-share.ip="IP地址";
-share.mac="MAC地址";
-share.none="無";
-share.both="兩者都有";
-share.del="刪除";
-share.remove="移除";
-share.descr="描述";
-share.from="起始於";
-share.to="終止於";
-share.about="關於";
-share.everyday="每天";
-share.sun="星期天";
-share.sun_s="周日";
-share.sun_s1="日";
-share.mon="星期一";
-share.mon_s="週一";
-share.mon_s1="一";
-share.tue="星期二";
-share.tue_s="週二";
-share.tue_s1="二";
-share.wed="星期三";
-share.wed_s="週三";
-share.wed_s1="三";
-share.thu="星期四";
-share.thu_s="週四";
-share.thu_s1="四";
-share.fri="星期五";
-share.fri_s="週五";
-share.fri_s1="五";
-share.sat="星期六";
-share.sat_s="週六";
-share.sat_s1="六";
-share.expires="過期";
-share.yes="是";
-share.no="否";
-share.allow="允許";
-share.deny="拒絕";
-share.range="範圍";
-share.use="使用";
-share.mins="分";
-share.secs="秒";
-share.routername="路由器名稱";
-share.manual="手動";
-share.port="埠";
+share.statu="篈";
+share.start="秨﹍";
+share.end="挡";
+share.proto="某";
+share.ip="IP";
+share.mac="MAC";
+share.none="礚";
+share.both="ㄢ常Τ";
+share.del="埃";
+share.remove="簿埃";
+share.descr="磞瓃";
+share.from="癬﹍";
+share.to="沧ゎ";
+share.about="闽";
+share.everyday="–ぱ";
+share.sun="琍戳ぱ";
+share.sun_s="秅ら";
+share.sun_s1="ら";
+share.mon="琍戳";
+share.mon_s="秅";
+share.mon_s1="";
+share.tue="琍戳";
+share.tue_s="秅";
+share.tue_s1="";
+share.wed="琍戳";
+share.wed_s="秅";
+share.wed_s1="";
+share.thu="琍戳";
+share.thu_s="秅";
+share.thu_s1="";
+share.fri="琍戳き";
+share.fri_s="秅き";
+share.fri_s1="き";
+share.sat="琍戳せ";
+share.sat_s="秅せ";
+share.sat_s1="せ";
+share.expires="筁戳";
+share.yes="琌";
+share.no="";
+share.allow="す砛";
+share.deny="┶荡";
+share.range="絛瞅";
+share.use="ㄏノ";
+share.mins="だ";
+share.secs="";
+share.routername="隔パ竟嘿";
+share.manual="も笆";
+share.port="梆";
 share.ssid="SSID";
-share.channel="頻道";
+share.channel="繵笵";
 share.rssi="Rssi";
-share.signal="信號";
-share.noise="雜訊";
-share.beacon="信標";
-share.openn="打開";
+share.signal="獺腹";
+share.noise="馒癟";
+share.beacon="獺夹";
+share.openn="ゴ秨";
 share.dtim="dtim";
-share.rates="速率";
-share.low="低";
-share.medium="中";
-share.high="高";
-share.option="選項";
-share.rule="規則";
-share.lan="LAN（區域網路）";
-share.point2point="點對點";
-share.nat="NAT（網路位址轉換）";
-share.subnet="子網路遮罩";
-share.unmask="非掩模";
-share.deflt="默認";  //don't use share.default !!!
-share.all="全部";
-share.auto="自動";
-share.right="右";
-share.left="左";
-share.share_key="Shared Key（共用秘鑰）";
-share.inter="間歇（以秒為單位）";
-share.srv="服務名稱";
-share.port_range="埠範圍";
-share.priority="優先順序";
-share.gateway="閘道";
-share.intrface="介面";  //don't use share.interface, Mozilla problem!!!
+share.rates="硉瞯";
+share.low="";
+share.medium="い";
+share.high="蔼";
+share.option="匡兜";
+share.rule="砏玥";
+share.lan="LAN跋办呼隔";
+share.point2point="翴癸翴";
+share.nat="NAT呼隔锣传";
+share.subnet="呼隔綛竛";
+share.unmask="獶被家";
+share.deflt="箇砞";  //don't use share.default !!!
+share.all="场";
+share.auto="笆";
+share.right="";
+share.left="オ";
+share.share_key="Shared Keyノ芲";
+share.inter="丁凡虫";
+share.srv="狝叭嘿";
+share.port_range="梆絛瞅";
+share.priority="纔抖";
+share.gateway="筯笵";
+share.intrface="ざ";  //don't use share.interface, Mozilla problem!!!
 share.pintrface="Physical Interface";
 share.vintrface="Virtual Interfaces";
-share.router="路由器";
-share.static_lease="靜態租用";
-share.srvip="伺服器IP地址";
-share.localdns="本地DNS（功能變數名稱伺服器）";
-share.minutes="分鐘";
-share.oui="OUI搜索";
-share.sttic="靜態";
-share.connecting="正在連接";
-share.connect="連接";
-share.connected="已連接";
-share.disconnect="斷開連接";
-share.disconnected="已斷開連接";
-share.info="信息";
-share.state="狀態";
-share.mode="模式";
-share.encrypt="加密";
-share.key="秘鑰";
-share.wireless="無線";
+share.router="隔パ竟";
+share.static_lease="繰篈ノ";
+share.srvip="狝竟IP";
+share.localdns="セDNS跑计嘿狝竟";
+share.minutes="だ牧";
+share.oui="OUI穓";
+share.sttic="繰篈";
+share.connecting="タ硈钡";
+share.connect="硈钡";
+share.connected="硈钡";
+share.disconnect="耞秨硈钡";
+share.disconnected="耞秨硈钡";
+share.info="獺";
+share.state="篈";
+share.mode="家Α";
+share.encrypt="盞";
+share.key="芲";
+share.wireless="礚絬";
 share.dhcp="DHCP";
-share.styl="風格";
+share.styl="";
 share.err="error";
 share.errs="errors";
 share.meters="meters";
-share.full="Full (20 Mhz)";
-share.half="Half (10 Mhz)";
-share.quarter="Quarter (5 Mhz)";
+share.full="Full";
+share.half="Half";
+share.quarter="Quarter";
 share.seealso="See also";
 share.never="never";
 share.unknown="unknown";
 share.expired="expired";
-share.standard="Standard（標準）";
+share.standard="Standard夹非";
 
-sbutton.save="保存設置";
-sbutton.saving="已保存"; // is this saving or saved? if saving, use "正在保存"
-sbutton.cmd="正在執行";
-sbutton.cancel="取消改動";
-sbutton.refres="刷新";
-sbutton.clos="關閉";
-sbutton.del="刪除";
-sbutton.continu="繼續";
-sbutton.add="添加";
-sbutton.remove="移除";
-sbutton.modify="修改";
-sbutton.deleted="已刪除";
-sbutton.delall="刪除全部";
-sbutton.autorefresh="自動刷新狀態[打開]";
-sbutton.backup="備份";
-sbutton.restore="恢復";
-sbutton.cptotext="複製到文字區";
-sbutton.runcmd="運行命令";
-sbutton.startup="保存啟動命令";
-sbutton.firewall="保存防火牆命令";
-sbutton.wol="喚醒";
-sbutton.add_wol="添加主機";
-sbutton.manual_wol="手動喚醒";
-sbutton.summary="綜述";
-sbutton.filterIP="編輯PC列表";
-sbutton.filterMac="編輯MAC篩檢程式列表";
-sbutton.filterSer="添加/編輯服務";
-sbutton.reboot="重新啟動路由器";
-sbutton.help="   説明  ";
-sbutton.wl_client_mac="無線用戶端MAC列表";
-sbutton.update_filter="更新篩檢程式列表";
-sbutton.join="加入";
-sbutton.log_in="連入日誌";
-sbutton.log_out="連出日誌";
-sbutton.apply="應用";
-sbutton.edit_srv="添加/編輯服務";
-sbutton.routingtab="顯示路由表";
-sbutton.wanmac="獲取當前PC的MAC地址";
-sbutton.dhcprel="DHCP發放";
-sbutton.dhcpren="DHCP更新";
-sbutton.survey="Site Survey（選址）";
-sbutton.upgrading="正在升級";
-sbutton.upgrade="升級";
-sbutton.preview="預覽";
+sbutton.save="玂砞竚";
+sbutton.saving="玂"; // is this saving or saved? if saving, use "タ玂"
+sbutton.cmd="タ磅︽";
+sbutton.cancel="э笆";
+sbutton.refres="穝";
+sbutton.clos="闽超";
+sbutton.del="埃";
+sbutton.continu="膥尿";
+sbutton.add="睰";
+sbutton.remove="簿埃";
+sbutton.modify="э";
+sbutton.deleted="埃";
+sbutton.delall="埃场";
+sbutton.autorefresh="笆穝篈[ゴ秨]";
+sbutton.backup="称";
+sbutton.restore="確";
+sbutton.cptotext="狡籹ゅ跋";
+sbutton.runcmd="笲︽㏑";
+sbutton.startup="玂币笆㏑";
+sbutton.firewall="玂ň鲤㏑";
+sbutton.wol="酬眶";
+sbutton.add_wol="睰诀";
+sbutton.manual_wol="も笆酬眶";
+sbutton.summary="侯瓃";
+sbutton.filterIP="絪胯PC";
+sbutton.filterMac="絪胯MAC縵浪祘Α";
+sbutton.filterSer="睰/絪胯狝叭";
+sbutton.reboot="穝币笆隔パ竟";
+sbutton.help="   弧  ";
+sbutton.wl_client_mac="礚絬ノめ狠MAC";
+sbutton.update_filter="穝縵浪祘Α";
+sbutton.join="";
+sbutton.log_in="硈ら粁";
+sbutton.log_out="硈ら粁";
+sbutton.apply="莱ノ";
+sbutton.edit_srv="睰/絪胯狝叭";
+sbutton.routingtab="陪ボ隔パ";
+sbutton.wanmac="莉ヘ玡PCMAC";
+sbutton.dhcprel="DHCP祇";
+sbutton.dhcpren="DHCP穝";
+sbutton.survey="Site Survey匡";
+sbutton.upgrading="タど";
+sbutton.upgrade="ど";
+sbutton.preview="箇凝";
 
 
 // ******************************************* COMMON ERROR MESSAGES  *******************************************//
 
-errmsg.err0="您必須輸入一個用戶名。";
-errmsg.err1="您必須輸入一個路由器名稱。";
-errmsg.err2="超出範圍，請調整起始IP地址或用戶的個數。";
-errmsg.err3="您必須至少選擇一個日期。"
-errmsg.err4="結束時間必須比開始時間大。";
-errmsg.err5="MAC位址長度不正確。";
-errmsg.err6="您必須輸入一個密碼。";
-errmsg.err7="您必須輸入一個主機名。";
-errmsg.err8="您必須輸入一個IP位址或者功能變數名稱。";
-errmsg.err9="非法DMZ IP地址。";
-errmsg.err10="確認密碼與所輸入密碼不相符。請重新輸入密碼。";
-errmsg.err11="在密碼中不允許使用空格";
-errmsg.err12="你必須輸入一個要運行的命令。";
-errmsg.err13="升級失敗。";
-errmsg.err45="HTTPS模式下不可用！請使用HTTP模式連接。";
-errmsg.err46="HTTPS模式下不可用";
+errmsg.err0="眤ゲ斗块ノめ";
+errmsg.err1="眤ゲ斗块隔パ竟嘿";
+errmsg.err2="禬絛瞅叫秸俱癬﹍IP┪ノめ计";
+errmsg.err3="眤ゲ斗ぶ匡拒ら戳"
+errmsg.err4="挡丁ゲ斗ゑ秨﹍丁";
+errmsg.err5="MACぃタ絋";
+errmsg.err6="眤ゲ斗块盞絏";
+errmsg.err7="眤ゲ斗块诀";
+errmsg.err8="眤ゲ斗块IP┪跑计嘿";
+errmsg.err9="獶猭DMZ IP";
+errmsg.err10="絋粄盞絏籔┮块盞絏ぃ才叫穝块盞絏";
+errmsg.err11="盞絏いぃす砛ㄏノ";
+errmsg.err12="ゲ斗块璶笲︽㏑";
+errmsg.err13="どア毖";
+errmsg.err45="HTTPS家Αぃノ叫ㄏノHTTP家Α硈钡";
+errmsg.err46="HTTPS家Αぃノ";
 
 
 //common.js error messages
-errmsg.err14=" 值超出範圍 [";
-errmsg.err15="WAM口MAC地址超出範圍 [00 - ff].";
-errmsg.err16="MAC位址的第二個字元必須是偶數 : [0, 2, 4, 6, 8, A, C, E].";
-errmsg.err17="MAC位址不正確。";
-errmsg.err18="MAC位址長度不正確。";
-errmsg.err19="MAC位址不能是廣播MAC位址。"
-errmsg.err20="使用形如(xx:xx:xx:xx:xx:xx)的格式輸入MAC位址。";
-errmsg.err21="無效MAC地址格式。";
-errmsg.err22="WAN口MAC位址不正確。";
-errmsg.err23="無效16進制數值 ";
-errmsg.err24?6c=" 在如下MAC地址中出現 ";
-errmsg.err25="秘鑰值不正確。";
-errmsg.err26="秘鑰長度不正確。";
-errmsg.err27="非法子網路遮罩。";
-errmsg.err28=" 含有非法字元, 字元必須是 [ 0 - 9 ]。";
-errmsg.err29=" 含有非法ASCII碼。";
-errmsg.err30=" 含有非法16進制數字。";
-errmsg.err31=" 數值非法。";
-errmsg.err32="IP位址和閘道不在同一子網中。";
-errmsg.err33="IP位址與閘道不能相同。";
-errmsg.err34=" 中不允許含有空格。";
+errmsg.err14=" 禬絛瞅 [";
+errmsg.err15="WAMMAC禬絛瞅 [00 - ff].";
+errmsg.err16="MAC材じゲ斗琌案计 : [0, 2, 4, 6, 8, A, C, E].";
+errmsg.err17="MACぃタ絋";
+errmsg.err18="MACぃタ絋";
+errmsg.err19="MACぃ琌約冀MAC"
+errmsg.err20="ㄏノ(xx:xx:xx:xx:xx:xx)Α块MAC";
+errmsg.err21="礚MACΑ";
+errmsg.err22="WAN狠MACぃタ絋";
+errmsg.err23="礚16秈计 ";
+errmsg.err24?6c=" MACい瞷 ";
+errmsg.err25="芲ぃタ絋";
+errmsg.err26="芲ぃタ絋";
+errmsg.err27="獶猭呼隔綛竛";
+errmsg.err28=" Τ獶猭じ, じゲ斗琌 [ 0 - 9 ]";
+errmsg.err29=" Τ獶猭ASCII絏";
+errmsg.err30=" Τ獶猭16秈计";
+errmsg.err31=" 计獶猭";
+errmsg.err32="IP㎝筯笵ぃ呼い";
+errmsg.err33="IP籔筯笵ぃ";
+errmsg.err34=" いぃす砛Τ";
 
 //Wol.asp error messages
-errmsg.err35="你必須輸入一個MAC位址來執行操作。";
-errmsg.err36="你必須輸入一個網路廣播位址來執行操作。";
-errmsg.err37="你必須輸入一個UDP埠來執行操作。";
+errmsg.err35="ゲ斗块MACㄓ磅︽巨";
+errmsg.err36="ゲ斗块呼隔約冀ㄓ磅︽巨";
+errmsg.err37="ゲ斗块UDP梆ㄓ磅︽巨";
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
-errmsg.err38="請輸入一個Shared Key（共用秘鑰）！";
-errmsg.err39="無效秘鑰，必須是長度為8到63個ASCII字元或者64個十六進位數位";
-errmsg.err40="你必須為如下秘鑰輸入一個關鍵字 ";
-errmsg.err41="關鍵字長度無效 ";
-errmsg.err43="重新獲取秘鑰間隔";
+errmsg.err38="叫块Shared Keyノ芲";
+errmsg.err39="礚芲ゲ斗琌863ASCIIじ┪64せ秈计";
+errmsg.err40="ゲ斗芲块闽龄 ";
+errmsg.err41="闽龄礚 ";
+errmsg.err43="穝莉芲丁筳";
 
 //config.asp error messages
-errmsg.err42="請選擇一個用來恢復的配置檔。";
+errmsg.err42="叫匡拒ノㄓ確皌竚郎";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="總檢查次數超過128次。";
+errmsg.err44="羆浪琩Ω计禬筁128Ω";
 
 //Site_Survey.asp error messages
-errmsg.err47="無效SSID。";   //changed 20060525
+errmsg.err47="礚SSID";   //changed 20060525
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS與當前路由器的配置不相容。請檢查以下幾點 :\n * 無線模式必須被設置為AP（接入點） \n * WDS下不支援WPA2 \n * WDS下不支援無線網路使用 僅B 模式";
+errmsg.err48="WDS籔ヘ玡隔パ竟皌竚ぃ甧叫浪琩碭翴 :\n * 礚絬家Αゲ斗砆砞竚AP钡翴 \n * WDSぃや穿WPA2 \n * WDSぃや穿礚絬呼隔ㄏノ 度B 家Α";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius僅在AP（接入點）模式下可用。";
+errmsg.err49="Radius度AP钡翴家Αノ";
 
 //Wireless_Basic.asp error messages
-errmsg.err50="你必須輸入一個SSID。";
+errmsg.err50="ゲ斗块SSID";
 
 // Management.asp error messages
-errmsg.err51="本路由器當前配置的密碼為默認密碼。 \
-			出於安全的考慮，您必須遠端管理特性被開啟前更改密碼。 \
-			點擊確定按鈕更改您的密碼。點擊取消按鈕保持遠端管理特性關閉。";
-errmsg.err52="密碼復核不相符。";
+errmsg.err51="セ隔パ竟ヘ玡皌竚盞絏箇砞盞絏 \
+			σ納眤ゲ斗环狠恨瞶疭┦砆秨币玡э盞絏 \
+			翴阑絋﹚秙э眤盞絏翴阑秙玂环狠恨瞶疭┦闽超";
+errmsg.err52="盞絏滦ぃ才";
 
 // Port_Services.asp error messages
-errmsg.err53="當所有操作完成之後，點擊[應用]按鈕保存設置。";
-errmsg.err54="你必須輸入一個服務名稱。";
-errmsg.err55="此服務名稱已存在。";
+errmsg.err53="讽┮Τ巨ЧΘぇ翴阑[莱ノ]秙玂砞竚";
+errmsg.err54="ゲ斗块狝叭嘿";
+errmsg.err55="狝叭嘿";
 
 // QoS.asp error messages
-errmsg.err56="埠值超出範圍 [0 - 65535]";
+errmsg.err56="梆禬絛瞅 [0 - 65535]";
 
 // Routing.asp error messages
-errmsg.err57="刪除此條目？";
+errmsg.err57="埃兵ヘ";
 
 // Status_Lan.asp error messages
-errmsg.err58="點擊刪除";
+errmsg.err58="翴阑埃";
 
 //Status_Wireless.asp error messages
-errmsg.err59="不可用！請啟用無線網路。";
+errmsg.err59="ぃノ叫币ノ礚絬呼隔";
 
 //Upgrade.asp error messages
-errmsg.err60="請選擇升級檔。";
-errmsg?6c?6c.err61="不正確的鏡像檔。";
+errmsg.err60="叫匡拒ど郎";
+errmsg?6c?6c.err61="ぃタ絋描钩郎";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
 
-bmenu.setup="設置";
-bmenu.setupbasic="基本設置";
-bmenu.setupddns="DDNS（動態DNS）";
-bmenu.setupmacclone="MAC地址克隆";
-bmenu.setuprouting="高級路由";
+bmenu.setup="砞竚";
+bmenu.setupbasic="膀セ砞竚";
+bmenu.setupddns="DDNS笆篈DNS";
+bmenu.setupmacclone="MAC订";
+bmenu.setuprouting="蔼隔パ";
 bmenu.setupvlan="VLANs";
 bmenu.setupeop="EoIP Tunnel";
 bmenu.networking="Networking";
 
-bmenu.wireless="無線";
-bmenu.wirelessBasic="基本設置";
+bmenu.wireless="礚絬";
+bmenu.wirelessBasic="膀セ砞竚";
 bmenu.wirelessRadius="Radius";
-bmenu.wirelessSecurity="無線安全";
-bmenu.wirelessMac="MAC過濾";
-bmenu.wirelessAdvanced="高級設置";
+bmenu.wirelessSecurity="礚絬";
+bmenu.wirelessMac="MAC筁耾";
+bmenu.wirelessAdvanced="蔼砞竚";
 bmenu.wirelessWds="WDS";
 
-bmenu.security="安全";
-bmenu.firwall="防火牆";
+bmenu.security="";
+bmenu.firwall="ň鲤";
 bmenu.vpn="VPN";
 
-bmenu.accrestriction="訪問限制";
-bmenu.webaccess="Internet訪問";
+bmenu.accrestriction="砐拜";
+bmenu.webaccess="Internet砐拜";
 
 
-bmenu.applications="應用程式 &amp; 遊戲";
-bmenu.applicationsprforwarding="埠段轉發（映射）";
-bmenu.applicationspforwarding="埠轉發（映射）";
-bmenu.applicationsptriggering="埠激發";
+bmenu.applications="莱ノ祘Α &amp; 笴栏";
+bmenu.applicationsprforwarding="梆琿锣祇琈甮";
+bmenu.applicationspforwarding="梆锣祇琈甮";
+bmenu.applicationsptriggering="梆縀祇";
 bmenu.applicationsUpnp="UPnP";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 
 bmenu.sipath="SIPatH";
-bmenu.sipathoverview="總覽";
-bmenu.sipathphone="電話本";
-bmenu.sipathstatus="狀態";
+bmenu.sipathoverview="羆凝";
+bmenu.sipathphone="筿杠セ";
+bmenu.sipathstatus="篈";
 
-bmenu.admin="管理";
-bmenu.adminManagement="普通管理";
-bmenu.adminHotspot="熱點";
-bmenu.adminServices="服務";
-bmenu.adminAlive="保持活動";
-bmenu.adminLog="日誌";
-bmenu.adminDiag="診斷";
-bmenu.adminWol="WOL（網路喚醒）";
-bmenu.adminFactory="出廠默認設置";
-bmenu.adminUpgrade="固件升級";
-bmenu.adminBackup="備份";
+bmenu.admin="恨瞶";
+bmenu.adminManagement="炊硄恨瞶";
+bmenu.adminHotspot="荐翴";
+bmenu.adminServices="狝叭";
+bmenu.adminAlive="玂笆";
+bmenu.adminLog="ら粁";
+bmenu.adminDiag="禘耞";
+bmenu.adminWol="WOL呼隔酬眶";
+bmenu.adminFactory="紅箇砞";
+bmenu.adminUpgrade="洞砰ど";
+bmenu.adminBackup="称";
 
 
-bmenu.statu="狀態";
-bmenu.statuRouter="路由器";
+bmenu.statu="篈";
+bmenu.statuRouter="隔パ竟";
 bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Sputnik代理";
-bmenu.statuWLAN="無線";
+bmenu.statuSputnik="Sputnik瞶";
+bmenu.statuWLAN="礚絬";
 bmenu.statuVPN="OpenVPN";
-bmenu.statuSysInfo="系統資訊";
+bmenu.statuSysInfo="╰参戈癟";
 
 
 // ******************************************* Alive.asp *******************************************//
 
-alive.titl="保持活動";
-alive.h2="保持活動";
-alive.legend="計畫重新啟動";
-alive.sevr1="計畫重新啟動";
-alive.hour="在設置的時間";
-alive.legend2="WDS/連接看門狗";
-alive.sevr2="開啟看門狗";
-alive.IP="IP地址";
-alive.legend3="代理伺服器/連接看門口";
-alive.sevr3="開啟代理伺服器看守程式";
-alive.IP2="代理伺服器IP位址";
-alive.port="代理伺服器埠";
+alive.titl=" - 玂笆";
+alive.h2="玂笆";
+alive.legend="璸礶穝币笆";
+alive.sevr1="璸礶穝币笆";
+alive.hour="砞竚丁";
+alive.legend2="WDS/硈钡";
+alive.sevr2="秨币";
+alive.IP="IP";
+alive.legend3="瞶狝竟/硈钡";
+alive.sevr3="秨币瞶狝竟祘Α";
+alive.IP2="瞶狝竟IP";
+alive.port="瞶狝竟梆";
 
 //help container
 
-halive.right2="選擇何時重新啟動路由器。在普通管理標籤中的Cron選項必須被開啟。";
-halive.right4="最多允許3個IP位址，之間使用<em>空格</em> 分割。<BR/>IP地址格式為：xxx.xxx.xxx.xxx。";
+halive.right2="匡拒穝币笆隔パ竟炊硄恨瞶夹乓いCron匡兜ゲ斗砆秨币";
+halive.right4="程す砛3IPぇ丁ㄏノ<em></em> だ澄<BR/>IPΑxxx.xxx.xxx.xxx";
 
 
 
 // ******************************************* config.asp *******************************************//
 
-config.titl="備份與恢復";
-config.h2="備份配置";
-config.legend="備份設置";
-config.mess1="點擊 \"" + sbutton.backup + "\" 按鈕將配置備份檔案下載到您的個人電腦。";
-config.h22="恢復配置";
-config.legend2="恢復設置";
-config.mess2="請選擇一個用來恢復的檔";
-config.mess3=" [ 警 ] [ 告 ] ";
-config.mess4="請僅上傳使用此（版本）固件並且從相同型號路由器上備份的檔。<br />請勿上傳任何不是使用本介面創建的檔！";
+config.titl=" - 称籔確";
+config.h2="称皌竚";
+config.legend="称砞竚";
+config.mess1="翴阑 \"" + sbutton.backup + "\" 秙盢皌竚称郎更眤筿福";
+config.h22="確皌竚";
+config.legend2="確砞竚";
+config.mess2="叫匡拒ノㄓ確郎";
+config.mess3=" [ 牡 ] [  ] ";
+config.mess4="叫度肚ㄏノセ洞砰眖腹隔パ竟称郎<br />叫づ肚ヴぃ琌ㄏノセざ承郎";
 
 //help container
 
-hconfig.right2="您可以備份您當前配置以備您將來需要將路由器重定到出廠設置後使用。<br /><br />點擊 <em>備份</em> 按鈕備份您的當前設置。";
-hconfig.right4="點擊 <em>流覽...</em> 按鈕流覽到一個當前存儲在您個人電腦上的配置檔。<br /><br />點擊 <em>" + sbutton.restore + "</em> 按鈕使用配置檔覆蓋當前配置。";
+hconfig.right2="眤称眤ヘ玡皌竚称眤盢ㄓ惠璶盢隔パ竟﹚紅砞竚ㄏノ<br /><br />翴阑 <em>称</em> 秙称眤ヘ玡砞竚";
+hconfig.right4="翴阑 <em>瑈凝...</em> 秙瑈凝ヘ玡纗眤筿福皌竚郎<br /><br />翴阑 <em>" + sbutton.restore + "</em> 秙ㄏノ皌竚郎滦籠ヘ玡皌竚";
 
 
 
 // ******************************************* DDNS.asp *******************************************//
 
-ddns.titl="動態DNS"
-ddns.h2="動態功能變數名稱系統(DDNS)";
+ddns.titl=" - 笆篈DNS"
+ddns.h2="笆篈跑计嘿╰参(DDNS)";
 ddns.legend="DDNS";
-ddns.srv="DDNS服務";
-ddns.emailaddr="E-mail地址";
-ddns.typ="類型";
-ddns.dynamic="動態";
-// ddns.static="靜態"; Please note: Mozilla doesn't like ".static", use ".sttic" , Eko 22.mar.06
-ddns.custom="自定義";
-ddns.wildcard="統配符";
-ddns.statu="DDNS狀態";
+ddns.srv="DDNS狝叭";
+ddns.emailaddr="E-mail";
+ddns.typ="摸";
+ddns.dynamic="笆篈";
+// ddns.static="繰篈"; Please note: Mozilla doesn't like ".static", use ".sttic" , Eko 22.mar.06
+ddns.custom="﹚竡";
+ddns.wildcard="参皌才";
+ddns.statu="DDNS篈";
 
 
-ddnsm.all_closed="DDNS伺服器當前處於關閉狀態";
-ddnsm.all_resolving="正在解析功能變數名稱";
-ddnsm.all_errresolv="功能變數名稱解析失敗";
-ddnsm.all_connecting="正在連接到伺服器";
-ddnsm.all_connectfail="連接到伺服器失敗";
-ddnsm.all_disabled="DDNS功能被禁用";
-ddnsm.all_noip="沒有Internet連接";
+ddnsm.all_closed="DDNS狝竟ヘ玡矪闽超篈";
+ddnsm.all_resolving="タ秆猂跑计嘿";
+ddnsm.all_errresolv="跑计嘿秆猂ア毖";
+ddnsm.all_connecting="タ硈钡狝竟";
+ddnsm.all_connectfail="硈钡狝竟ア毖";
+ddnsm.all_disabled="DDNS砆窽ノ";
+ddnsm.all_noip="⊿ΤInternet硈钡";
 
 //help container
 
-hddns.right2="DDNS允許您使用功能變數名稱代替IP位址來訪問您的網路。 \
-	這個服務動態的管理IP位址的變動，更新您的功能變數名稱資訊。 \
-	您必須通過DynDNS.org，TZO.com或ZoneEdit.com進行註冊。";
+hddns.right2="DDNSす砛眤ㄏノ跑计嘿蠢IPㄓ砐拜眤呼隔 \
+	硂狝叭笆篈恨瞶IP跑笆穝眤跑计嘿戈癟 \
+	眤ゲ斗硄筁DynDNS.orgTZO.com┪ZoneEdit.com秈︽爹";
 
 
 
 // ******************************************* Diagnostics.asp *******************************************//
 
-diag.titl="診斷";
-diag.h2="診斷";
-diag.legend="命令外殼";
-diag.cmd="命令";
-diag.startup="啟動";
-diag.firewall="防火牆";
+diag.titl=" - 禘耞";
+diag.h2="禘耞";
+diag.legend="㏑催";
+diag.cmd="㏑";
+diag.startup="币笆";
+diag.firewall="ň鲤";
 
 //help container
 
-hdiag.right2="您可以通過Web介面運行命令行。將您的命令填入文本區域並且點擊 <em>" + sbutton.runcmd + "</em> 按鈕進行提交。";
+hdiag.right2="眤硄筁Webざ笲︽㏑︽盢眤㏑恶ゅセ跋办翴阑 <em>" + sbutton.runcmd + "</em> 秙秈︽矗ユ";
 
 
 
 // ******************************************* DMZ.asp *******************************************//
 
-dmz.titl="DMZ";
-dmz.h2="非軍事區 (DMZ)";
+dmz.titl=" - DMZ";
+dmz.h2="獶瓁ㄆ跋 (DMZ)";
 dmz.legend="DMZ";
-dmz.serv="使用DMZ";
-dmz.host="DMZ主機IP位址";
+dmz.serv="ㄏノDMZ";
+dmz.host="DMZ诀IP";
 
 
 //help container
 
-hdmz.right2="啟用這個選項將使特定的主機被暴露給Internet。所有的埠都可以被從Internet訪問。";
+hdmz.right2="币ノ硂匡兜盢ㄏ疭﹚诀砆忌臩倒Internet┮Τ梆常砆眖Internet砐拜";
 
 
 
 // ******************************************* Factory_Defaults.asp *******************************************//
 
-factdef.titl="出廠默認設置";
-factdef.h2="出廠默認設置";
-factdef.legend="復位路由器設置";
-factdef.restore="恢復出廠默認設置";
+factdef.titl=" - 紅箇砞";
+factdef.h2="紅箇砞";
+factdef.legend="確隔パ竟砞竚";
+factdef.restore="確紅箇砞";
 
-factdef.mess1="警告！如果您點擊確定，此設備將會被重定到出廠默認設置，所有以往的設置都會被清除。";
+factdef.mess1="牡狦眤翴阑絋﹚砞称盢穦砆﹚紅箇砞┮Τ┕砞竚常穦砆睲埃";
 
 //help container
 
-hfactdef.right1="此操作將會將所有設置復位回出廠默認設置。您所做的所有設置都將被清除。";
+hfactdef.right1="巨盢穦盢┮Τ砞竚確紅箇砞眤┮暗┮Τ砞竚常盢砆睲埃";
 
 
 
 // ******************************************* FilterIP%AC.asp *******************************************//
 
-filterIP.titl="PC列表";
-filterIP.h2="PC列表";
-filterIP.h3="以如下格式輸入PC的MAC位址：xx:xx:xx:xx:xx:xx";
-filterIP.h32="輸入PC的IP位址";
-filterIP.h33="輸入PC的IP範圍";
-filterIP.ip_range="IP範圍";
+filterIP.titl=" - PC";
+filterIP.h2="PC";
+filterIP.h3="Α块PCMACxx:xx:xx:xx:xx:xx";
+filterIP.h32="块PCIP";
+filterIP.h33="块PCIP絛瞅";
+filterIP.ip_range="IP絛瞅";
 
 
 
 // ******************************************* Filter.asp *******************************************//
 
-filter.titl="訪問限制";
-filter.h2="Internet訪問";
-filter.legend="訪問策略";
-filter.pol="策略";
-filter.polname="策略名稱";
+filter.titl=" - 砐拜";
+filter.h2="Internet砐拜";
+filter.legend="砐拜郸菠";
+filter.restore="確紅箇砞";
+filter.pol="郸菠";
+filter.polname="郸菠嘿";
 filter.pcs="PC";
-filter.polallow="在選定的日期和時間允許Internet訪問。";
-filter.legend2="日期";
-filter.time="時間";
-filter.h24="24小時";
-filter.legend3="被封禁的服務";
-filter.catchall="捕獲所有P2P協議";
-filter.legend4="通過URL地址封鎖Web站點";
-filter.legend5="通過關鍵字封鎖Web站點";
+filter.polallow="匡﹚ら戳㎝丁す砛Internet砐拜";
+filter.legend2="ら戳";
+filter.time="丁";
+filter.h24="24";
+filter.legend3="砆窽ゎ狝叭";
+filter.catchall="莉┮ΤP2P某";
+filter.legend4="硄筁URL玛Web翴";
+filter.legend5="硄筁闽龄玛Web翴";
 
-filter.mess1="刪除此策略？";
-filter.mess2="您必須至少選擇一個日期。";
-filter.mess3="結束時間必須大於起始時間。";
+filter.mess1="埃郸菠";
+filter.mess2="眤ゲ斗ぶ匡拒ら戳";
+filter.mess3="挡丁ゲ斗癬﹍丁";
 
 //help container
 
-hfilter.right2="您可以最多定義10條訪問策略。點擊 <em>" + sbutton.del + "</em> 按鈕刪除一條策略，或者點擊 <em>" + sbutton.summary + "</em> 按鈕察看策略綜述。";
-hfilter.right4="啟用或禁用一條策略。";
-hfilter.right6="您可以為您的策略指定一個名稱。";
-hfilter.right8="請選擇您希望您的策略被應用的日期。";
-hfilter.right10="請輸入您希望您的策略被應用的時間。";
-hfilter.right12="您可以選擇封禁特定的服務。點擊 <em>" + sbutton.filterSer + "</em> 按鈕更改這些設置。";
-hfilter.right14="您可以通過輸入特定Web站點的URL來封禁對其訪問。";
-hfilter.right16="您可以通過輸入包含在特定Web站點頁面中的關鍵字來封禁對其訪問。";;
+hfilter.right2="眤程﹚竡10兵砐拜郸菠翴阑 <em>" + sbutton.del + "</em> 秙埃兵郸菠┪翴阑 <em>" + sbutton.summary + "</em> 秙诡郸菠侯瓃";
+hfilter.right4="币ノ┪窽ノ兵郸菠";
+hfilter.right6="眤眤郸菠﹚嘿";
+hfilter.right8="叫匡拒眤辨眤郸菠砆莱ノら戳";
+hfilter.right10="叫块眤辨眤郸菠砆莱ノ丁";
+hfilter.right12="眤匡拒窽ゎ疭﹚狝叭翴阑 <em>" + sbutton.filterSer + "</em> 秙э硂ㄇ砞竚";
+hfilter.right14="眤硄筁块疭﹚Web翴URLㄓ窽ゎ癸ㄤ砐拜";
+hfilter.right16="眤硄筁块疭﹚Web翴い闽龄ㄓ窽ゎ癸ㄤ砐拜";;
 
 
 ?6c
 // ******************************************* FilterSummary.asp *******************************************//
 
-filterSum.titl="訪問限制綜覽";
-filterSum.h2="Internet策略綜覽";
-filterSum.polnum="序號";
-filterSum.polday="（每天的）時間";
+filterSum.titl=" - 砐拜侯凝";
+filterSum.h2="Internet郸菠侯凝";
+filterSum.polnum="腹";
+filterSum.polday="–ぱ丁";
 
 
 
 // ******************************************* Firewall.asp *******************************************//
 
-firewall.titl="防火牆";
-firewall.h2="安全";
-firewall.legend="防火牆保護";
-firewall.firewall="SPI防火牆";
-firewall.legend2="附加的篩檢程式";
-firewall.proxy="過濾代理";
-firewall.cookies="過濾Cookies";
-firewall.applet="過濾Java Applets（Java小應用程式）";
-firewall.activex="過濾ActiveX";
-firewall.legend3="封禁來自WAN口的請求";
-firewall.ping="封禁來自Internet的匿名請求";
-firewall.muticast="過濾多播";
-filter.nat="過濾Internet NAT重定向";
-filter.port113="過濾IDENT（113號埠）";
+firewall.titl=" - ň鲤";
+firewall.h2="";
+firewall.legend="ň鲤玂臔";
+firewall.firewall="SPIň鲤";
+firewall.legend2="縵浪祘Α";
+firewall.proxy="筁耾瞶";
+firewall.cookies="筁耾Cookies";
+firewall.applet="筁耾Java AppletsJava莱ノ祘Α";
+firewall.activex="筁耾ActiveX";
+firewall.legend3="窽ゎㄓWAN狠叫―";
+firewall.ping="窽ゎㄓInternet拔叫―";
+firewall.muticast="筁耾冀";
+filter.nat="筁耾Internet NAT﹚";
+filter.port113="筁耾IDENT113腹梆";
 
 //help container
 
-hfirewall.right2="啟用或禁用SPI防火牆。";
+hfirewall.right2="币ノ┪窽ノSPIň鲤";
 
 
 
 // ******************************************* Forward.asp *******************************************//
 
-prforward.titl="埠段轉發（映射）";
-prforward.h2="埠段轉發（映射）";
-prforward.legend="轉發（映射）";
-prforward.app="應用程式";
+prforward.titl=" - 梆琿锣祇琈甮";
+prforward.h2="梆琿锣祇琈甮";
+prforward.legend="锣祇琈甮";
+prforward.app="莱ノ祘Α";
 
 //help container
 
-hprforward.right2="某些應用程式可能需要打開特定埠才能正常工作。 \
-	舉例來說，這些應用程式包括伺服器軟體和一些線上遊戲。 \
-	當從Internet接收到一個針對特定埠的請求時，路由器將會把這些資料路由到您指定的電腦。 \
-	處於安全的考慮，您可能想只對您需要使用的埠設置埠轉發（映射）， \
-	同時，在您完成之後，取消對 <em>" + share.enable +"</em> 核取方塊的選定。";
+hprforward.right2="琘ㄇ莱ノ祘Α惠璶ゴ秨疭﹚梆タ盽 \
+	羭ㄒㄓ弧硂ㄇ莱ノ祘Α珹狝竟硁砰㎝ㄇ絬笴栏 \
+	讽眖Internet钡Μ皐癸疭﹚梆叫―隔パ竟盢穦р硂ㄇ戈隔パ眤﹚筿福 \
+	矪σ納眤稱癸眤惠璶ㄏノ梆砞竚梆锣祇琈甮 \
+	眤ЧΘぇ癸 <em>" + share.enable +"</em> よ遏匡﹚";
 
 
 
 // ******************************************* ForwardSpec.asp *******************************************//
 
-pforward.titl="埠轉發（映射）";
-pforward.h2="埠轉發（映射）";
-pforward.legend="轉發（映射）";
-pforward.app="應用程式";
-pforward.from="源埠";
-pforward.to="目的埠";
+pforward.titl=" - 梆锣祇琈甮";
+pforward.h2="梆锣祇琈甮";
+pforward.legend="锣祇琈甮";
+pforward.app="莱ノ祘Α";
+pforward.from="方梆";
+pforward.to="ヘ梆";
 
 //help container
 
-hpforward.right2="某些應用程式可能需要打開特定埠才能正常工作。 \
-	舉例來說，這些應用程式包括伺服器軟體和一些線上遊戲。 \
-	當從Internet接收到一個針對特定埠的請求時，路由器將會把這些資料路由到您指定的電腦。 \
-	處於安全的考慮，您可能想只對您需要使用的埠設置埠轉發（映射）， \
-	同時，在您完成之後，取消對 <em>開啟</em> 核取方塊的選定。";
+hpforward.right2="琘ㄇ莱ノ祘Α惠璶ゴ秨疭﹚梆タ盽 \
+	羭ㄒㄓ弧硂ㄇ莱ノ祘Α珹狝竟硁砰㎝ㄇ絬笴栏 \
+	讽眖Internet钡Μ皐癸疭﹚梆叫―隔パ竟盢穦р硂ㄇ戈隔パ眤﹚筿福 \
+	矪σ納眤稱癸眤惠璶ㄏノ梆砞竚梆锣祇琈甮 \
+	眤ЧΘぇ癸 <em>秨币</em> よ遏匡﹚";
 
 
 
 // ******************************************* Hotspot.asp *******************************************//
 
-hotspot.titl="Hotspot";
-hotspot.h2="Hotspot門戶";
+hotspot.titl=" - Hotspot";
+hotspot.h2="Hotspotめ";
 hotspot.legend="Chillispot";
 hotspot.hotspot="Chillispot";
 hotspot.nowifibridge="Separate Wifi from the LAN Bridge";
-hotspot.pserver="主Radius伺服器IP/DNS";
-hotspot.bserver="備份RadiusIP/DNS";
+hotspot.pserver="Radius狝竟IP/DNS";
+hotspot.bserver="称RadiusIP/DNS";
 hotspot.dns="DNS IP";
-hotspot.url="重定向URL";
-hotspot.dhcp="DHCP介面";
+hotspot.url="﹚URL";
+hotspot.dhcp="DHCPざ";
 hotspot.radnas="Radius NAS ID";
-hotspot.uam="UAM秘密";
-hotspot.uamdns="UAM任意DNS";
-hotspot.allowuam="UAM被允許";
+hotspot.uam="UAM盞";
+hotspot.uamdns="UAMヴ種DNS";
+hotspot.allowuam="UAM砆す砛";
 hotspot.macauth="MACauth";
-hotspot.option="附加的Chillispot選項";
-hotspot.fon_chilli="Chillispot本地用戶管理";
-hotspot.fon_user="用戶列表";
-hotspot.http_legend="HTTP重定向";
-hotspot.http_srv="HTTP重定向";
-hotspot.http_ip="HTTP目標IP";
-hotspot.http_port="HTTP目標埠";
-hotspot.http_net="HTTP源網路";
+hotspot.option="Chillispot匡兜";
+hotspot.fon_chilli="Chillispotセノめ恨瞶";
+hotspot.fon_user="ノめ";
+hotspot.http_legend="HTTP﹚";
+hotspot.http_srv="HTTP﹚";
+hotspot.http_ip="HTTPヘ夹IP";
+hotspot.http_port="HTTPヘ夹梆";
+hotspot.http_net="HTTP方呼隔";
 hotspot.nocat_legend="NoCatSplash";
 hotspot.nocat_srv="NoCatSplash";
-hotspot.nocat_gateway="閘道名稱";
-hotspot.nocat_home="主頁";
-hotspot.nocat_allowweb="被許可的Web主機列表";
-hotspot.nocat_docroot="文檔根（目錄）";
+hotspot.nocat_gateway="筯笵嘿";
+hotspot.nocat_home="";
+hotspot.nocat_allowweb="砆砛Web诀";
+hotspot.nocat_docroot="ゅ郎ヘ魁";
 hotspot.nocat_splash="Splash URL";
-hotspot.nocat_port="排除的埠";
-hotspot.nocat_timeout="登錄超時";
-hotspot.nocat_verbose="細緻程度";
-hotspot.nocat_route="僅路由";
+hotspot.nocat_port="逼埃梆";
+hotspot.nocat_timeout="祅魁禬";
+hotspot.nocat_verbose="灿給祘";
+hotspot.nocat_route="度隔パ";
 hotspot.nocat_MAClist="MAC White List";
-hotspot.smtp_legend="SMTP重定向";
-hotspot.smtp_srv="SMTP重定向";
-hotspot.smtp_ip="SMTP目標IP";
-hotspot.smtp_net="SMTP源網路";
-hotspot.shat_legend="零IP配置";
-hotspot.shat_srv="零IP配置";
-hotspot.shat_srv2="零IP配置已開啟";
+hotspot.smtp_legend="SMTP﹚";
+hotspot.smtp_srv="SMTP﹚";
+hotspot.smtp_ip="SMTPヘ夹IP";
+hotspot.smtp_net="SMTP方呼隔";
+hotspot.shat_legend="箂IP皌竚";
+hotspot.shat_srv="箂IP皌竚";
+hotspot.shat_srv2="箂IP皌竚秨币";
 hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik代理";
-hotspot.sputnik_id="Sputnik伺服器ID";
-hotspot.sputnik_instant="使用Sputnik即時設置";
-hotspot.sputnik_express="使用SputnikNet Express";
-hotspot.sputnik_about="關於Sputnik";
+hotspot.sputnik_srv="Sputnik瞶";
+hotspot.sputnik_id="Sputnik狝竟ID";
+hotspot.sputnik_instant="ㄏノSputnik砞竚";
+hotspot.sputnik_express="ㄏノSputnikNet Express";
+hotspot.sputnik_about="闽Sputnik";
 
 
 
 // ******************************************* Info.htm *******************************************//
 
-info.titl="信息";
-info.h2="系統資訊";
-info.wlanmac="無線MAC";
-info.srv="服務";
+info.titl=" - 獺";
+info.h2="╰参戈癟";
+info.wlanmac="礚絬MAC";
+info.srv="狝叭";
 
 
 
 // ******************************************* index_heartbeat.asp *******************************************//
 
-idx_h.srv="心跳伺服器";
-idx_h.con_strgy="連接策略";
-idx_h.max_idle="按需連接：最大空閒時間";
-idx_h.alive="保持活動：重撥間期";
+idx_h.srv="み铬狝竟";
+idx_h.con_strgy="硈钡郸菠";
+idx_h.max_idle="惠硈钡程盯丁";
+idx_h.alive="玂笆挤丁戳";
 
 
 
 // ******************************************* index_l2tp.asp *******************************************//
 
-idx_l.srv="L2TP伺服器";
+idx_l.srv="L2TP狝竟";
 
 
 
 // ******************************************* index_pppoe.asp *******************************************//
 
-idx_pppoe.use_rp="使用RP PPPoE";
+idx_pppoe.use_rp="ㄏノRP PPPoE";
 
 
 
 // ******************************************* index_pptp.asp *******************************************//
 
-idx_pptp.srv="使用DHCP";
-idx_pptp.wan_ip="Internet IP地址";
-idx_pptp.gateway="閘道（PPTP服務）";
-idx_pptp.encrypt="PPTP加密";
+idx_pptp.srv="ㄏノDHCP";
+idx_pptp.wan_ip="Internet IP";
+idx_pptp.gateway="筯笵PPTP狝叭";
+idx_pptp.encrypt="PPTP盞";
 
 
 
 // ******************************************* index_static.asp *******************************************//
 
-idx_static.dns="靜態DNS";
+idx_static.dns="繰篈DNS";
 
 
 
 // ******************************************* index.asp *******************************************//
 
-idx.titl="設置";
-idx.h2="Internet設置";
-idx.h22="無線設置";
-idx.legend="Internet連接類型";
-idx.conn_type="連接類型";
+idx.titl=" - 砞竚";
+idx.h2="Internet砞竚";
+idx.h22="礚絬砞竚";
+idx.legend="Internet硈钡摸";
+idx.conn_type="硈钡摸";
 idx.stp="STP";
-idx.stp_mess="(對COMCAST ISP禁用)";
-idx.optional="可選設置（某些ISP需要這些設置）";
+idx.stp_mess="(癸COMCAST ISP窽ノ)";
+idx.optional="匡砞竚琘ㄇISP惠璶硂ㄇ砞竚";
 idx.mtu="MTU";
-idx.h23="網路設置";
-idx.routerip="路由器IP";
-idx.lanip="本地IP地址";
-idx.legend2="WAN埠";
-idx.wantoswitch="將WAN口指定給交換機";
-idx.legend3="時間設置";
-idx.timeset="時區";
-idx.dsttime="夏令時 (DST)";
-idx.static_ip="靜態IP";
-idx.dhcp="自動配置 - DHCP";
-idx.dhcp_legend="網路位址伺服器設置 (DHCP)";
-idx.dhcp_type="DHCP類型";
-idx.dhcp_srv="DHCP伺服器";
-idx.dhcp_fwd="DHCP轉發器";
-idx.dhcp_start="起始IP位址";
-idx.dhcp_end="終止IP地址";		//used in Status_Lan.asp
-idx.dhcp_maxusers="最大DHCP用戶數";
-idx.dhcp_lease="用戶端租用時間";
-idx.dhcp_dnsmasq="為DHCP使用DNSMasq";
-idx.dns_dnsmasq="為DNS使用DNSMasq";
-idx.auth_dnsmasq="以DHCP為准";
+idx.h23="呼隔砞竚";
+idx.routerip="隔パ竟IP";
+idx.lanip="セIP";
+idx.legend2="WAN梆";
+idx.wantoswitch="盢WAN狠﹚倒ユ传诀";
+idx.legend3="丁砞竚";
+idx.timeset="跋 / 甃 (DST)";
+idx.localtime="ㄏノ讽丁";
+idx.static_ip="繰篈IP";
+idx.dhcp="笆皌竚 - DHCP";
+idx.dhcp_legend="呼隔狝竟砞竚 (DHCP)";
+idx.dhcp_type="DHCP摸";
+idx.dhcp_srv="DHCP狝竟";
+idx.dhcp_fwd="DHCP锣祇竟";
+idx.dhcp_start="癬﹍IP";
+idx.dhcp_end="沧ゎIP";		//used in Status_Lan.asp
+idx.dhcp_maxusers="程DHCPノめ计";
+idx.dhcp_lease="ノめ狠ノ丁";
+idx.dhcp_dnsmasq="DHCPㄏノDNSMasq";
+idx.dns_dnsmasq="DNSㄏノDNSMasq";
+idx.auth_dnsmasq="DHCP非";
 idx.summt_opt1="none";
 idx.summt_opt2="first Sun Apr - last Sun Oct";
 idx.summt_opt3="last Sun Mar - last Sun Oct";
 idx.summt_opt4="last Sun Oct - last Sun Mar";
 idx.summt_opt5="2nd Sun Mar - first Sun Nov";
-idx.ntp_client="NTP用戶端";
 
 
 
 //help container
 
-hidx.right2="這些設置最經常被有線電視操作人員使用。";
-hidx.right4="請輸入您的ISP提供的主機名。";
-hidx.right6="請輸入您的ISP提供的功能變數名稱。";
-hidx.right8="這是路由器的位址。";
-hidx.right10="這是路由器的子網路遮罩。";
-hidx.right12="允許路由器管理您的IP位址。";
-hidx.right14="您希望起始的位址。";
-hidx.right16="您可以限制您的路由器提交的位址個數。";
-hidx.right18="請選擇您所在的時區和夏令時（DST）期間。本路由器可以使用本地時間或者UTC時間。";
+hidx.right2="硂ㄇ砞竚程竒盽砆Τ絬筿跌巨ㄏノ";
+hidx.right4="叫块眤ISP矗ㄑ诀";
+hidx.right6="叫块眤ISP矗ㄑ跑计嘿";
+hidx.right8="硂琌隔パ竟";
+hidx.right10="硂琌隔パ竟呼隔綛竛";
+hidx.right12="す砛隔パ竟恨瞶眤IP";
+hidx.right14="眤辨癬﹍";
+hidx.right16="眤眤隔パ竟矗ユ计";
+hidx.right18="叫匡拒眤┮跋㎝甃DST戳丁セ隔パ竟ㄏノセ丁┪UTC丁";
 
 
 
 // ******************************************* Join.asp *******************************************//
 
 //sshd.webservices
-join.titl="加入";
-join.mess1="已經以用戶端身份成功地加入了下列網路：";
+join.titl=" - ";
+join.mess1="竒ノめ狠ōΘ呼隔";
 
 
 
 // ******************************************* Log_incoming.asp *******************************************//
 
-log_in.titl="連入日誌表";
-log_in.h2="連入日誌表";
-log_in.th_ip="源IP";
-log_in.th_port="目的埠號";
+log_in.titl=" - 硈ら粁";
+log_in.h2="硈ら粁";
+log_in.th_ip="方IP";
+log_in.th_port="ヘ梆腹";
 
 
 
 // ******************************************* Log_outgoing.asp *******************************************//
 
-log_out.titl="連出日誌表";
-log_out.h2="連出日誌表";
+log_out.titl=" - 硈ら粁";
+log_out.h2="硈ら粁";
 log_out.th_lanip="LAN IP";
-log_out.th_wanip="目的URL/IP";
-log_out.th_port="服務/埠號";
+log_out.th_wanip="ヘURL/IP";
+log_out.th_port="狝叭/梆腹";
 
 
 
 // ******************************************* Log.asp *******************************************//
 
-log.titl="日誌";
-log.h2="日誌管理";
-log.legend="日誌";
-log.lvl="日誌等級";
-log.drop="丟棄的";
-log.reject="拒絕的";
-log.accept="接受的";
+log.titl=" - ら粁";
+log.h2="ら粁恨瞶";
+log.legend="ら粁";
+log.lvl="ら粁单";
+log.drop="メ斌";
+log.reject="┶荡";
+log.accept="钡";
 
 
 
 // ******************************************* Management.asp *******************************************//
 
-management.titl="管理";
-management.h2="路由器管理";
+management.titl=" - 恨瞶";
+management.h2="隔パ竟恨瞶";
 
-management.psswd_legend="路由器密碼";
-management.psswd_user="路由器用戶名";
-management.psswd_pass="路由器密碼";
-management.pass_conf="重新輸入從而確認";
+management.psswd_legend="隔パ竟盞絏";
+management.psswd_user="隔パ竟ノめ";
+management.psswd_pass="隔パ竟盞絏";
+management.pass_conf="穝块眖τ絋粄";
 
-management.remote_legend="遠端管理";
-management.remote_gui="Web圖形用戶介面管理";
-management.remote_https="使用HTTPS";
-management.remote_guiport="Web圖形用戶介面埠";
-management.remote_ssh="SSH管理";
-management.remote_sshport="SSH埠";
+management.remote_legend="环狠恨瞶";
+management.remote_gui="Web瓜ノめざ恨瞶";
+management.remote_https="ㄏノHTTPS";
+management.remote_guiport="Web瓜ノめざ梆";
+management.remote_ssh="SSH恨瞶";
+management.remote_sshport="SSH梆";
 
-management.web_legend="Web訪問";
-management.web_refresh="自動刷新（以秒為單位）";
-management.web_sysinfo="啟用信息站點";
-management.web_sysinfopass="資訊站點密碼保護";
-management.web_sysinfomasq="資訊站點MAC偽裝";
+management.web_legend="Web砐拜";
+management.web_refresh="笆穝虫";
+management.web_sysinfo="币ノ獺翴";
+management.web_sysinfopass="戈癟翴盞絏玂臔";
+management.web_sysinfomasq="戈癟翴MAC鞍杆";
 
 management.boot_legend="Boot Wait";
 management.boot_srv="Boot Wait";
@@ -801,207 +801,210 @@ management.loop_srv="Loopback";
 management.wifi_legend="802.1x";
 management.wifi_srv="802.1x";
 
-management.rst_legend="重定按鈕";
-management.rst_srv="重定按鈕";
+management.ntp_legend="NTPノめ狠";
+management.ntp_srv="NTP";
 
-management.routing_legend="路由";
-management.routing_srv="路由";
+management.rst_legend="﹚秙";
+management.rst_srv="﹚秙";
 
-management.ipv6_legend="IPv6支持";
+management.routing_legend="隔パ";
+management.routing_srv="隔パ";
+
+management.ipv6_legend="IPv6や";
 management.ipv6_srv="IPv6";
-management.ipv6_rad="Radvd已開啟";
-management.ipv6_radconf="Radvd配置";
+management.ipv6_rad="Radvd秨币";
+management.ipv6_radconf="Radvd皌竚";
 
-management.jffs_legend="JFFS2支持";
+management.jffs_legend="JFFS2や";
 management.jffs_srv="JFFS2";
-management.jffs_clean="清除JFFS2";
+management.jffs_clean="睲埃JFFS2";
 
-management.lang_legend="語言選擇";
-management.lang_srv="語言";
-management.lang_bulgarian="bulgarian（保加利亞語）";
-management.lang_chinese_traditional="tradchinese（繁體中文）"; 
-management.lang_chinese_simplified="simpchinese（簡體中文，Simplified Chinese）";
-management.lang_croatian="croatian（克羅地亞）";
-management.lang_czech="czech（捷克）";
-management.lang_dutch="dutch（荷蘭語）";
-management.lang_portuguese_braz="brazilian（巴西语）";
-management.lang_english="english（英語）";
-management.lang_french="french（法語）";
-management.lang_german="german（德語）";
-management.lang_italian="italian（義大利語）";
-management.lang_brazilian="brazilian（巴西語）";
-management.lang_slovenian="slovenian（斯洛文尼亞語）";
-management.lang_spanish="spanish（西班牙語）";
-management.lang_swedish="swedish（瑞典語）";
+management.lang_legend="粂ē匡拒";
+management.lang_srv="粂ē";
+management.lang_bulgarian="bulgarian玂ㄈ粂";
+management.lang_chinese_traditional="tradchinese羉砰いゅ"; 
+management.lang_chinese_simplified="simpchinese虏砰いゅSimplified Chinese";
+management.lang_croatian="croatian霉ㄈ";
+management.lang_czech="czech倍";
+management.lang_dutch="dutch颤孽粂";
+management.lang_portuguese_braz="brazilianぺ﹁粂";
+management.lang_english="english璣粂";
+management.lang_french="french猭粂";
+management.lang_german="german紈粂";
+management.lang_italian="italian竡粂";
+management.lang_brazilian="brazilianぺ﹁粂";
+management.lang_slovenian="slovenian吹ゅェㄈ粂";
+management.lang_spanish="spanish﹁痁粂";
+management.lang_swedish="swedish风ㄥ粂";
 management.lang_polish="polish";
 management.lang_japanese="japanese";
 
-management.net_legend="IP過濾設置（為P2P調整這些設置）";
-management.net_port="最大埠數";
-management.net_tcptimeout="TCP超時（以秒為單位）";
-management.net_udptimeout="UDP超時（以秒為單位）";
+management.net_legend="IP筁耾砞竚P2P秸俱硂ㄇ砞竚";
+management.net_port="程梆计";
+management.net_tcptimeout="TCP禬虫";
+management.net_udptimeout="UDP禬虫";
 
-management.clock_legend="超頻";
-management.clock_frq="頻率";
-management.clock_support="不支持";
+management.clock_legend="禬繵";
+management.clock_frq="繵瞯";
+management.clock_support="ぃや";
 
-management.mmc_legend="MMC/SD卡支持";
-management.mmc_srv="MMC設備";
+management.mmc_legend="MMC/SDや";
+management.mmc_srv="MMC砞称";
 
-management.samba_legend="Samba FS自動裝載";
-management.samba_srv="SMB檔系統";
-management.samba_share="共用";
-management.samba_stscript="啟動腳本";
+management.samba_legend="Samba FS笆杆更";
+management.samba_srv="SMB郎╰参";
+management.samba_share="ノ";
+management.samba_stscript="币笆竲セ";
 
 management.SIPatH_srv="SIPatH";
-management.SIPatH_port="SIP埠";
-management.SIPatH_domain="SIP域";
+management.SIPatH_port="SIP梆";
+management.SIPatH_domain="SIP办";
 
-management.gui_style="路由器圖形用戶介面風格";
+management.gui_style="隔パ竟瓜ノめざ";
 
 
 
 //help container
 
-hmanagement.right1="自動刷新：";
-hmanagement.right2="調整Web圖形用戶介面自動刷新間隙。輸入0完全關閉這個特性。";
+hmanagement.right1="笆穝";
+hmanagement.right2="秸俱Web瓜ノめざ笆穝丁回块0Ч闽超硂疭┦";
 
 
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymor) *****************************************//
 
-portserv.titl="埠服務";
-portserv.h2="埠服務";
+portserv.titl=" - 梆狝叭";
+portserv.h2="梆狝叭";
 
 
 
 // ******************************************* QoS.asp *******************************************//
 
-qos.titl="服務品質（QoS）";
-qos.h2="服務品質（QoS）";
-qos.legend="QoS設置";
-qos.srv="開啟QoS";
-qos.type="資料包計畫器";
-qos.uplink="上行 (kbps)";
-qos.dnlink="下行 (kbps)";
-qos.gaming="為遊戲優化";
-qos.legend2="服務優先順序";
-qos.prio_x="Exempt（豁免）";
-qos.prio_p="Premium（促進）";
-qos.prio_e="Express（快速）";
-qos.prio_b="Bulk（壓底）";
-qos.legend3="Netmask優先順序";
-qos.ipmask="IP/掩模";
-qos.maxrate_b="最大Kbits";
-qos.maxrate_o="最大資料率";
-qos.legend4="MAC優先順序";
-qos.legend5="乙太網埠優先順序";
-qos.legend6="默認帶寬等級";
-qos.bandwith="以Kbits表示的帶寬";
+qos.titl=" - 狝叭珇借QoS";
+qos.h2="狝叭珇借QoS";
+qos.legend="QoS砞竚";
+qos.srv="秨币QoS";
+qos.type="戈璸礶竟";
+qos.uplink="︽ (kbps)";
+qos.dnlink="︽ (kbps)";
+qos.gaming="笴栏纔て";
+qos.legend2="狝叭纔抖";
+qos.prio_x="Exempt僚";
+qos.prio_p="Premium玃秈";
+qos.prio_e="Expressе硉";
+qos.prio_b="Bulk溃┏";
+qos.legend3="Netmask纔抖";
+qos.ipmask="IP/被家";
+qos.maxrate_b="程Kbits";
+qos.maxrate_o="程戈瞯";
+qos.legend4="MAC纔抖";
+qos.legend5="び呼梆纔抖";
+qos.legend6="箇砞盿糴单";
+qos.bandwith="Kbitsボ盿糴";
 
 //help container
 
-hqos.right1="上行：";
-hqos.right2="將此設置為您的總上行限制的80%-95%（最大）。";
-hqos.right3="下行：";
-hqos.right4="將此設置為您的總下行限制的80%-100%（最大）。";
-hqos.right6="您可以注意消耗帶寬的應用程式，從而控制您的資料傳輸速率。";
-hqos.right8="您可以為一個給定的IP位址或者IP段指定優先順序。";
-hqos.right10="您可以通過為一個設備指定設備名，制定優先順序並輸入MAC位址， \
-			從而為該設備的所有流量指定優先順序。";
-hqos.right12="您可以根據您的設備連接到哪一個無力的LAN口來控制它的資料傳輸速率。 \
-			您可以根據設備連接到從1到4號LAN埠從而制定優先順序。";
+hqos.right1="︽";
+hqos.right2="盢砞竚眤羆︽80%-95%程";
+hqos.right3="︽";
+hqos.right4="盢砞竚眤羆︽80%-100%程";
+hqos.right6="眤猔種盿糴莱ノ祘Α眖τ北眤戈肚块硉瞯";
+hqos.right8="眤倒﹚IP┪IP琿﹚纔抖";
+hqos.right10="眤硄筁砞称﹚砞称﹚纔抖块MAC \
+			眖τ赣砞称┮Τ瑈秖﹚纔抖";
+hqos.right12="眤沮眤砞称硈钡礚LANㄓ北ウ戈肚块硉瞯 \
+			眤沮砞称硈钡眖14腹LAN梆眖τ﹚纔抖";
 
 
 
 // ******************************************* RouteTable.asp *******************************************//
 
-routetbl.titl="路由表";
-routetbl.h2="路由表項目列表";
-routetbl.th1="目的LAN IP";
+routetbl.titl=" - 隔パ";
+routetbl.h2="隔パ兜ヘ";
+routetbl.th1="ヘLAN IP";
 
 
 
 // ******************************************* Routing.asp *******************************************//
 
-route.titl="路由操作";
-route.h2="高級路由操作";
-route.mod="工作模式";
-route.bgp_legend="BGP設置";
-route.bgp_ip="鄰近IP";
-route.bgp_as="鄰近AS#";
-route.rip2_mod="RIP2路由器";
-route.ospf_mod="OSPF路由器";
-route.gateway_legend="動態路由操作";
-route.static_legend="動態路由操作";
-route.static_setno="選擇設置號";
-route.static_name="路由名稱";
-route.static_ip="目的LAN IP";
+route.titl=" - 隔パ巨";
+route.h2="蔼隔パ巨";
+route.mod="家Α";
+route.bgp_legend="BGP砞竚";
+route.bgp_ip="綟IP";
+route.bgp_as="綟AS#";
+route.rip2_mod="RIP2隔パ竟";
+route.ospf_mod="OSPF隔パ竟";
+route.gateway_legend="笆篈隔パ巨";
+route.static_legend="笆篈隔パ巨";
+route.static_setno="匡拒砞竚腹";
+route.static_name="隔パ嘿";
+route.static_ip="ヘLAN IP";
 
 //help container
 
-hroute.right2="如果本路由器正主控您的Internet連接，選擇 <em>閘道</em> 模式。如果您的網路中存在另外一個路由器，選擇 <em>路由</em> 模式。";
-hroute.right4="這是唯一的路由號，您可以設置最多20條路由。";
-hroute.right6="設置您希望指定給這條路由的名稱。";
-hroute.right8="這是您希望設定靜態路由的遠端主機。";
-hroute.right10="決定主機和網路分配。";
+hroute.right2="狦セ隔パ竟タ北眤Internet硈钡匡拒 <em>筯笵</em> 家Α狦眤呼隔い隔パ竟匡拒 <em>隔パ</em> 家Α";
+hroute.right4="硂琌斑隔パ腹眤砞竚程20兵隔パ";
+hroute.right6="砞竚眤辨﹚倒硂兵隔パ嘿";
+hroute.right8="硂琌眤辨砞﹚繰篈隔パ环狠诀";
+hroute.right10="∕﹚诀㎝呼隔だ皌";
 
 
 // ******************************************* Site_Survey.asp *******************************************//
 
-survey.titl="Site Survey（選址）";
-survey.h2="鄰近的無線網路";
-survey.thjoin="加入站點";
+survey.titl=" - Site Survey匡";
+survey.h2="綟礚絬呼隔";
+survey.thjoin="翴";
 
 
 
 // ******************************************* Services.asp *******************************************//
 
-service.titl="服務";
-service.h2="服務管理";
+service.titl=" - 狝叭";
+service.h2="狝叭恨瞶";
 
 //kaid
 service.kaid_legend="XBOX Kaid";
-service.kaid_srv="開啟Kaid";
+service.kaid_srv="秨币Kaid";
 service.kaid_locdevnum="Number of Local Devices";
 
 //DHCPd
-service.dhcp_legend="DHCP用戶端";
-service.dhcp_vendor="設置Vendorclass";
+service.dhcp_legend="DHCPノめ狠";
+service.dhcp_vendor="砞竚Vendorclass";
 service.dhcp_reqip="Request IP";
-service.dhcp_legend2="DHCP伺服器";
+service.dhcp_legend2="DHCP狝竟";
 service.dhcp_srv="DHCP Daemon";
-service.dhcp_jffs2="使用JFFS2作為用戶端租約資料庫";
-service.dhcp_domain="已使用的域";
-service.dhcp_landomain="LAN域";
-service.dhcp_option="附加的DHCPd選項";
+service.dhcp_jffs2="ㄏノJFFS2ノめ狠戈畐";
+service.dhcp_domain="ㄏノ办";
+service.dhcp_landomain="LAN办";
+service.dhcp_option="DHCPd匡兜";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="本地DNS";
-service.dnsmasq_opt="附加的DNSMasq選項";
+service.dnsmasq_loc="セDNS";
+service.dnsmasq_opt="DNSMasq匡兜";
 
 //pptp.webservices
 service.pptp_legend="PPTP";
-service.pptp_srv="PPTP伺服器";
-service.pptp_client="用戶端IP";
+service.pptp_srv="PPTP狝竟";
+service.pptp_client="ノめ狠IP";
 service.pptp_chap="CHAP-Secrets";
 
 //syslog.webservices
-service.syslog_legend="系統日誌";
-service.syslog_srv="系統日誌";
-service.syslog_ip="遠端伺服器";
+service.syslog_legend="╰参ら粁";
+service.syslog_srv="╰参ら粁";
+service.syslog_ip="环狠狝竟";
 
 //telnet.webservices
 service.telnet_legend="Telnet";
 service.telnet_srv="Telnet";
 
 //pptpd_client.webservices
-service.pptpd_legend="PPTP用戶端";
-service.pptpd_option="PPTP用戶端選項";
-service.pptpd_ipdns="伺服器IP或DNS名稱";
-service.pptpd_subnet="遠程子網";
-service.pptpd_subnetmask="遠程子網路遮罩";
-service.pptpd_encry="MPPE加密";
+service.pptpd_legend="PPTPノめ狠";
+service.pptpd_option="PPTPノめ狠匡兜";
+service.pptpd_ipdns="狝竟IP┪DNS嘿";
+service.pptpd_subnet="环祘呼";
+service.pptpd_subnetmask="环祘呼隔綛竛";
+service.pptpd_encry="MPPE盞";
 service.pptpd_mtu="MTU";
 service.pptpd_mru="MRU";
 service.pptpd_nat="NAT";
@@ -1012,390 +1015,390 @@ service.rflow_srv1="RFlow";
 service.rflow_srv2="MACupd";
 
 //pppoe-relay.webservices
-service.pppoe_legend="PPPOE中繼";
-service.pppoe_srv="中繼";
+service.pppoe_legend="PPPOEい膥";
+service.pppoe_srv="い膥";
 
 //snmp.webservices
 service.snmp_legend="SNMP";
 service.snmp_srv="SNMP";
-service.snmp_loc="位置";
-service.snmp_contact="聯繫";
-service.snmp_name="名稱";
-service.snmp_read="RO群社";
-service.snmp_write="RW群社";
+service.snmp_loc="竚";
+service.snmp_contact="羛么";
+service.snmp_name="嘿";
+service.snmp_read="RO竤";
+service.snmp_write="RW竤";
 
 //openvpn.webservices
-service.vpn_legend="OpenVPN用戶端";
-service.vpn_srv="開啟OpenVPN";
-service.vpn_ipname="伺服器IP/名稱";
-service.vpn_mtu="TUN MTU設置";
-service.vpn_mru="TUN MTU額外附加";
+service.vpn_legend="OpenVPNノめ狠";
+service.vpn_srv="秨币OpenVPN";
+service.vpn_ipname="狝竟IP/嘿";
+service.vpn_mtu="TUN MTU砞竚";
+service.vpn_mru="TUN MTU肂";
 service.vpn_mss="TCP MSS";
-service.vpn_compress="使用LZO壓縮";
-service.vpn_tunnel="隧道協議";
-service.vpn_srvcert="公共伺服器端證書";
-service.vpn_clicert="公共用戶端證書";
-service.vpn_certtype="nsCertType（ns證書類型）";
-service.vpn_clikey="用戶端私鑰";
+service.vpn_compress="ㄏノLZO溃罽";
+service.vpn_tunnel="繥笵某";
+service.vpn_srvcert="そ狝竟狠靡";
+service.vpn_clicert="そノめ狠靡";
+service.vpn_certtype="nsCertTypens靡摸";
+service.vpn_clikey="ノめ狠╬芲";
 
 //sshd.webservices
-service.ssh_legend="Secure Shell（安全外殼）";
+service.ssh_legend="Secure Shell催";
 service.ssh_srv="SSHd";
-service.ssh_password="密碼登錄";
-service.ssh_key="授權秘鑰";
+service.ssh_password="盞絏祅魁";
+service.ssh_key="甭舦芲";
 
 
 
 // ******************************************* Sipath.asp + cgi *******************************************//
 
-sipath.titl="SiPath總覽";
-sipath.phone_titl="電話本";
-sipath.status_titl="狀態";
+sipath.titl=" - SiPath羆凝";
+sipath.phone_titl=" - 筿杠セ";
+sipath.status_titl=" - 篈";
 
 
 
 // ******************************************* Status_Lan.asp *******************************************//
 
-status_lan.titl="LAN狀態";
-status_lan.h2="本地網路";
-status_lan.legend="LAN狀態";
-status_lan.h22="動態主機配置協定";
-status_lan.legend2="DHCP狀態";
-status_lan.legend3="DHCP用戶端";
+status_lan.titl=" - LAN篈";
+status_lan.h2="セ呼隔";
+status_lan.legend="LAN篈";
+status_lan.h22="笆篈诀皌竚﹚";
+status_lan.legend2="DHCP篈";
+status_lan.legend3="DHCPノめ狠";
 status_lan.legend4="Active Clients";
 
 //help container
 
-hstatus_lan.right2="這是您的本地乙太網路中看到的路由器的MAC位址。";
-hstatus_lan.right4="這是您的本地乙太網路中看到的路由器的IP位址。";
-hstatus_lan.right6="當路由器使用一個子網路遮罩的時候，它被顯示在這裏。";
-hstatus_lan.right8="如果您將您的路由器當作DHCP伺服器使用，那將被顯示在這裏。";
-hstatus_lan.right10="點擊任意MAC位址，您將能獲取該網路介面的“唯一組織識別碼”（IEEE標準OUI資料庫搜索）。";
+hstatus_lan.right2="硂琌眤セび呼隔い隔パ竟MAC";
+hstatus_lan.right4="硂琌眤セび呼隔い隔パ竟IP";
+hstatus_lan.right6="讽隔パ竟ㄏノ呼隔綛竛ウ砆陪ボ硂";
+hstatus_lan.right8="狦眤盢眤隔パ竟讽DHCP狝竟ㄏノê盢砆陪ボ硂";
+hstatus_lan.right10="翴阑ヴ種MAC眤盢莉赣呼隔ざ斑舱麓醚絏IEEE夹非OUI戈畐穓";
 
 
 
 // ******************************************* Status_Router.asp *******************************************//
 
-status_router.titl="路由器狀態";
-status_router.h2="路由器信息";
-status_router.legend="系統";
-status_router.sys_model="路由器型號";
-status_router.sys_firmver="固件版本";
-status_router.sys_time="當前時間";
-status_router.sys_up="運行時間";
-status_router.sys_load="平均負載";
+status_router.titl=" - 隔パ竟篈";
+status_router.h2="隔パ竟獺";
+status_router.legend="╰参";
+status_router.sys_model="隔パ竟腹";
+status_router.sys_firmver="洞砰セ";
+status_router.sys_time="ヘ玡丁";
+status_router.sys_up="笲︽丁";
+status_router.sys_load="キА璽更";
 status_router.legend2="CPU";
-status_router.cpu="CPU型號";
-status_router.clock="CPU時鐘";
-status_router.legend3="記憶體";
-status_router.mem_tot="所有可用";
-status_router.mem_free="空閒";
-status_router.mem_used="已使用";
-status_router.mem_buf="緩衝";
-status_router.mem_cached="被緩存的";
-status_router.mem_active="活動";
-status_router.mem_inactive="不活動";
-status_router.legend4="網路";
-status_router.net_maxports="IP篩檢程式最大埠數";
-status_router.net_conntrack="活動的IP連接數";
+status_router.cpu="CPU腹";
+status_router.clock="CPU牧";
+status_router.legend3="癘拘砰";
+status_router.mem_tot="┮Τノ";
+status_router.mem_free="盯";
+status_router.mem_used="ㄏノ";
+status_router.mem_buf="絯侥";
+status_router.mem_cached="砆絯";
+status_router.mem_active="笆";
+status_router.mem_inactive="ぃ笆";
+status_router.legend4="呼隔";
+status_router.net_maxports="IP縵浪祘Α程梆计";
+status_router.net_conntrack="笆IP硈钡计";
 status_router.h22="Internet";
-status_router.legend5="配置類型";
-status_router.www_loginstatus="登錄狀態";
+status_router.legend5="皌竚摸";
+status_router.www_loginstatus="祅魁篈";
 status_router.wanuptime="Connection Uptime";
 status_router.leasetime="Remaining Lease Time";
 status_router.notavail="Not available";
 
 //help container
 
-hstatus_router.right2="這是您在 <i>設置</i> 標籤中所指定的路由器的名稱。";
-hstatus_router.right4="這是您的ISP所看到的路由器的MAC地址。";
-hstatus_router.right6="這是路由器當前的固件。";
-hstatus_router.right8="這是您在設置標籤中設置得到時間。";
-hstatus_router.right10="這個數值表示路由器\"啟動\"並且運行的時間。";
-hstatus_router.right12="這裏給出的三個數位表示系統在過去1、5、15分鐘時間內的系統負載。";
-hstatus_router.right14="這裏顯示您的ISP所需要將您連接到Internet的資訊。 \
-				這些資訊被輸入在設置標籤中。通過按這裏的按鈕，您可以 <em>連接</em> 或者 <em>斷開</em> 您的連接。";
+hstatus_router.right2="硂琌眤 <i>砞竚</i> 夹乓い┮﹚隔パ竟嘿";
+hstatus_router.right4="硂琌眤ISP┮隔パ竟MAC";
+hstatus_router.right6="硂琌隔パ竟ヘ玡洞砰";
+hstatus_router.right8="硂琌眤砞竚夹乓い砞竚眔丁";
+hstatus_router.right10="硂计ボ隔パ竟\"币笆\"笲︽丁";
+hstatus_router.right12="硂倒计ボ╰参筁1515だ牧丁ず╰参璽更";
+hstatus_router.right14="硂陪ボ眤ISP┮惠璶盢眤硈钡Internet戈癟 \
+				硂ㄇ戈癟砆块砞竚夹乓い硄筁硂秙眤 <em>硈钡</em> ┪ <em>耞秨</em> 眤硈钡";
 
 
 
 // ******************************************* Status_SputnikAPD.asp *******************************************//
 
-status_sputnik.titl="Sputnik代理狀態";
+status_sputnik.titl=" - Sputnik瞶篈";
 status_sputnik.h2="Sputnik&reg; Agent&trade;";
-status_sputnik.manage="管理器";
-status_sputnik.license="SCC授權編號";
+status_sputnik.manage="恨瞶竟";
+status_sputnik.license="SCC甭舦絪腹";
 
 //help container
 
-hstatus_sputnik.right1="Sputnik代理狀態";
-hstatus_sputnik.right2="此螢幕顯示Sputnik代理操作的狀態。";
-hstatus_sputnik.right4="本訪問點所連接到的Sputnik控制中心。";
-hstatus_sputnik.right6="當前代理狀態。";
-hstatus_sputnik.right8="您的Sputnik控制中心的授權數。";
+hstatus_sputnik.right1="Sputnik瞶篈";
+hstatus_sputnik.right2="棵辊陪ボSputnik瞶巨篈";
+hstatus_sputnik.right4="セ砐拜翴┮硈钡Sputnik北いみ";
+hstatus_sputnik.right6="ヘ玡瞶篈";
+hstatus_sputnik.right8="眤Sputnik北いみ甭舦计";
 
 
 
 // ******************************************* Status_Wireless.asp *******************************************//
 
-status_wireless.titl="無線狀態";
-status_wireless.h2="無線";
-status_wireless.legend="無線狀態";
-status_wireless.net="網路";
-status_wireless.pptp="PPTP狀態";
-status_wireless.legend2="資料包資訊";
-status_wireless.rx="已接收的 (RX)";
-status_wireless.tx="已傳送的 (TX)";
-status_wireless.h22="無線節點";
-status_wireless.legend3="無線用戶端";
-status_wireless.signal_qual="信號品質";
-status_wireless.wds="WDS節點";
+status_wireless.titl=" - 礚絬篈";
+status_wireless.h2="礚絬";
+status_wireless.legend="礚絬篈";
+status_wireless.net="呼隔";
+status_wireless.pptp="PPTP篈";
+status_wireless.legend2="戈戈癟";
+status_wireless.rx="钡Μ (RX)";
+status_wireless.tx="肚癳 (TX)";
+status_wireless.h22="礚絬竊翴";
+status_wireless.legend3="礚絬ノめ狠";
+status_wireless.signal_qual="獺腹珇借";
+status_wireless.wds="WDS竊翴";
 
 //help container
 
-hstatus_wireless.right2="這是您在您的本地無線網路中看到的路由器的MAC位址。";
-hstatus_wireless.right4="正如您在在無線標籤裏所設置的，這裏將顯示網路所使用的無線模式（混合，僅G，僅B或者禁用）。";
+hstatus_wireless.right2="硂琌眤眤セ礚絬呼隔い隔パ竟MAC";
+hstatus_wireless.right4="タ眤礚絬夹乓┮砞竚硂盢陪ボ呼隔┮ㄏノ礚絬家Α睼度G度B┪窽ノ";
 
 
 
 // ******************************************* Status_OpenVPN.asp *******************************************//
 
-status_openvpn.titl="OpenVPN Status";
+status_openvpn.titl=" - OpenVPN Status";
 
 
 // ******************************************* Triggering.asp *******************************************//
 
-trforward.titl="埠激發器";
-trforward.h2="埠激發器";
-trforward.legend="轉發（映射）";
-trforward.trrange="被激發的埠範圍";
-trforward.fwdrange="被轉發（映射）的埠範圍";
-trforward.app="應用程式。";
+trforward.titl=" - 梆縀祇竟";
+trforward.h2="梆縀祇竟";
+trforward.legend="锣祇琈甮";
+trforward.trrange="砆縀祇梆絛瞅";
+trforward.fwdrange="砆锣祇琈甮梆絛瞅";
+trforward.app="莱ノ祘Α";
 
 //help container
 
-htrforward.right2="輸入激發器的應用名稱。";
-htrforward.right4="為每一個應用程式列出被激發的埠範圍。請參考Internet應用程式文檔來查找所需要的埠號。";
-htrforward.right6="為每一個應用程式列出被轉發（映射）的埠範圍。請參考Internet應用程式文檔來查找所需要的埠號。";
-htrforward.right8="輸入被激發和被轉發（映射）埠範圍的起始埠號。";
-htrforward.right10="輸入被激發和被轉發（映射）埠範圍的終止埠號。";
+htrforward.right2="块縀祇竟莱ノ嘿";
+htrforward.right4="–莱ノ祘Α砆縀祇梆絛瞅叫把σInternet莱ノ祘Αゅ郎ㄓ琩т┮惠璶梆腹";
+htrforward.right6="–莱ノ祘Α砆锣祇琈甮梆絛瞅叫把σInternet莱ノ祘Αゅ郎ㄓ琩т┮惠璶梆腹";
+htrforward.right8="块砆縀祇㎝砆锣祇琈甮梆絛瞅癬﹍梆腹";
+htrforward.right10="块砆縀祇㎝砆锣祇琈甮梆絛瞅沧ゎ梆腹";
 
 
 
 // ******************************************* Upgrade.asp *******************************************//
 
-upgrad.titl="固件升級";
-upgrad.h2="固件管理";
-upgrad.legend="固件升級";
-upgrad.info1="在刷新之後，復位到";
-upgrad.resetOff="不復位";
-upgrad.resetOn="默認設置";
-upgrad.file="請選擇一個用來升級的檔";
-upgrad.warning=" [警] [告] ";
-upgrad.mess1="升級固件可能需要花費數分鐘。<br />請不要關閉電源或者按重定按鈕！";
+upgrad.titl=" - 洞砰ど";
+upgrad.h2="洞砰恨瞶";
+upgrad.legend="洞砰ど";
+upgrad.info1="穝ぇ確";
+upgrad.resetOff="ぃ確";
+upgrad.resetOn="箇砞";
+upgrad.file="叫匡拒ノㄓど郎";
+upgrad.warning=" [牡] [] ";
+upgrad.mess1="ど洞砰惠璶禣计だ牧<br />叫ぃ璶闽超筿方┪﹚秙";
 
 //help container
 
-hupgrad.right2="點擊 <em>流覽...</em> 按鈕選擇將要上載到路由器的固件檔。<br /><br /> \
-			點擊 <em>升級</em> 按鈕開始升級過程。升級絕對不可以被打斷。";
+hupgrad.right2="翴阑 <em>瑈凝...</em> 秙匡拒盢璶更隔パ竟洞砰郎<br /><br /> \
+			翴阑 <em>ど</em> 秙秨﹍ど筁祘ど荡癸ぃ砆ゴ耞";
 
 
 
 // ******************************************* UPnP.asp *******************************************//
 
-upnp.titl="UPnP";
-upnp.h2="通用即插即用（UPnP）";
-upnp.legend="轉發（映射）";
-upnp.legend2="UPnP配置";
-upnp.serv="UPnP服務";
-upnp.clear="在啟動時清除埠轉發（映射）";
-upnp.url="發送陳述URL";
-upnp.msg1="點擊刪除租用";
-upnp.msg2="刪除所有項目？";
+upnp.titl=" - UPnP";
+upnp.h2="硄ノ础ノUPnP";
+upnp.legend="锣祇琈甮";
+upnp.legend2="UPnP皌竚";
+upnp.serv="UPnP狝叭";
+upnp.clear="币笆睲埃梆锣祇琈甮";
+upnp.url="祇癳朝瓃URL";
+upnp.msg1="翴阑埃ノ";
+upnp.msg2="埃┮Τ兜ヘ";
 
 
 //help container
 
-hupnp.right2="點擊垃圾桶刪除單一條目。";
-hupnp.right4="允許應用程式自動地設置埠轉發（映射）";
+hupnp.right2="翴阑︰В表埃虫兵ヘ";
+hupnp.right4="す砛莱ノ祘Α笆砞竚梆锣祇琈甮";
 
 
 
 // ******************************************* VPN.asp *******************************************//
 
-vpn.titl="VPN";
-vpn.h2="虛擬專用網路（VPN）";
-vpn.legend="VPN穿透";
-vpn.ipsec="IPSec穿透";
-vpn.pptp="PPTP穿透";
-vpn.l2tp="L2TP穿透";
+vpn.titl=" - VPN";
+vpn.h2="店览盡ノ呼隔VPN";
+vpn.legend="VPN硓";
+vpn.ipsec="IPSec硓";
+vpn.pptp="PPTP硓";
+vpn.l2tp="L2TP硓";
 
 //help container
 
-hvpn.right1="您可以選擇啟用IPSec，PPTP 和/或 L2TP 穿透，從而允許您的網路設備通過VPN進行通訊。";
+hvpn.right1="眤匡拒币ノIPSecPPTP ㎝/┪ L2TP 硓眖τす砛眤呼隔砞称硄筁VPN秈︽硄癟";
 
 
 // ******************************************* Vlan.asp *******************************************//
 
-vlan.titl="虛擬LAN";
-vlan.h2="虛擬本地網路（VLAN）";
+vlan.titl=" - 店览LAN";
+vlan.h2="店览セ呼隔VLAN";
 vlan.legend="VLAN";
-vlan.bridge="被指定到<br />網橋";
-vlan.tagged="已標記的";
-vlan.negociate="自動協商";
-vlan.aggregation="<br>3號與4號埠鏈路聚合";
-vlan.trunk="主幹";
+vlan.bridge="砆﹚<br />呼爵";
+vlan.tagged="夹癘";
+vlan.negociate="笆坝";
+vlan.aggregation="<br>3腹籔4腹梆渺隔籈";
+vlan.trunk="稦";
 
 
 // ******************************************* WEP.asp *******************************************//
 
-wep.defkey="默認傳輸秘鑰";
-wep.passphrase="口令";
+wep.defkey="箇砞肚块芲";
+wep.passphrase="";
 
 
 
 // ******************************************* WOL.asp *******************************************//
 
-wol.titl="WOL";
-wol.h2="網路喚醒";
-wol.legend="可用主機";
-wol.legend2="WOL地址";
-wol.legend3="輸出";
-wol.legend4="手工WOL";
-wol.enable="啟用WOL？";
-wol.mac="MAC地址";
-wol.broadcast="網路廣播";
-wol.udp="UDP埠";
-wol.msg1="點擊移除WOL主機";
+wol.titl=" - WOL";
+wol.h2="呼隔酬眶";
+wol.legend="ノ诀";
+wol.legend2="WOL";
+wol.legend3="块";
+wol.legend4="もWOL";
+wol.enable="币ノWOL";
+wol.mac="MAC";
+wol.broadcast="呼隔約冀";
+wol.udp="UDP梆";
+wol.msg1="翴阑簿埃WOL诀";
 wol.h22="Automatic Wake-On-LAN";
-wol.legend5="網路喚醒";
+wol.legend5="呼隔酬眶";
 wol.srv="WOL";
-wol.pass="SecureOn密碼";
+wol.pass="SecureOn盞絏";
 //help container
 
-hwol.right2="本頁面允許您 <em>喚醒</em> 在您本地網路上的主機（例如，本地的連接到您的路由器上的）。";
-hwol.right4="MAC位址使用如下格式輸入 xx:xx:xx:xx:xx:xx （例如 01:23:45:67:89:AB）";
-hwol.right6="IP位址通常是本地網路的廣播位址，但是如果目標主機並為連接到路由器的本地網路，則應該設置為遠端位址。"
+hwol.right2="セす砛眤 <em>酬眶</em> 眤セ呼隔诀ㄒセ硈钡眤隔パ竟";
+hwol.right4="MACㄏノΑ块 xx:xx:xx:xx:xx:xx ㄒ 01:23:45:67:89:AB";
+hwol.right6="IP硄盽琌セ呼隔約冀琌狦ヘ夹诀硈钡隔パ竟セ呼隔玥莱赣砞竚环狠"
 
 
 
 // ******************************************* WanMAC.asp *******************************************//
 
-wanmac.titl="MAC地址克隆";
-wanmac.h2="MAC地址克隆";
-wanmac.legend="MAC克隆";
-wanmac.wan="克隆WAN口MAC";
-wanmac.wlan="克隆無線MAC";
+wanmac.titl=" - MAC订";
+wanmac.h2="MAC订";
+wanmac.legend="MAC订";
+wanmac.wan="订WAN狠MAC";
+wanmac.wlan="订礚絬MAC";
 
 //help container
 
-hwanmac.right2="某些ISP可能要求您註冊您的MAC位址。 \
-			如果您不想重新註冊您的MAC位址，您可以將路由器的MAC位址克隆為您註冊在您的ISP處的MAC地址。";
+hwanmac.right2="琘ㄇISP璶―眤爹眤MAC \
+			狦眤ぃ稱穝爹眤MAC眤盢隔パ竟MAC订眤爹眤ISP矪MAC";
 
 
 
 // ******************************************* WL_WPATable.asp / WPA.asp / Radius.asp *******************************************//
 
-wpa.titl="無線安全";
-wpa.h2="無線安全";
-wpa.legend="無線加密";
-wpa.auth_mode="網路鑒權";
+wpa.titl=" - 礚絬";
+wpa.h2="礚絬";
+wpa.legend="礚絬盞";
+wpa.auth_mode="呼隔懦舦";
 wpa.wpa="WPA";
 wpa.radius="Radius";
-wpa.gtk_rekey="WPA組重新獲取秘鑰間隔";
-wpa.rekey="秘鑰更新間歇（以秒為單位）";
-wpa.radius_ipaddr="RADIUS伺服器地址";
-wpa.radius_port="RADIUS伺服器埠";
-wpa.radius_key="RADIUS秘鑰";
-wpa.algorithms="WPA演算法";
-wpa.shared_key="WPA共用秘鑰";
-wpa.rekeyInt="重新獲取秘鑰間隔";
+wpa.gtk_rekey="WPA舱穝莉芲丁筳";
+wpa.rekey="芲穝丁凡虫";
+wpa.radius_ipaddr="RADIUS狝竟";
+wpa.radius_port="RADIUS狝竟梆";
+wpa.radius_key="RADIUS芲";
+wpa.algorithms="WPA簍衡猭";
+wpa.shared_key="WPAノ芲";
+wpa.rekeyInt="穝莉芲丁筳";
 
 //help container
 
-hwpa.right1="安全模式：";
-hwpa.right2="您可以從禁用、WEP、WPA預共用秘鑰、WPA RADIUS或者RADIUS中選取一種。在您的網路上的所有設備必須使用相同的安全模式。";
+hwpa.right1="家Α";
+hwpa.right2="眤眖窽ノWEPWPA箇ノ芲WPA RADIUS┪RADIUSい匡贺眤呼隔┮Τ砞称ゲ斗ㄏノ家Α";
 
 
 
 // ******************************************* WL_FilterTable.asp *******************************************//
 
-wl_filter.titl="MAC地址篩檢程式列表";
-wl_filter.h2="MAC地址篩檢程式列表";
-wl_filter.h3="使用如下格式輸入MAC位址&nbsp;：&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
+wl_filter.titl=" - MAC縵浪祘Α";
+wl_filter.h2="MAC縵浪祘Α";
+wl_filter.h3="ㄏノΑ块MAC&nbsp;&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
 
 
 
 // ******************************************* WL_ActiveTable.asp *******************************************//
 
-wl_active.titl="活動的無線用戶端MAC列表";
-wl_active.h2="無線用戶端MAC列表";
-wl_active.h3="啟用MAC篩檢程式";
-wl_active.active="活動的PC";
-wl_active.inactive="不活動的PC";
+wl_active.titl=" - 笆礚絬ノめ狠MAC";
+wl_active.h2="礚絬ノめ狠MAC";
+wl_active.h3="币ノMAC縵浪祘Α";
+wl_active.active="笆PC";
+wl_active.inactive="ぃ笆PC";
 
 
 
 // ******************************************* Wireless_WDS.asp *******************************************//
 
-wds.titl="WDS";
-wds.h2="無線分佈系統";
-wds.legend="WDS設置";
+wds.titl=" - WDS";
+wds.h2="礚絬だ╰参";
+wds.legend="WDS砞竚";
 wds.label="Lazy WDS";
-wds.label2="WDS子網";
-wds.wl_mac="無線MAC";
+wds.label2="WDS呼";
+wds.wl_mac="礚絬MAC";
 wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
-wds.subnet="子網";
-wds.legend2="額外的選項";
+wds.subnet="呼";
+wds.legend2="肂匡兜";
 
 
 
 // ******************************************* Wireless_radauth.asp *******************************************//
 
-radius.titl="Radius";
-radius.h2="遠端授權撥入用戶服務（Radius）";
+radius.titl=" - Radius";
+radius.h2="环狠甭舦挤ノめ狝叭Radius";
 radius.legend="Radius";
-radius.label="MAC Radius用戶端";
-radius.label2="MAC格式";
-radius.label3="Radius伺服器IP";
-radius.label4="Radius伺服器埠";
-radius.label5="最大非授權用戶數";
-radius.label6="密碼格式";
+radius.label="MAC Radiusノめ狠";
+radius.label2="MACΑ";
+radius.label3="Radius狝竟IP";
+radius.label4="Radius狝竟梆";
+radius.label5="程獶甭舦ノめ计";
+radius.label6="盞絏Α";
 radius.label7="RADIUS Shared Secret";
-radius.label8="如果伺服器不可用則越過Radius";
+radius.label8="狦狝竟ぃノ玥禫筁Radius";
 
 
 
 // ******************************************* Wireless_MAC.asp *******************************************//
 
-wl_mac.titl="MAC篩檢程式";
-wl_mac.h2="無線MAC篩檢程式";
-wl_mac.legend="MAC篩檢程式";
-wl_mac.label="使用篩檢程式";
-wl_mac.label2="篩檢程式模式";
-wl_mac.deny="組織所列PC機訪問無線網路";
-wl_mac.allow="只允許所列PC機訪問無線網路";
+wl_mac.titl=" - MAC縵浪祘Α";
+wl_mac.h2="礚絬MAC縵浪祘Α";
+wl_mac.legend="MAC縵浪祘Α";
+wl_mac.label="ㄏノ縵浪祘Α";
+wl_mac.label2="縵浪祘Α家Α";
+wl_mac.deny="舱麓┮PC诀砐拜礚絬呼隔";
+wl_mac.allow="す砛┮PC诀砐拜礚絬呼隔";
 
 
 
 // ******************************************* Wireless_Basic.asp *******************************************//
 
-wl_basic.titl="無線";
-wl_basic.h2="無線";
-wl_basic.legend="基本設置";
-wl_basic.label="無線模式";
-wl_basic.label2="無線網路模式";
-wl_basic.label3="無線網路名（SSID）";
-wl_basic.label4="無線頻道";
-wl_basic.label5="無線SSID廣播";
-wl_basic.label6="感受範圍（ACK時序）";
-wl_basic.ap="訪問點（AP）";
-wl_basic.client="用戶端";
-wl_basic.clientBridge="用戶端網橋";
+wl_basic.titl=" - 礚絬";
+wl_basic.h2="礚絬";
+wl_basic.legend="膀セ砞竚";
+wl_basic.label="礚絬家Α";
+wl_basic.label2="礚絬呼隔家Α";
+wl_basic.label3="礚絬呼隔SSID";
+wl_basic.label4="礚絬繵笵";
+wl_basic.label5="礚絬SSID約冀";
+wl_basic.label6="稰絛瞅ACK";
+wl_basic.ap="砐拜翴AP";
+wl_basic.client="ノめ狠";
+wl_basic.clientBridge="ノめ狠呼爵";
 wl_basic.adhoc="Adhoc";
-wl_basic.mixed="混合";
-wl_basic.b="僅B";
-wl_basic.g="僅G";
+wl_basic.mixed="睼";
+wl_basic.b="度B";
+wl_basic.g="度G";
 wl_basic.legend2="Radio Time Restrictions";
 wl_basic.radio="Radio";
 wl_basic.radiotimer="Radio Scheduling";
@@ -1404,86 +1407,86 @@ wl_basic.radio_off="Radio is Off";
 
 //help container
 
-hwl_basic.right2="如果您想剔除無線-G用戶端，選擇 <em>僅B</em> 模式。如果您想禁用無線訪問，選擇 <em>禁用</em>。";
-hwl_basic.right3="感受範圍：";
-hwl_basic.right4="調整ack時序。輸入0將完全禁用ack時序。";
+hwl_basic.right2="狦眤稱埃礚絬-Gノめ狠匡拒 <em>度B</em> 家Α狦眤稱窽ノ礚絬砐拜匡拒 <em>窽ノ</em>";
+hwl_basic.right3="稰絛瞅";
+hwl_basic.right4="秸俱ack块0盢Ч窽ノack";
 
 
 
 // ******************************************* Wireless_Advanced.asp *******************************************//
 
-wl_adv.titl="高級無線設置";
-wl_adv.h2="高級無線設置";
-wl_adv.legend="高級設置";
-wl_adv.legend2="無線多媒體支援設置";
-wl_adv.label="鑒權類型";
-wl_adv.label2="基本速率";
-wl_adv.label3="傳輸速率";
-wl_adv.label4="CTS保護模式";
-wl_adv.label5="幀突發";
-wl_adv.label6="信標間隙";
-wl_adv.label7="DTIM間隙";
-wl_adv.label8="碎片閾值";
-wl_adv.label9="RTS閾值";
-wl_adv.label10="最大關聯的用戶端數";
-wl_adv.label11="AP獨立";
-wl_adv.label12="傳送天線";
-wl_adv.label13="接受天線";
+wl_adv.titl=" - 蔼礚絬砞竚";
+wl_adv.h2="蔼礚絬砞竚";
+wl_adv.legend="蔼砞竚";
+wl_adv.legend2="礚絬碈砰や穿砞竚";
+wl_adv.label="懦舦摸";
+wl_adv.label2="膀セ硉瞯";
+wl_adv.label3="肚块硉瞯";
+wl_adv.label4="CTS玂臔家Α";
+wl_adv.label5="碫祇";
+wl_adv.label6="獺夹丁回";
+wl_adv.label7="DTIM丁回";
+wl_adv.label8="窰霩";
+wl_adv.label9="RTS霩";
+wl_adv.label10="程闽羛ノめ狠计";
+wl_adv.label11="AP縒ミ";
+wl_adv.label12="肚癳ぱ絬";
+wl_adv.label13="钡ぱ絬";
 wl_adv.label14="Preamble";
-wl_adv.reference="雜訊參照";
-wl_adv.label15="Xmit功率";
+wl_adv.reference="馒癟把酚";
+wl_adv.label15="Xmit瞯";
 wl_adv.label16="Afterburner";
-wl_adv.label17="無線圖形用戶介面訪問";
-wl_adv.label18="WMM支持";
-wl_adv.label19="無知曉";
-wl_adv.table1="EDCA AP參數（AP到用戶端）";
+wl_adv.label17="礚絬瓜ノめざ砐拜";
+wl_adv.label18="WMMや";
+wl_adv.label19="礚惧";
+wl_adv.table1="EDCA AP把计APノめ狠";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
 wl_adv.col3="AIFSN";
 wl_adv.col4="TXOP(b)";
 wl_adv.col5="TXOP(a/g)";
-wl_adv.col6="管理員強制";
-wl_adv.row1="背景";
-wl_adv.row2="最大努力";
-wl_adv.row3="視頻";
-wl_adv.row4="語音";
-wl_adv.table2="EDCA STA參數（用戶端到AP）";
-wl_adv.lng="長"; 					//************* don't use .long ! *************
-wl_adv.shrt="短"; 				//************* don't use .short ! **************
+wl_adv.col6="恨瞶眏";
+wl_adv.row1="璉春";
+wl_adv.row2="程";
+wl_adv.row3="跌繵";
+wl_adv.row4="粂";
+wl_adv.table2="EDCA STA把计ノめ狠AP";
+wl_adv.lng=""; 					//************* don't use .long ! *************
+wl_adv.shrt="祏"; 				//************* don't use .short ! **************
 
 //help container
 
-hwl_adv.right2="您可以從自動或者共用秘鑰中選擇一個。共用秘鑰授權更加安全，但是所有在您網路中的設備必須支援共用秘鑰授權。";
+hwl_adv.right2="眤眖笆┪ノ芲い匡拒ノ芲甭舦琌┮Τ眤呼隔い砞称ゲ斗や穿ノ芲甭舦";
 
 
 
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//
 
-fail.mess1="您所輸入的數值是無效的。請再試一次。";
-fail.mess2="升級失敗。";
+fail.mess1="眤┮块计琌礚叫刚Ω";
+fail.mess2="どア毖";
 
 
 
 // ******************************************* Success*.asp / Reboot.asp  *******************************************//
 
-success.saved="設置已保存。";
-success.restore="設置已恢復。<br/>設備正在重新啟動。請稍候……";
-success.upgrade="升級成功。<br/>設備正在重新啟動。請稍候……";
-success.success_noreboot="設置成功。";
-success.success_reboot=success.success_noreboot + "<br />設備正在重新啟動。請稍候……";
+success.saved="砞竚玂";
+success.restore="砞竚確<br/>砞称タ穝币笆叫祔";
+success.upgrade="どΘ<br/>砞称タ穝币笆叫祔";
+success.success_noreboot="砞竚Θ";
+success.success_reboot=success.success_noreboot + "<br />砞称タ穝币笆叫祔";
 
-success.alert_reset="所有配置已經被恢復到它們的預設值。<br /><br />";
-success.alert1="請在再次連接前檢查以下內容：";
-success.alert2="如果您更改了您的路由器的IP位址，請注意您必須release並且renew您網路上用戶端的位址。";
-success.alert3="如果您是通過WLAN連接的，請加入網路並且點擊 <em>繼續</em>.";
+success.alert_reset="┮Τ皌竚竒砆確ウ箇砞<br /><br />";
+success.alert1="叫Ω硈钡玡浪琩ず甧";
+success.alert2="狦眤э眤隔パ竟IP叫猔種眤ゲ斗releaserenew眤呼隔ノめ狠";
+success.alert3="狦眤琌硄筁WLAN硈钡叫呼隔翴阑 <em>膥尿</em>.";
 
 // *****************************************************		OLD PAGES 		************************************************************************//
 // **************************************************************** DHCPTable.asp **********************************************************************//
 
-dhcp.titl="DHCP活動IP列表";
-dhcp.h2="DHCP活動IP列表";
-dhcp.server="DHCP伺服器IP地址：";
-dhcp.tclient="用戶端主機名";
+dhcp.titl=" - DHCP笆IP";
+dhcp.h2="DHCP笆IP";
+dhcp.server="DHCP狝竟IP";
+dhcp.tclient="ノめ狠诀";
 
 
-donate.mb="您也可以通過Moneybookers帳號mb@dd-wrt.com進行捐贈";
+donate.mb="眤硄筁Moneybookers眀腹mb@dd-wrt.com秈︽秘";
