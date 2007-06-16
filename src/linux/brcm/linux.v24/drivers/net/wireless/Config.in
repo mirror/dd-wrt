@@ -13,7 +13,9 @@ if [ "$CONFIG_ALL_PPC" = "y" ]; then
 fi
 
 if [ "$CONFIG_PCI" = "y" ]; then
-   dep_tristate '    Proprietary Broadcom BCM43xx 802.11 Wireless support' CONFIG_WL
+   dep_tristate '    Proprietary Broadcom BCM43xx 802.11 Wireless support (BASE)' CONFIG_WL
+   dep_tristate '    Proprietary Broadcom BCM43xx 802.11 Wireless support (APSTAMIMO)' CONFIG_APSTAMIMO
+   dep_tristate '    Proprietary Broadcom BCM43xx 802.11 Wireless support (APSTA)' CONFIG_APSTA
    dep_tristate '    Broadcom to IWLIB wrapper' CONFIG_WLCOMPAT
    dep_tristate '    Hermes in PLX9052 based PCI adaptor support (Netgear MA301 etc.) (EXPERIMENTAL)' CONFIG_PLX_HERMES $CONFIG_HERMES $CONFIG_EXPERIMENTAL
    dep_tristate '    Hermes in TMD7160/NCP130 based PCI adaptor support (Pheecom WL-PCI etc.) (EXPERIMENTAL)' CONFIG_TMD_HERMES $CONFIG_HERMES $CONFIG_EXPERIMENTAL

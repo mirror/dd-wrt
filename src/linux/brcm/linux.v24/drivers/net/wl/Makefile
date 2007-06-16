@@ -15,7 +15,9 @@ EXTRA_CFLAGS += -I$(TOPDIR)/arch/mips/bcm947xx/include -DBCMDRIVER=1 -DBCMDMA64=
 
 O_TARGET	:= wl.o
 
-obj-y		:= wl_apsta_mimo.o
+obj-$(CONFIG_APSTAMIMO)		:= wl_apsta_mimo.o
+obj-$(CONFIG_APSTA)		:= wl_apsta.o
+
 obj-y		+= bcmutils.o hnddma.o linux_osl.o
 
 obj-m		:= $(O_TARGET)
