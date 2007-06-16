@@ -196,7 +196,9 @@ ifneq ($(CONFIG_DIST),"micro")
 endif
 ifeq ($(CONFIG_MSSID),y)
 ifneq ($(CONFIG_BCM5354),y)
+ifneq ($(CONFIG_DIST),"micro")
 	cp bcm57xx/bcm57xx.o $(TARGETDIR)/lib/modules/$(LINUXVER)/bcm57xxlsys.o
+endif
 endif
 endif
 #endif
