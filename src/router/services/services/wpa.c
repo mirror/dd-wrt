@@ -473,7 +473,10 @@ int
 stop_nas (void)
 {
   int ret = 0;
-
+  
+  if (pidof ("nas") > 0)
+      syslog (LOG_INFO, "NAS : NAS daemon successfully stopped\n");
+  
   while (pidof ("nas") > 0)
     {
       /* NAS sometimes won't exit properly on a normal kill */
@@ -484,7 +487,6 @@ stop_nas (void)
       killall ("nas", SIGKILL);
     }
     
-    syslog (LOG_INFO, "NAS : NAS daemon successfully stopped\n");
     
 // clean
 #ifdef HAVE_MSSID
