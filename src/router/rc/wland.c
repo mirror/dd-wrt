@@ -211,6 +211,10 @@ do_aqos_check (void)
 	 (arp, "%s %s %s %s %s %s", ip_buf, hw_buf, fl_buf, mac_buf, mask_buf,
 	  dev_buf) == 6)
     {
+    char *wan = get_wan_face();
+    if (wan && strlen(wan)>0 && !strcmp(dev_buf,wan))
+	continue;
+	
 // fprintf(stderr,"reading mac/ip table\n");
       cmac = containsMAC (mac_buf);
       cip = containsIP (ip_buf);
