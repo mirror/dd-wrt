@@ -1,4 +1,4 @@
-#ifdef HAVE_DHCPFORWARD
+#ifdef HAVE_UDHCPD
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -2676,8 +2676,10 @@ start_wan_done (char *wan_ifname)
   stop_openvpnserverwan ();
   start_openvpnserverwan ();
 #endif
+#ifdef HAVE_DHCPFORWARD
   stop_dhcpfwd ();
   start_dhcpfwd ();
+#endif
   nvram_set ("wanup", "1");
 #ifdef HAVE_MILKFISH
   cprintf ("starting milkfish netup script\n");
