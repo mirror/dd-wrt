@@ -109,7 +109,8 @@ getAuthMode (char *prefix)
 {
   char akm[32];
   sprintf (akm, "%s_akm", prefix);
-  if (strlen (nvram_safe_get (akm)) == 0 || nvram_match (akm, "disabled") || nvram_match (akm, "wep"))
+  if (strlen (nvram_safe_get (akm)) == 0 || nvram_match (akm, "disabled")
+      || nvram_match (akm, "wep"))
     return NULL;
   if (nvram_match (akm, "radius"))
     return "32";
@@ -223,8 +224,7 @@ start_nas_wan (void)
       sprintf (vif, "%s_mode", var);
       if (nvram_match (vif, "sta")
 	  || nvram_match (vif, "wet")
-	  || nvram_match (vif, "apsta")
-	  || nvram_match (vif, "apstawet"))
+	  || nvram_match (vif, "apsta") || nvram_match (vif, "apstawet"))
 	{
 	  start_nas_single ("wan", var);
 	}
@@ -240,7 +240,7 @@ int
 start_nas (void)
 {
 #ifdef HAVE_MSSID
-	unlink ("/tmp/.nas");
+  unlink ("/tmp/.nas");
 #endif
   if (nvram_match ("wl0_mode", "sta")
       || nvram_match ("wl0_mode", "wet")
@@ -263,7 +263,7 @@ int
 start_nas_single (char *type, char *prefix)
 {
 #ifdef HAVE_MSSID
-	FILE *fnas;
+  FILE *fnas;
 #endif
 #ifdef HAVE_NASCONF
   char conffile[64];
@@ -292,7 +292,8 @@ start_nas_single (char *type, char *prefix)
 
     snprintf (pidfile, sizeof (pidfile), "/tmp/nas.%s%s.pid", prefix, type);
 #ifdef HAVE_NASCONF
-    snprintf (conffile, sizeof (conffile), "/tmp/nas.%s%s.conf", prefix, type);
+    snprintf (conffile, sizeof (conffile), "/tmp/nas.%s%s.conf", prefix,
+	      type);
 #endif
     /* Sveasoft rewrite - start nas with explicit parameters */
 
@@ -332,21 +333,25 @@ start_nas_single (char *type, char *prefix)
     if (0 == strcmp (nvram_safe_get (apmode), "ap"))
       {
 	mode = "-A";
-	syslog (LOG_INFO, "NAS : NAS lan (%s interface) successfully started\n", prefix);
+	syslog (LOG_INFO,
+		"NAS : NAS lan (%s interface) successfully started\n",
+		prefix);
 #ifdef HAVE_MSSID
 	fnas = fopen ("/tmp/.nas", "a");
-	fputc ('L', fnas);  //L as LAN
-	fclose (fnas); 
+	fputc ('L', fnas);	//L as LAN
+	fclose (fnas);
 #endif
       }
     else
       {
 	mode = "-S";
-	syslog (LOG_INFO, "NAS : NAS wan (%s interface) successfully started\n", prefix);
+	syslog (LOG_INFO,
+		"NAS : NAS wan (%s interface) successfully started\n",
+		prefix);
 #ifdef HAVE_MSSID
 	fnas = fopen ("/tmp/.nas", "a");
-	fputc ('W', fnas);  //W as WAN
-	fclose (fnas); 
+	fputc ('W', fnas);	//W as WAN
+	fclose (fnas);
 #endif
       }
 
@@ -381,9 +386,10 @@ start_nas_single (char *type, char *prefix)
 #else
 	  conf = fopen (conffile, "w");
 	  fprintf (conf, "-H 34954 -i %s %s -m %s -k %s -s %s -w %s -g %s\n",
-	   iface, mode, auth_mode, key, nvram_safe_get (ssid), sec_mode, nvram_safe_get (rekey));
-	  fclose (conf); 
-	  char *argv[] = { "nas", conffile, pidfile, "wan" , NULL };
+		   iface, mode, auth_mode, key, nvram_safe_get (ssid),
+		   sec_mode, nvram_safe_get (rekey));
+	  fclose (conf);
+	  char *argv[] = { "nas", conffile, pidfile, "wan", NULL };
 	  _eval (argv, NULL, 0, &pid);
 #endif
 	}
@@ -402,12 +408,16 @@ start_nas_single (char *type, char *prefix)
 	      };
 	      _eval (argv, NULL, 0, &pid);
 #else
-	  conf = fopen (conffile, "w");
-	  fprintf (conf, "-H 34954 -l %s -i %s %s -m %s -r %s -s %s -w %s -g %s -h %s -p %s\n",
-	   nvram_safe_get ("lan_ifname"), iface, mode, auth_mode, key, nvram_safe_get (ssid), sec_mode, nvram_safe_get (rekey), nvram_safe_get (radius), nvram_safe_get (port));
-	  fclose (conf); 
-	  char *argv[] = { "nas", conffile, pidfile, "lan" , NULL };
-	  _eval (argv, NULL, 0, &pid);
+	      conf = fopen (conffile, "w");
+	      fprintf (conf,
+		       "-H 34954 -l %s -i %s %s -m %s -r %s -s %s -w %s -g %s -h %s -p %s\n",
+		       nvram_safe_get ("lan_ifname"), iface, mode, auth_mode,
+		       key, nvram_safe_get (ssid), sec_mode,
+		       nvram_safe_get (rekey), nvram_safe_get (radius),
+		       nvram_safe_get (port));
+	      fclose (conf);
+	      char *argv[] = { "nas", conffile, pidfile, "lan", NULL };
+	      _eval (argv, NULL, 0, &pid);
 #endif
 	    }
 	  else if (!strcmp (auth_mode, "32"))
@@ -426,12 +436,16 @@ start_nas_single (char *type, char *prefix)
 	      };
 	      _eval (argv, NULL, 0, &pid);
 #else
-	  conf = fopen (conffile, "w");
-	  fprintf (conf, "-H 34954 -l %s -i %s %s -m %s -r %s -s %s -w %s -I %s -k %s -h %s -p %s\n",
-	   nvram_safe_get ("lan_ifname"), iface, mode, auth_mode, key, nvram_safe_get (ssid), sec_mode, nvram_safe_get (index), nvram_safe_get (wepkey), nvram_safe_get (radius), nvram_safe_get (port));
-	  fclose (conf); 
-	  char *argv[] = { "nas", conffile, pidfile, "lan" , NULL };
-	  _eval (argv, NULL, 0, &pid);
+	      conf = fopen (conffile, "w");
+	      fprintf (conf,
+		       "-H 34954 -l %s -i %s %s -m %s -r %s -s %s -w %s -I %s -k %s -h %s -p %s\n",
+		       nvram_safe_get ("lan_ifname"), iface, mode, auth_mode,
+		       key, nvram_safe_get (ssid), sec_mode,
+		       nvram_safe_get (index), nvram_safe_get (wepkey),
+		       nvram_safe_get (radius), nvram_safe_get (port));
+	      fclose (conf);
+	      char *argv[] = { "nas", conffile, pidfile, "lan", NULL };
+	      _eval (argv, NULL, 0, &pid);
 #endif
 	    }
 	  else
@@ -445,15 +459,18 @@ start_nas_single (char *type, char *prefix)
 	      };
 	      _eval (argv, NULL, 0, &pid);
 #else
-	  conf = fopen (conffile, "w");
-	  fprintf (conf, "-H 34954 -l %s -i %s %s -m %s -k %s -s %s -w %s -g %s\n",
-	   nvram_safe_get ("lan_ifname"), iface, mode, auth_mode, key, nvram_safe_get (ssid), sec_mode, nvram_safe_get (rekey));
-	  fclose (conf); 
-	  char *argv[] = { "nas", conffile, pidfile, "lan" , NULL };
-	  _eval (argv, NULL, 0, &pid);
+	      conf = fopen (conffile, "w");
+	      fprintf (conf,
+		       "-H 34954 -l %s -i %s %s -m %s -k %s -s %s -w %s -g %s\n",
+		       nvram_safe_get ("lan_ifname"), iface, mode, auth_mode,
+		       key, nvram_safe_get (ssid), sec_mode,
+		       nvram_safe_get (rekey));
+	      fclose (conf);
+	      char *argv[] = { "nas", conffile, pidfile, "lan", NULL };
+	      _eval (argv, NULL, 0, &pid);
 #endif
 	    }
-	    
+
 
 	}
 
@@ -473,10 +490,10 @@ int
 stop_nas (void)
 {
   int ret = 0;
-  
+
   if (pidof ("nas") > 0)
-      syslog (LOG_INFO, "NAS : NAS daemon successfully stopped\n");
-  
+    syslog (LOG_INFO, "NAS : NAS daemon successfully stopped\n");
+
   while (pidof ("nas") > 0)
     {
       /* NAS sometimes won't exit properly on a normal kill */
@@ -486,29 +503,29 @@ stop_nas (void)
       //killps("nas","-9");
       killall ("nas", SIGKILL);
     }
-    
-    
+
+
 // clean
 #ifdef HAVE_MSSID
-	unlink ("/tmp/.nas");
+  unlink ("/tmp/.nas");
 #endif
-	unlink ("/tmp/nas.wl0wan.pid");
-	unlink ("/tmp/nas.wl0lan.pid");
+  unlink ("/tmp/nas.wl0wan.pid");
+  unlink ("/tmp/nas.wl0lan.pid");
 #ifdef HAVE_NASCONF
-	unlink ("/tmp/nas.wl0wan.conf");
-	unlink ("/tmp/nas.wl0lan.conf");
-#endif	
+  unlink ("/tmp/nas.wl0wan.conf");
+  unlink ("/tmp/nas.wl0lan.conf");
+#endif
 #ifdef HAVE_MSSID
-	unlink ("/tmp/nas.wl0.1lan.pid");
-	unlink ("/tmp/nas.wl0.2lan.pid");
-	unlink ("/tmp/nas.wl0.3lan.pid");
+  unlink ("/tmp/nas.wl0.1lan.pid");
+  unlink ("/tmp/nas.wl0.2lan.pid");
+  unlink ("/tmp/nas.wl0.3lan.pid");
 #ifdef HAVE_NASCONF
-	unlink ("/tmp/nas.wl0.1lan.conf");
-	unlink ("/tmp/nas.wl0.2lan.conf");
-	unlink ("/tmp/nas.wl0.3lan.conf");
+  unlink ("/tmp/nas.wl0.1lan.conf");
+  unlink ("/tmp/nas.wl0.2lan.conf");
+  unlink ("/tmp/nas.wl0.3lan.conf");
 #endif
-#endif 
-    
+#endif
+
   cprintf ("done\n");
   return ret;
 }

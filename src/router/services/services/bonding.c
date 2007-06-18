@@ -12,7 +12,7 @@ start_bonding (void)
   char count[64];
   sprintf (mode, "mode=%s", nvram_default_get ("bonding_type", "balance-rr"));
   sprintf (count, "max_bonds=%s", nvram_default_get ("bonding_number", "1"));
-  eval ("insmod", "bonding","miimon=100", mode, count);
+  eval ("insmod", "bonding", "miimon=100", mode, count);
 
   static char word[256];
   char *next, *wordlist;

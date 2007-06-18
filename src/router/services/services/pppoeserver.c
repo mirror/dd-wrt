@@ -71,12 +71,12 @@ start_pppoeserver (void)
 	  fprintf (fp, "idle %s\n", nvram_safe_get ("pppoeserver_idle"));	//todo ...
 	  if (nvram_default_match ("pppoeserver_encryption", "1", "0"))	// make it configureable
 	    {
-	    fprintf (fp, "mppe required,no56,no40,stateless\n");
-	    fprintf (fp, "refuse-eap\n");
-	    fprintf (fp, "refuse-pap\n");
-	    fprintf (fp, "refuse-chap\n");
-	    fprintf (fp, "refuse-mschap\n");
-	    fprintf (fp, "require-mschap-v2\n");
+	      fprintf (fp, "mppe required,no56,no40,stateless\n");
+	      fprintf (fp, "refuse-eap\n");
+	      fprintf (fp, "refuse-pap\n");
+	      fprintf (fp, "refuse-chap\n");
+	      fprintf (fp, "refuse-mschap\n");
+	      fprintf (fp, "require-mschap-v2\n");
 	    }
 	  else
 	    fprintf (fp, "nomppe\n");
@@ -198,12 +198,12 @@ start_pppoeserver (void)
 	  fprintf (fp, "idle %s\n", nvram_safe_get ("pppoeserver_idle"));	//todo ...
 	  if (nvram_default_match ("pppoeserver_encryption", "1", "0"))	// make it configureable
 	    {
-	    fprintf (fp, "mppe required,no56,no40,stateless\n");
-	    fprintf (fp, "refuse-eap\n");
-	    fprintf (fp, "refuse-pap\n");
-	    fprintf (fp, "refuse-chap\n");
-	    fprintf (fp, "refuse-mschap\n");
-	    fprintf (fp, "require-mschap-v2\n");
+	      fprintf (fp, "mppe required,no56,no40,stateless\n");
+	      fprintf (fp, "refuse-eap\n");
+	      fprintf (fp, "refuse-pap\n");
+	      fprintf (fp, "refuse-chap\n");
+	      fprintf (fp, "refuse-mschap\n");
+	      fprintf (fp, "require-mschap-v2\n");
 	    }
 	  else
 	    fprintf (fp, "nomppe\n");
@@ -302,11 +302,11 @@ void
 stop_pppoeserver (void)
 {
   if (pidof ("pppoe-server") > 0)
-  {
-    syslog (LOG_INFO, "rp-pppoe : pppoe server successfully stopped\n");
-    killall ("pppoe-server", SIGTERM);
-    del_pppoe_natrule ();
-  }
+    {
+      syslog (LOG_INFO, "rp-pppoe : pppoe server successfully stopped\n");
+      killall ("pppoe-server", SIGTERM);
+      del_pppoe_natrule ();
+    }
 }
 
 #endif
