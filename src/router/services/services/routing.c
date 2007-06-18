@@ -9,9 +9,9 @@
 
 #ifdef HAVE_QUAGGA
 
-int zebra_ospf_init(void);
-int zebra_bgp_init(void);
-int zebra_ripd_init(void);
+int zebra_ospf_init (void);
+int zebra_bgp_init (void);
+int zebra_ripd_init (void);
 
 int
 zebra_init (void)
@@ -38,7 +38,7 @@ zebra_init (void)
     }
   else
     return 0;
-return 0;
+  return 0;
 }
 
 
@@ -54,7 +54,7 @@ zebra_ospf_init (void)
   char *wf = get_wan_face ();
 
   FILE *fp;
-  int ret1, ret2, s = 0;
+  int ret1, ret2, s = 0, i = 0;
 
 //      printf("Start zebra\n");
   if (!strcmp (lt, "0") && !strcmp (lr, "0") &&
@@ -170,7 +170,13 @@ zebra_ospf_init (void)
 
   if (strlen (nvram_safe_get ("ospfd_conf")) > 0)
     {
-      fprintf (fp, "%s", nvram_safe_get ("ospfd_conf"));
+      char *addconf = nvram_safe_get ("ospfd_conf");
+      i=0;
+      do
+	{
+	  putc (addconf[i], fp);
+	}
+      while (addconf[i++]);
     }
 
   fflush (fp);
@@ -261,6 +267,7 @@ zebra_ripd_init (void)
 
   return ret1 + ret2;
 }
+
 int
 zebra_bgp_init (void)
 {
@@ -299,12 +306,14 @@ zebra_bgp_init (void)
   fprintf (fp, "router bgp\n");
   fprintf (fp, "  network %s\n", lf);
   fprintf (fp, "  network %s\n", wf);
-  fprintf (fp, "neighbor %s local-as %s\n", lf,nvram_safe_get ("routing_bgp_as")); 
-  fprintf (fp, "neighbor %s local-as %s\n", wf,nvram_safe_get ("routing_bgp_as")); 
+  fprintf (fp, "neighbor %s local-as %s\n", lf,
+	   nvram_safe_get ("routing_bgp_as"));
+  fprintf (fp, "neighbor %s local-as %s\n", wf,
+	   nvram_safe_get ("routing_bgp_as"));
   fprintf (fp, "neighbor %s remote-as %s\n",
-		   nvram_safe_get ("routing_bgp_neighbor_ip"),
-		   nvram_safe_get ("routing_bgp_neighbor_as"));
-  fprintf (fp,"access-list all permit any\n");
+	   nvram_safe_get ("routing_bgp_neighbor_ip"),
+	   nvram_safe_get ("routing_bgp_neighbor_as"));
+  fprintf (fp, "access-list all permit any\n");
 
   fflush (fp);
   fclose (fp);

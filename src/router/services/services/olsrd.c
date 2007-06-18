@@ -11,8 +11,8 @@ stop_olsrd (void)
 {
   if (pidof ("olsrd") > 0)
     {
-    syslog (LOG_INFO, "olsrd : OLSR daemon successfully stopped\n");
-    killall ("olsrd", SIGTERM);
+      syslog (LOG_INFO, "olsrd : OLSR daemon successfully stopped\n");
+      killall ("olsrd", SIGTERM);
     }
 }
 
@@ -21,7 +21,7 @@ start_olsrd (void)
 {
   if (!nvram_match ("wk_mode", "olsr"))
     return;
-  stop_olsrd();
+  stop_olsrd ();
   char net[64];
   strcpy (net, nvram_safe_get ("lan_ipaddr"));
   int a, b, c, d;
@@ -44,11 +44,10 @@ start_olsrd (void)
   fprintf (fp, "UseHysteresis\t%s\n",
 	   nvram_match ("olsrd_hysteresis", "1") ? "yes" : "no");
   if (nvram_match ("olsrd_hysteresis", "0"))
-    fprintf (fp, "LinkQualityLevel\t%s\n",
-	     nvram_safe_get ("olsrd_lqlevel"));
+    fprintf (fp, "LinkQualityLevel\t%s\n", nvram_safe_get ("olsrd_lqlevel"));
   else
     fprintf (fp, "LinkQualityLevel\t0\n");
-  
+
   fprintf (fp, "LoadPlugin \"olsrd_dyn_gw_plain.so\"\n");
   fprintf (fp, "{\n");
   fprintf (fp, "}\n");
@@ -99,11 +98,11 @@ start_olsrd (void)
     fprintf (fp, "\tHnaValidityTime\t%s\n", hnavaliditytime);
     fprintf (fp, "}\n");
   }
-if (strlen(nvram_safe_get("olsrd_hna"))>0)
+  if (strlen (nvram_safe_get ("olsrd_hna")) > 0)
     {
-    fprintf(fp,"Hna4{\n");
-    fprintf(fp,"%s\n",nvram_safe_get("olsrd_hna"));
-    fprintf(fp,"}\n");
+      fprintf (fp, "Hna4{\n");
+      fprintf (fp, "%s\n", nvram_safe_get ("olsrd_hna"));
+      fprintf (fp, "}\n");
     }
   fclose (fp);
   eval ("olsrd");
