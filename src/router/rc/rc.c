@@ -448,7 +448,9 @@ main_loop (void)
 	  setenv ("LD_LIBRARY_PATH",
 		  "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:",
 		  1);
+#ifdef HAVE_IPV6
 	  start_service ("ipv6");
+#endif
 #ifndef HAVE_RB500
       start_service ("resetbutton");
 #endif

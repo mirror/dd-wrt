@@ -437,7 +437,9 @@ start_single_service (void)
       stop_service ("udhcpd");
       start_service ("udhcpd");
       start_service ("cron");
+#ifdef HAVE_IPV6
       start_service ("ipv6");
+#endif
 #ifdef HAVE_RADVD
       startstop ("radvd");
 #endif
