@@ -108,6 +108,12 @@ obj-distclean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-distclean)
 all: clean_target $(obj-y) $(LINUXDIR)/.config
         # Also build kernel
 	# Also build kernel
+ifeq ($(CONFIG_DIST),"micro")
+	cp $(LINUXDIR)/.config_micro $(LINUXDIR)/.config
+else
+	cp $(LINUXDIR)/.config_std $(LINUXDIR)/.config
+endif
+	$(MAKE) -C $(LINUXDIR) oldconfig	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -C $(LINUXDIR) zImage ; \
 	fi
@@ -280,7 +286,7 @@ ifeq ($(CONFIG_KAID),y)
 endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 	cp $(LINUXDIR)/arch/mips/bcm947xx/compressed/piggy mipsel-uclibc/vmlinux
-	../../opt/loader-0.02/lzma e mipsel-uclibc/vmlinux mipsel-uclibc/vmlinuz
+	../../opt/loader-0.02/lzma e -lc1 -lp2 -pb2 mipsel-uclibc/vmlinux mipsel-uclibc/vmlinuz
 #endif
 #
 # Configuration rules
