@@ -71,7 +71,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"os_version", EPI_VERSION_STR, 0},	/* OS revision */
   {"os_date", __DATE__, 0},	/* OS date */
   {"ct_modules", "", 0},	/* CyberTAN kernel modules */
-
+  {"wait_time","5",0},
   /* Miscellaneous parameters */
   {"timer_interval", "3600", 0},	/* Timer interval in seconds */
   {"time_zone", "+01", 0},	/* Time zone (GNU TZ format) */
