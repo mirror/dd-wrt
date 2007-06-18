@@ -55,7 +55,7 @@ endif
 ifeq ($(CONFIG_DHCPFORWARD),y)
 CFLAGS += -DHAVE_DHCPFWD
 LIBRARIES += ../dhcpforwarder/dhcpfwd.a
-LDFLAGS += -lpthread
+#LDFLAGS += -lpthread
 endif
 ifeq ($(CONFIG_NOMESSAGE),y)
 CFLAGS += -DHAVE_NOMESSAGE
