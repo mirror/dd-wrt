@@ -624,7 +624,7 @@ stop_radvd (void)
   return ret;
 }
 #endif
-
+#ifdef HAVE_IPV6
 int
 start_ipv6 (void)
 {
@@ -639,6 +639,7 @@ start_ipv6 (void)
   cprintf ("done\n");
   return ret;
 }
+#endif
 
 #ifdef HAVE_PPPOE
 int
