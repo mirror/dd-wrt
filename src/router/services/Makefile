@@ -27,6 +27,9 @@ ifeq ($(CONFIG_RSTATS),y)
 CFLAGS += -DHAVE_RSTATS
 OBJS += rstats.o
 endif
+ifeq ($(CONFIG_IPV6),y)
+CFLAGS += -DHAVE_IPV6
+endif
 
 ifeq ($(CONFIG_NSTX),y)
 CFLAGS += -DHAVE_NSTX
