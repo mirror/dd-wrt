@@ -1332,7 +1332,7 @@ adjust_regulatory (int count)
 
     long regulatory = atol (nvram_default_get ("ath_regulatory", "0"));
     {
-#if !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108)
+//#if !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_MERAKI)
       if (regulatory == 0)
 	{
 	  setsysctrl (wif, "regulatory", regulatory);
@@ -1342,7 +1342,7 @@ adjust_regulatory (int count)
 	  setsysctrl (wif, "antennagain", 0);
 	}
       else
-#endif
+//#endif
 	{
 	  sprintf (country, "%s_regdomain", dev);
 	  setsysctrl (wif, "regulatory", 1);
@@ -1356,14 +1356,14 @@ adjust_regulatory (int count)
 	}
     }
   }
-#ifndef HAVE_FONERA
+//#ifndef HAVE_FONERA 
   char *wid = nvram_safe_get (bw);
   int width = 20;
   if (wid)
     width = atoi (wid);
   char buf[64];
   setsysctrl (wif, "channelbw", (long) width);
-#endif
+//#endif
 
 
 }
