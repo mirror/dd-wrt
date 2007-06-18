@@ -2242,7 +2242,9 @@ start_wan (int status)
       unlink ("/tmp/ppp/set-pppoepid");
 
       stop_dhcpc ();
+#ifdef HAVE_PPTP
       stop_pptp ();
+#endif
 //      system("export LINUX_PLUGIN=/usr/lib/rp-pppoe.so");     
       eval ("/usr/sbin/pppd", "file", "/tmp/ppp/options.pppoe");
 
@@ -2712,8 +2714,10 @@ start_wan_done (char *wan_ifname)
 //      eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
       ifconfig (get_wdev (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
     }
+#ifdef HAVE_CHILLI
   stop_chilli ();
   start_chilli ();
+#endif
 #endif
 #else
   if (nvram_match ("fon_enable", "1")
@@ -2737,8 +2741,10 @@ start_wan_done (char *wan_ifname)
 //        eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), get_wdev ());
 	  ifconfig (get_wdev (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
 	}
+#ifdef HAVE_CHILLI
       stop_chilli ();
       start_chilli ();
+#endif
 #endif
     }
 
