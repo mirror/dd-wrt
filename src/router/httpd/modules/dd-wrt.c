@@ -1428,8 +1428,12 @@ ej_show_default_level (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(qos.bandwith)</script> Up</div>\n");
-  websWrite (wp,"<input type=\"num\" name=\"default_uplevel\" size=\"6\" value=\"%s\" /> Down\n",nvram_safe_get ("default_uplevel"));
-  websWrite (wp,"<input type=\"num\" name=\"default_downlevel\" size=\"6\" value=\"%s\" />\n",nvram_safe_get ("default_downlevel"));
+  websWrite (wp,
+	     "<input type=\"num\" name=\"default_uplevel\" size=\"6\" value=\"%s\" /> Down\n",
+	     nvram_safe_get ("default_uplevel"));
+  websWrite (wp,
+	     "<input type=\"num\" name=\"default_downlevel\" size=\"6\" value=\"%s\" />\n",
+	     nvram_safe_get ("default_downlevel"));
   websWrite (wp, "</div>\n");
   websWrite (wp, "</fieldset><br />\n");
   return;
@@ -1884,8 +1888,8 @@ showOptions (webs_t wp, char *propname, char *names, char *select)
   websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
   foreach (var, names, next)
   {
-    websWrite (wp, 
-    	   "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n",
+    websWrite (wp,
+	       "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n",
 	       var, !strcmp (var, select) ? "selected=\\\"selected\\\"" : "",
 	       var);
   }
@@ -1897,7 +1901,9 @@ showOptionsLabel (webs_t wp, char *labelname, char *propname, char *names,
 		  char *select)
 {
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(%s)</script></div>", labelname);
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(%s)</script></div>",
+	     labelname);
   showOptions (wp, propname, names, select);
   websWrite (wp, "</div>\n");
 
@@ -1908,9 +1914,13 @@ show_inputlabel (webs_t wp, char *labelname, char *propertyname,
 		 int propertysize, char *inputclassname, int inputmaxlength)
 {
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(%s)</script></div>", labelname);
-  websWrite (wp, "<input class=\"%s\" size=\"%d\" maxlength=\"%d\" name=\"%s\" value=\"%s\" />\n",
-		  inputclassname, propertysize, inputmaxlength, propertyname, nvram_safe_get (propertyname));
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(%s)</script></div>",
+	     labelname);
+  websWrite (wp,
+	     "<input class=\"%s\" size=\"%d\" maxlength=\"%d\" name=\"%s\" value=\"%s\" />\n",
+	     inputclassname, propertysize, inputmaxlength, propertyname,
+	     nvram_safe_get (propertyname));
   websWrite (wp, "</div>\n");
 }
 
@@ -1933,11 +1943,13 @@ show_legend (webs_t wp, char *labelname, int *translate)
 	websWrite (wp, "<legend>%s%s%s</legend>\n",
 		!strcmp (buf, "1") ? "<script type=\"text/javascript\">Capture(" : "", labelname, !strcmp (buf, "1") ? ")</script>" : "");
 */
-	if (translate)
-		websWrite (wp, "<legend><script type=\"text/javascript\">Capture(%s)</script></legend>\n", labelname);
-	else
-		websWrite (wp, "<legend>%s</legend>\n", labelname);
-			
+  if (translate)
+    websWrite (wp,
+	       "<legend><script type=\"text/javascript\">Capture(%s)</script></legend>\n",
+	       labelname);
+  else
+    websWrite (wp, "<legend>%s</legend>\n", labelname);
+
 }
 
 
@@ -2042,9 +2054,9 @@ save_olsrd (webs_t wp)
 void
 ej_show_olsrd (webs_t wp, int argc, char_t ** argv)
 {
-char *var=websGetVar (wp, "wk_mode", NULL);
-if (var==NULL)
-    var=nvram_safe_get("wk_mode");
+  char *var = websGetVar (wp, "wk_mode", NULL);
+  if (var == NULL)
+    var = nvram_safe_get ("wk_mode");
   if (!strcmp (var, "olsr"))
     {
       websWrite (wp, "<fieldset>\n");
@@ -2052,24 +2064,29 @@ if (var==NULL)
       show_inputlabel (wp, "route.olsrd_hna", "olsrd_hna", 32, "num", 32);
       show_inputlabel (wp, "route.olsrd_poll", "olsrd_pollsize", 5, "num", 5);
       showOptionsLabel (wp, "route.olsrd_tc", "olsrd_redundancy",
-    		  "0 1 2", nvram_default_get ("olsrd_redundancy", "2"));
+			"0 1 2", nvram_default_get ("olsrd_redundancy", "2"));
       show_inputlabel (wp, "route.olsrd_mpr", "olsrd_coverage", 5, "num", 5);
       showOption (wp, "route.olsrd_lqfe", "olsrd_lqfisheye");
-      show_inputlabel (wp, "route.olsrd_lqws", "olsrd_lqwinsize", 5, "num", 5);
-      
+      show_inputlabel (wp, "route.olsrd_lqws", "olsrd_lqwinsize", 5, "num",
+		       5);
+
       websWrite (wp, "<div class=\"setting\">\n");
-      websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(route.olsrd_lqdmin)</script></div>");
-      websWrite (wp, "<input class=\"num\" size=\"5\" maxlength=\"5\" name=\"olsrd_lqdijkstramin\" onblur=\"olsrd_checkDijkstra(this.form)\" value=\"%s\" />\n",
-    		  nvram_safe_get ("olsrd_lqdijkstramin"));
+      websWrite (wp,
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(route.olsrd_lqdmin)</script></div>");
+      websWrite (wp,
+		 "<input class=\"num\" size=\"5\" maxlength=\"5\" name=\"olsrd_lqdijkstramin\" onblur=\"olsrd_checkDijkstra(this.form)\" value=\"%s\" />\n",
+		 nvram_safe_get ("olsrd_lqdijkstramin"));
       websWrite (wp, "</div>\n");
       websWrite (wp, "<div class=\"setting\">\n");
-      websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(route.olsrd_lqdmax)</script></div>");
-      websWrite (wp, "<input class=\"num\" size=\"5\" maxlength=\"5\" name=\"olsrd_lqdijkstramax\" onblur=\"olsrd_checkDijkstra(this.form)\" value=\"%s\" />\n",
-    		  nvram_safe_get ("olsrd_lqdijkstramax"));
+      websWrite (wp,
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(route.olsrd_lqdmax)</script></div>");
+      websWrite (wp,
+		 "<input class=\"num\" size=\"5\" maxlength=\"5\" name=\"olsrd_lqdijkstramax\" onblur=\"olsrd_checkDijkstra(this.form)\" value=\"%s\" />\n",
+		 nvram_safe_get ("olsrd_lqdijkstramax"));
       websWrite (wp, "</div>\n");
-      
+
       showOptionsLabel (wp, "route.olsrd_lqlvl", "olsrd_lqlevel",
-    		  "0 1 2", nvram_default_get ("olsrd_lqlevel", "2"));
+			"0 1 2", nvram_default_get ("olsrd_lqlevel", "2"));
       showOption (wp, "route.olsrd_hysteresis", "olsrd_hysteresis");
       char *wordlist = nvram_safe_get ("olsrd_interfaces");
       char *next;
@@ -2129,7 +2146,8 @@ if (var==NULL)
 	count++;
       }
       websWrite (wp, "<div class=\"setting\">\n");
-      websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(route.olsrd_newiface)</script></div>\n");
+      websWrite (wp,
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(route.olsrd_newiface)</script></div>\n");
       char buffer[256];
       memset (buffer, 0, 256);
       getIfList (buffer, NULL);
@@ -3112,7 +3130,8 @@ static char *xr_rates[] =
   "54"
 };
 static char *half_rates[] = { "3", "4.5", "6", "9", "12", "18", "24", "27" };
-static char *quarter_rates[] = { "1.5", "2", "3", "4.5", "6", "9", "12", "13.5" };
+static char *quarter_rates[] =
+  { "1.5", "2", "3", "4.5", "6", "9", "12", "13.5" };
 
 
 
@@ -3250,7 +3269,7 @@ show_netmode (webs_t wp, char *prefix)
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label2)</script></div><select name=\"%s\" onchange=\"SelWL(this.form.%s.selectedIndex,this.form)\">\n",
 	     wl_net_mode, wl_net_mode);
-  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");    
+  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
   websWrite (wp,
 	     "document.write(\"<option value=\\\"disabled\\\" %s>\" + share.disabled + \"</option>\");\n",
 	     nvram_match (wl_net_mode,
@@ -3448,7 +3467,7 @@ show_virtualssid (webs_t wp, char *prefix)
     websWrite (wp,
 	       "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
 	       wl_mode);
-  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");	       
+    websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
     websWrite (wp,
 	       "document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n",
 	       nvram_match (wl_mode,
@@ -3461,7 +3480,7 @@ show_virtualssid (webs_t wp, char *prefix)
 	       "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n",
 	       nvram_match (wl_mode,
 			    "wdsap") ? "selected=\\\"selected\\\"" : "");
-	websWrite (wp, "//]]>\n</script>\n");		    
+    websWrite (wp, "//]]>\n</script>\n");
     websWrite (wp, "</select>\n");
     websWrite (wp, "</div>\n");
 #endif
@@ -3656,22 +3675,24 @@ save_prefix (webs_t wp, char *prefix)
   copytonv (wp, n);
   sprintf (n, "ath_regulatory");
   copytonv (wp, n);
-  sprintf (n, "%s_scanlist",prefix);
-  {      
+  sprintf (n, "%s_scanlist", prefix);
+  {
     char *sl = websGetVar (wp, n, NULL);
     if (sl)
-    {
-	char *slc=(char*)malloc(strlen(sl)+1);
-	strcpy(slc,sl);
-	int i,sllen=strlen(slc);
-	for (i=0;i<sllen;i++)
-	    {
-	    if (slc[i]==';')slc[i]=' ';
-	    if (slc[i]==',')slc[i]=' ';
-	    }
-	nvram_set(n,slc);
-    }
-  }  
+      {
+	char *slc = (char *) malloc (strlen (sl) + 1);
+	strcpy (slc, sl);
+	int i, sllen = strlen (slc);
+	for (i = 0; i < sllen; i++)
+	  {
+	    if (slc[i] == ';')
+	      slc[i] = ' ';
+	    if (slc[i] == ',')
+	      slc[i] = ' ';
+	  }
+	nvram_set (n, slc);
+      }
+  }
 #ifdef HAVE_MAKSAT
   sprintf (n, "ath_specialmode");
   copytonv (wp, n);
@@ -4172,7 +4193,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
     }
 #endif
   showOption (wp, "wl_basic.diversity", wl_diversity);
-#if !defined(HAVE_FONERA) 
+#if !defined(HAVE_FONERA)
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" >\n",
 	     wl_width);
@@ -4315,17 +4336,18 @@ ej_show_wireless_single (webs_t wp, char *prefix)
       websWrite (wp, "</div>\n");
     }
 #ifdef HAVE_MADWIFI
-if (nvram_match(wl_mode,"sta") || nvram_match(wl_mode,"wdssta") || nvram_match(wl_mode,"wet"))
+  if (nvram_match (wl_mode, "sta") || nvram_match (wl_mode, "wdssta")
+      || nvram_match (wl_mode, "wet"))
     {
-  char wl_scanlist[32];    
-  sprintf (wl_scanlist, "%s_scanlist", prefix);
-  websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp,
-	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.scanlist)</script></div>\n");
-  websWrite (wp,
-	     "<input name=\"%s\" size=\"32\" maxlength=\"512\" value=\"%s\" />\n",
-	     wl_scanlist, nvram_default_get (wl_scanlist, "default"));
-  websWrite (wp, "</div>\n");
+      char wl_scanlist[32];
+      sprintf (wl_scanlist, "%s_scanlist", prefix);
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp,
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.scanlist)</script></div>\n");
+      websWrite (wp,
+		 "<input name=\"%s\" size=\"32\" maxlength=\"512\" value=\"%s\" />\n",
+		 wl_scanlist, nvram_default_get (wl_scanlist, "default"));
+      websWrite (wp, "</div>\n");
     }
 #endif
 
@@ -5515,13 +5537,12 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
 		     mac, ifname,
 		     ((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) /
 		      //2) * turbo, -95 + si->isi_rssi,-95,
-		      2) * turbo, si->isi_noise + si->isi_rssi,si->isi_noise,
+		      2) * turbo, si->isi_noise + si->isi_rssi, si->isi_noise,
 		     si->isi_rssi);
 	}
       else
 	{
-	  websWrite (wp, "'%s','%s','N/A','%d','%d','%d'",
-		     mac, ifname,
+	  websWrite (wp, "'%s','%s','N/A','%d','%d','%d'", mac, ifname,
 		     //-95 + si->isi_rssi, -95,
 		     si->isi_noise + si->isi_rssi, si->isi_noise,
 		     si->isi_rssi);
@@ -6207,10 +6228,10 @@ get_svc (char *svc, char *protocol, char *ports)
 int
 qos_add_svc (webs_t wp)
 {
-	char *var = websGetVar (wp, "wshaper_enable", NULL);
-  	if (var != NULL)
-    	nvram_set ("wshaper_enable", var);	
-	
+  char *var = websGetVar (wp, "wshaper_enable", NULL);
+  if (var != NULL)
+    nvram_set ("wshaper_enable", var);
+
   char protocol[100] = { 0 }, ports[100] =
   {
   0};
@@ -6253,9 +6274,9 @@ qos_add_svc (webs_t wp)
 int
 qos_add_ip (webs_t wp)
 {
-	char *var = websGetVar (wp, "wshaper_enable", NULL);
-  	if (var != NULL)
-    	nvram_set ("wshaper_enable", var);	
+  char *var = websGetVar (wp, "wshaper_enable", NULL);
+  if (var != NULL)
+    nvram_set ("wshaper_enable", var);
 
   char *add_ip0 = websGetVar (wp, "svqos_ipaddr0", NULL);
   char *add_ip1 = websGetVar (wp, "svqos_ipaddr1", NULL);
@@ -6291,10 +6312,10 @@ qos_add_ip (webs_t wp)
 int
 qos_add_mac (webs_t wp)
 {
-	char *var = websGetVar (wp, "wshaper_enable", NULL);
-  	if (var != NULL)
-    	nvram_set ("wshaper_enable", var);
-    	
+  char *var = websGetVar (wp, "wshaper_enable", NULL);
+  if (var != NULL)
+    nvram_set ("wshaper_enable", var);
+
   char *add_mac0 = websGetVar (wp, "svqos_hwaddr0", NULL);
   char *add_mac1 = websGetVar (wp, "svqos_hwaddr1", NULL);
   char *add_mac2 = websGetVar (wp, "svqos_hwaddr2", NULL);
@@ -6332,7 +6353,7 @@ qos_save (webs_t wp)
 {
   char svqos_var[4096] = { 0 };
   char field[32] = { 0 };
-  char *name, *data, *level,*level2, *delete;
+  char *name, *data, *level, *level2, *delete;
   int no_svcs = atoi (websGetVar (wp, "svqos_nosvcs", NULL));
   int no_ips = atoi (websGetVar (wp, "svqos_noips", NULL));
   int no_macs = atoi (websGetVar (wp, "svqos_nomacs", NULL));
@@ -6448,9 +6469,9 @@ qos_save (webs_t wp)
       snprintf (field, 31, "svqos_ipdown%d", i);
       level2 = websGetVar (wp, field, NULL);
       if (strlen (svqos_var) > 0)
-	sprintf (svqos_var, "%s %s %s %s |", svqos_var, data, level,level2);
+	sprintf (svqos_var, "%s %s %s %s |", svqos_var, data, level, level2);
       else
-	sprintf (svqos_var, "%s %s %s |", data, level,level2);
+	sprintf (svqos_var, "%s %s %s |", data, level, level2);
 
 
 #endif
@@ -6489,9 +6510,9 @@ qos_save (webs_t wp)
       level2 = websGetVar (wp, field, NULL);
 
       if (strlen (svqos_var) > 0)
-	sprintf (svqos_var, "%s %s %s %s |", svqos_var, data, level,level2);
+	sprintf (svqos_var, "%s %s %s %s |", svqos_var, data, level, level2);
       else
-	sprintf (svqos_var, "%s %s %s |", data, level,level2);
+	sprintf (svqos_var, "%s %s %s |", data, level, level2);
 #endif
 
 
@@ -7061,7 +7082,7 @@ void
 ej_get_qosips2 (webs_t wp, int argc, char_t ** argv)
 {
   char *qos_ips = nvram_safe_get ("svqos_ips");
-  char ip[32], level[32],level2[32];
+  char ip[32], level[32], level2[32];
   int no_ips = 0, i = 0;
 
 // calc # of ips
@@ -7088,7 +7109,7 @@ ej_get_qosips2 (webs_t wp, int argc, char_t ** argv)
   /* IP format is "data level | data level |" ..etc */
   for (i = 0; i < no_ips && qos_ips && qos_ips[0]; i++)
     {
-      if (sscanf (qos_ips, "%31s %31s %31s ", ip, level,level2) < 3)
+      if (sscanf (qos_ips, "%31s %31s %31s ", ip, level, level2) < 3)
 	break;
       websWrite (wp, "<tr>\n\
 					<td>\n\
@@ -7102,7 +7123,7 @@ ej_get_qosips2 (webs_t wp, int argc, char_t ** argv)
 					<td>\n\
 						<input name=\"svqos_ipdown%d\" class=\"num\" size=\"5\" maxlength=\"5\" value=\"%s\" /> \n\
 					</td>\n\
-				</tr>\n", i, i, ip, ip, i, level,i,level2);
+				</tr>\n", i, i, ip, ip, i, level, i, level2);
 
       qos_ips = strpbrk (++qos_ips, "|");
       qos_ips++;
@@ -7177,7 +7198,7 @@ void
 ej_get_qosmacs2 (webs_t wp, int argc, char_t ** argv)
 {
   char *qos_macs = nvram_safe_get ("svqos_macs");
-  char mac[32], level[32],level2[32];
+  char mac[32], level[32], level2[32];
   int no_macs = 0, i = 0;
 
 
@@ -7204,9 +7225,9 @@ ej_get_qosmacs2 (webs_t wp, int argc, char_t ** argv)
   /* IP format is "data level | data level |" ..etc */
   for (i = 0; i < no_macs && qos_macs && qos_macs[0]; i++)
     {
-      if (sscanf (qos_macs, "%31s %31s %31s ", mac, level,level2) < 3)
+      if (sscanf (qos_macs, "%31s %31s %31s ", mac, level, level2) < 3)
 	break;
-     websWrite (wp, "<tr>\n\
+      websWrite (wp, "<tr>\n\
 					<td>\n\
 						<input type=\"checkbox\" name=\"svqos_macdel%d\" />\n\
 						<input type=\"hidden\" name=\"svqos_mac%d\" value=\"%s\" />\n\
@@ -7218,7 +7239,7 @@ ej_get_qosmacs2 (webs_t wp, int argc, char_t ** argv)
 					<td>\n\
 						<input name=\"svqos_macdown%d\" class=\"num\" size=\"5\" maxlength=\"5\" value=\"%s\" /> \n\
 					</td>\n\
-				</tr>\n", i, i, mac, mac, i, level,i,level2);
+				</tr>\n", i, i, mac, mac, i, level, i, level2);
 
       qos_macs = strpbrk (++qos_macs, "|");
       qos_macs++;
@@ -7845,13 +7866,13 @@ do_filtertable (char *path, webs_t stream)
   FILE *web = getWebsFile ("WL_FilterTable.asp");
   char temp[4096];
   memset (temp, 0, 4096);
-  unsigned int len = getWebsFileLen("WL_FilterTable.asp");
-  char *webfile=(char*)malloc(len+1);
-  fread(webfile,len,1,web);
-  webfile[len]=0;
+  unsigned int len = getWebsFileLen ("WL_FilterTable.asp");
+  char *webfile = (char *) malloc (len + 1);
+  fread (webfile, len, 1, web);
+  webfile[len] = 0;
   sprintf (temp, webfile, ifname, ifname, ifname, ifname);
-  free(webfile);
-  fclose(web);
+  free (webfile);
+  fclose (web);
   do_ej_buffer (temp, stream);
 }
 
@@ -7863,12 +7884,12 @@ do_wds (char *path, webs_t stream)
   strcpy (ifname, temp2);
   ifname[indexof (ifname, '.')] = 0;
   FILE *web = getWebsFile ("Wireless_WDS.asp");
-  unsigned int len = getWebsFileLen("Wireless_WDS.asp");
-  char *webfile=(char*)malloc(len+1);
-  fread(webfile,len,1,web);
-  webfile[len]=0;
-  fclose(web);
- 
+  unsigned int len = getWebsFileLen ("Wireless_WDS.asp");
+  char *webfile = (char *) malloc (len + 1);
+  fread (webfile, len, 1, web);
+  webfile[len] = 0;
+  fclose (web);
+
   char temp[32768];
   memset (temp, 0, 32768);
   int ai = 0;
@@ -7896,7 +7917,7 @@ do_wds (char *path, webs_t stream)
       else
 	temp[ai++] = webfile[i];
     }
-  free(webfile);
+  free (webfile);
   do_ej_buffer (temp, stream);
 }
 

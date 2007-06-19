@@ -9,6 +9,65 @@
 
 #include <broadcom.h>
 
+
+
+void
+ej_show_routeif (webs_t wp, int argc, char_t ** argv)
+{
+  char *arg;
+  int which, count;
+  char word[256], *next, *page;
+  char bufferif[512];
+  char name[50] = "", *ipaddr, *netmask, *gateway, *metric, *ifname;
+  int temp;
+  char new_name[200];
+  page = websGetVar (wp, "route_page", NULL);
+  if (!page)
+    page = "0";
+  which = atoi (page);
+  foreach (word, nvram_safe_get ("static_route"), next)
+  {
+    if (which-- == 0)
+      {
+	netmask = word;
+	ipaddr = strsep (&netmask, ":");
+	if (!ipaddr || !netmask)
+	  continue;
+	gateway = netmask;
+	netmask = strsep (&gateway, ":");
+	if (!netmask || !gateway)
+	  continue;
+	metric = gateway;
+	gateway = strsep (&metric, ":");
+	if (!gateway || !metric)
+	  continue;
+	ifname = metric;
+	metric = strsep (&ifname, ":");
+	if (!metric || !ifname)
+	  continue;
+	break;
+      }
+  }
+  if (!ifname)
+    ifname = "br0";
+  getIfList (bufferif, NULL);
+  websWrite (wp, "<option value=\"lan\" %s >LAN &amp; WLAN</option>\n",
+	     nvram_match ("lan_ifname",
+			  ifname) ? "selected=\"selected\"" : "");
+  websWrite (wp, "<option value=\"wan\" %s >WAN</option>\n",
+	     nvram_match ("wan_ifname",
+			  ifname) ? "selected=\"selected\"" : "");
+  foreach (word, bufferif, next)
+  {
+    if (nvram_match ("lan_ifname", word))
+      continue;
+    if (nvram_match ("wan_ifname", word))
+      continue;
+    websWrite (wp, "<option value=\"%s\" %s >%s</option>\n", word,
+	       !strcmp (word, ifname) ? "selected=\"selected\"" : "", word);
+  }
+}
+
 /*
  * Example: 
  * static_route=192.168.2.0:255.255.255.0:192.168.1.2:1:br0
@@ -115,13 +174,13 @@ ej_static_route_setting (webs_t wp, int argc, char_t ** argv)
 
   return;
 }
-extern int save_olsrd(webs_t wp);
+extern int save_olsrd (webs_t wp);
 
 void
 validate_static_route (webs_t wp, char *value, struct variable *v)
 {
 #ifdef HAVE_OLSRD
-save_olsrd(wp);
+  save_olsrd (wp);
 #endif
 
   int i, tmp = 1;
@@ -213,7 +272,8 @@ save_olsrd(wp);
 
 // Allow Defaultroute here
 
-  if (!strcmp (ipaddr, "0.0.0.0") && !strcmp (netmask, "0.0.0.0") && strcmp (gateway, "0.0.0.0"))
+  if (!strcmp (ipaddr, "0.0.0.0") && !strcmp (netmask, "0.0.0.0")
+      && strcmp (gateway, "0.0.0.0"))
     {
       tmp = 1;
       goto write_nvram;
@@ -226,14 +286,14 @@ save_olsrd(wp);
       goto write_nvram;
     }
 
-  if (!valid_choice (wp, ifname, &static_route_variables[3]))
-    {
+//  if (!valid_choice (wp, ifname, &static_route_variables[3]))
+//    {
 //      free (gateway);
 //      free (netmask);
 //      free (ipaddr);
 
-      return;
-    }
+//      return;
+//    }
 
   if (!*ipaddr)
     {
@@ -272,14 +332,15 @@ write_nvram:
   if (!strcmp (ifname, "lan"))
     {
       ifname = nvram_safe_get ("lan_ifname");
-      //if(!strcmp(gateway,"0.0.0.0") || !strcmp(gateway,""))
       static_route_variables[2].argv = NULL;
-      //else
-      //      static_route_variables[2].argv = ARGV("lan_ipaddr", "lan_netmask");
+    }
+  if (!strcmp (ifname, "wan"))
+    {
+      ifname = nvram_safe_get ("wan_ifname");
+      static_route_variables[2].argv = NULL;
     }
   else
     {
-      ifname = get_wan_face ();
       static_route_variables[2].argv = NULL;
     }
 
