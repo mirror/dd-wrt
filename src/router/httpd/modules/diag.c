@@ -95,10 +95,10 @@ ping_custom (webs_t wp)
   nvram_set ("rc_custom", custom);
   nvram_commit ();
   if (nvram_invmatch ("rc_custom", ""))
-  {
-  nvram2file ("rc_custom", "/tmp/custom.sh");
-  chmod ("/tmp/custom.sh", 0700);
-  }
+    {
+      nvram2file ("rc_custom", "/tmp/custom.sh");
+      chmod ("/tmp/custom.sh", 0700);
+    }
   //diag_ping_start(wp);
 
   return 0;

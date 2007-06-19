@@ -174,6 +174,7 @@ zebra_ospf_init (void)
       i=0;
       do
 	{
+	  if (addconf[i]!=0xd)
 	  putc (addconf[i], fp);
 	}
       while (addconf[i++]);
