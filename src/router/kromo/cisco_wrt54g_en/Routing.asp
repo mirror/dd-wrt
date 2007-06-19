@@ -199,8 +199,7 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("share.intrface"); %></div>
 									<select name="route_ifname">
-										<option value="lan" <% static_route_setting("lan","0"); %> >LAN &amp; WLAN</option>
-										<option value="wan" <% static_route_setting("wan","0"); %> >WAN</option>
+										<% show_routeif(); %>
 									</select>
 								</div>
 								<div class="center">
