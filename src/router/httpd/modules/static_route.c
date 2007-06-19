@@ -17,14 +17,15 @@ ej_show_routeif (webs_t wp, int argc, char_t ** argv)
   char *arg;
   int which, count;
   char word[256], *next, *page;
-  char bufferif[512];
-  char name[50] = "", *ipaddr, *netmask, *gateway, *metric, *ifname;
+  char name[50] = "", *ipaddr, *netmask, *gateway, *metric, *ifname,ifnamecopy[32];
   int temp;
   char new_name[200];
+  char bufferif[512];
   page = websGetVar (wp, "route_page", NULL);
   if (!page)
     page = "0";
   which = atoi (page);
+
   foreach (word, nvram_safe_get ("static_route"), next)
   {
     if (which-- == 0)
@@ -50,6 +51,9 @@ ej_show_routeif (webs_t wp, int argc, char_t ** argv)
   }
   if (!ifname)
     ifname = "br0";
+  strcpy(ifnamecopy,ifname);
+  
+  memset(bufferif,0,512);
   getIfList (bufferif, NULL);
   websWrite (wp, "<option value=\"lan\" %s >LAN &amp; WLAN</option>\n",
 	     nvram_match ("lan_ifname",
@@ -57,6 +61,8 @@ ej_show_routeif (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "<option value=\"wan\" %s >WAN</option>\n",
 	     nvram_match ("wan_ifname",
 			  ifname) ? "selected=\"selected\"" : "");
+  memset(word,0,256);
+  next=NULL;
   foreach (word, bufferif, next)
   {
     if (nvram_match ("lan_ifname", word))
@@ -64,7 +70,7 @@ ej_show_routeif (webs_t wp, int argc, char_t ** argv)
     if (nvram_match ("wan_ifname", word))
       continue;
     websWrite (wp, "<option value=\"%s\" %s >%s</option>\n", word,
-	       !strcmp (word, ifname) ? "selected=\"selected\"" : "", word);
+	       strcmp (word, ifnamecopy)==0 ? "selected=\"selected\"" : "", word);
   }
 }
 
