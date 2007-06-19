@@ -3335,7 +3335,7 @@ ej_show_styles (webs_t wp, int argc, char_t ** argv)
   while ((entry = readdir (directory)) != NULL)
     {
       sprintf (buf, "style/%s/style.css", entry->d_name);
-      FILE *web=getWebsFile (buf); 
+      FILE *web = getWebsFile (buf);
       if (web == NULL)
 	{
 	  sprintf (buf, "/www/style/%s/style.css", entry->d_name);
@@ -3344,8 +3344,8 @@ ej_show_styles (webs_t wp, int argc, char_t ** argv)
 	    continue;
 	  fclose (test);
 	}
-      fclose(web);
-      
+      fclose (web);
+
       websWrite (wp, "<option value=\"%s\" %s>%s</option>\n", entry->d_name,
 		 nvram_match ("router_style",
 			      entry->d_name) ? "selected=\"selected\"" : "",
@@ -3360,25 +3360,26 @@ ej_show_languages (webs_t wp, int argc, char_t ** argv)
 {
   char buf[256];
   websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-  int i=0;
+  int i = 0;
   while (websRomPageIndex[i].path != NULL)
     {
-    cprintf("checking %s\n",websRomPageIndex[i].path);
-      if (!strncmp (websRomPageIndex[i].path, "lang_pack/",strlen("lang_pack/")))
-    {
-    cprintf("found language\n");
-      if (strlen (websRomPageIndex[i].path) < 14)
-	continue;
-      strcpy (buf, websRomPageIndex[i].path);
-      char *mybuf = &buf[strlen("lang_pack/")];
-      mybuf[strlen (mybuf) - 3] = 0;	//strip .js
-      websWrite (wp,
-		 "document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");\n",
-		 mybuf, nvram_match ("language",
-				   mybuf) ? "selected=\\\"selected\\\"" : "",
-		 mybuf);
-    }
-    i++;
+      cprintf ("checking %s\n", websRomPageIndex[i].path);
+      if (!strncmp
+	  (websRomPageIndex[i].path, "lang_pack/", strlen ("lang_pack/")))
+	{
+	  cprintf ("found language\n");
+	  if (strlen (websRomPageIndex[i].path) < 14)
+	    continue;
+	  strcpy (buf, websRomPageIndex[i].path);
+	  char *mybuf = &buf[strlen ("lang_pack/")];
+	  mybuf[strlen (mybuf) - 3] = 0;	//strip .js
+	  websWrite (wp,
+		     "document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");\n",
+		     mybuf, nvram_match ("language",
+					 mybuf) ? "selected=\\\"selected\\\""
+		     : "", mybuf);
+	}
+      i++;
     }
   websWrite (wp, "//]]>\n</script>\n");
   return;
@@ -3907,8 +3908,8 @@ live_translate (char *tran)
 
   int len = strlen (temp1);
 
-  fp = getWebsFile(buf);
-  if (fp==NULL)
+  fp = getWebsFile (buf);
+  if (fp == NULL)
     return "Error";
   while (fgets (temp, 256, fp) != NULL)
     {
@@ -3923,8 +3924,8 @@ live_translate (char *tran)
     }
   fclose (fp);
 
-  fp = getWebsFile("lang_pack/english.js");	//if not found, try english
-  if (fp==NULL)
+  fp = getWebsFile ("lang_pack/english.js");	//if not found, try english
+  if (fp == NULL)
     return "Error";
 
   while (fgets (temp, 256, fp) != NULL)
@@ -5484,6 +5485,7 @@ struct ej_handler ej_handlers[] = {
 #ifdef HAVE_OLSRD
   {"show_olsrd", ej_show_olsrd},
 #endif
+  {"show_routeif", ej_show_routeif},
 
   {NULL, NULL}
 };
