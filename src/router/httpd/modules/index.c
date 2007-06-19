@@ -124,7 +124,8 @@ validate_wan_ipaddr (webs_t wp, char *value, struct variable *v)
 
   nvram_set ("wan_netmask", wan_netmask);
 
-  if (!valid_ipaddr (wp, wan_gateway, &which[2]) && strcmp(wan_gateway,"0.0.0.0"))
+  if (!valid_ipaddr (wp, wan_gateway, &which[2])
+      && strcmp (wan_gateway, "0.0.0.0"))
     return;
 
   if (!strcmp (wan_proto, "pptp"))

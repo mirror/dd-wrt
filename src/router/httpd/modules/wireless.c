@@ -88,7 +88,7 @@ int generate_key;
 extern void gen_key (char *genstr, int weptype);
 int nv_count;
 extern struct variable variables[];
-																																																																																																											    /* channel info structure *///from 11.9
+																																																																																																															/* channel info structure *///from 11.9
 typedef struct
 {
   uint chan;			/* channel number */
@@ -1580,9 +1580,9 @@ generate_wep_key (webs_t wp, int key, char *prefix)
 int
 generate_key_64 (webs_t wp)
 {
-	char *var = websGetVar (wp, "wl_wep_bit", NULL);
-  	if (var != NULL)
-    	nvram_set ("wl_wep_bit", var);	
+  char *var = websGetVar (wp, "wl_wep_bit", NULL);
+  if (var != NULL)
+    nvram_set ("wl_wep_bit", var);
 
   int ret;
   cprintf ("gen wep key 64");
@@ -1599,10 +1599,10 @@ generate_key_64 (webs_t wp)
 int
 generate_key_128 (webs_t wp)
 {
-	char *var = websGetVar (wp, "wl_wep_bit", NULL);
-  	if (var != NULL)
-    	nvram_set ("wl_wep_bit", var);
-    	
+  char *var = websGetVar (wp, "wl_wep_bit", NULL);
+  if (var != NULL)
+    nvram_set ("wl_wep_bit", var);
+
   int ret;
   cprintf ("gen wep key 128");
   generate_key = 1;
