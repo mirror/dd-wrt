@@ -4311,9 +4311,9 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,99999999,wl_basic.preambletime)\" value=\"%s\" />\n",
 	     wl_preambletime, nvram_default_get (wl_preambletime, "20"));
   websWrite (wp, "</div>\n");
-#endif
   sprintf (wmm, "%s_wmm", prefix);
   showOption (wp, "wl_adv.label18", wmm);
+#endif
 
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
