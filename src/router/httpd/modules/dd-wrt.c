@@ -3136,12 +3136,16 @@ static char *quarter_rates[] =
 
 
 void
-show_rates (webs_t wp, char *prefix)
+show_rates (webs_t wp, char *prefix, int maxrate)
 {
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp,
-	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label3)</script></div>\n");
-  websWrite (wp, "<select name=\"%s_rate\">\n", prefix);
+  websWrite (wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label3)</script></div>\n");
+if (maxrate){
+  websWrite (wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label21)</script></div>\n");
+  websWrite (wp, "<select name=\"%s_maxrate\">\n", prefix);
+}else{
+  websWrite (wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label3)</script></div>\n");
+  websWrite (wp, "<select name=\"%s_rate\">\n", prefix);}
   websWrite (wp, "<script type=\"text/javascript\">\n");
   websWrite (wp, "//<![CDATA[\n");
   char srate[32];
@@ -3239,6 +3243,17 @@ show_rates (webs_t wp, char *prefix)
   int i;
   for (i = 0; i < len; i++)
     {
+    if (maxrate)
+    {
+      if (showrates)
+	websWrite (wp, "<option value=\"%s\" %s >%s Mbps</option>\n", i,
+		   nvram_match (srate, rate[i]) ? "selected" : "0",
+		   showrates[i]);
+      else
+	websWrite (wp, "<option value=\"%s\" %s >%s Mbps</option>\n", i,
+		   nvram_match (srate, rate[i]) ? "selected" : "0", rate[i]);
+    }else
+    {
       if (showrates)
 	websWrite (wp, "<option value=\"%s\" %s >%s Mbps</option>\n", rate[i],
 		   nvram_match (srate, rate[i]) ? "selected" : "0",
@@ -3246,6 +3261,8 @@ show_rates (webs_t wp, char *prefix)
       else
 	websWrite (wp, "<option value=\"%s\" %s >%s Mbps</option>\n", rate[i],
 		   nvram_match (srate, rate[i]) ? "selected" : "0", rate[i]);
+    
+    }
     }
   websWrite (wp, "</select>\n");
   websWrite (wp, "<span class=\"default\">\n");
@@ -3713,6 +3730,8 @@ save_prefix (webs_t wp, char *prefix)
 
   sprintf (n, "%s_rate", prefix);
   copytonv (wp, n);
+  sprintf (n, "%s_maxrate", prefix);
+  copytonv (wp, n);
   sprintf (n, "%s_xr", prefix);
   copytonv (wp, n);
 //  sprintf (n, "%s_xchanmode", prefix);
@@ -4175,7 +4194,8 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   sprintf (wl_preambletime, "%s_preambletime", prefix);
   sprintf (wl_sifstime, "%s_sifstime", prefix);
   sprintf (wl_xr, "%s_xr", prefix);
-  show_rates (wp, prefix);
+  show_rates (wp, prefix,0);
+  show_rates (wp, prefix,1);
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
   showOption (wp, "wl_basic.turbo", wl_turbo);
 #endif
