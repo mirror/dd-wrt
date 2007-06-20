@@ -14,11 +14,11 @@
 
 static struct frec *frec_list = NULL;
 
-static struct frec *lookup_frec(unsigned short id, unsigned int crc);
+static struct frec *lookup_frec(unsigned short id);
 static struct frec *lookup_frec_by_sender(unsigned short id,
 					  union mysockaddr *addr,
 					  unsigned int crc);
-static unsigned short get_id(int force, unsigned short force_id, unsigned int crc);
+static unsigned short get_id(void);
 
 
 /* Send a UDP packet with it's source address set as "source" 
@@ -107,7 +107,7 @@ static void send_from(int fd, int nowild, char *packet, size_t len,
     }
 }
           
-static unsigned short search_servers(time_t now, struct all_addr **addrpp, 
+static unsigned short search_servers(struct daemon *daemon, time_t now, struct all_addr **addrpp, 
 				     unsigned short qtype, char *qdomain, int *type, char **domain)
 			      
 {
@@ -163,7 +163,7 @@ static unsigned short search_servers(time_t now, struct all_addr **addrpp,
 	      {
 		if ((sflag | F_QUERY ) & qtype)
 		  {
-		    flags = qtype & ~F_BIGNAME;
+		    flags = qtype;
 		    if (serv->addr.sa.sa_family == AF_INET) 
 		      *addrpp = (struct all_addr *)&serv->addr.in.sin_addr;
 #ifdef HAVE_IPV6
@@ -184,12 +184,10 @@ static unsigned short search_servers(time_t now, struct all_addr **addrpp,
       else
 	log_query(F_CONFIG | F_FORWARD | flags, qdomain, *addrpp, 0, NULL, 0);
     }
-  else if (qtype && !(qtype & F_BIGNAME) && 
-	   (daemon->options & OPT_NODOTS_LOCAL) && !strchr(qdomain, '.') && namelen != 0)
-    /* don't forward simple names, make exception from NS queries and empty name. */
+  else if (qtype && (daemon->options & OPT_NODOTS_LOCAL) && !strchr(qdomain, '.') && namelen != 0)
     flags = F_NXDOMAIN;
     
-  if (flags == F_NXDOMAIN && check_for_local_domain(qdomain, now))
+  if (flags == F_NXDOMAIN && check_for_local_domain(qdomain, now, daemon))
     flags = F_NOERR;
 
   if (flags == F_NXDOMAIN || flags == F_NOERR)
@@ -199,7 +197,7 @@ static unsigned short search_servers(time_t now, struct all_addr **addrpp,
 }
 
 /* returns new last_server */	
-static void forward_query(int udpfd, union mysockaddr *udpaddr,
+static void forward_query(struct daemon *daemon, int udpfd, union mysockaddr *udpaddr,
 			  struct all_addr *dst_addr, unsigned int dst_iface,
 			  HEADER *header, size_t plen, time_t now, struct frec *forward)
 {
@@ -231,24 +229,20 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
   else 
     {
       if (gotname)
-	flags = search_servers(now, &addrp, gotname, daemon->namebuff, &type, &domain);
+	flags = search_servers(daemon, now, &addrp, gotname, daemon->namebuff, &type, &domain);
       
-      if (!flags && !(forward = get_new_frec(now, NULL)))
+      if (!flags && !(forward = get_new_frec(daemon, now, NULL)))
 	/* table full - server failure. */
 	flags = F_NEG;
       
       if (forward)
 	{
-	  /* force unchanging id for signed packets */
-	  int is_sign;
-	  find_pseudoheader(header, plen, NULL, NULL, &is_sign);
-	  
 	  forward->source = *udpaddr;
 	  forward->dest = *dst_addr;
 	  forward->iface = dst_iface;
-	  forward->orig_id = ntohs(header->id);
-	  forward->new_id = get_id(is_sign, forward->orig_id, crc);
+	  forward->new_id = get_id();
 	  forward->fd = udpfd;
+	  forward->orig_id = ntohs(header->id);
 	  forward->crc = crc;
 	  forward->forwardall = 0;
 	  header->id = htons(forward->new_id);
@@ -331,7 +325,7 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
       
       /* could not send on, prepare to return */ 
       header->id = htons(forward->orig_id);
-      forward->sentto = NULL; /* cancel */
+      forward->new_id = 0; /* cancel */
     }	  
   
   /* could not send on, return empty answer or address if known for whole domain */
@@ -344,18 +338,18 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
   return;
 }
 
-static size_t process_reply(HEADER *header, time_t now, 
-			    struct server *server, size_t n)
+static size_t process_reply(struct daemon *daemon, HEADER *header, time_t now, 
+			    unsigned int query_crc, struct server *server, size_t n)
 {
   unsigned char *pheader, *sizep;
-  int munged = 0, is_sign;
+  int munged = 0;
   size_t plen; 
 
   /* If upstream is advertising a larger UDP packet size
 	 than we allow, trim it so that we don't get overlarge
-	 requests for the client. We can't do this for signed packets. */
+	 requests for the client. */
 
-  if ((pheader = find_pseudoheader(header, n, &plen, &sizep, &is_sign)) && !is_sign)
+  if ((pheader = find_pseudoheader(header, n, &plen, &sizep)))
     {
       unsigned short udpsz;
       unsigned char *psave = sizep;
@@ -373,7 +367,7 @@ static size_t process_reply(HEADER *header, time_t now,
       server && !(server->flags & SERV_WARNED_RECURSIVE))
     {
       prettyprint_addr(&server->addr, daemon->namebuff);
-      my_syslog(LOG_WARNING, _("nameserver %s refused to do a recursive query"), daemon->namebuff);
+      syslog(LOG_WARNING, _("nameserver %s refused to do a recursive query"), daemon->namebuff);
       if (!(daemon->options & OPT_LOG))
 	server->flags |= SERV_WARNED_RECURSIVE;
     }  
@@ -389,7 +383,7 @@ static size_t process_reply(HEADER *header, time_t now,
     {
       if (header->rcode == NXDOMAIN && 
 	  extract_request(header, n, daemon->namebuff, NULL) &&
-	  check_for_local_domain(daemon->namebuff, now))
+	  check_for_local_domain(daemon->namebuff, now, daemon))
 	{
 	  /* if we forwarded a query for a locally known name (because it was for 
 	     an unknown type) and the answer is NXDOMAIN, convert that to NODATA,
@@ -398,8 +392,12 @@ static size_t process_reply(HEADER *header, time_t now,
 	  header->aa = 1;
 	  header->rcode = NOERROR;
 	}
-      
-      extract_addresses(header, n, daemon->namebuff, now);
+  
+      /* If the crc of the question section doesn't match the crc we sent, then
+	 someone might be attempting to insert bogus values into the cache by 
+	 sending replies containing questions and bogus answers. */
+      if (query_crc == questions_crc(header, n, daemon->namebuff))
+	extract_addresses(header, n, daemon->namebuff, now, daemon);
     }
   
   /* do this after extract_addresses. Ensure NODATA reply and remove
@@ -419,20 +417,20 @@ static size_t process_reply(HEADER *header, time_t now,
 }
 
 /* sets new last_server */
-void reply_query(struct serverfd *sfd, time_t now)
+void reply_query(struct serverfd *sfd, struct daemon *daemon, time_t now)
 {
   /* packet from peer server, extract data for cache, and send to
      original requester */
+  struct frec *forward;
   HEADER *header;
   union mysockaddr serveraddr;
-  struct frec *forward;
   socklen_t addrlen = sizeof(serveraddr);
   ssize_t n = recvfrom(sfd->fd, daemon->packet, daemon->edns_pktsz, 0, &serveraddr.sa, &addrlen);
   size_t nn;
 
   /* packet buffer overwritten */
   daemon->srv_save = NULL;
-  
+
   /* Determine the address of the server replying  so that we can mark that as good */
   serveraddr.sa.sa_family = sfd->source_addr.sa.sa_family;
 #ifdef HAVE_IPV6
@@ -441,57 +439,51 @@ void reply_query(struct serverfd *sfd, time_t now)
 #endif
   
   header = (HEADER *)daemon->packet;
+  forward = lookup_frec(ntohs(header->id));
   
-  if (n >= (int)sizeof(HEADER) && header->qr && 
-      (forward = lookup_frec(ntohs(header->id), questions_crc(header, n, daemon->namebuff))))
+  if (n >= (int)sizeof(HEADER) && header->qr && forward)
     {
-      struct server *server = forward->sentto;
-      
-      if ((header->rcode == SERVFAIL || header->rcode == REFUSED) &&
-	  !(daemon->options & OPT_ORDER) &&
-	  forward->forwardall == 0)
-	/* for broken servers, attempt to send to another one. */
-	{
-	  unsigned char *pheader;
-	  size_t plen;
-	  int is_sign;
-	  
-	  /* recreate query from reply */
-	  pheader = find_pseudoheader(header, (size_t)n, &plen, NULL, &is_sign);
-	  if (!is_sign)
-	    {
-	      header->ancount = htons(0);
-	      header->nscount = htons(0);
-	      header->arcount = htons(0);
-	      if ((nn = resize_packet(header, (size_t)n, pheader, plen)))
-		{
-		  header->qr = 0;
-		  header->tc = 0;
-		  forward_query(-1, NULL, NULL, 0, header, nn, now, forward);
-		  return;
-		}
-	    }
-	}   
-      
-      if ((forward->sentto->flags & SERV_TYPE) == 0)
-	{
-	  if (header->rcode == SERVFAIL || header->rcode == REFUSED)
-	    server = NULL;
-	  else
-	    {
-	      struct server *last_server;
-	      /* find good server by address if possible, otherwise assume the last one we sent to */ 
-	      for (last_server = daemon->servers; last_server; last_server = last_server->next)
-		if (!(last_server->flags & (SERV_LITERAL_ADDRESS | SERV_HAS_DOMAIN | SERV_FOR_NODOTS | SERV_NO_ADDR)) &&
-		    sockaddr_isequal(&last_server->addr, &serveraddr))
-		  {
-		    server = last_server;
-		    break;
-		  }
-	    } 
-	  daemon->last_server = server;
-	}
-      
+       struct server *server = forward->sentto;
+       
+       if ((header->rcode == SERVFAIL || header->rcode == REFUSED) && forward->forwardall == 0)
+	 /* for broken servers, attempt to send to another one. */
+	 {
+	   unsigned char *pheader;
+	   size_t plen;
+	   
+	   /* recreate query from reply */
+	   pheader = find_pseudoheader(header, (size_t)n, &plen, NULL);
+	   header->ancount = htons(0);
+	   header->nscount = htons(0);
+	   header->arcount = htons(0);
+	   if ((nn = resize_packet(header, (size_t)n, pheader, plen)))
+	     {
+	       header->qr = 0;
+	       header->tc = 0;
+	       forward_query(daemon, -1, NULL, NULL, 0, header, nn, now, forward);
+	       return;
+	     }
+	 }   
+
+       if ((forward->sentto->flags & SERV_TYPE) == 0)
+	 {
+	   if (header->rcode == SERVFAIL || header->rcode == REFUSED)
+	     server = NULL;
+	   else
+	     {
+	       struct server *last_server;
+	       /* find good server by address if possible, otherwise assume the last one we sent to */ 
+	       for (last_server = daemon->servers; last_server; last_server = last_server->next)
+		 if (!(last_server->flags & (SERV_LITERAL_ADDRESS | SERV_HAS_DOMAIN | SERV_FOR_NODOTS | SERV_NO_ADDR)) &&
+		     sockaddr_isequal(&last_server->addr, &serveraddr))
+		   {
+		     server = last_server;
+		     break;
+		   }
+	     } 
+	   daemon->last_server = server;
+	 }
+	         
       /* If the answer is an error, keep the forward record in place in case
 	 we get a good reply from another server. Kill it when we've
 	 had replies from all to avoid filling the forwarding table when
@@ -499,19 +491,19 @@ void reply_query(struct serverfd *sfd, time_t now)
       if (forward->forwardall == 0 || --forward->forwardall == 1 || 
 	  (header->rcode != REFUSED && header->rcode != SERVFAIL))
 	{
-	  if ((nn = process_reply(header, now, server, (size_t)n)))
+	  if ((nn = process_reply(daemon, header, now, forward->crc, server, (size_t)n)))
 	    {
 	      header->id = htons(forward->orig_id);
 	      header->ra = 1; /* recursion if available */
 	      send_from(forward->fd, daemon->options & OPT_NOWILD, daemon->packet, nn, 
 			&forward->source, &forward->dest, forward->iface);
 	    }
-	  forward->sentto = NULL; /* cancel */
+	  forward->new_id = 0; /* cancel */
 	}
     }
 }
 
-void receive_query(struct listener *listen, time_t now)
+void receive_query(struct listener *listen, struct daemon *daemon, time_t now)
 {
   HEADER *header = (HEADER *)daemon->packet;
   union mysockaddr source_addr;
@@ -619,24 +611,27 @@ void receive_query(struct listener *listen, time_t now)
       if (if_index == 0)
 	return;
       
+      if (daemon->if_except || daemon->if_names || (daemon->options & OPT_LOCALISE))
+	{
 #ifdef SIOCGIFNAME
-      ifr.ifr_ifindex = if_index;
-      if (ioctl(listen->fd, SIOCGIFNAME, &ifr) == -1)
-	return;
+	  ifr.ifr_ifindex = if_index;
+	  if (ioctl(listen->fd, SIOCGIFNAME, &ifr) == -1)
+	    return;
 #else
-      if (!if_indextoname(if_index, ifr.ifr_name))
-	return;
+	  if (!if_indextoname(if_index, ifr.ifr_name))
+	    return;
 #endif
-      
-      if (!iface_check(listen->family, &dst_addr, &ifr, &if_index))
+
+	  if (listen->family == AF_INET &&
+	      (daemon->options & OPT_LOCALISE) &&
+	      ioctl(listen->fd, SIOCGIFNETMASK, &ifr) == -1)
+	    return;
+
+	  netmask = ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr;
+	}
+
+      if (!iface_check(daemon, listen->family, &dst_addr, ifr.ifr_name))
 	return;
-      
-      if (listen->family == AF_INET &&
-	  (daemon->options & OPT_LOCALISE) &&
-	  ioctl(listen->fd, SIOCGIFNETMASK, &ifr) == -1)
-	return;
-      
-      netmask = ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr;
     }
   
   if (extract_request(header, (size_t)n, daemon->namebuff, &type))
@@ -651,12 +646,12 @@ void receive_query(struct listener *listen, time_t now)
 #endif
     }
 
-  m = answer_request (header, ((char *) header) + PACKETSZ, (size_t)n, 
+  m = answer_request (header, ((char *) header) + PACKETSZ, (size_t)n, daemon, 
 		      dst_addr_4, netmask, now);
   if (m >= 1)
     send_from(listen->fd, daemon->options & OPT_NOWILD, (char *)header, m, &source_addr, &dst_addr, if_index);
   else
-    forward_query(listen->fd, &source_addr, &dst_addr, if_index,
+    forward_query(daemon, listen->fd, &source_addr, &dst_addr, if_index,
 		  header, (size_t)n, now, NULL);
 }
 
@@ -664,7 +659,7 @@ void receive_query(struct listener *listen, time_t now)
    blocking as neccessary, and then return. Note, need to be a bit careful
    about resources for debug mode, when the fork is suppressed: that's
    done by the caller. */
-unsigned char *tcp_request(int confd, time_t now,
+unsigned char *tcp_request(struct daemon *daemon, int confd, time_t now,
 			   struct in_addr local_addr, struct in_addr netmask)
 {
   int size = 0;
@@ -708,11 +703,8 @@ unsigned char *tcp_request(int confd, time_t now,
 	}
       
       /* m > 0 if answered from cache */
-      m = answer_request(header, ((char *) header) + 65536, (unsigned int)size, 
+      m = answer_request(header, ((char *) header) + 65536, (unsigned int)size, daemon, 
 			 local_addr, netmask, now);
-
-      /* Do this by steam now we're not in the select() loop */
-      check_log_writer(NULL); 
       
       if (m == 0)
 	{
@@ -722,7 +714,7 @@ unsigned char *tcp_request(int confd, time_t now,
 	  char *domain = NULL;
 	  
 	  if (gotname)
-	    flags = search_servers(now, &addrp, gotname, daemon->namebuff, &type, &domain);
+	    flags = search_servers(daemon, now, &addrp, gotname, daemon->namebuff, &type, &domain);
 	  
 	  if (type != 0  || (daemon->options & OPT_ORDER) || !daemon->last_server)
 	    last_server = daemon->servers;
@@ -796,13 +788,9 @@ unsigned char *tcp_request(int confd, time_t now,
 #endif 
 		  
 		  /* There's no point in updating the cache, since this process will exit and
-		     lose the information after a few queries. We make this call for the alias and 
+		     lose the information after one query. We make this call for the alias and 
 		     bogus-nxdomain side-effects. */
-		  /* If the crc of the question section doesn't match the crc we sent, then
-		     someone might be attempting to insert bogus values into the cache by 
-		     sending replies containing questions and bogus answers. */
-		  if (crc == questions_crc(header, (unsigned int)m, daemon->namebuff))
-		    m = process_reply(header, now, last_server, (unsigned int)m);
+		  m = process_reply(daemon, header, now, crc, last_server, (unsigned int)m);
 		  
 		  break;
 		}
@@ -812,8 +800,6 @@ unsigned char *tcp_request(int confd, time_t now,
 	  if (m == 0)
 	    m = setup_reply(header, (unsigned int)size, addrp, flags, daemon->local_ttl);
 	}
-
-      check_log_writer(NULL);
       
       c1 = m>>8;
       c2 = m;
@@ -832,7 +818,7 @@ static struct frec *allocate_frec(time_t now)
     {
       f->next = frec_list;
       f->time = now;
-      f->sentto = NULL;
+      f->new_id = 0;
       frec_list = f;
     }
 
@@ -842,7 +828,7 @@ static struct frec *allocate_frec(time_t now)
 /* if wait==NULL return a free or older than TIMEOUT record.
    else return *wait zero if one available, or *wait is delay to
    when the oldest in-use record will expire. */
-struct frec *get_new_frec(time_t now, int *wait)
+struct frec *get_new_frec(struct daemon *daemon, time_t now, int *wait)
 {
   struct frec *f, *oldest;
   int count;
@@ -851,7 +837,7 @@ struct frec *get_new_frec(time_t now, int *wait)
     *wait = 0;
 
   for (f = frec_list, oldest = NULL, count = 0; f; f = f->next, count++)
-    if (!f->sentto)
+    if (f->new_id == 0)
       {
 	f->time = now;
 	return f;
@@ -872,7 +858,7 @@ struct frec *get_new_frec(time_t now, int *wait)
 
       if (!wait)
 	{
-	  oldest->sentto = 0;
+	  oldest->new_id = 0;
 	  oldest->time = now;
 	}
       return oldest;
@@ -893,14 +879,12 @@ struct frec *get_new_frec(time_t now, int *wait)
   return f; /* OK if malloc fails and this is NULL */
 }
  
-/* crc is all-ones if not known. */
-static struct frec *lookup_frec(unsigned short id, unsigned int crc)
+static struct frec *lookup_frec(unsigned short id)
 {
   struct frec *f;
 
   for(f = frec_list; f; f = f->next)
-    if (f->sentto && f->new_id == id && 
-	(f->crc == crc || crc == 0xffffffff))
+    if (f->new_id == id)
       return f;
       
   return NULL;
@@ -913,7 +897,7 @@ static struct frec *lookup_frec_by_sender(unsigned short id,
   struct frec *f;
   
   for(f = frec_list; f; f = f->next)
-    if (f->sentto &&
+    if (f->new_id &&
 	f->orig_id == id && 
 	f->crc == crc &&
 	sockaddr_isequal(&f->source, addr))
@@ -923,13 +907,13 @@ static struct frec *lookup_frec_by_sender(unsigned short id,
 }
 
 /* A server record is going away, remove references to it */
-void server_gone(struct server *server)
+void server_gone(struct daemon *daemon, struct server *server)
 {
   struct frec *f;
   
   for (f = frec_list; f; f = f->next)
-    if (f->sentto && f->sentto == server)
-      f->sentto = NULL;
+    if (f->new_id != 0 && f->sentto == server)
+      f->new_id = 0;
   
   if (daemon->last_server == server)
     daemon->last_server = NULL;
@@ -938,25 +922,20 @@ void server_gone(struct server *server)
     daemon->srv_save = NULL;
 }
 
-/* return unique random ids.
-   For signed packets we can't change the ID without breaking the
-   signing, so we keep the same one. In this case force is set, and this
-   routine degenerates into killing any conflicting forward record. */
-static unsigned short get_id(int force, unsigned short force_id, unsigned int crc)
+/* return unique random ids between 1 and 65535 */
+static unsigned short get_id(void)
 {
   unsigned short ret = 0;
-  
-  if (force)
+
+  while (ret == 0)
     {
-      struct frec *f = lookup_frec(force_id, crc);
-      if (f)
-	f->sentto = NULL; /* free */
-      ret = force_id;
+      ret = rand16();
+      
+      /* scrap ids already in use */
+      if ((ret != 0) && lookup_frec(ret))
+	ret = 0;
     }
-  else do 
-    ret = rand16();
-  while (lookup_frec(ret, crc));
-  
+
   return ret;
 }
 

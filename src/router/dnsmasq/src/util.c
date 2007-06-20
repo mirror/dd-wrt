@@ -92,12 +92,11 @@ unsigned short rand16(void)
 int legal_char(char c)
 {
   /* check for legal char a-z A-Z 0-9 - 
-     (also / , used for RFC2317 and _ used in windows queries
-     and space, for DNS-SD stuff) */
+     (also / , used for RFC2317 and _ used in windows queries) */
   if ((c >= 'A' && c <= 'Z') ||
       (c >= 'a' && c <= 'z') ||
       (c >= '0' && c <= '9') ||
-      c == '-' || c == '/' || c == '_' || c == ' ')
+      c == '-' || c == '/' || c == '_')
     return 1;
   
   return 0;
@@ -155,6 +154,35 @@ void *safe_malloc(size_t size)
      
   return ret;
 }    
+
+static void log_err(char *message, char *arg1)
+{
+  char *errmess = strerror(errno);
+  
+  if (!arg1)
+    arg1 = errmess;
+  
+  fprintf(stderr, "dnsmasq: ");
+  fprintf(stderr, message, arg1, errmess);
+  fprintf(stderr, "\n");
+  
+  syslog(LOG_CRIT, message, arg1, errmess);
+}
+
+void complain(char *message, int lineno, char *file)
+{
+  char buff[256];
+  
+  sprintf(buff, _("%s at line %d of %%s"), message, lineno);
+  log_err(buff, file);
+}
+
+void die(char *message, char *arg1)
+{
+  log_err(message, arg1);
+  syslog(LOG_CRIT, _("FAILED to start up"));
+  exit(1);
+}
 
 int sockaddr_isequal(union mysockaddr *s1, union mysockaddr *s2)
 {
@@ -228,6 +256,23 @@ int is_same_net(struct in_addr a, struct in_addr b, struct in_addr mask)
 {
   return (a.s_addr & mask.s_addr) == (b.s_addr & mask.s_addr);
 } 
+
+int retry_send(void)
+{
+   struct timespec waiter;
+   if (errno == EAGAIN)
+     {
+       waiter.tv_sec = 0;
+       waiter.tv_nsec = 10000;
+       nanosleep(&waiter, NULL);
+       return 1;
+     }
+   
+   if (errno == EINTR)
+     return 1;
+
+   return 0;
+}
 
 /* returns port number from address */
 int prettyprint_addr(union mysockaddr *addr, char *buf)
@@ -352,9 +397,9 @@ int expand_buf(struct iovec *iov, size_t size)
   return 1;
 }
 
-char *print_mac(char *buff, unsigned char *mac, int len)
+char *print_mac(struct daemon *daemon, unsigned char *mac, int len)
 {
-  char *p = buff;
+  char *p = daemon->namebuff;
   int i;
    
   if (len == 0)
@@ -363,7 +408,7 @@ char *print_mac(char *buff, unsigned char *mac, int len)
     for (i = 0; i < len; i++)
       p += sprintf(p, "%.2x%s", mac[i], (i == len - 1) ? "" : ":");
   
-  return buff;
+  return daemon->namebuff;
 }
 
 void bump_maxfd(int fd, int *max)
@@ -372,21 +417,18 @@ void bump_maxfd(int fd, int *max)
     *max = fd;
 }
 
-int retry_send(void)
+void log_start(struct daemon *daemon)
 {
-   struct timespec waiter;
-   if (errno == EAGAIN)
-     {
-       waiter.tv_sec = 0;
-       waiter.tv_nsec = 10000;
-       nanosleep(&waiter, NULL);
-       return 1;
-     }
-   
-   if (errno == EINTR)
-     return 1;
-
-   return 0;
+  if (daemon->options & OPT_DEBUG)   
+    {
+#ifdef LOG_PERROR
+      openlog("dnsmasq", LOG_PERROR, daemon->log_fac);
+#else
+      openlog("dnsmasq", 0, daemon->log_fac);
+#endif
+    }
+  else
+    openlog("dnsmasq", LOG_PID, daemon->log_fac);
 }
 
 int read_write(int fd, unsigned char *packet, int size, int rw)
@@ -405,7 +447,7 @@ int read_write(int fd, unsigned char *packet, int size, int rw)
         return 0;
       else if (n == -1)
         {
-          if (retry_send() || errno == ENOMEM || errno == ENOBUFS)
+          if (errno == EINTR || errno == ENOMEM || errno == ENOBUFS)
             goto retry;
           else
             return 0;

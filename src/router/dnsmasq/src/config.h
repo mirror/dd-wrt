@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2007 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2006 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -10,7 +10,7 @@
    GNU General Public License for more details.
 */
 
-#define VERSION "2.40test10"
+#define VERSION "2.35"
 
 #define FTABSIZ 150 /* max number of outstanding requests (default) */
 #define MAX_PROCS 20 /* max no children for TCP requests */
@@ -36,7 +36,7 @@
 #if defined(__FreeBSD__) || defined (__OpenBSD__) || defined(__DragonFly__)
 #   define LEASEFILE "/var/db/dnsmasq.leases"
 #else
-#   define LEASEFILE "/var/lib/misc/dnsmasq.leases"
+#   define LEASEFILE "/tmp/dnsmasq.leases"
 #endif
 #if defined(__FreeBSD__)
 #   define CONFFILE "/usr/local/etc/dnsmasq.conf"
@@ -48,19 +48,12 @@
 #define CHGRP "dip"
 #define DHCP_SERVER_PORT 67
 #define DHCP_CLIENT_PORT 68
-#define TFTP_PORT 69
-#define TFTP_MAX_CONNECTIONS 50 /* max simultaneous connections */
-#define LOG_MAX 5 /* log-queue length */
 
 /* DBUS interface specifics */
 #define DNSMASQ_SERVICE "uk.org.thekelleys.dnsmasq"
 #define DNSMASQ_PATH "/uk/org/thekelleys/dnsmasq"
 
 /* A small collection of RR-types which are missing on some platforms */
-
-#ifndef T_SIG
-#  define T_SIG 24
-#endif
 
 #ifndef T_SRV
 #  define T_SRV 33
@@ -69,15 +62,6 @@
 #ifndef T_OPT
 #  define T_OPT 41
 #endif
-
-#ifndef T_TKEY
-#  define T_TKEY 249
-#endif
-
-#ifndef T_TSIG
-#  define T_TSIG 250
-#endif
-
 
 /* Get linux C library versions. */
 #if defined(__linux__) && !defined(__UCLIBC__) && !defined(__uClinux__)
@@ -113,9 +97,6 @@ HAVE_BROKEN_RTC
 HAVE_ISC_READER 
    define this to include the old ISC dhcpcd integration. Note that you cannot
    set both HAVE_ISC_READER and HAVE_BROKEN_RTC.
-
-HAVE_TFTP
-   define this to get dnsmasq's built-in TFTP server.
 
 HAVE_GETOPT_LONG
    define this if you have GNU libc or GNU getopt. 
@@ -172,18 +153,12 @@ NOTES:
 */
 
 /* platform independent options- uncomment to enable */
-#define HAVE_TFTP
 /* #define HAVE_BROKEN_RTC */
 /* #define HAVE_ISC_READER */
 /* #define HAVE_DBUS */
 
 #if defined(HAVE_BROKEN_RTC) && defined(HAVE_ISC_READER)
 #  error HAVE_ISC_READER is not compatible with HAVE_BROKEN_RTC
-#endif
-
-/* Allow TFTP to be disabled with COPT=-DNO_TFTP */
-#ifdef NO_TFTP
-#undef HAVE_TFTP
 #endif
 
 /* platform dependent options. */
@@ -277,7 +252,6 @@ typedef unsigned long in_addr_t;
  
 #endif
 /* Decide if we're going to support IPv6 */
-/* IPv6 can be forced off with "make COPTS=-DNO_IPV6" */
 /* We assume that systems which don't have IPv6
    headers don't have ntop and pton either */
 

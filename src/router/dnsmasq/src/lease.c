@@ -12,22 +12,18 @@
 
 #include "dnsmasq.h"
 
-static struct dhcp_lease *leases = NULL, *old_leases = NULL;
+static struct dhcp_lease *leases, *old_leases;
 static int dns_dirty, file_dirty, leases_left;
 
-void lease_init(time_t now)
+void lease_init(struct daemon *daemon, time_t now)
 {
   unsigned long ei;
   struct in_addr addr;
   struct dhcp_lease *lease;
-  int clid_len, hw_len, hw_type;
+  int flags, clid_len, hw_len, hw_type;
   FILE *leasestream;
   
-  /* These two each hold a DHCP option max size 255
-     and get a terminating zero added */
-  daemon->dhcp_buff = safe_malloc(256);
-  daemon->dhcp_buff2 = safe_malloc(256); 
-  
+  leases = old_leases = NULL;
   leases_left = daemon->dhcp_max;
 
   if (daemon->options & OPT_LEASE_RO)
@@ -52,6 +48,10 @@ void lease_init(time_t now)
       
       if (!leasestream)
 	die(_("cannot open or create lease file %s: %s"), daemon->lease_file);
+      
+      flags = fcntl(fileno(leasestream), F_GETFD);
+      if (flags != -1)
+	fcntl(fileno(leasestream), F_SETFD, flags | FD_CLOEXEC); 
       
       /* a+ mode lease pointer at end. */
       rewind(leasestream);
@@ -126,7 +126,7 @@ void lease_init(time_t now)
   dns_dirty = 1;
 }
 
-void lease_update_from_configs(void)
+void lease_update_from_configs(struct daemon *daemon)
 {
   /* changes to the config may change current leases. */
   
@@ -140,11 +140,11 @@ void lease_update_from_configs(void)
 	(config->flags & CONFIG_NAME) &&
 	(!(config->flags & CONFIG_ADDR) || config->addr.s_addr == lease->addr.s_addr))
       lease_set_hostname(lease, config->hostname, daemon->domain_suffix, 1);
-    else if ((name = host_from_dns(lease->addr)))
+    else if ((name = host_from_dns(daemon, lease->addr)))
       lease_set_hostname(lease, name, daemon->domain_suffix, 1); /* updates auth flag only */
 }
 
-static void ourprintf(int *errp, char *format, ...)
+static void ourprintf(struct daemon *daemon, int *errp, char *format, ...)
 {
   va_list ap;
   
@@ -154,7 +154,7 @@ static void ourprintf(int *errp, char *format, ...)
   va_end(ap);
 }
 
-void lease_update_file(time_t now)
+void lease_update_file(struct daemon *daemon, time_t now)
 {
   struct dhcp_lease *lease;
   time_t next_event;
@@ -170,29 +170,29 @@ void lease_update_file(time_t now)
       for (lease = leases; lease; lease = lease->next)
 	{
 #ifdef HAVE_BROKEN_RTC
-	  ourprintf(&err, "%u ", lease->length);
+	  ourprintf(daemon, &err, "%u ", lease->length);
 #else
-	  ourprintf(&err, "%lu ", (unsigned long)lease->expires);
+	  ourprintf(daemon, &err, "%lu ", (unsigned long)lease->expires);
 #endif
 	  if (lease->hwaddr_type != ARPHRD_ETHER || lease->hwaddr_len == 0) 
-	    ourprintf(&err, "%.2x-", lease->hwaddr_type);
+	    ourprintf(daemon, &err, "%.2x-", lease->hwaddr_type);
 	  for (i = 0; i < lease->hwaddr_len; i++)
 	    {
-	      ourprintf(&err, "%.2x", lease->hwaddr[i]);
+	      ourprintf(daemon, &err, "%.2x", lease->hwaddr[i]);
 	      if (i != lease->hwaddr_len - 1)
-		ourprintf(&err, ":");
+		ourprintf(daemon, &err, ":");
 	    }
-	  ourprintf(&err, " %s %s ", inet_ntoa(lease->addr),
+	  ourprintf(daemon, &err, " %s %s ", inet_ntoa(lease->addr),
 		    lease->hostname && strlen(lease->hostname) != 0 ? lease->hostname : "*");
 	  
 	  if (lease->clid && lease->clid_len != 0)
 	    {
 	      for (i = 0; i < lease->clid_len - 1; i++)
-		ourprintf(&err, "%.2x:", lease->clid[i]);
-	      ourprintf(&err, "%.2x\n", lease->clid[i]);
+		ourprintf(daemon, &err, "%.2x:", lease->clid[i]);
+	      ourprintf(daemon, &err, "%.2x\n", lease->clid[i]);
 	    }
 	  else
-	    ourprintf(&err, "*\n");	  
+	    ourprintf(daemon, &err, "*\n");	  
 	}
       
       if (fflush(daemon->lease_stream) != 0 ||
@@ -214,16 +214,16 @@ void lease_update_file(time_t now)
       if (next_event == 0 || difftime(next_event, LEASE_RETRY + now) > 0.0)
 	next_event = LEASE_RETRY + now;
       
-      my_syslog(LOG_ERR, _("failed to write %s: %s (retry in %us)"), 
-		daemon->lease_file, strerror(err),
-		(unsigned int)difftime(next_event, now));
+      syslog(LOG_ERR, _("failed to write %s: %s (retry in %us)"), 
+	     daemon->lease_file, strerror(err),
+	     (unsigned int)difftime(next_event, now));
     }
 
   if (next_event != 0)
     alarm((unsigned)difftime(next_event, now)); 
 }
 
-void lease_update_dns(void)
+void lease_update_dns(struct daemon *daemon)
 {
   struct dhcp_lease *lease;
   
@@ -233,8 +233,8 @@ void lease_update_dns(void)
       
       for (lease = leases; lease; lease = lease->next)
 	{
-	  cache_add_dhcp_entry(lease->fqdn, &lease->addr, lease->expires);
-	  cache_add_dhcp_entry(lease->hostname, &lease->addr, lease->expires);
+	  cache_add_dhcp_entry(daemon, lease->fqdn, &lease->addr, lease->expires);
+	  cache_add_dhcp_entry(daemon, lease->hostname, &lease->addr, lease->expires);
 	}
       
       dns_dirty = 0;
@@ -312,7 +312,7 @@ struct dhcp_lease *lease_allocate(struct in_addr addr)
   memset(lease, 0, sizeof(struct dhcp_lease));
   lease->new = 1;
   lease->addr = addr;
-  lease->hwaddr_len = 256; /* illegal value */
+  lease->hwaddr_len = 225; /* illegal value */
   lease->expires = 1;
 #ifdef HAVE_BROKEN_RTC
   lease->length = 0xffffffff; /* illegal value */
@@ -468,7 +468,7 @@ void lease_set_hostname(struct dhcp_lease *lease, char *name, char *suffix, int 
    script. Also run the lease change script on new/modified leases.
 
    Return zero if nothing to do. */
-int do_script_run(time_t now)
+int do_script_run(struct daemon *daemon)
 {
   struct dhcp_lease *lease;
 
@@ -479,14 +479,14 @@ int do_script_run(time_t now)
       /* If the lease still has an old_hostname, do the "old" action on that first */
       if (lease->old_hostname)
 	{
-	  queue_script(ACTION_OLD_HOSTNAME, lease, lease->old_hostname, now);
+	  queue_script(daemon, ACTION_OLD_HOSTNAME, lease, lease->old_hostname);
 	  free(lease->old_hostname);
 	  lease->old_hostname = NULL;
 	  return 1;
 	}
       else 
 	{
-	  queue_script(ACTION_DEL, lease, lease->hostname, now);
+	  queue_script(daemon, ACTION_DEL, lease, lease->hostname);
 	  old_leases = lease->next;
 	  
 	  if (lease->hostname)
@@ -509,7 +509,7 @@ int do_script_run(time_t now)
   for (lease = leases; lease; lease = lease->next)
     if (lease->old_hostname)
       {	
-	queue_script(ACTION_OLD_HOSTNAME, lease, lease->old_hostname, now);
+	queue_script(daemon, ACTION_OLD_HOSTNAME, lease, lease->old_hostname);
 	free(lease->old_hostname);
 	lease->old_hostname = NULL;
 	return 1;
@@ -519,7 +519,7 @@ int do_script_run(time_t now)
     if (lease->new || lease->changed || 
 	(lease->aux_changed && (daemon->options & OPT_LEASE_RO)))
       {
-	queue_script(lease->new ? ACTION_ADD : ACTION_OLD, lease, lease->hostname, now);
+	queue_script(daemon, lease->new ? ACTION_ADD : ACTION_OLD, lease, lease->hostname);
 	lease->new = lease->changed = lease->aux_changed = 0;
 	
 	/* these are used for the "add" call, then junked, since they're not in the database */

@@ -25,6 +25,7 @@ struct watch {
 
 static dbus_bool_t add_watch(DBusWatch *watch, void *data)
 {
+  struct daemon *daemon = data;
   struct watch *w;
 
   for (w = daemon->watches; w; w = w->next)
@@ -38,12 +39,14 @@ static dbus_bool_t add_watch(DBusWatch *watch, void *data)
   w->next = daemon->watches;
   daemon->watches = w;
 
-  w = data; /* no warning */
+  dbus_watch_set_data (watch, (void *)daemon, NULL);
+
   return TRUE;
 }
 
 static void remove_watch(DBusWatch *watch, void *data)
 {
+  struct daemon *daemon = data;
   struct watch **up, *w;  
   
   for (up = &(daemon->watches), w = daemon->watches; w; w = w->next)
@@ -54,11 +57,9 @@ static void remove_watch(DBusWatch *watch, void *data)
       }
     else
       up = &(w->next);
-
-  w = data; /* no warning */
 }
 
-static void dbus_read_servers(DBusMessage *message)
+static void dbus_read_servers(struct daemon *daemon, DBusMessage *message)
 {
   struct server *serv, *tmp, **up;
   DBusMessageIter iter;
@@ -108,7 +109,7 @@ static void dbus_read_servers(DBusMessage *message)
 	    }
 
 #ifndef HAVE_IPV6
-	  my_syslog(LOG_WARNING, _("attempt to set an IPv6 server address via DBus - no IPv6 support"));
+	  syslog(LOG_WARNING, _("attempt to set an IPv6 server address via DBus - no IPv6 support"));
 #else
 	  if (i == sizeof(struct in6_addr)-1)
 	    {
@@ -207,7 +208,6 @@ static void dbus_read_servers(DBusMessage *message)
       tmp = serv->next;
       if (serv->flags & SERV_MARK)
 	{
-	  server_gone(serv);
 	  *up = serv->next;
 	  free(serv);
 	}
@@ -222,7 +222,8 @@ DBusHandlerResult message_handler(DBusConnection *connection,
 				  void *user_data)
 {
   char *method = (char *)dbus_message_get_member(message);
-   
+  struct daemon *daemon = (struct daemon *)user_data;
+  
   if (strcmp(method, "GetVersion") == 0)
     {
       char *v = VERSION;
@@ -234,24 +235,22 @@ DBusHandlerResult message_handler(DBusConnection *connection,
     }
   else if (strcmp(method, "SetServers") == 0)
     {
-      my_syslog(LOG_INFO, _("setting upstream servers from DBus"));
-      dbus_read_servers(message);
-      check_servers();
+      syslog(LOG_INFO, _("setting upstream servers from DBus"));
+      dbus_read_servers(daemon, message);
+      check_servers(daemon);
     }
   else if (strcmp(method, "ClearCache") == 0)
-    clear_cache_and_reload(dnsmasq_time());
+    clear_cache_and_reload(daemon, dnsmasq_time());
   else
     return (DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
   
-  method = user_data; /* no warning */
-
   return (DBUS_HANDLER_RESULT_HANDLED);
  
 }
  
 
 /* returns NULL or error message, may fail silently if dbus daemon not yet up. */
-char *dbus_init(void)
+char *dbus_init(struct daemon *daemon)
 {
   DBusConnection *connection = NULL;
   DBusObjectPathVTable dnsmasq_vtable = {NULL, &message_handler, NULL, NULL, NULL, NULL };
@@ -264,14 +263,14 @@ char *dbus_init(void)
     
   dbus_connection_set_exit_on_disconnect(connection, FALSE);
   dbus_connection_set_watch_functions(connection, add_watch, remove_watch, 
-				      NULL, NULL, NULL);
+				      NULL, (void *)daemon, NULL);
   dbus_error_init (&dbus_error);
   dbus_bus_request_name (connection, DNSMASQ_SERVICE, 0, &dbus_error);
   if (dbus_error_is_set (&dbus_error))
     return (char *)dbus_error.message;
   
   if (!dbus_connection_register_object_path(connection,  DNSMASQ_PATH, 
-					    &dnsmasq_vtable, NULL))
+					    &dnsmasq_vtable, daemon))
     return _("could not register a DBus message handler");
   
   daemon->dbus = connection; 
@@ -283,7 +282,7 @@ char *dbus_init(void)
 }
  
 
-void set_dbus_listeners(int *maxfdp,
+void set_dbus_listeners(struct daemon *daemon, int *maxfdp,
 			fd_set *rset, fd_set *wset, fd_set *eset)
 {
   struct watch *w;
@@ -306,7 +305,8 @@ void set_dbus_listeners(int *maxfdp,
       }
 }
 
-void check_dbus_listeners(fd_set *rset, fd_set *wset, fd_set *eset)
+void check_dbus_listeners(struct daemon *daemon,
+			  fd_set *rset, fd_set *wset, fd_set *eset)
 {
   DBusConnection *connection = (DBusConnection *)daemon->dbus;
   struct watch *w;

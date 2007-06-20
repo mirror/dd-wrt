@@ -24,7 +24,6 @@ binary-arch:	checkroot
 	rm -rf debian/tmp
 	install -d debian/tmp/DEBIAN\
 	        -d debian/tmp/usr/share/doc/$(package)\
-		-d debian/tmp/usr/share/doc/$(package)/examples\
 	        -d debian/tmp/etc/init.d\
 	        -d debian/tmp/etc/resolvconf/update.d\
 	        -d debian/tmp/etc/default\
@@ -41,9 +40,10 @@ binary-arch:	checkroot
 	make install-i18n PREFIX=/usr DESTDIR=`pwd`/debian/tmp COPTS=$(DBUS)
 	cp doc.html debian/tmp/usr/share/doc/$(package)/.
 	cp setup.html debian/tmp/usr/share/doc/$(package)/.
-	cp dnsmasq.conf.example debian/tmp/usr/share/doc/$(package)/examples/.
 	cp FAQ debian/tmp/usr/share/doc/$(package)/.
 	gzip -9 debian/tmp/usr/share/doc/$(package)/FAQ
+	cp UPGRADING_to_2.0 debian/tmp/usr/share/doc/$(package)/.
+	gzip -9 debian/tmp/usr/share/doc/$(package)/UPGRADING_to_2.0
 	cp CHANGELOG debian/tmp/usr/share/doc/$(package)/changelog
 	gzip -9 debian/tmp/usr/share/doc/$(package)/changelog
 	cp dbus/DBus-interface debian/tmp/usr/share/doc/$(package)/.

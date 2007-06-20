@@ -57,7 +57,7 @@ static int next_token (char *token, int buffsize, FILE * fp)
   return count ? 1 : 0;
 }
 
-void load_dhcp(time_t now)
+void load_dhcp(struct daemon *daemon, time_t now)
 {
   char *hostname = daemon->namebuff;
   char token[MAXTOK], *dot;
@@ -70,7 +70,7 @@ void load_dhcp(time_t now)
   if (stat(daemon->lease_file, &statbuf) == -1)
     {
       if (!logged_lease)
-	my_syslog(LOG_WARNING, _("failed to access %s: %s"), daemon->lease_file, strerror(errno));
+	syslog(LOG_WARNING, _("failed to access %s: %m"), daemon->lease_file);
       logged_lease = 1;
       return;
     }
@@ -86,11 +86,11 @@ void load_dhcp(time_t now)
   
   if (!(fp = fopen (daemon->lease_file, "r")))
     {
-      my_syslog (LOG_ERR, _("failed to load %s: %s"), daemon->lease_file, strerror(errno));
+      syslog (LOG_ERR, _("failed to load %s: %m"), daemon->lease_file);
       return;
     }
   
-  my_syslog (LOG_INFO, _("reading %s"), daemon->lease_file);
+  syslog (LOG_INFO, _("reading %s"), daemon->lease_file);
 
   while ((next_token(token, MAXTOK, fp)))
     {
@@ -112,7 +112,7 @@ void load_dhcp(time_t now)
 			    if (!canonicalise(hostname))
 			      {
 				*hostname = 0;
-				my_syslog(LOG_ERR, _("bad name in %s"), daemon->lease_file); 
+				syslog(LOG_ERR, _("bad name in %s"), daemon->lease_file); 
 			      }
 			}
                       else if ((strcmp(token, "ends") == 0) ||
@@ -173,9 +173,9 @@ void load_dhcp(time_t now)
 		    { 
 		      if (!daemon->domain_suffix || hostname_isequal(dot+1, daemon->domain_suffix))
 			{
-			  my_syslog(LOG_WARNING, 
-				    _("Ignoring DHCP lease for %s because it has an illegal domain part"), 
-				    hostname);
+			  syslog(LOG_WARNING, 
+				 _("Ignoring DHCP lease for %s because it has an illegal domain part"), 
+				 hostname);
 			  continue;
 			}
 		      *dot = 0;
@@ -239,8 +239,8 @@ void load_dhcp(time_t now)
 
   for (lease = leases; lease; lease = lease->next)
     {
-      cache_add_dhcp_entry(lease->fqdn, &lease->addr, lease->expires);
-      cache_add_dhcp_entry(lease->name, &lease->addr, lease->expires);
+      cache_add_dhcp_entry(daemon, lease->fqdn, &lease->addr, lease->expires);
+      cache_add_dhcp_entry(daemon, lease->name, &lease->addr, lease->expires);
     }
 }
 
