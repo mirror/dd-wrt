@@ -3244,13 +3244,15 @@ if (maxrate){
     {
     if (maxrate)
     {
+      char comp[32];
+      sprintf(comp,"%d",i+1);
       if (showrates)
-	websWrite (wp, "<option value=\"%d\" %s >%s Mbps</option>\n", i,
-		   nvram_match (srate, rate[i]) ? "selected" : "0",
+	websWrite (wp, "<option value=\"%d\" %s >%s Mbps</option>\n", i+1,
+		   nvram_match (comp, rate[i]) ? "selected" : "0",
 		   showrates[i]);
       else
-	websWrite (wp, "<option value=\"%d\" %s >%s Mbps</option>\n", i,
-		   nvram_match (srate, rate[i]) ? "selected" : "0", rate[i]);
+	websWrite (wp, "<option value=\"%d\" %s >%s Mbps</option>\n", i+1,
+		   nvram_match (comp, rate[i]) ? "selected" : "0", rate[i]);
     }else
     {
       if (showrates)
