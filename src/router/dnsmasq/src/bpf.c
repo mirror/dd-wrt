@@ -26,7 +26,7 @@ static struct iovec ifreq = {
   .iov_len = 0
 };
 
-void init_bpf(void)
+void init_bpf(struct daemon *daemon)
 {
   int i = 0;
 
@@ -37,14 +37,19 @@ void init_bpf(void)
 	{
 	  sprintf(ifreq.iov_base, "/dev/bpf%d", i++);
 	  if ((daemon->dhcp_raw_fd = open(ifreq.iov_base, O_RDWR, 0)) != -1)
-	    return;
+	    {
+	      int flags = fcntl(daemon->dhcp_raw_fd, F_GETFD);
+	      if (flags != -1)
+		fcntl(daemon->dhcp_raw_fd, F_SETFD, flags | FD_CLOEXEC); 
+	      return;
+	    }
 	}
       if (errno != EBUSY)
 	die(_("cannot create DHCP BPF socket: %s"), NULL);
     }	     
 }
 
-void send_via_bpf(struct dhcp_packet *mess, size_t len,
+void send_via_bpf(struct daemon *daemon, struct dhcp_packet *mess, size_t len,
 		  struct in_addr iface_addr, struct ifreq *ifr)
 {
    /* Hairy stuff, packet either has to go to the
@@ -68,8 +73,8 @@ void send_via_bpf(struct dhcp_packet *mess, size_t len,
   /* Only know how to do ethernet on *BSD */
   if (mess->htype != ARPHRD_ETHER || mess->hlen != ETHER_ADDR_LEN)
     {
-      my_syslog(LOG_WARNING, _("DHCP request for unsupported hardware type (%d) received on %s"), 
-		mess->htype, ifr->ifr_name);
+      syslog(LOG_WARNING, _("DHCP request for unsupported hardware type (%d) received on %s"), 
+	     mess->htype, ifr->ifr_name);
       return;
     }
    
@@ -140,7 +145,7 @@ void send_via_bpf(struct dhcp_packet *mess, size_t len,
   while (writev(daemon->dhcp_raw_fd, iov, 4) == -1 && retry_send());
 }
 
-int iface_enumerate(void *parm, int (*ipv4_callback)(), int (*ipv6_callback)())
+int iface_enumerate(struct daemon *daemon, void *parm, int (*ipv4_callback)(), int (*ipv6_callback)())
 {
   char *ptr;
   struct ifreq *ifr;
@@ -201,7 +206,7 @@ int iface_enumerate(void *parm, int (*ipv4_callback)(), int (*ipv6_callback)())
 	  netmask = ((struct sockaddr_in *) &ifr->ifr_addr)->sin_addr;
 	  if (ioctl(fd, SIOCGIFBRDADDR, ifr) != -1)
 	    broadcast = ((struct sockaddr_in *) &ifr->ifr_addr)->sin_addr; 
-	  if (!((*ipv4_callback)(addr, 
+	  if (!((*ipv4_callback)(daemon, addr, 
 				 (int)if_nametoindex(ifr->ifr_name),
 				 netmask, broadcast, 
 				 parm)))
@@ -217,7 +222,7 @@ int iface_enumerate(void *parm, int (*ipv4_callback)(), int (*ipv6_callback)())
 	      addr->s6_addr[2] = 0;
 	      addr->s6_addr[3] = 0;
 	    }
-	  if (!((*ipv6_callback)(addr,
+	  if (!((*ipv6_callback)(daemon, addr,
 				 (int)((struct sockaddr_in6 *)&ifr->ifr_addr)->sin6_scope_id,
 				 (int)if_nametoindex(ifr->ifr_name),
 				 parm)))

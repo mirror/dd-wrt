@@ -311,7 +311,7 @@ A: Because when a Gentoo box shuts down, it releases its lease with
 
 Q: My laptop has two network interfaces, a wired one and a wireless
    one. I never use both interfaces at the same time, and I'd like the
-   same IP and configuration to be used irrespective of which
+   same IP and configuration to be used irrespcetive of which
    interface is in use. How can I do that?
 
 A: By default, the identity of a machine is determined by using the
@@ -391,49 +391,6 @@ Q: Where can I get .rpms Suitable for Suse?
 
 A: Dnsmasq is in Suse itself, and the latest releases are also
    available at ftp://ftp.suse.com/pub/people/ug/
-
-
-Q: Can I run dnsmasq in a Linux vserver?
-
-A: Yes, as a DNS server, dnsmasq will just work in a vserver.
-   To use dnsmasq's DHCP function you need to give the vserver
-   extra system capabilities. Please note that doing so will lesser 
-   the overall security of your system. The capabilities 
-   required are NET_ADMIN and NET_RAW. NET_ADMIN is essential, NET_RAW
-   is required to do an ICMP "ping" check on newly allocated
-   addresses. If you don't need this check, you can disable it with
-   --no-ping and omit the NET_RAW capability. 
-   Adding the capabilities is done by adding them, one per line, to
-   either /etc/vservers/<vservername>/ccapabilities for a 2.4 kernel or
-   /etc/vservers/<vservername>/bcapabilities for a 2.6 kernel (please
-   refer to the vserver documentation for more information).
-
-
-Q: What's the problem with syslog and dnsmasq?
-
-A: In almost all cases: none. If you have the normal arrangement with
-   local daemons logging to a local syslog, which then writes to disk,
-   then there's never a problem. If you use network logging, then
-   there's a potential problem with deadlock: the syslog daemon will
-   do DNS lookups so that it can log the source of log messages,
-   these lookups will (depending on exact configuration) go through
-   dnsmasq, which also sends log messages. With bad timing, you can 
-   arrive at a situation where syslog is waiting for dnsmasq, and
-   dnsmasq is waiting for syslog; they will both wait forever. This
-   problem is fixed from dnsmasq-2.39, which introduces asynchronous
-   logging: dnsmasq no longer waits for syslog and the deadlock is
-   broken. There is a remaining problem in 2.39, where "log-queries"
-   is in use. In this case most DNS queries generate two log lines, if
-   these go to a syslog which is doing a DNS lookup for each log line,
-   then those queries will in turn generate two more log lines, and a 
-   chain reaction runaway will occur. To avoid this, use syslog-ng
-   and turn on syslog-ng's dns-cache function.
-
- 
-
-
-
-
 
 
 
