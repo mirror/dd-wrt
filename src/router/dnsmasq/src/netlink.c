@@ -18,20 +18,12 @@
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 
-/* linux 2.6.19 buggers up the headers, patch it up here. */ 
-#ifndef IFA_RTA
-#  define IFA_RTA(r)  \
-       ((struct rtattr*)(((char*)(r)) + NLMSG_ALIGN(sizeof(struct ifaddrmsg))))
-
-#  include <linux/if_addr.h>
-#endif
-
 static struct iovec iov;
 
 static void nl_err(struct nlmsghdr *h);
-static void nl_routechange(struct nlmsghdr *h);
+static void nl_routechange(struct daemon *daemon, struct nlmsghdr *h);
 
-void netlink_init(void)
+void netlink_init(struct daemon *daemon)
 {
   struct sockaddr_nl addr;
 
@@ -57,12 +49,18 @@ void netlink_init(void)
   
   if (daemon->netlinkfd == -1)
     die(_("cannot create netlink socket: %s"), NULL);
-  
+  else
+    {
+      int flags = fcntl(daemon->netlinkfd, F_GETFD);
+      if (flags != -1)
+	fcntl(daemon->netlinkfd, F_SETFD, flags | FD_CLOEXEC); 
+    }
+
   iov.iov_len = 200;
   iov.iov_base = safe_malloc(iov.iov_len);
 }
 
-static ssize_t netlink_recv(void)
+static ssize_t netlink_recv(struct daemon *daemon)
 {
   struct msghdr msg;
   ssize_t rc;
@@ -101,7 +99,7 @@ static ssize_t netlink_recv(void)
   return rc;
 }
   
-int iface_enumerate(void *parm, int (*ipv4_callback)(), int (*ipv6_callback)())
+int iface_enumerate(struct daemon *daemon, void *parm, int (*ipv4_callback)(), int (*ipv6_callback)())
 {
   struct sockaddr_nl addr;
   struct nlmsghdr *h;
@@ -136,14 +134,14 @@ int iface_enumerate(void *parm, int (*ipv4_callback)(), int (*ipv6_callback)())
     
   while (1)
     {
-      if ((len = netlink_recv()) == -1)
+      if ((len = netlink_recv(daemon)) == -1)
 	return 0;
   
       for (h = (struct nlmsghdr *)iov.iov_base; NLMSG_OK(h, (size_t)len); h = NLMSG_NEXT(h, len))
  	if (h->nlmsg_type == NLMSG_ERROR)
 	  nl_err(h);
 	else if (h->nlmsg_seq != seq)
-	  nl_routechange(h); /* May be multicast arriving async */
+	  nl_routechange(daemon, h); /* May be multicast arriving async */
 	else if (h->nlmsg_type == NLMSG_DONE)
 	  {
 #ifdef HAVE_IPV6
@@ -180,7 +178,7 @@ int iface_enumerate(void *parm, int (*ipv4_callback)(), int (*ipv6_callback)())
 		  }
 		
 		if (addr.s_addr && ipv4_callback)
-		  if (!((*ipv4_callback)(addr, ifa->ifa_index, netmask, broadcast, parm)))
+		  if (!((*ipv4_callback)(daemon, addr, ifa->ifa_index, netmask, broadcast, parm)))
 		    return 0;
 	      }
 #ifdef HAVE_IPV6
@@ -196,7 +194,7 @@ int iface_enumerate(void *parm, int (*ipv4_callback)(), int (*ipv6_callback)())
 		  }
 		
 		if (addrp && ipv6_callback)
-		  if (!((*ipv6_callback)(addrp, ifa->ifa_index, ifa->ifa_index, parm)))
+		  if (!((*ipv6_callback)(daemon, addrp, ifa->ifa_index, ifa->ifa_index, parm)))
 		    return 0;
 	      }
 #endif
@@ -204,18 +202,18 @@ int iface_enumerate(void *parm, int (*ipv4_callback)(), int (*ipv6_callback)())
     }
 }
 
-void netlink_multicast(void)
+void netlink_multicast(struct daemon *daemon)
 {
   ssize_t len;
   struct nlmsghdr *h;
   
-  if ((len = netlink_recv()) != -1)
+  if ((len = netlink_recv(daemon)) != -1)
     {
       for (h = (struct nlmsghdr *)iov.iov_base; NLMSG_OK(h, (size_t)len); h = NLMSG_NEXT(h, len))
 	if (h->nlmsg_type == NLMSG_ERROR)
 	  nl_err(h);
 	else
-	  nl_routechange(h);
+	  nl_routechange(daemon, h);
     }
 }
 
@@ -223,7 +221,7 @@ static void nl_err(struct nlmsghdr *h)
 {
   struct nlmsgerr *err = NLMSG_DATA(h);
   if (err->error != 0)
-    my_syslog(LOG_ERR, _("netlink returns error: %s"), strerror(-(err->error)));
+    syslog(LOG_ERR, _("netlink returns error: %s"), strerror(-(err->error)));
 }
 
 /* We arrange to receive netlink multicast messages whenever the network route is added.
@@ -231,7 +229,7 @@ static void nl_err(struct nlmsghdr *h)
    This helps on DoD links, where frequently the packet which triggers dialling is
    a DNS query, which then gets lost. By re-sending, we can avoid the lookup
    failing. */ 
-static void nl_routechange(struct nlmsghdr *h)
+static void nl_routechange(struct daemon *daemon, struct nlmsghdr *h)
 {
   if (h->nlmsg_type == RTM_NEWROUTE && daemon->srv_save)
     {

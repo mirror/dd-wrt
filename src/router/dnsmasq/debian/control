@@ -18,5 +18,5 @@ Description: A small caching DNS proxy and DHCP server
  server and allows machines with DHCP-allocated addresses
  to appear in the DNS with names configured either in each host or
  in a central configuration file. Dnsmasq supports static and dynamic 
- DHCP leases and BOOTP/TFTP for network booting of diskless machines.
+ DHCP leases and BOOTP for network booting of diskless machines.
 
