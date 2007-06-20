@@ -3,5 +3,9 @@ set -e
 
 if [ purge = "$1" ]; then
    update-rc.d dnsmasq remove >/dev/null
-   /usr/sbin/deluser dnsmasq
+   if [ -x "$(command -v deluser)" ]; then
+     deluser --quiet --system dnsmasq > /dev/null || true
+  else
+     echo >&2 "not removing dnsmasq system account because deluser command was not found"
+  fi
 fi
