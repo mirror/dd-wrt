@@ -1870,10 +1870,10 @@ showOption (webs_t wp, char *propname, char *nvname)
   websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
   websWrite (wp,
 	     "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n",
-	     nvram_match (nvname, "0") ? "selected=\\\"selected\\\"" : "");
+	     nvram_default_match (nvname, "0","0") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp,
 	     "document.write(\"<option value=\\\"1\\\" %s >\" + share.enabled + \"</option>\");\n",
-	     nvram_match (nvname, "1") ? "selected=\\\"selected\\\"" : "");
+	     nvram_default_match (nvname, "1","0") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp, "//]]>\n</script>\n</select>\n</div>\n");
 
 }
@@ -3454,6 +3454,7 @@ show_virtualssid (webs_t wp, char *prefix)
   char *next;
   char var[80];
   char ssid[80];
+  char wmm[32];
   char vif[16];
 
   sprintf (vif, "%s_vifs", prefix);
@@ -3514,6 +3515,8 @@ show_virtualssid (webs_t wp, char *prefix)
     websWrite (wp, "//]]>\n</script>\n");
     websWrite (wp, "</select>\n");
     websWrite (wp, "</div>\n");
+    sprintf (wmm, "%s_wmm", var);
+    showOption (wp, "wl_adv.label18", wmm);
 #endif
     sprintf (ssid, "%s_ap_isolate", var);
     showOption (wp, "wl_adv.label11", ssid);
@@ -3759,6 +3762,8 @@ save_prefix (webs_t wp, char *prefix)
   sprintf (n, "%s_diversity", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_preamble", prefix);
+  copytonv (wp, n);
+  sprintf (n, "%s_wmm", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_txantenna", prefix);
   copytonv (wp, n);
@@ -4192,6 +4197,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   char wl_xr[16];
   char wl_comp[32];
   char wl_ff[16];
+  char wmm[32];
   char wl_isolate[32];
   char wl_sifstime[32];
   char wl_preambletime[32];
@@ -4306,6 +4312,8 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     wl_preambletime, nvram_default_get (wl_preambletime, "20"));
   websWrite (wp, "</div>\n");
 #endif
+  sprintf (wmm, "%s_wmm", prefix);
+  showOption (wp, "wl_adv.label18", wmm);
 
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
