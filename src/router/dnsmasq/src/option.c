@@ -27,8 +27,22 @@ struct myoption {
 #define OPTSTRING "9531yZDNLERKzowefnbvhdkqr:m:p:c:l:s:i:t:u:g:a:x:S:C:A:T:H:Q:I:B:F:G:O:M:X:V:U:j:P:J:W:Y:2:4:6:7:8:0:"
 
 /* options which don't have a one-char version */
-#define LOPT_RELOAD 256
-
+#define LOPT_RELOAD    256
+#define LOPT_NO_NAMES  257
+#define LOPT_TFTP      258
+#define LOPT_SECURE    259
+#define LOPT_PREFIX    260
+#define LOPT_PTR       261
+#define LOPT_BRIDGE    262
+#define LOPT_TFTP_MAX  263
+#define LOPT_FORCE     264
+#define LOPT_NOBLOCK   265
+#define LOPT_LOG_OPTS  266
+#define LOPT_MAX_LOGS  267
+#define LOPT_CIRCUIT   268
+#define LOPT_REMOTE    269
+#define LOPT_SUBSCR    270
+#define LOPT_INTNAME   271
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -42,14 +56,14 @@ static const struct myoption opts[] =
     {"help", 0, 0, 'w'},
     {"no-daemon", 0, 0, 'd'},
     {"log-queries", 0, 0, 'q'},
-    {"user", 1, 0, 'u'},
-    {"group", 1, 0, 'g'},
-    {"resolv-file", 1, 0, 'r'},
+    {"user", 2, 0, 'u'},
+    {"group", 2, 0, 'g'},
+    {"resolv-file", 2, 0, 'r'},
     {"mx-host", 1, 0, 'm'},
     {"mx-target", 1, 0, 't'},
-    {"cache-size", 1, 0, 'c'},
+    {"cache-size", 2, 0, 'c'},
     {"port", 1, 0, 'p'},
-    {"dhcp-leasefile", 1, 0, 'l'},
+    {"dhcp-leasefile", 2, 0, 'l'},
     {"dhcp-lease", 1, 0, 'l' },
     {"dhcp-host", 1, 0, 'G'},
     {"dhcp-range", 1, 0, 'F'},
@@ -63,12 +77,12 @@ static const struct myoption opts[] =
     {"bogus-nxdomain", 1, 0, 'B'},
     {"selfmx", 0, 0, 'e'},
     {"filterwin2k", 0, 0, 'f'},
-    {"pid-file", 1, 0, 'x'},
+    {"pid-file", 2, 0, 'x'},
     {"strict-order", 0, 0, 'o'},
     {"server", 1, 0, 'S'},
     {"local", 1, 0, 'S' },
     {"address", 1, 0, 'A' },
-    {"conf-file", 1, 0, 'C'},
+    {"conf-file", 2, 0, 'C'},
     {"no-resolv", 0, 0, 'R'},
     {"expand-hosts", 0, 0, 'E'},
     {"localmx", 0, 0, 'L'},
@@ -102,6 +116,23 @@ static const struct myoption opts[] =
     {"leasefile-ro", 0, 0, '9'},
     {"dns-forward-max", 1, 0, '0'},
     {"clear-on-reload", 0, 0, LOPT_RELOAD },
+    {"dhcp-ignore-names", 2, 0, LOPT_NO_NAMES },
+    {"enable-tftp", 0, 0, LOPT_TFTP },
+    {"tftp-secure", 0, 0, LOPT_SECURE },
+    {"tftp-root", 1, 0, LOPT_PREFIX },
+    {"tftp-max", 1, 0, LOPT_TFTP_MAX },
+    {"ptr-record", 1, 0, LOPT_PTR },
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+    {"bridge-interface", 1, 0 , LOPT_BRIDGE },
+#endif
+    {"dhcp-option-force", 1, 0, LOPT_FORCE },
+    {"tftp-no-blocksize", 0, 0, LOPT_NOBLOCK },
+    {"log-dhcp", 0, 0, LOPT_LOG_OPTS },
+    {"log-async", 2, 0, LOPT_MAX_LOGS },
+    {"dhcp-circuitid", 1, 0, LOPT_CIRCUIT },
+    {"dhcp-remoteid", 1, 0, LOPT_REMOTE },
+    {"dhcp-subscrid", 1, 0, LOPT_SUBSCR },
+    {"interface-name", 1, 0, LOPT_INTNAME },
     { NULL, 0, 0, 0 }
   };
 
@@ -134,6 +165,10 @@ static const struct optflags optmap[] = {
   { '5',            OPT_NO_PING },
   { '9',            OPT_LEASE_RO },
   { LOPT_RELOAD,    OPT_RELOAD },
+  { LOPT_TFTP,      OPT_TFTP },
+  { LOPT_SECURE,    OPT_TFTP_SECURE },
+  { LOPT_NOBLOCK,   OPT_TFTP_NOBLOCK },
+  { LOPT_LOG_OPTS,  OPT_LOG_OPTS },
   { 'v',            0},
   { 'w',            0},
   { 0, 0 }
@@ -162,8 +197,11 @@ static const struct {
   { "-H, --addn-hosts=path", gettext_noop("Specify a hosts file to be read in addition to %s."), HOSTSFILE },
   { "-i, --interface=interface", gettext_noop("Specify interface(s) to listen on."), NULL },
   { "-I, --except-interface=int", gettext_noop("Specify interface(s) NOT to listen on.") , NULL },
-  { "-j, --dhcp-userclass=<id>,<class>", gettext_noop("Map DHCP user class to option set."), NULL },
-  { "-J, --dhcp-ignore=<id>", gettext_noop("Don't do DHCP for hosts in option set."), NULL },
+  { "-j, --dhcp-userclass=<tag>,<class>", gettext_noop("Map DHCP user class to tag."), NULL },
+  { "    --dhcp-circuitid=<tag>,<circuit>", gettext_noop("Map RFC3046 circuit-id to tag."), NULL },
+  { "    --dhcp-remoteid=<tag>,<remote>", gettext_noop("Map RFC3046 remote-id to tag."), NULL },
+  { "    --dhcp-subscrid=<tag>,<remote>", gettext_noop("Map RFC3993 subscriber-id to tag."), NULL },
+  { "-J, --dhcp-ignore=<tag>", gettext_noop("Don't do DHCP for hosts with tag set."), NULL },
   { "-k, --keep-in-foreground", gettext_noop("Do NOT fork into the background, do NOT run in debug mode."), NULL },
   { "-K, --dhcp-authoritative", gettext_noop("Assume we are the only DHCP server on the local network."), NULL },
   { "-l, --dhcp-leasefile=path", gettext_noop("Specify where to store DHCP leases (defaults to %s)."), LEASEFILE },
@@ -173,7 +211,8 @@ static const struct {
   { "-n, --no-poll", gettext_noop("Do NOT poll %s file, reload only on SIGHUP."), RESOLVFILE }, 
   { "-N, --no-negcache", gettext_noop("Do NOT cache failed search results."), NULL },
   { "-o, --strict-order", gettext_noop("Use nameservers strictly in the order given in %s."), RESOLVFILE },
-  { "-O, --dhcp-option=<optspec>", gettext_noop("Set extra options to be set to DHCP clients."), NULL },
+  { "-O, --dhcp-option=<optspec>", gettext_noop("Specify options to be sent to DHCP clients."), NULL },
+  { "    --dhcp-option-force=<optspec>", gettext_noop("DHCP option sent even if the client does not request it."), NULL},
   { "-p, --port=number", gettext_noop("Specify port to listen for DNS requests on (defaults to 53)."), NULL },
   { "-P, --edns-packet-max=<size>", gettext_noop("Maximum supported UDP packet size for EDNS.0 (defaults to %s)."), "*" },
   { "-q, --log-queries", gettext_noop("Log queries."), NULL },
@@ -186,41 +225,149 @@ static const struct {
   { "-t, --mx-target=host_name", gettext_noop("Specify default target in an MX record."), NULL },
   { "-T, --local-ttl=time", gettext_noop("Specify time-to-live in seconds for replies from /etc/hosts."), NULL },
   { "-u, --user=username", gettext_noop("Change to this user after startup. (defaults to %s)."), CHUSER }, 
-  { "-U, --dhcp-vendorclass=<id>,<class>", gettext_noop("Map DHCP vendor class to option set."), NULL },
+  { "-U, --dhcp-vendorclass=<id>,<class>", gettext_noop("Map DHCP vendor class to tag."), NULL },
   { "-v, --version", gettext_noop("Display dnsmasq version and copyright information."), NULL },
   { "-V, --alias=addr,addr,mask", gettext_noop("Translate IPv4 addresses from upstream servers."), NULL },
   { "-W, --srv-host=name,target,...", gettext_noop("Specify a SRV record."), NULL },
-  { "-w, --help", gettext_noop("Display this message."), NULL },
-  { "-x, --pid-file=path", gettext_noop("Specify path of PID file. (defaults to %s)."), RUNFILE },
+  { "-w, --help", gettext_noop("Display this message. Use --help dhcp for known DHCP options."), NULL },
+  { "-x, --pid-file=path", gettext_noop("Specify path of PID file (defaults to %s)."), RUNFILE },
   { "-X, --dhcp-lease-max=number", gettext_noop("Specify maximum number of DHCP leases (defaults to %s)."), "&" },
   { "-y, --localise-queries", gettext_noop("Answer DNS queries based on the interface a query was sent to."), NULL },
   { "-Y  --txt-record=name,txt....", gettext_noop("Specify TXT DNS record."), NULL },
+  { "    --ptr-record=name,target", gettext_noop("Specify PTR DNS record."), NULL },
+  { "    --interface-name=name,interface", gettext_noop("Give DNS name to IPv4 address of interface."), NULL },
   { "-z, --bind-interfaces", gettext_noop("Bind only to interfaces in use."), NULL },
   { "-Z, --read-ethers", gettext_noop("Read DHCP static host information from %s."), ETHERSFILE },
   { "-1, --enable-dbus", gettext_noop("Enable the DBus interface for setting upstream servers, etc."), NULL },
   { "-2, --no-dhcp-interface=interface", gettext_noop("Do not provide DHCP on this interface, only provide DNS."), NULL },
   { "-3, --bootp-dynamic", gettext_noop("Enable dynamic address allocation for bootp."), NULL },
   { "-4, --dhcp-mac=<id>,<mac address>", gettext_noop("Map MAC address (with wildcards) to option set."), NULL },
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+  { "    --bridge-interface=iface,alias,..", gettext_noop("Treat DHCP requests on aliases as arriving from interface."), NULL },
+#endif
   { "-5, --no-ping", gettext_noop("Disable ICMP echo address checking in the DHCP server."), NULL },
   { "-6, --dhcp-script=path", gettext_noop("Script to run on DHCP lease creation and destruction."), NULL },
   { "-7, --conf-dir=path", gettext_noop("Read configuration from all the files in this directory."), NULL },
-  { "-8, --log-facility=facilty", gettext_noop("Log to this syslog facility. (defaults to DAEMON)"), NULL },
+  { "-8, --log-facility=facilty|file", gettext_noop("Log to this syslog facility or file. (defaults to DAEMON)"), NULL },
   { "-9, --leasefile-ro", gettext_noop("Read leases at startup, but never write the lease file."), NULL },
   { "-0, --dns-forward-max=<queries>", gettext_noop("Maximum number of concurrent DNS queries. (defaults to %s)"), "!" }, 
   { "    --clear-on-reload", gettext_noop("Clear DNS cache when reloading %s."), RESOLVFILE },
+  { "    --dhcp-ignore-names[=<id>]", gettext_noop("Ignore hostnames provided by DHCP clients."), NULL },
+  { "    --enable-tftp", gettext_noop("Enable integrated read-only TFTP server."), NULL },
+  { "    --tftp-root=<directory>", gettext_noop("Export files by TFTP only from the specified subtree."), NULL },
+  { "    --tftp-secure", gettext_noop("Allow access only to files owned by the user running dnsmasq."), NULL },
+  { "    --tftp-max=<connections>", gettext_noop("Maximum number of conncurrent TFTP transfers (defaults to %s)."), "#" },
+  { "    --tftp-no-blocksize", gettext_noop("Disable the TFTP blocksize extension."), NULL },
+  { "    --log-dhcp", gettext_noop("Extra logging for DHCP."), NULL },
+  { "    --log-async[=<log lines>]", gettext_noop("Enable async. logging; optionally set queue length."), NULL },
   { NULL, NULL, NULL }
 }; 
 
+/* makes options which take a list of addresses */
+#define OT_ADDR_LIST 255
+/* DHCP-internal options, for logging. not valid in config file */
+#define OT_INTERNAL 254
+
+static const struct {
+  char *name;
+  unsigned char val, size;
+} opttab[] = {
+  { "netmask", 1, OT_ADDR_LIST },
+  { "time-offset", 2, 4 },
+  { "router", 3, OT_ADDR_LIST  },
+  { "dns-server", 6, OT_ADDR_LIST },
+  { "log-server", 7, OT_ADDR_LIST },
+  { "lpr-server", 9, OT_ADDR_LIST },
+  { "hostname", 12, OT_INTERNAL },
+  { "boot-file-size", 13, 2 },
+  { "domain-name", 15, 0 },
+  { "swap-server", 16, OT_ADDR_LIST },
+  { "root-path", 17, 0 },
+  { "extension-path", 18, 0 },
+  { "ip-forward-enable", 19, 1 },
+  { "non-local-source-routing", 20, 1 },
+  { "policy-filter", 21, OT_ADDR_LIST },
+  { "max-datagram-reassembly", 22, 2 },
+  { "default-ttl", 23, 1 },
+  { "mtu", 26, 2 },
+  { "all-subnets-local", 27, 1 },
+  { "broadcast", 28, OT_INTERNAL },
+  { "router-discovery", 31, 1 },
+  { "router-solicitation", 32, OT_ADDR_LIST },
+  { "static-route", 33, OT_ADDR_LIST },
+  { "trailer-encapsulation", 34, 1 },
+  { "arp-timeout", 35, 4 },
+  { "ethernet-encap", 36, 1 },
+  { "tcp-ttl", 37, 1 },
+  { "tcp-keepalive", 38, 4 },
+  { "nis-domain", 40, 0 },
+  { "nis-server", 41, OT_ADDR_LIST },
+  { "ntp-server", 42, OT_ADDR_LIST },
+  { "vendor-encap", 43, OT_INTERNAL },
+  { "netbios-ns", 44, OT_ADDR_LIST },
+  { "netbios-dd", 45, OT_ADDR_LIST },
+  { "netbios-nodetype", 46, 1 },
+  { "netbios-scope", 47, 0 },
+  { "x-windows-fs", 48, OT_ADDR_LIST },
+  { "x-windows-dm", 49, OT_ADDR_LIST },
+  { "requested-address", 50, OT_INTERNAL },
+  { "lease-time", 51, OT_INTERNAL },
+  { "option-overload", 52, OT_INTERNAL },
+  { "message-type", 53, OT_INTERNAL, },
+  { "server-identifier", 54, OT_INTERNAL },
+  { "parameter-request", 55, OT_INTERNAL },
+  { "message", 56, OT_INTERNAL },
+  { "max-message-size", 57, OT_INTERNAL },
+  { "T1", 58, OT_INTERNAL },
+  { "T2", 59, OT_INTERNAL },
+  { "vendor-class", 60, 0 },
+  { "client-id", 61,OT_INTERNAL },
+  { "nis-domain", 64, 0 },
+  { "nis-server", 65, OT_ADDR_LIST },
+  { "tftp-server", 66, OT_INTERNAL },
+  { "bootfile-name", 67, OT_INTERNAL },
+  { "mobile-ip-home", 68, OT_ADDR_LIST }, 
+  { "smtp-server", 69, OT_ADDR_LIST }, 
+  { "pop3-server", 70, OT_ADDR_LIST }, 
+  { "nntp-server", 71, OT_ADDR_LIST }, 
+  { "irc-server", 74, OT_ADDR_LIST }, 
+  { "user-class", 77, 0 },
+  { "FQDN", 81, OT_INTERNAL },
+  { "agent-id", 82, OT_INTERNAL },
+  { "subnet-select", 118, OT_INTERNAL },
+  { "domain-search", 119, 0 },
+  { "sip-server", 120, 0 },
+  { "classless-static-route", 121, 0 },
+  { NULL, 0, 0 }
+};
+
+char *option_string(unsigned char opt)
+{
+  int i;
+
+  for (i = 0; opttab[i].name; i++)
+    if (opttab[i].val == opt)
+      return opttab[i].name;
+
+  return NULL;
+}
+
 /* We hide metacharaters in quoted strings by mapping them into the ASCII control
-   character space. Note that the \0, \t \a \b \r  and \n characters are carefully placed in the
+   character space. Note that the \0, \t \b \r \033 and \n characters are carefully placed in the
    following sequence so that they map to themselves: it is therefore possible to call
    unhide_metas repeatedly on string without breaking things.
    The transformation gets undone by opt_canonicalise, atoi_check and safe_string_alloc, and a 
-   couple of other places. */
+   couple of other places. 
+   Note that space is included here so that
+   --dhcp-option=3, string
+   has five characters, whilst
+   --dhcp-option=3," string"
+   has six.
+*/
 
-static const char meta[] = "\000123456\a\b\t\n78\r90abcdefABCDEF:,.";
+static const char meta[] = "\000123456 \b\t\n78\r90abcdefABCDE\033F:,.";
 
-static void one_file(struct daemon *daemon, char *file, int nest);
+static void one_file(char *file, int nest);
 
 static char hide_meta(char c)
 {
@@ -266,12 +413,25 @@ static char *safe_string_alloc(char *cp)
   return ret;
 }
 
-static char *safe_strchr(char *s, int c)
-{
-  if (!s) 
-    return NULL;
 
-  return strchr(s, c);
+/* find next comma, split string with zero and eliminate spaces.
+   return start of string following comma */
+static char *split(char *s)
+{
+  char *comma, *p;
+
+  if (!s || !(comma = strchr(s, ',')))
+    return NULL;
+  
+  p = comma;
+  *comma = ' ';
+  
+  for (; isspace(*comma); comma++);
+ 
+  for (; (p >= s) && isspace(*p); p--)
+    *p = 0;
+    
+  return comma;
 }
 
 static int canonicalise_opt(char *s)
@@ -300,7 +460,7 @@ static int atoi_check(char *a, int *res)
   return 1;
 }
 
-static void add_txt(struct daemon *daemon, char *name, char *txt)
+static void add_txt(char *name, char *txt)
 {
   size_t len = strlen(txt);
   struct txt_record *r = safe_malloc(sizeof(struct txt_record));
@@ -318,7 +478,19 @@ static void add_txt(struct daemon *daemon, char *name, char *txt)
 static void do_usage(void)
 {
   char buff[100];
-  int i;
+  int i, j;
+
+  struct {
+    char handle;
+    int val;
+  } tab[] = {
+    { '$', CACHESIZ },
+    { '*', EDNS_PKTSZ },
+    { '&', MAXLEASES },
+    { '!', FTABSIZ },
+    { '#', TFTP_MAX_CONNECTIONS },
+    { '\0', 0 }
+  };
 
   printf(_("Usage: dnsmasq [options]\n\n"));
 #ifndef HAVE_GETOPT_LONG
@@ -330,16 +502,10 @@ static void do_usage(void)
     {
       if (usage[i].arg)
 	{
-	  if (strcmp(usage[i].arg, "$") == 0)
-	    sprintf(buff, "%d", CACHESIZ);
-	  else if (strcmp(usage[i].arg, "*") == 0)
-	    sprintf(buff, "%d", EDNS_PKTSZ);
-	  else if (strcmp(usage[i].arg, "&") == 0)
-	    sprintf(buff, "%d", MAXLEASES);
-	  else if (strcmp(usage[i].arg, "!") == 0)
-	    sprintf(buff, "%d", FTABSIZ);
-	  else 
-	    strcpy(buff, usage[i].arg);
+	  strcpy(buff, usage[i].arg);
+	  for (j = 0; tab[j].handle; j++)
+	    if (tab[j].handle == *(usage[i].arg))
+	      sprintf(buff, "%d", tab[j].val);
 	}
       printf("%-36.36s", usage[i].flag);
       printf(_(usage[i].desc), buff);
@@ -347,35 +513,328 @@ static void do_usage(void)
     }
 }
 
-static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem, int nest)
+static void display_opts(void)
+{
+  int i;
+  
+  printf(_("Known DHCP options:\n"));
+  
+  for (i = 0; opttab[i].name; i++)
+    if (opttab[i].size != OT_INTERNAL)
+      printf("%3d %s\n", opttab[i].val, opttab[i].name);
+}
+
+/* This is too insanely large to keep in-line in the switch */
+static char *parse_dhcp_opt(char *arg, int forced)
+{
+  struct dhcp_opt *new = safe_malloc(sizeof(struct dhcp_opt));
+  char lenchar = 0, *cp;
+  int i, addrs, digs, is_addr, is_hex, is_dec, is_string, dots;
+  char *comma = NULL, *problem = NULL;
+  struct dhcp_netid *np = NULL;
+  unsigned char opt_len = 0;
+
+  new->len = 0;
+  new->flags = forced ? DHOPT_FORCE : 0;
+  new->netid = NULL;
+  new->val = NULL;
+  new->vendor_class = NULL;
+  new->opt = 0;
+  
+  while (arg)
+    {
+      comma = split(arg);      
+
+      for (cp = arg; *cp; cp++)
+	if (*cp < '0' || *cp > '9')
+	  break;
+      
+      if (!*cp)
+	{
+	  new->opt = atoi(arg);
+	  opt_len = 0;
+	  break;
+	}
+      
+      if (strstr(arg, "option:") == arg)
+	{
+	  for (i = 0; opttab[i].name; i++)
+	    if (opttab[i].size != OT_INTERNAL &&
+		strcasecmp(opttab[i].name, arg+7) == 0)
+	      {
+		new->opt = opttab[i].val;
+		opt_len = opttab[i].size;
+		break;
+	      }
+	  /* option:<optname> must follow tag and vendor string. */
+	  break;
+	}
+      else if (strstr(arg, "vendor:") == arg)
+	{
+	  new->vendor_class = (unsigned char *)safe_string_alloc(arg+7);
+	  new->flags |= DHOPT_ENCAPSULATE;
+	}
+      else
+	{
+	  new->netid = safe_malloc(sizeof (struct dhcp_netid));
+	  /* allow optional "net:" for consistency */
+	  if (strstr(arg, "net:") == arg)
+	    new->netid->net = safe_string_alloc(arg+4);
+	  else
+	    new->netid->net = safe_string_alloc(arg);
+	  new->netid->next = np;
+	  np = new->netid;
+	}
+      
+      arg = comma; 
+    }
+  
+  if (new->opt == 0)
+    problem = _("bad dhcp-option");
+  else if (comma)
+    {
+      /* characterise the value */
+      char c;
+      is_addr = is_hex = is_dec = is_string = 1;
+      addrs = digs = 1;
+      dots = 0;
+      for (cp = comma; (c = *cp); cp++)
+	if (c == ',')
+	  {
+	    addrs++;
+	    is_dec = is_hex = 0;
+	  }
+	else if (c == ':')
+	  {
+	    digs++;
+	    is_dec = is_addr = 0;
+	  }
+	else if (c == '/') 
+	  {
+	    is_dec = is_hex = 0;
+	    if (cp == comma) /* leading / means a pathname */
+	      is_addr = 0;
+	  } 
+	else if (c == '.')	
+	  {
+	    is_dec = is_hex = 0;
+	    dots++;
+	  }
+	else if (c == '-')
+	  is_hex = is_addr = 0;
+	else if (c == ' ')
+	  is_dec = is_hex = 0;
+	else if (!(c >='0' && c <= '9'))
+	  {
+	    is_addr = 0;
+	    if (cp[1] == 0 && is_dec &&
+		(c == 'b' || c == 's' || c == 'i'))
+	      {
+		lenchar = c;
+		*cp = 0;
+	      }
+	    else
+	      is_dec = 0;
+	    if (!((c >='A' && c <= 'F') ||
+		  (c >='a' && c <= 'f')))
+	      is_hex = 0;
+	  }
+     
+      /* We know that some options take addresses */
+
+      if (opt_len == OT_ADDR_LIST)
+	{
+	  is_string = is_dec = is_hex = 0;
+	  if (!is_addr || dots == 0)
+	    problem = _("bad IP address");
+	}
+	  
+      if (is_hex && digs > 1)
+	{
+	  new->len = digs;
+	  new->val = safe_malloc(new->len);
+	  parse_hex(comma, new->val, digs, NULL, NULL);
+	}
+      else if (is_dec)
+	{
+	  int i, val = atoi(comma);
+	  /* assume numeric arg is 1 byte except for
+	     options where it is known otherwise.
+	     For vendor class option, we have to hack. */
+	  if (opt_len != 0)
+	    new->len = opt_len;
+	  else if (val & 0xffff0000)
+	    new->len = 4;
+	  else if (val & 0xff00)
+	    new->len = 2;
+	  else
+	    new->len = 1;
+
+	  if (lenchar == 'b')
+	    new->len = 1;
+	  else if (lenchar == 's')
+	    new->len = 2;
+	  else if (lenchar == 'i')
+	    new->len = 4;
+	  
+	  new->val = safe_malloc(new->len);
+	  for (i=0; i<new->len; i++)
+	    new->val[i] = val>>((new->len - i - 1)*8);
+	}
+      else if (is_addr)	
+	{
+	  struct in_addr in;
+	  unsigned char *op;
+	  char *slash;
+	  /* max length of address/subnet descriptor is five bytes,
+	     add one for the option 120 enc byte too */
+	  new->val = op = safe_malloc((5 * addrs) + 1);
+	  new->flags |= DHOPT_ADDR;
+
+	  if (!(new->flags & DHOPT_ENCAPSULATE) && new->opt == 120)
+	    {
+	      *(op++) = 1; /* RFC 3361 "enc byte" */
+	      new->flags &= ~DHOPT_ADDR;
+	    }
+	  while (addrs--) 
+	    {
+	      cp = comma;
+	      comma = split(cp);
+	      if ((slash = strchr(cp, '/')))
+		*slash++ = 0;
+	      in.s_addr = inet_addr(cp);
+	      if (!slash)
+		{
+		  memcpy(op, &in, INADDRSZ);
+		  op += INADDRSZ;
+		}
+	      else
+		{
+		  unsigned char *p = (unsigned char *)&in;
+		  int netsize = atoi(slash);
+		  *op++ = netsize;
+		  if (netsize > 0)
+		    *op++ = *p++;
+		  if (netsize > 8)
+		    *op++ = *p++;
+		  if (netsize > 16)
+		    *op++ = *p++;
+		  if (netsize > 24)
+		    *op++ = *p++;
+		  new->flags &= ~DHOPT_ADDR; /* cannot re-write descriptor format */
+		} 
+	    }
+	  new->len = op - new->val;
+	}
+      else if (is_string)
+	{
+	  /* text arg */
+	  if ((new->opt == 119 || new->opt == 120) && !(new->flags & DHOPT_ENCAPSULATE))
+	    {
+	      /* dns search, RFC 3397, or SIP, RFC 3361 */
+	      unsigned char *q, *r, *tail;
+	      unsigned char *p, *m = NULL;
+	      size_t newlen, len = 0;
+	      int header_size = (new->opt == 119) ? 0 : 1;
+	      
+	      arg = comma;
+	      comma = split(arg);
+	      
+	      while (arg && *arg)
+		{
+		  if (!canonicalise_opt(arg))
+		    {
+		      problem = _("bad domain in dhcp-option");
+		      break;
+		    }
+		  
+		  if (!(m = realloc(m, len + strlen(arg) + 2 + header_size)))
+		    die(_("could not get memory"), NULL);
+		  p = m + header_size;
+		  q = p + len;
+		  
+		  /* add string on the end in RFC1035 format */
+		  while (*arg) 
+		    {
+		      unsigned char *cp = q++;
+		      int j;
+		      for (j = 0; *arg && (*arg != '.'); arg++, j++)
+			*q++ = *arg;
+		      *cp = j;
+		      if (*arg)
+			arg++;
+		    }
+		  *q++ = 0;
+		  
+		  /* Now tail-compress using earlier names. */
+		  newlen = q - p;
+		  for (tail = p + len; *tail; tail += (*tail) + 1)
+		    for (r = p; r - p < (int)len; r += (*r) + 1)
+		      if (strcmp((char *)r, (char *)tail) == 0)
+			{
+			  PUTSHORT((r - p) | 0xc000, tail); 
+			  newlen = tail - p;
+			  goto end;
+			}
+		end:
+		  len = newlen;
+		  
+		  arg = comma;
+		  comma = split(arg);
+		}
+      
+	      /* RFC 3361, enc byte is zero for names */
+	      if (new->opt == 120)
+		m[0] = 0;
+	      new->len = (int) len + header_size;
+	      new->val = m;
+	    }
+	  else
+	    {
+	      new->len = strlen(comma);
+	      /* keep terminating zero on string */
+	      new->val = (unsigned char *)safe_string_alloc(comma);
+	      new->flags |= DHOPT_STRING;
+	    }
+	}
+    }
+
+  if (new->len > 255)
+    problem = _("dhcp-option too long");
+  
+  new->next = daemon->dhcp_opts;
+  daemon->dhcp_opts = new;
+ 
+  return problem;
+}
+
+
+static char *one_opt(int option, char *arg, char *problem, int nest)
 {      
   int i;
   char *comma;
 
-  if(option == '?')
+  if (option == '?')
     return problem;
-
+  
   for (i=0; optmap[i].c; i++)
     if (option == optmap[i].c)
       {
 	daemon->options |= optmap[i].flag;
-	return arg ? _("extraneous parameter") : NULL;
+	return NULL;
       }
-  
-  if (!arg)
-    return _("missing parameter");
-  
+    
   switch (option)
     { 
-    case 'C':
+    case 'C': /* --conf-file */
       {
 	char *file = safe_string_alloc(arg);
 	if (file)
-	  one_file(daemon, file, nest);
+	  one_file(file, nest);
 	break;
       }
 
-    case '7':	      
+    case '7': /* --conf-dir */	      
       {
 	DIR *dir_stream;
 	struct dirent *ent;
@@ -410,7 +869,7 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	      continue;
 	    
 	    /* dir is one level, so files must be readable */
-	    one_file(daemon, path, nest + 1);
+	    one_file(path, nest + 1);
 	    free(path);
 	  }
      
@@ -418,25 +877,31 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	break;
       }
 
-    case '8':
-      for (i = 0; facilitynames[i].c_name; i++)
-	if (hostname_isequal((char *)facilitynames[i].c_name, arg))
-	  break;
-      
-      if (facilitynames[i].c_name)
-	daemon->log_fac = facilitynames[i].c_val;
+    case '8': /* --log-facility */
+      /* may be a filename */
+      if (strchr(arg, '/'))
+	daemon->log_file = safe_string_alloc(arg);
       else
-	{
-	  option = '?';
-	  problem = "bad log facility";
+	{	  
+	  for (i = 0; facilitynames[i].c_name; i++)
+	    if (hostname_isequal((char *)facilitynames[i].c_name, arg))
+	      break;
+	  
+	  if (facilitynames[i].c_name)
+	    daemon->log_fac = facilitynames[i].c_val;
+	  else
+	    {
+	      option = '?';
+	      problem = "bad log facility";
+	    }
 	}
       break;
       
-    case 'x': 
+    case 'x': /* --pid-file */
       daemon->runfile = safe_string_alloc(arg);
       break;
       
-    case 'r':
+    case 'r': /* --resolv-file */
       {
 	char *name = safe_string_alloc(arg);
 	struct resolvc *new, *list = daemon->resolv_files;
@@ -466,18 +931,16 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	break;
       }
       
-    case 'm':
+    case 'm':  /* --mx-host */
       {
 	int pref = 1;
 	struct mx_srv_record *new;
 	
-	if ((comma = safe_strchr(arg, ',')))
+	if ((comma = split(arg)))
 	  {
 	    char *prefstr;
-	    *(comma++) = 0;
-	    if ((prefstr=strchr(comma, ',')))
+	    if ((prefstr=split(comma)))
 	      {
-		*(prefstr++) = 0;
 		if (!atoi_check(prefstr, &pref))
 		  {
 		    option = '?';
@@ -504,7 +967,7 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	break;
       }
       
-    case 't':
+    case 't': /*  --mx-target */
       if (!canonicalise_opt(arg))
 	{
 	  option = '?';
@@ -514,11 +977,11 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	daemon->mxtarget = safe_string_alloc(arg);
       break;
       
-    case 'l':
+    case 'l':  /* --dhcp-leasefile */
       daemon->lease_file = safe_string_alloc(arg);
       break;
       
-    case '6':
+    case '6': /* --dhcp-script */
 #ifdef NO_FORK
       problem = _("cannot run scripts under uClinux");
       option = '?';
@@ -527,7 +990,7 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 #endif
       break;
       
-    case 'H':
+    case 'H': /* --addn-hosts */
       {
 	struct hostsfile *new = safe_malloc(sizeof(struct hostsfile));
 	static int hosts_index = 1;
@@ -538,7 +1001,7 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	break;
       }
       
-    case 's':
+    case 's': /* --domain */
       if (strcmp (arg, "#") == 0)
 	daemon->options |= OPT_RESOLV_DOMAIN;
       else if (!canonicalise_opt(arg))
@@ -547,19 +1010,18 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	daemon->domain_suffix = safe_string_alloc(arg);
       break;
       
-    case 'u':
+    case 'u':  /* --user */
       daemon->username = safe_string_alloc(arg);
       break;
       
-    case 'g':
+    case 'g':  /* --group */
       daemon->groupname = safe_string_alloc(arg);
       break;
       
-    case 'i':
+    case 'i':  /* --interface */
       do {
 	struct iname *new = safe_malloc(sizeof(struct iname));
-	if ((comma = safe_strchr(arg, ',')))
-	  *comma++ = 0;
+	comma = split(arg);
 	new->next = daemon->if_names;
 	daemon->if_names = new;
 	/* new->name may be NULL if someone does
@@ -570,12 +1032,11 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
       } while (arg);
       break;
       
-    case 'I':
-    case '2':
+    case 'I':  /* --except-interface */
+    case '2':  /* --no-dhcp-interface */
       do {
 	struct iname *new = safe_malloc(sizeof(struct iname));
-	if ((comma = safe_strchr(arg, ',')))
-	  *comma++ = 0;
+	comma = split(arg);
 	new->name = safe_string_alloc(arg);
 	if (option == 'I')
 	  {
@@ -591,7 +1052,7 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
       } while (arg);
       break;
       
-    case 'B':
+    case 'B':  /* --bogus-nxdomain */
       {
 	struct in_addr addr;
 	unhide_metas(arg);
@@ -607,11 +1068,10 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	break;	
       }
       
-    case 'a':
+    case 'a':  /* --listen-address */
       do {
 	struct iname *new = safe_malloc(sizeof(struct iname));
-	if ((comma = safe_strchr(arg, ',')))
-	  *comma++ = 0;
+	comma = split(arg);
 	unhide_metas(arg);
 	new->next = daemon->if_addrs;
 	if (arg && (new->addr.in.sin_addr.s_addr = inet_addr(arg)) != (in_addr_t)-1)
@@ -635,7 +1095,6 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	else
 	  {
 	    option = '?'; /* error */
-	    free(new);
 	    break;
 	  }
 	
@@ -644,8 +1103,8 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
       } while (arg);
       break;
       
-    case 'S':
-    case 'A':
+    case 'S':  /*  --server */
+    case 'A':  /*  --address */
       {
 	struct server *serv, *newlist = NULL;
 	
@@ -777,30 +1236,20 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	    
 	  }
 	
-	if (option == '?')
-	  while (newlist)
-	    { 
-	      serv = newlist;
-	      newlist = newlist->next;
-	      free(serv);
-	    }
-	else
+	serv = newlist;
+	while (serv->next)
 	  {
-	    serv = newlist;
-	    while (serv->next)
-	      {
-		serv->next->flags = serv->flags;
-		serv->next->addr = serv->addr;
-		serv->next->source_addr = serv->source_addr;
-		serv = serv->next;
-	      }
-	    serv->next = daemon->servers;
-	    daemon->servers = newlist;
+	    serv->next->flags = serv->flags;
+	    serv->next->addr = serv->addr;
+	    serv->next->source_addr = serv->source_addr;
+	    serv = serv->next;
 	  }
+	serv->next = daemon->servers;
+	daemon->servers = newlist;
 	break;
       }
       
-    case 'c':
+    case 'c':  /* --cache-size */
       {
 	int size;
 	
@@ -820,17 +1269,25 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	break;
       }
       
-    case 'p':
+    case 'p':  /* --port */
       if (!atoi_check(arg, &daemon->port))
 	option = '?';
       break;
     
-    case '0':
+    case '0':  /* --dns-forward-max */
       if (!atoi_check(arg, &daemon->ftabsize))
 	option = '?';
       break;  
     
-    case 'P':
+    case LOPT_MAX_LOGS:  /* --log-async */
+      daemon->max_logs = LOG_MAX; /* default */
+      if (arg && !atoi_check(arg, &daemon->max_logs))
+	option = '?';
+      else if (daemon->max_logs > 100)
+	daemon->max_logs = 100;
+      break;  
+
+    case 'P': /* --edns-packet-max */
       {
 	int i;
 	if (!atoi_check(arg, &i))
@@ -839,12 +1296,12 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	break;
       }
       
-    case 'Q':
+    case 'Q':  /* --query-port */
       if (!atoi_check(arg, &daemon->query_port))
 	option = '?';
       break;
       
-    case 'T':
+    case 'T':  /* --local-ttl */
       {
 	int ttl;
 	if (!atoi_check(arg, &ttl))
@@ -854,12 +1311,53 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	break;
       }
       
-    case 'X':
+    case 'X': /* --dhcp-lease-max */
       if (!atoi_check(arg, &daemon->dhcp_max))
 	option = '?';
       break;
       
-    case 'F':
+    case LOPT_TFTP_MAX:  /*  --tftp-max */
+      if (!atoi_check(arg, &daemon->tftp_max))
+	option = '?';
+      break;  
+
+    case  LOPT_PREFIX: /* --tftp-prefix */
+      daemon->tftp_prefix = safe_string_alloc(arg);
+      break;
+
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+    case LOPT_BRIDGE:   /* --bridge-interface */
+      {
+	struct dhcp_bridge *new = safe_malloc(sizeof(struct dhcp_bridge));
+	if (!(comma = split(arg)))
+	  {
+	    problem = _("bad bridge-interface");
+	    option = '?';
+	    break;
+	  }
+	
+	strncpy(new->iface, arg, IF_NAMESIZE);
+	new->alias = NULL;
+	new->next = daemon->bridges;
+	daemon->bridges = new;
+
+	do {
+	  arg = comma;
+	  comma = split(arg);
+	  if (strlen(arg) != 0)
+	    {
+	      struct dhcp_bridge *b = safe_malloc(sizeof(struct dhcp_bridge)); 
+	      b->next = new->alias;
+	      new->alias = b;
+	      strncpy(b->iface, arg, IF_NAMESIZE);
+	    }
+	} while (comma);
+	
+	break;
+      }
+#endif
+
+    case 'F':  /* --dhcp-range */
       {
 	int k, leasepos = 2;
 	char *cp, *a[5] = { NULL, NULL, NULL, NULL, NULL };
@@ -889,9 +1387,8 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	      if (!(*cp == ' ' || *cp == '.' ||  (*cp >='0' && *cp <= '9')))
 		break;
 	    
-	    if (*cp != ',' && (comma = strchr(arg, ',')))
+	    if (*cp != ',' && (comma = split(arg)))
 	      {
-		*comma = 0;
 		if (strstr(arg, "net:") == arg)
 		  {
 		    struct dhcp_netid *tt = safe_malloc(sizeof (struct dhcp_netid));
@@ -909,7 +1406,7 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 		    else
 		      new->netid.net = safe_string_alloc(arg);
 		  }
-		arg = comma + 1;
+		arg = comma;
 	      }
 	    else
 	      {
@@ -919,11 +1416,8 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	  }
 	
 	for (k = 1; k < 5; k++)
-	  {
-	    if (!(a[k] = strchr(a[k-1], ',')))
-	      break;
-	    *(a[k]++) = 0;
-	  }
+	  if (!(a[k] = split(a[k-1])))
+	    break;
 	
 	if (option == '?' || (k < 2) || ((new->start.s_addr = inet_addr(a[0])) == (in_addr_t)-1))
 	  option = '?';
@@ -953,14 +1447,7 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 		option = '?';
 	      }
 	  }
-	
-	if (option == '?')
-	  {
-	    free(new);
-	    break;
-	  }
-	else
-	  daemon->dhcp = new;
+	daemon->dhcp = new;
 	
 	if (k >= 4 && strchr(a[3], '.') &&  
 	    ((new->broadcast.s_addr = inet_addr(a[3])) != (in_addr_t)-1))
@@ -994,7 +1481,7 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 			/* fall through */
 		      case 's':
 		      case 'S':
-				a[leasepos][strlen(a[leasepos]) - 1] = 0;
+			a[leasepos][strlen(a[leasepos]) - 1] = 0;
 		      }
 		    
 		    new->lease_time = atoi(a[leasepos]) * fac;
@@ -1008,9 +1495,9 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	break;
       }
       
-    case 'G':
+    case 'G':  /* --dhcp-host */
       {
-	int j, k;
+	int j, k = 0;
 	char *a[6] = { NULL, NULL, NULL, NULL, NULL, NULL };
 	struct dhcp_config *new = safe_malloc(sizeof(struct dhcp_config));
 	struct in_addr in;
@@ -1021,13 +1508,8 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	
 	if ((a[0] = arg))
 	  for (k = 1; k < 6; k++)
-	    {
-	      if (!(a[k] = strchr(a[k-1], ',')))
-		break;
-	      *(a[k]++) = 0;
-	    }
-	else
-	  k = 0;
+	    if (!(a[k] = split(a[k-1])))
+	      break;
 	
 	for (j = 0; j < k; j++)
 	  if (strchr(a[j], ':')) /* ethernet address, netid or binary CLID */
@@ -1133,16 +1615,7 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	    }
 	
 	if (option == '?')
-	  {
-	    problem = _("bad dhcp-host");
-	    if (new->flags & CONFIG_NAME)
-	      free(new->hostname);
-	    if (new->flags & CONFIG_CLID)
-	      free(new->clid);
-	    if (new->flags & CONFIG_NETID)
-	      free(new->netid.net);
-	    free(new);
-	  }
+	  problem = _("bad dhcp-host");
 	else
 	  daemon->dhcp_conf = new;
 	
@@ -1150,266 +1623,12 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
       }
       
     case 'O':
-      {
-	struct dhcp_opt *new = safe_malloc(sizeof(struct dhcp_opt));
-	char lenchar = 0, *cp;
-	int addrs, digs, is_addr, is_hex, is_dec;
-	
-	new->len = 0;
-	new->flags = 0;
-	new->netid = NULL;
-	new->val = NULL;
-	new->vendor_class = NULL;
-	
-	if ((comma = safe_strchr(arg, ',')))
-	  {
-	    struct dhcp_netid *np = NULL;
-	    *comma++ = 0;
-	    
-	    do {
-	      for (cp = arg; *cp; cp++)
-		if (!(*cp == ' ' || (*cp >='0' && *cp <= '9')))
-		  break;
-	      if (!*cp)
-		break;
-	      
-	      if (strstr(arg, "vendor:") == arg)
-		new->vendor_class = (unsigned char *)safe_string_alloc(arg+7);
-	      else
-		{
-		  new->netid = safe_malloc(sizeof (struct dhcp_netid));
-		  /* allow optional "net:" for consistency */
-		  if (strstr(arg, "net:") == arg)
-		    new->netid->net = safe_string_alloc(arg+4);
-		  else
-		    new->netid->net = safe_string_alloc(arg);
-		  new->netid->next = np;
-		  np = new->netid;
-		}
-	      arg = comma;
-	      if ((comma = safe_strchr(arg, ',')))
-		*comma++ = 0;
-	    } while (arg);
-	  }
-	
-	if (!arg || (new->opt = atoi(arg)) == 0)
-	  {
-	    option = '?';
-	    problem = _("bad dhcp-option");
-	  }
-	else if (comma && new->opt == 119 && !new->vendor_class)
-	  {
-	    /* dns search, RFC 3397 */
-	    unsigned char *q, *r, *tail;
-	    unsigned char *p = NULL;
-	    size_t newlen, len = 0;
-		    
-	    arg = comma;
-	    if ((comma = safe_strchr(arg, ',')))
-	      *(comma++) = 0;
-	    
-	    while (arg && *arg)
-	      {
-		if (!canonicalise_opt(arg))
-		  {
-		    option = '?';
-		    problem = _("bad domain in dhcp-option");
-		    break;
-		  }
-		
-		if (!(p = realloc(p, len + strlen(arg) + 2)))
-		  die(_("could not get memory"), NULL);
-		q = p + len;
-		
-		/* add string on the end in RFC1035 format */
-		while (*arg) 
-		  {
-		    unsigned char *cp = q++;
-		    int j;
-		    for (j = 0; *arg && (*arg != '.'); arg++, j++)
-		      *q++ = *arg;
-		    *cp = j;
-		    if (*arg)
-		      arg++;
-		  }
-		*q++ = 0;
-		
-		/* Now tail-compress using earlier names. */
-		newlen = q - p;
-		for (tail = p + len; *tail; tail += (*tail) + 1)
-		  for (r = p; r - p < (int)len; r += (*r) + 1)
-		    if (strcmp((char *)r, (char *)tail) == 0)
-		      {
-			PUTSHORT((r - p) | 0xc000, tail); 
-			newlen = tail - p;
-			goto end;
-		      }
-	      end:
-		len = newlen;
-		
-		arg = comma;
-		if ((comma = safe_strchr(arg, ',')))
-		  *(comma++) = 0;
-	      }
-	    
-	    new->len = (int) len;
-	    new->val = p;
-	  }
-	else if (comma)
-	  {
-	    /* not option 119 */
-	    /* characterise the value */
-	    is_addr = is_hex = is_dec = 1;
-	    addrs = digs = 1;
-	    for (cp = comma; *cp; cp++)
-	      if (*cp == ',')
-		{
-		  addrs++;
-		  is_dec = is_hex = 0;
-		}
-	      else if (*cp == ':')
-		{
-		  digs++;
-		  is_dec = is_addr = 0;
-		}
-	      else if (*cp == '.' || *cp == '/')
-		is_dec = is_hex = 0;
-	      else if (!((*cp >='0' && *cp <= '9') || *cp == '-'))
-		{
-		  is_addr = 0;
-		  if (cp[1] == 0 && is_dec &&
-		      (*cp == 'b' || *cp == 's' || *cp == 'i'))
-		    {
-		      lenchar = *cp;
-		      *cp = 0;
-		    }
-		  else
-		    is_dec = 0;
-		  if (!((*cp >='A' && *cp <= 'F') ||
-			(*cp >='a' && *cp <= 'f')))
-		    is_hex = 0;
-		}
-	    
-	    if (is_hex && digs > 1)
-	      {
-		new->len = digs;
-		new->val = safe_malloc(new->len);
-		parse_hex(comma, new->val, digs, NULL, NULL);
-	      }
-	    else if (is_dec)
-	      {
-		int i, val = atoi(comma);
-		/* assume numeric arg is 1 byte except for
-		   options where it is known otherwise.
-		   For vendor class option, we have to hack. */
-		new->len = 1;
-		if (lenchar == 'b')
-		  new->len = 1;
-		else if (lenchar == 's')
-		  new->len = 2;
-		else if (lenchar == 'i')
-		  new->len = 4;
-		else if (new->vendor_class)
-		  {
-		    if (val & 0xffff0000)
-		      new->len = 4;
-		    else if (val & 0xff00)
-		      new->len = 2;
-		  } 
-		else
-		  switch (new->opt)
-		    {
-		    case 13: case 22: case 25: case 26: 
-		      new->len = 2;
-		      break;
-		    case 2: case 24: case 35: case 38: 
-		      new->len = 4;
-		      break;
-		    }
-		new->val = safe_malloc(new->len);
-		for (i=0; i<new->len; i++)
-		  new->val[i] = val>>((new->len - i - 1)*8);
-	      }
-	    else if (is_addr)	
-	      {
-		struct in_addr in;
-		unsigned char *op;
-		char *slash;
-		/* max length of address/subnet descriptor is five bytes */
-		new->val = op = safe_malloc(5 * addrs);
-		if (!new->vendor_class)
-		  new->flags |= DHOPT_ADDR;
-		while (addrs--) 
-		  {
-		    cp = comma;
-		    if ((comma = strchr(cp, ',')))
-		      *comma++ = 0;
-		    if ((slash = strchr(cp, '/')))
-		      *slash++ = 0;
-		    in.s_addr = inet_addr(cp);
-		    if (!slash)
-		      {
-			memcpy(op, &in, INADDRSZ);
-			op += INADDRSZ;
-		      }
-		    else
-		      {
-			unsigned char *p = (unsigned char *)&in;
-			int netsize = atoi(slash);
-			*op++ = netsize;
-			if (netsize > 0)
-			  *op++ = *p++;
-			if (netsize > 8)
-			  *op++ = *p++;
-			if (netsize > 16)
-			  *op++ = *p++;
-			if (netsize > 24)
-			  *op++ = *p++;
-			new->flags &= ~DHOPT_ADDR; /* cannot re-write descriptor format */
-		      } 
-		  }
-		new->len = op - new->val;
-	      }
-	    else
-	      {
-		/* text arg */
-		new->len = strlen(comma);
-		/* keep terminating zero on string */
-		new->val = (unsigned char *)safe_string_alloc(comma);
-		new->flags |= DHOPT_STRING;
-	      }
-	  }
-	
-	if (new->len > 255)
-	  {
-	    option = '?';
-	    problem = _("dhcp-option too long");
-	  }
-	
-	if (option == '?')
-	  {
-	    if (new->netid)
-	      free(new->netid);
-	    if (new->val)
-	      free(new->val);
-	    if (new->vendor_class)
-	      free(new->vendor_class);
-	    free(new);
-	  }
-	else if (new->vendor_class)
-	  {
-	    new->next = daemon->vendor_opts;
-	    daemon->vendor_opts = new;
-	  }
-	else
-	  {
-	    new->next = daemon->dhcp_opts;
-	    daemon->dhcp_opts = new;
-	  }
-		break;
-      }
+    case LOPT_FORCE:
+      if ((problem = parse_dhcp_opt(arg, option == LOPT_FORCE)))
+	option = '?';
+      break;
       
-    case 'M':
+    case 'M': /* --dhcp-boot */
       {
 	struct dhcp_netid *id = NULL;
 	while (arg && strstr(arg, "net:") == arg)
@@ -1417,8 +1636,7 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	    struct dhcp_netid *newid = safe_malloc(sizeof(struct dhcp_netid));
 	    newid->next = id;
 	    id = newid;
-	    if ((comma = strchr(arg, ',')))
-	      *comma++ = 0;
+	    comma = split(arg);
 	    newid->net = safe_string_alloc(arg+4);
 	    arg = comma;
 	  };
@@ -1429,15 +1647,13 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	  {
 	    char *dhcp_file, *dhcp_sname = NULL;
 	    struct in_addr dhcp_next_server;
-	    if ((comma = strchr(arg, ',')))
-	      *comma++ = 0;
+	    comma = split(arg);
 	    dhcp_file = safe_string_alloc(arg);
 	    dhcp_next_server.s_addr = 0;
 	    if (comma)
 	      {
 		arg = comma;
-		if ((comma = strchr(arg, ',')))
-		  *comma++ = 0;
+		comma = split(arg);
 		dhcp_sname = safe_string_alloc(arg);
 		if (comma)
 		  {
@@ -1458,80 +1674,110 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	      }
 	  }
 	
-	if (option == '?')
-	  {
-	    struct dhcp_netid *tmp;
-	    for (; id; id = tmp)
-	      {
-		tmp = id->next;
-		free(id);
-	      }
-	  }
 	break;
       }
       
-    case '4':
+    case '4':  /* --dhcp-mac */
       {
-	if (!(comma = safe_strchr(arg, ',')))
+	if (!(comma = split(arg)))
 	  option = '?';
 	else
 	  {
 	    struct dhcp_mac *new = safe_malloc(sizeof(struct dhcp_mac));
-	    *comma = 0;
 	    new->netid.net = safe_string_alloc(arg);
-	    unhide_metas(comma+1);
-	    new->hwaddr_len = parse_hex(comma+1, new->hwaddr, DHCP_CHADDR_MAX, &new->mask, &new->hwaddr_type);
+	    unhide_metas(comma);
+	    new->hwaddr_len = parse_hex(comma, new->hwaddr, DHCP_CHADDR_MAX, &new->mask, &new->hwaddr_type);
 	    new->next = daemon->dhcp_macs;
 	    daemon->dhcp_macs = new;
 	  }
       }
       break;
       
-    case 'U':
-    case 'j':
+    case 'U':           /* --dhcp-vendorclass */
+    case 'j':           /* --dhcp-userclass */
+    case LOPT_CIRCUIT:  /* --dhcp-circuitid */
+    case LOPT_REMOTE:   /* --dhcp-remoteid */
+    case LOPT_SUBSCR:   /* --dhcp-subscrid */
       {
-	if (!(comma = safe_strchr(arg, ',')))
+	if (!(comma = split(arg)))
 	  option = '?';
 	else
 	  {
+	    char *p;
+	    int dig = 0;
 	    struct dhcp_vendor *new = safe_malloc(sizeof(struct dhcp_vendor));
-	    *comma = 0;
 	    new->netid.net = safe_string_alloc(arg);
-	    unhide_metas(comma+1);
-	    new->len = strlen(comma+1);
+	    /* check for hex string - must digits may include : must not have nothing else, 
+	       only allowed for agent-options. */
+	    for (p = comma; *p; p++)
+	      if (isxdigit(*p))
+		dig = 1;
+	      else if (*p != ':')
+		break;
+	    unhide_metas(comma);
+	    if (option == 'U' || option == 'j' || *p || !dig)
+	      new->len = strlen(comma);
+	    else
+	      new->len = parse_hex(comma, (unsigned char *)comma, strlen(comma), NULL, NULL);
 	    new->data = safe_malloc(new->len);
-	    memcpy(new->data, comma+1, new->len);
-	    new->is_vendor = (option == 'U');
+	    memcpy(new->data, comma, new->len);
+	    switch (option)
+	      {
+	      case 'j':
+		new->match_type = MATCH_USER;
+		break;
+	      case 'U':
+		new->match_type = MATCH_VENDOR;
+		break; 
+	      case LOPT_CIRCUIT:
+		new->match_type = MATCH_CIRCUIT;
+		break;
+	      case LOPT_REMOTE:
+		new->match_type = MATCH_REMOTE;
+		break;
+	      case LOPT_SUBSCR:
+		new->match_type = MATCH_SUBSCRIBER;
+		break;
+	      }
 	    new->next = daemon->dhcp_vendors;
 	    daemon->dhcp_vendors = new;
 	  }
 	break;
       }
       
-    case 'J':
+    case 'J':           /* --dhcp-ignore */
+    case LOPT_NO_NAMES: /* --dhcp-ignore-names */
       {
 	struct dhcp_netid_list *new = safe_malloc(sizeof(struct dhcp_netid_list));
 	struct dhcp_netid *list = NULL;
-	new->next = daemon->dhcp_ignore;
-	daemon->dhcp_ignore = new;
-	do {
+	if (option == 'J')
+	  {
+	    new->next = daemon->dhcp_ignore;
+	    daemon->dhcp_ignore = new;
+	  }
+	else
+	  {
+	    new->next = daemon->dhcp_ignore_names;
+	    daemon->dhcp_ignore_names = new;
+	  }
+	
+	while (arg) {
 	  struct dhcp_netid *member = safe_malloc(sizeof(struct dhcp_netid));
-	  if ((comma = safe_strchr(arg, ',')))
-	    *comma++ = 0;
+	  comma = split(arg);
 	  member->next = list;
 	  list = member;
 	  member->net = safe_string_alloc(arg);
 	  arg = comma;
-	} while (arg);
+	}
 	
 	new->list = list;
 	break;
       }
       
-    case 'V':
+    case 'V':  /* --alias */
       {
 	char *a[3] = { NULL, NULL, NULL };
-	int k;
+	int k = 0;
 	struct in_addr in, out, mask;
 	struct doctor *new;
 	
@@ -1540,13 +1786,10 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	if ((a[0] = arg))
 	  for (k = 1; k < 3; k++)
 	    {
-	      if (!(a[k] = strchr(a[k-1], ',')))
+	      if (!(a[k] = split(a[k-1])))
 		break;
-	      *(a[k]++) = 0;
 	      unhide_metas(a[k]);
 	    }
-	else
-	  k = 0;
 	
 	if ((k < 2) || 
 	    ((in.s_addr = inet_addr(a[0])) == (in_addr_t)-1) ||
@@ -1569,13 +1812,59 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	break;
       }
       
-    case 'Y':
+    case LOPT_INTNAME:  /* --interface-name */
+      {
+	struct interface_name *new, **up;
+	
+	comma = split(arg);
+	
+	if (!comma || !canonicalise_opt(arg))
+	  {
+	    option = '?';
+	    problem = _("bad interface name");
+	    break;
+	  }
+
+	new = safe_malloc(sizeof(struct interface_name));
+	new->next = NULL;
+	/* Add to the end of the list, so that first name
+	   of an interface is used for PTR lookups. */
+	for(up = &daemon->int_names; *up; up = &((*up)->next));
+	*up = new;
+	new->name = safe_string_alloc(arg);
+	new->intr = safe_string_alloc(comma);
+	break;
+      }
+
+    case LOPT_PTR:  /* --ptr-record */
+      {
+	struct ptr_record *new;
+	
+	comma = split(arg);
+	
+	if (!canonicalise_opt(arg))
+	  {
+	    option = '?';
+	    problem = _("bad PTR record");
+	    break;
+	  }
+
+	new = safe_malloc(sizeof(struct ptr_record));
+	new->next = daemon->ptr;
+	daemon->ptr = new;
+	new->name = safe_string_alloc(arg);
+	new->ptr = NULL;
+	if (comma)
+	  new->ptr = safe_string_alloc(comma);
+	break;
+      }
+
+    case 'Y':  /* --txt-record */
       {
 	struct txt_record *new;
 	unsigned char *p, *q;
 	
-	if ((comma = safe_strchr(arg, ',')))
-	  *(comma) = 0;
+	comma = split(arg) - 1;
 	
 	if (!canonicalise_opt(arg))
 	  {
@@ -1633,20 +1922,20 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	    new->txt = empty;
 	  }
 	
+	/* ensure arg is terminated */
 	if (comma)
 	  *comma = 0;
 	new->name = safe_string_alloc(arg);
 	break;
       }
       
-    case 'W':
+    case 'W':  /* --srv-host */
       {
 	int port = 1, priority = 0, weight = 0;
 	char *name, *target = NULL;
 	struct mx_srv_record *new;
 	
-	if ((comma = safe_strchr(arg, ',')))
-	  *(comma++) = 0;
+	comma = split(arg);
 	
 	if (!canonicalise_opt(arg))
 	  {
@@ -1659,8 +1948,7 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	if (comma)
 	  {
 	    arg = comma;
-	    if ((comma = strchr(arg, ',')))
-	      *(comma++) = 0;
+	    comma = split(arg);
 	    if (!canonicalise_opt(arg))
 	      {
 		option = '?';
@@ -1671,8 +1959,7 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	    if (comma)
 	      {
 		arg = comma;
-		if ((comma = strchr(arg, ',')))
-		  *(comma++) = 0;
+		comma = split(arg);
 		if (!atoi_check(arg, &port))
 		  {
 		    option = '?';
@@ -1682,8 +1969,7 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 		if (comma)
 		  {
 		    arg = comma;
-		    if ((comma = strchr(arg, ',')))
-		      *(comma++) = 0;
+		    comma = split(arg);
 		    if (!atoi_check(arg, &priority))
 		      {
 			option = '?';
@@ -1693,8 +1979,7 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 		    if (comma)
 		      {
 			arg = comma;
-			if ((comma = strchr(arg, ',')))
-			  *(comma++) = 0;
+			comma = split(arg);
 			if (!atoi_check(arg, &weight))
 			  {
 			    option = '?';
@@ -1722,11 +2007,11 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
   return option == '?' ? problem : NULL;
 }
 
-static void one_file(struct daemon *daemon, char *file, int nest)	
+static void one_file(char *file, int nest)	
 {
   int i, option, lineno = 0; 
   FILE *f;
-  char *p, *arg, *buff = daemon->namebuff;
+  char *p, *arg, *start, *buff = daemon->namebuff;
 
   if (nest > 20)
     die(_("files nested too deep in %s"), file);
@@ -1743,7 +2028,8 @@ static void one_file(struct daemon *daemon, char *file, int nest)
     {
       int white;
       unsigned int lastquote;
-      
+      char *errmess = NULL;
+
       lineno++;
             
       /* Implement quotes, inside quotes we allow \\ \" \n and \t 
@@ -1756,18 +2042,18 @@ static void one_file(struct daemon *daemon, char *file, int nest)
 	      memmove(p, p+1, strlen(p+1)+1);
 	      for(; *p && *p != '"'; p++)
 		{
-		  if (*p == '\\' && strchr("\"tnabr\\", p[1]))
+		  if (*p == '\\' && strchr("\"tn\033br\\", p[1]))
 		    {
 		      if (p[1] == 't')
 			p[1] = '\t';
 		      else if (p[1] == 'n')
 			p[1] = '\n';
-		      else if (p[1] == 'a')
-			p[1] = '\a';
 		      else if (p[1] == 'b')
 			p[1] = '\b';
 		      else if (p[1] == 'r')
 			p[1] = '\r';
+		      else if (p[1] == 'e') /* escape */
+			p[1] = '\033';
 		      memmove(p, p+1, strlen(p+1)+1);
 		    }
 		  *p = hide_meta(*p);
@@ -1778,9 +2064,12 @@ static void one_file(struct daemon *daemon, char *file, int nest)
 		  lastquote = p - buff;
 		}
 	      else
-		complain(_("missing \""), lineno, file);
+		{
+		  errmess = _("missing \"");
+		  goto oops; 
+		}
 	    }
-	  
+
 	  if (white && *p == '#')
 	    { 
 	      *p = 0;
@@ -1805,33 +2094,46 @@ static void one_file(struct daemon *daemon, char *file, int nest)
 	}
       else
 	arg = NULL;
+
+      /* skip leading space */
+      for (start = buff; *start && isspace(*start); start++);
       
       for (option = 0, i = 0; opts[i].name; i++) 
-	if (strcmp(opts[i].name, buff) == 0)
-	  option = opts[i].val;
-
-      if (option)
-	{
-	  char *errmess;
-	  if ((errmess = one_opt(daemon, option, arg, _("error"), nest + 1)))
-	    complain(errmess, lineno, file);
-	}
+	if (strcmp(opts[i].name, start) == 0)
+	  {
+	    option = opts[i].val;
+	    break;
+	  }
+      
+      if (!option)
+	errmess = _("bad option");
+      else if (opts[i].has_arg == 0 && arg)
+	errmess = _("extraneous parameter");
+      else if (opts[i].has_arg == 1 && !arg)
+	errmess = _("missing parameter");
       else
-	complain(_("bad option"), lineno, file);
+	errmess = one_opt(option, arg, _("error"), nest + 1);
+      
+      if (errmess)
+	{
+	oops:
+	  sprintf(buff, _("%s at line %d of %%s"), errmess, lineno);
+	  die(buff, file);
+	}
     }
 
   fclose(f);
 }
 
-struct daemon *read_opts(int argc, char **argv, char *compile_opts)
+void read_opts(int argc, char **argv, char *compile_opts)
 {
-  struct daemon *daemon = safe_malloc(sizeof(struct daemon));
   char *buff = safe_malloc(MAXDNAME);
   int option, nest = 0;
   char *errmess, *arg, *conffile = CONFFILE;
       
   opterr = 0;
-  
+
+  daemon = safe_malloc(sizeof(struct daemon));
   memset(daemon, 0, sizeof(struct daemon));
   daemon->namebuff = buff;
 
@@ -1846,11 +2148,12 @@ struct daemon *read_opts(int argc, char **argv, char *compile_opts)
   daemon->groupname = CHGRP;
   daemon->runfile =  RUNFILE;
   daemon->dhcp_max = MAXLEASES;
+  daemon->tftp_max = TFTP_MAX_CONNECTIONS;
   daemon->edns_pktsz = EDNS_PKTSZ;
   daemon->log_fac = -1;
-  add_txt(daemon, "version.bind", "dnsmasq-" VERSION );
-  add_txt(daemon, "authors.bind", "Simon Kelley");
-  add_txt(daemon, "copyright.bind", COPYRIGHT);
+  add_txt("version.bind", "dnsmasq-" VERSION );
+  add_txt("authors.bind", "Simon Kelley");
+  add_txt("copyright.bind", COPYRIGHT);
 
   while (1) 
     {
@@ -1876,7 +2179,10 @@ struct daemon *read_opts(int argc, char **argv, char *compile_opts)
       /* command-line only stuff */
       if (option == 'w')
 	{
-	  do_usage();
+	  if (argc == 3 && strcmp(argv[2], "dhcp") == 0)
+	    display_opts();
+	  else
+	    do_usage();
 	  exit(0);
 	}
       else if (option == 'v')
@@ -1896,9 +2202,9 @@ struct daemon *read_opts(int argc, char **argv, char *compile_opts)
       else
 	{
 #ifdef HAVE_GETOPT_LONG
-	  errmess = one_opt(daemon, option, arg, _("try --help"), 0);
+	  errmess = one_opt(option, arg, _("try --help"), 0);
 #else 
-	  errmess = one_opt(daemon, option, arg, _("try -w"), 0); 
+	  errmess = one_opt(option, arg, _("try -w"), 0); 
 #endif  
 	  if (errmess)
 	    die(_("bad command line options: %s"), errmess);
@@ -1906,17 +2212,7 @@ struct daemon *read_opts(int argc, char **argv, char *compile_opts)
     }
 
   if (conffile)
-    one_file(daemon, conffile, nest);
-
-  /* Do old default, if nothing set for this. */
-  if (daemon->log_fac == -1)
-    {
-      daemon->log_fac = LOG_DAEMON;
-#ifdef LOG_LOCAL0
-      if (daemon->options & OPT_DEBUG)
-	daemon->log_fac = LOG_LOCAL0;
-#endif
-    }
+    one_file(conffile, nest);
 
   /* port might no be known when the address is parsed - fill in here */
   if (daemon->servers)
@@ -2031,8 +2327,6 @@ struct daemon *read_opts(int argc, char **argv, char *compile_opts)
 	    srv->name = safe_string_alloc(buff);
 	  }
     }
-     
-  return daemon;
 }  
      
       
