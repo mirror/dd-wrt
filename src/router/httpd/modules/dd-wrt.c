@@ -3155,6 +3155,8 @@ show_rates (webs_t wp, char *prefix, int maxrate)
   websWrite (wp, "//<![CDATA[\n");
   char srate[32];
   sprintf (srate, "%s_rate", prefix);
+  char mxrate[32];
+  sprintf (mxrate, "%s_maxrate", prefix);
   websWrite (wp,
 	     "document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n",
 	     nvram_match (srate, "0") ? "selected" : "");
@@ -3254,11 +3256,11 @@ show_rates (webs_t wp, char *prefix, int maxrate)
 	  sprintf (comp, "%d", i + 1);
 	  if (showrates)
 	    websWrite (wp, "<option value=\"%d\" %s >%s Mbps</option>\n",
-		       i + 1, nvram_match (comp, rate[i]) ? "selected" : "0",
+		       i + 1, nvram_match (mxrate, comp) ? "selected" : "0",
 		       showrates[i]);
 	  else
 	    websWrite (wp, "<option value=\"%d\" %s >%s Mbps</option>\n",
-		       i + 1, nvram_match (comp, rate[i]) ? "selected" : "0",
+		       i + 1, nvram_match (mxrate, comp) ? "selected" : "0",
 		       rate[i]);
 	}
       else
