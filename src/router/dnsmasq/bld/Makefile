@@ -7,7 +7,7 @@ OBJS = cache.o rfc1035.o util.o option.o forward.o isc.o network.o \
        helper.o tftp.o log.o
 
 .c.o:
-	$(CC) $(CFLAGS) $(COPTS) $(I18N) `echo $(COPTS) | ../bld/pkg-wrapper $(PKG_CONFIG) --cflags dbus-1` $(RPM_OPT_FLAGS) -Wall -W -c $<
+	$(CC) $(CFLAGS) $(COPTS) -DNO_TFTP $(I18N) `echo $(COPTS) | ../bld/pkg-wrapper $(PKG_CONFIG) --cflags dbus-1` $(RPM_OPT_FLAGS) -Wall -W -c $<
 
 dnsmasq : $(OBJS)
 	$(CC) $(LDFLAGS) -o $@  $(OBJS) `echo $(COPTS) | ../bld/pkg-wrapper $(PKG_CONFIG) --libs dbus-1` $(LIBS) 
