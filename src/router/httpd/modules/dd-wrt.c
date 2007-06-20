@@ -3246,11 +3246,11 @@ if (maxrate){
     if (maxrate)
     {
       if (showrates)
-	websWrite (wp, "<option value=\"%s\" %s >%s Mbps</option>\n", i,
+	websWrite (wp, "<option value=\"%d\" %s >%s Mbps</option>\n", i,
 		   nvram_match (srate, rate[i]) ? "selected" : "0",
 		   showrates[i]);
       else
-	websWrite (wp, "<option value=\"%s\" %s >%s Mbps</option>\n", i,
+	websWrite (wp, "<option value=\"%d\" %s >%s Mbps</option>\n", i,
 		   nvram_match (srate, rate[i]) ? "selected" : "0", rate[i]);
     }else
     {
