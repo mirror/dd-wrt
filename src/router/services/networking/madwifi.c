@@ -1216,7 +1216,6 @@ set_netmode (char *wif, char *dev, char *use)
 	      eval ("iwpriv", use, "xr", "0");
 	    }
 	}
-      eval ("iwpriv", use, "wmm", "0");
     }
   if (default_match (comp, "1", "0"))
     eval ("iwpriv", use, "compression", "1");
@@ -1526,7 +1525,10 @@ configure_single (int count)
   if (useif)
     set_netmode (wif, dev, useif);
   set_netmode (wif, dev, dev);
-
+  
+  char wmm[32];
+  sprintf(wmm,"%s_wmm",dev);
+  eval("iwpriv",dev,"wmm",default_get(wmm,"0"));
 
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
     {
@@ -1588,6 +1590,8 @@ configure_single (int count)
       cprintf ("set broadcast flag vif %s\n", var);	//hide ssid
       sprintf (broadcast, "%s_closed", var);
       eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
+      sprintf(wmm,"%s_wmm",var);
+      eval("iwpriv",var,"wmm",default_get(wmm,"0"));
       char isolate[32];
       sprintf (isolate, "%s_ap_isolate", var);
       if (default_match (isolate, "1", "0"))
