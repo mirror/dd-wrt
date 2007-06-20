@@ -3139,7 +3139,6 @@ void
 show_rates (webs_t wp, char *prefix, int maxrate)
 {
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label3)</script></div>\n");
 if (maxrate){
   websWrite (wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label21)</script></div>\n");
   websWrite (wp, "<select name=\"%s_maxrate\">\n", prefix);
