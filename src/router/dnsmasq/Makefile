@@ -1,7 +1,7 @@
-PREFIX?=/usr/local
-BINDIR = ${PREFIX}/sbin
-MANDIR = ${PREFIX}/share/man
-LOCALEDIR = ${PREFIX}/share/locale
+PREFIX ?= /usr/local
+BINDIR ?= ${PREFIX}/sbin
+MANDIR ?= ${PREFIX}/share/man
+LOCALEDIR ?= ${PREFIX}/share/locale
 
 SRC = src
 PO = po
