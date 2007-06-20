@@ -211,7 +211,7 @@ start_dnsmasq (void)
   dns_to_resolv ();
 
   chmod ("/etc/lease_update.sh", 0700);
-  ret = eval ("dnsmasq", "--conf-file", "/tmp/dnsmasq.conf");
+  ret = eval ("dnsmasq", "--conf-file=/tmp/dnsmasq.conf");
   syslog (LOG_INFO, "dnsmasq : dnsmasq daemon successfully started\n");
 
   cprintf ("done\n");
