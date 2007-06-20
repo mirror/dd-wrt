@@ -61,4 +61,10 @@ trap clean_up EXIT
 for N in $NMSRVRS ; do echo "nameserver $N" >> "$TMP_FILE" ; done
 mv -f "$TMP_FILE" "$RSLVRLIST_FILE"
 
+# dnsmasq uses the mtime of the file to detect changes. This has a resolution of one second, 
+# so it's possible that if two or more changes occur rapidly, the second change could 
+# be missed. We avoid this possibility by delaying here.
+sleep 1
+
+ 
 
