@@ -903,7 +903,7 @@ qos.maxrate_o="Max Rate";
 qos.legend4="MAC-Priorität";
 qos.legend5="Ethernet-Port-Priorität";
 qos.legend6="Standard-Bandbreiten-Zuweisung";
-qos.bandwith="Bandbreite in Kbits";
+qos.bandwidth="Bandbreite in Kbits";
 
 //help container
 
