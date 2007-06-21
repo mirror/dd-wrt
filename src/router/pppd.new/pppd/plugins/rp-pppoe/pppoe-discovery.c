@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 	case 'D':
 	    conn->debugFile = fopen(optarg, "w");
 	    if (!conn->debugFile) {
-		fprintf(stderr, "Could not open %s: %s\n",
+		printf( "Could not open %s: %s\n",
 			optarg, strerror(errno));
 		exit(1);
 	    }
@@ -119,6 +119,6 @@ char *xstrdup(const char *s)
 
 void usage(void)
 {
-    fprintf(stderr, "Usage: pppoe-discovery [options]\n");
-    fprintf(stderr, "\nVersion " VERSION "\n");
+    printf( "Usage: pppoe-discovery [options]\n");
+    printf( "\nVersion " VERSION "\n");
 }

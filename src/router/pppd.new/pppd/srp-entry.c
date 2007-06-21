@@ -85,7 +85,7 @@ static const char *myname;
 static void
 usage(void)
 {
-	(void) fprintf(stderr, "Usage:\n\t%s [-i index] [clientname]\n",
+	(void) printf( "Usage:\n\t%s [-i index] [clientname]\n",
 	    myname);
 	exit(1);
 }
@@ -133,7 +133,7 @@ main(int argc, char **argv)
 		tcent = &mytce;
 	}
 	if (tcent == NULL) {
-		(void) fprintf(stderr, "SRP modulus/generator %d not found\n",
+		(void) printf( "SRP modulus/generator %d not found\n",
 		    idx);
 		exit(1);
 	}
