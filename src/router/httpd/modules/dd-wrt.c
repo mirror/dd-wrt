@@ -1427,7 +1427,7 @@ ej_show_default_level (webs_t wp, int argc, char_t ** argv)
 	     "<legend><script type=\"text/javascript\">Capture(qos.legend6)</script></legend>\n");
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
-	     "<div class=\"label\"><script type=\"text/javascript\">Capture(qos.bandwith)</script> Up</div>\n");
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(qos.bandwidth)</script> Up</div>\n");
   websWrite (wp,
 	     "<input type=\"num\" name=\"default_uplevel\" size=\"6\" value=\"%s\" /> Down\n",
 	     nvram_safe_get ("default_uplevel"));
