@@ -1651,7 +1651,7 @@ device_script(program, in, out, dont_wait)
     setgid(getgid());
     setuid(uid);
     if (getuid() != uid) {
-	fprintf(stderr, "pppd: setuid failed\n");
+	printf( "pppd: setuid failed\n");
 	exit(1);
     }
     execl("/bin/sh", "sh", "-c", program, (char *)0);

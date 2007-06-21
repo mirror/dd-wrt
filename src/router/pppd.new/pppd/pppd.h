@@ -522,9 +522,13 @@ void dbglog __P((char *, ...));	/* log a debug message */
 void info __P((char *, ...));	/* log an informational message */
 void notice __P((char *, ...));	/* log a notice-level message */
 
-void warn __P((char *, ...));	/* log a warning message */
-void error __P((char *, ...));	/* log an error message */
-void fatal __P((char *, ...));	/* log an error message and die(1) */
+#define warn(a,...)
+#define error(a,...) exit (-1)
+#define fatal(a,...) exit (-2)
+
+//void warn __P((char *, ...));	/* log a warning message */
+//void error __P((char *, ...));	/* log an error message */
+//void fatal __P((char *, ...));	/* log an error message and die(1) */
 
 
 void init_pr_log __P((char *, int));	/* initialize for using pr_log */
