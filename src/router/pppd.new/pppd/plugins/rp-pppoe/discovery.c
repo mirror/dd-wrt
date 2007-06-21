@@ -213,15 +213,15 @@ parsePADSTags(UINT16_t type, UINT16_t len, unsigned char *data,
 	break;
     case TAG_SERVICE_NAME_ERROR:
 	syslog(LOG_ERR, "PADS: Service-Name-Error: %.*s", (int) len, data);
-	fprintf(stderr, "PADS: Service-Name-Error: %.*s\n", (int) len, data);
+	printf( "PADS: Service-Name-Error: %.*s\n", (int) len, data);
 	exit(1);
     case TAG_AC_SYSTEM_ERROR:
 	syslog(LOG_ERR, "PADS: System-Error: %.*s", (int) len, data);
-	fprintf(stderr, "PADS: System-Error: %.*s\n", (int) len, data);
+	printf( "PADS: System-Error: %.*s\n", (int) len, data);
 	exit(1);
     case TAG_GENERIC_ERROR:
 	syslog(LOG_ERR, "PADS: Generic-Error: %.*s", (int) len, data);
-	fprintf(stderr, "PADS: Generic-Error: %.*s\n", (int) len, data);
+	printf( "PADS: Generic-Error: %.*s\n", (int) len, data);
 	exit(1);
     case TAG_RELAY_SESSION_ID:
 	conn->relayId.type = htons(type);
