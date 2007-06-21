@@ -10,7 +10,13 @@
 
 
 #ifdef SYSLOG
-# define LOG(level, str, args...) syslog(level, str, ## args)
+
+#ifdef NEED_PRINTF
+#define LOG(level, str, args...) syslog(level, str, ## args)
+#else
+#define LOG(level, str, args...)
+#endif
+
 //#else
 //#ifdef DEBUG
 //# define LOG(level, fmt, args...) do { \

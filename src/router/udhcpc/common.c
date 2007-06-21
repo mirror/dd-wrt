@@ -79,6 +79,7 @@ void background(const char *pidfile)
 
 
 #ifdef UDHCP_SYSLOG
+#ifdef NEED_PRINTF
 void udhcp_logging(int level, const char *fmt, ...)
 {
 	va_list p;
@@ -93,7 +94,7 @@ void udhcp_logging(int level, const char *fmt, ...)
 	vsyslog(level, fmt, p2);
 	va_end(p);
 }
-
+#endif
 
 void start_log_and_pid(const char *client_server, const char *pidfile)
 {
