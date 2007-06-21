@@ -71,69 +71,45 @@ static RC_TYPE get_cache_dir(CMD_DATA *p_cmd, int current_nr, void *p_context);
 
 static CMD_DESCRIPTION_TYPE cmd_options_table[] = 
 {
-	{"--help",		0,	{help_handler, NULL},	"help" },
-	{"-h",			0,	{help_handler, NULL},	"help" },
+	{"--help",		0,	{help_handler, NULL}},
+	{"-h",			0,	{help_handler, NULL}},
 
-	{"--username",	1,	{get_username_handler, NULL},	"your  membername/ hash"},
-	{"-u",			1,	{get_username_handler, NULL},	"your  membername / hash"},
+	{"--username",	1,	{get_username_handler, NULL}},
+	{"-u",			1,	{get_username_handler, NULL}},
 
-	{"--password",	1,	{get_password_handler, NULL},	"your password. Optional."},
-	{"-p",			1,	{get_password_handler, NULL},	"your password"},
+	{"--password",	1,	{get_password_handler, NULL}},
+	{"-p",			1,	{get_password_handler, NULL}},
 
-	{"--alias",		1,	{get_alias_handler, NULL},	"alias host name. this option can appear multiple times." },
-	{"-a",			1,	{get_alias_handler, NULL},	"alias host name. this option can appear multiple times." },
+	{"--alias",		1,	{get_alias_handler, NULL}},
+	{"-a",			1,	{get_alias_handler, NULL}},
 
-	{DYNDNS_INPUT_FILE_OPT_STRING, 1, {get_options_from_file_handler, NULL}, "the file containing [further] inadyn options."
-			"The default config file, '" DYNDNS_DEFAULT_CONFIG_FILE "' is used if inadyn is called without any cmd line options." },
-	
-	{"--ip_server_name",	2,	{get_ip_server_name_handler, NULL},
-        "<srv_name[:port] local_url> - local IP is detected by parsing the response after returned by this server and URL. \n"
-		"\t\tThe first IP in found in http response is considered 'my IP'. \n"
-		"\t\tDefault value: 'checkip.dyndns.org /"},
+	{DYNDNS_INPUT_FILE_OPT_STRING, 1, {get_options_from_file_handler, NULL}},
+	{"--ip_server_name",	2,	{get_ip_server_name_handler, NULL}},
 
-	{"--dyndns_server_name", 1,	{get_dns_server_name_handler, NULL},	
-            "[<NAME>[:port]] \n"
-            "\t\tThe server that receives the update DNS request.  \n"
-            "\t\tAllows the use of unknown DNS services that accept HTTP updates.\n"  
-            "\t\tIf no proxy is wanted, then it is enough to set the dyndns system. The default servers will be taken."},
+	{"--dyndns_server_name", 1,	{get_dns_server_name_handler, NULL}},
 
-	{"--dyndns_server_url", 1, {get_dns_server_url_handler, NULL},	
-            "<name>\n"
-			"\tfull URL relative to DynDNS server root.\n"
-			"\tEx: /some_script.php?hostname=\n"},	
+	{"--dyndns_server_url", 1, {get_dns_server_url_handler, NULL}},	
 
-	{"--dyndns_system",	1,	{get_dyndns_system_handler, NULL},	
-            "[NAME] - optional DYNDNS service type. SHOULD be one of the following: \n"
-            "\t\t-For dyndns.org: dyndns@dyndns.org OR statdns@dyndns.org OR customdns@dyndns.org.\n"
-            "\t\t-For freedns.afraid.org: default@freedns.afraid.org\n"
-            "\t\t-For zoneedit.com: default@zoneedit.com\n"
-            "\t\t-For no-ip.com: default@no-ip.com\n"
-            "\t\t-For easydns.com: default@easydns.com\n"
-            "\t\t-For tzo.com: default@tzo.com\n"
-            "\t\t-For 3322.org: dyndns@3322.org\n"
-            "\t\t-For generic: custom@http_svr_basic_auth\n"
-            "\t\tDEFAULT value is intended for default service at dyndns.org (most users): dyndns@dyndns.org"},
+	{"--dyndns_system",	1,	{get_dyndns_system_handler, NULL}},
 
-  {"--proxy_server", 1, {get_proxy_server_handler, NULL},
-            "[NAME[:port]]  - the http proxy server name and port. Default is none."},
-	{"--update_period",	1,	{get_update_period_handler, NULL},	
-            "how often the IP is checked. The period is in [ms]. Default is about 1 min. Max is 10 days"},
-	{"--update_period_sec",	1,	{get_update_period_sec_handler, NULL},	"how often the IP is checked. The period is in [sec]. Default is about 1 min. Max is 10 days"},
-	{"--forced_update_period", 1,   {get_forced_update_period_handler, NULL},"how often the IP is updated even if it is not changed. [in sec]"},
+  {"--proxy_server", 1, {get_proxy_server_handler, NULL}},
+	{"--update_period",	1,	{get_update_period_handler, NULL}},
+	{"--update_period_sec",	1,	{get_update_period_sec_handler, NULL}},
+	{"--forced_update_period", 1,   {get_forced_update_period_handler, NULL}},
 
-	{"--log_file",	1,	{get_logfile_name, NULL},		"log file path abd name"},
-	{"--background", 0,	{set_silent_handler, NULL},		"run in background. output to log file or to syslog"},
+	{"--log_file",	1,	{get_logfile_name, NULL}},
+	{"--background", 0,	{set_silent_handler, NULL}},
 
-	{"--verbose",	1,	{set_verbose_handler, NULL},	"set dbg level. 0 to 5"},
+	{"--verbose",	1,	{set_verbose_handler, NULL}},
 
-	{"--iterations",	1,	{set_iterations_handler, NULL},	"set the number of DNS updates. Default is 0, which means infinity."},
-	{"--syslog",	0,	{set_syslog_handler, NULL},	"force logging to syslog . (e.g. /var/log/messages). Works on **NIX systems only."},
-	{"--change_persona", 1, {set_change_persona_handler, NULL}, "after init switch to a new user/group. Parameters: <uid[:gid]> to change to. Works on **NIX systems only."},
-	{"--version", 0, {print_version_handler, NULL}, "print the version number\n"},
-	{"--exec", 1, {get_exec_handler, NULL}, "external command to exec after an IP update. Include the full path."},
-	{"--cache_dir", 1, {get_cache_dir, NULL}, "cache directory name. (e.g. /tmp/ddns). Defaults to /tmp on **NIX systems."},
-	{"--wildcard", 0, {wildcard_handler, NULL}, "enable domain wildcarding for dyndns.org, 3322.org, or easydns.com."},
-	{NULL,		0,	{0, NULL},	NULL }
+	{"--iterations",	1,	{set_iterations_handler, NULL}},
+	{"--syslog",	0,	{set_syslog_handler, NULL}},
+	{"--change_persona", 1, {set_change_persona_handler, NULL}},
+	{"--version", 0, {print_version_handler, NULL}},
+	{"--exec", 1, {get_exec_handler, NULL}},
+	{"--cache_dir", 1, {get_cache_dir, NULL}},
+	{"--wildcard", 0, {wildcard_handler, NULL}},
+	{NULL,		0,	{0, NULL}}
 };
 
 
@@ -159,8 +135,8 @@ void print_help_page(void)
 		while( it->p_option != NULL)
 		{
 			printf(
-				"\t'%s': %s\n\r",
-				it->p_option, it->p_description);
+				"\t'%s'\n\r",
+				it->p_option);
 			++it;
 		}
 	}
