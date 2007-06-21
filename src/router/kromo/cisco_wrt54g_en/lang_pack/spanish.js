@@ -898,7 +898,7 @@ qos.maxrate_o="Tasa Max";
 qos.legend4="Prioridad MAC";
 qos.legend5="Prioridad Puerto Ethernet";
 qos.legend6="Ancho de Banda por Defecto";
-qos.bandwith="Ancho de Banda (Kbits)";
+qos.bandwidth="Ancho de Banda (Kbits)";
 
 //help container
 

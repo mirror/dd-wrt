@@ -902,7 +902,7 @@ qos.maxrate_o="最大数据率";
 qos.legend4="MAC优先级";
 qos.legend5="以太网端口优先级";
 qos.legend6="默认带宽等级";
-qos.bandwith="以Kbits表示的带宽";
+qos.bandwidth="以Kbits表示的带宽";
 
 //help container
 
