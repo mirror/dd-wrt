@@ -1306,7 +1306,7 @@ start_lan (void)
 		//eval("wlconf", name, "up");
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);
 #ifndef HAVE_MADWIFI
-		eval ("wl", "ap", "0");
+		ev	al ("wl", "ap", "0");
 #ifndef HAVE_MSSID
 		eval ("wl", "ssid", nvram_get ("wl_ssid"));
 #else
@@ -1340,8 +1340,8 @@ start_lan (void)
 #ifndef HAVE_MADWIFI
 		eval ("wl", "ap", "0");
 		eval ("wl", "infra", "1");
-		wl_ioctl (wl_name, WLC_SCAN, svbuf, sizeof (svbuf));
 		wlconf_up (name);
+		wl_ioctl (name, WLC_SCAN, svbuf, sizeof (svbuf));
 #endif
 		//eval("wlconf", name, "up");
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);
@@ -1755,12 +1755,12 @@ start_lan (void)
 
 #ifndef HAVE_MADWIFI
 #ifndef HAVE_MSSID
-  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta"))
-    {
-      system2 ("wl wep sw");
-      sleep (1);
-      system2 ("wl wep hw");
-    }
+//  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta"))
+//    {
+//      system2 ("wl wep sw");
+//      sleep (1);
+//      system2 ("wl wep hw");
+//    }
 #endif
 #endif
   if (nvram_match ("lan_stp", "0"))
@@ -2386,12 +2386,12 @@ start_wan (int status)
     }
   cprintf ("wep handling\n");
 #ifndef HAVE_MSSID
-  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta"))
-    {
-      system2 ("wl wep sw");
-      sleep (1);
-      system2 ("wl wep hw");
-    }
+//  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta"))
+//    {
+//      system2 ("wl wep sw");
+//      sleep (1);
+//      system2 ("wl wep hw");
+//    }
 #endif
   cprintf ("disable stp if needed\n");
   if (nvram_match ("lan_stp", "0"))
