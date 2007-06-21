@@ -691,7 +691,7 @@ qos.maxrate_o="最大レート";
 qos.legend4="MAC 優先度";
 qos.legend5="優先ポート優先度";
 qos.legend6="デフォルト帯域幅レベル";
-qos.bandwith="帯域幅 (Kbits)";
+qos.bandwidth="帯域幅 (Kbits)";
 
 hqos.right1="上り回線：";
 hqos.right2="ここに最大アップロード帯域幅の 80〜95 パーセントに指定します。";

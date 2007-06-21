@@ -998,8 +998,8 @@ qos.maxdownrate_b="Max Kbits Down";
 qos.maxrate_o="Max Rate";
 qos.legend4="MAC Priority";
 qos.legend5="Ethernet Port Priority";
-qos.legend6="Default Bandwith Level";
-qos.bandwith="Bandwith in Kbits";
+qos.legend6="Default Bandwidth Level";
+qos.bandwidth="Bandwidth in Kbits";
 
 //help container
 var hqos = new Object();

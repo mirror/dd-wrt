@@ -994,7 +994,7 @@ qos.maxrate_o="Najveèja hitrost";
 qos.legend4="MAC prioriteta";
 qos.legend5="Prioriteta ethernet vrat";
 qos.legend6="Privzeti nivo pasovne ¹irine";
-qos.bandwith="Pasovna ¹irina v Kbit/s";
+qos.bandwidth="Pasovna ¹irina v Kbit/s";
 
 //help container
 

@@ -900,7 +900,7 @@ qos.maxrate_o="最大資料率";
 qos.legend4="MAC優先順序";
 qos.legend5="乙太網埠優先順序";
 qos.legend6="預設帶寬等級";
-qos.bandwith="以Kbits表示的帶寬";
+qos.bandwidth="以Kbits表示的帶寬";
 
 //help container
 

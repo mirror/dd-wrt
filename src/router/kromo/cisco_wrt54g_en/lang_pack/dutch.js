@@ -899,7 +899,7 @@ qos.maxrate_o="Max Snelheid";
 qos.legend4="MAC Prioriteit";
 qos.legend5="Ethernet Poort Prioriteit";
 qos.legend6="Standaard Bandbreedte Level";
-qos.bandwith="Bandbreedte in Kbits";
+qos.bandwidth="Bandbreedte in Kbits";
 
 //help container
 
