@@ -1673,6 +1673,7 @@ wl_adv.label17="Brez¾ièni dostop do uporabni¹kega vmesnika";
 wl_adv.label18="WMM podpora";
 wl_adv.label19="Brez potrditve";
 wl_adv.label20="Razveljavi Shortslot";
+wl_adv.label21="Najveèja hitrost oddajanja";
 wl_adv.table1="EDCA AP parameteri (AP do odjemalca)";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmaks";
