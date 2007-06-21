@@ -843,7 +843,7 @@ qos.maxrate_o="Taxa Máxima";
 qos.legend4="Prioridade de MAC";
 qos.legend5="Prioridade de Porta Ethernet";
 qos.legend6="Nível de Banda Padrão";
-qos.bandwith="Banda em Kbits";
+qos.bandwidth="Banda em Kbits";
 
 hqos.right1="Uplink:";
 hqos.right2="Defina para 80%~95% (máx) do total de seu limite de upload.";
