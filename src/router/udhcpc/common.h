@@ -42,7 +42,11 @@ enum syslog_levels {
 long uptime(void);
 void background(const char *pidfile);
 void start_log_and_pid(const char *client_server, const char *pidfile);
+#ifdef NEED_PRINTF
 void udhcp_logging(int level, const char *fmt, ...);
+#else
+#define udhcp_logging(level, fmt, ...);
+#endif
                                                             
 #define LOG(level, str, args...) udhcp_logging(level, str, ## args)
 
