@@ -352,21 +352,21 @@ sigPADT(int src)
 *%DESCRIPTION:
 * Prints usage information and exits.
 ***********************************************************************/
-void
+static void
 usage(char const *argv0)
 {
-    fprintf(stderr, "Usage: %s [options]\n", argv0);
-    fprintf(stderr, "Options:\n");
+    printf( "Usage: %s [options]\n", argv0);
+    printf( "Options:\n");
 #ifdef USE_BPF
-    fprintf(stderr, "   -I if_name     -- Specify interface (REQUIRED)\n");
+    printf( "   -I if_name     -- Specify interface (REQUIRED)\n");
 #else
-    fprintf(stderr, "   -I if_name     -- Specify interface (default %s.)\n",
+    printf( "   -I if_name     -- Specify interface (default %s.)\n",
 	    DEFAULT_IF);
 #endif
 #ifdef DEBUGGING_ENABLED
-    fprintf(stderr, "   -D filename    -- Log debugging information in filename.\n");
+    printf( "   -D filename    -- Log debugging information in filename.\n");
 #endif
-    fprintf(stderr,
+    printf(
 	    "   -T timeout     -- Specify inactivity timeout in seconds.\n"
 	    "   -t timeout     -- Initial timeout for discovery packets in seconds\n"
 	    "   -V             -- Print version and exit.\n"
@@ -444,7 +444,7 @@ main(int argc, char *argv[])
 	switch(opt) {
 	case 't':
 	    if (sscanf(optarg, "%d", &conn.discoveryTimeout) != 1) {
-		fprintf(stderr, "Illegal argument to -t: Should be -t timeout\n");
+		printf( "Illegal argument to -t: Should be -t timeout\n");
 		exit(EXIT_FAILURE);
 	    }
 	    if (conn.discoveryTimeout < 1) {
@@ -453,11 +453,11 @@ main(int argc, char *argv[])
 	    break;
 	case 'F':
 	    if (sscanf(optarg, "%d", &optFloodDiscovery) != 1) {
-		fprintf(stderr, "Illegal argument to -F: Should be -F numFloods\n");
+		printf( "Illegal argument to -F: Should be -F numFloods\n");
 		exit(EXIT_FAILURE);
 	    }
 	    if (optFloodDiscovery < 1) optFloodDiscovery = 1;
-	    fprintf(stderr,
+	    printf(
 		    "WARNING: DISCOVERY FLOOD IS MEANT FOR STRESS-TESTING\n"
 		    "A PPPOE SERVER WHICH YOU OWN.  DO NOT USE IT AGAINST\n"
 		    "A REAL ISP.  YOU HAVE 5 SECONDS TO ABORT.\n");
@@ -465,7 +465,7 @@ main(int argc, char *argv[])
 	    break;
 	case 'f':
 	    if (sscanf(optarg, "%x:%x", &discoveryType, &sessionType) != 2) {
-		fprintf(stderr, "Illegal argument to -f: Should be disc:sess in hex\n");
+		printf( "Illegal argument to -f: Should be disc:sess in hex\n");
 		exit(EXIT_FAILURE);
 	    }
 	    Eth_PPPOE_Discovery = (UINT16_t) discoveryType;
@@ -491,7 +491,7 @@ main(int argc, char *argv[])
 	    n = sscanf(optarg, "%u:%2x:%2x:%2x:%2x:%2x:%2x",
 		       &s, &m[0], &m[1], &m[2], &m[3], &m[4], &m[5]);
 	    if (n != 7) {
-		fprintf(stderr, "Illegal argument to -e: Should be sess:xx:yy:zz:aa:bb:cc\n");
+		printf( "Illegal argument to -e: Should be sess:xx:yy:zz:aa:bb:cc\n");
 		exit(EXIT_FAILURE);
 	    }
 
@@ -534,7 +534,7 @@ main(int argc, char *argv[])
 	    conn.debugFile = fopen(optarg, "w");
 	    switchToEffectiveID();
 	    if (!conn.debugFile) {
-		fprintf(stderr, "Could not open %s: %s\n",
+		printf( "Could not open %s: %s\n",
 			optarg, strerror(errno));
 		exit(EXIT_FAILURE);
 	    }
@@ -551,11 +551,11 @@ main(int argc, char *argv[])
 	case 'm':
 	    optClampMSS = (int) strtol(optarg, NULL, 10);
 	    if (optClampMSS < 536) {
-		fprintf(stderr, "-m: %d is too low (min 536)\n", optClampMSS);
+		printf( "-m: %d is too low (min 536)\n", optClampMSS);
 		exit(EXIT_FAILURE);
 	    }
 	    if (optClampMSS > 1452) {
-		fprintf(stderr, "-m: %d is too high (max 1452)\n", optClampMSS);
+		printf( "-m: %d is too high (max 1452)\n", optClampMSS);
 		exit(EXIT_FAILURE);
 	    }
 	    break;
@@ -579,7 +579,7 @@ main(int argc, char *argv[])
     /* Pick a default interface name */
     if (!conn.ifName) {
 #ifdef USE_BPF
-	fprintf(stderr, "No interface specified (-I option)\n");
+	printf( "No interface specified (-I option)\n");
 	exit(EXIT_FAILURE);
 #else
 	SET_STRING(conn.ifName, DEFAULT_IF);
@@ -615,7 +615,7 @@ main(int argc, char *argv[])
     if (optFloodDiscovery) {
 	for (n=0; n < optFloodDiscovery; n++) {
 	    if (conn.printACNames) {
-		fprintf(stderr, "Sending discovery flood %d\n", n+1);
+		printf( "Sending discovery flood %d\n", n+1);
 	    }
 	    discovery(&conn);
 	    conn.discoveryState = STATE_SENT_PADI;

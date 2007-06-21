@@ -146,7 +146,6 @@ extern void serverProcessPacket(Interface *i);
 extern void processPADT(Interface *ethif, PPPoEPacket *packet, int len);
 extern void processPADR(Interface *ethif, PPPoEPacket *packet, int len);
 extern void processPADI(Interface *ethif, PPPoEPacket *packet, int len);
-extern void usage(char const *msg);
 extern ClientSession *pppoe_alloc_session(void);
 extern int pppoe_free_session(ClientSession *ses);
 extern void sendHURLorMOTM(PPPoEConnection *conn, char const *url, UINT16_t tag);

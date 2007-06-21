@@ -1,3 +1,5 @@
+#ifdef HAVE_PPPOESERVER
+
 /***********************************************************************
 *
 * pppoe-server.c
@@ -981,53 +983,53 @@ termHandler(int sig)
 *%DESCRIPTION:
 * Prints usage instructions
 ***********************************************************************/
-void
+static void
 usage(char const *argv0)
 {
-    fprintf(stderr, "Usage: %s [options]\n", argv0);
-    fprintf(stderr, "Options:\n");
+    printf( "Usage: %s [options]\n", argv0);
+    printf( "Options:\n");
 #ifdef USE_BPF
-    fprintf(stderr, "   -I if_name     -- Specify interface (REQUIRED)\n");
+    printf( "   -I if_name     -- Specify interface (REQUIRED)\n");
 #else
-    fprintf(stderr, "   -I if_name     -- Specify interface (default %s.)\n",
+    printf( "   -I if_name     -- Specify interface (default %s.)\n",
 	    DEFAULT_IF);
 #endif
-    fprintf(stderr, "   -T timeout     -- Specify inactivity timeout in seconds.\n");
-    fprintf(stderr, "   -C name        -- Set access concentrator name.\n");
-    fprintf(stderr, "   -m MSS         -- Clamp incoming and outgoing MSS options.\n");
-    fprintf(stderr, "   -L ip          -- Set local IP address.\n");
-    fprintf(stderr, "   -l             -- Increment local IP address for each session.\n");
-    fprintf(stderr, "   -R ip          -- Set start address of remote IP pool.\n");
-    fprintf(stderr, "   -S name        -- Advertise specified service-name.\n");
-    fprintf(stderr, "   -O fname       -- Use PPPD options from specified file\n");
-    fprintf(stderr, "                     (default %s).\n", PPPOE_SERVER_OPTIONS);
-    fprintf(stderr, "   -p fname       -- Optain IP address pool from specified file.\n");
-    fprintf(stderr, "   -N num         -- Allow 'num' concurrent sessions.\n");
-    fprintf(stderr, "   -o offset      -- Assign session numbers starting at offset+1.\n");
-    fprintf(stderr, "   -f disc:sess   -- Set Ethernet frame types (hex).\n");
-    fprintf(stderr, "   -s             -- Use synchronous PPP mode.\n");
+    printf( "   -T timeout     -- Specify inactivity timeout in seconds.\n");
+    printf( "   -C name        -- Set access concentrator name.\n");
+    printf( "   -m MSS         -- Clamp incoming and outgoing MSS options.\n");
+    printf( "   -L ip          -- Set local IP address.\n");
+    printf( "   -l             -- Increment local IP address for each session.\n");
+    printf( "   -R ip          -- Set start address of remote IP pool.\n");
+    printf( "   -S name        -- Advertise specified service-name.\n");
+    printf( "   -O fname       -- Use PPPD options from specified file\n");
+    printf( "                     (default %s).\n", PPPOE_SERVER_OPTIONS);
+    printf( "   -p fname       -- Optain IP address pool from specified file.\n");
+    printf( "   -N num         -- Allow 'num' concurrent sessions.\n");
+    printf( "   -o offset      -- Assign session numbers starting at offset+1.\n");
+    printf( "   -f disc:sess   -- Set Ethernet frame types (hex).\n");
+    printf( "   -s             -- Use synchronous PPP mode.\n");
 #ifdef HAVE_LINUX_KERNEL_PPPOE
-    fprintf(stderr, "   -k             -- Use kernel-mode PPPoE.\n");
+    printf( "   -k             -- Use kernel-mode PPPoE.\n");
 #endif
-    fprintf(stderr, "   -u             -- Pass 'unit' option to pppd.\n");
-    fprintf(stderr, "   -r             -- Randomize session numbers.\n");
-    fprintf(stderr, "   -d             -- Debug session creation.\n");
-    fprintf(stderr, "   -P             -- Check pool file for correctness and exit.\n");
+    printf( "   -u             -- Pass 'unit' option to pppd.\n");
+    printf( "   -r             -- Randomize session numbers.\n");
+    printf( "   -d             -- Debug session creation.\n");
+    printf( "   -P             -- Check pool file for correctness and exit.\n");
 #ifdef HAVE_LICENSE
-    fprintf(stderr, "   -c secret:if:port -- Enable clustering on interface 'if'.\n");
-    fprintf(stderr, "   -1             -- Allow only one session per user.\n");
+    printf( "   -c secret:if:port -- Enable clustering on interface 'if'.\n");
+    printf( "   -1             -- Allow only one session per user.\n");
 #endif
 
-    fprintf(stderr, "   -h             -- Print usage information.\n\n");
-    fprintf(stderr, "PPPoE-Server Version %s, Copyright (C) 2001-2006 Roaring Penguin Software Inc.\n", VERSION);
+    printf( "   -h             -- Print usage information.\n\n");
+    printf( "PPPoE-Server Version %s, Copyright (C) 2001-2006 Roaring Penguin Software Inc.\n", VERSION);
 
 #ifndef HAVE_LICENSE
-    fprintf(stderr, "PPPoE-Server comes with ABSOLUTELY NO WARRANTY.\n");
-    fprintf(stderr, "This is free software, and you are welcome to redistribute it\n");
-    fprintf(stderr, "under the terms of the GNU General Public License, version 2\n");
-    fprintf(stderr, "or (at your option) any later version.\n");
+    printf( "PPPoE-Server comes with ABSOLUTELY NO WARRANTY.\n");
+    printf( "This is free software, and you are welcome to redistribute it\n");
+    printf( "under the terms of the GNU General Public License, version 2\n");
+    printf( "or (at your option) any later version.\n");
 #endif
-    fprintf(stderr, "http://www.roaringpenguin.com\n");
+    printf( "http://www.roaringpenguin.com\n");
 }
 
 /**********************************************************************
@@ -1040,7 +1042,7 @@ usage(char const *argv0)
 * Main program of PPPoE server
 ***********************************************************************/
 int
-main(int argc, char **argv)
+pppoeserver_main(int argc, char **argv)
 {
 
     FILE *fp;
@@ -1063,7 +1065,7 @@ main(int argc, char **argv)
 
     if (getuid() != geteuid() ||
 	getgid() != getegid()) {
-	fprintf(stderr, "SECURITY WARNING: pppoe-server will NOT run suid or sgid.  Fix your installation.\n");
+	printf( "SECURITY WARNING: pppoe-server will NOT run suid or sgid.  Fix your installation.\n");
 	exit(1);
     }
 
@@ -1086,20 +1088,20 @@ main(int argc, char **argv)
 #endif
 	case 'S':
 	    if (NumServiceNames == MAX_SERVICE_NAMES) {
-		fprintf(stderr, "Too many '-S' options (%d max)",
+		printf( "Too many '-S' options (%d max)",
 			MAX_SERVICE_NAMES);
 		exit(1);
 	    }
 	    ServiceNames[NumServiceNames] = strdup(optarg);
 	    if (!ServiceNames[NumServiceNames]) {
-		fprintf(stderr, "Out of memory");
+		printf( "Out of memory");
 		exit(1);
 	    }
 	    NumServiceNames++;
 	    break;
 	case 'c':
 #ifndef HAVE_LICENSE
-	    fprintf(stderr, "Clustering capability not available.\n");
+	    printf( "Clustering capability not available.\n");
 	    exit(1);
 #else
 	    cluster_handle_option(optarg);
@@ -1139,7 +1141,7 @@ main(int argc, char **argv)
 
 	case 'f':
 	    if (sscanf(optarg, "%x:%x", &discoveryType, &sessionType) != 2) {
-		fprintf(stderr, "Illegal argument to -f: Should be disc:sess in hex\n");
+		printf( "Illegal argument to -f: Should be disc:sess in hex\n");
 		exit(EXIT_FAILURE);
 	    }
 	    Eth_PPPOE_Discovery = (UINT16_t) discoveryType;
@@ -1160,7 +1162,7 @@ main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	    }
 	    if (opt <= 0) {
-		fprintf(stderr, "-N: Value must be positive\n");
+		printf( "-N: Value must be positive\n");
 		exit(EXIT_FAILURE);
 	    }
 	    NumSessionSlots = opt;
@@ -1176,7 +1178,7 @@ main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	    }
 	    if (opt < 0) {
-		fprintf(stderr, "-o: Value must be non-negative\n");
+		printf( "-o: Value must be non-negative\n");
 		exit(EXIT_FAILURE);
 	    }
 	    SessOffset = (size_t) opt;
@@ -1184,7 +1186,7 @@ main(int argc, char **argv)
 
 	case 'I':
 	    if (NumInterfaces >= MAX_INTERFACES) {
-		fprintf(stderr, "Too many -I options (max %d)\n",
+		printf( "Too many -I options (max %d)\n",
 			MAX_INTERFACES);
 		exit(EXIT_FAILURE);
 	    }
@@ -1240,7 +1242,7 @@ main(int argc, char **argv)
 #ifdef HAVE_LICENSE
 	    MaxSessionsPerUser = 1;
 #else
-	    fprintf(stderr, "-1 option not valid.\n");
+	    printf( "-1 option not valid.\n");
 	    exit(1);
 #endif
 	    break;
@@ -1257,7 +1259,7 @@ main(int argc, char **argv)
     License_ReadFile("/etc/rp/license.txt");
     ServerLicense = License_GetFeature("PPPOE-SERVER");
     if (!ServerLicense) {
-	fprintf(stderr, "License: GetFeature failed: %s\n",
+	printf( "License: GetFeature failed: %s\n",
 		License_ErrorMessage());
 	exit(1);
     }
@@ -1265,7 +1267,7 @@ main(int argc, char **argv)
 
 #ifdef USE_LINUX_PACKET
 #ifndef HAVE_STRUCT_SOCKADDR_LL
-    fprintf(stderr, "The PPPoE server does not work on Linux 2.0 kernels.\n");
+    printf( "The PPPoE server does not work on Linux 2.0 kernels.\n");
     exit(EXIT_FAILURE);
 #endif
 #endif
@@ -1293,7 +1295,7 @@ main(int argc, char **argv)
 
     /* Max 65534 - SessOffset sessions */
     if (NumSessionSlots + SessOffset > 65534) {
-	fprintf(stderr, "-N and -o options must add up to at most 65534\n");
+	printf( "-N and -o options must add up to at most 65534\n");
 	exit(EXIT_FAILURE);
     }
 
@@ -1354,7 +1356,7 @@ main(int argc, char **argv)
 	int tmp;
 	permutation = malloc(sizeof(int) * NumSessionSlots);
 	if (!permutation) {
-	    fprintf(stderr, "Could not allocate memory to randomize session numbers\n");
+	    printf( "Could not allocate memory to randomize session numbers\n");
 	    exit(EXIT_FAILURE);
 	}
 	for (i=0; i<NumSessionSlots; i++) {
@@ -1446,7 +1448,7 @@ main(int argc, char **argv)
     if (use_clustering) {
 	ClusterLicense = License_GetFeature("PPPOE-CLUSTER");
 	if (!ClusterLicense) {
-	    fprintf(stderr, "License: GetFeature failed: %s\n",
+	    printf( "License: GetFeature failed: %s\n",
 		    License_ErrorMessage());
 	    exit(1);
 	}
@@ -2075,3 +2077,5 @@ sendHURLorMOTM(PPPoEConnection *conn, char const *url, UINT16_t tag)
     }
 #endif
 }
+#endif
+

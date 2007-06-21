@@ -224,6 +224,7 @@ static void log_write(void)
       return;
     }
 }
+#ifdef NEED_PRINTF
 
 void my_syslog(int priority, const char *format, ...)
 {
@@ -334,6 +335,7 @@ void my_syslog(int priority, const char *format, ...)
  
   va_end(ap);
 }
+#endif
 
 void set_log_writer(fd_set *set, int *maxfdp)
 {
