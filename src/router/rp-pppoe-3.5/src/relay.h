@@ -64,7 +64,7 @@ PPPoESession *createSession(PPPoEInterface const *ac,
 			    UINT16_t acSes);
 void freeSession(PPPoESession *ses, char const *msg);
 void addInterface(char const *ifname, int clientOK, int acOK);
-void usage(char const *progname);
+static void usage(char const *progname);
 void initRelay(int nsess);
 void relayLoop(void);
 void addHash(SessionHash *sh);

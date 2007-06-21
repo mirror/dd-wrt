@@ -1,3 +1,5 @@
+#ifdef HAVE_PPPOERELAY
+
 /***********************************************************************
 *
 * relay.c
@@ -195,24 +197,24 @@ removeBytes(PPPoEPacket *packet,
 *%DESCRIPTION:
 * Prints usage information and exits.
 ***********************************************************************/
-void
+static void
 usage(char const *argv0)
 {
-    fprintf(stderr, "Usage: %s [options]\n", argv0);
-    fprintf(stderr, "Options:\n");
-    fprintf(stderr, "   -S if_name     -- Specify interface for PPPoE Server\n");
-    fprintf(stderr, "   -C if_name     -- Specify interface for PPPoE Client\n");
-    fprintf(stderr, "   -B if_name     -- Specify interface for both clients and server\n");
-    fprintf(stderr, "   -n nsess       -- Maxmimum number of sessions to relay\n");
-    fprintf(stderr, "   -i timeout     -- Idle timeout in seconds (0 = no timeout)\n");
-    fprintf(stderr, "   -F             -- Do not fork into background\n");
-    fprintf(stderr, "   -h             -- Print this help message\n");
+    printf( "Usage: %s [options]\n", argv0);
+    printf( "Options:\n");
+    printf( "   -S if_name     -- Specify interface for PPPoE Server\n");
+    printf( "   -C if_name     -- Specify interface for PPPoE Client\n");
+    printf( "   -B if_name     -- Specify interface for both clients and server\n");
+    printf( "   -n nsess       -- Maxmimum number of sessions to relay\n");
+    printf( "   -i timeout     -- Idle timeout in seconds (0 = no timeout)\n");
+    printf( "   -F             -- Do not fork into background\n");
+    printf( "   -h             -- Print this help message\n");
 
-    fprintf(stderr, "\nPPPoE Version %s, Copyright (C) 2001-2006 Roaring Penguin Software Inc.\n", VERSION);
-    fprintf(stderr, "PPPoE comes with ABSOLUTELY NO WARRANTY.\n");
-    fprintf(stderr, "This is free software, and you are welcome to redistribute it under the terms\n");
-    fprintf(stderr, "of the GNU General Public License, version 2 or any later version.\n");
-    fprintf(stderr, "http://www.roaringpenguin.com\n");
+    printf( "\nPPPoE Version %s, Copyright (C) 2001-2006 Roaring Penguin Software Inc.\n", VERSION);
+    printf( "PPPoE comes with ABSOLUTELY NO WARRANTY.\n");
+    printf( "This is free software, and you are welcome to redistribute it under the terms\n");
+    printf( "of the GNU General Public License, version 2 or any later version.\n");
+    printf( "http://www.roaringpenguin.com\n");
     exit(EXIT_SUCCESS);
 }
 
@@ -230,7 +232,7 @@ usage(char const *argv0)
 * -n sessions         -- Maximum of "n" sessions
 ***********************************************************************/
 int
-main(int argc, char *argv[])
+pppoerelay_main(int argc, char *argv[])
 {
     int opt;
     int nsess = DEFAULT_SESSIONS;
@@ -239,7 +241,7 @@ main(int argc, char *argv[])
 
     if (getuid() != geteuid() ||
 	getgid() != getegid()) {
-	fprintf(stderr, "SECURITY WARNING: pppoe-relay will NOT run suid or sgid.  Fix your installation.\n");
+	printf( "SECURITY WARNING: pppoe-relay will NOT run suid or sgid.  Fix your installation.\n");
 	exit(1);
     }
 
@@ -265,7 +267,7 @@ main(int argc, char *argv[])
 	    break;
 	case 'i':
 	    if (sscanf(optarg, "%u", &IdleTimeout) != 1) {
-		fprintf(stderr, "Illegal argument to -i: should be -i timeout\n");
+		printf( "Illegal argument to -i: should be -i timeout\n");
 		exit(EXIT_FAILURE);
 	    }
 	    CleanPeriod = IdleTimeout / TIMEOUT_DIVISOR;
@@ -273,11 +275,11 @@ main(int argc, char *argv[])
 	    break;
 	case 'n':
 	    if (sscanf(optarg, "%d", &nsess) != 1) {
-		fprintf(stderr, "Illegal argument to -n: should be -n #sessions\n");
+		printf( "Illegal argument to -n: should be -n #sessions\n");
 		exit(EXIT_FAILURE);
 	    }
 	    if (nsess < 1 || nsess > 65534) {
-		fprintf(stderr, "Illegal argument to -n: must range from 1 to 65534\n");
+		printf( "Illegal argument to -n: must range from 1 to 65534\n");
 		exit(EXIT_FAILURE);
 	    }
 	    break;
@@ -288,14 +290,14 @@ main(int argc, char *argv[])
 
 #ifdef USE_LINUX_PACKET
 #ifndef HAVE_STRUCT_SOCKADDR_LL
-    fprintf(stderr, "The PPPoE relay does not work on Linux 2.0 kernels.\n");
+    printf( "The PPPoE relay does not work on Linux 2.0 kernels.\n");
     exit(EXIT_FAILURE);
 #endif
 #endif
 
     /* Check that at least two interfaces were defined */
     if (NumInterfaces < 2) {
-	fprintf(stderr, "%s: Must define at least two interfaces\n",
+	printf( "%s: Must define at least two interfaces\n",
 		argv[0]);
 	exit(EXIT_FAILURE);
     }
@@ -376,13 +378,13 @@ addInterface(char const *ifname,
     int j;
     for (j=0; j<NumInterfaces; j++) {
 	if (!strncmp(Interfaces[j].name, ifname, IFNAMSIZ)) {
-	    fprintf(stderr, "Interface %s specified more than once.\n", ifname);
+	    printf( "Interface %s specified more than once.\n", ifname);
 	    exit(EXIT_FAILURE);
 	}
     }
 
     if (NumInterfaces >= MAX_INTERFACES) {
-	fprintf(stderr, "Too many interfaces (%d max)\n",
+	printf( "Too many interfaces (%d max)\n",
 		MAX_INTERFACES);
 	exit(EXIT_FAILURE);
     }
@@ -696,47 +698,6 @@ findSession(unsigned char const *mac, UINT16_t sesNum)
 *%DESCRIPTION:
 * Prints a message plus the errno value to stderr and syslog and exits.
 ***********************************************************************/
-void
-fatalSys(char const *str)
-{
-    char buf[1024];
-    sprintf(buf, "%.256s: %.256s", str, strerror(errno));
-    printErr(buf);
-    exit(EXIT_FAILURE);
-}
-
-/**********************************************************************
-*%FUNCTION: sysErr
-*%ARGUMENTS:
-* str -- error message
-*%RETURNS:
-* Nothing
-*%DESCRIPTION:
-* Prints a message plus the errno value to syslog.
-***********************************************************************/
-void
-sysErr(char const *str)
-{
-    char buf[1024];
-    sprintf(buf, "%.256s: %.256s", str, strerror(errno));
-    printErr(buf);
-}
-
-/**********************************************************************
-*%FUNCTION: rp_fatal
-*%ARGUMENTS:
-* str -- error message
-*%RETURNS:
-* Nothing
-*%DESCRIPTION:
-* Prints a message to stderr and syslog and exits.
-***********************************************************************/
-void
-rp_fatal(char const *str)
-{
-    printErr(str);
-    exit(EXIT_FAILURE);
-}
 
 /**********************************************************************
 *%FUNCTION: relayLoop
@@ -926,7 +887,7 @@ relayGotSessionPacket(PPPoEInterface const *iface)
     memcpy(packet.ethHdr.h_source, sh->interface->mac, ETH_ALEN);
     memcpy(packet.ethHdr.h_dest, sh->peerMac, ETH_ALEN);
 #if 0
-    fprintf(stderr, "Relaying %02x:%02x:%02x:%02x:%02x:%02x(%s:%d) to %02x:%02x:%02x:%02x:%02x:%02x(%s:%d)\n",
+    printf( "Relaying %02x:%02x:%02x:%02x:%02x:%02x(%s:%d) to %02x:%02x:%02x:%02x:%02x:%02x(%s:%d)\n",
 	    sh->peer->peerMac[0], sh->peer->peerMac[1], sh->peer->peerMac[2],
 	    sh->peer->peerMac[3], sh->peer->peerMac[4], sh->peer->peerMac[5],
 	    sh->peer->interface->name, ntohs(sh->peer->sesNum),
@@ -1557,3 +1518,4 @@ void cleanSessions(void)
 	cur = next;
     }
 }
+#endif

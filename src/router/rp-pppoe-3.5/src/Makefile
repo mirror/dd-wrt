@@ -17,6 +17,10 @@
 #***********************************************************************
 
 # Version is set ONLY IN THE MAKEFILE!  Don't delete this!
+include $(TOP)/.config
+
+
+
 VERSION=3.8
 
 DEFINES=
@@ -59,8 +63,15 @@ PATHS='-DPPPOE_PATH="$(PPPOE_PATH)"' '-DPPPD_PATH="$(PPPD_PATH)"' \
 	'-DPLUGIN_PATH="$(PLUGIN_PATH)"' \
 	'-DPPPOE_SERVER_OPTIONS="$(PPPOESERVER_PPPD_OPTIONS)"'
 
-CFLAGS= -O2 -Wall -Wstrict-prototypes -ansi -pedantic $(LIC_INCDIR) $(DEFINES) $(LIC_DEFINE) $(PATHS) -Ilibevent
-TARGETS=pppoe pppoe-server pppoe-sniff pppoe-relay
+CFLAGS= $(COPTS) -Wall -Wstrict-prototypes -ansi -pedantic $(LIC_INCDIR) $(DEFINES) $(LIC_DEFINE) $(PATHS) -Ilibevent
+ifeq ($(CONFIG_PPPOERELAY),y)
+CFLAGS += -DHAVE_PPPOERELAY
+endif
+ifeq ($(CONFIG_PPPOESERVER),y)
+CFLAGS += -DHAVE_PPPOESERVER
+endif
+
+TARGETS=pppoe-multi 
 PPPOE_SERVER_LIBS=$(LIC_LIBDIR) $(LIC_LIB)
 
 all: $(TARGETS)
@@ -70,8 +81,8 @@ all: $(TARGETS)
 pppoe-sniff: pppoe-sniff.o if.o common.o debug.o
 	$(CC) -o pppoe-sniff pppoe-sniff.o if.o common.o debug.o
 
-pppoe-server: pppoe-server.o if.o debug.o common.o md5.o libevent/libevent.a 
-	$(CC) -o pppoe-server  pppoe-server.o if.o debug.o common.o md5.o $(PPPOE_SERVER_LIBS) -Llibevent -levent
+pppoe-multi: multicall.o pppoe-server.o if.o debug.o common.o relay.o md5.o libevent/libevent.a 
+	$(CC) -o pppoe-multi relay.o multicall.o pppoe-server.o if.o debug.o common.o md5.o $(PPPOE_SERVER_LIBS) -Llibevent -levent
 
 pppoe: pppoe.o if.o debug.o common.o ppp.o discovery.o
 	$(CC) -o pppoe pppoe.o if.o debug.o common.o ppp.o discovery.o
