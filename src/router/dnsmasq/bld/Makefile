@@ -1,4 +1,4 @@
-CFLAGS ?= -O2
+CFLAGS = $(COPTS)
 PKG_CONFIG ?= pkg-config
 
 
