@@ -49,7 +49,6 @@ typedef struct
 	char *p_option;
 	int arg_nr;
 	CMD_OPTION_HANDLER_TYPE p_handler;	
-	char *p_description;
 } CMD_DESCRIPTION_TYPE;
 
 
