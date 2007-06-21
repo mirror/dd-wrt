@@ -1014,8 +1014,8 @@ qos.maxrate_b="Max Kbits";
 qos.maxrate_o="Max Rate";
 qos.legend4="Priorité MAC";
 qos.legend5="Priorité de Port Ethernet";
-qos.legend6="Default Bandwidth Level";
-qos.bandwidth="Bandwidth in Kbits";
+qos.legend6="Niveau par défaut de la Bande Passante";
+qos.bandwith="Bande Passante (Kbits)";
 
 //help container
 
