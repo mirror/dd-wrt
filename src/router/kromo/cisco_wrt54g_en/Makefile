@@ -351,6 +351,9 @@ ifneq ($(CONFIG_MILKFISH),y)
 	rm -f $(INSTALLDIR)/www/Milkfish_messaging.asp
 	rm -f $(INSTALLDIR)/www/help/HMilkfish.asp
 endif
+ifneq ($(CONFIG_EOP_TUNNEL),y)
+	rm -f $(INSTALLDIR)/www/help/HEoIP.asp
+endif
 
 ifeq ($(CONFIG_RAMON),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/newmedia/ install
