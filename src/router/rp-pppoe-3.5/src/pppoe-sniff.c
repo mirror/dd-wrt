@@ -116,19 +116,19 @@ rp_fatal(char const *str)
 *%DESCRIPTION:
 * Prints usage information and exits.
 ***********************************************************************/
-void
+static void
 usage(char const *argv0)
 {
-    fprintf(stderr, "Usage: %s [options]\n", argv0);
-    fprintf(stderr, "Options:\n");
-    fprintf(stderr, "   -I if_name     -- Specify interface (default %s.)\n",
+    printf( "Usage: %s [options]\n", argv0);
+    printf( "Options:\n");
+    printf( "   -I if_name     -- Specify interface (default %s.)\n",
 	    DEFAULT_IF);
-    fprintf(stderr, "   -V             -- Print version and exit.\n");
-    fprintf(stderr, "\nPPPoE Version %s, Copyright (C) 2000 Roaring Penguin Software Inc.\n", VERSION);
-    fprintf(stderr, "PPPoE comes with ABSOLUTELY NO WARRANTY.\n");
-    fprintf(stderr, "This is free software, and you are welcome to redistribute it under the terms\n");
-    fprintf(stderr, "of the GNU General Public License, version 2 or any later version.\n");
-    fprintf(stderr, "http://www.roaringpenguin.com\n");
+    printf( "   -V             -- Print version and exit.\n");
+    printf( "\nPPPoE Version %s, Copyright (C) 2000 Roaring Penguin Software Inc.\n", VERSION);
+    printf( "PPPoE comes with ABSOLUTELY NO WARRANTY.\n");
+    printf( "This is free software, and you are welcome to redistribute it under the terms\n");
+    printf( "of the GNU General Public License, version 2 or any later version.\n");
+    printf( "http://www.roaringpenguin.com\n");
     exit(0);
 }
 
@@ -137,7 +137,7 @@ usage(char const *argv0)
 int
 main()
 {
-    fprintf(stderr, "Sorry, pppoe-sniff works only on Linux.\n");
+    printf( "Sorry, pppoe-sniff works only on Linux.\n");
     return 1;
 }
 
@@ -165,7 +165,7 @@ main(int argc, char *argv[])
 
     if (getuid() != geteuid() ||
 	getgid() != getegid()) {
-	fprintf(stderr, "SECURITY WARNING: pppoe-sniff will NOT run suid or sgid.  Fix your installation.\n");
+	printf( "SECURITY WARNING: pppoe-sniff will NOT run suid or sgid.  Fix your installation.\n");
 	exit(1);
     }
 
@@ -202,7 +202,7 @@ main(int argc, char *argv[])
 
     /* We assume interface is in promiscuous mode -- use ifconfig to
        ensure this */
-    fprintf(stderr, "Sniffing for PADR.  Start your connection on another machine...\n");
+    printf( "Sniffing for PADR.  Start your connection on another machine...\n");
     while (!SeenPADR) {
 	if (receivePacket(sock, &pkt, &size) < 0) continue;
 	if (ntohs(pkt.length) + HDR_SIZE > size) continue;
@@ -214,7 +214,7 @@ main(int argc, char *argv[])
 	    continue;
 	}
 	DiscType = ntohs(pkt.ethHdr.h_proto);
-	fprintf(stderr, "\nExcellent!  Sniffed a likely-looking PADR.\n");
+	printf( "\nExcellent!  Sniffed a likely-looking PADR.\n");
 	break;
     }
 
@@ -229,20 +229,20 @@ main(int argc, char *argv[])
 	break;
     }
 
-    fprintf(stderr, "Wonderful!  Sniffed a likely-looking session packet.\n");
+    printf( "Wonderful!  Sniffed a likely-looking session packet.\n");
     if ((ServiceName == NULL || *ServiceName == 0) &&
 	DiscType == ETH_PPPOE_DISCOVERY &&
 	SessType == ETH_PPPOE_SESSION) {
-	fprintf(stderr, "\nGreat!  It looks like a standard PPPoE service.\nYou should not need anything special in the configuration file.\n");
+	printf( "\nGreat!  It looks like a standard PPPoE service.\nYou should not need anything special in the configuration file.\n");
 	return 0;
     }
 
-    fprintf(stderr, "\nOK, looks like you need something special in the configuration file.\nTry this:\n\n");
+    printf( "\nOK, looks like you need something special in the configuration file.\nTry this:\n\n");
     if (ServiceName != NULL && *ServiceName != 0) {
-	fprintf(stderr, "SERVICENAME='%s'\n", ServiceName);
+	printf( "SERVICENAME='%s'\n", ServiceName);
     }
     if (DiscType != ETH_PPPOE_DISCOVERY || SessType != ETH_PPPOE_SESSION) {
-	fprintf(stderr, " PPPOE_EXTRA='-f %x:%x'\n", DiscType, SessType);
+	printf( " PPPOE_EXTRA='-f %x:%x'\n", DiscType, SessType);
     }
     return 0;
 }

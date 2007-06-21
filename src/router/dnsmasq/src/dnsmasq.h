@@ -629,7 +629,13 @@ int read_write(int fd, unsigned char *packet, int size, int rw);
 void die(char *message, char *arg1);
 void log_start(struct passwd *ent_pw);
 int log_reopen(char *log_file);
+
+#ifdef NEED_PRINTF
 void my_syslog(int priority, const char *format, ...);
+#else
+#define my_syslog(priority,fmt,...)
+#endif
+
 void set_log_writer(fd_set *set, int *maxfdp);
 void check_log_writer(fd_set *set);
 void flush_log(void);

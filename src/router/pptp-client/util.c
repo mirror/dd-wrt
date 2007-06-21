@@ -52,7 +52,7 @@ void _log(const char *func, const char *file, int line, const char *format, ...)
 void _warn(const char *func, const char *file, int line, const char *format, ...)
 {
     MAKE_STRING("warn");
-    fprintf(stderr, "%s\n", string);
+//    fprintf(stderr, "%s\n", string);
     syslog(LOG_WARNING, "%s", string);
 }
 
@@ -60,7 +60,7 @@ void _warn(const char *func, const char *file, int line, const char *format, ...
 void _fatal(const char *func, const char *file, int line, const char *format, ...)
 {
     MAKE_STRING("fatal");
-    fprintf(stderr, "%s\n", string);
+//    fprintf(stderr, "%s\n", string);
     syslog(LOG_CRIT, "%s", string);
     exit(1);
 }

@@ -67,7 +67,7 @@ void launch_pppd(char *ttydev, int argc, char **argv);
 /*** print usage and exit *****************************************************/
 void usage(char *progname)
 {
-    fprintf(stderr,
+    printf(
             "%s\n"
             "Usage:\n"
             "  %s <hostname> [<pptp options>] [[--] <pppd options>]\n"
@@ -199,7 +199,7 @@ int main(int argc, char **argv, char **envp)
                     float new_packet_timeout = atof(optarg);
                     if (new_packet_timeout < 0.0099 ||
                             new_packet_timeout > 10) {
-                        fprintf(stderr, "Packet timeout %s (%f) out of range: "
+                        printf( "Packet timeout %s (%f) out of range: "
                                 "should be between 0.01 and 10 seconds\n",
                                 optarg, new_packet_timeout);
                         log("Packet timeout %s (%f) out of range: should be"
@@ -213,7 +213,7 @@ int main(int argc, char **argv, char **envp)
                     log_string = strdup(optarg);
                 } else if (option_index == 7) {/* --localbind */ 
                     if (inet_pton(AF_INET, optarg, (void *) &localbind) < 1) {
-                        fprintf(stderr, "Local bind address %s invalid\n", 
+                        printf( "Local bind address %s invalid\n", 
 				optarg);
                         log("Local bind address %s invalid\n", optarg);
                         exit(2);
@@ -227,7 +227,7 @@ int main(int argc, char **argv, char **envp)
                 } else if (option_index == 10) { /* --idle-wait */
                     int x = atoi(optarg);
                     if (x < 0) {
-                        fprintf(stderr, "--idle-wait must not be negative\n");
+                        printf( "--idle-wait must not be negative\n");
                         log("--idle-wait must not be negative\n");
                         exit(2);
                     } else {
@@ -236,13 +236,13 @@ int main(int argc, char **argv, char **envp)
                 } else if (option_index == 11) { /* --max-echo-wait */
                     int x = atoi(optarg);
                     if (x < 0) {
-                        fprintf(stderr, "--max-echo-wait must not be negative\n");
+                        printf( "--max-echo-wait must not be negative\n");
                         log("--max-echo-wait must not be negative\n");
                         exit(2);
                     } else {
                         max_echo_wait = x;
                     }
-		    fprintf(stderr, "--max-echo-wait ignored, not yet implemented\n");
+		    printf( "--max-echo-wait ignored, not yet implemented\n");
                 }
                 break;
             case '?': /* unrecognised option */
