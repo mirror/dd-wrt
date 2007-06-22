@@ -354,7 +354,21 @@ endif
 ifneq ($(CONFIG_EOP_TUNNEL),y)
 	rm -f $(INSTALLDIR)/www/help/HEoIP.asp
 endif
-
+ifneq ($(CONFIG_VPND),y)
+	rm -f $(INSTALLDIR)/www/Status_OpenVPN.asp
+endif
+ifneq ($(CONFIG_SPUTNIK_APD),y)
+	rm -f $(INSTALLDIR)/www/Status_SputnikAPD.asp
+	rm -f $(INSTALLDIR)/www/Status_SputnikAPD.live.asp	
+endif
+ifneq ($(CONFIG_CTORRENT),y)
+	rm -f $(INSTALLDIR)/www/P2P.asp
+endif
+#	All: These pages are not used
+	rm -f $(INSTALLDIR)/www/About_test.htm
+	rm -f $(INSTALLDIR)/www/Logout.asp
+	rm -f $(INSTALLDIR)/www/SysInfo.htm
+	
 ifeq ($(CONFIG_RAMON),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/newmedia/ install
 else
