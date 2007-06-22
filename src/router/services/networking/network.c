@@ -1033,8 +1033,8 @@ start_lan (void)
 #ifndef HAVE_NOWIFI
   deconfigure_wifi ();
 #endif
-#else
-  eval ("wlconf", wl_face, "down");
+//#else
+//  eval ("wlconf", wl_face, "down");
 #endif
 //      eval("rmmod", "wl");
 //      eval("insmod", "wl");
