@@ -81,9 +81,14 @@ all: $(TARGETS)
 pppoe-sniff: pppoe-sniff.o if.o common.o debug.o
 	$(CC) -o pppoe-sniff pppoe-sniff.o if.o common.o debug.o
 
+ifeq ($(CONFIG_PPPOESERVER),y)
 pppoe-multi: multicall.o pppoe-server.o if.o debug.o common.o relay.o md5.o libevent/libevent.a 
 	$(CC) -o pppoe-multi relay.o multicall.o pppoe-server.o if.o debug.o common.o md5.o $(PPPOE_SERVER_LIBS) -Llibevent -levent
+else
+pppoe-multi: multicall.o if.o debug.o common.o relay.o md5.o  
+	$(CC) -o pppoe-multi relay.o multicall.o if.o debug.o common.o
 
+endif
 pppoe: pppoe.o if.o debug.o common.o ppp.o discovery.o
 	$(CC) -o pppoe pppoe.o if.o debug.o common.o ppp.o discovery.o
 
