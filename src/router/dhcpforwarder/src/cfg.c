@@ -50,8 +50,12 @@ exitFatal(char const msg[], register size_t len) __attribute__ ((noreturn))
 
   /*@noreturn@*/
 static void scEXITFATAL(/*@in@*//*@sef@*/char const *msg) /*@*/; 
-#define scEXITFATAL(msg)	exitFatal(msg, sizeof(msg)-1)
 
+#ifdef NEED_PRINTF
+#define scEXITFATAL(msg)	exitFatal(msg, sizeof(msg)-1)
+#else
+#define scEXITFATAL(msg)	exit(-1)
+#endif
 
 inline static void
 exitFatal(char const msg[], register size_t len)

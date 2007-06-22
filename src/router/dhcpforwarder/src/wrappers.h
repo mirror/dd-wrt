@@ -40,6 +40,7 @@
 
   /*@-internalglobs@*//*@-modfilesys@*/
 /*@unused@*//*@noreturnwhentrue@*/
+#ifdef NEED_PRINTF
 inline static void
 FatalErrnoError(bool condition, int retval, char const msg[]) /*@*/
 {
@@ -57,6 +58,9 @@ FatalErrnoError(bool condition, int retval, char const msg[]) /*@*/
 
   exit(retval);
 }
+#else
+#define FatalErrnoError(condition, retval, msg) exit(retval)
+#endif
   /*@=internalglobs@*//*@=modfilesys@*/
 
 /*@unused@*/

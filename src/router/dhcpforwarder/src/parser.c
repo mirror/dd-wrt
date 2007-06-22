@@ -113,10 +113,14 @@ isCharType(/*@sef@*/int c, /*@sef@*/unsigned int type) /*@*/
 /*@null@*/static char const		*filename = 0;
 
   /*@noreturn@*//*@unused@*/
+#ifdef NEED_PRINTF
 static void scEXITFATAL(/*@observer@*//*@sef@*/char const *msg);
 #define scEXITFATAL(msg)	exitFatal(msg, sizeof(msg)-1)
 #define scWRITE(msg)		(void)write(2, msg, sizeof(msg)-1)
-
+#else
+#define scEXITFATAL(msg)  exit(-1)
+#define scWRITE(msg)		(void)write(2, msg, sizeof(msg)-1)
+#endif
 /*@noreturn@*/
 static void
 exitFatal(/*@observer@*/char const msg[],
