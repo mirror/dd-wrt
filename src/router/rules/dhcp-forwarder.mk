@@ -8,4 +8,5 @@ dhcpforwarder-install:
 	@true
 	
 dhcpforwarder-clean:
-	$(MAKE) -C dhcpforwarder clean
+	if test -e "dhcpforwarder/Makefile"; then $(MAKE) -C dhcpforwarder clean; fi
+	
