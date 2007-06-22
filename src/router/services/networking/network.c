@@ -1306,7 +1306,7 @@ start_lan (void)
 		//eval("wlconf", name, "up");
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);
 #ifndef HAVE_MADWIFI
-		ev	al ("wl", "ap", "0");
+		eval ("wl", "ap", "0");
 #ifndef HAVE_MSSID
 		eval ("wl", "ssid", nvram_get ("wl_ssid"));
 #else
