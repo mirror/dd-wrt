@@ -1,0 +1,450 @@
+Noteworthy changes in version 1.2.4 (2007-02-01)
+------------------------------------------------
+
+ * Fixed a bug in the memory allocator which could have been the
+   reason for some of non-duplicable bugs.
+
+ * Other minor bug fixes.
+
+
+Noteworthy changes in version 1.2.3 (2006-08-28)
+------------------------------------------------
+
+ * Rewrote gcry_mpi_rshift to allow arbitrary shift counts.
+
+ * Minor bug fixes.
+
+
+Noteworthy changes in version 1.2.2 (2005-10-05)
+------------------------------------------------
+
+ * Made the RNG immune against fork without exec.
+
+ * Minor changes to some function declarations.  Buffer arguments are
+   now typed as void pointer.  This should not affect any compilation.
+
+ * A bug in the definition of gcry_cipher_register has been fixed.
+
+ * Interface changes relative to the 1.2.1 release:
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ gcry_cipher_encrypt    CHANGED: Arguments IN and OUT are now void*.
+ gcry_cipher_decrypt    CHANGED: Arguments IN and OUT are now void*.
+ gcry_create_nonce      CHANGED: Argument BUFFER is now void*.
+ gcry_md_ctl            CHANGED: Argument BUFFER is now void*.
+ gcry_sexp_sprint       CHANGED: Argument BUFFER is now void*.
+ gcry_mpi_scan          CHANGED: Argument BUFFER is now void*.
+ gcry_cipher_register   CHANGED: Argument ALGORITHM_ID is now int*.
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Noteworthy changes in version 1.2.1 (2005-01-05)
+------------------------------------------------
+
+ * Portability fixes, memory allocation fixes and other minor things.
+
+ * Support to build as a W32 static library.
+
+ * Changed the way the RNG gets initialized. This allows to keep it
+   uninitialized as long as no random numbers are used.  To override
+   this, the new macro gcry_fast_random_poll may be used.  It is in
+   general a good idea to spread this macro into the application code
+   to make sure that these polls happen often enough.
+
+ * Interface changes relative to the 1.2.0 release:
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ gcry_fast_random_poll	NEW
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Noteworthy changes in version 1.2.0 (2004-04-15)
+------------------------------------------------
+
+ * First stable release.
+
+
+Noteworthy changes in version 1.1.94 (2004-03-29)
+-------------------------------------------------
+
+ * The support for multi-threaded users goes into its third
+   incarnation.  We removed compile time support for thread libraries.
+   To support the thread library of your choice, you have to set up
+   callback handlers at initialization time.  New data structures, a
+   new control command, and default initializers are provided for this
+   purpose.
+
+ * Interface changes relative to the 1.1.93 release:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+libgcrypt-config --thread	OBSOLETE
+libgcrypt-pth.la		REMOVED
+libgcrypt-pthread.la		REMOVED
+GCRYCTL_SET_THREAD_CBS		NEW
+struct gcrypt_thread_cbs	NEW
+enum gcry_thread_option		NEW
+GCRY_THREAD_OPTION_PTH_IMPL	NEW
+GCRY_THREAD_OPTION_PTHREAD_IMPL	NEW
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Noteworthy changes in version 1.1.93 (2004-03-06)
+-------------------------------------------------
+
+ * The automatic thread library detection has finally been removed.
+   From now on, only linking explicitely to libgcrypt, libgcrypt-pth
+   or libgcrypt-pthread is supported.
+
+Noteworthy changes in version 1.1.92 (2004-02-20)
+-------------------------------------------------
+
+ * Minor bug fixes.
+
+ * Included a limited implementation of RFC2268.
+
+ * Changed API of the gcry_ac_ functions.  Only a very few programs
+   should be affected by this.
+
+ * Interface changes relative to the 1.1.91 release:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+GCRY_CIPHER_RFC2268_40          NEW.
+gcry_ac_data_set                CHANGED: New argument FLAGS.
+gcry_ac_data_get_name           CHANGED: New argument FLAGS.
+gcry_ac_data_get_index          CHANGED: New argument FLAGS.
+gcry_ac_key_pair_generate       CHANGED: New and reordered arguments.
+gcry_ac_key_test                CHANGED: New argument HANDLE.
+gcry_ac_key_get_nbits           CHANGED: New argument HANDLE.
+gcry_ac_key_get_grip            CHANGED: New argument HANDLE.
+gcry_ac_data_search             REMOVED.
+gcry_ac_data_add                REMOVED.
+GCRY_AC_DATA_FLAG_NO_BLINDING   REMOVED.
+GCRY_AC_FLAG_NO_BLINDING        NEW: Replaces above.
+
+
+Noteworthy changes in version 1.1.91 (2003-12-19)
+-------------------------------------------------
+
+ * Code cleanups and minor bug fixes.
+
+
+Noteworthy changes in version 1.1.90 (2003-11-14)
+-------------------------------------------------
+
+ * The use of the GCRY_WEAK_RANDOM level is now deprecated in favor of
+   the new gcry_create_nonce function.
+
+ * gcry_sexp_build now supports a "%b" format to include a memory buffer.
+
+ * Minor configuration fixes.
+ 
+ * Interface changes relative to the 1.1.44 release:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+gcry_create_nonce               NEW
+gcry_sexp_build                 ENHANCED
+
+
+Noteworthy changes in version 1.1.44 (2003-10-31)
+-------------------------------------------------
+
+ * Bug fixes and more code cleanups.
+
+ * Enhanced the prime API.
+
+ * Interface changes relative to the 1.1.43 release:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+gcry_prime_group_generator      NEW
+gcry_prime_release_factors      NEW
+
+
+Noteworthy changes in version 1.1.43 (2003-09-04)
+-------------------------------------------------
+
+ * Bug fixes and internal code cleanups.
+
+ * Support for the Serpent cipher algorithm.
+
+ * Interface changes relative to the 1.1.42 release:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+gcry_prime_generate             NEW
+gcry_prime_check                NEW
+
+
+Noteworthy changes in version 1.1.42 (2003-07-31)
+-------------------------------------------------
+
+ * Major API cleanup.  Applications need to be converted to the new
+   API.  See README.apichanges for hints on how to do that.  Backward
+   compatibility is provided where it was possible without too much
+   effort and did not collide with the overall sanitization effort.
+   However, this is only for ease of transition.  NO DEPRECATED
+   FUNCTION OR DATA TYPE IS CONSIDERED A PART OF THE API OR ABI AND
+   WILL BE DROPPED IN THE FUTURE WITHOUT CHANGING THE SONAME OF THE
+   LIBRARY. 
+
+ * If gcrypt.h is included in sources compiled by GCC 3.1 or later,
+   deprecated attributes will warn about use of obsolete functions and
+   type definitions.  You can suppress these warnings by passing
+   -Wno-deprecated-declarations to the gcc command.
+
+ * gcry_check_version must be called from now on to initialize the
+   library, it is not longer optional.
+
+ * Removed `libgcrypt errno' concept.
+
+ * Libgcrypt depends on libgpg-error, a library that provides error
+   codes and according functions for all GnuPG components.  Functions
+   that used to return error codes asa `int' have been changed to
+   return a code of type `gcry_error_t'.  All GCRYERR_* error symbols
+   have been removed, since they are now contained in libgpg-error
+   (GPG_ERR_*). All functions and types in libgpg-error have also been
+   wrapped in Libgcrypt. The new types are gcry_err_code_t and
+   gcry_err_source_t.  The new functions are gcry_err_code,
+   gcry_err_source, gcry_error, gcry_err_make, gcry_error_from_errno,
+   gcry_err_make_from_errno, gcry_err_code_from_errno,
+   gcry_err_code_to_errno, gcry_strsource.
+
+ * New function gcry_mpi_dump to help in debugging. 
+
+ * Added alternative interface for asymmetric cryptography.
+
+ * CRC-32, CRC-32 a'la RFC 1510, CRC-24 a'la RFC 2440 are now
+   supported.
+
+ * SHA-256, SHA-384 and SHA-512 are now supported.
+
+ * 128 bit Twofish is now supported.
+
+ * The random module won't print the "not enough random bytes
+   available" anymore.  A new progress status is issued instead.
+
+ * CBC-MAC for block ciphers is now supported, by using a
+   GCRY_CIPHER_CBC_MAC cipher flag.
+
+ * CTR mode for block ciphers is now supported.
+
+ * The public RSA exponent can now be specified in key generation. 
+
+ * RSA blinding is now supported and is used automatically for RSA
+   decryption.  It can be explicitely disabled by using the
+   `no-blinding' symbol in the `flags' S-Expression or by using the
+   GCRY_AC_FLAG_DATA_NO_BLINDING flag when using the ac interface.
+
+ * gcry_sexp_canon_len does not use a `historically encoded' error
+   code anymore.
+
+
+ * Interface changes relative to the 1.1.12 release:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+GCRY_MPI			DEPRECATED; Use: gcry_mpi_t
+GcryMPI				DEPRECATED; Use: gcry_mpi_t
+GCRY_SEXP			DEPRECATED; Use: gcry_sexp_t
+GcrySexp			DEPRECATED; Use: gcry_sexp_t
+GCRY_CIPHER_HD			DEPRECATED; Use: gcry_cipher_hd_t
+GcryCipherHd			DEPRECATED; Use: gcry_cipher_hd_t
+GCRY_MD_HD			DEPRECATED; Use: gcry_md_hd_t
+GcryMDHd			DEPRECATED; Use: gcry_md_hd_t
+gcry_error_t			NEW
+gcry_err_code_t			NEW
+gcry_err_source_t		NEW
+gcry_err_make			NEW
+gcry_error			NEW
+gcry_err_code			NEW
+gcry_err_source			NEW
+gcry_err_code_from_errno	NEW
+gcry_err_code_to_errno		NEW
+gcry_err_make_from_errno	NEW
+gcry_error_from_errno		NEW
+gcry_strsource			NEW
+GCRYERR_{some error code}	REMOVED; Use GPG_ERR_*
+                                         from libgpg-error instead.
+gcry_errno                      REMOVED
+gcry_sexp_canon_len		CHANGED
+gcry_sexp_build_array		NEW
+gcry_mpi_scan			CHANGED: New argument to separate in/out args.
+gcry_mpi_print			CHANGED: Ditto.
+gcry_mpi_dump			NEW
+gcry_cipher_open		CHANGED
+gcry_cipher_reset		NEW
+gcry_cipher_register		NEW
+gcry_cipher_unregister		NEW
+gcry_cipher_list		NEW
+gcry_cipher_algo_keylen		REPLACED macro with function.
+gcry_cipher_algo_blklen		REPLACED macro with function.
+gcry_pk_register		NEW
+gcry_pk_unregister		NEW
+gcry_pk_list			NEW
+gcry_pk_decrypt			ENHANCED: Allows flag to return
+                                          complete S-expression.
+gcry_md_open			CHANGED
+gcry_md_copy			CHANGED
+gcry_md_is_enabled		NEW
+gcry_md_is_secure		NEW
+gcry_md_register		NEW
+gcry_md_unregister		NEW
+gcry_md_list			NEW
+gcry_ac_data_t			NEW
+gcry_ac_key_t			NEW
+gcry_ac_key_pair_t		NEW
+gcry_ac_handle_t		NEW
+gcry_ac_key_spec_rsa_t		NEW
+gcry_ac_data_new		NEW
+gcry_ac_data_destroy		NEW
+gcry_ac_data_set		NEW
+gcry_ac_data_copy		NEW
+gcry_ac_data_length		NEW
+gcry_ac_data_get_name		NEW
+gcry_ac_data_get_index		NEW
+gcry_ac_data_clear		NEW
+gcry_ac_open			NEW
+gcry_ac_close			NEW
+gcry_ac_key_init		NEW
+gcry_ac_key_pair_generate	NEW
+gcry_ac_key_pair_extract	NEW
+gcry_ac_key_data_get		NEW
+gcry_ac_key_test		NEW
+gcry_ac_key_get_nbits		NEW
+gcry_ac_key_get_grip		NEW
+gcry_ac_key_destroy		NEW
+gcry_ac_key_pair_destroy	NEW
+gcry_ac_data_encrypt		NEW
+gcry_ac_data_decrypt		NEW
+gcry_ac_data_sign		NEW
+gcry_ac_data_verify		NEW
+gcry_ac_id_to_name		NEW
+gcry_ac_name_to_id		NEW
+gcry_handler_progress_t		NEW
+gcry_handler_alloc_t		NEW
+gcry_handler_secure_check_t	NEW
+gcry_handle_realloc_t		NEW
+gcry_handler_free_t		NEW
+gcry_handler_no_mem_t		NEW
+gcry_handler_error_t		NEW
+gcry_handler_log_t		NEW
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Noteworthy changes in version 1.1.12 (2003-01-20)
+-------------------------------------------------
+
+ * gcry_pk_sign, gcry_pk_verify and gcry_pk_encrypt can now handle an
+   optional pkcs1 flags parameter in the S-expression.  A similar flag
+   may be passed to gcry_pk_decrypt but it is only syntactically
+   implemented.
+
+ * New convenience macro gcry_md_get_asnoid.
+
+ * There is now some real stuff in the manual.
+
+
+Noteworthy changes in version 1.1.11 (2002-12-21)
+-------------------------------------------------
+
+ * Don't export internal symbols anymore (currently only for GNU systems)
+
+ * New algorithm: MD4
+
+ * Implemented ciphertext stealing.
+
+ * Smaller bugs fixes and a few new OIDs.
+
+ * Interface changes relative to the 1.1.8 release:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+gcry_cipher_cts                   NEW
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Noteworthy changes in version 1.1.10 (2002-09-20)
+-------------------------------------------------
+
+ * Fixed shared library builds for i386, PPC and Sparc.
+
+ * Added simple benchmark tool.
+
+ * Replaced the internal mutexes by code which automatically adapts to
+   the used threading library.  Currently Pth and Pthread are
+   supported.  For non-ELF systems the GNU toolchain is now required..
+
+ * Added untested support to build Windows DLLs.
+
+Noteworthy changes in version 1.1.9 (2002-08-23)
+------------------------------------------------
+
+ * Support for plain old DES.
+
+
+Noteworthy changes in version 1.1.8 (2002-06-25)
+------------------------------------------------
+
+ * Minor cleanups and exported a few new functions.
+
+ * Interface changes relative to the 1.1.7 release:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+gcry_mpi_div                      NEW
+gcry_mpi_mod                      NEW
+gcry_mpi_invm                     NEW
+gcry_mpi_swap                     NEW
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Noteworthy changes in version 1.1.7 (2002-05-21)
+------------------------------------------------
+
+* Libgcrypt is now distributed under the terms of the GNU Lesser
+  General Public License; see the README file for details.    
+  
+* It is possible to use libgcrypt w/o intialized secure memory.
+
+* Libgcrypt should now be thread safe after the initialization.
+  gcry_control (GCRYCRL_INITIALIZATION_FINISHED,NULL,0) should have
+  been called before creating additional threads.
+
+ * Interface changes relative to the 1.1.6 release:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+GCRYCTL_DISABLE_INTERNAL_LOCKING  NEW
+GCRYCTL_DISABLE_SECMEM            NEW
+GCRYCTL_INITIALIZATION_FINISHED   NEW
+GCRYCTL_INITIALIZATION_FINISHED_P NEW
+GCRYCTL_ANY_INITIALIZATION_P      NEW
+gcry_strdup                       NEW
+gcry_sexp_create                  NEW
+gcry_sexp_new                     NEW
+gcry_set_progress_handler         NEW
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Noteworthy changes in version 1.1.6 (2002-02-07)
+------------------------------------------------
+
+  * Enhanced the S-expression conversion functions.
+        
+Noteworthy changes in version 1.1.5 (2001-12-18)
+------------------------------------------------
+
+  * gcry_{cipher,md}_map_name are now able to map stringified object IDs.
+
+  * New functions gcry_sexp_canon_len and gcry_cipher_mode_from_oid.
+
+  * Closed some memory leaks.
+
+
+Noteworthy changes in version 1.1.4 (2001-08-03)
+------------------------------------------------
+
+  * Arcfour does now work.                   
+
+  * Some minor fixes.
+
+  * Added a first test program
+
+  * Migrated to autoconf 2.52.
+
+
+Noteworthy changes in version 1.1.3 (2001-05-31)
+------------------------------------------------
+
+  * First release of Libgcrypt which is a result of splitting GnuPG
+    into into libgcrypt and GnuPG.
+
+
+Copyright 2001, 2002, 2003, 2004 Free Software Foundation, Inc.
+
+This file is free software; as a special exception the author gives
+unlimited permission to copy and/or distribute it, with or without
+modifications, as long as this notice is preserved.
+
+This file is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
+implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

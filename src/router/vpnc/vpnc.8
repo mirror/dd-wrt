@@ -1,0 +1,164 @@
+.TH "VPNC" "8" "13 Mai 2004" "Debian" "vpnc"
+
+.SH NAME
+vpnc \- client for Cisco VPN3000 Concentrator, IOS and PIX
+.SH SYNOPSIS
+
+see
+.B vpnc  \-\-long\-help
+
+.SH "DESCRIPTION"
+.PP
+This manual page documents briefly the
+\fBvpnc\fR and
+\fBvpnc\-disconnect\fR commands.
+.PP
+\fBvpnc\fR is a 
+VPN client for the Cisco 3000 VPN  Concentrator,  creating  a IPSec-like
+connection as a tunneling network device for the local system. It uses
+the TUN/TAP driver in  Linux  kernel  2.4  and  above  and device tun(4)
+on BSD. The created connection is presented as a tunneling network
+device to the local system.
+.PP
+The vpnc daemon by itself does not set any routes, but it calls
+\fBvpnc\-script\fR to do this job. \fBvpnc\-script\fR displays
+a connect banner. If the concentrator supplies a network list
+for split-tunneling these networks are added to the routing table.
+Otherwise the default-route will be modified to point to the tunnel.
+Further a host route to the concentrator is added in the later case.
+If the client host needs DHCP, care must be taken to add another
+host route to the DHCP-Server around the tunnel.
+.PP
+The \fBvpnc\-disconnect\fR command is used to terminate
+the connection previously created by \fBvpnc\fR
+and restore the previous routing configuration.
+
+.SH CONFIGURATION
+The daemon reads configuration data from the following places:
+.PD 0
+.IP "- command line options"
+.IP "- config file(s) specified on the command line"
+.IP "- /etc/vpnc/default.conf"
+.IP "- /etc/vpnc.conf"
+.IP "- prompting the user if not found above"
+
+.PP
+
+vpnc can parse options and
+.B configuration files
+in any order. However the first
+place to set an option wins.
+configuration filenames
+which do not contain a /
+will be searched at
+.B /etc/vpnc/<filename>
+and
+.B /etc/vpnc/<filename>.conf.
+Otherwise
+.B <filename>
+and
+.B <filename>.conf
+will be used.
+If no configuration file
+is specified on the command-line
+at all, both
+.B /etc/vpnc/default.conf
+and
+.B /etc/vpnc.conf
+will be loaded.
+
+.SH OPTIONS
+The program options can be either given as argument (but not all of them
+for security reasons) or be stored in a configuration file.
+
+
+.IP "\-\-print\-config"
+ Prints your configuration; output can be used as vpnc.conf
+
+See output of
+.B vpnc \-\-long\-help
+for a complete description
+
+.SH FILES
+.I /etc/vpnc.conf
+.I /etc/vpnc/default.conf
+.RS
+The default configuration file. You can specify the same config
+directives as with command line options and additionaly
+.B IPSec secret
+and
+.B Xauth password
+both supplying a cleartext password. Scrambled passwords from the Cisco
+configuration profiles can be used with
+.B IPSec obfuscated secret
+and
+.B Xauth obfuscated password.
+
+See
+.BR EXAMPLES
+for further details.
+.RE
+
+.I /etc/vpnc/*.conf
+.RS
+vpnc will read configuration files in this directory when
+the config filename (with or without .conf) is specified on the command line.
+.RE
+
+
+.SH EXAMPLES
+This is an example vpnc.conf:
+
+.RS
+.PD 0
+IPSec gateway vpn.rwth\-aachen.de
+.P
+IPSec ID MoPS
+.P
+IPSec secret mopsWLAN
+.P
+Xauth username abcdef
+.P
+Xauth password 123456
+.PD
+.RE
+
+The lines begin with a keyword (no leading spaces!).
+The values start exactly one space after the keywords, and run to the end of
+line. This lets you put any kind of weird character (except CR, LF and NUL) in
+your strings, but it does mean you can't add comments after a string, or spaces
+before them.
+
+See also the
+.B \-\-print\-config
+option to generate a config file, and the example file in the package
+documentation directory where more advanced usage is demonstrated.
+
+Advanced features like manual setting of multiple target routes and
+disabling /etc/resolv.conf rewriting is documented in the README of the
+vpnc package.
+
+.SH TODO
+.PD 0
+Certificate support (Pre-Shared-Key + XAUTH is known to be insecure).
+.P
+Further points can be found in the TODO file.
+.PD
+
+.SH AUTHOR
+This man-page has been written by Eduard Bloch <blade(at)debian.org> and
+Christian Lackas <delta(at)lackas.net>, based on vpnc README by
+Maurice Massar <vpnc(at)unix\-ag.uni\-kl.de>.
+Permission is
+granted to copy, distribute and/or modify this document under
+the terms of the GNU General Public License, Version 2 any 
+later version published by the Free Software Foundation.
+.PP
+On Debian systems, the complete text of the GNU General Public
+License can be found in /usr/share/common\-licenses/GPL.
+.SH "SEE ALSO"
+.BR ip (8),
+.BR ifconfig (8),
+.BR route (1),
+.BR http://www.unix\-ag.uni\-kl.de/~massar/vpnc/
+

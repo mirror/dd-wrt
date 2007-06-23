@@ -1,0 +1,93 @@
+TODO list
+
+* --local-address
+
+* clean up scripts
+  - config-support for vpnc-script
+  - customizable handling of routing
+  - switch to disable resolv.conf rewriting
+  - do $something with split_dns
+
+* beautify paket dump output
+
+* large code cleanup
+  - at least one function per packet (instead of one function per phase)
+  - factor out a central select-loop, send / receive code, nat-t handling
+  - maybe even add some sort of state machine
+  - get a rid of remaining (non-const) global variables
+
+* implement phase1 rekeying (with or without xauth-reauthentication)
+* implement DPD, RFC3 706 Dead Peer Detection
+* implement compression
+* try a list of gateways (backup server)
+
+* optionally use in-kernel-ipsec with pf-key
+  - merge patch
+
+* add support for pcap and dump decrypted traffic
+
+* research:
+  - usernames containing "@" unable to login
+  - ipsec over tcp
+  - nortel support?
+
+* optional drop root (rekey? reconnect? vpnc-script calls?)
+* implement hybrid-auth
+* implement certificate support
+
+* factor out crypto stuff (cipher, hmac, dh)
+  - http://libtomcrypt.org/features.html
+  - http://www.foldr.org/~michaelw/ patch fertig
+  - libgcrypt (old too?)
+  - autodetect?
+  - openssl??
+  - relicense to gpl+ssl?
+
+* links to packages, howtos, etc.
+  - kvpnc http://home.gna.org/kvpnc/
+  - vpnc+Zaurus http://users.ox.ac.uk/~oliver/vpnc.html
+  - linux-mipsel (WRT54G) http://openwrt.alphacore.net/vpnc_0.3.2_mipsel.ipk
+  - howto-de http://localhost.ruhr.de/~stefan/uni-duisburg.ai/vpnc.shtml
+
+----
+
+* DONE implement phase2 rekeying
+* DONE support rsa-SecurID token which sometimes needs 2 IDs
+* DONE add macosx support
+* DONE update "check pfs setting" error message
+* DONE make doing xauth optional
+* DONE implement udp transport NAT-T
+* DONE fix Makefile (install, DESTDIR, CFLAGS, ...)
+* DONE implement udp encap via port 10.000
+* DONE svn-Repository
+* DONE XAUTH Domain: (empty)
+* DONE check /dev/net/tun, reject /dev/tun* on linux
+* DONE spawn post-connect script
+* DONE ask for dns/wins servers, default domain, pfs setting, netmask
+* DONE automatic handling of pfs
+* DONE send version string
+* DONE send lifetime in phase1 and phase2
+* DONE accept (== ignore) lifetime update in phase1
+* DONE load balancing support (fixes INVALID_EXCHANGE_TYPE in S4.5)
+* DONE include OpenBSD support from Nikolay Sturm
+* DONE memleak fix from Sebastian Biallas
+* DONE fix link at alioth
+* DONE include man-page
+* DONE post rfcs and drafts
+* DONE post link to http://www.liebchen-online.de/vpn-zaurus.html
+* DONE passcode == password
+* DONE support for new libgcrypt versions
+* DONE make /var/run/vpnc as needed
+* DONE ignore "metric10 xx"
+* DONE ignore attr 32136! (Cisco extension: XAUTH Vendor)
+* DONE FreeBSD supported
+* DONE NetBSD supported
+* DONE fix vpnc-disconnect
+* DONE --verbose
+* DONE hide user/pass from --debug output
+* DONE don't ignore all notifies at ipsec-sa-negotation
+* DONE VERSION
+* DONE --pid-file
+* DONE --non-interactive
+* DONE fix delete message
+* DONE implement ISAKMP and IPSEC SA negotiate support

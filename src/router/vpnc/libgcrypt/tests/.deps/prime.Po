@@ -1,0 +1,136 @@
+prime.o prime.o: prime.c \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/assert.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/features.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/uClibc_config.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/sys/cdefs.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/stdio.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/include/stddef.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/types.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/kernel_types.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/pthreadtypes.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/sched.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/uClibc_stdio.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/wchar.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/wchar.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/include/stdarg.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/stdio_lim.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/string.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/stdlib.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/sys/types.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/time.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/endian.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/endian.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/sys/select.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/select.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/sigset.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/time.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/sys/sysmacros.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/alloca.h \
+  ../src/gcrypt.h \
+  /home/dd-wrt2/DEV/xscale/src/router/armeb-uclibc/install/vpnc/usr/include/gpg-error.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/sys/socket.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/sys/uio.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/uio.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/socket.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/include/limits.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/include/syslimits.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/limits.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/posix1_lim.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/local_lim.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/linux/limits.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/posix2_lim.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/sockaddr.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/asm/socket.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/asm/sockios.h \
+  /home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/sys/time.h \
+  ../src/gcrypt-module.h
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/assert.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/features.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/uClibc_config.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/sys/cdefs.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/stdio.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/include/stddef.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/types.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/kernel_types.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/pthreadtypes.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/sched.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/uClibc_stdio.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/wchar.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/wchar.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/include/stdarg.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/stdio_lim.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/string.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/stdlib.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/sys/types.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/time.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/endian.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/endian.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/sys/select.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/select.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/sigset.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/time.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/sys/sysmacros.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/alloca.h:
+
+../src/gcrypt.h:
+
+/home/dd-wrt2/DEV/xscale/src/router/armeb-uclibc/install/vpnc/usr/include/gpg-error.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/sys/socket.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/sys/uio.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/uio.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/socket.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/include/limits.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/include/syslimits.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/limits.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/posix1_lim.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/local_lim.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/linux/limits.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/posix2_lim.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/bits/sockaddr.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/asm/socket.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/asm/sockios.h:
+
+/home/xfs/toolchains/armb-4.1.0/bin/../lib/gcc/armeb-linux-uclibc/4.1.1/../../../../armeb-linux-uclibc/sys-include/sys/time.h:
+
+../src/gcrypt-module.h:
