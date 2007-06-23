@@ -93,9 +93,9 @@ ej_dump_route_table (webs_t wp, int argc, char_t ** argv)
 		fclose (fp1);
 	    }
           char *ifname = line;
-	  if (!strcmp(ifname,nvram_safe_get("lan_ifname"))
+	  if (!strcmp(ifname,nvram_safe_get("lan_ifname")))
 	    ifname = "LAN";
-	  if (!strcmp(ifname,nvram_safe_get("wan_ifname"))
+	  if (!strcmp(ifname,nvram_safe_get("wan_ifname")))
 	    ifname = "WAN";
 	    
 	  websWrite (wp, "%s%c'%s','%s','%s','%s'\n",
