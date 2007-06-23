@@ -514,7 +514,7 @@ static int RequestConnection(UFILE *uclient, PService psvc, PAction ac, pvar_ent
 	    if(strcmp(str, "")) {
 	    	nvram_set(wanproto, str);
 		nvram_set("upnp_wan_proto", "");
-		nvram_commit();
+		//nvram_commit();
 	    }
 	}
 	igd_restart(1);
