@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# print vpnc version from file VERSION, appending the string printed
+# by svnversion(1) if appropriate
+
+_version="`cat VERSION`"
+
+if [ -d .svn ] && command -v svnversion >/dev/null; then
+	_version="$_version-`svnversion`"
+fi
+
+echo "$_version"
+
+exit 0

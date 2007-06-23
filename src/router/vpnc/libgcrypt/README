@@ -1,0 +1,117 @@
+		    libgcrypt - The GNU crypto library
+		   ------------------------------------
+  			    Version 1.2.4
+
+    Copyright 2000, 2002, 2003, 2004, 2005, 2006, 
+              2007 Free Software Foundation, Inc.
+
+    This file is free software; as a special exception the author gives
+    unlimited permission to copy and/or distribute it, with or without
+    modifications, as long as this notice is preserved.
+
+    This file is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
+    implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+
+
+    Overview
+    --------
+
+    Libgcrypt is a general purpose crypto library based on the code
+    used in GnuPG.  We can't start with a new version number because
+    libgcrypt was part of gnupg 1.1 and some applications already used
+    it and tested for the version number. We believe that the API can
+    stay as it is, except that new functions may be added in the
+    future.
+
+    Libgcrypt depends on the library `libgpg-error', which must be
+    installed correctly before Libgcrypt is to be built.
+
+
+    Mailing List
+    ------------
+
+    You may want to join the developer's mailing list
+    gcrypt-devel@gnupg.org by sending mail with a subject of
+    "subscribe" to gcrypt-devel-request@gnupg.org.  An archive of this
+    list is available at http://lists.gnupg.org .
+
+
+    License
+    -------
+    
+    Most of this library is distributed under the terms of the GNU
+    Lesser General Public License (LGPL); see the file COPYING.LIB for
+    the actual terms.  However some parts are distributed under the
+    GNU General Public License (GPL) so if you configure Libgcrypt to
+    include these modules, you have to comply with the conditions of
+    the GPL as found in the file COPYING.  The modules under the GPL
+    are:
+
+      rndunix - Entropy gatherer for Unices without a /dev/random
+      rndw32  - Entropy gatherer for MS Windows
+
+    The documentation is available under the terms of the GNU Free
+    Documentation License; see the file COPYING.DOC for the terms.
+
+    This library used to be available under the GPL - this was changed
+    with version 1.1.7 with the rationale that there are now many free
+    crypto libraries available and many of them come with capabilities
+    similar to Libcrypt.  We decided that to foster the use of
+    cryptography in Free Software an LGPLed library would make more
+    sense because it avoids problems due to license incompatibilities
+    between some Free Software licenses and the GPL. 
+
+    Please note that in many cases it is better for a library to be
+    licensed under the GPL, so that it provides an advantage for free
+    software projects.  The Lesser GPL is so named because it does
+    less to protect the freedom of the users of the code that it
+    covers.  See http://www.gnu.org/philosophy/why-not-lgpl.html for
+    more explanation.
+
+
+    Configure options 
+    -----------------
+    Here is a list of configure options which are sometimes useful 
+    for installation.
+
+     --enable-m-guard
+                     Enable the integrated malloc checking code. Please
+                     note that this feature does not work on all CPUs
+                     (e.g. SunOS 5.7 on UltraSparc-2) and might give
+                     you a bus error.
+
+     --disable-asm
+                     Do not use assembler modules.  It is not possible 
+                     to use this on some CPU types.
+                    
+     --enable-ld-version-script
+                     Libgcrypt tries to build a library where internal
+                     symbols are not exported.  This requires support
+                     from ld and is currently enabled for a few OSes.
+                     If you know that your ld supports the so called
+                     ELF version scripts, you can use this option to
+                     force its use.  OTOH, if you get error message
+                     from the linker, you probably want to use this
+                     option to disable the use of version scripts.
+                     Note, that you should never ever use an
+                     undocumented symbol or one which is prefixed with
+                     an underscore. 
+
+     --enable-ciphers=list
+     --enable-pubkey-ciphers=list
+     --enable-digests=list
+                     If not otherwise specified, all algorithms
+                     included in the libgcrypt source tree are built.
+		     An exception are algorithms, which depend on
+		     features not provided by the system, like 64bit
+		     data types.  With these switches it is possible
+                     to select exactly those algorithm modules, which
+		     should be built.
+
+    Contact
+    -------
+
+    See the file AUTHORS.
+
