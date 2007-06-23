@@ -107,7 +107,7 @@ static bool mapmgr_add_map(map_set_t *pset, mapping_t *m)
 			UPNP_TRACE(("MSN/Xbox add forward rule, not commit!\n"));
 	    else {
 			UPNP_TRACE(("Not MSN/Xbox message, commit (add)!\n"));
-				nvram_commit();		// removed/don't block -- tofu
+				//nvram_commit();		// removed/don't block -- tofu
 	    }
 	    FD_SET(i, &pset->map);
 	    pset->count++;
@@ -145,7 +145,7 @@ static bool mapmgr_delete_map(map_set_t *pset, int n)
         else{
 		    UPNP_TRACE(("Not MSN/Xbox message, commit (del)!\n"));
 		    foundit = del_forward_port(i);
-			nvram_commit();		// <-- removed/don't block; is this really necessary? -- tofu
+			//nvram_commit();		// <-- removed/don't block; is this really necessary? -- tofu
 		}
 		break;
 	    }

@@ -53,7 +53,7 @@ int LANHostConfig_SetDomainName(UFILE *uclient, PService psvc, PAction ac, pvar_
 
     nvram_set("lan_domain", ac->params[0].value);
     fprintf(stderr, "LANHostConfig_SetDomainName(): nvram_commit()\n");
-    nvram_commit();
+//    nvram_commit();
     // restart ?? 
     
     return success;
