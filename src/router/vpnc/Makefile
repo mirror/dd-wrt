@@ -37,7 +37,7 @@ RELEASE_VERSION := $(shell cat VERSION)
 #CC=gcc
 CFLAGS += -W -Wall $(COPTS) -Wmissing-declarations -Wwrite-strings -I$(INSTALLDIR)/vpnc/usr/include
 CPPFLAGS = -DVERSION=\"$(VERSION)\"
-LDFLAGS = -L$(INSTALLDIR)/vpnc/usr/lib $(INSTALLDIR)/vpnc/usr/lib/libgcrypt.a  $(INSTALLDIR)/vpnc/usr/lib/libgpg-error.a 
+LDFLAGS = -L$(INSTALLDIR)/vpnc/usr/lib  
 CFLAGS +=  -L$(INSTALLDIR)/vpnc/usr/lib
 
 ifeq ($(shell uname -s), SunOS)
@@ -55,10 +55,10 @@ gnupg :
 	make -C libgcrypt install DESTDIR=$(INSTALLDIR)/vpnc
 
 vpnc : $(OBJS) vpnc.o
-	$(CC) -o $@ $^ $(LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS) $(INSTALLDIR)/vpnc/usr/lib/libgcrypt.a  $(INSTALLDIR)/vpnc/usr/lib/libgpg-error.a
 
 cisco-decrypt : cisco-decrypt.o config.o supp.o sysdep.o vpnc-debug.o
-	$(CC) -o $@ $^ $(LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS) $(INSTALLDIR)/vpnc/usr/lib/libgcrypt.a  $(INSTALLDIR)/vpnc/usr/lib/libgpg-error.a
 
 .depend: $(SRCS) $(BINSRCS)
 	$(CC) -MM $(SRCS) $(BINSRCS) $(CFLAGS) $(CPPFLAGS) > $@
