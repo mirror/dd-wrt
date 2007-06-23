@@ -1,0 +1,38 @@
+What's left to do                                 -*- outline -*-
+
+* Updated the FSF directory.
+
+* Add more tests.  Even basic is very minimal.
+
+* udiv-qrnbd.o should get build as *.lo [HPUX]
+
+* Allow operation using RSA keys consisting of the OpenSSL list of
+  parameters and allow for a third form where the private Exponent
+  is not given (saves space).
+
+* Add a warning to the manual, to check that libgcrypt actually has
+  been compiled with thread support when used by a threaded
+  application.
+
+* write an autoconf test to check whether the linker supports a
+  version script.
+
+* Make use of the forthcoming visibility attribute.
+
+* Add attributes to the MPI functions.
+
+* Write tests for the progress function
+
+* In case the ac interface will be more popular than the pk interface,
+  the asymmetric ciphers could be changed for convenient interaction
+  with the ac interface (i.e. by using ac's `data sets') and the pk
+  interface could be changed to be a wrapper for the ac interface.
+
+* HMAC won't work with sha-512 due to the different block size.  OTOH,
+  I can imagine no cryptographic reason to use it.
+
+* cipher/pubkey.c and pubkey implementaions.
+  Don't rely on the secure memory based wiping function but add an
+  extra wiping.
+ 
+

@@ -1,0 +1,90 @@
+Library: Libgcrypt
+Maintainer: Moritz Schulte <moritz@g10code.com>
+Bug reports: <bug-libgcrypt@gnupg.org>
+Security related bug reports: <security@gnupg.org>
+
+Libgcrypt used to be part of GnuPG but has been taken out into its own
+package on 2000-12-21.
+
+
+Authors of Libgcrypt
+====================
+
+GNUPG	Werner Koch		  1998-02-23
+Assigns GNU Privacy Guard and future changes.
+wk@gnupg.org
+Designed and implemented GnuPG.
+
+GNUPG	Matthew Skala		   1998-08-10
+Disclaims changes.
+mskala@ansuz.sooke.bc.ca
+Wrote cipher/twofish.c.
+
+GNUPG	Natural Resources Canada    1998-08-11
+Disclaims changes by Matthew Skala.
+
+
+GNUPG	Michael Roth	Germany     1998-09-17
+Assigns changes.
+mroth@nessie.de
+Wrote cipher/des.c.
+Changes and bug fixes all over the place.
+
+
+GNUPG	Niklas Hernaeus 	1998-09-18
+Disclaims changes.
+nh@df.lth.se
+Weak key patches.
+
+
+GNUPG	Rémi Guyomarch		1999-05-25
+Assigns past and future changes. (g10/compress.c, g10/encr-data.c,
+g10/free-packet.c, g10/mdfilter.c, g10/plaintext.c, util/iobuf.c)
+rguyom@mail.dotcom.fr
+
+ANY     g10 Code GmbH           2001-06-07
+Code marked with ChangeLog entries of g10 Code employees.
+
+LIBGCRYPT Timo Schulz           2001-08-31
+Assigns past and future changes.
+twoaday@freakmail.de
+
+LIBGCRYPT Simon Josefsson       2002-10-25
+Assigns past and future changes to FSF (cipher/{md4,crc}.c, CTR mode,
+CTS/MAC flags, self test improvements)
+simon@josefsson.org
+
+LIBGCRYPT Moritz Schulte	2003-04-17
+Assigns past and future changes.
+moritz@g10code.com
+
+GNUTLS  Nikolaos Mavrogiannopoulos  2003-11-22
+nmav@gnutls.org
+Orginal code for cipher/rfc2268.c.
+
+
+More credits
+============
+The ATH implementation (src/ath*) has been taken from GPGME and
+relicensed to the LGPL by the copyright holder of GPGME (g10 Code
+GmbH); it is now considered to be a part of Libgcrypt.
+
+Most of the stuff in mpi has been taken from an old GMP library
+version by Torbjorn Granlund <tege@noisy.tmg.se>.
+
+The files cipher/rndunix.c and cipher/rndw32.c are based on those
+files from Cryptlib.  Copyright Peter Gutmann, Paul Kendall, and Chris
+Wedgwood 1996-1999.
+
+
+ Copyright 1998, 1999, 2000, 2001, 2002, 2003 Free Software Foundation, Inc.
+
+ This file is free software; as a special exception the author gives
+ unlimited permission to copy and/or distribute it, with or without
+ modifications, as long as this notice is preserved.
+
+ This file is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
+ implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+
