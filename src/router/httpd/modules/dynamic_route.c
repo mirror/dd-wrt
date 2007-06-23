@@ -92,13 +92,18 @@ ej_dump_route_table (webs_t wp, int argc, char_t ** argv)
 	      else
 		fclose (fp1);
 	    }
-
+          char *ifname = line;
+	  if (!strcmp(ifname,nvram_safe_get("lan_ifname"))
+	    ifname = "LAN";
+	  if (!strcmp(ifname,nvram_safe_get("wan_ifname"))
+	    ifname = "WAN";
+	    
 	  websWrite (wp, "%s%c'%s','%s','%s','%s'\n",
 		     debug ? "//" : "",
 		     blank ? ' ' : ',',
 		     sdest,
 		     inet_ntoa (netmask_ip),
-		     sgw, (strcmp (line, "br0") ? "WAN" : "LAN"));
+		     sgw, ifname);
 
 	  if (debug && blank)
 	    blank = 1;
