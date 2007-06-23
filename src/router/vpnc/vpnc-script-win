@@ -1,0 +1,91 @@
+#!/bin/sh
+#* reason                       -- why this script was called, one of: pre-init connect disconnect
+#* VPNGATEWAY                   -- vpn gateway address (always present)
+#* TUNDEV                       -- tunnel device (always present)
+#* INTERNAL_IP4_ADDRESS         -- address (always present)
+#* INTERNAL_IP4_NETMASK         -- netmask (often unset)
+#* INTERNAL_IP4_DNS             -- list of dns serverss
+#* INTERNAL_IP4_NBNS            -- list of wins servers
+#* CISCO_DEF_DOMAIN             -- default domain name
+#* CISCO_BANNER                 -- banner from server
+#* CISCO_SPLIT_INC              -- number of networks in split-network-list
+#* CISCO_SPLIT_INC_%d_ADDR      -- network address
+#* CISCO_SPLIT_INC_%d_MASK      -- subnet mask (for example: 255.255.255.0)
+#* CISCO_SPLIT_INC_%d_MASKLEN   -- subnet masklen (for example: 24)
+#* CISCO_SPLIT_INC_%d_PROTOCOL  -- protocol (often just 0)
+#* CISCO_SPLIT_INC_%d_SPORT     -- source port (often just 0)
+#* CISCO_SPLIT_INC_%d_DPORT     -- destination port (often just 0)
+
+if [ ! -n "$INTERNAL_IP4_NETMASK" ]; then
+	INTERNAL_IP4_NETMASK="255.255.255.0"
+fi
+
+DEFAULTROUTE=`route print 0.0.0.0 mask 0.0.0.0 | grep 0\.0\.0\.0 | tr -s ' ' | cut -f 5 -d ' '`
+
+case "$reason" in
+	pre-init)
+		;;
+	connect)
+		echo VPN Gateway: $VPNGATEWAY
+		echo Internal Address: $INTERNAL_IP4_ADDRESS
+		echo Internal Netmask: $INTERNAL_IP4_NETMASK
+		echo Interface: \"$TUNDEV\"
+		
+		# Interface IP configuration
+		echo -n Configuring "$TUNDEV" interface...
+		netsh interface ip set address "$TUNDEV" static \
+			$INTERNAL_IP4_ADDRESS 255.255.255.0 >/dev/null
+		
+		# Interface WINS configuration
+		if [ -n "$INTERNAL_IP4_NBNS" ]; then
+			WINS1=`echo $INTERNAL_IP4_NBNS | cut -f 1 -d ' '`
+			WINS2=`echo $INTERNAL_IP4_NBNS | cut -f 2 -d ' '`
+			netsh interface ip add wins "$TUNDEV" $WINS1 >/dev/null
+			netsh interface ip add wins "$TUNDEV" $WINS2 index=2 >/dev/null
+		fi
+		
+		# Interface DNS configuration
+		if [ -n "$INTERNAL_IP4_DNS" ]; then
+			DNS1=`echo $INTERNAL_IP4_DNS | cut -f 1 -d ' '`
+			DNS2=`echo $INTERNAL_IP4_DNS | cut -f 2 -d ' '`
+			netsh interface ip add dns "$TUNDEV" $DNS1 >/dev/null
+			netsh interface ip add dns "$TUNDEV" $DNS2 index=2 >/dev/null
+		fi
+		
+		echo done.
+		
+		# Add direct route for the VPN gateway to avoid routing loops
+		route add $VPNGATEWAY mask 255.255.255.255 $DEFAULTROUTE
+		
+		# Add internal network routes
+		echo "Configuring networks:"
+		if [ -n "$CISCO_SPLIT_INC" ]; then
+			for ((i = 0 ; i < CISCO_SPLIT_INC ; i++ )) ; do
+				eval NETWORK="\${CISCO_SPLIT_INC_${i}_ADDR}"
+				eval NETMASK="\${CISCO_SPLIT_INC_${i}_MASK}"
+				eval NETMASKLEN="\${CISCO_SPLIT_INC_${i}_MASKLEN}"
+				route add $NETWORK mask $NETMASK $INTERNAL_IP4_ADDRESS
+			done
+		else
+			echo Gateway did not provide network configuration.
+		fi
+		echo Route configuration done.
+		
+		if [ -n "$CISCO_BANNER" ]; then
+			echo --------------------------------------------------
+			echo "$CISCO_BANNER"
+			echo --------------------------------------------------
+		fi
+		;;
+	disconnect)
+		# Delete direct route for the VPN gateway to avoid
+		route delete $VPNGATEWAY mask 255.255.255.255
+		;;
+	*)
+		echo "unknown reason '$reason'.
+		echo Maybe vpnc-script-win is out of date" 1>&2
+		exit 1
+		;;
+esac
+
+exit 0

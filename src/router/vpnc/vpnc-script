@@ -1,0 +1,414 @@
+#!/bin/sh
+#* reason                       -- why this script was called, one of: pre-init connect disconnect
+#* VPNGATEWAY                   -- vpn gateway address (always present)
+#* TUNDEV                       -- tunnel device (always present)
+#* INTERNAL_IP4_ADDRESS         -- address (always present)
+#* INTERNAL_IP4_NETMASK         -- netmask (often unset)
+#* INTERNAL_IP4_DNS             -- list of dns serverss
+#* INTERNAL_IP4_NBNS            -- list of wins servers
+#* CISCO_DEF_DOMAIN             -- default domain name
+#* CISCO_BANNER                 -- banner from server
+#* CISCO_SPLIT_INC              -- number of networks in split-network-list
+#* CISCO_SPLIT_INC_%d_ADDR      -- network address
+#* CISCO_SPLIT_INC_%d_MASK      -- subnet mask (for example: 255.255.255.0)
+#* CISCO_SPLIT_INC_%d_MASKLEN   -- subnet masklen (for example: 24)
+#* CISCO_SPLIT_INC_%d_PROTOCOL  -- protocol (often just 0)
+#* CISCO_SPLIT_INC_%d_SPORT     -- source port (often just 0)
+#* CISCO_SPLIT_INC_%d_DPORT     -- destination port (often just 0)
+
+#set -x
+
+OS="`uname -s`"
+
+VPNC_WIN_SCRIPT=/etc/vpnc/vpnc-script-win
+
+case "$OS" in
+	CYGWIN_NT*)
+		# why does "--kernel-name" include "--kernel-release" on cygwin?!
+		exec $VPNC_WIN_SCRIPT
+		;;
+	*)
+		;;
+esac
+
+DEFAULT_ROUTE_FILE=/var/run/vpnc/defaultroute
+RESOLV_CONF_BACKUP=/var/run/vpnc/resolv.conf-backup
+
+# some systems, eg. Darwin & FreeBSD, prune /var/run on boot
+if ! [ -d "/var/run/vpnc" ]; then
+       mkdir -p /var/run/vpnc
+fi
+
+# stupid SunOS: no blubber in /usr/local/bin ... (on stdout)
+IPROUTE="`which ip | grep '^/' 2> /dev/null`"
+
+if [ "$OS" = "Linux" ]; then
+	ifconfig_syntax_ptp="pointopoint"
+	route_syntax_gw="gw"
+	route_syntax_del="del"
+	route_syntax_netmask="netmask"
+else
+	ifconfig_syntax_ptp=""
+	route_syntax_gw=""
+	route_syntax_del="delete"
+	route_syntax_netmask="-netmask"
+fi
+
+####
+
+kernel_is_2_6_or_above() {
+	case `uname -r` in
+		1.*|2.[012345]*)
+			return 1
+			;;
+		*)
+			return 0
+			;;
+	esac
+}
+
+do_pre_init() {
+	if [ "$OS" = "Linux" ]; then
+		if (exec 6<> /dev/net/tun) > /dev/null 2>&1 ; then
+			:
+		else # can't open /dev/net/tun
+			test -e /proc/sys/kernel/modprobe && `cat /proc/sys/kernel/modprobe` tun 2>/dev/null
+			# fix for broken devfs in kernel 2.6.x
+			if [ "`readlink /dev/net/tun`" = misc/net/tun \
+				-a ! -e /dev/net/misc/net/tun -a -e /dev/misc/net/tun ] ; then
+				ln -sf /dev/misc/net/tun /dev/net/tun
+			fi
+			# make sure tun device exists
+			if [ ! -e /dev/net/tun ]; then
+				mkdir -p /dev/net
+				mknod -m 0640 /dev/net/tun c 10 200
+			fi
+			# workaround for a possible latency caused by udev, sleep max. 10s
+			if kernel_is_2_6_or_above ; then
+				for x in `seq 100` ; do
+					(exec 6<> /dev/net/tun) > /dev/null 2>&1 && break;
+					sleep 0.1
+				done
+			fi
+		fi
+	elif [ "$OS" = "FreeBSD" ]; then
+		if [ ! -e /dev/tun ]; then
+			kldload if_tun
+		fi
+	elif [ "$OS" = "NetBSD" ]; then
+		:
+	elif [ "$OS" = "OpenBSD" ]; then
+		:
+	elif [ "$OS" = "SunOS" ]; then
+		:
+	elif [ "$OS" = "Darwin" ]; then
+		:
+	fi
+}
+
+do_ifconfig() {
+	ifconfig "$TUNDEV" inet "$INTERNAL_IP4_ADDRESS" $ifconfig_syntax_ptp "$INTERNAL_IP4_ADDRESS" netmask 255.255.255.255 mtu 1412 up
+}
+
+destroy_tun_device() {
+	case "$OS" in
+	NetBSD) # and probably others...
+		ifconfig "$TUNDEV" destroy
+		;;
+	esac
+}
+
+if [ -n "$IPROUTE" ]; then
+	fix_ip_get_output () {
+		sed 's/cache//;s/metric \?[0-9]\+ [0-9]\+//g;s/hoplimit [0-9]\+//g'
+	}
+
+	set_vpngateway_route() {
+		$IPROUTE route add `$IPROUTE route get "$VPNGATEWAY" | fix_ip_get_output`
+		$IPROUTE route flush cache
+	}
+	
+	del_vpngateway_route() {
+		$IPROUTE route $route_syntax_del "$VPNGATEWAY"
+		$IPROUTE route flush cache
+	}
+	
+	set_default_route() {
+		$IPROUTE route | grep '^default' | fix_ip_get_output > "$DEFAULT_ROUTE_FILE"
+		$IPROUTE route $route_syntax_del default
+		$IPROUTE route add default dev "$TUNDEV"
+		$IPROUTE route flush cache
+	}
+	
+	set_network_route() {
+		NETWORK="$1"
+		NETMASK="$2"
+		NETMASKLEN="$3"
+		$IPROUTE route add "$NETWORK/$NETMASKLEN" dev "$TUNDEV"
+		$IPROUTE route flush cache
+	}
+	
+	reset_default_route() {
+		$IPROUTE route $route_syntax_del default > /dev/null 2>&1
+		$IPROUTE route add `cat "$DEFAULT_ROUTE_FILE"`
+		$IPROUTE route flush cache
+	}
+	
+	del_network_route() {
+		# linux deletes routes automatically if the device is shut down
+		return
+		#NETWORK="$1"
+		#NETMASK="$2"
+		#NETMASKLEN="$3"
+		#$IPROUTE route $route_syntax_del "$NETWORK/$NETMASKLEN" dev "$TUNDEV" 
+		#$IPROUTE route flush cache
+	}
+else
+	get_default_gw() {
+		# isn't -n supposed to give --numeric output?
+		# apperently not...
+		netstat -r -n | sed 's/default/0.0.0.0/' | grep '^0.0.0.0' | awk '{print $2}'
+	}
+	
+	set_vpngateway_route() {
+		route add -host "$VPNGATEWAY" $route_syntax_gw "`get_default_gw`"
+	}
+
+	del_vpngateway_route() {
+		route $route_syntax_del -host "$VPNGATEWAY"
+	}
+	
+	set_default_route() {
+		DEFAULTGW="`get_default_gw`"
+		echo "$DEFAULTGW" > "$DEFAULT_ROUTE_FILE"
+		route $route_syntax_del default "$DEFAULTGW"
+		route add default $route_syntax_gw "$INTERNAL_IP4_ADDRESS"
+	}
+	
+	set_network_route() {
+		NETWORK="$1"
+		NETMASK="$2"
+		NETMASKLEN="$3"
+		route add -net "$NETWORK" $route_syntax_netmask "$NETMASK" $route_syntax_gw "$INTERNAL_IP4_ADDRESS"
+	}
+	
+	reset_default_route() {
+		route $route_syntax_del default
+		route add default $route_syntax_gw `cat "$DEFAULT_ROUTE_FILE"`
+	}
+	
+	del_network_route() {
+		case "$OS" in
+		Linux|NetBSD) # and probably others...
+			# routes are deleted automatically on device shutdown
+			return
+			;;
+		esac
+		NETWORK="$1"
+		NETMASK="$2"
+		NETMASKLEN="$3"
+		route $route_syntax_del -net "$NETWORK" $route_syntax_netmask "$NETMASK" $route_syntax_gw "$INTERNAL_IP4_ADDRESS"
+	}
+fi
+
+write_resolvconf() {
+	grep '^#@VPNC_GENERATED@' /etc/resolv.conf > /dev/null 2>&1 || cp -- /etc/resolv.conf "$RESOLV_CONF_BACKUP"
+	NEW_RESOLVCONF="#@VPNC_GENERATED@ -- this file is generated by vpnc
+# and will be overwritten by vpnc
+# as long as the above mark is intact"
+
+	# Don't step on INTERNAL_IP4_DNS value, use a temporary variable
+	INTERNAL_IP4_DNS_TEMP="$INTERNAL_IP4_DNS"
+	exec 6< /etc/resolv.conf
+	while read LINE <&6 ; do
+		case "$LINE" in
+			nameserver*)
+				if [ -n "$INTERNAL_IP4_DNS_TEMP" ]; then
+					read ONE_NAMESERVER INTERNAL_IP4_DNS_TEMP <<-EOF
+	$INTERNAL_IP4_DNS_TEMP
+EOF
+					LINE="nameserver $ONE_NAMESERVER"
+				else
+					LINE=""
+				fi
+				;;
+			domain*|search*)
+				if [ -n "$CISCO_DEF_DOMAIN" ]; then
+					LINE="$LINE $CISCO_DEF_DOMAIN"
+					CISCO_DEF_DOMAIN=""
+				fi
+				;;
+		esac
+		NEW_RESOLVCONF="$NEW_RESOLVCONF
+$LINE"
+	done
+	exec 6<&-
+	
+	for i in $INTERNAL_IP4_DNS_TEMP ; do
+		NEW_RESOLVCONF="$NEW_RESOLVCONF
+nameserver $i"
+	done
+	if [ -n "$CISCO_DEF_DOMAIN" ]; then
+		NEW_RESOLVCONF="$NEW_RESOLVCONF
+search $CISCO_DEF_DOMAIN"
+	fi
+	echo "$NEW_RESOLVCONF" > /etc/resolv.conf
+
+	if [ "$OS" = "Darwin" ]; then
+		case "`uname -r`" in
+			# Skip for pre-10.4 systems
+			4.*|5.*|6.*|7.*)
+				;;
+			# 10.4 and later require use of scutil for DNS to work properly
+			*)
+				scutil >/dev/null 2>&1 <<-EOF
+					open
+					d.init
+					d.add ServerAddresses * $INTERNAL_IP4_DNS
+					set State:/Network/Service/$TUNDEV/DNS
+					get State:/Network/Global/IPv4
+					d.remove PrimaryService
+					d.remove PrimaryInterface
+					d.add Addresses * $INTERNAL_IP4_ADDRESS
+					d.add SubnetMasks * 255.255.255.255
+					d.add InterfaceName $TUNDEV
+					set State:/Network/Service/$TUNDEV/IPv4
+					close
+				EOF
+				if [ -n "$CISCO_DEF_DOMAIN" ]; then
+					scutil >/dev/null 2>&1 <<-EOF
+						open
+						get State:/Network/Service/$TUNDEV/DNS
+						d.add DomainName $CISCO_DEF_DOMAIN
+						d.add SearchDomains * $CISCO_DEF_DOMAIN
+						d.add SupplementalMatchDomains * $CISCO_DEF_DOMAIN
+						set State:/Network/Service/$TUNDEV/DNS
+						close
+					EOF
+				fi
+				# Uncomment the following if/fi pair to use multiple
+				# DNS matching when available.  When multiple DNS matching
+				# is present, anything reading the /etc/resolv.conf file
+				# directly will probably not work as intended.
+				#if [ -z "$CISCO_DEF_DOMAIN" ]; then
+					# Cannot use multiple DNS matching without a domain
+					scutil >/dev/null 2>&1 <<-EOF
+						open
+						get State:/Network/Service/$TUNDEV/IPv4
+						d.add OverridePrimary # 1
+						set State:/Network/Service/$TUNDEV/IPv4
+						close
+					EOF
+				#fi
+				;;
+		esac
+	fi
+}
+
+reset_resolvconf() {
+	if [ ! -e "$RESOLV_CONF_BACKUP" ]; then
+		return
+	fi
+	grep '^#@VPNC_GENERATED@' /etc/resolv.conf > /dev/null 2>&1 && cat "$RESOLV_CONF_BACKUP" > /etc/resolv.conf
+	rm -f -- "$RESOLV_CONF_BACKUP"
+
+	if [ "$OS" = "Darwin" ]; then
+		case "`uname -r`" in
+			# Skip for pre-10.4 systems
+			4.*|5.*|6.*|7.*)
+				;;
+			# 10.4 and later require use of scutil for DNS to work properly
+			*)
+				scutil >/dev/null 2>&1 <<-EOF
+					open
+					remove State:/Network/Service/$TUNDEV/IPv4
+					remove State:/Network/Service/$TUNDEV/DNS
+					close
+				EOF
+				;;
+		esac
+	fi
+}
+
+do_connect() {
+	if [ -n "$CISCO_BANNER" ]; then
+		echo "Connect Banner:"
+		echo "$CISCO_BANNER" | while read LINE ; do echo "|" "$LINE" ; done
+		echo
+	fi
+	
+	do_ifconfig
+	set_vpngateway_route
+	if [ -n "$CISCO_SPLIT_INC" ]; then
+		i=0
+		while [ $i -lt $CISCO_SPLIT_INC ] ; do
+			eval NETWORK="\${CISCO_SPLIT_INC_${i}_ADDR}"
+			eval NETMASK="\${CISCO_SPLIT_INC_${i}_MASK}"
+			eval NETMASKLEN="\${CISCO_SPLIT_INC_${i}_MASKLEN}"
+			set_network_route "$NETWORK" "$NETMASK" "$NETMASKLEN"
+			i=`expr $i + 1`
+		done
+		for i in $INTERNAL_IP4_DNS ; do
+			set_network_route "$i" "255.255.255.255" "32"
+		done
+	else
+		set_default_route
+	fi
+	
+	if [ -n "$INTERNAL_IP4_DNS" ]; then
+		write_resolvconf
+	fi
+}
+
+do_disconnect() {
+	destroy_tun_device
+	if [ -n "$CISCO_SPLIT_INC" ]; then
+		i=0
+		while [ $i -lt $CISCO_SPLIT_INC ] ; do
+			eval NETWORK="\${CISCO_SPLIT_INC_${i}_ADDR}"
+			eval NETMASK="\${CISCO_SPLIT_INC_${i}_MASK}"
+			eval NETMASKLEN="\${CISCO_SPLIT_INC_${i}_MASKLEN}"
+			del_network_route "$NETWORK" "$NETMASK" "$NETMASKLEN"
+			i=`expr $i + 1`
+		done
+		for i in $INTERNAL_IP4_DNS ; do
+			del_network_route "$i" "255.255.255.255" "32"
+		done
+	else
+		if [ -s "$DEFAULT_ROUTE_FILE" ]; then
+			reset_default_route
+			rm -f -- "$DEFAULT_ROUTE_FILE"
+		fi
+	fi
+	
+	del_vpngateway_route
+	
+	if [ -n "$INTERNAL_IP4_DNS" ]; then
+		reset_resolvconf
+	fi
+}
+
+####
+
+if [ -z "$reason" ]; then
+	echo "this script must be called from vpnc" 1>&2
+	exit 1
+fi
+
+case "$reason" in
+	pre-init)
+		do_pre_init
+		;;
+	connect)
+		do_connect
+		;;
+	disconnect)
+		do_disconnect
+		;;
+	*)
+		echo "unknown reason '$reason'. Maybe vpnc-script is out of date" 1>&2
+		exit 1
+		;;
+esac
+
+exit 0
