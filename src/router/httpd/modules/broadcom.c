@@ -2014,6 +2014,25 @@ getFileString (FILE * in)
     }
   return buf;
 }
+
+void 
+skipFileString (FILE * in)
+{
+  int i, b;
+  StringStart (in);
+  for (i = 0; i < 1024; i++)
+    {
+      b = getc (in);
+      if (b == EOF)
+	return NULL;
+      if (b == '"')
+	{
+	  return;
+	}
+    }
+  return;
+}
+
 static char *directories[] = {
   "/etc/config",
   "/jffs/etc/config",
@@ -2059,7 +2078,7 @@ Initnvramtab ()
 		  tmp->validate2 = NULL;
 		  if (tmp->name == NULL)
 		    break;
-		  tmp->longname = getFileString (in);	//long string
+		  skipFileString (in);	//long string
 		  tmpstr = getFileString (in);
 		  tmp->argv = NULL;
 		  if (!stricmp (tmpstr, "RANGE"))
@@ -2415,9 +2434,10 @@ Initnvramtab ()
 		      tmp->nullok = FALSE;
 		    }
 		  free (tmpstr);
-		  tmpstr = getFileString (in);
-		  tmp->ezc_flags = atoi (tmpstr);
-		  free (tmpstr);
+		  skipFileString(in); //todo: remove it
+//		  tmpstr = getFileString (in);
+//		  tmp->ezc_flags = atoi (tmpstr);
+//		  free (tmpstr);
 		  variables =
 		    (struct variable **) realloc (variables,
 						  sizeof (struct variable **)

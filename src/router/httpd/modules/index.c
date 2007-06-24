@@ -90,9 +90,9 @@ validate_wan_ipaddr (webs_t wp, char *value, struct variable *v)
   int pptp_skip_check = FALSE;
 
   struct variable wan_variables[] = {
-  {longname:"WAN IP Address", NULL},
-  {longname:"WAN Subnet Mask", NULL},
-  {longname: "WAN Gateway", argv:ARGV ("wan_ipaddr", "wan_netmask")},
+  {NULL},
+  {NULL},
+  {argv:ARGV ("wan_ipaddr", "wan_netmask")},
   }, *which;
 
   which = &wan_variables[0];

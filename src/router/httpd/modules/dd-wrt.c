@@ -4837,11 +4837,11 @@ validate_wds (webs_t wp, char *value, struct variable *v)
   int h, i, devcount = 3;	//changed from 2 to 3
 #endif
   struct variable wds_variables[] = {
-  {longname: "WDS Mac", argv:NULL},
-  {longname: "WDS IP Address", argv:NULL},
-  {longname: "WDS Subnet Mask", argv:NULL},
-  {longname: "WDS Gateway", argv:NULL},
-  {longname: "WDS Description", argv:NULL},
+  {argv:NULL},
+  {argv:NULL},
+  {argv:NULL},
+  {argv:NULL},
+  {argv:NULL},
   };
 
   char *val = NULL;
