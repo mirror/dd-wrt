@@ -67,7 +67,7 @@ validate_filter_ip_grp (webs_t wp, char *value, struct variable *v)
     *ip_range1_0, *ip_range1_1;
   unsigned char ip[10] = { 0, 0, 0, 0, 0, 0, 0 };
   struct variable filter_ip_variables[] = {
-  {longname: "TCP/UDP IP address", argv:ARGV ("0", "255")},
+  {argv:ARGV ("0", "255")},
   }, *which;
   char _filter_ip[] = "filter_ip_grpXXX";
   //char _filter_rule[] = "filter_ruleXXX";
@@ -151,9 +151,9 @@ validate_filter_port (webs_t wp, char *value, struct variable *v)
   int i;
   char buf[1000] = "", *cur = buf;
   struct variable filter_port_variables[] = {
-  {longname: "TCP/UDP Port Filter Starting LAN Port", argv:ARGV ("0",
+  {argv:ARGV ("0",
 	  "65535")},
-  {longname: "TCP/UDP Port Filter Ending LAN Port", argv:ARGV ("0",
+  {argv:ARGV ("0",
 	  "65535")},
   }, *which;
   D ("validate_filter_port");
@@ -217,9 +217,9 @@ validate_filter_dport_grp (webs_t wp, char *value, struct variable *v)
   int i;
   char buf[1000] = "", *cur = buf;
   struct variable filter_port_variables[] = {
-  {longname: "TCP/UDP Port Filter Starting LAN Port", argv:ARGV ("0",
+  {argv:ARGV ("0",
 	  "65535")},
-  {longname: "TCP/UDP Port Filter Ending LAN Port", argv:ARGV ("0",
+  {argv:ARGV ("0",
 	  "65535")},
   }, *which;
   char _filter_port[] = "filter_dport_grpXXX";
@@ -779,8 +779,8 @@ validate_filter_tod (webs_t wp)
   char buf[256] = "";
   char tod_buf[20];
   struct variable filter_tod_variables[] = {
-  {longname: "Tod name", argv:ARGV ("20")},
-  {longname: "Tod Status", argv:ARGV ("0", "1", "2")},
+  {argv:ARGV ("20")},
+  {argv:ARGV ("0", "1", "2")},
 
   }, *which;
   D ("validate filter tod");
@@ -977,9 +977,9 @@ save_policy (webs_t wp)
   char *f_id, *f_name, *f_status, *f_status2;
   char buf[256] = "";
   struct variable filter_variables[] = {
-  {longname: "Filter ID", argv:ARGV ("1", "10")},
-  {longname: "Filter Status", argv:ARGV ("0", "1", "2")},
-  {longname: "Filter Status", argv:ARGV ("deny", "allow")},
+  {argv:ARGV ("1", "10")},
+  {argv:ARGV ("0", "1", "2")},
+  {argv:ARGV ("deny", "allow")},
 
 
   }, *which;
