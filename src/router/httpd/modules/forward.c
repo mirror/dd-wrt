@@ -18,10 +18,10 @@ validate_forward_proto (webs_t wp, char *value, struct variable *v)
   char *buf, *cur;
   int count, sof;
   struct variable forward_proto_variables[] = {
-  {longname: "Port Forward Application name", argv:ARGV ("12")},
-  {longname: "Port Forward from WAN Port", argv:ARGV ("0", "65535")},
-  {longname: "Port Forward to LAN Port", argv:ARGV ("0", "65535")},
-  {longname:"Port Forward Protocol", NULL},
+  {argv:ARGV ("12")},
+  {argv:ARGV ("0", "65535")},
+  {argv:ARGV ("0", "65535")},
+  {NULL},
   }, *which;
   buf = nvram_safe_get ("forward_entries");
   if (buf == NULL || strlen (buf) == 0)
@@ -181,10 +181,10 @@ validate_forward_spec (webs_t wp, char *value, struct variable *v)
   char *buf, *cur;
   int count, sof;
   struct variable forward_proto_variables[] = {
-  {longname: "Port Forward Application name", argv:ARGV ("12")},
-  {longname: "Port Forward from WAN Port", argv:ARGV ("0", "65535")},
-  {longname: "Port Forward to LAN Port", argv:ARGV ("0", "65535")},
-  {longname:"Port Forward Protocol", NULL},
+  {argv:ARGV ("12")},
+  {argv:ARGV ("0", "65535")},
+  {argv:ARGV ("0", "65535")},
+  {NULL},
   }, *which;
   buf = nvram_safe_get ("forwardspec_entries");
   if (buf == NULL || strlen (buf) == 0)
@@ -555,11 +555,11 @@ validate_port_trigger (webs_t wp, char *value, struct variable *v)
   char *buf, *cur;
   int count, sof;
   struct variable trigger_variables[] = {
-  {longname: "Port Trigger Application name", argv:ARGV ("12")},
-  {longname: "Port Trigger from WAN Port", argv:ARGV ("0", "65535")},
-  {longname: "Port Trigger from WAN Port", argv:ARGV ("0", "65535")},
-  {longname: "Port Trigger to LAN Port", argv:ARGV ("0", "65535")},
-  {longname: "Port Trigger to LAN Port", argv:ARGV ("0", "65535")},
+  {argv:ARGV ("12")},
+  {argv:ARGV ("0", "65535")},
+  {argv:ARGV ("0", "65535")},
+  {argv:ARGV ("0", "65535")},
+  {argv:ARGV ("0", "65535")},
   }, *which;
 
   buf = nvram_safe_get ("trigger_entries");

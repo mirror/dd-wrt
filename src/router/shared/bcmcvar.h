@@ -18,12 +18,10 @@
 struct variable
 {
   char *name;
-  char *longname;
   void (*validate) (webs_t wp, char *value, struct variable * v);
   int (*validate2) (webs_t wp);
   char **argv;
-  int nullok;
-  int ezc_flags;
+  unsigned char nullok;
 };
 
 #define POST_BUF_SIZE	10000

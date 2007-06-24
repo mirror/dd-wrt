@@ -123,7 +123,7 @@ void
 validate_dynamic_route (webs_t wp, char *value, struct variable *v)
 {
   struct variable dr_variables[] = {
-  {longname: "Danamic Route", argv:ARGV ("0", "1", "2", "3")},
+  {argv:ARGV ("0", "1", "2", "3")},
   }, *which;
   char *dr_setting;
 
