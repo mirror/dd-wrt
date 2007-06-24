@@ -363,12 +363,12 @@ validate_wl_wep_key (webs_t wp, char *value, struct variable *v)
 {
   char buf[200] = "";
   struct variable wl_wep_variables[] = {
-  {longname: "Passphrase", argv:ARGV ("16")},
-  {longname: "WEP Key", argv:ARGV ("5", "10")},
+  {argv:ARGV ("16")},
+  {argv:ARGV ("5", "10")},
     //for 64 bit
-  {longname: "WEP Key", argv:ARGV ("13", "26")},
+  {argv:ARGV ("13", "26")},
     //for 128 bit
-  {longname: "Default TX Key", argv:ARGV ("1", "4")},
+  {argv:ARGV ("1", "4")},
   }, *which;
 
   char *wep_bit = "", *wep_passphrase = "", *wep_key1 = "", *wep_key2 =
@@ -497,12 +497,12 @@ validate_wl_wep_key (webs_t wp, char *value, struct variable *v)
 {
   char buf[200] = "";
   struct variable wl_wep_variables[] = {
-  {longname: "Passphrase", argv:ARGV ("16")},
-  {longname: "WEP Key", argv:ARGV ("5", "10")},
+  {argv:ARGV ("16")},
+  {argv:ARGV ("5", "10")},
     //for 64 bit
-  {longname: "WEP Key", argv:ARGV ("13", "26")},
+  {argv:ARGV ("13", "26")},
     //for 128 bit
-  {longname: "Default TX Key", argv:ARGV ("1", "4")},
+  {argv:ARGV ("1", "4")},
   }, *which;
 
   char *wep_bit = "", *wep_passphrase = "", *wep_key1 = "", *wep_key2 =
@@ -2012,13 +2012,13 @@ validate_wl_gmode (webs_t wp, char *value, struct variable *v)
 		     "<br><b>Data Encryption</b> set to <b>Off</b>"
 		     "<br><b>Mode</b> set to <b>Access Point</b>"
 //                              "<br><b>Bridge Restrict</b> set to <b>Enabled</b>"
-		     "<br><b>WDS devices</b> disabled." "<br>", v->longname);
+		     "<br><b>WDS devices</b> disabled." "<br>", v->name);
 #else
 	  websWrite (wp, "Invalid <b>%s</b>: AfterBurner mode requires:"
 		     "<br><b>Network Authentication</b> set to <b>Disabled</b>"
 		     "<br><b>Mode</b> set to <b>Access Point</b>"
 //                              "<br><b>Bridge Restrict</b> set to <b>Enabled</b>"
-		     "<br><b>WDS devices</b> disabled." "<br>", v->longname);
+		     "<br><b>WDS devices</b> disabled." "<br>", v->name);
 #endif
 	  return;
 	}

@@ -198,10 +198,10 @@ validate_static_route (webs_t wp, char *value, struct variable *v)
   char old[STATIC_ROUTE_PAGE][60];
   char old_name[STATIC_ROUTE_PAGE][30];
   struct variable static_route_variables[] = {
-  {longname: "Route IP Address", argv:NULL},
-  {longname: "Route Subnet Mask", argv:NULL},
-  {longname: "Route Gateway", argv:NULL},
-  {longname: "Route Interface", argv:ARGV ("lan", "wan")},
+  {argv:NULL},
+  {argv:NULL},
+  {argv:NULL},
+  {argv:ARGV ("lan", "wan")},
   };
 
   char *name, ipaddr[20], netmask[20], gateway[20], *metric =

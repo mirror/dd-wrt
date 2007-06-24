@@ -60,10 +60,10 @@ ddns_save_value (webs_t wp)
   char *enable, *username, *passwd, *hostname, *dyndnstype, *wildcard,
     *custom, *conf, *url, *force;
   struct variable ddns_variables[] = {
-  {longname: "DDNS enable", argv:ARGV ("0", "1", "2", "3", "4", "5", "6",
+  {argv:ARGV ("0", "1", "2", "3", "4", "5", "6",
 	  "7",
 	  "8")},
-  {longname: "DDNS password", argv:ARGV ("30")},
+  {argv:ARGV ("30")},
   }, *which;
   int ret = -1;
   char _username[] = "ddns_username_X";
