@@ -3252,15 +3252,18 @@ show_rates (webs_t wp, char *prefix, int maxrate)
     {
       if (maxrate)
 	{
+	int offset=0;
+	if (nvram_match(mode,"a-only"))offset=4;
+	if (nvram_match(mode,"g-only"))offset=4;
 	  char comp[32];
-	  sprintf (comp, "%d", i + 1);
+	  sprintf (comp, "%d", i + 1 + offset);
 	  if (showrates)
 	    websWrite (wp, "<option value=\"%d\" %s >%s Mbps</option>\n",
-		       i + 1, nvram_match (mxrate, comp) ? "selected" : "0",
+		       i + 1+offset, nvram_match (mxrate, comp) ? "selected" : "0",
 		       showrates[i]);
 	  else
 	    websWrite (wp, "<option value=\"%d\" %s >%s Mbps</option>\n",
-		       i + 1, nvram_match (mxrate, comp) ? "selected" : "0",
+		       i + 1+offset, nvram_match (mxrate, comp) ? "selected" : "0",
 		       rate[i]);
 	}
       else
