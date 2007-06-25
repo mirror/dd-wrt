@@ -3253,8 +3253,8 @@ show_rates (webs_t wp, char *prefix, int maxrate)
       if (maxrate)
 	{
 	int offset=0;
-	if (nvram_match(mode,"a-only"))offset=4;
-	if (nvram_match(mode,"g-only"))offset=4;
+	if (nvram_match(mode,"a-only") && nvram_match (bw, "20"))offset=4;
+	if (nvram_match(mode,"g-only") && nvram_match (bw, "20"))offset=4;
 	  char comp[32];
 	  sprintf (comp, "%d", i + 1 + offset);
 	  if (showrates)
