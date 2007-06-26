@@ -2776,7 +2776,9 @@ stop_wan (void)
 #ifdef HAVE_OPENVPN
   stop_openvpn ();
 #endif
+#ifdef HAVE_DHCPFORWARD
   stop_dhcpfwd ();
+#endif
   /* Stop firewall */
   stop_firewall ();
   /* Kill any WAN client daemons or callbacks */
@@ -2805,6 +2807,7 @@ stop_wan (void)
 
   /* Bring down WAN interfaces */
   ifconfig (wan_ifname, 0, NULL, NULL);
+  eval("ifconfig", wan_ifname, "down"); //to allow for MAC clone to take effect
 #ifdef HAVE_PPP
 /*	    eval("rmmod","pppoe");
 	    eval("rmmod","pppox");
