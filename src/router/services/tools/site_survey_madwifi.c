@@ -134,7 +134,7 @@ site_survey_main (int argc, char *argv[])
   unsigned char *cp;
   int len;
   system2 ("iwlist ath0 scan >/dev/null");
-  len = do80211priv ("ath0", IEEE80211_IOCTL_SCAN_RESULTS, buf, sizeof (buf));
+  len = do80211priv (getSTA(), IEEE80211_IOCTL_SCAN_RESULTS, buf, sizeof (buf));
 
   if (len == -1)
     fprintf (stderr, "unable to get scan results");
