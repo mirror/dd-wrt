@@ -2814,7 +2814,7 @@ struct gozila_action gozila_actions[] = {
 #ifdef HAVE_CCONTROL
   {"ccontrol", "execute", "", 1, REFRESH, execute},
 #endif
-  {"WanMAC", "clone_mac", "", 1, REFRESH, clone_mac},	// for cisco style
+  {"WanMAC", "clone_mac", "", 1, RESTART, clone_mac},	// for cisco style
   {"DHCPTable", "delete", "", 2, REFRESH, delete_leases},
   {"Info", "refresh", "", 0, REFRESH, save_wifi},
   {"Status_Wireless", "refresh", "", 0, REFRESH, save_wifi},
