@@ -6,7 +6,6 @@ function to_submit(F) {
 	F.change_action.value = "";
 	F.submit_type.value = "";
 	F.save_button.value = sbutton.saving;
-	checked(F);
 	apply(F);
 }
 
