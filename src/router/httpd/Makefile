@@ -59,6 +59,12 @@ endif
 ifeq ($(CONFIG_RADLOCAL),y)
 CFLAGS += -DHAVE_RADLOCAL
 endif
+ifeq ($(CONFIG_WPA_SUPPLICANT),y)
+CFLAGS += -DHAVE_WPA_SUPPLICANT
+endif
+ifeq ($(CONFIG_ACK),y)
+CFLAGS += -DHAVE_ACK
+endif
 ifeq ($(CONFIG_MULTICAST),y)
 CFLAGS += -DHAVE_MULTICAST
 endif
@@ -253,7 +259,7 @@ endif
 
 ifeq ($(CONFIG_MADWIFI),y)
 
-CFLAGS += -DHAVE_MADWIFI -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h
+CFLAGS += -DHAVE_MADWIFI -DHAVE_ACK -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h
 OBJS += ../wireless-tools/libiw.so.29
 endif
 
