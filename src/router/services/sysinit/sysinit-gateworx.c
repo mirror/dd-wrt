@@ -204,22 +204,18 @@ start_sysinit (void)
   eval ("insmod", "ixp400th");
   eval ("insmod", "ixp400");
   system2 ("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
-//  eval ("insmod", "ixp400_eth");
-//  if (getRouterBrand()==ROUTER_BOARD_GATEWORX_GW2345) //lets load the spi drivers for this switch
+  eval ("insmod", "ixp400_eth");
+  eval ("ifconfig", "ixp0", "0.0.0.0", "up");
+  eval ("ifconfig", "ixp1", "0.0.0.0", "up");
+  if (getRouterBrand()==ROUTER_BOARD_GATEWORX_GW2345) //lets load the spi drivers for this switch
   {
-//    eval("insmod","spi-algo-bit");
-//    eval("insmod","spi-ixp4xx");
-//    eval("insmod","ks8995m");
+    eval("insmod","spi-algo-bit");
+    eval("insmod","spi-ixp4xx");
+    eval("insmod","ks8995m");
 //    eval("gpio","-w","1","0");
 //    eval("gpio","-w","1","1"); // reset switch
-//    sleep(1);
-//    system("echo R01=01 > /proc/driver/KS8995M"); // enable switch 
-//  eval ("ifconfig", "ixp1", "0.0.0.0", "down");
-//  eval ("ifconfig", "ixp0", "0.0.0.0", "down");
-    // eval ("rmmod", "ixp400_eth");
-    eval ("insmod", "ixp400_eth");
-    eval ("ifconfig", "ixp0", "0.0.0.0", "up");
-    // eval ("ifconfig", "ixp1", "0.0.0.0", "up");
+    sleep(1);
+    system("echo R01=01 > /proc/driver/KS8995M"); // enable switch 
   }
   eval ("insmod", "ocf");
   eval ("insmod", "cryptodev");
