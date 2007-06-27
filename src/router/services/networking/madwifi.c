@@ -117,8 +117,9 @@ vt_ar5211_eeprom_read (unsigned char *mem,
 
   return 1;
 }
+
 #ifdef HAVE_MSSID
-extern void set_vifsmac(char *mac);
+extern void set_vifsmac (char *mac);
 #endif
 
 static int
@@ -1026,53 +1027,56 @@ start_hostapdwan (void)
     }
 
 }
+
 #define SIOCSSCANLIST  		(SIOCDEVPRIVATE+4)
 
-static void set_scanlist(char *dev,char *wif)
+static void
+set_scanlist (char *dev, char *wif)
 {
-char var[32];
-char *next;
-struct iwreq iwr;
-char scanlist[32];
-unsigned short list[1024];
-sprintf(scanlist,"%s_scanlist",dev);
-char *sl = default_get(scanlist,"default");
-memset (list, 0, 1024*sizeof (unsigned short));
-int c=0;
-if (strlen(sl)>0 && strcmp(sl,"default"))
+  char var[32];
+  char *next;
+  struct iwreq iwr;
+  char scanlist[32];
+  unsigned short list[1024];
+  sprintf (scanlist, "%s_scanlist", dev);
+  char *sl = default_get (scanlist, "default");
+  memset (list, 0, 1024 * sizeof (unsigned short));
+  int c = 0;
+  if (strlen (sl) > 0 && strcmp (sl, "default"))
     {
-    foreach (var, sl, next)
-	{
-	int ch = atoi(var);
-	if (ch<1000 || ch >7000)
-	    {
-	    c=1;
+      foreach (var, sl, next)
+      {
+	int ch = atoi (var);
+	if (ch < 1000 || ch > 7000)
+	  {
+	    c = 1;
 	    break;
-	    }
+	  }
 	u_int16_t chan = ch;
 
-//	fprintf(stderr,"scanlist %d\n",chan);
-	list[c++]=chan;
-	}
-    }else
-    c=1;
+//      fprintf(stderr,"scanlist %d\n",chan);
+	list[c++] = chan;
+      }
+    }
+  else
+    c = 1;
 
   memset (&iwr, 0, sizeof (struct iwreq));
   strncpy (iwr.ifr_name, wif, IFNAMSIZ);
-    {
-      /*
-       * Argument data too big for inline transfer; setup a
-       * parameter block instead; the kernel will transfer
-       * the data for the driver.
-       */
-      iwr.u.data.pointer = &list[0];
-      iwr.u.data.length = 1024*sizeof(unsigned short);
-    }
+  {
+    /*
+     * Argument data too big for inline transfer; setup a
+     * parameter block instead; the kernel will transfer
+     * the data for the driver.
+     */
+    iwr.u.data.pointer = &list[0];
+    iwr.u.data.length = 1024 * sizeof (unsigned short);
+  }
 
-int r=ioctl (getsocket (), SIOCSSCANLIST, &iwr);
-if (r<0)
+  int r = ioctl (getsocket (), SIOCSSCANLIST, &iwr);
+  if (r < 0)
     {
-    fprintf(stderr,"error while setting scanlist on %s, %d\n",wif,r);
+      fprintf (stderr, "error while setting scanlist on %s, %d\n", wif, r);
     }
 }
 
@@ -1086,7 +1090,7 @@ set_rate (char *dev)
   char bw[32];
   char xr[32];
   char turbo[32];
-  
+
   sprintf (bw, "%s_channelbw", dev);
   sprintf (net, "%s_net_mode", dev);
   sprintf (rate, "%s_rate", dev);
@@ -1096,21 +1100,26 @@ set_rate (char *dev)
   char *r = default_get (rate, "0");
   char *mr = default_get (maxrate, "0");
   char *netmode = default_get (net, "mixed");
-  
-  if (nvram_match (bw, "20") && nvram_match(xr,"0"))
-    if (atof (r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r)==3.0f || atof(r)==4.5f || atof(r)==9.0f || atof(r) == 13.5f)
+
+  if (nvram_match (bw, "20") && nvram_match (xr, "0"))
+    if (atof (r) == 27.0f || atof (r) == 1.5f || atof (r) == 2.0f
+	|| atof (r) == 3.0f || atof (r) == 4.5f || atof (r) == 9.0f
+	|| atof (r) == 13.5f)
       {
 	nvram_set (rate, "0");
 	r = "0";
       }
-  if (nvram_match (turbo,"1"))
-    if (atof (r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r)==3.0f || atof(r)==4.5f || atof(r)==9.0f || atof(r) == 13.5f)
+  if (nvram_match (turbo, "1"))
+    if (atof (r) == 27.0f || atof (r) == 1.5f || atof (r) == 2.0f
+	|| atof (r) == 3.0f || atof (r) == 4.5f || atof (r) == 9.0f
+	|| atof (r) == 13.5f)
       {
 	nvram_set (rate, "0");
 	r = "0";
       }
   if (nvram_match (bw, "10"))
-    if (atof (r) > 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r) == 13.5f)
+    if (atof (r) > 27.0f || atof (r) == 1.5f || atof (r) == 2.0f
+	|| atof (r) == 13.5f)
       {
 	nvram_set (rate, "0");
 	r = "0";
@@ -1121,7 +1130,7 @@ set_rate (char *dev)
 	nvram_set (rate, "0");
 	r = "0";
       }
-  if (!strcmp (r, "0") || strcmp(mr,"0"))
+  if (!strcmp (r, "0") || strcmp (mr, "0"))
     {
       if (!strcmp (netmode, "b-only"))
 	eval ("iwconfig", dev, "rate", "11000", "auto");
@@ -1134,9 +1143,9 @@ set_rate (char *dev)
 	  else
 	    eval ("iwconfig", dev, "rate", "54000", "auto");
 	}
-      int maxrate = atoi(mr);
-      if (maxrate>0)
-    	    eval("iwpriv",dev,"maxrate",mr);
+      int maxrate = atoi (mr);
+      if (maxrate > 0)
+	eval ("iwpriv", dev, "maxrate", mr);
     }
   else
     {
@@ -1525,10 +1534,10 @@ configure_single (int count)
   if (useif)
     set_netmode (wif, dev, useif);
   set_netmode (wif, dev, dev);
-  
+
   char wmm[32];
-  sprintf(wmm,"%s_wmm",dev);
-  eval("iwpriv",dev,"wmm",default_get(wmm,"0"));
+  sprintf (wmm, "%s_wmm", dev);
+  eval ("iwpriv", dev, "wmm", default_get (wmm, "0"));
 
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
     {
@@ -1544,9 +1553,10 @@ configure_single (int count)
 	  sprintf (freq, "%sM", ch);
 	  eval ("iwconfig", dev, "freq", freq);
 	}
-    }else
+    }
+  else
     {
-    set_scanlist(dev,wif);
+      set_scanlist (dev, wif);
     }
 
 
@@ -1590,8 +1600,8 @@ configure_single (int count)
       cprintf ("set broadcast flag vif %s\n", var);	//hide ssid
       sprintf (broadcast, "%s_closed", var);
       eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
-      sprintf(wmm,"%s_wmm",var);
-      eval("iwpriv",var,"wmm",default_get(wmm,"0"));
+      sprintf (wmm, "%s_wmm", var);
+      eval ("iwpriv", var, "wmm", default_get (wmm, "0"));
       char isolate[32];
       sprintf (isolate, "%s_ap_isolate", var);
       if (default_match (isolate, "1", "0"))
@@ -1704,17 +1714,17 @@ configure_single (int count)
 	  ifconfig (dev, IFUP, nvram_safe_get (ip), nvram_safe_get (mask));
 	}
     }
-    else
+  else
     {
       char bridged[32];
       sprintf (bridged, "%s_bridged", dev);
-      if (default_match (bridged, "0", "1") && strcmp(getSTA(),dev))
-        {
+      if (default_match (bridged, "0", "1") && strcmp (getSTA (), dev))
+	{
 	  char ip[32];
 	  char mask[32];
 	  sprintf (ip, "%s_ipaddr", dev);
 	  sprintf (mask, "%s_netmask", dev);
-	  ifconfig (dev, IFUP, nvram_safe_get (ip), nvram_safe_get (mask));	
+	  ifconfig (dev, IFUP, nvram_safe_get (ip), nvram_safe_get (mask));
 	}
     }
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))

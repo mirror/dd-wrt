@@ -557,6 +557,9 @@ wlconf_up (char *name)
       if (v == 0)
 	{
 #ifdef HAVE_MSSID
+#ifdef HAVE_ACK
+	  eval ("wl", "noack", "0");
+#endif
 	  // wlc_noack (0);
 #else
 	  eval ("/etc/txackset.sh", "0");	// disable ack timing
@@ -566,6 +569,9 @@ wlconf_up (char *name)
       else
 	{
 #ifdef HAVE_MSSID
+#ifdef HAVE_ACK
+	  eval ("wl", "noack", "1");
+#endif
 	  //  wlc_noack (1);
 #else
 	  eval ("/etc/txackset.sh", "1");	// enable ack timing
@@ -573,11 +579,23 @@ wlconf_up (char *name)
 	}
 
 
-#ifdef HAVE_MSSID
-      //  set_wlc_slottime (val);
-#else
       val = 9 + (val / 150) + ((val % 150) ? 1 : 0);
+#ifdef HAVE_MSSID
+#ifdef HAVE_ACK
+      char strv[32];
+      sprintf (strv, "%d", val);
+      eval ("wl", "acktiming", strv);
+#else
+      shm = 0x10;
+      shm |= (val << 16);
+      WL_IOCTL (name, 197, &shm, sizeof (shm));
 
+      reg.byteoff = 0x684;
+      reg.val = val + 510;
+      reg.size = 2;
+      WL_IOCTL (name, 102, &reg, sizeof (reg));
+#endif
+#else
       shm = 0x10;
       shm |= (val << 16);
       WL_IOCTL (name, 197, &shm, sizeof (shm));
@@ -1077,7 +1095,7 @@ start_lan (void)
   else
     cprintf ("Write wireless mac successfully\n");
 #ifdef HAVE_MSSID
-    set_vifsmac(mac);
+  set_vifsmac (mac);
 #endif
 #endif
   if (nvram_match ("wl_mode", "sta"))
@@ -1207,7 +1225,7 @@ start_lan (void)
 	    else
 	      cprintf ("Write wireless mac successfully\n");
 #ifdef HAVE_MSSID
-    set_vifsmac(mac);
+	    set_vifsmac (mac);
 #endif
 
 #else
@@ -1425,8 +1443,7 @@ start_lan (void)
 
       eval ("ifconfig", "eth0:0", "down");
 //add fallback ip
-      eval ("ifconfig", staticlan, "169.254.255.1", "netmask",
-	    "255.255.0.0");
+      eval ("ifconfig", staticlan, "169.254.255.1", "netmask", "255.255.0.0");
 
 #ifdef HAVE_FONERA
     }
@@ -1973,15 +1990,14 @@ start_wan (int status)
       && !nvram_match ("wan_proto", "disabled"))
     {
       eval ("ifconfig", "br0:0", "down");
-      eval ("ifconfig", staticlan, "169.254.255.1", "netmask",
-	    "255.255.0.0");
+      eval ("ifconfig", staticlan, "169.254.255.1", "netmask", "255.255.0.0");
     }
   else
     eval ("ifconfig", staticlan, "0.0.0.0", "down");
 #endif
 
 //fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
-  
+
   if (nvram_match ("mac_clone_enable", "1") &&
       nvram_invmatch ("def_hwaddr", "00:00:00:00:00:00") &&
       nvram_invmatch ("def_hwaddr", ""))
@@ -1991,7 +2007,7 @@ start_wan (int status)
 #ifndef HAVE_MADWIFI
   else
     {
-	unsigned char mac[20];
+      unsigned char mac[20];
       if (nvram_match ("port_swap", "1"))
 	strcpy (mac, nvram_safe_get ("et1macaddr"));
       else
@@ -2008,7 +2024,7 @@ start_wan (int status)
     }
   else
     perror ("Write WAN mac fail : ");
-    
+
 #endif
 //fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
 
@@ -2155,20 +2171,15 @@ start_wan (int status)
       fprintf (fp, "noipdefault\n"
 	       "noauth\n"
 	       "defaultroute\n"
-	       "noaccomp\n"
-	       "nobsdcomp\n" 
-	       "nodeflate\n" 
-	       "maxfail 0\n"
+	       "noaccomp\n" "nobsdcomp\n" "nodeflate\n" "maxfail 0\n"
 //             "nocrtscts\n"
 //             "lock\n"
-	       "nopcomp\n"
-	       "novj\n"
-	       "novjccomp\n");
-	   if (nvram_invmatch ("ppp_mppe", ""))
-	    fprintf (fp, "%s\n", nvram_safe_get ("ppp_mppe"));
-	   else
-	    fprintf (fp, "nomppe\n");
-	   fprintf (fp, "usepeerdns\n"
+	       "nopcomp\n" "novj\n" "novjccomp\n");
+      if (nvram_invmatch ("ppp_mppe", ""))
+	fprintf (fp, "%s\n", nvram_safe_get ("ppp_mppe"));
+      else
+	fprintf (fp, "nomppe\n");
+      fprintf (fp, "usepeerdns\n"
 	       "user '%s'\n" "password '%s'\n", username, passwd);
 
       // This is a tricky one. When used it could improve speed of PPPoE but not all ISP's can support it.
@@ -2840,7 +2851,8 @@ stop_wan (void)
   cprintf ("done\n");
 }
 
-void start_set_routes (void)
+void
+start_set_routes (void)
 {
   char word[80], *tmp;
   char *ipaddr, *netmask, *gateway, *metric, *ifname;
@@ -2863,7 +2875,7 @@ void start_set_routes (void)
     metric = strsep (&ifname, ":");
     if (!metric || !ifname)
       continue;
-    if (!strcmp (ipaddr, "0.0.0.0") && !strcmp(gateway,"0.0.0.0"))
+    if (!strcmp (ipaddr, "0.0.0.0") && !strcmp (gateway, "0.0.0.0"))
       continue;
     if (!strcmp (ipaddr, "0.0.0.0"))
       eval ("route", "add", "default", "gw", gateway);

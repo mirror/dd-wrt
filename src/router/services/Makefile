@@ -30,6 +30,9 @@ endif
 ifeq ($(CONFIG_IPV6),y)
 CFLAGS += -DHAVE_IPV6
 endif
+ifeq ($(CONFIG_ACK),y)
+CFLAGS += -DHAVE_ACK
+endif
 
 ifeq ($(CONFIG_NSTX),y)
 CFLAGS += -DHAVE_NSTX
@@ -38,6 +41,12 @@ endif
 ifeq ($(CONFIG_UDHCPD),y)
 CFLAGS += -DHAVE_UDHCPD
 OBJS += udhcpd.o
+endif
+ifeq ($(CONFIG_WPA_SUPPLICANT),y)
+ifneq ($(CONFIG_MADWIFI),y)
+CFLAGS += -DHAVE_WPA_SUPPLICANT
+OBJS += brcm_80211x.o
+endif
 endif
 ifeq ($(CONFIG_DNSMASQ),y)
 CFLAGS += -DHAVE_DNSMASQ
