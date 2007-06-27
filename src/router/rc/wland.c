@@ -487,8 +487,8 @@ close(s);
 #endif
 
 
-#ifndef HAVE_MSSID
-
+#ifndef HAVE_ACK
+#ifndef HAVE_MADWIFI
 static void
 setACK (void)
 {
@@ -513,6 +513,7 @@ setACK (void)
     }
 
 }
+#endif
 #endif
 
 /*static void setShortSlot(void)
@@ -541,8 +542,10 @@ do_wlan_check (void)
 
   do_madwifi_check ();
 #endif
-#ifndef HAVE_MSSID
+#ifndef HAVE_ACK
+#ifndef HAVE_MADWIFI
   setACK ();
+#endif
 #endif
 
 }

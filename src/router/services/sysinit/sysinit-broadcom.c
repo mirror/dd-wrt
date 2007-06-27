@@ -486,7 +486,7 @@ start_sysinit (void)
 	    {
 	    case ROUTER_WRT350N:
 	    case ROUTER_BUFFALO_WZRG144NH:
-	      modules = "diag bcm57xxlsys";
+	      modules = "bcm57xxlsys";
 	      break;
 	    case ROUTER_LINKSYS_WRT55AG:
 	    case ROUTER_MOTOROLA:
@@ -495,16 +495,14 @@ start_sysinit (void)
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
-		"diag switch-core switch-adm";
+		"switch-core switch-adm";
 
 	      break;
 	    case ROUTER_WRT54G1X:
 	    case ROUTER_WRT54G:
 	    case ROUTER_RT480W:
 	    case ROUTER_BUFFALO_WLI2_TX1_G54:
-	      modules =
-		nvram_invmatch ("ct_modules",
-				"") ? nvram_safe_get ("ct_modules") : "diag";
+	      modules = "";
 	      eval ("insmod", "switch-core");
 	      if (eval ("insmod", "switch-robo"))
 		eval ("insmod", "switch-adm");
@@ -514,7 +512,7 @@ start_sysinit (void)
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
-		"diag switch-core switch-robo pcmcia_core yenta_socket ds serial_cs usbcore usb-ohci usbserial sierra";
+		"switch-core switch-robo pcmcia_core yenta_socket ds serial_cs usbcore usb-ohci usbserial sierra";
 	      break;
 
 	    default:
@@ -522,7 +520,7 @@ start_sysinit (void)
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
-		"diag switch-core switch-robo";
+		"switch-core switch-robo";
 	      break;
 	    }
 	}
@@ -532,19 +530,19 @@ start_sysinit (void)
 	    {
 	    case ROUTER_WRT350N:
 	    case ROUTER_BUFFALO_WZRG144NH:
-	      modules = "diag bcm57xxlsys";
+	      modules = "bcm57xxlsys";
 	      break;
 	    case ROUTER_LINKSYS_WRT55AG:
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
-		"diag switch-core switch-adm";
+		"switch-core switch-adm";
 
 	      break;
 	    case ROUTER_ASUS_WL500GD:
 	      modules =
 		nvram_invmatch ("ct_modules",
-				"") ? nvram_safe_get ("ct_modules") : "diag";
+				"") ? nvram_safe_get ("ct_modules") : "";
 	      eval ("insmod", "switch-core");
 	      if (eval ("insmod", "switch-robo"))
 		eval ("insmod", "switch-adm");
@@ -552,19 +550,19 @@ start_sysinit (void)
 	    case ROUTER_BUFFALO_WZRRSG54:
 	      modules =
 		nvram_invmatch ("ct_modules",
-				"") ? nvram_safe_get ("ct_modules") : "diag";
+				"") ? nvram_safe_get ("ct_modules") : "";
 	      break;
 	    case ROUTER_WRT54G3G:
 	      if (check_vlan_support ())
 		modules =
 		  nvram_invmatch ("ct_modules",
 				  "") ? nvram_safe_get ("ct_modules") :
-		  "diag switch-core switch-robo pcmcia_core yenta_socket ds";
+		  "switch-core switch-robo pcmcia_core yenta_socket ds";
 	      else
 		modules =
 		  nvram_invmatch ("ct_modules",
 				  "") ? nvram_safe_get ("ct_modules") :
-		  "diag pcmcia_core yenta_socket ds";
+		  "pcmcia_core yenta_socket ds";
 	      break;
 
 	    default:
@@ -572,12 +570,12 @@ start_sysinit (void)
 		modules =
 		  nvram_invmatch ("ct_modules",
 				  "") ? nvram_safe_get ("ct_modules") :
-		  "diag switch-core switch-robo";
+		  "switch-core switch-robo";
 	      else
 		modules =
 		  nvram_invmatch ("ct_modules",
 				  "") ? nvram_safe_get ("ct_modules") :
-		  "diag";
+		  "";
 	      break;
 	    }
 	}

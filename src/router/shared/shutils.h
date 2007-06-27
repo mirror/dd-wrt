@@ -115,6 +115,8 @@ extern int osifname_to_nvifname (const char *osifname, char *nvifname_buf,
 
 extern int system2 (char *command);
 
+extern int get_ifname_unit(const char* ifname, int *unit, int *subunit);
+
 /*
  * Concatenate two strings together into a caller supplied buffer
  * @param	s1	first string

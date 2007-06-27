@@ -55,16 +55,21 @@ do_mssid (char *lan_ifname)
     {
       char bridged[32];
       sprintf (bridged, "%s_bridged", var);
-      
-	if (nvram_match ("wl0_mode", "apsta"))
-	  ether_atoe (nvram_safe_get("wan_hwaddr"), ifr.ifr_hwaddr.sa_data);
-	else
-	  ether_atoe (nvram_safe_get("wl0_hwaddr"), ifr.ifr_hwaddr.sa_data);
+//      char bss[32];
+//      sprintf (bss, "%s_bss_enabled", var);
+//      if (nvram_match (bss, "1"))
+	{
+	  if (nvram_match ("wl0_mode", "apsta"))
+	    ether_atoe (nvram_safe_get ("wan_hwaddr"),
+			ifr.ifr_hwaddr.sa_data);
+	  else
+	    ether_atoe (nvram_safe_get ("wl0_hwaddr"),
+			ifr.ifr_hwaddr.sa_data);
 
-      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-      strncpy (ifr.ifr_name, var, IFNAMSIZ);
-      ioctl (s, SIOCSIFHWADDR, &ifr);
-      
+	  ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	  strncpy (ifr.ifr_name, var, IFNAMSIZ);
+	  ioctl (s, SIOCSIFHWADDR, &ifr);
+	}
       if (nvram_match (bridged, "1"))
 	{
 	  ifconfig (var, IFUP, NULL, NULL);
@@ -80,10 +85,11 @@ do_mssid (char *lan_ifname)
 	}
       //  eval ("brctl", "addif", lan_ifname, var);
     }
-  close(s);
+  close (s);
 }
 
-void set_vifsmac(char *mac)
+void
+set_vifsmac (char *mac)
 {
   struct ifreq ifr;
   int s;
@@ -100,6 +106,6 @@ void set_vifsmac(char *mac)
       strncpy (ifr.ifr_name, var, IFNAMSIZ);
       ioctl (s, SIOCSIFHWADDR, &ifr);
     }
-close(s);
+  close (s);
 }
 #endif
