@@ -1701,7 +1701,7 @@ save_prefix (webs_t wp, char *prefix)
     rep (p2, '.', 'X');
 
 
-#ifdef HAVE_MADWIFI
+#ifdef HAVE_WPA_SUPPLICANT
 /*_8021xtype
 _8021xuser
 _8021xpasswd
@@ -1891,7 +1891,7 @@ ej_show_wpa_setting (webs_t wp, int argc, char_t ** argv, char *prefix)
     show_wparadius (wp, prefix);
   else if (!strcmp (security_mode, "wep"))
     show_wep (wp, prefix);
-#ifdef HAVE_MADWIFI
+#ifdef HAVE_WPA_SUPPLICANT
   else if (!strcmp (security_mode, "8021X"))
     show_80211X (wp, prefix);
 #endif

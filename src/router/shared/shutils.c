@@ -605,3 +605,4 @@ for (i=0;i<slen;i++)
     if (str[(slen-1)-i]==c)return (slen-1)-i;
 return -1;
 }
+

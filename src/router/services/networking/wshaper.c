@@ -197,10 +197,12 @@ svqos_set_ports (void)
 
 #ifdef HAVE_AQOS
 
-extern void add_userip(char *ip, int idx,char *upstream,char *downstream);
-extern void add_usermac(char *mac, int idx,char *upstream,char *downstream);
+extern void add_userip (char *ip, int idx, char *upstream, char *downstream);
+extern void add_usermac (char *mac, int idx, char *upstream,
+			 char *downstream);
 
-void aqos_tables(void)
+void
+aqos_tables (void)
 {
   char *qos_ipaddr = nvram_safe_get ("svqos_ips");
   char *qos_mac = nvram_safe_get ("svqos_macs");
@@ -208,27 +210,27 @@ void aqos_tables(void)
   FILE *outmacs;
   outips = fopen ("/tmp/aqos_ips", "wb");
   outmacs = fopen ("/tmp/aqos_macs", "wb");
-  char level[32],level2[32],data[32];
-int qosidx=0;
+  char level[32], level2[32], data[32];
+  int qosidx = 0;
   do
     {
-      if (sscanf (qos_mac, "%31s %31s %31s |", data, level,level2) < 2)
+      if (sscanf (qos_mac, "%31s %31s %31s |", data, level, level2) < 2)
 	break;
       fprintf (outmacs, "%s\n", data);
-      add_usermac(data,qosidx,level,level2);
-      qosidx+=2;
+      add_usermac (data, qosidx, level, level2);
+      qosidx += 2;
 
 
     }
   while ((qos_mac = strpbrk (++qos_mac, "|")) && qos_mac++);
   do
     {
-      if (sscanf (qos_ipaddr, "%31s %31s %31s |", data, level,level2) < 2)
+      if (sscanf (qos_ipaddr, "%31s %31s %31s |", data, level, level2) < 2)
 	break;
       fprintf (outips, "%s\n", data);
 
-      add_userip(data,qosidx,level,level2);
-      qosidx+=2;
+      add_userip (data, qosidx, level, level2);
+      qosidx += 2;
 
     }
   while ((qos_ipaddr = strpbrk (++qos_ipaddr, "|")) && qos_ipaddr++);
@@ -249,9 +251,9 @@ svqos_iptables (void)
   char *qos_svcs = nvram_safe_get ("svqos_svcs");
   char *qos_ipaddr = nvram_safe_get ("svqos_ips");
   char *qos_mac = nvram_safe_get ("svqos_macs");
-  char name[32], type[32], data[32], level[32],level2[32];;
+  char name[32], type[32], data[32], level[32], level2[32];;
   char cmd[1024];
-  int ilevel,ilevel2;
+  int ilevel, ilevel2;
   char *dev = get_wshaper_dev ();
 
   system2 ("/usr/sbin/iptables -t mangle -F SVQOS_OUT");
@@ -631,10 +633,10 @@ start_wshaper (void)
   else
     ret = eval ("/usr/sbin/svqos2", ul_val, dl_val, dev_val, mtu_val, "0");
 #ifdef HAVE_AQOS
-  aqos_tables();
+  aqos_tables ();
 #endif
 #endif
-  nvram_set("qos_done","1");
+  nvram_set ("qos_done", "1");
   return ret;
 }
 
@@ -642,7 +644,7 @@ int
 stop_wshaper (void)
 {
   int ret = 0;
-  nvram_set("qos_done","0");
+  nvram_set ("qos_done", "0");
 #ifdef HAVE_WSHAPER
   char script_name[] = "/usr/sbin/wshaper";
 #elif defined(HAVE_SVQOS)

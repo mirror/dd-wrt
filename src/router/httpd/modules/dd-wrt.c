@@ -1579,7 +1579,7 @@ show_security_prefix (webs_t wp, int argc, char_t ** argv, char *prefix)
 	     selmatch (var, "radius", "selected=\"selected\""));
   websWrite (wp, "<option value=\"wep\" %s>WEP</option>\n",
 	     selmatch (var, "wep", "selected=\"selected\""));
-#ifdef HAVE_MADWIFI
+#ifdef HAVE_WPA_SUPPLICANT
   char sta[32];
   sprintf (sta, "%s_mode", prefix);
   if (nvram_match (sta, "sta"))
@@ -4397,7 +4397,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 #endif
 
 // ACK timing
-#ifdef HAVE_MADWIFI		//temp fix for v24 broadcom ACKnot working
+//#ifdef HAVE_ACK		//temp fix for v24 broadcom ACKnot working
   sprintf (power, "%s_distance", prefix);
   websWrite (wp, "<br />\n");
   websWrite (wp, "<div class=\"setting\">\n");
@@ -4410,7 +4410,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 2000 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
   websWrite (wp, "</div>\n");
 //end ACK timing
-#endif
+//#endif
 
   showbridgesettings (wp, prefix);
   websWrite (wp, "</fieldset>\n");
@@ -4554,7 +4554,7 @@ show_radius (webs_t wp, char *prefix, int showmacformat)
 }
 
 
-#ifdef HAVE_MADWIFI
+#ifdef HAVE_WPA_SUPPLICANT
 void
 show_80211X (webs_t wp, char *prefix)
 {

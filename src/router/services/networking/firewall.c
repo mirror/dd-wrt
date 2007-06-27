@@ -1945,8 +1945,8 @@ filter_forward (void)
 #ifdef HAVE_OLSRD
   if (nvram_match ("wk_mode", "olsr"))
     {
-    save2file ("-A FORWARD -p udp --dport 698 -j ACCEPT\n");
-    save2file ("-A FORWARD -p udp --sport 698 -j ACCEPT\n");
+      save2file ("-A FORWARD -p udp --dport 698 -j ACCEPT\n");
+      save2file ("-A FORWARD -p udp --sport 698 -j ACCEPT\n");
     }
 #endif
   /* Sveasoft mod - FORWARD br1 to br0, protecting br0 */
