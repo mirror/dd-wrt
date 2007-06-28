@@ -204,8 +204,16 @@ start_sysinit (void)
 
   eval ("insmod", "ath_ahb", "autocreate=none");
 
+
+  system("echo 2 >/proc/sys/dev/wifi0/ledpin");
+  system("echo 1 >/proc/sys/dev/wifi0/softled");
+  system("echo 3 >/proc/sys/dev/wifi1/ledpin");
+  system("echo 1 >/proc/sys/dev/wifi1/softled");
+
   eval ("ifconfig", "wifi0", "up");
   eval ("ifconfig", "wifi1", "up");
+
+
 
   eval ("insmod", "ipv6");
 
