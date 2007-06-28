@@ -201,6 +201,10 @@ struct nvram_tuple srouter_defaults[] = {
   {"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_XSCALE
   {"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
+#elif HAVE_FONERA
+  {"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
+#elif HAVE_CA8
+  {"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #else
   {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 
@@ -993,6 +997,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_WHRAG108
   {"remote_management", "1", 0},	/* Remote Management [1|0] */
+#elif HAVE_CA8
+  {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_RB500
   {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_X86
@@ -1278,6 +1284,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"sshd_enable", "1", 0},
 #elif HAVE_WHRAG108
   {"sshd_enable", "1", 0},
+#elif HAVE_CA8
+  {"sshd_enable", "1", 0},
 #elif HAVE_X86
   {"sshd_enable", "1", 0},
 #elif HAVE_NEWMEDIA
@@ -1301,6 +1309,8 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_MAKSAT
   {"remote_mgt_ssh", "1", 0},
 #elif HAVE_WHRAG108
+  {"remote_mgt_ssh", "1", 0},
+#elif HAVE_CA8
   {"remote_mgt_ssh", "1", 0},
 #elif HAVE_X86
   {"remote_mgt_ssh", "1", 0},
@@ -1601,6 +1611,8 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_LS2
   {"ip_conntrack_max", "4096", 0},
 #elif HAVE_WHRAG108
+  {"ip_conntrack_max", "16384", 0},
+#elif HAVE_CA8
   {"ip_conntrack_max", "16384", 0},
 #else
   {"ip_conntrack_max", "512", 0},
