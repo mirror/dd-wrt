@@ -1457,7 +1457,7 @@ start_lan (void)
 
   char staticlan[32];
   sprintf (staticlan, "%s:0", lan_ifname);
-#ifdef HAVE_FONERA
+#if defined(HAVE_FONERA) || defined(HAVE_CA8)
   if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("ath0_mode", "wet")
       || nvram_match ("wan_proto", "disabled"))
@@ -1468,7 +1468,7 @@ start_lan (void)
 //add fallback ip
       eval ("ifconfig", staticlan, "169.254.255.1", "netmask", "255.255.0.0");
 
-#ifdef HAVE_FONERA
+#if defined(HAVE_FONERA) || defined(HAVE_CA8)
     }
   else
     eval ("ifconfig", staticlan, "0.0.0.0", "down");
@@ -2022,7 +2022,7 @@ start_wan (int status)
   memset (ifr.ifr_hwaddr.sa_data, 0, ETHER_ADDR_LEN);
 
   ifconfig (wan_ifname, 0, NULL, NULL);
-#ifdef HAVE_FONERA
+#if defined(HAVE_FONERA) || defined(HAVE_CA8)
   char staticlan[32];
   sprintf (staticlan, "%s:0", wan_ifname);
   if (!nvram_match ("ath0_mode", "sta")
