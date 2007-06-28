@@ -200,12 +200,7 @@ start_sysinit (void)
   uname (&name);
 
 /* network drivers */
-  eval ("insmod", "ar2313eth0");
-  eval ("insmod", "ar2313eth1");
-//  setupSwitch();
-//  eval ("ifconfig", "eth0", "0.0.0.0", "up");
-//  eval ("vconfig", "add", "eth0", "1");
-//  eval ("vconfig", "add", "eth0", "2");
+  eval ("insmod", "ar2313");
 
   eval ("insmod", "ath_ahb", "autocreate=none");
 
