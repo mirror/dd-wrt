@@ -104,50 +104,91 @@ struct fis_image_desc {
     unsigned long file_cksum;    // Checksum over image data
 };
 
+int getMTD(char *name)
+{
+char buf[128];
+int device;
+sprintf(buf,"cat /proc/mtd|grep \"%s\"",name);
+FILE *fp =popen(buf,"rb");
+fscanf(fp,"%s",&buf);
+device = buf[3]-'0';
+pclose(fp);
+return device;
+}
+int geterasesize(char *name)
+{
+char buf[128];
+int device;
+int size;
+int esize;
+sprintf(buf,"cat /proc/mtd|grep \"%s\"",name);
+FILE *fp =popen(buf,"rb");
+if (fp==NULL)
+    {
+    fprintf(stderr,"error");
+    }
+fscanf(fp,"%s",&buf);
+fscanf(fp,"%s",&buf);
+fscanf(fp,"%s",&buf);
+if (!strcmp(buf,"00008000"))
+    esize=0x8000;
+if (!strcmp(buf,"00010000"))
+    esize=0x10000;
+if (!strcmp(buf,"00020000"))
+    esize=0x20000;
+pclose(fp);
+return esize;
+}
+
 int main (int argc, char** argv) {
   FILE *in;
-  in=fopen("/dev/mtdblock/3","rb");
-  char mem[128*1024];
-  fread(mem,128*1024,1,in); 
+  char op[32];
+  int dev=getMTD("FIS directory");
+  int esize=geterasesize("FIS directory");
+  if (esize>0x20000 || esize==0)
+    {
+    fprintf(stderr,"error\n");
+    return;
+    }  
+  sprintf(op,"/dev/mtdblock/%d",dev);
+  in=fopen(op,"rb");
+  char *mem=(char*)malloc(esize);
+  fread(mem,esize,1,in); 
   fclose(in);
   unsigned char *p=&mem[0];
   struct fis_image_desc *fis;  
   struct fis_image_desc *lfis;  
   fis=p;
   long len=0;
+  int flash=0;
   while (fis->name[0]!=0xff)
     {
-    if (!strcmp(fis->name,"linux"))
-	{
-	lfis=fis;
-	len=fis->data_length;
-	}
-    fprintf(stderr,"==========[%s]===========\n",fis->name);
+/*    fprintf(stderr,"==========[%s]===========\n",fis->name);
     fprintf(stderr,"flash base %lX\n",fis->flash_base);
     fprintf(stderr,"mem base %lX\n",fis->mem_base);
     fprintf(stderr,"size %lX\n",fis->size);
     fprintf(stderr,"entry_point %lX\n",fis->entry_point);
     fprintf(stderr,"data_length %lX\n",fis->data_length);
     fprintf(stderr,"desc_cksum %lX\n",fis->desc_cksum);
-    fprintf(stderr,"file_cksum %lX\n",fis->file_cksum);
+    fprintf(stderr,"file_cksum %lX\n",fis->file_cksum);*/
+    if (!strcmp(fis->name,"linux"))
+	{
+	lfis=fis;
+	if (fis->size!=fis->data_length)
+	    flash=1;
+	len=fis->size;
+	fis->data_length=len;
+	}
     p+=sizeof(struct fis_image_desc);
     fis=p;
     }  
+if (flash)
+{
+  fprintf(stderr,"fixing up redboot partitions\n");
   //generate checksum for linux partition
-  in=fopen("/dev/mtdblock/1","rb");
-  unsigned long crc=0;
-  len=128*1024*16;
-  fprintf(stderr,"length=%ld\n",len);
-  p=malloc(len);
-  fread(p,len,1,in);
-  crc=crc32(p,len,0);
-  fclose(in);
-  free(p);
-  fprintf(stderr,"linux crc %lX\n",crc);
-  lfis->file_cksum=crc;
-  lfis->data_length=128*1024*16;
   in=fopen("/tmp/fisdir","wb");
-  fwrite(mem,128*1024,1,in);
+  fwrite(mem,esize,1,in);
   fclose(in);
-  system("/usr/sbin/mtd -f write /tmp/fisdir /dev/mtdblock/3");
+  system("/usr/sbin/mtd -f write /tmp/fisdir \"FIS directory\"");
+}
 }
