@@ -101,7 +101,7 @@ start_sysinit (void)
   /* Modules */
   uname (&name);
 /* network drivers */
-  eval ("insmod", "ar2313eth0");
+  eval ("insmod", "ar2313");
   eval ("insmod", "ath_ahb", "autocreate=none");
   eval ("ifconfig", "wifi0", "up");
 
