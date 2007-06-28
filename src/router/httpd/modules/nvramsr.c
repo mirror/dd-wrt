@@ -160,7 +160,7 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
       if (!strcmp (buf, "\n") || !strcmp (buf, "\r\n"))
 	break;
     }
-#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_MAGICBOX) || defined(HAVE_X86) || defined(HAVE_LS2) || defined(HAVE_MERAKI)
+#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_MAGICBOX) || defined(HAVE_X86) || defined(HAVE_LS2) || defined(HAVE_MERAKI) || defined(HAVE_CA8)
   eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
   eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
 #endif

@@ -176,6 +176,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Asus WL500g (4702 cpu, fccid: Asus MSQWL500G)
 #define ROUTER_ASUS_WL500G 0x3406
 
+#define ROUTER_BOARD_CA8 0x3506
+
 
 #define NVROUTER "DD_BOARD"
 
