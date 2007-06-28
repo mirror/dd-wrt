@@ -35,6 +35,9 @@ endif
 ifeq ($(CONFIG_MADWIFI),y)
 UTILS += wl_atheros
 endif
+ifeq ($(CONFIG_CA8),y)
+UTILS += fischecksum
+endif
 ifeq ($(CONFIG_XSCALE),y)
 UTILS += gpio
 endif
