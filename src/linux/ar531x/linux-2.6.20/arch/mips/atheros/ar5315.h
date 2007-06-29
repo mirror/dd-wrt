@@ -12,6 +12,16 @@
 #ifndef AR5315_H
 #define AR5315_H
 
+/* 
+ * IRQs
+ */
+#define AR5315_IRQ_MISC_INTRS   MIPS_CPU_IRQ_BASE+2 /* C0_CAUSE: 0x0400 */
+#define AR5315_IRQ_WLAN0_INTRS  MIPS_CPU_IRQ_BASE+3 /* C0_CAUSE: 0x0800 */
+#define AR5315_IRQ_ENET0_INTRS  MIPS_CPU_IRQ_BASE+4 /* C0_CAUSE: 0x1000 */
+#define AR5315_IRQ_LCBUS_PCI    MIPS_CPU_IRQ_BASE+5 /* C0_CAUSE: 0x2000 */
+#define AR5315_IRQ_WLAN0_POLL   MIPS_CPU_IRQ_BASE+6 /* C0_CAUSE: 0x4000 */
+
+
 /*
  * Address map
  */
@@ -80,23 +90,23 @@
  */
 #define AR5315_ENDIAN_CTL       (AR5315_DSLBASE + 0x000c)
 
-#define CONFIG_AHB                  0x00000001      /* EC - AHB bridge endianess */
-#define CONFIG_WLAN                 0x00000002      /* WLAN byteswap */
-#define CONFIG_MPEGTS_RSVD          0x00000004      /* MPEG-TS byteswap */
-#define CONFIG_PCI                  0x00000008      /* PCI byteswap */
-#define CONFIG_MEMCTL               0x00000010      /* Memory controller endianess */
-#define CONFIG_LOCAL                0x00000020      /* Local bus byteswap */
-#define CONFIG_ETHERNET             0x00000040      /* Ethernet byteswap */
+#define AR5315_CONFIG_AHB                  0x00000001      /* EC - AHB bridge endianess */
+#define AR5315_CONFIG_WLAN                 0x00000002      /* WLAN byteswap */
+#define AR5315_CONFIG_MPEGTS_RSVD          0x00000004      /* MPEG-TS byteswap */
+#define AR5315_CONFIG_PCI                  0x00000008      /* PCI byteswap */
+#define AR5315_CONFIG_MEMCTL               0x00000010      /* Memory controller endianess */
+#define AR5315_CONFIG_LOCAL                0x00000020      /* Local bus byteswap */
+#define AR5315_CONFIG_ETHERNET             0x00000040      /* Ethernet byteswap */
 
-#define CONFIG_MERGE                0x00000200      /* CPU write buffer merge */
-#define CONFIG_CPU                  0x00000400      /* CPU big endian */
-#define CONFIG_PCIAHB               0x00000800
-#define CONFIG_PCIAHB_BRIDGE        0x00001000
-#define CONFIG_SPI                  0x00008000      /* SPI byteswap */
-#define CONFIG_CPU_DRAM             0x00010000
-#define CONFIG_CPU_PCI              0x00020000
-#define CONFIG_CPU_MMR              0x00040000
-#define CONFIG_BIG                  0x00000400      
+#define AR5315_CONFIG_MERGE                0x00000200      /* CPU write buffer merge */
+#define AR5315_CONFIG_CPU                  0x00000400      /* CPU big endian */
+#define AR5315_CONFIG_PCIAHB               0x00000800
+#define AR5315_CONFIG_PCIAHB_BRIDGE        0x00001000
+#define AR5315_CONFIG_SPI                  0x00008000      /* SPI byteswap */
+#define AR5315_CONFIG_CPU_DRAM             0x00010000
+#define AR5315_CONFIG_CPU_PCI              0x00020000
+#define AR5315_CONFIG_CPU_MMR              0x00040000
+#define AR5315_CONFIG_BIG                  0x00000400      
 
 
 /*
@@ -111,11 +121,11 @@
  */
 #define AR5315_SREV             (AR5315_DSLBASE + 0x0014)
 
-#define REV_MAJ                     0x00f0
-#define REV_MAJ_S                   4
-#define REV_MIN                     0x000f
-#define REV_MIN_S                   0
-#define REV_CHIP                    (REV_MAJ|REV_MIN)
+#define AR5315_REV_MAJ                     0x00f0
+#define AR5315_REV_MAJ_S                   4
+#define AR5315_REV_MIN                     0x000f
+#define AR5315_REV_MIN_S                   0
+#define AR5315_REV_CHIP                    (AR5315_REV_MAJ|AR5315_REV_MIN)
 
 /*
  * Interface Enable
@@ -349,21 +359,21 @@
  
 #define AR5315_PCICLK           (AR5315_DSLBASE + 0x00a4)
 
-#define PCICLK_INPUT_M              0x3
-#define PCICLK_INPUT_S              0
+#define AR5315_PCICLK_INPUT_M              0x3
+#define AR5315_PCICLK_INPUT_S              0
                          
-#define PCICLK_PLLC_CLKM            0
-#define PCICLK_PLLC_CLKM1           1
-#define PCICLK_PLLC_CLKC            2
-#define PCICLK_REF_CLK              3 
+#define AR5315_PCICLK_PLLC_CLKM            0
+#define AR5315_PCICLK_PLLC_CLKM1           1
+#define AR5315_PCICLK_PLLC_CLKC            2
+#define AR5315_PCICLK_REF_CLK              3 
 
-#define PCICLK_DIV_M                0xc
-#define PCICLK_DIV_S                2
+#define AR5315_PCICLK_DIV_M                0xc
+#define AR5315_PCICLK_DIV_S                2
                          
-#define PCICLK_IN_FREQ              0
-#define PCICLK_IN_FREQ_DIV_6        1
-#define PCICLK_IN_FREQ_DIV_8        2
-#define PCICLK_IN_FREQ_DIV_10       3 
+#define AR5315_PCICLK_IN_FREQ              0
+#define AR5315_PCICLK_IN_FREQ_DIV_6        1
+#define AR5315_PCICLK_IN_FREQ_DIV_8        2
+#define AR5315_PCICLK_IN_FREQ_DIV_10       3 
 
 /*
  * Observation Control Register
