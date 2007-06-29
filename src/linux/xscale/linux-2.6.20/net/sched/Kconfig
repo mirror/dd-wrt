@@ -167,6 +167,25 @@ config NET_SCH_PRIO
 	  To compile this code as a module, choose M here: the
 	  module will be called sch_prio.
 
+config NET_SCH_WRR
+	tristate "WRR packet scheduler"
+	depends on NET_SCHED && ( IP_NF_CONNTRACK || !IP_NF_CONNTRACK )
+	help
+	  The weighted robin-robin scheduling algorithm directs network
+	  connections to different real servers based on server weights
+	  in a round-robin manner. Servers with higher weights receive
+	  new connections first than those with less weights, and servers
+	  with higher weights get more connections than those with less
+	  weights and servers with equal weights get equal connections.
+
+	  If you want masquerading (the "masq" option to the tc userspace
+	  program) you need to enable connection tracking (IP_NF_CONNTRACK)
+	  in the netfilter options.
+
+	  If you want to compile it in kernel, say Y. If you want to compile
+	  it as a module, say M here and read Documentation/modules.txt. The
+	  module will be called sch_wrr. If unsure, say N.
+
 config NET_SCH_RED
 	tristate "Random Early Detection (RED)"
 	---help---

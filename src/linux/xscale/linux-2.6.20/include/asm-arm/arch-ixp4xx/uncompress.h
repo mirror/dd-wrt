@@ -40,7 +40,7 @@ static __inline__ void __arch_decomp_setup(unsigned long arch_id)
 	/*
 	 * Coyote and gtwx5715 only have UART2 connected
 	 */
-	if (machine_is_adi_coyote() || machine_is_gtwx5715())
+	if (machine_is_adi_coyote() || machine_is_gtwx5715() || machine_is_wrt300nv2() || machine_is_wg302v2() || machine_is_gateway7001() || machine_is_pronghorn() || machine_is_pronghorn_metro())
 		uart_base = (volatile u32*) IXP4XX_UART2_BASE_PHYS;
 	else
 		uart_base = (volatile u32*) IXP4XX_UART1_BASE_PHYS;
