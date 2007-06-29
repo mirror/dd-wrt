@@ -45,23 +45,21 @@ ifdef CONFIG_IXP400_LIB
 IX_XSCALE_SW := drivers/ixp400/ixp400_xscale_sw
 OSAL_DIR := $(IX_XSCALE_SW)/../ixp_osal
 
-
-IXP_CFLAGS = -DENABLE_IOMEM
-
-IXP_CFLAGS += -DENABLE_BUFFERMGT
-
-IXP_CFLAGS += \
+IXP_CFLAGS = \
 	-I$(ROOTDIR)/. \
 	-I$(IX_XSCALE_SW)/src/include \
 	-I$(OSAL_DIR)/ \
-	-I$(OSAL_DIR)/common/include/ \
-	-I$(OSAL_DIR)/common/include/modules/ioMem \
-	-I$(OSAL_DIR)/common/include/modules/ddk \
-	-I$(OSAL_DIR)/common/include/modules/bufferMgt \
-	-I$(OSAL_DIR)/common/os/linux/include/modules/ioMem \
-	-I$(OSAL_DIR)/common/os/linux/include/modules/ddk \
-	-I$(OSAL_DIR)/common/os/linux/include/modules/bufferMgt \
-	-I$(OSAL_DIR)/common/os/linux/include/core \
+	-I$(OSAL_DIR)/os/linux/include/ \
+	-I$(OSAL_DIR)/os/linux/include/modules/ \
+	-I$(OSAL_DIR)/os/linux/include/modules/ioMem/ \
+	-I$(OSAL_DIR)/os/linux/include/modules/core/ \
+	-I$(OSAL_DIR)/os/linux/include/modules/bufferMgt/ \
+	-I$(OSAL_DIR)/os/linux/include/core/  \
+	-I$(OSAL_DIR)/os/linux/include/platforms/ \
+	-I$(OSAL_DIR)/os/linux/include/platforms/ixp400/ \
+	-I$(OSAL_DIR)/os/linux/include/platforms/ixp400/ixp425 \
+	-I$(OSAL_DIR)/os/linux/include/platforms/ixp400/ixp465 \
+	-I$(OSAL_DIR)/os/linux/include/core/ \
 	-I$(OSAL_DIR)/include/ \
 	-I$(OSAL_DIR)/include/modules/ \
 	-I$(OSAL_DIR)/include/modules/bufferMgt/ \
@@ -87,12 +85,8 @@ endif
 
 ifeq ($(CONFIG_MACH_IXDP465),y)
 IXP_CFLAGS += -D__ixp46X
-IXP_CFLAGS += -I$(OSAL_DIR)/platforms/ixp46X/include
-IXP_CFLAGS += -I$(OSAL_DIR)/platforms/ixp46X/os/linux/include
 else
 IXP_CFLAGS += -D__ixp42X
-IXP_CFLAGS += -I$(OSAL_DIR)/platforms/ixp42X/include
-IXP_CFLAGS += -I$(OSAL_DIR)/platforms/ixp42X/os/linux/include
 endif
 
 CFLAGS_ixp4xx/ixp4xx.o += $(IXP_CFLAGS)

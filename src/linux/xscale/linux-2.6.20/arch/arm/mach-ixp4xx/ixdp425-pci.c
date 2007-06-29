@@ -37,7 +37,7 @@ void __init ixdp425_pci_preinit(void)
 
 static int __init ixdp425_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 {
-	static int pci_irq_table[IXDP425_PCI_IRQ_LINES] = {
+	static int pci_irq_table[AVILA_PCI_IRQ_LINES] = {
 		IRQ_IXDP425_PCI_INTA,
 		IRQ_IXDP425_PCI_INTB,
 		IRQ_IXDP425_PCI_INTC,
@@ -45,11 +45,11 @@ static int __init ixdp425_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 	};
 
 	int irq = -1;
-
-	if (slot >= 1 && slot <= IXDP425_PCI_MAX_DEV && 
-		pin >= 1 && pin <= IXDP425_PCI_IRQ_LINES) {
+	if (slot >= 1 && slot <= (machine_is_loft() ? LOFT_PCI_MAX_DEV : AVILA_PCI_MAX_DEV) &&
+		pin >= 1 && pin <= AVILA_PCI_IRQ_LINES) {
 		irq = pci_irq_table[(slot + pin - 2) % 4];
 	}
+
 
 	return irq;
 }
@@ -65,8 +65,7 @@ struct hw_pci ixdp425_pci __initdata = {
 
 int __init ixdp425_pci_init(void)
 {
-	if (machine_is_ixdp425() || machine_is_ixcdp1100() ||
-			machine_is_avila() || machine_is_ixdp465())
+	if (machine_is_ixdp425() || machine_is_ixcdp1100() || machine_is_avila() || machine_is_loft() || machine_is_ixdp465() || machine_is_compex())
 		pci_common_init(&ixdp425_pci);
 	return 0;
 }
