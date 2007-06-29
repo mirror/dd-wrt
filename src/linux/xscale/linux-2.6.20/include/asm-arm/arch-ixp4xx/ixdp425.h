@@ -22,8 +22,10 @@
 /*
  * IXDP425 PCI IRQs
  */
-#define IXDP425_PCI_MAX_DEV	4
-#define IXDP425_PCI_IRQ_LINES	4
+#define AVILA_PCI_MAX_DEV	4
+#define LOFT_PCI_MAX_DEV    6
+#define AVILA_PCI_IRQ_LINES	4
+
 
 
 /* PCI controller GPIO to IRQ pin mappings */
