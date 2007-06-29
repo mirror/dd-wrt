@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux kernel version: 2.6.20.11
-# Mon May 14 15:36:18 2007
+# Linux kernel version: 2.6.20.14
+# Mon Jun 25 12:59:31 2007
 #
 CONFIG_ARM=y
 CONFIG_GENERIC_TIME=y
@@ -513,6 +513,7 @@ CONFIG_NET_SCH_CBQ=y
 CONFIG_NET_SCH_HTB=y
 CONFIG_NET_SCH_HFSC=y
 CONFIG_NET_SCH_PRIO=y
+CONFIG_NET_SCH_WRR=y
 CONFIG_NET_SCH_RED=y
 CONFIG_NET_SCH_SFQ=y
 CONFIG_NET_SCH_TEQL=y
