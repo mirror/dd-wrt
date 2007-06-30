@@ -1,0 +1,16 @@
+/bin/cat >/tmp/watchap << "EOF"
+#!/bin/sh
+/bin/sleep 30
+while true
+do                                                                    
+    BS=`/bin/dmesg | /usr/bin/tail -n 2 | /bin/grep -c "stuck beacon"`
+    if test x${BS} = x1
+    then                           
+        /bin/date >>/tmp/downup.log
+        /sbin/rc restart
+    fi           
+    /bin/sleep 40
+done
+EOF
+/bin/chmod 755 /tmp/watchap                  
+/usr/bin/nohup /tmp/watchap >/dev/null 2>&1 &
