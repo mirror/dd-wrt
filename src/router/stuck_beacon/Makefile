@@ -5,7 +5,7 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
-MODULE:=stuck_beacon.startup
+MODULE:=beacon_stuck.startup
 
 clean:
 	@true
