@@ -140,5 +140,6 @@ obj-$(CONFIG_PCMCIA) += setserial
 obj-$(CONFIG_MEDIASERVER) += mediaserver
 obj-$(CONFIG_QUAGGA) += quagga
 obj-$(CONFIG_VPNC) += vpnc
+obj-$(CONFIG_STUCK) += stuck_beacon
 
 
