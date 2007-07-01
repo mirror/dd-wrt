@@ -35,7 +35,7 @@ if [ -z "$(nvram get milkfish_routerid)" ] ; then
     nvram set need_commit=1
 fi
 #if [ -z "$(nvram get milkfish_ppptime)" ] ; then
-#    nvram set milkfish_ppptime=off
+    nvram set milkfish_ppptime=off
 #    nvram set need_commit=1
 #fi
 #if [ -z "$(nvram get milkfish_audit)" ] ; then
@@ -44,6 +44,14 @@ fi
 #fi
 #if [ -z "$(nvram get milkfish_dynsip)" ] ; then
 #    nvram set milkfish_dynsip=off
+#    nvram set need_commit=1
+#fi
+#if [ -z "$(nvram get milkfish_dynsipdomain)" ] ; then
+#    nvram set milkfish_dynsipdomain=
+#    nvram set need_commit=1
+#fi
+#if [ -z "$(nvram get milkfish_dynsipurl)" ] ; then
+#    nvram set milkfish_dynsipurl=
 #    nvram set need_commit=1
 #fi
 #if [ -z "$(nvram get milkfish_siptrace)" ] ; then
