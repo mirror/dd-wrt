@@ -1175,7 +1175,7 @@ set_netmode (char *wif, char *dev, char *use)
 //  fprintf (stderr, "set netmode of %s to %s\n", net, netmode);
   cprintf ("configure net mode %s\n", netmode);
 
-  eval ("iwconfig", use, "channel", "0");
+//  eval ("iwconfig", use, "channel", "0");
 //  else
   {
     eval ("iwpriv", use, "turbo", "0");
@@ -1659,21 +1659,6 @@ configure_single (int count)
 #endif
     }
 
-  if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
-    {
-      cprintf ("set channel\n");
-      char *ch = default_get (channel, "0");
-      if (strcmp (ch, "0") == 0)
-	{
-	  eval ("iwconfig", dev, "channel", "0");
-	}
-      else
-	{
-	  char freq[64];
-	  sprintf (freq, "%sM", ch);
-	  eval ("iwconfig", dev, "freq", freq);
-	}
-    }
 
 
 
@@ -1805,6 +1790,21 @@ configure_single (int count)
 	setupSupplicant (var);
     }
   set_rate (dev);
+  if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
+    {
+      cprintf ("set channel\n");
+      char *ch = default_get (channel, "0");
+      if (strcmp (ch, "0") == 0)
+	{
+	  eval ("iwconfig", dev, "channel", "0");
+	}
+      else
+	{
+	  char freq[64];
+	  sprintf (freq, "%sM", ch);
+	  eval ("iwconfig", dev, "freq", freq);
+	}
+    }
 }
 
 void
@@ -1885,7 +1885,7 @@ stop_vifs (void)
 }
 
 void
-configure_wifi (void)		//madwifi implementation for atheros based cards
+configure_wifi_old (void)		//madwifi implementation for atheros based cards
 {
   deconfigure_wifi ();
 /*int s;
@@ -1992,10 +1992,12 @@ if (ifexists(wif))
       need_commit = 0;
     }
 }
-#endif
 
-
-//test functions only
+void configure_wifi(void)
+{
+configure_wifi_old();
+//configure_wifi_old();//temporarily fix for cm9
+}
 
 void
 start_deconfigurewifi (void)
@@ -2009,3 +2011,4 @@ start_configurewifi (void)
 {
   configure_wifi ();
 }
+#endif
