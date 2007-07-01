@@ -20,7 +20,7 @@
 #                                                                    #
 # The Milkfish Router Services - Shell Function Library              #
 #                                                                    #
-# Built/Version:  20070420                                           #
+# Built/Version:  20070701                                           #
 # Author/Contact: Franz Streibl <fronce@sipwerk.com>                 #
 # Copyright (C) 2007 by sipwerk - All rights reserved.               #
 #                                                                    #
@@ -101,7 +101,7 @@ mf_ser_procs () {
 }
 
 
-mf_services_status () {
+mf_services_check () {
     if [ $(which curl) ] ; then
         mf_feedback "Checking router status at milkfish.org (https)..."
 	curl -k -s https://$USERNAME:$PASSWORD@milkfish.org/register?system=all\&action=status\&routerid=$(nvram get milkfish_routerid)
@@ -113,7 +113,7 @@ mf_services_status () {
     fi
 }
 
-mf_router_check () {
+mf_router_status () {
     mf_feedback "Checking the local Router Status..."
     echo ""
     echo "SIP Transaction Statistics:"
@@ -207,13 +207,13 @@ mf_dynsip_update () {
     verbose)
       [ "$CURRENTIP" != "$DYNSIPIP" ] && {                           
        if [ $(which curl) ] ; then
-        mf_feedback "Updating the homesip.net dynamic SIP service (https)..."
-	curl -k -s https://$USERNAME:$PASSWORD@dynsip.milkfish.org/nic/update?hostname=$DOMAIN
- 	
+        mf_feedback "Updating dynamic SIP service (https)..."
+#	curl -k -s https://$USERNAME:$PASSWORD@dynsip.milkfish.org/nic/update?hostname=$DOMAIN
+ 	curl -k -s https://${DSUSERNAME:-$USERNAME}:${DSPASSWORD:-$PASSWORD}@${DYNSIPURL:-dynsip.milkfish.org/nic/update}?hostname=$DOMAIN
        else
-        mf_feedback "Updating the homesip.net dynamic SIP service (http)..."
-	wget -O - http://$USERNAME:$PASSWORD@dynsip.milkfish.org/nic/update?hostname=$DOMAIN
- 	
+        mf_feedback "Updating dynamic SIP service (http)..."
+#	wget -O - http://$USERNAME:$PASSWORD@dynsip.milkfish.org/nic/update?hostname=$DOMAIN
+ 	wget -O - http://${DSUSERNAME:-$USERNAME}:${DSPASSWORD:-$PASSWORD}@${DYNSIPURL:-dynsip.milkfish.org/nic/update}?hostname=$DOMAIN
        fi
        DYNSIPIP=$CURRENTIP
       }
@@ -221,11 +221,13 @@ mf_dynsip_update () {
     *)
       [ "$CURRENTIP" != "$DYNSIPIP" ] && {                           
        if [ $(which curl) ] ; then
-        mf_logging "Updating the homesip.net dynamic SIP service (https)..."
- 	curl -k -s https://$USERNAME:$PASSWORD@dynsip.milkfish.org/nic/update?hostname=$DOMAIN > /dev/null 2>&1
+        mf_logging "Updating dynamic SIP service (https)..."
+ #	curl -k -s https://$USERNAME:$PASSWORD@dynsip.milkfish.org/nic/update?hostname=$DOMAIN > /dev/null 2>&1
+	curl -k -s https://${DSUSERNAME:-$USERNAME}:${DSPASSWORD:-$PASSWORD}@${DYNSIPURL:-dynsip.milkfish.org/nic/update}?hostname=$DOMAIN > /dev/null 2>&1
        else
-        mf_logging "Updating the homesip.net dynamic SIP service (http)..."
- 	wget -O - http://$USERNAME:$PASSWORD@dynsip.milkfish.org/nic/update?hostname=$DOMAIN > /dev/null 2>&1
+        mf_logging "Updating dynamic SIP service (http)..."
+ #	wget -O - http://$USERNAME:$PASSWORD@dynsip.milkfish.org/nic/update?hostname=$DOMAIN > /dev/null 2>&1
+	wget -O - http://${DSUSERNAME:-$USERNAME}:${DSPASSWORD:-$PASSWORD}@${DYNSIPURL:-dynsip.milkfish.org/nic/update}?hostname=$DOMAIN > /dev/null 2>&1
        fi
        DYNSIPIP=$CURRENTIP
       }
