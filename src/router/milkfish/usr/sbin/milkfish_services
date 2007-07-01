@@ -20,7 +20,7 @@
 #                                                                    #
 # The Milkfish Router Services - Main Executable Shell Script        #
 #                                                                    #
-# Built/Version:  20070420                                           #
+# Built/Version:  20070701                                           #
 # Author/Contact: Franz Streibl <fronce@sipwerk.com>                 #
 # Copyright (C) 2007 by sipwerk - All rights reserved.               #
 #                                                                    #
@@ -37,17 +37,17 @@ mf_printhelp () {
     echo "audit          : Auditing service for measuring the availability and uptime"
     echo "fwtest         : Firewall test utility performing a quick portscan"
     echo "echotest       : Signaling test utility responding with the outgoing INVITEs SIP/SDP"
-    echo "homesip        : Dynamic SIP service routing personal FQDN calls to the WAN IP address"
+    echo "dynsip         : Dynamic SIP service routing personal FQDN calls to the WAN IP address"
     echo "simple         : Send an instant SIP/SIMPLE message - arguments: destination-sip:uri:port message"
     echo "phonebook      : Print short and detailed locally handled user list phonebook"
     echo "sipdb          : Local SIP user database management services"    
     #echo "dyndns         : Dynamic DNS service updating your DDNS service with the WAN IP address"
     echo "pppoe-reconnect: Checks whether a PPPoE reconnect is necessary and performs one if so"
-    echo "status         : Check for registration status and service activation at milkfish.org"
-    echo "check          : Check the local Router Status (IP addresses, SER Stats, RTPproxy, ...)"
-    echo "sipstart       : Initialises the Milkfish Environment Processes (Openser and RTPproxy)"
-    echo "sipstop        : Stops the Milkfish Environment Processes (Openser and RTPproxy)"
-    echo "siprestart     : Restarts the Milkfish Environment Processes (Openser and RTPproxy)"
+    echo "check          : Check for registration status and service activation at milkfish.org"
+    echo "status         : Shows the local Router Status (IP addresses, SER Stats, RTPproxy, ...)"
+    #echo "sipstart       : Initialises the Milkfish Environment Processes (Openser and RTPproxy)"
+    #echo "sipstop        : Stops the Milkfish Environment Processes (Openser and RTPproxy)"
+    #echo "siprestart     : Restarts the Milkfish Environment Processes (Openser and RTPproxy)"
     echo "start          : Activates the Milkfish Services (starts a background process)"
     echo "                 All enabled services will be updated automatically"
     echo "stop           : Stop the Milkfish Services (ends all background processes)"
@@ -66,7 +66,7 @@ mf_printhelp () {
     echo " "
     echo "store          : Stores the volatile SIP user database to flash memory"
     echo "restore        : Restores SIP user database from flash memory"
-    echo "flush          : Flushes the volatile SIP user database (not the persistent one)"
+    echo "flush          : Flushes the volatile SIP user database (not the persistent ones)"
     echo "adduser        : Adds a user to the volatile SIP user database - arguments: username password"
     echo "rmuser         : Removes a user from the volatile SIP user database - argument: username"
     echo "addalias       : Adds an alias to the volatile SIP user database - arguments: alias uri"
@@ -75,7 +75,15 @@ mf_printhelp () {
     echo "                 Locations are associated to every active account, this means"
     echo "                 also to UAs only using the Outbound Proxy feature."
     echo " "
-    echo "Security Note  : Install the curl packages to enable SSL secured services"
+    echo "Valid NVRAM sipdb <action> options are:"
+    echo " "
+    echo "storenv        : Stores the volatile SIP user database to NVRAM (max. 10 entries)"
+    echo "restorenv      : Restores SIP user database from NVRAM"
+    echo "flushnv        : Deletes all SIP user database entries inside NVRAM"
+    echo " "
+    echo "Please use \"milkfish_services openserctl restart\" afterwards for changes to take effect"
+    echo " "
+    echo "Security Note  : Install the curl packages to enable SSL secured Dynsip Updates and Audit Services"
     echo " "
 }
 
@@ -96,7 +104,11 @@ PPPTIME=$(mf_load_setting milkfish_ppptime)
 USERNAME=$(mf_load_setting milkfish_username)
 PASSWORD=$(mf_load_setting milkfish_password)
 ROUTERID=$(mf_load_setting milkfish_routerid)
-DOMAIN=$USERNAME.homesip.net
+DSUSERNAME=$(mf_load_setting milkfish_dsusername)
+DSPASSWORD=$(mf_load_setting milkfish_dspassword)
+DSDOMAIN=$(mf_load_setting milkfish_dynsipdomain)
+DOMAIN=${DSDOMAIN:-$USERNAME.homesip.net}
+DYNSIPURL=$(mf_load_setting milkfish_dynsipurl)
 DYNSIPIP="something"
 #
 
@@ -138,8 +150,8 @@ case $1 in
 	mf_reboot
 	exit 0
       ;;
-    check)
-	mf_router_check
+    status)
+	mf_router_status
 	exit 0
       ;;
     sipstart)
@@ -154,10 +166,10 @@ case $1 in
 	mf_sip_restart
 	exit 0
       ;;
-    status)
+    check)
 	mf_settings_check milkfish_username $USERNAME
 	mf_settings_check milkfish_password $PASSWORD
-	mf_services_status
+	mf_services_check
 	exit 0
       ;;
     simple)
@@ -367,7 +379,7 @@ case $1 in
 	fi
 	exit 0
 	;;
-    homesip)
+    dynsip)
 	mf_settings_check milkfish_username $USERNAME
 	mf_settings_check milkfish_password $PASSWORD
 	mf_switch_check milkfish_dynsip ${DYNSIPSWITCH:-off} Homesip doexit
