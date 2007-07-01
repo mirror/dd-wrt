@@ -3957,12 +3957,6 @@ find_command(char *name, struct cmdentry *entry, int act, const char *path)
 	}
 #endif
 
-	if (is_safe_applet(name)) {
-		entry->cmdtype = CMDNORMAL;
-		entry->u.index = -1;
-		return;
-	}
-
 	updatetbl = (path == pathval());
 	if (!updatetbl) {
 		act |= DO_ALTPATH;
@@ -4072,6 +4066,12 @@ loop:
 		cmdp->param.index = idx;
 		INTON;
 		goto success;
+	}
+
+	if (is_safe_applet(name)) {
+		entry->cmdtype = CMDNORMAL;
+		entry->u.index = -1;
+		return;
 	}
 
 	/* We failed.  If there was an entry for this command, delete it */
