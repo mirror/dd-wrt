@@ -4432,7 +4432,8 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 #endif
 
 // ACK timing
-//#ifdef HAVE_ACK		//temp fix for v24 broadcom ACKnot working
+#if defined(HAVE_ACK) || defined(HAVE_MADWIFI)		//temp fix for v24 broadcom ACKnot working
+  
   sprintf (power, "%s_distance", prefix);
   websWrite (wp, "<br />\n");
   websWrite (wp, "<div class=\"setting\">\n");
@@ -4444,7 +4445,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp,
 	     "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 2000 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
   websWrite (wp, "</div>\n");
-//end ACK timing
+end ACK timing
 //#endif
 
   showbridgesettings (wp, prefix);
