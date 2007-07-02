@@ -247,6 +247,7 @@ nvram_unset (const char *name)
 int
 nvram_commit (void)
 {
+system("/sbin/ledtool 1");
 //fprintf(stderr,"nvram_commit \n");
   lock ();
   int ret;
