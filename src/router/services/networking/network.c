@@ -2736,8 +2736,11 @@ start_wan_done (char *wan_ifname)
 #endif
   nvram_set ("wanup", "1");
 #ifdef HAVE_MILKFISH
+  if (nvram_match ("milkfish_enabled", "1"))
+{
   cprintf ("starting milkfish netup script\n");
   eval ("/etc/config/milkfish.netup");
+}
 #endif
 #ifdef HAVE_SPUTNIK_APD
   stop_sputnik ();

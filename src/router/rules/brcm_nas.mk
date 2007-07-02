@@ -1,10 +1,16 @@
-nas nas-clean nas-distclean:
-        # So that generic rule does not take precedence
-	@true
+
+nas:
+ifeq ($(CONFIG_MSSID),y)
+	make -C nas
+endif
+
+nas-clean:
+	make -C nas clean
 
 nas-install:
 ifeq ($(CONFIG_MSSID),y)
-	install -D nas/nas $(INSTALLDIR)/nas/usr/sbin/nas
+	make -C nas install
+#	install -D nas/nas $(INSTALLDIR)/nas/usr/sbin/nas
 else
 	install -D nas/nas.v23 $(INSTALLDIR)/nas/usr/sbin/nas
 endif

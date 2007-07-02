@@ -21,7 +21,7 @@ start_milkfish (void)
 {
   if (nvram_match ("milkfish_enabled", "1"))
     {
-      eval ("/etc/config/milkfish.startup");
+      eval ("/etc/config/milkfish.sh");
       eval ("/etc/config/milkfish.netup");	//start rtpproxy and openserctl
 
       syslog (LOG_INFO, "Milkfish service successfully started\n");

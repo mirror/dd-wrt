@@ -49,9 +49,19 @@ all:
 #	$(CC) -o jffs2root -I$(LINUXDIR)/include $(COPTS) jffs2root.c	
 else
 all: $(UTILS)
+ifeq ($(CONFIG_BUFFALO),y)
+	make -C full
+else
+	make -C src
+endif
 endif
 
 clean:
+ifeq ($(CONFIG_BUFFALO),y)
+	make -C full clean
+else
+	make -C src clean
+endif
 	rm -f *.o *~ $(UTILS)
 
 install: all
@@ -69,12 +79,12 @@ ifneq ($(CONFIG_MADWIFI),y)
 
 ifeq ($(CONFIG_MSSID),y)
 ifneq ($(CONFIG_BCM5354),y)
-	install -D wl_mimo $(INSTALLDIR)/usr/sbin/wl
+	install -D wl $(INSTALLDIR)/usr/sbin/wl
 else
 	install -D wl $(INSTALLDIR)/usr/sbin/wl
 endif
 else
-	install -D wl.v23 $(INSTALLDIR)/usr/sbin/wl
+	install -D wl $(INSTALLDIR)/usr/sbin/wl
 endif
 
 endif
