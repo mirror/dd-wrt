@@ -17,7 +17,7 @@ milkfish-install:
 	install -m0644 milkfish/etc/openser/dbtext/uri.empty $(INSTALLDIR)/milkfish/etc/openser/dbtext/
 	install -m0644 milkfish/etc/openser/dbtext/version $(INSTALLDIR)/milkfish/etc/openser/dbtext/
 	install -d -m0755 $(INSTALLDIR)/milkfish/etc/config
-	install -m0755 milkfish/etc/config/milkfish.startup $(INSTALLDIR)/milkfish/etc/config/
+	install -m0755 milkfish/etc/config/milkfish.sh $(INSTALLDIR)/milkfish/etc/config/
 	install -m0755 milkfish/etc/config/milkfish.netup $(INSTALLDIR)/milkfish/etc/config/
 	install -d -m0755 $(INSTALLDIR)/milkfish/usr/sbin
 	install -m0755 milkfish/usr/sbin/milkfish_services $(INSTALLDIR)/milkfish/usr/sbin/
