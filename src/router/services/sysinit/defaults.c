@@ -1154,10 +1154,14 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_GGEW
   {"txant", "0", 0},
   {"wl_antdiv", "0", 0},
+#elif HAVE_BUFFALO
+  {"txant", "0", 0},
+  {"wl_antdiv", "3", 0},
 #else
   {"txant", "3", 0},
   {"wl_antdiv", "3", 0},
 #endif
+
   {"apwatchdog_enable", "0", 0},
   {"apwatchdog_interval", "15", 0},
   {"boot_wait", "on", 0},
