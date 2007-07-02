@@ -14,8 +14,10 @@ CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/iptables/include/libipq -I$(TOP)/l
 CFLAGS  += -s $(COPTS) -fpic
 ifeq ($(ARCH),i386)
 LDFLAGS	+= -s -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lcrypt -L../libnet/lib -lnet -lshared  -ldl
+CFLAGS += -I$(LINUXDIR)
 else
 LDFLAGS	+= -s -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lcrypt -L../libnet/lib -lnet -lshared  -ldl
+CFLAGS += -I$(LINUXDIR)
 endif
 
 OBJS := rc.o init.o servicemanager.o services.o stats.o crc.o http.o
