@@ -586,14 +586,14 @@ wlconf_up (char *name)
       sprintf (strv, "%d", val);
       eval ("wl", "acktiming", strv);
 #else
-      shm = 0x10;
+/*      shm = 0x10;
       shm |= (val << 16);
       WL_IOCTL (name, 197, &shm, sizeof (shm));
 
       reg.byteoff = 0x684;
       reg.val = val + 510;
       reg.size = 2;
-      WL_IOCTL (name, 102, &reg, sizeof (reg));
+      WL_IOCTL (name, 102, &reg, sizeof (reg));*/
 #endif
 #else
       shm = 0x10;
@@ -2921,6 +2921,7 @@ start_set_routes (void)
       continue;
     if (!strcmp (ipaddr, "0.0.0.0") && !strcmp (gateway, "0.0.0.0"))
       continue;
+      eval ("route", "del", "default");
     if (!strcmp (ipaddr, "0.0.0.0"))
       eval ("route", "add", "default", "gw", gateway);
     else
