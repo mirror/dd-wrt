@@ -382,6 +382,7 @@ do_madwifi_check (void)
 		  eval ("ifconfig", wdsdevname, "down");
 		  sleep (1);
 		  eval ("ifconfig", wdsdevname, "up");
+		  eval ("startservice","set_routes");
 		}
 	    }
 	}
@@ -424,6 +425,7 @@ do_madwifi_check (void)
 		      eval ("ifconfig", dev, "down");
 		      sleep (1);
 		      eval ("ifconfig", dev, "up");
+		      eval ("startservice","set_routes");
 
 		    }
 		  else if (!notstarted[i])
@@ -444,6 +446,7 @@ do_madwifi_check (void)
 			  {
 //		           fprintf(stderr,"restarting %s\n",var);
 			    eval ("ifconfig", var, "up");
+			    eval ("startservice","set_routes");
 			  }
 			}
 
