@@ -3288,7 +3288,7 @@ show_rates (webs_t wp, char *prefix, int maxrate)
       if (maxrate)
 	{
 	int offset=0;
-	if (nvram_match(mode,"a-only") && nvram_match (bw, "20"))offset=4;
+//	if (nvram_match(mode,"a-only") && nvram_match (bw, "20"))offset=0;
 	if (nvram_match(mode,"g-only") && nvram_match (bw, "20"))offset=4;
 	  char comp[32];
 	  sprintf (comp, "%d", i + 1 + offset);
@@ -4445,8 +4445,8 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp,
 	     "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 2000 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
   websWrite (wp, "</div>\n");
-end ACK timing
-//#endif
+// end ACK timing
+#endif
 
   showbridgesettings (wp, prefix);
   websWrite (wp, "</fieldset>\n");
