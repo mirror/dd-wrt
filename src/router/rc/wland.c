@@ -489,6 +489,7 @@ close(s);
 
 #ifndef HAVE_ACK
 #ifndef HAVE_MADWIFI
+#ifndef HAVE_MSSID
 static void
 setACK (void)
 {
@@ -513,6 +514,7 @@ setACK (void)
     }
 
 }
+#endif
 #endif
 #endif
 

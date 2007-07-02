@@ -136,6 +136,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"lan_ipaddr", "192.168.0.1", 0},	/* LAN IP address */
 #elif HAVE_DDLAN
   {"lan_ipaddr", "192.168.11.1", 0},	/* LAN IP address */
+#elif HAVE_BUFFALO
+  {"lan_ipaddr", "192.168.11.1", 0},	/* LAN IP address */
 #elif HAVE_GGEW
   {"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
 #elif HAVE_NEWMEDIA

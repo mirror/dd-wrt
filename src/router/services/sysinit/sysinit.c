@@ -719,6 +719,8 @@ start_restore_defaults (void)
 	}
 #ifdef HAVE_SPUTNIK
       nvram_set ("lan_ipaddr", "192.168.180.1");
+#elif HAVE_BUFFALO
+      nvram_set ("lan_ipaddr", "192.168.11.1");
 #else
       nvram_set ("lan_ipaddr", "192.168.1.1");
 #endif
