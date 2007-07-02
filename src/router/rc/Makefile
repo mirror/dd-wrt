@@ -18,8 +18,8 @@ else
 LDFLAGS	+= -s -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lcrypt -L../libnet/lib -lnet -lshared  -ldl
 endif
 
-OBJS := rc.c init.c servicemanager.c services.c stats.c crc.c http.c
-OBJS += resetbutton.c ntp.c listen.c check_ps.c process_monitor.c sendudp.c radio_timer.c watchdog.c event.c nvram.c
+OBJS := rc.o init.o servicemanager.o services.o stats.o crc.o http.o
+OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o sendudp.o radio_timer.o watchdog.o event.o nvram.o ledtool.o
 
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
 REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
@@ -31,7 +31,7 @@ CFLAGS += -DDIST=\"$(CONFIG_DIST)\"
 
 ifneq ($(CONFIG_RB500),y)
 ifneq ($(CONFIG_X86),y)
-OBJS += mtd.c
+OBJS += mtd.o
 endif
 endif
 ifeq ($(CONFIG_DIST),"micro")
@@ -174,10 +174,10 @@ endif
 ifeq ($(CONFIG_CA8),y)
 CFLAGS += -DHAVE_CA8
 endif
-OBJS += wland.c
+OBJS += wland.o
 ifeq ($(CONFIG_WIVIZ),y)
-OBJS += run_wiviz.c
-OBJS += autokill_wiviz.c
+OBJS += run_wiviz.o
+OBJS += autokill_wiviz.o
 CFLAGS += -DHAVE_WIVIZ
 endif
 ifeq ($(CONFIG_OPENVPN),y)
@@ -234,7 +234,7 @@ CFLAGS += -DHAVE_AQOS
 endif
 
 ifeq ($(CONFIG_PPTPD),y)
-OBJS += pptpd.c
+OBJS += pptpd.o
 CFLAGS += -DHAVE_PPTPD
 endif
 ifeq ($(CONFIG_PPTP),y)
@@ -297,7 +297,7 @@ CFLAGS += -DHAVE_SNMP
 endif
 
 ifeq ($(CONFIG_WOL),y)
-OBJS +=wol.c
+OBJS +=wol.o
 CFLAGS += -DHAVE_WOL
 endif
 
@@ -373,6 +373,7 @@ ifeq ($(CONFIG_DIST),"micro-special")
 	cd $(INSTALLDIR)/sbin && ln -sf rc brctl
 endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc erase
+	cd $(INSTALLDIR)/sbin && ln -sf rc ledtool
 	cd $(INSTALLDIR)/sbin && ln -sf rc write
 	cd $(INSTALLDIR)/sbin && ln -sf rc restore
 	cd $(INSTALLDIR)/sbin && ln -sf rc stats

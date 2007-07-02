@@ -305,6 +305,7 @@ start_sysinit (void)
   cprintf ("sysinit() get router\n");
 
   int brand = getRouterBrand ();
+  led_control(LED_DIAG,LED_ON);
   char *rname = getRouter ();
   fprintf (stderr, "Booting Device:%s\n", rname);
   switch (brand)
@@ -612,7 +613,6 @@ start_sysinit (void)
   stime (&tm);
 
   led_control (LED_POWER, LED_ON);
-  led_control (LED_DIAG, LED_OFF);
   led_control (LED_SES, LED_OFF);
   led_control (LED_BRIDGE, LED_OFF);
   led_control (LED_WLAN, LED_OFF);
