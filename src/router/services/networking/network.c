@@ -2930,6 +2930,7 @@ start_set_routes (void)
 }
 
 
+
 #ifndef HAVE_MADWIFI
 static int
 notify_nas (char *type, char *ifname, char *action)
