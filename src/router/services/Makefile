@@ -19,8 +19,12 @@ OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o sysini
        bridgetools.o igmp.o wpa.o vlantagging.o
 
 
+ifeq ($(CONFIG_WHRAG108),y)
+OBJS += gpio_atheros.o
+else
 ifneq ($(CONFIG_XSCALE),y)
-OBJS += gpio.o
+OBJS += gpio_brcm.o
+endif
 endif
 
 ifeq ($(CONFIG_RSTATS),y)
