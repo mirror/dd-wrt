@@ -929,7 +929,7 @@ led_control (int type, int act)
 /* type: LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN, LED_SES, LED_SES2, LED_WLAN
  * act: LED_ON, LED_OFF, LED_FLASH */
 {
-#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8)
+#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8)
   return 0;
 #else
 
@@ -999,6 +999,10 @@ led_control (int type, int act)
       diag_gpio = 0x17;
       bridge_gpio = 0x11;
       ses_gpio = 0x16;
+    case ROUTER_BUFFALO_WHRAG108:
+      diag_gpio = 0x18;
+      bridge_gpio = 0x14
+      ses_gpio = 0x10;
       break;
     case ROUTER_BUFFALO_WZRRSG54:
       diag_gpio = 0x17;
