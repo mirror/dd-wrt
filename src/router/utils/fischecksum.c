@@ -171,12 +171,13 @@ int main (int argc, char** argv) {
     fprintf(stderr,"data_length %lX\n",fis->data_length);
     fprintf(stderr,"desc_cksum %lX\n",fis->desc_cksum);
     fprintf(stderr,"file_cksum %lX\n",fis->file_cksum);*/
-    if (!strcmp(fis->name,"linux"))
+    if (!strcmp(fis->name,"linux") || !strcmp(fis->name,"vmlinux.bin"))
 	{
 	lfis=fis;
 	if (fis->size!=fis->data_length)
 	    flash=1;
 	len=fis->size;
+	fis->file_cksum=0;
 	fis->data_length=len;
 	}
     p+=sizeof(struct fis_image_desc);
