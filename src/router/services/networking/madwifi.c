@@ -1799,6 +1799,7 @@ configure_single (int count)
 	setupSupplicant (var);
     }
   set_rate (dev);
+  m = default_get (wl, "ap");
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
     {
       cprintf ("set channel\n");
