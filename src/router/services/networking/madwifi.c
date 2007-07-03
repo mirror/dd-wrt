@@ -1178,6 +1178,13 @@ set_netmode (char *wif, char *dev, char *use)
 //  eval ("iwconfig", use, "channel", "0");
 //  else
   {
+#ifdef HAVE_WHRAG108  
+ if (!strncmp(use,"ath0",4))
+ {
+    eval("iwpriv",use,"mode","1");
+ }else
+#endif
+{
     eval ("iwpriv", use, "turbo", "0");
     eval ("iwpriv", use, "xr", "0");
     if (!strcmp (netmode, "mixed"))
@@ -1194,9 +1201,11 @@ set_netmode (char *wif, char *dev, char *use)
 	eval ("iwpriv", use, "mode", "3");
 	eval ("iwpriv", use, "protmode", "1");
       }
+
     if (!strcmp (netmode, "a-only"))
       eval ("iwpriv", use, "mode", "1");
   }
+}
   if (default_match (turbo, "1", "0"))
     {
       {
