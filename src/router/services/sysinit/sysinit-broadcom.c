@@ -118,7 +118,9 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
 
 #ifdef HAVE_MSSID		//v24
 
+#ifndef HAVE_BUFFALO
   nvram_set ("pa0maxpwr", "251");	//force pa0maxpwr to be 251
+#endif
 
   switch (brand)
     {

@@ -2687,7 +2687,28 @@ start_wan_done (char *wan_ifname)
     {
       SET_LED (GET_IP_ERROR);
     }
+/* check ip addresses for validity */
+uint32 wanip;
+uint32 wannm;
+inet_aton (nvram_safe_get ("wan_ipaddr"), (struct in_addr *) &wanip);
+inet_aton (nvram_safe_get ("wan_netmask"), (struct in_addr *) &wannm);
+uint32 lanip;
+uint32 lannm;
+inet_aton (nvram_safe_get ("lan_ipaddr"), (struct in_addr *) &lanip);
+inet_aton (nvram_safe_get ("lan_netmask"), (struct in_addr *) &lannm);
 
+if (wanip!=0 && nvram_match("wan_ipaddr","0.0.0.0"))
+    {
+    int iperror=0;
+    if ((wanip&wannm) == lanip&wannm) iperror=1;
+    if ((lanip&lannm) == wanip&lannm) iperror=1;
+    if (iperror)
+	eval("ledtool","5"); //blink 5 times the 3 time interval     
+    }
+/* end */
+
+
+  
   cprintf ("running custom DD-WRT ipup scripts\n");
   runStartup ("/etc/config", ".ipup");
 #ifdef HAVE_RB500
