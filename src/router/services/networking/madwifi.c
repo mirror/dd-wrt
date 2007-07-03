@@ -1547,6 +1547,7 @@ configure_single (int count)
   char wmm[32];
   sprintf (wmm, "%s_wmm", dev);
   eval ("iwpriv", dev, "wmm", default_get (wmm, "0"));
+  eval ("iwpriv",dev,"scandisable","0");
 
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
     {
@@ -1554,12 +1555,14 @@ configure_single (int count)
       char *ch = default_get (channel, "0");
       if (strcmp (ch, "0") == 0)
 	{
+	  eval ("iwpriv",dev,"scandisable","0");
 	  eval ("iwconfig", dev, "channel", "0");
 	}
       else
 	{
 	  char freq[64];
 	  sprintf (freq, "%sM", ch);
+	  eval ("iwpriv",dev,"scandisable","1");
 	  eval ("iwconfig", dev, "freq", freq);
 	}
     }
@@ -1800,6 +1803,7 @@ configure_single (int count)
     }
   set_rate (dev);
   m = default_get (wl, "ap");
+  eval ("iwpriv",dev,"scandisable","0");
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
     {
       cprintf ("set channel\n");
@@ -1812,6 +1816,7 @@ configure_single (int count)
 	{
 	  char freq[64];
 	  sprintf (freq, "%sM", ch);
+	  eval ("iwpriv",dev,"scandisable","1");
 	  eval ("iwconfig", dev, "freq", freq);
 	}
     }
