@@ -1179,7 +1179,7 @@ set_netmode (char *wif, char *dev, char *use)
 //  else
   {
 #ifdef HAVE_WHRAG108  
- if (!strncmp(use,"ath0",4))
+    if (!strncmp(use,"ath0",4))
  {
     eval("iwpriv",use,"mode","1");
  }else
