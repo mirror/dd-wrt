@@ -176,6 +176,8 @@ int main (int argc, char** argv) {
 	lfis=fis;
 	if (fis->size!=fis->data_length)
 	    flash=1;
+	if (fis->file_cksum!=0)
+	    flash=1;
 	len=fis->size;
 	fis->file_cksum=0;
 	fis->data_length=len;
