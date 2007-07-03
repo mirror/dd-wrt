@@ -994,16 +994,16 @@ led_control (int type, int act)
       diag_gpio = 0x17;
       ses_gpio = 0x11;
     break;
+    case ROUTER_BOARD_WHRAG108:
+      diag_gpio = 0x17;
+      bridge_gpio = 0x14;
+      ses_gpio = 0x10;
+      break;
     case ROUTER_BUFFALO_WHRG54S:
     case ROUTER_BUFFALO_WLI_TX4_G54HP:
       diag_gpio = 0x17;
       bridge_gpio = 0x11;
-      ses_gpio = 0x16;
-    case ROUTER_BOARD_WHRAG108:
-      diag_gpio = 0x18;
-      bridge_gpio = 0x14;
-      ses_gpio = 0x10;
-      break;
+      ses_gpio = 0x16;  
     case ROUTER_BUFFALO_WZRRSG54:
       diag_gpio = 0x17;
       vpn_gpio = 0x11;
