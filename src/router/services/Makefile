@@ -22,11 +22,18 @@ OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o sysini
 ifeq ($(CONFIG_WHRAG108),y)
 OBJS += gpio_atheros.o
 else
+ifeq ($(CONFIG_FONERA),y)
+OBJS += gpio_atheros.o
+else
+ifeq ($(CONFIG_MERAKI),y)
+OBJS += gpio_atheros.o
+else
 ifneq ($(CONFIG_XSCALE),y)
 OBJS += gpio_brcm.o
 endif
 endif
-
+endif
+endif
 ifeq ($(CONFIG_RSTATS),y)
 CFLAGS += -DHAVE_RSTATS
 OBJS += rstats.o
@@ -36,6 +43,9 @@ CFLAGS += -DHAVE_IPV6
 endif
 ifeq ($(CONFIG_ACK),y)
 CFLAGS += -DHAVE_ACK
+endif
+ifeq ($(CONFIG_GLAUCO),y)
+CFLAGS += -DHAVE_GLAUCO
 endif
 
 ifeq ($(CONFIG_NSTX),y)
