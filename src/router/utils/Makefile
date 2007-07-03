@@ -38,6 +38,15 @@ endif
 ifeq ($(CONFIG_CA8),y)
 UTILS += fischecksum
 endif
+ifeq ($(CONFIG_FONERA),y)
+UTILS += fischecksum
+endif
+ifeq ($(CONFIG_MERAKI),y)
+UTILS += fischecksum
+endif
+ifeq ($(CONFIG_WHRAG108),y)
+UTILS += fischecksum
+endif
 ifeq ($(CONFIG_XSCALE),y)
 UTILS += gpio
 endif
