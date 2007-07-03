@@ -1001,7 +1001,7 @@ led_control (int type, int act)
       ses_gpio = 0x16;
     case ROUTER_BOARD_WHRAG108:
       diag_gpio = 0x18;
-      bridge_gpio = 0x14
+      bridge_gpio = 0x14;
       ses_gpio = 0x10;
       break;
     case ROUTER_BUFFALO_WZRRSG54:
