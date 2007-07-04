@@ -1900,7 +1900,7 @@ stop_vifs (void)
 }
 
 void
-configure_wifi_old (void)		//madwifi implementation for atheros based cards
+configure_wifi (void)		//madwifi implementation for atheros based cards
 {
   deconfigure_wifi ();
 /*int s;
@@ -2008,11 +2008,6 @@ if (ifexists(wif))
     }
 }
 
-void configure_wifi(void)
-{
-configure_wifi_old();
-//configure_wifi_old();//temporarily fix for cm9
-}
 
 void
 start_deconfigurewifi (void)
