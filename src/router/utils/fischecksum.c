@@ -171,7 +171,7 @@ int main (int argc, char** argv) {
     fprintf(stderr,"data_length %lX\n",fis->data_length);
     fprintf(stderr,"desc_cksum %lX\n",fis->desc_cksum);
     fprintf(stderr,"file_cksum %lX\n",fis->file_cksum);*/
-    if (!strcmp(fis->name,"linux") || !strcmp(fis->name,"vmlinux.bin"))
+    if (!strcmp(fis->name,"linux") || !strncmp(fis->name,"vmlinux",7))
 	{
 	lfis=fis;
 	if (fis->size!=fis->data_length)

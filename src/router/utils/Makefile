@@ -61,7 +61,7 @@ all: $(UTILS)
 ifeq ($(CONFIG_BUFFALO),y)
 	make -C full
 else
-	if test -e "src/Makefile"; then make -C src clean; fi
+	if test -e "src/Makefile"; then make -C src; fi
 endif
 endif
 
