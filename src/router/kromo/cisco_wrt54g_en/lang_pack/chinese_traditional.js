@@ -279,7 +279,7 @@ errmsg.err59="不可用！請啟用無線網路。";
 
 //Upgrade.asp error messages
 errmsg.err60="請選擇升級檔。";
-errmsg?6c?6c.err61="不正確的鏡像檔。";
+errmsg.err61="不正確的鏡像檔。";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
 
@@ -287,7 +287,7 @@ bmenu.setup="設置";
 bmenu.setupbasic="基本設置";
 bmenu.setupddns="DDNS（動態DNS）";
 bmenu.setupmacclone="MAC地址克隆";
-bmenu.setuprouting="高級路由";
+bmenu.setuprouting="進階路由";
 bmenu.setupvlan="VLANs";
 bmenu.setupeop="EoIP Tunnel";
 bmenu.networking="Networking";
@@ -297,7 +297,7 @@ bmenu.wirelessBasic="基本設置";
 bmenu.wirelessRadius="Radius";
 bmenu.wirelessSecurity="無線安全";
 bmenu.wirelessMac="MAC過濾";
-bmenu.wirelessAdvanced="高級設置";
+bmenu.wirelessAdvanced="進階設置";
 bmenu.wirelessWds="WDS";
 
 bmenu.security="安全";
@@ -311,7 +311,7 @@ bmenu.webaccess="Internet訪問";
 bmenu.applications="應用程式 &amp; 遊戲";
 bmenu.applicationsprforwarding="埠段轉發（映射）";
 bmenu.applicationspforwarding="埠轉發（映射）";
-bmenu.applicationsptriggering="埠激發";
+bmenu.applicationsptriggering="埠觸發";
 bmenu.applicationsUpnp="UPnP";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
@@ -505,7 +505,7 @@ hfilter.right14="您可以通過輸入特定Web站點的URL來禁止對其訪問。";
 hfilter.right16="您可以通過輸入包含在特定Web站點頁面中的關鍵字來禁止對其訪問。";;
 
 
-?6c
+
 // ******************************************* FilterSummary.asp *******************************************//
 
 filterSum.titl=" - 訪問限制綜覽";
@@ -822,7 +822,7 @@ management.jffs_clean="清除JFFS2";
 management.lang_legend="語言選擇";
 management.lang_srv="語言";
 management.lang_bulgarian="bulgarian（保加利亞語）";
-management.lang_chinese_traditional="tradchinese（繁體中文）"; 
+management.lang_chinese_traditional="tradchinese（正體中文）"; 
 management.lang_chinese_simplified="simpchinese（簡體中文，Simplified Chinese）";
 management.lang_croatian="croatian（克羅地亞）";
 management.lang_czech="czech（捷克）";
@@ -851,7 +851,7 @@ management.clock_support="不支持";
 management.mmc_legend="MMC/SD卡支持";
 management.mmc_srv="MMC設備";
 
-management.samba_legend="Samba FS自動裝載";
+management.samba_legend="Samba FS自動載入";
 management.samba_srv="SMB檔系統";
 management.samba_share="共用";
 management.samba_stscript="啟動腳本";
@@ -866,8 +866,8 @@ management.gui_style="路由器圖形用戶介面風格";
 
 //help container
 
-hmanagement.right1="自動刷新：";
-hmanagement.right2="調整Web圖形用戶介面自動刷新間隙。輸入0完全關閉這個特性。";
+hmanagement.right1="自動更新：";
+hmanagement.right2="調整Web圖形介面自動更新時間。輸入0完全關閉這個特性。";
 
 
 
@@ -900,7 +900,7 @@ qos.maxrate_o="最大資料率";
 qos.legend4="MAC優先順序";
 qos.legend5="乙太網埠優先順序";
 qos.legend6="預設帶寬等級";
-qos.bandwidth="以Kbits表示的帶寬";
+qos.bandwith="以Kbits表示的帶寬";
 
 //help container
 
@@ -928,7 +928,7 @@ routetbl.th1="目的LAN IP";
 // ******************************************* Routing.asp *******************************************//
 
 route.titl=" - 路由操作";
-route.h2="高級路由操作";
+route.h2="進階路由操作";
 route.mod="工作模式";
 route.bgp_legend="BGP設置";
 route.bgp_ip="鄰近IP";
@@ -1167,20 +1167,20 @@ status_openvpn.titl=" - OpenVPN Status";
 
 // ******************************************* Triggering.asp *******************************************//
 
-trforward.titl=" - 埠激發器";
-trforward.h2="埠激發器";
-trforward.legend="轉發（映射）";
-trforward.trrange="被激發的埠範圍";
-trforward.fwdrange="被轉發（映射）的埠範圍";
+trforward.titl=" - 觸發通訊埠";
+trforward.h2="觸發通訊埠";
+trforward.legend="虛擬伺服器（映射）";
+trforward.trrange="已觸發通訊埠範圍";
+trforward.fwdrange="已開啟虛擬伺服器（映射）的埠範圍";
 trforward.app="應用程式。";
 
 //help container
 
-htrforward.right2="輸入激發器的應用名稱。";
-htrforward.right4="為每一個應用程式列出被激發的埠範圍。請參考Internet應用程式文檔來查找所需要的埠號。";
-htrforward.right6="為每一個應用程式列出被轉發（映射）的埠範圍。請參考Internet應用程式文檔來查找所需要的埠號。";
-htrforward.right8="輸入被激發和被轉發（映射）埠範圍的起始埠號。";
-htrforward.right10="輸入被激發和被轉發（映射）埠範圍的終止埠號。";
+htrforward.right2="輸入觸發通訊埠的應用名稱。";
+htrforward.right4="為每一個應用程式列出被觸發的埠範圍。請參考Internet應用程式說明檔來查尋所需要的埠號。";
+htrforward.right6="為每一個應用程式列出虛擬伺服器（映射）的埠範圍。請參考Internet應用程式說明檔來查詢所需要的埠號。";
+htrforward.right8="輸入被觸發和虛擬伺服器（映射）埠範圍的起始埠號。";
+htrforward.right10="輸入觸發通訊埠和虛擬伺服器（映射）埠範圍的終止埠號。";
 
 
 
@@ -1189,8 +1189,8 @@ htrforward.right10="輸入被激發和被轉發（映射）埠範圍的終止埠號。";
 upgrad.titl=" - 韌體升級";
 upgrad.h2="韌體管理";
 upgrad.legend="韌體升級";
-upgrad.info1="在刷新之後，復位到";
-upgrad.resetOff="不復位";
+upgrad.info1="在刷新之後，還原到";
+upgrad.resetOff="不還原";
 upgrad.resetOn="預設值";
 upgrad.file="請選擇一個用來升級的檔";
 upgrad.warning=" [警] [告] ";
@@ -1198,7 +1198,7 @@ upgrad.mess1="升級韌體可能需要花費數分鐘。<br />請不要關閉電源或者按重定按鈕！";
 
 //help container
 
-hupgrad.right2="點擊 <em>流覽...</em> 按鈕選擇將要上載到路由器的韌體檔。<br /><br /> \
+hupgrad.right2="點擊 <em>瀏覽...</em> 按鈕選擇將要上載到路由器的韌體檔。<br /><br /> \
 			點擊 <em>升級</em> 按鈕開始升級過程。升級絕對不可以被打斷。";
 
 
@@ -1207,10 +1207,10 @@ hupgrad.right2="點擊 <em>流覽...</em> 按鈕選擇將要上載到路由器的韌體檔。<br /><b
 
 upnp.titl=" - UPnP";
 upnp.h2="通用即插即用（UPnP）";
-upnp.legend="轉發（映射）";
+upnp.legend="虛擬伺服器（映射）";
 upnp.legend2="UPnP配置";
 upnp.serv="UPnP服務";
-upnp.clear="在啟動時清除埠轉發（映射）";
+upnp.clear="在啟動時清除虛擬伺服器（映射）";
 upnp.url="發送陳述URL";
 upnp.msg1="點擊刪除租用";
 upnp.msg2="刪除所有項目？";
@@ -1391,10 +1391,10 @@ wl_basic.label2="無線網路模式";
 wl_basic.label3="無線網路名（SSID）";
 wl_basic.label4="無線頻道";
 wl_basic.label5="無線SSID廣播";
-wl_basic.label6="感受範圍（ACK時序）";
-wl_basic.ap="訪問點（AP）";
+wl_basic.label6="感度範圍（ACK時序）";
+wl_basic.ap="AP";
 wl_basic.client="用戶端";
-wl_basic.clientBridge="用戶端網橋";
+wl_basic.clientBridge="用戶端橋接";
 wl_basic.adhoc="Adhoc";
 wl_basic.mixed="混合";
 wl_basic.b="僅B";
@@ -1415,19 +1415,19 @@ hwl_basic.right4="調整ack時序。輸入0將完全禁用ack時序。";
 
 // ******************************************* Wireless_Advanced.asp *******************************************//
 
-wl_adv.titl=" - 高級無線設置";
-wl_adv.h2="高級無線設置";
-wl_adv.legend="高級設置";
+wl_adv.titl=" - 進階無線設置";
+wl_adv.h2="進階無線設置";
+wl_adv.legend="進階設置";
 wl_adv.legend2="無線多媒體支援設置";
-wl_adv.label="鑒權類型";
+wl_adv.label="認證類型";
 wl_adv.label2="基本速率";
 wl_adv.label3="傳輸速率";
 wl_adv.label4="CTS保護模式";
-wl_adv.label5="幀突發";
+wl_adv.label5="Frame Burst";
 wl_adv.label6="信標間隙";
 wl_adv.label7="DTIM間隙";
-wl_adv.label8="碎片閾值";
-wl_adv.label9="RTS閾值";
+wl_adv.label8="Fragmentation Threshold";
+wl_adv.label9="RTS值";
 wl_adv.label10="最大關聯的用戶端數";
 wl_adv.label11="AP獨立";
 wl_adv.label12="傳送天線";
@@ -1436,16 +1436,16 @@ wl_adv.label14="Preamble";
 wl_adv.reference="雜訊參照";
 wl_adv.label15="Xmit功率";
 wl_adv.label16="Afterburner";
-wl_adv.label17="無線圖形用戶介面訪問";
-wl_adv.label18="WMM支持";
-wl_adv.label19="無知曉";
+wl_adv.label17="無線用戶圖形介面登入";
+wl_adv.label18="啟用WMM";
+wl_adv.label19="No-Acknowledgement";
 wl_adv.table1="EDCA AP參數（AP到用戶端）";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
 wl_adv.col3="AIFSN";
 wl_adv.col4="TXOP(b)";
 wl_adv.col5="TXOP(a/g)";
-wl_adv.col6="管理員強制";
+wl_adv.col6="Admin強制";
 wl_adv.row1="背景";
 wl_adv.row2="最大努力";
 wl_adv.row3="視頻";
@@ -1489,4 +1489,4 @@ dhcp.server="DHCP伺服器IP地址：";
 dhcp.tclient="用戶端主機名";
 
 
-donate.mb="您也可以通過Moneybookers帳號mb@dd-wrt.com進行捐贈";
+donate.mb="您也可以通過Moneybookers帳號mb@dd-wrt.com進行贊助";
