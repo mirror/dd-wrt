@@ -24,9 +24,9 @@ echo
 echo "*** Installing executable programs and preparing work directories"
 echo
 echo ">>> Installing iptraf in $TARGET"
-$INSTALL -m 0700 -o root -g root iptraf $TARGET
+$INSTALL iptraf $TARGET
 echo ">>> Installing rvnamed in $TARGET"
-$INSTALL -m 0700 -o root -g root rvnamed $TARGET
+$INSTALL rvnamed $TARGET
 
 if [ ! -d $WORKDIR ]; then
     echo ">>> Creating IPTraf work directory $WORKDIR"
@@ -35,21 +35,21 @@ else
     rm -f $WORKDIR/othfilter.dat
 fi
 
-$INSTALL -m 0700 -o root -g root -d $WORKDIR
+$INSTALL -d $WORKDIR
 
 if [ ! -d $LOGDIR ]; then
     echo ">>> Creating IPTraf log directory $LOGDIR"
 else
     echo ">>> IPTraf log directory $LOGDIR already exists"
 fi
-$INSTALL -m 0700 -o root -g root -d $LOGDIR
+$INSTALL -d $LOGDIR
 
 if [ ! -d $LOCKDIR ]; then
     echo ">>> Creating IPTraf lockfile directory $LOCKDIR"
 else
     echo ">>> IPTraf lockfile directory $LOCKDIR already exists"
 fi
-$INSTALL -m 0700 -o root -g root -d $LOCKDIR
+$INSTALL -d $LOCKDIR
 echo
 echo
 echo "*** iptraf, and rvnamed executables are in $TARGET"
