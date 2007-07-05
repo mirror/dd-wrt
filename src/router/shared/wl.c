@@ -323,6 +323,30 @@ struct wifi_channels
   int noise;
 };
 
+static inline int
+iw_get_ext(int			skfd,		/* Socket to the kernel */
+	   const char *		ifname,		/* Device name */
+	   int			request,	/* WE ID */
+	   struct iwreq *	pwrq)		/* Fixed part of the request */
+{
+  /* Set device name */
+  strncpy(pwrq->ifr_name, ifname, IFNAMSIZ);
+  /* Do the request */
+  return(ioctl(skfd, request, pwrq));
+}
+
+int isAssociated(char *ifname)
+{
+struct iwreq wrq;
+int i;
+  if(iw_get_ext(getsocket(),ifname, SIOCGIWAP, &wrq) >= 0)
+    {
+      for (i=0;i<6;i++)
+        if (wrq.u.ap_addr.sa_data[i]!=0)
+	    return 1;
+    }
+return 0;
+}
 
 static struct wifi_channels *
 list_channelsext (const char *ifname, int allchans)
