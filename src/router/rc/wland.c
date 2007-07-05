@@ -35,7 +35,11 @@
 #define TXPWR_MAX 251
 #define TXPWR_DEFAULT 28
 
+#ifdef HAVE_MADWIFI
+#define WLAND_INTERVAL 60
+#else
 #define WLAND_INTERVAL 15
+#endif
 
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
@@ -430,7 +434,7 @@ do_madwifi_check (void)
 		      sleep (1);
 		      eval ("ifconfig", dev, "up");
 		      eval ("startservice","set_routes");
-
+		      lastchans[i] = 0;
 		    }
 		  else if (!notstarted[i])
 		    {
