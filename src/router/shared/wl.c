@@ -646,6 +646,20 @@ getassoclist (char *ifname, unsigned char *list)
   int len;
   struct iwreq iwr;
   int s;
+  char type[32];
+  char netmode[32];
+  sprintf(type,"%s_mode");
+  sprintf(netmode,"%s_netmode");
+  if (nvram_match(netmode,"disabled"))
+    return 0;
+  int mincount=-1;
+  if (nvram_match(type,"wdssta") || nvram_match(type,"sta"))
+    {
+     int assoc = isAssociated(ifname);
+     if (!assoc)
+        return 0;
+    mincount=1;
+    }
   s = socket (AF_INET, SOCK_DGRAM, 0);
   if (s < 0)
     {
@@ -661,14 +675,14 @@ getassoclist (char *ifname, unsigned char *list)
     {
       close (s);
       free(buf);
-      return -1;
+      return mincount;
     }
   len = iwr.u.data.length;
   if (len < sizeof (struct ieee80211req_sta_info))
     {
     close(s);
     free(buf);
-    return -1;
+    return mincount;
     }
   int cnt = 0;
   cp = buf;
@@ -691,7 +705,8 @@ getassoclist (char *ifname, unsigned char *list)
   while (len >= sizeof (struct ieee80211req_sta_info));
   close (s);
   free(buf);
-  return count[0];
+  
+  return mincount>count[0]?mincount:count[0];
 }
 
 
