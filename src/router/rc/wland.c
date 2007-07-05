@@ -405,7 +405,7 @@ do_madwifi_check (void)
 		  int count = getassoclist (dev, &assoclist[0]);
 		  
 //	  fprintf(stderr,"count %d\n",count);
-		  if (count == 0 || count==-1 || isAssociated(dev)==0)
+		  if (count == 0 || count==-1)
 		    {
 		      char *next;
 		      char var[80];
