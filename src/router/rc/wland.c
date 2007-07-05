@@ -345,6 +345,9 @@ do_client_check (void)
 #endif
 
 #ifdef HAVE_MADWIFI
+
+
+
 static int notstarted[32];
 static char assoclist[24 * 1024];
 static int lastchans[256];
@@ -400,8 +403,9 @@ do_madwifi_check (void)
 	      if (chan == lastchans[i])
 		{
 		  int count = getassoclist (dev, &assoclist[0]);
+		  
 //	  fprintf(stderr,"count %d\n",count);
-		  if (count == 0 || count==-1)
+		  if (count == 0 || count==-1 || isAssociated(dev)==0)
 		    {
 		      char *next;
 		      char var[80];
