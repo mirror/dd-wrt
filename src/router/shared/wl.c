@@ -97,7 +97,7 @@ getwdslist (char *name, unsigned char *list)
 }
 
 int
-getNoise (char *ifname,unsigned char *macname)
+getNoise (char *ifname, unsigned char *macname)
 {
   unsigned int noise;
   //rssi = 0;
@@ -213,13 +213,13 @@ wifi_getrate (char *ifname)
 static u_int
 ieee80211_mhz2ieee (u_int freq)
 {
-  if (freq == 2484+OFFSET)
+  if (freq == 2484 + OFFSET)
     return 14;
-  if (freq < 2484+OFFSET)
-    return (freq - (2407+OFFSET)) / 5;
-  if (freq < (5000+OFFSET))
-    return 15 + ((freq - (2512+OFFSET)) / 20);
-  return (freq - (5000+OFFSET)) / 5;
+  if (freq < 2484 + OFFSET)
+    return (freq - (2407 + OFFSET)) / 5;
+  if (freq < (5000 + OFFSET))
+    return 15 + ((freq - (2512 + OFFSET)) / 20);
+  return (freq - (5000 + OFFSET)) / 5;
 }
 
 int
@@ -324,28 +324,50 @@ struct wifi_channels
 };
 
 static inline int
-iw_get_ext(int			skfd,		/* Socket to the kernel */
-	   const char *		ifname,		/* Device name */
-	   int			request,	/* WE ID */
-	   struct iwreq *	pwrq)		/* Fixed part of the request */
+iw_get_ext (int skfd,		/* Socket to the kernel */
+	    const char *ifname,	/* Device name */
+	    int request,	/* WE ID */
+	    struct iwreq *pwrq)	/* Fixed part of the request */
 {
   /* Set device name */
-  strncpy(pwrq->ifr_name, ifname, IFNAMSIZ);
+  strncpy (pwrq->ifr_name, ifname, IFNAMSIZ);
   /* Do the request */
-  return(ioctl(skfd, request, pwrq));
+  return (ioctl (skfd, request, pwrq));
 }
 
-int isAssociated(char *ifname)
+int
+isAssociated (char *ifname)
 {
-struct iwreq wrq;
-int i;
-  if(iw_get_ext(getsocket(),ifname, SIOCGIWAP, &wrq) >= 0)
+  struct iwreq wrq;
+  int i;
+  if (iw_get_ext (getsocket (), ifname, SIOCGIWAP, &wrq) >= 0)
     {
-      for (i=0;i<6;i++)
-        if (wrq.u.ap_addr.sa_data[i]!=0)
-	    return 1;
+      for (i = 0; i < 6; i++)
+	if (wrq.u.ap_addr.sa_data[i] != 0)
+	  return 1;
     }
-return 0;
+  return 0;
+}
+
+int
+getAssocMAC (char *ifname,char *mac)
+{
+  struct iwreq wrq;
+  int i;
+  int ret = -1;
+  if (iw_get_ext (getsocket (), ifname, SIOCGIWAP, &wrq) >= 0)
+    {
+      for (i = 0; i < 6; i++)
+	if (wrq.u.ap_addr.sa_data[i] != 0)
+	  ret = 0;
+    }
+  if (!ret)
+    {
+      for (i = 0; i < 6; i++)
+	mac[i] = wrq.u.ap_addr.sa_data[i];
+
+    }
+  return ret;
 }
 
 static struct wifi_channels *
@@ -396,25 +418,26 @@ list_channelsext (const char *ifname, int allchans)
   int l = 0;
   for (i = 0; i < achans.ic_nchans; i++)
     {
-  //fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
+      //fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
 
       //filter out A channels if mode isnt A-Only or mixed
       if (IEEE80211_IS_CHAN_A (&achans.ic_chans[i]))
 	{
 #ifdef HAVE_WHRAG108
-  if (!strcmp(ifname,"ath1"))
-	continue;
+	  if (!strcmp (ifname, "ath1"))
+	    continue;
 #endif
 	  if (nvram_invmatch (wl_mode, "a-only")
 	      && nvram_invmatch (wl_mode, "mixed"))
 	    continue;
 	}
       //filter out B/G channels if mode isnt g-only, b-only or mixed
-      if (IEEE80211_IS_CHAN_ANYG (&achans.ic_chans[i]) || IEEE80211_IS_CHAN_B (&achans.ic_chans[i]))
+      if (IEEE80211_IS_CHAN_ANYG (&achans.ic_chans[i])
+	  || IEEE80211_IS_CHAN_B (&achans.ic_chans[i]))
 	{
 #ifdef HAVE_WHRAG108
-  if (!strcmp(ifname,"ath0"))
-	continue;
+	  if (!strcmp (ifname, "ath0"))
+	    continue;
 #endif
 	  if (nvram_invmatch (wl_mode, "g-only")
 	      && nvram_invmatch (wl_mode, "mixed")
@@ -425,7 +448,8 @@ list_channelsext (const char *ifname, int allchans)
 
 
       //filter out channels which are not supporting turbo mode if turbo is enabled
-      if (!IEEE80211_IS_CHAN_STURBO (&achans.ic_chans[i]) && !IEEE80211_IS_CHAN_DTURBO (&achans.ic_chans[i]))
+      if (!IEEE80211_IS_CHAN_STURBO (&achans.ic_chans[i])
+	  && !IEEE80211_IS_CHAN_DTURBO (&achans.ic_chans[i]))
 	{
 	  if (nvram_match (wl_turbo, "1"))
 	    continue;
@@ -445,7 +469,7 @@ list_channelsext (const char *ifname, int allchans)
 
       list[l].channel = achans.ic_chans[i].ic_ieee;
       list[l].freq = achans.ic_chans[i].ic_freq;
-      list[l].noise = -95;//achans.ic_chans[i].ic_noise;
+      list[l].noise = -95;	//achans.ic_chans[i].ic_noise;
       l++;
     }
 
@@ -525,8 +549,8 @@ ieee80211_ntoa (const uint8_t mac[IEEE80211_ADDR_LEN])
 int
 getRssi (char *ifname, unsigned char *mac)
 {
-  unsigned char *buf=malloc(24*1024);
-  memset(buf,0,1024*24);
+  unsigned char *buf = malloc (24 * 1024);
+  memset (buf, 0, 1024 * 24);
   unsigned char *cp;
   int len;
   struct iwreq iwr;
@@ -535,17 +559,17 @@ getRssi (char *ifname, unsigned char *mac)
   if (s < 0)
     {
       fprintf (stderr, "socket(SOCK_DRAGM)\n");
-      free(buf);
+      free (buf);
       return 0;
     }
   (void) memset (&iwr, 0, sizeof (iwr));
   (void) strncpy (iwr.ifr_name, ifname, sizeof (iwr.ifr_name));
   iwr.u.data.pointer = (void *) buf;
-  iwr.u.data.length = 1024*24;
+  iwr.u.data.length = 1024 * 24;
   if (ioctl (s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
     {
       close (s);
-      free(buf);
+      free (buf);
       fprintf (stderr, "stainfo error\n");
       return 0;
     }
@@ -555,26 +579,26 @@ getRssi (char *ifname, unsigned char *mac)
   int cnt = 0;
   cp = buf;
   char maccmp[6];
-  memset(maccmp,0,6);
+  memset (maccmp, 0, 6);
   do
     {
       struct ieee80211req_sta_info *si;
       si = (struct ieee80211req_sta_info *) cp;
-        if (!memcmp(&si->isi_macaddr[0],mac,6))
-        {
-	close(s);
-	int rssi = si->isi_noise+si->isi_rssi;
-        free(buf);
-	return rssi;
+      if (!memcmp (&si->isi_macaddr[0], mac, 6))
+	{
+	  close (s);
+	  int rssi = si->isi_noise + si->isi_rssi;
+	  free (buf);
+	  return rssi;
 	}
-      if (!memcmp(&si->isi_macaddr[0],mac,6))
-        break;
+      if (!memcmp (&si->isi_macaddr[0], mac, 6))
+	break;
       cp += si->isi_len;
       len -= si->isi_len;
     }
   while (len >= sizeof (struct ieee80211req_sta_info));
   close (s);
-  free(buf);
+  free (buf);
   return 0;
 }
 
@@ -582,8 +606,8 @@ getRssi (char *ifname, unsigned char *mac)
 int
 getNoise (char *ifname, unsigned char *mac)
 {
-  unsigned char *buf=malloc(24*1024);
-  memset(buf,0,24*1024);
+  unsigned char *buf = malloc (24 * 1024);
+  memset (buf, 0, 24 * 1024);
   unsigned char *cp;
   int len;
   struct iwreq iwr;
@@ -592,17 +616,17 @@ getNoise (char *ifname, unsigned char *mac)
   if (s < 0)
     {
       fprintf (stderr, "socket(SOCK_DRAGM)\n");
-      free(buf);
+      free (buf);
       return 0;
     }
   (void) memset (&iwr, 0, sizeof (iwr));
   (void) strncpy (iwr.ifr_name, ifname, sizeof (iwr.ifr_name));
   iwr.u.data.pointer = (void *) buf;
-  iwr.u.data.length = 24*1024;
+  iwr.u.data.length = 24 * 1024;
   if (ioctl (s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
     {
       close (s);
-      free(buf);
+      free (buf);
       return 0;
     }
   len = iwr.u.data.length;
@@ -611,26 +635,26 @@ getNoise (char *ifname, unsigned char *mac)
   int cnt = 0;
   cp = buf;
   char maccmp[6];
-  memset(maccmp,0,6);
+  memset (maccmp, 0, 6);
   do
     {
       struct ieee80211req_sta_info *si;
       si = (struct ieee80211req_sta_info *) cp;
-      if (!memcmp(&si->isi_macaddr[0],mac,6))
-        {
-	close(s);
-	int noise = si->isi_noise;
-        free(buf);
-	return noise;
+      if (!memcmp (&si->isi_macaddr[0], mac, 6))
+	{
+	  close (s);
+	  int noise = si->isi_noise;
+	  free (buf);
+	  return noise;
 	}
-      if (!memcmp(&si->isi_macaddr[0],mac,6))
-        break;
+      if (!memcmp (&si->isi_macaddr[0], mac, 6))
+	break;
       cp += si->isi_len;
       len -= si->isi_len;
     }
   while (len >= sizeof (struct ieee80211req_sta_info));
   close (s);
-      free(buf);
+  free (buf);
   return 0;
 }
 
@@ -640,63 +664,67 @@ int
 getassoclist (char *ifname, unsigned char *list)
 {
   unsigned char *buf;
-  buf=malloc(24*1024);
-  memset(buf,0,1024*24);
+  buf = malloc (24 * 1024);
+  memset (buf, 0, 1024 * 24);
   unsigned char *cp;
   int len;
   struct iwreq iwr;
   int s;
   char type[32];
   char netmode[32];
-  sprintf(type,"%s_mode");
-  sprintf(netmode,"%s_netmode");
-  if (nvram_match(netmode,"disabled"))
+  sprintf (type, "%s_mode",ifname);
+  sprintf (netmode, "%s_net_mode",ifname);
+  if (nvram_match (netmode, "disabled"))
     return 0;
-  int mincount=-1;
-  if (nvram_match(type,"wdssta") || nvram_match(type,"sta"))
+  int mincount = 0;
+  if (nvram_match (type, "wdssta") || nvram_match (type, "sta"))
     {
-     int assoc = isAssociated(ifname);
-     if (!assoc)
-        return 0;
-    mincount=1;
+      int assoc = isAssociated (ifname);
+      if (!assoc)
+	return 0;
+      char mac[6];
+      getAssocMAC (ifname,mac);
+      memcpy (&list[4], mac, 6);
+      mincount = 1;
     }
   s = socket (AF_INET, SOCK_DGRAM, 0);
   if (s < 0)
     {
       fprintf (stderr, "socket(SOCK_DRAGM)\n");
-      free(buf);
+      free (buf);
       return -1;
     }
   (void) memset (&iwr, 0, sizeof (iwr));
   (void) strncpy (iwr.ifr_name, ifname, sizeof (iwr.ifr_name));
   iwr.u.data.pointer = (void *) buf;
-  iwr.u.data.length = 1024*24;
+  iwr.u.data.length = 1024 * 24;
   if (ioctl (s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
     {
       close (s);
-      free(buf);
+      free (buf);
       return mincount;
     }
   len = iwr.u.data.length;
   if (len < sizeof (struct ieee80211req_sta_info))
     {
-    close(s);
-    free(buf);
-    return mincount;
+      close (s);
+      free (buf);
+      return mincount;
     }
   int cnt = 0;
   cp = buf;
   unsigned char *l = (unsigned char *) list;
   unsigned int *count = (unsigned int *) list;
-  count[0]=0;
+  count[0] = 0;
   l += 4;
   do
     {
       struct ieee80211req_sta_info *si;
       si = (struct ieee80211req_sta_info *) cp;
       memcpy (l, &si->isi_macaddr[0], 6);
-      if (l[0]==0 && l[1]==0 && l[2]==0 && l[3]==0 && l[4]==0 && l[5]==0)
-        break;
+      if (l[0] == 0 && l[1] == 0 && l[2] == 0 && l[3] == 0 && l[4] == 0
+	  && l[5] == 0)
+	break;
       l += 6;
       count[0]++;
       cp += si->isi_len;
@@ -704,9 +732,9 @@ getassoclist (char *ifname, unsigned char *list)
     }
   while (len >= sizeof (struct ieee80211req_sta_info));
   close (s);
-  free(buf);
-  
-  return mincount>count[0]?mincount:count[0];
+  free (buf);
+
+  return mincount > count[0] ? mincount : count[0];
 }
 
 
@@ -718,11 +746,11 @@ char *
 get_wdev (void)
 {
 #ifdef HAVE_MADWIFI
-if (nvram_match("wifi_bonding","1"))
-  return "bond0";
-else
+  if (nvram_match ("wifi_bonding", "1"))
+    return "bond0";
+  else
     {
-  return "ath0";
+      return "ath0";
     }
 #else
   if (wl_probe ("eth2"))
