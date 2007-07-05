@@ -35,21 +35,6 @@ else
     rm -f $WORKDIR/othfilter.dat
 fi
 
-$INSTALL -d $WORKDIR
-
-if [ ! -d $LOGDIR ]; then
-    echo ">>> Creating IPTraf log directory $LOGDIR"
-else
-    echo ">>> IPTraf log directory $LOGDIR already exists"
-fi
-$INSTALL -d $LOGDIR
-
-if [ ! -d $LOCKDIR ]; then
-    echo ">>> Creating IPTraf lockfile directory $LOCKDIR"
-else
-    echo ">>> IPTraf lockfile directory $LOCKDIR already exists"
-fi
-$INSTALL -d $LOCKDIR
 echo
 echo
 echo "*** iptraf, and rvnamed executables are in $TARGET"
