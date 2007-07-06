@@ -1,0 +1,93 @@
+Summary of Changes from 0.4.4 to 0.5.0
+================================================
+	Thomas Graf <tgraf@suug.ch>
+	  o API documentation
+	  o nl_cache_filter to manually filter on a object
+	  o partial routing support
+	  o routing rules support
+	  o Propely set address family when setting addresses
+	  o debug flag and some rare messages, more to come
+	  o make error mesage verboseness configureable
+	  o tc fixes to wait for ack
+	  o cleanup and adaption of address code to latest internal API
+	  o various cleanups
+	  o dozens of API breakages (better now than later)
+
+	Daniel Hottinger <hotti@hotti.ch>
+	  o arch 64bit printf length modifier fixes
+
+	Baruch Even <baruch@ev-en.org>,
+	Mediatrix Telecom, inc. <ericb@mediatrix.com>
+	  o address support
+
+Summary of changes from 0.4.3 to 0.4.4
+================================================
+	Thomas Graf <tgraf@suug.ch>:
+	  o overall cleanups for better code quality
+	  o replace dump_(brief|full|with_stats) ops with
+	    dump[NL_DUMP_MAX] array to allow further additions without
+	    breaking the ABI.
+	  o add of send_ack callback, called whenever when oppenent
+	    asks for an ACK.
+	  o make nl_parse_rtattr initialize the tb buffer like in the
+	    kernel, caller must no longer take care of it.
+	  o remove nl_addrnattr (obsolete)
+	  o fixed nl_msg_append_raw to correctly calculate length
+	    for raw data not aligned to NLMSG_ALIGN
+	  o fix memory leak in nl_recv in case of errors
+	  o correctly check sequence numbers if more than one message
+	    was sent out before the answer is being received.
+	  o add workaround for buggy netlink applications not properly
+	    setting NLM_F_MULTI.
+
+Summary of changes from 0.4.2 to 0.4.3
+================================================
+
+	Thomas Graf <tgraf@suug.ch>:
+	  o use parser_param in nl_cache_parse
+	  o EGP: dump nfilters attribute
+	  o allow retrieving of filters attached to classes via
+	    FILTER_CACHE_PARENT(C) cache argument
+	  o filter message building API
+
+Summary of changes from 0.4.1 to 0.4.2
+================================================
+
+	Baruch Even <baruch@ev-en.org>:
+	  o memory leak fix in nl_parse_rtattr
+	  o reset padding to 0 when appending raw data to a nl_msg
+	  o avoid overwriting nlmsg ptr when buffer extending fails
+	  o typo fixes
+	  o create symlinks libnl.so.0 and libnl.so
+	
+	Thomas Graf <tgraf@suug.ch>:
+	  o EGP classifier support
+	  o avoid null pointer in printf call
+	  o added nl_cache_parse to put nl_msg's into a cache
+	  o added rtnl_filter_build to build a nl_msg filter message
+	  o correctly install header files
+	  o nl_msg_payload/nl_msg_payloadlen to access nl_msg payload
+	  o nl_parse_nested macro to simplify nested TLV parsing
+	  o NL_ERROR_ASSERT compile flag to assert(0) on errors
+	  o rta alignment fix in nl_msg_append_tlv
+	  o added nl_msg_parse_rtattr as shortcut for nl_parse_rtattr
+	    for nl_msg API
+	  o added nl_parse_nested for nested TLVs
+	  o added RTA_ARRAY_ELEMS macro to calculate array length
+	    for array TLVs
+	  o added nl_wait_for_ack to wait for the next ack
+	  o added rtnl_link_build_change_request(...)
+	  o added rtnl_neigh_build_*_request
+	  o converted neighbour code to use nl_wait_for_ack
+	  o cb_recvmsgs_ow callback to overwrite internal calls to
+	    nl_recvmsgs_def
+	  o cb_seq_check callback to overwrite default sequence checking
+	  o added nl_parser_param as argument for message parsers including
+	    a callback to be called upon successful parsing of a message.
+	    Removes the requirement of having all parsed messages to be added
+	    to a cache.
+	  o added cb_recv_ow and nl_send_ow callbacks to overwrite internal
+	    calls to nl_recv and nl_send.
+
+	Jamal Hadi Salim <hadi@cyberus.ca>
+	  o Linux 2.4 compile fixes
