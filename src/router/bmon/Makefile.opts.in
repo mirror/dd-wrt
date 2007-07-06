@@ -38,7 +38,7 @@ RRD = @RRD@
 ASOUND = @ASOUND@
 DBI = @DBI@
 
-DEPFLAGS  += -M -I../include/ -I. $(CPPFLAGS)
+DEPFLAGS  += -M -I$(TOP)/bmon/libnl/include -I../include/ -I. $(CPPFLAGS)
 CFLAGS    += -I../include/ -I.
 MAKEFLAGS += --no-print-directory
 
