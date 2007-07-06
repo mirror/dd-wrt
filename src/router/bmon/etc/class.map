@@ -1,0 +1,9 @@
+#
+# Example bmon netlink class map
+#
+
+## Map handle 10: to name "main"
+#10: main
+
+## Map handle 10:12 to name "classA"
+#10:12 classA

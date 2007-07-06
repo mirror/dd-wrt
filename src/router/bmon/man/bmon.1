@@ -1,0 +1,647 @@
+.TH bmon 1 "Feb 27, 2005" "Bandwidth Monitor"
+.SH NAME
+bmon \- Portable bandwidth monitor and rate estimator
+.SH SYNOPSIS
+.B bmon
+[
+.B \-awSchV
+] [
+.B \-i
+.I <mod>
+] [
+.B \-o
+.I <mod>
+] [
+.B \-I
+.I <mod>
+] [
+.B \-O
+.I <mod>
+]
+.br
+.ti +5
+[
+.B \-f
+.I <path>
+] [
+.B \-p
+.I <policy>
+] [
+.B \-r
+.I <float>
+] [
+.B \-s
+.I <float>
+]
+.br
+.ti +5
+[
+.B \-A
+.I <attrs>
+] [
+.B \-N
+.I <ngraphs>
+] [
+.B \-u
+.I <uid>
+] [
+.B \-g
+.I <gid>
+]
+.br
+.ti +5
+[
+.B \-R
+.I <float>
+] [
+.B \-H
+.I <float>
+] [
+.B \-L
+.I <lifetime>
+] [
+.B \-t
+.I <path>
+]
+.PP
+
+.SH DESCRIPTION
+bmon is a portable bandwidth monitor with multiple input
+methods and output modes. A set of architecture specific
+input modules provide the core with the listof interfaces
+and their counters. The core stores this counters and
+provides rate estimation including a history over the last
+60 seconds, minutes, hours and days to the output modules
+which output them according to the configuration.
+
+The set of counters is dependant on the input module and
+may vary. Secondary input and output modules may be used
+to collect counter values from other nodes or to write
+HTML statistics. This input/output architecture minimizes
+the work needed to port it to other architectures or
+generate specific statistics.
+
+.SH OPTIONS
+.TP
+.B \-i
+Set primary \fIinput module\fR  and its configuration. The
+argument "list" will result in a list of available input
+modules. See INPUT MODULES for more details.
+.TP
+.B \-o
+Set primary \fIoutput module\fR and its configuration. The
+argument "list" will result in a list of available output
+modules. See OUTPUT MODULES for more details.
+.TP
+.B \-I
+Set secondary \fIinput modules\fR and their configuration.
+The argument "list" will result in a list of available
+secondary input modules.
+.TP
+.B \-O
+Set secondary \fIoutput modules\fR and their configuration.
+The argument "list" will result in a list of available
+secondary output modules.
+.TP
+.B \-f
+Set alternative configuration \fIpath\fR.
+.TP
+.B \-p
+Set interface acceptance policy. See INTERFACE SELECTION for
+more details.
+.TP
+.B \-a
+Include interfaces even if their status is down.
+.TP
+.B \-A
+Set attribute acceptance policy for attributes you whish to
+collect historical data for. Equivalent to INTERFACE
+SELECTION but without support for wildcards. Set to "all"
+to maintain a history for all attributes.
+.TP
+.B \-r
+Set reading \fIinterval\fR in which the input module will be
+called. The default for this is one second. Should be less or
+equal than 1 or a factor of it. Values not equal to 1 will
+result in additional rate calculation with the read interval
+as its unit.
+.TP
+.B \-R
+Set rate \fIinterval\fR, i.e. the time period taken into account for the
+rate calculation. The default value is 30 seconds.
+.TP
+.B \-H
+Set the \fIhearbeat\fR while reading, specifies the variance
+of incomming updates still acceptable. A factor of 0.1 specifies
+a accepted variance of 10% before and after the expected timestamp.
+.TP
+.B \-L
+Set the \fIlifetime\fRlifetime of a item, i.e. the time that
+can pass until a item is deleted if it does not receive any updates.
+The default is 30 seconds.
+.TP
+.B \-t
+Set \fIpath\fR to the itemtab file.
+.TP
+.B \-c
+Enable the use of SI unit schema.
+.TP
+.B \-N
+Set number of graphs to draw, does not work for all outputs
+methods.
+.TP
+.B \-s
+Set sleeping \fIinterval\fR between calls to output short
+interval callbacks for interactive output modules. Changing
+this can affect the variance of read intervals.
+.TP
+.B \-w
+Enable signal driven output intervals. The output module will
+only be invoked upon receiving of SIGUSR1. Use bmon \-S \- to
+send the signal to a running bmon instance in signal driven mode.
+.TP
+.B \-S
+Send SIGUSR1 to a running bmon instance. This arugment takes
+either \fI-\fR which will result in invoking ps to find bmon
+instances or a \fIpid\fR directly.
+.TP
+.B \-u
+Change user ID to \fIuid\fR after initialization.
+.TP
+.B \-g
+Change group ID to \fIgid\fR after initialization.
+.TP
+.B \-h
+Prints a help text and exits.
+.TP
+.B \-V
+Prints the version and exits.
+
+.SH INPUT MODULES
+
+Input modules provide the core with interface statistics.
+Two kinds of modules exist, primary and secondary input
+modules. Their main difference is usage, there may be only
+one primary module running at the same time while the number
+of secondary input modules is not limited.
+
+Every input module has a description, help text and list of
+options available which can be seen by adding the option
+"help" to the module options:
+.TP
+.RS
+.NF
+bmon \-i netlink:help
+.FI
+.RE
+
+See MODULE CONFIGURATION for more details.
+
+
+.SH PRIMARY INPUT MODULES
+.TP
+\fBnetlink\fR (Linux)
+Requires libnl and uses an rtnetlink to collect interface
+statistics. This input module also provides statistics about
+traffic control qdiscs and classes. It is the preferred
+input module on Linux.
+
+.TP
+\fBkstat\fR (SunOS)
+Provides interface statistics on SunOS operating systems in
+form of 32bit and 64bit counters. It is the preferred input
+module on SunOS.
+
+.TP
+\fBsysctl\fR (BSD, Darwin)
+Provides interface statistics on BSD and Darwin operating
+systems. Is is the preferred input module on any BSD
+alike system.
+
+.TP
+\fBproc\fR (Linux)
+Provides interface statistics on Linux using the proc
+filesystem (/proc/net/dev). It is one of the fallback
+input modules on Linux and will work on nearly every
+Linux kernel version.
+
+.TP
+\fBsysfs\fR (Linux)
+Provides interface statistics on Linux using the sys
+filesystem (/sys/class/net/). It may be used together
+with newer Linux kernel versions but has no real
+advantage over the netlink input module. It caches
+open file descriptors to speed it up and is used
+as fallback method.
+
+.TP
+\fBnetstat\fR (POSIX)
+Provides limited interface statistics on almost any
+POSIX operating system by invoking netstat \-i \-a. Only
+use this as last hope.
+
+.TP
+\fBdummy\fR (any)
+The purpose of the dummy input module is for testing. It
+generates in either a static or randomized form.
+
+.TP
+\fBnulll\fR (any)
+Does not provide any interface statistics and thus can be
+used to disable local interface collection.
+
+.SH SECONDARY INPUT MODULES
+
+.TP
+\fBdistribution\fR
+Collects interface statistics from other nodes. It is the
+counterpart of the secondary output module called distribution.
+Its purpose is to distribute statistics in real time with
+not too much bandwidth consumption itself. See DISTRIBUTION
+for more details.
+
+.SH OUTPUT MODULES
+
+Output modules are feeded with rate estimations and graphs
+from the core and print them out to the configured output
+device. Two kinds of modules exist, primary and secondary
+output modules. Their main difference is usage, there may be
+only one primary module running at the same time while the number
+of secondary output modules is not limited.
+
+Every output module has a description, help text and list of
+options available which can be seen by adding the option
+"help" to the module options:
+.TP
+.RS
+.NF
+bmon \-o ascii:help
+.FI
+.RE
+
+See MODULE CONFIGURATION for more details.
+
+.SH PRIMARY OUTPUT MODULES
+
+.TP
+\fBascii\fR
+The ascii output modules prints out the diagrams and
+lists to standard output. The output format is highly
+configurable and suits as vmstat alike tool for interface
+statistics.
+
+.TP
+\fBcurses\fR
+Interactive curses user interface providing real time rate
+estimations and graphs. The default view is a list of all
+interfaces grouped per node. The graphical history diagram
+and a list of detailed counters may be enabled/disable
+during runtime. Press '?' while the UI is running to see
+the quick reference.
+
+.TP
+\fBformat\fR
+Formatable ascii output for scripts. Calls a drawing function
+for every item per node and outputs according to the specified
+format string. The format string consists of text support various
+escaping sequences and placeholders in the form of $(placeholder).
+
+.TP
+\fBnull\fR
+Disables primary output.
+
+.SH SECONDARY OUTPUT MODULES
+
+.TP
+\fBhtml\fR
+Writes all interface statistics and diagrams as HTML files including
+a navigation menu for all nodes and their interfaces. The layout
+can be easly changed by altering the stylesheet which will not be
+overwritten.
+
+.TP
+\fBdistribution\fR (any)
+Distributes all statistics over the network using an UDP based
+statistic distribution protocol. The default configuration will
+use the multicast address all\-nodes but it may also be configured
+so send to a unicast address.
+
+.TP
+\fBrrd\fR (any)
+Updates and creates RRD databases using librrd. Step, heartbeat
+and archives can be freely configured.
+
+.TP
+\fBaudio\fR (any)
+Outputs the currently selected attribute rate as MIDI
+sequence.
+
+.TP
+\fBdb\fR (any)
+Writes current rate estimations into a database for other tools
+to pick up.
+
+.TP
+\fBxml_event\fR (any)
+Writes a continious stream of XML objects containing the
+counters to a standard output or into a file.
+
+.TP
+\fBxml_state\fR (any)
+XML based state output, outputs counters as-is as XML
+objects into a file. The file is overwritten in each
+cycle and locked during this period.
+
+.SH MODULE CONFIGURATION
+
+ARGUMENT ::= modulename:OPTS[,modulename:OPTS[,...]]
+.br
+OPTS     ::= OPTION[;OPTION[;...]]
+.br
+OPTION   ::= type[=value]
+
+If you specify multiple primrary input or output modules the
+first reported to be working module will be used.
+
+If you specify multiple secondary input or output modules all
+of them will get invoked.
+
+.SH DISTRIBUTION
+
+Statistic distribution is a powerful method to spread the statistic
+all over the network and make the available on every machine. The
+advantage over web based statistic overviews and multi terminal
+remote shell based solutions is its nearly realtime accuracy while
+being lightweight and not polluting the network too much. The protocol
+is UDP based and thus not reliable and optmized on size.
+
+See include/bmon/distribution.h for the protocol specification.
+
+.SH DIAGRAM TYPES
+
+You will find the following diagram types being used by all output
+modules in some form:
+
+.TP
+\fBlist\fR
+A list of interfaces including their byte and packets rate (bps/pps).
+
+.TP
+\fBgraphical history diagram \fR
+A graph showing the history of a counter over the last 60 (read interval/
+seconds/minutes/hours/days). The outer left column is the most recent
+rate while the outer right column is the most outdated. The preferred
+diagram to impress co\-workers.
+
+.TP
+\fBdetailed\fR
+Detailed counters such as error counters or other attributes assigned
+to this interface. The list of attributes may very depending on the
+input module and architecture of the host OS.
+
+.SH INTERFACE SELECTION
+
+SELECTION ::= NAME[,NAME[,...]]
+.br
+NAME      ::= [!]interface
+
+The interface name may contain the character '*' which will act as a wildcard and represents any
+number of any character type, i.e. eth*, h*0, ...
+
+.TP
+Examples:
+.RS
+.NF
+lo,eth0,eth1
+.FI
+.RE
+.RS
+.NF
+eth*,!eth0
+.FI
+.RE
+
+.SH CONFIGURATION FILE
+
+Bmon will try and read configuration data from the following
+files in the specified order: /etc/bmon.conf, $HOME/.bmonrc.
+
+None of the above files will be read if the path to the
+configuration file was specified using the \-f option.
+
+Configuration possibilities:
+
+\fBinput\fR \fI<module configuration>\fR
+.br
+.ti +7
+Specify primary input module (\-i), see INPUT MODULES.
+
+\fBsecondary_input\fR \fI<module configuration>\fR
+.br
+.ti +7
+Specify secondary input modules (\-I), see INPUT MODULES.
+
+\fBoutput\fR \fI<module configuration>\fR
+.br
+.ti +7
+Specify primary output module (\-o), see OUTPUT MODULES.
+
+\fBsecondary_output\fB \fI<module configuration>\fR
+.br
+.ti +7
+Specify secondary output modules (\-O), see OUTPUT MODULES.
+
+\fBpolicy\fB \fI<policy>\fR
+.br
+.ti +7
+Set interface acceptance policy (\-p), see INTERFACE SELECTION.
+
+\fBread_interval\fB \fI<interval>\fR
+.br
+.ti +7
+Set reading interval in which the input module will be called
+(-r).
+
+\fBsleep_time\fB \fI<interval>\fR
+.br
+.ti +7
+Set sleeping interval between calls to output short interval
+callbacks for interactive output modules. (\-s)
+
+\fBshow_all\fR
+.br
+.ti +7
+Include interface even if their status is down. (\-a)
+
+\fBuse_si\fR
+.br
+.ti +7
+Use SI metric system. (\-c)
+
+\fBnr_graphs\fR \fI<num>\fR
+.br
+.ti +7
+Set number of graphs to draw, does not work for all outputs methods. (\-N)
+
+\fBitemtab\fR \fI<path>\fR
+.br
+.ti +7
+Path to itemtab. (\-t)
+
+\fBheartbeat_factor\fR \fI<factor 0..1>\fR
+.br
+.ti +7
+Set heartbeat factor
+
+\fBrate_interval\fR \fI<interval>\fR
+.br
+.ti +7
+Set rate interval, i.e. the time period taken into account for the
+rate calculation. (\-R)
+
+\fBlifetime\fR \fI<seconds>\fR
+.br
+.ti +7
+Set lifetime of a item, i.e. the time that can pass until a
+item is deleted if it does not receive any updates. (\-L)
+
+\fBinclude\fR \fI<file>\fR
+.br
+.ti +7
+Include \fIfile\fR and read it as configuration file.
+
+\fBColor layouts\fR
+.br
+.ti +7
+See COLOR LAYOUTS.
+
+\fBBindings\fR
+.br
+.ti +7
+See BIND INTERFACE.
+
+
+.SH COLOR LAYOUTS
+
+The layout is used to specify the look'n'feel of the curses
+output module. The color "default" represents the terminal
+color which can be used to keep the background transparent
+for transparent terminals.
+
+.LP
+.B Colors:
+default, black, red, green, yellow, blue, magenta, cyan, white
+.LP
+.B Flags:
+reverse
+.LP
+.B Layouts:
+Default, Statusbar, Header, List, Selected, 
+
+Prototype:
+.br
+.ti +7
+\fBLayout\fR \fI<name>\fR \fI<foreground>\fR \fI<background>\fR \fI<flags>\fR
+
+Example:
+.br
+.ti +7
+Layout Statusbar red black reverse
+
+Feel free to submit patches extending the configurability using layouts.
+
+.SH BIND INTERFACE
+
+The bind interface can be used to bind not yet assigned keys to
+shell scripts. It currently works in the curses output module but
+it might be ported to other output modules in the future. The interface
+name of the currently selected interface is provided to the script
+via the first argument.
+
+Prototype:
+.br
+.ti +7
+\fBBind\fR \fI<key>\fR \fI<Executable>\fR
+
+Example:
+.br
+.ti +7
+bind D /sbin/intf_down.sh
+
+.SH EXAMPLES
+
+To run bmon in curses mode monitoring the interfaces eth0
+and eth1:
+.RS
+.NF
+\fBbmon \-i eth0,eth1 \-o curses\fP
+.FI
+.RE
+
+To run bmon in acii mode printing the detailed diagram
+with fixed y\-axis unit:
+.RS
+.NF
+\fBbmon \-o 'ascii:diagram=detailed;ynit=kb'\fP
+.FI
+.RE
+
+To run bmon in signal driven mode drawing the graphical
+diagram with customized drawing characters and fixed x
+and y axis:
+.RS
+.NF
+\fBbmon \-s \-o 'ascii:diagram=graph;fgchar=#;bgcar=_;xunit=min'\fP
+.FI
+.RE
+
+To run bmon with no primrary output (daemon) but
+distribute the statistic over the network:
+.RS
+.NF
+\fBbmon \-o null \-O distribution\fP
+.FI
+.RE
+
+To run bmon collecting local and remote statistics and
+show it in curses mode:
+.RS
+.NF
+\fBbmon \-I distribution:multicast \-o curses\fP
+.FI
+.RE
+
+To build a relay and collect remote statistic and send
+them to a unicast address while ignoring while
+the destination is unreachable:
+.RS
+.NF
+\fBbmon \-i null \-I distribution:multicast \-o null \-O 'distribution:ip=10.0.0.1;errignore;forward'\fP
+.FI
+.RE
+
+To collect local statistics and those from the whole
+network and generate a HTML page out of the those
+statistics:
+.RS
+.NF
+\fBbmon \-I distribution:multicast \-o null \-O html:path=/var/istats/\fP
+.FI
+.RE
+
+.SH KNOWN ISSUES
+The curses output modules doesn't work properly on NetBSD < 2.0 because getch() cannot be set to be non\-blocking.
+
+sysctl input segfaults on sparc64 OpenBSD.
+
+.SH FILES
+/etc/bmon.conf
+.br
+$HOME/.bmonrc
+
+
+.SH SEE ALSO
+ifconfig(8), kstat(1M), netlink(3)
+
+.SH AUTHOR
+Thomas Graf <tgraf@suug.ch>

@@ -1,0 +1,56 @@
+bmon TODO/Wishlist 
+==================
+
+1: Differ between interactive and non-interactive output modules
+
+	Currently the timing is done by sleeping in small amounts and
+	check if the next read interval has been reached. The sleep
+	amount gets adjusted to hit the next read interval as accurate
+	as possible.
+
+	This is only needed for interactive output modules. Non-interactive
+	output modules could enforce a timing strategy which would sleep
+	exactly to the next read interval and thus save some cycles.
+
+2: XML Output Modules
+
+	bmon's portability advantages could be used to provide all the
+	architecture specific interface statistics and convert them to
+	a generic XML based interface. There should be interfaces:
+	
+	b) State based
+
+		The current state as it would be outputed by bmon itself
+		written as XML message and overwritten in every output
+		interval (just like the already implemented HTML output).
+		This could be used by 3rd party applications to display
+		the current statistics and rate estimations.
+
+		Problem: Locking
+
+3: SNMP Input Module
+
+	A SNMP input module (secondary) would increase the usefulness
+	in environment with properiatary hardware to which bmon
+	cannot be ported.
+
+	Problems:
+	a) Async nature
+
+		The whole module must be implemented async, this itself is
+		not a problem but the protocol enforces various handshakes
+		required to get the statistics:
+
+		1) Get number of interfaces
+		2) Wait for the result (could be cached)
+		3) Request statistics
+		4) Wait for the result
+	
+	b) Accuracy
+
+		Due to the handshakes required the accuracy can vary depending
+		on current network latency and it is quite hard to adjust it.
+		Other statistical applications using SNMP don't have this problems
+		because they don't require update intervals of <= 1 second.
+
+5: MAPI Input (highly configurable)
