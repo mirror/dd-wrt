@@ -1,0 +1,47 @@
+#
+# Makefile.rules      libnl Makefile rules
+#
+# $Id: Makefile.rules 11 2004-09-15 15:05:49Z tgr $
+#
+# Copyright (C) 2002-2004 Thomas Graf <tgraf@suug.ch>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or 
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+.SUFFIXES:
+.SUFFIXES: .deps/%.d .c
+
+%.o: %.c
+	@echo "  CC $<"; \
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+.deps/%.d: %.c
+	@echo "  DEP $<"; \
+	$(CC) $(DEPFLAGS) $< > $@.tmp; \
+	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.tmp > $@; \
+	rm -f $@.tmp
+
+Makefile.opts:
+	@echo "***"
+	@echo "*** No configuration found, please run ./configure"
+	@echo "***"
+	@exit 1
+
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),distclean)
+ifneq ($(DEPS),)
+-include $(DEPS)
+endif
+endif
+endif
