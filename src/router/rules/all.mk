@@ -158,6 +158,7 @@ include rules/nvtlstatus.mk
 include rules/ctorrent.mk
 include rules/milkfish.mk
 include rules/quagga.mk
+include rules/bmon.mk
 
 # Generic rules
 #
