@@ -557,7 +557,9 @@ do_wlan_check (void)
 #endif
 #ifndef HAVE_ACK
 #ifndef HAVE_MADWIFI
+#ifndef HAVE_MSSID
   setACK ();
+#endif
 #endif
 #endif
 
