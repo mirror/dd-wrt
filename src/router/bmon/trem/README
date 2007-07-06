@@ -1,0 +1,11 @@
+ INSTALLATION
+ -------------
+
+ 1) Create a database
+ 2) Edit config.php and enter database parameters
+ 3) Run bmon ... -O db:<database parameters>
+    Example: bmon -o null -O 'db:driver=mysql;password=XXX'
+ 4) Make this directory available on a PHP capable webserver
+
+ NOTE: bmon will create the required tables itself, an empty
+       database will suit you just fine.

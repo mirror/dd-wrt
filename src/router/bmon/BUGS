@@ -1,0 +1,14 @@
+NetBSD
+ * getch in -lcurses cannot be set nonblocking in older releases
+   leading to the curses gui being unfunctional.
+
+OpenBSD 64bit arch
+ * OpenBSD on 64bit archs provides unnecessary padding in the
+   data provided by sysctl leading to a segfault if more than
+   one interface is configured. This is not a bug of bmon but
+   rather of OpenBSD.
+
+netstat input method
+ * vulnerable to escaping attacks. This is a feature not a bug,
+   the path to netstat will stay configureable, do not install
+   bmon suid root. The same issue applies to key bindings.
