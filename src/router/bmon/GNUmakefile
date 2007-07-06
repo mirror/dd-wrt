@@ -48,10 +48,7 @@ distclean: clean
 	done
 
 install:
-	./install-sh -d -m 0755 $(DESTDIR)$(prefix)/bin
-	./install-sh -d -m 0755 $(DESTDIR)$(mandir)/man1
-	./install-sh -c -s -m 0755 src/bmon $(DESTDIR)$(prefix)/bin
-	./install-sh -c    -m 0644 man/bmon.1 $(DESTDIR)$(mandir)/man1
+	./install-sh -c -s -m 0755 src/bmon $(INSTALLDIR)/usr/sbin/bmon
 
 show: Makefile.opts
 	@echo "CC:          $(CC)"
