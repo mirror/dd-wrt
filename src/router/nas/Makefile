@@ -11,5 +11,5 @@ clean:
 	@true
 
 install:
-	if test -e "src/Makefile"; then make -C src install; else install -D src/nas $(INSTALLDIR)/nas/usr/sbin/nas; fi
+	if test -e "src/Makefile"; then make -C src install; else install -D nas $(INSTALLDIR)/nas/usr/sbin/nas; fi
 	@true
