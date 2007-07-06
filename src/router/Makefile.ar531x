@@ -20,8 +20,8 @@ endif
 #
 # Paths
 #
-SER_MODULES:=sl tm rr maxfwd usrloc registrar dbtext textops nathelper
-SER_MODULE_FILES:=$(foreach module,$(SER_MODULES),ser/modules/$(module)/$(module).so)
+OPENSER_MODULES := sl tm rr maxfwd usrloc registrar dbtext textops exec auth auth_db nathelper
+OPENSER_MODULE_FILES := $(foreach module,$(OPENSER_MODULES),openser/modules/$(module)/$(module).so)
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-rmd160 no-aes192
 OPENSSL_OPTIONS:= shared no-ec no-err no-fips no-hw no-krb5 no-threads zlib-dynamic no-engines
 
@@ -156,6 +156,12 @@ build_date:
 kernel:
         # Also build kernel
 	# Also build kernel
+ifeq ($(CONFIG_CA8),y)
+	cp $(LINUXDIR)/.config_ca8 $(LINUXDIR)/.config
+else
+	cp $(LINUXDIR)/.config_generic $(LINUXDIR)/.config
+endif
+	$(MAKE) -C $(LINUXDIR) oldconfig	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
 	fi
@@ -200,7 +206,7 @@ optimize-lib:
 #	../../tools/optimize_lib.sh openssl/ libssl.so.0.9.8 libssl.a libssl_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libssl.so.0.9.8
 #	../../tools/optimize_lib.sh openssl/ libcrypto.so.0.9.8 libcrypto.a libcrypto_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libcrypto.so.0.9.8
 #	../../tools/optimize_lib.sh lib/ libm.so libm.a libm_min.so $(TARGETDIR) $(TARGETDIR)/lib/libm.so.0
-	../../tools/optimize_lib.sh lib/ libpthread.so libpthread.a libphread_min.so $(TARGETDIR) $(TARGETDIR)/lib/libpthread.so.0
+	../../tools/optimize_lib.sh lib.$(ARCH)/ libpthread.so libpthread.a libphread_min.so $(TARGETDIR) $(TARGETDIR)/lib/libpthread.so.0
 #	../../tools/optimize_lib.sh services/ services.so services.a services_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/services.so
 #  ../../tools/optimize_lib.sh iptables/ libiptables.so libiptables.a libiptables_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libiptables.so
 
@@ -301,7 +307,7 @@ endif
 #	mknod $(TARGETDIR)/dev/cfa3 b 13 3
 #	mknod $(TARGETDIR)/dev/cfa4 b 13 4
 #	umount $(TARGETDIR)
-#find $(TARGETDIR)/lib/modules -name *.ko -exec mipsel-linux-strip --strip-unneeded --remove-section=.comment {} +		
+	find $(TARGETDIR)/lib/modules -name *.ko -exec mips-linux-strip --strip-unneeded --remove-section=.comment {} +		
 	#e2fsck -y -f $(ARCH)-uclibc/root.fs
 #	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
 	
@@ -323,14 +329,26 @@ endif
 
 	cp $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bak 
 	mips-linux-uclibc-objcopy -O binary -g $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bin
-	lzma e $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
+	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
 #	gzip -9 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.gz
 	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.bin.l7 bs=131072 conv=sync
 #	dd if=$(ARCH)-uclibc/vmlinux.gz of=$(ARCH)-uclibc/vmlinux.bin.gz bs=65536 conv=sync
+ifeq ($(CONFIG_GLAUCO),y)
+	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.aligned bs=2818048 conv=sync
+else
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.aligned bs=2883584 conv=sync
-ifneq ($(CONFIG_FONERA),y)
+endif
+
+ifeq ($(CONFIG_WHRAG108),y)
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.whr bs=2752512 conv=sync
 	./tools/trx_n -o $(ARCH)-uclibc/whrag108-firmware.bin $(ARCH)-uclibc/root.whr $(ARCH)-uclibc/lzma_vmlinus
+endif
+ifeq ($(CONFIG_CA8),y)
+	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.ca8 bs=2752512 conv=sync
+	./tools/trx_n -o $(ARCH)-uclibc/ca8-firmware.bin $(ARCH)-uclibc/root.ca8 $(ARCH)-uclibc/lzma_vmlinus
+endif
+ifeq ($(CONFIG_MERAKI),y)
+	./tools/trx_n -o $(ARCH)-uclibc/meraki-firmware.bin $(ARCH)-uclibc/root.aligned $(ARCH)-uclibc/lzma_vmlinus
 endif
 	./tools/trx_n -o $(ARCH)-uclibc/fonera-firmware.bin $(ARCH)-uclibc/root.aligned $(ARCH)-uclibc/vmlinux.bin.l7 
 
