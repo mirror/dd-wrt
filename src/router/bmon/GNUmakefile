@@ -49,6 +49,7 @@ distclean: clean
 
 install:
 	./install-sh -c -s -m 0755 src/bmon $(INSTALLDIR)/usr/sbin/bmon
+	make -C libnl install
 
 show: Makefile.opts
 	@echo "CC:          $(CC)"
