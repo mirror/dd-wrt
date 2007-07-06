@@ -1,0 +1,298 @@
+body {
+	background: #f7f7f7;
+	margin-top: 20px;
+}
+
+p, b, td {
+	color: #000000;
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 10pt;
+}
+
+a:link,a:visited,a:hover {
+  color: #4E7AAF;
+  text-decoration: underline;
+}
+
+p.banner {
+	margin-top: 8px;
+	margin-bottom: 8px;
+	text-align: center;
+	font-size: 16pt;
+	font-weight: bold;
+}
+
+p.node_title {
+	text-align: center;
+	margin: 0pt;
+	margin-bottom: 10px;
+	font-weight: bold;
+	font-size: 18pt;
+}
+
+p.title {
+	margin: 0pt;
+	margin-top: 5px;
+	text-align: center;
+	font-weight: bold;
+	font-size: 14pt;
+}
+
+a.a_node_link:link,a.a_node_link:visited,a.a_node_link:hover {
+	color: #000;
+	font-weight: bold;
+	text-decoration: none;
+}
+
+a.a_node_link:hover {
+	font-weight: bold;
+	text-decoration: underline;
+}
+
+a.a_intf_link:link,a.a_intf_link:visited,a.a_intf_link:hover {
+	color: #000;
+	text-decoration: none;
+}
+
+a.a_intf_link:hover {
+	text-decoration: underline;
+}
+
+p.selection {
+	text-align: center;
+	margin: 0pt;
+}
+
+table.intf_list {
+	border: 1px solid #cdcdcd;
+	width: 100%;
+	border-spacing: 1px;
+	background: #f8f8f8;
+	margin-bottom: 10px;
+}
+
+tr.intf_list_hdr {
+	font-weight: bold;
+}
+
+th.intf_list_hdr_name {
+	text-align: left;
+	padding-left: 5px;
+}
+
+td.intf_list_nr {
+	border-top: 1px dashed #cdcdcd;
+	text-align: center;
+}
+
+td.intf_list_name {
+	border-top: 1px dashed #cdcdcd;
+	border-left: 1px dashed #cdcdcd;
+	text-align: left;
+	padding-left: 5px;
+}
+
+td.intf_list_rx {
+	border-top: 1px dashed #cdcdcd;
+	border-left: 1px dashed #cdcdcd;
+	text-align: center;
+}
+
+td.intf_list_rxp {
+	border-top: 1px dashed #cdcdcd;
+	border-left: 1px dashed #cdcdcd;
+	text-align: center;
+}
+
+td.intf_list_tx {
+	border-top: 1px dashed #cdcdcd;
+	border-left: 1px dashed #cdcdcd;
+	text-align: center;
+}
+
+td.intf_list_txp {
+	border-top: 1px dashed #cdcdcd;
+	border-left: 1px dashed #cdcdcd;
+	text-align: center;
+}
+	
+table.details {
+	border: 1px solid #cdcdcd;
+	width: 100%;
+	border-spacing: 1px;
+	background: #f8f8f8;
+	margin-top: 10px;
+}
+
+tr.details_hdr {
+	font-weight: bold;
+}
+
+th.details_hdr_name {
+	text-align: left;
+	padding-left: 20px;
+}
+
+td.details_name {
+	border-top: 1px dashed #cdcdcd;
+	padding-left: 20px;
+}
+
+td.details_rx {
+	border-top: 1px dashed #cdcdcd;
+	border-left: 1px dashed #cdcdcd;
+	text-align: center;
+}
+
+td.details_tx {
+	border-top: 1px dashed #cdcdcd;
+	border-left: 1px dashed #cdcdcd;
+	text-align: center;
+}
+
+table.overall {
+	width: 80%;
+	border-spacing: 0px;
+}
+
+td.header {
+	background: #b8c4db;
+	text-align: center;
+	border: 1px solid #000;
+}
+
+td.left_col {
+	background: #eeeeee;
+	padding-left: 10px;
+	border-left: 1px solid #cdcdcd;
+	border-right: 1px solid #cdcdcd;
+	border-bottom: 1px solid #cdcdcd;
+	vertical-align: top;
+	width: 130px;
+}
+
+td.right_col {
+	background: #fff;
+	padding: 20px;
+	padding-top: 10px;
+	border-bottom: 1px solid #cdcdcd;
+	border-right: 1px solid #cdcdcd;
+	vertical-align: top;
+}
+
+td.fg {
+	background: #6a94b7;
+}
+
+td.noise {
+	background: #9fc5db;
+}
+
+td.bg {
+	background: #eeeeee;
+}
+
+td.unknown {
+	background: #f69191;
+}
+
+table.graph {
+	border: 1px solid #cdcdcd;
+	width: 100%;
+	border-spacing: 1px;
+	background: #f8f8f8;
+	margin-top: 10px;
+	table-layout: fixed;
+	empty-cells: show;
+	padding-right: 5px;
+	padding-bottom: 5px;
+}
+
+th.graph_hdr {
+}
+
+th.scale_hdr {
+	text-align: right;
+	width: 60px;
+}
+
+td.scale {
+	text-align: right;
+	vertical-align: top;
+}
+
+tr.graph_row {
+	line-height: 7px;
+}
+
+ul.node_list {
+	padding-left: 15px;
+}
+
+ul.node_intf_list {
+	padding-left: 8px;
+}
+
+ul.sub_intf {
+	padding-left: 8px;
+}
+
+tr.legend {
+	line-height: 10px;
+}
+
+td.legend {
+	font-size: 8pt;
+}
+
+table.graph {
+	border: 1px solid #cdcdcd;
+	width: 100%;
+	border-spacing: 1px;
+	background: #f8f8f8;
+	margin-top: 10px;
+}
+
+table.gconf {
+	width: 100%;
+	padding-left: 15px;
+	padding-right: 15px;
+	border-spacing: 0px;
+	background: #f8f8f8;
+	margin-top: 0px;
+}
+
+p.glabel {
+	font-size: 8pt;
+	margin: 2px;
+}
+
+span.gtext {
+	font-size: 8pt;
+	margin: 0px;
+}
+
+input, select {
+	font-size: 8pt;
+}
+
+select {
+	width: 90%;
+}
+
+th.gconf {
+	font-size: 9pt;
+	font-weight: bold;
+	text-align: left;
+	padding-left: 10px;
+	border-bottom: 1px dashed #cdcdcd;
+}
+
+td.gconf {
+	padding-left: 
+}
+
+p.footer {
+	margin-left: 10px;
+	font-size: 8pt;
+}

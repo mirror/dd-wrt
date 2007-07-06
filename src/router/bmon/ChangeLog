@@ -1,0 +1,165 @@
+Summary of changes from 2.1.0-pre7 to 2.1.0
+================================================
+	Thomas Graf <tgraf@suug.ch>
+	  o [CORE] Portability fixes & hacks
+
+	Reto Schuettel <reto@schuettel.ch>
+	  o [CORE] Various typo fixes
+
+Summary of changes from 2.1.0-pre6 to 2.1.0-pre7
+================================================
+	Thomas Graf <tgraf@suug.ch>
+	  o [BIND] Use fcloseall if available
+	  o [NETLINK] removed debugging leftover
+	  o [CORE] input modules choose major/minor attrs
+	  o [CORE] major/minor total rates per node
+	  o [CORE] itemtab support for manual interface parameters
+	  o [CORE] item utilization of major attribute statistics
+	  o [CURSES] fixed minor drawing mistakes
+	  o [CURSES] restructured item list output
+	  o [SAVE] Renamed to xml_event
+	  o [XML-STATE] XML state output
+	  o [DIST] distribute item utilization and description
+	  o [FORMAT] Added more output variables
+	  o [DB] include item description and utilization
+
+Summary of changes from 2.1.0-pre5 to 2.1.0-pre6
+================================================
+	Thomas Graf <tgraf@suug.ch>
+	  o [DIST] Correctly handle child interfaces
+	  o [CORE] manual pages update
+	  o [CORE] rate interval parameter
+	  o [CORE] new lifetime method to get along with distribution
+	           using differentiating reading intervals
+	  o [CORE] auto correct sleep time if bigger than read interval
+	  o [CORE] fixed timer correction code
+	  o [CORE] Do not correct rate calculation at read interval
+	  o [CONF] added all new paramters to config file
+	  o [FORMAT] New formatable output
+	  o [CONF] added example netlink handle map
+	  o [NETSTAT] NetBSD portability fixes
+	  o [UTILS] use pow instead of powl to get along with crappy BSD
+	  o [DB] Database output using libdbi
+	  o [TREM] PHP based HTML/SWF interface for database
+
+Summary of changes from 2.1.0-pre4 to 2.1.0-pre5
+================================================
+	Thomas Graf <tgraf@suug.ch>
+	  o [CORE] configurable heartbeat factor
+	  o [CORE] discard outdated updates
+	  o [GRAPH] mark outdated updates as unknown data input
+	  o [HTML] New stylesheet
+	  o [HTML] graph legend
+
+Summary of changes from 2.1.0-pre3 to 2.1.0-pre4
+================================================
+	Thomas Graf <tgraf@suug.ch>
+	  o [HTML] improved useability of details and interface list table
+	  o [HTML] configurable title
+	  o [HTML] list interfaces in nodelist (configurable)
+	  o [CORE] generic floating point precision correction
+	  o [CODE] -u -g parameters to drop privileges
+	  o [RRD] RRD output, just a hack, not really tested
+	  o [AUDIO] MIDI sequence output
+
+Summary of changes from 2.1.0-pre2 to 2.1.0-pre3
+================================================
+	Thomas Graf <tgraf@suug.ch>
+	  o [HTML] rowspan parameter to increase resolution of graphs
+	  o [HTML] finally valid html
+	  o [HTML] Write time of last update
+	  o [CORE] improved precision for graph y-axis scale on very small values
+
+Summary of changes from 2.1.0-pre1 to 2.1.0-pre2
+================================================
+	Daniel Hottinger <hotti@hotti.ch>
+	  o [dist/save] 64bit arch printf/scanf length modifier fixes
+
+	Thomas Graf <tgraf@suug.ch>
+	  o [HTML] draw graphs as tables
+	  o [HTML] drawing interval
+	  o [CORE] fixed overflow in cancel down algorithms, damn typos
+	  o [CURSES] made curses output optional
+	  o [DIST] fixed c99'ism
+	  o [CORE] updated manual pages
+
+Summary of changes from 2.0.1 to 2.1.0-pre1
+================================================
+	Thomas Graf <tgraf@suug.ch>
+	  o [CORE] Changes bytes/packet counters to be attributes
+	  o [CORE] allow keeping history for attribuets
+	  o [CORE] added -c parameter to switch to SI metrics
+	  o [CORE] new cancel down algorithm, uses powl and thus libm
+	  o [CORE] allow input module to specify read timestamp
+	  o [DIST] Endianess fixes
+	  o [DIST] use reading timestamp of remote node, more accurate
+	  o [NETLINK] Fixed small memory leak
+	  o [NETLINK] adopted to new libnl API
+	  o [NETLINK] added a map file to map handles to names
+	  o [CURSES] allow switching between attribute graphs
+	  o [CURSES] support for multiple graphs
+	  o [CURSES] Changed keys to switch nodes to PgUp/PgDown
+	  o [HTML] graph for all configured attributes
+
+Summary of changes from 2.0.0 to 2.0.1
+================================================
+
+	Memory leak fix when deleting unused interfaces
+
+	netlink: use default handlers
+
+
+Summary of changes from 2.0.0-rc2 to 2.0.0-rc3
+================================================
+
+	Support for collision, multicast and drop statistics for BSD.
+
+	Mark sparc64 OpenBSD as broken in manual pages.
+
+
+Summary of changes from 2.0.0-rc1 to 2.0.0-rc2
+================================================
+
+	Curses: 'l' toggles interface list display.
+
+	Curses: change header to show interface and
+	node and bmon version string on the right.
+
+Summary of changes from 2.0.0-pre5 to 2.0.0-rc1
+================================================
+
+	Support for requeues statistics (Linux).
+
+	Adapted to new libnl interface
+
+	Respect CPPFLAGS in dependency lookup
+
+	Remove trailing / in install procedure
+	(better portability)
+
+Summary of changes from 2.0.0-pre4 to 2.0.0-pre5
+================================================
+
+	Respect CPPFLAGS
+
+Summary of changes from 2.0.0-pre3 to 2.0.0-pre4
+================================================
+
+	Removed --enable-netstat, the global warning is better.
+
+	etc/bmon.conf example configuration file
+
+	Updated manual pages.
+
+	Verbose warning to not install bmon as SUID root
+	executable in configure script.
+
+	Allow setting input, secondary input, output secondary output,
+	policy, read_interval, sleep time and show all interface via
+	configuration file, overwrite possible via cli arguments.
+
+Summary of changes from 2.0.0-pre2 to 2.0.0-pre3
+================================================
+
+	Disable netstat input method by default and add --enable-netstat
+	to add it back to the compile process.
