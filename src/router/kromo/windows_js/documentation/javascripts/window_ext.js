@@ -92,21 +92,24 @@ WindowCloseKey = {
   
   init: function(keyCode) {
     if (keyCode)
-      WindowCloseKey.keyCode = keyCode;
-    Event.observe(document, 'keydown', this._closeCurrentWindow.bindAsEventListener(this));
+      WindowCloseKey.keyCode = keyCode;      
+      
+    Event.observe(document, 'keydown', this._closeCurrentWindow.bindAsEventListener(this));   
   },
   
   _closeCurrentWindow: function(event) {
     var e = event || window.event
   	var characterCode = e.which || e.keyCode;
-  	var win = Windows.focusedWindow;
+  	
+  	// Check if there is a top window (it means it's an URL content)
+  	var win = top.Windows.focusedWindow;
     if (characterCode == WindowCloseKey.keyCode && win) {
       if (win.cancelCallback) 
-        Dialog.cancelCallback();      
+        top.Dialog.cancelCallback();      
       else if (win.okCallback) 
-        Dialog.okCallback();
+        top.Dialog.okCallback();
       else
-        Windows.close(Windows.focusedWindow.getId());
+        top.Windows.close(top.Windows.focusedWindow.getId());
     }
   }
 }
