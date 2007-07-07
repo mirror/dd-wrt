@@ -7,7 +7,8 @@ html, body {
 }
 
 .content {
-  margin:10px 30px 10px 30px;
+  margin:00px 30px 0px 30px;
+  padding-right:10px;
 }
 
 iframe.frame_content {
@@ -23,7 +24,7 @@ pre, xmp {
   padding:10px;
   border: 1px dotted #272727;
   overflow:auto;
-  width:100%;
+  width:95%;
   margin:0;
 }
 
@@ -67,7 +68,7 @@ h2 {
 }
 
 h2.first {
-	padding-top:0px;
+	padding-top:10px;
 }
 
 h3 {
@@ -296,4 +297,36 @@ xmp.intro {
   margin:0 2%;
   text-align:left;
   width:93%;
+}
+
+
+div#wrapper{
+  float:left;
+  width:100%
+}
+div#content{
+  margin-right:200px;
+  padding-right:10px;
+  border-right: 1px solid #888;
+}
+div#navigation{
+  float:left;
+  width:200px;
+  margin-left:-200px;
+  text-align:left;
+  background:#fef1e2;
+}
+
+#nm {
+  float:left;
+  background:#FFF;
+  width: 200px;
+  height:250px;
+  text-align:center;
+}
+
+#g {
+  float:left;
+  padding-top:10px;
+  padding-left:40px;
 }

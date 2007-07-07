@@ -23,7 +23,8 @@
 <body onload="Application.insertDocOverview()">
   <script>Application.insertNavigation('documentation')</script>
   
-  <div class="content">
+  <div id="wrapper">
+  <div id= "content" class="content">
     <h2 class="first"> Overview</h2>
     <div id="Overview"></div>
     <h2>Window Class</h2>
@@ -81,7 +82,7 @@
             <tr><td  class="key">destroyOnClose</td>             <td class="default">false</td>       <td class="detail">Destroy window when closing window. By default, the window is just hidden</td></tr>
             
             <tr><td  class="key">all callbacks</td>       <td class="default">none</td>       <td class="detail">All callback used in observer. Callbacks override observer callbacks:<br/>
-              <em>onDestroy onStartResize onStartMove onResize onMove onEndResize onEndMove onFocus onBeforeShow onShow onHide onMinimize onMaximize onClose</em>
+              <em>onDestroy onStartResize onStartMove onResize onMove onEndResize onEndMove onFocus onBlur onBeforeShow onShow onHide onMinimize onMaximize onClose</em>
               </td></tr>
           </table>
         </span>
@@ -312,6 +313,14 @@
     </div>
     <br style='clear:both'/>
     
+    <div class="function window" title="getTitle"><a name="setTitle"></a>
+      <p class="title"><span class="function">getTitle()</span> Gets window title</p>
+      <p class="parameter">
+        <span class="explanation">Return window's title</span>
+      </p>
+    </div>
+    <br style='clear:both'/>
+    
     <div class="function window" title="setStatusBar"><a name="setStatusBar"></a>
       <p class="title"><span class="function">setStatusBar(element)</span> Sets window status bar</p>
       <p class="parameter">
@@ -439,7 +448,7 @@
     
     <div class="function windows" title="addObserver"><a name="addObserver"></a>
       <p class="title"><span class="function">addObserver(observer)</span> Registers a new windows observer. Should be able to respond to <br/>
-        <em>onDestroy onStartResize onStartMove onResize onMove onEndResize onEndMove onFocus onBeforeShow onShow onHide onMinimize onMaximize onClose</em>
+        <em>onDestroy onStartResize onStartMove onResize onMove onEndResize onEndMove onFocus onBlur onBeforeShow onShow onHide onMinimize onMaximize onClose</em>
       </p>
       <p class="parameter">
         <span class="field">observer</span>
@@ -463,7 +472,25 @@
     <br style='clear:both'/>
     
     <div class="function windows" title="getFocusedWindow"><a name="getFocusedWindow"></a>
-      <p class="title"><span class="function">getFocusedWindow()</span> Returns the last focused window. </p>
+      <p class="title"><span class="function">getFocusedWindow()</span> Returns the focused window. </p>
+    </div>
+    <br style='clear:both'/>
+    
+    <div class="function windows" title="focus"><a name="focus"></a>
+      <p class="title"><span class="function">focus(id)</span> Focus a window using it's id. </p>
+      <p class="parameter">
+        <span class="field">id</span>
+        <span class="explanation">Window's id</span>
+      </p>
+    </div>
+    <br style='clear:both'/>                         
+    
+    <div class="function windows" title="blur"><a name="focus"></a>
+      <p class="title"><span class="function">blur(id)</span> Blur a window using it's id. </p>
+      <p class="parameter">
+        <span class="field">id</span>
+        <span class="explanation">Window's id</span>
+      </p>
     </div>
     <br style='clear:both'/>
     
@@ -507,7 +534,9 @@
     </div>
     <br style='clear:both'/>
     
+    </div>
   </div>
+  <script type="text/javascript">Application.addRightColumn()</script>
   <br/>
   <br/>
 </body>

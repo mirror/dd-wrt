@@ -147,5 +147,27 @@ var Application =  {
       </ul>\
     </div>');
     $('menu_' + selected).addClassName("selected");
+	},
+	addRightColumn: function() {
+	  document.write('\
+	  <style>\
+	  div#wrapper{\
+      float:left;\
+      width:100%\
+    }\
+    div#content{\
+      margin-right:0px;\
+      padding-right:10px;\
+      border-right: none;\
+    }\
+    div#navigation{\
+      float:left;\
+      width:00px;\
+      margin-left:0px;\
+      text-align:left;\
+      background:#fef1e2;\
+    }\
+	  </style>\
+  ')
 	}
 }

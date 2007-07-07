@@ -23,7 +23,8 @@
 
 <body>
   <script>Application.insertNavigation('debug')</script>
-  <div class="content">
+  <div id="wrapper">
+  <div id= "content" class="content">
   
 In addtion of <tt>window.js</tt>, there is a little javascript <tt>debug.js</tt> more usefull than the alert javascript function to display debug information.
 
@@ -100,7 +101,9 @@ To use it just include <tt>extended_debug.js</tt> after <tt>debug.js</tt>.<br/>
 
 <a href="javascript:showExtendedDebug()">Click here</a> to open the extended debug window.
 
+  </div>
 </div>
+<script type="text/javascript">Application.addRightColumn()</script>
 
 </body>
 </html>

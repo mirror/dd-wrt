@@ -20,6 +20,7 @@
 	<link href="themes/spread.css" rel="stylesheet" type="text/css" >	 </link>
 	<link href="themes/mac_os_x.css" rel="stylesheet" type="text/css" >	 </link>
 	<link href="themes/alert.css" rel="stylesheet" type="text/css" >	 </link>
+	<link href="themes/lighting.css" rel="stylesheet" type="text/css" >	 </link>
 	
   <!--  Doc Part-->
   <link href="stylesheets/style.css" rel="stylesheet" type="text/css" >	 </link>
@@ -28,7 +29,8 @@
 
 <body>
   <script>Application.insertNavigation('themes')</script>
-  <div class="content">
+  <div id="wrapper">
+  <div id= "content" class="content">
     <h2 class="first"> Overview</h2>
     
     Creating a new theme is very easy. You need to describe window's look and feel in a CSS file. Name your CSS file THEME_NAME.css with thoses CSS definition:<br/>
@@ -170,16 +172,20 @@
   <ul>
     <li>Default (<script>Application.addViewThemeButton('dialog')</script>)</li>
     <li>MacShadow (<script>Application.addViewThemeButton('mac_os_x')</script>)</li>
+    <li>Lighting (from Emanuel Mila) (<script>Application.addViewThemeButton('bluelighting')</script>)</li>
     <li>Nuncio (from Brice Joly) (<script>Application.addViewThemeButton('nuncio')</script>)</li>
     <li>Alphacube from <a href="http://art.gnome.org/themes/metacity/1171">Art.Gnome.Org</a> (<script>Application.addViewThemeButton('alphacube')</script>)</li>
     <li>Spread (Alphacube with a different color scheme) (<script>Application.addViewThemeButton('spread')</script>)</li>
     <li>DarkX from <a href="http://art.gnome.org/themes/metacity/708">Art.Gnome.Org</a> (<script>Application.addViewThemeButton('darkX')</script>)</li>
+    <li>Lighting from <a href="http://art.gnome.org/themes/metacity/708">Mila</a> (<script>Application.addViewThemeButton('lighting')</script>)</li>
     <br/>
     <li>Default dialog (<script>Application.addViewThemeDialogButton('alert')</script>)</li>
     <li>Alphacube as dialog (<script>Application.addViewThemeDialogButton('alphacube')</script>)</li>
     
   </ul>
+  </div>
 </div>
+<script type="text/javascript">Application.addRightColumn()</script>
   
 </body>
 
