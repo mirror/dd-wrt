@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+	"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" version="-//W3C//DTD XHTML 1.1//EN" xml:lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
+	<script type="text/javascript" src="../javascripts/prototype.js"> </script>
+	<script type="text/javascript" src="../javascripts/effects.js"> </script>
+	<script type="text/javascript" src="../javascripts/window.js"> </script>
+	<script type="text/javascript" src="../javascripts/window_effects.js"> </script>
+	<script type="text/javascript" src="../javascripts/debug.js"> </script>
+	<link href="../themes/default.css" rel="stylesheet" type="text/css"/>
+	<link href="../themes/alert.css" rel="stylesheet" type="text/css"/>
+	<link href="../themes/alphacube.css" rel="stylesheet" type="text/css"/>
+
+	<title>nice_open</title>
+
+  <style type="text/css">
+    .popup_effect1 {
+      background:#11455A;
+      opacity: 0.2;
+    }
+    .popup_effect2 {
+      background:#FF0041;
+      border: 3px dashed #000;
+    }
+    
+  </style>	
+</head>
+
+<body>
+
+<input type=button onclick="openDialog2(this)" value="open"/> a window with <tt>className: "popup_effect1"</tt> <br/>   <br/>
+<a href="#" onclick="openDialog1(this)">Open a window</a>  with: <tt>className: "popup_effect2", duration: 2, fromOpacity: 0.2, toOpacity: 0.4</tt>  <br/><br/>
+<input type=button onclick="openDialog3(this)" value="Modal window"/> It works also with moodal window<br/> 
+
+<script type="text/javascript">  
+  function openDialog1(html) {
+    var effect = new PopupEffect(html, {className: "popup_effect2", duration: 2, fromOpacity: 0.2, toOpacity: 0.4});
+    var win = new Window({className:"alphacube", width: 200, height:null, showEffect:effect.show.bind(effect), hideEffect:effect.hide.bind(effect)})
+    win.getContent().update("<h1>Hello</h1>Word");     
+    
+    win.showCenter();
+  }        
+
+  function openDialog2(html) {
+    var effect = new PopupEffect(html, {className: "popup_effect1"});
+    var win = new Window({className:"alphacube", width: 200, height:null, showEffect:effect.show.bind(effect), hideEffect:effect.hide.bind(effect)})
+    win.getContent().update("<h1>Hello</h1>Word");     
+    
+    win.show();
+  }       
+   
+  function openDialog3(html) {
+    var effect = new PopupEffect(html, {className: "popup_effect1"});
+    Dialog.confirm("Do you like this effect?",{className:"alphacube", width: 400, height:null, showEffect:effect.show.bind(effect), hideEffect:effect.hide.bind(effect)})
+  }       
+              
+</script>
+</body>
+</html>

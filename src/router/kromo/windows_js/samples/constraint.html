@@ -13,8 +13,8 @@
 <script type="text/javascript"> 
 function win1()
 {
-  var win = new Window({className: "alphacube", title: "Sample", width:250, height:150, top:0, left: 1, parent:$('container')}); 
-  win.getContent().innerHTML = "<h1>Constraint inside  a div !!</h1>constraint: {left:10, right:20}"; 
+  var win = new Window({id: "win1", className: "alphacube", title: "Sample", width:250, height:150, top:0, left: 1, parent:$('container')}); 
+  win.getContent().innerHTML = "<h1>Constraint inside  a div !!</h1>constraint: {left:10, right:20}<br><a href='#' onclick='Windows.getWindow(\"win1\").maximize()'>Maximize me</a>"; 
 
   win.setDestroyOnClose(); 
   win.show();
@@ -24,8 +24,8 @@ function win1()
 
 function win2()
 {
-  var win = new Window({className: "alphacube", title: "Sample", width:200, height:150}); 
-  win.getContent().innerHTML = "<h1>Constraint inside page !!</h1>constraint: {top: 30, bottom:10}"; 
+  var win = new Window({id: "win2", className: "alphacube", title: "Sample", width:200, height:150}); 
+  win.getContent().innerHTML = "<h1>Constraint inside page !!</h1>constraint: {top: 30, bottom:10}<br><a href='#' onclick='Windows.getWindow(\"win2\").maximize()'>Maximize me</a>"; 
 
   win.setDestroyOnClose(); 
   win.showCenter();
@@ -35,8 +35,8 @@ function win2()
 
 function win3()
 {
-  var win = new Window({className: "alphacube", title: "Sample", width:250, height:150, wiredDrag: true}); 
-  win.getContent().innerHTML = "<h1>No Constraint</h1>Wired mode"; 
+  var win = new Window({id: "win3", className: "alphacube", title: "Sample", width:250, height:150, wiredDrag: true}); 
+  win.getContent().innerHTML = "<h1>No Constraint</h1>Wired mode<br><a href='#' onclick='Windows.getWindow(\"win3\").maximize()'>Maximize me</a>"; 
   win.setDestroyOnClose(); 
   win.setLocation(10, 500);
   win.show();
@@ -46,7 +46,7 @@ function win3()
 </script>
 <style>
 body {
-  background: #FFCA7A;
+  background: #363636;
 }
 #border {
   position:absolute;
@@ -64,7 +64,7 @@ body {
   width:500px;
   height:500px;
   overflow:hidden;
-  background:#71BAB8;
+  background:#DAEE9B;
   z-index:0;
 }  
 </style>

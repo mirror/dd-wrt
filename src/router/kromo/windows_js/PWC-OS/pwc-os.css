@@ -1,0 +1,36 @@
+body {
+  margin:0;
+  padding:0;
+  overflow: hidden;
+  background: #FFF8DD url(body-bg.png) no-repeat fixed center 10px;
+}         
+
+#dock {
+  position:absolute;
+  bottom:0;
+  left:0;
+  width:100%;
+  height:26px;
+  background:transparent url(dock-bg.gif) repeat-x 0 0;
+  z-index: 100000;	
+}       
+
+.dock_icon {
+  float:left;
+  width:102px;
+  height:21px;
+  margin-top:3px;
+  background: url(button-bg.gif);
+  text-align:center;
+  font-size: 14px;
+  color: #000;
+  line-height: 22px;    
+  margin-right:10px;
+  margin-left:10px;
+}       
+
+#theme {       
+  float:right; 
+  margin-top:3px;
+  margin-right:15px;
+}
