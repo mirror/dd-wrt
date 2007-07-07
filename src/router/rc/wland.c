@@ -383,12 +383,12 @@ do_madwifi_check (void)
 	  hwaddr = nvram_get (wdsmacname);
 	  if (hwaddr != NULL)
 	    {
-	      int count = getassoclist (wdsdevname, &assoclist[0]);
+	      int count = getassoclist (wdsdev, &assoclist[0]);
 	      if (count < 1)
 		{
-		  eval ("ifconfig", wdsdevname, "down");
+		  eval ("/sbin/ifconfig", wdsdev, "down");
 		  sleep (1);
-		  eval ("ifconfig", wdsdevname, "up");
+		  eval ("/sbin/ifconfig", wdsdev, "up");
 		  eval ("startservice","set_routes");
 		}
 	    }
@@ -424,15 +424,15 @@ do_madwifi_check (void)
 			  foreach (var, vifs, next)
 			  {
 //			    fprintf(stderr,"shutting down %s\n",var);
-			    eval ("ifconfig", var, "down");
+			    eval ("/sbin/ifconfig", var, "down");
 			  }
 			}
 
 		      notstarted[i] = 0;
 //			    fprintf(stderr,"restarting %s\n",dev);
-		      eval ("ifconfig", dev, "down");
+		      eval ("/sbin/ifconfig", dev, "down");
 		      sleep (1);
-		      eval ("ifconfig", dev, "up");
+		      eval ("/sbin/ifconfig", dev, "up");
 		      eval ("startservice","set_routes");
 		      lastchans[i] = 0;
 		    }
@@ -453,7 +453,7 @@ do_madwifi_check (void)
 			  foreach (var, vifs, next)
 			  {
 //		           fprintf(stderr,"restarting %s\n",var);
-			    eval ("ifconfig", var, "up");
+			    eval ("/sbin/ifconfig", var, "up");
 			    eval ("startservice","set_routes");
 			  }
 			}
