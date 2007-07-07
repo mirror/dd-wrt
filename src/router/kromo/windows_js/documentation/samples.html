@@ -43,10 +43,13 @@
   </script>
   <body onload="">
     <script>Application.insertNavigation('samples')</script>
-    <div class="content">
+    <div id="wrapper">
+    <div id= "content" class="content">
       <div id="samples">
         Here is a list of sample codes to show different ways to create windows and dialogs. You can view source of each example, even edit it and test your modification immediatly in your browser. Just click again on the link to open a new window/dialog with the modified code. Each window uses a javascript function to get a new id and DO NOT call setDestroyOnClose().<br/>
 You can open <a href="#" onclick="showDebug();"> the debug window </a> if you want to see some debug outputs.
+
+<br/><br/><img border=0 src="pwc_os_thumb.png"/><br/><b>Do not forget to check <a href="PWC-OS/index.html">PWC-OS</a></b>
         
         <script>Application.addTitle('Open a simple window', 'open_window1')</script>
         <p class="description">
@@ -265,6 +268,8 @@ Dialog.confirm($('login').innerHTML, {className:"alphacube", width:400,
         </ul>
     </div>
     
-   </div>   
+    </div>
+  </div>
+  <script type="text/javascript">Application.addRightColumn()</script>
   </body>
 </html>

@@ -115,8 +115,10 @@
 	function openInfoDialog() {
 		Dialog.info("Test of info panel, it will close <br>in 3s ...",
 				        {windowParameters: {className: "alert_lite",width:250, height:100}, showProgress: true});
-		timeout=3;
-		setTimeout("infoTimeout()", 1000)
+    // timeout=3;
+    // setTimeout("infoTimeout()", 1000)
+    Dialog.closeInfo()
+    
 	}
 	
 	function infoTimeout() {

@@ -1,4 +1,4 @@
-// Copyright (c) 2006 Sébastien Gruhier (http://xilinus.com, http://itseb.com)
+// Copyright (c) 2006 SÃ©bastien Gruhier (http://xilinus.com, http://itseb.com)
 // 
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -19,20 +19,20 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
-// VERSION 1.2
+// VERSION 1.3
 
 var Window = Class.create();
 
 Window.keepMultiModalWindow = false;
-Window.hasEffectLib = String.prototype.parseColor != null;
+Window.hasEffectLib = (typeof Effect != 'undefined');
 Window.resizeEffectDuration = 0.4;
 
 Window.prototype = {
   // Constructor
-  // Available parameters : className, title, minWidth, minHeight, maxWidth, maxHeight, width, height, top, left, bottom, right, resizable, zIndex, opacity, recenterAuto, wiredDrag
+  // Available parameters : className, blurClassName, title, minWidth, minHeight, maxWidth, maxHeight, width, height, top, left, bottom, right, resizable, zIndex, opacity, recenterAuto, wiredDrag
   //                        hideEffect, showEffect, showEffectOptions, hideEffectOptions, effectOptions, url, draggable, closable, minimizable, maximizable, parent, onload
   //                        add all callbacks (if you do not use an observer)
-  //                        onDestroy onStartResize onStartMove onResize onMove onEndResize onEndMove onFocus onBeforeShow onShow onHide onMinimize onMaximize onClose
+  //                        onDestroy onStartResize onStartMove onResize onMove onEndResize onEndMove onFocus onBlur onBeforeShow onShow onHide onMinimize onMaximize onClose
   
   initialize: function() {
     var id;
@@ -56,6 +56,7 @@ Window.prototype = {
 
     this.options = Object.extend({
       className:         "dialog",
+      blurClassName:     null,
       minWidth:          100, 
       minHeight:         20,
       resizable:         true,
@@ -81,9 +82,11 @@ Window.prototype = {
       closeCallback:     null,
       destroyOnClose:    false,
       gridX:             1, 
-      gridY:             1
+      gridY:             1      
     }, arguments[optionIndex] || {});
-    
+    if (this.options.blurClassName)
+      this.options.focusClassName = this.options.className;
+      
     if (typeof this.options.top == "undefined" &&  typeof this.options.bottom ==  "undefined") 
       this.options.top = this._round(Math.random()*500, this.options.gridY);
     if (typeof this.options.left == "undefined" &&  typeof this.options.right ==  "undefined") 
@@ -108,7 +111,8 @@ Window.prototype = {
     if (this.options.parent != document.body)  
       this.options.parent = $(this.options.parent);
       
-    this.element = this._createWindow(id);
+    this.element = this._createWindow(id);       
+    this.element.win = this;
     
     // Bind event listener
     this.eventMouseDown = this._initDrag.bindAsEventListener(this);
@@ -128,6 +132,7 @@ Window.prototype = {
     Event.observe(window, "load", this.eventOnLoad);
     Event.observe(window, "resize", this.eventResize);
     Event.observe(window, "scroll", this.eventResize);
+    Event.observe(this.options.parent, "scroll", this.eventResize);
     
     if (this.options.draggable)  {
       var that = this;
@@ -388,7 +393,7 @@ Window.prototype = {
     if (Event.element(event) != this.sizer && this.isMaximized())
       return;
       
-    if (window.ie && this.heightN == 0)
+    if (Prototype.Browser.IE && this.heightN == 0)
       this._getWindowBorderSize();
     
     // Get pointer X,Y
@@ -627,16 +632,16 @@ Window.prototype = {
   },
   
   
-  changeClassName: function(newClassName) {
+  changeClassName: function(newClassName) {    
     var className = this.options.className;
     var id = this.getId();
-    var win = this;
-    $A(["_close","_minimize","_maximize","_sizer", "_content"]).each(function(value) { win._toggleClassName($(id + value), className + value, newClassName + value) });
-    $$("#" + id + " td").each(function(td) {td.className = td.className.sub(className,newClassName) });
+    $A(["_close", "_minimize", "_maximize", "_sizer", "_content"]).each(function(value) { this._toggleClassName($(id + value), className + value, newClassName + value) }.bind(this));
+    this._toggleClassName($(id + "_top"), className + "_title", newClassName + "_title");
+    $$("#" + id + " td").each(function(td) {td.className = td.className.sub(className,newClassName); });
     this.options.className = newClassName;
   },
   
-  _toggleClassName: function(element, oldClassName, newClassName) {
+  _toggleClassName: function(element, oldClassName, newClassName) { 
     if (element) {
       element.removeClassName(oldClassName);
       element.addClassName(newClassName);
@@ -725,35 +730,26 @@ Window.prototype = {
   toFront: function() {
     if (this.element.style.zIndex < Windows.maxZIndex)  
       this.setZIndex(Windows.maxZIndex + 1);
-    this._notify("onFocus");
     if (this.iefix) 
       this._fixIEOverlapping(); 
   },
-  
-  // Displays window modal state or not
-  show: function(modal) {
-    if (modal) {
-      // Hack for Safar!!
-      if (typeof this.overlayOpacity == "undefined") {
-        var that= this;
-        setTimeout(function() {that.show(modal)}, 10);
-        return;
-      }
-      Windows.addModalWindow(this);
-      
-      this.modal = true;      
-      this.setZIndex(Windows.maxZIndex + 1);
-      Windows.unsetOverflow(this);
+   
+  getBounds: function(insideOnly) {
+    if (! this.width || !this.height || !this.visible)  
+      this.computeBounds();
+    var w = this.width;
+    var h = this.height;
+
+    if (!insideOnly) {
+      w += this.widthW + this.widthE;
+      h += this.heightN + this.heightS;
     }
-    else
-      if (!this.element.style.zIndex) 
-        this.setZIndex(Windows.maxZIndex++ + 1);        
+    var bounds = Object.extend(this.getLocation(), {width: w + "px", height: h + "px"});
+    return bounds;
+  },
       
-    // To restore overflow if need be
-    if (this.oldStyle)
-      this.getContent().setStyle({overflow: this.oldStyle});
-      
-    if (! this.width || !this.height) {
+  computeBounds: function() {
+     if (! this.width || !this.height) {
       var size = WindowUtilities._computeSize(this.content.innerHTML, this.content.id, this.width, this.height, 0, this.options.className)
       if (this.height)
         this.width = size + 5
@@ -764,6 +760,33 @@ Window.prototype = {
     this.setSize(this.width, this.height);
     if (this.centered)
       this._center(this.centerTop, this.centerLeft);    
+  },
+  
+  // Displays window modal state or not
+  show: function(modal) {
+    this.visible = true;
+    if (modal) {
+      // Hack for Safari !!
+      if (typeof this.overlayOpacity == "undefined") {
+        var that = this;
+        setTimeout(function() {that.show(modal)}, 10);
+        return;
+      }
+      Windows.addModalWindow(this);
+      
+      this.modal = true;      
+      this.setZIndex(Windows.maxZIndex + 1);
+      Windows.unsetOverflow(this);
+    }
+    else    
+      if (!this.element.style.zIndex) 
+        this.setZIndex(Windows.maxZIndex + 1);        
+      
+    // To restore overflow if need be
+    if (this.oldStyle)
+      this.getContent().setStyle({overflow: this.oldStyle});
+      
+    this.computeBounds();
     
     this._notify("onBeforeShow");   
     if (this.options.showEffect != Element.show && this.options.showEffectOptions)
@@ -772,7 +795,6 @@ Window.prototype = {
       this.options.showEffect(this.element);  
       
     this._checkIEOverlapping();
-    this.visible = true;
     WindowUtilities.focusedWindow = this
     this._notify("onShow");   
   },
@@ -790,31 +812,31 @@ Window.prototype = {
     return this.visible;
   },
   
-  _center: function(top, left) {
-    var windowScroll = WindowUtilities.getWindowScroll();    
-    var pageSize = WindowUtilities.getPageSize();    
-
+  _center: function(top, left) {    
+    var windowScroll = WindowUtilities.getWindowScroll(this.options.parent);    
+    var pageSize = WindowUtilities.getPageSize(this.options.parent);    
     if (typeof top == "undefined")
       top = (pageSize.windowHeight - (this.height + this.heightN + this.heightS))/2;
     top += windowScroll.top
     
     if (typeof left == "undefined")
       left = (pageSize.windowWidth - (this.width + this.widthW + this.widthE))/2;
-    left += windowScroll.left 
-    
+    left += windowScroll.left      
     this.setLocation(top, left);
     this.toFront();
   },
   
-  _recenter: function(event) {
+  _recenter: function(event) {     
     if (this.centered) {
-      var pageSize = WindowUtilities.getPageSize();
+      var pageSize = WindowUtilities.getPageSize(this.options.parent);
+      var windowScroll = WindowUtilities.getWindowScroll(this.options.parent);    
 
       // Check for this stupid IE that sends dumb events
-      if (this.pageSize && this.pageSize.windowWidth == pageSize.windowWidth && this.pageSize.windowHeight == pageSize.windowHeight) 
+      if (this.pageSize && this.pageSize.windowWidth == pageSize.windowWidth && this.pageSize.windowHeight == pageSize.windowHeight && 
+          this.windowScroll.left == windowScroll.left && this.windowScroll.top == windowScroll.top) 
         return;
       this.pageSize = pageSize;
-
+      this.windowScroll = windowScroll;
       // set height of Overlay to take up whole page and show
       if ($('overlay_modal')) 
         $('overlay_modal').setStyle({height: (pageSize.pageHeight + 'px')});
@@ -924,7 +946,7 @@ Window.prototype = {
     if (this.isMinimized() || this.resizing)
       return;
   
-    if (window.ie && this.heightN == 0)
+    if (Prototype.Browser.IE && this.heightN == 0)
       this._getWindowBorderSize();
       
     if (this.storedLocation != null) {
@@ -936,8 +958,8 @@ Window.prototype = {
       this._storeLocation();
       Windows.unsetOverflow(this);
       
-      var windowScroll = WindowUtilities.getWindowScroll();
-      var pageSize = WindowUtilities.getPageSize();    
+      var windowScroll = WindowUtilities.getWindowScroll(this.options.parent);
+      var pageSize = WindowUtilities.getPageSize(this.options.parent);    
       var left = windowScroll.left;
       var top = windowScroll.top;
       
@@ -1003,7 +1025,11 @@ Window.prototype = {
       
     Element.update(this.element.id + '_top', newTitle);
   },
-
+   
+  getTitle: function() {
+    return $(this.element.id + '_top').innerHTML;
+  },
+  
   setStatusBar: function(element) {
     var statusBar = $(this.getId() + "_bottom");
 
@@ -1060,13 +1086,13 @@ Window.prototype = {
     setTimeout(function() {that.overlayOpacity = ($(div).getStyle("opacity")); div.parentNode.removeChild(div);}, 10);
     
     // Workaround for IE!!
-    if (window.ie) {
+    if (Prototype.Browser.IE) {
       this.heightS = $(this.getId() +"_row3").getDimensions().height;
       this.heightN = $(this.getId() +"_row1").getDimensions().height;
     }
 
     // Safari size fix
-    if (window.khtml && !window.webkit)
+    if (Prototype.Browser.WebKit && Prototype.Browser.WebKitVersion < 420)
       this.setSize(this.width, this.height);
     if (this.doMaximize)
       this.maximize();
@@ -1138,7 +1164,7 @@ Window.prototype = {
   
   _createWiredElement: function() {
     if (! this.wiredElement) {
-      if (window.ie)
+      if (Prototype.Browser.IE)
         this._getWindowBorderSize();
       var div = document.createElement("div");
       div.className = "wired_frame " + this.options.className + "_wired_frame";
@@ -1214,7 +1240,7 @@ var Windows = {
     this.observers = this.observers.reject( function(o) { return o==observer });
   },
   
-  //  onDestroy onStartResize onStartMove onResize onMove onEndResize onEndMove onFocus onBeforeShow onShow onHide onMinimize onMaximize onClose
+  // onDestroy onStartResize onStartMove onResize onMove onEndResize onEndMove onFocus onBlur onBeforeShow onShow onHide onMinimize onMaximize onClose
   notify: function(eventName, win) {  
     this.observers.each( function(o) {if(o[eventName]) o[eventName](eventName, win);});
   },
@@ -1241,8 +1267,9 @@ var Windows = {
   // Add a modal window in the stack
   addModalWindow: function(win) {
     // Disable screen if first modal window
-    if (this.modalWindows.length == 0)
-      WindowUtilities.disableScreen(win.options.className, 'overlay_modal', win.overlayOpacity, win.getId());
+    if (this.modalWindows.length == 0) {
+      WindowUtilities.disableScreen(win.options.className, 'overlay_modal', win.overlayOpacity, win.getId(), win.options.parent);
+    }
     else {
       // Move overlay over all windows
       if (Window.keepMultiModalWindow) {
@@ -1320,6 +1347,30 @@ var Windows = {
       Event.stop(event);
   },
   
+  blur: function(id) {
+    var win = this.getWindow(id);  
+    if (!win)
+      return;
+    if (win.options.blurClassName)
+      win.changeClassName(win.options.blurClassName);
+    if (this.focusedWindow == win)  
+      this.focusedWindow = null;
+    win._notify("onBlur");  
+  },
+  
+  focus: function(id) {
+    var win = this.getWindow(id);  
+    if (!win)
+      return;       
+    if (this.focusedWindow)
+      this.blur(this.focusedWindow.getId())
+
+    if (win.options.focusClassName)
+      win.changeClassName(win.options.focusClassName);  
+    this.focusedWindow = win;
+    win._notify("onFocus");
+  },
+  
   unsetOverflow: function(except) {    
     this.windows.each(function(d) { d.oldOverflow = d.getContent().getStyle("overflow") || "auto" ; d.getContent().setStyle({overflow: "hidden"}) });
     if (except && except.oldOverflow)
@@ -1330,10 +1381,15 @@ var Windows = {
     this.windows.each(function(d) { if (d.oldOverflow) d.getContent().setStyle({overflow: d.oldOverflow}) });
   },
 
-  updateZindex: function(zindex, win) {
-    if (zindex > this.maxZIndex)
-      this.maxZIndex = zindex;
+  updateZindex: function(zindex, win) { 
+    if (zindex > this.maxZIndex) {   
+      this.maxZIndex = zindex;    
+      if (this.focusedWindow) 
+        this.blur(this.focusedWindow.getId())
+    }
     this.focusedWindow = win;
+    if (this.focusedWindow) 
+      this.focus(this.focusedWindow.getId())
   }
 };
 
@@ -1395,7 +1451,7 @@ var Dialog = {
       <div class='" + parameters.className + "_message'>" + content  + "</div>\
         <div class='" + parameters.className + "_buttons'>\
           <input type='button' value='" + okLabel + "' onclick='Dialog.okCallback()' " + okButtonClass + "/>\
-        </div>";
+        </div>";                  
     return this._openDialog(content, parameters)
   },
   
@@ -1436,7 +1492,7 @@ var Dialog = {
     var className = parameters.className;
     
     if (! parameters.height && ! parameters.width) {
-      parameters.width = WindowUtilities.getPageSize().pageWidth / 2;
+      parameters.width = WindowUtilities.getPageSize(parameters.options.parent || document.body).pageWidth / 2;
     }
     if (parameters.id)
       this.dialogId = parameters.id;
@@ -1454,12 +1510,12 @@ var Dialog = {
       else
         parameters.height = size + 5
     }
-    parameters.resizable = parameters.resizable || false;
     parameters.effectOptions = parameters.effectOptions ;
-    parameters.minimizable = false;
-    parameters.maximizable = false;
-    parameters.draggable = false;
-    parameters.closable = false;
+    parameters.resizable   = parameters.resizable || false;
+    parameters.minimizable = parameters.minimizable || false;
+    parameters.maximizable = parameters.maximizable ||  false;
+    parameters.draggable   = parameters.draggable || false;
+    parameters.closable    = parameters.closable || false;
     
     var win = new Window(parameters);
     win.getContent().innerHTML = content;
@@ -1517,44 +1573,45 @@ var Dialog = {
   (basically, do anything you want, just leave my name and link)
 */
 
-// From mootools.net
-// window.ie - will be set to true if the current browser is internet explorer (any).
-// window.ie6 - will be set to true if the current browser is internet explorer 6.
-// window.ie7 - will be set to true if the current browser is internet explorer 7.
-// window.khtml - will be set to true if the current browser is Safari/Konqueror.
-// window.webkit - will be set to true if the current browser is Safari-WebKit (Safari3)
-// window.gecko - will be set to true if the current browser is Mozilla/Gecko.
-if (window.ActiveXObject) window.ie = window[window.XMLHttpRequest ? 'ie7' : 'ie6'] = true;
-else if (document.childNodes && !document.all && !navigator.taintEnabled) window.khtml = true;
-else if (document.getBoxObjectFor != null) window.gecko = true;
-{
+if (Prototype.Browser.WebKit) {
   var array = navigator.userAgent.match(new RegExp(/AppleWebKit\/([\d\.\+]*)/));
-  window.webkit =  array && array.length == 2 ? parseFloat(array[1]) >= 420 : false;
+  Prototype.Browser.WebKitVersion = parseFloat(array[1]);
 }
 
-
 var WindowUtilities = {  
-  getWindowScroll: function() {
-    var w = window;
-      var T, L, W, H;
-      L = window.pageXOffset || document.documentElement.scrollLeft;
-      T = window.pageYOffset || document.documentElement.scrollTop;
-
-      if (window.ie) 
-        W = Math.max(document.documentElement.offsetWidth, document.documentElement.scrollWidth);
-  		else if (window.khtml) 
-  		  W = document.body.scrollWidth;
-  		else 
-  		  W = document.documentElement.scrollWidth;
-  		  
-  		if (window.ie) 
-  		  H = Math.max(document.documentElement.offsetHeight, document.documentElement.scrollHeight);
-    	else if (window.khtml) 
-    	  H = document.body.scrollHeight;
-    	else
-    	  H = document.documentElement.scrollHeight;
-    	
-      return { top: T, left: L, width: W, height: H };
+  // From dragdrop.js
+  getWindowScroll: function(parent) {
+    var T, L, W, H;
+    parent = parent || document.body;              
+    if (parent != document.body) {
+      T = parent.scrollTop;
+      L = parent.scrollLeft;
+      W = parent.scrollWidth;
+      H = parent.scrollHeight;
+    } 
+    else {
+      var w = window;
+      with (w.document) {
+        if (w.document.documentElement && documentElement.scrollTop) {
+          T = documentElement.scrollTop;
+          L = documentElement.scrollLeft;
+        } else if (w.document.body) {
+          T = body.scrollTop;
+          L = body.scrollLeft;
+        }
+        if (w.innerWidth) {
+          W = w.innerWidth;
+          H = w.innerHeight;
+        } else if (w.document.documentElement && documentElement.clientWidth) {
+          W = documentElement.clientWidth;
+          H = documentElement.clientHeight;
+        } else {
+          W = body.offsetWidth;
+          H = body.offsetHeight
+        }
+      }
+    }
+    return { top: T, left: L, width: W, height: H };
   }, 
   //
   // getPageSize()
@@ -1562,66 +1619,71 @@ var WindowUtilities = {
   // Core code from - quirksmode.org
   // Edit for Firefox by pHaez
   //
-  getPageSize: function(){
-    var xScroll, yScroll;
-
-    if (window.innerHeight && window.scrollMaxY) {  
-      xScroll = document.body.scrollWidth;
-      yScroll = window.innerHeight + window.scrollMaxY;
-    } else if (document.body.scrollHeight > document.body.offsetHeight){ // all but Explorer Mac
-      xScroll = document.body.scrollWidth;
-      yScroll = document.body.scrollHeight;
-    } else { // Explorer Mac...would also work in Explorer 6 Strict, Mozilla and Safari
-      xScroll = document.body.offsetWidth;
-      yScroll = document.body.offsetHeight;
-    }
-
+  getPageSize: function(parent){
+    parent = parent || document.body;              
     var windowWidth, windowHeight;
-
-    if (self.innerHeight) {  // all except Explorer
-      windowWidth = self.innerWidth;
-      windowHeight = self.innerHeight;
-    } else if (document.documentElement && document.documentElement.clientHeight) { // Explorer 6 Strict Mode
-      windowWidth = document.documentElement.clientWidth;
-      windowHeight = document.documentElement.clientHeight;
-    } else if (document.body) { // other Explorers
-      windowWidth = document.body.clientWidth;
-      windowHeight = document.body.clientHeight;
-    }  
     var pageHeight, pageWidth;
+    if (parent != document.body) {
+      windowWidth = parent.getWidth();
+      windowHeight = parent.getHeight();                                
+      pageWidth = parent.scrollWidth;
+      pageHeight = parent.scrollHeight;                                
+    } 
+    else {
+      var xScroll, yScroll;
 
-    // for small pages with total height less then height of the viewport
-    if(yScroll < windowHeight){
-      pageHeight = windowHeight;
-    } else { 
-      pageHeight = yScroll;
-    }
+      if (window.innerHeight && window.scrollMaxY) {  
+        xScroll = document.body.scrollWidth;
+        yScroll = window.innerHeight + window.scrollMaxY;
+      } else if (document.body.scrollHeight > document.body.offsetHeight){ // all but Explorer Mac
+        xScroll = document.body.scrollWidth;
+        yScroll = document.body.scrollHeight;
+      } else { // Explorer Mac...would also work in Explorer 6 Strict, Mozilla and Safari
+        xScroll = document.body.offsetWidth;
+        yScroll = document.body.offsetHeight;
+      }
 
-    // for small pages with total width less then width of the viewport
-    if(xScroll < windowWidth){  
-      pageWidth = windowWidth;
-    } else {
-      pageWidth = xScroll;
-    }
 
+      if (self.innerHeight) {  // all except Explorer
+        windowWidth = self.innerWidth;
+        windowHeight = self.innerHeight;
+      } else if (document.documentElement && document.documentElement.clientHeight) { // Explorer 6 Strict Mode
+        windowWidth = document.documentElement.clientWidth;
+        windowHeight = document.documentElement.clientHeight;
+      } else if (document.body) { // other Explorers
+        windowWidth = document.body.clientWidth;
+        windowHeight = document.body.clientHeight;
+      }  
+
+      // for small pages with total height less then height of the viewport
+      if(yScroll < windowHeight){
+        pageHeight = windowHeight;
+      } else { 
+        pageHeight = yScroll;
+      }
+
+      // for small pages with total width less then width of the viewport
+      if(xScroll < windowWidth){  
+        pageWidth = windowWidth;
+      } else {
+        pageWidth = xScroll;
+      }
+    }             
     return {pageWidth: pageWidth ,pageHeight: pageHeight , windowWidth: windowWidth, windowHeight: windowHeight};
   },
 
-  disableScreen: function(className, overlayId, overlayOpacity, contentId) {
-    var that = this;
-    WindowUtilities.initLightbox(overlayId, className, function() {that._disableScreen(className, overlayId, overlayOpacity, contentId)});
+  disableScreen: function(className, overlayId, overlayOpacity, contentId, parent) {
+    WindowUtilities.initLightbox(overlayId, className, function() {this._disableScreen(className, overlayId, overlayOpacity, contentId)}.bind(this), parent || document.body);
   },
 
   _disableScreen: function(className, overlayId, overlayOpacity, contentId) {
-    var objBody = document.body;
-
     // prep objects
     var objOverlay = $(overlayId);
 
-    var pageSize = WindowUtilities.getPageSize();
+    var pageSize = WindowUtilities.getPageSize(objOverlay.parentNode);
 
     // Hide select boxes as they will 'peek' through the image in IE, store old value
-    if (contentId && window.ie) {
+    if (contentId && Prototype.Browser.IE) {
       WindowUtilities._hideSelect();
       WindowUtilities._showSelect(contentId);
     }  
@@ -1656,7 +1718,7 @@ var WindowUtilities = {
   },
 
   _hideSelect: function(id) {
-    if (window.ie) {
+    if (Prototype.Browser.IE) {
       id = id ==  null ? "" : "#" + id + " ";
       $$(id + 'select').each(function(element) {
         if (! WindowUtilities.isDefined(element.oldVisibility)) {
@@ -1668,7 +1730,7 @@ var WindowUtilities = {
   },
   
   _showSelect: function(id) {
-    if (window.ie) {
+    if (Prototype.Browser.IE) {
       id = id ==  null ? "" : "#" + id + " ";
       $$(id + 'select').each(function(element) {
         if (WindowUtilities.isDefined(element.oldVisibility)) {
@@ -1697,7 +1759,7 @@ var WindowUtilities = {
   // These links receive onclick events that enable the lightbox display for their targets.
   // The function also inserts html markup at the top of the page which will be used as a
   // container for the overlay pattern and the inline image.
-  initLightbox: function(id, className, doneHandler) {
+  initLightbox: function(id, className, doneHandler, parent) {
     // Already done, just update zIndex
     if ($(id)) {
       Element.setStyle(id, {zIndex: Windows.maxZIndex + 1});
@@ -1706,7 +1768,6 @@ var WindowUtilities = {
     }
     // create overlay div and hardcode some functional styles (aesthetic styles are in CSS file)
     else {
-      var objBody = document.body;
       var objOverlay = document.createElement("div");
       objOverlay.setAttribute('id', id);
       objOverlay.className = "overlay_" + className
@@ -1717,8 +1778,8 @@ var WindowUtilities = {
       objOverlay.style.zIndex = Windows.maxZIndex + 1;
       Windows.maxZIndex++;
       objOverlay.style.width = '100%';
-      objBody.insertBefore(objOverlay, objBody.firstChild);
-      if (window.khtml && id == "overlay_modal") {
+      parent.insertBefore(objOverlay, parent.firstChild);
+      if (Prototype.Browser.WebKit && id == "overlay_modal") {
         setTimeout(function() {doneHandler()}, 10);
       }
       else
@@ -1769,12 +1830,12 @@ var WindowUtilities = {
 
     tmpObj.innerHTML = content;
     objBody.insertBefore(tmpObj, objBody.firstChild);
-    
+
     var size;
     if (height)
-      size = $(id).getDimensions().width + margin;
+      size = $(tmpObj).getDimensions().width + margin;
     else
-      size = $(id).getDimensions().height + margin;
+      size = $(tmpObj).getDimensions().height + margin;
     objBody.removeChild(tmpObj);
     return size;
   }  

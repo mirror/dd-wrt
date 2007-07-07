@@ -30,6 +30,7 @@ function dialog() {
                {windowParameters: {className: "alphacube", width:300, height:100}, okLabel: "close", 
                 ok:function(win) {debug("validate alert panel"); return true;}, cancel:function(win) {debug("validate cancel panel"); return true;}});
 }
+new Window({url: "window_key_url_content.html", className: "alphacube" }).show()
 WindowCloseKey.init();
 </script>
 </body>
