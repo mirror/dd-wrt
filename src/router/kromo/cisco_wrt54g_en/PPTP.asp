@@ -1,4 +1,4 @@
-<% do_pagehead("service.pppoesrv_legend"); %>
+<% do_pagehead("service.pptp_legend"); %>
 		<script type="text/javascript">
 		//<![CDATA[
 
