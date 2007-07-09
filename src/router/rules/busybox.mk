@@ -2,6 +2,7 @@ busybox-config:
 	cd busybox && rm -f Config.h && ln -sf configs/$(CONFIG_BUSYBOX_CONFIG).h Config.h
 
 busybox: busybox-config rc net-tools
+ifeq ($(ARCH),mipsel)
 ifeq ($(CONFIG_DIST),"micro")
 	cp busybox/.config_micro busybox/.config
 	cd busybox && make oldconfig
@@ -14,6 +15,8 @@ else
 	cd busybox && make oldconfig
 endif
 endif
+endif
+
 ifeq ($(ARCH),i386)
 	cp busybox/.config_wrap busybox/.config
 endif
