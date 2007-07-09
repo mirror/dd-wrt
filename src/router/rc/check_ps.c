@@ -85,49 +85,52 @@ search_process (char *name, int count)
     }
 }
 
-void checknas (void)  //for broadcom v24 only
+void
+checknas (void)			//for broadcom v24 only
 {
 #ifndef HAVE_MADWIFI
 #ifdef HAVE_MSSID
 
-	char buf[32];
-	FILE *fnas = fopen ("/tmp/.nas", "r");
-	
-	if (fnas == NULL)
-		return;
+  char buf[32];
+  FILE *fnas = fopen ("/tmp/.nas", "r");
 
-	fgets (buf, sizeof (buf), fnas);
-	fclose (fnas);
+  if (fnas == NULL)
+    return;
 
-	if (strlen (buf) != count_processes ("nas"))  //restart all nas processes
-		{
-		stop_service ("nas");
-		start_service ("nas");
-		}
-		
-	return;
-	 
+  fgets (buf, sizeof (buf), fnas);
+  fclose (fnas);
+
+  if (strlen (buf) != count_processes ("nas"))	//restart all nas processes
+    {
+      stop_service ("nas");
+      start_service ("nas");
+    }
+
+  return;
+
 #endif
-#endif	
+#endif
 }
 
-void checkupgrade (void)
+void
+checkupgrade (void)
 {
 #ifndef HAVE_X86
-FILE *in=fopen("/tmp/firmware.bin","rb");
-if (in!=NULL)
+  FILE *in = fopen ("/tmp/firmware.bin", "rb");
+  if (in != NULL)
     {
-    fclose(in);
-    eval("rm","/tmp/cron.d/check_ps"); // deleting cron file to prevent double call of this
-    fprintf(stderr,"found firmware upgrade, flashing now, but we will wait for another 30 seconds\n");
-    sleep(30);
+      fclose (in);
+      eval ("rm", "/tmp/cron.d/check_ps");	// deleting cron file to prevent double call of this
+      fprintf (stderr,
+	       "found firmware upgrade, flashing now, but we will wait for another 30 seconds\n");
+      sleep (30);
 #if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_CA8)
-    eval("write","/tmp/firmware.bin","rootfs");
+      eval ("write", "/tmp/firmware.bin", "rootfs");
 #else
-    eval("write","/tmp/firmware.bin","linux");
+      eval ("write", "/tmp/firmware.bin", "linux");
 #endif
-    fprintf(stderr,"done. rebooting now\n");
-    eval("killall","-3","init");
+      fprintf (stderr, "done. rebooting now\n");
+      eval ("killall", "-3", "init");
     }
 #endif
 }
@@ -142,7 +145,7 @@ do_mon (void)
     return 1;
   char service[64];
   void (*fptr) (void);
-  
+
   for (v = mons; v < &mons[sizeof (mons) / sizeof (*v)]; v++)
     {
       if (v->name == NULL)

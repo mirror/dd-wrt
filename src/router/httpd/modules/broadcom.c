@@ -2015,7 +2015,7 @@ getFileString (FILE * in)
   return buf;
 }
 
-void 
+void
 skipFileString (FILE * in)
 {
   int i, b;
@@ -2434,10 +2434,10 @@ Initnvramtab ()
 		      tmp->nullok = FALSE;
 		    }
 		  free (tmpstr);
-		  skipFileString(in); //todo: remove it
-//		  tmpstr = getFileString (in);
-//		  tmp->ezc_flags = atoi (tmpstr);
-//		  free (tmpstr);
+		  skipFileString (in);	//todo: remove it
+//                tmpstr = getFileString (in);
+//                tmp->ezc_flags = atoi (tmpstr);
+//                free (tmpstr);
 		  variables =
 		    (struct variable **) realloc (variables,
 						  sizeof (struct variable **)
@@ -2852,7 +2852,7 @@ struct gozila_action gozila_actions[] = {
   {"WL_WPATable", "key_128", "", 1, REFRESH, generate_key_128},
   {"WL_WPATable", "security", "", 1, REFRESH, set_security},
 #ifdef HAVE_MSSID
-  {"WL_WPATable", "save", "", 1, RESTART, security_save},
+  {"WL_WPATable", "save", "", 1, REFRESH, security_save},
   {"WL_WPATable", "keysize", "", 1, REFRESH, security_save},
 #endif
   {"WL_ActiveTable", "add_mac", "", 1, REFRESH, add_active_mac},
@@ -2889,9 +2889,9 @@ struct gozila_action gozila_actions[] = {
   {"Networking", "del_vlan", "", 0, REFRESH, del_vlan},
   {"Networking", "del_bridge", "", 0, REFRESH, del_bridge},
   {"Networking", "del_bridgeif", "", 0, REFRESH, del_bridgeif},
-  {"Networking", "save_networking", "", 5, RESTART, save_networking},
+  {"Networking", "save_networking", "", 5, REFRESH, save_networking},
 #endif
-  {"Wireless_Basic", "save", "", 5, RESTART, wireless_save},
+  {"Wireless_Basic", "save", "", 5, REFRESH, wireless_save},
 #ifdef HAVE_WIVIZ
   {"Wiviz_Survey", "Set", "", 0, REFRESH, set_wiviz},
 #endif
@@ -2915,9 +2915,9 @@ struct gozila_action gozila_actions[] = {
   {"ForwardSpec", "remove_forward_spec", "", 0, REFRESH, forwardspec_remove},
   {"Triggering", "add_trigger", "", 0, REFRESH, trigger_add},
   {"Triggering", "remove_trigger", "", 0, REFRESH, trigger_remove},
-  {"Port_Services", "save_services", "filters", 2, SYS_RESTART,
+  {"Port_Services", "save_services", "filters", 2, REFRESH,
    save_services_port},
-  {"QOSPort_Services", "save_qosservices", "filters", 2, SYS_RESTART,
+  {"QOSPort_Services", "save_qosservices", "filters", 2, REFRESH,
    save_services_port},
   {"Ping", "start", "start_ping", 1, SERVICE_RESTART, diag_ping_start},
   {"Ping", "stop", "", 0, REFRESH, diag_ping_stop},
@@ -3524,27 +3524,45 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       if (act)
 	{
 	  fprintf (stderr,
-		   "submit_button=[%s] service=[%s] sleep_time=[%d] action=[%d]\n",
-		   act->name, act->service, act->sleep_time, act->action);
+		   "%s:submit_button=[%s] service=[%s] sleep_time=[%d] action=[%d]\n",
+		   value, act->name, act->service, act->sleep_time,
+		   act->action);
 
 	  if ((act->action == SYS_RESTART)
 	      || (act->action == SERVICE_RESTART))
-	    nvram_set ("action_service", act->service);
-	  char *actionstack;
-	  int freeit=0;
-	  if (nvram_get("action_service")!=NULL)
-	  {
-	  actionstack = malloc(strlen(nvram_safe_get("action_service")) + strlen(act->service) + 2);
-	  sprintf(actionstack,"%s %s",nvram_safe_get("action_service"),act->service);
-	  freeit=0;
-	  }
-	  else
-	  {
-	  actionstack = nvram_get("action_service");
-	  }
-	  nvram_set("action_service",actionstack);
-	  if (freeit)
-	    free(actionstack);
+	    {
+	      char *actionstack = "";
+	      int freeit = 0;
+	      int inside = 0;
+	      char *next;
+	      char service[80];
+	      char *services = nvram_safe_get ("action_service");
+	      foreach (service, services, next)
+	      {
+		if (!strcmp (service, act->service))
+		  {
+		    inside = 1;
+		    break;
+		  }
+	      }
+	      if (nvram_get ("action_service") != NULL && !inside)
+		{
+		  actionstack =
+		    malloc (strlen (nvram_safe_get ("action_service")) +
+			    strlen (act->service) + 2);
+		  sprintf (actionstack, "%s %s",
+			   act->service, nvram_safe_get ("action_service"),);
+		  freeit = 0;
+		}
+	      else
+		{
+		  if (!inside)
+		    actionstack = act->service;
+		}
+	      nvram_set ("action_service", actionstack);
+	      if (freeit)
+		free (actionstack);
+	    }
 	  sleep_time = act->sleep_time;
 	  action = act->action;
 
@@ -3622,9 +3640,9 @@ footer:
   if (need_reboot)
     action = REBOOT;
 
-if (!strcmp (value, "Apply"))
+  if (!strcmp (value, "Apply"))
     {
-    action=NOTHING;
+      action = NOTHING;
     }
 
   if (action != REBOOT)
@@ -3670,7 +3688,6 @@ if (!strcmp (value, "Apply"))
 
   nvram_set ("upnp_wan_proto", "");
   sleep (sleep_time);
-
   if ((action == RESTART) || (action == SYS_RESTART))
     sys_restart ();
   else if (action == SERVICE_RESTART)
@@ -4111,11 +4128,11 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 		j++;
 #endif
 #ifdef HAVE_GLAUCO
-	      if (!strcmp(menu[i][j],"Factory_Defaults.asp"))
-	        j++;
-	      if (!strcmp(menu[i][j],"Upgrade.asp"))
-	        j++;
-#endif 
+	      if (!strcmp (menu[i][j], "Factory_Defaults.asp"))
+		j++;
+	      if (!strcmp (menu[i][j], "Upgrade.asp"))
+		j++;
+#endif
 #ifndef HAVE_MILKFISH
 	      if (!strcmp (menu[i][j], "Milkfish.asp"))
 		j++;

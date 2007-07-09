@@ -188,7 +188,7 @@ addEvent(window, "unload", function() {
 				<input type="hidden" name="submit_button" value="WL_WPATable" />
 				<input type="hidden" name="action" value="Apply" />
 				<input type="hidden" name="change_action" value="gozila_cgi" />
-				<input type="hidden" name="submit_type" />
+				<input type="hidden" name="submit_type" value="save" />
 				
 				<input type="hidden" name="security_varname" />
 				<input type="hidden" name="security_mode_last" />

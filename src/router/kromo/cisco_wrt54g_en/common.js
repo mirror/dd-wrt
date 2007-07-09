@@ -834,15 +834,27 @@ function StatusbarUpdate() {
 
 // Gray all form when submitting
 function apply(form, text, delay) {
+	form.submit();
 	for (i = 0; i < form.elements.length; i++) {
 		if(defined(form.elements[i].disabled)) 
 			form.elements[i].disabled = true;
 	}
 	if (form.contents) document.getElementById("contents").style.color = '#999999';
-    form.submit();
 }
 function applytake(form, text, delay) {
     form.action.value = "ApplyTake";
+    if(!text)
+    	text=errmsg.err100;
+
+    Dialog.info(text, {windowParameters: {className:"ddwrt", width:250, height:100}, showProgress:true});
+    setTimeout(function(){form.submit();}, 2000);
+
+    if(delay) {
+    	setTimeout(function(){infoTimeout(text, delay);}, 1000);
+    }
+}
+
+function applyupdate(form, text, delay) {
     if(!text)
     	text=errmsg.err100;
 

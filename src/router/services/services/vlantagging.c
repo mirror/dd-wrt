@@ -22,7 +22,6 @@ start_vlantagging (void)
     char vlan_name[32];
     sprintf (vlan_name, "%s.%s", tag, port);
     eval ("ifconfig", vlan_name, "0.0.0.0", "up");
-    eval("rm","/tmp/.ifcache");
   }
 }
 
@@ -43,7 +42,6 @@ stop_vlantagging (void)
     if (ifexists (vlan_name))
       {
       eval ("vconfig", "rem", vlan_name);
-      eval("rm","/tmp/.ifcache");
       }
   }
 }
@@ -95,7 +93,6 @@ start_bridging (void)
     sprintf (netmask, "%s_netmask", tag);
 
     eval ("brctl", "addbr", tag);
-    eval("rm","/tmp/.ifcache");
     if (!strcmp (port, "On"))
       br_set_stp_state (tag, 1);
     else
@@ -209,7 +206,6 @@ stop_bridging (void)
       {
 	eval ("ifconfig", tag, "down");
 	eval ("brctl", "delbr", tag);
-        eval("rm","/tmp/.ifcache");
       }
   }
 }
