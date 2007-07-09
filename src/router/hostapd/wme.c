@@ -20,7 +20,6 @@
 #include "wme.h"
 #include "sta_info.h"
 #include "driver.h"
-#include "hostap_common.h"
 
 
 /* TODO: maintain separate sequence and fragment numbers for each AC
@@ -78,8 +77,6 @@ u8 * hostapd_eid_wme(struct hostapd_data *hapd, u8 *eid)
 int hostapd_eid_wme_valid(struct hostapd_data *hapd, u8 *eid, size_t len)
 {
 	struct wme_information_element *wme;
-	u8 *pos;
-	size_t left;
 
 	wpa_hexdump(MSG_MSGDUMP, "WME IE", eid, len);
 
@@ -101,9 +98,6 @@ int hostapd_eid_wme_valid(struct hostapd_data *hapd, u8 *eid, size_t len)
 		printf("Unsupported WME IE OUI/Type/Subtype/Version\n");
 		return -1;
 	}
-
-	pos = (u8 *) (wme + 1);
-	left = len - sizeof(*wme);
 
 	return 0;
 }

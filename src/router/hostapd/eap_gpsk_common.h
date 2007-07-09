@@ -1,6 +1,6 @@
 /*
  * EAP server/peer: EAP-GPSK shared routines
- * Copyright (c) 2006, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2006-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -19,6 +19,13 @@
 #define EAP_GPSK_OPCODE_GPSK_2 2
 #define EAP_GPSK_OPCODE_GPSK_3 3
 #define EAP_GPSK_OPCODE_GPSK_4 4
+#define EAP_GPSK_OPCODE_FAIL 5
+#define EAP_GPSK_OPCODE_PROTECTED_FAIL 6
+
+/* Failure-Code in GPSK-Fail and GPSK-Protected-Fail */
+#define EAP_GPSK_FAIL_PSK_NOT_FOUND 0x00000001
+#define EAP_GPSK_FAIL_AUTHENTICATION_FAILURE 0x00000002
+#define EAP_GPSK_FAIL_AUTHORIZATION_FAILURE 0x00000003
 
 #define EAP_GPSK_RAND_LEN 32
 #define EAP_GPSK_MAX_SK_LEN 32
@@ -50,7 +57,7 @@ int eap_gpsk_derive_keys(const u8 *psk, size_t psk_len, int vendor,
 			 const u8 *rand_client, const u8 *rand_server,
 			 const u8 *id_client, size_t id_client_len,
 			 const u8 *id_server, size_t id_server_len,
-			 u8 *msk, u8 *sk, size_t *sk_len,
+			 u8 *msk, u8 *emsk, u8 *sk, size_t *sk_len,
 			 u8 *pk, size_t *pk_len);
 size_t eap_gpsk_mic_len(int vendor, int specifier);
 int eap_gpsk_compute_mic(const u8 *sk, size_t sk_len, int vendor,

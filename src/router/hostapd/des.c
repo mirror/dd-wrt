@@ -2,7 +2,7 @@
  * DES and 3DES-EDE ciphers
  *
  * Modifications to LibTomCrypt implementation:
- * Copyright (c) 2006, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2006, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as

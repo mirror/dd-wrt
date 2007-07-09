@@ -1,6 +1,6 @@
 /*
  * WPA Supplicant - Layer2 packet handling with FreeBSD
- * Copyright (c) 2003-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2003-2005, Jouni Malinen <j@w1.fi>
  * Copyright (c) 2005, Sam Leffler <sam@errno.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -29,6 +29,9 @@
 #include "l2_packet.h"
 
 
+static const u8 pae_group_addr[ETH_ALEN] =
+{ 0x01, 0x80, 0xc2, 0x00, 0x00, 0x03 };
+
 struct l2_packet_data {
 	pcap_t *pcap;
 	char ifname[100];
@@ -43,7 +46,7 @@ struct l2_packet_data {
 
 int l2_packet_get_own_addr(struct l2_packet_data *l2, u8 *addr)
 {
-	memcpy(addr, l2->own_addr, ETH_ALEN);
+	os_memcpy(addr, l2->own_addr, ETH_ALEN);
 	return 0;
 }
 
@@ -53,15 +56,15 @@ int l2_packet_send(struct l2_packet_data *l2, const u8 *dst_addr, u16 proto,
 {
 	if (!l2->l2_hdr) {
 		int ret;
-		struct l2_ethhdr *eth = malloc(sizeof(*eth) + len);
+		struct l2_ethhdr *eth = os_malloc(sizeof(*eth) + len);
 		if (eth == NULL)
 			return -1;
-		memcpy(eth->h_dest, dst_addr, ETH_ALEN);
-		memcpy(eth->h_source, l2->own_addr, ETH_ALEN);
+		os_memcpy(eth->h_dest, dst_addr, ETH_ALEN);
+		os_memcpy(eth->h_source, l2->own_addr, ETH_ALEN);
 		eth->h_proto = htons(proto);
-		memcpy(eth + 1, buf, len);
+		os_memcpy(eth + 1, buf, len);
 		ret = pcap_inject(l2->pcap, (u8 *) eth, len + sizeof(*eth));
-		free(eth);
+		os_free(eth);
 		return ret;
 	} else
 		return pcap_inject(l2->pcap, buf, len);
@@ -99,7 +102,7 @@ static int l2_packet_init_libpcap(struct l2_packet_data *l2,
 				  unsigned short protocol)
 {
 	bpf_u_int32 pcap_maskp, pcap_netp;
-	char pcap_filter[100], pcap_err[PCAP_ERRBUF_SIZE];
+	char pcap_filter[200], pcap_err[PCAP_ERRBUF_SIZE];
 	struct bpf_program pcap_fp;
 
 	pcap_lookupnet(l2->ifname, &pcap_netp, &pcap_maskp, pcap_err);
@@ -111,13 +114,17 @@ static int l2_packet_init_libpcap(struct l2_packet_data *l2,
 	}
 	if (pcap_datalink(l2->pcap) != DLT_EN10MB &&
 	    pcap_set_datalink(l2->pcap, DLT_EN10MB) < 0) {
-		fprintf(stderr, "pcap_set_datalinke(DLT_EN10MB): %s\n",
+		fprintf(stderr, "pcap_set_datalink(DLT_EN10MB): %s\n",
 			pcap_geterr(l2->pcap));
 		return -1;
 	}
-	snprintf(pcap_filter, sizeof(pcap_filter),
-		 "ether dst " MACSTR " and ether proto 0x%x",
-		 MAC2STR(l2->own_addr), protocol);
+	os_snprintf(pcap_filter, sizeof(pcap_filter),
+		    "not ether src " MACSTR " and "
+		    "( ether dst " MACSTR " or ether dst " MACSTR " ) and "
+		    "ether proto 0x%x",
+		    MAC2STR(l2->own_addr), /* do not receive own packets */
+		    MAC2STR(l2->own_addr), MAC2STR(pae_group_addr),
+		    protocol);
 	if (pcap_compile(l2->pcap, &pcap_fp, pcap_filter, 1, pcap_netp) < 0) {
 		fprintf(stderr, "pcap_compile: %s\n", pcap_geterr(l2->pcap));
 		return -1;
@@ -161,10 +168,10 @@ static int eth_get(const char *device, u8 ea[ETH_ALEN])
 
 	if (sysctl(mib, 6, NULL, &len, NULL, 0) < 0)
 		return -1;
-	if ((buf = malloc(len)) == NULL)
+	if ((buf = os_malloc(len)) == NULL)
 		return -1;
 	if (sysctl(mib, 6, buf, &len, NULL, 0) < 0) {
-		free(buf);
+		os_free(buf);
 		return -1;
 	}
 	for (p = buf; p < buf + len; p += ifm->ifm_msglen) {
@@ -174,12 +181,12 @@ static int eth_get(const char *device, u8 ea[ETH_ALEN])
 		    (ifm->ifm_addrs & RTA_IFP) == 0)
 			continue;
 		if (sdl->sdl_family != AF_LINK || sdl->sdl_nlen == 0 ||
-		    memcmp(sdl->sdl_data, device, sdl->sdl_nlen) != 0)
+		    os_memcmp(sdl->sdl_data, device, sdl->sdl_nlen) != 0)
 			continue;
-		memcpy(ea, LLADDR(sdl), sdl->sdl_alen);
+		os_memcpy(ea, LLADDR(sdl), sdl->sdl_alen);
 		break;
 	}
-	free(buf);
+	os_free(buf);
 
 	if (p >= buf + len) {
 		errno = ESRCH;
@@ -197,10 +204,10 @@ struct l2_packet_data * l2_packet_init(
 {
 	struct l2_packet_data *l2;
 
-	l2 = wpa_zalloc(sizeof(struct l2_packet_data));
+	l2 = os_zalloc(sizeof(struct l2_packet_data));
 	if (l2 == NULL)
 		return NULL;
-	strncpy(l2->ifname, ifname, sizeof(l2->ifname));
+	os_strncpy(l2->ifname, ifname, sizeof(l2->ifname));
 	l2->rx_callback = rx_callback;
 	l2->rx_callback_ctx = rx_callback_ctx;
 	l2->l2_hdr = l2_hdr;
@@ -208,12 +215,12 @@ struct l2_packet_data * l2_packet_init(
 	if (eth_get(l2->ifname, l2->own_addr) < 0) {
 		fprintf(stderr, "Failed to get link-level address for "
 			"interface '%s'.\n", l2->ifname);
-		free(l2);
+		os_free(l2);
 		return NULL;
 	}
 
 	if (l2_packet_init_libpcap(l2, protocol)) {
-		free(l2);
+		os_free(l2);
 		return NULL;
 	}
 
@@ -226,7 +233,7 @@ void l2_packet_deinit(struct l2_packet_data *l2)
 	if (l2 != NULL) {
 		if (l2->pcap)
 			pcap_close(l2->pcap);
-		free(l2);
+		os_free(l2);
 	}
 }
 
@@ -245,15 +252,15 @@ int l2_packet_get_ip_addr(struct l2_packet_data *l2, char *buf, size_t len)
 	}
 
 	for (dev = devs; dev && !found; dev = dev->next) {
-		if (strcmp(dev->name, l2->ifname) != 0)
+		if (os_strcmp(dev->name, l2->ifname) != 0)
 			continue;
 
 		addr = dev->addresses;
 		while (addr) {
 			saddr = (struct sockaddr_in *) addr->addr;
 			if (saddr && saddr->sin_family == AF_INET) {
-				snprintf(buf, len, "%s",
-					 inet_ntoa(saddr->sin_addr));
+				os_snprintf(buf, len, "%s",
+					    inet_ntoa(saddr->sin_addr));
 				found = 1;
 				break;
 			}

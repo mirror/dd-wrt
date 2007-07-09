@@ -2,6 +2,7 @@
  * hostapd / Driver interaction with Prism54 PIMFOR interface
  * Copyright (c) 2004, Bell Kin <bell_kin@pek.com.tw>
  * based on hostap driver.c, ieee802_11.c
+ * Copyright (c) 2002-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -41,7 +42,6 @@
 #include "radius.h"
 #include "sta_info.h"
 #include "accounting.h"
-#include "hostap_common.h"
 
 const int PIM_BUF_SIZE = 4096;
 
@@ -114,6 +114,7 @@ static int prism54_waitpim(void *priv, unsigned long oid, void *buf, int len,
 						return -1;
 					}
 				} else {
+					gettimeofday(&ctv, NULL);
 					continue;
 				}
 			}
@@ -128,7 +129,8 @@ static int prism54_waitpim(void *priv, unsigned long oid, void *buf, int len,
 
 /* send an eapol packet */
 static int prism54_send_eapol(void *priv, const u8 *addr,
-			      const u8 *data, size_t data_len, int encrypt)
+			      const u8 *data, size_t data_len, int encrypt,
+			      const u8 *own_addr)
 {
 	struct prism54_driver_data *drv = priv;
 	ieee802_3_hdr *hdr;
@@ -145,7 +147,7 @@ static int prism54_send_eapol(void *priv, const u8 *addr,
 	}
 
 	memcpy(&hdr->da[0], addr, ETH_ALEN);
-	memcpy(&hdr->sa[0], drv->hapd->own_addr, ETH_ALEN);
+	memcpy(&hdr->sa[0], own_addr, ETH_ALEN);
 	hdr->type = htons(ETH_P_PAE);
 	pos = (u8 *) (hdr + 1);
 	memcpy(pos, data, data_len);
@@ -170,7 +172,7 @@ static int prism54_set_sta_authorized(void *priv, const u8 *addr,
 	struct prism54_driver_data *drv = priv;
 	pimdev_hdr *hdr;
 	char *pos;
-	int res;
+
 	hdr = malloc(sizeof(*hdr) + ETH_ALEN);
 	if (hdr == NULL)
 		return -1;
@@ -182,7 +184,7 @@ static int prism54_set_sta_authorized(void *priv, const u8 *addr,
 	}
 	pos = (char *) (hdr + 1);
 	memcpy(pos, addr, ETH_ALEN);
-	res = send(drv->pim_sock, hdr, sizeof(*hdr) + ETH_ALEN, 0);
+	send(drv->pim_sock, hdr, sizeof(*hdr) + ETH_ALEN, 0);
 	prism54_waitpim(priv, hdr->oid, hdr, sizeof(*hdr) + ETH_ALEN, 10);
 	free(hdr);
 	return 0;
@@ -234,6 +236,7 @@ static int prism54_set_encryption(const char *ifname, void *priv,
 		/* the only way to clear the key is to deauth it */
 		/* and prism54 is capable to receive unencrypted packet */
 		/* so we do nothing here */
+		free(hdr);
 		return 0;
 	} else {
 		printf("bad auth type: %s\n", alg);
@@ -250,8 +253,10 @@ static int prism54_set_encryption(const char *ifname, void *priv,
 	memcpy(buf, key, key_len);
 	
 	ret = send(drv->pim_sock, hdr, blen, 0);
-	if (ret < 0)
+	if (ret < 0) {
+		free(hdr);
 		return ret;
+	}
 	prism54_waitpim(priv, hdr->oid, hdr, blen, 10);
 
 	free(hdr);
@@ -311,7 +316,6 @@ static int prism54_init_1x(void *priv)
 	struct prism54_driver_data *drv = priv;
 	pimdev_hdr *hdr;
 	unsigned long *ul;
-	int ret;
 	int blen = sizeof(*hdr) + sizeof(*ul);
 
 	hdr = malloc(blen);
@@ -322,29 +326,30 @@ static int prism54_init_1x(void *priv)
 	hdr->op = htonl(PIMOP_SET);
 	hdr->oid = htonl(DOT11_OID_EXUNENCRYPTED);
 	*ul = htonl(DOT11_BOOL_TRUE); /* not accept */
-	ret = send(drv->pim_sock, hdr, blen, 0);
+	send(drv->pim_sock, hdr, blen, 0);
 	prism54_waitpim(priv, DOT11_OID_EXUNENCRYPTED, hdr, blen, 10);
 	hdr->op = htonl(PIMOP_SET);
 	hdr->oid = htonl(DOT11_OID_MLMEAUTOLEVEL);
 	*ul = htonl(DOT11_MLME_EXTENDED);
-	ret = send(drv->pim_sock, hdr, blen, 0);
+	send(drv->pim_sock, hdr, blen, 0);
 	prism54_waitpim(priv, DOT11_OID_MLMEAUTOLEVEL, hdr, blen, 10);
 	hdr->op = htonl(PIMOP_SET);
 	hdr->oid = htonl(DOT11_OID_DOT1XENABLE);
 	*ul = htonl(DOT11_BOOL_TRUE);
-	ret = send(drv->pim_sock, hdr, blen, 0);
+	send(drv->pim_sock, hdr, blen, 0);
 	prism54_waitpim(priv, DOT11_OID_DOT1XENABLE, hdr, blen, 10);
 	hdr->op = htonl(PIMOP_SET);
 	hdr->oid = htonl(DOT11_OID_AUTHENABLE);
 	*ul = htonl(DOT11_AUTH_OS); /* OS */
-	ret = send(drv->pim_sock, hdr, blen, 0);
+	send(drv->pim_sock, hdr, blen, 0);
 	prism54_waitpim(priv, DOT11_OID_AUTHENABLE, hdr, blen, 10);
 	free(hdr);
 	return 0;
 }
 
 
-static int prism54_set_privacy_invoked(void *priv, int flag)
+static int prism54_set_privacy_invoked(const char *ifname, void *priv,
+				       int flag)
 {
 	struct prism54_driver_data *drv = priv;
 	pimdev_hdr *hdr;
@@ -372,7 +377,8 @@ static int prism54_set_privacy_invoked(void *priv, int flag)
 }
 
  
-static int prism54_ioctl_setiwessid(void *priv, const u8 *buf, int len)
+static int prism54_ioctl_setiwessid(const char *ifname, void *priv,
+				    const u8 *buf, int len)
 {
 #if 0
 	struct prism54_driver_data *drv = priv;
@@ -401,11 +407,13 @@ static int prism54_flush(void *priv)
 	struct prism54_driver_data *drv = priv;
 	struct obj_mlmeex *mlme;
 	pimdev_hdr *hdr;
-	int ret, i;
+	int ret;
+	unsigned int i;
 	long *nsta;
 	int blen = sizeof(*hdr) + sizeof(*mlme);
+	char *mac_id;
 
-	hdr = malloc(blen);
+	hdr = wpa_zalloc(blen);
 	if (hdr == NULL)
 		return -1;
 
@@ -422,7 +430,9 @@ static int prism54_flush(void *priv)
 	}
 	for (i = 0; i < le_to_host32(*nsta); i++) {
 		mlme->id = -1;
-		memcpy(&mlme->address[0], mac_id_get(drv, i), ETH_ALEN);
+		mac_id = mac_id_get(drv, i);
+		if (mac_id)
+			memcpy(&mlme->address[0], mac_id, ETH_ALEN);
 		mlme->code = host_to_le16(WLAN_REASON_UNSPECIFIED);
 		mlme->state = htons(DOT11_STATE_NONE);
 		mlme->size = 0;
@@ -434,7 +444,9 @@ static int prism54_flush(void *priv)
 	}
 	for (i = 0; i < le_to_host32(*nsta); i++) {
 		mlme->id = -1;
-		memcpy(&mlme->address[0], mac_id_get(drv, i), ETH_ALEN);
+		mac_id = mac_id_get(drv, i);
+		if (mac_id)
+			memcpy(&mlme->address[0], mac_id, ETH_ALEN);
 		mlme->code = host_to_le16(WLAN_REASON_UNSPECIFIED);
 		mlme->state = htons(DOT11_STATE_NONE);
 		mlme->size = 0;
@@ -532,11 +544,10 @@ static int prism54_get_inact_sec(void *priv, const u8 *addr)
 
 
 /* set attachments */
-static int prism54_set_generic_elem(void *priv,
+static int prism54_set_generic_elem(const char *ifname, void *priv,
 				    const u8 *elem, size_t elem_len)
 {
 	struct prism54_driver_data *drv = priv;
-	int res;
 	pimdev_hdr *hdr;
 	char *pos;
 	struct obj_attachment_hdr *attach;
@@ -555,9 +566,9 @@ static int prism54_set_generic_elem(void *priv,
 	pos = ((char*) attach) + sizeof(*attach);
 	if (elem)
 		memcpy(pos, elem, elem_len);
-	res = send(drv->pim_sock, hdr, blen, 0);
+	send(drv->pim_sock, hdr, blen, 0);
 	attach->type = DOT11_PKT_PROBE_RESP;
-	res = send(drv->pim_sock, hdr, blen, 0);
+	send(drv->pim_sock, hdr, blen, 0);
 	free(hdr);
 	return 0;
 }
@@ -596,13 +607,15 @@ static void prism54_handle_deauth(struct prism54_driver_data *drv,
 	struct obj_mlme *mlme;
 	pimdev_hdr *hdr;
 	struct sta_info *sta;
+	char *mac_id;
+
 	hdr = (pimdev_hdr *) buf;
 	mlme = (struct obj_mlme *) &hdr[1];
 	sta = ap_get_sta(drv->hapd, (u8 *) &mlme->address[0]);
-	memcpy(&mlme->address[0], mac_id_get(drv, mlme->id), ETH_ALEN);
-	if (sta == NULL) {
+	mac_id = mac_id_get(drv, mlme->id);
+	if (sta == NULL || mac_id == NULL)
 		return;
-	}
+	memcpy(&mlme->address[0], mac_id, ETH_ALEN);
 	sta->flags &= ~(WLAN_STA_AUTH | WLAN_STA_ASSOC);
 	wpa_auth_sm_event(sta->wpa_sm, WPA_DEAUTH);
 	sta->acct_terminate_cause = RADIUS_ACCT_TERMINATE_CAUSE_USER_REQUEST;
@@ -617,9 +630,14 @@ static void prism54_handle_disassoc(struct prism54_driver_data *drv,
 	struct obj_mlme *mlme;
 	pimdev_hdr *hdr;
 	struct sta_info *sta;
+	char *mac_id;
+
 	hdr = (pimdev_hdr *) buf;
 	mlme = (struct obj_mlme *) &hdr[1];
-	memcpy(&mlme->address[0], mac_id_get(drv, mlme->id), ETH_ALEN);
+	mac_id = mac_id_get(drv, mlme->id);
+	if (mac_id == NULL)
+		return;
+	memcpy(&mlme->address[0], mac_id, ETH_ALEN);
 	sta = ap_get_sta(drv->hapd, (u8 *) &mlme->address[0]);
 	if (sta == NULL) {
 		return;
@@ -679,7 +697,8 @@ fail:
 	printf("auth fail: %x\n", resp);
 	mlme->code = host_to_le16(resp);
 	mlme->size = 0;
-	sta->flags &= ~(WLAN_STA_AUTH | WLAN_STA_ASSOC);
+	if (sta)
+		sta->flags &= ~(WLAN_STA_AUTH | WLAN_STA_ASSOC);
 	hdr->oid = htonl(DOT11_OID_DEAUTHENTICATEEX);
 	hdr->op = htonl(PIMOP_SET);
 	send(drv->pim_sock, hdr, sizeof(*hdr)+sizeof(*mlme), 0);
@@ -699,6 +718,8 @@ static void prism54_handle_assoc(struct prism54_driver_data *drv,
 	int ieofs = 0;
 	size_t wpa_ie_len;
 	int resp, new_assoc;
+	char *mac_id;
+
 	resp = 0;
 	hdr = (pimdev_hdr *) buf;
 	mlme = (struct obj_mlmeex *) &hdr[1];
@@ -715,7 +736,10 @@ static void prism54_handle_assoc(struct prism54_driver_data *drv,
 			printf("bad assoc packet\n");
 			return;
 		}
-		memcpy(&mlme->address[0], mac_id_get(drv, mlme->id), ETH_ALEN);
+		mac_id = mac_id_get(drv, mlme->id);
+		if (mac_id == NULL)
+			return;
+		memcpy(&mlme->address[0], mac_id, ETH_ALEN);
 		sta = ap_get_sta(drv->hapd, (u8 *) &mlme->address[0]);
 		if (sta == NULL) {
 			printf("cannot get sta\n");
@@ -801,14 +825,17 @@ static void prism54_handle_assoc(struct prism54_driver_data *drv,
 			printf("bad assoc packet\n");
 			return;
 		}
-		memcpy(&mlme->address[0], mac_id_get(drv, mlme->id), ETH_ALEN);
+		mac_id = mac_id_get(drv, mlme->id);
+		if (mac_id == NULL)
+			return;
+		memcpy(&mlme->address[0], mac_id, ETH_ALEN);
 		sta = ap_get_sta(drv->hapd, (u8 *) &mlme->address[0]);
 		if (sta == NULL) {
 			printf("cannot get sta\n");
 			return;
 		}
 		new_assoc = (sta->flags & WLAN_STA_ASSOC) == 0;
-		sta->flags |= WLAN_STA_ASSOC;
+		sta->flags |= WLAN_STA_AUTH | WLAN_STA_ASSOC;
 		wpa_auth_sm_event(sta->wpa_sm, WPA_ASSOC);
 		hostapd_new_assoc_sta(drv->hapd, sta, !new_assoc);
 		ieee802_1x_notify_port_enabled(sta->eapol_sm, 1);
@@ -832,15 +859,20 @@ fail:
 static void handle_pim(int sock, void *eloop_ctx, void *sock_ctx)
 {
 	struct prism54_driver_data *drv = eloop_ctx;
-	size_t len;
+	int len;
 	pimdev_hdr *hdr;
 
 	hdr = malloc(PIM_BUF_SIZE);
 	if (hdr == NULL)
 		return;
 	len = recv(sock, hdr, PIM_BUF_SIZE, 0);
+	if (len < 0) {
+		perror("recv");
+		free(hdr);
+		return;
+	}
 	if (len < 8) {
-		printf("handle_pim: too short (%lu)\n", (unsigned long) len);
+		printf("handle_pim: too short (%d)\n", len);
 		free(hdr);
 		return;
 	}

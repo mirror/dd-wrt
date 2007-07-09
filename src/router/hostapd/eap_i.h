@@ -1,6 +1,6 @@
 /*
  * hostapd / EAP Authenticator state machine internal structures (RFC 4137)
- * Copyright (c) 2004-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2004-2005, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -80,6 +80,19 @@ struct eap_method {
 	 * to create a linked list of registered EAP methods.
 	 */
 	struct eap_method *next;
+
+	/**
+	 * get_emsk - Get EAP method specific keying extended material (EMSK)
+	 * @sm: Pointer to EAP state machine allocated with eap_sm_init()
+	 * @priv: Pointer to private EAP method data from eap_method::init()
+	 * @len: Pointer to a variable to store EMSK length
+	 * Returns: EMSK or %NULL if not available
+	 *
+	 * This function can be used to get the extended keying material from
+	 * the EAP method. The key may already be stored in the method-specific
+	 * private data or this function may derive the key.
+	 */
+	u8 * (*get_emsk)(struct eap_sm *sm, void *priv, size_t *len);
 };
 
 /**

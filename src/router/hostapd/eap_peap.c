@@ -1,6 +1,6 @@
 /*
  * hostapd / EAP-PEAP (draft-josefsson-pppext-eap-tls-eap-07.txt)
- * Copyright (c) 2004-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -339,12 +339,11 @@ static Boolean eap_peap_check(struct eap_sm *sm, void *priv,
 {
 	struct eap_hdr *resp;
 	u8 *pos;
-	size_t len;
 
 	resp = (struct eap_hdr *) respData;
 	pos = (u8 *) (resp + 1);
 	if (respDataLen < sizeof(*resp) + 2 || *pos != EAP_TYPE_PEAP ||
-	    (len = ntohs(resp->length)) > respDataLen) {
+	    (ntohs(resp->length)) > respDataLen) {
 		wpa_printf(MSG_INFO, "EAP-PEAP: Invalid frame");
 		return TRUE;
 	}
@@ -390,9 +389,9 @@ static void eap_peap_process_phase2_response(struct eap_sm *sm,
 
 	hdr = (struct eap_hdr *) in_data;
 	pos = (u8 *) (hdr + 1);
-	left = in_len - sizeof(*hdr);
 
 	if (in_len > sizeof(*hdr) && *pos == EAP_TYPE_NAK) {
+		left = in_len - sizeof(*hdr);
 		wpa_hexdump(MSG_DEBUG, "EAP-PEAP: Phase2 type Nak'ed; "
 			    "allowed types", pos + 1, left - 1);
 		eap_sm_process_nak(sm, pos + 1, left - 1);

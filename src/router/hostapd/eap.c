@@ -1,6 +1,6 @@
 /*
  * hostapd / EAP Standalone Authenticator state machine (RFC 4137)
- * Copyright (c) 2004-2006, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2004-2006, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -712,6 +712,9 @@ void eap_sm_process_nak(struct eap_sm *sm, u8 *nak_list, size_t len)
 {
 	int i;
 	size_t j;
+
+	if (sm->user == NULL)
+		return;
 
 	wpa_printf(MSG_MSGDUMP, "EAP: processing NAK (current EAP method "
 		   "index %d)", sm->user_eap_method_index);
