@@ -3550,14 +3550,15 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 		  actionstack =
 		    malloc (strlen (nvram_safe_get ("action_service")) +
 			    strlen (act->service) + 2);
-		  sprintf (actionstack, "%s %s",
-			   act->service, nvram_safe_get ("action_service"),);
+		  sprintf (actionstack, "%s %s",act->service, nvram_safe_get ("action_service"));
 		  freeit = 0;
 		}
 	      else
 		{
 		  if (!inside)
 		    actionstack = act->service;
+		  else
+		    actionstack = nvram_safe_get ("action_service");
 		}
 	      nvram_set ("action_service", actionstack);
 	      if (freeit)
