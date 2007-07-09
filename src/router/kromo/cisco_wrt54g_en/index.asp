@@ -184,12 +184,14 @@ function setDNSMasq(F) {
 }
 
 function SelWAN(num,F) {
+	F.change_action="gozila_cgi";
 	F.submit_type.value = "wan_proto";
 	F.wan_proto.value=F.wan_proto.options[num].value;
 	F.submit();
 }
 
 function SelDHCPFWD(num,F) {
+	F.change_action="gozila_cgi";
 	F.submit_type.value = "dhcpfwd";
 	F.dhcpfwd_enable.value = F.dhcpfwd_enable.options[num].value;
 	F.submit();
@@ -278,7 +280,7 @@ addEvent(window, "unload", function() {
 						<form name="setup" action="apply.cgi" method="<% get_http_method(); %>">
 							<input type="hidden" name="submit_button" value="index" />
 							<input type="hidden" name="action" value="Apply" />
-							<input type="hidden" name="change_action" value="gozila_cgi" />
+							<input type="hidden" name="change_action"/>
 							<input type="hidden" name="submit_type" />
 							
 							<input type="hidden" name="now_proto" value="<% nvram_gozila_get("wan_proto"); %>" />
