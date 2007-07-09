@@ -817,6 +817,11 @@ function StatusbarUpdate() {
 
 function apply(form) {
 	form.submit();
+}
+
+function applytake(form) {
+	form.action.value="ApplyTake";
+	form.submit();
 	for (i = 0; i < form.elements.length; i++) {
 		if(defined(form.elements[i].disabled)) 
 			form.elements[i].disabled = true;
@@ -1004,6 +1009,8 @@ function unDisplayDiv()
 function submitFooterButton(sub, res, reb, autoref, ref, clo) {
 	if(sub)
 		document.write("<input class=\"button\" type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form);\" />");
+	if(sub)
+		document.write("<input class=\"button\" type=\"button\" name=\"apply_button\" value=\"" + sbutton.apply + "\" onclick=\"applytake(this.form);\" />");
 	if(res)
 		document.write("<input class=\"button\" type=\"button\" name=\"reset_button\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.reload();\" />");
 	if(reb)
