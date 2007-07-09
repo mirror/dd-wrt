@@ -7,14 +7,16 @@
 		<div id="content">
 			<h2><% tran("bmenu.servicesMilkfish"); %></h2>
 			<dl>
-				<dt>Boozy Milkfish - Personal VoIP/IM Router - v3.0.0</dt>
+				<dt>Milkfish-dd - Personal VoIP/IM Router - v1.0</dt>
 				<ul class="wide">
 				<br>Key features are...<br>
-				<li>the first free and user specific alphanumeric dialing infrastructure - choose <b>yourname.homesip.net</b><br></li>
-				<li>seamless NAT traversal by means of a combined SIP-RTP-proxy.</li>
-				<li>quick dialling through self-definable Aliases (e.g. call "123" and reach "alphonse.numeric@sales.myoffice24.com")</li>
-				<li>reduction of internet traffic by internal routing of calls among local phones.</li>
-				<li>SIP/SIMPLE messaging via web interface.</li>
+				<li>the first free and <a href="http://wiki.milkfish.org/index.php?n=MilkfishServices.Homesip">user specific alphanumeric dialing</a> infrastructure - choose <b>yourname.homesip.net</b></li>
+				<li>improved NAT traversal by means of a combined SIP-RTP-proxy - equipped with a selective STUNBLOCKER</li>
+				<li>support for LAN-connected PBX-Adapter hardwares - find an example <a href="http://wiki.milkfish.org/index.php?n=TheMilkfish.FritzBox">here</a></li>
+				<li>quick dialling through user-defined Aliases (e.g. call local "123" and reach "alphonse.numeric@myrouter.homesip.net")</li>
+				<li>reduction of internet traffic by internal routing of calls among local phones</li>
+				<li>direct dialling through the <a href="http://www.sipbroker.com">SIPBroker</a> Network Directory using <b>*1</b> as a prefix before the SIPBroker <i>SIP-Code</i></li>
+				<li>SIP/SIMPLE messaging via web interface</li>
 				</ul><br />
 					<div class="note">
 						<h4>Note</h4>
@@ -25,7 +27,7 @@
 
 						<h4>Legal</h4>
 						<div>
-						Copyright © 2005-2006 by <a href="http://www.milkfish.org" target="new">The Milkfish Project</a>. All rights reserved.<br />
+						Copyright © 2005-2007 by <a href="http://www.milkfish.org" target="new">The Milkfish Project</a>. All rights reserved.<br />
 						Logos and trademarks are the property of their respective owners.<br />
 						The Milkfish software is licensed under the <a href="http://www.gnu.org/licenses/gpl.html" target="new">GNU General Public License</a>.<br />
 						Please note that this software is under development and comes with absolutely no warranty, to the extend permitted by applicable law.</div>

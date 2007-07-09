@@ -21,10 +21,14 @@ function to_submit(F) {
 			<div id="main">
 				<div id="contentsInfo">
 					<h2>Milkfish SIP phonebook</h2>
-					Not yet  .....
-					<br />
-					<br />
-					<div class="submitFooter">
+					
+                                        <div class="info"><span id="phonebook"><% show_phonebook(); %></span></div>
+                                        <div class="setting">
+                                            <div class="label">auditto</div>
+                                            <span id="milkfish_audit"><% nvram_status_get("milkfish_audit"); %></span>&nbsp;
+                                        </div>
+                                        <% show_ppptime(); %>
+                                        <div class="submitFooter">
 						<script type="text/javascript">
 						//<![CDATA[
 						submitFooterButton(1,1,0,0,0,1);
