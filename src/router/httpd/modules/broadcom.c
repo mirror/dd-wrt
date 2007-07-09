@@ -3622,7 +3622,7 @@ footer:
   if (need_reboot)
     action = REBOOT;
 
-if (!strcmp (value, "ApplyTake"))
+if (!strcmp (value, "Apply"))
     {
     action=NOTHING;
     }
@@ -4110,6 +4110,12 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 	      if (!strcmp (menu[i][j], "PPTP.asp"))	//jump over PPTP in micro build
 		j++;
 #endif
+#ifdef HAVE_GLAUCO
+	      if (!strcmp(menu[i][j],"Factory_Defaults.asp"))
+	        j++;
+	      if (!strcmp(menu[i][j],"Upgrade.asp"))
+	        j++;
+#endif 
 #ifndef HAVE_MILKFISH
 	      if (!strcmp (menu[i][j], "Milkfish.asp"))
 		j++;
