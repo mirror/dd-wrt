@@ -834,6 +834,11 @@ function StatusbarUpdate() {
 
 // Gray all form when submitting
 function apply(form, text, delay) {
+	for (i = 0; i < form.elements.length; i++) {
+		if(defined(form.elements[i].disabled)) 
+			form.elements[i].disabled = true;
+	}
+	if (form.contents) document.getElementById("contents").style.color = '#999999';
     form.submit();
 }
 function applytake(form, text, delay) {
