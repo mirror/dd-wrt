@@ -8,7 +8,7 @@ function to_submit(F) {
 		return false;
 	}
 	F.save_button.value = sbutton.saving;
-	apply(F, errmsg.err101);
+	applyupdate(F, errmsg.err101);
 	return true;
 }
 

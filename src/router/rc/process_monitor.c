@@ -99,7 +99,7 @@ process_monitor_main (void)
 	  start_service ("snmp");
 	}
 #endif
-#ifdef HAVE_WIFIDOG  //dirty fix for wifidog
+#ifdef HAVE_WIFIDOG		//dirty fix for wifidog
       if ((abs (now.tv_sec - then.tv_sec) > 100000000)
 	  && nvram_match ("wd_enable", "1"))
 	{

@@ -90,8 +90,8 @@ validate_wan_ipaddr (webs_t wp, char *value, struct variable *v)
   int pptp_skip_check = FALSE;
 
   struct variable wan_variables[] = {
-  {NULL},
-  {NULL},
+    {NULL},
+    {NULL},
   {argv:ARGV ("wan_ipaddr", "wan_netmask")},
   }, *which;
 

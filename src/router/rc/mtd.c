@@ -199,12 +199,12 @@ mtd_write (const char *path, const char *mtd)
   trx.magic = STORE32_LE (trx.magic);
   trx.len = STORE32_LE (trx.len);
   trx.crc32 = STORE32_LE (trx.crc32);
-  info.freeram=64; //fix, must be flashed in erase blocks
+  info.freeram = 64;		//fix, must be flashed in erase blocks
 #elif HAVE_MERAKI
   trx.magic = STORE32_LE (trx.magic);
   trx.len = STORE32_LE (trx.len);
   trx.crc32 = STORE32_LE (trx.crc32);
-  info.freeram=64; //fix, must be flashed in erase blocks
+  info.freeram = 64;		//fix, must be flashed in erase blocks
 #elif HAVE_LS2
   trx.magic = STORE32_LE (trx.magic);
   trx.len = STORE32_LE (trx.len);

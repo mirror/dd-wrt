@@ -21,7 +21,7 @@ validate_forward_proto (webs_t wp, char *value, struct variable *v)
   {argv:ARGV ("12")},
   {argv:ARGV ("0", "65535")},
   {argv:ARGV ("0", "65535")},
-  {NULL},
+    {NULL},
   }, *which;
   buf = nvram_safe_get ("forward_entries");
   if (buf == NULL || strlen (buf) == 0)
@@ -184,7 +184,7 @@ validate_forward_spec (webs_t wp, char *value, struct variable *v)
   {argv:ARGV ("12")},
   {argv:ARGV ("0", "65535")},
   {argv:ARGV ("0", "65535")},
-  {NULL},
+    {NULL},
   }, *which;
   buf = nvram_safe_get ("forwardspec_entries");
   if (buf == NULL || strlen (buf) == 0)
