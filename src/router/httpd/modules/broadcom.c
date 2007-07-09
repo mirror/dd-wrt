@@ -3509,7 +3509,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   /**********   check action to do **********/
 
   /** Apply **/
-  if (!strcmp (value, "Apply"))
+  if (!strcmp (value, "Apply") || !strcmp (value, "ApplyTake"))
     {
       struct apply_action *act;
       cprintf ("validate cgi");
@@ -3526,12 +3526,25 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	  fprintf (stderr,
 		   "submit_button=[%s] service=[%s] sleep_time=[%d] action=[%d]\n",
 		   act->name, act->service, act->sleep_time, act->action);
+
 	  if ((act->action == SYS_RESTART)
 	      || (act->action == SERVICE_RESTART))
 	    nvram_set ("action_service", act->service);
+	  char *actionstack;
+	  int freeit=0;
+	  if (nvram_get("action_service")!=NULL)
+	  {
+	  actionstack = malloc(strlen(nvram_safe_get("action_service")) + strlen(act->service) + 2);
+	  sprintf(actionstack,"%s %s",nvram_safe_get("action_service"),act->service);
+	  freeit=0;
+	  }
 	  else
-	    nvram_set ("action_service", "");
-
+	  {
+	  actionstack = nvram_get("action_service");
+	  }
+	  nvram_set("action_service",actionstack);
+	  if (freeit)
+	    free(actionstack);
 	  sleep_time = act->sleep_time;
 	  action = act->action;
 
@@ -3540,12 +3553,12 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	}
       else
 	{
-	  nvram_set ("action_service", "");
+	  //nvram_set ("action_service", "");
 	  sleep_time = 1;
 	  action = RESTART;
 	}
 
-      if (need_commit)
+      if (need_commit && !strcmp (value, "ApplyTake"))
 	{
 	  diag_led (DIAG, STOP_LED);
 	  sys_commit ();
@@ -3601,12 +3614,18 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 
 
 footer:
+
   if (do_reboot)
     action = REBOOT;
 
   /* The will let PC to re-get a new IP Address automatically */
   if (need_reboot)
     action = REBOOT;
+
+if (!strcmp (value, "ApplyTake"))
+    {
+    action=NOTHING;
+    }
 
   if (action != REBOOT)
     {

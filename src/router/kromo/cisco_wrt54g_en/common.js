@@ -834,6 +834,10 @@ function StatusbarUpdate() {
 
 // Gray all form when submitting
 function apply(form, text, delay) {
+    form.submit();
+}
+function applytake(form, text, delay) {
+    form.action.value = "ApplyTake";
     if(!text)
     	text=errmsg.err100;
 
@@ -1084,6 +1088,8 @@ function unDisplayDiv()
 function submitFooterButton(sub, res, reb, autoref, ref, clo) {
 	if(sub)
 		document.write("<input class=\"button\" type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form);\" />");
+	if(sub)
+		document.write("<input class=\"button\" type=\"button\" name=\"apply_button\" value=\"" + sbutton.apply + "\" onclick=\"applytake(this.form);\" />");
 	if(res)
 		document.write("<input class=\"button\" type=\"button\" name=\"reset_button\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.reload();\" />");
 	if(reb)

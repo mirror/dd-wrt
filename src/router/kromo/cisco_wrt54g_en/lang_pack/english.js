@@ -163,7 +163,8 @@ share.user="User";
 share.privatekey="Private Key";
 
 var sbutton = new Object();
-sbutton.save="Save Settings";
+sbutton.save="Save";
+sbutton.apply="Apply Settings";
 sbutton.saving="Saved";
 sbutton.cmd="Executing";
 sbutton.cancel="Cancel Changes";
