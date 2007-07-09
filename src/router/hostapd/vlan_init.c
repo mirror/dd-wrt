@@ -636,7 +636,8 @@ full_dynamic_vlan_init(struct hostapd_data *hapd)
 		return NULL;
 	}
 
-	if (eloop_register_read_sock(priv->s, vlan_event_receive, hapd, 0)) {
+	if (eloop_register_read_sock(priv->s, vlan_event_receive, hapd, NULL))
+	{
 		close(priv->s);
 		free(priv);
 		return NULL;

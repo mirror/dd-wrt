@@ -1,6 +1,6 @@
 /*
  * hostapd / IEEE 802.11 MLME
- * Copyright 2003, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright 2003, Jouni Malinen <j@w1.fi>
  * Copyright 2003-2004, Instant802 Networks, Inc.
  * Copyright 2005-2006, Devicescape Software, Inc.
  *

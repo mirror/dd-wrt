@@ -1,6 +1,6 @@
 /*
  * hostapd / EAP-MSCHAPv2 (draft-kamath-pppext-eap-mschapv2-00.txt) server
- * Copyright (c) 2004-2006, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -133,7 +133,7 @@ static u8 * eap_mschapv2_build_success_req(struct eap_sm *sm,
 	char *message = "OK";
 	size_t ms_len;
 
-	ms_len = sizeof(*ms) + 2 + 2 * sizeof(data->auth_response) + 2 +
+	ms_len = sizeof(*ms) + 2 + 2 * sizeof(data->auth_response) + 1 + 2 +
 		strlen(message);
 	req = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_MSCHAPV2, reqDataLen,
 			    ms_len, EAP_CODE_REQUEST, id, &pos);
@@ -156,6 +156,7 @@ static u8 * eap_mschapv2_build_success_req(struct eap_sm *sm,
 					  sizeof(data->auth_response) * 2 + 1,
 					  data->auth_response,
 					  sizeof(data->auth_response));
+	*pos++ = ' ';
 	*pos++ = 'M';
 	*pos++ = '=';
 	memcpy(pos, message, strlen(message));
