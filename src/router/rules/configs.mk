@@ -142,5 +142,7 @@ obj-$(CONFIG_QUAGGA) += quagga
 obj-$(CONFIG_VPNC) += vpnc
 obj-$(CONFIG_STUCK) += stuck_beacon
 obj-$(CONFIG_BMON) += bmon
+obj-$(CONFIG_HOSTAPD2) += hostapd2
+obj-$(CONFIG_WPA_SUPPLICANT2) += wpa_supplicant2
 
 
