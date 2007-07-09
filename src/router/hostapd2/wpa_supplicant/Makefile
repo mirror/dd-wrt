@@ -3,7 +3,7 @@ CC=gcc
 endif
 
 ifndef CFLAGS
-CFLAGS = -MMD -O2 -Wall -g
+CFLAGS = -MMD $(COPTS) -Wall
 endif
 
 CFLAGS += -I.
