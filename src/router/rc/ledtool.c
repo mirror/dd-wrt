@@ -33,21 +33,21 @@ ledtool_main (int argc, char **argv)
       /* parent process should just die */
       _exit (0);
     }
-int times = atoi(argv[1]);
-while(times >0)
-{
-int count=3;
-  while (count>0)
+  int times = atoi (argv[1]);
+  while (times > 0)
     {
-    led_control(LED_DIAG,LED_ON);
-    usleep(500000);
-    led_control(LED_DIAG,LED_OFF);
-    usleep(500000);
-    count--;
+      int count = 3;
+      while (count > 0)
+	{
+	  led_control (LED_DIAG, LED_ON);
+	  usleep (500000);
+	  led_control (LED_DIAG, LED_OFF);
+	  usleep (500000);
+	  count--;
+	}
+      sleep (3);
+      times--;
     }
-    sleep(3);
-    times--;
-}
 
   return 0;
 }				// end main

@@ -137,7 +137,7 @@ containsIP (char *ip)
       cprintf ("found %s/%s\n", net, i);
       if (compareNet (net, i, ip))
 	{
-//	  printf ("%s/%s fits to %s\n", net, i, ip);
+//        printf ("%s/%s fits to %s\n", net, i, ip);
 	  fclose (in);
 	  return 1;
 	}
@@ -147,7 +147,7 @@ containsIP (char *ip)
 //cprintf("no ip found\n");
   return 0;
 }
-static int qosidx=1000;
+static int qosidx = 1000;
 
 int
 containsMAC (char *ip)
@@ -161,9 +161,9 @@ containsMAC (char *ip)
   while (fscanf (in, "%s", buf_ip) != EOF)
     {
       if (!strcmp (buf_ip, ip))
-        {
-	fclose (in);
-	return 1;
+	{
+	  fclose (in);
+	  return 1;
 	}
     }
   fclose (in);
@@ -177,7 +177,7 @@ do_aqos_check (void)
 {
   if (!nvram_invmatch ("wshaper_enable", "0"))
     return 0;
-  if (nvram_match("qos_done","0"))
+  if (nvram_match ("qos_done", "0"))
     return 0;
 
   FILE *arp = fopen ("/proc/net/arp", "rb");
@@ -199,7 +199,7 @@ do_aqos_check (void)
       cprintf ("/proc/net/arp missing, check kernel config\n");
       return;
     }
- // fprintf(stderr,"get level definition\n");
+  // fprintf(stderr,"get level definition\n");
   defaulup = nvram_safe_get ("default_uplevel");
   defauldown = nvram_safe_get ("default_downlevel");
   if (defaulup == NULL || strlen (defaulup) == 0)
@@ -215,46 +215,46 @@ do_aqos_check (void)
 	 (arp, "%s %s %s %s %s %s", ip_buf, hw_buf, fl_buf, mac_buf, mask_buf,
 	  dev_buf) == 6)
     {
-    char *wan = get_wan_face();
-    if (wan && strlen(wan)>0 && !strcmp(dev_buf,wan))
+      char *wan = get_wan_face ();
+      if (wan && strlen (wan) > 0 && !strcmp (dev_buf, wan))
 	continue;
-	
+
 // fprintf(stderr,"reading mac/ip table\n");
       cmac = containsMAC (mac_buf);
       cip = containsIP (ip_buf);
 
 
       if (cip || cmac)
-        {
-//	fprintf(stderr,"ip's already added, continue\n");
-	continue;
+	{
+//      fprintf(stderr,"ip's already added, continue\n");
+	  continue;
 	}
 //fprintf(stderr,"nothing found for %s %s\n",ip_buf,mac_buf);
 
-      if (!cmac && strlen(mac_buf)>0)
+      if (!cmac && strlen (mac_buf) > 0)
 	{
-	
+
 	  char addition[128];
-	  sprintf(addition,"echo \"%s\" >>/tmp/aqos_macs",mac_buf);
-	  system2(addition);
-//	  fprintf(stderr,"addition mac %s\n",addition);
+	  sprintf (addition, "echo \"%s\" >>/tmp/aqos_macs", mac_buf);
+	  system2 (addition);
+//        fprintf(stderr,"addition mac %s\n",addition);
 	  //create default rule for mac
-	  add_usermac(mac_buf,qosidx,defaulup,defauldown);
-	  qosidx+=2;
-//	  fprintf(stderr,"done mac\n");
+	  add_usermac (mac_buf, qosidx, defaulup, defauldown);
+	  qosidx += 2;
+//        fprintf(stderr,"done mac\n");
 	}
-      if (!cip && strlen(ip_buf)>0)
+      if (!cip && strlen (ip_buf) > 0)
 	{
 	  char addition[128];
 	  char ipnet[32];
-	  sprintf(ipnet,"%s/32",ip_buf);
-	  sprintf(addition,"echo \"%s\" >>/tmp/aqos_ips",ipnet);
-	  system2(addition);
-//	  fprintf(stderr,"addition ip %s\n",addition);
+	  sprintf (ipnet, "%s/32", ip_buf);
+	  sprintf (addition, "echo \"%s\" >>/tmp/aqos_ips", ipnet);
+	  system2 (addition);
+//        fprintf(stderr,"addition ip %s\n",addition);
 	  //create default rule for ip
-	  add_userip(ipnet,qosidx,defaulup,defauldown);
-//	  fprintf(stderr,"done ip\n");
-	  qosidx+=2;
+	  add_userip (ipnet, qosidx, defaulup, defauldown);
+//        fprintf(stderr,"done ip\n");
+	  qosidx += 2;
 	}
     }
 //fprintf(stderr,"done with arp\n");
@@ -389,7 +389,7 @@ do_madwifi_check (void)
 		  eval ("/sbin/ifconfig", wdsdev, "down");
 		  sleep (1);
 		  eval ("/sbin/ifconfig", wdsdev, "up");
-		  eval ("startservice","set_routes");
+		  eval ("startservice", "set_routes");
 		}
 	    }
 	}
@@ -398,18 +398,18 @@ do_madwifi_check (void)
       if (nvram_match (mode, "sta") || nvram_match (mode, "wdssta"))
 	{
 	  int chan = wifi_getchannel (dev);
-//	  fprintf(stderr,"chan %d %d\n",chan,lastchans[i]);
-	  if (lastchans[i] == 0 && chan<1000)
+//        fprintf(stderr,"chan %d %d\n",chan,lastchans[i]);
+	  if (lastchans[i] == 0 && chan < 1000)
 	    lastchans[i] = chan;
 	  else
 	    {
-//	  fprintf(stderr,"chan2 %d %d\n",chan,lastchans[i]);
+//        fprintf(stderr,"chan2 %d %d\n",chan,lastchans[i]);
 	      if (chan == lastchans[i])
 		{
 		  int count = getassoclist (dev, &assoclist[0]);
-		  
-//	  fprintf(stderr,"count %d\n",count);
-		  if (count == 0 || count==-1)
+
+//        fprintf(stderr,"count %d\n",count);
+		  if (count == 0 || count == -1)
 		    {
 		      char *next;
 		      char var[80];
@@ -423,17 +423,17 @@ do_madwifi_check (void)
 			{
 			  foreach (var, vifs, next)
 			  {
-//			    fprintf(stderr,"shutting down %s\n",var);
+//                          fprintf(stderr,"shutting down %s\n",var);
 			    eval ("/sbin/ifconfig", var, "down");
 			  }
 			}
 
 		      notstarted[i] = 0;
-//			    fprintf(stderr,"restarting %s\n",dev);
+//                          fprintf(stderr,"restarting %s\n",dev);
 		      eval ("/sbin/ifconfig", dev, "down");
 		      sleep (1);
 		      eval ("/sbin/ifconfig", dev, "up");
-		      eval ("startservice","set_routes");
+		      eval ("startservice", "set_routes");
 		      lastchans[i] = 0;
 		    }
 		  else if (!notstarted[i])
@@ -452,16 +452,16 @@ do_madwifi_check (void)
 			{
 			  foreach (var, vifs, next)
 			  {
-//		           fprintf(stderr,"restarting %s\n",var);
+//                         fprintf(stderr,"restarting %s\n",var);
 			    eval ("/sbin/ifconfig", var, "up");
-			    eval ("startservice","set_routes");
+			    eval ("startservice", "set_routes");
 			  }
 			}
 
 		    }
 
 		}
-		lastchans[i] = chan;
+	      lastchans[i] = chan;
 
 	    }
 	}
@@ -586,12 +586,12 @@ wland_main (int argc, char **argv)
       _exit (0);
     }
 #ifdef HAVE_AQOS
-qosidx=1000;
+  qosidx = 1000;
 #endif
   /* Most of time it goes to sleep */
 #ifdef HAVE_MADWIFI
-  memset (lastchans, 0, 256*4);
-  memset (notstarted, 0, 32*4);
+  memset (lastchans, 0, 256 * 4);
+  memset (notstarted, 0, 32 * 4);
 #endif
   while (1)
     {

@@ -369,43 +369,43 @@ period_check (int sig)
 	  alarmtimer (0, URGENT_INTERVAL);
 	  mode = 1;
 	}
-	{			/* Whenever it is pushed steady */
-	  if (++count > RESET_WAIT_COUNT)
-	    {
-	      if (check_action () != ACT_IDLE)
-		{		// Don't execute during upgrading
-		  fprintf (stderr, "resetbutton: nothing to do...\n");
-		  alarmtimer (0, 0);	/* Stop the timer alarm */
-		  return;
-		}
-	      if ((brand & 0x000f) != 0x000f)
-		{
-		  printf ("resetbutton: factory default.\n");
-		  syslog (LOG_DEBUG,
-			  "Reset button: restoring factory defaults now!\n");
+      {				/* Whenever it is pushed steady */
+	if (++count > RESET_WAIT_COUNT)
+	  {
+	    if (check_action () != ACT_IDLE)
+	      {			// Don't execute during upgrading
+		fprintf (stderr, "resetbutton: nothing to do...\n");
+		alarmtimer (0, 0);	/* Stop the timer alarm */
+		return;
+	      }
+	    if ((brand & 0x000f) != 0x000f)
+	      {
+		printf ("resetbutton: factory default.\n");
+		syslog (LOG_DEBUG,
+			"Reset button: restoring factory defaults now!\n");
 #if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8)
-		  led_control (LED_DIAG, LED_ON);
+		led_control (LED_DIAG, LED_ON);
 #endif
-		  ACTION ("ACT_HW_RESTORE");
-		  alarmtimer (0, 0);	/* Stop the timer alarm */
+		ACTION ("ACT_HW_RESTORE");
+		alarmtimer (0, 0);	/* Stop the timer alarm */
 #ifdef HAVE_X86
-		  eval ("mount", "/usr/local", "-o", "remount,rw");
-		  eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-		  eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
-		  eval ("rm", "-f", "/usr/local/nvram/*");	// delete nvram database
-		  eval ("mount", "/usr/local", "-o", "remount,ro");
+		eval ("mount", "/usr/local", "-o", "remount,rw");
+		eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+		eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+		eval ("rm", "-f", "/usr/local/nvram/*");	// delete nvram database
+		eval ("mount", "/usr/local", "-o", "remount,ro");
 #elif HAVE_RB500
-		  eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-		  eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
-		  eval ("rm", "-f", "/etc/nvram/*");	// delete nvram database
+		eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+		eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+		eval ("rm", "-f", "/etc/nvram/*");	// delete nvram database
 #elif HAVE_MAGICBOX
-		  eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-		  eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
-		  eval ("erase", "nvram");
+		eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+		eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+		eval ("erase", "nvram");
 #else
-          nvram_set ("sv_restore_defaults", "1");
-          nvram_commit ();
-		  eval ("erase", "nvram");
+		nvram_set ("sv_restore_defaults", "1");
+		nvram_commit ();
+		eval ("erase", "nvram");
 #endif
 
 
@@ -414,10 +414,10 @@ period_check (int sig)
 
 
 
-		  kill (1, SIGTERM);
-		}
-	    }
-	}
+		kill (1, SIGTERM);
+	      }
+	  }
+      }
     }
 #if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8)
 

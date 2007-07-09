@@ -817,10 +817,23 @@ function StatusbarUpdate() {
 
 function apply(form) {
 	form.submit();
+	for (i = 0; i < form.elements.length; i++) {
+		if(defined(form.elements[i].disabled)) 
+			form.elements[i].disabled = true;
+	}
+	if (form.contents) document.getElementById("contents").style.color = '#999999';
 }
 
 function applytake(form) {
 	form.action.value="ApplyTake";
+	form.submit();
+	for (i = 0; i < form.elements.length; i++) {
+		if(defined(form.elements[i].disabled)) 
+			form.elements[i].disabled = true;
+	}
+	if (form.contents) document.getElementById("contents").style.color = '#999999';
+}
+function applyupdate(form) {
 	form.submit();
 	for (i = 0; i < form.elements.length; i++) {
 		if(defined(form.elements[i].disabled)) 

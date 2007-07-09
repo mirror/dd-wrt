@@ -21,7 +21,7 @@ validate_chaps (webs_t wp, char *value, struct variable *v)
   struct variable chaps_variables[] = {
   {argv:ARGV ("30")},
   {argv:ARGV ("30")},
-  {NULL},
+    {NULL},
   }, *which;
   buf = nvram_safe_get ("pppoeserver_chapsnum");
   if (buf == NULL || strlen (buf) == 0)

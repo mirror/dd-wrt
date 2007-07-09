@@ -192,7 +192,7 @@ addEvent(window, "unload", function() {
 				  	<input type="hidden" name="submit_button" value="Wireless_Basic" />
 				  	<input type="hidden" name="action" value="Apply" />
 				  	<input type="hidden" name="change_action" value="gozila_cgi" />
-				  	<input type="hidden" name="submit_type" />
+				  	<input type="hidden" name="submit_type" value="save" />
 				  	
 				  	<input type="hidden" name="wl0_nctrlsb" />
 				  	<input type="hidden" name="iface" />
