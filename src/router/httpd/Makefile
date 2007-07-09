@@ -53,6 +53,9 @@ endif
 ifeq ($(CONFIG_DIST),"micro")
 CFLAGS += -DHAVE_MICRO
 endif
+ifeq ($(CONFIG_GLAUCO),y)
+CFLAGS += -DHAVE_GLAUCO
+endif
 ifeq ($(CONFIG_WIVIZ),y)
 CFLAGS += -DHAVE_WIVIZ
 endif
@@ -60,6 +63,9 @@ ifeq ($(CONFIG_RADLOCAL),y)
 CFLAGS += -DHAVE_RADLOCAL
 endif
 ifeq ($(CONFIG_WPA_SUPPLICANT),y)
+CFLAGS += -DHAVE_WPA_SUPPLICANT
+endif
+ifeq ($(CONFIG_WPA_SUPPLICANT2),y)
 CFLAGS += -DHAVE_WPA_SUPPLICANT
 endif
 ifeq ($(CONFIG_ACK),y)
