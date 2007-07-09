@@ -12,10 +12,10 @@ SHELL = /bin/sh
 # programs
 
 CC       = armeb-linux-uclibc-gcc
-CFLAGS   = -Os -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb -Wall -O2 -pthread -DHAVE_CONFIG_H
+CFLAGS   = -Os -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb -Wall -O2 -pthread -DHAVE_CONFIG_H -DNEED_PRINTF
 
 CXX      = armeb-linux-uclibc-g++
-CXXFLAGS =  -Wall -O2 -pthread -DHAVE_CONFIG_H
+CXXFLAGS =  -Wall -O2 -pthread -DHAVE_CONFIG_H -DNEED_PRINTF
 
 LD       = armeb-linux-uclibc-g++
 LDFLAGS  =  -pthread 
