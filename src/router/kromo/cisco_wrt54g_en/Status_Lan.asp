@@ -5,6 +5,7 @@
 function deleteLease(val, val2) {
 	document.forms[0].ip_del.value = val;
 	document.forms[0].mac_del.value = val2;
+	document.forms[0].change_action.value="gozila_cgi";
 	document.forms[0].submit();
 }
 
@@ -124,7 +125,7 @@ addEvent(window, "unload", function() {
 						<form action="apply.cgi" method="<% get_http_method(); %>">
 							<input type="hidden" name="submit_button" value="DHCPTable" />
 							<input type="hidden" name="action" />
-							<input type="hidden" name="change_action" value="gozila_cgi" />
+							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" value="delete" />
 							<input type="hidden" name="next_page" value="Status_Lan.asp" />
 							

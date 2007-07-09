@@ -24,12 +24,14 @@ function checked(F) {
 }
 
 function chap_user_add_submit(F) {
+	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "add_chap_user";
 	checked(F);
 	F.submit();
 }
 
 function chap_user_remove_submit(F) {
+	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "remove_chap_user";
 	checked(F);
 	F.submit();
@@ -77,7 +79,7 @@ addEvent(window, "unload", function() {
 						<form name="setup" action="applyuser.cgi" method="<% get_http_method(); %>">
 							<input type="hidden" name="submit_button" value="PPPoE_Server" />
 							<input type="hidden" name="action" value="Apply" />
-							<input type="hidden" name="change_action" value="gozila_cgi" />
+							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1" />
 							
