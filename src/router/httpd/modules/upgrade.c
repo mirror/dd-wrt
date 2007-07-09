@@ -90,7 +90,7 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
     write_argv[3] = NULL;
   }
 #if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_MERAKI) || defined(HAVE_CA8)
-  eval("fischecksum");
+  eval ("fischecksum");
   if (url)
     return eval ("write", url, "rootfs");
 

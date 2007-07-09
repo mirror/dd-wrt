@@ -1905,10 +1905,12 @@ showOption (webs_t wp, char *propname, char *nvname)
   websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
   websWrite (wp,
 	     "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n",
-	     nvram_default_match (nvname, "0","0") ? "selected=\\\"selected\\\"" : "");
+	     nvram_default_match (nvname, "0",
+				  "0") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp,
 	     "document.write(\"<option value=\\\"1\\\" %s >\" + share.enabled + \"</option>\");\n",
-	     nvram_default_match (nvname, "1","0") ? "selected=\\\"selected\\\"" : "");
+	     nvram_default_match (nvname, "1",
+				  "0") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp, "//]]>\n</script>\n</select>\n</div>\n");
 
 }
@@ -2339,10 +2341,14 @@ save_networking (webs_t wp)
 #ifdef HAVE_PORTSETUP
   validate_portsetup (wp, NULL, NULL);
 #endif
-  nvram_commit ();
 
-  nvram_set ("action_service", "index");
-  service_restart ();
+  char *value = websGetVar (wp, "action", "");
+  if (!strcmp (value, "ApplyTake"))
+    {
+      nvram_commit ();
+      nvram_set ("action_service", "index");
+      service_restart ();
+    }
 }
 
 int
@@ -3159,7 +3165,7 @@ static char *ag_rates[] = { "6", "9", "12", "18", "24", "36", "48", "54" };
 static char *turbo_rates[] = { "12", "24", "36", "48", "72", "96", "108" };
 static char *b_rates[] = { "1", "2", "5.5", "11" };
 static char *bg_rates[] =
-  { "1", "2", "5.5", "6", "9","11", "12", "18", "24", "36", "48", "54" };
+  { "1", "2", "5.5", "6", "9", "11", "12", "18", "24", "36", "48", "54" };
 static char *xr_rates[] =
   { "0.25", "0.5", "1", "2", "3", "6", "9", "12", "18", "24", "36", "48",
   "54"
@@ -3287,18 +3293,21 @@ show_rates (webs_t wp, char *prefix, int maxrate)
     {
       if (maxrate)
 	{
-	int offset=0;
-//	if (nvram_match(mode,"a-only") && nvram_match (bw, "20"))offset=0;
-	if (nvram_match(mode,"g-only") && nvram_match (bw, "20"))offset=4;
+	  int offset = 0;
+//      if (nvram_match(mode,"a-only") && nvram_match (bw, "20"))offset=0;
+	  if (nvram_match (mode, "g-only") && nvram_match (bw, "20"))
+	    offset = 4;
 	  char comp[32];
 	  sprintf (comp, "%d", i + 1 + offset);
 	  if (showrates)
 	    websWrite (wp, "<option value=\"%d\" %s >%s Mbps</option>\n",
-		       i + 1+offset, nvram_match (mxrate, comp) ? "selected" : "",
+		       i + 1 + offset, nvram_match (mxrate,
+						    comp) ? "selected" : "",
 		       showrates[i]);
 	  else
 	    websWrite (wp, "<option value=\"%d\" %s >%s Mbps</option>\n",
-		       i + 1+offset, nvram_match (mxrate, comp) ? "selected" : "",
+		       i + 1 + offset, nvram_match (mxrate,
+						    comp) ? "selected" : "",
 		       rate[i]);
 	}
       else
@@ -3967,6 +3976,12 @@ wireless_save (webs_t wp)
 #endif
   //nvram_commit ();
 #endif
+  char *value = websGetVar (wp, "action", "");
+  if (!strcmp (value, "ApplyTake"))
+    {
+      nvram_commit ();
+      sys_restart ();
+    }
   return 0;
 }
 
@@ -4432,8 +4447,8 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 #endif
 
 // ACK timing
-#if defined(HAVE_ACK) || defined(HAVE_MADWIFI)		//temp fix for v24 broadcom ACKnot working
-  
+#if defined(HAVE_ACK) || defined(HAVE_MADWIFI)	//temp fix for v24 broadcom ACKnot working
+
   sprintf (power, "%s_distance", prefix);
   websWrite (wp, "<br />\n");
   websWrite (wp, "<div class=\"setting\">\n");

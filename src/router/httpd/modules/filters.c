@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 
 #include <broadcom.h>
 
@@ -1119,8 +1120,15 @@ validate_services_port (webs_t wp)
 int
 save_services_port (webs_t wp)
 {
-  D ("sdave services port");
-  return validate_services_port (wp);
+  int val = validate_services_port (wp);
+  char *value = websGetVar (wp, "action", "");
+  if (!strcmp (value, "ApplyTake"))
+    {
+      nvram_commit ();
+      nvram_set ("action_service", "index");
+      service_restart ();
+    }
+  return val;
 }
 
 void

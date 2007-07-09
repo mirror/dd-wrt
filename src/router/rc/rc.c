@@ -348,7 +348,7 @@ main_loop (void)
 
 	  state = IDLE;
 	  break;
-	  
+
 	case RESTART:
 	  lcdmessage ("RESTART SYSTEM");
 	  start_service ("overclocking");
@@ -375,16 +375,16 @@ main_loop (void)
 	  cprintf ("RESTART\n");
 
 #ifndef HAVE_MADWIFI
-	      eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
-#ifdef HAVE_MSSID	  
-  char *next;
-  char var[80];
-  char *vifs = nvram_safe_get ("wl0_vifs");
-  if (vifs != NULL)
-    foreach (var, vifs, next)
-    {
-      eval ("ifconfig", var, "down");
-    }	  
+	  eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
+#ifdef HAVE_MSSID
+	  char *next;
+	  char var[80];
+	  char *vifs = nvram_safe_get ("wl0_vifs");
+	  if (vifs != NULL)
+	    foreach (var, vifs, next)
+	    {
+	      eval ("ifconfig", var, "down");
+	    }
 #endif
 #endif
 
@@ -400,10 +400,10 @@ main_loop (void)
 		  "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:",
 		  1);
 	  cprintf ("STOP SERVICES\n");
-	  
+
 	  stop_services ();
 #ifndef HAVE_MADWIFI
-      stop_service ("nas");
+	  stop_service ("nas");
 #endif
 	  cprintf ("STOP WAN\n");
 	  stop_service ("wan");
@@ -425,7 +425,7 @@ main_loop (void)
 #endif
 
 #ifndef HAVE_RB500
-      stop_service ("resetbutton");
+	  stop_service ("resetbutton");
 #endif
 	  start_service ("create_rc_shutdown");
 	  system ("/tmp/.rc_shutdown");
@@ -452,22 +452,22 @@ main_loop (void)
 	  start_service ("ipv6");
 #endif
 #ifndef HAVE_RB500
-      start_service ("resetbutton");
+	  start_service ("resetbutton");
 #endif
 	  start_service ("setup_vlans");
 #ifndef HAVE_MADWIFI
-	if (nvram_match ("wl0_mode", "apstawet"))  //temporary fix for repeater-bridge mode init problem
-		{
-		  nvram_set ("wl0_mode", "wet");
+	  if (nvram_match ("wl0_mode", "apstawet"))	//temporary fix for repeater-bridge mode init problem
+	    {
+	      nvram_set ("wl0_mode", "wet");
 	      start_service ("wlconf");
-		  eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
-		  nvram_set ("wl0_mode", "apstawet");
-		}
-      start_service ("wlconf");
+	      eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
+	      nvram_set ("wl0_mode", "apstawet");
+	    }
+	  start_service ("wlconf");
 #endif
 
 #ifdef HAVE_VLANTAGGING
-      start_service ("bridging");
+	  start_service ("bridging");
 #endif
 	  start_service ("lan");
 #ifdef HAVE_BONDING
@@ -484,15 +484,15 @@ main_loop (void)
 
 	  cprintf ("start services\n");
 	  start_services ();
-	  
+
 	  cprintf ("start wan boot\n");
 	  start_service ("wan_boot");
-	  
+
 	  cprintf ("diag STOP LED\n");
 	  diag_led (DIAG, STOP_LED);
 	  cprintf ("set led release wan control\n");
 	  SET_LED (RELEASE_WAN_CONTROL);
-	  
+
 	  if (nvram_match ("wl0_mode", "sta")
 	      || nvram_match ("wl0_mode", "wet")
 	      || nvram_match ("wl0_mode", "apsta")
@@ -504,31 +504,31 @@ main_loop (void)
 	    }
 #ifdef HAVE_MADWIFI
 	  start_service ("stabridge");
-#endif	    
+#endif
 #ifndef HAVE_MADWIFI
-      start_service ("nas");
+	  start_service ("nas");
 #ifdef HAVE_MSSID
-      start_service ("guest_nas");
+	  start_service ("guest_nas");
 #endif
 #endif
 
-          
+
 	  cprintf ("create rc file\n");
 #ifdef HAVE_REGISTER
 	  if (isregistered ())
 #endif
 	    {
-		  start_service ("create_rc_startup");
+	      start_service ("create_rc_startup");
 	      chmod ("/tmp/.rc_startup", 0700);
 	      system ("/tmp/.rc_startup");
 	      system ("/etc/init.d/rcS");	// start openwrt startup script (siPath impl)
 	      cprintf ("start modules\n");
 	      start_service ("modules");
-		  if (nvram_invmatch ("rc_custom", ""))   //create custom script
-			{ 
-			nvram2file ("rc_custom", "/tmp/custom.sh"); 
-			chmod ("/tmp/custom.sh", 0700); 
-			}
+	      if (nvram_invmatch ("rc_custom", ""))	//create custom script
+		{
+		  nvram2file ("rc_custom", "/tmp/custom.sh");
+		  chmod ("/tmp/custom.sh", 0700);
+		}
 	    }
 
 #ifdef HAVE_CHILLI
@@ -541,8 +541,8 @@ main_loop (void)
 	  startstop ("syslog");
 
 	  system ("/etc/postinit");
-	    
-	  led_control(LED_DIAG,LED_OFF);
+
+	  led_control (LED_DIAG, LED_OFF);
 	  lcdmessage ("System Ready");
 	  /* Fall through */
 	case TIMER:
@@ -574,7 +574,7 @@ main_loop (void)
 	  cprintf ("UNKNOWN\n");
 	  return;
 	}
-	
+
     }
 
 }
@@ -762,7 +762,7 @@ main (int argc, char **argv)
   else if (strstr (base, "resetbutton"))
     {
 #ifndef HAVE_RB500
-	  return resetbutton_main (argc, argv);
+      return resetbutton_main (argc, argv);
 #endif
     }
   else if (strstr (base, "wland"))

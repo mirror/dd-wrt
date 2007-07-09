@@ -1594,7 +1594,7 @@ configure_single (int count)
   vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
     foreach (var, vifs, next)
-    {
+        {
       sprintf (net, "%s_net_mode", var);
       if (nvram_match (net, "disabled"))
 	continue;

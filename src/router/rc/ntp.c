@@ -84,15 +84,15 @@ do_ntp (void)			// called from ntp_main and process_monitor_main; called every h
     return 0;
 
 //convert old timezone format into new
-	
-	if (strlen (nvram_safe_get("time_zone")) > 6)
-	{
-		sscanf (nvram_safe_get("time_zone"), "%s %*d %s", tzon, tdst);
-		nvram_set ("time_zone", tzon);
-		nvram_set ("daylight_time", tdst);
-	}
-	
-    
+
+  if (strlen (nvram_safe_get ("time_zone")) > 6)
+    {
+      sscanf (nvram_safe_get ("time_zone"), "%s %*d %s", tzon, tdst);
+      nvram_set ("time_zone", tzon);
+      nvram_set ("daylight_time", tdst);
+    }
+
+
   sscanf (nvram_safe_get ("time_zone"), "%f", &fofs);
   sscanf (nvram_safe_get ("daylight_time"), "%d", &dst);
 
