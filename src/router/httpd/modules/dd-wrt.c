@@ -2831,7 +2831,7 @@ del_bridgeif (webs_t wp)
   if (val == NULL)
     return 0;
   int todel = atoi (val);
-  wordlist = nvram_safe_get ("bridgesif_count");
+  wordlist = nvram_safe_get ("bridgesif");
   newwordlist = (char *) malloc (strlen (wordlist));
   memset (newwordlist, 0, strlen (wordlist));
   int count = 0;
