@@ -2866,7 +2866,7 @@ struct gozila_action gozila_actions[] = {
   {"QoS", "add_svc", "", 0, REFRESH, qos_add_svc},
   {"QoS", "add_ip", "", 0, REFRESH, qos_add_ip},
   {"QoS", "add_mac", "", 0, REFRESH, qos_add_mac},
-  {"QoS", "save", "filters", 1, SYS_RESTART, qos_save},
+  {"QoS", "save", "filters", 1, REFRESH, qos_save},
   /* end Sveasoft addition */
   {"Forward", "add_forward", "", 0, REFRESH, forward_add},
   {"Forward", "remove_forward", "", 0, REFRESH, forward_remove},
@@ -3648,7 +3648,7 @@ footer:
 
   if (action != REBOOT)
     {
-      if (!error_value)
+//      if (!error_value)
 	{
 	  if (my_next_page[0] != '\0')
 	    sprintf (path, "%s", my_next_page);
@@ -3672,11 +3672,11 @@ footer:
 	    do_ej (path, wp);	//refresh
 	  websDone (wp, 200);
 	}
-      else
-	{
-	  do_ej ("Fail.asp", wp);
-	  websDone (wp, 200);
-	}
+//      else
+//	{
+//	  do_ej ("Fail.asp", wp);
+//	  websDone (wp, 200);
+//	}
     }
   else
     {
