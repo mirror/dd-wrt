@@ -3,6 +3,7 @@
 		//<![CDATA[
 
 function SelSubnet(F,num) {
+	F.change_action.value="gozila_cgi";
 	setElementsActive("%s_br1_nat", "%s_br1_netmask3", num == 1);
 	F.submit_type.value = "save";
 	F.submit();
@@ -19,7 +20,7 @@ function SelWDS(index, num, F) {
 	else if(index==8) F.%s_wds8_enable.value=F.%s_wds8_enable.options[num].value;
 	else if(index==9) F.%s_wds9_enable.value=F.%s_wds9_enable.options[num].value;
 	else if(index==10) F.%s_wds10_enable.value=F.%s_wds10_enable.options[num].value;
-
+	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "save";
 	F.submit();
 }
@@ -73,7 +74,7 @@ addEvent(window, "unload", function() {
 			   	<input type="hidden" name="submit_button" value="Wireless_WDS-%s" />
 			   	<input type="hidden" name="action" value="Apply" />
 			   	<input type="hidden" name="interface" value="%s" />
-			   	<input type="hidden" name="change_action" value="gozila_cgi" />
+			   	<input type="hidden" name="change_action" />
 			   	<input type="hidden" name="submit_type" />
 			   	<input type="hidden" name="commit" value="1" />
 			   	

@@ -228,12 +228,14 @@ function Status(F,I) {
 }
 
 function SelFilter(num,F) {
+	F.change_action.value="gozila_cgi";
 	F.f_id.value=F.f_id.options[num].value;
 	apply(F);
 }
 
 function to_delete(F) {
 	if(confirm(filter.mess1)) {
+		F.change_action.value="gozila_cgi";
 		F.submit_type.value = "delete";
 		F.submit();
 	}
@@ -294,7 +296,7 @@ addEvent(window, "unload", function() {
 						<form name="filters" action="apply.cgi" method="<% get_http_method(); %>" >
 							<input type="hidden" name="submit_button" value="Filters" />
 							<input type="hidden" name="action" value="Apply" />
-							<input type="hidden" name="change_action" value="gozila_cgi" />
+							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							
 							<input type="hidden" name="blocked_service" />

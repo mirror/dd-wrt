@@ -35,11 +35,13 @@ function setIpconntrackValues(val) {
 }
 
 function DHCPAction(F,I) {
+	F.change_action.value="gozila_cgi";
 	F.submit_type.value = I;
 	apply(F);
 }
 
 function connect(F,I) {
+	F.change_action.value="gozila_cgi";
 	F.submit_type.value = I;
 	apply(F);
 }
@@ -91,7 +93,7 @@ addEvent(window, "unload", function() {
 						<form name="status" action="apply.cgi" method="<% get_http_method(); %>">
 							<input type="hidden" name="submit_button" value="Status_Router" />
 							<input type="hidden" name="action" value="Apply" />
-							<input type="hidden" name="change_action" value="gozila_cgi" />
+							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							
 							<h2><% tran("status_router.h2"); %></h2>
