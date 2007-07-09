@@ -262,22 +262,20 @@ stop_services (void)
 int
 start_single_service (void)
 {
-  char *service;
 
-  service = nvram_get ("action_service");
-  if (!service)
-    kill (1, SIGHUP);
-  fprintf (stderr, "Action %s\n", service);
+  char *next;
+  char service[80];
+  char *services = nvram_safe_get ("action_service");
   sleep(3);
-  cprintf ("Restart service=[%s]\n", service);
   start_service ("overclocking");
+  foreach (service, services, next)
+  {
+  fprintf (stderr, "Action %s\n", service);
+  cprintf ("Restart service=[%s]\n", service);
 
   if (!strcmp (service, "dhcp"))
     {
       startstop ("udhcpd");
-      nvram_set ("action_service", "");
-      nvram_set ("action_service_arg1", "");
-      return 0;
     }
   else if (!strcmp (service, "index"))
     {
@@ -782,12 +780,7 @@ start_single_service (void)
       eval ("/etc/config/eop-tunnel.firewall");
     }
 #endif
-  else
-    {
-      nvram_unset ("action_service");
-      nvram_unset ("action_service_arg1");
-      kill (1, SIGHUP);
-    }
+  }
 
   nvram_set ("action_service", "");
   nvram_set ("action_service_arg1", "");
