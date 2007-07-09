@@ -132,7 +132,9 @@ include rules/iproute2.mk
 include rules/igmp-proxy.mk
 include rules/parprouted.mk
 include rules/hostapd.mk
+include rules/hostapd2.mk
 include rules/wpa_supplicant.mk
+include rules/wpa_supplicant2.mk
 include rules/madwifi.mk
 include rules/sputnik.mk
 include rules/openvpn.mk
