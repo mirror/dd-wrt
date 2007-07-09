@@ -672,6 +672,7 @@ getassoclist (char *ifname, unsigned char *list)
   int s;
   char type[32];
   char netmode[32];
+  unsigned int *count = (unsigned int *) list;
   sprintf (type, "%s_mode",ifname);
   sprintf (netmode, "%s_net_mode",ifname);
   if (nvram_match (netmode, "disabled"))
@@ -685,6 +686,7 @@ getassoclist (char *ifname, unsigned char *list)
       char mac[6];
       getAssocMAC (ifname,mac);
       memcpy (&list[4], mac, 6);
+      count[0]=1;
       mincount = 1;
     }
   s = socket (AF_INET, SOCK_DGRAM, 0);
@@ -692,7 +694,8 @@ getassoclist (char *ifname, unsigned char *list)
     {
       fprintf (stderr, "socket(SOCK_DRAGM)\n");
       free (buf);
-      return -1;
+      mincount = 1;
+      return mincount;
     }
   (void) memset (&iwr, 0, sizeof (iwr));
   (void) strncpy (iwr.ifr_name, ifname, sizeof (iwr.ifr_name));
@@ -714,7 +717,6 @@ getassoclist (char *ifname, unsigned char *list)
   int cnt = 0;
   cp = buf;
   unsigned char *l = (unsigned char *) list;
-  unsigned int *count = (unsigned int *) list;
   count[0] = 0;
   l += 4;
   do

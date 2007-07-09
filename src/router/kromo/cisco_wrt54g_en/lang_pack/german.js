@@ -136,7 +136,8 @@ share.expired="abgelaufen";
 share.standard="Standard";
 share.user="Nutzer";
 
-sbutton.save="Einstellungen speichern";
+sbutton.save="Speichern";
+sbutton.apply="Übernehmen";
 sbutton.saving="Gespeichert";
 sbutton.cmd="Ausführen";
 sbutton.cancel="Einstellungen zurücknehmen";
