@@ -1835,6 +1835,7 @@ start_lan (void)
 #ifdef HAVE_MICRO
   br_shutdown ();
 #endif
+  eval("rm","/tmp/.ifcache");
 
 }
 
@@ -2833,6 +2834,7 @@ if (wanip!=0 && nvram_match("wan_ipaddr","0.0.0.0") && !nvram_match("wan_proto",
   start_hostapdwan ();
 #endif
 #endif
+  eval("rm","/tmp/.ifcache");
 
 }
 

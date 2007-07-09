@@ -268,7 +268,7 @@ start_single_service (void)
   if (!service)
     kill (1, SIGHUP);
   fprintf (stderr, "Action %s\n", service);
-
+  sleep(3);
   cprintf ("Restart service=[%s]\n", service);
   start_service ("overclocking");
 

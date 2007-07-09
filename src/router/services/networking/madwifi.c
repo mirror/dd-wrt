@@ -1438,8 +1438,6 @@ configure_single (int count)
 //create wds interface(s)
   int s;
 
-
-
   char *m;
   char *first = NULL;
   int vif = 0;
