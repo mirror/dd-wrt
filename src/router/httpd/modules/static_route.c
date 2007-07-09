@@ -509,5 +509,12 @@ delete_static_route (webs_t wp)
   nvram_set ("static_route", buf);
   nvram_set ("static_route_name", buf_name);
 
-  return 1;
+  char *value = websGetVar (wp, "action", "");
+  if (!strcmp (value, "ApplyTake"))
+    {
+      nvram_commit ();
+      nvram_set ("action_service", "routing");
+      service_restart ();
+    }
+  return 0;
 }

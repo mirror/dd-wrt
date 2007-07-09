@@ -2842,9 +2842,9 @@ struct gozila_action gozila_actions[] = {
   {"Filters", "save", "filters", 1, SYS_RESTART, save_policy},
   {"Filters", "delete", "filters", 1, SYS_RESTART, single_delete_policy},
   {"FilterSummary", "delete", "filters", 1, REFRESH, summary_delete_policy},
-  {"Routing", "del", "static_route_del", 1, SERVICE_RESTART,
+  {"Routing", "del", "static_route_del", 1, REFRESH,
    delete_static_route},
-  {"RouteStatic", "del", "static_route_del", 1, SYS_RESTART,
+  {"RouteStatic", "del", "static_route_del", 1, REFRESH,
    delete_static_route},
 //  {"WL_WEPTable", "key_64", "", 1, REFRESH, generate_key_64}, //OBSOLETE
 //  {"WL_WEPTable", "key_128", "", 1, REFRESH, generate_key_128}, //OBSOLETE

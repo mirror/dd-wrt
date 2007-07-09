@@ -21,21 +21,25 @@ function DeleteEntry(F) {
 }
 
 function SelRoute(num,F) {
+	F.change_action.value="gozila_cgi";
 	F.route_page.value = F.route_page.options[num].value;
 	F.submit();
 }
 
 function SelMode(num,F) {
+	F.change_action.value="gozila_cgi";
 	F.wk_mode.value = F.wk_mode.options[num].value;
 	F.submit();
 }
 
 function olsrd_add_submit(F) {
+	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "add_olsrd";
 	F.submit();
 }
 
 function olsrd_del_submit(F,num) {
+	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "del_olsrd";
 	F.olsrd_delcount.value = num;
 	F.submit();
@@ -93,7 +97,7 @@ addEvent(window, "unload", function() {
 						<form name="static" action="apply.cgi" method="<% get_http_method(); %>" >
 							<input type="hidden" name="submit_button" value="Routing" />
 							<input type="hidden" name="action" value="Apply" />
-							<input type="hidden" name="change_action" value="gozila_cgi" />
+							<input type="hidden" name="change_action"/>
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="olsrd_delcount" />
 							<input type="hidden" name="static_route" />

@@ -73,6 +73,7 @@ function to_submit(F) {
 }
 
 function SelDDNS(num,F) {
+	change_action.value="gozila_cgi";
 	F.ddns_enable.value=F.ddns_enable.options[num].value;
 	update.stop();
 	F.submit();
@@ -106,7 +107,7 @@ addEvent(window, "unload", function() {
 						<form name="ddns" action="apply.cgi" method="<% get_http_method(); %>">
 							<input type="hidden" name="submit_button" value="DDNS" />
 							<input type="hidden" name="action" value="Apply" />
-							<input type="hidden" name="change_action" value="gozila_cgi" />
+							<input type="hidden" name="change_action"/>
 							<input type="hidden" name="submit_type" />
 							
 							<h2><% tran("ddns.h2"); %></h2>

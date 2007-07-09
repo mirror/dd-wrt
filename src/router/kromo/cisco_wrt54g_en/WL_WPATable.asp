@@ -3,17 +3,20 @@
 		//<![CDATA[
 
 function SelMode(varname,num,F)	{
+	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "security";
 	F.security_varname.value = varname;
 	F.submit();
 }
 
 function keyMode(F) {
+	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "keysize";
 	F.submit();
 }
 
 function generateKey(F,PREFIX) {
+	F.change_action.value="gozila_cgi";
 	F.security_varname.value = PREFIX;
 	if(F.wl_wep_bit.value == 64) {
 		F.submit_type.value = "key_64";
@@ -24,18 +27,21 @@ function generateKey(F,PREFIX) {
 }
 
 function generateKey64(F,PREFIX) {
+	F.change_action.value="gozila_cgi";
 	F.security_varname.value = PREFIX;
 	F.submit_type.value = "key_64";
 	F.submit();
 }
 
 function generateKey128(F,PREFIX) {
+	F.change_action.value="gozila_cgi";
 	F.security_varname.value = PREFIX;
 	F.submit_type.value = "key_128";
 	F.submit();
 }
 
 function to_submit(F) {
+	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
   apply(F);

@@ -86,16 +86,19 @@ services_length=0;
 services.sort(sorton);
 
 function svc_add_submit(F) {
+	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "add_svc";
 	apply(F);
 }
 
 function ip_add_submit(F) {
+	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "add_ip";
 	apply(F);
 }
 
 function mac_add_submit(F) {
+	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "add_mac";
 	apply(F);
 }
@@ -106,7 +109,7 @@ function to_submit(F) {
 	}else{
 	    F.enable_game.value = 1;
 	}
-
+	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
 	apply(F);
@@ -145,7 +148,7 @@ addEvent(window, "unload", function() {
 						<form name="QoS" action="apply.cgi" method="<% get_http_method(); %>" >
 							<input type="hidden" name="submit_button" value="QoS" />
 							<input type="hidden" name="action" value="Apply" />
-							<input type="hidden" name="change_action" value="gozila_cgi" />
+							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1" />
 							
