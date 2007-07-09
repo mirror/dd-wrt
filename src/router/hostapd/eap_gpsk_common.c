@@ -1,6 +1,6 @@
 /*
  * EAP server/peer: EAP-GPSK shared routines
- * Copyright (c) 2006, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2006-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -17,6 +17,8 @@
 #include "common.h"
 #include "eap_defs.h"
 #include "aes_wrap.h"
+#include "crypto.h"
+#include "sha1.h"
 #include "sha256.h"
 #include "eap_gpsk_common.h"
 
@@ -41,46 +43,36 @@ int eap_gpsk_supported_ciphersuite(int vendor, int specifier)
 }
 
 
-static int eap_gpsk_gkdf_aes(const u8 *psk, const u8 *data, size_t data_len,
-			     u8 *buf, size_t len)
+static int eap_gpsk_gkdf(const u8 *psk /* Y */, size_t psk_len,
+			 const u8 *data /* Z */, size_t data_len,
+			 u8 *buf, size_t len /* X */)
 {
-	u8 *tmp, *pos, *opos;
-	size_t i, n, size, left, clen;
+	u8 *opos;
+	size_t i, n, hashlen, left, clen;
+	u8 ibuf[2], hash[SHA1_MAC_LEN];
+	const u8 *addr[3];
+	size_t vlen[3];
 
-	size = 16;
-
-	tmp = malloc(size + data_len + 2 + 2);
-	if (tmp == NULL) {
-		wpa_printf(MSG_DEBUG, "EAP-GPSK: Failed to allocate memory "
-			   "for GKDF");
-		return -1;
-	}
+	hashlen = SHA1_MAC_LEN;
+	/* M_i = Hash-Function (i || Y || Z); */
+	addr[0] = ibuf;
+	vlen[0] = sizeof(ibuf);
+	addr[1] = psk;
+	vlen[1] = psk_len;
+	addr[2] = data;
+	vlen[2] = data_len;
 
 	opos = buf;
 	left = len;
-	n = (len + size - 1) / size;
+	n = (len + hashlen - 1) / hashlen;
 	for (i = 1; i <= n; i++) {
-		pos = tmp;
-		if (i > 1)
-			pos += size;
-		memcpy(pos, data, data_len);
-		pos += data_len;
-		WPA_PUT_BE16(pos, i);
-		pos += 2;
-		WPA_PUT_BE16(pos, len);
-		pos += 2;
-
-		if (omac1_aes_128(psk, tmp, pos - tmp, tmp) < 0) {
-			free(tmp);
-			return -1;
-		}
-		clen = left > size ? size : left;
-		memcpy(opos, tmp, clen);
+		WPA_PUT_BE16(ibuf, i);
+		sha1_vector(3, addr, vlen, hash);
+		clen = left > hashlen ? hashlen : left;
+		os_memcpy(opos, hash, clen);
 		opos += clen;
 		left -= clen;
 	}
-
-	free(tmp);
 
 	return 0;
 }
@@ -88,54 +80,78 @@ static int eap_gpsk_gkdf_aes(const u8 *psk, const u8 *data, size_t data_len,
 
 static int eap_gpsk_derive_keys_aes(const u8 *psk, size_t psk_len,
 				    const u8 *seed, size_t seed_len,
-				    u8 *msk, u8 *sk, size_t *sk_len,
+				    u8 *msk, u8 *emsk, u8 *sk, size_t *sk_len,
 				    u8 *pk, size_t *pk_len)
 {
 #define EAP_GPSK_SK_LEN_AES 16
 #define EAP_GPSK_PK_LEN_AES 16
-	u8 mk[16], *pos;
+	u8 zero_string[1], mk[32], *pos, *data;
 	u8 kdf_out[EAP_MSK_LEN + EAP_EMSK_LEN + EAP_GPSK_SK_LEN_AES +
 		   EAP_GPSK_PK_LEN_AES];
+	size_t data_len;
 
 	/*
-	 * MK = GKDF-16(PSK[0..15], seed)
-	 * KDF_out = GKDF-160(MK, seed)
-	 * MSK = KDF_out[0..63]
-	 * EMSK = KDF_out[64..127]
-	 * SK = KDF_out[128..143]
-	 * PK = KDF_out[144..159]
-	 * MID = GKDF-16(Zero-String, "Method ID" || EAP_Method_Type || seed)
+	 * inputString = RAND_Client || ID_Client || RAND_Server || ID_Server
+	 *            (= seed)
+	 * KS = 16, PL = psk_len, CSuite_Sel = 0x000000 0x000001
+	 * MK = GKDF-32 (0x00, PL || PSK || CSuite_Sel || inputString)
+	 * MSK = GKDF-160 (MK, inputString)[0..63]
+	 * EMSK = GKDF-160 (MK, inputString)[64..127]
+	 * SK = GKDF-160 (MK, inputString)[128..143]
+	 * PK = GKDF-160 (MK, inputString)[144..159]
+	 * MID = GKDF-16(0x00, "Method ID" || EAP_Method_Type || CSuite_Sel ||
+	 *               inputString)
+	 * Hash-Function = SHA-1 (see [RFC3174])
+	 * hashlen = 20 octets (160 bits)
 	 */
 
-	if (psk_len < 16) {
-		wpa_printf(MSG_DEBUG, "EAP-GPSK: Too short PSK (len %d) for "
-			   "AES-128 ciphersuite", psk_len);
+	os_memset(zero_string, 0, sizeof(zero_string));
+
+	data_len = 2 + psk_len + 6 + seed_len;
+	data = os_malloc(data_len);
+	if (data == NULL)
+		return -1;
+	pos = data;
+	WPA_PUT_BE16(pos, psk_len);
+	pos += 2;
+	os_memcpy(pos, psk, psk_len);
+	pos += psk_len;
+	WPA_PUT_BE24(pos, 0); /* CSuite/Vendor = IETF */
+	pos += 3;
+	WPA_PUT_BE24(pos, EAP_GPSK_CIPHER_AES); /* CSuite/Specifier */
+	pos += 3;
+	os_memcpy(pos, seed, seed_len); /* inputString */
+	wpa_hexdump_key(MSG_DEBUG, "EAP-GPSK: Data to MK derivation (AES)",
+			data, data_len);
+
+	if (eap_gpsk_gkdf(zero_string, sizeof(zero_string), data, data_len,
+			  mk, sizeof(mk)) < 0) {
+		os_free(data);
 		return -1;
 	}
-
-	if (eap_gpsk_gkdf_aes(psk, seed, seed_len, mk, sizeof(mk)) < 0)
-		return -1;
+	os_free(data);
 	wpa_hexdump_key(MSG_DEBUG, "EAP-GPSK: MK", mk, sizeof(mk));
 
-	if (eap_gpsk_gkdf_aes(mk, seed, seed_len, kdf_out, sizeof(kdf_out)) <
-	    0)
+	if (eap_gpsk_gkdf(mk, sizeof(mk), seed, seed_len,
+			  kdf_out, sizeof(kdf_out)) < 0)
 		return -1;
 
 	pos = kdf_out;
 	wpa_hexdump_key(MSG_DEBUG, "EAP-GPSK: MSK", pos, EAP_MSK_LEN);
-	memcpy(msk, pos, EAP_MSK_LEN);
+	os_memcpy(msk, pos, EAP_MSK_LEN);
 	pos += EAP_MSK_LEN;
 
 	wpa_hexdump_key(MSG_DEBUG, "EAP-GPSK: EMSK", pos, EAP_EMSK_LEN);
+	os_memcpy(emsk, pos, EAP_EMSK_LEN);
 	pos += EAP_EMSK_LEN;
 
 	wpa_hexdump_key(MSG_DEBUG, "EAP-GPSK: SK", pos, EAP_GPSK_SK_LEN_AES);
-	memcpy(sk, pos, EAP_GPSK_SK_LEN_AES);
+	os_memcpy(sk, pos, EAP_GPSK_SK_LEN_AES);
 	*sk_len = EAP_GPSK_SK_LEN_AES;
 	pos += EAP_GPSK_SK_LEN_AES;
 
 	wpa_hexdump_key(MSG_DEBUG, "EAP-GPSK: PK", pos, EAP_GPSK_PK_LEN_AES);
-	memcpy(pk, pos, EAP_GPSK_PK_LEN_AES);
+	os_memcpy(pk, pos, EAP_GPSK_PK_LEN_AES);
 	*pk_len = EAP_GPSK_PK_LEN_AES;
 
 	return 0;
@@ -143,39 +159,33 @@ static int eap_gpsk_derive_keys_aes(const u8 *psk, size_t psk_len,
 
 
 #ifdef EAP_GPSK_SHA256
-static int eap_gpsk_gkdf_sha256(const u8 *psk, size_t psk_len,
-				const u8 *data, size_t data_len,
-				u8 *buf, size_t len)
+static int eap_gpsk_gkdf_sha256(const u8 *psk /* Y */, size_t psk_len,
+				const u8 *data /* Z */, size_t data_len,
+				u8 *buf, size_t len /* X */)
 {
-	u8 *tmp, *pos, *opos;
-	size_t i, n, size, left, clen;
-	u8 ibuf[2], lenbuf[2], hash[SHA256_MAC_LEN];
-	const u8 *addr[4];
-	size_t vlen[4];
+	u8 *opos;
+	size_t i, n, hashlen, left, clen;
+	u8 ibuf[2], hash[SHA256_MAC_LEN];
+	const u8 *addr[3];
+	size_t vlen[3];
 
-	size = SHA256_MAC_LEN;
-	addr[0] = hash;
-	vlen[0] = size;
-	addr[1] = data;
-	vlen[1] = data_len;
-	addr[2] = ibuf;
-	vlen[2] = sizeof(ibuf);
-	addr[3] = lenbuf;
-	vlen[3] = sizeof(lenbuf);
+	hashlen = SHA256_MAC_LEN;
+	/* M_i = Hash-Function (i || Y || Z); */
+	addr[0] = ibuf;
+	vlen[0] = sizeof(ibuf);
+	addr[1] = psk;
+	vlen[1] = psk_len;
+	addr[2] = data;
+	vlen[2] = data_len;
 
 	opos = buf;
 	left = len;
-	n = (len + size - 1) / size;
+	n = (len + hashlen - 1) / hashlen;
 	for (i = 1; i <= n; i++) {
-		pos = tmp;
-		if (i > 1)
-			hmac_sha256_vector(psk, psk_len, 4, addr, vlen, hash);
-		else
-			hmac_sha256_vector(psk, psk_len, 3, addr + 1, vlen + 1,
-					   hash);
-
-		clen = left > size ? size : left;
-		memcpy(opos, hash, clen);
+		WPA_PUT_BE16(ibuf, i);
+		sha256_vector(3, addr, vlen, hash);
+		clen = left > hashlen ? hashlen : left;
+		os_memcpy(opos, hash, clen);
 		opos += clen;
 		left -= clen;
 	}
@@ -186,28 +196,57 @@ static int eap_gpsk_gkdf_sha256(const u8 *psk, size_t psk_len,
 
 static int eap_gpsk_derive_keys_sha256(const u8 *psk, size_t psk_len,
 				       const u8 *seed, size_t seed_len,
-				       u8 *msk, u8 *sk, size_t *sk_len,
+				       u8 *msk, u8 *emsk,
+				       u8 *sk, size_t *sk_len,
 				       u8 *pk, size_t *pk_len)
 {
 #define EAP_GPSK_SK_LEN_SHA256 SHA256_MAC_LEN
 #define EAP_GPSK_PK_LEN_SHA256 SHA256_MAC_LEN
-	u8 mk[SHA256_MAC_LEN], *pos;
+	u8 mk[SHA256_MAC_LEN], zero_string[1], *pos, *data;
 	u8 kdf_out[EAP_MSK_LEN + EAP_EMSK_LEN + EAP_GPSK_SK_LEN_SHA256 +
 		   EAP_GPSK_PK_LEN_SHA256];
+	size_t data_len;
 
 	/*
-	 * MK = GKDF-32(PSK, seed || CSuite_Sel)
-	 * KDF_out = GKDF-192(MK, seed)
-	 * MSK = KDF_out[0..63]
-	 * EMSK = KDF_out[64..127]
-	 * SK = KDF_out[128..159]
-	 * PK = KDF_out[160..191]
-	 * MID = GKDF-16(Zero-String, "Method ID" || EAP_Method_Type || seed)
+	 * inputString = RAND_Client || ID_Client || RAND_Server || ID_Server
+	 *            (= seed)
+	 * KS = 32, PL = psk_len, CSuite_Sel = 0x000000 0x000002
+	 * MK = GKDF-32 (0x00, PL || PSK || CSuite_Sel || inputString)
+	 * MSK = GKDF-192 (MK, inputString)[0..63]
+	 * EMSK = GKDF-192 (MK, inputString)[64..127]
+	 * SK = GKDF-192 (MK, inputString)[128..159]
+	 * PK = GKDF-192 (MK, inputString)[160..191]
+	 * MID = GKDF-16(0x00, "Method ID" || EAP_Method_Type || CSuite_Sel ||
+	 *               inputString)
+	 * Hash-Function = SHA256 (see [RFC4634])
+	 * hashlen = 32 octets (256 bits)
 	 */
 
-	if (eap_gpsk_gkdf_sha256(psk, psk_len, seed, seed_len, mk, sizeof(mk))
-	    < 0)
+	os_memset(zero_string, 0, sizeof(zero_string));
+
+	data_len = 2 + psk_len + 6 + seed_len;
+	data = os_malloc(data_len);
+	if (data == NULL)
 		return -1;
+	pos = data;
+	WPA_PUT_BE16(pos, psk_len);
+	pos += 2;
+	os_memcpy(pos, psk, psk_len);
+	pos += psk_len;
+	WPA_PUT_BE24(pos, 0); /* CSuite/Vendor = IETF */
+	pos += 3;
+	WPA_PUT_BE24(pos, EAP_GPSK_CIPHER_SHA256); /* CSuite/Specifier */
+	pos += 3;
+	os_memcpy(pos, seed, seed_len); /* inputString */
+	wpa_hexdump_key(MSG_DEBUG, "EAP-GPSK: Data to MK derivation (SHA256)",
+			data, data_len);
+
+	if (eap_gpsk_gkdf_sha256(zero_string, sizeof(zero_string),
+				 data, data_len, mk, sizeof(mk)) < 0) {
+		os_free(data);
+		return -1;
+	}
+	os_free(data);
 	wpa_hexdump_key(MSG_DEBUG, "EAP-GPSK: MK", mk, sizeof(mk));
 
 	if (eap_gpsk_gkdf_sha256(mk, sizeof(mk), seed, seed_len,
@@ -216,21 +255,22 @@ static int eap_gpsk_derive_keys_sha256(const u8 *psk, size_t psk_len,
 
 	pos = kdf_out;
 	wpa_hexdump_key(MSG_DEBUG, "EAP-GPSK: MSK", pos, EAP_MSK_LEN);
-	memcpy(msk, pos, EAP_MSK_LEN);
+	os_memcpy(msk, pos, EAP_MSK_LEN);
 	pos += EAP_MSK_LEN;
 
 	wpa_hexdump_key(MSG_DEBUG, "EAP-GPSK: EMSK", pos, EAP_EMSK_LEN);
+	os_memcpy(emsk, pos, EAP_EMSK_LEN);
 	pos += EAP_EMSK_LEN;
 
 	wpa_hexdump_key(MSG_DEBUG, "EAP-GPSK: SK",
 			pos, EAP_GPSK_SK_LEN_SHA256);
-	memcpy(sk, pos, EAP_GPSK_SK_LEN_SHA256);
+	os_memcpy(sk, pos, EAP_GPSK_SK_LEN_SHA256);
 	*sk_len = EAP_GPSK_SK_LEN_AES;
 	pos += EAP_GPSK_SK_LEN_AES;
 
 	wpa_hexdump_key(MSG_DEBUG, "EAP-GPSK: PK",
 			pos, EAP_GPSK_PK_LEN_SHA256);
-	memcpy(pk, pos, EAP_GPSK_PK_LEN_SHA256);
+	os_memcpy(pk, pos, EAP_GPSK_PK_LEN_SHA256);
 	*pk_len = EAP_GPSK_PK_LEN_SHA256;
 
 	return 0;
@@ -251,6 +291,7 @@ static int eap_gpsk_derive_keys_sha256(const u8 *psk, size_t psk_len,
  * @id_server: ID_Server
  * @id_server_len: Length of ID_Server
  * @msk: Buffer for 64-byte MSK
+ * @emsk: Buffer for 64-byte EMSK
  * @sk: Buffer for SK (at least EAP_GPSK_MAX_SK_LEN bytes)
  * @sk_len: Buffer for returning length of SK
  * @pk: Buffer for SK (at least EAP_GPSK_MAX_PK_LEN bytes)
@@ -262,7 +303,7 @@ int eap_gpsk_derive_keys(const u8 *psk, size_t psk_len, int vendor,
 			 const u8 *rand_client, const u8 *rand_server,
 			 const u8 *id_client, size_t id_client_len,
 			 const u8 *id_server, size_t id_server_len,
-			 u8 *msk, u8 *sk, size_t *sk_len,
+			 u8 *msk, u8 *emsk, u8 *sk, size_t *sk_len,
 			 u8 *pk, size_t *pk_len)
 {
 	u8 *seed, *pos;
@@ -277,9 +318,9 @@ int eap_gpsk_derive_keys(const u8 *psk, size_t psk_len, int vendor,
 
 	wpa_hexdump_key(MSG_DEBUG, "EAP-GPSK: PSK", psk, psk_len);
 
-	/* Seed = RAND_Client || RAND_Server || ID_Server || IN_Client */
+	/* Seed = RAND_Client || ID_Client || RAND_Server || ID_Server */
 	seed_len = 2 * EAP_GPSK_RAND_LEN + id_server_len + id_client_len;
-	seed = malloc(seed_len);
+	seed = os_malloc(seed_len);
 	if (seed == NULL) {
 		wpa_printf(MSG_DEBUG, "EAP-GPSK: Failed to allocate memory "
 			   "for key derivation");
@@ -287,25 +328,27 @@ int eap_gpsk_derive_keys(const u8 *psk, size_t psk_len, int vendor,
 	}
 
 	pos = seed;
-	memcpy(pos, rand_client, EAP_GPSK_RAND_LEN);
+	os_memcpy(pos, rand_client, EAP_GPSK_RAND_LEN);
 	pos += EAP_GPSK_RAND_LEN;
-	memcpy(pos, rand_server, EAP_GPSK_RAND_LEN);
-	pos += EAP_GPSK_RAND_LEN;
-	memcpy(pos, id_server, id_server_len);
-	pos += id_server_len;
-	memcpy(pos, id_client, id_client_len);
+	os_memcpy(pos, id_client, id_client_len);
 	pos += id_client_len;
+	os_memcpy(pos, rand_server, EAP_GPSK_RAND_LEN);
+	pos += EAP_GPSK_RAND_LEN;
+	os_memcpy(pos, id_server, id_server_len);
+	pos += id_server_len;
 	wpa_hexdump(MSG_DEBUG, "EAP-GPSK: Seed", seed, seed_len);
 
 	switch (specifier) {
 	case EAP_GPSK_CIPHER_AES:
 		ret = eap_gpsk_derive_keys_aes(psk, psk_len, seed, seed_len,
-					       msk, sk, sk_len, pk, pk_len);
+					       msk, emsk, sk, sk_len,
+					       pk, pk_len);
 		break;
 #ifdef EAP_GPSK_SHA256
 	case EAP_GPSK_CIPHER_SHA256:
 		ret = eap_gpsk_derive_keys_sha256(psk, psk_len, seed, seed_len,
-						  msk, sk, sk_len, pk, pk_len);
+						  msk, emsk, sk, sk_len,
+						  pk, pk_len);
 		break;
 #endif /* EAP_GPSK_SHA256 */
 	default:
@@ -315,7 +358,7 @@ int eap_gpsk_derive_keys(const u8 *psk, size_t psk_len, int vendor,
 		break;
 	}
 
-	free(seed);
+	os_free(seed);
 
 	return ret;
 }

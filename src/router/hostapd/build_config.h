@@ -1,6 +1,6 @@
 /*
  * wpa_supplicant/hostapd - Build time configuration defines
- * Copyright (c) 2005-2006, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2005-2006, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -35,6 +35,7 @@
 #define CONFIG_CTRL_IFACE_NAMED_PIPE
 #define CONFIG_DRIVER_NDIS
 #define CONFIG_NDIS_EVENTS_INTEGRATED
+#define CONFIG_DEBUG_FILE
 #define EAP_MD5
 #define EAP_TLS
 #define EAP_MSCHAPv2

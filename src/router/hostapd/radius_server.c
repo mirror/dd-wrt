@@ -1,6 +1,6 @@
 /*
  * hostapd / RADIUS authentication server
- * Copyright (c) 2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2005-2006, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -60,6 +60,9 @@ struct radius_session {
 	int last_from_port;
 	struct sockaddr_storage last_from;
 	socklen_t last_fromlen;
+	u8 last_identifier;
+	struct radius_msg *last_reply;
+	u8 last_authenticator[16];
 };
 
 struct radius_client {
@@ -173,16 +176,25 @@ static void radius_server_session_free(struct radius_server_data *data,
 		free(sess->last_msg);
 	}
 	free(sess->last_from_addr);
+	if (sess->last_reply) {
+		radius_msg_free(sess->last_reply);
+		free(sess->last_reply);
+	}
 	free(sess);
 	data->num_sess--;
 }
 
+
+static void radius_server_session_remove_timeout(void *eloop_ctx,
+						 void *timeout_ctx);
 
 static void radius_server_session_remove(struct radius_server_data *data,
 					 struct radius_session *sess)
 {
 	struct radius_client *client = sess->client;
 	struct radius_session *session, *prev;
+
+	eloop_cancel_timeout(radius_server_session_remove_timeout, data, sess);
 
 	prev = NULL;
 	session = client->sessions;
@@ -199,6 +211,16 @@ static void radius_server_session_remove(struct radius_server_data *data,
 		prev = session;
 		session = session->next;
 	}
+}
+
+
+static void radius_server_session_remove_timeout(void *eloop_ctx,
+						 void *timeout_ctx)
+{
+	struct radius_server_data *data = eloop_ctx;
+	struct radius_session *sess = timeout_ctx;
+	RADIUS_DEBUG("Removing completed session 0x%x", sess->sess_id);
+	radius_server_session_remove(data, sess);
 }
 
 
@@ -434,12 +456,6 @@ static int radius_server_request(struct radius_server_data *data,
 	struct radius_msg *reply;
 	struct eap_hdr *hdr;
 
-	/*
-	 * TODO: Implement duplicate packet processing
-	 * data->counters.dup_access_requests++;
-	 * client->counters.dup_access_requests++;
-	 */
-
 	if (force_sess)
 		sess = force_sess;
 	else {
@@ -472,6 +488,29 @@ static int radius_server_request(struct radius_server_data *data,
 		}
 	}
 
+	if (sess->last_from_port == from_port &&
+	    sess->last_identifier == msg->hdr->identifier &&
+	    os_memcmp(sess->last_authenticator, msg->hdr->authenticator, 16) ==
+	    0) {
+		RADIUS_DEBUG("Duplicate message from %s", from_addr);
+		data->counters.dup_access_requests++;
+		client->counters.dup_access_requests++;
+
+		if (sess->last_reply) {
+			res = sendto(data->auth_sock, sess->last_reply->buf,
+				     sess->last_reply->buf_used, 0,
+				     (struct sockaddr *) from, fromlen);
+			if (res < 0) {
+				perror("sendto[RADIUS SRV]");
+			}
+			return 0;
+		}
+
+		RADIUS_DEBUG("No previous reply available for duplicate "
+			     "message");
+		return -1;
+	}
+		      
 	eap = radius_msg_get_eap(msg, &eap_len);
 	if (eap == NULL) {
 		RADIUS_DEBUG("No EAP-Message in RADIUS packet from %s",
@@ -567,16 +606,28 @@ static int radius_server_request(struct radius_server_data *data,
 		if (res < 0) {
 			perror("sendto[RADIUS SRV]");
 		}
-		radius_msg_free(reply);
-		free(reply);
+		if (sess->last_reply) {
+			radius_msg_free(sess->last_reply);
+			free(sess->last_reply);
+		}
+		sess->last_reply = reply;
+		sess->last_from_port = from_port;
+		sess->last_identifier = msg->hdr->identifier;
+		os_memcpy(sess->last_authenticator, msg->hdr->authenticator,
+			  16);
 	} else {
 		data->counters.packets_dropped++;
 		client->counters.packets_dropped++;
 	}
 
 	if (sess->eapSuccess || sess->eapFail) {
-		RADIUS_DEBUG("Removing completed session 0x%x", sess->sess_id);
-		radius_server_session_remove(data, sess);
+		RADIUS_DEBUG("Removing completed session 0x%x after timeout",
+			     sess->sess_id);
+		eloop_cancel_timeout(radius_server_session_remove_timeout,
+				     data, sess);
+		eloop_register_timeout(10, 0,
+				       radius_server_session_remove_timeout,
+				       data, sess);
 	}
 
 	return 0;
@@ -1006,7 +1057,7 @@ int radius_server_get_mib(struct radius_server_data *data, char *buf,
 
 	/* RFC 2619 - RADIUS Authentication Server MIB */
 
-	if (buflen == 0)
+	if (data == NULL || buflen == 0)
 		return 0;
 
 	pos = buf;

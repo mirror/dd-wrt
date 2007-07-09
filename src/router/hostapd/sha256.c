@@ -1,6 +1,6 @@
 /*
  * SHA-256 hash implementation and interface functions
- * Copyright (c) 2003-2006, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2003-2006, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -32,7 +32,7 @@ void hmac_sha256_vector(const u8 *key, size_t key_len, size_t num_elem,
 			const u8 *addr[], const size_t *len, u8 *mac)
 {
 	unsigned char k_pad[64]; /* padding - key XORd with ipad/opad */
-	unsigned char tk[20];
+	unsigned char tk[32];
 	const u8 *_addr[6];
 	size_t _len[6], i;
 

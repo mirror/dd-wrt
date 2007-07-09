@@ -1,6 +1,6 @@
 /*
  * wpa_supplicant/hostapd / OS specific functions for UNIX/POSIX systems
- * Copyright (c) 2005-2006, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2005-2006, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -113,6 +113,7 @@ char * os_rel2abs_path(const char *rel_path)
 {
 	char *buf = NULL, *cwd, *ret;
 	size_t len = 128, cwd_len, rel_len, ret_len;
+	int last_errno;
 
 	if (rel_path[0] == '/')
 		return strdup(rel_path);
@@ -123,12 +124,15 @@ char * os_rel2abs_path(const char *rel_path)
 			return NULL;
 		cwd = getcwd(buf, len);
 		if (cwd == NULL) {
+			last_errno = errno;
 			free(buf);
-			if (errno != ERANGE) {
+			if (last_errno != ERANGE)
 				return NULL;
-			}
 			len *= 2;
+			if (len > 2000)
+				return NULL;
 		} else {
+			buf[len - 1] = '\0';
 			break;
 		}
 	}

@@ -1,6 +1,6 @@
 /*
  * hostapd / EAP-TTLS (draft-ietf-pppext-eap-ttls-05.txt)
- * Copyright (c) 2004-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -187,7 +187,12 @@ static int eap_ttls_avp_parse(u8 *buf, size_t len, struct eap_ttls_avp *parse)
 			wpa_printf(MSG_WARNING, "EAP-TTLS: AVP overflow "
 				   "(len=%d, left=%d) - dropped",
 				   (int) avp_length, left);
-			return -1;
+			goto fail;
+		}
+		if (avp_length < sizeof(*avp)) {
+			wpa_printf(MSG_WARNING, "EAP-TTLS: Invalid AVP length "
+				   "%d", avp_length);
+			goto fail;
 		}
 		dpos = (u8 *) (avp + 1);
 		dlen = avp_length - sizeof(*avp);
@@ -195,7 +200,7 @@ static int eap_ttls_avp_parse(u8 *buf, size_t len, struct eap_ttls_avp *parse)
 			if (dlen < 4) {
 				wpa_printf(MSG_WARNING, "EAP-TTLS: vendor AVP "
 					   "underflow");
-				return -1;
+				goto fail;
 			}
 			vendor_id = be_to_host32(* (u32 *) dpos);
 			wpa_printf(MSG_DEBUG, "EAP-TTLS: AVP vendor_id %d",
@@ -214,7 +219,7 @@ static int eap_ttls_avp_parse(u8 *buf, size_t len, struct eap_ttls_avp *parse)
 					wpa_printf(MSG_WARNING, "EAP-TTLS: "
 						   "failed to allocate memory "
 						   "for Phase 2 EAP data");
-					return -1;
+					goto fail;
 				}
 				memcpy(parse->eap, dpos, dlen);
 				parse->eap_len = dlen;
@@ -225,9 +230,7 @@ static int eap_ttls_avp_parse(u8 *buf, size_t len, struct eap_ttls_avp *parse)
 					wpa_printf(MSG_WARNING, "EAP-TTLS: "
 						   "failed to allocate memory "
 						   "for Phase 2 EAP data");
-					free(parse->eap);
-					parse->eap = NULL;
-					return -1;
+					goto fail;
 				}
 				memcpy(neweap + parse->eap_len, dpos, dlen);
 				parse->eap = neweap;
@@ -291,7 +294,7 @@ static int eap_ttls_avp_parse(u8 *buf, size_t len, struct eap_ttls_avp *parse)
 			wpa_printf(MSG_WARNING, "EAP-TTLS: Unsupported "
 				   "mandatory AVP code %d vendor_id %d - "
 				   "dropped", (int) avp_code, (int) vendor_id);
-			return -1;
+			goto fail;
 		} else {
 			wpa_printf(MSG_DEBUG, "EAP-TTLS: Ignoring unsupported "
 				   "AVP code %d vendor_id %d",
@@ -304,6 +307,11 @@ static int eap_ttls_avp_parse(u8 *buf, size_t len, struct eap_ttls_avp *parse)
 	}
 
 	return 0;
+
+fail:
+	free(parse->eap);
+	parse->eap = NULL;
+	return -1;
 }
 
 
@@ -544,7 +552,7 @@ static u8 * eap_ttls_build_phase2_mschapv2(struct eap_sm *sm,
 	pos = req = malloc(100);
 	if (req == NULL)
 		return NULL;
-	end = req + 200;
+	end = req + 100;
 
 	if (data->mschapv2_resp_ok) {
 		pos = eap_ttls_avp_hdr(pos, RADIUS_ATTR_MS_CHAP2_SUCCESS,
@@ -643,12 +651,11 @@ static Boolean eap_ttls_check(struct eap_sm *sm, void *priv,
 {
 	struct eap_hdr *resp;
 	u8 *pos;
-	size_t len;
 
 	resp = (struct eap_hdr *) respData;
 	pos = (u8 *) (resp + 1);
 	if (respDataLen < sizeof(*resp) + 2 || *pos != EAP_TYPE_TTLS ||
-	    (len = ntohs(resp->length)) > respDataLen) {
+	    (ntohs(resp->length)) > respDataLen) {
 		wpa_printf(MSG_INFO, "EAP-TTLS: Invalid frame");
 		return TRUE;
 	}
@@ -857,7 +864,7 @@ static void eap_ttls_process_phase2_mschapv2(struct eap_sm *sm,
 					     size_t challenge_len,
 					     u8 *response, size_t response_len)
 {
-	u8 *chal, *username, nt_response[24], *pos, *rx_resp, *peer_challenge,
+	u8 *chal, *username, nt_response[24], *rx_resp, *peer_challenge,
 		*auth_challenge;
 	size_t username_len, i;
 
@@ -886,7 +893,6 @@ static void eap_ttls_process_phase2_mschapv2(struct eap_sm *sm,
 	 * (if present). */
 	username = sm->identity;
 	username_len = sm->identity_len;
-	pos = username;
 	for (i = 0; i < username_len; i++) {
 		if (username[i] == '\\') {
 			username_len -= i + 1;
@@ -1033,9 +1039,9 @@ static void eap_ttls_process_phase2_eap_response(struct eap_sm *sm,
 
 	hdr = (struct eap_hdr *) in_data;
 	pos = (u8 *) (hdr + 1);
-	left = in_len - sizeof(*hdr);
 
 	if (in_len > sizeof(*hdr) && *pos == EAP_TYPE_NAK) {
+		left = in_len - sizeof(*hdr);
 		wpa_hexdump(MSG_DEBUG, "EAP-TTLS/EAP: Phase2 type Nak'ed; "
 			    "allowed types", pos + 1, left - 1);
 		eap_sm_process_nak(sm, pos + 1, left - 1);

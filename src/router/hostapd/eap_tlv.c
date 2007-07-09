@@ -1,6 +1,6 @@
 /*
  * hostapd / EAP-TLV (draft-josefsson-pppext-eap-tls-eap-07.txt)
- * Copyright (c) 2004, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -99,12 +99,11 @@ static Boolean eap_tlv_check(struct eap_sm *sm, void *priv,
 {
 	struct eap_hdr *resp;
 	u8 *pos;
-	size_t len;
 
 	resp = (struct eap_hdr *) respData;
 	pos = (u8 *) (resp + 1);
 	if (respDataLen < sizeof(*resp) + 1 || *pos != EAP_TYPE_TLV ||
-	    (len = ntohs(resp->length)) > respDataLen) {
+	    (ntohs(resp->length)) > respDataLen) {
 		wpa_printf(MSG_INFO, "EAP-TLV: Invalid frame");
 		return TRUE;
 	}
@@ -119,14 +118,12 @@ static void eap_tlv_process(struct eap_sm *sm, void *priv,
 	struct eap_tlv_data *data = priv;
 	struct eap_hdr *resp;
 	u8 *pos;
-	int len;
 	size_t left;
 	u8 *result_tlv = NULL;
 	size_t result_tlv_len = 0;
 	int tlv_type, mandatory, tlv_len;
 
 	resp = (struct eap_hdr *) respData;
-	len = ntohs(resp->length);
 	pos = (u8 *) (resp + 1);
 
 	/* Parse TLVs */

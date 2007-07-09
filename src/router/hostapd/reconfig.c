@@ -1,9 +1,17 @@
 /*
  * hostapd / Configuration reloading
- * Copyright 2002-2003, Jouni Malinen <jkmaline@cc.hut.fi>
- * Copyright 2002-2004, Instant802 Networks, Inc.
- * Copyright 2005-2006, Devicescape Software, Inc.
- * All Rights Reserved.
+ * Copyright (c) 2002-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2002-2004, Instant802 Networks, Inc.
+ * Copyright (c) 2005-2006, Devicescape Software, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * Alternatively, this software may be distributed under the terms of BSD
+ * license.
+ *
+ * See README and COPYING for more details.
  */
 
 #include "includes.h"
@@ -49,13 +57,10 @@ static int hostapd_config_reload_sta(struct hostapd_data *hapd,
 				     struct sta_info *sta, void *data)
 {
 	struct hostapd_config_change *change = data;
-	struct hostapd_config *newconf, *oldconf;
 	struct hostapd_bss_config *newbss, *oldbss;
 	int deauth = 0;
 	u8 reason = WLAN_REASON_PREV_AUTH_NOT_VALID;
 
-	newconf = change->newconf;
-	oldconf = change->oldconf;
 	newbss = change->newbss;
 	oldbss = change->oldbss;
 	hapd = change->hapd;

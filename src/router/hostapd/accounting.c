@@ -1,6 +1,6 @@
 /*
  * hostapd / RADIUS Accounting
- * Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2002-2005, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -231,7 +231,7 @@ void accounting_sta_start(struct hostapd_data *hapd, struct sta_info *sta)
 {
 	struct radius_msg *msg;
 	int interval;
-	
+
 	if (sta->acct_session_started)
 		return;
 
@@ -453,4 +453,15 @@ int accounting_init(struct hostapd_data *hapd)
 void accounting_deinit(struct hostapd_data *hapd)
 {
 	accounting_report_state(hapd, 0);
+}
+
+
+int accounting_reconfig(struct hostapd_data *hapd,
+			struct hostapd_config *oldconf)
+{
+	if (!hapd->radius_client_reconfigured)
+		return 0;
+
+	accounting_deinit(hapd);
+	return accounting_init(hapd);
 }
