@@ -2714,21 +2714,7 @@ skipline (FILE * in)
 int
 getIfList (char *buffer, char *ifprefix)
 {
-  FILE *in = fopen("/tmp/.ifcache","rb");
-  if (in==NULL)
-    {
-    in = fopen("/proc/net/dev","rb");
-    FILE *tmp = fopen("/tmp/.ifcache","wb");
-    int c=getc(in);
-    while(c!=EOF)
-	{
-	putc(c,tmp);
-	c=getc(in);
-	}
-    fclose(tmp);
-    fclose(in);
-    in=fopen("/tmp/.ifcache","rb");
-    }
+  FILE *in = fopen("/proc/net/dev","rb");
   char ifname[32];
 //skip the first 2 lines
   skipline (in);
