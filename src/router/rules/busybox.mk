@@ -27,7 +27,11 @@ else
 ifeq ($(ARCHITECTURE),whrag108)
 	cp busybox/.config_fonera busybox/.config
 else
+ifeq ($(ARCHITECTURE),ca8)
+	cp busybox/.config_fonera busybox/.config
+else
 	cp busybox/.config_3com busybox/.config
+endif
 endif
 endif
 endif
