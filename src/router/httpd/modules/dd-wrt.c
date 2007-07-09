@@ -2503,11 +2503,13 @@ ej_show_bondings (webs_t wp, int argc, char_t ** argv)
   getIfList (bufferif, "eth");
   int i;
 #ifdef HAVE_XSCALE
+  memset (buffer, 0, 256);
   getIfList (buffer, "ixp");
-  sprintf (bufferif, "%s", buffer);
+  sprintf (bufferif, "%s %s", bufferif,buffer);
 #endif
+  memset (buffer, 0, 256);
   getIfList (buffer, "br");
-  sprintf (bufferif, "%s", buffer);
+  sprintf (bufferif, "%s %s", bufferif,buffer);
 #ifdef HAVE_MADWIFI
   int c = getifcount ("wifi");
   for (i = 0; i < c; i++)
