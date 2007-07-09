@@ -199,6 +199,7 @@ function to_submit(F) {
 		}
  		eval("F.services_array"+index+".value += svc");
  	}
+	F.change_action.value="gozila_cgi";
 	apply(F);
 }
 
@@ -232,7 +233,7 @@ addEvent(window, "unload", function() {
 		<form name="PortServices" action="apply.cgi" method="<% get_http_method(); %>" >
 		<input type="hidden" name="submit_button" />
 		<input type="hidden" name="action" />
-		<input type="hidden" name="change_action" value="gozila_cgi" />
+		<input type="hidden" name="change_action" />
 		<input type="hidden" name="submit_type" />
 		
 		<input type="hidden" name="services_array" />

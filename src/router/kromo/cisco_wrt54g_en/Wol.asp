@@ -121,6 +121,7 @@ function submit_wol(mac, ip) {
 	if(F.manual_wol_port.value == "")
 		F.manual_wol_port.value = 7;
 		
+	F.change_action.value="gozila_cgi";
 	F.wol_type.value = "wol";
 	apply(F);
 }
@@ -131,6 +132,7 @@ function submit_manual_wol(F) {
 	
 	F.manual_wol_mac.value = F.manual_wol_mac.value.replace("\n", " ");
 	F.wol_type.value = "manual";
+	F.change_action.value="gozila_cgi";
 	apply(F);
 }
 function to_submit(F) {
@@ -280,7 +282,7 @@ addEvent(window, "unload", function() {
 						<form name="ping" action="apply.cgi" method="post">
 							<input type="hidden" name="submit_button" value="Ping" />
 							<input type="hidden" name="action" value="Apply" />
-							<input type="hidden" name="change_action" value="gozila_cgi" />
+							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" value="wol" />
 							<input type="hidden" name="next_page" value="Wol.asp" />
 							

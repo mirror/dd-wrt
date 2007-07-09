@@ -15,7 +15,7 @@ function to_submit(F) {
 		<form name="setup" action="applyuser.cgi" method="<% get_http_method(); %>">
 		<input type="hidden" name="submit_button" value="Milkfish_database" />
 		<input type="hidden" name="action" value="Apply" />
-		<input type="hidden" name="change_action" value="gozila_cgi" />
+		<input type="hidden" name="change_action" />
 		<input type="hidden" name="submit_type" />
 		<input type="hidden" name="commit" value="1" />
 			<div id="main">
