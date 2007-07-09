@@ -1,6 +1,6 @@
 /*
  * hostapd / IEEE 802.1X Authenticator - EAPOL state machine
- * Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2002-2005, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -166,6 +166,9 @@ struct eapol_state_machine {
 	size_t last_eap_radius_len;
 	u8 *identity;
 	size_t identity_len;
+	u8 eap_type_authsrv; /* EAP type of the last EAP packet from
+			      * Authentication server */
+	u8 eap_type_supp; /* EAP type of the last EAP packet from Supplicant */
 	struct radius_class_data radius_class;
 
 	/* Keys for encrypting and signing EAPOL-Key frames */

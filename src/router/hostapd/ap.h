@@ -1,6 +1,6 @@
 /*
  * hostapd / Station table data structures
- * Copyright (c) 2002-2004, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2002-2004, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -47,6 +47,9 @@ struct sta_info {
 	unsigned int nonerp_set:1;
 	unsigned int no_short_slot_time_set:1;
 	unsigned int no_short_preamble_set:1;
+
+	u16 auth_alg;
+	u8 previous_ap[6];
 
 	enum {
 		STA_NULLFUNC = 0, STA_DISASSOC, STA_DEAUTH, STA_REMOVE
@@ -99,5 +102,10 @@ struct sta_info {
 #define AP_MAX_INACTIVITY (5 * 60)
 #define AP_DISASSOC_DELAY (1)
 #define AP_DEAUTH_DELAY (1)
+/* Number of seconds to keep STA entry with Authenticated flag after it has
+ * been disassociated. */
+#define AP_MAX_INACTIVITY_AFTER_DISASSOC (1 * 30)
+/* Number of seconds to keep STA entry after it has been deauthenticated. */
+#define AP_MAX_INACTIVITY_AFTER_DEAUTH (1 * 5)
 
 #endif /* AP_H */

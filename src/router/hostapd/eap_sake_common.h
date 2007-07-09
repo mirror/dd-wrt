@@ -1,6 +1,6 @@
 /*
  * EAP server/peer: EAP-SAKE shared routines
- * Copyright (c) 2006, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2006, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -60,19 +60,6 @@ struct eap_sake_hdr {
 	u8 subtype;
 } STRUCT_PACKED;
 
-struct eap_sake_exp_hdr {
-	u8 code;
-	u8 identifier;
-	u16 length;
-	u8 type; /* EAP_TYPE_EXPANDED */
-	u8 vendor_id[3]; /* EAP_VENDOR_IETF */
-	u8 vendor_type[4]; /* EAP_SAKE_VERSION */
-	u8 pad; /* 0 */
-	u8 version; /* EAP_SAKE_VERSION */
-	u8 session_id;
-	u8 subtype;
-} STRUCT_PACKED;
-
 #ifdef _MSC_VER
 #pragma pack(pop)
 #endif /* _MSC_VER */
@@ -106,7 +93,7 @@ int eap_sake_parse_attributes(const u8 *buf, size_t len,
 			      struct eap_sake_parse_attr *attr);
 void eap_sake_derive_keys(const u8 *root_secret_a, const u8 *root_secret_b,
 			  const u8 *rand_s, const u8 *rand_p,
-			  u8 *tek, u8 *msk);
+			  u8 *tek, u8 *msk, u8 *emsk);
 int eap_sake_compute_mic(const u8 *tek_auth,
 			 const u8 *rand_s, const u8 *rand_p,
 			 const u8 *serverid, size_t serverid_len,

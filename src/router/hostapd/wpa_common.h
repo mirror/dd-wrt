@@ -1,6 +1,6 @@
 /*
  * WPA definitions shared between hostapd and wpa_supplicant
- * Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2002-2005, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -48,5 +48,11 @@ enum { IEEE802_1X_TYPE_EAP_PACKET = 0,
 
 enum { EAPOL_KEY_TYPE_RC4 = 1, EAPOL_KEY_TYPE_RSN = 2,
        EAPOL_KEY_TYPE_WPA = 254 };
+
+#ifdef CONFIG_IEEE80211W
+#define WPA_DGTK_LEN 16
+#define WPA_DHV_LEN 16
+#define WPA_IGTK_LEN 16
+#endif /* CONFIG_IEEE80211W */
 
 #endif /* WPA_COMMON_H */

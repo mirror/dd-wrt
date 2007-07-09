@@ -1,6 +1,6 @@
 /*
  * hostapd / AP table
- * Copyright 2002-2003, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright 2002-2003, Jouni Malinen <j@w1.fi>
  * Copyright 2003-2004, Instant802 Networks, Inc.
  * Copyright 2006, Devicescape Software, Inc.
  *

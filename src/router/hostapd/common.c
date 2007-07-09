@@ -1,6 +1,6 @@
 /*
  * wpa_supplicant/hostapd / common helper functions, etc.
- * Copyright (c) 2002-2006, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2002-2006, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -137,8 +137,8 @@ void wpa_get_ntp_timestamp(u8 *buf)
 	/* Estimate 2^32/10^6 = 4295 - 1/32 - 1/512 */
 	usec = now.usec;
 	usec = host_to_be32(4295 * usec - (usec >> 5) - (usec >> 9));
-	memcpy(buf, (u8 *) &sec, 4);
-	memcpy(buf + 4, (u8 *) &usec, 4);
+	os_memcpy(buf, (u8 *) &sec, 4);
+	os_memcpy(buf + 4, (u8 *) &usec, 4);
 }
 
 
@@ -352,11 +352,11 @@ int wpa_debug_open_file(void)
 	if (!wpa_debug_use_file)
 		return 0;
 #ifdef _WIN32
-	snprintf(fname, sizeof(fname), "\\Temp\\wpa_supplicant-log-%d.txt",
-		 count++);
+	os_snprintf(fname, sizeof(fname), "\\Temp\\wpa_supplicant-log-%d.txt",
+		    count++);
 #else /* _WIN32 */
-	snprintf(fname, sizeof(fname), "/tmp/wpa_supplicant-log-%d.txt",
-		 count++);
+	os_snprintf(fname, sizeof(fname), "/tmp/wpa_supplicant-log-%d.txt",
+		    count++);
 #endif /* _WIN32 */
 	out_file = fopen(fname, "w");
 	return out_file == NULL ? -1 : 0;
@@ -379,15 +379,50 @@ void wpa_debug_close_file(void)
 #endif /* CONFIG_NO_STDOUT_DEBUG */
 
 
+#ifndef CONFIG_NO_WPA_MSG
+static wpa_msg_cb_func wpa_msg_cb = NULL;
+
+void wpa_msg_register_cb(wpa_msg_cb_func func)
+{
+	wpa_msg_cb = func;
+}
+
+
+void wpa_msg(void *ctx, int level, char *fmt, ...)
+{
+	va_list ap;
+	char *buf;
+	const int buflen = 2048;
+	int len;
+
+	buf = os_malloc(buflen);
+	if (buf == NULL) {
+		wpa_printf(MSG_ERROR, "wpa_msg: Failed to allocate message "
+			   "buffer");
+		return;
+	}
+	va_start(ap, fmt);
+	len = vsnprintf(buf, buflen, fmt, ap);
+	va_end(ap);
+	wpa_printf(level, "%s", buf);
+	if (wpa_msg_cb)
+		wpa_msg_cb(ctx, level, buf, len);
+	os_free(buf);
+}
+#endif /* CONFIG_NO_WPA_MSG */
+
+
 static inline int _wpa_snprintf_hex(char *buf, size_t buf_size, const u8 *data,
 				    size_t len, int uppercase)
 {
 	size_t i;
 	char *pos = buf, *end = buf + buf_size;
 	int ret;
+	if (buf_size == 0)
+		return 0;
 	for (i = 0; i < len; i++) {
-		ret = snprintf(pos, end - pos, uppercase ? "%02X" : "%02x",
-			       data[i]);
+		ret = os_snprintf(pos, end - pos, uppercase ? "%02X" : "%02x",
+				  data[i]);
 		if (ret < 0 || ret >= end - pos) {
 			end[-1] = '\0';
 			return pos - buf;
@@ -404,6 +439,7 @@ static inline int _wpa_snprintf_hex(char *buf, size_t buf_size, const u8 *data,
  * @buf_size: Maximum buffer size in bytes (should be at least 2 * len + 1)
  * @data: Data to be printed
  * @len: Length of data in bytes
+ * Returns: Number of bytes written
  */
 int wpa_snprintf_hex(char *buf, size_t buf_size, const u8 *data, size_t len)
 {
@@ -417,6 +453,7 @@ int wpa_snprintf_hex(char *buf, size_t buf_size, const u8 *data, size_t len)
  * @buf_size: Maximum buffer size in bytes (should be at least 2 * len + 1)
  * @data: Data to be printed
  * @len: Length of data in bytes
+ * Returns: Number of bytes written
  */
 int wpa_snprintf_hex_uppercase(char *buf, size_t buf_size, const u8 *data,
 			       size_t len)
@@ -426,197 +463,6 @@ int wpa_snprintf_hex_uppercase(char *buf, size_t buf_size, const u8 *data,
 
 
 #ifdef CONFIG_ANSI_C_EXTRA
-/*
- * Extremely simple (and likely inefficient) example implementation of some C
- * library functions
- */
-
-#if !defined(_MSC_VER) || _MSC_VER < 1400
-#ifndef _MSC_VER
-#undef memcpy
-void *memcpy(void *dest, const void *src, size_t n)
-{
-	unsigned char *d = dest;
-	const unsigned char *s = src;
-	while (n--)
-		*d++ = *s++;
-	return dest;
-}
-#endif
-
-
-#undef memmove
-void *memmove(void *dest, const void *src, size_t n)
-{
-	if (dest < src)
-		memcpy(dest, src, n);
-	else {
-		/* overlapping areas */
-		unsigned char *d = (unsigned char *) dest + n;
-		const unsigned char *s = (const unsigned char *) src + n;
-		while (n--)
-			*--d = *--s;
-	}
-	return dest;
-}
-
-
-#ifndef _MSC_VER
-#undef memset
-void *memset(void *s, int c, size_t n)
-{
-	unsigned char *p = s;
-	while (n--)
-		*p++ = c;
-	return s;
-}
-#endif
-
-
-#ifndef _MSC_VER
-#undef memcmp
-int memcmp(const void *s1, const void *s2, size_t n)
-{
-	const unsigned char *p1 = s1, *p2 = s2;
-
-	if (n == 0)
-		return 0;
-
-	while (*p1 == *p2) {
-		p1++;
-		p2++;
-		n--;
-		if (n == 0)
-			return 0;
-	}
-
-	return *p1 - *p2;
-}
-#endif
-
-
-#undef strchr
-char *strchr(const char *s, int c)
-{
-	while (*s) {
-		if (*s == c)
-			return (char *) s;
-		s++;
-	}
-	return NULL;
-}
-
-
-#undef strrchr
-char *strrchr(const char *s, int c)
-{
-	const char *p = s;
-	while (*p)
-		p++;
-	p--;
-	while (p >= s) {
-		if (*p == c)
-			return (char *) p;
-		p--;
-	}
-	return NULL;
-}
-
-
-#ifndef _MSC_VER
-#undef strcmp
-int strcmp(const char *s1, const char *s2)
-{
-	while (*s1 == *s2) {
-		if (*s1 == '\0')
-			break;
-		s1++;
-		s2++;
-	}
-
-	return *s1 - *s2;
-}
-#endif
-
-
-#undef strncmp
-int strncmp(const char *s1, const char *s2, size_t n)
-{
-	if (n == 0)
-		return 0;
-
-	while (*s1 == *s2) {
-		if (*s1 == '\0')
-			break;
-		s1++;
-		s2++;
-		n--;
-		if (n == 0)
-			return 0;
-	}
-
-	return *s1 - *s2;
-}
-
-
-#ifndef _MSC_VER
-#undef strlen
-size_t strlen(const char *s)
-{
-	const char *p = s;
-	while (*p)
-		p++;
-	return p - s;
-}
-#endif
-
-
-#undef strncpy
-char *strncpy(char *dest, const char *src, size_t n)
-{
-	char *d = dest;
-
-	while (n--) {
-		*d = *src;
-		if (*src == '\0')
-			break;
-		d++;
-		src++;
-	}
-
-	return dest;
-}
-
-
-#undef strstr
-char *strstr(const char *haystack, const char *needle)
-{
-	size_t len = strlen(needle);
-	while (*haystack) {
-		if (strncmp(haystack, needle, len) == 0)
-			return (char *) haystack;
-		haystack++;
-	}
-
-	return NULL;
-}
-
-
-#undef strdup
-char * strdup(const char *s)
-{
-	char *res;
-	size_t len;
-	if (s == NULL)
-		return NULL;
-	len = strlen(s);
-	res = malloc(len + 1);
-	if (res)
-		memcpy(res, s, len + 1);
-	return res;
-}
-#endif /* !defined(_MSC_VER) || _MSC_VER < 1400 */
-
 
 #ifdef _WIN32_WCE
 void perror(const char *s)
@@ -648,14 +494,14 @@ int getopt(int argc, char *const argv[], const char *optstring)
 		}
 	}
 
-	if (strcmp(argv[optind], "--") == 0) {
+	if (os_strcmp(argv[optind], "--") == 0) {
 		/* no more options */
 		optind++;
 		return EOF;
 	}
 
 	optopt = argv[optind][optchr];
-	cp = strchr(optstring, optopt);
+	cp = os_strchr(optstring, optopt);
 	if (cp == NULL || optopt == ':') {
 		if (argv[optind][++optchr] == '\0') {
 			optchr = 1;
@@ -690,20 +536,6 @@ int getopt(int argc, char *const argv[], const char *optstring)
 #endif /* CONFIG_ANSI_C_EXTRA */
 
 
-/**
- * wpa_zalloc - Allocate and zero memory
- * @size: Number of bytes to allocate
- * Returns: Pointer to allocated and zeroed memory or %NULL on failure
- */
-void *wpa_zalloc(size_t size)
-{
-	void *b = malloc(size);
-	if (b)
-		memset(b, 0, size);
-	return b;
-}
-
-
 #ifdef CONFIG_NATIVE_WINDOWS
 /**
  * wpa_unicode2ascii_inplace - Convert unicode string into ASCII
@@ -728,13 +560,44 @@ TCHAR * wpa_strdup_tchar(const char *str)
 {
 #ifdef UNICODE
 	TCHAR *buf;
-	buf = malloc((strlen(str) + 1) * sizeof(TCHAR));
+	buf = os_malloc((strlen(str) + 1) * sizeof(TCHAR));
 	if (buf == NULL)
 		return NULL;
 	wsprintf(buf, L"%S", str);
 	return buf;
 #else /* UNICODE */
-	return strdup(str);
+	return os_strdup(str);
 #endif /* UNICODE */
 }
 #endif /* CONFIG_NATIVE_WINDOWS */
+
+
+/**
+ * wpa_ssid_txt - Convert SSID to a printable string
+ * @ssid: SSID (32-octet string)
+ * @ssid_len: Length of ssid in octets
+ * Returns: Pointer to a printable string
+ *
+ * This function can be used to convert SSIDs into printable form. In most
+ * cases, SSIDs do not use unprintable characters, but IEEE 802.11 standard
+ * does not limit the used character set, so anything could be used in an SSID.
+ *
+ * This function uses a static buffer, so only one call can be used at the
+ * time, i.e., this is not re-entrant and the returned buffer must be used
+ * before calling this again.
+ */
+const char * wpa_ssid_txt(u8 *ssid, size_t ssid_len)
+{
+	static char ssid_txt[33];
+	char *pos;
+
+	if (ssid_len > 32)
+		ssid_len = 32;
+	os_memcpy(ssid_txt, ssid, ssid_len);
+	ssid_txt[ssid_len] = '\0';
+	for (pos = ssid_txt; *pos != '\0'; pos++) {
+		if ((u8) *pos < 32 || (u8) *pos >= 127)
+			*pos = '_';
+	}
+	return ssid_txt;
+}

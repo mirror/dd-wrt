@@ -1,6 +1,6 @@
 /*
  * hostapd - command line interface for hostapd daemon
- * Copyright (c) 2004-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,7 +21,7 @@
 
 static const char *hostapd_cli_version =
 "hostapd_cli v" VERSION_STR "\n"
-"Copyright (c) 2004-2005, Jouni Malinen <jkmaline@cc.hut.fi> and contributors";
+"Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi> and contributors";
 
 
 static const char *hostapd_cli_license =
@@ -537,6 +537,7 @@ int main(int argc, char *argv[])
 			printf("%s\n", hostapd_cli_version);
 			return 0;
 		case 'i':
+			free(ctrl_ifname);
 			ctrl_ifname = strdup(optarg);
 			break;
 		case 'p':

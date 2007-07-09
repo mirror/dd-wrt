@@ -1,6 +1,6 @@
 /*
  * hostapd / RADIUS client
- * Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2002-2005, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -97,5 +97,9 @@ void radius_client_deinit(struct radius_client_data *radius);
 void radius_client_flush_auth(struct radius_client_data *radius, u8 *addr);
 int radius_client_get_mib(struct radius_client_data *radius, char *buf,
 			  size_t buflen);
+struct radius_client_data *
+radius_client_reconfig(struct radius_client_data *old, void *ctx,
+		       struct hostapd_radius_servers *oldconf,
+		       struct hostapd_radius_servers *newconf);
 
 #endif /* RADIUS_CLIENT_H */
