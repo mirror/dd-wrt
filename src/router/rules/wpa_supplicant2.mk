@@ -14,12 +14,10 @@ wpa_supplicant2-clean:
 
 wpa_supplicant2-install:
 ifeq ($(CONFIG_WPA_SUPPLICANT2),y)
-	install -D hostapd2/wpa_supplicant/wpa_supplicant $(INSTALLDIR)/wpa_supplicant/usr/sbin/wpa_supplicant
+	install -D hostapd2/wpa_supplicant/wpa_supplicant $(INSTALLDIR)/wpa_supplicant2/usr/sbin/wpa_supplicant
 #	install -D hostapd2/wpa_supplicant/wpa_passphrase $(INSTALLDIR)/wpa_supplicant/usr/sbin/wpa_passphrase
 #	install -D hostapd2/wpa_supplicant/wpa_cli $(INSTALLDIR)/wpa_supplicant/usr/sbin/wpa_cli
-	$(STRIP) $(INSTALLDIR)/wpa_supplicant/usr/sbin/wpa_supplicant
-	$(STRIP) $(INSTALLDIR)/wpa_supplicant/usr/sbin/wpa_passphrase
-	$(STRIP) $(INSTALLDIR)/wpa_supplicant/usr/sbin/wpa_cli
+	$(STRIP) $(INSTALLDIR)/wpa_supplicant2/usr/sbin/wpa_supplicant
 else
 	# So that generic rule does not take precedence
 	@true

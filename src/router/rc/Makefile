@@ -60,6 +60,9 @@ endif
 ifeq ($(CONFIG_NSTX),y)
 CFLAGS += -DHAVE_NSTX
 endif
+ifeq ($(CONFIG_GLAUCO),y)
+CFLAGS += -DHAVE_GLAUCO
+endif
 ifeq ($(CONFIG_USB),y)
 CFLAGS += -DHAVE_USB
 endif
