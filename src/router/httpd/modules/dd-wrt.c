@@ -6629,7 +6629,13 @@ qos_save (webs_t wp)
   nvram_set ("svqos_port3bw", websGetVar (wp, "svqos_port3bw", NULL));
   nvram_set ("svqos_port4bw", websGetVar (wp, "svqos_port4bw", NULL));
 
-  nvram_commit ();
+  char *value = websGetVar (wp, "action", "");
+  if (!strcmp (value, "ApplyTake"))
+    {
+      nvram_commit ();
+      sys_restart ();
+    }
+
 
   return 0;
 }
