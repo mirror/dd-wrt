@@ -440,8 +440,8 @@ verify_config:
 	fi
 
 install: all
-	mkdir -p $(INSTALLDIR)/hostapd/usr/sbin
-	for i in $(ALL); do cp $$i $(INSTALLDIR)/hostapd/usr/sbin/$$i; done
+	mkdir -p $(INSTALLDIR)/hostapd2/usr/sbin
+	for i in $(ALL); do cp $$i $(INSTALLDIR)/hostapd2/usr/sbin/$$i; done
 
 hostapd: $(OBJS)
 	$(CC) -o hostapd $(OBJS) $(LIBS)
