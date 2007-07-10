@@ -1727,7 +1727,7 @@ ej_filter_port_services_get (webs_t wp, int argc, char_t ** argv)
 {
   char *type;
   int which;
-  char word[1024], *next, services[8192] = "", svcs_var[32] = "";
+  char word[1024], *next, *services;
   char delim[] = "<&nbsp;>";
   int index = 0;
   D ("ej_filter_port_services get");
