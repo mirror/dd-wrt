@@ -10,6 +10,7 @@ start_vlantagging (void)
   static char word[256];
   char *next, *wordlist;
   wordlist = nvram_safe_get ("vlan_tags");
+  eval ("vconfig", "set_name_type", "DEV_PLUS_VID_NO_PAD");
   foreach (word, wordlist, next)
   {
     char *port = word;
@@ -31,6 +32,7 @@ stop_vlantagging (void)
   static char word[256];
   char *next, *wordlist;
   wordlist = nvram_safe_get ("vlan_tags");
+  eval ("vconfig", "set_name_type", "DEV_PLUS_VID_NO_PAD");
   foreach (word, wordlist, next)
   {
     char *port = word;

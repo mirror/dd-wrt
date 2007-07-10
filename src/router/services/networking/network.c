@@ -1789,10 +1789,10 @@ start_lan (void)
 #ifndef HAVE_MADWIFI
 #ifndef HAVE_MSSID
   eval ("/usr/sbin/wl", "radio",
-	nvram_invmatch ("wl_net_mode", "disabled") ? "on" : "off");
+	nvram_invmatch ("wl_net_mode", "disabled") ? "0" : "1");
 #else
   eval ("/usr/sbin/wl", "radio",
-	nvram_invmatch ("wl0_net_mode", "disabled") ? "on" : "off");
+	nvram_invmatch ("wl0_net_mode", "disabled") ? "0" : "1");
 #endif
 #endif
   /* Disable wireless will cause diag led blink, so we want to stop it. */
@@ -2700,8 +2700,8 @@ inet_aton (nvram_safe_get ("lan_netmask"), (struct in_addr *) &lannm);
 if (wanip!=0 && nvram_match("wan_ipaddr","0.0.0.0") && !nvram_match("wan_proto","disabled"))
     {
     int iperror=0;
-    if ((wanip&wannm) == lanip&wannm) iperror=1;
-    if ((lanip&lannm) == wanip&lannm) iperror=1;
+    if ((wanip&wannm) == (lanip&wannm)) iperror=1;
+    if ((lanip&lannm) == (wanip&lannm)) iperror=1;
     if (iperror)
 	eval("ledtool","5"); //blink 5 times the 3 time interval     
     }
@@ -3104,6 +3104,38 @@ int
 start_hotplug_net (void)
 {
 #ifdef HAVE_MADWIFI
+  char *interface, *action, *devaction;
+ fprintf(stderr,"Hotplug\n");
+   if (!(interface = getenv ("INTERFACE")) || !(action = getenv ("ACTION")) || !(devaction = getenv ("DEVACTION")))
+    return 0;
+ fprintf(stderr,"Hotplug %s\n",action);
+   if (!strcmp(action,"change"))
+    {
+    char *vlan = getenv("VLAN");
+    char bridged[32];
+    sprintf(bridged,"%s_bridged",interface);
+    if (!strcmp(devaction,"wds_add"))
+	{
+	
+	eval ("vconfig","set_name_type","DEV_PLUS_VID");
+	eval ("vconfig", "add", interface, vlan);
+	char devname[32];
+	sprintf(devname,"%s.%04d",interface,atoi(vlan));
+	fprintf(stderr,"adding WDS Interface %s for Station %s\n",devname,getenv("WDSNODE"));
+	if (nvram_match(bridged,"1"))
+	    eval("brctl","addif",getBridge(interface),devname);	
+	}
+    if (!strcmp(devaction,"wds_del"))
+	{
+	eval ("vconfig","set_name_type","DEV_PLUS_VID");
+	char devname[32];
+	sprintf(devname,"%s.%04d",interface,atoi(vlan));
+	fprintf(stderr,"removing WDS Interface %s for Station %s\n",devname,getenv("WDSNODE"));
+	if (nvram_match(bridged,"1"))
+	    eval("brctl","delif",getBridge(interface),devname);	
+	eval ("vconfig", "rem", devname);
+	}    
+    }    
   return 0;
 #else
 
