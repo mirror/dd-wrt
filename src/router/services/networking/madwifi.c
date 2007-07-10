@@ -1620,6 +1620,9 @@ configure_single (int count)
 	eval ("iwpriv", var, "ap_bridge", "0");
       if (!strcmp (m, "wdssta") || !strcmp (m, "wdsap"))
 	eval ("iwpriv", var, "wds", "1");
+      if (!strcmp (m, "wdsap"))
+	eval ("iwpriv", var, "wdsvlan", "1");
+	
       cnt++;
     }
 
@@ -1627,6 +1630,10 @@ configure_single (int count)
 
   if (!strcmp (m, "wdssta") || !strcmp (m, "wdsap"))
     eval ("iwpriv", dev, "wds", "1");
+
+  if (!strcmp (m, "wdsap"))
+    eval ("iwpriv", dev, "wdsvlan", "1");
+
   char isolate[32];
   sprintf (isolate, "%s_ap_isolate", dev);
   if (default_match (isolate, "1", "0"))
