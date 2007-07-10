@@ -6197,6 +6197,167 @@ save_wds (webs_t wp)
 char *
 get_filter_services (void)
 {
+/*	
+typedef struct _l7filters  //l7 and p2p filters
+	{
+	char *name;
+	char *protocol;
+	} l7filters;
+
+l7filters filters_list[] = {
+	{ "100bao",				"l7" },
+	{ "aim",				"l7"},
+	{ "aimwebcontent" ,		"l7" },
+	{ "applejuice",			"p2p" },
+	{ "ares",				"p2p" },
+	{ "audiogalaxy",		"l7" },
+	{ "battlefield1942",	"l7" },
+	{ "battlefield2",		"l7" },
+	{ "bgp",				"l7" },
+	{ "biff",				"l7" },
+	{ "bittorrent",			"p2p" },
+	{ "chikka",				"l7" },
+	{ "cimd",				"l7" },
+	{ "ciscovpn",			"l7" },
+	{ "citrix",				"l7" },
+	{ "code_red",			"l7" },
+	{ "counterstrike-source", "l7" },
+	{ "cvs",				"l7" },
+	{ "dayofdefeat-source",	"l7" },
+	{ "dhcp",				"l7" },
+	{ "directconnect",		"p2p" },
+	{ "dns",				"l7" },
+	{ "doom3",				"l7" },
+	{ "edonkey",			"p2p" },
+	{ "exe",				"l7" },
+	{ "fasttrack",			"l7" },
+	{ "finger",				"l7" },
+	{ "flash",				"l7" },
+	{ "freenet",			"l7" },
+	{ "ftp",				"l7"},
+	{ "gif",				"l7" },
+	{ "gkrellm",			"l7" },
+	{ "gnucleuslan",		"l7" },
+	{ "gnutella",			"p2p" },
+	{ "goboogy",			"l7" },
+	{ "gopher",				"l7" },
+	{ "h323",				"l7" },
+	{ "halflife2-deathmatch", "l7" },
+	{ "hddtemp",			"l7" },
+	{ "hotline",			"l7" },
+	{ "html",				"l7" },
+	{ "http",				"l7" },
+	{ "http-dap",			"l7" },
+	{ "http-fresh",			"l7" },
+	{ "http-itunes",		"l7" },
+	{ "http-rtsp",			"l7" },
+	{ "httpaudio",			"l7" },
+	{ "httpcachehit",		"l7" },
+	{ "httpcachemiss",		"l7" },
+	{ "httpvideo",			"l7" },
+	{ "ident",				"l7" },
+	{ "imap",				"l7" },
+	{ "imesh",				"l7" },
+	{ "ipp",				"l7" },
+	{ "irc",				"l7" },
+	{ "jabber",				"l7" },
+	{ "jpeg",				"l7" },
+	{ "kugoo",				"l7"},
+	{ "live365",			"l7" },
+	{ "lpd",				"l7" },
+	{ "mohaa",				"l7" },
+	{ "msnmessenger",		"l7" },
+	{ "msn-filetransfer",	"l7" },
+	{ "mute",				"l7" },
+	{ "napster",			"l7" },
+	{ "nbns",				"l7" },
+	{ "ncp",				"l7" },
+	{ "netbios",			"l7" },
+	{ "nimda",				"l7" },
+	{ "nntp",				"l7" },
+	{ "ntp",				"l7" },
+	{ "ogg",				"l7" },
+	{ "openft",				"l7" },
+	{ "pcanywhere",			"l7" },
+	{ "pdf",				"l7" },
+	{ "perl",				"l7" },
+	{ "poco",				"l7" },
+	{ "pop3",				"l7" },
+	{ "postscript",			"l7" },
+	{ "pressplay",			"l7" },
+	{ "qq",					"l7" },
+	{ "quake-halflife",		"l7" },
+	{ "quake1",				"l7" },
+	{ "quicktime",			"l7" },
+	{ "radmin",				"l7" },
+	{ "rar",				"l7"},
+	{ "rdp",				"l7" },
+	{ "replaytv-ivs",		"l7" },
+	{ "rlogin",				"l7" },
+	{ "rpm",				"l7" },
+	{ "rtf",				"l7" },
+	{ "rtsp",				"l7" },
+	{ "shoutcast",			"l7" },
+	{ "sip",				"l7" },
+	{ "skypeout",			"l7" },
+	{ "skypetoskype",		"l7" },
+	{ "smb",				"l7" },
+	{ "smtp",				"l7" },
+	{ "snmp",				"l7" },
+	{ "snmp-mon",			"l7" },
+	{ "snmp-trap",			"l7" },
+	{ "socks",				"l7" },
+	{ "soribada",			"l7" },
+	{ "soulseek",			"p2p" },
+	{ "ssdp",				"l7" },
+	{ "ssh",				"l7" },
+	{ "ssl",				"l7" },
+	{ "stun",				"l7" },
+	{ "subspace",			"l7" },
+	{ "subversion",			"l7" },
+	{ "tar",				"l7" },
+	{ "teamspeak",			"l7" },
+	{ "telnet",				"l7" },
+	{ "tesla",				"l7"},
+	{ "tftp",				"l7" },
+	{ "thecircle",			"l7" },
+	{ "tls",				"l7" },
+	{ "tor"					"l7" },
+	{ "tsp",				"l7" },
+	{ "unknown",			"l7" },
+	{ "uucp",				"l7" },
+	{ "validcertssl",		"l7" },
+	{ "ventrilo",			"l7" },
+	{ "vnc",				"l7" },
+	{ "winmx",				"p2p" },
+	{ "whois",				"l7" },
+	{ "worldofwarcraft",	"l7" },
+	{ "x11",				"l7" },
+	{ "xboxlive",			"l7" },
+	{ "xunlei",				"l7" },
+	{ "yahoo",				"l7" },
+	{ "zip",				"l7" },
+	{ "zmaap",				"l7" },
+	{ 0, 0 }
+};
+
+int i=0;
+int namelen, protolen;
+
+char services[8192] = "";
+char temp[128] = "";
+
+	while (filters_list[i].name)  //add l7 and p2p filters
+		{
+		namelen = strlen (filters_list[i].name);
+		protolen = strlen (filters_list[i].protocol);
+
+		sprintf (temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>", namelen, filters_list[i].name, protolen, filters_list[i].protocol);
+		strcat (services, temp);
+		
+		i++;
+		}	
+*/	
   char services[8192] = "", svcs_var[32] = "filter_services0";
   int index = 1;
 
