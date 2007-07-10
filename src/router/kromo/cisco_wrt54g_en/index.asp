@@ -184,14 +184,14 @@ function setDNSMasq(F) {
 }
 
 function SelWAN(num,F) {
-	F.change_action="gozila_cgi";
+	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "wan_proto";
 	F.wan_proto.value=F.wan_proto.options[num].value;
 	F.submit();
 }
 
 function SelDHCPFWD(num,F) {
-	F.change_action="gozila_cgi";
+	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "dhcpfwd";
 	F.dhcpfwd_enable.value = F.dhcpfwd_enable.options[num].value;
 	F.submit();
