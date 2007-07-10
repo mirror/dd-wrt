@@ -31,7 +31,6 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <ctype.h>
-#include <broadcom.h>
 
 #ifndef DEVELOPE_ENV
 #include <bcmnvram.h>
@@ -1284,6 +1283,23 @@ portgrp_chain (int seq, unsigned int mark, int urlenable)
   }
 }
 
+char * 
+fw_get_filter_services (void) 
+	 	{ 
+	 	  static char services[8192] = "", svcs_var[31] = "filter_services0"; 
+	 	  int index = 0; 
+	 	 
+	 	  while (strlen (nvram_safe_get (svcs_var)) > 0 && index < 8) 
+	 	    { 
+	 	      snprintf (svcs_var, 31, "filter_services%d", index); 
+	 	      strcat (services, nvram_safe_get (svcs_var)); 
+	 	      index++; 
+	 	 
+	 	 
+	 	    } 
+	 	 
+	 	  return services; 
+	 	} 
 
 static void
 advgrp_chain (int seq, unsigned int mark, int urlenable)
@@ -1295,7 +1311,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
   cprintf ("add advgrp_chain\n");
 
   /* filter_services=$NAME:006:My ICQ$PROT:002:17$PORT:009:5000:5010<&nbsp;>.. */
-  services = get_filter_services ();	//nvram_safe_get("filter_services");
+  services = fw_get_filter_services ();	//nvram_safe_get("filter_services");
   /* filter_port_grp5=My ICQ<&nbsp;>Game boy */
   sprintf (nvname, "filter_port_grp%d", seq);
   wordlist = nvram_safe_get (nvname);
