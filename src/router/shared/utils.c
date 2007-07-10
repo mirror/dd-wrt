@@ -215,7 +215,7 @@ internal_getRouterBrand ()
   data->phy_id = 0x1f;
   data->reg_num = 0x1;
   ioctl (s, SIOCGMIIREG, &iwr);
-  fprintf(stderr,"returns %X\n",data->vlan_out);
+  fprintf(stderr,"returns %X\n",data->val_out);
   if (data->val_out!=-1) // marvell phy
     {
     setRouter ("Fonera 2200");
