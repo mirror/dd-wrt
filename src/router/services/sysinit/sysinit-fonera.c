@@ -105,7 +105,7 @@ start_sysinit (void)
   eval ("ifconfig", "wifi0", "up");
   int brand = getRouterBrand ();
 
-  if (brand = ROUTER_BOARD_FONERA2200)
+  if (brand == ROUTER_BOARD_FONERA2200)
     {
     eval ("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
     eval ("/sbin/vconfig", "add","eth0","0"); // lan 
