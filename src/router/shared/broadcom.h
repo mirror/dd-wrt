@@ -577,3 +577,5 @@ extern void show_radius (webs_t wp, char *prefix, int showmac);
 extern void show_wparadius (webs_t wp, char *prefix);
 extern void show_wep (webs_t wp, char *prefix);
 extern char *get_wep_value (char *type, char *_bit, char *prefix);
+
+extern char *get_filter_services (void);
