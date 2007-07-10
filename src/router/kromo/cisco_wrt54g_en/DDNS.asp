@@ -73,7 +73,7 @@ function to_submit(F) {
 }
 
 function SelDDNS(num,F) {
-	change_action.value="gozila_cgi";
+	F.change_action.value="gozila_cgi";
 	F.ddns_enable.value=F.ddns_enable.options[num].value;
 	update.stop();
 	F.submit();
