@@ -95,7 +95,6 @@ start_sysinit (void)
   klogctl (8, NULL, atoi (nvram_safe_get ("console_loglevel")));
   cprintf ("sysinit() get router\n");
 
-  int brand = getRouterBrand ();
 
 
   /* Modules */
@@ -104,7 +103,14 @@ start_sysinit (void)
   eval ("insmod", "ar2313");
   eval ("insmod", "ath_ahb", "autocreate=none");
   eval ("ifconfig", "wifi0", "up");
+  int brand = getRouterBrand ();
 
+  if (brand = ROUTER_BOARD_FONERA2200)
+    {
+    eval ("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+    eval ("/sbin/vconfig", "add","eth0","0"); // lan 
+    eval ("/sbin/vconfig", "add","eth0","1"); // wan
+    }
 //  eval ("insmod", "ipv6");
 
   /* Set a sane date */

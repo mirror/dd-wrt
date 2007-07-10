@@ -201,8 +201,30 @@ internal_getRouterBrand ()
   setRouter ("MagicBox");
   return ROUTER_BOARD_MAGICBOX;
 #elif HAVE_FONERA
-  setRouter ("Fonera");
-  return ROUTER_BOARD_FONERA;
+  struct mii_ioctl_data *data;
+  struct ifreq iwr;
+  int s = socket (AF_INET, SOCK_DGRAM, 0);
+  if (s < 0)
+    {
+      fprintf (stderr, "socket(SOCK_DRAGM)\n");
+      setRouter ("Fonera");
+      return ROUTER_BOARD_FONERA;
+    }
+  (void) strncpy (iwr.ifr_name, "eth0", sizeof ("eth0"));
+  data = (struct mii_ioctl_data *) &iwr.ifr_data;
+  data->phy_id = 0x1f;
+  data->reg_num = 0x1;
+  ioctl (s, SIOCGMIIREG, &iwr);
+  fprintf(stderr,"returns %X\n",data->vlan_out);
+  if (data->val_out!=-1) // marvell phy
+    {
+    setRouter ("Fonera 2200");
+    return ROUTER_BOARD_FONERA2200;    
+    }else
+    { 
+    setRouter ("Fonera 2100");
+    return ROUTER_BOARD_FONERA;
+    }
 #elif HAVE_MERAKI
   setRouter ("Meraki Mini");
   return ROUTER_BOARD_MERAKI;

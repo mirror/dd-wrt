@@ -418,7 +418,7 @@ flush_interfaces (void)
   snprintf (all_ifnames, 255, "%s %s %s", "eth0 eth1",
 	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
 #elif HAVE_FONERA
-  snprintf (all_ifnames, 255, "%s %s %s", "eth0",
+  snprintf (all_ifnames, 255, "%s %s %s", "eth0 vlan0 vlan1",
 	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
 #elif HAVE_LS2
   snprintf (all_ifnames, 255, "%s %s %s", "eth0",
