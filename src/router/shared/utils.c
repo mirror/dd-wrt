@@ -215,6 +215,7 @@ internal_getRouterBrand ()
   data->phy_id = 0x1f;
   data->reg_num = 0x1;
   ioctl (s, SIOCGMIIREG, &iwr);
+  close(s);
   fprintf(stderr,"returns %X\n",data->val_out);
   if (data->val_out!=-1) // marvell phy
     {
