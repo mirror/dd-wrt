@@ -3150,6 +3150,7 @@ start_hotplug_net (void)
 	char devname[32];
 	sprintf(devname,"%s.%04d",interface,atoi(vlan));
 	fprintf(stderr,"adding WDS Interface %s for Station %s\n",devname,getenv("WDSNODE"));
+	    eval("ifconfig",devname,"up");
 	if (nvram_match(bridged,"1"))
 	    eval("brctl","addif",getBridge(interface),devname);	
 	}
@@ -3159,6 +3160,7 @@ start_hotplug_net (void)
 	char devname[32];
 	sprintf(devname,"%s.%04d",interface,atoi(vlan));
 	fprintf(stderr,"removing WDS Interface %s for Station %s\n",devname,getenv("WDSNODE"));
+	    eval("ifconfig",devname,"down");
 	if (nvram_match(bridged,"1"))
 	    eval("brctl","delif",getBridge(interface),devname);	
 	eval ("vconfig", "rem", devname);
