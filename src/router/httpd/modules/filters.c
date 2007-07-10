@@ -1737,12 +1737,7 @@ ej_filter_port_services_get (webs_t wp, int argc, char_t ** argv)
       return;
     }
 
-  do
-    {
-      snprintf (svcs_var, 31, "filter_services%d", index++);
-      strcat (services, nvram_safe_get (svcs_var));
-    }
-  while (strlen (nvram_safe_get (svcs_var)) > 0 && index < 10);
+  services = get_filter_services ();
 
   if (!strcmp (type, "all_list"))
     {
