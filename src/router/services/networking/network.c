@@ -1789,10 +1789,10 @@ start_lan (void)
 #ifndef HAVE_MADWIFI
 #ifndef HAVE_MSSID
   eval ("/usr/sbin/wl", "radio",
-	nvram_invmatch ("wl_net_mode", "disabled") ? "off" : "on");
+	nvram_invmatch ("wl_net_mode", "disabled") ? "on" : "off");
 #else
   eval ("/usr/sbin/wl", "radio",
-	nvram_invmatch ("wl0_net_mode", "disabled") ? "off" : "on");
+	nvram_invmatch ("wl0_net_mode", "disabled") ? "on" : "off");
 #endif
 #endif
   /* Disable wireless will cause diag led blink, so we want to stop it. */
