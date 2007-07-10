@@ -748,6 +748,26 @@ start_lan (void)
   ioctl (s, SIOCSIFHWADDR, &ifr);
 #endif
 #ifdef HAVE_FONERA
+
+  if (getRouterBrand() == ROUTER_BOARD_FONERA2200)
+  {
+  if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
+      || nvram_match ("wan_proto", "disabled"))
+    {
+      nvram_set ("lan_ifname", "br0");
+      nvram_set ("lan_ifnames", "vlan0 vlan1 ath0");
+      nvram_set ("wan_ifname", "");
+      nvram_set ("wan_ifnames", "");
+    }
+  else
+    {
+      nvram_set ("lan_ifname", "br0");
+      nvram_set ("lan_ifnames", "vlan1 ath0");
+      nvram_set ("wan_ifname", "vlan1");
+      nvram_set ("wan_ifnames", "vlan1");
+    }
+  }else
+  {
   if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("wan_proto", "disabled"))
     {
@@ -763,8 +783,7 @@ start_lan (void)
       nvram_set ("wan_ifname", "eth0");
       nvram_set ("wan_ifnames", "eth0");
     }
-
-
+  }
   strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
   ioctl (s, SIOCGIFHWADDR, &ifr);
   nvram_set ("et0macaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
@@ -1458,6 +1477,7 @@ start_lan (void)
   char staticlan[32];
   sprintf (staticlan, "%s:0", lan_ifname);
 #if defined(HAVE_FONERA) || defined(HAVE_CA8)
+  if (getRouterBrand() != ROUTER_BOARD_FONERA2200)
   if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("ath0_mode", "wet")
       || nvram_match ("wan_proto", "disabled"))
@@ -1939,6 +1959,11 @@ start_wan (int status)
 					   "") ?
     nvram_safe_get ("pppoe_wan_ifname") : "eth0";
 #elif HAVE_FONERA
+  if (getRouterBrand() == ROUTER_BOARD_FONERA2200)
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
+					   "") ?
+    nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
+  else
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
     nvram_safe_get ("pppoe_wan_ifname") : "eth0";
@@ -2023,6 +2048,8 @@ start_wan (int status)
 
   ifconfig (wan_ifname, 0, NULL, NULL);
 #if defined(HAVE_FONERA) || defined(HAVE_CA8)
+  if (getRouterBrand() != ROUTER_BOARD_FONERA2200)
+  {
   char staticlan[32];
   sprintf (staticlan, "%s:0", wan_ifname);
   if (!nvram_match ("ath0_mode", "sta")
@@ -2035,6 +2062,7 @@ start_wan (int status)
     }
   else
     eval ("ifconfig", staticlan, "0.0.0.0", "down");
+  }
 #endif
 
 //fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
