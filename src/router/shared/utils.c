@@ -207,7 +207,7 @@ internal_getRouterBrand ()
   if (s < 0)
     {
       fprintf (stderr, "socket(SOCK_DRAGM)\n");
-      setRouter ("Fonera");
+      setRouter ("Fonera 2100/2200");
       return ROUTER_BOARD_FONERA;
     }
   (void) strncpy (iwr.ifr_name, "eth0", sizeof ("eth0"));
@@ -217,13 +217,13 @@ internal_getRouterBrand ()
   ioctl (s, SIOCGMIIREG, &iwr);
   close(s);
   fprintf(stderr,"returns %X\n",data->val_out);
-  if (data->val_out!=-1) // marvell phy
+  if (data->val_out&0xffff!=0xffff) // marvell phy
     {
-    setRouter ("Fonera 2200");
+    setRouter ("Fonera+");
     return ROUTER_BOARD_FONERA2200;    
     }else
     { 
-    setRouter ("Fonera 2100");
+    setRouter ("Fonera 2100/2200");
     return ROUTER_BOARD_FONERA;
     }
 #elif HAVE_MERAKI
