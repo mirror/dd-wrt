@@ -1093,6 +1093,8 @@ start_lan (void)
 #ifndef HAVE_NOWIFI
   deconfigure_wifi ();
 #endif
+#else
+  eval ("wlconf", wl_face, "down");
 #endif
 
 
@@ -1102,7 +1104,6 @@ start_lan (void)
   /* you gotta bring it down before you can set its MAC */
   cprintf ("configure wl_face\n");
   ifconfig (wl_face, 0, 0, 0);
-
 #ifndef HAVE_MADWIFI
 
   if (nvram_match ("mac_clone_enable", "1") &&
