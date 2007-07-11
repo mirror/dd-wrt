@@ -1122,10 +1122,10 @@ save_services_port (webs_t wp)
 {
   int val = validate_services_port (wp);
   char *value = websGetVar (wp, "action", "");
+  addAction ("index");
   if (!strcmp (value, "ApplyTake"))
     {
       nvram_commit ();
-      addAction ("index");
       service_restart ();
     }
   return val;

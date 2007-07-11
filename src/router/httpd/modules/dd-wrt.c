@@ -2343,10 +2343,10 @@ save_networking (webs_t wp)
 #endif
 
   char *value = websGetVar (wp, "action", "");
+  addAction ("index");
   if (!strcmp (value, "ApplyTake"))
     {
       nvram_commit ();
-      addAction("index");
       service_restart ();
     }
 }
@@ -3979,11 +3979,11 @@ wireless_save (webs_t wp)
   //nvram_commit ();
 #endif
   char *value = websGetVar (wp, "action", "");
+  addAction ("wireless");
   if (!strcmp (value, "ApplyTake"))
     {
       nvram_commit ();
-      addAction("wireless");
-      service_restart();
+      service_restart ();
     }
   return 0;
 }
@@ -6358,7 +6358,7 @@ char temp[128] = "";
 		
 		i++;
 		}	
-*/	
+*/
   char services[8192] = "", svcs_var[32] = "filter_services0";
   int index = 1;
 
@@ -6794,11 +6794,11 @@ qos_save (webs_t wp)
   nvram_set ("svqos_port4bw", websGetVar (wp, "svqos_port4bw", NULL));
 
   char *value = websGetVar (wp, "action", "");
+  addAction ("qos");
   if (!strcmp (value, "ApplyTake"))
     {
       nvram_commit ();
-      addAction("qos");
-      service_restart();
+      service_restart ();
     }
 
 
