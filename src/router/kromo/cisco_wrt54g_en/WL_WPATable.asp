@@ -46,6 +46,12 @@ function to_submit(F) {
 	F.save_button.value = sbutton.saving;
   apply(F);
 }
+function to_apply(F) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "save";
+	F.save_button.value = sbutton.saving;
+  applytake(F);
+}
 
 function valid_radius(F) {
 	if(F.security_mode.value == "radius" || F.security_mode.value == "wpa" || F.security_mode.value == "wpa2" || F.security_mode.value == "wpa wpa2"){

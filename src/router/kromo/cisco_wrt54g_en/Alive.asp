@@ -6,6 +6,10 @@ function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	apply(F);
 }
+function to_apply(F) {
+	F.save_button.value = sbutton.saving;
+	applytake(F);
+}
 
 function setWDS(val) {
 	setElementsActive("wds_watchdog_interval_sec", "wds_watchdog_ips", val == 1);

@@ -6,6 +6,10 @@ function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	apply(F);
 }
+function to_apply(F) {
+	F.save_button.value = sbutton.saving;
+	applytake(F);
+}
 
 function SelSpeed(F,I) {
 	if(eval("F."+I+"vlan17").checked) {
