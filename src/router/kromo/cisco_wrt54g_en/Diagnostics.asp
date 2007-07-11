@@ -17,6 +17,21 @@ function to_submit(F, I) {
 	
 	apply(F);
 }
+function to_apply(F, I) {
+	if(!valid(F, I)) return;
+	F.submit_type.value = I;
+	
+	if (I == "start") 
+		F.ping.value = sbutton.cmd;
+	else if (I == "startup")
+		F.startup.value = sbutton.saving;
+	else if (I == "firewall")
+		F.startup.value = sbutton.saving;
+	else if (I == "custom")
+		F.startup.value = sbutton.saving;
+	
+	applytake(F);
+}
 
 function valid(F,I) {
 	if(I == "start" && F.ping_ip.value == ""){
@@ -127,7 +142,7 @@ addEvent(window, "unload", function() {
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								document.write("<input class=\"button\" type=\"button\" name=\"ping\" value=\"" + sbutton.runcmd + "\" onclick=\"to_submit(this.form, 'start');\" />")
+								document.write("<input class=\"button\" type=\"button\" name=\"ping\" value=\"" + sbutton.runcmd + "\" onclick=\"to_apply(this.form, 'start');\" />")
 								document.write("<input class=\"button\" type=\"button\" name=\"startup\" value=\"" + sbutton.startup + "\" onclick=\"to_submit(this.form, 'startup');\" />")
 								document.write("<input class=\"button\" type=\"button\" name=\"firewall\" value=\"" + sbutton.firewall + "\" onclick=\"to_submit(this.form, 'firewall');\" />")
 								document.write("<input class=\"button\" type=\"button\" name=\"custom\" value=\"" + sbutton.custom + "\" onclick=\"to_submit(this.form, 'custom');\" />")

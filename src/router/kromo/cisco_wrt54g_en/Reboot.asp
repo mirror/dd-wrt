@@ -17,6 +17,13 @@ function to_submit()
 	else
 		document.location.href =  submit_button;
 }
+function to_apply()
+{
+	if(submit_button == ".asp")
+		history.go(-1);
+	else
+		document.location.href =  submit_button;
+}
 
 function message()
 {

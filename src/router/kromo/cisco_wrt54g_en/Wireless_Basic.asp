@@ -118,7 +118,7 @@ function vifs_remove_submit(F,I) {
 	F.submit();
 }
 
-function to_submit(F) {
+function submitcheck(F) {
 	if(F.wl_ssid)
 		if(F.wl_ssid.value == ""){
 			alert(errmsg.err50);
@@ -146,8 +146,20 @@ function to_submit(F) {
 	}
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
-	apply(F);
+	return true;
 }
+
+function to_submit(F)
+{
+if (submitcheck(F))
+    apply(F);
+}
+function to_apply(F)
+{
+if (submitcheck(F))
+    applytake(F);
+}
+
 
 var update;
 

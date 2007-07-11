@@ -31,6 +31,12 @@ function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	apply(F);
 }
+function to_apply(F) {
+	F.submit_type.value = "";		//avoid gozilla and force save process
+	F.change_action.value = "";
+	F.save_button.value = sbutton.saving;
+	applytake(F);
+}
 
 function setWDS(val) {
 	if (val == "0") {
