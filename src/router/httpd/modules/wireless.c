@@ -1855,7 +1855,7 @@ security_save (webs_t wp)
   if (!strcmp (value, "ApplyTake"))
     {
       nvram_commit ();
-      addAction("wireless");
+      addAction("wireless_2");
       service_restart();
     }
 }
