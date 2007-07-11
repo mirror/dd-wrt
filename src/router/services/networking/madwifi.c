@@ -1545,7 +1545,7 @@ configure_single (int count)
   char wmm[32];
   sprintf (wmm, "%s_wmm", dev);
   eval ("iwpriv", dev, "wmm", default_get (wmm, "0"));
-  eval ("iwpriv", dev, "uapsd","0");
+//  eval ("iwpriv", dev, "uapsd","0");
   eval ("iwpriv",dev,"scandisable","0");
 
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
@@ -1613,7 +1613,7 @@ configure_single (int count)
       eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
       sprintf (wmm, "%s_wmm", var);
       eval ("iwpriv", var, "wmm", default_get (wmm, "0"));
-      eval ("iwpriv", var, "uapsd", "0");
+//      eval ("iwpriv", var, "uapsd", "0");
       char isolate[32];
       sprintf (isolate, "%s_ap_isolate", var);
       if (default_match (isolate, "1", "0"))
