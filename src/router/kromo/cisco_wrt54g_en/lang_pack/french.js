@@ -163,7 +163,8 @@ share.execscript="Exécuter un script";
 share.user="User";
 share.privatekey="Clé privée";
 
-sbutton.save="Enregistrer";
+sbutton.save="OK";
+sbutton.apply="Appliquer";
 sbutton.saving="Enregistré";
 sbutton.cmd="Patientez ...";
 sbutton.cancel="Annuler";
