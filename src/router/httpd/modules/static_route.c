@@ -514,7 +514,7 @@ delete_static_route (webs_t wp)
   if (!strcmp (value, "ApplyTake"))
     {
       nvram_commit ();
-      nvram_set ("action_service", "routing");
+      addAction ("routing");
       service_restart ();
     }
   return 0;
