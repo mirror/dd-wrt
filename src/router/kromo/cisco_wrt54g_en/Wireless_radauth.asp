@@ -12,6 +12,16 @@ function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	apply(F);
 }
+function to_apply(F) {
+	if (F._radius_override.checked == false){
+	    F.radius_override.value = 0;
+	}else{
+	    F.radius_override.value = 1;
+	}
+
+	F.save_button.value = sbutton.saving;
+	applytake(F);
+}
 
 function setRad(val) {
 	show_layer_ext(document.wireless.wl_radauth, 'idradius', val == "1");

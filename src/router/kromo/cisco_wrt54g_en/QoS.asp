@@ -103,7 +103,7 @@ function mac_add_submit(F) {
 	apply(F);
 }
 
-function to_submit(F) {
+function submitcheck(F) {
 	if (F._enable_game.checked == false){
 	    F.enable_game.value = 0;
 	}else{
@@ -112,7 +112,15 @@ function to_submit(F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
-	apply(F);
+}
+
+function to_submit(F) {
+    submitcheck(F);
+    apply(F);
+}
+function to_apply(F) {
+    submitcheck(F);
+    applytake(F);
 }
 
 var update;

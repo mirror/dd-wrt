@@ -83,7 +83,7 @@ function to_reboot(F) {
 	apply(F);
 }
 
-function to_submit(F) {
+function submitcheck(F) {
 	if( F.http_passwd.value != F.http_passwdConfirm.value ) {
 		alert(errmsg.err52);
 		F.http_passwd.focus();
@@ -131,8 +131,15 @@ function to_submit(F) {
 	}
 
 	F.save_button.value = sbutton.saving;
-	apply(F);
 	return true;
+}
+function to_submit(F) {
+    if (submitcheck(F))
+    apply(F);
+}
+function to_apply(F) {
+    if (submitcheck(F))
+    applytake(F);
 }
 
 var update;

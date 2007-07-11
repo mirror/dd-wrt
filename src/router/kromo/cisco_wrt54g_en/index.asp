@@ -197,7 +197,8 @@ function SelDHCPFWD(num,F) {
 	F.submit();
 }
 
-function to_submit(F) {
+
+function submitcheck(F) {
 	if(valid_value(F)) {
 		if(F._dhcp_dnsmasq) {
 			if(F._dhcp_dnsmasq.checked == false)
@@ -230,9 +231,18 @@ function to_submit(F) {
 		F.submit_type.value = "";
 		F.change_action.value = "";
 		F.save_button.value = sbutton.saving;
-		apply(F);
 	}
 }
+
+function to_submit(F) {
+    submitcheck(F);
+    apply(F);
+}
+function to_apply(F) {
+    submitcheck(F);
+    applytake(F);
+}
+
 
 var update;
 

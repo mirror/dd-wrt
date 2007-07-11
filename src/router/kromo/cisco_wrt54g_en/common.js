@@ -1106,7 +1106,7 @@ function submitFooterButton(sub, res, reb, autoref, ref, clo) {
 	if(sub)
 		document.write("<input class=\"button\" type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form);\" />");
 	if(sub)
-		document.write("<input class=\"button\" type=\"button\" name=\"apply_button\" value=\"" + sbutton.apply + "\" onclick=\"applytake(this.form);\" />");
+		document.write("<input class=\"button\" type=\"button\" name=\"apply_button\" value=\"" + sbutton.apply + "\" onclick=\"to_apply(this.form);\" />");
 	if(res)
 		document.write("<input class=\"button\" type=\"button\" name=\"reset_button\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.reload();\" />");
 	if(reb)

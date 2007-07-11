@@ -53,7 +53,7 @@ function olsrd_checkDijkstra(F) {
 	}
 }
 
-function to_submit(F) {
+function submitcheck(F) {
 	if (F.routing_bgp_neighbor_ip != null) {
 		F.routing_bgp_neighbor_ip.value = F.routing_bgp_neighbor_ip_0.value+'.'+F.routing_bgp_neighbor_ip_1.value+'.'+F.routing_bgp_neighbor_ip_2.value+'.'+F.routing_bgp_neighbor_ip_3.value;
 	}
@@ -63,7 +63,15 @@ function to_submit(F) {
 	F.change_action.value = "";
 	F.submit_type.value = "";
 	F.save_button.value = sbutton.saving;
-	apply(F);
+}
+
+function to_submit(F) {
+    submitcheck(F);
+    apply(F);
+}
+function to_apply(F) {
+    submitcheck(F);
+    applytake(F);
 }
 
 var update;

@@ -20,6 +20,12 @@ function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	apply(F);
 }
+function to_apply(F) {
+	F.submit_type.value = "";
+	F.change_action.value = "";
+	F.save_button.value = sbutton.saving;
+	applytake(F);
+}
 
 var update;
 

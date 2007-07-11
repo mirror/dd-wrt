@@ -170,6 +170,12 @@ function to_submit(F) {
 	F.radio0_on_time.value = computeWlTimer();
 	apply(F);
 }
+function to_apply(F) {
+	F.wl_nmode_protection.value = F.wl_gmode_protection.value;
+	F.save_button.value = sbutton.saving;
+	F.radio0_on_time.value = computeWlTimer();
+	applytake(F);
+}
 
 function setWMM(val) {
 	setElementsActive("wl_wme_no_ack", "_wl_wme_sta_vo5", val == "on");

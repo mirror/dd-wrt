@@ -171,7 +171,7 @@ function onclick_Add(){
 	services_length++;
 }
 
-function to_submit(F) {
+function submitcheck(F) {
  	var i=0;
 	var index=0;
 	var svclen=0;
@@ -200,7 +200,19 @@ function to_submit(F) {
  		eval("F.services_array"+index+".value += svc");
  	}
 	F.change_action.value="gozila_cgi";
-	apply(F);
+	
+}
+
+function to_submit(F)
+{
+submitcheck(F);
+apply(F);
+}
+
+function to_apply(F)
+{
+submitcheck(F);
+applytake(F);
 }
 
 function onchange_Prot(I) {

@@ -139,6 +139,10 @@ function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	apply(F);
 }
+function to_apply(F) {
+	F.save_button.value = sbutton.saving;
+	applytake(F);
+}
 
 function valid(F) {
 	if(F.manual_wol_mac.value == ""){
