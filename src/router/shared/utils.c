@@ -2116,10 +2116,23 @@ get_wl_assoc_mac (int *c)
 
   wlmac = NULL;
   count = *c = 0;
+  
+#ifdef HAVE_MSSID
+  char assoccmd[4][32] = {"wl assoclist", "wl -i wl0.1 assoclist", "wl -i wl0.2 assoclist", "wl -i wl0.3 assoclist"};
+  int ifcnt = 4;
+#else
+  char assoccmd[1][16] = {"wl assoclist"};
+  int ifcnt = 1;
+#endif
+  int i;
+  int gotit = 0;
 //  fprintf(stderr,"assoclist\n");
 
-  if ((fp = popen ("wl assoclist", "r")))
+  for (i = 0; i < ifcnt; i++)
+  {
+  if ((fp = popen (assoccmd[i], "r")))
     {
+	  gotit = 1;
       while (fgets (line, sizeof (line), fp) != NULL)
 	{
 	  strcpy (list[0], "");
@@ -2130,12 +2143,7 @@ get_wl_assoc_mac (int *c)
 	  if (strcmp (list[0], "assoclist"))
 	    continue;
 
-//not needed            if(count > 0)    // realloc(NULL,n) == malloc(n) -- tofu6
 	  wlmac = realloc (wlmac, sizeof (struct wl_assoc_mac) * (count + 1));
-
-//        if (count > 0)
-//          wlmac =
-//            realloc (wlmac, sizeof (struct wl_assoc_mac) * (count + 1));
 
 	  memset (&wlmac[count], 0, sizeof (struct wl_assoc_mac));
 	  strncpy (wlmac[count].mac, list[1], sizeof (wlmac[0].mac));
@@ -2143,12 +2151,17 @@ get_wl_assoc_mac (int *c)
 	}
 
       pclose (fp);
+	} 
+  }
+  
+  if (gotit)
+  { 
       //cprintf("Count of wl assoclist mac is %d\n", count);
       *c = count;
       return wlmac;
-    }
-
-  return NULL;
+  }
+  else
+      return NULL;
 }
 
 struct mtu_lists mtu_list[] = {
