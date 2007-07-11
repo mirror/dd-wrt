@@ -951,6 +951,7 @@ single_delete_policy (webs_t wp)
   D ("single delete policy");
   ret = delete_policy (wp, atoi (id));
   D ("okay");
+  addAction ("filters");
   return ret;
 }
 
@@ -969,6 +970,7 @@ summary_delete_policy (webs_t wp)
 	ret += delete_policy (wp, i);
     }
   D ("okay");
+  addAction ("filters");
   return ret;
 }
 
@@ -1026,6 +1028,16 @@ save_policy (webs_t wp)
 	    !strcmp (f_status2, "deny") ? 1 : 0);
 
   nvram_set (filter_buf, buf);
+
+  addAction ("filters");
+  char *value = websGetVar (wp, "action", "");
+  if (!strcmp (value, "ApplyTake"))
+    {
+      nvram_commit ();
+      service_restart ();
+    }
+
+
   D ("okay");
   return 0;
 }
