@@ -216,7 +216,6 @@ internal_getRouterBrand ()
   data->reg_num = 0x1;
   ioctl (s, SIOCGMIIREG, &iwr);
   close(s);
-  fprintf(stderr,"returns %X\n",data->val_out);
   if (data->val_out&0xffff!=0xffff) // marvell phy
     {
     setRouter ("Fonera+");
