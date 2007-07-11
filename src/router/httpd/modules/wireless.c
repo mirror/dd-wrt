@@ -88,7 +88,7 @@ int generate_key;
 extern void gen_key (char *genstr, int weptype);
 int nv_count;
 extern struct variable variables[];
-																																																																																																																									    /* channel info structure *///from 11.9
+																																																																																																																													/* channel info structure *///from 11.9
 typedef struct
 {
   uint chan;			/* channel number */
@@ -1855,7 +1855,8 @@ security_save (webs_t wp)
   if (!strcmp (value, "ApplyTake"))
     {
       nvram_commit ();
-      sys_restart ();
+      addAction("wireless");
+      service_restart();
     }
 }
 
