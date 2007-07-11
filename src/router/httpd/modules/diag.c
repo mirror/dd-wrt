@@ -31,6 +31,7 @@ diag_ping_start (webs_t wp)
   //snprintf(cmd, sizeof(cmd), "ping -c %s %s &", times, ip);
   //cprintf("cmd=[%s]\n",cmd);
   //system(cmd);
+  addAction ("start_ping");
 
   return ret;
 }
