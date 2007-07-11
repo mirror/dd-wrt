@@ -1125,7 +1125,7 @@ save_services_port (webs_t wp)
   if (!strcmp (value, "ApplyTake"))
     {
       nvram_commit ();
-      nvram_set ("action_service", "index");
+      addAction ("index");
       service_restart ();
     }
   return val;

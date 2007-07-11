@@ -127,6 +127,9 @@ enum
   START_FROM = 10,
 };
 
+
+
+extern void addAction(char *action);
 /* SEG addition for dynamic nvram layout */
 extern void Initnvramtab (void);
 extern void prefix_ip_get (char *name, char *buf, int type);
