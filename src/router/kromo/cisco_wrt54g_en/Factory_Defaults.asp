@@ -12,6 +12,16 @@ function to_submit(F) {
 		return true;
 	}
 }
+function to_apply(F) {
+	if( F.FactoryDefaults[0].checked == 1 ) {
+		if(!confirm(factdef.mess1)) {
+			return false;
+		}
+		F.save_button.value = sbutton.saving;
+		applytake(F);
+		return true;
+	}
+}
 
 var update;
 

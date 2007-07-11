@@ -34,6 +34,16 @@ function to_submit(F) {
   apply(F);
   return true;
 }
+function to_apply(F) {
+  if(F.wl_ssid.value == ""){
+	alert(errmsg.err50);
+    F.wl_ssid.focus();
+    return false;
+  }
+  F.save_button.value = sbutton.saving;
+  applytake(F);
+  return true;
+}
 
 addEvent(window, "load", function() {
 	wl_enable_disable(document.wireless,'<% nvram_else_match("wl_gmode","-1","0","1"); %>');

@@ -79,6 +79,22 @@ function to_submit(F) {
 	apply(F);
 	return true;
 }
+function to_apply(F) {
+	if(!verify_unique_static_ip(F)) {
+		return false;
+	}
+	
+	if(F.rstats_enable) {
+		F.rstats_path.value = (F.rstats_select.value == '*user') ? F.u_path.value : F.rstats_select.value;
+	}
+	
+	F.change_action.value = "";
+	F.submit_type.value = "";
+	F.save_button.value = sbutton.saving;
+	checked(F);
+	applytake(F);
+	return true;
+}
 
 var update;
 

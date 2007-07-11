@@ -9,6 +9,13 @@ function to_submit(F)
 		F.submit();
 	}
 }
+function to_apply(F)
+{
+	if(valid_value(F)){
+		F.submit_type.value="add_mac";
+		F.submit();
+	}
+}
 
 function valid_value(F)
 {

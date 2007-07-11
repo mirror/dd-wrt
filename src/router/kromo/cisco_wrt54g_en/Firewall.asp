@@ -2,7 +2,7 @@
 		<script type="text/javascript">
 		//<![CDATA[
 
-function to_submit(F) {
+function submitcheck(F) {
 	if(F._block_proxy){
 		F.block_proxy.value = F._block_proxy.checked ? 1 : 0;
 	}
@@ -30,7 +30,18 @@ function to_submit(F) {
 	}
 
 	F.save_button.value = sbutton.saving;
-	apply(F);
+	
+}
+
+function to_submit(F)
+{
+    submitcheck(F);
+    apply(F);
+}
+function to_apply(F)
+{
+    submitcheck(F);
+    applytake(F);
 }
 
 function setFirewall(val) {
