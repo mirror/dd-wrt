@@ -3454,6 +3454,46 @@ do_shell_script (char *url, webs_t stream)
 }
 
 
+void
+addAction (char *action)
+{
+  char *actionstack = "";
+  int freeit = 0;
+  int inside = 0;
+  char *next;
+  char service[80];
+  char *services = nvram_safe_get ("action_service");
+  foreach (service, services, next)
+  {
+    if (!strcmp (service, action))
+      {
+	inside = 1;
+	break;
+      }
+  }
+  if (nvram_get ("action_service") != NULL && !inside)
+    {
+      actionstack =
+	malloc (strlen (nvram_safe_get ("action_service")) +
+		strlen (action) + 2);
+      sprintf (actionstack, "%s %s", action,
+	       nvram_safe_get ("action_service"));
+      freeit = 0;
+    }
+  else
+    {
+      if (!inside)
+	actionstack = action;
+      else
+	actionstack = nvram_safe_get ("action_service");
+    }
+  nvram_set ("action_service", actionstack);
+  if (freeit)
+    free (actionstack);
+
+
+}
+
 static int
 apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	   char_t * url, char_t * path, char_t * query)
@@ -3531,38 +3571,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	  if ((act->action == SYS_RESTART)
 	      || (act->action == SERVICE_RESTART))
 	    {
-	      char *actionstack = "";
-	      int freeit = 0;
-	      int inside = 0;
-	      char *next;
-	      char service[80];
-	      char *services = nvram_safe_get ("action_service");
-	      foreach (service, services, next)
-	      {
-		if (!strcmp (service, act->service))
-		  {
-		    inside = 1;
-		    break;
-		  }
-	      }
-	      if (nvram_get ("action_service") != NULL && !inside)
-		{
-		  actionstack =
-		    malloc (strlen (nvram_safe_get ("action_service")) +
-			    strlen (act->service) + 2);
-		  sprintf (actionstack, "%s %s",act->service, nvram_safe_get ("action_service"));
-		  freeit = 0;
-		}
-	      else
-		{
-		  if (!inside)
-		    actionstack = act->service;
-		  else
-		    actionstack = nvram_safe_get ("action_service");
-		}
-	      nvram_set ("action_service", actionstack);
-	      if (freeit)
-		free (actionstack);
+	      addAction (act->service);
 	    }
 	  sleep_time = act->sleep_time;
 	  action = act->action;
@@ -3649,34 +3658,34 @@ footer:
   if (action != REBOOT)
     {
 //      if (!error_value)
-	{
-	  if (my_next_page[0] != '\0')
-	    sprintf (path, "%s", my_next_page);
-	  else
-	    {
-	      next_page = websGetVar (wp, "next_page", NULL);
-	      if (next_page)
-		sprintf (path, "%s", next_page);
-	      else
-		sprintf (path, "%s.asp", submit_button);
-	    }
+      {
+	if (my_next_page[0] != '\0')
+	  sprintf (path, "%s", my_next_page);
+	else
+	  {
+	    next_page = websGetVar (wp, "next_page", NULL);
+	    if (next_page)
+	      sprintf (path, "%s", next_page);
+	    else
+	      sprintf (path, "%s.asp", submit_button);
+	  }
 
-	  cprintf ("refresh to %s\n", path);
-	  if (!strncmp (path, "WL_FilterTable", strlen ("WL_FilterTable")))
-	    do_filtertable (path, wp);	//refresh
+	cprintf ("refresh to %s\n", path);
+	if (!strncmp (path, "WL_FilterTable", strlen ("WL_FilterTable")))
+	  do_filtertable (path, wp);	//refresh
 #ifdef HAVE_MADWIFI
-	  else if (!strncmp (path, "Wireless_WDS", strlen ("Wireless_WDS")))
-	    do_wds (path, wp);	//refresh
+	else if (!strncmp (path, "Wireless_WDS", strlen ("Wireless_WDS")))
+	  do_wds (path, wp);	//refresh
 #endif
-	  else
-	    do_ej (path, wp);	//refresh
-	  websDone (wp, 200);
-	}
+	else
+	  do_ej (path, wp);	//refresh
+	websDone (wp, 200);
+      }
 //      else
-//	{
-//	  do_ej ("Fail.asp", wp);
-//	  websDone (wp, 200);
-//	}
+//      {
+//        do_ej ("Fail.asp", wp);
+//        websDone (wp, 200);
+//      }
     }
   else
     {

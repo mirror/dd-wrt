@@ -2346,7 +2346,7 @@ save_networking (webs_t wp)
   if (!strcmp (value, "ApplyTake"))
     {
       nvram_commit ();
-      nvram_set ("action_service", "index");
+      addAction("index");
       service_restart ();
     }
 }
@@ -2505,11 +2505,11 @@ ej_show_bondings (webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_XSCALE
   memset (buffer, 0, 256);
   getIfList (buffer, "ixp");
-  sprintf (bufferif, "%s %s", bufferif,buffer);
+  sprintf (bufferif, "%s %s", bufferif, buffer);
 #endif
   memset (buffer, 0, 256);
   getIfList (buffer, "br");
-  sprintf (bufferif, "%s %s", bufferif,buffer);
+  sprintf (bufferif, "%s %s", bufferif, buffer);
 #ifdef HAVE_MADWIFI
   int c = getifcount ("wifi");
   for (i = 0; i < c; i++)
@@ -3982,7 +3982,8 @@ wireless_save (webs_t wp)
   if (!strcmp (value, "ApplyTake"))
     {
       nvram_commit ();
-      sys_restart ();
+      addAction("wireless");
+      service_restart();
     }
   return 0;
 }
@@ -6796,7 +6797,8 @@ qos_save (webs_t wp)
   if (!strcmp (value, "ApplyTake"))
     {
       nvram_commit ();
-      sys_restart ();
+      addAction("qos");
+      service_restart();
     }
 
 
