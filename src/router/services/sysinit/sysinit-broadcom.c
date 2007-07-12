@@ -490,7 +490,7 @@ start_sysinit (void)
       char module[80], *modules, *next;
       //modules="wl switch-core";
 
-      if ((check_vlan_support () && check_hw_type () != BCM5325E_CHIP)
+      if (check_vlan_support () && check_hw_type () != BCM5325E_CHIP)
 	{
 	  switch (brand)
 	    {
