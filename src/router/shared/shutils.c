@@ -112,10 +112,10 @@ waitfor (int fd, int timeout)
 int
 system2 (char *command)
 {
-  return system (command);
 #ifndef HAVE_SILENCE
  fprintf(stderr,"system: %s\n",command);
 #endif
+  return system (command);
 }
 
 int

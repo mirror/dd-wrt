@@ -554,7 +554,7 @@ wlconf_up (char *name)
       uint32 shm;
 
       val = atoi (v);
-      if (v == 0)
+      if (val == 0)
 	{
 #ifdef HAVE_MSSID
 #ifdef HAVE_ACK
@@ -562,7 +562,15 @@ wlconf_up (char *name)
 #endif
 	  // wlc_noack (0);
 #else
-	  eval ("/etc/txackset.sh", "0");	// disable ack timing
+	  FILE *test=fopen("/tmp/ackdisabled","rb");
+	  if (test==NULL)
+	    {
+	    eval ("/etc/txackset.sh", "0");	// disable ack timing
+	    FILE *test=fopen("/tmp/ackdisabled","wb");
+	    fprintf(test,"yes");
+	    }
+	    fclose(test);
+	 
 #endif
 	  return 0;
 	}
@@ -574,7 +582,13 @@ wlconf_up (char *name)
 #endif
 	  //  wlc_noack (1);
 #else
-	  eval ("/etc/txackset.sh", "1");	// enable ack timing
+	  FILE *test=fopen("/tmp/ackdisabled","rb");
+	  if (test!=NULL)
+	    {
+	    fclose(test);
+	    eval ("/etc/txackset.sh", "1");	// enable ack timing (not required, enable per default)
+	    eval ("rm","-f","/tmp/ackdisabled");
+	    }
 #endif
 	}
 
