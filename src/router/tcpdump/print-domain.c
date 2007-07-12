@@ -21,7 +21,7 @@
 
 #ifndef lint
 static const char rcsid[] _U_ =
-    "@(#) $Header: /tcpdump/master/tcpdump/print-domain.c,v 1.86.2.3 2004/03/28 20:54:00 fenner Exp $ (LBL)";
+    "@(#) $Header: /tcpdump/master/tcpdump/print-domain.c,v 1.89.2.3 2006/04/07 08:58:43 guy Exp $ (LBL)";
 #endif
 
 #ifdef HAVE_CONFIG_H
@@ -131,9 +131,10 @@ labellen(const u_char *cp)
 	i = *cp;
 	if ((i & INDIR_MASK) == EDNS0_MASK) {
 		int bitlen, elt;
-
-		if ((elt = (i & ~INDIR_MASK)) != EDNS0_ELT_BITLABEL)
+		if ((elt = (i & ~INDIR_MASK)) != EDNS0_ELT_BITLABEL) {
+			printf("<ELT %d>", elt);
 			return(-1);
+		}
 		if (!TTEST2(*(cp + 1), 1))
 			return(-1);
 		if ((bitlen = *(cp + 1)) == 0)
@@ -277,9 +278,20 @@ struct tok ns_type2str[] = {
 	{ T_SRV,	"SRV" },		/* RFC 2782 */
 	{ T_ATMA,	"ATMA" },		/* ATM Forum */
 	{ T_NAPTR,	"NAPTR" },		/* RFC 2168, RFC 2915 */
+	{ T_KX,		"KX" },			/* RFC 2230 */
+	{ T_CERT,	"CERT" },		/* RFC 2538 */
 	{ T_A6,		"A6" },			/* RFC 2874 */
 	{ T_DNAME,	"DNAME" },		/* RFC 2672 */
+	{ T_SINK, 	"SINK" },
 	{ T_OPT,	"OPT" },		/* RFC 2671 */
+	{ T_APL, 	"APL" },		/* RFC 3123 */
+	{ T_DS,		"DS" },			/* RFC 4034 */
+	{ T_SSHFP,	"SSHFP" },		/* RFC 4255 */
+	{ T_IPSECKEY,	"IPSECKEY" },		/* RFC 4025 */
+	{ T_RRSIG, 	"RRSIG" },		/* RFC 4034 */
+	{ T_NSEC,	"NSEC" },		/* RFC 4034 */
+	{ T_DNSKEY,	"DNSKEY" },		/* RFC 4034 */
+	{ T_SPF,	"SPF" },		/* RFC-schlitt-spf-classic-02.txt */
 	{ T_UINFO,	"UINFO" },
 	{ T_UID,	"UID" },
 	{ T_GID,	"GID" },
@@ -335,7 +347,7 @@ ns_qprint(register const u_char *cp, register const u_char *bp, int is_mdns)
 static const u_char *
 ns_rprint(register const u_char *cp, register const u_char *bp, int is_mdns)
 {
-	register u_int class;
+	register u_int class, opt_flags = 0;
 	register u_short typ, len;
 	register const u_char *rp;
 
@@ -360,7 +372,12 @@ ns_rprint(register const u_char *cp, register const u_char *bp, int is_mdns)
 		printf(" %s", tok2str(ns_class2str, "(Class %d)", class));
 
 	/* ignore ttl */
-	cp += 4;
+	cp += 2;
+	/* if T_OPT, save opt_flags */
+	if (typ == T_OPT)
+		opt_flags = EXTRACT_16BITS(cp);
+	/* ignore rest of ttl */
+	cp += 2;
 
 	len = EXTRACT_16BITS(cp);
 	cp += 2;
@@ -477,6 +494,8 @@ ns_rprint(register const u_char *cp, register const u_char *bp, int is_mdns)
 
 	case T_OPT:
 		printf(" UDPsize=%u", class);
+		if (opt_flags & 0x8000)
+			printf(" OK");
 		break;
 
 	case T_UNSPECA:		/* One long string */

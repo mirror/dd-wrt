@@ -17,7 +17,7 @@
 #  WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
 #  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#) $Header: /tcpdump/master/tcpdump/Makefile.in,v 1.276.2.4 2004/03/28 21:25:02 fenner Exp $ (LBL)
+# @(#) $Header: /tcpdump/master/tcpdump/Makefile.in,v 1.293.2.3 2005/09/20 06:05:36 guy Exp $ (LBL)
 
 #
 # Various configurable paths (remember to edit Makefile.in, not Makefile)
@@ -39,11 +39,11 @@ srcdir = .
 # You shouldn't need to edit anything below here.
 #
 
-#CC = /opt/openwrt401/bin/mipsel-linux-uclibc-gcc
+CC = armeb-linux-uclibc-gcc
 PROG = tcpdump
-CCOPT = $(COPTS) -DNEED_PRINTF -I../libpcap_noring
+CCOPT = -O2 -I../libpcap_noring -Os -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb -DNEED_PRINTF
 INCLS = -I.  -I$(srcdir)/missing
-DEFS = -DHAVE_CONFIG_H  -D_U_="__attribute__((unused))"
+DEFS = -DHAVE_CONFIG_H -I../libpcap_noring -Os -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb -DNEED_PRINTF -I$(srcdir)/missing  -D_U_="__attribute__((unused))"
 
 # Standard CFLAGS
 CFLAGS = $(CCOPT) $(DEFS) $(INCLS)
@@ -65,25 +65,28 @@ INSTALL_DATA = ${INSTALL} -m 644
 	@rm -f $@
 	$(CC) $(CFLAGS) -c $(srcdir)/$*.c
 
-CSRC =	addrtoname.c gmpls.c gmt2local.c machdep.c oui.c parsenfsfh.c \
+CSRC =	addrtoname.c cpack.c gmpls.c oui.c gmt2local.c ipproto.c \
+        nlpid.c l2vpn.c machdep.c parsenfsfh.c \
 	print-802_11.c print-ap1394.c print-ah.c print-arcnet.c \
 	print-aodv.c print-arp.c print-ascii.c print-atalk.c print-atm.c \
 	print-beep.c print-bfd.c print-bgp.c print-bootp.c print-cdp.c \
-	print-chdlc.c print-cip.c print-cnfp.c print-decnet.c \
+	print-chdlc.c print-cip.c print-cnfp.c print-dccp.c print-decnet.c \
 	print-domain.c print-dvmrp.c print-enc.c print-egp.c \
+	print-eap.c print-eigrp.c\
 	print-esp.c print-ether.c print-fddi.c print-fr.c \
 	print-gre.c print-hsrp.c print-icmp.c print-igmp.c \
 	print-igrp.c print-ip.c print-ipcomp.c print-ipfc.c \
-	print-ipx.c print-isakmp.c print-isoclns.c print-krb.c \
+	print-ipx.c print-isakmp.c print-isoclns.c print-juniper.c print-krb.c \
 	print-l2tp.c print-lane.c print-ldp.c print-llc.c \
+        print-lmp.c print-lspping.c \
 	print-lwres.c print-mobile.c print-mpls.c print-msdp.c \
 	print-nfs.c print-ntp.c print-null.c print-ospf.c \
-	print-pflog.c print-pim.c print-ppp.c print-pppoe.c \
+	print-pflog.c print-pgm.c print-pim.c print-ppp.c print-pppoe.c \
 	print-pptp.c print-radius.c print-raw.c print-rip.c \
-	print-rsvp.c print-rx.c print-sctp.c print-sl.c print-sll.c \
-	print-snmp.c print-stp.c print-sunatm.c print-sunrpc.c \
-	print-tcp.c print-telnet.c print-tftp.c print-timed.c \
-	print-token.c print-udp.c print-vjc.c print-vrrp.c \
+	print-rsvp.c print-rx.c print-sctp.c print-sip.c print-sl.c print-sll.c \
+	print-slow.c print-snmp.c print-stp.c print-sunatm.c print-sunrpc.c \
+	print-symantec.c print-syslog.c print-tcp.c print-telnet.c print-tftp.c \
+	print-timed.c print-token.c print-udp.c print-vjc.c print-vrrp.c \
 	print-wb.c print-zephyr.c setsignal.c tcpdump.c util.c
 
 LOCALSRC = print-smb.c smbutil.c 
@@ -95,7 +98,7 @@ SRC =	$(CSRC) $(GENSRC) $(LOCALSRC)
 # We would like to say "OBJ = $(SRC:.c=.o)" but Ultrix's make cannot
 # hack the extra indirection
 OBJ =	$(CSRC:.c=.o) $(GENSRC:.c=.o) $(LOCALSRC:.c=.o) $(LIBOBJS)
-HDR =   addrtoname.h appletalk.h bootp.h decnet.h \
+HDR =   addrtoname.h appletalk.h bootp.h cpack.h dccp.h decnet.h \
 	ethertype.h extract.h fddi.h gmt2local.h igrp.h interface.h \
 	ipx.h llc.h machdep.h mib.h nfsfh.h nfsv2.h ntp.h ospf.h \
 	setsignal.h \
