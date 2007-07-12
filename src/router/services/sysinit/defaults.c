@@ -502,8 +502,14 @@ struct nvram_tuple srouter_defaults[] = {
   {"ath0_ssid", "maksat", 0},	/* Service set ID (network name) */
 #else
   {"ath_regulatory", "1", 0},
+#ifdef HAVE_BUFFALO
+  {"wl0_ssid", "BUFFALO", 0},	/* Service set ID (network name) */
+  {"ath0_ssid", "BUFFALO", 0},	/* Service set ID (network name) */
+#else
   {"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
   {"ath0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
+#endif
+
 #endif
   {"ath0.1_ssid", "", 0},	/* Service set ID (network name) */
   {"ath0.2_ssid", "", 0},	/* Service set ID (network name) */
@@ -521,8 +527,13 @@ struct nvram_tuple srouter_defaults[] = {
   {"ath0.2_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
   {"ath0.3_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
 #else
+#ifdef HAVE_BUFFALO
+  {"wl_ssid", "BUFFALO", 0},	/* Service set ID (network name) */
+  {"wl0_ssid", "BUFFALO", 0},	/* Service set ID (network name) */
+#else
   {"wl_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
   {"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
+#endif
   {"wl0.1_ssid", "", 0},	/* Service set ID (network name) */
   {"wl0.2_ssid", "", 0},	/* Service set ID (network name) */
   {"wl0.3_ssid", "", 0},	/* Service set ID (network name) */
@@ -540,7 +551,11 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl0.3_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
 #endif
 #else
+#ifdef HAVE_BUFFALO
+  {"wl_ssid", "BUFFALO", 0},	/* Service set ID (network name) */
+#else
   {"wl_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
+#endif
 #endif
 
 

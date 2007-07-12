@@ -508,10 +508,13 @@ setACK (void)
   char *name = get_wdev ();
   if ((v = nvram_get ("wl0_distance")))
     {
+      
       rw_reg_t reg;
       uint32 shm;
 
       int val = atoi (v);
+      if (val!=0)
+      {
       val = 9 + (val / 150) + ((val % 150) ? 1 : 0);
 
       shm = 0x10;
@@ -522,6 +525,7 @@ setACK (void)
       reg.val = val + 510;
       reg.size = 2;
       WL_IOCTL (name, 102, &reg, sizeof (reg));
+      }
     }
 
 }
