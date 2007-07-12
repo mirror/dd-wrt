@@ -1,5 +1,5 @@
 ncurses:
-	cd ncurses && ./configure --host=$(ARCH)-linux-uclibc --with-shared CFLAGS="$(COPTS)" \
+	cd ncurses && ./configure --host=$(ARCH)-linux-uclibc --with-shared CFLAGS="$(COPTS) -DNEED_PRINTF" \
 		--enable-echo \
 		--enable-const \
 		--enable-overwrite \

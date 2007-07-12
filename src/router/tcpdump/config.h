@@ -21,7 +21,6 @@
 /* define if your struct __res_state has the nsort member */
 /* #undef HAVE_NEW_RES_STATE */
 
-
 /*
  * define if struct ether_header.ether_dhost is a struct with ether_addr_octet
  */
@@ -87,6 +86,12 @@
 /* define if libpcap has pcap_datalink_val_to_description() */
 #define HAVE_PCAP_DATALINK_VAL_TO_DESCRIPTION 1
 
+/* define if libpcap has pcap_dump_ftell() */
+#define HAVE_PCAP_DUMP_FTELL 1
+
+/* define if you have getrpcbynumber() */
+#define HAVE_GETRPCBYNUMBER 1
+
 /* define if unaligned memory accesses fail */
 #define LBL_ALIGN 1
 
@@ -102,14 +107,11 @@
 /* AIX hack. */
 /* #undef _SUN */
 
-/* Workaround for missing sized types */
-/* XXX this should move to the more standard uint*_t */
-/* #undef int8_t */
-/* #undef int16_t */
-/* #undef int32_t */
-/* #undef u_int16_t */
-/* #undef u_int32_t */
-/* #undef u_int8_t */
+/* Workaround for missing 64-bit formats */
+/* #undef PRId64 */
+/* #undef PRIo64 */
+/* #undef PRIx64 */
+/* #undef PRIu64 */
 
 /* Whether or not to include the possibly-buggy SMB printer */
 #define TCPDUMP_DO_SMB 1
@@ -128,8 +130,21 @@
 /* Define if you have a dnet_htoa declaration in <netdnet/dnetdb.h>.  */
 /* #undef HAVE_NETDNET_DNETDB_H_DNET_HTOA */
 
+/* define if should drop privileges by default */
+/* #undef WITH_USER */
+
+/* define if should chroot when dropping privileges */
+/* #undef WITH_CHROOT */
+
+/* Define to 1 if you have the `alarm' function. */
+#define HAVE_ALARM 1
+
 /* Define to 1 if you have the `bpf_dump' function. */
 #define HAVE_BPF_DUMP 1
+
+/* Define to 1 if you have the declaration of `ether_ntohost', and to 0 if you
+   don't. */
+/* #undef HAVE_DECL_ETHER_NTOHOST */
 
 /* Define to 1 if you have the `ether_ntohost' function. */
 /* #undef HAVE_ETHER_NTOHOST */
@@ -162,7 +177,7 @@
 /* #undef HAVE_NETDNET_DNETDB_H */
 
 /* Define to 1 if you have the <netinet/ether.h> header file. */
-#define HAVE_NETINET_ETHER_H 1
+/* #undef HAVE_NETINET_ETHER_H */
 
 /* Define to 1 if you have the <netinet/if_ether.h> header file. */
 #define HAVE_NETINET_IF_ETHER_H 1
@@ -236,6 +251,12 @@
 /* Define to 1 if you have the `strsep' function. */
 #define HAVE_STRSEP 1
 
+/* Define to 1 if the system has the type `struct ether_addr'. */
+/* #undef HAVE_STRUCT_ETHER_ADDR */
+
+/* Define to 1 if you have the <sys/bitypes.h> header file. */
+#define HAVE_SYS_BITYPES_H 1
+
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #define HAVE_SYS_STAT_H 1
 
@@ -253,6 +274,12 @@
 
 /* define if your compiler has __attribute__ */
 #define HAVE___ATTRIBUTE__ 1
+
+/* Define to 1 if netinet/ether.h declares `ether_ntohost' */
+/* #undef NETINET_ETHER_H_DECLARES_ETHER_NTOHOST */
+
+/* Define to 1 if netinet/if_ether.h declares `ether_ntohost' */
+/* #undef NETINET_IF_ETHER_H_DECLARES_ETHER_NTOHOST */
 
 /* Define to the address where bug reports for this package should be sent. */
 #define PACKAGE_BUGREPORT ""
@@ -281,6 +308,9 @@
 /* The size of a `long', as computed by sizeof. */
 #define SIZEOF_LONG 4
 
+/* The size of a `long long', as computed by sizeof. */
+#define SIZEOF_LONG_LONG 8
+
 /* The size of a `short', as computed by sizeof. */
 #define SIZEOF_SHORT 2
 
@@ -292,3 +322,27 @@
 
 /* Define as token for inline if inlining supported */
 #define inline inline
+
+/* Define to `short' if int16_t not defined. */
+/* #undef int16_t */
+
+/* Define to `int' if int32_t not defined. */
+/* #undef int32_t */
+
+/* Define to `long long' if int64_t not defined. */
+/* #undef int64_t */
+
+/* Define to `signed char' if int8_t not defined. */
+/* #undef int8_t */
+
+/* Define to `unsigned short' if u_int16_t not defined. */
+/* #undef u_int16_t */
+
+/* Define to `unsigned int' if u_int32_t not defined. */
+/* #undef u_int32_t */
+
+/* Define to `unsigned long long' if u_int64_t not defined. */
+/* #undef u_int64_t */
+
+/* Define to `unsigned char' if u_int8_t not defined. */
+/* #undef u_int8_t */

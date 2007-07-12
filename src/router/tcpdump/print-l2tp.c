@@ -23,7 +23,7 @@
 
 #ifndef lint
 static const char rcsid[] _U_ =
-    "@(#) $Header: /tcpdump/master/tcpdump/print-l2tp.c,v 1.14.2.3 2003/12/26 23:21:42 guy Exp $";
+    "@(#) $Header: /tcpdump/master/tcpdump/print-l2tp.c,v 1.17.2.3 2006/06/23 02:07:27 hannes Exp $";
 #endif
 
 #ifdef HAVE_CONFIG_H
@@ -39,14 +39,6 @@ static const char rcsid[] _U_ =
 #include "extract.h"
 
 static char tstr[] = " [|l2tp]";
-
-#ifndef TRUE
-#define TRUE 1
-#endif
-
-#ifndef FALSE
-#define FALSE 0
-#endif
 
 #define	L2TP_MSGTYPE_SCCRQ	1  /* Start-Control-Connection-Request */
 #define	L2TP_MSGTYPE_SCCRP	2  /* Start-Control-Connection-Reply */
@@ -617,10 +609,10 @@ l2tp_print(const u_char *dat, u_int length)
 	const u_int16_t *ptr = (u_int16_t *)dat;
 	u_int cnt = 0;			/* total octets consumed */
 	u_int16_t pad;
-	int flag_t, flag_l, flag_s, flag_o, flag_p;
+	int flag_t, flag_l, flag_s, flag_o;
 	u_int16_t l2tp_len;
 
-	flag_t = flag_l = flag_s = flag_o = flag_p = FALSE;
+	flag_t = flag_l = flag_s = flag_o = FALSE;
 
 	TCHECK(*ptr);	/* Flags & Version */
 	if ((EXTRACT_16BITS(ptr) & L2TP_VERSION_MASK) == L2TP_VERSION_L2TP) {
@@ -650,10 +642,8 @@ l2tp_print(const u_char *dat, u_int length)
 		flag_o = TRUE;
 		printf("O");
 	}
-	if (EXTRACT_16BITS(ptr) & L2TP_FLAG_PRIORITY) {
-		flag_p = TRUE;
+	if (EXTRACT_16BITS(ptr) & L2TP_FLAG_PRIORITY)
 		printf("P");
-	}
 	printf("]");
 
 	ptr++;
@@ -690,7 +680,22 @@ l2tp_print(const u_char *dat, u_int length)
 		cnt += (2 + pad);
 	}
 
+	if (flag_l) {
+		if (length < l2tp_len) {
+			printf(" Length %u larger than packet", l2tp_len);
+			return;
+		}
+		length = l2tp_len;
+	}
+	if (length < cnt) {
+		printf(" Length %u smaller than header length", length);
+		return;
+	}
 	if (flag_t) {
+		if (!flag_l) {
+			printf(" No length");
+			return;
+		}
 		if (length - cnt == 0) {
 			printf(" ZLB");
 		} else {

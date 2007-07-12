@@ -14,12 +14,19 @@ CFLAGS = -I ${PCAP_DIR}/wpcap/libpcap/bpf \
 	-I ${PCAP_DIR}/wpcap/libpcap/Win32/Include/net \
 	-I ../../Win32/Include -I ../../linux-Include \
 	-I ../../lbl -I../.. \
-	-DWIN32 -DHAVE_ADDRINFO_H -DHAVE_PCAP_FINDALLDEVS \
-	-DINET6 -DSIZEOF_CHAR=1 -DHAVE_SOCKADDR_STORAGE -DHAVE_PCAP_DUMP_FLUSH\
-	-DSIZEOF_SHORT=2 -DSIZEOF_INT=4 -D_U_="__attribute__((unused))" \
+	-DWIN32 -DINET6 -DHAVE_ADDRINFO=1 -DHAVE_SOCKADDR_STORAGE=1 \
+	-DHAVE_PCAP_LIST_DATALINKS=1 -DHAVE_PCAP_SET_DATALINK=1 \
+	-DHAVE_PCAP_DATALINK_NAME_TO_VAL=1 \
+	-DHAVE_PCAP_DATALINK_VAL_TO_DESCRIPTION=1 \
+	-DHAVE_PCAP_DUMP_FTELL=1 -DHAVE_BPF_DUMP=1 \
+	-DHAVE_PCAP_DUMP_FLUSH=1 -DHAVE_PCAP_FINDALLDEVS=1 \
+	-DHAVE_PCAP_IF_T=1 -DHAVE_PCAP_LIB_VERSION=1 \
+	-DSIZEOF_CHAR=1 -DSIZEOF_SHORT=2 -DSIZEOF_INT=4 \
+	-DSIZEOF_LONG_LONG=8 \
+	-D_U_="__attribute__((unused))" \
 	-mno-cygwin ${OPTFLAGS}
 LDFLAGS = 
-LIBS = -L ${PCAP_DIR}/WPCAP/LIB -lwpcap -lwsock32
+LIBS = -L ${PCAP_DIR}/WPCAP/LIB -lwpcap -lws2_32
 OBJS = \
 	../../addrtoname.o \
 	../../gmpls.o \
@@ -93,6 +100,7 @@ OBJS = \
 	../../print-ospf6.o \
 	../../print-pflog.o \
 	../../print-pim.o \
+	../../print-pgm.o \
 	../../print-ppp.o \
 	../../print-pppoe.o \
 	../../print-pptp.o \
@@ -107,6 +115,7 @@ OBJS = \
 	../../print-sl.o \
 	../../print-sll.o \
 	../../print-smb.o \
+	../../print-slow.o \
 	../../print-snmp.o \
 	../../print-stp.o \
 	../../print-sunatm.o \
@@ -126,7 +135,19 @@ OBJS = \
 	../../smbutil.o \
 	../../tcpdump.o \
 	../../util.o \
-	../../Win32/src/getopt.o
+	../../Win32/src/getopt.o \
+	../../cpack.o \
+	../../ipproto.o \
+	../../l2vpn.o \
+	../../nlpid.o \
+	../../print-eigrp.o \
+	../../print-juniper.o \
+	../../print-lspping.o \
+	../../print-sip.o \
+	../../print-eap.o \
+	../../print-lmp.o \
+	../../print-syslog.o \
+	../../print-dccp.o
 
 main: ${OBJS}
 	${CC} ${CFLAGS} ${LDFLAGS} -o windump.exe ${OBJS} ${LIBS}
