@@ -10,6 +10,11 @@ function to_submit(F) {
 	apply(F);
 }
 
+function to_apply(F) {
+	F.save_button.value = sbutton.saving;
+	applytake(F);
+}
+
 var update;
 
 addEvent(window, "load", function() {
