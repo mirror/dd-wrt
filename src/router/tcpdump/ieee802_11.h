@@ -1,4 +1,4 @@
-/* @(#) $Header: /tcpdump/master/tcpdump/ieee802_11.h,v 1.9 2003/07/22 17:36:57 guy Exp $ (LBL) */
+/* @(#) $Header: /tcpdump/master/tcpdump/ieee802_11.h,v 1.9.4.2 2005/11/13 12:07:44 guy Exp $ (LBL) */
 /*
  * Copyright (c) 2001
  *	Fortress Technologies
@@ -122,6 +122,12 @@ struct mgmt_header_t {
 #define	CAPABILITY_CFP_REQ(cap)	((cap) & 0x0008)
 #define	CAPABILITY_PRIVACY(cap)	((cap) & 0x0010)
 
+typedef enum {
+	NOT_PRESENT,
+	PRESENT,
+	TRUNCATED
+} elem_status_t;
+
 struct ssid_t {
 	u_int8_t	element_id;
 	u_int8_t	length;
@@ -131,7 +137,7 @@ struct ssid_t {
 struct rates_t {
 	u_int8_t	element_id;
 	u_int8_t	length;
-	u_int8_t	rate[8];
+	u_int8_t	rate[16];
 };
 
 struct challenge_t {
@@ -139,6 +145,7 @@ struct challenge_t {
 	u_int8_t	length;
 	u_int8_t	text[254]; /* 1-253 + 1 for null */
 };
+
 struct fh_t {
 	u_int8_t	element_id;
 	u_int8_t	length;
@@ -199,22 +206,29 @@ struct tim_t {
 
 
 struct mgmt_body_t {
-	u_int8_t   	timestamp[8];
+	u_int8_t   	timestamp[IEEE802_11_TSTAMP_LEN];
 	u_int16_t  	beacon_interval;
 	u_int16_t 	listen_interval;
 	u_int16_t 	status_code;
 	u_int16_t 	aid;
-	u_char		ap[6];
+	u_char		ap[IEEE802_11_AP_LEN];
 	u_int16_t	reason_code;
 	u_int16_t	auth_alg;
 	u_int16_t	auth_trans_seq_num;
+	elem_status_t	challenge_status;
 	struct challenge_t  challenge;
 	u_int16_t	capability_info;
+	elem_status_t	ssid_status;
 	struct ssid_t	ssid;
+	elem_status_t	rates_status;
 	struct rates_t 	rates;
+	elem_status_t	ds_status;
 	struct ds_t	ds;
+	elem_status_t	cf_status;
 	struct cf_t	cf;
+	elem_status_t	fh_status;
 	struct fh_t	fh;
+	elem_status_t	tim_status;
 	struct tim_t	tim;
 };
 
