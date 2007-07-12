@@ -411,7 +411,14 @@ start_sysinit (void)
       nvram_set ("wan_ifname", "eth1");
       nvram_set ("wan_ifnames", "eth1");
       break;
-
+    case ROUTER_WRT54G1X:
+    if (check_vlan_support ())
+	    {
+    	    nvram_set ("lan_ifnames", "vlan0 eth2");
+    	    nvram_set ("wan_ifname", "vlan1");
+    	    nvram_set ("wan_ifnames", "vlan1");	    
+	    }
+    break;
     case ROUTER_WRT350N:
       nvram_set ("wan_ifname", "vlan2");
       nvram_set ("wan_ifnames", "vlan2");
@@ -483,7 +490,7 @@ start_sysinit (void)
       char module[80], *modules, *next;
       //modules="wl switch-core";
 
-      if (check_vlan_support () && check_hw_type () != BCM5325E_CHIP)
+      if ((check_vlan_support () && check_hw_type () != BCM5325E_CHIP)
 	{
 	  switch (brand)
 	    {
