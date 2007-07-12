@@ -505,7 +505,7 @@ start_sysinit (void)
 	    case ROUTER_WRT54G:
 	    case ROUTER_RT480W:
 	    case ROUTER_BUFFALO_WLI2_TX1_G54:
-	      modules = "";
+	      modules = "diag";
 	      eval ("insmod", "switch-core");
 	      if (eval ("insmod", "switch-robo"))
 		eval ("insmod", "switch-adm");
