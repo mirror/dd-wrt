@@ -4,7 +4,7 @@
 
 OPT=$(COPTS)
 #OPT=-O2 -g
-CFLAGS=$(OPT) -Wall -W -Wno-parentheses -Wstrict-prototypes
+CFLAGS=$(OPT) -Wall -W -Wno-parentheses -Wstrict-prototypes -DNEED_PRINTF
 
 VERSION=2.1.10
 #SUFFIX=-pre2
