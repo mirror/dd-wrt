@@ -2963,8 +2963,6 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   submit_button = websGetVar (wp, "submit_button", NULL);	/* every html must have the name */
   submit_type = websGetVar (wp, "submit_type", NULL);	/* add, del, renew, release ..... */
 
-  nvram_set ("action_service", "");
-  nvram_set ("action_service_arg1", "");
 
   fprintf (stderr, "submit_button=[%s] submit_type=[%s]\n", submit_button,
 	   submit_type);
@@ -2976,7 +2974,7 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	       "name=[%s] type=[%s] service=[%s] sleep=[%d] action=[%d]\n",
 	       act->name, act->type, act->service, act->sleep_time,
 	       act->action);
-      nvram_set ("action_service", act->service);
+      addAction(act->service);
       sleep_time = act->sleep_time;
       action = act->action;
       if (act->go)
