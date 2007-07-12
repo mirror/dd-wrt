@@ -2247,7 +2247,7 @@ start_wan (int status)
 	}
       else
 	{
-	  fprintf (fp, "noccp\n");
+//	  fprintf (fp, "noccp\n");
 	  fprintf (fp, "nomppc\n");
 	}
       fprintf (fp, "noipdefault\n"
