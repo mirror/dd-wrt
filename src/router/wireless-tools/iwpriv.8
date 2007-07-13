@@ -16,13 +16,9 @@ network interface
 .br
 .BI "iwpriv " "interface private-command " "[" private-parameters ]
 .br
-.BI "iwpriv " "interface private-command [I] " "[" private-parameters ]
+.BI "iwpriv " "interface private-command " [ I "] [" private-parameters ]
 .br
 .BI "iwpriv " interface " --all"
-.br
-.BI "iwpriv " interface " roam " {on,off}
-.br
-.BI "iwpriv " interface " port " {ad-hoc,managed,N}
 .\"
 .\" DESCRIPTION part
 .\"
@@ -64,7 +60,7 @@ about those parameters.
 However you should refer to the device driver documentation for
 information on how to properly use the command and the effect.
 .TP
-.I "private-command [I]" "[" private-parameters ]
+.IR "private-command " [ I "] [" private-parameters ]
 Idem, except that
 .I I
 (an integer) is passed to the command as a
@@ -75,19 +71,6 @@ the driver documentation should tell you when it's needed.
 .BR -a / --all
 Execute and display all the private commands that don't take any
 arguments (i.e.  read only).
-.TP
-.B roam
-Enable or disable roaming, if supported. Call the private command
-.IR setroam .
-Found in the
-.I wavelan_cs
-driver.
-.TP
-.B port
-Read or configure the port type. Call the private commands
-.IR gport_type ", " sport_type ", " get_port " or " set_port
-found in the
-.IR wavelan2_cs " and " wvlan_cs " drivers."
 .\"
 .\" DISPLAY part
 .\"

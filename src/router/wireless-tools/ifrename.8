@@ -1,7 +1,7 @@
-.\" Jean II - HPL - 2004
+.\" Jean II - HPL - 2004-2007
 .\" ifrename.8
 .\"
-.TH IFRENAME 8 "01 March 2004" "wireless-tools" "Linux Programmer's Manual"
+.TH IFRENAME 8 "26 February 2007" "wireless-tools" "Linux Programmer's Manual"
 .\"
 .\" NAME part
 .\"
@@ -11,7 +11,7 @@ ifrename \- rename network interfaces based on various static criteria
 .\" SYNOPSIS part
 .\"
 .SH SYNOPSIS
-.B "ifrename [-c configfile] [-p] [-d] [-v] [-V] [-D]"
+.B "ifrename [-c configfile] [-p] [-d] [-u] [-v] [-V] [-D]"
 .br
 .B "ifrename [-c configfile] [-i interface] [-n newname]"
 .\"
@@ -124,12 +124,38 @@ In any case, name swapping and the use of this feature is discouraged,
 and you are invited to choose unique and unambiguous names for your
 interfaces...
 .TP
+.B -u
+Enable
+.I udev
+output mode. This enables proper integration of
+.B ifrename
+in the
+.I udev
+framework,
+.BR udevd (8)
+will use
+.B ifrename
+to assign interface names present in
+.IR /etc/iftab .
+In this mode the output of ifrename can be parsed
+directly by
+.BR udevd (8)
+as an IMPORT action. This requires
+.I udev
+version 107 or later.
+.TP
 .B -D
 Dry-run mode. Ifrename won't change any interface, it will only print
 new interface name, if applicable, and return.
 .br
 In dry-run mode, interface name wildcards are not resolved. New
 interface name is printed, even if it is the same as the old name.
+.br
+Be also aware that some selectors can only be read by root, for
+example those based on
+.BR ethtool ),
+and will fail silently if run by a normal user. In other words,
+dry-run mode under a standard user may not give the expected result.
 .TP
 .B -V
 Verbose mode. Ifrename will display internal results of parsing its
