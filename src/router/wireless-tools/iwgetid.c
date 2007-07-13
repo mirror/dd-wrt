@@ -94,7 +94,7 @@ print_essid(int			skfd,
 
   /* Get ESSID */
   wrq.u.essid.pointer = (caddr_t) essid;
-  wrq.u.essid.length = IW_ESSID_MAX_SIZE + 1;
+  wrq.u.essid.length = IW_ESSID_MAX_SIZE /* + 1 */;
   wrq.u.essid.flags = 0;
   if(iw_get_ext(skfd, ifname, SIOCGIWESSID, &wrq) < 0)
     return(-1);
