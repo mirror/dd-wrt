@@ -323,6 +323,7 @@ start_sysinit (void)
       break;
 
     case ROUTER_RT480W:
+    case ROUTER_USR_5461:
       setup_4712 ();
       break;
 
