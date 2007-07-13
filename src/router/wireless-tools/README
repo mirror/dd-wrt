@@ -1,10 +1,12 @@
-	Wireless Tools
-	--------------
+	Wireless Tools & IfRename
+	-------------------------
 
 	This package contains the Wireless tools, used to manipulate
 the Wireless Extensions. The Wireless Extensions is an interface
 allowing you to set Wireless LAN specific parameters and get the
 specific stats.
+	It also contains the IfRename package, used for advance
+renaming of network interfaces.
 
 web page :
 --------
@@ -112,6 +114,10 @@ iwlib.c
 	The Wireless Tools helper library. May be useful if you want
 to create your own applications using Wireless Extensions.
 
+iwmulticall.c
+-------------
+	Multicall version of the tools for embedded systems.
+
 Changelog, contributions :
 ------------------------
 	See CHANGELOG.h
@@ -135,6 +141,10 @@ more tricky features of Wireless Extensions in your driver.
 	Note that there is no guarantee that this code compiles, let
 alone works, but it should point you in the proper direction.
 	Also, have a look at existing drivers in the Linux kernel.
+
+19-udev-ifrename.rules :
+----------------------
+	udev rules to integrate properly ifrename (udev >= 107).
 
 Other tools :
 -----------

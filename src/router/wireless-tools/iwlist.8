@@ -1,7 +1,7 @@
 .\" Jean II - HPLB - 96
 .\" iwlist.8
 .\"
-.TH IWLIST 8 "23 June 2004" "wireless-tools" "Linux Programmer's Manual"
+.TH IWLIST 8 "13 April 2006" "wireless-tools" "Linux Programmer's Manual"
 .\"
 .\" NAME part
 .\"
@@ -11,23 +11,29 @@ iwlist \- Get more detailed wireless information from a wireless interface
 .\" SYNOPSIS part
 .\"
 .SH SYNOPSIS
-.BI "iwlist " interface " scanning"
+.BI "iwlist [" interface "] scanning"
 .br
-.BI "iwlist " interface " frequency"
+.BI "iwlist [" interface "] frequency"
 .br
-.BI "iwlist " interface " rate"
+.BI "iwlist [" interface "] rate"
 .br
-.BI "iwlist " interface " key"
+.BI "iwlist [" interface "] keys"
 .br
-.BI "iwlist " interface " power"
+.BI "iwlist [" interface "] power"
 .br
-.BI "iwlist " interface " txpower"
+.BI "iwlist [" interface "] txpower"
 .br
-.BI "iwlist " interface " retry"
+.BI "iwlist [" interface "] retry"
 .br
-.BI "iwlist " interface " event"
+.BI "iwlist [" interface "] event"
 .br
-.BI "iwlist " interface " modulation"
+.BI "iwlist [" interface "] auth"
+.br
+.BI "iwlist [" interface "] wpakeys"
+.br
+.BI "iwlist [" interface "] genie"
+.br
+.BI "iwlist [" interface "] modulation"
 .br
 .BI "iwlist --help"
 .br
@@ -60,10 +66,15 @@ the card supports.
 Triggering scanning is a privileged operation
 .RI ( root
 only) and normal users can only read left-over scan results. By
-default, the way scanning is done (the scope of the scan) will be
-impacted by the current setting of the driver. Also, this command is
-supposed to take extra arguments to control the scanning behaviour,
-but this is currently not implemented.
+default, the way scanning is done (the scope of the scan) is dependant
+on the card and card settings.
+.br
+This command take optional arguments, however most drivers will ignore
+those. The option
+.B essid
+is used to specify a scan on a specific ESSID. The option
+.B last
+do not trigger a scan and read left-over scan results.
 .TP
 .BR freq [uency]/ channel
 Give the list of available frequencies in the device and the number of
@@ -75,9 +86,9 @@ displayed and channel numbers.
 .BR rate / bit [rate]
 List the bit-rates supported by the device.
 .TP
-.BR key / enc [ryption]
-List the encryption key sizes supported and display all the encryption
-keys available in the device.
+.BR keys / enc [ryption]
+List the encryption key sizes supported and list all the encryption
+keys set in the device.
 .TP
 .B power
 List the various Power Management attributes and modes of the device.
@@ -102,6 +113,16 @@ the card. See your driver documentation for details.
 .B event
 List the wireless events supported by the device.
 .TP
+.B auth
+List the WPA authentication parametes curently set.
+.TP
+.BR wpa [keys]
+List all the WPA encryption keys set in the device.
+.TP
+.B genie
+List the Generic Information Elements set in the device (used for WPA
+support).
+.TP
 .BR modu [lation]
 List the modulations supported by the device and the modulations
 currently enabled.
@@ -110,6 +131,9 @@ currently enabled.
 Display the version of the tools, as well as the recommended and
 current Wireless Extensions version for the tool and the various
 wireless interfaces.
+.TP
+.B --help
+Display short help message.
 .\"
 .\" FILES part
 .\"

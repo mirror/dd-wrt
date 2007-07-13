@@ -1,10 +1,10 @@
 /*
  * This file define a set of standard wireless extensions
  *
- * Version :	22	16.3.07
+ * Version :	20	17.2.06
  *
  * Authors :	Jean Tourrilhes - HPL - <jt@hpl.hp.com>
- * Copyright (c) 1997-2007 Jean Tourrilhes, All Rights Reserved.
+ * Copyright (c) 1997-2006 Jean Tourrilhes, All Rights Reserved.
  */
 
 #ifndef _LINUX_WIRELESS_H
@@ -69,14 +69,12 @@
 
 /***************************** INCLUDES *****************************/
 
-/* This header is used in user-space, therefore need to be sanitised
- * for that purpose. Those includes are usually not compatible with glibc.
- * To know which includes to use in user-space, check iwlib.h. */
-#ifdef __KERNEL__
-#include <linux/types.h>		/* for "caddr_t" et al		*/
-#include <linux/socket.h>		/* for "struct sockaddr" et al	*/
-#include <linux/if.h>			/* for IFNAMSIZ and co... */
-#endif	/* __KERNEL__ */
+/* Do not put any header in this file, this creates a mess when
+ * exported to user space. Most users have included all the
+ * relevant headers anyway... Jean II */
+/*#include <linux/types.h>*/		/* for "caddr_t" et al		*/
+/*#include <linux/socket.h>*/		/* for "struct sockaddr" et al	*/
+/*#include <linux/if.h>*/		/* for IFNAMSIZ and co... */
 
 /***************************** VERSION *****************************/
 /*
@@ -85,7 +83,7 @@
  * (there is some stuff that will be added in the future...)
  * I just plan to increment with each new version.
  */
-#define WIRELESS_EXT	22
+#define WIRELESS_EXT	20
 
 /*
  * Changes :
@@ -213,18 +211,6 @@
  * V19 to V20
  * ----------
  *	- RtNetlink requests support (SET/GET)
- *
- * V20 to V21
- * ----------
- *	- Remove (struct net_device *)->get_wireless_stats()
- *	- Change length in ESSID and NICK to strlen() instead of strlen()+1
- *	- Add IW_RETRY_SHORT/IW_RETRY_LONG retry modifiers
- *	- Power/Retry relative values no longer * 100000
- *	- Add explicit flag to tell stats are in 802.11k RCPI : IW_QUAL_RCPI
- *
- * V21 to V22
- * ----------
- *	- Prevent leaking of kernel space in stream on 64 bits.
  */
 
 /**************************** CONSTANTS ****************************/
@@ -298,9 +284,6 @@
 /* Power saving stuff (power management, unicast and multicast) */
 #define SIOCSIWPOWER	0x8B2C		/* set Power Management settings */
 #define SIOCGIWPOWER	0x8B2D		/* get Power Management settings */
-/* Modulation bitmask */
-#define SIOCSIWMODUL	0x8B2E		/* set Modulations settings */
-#define SIOCGIWMODUL	0x8B2F		/* get Modulations settings */
 
 /* WPA : Generic IEEE 802.11 informatiom element (e.g., for WPA/RSN/WMM).
  * This ioctl uses struct iw_point and data buffer that includes IE id and len
@@ -341,7 +324,7 @@
  * separate range because of collisions with other tools such as
  * 'mii-tool'.
  * We now have 32 commands, so a bit more space ;-).
- * Also, all 'even' commands are only usable by root and don't return the
+ * Also, all 'odd' commands are only usable by root and don't return the
  * content of ifr/iwr to user (but you are not obliged to use the set/get
  * convention, just use every other two command). More details in iwpriv.c.
  * And I repeat : you are not forced to use them with iwpriv, but you
@@ -355,7 +338,7 @@
 #define SIOCIWLAST	SIOCIWLASTPRIV		/* 0x8BFF */
 #define IW_IOCTL_IDX(cmd)	((cmd) - SIOCIWFIRST)
 
-/* Odd : get (world access), even : set (root access) */
+/* Even : get (world access), odd : set (root access) */
 #define IW_IS_SET(cmd)	(!((cmd) & 0x1))
 #define IW_IS_GET(cmd)	((cmd) & 0x1)
 
@@ -407,17 +390,17 @@
  * Privates ioctl are SIOCIWFIRSTPRIV -> SIOCIWLASTPRIV
  */
 
-#define IW_PRIV_TYPE_MASK	0x70000	/* Type of arguments */
-#define IW_PRIV_TYPE_NONE	0x00000
-#define IW_PRIV_TYPE_BYTE	0x10000	/* Char as number */
-#define IW_PRIV_TYPE_CHAR	0x20000	/* Char as character */
-#define IW_PRIV_TYPE_INT	0x40000	/* 32 bits int */
-#define IW_PRIV_TYPE_FLOAT	0x50000	/* struct iw_freq */
-#define IW_PRIV_TYPE_ADDR	0x60000	/* struct sockaddr */
+#define IW_PRIV_TYPE_MASK	0x7000	/* Type of arguments */
+#define IW_PRIV_TYPE_NONE	0x0000
+#define IW_PRIV_TYPE_BYTE	0x1000	/* Char as number */
+#define IW_PRIV_TYPE_CHAR	0x2000	/* Char as character */
+#define IW_PRIV_TYPE_INT	0x4000	/* 32 bits int */
+#define IW_PRIV_TYPE_FLOAT	0x5000	/* struct iw_freq */
+#define IW_PRIV_TYPE_ADDR	0x6000	/* struct sockaddr */
 
-#define IW_PRIV_SIZE_FIXED	0x08000	/* Variable or fixed number of args */
+#define IW_PRIV_SIZE_FIXED	0x0800	/* Variable or fixed number of args */
 
-#define IW_PRIV_SIZE_MASK	0x07FFF	/* Max number of those args */
+#define IW_PRIV_SIZE_MASK	0x07FF	/* Max number of those args */
 
 /*
  * Note : if the number of args is fixed and the size < 16 octets,
@@ -468,7 +451,6 @@
 #define IW_QUAL_QUAL_INVALID	0x10	/* Driver doesn't provide value */
 #define IW_QUAL_LEVEL_INVALID	0x20
 #define IW_QUAL_NOISE_INVALID	0x40
-#define IW_QUAL_RCPI		0x80	/* Level + Noise are 802.11k RCPI */
 #define IW_QUAL_ALL_INVALID	0x70
 
 /* Frequency flags */
@@ -498,7 +480,6 @@
 #define IW_POWER_TYPE		0xF000	/* Type of parameter */
 #define IW_POWER_PERIOD		0x1000	/* Value is a period/duration of  */
 #define IW_POWER_TIMEOUT	0x2000	/* Value is a timeout (to go asleep) */
-#define IW_POWER_SAVING		0x4000	/* Value is relative (how aggressive)*/
 #define IW_POWER_MODE		0x0F00	/* Power Management mode */
 #define IW_POWER_UNICAST_R	0x0100	/* Receive only unicast messages */
 #define IW_POWER_MULTICAST_R	0x0200	/* Receive only multicast messages */
@@ -522,12 +503,10 @@
 #define IW_RETRY_TYPE		0xF000	/* Type of parameter */
 #define IW_RETRY_LIMIT		0x1000	/* Maximum number of retries*/
 #define IW_RETRY_LIFETIME	0x2000	/* Maximum duration of retries in us */
-#define IW_RETRY_MODIFIER	0x00FF	/* Modify a parameter */
+#define IW_RETRY_MODIFIER	0x000F	/* Modify a parameter */
 #define IW_RETRY_MIN		0x0001	/* Value is a minimum  */
 #define IW_RETRY_MAX		0x0002	/* Value is a maximum */
 #define IW_RETRY_RELATIVE	0x0004	/* Value is not in seconds/ms/us */
-#define IW_RETRY_SHORT		0x0010	/* Value is for short packets  */
-#define IW_RETRY_LONG		0x0020	/* Value is for long packets */
 
 /* Scanning request flags */
 #define IW_SCAN_DEFAULT		0x0000	/* Default scan of the driver */
@@ -554,8 +533,6 @@
 /* MLME requests (SIOCSIWMLME / struct iw_mlme) */
 #define IW_MLME_DEAUTH		0
 #define IW_MLME_DISASSOC	1
-#define IW_MLME_AUTH		2
-#define IW_MLME_ASSOC		3
 
 /* SIOCSIWAUTH/SIOCGIWAUTH struct iw_param flags */
 #define IW_AUTH_INDEX		0x0FFF
@@ -647,27 +624,6 @@
 #define IW_EVENT_CAPA_SET(event_capa, cmd) (event_capa[IW_EVENT_CAPA_INDEX(cmd)] |= IW_EVENT_CAPA_MASK(cmd))
 #define IW_EVENT_CAPA_SET_KERNEL(event_capa) {event_capa[0] |= IW_EVENT_CAPA_K_0; event_capa[1] |= IW_EVENT_CAPA_K_1; }
 
-/* Modulations bitmasks */
-#define IW_MODUL_ALL		0x00000000	/* Everything supported */
-#define IW_MODUL_FH		0x00000001	/* Frequency Hopping */
-#define IW_MODUL_DS		0x00000002	/* Original Direct Sequence */
-#define IW_MODUL_CCK		0x00000004	/* 802.11b : 5.5 + 11 Mb/s */
-#define IW_MODUL_11B		(IW_MODUL_DS | IW_MODUL_CCK)
-#define IW_MODUL_PBCC		0x00000008	/* TI : 5.5 + 11 + 22 Mb/s */
-#define IW_MODUL_OFDM_A		0x00000010	/* 802.11a : 54 Mb/s */
-#define IW_MODUL_11A		(IW_MODUL_OFDM_A)
-#define IW_MODUL_11AB		(IW_MODUL_11B | IW_MODUL_11A)
-#define IW_MODUL_OFDM_G		0x00000020	/* 802.11g : 54 Mb/s */
-#define IW_MODUL_11G		(IW_MODUL_11B | IW_MODUL_OFDM_G)
-#define IW_MODUL_11AG		(IW_MODUL_11G | IW_MODUL_11A)
-#define IW_MODUL_TURBO		0x00000040	/* ATH : bonding, 108 Mb/s */
-/* In here we should define MIMO stuff. Later... */
-#define IW_MODUL_CUSTOM		0x40000000	/* Driver specific */
-
-/* Bitrate flags available */
-#define IW_BITRATE_TYPE		0x00FF	/* Type of value */
-#define IW_BITRATE_UNICAST	0x0001	/* Maximum/Fixed unicast bitrate */
-#define IW_BITRATE_BROADCAST	0x0002	/* Fixed broadcast bitrate */
 
 /****************************** TYPES ******************************/
 
@@ -1064,18 +1020,7 @@ struct	iw_range
 	/* Note : this frequency list doesn't need to fit channel numbers,
 	 * because each entry contain its channel index */
 
-	__u32		enc_capa;	/* IW_ENC_CAPA_* bit field */
-
-	/* More power management stuff */
-	__s32		min_pms;	/* Minimal PM saving */
-	__s32		max_pms;	/* Maximal PM saving */
-	__u16		pms_flags;	/* How to decode max/min PM saving */
-
-	/* All available modulations for driver (hw may support less) */
-	__s32		modul_capa;	/* IW_MODUL_* bit field */
-
-	/* More bitrate stuff */
-	__u32		bitrate_capa;	/* Types of bitrates supported */
+	__u32		enc_capa; /* IW_ENC_CAPA_* bit field */
 };
 
 /*
@@ -1124,31 +1069,5 @@ struct iw_event
 			  (char *) NULL)
 #define IW_EV_POINT_LEN	(IW_EV_LCP_LEN + sizeof(struct iw_point) - \
 			 IW_EV_POINT_OFF)
-
-/* Size of the Event prefix when packed in stream */
-#define IW_EV_LCP_PK_LEN	(4)
-/* Size of the various events when packed in stream */
-#define IW_EV_CHAR_PK_LEN	(IW_EV_LCP_PK_LEN + IFNAMSIZ)
-#define IW_EV_UINT_PK_LEN	(IW_EV_LCP_PK_LEN + sizeof(__u32))
-#define IW_EV_FREQ_PK_LEN	(IW_EV_LCP_PK_LEN + sizeof(struct iw_freq))
-#define IW_EV_PARAM_PK_LEN	(IW_EV_LCP_PK_LEN + sizeof(struct iw_param))
-#define IW_EV_ADDR_PK_LEN	(IW_EV_LCP_PK_LEN + sizeof(struct sockaddr))
-#define IW_EV_QUAL_PK_LEN	(IW_EV_LCP_PK_LEN + sizeof(struct iw_quality))
-#define IW_EV_POINT_PK_LEN	(IW_EV_LCP_LEN + 4)
-struct iw_pk_event
-{
-	__u16		len;			/* Real lenght of this stuff */
-	__u16		cmd;			/* Wireless IOCTL */
-	union iwreq_data	u;		/* IOCTL fixed payload */
-} __attribute__ ((packed));
-struct	iw_pk_point
-{
-  void __user	*pointer;	/* Pointer to the data  (in user space) */
-  __u16		length;		/* number of fields or size in bytes */
-  __u16		flags;		/* Optional params */
-} __attribute__ ((packed));
-
-#define IW_EV_LCP_PK2_LEN	(sizeof(struct iw_pk_event) - sizeof(union iwreq_data))
-#define IW_EV_POINT_PK2_LEN	(IW_EV_LCP_PK2_LEN + sizeof(struct iw_pk_point) - IW_EV_POINT_OFF)
 
 #endif	/* _LINUX_WIRELESS_H */

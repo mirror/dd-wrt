@@ -1,14 +1,14 @@
 /*
  *	Wireless Tools
  *
- *		Jean II - HPLB '99 - HPL 99->04
+ *		Jean II - HPLB '99 - HPL 99->07
  *
  * This tool can access various piece of information on the card
  * not part of iwconfig...
  * You need to link this code against "iwlist.c" and "-lm".
  *
  * This file is released under the GPL license.
- *     Copyright (c) 1997-2004 Jean Tourrilhes <jt@hpl.hp.com>
+ *     Copyright (c) 1997-2007 Jean Tourrilhes <jt@hpl.hp.com>
  */
 
 #include "iwlib.h"		/* Header */
@@ -26,21 +26,193 @@ typedef struct iwscan_state
   int			val_index;	/* Value in table 0->(N-1) */
 } iwscan_state;
 
-
-/***************************** SCANNING *****************************/
 /*
- * This one behave quite differently from the others
- *
- * Note that we don't use the scanning capability of iwlib (functions
- * iw_process_scan() and iw_scan()). The main reason is that
- * iw_process_scan() return only a subset of the scan data to the caller,
- * for example custom elements and bitrates are ommited. Here, we
- * do the complete job...
+ * Bit to name mapping
  */
+typedef struct iwmask_name
+{
+  unsigned int	mask;	/* bit mask for the value */
+  const char *	name;	/* human readable name for the value */
+} iwmask_name;
+
+/*
+ * Types of authentication parameters
+ */
+typedef struct iw_auth_descr
+{
+  int				value;		/* Type of auth value */
+  const char *			label;		/* User readable version */
+  const struct iwmask_name *	names;		/* Names for this value */
+  const int			num_names;	/* Number of names */
+} iw_auth_descr;
+
+/**************************** CONSTANTS ****************************/
+
+#define IW_SCAN_HACK		0x8000
+
+#define IW_EXTKEY_SIZE	(sizeof(struct iw_encode_ext) + IW_ENCODING_TOKEN_MAX)
+
+/* ------------------------ WPA CAPA NAMES ------------------------ */
+/*
+ * This is the user readable name of a bunch of WPA constants in wireless.h
+ * Maybe this should go in iwlib.c ?
+ */
+
+#ifndef WE_ESSENTIAL
+#define IW_ARRAY_LEN(x) (sizeof(x)/sizeof((x)[0]))
+
+//static const struct iwmask_name iw_enc_mode_name[] = {
+//  { IW_ENCODE_RESTRICTED,	"restricted" },
+//  { IW_ENCODE_OPEN,		"open" },
+//};
+//#define	IW_ENC_MODE_NUM		IW_ARRAY_LEN(iw_enc_mode_name)
+
+static const struct iwmask_name iw_auth_capa_name[] = {
+  { IW_ENC_CAPA_WPA,		"WPA" },
+  { IW_ENC_CAPA_WPA2,		"WPA2" },
+  { IW_ENC_CAPA_CIPHER_TKIP,	"CIPHER-TKIP" },
+  { IW_ENC_CAPA_CIPHER_CCMP,	"CIPHER-CCMP" },
+};
+#define	IW_AUTH_CAPA_NUM	IW_ARRAY_LEN(iw_auth_capa_name)
+
+static const struct iwmask_name iw_auth_cypher_name[] = {
+  { IW_AUTH_CIPHER_NONE,	"none" },
+  { IW_AUTH_CIPHER_WEP40,	"WEP-40" },
+  { IW_AUTH_CIPHER_TKIP,	"TKIP" },
+  { IW_AUTH_CIPHER_CCMP,	"CCMP" },
+  { IW_AUTH_CIPHER_WEP104,	"WEP-104" },
+};
+#define	IW_AUTH_CYPHER_NUM	IW_ARRAY_LEN(iw_auth_cypher_name)
+
+static const struct iwmask_name iw_wpa_ver_name[] = {
+  { IW_AUTH_WPA_VERSION_DISABLED,	"disabled" },
+  { IW_AUTH_WPA_VERSION_WPA,		"WPA" },
+  { IW_AUTH_WPA_VERSION_WPA2,		"WPA2" },
+};
+#define	IW_WPA_VER_NUM		IW_ARRAY_LEN(iw_wpa_ver_name)
+
+static const struct iwmask_name iw_auth_key_mgmt_name[] = {
+  { IW_AUTH_KEY_MGMT_802_1X,	"802.1x" },
+  { IW_AUTH_KEY_MGMT_PSK,	"PSK" },
+};
+#define	IW_AUTH_KEY_MGMT_NUM	IW_ARRAY_LEN(iw_auth_key_mgmt_name)
+
+static const struct iwmask_name iw_auth_alg_name[] = {
+  { IW_AUTH_ALG_OPEN_SYSTEM,	"open" },
+  { IW_AUTH_ALG_SHARED_KEY,	"shared-key" },
+  { IW_AUTH_ALG_LEAP,		"LEAP" },
+};
+#define	IW_AUTH_ALG_NUM		IW_ARRAY_LEN(iw_auth_alg_name)
+
+static const struct iw_auth_descr	iw_auth_settings[] = {
+  { IW_AUTH_WPA_VERSION, "WPA version", iw_wpa_ver_name, IW_WPA_VER_NUM },
+  { IW_AUTH_KEY_MGMT, "Key management", iw_auth_key_mgmt_name, IW_AUTH_KEY_MGMT_NUM },
+  { IW_AUTH_CIPHER_PAIRWISE, "Pairwise cipher", iw_auth_cypher_name, IW_AUTH_CYPHER_NUM },
+  { IW_AUTH_CIPHER_GROUP, "Pairwise cipher", iw_auth_cypher_name, IW_AUTH_CYPHER_NUM },
+  { IW_AUTH_TKIP_COUNTERMEASURES, "TKIP countermeasures", NULL, 0 },
+  { IW_AUTH_DROP_UNENCRYPTED, "Drop unencrypted", NULL, 0 },
+  { IW_AUTH_80211_AUTH_ALG, "Authentication algorithm", iw_auth_alg_name, IW_AUTH_ALG_NUM },
+  { IW_AUTH_RX_UNENCRYPTED_EAPOL, "Receive unencrypted EAPOL", NULL, 0 },
+  { IW_AUTH_ROAMING_CONTROL, "Roaming control", NULL, 0 },
+  { IW_AUTH_PRIVACY_INVOKED, "Privacy invoked", NULL, 0 },
+};
+#define	IW_AUTH_SETTINGS_NUM		IW_ARRAY_LEN(iw_auth_settings)
+
+/* Values for the IW_ENCODE_ALG_* returned by SIOCSIWENCODEEXT */
+static const char *	iw_encode_alg_name[] = {
+	"none",
+	"WEP",
+	"TKIP",
+	"CCMP",
+	"unknown"
+};
+#define	IW_ENCODE_ALG_NUM		IW_ARRAY_LEN(iw_encode_alg_name)
+
+#ifndef IW_IE_CIPHER_NONE
+/* Cypher values in GENIE (pairwise and group) */
+#define IW_IE_CIPHER_NONE	0
+#define IW_IE_CIPHER_WEP40	1
+#define IW_IE_CIPHER_TKIP	2
+#define IW_IE_CIPHER_WRAP	3
+#define IW_IE_CIPHER_CCMP	4
+#define IW_IE_CIPHER_WEP104	5
+/* Key management in GENIE */
+#define IW_IE_KEY_MGMT_NONE	0
+#define IW_IE_KEY_MGMT_802_1X	1
+#define IW_IE_KEY_MGMT_PSK	2
+#endif	/* IW_IE_CIPHER_NONE */
+
+/* Values for the IW_IE_CIPHER_* in GENIE */
+static const char *	iw_ie_cypher_name[] = {
+	"none",
+	"WEP-40",
+	"TKIP",
+	"WRAP",
+	"CCMP",
+	"WEP-104",
+};
+#define	IW_IE_CYPHER_NUM	IW_ARRAY_LEN(iw_ie_cypher_name)
+
+/* Values for the IW_IE_KEY_MGMT_* in GENIE */
+static const char *	iw_ie_key_mgmt_name[] = {
+	"none",
+	"802.1x",
+	"PSK",
+};
+#define	IW_IE_KEY_MGMT_NUM	IW_ARRAY_LEN(iw_ie_key_mgmt_name)
+
+#endif	/* WE_ESSENTIAL */
+
+/************************* WPA SUBROUTINES *************************/
+
+#ifndef WE_ESSENTIAL
+/*------------------------------------------------------------------*/
+/*
+ * Print all names corresponding to a mask.
+ * This may want to be used in iw_print_retry_value() ?
+ */
+static void 
+iw_print_mask_name(unsigned int			mask,
+		   const struct iwmask_name	names[],
+		   const unsigned int		num_names,
+		   const char *			sep)
+{
+  unsigned int	i;
+
+  /* Print out all names for the bitmask */
+  for(i = 0; i < num_names; i++)
+    {
+      if(mask & names[i].mask)
+	{
+	  /* Print out */
+	  printf("%s%s", sep, names[i].name);
+	  /* Remove the bit from the mask */
+	  mask &= ~names[i].mask;
+	}
+    }
+  /* If there is unconsumed bits... */
+  if(mask != 0)
+    printf("%sUnknown", sep);
+}
 
 /*------------------------------------------------------------------*/
 /*
- * Parse, and display the results of a WPA or WPA2 IE.
+ * Print the name corresponding to a value, with overflow check.
+ */
+static void
+iw_print_value_name(unsigned int		value,
+		    const char *		names[],
+		    const unsigned int		num_names)
+{
+  if(value >= num_names)
+    printf(" unknown (%d)", value);
+  else
+    printf(" %s", names[value]);
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Parse, and display the results of an unknown IE.
  *
  */
 static void 
@@ -59,46 +231,6 @@ iw_print_ie_unknown(unsigned char *	iebuf,
   printf("\n");
 }
 
-/*-----------------------------------------------------------------*/
-/*
- * Display the cipher type for the value passed in.
- *
- */
-static inline void 
-iw_print_ie_cipher(unsigned char	csuite)
-{
-  switch (csuite)
-    {
-    case 0x00:
-      printf("None or same as Group ");
-      break;
- 
-    case 0x01:
-      printf("WEP-40 ");
-      break;
- 
-    case 0x02:
-      printf("TKIP ");
-      break;
- 
-    case 0x03:
-      printf("WRAP ");
-      break;
- 
-    case 0x04:
-      printf("CCMP ");
-      break;
- 
-    case 0x05:
-      printf("WEP-104 ");
-      break;
- 
-    default:
-      printf("Unknown ");
-      break;
-    }
- }
- 
 /*------------------------------------------------------------------*/
 /*
  * Parse, and display the results of a WPA or WPA2 IE.
@@ -120,6 +252,14 @@ iw_print_ie_wpa(unsigned char *	iebuf,
   if(ielen > buflen)
     ielen = buflen;
 
+#ifdef DEBUG
+  /* Debugging code. In theory useless, because it's debugged ;-) */
+  printf("IE raw value %d [%02X", buflen, iebuf[0]);
+  for(i = 1; i < buflen; i++)
+    printf(":%02X", iebuf[i]);
+  printf("]\n");
+#endif
+
   switch(iebuf[0])
     {
     case 0x30:		/* WPA2 */
@@ -137,17 +277,18 @@ iw_print_ie_wpa(unsigned char *	iebuf,
       wpa_oui = wpa1_oui;
  
       /* Not all IEs that start with 0xdd are WPA. 
-       * So check that the OUI is valid. */
+       * So check that the OUI is valid. Note : offset==2 */
       if((ielen < 8)
-	 || ((memcmp(&iebuf[offset], wpa_oui, 3) != 0)
-	     && (iebuf[offset+3] == 0x01)))
+	 || (memcmp(&iebuf[offset], wpa_oui, 3) != 0)
+	 || (iebuf[offset + 3] != 0x01))
  	{
 	  iw_print_ie_unknown(iebuf, buflen);
  	  return;
  	}
 
-       offset += 4;
-       break;
+      /* Skip the OUI type */
+      offset += 4;
+      break;
 
     default:
       return;
@@ -180,8 +321,9 @@ iw_print_ie_wpa(unsigned char *	iebuf,
     }
   else
     {
-      printf("                        Group Cipher : ");
-      iw_print_ie_cipher(iebuf[offset+3]);
+      printf("                        Group Cipher :");
+      iw_print_value_name(iebuf[offset+3],
+			  iw_ie_cypher_name, IW_IE_CYPHER_NUM);
       printf("\n");
     }
   offset += 4;
@@ -190,14 +332,14 @@ iw_print_ie_wpa(unsigned char *	iebuf,
   if(ielen < (offset + 2))
     {
       /* We don't have a pairwise cipher, or auth method. Assume TKIP. */
-      printf("                        Pairwise Ciphers (1) : TKIP\n");
+      printf("                        Pairwise Ciphers : TKIP\n");
       return;
     }
 
   /* Otherwise, we have some number of pairwise ciphers. */
   cnt = iebuf[offset] | (iebuf[offset + 1] << 8);
   offset += 2;
-  printf("                        Pairwise Ciphers (%d) : ", cnt);
+  printf("                        Pairwise Ciphers (%d) :", cnt);
 
   if(ielen < (offset + 4*cnt))
     return;
@@ -206,11 +348,12 @@ iw_print_ie_wpa(unsigned char *	iebuf,
     {
       if(memcmp(&iebuf[offset], wpa_oui, 3) != 0)
  	{
- 	  printf("Proprietary  ");
+ 	  printf(" Proprietary");
  	}
       else
 	{
- 	  iw_print_ie_cipher(iebuf[offset+3]);
+	  iw_print_value_name(iebuf[offset+3],
+			      iw_ie_cypher_name, IW_IE_CYPHER_NUM);
  	}
       offset+=4;
     }
@@ -223,7 +366,7 @@ iw_print_ie_wpa(unsigned char *	iebuf,
   /* Now, we have authentication suites. */
   cnt = iebuf[offset] | (iebuf[offset + 1] << 8);
   offset += 2;
-  printf("                        Authentication Suites (%d) : ", cnt);
+  printf("                        Authentication Suites (%d) :", cnt);
 
   if(ielen < (offset + 4*cnt))
     return;
@@ -232,28 +375,12 @@ iw_print_ie_wpa(unsigned char *	iebuf,
     {
       if(memcmp(&iebuf[offset], wpa_oui, 3) != 0)
  	{
- 	  printf("Proprietary  ");
+ 	  printf(" Proprietary");
  	}
       else
 	{
- 	  switch(iebuf[offset+3])
- 	    {
- 	    case 0x00:
- 	      printf("Reserved  ");
- 	      break;
-
- 	    case 0x01:
- 	      printf("802.1X  ");
- 	      break;
-
- 	    case 0x02:
- 	      printf("PSK  ");
- 	      break;
-
- 	    default:
- 	      printf("Unknown  ");
- 	      break;
- 	    }
+	  iw_print_value_name(iebuf[offset+3],
+			      iw_ie_key_mgmt_name, IW_IE_KEY_MGMT_NUM);
  	}
        offset+=4;
      }
@@ -304,6 +431,18 @@ iw_print_gen_ie(unsigned char *	buffer,
       offset += buffer[offset+1] + 2;
     }
 }
+#endif	/* WE_ESSENTIAL */
+
+/***************************** SCANNING *****************************/
+/*
+ * This one behave quite differently from the others
+ *
+ * Note that we don't use the scanning capability of iwlib (functions
+ * iw_process_scan() and iw_scan()). The main reason is that
+ * iw_process_scan() return only a subset of the scan data to the caller,
+ * for example custom elements and bitrates are ommited. Here, we
+ * do the complete job...
+ */
 
 /*------------------------------------------------------------------*/
 /*
@@ -346,6 +485,9 @@ print_scanning_token(struct stream_descr *	stream,	/* Stream of events */
       }
       break;
     case SIOCGIWMODE:
+      /* Note : event->u.mode is unsigned, no need to check <= 0 */
+      if(event->u.mode >= IW_NUM_OPER_MODE)
+	event->u.mode = IW_NUM_OPER_MODE;
       printf("                    Mode:%s\n",
 	     iw_operation_mode[event->u.mode]);
       break;
@@ -443,10 +585,12 @@ print_scanning_token(struct stream_descr *	stream,	/* Stream of events */
 		     &event->u.qual, iw_range, has_range);
       printf("                    %s\n", buffer);
       break;
+#ifndef WE_ESSENTIAL
     case IWEVGENIE:
       /* Informations Elements are complex, let's do only some of them */
       iw_print_gen_ie(event->u.data.pointer, event->u.data.length);
       break;
+#endif	/* WE_ESSENTIAL */
     case IWEVCUSTOM:
       {
 	char custom[IW_CUSTOM_MAX+1];
@@ -473,6 +617,8 @@ print_scanning_info(int		skfd,
 		    int		count)		/* Args count */
 {
   struct iwreq		wrq;
+  struct iw_scan_req    scanopt;		/* Options for 'set' */
+  int			scanflags = 0;		/* Flags for scan */
   unsigned char *	buffer = NULL;		/* Results */
   int			buflen = IW_SCAN_MAX_DATA; /* Min for compat WE<17 */
   struct iw_range	range;
@@ -482,6 +628,15 @@ print_scanning_info(int		skfd,
 
   /* Avoid "Unused parameter" warning */
   args = args; count = count;
+
+  /* Debugging stuff */
+  if((IW_EV_LCP_PK2_LEN != IW_EV_LCP_PK_LEN) || (IW_EV_POINT_PK2_LEN != IW_EV_POINT_PK_LEN))
+    {
+      fprintf(stderr, "*** Please report to jt@hpl.hp.com your platform details\n");
+      fprintf(stderr, "*** and the following line :\n");
+      fprintf(stderr, "*** IW_EV_LCP_PK2_LEN = %zu ; IW_EV_POINT_PK2_LEN = %zu\n\n",
+	      IW_EV_LCP_PK2_LEN, IW_EV_POINT_PK2_LEN);
+    }
 
   /* Get range stuff */
   has_range = (iw_get_range_info(skfd, ifname, &range) >= 0);
@@ -494,35 +649,104 @@ print_scanning_info(int		skfd,
       return(-1);
     }
 
-  /* Init timeout value -> 250ms*/
+  /* Init timeout value -> 250ms between set and first get */
   tv.tv_sec = 0;
   tv.tv_usec = 250000;
 
-  /*
-   * Here we should look at the command line args and set the IW_SCAN_ flags
-   * properly
-   */
-  wrq.u.data.pointer = NULL;		/* Later */
-  wrq.u.data.flags = 0;
-  wrq.u.data.length = 0;
+  /* Clean up set args */
+  memset(&scanopt, 0, sizeof(scanopt));
 
-  /* Initiate Scanning */
-  if(iw_set_ext(skfd, ifname, SIOCSIWSCAN, &wrq) < 0)
+  /* Parse command line arguments and extract options.
+   * Note : when we have enough options, we should use the parser
+   * from iwconfig... */
+  while(count > 0)
     {
-      if(errno != EPERM)
+      /* One arg is consumed (the option name) */
+      count--;
+      
+      /*
+       * Check for Active Scan (scan with specific essid)
+       */
+      if(!strncmp(args[0], "essid", 5))
 	{
-	  fprintf(stderr, "%-8.16s  Interface doesn't support scanning : %s\n\n",
-		  ifname, strerror(errno));
-	  return(-1);
+	  if(count < 1)
+	    {
+	      fprintf(stderr, "Too few arguments for scanning option [%s]\n",
+		      args[0]);
+	      return(-1);
+	    }
+	  args++;
+	  count--;
+
+	  /* Store the ESSID in the scan options */
+	  scanopt.essid_len = strlen(args[0]);
+	  memcpy(scanopt.essid, args[0], scanopt.essid_len);
+	  /* Initialise BSSID as needed */
+	  if(scanopt.bssid.sa_family == 0)
+	    {
+	      scanopt.bssid.sa_family = ARPHRD_ETHER;
+	      memset(scanopt.bssid.sa_data, 0xff, ETH_ALEN);
+	    }
+	  /* Scan only this ESSID */
+	  scanflags |= IW_SCAN_THIS_ESSID;
 	}
-      /* If we don't have the permission to initiate the scan, we may
-       * still have permission to read left-over results.
-       * But, don't wait !!! */
-#if 0
-      /* Not cool, it display for non wireless interfaces... */
-      fprintf(stderr, "%-8.16s  (Could not trigger scanning, just reading left-over results)\n", ifname);
-#endif
+      else
+	/* Check for last scan result (do not trigger scan) */
+	if(!strncmp(args[0], "last", 4))
+	  {
+	    /* Hack */
+	    scanflags |= IW_SCAN_HACK;
+	  }
+	else
+	  {
+	    fprintf(stderr, "Invalid scanning option [%s]\n", args[0]);
+	    return(-1);
+	  }
+
+      /* Next arg */
+      args++;
+    }
+
+  /* Check if we have scan options */
+  if(scanflags)
+    {
+      wrq.u.data.pointer = (caddr_t) &scanopt;
+      wrq.u.data.length = sizeof(scanopt);
+      wrq.u.data.flags = scanflags;
+    }
+  else
+    {
+      wrq.u.data.pointer = NULL;
+      wrq.u.data.flags = 0;
+      wrq.u.data.length = 0;
+    }
+
+  /* If only 'last' was specified on command line, don't trigger a scan */
+  if(scanflags == IW_SCAN_HACK)
+    {
+      /* Skip waiting */
       tv.tv_usec = 0;
+    }
+  else
+    {
+      /* Initiate Scanning */
+      if(iw_set_ext(skfd, ifname, SIOCSIWSCAN, &wrq) < 0)
+	{
+	  if((errno != EPERM) || (scanflags != 0))
+	    {
+	      fprintf(stderr, "%-8.16s  Interface doesn't support scanning : %s\n\n",
+		      ifname, strerror(errno));
+	      return(-1);
+	    }
+	  /* If we don't have the permission to initiate the scan, we may
+	   * still have permission to read left-over results.
+	   * But, don't wait !!! */
+#if 0
+	  /* Not cool, it display for non wireless interfaces... */
+	  fprintf(stderr, "%-8.16s  (Could not trigger scanning, just reading left-over results)\n", ifname);
+#endif
+	  tv.tv_usec = 0;
+	}
     }
   timeout -= tv.tv_usec;
 
@@ -628,7 +852,7 @@ print_scanning_info(int		skfd,
       struct iwscan_state	state = { .ap_num = 1, .val_index = 0 };
       int			ret;
       
-#if 0
+#ifdef DEBUG
       /* Debugging code. In theory useless, because it's debugged ;-) */
       int	i;
       printf("Scan result %d [%02X", wrq.u.data.length, buffer[0]);
@@ -651,7 +875,7 @@ print_scanning_info(int		skfd,
       printf("\n");
     }
   else
-    printf("%-8.16s  No scan results\n", ifname);
+    printf("%-8.16s  No scan results\n\n", ifname);
 
   free(buffer);
   return(0);
@@ -785,7 +1009,7 @@ print_bitrate_info(int		skfd,
 
 /*------------------------------------------------------------------*/
 /*
- * Print the number of available encryption key for the device
+ * Print all the available encryption keys for the device
  */
 static int
 print_keys_info(int		skfd,
@@ -796,7 +1020,7 @@ print_keys_info(int		skfd,
   struct iwreq		wrq;
   struct iw_range	range;
   unsigned char		key[IW_ENCODING_TOKEN_MAX];
-  int			k;
+  unsigned int		k;
   char			buffer[128];
 
   /* Avoid "Unused parameter" warning */
@@ -847,7 +1071,7 @@ print_keys_info(int		skfd,
 	      printf("\n");
 	    }
 	}
-      /* Print current key and mode */
+      /* Print current key index and mode */
       wrq.u.data.pointer = (caddr_t) key;
       wrq.u.data.length = IW_ENCODING_TOKEN_MAX;
       wrq.u.data.flags = 0;	/* Set index to zero to get current */
@@ -863,48 +1087,7 @@ print_keys_info(int		skfd,
 	    printf("          Security mode:open\n");
 	}
 
-      /* Print WPA/802.1x/802.11i security parameters */
-      if(range.we_version_compiled > 17)
-	{
-	  /* Display advance encryption capabilities */
-	  if(range.enc_capa)
-	    {
-	      const char *	auth_string[] = { "WPA",
-						  "WPA2",
-						  "CIPHER TKIP",
-						  "CIPHER CCMP" };
-	      const int		auth_num = (sizeof(auth_string) /
-					    sizeof(auth_string[1]));
-	      int		i;
-	      int		mask = 0x1;
-
-	      printf("          Authentication capabilities :\n");
-	      for(i = 0; i < auth_num; i++)
-		{
-		  if(range.enc_capa & mask)
-		    printf("\t\t%s\n", auth_string[i]);
-		  mask <<= 1;
-		}
-	    }
-
-	  /* Current values for authentication */
-	  wrq.u.param.flags = IW_AUTH_KEY_MGMT;
-	  if(iw_get_ext(skfd, ifname, SIOCGIWAUTH, &wrq) >= 0)
-	      printf("          Current key_mgmt:0x%X\n",
-		     wrq.u.param.value);
-
-	  wrq.u.param.flags = IW_AUTH_CIPHER_PAIRWISE;
-	  if(iw_get_ext(skfd, ifname, SIOCGIWAUTH, &wrq) >= 0)
-	      printf("          Current cipher_pairwise:0x%X\n",
-		     wrq.u.param.value);
-
-	  wrq.u.param.flags = IW_AUTH_CIPHER_GROUP;
-	  if(iw_get_ext(skfd, ifname, SIOCGIWAUTH, &wrq) >= 0)
-	    printf("          Current cipher_group:0x%X\n",
-		   wrq.u.param.value);
-	}
-
-     printf("\n\n");
+      printf("\n\n");
     }
   return(0);
 }
@@ -915,7 +1098,7 @@ print_keys_info(int		skfd,
 /*
  * Print Power Management info for each device
  */
-static inline int
+static int
 get_pm_value(int		skfd,
 	     char *		ifname,
 	     struct iwreq *	pwrq,
@@ -1140,7 +1323,7 @@ print_txpower_info(int		skfd,
 
   /* Avoid "Unused parameter" warning */
   args = args; count = count;
-  int maxpower=0;
+
   /* Extract range info */
   if((iw_get_range_info(skfd, ifname, &range) < 0) ||
      (range.we_version_compiled < 10))
@@ -1168,13 +1351,11 @@ print_txpower_info(int		skfd,
 		    {
 		      dbm = iw_mwatt2dbm(range.txpower[k]);
 		      mwatt = range.txpower[k];
-		      if (mwatt>maxpower)maxpower=mwatt;
 		    }
 		  else
 		    {
 		      dbm = range.txpower[k];
 		      mwatt = iw_dbm2mwatt(range.txpower[k]);
-		      if (mwatt>maxpower)maxpower=mwatt;
 		    }
 		  printf("\t  %d dBm  \t(%d mW)\n", dbm, mwatt);
 		}
@@ -1220,7 +1401,6 @@ print_txpower_info(int		skfd,
 		}
 	    }
 	}
-	printf("Maximum Power: %d mW\n",maxpower);
     }
   return(0);
 }
@@ -1231,7 +1411,7 @@ print_txpower_info(int		skfd,
 /*
  * Print one retry value
  */
-static inline int
+static int
 get_retry_value(int		skfd,
 		char *		ifname,
 		struct iwreq *	pwrq,
@@ -1531,7 +1711,7 @@ print_event_capa_info(int		skfd,
 		      ifname);
   else
     {
-#if 0
+#ifdef DEBUG
       /* Debugging ;-) */
       for(cmd = 0x8B00; cmd < 0x8C0F; cmd++)
 	{
@@ -1559,6 +1739,223 @@ print_event_capa_info(int		skfd,
 	    printf("          0x%04X : %s\n",
 		   cmd, event_capa_evt[cmd - IWEVFIRST]);
 	}
+      printf("\n");
+    }
+  return(0);
+}
+
+/*************************** WPA SUPPORT ***************************/
+
+/*------------------------------------------------------------------*/
+/*
+ * Print the authentication parameters for the device
+ */
+static int
+print_auth_info(int		skfd,
+		char *		ifname,
+		char *		args[],		/* Command line args */
+		int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  struct iw_range	range;
+  unsigned int		k;
+
+  /* Avoid "Unused parameter" warning */
+  args = args; count = count;
+
+  /* Extract range info */
+  if((iw_get_range_info(skfd, ifname, &range) < 0) ||
+     (range.we_version_compiled < 18))
+      fprintf(stderr, "%-8.16s  no authentication information.\n\n",
+		      ifname);
+  else
+    {
+      /* Print WPA/802.1x/802.11i security parameters */
+      if(!range.enc_capa)
+	{
+	printf("%-8.16s  unknown authentication information.\n\n", ifname);
+	}
+      else
+	{
+	  /* Display advanced encryption capabilities */
+	  printf("%-8.16s  Authentication capabilities :", ifname);
+	  iw_print_mask_name(range.enc_capa,
+			     iw_auth_capa_name, IW_AUTH_CAPA_NUM,
+				 "\n\t\t");
+	  printf("\n");
+
+	  /* Extract all auth settings */
+	  for(k = 0; k < IW_AUTH_SETTINGS_NUM; k++)
+	    { 
+	      wrq.u.param.flags = iw_auth_settings[k].value;
+	      if(iw_get_ext(skfd, ifname, SIOCGIWAUTH, &wrq) >= 0)
+		{
+		  printf("          Current %s :", iw_auth_settings[k].label);
+		  if(iw_auth_settings[k].names != NULL)
+		    iw_print_mask_name(wrq.u.param.value,
+				       iw_auth_settings[k].names,
+				       iw_auth_settings[k].num_names,
+				       "\n\t\t");
+		  else
+		    printf((wrq.u.param.value) ? " yes" : " no");
+		  printf("\n");
+		}
+	    }
+	}
+
+      printf("\n\n");
+    }
+  return(0);
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Print all the available wpa keys for the device
+ */
+static int
+print_wpakeys_info(int		skfd,
+		   char *	ifname,
+		   char *	args[],		/* Command line args */
+		   int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  struct iw_range	range;
+  unsigned char         extbuf[IW_EXTKEY_SIZE];
+  struct iw_encode_ext  *extinfo;
+  unsigned int		k;
+  char			buffer[128];
+
+  /* Avoid "Unused parameter" warning */
+  args = args; count = count;
+
+  /* This always point to the same place */
+  extinfo = (struct iw_encode_ext *) extbuf;
+
+  /* Extract range info */
+  if(iw_get_range_info(skfd, ifname, &range) < 0)
+      fprintf(stderr, "%-8.16s  no wpa key information.\n\n",
+		      ifname);
+  else
+    {
+      printf("%-8.16s  ", ifname);
+      /* Print key sizes */
+      if((range.num_encoding_sizes > 0) &&
+	 (range.num_encoding_sizes < IW_MAX_ENCODING_SIZES))
+	{
+	  printf("%d key sizes : %d", range.num_encoding_sizes,
+		 range.encoding_size[0] * 8);
+	  /* Print them all */
+	  for(k = 1; k < range.num_encoding_sizes; k++)
+	    printf(", %d", range.encoding_size[k] * 8);
+	  printf("bits\n          ");
+	}
+
+      /* Print the keys */
+      printf("%d keys available :\n", range.max_encoding_tokens);
+      for(k = 1; k <= range.max_encoding_tokens; k++)
+	{
+	  /* Cleanup. Driver may not fill everything */
+	  memset(extbuf, '\0', IW_EXTKEY_SIZE);
+
+	  /* Get whole struct containing one WPA key */
+	  wrq.u.data.pointer = (caddr_t) extbuf;
+	  wrq.u.data.length = IW_EXTKEY_SIZE;
+	  wrq.u.data.flags = k;
+	  if(iw_get_ext(skfd, ifname, SIOCGIWENCODEEXT, &wrq) < 0)
+	    {
+	      fprintf(stderr, "Error reading wpa keys (SIOCGIWENCODEEXT): %s\n", strerror(errno));
+	      break;
+	    }
+
+	  /* Sanity check */
+	  if(wrq.u.data.length < 
+	     (sizeof(struct iw_encode_ext) + extinfo->key_len))
+	    break;
+
+	  /* Check if key is disabled */
+	  if((wrq.u.data.flags & IW_ENCODE_DISABLED) ||
+	     (extinfo->key_len == 0))
+	    printf("\t\t[%d]: off\n", k);
+	  else
+	    {
+	      /* Display the key */
+	      iw_print_key(buffer, sizeof(buffer),
+			   extinfo->key, extinfo->key_len, wrq.u.data.flags);
+	      printf("\t\t[%d]: %s", k, buffer);
+
+	      /* Key size */
+	      printf(" (%d bits)", extinfo->key_len * 8);
+	      printf("\n");
+
+	      /* Other info... */
+	      printf("\t\t     Address: %s\n",
+		     iw_saether_ntop(&extinfo->addr, buffer));
+
+	      printf("\t\t     Algorithm:");
+	      iw_print_value_name(extinfo->alg,
+				  iw_encode_alg_name, IW_ENCODE_ALG_NUM);
+
+	      printf("\n\t\t     Flags: 0x%08x\n", extinfo->ext_flags);
+	      if (extinfo->ext_flags & IW_ENCODE_EXT_TX_SEQ_VALID)
+		printf("\t\t        tx-seq-valid\n");
+	      if (extinfo->ext_flags & IW_ENCODE_EXT_RX_SEQ_VALID)
+		printf("\t\t        rx-seq-valid\n");
+	      if (extinfo->ext_flags & IW_ENCODE_EXT_GROUP_KEY)
+		printf("\t\t        group-key\n");
+	    }
+	}
+      /* Print current key index and mode */
+      wrq.u.data.pointer = (caddr_t) extbuf;
+      wrq.u.data.length = IW_EXTKEY_SIZE;
+      wrq.u.data.flags = 0;	/* Set index to zero to get current */
+      if(iw_get_ext(skfd, ifname, SIOCGIWENCODEEXT, &wrq) >= 0)
+	{
+	  /* Note : if above fails, we have already printed an error
+	   * message int the loop above */
+	  printf("          Current Transmit Key: [%d]\n",
+		 wrq.u.data.flags & IW_ENCODE_INDEX);
+	  if(wrq.u.data.flags & IW_ENCODE_RESTRICTED)
+	    printf("          Security mode:restricted\n");
+	  if(wrq.u.data.flags & IW_ENCODE_OPEN)
+	    printf("          Security mode:open\n");
+	}
+
+      printf("\n\n");
+    }
+  return(0);
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Print the Generic IE for the device
+ * Note : indentation is broken. We need to fix that.
+ */
+static int
+print_gen_ie_info(int		skfd,
+		  char *	ifname,
+		  char *	args[],		/* Command line args */
+		  int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  unsigned char         buf[IW_GENERIC_IE_MAX];
+
+  /* Avoid "Unused parameter" warning */
+  args = args; count = count;
+
+  wrq.u.data.pointer = (caddr_t)buf;
+  wrq.u.data.length = IW_GENERIC_IE_MAX;
+  wrq.u.data.flags = 0;
+
+  if(iw_get_ext(skfd, ifname, SIOCGIWGENIE, &wrq) < 0)
+    fprintf(stderr, "%-8.16s  no generic IE (%s).\n\n",
+	    ifname, strerror(errno));
+  else
+    {
+      fprintf(stderr, "%-8.16s\n", ifname);
+      if(wrq.u.data.length == 0)
+	printf("          empty generic IE\n");
+      else
+	iw_print_gen_ie(buf, wrq.u.data.length);
       printf("\n");
     }
   return(0);
@@ -1648,29 +2045,32 @@ print_modul_info(int		skfd,
  * Map command line arguments to the proper procedure...
  */
 typedef struct iwlist_entry {
-  const char *		cmd;
-  iw_enum_handler	fn;
-  int			min_count;
+  const char *		cmd;		/* Command line shorthand */
+  iw_enum_handler	fn;		/* Subroutine */
   int			max_count;
+  const char *		argsname;	/* Args as human readable string */
 } iwlist_cmd;
 
 static const struct iwlist_entry iwlist_cmds[] = {
-  { "scanning",		print_scanning_info,	0, 5 },
-  { "frequency",	print_freq_info,	0, 0 },
-  { "channel",		print_freq_info,	0, 0 },
-  { "bitrate",		print_bitrate_info,	0, 0 },
-  { "rate",		print_bitrate_info,	0, 0 },
-  { "encryption",	print_keys_info,	0, 0 },
-  { "key",		print_keys_info,	0, 0 },
-  { "power",		print_pm_info,		0, 0 },
+  { "scanning",		print_scanning_info,	-1, "[essid NNN] [last]" },
+  { "frequency",	print_freq_info,	0, NULL },
+  { "channel",		print_freq_info,	0, NULL },
+  { "bitrate",		print_bitrate_info,	0, NULL },
+  { "rate",		print_bitrate_info,	0, NULL },
+  { "encryption",	print_keys_info,	0, NULL },
+  { "keys",		print_keys_info,	0, NULL },
+  { "power",		print_pm_info,		0, NULL },
 #ifndef WE_ESSENTIAL
-  { "txpower",		print_txpower_info,	0, 0 },
-  { "retry",		print_retry_info,	0, 0 },
-  { "ap",		print_ap_info,		0, 0 },
-  { "accesspoints",	print_ap_info,		0, 0 },
-  { "peers",		print_ap_info,		0, 0 },
-  { "event",		print_event_capa_info,	0, 0 },
-  { "modulation",	print_modul_info,	0, 0 },
+  { "txpower",		print_txpower_info,	0, NULL },
+  { "retry",		print_retry_info,	0, NULL },
+  { "ap",		print_ap_info,		0, NULL },
+  { "accesspoints",	print_ap_info,		0, NULL },
+  { "peers",		print_ap_info,		0, NULL },
+  { "event",		print_event_capa_info,	0, NULL },
+  { "auth",		print_auth_info,	0, NULL },
+  { "wpakeys",		print_wpakeys_info,	0, NULL },
+  { "genie",		print_gen_ie_info,	0, NULL },
+  { "modulation",	print_modul_info,	0, NULL },
 #endif	/* WE_ESSENTIAL */
   { NULL, NULL, 0, 0 },
 };
@@ -1710,13 +2110,13 @@ find_command(const char *	cmd)
 
   if(found == NULL)
     {
-      fprintf(stderr, "iwlist: unknown command `%s'\n", cmd);
+      fprintf(stderr, "iwlist: unknown command `%s' (check 'iwlist --help').\n", cmd);
       return NULL;
     }
 
   if(ambig)
     {
-      fprintf(stderr, "iwlist: command `%s' is ambiguous\n", cmd);
+      fprintf(stderr, "iwlist: command `%s' is ambiguous (check 'iwlist --help').\n", cmd);
       return NULL;
     }
 
@@ -1729,12 +2129,17 @@ find_command(const char *	cmd)
  */
 static void iw_usage(int status)
 {
-  FILE* f = status ? stderr : stdout;
-  int i;
+  FILE *		f = status ? stderr : stdout;
+  int			i;
 
-  fprintf(f,   "Usage: iwlist [interface] %s\n", iwlist_cmds[0].cmd);
-  for(i = 1; iwlist_cmds[i].cmd != NULL; ++i)
-    fprintf(f, "              [interface] %s\n", iwlist_cmds[i].cmd);
+  for(i = 0; iwlist_cmds[i].cmd != NULL; ++i)
+    {
+      fprintf(f, "%s [interface] %s %s\n",
+	      (i ? "             " : "Usage: iwlist"),
+	      iwlist_cmds[i].cmd,
+	      iwlist_cmds[i].argsname ? iwlist_cmds[i].argsname : "");
+    }
+
   exit(status);
 }
 
@@ -1755,7 +2160,7 @@ main(int	argc,
   int count;			/* Number of arguments */
   const iwlist_cmd *iwcmd;
 
-  if(argc == 1 || argc > 3)
+  if(argc < 2)
     iw_usage(1);
 
   /* Those don't apply to all interfaces */
@@ -1785,16 +2190,10 @@ main(int	argc,
     return 1;
 
   /* Check arg numbers */
-  if(count < iwcmd->min_count)
+  if((iwcmd->max_count >= 0) && (count > iwcmd->max_count))
     {
-      fprintf(stderr, "iwlist: command `%s' needs more arguments\n",
-	      iwcmd->cmd);
-      return 1;
-    }
-  if(count > iwcmd->max_count)
-    {
-      fprintf(stderr, "iwlist: command `%s' needs fewer arguments\n",
-	      iwcmd->cmd);
+      fprintf(stderr, "iwlist: command `%s' needs fewer arguments (max %d)\n",
+	      iwcmd->cmd, iwcmd->max_count);
       return 1;
     }
 
