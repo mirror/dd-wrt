@@ -79,21 +79,21 @@ interfaces, with rules such as :
 		http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev.html
 
 	Advantages over 'ifrename' :
-		+ integrated into 'udev'
 		+ simpler to setup if 'udev' is already properly setup
+		+ automatically generates persistent rules
 	Drawbacks compared to 'ifrename' :
 		- Less selectors that 'ifrename'
 		- Require kernel 2.6.X or later with sysfs support
 		- Do no support non-hotplug interfaces
 		- Require 'udev', not everybody uses it (static /dev, devfs)
-		- Does not support module on-demand loading
 	Comments :
 		o 'udev' support many selectors, basically all those
-present in 'sysfs', even if the documentation only show instructions
-to use the MAC address (which is problematic with virtual devices some
-drivers - see above). 'ifrename' can also use all selectors present in
-'sysfs' (like 'udev'), plus some other selectors not present in sysfs
-that were found to be useful.
+present in 'sysfs' (excluding symlinks), even if the documentation
+only show instructions to use the MAC address (which is problematic
+with virtual devices some drivers - see above). 'ifrename' can also
+use all selectors present in 'sysfs' (like 'udev'), can use sysfs
+symlinks and parent directories, plus some other selectors not present
+in sysfs that were found to be useful.
 		o Not all interfaces are managed by hotplug. All
 virtual devices, such as tunnels and loopbacks, are not associated
 with a hardware bus, and therefore are not managed by hotplug. All
@@ -102,7 +102,9 @@ hotplug. 'udev' can't deal with those devices.
 		o It is common practice on embedded system to use a
 static /dev and not 'udev' to save space and boot time. And to not use
 hotplug for the same reasons.
-		o 'ifrename' could be better integrated in 'udev', I don't foresee any technical issues.
+		o 'ifrename' has now a udev compatiblity mode that
+enables to trivially integrate it into 'udev' as an IMPORT rule. This
+requires udev version 107 or better and ifrename 29-pre17 or better.
 
 SELECTOR AWARE NETWORK SCRIPTS
 ------------------------------

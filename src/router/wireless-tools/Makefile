@@ -102,11 +102,11 @@ ifdef BUILD_WE_ESSENTIAL
 endif
 
 # Other flags
-CFLAGS=$(COPTS) -W -Wall -Wstrict-prototypes -Wmissing-prototypes -Wshadow -DNEED_PRINTF \
+CFLAGS=-Os -W -Wall -Wstrict-prototypes -Wmissing-prototypes -Wshadow \
 	-Wpointer-arith -Wcast-qual -Winline -I.
 #CFLAGS=-O2 -W -Wall -Wstrict-prototypes -I.
 DEPFLAGS=-MMD
-XCFLAGS=$(CFLAGS) $(DEPFLAGS) $(WARN) $(HEADERS) $(WELIB_FLAG) $(WEDEF_FLAG) -DNEED_PRINTF
+XCFLAGS=$(CFLAGS) $(DEPFLAGS) $(WARN) $(HEADERS) $(WELIB_FLAG) $(WEDEF_FLAG)
 PICFLAG=-fPIC
 
 # Standard compilation targets
@@ -162,8 +162,6 @@ install-dynamic:: $(DYNAMIC)
 	install -m 755 -d $(INSTALL_LIB)
 	install -m 755 $(DYNAMIC) $(INSTALL_LIB)
 	ln -sfn $(DYNAMIC) $(INSTALL_LIB)/$(DYNAMIC_LINK)
-	@echo "*** Don't forget to add $(INSTALL_LIB) to /etc/ld.so.conf, and run ldconfig as root. ***"
-	@$(LDCONFIG) || echo "*** Could not run ldconfig ! ***"
 
 # Install the static library
 install-static:: $(STATIC)
