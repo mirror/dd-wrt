@@ -1833,8 +1833,8 @@ set_info(int		skfd,		/* The socket */
 	  if(ret == IWERR_GET_EXT)
 	    request++;	/* Transform the SET into GET */
 
-	  fprintf(stderr, "Error for wireless request \"%s\" (%X) :\n",
-		  iwcmd->name, request);
+//	  fprintf(stderr, "Error for wireless request \"%s\" (%X) :\n",
+//		  iwcmd->name, request);
 	  switch(ret)
 	    {
 	    case IWERR_ARG_NUM:
@@ -1845,7 +1845,7 @@ set_info(int		skfd,		/* The socket */
 		errarg = 0;
 	      if(errarg >= count)
 		errarg = count - 1;
-	      fprintf(stderr, "    invalid argument \"%s\".\n", args[errarg]);
+//	      fprintf(stderr, "    invalid argument \"%s\".\n", args[errarg]);
 	      break;
 	    case IWERR_ARG_SIZE:
 	      fprintf(stderr, "    argument too big (max %d)\n", errmax);

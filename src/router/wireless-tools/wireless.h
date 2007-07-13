@@ -1085,8 +1085,8 @@ struct	iw_range
 struct	iw_priv_args
 {
 	__u32		cmd;		/* Number of the ioctl to issue */
-	__u16		set_args;	/* Type and number of args */
-	__u16		get_args;	/* Type and number of args */
+	__u32		set_args;	/* Type and number of args */
+	__u32		get_args;	/* Type and number of args */
 	char		name[IFNAMSIZ];	/* Name of the extension */
 };
 
