@@ -597,7 +597,7 @@ iw_get_priv_info(int		skfd,
 {
   struct iwreq		wrq;
   iwprivargs *		priv = NULL;	/* Not allocated yet */
-  int			maxpriv = 16;	/* Minimum for compatibility WE<13 */
+  int			maxpriv = 256;	/* Minimum for compatibility WE<13 */
   iwprivargs *		newpriv;
 
   /* Some driver may return a very large number of ioctls. Some
