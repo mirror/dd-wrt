@@ -581,4 +581,10 @@ extern void show_wparadius (webs_t wp, char *prefix);
 extern void show_wep (webs_t wp, char *prefix);
 extern char *get_wep_value (char *type, char *_bit, char *prefix);
 
+#ifdef HAVE_MILKFISH
+extern void ej_show_phonebook(webs_t wp, int argc, char_t ** argv);
+extern void ej_show_ppptime(webs_t wp, int argc, char_t ** argv);
+extern void ej_exec_milkfish_service(webs_t wp, int argc, char_t ** argv);
+#endif
+
 extern char *get_filter_services (void);
