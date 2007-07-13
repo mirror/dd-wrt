@@ -695,7 +695,7 @@ main (int argc, char **argv)
     {
       if (argc >= 2)
 	{
-	  cprintf ("hotplug %s\n", argv[1]);
+	  fprintf (stderr,"hotplug %s\n", argv[1]);
 	  if (!strcmp (argv[1], "net"))
 	    return start_service ("hotplug_net");
 #ifdef HAVE_USBHOTPLUG
@@ -838,8 +838,10 @@ main (int argc, char **argv)
     return watchdog_main (argc, argv);
   else if (strstr (base, "nvram"))
     return nvram_main (argc, argv);
+#ifndef HAVE_XSCALE
   else if (strstr (base, "ledtool"))
     return ledtool_main (argc, argv);
+#endif
 //  else if (strstr (base, "reboot"))
 //    shutdown_system();
   return 1;

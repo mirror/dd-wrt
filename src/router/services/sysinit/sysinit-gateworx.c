@@ -155,7 +155,6 @@ start_sysinit (void)
   eval ("mknod", "/dev/nvram", "c", "229", "0");
   eval ("mknod", "/dev/rtc", "c", "254", "0");
   eval ("mknod", "/dev/crypto", "c", "10", "70");
-
   eval ("mount", "-o", "remount,rw", "/");
 
   unlink ("/tmp/nvram/.lock");
@@ -201,6 +200,9 @@ start_sysinit (void)
 
 
 //system("/etc/kendin");
+
+
+#if 0
   eval ("insmod", "ixp400th");
   eval ("insmod", "ixp400");
   system2 ("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
@@ -212,14 +214,32 @@ start_sysinit (void)
     eval("insmod","spi-algo-bit");
     eval("insmod","spi-ixp4xx");
     eval("insmod","ks8995m");
-//    eval("gpio","-w","1","0");
-//    eval("gpio","-w","1","1"); // reset switch
     sleep(1);
     system("echo R01=01 > /proc/driver/KS8995M"); // enable switch 
   }
   eval ("insmod", "ocf");
   eval ("insmod", "cryptodev");
   eval ("insmod", "ixp4xx", "init_crypto=0");
+#else
+//  eval ("mknod", "/dev/IxNpe","c","10","184");
+  system2 ("cat /usr/lib/firmware/NPE-B > /dev/misc/ixp4xx_ucode");
+  system2 ("cat /usr/lib/firmware/NPE-C > /dev/misc/ixp4xx_ucode");
+/*  if (getRouterBrand()==ROUTER_BOARD_GATEWORX_GW2345) //lets load the spi drivers for this switch
+  {
+    eval("insmod","spi-algo-bit");
+    eval("insmod","spi-ixp4xx");
+    eval("insmod","ks8995m");
+    sleep(1);
+    system("echo R01=01 > /proc/driver/KS8995M"); // enable switch 
+  }*/
+//  eval ("insmod", "ocf");
+//  eval ("insmod", "cryptodev");
+//  eval ("insmod", "ixp4xx", "init_crypto=0");
+#endif
+
+
+
+
 
 /*  eval ("insmod", "wlan");
   eval ("insmod", "ath_hal");
@@ -259,7 +279,8 @@ start_sysinit (void)
 /*
 Configure mac addresses by reading data from eeprom
 */
-  char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom";	/* bank2=0x100 */
+//  char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom";	/* bank2=0x100 */
+  char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom";	/* bank2=0x100 */
   FILE *file = fopen (filename, "r");
   unsigned char buf[16];
   fread (&buf[0], 16, 1, file);
@@ -271,6 +292,8 @@ Configure mac addresses by reading data from eeprom
 	   buf[9], buf[10], buf[11]);
   eval ("ifconfig", "ixp1", "hw", "ether", mac);
 
+  eval ("ifconfig", "ixp0", "0.0.0.0", "up");
+  eval ("ifconfig", "ixp1", "0.0.0.0", "up");
 
 
   /* Set a sane date */
