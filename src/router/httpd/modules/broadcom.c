@@ -4715,7 +4715,7 @@ static void
 ej_get_voltage (webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp =
-    fopen ("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/volt", "rb");
+    fopen ("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/volt", "rb");
 
   if (fp == NULL)
     {
