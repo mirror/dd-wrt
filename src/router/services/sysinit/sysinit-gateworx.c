@@ -224,17 +224,6 @@ start_sysinit (void)
 //  eval ("mknod", "/dev/IxNpe","c","10","184");
   system2 ("cat /usr/lib/firmware/NPE-B > /dev/misc/ixp4xx_ucode");
   system2 ("cat /usr/lib/firmware/NPE-C > /dev/misc/ixp4xx_ucode");
-/*  if (getRouterBrand()==ROUTER_BOARD_GATEWORX_GW2345) //lets load the spi drivers for this switch
-  {
-    eval("insmod","spi-algo-bit");
-    eval("insmod","spi-ixp4xx");
-    eval("insmod","ks8995m");
-    sleep(1);
-    system("echo R01=01 > /proc/driver/KS8995M"); // enable switch 
-  }*/
-//  eval ("insmod", "ocf");
-//  eval ("insmod", "cryptodev");
-//  eval ("insmod", "ixp4xx", "init_crypto=0");
 #endif
 
 
@@ -294,6 +283,15 @@ Configure mac addresses by reading data from eeprom
 
   eval ("ifconfig", "ixp0", "0.0.0.0", "up");
   eval ("ifconfig", "ixp1", "0.0.0.0", "up");
+
+  if (getRouterBrand()==ROUTER_BOARD_GATEWORX_GW2345) //lets load the spi drivers for this switch
+  {
+    eval("insmod","spi-algo-bit");
+    eval("insmod","spi-ixp4xx");
+    eval("insmod","ks8995m");
+    sleep(1);
+    system("echo R01=01 > /proc/driver/KS8995M"); // enable switch 
+  }
 
 
   /* Set a sane date */
