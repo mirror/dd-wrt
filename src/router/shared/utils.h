@@ -170,15 +170,19 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // U.S.Robotics USR5430 bridge (4712 cpu, no switch, fccid: ?)
 #define ROUTER_USR_5430 0x3210
 
+// U.S.Robotics USR5461 (5350 cpu, fccid: ?)
+#define ROUTER_USR_5461 0x3300
+
 // Meraki Mini (Atheros SoC, no switch, fccid: Meraki UDX-MERAKI-MINI)
-#define ROUTER_BOARD_MERAKI 0x330f
+#define ROUTER_BOARD_MERAKI 0x340f
 
 // Asus WL500g (4702 cpu, fccid: Asus MSQWL500G)
-#define ROUTER_ASUS_WL500G 0x3406
+#define ROUTER_ASUS_WL500G 0x3506
 
-#define ROUTER_BOARD_CA8 0x3506
+#define ROUTER_BOARD_CA8 0x3606
 
-#define ROUTER_BOARD_FONERA2200 0x3601
+// Fonera (Atheros SoC,...)
+#define ROUTER_BOARD_FONERA2200 0x3701
 
 
 #define NVROUTER "DD_BOARD"
