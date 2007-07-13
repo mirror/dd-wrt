@@ -5558,6 +5558,11 @@ struct ej_handler ej_handlers[] = {
   {"show_olsrd", ej_show_olsrd},
 #endif
   {"show_routeif", ej_show_routeif},
+#ifdef HAVE_MILKFISH
+{"show_phonebook", ej_show_phonebook},
+{"show_ppptime", ej_show_ppptime},
+{"exec_milkfish_service", ej_exec_milkfish_service},
+#endif
 
   {NULL, NULL}
 };
