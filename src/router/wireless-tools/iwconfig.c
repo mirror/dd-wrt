@@ -1,14 +1,14 @@
 /*
  *	Wireless Tools
  *
- *		Jean II - HPLB 97->99 - HPL 99->07
+ *		Jean II - HPLB 97->99 - HPL 99->04
  *
  * Main code for "iwconfig". This is the generic tool for most
  * manipulations...
  * You need to link this code against "iwlib.c" and "-lm".
  *
  * This file is released under the GPL license.
- *     Copyright (c) 1997-2007 Jean Tourrilhes <jt@hpl.hp.com>
+ *     Copyright (c) 1997-2004 Jean Tourrilhes <jt@hpl.hp.com>
  */
 
 #include "iwlib.h"		/* Header */
@@ -298,7 +298,10 @@ display_info(struct wireless_info *	info,
       tokens +=4;
 
       /* Fixed ? */
-      printf("Sensitivity%c", info->sens.fixed ? '=' : ':');
+      if(info->sens.fixed)
+	printf("Sensitivity=");
+      else
+	printf("Sensitivity:");
 
       if(info->has_range)
 	/* Display in dBm ? */
@@ -350,9 +353,12 @@ display_info(struct wireless_info *	info,
       else
 	{
 	  /* Fixed ? */
-	  printf("RTS thr%c%d B   ",
-		 info->rts.fixed ? '=' : ':',
-		 info->rts.value);
+	  if(info->rts.fixed)
+	    printf("RTS thr=");
+	  else
+	    printf("RTS thr:");
+
+	  printf("%d B   ", info->rts.value);
 	}
       tokens += 3;
     }
@@ -374,9 +380,12 @@ display_info(struct wireless_info *	info,
       else
 	{
 	  /* Fixed ? */
-	  printf("Fragment thr%c%d B   ",
-		 info->frag.fixed ? '=' : ':',
-		 info->frag.value);
+	  if(info->frag.fixed)
+	    printf("Fragment thr=");
+	  else
+	    printf("Fragment thr:");
+
+	  printf("%d B   ", info->frag.value);
 	}
     }
 
@@ -706,12 +715,11 @@ set_mode_info(int		skfd,
 	      int		count)		/* Args count */
 {
   struct iwreq		wrq;
-  unsigned int		k;		/* Must be unsigned */
+  int			k;
 
   /* Avoid "Unused parameter" warning */
   count = count;
 
-  /* Check if it is a uint, otherwise get is as a string */
   if(sscanf(args[0], "%i", &k) != 1)
     {
       k = 0;
@@ -719,7 +727,7 @@ set_mode_info(int		skfd,
 	    strncasecmp(args[0], iw_operation_mode[k], 3))
 	k++;
     }
-  if(k >= IW_NUM_OPER_MODE)
+  if((k >= IW_NUM_OPER_MODE) || (k < 0))
     {
       errarg = 0;
       return(IWERR_ARG_TYPE);
@@ -745,6 +753,7 @@ set_freq_info(int		skfd,
 {
   struct iwreq		wrq;
   int			i = 1;
+  double		freq;
 
   if(!strcasecmp(args[0], "auto"))
     {
@@ -763,21 +772,14 @@ set_freq_info(int		skfd,
 	}
       else			/* Should be a numeric value */
 	{
-	  double		freq;
-	  char *		unit;
-
-	  freq = strtod(args[0], &unit);
-	  if(unit == args[0])
+	  if(sscanf(args[0], "%lg", &(freq)) != 1)
 	    {
 	      errarg = 0;
 	      return(IWERR_ARG_TYPE);
 	    }
-	  if(unit != NULL)
-	    {
-	      if(unit[0] == 'G') freq *= GIGA;
-	      if(unit[0] == 'M') freq *= MEGA;
-	      if(unit[0] == 'k') freq *= KILO;
-	    }
+	  if(index(args[0], 'G')) freq *= GIGA;
+	  if(index(args[0], 'M')) freq *= MEGA;
+	  if(index(args[0], 'k')) freq *= KILO;
 
 	  iw_float2freq(freq, &(wrq.u.freq));
 
@@ -835,20 +837,15 @@ set_bitrate_info(int		skfd,
       else			/* Should be a numeric value */
 	{
 	  double		brate;
-	  char *		unit;
 
-	  brate = strtod(args[0], &unit);
-	  if(unit == args[0])
+	  if(sscanf(args[0], "%lg", &(brate)) != 1)
 	    {
 	      errarg = 0;
 	      return(IWERR_ARG_TYPE);
 	    }
-	  if(unit != NULL)
-	    {
-	      if(unit[0] == 'G') brate *= GIGA;
-	      if(unit[0] == 'M') brate *= MEGA;
-	      if(unit[0] == 'k') brate *= KILO;
-	    }
+	  if(index(args[i], 'G')) brate *= GIGA;
+	  if(index(args[i], 'M')) brate *= MEGA;
+	  if(index(args[i], 'k')) brate *= KILO;
 	  wrq.u.bitrate.value = (long) brate;
 	  wrq.u.bitrate.fixed = 1;
 
@@ -1021,8 +1018,7 @@ set_power_info(int		skfd,
       }
     else
       {
-	double		value;
-	char *		unit;
+	double		temp;
 	int		gotone = 0;
 
 	/* Parse modifiers */
@@ -1034,8 +1030,7 @@ set_power_info(int		skfd,
 	wrq.u.power.disabled = 0;
 
 	/* Is there any value to grab ? */
-	value = strtod(args[0], &unit);
-	if(unit != args[0])
+	if(sscanf(args[i], "%lg", &(temp)) == 1)
 	  {
 	    struct iw_range	range;
 	    int			flags;
@@ -1060,17 +1055,17 @@ set_power_info(int		skfd,
 	    if(flags & IW_POWER_RELATIVE)
 	      {
 		if(range.we_version_compiled < 21)
-		  value *= MEGA;
+		  temp *= MEGA;
 		else
 		  wrq.u.power.flags |= IW_POWER_RELATIVE;
 	      }
 	    else
 	      {
-		value *= MEGA;	/* default = s */
-		if(unit[0] == 'u') value /= MEGA;
-		if(unit[0] == 'm') value /= KILO;
+		temp *= MEGA;	/* default = s */
+		if(index(args[i], 'u')) temp /= MEGA;
+		if(index(args[i], 'm')) temp /= KILO;
 	      }
-	    wrq.u.power.value = (long) value;
+	    wrq.u.power.value = (long) temp;
 	    /* Set some default type if none */
 	    if((wrq.u.power.flags & IW_POWER_TYPE) == 0)
 	      wrq.u.power.flags |= IW_POWER_PERIOD;
@@ -1159,7 +1154,6 @@ set_nwid_info(int		skfd,
 	      int		count)		/* Args count */
 {
   struct iwreq		wrq;
-  unsigned long		temp;
 
   /* Avoid "Unused parameter" warning */
   count = count;
@@ -1176,16 +1170,13 @@ set_nwid_info(int		skfd,
 	wrq.u.nwid.disabled = 0;
       }
     else
-      if(sscanf(args[0], "%lX", &(temp)) != 1)
+      if(sscanf(args[0], "%lX", (unsigned long *) &(wrq.u.nwid.value)) != 1)
 	{
 	  errarg = 0;
 	  return(IWERR_ARG_TYPE);
 	}
       else
-	{
-	  wrq.u.nwid.value = temp;
-	  wrq.u.nwid.disabled = 0;
-	}
+	wrq.u.nwid.disabled = 0;
 
   wrq.u.nwid.fixed = 1;
 
@@ -1309,8 +1300,8 @@ set_txpower_info(int		skfd,
 		/* Check if milliWatt
 		 * We authorise a single 'm' as a shorthand for 'mW',
 		 * on the other hand a 'd' probably means 'dBm'... */
-		ismwatt = ((strchr(args[0], 'm') != NULL)
-			   && (strchr(args[0], 'd') == NULL));
+		ismwatt = ((index(args[0], 'm') != NULL)
+			   && (index(args[0], 'd') == NULL));
 
 		/* We could check 'W' alone... Another time... */
 
@@ -1373,17 +1364,15 @@ set_sens_info(int		skfd,
 	      int		count)		/* Args count */
 {
   struct iwreq		wrq;
-  int			temp;
 
   /* Avoid "Unused parameter" warning */
   count = count;
 
-  if(sscanf(args[0], "%i", &(temp)) != 1)
+  if(sscanf(args[0], "%i", &(wrq.u.sens.value)) != 1)
     {
       errarg = 0;
       return(IWERR_ARG_TYPE);
     }
-  wrq.u.sens.value = temp;
 
   if(iw_set_ext(skfd, ifname, SIOCSIWSENS, &wrq) < 0)
     return(IWERR_SET_EXT);
@@ -1404,8 +1393,7 @@ set_retry_info(int		skfd,
 {
   struct iwreq		wrq;
   int			i = 0;
-  double		value;
-  char *		unit;
+  double		temp;
 
   /* Parse modifiers */
   i = parse_modifiers(args, count, &wrq.u.retry.flags,
@@ -1420,8 +1408,7 @@ set_retry_info(int		skfd,
   wrq.u.retry.disabled = 0;
 
   /* Is there any value to grab ? */
-  value = strtod(args[0], &unit);
-  if(unit == args[0])
+  if(sscanf(args[i], "%lg", &(temp)) != 1)
     {
       errarg = i;
       return(IWERR_ARG_TYPE);
@@ -1438,19 +1425,19 @@ set_retry_info(int		skfd,
       if(range.r_time_flags & IW_RETRY_RELATIVE)
 	{
 	  if(range.we_version_compiled < 21)
-	    value *= MEGA;
+	    temp *= MEGA;
 	  else
 	    wrq.u.retry.flags |= IW_RETRY_RELATIVE;
 	}
       else
 	{
 	  /* Normalise lifetime */
-	  value *= MEGA;	/* default = s */
-	  if(unit[0] == 'u') value /= MEGA;
-	  if(unit[0] == 'm') value /= KILO;
+	  temp *= MEGA;	/* default = s */
+	  if(index(args[i], 'u')) temp /= MEGA;
+	  if(index(args[i], 'm')) temp /= KILO;
 	}
     }
-  wrq.u.retry.value = (long) value;
+  wrq.u.retry.value = (long) temp;
   ++i;
 
   if(iw_set_ext(skfd, ifname, SIOCSIWRETRY, &wrq) < 0)
@@ -1493,16 +1480,12 @@ set_rts_info(int		skfd,
 	      return(IWERR_GET_EXT);
 	    wrq.u.rts.fixed = 1;
 	  }
-	else
-	  {	/* Should be a numeric value */
-	    long	temp;
-	    if(sscanf(args[0], "%li", (unsigned long *) &(temp)) != 1)
-	      {
-		errarg = 0;
-		return(IWERR_ARG_TYPE);
-	      }
-	    wrq.u.rts.value = temp;
-	  }
+	else			/* Should be a numeric value */
+	  if(sscanf(args[0], "%li", (unsigned long *) &(wrq.u.rts.value)) != 1)
+	    {
+	      errarg = 0;
+	      return(IWERR_ARG_TYPE);
+	    }
       }
 
   if(iw_set_ext(skfd, ifname, SIOCSIWRTS, &wrq) < 0)
@@ -1545,17 +1528,13 @@ set_frag_info(int		skfd,
 	      return(IWERR_GET_EXT);
 	    wrq.u.frag.fixed = 1;
 	  }
-	else
-	  {	/* Should be a numeric value */
-	    long	temp;
-	    if(sscanf(args[0], "%li", &(temp))
-	       != 1)
-	      {
-		errarg = 0;
-		return(IWERR_ARG_TYPE);
-	      }
-	    wrq.u.frag.value = temp;
-	  }
+	else			/* Should be a numeric value */
+	  if(sscanf(args[0], "%li", (unsigned long *) &(wrq.u.frag.value))
+	     != 1)
+	    {
+	      errarg = 0;
+	      return(IWERR_ARG_TYPE);
+	    }
       }
 
   if(iw_set_ext(skfd, ifname, SIOCSIWFRAG, &wrq) < 0)
@@ -1715,7 +1694,7 @@ static const struct iwconfig_entry iwconfig_cmds[] = {
   { "power",		set_power_info,		1,	SIOCSIWPOWER,
 	"Set Power Management",		"{period N|timeout N|saving N|off}" },
 #ifndef WE_ESSENTIAL
-  { "nickname",		set_nick_info,		1,	SIOCSIWNICKN,
+  { "nick",		set_nick_info,		1,	SIOCSIWNICKN,
 	"Set Nickname",			"NNN" },
   { "nwid",		set_nwid_info,		1,	SIOCSIWNWID,
 	"Set NWID",			"{NN|on|off}" },
