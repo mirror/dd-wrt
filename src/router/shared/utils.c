@@ -629,8 +629,14 @@ internal_getRouterBrand ()
     {
       setRouter ("U.S.Robotics USR5430");
       return ROUTER_USR_5430;
-    }   
- 
+    }
+      
+  if (boardnum == 10496 && nvram_match ("boardtype", "0x456"))
+    {
+      setRouter ("U.S.Robotics USR5461");
+      return ROUTER_USR_5461;
+    } 
+      
   if (boardnum == 1024 && nvram_match ("boardtype", "0x0446"))
     {
       char *cfe = nvram_safe_get ("cfe_version");
