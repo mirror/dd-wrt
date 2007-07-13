@@ -1755,8 +1755,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"sip_port", "5060", 0},
   {"sip_domain", "sip.skytron.de", 0},
 #else
-  {"sip_port", "5060", 0},
-  {"sip_domain", "", 0},
+  {"sip_port", "5060", 0},          /* MILKFISH SETTING */ //this setting is not evaluated/used by the milkfish scripts for milkfish-dd 1.0 - fs070712
+  {"sip_domain", "192.168.1.1", 0}, /* MILKFISH SETTING */ //set "192.168.1.1" as default - not setting at all disables dbtextctl script - fs070712
 #endif
 #ifdef HAVE_AQOS
   {"default_uplevel", "1000", 0},	//set a useful value to prevent deadlock
@@ -2088,14 +2088,14 @@ struct nvram_tuple srouter_defaults[] = {
   {"pppoeserver_sharedkey", "", 0},
 #endif
 #ifdef HAVE_MILKFISH
-  {"milkfish_enabled", "0", 0},	/* MILKFISH enable|disable */
+  {"milkfish_enabled", "0", 0},	/* MILKFISH enable=1|disable=0 */
   {"openser_cfg", "/var/openser/milkfish_openser.cfg", 0},	/* MILKFISH SETTING */
   {"milkfish_fromdomain", "", 0},	/* MILKFISH SETTING */
   {"milkfish_fromswitch", "off", 0},	/* MILKFISH SETTING */
   {"milkfish_username", "", 0},	/* MILKFISH SETTING */
   {"milkfish_password", "", 0},	/* MILKFISH SETTING */
   {"milkfish_routerid", "", 0},	/* MILKFISH SETTING */
-  {"milkfish_ppptime", "off", 0},	/* MILKFISH SETTING */
+  {"milkfish_ppptime", "off", 0},	/* MILKFISH SETTING - keep always "off" on dd-wrt !*/
   {"milkfish_audit", "off", 0},	/* MILKFISH SETTING */
   {"milkfish_dynsip", "off", 0},	/* MILKFISH SETTING */
   {"milkfish_siptrace", "off", 0},	/* MILKFISH SETTING */
