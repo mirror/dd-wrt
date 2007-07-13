@@ -357,6 +357,7 @@ endif
 
 ifeq ($(CONFIG_MILKFISH),y)
 CFLAGS += -DHAVE_MILKFISH
+OBJS += milkfish.c
 endif
 
 #OBJS += http.o
