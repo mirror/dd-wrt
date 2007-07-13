@@ -162,6 +162,8 @@ install-dynamic:: $(DYNAMIC)
 	install -m 755 -d $(INSTALL_LIB)
 	install -m 755 $(DYNAMIC) $(INSTALL_LIB)
 	ln -sfn $(DYNAMIC) $(INSTALL_LIB)/$(DYNAMIC_LINK)
+	@echo "*** Don't forget to add $(INSTALL_LIB) to /etc/ld.so.conf, and run ldconfig as root. ***"
+	@$(LDCONFIG) || echo "*** Could not run ldconfig ! ***"
 
 # Install the static library
 install-static:: $(STATIC)
