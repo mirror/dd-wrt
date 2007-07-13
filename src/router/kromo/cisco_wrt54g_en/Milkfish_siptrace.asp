@@ -6,10 +6,6 @@ function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	apply(F);
 }
-function to_apply(F) {
-	F.save_button.value = sbutton.saving;
-	applytake(F);
-}
 		
 		//]]>
 		</script>
@@ -17,15 +13,17 @@ function to_apply(F) {
 	
 	<body>
 		<form name="setup" action="applyuser.cgi" method="<% get_http_method(); %>">
-		<input type="hidden" name="submit_button" value="Milkfish_phonebook" />
+		<input type="hidden" name="submit_button" value="Milkfish_siptrace" />
 		<input type="hidden" name="action" value="Apply" />
-		<input type="hidden" name="change_action" />
+		<input type="hidden" name="change_action" value="gozila_cgi" />
 		<input type="hidden" name="submit_type" />
 		<input type="hidden" name="commit" value="1" />
 			<div id="main">
 				<div id="contentsInfo">
-					<h2>Milkfish - SIP Phonebook</h2>
-                                        <% exec_milkfish_service("milkfish_services phonebook"); %>
+					<h2>Milkfish SIP Trace</h2><br /><br />
+					<b>Reload page to update trace</b>
+					<br /><br />
+                                        <% exec_milkfish_service("cat /var/log/sip_trace.log"); %>
                                         <div class="submitFooter">
 						<script type="text/javascript">
 						//<![CDATA[
