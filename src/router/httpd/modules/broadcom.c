@@ -4671,7 +4671,7 @@ ej_get_cputemp (webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_GATEWORX
 #define TEMP_MUL 100
   FILE *fp =
-    fopen ("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/temp_input",
+    fopen ("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/temp_input",
 	   "rb");
 #else
 #define TEMP_MUL 1000

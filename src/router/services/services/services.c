@@ -1549,7 +1549,8 @@ start_force_to_dial (void)
 #ifdef HAVE_CPUTEMP
 
 #ifdef HAVE_GATEWORX
-#define TEMP_PATH "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028"
+#define TEMP_PATH "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028"
+//#define TEMP_PATH "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028"
 #define TEMP_PREFIX "temp"
 #define TEMP_MUL 100
 #else
