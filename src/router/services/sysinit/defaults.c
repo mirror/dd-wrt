@@ -1836,9 +1836,15 @@ struct nvram_tuple srouter_defaults[] = {
   {"apd_enable", "0", 0},
 #endif
 #endif
-
+#ifdef HAVE_FONERA
+  {"upgrade_delay", "600", 0},
+#elif HAVE_MERAKI
+  {"upgrade_delay", "600", 0},
+#elif HAVE_LS2
+  {"upgrade_delay", "600", 0},
+#else
   {"upgrade_delay", "300", 0},
-
+#endif
 #ifdef HAVE_WIFIDOG
   {"wd_enable", "0", 0},
   {"wd_gwid", "default", 0},
