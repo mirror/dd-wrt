@@ -1733,23 +1733,30 @@ ej_filter_init (webs_t wp, int argc, char_t ** argv)
 
   return;
 }
+void 
+ej_filter_port_services_get (webs_t wp, int argc, char_t ** argv) 
+{ 
+	char *type; 
+	int which; 
+	char word[1024], *next, services[8192] = "", svcs_var[32] = ""; 
+	char delim[] = "<&nbsp;>"; 
+	int index = 0; 
+	
+	D ("ej_filter_port_services get"); 
+	
+	if (ejArgs (argc, argv, "%s %d", &type, &which) < 2) 
+	{ 
+		websError (wp, 400, "Insufficient args\n"); 
+		return; 
+	} 
 
-void
-ej_filter_port_services_get (webs_t wp, int argc, char_t ** argv)
-{
-  char *type;
-  int which;
-  char word[1024], *next, *services;
-  char delim[] = "<&nbsp;>";
-  int index = 0;
-  D ("ej_filter_port_services get");
-  if (ejArgs (argc, argv, "%s %d", &type, &which) < 2)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return;
-    }
+	do 
+	{ 
+		snprintf (svcs_var, 31, "filter_services%d", index++); 
+		strcat (services, nvram_safe_get (svcs_var)); 
+	} 
+	while (strlen (nvram_safe_get (svcs_var)) > 0 && index < 8); 
 
-  services = get_filter_services ();
 
   if (!strcmp (type, "all_list"))
     {
