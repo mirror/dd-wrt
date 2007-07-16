@@ -1547,7 +1547,7 @@ configure_single (int count)
   eval ("iwpriv", dev, "wmm", default_get (wmm, "0"));
 //  eval ("iwpriv", dev, "uapsd","0");
   eval ("iwpriv",dev,"scandisable","0");
-
+ int disablescan=0;
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
     {
       cprintf ("set channel\n");
@@ -1562,6 +1562,7 @@ configure_single (int count)
 	  char freq[64];
 	  sprintf (freq, "%sM", ch);
 	  eval ("iwpriv",dev,"scandisable","1");
+	  disablescan=1;
 	  eval ("iwconfig", dev, "freq", freq);
 	}
     }
@@ -1622,7 +1623,9 @@ configure_single (int count)
 	eval ("iwpriv", var, "wds", "1");
       if (!strcmp (m, "wdsap"))
 	eval ("iwpriv", var, "wdsvlan", "1");
-	
+      if (scandisable)
+      	  eval ("iwpriv",var,"scandisable","1");
+
       cnt++;
     }
 
