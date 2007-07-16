@@ -93,7 +93,7 @@ else
 	install -D wl $(INSTALLDIR)/usr/sbin/wl
 endif
 else
-	install -D wl $(INSTALLDIR)/usr/sbin/wl
+	install -D wl.v23 $(INSTALLDIR)/usr/sbin/wl
 endif
 
 endif
