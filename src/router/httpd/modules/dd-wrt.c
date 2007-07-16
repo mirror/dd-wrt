@@ -6359,17 +6359,15 @@ char temp[128] = "";
 		i++;
 		}	
 */
-  char services[8192] = "", svcs_var[32] = "filter_services0";
-  int index = 1;
+  char services[8192] = "", svcs_var[32] = "";
+  int index = 0;
 
-  while (strlen (nvram_safe_get (svcs_var)) > 0 && index < 8)
-    {
-      strcat (services, nvram_safe_get (svcs_var));
-      snprintf (svcs_var, 31, "filter_services%d", index);
-      index++;
-
-
-    }
+    do 
+		{ 
+		snprintf (svcs_var, 31, "filter_services%d", index++); 
+		strcat (services, nvram_safe_get (svcs_var)); 
+		} 
+	while (strlen (nvram_safe_get (svcs_var)) > 0 && index < 8); 
 
   return services;
 }
