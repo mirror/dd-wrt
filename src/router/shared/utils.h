@@ -171,7 +171,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_USR_5430 0x3210
 
 // U.S.Robotics USR5461 (5350 cpu, fccid: ?)
-#define ROUTER_USR_5461 0x3300
+#define ROUTER_USR_5461 0x330f
 
 // Meraki Mini (Atheros SoC, no switch, fccid: Meraki UDX-MERAKI-MINI)
 #define ROUTER_BOARD_MERAKI 0x340f
