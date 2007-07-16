@@ -1623,7 +1623,7 @@ configure_single (int count)
 	eval ("iwpriv", var, "wds", "1");
       if (!strcmp (m, "wdsap"))
 	eval ("iwpriv", var, "wdsvlan", "1");
-      if (scandisable)
+      if (disablescan)
       	  eval ("iwpriv",var,"scandisable","1");
 
       cnt++;
