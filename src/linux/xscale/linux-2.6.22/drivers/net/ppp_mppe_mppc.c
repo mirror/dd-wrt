@@ -110,11 +110,11 @@ static inline void
 arc4_encrypt(struct ppp_mppe_state *state, const unsigned char *in,
 	     const unsigned int len, unsigned char *out)
 {
-    struct scatterlist sgin[4], sgout[4];
-
-    setup_sg(sgin, in, len);
-    setup_sg(sgout, out, len);
-    crypto_cipher_encrypt_one(state->arc4_tfm,sgout, sgin);
+    int i;
+    for (i = 0; i < len; i++)
+    {
+       crypto_cipher_encrypt_one(state->arc4_tfm, out+i, in+i);
+    }
 }
 
 #define arc4_decrypt arc4_encrypt
@@ -133,7 +133,7 @@ get_new_key_from_sha(struct ppp_mppe_state *state, unsigned char *interim_key)
     setup_sg(&sg[2], state->session_key, state->keylen);
     setup_sg(&sg[3], sha_pad->sha_pad2, sizeof(sha_pad->sha_pad2));
 
-    crypto_digest_digest (state->sha1_tfm, sg, 4, state->sha1_digest);
+    crypto_digest_digest ((struct crypto_tfm *)state->sha1_tfm, sg, 4, state->sha1_digest);
 
     memcpy(interim_key, state->sha1_digest, state->keylen);
 }
@@ -251,7 +251,7 @@ mppe_alloc(unsigned char *options, int opt_len, int comp)
 
     if (state->mppe) { /* specific for MPPE */
 	/* Load ARC4 algorithm */
-	state->arc4_tfm = crypto_alloc_cipher("arc4", 0,CRYPTO_ALG_ASYNC);
+	state->arc4_tfm = crypto_alloc_cipher("arc4", 0, 0);
 	if (state->arc4_tfm == NULL) {
 	    if (state->mppc) {
 		vfree(state->hash);
@@ -264,7 +264,7 @@ mppe_alloc(unsigned char *options, int opt_len, int comp)
 	}
 
 	/* Load SHA1 algorithm */
-	state->sha1_tfm = crypto_alloc_cipher("sha1", 0,CRYPTO_ALG_ASYNC);
+	state->sha1_tfm = crypto_alloc_cipher("sha1", 0, 0);
 	if (state->sha1_tfm == NULL) {
 	    crypto_free_cipher(state->arc4_tfm);
 	    if (state->mppc) {
@@ -277,7 +277,7 @@ mppe_alloc(unsigned char *options, int opt_len, int comp)
 	    return NULL;
 	}
 
-	digestsize = crypto_tfm_alg_digestsize(state->sha1_tfm);
+	digestsize = crypto_hash_digestsize((struct crypto_hash *)state->sha1_tfm);
 	if (digestsize < MPPE_MAX_KEY_LEN) {
 	    crypto_free_cipher(state->sha1_tfm);
 	    crypto_free_cipher(state->arc4_tfm);
