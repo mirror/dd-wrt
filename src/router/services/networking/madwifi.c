@@ -925,8 +925,7 @@ setupHostAP (char *prefix, int iswan)
 	  sprintf (psk, "%s_wpa_psk", prefix);
 	  fprintf (fp, "wpa_passphrase=%s\n", nvram_safe_get (psk));
 	  fprintf (fp, "wpa_key_mgmt=WPA-PSK\n");
-	}
-      else
+	}else
 	{
 //        if (nvram_invmatch (akm, "radius"))
 	  fprintf (fp, "wpa_key_mgmt=WPA-EAP\n");

@@ -765,6 +765,7 @@ start_single_service (void)
 	    || nvram_match ("wl0_mode", "apsta")
 	    || nvram_match ("wl0_mode", "apstawet"))
 	  startstop ("httpd");	//httpd will not accept connection anymore on wan/lan ip changes changes 
+	start_service("hostapdwan");
       }
     else if (!strcmp (service, "dhcp_release"))
       {
