@@ -6371,7 +6371,7 @@ char temp[128] = "";
 
   return services;
 }
-
+/*
 void
 ej_get_services_options (webs_t wp, int argc, char_t ** argv)
 {
@@ -6394,21 +6394,21 @@ ej_get_services_options (webs_t wp, int argc, char_t ** argv)
 	(port = strstr (word, "$PORT:")) == NULL)
       continue;
 
-    /* $NAME */
+    // $NAME
     if (sscanf (name, "$NAME:%3d:", &len) != 1)
       continue;
 
     strncpy (name, name + sizeof ("$NAME:nnn:") - 1, len);
     name[len] = '\0';
 
-    /* $PROT */
+    // $PROT
     if (sscanf (prot, "$PROT:%3d:", &len) != 1)
       continue;
 
     strncpy (protocol, prot + sizeof ("$PROT:nnn:") - 1, len);
     protocol[len] = '\0';
 
-    /* $PORT */
+    // $PORT
     if (sscanf (port, "$PORT:%3d:", &len) != 1)
       continue;
 
@@ -6427,7 +6427,7 @@ ej_get_services_options (webs_t wp, int argc, char_t ** argv)
 
   return;
 }
-
+*/
 int
 get_svc (char *svc, char *protocol, char *ports)
 {
