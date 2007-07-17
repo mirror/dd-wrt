@@ -5438,7 +5438,7 @@ struct ej_handler ej_handlers[] = {
   {"get_currate", ej_get_currate},
   {"get_uptime", ej_get_uptime},
   {"get_wan_uptime", ej_get_wan_uptime},
-  {"get_services_options", ej_get_services_options},
+//  {"get_services_options", ej_get_services_options},
   {"get_clone_wmac", ej_get_clone_wmac},
   {"show_modules", ej_show_modules},
   {"show_styles", ej_show_styles},
