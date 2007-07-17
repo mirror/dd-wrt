@@ -4977,7 +4977,7 @@ ej_get_radio_state (webs_t wp, int argc, char_t ** argv)
 
 #endif
 
-  switch (radiooff)
+  switch ((radiooff & WL_RADIO_SW_DISABLE))
     {
     case 0:
       websWrite (wp, "%s", live_translate ("wl_basic.radio_on"));
