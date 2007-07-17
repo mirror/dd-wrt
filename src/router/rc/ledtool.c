@@ -45,8 +45,9 @@ ledtool_main (int argc, char **argv)
 	  usleep (500000);
 	  count--;
 	}
-      sleep (3);
       times--;
+      if (times>0)
+        sleep (3);
     }
 
   return 0;
