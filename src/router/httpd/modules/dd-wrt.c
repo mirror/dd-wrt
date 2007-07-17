@@ -5794,7 +5794,7 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 	{
 
 	  // get rssi
-#ifdef HAVE_MSSID
+//#ifdef HAVE_MSSID
 	  if (sscanf (line, "%d", &rssi) != 1)
 	    continue;
 
@@ -5804,7 +5804,7 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 	      fgets (line, sizeof (line), fp2) != NULL &&
 	      sscanf (line, "%d", &noise) != 1)
 	    continue;
-#else
+/*#else
 	  if (sscanf (line, "%s %s %d", list[0], list[1], &rssi) != 3)
 	    continue;
 //          noise=getNoise(iface);
@@ -5812,7 +5812,7 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 	      fgets (line, sizeof (line), fp2) != NULL &&
 	      sscanf (line, "%s %s %d", list[0], list[1], &noise) != 3)
 	    continue;
-#endif
+#endif*/
 	  // get noise for client/wet mode
 
 	  fclose (fp2);
@@ -5899,7 +5899,7 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
 	{
 
 	  // get rssi
-#ifdef HAVE_MSSID
+//#ifdef HAVE_MSSID
 	  if (sscanf (line, "%d", &rssi) != 1)
 	    continue;
 
@@ -5909,7 +5909,7 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
 	      fgets (line, sizeof (line), fp2) != NULL &&
 	      sscanf (line, "%d", &noise) != 1)
 	    continue;
-#else
+/*#else
 	  if (sscanf (line, "%s %s %d", list[0], list[1], &rssi) != 3)
 	    continue;
 //          noise=getNoise(iface);
@@ -5917,7 +5917,7 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
 	      fgets (line, sizeof (line), fp2) != NULL &&
 	      sscanf (line, "%s %s %d", list[0], list[1], &noise) != 3)
 	    continue;
-#endif
+#endif*/
 	  // get noise for client/wet mode
 
 	  fclose (fp2);
@@ -6041,13 +6041,13 @@ ej_active_wds (webs_t wp, int argc, char_t ** argv)
 	{
 
 	  // get rssi
-#ifdef HAVE_MSSID
+//#ifdef HAVE_MSSID
 	  if (sscanf (line, "%d", &rssi) != 1)
 	    continue;
-#else
+/*#else
 	  if (sscanf (line, "%s %s %d", list[0], list[1], &rssi) != 3)
 	    continue;
-#endif
+#endif*/
 	  fclose (fp2);
 	}
       if (nvram_match ("maskmac", "1") && macmask)
