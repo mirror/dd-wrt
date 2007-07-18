@@ -37,6 +37,7 @@ obj-$(CONFIG_PPPOE) += pppoe
 obj-$(CONFIG_UDHCPD) += udhcpd
 obj-$(CONFIG_UPNP) += upnp
 obj-$(CONFIG_MADWIFI) += madwifi
+obj-$(CONFIG_MADWIFI_MIMO) += madwifi_mimo
 obj-$(CONFIG_ETC) += etc
 #obj-$(CONFIG_VLAN) += vlan
 obj-$(CONFIG_WIRELESS_TOOLS) += wireless-tools
