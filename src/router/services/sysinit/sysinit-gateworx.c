@@ -244,8 +244,22 @@ start_sysinit (void)
 //  if (isGrep("/sbin/lspci -v","EMP-8602"))
 //  eval ("insmod", "ath_pci","powerfix=7", "rfkill=0", "autocreate=none");
 //  else
-  eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
 
+  eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
+#ifdef HAVE_MADWIFI_MIMO
+  eval ("insmod", "wlan");
+  eval ("insmod", "ath_mimo_hal");
+  eval ("insmod", "ath_mimo_dfs");
+  eval ("insmod", "ath_rate_atheros");
+  eval ("insmod", "ath_mimo_pci");
+  eval ("insmod", "wlan_acl");
+  eval ("insmod", "wlan_ccmp");
+  eval ("insmod", "wlan_tkip");
+  eval ("insmod", "wlan_wep");
+  eval ("insmod", "wlan_xauth");
+  eval ("insmod", "wlan_scan_ap");
+  eval ("insmod", "wlan_scan_sta");
+#endif
  // eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
 
   if (ifexists ("wifi0"))
