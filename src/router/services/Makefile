@@ -44,6 +44,9 @@ endif
 ifeq ($(CONFIG_ACK),y)
 CFLAGS += -DHAVE_ACK
 endif
+ifeq ($(CONFIG_MADWIFI_MIMO),y)
+CFLAGS += -DHAVE_MADWIFI_MIMO
+endif
 ifeq ($(CONFIG_GLAUCO),y)
 CFLAGS += -DHAVE_GLAUCO
 endif
