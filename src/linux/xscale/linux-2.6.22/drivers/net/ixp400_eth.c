@@ -153,7 +153,7 @@ static u32 npe_error_handler_initialized = 0;
 /* 
  * Module parameters 
  */
-static int npe_learning = 1;      /* default : NPE learning & filtering enable */
+static int npe_learning = 0;      /* default : NPE learning & filtering enable */
 static int log_level = 0;         /* default : no log */
 static int no_ixp400_sw_init = 0; /* default : init core components of the IXP400 Software */
 static int no_phy_scan = 0;       /* default : do phy discovery */
@@ -632,6 +632,14 @@ static struct sk_buff *skQueue[SKB_QSIZE];
  */
 static int phyAddresses[IXP425_ETH_ACC_MII_MAX_ADDR] =
 {
+/*#if defined(CONFIG_ARCH_AVILA)
+    5, 
+    4, 
+    0, 
+    1,
+    2,
+    3
+#el*/
 #if defined(CONFIG_ARCH_IXDP425)
     /* 1 PHY per NPE port */
     0, /* Port 1 (IX_ETH_PORT_1 / NPE B) */
@@ -682,6 +690,16 @@ static int phyAddresses[IXP425_ETH_ACC_MII_MAX_ADDR] =
  */
 static phy_cfg_t default_phy_cfg[] =
 {
+/*#if defined(CONFIG_ARCH_AVILA)
+    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE},
+    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}, 
+    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE},
+    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE},
+    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE},
+    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}
+
+
+#el*/
 #if defined(CONFIG_ARCH_IXDP425)
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE},/* Port 0: monitor the phy */
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE} /* Port 1: monitor the link */
@@ -1778,7 +1796,7 @@ static int dev_pmu_timer_setup(void)
 	 */
 	if (request_irq(IX_OSAL_IXP400_XSCALE_PMU_IRQ_LVL,
 			dev_pmu_timer_npemhpoll_os_isr,
-			SA_SHIRQ,
+			IRQF_SHARED,
 			"ixp400_eth PMU timer",
 			(void *)IRQ_ANY_PARAMETER))
 	{
@@ -1795,7 +1813,7 @@ static int dev_pmu_timer_setup(void)
 	 */
 	if (request_irq(IX_OSAL_IXP400_XSCALE_PMU_IRQ_LVL,
 			dev_pmu_timer_datapathpoll_os_isr,
-			SA_SHIRQ,
+			IRQF_SHARED,
 			"ixp400_eth PMU timer",
 			(void *)IRQ_ANY_PARAMETER))
 	{
@@ -2205,7 +2223,7 @@ static void rx_cb(UINT32 callbackTag, IX_OSAL_MBUF *mbuf, IxEthAccPortId portId)
 #ifndef CONFIG_IXP400_NAPI
     unsigned int qlevel;
 #endif
-    u8 *vlanh;
+//    u8 *vlanh;
     TRACE;
     dev = (struct net_device *)callbackTag;
     priv = dev->priv;
@@ -2263,9 +2281,9 @@ static void rx_cb(UINT32 callbackTag, IX_OSAL_MBUF *mbuf, IxEthAccPortId portId)
 	/* set the length of the received skb from the mbuf length  */
 	skb->tail = skb->data + len;
 	skb->len = len;
-	vlanh=(u8 *)skb->data;
-	if (*(vlanh+12)==0x81) 
-	    *(vlanh+13)=0;
+//	vlanh=(u8 *)skb->data;
+//	if (*(vlanh+12)==0x81) 
+//	    *(vlanh+13)=0;
 #ifdef DEBUG_DUMP
 	skb_dump("rx", skb);
 #endif
@@ -3121,7 +3139,7 @@ static int qmgr_init(void)
 
     if (request_irq(IX_OSAL_IXP400_QM1_IRQ_LVL,
                     dev_qmgr_os_isr,
-                    SA_SHIRQ,
+                    IRQF_SHARED,
                     "ixp400_eth QM1",
                     (void *)IRQ_ANY_PARAMETER))
     {
