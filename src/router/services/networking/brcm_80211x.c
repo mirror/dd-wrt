@@ -197,3 +197,8 @@ setupSupplicant (char *prefix)
 
 
 }
+
+void start_supplicant(void) //for testing only
+{
+setupSupplicant("wl0");
+}
