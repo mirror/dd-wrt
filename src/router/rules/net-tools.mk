@@ -4,5 +4,6 @@ net-tools:
 	
 
 net-tools-install:
-	@true
+	mkdir -p $(INSTALLDIR)/net-tools/usr/sbin
+	cp net-tools/mii-tool $(INSTALLDIR)/net-tools/usr/sbin
 
