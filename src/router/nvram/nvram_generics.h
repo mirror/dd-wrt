@@ -88,7 +88,7 @@ return chains;
  */
 int
 nvram_match(char *name, char *match) {
-	const char *value = BCMINIT(nvram_get)(name);
+	const char *value = nvram_get(name);
 	return (value && !strcmp(value, match));
 }
 
@@ -101,7 +101,7 @@ nvram_match(char *name, char *match) {
  */
 int
 nvram_invmatch(char *name, char *invmatch) {
-	const char *value = BCMINIT(nvram_get)(name);
+	const char *value = nvram_get(name);
 	return (value && strcmp(value, invmatch));
 }
 

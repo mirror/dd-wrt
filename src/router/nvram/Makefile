@@ -16,7 +16,11 @@
 include $(TOP)/.config
 
 ifeq ($(CONFIG_MSSID),y)
+ifeq ($(CONFIG_BUFFALO),y)
+CFLAGS	+= -I. -I$(SRCBASE)/include.bcm -Wall
+else
 CFLAGS	+= -I. -I$(SRCBASE)/include.v24 -Wall
+endif
 else
 CFLAGS	+= -I. -I$(SRCBASE)/include.v23 -Wall
 endif
