@@ -162,6 +162,7 @@ include rules/ctorrent.mk
 include rules/milkfish.mk
 include rules/quagga.mk
 include rules/bmon.mk
+include rules/ethtool.mk
 
 # Generic rules
 #
