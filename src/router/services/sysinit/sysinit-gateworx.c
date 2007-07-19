@@ -202,7 +202,7 @@ start_sysinit (void)
 //system("/etc/kendin");
 
 
-#if 0
+#if 1
   eval ("insmod", "ixp400th");
   eval ("insmod", "ixp400");
   system2 ("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
@@ -219,7 +219,7 @@ start_sysinit (void)
   }
   eval ("insmod", "ocf");
   eval ("insmod", "cryptodev");
-  eval ("insmod", "ixp4xx", "init_crypto=0");
+//  eval ("insmod", "ixp4xx", "init_crypto=0");
 #else
 //  eval ("mknod", "/dev/IxNpe","c","10","184");
   system2 ("cat /usr/lib/firmware/NPE-B > /dev/misc/ixp4xx_ucode");
@@ -230,20 +230,6 @@ start_sysinit (void)
 
 
 
-/*  eval ("insmod", "wlan");
-  eval ("insmod", "ath_hal");
-  eval ("insmod", "ath_dfs");
-  eval ("insmod", "ath_rate_atheros");
-  eval ("insmod", "wlan_scan_sta");
-  eval ("insmod", "wlan_scan_ap");
-  eval ("insmod", "wlan_acl");
-  eval ("insmod", "wlan_ccmp");
-  eval ("insmod", "wlan_tkip");
-  eval ("insmod", "wlan_wep");
-  eval ("insmod", "wlan_xauth");*/
-//  if (isGrep("/sbin/lspci -v","EMP-8602"))
-//  eval ("insmod", "ath_pci","powerfix=7", "rfkill=0", "autocreate=none");
-//  else
 
   eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
 #ifdef HAVE_MADWIFI_MIMO
@@ -298,14 +284,14 @@ Configure mac addresses by reading data from eeprom
   eval ("ifconfig", "ixp0", "0.0.0.0", "up");
   eval ("ifconfig", "ixp1", "0.0.0.0", "up");
 
-  if (getRouterBrand()==ROUTER_BOARD_GATEWORX_GW2345) //lets load the spi drivers for this switch
+/*  if (getRouterBrand()==ROUTER_BOARD_GATEWORX_GW2345) //lets load the spi drivers for this switch
   {
     eval("insmod","spi-algo-bit");
     eval("insmod","spi-ixp4xx");
     eval("insmod","ks8995m");
     sleep(1);
     system("echo R01=01 > /proc/driver/KS8995M"); // enable switch 
-  }
+  }*/
 
 
   /* Set a sane date */
