@@ -20,7 +20,11 @@ endif
 
 CFLAGS	= $(COPTS)
 ifeq ($(CONFIG_MSSID),y)
+ifeq ($(CONFIG_BUFFALO),y)
+CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ -Imodules
+else
 CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/ -Imodules
+endif
 else
 CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/ -Imodules
 endif

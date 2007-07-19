@@ -18,7 +18,11 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
 endif
 
 ifeq ($(CONFIG_MSSID),y)
+ifeq ($(CONFIG_BUFFALO),y)
+CFLAGS	= -I. -I../httpd -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/
+else
 CFLAGS	= -I. -I../httpd -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/
+endif
 else
 CFLAGS	= -I. -I../httpd -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/
 endif
