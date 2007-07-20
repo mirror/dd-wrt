@@ -35,7 +35,7 @@ mkconfig:
 	echo CONFIG_DRIVER_WEXT=y >> .config
 	echo CONFIG_WIRELESS_EXTENSION=y >> .config
 
-install: all
+install:
 	mkdir -p $(DESTDIR)/usr/local/sbin/
 	for i in $(ALL); do cp $$i $(DESTDIR)/usr/local/sbin/$$i; done
 
