@@ -1,5 +1,6 @@
 wpa_supplicant2: 
 ifeq ($(CONFIG_WPA_SUPPLICANT2),y)
+	$(MAKE) -C hostapd2/wpa_supplicant clean
 	$(MAKE) -C hostapd2/wpa_supplicant
 else
 	@true
