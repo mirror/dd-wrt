@@ -439,7 +439,7 @@ verify_config:
 		exit 1; \
 	fi
 
-install: all
+install: 
 	mkdir -p $(INSTALLDIR)/hostapd2/usr/sbin
 	for i in $(ALL); do cp $$i $(INSTALLDIR)/hostapd2/usr/sbin/$$i; done
 
