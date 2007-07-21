@@ -127,6 +127,7 @@ obj-$(CONFIG_SQUID) += squid
 obj-$(CONFIG_IPERF) += iperf
 obj-$(CONFIG_NTPD) += ntpd
 obj-$(CONFIG_GPSD) += gpsd
+obj-$(CONFIG_PHP5) += php5
 obj-$(CONFIG_FREERADIUS) += freeradius
 
 obj-$(CONFIG_SCDP) += scdp

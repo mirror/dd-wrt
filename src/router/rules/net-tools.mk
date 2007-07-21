@@ -1,6 +1,6 @@
 net-tools:
 	make -C net-tools
-	make -C net-tools arp
+	make -C net-tools arp mii-tool
 	
 
 net-tools-install:
