@@ -76,6 +76,7 @@ $(LINUXDIR)/.config:
 include rules/matrixssl.mk
 include rules/ntpd.mk
 include rules/gpsd.mk
+include rules/php5.mk
 include rules/openssl.mk
 include rules/rp-l2tp.mk
 include rules/libpcap.mk
