@@ -1,5 +1,5 @@
 quagga:
-	cd quagga && ./configure --host=$(ARCH)-uclibc-linux --enable-opaque-lsa --enable-ospf-te --disable-ospfclient --enable-multipath=32  --disable-ipv6 --prefix=/usr  --disable-ospf6d  --enable-user=root --enable-group=root --disable-ospfapi
+	cd quagga && ./configure --host=$(ARCH)-uclibc-linux $(CONFIG_QUAGGA_EXTRA) --enable-opaque-lsa --enable-ospf-te --disable-ospfclient --enable-multipath=32  --disable-ipv6 --prefix=/usr  --disable-ospf6d  --enable-user=root --enable-group=root --disable-ospfapi
 	$(MAKE) -C quagga
 
 quagga-install:
