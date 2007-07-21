@@ -24,7 +24,7 @@ madwifi_mimo-clean:
 
 madwifi_mimo-install:
 	mkdir -p $(INSTALLDIR)/madwifi_mimo/usr/sbin
-	make -C madwifi_mimo/tools BINDIR=$(INSTALLDIR)/madwifi_mimo/usr/ath/sbin install
+#	make -C madwifi_mimo/tools BINDIR=$(INSTALLDIR)/madwifi_mimo/usr/ath/sbin install
 	make -C madwifi_mimo KERNELPATH=$(LINUXDIR) BINDIR=/usr/ath/sbin DESTDIR=$(INSTALLDIR)/madwifi_mimo TARGET=xscale-$(MADFLAG)be-elf install
 endif
 
@@ -133,6 +133,6 @@ madwifi_mimo-clean:
 
 madwifi_mimo-install:
 	mkdir -p $(INSTALLDIR)/madwifi_mimo/usr/sbin
-	make -C madwifi_mimo/tools BINDIR=$(INSTALLDIR)/madwifi_mimo/usr/ath/sbin install
+#	make -C madwifi_mimo/tools BINDIR=$(INSTALLDIR)/madwifi_mimo/usr/ath/sbin install
 	make -C madwifi_mimo KERNELPATH=$(LINUXDIR) BINDIR=/usr/ath/sbin DESTDIR=$(INSTALLDIR)/madwifi_mimo TARGET=i386$(MADFLAG)-elf install
 endif
