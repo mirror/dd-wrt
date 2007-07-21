@@ -127,6 +127,10 @@ config ROCKETPORT
 	  If you want to compile this driver into the kernel, say Y here.  If
           you don't have a Comtrol RocketPort/RocketModem card installed, say N.
 
+config MOXA
+	tristate "MOXA support"
+
+
 config CYCLADES
 	tristate "Cyclades async mux support"
 	depends on SERIAL_NONSTANDARD && (PCI || ISA)
