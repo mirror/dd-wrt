@@ -1,0 +1,41 @@
+#! /bin/sh
+
+prefix="/usr"
+exec_prefix="/usr"
+version="5.2.3"
+version_id="50203"
+includedir="/usr/include/php"
+includes="-I$includedir -I$includedir/main -I$includedir/TSRM -I$includedir/Zend -I$includedir/ext -I$includedir/ext/date/lib"
+ldflags=""
+libs="-lcrypt   -lcrypt -lm  -lcrypt -lcrypt "
+extension_dir='/usr/lib/extensions/no-debug-non-zts-20060613'
+program_prefix=""
+program_suffix=""
+exe_extension=""
+php_binary="/usr/bin/${program_prefix}php${program_suffix}${exe_extension}"
+
+case "$1" in
+--prefix)
+	echo $prefix;;
+--includes)
+	echo $includes;;
+--ldflags)
+	echo $ldflags;;
+--libs)
+	echo $libs;;
+--extension-dir)
+	echo $extension_dir;;
+--include-dir)
+	echo $includedir;;
+--php-binary)
+	echo $php_binary;;
+--version)
+	echo $version;;
+--vernum)
+	echo $version_id;;
+*)
+	echo "Usage: $0 [--prefix|--includes|--ldflags|--libs|--extension-dir|--include-dir|--php-binary|--version|--vernum]"
+	exit 1;;
+esac
+
+exit 0
