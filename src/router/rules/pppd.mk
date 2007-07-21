@@ -13,6 +13,9 @@ pppd-symlinks:
 
 pppd: pppd-symlinks
 	$(MAKE) -C pppd.new/pppd
+ifeq ($(CONFIG_PPPD_CHAT),y)
+	$(MAKE) -C pppd.new/chat
+endif
 ifeq ($(CONFIG_PPPSTATS),y)
 	$(MAKE) -C pppd.new/pppstats
 endif
@@ -30,6 +33,9 @@ pppd-clean pppd-distclean: pppd-symlinks
 
 pppd-install:
 	install -D pppd.new/pppd/pppd $(INSTALLDIR)/pppd/usr/sbin/pppd
+ifeq ($(CONFIG_PPPD_CHAT),y)
+	install -D pppd.new/chat/chat $(INSTALLDIR)/pppd/usr/sbin/chat
+endif
 	install -D pppd.new/pppd/plugins/rp-pppoe/rp-pppoe.so $(INSTALLDIR)/pppd/usr/lib/rp-pppoe.so
 ifeq ($(CONFIG_PPPSTATS),y)
 	install -D pppd.new/pppstats/pppstats $(INSTALLDIR)/pppd/usr/sbin/pppstats
