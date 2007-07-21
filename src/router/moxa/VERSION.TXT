@@ -1,0 +1,148 @@
+
+Product:	NPort Linux Real TTY Driver (V2)
+Version:	1.14 Build 07062310
+Date:		6/23/2007
+Company:	Moxa Technologies Co., Ltd
+
+            
+Release Note:
+=============
+Ver 1.14 (6/23/2007)
+1. Official release.
+2. New: support 32 port model.
+
+Ver 1.13.11 (5/3/2007)
+1. Bugfix: install error in kernel 2.6.15.
+
+Ver 1.13.9 (3/30/2007)
+1. Bugfix: the npreal2d disappeared in big-endian machine.
+
+Ver 1.13.7 (2/15/2007)
+1. Support Linux kernel up to 2.6.20.
+   
+Ver 1.13.5 (2/9/2007)
+1. Bugfix: tcdrain() function caused application halted when network 
+   is disconnected.
+
+Ver 1.13.3 (2/1/2007)
+1. Fixed PowerPC64 builds problem.
+
+Ver 1.13.1 (12/11/2006)
+1. Fixed DCD off problem.
+2. Fixed can not include 64-bits libssl.so problem.
+
+Ver 1.13 (11/17/2006)
+1. Official release.
+2. Support Secure RealCOM operating mode at NPort 6000 series.  
+
+Ver 1.12.9 (11/17/2006)
+1. Fixed stack smashing detected problem.
+
+Ver 1.12.7 (10/18/2006)
+1. Support Linux kernel up to 2.6.18.1.
+2. Modify flush mechnism for closing port problem. 
+
+Ver 1.12.5 (9/8/2006)
+1. Add null pointer checking in npreal_net_write() to prevent from accessing invalid address.
+
+Ver 1.12.3 (7/12/2006)
+1. Support Linux kernel up to 2.6.17. 
+
+Ver 1.12.1 (3/22/2006)
+1. bugfix: Npreal2d disappeared.
+
+Ver 1.12 (2/23/2006)
+1. Offical release.
+2. new: Add termio CMSPAR option. Now the driver supports MARK and SPACE parity checks.
+3. bugfix: Use access_ok() instead of verify_ok(), since it is obsolete in 2.6.x kernel.
+
+Ver 1.11.11 (12/08/2005)
+1. new: Add npreal2 tools source code into the package.
+2. bugfix: clean up data kept in internal buffer of Real TTY driver when the tty port is closed to prevent from receiving unexpected data in the following open.
+3. bugfix: enlarge buffer size of ttyname[] array to prevent from invalid memory access error in the Linux distributions where long tty names are used.
+
+Ver 1.11.9 (11/21/2005)
+1. bugfix: Fixed compilation error on all v2.6.x versions.
+
+Ver 1.11.7 (11/09/2005)
+1. bugfix: Added null pointer checkings to prevent from invalid memory access in SMP platforms.
+2. bugfix: Fixed ioctl::TIOCMIWAIT bug which causes the calling process halt.
+3. bugfix: Added ASYNC_CLOSING checking to prevent race condition on closing port in SMP platforms.
+4. new: Add debug print management.
+5. bugfix: Incorrect working directory is returned when reading configuration file. Read configuration may fail.
+6. bugfix: Alive check should verify both data channel and command channel to make disconnection timeout checking more accurate.
+
+Ver 1.11.5 (9/13/2005)
+1. bugfix: original put_to_user() declaration will cause type mismatch in 64-bit platform. Modify the delaration to make it work witn both 32-bit Linux and 64-bit Linux.
+
+Ver 1.11.3 (9/5/2005)
+1. bugfix: When user changes system time, connection timeout machanism may not work correctly. The connection may be teared down right away, or never disconnected.
+
+Ver 1.11.1 (8/24/2005)
+1. Support 64-bit Linux.
+2. new: Support TCXONC command of ioctl(). The supported arg values are TCOOFF and TCOON.
+
+Ver 1.11 (7/25/2005)
+1. Offical release.
+2. new: Support NPort IA model.
+
+Ver 1.10.7 (7/13/2005)
+1. bugfix: module use count might be incorrectly decremented in SMP platforms.
+2. bugfix: Wait for port shutdown command to complete before returning to user code. This is to ensure closing port successfully.
+
+Ver 1.10.5 (7/8/2005)
+1. bugfix: Don't block on close when open operation is non-blocking mode.
+2. bugfix: ioctl of serial info won't work for closing_wait option on value ASYNC_CLOSING_WAIT_NONE.
+
+Ver 1.10.3 (6/7/2005)
+1. bugfix: Modified parameters of npreal_write() to support kernel version 2.6.10 and above.
+
+Ver 1.10.1 (5/31/2005)
+1. feature: Close network connections when closing tty ports.
+
+Ver 1.10 (4/22/2005)
+1. Further verified the supported Moxa products.
+2. Support Linux kernel version 2.4.x to 2.6.9.
+3. Bug fixed: Warning message occurs with ppp dialout case.
+4. Bug fixed: With kernel 2.4, try to ping a packet larger than 4KB via
+              ppp dialout caused Linux to hang.
+
+Ver 1.9 (3/2/2005)
+1. Bug fixed: server index of ttyinfo table is not correct. Connection might
+     be down incorrectly.
+
+Ver 1.8 (2/22/2005)
+1. Bug fixed: Open might be slow or failed.
+2. Bug fixed: Warning message occurs when adding/removing nodes in Fedora Core3.
+3. Add Slackware support (Kernel version 2.4.x).
+4. Bug fixed: /dev/ttyr?? nodes might be deleted after system reboot in some Linux kernel 2.6.x.
+
+Ver 1.7 (12/31/2004)
+1. Support ASPP baud rate error detection.
+2. Modified DSCI netstat command: using little endian for max_socket field.
+3. Add new product NPort 5110 into README.TXT and VERSION.TXT.
+4. Fix bug: ap_id field is 4 byte long. Use ntohl() and htonl() to convert between host and network format.
+5. Add alive check mechanism for MOXA products which support DSCI commands (get net state).
+6. Modified alive check to support multiple connections.
+
+Ver1.6
+1. Support Linux kernel 2.6.
+2. Callout device (cur*) is obsolete under Linux 2.6.
+
+Ver1.5
+1. Support NE-4100T, NE-4110S, NE-4120S, NE-4110A, NE-4120A.
+
+Ver1.4.1
+1. Fix compatible problem with Real TTY driver V1 (ver1.1/1.2).
+
+Ver1.4
+1. Support CN2510-8, CN2510-16, CN2610-8, CN2610-16.
+2. Fix compiling error: request for member `counter' in 
+   something not a structure or union. Except Fedora, this is 
+   encounterd on any distribution with kernel version
+   >= 2.4.22. (Bug#33)
+3. Fix compiling error on Red Hat 7.2: The MODULE_LICENSE is 
+   not defined. (Bug#5)
+
+
+-End-
