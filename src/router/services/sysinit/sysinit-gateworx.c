@@ -237,7 +237,6 @@ start_sysinit (void)
   eval ("insmod", "ath_mimo_hal");
   eval ("insmod", "ath_mimo_dfs");
   eval ("insmod", "ath_rate_atheros");
-  eval ("insmod", "ath_mimo_pci");
   eval ("insmod", "wlan_acl");
   eval ("insmod", "wlan_ccmp");
   eval ("insmod", "wlan_tkip");
@@ -245,6 +244,7 @@ start_sysinit (void)
   eval ("insmod", "wlan_xauth");
   eval ("insmod", "wlan_scan_ap");
   eval ("insmod", "wlan_scan_sta");
+  eval ("insmod", "ath_mimo_pci");
 #endif
  // eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
 
