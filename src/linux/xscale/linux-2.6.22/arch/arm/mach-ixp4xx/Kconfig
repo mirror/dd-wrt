@@ -222,6 +222,37 @@ config IXP4XX_INDIRECT_PCI
 	  need to use the indirect method instead. If you don't know
 	  what you need, leave this option unselected.
 
+config IXP400_LIB
+	tristate 'Build IXP400 Access Library' 
+	depends on ARCH_IXP4XX
+	default m
+	help
+	  IXP400 Access Library:
+
+	  If you select M here, the Intel IXP400 Access Library will be
+	  compiled as part of the build.
+	
+	  In order for the library to build correctly you must set up some
+	  environment variables before building the kernel. See the README
+	  files included in the IXP400 software distribution for details.
+	
+	  Note that this library is Intel proprietary code and must be
+	  obtained from Intel Corp. See the README files included in the
+	  IXP400 software distribution for details.
+	
+	  The library can be compiled only as a module, as linking it
+	  statically into the kernel would violate the GPL. The library module
+	  will be called ixp400.o. The demo codelets included with the library
+	  will be built in seperate modules. See the documentation included in
+	  the IXP400 software distribution for details.
+	
+	  Note that the access library build is not compatible with the
+	  CONFIG_MODVERSIONS option (Controlled by the "set version information
+	  on all symbols" option in the "loadable module support" section).
+	
+	  Select M if you have the IXP400 source code and wish to include it
+	  in your build.
+
 
 endmenu
 
