@@ -109,6 +109,7 @@ function edit_wol_hosts(mac, host, ip, add) {
 	if (wol_hosts.length == 0)
 		wol_hosts = " ";
 
+	F.change_action.value="gozila_cgi";
 	F.wol_type.value = "update";
 	F.wol_hosts.value = wol_hosts;
 	apply(F);
