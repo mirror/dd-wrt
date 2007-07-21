@@ -123,18 +123,16 @@ endif
 endif
 
 ifeq ($(ARCH),i386)
-madwifi:
-	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=i386-elf
-	make -C madwifi.dev/madwifi.dev/tools TARGET=i386-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
+madwifi_mimo:
+	make -C madwifi_mimo KERNELPATH=$(LINUXDIR) TARGET=i386$(MADFLAG)-elf  
+	make -C madwifi_mimo/tools CFLAGS="$(CONFIG_MADWIFIFLAGS) $(COPTS) -DNEED_PRINTF" TARGET=i386$(MADFLAG)-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin 
 
-madwifi-clean:
-	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=i386-elf
-	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
+madwifi_mimo-clean:
+	make -C madwifi_mimo clean KERNELPATH=$(LINUXDIR) TARGET=i386$(MADFLAG)-elf
+	make -C madwifi_mimo/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
 
-madwifi-install:
-	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
-ifneq ($(CONFIG_NOWIFI),y)
-	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install TARGET=i386-elf install
-	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=i386-elf install
-endif
+madwifi_mimo-install:
+	mkdir -p $(INSTALLDIR)/madwifi_mimo/usr/sbin
+	make -C madwifi_mimo/tools BINDIR=$(INSTALLDIR)/madwifi_mimo/usr/ath/sbin install
+	make -C madwifi_mimo KERNELPATH=$(LINUXDIR) BINDIR=/usr/ath/sbin DESTDIR=$(INSTALLDIR)/madwifi_mimo TARGET=i386$(MADFLAG)-elf install
 endif
