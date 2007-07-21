@@ -4,7 +4,7 @@ php5:
 	make  -C php5
 
 php5-clean:
-	make  -C php5 clean
+	if test -e "php5/Makefile"; then make -C php5 clean; fi
 
 php5-install:
 	install -D php5/sapi/cli/php $(INSTALLDIR)/php5/usr/bin/php
