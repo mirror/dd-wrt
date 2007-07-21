@@ -1,0 +1,12 @@
+dev=/dev
+
+[ "$#" -eq 1 ] || {
+    echo "usage: mxrmnod [Name]"
+    exit
+}
+
+[ -e $dev/$1 ] && {
+    echo "rm -f $dev/$1"
+    rm -f $dev/$1
+}
+

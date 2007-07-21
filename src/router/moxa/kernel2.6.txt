@@ -1,0 +1,18 @@
+
+
+The NPort Linux driver supports Linux Kernel 2.6 
+===============================================================
+
+1. The first NPort Linux driver which supports Kernel 2.6 is Ver1.6. 
+
+2. The driver is tested on Mandrake 10 and 
+   Fedora Core2 to support Kernel 2.6.
+   If any compatible issue, please contact
+   support@moxa.com
+
+3. The driver difference under 2.6 and 2.4 kernel:
+   a. The cur* device is obsolete. That is,
+      you can't use cum* device under kernel
+      2.6. 
+
+-End-

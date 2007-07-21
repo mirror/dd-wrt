@@ -1,0 +1,9 @@
+ps x | grep $2 > /tmp/tmp_pid
+while true
+do
+	#read name pid ppid arg1 time tty time1 desp || exit
+	echo "executing killp $1 $2"
+	read pid tty stat time desp || exit
+	kill -$1 $pid > /dev/null 2>&1
+done < /tmp/tmp_pid
+

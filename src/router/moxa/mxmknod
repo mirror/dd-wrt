@@ -1,0 +1,32 @@
+dev=/dev
+
+[ "$#" -eq 3 ] || {
+    echo "usage: mxmknod [Name] [Major#] [Minor#]"
+    exit
+}
+
+[ -e $dev/$1 ] && {
+    ./mxrmnod $1
+}
+
+if [ -f	/etc/sysconfig/selinux ]
+then
+STATUS=`sestatus | grep "SELinux " | perl -ne '@F = split; print "$F[2]\n";'`
+if [ "$STATUS" = enabled ]
+then
+[ -e $dev/$1 ] || {
+    echo "mknod -Z system_u:object_r:tty_device_t -m 666 $1 c $2 $3"
+    mknod -Z system_u:object_r:tty_device_t -m 666 $dev/$1 c $2 $3 > /dev/null 2>&1
+}
+else
+[ -e $dev/$1 ] || {
+    echo "mknod -m 666 $1 c $2 $3"
+    mknod -m 666 $dev/$1 c $2 $3 > /dev/null 2>&1
+}
+fi
+else
+[ -e $dev/$1 ] || {
+    echo "mknod -m 666 $1 c $2 $3"
+    mknod -m 666 $dev/$1 c $2 $3 > /dev/null 2>&1
+}
+fi
