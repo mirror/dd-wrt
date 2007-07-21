@@ -1,0 +1,8 @@
+#=========================================================#
+#   This configuration file is created by Moxa NPort      #
+#   Administrator Program automatically, please do not    #
+#   modify this file by yourself.                         #
+#=========================================================#
+ttymajor=33
+calloutmajor=38
+#[Minor] [ServerIP]	[data]	[cmd]	[FIFO]	[SSL]	[ttyName] [coutName]
