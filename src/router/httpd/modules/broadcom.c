@@ -4669,7 +4669,10 @@ static void
 ej_get_cputemp (webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_GATEWORX
-#define TEMP_MUL 100
+int TEMP_MUL=100;
+if (getRouterBrand()==ROUTER_BOARD_GATEWORX_SWAP)
+    TEMP_MUL=200;
+    
   FILE *fp =
     fopen ("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/temp_input",
 	   "rb");
