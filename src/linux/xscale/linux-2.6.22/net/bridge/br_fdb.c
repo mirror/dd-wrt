@@ -55,11 +55,7 @@ void __exit br_fdb_fini(void)
  */
 static inline unsigned long hold_time(const struct net_bridge *br)
 {
-    /* We use forward_delay=0. If code unchanged, every entry in fdb will expire immidately */
-    /* and every packet flood the local network for a period of bridge_max_age afterboot up */
-    /* So we decoulpe this timer from forward_delay. */
-	return br->topology_change ? (15*HZ) : br->ageing_time;
-	//return br->topology_change ? br->forward_delay : br->ageing_time;
+	return br->topology_change ? br->forward_delay : br->ageing_time;
 }
 
 static inline int has_expired(const struct net_bridge *br,
@@ -80,148 +76,6 @@ static inline void fdb_delete(struct net_bridge_fdb_entry *f)
 {
 	hlist_del_rcu(&f->hlist);
 	br_fdb_put(f);
-}
-
-
-void dolist(struct net_bridge *br)
-{
-	struct net_bridge_mc_fdb_entry *dst;
-	struct list_head *lh;
-
-	
-	if (!br)
-	    return;
-
-	printk(KERN_EMERG "bridge	device	group			source			timeout\n");
-	list_for_each_rcu(lh, &br->mc_list) {
-	    dst = (struct net_bridge_mc_fdb_entry *) list_entry(lh, struct net_bridge_mc_fdb_entry, list);
-	    printk(KERN_EMERG "%s	%s  	", br->dev->name, dst->dst->dev->name);
-	    addr_debug((unsigned char *) &dst->addr);
-	    printk(KERN_EMERG "	");
-	    addr_debug((unsigned char *) &dst->host);
-	    printk(KERN_EMERG "	%d\n", (int) (dst->tstamp - jiffies)/HZ);
-	}
-}
-
-int br_mc_fdb_update(struct net_bridge *br, struct net_bridge_port *prt, const unsigned char *dest, unsigned char *host)
-{
-	struct net_bridge_mc_fdb_entry *dst;
-	struct list_head *lh;
-	int ret = 0;
-    
-	list_for_each_rcu(lh, &br->mc_list) {
-	    dst = (struct net_bridge_mc_fdb_entry *) list_entry(lh, struct net_bridge_mc_fdb_entry, list);
-	    if (!memcmp(&dst->addr, dest, ETH_ALEN)) {
-		dst->tstamp = jiffies + QUERY_TIMEOUT*HZ;
-		if (!memcmp(&dst->host, host, ETH_ALEN))
-		    ret = 1;
-	    }
-	}
-	
-	return ret;
-}
-
-struct net_bridge_mc_fdb_entry *br_mc_fdb_get(struct net_bridge *br, struct net_bridge_port *prt, unsigned char *dest, unsigned char *host)
-{
-	struct net_bridge_mc_fdb_entry *dst;
-	struct list_head *lh;
-    
-	list_for_each_rcu(lh, &br->mc_list) {
-	    dst = (struct net_bridge_mc_fdb_entry *) list_entry(lh, struct net_bridge_mc_fdb_entry, list);
-	    if ((!memcmp(&dst->addr, dest, ETH_ALEN)) && (!memcmp(&dst->host, host, ETH_ALEN))) {
-		if (dst->dst == prt)
-		    return dst;
-	    }
-	}
-	
-	return NULL;
-}
-
-extern mac_addr upnp_addr;
-
-int br_mc_fdb_add(struct net_bridge *br, struct net_bridge_port *prt, const unsigned char *dest, unsigned char *host)
-{
-	struct net_bridge_mc_fdb_entry *mc_fdb;
-
-	//printk("--- add mc entry ---\n");
-
-	if (!memcmp(dest, &upnp_addr, ETH_ALEN))
-	    return 0;
-	    
-	if (br_mc_fdb_update(br, prt, dest, host))
-	    return 0;
-	    
-	mc_fdb = kmalloc(sizeof(struct net_bridge_mc_fdb_entry), GFP_KERNEL);
-	if (!mc_fdb)
-	    return ENOMEM;
-	memcpy(mc_fdb->addr.addr, dest, ETH_ALEN);
-	memcpy(mc_fdb->host.addr, host, ETH_ALEN);
-	mc_fdb->dst = prt;
-	mc_fdb->tstamp = jiffies + QUERY_TIMEOUT*HZ;;
-	spin_lock_bh(&br->mcl_lock);
-	list_add_tail_rcu(&mc_fdb->list, &br->mc_list);
-	spin_unlock_bh(&br->mcl_lock);
-
-	if (!br->start_timer) {
-    	    init_timer(&br->igmp_timer);
-	    br->igmp_timer.expires = jiffies + TIMER_CHECK_TIMEOUT*HZ;
-	    br->igmp_timer.function = query_timeout;
-	    br->igmp_timer.data = (unsigned long) br;
-	    add_timer(&br->igmp_timer);
-	    br->start_timer = 1;
-	}
-
-	return 1;
-}
-
-void br_mc_fdb_cleanup(struct net_bridge *br)
-{
-	struct net_bridge_mc_fdb_entry *dst;
-	struct list_head *lh;
-	struct list_head *tmp;
-    
-	spin_lock_bh(&br->mcl_lock);
-	list_for_each_safe_rcu(lh, tmp, &br->mc_list) {
-	    dst = (struct net_bridge_mc_fdb_entry *) list_entry(lh, struct net_bridge_mc_fdb_entry, list);
-	    list_del_rcu(&dst->list);
-	    kfree(dst);
-	}
-	spin_unlock_bh(&br->mcl_lock);
-}
-
-void br_mc_fdb_remove_grp(struct net_bridge *br, struct net_bridge_port *prt, unsigned char *dest)
-{
-	struct net_bridge_mc_fdb_entry *dst;
-	struct list_head *lh;
-	struct list_head *tmp;
-
-	spin_lock_bh(&br->mcl_lock);
-	list_for_each_safe_rcu(lh, tmp, &br->mc_list) {
-	    dst = (struct net_bridge_mc_fdb_entry *) list_entry(lh, struct net_bridge_mc_fdb_entry, list);
-	    if ((!memcmp(&dst->addr, dest, ETH_ALEN)) && (dst->dst == prt)) {
-		list_del_rcu(&dst->list);
-		kfree(dst);
-	    }
-	}
-	spin_unlock_bh(&br->mcl_lock);
-}
-
-int br_mc_fdb_remove(struct net_bridge *br, struct net_bridge_port *prt, unsigned char *dest, unsigned char *host)
-{
-	struct net_bridge_mc_fdb_entry *mc_fdb;
-
-	//printk("--- remove mc entry ---\n");
-	
-	if ((mc_fdb = br_mc_fdb_get(br, prt, dest, host))) {
-	    spin_lock_bh(&br->mcl_lock);
-	    list_del_rcu(&mc_fdb->list);
-	    kfree(mc_fdb);
-	    spin_unlock_bh(&br->mcl_lock);
-
-	    return 1;
-	}
-	
-	return 0;
 }
 
 void br_fdb_changeaddr(struct net_bridge_port *p, const unsigned char *newaddr)
@@ -534,12 +388,10 @@ void br_fdb_update(struct net_bridge *br, struct net_bridge_port *source,
 	if (likely(fdb)) {
 		/* attempt to update an entry for a local interface */
 		if (unlikely(fdb->is_local)) {
-		#if 0 
 			if (net_ratelimit())
 				printk(KERN_WARNING "%s: received packet with "
 				       " own address as source address\n",
 				       source->dev->name);
-		#endif
 		} else {
 			/* fastpath: update of existing entry */
 			fdb->dst = source;
