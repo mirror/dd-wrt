@@ -992,3 +992,6 @@ void br_netfilter_fini(void)
 	unregister_sysctl_table(brnf_sysctl_header);
 #endif
 }
+EXPORT_SYMBOL(br_netfilter_init);
+EXPORT_SYMBOL(br_netfilter_fini);
+
