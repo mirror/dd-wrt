@@ -21,12 +21,6 @@
 #include <asm/uaccess.h>
 #include "br_private.h"
 
-#define BRCTL_SET_PORT_SNOOPING 21
-#define BRCTL_CLEAR_PORT_SNOOPING 22
-#define BRCTL_ENABLE_SNOOPING 23
-#define BRCTL_SHOW_SNOOPING 24
-#define SIOCBRSHOWSNOOPING 24
-
 /* called with RTNL */
 static int get_bridge_ifindices(int *indices, int num)
 {
@@ -52,31 +46,6 @@ static void get_port_ifindices(struct net_bridge *br, int *ifindices, int num)
 		if (p->port_no < num)
 			ifindices[p->port_no] = p->dev->ifindex;
 	}
-}
-
-int br_set_port_snooping(struct net_bridge_port *p,  void __user * userbuf)
-{
-    unsigned char tmp[26];
-    
-    if (copy_from_user(tmp, userbuf, sizeof(tmp)))
-		return -EFAULT;
-    br_mc_fdb_add(p->br, p, tmp, tmp+6);
-    return 0;
-}
-
-int br_clear_port_snooping(struct net_bridge_port *p,  void __user * userbuf)
-{
-    unsigned char tmp[26];
-    unsigned char all[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-    
-    if (copy_from_user(tmp, userbuf, sizeof(tmp)))
-		return -EFAULT;
-    p->br->proxy = 1;
-    if (!memcmp(tmp+6, all, 6))
-	br_mc_fdb_remove_grp(p->br, p, tmp);
-    else
-	br_mc_fdb_remove(p->br, p, tmp, tmp+6);
-    return 1;
 }
 
 /*
@@ -317,39 +286,6 @@ static int old_dev_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 		return ret;
 	}
 
-	case BRCTL_SET_PORT_SNOOPING:
-	{
-		struct net_bridge_port *p;
-		int ret = 0;
-		if (!capable(CAP_NET_ADMIN))
-			return -EPERM;
-
-		spin_lock_bh(&br->lock);
-		if ((p = br_get_port(br, args[1])) == NULL) 
-			ret = -EINVAL;
-		else
-			br_set_port_snooping(p, (void __user *) args[2]);
-		spin_unlock_bh(&br->lock);
-		return ret;
-	}
-
-	case BRCTL_CLEAR_PORT_SNOOPING:
-	{
-		struct net_bridge_port *p;
-		int ret = 0;
-
-		if (!capable(CAP_NET_ADMIN))
-			return -EPERM;
-
-		spin_lock_bh(&br->lock);
-		if ((p = br_get_port(br, args[1])) == NULL) 
-			ret = -EINVAL;
-		else
-			br_clear_port_snooping(p, (void __user *) args[2]);
-		spin_unlock_bh(&br->lock);
-		return ret;
-	}
-
 	case BRCTL_SET_PATH_COST:
 	{
 		struct net_bridge_port *p;
@@ -423,35 +359,6 @@ static int old_deviceless(void __user *uarg)
 
 		return br_del_bridge(buf);
 	}
-
-	case BRCTL_SHOW_SNOOPING:
-	{
-		char buf[IFNAMSIZ];
-		struct net_device *dev;
-		if (!capable(CAP_NET_ADMIN))
-			return -EPERM;
-
-		if (copy_from_user(buf, (void __user *)args[1], IFNAMSIZ))
-			return -EFAULT;
-
-		buf[IFNAMSIZ-1] = 0;
-
-		dev = __dev_get_by_name(buf);
-		if (dev == NULL) 
-		    return  -ENXIO; 	/* Could not find device */
-		dolist(netdev_priv(dev));
-
-		return 0;
-	}
-
-	case BRCTL_ENABLE_SNOOPING:
-	{
-		if (!capable(CAP_NET_ADMIN))
-			return -EPERM;
-
-		snooping = args[1];
-		return 0;
-	}
 	}
 
 	return -EOPNOTSUPP;
@@ -481,26 +388,6 @@ int br_ioctl_deviceless_stub(unsigned int cmd, void __user *uarg)
 
 		return br_del_bridge(buf);
 	}
-	case SIOCBRSHOWSNOOPING:
-	{
-		char buf[IFNAMSIZ];
-		struct net_device *dev;
-	
-		if (!capable(CAP_NET_ADMIN))
-			return -EPERM;
-	
-		if (copy_from_user(buf, uarg, IFNAMSIZ))
-			return -EFAULT;
-
-		buf[IFNAMSIZ-1] = 0;
-			
-		dev = __dev_get_by_name(buf);
-		if (dev == NULL) 
-		    return -ENXIO; 	/* Could not find device */
-			dolist(netdev_priv(dev));
-		
-		return 0;
-	}
 	}
 	return -EOPNOTSUPP;
 }
@@ -522,4 +409,3 @@ int br_dev_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 	pr_debug("Bridge does not support ioctl 0x%x\n", cmd);
 	return -EOPNOTSUPP;
 }
-

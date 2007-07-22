@@ -25,8 +25,6 @@
 
 #include "br_private.h"
 
-int snooping = 0;
-
 /*
  * Determine initial path cost based on speed.
  * using recommendations from 802.1d standard
@@ -177,8 +175,6 @@ static void del_br(struct net_bridge *br)
 		del_nbp(p);
 	}
 
-	br_mc_fdb_cleanup(br);
-
 	del_timer_sync(&br->gc_timer);
 
 	br_sysfs_delbr(br->dev);
@@ -209,9 +205,6 @@ static struct net_device *new_bridge_dev(const char *name)
 	memcpy(br->group_addr, br_group_address, ETH_ALEN);
 
 	br->feature_mask = dev->features;
-  	br->lock = SPIN_LOCK_UNLOCKED;
-  	INIT_LIST_HEAD(&br->mc_list);
-  	br->hash_lock = SPIN_LOCK_UNLOCKED;
 	br->stp_enabled = BR_NO_STP;
 	br->designated_root = br->bridge_id;
 	br->root_path_cost = 0;
