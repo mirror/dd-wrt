@@ -52,9 +52,6 @@ void br_stp_enable_bridge(struct net_bridge *br)
 
 	br_config_bpdu_generation(br);
 
-	// brcm
-	br->dev->trans_start = jiffies * 100 / HZ;
-
 	list_for_each_entry(p, &br->port_list, list) {
 		if ((p->dev->flags & IFF_UP) && netif_carrier_ok(p->dev))
 			br_stp_enable_port(p);
@@ -78,9 +75,6 @@ void br_stp_disable_bridge(struct net_bridge *br)
 	br->topology_change = 0;
 	br->topology_change_detected = 0;
 	spin_unlock_bh(&br->lock);
-
-	// brcm
-	br->dev->trans_start = jiffies * 100 / HZ;
 
 	del_timer_sync(&br->hello_timer);
 	del_timer_sync(&br->topology_change_timer);
@@ -224,7 +218,7 @@ void br_stp_recalculate_bridge_id(struct net_bridge *br)
 
 	list_for_each_entry(p, &br->port_list, list) {
 		if (addr == br_mac_zero ||
-		    memcmp(p->dev->dev_addr, addr, ETH_ALEN) > 0)
+		    memcmp(p->dev->dev_addr, addr, ETH_ALEN) < 0)
 			addr = p->dev->dev_addr;
 
 	}

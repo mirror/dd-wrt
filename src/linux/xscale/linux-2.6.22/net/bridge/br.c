@@ -63,7 +63,7 @@ static int __init br_init(void)
 err_out3:
 	unregister_netdevice_notifier(&br_device_notifier);
 err_out2:
-//	br_netfilter_fini();
+	br_netfilter_fini();
 err_out1:
 	llc_sap_put(br_stp_sap);
 	return err;
