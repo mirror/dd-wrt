@@ -17,11 +17,7 @@
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/netfilter_bridge.h>
-#include <linux/timer.h>
-#include <linux/igmp.h>
 #include "br_private.h"
-
-#define SNOOPING_BLOCKING_MODE 2
 
 /* Bridge group multicast address 802.1d (pg 51). */
 const u8 br_group_address[ETH_ALEN] = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x00 };
@@ -39,143 +35,6 @@ static void br_pass_frame_up(struct net_bridge *br, struct sk_buff *skb)
 	NF_HOOK(PF_BRIDGE, NF_BR_LOCAL_IN, skb, indev, NULL,
 		netif_receive_skb);
 }
- void query_timeout(unsigned long ptr)
- {
- 	struct net_bridge_mc_fdb_entry *dst;
- 	struct list_head *tmp;
- 	struct list_head *lh;
- 	struct net_bridge *br;
-     
- 	br = (struct net_bridge *) ptr;
- 
- 	spin_lock_bh(&br->mcl_lock);
- 	list_for_each_safe_rcu(lh, tmp, &br->mc_list) {
- 	    dst = (struct net_bridge_mc_fdb_entry *) list_entry(lh, struct net_bridge_mc_fdb_entry, list);
- 	    if (jiffies > dst->tstamp) {
- 		list_del_rcu(&dst->list);
- 		kfree(dst);
- 	    }
- 	}
- 	spin_unlock_bh(&br->mcl_lock);
- 		
- 	mod_timer(&br->igmp_timer, jiffies + TIMER_CHECK_TIMEOUT*HZ);		
- }
- 
- void addr_debug(unsigned char *dest)
- {
- #define NUM2PRINT 50
- 	char buf[NUM2PRINT * 3 + 1];	/* 3 chars per byte */
- 	int i = 0;
- 	for (i = 0; i < 6 && i < NUM2PRINT; i++) {
- 		sprintf(buf + i * 3, "%2.2x ", 0xff & dest[i]);
- 	}
- 	printk("%s ", buf);
- }
- 
- 
- void addr_conv(const unsigned char *in, char * out)
- {
-     sprintf(out, "%02x%02x%02x%02x%02x%02x", in[0], in[1], in[2], in[3], in[4], in[5]);
- }
- 
- mac_addr upnp_addr = {{0x01, 0x00, 0x5e, 0x7f, 0xff, 0xfa}};
- mac_addr sys1_addr = {{0x01, 0x00, 0x5e, 0x00, 0x00, 0x01}};
- mac_addr sys2_addr = {{0x01, 0x00, 0x5e, 0x00, 0x00, 0x02}};
- mac_addr ospf1_addr = {{0x01, 0x00, 0x5e, 0x00, 0x00, 0x05}};
- mac_addr ospf2_addr = {{0x01, 0x00, 0x5e, 0x00, 0x00, 0x06}};
- mac_addr ripv2_addr = {{0x01, 0x00, 0x5e, 0x00, 0x00, 0x09}};
- mac_addr sys_addr = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
- 
- int control_filter(const unsigned char *dest)
- {
-     if ((!memcmp(dest, &upnp_addr, ETH_ALEN)) ||
- 	(!memcmp(dest, &sys1_addr, ETH_ALEN)) ||
- 	(!memcmp(dest, &sys2_addr, ETH_ALEN)) ||
- 	(!memcmp(dest, &ospf1_addr, ETH_ALEN)) ||
- 	(!memcmp(dest, &ospf2_addr, ETH_ALEN)) ||
- 	(!memcmp(dest, &sys_addr, ETH_ALEN)) ||
- 	(!memcmp(dest, &ripv2_addr, ETH_ALEN)))
- 	    return 0;
-     else
- 	return 1;
- }
- 
- int mc_forward(struct net_bridge *br, struct sk_buff *skb, const unsigned char *dest,int forward, int clone)
- {
- 	struct net_bridge_mc_fdb_entry *dst;
- 	struct list_head *lh;
- 	int status = 0;
- 	struct sk_buff *skb2;
- 	struct net_bridge_port *p;
- 	unsigned char tmp[6];
- 
- 	if (!snooping)
- 		return 0;
- 
- 	if ((snooping == SNOOPING_BLOCKING_MODE) && control_filter(dest))
- 	    status = 1;
- 
- 	if (skb->data[9] == IPPROTO_IGMP) {
- 	    // For proxy; need to add some intelligence here 
- 	    if (!br->proxy) {
- 		if (skb->data[24] == IGMPV2_HOST_MEMBERSHIP_REPORT &&
- 		    skb->protocol == __constant_htons(ETH_P_IP)) {
- 		    br_mc_fdb_add(br, skb->dev->br_port, dest, eth_hdr(skb)->h_source);
-                 }
- 		else if (skb->data[24] == IGMP_HOST_LEAVE_MESSAGE) {
- 		    tmp[0] = 0x01;
- 		    tmp[1] = 0x00;
- 		    tmp[2] = 0x5e;
- 		    tmp[3] = 0x7F & skb->data[29];
- 		    tmp[4] = skb->data[30];
- 		    tmp[5] = skb->data[31];
- 		    br_mc_fdb_remove(br, skb->dev->br_port, tmp, eth_hdr(skb)->h_source);
- 		}
- 		else
- 		    ;
- 	    }
- 	    return 0;
- 	}
- 
- 	/*
- 	if (clone) {
- 		struct sk_buff *skb3;
- 
- 		if ((skb3 = skb_clone(skb, GFP_ATOMIC)) == NULL) {
- 			br->statistics.tx_dropped++;
- 			return;
- 		}
- 
- 		skb = skb3;
- 	}
- 	*/
- 	
- 	list_for_each_rcu(lh, &br->mc_list) {
- 	    dst = (struct net_bridge_mc_fdb_entry *) list_entry(lh, struct net_bridge_mc_fdb_entry, list);
- 	    if (!memcmp(&dst->addr, dest, ETH_ALEN)) {
- 		if (!dst->dst->dirty) {
- 		    skb2 = skb_clone(skb, GFP_ATOMIC);
- 		    if (forward)
- 			br_forward(dst->dst, skb2);
- 		    else
- 			br_deliver(dst->dst, skb2);
- 		}
- 		dst->dst->dirty = 1;
- 		status = 1;
- 	    }
- 	}
- 	if (status) {
- 	    list_for_each_entry_rcu(p, &br->port_list, list) {
- 		p->dirty = 0;
- 	  }
- 	}
- 
- 	if ((!forward) && (status))
- 	kfree_skb(skb);
- 
- 	return status;
- }
- 
 
 /* note: already called with rcu_read_lock (preempt_disabled) */
 int br_handle_frame_finish(struct sk_buff *skb)
@@ -184,9 +43,7 @@ int br_handle_frame_finish(struct sk_buff *skb)
 	struct net_bridge_port *p = rcu_dereference(skb->dev->br_port);
 	struct net_bridge *br;
 	struct net_bridge_fdb_entry *dst;
-	unsigned char *src;
 	int passedup = 0;
-	src = eth_hdr(skb)->h_source;
 
 	if (!p || p->state == BR_STATE_DISABLED)
 		goto drop;
@@ -209,28 +66,6 @@ int br_handle_frame_finish(struct sk_buff *skb)
 	}
 
 	if (is_multicast_ether_addr(dest)) {
-		if (snooping && br->proxy) {
-		  if (skb->data[9] == IPPROTO_IGMP) {
-		    char destS[16];
-		    char srcS[16];
-
-		    if (skb->data[24] == IGMP_HOST_LEAVE_MESSAGE) {
-			unsigned char tmp[6];
-			
-			tmp[0] = 0x01;
-			tmp[1] = 0x00;
-			tmp[2] = 0x5e;
-			tmp[3] = 0x7F & skb->data[29];
-			tmp[4] = skb->data[30];
-			tmp[5] = skb->data[31];
-			addr_conv(tmp, destS);
-		    }
-		    else
-			addr_conv(dest, destS);
-		    addr_conv(src, srcS);
-		  }
-		}
-		if (!mc_forward(br, skb, dest, 1, !passedup))		
 		br->statistics.multicast++;
 		br_flood_forward(br, skb, !passedup);
 		if (!passedup)
