@@ -568,9 +568,8 @@ wlconf_up (char *name)
 	    eval ("/etc/txackset.sh", "0");	// disable ack timing
 	    FILE *test=fopen("/tmp/ackdisabled","wb");
 	    fprintf(test,"yes");
-	    }
 	    fclose(test);
-	 
+ 		}
 #endif
 	  return 0;
 	}
