@@ -16,6 +16,7 @@ function valid_value(F) {
 
 function DeleteEntry(F) {
 	if(!confirm(errmsg.err57)) return;
+	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "del";
 	apply(F);
 }
