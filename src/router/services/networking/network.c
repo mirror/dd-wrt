@@ -562,14 +562,18 @@ wlconf_up (char *name)
 #endif
 	  // wlc_noack (0);
 #else
-	  FILE *test=fopen("/tmp/ackdisabled","rb");
-	  if (test==NULL)
+	  FILE *test = fopen("/tmp/ackdisabled", "rb");
+	  if (test == NULL)
 	    {
 	    eval ("/etc/txackset.sh", "0");	// disable ack timing
-	    FILE *test=fopen("/tmp/ackdisabled","wb");
-	    fprintf(test,"yes");
-	    fclose(test);
+	    FILE *test = fopen ("/tmp/ackdisabled", "wb");
+	    fprintf (test, "yes");
+	    fclose (test);
  		}
+	  else
+	  	{
+	  	fclose (test);
+  		}
 #endif
 	  return 0;
 	}
@@ -581,12 +585,12 @@ wlconf_up (char *name)
 #endif
 	  //  wlc_noack (1);
 #else
-	  FILE *test=fopen("/tmp/ackdisabled","rb");
-	  if (test!=NULL)
+	  FILE *test = fopen("/tmp/ackdisabled", "rb");
+	  if (test != NULL)
 	    {
-	    fclose(test);
+	    fclose (test);
 	    eval ("/etc/txackset.sh", "1");	// enable ack timing (not required, enable per default)
-	    eval ("rm","-f","/tmp/ackdisabled");
+	    unlink ("/tmp/ackdisabled");
 	    }
 #endif
 	}
