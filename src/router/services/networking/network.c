@@ -553,6 +553,11 @@ wlconf_up (char *name)
       rw_reg_t reg;
       uint32 shm;
 
+#ifndef HAVE_MSSID      
+  struct stat buf;
+  int notexists = stat ("/tmp/ackdisabled", &buf); 
+#endif
+      
       val = atoi (v);
       if (val == 0)
 	{
@@ -562,18 +567,13 @@ wlconf_up (char *name)
 #endif
 	  // wlc_noack (0);
 #else
-	  FILE *test = fopen("/tmp/ackdisabled", "rb");
-	  if (test == NULL)
+	  if (notexists != 0)  //file not exists
 	    {
 	    eval ("/etc/txackset.sh", "0");	// disable ack timing
 	    FILE *test = fopen ("/tmp/ackdisabled", "wb");
 	    fprintf (test, "yes");
 	    fclose (test);
  		}
-	  else
-	  	{
-	  	fclose (test);
-  		}
 #endif
 	  return 0;
 	}
@@ -585,10 +585,8 @@ wlconf_up (char *name)
 #endif
 	  //  wlc_noack (1);
 #else
-	  FILE *test = fopen("/tmp/ackdisabled", "rb");
-	  if (test != NULL)
+	  if (notexists == 0)  //file exists
 	    {
-	    fclose (test);
 	    eval ("/etc/txackset.sh", "1");	// enable ack timing (not required, enable per default)
 	    unlink ("/tmp/ackdisabled");
 	    }
