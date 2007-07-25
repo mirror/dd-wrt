@@ -462,6 +462,7 @@ ej_static_route_table (webs_t wp, int argc, char_t ** argv)
 int
 delete_static_route (webs_t wp)
 {
+  addAction ("routing");
   char *buf=malloc(1000);
   char *buf_name=malloc(1000);
   memset(buf,0,1000);
@@ -517,7 +518,6 @@ delete_static_route (webs_t wp)
   nvram_set ("static_route_name", buf_name);
   free(buf_name);
   free(buf);
-  addAction ("routing");
   if (!strcmp (value, "ApplyTake"))
     {
       nvram_commit ();
