@@ -3465,8 +3465,7 @@ addAction (char *action)
   {
     if (!strcmp (service, action))
       {
-	inside = 1;
-	break;
+	return;
       }
   }
   if (nvram_get ("action_service") != NULL && !inside)
@@ -3476,18 +3475,13 @@ addAction (char *action)
 		strlen (action) + 2);
       sprintf (actionstack, "%s %s", action,
 	       nvram_safe_get ("action_service"));
-      freeit = 0;
+    nvram_set ("action_service", actionstack);
+    free (actionstack);
     }
   else
     {
-      if (!inside)
-	actionstack = action;
-      else
-	actionstack = nvram_safe_get ("action_service");
+    nvram_set ("action_service", action);
     }
-  nvram_set ("action_service", actionstack);
-  if (freeit)
-    free (actionstack);
 
 
 }
