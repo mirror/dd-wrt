@@ -3456,8 +3456,6 @@ void
 addAction (char *action)
 {
   char *actionstack = "";
-  int freeit = 0;
-  int inside = 0;
   char *next;
   char service[80];
   char *services = nvram_safe_get ("action_service");
@@ -3468,7 +3466,7 @@ addAction (char *action)
 	return;
       }
   }
-  if (nvram_get ("action_service") != NULL && !inside)
+  if (strlen(nvram_safe_get ("action_service"))>0)
     {
       actionstack =
 	malloc (strlen (nvram_safe_get ("action_service")) +
