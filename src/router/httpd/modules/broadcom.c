@@ -4153,6 +4153,10 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 	      if (!strcmp (menu[i][j], "Networking.asp"))
 		j++;
 #endif
+#ifndef HAVE_RSTATS
+	      if (!strcmp (menu[i][j], "Status_Bandwidth.asp"))
+		j++;
+#endif
 #ifndef HAVE_CTORRENT
 	      if (!strcmp (menu[i][j], "P2P.asp"))
 		j++;
