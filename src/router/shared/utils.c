@@ -248,7 +248,7 @@ internal_getRouterBrand ()
       setRouter ("Buffalo WBR-G54 / WLA-G54");
       return ROUTER_BUFFALO_WBR54G;
     }
-
+#ifndef HAVE_BUFFALO
   if (nvram_match ("boardnum", "mn700") &&
       nvram_match ("boardtype", "bcm94710ap"))
     {
@@ -271,6 +271,7 @@ internal_getRouterBrand ()
       setRouter ("Dell TrueMobile 2300");
       return ROUTER_DELL_TRUEMOBILE_2300;
     }
+#endif
 
   if (boardnum == 100 && nvram_match ("boardtype", "bcm94710dev"))
     {
@@ -279,13 +280,14 @@ internal_getRouterBrand ()
       return ROUTER_BUFFALO_WLAG54C;
     }
 
+#ifndef HAVE_BUFFALO
   if (boardnum == 45 && nvram_match ("boardtype", "bcm95365r"))
     {
       cprintf ("router is Asus WL-500GD\n");
       setRouter ("Asus WL-500g Deluxe");
       return ROUTER_ASUS_WL500GD;
     }
-
+#endif
   if (nvram_match ("boardnum", "00") &&
       nvram_match ("boardtype", "0x0101") && nvram_match ("boardrev", "0x10"))
     {
@@ -337,6 +339,7 @@ internal_getRouterBrand ()
 	  setRouter ("Buffalo WHR-G54S");
 	  return ROUTER_BUFFALO_WHRG54S;
 	}
+#ifndef HAVE_BUFFALO
       if (nvram_match ("boardflags", "0x1758")
 	  && !nvram_match ("buffalo_hp", "1"))
 	{
@@ -352,6 +355,23 @@ internal_getRouterBrand ()
 	  setRouter ("Buffalo WHR-HP-G54");
 	  return ROUTER_BUFFALO_WHRG54S;
 	}
+#else
+      if (nvram_match ("boardflags", "0x1758")
+	  && !nvram_match ("buffalo_hp", "1"))
+	{
+	  cprintf ("router is Buffalo WHR-HP-G54DD\n");
+//	  nvram_set ("boardflags", "0x2758");  /* removed, to be FCC/CE valid */
+	  nvram_set ("buffalo_hp", "1");
+	  setRouter ("Buffalo WHR-HP-G54DD");
+	  return ROUTER_BUFFALO_WHRG54S;
+	}
+      if (nvram_match ("buffalo_hp", "1"))
+	{
+	  cprintf ("router is Buffalo WHR-HP-G54DD\n");
+	  setRouter ("Buffalo WHR-HP-G54DD");
+	  return ROUTER_BUFFALO_WHRG54S;
+	}
+#endif
     }
 
   if (nvram_match ("boardnum", "00") &&
@@ -412,6 +432,7 @@ internal_getRouterBrand ()
 	}
     }
 
+#ifndef HAVE_BUFFALO
   if (boardnum == 42 &&
       nvram_match ("boardtype", "0x042f") && nvram_match ("boardrev", "0x10"))
 //      nvram_match ("boardflags","0x0018"))
@@ -501,13 +522,14 @@ internal_getRouterBrand ()
 	  return ROUTER_RT480W;
 	}
     }
-
+#endif
   if (boardnum == 2 && nvram_match ("boardtype", "bcm94710dev") && nvram_match ("melco_id", "29016"))	//Buffalo WLI2-TX1-G54)
     {
       cprintf ("router is Buffalo WLI2-TX1-G54\n");
       setRouter ("Buffalo WLI2-TX1-G54");
       return ROUTER_BUFFALO_WLI2_TX1_G54;
     }
+#ifndef HAVE_BUFFALO
 
   if (boardnum == 2 && nvram_match ("GemtekPmonVer", "10"))
     {
@@ -576,7 +598,7 @@ internal_getRouterBrand ()
 	  return ROUTER_LINKSYS_WRT55AG;
 	}
     }
-
+#endif
   if (boardnum == 0 && nvram_match ("boardtype", "0x478") && nvram_match ("cardbus", "0") && nvram_match("boardrev","0x10") && nvram_match("boardflags","0x110") && nvram_match("melco_id","32027"))
     {
       setRouter ("Buffalo WZR-G144NH");
@@ -589,6 +611,7 @@ internal_getRouterBrand ()
       setRouter ("Buffalo WZR-G300N");
       return ROUTER_BUFFALO_WZRG300N;
     }
+#ifndef HAVE_BUFFALO
 
   if (boardnum == 8 &&
       nvram_match ("boardtype", "0x0472") && nvram_match ("cardbus", "1"))
@@ -673,17 +696,22 @@ internal_getRouterBrand ()
       setRouter ("Dell TrueMobile 2300 v2");
       return ROUTER_DELL_TRUEMOBILE_2300_V2;
     }
-
+#endif
   if (nvram_match ("boardtype", "bcm94710ap"))
     {
       cprintf ("router is Buffalo old 4710\n");
       setRouter ("Buffalo WBR-B11");
       return ROUTER_BUFFALO_WBR54G;
     }
+#ifndef HAVE_BUFFALO
 
   setRouter ("Linksys WRT54G/GL/GS");
   cprintf ("router is wrt54g\n");
   return ROUTER_WRT54G;
+#else
+  eval("event","3","1","15");
+  return 0;
+#endif
 #endif
 
 }
@@ -985,6 +1013,7 @@ led_control (int type, int act)
   int v1func=0;
   switch (getRouterBrand ())	//gpio definitions here: 0xYZ, Y=0:normal, Y=1:inverted, Z:gpio number (f=disabled)
     {
+#ifndef HAVE_BUFFALO
     case ROUTER_WRT54G:
       power_gpio = 0x01;
       dmz_gpio = 0x17;
@@ -1004,6 +1033,7 @@ led_control (int type, int act)
     case ROUTER_LINKSYS_WRT55AG:
       connected_gpio = 0x13;
       break;
+#endif
     case ROUTER_BUFFALO_WBR54G:
       diag_gpio = 0x17;
       break;
@@ -1038,6 +1068,11 @@ led_control (int type, int act)
       vpn_gpio = 0x11;
       ses_gpio = 0x16;
       break;
+    case ROUTER_BUFFALO_WZRG300N:
+      diag_gpio = 0x17;
+      bridge_gpio = 0x11;
+      break;
+#ifndef HAVE_BUFFALO
     case ROUTER_MOTOROLA:
       power_gpio = 0x01;
       diag_gpio = 0x11;
@@ -1088,10 +1123,7 @@ led_control (int type, int act)
       power_gpio = 0x03;
       wlan_gpio = 0x14;
       break;
-    case ROUTER_BUFFALO_WZRG300N:
-      diag_gpio = 0x17;
-      bridge_gpio = 0x11;
-      break;
+
     case ROUTER_WRT300N:
       diag_gpio = 0x11;  //power led blink to indicate fac.def.
       break;
@@ -1099,6 +1131,7 @@ led_control (int type, int act)
       power_gpio = 0x10;
       diag_gpio = 0x00;  //power led off to indicate factory defaults
       break;
+#endif
     }
 if (type==LED_DIAG && v1func==1) 
     {
@@ -2250,10 +2283,11 @@ check_vlan_support (void)
   int brand = getRouterBrand ();
   switch (brand)
     {
-    case ROUTER_LINKSYS_WRT55AG:
-    case ROUTER_MOTOROLA_V1:
     case ROUTER_BUFFALO_WLAG54C:
     case ROUTER_BUFFALO_WLA2G54C:
+#ifndef HAVE_BUFFALO
+    case ROUTER_LINKSYS_WRT55AG:
+    case ROUTER_MOTOROLA_V1:
     case ROUTER_MOTOROLA_WE800G:
     case ROUTER_WAP54G_V1:
     case ROUTER_SITECOM_WL105B:
@@ -2261,6 +2295,7 @@ check_vlan_support (void)
     case ROUTER_BUFFALO_WLI_TX4_G54HP:
     case ROUTER_BRCM4702_GENERIC:
     case ROUTER_ASUS_WL500G:
+#endif
       return 0;
       break;
     }

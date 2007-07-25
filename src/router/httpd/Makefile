@@ -82,7 +82,7 @@ ifeq ($(CONFIG_OLSRD),y)
 CFLAGS += -DHAVE_OLSRD
 endif
 ifeq ($(CONFIG_BUFFALO),y)
-CFLAGS += -DHAVE_BUFFALO
+CFLAGS += -DHAVE_BUFFALO -DDEFAULT_COUNTRY_CODE=\"$(CONFIG_DEFAULT_COUNTRYCODE)\"
 endif
 ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
@@ -417,7 +417,7 @@ cert:
 
 httpd: cgi.c ej.c httpd.c broadcom.c \
        index.c status.c dhcp.c log.c filters.c forward.c dynamic_route.c static_route.c wireless.c ddns.c \
-       find_pattern.c lib.c $(ADDOBJ) diag.c sysinfo.c wepkey.c md5c.c getservice.c dd-wrt.c nvramsr.c $(OBJS)
+       find_pattern.c lib.c $(ADDOBJ) diag.c wepkey.c md5c.c getservice.c dd-wrt.c nvramsr.c $(OBJS)
 	gcc -o write_web write_web.c
 	./write_web www 
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
