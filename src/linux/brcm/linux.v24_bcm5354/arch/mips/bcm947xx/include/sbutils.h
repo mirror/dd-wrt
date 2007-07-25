@@ -162,5 +162,14 @@ void sb_war32414_forceHT(sb_t *sbh, bool forceHT);
 
 /* device path */
 #define SB_DEVPATH_BUFSZ	16		/* min buffer size in bytes */
+/* PA Ref LDO */
+#define SET_LDO_VOLTAGE_LDO1	1
+#define SET_LDO_VOLTAGE_LDO2	2
+#define SET_LDO_VOLTAGE_LDO3	3
+#define SET_LDO_VOLTAGE_PAREF	4
+
+extern void sb_pmu_set_ldo_voltage(sb_t *sbh, osl_t *osh,
+	uint8 ldo, uint8 voltage);
+extern void sb_pmu_paref_ldo_enable(sb_t *sbh, osl_t *osh, bool enable);
 
 #endif	/* _sbutils_h_ */

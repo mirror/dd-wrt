@@ -311,6 +311,25 @@ pcibios_enable_device(struct pci_dev *dev, int mask)
 			writel(0x7FF, (ulong)regs + 0x200);
 			udelay(1);
 		}
+				/* PRxxxx: War for 5354 failures. */
+		if (sb_corerev(sbh) == 1) {
+			uint32 tmp;
+
+			/* Change Flush control reg */
+			tmp = readl((uintptr)regs + 0x400);
+			tmp &= ~8;
+			writel(tmp, (uintptr)regs + 0x400);
+			tmp = readl((uintptr)regs + 0x400);
+			printk("USB20H fcr: 0x%x\n", tmp);
+
+			/* Change Shim control reg */
+			tmp = readl((uintptr)regs + 0x304);
+			tmp &= ~0x100;
+			writel(tmp, (uintptr)regs + 0x304);
+			tmp = readl((uintptr)regs + 0x304);
+			printk("USB20H shim cr: 0x%x\n", tmp);
+                }
+
 	} else
 		sb_core_reset(sbh, 0, 0);
 
