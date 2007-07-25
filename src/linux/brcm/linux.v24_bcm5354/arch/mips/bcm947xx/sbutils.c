@@ -3856,3 +3856,86 @@ BCMINITFN(sb_pmu_alp_clock)(sb_info_t *si)
 
 	return (xt->freq * 1000);
 }
+
+void
+sb_pmu_set_ldo_voltage(sb_t *sbh, osl_t *osh,
+                                       uint8 ldo, uint8 voltage)
+{
+#if defined(BCM4328) || defined(BCM5354)
+
+	uint8 sr_cntl_shift, rc_shift, shift, mask;
+	uint32 addr;
+
+	ASSERT(sbh->cccaps & CC_CAP_PMU);
+
+	switch (ldo) {
+		case SET_LDO_VOLTAGE_LDO1:
+			addr = 2;
+			sr_cntl_shift = 8;
+			rc_shift = 17;
+			mask = 0x17;
+			break;
+		case SET_LDO_VOLTAGE_LDO2:
+			addr = 2;
+			sr_cntl_shift = 8;
+			rc_shift = 17;
+			mask = 0x17;
+			break;
+		case SET_LDO_VOLTAGE_LDO3:
+			addr = 2;
+			sr_cntl_shift = 8;
+			rc_shift = 17;
+			mask = 0x17;
+			break;
+		case SET_LDO_VOLTAGE_PAREF:
+			addr = 2;
+			sr_cntl_shift = 8;
+			rc_shift = 17;
+			mask = 0x17;
+			break;
+		default:
+			ASSERT(FALSE);
+			return;
+	}
+
+	shift = sr_cntl_shift + rc_shift;
+
+	sb_corereg(sbh, SB_CC_IDX, OFFSETOF(chipcregs_t, regcontrol_addr),
+		~0, addr);
+	sb_corereg(sbh, SB_CC_IDX, OFFSETOF(chipcregs_t, regcontrol_data),
+		mask << shift, (voltage & mask) << shift);
+
+#endif	/* defined(BCM4328) || defined(BCM5354) */
+
+}
+
+void
+sb_pmu_paref_ldo_enable(sb_t *sbh, osl_t *osh, bool enable)
+{
+#if defined(BCM4328) || defined(BCM5354)
+	uint ldo = 0, rom = 0;
+
+	ASSERT(sbh->cccaps & CC_CAP_PMU);
+
+	switch (sbh->chip) {
+#if defined(BCM4328)
+	case BCM4328_CHIP_ID:
+		ldo = RES4328_PA_REF_LDO;
+		rom = RES4328_ROM_SWITCH;
+		break;
+#endif
+#if defined(BCM5354)
+	case BCM5354_CHIP_ID:
+		ldo = RES5354_PA_REF_LDO;
+		rom = RES5354_ROM_SWITCH;
+		break;
+#endif
+	default:
+		return;
+	}
+
+	sb_corereg(sbh, SB_CC_IDX, OFFSETOF(chipcregs_t, min_res_mask),
+	           PMURES_BIT(ldo), enable ? PMURES_BIT(rom) : 0);
+
+#endif	/* defined(BCM4328) || defined(BCM5354) */
+}
