@@ -1,16 +1,3 @@
-/*
- * Router rc control script
- *
- * Copyright 2001-2003, Broadcom Corporation
- * All Rights Reserved.
- * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- *
- * $Id: rc.c,v 1.12 2005/11/30 11:54:21 seg Exp $
- */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -177,7 +164,7 @@ main_loop (void)
   nvram_set ("vlan0ports", "0 1 2 3 4 5*");
   nvram_set ("vlan1ports", "");
 #else
-
+#ifndef HAVE_BUFFALO
   if (brand == ROUTER_WRT350N)
     {
       if (nvram_match ("fullswitch", "1")
@@ -196,7 +183,9 @@ main_loop (void)
 	    }
 	}
     }
-  else if (brand == ROUTER_BUFFALO_WZRG144NH)
+  else
+#endif 
+  if (brand == ROUTER_BUFFALO_WZRG144NH)
     {
       if (nvram_match ("fullswitch", "1")
 	  && (nvram_invmatch ("wl0_mode", "ap")

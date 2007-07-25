@@ -48,6 +48,9 @@ endif
 ifeq ($(CONFIG_SILENCE),y)
   CFLAGS += -DHAVE_SILENCE
 endif
+ifeq ($(CONFIG_BUFFALO),y)
+  CFLAGS += -DHAVE_BUFFALO
+endif
 ifeq ($(CONFIG_SAMBA),y)
   CFLAGS += -DHAVE_SAMBA
 endif

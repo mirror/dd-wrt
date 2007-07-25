@@ -1,24 +1,4 @@
 /*
- * Reset button 
- *
- * Copyright 2002, Cybertan Corporation
- * All Rights Reserved.
- *
- * Description:
- *   This program checks the Reset-Button status periodically.
- *   There is two senaria, whenever the button is pushed
- *     o  Less than 3 seconds : reboot.
- *     o  Greater than 3 seconds : factory default restore, and reboot. 
- *
- *   The reset-button is connected to the GPIO pin, it has character
- *   device driver to manage it by file operation read/write.
- *
- *
- * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Cybertan Corporation;
- * the contents of this file may not be disclosed to third parties, copied or
- * duplicated in any form, in whole or in part, without the prior written
- * permission of Cybertan Corporation.
- *
  */
 
 #include <stdio.h>
