@@ -23,9 +23,7 @@ ifeq ($(TARGET_ARCH),linux)
 	ARCH_SPECIFIC_CFLAGS += $(COPTS)
 endif
 
-ifdef DEBUG
-	CFLAGS += -g
-endif
+CFLAGS += -DNEED_PRINTF
 
 COMMON_OBJ=$(OUTDIR)/base64utils.o $(OUTDIR)/dyndns.o \
 	$(OUTDIR)/errorcode.o $(OUTDIR)/get_cmd.o $(OUTDIR)/http_client.o \
