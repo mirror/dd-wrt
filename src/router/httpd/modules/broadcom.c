@@ -3466,13 +3466,15 @@ addAction (char *action)
 	return;
       }
   }
-  if (strlen(nvram_safe_get ("action_service"))>0)
+  if (strlen(services)>0)
     {
       actionstack =
-	malloc (strlen (nvram_safe_get ("action_service")) +
+	malloc (strlen (services) +
 		strlen (action) + 2);
-      sprintf (actionstack, "%s %s", action,
-	       nvram_safe_get ("action_service"));
+      memset(actionstack,0,strlen (services) +strlen (action) + 2);
+            strcpy(actionstack,action);
+	    strcat(actionstack," ");
+	    strcat(actionstack,nvram_safe_get ("action_service"));
     nvram_set ("action_service", actionstack);
     free (actionstack);
     }
