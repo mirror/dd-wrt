@@ -462,21 +462,27 @@ ej_static_route_table (webs_t wp, int argc, char_t ** argv)
 int
 delete_static_route (webs_t wp)
 {
-  char buf[1000] = "", *cur = buf;
-  char buf_name[1000] = "", *cur_name = buf_name;
+  char *buf=malloc(1000);
+  char *buf_name=malloc(1000);
+  memset(buf,0,1000);
+  memset(buf_name,0,1000);
+  char *cur = buf;
+  char *cur_name = buf_name;
   static char word[256], *next;
   static char word_name[256], *next_name;
   char *page = websGetVar (wp, "route_page", NULL);
+  char *value = websGetVar (wp, "action", "");
   int i = 0;
-
-  foreach (word, nvram_safe_get ("static_route"), next)
+  char *performance = nvram_safe_get ("static_route");
+  char *performance2 = nvram_safe_get ("static_route_name");
+  foreach (word, performance, next)
   {
     if (i == atoi (page))
       {
         char *oldarg = nvram_get("action_service_arg1");
 	if (oldarg && strlen(oldarg)>0)
 	    {
-	    char *newarg =malloc(strlen(oldarg)+1+strlen(word)+1);
+	    char *newarg =malloc(strlen(oldarg)+strlen(word)+2);
 	    sprintf(newarg,"%s %s",oldarg,word);
 	    nvram_set ("action_service_arg1", newarg);
 	    free(newarg);
@@ -486,14 +492,14 @@ delete_static_route (webs_t wp)
 	continue;
       }
 
-    cur += snprintf (cur, buf + sizeof (buf) - cur, "%s%s",
+    cur += snprintf (cur, buf + 1000 - cur, "%s%s",
 		     cur == buf ? "" : " ", word);
 
     i++;
   }
 
   i = 0;
-  foreach (word_name, nvram_safe_get ("static_route_name"), next_name)
+  foreach (word_name, performance2, next_name)
   {
     if (i == atoi (page))
       {
@@ -501,7 +507,7 @@ delete_static_route (webs_t wp)
 	continue;
       }
     cur_name +=
-      snprintf (cur_name, buf_name + sizeof (buf_name) - cur_name, "%s%s",
+      snprintf (cur_name, buf_name + 1000 - cur_name, "%s%s",
 		cur_name == buf_name ? "" : " ", word_name);
 
     i++;
@@ -509,8 +515,8 @@ delete_static_route (webs_t wp)
 
   nvram_set ("static_route", buf);
   nvram_set ("static_route_name", buf_name);
-
-  char *value = websGetVar (wp, "action", "");
+  free(buf_name);
+  free(buf);
   addAction ("routing");
   if (!strcmp (value, "ApplyTake"))
     {
