@@ -61,7 +61,7 @@ static struct
 {
 	int error;
 	u8 scope;
-} dn_fib_props[RTA_MAX+1] = {
+} dn_fib_props[RTN_MAX+1] = {
 	{ 0, RT_SCOPE_NOWHERE },		/* RTN_UNSPEC */
 	{ 0, RT_SCOPE_UNIVERSE },		/* RTN_UNICAST */
 	{ 0, RT_SCOPE_HOST },			/* RTN_LOCAL */
@@ -256,6 +256,9 @@ struct dn_fib_info *dn_fib_create_info(const struct rtmsg *r, struct dn_kern_rta
 	struct dn_fib_info *fi = NULL;
 	struct dn_fib_info *ofi;
 	int nhs = 1;
+
+	if (r->rtm_type > RTN_MAX)
+		goto err_inval;
 
 	if (dn_fib_props[r->rtm_type].scope > r->rtm_scope)
 		goto err_inval;

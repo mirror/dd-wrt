@@ -2189,10 +2189,6 @@ static int lvm_do_lv_create(int minor, char *lv_name, lv_t * lv)
 				lv_ptr->lv_stripesize =
 				    lv_ptr->lv_snapshot_org->lv_stripesize;
 
-				/* Update the VG PE(s) used by snapshot reserve space. */
-				vg_ptr->pe_allocated +=
-				    lv_ptr->lv_allocated_snapshot_le;
-
 				if ((ret =
 				     lvm_snapshot_alloc(lv_ptr)) != 0) {
 					vfree(lv_ptr->lv_block_exception);
@@ -2200,6 +2196,10 @@ static int lvm_do_lv_create(int minor, char *lv_name, lv_t * lv)
 					vg_ptr->lv[l] = NULL;
 					return ret;
 				}
+				/* Update the VG PE(s) used by snapshot reserve space. */
+				vg_ptr->pe_allocated +=
+				    lv_ptr->lv_allocated_snapshot_le;
+
 				for (e = 0; e < lv_ptr->lv_remap_ptr; e++)
 					lvm_hash_link(lv_ptr->
 						      lv_block_exception +

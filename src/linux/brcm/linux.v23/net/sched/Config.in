@@ -10,6 +10,11 @@ if [ "$CONFIG_ATM" = "y" -o "$CONFIG_ATM" = "m" ]; then
    dep_tristate '  ATM pseudo-scheduler' CONFIG_NET_SCH_ATM $CONFIG_ATM
 fi
 tristate '  The simplest PRIO pseudoscheduler' CONFIG_NET_SCH_PRIO
+if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ]; then
+   dep_tristate '  WRR packet scheduler' CONFIG_NET_SCH_WRR $CONFIG_IP_NF_CONNTRACK
+else
+   tristate '  WRR packet scheduler' CONFIG_NET_SCH_WRR
+fi
 tristate '  RED queue' CONFIG_NET_SCH_RED
 tristate '  SFQ queue' CONFIG_NET_SCH_SFQ
 tristate '  TEQL queue' CONFIG_NET_SCH_TEQL

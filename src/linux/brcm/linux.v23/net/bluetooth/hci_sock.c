@@ -469,6 +469,8 @@ int hci_sock_setsockopt(struct socket *sock, int level, int optname, char *optva
 		break;
 
 	case HCI_FILTER:
+		memcpy(&flt, &hci_pi(sk)->filter, sizeof(flt));
+
 		len = MIN(len, sizeof(struct hci_filter));
 		if (copy_from_user(&flt, optval, len)) {
 			err = -EFAULT;

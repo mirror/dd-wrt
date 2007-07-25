@@ -2384,6 +2384,9 @@ static void ppp_destroy_interface(struct ppp *ppp)
 	}
 #endif /* CONFIG_PPP_FILTER */
 
+	if (ppp->xmit_pending)
+		kfree_skb(ppp->xmit_pending);
+
 	kfree(ppp);
 }
 

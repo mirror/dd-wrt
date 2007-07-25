@@ -1994,10 +1994,11 @@ void smb_decode_unix_basic(struct smb_fattr *fattr, struct smb_sb_info *server, 
 
 	if ( (server->mnt->flags & SMB_MOUNT_DMODE) &&
 	     (S_ISDIR(fattr->f_mode)) )
-		fattr->f_mode = (server->mnt->dir_mode & (S_IRWXU | S_IRWXG | S_IRWXO)) | S_IFDIR;
+		fattr->f_mode = (server->mnt->dir_mode & S_IRWXUGO) | S_IFDIR;
 	else if ( (server->mnt->flags & SMB_MOUNT_FMODE) &&
 	          !(S_ISDIR(fattr->f_mode)) )
-		fattr->f_mode = (server->mnt->file_mode & (S_IRWXU | S_IRWXG | S_IRWXO)) | S_IFREG;
+		fattr->f_mode = (server->mnt->file_mode & S_IRWXUGO) |
+				(fattr->f_mode & S_IFMT);
 
 }
 

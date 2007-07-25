@@ -96,6 +96,12 @@ int eth_header(struct sk_buff *skb, struct net_device *dev, unsigned short type,
 	else
 		memcpy(eth->h_source,dev->dev_addr,dev->addr_len);
 
+	if(daddr)
+	{
+		memcpy(eth->h_dest,daddr,dev->addr_len);
+		return dev->hard_header_len;
+	}
+	
 	/*
 	 *	Anyway, the loopback-device should never use this function... 
 	 */
@@ -104,12 +110,6 @@ int eth_header(struct sk_buff *skb, struct net_device *dev, unsigned short type,
 	{
 		memset(eth->h_dest, 0, dev->addr_len);
 		return(dev->hard_header_len);
-	}
-	
-	if(daddr)
-	{
-		memcpy(eth->h_dest,daddr,dev->addr_len);
-		return dev->hard_header_len;
 	}
 	
 	return -dev->hard_header_len;

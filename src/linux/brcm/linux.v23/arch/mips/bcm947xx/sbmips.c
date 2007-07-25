@@ -485,6 +485,13 @@ BCMINITFN(sb_mips_clock)(void *sbh)
 		n = R_REG(&eir->clockcontrol_n);
 		m = R_REG(&eir->clockcontrol_sb);
 	} else if ((cc = (chipcregs_t *) sb_setcore(sbh, SB_CC, 0))) {
+
+		/* 5354 chip uses a non programmable PLL of frequency 240MHz */
+		if (sb_chip(sbh) == BCM5354_CHIP_ID) {
+			rate = 240000000;
+			goto out;
+		}
+
 		pll_type = R_REG(&cc->capabilities) & CAP_PLL_MASK;
 		n = R_REG(&cc->clockcontrol_n);
 		if ((pll_type == PLL_TYPE2) ||
@@ -693,6 +700,16 @@ BCMINITFN(sb_mips_setclock)(void *sbh, uint32 mipsclock, uint32 sbclock, uint32 
 		clockcontrol_pci = &eir->clockcontrol_pci;
 		clockcontrol_m2 = &cc->clockcontrol_m2;
 	} else if ((cc = (chipcregs_t *) sb_setcore(sbh, SB_CC, 0))) {
+
+		/* 5354 chipcommon pll setting can't be changed. 
+		 * The PMU on power up comes up with the default clk frequency
+		 * of 240MHz
+		 */
+		if (sb_chip(sbh) == BCM5354_CHIP_ID) {
+			ret = TRUE;
+			goto done;
+		}
+
 		pll_type = R_REG(&cc->capabilities) & CAP_PLL_MASK;
 		if (pll_type == PLL_TYPE6) {
 			clockcontrol_n = NULL;
