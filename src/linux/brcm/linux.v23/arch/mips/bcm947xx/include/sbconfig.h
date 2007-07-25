@@ -303,6 +303,8 @@ typedef volatile struct _sbconfig {
 #define	SB_SATAXOR		0x81e		/* serial ATA & XOR DMA core */
 #define	SB_GIGETH		0x81f		/* gigabit ethernet core */
 
+#define	SB_CC_IDX		0		/* chipc, when present, is always core 0 */
+
 /* Not really related to Silicon Backplane, but a couple of software
  * conventions for the use the flash space:
  */

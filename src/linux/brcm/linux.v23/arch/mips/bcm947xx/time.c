@@ -21,9 +21,11 @@
 
 #include <typedefs.h>
 #include <bcmnvram.h>
+#include <bcmdevs.h>
 #include <sbconfig.h>
 #include <sbextif.h>
 #include <sbutils.h>
+#include <sbchipc.h>
 #include <sbmips.h>
 
 /* Global SB handle */
@@ -88,8 +90,12 @@ bcm947xx_timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 	timer_interrupt(irq, dev_id, regs);
 
 	/* Set the watchdog timer to reset after the specified number of ms */
-	if (watchdog > 0)
-		sb_watchdog(sbh, WATCHDOG_CLOCK / 1000 * watchdog);
+	if (watchdog > 0) {
+		if (sb_chip(sbh) == BCM5354_CHIP_ID)
+			sb_watchdog(sbh, WATCHDOG_CLOCK_5354 / 1000 * watchdog);
+		else
+			sb_watchdog(sbh, WATCHDOG_CLOCK / 1000 * watchdog);
+	}
 
 #ifdef	CONFIG_HWSIM
 	(*((int *)0xa0000f1c))++;

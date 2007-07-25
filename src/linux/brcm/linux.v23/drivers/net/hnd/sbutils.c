@@ -622,9 +622,15 @@ sb_corereg(void *sbh, uint coreidx, uint regoff, uint mask, uint val)
 
 	/* readback */
 	if (regoff >= SBCONFIGOFF)
-		w = R_SBREG(sbh, r);
-	else
-		w = R_REG(r);
+		w = R_SBREG(sbh,r);
+	else {
+		if ((si->chip == BCM5354_CHIP_ID) &&
+		    (coreidx == SB_CC_IDX) &&
+		    (regoff == OFFSETOF(chipcregs_t, watchdog))) {
+			w = val;
+		} else
+			w = R_REG(r);
+	}
 
 	/* restore core index */
 	if (origidx != coreidx)
@@ -1462,7 +1468,7 @@ sb_clock(void *sbh)
 	uint idx;
 	uint32 pll_type, rate;
 	uint intr_val = 0;
-
+	uint32 cap;
 	si = SB_INFO(sbh);
 	idx = si->curidx;
 	pll_type = PLL_TYPE1;
@@ -1474,6 +1480,24 @@ sb_clock(void *sbh)
 		n = R_REG(&eir->clockcontrol_n);
 		m = R_REG(&eir->clockcontrol_sb);
 	} else if ((cc = (chipcregs_t *) sb_setcore(sbh, SB_CC, 0))) {
+		cap = R_REG(&cc->capabilities);
+
+		if (cap & CAP_PMU) {
+
+			if (sb_chip(sbh) == BCM5354_CHIP_ID) {
+				/* 5354 has a constant sb clock of 120MHz */
+				rate = 120000000;
+				goto end;
+			} else
+#ifdef BCM4328
+			if (sb_chip(sbh) == BCM4328_CHIP_ID) {
+				rate = 80000000;
+				goto end;
+			}
+			else
+#endif	/* BCM4328 */
+				ASSERT(0);
+		}
 		pll_type = R_REG(&cc->capabilities) & CAP_PLL_MASK;
 		n = R_REG(&cc->clockcontrol_n);
 		if (pll_type == PLL_TYPE6)
@@ -1496,8 +1520,9 @@ sb_clock(void *sbh)
 			rate = rate / 2;
 	}
 
-
+end:
 	/* switch back to previous core */
+
 	sb_setcoreidx(sbh, idx);
 
 	INTR_RESTORE(si, intr_val);

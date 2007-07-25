@@ -11177,6 +11177,17 @@ CONFIG_NET_SCH_PRIO
   whenever you want). If you want to compile it as a module, say M
   here and read <file:Documentation/modules.txt>.
 
+Weighted Round Robin scheduler
+CONFIG_NET_SCH_WRR
+  Say Y here if you want to use the WRR scheduler.  This provides
+  a weighted round robin algorithm to schedule network packets.
+  WRR can be used on a bridge, on a firewall and on a NAT router.
+  See <http://wipl-wrr.sourceforge.net/wrr.html> for more information.
+
+  This code is also available as a module called sch_wrr.o ( = code
+  whenever you want).  If you want to compile it as a module, say M
+  here and read <file:Documentation/modules.txt>.
+
 Diffserv field marker
 CONFIG_NET_SCH_DSMARK
   Say Y if you want to schedule packets according to the
