@@ -1,14 +1,3 @@
-/*******************************************************************************
- * $Id: crc.c,v 1.1.1.6 2004/04/12 04:30:39 honor Exp $
- * Copyright 2004, Broadcom Corporation      
- * All Rights Reserved.      
- *       
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM      
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS      
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.      
- * crc.c: utility function to compute various CRCs
- ******************************************************************************/
 
 #include "typedefs.h"
 #include "crc.h"
