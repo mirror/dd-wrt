@@ -167,6 +167,11 @@ typedef volatile struct {
 #define CAP_OTPSIZE_SHIFT	19			/* OTP Size shift */
 #define CAP_JTAGP		0x00400000		/* JTAG Master Present */
 #define CAP_ROM			0x00800000		/* Internal boot rom active */
+#define	CAP_PMU			0x10000000	/* PMU Present, rev >= 20 */
+
+
+/* watchdog clock */
+#define WATCHDOG_CLOCK_5354 	32000		/* Hz */
 
 /* PLL type */
 #define PLL_NONE		0x00000000

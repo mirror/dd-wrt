@@ -15,6 +15,7 @@ obj-$(CONFIG_NET_CLS)		+= cls_api.o
 obj-$(CONFIG_NET_CLS_POLICE)	+= police.o
 obj-$(CONFIG_NET_SCH_INGRESS)	+= sch_ingress.o 
 obj-$(CONFIG_NET_SCH_CBQ)	+= sch_cbq.o
+obj-$(CONFIG_NET_SCH_WRR)	+= sch_wrr.o
 obj-$(CONFIG_NET_SCH_CSZ)	+= sch_csz.o
 obj-$(CONFIG_NET_SCH_NETEM)	+= sch_netem.o
 obj-$(CONFIG_NET_SCH_HPFQ)	+= sch_hpfq.o

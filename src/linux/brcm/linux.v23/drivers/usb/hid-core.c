@@ -1329,7 +1329,7 @@ static struct hid_device *usb_hid_configure(struct usb_device *dev, int ifnum)
 	for (n = 0; n < interface->bNumEndpoints; n++) {
 
 		struct usb_endpoint_descriptor *endpoint = &interface->endpoint[n];
-		int pipe, maxp;
+		int pipe, maxp, interval;
 
 		if ((endpoint->bmAttributes & 3) != 3)		/* Not an interrupt endpoint */
 			continue;
@@ -1339,8 +1339,11 @@ static struct hid_device *usb_hid_configure(struct usb_device *dev, int ifnum)
 
 		pipe = usb_rcvintpipe(dev, endpoint->bEndpointAddress);
 		maxp = usb_maxpacket(dev, pipe, usb_pipeout(pipe));
+		interval = endpoint->bInterval;
+		if (dev->speed == USB_SPEED_HIGH)
+			interval = 1 << (interval - 1);
 
-		FILL_INT_URB(&hid->urb, dev, pipe, hid->buffer, maxp > 32 ? 32 : maxp, hid_irq, hid, endpoint->bInterval);
+		FILL_INT_URB(&hid->urb, dev, pipe, hid->buffer, maxp > 32 ? 32 : maxp, hid_irq, hid, interval);
 
 		break;
 	}

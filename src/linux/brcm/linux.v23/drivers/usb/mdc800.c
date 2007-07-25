@@ -523,7 +523,8 @@ static void mdc800_usb_disconnect (struct usb_device *dev,void* ptr)
 
 	if (mdc800->state == NOT_CONNECTED)
 		return;
-	
+
+	down (&mdc800->io_lock);
 	mdc800->state=NOT_CONNECTED;
 
 	usb_unlink_urb (mdc800->irq_urb);
@@ -533,6 +534,7 @@ static void mdc800_usb_disconnect (struct usb_device *dev,void* ptr)
 	usb_driver_release_interface (&mdc800_usb_driver, &dev->actconfig->interface[1]);
 
 	mdc800->dev=0;
+	up (&mdc800->io_lock);
 	info ("Mustek MDC800 disconnected from USB.");
 }
 

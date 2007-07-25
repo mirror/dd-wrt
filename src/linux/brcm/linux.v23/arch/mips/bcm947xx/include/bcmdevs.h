@@ -153,6 +153,8 @@
 #define BCM5365_DEVICE_ID       0x5365          /* 5365 chipcommon chipid */
 #define	BCM5350_DEVICE_ID	0x5350		/* bcm5350 chipcommon chipid */
 #define	BCM5352_DEVICE_ID	0x5352		/* bcm5352 chipcommon chipid */
+#define	BCM5354_CHIP_ID		0x5354		/* bcm5354 chipcommon chipid */
+#define	BCM5354E_PKG_ID		1			/* 5354E package id */
 
 #define	BCM4320_DEVICE_ID	0x4320		/* bcm4320 chipcommon chipid */
 
