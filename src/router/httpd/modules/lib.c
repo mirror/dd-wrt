@@ -133,8 +133,8 @@ void
 ej_get_firmware_version (webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_BUFFALO
-  websWrite (wp, "%s%s %s Build %s", CYBERTAN_VERSION, MINOR_VERSION,
-	     nvram_safe_get ("dist_type"),SVN_REVISION);
+  websWrite (wp, "%s%s %s", CYBERTAN_VERSION, MINOR_VERSION,
+	     nvram_safe_get ("dist_type"));
 #else
   websWrite (wp, "%s%s %s", CYBERTAN_VERSION, MINOR_VERSION,
 	     nvram_safe_get ("dist_type"));
