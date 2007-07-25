@@ -28,6 +28,7 @@
 #define	PHY_TYPE_B		1
 #define	PHY_TYPE_G		2
 #define	PHY_TYPE_N		4
+#define	PHY_TYPE_LP		5
 #define	PHY_TYPE_NULL		0xf
 
 /* how many times to attempt to bring up a virtual i/f when
@@ -437,15 +438,19 @@ wlconf_auto_chanspec(char *name)
 	return chosen;
 }
 
+
 /* PHY type/BAND conversion */
 #define WLCONF_PHYTYPE2BAND(phy)	((phy) == PHY_TYPE_A ? WLC_BAND_5G : WLC_BAND_2G)
 /* PHY type conversion */
 #define WLCONF_PHYTYPE2STR(phy)	((phy) == PHY_TYPE_A ? "a" : \
 				 (phy) == PHY_TYPE_B ? "b" : \
+				 (phy) == PHY_TYPE_LP ? "l" : \
 				 (phy) == PHY_TYPE_G ? "g" : "n")
 #define WLCONF_STR2PHYTYPE(phy)	((phy) && (phy)[0] == 'a' ? PHY_TYPE_A : \
 				 (phy) && (phy)[0] == 'b' ? PHY_TYPE_B : \
+				 (phy) && (phy)[0] == 'l' ? PHY_TYPE_LP : \
 				 (phy) && (phy)[0] == 'g' ? PHY_TYPE_G : PHY_TYPE_N)
+
 
 #define PREFIX_LEN 32			/* buffer size for wlXXX_ prefix */
 
@@ -577,7 +582,7 @@ wlconf(char *name)
 	struct bsscfg_list *bclist = NULL;
 	struct bsscfg_info *bsscfg;
 	char tmp[100], prefix[PREFIX_LEN];
-	char var[80], *next, phy[] = "a", *str;
+	char var[80], *next, phy[] = "a", *str, *addr = NULL;
 	char buf[WLC_IOCTL_MAXLEN];
 	char *country;
 	wlc_rev_info_t rev;
@@ -588,10 +593,11 @@ wlconf(char *name)
 	wl_rateset_t rs;
 	unsigned int i;
 	char eaddr[32];
-	int ap, apsta, wds, sta = 0, wet = 0;
+	int ap, apsta, wds, sta = 0, wet = 0, mac_spoof = 0;
 	char country_code[4];
 	int nas_will_run = 0;
 	char *wme, *ba;
+	char vif_addr[WLC_IOCTL_SMLEN];
 #ifdef BCMWPA2
 	char *preauth;
 	int set_preauth;
@@ -599,11 +605,13 @@ wlconf(char *name)
 	int ii;
 	int wlunit = -1;
 	int wlsubunit = -1;
+	int max_no_vifs = 0;
 	int wl_ap_build = 0; /* wl compiled with AP capabilities */
 	char cap[WLC_IOCTL_SMLEN];
 	char caps[WLC_IOCTL_SMLEN];
 	int btc_mode;
 	uint32 leddc;
+	bool ure_enab = FALSE;
 
 	/* wlconf doesn't work for virtual i/f, so if we are given a
 	 * virtual i/f return 0 if that interface is in it's parent's "vifs"
@@ -639,10 +647,15 @@ wlconf(char *name)
 	if (wl_iovar_get(name, "cap", (void *)caps, WLC_IOCTL_SMLEN))
 		return -1;
 
+
 	foreach(cap, caps, next) {
 		if (!strcmp(cap, "ap")) {
 			wl_ap_build = 1;
 		}
+		else if (!strcmp(cap, "mbss16"))
+			max_no_vifs = 16;
+		else if (!strcmp(cap, "mbss4"))
+			max_no_vifs = 4;
 	}
 
 	/* Check interface (fail silently for non-wl interfaces) */
@@ -705,11 +718,15 @@ wlconf(char *name)
 #endif
 		nvram_set(strcat_r(bsscfg->prefix, "ifname", tmp), var);
 	}
-
+	if (!strcmp(nvram_safe_get("ure_disable"), "0")) { /* URE is enabled */
+		ure_enab = TRUE;
+	}
 	if (wl_ap_build) {
 		/* Enable MSSID mode if appropriate */
+		if (!ure_enab) {
 		WL_IOVAR_SETINT(name, "mssid", (bclist->count > 1));
-
+		WL_IOVAR_SETINT(name, "mbss", (bclist->count > 1)); //compatiblitiy with newer drivers
+		}
 		/*
 		 * Set SSID for each BSS Config
 		 */
@@ -725,6 +742,41 @@ wlconf(char *name)
 			WL_BSSIOVAR_SET(name, "ssid", bsscfg->idx, &ssid, sizeof(ssid));
 		}
 	}
+	if (!ure_enab) {
+		/* set local bit for our MBSS vif base */
+		ETHER_SET_LOCALADDR(vif_addr);
+
+		/* construct and set other wlX.Y_hwaddr */
+		for (i = 1; i < max_no_vifs; i++) {
+			snprintf(tmp, sizeof(tmp), "wl%d.%d_hwaddr", unit, i);
+			addr = nvram_safe_get(tmp);
+			if (!strcmp(addr, "")) {
+				vif_addr[5] = (vif_addr[5] & ~(max_no_vifs-1))
+				        | ((max_no_vifs-1) & (vif_addr[5]+1));
+
+				nvram_set(tmp, ether_etoa((uchar *)vif_addr,
+				                          eaddr));
+			}
+		}
+		/* The addresses are available in NVRAM, so set them */
+		for (i = 1; i < max_no_vifs; i++) {
+//			snprintf(tmp, sizeof(tmp), "wl%d.%d_bss_enabled",
+//			         unit, i);
+//			if (!strcmp(nvram_safe_get(tmp), "1")) {
+				snprintf(tmp, sizeof(tmp), "wl%d.%d_hwaddr",
+				         unit, i);
+				ether_atoe(nvram_safe_get(tmp), eaddr);
+				WL_BSSIOVAR_SET(name, "cur_etheraddr", i,
+				                eaddr, ETHER_ADDR_LEN);
+//			}
+		}
+	} else { /* URE is enabled */
+		/* URE is on, so set wlX.1 hwaddr is same as that of primary interface */
+		snprintf(tmp, sizeof(tmp), "wl%d.1_hwaddr", unit);
+		WL_BSSIOVAR_SET(name, "cur_etheraddr", 1, vif_addr,
+		                ETHER_ADDR_LEN);
+		nvram_set(tmp, ether_etoa((uchar *)vif_addr, eaddr));
+	}
 
 	/* wlX_mode settings: AP, STA, WET, BSS/IBSS, APSTA */
 	str = nvram_safe_get(strcat_r(prefix, "mode", tmp));
@@ -733,6 +785,7 @@ wlconf(char *name)
 	sta = (!strcmp(str, "sta") && bclist->count == 1);
 	wds = !strcmp(str, "wds");
 	wet = !strcmp(str, "wet") || !strcmp(str, "apstawet");
+	mac_spoof = !strcmp(str, "mac_spoof");
 
 	/* Set AP mode */
 	val = (ap || apsta || wds) ? 1 : 0;
@@ -743,6 +796,11 @@ wlconf(char *name)
 	/* Set mode: WET */
 	if (wet)
 		WL_IOCTL(name, WLC_SET_WET, &wet, sizeof(wet));
+
+	if (mac_spoof) {
+		sta = 1;
+		WL_IOVAR_SETINT(name, "mac_spoof", 1);
+	}
 
 	/* For STA configurations, configure association retry time.
 	 * Use specified time (capped), or mode-specific defaults.
@@ -813,6 +871,9 @@ wlconf(char *name)
 	/* Set up the country code */
 	(void) strcat_r(prefix, "country_code", tmp);
 	
+#ifdef HAVE_BUFFALO
+	country = BUFFALO_COUNTRY;
+#else
 	if (nvram_match("wl0_phytype","a"))
 	    country="US";
 	else
@@ -823,6 +884,7 @@ wlconf(char *name)
 		country="DE";
 	    }
 	//country = nvram_get(tmp);
+#endif
 	if (country) {
 		strncpy(country_code, country, sizeof(country_code));
 		WL_IOCTL(name, WLC_SET_COUNTRY, country_code, strlen(country_code)+1);
@@ -923,6 +985,7 @@ wlconf(char *name)
 
 	/* Get supported phy types */
 	WL_IOCTL(name, WLC_GET_PHYLIST, var, sizeof(var));
+
 	nvram_set(strcat_r(prefix, "phytypes", tmp), var);
 
 	/* Get radio IDs */
