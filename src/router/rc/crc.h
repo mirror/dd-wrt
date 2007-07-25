@@ -1,14 +1,3 @@
-/*******************************************************************************
- * $Id: crc.h,v 1.1.1.6 2004/04/12 04:30:39 honor Exp $
- * Copyright 2004, Broadcom Corporation      
- * All Rights Reserved.      
- *       
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM      
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS      
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.      
- * crc.h - a function to compute crc for iLine10 headers
- ******************************************************************************/
 
 #ifndef _RTS_CRC_H_
 #define _RTS_CRC_H_ 1

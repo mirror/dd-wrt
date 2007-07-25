@@ -551,35 +551,41 @@ start_restore_defaults (void)
   char *ds;
   switch (brand)
     {
+#ifndef HAVE_BUFFALO
     case ROUTER_WRTSL54GS:
-    case ROUTER_BUFFALO_WZRG300N:
     case ROUTER_WRT150N:
     case ROUTER_WRT300N:
+    case ROUTER_NETGEAR_WNR834B:
+    case ROUTER_ASUS_WL500G:
+#endif
+    case ROUTER_BUFFALO_WZRG300N:
     case ROUTER_BUFFALO_WLAH_G54:
     case ROUTER_BUFFALO_WAPM_HP_AM54G54:
     case ROUTER_BUFFALO_WZRRSG54:
-    case ROUTER_NETGEAR_WNR834B:
-    case ROUTER_ASUS_WL500G:
       linux_overrides = generic;
       break;
+#ifndef HAVE_BUFFALO
     case ROUTER_ASUS_WL500GD:
       linux_overrides = vlan;
       break;
     case ROUTER_WRT350N:
       linux_overrides = wrt350vlan;
       break;
+#endif
     case ROUTER_BUFFALO_WZRG144NH:
       linux_overrides = wzr144nhvlan;
       break;
     case ROUTER_BUFFALO_WLI2_TX1_G54:
-    case ROUTER_MOTOROLA_WE800G:
     case ROUTER_BUFFALO_WLAG54C:
+#ifndef HAVE_BUFFALO
+    case ROUTER_MOTOROLA_WE800G:
     case ROUTER_WAP54G_V1:
     case ROUTER_SITECOM_WL105B:
       linux_overrides = generic_2;
       break;
     case ROUTER_RT480W:
     case ROUTER_RT210W:
+#endif
     case ROUTER_BRCM4702_GENERIC:
       ds = nvram_safe_get ("dhcp_start");
       if (ds != NULL && strlen (ds) > 3)
@@ -1398,10 +1404,6 @@ check_cfe_nv (void)
   switch (getRouterBrand ())
     {
 
-    case ROUTER_ASUS_WL500GD:
-      ret += check_nv ("wl0_ifname", "eth1");
-      return 0;
-      break;
     case ROUTER_BUFFALO_WBR54G:
     case ROUTER_BUFFALO_WZRRSG54:
       ret += check_nv ("lan_hwnames", "et0 wl0");
@@ -1427,6 +1429,11 @@ check_cfe_nv (void)
       ret += check_nv ("wl0gpio3", "0");
       ret += check_nv ("cctl", "0");
       ret += check_nv ("ccode", "0");
+      break;
+#ifndef HAVE_BUFFALO
+    case ROUTER_ASUS_WL500GD:
+      ret += check_nv ("wl0_ifname", "eth1");
+      return 0;
       break;
     case ROUTER_LINKSYS_WRT55AG:
     case ROUTER_MOTOROLA_V1:
@@ -1496,7 +1503,7 @@ check_cfe_nv (void)
       ret += check_nv ("cctl", "0");
       ret += check_nv ("ccode", "0");
       break;
-
+#endif
     }
   if (ret)
     {
@@ -1516,17 +1523,3 @@ check_pmon_nv (void)
   return 0;
 }
 
-#if 0
-static int
-check_image (void)
-{
-  int ret = 0;
-/*  eval ("insmod", "writemac", "flag=get_flash");	//Barry adds for set flash_type 2003 09 08
-  nvram_set ("firmware_version", CYBERTAN_VERSION);
-  nvram_set ("Intel_firmware_version", INTEL_FLASH_SUPPORT_VERSION_FROM);
-  nvram_set ("bcm4712_firmware_version", BCM4712_CHIP_SUPPORT_VERSION_FROM);
-  eval ("rmmod", "writemac");
-*/
-  return ret;
-}
-#endif
