@@ -2372,6 +2372,7 @@ static int tcp_clean_rtx_queue(struct sock *sk, __s32 *seq_rtt_p)
 				if(sacked & TCPCB_SACKED_RETRANS)
 					tp->retrans_out--;
 				acked |= FLAG_RETRANS_DATA_ACKED;
+				acked &= ~FLAG_DATA_ACKED;
 				seq_rtt = -1;
 			} else if (seq_rtt < 0)
 				seq_rtt = now - scb->when;
