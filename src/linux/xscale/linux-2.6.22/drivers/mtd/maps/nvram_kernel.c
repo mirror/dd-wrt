@@ -116,7 +116,7 @@ _nvram_read(char *buf)
 	if (!nvram_mtd || nvram_mtd->read(nvram_mtd, nvram_mtd->size - NVRAM_SPACE, NVRAM_SPACE, &len, buf) ||
 	    len != NVRAM_SPACE ||
 	    header->magic != NVRAM_MAGIC) {
-	        printk(KERN_EMERG "Broken NVRAM found, recovering it (Magic %X)\n",header->magic);
+	//        printk(KERN_EMERG "Broken NVRAM found, recovering it (Magic %X)\n",header->magic);
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
 		memset(buf,0,NVRAM_SPACE);
@@ -440,7 +440,7 @@ dev_nvram_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsign
 {
 	if (cmd != NVRAM_MAGIC)
 	{
-	    printk(KERN_EMERG "Invalid nvram magic %X %X\n",cmd,NVRAM_MAGIC);
+//	    printk(KERN_EMERG "Invalid nvram magic %X %X\n",cmd,NVRAM_MAGIC);
 		return -EINVAL;
 	}
 	return nvram_commit();
