@@ -1246,13 +1246,14 @@ static ssize_t extract_entropy(struct entropy_store *r, void * buf,
  * at which point we do a "catastrophic reseeding".
  */
 static inline void xfer_secondary_pool(struct entropy_store *r,
-				       size_t nbytes, __u32 *tmp)
+				       size_t nbytes, __u32 *tmp,
+				       size_t tmpsize)
 {
 	if (r->entropy_count < nbytes * 8 &&
 	    r->entropy_count < r->poolinfo.POOLBITS) {
 		int nwords = min_t(int,
 				   r->poolinfo.poolwords - r->entropy_count/32,
-				   sizeof(tmp) / 4);
+				   tmpsize / 4);
 
 		DEBUG_ENT("xfer %d from primary to %s (have %d, need %d)\n",
 			  nwords * 32,
@@ -1266,9 +1267,9 @@ static inline void xfer_secondary_pool(struct entropy_store *r,
 	if (r->extract_count > 1024) {
 		DEBUG_ENT("reseeding %s with %d from primary\n",
 			  r == sec_random_state ? "secondary" : "unknown",
-			  sizeof(tmp) * 8);
-		extract_entropy(random_state, tmp, sizeof(tmp), 0);
-		add_entropy_words(r, tmp, sizeof(tmp) / 4);
+			  tmpsize * 8);
+		extract_entropy(random_state, tmp, tmpsize, 0);
+		add_entropy_words(r, tmp, tmpsize / 4);
 		r->extract_count = 0;
 	}
 }
@@ -1300,7 +1301,7 @@ static ssize_t extract_entropy(struct entropy_store *r, void * buf,
 		r->entropy_count = r->poolinfo.POOLBITS;
 
 	if (flags & EXTRACT_ENTROPY_SECONDARY)
-		xfer_secondary_pool(r, nbytes, tmp);
+		xfer_secondary_pool(r, nbytes, tmp, sizeof(tmp));
 
 	DEBUG_ENT("%s has %d bits, want %d bits\n",
 		  r == sec_random_state ? "secondary" :
