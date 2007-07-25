@@ -68,11 +68,11 @@ distclean:
 
 install:
 	mkdir -p $(DESTDIR)$(prefix)/lib/
-	install -o root -g root -m 0644 $(OUT_SLIB) $(DESTDIR)$(prefix)/lib
+	install $(OUT_SLIB) $(DESTDIR)$(prefix)/lib
 	rm -f $(DESTDIR)$(prefix)/lib/$(LN1_SLIB) ; \
-	$(LN) -s $(DESTDIR)$(prefix)/lib/$(OUT_SLIB) $(DESTDIR)$(prefix)/lib/$(LN1_SLIB)
+	cd $(DESTDIR)$(prefix)/lib/ && $(LN) -s $(OUT_SLIB) $(LN1_SLIB)
 	rm -f $(DESTDIR)$(prefix)/lib/$(LN_SLIB) ; \
-	$(LN) -s $(DESTDIR)$(prefix)/lib/$(LN1_SLIB) $(DESTDIR)$(prefix)/lib/$(LN_SLIB)
+	cd $(DESTDIR)$(prefix)/lib/ && $(LN) -s $(LN1_SLIB) $(LN_SLIB)
 
 $(DEPS): ../Makefile.opts
 

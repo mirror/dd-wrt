@@ -36,6 +36,4 @@ distclean:
 	@true
 
 install:
-	mkdir -p $(DESTDIR)$(prefix)/include/netlink/route/
-	install -o root -g root -m 0644 netlink/*.h $(DESTDIR)$(prefix)/include/netlink/
-	install -o root -g root -m 0644 netlink/route/*.h $(DESTDIR)$(prefix)/include/netlink/route/
+	@true
