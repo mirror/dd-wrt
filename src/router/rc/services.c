@@ -572,10 +572,7 @@ start_single_service (void)
       }
     else if (!strcmp (service, "static_route_del"))
       {
-	if (nvram_safe_get ("action_service_arg1"))
-	  {
-	    del_routes (nvram_safe_get ("action_service_arg1"));
-	  }
+	del_routes (nvram_safe_get ("action_service_arg1"));
       }
     else if (!strcmp (service, "ddns"))
       {

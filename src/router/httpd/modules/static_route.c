@@ -473,15 +473,15 @@ delete_static_route (webs_t wp)
   {
     if (i == atoi (page))
       {
-/*      char ipaddr[20];
-      char netmask[20];
-      char gateway[20];
-      char met[16];
-      char ifn[16];
-      sscanf(word_name,"%s:%s:%s:%s:%s",ipaddr,netmask,gateway,met,ifn);
-      fprintf(stderr,"deleting2 %s %s %s %s %s\n",ipaddr,netmask,gateway,met,ifn);
-      route_del (ifn, atoi (met) + 1, ipaddr, gateway, netmask);*/
-	nvram_set ("action_service_arg1", word);
+        char *oldarg = nvram_get("action_service_arg1");
+	if (oldarg && strlen(oldarg)>0)
+	    {
+	    char *newarg =malloc(strlen(oldarg)+1+strlen(word)+1);
+	    sprintf(newarg,"%s %s",oldarg,word);
+	    nvram_set ("action_service_arg1", newarg);
+	    free(newarg);
+	    }else
+	    nvram_set ("action_service_arg1", word);
 	i++;
 	continue;
       }
