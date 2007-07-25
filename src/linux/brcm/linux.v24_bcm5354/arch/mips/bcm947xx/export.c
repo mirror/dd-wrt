@@ -118,3 +118,5 @@ _export(hndcrc32)
 
 _export(sb_alp_clock)
 _export(sb_pmu_fast_pwrup_delay)
+_export(sb_pmu_paref_ldo_enable);
+_export(sb_pmu_set_ldo_voltage);

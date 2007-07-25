@@ -376,6 +376,29 @@ typedef volatile struct {
 #define	PC2_WILD_INT_MASK	0xf
 #define	PC2_WILD_INT_SHIFT	4
 
+/* PMU Resource Definitions */
+#define PMU0_EXT_SWITCHER_PWM		0	/* 0x00001 */
+#define PMU0_BB_SWITCHER_PWM		1	/* 0x00002 */
+#define PMU0_BB_SWITCHER_BURST		2	/* 0x00004 */
+#define PMU0_BB_EXT_SWITCHER_BURST	3	/* 0x00008 */
+#define PMU0_ILP_REQUEST		4	/* 0x00010 */
+#define PMU0_RADIO_SWITCHER_PWM		5	/* 0x00020 */
+#define PMU0_RADIO_SWITCHER_BURST	6	/* 0x00040 */
+#define PMU0_ROM_SWITCH			7	/* 0x00080 */
+#define PMU0_PA_REF_LDO			8	/* 0x00100 */
+#define PMU0_RADIO_LDO			9	/* 0x00200 */
+#define PMU0_AFE_LDO			10	/* 0x00400 */
+#define PMU0_PLL_LDO			11	/* 0x00800 */
+#define PMU0_BG_FILTBYP			12	/* 0x01000 */
+#define PMU0_TX_FILTBYP			13	/* 0x02000 */
+#define PMU0_RX_FILTBYP			14	/* 0x04000 */
+#define PMU0_XTAL_PU			15	/* 0x08000 */
+#define PMU0_XTAL_EN			16	/* 0x10000 */
+#define PMU0_BB_PLL_FILTBYP		17	/* 0x20000 */
+#define PMU0_RF_PLL_FILTBYP		18	/* 0x40000 */
+#define PMU0_BB_PLL_PU			19	/* 0x80000 */
+
+
 /* gpiotimerval */
 #define GPIO_ONTIME_SHIFT	16
 
