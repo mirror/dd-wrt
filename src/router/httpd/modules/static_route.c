@@ -214,6 +214,7 @@ validate_static_route (webs_t wp, char *value, struct variable *v)
   char buf_name[1000] = "", *cur_name = buf_name;
   char old[STATIC_ROUTE_PAGE][60];
   char old_name[STATIC_ROUTE_PAGE][30];
+  char backuproute[256];
   struct variable static_route_variables[] = {
   {argv:NULL},
   {argv:NULL},
@@ -386,12 +387,10 @@ write_nvram:
     strcpy (old_name[i], word);
     i++;
   }
-
-  if (strlen (old[atoi (page)]) > 0)
-    {
-      addAction ("static_route_del");
-      addDeletion (old[atoi (page)]);
-    }
+  
+  
+  
+  strcpy(backuproute,old[atoi (page)]);
   if (!tmp)
     {
       char met[16];
@@ -413,7 +412,14 @@ write_nvram:
       snprintf (old_name[atoi (page)], sizeof (old_name[0]), "$NAME:%s$$",
 		new_name);
     }
-
+  if (strcmp(backuproute,old[atoi (page)]))
+  {
+  if (strlen (backuproute) > 0)
+    {
+      addAction ("static_route_del");
+      addDeletion (backuproute);
+    }
+  }
 
   for (i = 0; i < STATIC_ROUTE_PAGE; i++)
     {
