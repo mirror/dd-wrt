@@ -183,6 +183,20 @@ ej_static_route_setting (webs_t wp, int argc, char_t ** argv)
 
   return;
 }
+
+
+void addDeletion(char *word)
+{
+        char *oldarg = nvram_get("action_service_arg1");
+	if (oldarg && strlen(oldarg)>0)
+	    {
+	    char *newarg =malloc(strlen(oldarg)+strlen(word)+2);
+	    sprintf(newarg,"%s %s",oldarg,word);
+	    nvram_set ("action_service_arg1", newarg);
+	    free(newarg);
+	    }else
+	    nvram_set ("action_service_arg1", word);
+}
 extern int save_olsrd (webs_t wp);
 
 void
@@ -371,6 +385,11 @@ write_nvram:
     i++;
   }
 
+  if (strlen(old[i])>0)
+  {
+    	addAction("static_route_del");
+	addDeletion(old[atoi(page)]);
+  }
   if (!tmp)
     {
       char met[16];
@@ -386,7 +405,7 @@ write_nvram:
     }
   else
     {
-      snprintf (old[atoi (page)], sizeof (old[0]), "%s:%s:%s:%s:%s", ipaddr,
+	snprintf (old[atoi (page)], sizeof (old[0]), "%s:%s:%s:%s:%s", ipaddr,
 		netmask, gateway, metric, ifname);
       httpd_filter_name (name, new_name, sizeof (new_name), SET);
       snprintf (old_name[atoi (page)], sizeof (old_name[0]), "$NAME:%s$$",
