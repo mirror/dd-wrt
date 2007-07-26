@@ -1839,6 +1839,8 @@ security_save_prefix (webs_t wp, char *prefix)
 int
 security_save (webs_t wp)
 {
+  char *value = websGetVar (wp, "action", "");
+  addAction ("wireless_2");
 #ifdef HAVE_MADWIFI
   int dc = getdevicecount ();
   int i;
@@ -1851,8 +1853,6 @@ security_save (webs_t wp)
 #else
   security_save_prefix (wp, "wl0");
 #endif
-  char *value = websGetVar (wp, "action", "");
-  addAction ("wireless_2");
   if (!strcmp (value, "ApplyTake"))
     {
       nvram_commit ();
