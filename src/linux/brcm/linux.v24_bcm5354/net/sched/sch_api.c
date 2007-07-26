@@ -1244,6 +1244,9 @@ int __init pktsched_init(void)
 #ifdef CONFIG_NET_SCH_PRIO
 	INIT_QDISC(prio);
 #endif
+#ifdef CONFIG_NET_SCH_WRR
+	INIT_QDISC(wrr);
+#endif
 #ifdef CONFIG_NET_SCH_ATM
 	INIT_QDISC(atm);
 #endif
