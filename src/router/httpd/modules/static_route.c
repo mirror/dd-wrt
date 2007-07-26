@@ -387,7 +387,7 @@ write_nvram:
     i++;
   }
 
-  if (strlen (old[i]) > 0)
+  if (strlen (old[atoi (page)]) > 0)
     {
       addAction ("static_route_del");
       addDeletion (old[atoi (page)]);
