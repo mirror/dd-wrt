@@ -2974,7 +2974,7 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	       "name=[%s] type=[%s] service=[%s] sleep=[%d] action=[%d]\n",
 	       act->name, act->type, act->service, act->sleep_time,
 	       act->action);
-      addAction(act->service);
+      addAction (act->service);
       sleep_time = act->sleep_time;
       action = act->action;
       if (act->go)
@@ -3466,21 +3466,19 @@ addAction (char *action)
 	return;
       }
   }
-  if (strlen(services)>0)
+  if (strlen (services) > 0)
     {
-      actionstack =
-	malloc (strlen (services) +
-		strlen (action) + 2);
-      memset(actionstack,0,strlen (services) +strlen (action) + 2);
-            strcpy(actionstack,action);
-	    strcat(actionstack," ");
-	    strcat(actionstack,nvram_safe_get ("action_service"));
-    nvram_set ("action_service", actionstack);
-    free (actionstack);
+      actionstack = malloc (strlen (services) + strlen (action) + 2);
+      memset (actionstack, 0, strlen (services) + strlen (action) + 2);
+      strcpy (actionstack, action);
+      strcat (actionstack, " ");
+      strcat (actionstack, nvram_safe_get ("action_service"));
+      nvram_set ("action_service", actionstack);
+      free (actionstack);
     }
   else
     {
-    nvram_set ("action_service", action);
+      nvram_set ("action_service", action);
     }
 
 
@@ -3563,7 +3561,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	  if ((act->action == SYS_RESTART)
 	      || (act->action == SERVICE_RESTART))
 	    {
-	      
+
 	      addAction (act->service);
 	    }
 	  sleep_time = act->sleep_time;
@@ -4668,13 +4666,14 @@ static void
 ej_get_cputemp (webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_GATEWORX
-int TEMP_MUL=100;
-if (getRouterBrand()==ROUTER_BOARD_GATEWORX_SWAP)
-    TEMP_MUL=200;
-    
+  int TEMP_MUL = 100;
+  if (getRouterBrand () == ROUTER_BOARD_GATEWORX_SWAP)
+    TEMP_MUL = 200;
+
   FILE *fp =
-    fopen ("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/temp_input",
-	   "rb");
+    fopen
+    ("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/temp_input",
+     "rb");
 #else
 #define TEMP_MUL 1000
 #ifdef HAVE_X86
@@ -4717,7 +4716,8 @@ static void
 ej_get_voltage (webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp =
-    fopen ("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/volt", "rb");
+    fopen ("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/volt",
+	   "rb");
 
   if (fp == NULL)
     {
@@ -5559,9 +5559,9 @@ struct ej_handler ej_handlers[] = {
 #endif
   {"show_routeif", ej_show_routeif},
 #ifdef HAVE_MILKFISH
-{"show_phonebook", ej_show_phonebook},
-{"show_ppptime", ej_show_ppptime},
-{"exec_milkfish_service", ej_exec_milkfish_service},
+  {"show_phonebook", ej_show_phonebook},
+  {"show_ppptime", ej_show_ppptime},
+  {"exec_milkfish_service", ej_exec_milkfish_service},
 #endif
 
   {NULL, NULL}
