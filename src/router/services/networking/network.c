@@ -2381,7 +2381,7 @@ start_wan (int status)
 	    {
 	      sleep (3);
 	      start_force_to_dial ();
-	      nvram_set ("action_service", "");
+	      nvram_unset("action_service");
 	    }
 	}
       else

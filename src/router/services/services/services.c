@@ -934,7 +934,7 @@ start_pptp (int status)
 	{
 	  start_force_to_dial ();
 //                      force_to_dial(nvram_safe_get("action_service"));
-	  nvram_set ("action_service", "");
+	  nvram_unset("action_service");
 	}
       /* Trigger Connect On Demand if user ping pptp server */
       else
@@ -1180,7 +1180,7 @@ start_tmp_ppp (int num)
       sleep (3);
       // force_to_dial(nvram_safe_get("action_service"));
       start_force_to_dial ();
-      nvram_set ("action_service", "");
+      nvram_unset("action_service");
     }
 
   close (s);
@@ -1357,7 +1357,7 @@ start_l2tp (int status)
       if (nvram_match ("action_service", "start_l2tp"))
 	{
 	  start_force_to_dial ();
-	  nvram_set ("action_service", "");
+	  nvram_unset("action_service");
 	}
       /* Trigger Connect On Demand if user ping pptp server */
       else

@@ -22,6 +22,7 @@ diag_ping_start (webs_t wp)
 
   if (!ip || !times || !strcmp (ip, ""))
     return ret;
+  addAction ("start_ping");
   unlink (PING_TMP);
   nvram_set ("ping_ip", ip);
   nvram_set ("ping_times", times);
@@ -31,7 +32,6 @@ diag_ping_start (webs_t wp)
   //snprintf(cmd, sizeof(cmd), "ping -c %s %s &", times, ip);
   //cprintf("cmd=[%s]\n",cmd);
   //system(cmd);
-  addAction ("start_ping");
 
   return ret;
 }
