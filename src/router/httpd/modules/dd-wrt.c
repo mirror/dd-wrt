@@ -6362,15 +6362,16 @@ char temp[128] = "";
   char services[8192] = "", svcs_var[32] = "";
   int index = 0;
 
-    do 
-		{ 
-		snprintf (svcs_var, 31, "filter_services%d", index++); 
-		strcat (services, nvram_safe_get (svcs_var)); 
-		} 
-	while (strlen (nvram_safe_get (svcs_var)) > 0 && index < 8); 
+  do
+    {
+      snprintf (svcs_var, 31, "filter_services%d", index++);
+      strcat (services, nvram_safe_get (svcs_var));
+    }
+  while (strlen (nvram_safe_get (svcs_var)) > 0 && index < 8);
 
   return services;
 }
+
 /*
 void
 ej_get_services_options (webs_t wp, int argc, char_t ** argv)
