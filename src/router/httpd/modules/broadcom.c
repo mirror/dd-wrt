@@ -3563,6 +3563,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	  if ((act->action == SYS_RESTART)
 	      || (act->action == SERVICE_RESTART))
 	    {
+	      
 	      addAction (act->service);
 	    }
 	  sleep_time = act->sleep_time;

@@ -946,18 +946,19 @@ delete_policy (webs_t wp, int which)
 int
 single_delete_policy (webs_t wp)
 {
+  addAction ("filters");
   int ret = 0;
   char *id = nvram_safe_get ("filter_id");
   D ("single delete policy");
   ret = delete_policy (wp, atoi (id));
   D ("okay");
-  addAction ("filters");
   return ret;
 }
 
 int
 summary_delete_policy (webs_t wp)
 {
+  addAction ("filters");
   int i, ret = 0;
   D ("summary delete policy");
   for (i = 1; i <= 10; i++)
@@ -970,7 +971,6 @@ summary_delete_policy (webs_t wp)
 	ret += delete_policy (wp, i);
     }
   D ("okay");
-  addAction ("filters");
   return ret;
 }
 
@@ -979,6 +979,7 @@ save_policy (webs_t wp)
 {
   char *f_id, *f_name, *f_status, *f_status2;
   char buf[256] = "";
+  char *value = websGetVar (wp, "action", "");
   struct variable filter_variables[] = {
   {argv:ARGV ("1", "10")},
   {argv:ARGV ("0", "1", "2")},
@@ -1030,7 +1031,6 @@ save_policy (webs_t wp)
   nvram_set (filter_buf, buf);
 
   addAction ("filters");
-  char *value = websGetVar (wp, "action", "");
   if (!strcmp (value, "ApplyTake"))
     {
       nvram_commit ();

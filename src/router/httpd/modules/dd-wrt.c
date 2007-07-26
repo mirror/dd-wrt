@@ -2204,6 +2204,7 @@ ej_show_olsrd (webs_t wp, int argc, char_t ** argv)
 int
 save_networking (webs_t wp)
 {
+  char *value = websGetVar (wp, "action", "");
   int vlancount = atoi (nvram_safe_get ("vlan_tagcount"));
   int bridgescount = atoi (nvram_safe_get ("bridges_count"));
   int bridgesifcount = atoi (nvram_safe_get ("bridgesif_count"));
@@ -2342,7 +2343,6 @@ save_networking (webs_t wp)
   validate_portsetup (wp, NULL, NULL);
 #endif
 
-  char *value = websGetVar (wp, "action", "");
   addAction ("index");
   if (!strcmp (value, "ApplyTake"))
     {
@@ -3948,6 +3948,8 @@ save_prefix (webs_t wp, char *prefix)
 int
 wireless_save (webs_t wp)
 {
+  char *value = websGetVar (wp, "action", "");
+  addAction ("wireless");
 #ifdef HAVE_MSSID
   char *next;
   char var[80];
@@ -3978,8 +3980,6 @@ wireless_save (webs_t wp)
 #endif
   //nvram_commit ();
 #endif
-  char *value = websGetVar (wp, "action", "");
-  addAction ("wireless");
   if (!strcmp (value, "ApplyTake"))
     {
       nvram_commit ();
@@ -6609,6 +6609,7 @@ qos_add_mac (webs_t wp)
 int
 qos_save (webs_t wp)
 {
+  char *value = websGetVar (wp, "action", "");
   char svqos_var[4096] = { 0 };
   char field[32] = { 0 };
   char *name, *data, *level, *level2, *delete;
@@ -6791,7 +6792,6 @@ qos_save (webs_t wp)
   nvram_set ("svqos_port3bw", websGetVar (wp, "svqos_port3bw", NULL));
   nvram_set ("svqos_port4bw", websGetVar (wp, "svqos_port4bw", NULL));
 
-  char *value = websGetVar (wp, "action", "");
   addAction ("qos");
   if (!strcmp (value, "ApplyTake"))
     {

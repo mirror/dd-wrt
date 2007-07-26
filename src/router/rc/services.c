@@ -780,10 +780,9 @@ start_single_service (void)
       }
 #endif
   }
-
-  nvram_set ("action_service", "");
-  nvram_set ("action_service_arg1", "");
-
+  
+  nvram_unset("action_service");
+  nvram_unset("action_service_arg1");
   return 0;
 }
 

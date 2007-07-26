@@ -1701,6 +1701,8 @@ configure_single (int count)
 
   setMacFilter (dev);
 
+  set_rate (dev);
+
   if (strcmp (m, "sta"))
     {
       char bridged[32];
@@ -1810,7 +1812,7 @@ configure_single (int count)
       else
 	setupSupplicant (var);
     }
-  set_rate (dev);
+/*  set_rate (dev);
   m = default_get (wl, "ap");
   eval ("iwpriv",dev,"scandisable","0");
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
@@ -1828,7 +1830,7 @@ configure_single (int count)
 	  eval ("iwpriv",dev,"scandisable","1");
 	  eval ("iwconfig", dev, "freq", freq);
 	}
-    }
+    }*/
 }
 
 void
