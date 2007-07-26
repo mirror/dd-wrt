@@ -185,17 +185,19 @@ ej_static_route_setting (webs_t wp, int argc, char_t ** argv)
 }
 
 
-void addDeletion(char *word)
+void
+addDeletion (char *word)
 {
-        char *oldarg = nvram_get("action_service_arg1");
-	if (oldarg && strlen(oldarg)>0)
-	    {
-	    char *newarg =malloc(strlen(oldarg)+strlen(word)+2);
-	    sprintf(newarg,"%s %s",oldarg,word);
-	    nvram_set ("action_service_arg1", newarg);
-	    free(newarg);
-	    }else
-	    nvram_set ("action_service_arg1", word);
+  char *oldarg = nvram_get ("action_service_arg1");
+  if (oldarg && strlen (oldarg) > 0)
+    {
+      char *newarg = malloc (strlen (oldarg) + strlen (word) + 2);
+      sprintf (newarg, "%s %s", oldarg, word);
+      nvram_set ("action_service_arg1", newarg);
+      free (newarg);
+    }
+  else
+    nvram_set ("action_service_arg1", word);
 }
 extern int save_olsrd (webs_t wp);
 
@@ -385,11 +387,11 @@ write_nvram:
     i++;
   }
 
-  if (strlen(old[i])>0)
-  {
-    	addAction("static_route_del");
-	addDeletion(old[atoi(page)]);
-  }
+  if (strlen (old[i]) > 0)
+    {
+      addAction ("static_route_del");
+      addDeletion (old[atoi (page)]);
+    }
   if (!tmp)
     {
       char met[16];
@@ -405,7 +407,7 @@ write_nvram:
     }
   else
     {
-	snprintf (old[atoi (page)], sizeof (old[0]), "%s:%s:%s:%s:%s", ipaddr,
+      snprintf (old[atoi (page)], sizeof (old[0]), "%s:%s:%s:%s:%s", ipaddr,
 		netmask, gateway, metric, ifname);
       httpd_filter_name (name, new_name, sizeof (new_name), SET);
       snprintf (old_name[atoi (page)], sizeof (old_name[0]), "$NAME:%s$$",
@@ -482,10 +484,10 @@ int
 delete_static_route (webs_t wp)
 {
   addAction ("routing");
-  char *buf=malloc(1000);
-  char *buf_name=malloc(1000);
-  memset(buf,0,1000);
-  memset(buf_name,0,1000);
+  char *buf = malloc (1000);
+  char *buf_name = malloc (1000);
+  memset (buf, 0, 1000);
+  memset (buf_name, 0, 1000);
   char *cur = buf;
   char *cur_name = buf_name;
   static char word[256], *next;
@@ -499,15 +501,7 @@ delete_static_route (webs_t wp)
   {
     if (i == atoi (page))
       {
-        char *oldarg = nvram_get("action_service_arg1");
-	if (oldarg && strlen(oldarg)>0)
-	    {
-	    char *newarg =malloc(strlen(oldarg)+strlen(word)+2);
-	    sprintf(newarg,"%s %s",oldarg,word);
-	    nvram_set ("action_service_arg1", newarg);
-	    free(newarg);
-	    }else
-	    nvram_set ("action_service_arg1", word);
+	addDeletion (word);
 	i++;
 	continue;
       }
@@ -535,8 +529,8 @@ delete_static_route (webs_t wp)
 
   nvram_set ("static_route", buf);
   nvram_set ("static_route_name", buf_name);
-  free(buf_name);
-  free(buf);
+  free (buf_name);
+  free (buf);
   if (!strcmp (value, "ApplyTake"))
     {
       nvram_commit ();
