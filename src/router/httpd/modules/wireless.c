@@ -2108,33 +2108,27 @@ convert_wl_gmode (char *value)
 	nvram_set ("wl_net_mode", value);
 #ifdef HAVE_MSSID
 	nvram_set ("wl_gmode", "1");
+	nvram_set ("wl_nmode", "-1");
 #else
 	nvram_set ("wl_gmode", "6");
 #endif
-	nvram_set ("wl_afterburner", "auto");	// From 3.61.13.0
+	nvram_set ("wl_afterburner", "auto");
 	nvram_set ("wl_rateset", "default");
-#ifdef HAVE_MSSID
-	nvram_set ("wl_nmode", "-1");
-#endif
 	nvram_set ("wl_frameburst", "on");
 	nvram_set ("wl_phytype", "g");
 	nvram_set ("wl_nreqd", "0");
-
       }
 #ifdef HAVE_MSSID
     else if (!strcmp (value, "bg-mixed"))
       {
 	nvram_set ("wl_net_mode", value);
 	nvram_set ("wl_gmode", "1");
-	nvram_set ("wl_afterburner", "auto");	// From 3.61.13.0
+	nvram_set ("wl_afterburner", "auto");
 	nvram_set ("wl_rateset", "default");
-#ifdef HAVE_MSSID
-	nvram_set ("wl_nmode", "0");
-#endif
 	nvram_set ("wl_frameburst", "on");
+	nvram_set ("wl_nmode", "0");
 	nvram_set ("wl_phytype", "g");
 	nvram_set ("wl_nreqd", "0");
-
       }
 #endif
     else if (!strcmp (value, "g-only"))
@@ -2155,17 +2149,15 @@ convert_wl_gmode (char *value)
 #ifdef HAVE_MSSID
 	nvram_set ("wl_nmode", "0");
 #endif
-	nvram_set ("wl_afterburner", "off");	// From 3.61.13.0
+	nvram_set ("wl_afterburner", "off");
 	nvram_set ("wl_rateset", "default");
 	nvram_set ("wl_frameburst", "on");
 	nvram_set ("wl_phytype", "g");
 	nvram_set ("wl_nreqd", "0");
-
       }
 #ifdef HAVE_MSSID
     else if (!strcmp (value, "n-only"))
       {
-
 	nvram_set ("wl_net_mode", value);
 	nvram_set ("wl_gmode", "1");
 	nvram_set ("wl_nmode", "2");
@@ -2180,9 +2172,6 @@ convert_wl_gmode (char *value)
 	nvram_set ("wl_phytype", "a");
 	nvram_set ("wl_nreqd", "0");
       }
-
-
-
   }
 }
 
