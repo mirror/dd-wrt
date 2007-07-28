@@ -2297,7 +2297,7 @@ static int wavelan_ioctl(struct net_device *dev,	/* device on which the ioctl is
 			wv_splx(lp, &flags);
 			if (copy_to_user(wrq->u.data.pointer,
 					 lp->his_sum,
-					 sizeof(long) * lp->his_number);
+					 sizeof(long) * lp->his_number));
 				ret = -EFAULT;
 			wv_splhi(lp, &flags);
 

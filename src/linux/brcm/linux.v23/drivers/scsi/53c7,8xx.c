@@ -3197,7 +3197,7 @@ debugger_fn_bs (struct Scsi_Host *host, struct debugger_token *token,
 
     bp->address = (u32 *) args[0];
     memcpy ((void *) bp->old_instruction, (void *) bp->address, 8);
-    bp->old_size = (((bp->old_instruction[0] >> 24) & DCMD_TYPE_MASK) ==
+    bp->old_size = ((bp->old_instruction[0] >> 24) & DCMD_TYPE_MASK) ==
 	DCMD_TYPE_MMI ? 3 : 2;
     bp->next = hostdata->breakpoints;
     hostdata->breakpoints = bp->next;

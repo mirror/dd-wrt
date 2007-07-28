@@ -12344,6 +12344,37 @@ CONFIG_SK98LIN
   say M here and read Documentation/modules.txt. This is recommended.
   The module will be called sk98lin.o.
 
+Marvell Yukon Gigabit Ethernet Adapter family support
+CONFIG_SKGE
+  This is an alternate driver for the Marvell Yukon Gigabit Ethernet
+  family. It is a backport of version 1.6 for kernel 2.6. The vendor's
+  one is normally recommended (sk98lin), but under some circumstances, it
+  is known to have trouble (eg: sending UDP only on old chips). This driver
+  is not very fast an may lead to higher CPU loads than the original one
+  since it does not support NAPI yet, but at least it is reported to work
+  and is maintained in 2.6. Linking it with the kernel is not recommended
+  since it may conflict with sk98lin.
+
+  If you want to compile this driver as a module ( = code which can be
+  inserted in and removed from the running kernel whenever you want),
+  say M here and read Documentation/modules.txt. This is recommended.
+  The module will be called skge.o.
+
+Marvell Yukon 2 Gigabit Ethernet Adapter family support
+CONFIG_SKY2
+  This is an alternate driver for the Marvell Yukon 2 Gigabit Ethernet
+  family. It is a backport of version 1.5 for kernel 2.6. The vendor's
+  one is normally recommended (sk98lin), but under some circumstances, it
+  is known to have trouble (eg: sending UDP only on old chips). This driver
+  is not very fast an may lead to higher CPU loads than the original one
+  since it does not support NAPI yet, but at least it is reported to work
+  and is maintained in 2.6. Linking it with the kernel is not recommended
+  since it may conflict with sk98lin.
+
+  If you want to compile this driver as a module ( = code which can be
+  inserted in and removed from the running kernel whenever you want),
+  say M here and read Documentation/modules.txt. This is recommended.
+  The module will be called sky2.o.
 
 Sun GEM support
 CONFIG_SUNGEM
@@ -20754,6 +20785,13 @@ CONFIG_WDTPCI
   inserted in and removed from the running kernel whenever you want),
   say M here and read <file:Documentation/modules.txt>.  The module
   will be called wdt_pci.o.
+
+W83627HF/F/HG/G Watchdog
+CONFIG_WDT_W83627
+  This is a driver for the hardware watchdog on the W83627HF chipset.
+  To compile this driver as a module say M here. The module will be
+  named wdt83627.o
+  Most people will say N.
 
 WDT501 features
 CONFIG_WDT_501
