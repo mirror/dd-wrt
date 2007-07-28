@@ -34,17 +34,19 @@
 				<dd>Select the appropriate channel from the list provided to correspond with your network settings (in North America between channel 1 and 11, in Europe 1 and 13, in Japan all 14 channels). All devices in your wireless network must use the same channel in order to function correctly. Try to avoid conflicts with other wireless networks by choosing a channel where the upper and lower three channels are not in use.</dd>
 				<dt>Wireless SSID Broadcast</dt>
 				<dd>When wireless clients survey the local area for wireless networks to associate with, they will detect the SSID broadcast by the router. To broadcast the router SSID, keep the default setting, <i>Enable</i>. If you do not want to broadcast the router SSID, then select <i>Disable</i>.</dd>
+<% support_invmatch("ACK","1","<!--"); %>
 				<dt>Sensitivity Range</dt>
 				<dd>Adjusts the ack timing in Atheros typical way based on the maximum distance in meters
 					<div class="note">
 						<h4>Note</h4>
-						<div>On Atheros based DD-WRT firmwares 0 will not disable ack timing but will turn into a dynamic ACK timing mode</div>
+						<div>On Atheros based DD-WRT firmwares 0 will not disable ack timing but will turn into default ACK timing mode</div>
 					</div>
 					<ul class="wide">
 						<li> 0 disables ack timing completely</li>
 						<li> 1 - 999999 adjusts ack timing</li>
 					</ul>
 				</dd>
+<% support_invmatch("ACK","1","-->"); %>
 				<dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>
 			</dl>
 		</div>
