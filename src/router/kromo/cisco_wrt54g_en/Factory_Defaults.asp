@@ -8,17 +8,7 @@ function to_submit(F) {
 			return false;
 		}
 		F.save_button.value = sbutton.saving;
-		apply(F);
-		return true;
-	}
-}
-function to_apply(F) {
-	if( F.FactoryDefaults[0].checked == 1 ) {
-		if(!confirm(factdef.mess1)) {
-			return false;
-		}
-		F.save_button.value = sbutton.saving;
-		applytake(F);
+		applyupdate(F);
 		return true;
 	}
 }
@@ -71,7 +61,8 @@ addEvent(window, "unload", function() {
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								submitFooterButton(1,1);
+								document.write("<input class=\"button\" type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form);\" />");
+								document.write("<input class=\"button\" type=\"button\" name=\"reset_button\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.reload();\" />");
 								//]]>
 								</script>
 							</div>

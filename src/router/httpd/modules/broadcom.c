@@ -1071,18 +1071,11 @@ ej_support_match (webs_t wp, int argc, char_t ** argv)
   if (!strcmp (name, "MULTICAST_SUPPORT") && !strcmp (value, "1"))
     websWrite (wp, output);
 #endif
+#ifdef HAVE_ACK
+  if (!strcmp (name, "ACK") && !strcmp (value, "1"))
+    websWrite (wp, output);
+#endif
 
-/*
-   struct support_list *v;
-   for (v = supports; v < &supports[SUPPORT_COUNT]; v++)
-    {
-      if (!strcmp (v->supp_name, name) && !strcmp (v->supp_value, value))
-	{
-	  websWrite (wp, output);
-	  return;
-	}
-    }
-*/
   return;
 }
 
@@ -1120,6 +1113,13 @@ ej_support_invmatch (webs_t wp, int argc, char_t ** argv)
 #endif
 #ifndef HAVE_WIVIZ
   if (!strcmp (name, "WIVIZ_SUPPORT") && !strcmp (value, "1"))
+    {
+      websWrite (wp, output);
+      return;
+    }
+#endif
+#ifndef HAVE_ACK
+  if (!strcmp (name, "ACK") && !strcmp (value, "1"))
     {
       websWrite (wp, output);
       return;
@@ -1166,22 +1166,6 @@ ej_support_invmatch (webs_t wp, int argc, char_t ** argv)
     websWrite (wp, output);
   return;
 #endif
-/*
-  struct support_list *v;
-  for (v = supports; v < &supports[SUPPORT_COUNT]; v++)
-    {
-      if (!strcmp (v->supp_name, name))
-	{
-	  if (strcmp (v->supp_value, value))
-	    {
-	      websWrite (wp, output);
-	      return;
-	    }
-	  else
-	    return;
-	}
-    }
-*/
 //        websWrite(wp,output);
   return;
 
