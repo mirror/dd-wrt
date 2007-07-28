@@ -39,7 +39,7 @@ ifeq ($(CONFIG_UCLIBC),y)
 export PLATFORM := $(PLATFORM)-uclibc
 endif
 
-export LINUXVER := 2.4.34
+export LINUXVER := 2.4.35
 ifneq ($(CONFIG_MSSID),y)
 export LINUXDIR := $(SRCBASE)/linux/brcm/linux.v23
 endif
@@ -112,6 +112,9 @@ ifeq ($(CONFIG_DIST),"micro")
 	cp $(LINUXDIR)/.config_micro $(LINUXDIR)/.config
 else
 	cp $(LINUXDIR)/.config_std $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_REGISTER),y)
+	cp $(LINUXDIR)/.config_register $(LINUXDIR)/.config
 endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
@@ -188,7 +191,8 @@ endif
 #endif
 
 	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/build
-	mv $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/diag/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	if test -d "$(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/diag"; then mv $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/diag/* $(TARGETDIR)/lib/modules/$(LINUXVER); fi
+#	mv $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/diag/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 #ifneq ($(CONFIG_DIST),"micro")
 #	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/led/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 #endif
@@ -198,7 +202,7 @@ endif
 #else
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/wl/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 ifneq ($(CONFIG_DIST),"micro")
-	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/wireless/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	if test -d "$(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/wireless"; then mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/wireless/* $(TARGETDIR)/lib/modules/$(LINUXVER); fi
 endif
 ifeq ($(CONFIG_MSSID),y)
 ifneq ($(CONFIG_BCM5354),y)
