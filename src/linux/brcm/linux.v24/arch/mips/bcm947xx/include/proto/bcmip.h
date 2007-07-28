@@ -1,5 +1,5 @@
 /*
- * Copyright 2006, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,11 +9,20 @@
  *
  * Fundamental constants relating to IP Protocol
  *
- * $Id: bcmip.h,v 1.1.1.3 2006/02/27 03:43:16 honor Exp $
+ * $Id$
  */
 
 #ifndef _bcmip_h_
 #define _bcmip_h_
+
+/* enable structure packing */
+#if defined(__GNUC__)
+#define	PACKED	__attribute__((packed))
+#else
+#pragma pack(1)
+#define	PACKED
+#endif
+
 
 /* IPV4 and IPV6 common */
 #define IP_VER_OFFSET		0x0	/* offset to version field */
@@ -32,10 +41,13 @@
 /* IPV4 field offsets */
 #define IPV4_VER_HL_OFFSET	0	/* version and ihl byte offset */
 #define IPV4_TOS_OFFSET		1	/* type of service offset */
+#define IPV4_PKTLEN_OFFSET	2	/* packet length offset */
+#define IPV4_PKTFLAG_OFFSET	6	/* more-frag,dont-frag flag offset */
 #define IPV4_PROT_OFFSET	9	/* protocol type offset */
 #define IPV4_CHKSUM_OFFSET	10	/* IP header checksum offset */
 #define IPV4_SRC_IP_OFFSET	12	/* src IP addr offset */
 #define IPV4_DEST_IP_OFFSET	16	/* dest IP addr offset */
+#define IPV4_OPTIONS_OFFSET	20	/* IP options offset */
 
 /* IPV4 field decodes */
 #define IPV4_VER_MASK		0xf0	/* IPV4 version mask */
@@ -48,6 +60,9 @@
 
 #define IPV4_ADDR_NULL(a)	((((uint8 *)(a))[0] | ((uint8 *)(a))[1] | \
 				  ((uint8 *)(a))[2] | ((uint8 *)(a))[3]) == 0)
+
+#define IPV4_ADDR_BCAST(a)	((((uint8 *)(a))[0] & ((uint8 *)(a))[1] & \
+				  ((uint8 *)(a))[2] & ((uint8 *)(a))[3]) == 0xff)
 
 #define	IPV4_TOS_DSCP_MASK	0xfc	/* DiffServ codepoint mask */
 #define	IPV4_TOS_DSCP_SHIFT	2	/* DiffServ codepoint shift */
@@ -63,7 +78,38 @@
 
 #define IPV4_PROT(ipv4_body)	(((uint8 *)(ipv4_body))[IPV4_PROT_OFFSET])
 
+#define IPV4_FRAG_RESV		0x8000	/* Reserved */
+#define IPV4_FRAG_DONT		0x4000	/* Don't fragment */
+#define IPV4_FRAG_MORE		0x2000	/* More fragments */
+#define IPV4_FRAG_OFFSET_MASK	0x1fff	/* Fragment offset */
+
 #define IPV4_ADDR_STR_LEN	16	/* Max IP address length in string format */
+
+/* IPv4, no options only.  */
+#define IPV4_NO_OPTIONS_HDR_LEN 20
+#define IPV4_NO_OPTIONS_PAYLOAD(ip_hdr)    (&(((uint8 *)(ip_hdr))[IPV4_NO_OPTIONS_HDR_LEN]))
+
+#define IPV4_PAYLOAD_LEN(ip_body) \
+	(((int)(((uint8 *)(ip_body))[IPV4_PKTLEN_OFFSET + 0]) << 8) | \
+	 ((uint8 *)(ip_body))[IPV4_PKTLEN_OFFSET + 1])
+
+/* IPV4 packet formats */
+struct ipv4_addr {
+	uint8	addr[IPV4_ADDR_LEN];
+} PACKED;
+
+struct ipv4_hdr {
+	uint8	version_ihl;		/* Version and Internet Header Length */
+	uint8	tos;			/* Type Of Service */
+	uint16	tot_len;		/* Number of bytes in packet (max 65535) */
+	uint16	id;
+	uint16	frag;			/* 3 flag bits and fragment offset */
+	uint8	ttl;			/* Time To Live */
+	uint8	prot;			/* Protocol */
+	uint16	hdr_chksum;		/* IP header checksum */
+	uint8	src_ip[IPV4_ADDR_LEN];	/* Source IP Address */
+	uint8	dst_ip[IPV4_ADDR_LEN];	/* Destination IP Address */
+} PACKED;
 
 /* IPV6 field offsets */
 #define IPV6_PAYLOAD_LEN_OFFSET	4	/* payload length offset */
@@ -97,5 +143,10 @@
 #define IP_TOS(ip_body) \
 	(IP_VER(ip_body) == IP_VER_4 ? IPV4_TOS(ip_body) : \
 	 IP_VER(ip_body) == IP_VER_6 ? IPV6_TRAFFIC_CLASS(ip_body) : 0)
+
+#undef PACKED
+#if !defined(__GNUC__)
+#pragma pack()
+#endif
 
 #endif	/* _bcmip_h_ */

@@ -775,7 +775,7 @@ static void __init init_setup_csb6 (struct pci_dev *dev, ide_pci_device_t *d)
 			return;
 	}
 #if 0
-	if ((IDE_PCI_DEVID_EQ(d->devid, DEVID_CSB6) &&
+	if (IDE_PCI_DEVID_EQ(d->devid, DEVID_CSB6) &&
              (!(PCI_FUNC(dev->devfn) & 1)))
 		d->autodma = AUTODMA;
 #endif

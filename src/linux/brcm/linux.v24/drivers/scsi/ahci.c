@@ -275,6 +275,24 @@ static const struct pci_device_id ahci_pci_tbl[] = {
 	  board_ahci }, /* ESB2 */
 	{ PCI_VENDOR_ID_INTEL, 0x27c6, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
 	  board_ahci }, /* ICH7-M DH */
+	{ PCI_VENDOR_ID_INTEL, 0x2821, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* ICH8 */
+	{ PCI_VENDOR_ID_INTEL, 0x2822, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* ICH8 */
+	{ PCI_VENDOR_ID_INTEL, 0x2824, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* ICH8 */
+	{ PCI_VENDOR_ID_INTEL, 0x2829, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* ICH8M */
+	{ PCI_VENDOR_ID_INTEL, 0x282a, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* ICH8M */
+	{ 0x197b, 0x2360, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* JMicron JMB360 */
+	{ 0x197b, 0x2363, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* JMicron JMB363 */
+	{ PCI_VENDOR_ID_ATI, 0x4380, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* ATI SB600 non-raid */
+	{ PCI_VENDOR_ID_ATI, 0x4381, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* ATI SB600 raid */
 	{ }	/* terminate list */
 };
 
@@ -1066,6 +1084,10 @@ static int ahci_init_one (struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	if (have_msi)
 		hpriv->flags |= AHCI_FLAG_MSI;
+
+	/* JMicron-specific fixup: make sure we're in AHCI mode */
+	if (pdev->vendor == 0x197b)
+		pci_write_config_byte(pdev, 0x41, 0xa1);
 
 	/* initialize adapter */
 	rc = ahci_host_init(probe_ent);

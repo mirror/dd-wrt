@@ -1354,6 +1354,7 @@ static struct sock * tcp_v6_syn_recv_sock(struct sock *sk, struct sk_buff *skb,
 	   First: no IPv4 options.
 	 */
 	newsk->protinfo.af_inet.opt = NULL;
+	np->ipv6_fl_list = NULL;
 
 	/* Clone RX bits */
 	np->rxopt.all = sk->net_pinfo.af_inet6.rxopt.all;

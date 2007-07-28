@@ -1276,7 +1276,7 @@ void daemonize(void)
 
 extern unsigned long wait_init_idle;
 
-void __init init_idle(void)
+void init_idle(void)
 {
 	struct schedule_data * sched_data;
 	sched_data = &aligned_data[smp_processor_id()].schedule_data;

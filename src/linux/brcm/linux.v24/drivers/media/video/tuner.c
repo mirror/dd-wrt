@@ -784,6 +784,9 @@ static void set_radio_freq(struct i2c_client *c, unsigned int freq)
 	case TUNER_PHILIPS_FM1216ME_MK3:
 		buffer[3] = 0x19;
 		break;
+	case TUNER_LG_PAL_FM:
+		buffer[3] = 0xa5;
+		break;
 	default:
 		buffer[3] = 0xa4;
 		break;
