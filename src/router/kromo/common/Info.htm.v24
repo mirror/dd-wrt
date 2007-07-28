@@ -199,11 +199,6 @@ apply();
 				</div>
 				<div id="main">
 					<div id="contentsInfo">
-				    <form name="Info" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button" value="Info" />
-							<input type="hidden" name="next_page" value="Info.htm" />
-                  					<input type="hidden" name="change_action" value="gozila_cgi" />
-							<input type="hidden" name="submit_type" value="refresh" />
 						<h2><% tran("info.h2"); %></h2>
 						<div class="col2l">
 							<fieldset>
@@ -473,6 +468,11 @@ apply();
 						<div class="center">
 							<% show_paypal(); %>
 						</div><br />
+				    <form name="Info" action="apply.cgi" method="<% get_http_method(); %>">
+							<input type="hidden" name="submit_button" value="Info" />
+							<input type="hidden" name="next_page" value="Info.htm" />
+                  					<input type="hidden" name="change_action" value="gozila_cgi" />
+							<input type="hidden" name="submit_type" value="refresh" />
 						<div class="submitFooter">
 							<script type="text/javascript">
 							 //<![CDATA[
