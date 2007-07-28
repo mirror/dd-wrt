@@ -127,6 +127,9 @@ ifeq ($(CONFIG_SK98LIN),y)
 obj-y += sk98lin/sk98lin.o
 endif
 
+obj-$(CONFIG_SKGE) += skge.o
+obj-$(CONFIG_SKY2) += sky2.o
+
 ifeq ($(CONFIG_SKFP),y)
   obj-y += skfp/skfp.o
 endif

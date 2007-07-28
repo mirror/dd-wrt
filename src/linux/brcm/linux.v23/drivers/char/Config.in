@@ -263,6 +263,7 @@ if [ "$CONFIG_WATCHDOG" != "n" ]; then
    tristate '  W83877F (EMACS) Watchdog Timer' CONFIG_W83877F_WDT
    tristate '  WDT Watchdog timer' CONFIG_WDT
    tristate '  WDT PCI Watchdog timer' CONFIG_WDTPCI
+   tristate '  W83627HF/F/HG/G Watchdog' CONFIG_WDT_W83627
    if [ "$CONFIG_WDT" != "n" ]; then
       bool '    WDT501 features' CONFIG_WDT_501
       if [ "$CONFIG_WDT_501" = "y" ]; then

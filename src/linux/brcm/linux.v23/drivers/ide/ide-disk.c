@@ -1172,8 +1172,12 @@ static void init_idedisk_capacity (ide_drive_t  *drive)
 
 	if (id->cfs_enable_2 & 0x0400) {
 		capacity_2 = id->lba_capacity_2;
-		drive->head		= drive->bios_head = 255;
-		drive->sect		= drive->bios_sect = 63;
+		if (!drive->forced_geom) {
+			drive->bios_head = 255;
+			drive->bios_sect = 63;
+		}
+		drive->head = drive->bios_head;
+		drive->sect = drive->bios_sect;
 		drive->cyl = (unsigned int) capacity_2 / (drive->head * drive->sect);
 		drive->select.b.lba	= 1;
 		set_max_ext = idedisk_read_native_max_address_ext(drive);

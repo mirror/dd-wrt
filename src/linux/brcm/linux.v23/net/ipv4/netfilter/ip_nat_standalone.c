@@ -47,7 +47,7 @@
 			   : ((hooknum) == NF_IP_PRE_ROUTING ? "PRE_ROUTING" \
 			      : ((hooknum) == NF_IP_LOCAL_OUT ? "LOCAL_OUT"  \
 			         : ((hooknum) == NF_IP_LOCAL_IN ? "LOCAL_IN"  \
-				    : "*ERROR*")))
+				    : "*ERROR*"))))
 
 static inline int call_expect(struct ip_conntrack *master,
 			      struct sk_buff **pskb,

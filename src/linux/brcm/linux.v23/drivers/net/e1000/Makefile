@@ -32,7 +32,7 @@
 
 O_TARGET := e1000.o
 
-obj-y	:= e1000_main.o e1000_hw.o e1000_ethtool.o e1000_param.o
+obj-y	:= e1000_main.o e1000_hw.o e1000_ethtool.o e1000_param.o kcompat.o
 obj-m	:= $(O_TARGET)
 
 include $(TOPDIR)/Rules.make

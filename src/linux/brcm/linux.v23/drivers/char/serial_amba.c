@@ -481,7 +481,7 @@ static void ambauart_modem_status(struct amba_info *info)
 		icount->dcd++;
 #ifdef CONFIG_HARD_PPS
 		if ((info->flags & ASYNC_HARDPPS_CD) &&
-		    (status & AMBA_UARTFR_DCD)
+		    (status & AMBA_UARTFR_DCD))
 			hardpps();
 #endif
 		if (info->flags & ASYNC_CHECK_CD) {
