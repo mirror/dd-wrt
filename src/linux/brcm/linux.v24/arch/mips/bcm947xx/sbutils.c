@@ -958,7 +958,6 @@ BCMINITFN(sb_scan)(sb_info_t *si)
 		si->sb.buscorerev = pcierev;
 		si->sb.buscoreidx = pcieidx;
 	}
-	printk(KERN_EMERG "sbinfo: %d %d %d\n",si->sb.buscoretype,si->sb.buscorerev,si->sb.buscoreidx);
 
 	/*
 	 * Find the gpio "controlling core" type and index.

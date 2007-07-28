@@ -11,9 +11,15 @@
 /* History:                                                                   */
 /******************************************************************************/
 
+/* $Id$ */
+
+#include <osl.h>
+#include "typedefs.h"
 #include "mm.h"
-
-
+#include "bcmdevs.h"
+#include "bcmutils.h"
+#include "sbutils.h"
+#include "bcmrobo.h"
 
 /******************************************************************************/
 /* Local functions. */
@@ -349,6 +355,10 @@ STATIC LM_STATUS LM_NVRAM_AcquireLock( PLM_DEVICE_BLOCK pDevice )
 
     status = LM_STATUS_SUCCESS;
 
+    /* BCM4785: Avoid all access to NVRAM & EEPROM. */
+    if (pDevice->Flags & SB_CORE_FLAG)
+	    return status;
+
     /* Request access to the flash interface. */
     REG_WR( pDevice, Nvram.SwArb, SW_ARB_REQ_SET1 );
 
@@ -380,6 +390,10 @@ STATIC LM_STATUS LM_NVRAM_AcquireLock( PLM_DEVICE_BLOCK pDevice )
 /******************************************************************************/
 STATIC LM_STATUS LM_NVRAM_ReleaseLock( PLM_DEVICE_BLOCK pDevice )
 {
+    /* BCM4785: Avoid all access to NVRAM & EEPROM. */
+    if (pDevice->Flags & SB_CORE_FLAG)
+	    return LM_STATUS_SUCCESS;
+
     /* Relinquish nvram interface. */
     REG_WR( pDevice, Nvram.SwArb, SW_ARB_REQ_CLR1 );
     REG_RD_BACK( pDevice, Nvram.SwArb );
@@ -417,7 +431,7 @@ LM_EEPROM_ExecuteCommand( PLM_DEVICE_BLOCK pDevice, LM_UINT32 cmd )
 
     if( i == EEPROM_CMD_TIMEOUT )
     {
-        printf("EEPROM command (0x%x) timed out!\n", cmd );
+        B57_ERR(("EEPROM command (0x%x) timed out!\n", cmd));
         status = LM_STATUS_FAILURE;
     }
 
@@ -457,7 +471,7 @@ LM_NVRAM_ExecuteCommand( PLM_DEVICE_BLOCK pDevice, LM_UINT32 cmd )
 
     if( i == NVRAM_CMD_TIMEOUT )
     {
-        printf("NVRAM command (0x%x) timed out!\n", cmd );
+        B57_ERR(("NVRAM command (0x%x) timed out!\n", cmd));
         status = LM_STATUS_FAILURE;
     }
 
@@ -558,71 +572,6 @@ LM_NVRAM_Read_UINT32( PLM_DEVICE_BLOCK pDevice, LM_UINT32 offset,
 
     return status;
 } /* LM_NVRAM_Read_UINT32 */
-
-
-
-/******************************************************************************/
-/* Description:                                                               */
-/*                                                                            */
-/* Return:                                                                    */
-/******************************************************************************/
-STATIC LM_STATUS
-LM_NVRAM_ReadBlock( PLM_DEVICE_BLOCK   pDevice, LM_UINT32 offset,
-                    LM_UINT8         *    data, LM_UINT32   size )
-{
-    LM_STATUS status;
-    LM_UINT32 value32;
-    LM_UINT32 bytecnt;
-    LM_UINT8 * srcptr;
-
-    status = LM_STATUS_SUCCESS;
-
-    while( size > 0 )
-    {
-        /* Make sure the read is word aligned. */
-        value32 = offset & 0x3;
-        if( value32 )
-        {
-            bytecnt = sizeof(LM_UINT32) - value32;
-            offset -= value32;
-            srcptr  = (LM_UINT8 *)(&value32) + value32;
-        }
-        else
-        {
-            bytecnt = sizeof(LM_UINT32);
-            srcptr  = (LM_UINT8 *)(&value32);
-        }
-
-        if( bytecnt > size )
-        {
-            bytecnt = size;
-        }
-
-        if( T3_ASIC_REV(pDevice->ChipRevId) != T3_ASIC_REV_5700 &&
-            T3_ASIC_REV(pDevice->ChipRevId) != T3_ASIC_REV_5701 )
-        {
-            status = LM_NVRAM_Read_UINT32( pDevice, offset, &value32 );
-        }
-        else
-        {
-            status = LM_EEPROM_Read_UINT32( pDevice, offset, &value32 );
-        }
-
-        if( status != LM_STATUS_SUCCESS )
-        {
-            break;
-        }
-
-        memcpy( data, srcptr, bytecnt );
-
-        offset += sizeof(LM_UINT32);
-        data   += bytecnt;
-        size   -= bytecnt;
-    }
-
-    return status;
-} /* LM_NVRAM_ReadBlock */
-
 
 
 /******************************************************************************/
@@ -994,7 +943,7 @@ STATIC LM_VOID LM_NVRAM_Detect_5750( PLM_DEVICE_BLOCK pDevice )
              pDevice->flashinfo.buffered = FALSE;
              break;
         default:
-             printf("bcm5700 : Unknown NVRAM type.\n" );
+             B57_ERR(("bcm5700 : Unknown NVRAM type.\n"));
              pDevice->flashinfo.jedecnum = 0;
              pDevice->flashinfo.romtype  = 0;
              pDevice->flashinfo.buffered = FALSE;
@@ -1087,7 +1036,7 @@ STATIC LM_VOID LM_NVRAM_Detect_5752( PLM_DEVICE_BLOCK pDevice )
              supported = TRUE;
              break;
         default:
-             printf("bcm5700 : Unknown NVRAM type.\n" );
+             B57_ERR(("bcm5700 : Unknown NVRAM type.\n"));
     }
 
     if( pDevice->flashinfo.romtype == ROM_TYPE_FLASH )
@@ -1113,14 +1062,14 @@ STATIC LM_VOID LM_NVRAM_Detect_5752( PLM_DEVICE_BLOCK pDevice )
                 pDevice->flashinfo.pagesize = 264;
                 break;
             default:
-                printf("bcm5700 : Unknown NVRAM page size.\n" );
+                B57_ERR(("bcm5700 : Unknown NVRAM page size.\n"));
                 supported = FALSE;
         }
     }
 
    if( supported != TRUE )
     {
-        printf("Flash type unsupported!!!\n" );
+        B57_ERR(("Flash type unsupported!!!\n"));
         pDevice->flashinfo.jedecnum = 0;
         pDevice->flashinfo.romtype  = 0;
         pDevice->flashinfo.buffered = FALSE;
@@ -1139,6 +1088,10 @@ STATIC LM_VOID LM_NVRAM_Detect_5752( PLM_DEVICE_BLOCK pDevice )
 STATIC LM_VOID LM_NVRAM_Init( PLM_DEVICE_BLOCK pDevice )
 {
     LM_UINT32 Value32;
+
+    /* BCM4785: Avoid all access to NVRAM & EEPROM. */
+    if (pDevice->Flags & SB_CORE_FLAG)
+	    return;
 
     pDevice->NvramSize = 0;
 
@@ -1224,7 +1177,9 @@ STATIC LM_VOID LM_NVRAM_Init( PLM_DEVICE_BLOCK pDevice )
 
     pDevice->NvramSize  = pDevice->flashinfo.chipsize;
 
-//printf("*nvram:size=0x%x jnum=0x%x page=0x%x buff=0x%x \n",pDevice->NvramSize,pDevice->flashinfo.jedecnum,pDevice->flashinfo.pagesize,pDevice->flashinfo.buffered);
+    B57_INFO(("*nvram:size=0x%x jnum=0x%x page=0x%x buff=0x%x \n",
+              pDevice->NvramSize, pDevice->flashinfo.jedecnum,
+              pDevice->flashinfo.pagesize, pDevice->flashinfo.buffered));
 
 } /* LM_NVRAM_Init */
 
@@ -1240,6 +1195,12 @@ LM_NvramRead( PLM_DEVICE_BLOCK pDevice, LM_UINT32 offset, LM_UINT32 * data )
 {
     LM_UINT32 value32;
     LM_STATUS status;
+
+    /* BCM4785: Avoid all access to NVRAM & EEPROM. */
+    if (pDevice->Flags & SB_CORE_FLAG) {
+	    *data = 0xffffffff;
+	    return LM_STATUS_FAILURE;
+    }
 
     if( offset >= pDevice->flashinfo.chipsize )
     {
@@ -1290,6 +1251,68 @@ LM_NvramRead( PLM_DEVICE_BLOCK pDevice, LM_UINT32 offset, LM_UINT32 * data )
 
 
 #ifdef ETHTOOL_SEEPROM
+
+/******************************************************************************/
+/* Description:                                                               */
+/*                                                                            */
+/* Return:                                                                    */
+/******************************************************************************/
+STATIC LM_STATUS
+LM_NVRAM_ReadBlock(PLM_DEVICE_BLOCK pDevice, LM_UINT32 offset,
+                   LM_UINT8 *data, LM_UINT32 size)
+{
+    LM_STATUS status;
+    LM_UINT32 value32;
+    LM_UINT32 bytecnt;
+    LM_UINT8 * srcptr;
+
+    status = LM_STATUS_SUCCESS;
+
+    while( size > 0 )
+    {
+        /* Make sure the read is word aligned. */
+        value32 = offset & 0x3;
+        if( value32 )
+        {
+            bytecnt = sizeof(LM_UINT32) - value32;
+            offset -= value32;
+            srcptr  = (LM_UINT8 *)(&value32) + value32;
+        }
+        else
+        {
+            bytecnt = sizeof(LM_UINT32);
+            srcptr  = (LM_UINT8 *)(&value32);
+        }
+
+        if( bytecnt > size )
+        {
+            bytecnt = size;
+        }
+
+        if( T3_ASIC_REV(pDevice->ChipRevId) != T3_ASIC_REV_5700 &&
+            T3_ASIC_REV(pDevice->ChipRevId) != T3_ASIC_REV_5701 )
+        {
+            status = LM_NVRAM_Read_UINT32( pDevice, offset, &value32 );
+        }
+        else
+        {
+            status = LM_EEPROM_Read_UINT32( pDevice, offset, &value32 );
+        }
+
+        if( status != LM_STATUS_SUCCESS )
+        {
+            break;
+        }
+
+        memcpy( data, srcptr, bytecnt );
+
+        offset += sizeof(LM_UINT32);
+        data   += bytecnt;
+        size   -= bytecnt;
+    }
+
+    return status;
+} /* LM_NVRAM_ReadBlock */
 
 /******************************************************************************/
 /* Description:                                                               */
@@ -1990,6 +2013,10 @@ error:
 LM_STATUS LM_NvramWriteBlock( PLM_DEVICE_BLOCK pDevice, LM_UINT32 offset,
                               LM_UINT32 * data, LM_UINT32 size )
 {
+    /* BCM4785: Avoid all access to NVRAM & EEPROM. */
+    if (pDevice->Flags & SB_CORE_FLAG)
+	    return LM_STATUS_FAILURE;
+
     return LM_NVRAM_WriteBlock( pDevice, offset, (LM_UINT8 *)data, size * 4 );
 }
 
@@ -2010,7 +2037,7 @@ LM_ReadVPD(PLM_DEVICE_BLOCK pDevice)
     for (j = 0; j < 256; j += 4, Vpd_dptr++ )
     {
         if (LM_NvramRead(pDevice, 0x100 + j, &Value32) != LM_STATUS_SUCCESS) {
-            printf("VPD read failed\n");
+            B57_ERR(("VPD read failed\n"));
             return;
         }
         *Vpd_dptr = Value32;
@@ -2555,32 +2582,39 @@ PLM_DEVICE_BLOCK pDevice)
     LM_NVRAM_Init(pDevice);
 
     Status = LM_STATUS_FAILURE;
-    /* Get the node address.  First try to get in from the shared memory. */
-    /* If the signature is not present, then get it from the NVRAM. */
-    Value32 = MEM_RD_OFFSET(pDevice, T3_MAC_ADDR_HIGH_MAILBOX);
-    if((Value32 >> 16) == 0x484b)
-    {
-        int i;
 
-        pDevice->NodeAddress[0] = (LM_UINT8) (Value32 >> 8);
-        pDevice->NodeAddress[1] = (LM_UINT8) Value32;
+    /* BCM4785: Use the MAC address stored in the main flash. */
+    if (pDevice->Flags & SB_CORE_FLAG) {
+	    bcm_ether_atoe(getvar(NULL, "et0macaddr"), (struct ether_addr *)pDevice->NodeAddress);
+	    Status = LM_STATUS_SUCCESS;
+    } else {
+	    /* Get the node address.  First try to get in from the shared memory. */
+	    /* If the signature is not present, then get it from the NVRAM. */
+	    Value32 = MEM_RD_OFFSET(pDevice, T3_MAC_ADDR_HIGH_MAILBOX);
+	    if((Value32 >> 16) == 0x484b)
+	    {
+		    int i;
 
-        Value32 = MEM_RD_OFFSET(pDevice, T3_MAC_ADDR_LOW_MAILBOX);
+		    pDevice->NodeAddress[0] = (LM_UINT8) (Value32 >> 8);
+		    pDevice->NodeAddress[1] = (LM_UINT8) Value32;
 
-        pDevice->NodeAddress[2] = (LM_UINT8) (Value32 >> 24);
-        pDevice->NodeAddress[3] = (LM_UINT8) (Value32 >> 16);
-        pDevice->NodeAddress[4] = (LM_UINT8) (Value32 >> 8);
-        pDevice->NodeAddress[5] = (LM_UINT8) Value32;
+		    Value32 = MEM_RD_OFFSET(pDevice, T3_MAC_ADDR_LOW_MAILBOX);
 
-        /* Check for null MAC address which can happen with older boot code */
-        for (i = 0; i < 6; i++)
-        {
-            if (pDevice->NodeAddress[i] != 0)
-            {
-                Status = LM_STATUS_SUCCESS;
-                break;
-            }
-        }
+		    pDevice->NodeAddress[2] = (LM_UINT8) (Value32 >> 24);
+		    pDevice->NodeAddress[3] = (LM_UINT8) (Value32 >> 16);
+		    pDevice->NodeAddress[4] = (LM_UINT8) (Value32 >> 8);
+		    pDevice->NodeAddress[5] = (LM_UINT8) Value32;
+
+		    /* Check for null MAC address which can happen with older boot code */
+		    for (i = 0; i < 6; i++)
+		    {
+			    if (pDevice->NodeAddress[i] != 0)
+			    {
+				    Status = LM_STATUS_SUCCESS;
+				    break;
+			    }
+		    }
+	    }
     }
 
     if (Status != LM_STATUS_SUCCESS)
@@ -2634,10 +2668,10 @@ PLM_DEVICE_BLOCK pDevice)
         pDevice->NodeAddress[3] = (Value32 >> 16) & 0xff;
         pDevice->NodeAddress[4] = (Value32 >> 8) & 0xff;
         pDevice->NodeAddress[5] = Value32 & 0xff;
-        printf("WARNING: Cannot get MAC addr from NVRAM, using %2.2x%2.2x%2.2x%2.2x%2.2x%2.2x\n",
-            pDevice->NodeAddress[0], pDevice->NodeAddress[1],
-            pDevice->NodeAddress[2], pDevice->NodeAddress[3],
-            pDevice->NodeAddress[4], pDevice->NodeAddress[5]);
+        B57_ERR(("WARNING: Cannot get MAC addr from NVRAM, using %2.2x%2.2x%2.2x%2.2x%2.2x%2.2x\n",
+	         pDevice->NodeAddress[0], pDevice->NodeAddress[1],
+	         pDevice->NodeAddress[2], pDevice->NodeAddress[3],
+	         pDevice->NodeAddress[4], pDevice->NodeAddress[5]));
     }
 
     memcpy(pDevice->PermanentNodeAddress, pDevice->NodeAddress, 6);
@@ -3030,14 +3064,18 @@ PLM_DEVICE_BLOCK pDevice)
             }
             break;
     }
-/*
+
     if(UNKNOWN_PHY_ID(pDevice->PhyId) && 
         !(pDevice->TbiFlags & ENABLE_TBI_FLAG))
     {
-        pDevice->TbiFlags |= ENABLE_TBI_FLAG;
-        printf("PHY ID unknown, assume it is SerDes\n");
+      if (pDevice->Flags & ROBO_SWITCH_FLAG) {
+      	B57_ERR(("PHY ID unknown, assume it is a copper PHY.\n"));
+      } else {
+	pDevice->TbiFlags |= ENABLE_TBI_FLAG;
+	B57_ERR(("PHY ID unknown, assume it is SerDes\n"));
+      }
     }
-*/
+
     if(T3_ASIC_REV(pDevice->ChipRevId) == T3_ASIC_REV_5703)
     {
         if((pDevice->SavedCacheLineReg & 0xff00) < 0x4000)
@@ -3414,10 +3452,19 @@ PLM_DEVICE_BLOCK pDevice)
         pDevice->Flags |= T3_HAS_TWO_CPUS;
     }
 
-    LM_ReadVPD(pDevice);
-    LM_ReadBootCodeVersion(pDevice);
-    LM_ReadIPMICodeVersion(pDevice);
-    LM_GetBusSpeed(pDevice);
+    /*
+     * BCM4785: In general, various information is read from NVRAM,
+     * including vital product data, version info, and other goodies.
+     *
+     * In the case of the BCM4785, access to external EEPROM is
+     * avoided, so these calls are skipped.
+     */
+    if (!pDevice->Flags & SB_CORE_FLAG) {
+	    LM_ReadVPD(pDevice);
+	    LM_ReadBootCodeVersion(pDevice);
+	    LM_ReadIPMICodeVersion(pDevice);
+	    LM_GetBusSpeed(pDevice);
+    }
 
     return LM_STATUS_SUCCESS;
 } /* LM_GetAdapterInfo */
@@ -3493,9 +3540,8 @@ PLM_DEVICE_BLOCK pDevice)
     LM_UINT32 Size;
     LM_UINT32 Value32, j;
     LM_UINT32 DmaWrCmd, DmaRdCmd, DmaWrBdry, DmaRdBdry;
-printk(KERN_EMERG "ReadConfig \n");
-    MM_ReadConfig32(pDevice, PCI_COMMAND_REG, &Value32);
 
+    MM_ReadConfig32(pDevice, PCI_COMMAND_REG, &Value32);
     j = 0;
     while (((Value32 & 0x3ff) != (pDevice->PciCommandStatusWords & 0x3ff)) &&
         (j < 1000))
@@ -3507,13 +3553,9 @@ printk(KERN_EMERG "ReadConfig \n");
         MM_ReadConfig32(pDevice, PCI_COMMAND_REG, &Value32);
         j++;
     }
-printk(KERN_EMERG "WriteConfig T3_PCI_MISC_HOST_CTRL_REG \n");
-
     MM_WriteConfig32(pDevice, T3_PCI_MISC_HOST_CTRL_REG, pDevice->MiscHostCtrl);
     /* Set power state to D0. */
-printk(KERN_EMERG "WriteConfig SetPowerState \n");
     LM_SetPowerState(pDevice, LM_POWER_STATE_D0);
-printk(KERN_EMERG "WriteConfig InitQueu\n");
 
     /* Intialize the queues. */
     QQ_InitQueue(&pDevice->RxPacketReceivedQ.Container, 
@@ -3549,7 +3591,6 @@ printk(KERN_EMERG "WriteConfig InitQueu\n");
     {
         Size += sizeof(T3_SND_BD) * T3_SEND_RCB_ENTRY_COUNT;
     }
-printk(KERN_EMERG "AllocateSharedMemory\n");
 
     /* Allocate the memory block. */
     Status = MM_AllocateSharedMemory(pDevice, Size, (PLM_VOID) &pMemVirt, &MemPhy, FALSE);
@@ -3751,7 +3792,6 @@ printk(KERN_EMERG "AllocateSharedMemory\n");
     /* Allocate memory for packet descriptors. */
     Size = (pDevice->RxPacketDescCnt + 
         pDevice->TxPacketDescCnt) * MM_PACKET_DESC_SIZE;
-printk(KERN_EMERG "MM_AllocateMemory2\n");
     Status = MM_AllocateMemory(pDevice, Size, (PLM_VOID *) &pPacket);
     if(Status != LM_STATUS_SUCCESS)
     {
@@ -3820,7 +3860,6 @@ printk(KERN_EMERG "MM_AllocateMemory2\n");
         pPacket = (PLM_PACKET) ((PLM_UINT8) pPacket + MM_PACKET_DESC_SIZE);
     } /* for */
 #endif /* T3_JUMBO_RCV_RCB_ENTRY_COUNT */
-printk(KERN_EMERG "InitializeUmPackets\n");
 
     /* Initialize the rest of the packet descriptors. */
     Status = MM_InitializeUmPackets(pDevice);
@@ -3833,12 +3872,9 @@ printk(KERN_EMERG "InitializeUmPackets\n");
     pDevice->ReceiveMask &= LM_KEEP_VLAN_TAG;
     pDevice->ReceiveMask |= LM_ACCEPT_MULTICAST | LM_ACCEPT_BROADCAST |
         LM_ACCEPT_UNICAST;
-printk(KERN_EMERG "WriteConfig REG_WR\n");
 
     /* Make sure we are in the first 32k memory window or NicSendBd. */
     REG_WR(pDevice, PciCfg.MemWindowBaseAddr, 0);
-
-printk(KERN_EMERG "WriteConfig LM_ResetAdapter\n");
 
     /* Initialize the hardware. */
     Status = LM_ResetAdapter(pDevice);
@@ -4061,17 +4097,15 @@ PLM_DEVICE_BLOCK pDevice)
     LM_UINT32 Value32;
     LM_UINT32 j, k;
     int reset_count = 0;
-printk(KERN_EMERG "LM_DisableInterrupt\n");
+
     /* Disable interrupt. */
     LM_DisableInterrupt(pDevice);
 
 restart_reset:
-printk(KERN_EMERG "LM_DisableFW\n");
     LM_DisableFW(pDevice);
 
     /* May get a spurious interrupt */
     pDevice->pStatusBlkVirt->Status = STATUS_BLOCK_UPDATED;
-printk(KERN_EMERG "LM_WritePreResetsignatures\n");
 
     LM_WritePreResetSignatures(pDevice, LM_INIT_RESET);
     /* Disable transmit and receive DMA engines.  Abort all pending requests. */
@@ -4081,10 +4115,8 @@ printk(KERN_EMERG "LM_WritePreResetsignatures\n");
     }
 
     pDevice->ShuttingDown = FALSE;
-printk(KERN_EMERG "LM_ResetChip\n");
 
     LM_ResetChip(pDevice);
-printk(KERN_EMERG "LM_WriteLegacySignatures\n");
 
     LM_WriteLegacySignatures(pDevice, LM_INIT_RESET);
 
@@ -4095,7 +4127,6 @@ printk(KERN_EMERG "LM_WriteLegacySignatures\n");
     {
         REG_WR(pDevice, PciCfg.ClockCtrl, pDevice->ClockCtrl | BIT_31);
     }
-printk(KERN_EMERG "LM_REG_WR if PCI_MODE\n");
 
     if(pDevice->ChipRevId == T3_CHIP_ID_5704_A0)
     {
@@ -4119,7 +4150,6 @@ printk(KERN_EMERG "LM_REG_WR if PCI_MODE\n");
     {
         pDevice->MiscHostCtrl |= MISC_HOST_CTRL_ENABLE_TAGGED_STATUS_MODE;
     }
-printk(KERN_EMERG "MM_RestorePCI Config\n");
 
     /* Restore PCI configuration registers. */
     MM_WriteConfig32(pDevice, PCI_CACHE_LINE_SIZE_REG,
@@ -4162,7 +4192,6 @@ printk(KERN_EMERG "MM_RestorePCI Config\n");
         pDevice->pRxJumboBdVirt[k].Len = (LM_UINT16) pDevice->RxJumboBufferSize;
     }
 #endif
-printk(KERN_EMERG "REG_WR DmaReadWriteCtrl\n");
 
     REG_WR(pDevice, PciCfg.DmaReadWriteCtrl, pDevice->DmaReadWriteCtrl);    
 
@@ -4278,7 +4307,6 @@ printk(KERN_EMERG "REG_WR DmaReadWriteCtrl\n");
 
     REG_WR(pDevice, BufMgr.DmaLowWaterMark, T3_DEF_DMA_DESC_LOW_WMARK);
     REG_WR(pDevice, BufMgr.DmaHighWaterMark, T3_DEF_DMA_DESC_HIGH_WMARK);
-printk(KERN_EMERG "Enable buffer Manager\n");
 
     /* Enable buffer manager. */
     REG_WR(pDevice, BufMgr.Mode, BUFMGR_MODE_ENABLE | BUFMGR_MODE_ATTN_ENABLE);
@@ -4396,8 +4424,6 @@ printk(KERN_EMERG "Enable buffer Manager\n");
         }
     }
 #endif
-printk(KERN_EMERG "Atomic Set\n");
-
     MM_ATOMIC_SET(&pDevice->SendBdLeft, T3_SEND_RCB_ENTRY_COUNT-1);
 
     /* Configure the receive return rings. */
@@ -4439,11 +4465,9 @@ printk(KERN_EMERG "Atomic Set\n");
 #if T3_JUMBO_RCV_ENTRY_COUNT
     pDevice->RxJumboProdIdx = 0;
 #endif /* T3_JUMBO_RCV_ENTRY_COUNT */
-printk(KERN_EMERG "LM_SetMacAddress\n");
 
     /* Configure the MAC address. */
     LM_SetMacAddress(pDevice, pDevice->NodeAddress);
-printk(KERN_EMERG "Initialize the transmit random backoff seed\n");
 
     /* Initialize the transmit random backoff seed. */
     Value32 = (pDevice->NodeAddress[0] + pDevice->NodeAddress[1] + 
@@ -4457,14 +4481,12 @@ printk(KERN_EMERG "Initialize the transmit random backoff seed\n");
 
     /* Configure Time slot/IPG per 802.3 */
     REG_WR(pDevice, MacCtrl.TxLengths, 0x2620);
-printk(KERN_EMERG "Configure receive rules\n");
 
     /*
      * Configure Receive Rules so that packets don't match 
      * Programmble rule will be queued to Return Ring 1 
      */
     REG_WR(pDevice, MacCtrl.RcvRuleCfg, RX_RULE_DEFAULT_CLASS);
-printk(KERN_EMERG "Configuer to have 16 classes\n");
 
     /* 
      * Configure to have 16 Classes of Services (COS) and one
@@ -4472,7 +4494,6 @@ printk(KERN_EMERG "Configuer to have 16 classes\n");
      * And frames don't match rules are also queued to COS#1.
      */
     REG_WR(pDevice, RcvListPlmt.Config, 0x181);
-printk(KERN_EMERG "enable receive placement statistics\n");
 
     /* Enable Receive Placement Statistics */
     if ((pDevice->DmaReadFifoSize == DMA_READ_MODE_FIFO_LONG_BURST) &&
@@ -4487,14 +4508,12 @@ printk(KERN_EMERG "enable receive placement statistics\n");
         REG_WR(pDevice, RcvListPlmt.StatsEnableMask,0xffffff);
     }
     REG_WR(pDevice, RcvListPlmt.StatsCtrl, RCV_LIST_STATS_ENABLE);
-printk(KERN_EMERG "Enable send data initiation statistics\n");
 
     /* Enable Send Data Initator Statistics */
     REG_WR(pDevice, SndDataIn.StatsEnableMask,0xffffff);
     REG_WR(pDevice, SndDataIn.StatsCtrl,
         T3_SND_DATA_IN_STATS_CTRL_ENABLE | \
         T3_SND_DATA_IN_STATS_CTRL_FASTER_UPDATE);
-printk(KERN_EMERG "disable the host coalescing state machine\n");
 
     /* Disable the host coalescing state machine before configuring it's */
     /* parameters. */
@@ -4508,7 +4527,6 @@ printk(KERN_EMERG "disable the host coalescing state machine\n");
         }
         MM_Wait(10);
     }
-printk(KERN_EMERG "host coalescing configurations\n");
 
     /* Host coalescing configurations. */
     REG_WR(pDevice, HostCoalesce.RxCoalescingTicks, pDevice->RxCoalescingTicks);
@@ -4529,7 +4547,6 @@ printk(KERN_EMERG "host coalescing configurations\n");
         pDevice->RxMaxCoalescedFramesDuringInt);
     REG_WR(pDevice, HostCoalesce.TxMaxCoalescedFramesDuringInt,
         pDevice->TxMaxCoalescedFramesDuringInt);
-printk(KERN_EMERG "initialize the address of the status block\n");
 
     /* Initialize the address of the status block.  The NIC will DMA */
     /* the status block to this memory which resides on the host. */
@@ -4537,7 +4554,6 @@ printk(KERN_EMERG "initialize the address of the status block\n");
         pDevice->StatusBlkPhy.High);
     REG_WR(pDevice, HostCoalesce.StatusBlkHostAddr.Low,
         pDevice->StatusBlkPhy.Low);
-printk(KERN_EMERG "initialize the address of the statistics block\n");
 
     /* Initialize the address of the statistics block.  The NIC will DMA */
     /* the statistics to this block of memory. */
@@ -4554,22 +4570,17 @@ printk(KERN_EMERG "initialize the address of the statistics block\n");
         REG_WR(pDevice, HostCoalesce.StatsBlkNicAddr, 0x300);
         REG_WR(pDevice, HostCoalesce.StatusBlkNicAddr,0xb00);
     }
-printk(KERN_EMERG "enable host coalesing state machine\n");
 
     /* Enable Host Coalesing state machine */
     REG_WR(pDevice, HostCoalesce.Mode, HOST_COALESCE_ENABLE |
         pDevice->CoalesceMode);
-printk(KERN_EMERG "enable the receive bd completion state machine\n");
 
     /* Enable the Receive BD Completion state machine. */
     REG_WR(pDevice, RcvBdComp.Mode, RCV_BD_COMP_MODE_ENABLE |
         RCV_BD_COMP_MODE_ATTN_ENABLE);
-printk(KERN_EMERG "enable the receive list placement state machine\n");
 
     /* Enable the Receive List Placement state machine. */
     REG_WR(pDevice, RcvListPlmt.Mode, RCV_LIST_PLMT_MODE_ENABLE);
-
-printk(KERN_EMERG "enable the receive list selector state machine\n");
 
     if(!T3_ASIC_IS_5705_BEYOND(pDevice->ChipRevId))
     {
@@ -4577,7 +4588,6 @@ printk(KERN_EMERG "enable the receive list selector state machine\n");
         REG_WR(pDevice, RcvListSel.Mode, RCV_LIST_SEL_MODE_ENABLE |
             RCV_LIST_SEL_MODE_ATTN_ENABLE);
     }
-printk(KERN_EMERG "reset the rx mac state machine\n");
 
     /* Reset the Rx MAC State Machine.
      *
@@ -4595,25 +4605,18 @@ printk(KERN_EMERG "reset the rx mac state machine\n");
     if ((pDevice->TbiFlags & ENABLE_TBI_FLAG) ||
         (pDevice->PhyFlags & PHY_IS_FIBER))
     {
-printk(KERN_EMERG "RXMode\n");
         REG_WR(pDevice, MacCtrl.RxMode, RX_MODE_RESET);
-printk(KERN_EMERG "RD_BACK\n");
         REG_RD_BACK(pDevice, MacCtrl.RxMode);
-printk(KERN_EMERG "MM_Wait(10)\n");
         MM_Wait(10);
-printk(KERN_EMERG "MacCtrl.RxMode\n");
         REG_WR(pDevice, MacCtrl.RxMode, pDevice->RxMode);
-printk(KERN_EMERG "RD_BACK RxMode\n");
         REG_RD_BACK(pDevice, MacCtrl.RxMode);
     }
-printk(KERN_EMERG "Clear Statistics\n");
 
     /* Clear the statistics block. */
     for(j = 0x0300; j < 0x0b00; j = j + 4)
     {
         MEM_WR_OFFSET(pDevice, j, 0);
     }
-printk(KERN_EMERG "Set Mac Mode\n");
 
     /* Set Mac Mode */
     if (pDevice->TbiFlags & ENABLE_TBI_FLAG)
@@ -4656,14 +4659,12 @@ printk(KERN_EMERG "Set Mac Mode\n");
 
     RAW_REG_WR(pDevice, Grc.LocalCtrl, pDevice->GrcLocalCtrl);
     MM_Wait(40);
-printk(KERN_EMERG "Reset RX\n");
 
     /* Reset RX counters. */
     for(j = 0; j < sizeof(LM_RX_COUNTERS); j++)
     {
         ((PLM_UINT8) &pDevice->RxCounters)[j] = 0;
     }
-printk(KERN_EMERG "Reset TX\n");
 
     /* Reset TX counters. */
     for(j = 0; j < sizeof(LM_TX_COUNTERS); j++)
@@ -4727,7 +4728,6 @@ printk(KERN_EMERG "Reset TX\n");
             REG_WR(pDevice, PciCfg.PciXCapabilities, Value32);
         }
     }
-printk(KERN_EMERG "Enable Read DMA State Machine\n");
 
     /* Enable the Read DMA state machine. */
     Value32 = DMA_READ_MODE_ENABLE |
@@ -4768,7 +4768,6 @@ printk(KERN_EMERG "Enable Read DMA State Machine\n");
         /* Enable the Mbuf Cluster Free state machine. */
         REG_WR(pDevice, MbufClusterFree.Mode, MBUF_CLUSTER_FREE_MODE_ENABLE);
     }
-printk(KERN_EMERG "Enable Send Data Completion state machine\n");
 
     /* Enable the Send Data Completion state machine. */
     REG_WR(pDevice, SndDataComp.Mode, SND_DATA_COMP_MODE_ENABLE);
@@ -4809,7 +4808,6 @@ printk(KERN_EMERG "Enable Send Data Completion state machine\n");
         LM_LoadRlsFirmware(pDevice);
     }
 #endif
-printk(KERN_EMERG "LM_QueueRxPackets\n");
 
     /* Queue Rx packet buffers. */
     if(pDevice->QueueRxPackets)
@@ -4836,13 +4834,11 @@ printk(KERN_EMERG "LM_QueueRxPackets\n");
             goto restart_reset;
         }
     }
-printk(KERN_EMERG "Enable the transmitter\n");
 
     /* Enable the transmitter. */
     pDevice->TxMode = TX_MODE_ENABLE;
     REG_WR(pDevice, MacCtrl.TxMode, pDevice->TxMode);
-printk(KERN_EMERG "Enable the receiver\n");
-
+    
     /* Enable the receiver. */
     pDevice->RxMode = (pDevice->RxMode & RX_MODE_KEEP_VLAN_TAG) |
         RX_MODE_ENABLE;
@@ -4857,15 +4853,13 @@ printk(KERN_EMERG "Enable the receiver\n");
         pDevice->RequestedDuplexMode = pDevice->WakeUpRequestedDuplexMode;
     }
 #endif
-printk(KERN_EMERG "Disable auto polling\n");
 
     /* Disable auto polling. */
     pDevice->MiMode = 0xc0000;
     REG_WR(pDevice, MacCtrl.MiMode, pDevice->MiMode);
 
     REG_WR(pDevice, MacCtrl.LedCtrl, pDevice->LedCtrl);
-printk(KERN_EMERG "Activate Link\n");
-
+    
     /* Activate Link to enable MAC state machine */
     REG_WR(pDevice, MacCtrl.MiStatus, MI_STATUS_ENABLE_LINK_STATUS_ATTN);
 
@@ -4904,7 +4898,11 @@ printk(KERN_EMERG "Activate Link\n");
 
     if (!pDevice->InitDone)
     {
-        pDevice->LinkStatus = LM_STATUS_LINK_DOWN;
+      if(UNKNOWN_PHY_ID(pDevice->PhyId) && (pDevice->Flags & ROBO_SWITCH_FLAG)) {
+	pDevice->LinkStatus = LM_STATUS_LINK_ACTIVE;
+      } else {
+	pDevice->LinkStatus = LM_STATUS_LINK_DOWN;
+      }
     }
 
     if (!(pDevice->TbiFlags & ENABLE_TBI_FLAG) &&
@@ -4920,7 +4918,6 @@ printk(KERN_EMERG "Activate Link\n");
 
         LM_ResetPhy(pDevice);
     }
-printk(KERN_EMERG "Setup The phy chip\n");
 
     /* Setup the phy chip. */
     LM_SetupPhy(pDevice);
@@ -4931,7 +4928,6 @@ printk(KERN_EMERG "Setup The phy chip\n");
         LM_WritePhy(pDevice, 0x1e, Value32 | 0x8000);
         LM_ReadPhy(pDevice, 0x14, &Value32);
     }
-printk(KERN_EMERG "Setup receive mask\n");
 
     /* Set up the receive mask. */
     LM_SetReceiveMask(pDevice, pDevice->ReceiveMask);
@@ -4945,8 +4941,6 @@ printk(KERN_EMERG "Setup receive mask\n");
         }
     }
 #endif
-printk(KERN_EMERG "Write Post Reset Signatures\n");
-
     LM_WritePostResetSignatures(pDevice, LM_INIT_RESET);
 
     return LM_STATUS_SUCCESS;
@@ -5579,6 +5573,10 @@ LM_DoHalt(LM_DEVICE_BLOCK *pDevice)
     LM_WritePreResetSignatures(pDevice, LM_SHUTDOWN_RESET);
     LM_Abort(pDevice);
 
+    if((pDevice->PhyId & PHY_ID_MASK) == PHY_BCM5461_PHY_ID)
+	    LM_WritePhy(pDevice, BCM546X_1c_SHADOW_REG,
+	                (BCM546X_1c_SPR_CTRL_1 | BCM546X_1c_WR_EN));
+
     /* Get the number of entries in the queue. */
     EntryCnt = QQ_GetEntryCnt(&pDevice->RxPacketFreeQ.Container);
 
@@ -5784,6 +5782,17 @@ LM_ResetChip(PLM_DEVICE_BLOCK pDevice)
         LM_DisableFW(pDevice);
         REG_WR_OFFSET(pDevice, 0x5000, 0x400);
     }
+
+    /*
+     * BCM4785: In order to avoid repercussions from using potentially
+     * defective internal ROM, stop the Rx RISC CPU, which is not
+     * required.
+     */
+    if (pDevice->Flags & SB_CORE_FLAG) {
+	    LM_DisableFW(pDevice);
+	    LM_HaltCpu(pDevice, T3_RX_CPU_ID);
+    }
+
 #ifdef BIG_ENDIAN_HOST
     /* Reconfigure the mode register. */
     Value32 = GRC_MODE_BYTE_SWAP_NON_FRAME_DATA | 
@@ -5824,40 +5833,34 @@ LM_ResetChip(PLM_DEVICE_BLOCK pDevice)
     REG_RD_BACK(pDevice, MacCtrl.Mode);
     MM_Wait(40);
 
-    /* Wait for the firmware to finish initialization. */
-    for(j = 0; j < 100000; j++)
-    {
-        MM_Wait(10);
+    /* BCM4785: Don't use any firmware, so don't wait */
+    if (!pDevice->Flags & SB_CORE_FLAG) {
+	    /* Wait for the firmware to finish initialization. */
+	    for(j = 0; j < 100000; j++) {
+		    MM_Wait(10);
 
-        if (j < 100)
-            continue;
+		    if (j < 100)
+			    continue;
 
-        Value32 = MEM_RD_OFFSET(pDevice, T3_FIRMWARE_MAILBOX);
-        if(Value32 == ~T3_MAGIC_NUM_FIRMWARE_INIT_DONE)
-        {
-            break;
-        }
-    }
-    if ((j >= 0x100000) && (T3_ASIC_REV(pDevice->ChipRevId) == T3_ASIC_REV_5704))
-    {
-        /* if the boot code is not running */
-        if (LM_NVRAM_AcquireLock(pDevice) != LM_STATUS_SUCCESS)
-        {
-            LM_DEVICE_BLOCK *pDevice2;
-
-            REG_WR(pDevice, Nvram.Cmd, NVRAM_CMD_RESET);
-            pDevice2 = MM_FindPeerDev(pDevice);
-            if (pDevice2 && !pDevice2->InitDone)
-            {
-                REG_WR(pDevice2, Nvram.Cmd, NVRAM_CMD_RESET);
+		    Value32 = MEM_RD_OFFSET(pDevice, T3_FIRMWARE_MAILBOX);
+		    if(Value32 == ~T3_MAGIC_NUM_FIRMWARE_INIT_DONE) {
+			    break;
+		    }
 	    }
-	}
-        else
-        {
-            LM_NVRAM_ReleaseLock(pDevice);
-        }
-    }
+	    if ((j >= 0x100000) && (T3_ASIC_REV(pDevice->ChipRevId) == T3_ASIC_REV_5704)) {
+		    /* if the boot code is not running */
+		    if (LM_NVRAM_AcquireLock(pDevice) != LM_STATUS_SUCCESS) {
+			    LM_DEVICE_BLOCK *pDevice2;
 
+			    REG_WR(pDevice, Nvram.Cmd, NVRAM_CMD_RESET);
+			    pDevice2 = MM_FindPeerDev(pDevice);
+			    if (pDevice2 && !pDevice2->InitDone)
+				    REG_WR(pDevice2, Nvram.Cmd, NVRAM_CMD_RESET);
+		    } else {
+			    LM_NVRAM_ReleaseLock(pDevice);
+		    }
+	    }
+    }
 
     if ((pDevice->Flags & PCI_EXPRESS_FLAG) && 
 	(pDevice->ChipRevId != T3_CHIP_ID_5750_A0))
@@ -6399,7 +6402,7 @@ LM_SetMacAddress(
     PLM_UINT8 pMacAddress)
 {
     LM_UINT32 j;
-printk(KERN_EMERG "write 4 block\n");
+
     for(j = 0; j < 4; j++)
     {
         REG_WR(pDevice, MacCtrl.MacAddr[j].High,
@@ -6408,7 +6411,6 @@ printk(KERN_EMERG "write 4 block\n");
             (pMacAddress[2] << 24) | (pMacAddress[3] << 16) |
             (pMacAddress[4] << 8) | pMacAddress[5]);
     }
-printk(KERN_EMERG "write 12 block\n");
 
     if ((T3_ASIC_REV(pDevice->ChipRevId) == T3_ASIC_REV_5703) ||
         (T3_ASIC_REV(pDevice->ChipRevId) == T3_ASIC_REV_5704)) 
@@ -6463,6 +6465,7 @@ PLM_DEVICE_BLOCK pDevice)
     LM_STATUS CurrentLinkStatus;
     LM_UINT32 Value32;
     LM_UINT32 j;
+    robo_info_t *robo;
 
     LM_WritePhy(pDevice, BCM5401_AUX_CTRL, 0x02);
 
@@ -6580,6 +6583,27 @@ PLM_DEVICE_BLOCK pDevice)
 
     CurrentLinkStatus = LM_STATUS_LINK_DOWN;
 
+    if(UNKNOWN_PHY_ID(pDevice->PhyId) && (pDevice->Flags & ROBO_SWITCH_FLAG)) {
+      B57_INFO(("Force to active link of 1000 MBPS and full duplex mod.\n"));
+      CurrentLinkStatus = LM_STATUS_LINK_ACTIVE;
+
+      /* Set the line speed based on the robo switch type */
+      robo = ((PUM_DEVICE_BLOCK)pDevice)->robo;
+      if (robo->devid == DEVID5325)
+      {
+          CurrentLineSpeed = LM_LINE_SPEED_100MBPS;
+      }
+      else
+      {
+          CurrentLineSpeed = LM_LINE_SPEED_1000MBPS;
+      }
+      CurrentDuplexMode = LM_DUPLEX_MODE_FULL;
+      
+      /* Save line settings. */
+      pDevice->LineSpeed = CurrentLineSpeed;
+      pDevice->DuplexMode = CurrentDuplexMode;
+    } else {
+      
     /* Get current link and duplex mode. */
     for(j = 0; j < 100; j++)
     {
@@ -6718,6 +6742,7 @@ PLM_DEVICE_BLOCK pDevice)
         pDevice->LineSpeed = CurrentLineSpeed;
         pDevice->DuplexMode = CurrentDuplexMode;
     }
+}
 
     return CurrentLinkStatus;
 } /* LM_InitBcm540xPhy */
@@ -7409,8 +7434,11 @@ LM_SetupCopperPhy(
 
     /* Determine the requested line speed and duplex. */
     pDevice->OldLineSpeed = pDevice->LineSpeed;
-    pDevice->LineSpeed = pDevice->RequestedLineSpeed;
-    pDevice->DuplexMode = pDevice->RequestedDuplexMode;
+    /* Set line and duplex only if we don't have a Robo switch */
+    if (!(pDevice->Flags & ROBO_SWITCH_FLAG)) {
+      pDevice->LineSpeed = pDevice->RequestedLineSpeed;
+      pDevice->DuplexMode = pDevice->RequestedDuplexMode;
+    }
 
     /* Set the phy to loopback mode. */
     if ((pDevice->LoopBackMode == LM_PHY_LOOP_BACK_MODE) ||
@@ -7493,7 +7521,12 @@ LM_SetupCopperPhy(
         return LM_STATUS_SUCCESS;
     }
 
-    LM_ReadPhy(pDevice, PHY_CTRL_REG, &Value32);
+    /* For Robo switch read PHY_CTRL_REG value as zero */
+	if (pDevice->Flags & ROBO_SWITCH_FLAG)
+		Value32 = 0;
+	else
+		LM_ReadPhy(pDevice, PHY_CTRL_REG, &Value32);
+
     if(Value32 & PHY_CTRL_LOOPBACK_MODE)
     {
         CurrentLinkStatus = LM_STATUS_LINK_DOWN;
@@ -7531,8 +7564,8 @@ LM_SetupCopperPhy(
 
         if(pDevice->DuplexMode == LM_DUPLEX_MODE_FULL)
         {
-            if(pDevice->DisableAutoNeg == FALSE ||
-                pDevice->RequestedLineSpeed == LM_LINE_SPEED_AUTO)
+	  if(pDevice->DisableAutoNeg == FALSE ||
+	     pDevice->RequestedLineSpeed == LM_LINE_SPEED_AUTO)
             {
                 LM_UINT32 ExpectedPhyAd;
                 LM_UINT32 LocalPhyAd;
@@ -8450,7 +8483,7 @@ PLM_UINT32 pData32) {
 
     REG_WR(pDevice, MacCtrl.MiCom, Value32);
     
-    for(j = 0; j < 400; j++)
+    for(j = 0; j < 200; j++)
     {
         MM_Wait(1);
 
@@ -8529,6 +8562,38 @@ LM_UINT32 Data32) {
         MM_Wait(40);
     }
 } /* LM_WritePhy */
+
+/* MII read/write functions to export to the robo support code */
+LM_UINT16
+robo_miird(void *h, int phyadd, int regoff)
+{
+	PLM_DEVICE_BLOCK pdev = h;
+	LM_UINT32 savephyaddr, val32;
+
+	savephyaddr = pdev->PhyAddr;
+	pdev->PhyAddr = phyadd;
+
+	LM_ReadPhy(pdev, regoff, &val32);
+
+	pdev->PhyAddr = savephyaddr;
+
+	return ((LM_UINT16)(val32 & 0xffff));
+}
+
+void
+robo_miiwr(void *h, int phyadd, int regoff, LM_UINT16 value)
+{
+	PLM_DEVICE_BLOCK pdev = h;
+	LM_UINT32 val32, savephyaddr;
+
+	savephyaddr = pdev->PhyAddr;
+	pdev->PhyAddr = phyadd;
+
+	val32 = (LM_UINT32)value;
+	LM_WritePhy(pdev, regoff, val32);
+
+	pdev->PhyAddr = savephyaddr;
+}
 
 STATIC void
 LM_GetPhyId(LM_DEVICE_BLOCK *pDevice)
@@ -9405,6 +9470,10 @@ LM_STATUS LM_LoadFirmware(PLM_DEVICE_BLOCK pDevice,
     LM_UINT32 len;
     LM_UINT32 base_addr;
 
+    /* BCM4785: Avoid all use of firmware. */
+    if (pDevice->Flags & SB_CORE_FLAG)
+	    return LM_STATUS_FAILURE;
+
 #ifdef INCLUDE_TCP_SEG_SUPPORT
     if (T3_ASIC_REV(pDevice->ChipRevId) == T3_ASIC_REV_5705)
       {
@@ -9579,6 +9648,14 @@ LM_STATUS LM_HaltCpu(PLM_DEVICE_BLOCK pDevice,LM_UINT32 cpu_number)
         if (i == 10000)
             status = LM_STATUS_FAILURE;
     }
+    
+    /*
+     * BCM4785: There is only an Rx CPU for the 5750 derivative in
+     * the 4785.  Don't go any further in this code in order to
+     * avoid access to the NVRAM arbitration register.
+     */
+    if (pDevice->Flags & SB_CORE_FLAG)
+	    return status;
 
     if ((pDevice->Flags & T3_HAS_TWO_CPUS) &&
         (cpu_number & T3_TX_CPU_ID))

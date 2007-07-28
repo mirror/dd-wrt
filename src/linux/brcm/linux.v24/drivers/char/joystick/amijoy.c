@@ -64,9 +64,9 @@ static void amijoy_interrupt(int irq, void *dummy, struct pt_regs *fp)
 
 			input_report_key(amijoy_dev + i, BTN_TRIGGER, button);
 
-			input_report_abs(amijoy_dev + i, ABS_X, ((data >> 1) & 1) - ((data >> 9) & 1);
+			input_report_abs(amijoy_dev + i, ABS_X, ((data >> 1) & 1) - ((data >> 9) & 1));
 			data = ~(data ^ (data << 1));
-			input_report_abs(amijoy_dev + i, ABS_Y, ((data >> 1) & 1) - ((data >> 9) & 1);
+			input_report_abs(amijoy_dev + i, ABS_Y, ((data >> 1) & 1) - ((data >> 9) & 1));
 		}
 }
 

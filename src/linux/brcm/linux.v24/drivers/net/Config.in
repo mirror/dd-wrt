@@ -285,6 +285,10 @@ dep_tristate 'Realtek 8169 Gigabit Ethernet support' CONFIG_R8169 $CONFIG_PCI
 if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
    tristate 'SB1250 Ethernet support' CONFIG_NET_SB1250_MAC
 fi
+
+dep_tristate 'Alternate Marvell Yukon Chipset Support (not Yukon2)' CONFIG_SKGE $CONFIG_PCI
+dep_tristate 'Alternate Marvell Yukon 2 Chipset Support' CONFIG_SKY2 $CONFIG_PCI
+
 dep_tristate 'Marvell Yukon Chipset / SysKonnect SK-98xx Support' CONFIG_SK98LIN $CONFIG_PCI
 dep_tristate 'Broadcom Tigon3 support' CONFIG_TIGON3 $CONFIG_PCI
 

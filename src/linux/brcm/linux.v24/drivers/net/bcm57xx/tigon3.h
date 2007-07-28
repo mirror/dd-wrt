@@ -3264,12 +3264,6 @@ typedef struct _LM_DEVICE_BLOCK {
 
     LM_UINT32 Flags;
 
-#ifdef BCM_WL_EMULATOR
-    LM_BOOL  wl_emulate_rx;
-    LM_BOOL  wl_emulate_tx;	
-    void *wlc; 
-#endif /*BCM_WL_EMULATOR*/
-
     #define MINI_PCI_FLAG              0x1
     #define PCI_EXPRESS_FLAG           0x2
     #define BCM5788_FLAG               0x4
@@ -3326,9 +3320,17 @@ typedef struct _LM_DEVICE_BLOCK {
     #define HOST_COALESCING_BUG_FIX    0x10000000
 
     /* 5750 in BCM4785 */
-    #define SB_CORE_FLAG               0x40000000
+    #define SB_CORE_FLAG               0x20000000
     /* 5750 in RGMII mode (BCM4785) */
-    #define RGMII_MODE_FLAG            0x80000000
+    #define RGMII_MODE_FLAG            0x40000000
+    /* connected to a ROBO switch */
+    #define ROBO_SWITCH_FLAG           0x80000000
+
+#ifdef BCM_WL_EMULATOR
+    LM_BOOL  wl_emulate_rx;
+    LM_BOOL  wl_emulate_tx;	
+    void *wlc; 
+#endif /*BCM_WL_EMULATOR*/
 
     /* Rx info */
     LM_UINT32 RxStdDescCnt;

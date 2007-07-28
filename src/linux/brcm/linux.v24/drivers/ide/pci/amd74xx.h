@@ -197,6 +197,17 @@ static ide_pci_device_t amd74xx_chipsets[] __devinitdata = {
 		.enablebits	= {{0x50,0x02,0x02}, {0x50,0x01,0x01}},
 		.bootable	= ON_BOARD,
 	},
+	{	/* 15 */
+		.vendor		= PCI_VENDOR_ID_NVIDIA,
+		.device		= PCI_DEVICE_ID_NVIDIA_NFORCE_MCP55_IDE,
+		.name		= "NFORCE-MCP55",
+		.init_chipset	= init_chipset_amd74xx,
+		.init_hwif	= init_hwif_amd74xx,
+		.channels	= 2,
+		.autodma	= AUTODMA,
+		.enablebits	= {{0x50,0x02,0x02}, {0x50,0x01,0x01}},
+		.bootable	= ON_BOARD,
+	},
 	{
 		.vendor		= 0,
 		.device		= 0,

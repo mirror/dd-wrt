@@ -10,6 +10,7 @@
 /*                                                                            */
 /******************************************************************************/
 
+/* $Id$ */
 
 char bcm5700_driver[] = "bcm5700";
 char bcm5700_version[] = "8.3.14";
@@ -19,6 +20,7 @@ char bcm5700_date[] = "(11/2/05)";
 #include "mm.h"
 
 #include "typedefs.h"
+#include "epivers.h"
 #include "osl.h"
 #include "bcmdefs.h"
 #include "bcmdevs.h"
@@ -26,6 +28,8 @@ char bcm5700_date[] = "(11/2/05)";
 #include "sbconfig.h"
 #include "sbutils.h"
 #include "hndgige.h"
+#include "etioctl.h"
+#include "bcmrobo.h"
 
 /* this is needed to get good and stable performances */
 #define EXTRA_HDR BCMEXTRAHDROOM
@@ -371,6 +375,7 @@ MODULE_LICENSE("GPL");
 #if (LINUX_VERSION_CODE < 0x020605)
 
 MODULE_PARM(debug, "i");
+MODULE_PARM(msglevel, "i");
 MODULE_PARM(line_speed, "1-" __MODULE_STRING(MAX_UNITS) "i");
 MODULE_PARM(auto_speed, "1-" __MODULE_STRING(MAX_UNITS) "i");
 MODULE_PARM(full_duplex, "1-" __MODULE_STRING(MAX_UNITS) "i");
@@ -497,7 +502,8 @@ static int tigon3_debug = TIGON3_DEBUG;
 #else
 static int tigon3_debug = 0;
 #endif
-
+static int msglevel = 0xdeadbeef;
+int b57_msg_level;
 
 int bcm5700_open(struct net_device *dev);
 STATIC void bcm5700_timer(unsigned long data);
@@ -540,6 +546,13 @@ void bcm5700_shutdown(UM_DEVICE_BLOCK *pUmDevice);
 void bcm5700_free_remaining_rx_bufs(UM_DEVICE_BLOCK *pUmDevice);
 void bcm5700_validate_param_range(UM_DEVICE_BLOCK *pUmDevice, int *param,
 	char *param_name, int min, int max, int deflt);
+
+static int bcm5700_notify_reboot(struct notifier_block *this, unsigned long event, void *unused);
+static struct notifier_block bcm5700_reboot_notifier = {
+	bcm5700_notify_reboot,
+	NULL,
+	0
+};
 
 #if defined(HAVE_POLL_CONTROLLER) || defined(CONFIG_NET_POLL_CONTROLLER)
 STATIC void poll_bcm5700(struct net_device *dev);
@@ -911,7 +924,7 @@ extern int bcm5700_proc_remove_notifier(void);
 	};
 #endif
 
-static int sbgige = 0;
+static int sbgige = -1;
 
 /*******************************************************************************
  *******************************************************************************
@@ -999,18 +1012,15 @@ int attached_to_ICH4_or_older( struct pci_dev *pdev)
 	}
 	return 0;
 }
-extern char *getvar(char *vars, char *name);
-extern int bcm_ether_atoe(char *p, struct ether_addr *ea);
 
-static int __devinit bcm5700_init_board(struct pci_dev *pdev,
-					struct net_device **dev_out,
-					int board_idx)
+static int
+__devinit bcm5700_init_board(struct pci_dev *pdev, struct net_device **dev_out, int board_idx)
 {
 	struct net_device *dev;
 	PUM_DEVICE_BLOCK pUmDevice;
 	PLM_DEVICE_BLOCK pDevice;
 	bool rgmii = FALSE;
-	bool sbcore = FALSE;
+	sb_t *sbh = NULL;
 	int rc;
 
 	*dev_out = NULL;
@@ -1022,8 +1032,7 @@ static int __devinit bcm5700_init_board(struct pci_dev *pdev,
 	dev = init_etherdev(NULL, sizeof(*pUmDevice));
 #endif
 	if (dev == NULL) {
-		printk (KERN_EMERG "%s: unable to alloc new ethernet\n",
-			bcm5700_driver);
+		printk(KERN_ERR "%s: unable to alloc new ethernet\n", bcm5700_driver);
 		return -ENOMEM;
 	}
 	SET_MODULE_OWNER(dev);
@@ -1033,48 +1042,38 @@ static int __devinit bcm5700_init_board(struct pci_dev *pdev,
 	pUmDevice = (PUM_DEVICE_BLOCK) dev->priv;
 
 	/* enable device (incl. PCI PM wakeup), and bus-mastering */
-	rc = pci_enable_device (pdev);
+	rc = pci_enable_device(pdev);
 	if (rc)
 		goto err_out;
 
 	/* init core specific stuff */
 	if (pdev->device == T3_PCI_DEVICE_ID(T3_PCI_ID_BCM471F)) {
-	printk(KERN_EMERG "Attaching Broadcom device\n");
-		sb_t *sbh = sb_kattach(SB_OSH);
-		uint32 idx = sb_coreidx(sbh);
-		void *regs = sb_setcore(sbh, SB_GIGETH, sbgige);
-		sb_gige_init(sbh, regs, &rgmii);
-		sb_setcoreidx(sbh, idx);
-		sbcore = TRUE;
-		sbgige ++;
+		sbh = sb_kattach(SB_OSH);
+		sb_gige_init(sbh, ++sbgige, &rgmii);
 	}
 
 	rc = pci_request_regions(pdev, bcm5700_driver);
 	if (rc) {
-		if (!sbcore)
+		if (!sbh)
 			goto err_out;
-		printk(KERN_EMERG "bcm5700_init_board: pci_request_regions returned error %d\n"
+		printk(KERN_INFO "bcm5700_init_board: pci_request_regions returned error %d\n"
 				 "This may be because the region is already requested by"
-				 " the SMBus driver. Ignore the PCI error messages.\n", 
-				 rc);
+				 " the SMBus driver. Ignore the PCI error messages.\n", rc);
 	}
 
 	pci_set_master(pdev);
 
 	if (pci_set_dma_mask(pdev, BCM_64BIT_DMA_MASK) == 0) {
 		pUmDevice->using_dac = 1;
-		if (pci_set_consistent_dma_mask(pdev, BCM_64BIT_DMA_MASK) != 0)
-		{
-			printk(KERN_EMERG "pci_set_consistent_dma_mask failed\n");
+		if (pci_set_consistent_dma_mask(pdev, BCM_64BIT_DMA_MASK) != 0) {
+			printk(KERN_ERR "pci_set_consistent_dma_mask failed\n");
 			pci_release_regions(pdev);
 			goto err_out;
 		}
-	}
-	else if (pci_set_dma_mask(pdev, BCM_32BIT_DMA_MASK) == 0) {
+	} else if (pci_set_dma_mask(pdev, BCM_32BIT_DMA_MASK) == 0) {
 		pUmDevice->using_dac = 0;
-	}
-	else {
-		printk(KERN_EMERG "System does not support DMA\n");
+	} else {
+		printk(KERN_ERR "System does not support DMA\n");
 		pci_release_regions(pdev);
 		goto err_out;
 	}
@@ -1084,6 +1083,7 @@ static int __devinit bcm5700_init_board(struct pci_dev *pdev,
 	pUmDevice->mem_list_num = 0;
 	pUmDevice->next_module = root_tigon3_dev;
 	pUmDevice->index = board_idx;
+	pUmDevice->sbh = (void *)sbh;
 	root_tigon3_dev = dev;
 
 	spin_lock_init(&pUmDevice->global_lock);
@@ -1092,13 +1092,19 @@ static int __devinit bcm5700_init_board(struct pci_dev *pdev,
 
 	spin_lock_init(&pUmDevice->phy_lock);
 
-	pDevice = (PLM_DEVICE_BLOCK) pUmDevice;
+	pDevice = &pUmDevice->lm_dev;
 	pDevice->Flags = 0;
 	pDevice->FunctNum = PCI_FUNC(pUmDevice->pdev->devfn);
-	if (sbcore) {
+	pUmDevice->boardflags = getintvar(NULL, "boardflags");
+	if (sbh) {
+		if (pUmDevice->boardflags & BFL_ENETROBO)
+			pDevice->Flags |= ROBO_SWITCH_FLAG;
 		pDevice->Flags |= rgmii ? RGMII_MODE_FLAG : 0;
+		if (sb_chip(sbh) == BCM4785_CHIP_ID && sb_chiprev(sbh) < 2)
+			pDevice->Flags |= ONE_DMA_AT_ONCE_FLAG;
 		pDevice->Flags |= SB_CORE_FLAG;
-		pDevice->Flags |= ONE_DMA_AT_ONCE_FLAG;
+		if (sb_chip(sbh) == BCM4785_CHIP_ID)
+			pDevice->Flags |= FLUSH_POSTED_WRITE_FLAG;
 	}
 
 #if T3_JUMBO_RCV_RCB_ENTRY_COUNT
@@ -1108,12 +1114,12 @@ static int __devinit bcm5700_init_board(struct pci_dev *pdev,
 	}
 #endif
 
-	if (attached_to_ICH4_or_older( pdev)) {
+	if (attached_to_ICH4_or_older(pdev)) {
 		pDevice->Flags |= UNDI_FIX_FLAG;
 	}
 
 #if (LINUX_VERSION_CODE >= 0x2060a)
-	if(pci_dev_present(pci_AMD762id)){
+	if (pci_dev_present(pci_AMD762id)) {
 		pDevice->Flags |= FLUSH_POSTED_WRITE_FLAG;
 		pDevice->Flags &= ~NIC_SEND_BD_FLAG;
 	}
@@ -1131,26 +1137,44 @@ static int __devinit bcm5700_init_board(struct pci_dev *pdev,
 		goto err_out_unmap;
 	}
 
-	/*
-	 * We are lucky there is nothing special being keyed on PCI
-	 * device ID BCM5750 (0x1676) inside LM_GetAdapterInfo(),
- 	 * otherwise we would have to modify the function to do the
-	 * same thing for BCM471F (BCM5750 as a SB core in BCM4785).
-	 *
-	 * Apply MAC address.
-	 */
-	if (sbcore) {
-		char etXmacaddr[] = "etXXXXmacaddr";
-		sprintf(etXmacaddr, "et%umacaddr", sbgige-1);
-		bcm_ether_atoe(getvar(NULL, etXmacaddr),
-		               (struct ether_addr *)pDevice->NodeAddress);
-		LM_SetMacAddress(pDevice, pDevice->NodeAddress);
+	if (pDevice->Flags & ROBO_SWITCH_FLAG) {
+		robo_info_t	*robo;
+
+		if ((robo = bcm_robo_attach(sbh, pDevice, NULL,
+		                            robo_miird, robo_miiwr)) == NULL) {
+			B57_ERR(("robo_setup: failed to attach robo switch \n"));
+			goto robo_fail;
+		}
+
+		if (bcm_robo_enable_device(robo)) {
+			B57_ERR(("robo_setup: failed to enable robo switch \n"));
+			goto robo_fail;
+		}
+
+		/* Configure the switch to do VLAN */
+		if ((pUmDevice->boardflags & BFL_ENETVLAN) &&
+		    bcm_robo_config_vlan(robo, pDevice->PermanentNodeAddress)) {
+			B57_ERR(("robo_setup: robo_config_vlan failed\n"));
+			goto robo_fail;
+		}
+
+		/* Enable the switch */
+		if (bcm_robo_enable_switch(robo)) {
+			B57_ERR(("robo_setup: robo_enable_switch failed\n"));
+robo_fail:
+			bcm_robo_detach(robo);
+			rc = -ENODEV;
+			goto err_out_unmap;
+		}
+		pUmDevice->robo = (void *)robo;
 	}
 
-	if ( (pDevice->Flags & JUMBO_CAPABLE_FLAG) == 0 ) {
+	if ((pDevice->Flags & JUMBO_CAPABLE_FLAG) == 0) {
 		if (dev->mtu > 1500) {
 			dev->mtu = 1500;
-			printk(KERN_WARNING "%s-%d: Jumbo mtu sizes not supported, using mtu=1500\n", bcm5700_driver, pUmDevice->index);
+			printk(KERN_WARNING
+			       "%s-%d: Jumbo mtu sizes not supported, using mtu=1500\n",
+			       bcm5700_driver, pUmDevice->index);
 		}
 	}
 
@@ -1165,8 +1189,7 @@ static int __devinit bcm5700_init_board(struct pci_dev *pdev,
 		((pDevice->PciState & T3_PCI_STATE_NOT_PCI_X_BUS) == 0)) {
 
 		pUmDevice->rx_buf_align = 0;
-	}
-	else {
+	} else {
 		pUmDevice->rx_buf_align = 2;
 	}
 	dev->mem_start = pci_resource_start(pdev, 0);
@@ -1193,7 +1216,7 @@ err_out:
 static int __devinit
 bcm5700_print_ver(void)
 {
-	printk(KERN_EMERG "Broadcom Gigabit Ethernet Driver %s ",
+	printk(KERN_INFO "Broadcom Gigabit Ethernet Driver %s ",
 		bcm5700_driver);
 #ifdef NICE_SUPPORT
 	printk("with Broadcom NIC Extension (NICE) ");
@@ -1203,8 +1226,7 @@ bcm5700_print_ver(void)
 }
 
 static int __devinit
-bcm5700_init_one(struct pci_dev *pdev,
-				       const struct pci_device_id *ent)
+bcm5700_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 {
 	struct net_device *dev = NULL;
 	PUM_DEVICE_BLOCK pUmDevice;
@@ -1272,7 +1294,7 @@ bcm5700_init_one(struct pci_dev *pdev,
 
 #if (LINUX_VERSION_CODE >= 0x20600)
 	if ((i = register_netdev(dev))) {
-		printk(KERN_EMERG "%s: Cannot register net device\n",
+		printk(KERN_ERR "%s: Cannot register net device\n",
 			bcm5700_driver);
 		if (pUmDevice->lm_dev.pMappedMemBase)
 			iounmap(pUmDevice->lm_dev.pMappedMemBase);
@@ -1288,7 +1310,7 @@ bcm5700_init_one(struct pci_dev *pdev,
 
 	memcpy(dev->dev_addr, pDevice->NodeAddress, 6);
 	pUmDevice->name = board_info[ent->driver_data].name,
-	printk(KERN_EMERG "%s: %s found at mem %lx, IRQ %d, ",
+	printk(KERN_INFO "%s: %s found at mem %lx, IRQ %d, ",
 		dev->name, pUmDevice->name, dev->base_addr,
 		dev->irq);
 	printk("node addr ");
@@ -1297,7 +1319,7 @@ bcm5700_init_one(struct pci_dev *pdev,
 	}
 	printk("\n");
 
-	printk(KERN_EMERG "%s: ", dev->name);
+	printk(KERN_INFO "%s: ", dev->name);
 	if ((pDevice->PhyId & PHY_ID_MASK) == PHY_BCM5400_PHY_ID)
 		printk("Broadcom BCM5400 Copper ");
 	else if ((pDevice->PhyId & PHY_ID_MASK) == PHY_BCM5401_PHY_ID)
@@ -1385,13 +1407,13 @@ bcm5700_init_one(struct pci_dev *pdev,
 	    (enable_tso[board_idx])) {
 		if (T3_ASIC_5714_FAMILY(pDevice->ChipRevId) &&
 		   (dev->mtu > 1500)) {
-			printk(KERN_EMERG "%s: Jumbo Frames and TSO cannot simultaneously be enabled. Jumbo Frames enabled. TSO disabled.\n", dev->name);
+			printk(KERN_ALERT "%s: Jumbo Frames and TSO cannot simultaneously be enabled. Jumbo Frames enabled. TSO disabled.\n", dev->name);
 		} else {
 			dev->features |= NETIF_F_TSO;
 		}
 	}
 #endif
-	printk(KERN_EMERG "%s: Scatter-gather %s, 64-bit DMA %s, Tx Checksum %s, ",
+	printk(KERN_INFO "%s: Scatter-gather %s, 64-bit DMA %s, Tx Checksum %s, ",
 			dev->name,
 			(char *) ((dev->features & NETIF_F_SG) ? "ON" : "OFF"),
 			(char *) ((dev->features & NETIF_F_HIGHDMA) ? "ON" : "OFF"),
@@ -1419,6 +1441,7 @@ bcm5700_init_one(struct pci_dev *pdev,
 #ifdef BCM_PROC_FS
 	bcm5700_proc_create_dev(dev);
 #endif
+	register_reboot_notifier(&bcm5700_reboot_notifier);
 #ifdef BCM_TASKLET
 	tasklet_init(&pUmDevice->tasklet, bcm5700_tasklet,
 		(unsigned long) pUmDevice);
@@ -1433,17 +1456,18 @@ printk(KERN_WARNING "%s: Device is configured for Hardware Based Teaming which i
 
 #if (LINUX_VERSION_CODE > 0x20605)
 
-	if ((pci_dev = pci_get_device(0x1022, 0x700c, NULL))) {
+	if ((pci_dev = pci_get_device(0x1022, 0x700c, NULL)))
 #else
-	if ((pci_dev = pci_find_device(0x1022, 0x700c, NULL))) {
+	if ((pci_dev = pci_find_device(0x1022, 0x700c, NULL)))
 #endif
+	{
 		u32 val;
 
 		/* Found AMD 762 North bridge */
 		pci_read_config_dword(pci_dev, 0x4c, &val);
 		if ((val & 0x02) == 0) {
 			pci_write_config_dword(pci_dev, 0x4c, val | 0x02);
-			printk(KERN_EMERG "%s: Setting AMD762 Northbridge to enable PCI ordering compliance\n", bcm5700_driver);
+			printk(KERN_INFO "%s: Setting AMD762 Northbridge to enable PCI ordering compliance\n", bcm5700_driver);
 		}
 	}
 
@@ -1554,10 +1578,10 @@ bcm5700emu_open(struct net_device *dev)
 	{
 		/* create an emulator context. */
 		pDevice->wlc = (void *)wlcemu_wlccreate((void *)dev);
-		printk(KERN_EMERG "Using %s for wl emulation \n",dev->name);
+		B57_INFO(("Using %s for wl emulation \n", dev->name));
 		if(rx_enable)
 		{
-			printk(KERN_EMERG "Enabling wl RX emulation \n");
+			B57_INFO(("Enabling wl RX emulation \n"));
 			pDevice->wl_emulate_rx = 1;
 		}
 		/* re-direct transmit callback to emulator */
@@ -1565,7 +1589,7 @@ bcm5700emu_open(struct net_device *dev)
 		{
 			pDevice->wl_emulate_tx = 1;
 			dev->hard_start_xmit = bcm5700emu_start_xmit;
-			printk(KERN_EMERG "Enabling wl TX emulation \n");
+			B57_INFO(("Enabling wl TX emulation \n"));
 		}  
 	}
 	/* for debug access to configured devices only */
@@ -1642,7 +1666,7 @@ bcm5700_open(struct net_device *dev)
 #ifdef BCM_WL_EMULATOR
 	bcm5700emu_open(dev);
 #endif
-printk(KERN_EMERG "delay for 6 seconds\n");
+
 	/* delay for 6 seconds */
 	pUmDevice->delayed_link_ind = (6 * HZ) / pUmDevice->timer_interval;
 
@@ -1652,7 +1676,6 @@ printk(KERN_EMERG "delay for 6 seconds\n");
 #endif
 #endif
 
-printk(KERN_EMERG "poll_tbi_interval\n");
 #ifdef INCLUDE_TBI_SUPPORT
 	if ((pDevice->TbiFlags & ENABLE_TBI_FLAG) &&
 		(pDevice->TbiFlags & TBI_POLLING_FLAGS)) {
@@ -1663,8 +1686,6 @@ printk(KERN_EMERG "poll_tbi_interval\n");
 		pUmDevice->poll_tbi_expiry = pUmDevice->poll_tbi_interval;
 	}
 #endif
-printk(KERN_EMERG "asf_heartbeat\n");
-
 	/* set this timer for 2 seconds */
 	pUmDevice->asf_heartbeat = (2 * HZ) / pUmDevice->timer_interval;
 
@@ -1695,11 +1716,9 @@ printk(KERN_EMERG "asf_heartbeat\n");
 
 
 #endif
-printk(KERN_EMERG "request irc\n");
 
 	if ((rc= request_irq(pUmDevice->pdev->irq, &bcm5700_interrupt, SA_SHIRQ, dev->name, dev)))
 	{
-printk(KERN_EMERG "error\n");
 
 #if defined(CONFIG_PCI_MSI) || defined(CONFIG_PCI_USE_VECTOR)
 
@@ -1713,25 +1732,20 @@ printk(KERN_EMERG "error\n");
 #endif
 		return rc;
 	}
-printk(KERN_EMERG "opened\n");
 
 	pUmDevice->opened = 1;
 	if (LM_InitializeAdapter(pDevice) != LM_STATUS_SUCCESS) {
 		pUmDevice->opened = 0;
-printk(KERN_EMERG "init failed\n");
 		free_irq(dev->irq, dev);
 		bcm5700_freemem(dev);
 		return -EAGAIN;
 	}
-printk(KERN_EMERG "vlan mode\n");
 
 	bcm5700_set_vlan_mode(pUmDevice);
-printk(KERN_EMERG "init counters\n");
-
 	bcm5700_init_counters(pUmDevice);
 
 	if (pDevice->Flags & UNDI_FIX_FLAG) {
-		printk(KERN_EMERG "%s: Using indirect register access\n", dev->name);
+		printk(KERN_INFO "%s: Using indirect register access\n", dev->name);
 	}
 
 	if (memcmp(dev->dev_addr, pDevice->NodeAddress, 6))
@@ -1742,14 +1756,13 @@ printk(KERN_EMERG "init counters\n");
 		}
 		else
 		{
-			printk(KERN_EMERG "%s: Invalid administered node address\n",dev->name);
+			printk(KERN_INFO "%s: Invalid administered node address\n",dev->name);
 			memcpy(dev->dev_addr, pDevice->NodeAddress, 6);
 		}
 	}
 
 	if (tigon3_debug > 1)
-		printk(KERN_EMERG "%s: tigon3_open() irq %d.\n", dev->name, dev->irq);
-printk(KERN_EMERG "initqueue\n");
+		printk(KERN_DEBUG "%s: tigon3_open() irq %d.\n", dev->name, dev->irq);
 
 	QQ_InitQueue(&pUmDevice->rx_out_of_buf_q.Container,
         MAX_RX_PACKET_DESC_COUNT);
@@ -1760,7 +1773,6 @@ printk(KERN_EMERG "initqueue\n");
 #endif
 
 	atomic_set(&pUmDevice->intr_sem, 0);
-printk(KERN_EMERG "enable interrupt\n");
 
 	LM_EnableInterrupt(pDevice);
 
@@ -1778,7 +1790,7 @@ printk(KERN_EMERG "enable interrupt\n");
 			pDevice->Flags &= ~USING_MSI_FLAG;
 
 			rc = LM_ResetAdapter(pDevice);
-printk(KERN_EMERG " The MSI support in this system is not functional.\n");
+printk(KERN_ALERT " The MSI support in this system is not functional.\n");
 
 			if (rc == LM_STATUS_SUCCESS)
 				rc = 0;
@@ -1804,14 +1816,11 @@ printk(KERN_EMERG " The MSI support in this system is not functional.\n");
 		}
 	}
 #endif
-printk(KERN_EMERG "init timer\n");
 
 	init_timer(&pUmDevice->timer);
 	pUmDevice->timer.expires = RUN_AT(pUmDevice->timer_interval);
 	pUmDevice->timer.data = (unsigned long)dev;
 	pUmDevice->timer.function = &bcm5700_timer;
-printk(KERN_EMERG "add timer\n");
-
 	add_timer(&pUmDevice->timer);
 
 	if (T3_ASIC_IS_5705_BEYOND(pDevice->ChipRevId)) {
@@ -1823,9 +1832,9 @@ printk(KERN_EMERG "add timer\n");
 	}
 
 	if(pDevice->Flags & USING_MSI_FLAG)
-		printk(KERN_EMERG "%s: Using Message Signaled Interrupt (MSI)  \n", dev->name);
+		printk(KERN_INFO "%s: Using Message Signaled Interrupt (MSI)  \n", dev->name);
 	else
-		printk(KERN_EMERG "%s: Using PCI INTX interrupt \n", dev->name);
+		printk(KERN_INFO "%s: Using PCI INTX interrupt \n", dev->name);
 
 	netif_start_queue(dev);
 
@@ -1871,7 +1880,7 @@ bcm5700_timer(unsigned long data)
 		return;
 
 	/* BCM4785: Flush posted writes from GbE to host memory. */
-	if (pDevice->Flags & SB_CORE_FLAG)
+	if (pDevice->Flags & FLUSH_POSTED_WRITE_FLAG)
 		REG_RD(pDevice, HostCoalesce.Mode);
 
 	if (atomic_read(&pUmDevice->intr_sem) || pUmDevice->suspended) {
@@ -2293,6 +2302,7 @@ bcm5700_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	}
 	pUmPacket = (PUM_PACKET) pPacket;
 	pUmPacket->skbuff = skb;
+	pUmDevice->stats.tx_bytes += skb->len; 
 
 	if (skb->ip_summed == CHECKSUM_HW) {
 		pPacket->Flags = SND_BD_FLAG_TCP_UDP_CKSUM;
@@ -2426,7 +2436,7 @@ bcm5700_poll(struct net_device *dev, int *budget)
 
 	BCM5700_LOCK(pUmDevice, flags);
 	/* BCM4785: Flush posted writes from GbE to host memory. */
-	if (pDevice->Flags & SB_CORE_FLAG)
+	if (pDevice->Flags & FLUSH_POSTED_WRITE_FLAG)
 		REG_RD(pDevice, HostCoalesce.Mode);
 	work_done = LM_ServiceRxPoll(pDevice, orig_budget);
 	*budget -= work_done;
@@ -2517,7 +2527,7 @@ bcm5700_interrupt(int irq, void *dev_instance, struct pt_regs *regs)
 	}
 
 	if (test_and_set_bit(0, (void*)&pUmDevice->interrupt)) {
-		printk(KERN_EMERG "%s: Duplicate entry of the interrupt handler\n",
+		printk(KERN_ERR "%s: Duplicate entry of the interrupt handler\n",
 			dev->name);
 		bcm5700_intr_unlock(pUmDevice);
 		handled = 0;
@@ -2525,7 +2535,7 @@ bcm5700_interrupt(int irq, void *dev_instance, struct pt_regs *regs)
 	}
 
 	/* BCM4785: Flush posted writes from GbE to host memory. */
-	if (pDevice->Flags & SB_CORE_FLAG)
+	if (pDevice->Flags & FLUSH_POSTED_WRITE_FLAG)
 		REG_RD(pDevice, HostCoalesce.Mode);
 
 	if ((pDevice->Flags & USING_MSI_FLAG) ||
@@ -2556,7 +2566,7 @@ bcm5700_interrupt(int irq, void *dev_instance, struct pt_regs *regs)
 
 				LM_ServiceInterrupts(pDevice);
 				/* BCM4785: Flush GbE posted writes to host memory. */
-				if (pDevice->Flags & SB_CORE_FLAG)
+				if (pDevice->Flags & FLUSH_POSTED_WRITE_FLAG)
 					MB_REG_RD(pDevice, Mailbox.Interrupt[0].Low);
 				newtag = pDevice->pStatusBlkVirt->StatusTag;
 				if ((newtag == oldtag) || (i > max_intr_loop)) {
@@ -2687,7 +2697,7 @@ bcm5700_close(struct net_device *dev)
 #ifdef BCM_WOL
 		if( enable_wol[pUmDevice->index] == 0 )
 #endif
-			printk(KERN_EMERG "%s: %s NIC Link is DOWN\n", bcm5700_driver, dev->name);
+			B57_INFO(("%s: %s NIC Link is DOWN\n", bcm5700_driver, dev->name));
 
 	if (tigon3_debug > 1)
 		printk(KERN_DEBUG "%s: Shutting down Tigon3\n",
@@ -2880,8 +2890,11 @@ bcm5700_get_stats(struct net_device *dev)
 		MM_GETSTATS(pStats->ifHCOutUcastPkts) +
 		MM_GETSTATS(pStats->ifHCOutMulticastPkts) +
 		MM_GETSTATS(pStats->ifHCOutBroadcastPkts);
-	p_netstats->rx_bytes = MM_GETSTATS(pStats->ifHCInOctets);
-	p_netstats->tx_bytes = MM_GETSTATS(pStats->ifHCOutOctets);
+	/* There counters seem to be innacurate. Use byte number accumulation 
+	   instead.
+	   p_netstats->rx_bytes = MM_GETSTATS(pStats->ifHCInOctets);
+	   p_netstats->tx_bytes = MM_GETSTATS(pStats->ifHCOutOctets);
+	*/
 	p_netstats->tx_errors =
 		MM_GETSTATS(pStats->dot3StatsInternalMacTransmitErrors) +
 		MM_GETSTATS(pStats->dot3StatsCarrierSenseErrors) +
@@ -3170,8 +3183,7 @@ static int netdev_ethtool_ioctl(struct net_device *dev, void *useraddr)
 				SUPPORTED_Autoneg);
 			ethcmd.supported |= SUPPORTED_FIBRE;
 			ethcmd.port = PORT_FIBRE;
-		}
-		else {
+		} else {
 			ethcmd.supported =
 				(SUPPORTED_10baseT_Half |
 				SUPPORTED_10baseT_Full |
@@ -3890,7 +3902,7 @@ static int netdev_ethtool_ioctl(struct net_device *dev, void *useraddr)
 		uint64_t tests[ETH_NUM_TESTS] = {0, 0, 0, 0, 0, 0};
 		LM_POWER_STATE old_power_level;
 
-		printk( KERN_EMERG "Performing ethtool test.\n"
+		printk( KERN_ALERT "Performing ethtool test.\n"
 		                   "This test will take a few seconds to complete.\n" );
 
 		if (mm_copy_from_user(&etest, useraddr, sizeof(etest)))
@@ -3997,7 +4009,7 @@ static int netdev_ethtool_ioctl(struct net_device *dev, void *useraddr)
 		if (edata.data) {
 			if (T3_ASIC_5714_FAMILY(pDevice->ChipRevId) &&
 			   (dev->mtu > 1500)) {
-				printk(KERN_EMERG "%s: Jumbo Frames and TSO cannot simultaneously be enabled. Jumbo Frames enabled. TSO disabled.\n", dev->name);
+				printk(KERN_ALERT "%s: Jumbo Frames and TSO cannot simultaneously be enabled. Jumbo Frames enabled. TSO disabled.\n", dev->name);
 			return -EINVAL;
 			} else {
 				dev->features |= NETIF_F_TSO;
@@ -4019,6 +4031,54 @@ static int netdev_ethtool_ioctl(struct net_device *dev, void *useraddr)
 #include <linux/iobuf.h>
 #endif
 
+#ifdef	BCMDBG
+STATIC void
+b57_dump(struct net_device *dev, struct bcmstrbuf *b)
+{
+	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
+	PLM_DEVICE_BLOCK pDevice = (PLM_DEVICE_BLOCK) pUmDevice;
+	struct net_device_stats *st;
+	char macaddr[32];
+
+        bcm_bprintf(b, "b57%d: %s %s version %s\n", pUmDevice->index,
+	            __DATE__, __TIME__, EPI_VERSION_STR);
+
+        bcm_bprintf(b, "dev 0x%x pdev 0x%x unit %d msglevel %d flags 0x%x boardflags 0x%x\n",
+	            (uint)dev, (uint)pDevice, pUmDevice->index, b57_msg_level,
+	            pDevice->Flags, pUmDevice->boardflags);
+        bcm_bprintf(b, "speed/duplex %d/%s promisc 0x%x loopbk %d advertise 0x%x\n",
+	            pDevice->LineSpeed,
+	            (pDevice->DuplexMode == LM_DUPLEX_MODE_FULL) ? "full" : "half",
+	            pDevice->ReceiveMask & LM_PROMISCUOUS_MODE,
+	            pDevice->LoopBackMode,
+	            pDevice->advertising);
+        bcm_bprintf(b, "allmulti %d qos %d phyaddr %d linkstat %d\n",
+	            pDevice->ReceiveMask & LM_ACCEPT_ALL_MULTICAST, pUmDevice->qos,
+	            pDevice->PhyAddr, pDevice->LinkStatus);
+	bcm_bprintf(b, "vendor 0x%x device 0x%x rev %d subsys vendor 0x%x subsys id 0x%x\n",
+	            pDevice->PciVendorId, pDevice->PciDeviceId, pDevice->PciRevId,
+	            pDevice->SubsystemVendorId, pDevice->SubsystemId);
+	bcm_bprintf(b, "MAC addr %s\n", bcm_ether_ntoa((struct ether_addr *)&pDevice->NodeAddress,
+	                                               macaddr));
+
+	if ((st = bcm5700_get_stats(dev)) != NULL) {
+		bcm_bprintf(b, "txframe %d txbyte %d txerror %d rxframe %d rxbyte %d rxerror %d\n",
+		            st->tx_packets, st->tx_bytes, st->tx_errors,
+		            st->rx_packets, st->rx_bytes, st->rx_errors);
+		bcm_bprintf(b, "multicast %d collisions %d tx_abort %d tx_carrier %d\n",
+		            st->multicast, st->collisions, st->tx_aborted_errors,
+		            st->tx_carrier_errors);
+		bcm_bprintf(b, "rx_length %d rx_over %d rx_frame %d rx_crc %d\n",
+		            st->rx_length_errors, st->rx_over_errors, st->rx_frame_errors,
+		            st->rx_crc_errors);
+	}
+	if (pDevice->Flags & ROBO_SWITCH_FLAG)
+		robo_dump_regs(pUmDevice->robo, b);
+
+	bcm_bprintf(b, "\n");
+}
+#endif	/* BCMDBG */
+
 /* Provide ioctl() calls to examine the MII xcvr state. */
 STATIC int bcm5700_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 {
@@ -4030,15 +4090,17 @@ STATIC int bcm5700_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 
 	switch(cmd) {
 #ifdef SIOCGMIIPHY
-	case SIOCGMIIPHY:
-#endif
-	case SIOCDEVPRIVATE:		/* Get the address of the PHY in use. */
+	case SIOCGMIIPHY:		/* Get the address of the PHY in use. */
+
 		data[0] = pDevice->PhyAddr;
+		return 0;
+#endif
 
 #ifdef SIOCGMIIREG
-	case SIOCGMIIREG:
-#endif
-	case SIOCDEVPRIVATE+1:		/* Read the specified MII register. */
+	case SIOCGMIIREG:		/* Read the specified MII register. */
+	{
+		uint32 savephyaddr = 0;
+
 		if (pDevice->TbiFlags & ENABLE_TBI_FLAG)
 			return -EOPNOTSUPP;
 
@@ -4046,19 +4108,64 @@ STATIC int bcm5700_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 		/* NIC may take more than 5 seconds to establish link */
 		if ((pUmDevice->delayed_link_ind > 0) &&
 			delay_link[pUmDevice->index]) {
-			return -EOPNOTSUPP;
+			return -EAGAIN;
 		}
 
 		BCM5700_PHY_LOCK(pUmDevice, flags);
-		LM_ReadPhy(pDevice, data[1] & 0x1f, (LM_UINT32 *) &value);
+		if (data[0] != 0xffff) {
+			savephyaddr = pDevice->PhyAddr;
+			pDevice->PhyAddr = data[0];
+		}
+		LM_ReadPhy(pDevice, data[1] & 0x1f, (LM_UINT32 *)&value);
+		if (data[0] != 0xffff)
+			pDevice->PhyAddr = savephyaddr;
 		BCM5700_PHY_UNLOCK(pUmDevice, flags);
 		data[3] = value & 0xffff;
 		return 0;
+	}
+#endif
+
+	case SIOCGETCPHYRD:		/* Read the specified MII register. */
+	case SIOCGETCPHYRD2:
+	{
+		int args[2];
+		uint32 savephyaddr = 0;
+
+		if (pDevice->TbiFlags & ENABLE_TBI_FLAG)
+			return -EOPNOTSUPP;
+
+		/* ifup only waits for 5 seconds for link up */
+		/* NIC may take more than 5 seconds to establish link */
+		if ((pUmDevice->delayed_link_ind > 0) &&
+			delay_link[pUmDevice->index]) {
+			return -EAGAIN;
+		}
+
+		if (mm_copy_from_user(&args, rq->ifr_data, sizeof(args)))
+			return -EFAULT;
+
+		BCM5700_PHY_LOCK(pUmDevice, flags);
+		if (cmd == SIOCGETCPHYRD2) {
+			savephyaddr = pDevice->PhyAddr;
+			pDevice->PhyAddr = (args[0] >> 16) & 0xffff;
+		}
+		LM_ReadPhy(pDevice, args[0] & 0xffff, (LM_UINT32 *)&value);
+		if (cmd == SIOCGETCPHYRD2)
+			pDevice->PhyAddr = savephyaddr;
+		BCM5700_PHY_UNLOCK(pUmDevice, flags);
+
+		args[1] = value & 0xffff;
+		if (mm_copy_to_user(rq->ifr_data, &args, sizeof(args)))
+			return -EFAULT;
+
+		return 0;
+	}
 
 #ifdef SIOCSMIIREG
-	case SIOCSMIIREG:
-#endif
-	case SIOCDEVPRIVATE+2:		/* Write the specified MII register */
+	case SIOCSMIIREG:		/* Write the specified MII register */
+	{
+		uint32 savephyaddr = 0;
+
 		if (!capable(CAP_NET_ADMIN))
 			return -EPERM;
 
@@ -4066,9 +4173,132 @@ STATIC int bcm5700_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 			return -EOPNOTSUPP;
 
 		BCM5700_PHY_LOCK(pUmDevice, flags);
+		if (data[0] != 0xffff) {
+			savephyaddr = pDevice->PhyAddr;
+			pDevice->PhyAddr = data[0];
+		}
 		LM_WritePhy(pDevice, data[1] & 0x1f, data[2]);
+		if (data[0] != 0xffff)
+			pDevice->PhyAddr = savephyaddr;
+		BCM5700_PHY_UNLOCK(pUmDevice, flags);
+		data[3] = 0;
+		return 0;
+	}
+#endif
+
+	case SIOCSETCPHYWR:		/* Write the specified MII register */
+	case SIOCSETCPHYWR2:
+	{
+		int args[2];
+		uint32 savephyaddr = 0;
+
+		if (!capable(CAP_NET_ADMIN))
+			return -EPERM;
+
+		if (pDevice->TbiFlags & ENABLE_TBI_FLAG)
+			return -EOPNOTSUPP;
+
+		if (mm_copy_from_user(&args, rq->ifr_data, sizeof(args)))
+			return -EFAULT;
+
+		BCM5700_PHY_LOCK(pUmDevice, flags);
+		if (cmd == SIOCSETCPHYWR2) {
+			savephyaddr = pDevice->PhyAddr;
+			pDevice->PhyAddr = (args[0] >> 16) & 0xffff;
+		}
+		LM_WritePhy(pDevice, args[0] & 0xffff, args[1]);
+		if (cmd == SIOCSETCPHYWR2)
+			pDevice->PhyAddr = savephyaddr;
 		BCM5700_PHY_UNLOCK(pUmDevice, flags);
 		return 0;
+	}
+
+	case SIOCGETCROBORD:		/* Read the specified ROBO register. */
+	{
+		int args[2];
+		robo_info_t *robo = (robo_info_t *)pUmDevice->robo;
+
+		if (((pDevice->Flags & ROBO_SWITCH_FLAG) == 0) || (robo == NULL))
+			return -ENXIO;
+
+		if (mm_copy_from_user(&args, rq->ifr_data, sizeof(args)))
+			return -EFAULT;
+
+		if (robo->ops->read_reg(robo, (args[0] >> 16) & 0xffff, args[0] & 0xffff, &value, 2))
+			return -EIO;
+
+		args[1] = value & 0xffff;
+		if (mm_copy_to_user(rq->ifr_data, &args, sizeof(args)))
+			return -EFAULT;
+
+		return 0;
+	}
+
+	case SIOCSETCROBOWR:		/* Write the specified ROBO register. */
+	{
+		int args[2];
+		robo_info_t *robo = (robo_info_t *)pUmDevice->robo;
+
+		if (!capable(CAP_NET_ADMIN))
+			return -EPERM;
+
+		if (((pDevice->Flags & ROBO_SWITCH_FLAG) == 0) || (robo == NULL))
+			return -ENXIO;
+
+		if (mm_copy_from_user(&args, rq->ifr_data, sizeof(args)))
+			return -EFAULT;
+
+		if (robo->ops->write_reg(robo, (args[0] >> 16) & 0xffff, args[0] & 0xffff,
+		                         &args[1], 2))
+			return -EIO;
+
+		return 0;
+	}
+
+	case SIOCSETCSETMSGLEVEL:
+		if (mm_copy_from_user(&value, rq->ifr_data, sizeof(value)))
+			return -EFAULT;
+
+		b57_msg_level = value;
+		printf("%s: msglevel set to 0x%x\n", __FUNCTION__, b57_msg_level);
+		return 0;
+
+	case SIOCSETCQOS:		/* Set the qos flag */
+		if (mm_copy_from_user(&value, rq->ifr_data, sizeof(value)))
+			return -EFAULT;
+
+		pUmDevice->qos = value;
+		B57_INFO(("Qos flag now: %d\n", pUmDevice->qos));
+		return 0;
+
+#ifdef BCMDBG
+	case SIOCGETCDUMP:
+	{
+		char *buf;
+
+		if ((buf = MALLOC(SB_OSH, 4096)) == NULL) {
+			B57_ERR(("%s: out of memory, malloced %d bytes\n", __FUNCTION__,
+			         MALLOCED(SB_OSH)));
+			return (-ENOMEM);
+		}
+
+		if (b57_msg_level & 0x10000)
+			bcmdumplog(buf, 4096);
+		else {
+			struct bcmstrbuf b;
+			bcm_binit(&b, buf, 4096);
+			b57_dump(dev, &b);
+		}
+		value = mm_copy_to_user(rq->ifr_data, buf, 4096);
+
+		MFREE(SB_OSH, buf, 4096);
+
+		if (value)
+			return -EFAULT;
+		else
+			return 0;
+	}
+#endif /* BCMDBG */
 
 #ifdef NICE_SUPPORT
 	case SIOCNICE:
@@ -4616,7 +4846,7 @@ STATIC int bcm5700_change_mtu(struct net_device *dev, int new_mtu)
 	   (dev->mtu > 1514) ) {
 		if (dev->features & NETIF_F_TSO) {
 			dev->features &= ~NETIF_F_TSO;
-			printk(KERN_EMERG "%s: TSO previously enabled. Jumbo Frames and TSO cannot simultaneously be enabled. Jumbo Frames enabled. TSO disabled.\n", dev->name);
+			printk(KERN_ALERT "%s: TSO previously enabled. Jumbo Frames and TSO cannot simultaneously be enabled. Jumbo Frames enabled. TSO disabled.\n", dev->name);
 		}
 	}
 #endif
@@ -4647,10 +4877,9 @@ bcm5700_probe(struct net_device *dev)
 	struct pci_dev *pdev = NULL;
 	struct pci_device_id *pci_tbl;
 	u16 ssvid, ssid;
-	printk(KERN_EMERG "PCI present?\n");
+
 	if ( ! pci_present())
 		return -ENODEV;
-	printk(KERN_EMERG "check for pci classes\n");
 
 	pci_tbl = bcm5700_pci_tbl;
 	while ((pdev = pci_find_class(PCI_CLASS_NETWORK_ETHERNET << 8, pdev))) {
@@ -4679,8 +4908,6 @@ bcm5700_probe(struct net_device *dev)
 		if (bcm5700_init_one(pdev, &pci_tbl[idx]) == 0)
 			cards_found++;
 	}
-	if (cards_found==0)
-	    printk(KERN_EMERG "no card detected!\n");
 
 	return cards_found ? 0 : -ENODEV;
 }
@@ -4688,7 +4915,6 @@ bcm5700_probe(struct net_device *dev)
 #ifdef MODULE
 int init_module(void)
 {
-	printk(KERN_EMERG "init bcm5700\n");
 	return bcm5700_probe(NULL);
 }
 
@@ -4790,21 +5016,42 @@ static struct pci_driver bcm5700_pci_driver = {
 	resume:		bcm5700_resume,
 };
 
+static int
+bcm5700_notify_reboot(struct notifier_block *this, unsigned long event, void *unused)
+{
+	switch (event) {
+	case SYS_HALT:
+	case SYS_POWER_OFF:
+	case SYS_RESTART:
+		break;
+	default:
+		return NOTIFY_DONE;
+	}
+
+	B57_INFO(("bcm5700 reboot notification\n"));
+	pci_unregister_driver(&bcm5700_pci_driver);
+	return NOTIFY_DONE;
+}
 
 static int __init bcm5700_init_module (void)
 {
+	if (msglevel != 0xdeadbeef) {
+		b57_msg_level = msglevel;
+		printf("%s: msglevel set to 0x%x\n", __FUNCTION__, b57_msg_level);
+	} else
+		b57_msg_level = B57_ERR_VAL;
+
 	return pci_module_init(&bcm5700_pci_driver);
 }
-
 
 static void __exit bcm5700_cleanup_module (void)
 {
 #ifdef BCM_PROC_FS
 	bcm5700_proc_remove_notifier();
 #endif
+	unregister_reboot_notifier(&bcm5700_reboot_notifier);
 	pci_unregister_driver(&bcm5700_pci_driver);
 }
-
 
 module_init(bcm5700_init_module);
 module_exit(bcm5700_cleanup_module);
@@ -4910,7 +5157,7 @@ MM_AllocateMemory(PLM_DEVICE_BLOCK pDevice, LM_UINT32 BlockSize,
 		goto MM_Alloc_error;
 	}
 
-	pvirt = kmalloc(BlockSize,GFP_ATOMIC);
+	pvirt = kmalloc(BlockSize, GFP_ATOMIC);
 	if (!pvirt) {
 		goto MM_Alloc_error;
 	}
@@ -5142,7 +5389,7 @@ MM_GetConfig(PLM_DEVICE_BLOCK pDevice)
 		if (T3_ASIC_5714_FAMILY(pDevice->ChipRevId) &&
 		   (dev->features & NETIF_F_TSO)) {
 				dev->features &= ~NETIF_F_TSO;
-				printk(KERN_EMERG "%s: TSO previously enabled. Jumbo Frames and TSO cannot simultaneously be enabled. Jumbo Frames enabled. TSO disabled.\n", dev->name);
+				printk(KERN_ALERT "%s: TSO previously enabled. Jumbo Frames and TSO cannot simultaneously be enabled. Jumbo Frames enabled. TSO disabled.\n", dev->name);
 		}
 #endif
 		pDevice->RxMtu = dev->mtu + 14;
@@ -5395,6 +5642,19 @@ MM_GetConfig(PLM_DEVICE_BLOCK pDevice)
     return LM_STATUS_SUCCESS;
 }
 
+/* From include/proto/ethernet.h */
+#define ETHER_TYPE_8021Q	0x8100		/* 802.1Q */
+
+/* From include/proto/vlan.h */
+#define VLAN_PRI_MASK		7	/* 3 bits of priority */
+#define VLAN_PRI_SHIFT		13
+
+/* Replace the priority in a vlan tag */
+#define	UPD_VLANTAG_PRIO(tag, prio) do { \
+	tag &= ~(VLAN_PRI_MASK << VLAN_PRI_SHIFT); \
+	tag |= prio << VLAN_PRI_SHIFT; \
+} while (0)
+
 LM_STATUS
 MM_IndicateRxPackets(PLM_DEVICE_BLOCK pDevice)
 {
@@ -5404,6 +5664,7 @@ MM_IndicateRxPackets(PLM_DEVICE_BLOCK pDevice)
 	struct sk_buff *skb;
 	int size;
 	int vlan_tag_size = 0;
+	uint16 dscp_prio;
 
 	if (pDevice->ReceiveMask & LM_KEEP_VLAN_TAG)
 		vlan_tag_size = 4;
@@ -5436,15 +5697,30 @@ MM_IndicateRxPackets(PLM_DEVICE_BLOCK pDevice)
 		skb = pUmPacket->skbuff;
 		skb_put(skb, size);
 		skb->pkt_type = 0;
+		/* Extract priority from payload and put it in skb->priority */
+		dscp_prio = 0;
+		if (pUmDevice->qos) {
+			uint rc;
+
+			rc = pktsetprio(skb, TRUE);
+			if (rc & (PKTPRIO_VDSCP | PKTPRIO_DSCP))
+				dscp_prio = rc & VLAN_PRI_MASK;
+			if (rc != 0)
+				B57_INFO(("pktsetprio returned 0x%x, skb->priority: %d\n",
+				          rc, skb->priority));
+		}
 		skb->protocol = eth_type_trans(skb, skb->dev);
 		if (size > pDevice->RxMtu) {
 			/* Make sure we have a valid VLAN tag */
-			if (htons(skb->protocol) != 0x8100) {
+			if (htons(skb->protocol) != ETHER_TYPE_8021Q) {
 				dev_kfree_skb_irq(skb);
 				pUmDevice->rx_misc_errors++;
 				goto drop_rx;
 			}
 		}
+
+		pUmDevice->stats.rx_bytes += skb->len;
+
 		if ((pPacket->Flags & RCV_BD_FLAG_TCP_UDP_CHKSUM_FIELD) &&
 			(pDevice->TaskToOffload &
 				LM_TASK_OFFLOAD_RX_TCP_CHECKSUM)) {
@@ -5471,19 +5747,22 @@ MM_IndicateRxPackets(PLM_DEVICE_BLOCK pDevice)
 			if (pPacket->Flags & RCV_BD_FLAG_VLAN_TAG) {
 				vlan_tag->signature = 0x7777;
 				vlan_tag->tag = pPacket->VlanTag;
-			}
-			else {
+				/* Override vlan priority with dscp priority */
+				if (dscp_prio)
+					UPD_VLANTAG_PRIO(vlan_tag->tag,  dscp_prio);
+			} else {
 				vlan_tag->signature = 0;
 			}
 			pUmDevice->nice_rx(skb, pUmDevice->nice_ctx);
-		}
-		else
+		} else
 #endif
 		{
 #ifdef BCM_VLAN
 			if (pUmDevice->vlgrp &&
 				(pPacket->Flags & RCV_BD_FLAG_VLAN_TAG)) {
-
+				/* Override vlan priority with dscp priority */
+				if (dscp_prio)
+					UPD_VLANTAG_PRIO(pPacket->VlanTag, dscp_prio);
 #ifdef BCM_NAPI_RXPOLL
 				vlan_hwaccel_receive_skb(skb, pUmDevice->vlgrp,
 					pPacket->VlanTag);
@@ -5491,8 +5770,7 @@ MM_IndicateRxPackets(PLM_DEVICE_BLOCK pDevice)
 				vlan_hwaccel_rx(skb, pUmDevice->vlgrp,
 					pPacket->VlanTag);
 #endif
-			}
-			else
+			} else
 #endif
 			{
 #ifdef BCM_WL_EMULATOR
@@ -5699,18 +5977,18 @@ MM_IndicateStatus(PLM_DEVICE_BLOCK pDevice, LM_STATUS Status)
 	if (pUmDevice->delayed_link_ind > 0) {
 		pUmDevice->delayed_link_ind = 0;
 		if (Status == LM_STATUS_LINK_DOWN) {
-			printk(KERN_EMERG "%s: %s NIC Link is DOWN\n", bcm5700_driver, dev->name);
+			B57_INFO(("%s: %s NIC Link is DOWN\n", bcm5700_driver, dev->name));
 		}
 		else if (Status == LM_STATUS_LINK_ACTIVE) {
-			printk(KERN_EMERG "%s: %s NIC Link is UP, ", bcm5700_driver, dev->name);
+			B57_INFO(("%s: %s NIC Link is UP, ", bcm5700_driver, dev->name));
 		}
 	}
 	else {
 		if (Status == LM_STATUS_LINK_DOWN) {
-			printk(KERN_EMERG "%s: %s NIC Link is Down\n", bcm5700_driver, dev->name);
+			B57_INFO(("%s: %s NIC Link is Down\n", bcm5700_driver, dev->name));
 		}
 		else if (Status == LM_STATUS_LINK_ACTIVE) {
-			printk(KERN_EMERG "%s: %s NIC Link is Up, ", bcm5700_driver, dev->name);
+			B57_INFO(("%s: %s NIC Link is Up, ", bcm5700_driver, dev->name));
 		}
 	}
 
@@ -5722,28 +6000,28 @@ MM_IndicateStatus(PLM_DEVICE_BLOCK pDevice, LM_STATUS Status)
 		else if (pDevice->LineSpeed == LM_LINE_SPEED_10MBPS)
 			speed = 10;
 
-		printk("%d Mbps ", speed);
+		B57_INFO(("%d Mbps ", speed));
 
 		if (pDevice->DuplexMode == LM_DUPLEX_MODE_FULL)
-			printk("full duplex");
+			B57_INFO(("full duplex"));
 		else
-			printk("half duplex");
+			B57_INFO(("half duplex"));
 
 		flow_control = pDevice->FlowControl &
 			(LM_FLOW_CONTROL_RECEIVE_PAUSE |
 			LM_FLOW_CONTROL_TRANSMIT_PAUSE);
 		if (flow_control) {
 			if (flow_control & LM_FLOW_CONTROL_RECEIVE_PAUSE) {
-				printk(", receive ");
+				B57_INFO((", receive "));
 				if (flow_control & LM_FLOW_CONTROL_TRANSMIT_PAUSE)
-					printk("& transmit ");
+					B57_INFO(("& transmit "));
 			}
 			else {
-				printk(", transmit ");
+				B57_INFO((", transmit "));
 			}
-			printk("flow control ON");
+			B57_INFO(("flow control ON"));
 		}
-		printk("\n");
+		B57_INFO(("\n"));
 	}
 	return LM_STATUS_SUCCESS;
 }

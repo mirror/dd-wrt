@@ -10,6 +10,8 @@
 /*                                                                            */
 /******************************************************************************/
 
+/* $Id$ */
+
 #ifndef MM_H
 #define MM_H
 
@@ -66,6 +68,7 @@
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/skbuff.h>
+#include <linux/reboot.h>
 #include <asm/processor.h>		/* Processor type for cache alignment. */
 #include <asm/bitops.h>
 #include <asm/io.h>
@@ -413,6 +416,11 @@ typedef struct _UM_DEVICE_BLOCK {
 	unsigned long rx_misc_errors;
 	uint64_t phy_crc_count;
 	unsigned int spurious_int;
+
+	void		*sbh;
+	unsigned long	boardflags;
+	void		*robo;
+	int		qos;
 } UM_DEVICE_BLOCK, *PUM_DEVICE_BLOCK;
 
 typedef struct _UM_PACKET {
@@ -602,13 +610,11 @@ static inline void MM_MapTxDma(PLM_DEVICE_BLOCK pDevice,
 #endif
 
 #define DbgPrint(fmt, arg...) printk(KERN_DEBUG fmt, ##arg)
-
 #if defined(CONFIG_X86)
 #define DbgBreakPoint() __asm__("int $129")
 #else
 #define DbgBreakPoint()
 #endif
-
 #define MM_Wait(time) udelay(time)
 
 #endif
