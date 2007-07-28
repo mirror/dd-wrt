@@ -399,6 +399,11 @@ LM_VOID LM_ReadPhy(PLM_DEVICE_BLOCK pDevice, LM_UINT32 PhyReg,
 LM_VOID LM_WritePhy(PLM_DEVICE_BLOCK pDevice, LM_UINT32 PhyReg,
     LM_UINT32 Data32);
 
+/* MII read/write functions to export to the robo support code */
+LM_UINT16 robo_miird(void *h, int phyadd, int regoff);
+void robo_miiwr(void *h, int phyadd, int regoff, LM_UINT16 value);
+
+
 LM_STATUS LM_EnableMacLoopBack(PLM_DEVICE_BLOCK pDevice);
 LM_STATUS LM_DisableMacLoopBack(PLM_DEVICE_BLOCK pDevice);
 LM_STATUS LM_EnablePhyLoopBack(PLM_DEVICE_BLOCK pDevice);
@@ -464,6 +469,15 @@ LM_STATUS LM_MbufWorkAround(PLM_DEVICE_BLOCK pDevice);
 LM_STATUS LM_Load5703DmaWFirmware(PLM_DEVICE_BLOCK pDevice);
 #endif
 
+/* Debugging support */
+
+extern int b57_msg_level;
+
+#define	B57_ERR_VAL	1
+#define	B57_INFO_VAL	2
+
+#define	B57_ERR(args)	do {if (b57_msg_level & B57_ERR_VAL) printf args;} while (0)
+#define	B57_INFO(args)	do {if (b57_msg_level & B57_INFO_VAL) printf args;} while (0)
 
 #endif /* LM_H */
 

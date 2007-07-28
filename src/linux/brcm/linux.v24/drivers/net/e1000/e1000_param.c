@@ -1,27 +1,27 @@
 /*******************************************************************************
 
-  
-  Copyright(c) 1999 - 2004 Intel Corporation. All rights reserved.
-  
-  This program is free software; you can redistribute it and/or modify it 
-  under the terms of the GNU General Public License as published by the Free 
-  Software Foundation; either version 2 of the License, or (at your option) 
-  any later version.
-  
-  This program is distributed in the hope that it will be useful, but WITHOUT 
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for 
+  Intel PRO/1000 Linux driver
+  Copyright(c) 1999 - 2006 Intel Corporation.
+
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
+
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
   more details.
-  
+
   You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc., 59 
-  Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-  
-  The full GNU General Public License is included in this distribution in the
-  file called LICENSE.
-  
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
   Contact Information:
   Linux NICS <linux.nics@intel.com>
+  e1000-devel Mailing List <e1000-devel@lists.sourceforge.net>
   Intel Corporation, 5200 N.E. Elam Young Parkway, Hillsboro, OR 97124-6497
 
 *******************************************************************************/
@@ -44,6 +44,7 @@
  */
 
 #define E1000_PARAM_INIT { [0 ... E1000_MAX_NIC] = OPTION_UNSET }
+#ifndef module_param_array
 /* Module Parameters are always initialized to -1, so that the driver
  * can tell the difference between no user specified value or the
  * user asking for the default value.
@@ -58,6 +59,13 @@
 	static const int __devinitdata X[E1000_MAX_NIC+1] = E1000_PARAM_INIT; \
 	MODULE_PARM(X, "1-" __MODULE_STRING(E1000_MAX_NIC) "i"); \
 	MODULE_PARM_DESC(X, desc);
+#else
+#define E1000_PARAM(X, desc) \
+	static int __devinitdata X[E1000_MAX_NIC+1] = E1000_PARAM_INIT; \
+	static int num_##X = 0; \
+	module_param_array_named(X, X, int, &num_##X, 0); \
+	MODULE_PARM_DESC(X, desc);
+#endif
 
 /* Transmit Descriptor Count
  *
@@ -66,7 +74,6 @@
  *
  * Default Value: 256
  */
-
 E1000_PARAM(TxDescriptors, "Number of transmit descriptors");
 
 /* Receive Descriptor Count
@@ -76,7 +83,6 @@ E1000_PARAM(TxDescriptors, "Number of transmit descriptors");
  *
  * Default Value: 256
  */
-
 E1000_PARAM(RxDescriptors, "Number of receive descriptors");
 
 /* User Specified Speed Override
@@ -89,7 +95,6 @@ E1000_PARAM(RxDescriptors, "Number of receive descriptors");
  *
  * Default Value: 0
  */
-
 E1000_PARAM(Speed, "Speed setting");
 
 /* User Specified Duplex Override
@@ -101,7 +106,6 @@ E1000_PARAM(Speed, "Speed setting");
  *
  * Default Value: 0
  */
-
 E1000_PARAM(Duplex, "Duplex setting");
 
 /* Auto-negotiation Advertisement Override
@@ -118,8 +122,9 @@ E1000_PARAM(Duplex, "Duplex setting");
  *
  * Default Value: 0x2F (copper); 0x20 (fiber)
  */
-
 E1000_PARAM(AutoNeg, "Advertised auto-negotiation setting");
+#define AUTONEG_ADV_DEFAULT  0x2F
+#define AUTONEG_ADV_MASK     0x2F
 
 /* User Specified Flow Control Override
  *
@@ -131,8 +136,8 @@ E1000_PARAM(AutoNeg, "Advertised auto-negotiation setting");
  *
  * Default Value: Read flow control settings from the EEPROM
  */
-
 E1000_PARAM(FlowControl, "Flow Control setting");
+#define FLOW_CONTROL_DEFAULT FLOW_CONTROL_FULL
 
 /* XsumRX - Receive Checksum Offload Enable/Disable
  *
@@ -143,77 +148,70 @@ E1000_PARAM(FlowControl, "Flow Control setting");
  *
  * Default Value: 1
  */
-
 E1000_PARAM(XsumRX, "Disable or enable Receive Checksum offload");
 
 /* Transmit Interrupt Delay in units of 1.024 microseconds
+ *  Tx interrupt delay needs to typically be set to something non zero
  *
  * Valid Range: 0-65535
- *
- * Default Value: 64
  */
-
 E1000_PARAM(TxIntDelay, "Transmit Interrupt Delay");
+#define DEFAULT_TIDV                   8
+#define MAX_TXDELAY               0xFFFF
+#define MIN_TXDELAY                    0
 
 /* Transmit Absolute Interrupt Delay in units of 1.024 microseconds
  *
  * Valid Range: 0-65535
- *
- * Default Value: 0
  */
-
 E1000_PARAM(TxAbsIntDelay, "Transmit Absolute Interrupt Delay");
+#define DEFAULT_TADV                  32
+#define MAX_TXABSDELAY            0xFFFF
+#define MIN_TXABSDELAY                 0
 
 /* Receive Interrupt Delay in units of 1.024 microseconds
+ *   hardware will likely hang if you set this to anything but zero.
  *
  * Valid Range: 0-65535
- *
- * Default Value: 0
  */
-
 E1000_PARAM(RxIntDelay, "Receive Interrupt Delay");
-
-/* Receive Absolute Interrupt Delay in units of 1.024 microseconds
- *
- * Valid Range: 0-65535
- *
- * Default Value: 128
- */
-
-E1000_PARAM(RxAbsIntDelay, "Receive Absolute Interrupt Delay");
-
-/* Interrupt Throttle Rate (interrupts/sec)
- *
- * Valid Range: 100-100000 (0=off, 1=dynamic)
- *
- * Default Value: 1
- */
-
-E1000_PARAM(InterruptThrottleRate, "Interrupt Throttling Rate");
-
-#define AUTONEG_ADV_DEFAULT  0x2F
-#define AUTONEG_ADV_MASK     0x2F
-#define FLOW_CONTROL_DEFAULT FLOW_CONTROL_FULL
-
 #define DEFAULT_RDTR                   0
 #define MAX_RXDELAY               0xFFFF
 #define MIN_RXDELAY                    0
 
-#define DEFAULT_RADV                 128
+/* Receive Absolute Interrupt Delay in units of 1.024 microseconds
+ *
+ * Valid Range: 0-65535
+ */
+E1000_PARAM(RxAbsIntDelay, "Receive Absolute Interrupt Delay");
+#define DEFAULT_RADV                   8
 #define MAX_RXABSDELAY            0xFFFF
 #define MIN_RXABSDELAY                 0
 
-#define DEFAULT_TIDV                  64
-#define MAX_TXDELAY               0xFFFF
-#define MIN_TXDELAY                    0
-
-#define DEFAULT_TADV                  64
-#define MAX_TXABSDELAY            0xFFFF
-#define MIN_TXABSDELAY                 0
-
-#define DEFAULT_ITR                 8000
+/* Interrupt Throttle Rate (interrupts/sec)
+ *
+ * Valid Range: 100-100000 (0=off, 1=dynamic, 3=dynamic conservative)
+ */
+E1000_PARAM(InterruptThrottleRate, "Interrupt Throttling Rate");
+#define DEFAULT_ITR                    3
 #define MAX_ITR                   100000
 #define MIN_ITR                      100
+
+/* Enable Smart Power Down of the PHY
+ *
+ * Valid Range: 0, 1
+ *
+ * Default Value: 0 (disabled)
+ */
+E1000_PARAM(SmartPowerDownEnable, "Enable PHY smart power down");
+
+/* Enable Kumeran Lock Loss workaround
+ *
+ * Valid Range: 0, 1
+ *
+ * Default Value: 1 (enabled)
+ */
+E1000_PARAM(KumeranLockLoss, "Enable Kumeran lock loss workaround");
 
 struct e1000_option {
 	enum { enable_option, range_option, list_option } type;
@@ -236,7 +234,7 @@ static int __devinit
 e1000_validate_option(int *value, struct e1000_option *opt,
 		struct e1000_adapter *adapter)
 {
-	if(*value == OPTION_UNSET) {
+	if (*value == OPTION_UNSET) {
 		*value = opt->def;
 		return 0;
 	}
@@ -253,7 +251,7 @@ e1000_validate_option(int *value, struct e1000_option *opt,
 		}
 		break;
 	case range_option:
-		if(*value >= opt->arg.r.min && *value <= opt->arg.r.max) {
+		if (*value >= opt->arg.r.min && *value <= opt->arg.r.max) {
 			DPRINTK(PROBE, INFO,
 					"%s set to %i\n", opt->name, *value);
 			return 0;
@@ -263,10 +261,10 @@ e1000_validate_option(int *value, struct e1000_option *opt,
 		int i;
 		struct e1000_opt_list *ent;
 
-		for(i = 0; i < opt->arg.l.nr; i++) {
+		for (i = 0; i < opt->arg.l.nr; i++) {
 			ent = &opt->arg.l.p[i];
-			if(*value == ent->i) {
-				if(ent->str[0] != '\0')
+			if (*value == ent->i) {
+				if (ent->str[0] != '\0')
 					DPRINTK(PROBE, INFO, "%s\n", ent->str);
 				return 0;
 			}
@@ -277,7 +275,7 @@ e1000_validate_option(int *value, struct e1000_option *opt,
 		BUG();
 	}
 
-	DPRINTK(PROBE, INFO, "Invalid %s specified (%i) %s\n",
+	DPRINTK(PROBE, INFO, "Invalid %s value specified (%i) %s\n",
 	       opt->name, *value, opt->err);
 	*value = opt->def;
 	return -1;
@@ -300,11 +298,13 @@ void __devinit
 e1000_check_options(struct e1000_adapter *adapter)
 {
 	int bd = adapter->bd_number;
-	if(bd >= E1000_MAX_NIC) {
+	if (bd >= E1000_MAX_NIC) {
 		DPRINTK(PROBE, NOTICE,
 		       "Warning: no configuration for board #%i\n", bd);
 		DPRINTK(PROBE, NOTICE, "Using defaults for all values\n");
+#ifndef module_param_array
 		bd = E1000_MAX_NIC;
+#endif
 	}
 
 	{ /* Transmit Descriptor Count */
@@ -316,15 +316,26 @@ e1000_check_options(struct e1000_adapter *adapter)
 			.def  = E1000_DEFAULT_TXD,
 			.arg  = { .r = { .min = E1000_MIN_TXD }}
 		};
-		struct e1000_desc_ring *tx_ring = &adapter->tx_ring;
+		struct e1000_tx_ring *tx_ring = adapter->tx_ring;
+		int i;
 		e1000_mac_type mac_type = adapter->hw.mac_type;
 		opt.arg.r.max = mac_type < e1000_82544 ?
 			E1000_MAX_TXD : E1000_MAX_82544_TXD;
 
+#ifdef module_param_array
+		if (num_TxDescriptors > bd) {
+#endif
 			tx_ring->count = TxDescriptors[bd];
 			e1000_validate_option(&tx_ring->count, &opt, adapter);
-			E1000_ROUNDUP(tx_ring->count, 
+			E1000_ROUNDUP(tx_ring->count,
 						REQ_TX_DESCRIPTOR_MULTIPLE);
+#ifdef module_param_array
+		} else {
+			tx_ring->count = opt.def;
+		}
+#endif
+		for (i = 0; i < adapter->num_tx_queues; i++)
+			tx_ring[i].count = tx_ring->count;
 	}
 	{ /* Receive Descriptor Count */
 		struct e1000_option opt = {
@@ -335,15 +346,26 @@ e1000_check_options(struct e1000_adapter *adapter)
 			.def  = E1000_DEFAULT_RXD,
 			.arg  = { .r = { .min = E1000_MIN_RXD }}
 		};
-		struct e1000_desc_ring *rx_ring = &adapter->rx_ring;
+		struct e1000_rx_ring *rx_ring = adapter->rx_ring;
+		int i;
 		e1000_mac_type mac_type = adapter->hw.mac_type;
 		opt.arg.r.max = mac_type < e1000_82544 ? E1000_MAX_RXD :
 			E1000_MAX_82544_RXD;
 
+#ifdef module_param_array
+		if (num_RxDescriptors > bd) {
+#endif
 			rx_ring->count = RxDescriptors[bd];
 			e1000_validate_option(&rx_ring->count, &opt, adapter);
-			E1000_ROUNDUP(rx_ring->count, 
+			E1000_ROUNDUP(rx_ring->count,
 						REQ_RX_DESCRIPTOR_MULTIPLE);
+#ifdef module_param_array
+		} else {
+			rx_ring->count = opt.def;
+		}
+#endif
+		for (i = 0; i < adapter->num_rx_queues; i++)
+			rx_ring[i].count = rx_ring->count;
 	}
 	{ /* Checksum Offload Enable/Disable */
 		struct e1000_option opt = {
@@ -353,31 +375,47 @@ e1000_check_options(struct e1000_adapter *adapter)
 			.def  = OPTION_ENABLED
 		};
 
+#ifdef module_param_array
+		if (num_XsumRX > bd) {
+#endif
 			int rx_csum = XsumRX[bd];
 			e1000_validate_option(&rx_csum, &opt, adapter);
 			adapter->rx_csum = rx_csum;
+#ifdef module_param_array
+		} else {
+			adapter->rx_csum = opt.def;
+		}
+#endif
 	}
 	{ /* Flow Control */
 
 		struct e1000_opt_list fc_list[] =
-			{{ e1000_fc_none,    "Flow Control Disabled" },
-			 { e1000_fc_rx_pause,"Flow Control Receive Only" },
-			 { e1000_fc_tx_pause,"Flow Control Transmit Only" },
-			 { e1000_fc_full,    "Flow Control Enabled" },
-			 { e1000_fc_default, "Flow Control Hardware Default" }};
+			{{ E1000_FC_NONE,    "Flow Control Disabled" },
+			 { E1000_FC_RX_PAUSE,"Flow Control Receive Only" },
+			 { E1000_FC_TX_PAUSE,"Flow Control Transmit Only" },
+			 { E1000_FC_FULL,    "Flow Control Enabled" },
+			 { E1000_FC_DEFAULT, "Flow Control Hardware Default" }};
 
 		struct e1000_option opt = {
 			.type = list_option,
 			.name = "Flow Control",
 			.err  = "reading default settings from EEPROM",
-			.def  = e1000_fc_default,
+			.def  = E1000_FC_DEFAULT,
 			.arg  = { .l = { .nr = ARRAY_SIZE(fc_list),
 					 .p = fc_list }}
 		};
 
+#ifdef module_param_array
+		if (num_FlowControl > bd) {
+#endif
 			int fc = FlowControl[bd];
 			e1000_validate_option(&fc, &opt, adapter);
 			adapter->hw.fc = adapter->hw.original_fc = fc;
+#ifdef module_param_array
+		} else {
+			adapter->hw.fc = adapter->hw.original_fc = opt.def;
+		}
+#endif
 	}
 	{ /* Transmit Interrupt Delay */
 		struct e1000_option opt = {
@@ -389,9 +427,17 @@ e1000_check_options(struct e1000_adapter *adapter)
 					 .max = MAX_TXDELAY }}
 		};
 
+#ifdef module_param_array
+		if (num_TxIntDelay > bd) {
+#endif
 			adapter->tx_int_delay = TxIntDelay[bd];
-			e1000_validate_option(&adapter->tx_int_delay, &opt, 
-								adapter);
+			e1000_validate_option(&adapter->tx_int_delay, &opt,
+			                      adapter);
+#ifdef module_param_array
+		} else {
+			adapter->tx_int_delay = opt.def;
+		}
+#endif
 	}
 	{ /* Transmit Absolute Interrupt Delay */
 		struct e1000_option opt = {
@@ -403,9 +449,17 @@ e1000_check_options(struct e1000_adapter *adapter)
 					 .max = MAX_TXABSDELAY }}
 		};
 
+#ifdef module_param_array
+		if (num_TxAbsIntDelay > bd) {
+#endif
 			adapter->tx_abs_int_delay = TxAbsIntDelay[bd];
-			e1000_validate_option(&adapter->tx_abs_int_delay, &opt, 
-								adapter);
+			e1000_validate_option(&adapter->tx_abs_int_delay, &opt,
+			                      adapter);
+#ifdef module_param_array
+		} else {
+			adapter->tx_abs_int_delay = opt.def;
+		}
+#endif
 	}
 	{ /* Receive Interrupt Delay */
 		struct e1000_option opt = {
@@ -417,9 +471,17 @@ e1000_check_options(struct e1000_adapter *adapter)
 					 .max = MAX_RXDELAY }}
 		};
 
+#ifdef module_param_array
+		if (num_RxIntDelay > bd) {
+#endif
 			adapter->rx_int_delay = RxIntDelay[bd];
-			e1000_validate_option(&adapter->rx_int_delay, &opt, 
-								adapter);
+			e1000_validate_option(&adapter->rx_int_delay, &opt,
+			                      adapter);
+#ifdef module_param_array
+		} else {
+			adapter->rx_int_delay = opt.def;
+		}
+#endif
 	}
 	{ /* Receive Absolute Interrupt Delay */
 		struct e1000_option opt = {
@@ -431,9 +493,17 @@ e1000_check_options(struct e1000_adapter *adapter)
 					 .max = MAX_RXABSDELAY }}
 		};
 
+#ifdef module_param_array
+		if (num_RxAbsIntDelay > bd) {
+#endif
 			adapter->rx_abs_int_delay = RxAbsIntDelay[bd];
-			e1000_validate_option(&adapter->rx_abs_int_delay, &opt, 
-								adapter);
+			e1000_validate_option(&adapter->rx_abs_int_delay, &opt,
+			                      adapter);
+#ifdef module_param_array
+		} else {
+			adapter->rx_abs_int_delay = opt.def;
+		}
+#endif
 	}
 	{ /* Interrupt Throttling Rate */
 		struct e1000_option opt = {
@@ -445,25 +515,86 @@ e1000_check_options(struct e1000_adapter *adapter)
 					 .max = MAX_ITR }}
 		};
 
+#ifdef module_param_array
+		if (num_InterruptThrottleRate > bd) {
+#endif
 			adapter->itr = InterruptThrottleRate[bd];
-			switch(adapter->itr) {
+			switch (adapter->itr) {
 			case 0:
-				DPRINTK(PROBE, INFO, "%s turned off\n", 
-					opt.name);
+				DPRINTK(PROBE, INFO, "%s turned off\n",
+				        opt.name);
 				break;
 			case 1:
-				DPRINTK(PROBE, INFO, "%s set to dynamic mode\n", 
+				DPRINTK(PROBE, INFO, "%s set to dynamic mode\n",
 					opt.name);
+				adapter->itr_setting = adapter->itr;
+				adapter->itr = 20000;
 				break;
-			case -1:
+			case 3:
+				DPRINTK(PROBE, INFO,
+				        "%s set to dynamic conservative mode\n",
+					opt.name);
+				adapter->itr_setting = adapter->itr;
+				adapter->itr = 20000;
+				break;
 			default:
-				e1000_validate_option(&adapter->itr, &opt, 
-					adapter);
+				e1000_validate_option(&adapter->itr, &opt,
+				        adapter);
+				/* save the setting, because the dynamic bits change itr */
+				/* clear the lower two bits because they are
+				 * used as control */
+				adapter->itr_setting = adapter->itr & ~3;
 				break;
 			}
+#ifdef module_param_array
+		} else {
+			adapter->itr_setting = opt.def;
+			adapter->itr = 20000;
+		}
+#endif
+	}
+	{ /* Smart Power Down */
+		struct e1000_option opt = {
+			.type = enable_option,
+			.name = "PHY Smart Power Down",
+			.err  = "defaulting to Disabled",
+			.def  = OPTION_DISABLED
+		};
+
+#ifdef module_param_array
+		if (num_SmartPowerDownEnable > bd) {
+#endif
+			int spd = SmartPowerDownEnable[bd];
+			e1000_validate_option(&spd, &opt, adapter);
+			adapter->smart_power_down = spd;
+#ifdef module_param_array
+		} else {
+			adapter->smart_power_down = opt.def;
+		}
+#endif
+	}
+	{ /* Kumeran Lock Loss Workaround */
+		struct e1000_option opt = {
+			.type = enable_option,
+			.name = "Kumeran Lock Loss Workaround",
+			.err  = "defaulting to Enabled",
+			.def  = OPTION_ENABLED
+		};
+
+#ifdef module_param_array
+		if (num_KumeranLockLoss > bd) {
+#endif
+			int kmrn_lock_loss = KumeranLockLoss[bd];
+			e1000_validate_option(&kmrn_lock_loss, &opt, adapter);
+			adapter->hw.kmrn_lock_loss_workaround_disabled = !kmrn_lock_loss;
+#ifdef module_param_array
+		} else {
+			adapter->hw.kmrn_lock_loss_workaround_disabled = !opt.def;
+		}
+#endif
 	}
 
-	switch(adapter->hw.media_type) {
+	switch (adapter->hw.media_type) {
 	case e1000_media_type_fiber:
 	case e1000_media_type_internal_serdes:
 		e1000_check_fiber_options(adapter);
@@ -487,18 +618,30 @@ static void __devinit
 e1000_check_fiber_options(struct e1000_adapter *adapter)
 {
 	int bd = adapter->bd_number;
+#ifndef module_param_array
 	bd = bd > E1000_MAX_NIC ? E1000_MAX_NIC : bd;
-	if((Speed[bd] != OPTION_UNSET)) {
+	if ((Speed[bd] != OPTION_UNSET)) {
+#else
+	if (num_Speed > bd) {
+#endif
 		DPRINTK(PROBE, INFO, "Speed not valid for fiber adapters, "
 		       "parameter ignored\n");
 	}
 
-	if((Duplex[bd] != OPTION_UNSET)) {
+#ifndef module_param_array
+	if ((Duplex[bd] != OPTION_UNSET)) {
+#else
+	if (num_Duplex > bd) {
+#endif
 		DPRINTK(PROBE, INFO, "Duplex not valid for fiber adapters, "
 		       "parameter ignored\n");
 	}
 
-	if((AutoNeg[bd] != OPTION_UNSET) && (AutoNeg[bd] != 0x20)) {
+#ifndef module_param_array
+	if ((AutoNeg[bd] != OPTION_UNSET) && (AutoNeg[bd] != 0x20)) {
+#else
+	if ((num_AutoNeg > bd) && (AutoNeg[bd] != 0x20)) {
+#endif
 		DPRINTK(PROBE, INFO, "AutoNeg other than 1000/Full is "
 				 "not valid for fiber adapters, "
 				 "parameter ignored\n");
@@ -515,9 +658,11 @@ e1000_check_fiber_options(struct e1000_adapter *adapter)
 static void __devinit
 e1000_check_copper_options(struct e1000_adapter *adapter)
 {
-	int speed, dplx;
+	int speed, dplx, an;
 	int bd = adapter->bd_number;
+#ifndef module_param_array
 	bd = bd > E1000_MAX_NIC ? E1000_MAX_NIC : bd;
+#endif
 
 	{ /* Speed */
 		struct e1000_opt_list speed_list[] = {{          0, "" },
@@ -534,8 +679,16 @@ e1000_check_copper_options(struct e1000_adapter *adapter)
 					 .p = speed_list }}
 		};
 
+#ifdef module_param_array
+		if (num_Speed > bd) {
+#endif
 			speed = Speed[bd];
 			e1000_validate_option(&speed, &opt, adapter);
+#ifdef module_param_array
+		} else {
+			speed = opt.def;
+		}
+#endif
 	}
 	{ /* Duplex */
 		struct e1000_opt_list dplx_list[] = {{           0, "" },
@@ -551,11 +704,29 @@ e1000_check_copper_options(struct e1000_adapter *adapter)
 					 .p = dplx_list }}
 		};
 
+		if (e1000_check_phy_reset_block(&adapter->hw)) {
+			DPRINTK(PROBE, INFO,
+				"Link active due to SoL/IDER Session. "
+			        "Speed/Duplex/AutoNeg parameter ignored.\n");
+			return;
+		}
+#ifdef module_param_array
+		if (num_Duplex > bd) {
+#endif
 			dplx = Duplex[bd];
 			e1000_validate_option(&dplx, &opt, adapter);
+#ifdef module_param_array
+		} else {
+			dplx = opt.def;
+		}
+#endif
 	}
 
-	if(AutoNeg[bd] != OPTION_UNSET && (speed != 0 || dplx != 0)) {
+#ifdef module_param_array
+	if ((num_AutoNeg > bd) && (speed != 0 || dplx != 0)) {
+#else
+	if (AutoNeg[bd] != OPTION_UNSET && (speed != 0 || dplx != 0)) {
+#endif
 		DPRINTK(PROBE, INFO,
 		       "AutoNeg specified along with Speed or Duplex, "
 		       "parameter ignored\n");
@@ -604,15 +775,27 @@ e1000_check_copper_options(struct e1000_adapter *adapter)
 					 .p = an_list }}
 		};
 
-		int an = AutoNeg[bd];
-		e1000_validate_option(&an, &opt, adapter);
+#ifdef module_param_array
+		if (num_AutoNeg > bd) {
+#endif
+			an = AutoNeg[bd];
+			e1000_validate_option(&an, &opt, adapter);
+#ifdef module_param_array
+		} else {
+			an = opt.def;
+		}
+#endif
 		adapter->hw.autoneg_advertised = an;
 	}
 
 	switch (speed + dplx) {
 	case 0:
 		adapter->hw.autoneg = adapter->fc_autoneg = 1;
-		if(Speed[bd] != OPTION_UNSET || Duplex[bd] != OPTION_UNSET)
+#ifdef module_param_array
+		if ((num_Speed > bd) && (speed != 0 || dplx != 0))
+#else
+		if (Speed[bd] != OPTION_UNSET || Duplex[bd] != OPTION_UNSET)
+#endif
 			DPRINTK(PROBE, INFO,
 			       "Speed and duplex autonegotiation enabled\n");
 		break;
@@ -677,22 +860,13 @@ e1000_check_copper_options(struct e1000_adapter *adapter)
 	case SPEED_1000:
 		DPRINTK(PROBE, INFO, "1000 Mbps Speed specified without "
 			"Duplex\n");
-		DPRINTK(PROBE, INFO,
-			"Using Autonegotiation at 1000 Mbps "
-			"Full Duplex only\n");
-		adapter->hw.autoneg = adapter->fc_autoneg = 1;
-		adapter->hw.autoneg_advertised = ADVERTISE_1000_FULL;
-		break;
+		goto full_duplex_only;
 	case SPEED_1000 + HALF_DUPLEX:
 		DPRINTK(PROBE, INFO,
 			"Half Duplex is not supported at 1000 Mbps\n");
-		DPRINTK(PROBE, INFO,
-			"Using Autonegotiation at 1000 Mbps "
-			"Full Duplex only\n");
-		adapter->hw.autoneg = adapter->fc_autoneg = 1;
-		adapter->hw.autoneg_advertised = ADVERTISE_1000_FULL;
-		break;
+		/* fall through */
 	case SPEED_1000 + FULL_DUPLEX:
+full_duplex_only:
 		DPRINTK(PROBE, INFO,
 		       "Using Autonegotiation at 1000 Mbps Full Duplex only\n");
 		adapter->hw.autoneg = adapter->fc_autoneg = 1;
