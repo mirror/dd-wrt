@@ -3018,7 +3018,7 @@ mptscsih_abort(Scsi_Cmnd * SCpnt)
 		return FAILED;
 
 	printk(KERN_WARNING MYNAM ": %s: >> Attempting task abort! (sc=%p)\n",
-	       hd->ioc->name, SCpnt));
+	       hd->ioc->name, SCpnt);
 
 	if (hd->timeouts < -1)
 		hd->timeouts++;
@@ -3156,7 +3156,7 @@ mptscsih_bus_reset(Scsi_Cmnd * SCpnt)
 	}
 
 	printk(KERN_WARNING MYNAM ": %s: >> Attempting bus reset! (sc=%p)\n",
-	       hd->ioc->name, SCpnt));
+	       hd->ioc->name, SCpnt);
 
 	if (hd->timeouts < -1)
 		hd->timeouts++;

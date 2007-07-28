@@ -11679,7 +11679,7 @@ SetOEMLCDData(SiS_Private *SiS_Pr, PSIS_HW_INFO HwInfo,
   UCHAR  *ROMAddr = HwInfo->pjVirtualRomBase;
   USHORT index,temp;
 
-  if((SiS_Pr->SiS_UseROM) {
+  if (SiS_Pr->SiS_UseROM) {
      if(!(ROMAddr[0x237] & 0x01)) return;
      if(!(ROMAddr[0x237] & 0x04)) return;
      /* No rom pointer in BIOS header! */

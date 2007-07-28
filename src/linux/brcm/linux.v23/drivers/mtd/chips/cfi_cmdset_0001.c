@@ -161,7 +161,7 @@ struct mtd_info *cfi_cmdset_0001(struct map_info *map, int primary)
 		}
 		
 		if (extp->MajorVersion != '1' || 
-		    (extp->MinorVersion < '0' || extp->MinorVersion > '3')) {
+		    (extp->MinorVersion < '0' || extp->MinorVersion > '4')) {
 			printk(KERN_WARNING "  Unknown IntelExt Extended Query "
 			       "version %c.%c.\n",  extp->MajorVersion,
 			       extp->MinorVersion);
