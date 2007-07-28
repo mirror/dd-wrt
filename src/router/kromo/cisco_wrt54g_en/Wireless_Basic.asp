@@ -228,8 +228,10 @@ addEvent(window, "unload", function() {
 					<dl>
 						<dt class="term"><% tran("wl_basic.label2"); %>:</dt>
 						<dd class="definition"><% tran("hwl_basic.right2"); %></dd>
+<% support_invmatch("ACK","1","<!--"); %>
 						<dt class="term"><% tran("hwl_basic.right3"); %></dt>
 						<dd class="definition"><% tran("hwl_basic.right4"); %></dd>
+<% support_invmatch("ACK","1","-->"); %>
 					</dl><br />
 					<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HWireless.asp')"><% tran("share.more"); %></a>
 				</div>
