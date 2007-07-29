@@ -320,6 +320,8 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
       wfputs (pattern, stream);	//jimmy, https, 8/4/2003
       len = 0;
     }
+    if (len>0)
+      wfputs (pattern, stream);	//jimmy, https, 8/4/2003
   free (pattern);
 }
 
