@@ -1062,7 +1062,8 @@ led_control (int type, int act)
     case ROUTER_BUFFALO_WLI_TX4_G54HP:
       diag_gpio = 0x17;
       bridge_gpio = 0x11;
-      ses_gpio = 0x16;  
+      ses_gpio = 0x16; 
+    break; 
     case ROUTER_BUFFALO_WZRRSG54:
       diag_gpio = 0x17;
       vpn_gpio = 0x11;
