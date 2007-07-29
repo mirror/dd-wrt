@@ -3952,8 +3952,13 @@ live_translate (char *tran)
   fp = getWebsFile (buf);
   if (fp == NULL)
     return "Error";
+  int start = ftell(fp);
+  int filelen = getWebsFileLen(buf);
   while (fgets (temp, 256, fp) != NULL)
     {
+    int pos = ftell(fp);
+    if ((pos-start)>filelen) 
+	break;
       if ((memcmp (temp, temp1, len)) == 0)
 	{
 	  temp2 = strtok (temp, "\"");
