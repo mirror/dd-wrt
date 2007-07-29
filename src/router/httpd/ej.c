@@ -117,7 +117,7 @@ call (char *func, webs_t stream)	//jimmy, https, 8/4/2003
   for (handler = &ej_handlers[0]; handler->pattern; handler++)
     {
       //if (strncmp(handler->pattern, func, strlen(handler->pattern)) == 0)
-      if (strcmp (handler->pattern, func) == 0)
+      if (*((long*)handler->pattern)==*((long*)func) && strcmp (handler->pattern, func) == 0)
 	handler->output (stream, argc, argv);
     }
 }
