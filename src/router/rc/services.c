@@ -761,8 +761,10 @@ start_single_service (void)
 	if (nvram_match ("wl0_mode", "sta")
 	    || nvram_match ("wl0_mode", "apsta")
 	    || nvram_match ("wl0_mode", "apstawet"))
-	  startstop ("httpd");	//httpd will not accept connection anymore on wan/lan ip changes changes 
+	  startstop ("httpd");	//httpd will not accept connection anymore on wan/lan ip changes changes
+#ifdef HAVE_MADWIFI	  
 	start_service("hostapdwan");
+#endif	
       }
     else if (!strcmp (service, "dhcp_release"))
       {
