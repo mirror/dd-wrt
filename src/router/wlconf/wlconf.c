@@ -664,7 +664,6 @@ wlconf(char *name)
 
 	/* Get MAC address */
 	(void) wl_hwaddr(name, (uchar *)buf);
-
 	/* Get instance */
 	WL_IOCTL(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
 	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
