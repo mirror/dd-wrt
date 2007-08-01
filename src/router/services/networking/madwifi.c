@@ -1027,7 +1027,7 @@ start_hostapdwan (void)
 
 }
 
-#define SIOCSSCANLIST  		(SIOCDEVPRIVATE+4)
+#define SIOCSSCANLIST  		(SIOCDEVPRIVATE+6)
 
 static void
 set_scanlist (char *dev, char *wif)
@@ -1812,7 +1812,8 @@ configure_single (int count)
       else
 	setupSupplicant (var);
     }
-/*  set_rate (dev);
+/*  set_rate (dev);*/
+ 
   m = default_get (wl, "ap");
   eval ("iwpriv",dev,"scandisable","0");
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
@@ -1829,8 +1830,12 @@ configure_single (int count)
 	  sprintf (freq, "%sM", ch);
 	  eval ("iwpriv",dev,"scandisable","1");
 	  eval ("iwconfig", dev, "freq", freq);
+	  sleep(1);
+	  eval("ifconfig",dev,"down");
+	  sleep(1);
+	  eval("ifconfig",dev,"up");
 	}
-    }*/
+    }
 }
 
 void
