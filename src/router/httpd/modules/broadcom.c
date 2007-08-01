@@ -2875,7 +2875,7 @@ struct gozila_action gozila_actions[] = {
   {"Networking", "del_bridgeif", "", 0, REFRESH, del_bridgeif},
   {"Networking", "save_networking", "", 5, REFRESH, save_networking},
 #endif
-  {"Wireless_Basic", "save", "", 5, REFRESH, wireless_save},
+  {"Wireless_Basic", "save", "", 1, REFRESH, wireless_save},
 #ifdef HAVE_WIVIZ
   {"Wiviz_Survey", "Set", "", 0, REFRESH, set_wiviz},
 #endif
