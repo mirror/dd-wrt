@@ -24,17 +24,6 @@ static void call (char *func, webs_t stream);
 
 #define LOG(a)			//fprintf(stderr,"%s\n",a);
 
-#if __BYTE_ORDER == __BIG_ENDIAN
-#define START_PATTERN '<%'	// big endian
-#define END_PATTERN '%>'	// big endian
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-#define START_PATTERN '%<'	// little endian
-#define END_PATTERN '>%'	// little endian
-#else
-#error "Could not determine the system's endianness"
-#endif
-
-
 
 char *
 uqstrchr (char *buf, char find)
@@ -53,27 +42,28 @@ uqstrchr (char *buf, char find)
 
 /* Look for unquoted character within a string */
 static char *
-unqstrstr (char *haystack, unsigned short needle)
+unqstrstr (char *haystack, char *needle)
 {
   char *cur;
   int q;
-  int haylen = strlen (haystack);
+  int needlelen = strlen(needle);
   for (cur = haystack, q = 0;
-       cur < &haystack[haylen] && !(!q
-				    && *((unsigned short *) cur) == needle);
+       cur < &haystack[strlen (haystack)] && !(!q
+					       && !strncmp (needle, cur,
+							    needlelen));
        cur++)
     {
       if (*cur == '"')
 	q ? q-- : q++;
     }
-  return (cur < &haystack[haylen]) ? cur : NULL;
+  return (cur < &haystack[strlen (haystack)]) ? cur : NULL;
 }
 
 static char *
 get_arg (char *args, char **next)
 {
   char *arg, *end;
-
+  
   /* Parse out arg, ... */
   if (!(end = uqstrchr (args, ',')))
     {
@@ -117,7 +107,7 @@ call (char *func, webs_t stream)	//jimmy, https, 8/4/2003
   for (handler = &ej_handlers[0]; handler->pattern; handler++)
     {
       //if (strncmp(handler->pattern, func, strlen(handler->pattern)) == 0)
-      if (*((long*)handler->pattern)==*((long*)func) && strcmp (handler->pattern, func) == 0)
+      if (strcmp (handler->pattern, func) == 0)
 	handler->output (stream, argc, argv);
     }
 }
@@ -150,18 +140,10 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 
       /* Look for <% ... */
 //      LOG("look start");
-      if (!asp && pattern[len - 1] == '{')
-	{
-	  pattern[len - 1] = '\0';
-	  wfputs (pattern, stream);	//flush
-	  pattern[0] = '{';
-	  len = 1;
-	  continue;
-	}
 
-      if (!asp && *pattern == '{')
+      if (!asp && pattern[0]=='{')
 	{
-
+	
 	  if (!strncmp (pattern, "{i}", len))
 	    {
 	      if (len == 3)
@@ -280,23 +262,18 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 	      continue;
 	    }
 	}
-      if (!asp)
+      if (!asp && !strncmp (pattern, "<%", len))
 	{
-	  if (len == 1 && *pattern == '<')
-	    continue;
-	  if (*((unsigned short *) &pattern[len - 2]) == START_PATTERN)
-	    {
-	      pattern[len - 2] = '\0';
-	      wfputs (pattern, stream);	//jimmy, https, 8/4/2003
-	      len = 0;
-	      asp = pattern;
-	      continue;
-	    }
-
+	  if (len == 2)
+	    asp = pattern + 2;
+	  continue;
 	}
-      else
+
+      /* Look for ... %> */
+//      LOG("look end");
+      if (asp)
 	{
-	  if (unqstrstr (asp, END_PATTERN))
+	  if (unqstrstr (asp, "%>"))
 	    {
 	      for (func = asp; func < &pattern[len]; func = end)
 		{
@@ -307,21 +284,22 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		  *end++ = '\0';
 
 		  /* Call function */
+		  cdebug (func);
 		  call (func, stream);
+		  cdebug (func);
 		}
 	      asp = NULL;
 	      len = 0;
 	    }
 	  continue;
 	}
-      continue;
+
     release:
       /* Release pattern space */
+      //fputs(pattern, stream);
       wfputs (pattern, stream);	//jimmy, https, 8/4/2003
       len = 0;
     }
-    if (len>0)
-      wfputs (pattern, stream);	//jimmy, https, 8/4/2003
   free (pattern);
 }
 
@@ -361,21 +339,21 @@ return buf;
 FILE *
 getWebsFile (char *path)
 {
-  cprintf ("opening %s\n", path);
+cprintf("opening %s\n",path);
   char *buf = NULL;
   int i = 0;
   while (websRomPageIndex[i].path != NULL)
     {
       if (!strcmp (websRomPageIndex[i].path, path))
 	{
-	  FILE *web = fopen ("/etc/www", "rb");
-	  fseek (web, websRomPageIndex[i].offset, 0);
-	  cprintf ("found %s\n", path);
+	  FILE *web=fopen("/etc/www","rb");
+	  fseek(web,websRomPageIndex[i].offset,0);
+cprintf("found %s\n",path);
 	  return web;
 	}
       i++;
     }
-  cprintf ("not found %s\n", path);
+cprintf("not found %s\n",path);
 
   return NULL;
 }
@@ -402,8 +380,8 @@ do_ej (char *path, webs_t stream)	// jimmy, https, 8/4/2003
 {
 
 //open file and read into memory
-  char *buffer = NULL;
-  FILE *fp = NULL;
+  char *buffer=NULL;
+  FILE  *fp = NULL;
 #ifdef HAVE_VFS
   entry *e;
 #endif
@@ -426,8 +404,8 @@ do_ej (char *path, webs_t stream)	// jimmy, https, 8/4/2003
 //fprintf(stderr,"try to find %s from %s\n",path,websRomPageIndex[i].path);
 	  if (!strcmp (websRomPageIndex[i].path, path))
 	    {
-	      fp = fopen ("/etc/www", "rb");
-	      fseek (fp, websRomPageIndex[i].offset, SEEK_SET);
+	      fp = fopen("/etc/www","rb");
+	      fseek(fp,websRomPageIndex[i].offset,SEEK_SET);   
 	      len = websRomPageIndex[i].size;
 	      break;
 	    }
@@ -447,8 +425,7 @@ do_ej (char *path, webs_t stream)	// jimmy, https, 8/4/2003
 	  fread (buffer, 1, len, in);
 	  buffer[len] = 0;
 	  fclose (in);
-	}
-      else
+	}else
 	{
 	  le = 1;
 	  buffer = (char *) malloc (len + 1);
