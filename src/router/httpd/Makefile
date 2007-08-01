@@ -109,6 +109,9 @@ endif
 ifeq ($(CONFIG_MAKSAT),y)
 CFLAGS += -DHAVE_MAKSAT
 endif
+ifeq ($(CONFIG_VILIM),y)
+CFLAGS += -DHAVE_VILIM
+endif
 ifeq ($(CONFIG_RSTATS),y)
 CFLAGS += -DHAVE_RSTATS
 endif
