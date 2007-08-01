@@ -119,10 +119,10 @@ function vifs_remove_submit(F,I) {
 }
 
 function submitcheck(F) {
-	if(F.wl_ssid)
-		if(F.wl_ssid.value == ""){
+	if(F.wl0_ssid)
+		if(F.wl0_ssid.value == ""){
 			alert(errmsg.err50);
-			F.wl_ssid.focus();
+			F.wl0_ssid.focus();
 			return false;
 		}
 	if(F.wl0_nbw)
