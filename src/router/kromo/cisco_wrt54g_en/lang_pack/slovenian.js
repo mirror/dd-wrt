@@ -1179,6 +1179,7 @@ service.ssh_key="Poobla¹èeni kljuèi";
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP gumb";
 service.radiooff_srv="Uporabi ta gumb za izkljuèitev radia";
+service.radiooff_bootoff="Ob zagonu izkljuèi radio";
 
 //ses.webservices ====> might replace the above radiooff_button
 service.ses_legend="SES / AOSS / EZ-SETUP gumb";
