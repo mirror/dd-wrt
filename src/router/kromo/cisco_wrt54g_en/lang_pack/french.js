@@ -1203,7 +1203,7 @@ service.ssh_key="Authorized Keys";
 //radiooff.webservices
 service.radiooff_legend="Fonction du Bouton SES / AOSS / EZ-SETUP";
 service.radiooff_srv="Gérer l\'émission radio";
-service.radiooff_bootoff="Turn radio off at boot";
+service.radiooff_bootoff="Désactiver le Wifi au démarrage";
 
 //ses.webservices
 service.ses_legend="Bouton SES (SecureEasySetup)";
