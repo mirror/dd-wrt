@@ -1186,6 +1186,7 @@ service.ssh_key="Authorized Keys";
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP Button";
 service.radiooff_srv="Use this button for turning off radio";
+service.radiooff_bootoff="Turn radio off at boot";
 
 //ses.webservices ====> might replace the above radiooff_button
 service.ses_legend="SES / AOSS Button";
