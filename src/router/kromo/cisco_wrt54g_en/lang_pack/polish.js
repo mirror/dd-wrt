@@ -738,6 +738,8 @@ service.ssh_password="Haslo login";
 service.ssh_key="Autoryzacja kluczy";
 service.radiooff_legend="Przycisk SES";
 service.radiooff_srv="Uzyj przycisku SES do wylaczenia WIFI";
+service.radiooff_bootoff="Turn radio off at boot";
+
 sipath.titl="SiPath Overview";
 sipath.phone_titl="Ksiazka tel";
 sipath.status_titl="Status";
