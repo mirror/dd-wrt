@@ -177,7 +177,9 @@ getbuttonstate ()
 static int mode = 0;		/* mode 1 : pushed */
 static int ses_mode = 0;	/* mode 1 : pushed */
 static int count = 0;
+#ifdef HAVE_RADIOOFF
 static int initses = 1;
+#endif
 
 static int brand;
 
@@ -262,7 +264,7 @@ period_check (int sig)
   unsigned int val = 0;
   
 #ifdef HAVE_RADIOOFF  
-  if (initses == 1 && nvram_match ("radiooff_boot_off", "1"))
+  if (initses == 1 && nvram_match ("radiooff_boot_off", "1") && nvram_match ("radiooff_button", "1"))
   	{
 	 ses_mode = 1;
 	 initses = 0;
