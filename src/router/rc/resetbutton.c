@@ -177,6 +177,7 @@ getbuttonstate ()
 static int mode = 0;		/* mode 1 : pushed */
 static int ses_mode = 0;	/* mode 1 : pushed */
 static int count = 0;
+static int initses = 1;
 
 static int brand;
 
@@ -259,6 +260,12 @@ period_check (int sig)
 {
   FILE *fp;
   unsigned int val = 0;
+  
+  if (initses == 1 && nvram_match ("radiooff_boot_off", "1"))
+  	{
+	 sesmode == 1;
+	 initses == 0;
+ 	}
 //      time_t t;
 
 //      time(&t);
