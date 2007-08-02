@@ -261,11 +261,14 @@ period_check (int sig)
   FILE *fp;
   unsigned int val = 0;
   
+#ifdef HAVE_RADIOOFF  
   if (initses == 1 && nvram_match ("radiooff_boot_off", "1"))
   	{
-	 sesmode == 1;
+	 ses_mode == 1;
 	 initses == 0;
  	}
+#endif
+
 //      time_t t;
 
 //      time(&t);
