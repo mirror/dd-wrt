@@ -264,8 +264,8 @@ period_check (int sig)
 #ifdef HAVE_RADIOOFF  
   if (initses == 1 && nvram_match ("radiooff_boot_off", "1"))
   	{
-	 ses_mode == 1;
-	 initses == 0;
+	 ses_mode = 1;
+	 initses = 0;
  	}
 #endif
 
