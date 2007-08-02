@@ -376,8 +376,8 @@ bmenu.adminFactory="Privzete nast.";
 bmenu.adminUpgrade="Posodabljanje";
 bmenu.adminBackup="Varnostna kop.";
 
-bmenu.services="Storitve"";
-bmenu.servicesServices="Storitve"";
+bmenu.services="Storitve";
+bmenu.servicesServices="Storitve";
 bmenu.servicesPppoesrv="PPPoE stre¾nik";
 bmenu.servicesPptp="PPTP";
 bmenu.servicesHotspot="Hotspot";
