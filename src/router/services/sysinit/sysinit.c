@@ -128,7 +128,7 @@ start_modules (void)
   runStartup ("/etc/config", ".startup");
 #ifndef HAVE_MADWIFI
 #ifdef HAVE_RADIOOFF
-  if (nvram_match ("radiooff_boot_off", "1"))
+  if (nvram_match ("radiooff_button", "1") && nvram_match ("radiooff_boot_off", "1"))
   	eval ("wl", "radio", "off");
 #endif
 #endif
