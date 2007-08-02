@@ -370,6 +370,27 @@ getAssocMAC (char *ifname,char *mac)
   return ret;
 }
 
+int is_ar5008(int devnum)
+{
+char sys[64];
+sprintf(sys,"/proc/sys/devv/wifi%d/mimo",devnum);
+FILE *tmp=fopen(sys,"rb");
+if (tmp==NULL)
+    return 0;
+fclose(tmp)
+return 1;
+}
+int is_wifar5008(char *dev)
+{
+char sys[64];
+sprintf(sys,"/proc/sys/devv/%s/mimo",dev);
+FILE *tmp=fopen(sys,"rb");
+if (tmp==NULL)
+    return 0;
+fclose(tmp)
+return 1;
+}
+
 static struct wifi_channels *
 list_channelsext (const char *ifname, int allchans)
 {
@@ -428,6 +449,18 @@ list_channelsext (const char *ifname, int allchans)
 	    continue;
 #endif
 	  if (nvram_invmatch (wl_mode, "a-only")
+	      && nvram_invmatch (wl_mode, "mixed"))
+	    continue;
+	}
+      if (IEEE80211_IS_CHAN_NA (&achans.ic_chans[i]))
+	{
+	  if (nvram_invmatch (wl_mode, "na-only")
+	      && nvram_invmatch (wl_mode, "mixed"))
+	    continue;
+	}
+      if (IEEE80211_IS_CHAN_NG (&achans.ic_chans[i]))
+	{
+	  if (nvram_invmatch (wl_mode, "ng-only")
 	      && nvram_invmatch (wl_mode, "mixed"))
 	    continue;
 	}
