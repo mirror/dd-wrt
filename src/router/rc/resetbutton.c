@@ -1,5 +1,3 @@
-/*
- */
 
 #include <stdio.h>
 #include <signal.h>
@@ -420,8 +418,13 @@ period_check (int sig)
 	  if (nvram_match ("radiooff_button", "1"))
 	    {
 	      eval ("wl", "radio", "on");
+#ifndef HAVE_BUFFALO
 	      syslog (LOG_DEBUG,
 		      "SES /AOSS /EZ-setup button: turning radio on\n");
+#else
+	      syslog (LOG_DEBUG,
+		      "AOSS button: turning radio on\n");
+#endif
 	    }
 #endif
 
@@ -446,8 +449,13 @@ period_check (int sig)
 	  if (nvram_match ("radiooff_button", "1"))
 	    {
 	      eval ("wl", "radio", "off");
+#ifndef HAVE_BUFFALO
 	      syslog (LOG_DEBUG,
 		      "SES /AOSS /EZ-setup button: turning radio off\n");
+#else
+	      syslog (LOG_DEBUG,
+		      "AOSS button: turning radio off\n");
+#endif
 	    }
 #endif
 //              led_control (LED_SES, LED_ON);          //enable white led
