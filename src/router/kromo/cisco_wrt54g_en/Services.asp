@@ -113,6 +113,7 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.setup.nstx_ipenable, 'idnstxip', <% nvram_else_match("nstx_ipenable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.nstxd_enable, 'idnstx', <% nvram_else_match("nstxd_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.oet1_en, 'idoet', <% nvram_else_match("oet1_en", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.radiooff_button, 'idradiooff', <% nvram_else_match("radiooff_button", "1", "1", "0"); %> == 1);
 		
 		if(document.setup.rstats_enable) {
 			rstats_select = '*user';
