@@ -373,21 +373,21 @@ getAssocMAC (char *ifname,char *mac)
 int is_ar5008(int devnum)
 {
 char sys[64];
-sprintf(sys,"/proc/sys/devv/wifi%d/mimo",devnum);
+sprintf(sys,"/proc/sys/dev/wifi%d/mimo",devnum);
 FILE *tmp=fopen(sys,"rb");
 if (tmp==NULL)
     return 0;
-fclose(tmp)
+fclose(tmp);
 return 1;
 }
 int is_wifar5008(char *dev)
 {
 char sys[64];
-sprintf(sys,"/proc/sys/devv/%s/mimo",dev);
+sprintf(sys,"/proc/sys/dev/%s/mimo",dev);
 FILE *tmp=fopen(sys,"rb");
 if (tmp==NULL)
     return 0;
-fclose(tmp)
+fclose(tmp);
 return 1;
 }
 
@@ -452,13 +452,13 @@ list_channelsext (const char *ifname, int allchans)
 	      && nvram_invmatch (wl_mode, "mixed"))
 	    continue;
 	}
-      if (IEEE80211_IS_CHAN_NA (&achans.ic_chans[i]))
+      if (IEEE80211_IS_CHAN_11NA (&achans.ic_chans[i]))
 	{
 	  if (nvram_invmatch (wl_mode, "na-only")
 	      && nvram_invmatch (wl_mode, "mixed"))
 	    continue;
 	}
-      if (IEEE80211_IS_CHAN_NG (&achans.ic_chans[i]))
+      if (IEEE80211_IS_CHAN_11NG (&achans.ic_chans[i]))
 	{
 	  if (nvram_invmatch (wl_mode, "ng-only")
 	      && nvram_invmatch (wl_mode, "mixed"))
