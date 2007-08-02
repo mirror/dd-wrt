@@ -1066,7 +1066,7 @@ service.vpn_clikey="Privater Client-Schlüssel";
 //radiooff.webservices
 service.radiooff_legend="SES Button";
 service.radiooff_srv="Nutze SES um Wireless abzuschalten";
-service.radiooff_bootoff="Turn radio off at boot";
+service.radiooff_bootoff="Schalte Wireless Initial aus";
 
 //sshd.webservices
 service.ssh_legend="Secure Shell";
