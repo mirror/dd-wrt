@@ -1195,6 +1195,15 @@ set_netmode (char *wif, char *dev, char *use)
 	eval ("iwpriv", use, "mode", "3");
 	eval ("iwpriv", use, "protmode", "0");
       }
+    if (!strcmp (netmode, "ng-only"))
+      {
+	eval ("iwpriv", use, "mode", "7");
+	eval ("iwpriv", use, "protmode", "0");
+      }
+    if (!strcmp (netmode, "na-only"))
+      {
+	eval ("iwpriv", use, "mode", "6");
+      }
     if (!strcmp (netmode, "bg-mixed"))
       {
 	eval ("iwpriv", use, "mode", "3");
