@@ -12,6 +12,6 @@ default_target:	$(OBJS)
 	$(CC) $(LDFLAGS) -o $(TOPDIR)/$(BINNAME) $(OBJS) $(LIBS)
 
 clean:
-	rm -f *.o *.d
+	rm -f *.[od]
 	rm -f *~
 	rm -f $(TOPDIR)/$(BINNAME)

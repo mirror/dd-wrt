@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: ifnet.c,v 1.37 2007/05/01 21:50:41 bernd67 Exp $
+ * $Id: ifnet.c,v 1.38 2007/05/13 22:23:55 bernd67 Exp $
  */
 
 #include "interfaces.h"
@@ -113,7 +113,6 @@ struct InterfaceInfo
 
 void WinSockPError(char *);
 char *StrError(unsigned int ErrNo);
-int inet_pton(int af, const char *src, void *dst);
 
 void ListInterfaces(void);
 int GetIntInfo(struct InterfaceInfo *Info, char *Name);
@@ -625,8 +624,6 @@ int add_hemu_if(struct olsr_if *iface)
 
   OLSR_PRINTF(1, "       Address:%s\n", olsr_ip_to_string(&iface->hemu_ip));
 
-  OLSR_PRINTF(1, "       Index:%d\n", iface->index);
-
   OLSR_PRINTF(1, "       NB! This is a emulated interface\n       that does not exist in the kernel!\n");
 
   ifp->int_next = ifnet;
@@ -638,9 +635,6 @@ int add_hemu_if(struct olsr_if *iface)
       COPY_IP(&olsr_cnf->main_addr, &iface->hemu_ip);
       OLSR_PRINTF(1, "New main address: %s\n", olsr_ip_to_string(&olsr_cnf->main_addr));
     }
-
-  /* setting the interfaces number*/
-  ifp->if_nr = iface->index;
 
   ifp->int_mtu = OLSR_DEFAULT_MTU;
 
@@ -983,8 +977,6 @@ int chk_if_up(struct olsr_if *IntConf, int DebugLevel __attribute__((unused)))
   New->int_name = olsr_malloc(strlen (IntConf->name) + 1, "Interface 2");
   strcpy(New->int_name, IntConf->name);
 
-  New->if_nr = IntConf->index;
-
   IsWlan = IsWireless(IntConf->name);
 
   if (IsWlan < 0)
@@ -1003,7 +995,7 @@ int chk_if_up(struct olsr_if *IntConf, int DebugLevel __attribute__((unused)))
   New->ttl_index = 0;
     
   OLSR_PRINTF(1, "\tInterface %s set up for use with index %d\n\n",
-              IntConf->name, New->if_nr);
+              IntConf->name, New->if_index);
       
   OLSR_PRINTF(1, "\tMTU: %d\n", New->int_mtu);
   OLSR_PRINTF(1, "\tAddress: %s\n", sockaddr_to_string(&New->int_addr));

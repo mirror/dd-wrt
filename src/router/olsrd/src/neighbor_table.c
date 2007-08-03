@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: neighbor_table.c,v 1.32 2007/04/25 22:08:09 bernd67 Exp $
+ * $Id: neighbor_table.c,v 1.33 2007/08/02 21:57:06 bernd67 Exp $
  */
 
 
@@ -89,8 +89,7 @@ olsr_delete_neighbor_2_pointer(struct neighbor_entry *neighbor, union olsr_ip_ad
   entry = neighbor->neighbor_2_list.next;
 
   while(entry != &neighbor->neighbor_2_list)
-    {
-      
+    {      
       if(COMP_IP(&entry->neighbor_2->neighbor_2_addr, address))
 	{
 	  /* Dequeue */
@@ -117,9 +116,8 @@ olsr_delete_neighbor_2_pointer(struct neighbor_entry *neighbor, union olsr_ip_ad
  *representing the two hop neighbor if found. NULL if not found.
  */
 struct neighbor_2_list_entry *
-olsr_lookup_my_neighbors(struct neighbor_entry *neighbor, union olsr_ip_addr *neighbor_main_address)
+olsr_lookup_my_neighbors(const struct neighbor_entry *neighbor, const union olsr_ip_addr *neighbor_main_address)
 {
-  
   struct neighbor_2_list_entry *entry;
   
   for(entry = neighbor->neighbor_2_list.next;
@@ -147,7 +145,7 @@ olsr_lookup_my_neighbors(struct neighbor_entry *neighbor, union olsr_ip_addr *ne
  */
 
 int
-olsr_delete_neighbor_table(union olsr_ip_addr *neighbor_addr)
+olsr_delete_neighbor_table(const union olsr_ip_addr *neighbor_addr)
 {  
   struct  neighbor_2_list_entry *two_hop_list, *two_hop_to_delete;
   olsr_u32_t                    hash;
@@ -178,9 +176,7 @@ olsr_delete_neighbor_table(union olsr_ip_addr *neighbor_addr)
 
   while(two_hop_list != &entry->neighbor_2_list)
     {
-      struct  neighbor_2_entry *two_hop_entry;
-
-      two_hop_entry = two_hop_list->neighbor_2;
+      struct neighbor_2_entry *two_hop_entry = two_hop_list->neighbor_2;
       
       two_hop_entry->neighbor_2_pointer--;
 
@@ -223,7 +219,7 @@ olsr_delete_neighbor_table(union olsr_ip_addr *neighbor_addr)
  *@return 0 if neighbor already exists 1 if inserted
  */
 struct neighbor_entry *
-olsr_insert_neighbor_table(union olsr_ip_addr *main_addr)
+olsr_insert_neighbor_table(const union olsr_ip_addr *main_addr)
 {
   olsr_u32_t             hash;
   struct neighbor_entry  *new_neigh;
@@ -273,35 +269,15 @@ olsr_insert_neighbor_table(union olsr_ip_addr *main_addr)
  *address. NULL if not found.
  */
 struct neighbor_entry *
-olsr_lookup_neighbor_table(union olsr_ip_addr *dst)
+olsr_lookup_neighbor_table(const union olsr_ip_addr *dst)
 {
-  struct neighbor_entry  *entry;
-  olsr_u32_t             hash;
-  union olsr_ip_addr     *tmp_ip;
-
   /*
    *Find main address of node
    */
-  if((tmp_ip = mid_lookup_main_addr(dst)) != NULL)
+  union olsr_ip_addr *tmp_ip = mid_lookup_main_addr(dst);
+  if(tmp_ip != NULL)
     dst = tmp_ip;
-  
-  hash = olsr_hashing(dst);
-
-  
-  //printf("\nLookup %s\n", olsr_ip_to_string(dst));
-  for(entry = neighbortable[hash].next;
-      entry != &neighbortable[hash];
-      entry = entry->next)
-    {
-      //printf("Checking %s\n", olsr_ip_to_string(&neighbor_table_tmp->neighbor_main_addr));
-      if(COMP_IP(&entry->neighbor_main_addr, dst))
-	return entry;
-      
-    }
-  //printf("NOPE\n\n");
-
-  return NULL;
-
+  return olsr_lookup_neighbor_table_alias(dst);
 }
 
 
@@ -314,13 +290,10 @@ olsr_lookup_neighbor_table(union olsr_ip_addr *dst)
  *address. NULL if not found.
  */
 struct neighbor_entry *
-olsr_lookup_neighbor_table_alias(union olsr_ip_addr *dst)
+olsr_lookup_neighbor_table_alias(const union olsr_ip_addr *dst)
 {
   struct neighbor_entry  *entry;
-  olsr_u32_t             hash;
-  
-  hash = olsr_hashing(dst);
-
+  olsr_u32_t             hash = olsr_hashing(dst);
   
   //printf("\nLookup %s\n", olsr_ip_to_string(dst));
   for(entry = neighbortable[hash].next;
@@ -341,13 +314,13 @@ olsr_lookup_neighbor_table_alias(union olsr_ip_addr *dst)
 
 
 int
-update_neighbor_status(struct neighbor_entry *entry, int link)
+update_neighbor_status(struct neighbor_entry *entry, int lnk)
 {
   /*
    * Update neighbor entry
    */
  
-  if(link == SYM_LINK)
+  if(lnk == SYM_LINK)
     {
       /* N_status is set to SYM */
       if(entry->status == NOT_SYM)
@@ -397,9 +370,7 @@ update_neighbor_status(struct neighbor_entry *entry, int link)
 void
 olsr_time_out_two_hop_neighbors(struct neighbor_entry  *neighbor)
 {
-  struct neighbor_2_list_entry *two_hop_list;
-
-  two_hop_list = neighbor->neighbor_2_list.next;
+  struct neighbor_2_list_entry *two_hop_list = neighbor->neighbor_2_list.next;
 
   while(two_hop_list != &neighbor->neighbor_2_list)
     {
@@ -414,7 +385,7 @@ olsr_time_out_two_hop_neighbors(struct neighbor_entry  *neighbor)
 	  if(two_hop_entry->neighbor_2_pointer < 1)
 	    {
 	      DEQUEUE_ELEM(two_hop_entry);
-	      free((void *)two_hop_entry);
+	      free(two_hop_entry);
 	    }
 	  
 	  two_hop_to_delete = two_hop_list;
@@ -439,12 +410,12 @@ olsr_time_out_two_hop_neighbors(struct neighbor_entry  *neighbor)
 void
 olsr_time_out_neighborhood_tables(void)
 {
-  olsr_u8_t index;
+  int idx;
   
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
       struct neighbor_entry *entry;
-      for(entry = neighbortable[index].next; entry != &neighbortable[index]; entry = entry->next)
+      for(entry = neighbortable[idx].next; entry != &neighbortable[idx]; entry = entry->next)
 	{	  
 	  olsr_time_out_two_hop_neighbors(entry);
 	}
@@ -485,11 +456,11 @@ olsr_print_neighbor_table(void)
       struct neighbor_entry *neigh;
       for(neigh = neighbortable[i].next; neigh != &neighbortable[i]; neigh = neigh->next)
 	{
-	  struct link_entry *link = get_best_link_to_neighbor(&neigh->neighbor_main_addr);
-	  if(link)
+	  struct link_entry *lnk = get_best_link_to_neighbor(&neigh->neighbor_main_addr);
+	  if(lnk)
             {
-              double best_lq = link->neigh_link_quality;
-              double inv_best_lq = link->loss_link_quality;
+              const double best_lq = lnk->neigh_link_quality;
+              const double inv_best_lq = lnk->loss_link_quality;
 
               OLSR_PRINTF(1, fstr, olsr_ip_to_string(&neigh->neighbor_main_addr),
                           inv_best_lq, best_lq,
@@ -501,13 +472,3 @@ olsr_print_neighbor_table(void)
         }
     }
 }
-
-
-
-
-
-
-
-
-
-

@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: test.c,v 1.1 2005/04/12 17:17:25 tlopatic Exp $
+ * $Id: test.c,v 1.2 2007/07/15 17:48:55 bernd67 Exp $
  */
 
 #include "src/link.h"
@@ -54,7 +54,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void sigHand(int sig)
+static void sigHand(int sig) __attribute__((noreturn));
+static void sigHand(int sig __attribute__((unused)))
 {
   httpShutdown();
   exit(0);

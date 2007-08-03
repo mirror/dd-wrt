@@ -8,9 +8,9 @@ EXENAME = olsrd.exe
 SRCS +=		$(wildcard src/win32/*.c)
 HDRS +=		$(wildcard src/win32/*.h)
 
-DEFINES +=	-DWIN32 -D_WIN32_WINNT=0x0600
+CPPFLAGS +=	-DWIN32 -D_WIN32_WINNT=0x0600
 LIBS +=		-mno-cygwin -lws2_32 -liphlpapi
-INCLUDES += 	-I$(TOPDIR)/src/win32
+CPPFLAGS += 	-I$(TOPDIR)/src/win32
 CFLAGS +=	-mno-cygwin
 
 PLUGIN_FULLNAME ?= $(PLUGIN_NAME).dll

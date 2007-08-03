@@ -33,7 +33,7 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: olsrd_plugin.c,v 1.11 2007/04/20 13:46:03 bernd67 Exp $
+ * $Id: olsrd_plugin.c,v 1.13 2007/07/15 21:47:17 bernd67 Exp $
  */
 
 
@@ -48,32 +48,26 @@
 #define PLUGIN_VERSION "0.5"
 #define PLUGIN_AUTHOR   "Andreas Tønnesen"
 #define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION " by " PLUGIN_AUTHOR
+#define PLUGIN_INTERFACE_VERSION 5
 
-
-static void __attribute__ ((constructor)) 
-my_init(void);
-
-static void __attribute__ ((destructor)) 
-my_fini(void);
-
+static void my_init(void) __attribute__ ((constructor));
+static void my_fini(void) __attribute__ ((destructor));
 
 /*
  * Defines the version of the plugin interface that is used
  * THIS IS NOT THE VERSION OF YOUR PLUGIN!
  * Do not alter unless you know what you are doing!
  */
-int 
-olsrd_plugin_interface_version(void)
+int olsrd_plugin_interface_version(void)
 {
-  return OLSRD_PLUGIN_INTERFACE_VERSION;
+  return PLUGIN_INTERFACE_VERSION;
 }
 
 
 /**
  *Constructor
  */
-static void
-my_init(void)
+static void my_init(void)
 {
   /* Print plugin info to stdout */
   /* We cannot use olsr_printf yet! */
@@ -84,8 +78,7 @@ my_init(void)
 /**
  *Destructor
  */
-static void
-my_fini(void)
+static void my_fini(void)
 {
 
   /* Calls the destruction function
@@ -97,21 +90,25 @@ my_fini(void)
   secure_plugin_exit();
 }
 
-
-int
-olsrd_plugin_register_param(char *key, char *value)
+static int store_string(const char *value, void *data)
 {
-  if(!strcmp(key, "Keyfile"))
-    {
-      strncpy(keyfile, value, FILENAME_MAX);
-    }
-
-  return 1;
+  char *str = data;
+  snprintf(str, FILENAME_MAX+1, "%s", value);
+  return 0;
 }
 
 
-int
-olsrd_plugin_init(void) {
+static const struct olsrd_plugin_parameters plugin_parameters[] = {
+    { .name = "keyfile", .set_plugin_parameter = &store_string, .data = keyfile },
+};
+
+void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size)
+{
+    *params = plugin_parameters;
+    *size = sizeof(plugin_parameters)/sizeof(*plugin_parameters);
+}
+
+int olsrd_plugin_init(void) {
   /* Calls the initialization function
    * olsr_plugin_init()
    * This function should be present in your

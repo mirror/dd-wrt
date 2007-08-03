@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: lq_mpr.c,v 1.12 2007/02/10 19:27:32 bernd67 Exp $
+ * $Id: lq_mpr.c,v 1.13 2007/08/02 22:07:19 bernd67 Exp $
  */
 
 #include "defs.h"
@@ -54,7 +54,6 @@ void olsr_calculate_lq_mpr(void)
   struct neighbor_entry *neigh;
   double best, best_1hop;
   olsr_bool mpr_changes = OLSR_FALSE;
-  struct link_entry *link;
 
   for(i = 0; i < HASHSIZE; i++)
     {
@@ -108,12 +107,12 @@ void olsr_calculate_lq_mpr(void)
 
               // determine the link quality of the direct link
 
-              link = get_best_link_to_neighbor(&neigh->neighbor_main_addr);
+              struct link_entry *lnk = get_best_link_to_neighbor(&neigh->neighbor_main_addr);
 
-	      if(!link)
+	      if (!lnk)
 		continue;
 
-              best_1hop = link->loss_link_quality * link->neigh_link_quality;
+              best_1hop = lnk->loss_link_quality * lnk->neigh_link_quality;
 
               // see wether we find a better route via an MPR
 

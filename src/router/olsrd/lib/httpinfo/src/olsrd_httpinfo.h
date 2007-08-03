@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_httpinfo.h,v 1.29 2007/04/20 14:06:18 bernd67 Exp $
+ * $Id: olsrd_httpinfo.h,v 1.30 2007/07/15 19:29:38 bernd67 Exp $
  */
 
 /*
@@ -47,6 +47,7 @@
 #define _OLSRD_HTTP_INFO
 
 #include "olsrd_plugin.h"
+#include "plugin_util.h"
 
 
 #define HTTP_VERSION "HTTP/1.1"
@@ -61,31 +62,35 @@
 #define HTTP_404_MSG "<html><h1>404 - ERROR, no such file</h1><hr>This server does not support file requests!<br><br><i>" PLUGIN_NAME " version " PLUGIN_VERSION  "</i></html>"
 
 
-typedef enum
-  {
+typedef enum {
     HTTP_BAD_REQ,
     HTTP_BAD_FILE,
     HTTP_OK
-  }http_header_type;
+} http_header_type;
 
 
-struct http_stats
-{
-  olsr_u32_t ok_hits;
-  olsr_u32_t dyn_hits;
-  olsr_u32_t err_hits;
-  olsr_u32_t ill_hits;
+struct http_stats {
+    olsr_u32_t ok_hits;
+    olsr_u32_t dyn_hits;
+    olsr_u32_t err_hits;
+    olsr_u32_t ill_hits;
 };
-
 
 extern struct olsrd_config *olsr_cfg;
 
-
-char *
-olsr_netmask_to_string(union hna_netmask *);
-
 /* Destructor function */
-void
-olsr_plugin_exit(void);
+void olsr_plugin_exit(void);
+void olsr_plugin_exit(void);
+void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size);
+
 
 #endif
+
+/*
+ * Local Variables:
+ * mode: c
+ * style: linux
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */

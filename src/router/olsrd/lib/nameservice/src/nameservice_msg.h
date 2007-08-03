@@ -29,7 +29,7 @@
  *
  */
 
-/* $Id: nameservice_msg.h,v 1.7 2007/02/04 21:11:48 bernd67 Exp $ */
+/* $Id: nameservice_msg.h,v 1.8 2007/07/02 10:59:12 bernd67 Exp $ */
 
 /*
  * Dynamic linked library for UniK OLSRd
@@ -43,6 +43,7 @@ typedef enum {
 	NAME_HOST = 0,
 	NAME_FORWARDER = 1,
 	NAME_SERVICE = 2,
+	NAME_LATLON = 3,
 } NAME_TYPE;
 
 /**
@@ -53,8 +54,8 @@ struct name
 {
 	olsr_u16_t		type;
 	olsr_u16_t		len;	// length of the name
-    // the ip of the hostname, or the ip of the dns-server
-    // ip is irrelevant for services
+	// the ip of the hostname, or the ip of the dns-server
+	// ip is irrelevant for services
 	union olsr_ip_addr	ip;
 	/*
 	 * name or service is written in plain text after this struct and padded to 4 byte

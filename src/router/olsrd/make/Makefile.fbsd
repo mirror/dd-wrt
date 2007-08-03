@@ -14,15 +14,15 @@ HDRS +=		$(wildcard src/bsd/*.h) $(wildcard src/unix/*.h)
 
 LIBS =
 
-CFLAGS +=	-DOLSRD_GLOBAL_CONF_FILE=\"$(CFGFILE)\"
+CPPFLAGS +=	-DOLSRD_GLOBAL_CONF_FILE=\"$(CFGFILE)\"
 
 ifdef NO_80211
-CFLAGS += -DFBSD_NO_80211=1
+CPPFLAGS +=	-DFBSD_NO_80211=1
 endif
 
 ifdef LIBNET
 
-CFLAGS +=	-DSPOOF -I$(DESTDIR)/include
+CPPFLAGS +=	-DSPOOF -I$(DESTDIR)/include
 LIBS +=		-L$(DESTDIR)/lib -lnet
 
 endif

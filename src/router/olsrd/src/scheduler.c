@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: scheduler.c,v 1.39 2007/04/25 22:08:16 bernd67 Exp $
+ * $Id: scheduler.c,v 1.41 2007/08/02 12:24:37 bernd67 Exp $
  */
 
 
@@ -61,8 +61,6 @@ extern olsr_bool olsr_win32_end_flag;
 clock_t now_times;              /* current idea of times(2) reported uptime */
 struct timeval now;		/* current idea of time */
 struct tm *nowtm;		/* current idea of time (in tm) */
-
-static float pollrate;
 
 /* Lists */
 static struct timeout_entry *timeout_functions;
@@ -118,7 +116,7 @@ scheduler(void)
 
   struct interface *ifn;
 
-  /* Global buffer for times(2) calls */
+  /* Global buffer for times(2) calls. Do not remove - at least OpenBSD needs it. */
   struct tms tms_buf;
  
   link_changes = OLSR_FALSE;
@@ -126,13 +124,12 @@ scheduler(void)
   if(olsr_cnf->lq_level > 1 && olsr_cnf->lq_dinter > 0.0)
     olsr_register_scheduler_event(trigger_dijkstra, NULL, olsr_cnf->lq_dinter, 0, NULL);
 
-  pollrate = olsr_cnf->pollrate;
-  interval_usec = (olsr_u32_t)(pollrate * 1000000);
+  interval_usec = (olsr_u32_t)(olsr_cnf->pollrate * 1000000);
 
   interval.tv_sec = interval_usec / 1000000;
   interval.tv_usec = interval_usec % 1000000;
 
-  OLSR_PRINTF(1, "Scheduler started - polling every %0.2f seconds\n", pollrate);
+  OLSR_PRINTF(1, "Scheduler started - polling every %0.2f seconds\n", olsr_cnf->pollrate);
   OLSR_PRINTF(3, "Max jitter is %f\n\n", olsr_cnf->max_jitter);
 
   /* Main scheduler event loop */
@@ -181,7 +178,7 @@ scheduler(void)
       /* UPDATED - resets timer upon triggered execution */
       while(entry)
 	{
-	  entry->since_last += pollrate;
+	  entry->since_last += olsr_cnf->pollrate;
 
 	  /* Timed out */
 	  if((entry->since_last > entry->interval) ||

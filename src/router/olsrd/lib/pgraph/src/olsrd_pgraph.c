@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_pgraph.c,v 1.5 2007/04/28 20:48:57 bernd67 Exp $
+ * $Id: olsrd_pgraph.c,v 1.6 2007/08/02 14:38:34 bernd67 Exp $
  */
 
 /*
@@ -147,7 +147,7 @@ olsrd_plugin_init(void)
   return 1;
 }
 
-int
+static int
 plugin_ipc_init(void)
 {
   struct sockaddr_in sin;
@@ -401,7 +401,7 @@ ipc_print_net(union olsr_ip_addr *gw, union olsr_ip_addr *net, union hna_netmask
 #endif
 
 
-int
+static int
 ipc_send(const char *data, int size)
 {
   if(!ipc_open)

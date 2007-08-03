@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: unistd.h,v 1.6 2007/05/09 00:30:04 bernd67 Exp $
+ * $Id: unistd.h,v 1.7 2007/05/13 23:44:24 tlopatic Exp $
  */
 
 #if !defined TL_UNISTD_H_INCLUDED
@@ -58,8 +58,5 @@ int getpid(void);
 #define IPTOS_PREC(x) ((x) & 0xe0)
 
 int isatty(int fd);
-
-typedef long ssize_t;
-ssize_t write(int fd, const void *buf, size_t count);
 
 #endif

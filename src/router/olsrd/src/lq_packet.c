@@ -38,7 +38,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: lq_packet.c,v 1.23 2007/02/10 17:36:51 bernd67 Exp $
+ * $Id: lq_packet.c,v 1.24 2007/08/02 22:07:19 bernd67 Exp $
  */
 
 #include "olsr_protocol.h"
@@ -150,7 +150,6 @@ create_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
   struct lq_tc_neighbor *neigh;
   int i;
   struct neighbor_entry *walker;
-  struct link_entry *link;
   static int ttl_list[] = { 1, 2, 1, 4, 1, 2, 1, 8, 1, 2, 1, 4, 1, 2, 1, MAX_TTL-1, 0};
 
   // remember that we have generated an LQ TC message; this is
@@ -199,6 +198,7 @@ create_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
       for(walker = neighbortable[i].next; walker != &neighbortable[i];
           walker = walker->next)
         {
+          struct link_entry *lnk;
           // only consider symmetric neighbours
 
           if(walker->status != SYM)
@@ -226,11 +226,11 @@ create_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
 
           // set the entry's link quality
 
-          link = get_best_link_to_neighbor(&neigh->main);
+          lnk = get_best_link_to_neighbor(&neigh->main);
 
-          if (link) {
-            neigh->link_quality = link->loss_link_quality;
-            neigh->neigh_link_quality = link->neigh_link_quality;
+          if (lnk) {
+            neigh->link_quality = lnk->loss_link_quality;
+            neigh->neigh_link_quality = lnk->neigh_link_quality;
           }
 
           // queue the neighbour entry

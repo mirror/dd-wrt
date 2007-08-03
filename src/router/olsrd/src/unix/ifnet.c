@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: ifnet.c,v 1.48 2007/04/25 22:08:18 bernd67 Exp $
+ * $Id: ifnet.c,v 1.49 2007/05/13 22:23:55 bernd67 Exp $
  */
 
 
@@ -550,8 +550,6 @@ add_hemu_if(struct olsr_if *iface)
 
   OLSR_PRINTF(1, "       Address:%s\n", olsr_ip_to_string(&iface->hemu_ip));
 
-  OLSR_PRINTF(1, "       Index:%d\n", iface->index);
-
   OLSR_PRINTF(1, "       NB! This is a emulated interface\n       that does not exist in the kernel!\n");
 
   ifp->int_next = ifnet;
@@ -564,9 +562,6 @@ add_hemu_if(struct olsr_if *iface)
       OLSR_PRINTF(1, "New main address: %s\n", olsr_ip_to_string(&olsr_cnf->main_addr));
 	olsr_syslog(OLSR_LOG_INFO, "New main address: %s\n", olsr_ip_to_string(&olsr_cnf->main_addr));
     }
-
-  /* setting the interfaces number*/
-  ifp->if_nr = iface->index;
 
   ifp->int_mtu = OLSR_DEFAULT_MTU;
 
@@ -887,10 +882,6 @@ chk_if_up(struct olsr_if *iface, int debuglvl)
     ifs.int_metric = calculate_if_metric(ifr.ifr_name);
   OLSR_PRINTF(1, "\tMetric: %d\n", ifs.int_metric);
 
-  /* setting the interfaces number*/
-  ifs.if_nr = iface->index;
-
-
   /* Get MTU */
   if (ioctl(olsr_cnf->ioctl_s, SIOCGIFMTU, &ifr) < 0)
     ifs.int_mtu = OLSR_DEFAULT_MTU;
@@ -907,7 +898,7 @@ chk_if_up(struct olsr_if *iface, int debuglvl)
   OLSR_PRINTF(1, "\tMTU - IPhdr: %d\n", ifs.int_mtu);
 
   olsr_syslog(OLSR_LOG_INFO, "Adding interface %s\n", iface->name);
-  OLSR_PRINTF(1, "\tIndex %d\n", ifs.if_nr);
+  OLSR_PRINTF(1, "\tIndex %d\n", ifs.if_index);
 
   if(olsr_cnf->ip_version == AF_INET)
     {

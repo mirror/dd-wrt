@@ -1,6 +1,6 @@
 /*
  * OLSR Basic Multicast Forwarding (BMF) plugin.
- * Copyright (c) 2005, 2006, Thales Communications, Huizen, The Netherlands.
+ * Copyright (c) 2005 - 2007, Thales Communications, Huizen, The Netherlands.
  * Written by Erik Tromp.
  * All rights reserved.
  *
@@ -48,6 +48,7 @@
 #include <stdarg.h> /* va_list, va_start, va_end */
 #include <errno.h> /* errno */
 #include <assert.h> /* assert() */
+#include <linux/if_ether.h> /* ETH_P_IP */
 #include <linux/if_packet.h> /* struct sockaddr_ll, PACKET_MULTICAST */
 #include <pthread.h> /* pthread_t, pthread_create() */
 #include <signal.h> /* sigset_t, sigfillset(), sigdelset(), SIGINT */
@@ -67,7 +68,6 @@
 #include "Address.h" /* IsMulticast() */
 #include "Packet.h" /* ETH_TYPE_OFFSET, IFHWADDRLEN etc. */
 #include "PacketHistory.h" /* InitPacketHistory() */
-#include "DropList.h" /* DropMac() */
 
 static pthread_t BmfThread;
 static int BmfThreadRunning = 0;
@@ -108,7 +108,7 @@ void BmfPError(char* format, ...)
 
     olsr_printf(1, "%s: %s\n", strDesc, strErr);
   }
-}
+} /* BmfPError */
 
 /* -------------------------------------------------------------------------
  * Function   : MainAddressOf
@@ -129,69 +129,14 @@ union olsr_ip_addr* MainAddressOf(union olsr_ip_addr* ip)
     result = ip;
   }
   return result;
-}
-
-/* -------------------------------------------------------------------------
- * Function   : ComposeEnapsulationDestination
- * Description: Compose a next destination for an encapsulated packet
- * Input      : intf - the network interface on which to forward the
- *                encapsulation packet
- *              src - the IP source of the encapsulated packet. Pass NULL if
- *                not applicable.
- *              forwardedBy - the IP address of the last host that forwarded
- *                the packet. Pass NULL if not applicable.
- *              forwardedTo - the IP address to which the last host has
- *                forwarded the packet. Pass NULL if not applicable.
- * Output     : nextDest - the composed next destination
- * Return     : 1 if a valid next destination could be composed, or 0 if not
- * Data Used  : BmfMechanism
- * ------------------------------------------------------------------------- */
-static int ComposeEnapsulationDestination(
-  struct TBmfInterface* intf,
-  union olsr_ip_addr* src,
-  union olsr_ip_addr* forwardedBy,
-  union olsr_ip_addr* forwardedTo,
-  struct sockaddr_in* nextDest)
-{
-  struct link_entry* bestNeighborLink;
-  int nPossibleNeighbors;
-
-  memset(nextDest, 0, sizeof(nextDest));
-  nextDest->sin_family = AF_INET;
-  nextDest->sin_port = htons(BMF_ENCAP_PORT);
-
-  bestNeighborLink = GetBestNeighbor(intf, src, forwardedBy, forwardedTo, &nPossibleNeighbors);
-
-  if (bestNeighborLink != NULL)
-  {
-    /* Depending on the how many neighbors there are, and on the BMF mechanism... */
-    if (nPossibleNeighbors == 1 || BmfMechanism == BM_UNICAST_PROMISCUOUS)
-    {
-      /* ...destination IP address is address of best neighbor... */
-      COPY_IP(&nextDest->sin_addr.s_addr, &bestNeighborLink->neighbor_iface_addr);
-    }
-    else
-    {
-      /* ...or destination IP address is local broadcast. */
-      COPY_IP(&nextDest->sin_addr.s_addr, &intf->broadAddr);
-    }
-  }
-  else
-  {
-    /* No (good enough) neighbor on the specified interface: don't forward
-     * the packet */
-    return 0;
-  }
-
-  return 1;
-}
+} /* MainAddressOf */
 
 /* -------------------------------------------------------------------------
  * Function   : EncapsulateAndForwardPacket
  * Description: Encapsulate a captured raw IP packet and forward it
  * Input      : intf - the network interface on which to forward the packet
  *              encapsulationUdpData - The encapsulation header, followed by
- *                the encapsulated Ethernet frame
+ *                the encapsulated IP packet
  * Output     : none
  * Return     : none
  * Data Used  : none
@@ -200,16 +145,22 @@ static void EncapsulateAndForwardPacket(
   struct TBmfInterface* intf,
   unsigned char* encapsulationUdpData)
 {
-  unsigned char* ethernetFrame = GetEthernetFrame(encapsulationUdpData);
-  int nBytesWritten;
-  struct sockaddr_in forwardTo; /* Next destination of encapsulation packet */
+  /* The packet */
   u_int16_t udpDataLen = GetEncapsulationUdpDataLength(encapsulationUdpData);
 
-  /* Change encapsulated source MAC address to that of sending interface */
-  SetFrameSourceMac(ethernetFrame, intf->macAddr);
+  /* The next destination(s) */
+  struct TBestNeighbors bestNeighborLinks;
+  int nPossibleNeighbors;
+  struct sockaddr_in forwardTo; /* Next destination of encapsulation packet */
 
-  /* Compose destination of encapsulation packet */
-  if (ComposeEnapsulationDestination(intf, NULL, NULL, NULL, &forwardTo) == 0)
+  int nPacketsToSend;
+  int nBytesWritten;
+  int i;
+
+  /* Retrieve at most two best neigbors to forward the packet to */
+  bestNeighborLinks = GetBestTwoNeighbors(intf, NULL, NULL, NULL, &nPossibleNeighbors);
+
+  if (nPossibleNeighbors <= 0)
   {
     OLSR_PRINTF(
       8,
@@ -219,74 +170,100 @@ static void EncapsulateAndForwardPacket(
     return;
   }
 
-  nBytesWritten = sendto(
-    intf->encapsulatingSkfd,
-    encapsulationUdpData,
-    udpDataLen,
-    MSG_DONTROUTE,
-    (struct sockaddr*) &forwardTo,
-    sizeof(forwardTo));                   
-  if (nBytesWritten != udpDataLen)
-  {
-    BmfPError("sendto() error forwarding pkt on \"%s\"", intf->ifName);
-  }
-  else
-  {
-    /* Increase counter */
-    intf->nBmfPacketsTx++;
+  /* Compose destination of encapsulation packet */
 
-    OLSR_PRINTF(
-      8,
-      "%s: --> encapsulated and forwarded on \"%s\" to %s\n",
-      PLUGIN_NAME_SHORT,
-      intf->ifName,
-      inet_ntoa(forwardTo.sin_addr));
-  } /* if (nBytesWritten != udpDataLen) */
-}
+  memset(&forwardTo, 0, sizeof(forwardTo));
+  forwardTo.sin_family = AF_INET;
+  forwardTo.sin_port = htons(BMF_ENCAP_PORT);
+
+  /* Start by filling in the local broadcast address */
+  COPY_IP(&forwardTo.sin_addr.s_addr, &intf->broadAddr);
+
+  /* - If the BMF mechanism is BM_UNICAST_PROMISCUOUS, always send just one
+   *   packet (to the best neighbor).
+   * - If the BMF mechanism is BM_BROADCAST,
+   *   - send one unicast packet if there is one possible neighbor,
+   *   - send two unicast packets if there are two possible neighbors, and
+   *   - only if there are more than two possible neighbors, then send an
+   *     (WLAN-air-expensive, less reliable) broadcast packet. */
+  if (BmfMechanism == BM_UNICAST_PROMISCUOUS || nPossibleNeighbors < 2)
+  {
+    nPacketsToSend = 1;
+  }
+  else /* BmfMechanism == BM_BROADCAST && nPossibleNeighbors >= 2 */
+  {
+    nPacketsToSend = 2;
+  }
+
+  for (i = 0; i < nPacketsToSend; i++)
+  {
+    if (BmfMechanism == BM_UNICAST_PROMISCUOUS || nPossibleNeighbors <= 2)
+    {
+      COPY_IP(&forwardTo.sin_addr.s_addr, &bestNeighborLinks.links[i]->neighbor_iface_addr);
+    }
+
+    /* Forward the BMF packet via the encapsulation socket */
+    nBytesWritten = sendto(
+      intf->encapsulatingSkfd,
+      encapsulationUdpData,
+      udpDataLen,
+      MSG_DONTROUTE,
+      (struct sockaddr*) &forwardTo,
+      sizeof(forwardTo));                   
+
+    /* Evaluate and display result */
+    if (nBytesWritten != udpDataLen)
+    {
+      BmfPError("sendto() error forwarding pkt on \"%s\"", intf->ifName);
+    }
+    else
+    {
+      /* Increase counter */
+      intf->nBmfPacketsTx++;
+
+      OLSR_PRINTF(
+        8,
+        "%s: --> encapsulated and forwarded on \"%s\" to %s\n",
+        PLUGIN_NAME_SHORT,
+        intf->ifName,
+        inet_ntoa(forwardTo.sin_addr));
+    } /* if (nBytesWritten != udpDataLen) */
+  } /* for */
+} /* EncapsulateAndForwardPacket */
 
 /* -------------------------------------------------------------------------
  * Function   : BmfPacketCaptured
- * Description: Handle a captured raw Ethernet frame
+ * Description: Handle a captured IP packet
  * Input      : intf - the network interface on which the packet was captured
  *              sllPkttype - the type of packet. Either PACKET_OUTGOING,
  *                PACKET_BROADCAST or PACKET_MULTICAST.
  *              encapsulationUdpData - space for the encapsulation header, followed by
- *                the captured Ethernet frame
+ *                the captured IP packet
  * Output     : none
  * Return     : none
  * Data Used  : BmfInterfaces
- * Notes      : The Ethernet frame is assumed to be captured on a socket of family
- *              PF_PACKET and type SOCK_RAW.
+ * Notes      : The IP packet is assumed to be captured on a socket of family
+ *              PF_PACKET and type SOCK_DGRAM (cooked).
  * ------------------------------------------------------------------------- */
 static void BmfPacketCaptured(
   struct TBmfInterface* intf,
   unsigned char sllPkttype,
   unsigned char* encapsulationUdpData)
 {
-  unsigned char* srcMac;
-  union olsr_ip_addr src; /* Source IP address in captured frame */
-  union olsr_ip_addr dst; /* Destination IP address in captured frame */
-  union olsr_ip_addr* origIp; /* Main OLSR address of source of captured frame */
+  union olsr_ip_addr src; /* Source IP address in captured packet */
+  union olsr_ip_addr dst; /* Destination IP address in captured packet */
+  union olsr_ip_addr* origIp; /* Main OLSR address of source of captured packet */
   struct TBmfInterface* walker;
   int isFromOlsrIntf;
   int isFromOlsrNeighbor;
   int iAmMpr;
-  unsigned char* ethernetFrame; /* The captured Ethernet frame... */
-  u_int16_t ethernetFrameLen; /* ...and its length */
-  struct ip* ipHeader; /* The IP header inside the captured Ethernet frame */
-  unsigned char* ipPacket; /* The IP packet inside the captured Ethernet frame */
+  unsigned char* ipPacket; /* The captured IP packet... */
+  u_int16_t ipPacketLen; /* ...and its length */
+  struct ip* ipHeader; /* The IP header inside the captured IP packet */
   u_int32_t crc32;
   struct TEncapHeader* encapHdr;
 
-  ethernetFrame = GetEthernetFrame(encapsulationUdpData);
-
-  /* Only forward IPv4 packets */
-  if (GetEtherType(ethernetFrame) != IPV4_TYPE)
-  {
-    return;
-  }
-
-  ipHeader = GetIpHeader(ethernetFrame);
+  ipHeader = GetIpHeader(encapsulationUdpData);
 
   COPY_IP(&dst, &ipHeader->ip_dst);
 
@@ -301,7 +278,7 @@ static void BmfPacketCaptured(
     return;
   }
 
-  ipPacket = GetIpPacket(ethernetFrame);
+  ipPacket = GetIpPacket(encapsulationUdpData);
 
   /* Don't forward fragments of IP packets. Also, don't forward OLSR packets (UDP
    * port 698) and BMF encapsulated packets */
@@ -316,8 +293,8 @@ static void BmfPacketCaptured(
   /* Check if the frame is captured on an OLSR-enabled interface */
   isFromOlsrIntf = (intf->olsrIntf != NULL);
 
-  /* Retrieve the length of the captured frame */
-  ethernetFrameLen = GetFrameLength(ethernetFrame);
+  /* Retrieve the length of the captured packet */
+  ipPacketLen = GetIpTotalLength(ipPacket);
 
   COPY_IP(&src, &ipHeader->ip_src);
   OLSR_PRINTF(
@@ -325,30 +302,20 @@ static void BmfPacketCaptured(
     "%s: %s pkt of %ld bytes captured on %s interface \"%s\": %s->%s\n",
     PLUGIN_NAME_SHORT,
     sllPkttype == PACKET_OUTGOING ? "outgoing" : "incoming",
-    (long)ethernetFrameLen,
+    (long)ipPacketLen,
     isFromOlsrIntf ? "OLSR" : "non-OLSR",
     intf->ifName,
     olsr_ip_to_string(&src),
     olsr_ip_to_string(&dst));
 
-  /* Apply drop list for testing purposes. */
-  srcMac = ethernetFrame + IFHWADDRLEN;
-  if (IsInDropList(srcMac))
-  {
-    OLSR_PRINTF(
-      8,
-      "%s: --> discarding: source MAC (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x) found in drop list\n",
-      PLUGIN_NAME_SHORT,
-      *srcMac, *(srcMac + 1), *(srcMac + 2), *(srcMac + 3), *(srcMac + 4), *(srcMac + 5));
-    return;
-  }
-
   /* Lookup main address of source in the MID table of OLSR */
   origIp = MainAddressOf(&src);
 
+  /* Calculate packet fingerprint */
+  crc32 = PacketCrc32(ipPacket, ipPacketLen);
+
   /* Check if this packet was seen recently */
-  crc32 = PacketCrc32(ethernetFrame, ethernetFrameLen);
-  if (CheckAndMarkRecentPacket(Hash16(crc32)))
+  if (CheckAndMarkRecentPacket(crc32))
   {
     /* Increase counter */
     intf->nBmfPacketsRxDup++;
@@ -363,6 +330,9 @@ static void BmfPacketCaptured(
   /* Compose encapsulation header */
   encapHdr = (struct TEncapHeader*) encapsulationUdpData;
   memset (encapHdr, 0, ENCAP_HDR_LEN);
+  encapHdr->type = BMF_ENCAP_TYPE;
+  encapHdr->len = BMF_ENCAP_LEN;
+  encapHdr->reserved = 0;
   encapHdr->crc32 = htonl(crc32);
 
   /* Check if the frame is captured on an OLSR interface from an OLSR neighbor.
@@ -461,19 +431,37 @@ static void BmfPacketCaptured(
       /* Case 2: Forward from OLSR interface to non-OLSR interface */
 
       int nBytesWritten;
+      struct sockaddr_ll dest;
 
-      /* Change source MAC address to that of sending interface */
-      SetFrameSourceMac(ethernetFrame, walker->macAddr);
-
-      /* If the encapsulated Ethernet frame is an IP local broadcast packet,
+      /* If the encapsulated IP packet is a local broadcast packet,
        * update its destination address to match the subnet of the network
        * interface on which the packet is being sent. */
-      CheckAndUpdateLocalBroadcast(GetIpPacket(ethernetFrame), &walker->broadAddr);
+      CheckAndUpdateLocalBroadcast(ipPacket, &walker->broadAddr);
 
-      nBytesWritten = write(walker->capturingSkfd, ethernetFrame, ethernetFrameLen);
-      if (nBytesWritten != ethernetFrameLen)
+      memset(&dest, 0, sizeof(dest));
+      dest.sll_family = AF_PACKET;
+      dest.sll_protocol = htons(ETH_P_IP);
+      dest.sll_ifindex = if_nametoindex(walker->ifName);
+      dest.sll_halen = IFHWADDRLEN;
+
+      /* Use all-ones as destination MAC address. When the IP destination is
+       * a multicast address, the destination MAC address should normally also
+       * be a multicast address. E.g., when the destination IP is 224.0.0.1,
+       * the destination MAC should be 01:00:5e:00:00:01. However, it does not
+       * seem to matter when the destination MAC address is set to all-ones
+       * in that case. */
+      memset(dest.sll_addr, 0xFF, IFHWADDRLEN);
+
+      nBytesWritten = sendto(
+        walker->capturingSkfd,
+        ipPacket,
+        ipPacketLen,
+        0,
+        (struct sockaddr*) &dest,
+        sizeof(dest));
+      if (nBytesWritten != ipPacketLen)
       {
-        BmfPError("write() error forwarding pkt on \"%s\"", walker->ifName);
+        BmfPError("sendto() error forwarding pkt on \"%s\"", walker->ifName);
       }
       else
       {
@@ -509,19 +497,37 @@ static void BmfPacketCaptured(
       else
       {
         int nBytesWritten;
+        struct sockaddr_ll dest;
 
-        /* Change source MAC address to that of sending interface */
-        SetFrameSourceMac(ethernetFrame, walker->macAddr);
-
-        /* If the encapsulated Ethernet frame is an IP local broadcast packet,
+        /* If the encapsulated IP packet is a local broadcast packet,
          * update its destination address to match the subnet of the network
          * interface on which the packet is being sent. */
-        CheckAndUpdateLocalBroadcast(GetIpPacket(ethernetFrame), &walker->broadAddr);
+        CheckAndUpdateLocalBroadcast(ipPacket, &walker->broadAddr);
 
-        nBytesWritten = write(walker->capturingSkfd, ethernetFrame, ethernetFrameLen);
-        if (nBytesWritten != ethernetFrameLen)
+        memset(&dest, 0, sizeof(dest));
+        dest.sll_family = AF_PACKET;
+        dest.sll_protocol = htons(ETH_P_IP);
+        dest.sll_ifindex = if_nametoindex(walker->ifName);
+        dest.sll_halen = IFHWADDRLEN;
+
+        /* Use all-ones as destination MAC address. When the IP destination is
+         * a multicast address, the destination MAC address should normally also
+         * be a multicast address. E.g., when the destination IP is 224.0.0.1,
+         * the destination MAC should be 01:00:5e:00:00:01. However, it does not
+         * seem to matter when the destination MAC address is set to all-ones
+         * in that case. */
+        memset(dest.sll_addr, 0xFF, IFHWADDRLEN);
+
+        nBytesWritten = sendto(
+          walker->capturingSkfd,
+          ipPacket,
+          ipPacketLen,
+          0,
+          (struct sockaddr*) &dest,
+          sizeof(dest));
+        if (nBytesWritten != ipPacketLen)
         {
-          BmfPError("write() error forwarding pkt on \"%s\"", walker->ifName);
+          BmfPError("sendto() error forwarding pkt on \"%s\"", walker->ifName);
         }
         else
         {
@@ -537,7 +543,7 @@ static void BmfPacketCaptured(
       } /* if (intf == walker) */
     } /* if */
   } /* for */
-}
+} /* BmfPacketCaptured */
 
 /* -------------------------------------------------------------------------
  * Function   : BmfEncapsulationPacketReceived
@@ -550,7 +556,7 @@ static void BmfPacketCaptured(
  *                broadcast).
  *              encapsulationUdpData - the encapsulating IP UDP data, containting
  *                the BMF encapsulation header, followed by the encapsulated
- *                Ethernet frame
+ *                IP packet
  * Output     : none
  * Return     : none
  * Data Used  : BmfInterfaces
@@ -563,14 +569,14 @@ static void BmfEncapsulationPacketReceived(
 {
   int iAmMpr; /* True (1) if I am selected as MPR by 'forwardedBy' */
   struct sockaddr_in forwardTo; /* Next destination of encapsulation packet */
-  struct TBmfInterface* walker;
-  unsigned char* ethernetFrame; /* The encapsulated Ethernet packet */
-  u_int16_t ethernetFrameLen; /* Length of the encapsulated Ethernet packet */
-  struct ip* ipHeader; /* IP header inside the encapsulated Ethernet packet */
+  unsigned char* ipPacket; /* The encapsulated IP packet */
+  u_int16_t ipPacketLen; /* Length of the encapsulated IP packet */
+  struct ip* ipHeader; /* IP header inside the encapsulated IP packet */
   union olsr_ip_addr mcSrc; /* Original source of the encapsulated multicast packet */
   union olsr_ip_addr mcDst; /* Multicast destination of the encapsulated packet */
   struct TEncapHeader* encapsulationHdr;
   u_int16_t encapsulationUdpDataLen;
+  struct TBmfInterface* walker;
 
   /* Are we talking to ourselves? */
   if (if_ifwithaddr(forwardedBy) != NULL)
@@ -584,18 +590,13 @@ static void BmfEncapsulationPacketReceived(
     return;
   }
 
-  ethernetFrame = GetEthernetFrame(encapsulationUdpData);
-  ethernetFrameLen = GetFrameLength(ethernetFrame);
-
-  ipHeader = GetIpHeader(ethernetFrame);
+  /* Retrieve details about the encapsulated IP packet */
+  ipPacket = GetIpPacket(encapsulationUdpData);
+  ipPacketLen = GetIpTotalLength(ipPacket);
+  ipHeader = GetIpHeader(encapsulationUdpData);
 
   COPY_IP(&mcSrc, &ipHeader->ip_src);
   COPY_IP(&mcDst, &ipHeader->ip_dst);
-
-  /* Apply drop list? No, not needed: encapsulation packets are IP-routed,
-   * so filtering should be done by adding a rule to the iptables FORWARD
-   * chain, e.g.:
-   * iptables -A FORWARD -m mac --mac-source 00:0C:29:28:0E:CC -j DROP */
 
   /* Increase counter */
   intf->nBmfPacketsRx++;
@@ -605,7 +606,7 @@ static void BmfEncapsulationPacketReceived(
     8,
     "%s: encapsulated pkt of %ld bytes incoming on \"%s\": %s->%s, forwarded by %s to %s\n",
     PLUGIN_NAME_SHORT,
-    (long)ethernetFrameLen,
+    (long)ipPacketLen,
     intf->ifName,
     olsr_ip_to_string(&mcSrc),
     olsr_ip_to_string(&mcDst),
@@ -615,8 +616,20 @@ static void BmfEncapsulationPacketReceived(
   /* Get encapsulation header */
   encapsulationHdr = (struct TEncapHeader*) encapsulationUdpData;
 
+  /* Verify correct format of BMF encapsulation header */
+  if (encapsulationHdr->type != BMF_ENCAP_TYPE ||
+      encapsulationHdr->len != BMF_ENCAP_LEN ||
+      ntohs(encapsulationHdr->reserved != 0))
+  {
+    OLSR_PRINTF(
+      8,
+      "%s: --> discarding: format of BMF encapsulation header not recognized\n",
+      PLUGIN_NAME_SHORT);
+    return;
+  }
+
   /* Check if this packet was seen recently */
-  if (CheckAndMarkRecentPacket(Hash16(ntohl(encapsulationHdr->crc32))))
+  if (CheckAndMarkRecentPacket(ntohl(encapsulationHdr->crc32)))
   {
     /* Increase counter */
     intf->nBmfPacketsRxDup++;
@@ -630,31 +643,23 @@ static void BmfEncapsulationPacketReceived(
 
   if (EtherTunTapFd >= 0)
   {
-    /* Unpack the encapsulated Ethernet packet and send a copy to myself via
-     * the EtherTunTap interface */
+    /* Unpack the encapsulated IP packet and deliver it locally, by sending
+     * a copy into the local IP stack via the EtherTunTap interface */
 
     union olsr_ip_addr broadAddr;
     int nBytesToWrite, nBytesWritten;
     unsigned char* bufferToWrite;
 
-    /* If the encapsulated Ethernet frame is an IP local broadcast packet,
+    /* If the encapsulated IP packet is a local broadcast packet,
      * update its destination address to match the subnet of the EtherTunTap
      * interface */
     broadAddr.v4 = htonl(EtherTunTapIpBroadcast);
-    CheckAndUpdateLocalBroadcast(GetIpPacket(ethernetFrame), &broadAddr);
+    CheckAndUpdateLocalBroadcast(ipPacket, &broadAddr);
 
-    /* Start off by assuming a TAP device */
-    bufferToWrite = ethernetFrame;
-    nBytesToWrite = ethernetFrameLen;
+    bufferToWrite = ipPacket;
+    nBytesToWrite = ipPacketLen;
 
-    /* If we're using the TUN device instead, we need to write an IP packet instead
-     * of an Ethernet packet */
-    if (TunOrTap == TT_TUN)
-    {
-      bufferToWrite += IP_HDR_OFFSET;
-      nBytesToWrite -= IP_HDR_OFFSET;
-    }
-
+    /* Write the packet into the EtherTunTap interface for local delivery */
     nBytesWritten = write(EtherTunTapFd, bufferToWrite, nBytesToWrite);
     if (nBytesWritten != nBytesToWrite)
     {
@@ -668,56 +673,67 @@ static void BmfEncapsulationPacketReceived(
         PLUGIN_NAME_SHORT,
         EtherTunTapIfName);
     }
-  }
+  } /* if (EtherTunTapFd >= 0) */
 
   /* Check if I am MPR for the forwarder */
   /* TODO: olsr_lookup_mprs_set() is not thread-safe! */
   iAmMpr = (olsr_lookup_mprs_set(MainAddressOf(forwardedBy)) != NULL);
 
+  /* Compose destination address for next hop */
   memset(&forwardTo, 0, sizeof(forwardTo));
   forwardTo.sin_family = AF_INET;
   forwardTo.sin_port = htons(BMF_ENCAP_PORT);
 
+  /* Retrieve the number of bytes to be forwarded via the encapsulation socket */
   encapsulationUdpDataLen = GetEncapsulationUdpDataLength(encapsulationUdpData);
 
   /* Check with each network interface what needs to be done on it */
   for (walker = BmfInterfaces; walker != NULL; walker = walker->next)
   {
-    /* Depending on certain conditions, decide whether or not to forward
-     * the packet, and if it is forwarded, in which form (encapsulated
-     * or not). These conditions are:
-     * - is the packet going out on an OLSR interface or not? (isToOlsrIntf)
-     * - is this node selected as MPR by the node that forwarded the packet,
-     *   or not? (iAmMpr)
-     * Note that the packet is always coming in on an OLSR interface, because
-     * it is an encapsulated BMF packet.
+    /* What to do with the packet on a non-OLSR interface? Unpack
+     * encapsulated packet, and forward it.
      *
-     * Based on these conditions, 3 cases can be distinguished:
-     * - Case 1: What to do with the packet on a non-OLSR interface?
-     *   Answer: unpack encapsulated packet, [decrease its TTL and] forward it.
-     * - Case 2: The forwarding node has selected us as MPR. What to
-     *   do with the packet on an OLSR interface?
-     *   Answer: Forward it.
-     * - Case 3: The forwarding node has not selected us as MPR. What to
-     *   do with the packet on an OLSR interface?
-     *   Answer: nothing. Nodes not selected as MPR must not participate in
-     *   the flooding.
-     */
+     * What to do with the packet on an OLSR interface? Forward it only
+     * if the forwarding node has selected us as MPR (iAmMpr).
+     *
+     * Note that the packet is always coming in on an OLSR interface, because
+     * it is an encapsulated BMF packet. */
 
-    /* To a non-OLSR interface: unpack encapsulated packet and forward */
+    /* To a non-OLSR interface: unpack the encapsulated IP packet and forward it */
     if (walker->olsrIntf == NULL)
     {
       int nBytesWritten;
+      struct sockaddr_ll dest;
 
-      /* If the encapsulated Ethernet frame is an IP local broadcast packet,
+      /* If the encapsulated IP packet is a local broadcast packet,
        * update its destination address to match the subnet of the network
        * interface on which the packet is being sent. */
-      CheckAndUpdateLocalBroadcast(GetIpPacket(ethernetFrame), &walker->broadAddr);
+      CheckAndUpdateLocalBroadcast(ipPacket, &walker->broadAddr);
 
-      nBytesWritten = write(walker->capturingSkfd, ethernetFrame, ethernetFrameLen);
-      if (nBytesWritten != ethernetFrameLen)
+      memset(&dest, 0, sizeof(dest));
+      dest.sll_family = AF_PACKET;
+      dest.sll_protocol = htons(ETH_P_IP);
+      dest.sll_ifindex = if_nametoindex(walker->ifName);
+      dest.sll_halen = IFHWADDRLEN;
+
+      /* Use all-ones as destination MAC address. When the IP destination is
+       * a multicast address, the destination MAC address should normally also
+       * be a multicast address. E.g., when the destination IP is 224.0.0.1,
+       * the destination MAC should be 01:00:5e:00:00:01. However, it does not
+       * seem to matter when the destination MAC address is set to all-ones
+       * in that case. */
+      memset(dest.sll_addr, 0xFF, IFHWADDRLEN);
+
+      nBytesWritten = sendto(
+        walker->capturingSkfd,
+        ipPacket,
+        ipPacketLen,
+        0,
+        (struct sockaddr*) &dest,
+        sizeof(dest));
+      if (nBytesWritten != ipPacketLen)
       {
-        BmfPError("write() error forwarding unpacked encapsulated pkt on \"%s\"", walker->ifName);
+        BmfPError("sendto() error forwarding unpacked encapsulated pkt on \"%s\"", walker->ifName);
       }
       else
       {
@@ -732,18 +748,26 @@ static void BmfEncapsulationPacketReceived(
       }
     } /* if (walker->olsrIntf == NULL) */
 
-    /* To a OLSR interface: forward the packet if this node is selected as MPR by the forwarding node */
+    /* To an OLSR interface: forward the packet, but only if this node is
+     * selected as MPR by the forwarding node */
     else if (iAmMpr)
     {
+      struct TBestNeighbors bestNeighborLinks;
+      int nPossibleNeighbors;
       int nBytesWritten;
+      int nPacketsToSend;
+      int i;
 
-      /* Compose destination of encapsulation packet */
-      if (ComposeEnapsulationDestination(
-        walker,
-        &mcSrc,
-        forwardedBy,
-        forwardedTo,
-        &forwardTo) == 0)
+      /* Retrieve at most two best neigbors to forward the packet to */
+      bestNeighborLinks =
+        GetBestTwoNeighbors(
+          walker,
+          &mcSrc,
+          forwardedBy,
+          forwardedTo,
+          &nPossibleNeighbors);
+
+      if (nPossibleNeighbors <= 0)
       {
         OLSR_PRINTF(
           8,
@@ -754,54 +778,88 @@ static void BmfEncapsulationPacketReceived(
         continue; /* for */
       }
 
-      nBytesWritten = sendto(
-        walker->encapsulatingSkfd,
-        encapsulationUdpData,
-        encapsulationUdpDataLen,
-        MSG_DONTROUTE,
-        (struct sockaddr*) &forwardTo,
-        sizeof(forwardTo));                   
+      /* Compose destination of encapsulation packet.
+       * Start by filling in the local broadcast address. */
+      COPY_IP(&forwardTo.sin_addr.s_addr, &walker->broadAddr);
 
-      if (nBytesWritten != encapsulationUdpDataLen)
+      /* - If the BMF mechanism is BM_UNICAST_PROMISCUOUS, always send just one
+       *   packet (to the best neighbor). Other neighbors listen promiscuously.
+       * - If the BMF mechanism is BM_BROADCAST,
+       *   - send one unicast packet if there is one possible neighbor,
+       *   - send two unicast packets if there are two possible neighbors, and
+       *   - only if there are more than two possible neighbors, then send an
+       *     (WLAN-air-expensive, less reliable) broadcast packet. */
+      if (BmfMechanism == BM_UNICAST_PROMISCUOUS || nPossibleNeighbors < 2)
       {
-        BmfPError("sendto() error forwarding encapsulated pkt on \"%s\"", walker->ifName);
+        nPacketsToSend = 1;
       }
-      else
+      else /* BmfMechanism == BM_BROADCAST && nPossibleNeighbors >= 2 */
       {
-        /* Increase counter */
-        walker->nBmfPacketsTx++;
+        nPacketsToSend = 2;
+      }
 
-        OLSR_PRINTF(
-          8,
-          "%s: --> forwarded on \"%s\" to %s\n",
-          PLUGIN_NAME_SHORT,
-          walker->ifName,
-          inet_ntoa(forwardTo.sin_addr));
-      }
+      for (i = 0; i < nPacketsToSend; i++)
+      {
+        if (BmfMechanism == BM_UNICAST_PROMISCUOUS || nPossibleNeighbors <= 2)
+        {
+          /* For unicast, overwrite the local broadcast address which was filled in
+           * above */
+          COPY_IP(&forwardTo.sin_addr.s_addr, &bestNeighborLinks.links[i]->neighbor_iface_addr);
+        }
+
+        /* Forward the BMF packet via the encapsulation socket */
+        nBytesWritten = sendto(
+          walker->encapsulatingSkfd,
+          encapsulationUdpData,
+          encapsulationUdpDataLen,
+          MSG_DONTROUTE,
+          (struct sockaddr*) &forwardTo,
+          sizeof(forwardTo));                   
+
+        /* Evaluate and display result */
+        if (nBytesWritten != encapsulationUdpDataLen)
+        {
+          BmfPError("sendto() error forwarding encapsulated pkt on \"%s\"", walker->ifName);
+        }
+        else
+        {
+          /* Increase counter */
+          walker->nBmfPacketsTx++;
+
+          OLSR_PRINTF(
+            8,
+            "%s: --> forwarded on \"%s\" to %s\n",
+            PLUGIN_NAME_SHORT,
+            walker->ifName,
+            inet_ntoa(forwardTo.sin_addr));
+        } /* if */
+      } /* for */
     }  /* else if (iAmMpr) */
+
     else /* walker->olsrIntf != NULL && !iAmMpr */
     {
-      /* 'walker' is an OLSR interface and I am not selected as MPR */
+      /* 'walker' is an OLSR interface, but I am not selected as MPR. In that
+       * case, don't forward. */
       OLSR_PRINTF(
         8,
         "%s: --> not forwarding on \"%s\": I am not selected as MPR by %s\n",
         PLUGIN_NAME_SHORT,
         walker->ifName,
         olsr_ip_to_string(forwardedBy));
-    }
+    } /* else */
   } /* for */
-}
+} /* BmfEncapsulationPacketReceived */
 
 /* -------------------------------------------------------------------------
  * Function   : BmfTunPacketCaptured
- * Description: Handle a Ethernet frame, captured outgoing on the tuntap interface
+ * Description: Handle an IP packet, captured outgoing on the tuntap interface
  * Input      : encapsulationUdpData - space for the encapsulation header, followed by
- *                the captured Ethernet frame
+ *                the captured outgoing IP packet
  * Output     : none
  * Return     : none
  * Data Used  : none
  * Notes      : The packet is assumed to be captured on a socket of family
- *              PF_PACKET and type SOCK_RAW.
+ *              PF_PACKET and type SOCK_DGRAM (cooked).
  * ------------------------------------------------------------------------- */
 static void BmfTunPacketCaptured(unsigned char* encapsulationUdpData)
 {
@@ -809,22 +867,15 @@ static void BmfTunPacketCaptured(unsigned char* encapsulationUdpData)
   union olsr_ip_addr dstIp;
   union olsr_ip_addr broadAddr;
   struct TBmfInterface* walker;
-  unsigned char* ethernetFrame;
-  u_int16_t ethernetFrameLen;
+  unsigned char* ipPacket;
+  u_int16_t ipPacketLen;
   struct ip* ipHeader;
   u_int32_t crc32;
   struct TEncapHeader* encapHdr;
 
-  ethernetFrame = GetEthernetFrame(encapsulationUdpData);
-  ethernetFrameLen = GetFrameLength(ethernetFrame);
-
-  /* Only forward IPv4 packets */
-  if (GetEtherType(ethernetFrame) != IPV4_TYPE)
-  {
-    return;
-  }
-
-  ipHeader = GetIpHeader(ethernetFrame);
+  ipPacket = GetIpPacket(encapsulationUdpData);
+  ipPacketLen = GetIpTotalLength(ipPacket);
+  ipHeader = GetIpHeader(encapsulationUdpData);
 
   /* Only forward multicast packets. If configured, also forward local broadcast packets */
   COPY_IP(&dstIp, &ipHeader->ip_dst);
@@ -844,14 +895,16 @@ static void BmfTunPacketCaptured(unsigned char* encapsulationUdpData)
     8,
     "%s: outgoing pkt of %ld bytes captured on tuntap interface \"%s\": %s->%s\n",
     PLUGIN_NAME_SHORT,
-    (long)ethernetFrameLen,
+    (long)ipPacketLen,
     EtherTunTapIfName,
     olsr_ip_to_string(&srcIp),
     olsr_ip_to_string(&dstIp));
 
+  /* Calculate packet fingerprint */
+  crc32 = PacketCrc32(ipPacket, ipPacketLen);
+
   /* Check if this packet was seen recently */
-  crc32 = PacketCrc32(ethernetFrame, ethernetFrameLen);
-  if (CheckAndMarkRecentPacket(Hash16(crc32)))
+  if (CheckAndMarkRecentPacket(crc32))
   {
     OLSR_PRINTF(
       8,
@@ -863,6 +916,9 @@ static void BmfTunPacketCaptured(unsigned char* encapsulationUdpData)
   /* Compose encapsulation header */
   encapHdr = (struct TEncapHeader*) encapsulationUdpData;
   memset (encapHdr, 0, ENCAP_HDR_LEN);
+  encapHdr->type = BMF_ENCAP_TYPE;
+  encapHdr->len = BMF_ENCAP_LEN;
+  encapHdr->reserved = 0;
   encapHdr->crc32 = htonl(crc32);
 
   /* Check with each network interface what needs to be done on it */
@@ -883,19 +939,37 @@ static void BmfTunPacketCaptured(unsigned char* encapsulationUdpData)
        * Answer 2 (better): Forward it. */
 
       int nBytesWritten;
+      struct sockaddr_ll dest;
 
-      /* Change source MAC address to that of sending interface */
-      SetFrameSourceMac(ethernetFrame, walker->macAddr);
-
-      /* If the encapsulated Ethernet frame is an IP local broadcast packet,
+      /* If the encapsulated IP packet is a local broadcast packet,
        * update its destination address to match the subnet of the network
        * interface on which the packet is being sent. */
-      CheckAndUpdateLocalBroadcast(GetIpPacket(ethernetFrame), &walker->broadAddr);
+      CheckAndUpdateLocalBroadcast(ipPacket, &walker->broadAddr);
 
-      nBytesWritten = write(walker->capturingSkfd, ethernetFrame, ethernetFrameLen);
-      if (nBytesWritten != ethernetFrameLen)
+      memset(&dest, 0, sizeof(dest));
+      dest.sll_family = AF_PACKET;
+      dest.sll_protocol = htons(ETH_P_IP);
+      dest.sll_ifindex = if_nametoindex(walker->ifName);
+      dest.sll_halen = IFHWADDRLEN;
+
+      /* Use all-ones as destination MAC address. When the IP destination is
+       * a multicast address, the destination MAC address should normally also
+       * be a multicast address. E.g., when the destination IP is 224.0.0.1,
+       * the destination MAC should be 01:00:5e:00:00:01. However, it does not
+       * seem to matter when the destination MAC address is set to all-ones
+       * in that case. */
+      memset(dest.sll_addr, 0xFF, IFHWADDRLEN);
+
+      nBytesWritten = sendto(
+        walker->capturingSkfd,
+        ipPacket,
+        ipPacketLen,
+        0,
+        (struct sockaddr*) &dest,
+        sizeof(dest));
+      if (nBytesWritten != ipPacketLen)
       {
-        BmfPError("write() error forwarding pkt on \"%s\"", walker->ifName);
+        BmfPError("sendto() error forwarding pkt on \"%s\"", walker->ifName);
       }
       else
       {
@@ -910,7 +984,7 @@ static void BmfTunPacketCaptured(unsigned char* encapsulationUdpData)
       } /* if */
     } /* if */
   } /* for */
-}
+} /* BmfTunPacketCaptured */
 
 /* -------------------------------------------------------------------------
  * Function   : DoBmf
@@ -959,7 +1033,7 @@ static void DoBmf(void)
         struct sockaddr_ll pktAddr;
         socklen_t addrLen = sizeof(pktAddr);
         int nBytes;
-        unsigned char* ethernetFrame;
+        unsigned char* ipPacket;
 
         /* A packet was captured. */
 
@@ -967,10 +1041,10 @@ static void DoBmf(void)
 
         /* Receive the captured Ethernet frame, leaving space for the BMF
          * encapsulation header */
-        ethernetFrame = GetEthernetFrame(rxBuffer);
+        ipPacket = GetIpPacket(rxBuffer);
         nBytes = recvfrom(
           skfd,
-          ethernetFrame,
+          ipPacket,
           BMF_BUFFER_SIZE - ENCAP_HDR_LEN,
           0,
           (struct sockaddr*)&pktAddr,
@@ -982,13 +1056,13 @@ static void DoBmf(void)
           continue; /* for */
         } /* if (nBytes < 0) */
 
-        /* Check if the number of received bytes is large enough for an Ethernet
-         * frame which contains at least a minimum-size IP header.
+        /* Check if the number of received bytes is large enough for an IP
+         * packet which contains at least a minimum-size IP header.
          * Note: There is an apparent bug in the packet socket implementation in
          * combination with VLAN interfaces. On a VLAN interface, the value returned
          * by 'recvfrom' may (but need not) be 4 (bytes) larger than the value
          * returned on a non-VLAN interface, for the same ethernet frame. */
-        if (nBytes < IP_HDR_OFFSET + (int)sizeof(struct ip))
+        if (nBytes < (int)sizeof(struct ip))
         {
           olsr_printf(
             1,
@@ -1047,8 +1121,13 @@ static void DoBmf(void)
           continue; /* for */
         } /* if (nBytes < 0) */
 
+        /* Check if the received packet is actually directed to another
+         * node on the LAN */
         if (pktAddr.sll_pkttype != PACKET_OTHERHOST)
         {
+          /* No, the packet is directed to this node. In that case it will
+           * be, or will already have been received, via the encapsulating
+           * socket. Discard it here. */
           continue; /* for */
         } /* if (pktAddr.sll_pkttype ...) */
 
@@ -1060,7 +1139,7 @@ static void DoBmf(void)
           continue; /* for */
         }
 
-        udpHeader = (struct udphdr*)(rxBuffer + GetHeaderLength(rxBuffer));
+        udpHeader = (struct udphdr*)(rxBuffer + GetIpHeaderLength(rxBuffer));
         destPort = ntohs(udpHeader->dest);
         if (destPort != BMF_ENCAP_PORT)
         {
@@ -1079,7 +1158,7 @@ static void DoBmf(void)
          * not) be 4 (bytes) larger than the value returned on a non-VLAN interface, for
          * the same ethernet frame. */
         minimumLength =
-          GetHeaderLength(rxBuffer) +
+          GetIpHeaderLength(rxBuffer) +
           sizeof(struct udphdr) +
           ENCAP_HDR_LEN +
           IP_HDR_OFFSET +
@@ -1102,7 +1181,7 @@ static void DoBmf(void)
           walker,
           &forwardedBy,
           &forwardedTo,
-          rxBuffer + GetHeaderLength(rxBuffer) + sizeof(struct udphdr));
+          rxBuffer + GetIpHeaderLength(rxBuffer) + sizeof(struct udphdr));
 
       } /* if (skfd >= 0 && (FD_ISSET...)) */
     } /* for */
@@ -1157,6 +1236,10 @@ static void DoBmf(void)
           continue; /* for */
         }
 
+        /* Unfortunately, the recvfrom call does not return the destination
+         * of the encapsulation packet (the destination may be either the
+         * my unicast or my local broadcast address). Therefore we fill in 'NULL'
+         * for the 'forwardedTo' parameter. */
         BmfEncapsulationPacketReceived(walker, &forwardedBy, NULL, rxBuffer);
 
       } /* if (skfd >= 0 && (FD_ISSET...)) */
@@ -1168,43 +1251,17 @@ static void DoBmf(void)
        * network interface */
 
       int nBytes;
-      unsigned char* ethernetFrame;
+      unsigned char* ipPacket;
       unsigned char* bufferToRead;
       size_t nBytesToRead;
 
       nFdBitsSet--;
 
       /* Receive the packet, leaving space for the BMF encapsulation header */
-      ethernetFrame = GetEthernetFrame(rxBuffer);
+      ipPacket = GetIpPacket(rxBuffer);
     
-      bufferToRead = ethernetFrame;
+      bufferToRead = ipPacket;
       nBytesToRead = BMF_BUFFER_SIZE - ENCAP_HDR_LEN;
-      if (TunOrTap == TT_TUN)
-      {
-        u_int16_t type;
-
-        /* When using a tun-interface, also leave space for an Ethernet header */
-        bufferToRead += IP_HDR_OFFSET;
-        nBytesToRead -= IP_HDR_OFFSET;
-
-        /* Compose a valid Ethernet header, for other BMF-nodes which may be
-         * receiving their BMF packets on a tap-interface. */
-
-        /* Use all-ones as destination MAC address. When the IP destination is
-         * a multicast address, the destination MAC address should normally also
-         * be a multicast address. E.g., when the destination IP is 224.0.0.1,
-         * the destination MAC should be 01:00:5e:00:00:01. However, it does not
-         * seem to matter when the destination MAC address is set to all-ones
-         * in that case. */
-        memset(ethernetFrame, 0xFF, IFHWADDRLEN);
-
-        /* Source MAC address is not important. Set to all-zeros */
-        memset(ethernetFrame + IFHWADDRLEN, 0x00, IFHWADDRLEN);
-
-        /* Ethertype = 0800 = IP */
-        type = htons(0x0800);
-        memcpy(ethernetFrame + ETH_TYPE_OFFSET, &type, 2);
-      }
 
       nBytes = read(EtherTunTapFd, bufferToRead, nBytesToRead);
 
@@ -1214,13 +1271,9 @@ static void DoBmf(void)
       }
       else
       {
-        /* Check if the number of received bytes is large enough for an Ethernet
-         * frame which contains at least a minimum-size IP header */
-        if (TunOrTap == TT_TUN)
-        {
-          nBytes += IP_HDR_OFFSET;
-        }
-        if (nBytes < IP_HDR_OFFSET + (int)sizeof(struct ip))
+        /* Check if the number of received bytes is large enough for an IP
+         * packet which contains at least a minimum-size IP header */
+        if (nBytes < (int)sizeof(struct ip))
         {
           olsr_printf(
             1,
@@ -1235,11 +1288,11 @@ static void DoBmf(void)
 
           BmfTunPacketCaptured(rxBuffer);
 
-        } /* if (nBytes < IP_HDR_OFFSET... */
+        } /* if (nBytes < ... */
       } /* if (nBytes < 0) */
     } /* if (nFdBitsSet > 0 && ... */
   } /* while (nFdBitsSet > 0) */
-}
+} /* DoBmf */
 
 /* -------------------------------------------------------------------------
  * Function   : BmfSignalHandler
@@ -1252,7 +1305,7 @@ static void DoBmf(void)
 static void BmfSignalHandler(int signo __attribute__((unused)))
 {
   BmfThreadRunning = 0;
-}
+} /* BmfSignalHandler */
 
 /* -------------------------------------------------------------------------
  * Function   : BmfRun
@@ -1293,7 +1346,7 @@ static void* BmfRun(void* useless __attribute__((unused)))
   }
 
   return NULL;
-}
+} /* BmfRun */
 
 /* -------------------------------------------------------------------------
  * Function   : InterfaceChange
@@ -1338,8 +1391,9 @@ int InterfaceChange(struct interface* interf, int action)
       interf->int_name, action);
     break;
   }
+
   return 0;
-}
+} /* InterfaceChange */
 
 /* -------------------------------------------------------------------------
  * Function   : InitBmf
@@ -1376,7 +1430,7 @@ int InitBmf(struct interface* skipThisIntf)
   }
 
   return 1;
-}
+} /* InitBmf */
 
 /* -------------------------------------------------------------------------
  * Function   : CloseBmf
@@ -1384,7 +1438,7 @@ int InitBmf(struct interface* skipThisIntf)
  * Input      : none
  * Output     : none
  * Return     : none
- * Data Used  : BmfThreadRunning, BmfThread
+ * Data Used  : BmfThread
  * ------------------------------------------------------------------------- */
 void CloseBmf(void)
 {
@@ -1397,24 +1451,27 @@ void CloseBmf(void)
     RestoreSpoofFilter();
   }
 
-  /* Signal BmfThread to exit */
-  /* Strangely enough, all running threads receive the SIGALRM signal. But only the
-   * BMF thread is affected by this signal, having specified a handler for this
-   * signal in its thread entry function BmfRun(...). */
-  if (pthread_kill(BmfThread, SIGALRM) != 0)
+  if (BmfThreadRunning)
   {
-    BmfPError("pthread_kill() error");
-  }
+    /* Signal BmfThread to exit */
+    /* Strangely enough, all running threads receive the SIGALRM signal. But only the
+     * BMF thread is affected by this signal, having specified a handler for this
+     * signal in its thread entry function BmfRun(...). */
+    if (pthread_kill(BmfThread, SIGALRM) != 0)
+    {
+      BmfPError("pthread_kill() error");
+    }
 
-  /* Wait for BmfThread to acknowledge */
-  if (pthread_join(BmfThread, NULL) != 0)
-  {
-    BmfPError("pthread_join() error");
+    /* Wait for BmfThread to acknowledge */
+    if (pthread_join(BmfThread, NULL) != 0)
+    {
+      BmfPError("pthread_join() error");
+    }
   }
 
   /* Clean up after the BmfThread has been killed */
   CloseBmfNetworkInterfaces();
-}
+} /* CloseBmf */
 
 /* -------------------------------------------------------------------------
  * Function   : RegisterBmfParameter
@@ -1427,11 +1484,7 @@ void CloseBmf(void)
  * ------------------------------------------------------------------------- */
 int RegisterBmfParameter(char* key, char* value)
 {
-  if (strcmp(key, "DropMac") == 0)
-  {
-    return DropMac(value);
-  }
-  else if (strcmp(key, "NonOlsrIf") == 0)
+  if (strcmp(key, "NonOlsrIf") == 0)
   {
     return AddNonOlsrBmfIf(value);
   }
@@ -1442,10 +1495,6 @@ int RegisterBmfParameter(char* key, char* value)
   else if (strcmp(key, "BmfInterface") == 0)
   {
     return SetBmfInterfaceName(value);
-  }
-  else if (strcmp(key, "BmfInterfaceType") == 0)
-  {
-    return SetBmfInterfaceType(value);
   }
   else if (strcmp(key, "BmfInterfaceIp") == 0)
   {
@@ -1462,5 +1511,5 @@ int RegisterBmfParameter(char* key, char* value)
 
   /* Key not recognized */
   return 0;
-}
+} /* RegisterBmfParameter */
 

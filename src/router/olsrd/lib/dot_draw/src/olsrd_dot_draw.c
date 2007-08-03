@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_dot_draw.c,v 1.23 2007/04/20 14:06:18 bernd67 Exp $
+ * $Id: olsrd_dot_draw.c,v 1.26 2007/07/23 12:58:38 bernd67 Exp $
  */
 
 /*
@@ -236,9 +236,8 @@ plugin_ipc_init(void)
 	  return 0;
 	}
 
-
       /* Register with olsrd */
-      printf("Adding socket with olsrd\n");
+      //printf("Adding socket with olsrd\n");
       add_olsr_socket(ipc_socket, &ipc_action);
       ipc_socket_up = 1;
     }
@@ -271,17 +270,16 @@ ipc_action(int fd __attribute__((unused)))
     }
   else
     {
-      char *addr = inet_ntoa(pin.sin_addr);
-      if(ntohl(pin.sin_addr.s_addr) != ntohl(ipc_accept_ip.s_addr))
+      if(ntohl(pin.sin_addr.s_addr) != ntohl(ipc_accept_ip.v4))
 	{
-	  olsr_printf(1, "Front end-connection from foregin host(%s) not allowed!\n", addr);
+	  olsr_printf(0, "Front end-connection from foreign host (%s) not allowed!\n", inet_ntoa(pin.sin_addr));
 	  close(ipc_connection);
           ipc_connection = -1;
 	}
       else
 	{
 	  ipc_open = 1;
-	  olsr_printf(1, "(DOT DRAW)IPC: Connection from %s\n",addr);
+	  olsr_printf(1, "(DOT DRAW)IPC: Connection from %s\n",inet_ntoa(pin.sin_addr));
 	  pcf_event(1, 1, 1);
 	}
     }

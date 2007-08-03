@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: ohs_cmd.c,v 1.21 2005/11/22 10:12:30 tlopatic Exp $
+ * $Id: ohs_cmd.c,v 1.24 2007/07/28 12:58:23 bernd67 Exp $
  */
 
 #include "olsr_host_switch.h"
@@ -94,13 +94,17 @@ ohs_set_olsrd_path(char *path)
   return 0;
 }
 
+#ifdef WIN32
+int
+ohs_cmd_olsrd(char *args __attribute__((unused)))
+{
+  printf("olsrd command not available in windows version\nStart instances manually\n");
+  return 0;
+}
+#else
 int
 ohs_cmd_olsrd(char *args)
 {
-#ifdef WIN32
-  printf("olsrd command not available in windows version\nStart instances manually\n");
-  return 0;
-#else
   char *olsrd_args[MAX_OLSRD_ARGS];
   struct in_addr iaddr;
 
@@ -214,7 +218,8 @@ ohs_cmd_olsrd(char *args)
   /* Set arguments */
   else if(!strncmp(tok_buf, "seta", strlen("seta")))
     {
-
+	printf("Error - NOT IMPLEMENTED YET\n");
+	return 1;
     }
   /* Show settings */
   else if(!strncmp(tok_buf, "show", strlen("show")))
@@ -227,8 +232,8 @@ ohs_cmd_olsrd(char *args)
  print_usage:
   printf("Usage: olsrd [start|stop|show|setb|seta] [IP|path|args]\n");
   return 0;
-#endif
 }
+#endif
 
 int
 ohs_cmd_link(char *args)
@@ -535,13 +540,12 @@ ohs_cmd_log(char *args)
 }
 
 int
-ohs_cmd_exit(char *args)
+ohs_cmd_exit(char *args __attribute__((unused)))
 {
 
   printf("Exitting... bye-bye!\n");
 
   ohs_close(0);
-  return 0;
 }
 
 void

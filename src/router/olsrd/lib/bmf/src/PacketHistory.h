@@ -3,7 +3,7 @@
 
 /*
  * OLSR Basic Multicast Forwarding (BMF) plugin.
- * Copyright (c) 2005, 2006, Thales Communications, Huizen, The Netherlands.
+ * Copyright (c) 2005 - 2007, Thales Communications, Huizen, The Netherlands.
  * Written by Erik Tromp.
  * All rights reserved.
  *
@@ -41,24 +41,28 @@
  *
  * ------------------------------------------------------------------------- */
 
+/* System includes */
 #include <sys/types.h> /* ssize_t */
+#include <sys/times.h> /* clock_t */
 
-/* 2 bits per seen packet: 
- * 11 = "seen recently",
- * 01 = "timing out"
- * 00 = "not seen recently"
- * Note that 10 is unused */
-#define NBITS_PER_PACKET 2
-#define NBITS_IN_UINT16 (sizeof(u_int16_t) * 8)
-#define NBITS_IN_UINT32 (sizeof(u_int32_t) * 8)
-#define NPACKETS_PER_ENTRY (NBITS_IN_UINT32 / NBITS_PER_PACKET)
-#define HISTORY_TABLE_SIZE ((1 << NBITS_IN_UINT16) / NPACKETS_PER_ENTRY)
+#define N_HASH_BITS 12
+#define HISTORY_HASH_SIZE (1 << N_HASH_BITS)
+
+/* Time-out of duplicate entries, in milliseconds */
+#define HISTORY_HOLD_TIME 3000
+
+struct TDupEntry
+{
+  u_int32_t crc32;
+  clock_t timeOut;
+  struct TDupEntry* next;
+};
 
 void InitPacketHistory(void);
-u_int32_t PacketCrc32(unsigned char* ethPkt, ssize_t len);
-u_int16_t Hash16(u_int32_t hash32);
-void MarkRecentPacket(u_int16_t hash16);
-int CheckAndMarkRecentPacket(u_int16_t hash16);
+u_int32_t PacketCrc32(unsigned char* ipPkt, ssize_t len);
+u_int32_t Hash(u_int32_t from32);
+void MarkRecentPacket(u_int32_t crc32);
+int CheckAndMarkRecentPacket(u_int32_t crc32);
 void PrunePacketHistory(void*);
 
 #endif /* _BMF_PACKETHISTORY_H */
