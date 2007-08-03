@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: packet.c,v 1.22 2007/04/25 22:08:09 bernd67 Exp $
+ * $Id: packet.c,v 1.23 2007/08/02 22:07:19 bernd67 Exp $
  */
 
 
@@ -90,8 +90,7 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
   struct hello_neighbor   *message_neighbor, *tmp_neigh;
   struct link_entry       *links;
   struct neighbor_entry   *neighbor;
-  olsr_u16_t              index;
-  int                     link;
+  int                     idx;
 
 #ifdef DEBUG
   OLSR_PRINTF(3, "\tBuilding HELLO on interface %d\n", outif->if_nr);
@@ -123,8 +122,7 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
 
   while(links != NULL)
     {      
-      
-      link = lookup_link_status(links);
+      int lnk = lookup_link_status(links);
       /* Update the status */
       
       /* Check if this link tuple is registered on the outgoing interface */
@@ -138,7 +136,7 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
       
 
       /* Find the link status */
-      message_neighbor->link = link;
+      message_neighbor->link = lnk;
 
       /*
        * Calculate neighbor status
@@ -213,10 +211,10 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
   /* Add the rest of the neighbors if running on multiple interfaces */
   
   if(ifnet != NULL && ifnet->int_next != NULL)
-    for(index=0;index<HASHSIZE;index++)
+    for(idx=0;idx<HASHSIZE;idx++)
       {       
-	for(neighbor = neighbortable[index].next;
-	    neighbor != &neighbortable[index];
+	for(neighbor = neighbortable[idx].next;
+	    neighbor != &neighbortable[idx];
 	    neighbor=neighbor->next)
 	  {
 	    /* Check that the neighbor is not added yet */
@@ -339,12 +337,11 @@ olsr_free_tc_packet(struct tc_message *message)
 int
 olsr_build_tc_packet(struct tc_message *message)
 {
-  struct tc_mpr_addr        *message_mpr;
+  struct tc_mpr_addr     *message_mpr;
   //struct mpr_selector       *mprs;
-  olsr_u8_t              index;
+  int                     idx;
   struct neighbor_entry  *entry;
   //struct mpr_selector_hash  *mprs_hash;
-  //olsr_u16_t          index;
   olsr_bool entry_added = OLSR_FALSE;
 
   message->multipoint_relay_selector_address=NULL;
@@ -359,10 +356,10 @@ olsr_build_tc_packet(struct tc_message *message)
   
 
   /* Loop trough all neighbors */  
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
-      for(entry = neighbortable[index].next;
-	  entry != &neighbortable[index];
+      for(entry = neighbortable[idx].next;
+	  entry != &neighbortable[idx];
 	  entry = entry->next)
 	{
 	  if(entry->status != SYM)
@@ -417,7 +414,7 @@ olsr_build_tc_packet(struct tc_message *message)
 	  
 	    } /* Switch */
 	} /* For */
-    } /* For index */
+    } /* For idx */
 
   if(entry_added)
     {

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: misc.c,v 1.5 2005/03/10 07:01:48 kattemat Exp $
+ * $Id: misc.c,v 1.6 2007/08/02 21:58:43 bernd67 Exp $
  */
 
 
@@ -47,30 +47,23 @@
 
 void clear_console(void)
 {
-  FILE *pipe;
-  static int first_time = 1;
+  static int len = -1;
   static char clear_buff[100];
-  static olsr_u16_t len = 0;
-  int c;
   int i;
 
-  if (first_time != 0)
+  if (len < 0)
     {
-      first_time = 0;
-
-      pipe = popen("clear", "r");
-
-      for (len = 0; len < sizeof (clear_buff); len++)
+      FILE *pip = popen("clear", "r");
+      for (len = 0; len < (int)sizeof(clear_buff); len++)
         {
-          c = fgetc(pipe);
-
+          int c = fgetc(pip);
           if (c == EOF)
             break;
 
-          clear_buff[len] = (char)c;
+          clear_buff[len] = c;
         }
 
-      pclose(pipe);
+      pclose(pip);
     }
 
   for (i = 0; i < len; i++)

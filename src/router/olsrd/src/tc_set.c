@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: tc_set.c,v 1.26 2007/04/25 22:08:17 bernd67 Exp $
+ * $Id: tc_set.c,v 1.27 2007/08/02 22:07:19 bernd67 Exp $
  */
 
 
@@ -57,15 +57,15 @@ struct tc_entry tc_table[HASHSIZE];
 int
 olsr_init_tc(void)
 {
-  int index;
+  int idx;
   OLSR_PRINTF(5, "TC: init topo\n");
 
   olsr_register_timeout_function(&olsr_time_out_tc_set);
 
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
-      tc_table[index].next = &tc_table[index];
-      tc_table[index].prev = &tc_table[index];
+      tc_table[idx].next = &tc_table[idx];
+      tc_table[idx].prev = &tc_table[idx];
     }
 
   return 1;
@@ -372,16 +372,16 @@ olsr_tc_lookup_dst(struct tc_entry *entry, union olsr_ip_addr *dst_addr)
 void
 olsr_time_out_tc_set(void)
 {
-  int index;
+  int idx;
 
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
       /* For all TC entries */
-      struct tc_entry *entry = tc_table[index].next;
-      while(entry != &tc_table[index])
+      struct tc_entry *entry = tc_table[idx].next;
+      while(entry != &tc_table[idx])
 	{
           struct tc_entry *entry2;
-	  //printf("INDEX: %d\n", index);
+	  //printf("INDEX: %d\n", idx);
 	  /* For all destination entries of that TC entry */
 	  int deleted = 0;
 	  struct topo_dst *dst_entry = entry->destinations.next;

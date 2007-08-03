@@ -5,7 +5,7 @@ Release:   1
 License:   BSD
 Packager:  roarbr@tihlde.org
 Group:     System Environment/Daemons
-Source:    http://www.olsr.org/releases/0.4/olsrd-%{version}.tar.bz2
+Source:    http://www.olsr.org/releases/0.5/olsrd-%{version}.tar.bz2
 URL:       http://www.olsr.org/
 BuildRoot: %{_tmppath}/%{name}-root
 Provides:  olsrd
@@ -18,7 +18,8 @@ This version supports both IPv4 and IPv6.
 See http://www.olsr.org/ for more info.
 
 %prep
-%setup 
+%setup
+
 
 %{__cat} << 'EOF' > %{name}.init
 #!/bin/bash
@@ -108,13 +109,6 @@ EOF
 %build
 make %{?_smp_mflags}
 make %{?_smp_mflags} libs
-#cd lib/dyn_gw && make %{?_smp_mflags} OS=linux
-#cd ../dot_draw && make %{?_smp_mflags} OS=linux
-#cd ../httpinfo && make %{?_smp_mflags} OS=linux
-#cd ../nameservice && make %{?_smp_mflags} OS=linux
-#cd ../powerinfo && make %{?_smp_mflags} OS=linux
-#cd ../secure && make %{?_smp_mflags} OS=linux
-#cd ../..
 
 %install
 rm -rf %{buildroot}
@@ -144,10 +138,8 @@ echo "Run 'chkconfig olsrd on' to enable automatic starting of olsrd"
 %files
 %defattr(-, root, root, 0755)
 %doc README CHANGELOG
-%doc lib/dyn_gw/README_DYN_GW lib/dot_draw/README_DOT_DRAW lib/httpinfo/README_HTTPINFO
-%doc lib/secure/SOLSR-README lib/pgraph/README-OLSR
-# Do not overwrite original README, should rename these files
-#%doc lib/nameservice/README lib/mini/README
+%doc lib/*/*README*
+
 %config(noreplace) %{_sysconfdir}/olsrd.conf
 %config %{_initrddir}/olsrd
 /usr/sbin/olsrd
@@ -157,10 +149,15 @@ echo "Run 'chkconfig olsrd on' to enable automatic starting of olsrd"
 /usr/share/man/man5/olsrd.conf.5.gz
 
 %changelog
-* Mon Feb  5 2007 Bernd Petrovitsch <bernd@firmix.at>
-- updated to CVS-HEAD:
-- s/INSTALL_PREFIX/DESTDIR/
-- removed references to the powerinfo plugin since it is gone
+* Tue Jul 17 2007 Roar Bjørgum Rotvik <roarbr@tihlde.org>
+- Created spec-file for 0.5.2
+
+* Mon Jul 09 2007 Roar Bjørgum Rotvik <roarbr@tihlde.org>
+- Created spec-file for 0.5.1
+
+* Tue Apr 03 2007 Roar Bjørgum Rotvik <roarbr@tihlde.org>
+- Created spec-file for 0.5.0
+- Changed from INSTALL_PREFIX to DESTDIR
 
 * Wed Jan 04 2006 Roar Bjørgum Rotvik <roarbr@tihlde.org>
 - Created spec-file for 0.4.10

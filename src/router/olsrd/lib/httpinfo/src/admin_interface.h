@@ -36,14 +36,12 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: admin_interface.h,v 1.2 2005/02/21 19:33:48 kattemat Exp $
+ * $Id: admin_interface.h,v 1.3 2007/07/15 17:54:07 bernd67 Exp $
  */
 
 /*
  * Dynamic linked library for the olsr.org olsr daemon
  */
-
-
 
 #ifndef ADMIN_INTERFACE_H
 #define ADMIN_INTERFACE_H

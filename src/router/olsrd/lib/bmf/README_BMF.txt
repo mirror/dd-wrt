@@ -1,6 +1,6 @@
 BASIC MULTICAST FORWARDING PLUGIN FOR OLSRD
 by Erik Tromp (erik.tromp@nl.thalesgroup.com, erik_tromp@hotmail.com)
-Version 1.4
+Version 1.5
 
 1. Introduction
 ---------------
@@ -17,14 +17,14 @@ in the past 3-6 seconds are forwarded.
 2. How to build and install
 ---------------------------
 
-Download the olsr-bmf-v1.4.tar.gz file and save it into your OLSRD
+Download the olsr-bmf-v1.5.tar.gz file and save it into your OLSRD
 base install directory.
 
 Change directory (cd) to your OLSRD base install directory.
 
 At the command prompt, type:
 
-  tar -zxvf ./olsr-bmf-v1.4.tar.gz
+  tar -zxvf ./olsr-bmf-v1.5.tar.gz
 
 then type:
 
@@ -47,7 +47,7 @@ Set permissions, e.g.:
 To configure BMF in OLSR, you must edit the file /etc/olsrd.conf
 to load the BMF plugin. For example, add the following lines:
 
-  LoadPlugin "olsrd_bmf.so.1.4"
+  LoadPlugin "olsrd_bmf.so.1.5"
   {
     # No PlParam entries required for basic operation
   }
@@ -64,8 +64,8 @@ olsrd daemon by entering at the shell prompt:
 Look at the output; it should list the BMF plugin, e.g.:
 
   ---------- Plugin loader ----------
-  Library: olsrd_bmf.so.1.4
-  OLSRD Basic Multicast Forwarding plugin 1.4 (Mar 30 2007 14:30:57)
+  Library: olsrd_bmf.so.1.5
+  OLSRD Basic Multicast Forwarding plugin 1.5 (May 16 2007 14:30:57)
     (C) Thales Communications Huizen, Netherlands
     Erik Tromp (erik.tromp@nl.thalesgroup.com)
   Checking plugin interface version...  4 - OK
@@ -149,7 +149,8 @@ original packets are encapsulated into a new IP packet. Encapsulated
 packets are transported in UDP, port 50698. The source address of the
 encapsulation packet is set to the address of the forwarder instead of
 the originator. Of course, the payload of the encapsulation packet is
-the original IP packet.
+the original IP packet. For an exact specification of the encapsulation
+format, refer to paragraph 10 below.
 
 For local reception, each received encapsulated packets is unpacked
 and passed into a tuntap interface which is specially created for
@@ -189,15 +190,11 @@ the /etc/olsrd.conf file.
 The following gives an overview of all plugin parameters that can be
 configured:
 
-  LoadPlugin "olsrd_bmf.so.1.4"
+  LoadPlugin "olsrd_bmf.so.1.5"
   {
     # Specify the name of the BMF network interface.
     # Defaults to "bmf0".
     PlParam "BmfInterface" "mybmf0"
-
-    # Specify the type of the BMF network interface: either "tun" or
-    # "tap". Defaults to "tun".
-    PlParam "BmfInterfaceType" "tap"
 
     # Specify the IP address and mask for the BMF network interface.
     # By default, the IP address of the first OLSR interface is copied.
@@ -334,7 +331,7 @@ want to forward multicast and local-broadcast IP packets, specify these
 interfaces one by one as "NonOlsrIf" parameters in the BMF plugin section
 of /etc/olsrd.conf. For example:
 
-  LoadPlugin "olsrd_bmf.so.1.4"
+  LoadPlugin "olsrd_bmf.so.1.5"
   {
     # Non-OLSR interfaces to participate in the multicast flooding
     PlParam     "NonOlsrIf"  "eth2"
@@ -392,7 +389,7 @@ Therefore, override the default IP address and prefix length of
 the BMF network interface, by editing the /etc/olsrd.conf file.
 For example:
 
-  LoadPlugin "olsrd_bmf.so.1.4"
+  LoadPlugin "olsrd_bmf.so.1.5"
   {
       PlParam "BmfInterfaceIp" "10.10.10.4/24"
   }
@@ -454,43 +451,7 @@ packets with their destination IP address in the range 224.0.0.0 -
 TTL is implicitly assumed to be 1).
 
 
-9. Testing in a lab environment
--------------------------------
-
-When using equipment like switches or hubs, usually all the hosts see each
-other. In an OLSR lab environment, we sometimes want to simulate the
-situation that some hosts in the network cannot directly see other hosts
-(as 1-hop neighbors) but only indirectly (as 2- or more-hop neighbors).
-To simulate that situation, the iptables tool is often used (see
-www.netfilter.org). For BMF, however, that is nog enough.
-
-For OLSR testing, setup iptables on each host to drop packets from
-all other hosts which are not direct (1-hop) neigbors. For example, to
-drop all packets from the hosts with MAC addresses 00:0C:29:51:32:88,
-00:0C:29:61:34:B7 and 00:0C:29:28:0E:CC, enter at the shell prompt:
-
-  iptables -A INPUT -m mac --mac-source 00:0C:29:51:32:88 -j DROP
-  iptables -A INPUT -m mac --mac-source 00:0C:29:61:34:B7 -j DROP
-  iptables -A INPUT -m mac --mac-source 00:0C:29:28:0E:CC -j DROP
-
-For BMF testing, edit the file /etc/olsrd.conf, and specify the MAC
-addresses of the hosts we do not want to see. (Even though packets from
-these hosts are dropped by iptables, they are still received on network
-interfaces if they are in promiscuous mode.) For example:
-
-  LoadPlugin "olsrd_bmf.so.1.4"
-  {
-    # Drop all packets received from the following MAC sources
-    PlParam     "DropMac"    "00:0C:29:51:32:88" # RemoteClient1
-    PlParam     "DropMac"    "00:0C:29:61:34:B7" # SimpleClient1
-    PlParam     "DropMac"    "00:0C:29:28:0E:CC" # SimpleClient2
-  }
-
-See also the notes in the 'packet' manpage ("Packet sockets are not
-subject to the input or output firewall chains").
-
-
-10. Common problems, FAQ
+9. Common problems, FAQ
 ------------------------
 
 ---------
@@ -561,8 +522,74 @@ the BMF network interface, either by specifying the interface name itself
 (e.g. "bmf0") or by specifying its IP address.
 
 
-11. Version history
+10. Version history
 -------------------
+
+16 May 2007: Version 1.5
+
+* Improved packet history list to take into account the full 32 bits
+  of the packet fingerprint.
+  Previous versions derived a 16-bits value from the 32-bits packet
+  fingerprint and used that 16-bits value to determine packet unicity. In
+  situations with high packet rates (e.g. multicast video), this leads to
+  packets being incorrectly seen as duplicates of other, previously received
+  packets.
+
+* New encapsulation format. In previous versions, a complete Ethernet
+  frame was encapsulated. This is unnecessary, and not very clean; e.g.
+  from packets coming in on non-Ethernet media such as PPP, the data in
+  the Ethernet header is bogus.
+  The new encapsulation format encapsulates only the IP packet. An
+  outer IP header [1], UDP header [2] and BMF Encapsulation Header are
+  inserted before the datagram's existing IP header, as follows:
+
+                                       +---------------------------+
+                                       |                           |
+                                       |      Outer IP Header      |
+                                       +---------------------------+
+                                       |                           |
+                                       |        UDP Header         |
+                                       +---------------------------+
+                                       |      BMF Encapsulation    |
+                                       |           Header          |
+   +---------------------------+       +---------------------------+
+   |                           |       |                           |
+   |         IP Header         |       |         IP Header         |
+   +---------------------------+ ====> +---------------------------+
+   |                           |       |                           |
+   |         IP Payload        |       |         IP Payload        |
+   |                           |       |                           |
+   |                           |       |                           |
+   +---------------------------+       +---------------------------+
+
+  The BMF encapsulation header has a typical type-length-value (TLV)
+  format:
+
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |     Type      |    Length     |            Reserved           |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                       Packet fingerprint                      |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   Type                1
+
+   Length              6.  Length in bytes of this extension, not
+                       including the Type and Length bytes.
+
+   Reserved            Reserved for future use. MUST be set to 0 on
+                       sending, MUST be verified as 0 on receipt;
+                       otherwise the extension must be handled as not
+                       understood and silently skipped.
+
+   Packet fingerprint  32-bits unique fingerprint inserted by the
+                       encapsulator. MAY be used by the receiver to
+                       determine duplicate packet reception.
+
+  The new encapsulation format is incompatible with those of previous
+  BMF versions, implying that all network nodes need to be updated.
+
 
 31 Mar 2007: Version 1.4
 * Optimized the standard forwarding mechanism in such a way that
@@ -642,4 +669,13 @@ the BMF network interface, either by specifying the interface name itself
 
 27 Apr 2006: Version 1.0.1
 * First release.
+
+
+11. Normative References
+------------------------
+
+   [1]  Postel, J., "Internet Protocol", STD 5, RFC 791, September 1981.
+
+   [2]  Postel, J., "User Datagram Protocol", STD 6, RFC 768, August
+        1980.
 

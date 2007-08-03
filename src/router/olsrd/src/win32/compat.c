@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: compat.c,v 1.15 2007/05/09 00:30:04 bernd67 Exp $
+ * $Id: compat.c,v 1.16 2007/07/15 21:09:38 bernd67 Exp $
  */
 
 /*
@@ -61,6 +61,7 @@
 #include <sys/times.h>
 #include <ctype.h>
 #include <dlfcn.h>
+#include <io.h>
 #include "defs.h"
 
 void PError(char *Str);
@@ -123,7 +124,7 @@ long times(struct tms *Dummy __attribute__((unused)))
   return (long)GetTickCount();
 }
 
-int inet_aton(char *AddrStr, struct in_addr *Addr)
+int inet_aton(const char *AddrStr, struct in_addr *Addr)
 {
   Addr->s_addr = inet_addr(AddrStr);
 
@@ -526,7 +527,7 @@ int isatty(int fd)
 #define CHUNK_SIZE 512
 
 /* and we emulate a real write(2) syscall using send() */
-ssize_t write(int fd, const void *buf, size_t count)
+int write(int fd, const void *buf, unsigned int count)
 {
   size_t written = 0;
   while (written < count) {

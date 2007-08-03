@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: defs.h,v 1.60 2007/05/02 08:06:28 bernd67 Exp $
+ * $Id: defs.h,v 1.61 2007/08/02 21:45:33 bernd67 Exp $
  */
 
 
@@ -64,7 +64,7 @@
 
 #ifndef OLSRD_GLOBAL_CONF_FILE
 #define OLSRD_CONF_FILE_NAME	"olsrd.conf"
-#define OLSRD_GLOBAL_CONF_FILE	"/tmp/" OLSRD_CONF_FILE_NAME
+#define OLSRD_GLOBAL_CONF_FILE	"/etc/" OLSRD_CONF_FILE_NAME
 #endif
 
 #define	MAXMESSAGESIZE		1500	/* max broadcast size */
@@ -107,15 +107,15 @@ extern FILE *debug_handle;
 /* First "argument" is NOT a pointer! */
 
 #define QUEUE_ELEM(pre, new) do { \
-    pre.next->prev = new;         \
-    new->next = pre.next;         \
-    new->prev = &pre;             \
-    pre.next = new;               \
+    (pre).next->prev = (new);         \
+    (new)->next = (pre).next;         \
+    (new)->prev = &(pre);             \
+    (pre).next = (new);               \
   } while (0)
 
 #define DEQUEUE_ELEM(elem) do { \
-    elem->prev->next = elem->next;     \
-    elem->next->prev = elem->prev;     \
+    (elem)->prev->next = (elem)->next;     \
+    (elem)->next->prev = (elem)->prev;     \
   } while (0)
 
 

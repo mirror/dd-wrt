@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: routing_table.c,v 1.27 2007/04/25 22:08:14 bernd67 Exp $
+ * $Id: routing_table.c,v 1.28 2007/08/02 21:54:54 bernd67 Exp $
  */
 
 
@@ -85,7 +85,7 @@ two_hop_neighbor_reachable(struct neighbor_2_list_entry *);
 int
 olsr_init_routing_table(void)
 {
-  int index;
+  int idx;
   /*
    *The hna routes hash will almost always
    *be indexed to 0
@@ -93,12 +93,12 @@ olsr_init_routing_table(void)
    *with the functions used on the regular
    *routing table
    */
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
-      routingtable[index].next = &routingtable[index];
-      routingtable[index].prev = &routingtable[index];
-      hna_routes[index].next = &hna_routes[index];
-      hna_routes[index].prev = &hna_routes[index];
+      routingtable[idx].next = &routingtable[idx];
+      routingtable[idx].prev = &routingtable[idx];
+      hna_routes[idx].next = &hna_routes[idx];
+      hna_routes[idx].prev = &hna_routes[idx];
     }
   return 1;
 }
@@ -164,13 +164,13 @@ olsr_lookup_hna_routing_table(union olsr_ip_addr *dst)
 void
 olsr_free_routing_table(struct rt_entry *table)
 {
-  olsr_u8_t       index;
+  int idx;
   
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
-      struct rt_entry *destination = table[index].next;
+      struct rt_entry *destination = table[idx].next;
 
-      while(destination != &table[index])
+      while(destination != &table[idx])
 	{
 	  struct rt_entry *dst_to_delete = destination;
 	  destination = destination->next;
@@ -192,18 +192,14 @@ olsr_free_routing_table(struct rt_entry *table)
  */
 struct rt_entry *
 olsr_insert_routing_table(union olsr_ip_addr *dst, 
-			  union olsr_ip_addr *router, 
+			  const union olsr_ip_addr *router, 
 			  struct interface *iface, 
 			  int metric,
 			  float etx)
 {
-  struct rt_entry *new_route_entry, *rt_list;
-  olsr_u32_t       hash;
-
-  hash = olsr_hashing(dst);
-  rt_list = &routingtable[hash];
-
-  new_route_entry = olsr_malloc(sizeof(struct rt_entry), "Insert routing table");
+  const olsr_u32_t hash = olsr_hashing(dst);
+  struct rt_entry *rt_list = &routingtable[hash];
+  struct rt_entry *new_route_entry = olsr_malloc(sizeof(struct rt_entry), "Insert routing table");
 
   COPY_IP(&new_route_entry->rt_dst, dst);
   COPY_IP(&new_route_entry->rt_router, router);
@@ -249,17 +245,17 @@ olsr_insert_routing_table(union olsr_ip_addr *dst,
 static int
 olsr_fill_routing_table_with_neighbors(void)
 {
-  int index;
+  int idx;
 
 #ifdef DEBUG
   OLSR_PRINTF(7, "FILL ROUTING TABLE WITH NEIGHBORS\n");
 #endif
 
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
       struct neighbor_entry *neighbor;
-      for(neighbor = neighbortable[index].next;
-	  neighbor != &neighbortable[index];
+      for(neighbor = neighbortable[idx].next;
+	  neighbor != &neighbortable[idx];
 	  neighbor=neighbor->next)     
 	{
 	  if(neighbor->status == SYM)
@@ -276,18 +272,18 @@ olsr_fill_routing_table_with_neighbors(void)
 
 	      for(addrs2 = &addrs;addrs2!=NULL;addrs2 = addrs2->next_alias)
 		{
-		  struct link_entry *link = get_best_link_to_neighbor(&addrs2->alias);
+		  const struct link_entry *lnk = get_best_link_to_neighbor(&addrs2->alias);
 #ifdef DEBUG
 		  OLSR_PRINTF(7, "(ROUTE)Adding neighbor %s\n", olsr_ip_to_string(&addrs.alias));
 #endif
-		  if(link)
+		  if(lnk)
 		    {
-		      struct interface *iface = link->if_name ? if_ifwithname(link->if_name) :
-		                                if_ifwithaddr(&link->local_iface_addr);
+		      struct interface *iface = lnk->if_name ? if_ifwithname(lnk->if_name) :
+		                                if_ifwithaddr(&lnk->local_iface_addr);
 		      if(iface)
 			{
 			  olsr_insert_routing_table(&addrs2->alias, 
-						    &link->neighbor_iface_addr,
+						    &lnk->neighbor_iface_addr,
 						    iface,
 						    1,
 						    -1.0);
@@ -336,16 +332,16 @@ static struct destination_n *
 olsr_fill_routing_table_with_two_hop_neighbors(void)
 {
   struct destination_n *list_destination_n=NULL;
-  int            index;
+  int            idx;
 
   //printf("FILL ROUTING TABLE WITH TWO HOP NEIGHBORS\n");
 
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
       struct neighbor_entry *neighbor;
 
-      for(neighbor = neighbortable[index].next;
-	  neighbor != &neighbortable[index];
+      for(neighbor = neighbortable[idx].next;
+	  neighbor != &neighbortable[idx];
 	  neighbor=neighbor->next)     
 	{
 	  struct neighbor_2_list_entry *neigh_2_list; 
@@ -386,19 +382,19 @@ olsr_fill_routing_table_with_two_hop_neighbors(void)
 
 	      for(addrsp = &addrs; addrsp; addrsp = addrsp->next_alias)
 		{
-		  struct link_entry *link = get_best_link_to_neighbor(&neighbor->neighbor_main_addr);
+		  const struct link_entry * const lnk = get_best_link_to_neighbor(&neighbor->neighbor_main_addr);
 #ifdef DEBUG
 		  OLSR_PRINTF(7, "(ROUTE)Adding neighbor %s\n", olsr_ip_to_string(&addrsp->alias));
 #endif
-		  if(link)
+		  if(lnk)
 		    {
-                      struct interface *iface = link->if_name ? if_ifwithname(link->if_name) :
-		                                if_ifwithaddr(&link->local_iface_addr);
+                      struct interface *iface = lnk->if_name ? if_ifwithname(lnk->if_name) :
+		                                if_ifwithaddr(&lnk->local_iface_addr);
 		      if(iface)
 			{
 			  struct rt_entry *new_route_entry = 
 			    olsr_insert_routing_table(&addrsp->alias, 
-						      &link->neighbor_iface_addr,
+						      &lnk->neighbor_iface_addr,
 						      iface,
 						      2,
 						      -1.0);
@@ -550,14 +546,14 @@ olsr_calculate_routing_table(void)
 static struct rt_entry *
 olsr_check_for_higher_quality(struct rt_entry *routes, struct hna_net *net, float etx)
 {
-  int index;
+  int idx;
 
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
       struct rt_entry *tmp_routes;
       /* All entries */
-      for(tmp_routes = routes[index].next;
-	  tmp_routes != &routes[index];
+      for(tmp_routes = routes[idx].next;
+	  tmp_routes != &routes[idx];
 	  tmp_routes = tmp_routes->next)
 	{
 	  if(COMP_IP(&tmp_routes->rt_dst, &net->A_network_addr) &&
@@ -590,14 +586,14 @@ olsr_check_for_higher_quality(struct rt_entry *routes, struct hna_net *net, floa
 struct rt_entry *
 olsr_check_for_lower_quality(struct rt_entry *routes, struct hna_net *net, float etx)
 {
-  int index;
+  int idx;
 
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
       struct rt_entry *tmp_routes;
       /* All entries */
-      for(tmp_routes = routes[index].next;
-	  tmp_routes != &routes[index];
+      for(tmp_routes = routes[idx].next;
+	  tmp_routes != &routes[idx];
 	  tmp_routes = tmp_routes->next)
 	{
 	  if(COMP_IP(&tmp_routes->rt_dst, &net->A_network_addr) &&
@@ -627,7 +623,7 @@ olsr_check_for_lower_quality(struct rt_entry *routes, struct hna_net *net, float
 void
 olsr_calculate_hna_routes(void)
 {
-  int index;
+  int idx;
 
 #ifdef DEBUG
   OLSR_PRINTF(3, "Calculating HNA routes\n");
@@ -635,12 +631,12 @@ olsr_calculate_hna_routes(void)
 
   olsr_move_route_table(hna_routes, old_hna);
 
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
       struct hna_entry *tmp_hna;
       /* All entries */
-      for(tmp_hna = hna_set[index].next;
-	  tmp_hna != &hna_set[index];
+      for(tmp_hna = hna_set[idx].next;
+	  tmp_hna != &hna_set[idx];
 	  tmp_hna = tmp_hna->next)
 	{
 	  struct hna_net *tmp_net;
@@ -735,15 +731,15 @@ olsr_calculate_hna_routes(void)
 void
 olsr_print_routing_table(struct rt_entry *table)
 {
-  int index;
+  int idx;
 
   printf("ROUTING TABLE\n");
   printf("DESTINATION\tNEXT HOP\tHOPCNT\tINTERFACE\n");
-  for(index = 0; index < HASHSIZE; index++)
+  for(idx = 0; idx < HASHSIZE; idx++)
     {
       struct rt_entry *destination;
-      for(destination = table[index].next;
-	  destination != &table[index];
+      for(destination = table[idx].next;
+	  destination != &table[idx];
 	  destination = destination->next)
 	{
 	  printf("%s\t", olsr_ip_to_string(&destination->rt_dst));

@@ -33,7 +33,7 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: olsrd_secure.c,v 1.25 2007/05/09 17:41:17 bernd67 Exp $
+ * $Id: olsrd_secure.c,v 1.27 2007/08/02 14:37:09 bernd67 Exp $
  */
 
 
@@ -107,6 +107,56 @@ MD5_checksum(const olsr_u8_t *data, const olsr_u16_t data_len, olsr_u8_t *hashbu
 #endif
 
 
+/* Timestamp node */
+struct stamp
+{
+  union olsr_ip_addr addr;
+  /* Timestamp difference */
+  int diff;
+  olsr_u32_t challenge;
+  olsr_u8_t validated;
+  clock_t valtime; /* Validity time */
+  clock_t conftime; /* Reconfiguration time */
+  struct stamp *prev;
+  struct stamp *next;
+};
+
+/* Seconds to cache a valid timestamp entry */
+#define TIMESTAMP_HOLD_TIME 30
+/* Seconds to cache a not verified timestamp entry */
+#define EXCHANGE_HOLD_TIME 5
+
+static struct stamp timestamps[HASHSIZE];
+
+
+char keyfile[FILENAME_MAX+1];
+char aes_key[16];
+/* Input interface */
+static struct interface *olsr_in_if;
+
+/* Event function to register with the sceduler */
+#if 0
+static void olsr_event(void);
+#endif
+static int send_challenge(union olsr_ip_addr *);
+static int ifchange(struct interface *, int);
+static int send_cres(union olsr_ip_addr *, union olsr_ip_addr *, olsr_u32_t, struct stamp *);
+static int send_rres(union olsr_ip_addr *, union olsr_ip_addr *, olsr_u32_t);
+static int parse_challenge(char *);
+static int parse_cres(char *);
+static int parse_rres(char *);
+static int check_auth(char *, int *);
+#if 0
+static int ipc_send(char *, int);
+#endif
+static int add_signature(olsr_u8_t *, int*);
+static int validate_packet(char *, int*);
+static void packet_parser(int);
+static void timeout_timestamps(void*);
+static int check_timestamp(union olsr_ip_addr *, time_t);
+static struct stamp *lookup_timestamp_entry(union olsr_ip_addr *);
+static int read_key_from_file(char *);
+
 /**
  *Do initialization here
  *
@@ -172,13 +222,11 @@ secure_plugin_init(void)
   return 1;
 }
 
-
 int
 plugin_ipc_init(void)
 {
   return 1;
 }
-
 
 /*
  * destructor - called at unload
@@ -189,25 +237,27 @@ secure_plugin_exit(void)
 }
 
 
+#if 0
 /**
  *Scheduled event
  */
-void
+static void
 olsr_event(void)
 {
 
 }
+#endif
 
-
-int
+#if 0
+static int
 ipc_send(char *data __attribute__((unused)), int size __attribute__((unused)))
 {
   return 1;
 }
-
+#endif
 
 /* XXX - ToDo */
-int
+static int
 ifchange(struct interface *ifn, int action)
 {
 
@@ -240,7 +290,7 @@ ifchange(struct interface *ifn, int action)
 }
 
 
-void
+static void
 packet_parser(int fd)
 {
   /* sockaddr_in6 is bigger than sockaddr !!!! */
@@ -357,7 +407,7 @@ packet_parser(int fd)
  * are signed in the message.
  *
  */
-int
+static int
 check_auth(char *pck, int *size __attribute__((unused)))
 {
 
@@ -1116,7 +1166,7 @@ send_cres(union olsr_ip_addr *to, union olsr_ip_addr *from, olsr_u32_t chal_in, 
  * message.
  *
  */
-int
+static int
 send_rres(union olsr_ip_addr *to, union olsr_ip_addr *from, olsr_u32_t chal_in)
 {
   struct r_respmsg rrmsg;
@@ -1186,7 +1236,7 @@ send_rres(union olsr_ip_addr *to, union olsr_ip_addr *from, olsr_u32_t chal_in)
 
 
 
-struct stamp *
+static struct stamp *
 lookup_timestamp_entry(union olsr_ip_addr *adr)
 {
   olsr_u32_t hash;
@@ -1256,7 +1306,7 @@ timeout_timestamps(void* foo __attribute__((unused)))
 
 
 
-int
+static int
 read_key_from_file(char *file)
 {
   FILE *kf;

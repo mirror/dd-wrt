@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: commands.h,v 1.7 2005/06/04 21:07:33 kattemat Exp $
+ * $Id: commands.h,v 1.8 2007/05/31 00:16:52 ipo23 Exp $
  */
 
 
@@ -76,7 +76,7 @@ static struct ohs_command ohs_commands[] =
     },
     { "olsrd", "olsrd [start|stop|show|setb|seta] [IP|path|args]",
       "Start or stop local olsrd processes. Also used to set the olsrd binary path and arguments",
-      "This command is used for managing local olsrd instances from within olsr_switch.\nThe command can be configured in runtime using the setb and seta sub-commands.\nTo show the current olsrd command-configuration do:\nolsrd show\nTo set the olsrd binary path do:\nolsrd setb /full/path/to/olsrd\nTo start a olsrd instance with a IP address of 10.0.0.1, do:\nolsrd start 10.0.0.1\nTo stop that same instance do:\nolsrd stop 10.0.0.1\n",
+      "This command is used for managing local olsrd instances from within olsr_switch.\nThe command can be configured in runtime using the setb and seta sub-commands.\nTo show the current olsrd command-configuration do:\nolsrd show\nTo set the olsrd binary path do:\nolsrd setb /full/path/to/olsrd\nTo start a olsrd instance with a IP address of 10.0.0.1, do:\nolsrd start 10.0.0.1\nTo stop that same instance do:\nolsrd stop 10.0.0.1\nseta would set arguments but is currently not implemented\n",
       ohs_cmd_olsrd
     },
     { NULL, NULL,

@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_dot_draw.h,v 1.8 2007/04/20 14:20:11 bernd67 Exp $
+ * $Id: olsrd_dot_draw.h,v 1.10 2007/07/23 12:58:38 bernd67 Exp $
  */
 
 /*
@@ -47,20 +47,15 @@
 #ifndef _OLSRD_DOT_DRAW
 #define _OLSRD_DOT_DRAW
 
+#include "olsrd_plugin.h"
+#include "plugin_util.h"
 
-extern struct in_addr ipc_accept_ip;
+extern union olsr_ip_addr ipc_accept_ip;
 extern int ipc_port;
 
-int 
-olsrd_plugin_interface_version(void);
-
-int
-olsrd_plugin_init(void);
-
-int
-olsrd_plugin_register_param(char *key, char *value);
-
-void
-olsr_plugin_exit(void);
+int olsrd_plugin_interface_version(void);
+int olsrd_plugin_init(void);
+void olsr_plugin_exit(void);
+void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size);
 
 #endif

@@ -1,6 +1,6 @@
 /*
  * OLSR Basic Multicast Forwarding (BMF) plugin.
- * Copyright (c) 2005, 2006, Thales Communications, Huizen, The Netherlands.
+ * Copyright (c) 2005 - 2007, Thales Communications, Huizen, The Netherlands.
  * Written by Erik Tromp.
  * All rights reserved.
  *
@@ -67,10 +67,10 @@ int IsIpFragment(unsigned char* ipPacket)
     return 1;
   }
   return 0;
-}
+} /* IsIpFragment */
 
 /* -------------------------------------------------------------------------
- * Function   : GetTotalLength
+ * Function   : GetIpTotalLength
  * Description: Retrieve the total length of the IP packet (in bytes) of
  *              an IP packet
  * Input      : ipPacket - the IP packet
@@ -78,7 +78,7 @@ int IsIpFragment(unsigned char* ipPacket)
  * Return     : IP packet length
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-u_int16_t GetTotalLength(unsigned char* ipPacket)
+u_int16_t GetIpTotalLength(unsigned char* ipPacket)
 {
   struct iphdr* iph;
 
@@ -86,17 +86,17 @@ u_int16_t GetTotalLength(unsigned char* ipPacket)
 
   iph = (struct iphdr*) ipPacket;
   return ntohs(iph->tot_len);
-}
+} /* GetIpTotalLength */
 
 /* -------------------------------------------------------------------------
- * Function   : GetHeaderLength
+ * Function   : GetIpHeaderLength
  * Description: Retrieve the IP header length (in bytes) of an IP packet
  * Input      : ipPacket - the IP packet
  * Output     : none
  * Return     : IP header length
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-unsigned int GetHeaderLength(unsigned char* ipPacket)
+unsigned int GetIpHeaderLength(unsigned char* ipPacket)
 {
   struct iphdr* iph;
 
@@ -104,7 +104,7 @@ unsigned int GetHeaderLength(unsigned char* ipPacket)
 
   iph = (struct iphdr*) ipPacket;
   return iph->ihl << 2;
-}
+} /* GetIpHeaderLength */
 
 /* -------------------------------------------------------------------------
  * Function   : GetTtl
@@ -123,7 +123,7 @@ u_int8_t GetTtl(unsigned char* ipPacket)
 
   iph = (struct iphdr*) ipPacket;
   return iph->ttl;
-}
+} /* GetTtl */
 
 /* -------------------------------------------------------------------------
  * Function   : SaveTtlAndChecksum
@@ -143,7 +143,7 @@ void SaveTtlAndChecksum(unsigned char* ipPacket, struct TSaveTtl* sttl)
   iph = (struct iphdr*) ipPacket;
   sttl->ttl = iph->ttl;
   sttl->check = ntohs(iph->check);
-}
+} /* SaveTtlAndChecksum */
 
 /* -------------------------------------------------------------------------
  * Function   : RestoreTtlAndChecksum
@@ -164,7 +164,7 @@ void RestoreTtlAndChecksum(unsigned char* ipPacket, struct TSaveTtl* sttl)
   iph = (struct iphdr*) ipPacket;
   iph->ttl = sttl->ttl;
   iph->check = htons(sttl->check);
-}
+} /* RestoreTtlAndChecksum */
 
 /* -------------------------------------------------------------------------
  * Function   : DecreaseTtlAndUpdateHeaderChecksum
@@ -188,100 +188,44 @@ void DecreaseTtlAndUpdateHeaderChecksum(unsigned char* ipPacket)
   iph->ttl--; /* decrement ttl */
   sum = ntohs(iph->check) + 0x100; /* increment checksum high byte */
   iph->check = htons(sum + (sum>>16)); /* add carry */
-}
-
-/* -------------------------------------------------------------------------
- * Function   : GetEtherType
- * Description: Retrieve the EtherType of an Ethernet frame
- * Input      : ethernetFrame - the Ethernet frame
- * Output     : none
- * Return     : EtherType
- * Data Used  : none
- * ------------------------------------------------------------------------- */
-u_int16_t GetEtherType(unsigned char* ethernetFrame)
-{
-  u_int16_t type;
-  memcpy(&type, ethernetFrame + ETH_TYPE_OFFSET, 2);
-  return ntohs(type);
-}
+} /* DecreaseTtlAndUpdateHeaderChecksum */
 
 /* -------------------------------------------------------------------------
  * Function   : GetIpHeader
- * Description: Retrieve the IP header from an Ethernet frame
- * Input      : ethernetFrame - the Ethernet frame
+ * Description: Retrieve the IP header from BMF encapsulation UDP data
+ * Input      : encapsulationUdpData - the encapsulation UDP data
  * Output     : none
  * Return     : IP header
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-struct ip* GetIpHeader(unsigned char* ethernetFrame)
+struct ip* GetIpHeader(unsigned char* encapsulationUdpData)
 {
-  return (struct ip*)(ethernetFrame + IP_HDR_OFFSET);
-}
+  return (struct ip*)(encapsulationUdpData + ENCAP_HDR_LEN);
+} /* GetIpHeader */
 
 /* -------------------------------------------------------------------------
  * Function   : GetIpPacket
- * Description: Retrieve the IP packet from an Ethernet frame
- * Input      : ethernetFrame - the Ethernet frame
- * Output     : none
- * Return     : IP packet
- * Data Used  : none
- * ------------------------------------------------------------------------- */
-unsigned char* GetIpPacket(unsigned char* ethernetFrame)
-{
-  return ethernetFrame + IP_HDR_OFFSET;
-}
-
-/* -------------------------------------------------------------------------
- * Function   : GetFrameLength
- * Description: Return the Ethernet frame length of an Ethernet frame containing
- *              an IP packet
- * Input      : ethernetFrame - the Ethernet frame
- * Output     : none
- * Return     : The frame length
- * Data Used  : none
- * ------------------------------------------------------------------------- */
-u_int16_t GetFrameLength(unsigned char* ethernetFrame)
-{
-  return GetTotalLength(GetIpPacket(ethernetFrame)) + IP_HDR_OFFSET;
-}
-
-/* -------------------------------------------------------------------------
- * Function   : SetFrameSourceMac
- * Description: Set the source MAC address of an Ethernet frame
- * Input      : ethernetFrame - the Ethernet frame
-              : srcMac - the source MAC address
- * Output     : none
- * Return     : none
- * Data Used  : none
- * ------------------------------------------------------------------------- */
-void SetFrameSourceMac(unsigned char* ethernetFrame, unsigned char* srcMac)
-{
-  memcpy(ethernetFrame + IFHWADDRLEN, srcMac, IFHWADDRLEN);
-}
-
-/* -------------------------------------------------------------------------
- * Function   : GetEthernetFrame
- * Description: Retrieve the Ethernet frame from BMF encapsulation UDP data
+ * Description: Retrieve the IP packet from BMF encapsulation UDP data
  * Input      : encapsulationUdpData - the encapsulation UDP data
  * Output     : none
- * Return     : The Ethernet frame
+ * Return     : The IP packet
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-unsigned char* GetEthernetFrame(unsigned char* encapsulationUdpData)
+unsigned char* GetIpPacket(unsigned char* encapsulationUdpData)
 {
   return encapsulationUdpData + ENCAP_HDR_LEN;
-}
+} /* GetIpPacket */
 
 /* -------------------------------------------------------------------------
  * Function   : GetEncapsulationUdpDataLength
  * Description: Return the length of BMF encapsulation UDP data
  * Input      : encapsulationUdpData - the encapsulation UDP data
  * Output     : none
- * Return     : The packet length
+ * Return     : The encapsulation data length
  * Data Used  : none
  * ------------------------------------------------------------------------- */
 u_int16_t GetEncapsulationUdpDataLength(unsigned char* encapsulationUdpData)
 {
-  return GetFrameLength(GetEthernetFrame(encapsulationUdpData)) + ENCAP_HDR_LEN;
-}
+  return GetIpTotalLength(GetIpPacket(encapsulationUdpData)) + ENCAP_HDR_LEN;
+} /* GetEncapsulationUdpDataLength */
 

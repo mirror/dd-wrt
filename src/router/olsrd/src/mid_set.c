@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: mid_set.c,v 1.20 2007/04/25 22:08:09 bernd67 Exp $
+ * $Id: mid_set.c,v 1.21 2007/08/02 21:50:22 bernd67 Exp $
  */
 
 #include "defs.h"
@@ -52,7 +52,7 @@
 struct mid_entry mid_set[HASHSIZE];
 struct mid_address reverse_mid_set[HASHSIZE];
 
-struct mid_entry *mid_lookup_entry_bymain(union olsr_ip_addr *adr);
+struct mid_entry *mid_lookup_entry_bymain(const union olsr_ip_addr *adr);
 
 /**
  * Initialize the MID set
@@ -62,7 +62,7 @@ struct mid_entry *mid_lookup_entry_bymain(union olsr_ip_addr *adr);
 int
 olsr_init_mid_set(void)
 {
-  int index;
+  int idx;
 
   OLSR_PRINTF(5, "MID: init\n");
 
@@ -71,13 +71,13 @@ olsr_init_mid_set(void)
    */
   olsr_register_scheduler_event(&olsr_time_out_mid_set, NULL, 1, 0, NULL);
 
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
-      mid_set[index].next = &mid_set[index];
-      mid_set[index].prev = &mid_set[index];
+      mid_set[idx].next = &mid_set[idx];
+      mid_set[idx].prev = &mid_set[idx];
 
-      reverse_mid_set[index].next = &reverse_mid_set[index];
-      reverse_mid_set[index].prev = &reverse_mid_set[index];
+      reverse_mid_set[idx].next = &reverse_mid_set[idx];
+      reverse_mid_set[idx].prev = &reverse_mid_set[idx];
     }
 
   return 1;
@@ -96,7 +96,7 @@ olsr_init_mid_set(void)
  */
 
 void 
-insert_mid_tuple(union olsr_ip_addr *m_addr, struct mid_address *alias, float vtime)
+insert_mid_tuple(const union olsr_ip_addr *m_addr, struct mid_address *alias, float vtime)
 {
   struct mid_entry *tmp;
   struct mid_address *tmp_adr;
@@ -133,9 +133,9 @@ insert_mid_tuple(union olsr_ip_addr *m_addr, struct mid_address *alias, float vt
       alias->next_alias = tmp_adr;
       tmp->ass_timer = GET_TIMESTAMP(vtime*1000);
     }
-      /*Create new node*/
   else
     {
+      /*Create new node*/
       tmp = olsr_malloc(sizeof(struct mid_entry), "MID new alias");
 
       tmp->aliases = alias;
@@ -212,7 +212,7 @@ insert_mid_tuple(union olsr_ip_addr *m_addr, struct mid_address *alias, float vt
  *@return nada
  */
 void
-insert_mid_alias(union olsr_ip_addr *main_add, union olsr_ip_addr *alias, float vtime)
+insert_mid_alias(const union olsr_ip_addr *main_add, const union olsr_ip_addr *alias, float vtime)
 {
   struct mid_address *adr;
   struct neighbor_entry *ne_old, *ne_new;
@@ -260,9 +260,6 @@ insert_mid_alias(union olsr_ip_addr *main_add, union olsr_ip_addr *alias, float 
   //print_mid_list();
 }
 
-
-
-
 /**
  *Lookup the main address for a alias address
  *
@@ -272,7 +269,7 @@ insert_mid_alias(union olsr_ip_addr *main_add, union olsr_ip_addr *alias, float 
  *or NULL if not found
  */
 union olsr_ip_addr *
-mid_lookup_main_addr(union olsr_ip_addr *adr)
+mid_lookup_main_addr(const union olsr_ip_addr *adr)
 {
   olsr_u32_t hash;
   struct mid_address *tmp_list;
@@ -290,14 +287,13 @@ mid_lookup_main_addr(union olsr_ip_addr *adr)
 
 }
 
-
 /* Find mid entry to an address.
  * @param adr the main address to search for
  *
  * @return a linked list of address structs
  */
 struct mid_entry *
-mid_lookup_entry_bymain(union olsr_ip_addr *adr)
+mid_lookup_entry_bymain(const union olsr_ip_addr *adr)
 {
   struct mid_entry *tmp_list;
   olsr_u32_t hash;
@@ -314,11 +310,8 @@ mid_lookup_entry_bymain(union olsr_ip_addr *adr)
       if(COMP_IP(&tmp_list->main_addr, adr))
 	return tmp_list;
     }
-
-
   return NULL;
 }
-
 
 /*
  *Find all aliases for an address.
@@ -328,7 +321,7 @@ mid_lookup_entry_bymain(union olsr_ip_addr *adr)
  *@return a linked list of addresses structs
  */
 struct mid_address *
-mid_lookup_aliases(union olsr_ip_addr *adr)
+mid_lookup_aliases(const union olsr_ip_addr *adr)
 {
   struct mid_entry *tmp = mid_lookup_entry_bymain(adr);
   return tmp ? tmp->aliases : NULL;
@@ -343,7 +336,7 @@ mid_lookup_aliases(union olsr_ip_addr *adr)
  *@return 1 if the node was updated, 0 if not
  */
 int
-olsr_update_mid_table(union olsr_ip_addr *adr, float vtime)
+olsr_update_mid_table(const union olsr_ip_addr *adr, float vtime)
 {
   struct mid_entry *tmp_list = mid_set;
   olsr_u32_t hash;
@@ -378,7 +371,7 @@ olsr_update_mid_table(union olsr_ip_addr *adr, float vtime)
  *@return nada
  */
 void
-olsr_prune_aliases(union olsr_ip_addr *m_addr, struct mid_alias *declared_aliases)
+olsr_prune_aliases(const union olsr_ip_addr *m_addr, struct mid_alias *declared_aliases)
 {
   struct mid_entry *entry;
   olsr_u32_t hash;
@@ -405,7 +398,7 @@ olsr_prune_aliases(union olsr_ip_addr *m_addr, struct mid_alias *declared_aliase
   registered_aliases = entry->aliases;
   previous_alias = NULL;
 
-  while(registered_aliases != 0)
+  while(registered_aliases != NULL)
     {
       struct mid_address *current_alias = registered_aliases;
       registered_aliases = registered_aliases->next_alias;
@@ -419,7 +412,7 @@ olsr_prune_aliases(union olsr_ip_addr *m_addr, struct mid_alias *declared_aliase
           declared_aliases = declared_aliases->next;
         }
 
-      if (declared_aliases == 0)
+      if (declared_aliases == NULL)
         {
           /* Current alias not found in list of declared aliases: free current alias */
           OLSR_PRINTF(1, "MID remove: (%s, ", olsr_ip_to_string(&entry->main_addr));
@@ -463,14 +456,13 @@ olsr_prune_aliases(union olsr_ip_addr *m_addr, struct mid_alias *declared_aliase
 void
 olsr_time_out_mid_set(void *foo __attribute__((unused)))
 {
-  int index;
+  int idx;
 
-
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
-      struct mid_entry *tmp_list = mid_set[index].next;
+      struct mid_entry *tmp_list = mid_set[idx].next;
       /*Traverse MID list*/
-      while(tmp_list != &mid_set[index])
+      while(tmp_list != &mid_set[idx])
 	{
 	  /*Check if the entry is timed out*/
 	  if(TIMED_OUT(tmp_list->ass_timer))
@@ -529,15 +521,15 @@ mid_delete_node(struct mid_entry *entry)
 void
 olsr_print_mid_set(void)
 {
-  int index;
+  int idx;
 
   OLSR_PRINTF(1, "mid set: %02d:%02d:%02d.%06lu\n",nowtm->tm_hour, nowtm->tm_min, nowtm->tm_sec, now.tv_usec);
 
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
-      struct mid_entry *tmp_list = mid_set[index].next;
+      struct mid_entry *tmp_list = mid_set[idx].next;
       /*Traverse MID list*/
-      for(tmp_list = mid_set[index].next; tmp_list != &mid_set[index]; tmp_list = tmp_list->next)
+      for(tmp_list = mid_set[idx].next; tmp_list != &mid_set[idx]; tmp_list = tmp_list->next)
 	{
 	  struct mid_address *tmp_addr;
           

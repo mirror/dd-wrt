@@ -29,7 +29,7 @@
  *
  */
 
-/* $Id: nameservice.h,v 1.11 2007/02/06 21:07:11 bernd67 Exp $ */
+/* $Id: nameservice.h,v 1.12 2007/07/02 10:59:12 bernd67 Exp $ */
  
 /*
  * Dynamic linked library for UniK OLSRd
@@ -49,8 +49,8 @@
 #include "nameservice_msg.h"
 
 #define PLUGIN_NAME	"OLSRD nameservice plugin"
-#define PLUGIN_VERSION	"0.2"
-#define PLUGIN_AUTHOR	"Bruno Randolf"
+#define PLUGIN_VERSION	"0.3"
+#define PLUGIN_AUTHOR   "Bruno Randolf, Jens Nachtigall, Sven-Ola"
 
 // useful to set for the freifunkfirmware to remove all
 // calls to olsr_printf by the empty statement ";"
@@ -72,6 +72,7 @@
  * if type is NAME_HOST, name is a hostname and ip its IP addr
  * if type is NAME_FORWARDER, then ip is a dns-server (and name is irrelevant)
  * if type is NAME_SERVICE, then name is a service-line (and the ip is irrelevant)
+ * if type is NAME_LATLON, then name has 2 floats with lat and lon (and the ip is irrelevant)
  */
 struct name_entry
 {
@@ -167,6 +168,24 @@ is_name_wellformed(char *service_line);
 
 olsr_bool
 is_service_wellformed(char *service_line);
+
+olsr_bool
+is_service_wellformed(char *service_line);
+
+olsr_bool
+is_latlon_wellformed(char *latlon_line);
+
+olsr_bool
+get_isdefhna_latlon(void);
+
+void
+lookup_defhna_latlon(union olsr_ip_addr *ip);
+
+char*
+lookup_name_latlon(union olsr_ip_addr *ip);
+
+void
+write_latlon_file(void);
 
 char*  
 create_packet(struct name *to, struct name_entry *from);
