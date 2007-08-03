@@ -430,6 +430,10 @@ running once the system is up.
 			initial RAM disk.
 
 	nointroute	[IA-64]
+
+	nokeyb		[HW] Skip console keyboard initialization for systems 
+			without a console keyboard, removable keyboard, or 
+			bladecenters with a USB console keyboard switch, etc.
  
 	nolapic		[IA-32,APIC] Do not enable or use the local APIC.
 

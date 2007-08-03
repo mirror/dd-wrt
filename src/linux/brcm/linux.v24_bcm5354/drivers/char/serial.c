@@ -966,7 +966,7 @@ static void rs_interrupt_single(int irq, void *dev_id, struct pt_regs * regs)
 			transmit_chars(info, 0);
 #endif
 		if (pass_counter++ > RS_ISR_PASS_LIMIT) {
-#if SERIAL_DEBUG_INTR
+#ifdef SERIAL_DEBUG_INTR
 			printk("rs_single loop break.\n");
 #endif
 			break;
@@ -4245,7 +4245,7 @@ pci_inteli960ni_fn(struct pci_dev *dev,
    
 #ifdef SERIAL_DEBUG_PCI
 	printk(KERN_DEBUG " Subsystem ID %lx (intel 960)\n",
-	       (unsigned long) board->subdevice);
+	       (unsigned long) dev->subsystem_device);
 #endif
 	/* is firmware started? */
 	pci_read_config_dword(dev, 0x44, (void*) &oldval); 

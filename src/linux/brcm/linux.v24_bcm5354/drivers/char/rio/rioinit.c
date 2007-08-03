@@ -478,7 +478,7 @@ int RIOMCAinit(int Mode)
 		Handle = RIOMapin( Paddr, RIO_MCA_MEM_SIZE, &Caddr );
 
 		if ( Handle == -1 ) {
-			rio_dprintk (RIO_DEBUG_INIT, "Couldn't map %d bytes at %x\n", RIO_MCA_MEM_SIZE, Paddr;
+			rio_dprintk (RIO_DEBUG_INIT, "Couldn't map %d bytes at %x\n", RIO_MCA_MEM_SIZE, Paddr);
 			continue;
 		}
 

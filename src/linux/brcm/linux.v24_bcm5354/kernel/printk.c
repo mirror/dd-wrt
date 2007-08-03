@@ -15,7 +15,6 @@
  * Rewrote bits to get rid of console_lock
  *	01Mar01 Andrew Morton <andrewm@uow.edu.au>
  */
-#define ISPRINTK 1
 
 #include <linux/kernel.h>
 #include <linux/mm.h>
@@ -51,11 +50,11 @@
 #endif
 
 /* printk's without a loglevel use this.. */
-#define DEFAULT_MESSAGE_LOGLEVEL 0 /* KERN_WARNING */
+#define DEFAULT_MESSAGE_LOGLEVEL 4 /* KERN_WARNING */
 
 /* We show everything that is MORE important than this.. */
 #define MINIMUM_CONSOLE_LOGLEVEL 1 /* Minimum loglevel we let people use */
-#define DEFAULT_CONSOLE_LOGLEVEL 1 /* anything MORE serious than KERN_DEBUG */
+#define DEFAULT_CONSOLE_LOGLEVEL 7 /* anything MORE serious than KERN_DEBUG */
 
 DECLARE_WAIT_QUEUE_HEAD(log_wait);
 
@@ -253,8 +252,8 @@ int do_syslog(int type, char * buf, int len)
 			int offset = count-error;
 			/* buffer overflow during copy, correct user buffer. */
 			for(i=0;i<error;i++) {
-				__get_user(c,&buf[i+offset]);
-				__put_user(c,&buf[i]);
+				__get_user(c,(char*)&buf[i+offset]);
+				__put_user(c,(char*)&buf[i]);
 			}
 		}
 

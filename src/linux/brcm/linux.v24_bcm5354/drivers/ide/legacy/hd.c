@@ -432,7 +432,7 @@ ok_to_read:
 #ifdef DEBUG
 	printk("hd%c: read: sector %ld, remaining = %ld, buffer=0x%08lx\n",
 		dev+'a', CURRENT->sector, CURRENT->nr_sectors,
-		(unsigned long) CURRENT->buffer+512));
+		(unsigned long) CURRENT->buffer+512);
 #endif
 	if (CURRENT->current_nr_sectors <= 0)
 		end_request(1);

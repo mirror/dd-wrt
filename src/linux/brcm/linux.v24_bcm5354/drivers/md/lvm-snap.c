@@ -547,15 +547,17 @@ int lvm_snapshot_alloc_hash_table(lv_t * lv)
 
 int lvm_snapshot_alloc(lv_t * lv_snap)
 {
-	int ret;
+	int ret, max_sectors;
 
 	/* allocate kiovec to do chunk io */
 	ret = alloc_kiovec(1, &lv_snap->lv_iobuf);
 	if (ret)
 		goto out;
 
-	ret = lvm_snapshot_alloc_iobuf_pages(lv_snap->lv_iobuf,
-					     KIO_MAX_SECTORS);
+	max_sectors = KIO_MAX_SECTORS << (PAGE_SHIFT - 9);
+
+	ret =
+	    lvm_snapshot_alloc_iobuf_pages(lv_snap->lv_iobuf, max_sectors);
 	if (ret)
 		goto out_free_kiovec;
 
