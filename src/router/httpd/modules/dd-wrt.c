@@ -6097,7 +6097,6 @@ ej_get_wdsp2p (webs_t wp, int argc, char_t ** argv)
   char *interface = "wl";
   if (ejArgs (argc, argv, "%d", &index) < 1)
     {
-      fprintf(stderr,"argument problem wdsp2p\n");
       websError (wp, 400, "Insufficient args\n");
       return;
     }
@@ -6132,7 +6131,6 @@ ej_get_wdsp2p (webs_t wp, int argc, char_t ** argv)
       netmask[2] = 255;
       netmask[3] = 252;
     }
-      fprintf(stderr,"is %s = 1?\n",nvramvar);
 
   if (nvram_match (nvramvar, "1"))
     {
@@ -6185,7 +6183,6 @@ save_wds (webs_t wp)
     {
       sprintf (wds_enable_var, "%s_wds%d_enable", interface, h);
       wds_enable_val = websGetVar (wp, wds_enable_var, NULL);
-      fprintf(stderr,"wds save %s -> %s\n",wds_enable_var,wds_enable_val);
       nvram_set (wds_enable_var, wds_enable_val);
     }
   sprintf (wds_enable_var, "%s_br1_enable", interface);
