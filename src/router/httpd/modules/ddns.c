@@ -233,12 +233,13 @@ char request2[128]={0};
 int i;
 for (i=0;i<20;i++)
 sprintf(request,"%s%x",request,final[i]);
+system("rm -f /tmp/.hash");
 sprintf(request2,"wget \"http://freedns.afraid.org/api/?action=getdyndns&sha=%s\" -O /tmp/.hash",request);
 system(request2);
 FILE *in=fopen("/tmp/.hash","rb");
 if (in==NULL)
     return NULL;
-while(getc(in)!='?');
+while(getc(in)!='?' && feof(in)==0);
 i=0;
 char *hash=malloc(64);
 while(feof(in)==0)
@@ -420,7 +421,7 @@ int gethash=0;
   if (gethash && !contains(hostname,','))
     {
     char hostn[128];
-    char *hash=request_freedns(username,passwd);
+    char *hash=request_freedns(username,nvram_safe_get(_passwd));
     if (hash)
     {
     sprintf(hostn,"%s,%s",hostname,hash);
