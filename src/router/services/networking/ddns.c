@@ -42,6 +42,9 @@
 #include <utils.h>
 #include <rc.h>
 
+
+
+
 /* inadyn scripts by lawnmowerguy1 */
 
 char service[32];
@@ -122,6 +125,7 @@ init_ddns (void)
       snprintf (_username, sizeof (_username), "%s", "ddns_username_2");
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_2");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_2");
+      
     }
   else if (flag == 3)
     {
