@@ -1,6 +1,6 @@
 /*
  * OLSR Basic Multicast Forwarding (BMF) plugin.
- * Copyright (c) 2005, 2006, Thales Communications, Huizen, The Netherlands.
+ * Copyright (c) 2005 - 2007, Thales Communications, Huizen, The Netherlands.
  * Written by Erik Tromp.
  * All rights reserved.
  *
@@ -128,8 +128,8 @@ int IsOlsrOrBmfPacket(unsigned char* ipPacket)
   }
 
   /* The total length must be at least large enough to store the UDP header */
-  ipHeaderLen = GetHeaderLength(ipPacket);
-  if (GetTotalLength(ipPacket) < ipHeaderLen + sizeof(struct udphdr))
+  ipHeaderLen = GetIpHeaderLength(ipPacket);
+  if (GetIpTotalLength(ipPacket) < ipHeaderLen + sizeof(struct udphdr))
   {
     /* Not long enough */
     return 0;

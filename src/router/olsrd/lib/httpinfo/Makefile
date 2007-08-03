@@ -35,7 +35,7 @@
 # to the project. For more information see the website or contact
 # the copyright holders.
 #
-# $Id: Makefile,v 1.21 2005/05/25 13:50:22 br1 Exp $
+# $Id: Makefile,v 1.23 2007/07/26 17:34:54 bernd67 Exp $
 
 OLSRD_PLUGIN =	true
 PLUGIN_NAME =	olsrd_httpinfo
@@ -45,7 +45,7 @@ TOPDIR = ../..
 include $(TOPDIR)/Makefile.inc
 
 ifdef ADMIN_INTERFACE
-	CFLAGS += -DADMIN_INTERFACE
+CPPFLAGS +=	-DADMIN_INTERFACE
 endif
 
 OBJS += $(TOPDIR)/src/cfgparser/cfgfile_gen.o
@@ -55,7 +55,7 @@ ifdef ADMIN_INTERFACE
 		@echo 'WARNING - BUILT WITH EXPERIMENTAL ADMIN INTERFACE!'
 endif
 
-$(PLUGIN_FULLNAME): $(OBJS)
+$(PLUGIN_FULLNAME): $(OBJS) version-script.txt
 		$(CC) $(LDFLAGS) -o $(PLUGIN_FULLNAME) $(OBJS) $(LIBS)
 
 install:	$(PLUGIN_FULLNAME)

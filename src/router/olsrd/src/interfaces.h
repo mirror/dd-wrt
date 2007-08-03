@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: interfaces.h,v 1.39 2007/04/20 13:46:04 bernd67 Exp $
+ * $Id: interfaces.h,v 1.41 2007/08/02 21:51:40 bernd67 Exp $
  */
 
 
@@ -141,7 +141,6 @@ struct interface
   int	        int_flags;			/* see below */
   char	        *int_name;			/* from kernel if structure */
   int           if_index;                       /* Kernels index of this interface */
-  int           if_nr;                          /* This interfaces index internally*/
   int           is_wireless;                    /* wireless interface or not*/
   olsr_u16_t    olsr_seqnum;                    /* Olsr message seqno */
 
@@ -207,7 +206,7 @@ struct interface *
 if_ifwithsock(int);
 
 struct interface *
-if_ifwithaddr(union olsr_ip_addr *);
+if_ifwithaddr(const union olsr_ip_addr *);
 
 struct interface *
 if_ifwithname(const char *);

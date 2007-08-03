@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: kernel_routes.c,v 1.22 2007/04/25 22:08:17 bernd67 Exp $
+ * $Id: kernel_routes.c,v 1.23 2007/05/17 20:30:09 bernd67 Exp $
  */
 
 
@@ -65,14 +65,13 @@ olsr_ioctl_add_route(struct rt_entry *destination)
 {
   struct rtentry kernel_route;
   int tmp;
-  char dst_str[16], mask_str[16], router_str[16];
-
-  inet_ntop(AF_INET, &destination->rt_dst.v4, dst_str, 16);
-  inet_ntop(AF_INET, &destination->rt_mask.v4, mask_str, 16);
-  inet_ntop(AF_INET, &destination->rt_router.v4, router_str, 16);
+  char dst_str[INET_ADDRSTRLEN], mask_str[INET_ADDRSTRLEN], router_str[INET_ADDRSTRLEN];
 
   OLSR_PRINTF(1, "(ioctl)Adding route with metric %d to %s/%s via %s/%s.\n",
-              destination->rt_metric, dst_str, mask_str, router_str,
+              destination->rt_metric,
+              inet_ntop(AF_INET, &destination->rt_dst.v4, dst_str, sizeof(dst_str)),
+              inet_ntop(AF_INET, &destination->rt_mask.v4, mask_str, sizeof(mask_str)),
+              inet_ntop(AF_INET, &destination->rt_router.v4, router_str, sizeof(router_str)),
               destination->rt_if->int_name);
   
   memset(&kernel_route, 0, sizeof(struct rtentry));
@@ -104,14 +103,7 @@ olsr_ioctl_add_route(struct rt_entry *destination)
   /*
    * Set interface
    */
-  if((kernel_route.rt_dev = malloc(strlen(destination->rt_if->int_name) + 1)) == 0)
-    {
-      fprintf(stderr, "Out of memory!\n%s\n", strerror(errno));
-      olsr_exit(__func__, EXIT_FAILURE);
-    }
-
-  strcpy(kernel_route.rt_dev, destination->rt_if->int_name);
-
+  kernel_route.rt_dev = destination->rt_if->int_name;
   
   //printf("Inserting route entry on device %s\n\n", kernel_route.rt_dev);
   
@@ -139,13 +131,6 @@ olsr_ioctl_add_route(struct rt_entry *destination)
 			       1,
 			       destination->rt_if->int_name); /* Send interface name */
       }
-  
-  
-  if (ifnet && kernel_route.rt_dev)
-    {
-      free(kernel_route.rt_dev);
-    }
-  
   
   return tmp;
 }
@@ -234,14 +219,13 @@ olsr_ioctl_del_route(struct rt_entry *destination)
 {
   struct rtentry kernel_route;
   int tmp;
-  char dst_str[16], mask_str[16], router_str[16];
-
-  inet_ntop(AF_INET, &destination->rt_dst.v4, dst_str, 16);
-  inet_ntop(AF_INET, &destination->rt_mask.v4, mask_str, 16);
-  inet_ntop(AF_INET, &destination->rt_router.v4, router_str, 16);
+  char dst_str[INET_ADDRSTRLEN], mask_str[INET_ADDRSTRLEN], router_str[INET_ADDRSTRLEN];
 
   OLSR_PRINTF(1, "(ioctl)Deleting route with metric %d to %s/%s via %s.\n",
-              destination->rt_metric, dst_str, mask_str, router_str);
+              destination->rt_metric,
+              inet_ntop(AF_INET, &destination->rt_dst.v4, dst_str, sizeof(dst_str)),
+              inet_ntop(AF_INET, &destination->rt_mask.v4, mask_str, sizeof(mask_str)),
+              inet_ntop(AF_INET, &destination->rt_router.v4, router_str, sizeof(router_str)));
   
   memset(&kernel_route,0,sizeof(struct rtentry));
 
@@ -374,7 +358,7 @@ delete_all_inet_gws(void)
 
   ifr = ifc.ifc_req;
   cplim = buf + ifc.ifc_len; /*skip over if's with big ifr_addr's */
-  for (cp = buf; cp < cplim;cp += sizeof (ifr->ifr_name) + sizeof(ifr->ifr_addr)) 
+  for (cp = buf; cp < cplim; cp += sizeof (ifr->ifr_name) + sizeof(ifr->ifr_addr)) 
     {
       struct rtentry kernel_route;
       ifr = (struct ifreq *)cp;
@@ -406,13 +390,7 @@ delete_all_inet_gws(void)
       kernel_route.rt_flags = RTF_UP | RTF_GATEWAY;
 	   
 	   
-      if((kernel_route.rt_dev = malloc(6)) == 0)
-	{
-	  fprintf(stderr, "Out of memory!\n%s\n", strerror(errno));
-	  olsr_exit(__func__, EXIT_FAILURE);
-	}
-	   
-      strncpy(kernel_route.rt_dev, ifr->ifr_ifrn.ifrn_name, 6);
+      kernel_route.rt_dev = ifr->ifr_ifrn.ifrn_name;
 
   
       //printf("Inserting route entry on device %s\n\n", kernel_route.rt_dev);
@@ -421,14 +399,8 @@ delete_all_inet_gws(void)
          OLSR_PRINTF(1, "NO\n");
       else
          OLSR_PRINTF(1, "YES\n");
-
-
-      free(kernel_route.rt_dev);
-      
-    }
-  
+    }  
   close(s);
-  
   return 0;
        
 }

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsr.c,v 1.54 2007/04/25 22:08:09 bernd67 Exp $
+ * $Id: olsr.c,v 1.56 2007/08/01 16:22:57 bernd67 Exp $
  */
 
 /**
@@ -60,6 +60,7 @@
 #include "neighbor_table.h"
 #include "log.h"
 #include "lq_packet.h"
+#include "lq_avl.h"
 
 #include <stdarg.h>
 #include <signal.h>
@@ -259,6 +260,13 @@ olsr_init_tables(void)
   changes_topology = OLSR_FALSE;
   changes_neighborhood = OLSR_FALSE;
   changes_hna = OLSR_FALSE;
+
+  /* Set avl tree comparator */
+  if (olsr_cnf->ipsize == 4) {
+    avl_comp_default = NULL;
+  } else {
+    avl_comp_default = avl_comp_ipv6;
+  }
 
   /* Initialize link set */
   olsr_init_link_set();

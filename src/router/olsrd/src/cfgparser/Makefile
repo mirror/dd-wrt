@@ -36,7 +36,7 @@
 # to the project. For more information see the website or contact
 # the copyright holders.
 #
-# $Id: Makefile,v 1.25 2007/04/27 11:32:27 bernd67 Exp $
+# $Id: Makefile,v 1.29 2007/08/02 19:59:15 bernd67 Exp $
 
 TOPDIR=../..
 include $(TOPDIR)/Makefile.inc
@@ -48,20 +48,19 @@ ifeq ($(OS), win32)
 
 LIBNAME ?=	olsrd_cfgparser.dll
 BINNAME ?=	olsrd_cfgparser.exe
-CFLAGS +=	-DWIN32_STDIO_HACK
+CPPFLAGS +=	-DWIN32_STDIO_HACK
 OBJS +=		../win32/compat.o
 
 else
 
 LIBNAME ?=	olsrd_cfgparser.so.0.1
 BINNAME ?=	olsrd_cfgparser
-
 endif
 
 
 ifdef MAKEBIN
 
-CFLAGS +=	-DMAKEBIN 
+CPPFLAGS +=	-DMAKEBIN 
 NAME =		$(BINNAME)
 
 else 
@@ -78,7 +77,7 @@ ifeq (${OS}, win32)
 LDFLAGS +=	-Wl,--out-implib=libolsrd_cfgparser.a -Wl,--export-all-symbols
 endif
 
-CFLAGS +=	-DMAKELIB
+CPPFLAGS +=	-DMAKELIB
 NAME =		$(LIBNAME)
 
 endif
@@ -93,6 +92,7 @@ oscan.c:	oscan.lex Makefile
 		$(FLEX) -Cem -ooscan.c-tmp oscan.lex
 		sed	-e '/^static/s/yy_get_next_buffer[\(][\)]/yy_get_next_buffer(void)/' \
 			-e '/^static/s/yy_get_previous_state[\(][\)]/yy_get_previous_state(void)/' \
+			-e '/^static/s/yygrowstack[\(][\)]/yygrowstack(void)/' \
 			-e '/^static/s/input[\(][\)]/input(void)/' \
 			-e '/^static  *void  *yy_fatal_error/s/^\(.*)\);$$/\1 __attribute__((noreturn));/' \
 			< oscan.c-tmp >oscan.c

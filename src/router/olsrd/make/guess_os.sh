@@ -1,11 +1,6 @@
 #!/bin/sh
 
 if test -n "$OS"; then
-	# cygwin exports the OS environment vaiable - fix it. 
-	# otherwiese accept the user supplied OS
-	case "$OS" in
-		Windows*)	OS=win32 ;;
-	esac
 	echo $OS;
 	exit;
 else

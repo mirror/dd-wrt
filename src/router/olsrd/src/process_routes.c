@@ -39,7 +39,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: process_routes.c,v 1.32 2007/04/25 22:08:13 bernd67 Exp $
+ * $Id: process_routes.c,v 1.34 2007/08/02 22:07:19 bernd67 Exp $
  */
 
 #include "defs.h"
@@ -213,14 +213,14 @@ olsr_export_del_route6 (struct rt_entry *e)
 int
 olsr_init_old_table(void)
 {
-  int index;
+  int idx;
 
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
-      old_routes[index].next = &old_routes[index];
-      old_routes[index].prev = &old_routes[index];
-      old_hna[index].next = &old_hna[index];
-      old_hna[index].prev = &old_hna[index];
+      old_routes[idx].next = &old_routes[idx];
+      old_routes[idx].prev = &old_routes[idx];
+      old_hna[idx].next = &old_hna[idx];
+      old_hna[idx].prev = &old_hna[idx];
     }
 
   return 1;
@@ -247,7 +247,7 @@ olsr_find_up_route(struct rt_entry *dst, struct rt_entry *table)
       //printf("vs %s hc: %d ... ", olsr_ip_to_string(&destination->rt_dst), destination->rt_metric);      
       if (COMP_IP(&destination->rt_dst, &dst->rt_dst) &&
 	  COMP_IP(&destination->rt_router, &dst->rt_router) &&
-	  (destination->rt_if->if_nr == dst->rt_if->if_nr))
+	  (destination->rt_if->if_index == dst->rt_if->if_index))
 	{
 	  if(destination->rt_metric == dst->rt_metric)
 	    {
@@ -277,12 +277,12 @@ olsr_build_update_list(struct rt_entry *from_table,struct rt_entry *in_table)
 {
   struct destination_n *kernel_route_list = NULL;
   struct rt_entry      *destination;
-  olsr_u8_t            index;
+  int                   idx;
   
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
-      for(destination = from_table[index].next;
-	  destination != &from_table[index];
+      for(destination = from_table[idx].next;
+	  destination != &from_table[idx];
 	  destination = destination->next)
 	{
 	  if (!olsr_find_up_route(destination, in_table))
@@ -399,26 +399,26 @@ olsr_update_kernel_hna_routes(void)
 void
 olsr_move_route_table(struct rt_entry *original, struct rt_entry *new)
 {
-  olsr_16_t index;
+  int idx;
 
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
-      if(original[index].next == &original[index])
+      if(original[idx].next == &original[idx])
 	{
-	  new[index].next = &new[index];
-	  new[index].prev = &new[index];
+	  new[idx].next = &new[idx];
+	  new[idx].prev = &new[idx];
 	}
       else
 	{
 	  /* Copy to old */
-	  new[index].next = original[index].next;
-	  new[index].next->prev = &new[index];
-	  new[index].prev = original[index].prev;
-	  new[index].prev->next = &new[index];
+	  new[idx].next = original[idx].next;
+	  new[idx].next->prev = &new[idx];
+	  new[idx].prev = original[idx].prev;
+	  new[idx].prev->next = &new[idx];
 
 	  /* Clear original */
-	  original[index].next = &original[index];
-	  original[index].prev = &original[index];
+	  original[idx].next = &original[idx];
+	  original[idx].prev = &original[idx];
 	}
     }
 }

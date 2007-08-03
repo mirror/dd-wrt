@@ -38,7 +38,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: oscan.lex,v 1.22 2007/04/20 13:46:05 bernd67 Exp $
+ * $Id: oscan.lex,v 1.24 2007/05/17 20:35:16 bernd67 Exp $
  */
 
 
@@ -55,7 +55,7 @@
 #include "olsrd_conf.h"
 
 #include "oparse.h"
-
+ 
 /* Prototypes */
 int yyget_lineno(void);
 FILE * yyget_in(void);
@@ -70,27 +70,63 @@ void yyset_debug(int);
 int yylex_destroy(void);
 int yylex(void);
 
-struct conf_token *
-get_conf_token(void);
+static struct conf_token *get_conf_token(void);
+static struct conf_token *get_string_token(const char * const s, int const n);
+static struct conf_token *get_integer_token(const char * const s);
+static struct conf_token *get_floating_token(const char * const s);
+static struct conf_token *get_boolean_token(const olsr_bool b);
 
-struct conf_token *
-get_conf_token(void)
+static struct conf_token *get_conf_token(void)
 {
-  struct conf_token *t = malloc(sizeof(struct conf_token));
-
-  if (t == NULL)
-    {
-      fprintf(stderr, "Cannot allocate %d bytes for an configuration token.\n",
-	      (int) sizeof (struct conf_token));
-      exit(EXIT_FAILURE);
+    struct conf_token *t = calloc(1, sizeof(struct conf_token));
+    if (t == NULL) {
+        fprintf(stderr, "Cannot allocate %d bytes for an configuration token.\n", (int)sizeof(struct conf_token));
     }
-
-  memset(t, 0, sizeof(struct conf_token));
-
-  return t;
+    return t;
 }
 
+static struct conf_token *get_string_token(const char * const s, int const n)
+{
+    struct conf_token *rv = get_conf_token();
+    if (rv != NULL) {
+        rv->string = malloc(n+1);
+        if (rv->string == NULL) {
+            fprintf(stderr, "Cannot allocate %d bytes for string token data.\n", n+1);
+            free(rv);
+            return NULL;
+        }
+        strncpy(rv->string, s, n);
+        rv->string[n] = '\0';
+    }
+    return rv;
+}
 
+static struct conf_token *get_integer_token(const char * const s)
+{
+    struct conf_token *rv = get_conf_token();
+    if (rv != NULL) {
+        rv->integer = strtol(s, NULL, 0);
+    }
+    return rv;
+}
+
+static struct conf_token *get_floating_token(const char * const s)
+{
+    struct conf_token *rv = get_conf_token();
+    if (rv != NULL) {
+        rv->floating = strtod(s, NULL);
+    }
+    return rv;
+}
+
+static struct conf_token *get_boolean_token(const olsr_bool b)
+{
+    struct conf_token *rv = get_conf_token();
+    if (rv != NULL) {
+        rv->boolean = b;
+    }
+    return rv;
+}
 
 %}
 
@@ -119,345 +155,287 @@ IPV6ADDR {IP6PAT1}|{IP6PAT2}|{IP6PAT3}|{IP6PAT4}|{IP6PAT5}|{IP6PAT6}|{IP6PAT7}|{
 %%
 
 \s*"#".*\n {
-
-  current_line++;
-  return TOK_COMMENT;
+    current_line++;
+    return TOK_COMMENT;
 }
 
 \{ {
-  yylval = NULL;
-  return TOK_OPEN;
+    yylval = NULL;
+    return TOK_OPEN;
 }
 
 \} {
-  yylval = NULL;
-  return TOK_CLOSE;
-}
-
-\; {
-  yylval = NULL;
-  return TOK_SEMI;
+    yylval = NULL;
+    return TOK_CLOSE;
 }
 
 \"[^\"]*\" {
-  yylval = get_conf_token();
-
-  yylval->string = malloc(yyleng - 1);
-
-  if (yylval->string == NULL)
-  {
-    fprintf(stderr,
-            "Cannot allocate %d bytes for string token data.\n", yyleng - 1);
-    yyterminate();
-  }
-
-  strncpy(yylval->string, yytext + 1, yyleng - 2);
-  yylval->string[yyleng - 2] = 0;
-
-  return TOK_STRING;
+    yylval = get_string_token(yytext + 1, yyleng - 2);
+    if (yylval == NULL) {
+        yyterminate();
+    }
+    return TOK_STRING;
 }
 
 0x{HEXDIGIT}+ {
-  yylval = get_conf_token();
-
-  yylval->integer = strtol(yytext, NULL, 0);
-
-  return TOK_INTEGER;
+    yylval = get_integer_token(yytext);
+    return TOK_INTEGER;
 }
 
 {FLOAT} {
-  yylval = get_conf_token();
-
-  sscanf(yytext, "%f", &yylval->floating);
-  return TOK_FLOAT;
+    yylval = get_floating_token(yytext);
+    return TOK_FLOAT;
 }
 
 {IPV4ADDR} {
-  yylval = get_conf_token();
-  
-  yylval->string = malloc(yyleng + 1);
-  
-  if (yylval->string == NULL)
-    {
-      fprintf(stderr,
-	      "Cannot allocate %d bytes for string token data.\n", yyleng + 1);
-      yyterminate();
+    yylval = get_string_token(yytext, yyleng + 1);
+    if (yylval == NULL) {
+        yyterminate();
     }
-  
-  strncpy(yylval->string, yytext, yyleng+1);
-
-  return TOK_IP4_ADDR;
+    return TOK_IP4_ADDR;
 }
 
-
-
 {IPV6ADDR} {
-
-  yylval = get_conf_token();
-  
-  yylval->string = malloc(yyleng+1);
-  
-  if (yylval->string == NULL)
-    {
-      fprintf(stderr,
-	      "Cannot allocate %d bytes for string token data.\n", yyleng + 1);
-      yyterminate();
+    yylval = get_string_token(yytext, yyleng + 1);
+    if (yylval == NULL) {
+        yyterminate();
     }
-  
-  strncpy(yylval->string, yytext, yyleng+1);
-  
-  return TOK_IP6_ADDR;
+    return TOK_IP6_ADDR;
 }
 
 "default" {
-  yylval = NULL;
-  return TOK_DEFAULT;
+    yylval = NULL;
+    return TOK_DEFAULT;
 }
 
 {DECDIGIT}+ {
-
-  yylval = get_conf_token();
-
-  yylval->integer = atoi(yytext);
-
-  return TOK_INTEGER;
-
+    yylval = get_integer_token(yytext);
+    return TOK_INTEGER;
 }
 
 
-"yes"|"no" {
-  yylval = get_conf_token();
-
-  if (strncmp(yytext, "yes", 3) == 0)
-    yylval->boolean = OLSR_TRUE;
-
-  else
-    yylval->boolean = OLSR_FALSE;
-
-  return TOK_BOOLEAN;
+"yes" {
+    yylval = get_boolean_token(OLSR_TRUE);
+    return TOK_BOOLEAN;
 }
 
+"no" {
+    yylval = get_boolean_token(OLSR_FALSE);
+    return TOK_BOOLEAN;
+}
 
+"site-local" {
+    yylval = get_boolean_token(OLSR_TRUE);
+    return TOK_IP6TYPE;
+}
 
-"site-local"|"global" {
-  yylval = get_conf_token();
-
-  if (strncmp(yytext, "site-local", 10) == 0)
-    yylval->boolean = OLSR_TRUE;
-
-  else
-    yylval->boolean = OLSR_FALSE;
-
-  return TOK_IP6TYPE;
+"global" {
+    yylval = get_boolean_token(OLSR_FALSE);
+    return TOK_IP6TYPE;
 }
 
 "Host" {
-  yylval = NULL;
-  return TOK_HOSTLABEL;
+    yylval = NULL;
+    return TOK_HOSTLABEL;
 }
 
 "Net" {
-  yylval = NULL;
-  return TOK_NETLABEL;
+    yylval = NULL;
+    return TOK_NETLABEL;
 }
 
 "MaxConnections" {
-  yylval = NULL;
-  return TOK_MAXIPC;
+    yylval = NULL;
+    return TOK_MAXIPC;
 }
 
 "DebugLevel" {
-  yylval = NULL;
-  return TOK_DEBUGLEVEL;
+    yylval = NULL;
+    return TOK_DEBUGLEVEL;
 }
 
 "IpVersion" {
-  yylval = NULL;
-  return TOK_IPVERSION;
+    yylval = NULL;
+    return TOK_IPVERSION;
 }
 
 "NicChgsPollInt" {
-  yylval = NULL;
-  return TOK_NICCHGSPOLLRT;
+    yylval = NULL;
+    return TOK_NICCHGSPOLLRT;
 }
 
 "Hna4" {
-  yylval = NULL;
-  return TOK_HNA4;
+    yylval = NULL;
+    return TOK_HNA4;
 }
 
 "Hna6" {
-  yylval = NULL;
-  return TOK_HNA6;
+    yylval = NULL;
+    return TOK_HNA6;
 }
 
 "LoadPlugin" {
-  yylval = NULL;
-  return TOK_PLUGIN;
-}
-
-"PlName" {
-  yylval = NULL;
-  return TOK_PLNAME;
+    yylval = NULL;
+    return TOK_PLUGIN;
 }
 
 "PlParam" {
-  yylval = NULL;
-  return TOK_PLPARAM;
+    yylval = NULL;
+    return TOK_PLPARAM;
 }
 
 "Interface" {
-  yylval = NULL;
-  return TOK_INTERFACE;
+    yylval = NULL;
+    return TOK_INTERFACE;
 }
 
 "AllowNoInt" {
-  yylval = NULL;
-  return TOK_NOINT;
+    yylval = NULL;
+    return TOK_NOINT;
 }
 
 "TosValue" {
-  yylval = NULL;
-  return TOK_TOS;
+    yylval = NULL;
+    return TOK_TOS;
 }
 
 "Willingness" {
-  yylval = NULL;
-  return TOK_WILLINGNESS;
+    yylval = NULL;
+    return TOK_WILLINGNESS;
 }
 
 "IpcConnect" {
-  yylval = NULL;
-  return TOK_IPCCON;
+    yylval = NULL;
+    return TOK_IPCCON;
 }
 
 "UseHysteresis" {
-  yylval = NULL;
-  return TOK_USEHYST;
+    yylval = NULL;
+    return TOK_USEHYST;
 }
 
 "HystScaling" {
-  yylval = NULL;
-  return TOK_HYSTSCALE;
+    yylval = NULL;
+    return TOK_HYSTSCALE;
 }
 
 "HystThrHigh" {
-  yylval = NULL;
-  return TOK_HYSTUPPER;
+    yylval = NULL;
+    return TOK_HYSTUPPER;
 }
 
 "HystThrLow" {
-  yylval = NULL;
-  return TOK_HYSTLOWER;
+    yylval = NULL;
+    return TOK_HYSTLOWER;
 }
 
 "Pollrate" {
-  yylval = NULL;
-  return TOK_POLLRATE;
+    yylval = NULL;
+    return TOK_POLLRATE;
 }
 
 
 "TcRedundancy" {
-  yylval = NULL;
-  return TOK_TCREDUNDANCY;
+    yylval = NULL;
+    return TOK_TCREDUNDANCY;
 }
 
 "MprCoverage" {
-  yylval = NULL;
-  return TOK_MPRCOVERAGE;
+    yylval = NULL;
+    return TOK_MPRCOVERAGE;
 }
 
 "LinkQualityLevel" {
-  yylval = NULL;
-  return TOK_LQ_LEVEL;
+    yylval = NULL;
+    return TOK_LQ_LEVEL;
 }
 
 "LinkQualityFishEye" {
-  yylval = NULL;
-  return TOK_LQ_FISH;
+    yylval = NULL;
+    return TOK_LQ_FISH;
 }
 
 "LinkQualityDijkstraLimit" {
-  yylval = NULL;
-  return TOK_LQ_DLIMIT;
+    yylval = NULL;
+    return TOK_LQ_DLIMIT;
 }
 
 "LinkQualityWinSize" {
-  yylval = NULL;
-  return TOK_LQ_WSIZE;
+    yylval = NULL;
+    return TOK_LQ_WSIZE;
 }
 
 "LinkQualityMult" {
-  yylval = NULL;
-  return TOK_LQ_MULT;
+    yylval = NULL;
+    return TOK_LQ_MULT;
 }
 
 "ClearScreen" {
-  yylval = NULL;
-  return TOK_CLEAR_SCREEN;
+    yylval = NULL;
+    return TOK_CLEAR_SCREEN;
 }
 
 "Weight" {
-  yylval = NULL;
-  return TOK_IFWEIGHT;
+    yylval = NULL;
+    return TOK_IFWEIGHT;
 }
 
 "Ip4Broadcast" {
-  yylval = NULL;
-  return TOK_IP4BROADCAST;
+    yylval = NULL;
+    return TOK_IP4BROADCAST;
 }
 "Ip6AddrType" {
-  yylval = NULL;
-  return TOK_IP6ADDRTYPE;
+    yylval = NULL;
+    return TOK_IP6ADDRTYPE;
 }
 "Ip6MulticastSite" {
-  yylval = NULL;
-  return TOK_IP6MULTISITE;
+    yylval = NULL;
+    return TOK_IP6MULTISITE;
 }
 "Ip6MulticastGlobal" {
-  yylval = NULL;
-  return TOK_IP6MULTIGLOBAL;
+    yylval = NULL;
+    return TOK_IP6MULTIGLOBAL;
 }
 "HelloInterval" {
-  yylval = NULL;
-  return TOK_HELLOINT;
+    yylval = NULL;
+    return TOK_HELLOINT;
 }
 "HelloValidityTime" {
-  yylval = NULL;
-  return TOK_HELLOVAL;
+    yylval = NULL;
+    return TOK_HELLOVAL;
 }
 "TcInterval" {
-  yylval = NULL;
-  return TOK_TCINT;
+    yylval = NULL;
+    return TOK_TCINT;
 }
 "TcValidityTime" {
-  yylval = NULL;
-  return TOK_TCVAL;
+    yylval = NULL;
+    return TOK_TCVAL;
 }
 "MidInterval" {
-  yylval = NULL;
-  return TOK_MIDINT;
+    yylval = NULL;
+    return TOK_MIDINT;
 }
 "MidValidityTime" {
-  yylval = NULL;
-  return TOK_MIDVAL;
+    yylval = NULL;
+    return TOK_MIDVAL;
 }
 "HnaInterval" {
-  yylval = NULL;
-  return TOK_HNAINT;
+    yylval = NULL;
+    return TOK_HNAINT;
 }
 "HnaValidityTime" {
-  yylval = NULL;
-  return TOK_HNAVAL;
+    yylval = NULL;
+    return TOK_HNAVAL;
 }
 "AutoDetectChanges" {
-  yylval = NULL;
-  return TOK_AUTODETCHG;
+    yylval = NULL;
+    return TOK_AUTODETCHG;
 }
 
 
 \n|\r\n {
-  current_line++;
+    current_line++;
 }
 
 \ |\t

@@ -3,7 +3,7 @@
 
 /*
  * OLSR Basic Multicast Forwarding (BMF) plugin.
- * Copyright (c) 2005, 2006, Thales Communications, Huizen, The Netherlands.
+ * Copyright (c) 2005 - 2007, Thales Communications, Huizen, The Netherlands.
  * Written by Erik Tromp.
  * All rights reserved.
  *
@@ -117,25 +117,28 @@ extern u_int32_t EtherTunTapIpBroadcast;
 
 extern int CapturePacketsOnOlsrInterfaces;
 
-enum TTunOrTap { TT_TUN = 0, TT_TAP };
-extern enum TTunOrTap TunOrTap;
-
 enum TBmfMechanism { BM_BROADCAST = 0, BM_UNICAST_PROMISCUOUS };
 extern enum TBmfMechanism BmfMechanism;
 
 int SetBmfInterfaceName(const char* ifname);
-int SetBmfInterfaceType(const char* iftype);
 int SetBmfInterfaceIp(const char* ip);
 int SetCapturePacketsOnOlsrInterfaces(const char* enable);
 int SetBmfMechanism(const char* mechanism);
 int DeactivateSpoofFilter(void);
 void RestoreSpoofFilter(void);
-struct link_entry* GetBestNeighbor(
+
+struct TBestNeighbors
+{
+  struct link_entry* links[2];
+};
+
+struct TBestNeighbors GetBestTwoNeighbors(
   struct TBmfInterface* intf,
   union olsr_ip_addr* source,
   union olsr_ip_addr* forwardedBy,
   union olsr_ip_addr* forwardedTo,
-  int* multipleNeighbors);
+  int* nPossibleNeighbors);
+
 int CreateBmfNetworkInterfaces(struct interface* skipThisIntf);
 void AddInterface(struct interface* newIntf);
 void CloseBmfNetworkInterfaces(void);

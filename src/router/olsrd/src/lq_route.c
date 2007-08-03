@@ -2,6 +2,7 @@
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
  * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
  * IPv4 performance optimization (c) 2006, sven-ola(gmx.de)
+ * SPF implementation (c) 2007, Hannes Gredler (hannes@gredler.at)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -37,7 +38,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: lq_route.c,v 1.46 2007/04/25 22:08:09 bernd67 Exp $
+ * $Id: lq_route.c,v 1.48 2007/08/02 22:07:19 bernd67 Exp $
  */
 
 #include "defs.h"
@@ -53,73 +54,158 @@
 #include "lq_avl.h"
 #include "lq_route.h"
 
-struct dijk_edge
+struct olsr_spf_edge
 {
   struct avl_node tree_node;
-  struct list_node node;
-  struct dijk_vertex *dest;
+  struct olsr_spf_vertex *dest;
   float etx;
 };
 
-struct dijk_vertex
+struct olsr_spf_vertex
 {
-  struct avl_node tree_node;
-  struct list_node node;
+  struct avl_node tree_node; /* node keyed by ip address */
+  struct avl_node cand_tree_node; /* node keyed by etx */
+  struct avl_node path_tree_node; /* node keyed by etx */
   union olsr_ip_addr addr;
   struct avl_tree edge_tree;
-  struct list edge_list;
+  union olsr_ip_addr *next_hop; /* the gateway router */
   float path_etx;
-  struct dijk_vertex *prev;
-  olsr_bool done;
+  olsr_u8_t hops;
 };
 
-static int avl_comp_ipv6(void *ip1, void *ip2)
-{
-  return memcmp(ip1, ip2, olsr_cnf->ipsize);
+/*
+ * avl_comp_etx
+ *
+ * compare two etx metrics.
+ * return 0 if there is an exact match and
+ * -1 / +1 depending on being smaller or bigger.
+ * note that this results in the most optimal code
+ * after compiler optimization.
+ */
+static int
+avl_comp_etx (void *etx1, void *etx2)
+{       
+  if (*(float *)etx1 < *(float *)etx2) {
+    return -1;
+  }
+
+  if (*(float *)etx1 > *(float *)etx2) {
+    return +1;
+  }
+
+  return 0;
 }
 
-static int (*avl_comp)(void *, void *);
+/*
+ * olsr_spf_add_cand_tree
+ *
+ * Key an existing vertex to a candidate tree.
+ */
+static void
+olsr_spf_add_cand_tree (struct avl_tree *tree,
+                        struct olsr_spf_vertex *vert)
+{
+  vert->cand_tree_node.key = &vert->path_etx;
+  vert->cand_tree_node.data = vert;
 
-static void add_vertex(struct avl_tree *vertex_tree, union olsr_ip_addr *addr,
-                       float path_etx)
+#ifdef DEBUG
+  OLSR_PRINTF(1, "SPF: insert candidate %s, cost %f\n",
+              olsr_ip_to_string(&(vert->addr)),
+              vert->path_etx);
+#endif
+
+  avl_insert(tree, &vert->cand_tree_node, 1);
+}
+
+/*
+ * olsr_spf_del_cand_tree
+ *
+ * Unkey an existing vertex from a candidate tree.
+ */
+static void
+olsr_spf_del_cand_tree (struct avl_tree *tree,
+                        struct olsr_spf_vertex *vert)
+{
+
+#ifdef DEBUG
+  OLSR_PRINTF(1, "SPF: delete candidate %s, cost %f\n",
+              olsr_ip_to_string(&(vert->addr)),
+              vert->path_etx);
+#endif
+
+  avl_delete(tree, &vert->cand_tree_node);
+}
+
+/*
+ * olsr_spf_add_path_tree
+ *
+ * Key an existing vertex to a path tree.
+ */
+static void
+olsr_spf_add_path_tree (struct avl_tree *tree,
+                        struct olsr_spf_vertex *vert)
+{
+  vert->path_tree_node.key = &vert->path_etx;
+  vert->path_tree_node.data = vert;
+
+#ifdef DEBUG
+  OLSR_PRINTF(1, "SPF: insert path %s, cost %f, via %s\n",
+              olsr_ip_to_string(&(vert->addr)),
+              vert->path_etx,
+              olsr_ip_to_string(vert->next_hop));
+#endif
+
+  avl_insert(tree, &vert->path_tree_node, 1);
+}
+
+/*
+ * olsr_spf_add_vertex
+ *
+ * Add a node to the tree of all nodes in the network.
+ */
+static struct olsr_spf_vertex *
+olsr_spf_add_vertex (struct avl_tree *vertex_tree,
+                     union olsr_ip_addr *addr, float path_etx)
 {
   struct avl_node *node;
-  struct dijk_vertex *vert;
+  struct olsr_spf_vertex *vert;
 
-  // see whether this destination is already in our list
+  // see whether this destination is already in our tree
 
   node = avl_find(vertex_tree, addr);
 
+  if (node) {
+    return node->data;
+  }
+
   // if it's not in our list, add it
 
-  if (node == NULL)
-  {
-    vert = olsr_malloc(sizeof (struct dijk_vertex), "Dijkstra vertex");
+  vert = olsr_malloc(sizeof (struct olsr_spf_vertex), "Dijkstra vertex");
 
-    vert->tree_node.data = vert;
-    vert->tree_node.key = &vert->addr;
+  vert->tree_node.data = vert;
+  vert->tree_node.key = &vert->addr;
 
-    COPY_IP(&vert->addr, addr);
+  COPY_IP(&vert->addr, addr);
     
-    vert->path_etx = path_etx;
-    vert->prev = NULL;
-    vert->done = OLSR_FALSE;
+  vert->path_etx = path_etx;
+  vert->next_hop = NULL;
+  vert->hops = 0;
 
-    avl_init(&vert->edge_tree, avl_comp);
-    list_init(&vert->edge_list);
+  avl_init(&vert->edge_tree, avl_comp_default);
 
-    avl_insert(vertex_tree, &vert->tree_node, 0);
-  }
+  avl_insert(vertex_tree, &vert->tree_node, 0);
+  return vert;
 }
 
-static void add_edge(struct avl_tree *vertex_tree,
-                     union olsr_ip_addr *src, union olsr_ip_addr *dst,
-                     float etx)
+static void
+olsr_spf_add_edge (struct avl_tree *vertex_tree,
+                   union olsr_ip_addr *src, union olsr_ip_addr *dst,
+                   float etx)
 {
   struct avl_node *node;
-  struct dijk_vertex *svert;
-  struct dijk_vertex *dvert;
-  struct dijk_edge *edge;
+  struct olsr_spf_vertex *svert;
+  struct olsr_spf_vertex *dvert;
+  struct olsr_spf_edge *edge;
 
   // source lookup
 
@@ -149,18 +235,15 @@ static void add_edge(struct avl_tree *vertex_tree,
   {
     // add forward edge
 
-    edge = olsr_malloc(sizeof (struct dijk_vertex), "Dijkstra edge 1");
+    edge = olsr_malloc(sizeof (struct olsr_spf_vertex), "Dijkstra forward edge");
 
     edge->tree_node.data = edge;
     edge->tree_node.key = &dvert->addr;
-
-    edge->node.data = edge;
 
     edge->dest = dvert;
     edge->etx = etx;
 
     avl_insert(&svert->edge_tree, &edge->tree_node, 0);
-    list_add_tail(&svert->edge_list, &edge->node);
   }
 
   // check for existing inverse edge
@@ -169,233 +252,105 @@ static void add_edge(struct avl_tree *vertex_tree,
   {
     // add inverse edge
 
-    edge = olsr_malloc(sizeof (struct dijk_vertex), "Dijkstra edge 2");
+    edge = olsr_malloc(sizeof (struct olsr_spf_vertex), "Dijkstra inverse edge");
 
     edge->tree_node.data = edge;
     edge->tree_node.key = &svert->addr;
-
-    edge->node.data = edge;
 
     edge->dest = svert;
     edge->etx = etx;
 
     avl_insert(&dvert->edge_tree, &edge->tree_node, 0);
-    list_add_tail(&dvert->edge_list, &edge->node);
   }
 }
 
-static void create_vertex_list_rec(struct list *vertex_list,
-                                   struct avl_node *node,
-                                   int (*comp)(void *, void *))
+static void olsr_free_everything(struct avl_tree *vertex_tree)
 {
-  struct dijk_vertex *vert = node->data;
+  struct avl_node *vert_node;
+  struct avl_node *edge_node;
+  struct olsr_spf_vertex *vert;
+  struct olsr_spf_edge *edge;
 
-  if (node->left != NULL)
-    create_vertex_list_rec(vertex_list, node->left, comp);
-
-  // add the vertex to the list, if it's not us
-  if (NULL == comp) {
-    if (inline_avl_comp_ipv4(&olsr_cnf->main_addr, node->key) != 0)
-    {
-      vert->node.data = vert;
-      list_add_tail(vertex_list, &vert->node);
-    }
-  }
-  else {
-    if ((*comp)(&olsr_cnf->main_addr, node->key) != 0)
-    {
-      vert->node.data = vert;
-      list_add_tail(vertex_list, &vert->node);
-    }
-  }
-
-  if (node->right != NULL)
-    create_vertex_list_rec(vertex_list, node->right, comp);
-}
-
-static void create_vertex_list(struct avl_tree *vertex_tree,
-                               struct list *vertex_list)
-{
-  struct avl_node *node;
-  struct dijk_vertex *vert;
-
-  // make ourselves the first vertex in the list
-
-  node = avl_find(vertex_tree, &olsr_cnf->main_addr);
-  vert = node->data;
-
-  vert->node.data = vert;
-  list_add_tail(vertex_list, &vert->node);
-
-  // add the remaining vertices ordered by their main address
-
-  create_vertex_list_rec(vertex_list, vertex_tree->root, vertex_tree->comp);
-}
-
-static void free_everything(struct list *vertex_list)
-{
-  struct list_node *vnode, *enode;
-  struct dijk_vertex *vert;
-  struct dijk_edge *edge;
-
-  vnode = list_get_head(vertex_list);
+  vert_node = avl_walk_first(vertex_tree);
 
   // loop through all vertices
 
-  while (vnode != NULL)
+  while (vert_node)
   {
-    vert = vnode->data;
-
-    enode = list_get_head(&vert->edge_list);
+    vert = vert_node->data;
+    edge_node = avl_walk_first(&vert->edge_tree);
 
     // loop through all edges of the current vertex
 
-    while (enode != NULL)
+    while (edge_node != NULL)
     {
-      edge = enode->data;
-
-      enode = list_get_next(enode);
+      edge = edge_node->data;
+      edge_node = avl_walk_next(edge_node);
       free(edge);
     }
 
-    vnode = list_get_next(vnode);
+    vert_node = avl_walk_next(vert_node);
     free(vert);
   }
 }
 
-// XXX - bad complexity
-#define SVEN_OLA_OPTIMIZE
+/*
+ * olsr_spf_extract_best
+ *
+ * return the node with the minimum pathcost.
+ */
+static struct olsr_spf_vertex *
+olsr_spf_extract_best (struct avl_tree *tree)
+{
+  struct avl_node *node;
+
+  node = avl_walk_first(tree);
+
+  return (node ? node->data :  NULL);
+}
+
+
+#ifdef DEBUG
+static char *olsr_etx_to_string(float etx)
+{
+  static char buff[20];
+
+  if (etx == INFINITE_ETX)
+    return "INF";
+
+  snprintf(buff, 20, "%.6f", etx);
+  return buff;
+}
+#endif
+
 
 /*
- * The function extract_best() is most expensive (>50% CPU in profiling).
- * It is called in two modes: while doing Dijkstra route calculation and
- * while searching for a direct route/hna. The latter can be optimized
- * because the stored verices do not change from call to call and it is
- * more sufficient to have them sorted/popped from a list rather than 
- * searching the complete list by every call. Sven-Ola@gmx.de, 11/2006
- * 
- * The SVEN_OLA_OPTIMIZE changes work in our berlin environment. However,
- * they may introduce bugs, e.g. they are untested for IPv6. For this 
- * reason, the source still contains the ifdef SVEN_OLA_OPIMIZE.
+ * olsr_spf_relax
+ *
+ * Explore all edges of a node and add the node
+ * to the candidate tree if the if the aggregate
+ * path cost is better.
  */
- 
-#ifdef SVEN_OLA_OPTIMIZE
-static struct dijk_vertex **etx_cache = 0;
-static int etx_cache_count;
-static int etx_cache_get;
-
-static int etx_cache_compare(const void *a, const void *b)
+static void
+olsr_spf_relax (struct avl_tree *cand_tree, struct olsr_spf_vertex *vert)
 {
-  // Oh jeah. I love this macro assembler :)
-  
-  if ((*(struct dijk_vertex **)a)->path_etx > (*(struct dijk_vertex **)b)->path_etx) return 1;
-  if ((*(struct dijk_vertex **)a)->path_etx < (*(struct dijk_vertex **)b)->path_etx) return -1;
-  
-  // This is for debugging only: etx==etx then compare pointers
-  // to make it possible to compare to the original search algo.
-  if (*(struct dijk_vertex **)a > *(struct dijk_vertex **)b) return 1;
-  if (*(struct dijk_vertex **)a < *(struct dijk_vertex **)b) return -1;
-  
-  return 0;
-}
-
-static struct dijk_vertex *extract_best_route(struct list *vertex_list)
-{
-  struct list_node *node;
-  struct dijk_vertex *vert;
-  struct dijk_vertex *res = NULL;
-
-  if (NULL == etx_cache)
-  {
-    int count = 0;
-    node = list_get_head(vertex_list);
-    while (node != NULL)
-    {
-      vert = node->data;
-      if (!vert->done && vert->path_etx < INFINITE_ETX) count++;
-      node = list_get_next(node);
-    }
-    if (0 < count)
-    {
-      etx_cache = olsr_malloc(sizeof(etx_cache[0]) * count, "ETX Cache");
-      node = list_get_head(vertex_list);
-      etx_cache_count = 0;
-      etx_cache_get = 0;
-      while (node != NULL)
-      {
-        vert = node->data;
-        if (!vert->done && vert->path_etx < INFINITE_ETX)
-        {
-          etx_cache[etx_cache_count] = vert;
-          etx_cache_count++;
-        }
-        node = list_get_next(node);
-      }
-      qsort(etx_cache, etx_cache_count, sizeof(etx_cache[0]), etx_cache_compare);
-    }
-  }
-
-  if (NULL != etx_cache && etx_cache_get < etx_cache_count)
-  {
-    res = etx_cache[etx_cache_get++];
-  }
-
-  // if we've found a vertex, remove it from the set
-
-  if (res != NULL)
-    res->done = OLSR_TRUE;
-
-  return res;
-}
-#endif // SVEN_OLA_OPTIMIZE
-
-static struct dijk_vertex *extract_best(struct list *vertex_list)
-{
-  float best_etx = INFINITE_ETX + 1.0;
-  struct list_node *node;
-  struct dijk_vertex *vert;
-  struct dijk_vertex *res = NULL;
-
-  node = list_get_head(vertex_list);
-
-  // loop through all vertices
-  
-  while (node != NULL)
-  {
-    vert = node->data;
-
-    // see whether the current vertex is better than what we have
-
-    if (!vert->done && vert->path_etx < best_etx)
-    {
-      best_etx = vert->path_etx;
-      res = vert;
-    }
-
-    node = list_get_next(node);
-  }
-
-  // if we've found a vertex, remove it from the set
-
-  if (res != NULL)
-    res->done = OLSR_TRUE;
-
-  return res;
-}
-
-static void relax(struct dijk_vertex *vert)
-{
-  struct dijk_edge *edge;
+  struct olsr_spf_edge *edge;
+  struct avl_node *edge_node;
   float new_etx;
-  struct list_node *node;
 
-  node = list_get_head(&vert->edge_list);
+#ifdef DEBUG
+  OLSR_PRINTF(1, "SPF: exploring node %s, cost %f\n",
+              olsr_ip_to_string(&(vert->addr)),
+              vert->path_etx);
+#endif
+
+  edge_node = avl_walk_first(&vert->edge_tree);
 
   // loop through all edges of this vertex
 
-  while (node != NULL)
+  while (edge_node != NULL)
   {
-    edge = node->data;
+    edge = edge_node->data;
 
     // total quality of the path through this vertex to the
     // destination of this edge
@@ -408,39 +363,77 @@ static void relax(struct dijk_vertex *vert)
 
     if (new_etx < edge->dest->path_etx)
     {
+      /* if this node has been on the candidate tree delete it */
+      if (edge->dest->path_etx != INFINITE_ETX) {
+        olsr_spf_del_cand_tree(cand_tree, edge->dest);
+      }
+
+      /* re-insert on candidate tree with the better metric */
       edge->dest->path_etx = new_etx;
-      edge->dest->prev = vert;
+      olsr_spf_add_cand_tree(cand_tree, edge->dest);
+
+      /* pull-up the next-hop and bump the hop count */
+      if (vert->next_hop) {
+        edge->dest->next_hop = vert->next_hop;
+      }
+      edge->dest->hops = vert->hops + 1;
+
+#ifdef DEBUG
+      OLSR_PRINTF(1, "SPF:   better path to %s, cost %s -> %s, via %s, hops %u\n",
+                  olsr_ip_to_string(&(edge->dest->addr)),
+                  olsr_etx_to_string(edge->dest->path_etx),
+                  olsr_etx_to_string(new_etx),
+                  olsr_ip_to_string(vert->next_hop),
+                  edge->dest->hops);
+#endif
+
     }
 
-    node = list_get_next(node);
+    edge_node = avl_walk_next(edge_node);
   }
 }
 
-static char *etx_to_string(float etx)
+/*
+ * olsr_spf_run_full
+ *
+ * Run the Dijkstra algorithm.
+ * 
+ * We are using two trees: the candidate and the path tree.
+ * A node gets added to the candidate tree when one of its edges has
+ * an overall better root path cost than the node itself.
+ * The node with the shortest metric gets moved from the candidate to
+ * the path tree every pass.
+ * The SPF computation is completed when there are no more nodes
+ * on the candidate tree. 
+ */ 
+static void
+olsr_spf_run_full (struct avl_tree *cand_tree, struct avl_tree *path_tree)
 {
-  static char buff[20];
+  struct olsr_spf_vertex *vert;
 
-  if (etx == INFINITE_ETX)
-    return "INF";
+  while ((vert = olsr_spf_extract_best(cand_tree))) {
 
-  snprintf(buff, 20, "%.2f", etx);
-  return buff;
+    olsr_spf_relax(cand_tree, vert);
+
+    /*
+     * move the best path from the candidate tree
+     * to the path tree.
+     */
+    olsr_spf_del_cand_tree(cand_tree, vert);
+    olsr_spf_add_path_tree(path_tree, vert);
+  }
 }
 
-void olsr_calculate_lq_routing_table(void)
+void
+olsr_calculate_lq_routing_table (void)
 {
-  struct avl_tree vertex_tree;
-  struct list vertex_list;
+  struct avl_tree vertex_tree, cand_tree, path_tree;
+  struct avl_node *tree_node;
   int i;
   struct tc_entry *tcsrc;
   struct topo_dst *tcdst;
-  struct dijk_vertex *vert;
-  struct link_entry *link;
+  struct olsr_spf_vertex *vert, *myself;
   struct neighbor_entry *neigh;
-  struct list_node *node;
-  struct dijk_vertex *myself;
-  struct dijk_vertex *walker;
-  int hops;
   struct mid_address *mid_walker;
   float etx;
   struct hna_entry *hna_gw;
@@ -452,36 +445,62 @@ void olsr_calculate_lq_routing_table(void)
 #endif
   struct interface *inter;
 
-  if (olsr_cnf->ipsize == 4)
-    avl_comp = 0;
-  else
-    avl_comp = avl_comp_ipv6;
+  if (olsr_cnf->ipsize != 4)
+    avl_comp_default = avl_comp_ipv6;
 
   // initialize the graph
 
-  avl_init(&vertex_tree, avl_comp);
-  list_init(&vertex_list);
+  avl_init(&vertex_tree, avl_comp_default);
+  avl_init(&cand_tree, avl_comp_etx);
+  avl_init(&path_tree, avl_comp_etx);
 
-  // add ourselves to the vertex tree
+  // add ourselves to the vertex and candidate tree
 
-  add_vertex(&vertex_tree, &olsr_cnf->main_addr, 0.0);
+  myself = olsr_spf_add_vertex(&vertex_tree, &olsr_cnf->main_addr, ZERO_ETX);
+  olsr_spf_add_cand_tree(&cand_tree, myself);
 
-  // add our neighbours
-
+  /*
+   * Add our neighbours.
+   */
   for (i = 0; i < HASHSIZE; i++)
     for (neigh = neighbortable[i].next; neigh != &neighbortable[i];
-         neigh = neigh->next)
-      if (neigh->status == SYM)
-        add_vertex(&vertex_tree, &neigh->neighbor_main_addr, INFINITE_ETX);
+         neigh = neigh->next) {
+      if (neigh->status == SYM) {
+
+        vert = olsr_spf_add_vertex(&vertex_tree, &neigh->neighbor_main_addr,
+                                   INFINITE_ETX);
+
+        /*
+         * Set the next-hop pointer to ourselves.
+         * During olsr_spf_relax() the next_hop pointer will be
+         * pulled up to the new candidate node.
+         * At the End of the SPF computation every reachable node has
+         * a pointer to its corresponding first hop router.
+         */
+        vert->next_hop = &vert->addr;
+
+        /*
+         * one hop neighbors are just one hop away.
+         */
+        vert->hops = 1;
+      }
+    }
 
   // add our two-hop neighbours
 
   for (i = 0; i < HASHSIZE; i++)
     for (neigh2 = two_hop_neighbortable[i].next;
          neigh2 != &two_hop_neighbortable[i];
-         neigh2 = neigh2->next)
-      add_vertex(&vertex_tree, &neigh2->neighbor_2_addr, INFINITE_ETX);
+         neigh2 = neigh2->next) {
 
+      vert = olsr_spf_add_vertex(&vertex_tree, &neigh2->neighbor_2_addr,
+                                 INFINITE_ETX);
+
+      /*
+       * two hop neighbors are two hops away.
+       */
+      vert->hops = 2;
+    }
   // add remaining vertices
 
   for (i = 0; i < HASHSIZE; i++)
@@ -489,13 +508,13 @@ void olsr_calculate_lq_routing_table(void)
     {
       // add source
 
-      add_vertex(&vertex_tree, &tcsrc->T_last_addr, INFINITE_ETX);
+      olsr_spf_add_vertex(&vertex_tree, &tcsrc->T_last_addr, INFINITE_ETX);
 
       // add destinations of this source
 
       for (tcdst = tcsrc->destinations.next; tcdst != &tcsrc->destinations;
            tcdst = tcdst->next)
-        add_vertex(&vertex_tree, &tcdst->T_dest_addr, INFINITE_ETX);
+        olsr_spf_add_vertex(&vertex_tree, &tcdst->T_dest_addr, INFINITE_ETX);
     }
 
   // add edges to and from our neighbours
@@ -505,17 +524,17 @@ void olsr_calculate_lq_routing_table(void)
          neigh = neigh->next)
       if (neigh->status == SYM)
       {
-        link = get_best_link_to_neighbor(&neigh->neighbor_main_addr);
+        struct link_entry *lnk = get_best_link_to_neighbor(&neigh->neighbor_main_addr);
 
-	if(!link)
+	if(!lnk)
 	  continue;
 
-        if (link->loss_link_quality2 >= MIN_LINK_QUALITY &&
-            link->neigh_link_quality2 >= MIN_LINK_QUALITY)
+        if (lnk->loss_link_quality2 >= MIN_LINK_QUALITY &&
+            lnk->neigh_link_quality2 >= MIN_LINK_QUALITY)
           {
-            etx = 1.0 / (link->loss_link_quality2 * link->neigh_link_quality2);
+            etx = 1.0 / (lnk->loss_link_quality2 * lnk->neigh_link_quality2);
 
-            add_edge(&vertex_tree, &neigh->neighbor_main_addr, &olsr_cnf->main_addr, etx);
+            olsr_spf_add_edge(&vertex_tree, &neigh->neighbor_main_addr, &olsr_cnf->main_addr, etx);
           }
       }
 
@@ -540,7 +559,7 @@ void olsr_calculate_lq_routing_table(void)
 
           etx = 1.0 / neigh_walker->second_hop_link_quality;
 
-          add_edge(&vertex_tree, &neigh2->neighbor_2_addr,
+          olsr_spf_add_edge(&vertex_tree, &neigh2->neighbor_2_addr,
                    &neigh->neighbor_main_addr, etx);
         }
       }
@@ -559,36 +578,19 @@ void olsr_calculate_lq_routing_table(void)
           {
             etx = 1.0 / (tcdst->link_quality * tcdst->inverse_link_quality);
 
-            add_edge(&vertex_tree, &tcdst->T_dest_addr, &tcsrc->T_last_addr,
+            olsr_spf_add_edge(&vertex_tree, &tcdst->T_dest_addr, &tcsrc->T_last_addr,
                      etx);
           }
       }
 
-  // create a sorted vertex list from the vertex tree
-
-  create_vertex_list(&vertex_tree, &vertex_list);
-
-  // run Dijkstra's algorithm
-
-  for (;;)
-  {
-    vert = extract_best(&vertex_list);
-
-    if (vert == NULL)
-      break;
-
-    relax(vert);
-  }
+  /*
+   * Run the SPF calculation.
+   */
+  olsr_spf_run_full(&cand_tree, &path_tree);
 
   // save the old routing table
 
   olsr_move_route_table(routingtable, old_routes);
-
-  node = list_get_head(&vertex_list);
-
-  // we're the first vertex in the list
-  
-  myself = node->data;
 
   OLSR_PRINTF(2, "\n--- %02d:%02d:%02d.%02d ------------------------------------------------- DIJKSTRA\n\n",
               nowtm->tm_hour,
@@ -596,55 +598,34 @@ void olsr_calculate_lq_routing_table(void)
               nowtm->tm_sec,
               (int)now.tv_usec/10000);
 
-  for (node = list_get_next(node); node != NULL; node = list_get_next(node))
-  {
-    vert = node->data;
+  /*
+   * In the path tree we have all the reachable nodes
+   * in our topology sorted by etx metric.
+   */
+  for (tree_node = avl_walk_first(&path_tree);
+       tree_node != NULL;
+       tree_node = avl_walk_next(tree_node)) {
+    struct link_entry *lnk;
+    vert = tree_node->data;
 
-    hops = 1;
-
-    // count hops to until the path ends or until we have reached a
-    // one-hop neighbour
-
-    for (walker = vert; walker != NULL && walker->prev != myself;
-         walker = walker->prev)
-    {
-      OLSR_PRINTF(2, "%s:%s <- ", olsr_ip_to_string(&walker->addr),
-                  etx_to_string(walker->path_etx));
-      hops++;
-    }
-
-    // if no path to a one-hop neighbour was found, ignore this node
-
-    if (walker != NULL)
-    {
-      OLSR_PRINTF(2, "%s:%s (one-hop)\n", olsr_ip_to_string(&walker->addr),
-                  etx_to_string(walker->path_etx));
-
-      // node reachable => add to the set of unprocessed nodes
-      // for HNA processing
-
-      vert->done = OLSR_FALSE;
-    }
-
-    else
-    {
-      OLSR_PRINTF(2, "%s FAILED\n", olsr_ip_to_string(&vert->addr));
+    if (!vert->next_hop) {
+      OLSR_PRINTF(2, "%s no next-hop\n", olsr_ip_to_string(&vert->addr));
       continue;
     }
 
     // find the best link to the one-hop neighbour
 
-    link = get_best_link_to_neighbor(&walker->addr);
+    lnk = get_best_link_to_neighbor(vert->next_hop);
 
     // we may see NULL here, if the one-hop neighbour is not in the
     // link and neighbour sets any longer, but we have derived an edge
     // between us and the one-hop neighbour from the TC set
 
-    if (link != NULL)
+    if (lnk != NULL)
     {
       // find the interface for the found link
-      inter = link->if_name ? if_ifwithname(link->if_name) : 
-              if_ifwithaddr(&link->local_iface_addr);
+      inter = lnk->if_name ? if_ifwithname(lnk->if_name) : 
+              if_ifwithaddr(&lnk->local_iface_addr);
 
       // we may see NULL here if the interface is down, but we have
       // links that haven't timed out, yet
@@ -658,8 +639,8 @@ void olsr_calculate_lq_routing_table(void)
         // destination node
 
         if (olsr_lookup_routing_table(&vert->addr) == NULL)
-          olsr_insert_routing_table(&vert->addr, &link->neighbor_iface_addr,
-                                    inter, hops, vert->path_etx);
+          olsr_insert_routing_table(&vert->addr, &lnk->neighbor_iface_addr,
+                                    inter, vert->hops, vert->path_etx);
 
         // route addition, case B - add routes to the remaining interfaces
         // of the destination node
@@ -668,7 +649,7 @@ void olsr_calculate_lq_routing_table(void)
              mid_walker = mid_walker->next_alias)
           if (olsr_lookup_routing_table(&mid_walker->alias) == NULL)
             olsr_insert_routing_table(&mid_walker->alias,
-                                      &link->neighbor_iface_addr, inter, hops, 
+                                      &lnk->neighbor_iface_addr, inter, vert->hops, 
                                       vert->path_etx);
 
         // XXX - we used to use olsr_lookup_routing_table() only here, but
@@ -681,9 +662,9 @@ void olsr_calculate_lq_routing_table(void)
         // router - e.g. in case the router's not the main address and it's
         // MID entry has timed out
 
-        if (olsr_lookup_routing_table(&link->neighbor_iface_addr) == NULL)
-          olsr_insert_routing_table(&link->neighbor_iface_addr,
-                                    &link->neighbor_iface_addr, inter, 1,
+        if (olsr_lookup_routing_table(&lnk->neighbor_iface_addr) == NULL)
+          olsr_insert_routing_table(&lnk->neighbor_iface_addr,
+                                    &lnk->neighbor_iface_addr, inter, 1,
                                     vert->path_etx);
       }
     }
@@ -693,30 +674,19 @@ void olsr_calculate_lq_routing_table(void)
 
   olsr_move_route_table(hna_routes, old_hna);
 
-  // add HNA routes - the set of unprocessed network nodes contains
-  // all reachable network nodes
-#ifdef SVEN_OLA_OPTIMIZE
-  if (NULL != etx_cache) {
-    free(etx_cache);
-    etx_cache = NULL;
-  }
-#endif
+  // add HNA routes
 
-  for (;;)
-  {
-    // extract the network node with the best ETX and remove it
-    // from the set of unprocessed network nodes
+  /*
+   * In the path tree we have all the reachable nodes
+   * in our topology sorted by etx metric.
+   */
+  for (tree_node = avl_walk_first(&path_tree);
+       tree_node;
+       tree_node = avl_walk_next(tree_node)) {
 
-#ifdef SVEN_OLA_OPTIMIZE
-    vert = extract_best_route(&vertex_list);
-#else
-    vert = extract_best(&vertex_list);
-#endif
-
-    // no more nodes left
-
-    if (vert == NULL)
+    if (!(vert = tree_node->data)) {
       break;
+    }
 
     // find the node's HNAs
 
@@ -783,7 +753,7 @@ void olsr_calculate_lq_routing_table(void)
 
   // free the graph
 
-  free_everything(&vertex_list);
+  olsr_free_everything(&vertex_tree);
 
   // move the route changes into the kernel
 
@@ -795,3 +765,9 @@ void olsr_calculate_lq_routing_table(void)
   olsr_free_routing_table(old_routes);
   olsr_free_routing_table(old_hna);
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */

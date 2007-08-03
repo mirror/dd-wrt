@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: ohs_cmd.h,v 1.5 2005/10/23 19:01:04 tlopatic Exp $
+ * $Id: ohs_cmd.h,v 1.6 2007/07/28 12:53:15 bernd67 Exp $
  */
 
 
@@ -71,7 +71,7 @@ int
 ohs_cmd_help(char *);
 
 int
-ohs_cmd_exit(char *);
+ohs_cmd_exit(char *) __attribute__((noreturn));
 
 int
 ohs_cmd_log(char *);

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: link_set.c,v 1.68 2007/04/25 22:08:09 bernd67 Exp $
+ * $Id: link_set.c,v 1.69 2007/08/02 22:07:19 bernd67 Exp $
  */
 
 
@@ -198,14 +198,14 @@ get_neighbor_status(union olsr_ip_addr *address)
   for(ifs = ifnet; ifs != NULL; ifs = ifs->int_next)
     {
       struct mid_address   *aliases;
-      struct link_entry  *link;
+      struct link_entry  *lnk = lookup_link_entry(main_addr, NULL, ifs);
 
       //printf("\tChecking %s->", olsr_ip_to_string(&ifs->ip_addr));
       //printf("%s : ", olsr_ip_to_string(main_addr)); 
-      if((link = lookup_link_entry(main_addr, NULL, ifs)) != NULL)
+      if(lnk != NULL)
 	{
 	  //printf("%d\n", lookup_link_status(link));
-	  if(lookup_link_status(link) == SYM_LINK)
+	  if(lookup_link_status(lnk) == SYM_LINK)
 	    return SYM_LINK;
 	}
       /* Get aliases */
@@ -215,11 +215,12 @@ get_neighbor_status(union olsr_ip_addr *address)
 	{
 	  //printf("\tChecking %s->", olsr_ip_to_string(&ifs->ip_addr));
 	  //printf("%s : ", olsr_ip_to_string(&aliases->address)); 
-            if((link = lookup_link_entry(&aliases->alias, NULL, ifs)) != NULL)
+            lnk = lookup_link_entry(&aliases->alias, NULL, ifs);
+            if(lnk != NULL)
 	    {
 	      //printf("%d\n", lookup_link_status(link));
 
-	      if(lookup_link_status(link) == SYM_LINK)
+	      if(lookup_link_status(lnk) == SYM_LINK)
 		return SYM_LINK;
 	    }
 	}
@@ -978,19 +979,19 @@ void olsr_print_link_set(void)
 static void update_packet_loss_worker(struct link_entry *entry, int lost)
 {
   unsigned char mask = 1 << (entry->loss_index & 7);
-  int index = entry->loss_index >> 3;
+  const int idx = entry->loss_index >> 3;
   double rel_lq, saved_lq;
 
   if (lost == 0)
     {
       // packet not lost
 
-      if ((entry->loss_bitmap[index] & mask) != 0)
+      if ((entry->loss_bitmap[idx] & mask) != 0)
         {
           // but the packet that we replace was lost
           // => decrement packet loss
 
-          entry->loss_bitmap[index] &= ~mask;
+          entry->loss_bitmap[idx] &= ~mask;
           entry->lost_packets--;
         }
     }
@@ -999,12 +1000,12 @@ static void update_packet_loss_worker(struct link_entry *entry, int lost)
     {
       // packet lost
 
-      if ((entry->loss_bitmap[index] & mask) == 0)
+      if ((entry->loss_bitmap[idx] & mask) == 0)
         {
           // but the packet that we replace was not lost
           // => increment packet loss
 
-          entry->loss_bitmap[index] |= mask;
+          entry->loss_bitmap[idx] |= mask;
           entry->lost_packets++;
         }
     }

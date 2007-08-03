@@ -3,7 +3,7 @@
 
 /*
  * OLSR Basic Multicast Forwarding (BMF) plugin.
- * Copyright (c) 2005, 2006, Thales Communications, Huizen, The Netherlands.
+ * Copyright (c) 2005 - 2007, Thales Communications, Huizen, The Netherlands.
  * Written by Erik Tromp.
  * All rights reserved.
  *
@@ -55,18 +55,21 @@
 #define IPV4_TYPE 0x0800
 
 /* BMF-encapsulated packets are Ethernet-IP-UDP packets, which start
- * with a 16-bytes BMF header (struct TEncapHeader), followed by the
+ * with a 8-bytes BMF header (struct TEncapHeader), followed by the
  * encapsulated Ethernet-IP packet itself */
 
 struct TEncapHeader
 {
+  /* Use a standard Type-Length-Value (TLV) element */
+  u_int8_t type;
+  u_int8_t len;
+  u_int16_t reserved; /* Always 0 */
   u_int32_t crc32;
-  u_int32_t futureExpansion1;
-  u_int32_t futureExpansion2;
-  u_int32_t futureExpansion3;
 } __attribute__((__packed__));
 
 #define	ENCAP_HDR_LEN ((int)sizeof(struct TEncapHeader))
+#define BMF_ENCAP_TYPE 1
+#define BMF_ENCAP_LEN 6
 
 struct TSaveTtl
 {
@@ -75,18 +78,14 @@ struct TSaveTtl
 } __attribute__((__packed__));
 
 int IsIpFragment(unsigned char* ipPacket);
-u_int16_t GetTotalLength(unsigned char* ipPacket);
-unsigned int GetHeaderLength(unsigned char* ipPacket);
+u_int16_t GetIpTotalLength(unsigned char* ipPacket);
+unsigned int GetIpHeaderLength(unsigned char* ipPacket);
 u_int8_t GetTtl(unsigned char* ipPacket);
 void SaveTtlAndChecksum(unsigned char* ipPacket, struct TSaveTtl* sttl);
 void RestoreTtlAndChecksum(unsigned char* ipPacket, struct TSaveTtl* sttl);
 void DecreaseTtlAndUpdateHeaderChecksum(unsigned char* ipPacket);
-u_int16_t GetEtherType(unsigned char* ethernetFrame);
-struct ip* GetIpHeader(unsigned char* ethernetFrame);
-unsigned char* GetIpPacket(unsigned char* ethernetFrame);
-u_int16_t GetFrameLength(unsigned char* ethernetFrame);
-void SetFrameSourceMac(unsigned char* ethernetFrame, unsigned char* srcMac);
-unsigned char* GetEthernetFrame(unsigned char* encapsulationUdpData);
+struct ip* GetIpHeader(unsigned char* encapsulationUdpData);
+unsigned char* GetIpPacket(unsigned char* encapsulationUdpData);
 u_int16_t GetEncapsulationUdpDataLength(unsigned char* encapsulationUdpData);
 
 #endif /* _BMF_PACKET_H */

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: hysteresis.c,v 1.20 2007/04/25 22:08:08 bernd67 Exp $
+ * $Id: hysteresis.c,v 1.21 2007/08/02 22:07:19 bernd67 Exp $
  */
 
 
@@ -164,16 +164,14 @@ olsr_update_hysteresis_hello(struct link_entry *entry, double htime)
 void
 update_hysteresis_incoming(union olsr_ip_addr *remote, struct interface *local, olsr_u16_t seqno)
 {
-  struct link_entry *link;
-
-  link = lookup_link_entry(remote, NULL, local);
+  struct link_entry *lnk = lookup_link_entry(remote, NULL, local);
 
   /* Calculate new quality */      
-  if(link != NULL)
+  if(lnk != NULL)
     {
-      link->L_link_quality = olsr_hyst_calc_stability(link->L_link_quality);
+      lnk->L_link_quality = olsr_hyst_calc_stability(lnk->L_link_quality);
 #ifdef DEBUG
-      OLSR_PRINTF(3, "HYST[%s]: %0.3f\n", olsr_ip_to_string(remote), link->L_link_quality);
+      OLSR_PRINTF(3, "HYST[%s]: %0.3f\n", olsr_ip_to_string(remote), lnk->L_link_quality);
 #endif
 
       /* 
@@ -183,26 +181,26 @@ update_hysteresis_incoming(union olsr_ip_addr *remote, struct interface *local, 
        * been added to olsr_seqno there
        */
 
-      if (link->olsr_seqno_valid && 
-          (unsigned short)(seqno - link->olsr_seqno) < 100)
-	  while (link->olsr_seqno != seqno)
+      if (lnk->olsr_seqno_valid && 
+          (unsigned short)(seqno - lnk->olsr_seqno) < 100)
+	  while (lnk->olsr_seqno != seqno)
 	    {
-	      link->L_link_quality = olsr_hyst_calc_instability(link->L_link_quality);
+	      lnk->L_link_quality = olsr_hyst_calc_instability(lnk->L_link_quality);
 #ifdef DEBUG
 	      OLSR_PRINTF(5, "HYST[%s] PACKET LOSS! %0.3f\n",
-			  olsr_ip_to_string(remote), link->L_link_quality);
+			  olsr_ip_to_string(remote), lnk->L_link_quality);
 #endif
-	      if(link->L_link_quality < olsr_cnf->hysteresis_param.thr_low)
+	      if(lnk->L_link_quality < olsr_cnf->hysteresis_param.thr_low)
 		break;
 
-	      link->olsr_seqno++;
+	      lnk->olsr_seqno++;
 	    }
 
 
-      link->olsr_seqno = seqno + 1;
-      link->olsr_seqno_valid = OLSR_TRUE;
+      lnk->olsr_seqno = seqno + 1;
+      lnk->olsr_seqno_valid = OLSR_TRUE;
 
-      //printf("Updating seqno to: %d\n", link->olsr_seqno);
+      //printf("Updating seqno to: %d\n", lnk->olsr_seqno);
     }
   return;
 }

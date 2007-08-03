@@ -9,11 +9,11 @@ STRIP = \#
 DESTDIR ?=
 LIBDIR =	$(DESTDIR)/usr/lib
 
-SRCS +=		$(wildcard src/bsd/*.c) $(wildcard src/unix/*.c)
-HDRS +=		$(wildcard src/bsd/*.h) $(wildcard src/unix/*.h)
+SRCS +=		$(wildcard src/bsd/*.c src/unix/*.c)
+HDRS +=		$(wildcard src/bsd/*.h src/unix/*.h)
 
-DEFINES =	-D__MacOSX__
-LIBS =		
+CPPFLAGS +=	-D__MacOSX__
+LIBS +=		
 
 PLUGIN_FULLNAME ?= $(PLUGIN_NAME).so.$(PLUGIN_VER)
 INSTALL_LIB =	install -m 755 $(PLUGIN_FULLNAME) $(LIBDIR)/$(PLUGIN_FULLNAME)

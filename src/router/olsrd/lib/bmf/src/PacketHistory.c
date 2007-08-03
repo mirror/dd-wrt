@@ -1,6 +1,6 @@
 /*
  * OLSR Basic Multicast Forwarding (BMF) plugin.
- * Copyright (c) 2005, 2006, Thales Communications, Huizen, The Netherlands.
+ * Copyright (c) 2005 - 2007, Thales Communications, Huizen, The Netherlands.
  * Written by Erik Tromp.
  * All rights reserved.
  *
@@ -48,12 +48,13 @@
 #include <netinet/ip.h> /* struct iphdr */
 
 /* OLSRD includes */
+#include "defs.h" /* GET_TIMESTAMP, TIMED_OUT */
 #include "olsr.h" /* olsr_printf */
 
-/* NULLPlugin includes */
+/* Plugin includes */
 #include "Packet.h"
 
-static u_int32_t PacketHistory[HISTORY_TABLE_SIZE];
+static struct TDupEntry* PacketHistory[HISTORY_HASH_SIZE];
 
 #define CRC_UPTO_NBYTES 256
 
@@ -85,7 +86,7 @@ static u_int16_t CalcCrcCcitt(unsigned char* buffer, ssize_t len)
     crc ^= ((crc & 0xff) << 4) << 1;
   }
   return crc;
-}
+} /* CalcCrcCcitt */
 #endif
 
 /* -------------------------------------------------------------------------
@@ -120,8 +121,8 @@ static void GenerateCrc32Table(void)
       }
     }
     CrcTable[i] = crc;
-  }
-}
+  } /* for */
+} /* GenerateCrc32Table */
 
 /* -------------------------------------------------------------------------
  * Function   : CalcCrc32
@@ -142,32 +143,26 @@ static u_int32_t CalcCrc32(unsigned char* buffer, ssize_t len)
     crc = (crc >> 8) ^ CrcTable[j];
   }
   return crc ^ 0xffffffffUL;
-}
+} /* CalcCrc32 */
 
 /* -------------------------------------------------------------------------
  * Function   : PacketCrc32
- * Description: Calculates the CRC-32 value for an Ethernet frame
- * Input      : ethernetFrame - the Ethernet frame
- *              len - the number of octets in the Ethernet frame
+ * Description: Calculates the CRC-32 value for an IP packet
+ * Input      : ipPacket - the IP packet
+ *              len - the number of octets in the IP packet
  * Output     : none
- * Return     : 32-bits hash value
+ * Return     : 32-bits CRC value
  * Data Used  : none
- * Notes      : The source and destination MAC address are not taken into account
- *              in the CRC calculation.
  * ------------------------------------------------------------------------- */
-u_int32_t PacketCrc32(unsigned char* ethernetFrame, ssize_t len)
+u_int32_t PacketCrc32(unsigned char* ipPacket, ssize_t len)
 {
-  ssize_t nCrcBytes;
   struct TSaveTtl sttl;
   struct ip* ipHeader;
   u_int32_t result;
 
-  assert(ethernetFrame != NULL);
+  assert(ipPacket != NULL);
 
-  /* Start CRC calculation at ethertype; skip source and destination MAC 
-   * addresses, and ethertype.
-   *
-   * Also skip TTL: in a multi-homed OLSR-network, the same multicast packet
+  /* Skip TTL: in a multi-homed OLSR-network, the same multicast packet
    * may enter the network multiple times, each copy differing only in its
    * TTL value. BMF must not calculate a different CRC for packets that
    * differ only in TTL. Skip also the IP-header checksum, because it changes
@@ -176,30 +171,36 @@ u_int32_t PacketCrc32(unsigned char* ethernetFrame, ssize_t len)
    *
    * Clip number of bytes over which CRC is calculated to prevent
    * long packets from possibly claiming too much CPU resources. */
-  nCrcBytes = len - IP_HDR_OFFSET;
-  assert(nCrcBytes > 0);
-  if (nCrcBytes > CRC_UPTO_NBYTES)
+  assert(len > 0);
+  if (len > CRC_UPTO_NBYTES)
   {
-    nCrcBytes = CRC_UPTO_NBYTES;
+    len = CRC_UPTO_NBYTES;
   }
 
-  SaveTtlAndChecksum(GetIpPacket(ethernetFrame), &sttl);
+  SaveTtlAndChecksum(ipPacket, &sttl);
 
-  ipHeader = GetIpHeader(ethernetFrame);
+  ipHeader = (struct ip*)ipPacket;
   ipHeader->ip_ttl = 0xFF; /* fixed value of TTL for CRC-32 calculation */
   ipHeader->ip_sum = 0x5A5A; /* fixed value of IP header checksum for CRC-32 calculation */
 
-  result = CalcCrc32(ethernetFrame + IP_HDR_OFFSET, nCrcBytes);
+  result = CalcCrc32(ipPacket, len);
 
-  RestoreTtlAndChecksum(GetIpPacket(ethernetFrame), &sttl);
+  RestoreTtlAndChecksum(ipPacket, &sttl);
   return result;
-}
+} /* PacketCrc32 */
 
-/* Calculates a 16-bit hash value from a 32-bit hash value */
-u_int16_t Hash16(u_int32_t hash32)
+/* -------------------------------------------------------------------------
+ * Function   : Hash
+ * Description: Calculates a hash value from a 32-bit value
+ * Input      : from32 - 32-bit value
+ * Output     : none
+ * Return     : hash value
+ * Data Used  : none
+ * ------------------------------------------------------------------------- */
+u_int32_t Hash(u_int32_t from32)
 {
-  return ((hash32 >> 16) + hash32) & 0xFFFFU;
-}
+  return ((from32 >> N_HASH_BITS) + from32) & ((1 << N_HASH_BITS) - 1);
+} /* Hash */
 
 /* -------------------------------------------------------------------------
  * Function   : InitPacketHistory
@@ -211,63 +212,61 @@ u_int16_t Hash16(u_int32_t hash32)
  * ------------------------------------------------------------------------- */
 void InitPacketHistory(void)
 {
-  memset(PacketHistory, 0, sizeof(PacketHistory));
+  int i;
+
   GenerateCrc32Table();
-}
 
-/* -------------------------------------------------------------------------
- * Function   : MarkRecentPacket
- * Description: Record the fact that this packet was seen recently
- * Input      : hash16
- * Output     : none
- * Return     : none
- * Data Used  : PacketHistory
- * ------------------------------------------------------------------------- */
-void MarkRecentPacket(u_int16_t hash16)
-{
-  u_int32_t index;
-  uint offset;
-
-  index = hash16 / NPACKETS_PER_ENTRY;
-  assert(index < HISTORY_TABLE_SIZE);
-
-  offset = (hash16 % NPACKETS_PER_ENTRY) * NBITS_PER_PACKET;
-  assert(offset <= NBITS_IN_UINT32 - NBITS_PER_PACKET);
-
-  /* Mark as "seen recently" */
-  PacketHistory[index] = PacketHistory[index] | (0x3u << offset);
-}
+  for(i = 0; i < HISTORY_HASH_SIZE; i++)
+  {
+    PacketHistory[i] = NULL;
+  }
+} /* InitPacketHistory */
 
 /* -------------------------------------------------------------------------
  * Function   : CheckAndMarkRecentPacket
  * Description: Check if this packet was seen recently, then record the fact
  *              that this packet was seen recently.
- * Input      : hash16
+ * Input      : crc32 - 32-bits crc value of the packet
  * Output     : none
  * Return     : not recently seen (0), recently seen (1)
  * Data Used  : PacketHistory
  * ------------------------------------------------------------------------- */
-int CheckAndMarkRecentPacket(u_int16_t hash16)
+int CheckAndMarkRecentPacket(u_int32_t crc32)
 {
   u_int32_t index;
-  uint offset;
-  u_int32_t bitMask;
-  int result;
+  struct TDupEntry* walker;
+  struct TDupEntry* newEntry;
 
-  index = hash16 / NPACKETS_PER_ENTRY;
-  assert(index < HISTORY_TABLE_SIZE);
+  index = Hash(crc32);
+  assert(index < HISTORY_HASH_SIZE);
 
-  offset =  (hash16 % NPACKETS_PER_ENTRY) * NBITS_PER_PACKET;
-  assert(offset <= NBITS_IN_UINT32 - NBITS_PER_PACKET);
+  for (walker = PacketHistory[index]; walker != NULL; walker = walker->next)
+  {
+    if (walker->crc32 == crc32)
+    {
+      /* Found duplicate entry */
 
-  bitMask = 0x1u << offset;
-  result = ((PacketHistory[index] & bitMask) == bitMask);
-  
-  /* Always mark as "seen recently" */
-  PacketHistory[index] = PacketHistory[index] | (0x3u << offset);
+      /* Always mark as "seen recently": refresh time-out */
+      walker->timeOut = GET_TIMESTAMP(HISTORY_HOLD_TIME);
 
-  return result;
-}
+      return 1;
+    } /* if */
+  } /* for */
+
+  /* No duplicate entry found: create one */
+  newEntry = malloc(sizeof(struct TDupEntry));
+  if (newEntry != NULL)
+  {
+    newEntry->crc32 = crc32;
+    newEntry->timeOut = GET_TIMESTAMP(HISTORY_HOLD_TIME);
+
+    /* Add new entry at the front of the list */
+    newEntry->next = PacketHistory[index];
+    PacketHistory[index] = newEntry;
+  }
+
+  return 0;
+} /* CheckAndMarkRecentPacket */
   
 /* -------------------------------------------------------------------------
  * Function   : PrunePacketHistory
@@ -280,33 +279,37 @@ int CheckAndMarkRecentPacket(u_int16_t hash16)
 void PrunePacketHistory(void* useless __attribute__((unused)))
 {
   uint i;
-  for (i = 0; i < HISTORY_TABLE_SIZE; i++)
+  for (i = 0; i < HISTORY_HASH_SIZE; i++)
   {
-    if (PacketHistory[i] > 0)
+    if (PacketHistory[i] != NULL)
     {
-      uint j;
-      for (j = 0; j < NPACKETS_PER_ENTRY; j++)
+      struct TDupEntry* nextEntry = PacketHistory[i];
+      struct TDupEntry* prevEntry = NULL;
+      while (nextEntry != NULL) 
       {
-        uint offset = j * NBITS_PER_PACKET;
+        struct TDupEntry* entry = nextEntry;
+        nextEntry = entry->next;
 
-        u_int32_t bitMask = 0x3u << offset;
-        u_int32_t bitsSeenRecenty = 0x3u << offset;
-        u_int32_t bitsTimingOut = 0x1u << offset;
+        if (TIMED_OUT(entry->timeOut))
+        {
+          /* De-queue */
+          if (prevEntry != NULL)
+          {
+            prevEntry->next = entry->next;
+          }
+          else
+          {
+            PacketHistory[i] = entry->next;
+          } /* if */
 
-        /* 10 should never occur */
-        assert ((PacketHistory[i] & bitMask) != (0x2u << offset));
-        
-        if ((PacketHistory[i] & bitMask) == bitsSeenRecenty)
-        {
-          /* 11 -> 01 */
-          PacketHistory[i] &= ~bitMask | bitsTimingOut;
-        }
-        else if ((PacketHistory[i] & bitMask) == bitsTimingOut)
-        {
-          /* 01 -> 00 */
-          PacketHistory[i] &= ~bitMask;
-        }
-      } /* for (j = ...) */
-    } /* if (PacketHistory[i] > 0) */
+          /* De-allocate memory */
+          free(entry); 
+	      }
+	      else
+	      {
+	        prevEntry = entry;
+	      } /* if */
+      } /* while */
+    } /* if (PacketHistory[i] != NULL) */
   } /* for (i = ...) */
-}
+} /* PrunePacketHistory */

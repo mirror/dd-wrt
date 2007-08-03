@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: neighbor_table.h,v 1.14 2005/05/29 12:47:45 br1 Exp $
+ * $Id: neighbor_table.h,v 1.15 2007/08/02 21:57:06 bernd67 Exp $
  */
 
 
@@ -86,19 +86,19 @@ int
 olsr_delete_neighbor_2_pointer(struct neighbor_entry *, union olsr_ip_addr *);
 
 struct neighbor_2_list_entry *
-olsr_lookup_my_neighbors(struct neighbor_entry *, union olsr_ip_addr *);
+olsr_lookup_my_neighbors(const struct neighbor_entry *, const union olsr_ip_addr *);
 
 int
-olsr_delete_neighbor_table(union olsr_ip_addr *);
+olsr_delete_neighbor_table(const union olsr_ip_addr *);
 
 struct neighbor_entry *
-olsr_insert_neighbor_table(union olsr_ip_addr *);
+olsr_insert_neighbor_table(const union olsr_ip_addr *);
 
 struct neighbor_entry *
-olsr_lookup_neighbor_table(union olsr_ip_addr *);
+olsr_lookup_neighbor_table(const union olsr_ip_addr *);
 
 struct neighbor_entry *
-olsr_lookup_neighbor_table_alias(union olsr_ip_addr *);
+olsr_lookup_neighbor_table_alias(const union olsr_ip_addr *);
 
 void
 olsr_time_out_two_hop_neighbors(struct neighbor_entry  *);

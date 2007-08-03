@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: mid_set.h,v 1.14 2007/02/10 19:27:32 bernd67 Exp $
+ * $Id: mid_set.h,v 1.15 2007/08/02 21:50:22 bernd67 Exp $
  */
 
 
@@ -44,6 +44,7 @@
 #define _OLSR_MID
 
 #include "olsr_types.h"
+
 
 struct mid_address
 {
@@ -79,16 +80,16 @@ int
 olsr_init_mid_set(void);
 
 void 
-insert_mid_tuple(union olsr_ip_addr *, struct mid_address *, float);
+insert_mid_tuple(const union olsr_ip_addr *, struct mid_address *, float);
 
 void
-insert_mid_alias(union olsr_ip_addr *, union olsr_ip_addr *, float);
+insert_mid_alias(const union olsr_ip_addr *, const union olsr_ip_addr *, float);
 
 union olsr_ip_addr *
-mid_lookup_main_addr(union olsr_ip_addr *);
+mid_lookup_main_addr(const union olsr_ip_addr *);
 
 struct mid_address *
-mid_lookup_aliases(union olsr_ip_addr *);
+mid_lookup_aliases(const union olsr_ip_addr *);
 
 void
 olsr_print_mid_set(void);
@@ -97,10 +98,10 @@ void
 olsr_time_out_mid_set(void *);
 
 void
-olsr_prune_aliases(union olsr_ip_addr *m_addr, struct mid_alias *declared_aliases);
+olsr_prune_aliases(const union olsr_ip_addr *m_addr, struct mid_alias *declared_aliases);
 
 int
-olsr_update_mid_table(union olsr_ip_addr *, float);
+olsr_update_mid_table(const union olsr_ip_addr *, float);
 
 int
 mid_delete_node(struct mid_entry *);

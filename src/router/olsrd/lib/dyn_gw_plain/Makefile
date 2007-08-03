@@ -35,7 +35,7 @@
 # to the project. For more information see the website or contact
 # the copyright holders.
 #
-# $Id: Makefile,v 1.1 2007/01/31 12:38:25 bernd67 Exp $
+# $Id: Makefile,v 1.2 2007/07/15 21:50:45 bernd67 Exp $
 
 OLSRD_PLUGIN =	true
 PLUGIN_NAME =	olsrd_dyn_gw_plain
@@ -46,7 +46,7 @@ include $(TOPDIR)/Makefile.inc
 
 default_target: $(PLUGIN_FULLNAME)
 
-$(PLUGIN_FULLNAME): $(OBJS)
+$(PLUGIN_FULLNAME): $(OBJS) version-script.txt
 		$(CC) $(LDFLAGS) -o $(PLUGIN_FULLNAME) $(OBJS) $(LIBS)
 
 install:	$(PLUGIN_FULLNAME)

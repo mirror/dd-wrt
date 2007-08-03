@@ -3,7 +3,7 @@
 
 /*
  * OLSR Basic Multicast Forwarding (BMF) plugin.
- * Copyright (c) 2005, 2006, Thales Communications, Huizen, The Netherlands.
+ * Copyright (c) 2005 - 2007, Thales Communications, Huizen, The Netherlands.
  * Written by Erik Tromp.
  * All rights reserved.
  *
@@ -43,9 +43,9 @@
 /* BMF plugin data */
 #define PLUGIN_NAME "OLSRD Basic Multicast Forwarding (BMF) plugin"
 #define PLUGIN_NAME_SHORT "OLSRD BMF"
-#define PLUGIN_VERSION "1.4 (" __DATE__ " " __TIME__ ")"
+#define PLUGIN_VERSION "1.5 (" __DATE__ " " __TIME__ ")"
 #define PLUGIN_COPYRIGHT "  (C) Thales Communications Huizen, Netherlands"
-#define PLUGIN_AUTHOR "  Erik Tromp (erik.tromp@nl.thalesgroup.com)"
+#define PLUGIN_AUTHOR "  Erik Tromp (eriktromp@users.sourceforge.net)"
 #define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION "\n" PLUGIN_COPYRIGHT "\n" PLUGIN_AUTHOR
 
 /* UDP-Port on which multicast packets are encapsulated */

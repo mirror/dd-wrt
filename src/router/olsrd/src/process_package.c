@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: process_package.c,v 1.40 2007/04/25 22:08:13 bernd67 Exp $
+ * $Id: process_package.c,v 1.41 2007/08/02 22:07:19 bernd67 Exp $
  */
 
 
@@ -86,7 +86,7 @@ olsr_hello_tap(struct hello_message *message, struct interface *in_if,
   /*
    * Update link status
    */
-  struct link_entry         *link = update_link_entry(&in_if->ip_addr, from_addr, message, in_if);
+  struct link_entry *lnk = update_link_entry(&in_if->ip_addr, from_addr, message, in_if);
 
   if (olsr_cnf->lq_level > 0)
     {
@@ -94,7 +94,7 @@ olsr_hello_tap(struct hello_message *message, struct interface *in_if,
       double rel_lq;
       struct hello_neighbor *walker;
       // just in case our neighbor has changed its HELLO interval
-      olsr_update_packet_loss_hello_int(link, message->htime);
+      olsr_update_packet_loss_hello_int(lnk, message->htime);
 
       // find the input interface in the list of neighbor interfaces
 
@@ -104,7 +104,7 @@ olsr_hello_tap(struct hello_message *message, struct interface *in_if,
 
       // the current reference link quality
 
-      saved_lq = link->saved_neigh_link_quality;
+      saved_lq = lnk->saved_neigh_link_quality;
 
       if (saved_lq == 0.0)
         saved_lq = -1.0;
@@ -113,19 +113,19 @@ olsr_hello_tap(struct hello_message *message, struct interface *in_if,
       // know the link quality in both directions
 
       if (walker != NULL)
-        link->neigh_link_quality = walker->link_quality;
+        lnk->neigh_link_quality = walker->link_quality;
 
       else
-        link->neigh_link_quality = 0.0;
+        lnk->neigh_link_quality = 0.0;
 
       // if the link quality has changed by more than 10 percent,
       // print the new link quality table
 
-      rel_lq = link->neigh_link_quality / saved_lq;
+      rel_lq = lnk->neigh_link_quality / saved_lq;
 
       if (rel_lq > 1.1 || rel_lq < 0.9)
         {
-          link->saved_neigh_link_quality = link->neigh_link_quality;
+          lnk->saved_neigh_link_quality = lnk->neigh_link_quality;
 
           if (olsr_cnf->lq_dlimit > 0)
           {
@@ -145,7 +145,7 @@ olsr_hello_tap(struct hello_message *message, struct interface *in_if,
         }
     }
   
-  neighbor = link->neighbor;
+  neighbor = lnk->neighbor;
 
   /*
    * Hysteresis
@@ -154,13 +154,13 @@ olsr_hello_tap(struct hello_message *message, struct interface *in_if,
     {
       /* Update HELLO timeout */
       //printf("MESSAGE HTIME: %f\n", message->htime);
-      olsr_update_hysteresis_hello(link, message->htime);
+      olsr_update_hysteresis_hello(lnk, message->htime);
     }
 
   /* Check if we are chosen as MPR */
   if(olsr_lookup_mpr_status(message, in_if))
     /* source_addr is always the main addr of a node! */
-    olsr_update_mprs_set(&message->source_addr, (float)message->vtime);
+    olsr_update_mprs_set(&message->source_addr, message->vtime);
 
 
 
@@ -624,10 +624,10 @@ olsr_process_message_neighbors(struct neighbor_entry *neighbor,
 
   if (olsr_cnf->lq_level > 0)
     {
-      struct link_entry *link =
+      struct link_entry *lnk =
         get_best_link_to_neighbor(&neighbor->neighbor_main_addr);
 
-      if(!link)
+      if(!lnk)
 	return;
 
       // Second pass for link quality OLSR: calculate the best 2-hop
@@ -695,7 +695,7 @@ olsr_process_message_neighbors(struct neighbor_entry *neighbor,
 
                       new_path_link_quality =
                         new_second_hop_link_quality *
-                        link->loss_link_quality * link->neigh_link_quality;
+                        lnk->loss_link_quality * lnk->neigh_link_quality;
 
                       // Only copy the link quality if it is better than what we have
                       // for this 2-hop neighbor

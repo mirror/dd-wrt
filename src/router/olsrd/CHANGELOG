@@ -1,5 +1,80 @@
 This file states changes as of version 0.2.4:
-$Id: CHANGELOG,v 1.59 2007/04/03 08:25:19 bernd67 Exp $
+$Id: CHANGELOG,v 1.74 2007/08/02 21:42:40 bernd67 Exp $
+
+0.5.4 ---------------------------------------------------------------------
+
+0.5.3 ---------------------------------------------------------------------
+
+URGENT BUG FIX
+Ignacio García Pérez <iggarpe@terra.es> found a serious bug in the dot-draw
+plugin and identified it's source.
+
+BUG FIX
+The bmf plugin wanted to kill a not-started thread and this causes a segmentation
+violation. This happens if the old plugin interface support is not compiled in
+and one uses - or more asccurate: wants to use - the bmf plugin which uses that
+ATM. Thanks to Cédric Krier <ced@ced.homedns.org> for reporting this.
+
+DEPENDENCIES FIXED
+The dependencies (*.d files) are now properly generated and used. And they also
+dependen on the Makefile in the current directory and the Makefile.inc so that
+changes there also lead to new compilation.
+Remember: We support "ccache" so install it to save lot of meaningless recompiles
+if nothing (as seen by the real C compiler, i.e. after the C preprocessor) has
+changed.
+
+BUILD FIX
+Linux/IA64 and Linux/HPPA also need "-fPIC".
+
+CLEANUPS
+- olsr_switch does no longer generate warnings
+- olsr_switch is also built with "build_all" and cleaned with "uberclean"
+- More "const" all over the place.
+- More "static" for local functions and variables.
+- Killed an unnecessary "static" variable.
+
+0.5.2 ---------------------------------------------------------------------
+
+URGENT BUG FIX
+Sven-Ola Tuecke found a serious bug of the class "show stopper" and sent a patch.
+
+PLUGIN CLEANUP
+Plugins handle parameters quite individually (case-sensitive vs case-insensitive,
+different parsing functions for the same values, etc.). Plugin Interface version 5
+now exports a table of { parameter-name, parsing-function, addr-of-storage } and
+it's size. Common functions should be shared.
+
+0.5.1 ---------------------------------------------------------------------
+
+MISC
+Upgrade to olsr-bmf 1.5 from Erik Tromp <erik_tromp@hotmail.com>
+
+latitude/longitude support is now in the nameservice plugin done by
+Sven-Ola Tuecke <mail2news@commando.de>
+
+added the spf refactoring patch from  Hannes Gredler <hannes@gredler.at> whicht saves
+a noteworthy amount of CPU time. To quote him:
+----  snip  ----
+1. use of an AVL tree as a min-heap implementation
+
+   as a means for efficient sorting.
+   (the etx metric is used as the key in the candidate tree)
+
+2. next-hop propagation
+
+   rather than tracking the previous node in olsr_relax()
+   i have changed that model and pre-populate all one-hop neighbors
+   with their own IP adress as 'next-hop' and pull that
+   pointer up once new paths are explored.
+
+   as a result no walker for counting hops and extracting next-hops
+   is required - it turns out at this is slighly more efficient
+   than the existing behaviour (even with the cache applied).
+----  snip  ----
+
+CLEANUPS
+* moved a only locally needed hack from "union olsr_ip_addr" into the only place
+  where it is needed in hashing.c
 
 0.5.0 ---------------------------------------------------------------------
 

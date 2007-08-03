@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: ipc_frontend.c,v 1.31 2007/04/28 20:45:06 bernd67 Exp $
+ * $Id: ipc_frontend.c,v 1.33 2007/08/02 22:07:19 bernd67 Exp $
  */
 
 /*
@@ -67,6 +67,7 @@ WinSockPError(char *);
 
 static int ipc_sock = -1;
 static int ipc_conn = -1;
+static int ipc_active = OLSR_FALSE;
 
 static int
 ipc_send_all_routes(int fd);
@@ -334,7 +335,7 @@ ipc_send_all_routes(int fd)
 {
   struct rt_entry  *destination;
   struct interface *ifn;
-  olsr_u8_t        index;
+  int               idx;
   struct ipcmsg packet;
   char *tmp;
   
@@ -342,10 +343,10 @@ ipc_send_all_routes(int fd)
   if(!ipc_active)
     return 0;
   
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
-      for(destination = routingtable[index].next;
-	  destination != &routingtable[index];
+      for(destination = routingtable[idx].next;
+	  destination != &routingtable[idx];
 	  destination = destination->next)
 	{
 	  ifn = destination->rt_if;
@@ -389,10 +390,10 @@ ipc_send_all_routes(int fd)
 	}
     }
 
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
-      for(destination = hna_routes[index].next;
-	  destination != &hna_routes[index];
+      for(destination = hna_routes[idx].next;
+	  destination != &hna_routes[idx];
 	  destination = destination->next)
 	{
 	  ifn = destination->rt_if;

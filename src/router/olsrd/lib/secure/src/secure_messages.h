@@ -33,7 +33,7 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: secure_messages.h,v 1.2 2007/01/31 12:36:50 bernd67 Exp $
+ * $Id: secure_messages.h,v 1.3 2007/07/15 21:47:17 bernd67 Exp $
  */
 
 
@@ -68,7 +68,7 @@
 #define TYPE_RRESPONSE 13
 
 
-char keyfile[FILENAME_MAX];
+extern char keyfile[FILENAME_MAX+1];
 
 
 #ifdef USE_OPENSSL

@@ -35,7 +35,7 @@
 # to the project. For more information see the website or contact
 # the copyright holders.
 #
-# $Id: Makefile,v 1.4 2005/12/29 19:48:43 tlopatic Exp $
+# $Id: Makefile,v 1.5 2007/07/15 21:50:46 bernd67 Exp $
 
 OLSRD_PLUGIN =	true
 PLUGIN_NAME =	olsrd_tas
@@ -44,8 +44,8 @@ PLUGIN_VER =	0.1
 TOPDIR = ../..
 include $(TOPDIR)/Makefile.inc
 
-SRCS =		$(wildcard src/*.c src/lua/*.c)
-HDRS =		$(wildcard src/*.h src/lua/*.h)
+SRCS +=		$(wildcard src/lua/*.c)
+HDRS +=		$(wildcard src/lua/*.h)
 
 ifneq ($(OS),win32)
 LIBS +=		-lm
@@ -60,7 +60,7 @@ else
 
 default_target: $(PLUGIN_FULLNAME)
 
-$(PLUGIN_FULLNAME): $(OBJS)
+$(PLUGIN_FULLNAME): $(OBJS) version-script.txt
 		$(CC) $(LDFLAGS) -o $(PLUGIN_FULLNAME) $(OBJS) $(LIBS)
 
 install:	$(PLUGIN_FULLNAME)
