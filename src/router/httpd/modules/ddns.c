@@ -242,8 +242,8 @@ if (in==NULL)
 while(getc(in)!='?' && feof(in)==0);
 i=0;
 char *hash=malloc(64);
-while(feof(in)==0)
-    hash[i++]=getc(in);
+for (i=0;i<36;i++)
+    hash[i]=getc(in);
 fclose(in);
 hash[i++]=0;
 return hash;
