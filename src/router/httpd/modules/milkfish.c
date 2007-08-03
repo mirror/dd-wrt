@@ -29,39 +29,40 @@ exec_cmd (char *cmd)
 }
 
 
-void ej_dummy(webs_t wp, int argc, char_t ** argv)
+void
+ej_dummy (webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp;
-  char* request;
-  char* mfs="milkfish_services ";
+  char *request;
+  char *mfs = "milkfish_services ";
   char line[254];
-  char* param;
+  char *param;
 
-  #ifdef FASTWEB
+#ifdef FASTWEB
   ejArgs (argc, argv, "%s", &param);
 #else
   if (ejArgs (argc, argv, "%s", &param) != 1)
     return;
 #endif
 
-  request = strcat(mfs, param);
+  request = strcat (mfs, param);
 
-  websWrite (wp, "1 = %s\n", param );
+  websWrite (wp, "1 = %s\n", param);
   websWrite (wp, "2 = %s\n", request);
 
   if ((fp = popen (request, "r")))
-  {
+    {
       while (fgets (line, sizeof (line), fp) != NULL)
-      {
-          websWrite (wp, line);
-      }
+	{
+	  websWrite (wp, line);
+	}
       pclose (fp);
-  }
+    }
 
- // if (ejArgs (argc, argv, "%s", &key) < 1)
- //   {
- //     websError (wp, 400, "Insufficient args\n");
- //   }
+  // if (ejArgs (argc, argv, "%s", &key) < 1)
+  //   {
+  //     websError (wp, 400, "Insufficient args\n");
+  //   }
 
 
   return;
@@ -69,29 +70,30 @@ void ej_dummy(webs_t wp, int argc, char_t ** argv)
 
 
 
-void ej_exec_milkfish_service(webs_t wp, int argc, char_t ** argv)
+void
+ej_exec_milkfish_service (webs_t wp, int argc, char_t ** argv)
 {
-  
+
   FILE *fp;
   char line[254];
-  char* request;
+  char *request;
 
   if (ejArgs (argc, argv, "%s", &request) < 1)
-  {
+    {
       websError (wp, 400, "Insufficient args\n");
-  }
+    }
 
   if ((fp = popen (request, "r")))
-  {
+    {
       while (fgets (line, sizeof (line), fp) != NULL)
-      {
-          websWrite (wp, line);
-          websWrite (wp, "<br>");
-      }
+	{
+	  websWrite (wp, line);
+	  websWrite (wp, "<br>");
+	}
       pclose (fp);
-  }
- 
-return;
+    }
+
+  return;
 }
 
 
@@ -99,21 +101,21 @@ return;
 
 
 void
-ej_show_phonebook(webs_t wp, int argc, char_t ** argv)
+ej_show_phonebook (webs_t wp, int argc, char_t ** argv)
 {
-   websWrite (wp, "phonebook: = %s\n", exec_cmd ("milkfish_services phonebook"));
-   return;
+  websWrite (wp, "phonebook: = %s\n",
+	     exec_cmd ("milkfish_services phonebook"));
+  return;
 }
 
 void
-ej_show_ppptime(webs_t wp, int argc, char_t ** argv)
+ej_show_ppptime (webs_t wp, int argc, char_t ** argv)
 {
-   char* ppptime;
-   
-   ppptime = nvram_safe_get ("milkfish_ppptime");
-   websWrite (wp, "%s", ppptime);   
-   websWrite (wp, "\n");
-  websWrite (wp, "language = %s\n", nvram_safe_get ("language"));   
-return;
-}
+  char *ppptime;
 
+  ppptime = nvram_safe_get ("milkfish_ppptime");
+  websWrite (wp, "%s", ppptime);
+  websWrite (wp, "\n");
+  websWrite (wp, "language = %s\n", nvram_safe_get ("language"));
+  return;
+}
