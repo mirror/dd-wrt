@@ -273,7 +273,7 @@ extern void _ubh_memcpyubh_(struct ufs_sb_private_info *, struct ufs_buffer_head
 
 #define ubh_get_addr16(ubh,begin) \
 	(((u16*)((ubh)->bh[(begin) >> (uspi->s_fshift-1)]->b_data)) + \
-	((begin) & (uspi->fsize>>1) - 1)))
+	((begin) & ((uspi->fsize>>1) - 1)))
 
 #define ubh_get_addr32(ubh,begin) \
 	(((u32*)((ubh)->bh[(begin) >> (uspi->s_fshift-2)]->b_data)) + \
