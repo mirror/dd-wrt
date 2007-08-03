@@ -245,6 +245,7 @@ char *hash=malloc(64);
 while(feof(in)==0)
     hash[i++]=getc(in);
 fclose(in);
+hash[i++]=0;
 return hash;
 }
 
