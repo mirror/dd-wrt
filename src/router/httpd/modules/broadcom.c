@@ -2738,7 +2738,8 @@ validate_cgi (webs_t wp)
       value = websGetVar (wp, variables[i]->name, NULL);
       if (!value)
 	continue;
-      if ((!*value && variables[i]->nullok) || (!variables[i]->validate && !variables[i]->validate2))
+      if ((!*value && variables[i]->nullok)
+	  || (!variables[i]->validate && !variables[i]->validate2))
 	nvram_set (variables[i]->name, value);
       else
 	{
@@ -2771,7 +2772,7 @@ static int execute (webs_t wp);
 static void
 save_wifi (webs_t wp)
 {
-  fprintf (stderr, "save wifi\n");
+//  fprintf (stderr, "save wifi\n");
   char *var = websGetVar (wp, "wifi_display", NULL);
   if (var)
     {
@@ -3950,12 +3951,12 @@ live_translate (char *tran)
   fp = getWebsFile (buf);
   if (fp == NULL)
     return "Error";
-  int start = ftell(fp);
-  int filelen = getWebsFileLen(buf);
+  int start = ftell (fp);
+  int filelen = getWebsFileLen (buf);
   while (fgets (temp, 256, fp) != NULL)
     {
-    int pos = ftell(fp);
-    if ((pos-start)>filelen) 
+      int pos = ftell (fp);
+      if ((pos - start) > filelen)
 	break;
       if ((memcmp (temp, temp1, len)) == 0)
 	{
@@ -4836,7 +4837,6 @@ ej_getwirelessssid (webs_t wp, int argc, char_t ** argv)
   char mode[32];
   sprintf (mode, "%s_ssid", nvram_safe_get ("wifi_display"));
 #endif
-//fprintf(stderr,"Wireles SSID %s -> %s\n",mode,nvram_safe_get(mode));
   websWrite (wp, "%s", nvram_safe_get (mode));
 }
 static void
