@@ -263,14 +263,13 @@ int
 start_single_service (void)
 {
 
+  sleep (3);
+  start_service ("overclocking");
   char *next;
   char service[80];
   char *services = nvram_safe_get ("action_service");
-  sleep (3);
-  start_service ("overclocking");
   foreach (service, services, next)
   {
-    fprintf (stderr, "Action %s\n", service);
     cprintf ("Restart service=[%s]\n", service);
 
     if (!strcmp (service, "dhcp"))
