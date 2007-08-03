@@ -387,18 +387,18 @@ write_nvram:
     strcpy (old_name[i], word);
     i++;
   }
-  
-  
-  
-  strcpy(backuproute,old[atoi (page)]);
+
+
+
+  strcpy (backuproute, old[atoi (page)]);
   if (!tmp)
     {
       char met[16];
       char ifn[16];
       sscanf (old[atoi (page)], "%s:%s:%s:%s:%s", ipaddr, netmask, gateway,
 	      met, ifn);
-      fprintf (stderr, "deleting %s %s %s %s %s\n", ipaddr, netmask, gateway,
-	       met, ifn);
+//      fprintf (stderr, "deleting %s %s %s %s %s\n", ipaddr, netmask, gateway,
+//             met, ifn);
       route_del (ifn, atoi (met) + 1, ipaddr, gateway, netmask);
 
       snprintf (old[atoi (page)], sizeof (old[0]), "%s", "");
@@ -412,14 +412,14 @@ write_nvram:
       snprintf (old_name[atoi (page)], sizeof (old_name[0]), "$NAME:%s$$",
 		new_name);
     }
-  if (strcmp(backuproute,old[atoi (page)]))
-  {
-  if (strlen (backuproute) > 0)
+  if (strcmp (backuproute, old[atoi (page)]))
     {
-      addAction ("static_route_del");
-      addDeletion (backuproute);
+      if (strlen (backuproute) > 0)
+	{
+	  addAction ("static_route_del");
+	  addDeletion (backuproute);
+	}
     }
-  }
 
   for (i = 0; i < STATIC_ROUTE_PAGE; i++)
     {
