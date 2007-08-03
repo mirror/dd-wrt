@@ -2738,19 +2738,16 @@ validate_cgi (webs_t wp)
       value = websGetVar (wp, variables[i]->name, NULL);
       if (!value)
 	continue;
-      fprintf(stderr,"try to save %s\n",variables[i]->name);
       if ((!*value && variables[i]->nullok) || (!variables[i]->validate && !variables[i]->validate2))
 	nvram_set (variables[i]->name, value);
       else
 	{
 	  if (variables[i]->validate)
 	    {
-	      fprintf(stderr,"call validate 1 %s\n",variables[i]->name);
 	      variables[i]->validate (wp, value, variables[i]);
 	    }
 	  else
 	    {
-	      fprintf(stderr,"call validate 2 %s\n",variables[i]->name);
 	      variables[i]->validate2 (wp);
 	    }
 	}
