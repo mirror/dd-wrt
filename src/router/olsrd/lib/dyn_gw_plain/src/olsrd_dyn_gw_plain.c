@@ -51,6 +51,8 @@
 
 #define DEBUGLEV 1
 
+#define PLUGIN_INTERFACE_VERSION 4
+
 static int has_inet_gateway;
 
 /**
@@ -60,7 +62,7 @@ static int has_inet_gateway;
 int 
 olsrd_plugin_interface_version(void)
 {
-  return OLSRD_PLUGIN_INTERFACE_VERSION;
+  return PLUGIN_INTERFACE_VERSION;
 }
 
 /**

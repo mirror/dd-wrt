@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: interfaces.c,v 1.31 2007/04/25 22:08:08 bernd67 Exp $
+ * $Id: interfaces.c,v 1.33 2007/08/02 21:51:40 bernd67 Exp $
  */
 
 #include "defs.h"
@@ -226,7 +226,7 @@ run_ifchg_cbs(struct interface *ifp, int flag)
  */
 
 struct interface *
-if_ifwithaddr(union olsr_ip_addr *addr)
+if_ifwithaddr(const union olsr_ip_addr * const addr)
 {
   struct interface *ifp;
 
@@ -342,7 +342,6 @@ queue_if(char *name, int hemu)
   interf_n->cnf = NULL;
   interf_n->interf = NULL;
   interf_n->configured = 0;
-  interf_n->index = olsr_cnf->ifcnt++;
 
   interf_n->host_emul = hemu ? OLSR_TRUE : OLSR_FALSE;
 

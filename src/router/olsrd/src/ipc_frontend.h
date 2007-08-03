@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: ipc_frontend.h,v 1.13 2007/04/20 13:46:04 bernd67 Exp $
+ * $Id: ipc_frontend.h,v 1.14 2007/08/01 16:19:48 bernd67 Exp $
  */
 
 /*
@@ -97,8 +97,6 @@ struct ipc_net_msg
   union olsr_ip_addr   main_addr;
 };
 
-
-olsr_bool ipc_active;
 
 olsr_bool
 ipc_check_allowed_ip(union olsr_ip_addr *);

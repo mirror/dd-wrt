@@ -38,7 +38,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: oparse.y,v 1.32 2007/04/20 13:46:05 bernd67 Exp $
+ * $Id: oparse.y,v 1.33 2007/05/13 21:49:59 bernd67 Exp $
  */
 
 
@@ -127,7 +127,6 @@ static int lq_mult_helper(YYSTYPE ip_addr_arg, YYSTYPE mult_arg)
 
 %token TOK_OPEN
 %token TOK_CLOSE
-%token TOK_SEMI
 
 %token TOK_STRING
 %token TOK_INTEGER
@@ -160,7 +159,6 @@ static int lq_mult_helper(YYSTYPE ip_addr_arg, YYSTYPE mult_arg)
 %token TOK_LQ_WSIZE
 %token TOK_LQ_MULT
 %token TOK_CLEAR_SCREEN
-%token TOK_PLNAME
 %token TOK_PLPARAM
 
 %token TOK_HOSTLABEL

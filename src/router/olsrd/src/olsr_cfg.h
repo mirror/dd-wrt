@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsr_cfg.h,v 1.30 2006/04/17 18:31:09 kattemat Exp $
+ * $Id: olsr_cfg.h,v 1.31 2007/05/13 22:23:55 bernd67 Exp $
  */
 
 
@@ -132,7 +132,6 @@ struct olsr_if
 {
   char                     *name;
   char                     *config;
-  int                      index;
   olsr_bool                configured;
   olsr_bool                host_emul;
   union olsr_ip_addr       hemu_ip;
@@ -223,7 +222,6 @@ struct olsrd_config
   struct ipc_host          *ipc_hosts;
   struct ipc_net           *ipc_nets;
   struct olsr_if           *interfaces;
-  olsr_u16_t               ifcnt;
 
   /* Stuff set by olsrd */
   size_t                   ipsize;               /* Size of address */

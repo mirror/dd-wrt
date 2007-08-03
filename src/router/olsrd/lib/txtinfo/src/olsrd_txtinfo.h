@@ -37,26 +37,27 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_txtinfo.h,v 1.1 2007/01/31 12:38:26 bernd67 Exp $
+ * $Id: olsrd_txtinfo.h,v 1.2 2007/07/15 19:29:37 bernd67 Exp $
  */
 
 /*
  * Dynamic linked library for the olsr.org olsr daemon
  */
 
-#ifndef _OLSRD_DOT_DRAW
-#define _OLSRD_DOT_DRAW
+#ifndef _OLSRD_TXTINFO
+#define _OLSRD_TXTINFO
 
+#include "olsr_types.h"
+#include "olsrd_plugin.h"
+#include "plugin_util.h"
 
-extern struct in_addr ipc_accept_ip;
+extern union olsr_ip_addr ipc_accept_ip;
 extern int ipc_port;
 extern int nompr;
 
-
-int
-olsrd_plugin_init(void);
-
-void
-olsr_plugin_exit(void);
+int olsrd_plugin_interface_version(void);
+int olsrd_plugin_init(void);
+void olsr_plugin_exit(void);
+void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size);
 
 #endif

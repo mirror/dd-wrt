@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: hna_set.c,v 1.19 2007/04/25 22:08:08 bernd67 Exp $
+ * $Id: hna_set.c,v 1.20 2007/08/02 22:07:19 bernd67 Exp $
  */
 
 #include "defs.h"
@@ -55,7 +55,7 @@ int
 olsr_init_hna_set(void)
 {
 
-  int index;
+  int idx;
 
   if(olsr_cnf->ip_version == AF_INET)
     {
@@ -71,10 +71,10 @@ olsr_init_hna_set(void)
    */
   olsr_register_scheduler_event(&olsr_time_out_hna_set, NULL, 1, 0, NULL);
 
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
-      hna_set[index].next = &hna_set[index];
-      hna_set[index].prev = &hna_set[index];
+      hna_set[idx].next = &hna_set[idx];
+      hna_set[idx].prev = &hna_set[idx];
     }
 
   return 1;
@@ -267,13 +267,13 @@ olsr_update_hna_entry(union olsr_ip_addr *gw, union olsr_ip_addr *net, union hna
 void
 olsr_time_out_hna_set(void *foo __attribute__((unused)))
 {
-  int index;
+  int idx;
 
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
-      struct hna_entry *tmp_hna = hna_set[index].next;
+      struct hna_entry *tmp_hna = hna_set[idx].next;
       /* Check all entrys */
-      while(tmp_hna != &hna_set[index])
+      while(tmp_hna != &hna_set[idx])
 	{
 	  /* Check all networks */
 	  struct hna_net *tmp_net = tmp_hna->networks.next;
@@ -321,7 +321,7 @@ olsr_time_out_hna_set(void *foo __attribute__((unused)))
 void
 olsr_print_hna_set(void)
 {
-  int index;
+  int idx;
 
   OLSR_PRINTF(1, "\n--- %02d:%02d:%02d.%02d ------------------------------------------------- HNA SET\n\n",
               nowtm->tm_hour,
@@ -334,11 +334,11 @@ olsr_print_hna_set(void)
   else
     OLSR_PRINTF(1, "IP net/prefixlen               GW IP\n");
 
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
-      struct hna_entry *tmp_hna = hna_set[index].next;
+      struct hna_entry *tmp_hna = hna_set[idx].next;
       /* Check all entrys */
-      while(tmp_hna != &hna_set[index])
+      while(tmp_hna != &hna_set[idx])
 	{
 	  /* Check all networks */
 	  struct hna_net *tmp_net = tmp_hna->networks.next;

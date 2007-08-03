@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_plugin.c,v 1.16 2007/05/09 00:22:47 bernd67 Exp $
+ * $Id: olsrd_plugin.c,v 1.17 2007/07/15 19:29:38 bernd67 Exp $
  */
 
 /*
@@ -59,128 +59,108 @@
 
 int http_port = 0;
 int resolve_ip_addresses = 0;
+struct allowed_net *allowed_nets = NULL;
 
-static void __attribute__ ((constructor)) 
-my_init(void);
+static void my_init(void) __attribute__ ((constructor));
+static void my_fini(void) __attribute__ ((destructor));
 
-static void __attribute__ ((destructor)) 
-my_fini(void);
+static int add_plugin_ipnet(const char *value, void *data);
+static int add_plugin_ipaddr(const char *value, void *data);
+
+static int insert_plugin_ipnet(const char *sz_net, const char *sz_mask, struct allowed_net **allowed_nets);
 
 /*
  * Defines the version of the plugin interface that is used
  * THIS IS NOT THE VERSION OF YOUR PLUGIN!
  * Do not alter unless you know what you are doing!
  */
-int 
-olsrd_plugin_interface_version(void)
+int olsrd_plugin_interface_version(void)
 {
-  return PLUGIN_INTERFACE_VERSION;
+    return PLUGIN_INTERFACE_VERSION;
 }
-
-
 
 /**
  *Constructor
  */
-static void
-my_init(void)
+static void my_init(void)
 {
-  /* Print plugin info to stdout */
-  printf("%s\n", MOD_DESC);
-
-  return;
+    /* Print plugin info to stdout */
+    printf("%s\n", MOD_DESC);
 }
 
 /**
  *Destructor
  */
-static void
-my_fini(void)
+static void my_fini(void)
 {
-
-  /* Calls the destruction function
-   * olsr_plugin_exit()
-   * This function should be present in your
-   * sourcefile and all data destruction
-   * should happen there - NOT HERE!
-   */
-  olsr_plugin_exit();
-
-  return;
+    /* Calls the destruction function
+     * olsr_plugin_exit()
+     * This function should be present in your
+     * sourcefile and all data destruction
+     * should happen there - NOT HERE!
+     */
+    olsr_plugin_exit();
 }
 
+static const struct olsrd_plugin_parameters plugin_parameters[] = {
+    { .name = "port",   .set_plugin_parameter = &set_plugin_port,      .data = &http_port },
+    { .name = "host",   .set_plugin_parameter = &add_plugin_ipaddr,    .data = &allowed_nets },
+    { .name = "net",    .set_plugin_parameter = &add_plugin_ipnet,     .data = &allowed_nets },
+    { .name = "resolve",.set_plugin_parameter = &set_boolean,          .data = &resolve_ip_addresses },
+};
 
-int
-olsrd_plugin_register_param(char *key, char *value)
+void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size)
 {
-  if(!strcmp(key, "port") || !strcmp(key, "Port"))
-    {
-     http_port = atoi(value);
-     printf("(HTTPINFO) listening on port: %d\n", http_port);
-    }
-
-  if(!strcmp(key, "host") || !strcmp(key, "Host"))
-    {
-      struct in_addr in;
-      struct allowed_host *ah;
-      
-      if(inet_aton(value, &in) == 0)
-	return 0;
-
-      ah = malloc(sizeof(struct allowed_host));
-      if(!ah)
-	{
-	  fprintf(stderr, "(HTTPINFO) register param host out of memory!\n");
-	  exit(0);
-	}
-      ah->host.v4 = in.s_addr;
-      ah->next = allowed_hosts;
-      allowed_hosts = ah;
-      return 1;
-    }
-
-  if(!strcmp(key, "net") || !strcmp(key, "Net"))
-    {
-      struct in_addr net, mask;
-      struct allowed_net *an;
-      char sz_net[100], sz_mask[100]; /* IPv6 in the future */
-
-      if(sscanf(value, "%99s %99s", sz_net, sz_mask) != 2)
-	{
-	  olsr_printf(1, "(HTTPINFO) Error parsing net param \"%s\"!\n", value);
-	  return 0;
-	}
-
-      if(inet_aton(sz_net, &net) == 0)
-	return 0;
-
-      if(inet_aton(sz_mask, &mask) == 0)
-	return 0;
-
-      an = malloc(sizeof(struct allowed_net));
-      if(!an)
-	{
-	  fprintf(stderr, "(HTTPINFO) register param net out of memory!\n");
-	  exit(0);
-	}
-
-      an->net.v4 = net.s_addr;
-      an->mask.v4 = mask.s_addr;
-
-      an->next = allowed_nets;
-      allowed_nets = an;
-      return 1;
-      
-    }
-  if(!strcasecmp(key, "resolve"))
-    {
-        if (!strcasecmp (value, "yes")) {
-            resolve_ip_addresses = 1;
-        } else if (!strcasecmp (value, "no")) {
-            resolve_ip_addresses = 0;
-        } else {
-            return 0;
-        }
-    }
-  return 1;
+    *params = plugin_parameters;
+    *size = sizeof(plugin_parameters)/sizeof(*plugin_parameters);
 }
+
+static int insert_plugin_ipnet(const char *sz_net, const char *sz_mask, struct allowed_net **allowed_nets)
+{
+    struct in_addr net, mask;
+    struct allowed_net *an;
+
+    if(inet_aton(sz_net, &net) == 0) {
+	return 1;
+    }
+    if(inet_aton(sz_mask, &mask) == 0) {
+	return 1;
+    }
+
+    an = olsr_malloc(sizeof(*an), __func__);
+    if (an == NULL) {
+        fprintf(stderr, "(HTTPINFO) register param net out of memory!\n");
+        exit(0);
+    }
+
+    an->net.v4  = net.s_addr;
+    an->mask.v4 = mask.s_addr;
+    an->next = *allowed_nets;
+    *allowed_nets = an;
+    return 0;
+}
+
+static int add_plugin_ipnet(const char *value, void *data)
+{
+    char sz_net[100], sz_mask[100]; /* IPv6 in the future */
+
+    if(sscanf(value, "%99s %99s", sz_net, sz_mask) != 2) {
+        olsr_printf(1, "(HTTPINFO) Error parsing net param \"%s\"!\n", value);
+        return 0;
+    }
+    return insert_plugin_ipnet(sz_net, sz_mask, data);
+}
+
+static int add_plugin_ipaddr(const char *value, void *data)
+{
+    return insert_plugin_ipnet(value, "255.255.255.255", data);
+}
+
+/*
+ * Local Variables:
+ * mode: c
+ * style: linux
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */

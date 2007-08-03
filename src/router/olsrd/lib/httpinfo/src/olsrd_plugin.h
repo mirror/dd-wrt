@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_plugin.h,v 1.22 2007/04/02 22:22:26 bernd67 Exp $
+ * $Id: olsrd_plugin.h,v 1.23 2007/07/15 19:29:38 bernd67 Exp $
  */
 
 /*
@@ -57,6 +57,7 @@
 #include <math.h>
 
 #include "olsr_types.h"
+#include "../../../src/olsrd_plugin.h"
 #include "neighbor_table.h"
 #include "two_hop_neighbor_table.h"
 #include "tc_set.h"
@@ -69,43 +70,40 @@
 #define PLUGIN_VERSION "0.1"
 #define PLUGIN_AUTHOR   "Andreas Tønnesen"
 #define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION " by " PLUGIN_AUTHOR
-#define PLUGIN_INTERFACE_VERSION 4
+#define PLUGIN_INTERFACE_VERSION 5
 
 extern int http_port;
 extern int resolve_ip_addresses;
 
 /* Allowed hosts stuff */
 
-struct allowed_host
-{
-  union olsr_ip_addr       host;
-  struct allowed_host     *next;
+struct allowed_net {
+    union olsr_ip_addr       net;
+    union olsr_ip_addr       mask;
+    struct allowed_net      *next;
 };
 
-struct allowed_net
-{
-  union olsr_ip_addr       net;
-  union olsr_ip_addr       mask;
-  struct allowed_net      *next;
-};
-
-struct allowed_host   *allowed_hosts;
-struct allowed_net    *allowed_nets;
+extern struct allowed_net    *allowed_nets;
 
 
 /****************************************************************************
  *                Functions that the plugin MUST provide                    *
  ****************************************************************************/
 
-
 /* Initialization function */
-int
-olsrd_plugin_init(void);
+int olsrd_plugin_init(void);
 
-int
-olsrd_plugin_register_param(char *, char *);
+void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size);
 
-int 
-olsrd_plugin_interface_version(void);
+int olsrd_plugin_interface_version(void);
 
 #endif
+
+/*
+ * Local Variables:
+ * mode: c
+ * style: linux
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: two_hop_neighbor_table.c,v 1.18 2007/04/25 22:08:17 bernd67 Exp $
+ * $Id: two_hop_neighbor_table.c,v 1.19 2007/08/02 22:07:19 bernd67 Exp $
  */
 
 
@@ -56,12 +56,12 @@ struct neighbor_2_entry two_hop_neighbortable[HASHSIZE];
 int
 olsr_init_two_hop_table(void)
 {
-  int index;
+  int idx;
 
-  for(index=0;index<HASHSIZE;index++)
+  for(idx=0;idx<HASHSIZE;idx++)
     {
-      two_hop_neighbortable[index].next = &two_hop_neighbortable[index];
-      two_hop_neighbortable[index].prev = &two_hop_neighbortable[index];
+      two_hop_neighbortable[idx].next = &two_hop_neighbortable[idx];
+      two_hop_neighbortable[idx].prev = &two_hop_neighbortable[idx];
     }
   return 1;
 }

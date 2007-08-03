@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_plugin.c,v 1.2 2007/04/20 13:46:04 bernd67 Exp $
+ * $Id: olsrd_plugin.c,v 1.3 2007/07/15 17:41:33 bernd67 Exp $
  */
 
 /*
@@ -53,90 +53,79 @@
 
 #include "olsrd_plugin.h"
 #include "olsrd_txtinfo.h"
+#include "defs.h"
 
 
 #define PLUGIN_NAME    "OLSRD txtinfo plugin"
 #define PLUGIN_VERSION "0.1"
 #define PLUGIN_AUTHOR   "Lorenz Schori"
 #define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION " by " PLUGIN_AUTHOR
-#define PLUGIN_INTERFACE_VERSION 4
+#define PLUGIN_INTERFACE_VERSION 5
 
 
-struct in_addr ipc_accept_ip;
+union olsr_ip_addr ipc_accept_ip;
 int ipc_port;
 int nompr;
 
-
-static void __attribute__ ((constructor)) 
-my_init(void);
-
-static void __attribute__ ((destructor)) 
-my_fini(void);
-
+static void my_init(void) __attribute__ ((constructor));
+static void my_fini(void) __attribute__ ((destructor));
 
 /**
  *Constructor
  */
-static void
-my_init(void)
+static void my_init(void)
 {
-  /* Print plugin info to stdout */
-  printf("%s\n", MOD_DESC);
+    /* Print plugin info to stdout */
+    printf("%s\n", MOD_DESC);
 
-  /* defaults for parameters */
-  ipc_port = 2006;
-  ipc_accept_ip.s_addr = htonl(INADDR_LOOPBACK);
+    /* defaults for parameters */
+    ipc_port = 2006;
+    if (olsr_cnf->ip_version == AF_INET) {
+        ipc_accept_ip.v4 = htonl(INADDR_LOOPBACK);
+    } else {
+        ipc_accept_ip.v6 = in6addr_loopback;
+    }
 
-	/* highlite neighbours by default */
-	nompr = 0;
+    /* highlite neighbours by default */
+    nompr = 0;
 }
-
 
 /**
  *Destructor
  */
-static void
-my_fini(void)
+static void my_fini(void)
 {
-  /* Calls the destruction function
-   * olsr_plugin_exit()
-   * This function should be present in your
-   * sourcefile and all data destruction
-   * should happen there - NOT HERE!
-   */
-  olsr_plugin_exit();
+    /* Calls the destruction function
+     * olsr_plugin_exit()
+     * This function should be present in your
+     * sourcefile and all data destruction
+     * should happen there - NOT HERE!
+     */
+    olsr_plugin_exit();
 }
 
 
-int 
-olsrd_plugin_interface_version(void)
+int olsrd_plugin_interface_version(void)
 {
-  return PLUGIN_INTERFACE_VERSION;
+    return PLUGIN_INTERFACE_VERSION;
 }
 
+static const struct olsrd_plugin_parameters plugin_parameters[] = {
+    { .name = "port",   .set_plugin_parameter = &set_plugin_port,      .data = &ipc_port },
+    { .name = "accept", .set_plugin_parameter = &set_plugin_ipaddress, .data = &ipc_accept_ip },
+};
 
-int
-olsrd_plugin_register_param(char *key, char *value)
+void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size)
 {
-  if(!strcmp(key, "port"))
-    {
-     ipc_port = atoi(value);
-     printf("(TXTINFO) listening on port: %d\n", ipc_port);
-    }
+    *params = plugin_parameters;
+    *size = sizeof(plugin_parameters)/sizeof(*plugin_parameters);
+}
 
-  if(!strcmp(key, "accept"))
-    {
-	inet_aton(value, &ipc_accept_ip);
-	printf("(TXTINFO) accept only: %s\n", inet_ntoa(ipc_accept_ip));
-    }
 /*
-	if(!strcmp(key, "hilitemprneighbours"))
-	{
-		if(!strcmp(value, "false") || !strcmp(value, "0"))
-		{
-			nompr=1;
-		}
-	}
-	*/
-  return 1;
-}
+ * Local Variables:
+ * mode: c
+ * style: linux
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */

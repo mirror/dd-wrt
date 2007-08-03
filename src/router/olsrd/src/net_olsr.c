@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: net_olsr.c,v 1.22 2007/04/25 22:08:09 bernd67 Exp $
+ * $Id: net_olsr.c,v 1.25 2007/08/02 22:07:19 bernd67 Exp $
  */
 
 #include "net_olsr.h"
@@ -458,7 +458,7 @@ net_output(struct interface *ifp)
 	{
 	  perror("sendto(v6)");
 	  olsr_syslog(OLSR_LOG_ERR, "OLSR: sendto IPv6 %m");
-	  fprintf(stderr, "Socket: %d interface: %d\n", ifp->olsr_socket, ifp->if_nr);
+	  fprintf(stderr, "Socket: %d interface: %d\n", ifp->olsr_socket, ifp->if_index);
 	  fprintf(stderr, "To: %s (size: %d)\n", ip6_to_string(&sin6->sin6_addr), (int)sizeof(*sin6));
 	  fprintf(stderr, "Outputsize: %d\n", ifp->netbuf.pending);
 	  retval = -1;
@@ -612,26 +612,30 @@ ip6_to_string(const struct in6_addr *addr6)
 const char *
 olsr_ip_to_string(const union olsr_ip_addr *addr)
 {
-  static int index = 0;
+  static int idx = 0;
   static char buff[4][INET6_ADDRSTRLEN > INET_ADDRSTRLEN ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN];
   const char *ret;
+
+  if (!addr) {
+      return "null";
+  }
   
   if(olsr_cnf->ip_version == AF_INET)
     {
 #if 0
       struct in_addr in;
       in.s_addr = addr->v4;
-      ret = inet_ntop(AF_INET, &in, buff[index], sizeof(buff[index]));
+      ret = inet_ntop(AF_INET, &in, buff[idx], sizeof(buff[idx]));
 #else
-      ret = inet_ntop(AF_INET, &addr->v6, buff[index], sizeof(buff[index]));
+      ret = inet_ntop(AF_INET, &addr->v4, buff[idx], sizeof(buff[idx]));
 #endif
     }
   else
     {
       /* IPv6 */
-      ret = inet_ntop(AF_INET6, &addr->v6, buff[index], sizeof(buff[index]));
+      ret = inet_ntop(AF_INET6, &addr->v6, buff[idx], sizeof(buff[idx]));
     }
-  index = (index + 1) & 3;
+  idx = (idx + 1) & 3;
 
   return ret;
 }

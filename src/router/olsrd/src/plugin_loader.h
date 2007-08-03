@@ -36,43 +36,65 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: plugin_loader.h,v 1.15 2005/05/29 12:47:45 br1 Exp $
+ * $Id: plugin_loader.h,v 1.17 2007/07/15 19:29:37 bernd67 Exp $
  */
 
 #ifndef _OLSR_PLUGIN_LOADER
 #define _OLSR_PLUGIN_LOADER
 
-#include <dlfcn.h>
-#include <stdio.h>
+#include "olsrd_plugin.h"
 #include "olsr_types.h"
 #include "olsr_cfg.h"
 
 #ifndef OLSR_PLUGIN
 
-#define MAX_LIBS 10
+/* all */
+typedef int (*plugin_init_func)(void);
+typedef int (*get_interface_version_func)(void);
 
-struct olsr_plugin
-{
-  /* The handle */
-  void *dlhandle;
+#if SUPPORT_OLD_PLUGIN_VERSIONS
+/* version 4 */
+typedef int (*register_param_func)(char *, char *);
+#endif
+
+/* version 5 */
+typedef void (*get_plugin_parameters_func)(const struct olsrd_plugin_parameters **params, unsigned int *size);
+
+
+struct olsr_plugin {
+    /* The handle */
+    void *dlhandle;
   
-  struct plugin_param *params;
-  int plugin_interface_version;
+    struct plugin_param *params;
+    int plugin_interface_version;
   
-  int (*register_param)(char *, char *);
-  int (*plugin_init)(void);
+#if SUPPORT_OLD_PLUGIN_VERSIONS
+    /* version 4 */
+    register_param_func register_param;
+#endif
+    plugin_init_func plugin_init;
+
+    /* version 5 */
+    const struct olsrd_plugin_parameters *plugin_parameters;
+    unsigned int plugin_parameters_size;
   
-  struct olsr_plugin *next;
+    struct olsr_plugin *next;
 };
 
-int
-olsr_load_plugins(void);
+void olsr_load_plugins(void);
 
-void
-olsr_close_plugins(void);
+void olsr_close_plugins(void);
 
-int
-olsr_plugin_io(int, void *, size_t);
+int olsr_plugin_io(int, void *, size_t);
 
 #endif
 #endif
+
+/*
+ * Local Variables:
+ * mode: c
+ * style: linux
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */

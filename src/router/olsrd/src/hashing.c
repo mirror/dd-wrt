@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: hashing.c,v 1.11 2007/04/20 13:46:04 bernd67 Exp $
+ * $Id: hashing.c,v 1.16 2007/08/02 21:59:59 bernd67 Exp $
  */
 
 #include "olsr_protocol.h"
@@ -44,28 +44,31 @@
 #include "defs.h"
 
 /**
- *Hashing function. Creates a key based on
- *an 32-bit address.
- *@param address the address to hash
- *@return the hash(a value in the 0-31 range)
+ * Hashing function. Creates a key based on
+ * an 32-bit address.
+ * @param address the address to hash
+ * @return the hash(a value in the 0-31 range)
  */
-olsr_u32_t
-olsr_hashing(union olsr_ip_addr *address)
+olsr_u32_t olsr_hashing(const union olsr_ip_addr * address)
 {
-  olsr_u32_t hash;
-  char *tmp;
-
-  if(olsr_cnf->ip_version == AF_INET)
-    /* IPv4 */  
-    hash = address->v4x[0] ^ address->v4x[1] ^ address->v4x[2] ^ address->v4x[3];
-  else
-    {
-      /* IPv6 */
-      tmp = (char *) &address->v6;
-      hash = (ntohl(*tmp));
+    olsr_u32_t hash;
+    if(olsr_cnf->ip_version == AF_INET) {
+        /* IPv4 */  
+        const olsr_u8_t * const v4x = (const olsr_u8_t *)&address->v4;
+        hash = v4x[0] ^ v4x[1] ^ v4x[2] ^ v4x[3];
+    } else {
+        /* IPv6 */
+        const char * const tmp = (const char *)&address->v6;
+        hash = ntohl(*tmp);
     }
-
-  hash &= HASHMASK;
-
-  return hash;
+    return hash & HASHMASK;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * style: linux
+ * c-basic-offset: 4
+ * indent-tabs-mode: nil
+ * End:
+ */

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_httpinfo.c,v 1.66 2007/05/09 17:37:09 bernd67 Exp $
+ * $Id: olsrd_httpinfo.c,v 1.71 2007/07/15 21:09:37 bernd67 Exp $
  */
 
 /*
@@ -49,7 +49,9 @@
 #include <stdarg.h>
 #include <unistd.h>
 #include <errno.h>
-#ifndef WIN32
+#ifdef WIN32
+#include <io.h>
+#else
 #include <netdb.h>
 #endif
 
@@ -89,11 +91,11 @@ static char copyright_string[] = "olsr.org HTTPINFO plugin Copyright (c) 2004, A
 
 #define MAX_CLIENTS 3
 
-#define MAX_HTTPREQ_SIZE 1024 * 10
+#define MAX_HTTPREQ_SIZE (1024 * 10)
 
 #define DEFAULT_TCP_PORT 1978
 
-#define HTML_BUFSIZE 1024*75
+#define HTML_BUFSIZE (1024 * 400)
 
 #define FRAMEWIDTH 800
 
@@ -130,64 +132,43 @@ struct dynamic_file_entry
   int(*process_data_cb)(char *, olsr_u32_t, char *, olsr_u32_t);
 };
 
+static int get_http_socket(int);
 
-static int
-get_http_socket(int);
+static int build_tabs(char *, olsr_u32_t, int);
 
-static int
-build_tabs(char *, olsr_u32_t, int);
+static void parse_http_request(int);
 
-static void
-parse_http_request(int);
+static int build_http_header(http_header_type, olsr_bool, olsr_u32_t, char *, olsr_u32_t);
 
-int
-build_http_header(http_header_type, olsr_bool, olsr_u32_t, char *, olsr_u32_t);
+static int build_frame(char *, char *, int, char *, olsr_u32_t, int(*frame_body_cb)(char *, olsr_u32_t));
 
-static int
-build_frame(char *, char *, int, char *, olsr_u32_t, int(*frame_body_cb)(char *, olsr_u32_t));
+static int build_routes_body(char *, olsr_u32_t);
 
-int
-build_routes_body(char *, olsr_u32_t);
+static int build_config_body(char *, olsr_u32_t);
 
-int
-build_config_body(char *, olsr_u32_t);
+static int build_neigh_body(char *, olsr_u32_t);
 
-int
-build_neigh_body(char *, olsr_u32_t);
+static int build_topo_body(char *, olsr_u32_t);
 
-int
-build_topo_body(char *, olsr_u32_t);
+static int build_hna_body(char *, olsr_u32_t);
 
-int
-build_hna_body(char *, olsr_u32_t);
+static int build_mid_body(char *, olsr_u32_t);
 
-int
-build_mid_body(char *, olsr_u32_t);
+static int build_nodes_body(char *, olsr_u32_t);
 
-int
-build_nodes_body(char *, olsr_u32_t);
+static int build_all_body(char *, olsr_u32_t);
 
-int
-build_all_body(char *, olsr_u32_t);
+static int build_about_body(char *, olsr_u32_t);
 
-int
-build_about_body(char *, olsr_u32_t);
+static int build_cfgfile_body(char *, olsr_u32_t);
 
-int
-build_cfgfile_body(char *, olsr_u32_t);
+static int check_allowed_ip(const struct allowed_net * const allowed_nets, const union olsr_ip_addr * const addr);
 
+static int build_ip_txt(char *buf, const olsr_u32_t bufsize, const olsr_bool want_link, const char * const ipstr, const char  * const maskstr);
 
-char *
-sockaddr_to_string(struct sockaddr *);
+static int build_ipaddr_link(char *buf, const olsr_u32_t bufsize, const olsr_bool want_link, const union olsr_ip_addr * const ipaddr, const union hna_netmask * const mask);
 
-olsr_bool
-check_allowed_ip(union olsr_ip_addr *);
-
-
-static int
-build_ip_txt(char *buf, const olsr_u32_t bufsize, const olsr_bool want_link, const char * const ipstr, const char  * const maskstr);
-static int
-build_ipaddr_link(char *buf, const olsr_u32_t bufsize, const olsr_bool want_link, union olsr_ip_addr * const ipaddr, const union hna_netmask * const mask);
+static char *olsr_netmask_to_string(union hna_netmask *);
 
 static ssize_t writen(int fd, const void *buf, size_t count);
 
@@ -336,20 +317,19 @@ parse_http_request(int fd)
   char http_version[11];
   int c = 0, r = 1, size = 0;
 
-  addrlen = sizeof(struct sockaddr_in);
-
   if(curr_clients >= MAX_CLIENTS)
     return;
 
   curr_clients++;
 
+  addrlen = sizeof(struct sockaddr_in);
   if ((client_sockets[curr_clients] = accept(fd, (struct sockaddr *)  &pin, &addrlen)) == -1)
     {
       olsr_printf(1, "(HTTPINFO) accept: %s\n", strerror(errno));
       goto close_connection;
     }
 
-  if(!check_allowed_ip((union olsr_ip_addr *)&pin.sin_addr.s_addr))
+  if(!check_allowed_ip(allowed_nets, (union olsr_ip_addr *)&pin.sin_addr.s_addr))
     {
       olsr_printf(1, "HTTP request from non-allowed host %s!\n", 
 		  olsr_ip_to_string((union olsr_ip_addr *)&pin.sin_addr.s_addr));
@@ -412,7 +392,7 @@ parse_http_request(int fd)
 	      printf("Dynamic read %d bytes\n", param_size);
 	      
 	      //memcpy(body, dynamic_files[i].data, static_bin_files[i].data_size);
-	      size += dynamic_files[i].process_data_cb(req, param_size, &body[size], HTML_BUFSIZE-size);
+	      size += dynamic_files[i].process_data_cb(req, param_size, &body[size], sizeof(body)-size);
 	      c = build_http_header(HTTP_OK, OLSR_TRUE, size, req, MAX_HTTPREQ_SIZE);  
 	      goto send_http_data;
 	    }
@@ -624,8 +604,7 @@ build_http_header(http_header_type type,
 
 
 
-int 
-build_tabs(char *buf, const olsr_u32_t bufsize, int active)
+static int build_tabs(char *buf, const olsr_u32_t bufsize, int active)
 {
   int size = 0, i = 0, tabs = 0;
 
@@ -678,13 +657,12 @@ olsr_plugin_exit(void)
 }
 
 
-static int
-build_frame(char *title __attribute__((unused)), 
-	    char *link __attribute__((unused)), 
-	    int width __attribute__((unused)),
-	    char *buf,
-	    olsr_u32_t bufsize, 
-	    int(*frame_body_cb)(char *, olsr_u32_t))
+static int build_frame(char *title __attribute__((unused)), 
+                       char *link __attribute__((unused)), 
+                       int width __attribute__((unused)),
+                       char *buf,
+                       olsr_u32_t bufsize, 
+                       int(*frame_body_cb)(char *, olsr_u32_t))
 {
   int i = 0, size = 0;
 
@@ -701,8 +679,7 @@ build_frame(char *title __attribute__((unused)),
   return size;
 }
 
-static int
-build_ip_txt(char *buf, const olsr_u32_t bufsize, const olsr_bool want_link, const char * const ipstr, const char  * const maskstr)
+static int build_ip_txt(char *buf, const olsr_u32_t bufsize, const olsr_bool want_link, const char * const ipstr, const char  * const maskstr)
 {
   int size = 0;
   if (want_link && maskstr == NULL) { /* Print the link only if there is not netmask */
@@ -722,8 +699,7 @@ build_ip_txt(char *buf, const olsr_u32_t bufsize, const olsr_bool want_link, con
   return size;
 }
 
-static int
-build_ipaddr_link(char *buf, const olsr_u32_t bufsize, const olsr_bool want_link, union olsr_ip_addr * const ipaddr, const union hna_netmask * const mask)
+static int build_ipaddr_link(char *buf, const olsr_u32_t bufsize, const olsr_bool want_link, const union olsr_ip_addr * const ipaddr, const union hna_netmask * const mask)
 {
   int size = 0;
   char maskbuf[32];
@@ -750,83 +726,72 @@ build_ipaddr_link(char *buf, const olsr_u32_t bufsize, const olsr_bool want_link
   } else {
     maskstr =  NULL;
   }
-  size += snprintf(&buf[size], bufsize-size, "<td%s>", resolve_ip_addresses && hp ? "" : " colspan=\"2\"");
+  size += snprintf(&buf[size], bufsize-size, "<td>");
   size += build_ip_txt(&buf[size], bufsize-size, want_link, olsr_ip_to_string(ipaddr), maskstr);
-  if (hp) {
-    size += snprintf(&buf[size], bufsize-size, "</td><td>(");
-    size += build_ip_txt(&buf[size], bufsize-size, want_link, hp->h_name, NULL);
-    size += snprintf(&buf[size], bufsize-size, ")");
-  }
   size += snprintf(&buf[size], bufsize-size, "</td>");
+  if (resolve_ip_addresses) {
+    if (hp) {
+      size += snprintf(&buf[size], bufsize-size, "<td>(");
+      size += build_ip_txt(&buf[size], bufsize-size, want_link, hp->h_name, NULL);
+      size += snprintf(&buf[size], bufsize-size, ")</td>");
+    } else {
+      size += snprintf(&buf[size], bufsize-size, "<td/>");
+    }
+  }
   return size;
 }
 #define build_ipaddr_with_link(buf, bufsize, ipaddr, mask) build_ipaddr_link((buf), (bufsize), OLSR_TRUE, (ipaddr), (mask))
 #define build_ipaddr_no_link(buf, bufsize, ipaddr, mask)   build_ipaddr_link((buf), (bufsize), OLSR_FALSE, (ipaddr), (mask))
 
-int
-build_routes_body(char *buf, olsr_u32_t bufsize)
+
+static int build_route(char *buf, olsr_u32_t bufsize, const struct rt_entry * const route, const char * const title, const int print_netmask)
+{
+  int size = 0;
+  size += snprintf(&buf[size], bufsize-size, "<tr>");
+  size += build_ipaddr_with_link(&buf[size], bufsize-size, &route->rt_dst, print_netmask ? &route->rt_mask : NULL);
+  size += build_ipaddr_with_link(&buf[size], bufsize-size, &route->rt_router, NULL);
+
+  size += snprintf(&buf[size], bufsize-size, "<td align=\"center\">%d</td>", route->rt_metric);
+  if (olsr_cnf->lq_level > 0) {
+    size += snprintf(&buf[size], bufsize-size, "<td align=\"center\">%.2f</td>", route->rt_etx);
+  }
+  size += snprintf(&buf[size], bufsize-size, "<td align=\"center\">%s</td><td>%s</td></tr>\n", route->rt_if->int_name, title);
+  return size;
+}
+
+static int build_routes_body(char *buf, olsr_u32_t bufsize)
 {
   int size = 0, index;
   struct rt_entry *routes;
 
   size += snprintf(&buf[size], bufsize-size, "<h2>OLSR routes in kernel</h2>\n");
 
-  size += snprintf(&buf[size], bufsize-size, "<table width=\"100%%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" align=\"center\"><tr><th%s>Destination</th><th>Gateway</th><th>Metric</th>",
+  size += snprintf(&buf[size], bufsize-size, "<table width=\"100%%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" align=\"center\"><tr><th%1$s>Destination</th><th%1$s>Gateway</th><th>Metric</th>",
                   resolve_ip_addresses ? " colspan=\"2\"" : "");
   if (olsr_cnf->lq_level > 0)
     size += snprintf(&buf[size], bufsize-size, "<th>ETX</th>");
   size += snprintf(&buf[size], bufsize-size, "<th>Interface</th><th>Type</th></tr>\n");
 
   /* Neighbors */
-  for(index = 0;index < HASHSIZE;index++)
-    {
-      for(routes = routingtable[index].next;
-	  routes != &routingtable[index];
-	  routes = routes->next)
-	{
-          size += snprintf(&buf[size], bufsize-size, "<tr>");
-	  size += build_ipaddr_with_link(&buf[size], bufsize-size, &routes->rt_dst, NULL);
-	  size += build_ipaddr_with_link(&buf[size], bufsize-size, &routes->rt_router, NULL);
-
-	  size += snprintf(&buf[size], bufsize-size, "<td align=\"right\">%d</td>", routes->rt_metric);
-          if (olsr_cnf->lq_level > 0)
-            size += snprintf(&buf[size], bufsize-size, "<td align=\"right\">%.2f</td>", routes->rt_etx);
-	  size += snprintf(&buf[size], bufsize-size,
-                         "<td>%s</td>"
-                         "<td>HOST</td></tr>\n",
-                         routes->rt_if->int_name);
-	}
+  for(index = 0;index < HASHSIZE;index++) {
+    for(routes = routingtable[index].next; routes != &routingtable[index]; routes = routes->next) {
+      size += build_route(&buf[size], bufsize-size, routes, "HOST", OLSR_FALSE);
     }
+  }
 
   /* HNA */
-  for(index = 0;index < HASHSIZE;index++)
-    {
-      for(routes = hna_routes[index].next;
-	  routes != &hna_routes[index];
-	  routes = routes->next)
-	{
-          size += snprintf(&buf[size], bufsize-size, "<tr>");
-	  size += build_ipaddr_with_link(&buf[size], bufsize-size, &routes->rt_dst, &routes->rt_mask);
-	  size += build_ipaddr_with_link(&buf[size], bufsize-size, &routes->rt_router, NULL);
-	  size += snprintf(&buf[size], bufsize-size,
-                         "<td align=\"right\">%d</td>",
-                         routes->rt_metric);
-          if (olsr_cnf->lq_level > 0)
-	    size += snprintf(&buf[size], bufsize-size, "<td align=\"right\">%.2f</td>", routes->rt_etx);
-	  size += snprintf(&buf[size], bufsize-size,
-                         "<td>%s</td>"
-                         "<td>HNA</td></tr>\n",
-                         routes->rt_if->int_name);
-	}
+  for(index = 0;index < HASHSIZE;index++) {
+    for(routes = hna_routes[index].next; routes != &hna_routes[index];routes = routes->next) {
+      size += build_route(&buf[size], bufsize-size, routes, "HNA", OLSR_TRUE);
     }
+  }
 
   size += snprintf(&buf[size], bufsize-size, "</table>\n");
 
   return size;
 }
 
-int
-build_config_body(char *buf, olsr_u32_t bufsize)
+static int build_config_body(char *buf, olsr_u32_t bufsize)
 {
     char systime[100];
     time_t currtime;
@@ -1021,8 +986,7 @@ build_config_body(char *buf, olsr_u32_t bufsize)
 
 
 
-int
-build_neigh_body(char *buf, olsr_u32_t bufsize)
+static int build_neigh_body(char *buf, olsr_u32_t bufsize)
 {
   struct neighbor_entry *neigh;
   struct neighbor_2_list_entry *list_2;
@@ -1109,10 +1073,7 @@ build_neigh_body(char *buf, olsr_u32_t bufsize)
   return size;
 }
 
-
-
-int
-build_topo_body(char *buf, olsr_u32_t bufsize)
+static int build_topo_body(char *buf, olsr_u32_t bufsize)
 {
   int size = 0;
   olsr_u8_t index;
@@ -1164,10 +1125,7 @@ build_topo_body(char *buf, olsr_u32_t bufsize)
   return size;
 }
 
-
-
-int
-build_hna_body(char *buf, olsr_u32_t bufsize)
+static int build_hna_body(char *buf, olsr_u32_t bufsize)
 {
   int size;
   olsr_u8_t index;
@@ -1208,8 +1166,7 @@ build_hna_body(char *buf, olsr_u32_t bufsize)
 }
 
 
-int
-build_mid_body(char *buf, olsr_u32_t bufsize)
+static int build_mid_body(char *buf, olsr_u32_t bufsize)
 {
   int size = 0;
   olsr_u8_t index;
@@ -1246,8 +1203,7 @@ build_mid_body(char *buf, olsr_u32_t bufsize)
 }
 
 
-int
-build_nodes_body(char *buf, olsr_u32_t bufsize)
+static int build_nodes_body(char *buf, olsr_u32_t bufsize)
 {
   int size = 0;
 
@@ -1259,8 +1215,7 @@ build_nodes_body(char *buf, olsr_u32_t bufsize)
   return size;
 }
 
-int
-build_all_body(char *buf, olsr_u32_t bufsize)
+static int build_all_body(char *buf, olsr_u32_t bufsize)
 {
   int size = 0;
 
@@ -1275,8 +1230,7 @@ build_all_body(char *buf, olsr_u32_t bufsize)
 }
 
 
-int
-build_about_body(char *buf, olsr_u32_t bufsize)
+static int build_about_body(char *buf, olsr_u32_t bufsize)
 {
   int size = 0, i = 0;
 
@@ -1287,8 +1241,7 @@ build_about_body(char *buf, olsr_u32_t bufsize)
   return size;
 }
 
-int
-build_cfgfile_body(char *buf, olsr_u32_t bufsize)
+static int build_cfgfile_body(char *buf, olsr_u32_t bufsize)
 {
   int size = 0, i = 0;
 
@@ -1323,41 +1276,23 @@ build_cfgfile_body(char *buf, olsr_u32_t bufsize)
   return size;
 }
 
-
-olsr_bool
-check_allowed_ip(union olsr_ip_addr *addr)
+static int check_allowed_ip(const struct allowed_net * const allowed_nets, const union olsr_ip_addr * const addr)
 {
-  struct allowed_host *allh = allowed_hosts;
-  struct allowed_net *alln = allowed_nets;
-
-  if(addr->v4 == ntohl(INADDR_LOOPBACK))
-    return OLSR_TRUE;
-
-  /* check hosts */
-  while(allh)
-    {
-      if(addr->v4 == allh->host.v4)
-	return OLSR_TRUE;
-      allh = allh->next;
+    const struct allowed_net *alln;
+    for (alln = allowed_nets; alln != NULL; alln = alln->next) {
+        if((addr->v4 & alln->mask.v4) == (alln->net.v4 & alln->mask.v4)) {
+            return 1;
+        }
     }
-
-  /* check nets */
-  while(alln)
-    {
-      if((addr->v4 & alln->mask.v4) == (alln->net.v4 & alln->mask.v4))
-	return OLSR_TRUE;
-      alln = alln->next;
-    }
-
-  return OLSR_FALSE;
+    return 0;
 }
+
 
 
 /**
  *This function is just as bad as the previous one :-(
  */
-char *
-olsr_netmask_to_string(union hna_netmask *mask)
+static char *olsr_netmask_to_string(union hna_netmask *mask)
 {
   char *ret;
   if(olsr_cnf->ip_version == AF_INET) {

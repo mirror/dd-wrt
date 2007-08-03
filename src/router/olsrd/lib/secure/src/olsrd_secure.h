@@ -66,101 +66,14 @@
 #define UPPER_DIFF 3
 #define LOWER_DIFF -3
 
-char aes_key[16];
+extern char aes_key[16];
 /* Seconds of slack allowed */
 #define SLACK 3
 
-/* Timestamp node */
-struct stamp
-{
-  union olsr_ip_addr addr;
-  /* Timestamp difference */
-  int diff;
-  olsr_u32_t challenge;
-  olsr_u8_t validated;
-  clock_t valtime; /* Validity time */
-  clock_t conftime; /* Reconfiguration time */
-  struct stamp *prev;
-  struct stamp *next;
-};
+int secure_plugin_init(void);
 
-/* Seconds to cache a valid timestamp entry */
-#define TIMESTAMP_HOLD_TIME 30
-/* Seconds to cache a not verified timestamp entry */
-#define EXCHANGE_HOLD_TIME 5
+void secure_plugin_exit(void);
 
-struct stamp timestamps[HASHSIZE];
-
-/* Input interface */
-struct interface *olsr_in_if;
-
-/* Timeout function to register with the sceduler */
-void
-olsr_timeout(void);
-
-
-/* Event function to register with the sceduler */
-void
-olsr_event(void);
-
-int
-send_challenge(union olsr_ip_addr *);
-
-int
-ifchange(struct interface *, int);
-
-int
-send_cres(union olsr_ip_addr *, union olsr_ip_addr *, olsr_u32_t, struct stamp *);
-
-int
-send_rres(union olsr_ip_addr *, union olsr_ip_addr *, olsr_u32_t);
-
-int
-parse_challenge(char *);
-
-int
-parse_cres(char *);
-
-int
-parse_rres(char *);
-
-int
-check_auth(char *, int *);
-
-void
-ipc_action(int);
-
-int
-ipc_send(char *, int);
-
-int
-add_signature(olsr_u8_t *, int*);
-
-int
-validate_packet(char *, int*);
-
-void
-packet_parser(int);
-
-void
-timeout_timestamps(void*);
-
-int
-check_timestamp(union olsr_ip_addr *, time_t);
-
-struct stamp *
-lookup_timestamp_entry(union olsr_ip_addr *);
-
-int
-read_key_from_file(char *);
-
-int
-secure_plugin_init(void);
-
-void
-secure_plugin_exit(void);
-
-int
-plugin_ipc_init(void);
+int plugin_ipc_init(void);
 
 #endif
