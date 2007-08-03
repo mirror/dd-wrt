@@ -23,7 +23,7 @@ extern int sbpci_write_config(sb_t *sbh, uint bus, uint dev, uint func, uint off
 extern int extpci_write_config(sb_t *sbh, uint bus, uint dev, uint func, uint off, void *buf,
                                int len);
 extern void sbpci_ban(uint16 core);
-extern void sbpci_init_cores(sb_t *sbh);
+static void sbpci_init_cores(sb_t *sbh);
 extern int sbpci_init(sb_t *sbh);
 extern int sbpci_init_pci(sb_t *sbh);
 extern void sbpci_check(sb_t *sbh);

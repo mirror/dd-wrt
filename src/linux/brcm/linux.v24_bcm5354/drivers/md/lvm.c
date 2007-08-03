@@ -1584,10 +1584,8 @@ static int lvm_do_vg_create(void *arg, int minor)
 		minor = vg_ptr->vg_number;
 
 	/* check limits */
-	if (minor >= ABS_MAX_VG) {
-		kfree(vg_ptr);
+	if (minor >= ABS_MAX_VG)
 		return -EFAULT;
-	}
 
 	/* Validate it */
 	if (vg[VG_CHR(minor)] != NULL) {
@@ -1655,7 +1653,8 @@ static int lvm_do_vg_create(void *arg, int minor)
 				P_IOCTL
 				    ("ERROR: copying LV ptr %p (%d bytes)\n",
 				     lvp, sizeof(lv_t));
-				goto copy_fault;
+				lvm_do_vg_remove(minor);
+				return -EFAULT;
 			}
 			if (lv.lv_access & LV_SNAPSHOT) {
 				snap_lv_ptr[ls] = lvp;
@@ -1666,7 +1665,8 @@ static int lvm_do_vg_create(void *arg, int minor)
 			vg_ptr->lv[l] = NULL;
 			/* only create original logical volumes for now */
 			if (lvm_do_lv_create(minor, lv.lv_name, &lv) != 0) {
-				goto copy_fault;
+				lvm_do_vg_remove(minor);
+				return -EFAULT;
 			}
 		}
 	}
@@ -1676,10 +1676,12 @@ static int lvm_do_vg_create(void *arg, int minor)
 	for (l = 0; l < ls; l++) {
 		lv_t *lvp = snap_lv_ptr[l];
 		if (copy_from_user(&lv, lvp, sizeof(lv_t)) != 0) {
-			goto copy_fault;
+			lvm_do_vg_remove(minor);
+			return -EFAULT;
 		}
 		if (lvm_do_lv_create(minor, lv.lv_name, &lv) != 0) {
-			goto copy_fault;
+			lvm_do_vg_remove(minor);
+			return -EFAULT;
 		}
 	}
 
@@ -1694,10 +1696,6 @@ static int lvm_do_vg_create(void *arg, int minor)
 	vg_ptr->vg_status |= VG_ACTIVE;
 
 	return 0;
-copy_fault:
-	lvm_do_vg_remove(minor);
-	vfree(snap_lv_ptr);
-	return -EFAULT;
 }				/* lvm_do_vg_create() */
 
 
@@ -2689,10 +2687,6 @@ static int lvm_do_lv_status_byname(vg_t * vg_ptr, void *arg)
 			    (&lv_status_byname_req.lv->lv_current_pe,
 			     &saved_ptr1, sizeof(void *)) != 0)
 				return -EFAULT;
-			if (copy_to_user
-			    (&lv_status_byname_req.lv->lv_block_exception,
-			     &saved_ptr2, sizeof(void *)) != 0)
-				return -EFAULT;
 			return 0;
 		}
 	}
@@ -2745,10 +2739,6 @@ static int lvm_do_lv_status_byindex(vg_t * vg_ptr, void *arg)
 	/* Restore usermode pointers */
 	if (copy_to_user
 	    (&lv_status_byindex_req.lv->lv_current_pe, &saved_ptr1,
-	     sizeof(void *)) != 0)
-		return -EFAULT;
-	if (copy_to_user
-	    (&lv_status_byindex_req.lv->lv_block_exception, &saved_ptr2,
 	     sizeof(void *)) != 0)
 		return -EFAULT;
 
@@ -2807,10 +2797,6 @@ static int lvm_do_lv_status_bydev(vg_t * vg_ptr, void *arg)
 	/* Restore usermode pointers */
 	if (copy_to_user
 	    (&lv_status_bydev_req.lv->lv_current_pe, &saved_ptr1,
-	     sizeof(void *)) != 0)
-		return -EFAULT;
-	if (copy_to_user
-	    (&lv_status_bydev_req.lv->lv_block_exception, &saved_ptr2,
 	     sizeof(void *)) != 0)
 		return -EFAULT;
 

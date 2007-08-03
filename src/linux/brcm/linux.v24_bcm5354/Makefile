@@ -1,6 +1,6 @@
 VERSION = 2
 PATCHLEVEL = 4
-SUBLEVEL = 34
+SUBLEVEL = 35
 EXTRAVERSION =
 
 KERNELRELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
@@ -19,6 +19,7 @@ FINDHPATH	= $(HPATH)/asm $(HPATH)/linux $(HPATH)/scsi $(HPATH)/net $(HPATH)/math
 HOSTCC  	= gcc
 HOSTCFLAGS	= -Wall -Wstrict-prototypes -Os -fomit-frame-pointer
 
+#CROSS_COMPILE   = /opt/3.3.4/bin/mipsel-linux-
 CROSS_COMPILE   = mipsel-linux-
 
 #
@@ -38,7 +39,7 @@ MAKEFILES	= $(TOPDIR)/.config
 GENKSYMS	= /sbin/genksyms
 DEPMOD		= /sbin/depmod
 MODFLAGS	= -DMODULE
-CFLAGS_KERNEL	= -fno-delayed-branch
+#CFLAGS_KERNEL	= -fno-delayed-branch
 PERL		= perl
 AWK		= awk
 RPM 		:= $(shell if [ -x "/usr/bin/rpmbuild" ]; then echo rpmbuild; \
@@ -109,8 +110,8 @@ CFLAGS += $(call check_gcc, -funit-at-a-time,)
 # disable pointer signedness warnings in gcc 4.0
 CFLAGS += $(call check_gcc,-Wno-pointer-sign,)
 
-CFLAGS += -fno-delayed-branch
-CFLAGS += $(call check_gcc, -fno-delayed-branch)
+#CFLAGS += -fno-delayed-branch
+#CFLAGS += $(call check_gcc, -fno-delayed-branch)
 
 
 
