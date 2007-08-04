@@ -901,5 +901,7 @@ overclock (void)
 void
 start_overclocking (void)
 {
+cprintf("Overclocking...\n");
   overclock ();
+cprintf("Overclocking, done\n");
 }

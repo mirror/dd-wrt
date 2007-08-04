@@ -65,7 +65,7 @@
 
 void start_restore_defaults (void);
 static void rc_signal (int sig);
-static void overclock (void);
+extern void start_overclocking (void);
 extern int check_cfe_nv (void);
 extern int check_pmon_nv (void);
 static void unset_nvram (void);
@@ -827,7 +827,7 @@ start_restore_defaults (void)
   if (nvram_get ("overclocking") == NULL)
     nvram_set ("overclocking", nvram_safe_get ("clkfreq"));
   cprintf ("start overclocking\n");
-  overclock ();
+  start_overclocking ();
   cprintf ("done()");
   if (nvram_get ("http_username") != NULL)
     {
@@ -841,10 +841,12 @@ start_restore_defaults (void)
 	}
     }
 
+cprintf("check CFE nv\n");
   if (check_now_boot () == CFE_BOOT)
     check_cfe_nv ();
   else if (check_now_boot () == PMON_BOOT)
     check_pmon_nv ();
+cprintf("restore defaults\n");
 
   /* Commit values */
   if (restore_defaults)
