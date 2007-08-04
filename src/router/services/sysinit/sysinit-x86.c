@@ -352,3 +352,18 @@ eval("insmod","crypto_null");
   cprintf ("done\n");
   return 0;
 }
+int
+check_cfe_nv (void)
+{
+  return 0;
+}
+
+int
+check_pmon_nv (void)
+{
+  return 0;
+}
+void
+start_overclocking (void)
+{
+}
