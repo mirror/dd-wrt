@@ -20,7 +20,7 @@ CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libip
 CFLAGS  += $(COPTS) -fpic
 
 OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o iptable.o defaults.o \
-       bridgetools.o igmp.o wpa.o vlantagging.o
+       bridgetools.o igmp.o wpa.o vlantagging.o httpd.o
 
 
 ifeq ($(CONFIG_WHRAG108),y)
@@ -465,6 +465,7 @@ endif
 
 ifeq ($(CONFIG_SPUTNIK_APD),y)
 CFLAGS += -DHAVE_SPUTNIK_APD
+OBJS += sputnik.o
 endif
 
 vpath %.c sysinit services tools networking $(TOP)/shared $(SRCBASE)/rts/src
