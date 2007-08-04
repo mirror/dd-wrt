@@ -636,3 +636,270 @@ start_sysinit (void)
   return 0;
 
 }
+static int
+check_nv (char *name, char *value)
+{
+  int ret = 0;
+  if (nvram_match ("manual_boot_nv", "1"))
+    return 0;
+
+  if (!nvram_get (name))
+    {
+      cprintf ("ERR: Cann't find %s !.......................\n", name);
+      nvram_set (name, value);
+      ret++;
+    }
+  else if (nvram_invmatch (name, value))
+    {
+      cprintf ("ERR: The %s is %s, not %s !.................\n", name,
+	       nvram_safe_get (name), value);
+      nvram_set (name, value);
+      ret++;
+    }
+
+  return ret;
+}
+
+int
+check_cfe_nv (void)
+{
+  int ret = 0;
+
+  switch (getRouterBrand ())
+    {
+
+    case ROUTER_BUFFALO_WBR54G:
+    case ROUTER_BUFFALO_WZRRSG54:
+      ret += check_nv ("lan_hwnames", "et0 wl0");
+      ret += check_nv ("lan_ifnames", "eth0 eth2");
+      ret += check_nv ("wan_hwname", "et1");
+      ret += check_nv ("wan_ifname", "eth1");
+      ret += check_nv ("wan_ifnames", "eth1");
+      ret += check_nv ("pppoe_ifname", "eth1");
+      ret += check_nv ("wl0_ifname", "eth2");
+      ret += check_nv ("vlans", "0");
+      break;
+    case ROUTER_BUFFALO_WBR2G54S:
+      ret += check_nv ("aa0", "3");
+
+      ret += check_nv ("pa0itssit", "62");
+      ret += check_nv ("pa0b0", "0x1136");
+      ret += check_nv ("pa0b1", "0xfb93");
+      ret += check_nv ("pa0b2", "0xfea5");
+#ifndef HAVE_MSSID
+      ret += check_nv ("pa0maxpwr", "60");
+#endif
+      ret += check_nv ("wl0gpio2", "0");
+      ret += check_nv ("wl0gpio3", "0");
+      ret += check_nv ("cctl", "0");
+      ret += check_nv ("ccode", "0");
+      break;
+#ifndef HAVE_BUFFALO
+    case ROUTER_ASUS_WL500GD:
+      ret += check_nv ("wl0_ifname", "eth1");
+      return 0;
+      break;
+    case ROUTER_LINKSYS_WRT55AG:
+    case ROUTER_MOTOROLA_V1:
+    case ROUTER_WRT54G1X:
+      break;
+
+    case ROUTER_WRT54G:
+      ret += check_nv ("aa0", "3");
+      if (check_hw_type () == BCM5352E_CHIP)
+	ret += check_nv ("ag0", "0x02");
+      else
+	ret += check_nv ("ag0", "255");
+      if (check_hw_type () == BCM5325E_CHIP)
+	{
+	  /* Lower the DDR ram drive strength , the value will be stable for all boards
+	     Latency 3 is more stable for all ddr 20050420 by honor */
+
+	  ret += check_nv ("sdram_init", "0x010b");
+	  ret += check_nv ("sdram_config", "0x0062");
+	  if (nvram_match ("clkfreq", "200")
+	      && nvram_match ("overclocking", "200"))
+	    {
+	      ret += check_nv ("clkfreq", "216");
+	      nvram_set ("overclocking", "216");
+	    }
+
+	  if (ret)
+	    {
+	      nvram_set ("sdram_ncdl", "0x0");
+
+	    }
+	  ret += check_nv ("pa0itssit", "62");
+	  ret += check_nv ("pa0b0", "0x15eb");
+	  ret += check_nv ("pa0b1", "0xfa82");
+	  ret += check_nv ("pa0b2", "0xfe66");
+#ifndef HAVE_MSSID
+	  ret += check_nv ("pa0maxpwr", "0x4e");
+#endif
+	}
+      else if (check_hw_type () == BCM4705_BCM5397_EWC_CHIP)
+	{
+	  // nothing to do
+	}
+      else if (check_hw_type () == BCM4704_BCM5325F_CHIP)
+	{
+	  //nothing to do
+	}
+      else
+	{
+	  ret += check_nv ("pa0itssit", "62");
+	  ret += check_nv ("pa0b0", "0x170c");
+	  ret += check_nv ("pa0b1", "0xfa24");
+	  ret += check_nv ("pa0b2", "0xfe70");
+#ifndef HAVE_MSSID
+	  ret += check_nv ("pa0maxpwr", "0x48");
+#endif
+	}
+
+      //ret += check_nv("gpio2", "adm_eecs");
+      //ret += check_nv("gpio3", "adm_eesk");
+      //ret += check_nv("gpio5", "adm_eedi");
+      //ret += check_nv("gpio6", "adm_rc");
+
+      ret += check_nv ("wl0gpio2", "0");
+      ret += check_nv ("wl0gpio3", "0");
+
+      ret += check_nv ("cctl", "0");
+      ret += check_nv ("ccode", "0");
+      break;
+#endif
+    }
+  if (ret)
+    {
+      cprintf ("Some error found, we want to reboot!.....................\n");
+      nvram_commit ();
+      kill (1, SIGTERM);
+      exit (0);
+    }
+
+
+  return ret;
+}
+
+int
+check_pmon_nv (void)
+{
+  return 0;
+}
+
+#define ISCLK(a) nvram_match("clkfreq",a);
+static void
+overclock (void)
+{
+  int rev = getcpurev ();
+  char *ov = nvram_get ("overclocking");
+  if (ov == NULL)
+    return;
+  int clk = atoi (ov);
+  if (nvram_get ("clkfreq") == NULL)
+    return;			//unsupported
+  if (nvram_match ("clkfreq", "125"))
+    return;			//unsupported
+  if (rev == 0)
+    return;			//unsupported
+
+//int cclk = atoi(nvram_safe_get("clkfreq"));
+//if (cclk<192)return; //unsupported
+  char *pclk = nvram_safe_get ("clkfreq");
+  char dup[64];
+  strcpy (dup, pclk);
+  int i;
+  for (i = 0; i < strlen (dup); i++)
+    if (dup[i] == ',')
+      dup[i] = 0;
+  int cclk = atoi (dup);
+  if (cclk < 192 && rev == 7)
+    {
+      cprintf ("clkfreq is %d (%s), this is unsupported\n", cclk, dup);
+      return;			//unsupported
+    }
+  if (cclk < 183 && rev == 8)
+    {
+      cprintf ("clkfreq is %d (%s), this is unsupported\n", cclk, dup);
+      return;			//unsupported
+    }
+
+  if (clk == cclk)
+    {
+      cprintf ("clkfreq identical with new setting\n");
+      return;			//clock already set
+    }
+
+
+  int set = 1;
+
+  switch (clk)
+    {
+    case 183:
+      nvram_set ("clkfreq", "183,92");
+      break;
+    case 187:
+      nvram_set ("clkfreq", "187,94");
+      break;
+    case 192:
+      nvram_set ("clkfreq", "192,96");
+      break;
+    case 198:
+      nvram_set ("clkfreq", "198,98");
+      break;
+    case 200:
+      nvram_set ("clkfreq", "200,100");
+      break;
+    case 216:
+      nvram_set ("clkfreq", "216,108");
+      break;
+    case 225:
+      nvram_set ("clkfreq", "225,113");
+      break;
+    case 228:
+      nvram_set ("clkfreq", "228,114");
+      break;
+    case 233:
+      nvram_set ("clkfreq", "233,116");
+      break;
+    case 237:
+      nvram_set ("clkfreq", "237,119");
+      break;
+    case 240:
+      nvram_set ("clkfreq", "240,120");
+      break;
+    case 250:
+      nvram_set ("clkfreq", "250,125");
+      break;
+    case 252:
+      nvram_set ("clkfreq", "252,126");
+      break;
+    case 264:
+      nvram_set ("clkfreq", "264,132");
+      break;
+    case 280:
+      nvram_set ("clkfreq", "280,120");
+      break;
+    case 300:
+      nvram_set ("clkfreq", "300,120");
+      break;
+    default:
+      set = 0;
+      break;
+    }
+
+  if (set)
+    {
+      cprintf ("clock frequency adjusted from %d to %d, reboot needed\n",
+	       cclk, clk);
+      nvram_commit ();
+      kill (1, SIGTERM);
+      exit (0);
+    }
+}
+
+void
+start_overclocking (void)
+{
+  overclock ();
+}
