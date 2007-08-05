@@ -558,11 +558,11 @@ stop_pppoe (void)
   int ret;
 
   unlink ("/tmp/ppp/link");
-  if (pidof ("pppoecd") > 0)
+  if (pidof ("pppd") > 0)
     syslog (LOG_INFO, "pppoe process successfully stopped\n");
-  ret = killall ("pppoecd", SIGKILL);
-  ret += killall ("ip-up", SIGKILL);
-  ret += killall ("ip-down", SIGKILL);
+  ret = killall ("pppd", SIGTERM);
+//  ret += killall ("ip-up", SIGKILL);
+//  ret += killall ("ip-down", SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -872,7 +872,7 @@ stop_pptp (void)
   //ret = killps("pppd","-9");
   //ret += killps("pptp","-9");
   //ret += killps("listen","-9");
-  ret = killall ("pppd", SIGKILL);
+  ret = killall ("pppd", SIGTERM);
   ret += killall ("pptp", SIGKILL);
   ret += killall ("listen", SIGKILL);
 
@@ -1305,7 +1305,7 @@ stop_l2tp (void)
   //ret += killps("l2tpd","-9");
   //ret += killps("listen","-9");
 
-  ret = killall ("pppd", SIGKILL);
+  ret = killall ("pppd", SIGTERM);
   ret += killall ("l2tpd", SIGKILL);
   ret += killall ("listen", SIGKILL);
 
