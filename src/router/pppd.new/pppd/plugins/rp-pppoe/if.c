@@ -40,10 +40,6 @@ static char const RCSID[] =
 #include <sys/ioctl.h>
 #endif
 
-#ifdef HAVE_SYSLOG_H
-#include <syslog.h>
-#endif
-
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -127,7 +123,7 @@ etherType(PPPoEPacket *packet)
 {
     UINT16_t type = (UINT16_t) ntohs(packet->ethHdr.h_proto);
     if (type != Eth_PPPOE_Discovery && type != Eth_PPPOE_Session) {
-	syslog(LOG_ERR, "Invalid ether type 0x%x", type);
+	error("Invalid ethernet type 0x%x", type);
     }
     return type;
 }
@@ -156,7 +152,7 @@ getHWaddr(int sock, char const *ifname, unsigned char *hwaddr)
     ifc.ifc_len = sizeof(inbuf);
     ifc.ifc_buf = inbuf;
     if (ioctl(sock, SIOCGIFCONF, &ifc) < 0) {
-	fatalSys("SIOCGIFCONF");
+	fatal("SIOCGIFCONF: %m");
     }
     ifr = ifc.ifc_req;
     ifreq.ifr_name[0] = '\0';
@@ -172,9 +168,7 @@ getHWaddr(int sock, char const *ifname, unsigned char *hwaddr)
 	        (sdl->sdl_alen == ETH_ALEN) &&
 		!strncmp(ifname, ifr->ifr_name, sizeof(ifr->ifr_name))) {
 		if (found) {
-		    char buffer[256];
-		    sprintf(buffer, "interface %.16s has more than one ethernet address", ifname);
-		    rp_fatal(buffer);
+		    fatal("interface %s has more than one ethernet address", ifname);
 		} else {
 		    found = 1;
 	            memcpy(hwaddr, LLADDR(sdl), ETH_ALEN);
@@ -183,9 +177,7 @@ getHWaddr(int sock, char const *ifname, unsigned char *hwaddr)
 	}
     }
     if (!found) {
-	char buffer[256];
-        sprintf(buffer, "interface %.16s has no ethernet address", ifname);
-	rp_fatal(buffer);
+        fatal("interface %s has no ethernet address", ifname);
     }
 }
 
@@ -252,7 +244,7 @@ initFilter(int fd, UINT16_t type, unsigned char *hwaddr)
       
       /* Apply the filter */
       if (ioctl(fd, BIOCSETF, &bpfProgram) < 0) {
-	fatalSys("ioctl(BIOCSETF)");
+	fatal("ioctl(BIOCSETF): %m");
       }
     }
 }
@@ -298,42 +290,36 @@ openInterface(char const *ifname, UINT16_t type, unsigned char *hwaddr)
     if (fd < 0) {
 	switch (errno) {
 	case EACCES:		/* permission denied */
-	    {
-		char buffer[256];
-		sprintf(buffer, "Cannot open %.32s -- pppoe must be run as root.", bpfName);
-		rp_fatal(buffer);
-	    }
+	    fatal("Cannot open %s -- pppoe must be run as root.", bpfName);
 	    break;
 	case EBUSY:
 	case ENOENT:		/* no such file */
 	    if (i == 0) {
-		rp_fatal("No /dev/bpf* devices (check your kernel configuration for BPF support)");
+		fatal("No /dev/bpf* devices (check your kernel configuration for BPF support)");
 	    } else {
-		rp_fatal("All /dev/bpf* devices are in use");
+		fatal("All /dev/bpf* devices are in use");
 	    }
 	    break;
 	}
-	fatalSys(bpfName);
+	fatal("%s: %m", bpfName);
     }
 
     if ((sock = socket(AF_LOCAL, SOCK_DGRAM, 0)) < 0) {
-	fatalSys("socket");
+	fatal("socket: %m");
     }
 
     /* Check that the interface is up */
     strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
     if (ioctl(sock, SIOCGIFFLAGS, &ifr) < 0) {
-	fatalSys("ioctl(SIOCGIFFLAGS)");
+	fatal("ioctl(SIOCGIFFLAGS): %m");
     }
     if ((ifr.ifr_flags & IFF_UP) == 0) {
-	char buffer[256];
-	sprintf(buffer, "Interface %.16s is not up\n", ifname);
-	rp_fatal(buffer);
+	fatal("Interface %s is not up", ifname);
     }
 
     /* Fill in hardware address and initialize the packet filter rules */
     if (hwaddr == NULL) {
-	rp_fatal("openInterface: no hwaddr arg.");
+	fatal("openInterface: no hwaddr arg.");
     }
     getHWaddr(sock, ifname, hwaddr);
     initFilter(fd, type, hwaddr);
@@ -342,58 +328,52 @@ openInterface(char const *ifname, UINT16_t type, unsigned char *hwaddr)
 #if !defined(__OpenBSD__)
     strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
     if (ioctl(sock, SIOCGIFMTU, &ifr) < 0) {
-	fatalSys("ioctl(SIOCGIFMTU)");
+	fatal("ioctl(SIOCGIFMTU): %m");
     }
     if (ifr.ifr_mtu < ETH_DATA_LEN) {
-	char buffer[256];
-	sprintf(buffer, "Interface %.16s has MTU of %d -- should be %d.  You may have serious connection problems.",
+	error("Interface %s has MTU of %d -- should be %d."
+		"  You may have serious connection problems.",
 		ifname, ifr.ifr_mtu, ETH_DATA_LEN);
-	printErr(buffer);
     }
 #endif
 
     /* done with the socket */
     if (close(sock) < 0) {
-	fatalSys("close");
+	fatal("close: %m");
     }
 
     /* Check the BPF version number */
     if (ioctl(fd, BIOCVERSION, &bpf_ver) < 0) {
-	fatalSys("ioctl(BIOCVERSION)");
+	fatal("ioctl(BIOCVERSION): %m");
     }
     if ((bpf_ver.bv_major != BPF_MAJOR_VERSION) ||
         (bpf_ver.bv_minor < BPF_MINOR_VERSION)) {
-	char buffer[256];
-	sprintf(buffer, "Unsupported BPF version: %d.%d (kernel: %d.%d)", 
+	fatal("Unsupported BPF version: %d.%d (kernel: %d.%d)",
 			BPF_MAJOR_VERSION, BPF_MINOR_VERSION,
 			bpf_ver.bv_major, bpf_ver.bv_minor);
-	rp_fatal(buffer);
     }
 
     /* allocate a receive packet buffer */
     if (ioctl(fd, BIOCGBLEN, &bpfLength) < 0) {
-	fatalSys("ioctl(BIOCGBLEN)");
+	fatal("ioctl(BIOCGBLEN): %m");
     }
     if (!(bpfBuffer = (unsigned char *) malloc(bpfLength))) {
-	rp_fatal("malloc");
+	fatal("malloc");
     }
 
     /* reads should return as soon as there is a packet available */
     optval = 1;
     if (ioctl(fd, BIOCIMMEDIATE, &optval) < 0) {
-	fatalSys("ioctl(BIOCIMMEDIATE)");
+	fatal("ioctl(BIOCIMMEDIATE): %m");
     }
 
     /* Bind the interface to the filter */
     strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
     if (ioctl(fd, BIOCSETIF, &ifr) < 0) {
-	char buffer[256];
-	sprintf(buffer, "ioctl(BIOCSETIF) can't select interface %.16s",
-		ifname);
-	rp_fatal(buffer);
+	fatal("ioctl(BIOCSETIF) can't select interface %s: %m", ifname);
     }
 
-    syslog(LOG_INFO, "Interface=%.16s HWaddr=%02X:%02X:%02X:%02X:%02X:%02X Device=%.32s Buffer size=%d",
+    info("Interface=%s HWaddr=%02X:%02X:%02X:%02X:%02X:%02X Device=%s Buffer size=%d",
 	   ifname, 
 	   hwaddr[0], hwaddr[1], hwaddr[2],
 	   hwaddr[3], hwaddr[4], hwaddr[5],
@@ -442,48 +422,41 @@ openInterface(char const *ifname, UINT16_t type, unsigned char *hwaddr)
     if ((fd = socket(domain, stype, htons(type))) < 0) {
 	/* Give a more helpful message for the common error case */
 	if (errno == EPERM) {
-	    rp_fatal("Cannot create raw socket -- pppoe must be run as root.");
+	    fatal("Cannot create raw socket -- pppoe must be run as root.");
 	}
-	fatalSys("socket");
+	fatal("cannot create the raw socket: %m");
     }
 
     if (setsockopt(fd, SOL_SOCKET, SO_BROADCAST, &optval, sizeof(optval)) < 0) {
-	fatalSys("setsockopt");
+	fatal("setsockopt(SOL_SOCKET, SO_BROADCAST): %m");
     }
 
     /* Fill in hardware address */
     if (hwaddr) {
 	strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
-	if (ioctl(fd, SIOCGIFHWADDR, &ifr) < 0) {
-	    fatalSys("ioctl(SIOCGIFHWADDR)");
-	}
+	if (ioctl(fd, SIOCGIFHWADDR, &ifr) < 0)
+	    fatal("ioctl(SIOCGIFHWADDR): %m");
 	memcpy(hwaddr, ifr.ifr_hwaddr.sa_data, ETH_ALEN);
 #ifdef ARPHRD_ETHER
 	if (ifr.ifr_hwaddr.sa_family != ARPHRD_ETHER) {
-	    char buffer[256];
-	    sprintf(buffer, "Interface %.16s is not Ethernet", ifname);
-	    rp_fatal(buffer);
+	    fatal("Interface %s is not Ethernet", ifname);
 	}
 #endif
 	if (NOT_UNICAST(hwaddr)) {
-	    char buffer[256];
-	    sprintf(buffer,
-		    "Interface %.16s has broadcast/multicast MAC address??",
+	    fatal("Interface %s has broadcast/multicast MAC address",
 		    ifname);
-	    rp_fatal(buffer);
 	}
     }
 
     /* Sanity check on MTU */
     strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
     if (ioctl(fd, SIOCGIFMTU, &ifr) < 0) {
-	fatalSys("ioctl(SIOCGIFMTU)");
+	fatal("ioctl(SIOCGIFMTU): %m");
     }
     if (ifr.ifr_mtu < ETH_DATA_LEN) {
-	char buffer[256];
-	sprintf(buffer, "Interface %.16s has MTU of %d -- should be %d.  You may have serious connection problems.",
+	error("Interface %s has MTU of %d -- should be %d."
+		"  You may have serious connection problems.",
 		ifname, ifr.ifr_mtu, ETH_DATA_LEN);
-	printErr(buffer);
     }
 
 #ifdef HAVE_STRUCT_SOCKADDR_LL
@@ -493,7 +466,7 @@ openInterface(char const *ifname, UINT16_t type, unsigned char *hwaddr)
 
     strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
     if (ioctl(fd, SIOCGIFINDEX, &ifr) < 0) {
-	fatalSys("ioctl(SIOCFIGINDEX): Could not get interface index");
+	fatal("ioctl(SIOCFIGINDEX): Could not get interface index: %m");
     }
     sa.sll_ifindex = ifr.ifr_ifindex;
 
@@ -503,7 +476,7 @@ openInterface(char const *ifname, UINT16_t type, unsigned char *hwaddr)
 
     /* We're only interested in packets on specified interface */
     if (bind(fd, (struct sockaddr *) &sa, sizeof(sa)) < 0) {
-	fatalSys("bind");
+	fatal("bind: %m");
     }
 
     return fd;
@@ -527,13 +500,11 @@ sendPacket(PPPoEConnection *conn, int sock, PPPoEPacket *pkt, int size)
 {
 #if defined(USE_BPF)
     if (write(sock, pkt, size) < 0) {
-	sysErr("write (sendPacket)");
-	return -1;
+	fatal("sendPacket: write: %m");
     }
 #elif defined(HAVE_STRUCT_SOCKADDR_LL)
     if (send(sock, pkt, size, 0) < 0) {
-	sysErr("send (sendPacket)");
-	return -1;
+	fatal("sendPacket: send: %m");
     }
 #else
 #ifdef USE_DLPI
@@ -577,12 +548,11 @@ sendPacket(PPPoEConnection *conn, int sock, PPPoEPacket *pkt, int size)
     struct sockaddr sa;
 
     if (!conn) {
-	rp_fatal("relay and server not supported on Linux 2.0 kernels");
+	fatal("relay and server not supported on Linux 2.0 kernels");
     }
     strcpy(sa.sa_data, conn->ifName);
     if (sendto(sock, pkt, size, 0, &sa, sizeof(sa)) < 0) {
-	sysErr("sendto (sendPacket)");
-	return -1;
+	fatal("sendPacket: sendto: %m");
     }
 #endif
 #endif
@@ -632,26 +602,24 @@ receivePacket(int sock, PPPoEPacket *pkt, int *size)
     if (bpfSize <= 0) {
 	bpfOffset = 0;
 	if ((bpfSize = read(sock, bpfBuffer, bpfLength)) < 0) {
-	    sysErr("read (receivePacket)");
-	    return -1;
+	    fatal("receivePacket: read: %m");
 	}
     }
     if (bpfSize < sizeof(hdr)) {
-	syslog(LOG_ERR, "Truncated bpf packet header: len=%d", bpfSize);
+	error("Truncated bpf packet header: len=%d", bpfSize);
 	clearPacketHeader(pkt);		/* resets bpfSize and bpfOffset */
 	return 0;
     }
     memcpy(&hdr, bpfBuffer + bpfOffset, sizeof(hdr));
     if (hdr.bh_caplen != hdr.bh_datalen) {
-	syslog(LOG_ERR, "Truncated bpf packet: caplen=%d, datalen=%d",
+	error("Truncated bpf packet: caplen=%d, datalen=%d",
 	       hdr.bh_caplen, hdr.bh_datalen);
 	clearPacketHeader(pkt);		/* resets bpfSize and bpfOffset */
 	return 0;
     }
     seglen = hdr.bh_hdrlen + hdr.bh_caplen;
     if (seglen > bpfSize) {
-	syslog(LOG_ERR, "Truncated bpf packet: seglen=%d, bpfSize=%d",
-	       seglen, bpfSize);
+	error("Truncated bpf packet: seglen=%d, bpfSize=%d", seglen, bpfSize);
 	clearPacketHeader(pkt);		/* resets bpfSize and bpfOffset */
 	return 0;
     }
@@ -676,16 +644,14 @@ receivePacket(int sock, PPPoEPacket *pkt, int *size)
 	data.len = 0; 
 	
 	if ((retval = getmsg(sock, NULL, &data, &flags)) < 0) {
-	    sysErr("read (receivePacket)");
-	    return -1;
+	    fatal("receivePacket: getmsg: %m");
 	}
 
 	*size = data.len; 
 
 #else
     if ((*size = recv(sock, pkt, sizeof(PPPoEPacket), 0)) < 0) {
-	sysErr("recv (receivePacket)");
-	return -1;
+	fatal("receivePacket: recv: %m");
     }
 #endif
 #endif
@@ -716,7 +682,7 @@ openInterface(char const *ifname, UINT16_t type, unsigned char *hwaddr)
     int ppa; 
 
     if(strlen(ifname) > PATH_MAX) {
-	rp_fatal("socket: string to long"); 
+	fatal("openInterface: interface name too long");
     }
 
     ppa = atoi(&ifname[strlen(ifname)-1]);
@@ -729,9 +695,9 @@ openInterface(char const *ifname, UINT16_t type, unsigned char *hwaddr)
     if (( fd = open(base_dev, O_RDWR)) < 0) {
 	/* Give a more helpful message for the common error case */
 	if (errno == EPERM) {
-	    rp_fatal("Cannot create raw socket -- pppoe must be run as root.");
+	    fatal("Cannot create raw socket -- pppoe must be run as root.");
 	}
-	fatalSys("socket");
+	fatal("open(%s): %m", base_dev);
     }
 
 /* rearranged order of DLPI code - delphys 20010803 */
@@ -747,17 +713,18 @@ openInterface(char const *ifname, UINT16_t type, unsigned char *hwaddr)
     dl_abssaplen = ABS(dlp->info_ack.dl_sap_length);
     dl_saplen = dlp->info_ack.dl_sap_length;
     if (ETHERADDRL != (dlp->info_ack.dl_addr_length - dl_abssaplen))
-	fatalSys("invalid destination physical address length");
+	fatal("invalid destination physical address length");
     dl_addrlen = dl_abssaplen + ETHERADDRL;
 
 /* ethernet address retrieved as part of DL_INFO_ACK - delphys 20010803 */
     memcpy(hwaddr, (u_char*)((char*)(dlp) + (int)(dlp->info_ack.dl_addr_offset)), ETHERADDRL);
 
     if ( strioctl(fd, DLIOCRAW, -1, 0, NULL) < 0 ) { 
-	fatalSys("DLIOCRAW"); 
+	fatal("DLIOCRAW: %m");
     }
 
-    if (ioctl(fd, I_FLUSH, FLUSHR) < 0) fatalSys("I_FLUSH");
+    if (ioctl(fd, I_FLUSH, FLUSHR) < 0)
+	fatal("I_FLUSH: %m");
 
     return fd;
 }
@@ -780,7 +747,7 @@ void dlpromisconreq(int fd, u_long level)
         flags = 0;
 
         if (putmsg(fd, &ctl, (struct strbuf*) NULL, flags) < 0)
-                fatalSys("dlpromiscon:  putmsg");
+                fatal("dlpromiscon: putmsg: %m");
 
 }
 
@@ -799,7 +766,7 @@ void dlinforeq(int fd)
         flags = RS_HIPRI;
 
         if (putmsg(fd, &ctl, (struct strbuf*) NULL, flags) < 0)
-                fatalSys("dlinforeq:  putmsg");
+                fatal("dlinforeq: putmsg: %m");
 }
 
 void dlunitdatareq(int fd, u_char *addrp, int addrlen, u_long minpri, u_long maxpri, u_char *datap, int datalen)
@@ -827,7 +794,7 @@ void dlunitdatareq(int fd, u_char *addrp, int addrlen, u_long minpri, u_long max
         data.buf = (char *) datap;
 
         if (putmsg(fd, &ctl, &data, 0) < 0)
-                fatalSys("dlunitdatareq:  putmsg");
+                fatal("dlunitdatareq: putmsg: %m");
 }
 
 void dlinfoack(int fd, char *bufp)
@@ -847,18 +814,14 @@ void dlinfoack(int fd, char *bufp)
         expecting(DL_INFO_ACK, dlp);
 
         if (ctl.len < sizeof (dl_info_ack_t)) {
-		char buffer[256];
-		sprintf(buffer, "dlinfoack:  response ctl.len too short:  %d", ctl.len); 
-                rp_fatal(buffer); 
+		fatal("dlinfoack: response ctl.len too short: %d", ctl.len);
 	}
 
         if (flags != RS_HIPRI)
-                rp_fatal("dlinfoack:  DL_INFO_ACK was not M_PCPROTO");
+                fatal("dlinfoack: DL_INFO_ACK was not M_PCPROTO");
 
         if (ctl.len < sizeof (dl_info_ack_t)) {
-		char buffer[256];
-		sprintf(buffer, "dlinfoack:  short response ctl.len:  %d", ctl.len); 
-		rp_fatal(buffer); 
+		fatal("dlinfoack: short response ctl.len: %d", ctl.len);
 	}
 }
 
@@ -882,7 +845,7 @@ void dlbindreq(int fd, u_long sap, u_long max_conind, u_long service_mode, u_lon
         flags = 0;
 
         if (putmsg(fd, &ctl, (struct strbuf*) NULL, flags) < 0)
-                fatalSys("dlbindreq:  putmsg");
+                fatal("dlbindreq: putmsg: %m");
 }
 
 void dlattachreq(int fd, u_long ppa)
@@ -901,7 +864,7 @@ void dlattachreq(int fd, u_long ppa)
         flags = 0;
 
         if (putmsg(fd, &ctl, (struct strbuf*) NULL, flags) < 0)
-                fatalSys("dlattachreq:  putmsg");
+                fatal("dlattachreq: putmsg: %m");
 }
 
 void dlokack(int fd, char *bufp)
@@ -921,18 +884,14 @@ void dlokack(int fd, char *bufp)
         expecting(DL_OK_ACK, dlp);
 
         if (ctl.len < sizeof (dl_ok_ack_t)) { 
-		char buffer[256];
-		sprintf(buffer, "dlokack:  response ctl.len too short:  %d", ctl.len);
-		rp_fatal(buffer); 
+		fatal("dlokack: response ctl.len too short: %d", ctl.len);
 	}
 
         if (flags != RS_HIPRI)
-                rp_fatal("dlokack:  DL_OK_ACK was not M_PCPROTO");
+                fatal("dlokack: DL_OK_ACK was not M_PCPROTO");
 
         if (ctl.len < sizeof (dl_ok_ack_t)) {
-		char buffer[256]; 
-		sprintf(buffer, "dlokack:  short response ctl.len:  %d", ctl.len);
-		rp_fatal(buffer); 
+		fatal("dlokack: short response ctl.len: %d", ctl.len);
 	}
 }
 
@@ -953,12 +912,10 @@ void dlbindack(int fd, char *bufp)
         expecting(DL_BIND_ACK, dlp);
 
         if (flags != RS_HIPRI)
-                rp_fatal("dlbindack:  DL_OK_ACK was not M_PCPROTO");
+                fatal("dlbindack: DL_OK_ACK was not M_PCPROTO");
 
         if (ctl.len < sizeof (dl_bind_ack_t)) {
-		char buffer[256];
-		sprintf(buffer, "dlbindack:  short response ctl.len:  %d", ctl.len);
-		rp_fatal(buffer); 
+		fatal("dlbindack: short response ctl.len: %d", ctl.len);
 	}
 }
 
@@ -989,8 +946,7 @@ void strgetmsg(int fd, struct strbuf *ctlp, struct strbuf *datap, int *flagsp, c
          */
         (void) signal(SIGALRM, sigalrm);
         if (alarm(MAXWAIT) < 0) {
-                (void) sprintf(errmsg, "%s:  alarm", caller);
-                fatalSys(errmsg);
+                fatal("%s: alarm", caller);
         }
 
         /*
@@ -998,61 +954,48 @@ void strgetmsg(int fd, struct strbuf *ctlp, struct strbuf *datap, int *flagsp, c
          */
         *flagsp = 0;
         if ((rc = getmsg(fd, ctlp, datap, flagsp)) < 0) {
-                (void) sprintf(errmsg, "%s:  getmsg", caller);
-                fatalSys(errmsg);
+                fatal(errmsg, "%s: getmsg: %m", caller);
         }
 
         /*
          * Stop timer.
          */
         if (alarm(0) < 0) {
-                (void) sprintf(errmsg, "%s:  alarm", caller);
-                fatalSys(errmsg);
+                fatal("%s: alarm", caller);
         }
 
         /*
          * Check for MOREDATA and/or MORECTL.
          */
         if ((rc & (MORECTL | MOREDATA)) == (MORECTL | MOREDATA)) {
-		char buffer[256]; 
-		sprintf(buffer, "%s:  MORECTL|MOREDATA", caller);
-		rp_fatal(buffer);
+		fatal("%s: MORECTL|MOREDATA", caller);
 	}
                 
         if (rc & MORECTL) {
-		char buffer[256];
-		sprintf(buffer, "%s:  MORECTL", caller);
-		rp_fatal(buffer); 
+		fatal("%s: MORECTL", caller);
 	}
         
         if (rc & MOREDATA) {
-		char buffer[256]; 
-		sprintf(buffer, "%s:  MOREDATA", caller);
-		rp_fatal(buffer);
+		fatal("%s: MOREDATA", caller);
 	}
 
         /*
          * Check for at least sizeof (long) control data portion.
          */
         if (ctlp->len < sizeof (long)) {
-		char buffer[256]; 
-		sprintf(buffer, "getmsg:  control portion length < sizeof (long):  %d", ctlp->len);
-		rp_fatal(buffer); 
+		fatal("getmsg: control portion length < sizeof (long): %d", ctlp->len);
 	}
 }
 
 void sigalrm(int sig)
 {
-        (void) rp_fatal("sigalrm:  TIMEOUT");
+        fatal("sigalrm: TIMEOUT");
 }
 
 void expecting(int prim, union DL_primitives *dlp)
 {
         if (dlp->dl_primitive != (u_long)prim) {
-		char buffer[256]; 
-		sprintf(buffer, "expected %s got %s", dlprim(prim), dlprim(dlp->dl_primitive));
-		rp_fatal(buffer); 
-		exit(1); 
+		fatal("expected %s got %s", dlprim(prim), dlprim(dlp->dl_primitive));
 	}
 }
 
