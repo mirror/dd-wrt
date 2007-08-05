@@ -250,4 +250,4 @@ VALUE		Octets-Direction        Output			2
 VALUE		Octets-Direction        MaxOveral		3
 VALUE		Octets-Direction        MaxSession		4
 
-INCLUDE /etc/radiusclient/dictionary.microsoft
+INCLUDE /etc/dictionary.microsoft

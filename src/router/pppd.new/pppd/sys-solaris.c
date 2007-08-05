@@ -85,7 +85,7 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define RCSID	"$Id: sys-solaris.c,v 1.13 2004/11/04 10:02:26 paulus Exp $"
+#define RCSID	"$Id: sys-solaris.c,v 1.14 2005/05/04 21:31:20 carlsonj Exp $"
 
 #include <limits.h>
 #include <stdio.h>
@@ -194,7 +194,7 @@ static int	if6_is_up = 0;	/* IPv6 interface has been marked up */
 	eui64_copy(eui64, s->sin6_addr.s6_addr32[2]);	\
 	s->sin6_family = AF_INET6;		\
 	l.lifr_addr.ss_family = AF_INET6;	\
-	l.lifr_addrlen = 10;			\
+	l.lifr_addrlen = 64;			\
 	l.lifr_addr = laddr;			\
 	} while (0)
 
