@@ -40,7 +40,7 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define RCSID	"$Id: options.c,v 1.100 2006/06/18 11:26:00 paulus Exp $"
+#define RCSID	"$Id: options.c,v 1.95 2004/11/09 22:33:35 paulus Exp $"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -57,20 +57,8 @@
 
 #ifdef PPP_FILTER
 #include <pcap.h>
-/*
- * There have been 3 or 4 different names for this in libpcap CVS, but
- * this seems to be what they have settled on...
- * For older versions of libpcap, use DLT_PPP - but that means
- * we lose the inbound and outbound qualifiers.
- */
-#ifndef DLT_PPP_PPPD
-#ifdef DLT_PPP_WITHDIRECTION
-#define DLT_PPP_PPPD	DLT_PPP_WITHDIRECTION
-#else
-#define DLT_PPP_PPPD	DLT_PPP
+#include <pcap-bpf.h>
 #endif
-#endif
-#endif /* PPP_FILTER */
 
 #include "pppd.h"
 #include "pathnames.h"
@@ -103,12 +91,6 @@ bool	persist = 0;		/* Reopen link after it goes down */
 char	our_name[MAXNAMELEN];	/* Our name for authentication purposes */
 bool	demand = 0;		/* do dial-on-demand */
 char	*ipparam = NULL;	/* Extra parameter for ip up/down scripts */
-char	*ipupcustom = NULL;	/* Custom ip up scripts */
-char	*ipdowncustom = NULL;	/* Custom ip down scripts */
-char	*chapseccustom = NULL;	/* Custom chap-secrets file */
-char	*papseccustom = NULL;	/* Custom pap-secrets file */
-char	*srpseccustom = NULL;	/* Custom pap-secrets file */
-
 int	idle_time_limit = 0;	/* Disconnect if idle for this many seconds */
 int	holdoff = 30;		/* # seconds to pause before reconnecting */
 bool	holdoff_specified;	/* true if a holdoff value has been given */
@@ -119,6 +101,8 @@ char	linkname[MAXPATHLEN];	/* logical name for link */
 bool	tune_kernel;		/* may alter kernel settings */
 int	connect_delay = 1000;	/* wait this many ms after connect script */
 int	req_unit = -1;		/* requested interface unit */
+char	path_ipup[MAXPATHLEN];	/* pathname of ip-up script */
+char	path_ipdown[MAXPATHLEN];/* pathname of ip-down script */
 bool	multilink = 0;		/* Enable multilink operation */
 char	*bundle_name = NULL;	/* bundle name for multilink */
 bool	dump_options;		/* print out option values */
@@ -162,6 +146,13 @@ static void usage __P((void));
 static int setlogfile __P((char **));
 #ifdef PLUGIN
 static int loadplugin __P((char **));
+#endif
+
+#ifdef PPP_PRECOMPILED_FILTER
+#include "pcap_pcc.h"
+static int setprecompiledpassfilter __P((char **));
+static int setprecompiledactivefilter __P((char **));
+#undef PPP_FILTER
 #endif
 
 #ifdef PPP_FILTER
@@ -287,6 +278,13 @@ option_t general_options[] = {
       "Number of seconds to wait for child processes at exit",
       OPT_PRIO },
 
+    { "ip-up-script", o_string, path_ipup,
+      "Set pathname of ip-up script",
+      OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
+    { "ip-down-script", o_string, path_ipdown,
+      "Set pathname of ip-down script",
+      OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
+
 #ifdef HAVE_MULTILINK
     { "multilink", o_bool, &multilink,
       "Enable multilink operation", OPT_PRIO | 1 },
@@ -307,11 +305,19 @@ option_t general_options[] = {
 #endif
 
 #ifdef PPP_FILTER
-    { "pass-filter", o_special, setpassfilter,
+    { "pass-filter", 1, setpassfilter,
       "set filter for packets to pass", OPT_PRIO },
 
-    { "active-filter", o_special, setactivefilter,
+    { "active-filter", 1, setactivefilter,
       "set filter for active pkts", OPT_PRIO },
+#endif
+
+#ifdef PPP_PRECOMPILED_FILTER
+    { "precompiled-pass-filter", 1, setprecompiledpassfilter,
+      "set precompiled filter for packets to pass", OPT_PRIO },
+
+    { "precompiled-active-filter", 1, setprecompiledactivefilter,
+      "set precompiled filter for active pkts", OPT_PRIO },
 #endif
 
 #ifdef MAXOCTETS
@@ -405,20 +411,16 @@ options_from_file(filename, must_exist, check_prot, priv)
     option_t *opt;
     int oldpriv, n;
     char *oldsource;
-    uid_t euid;
     char *argv[MAXARGS];
     char args[MAXARGS][MAXWORDLEN];
     char cmd[MAXWORDLEN];
 
-    euid = geteuid();
-    if (check_prot && seteuid(getuid()) == -1) {
-	option_error("unable to drop privileges to open %s: %m", filename);
-	return 0;
-    }
+    if (check_prot)
+	seteuid(getuid());
     f = fopen(filename, "r");
     err = errno;
-    if (check_prot && seteuid(euid) == -1)
-	fatal("unable to regain privileges");
+    if (check_prot)
+	seteuid(0);
     if (f == NULL) {
 	errno = err;
 	if (!must_exist) {
@@ -1026,7 +1028,7 @@ static void
 usage()
 {
     if (phase == PHASE_INITIALIZE)
-	printf(usage_string, VERSION, progname);
+	fprintf(stderr, usage_string, VERSION, progname);
 }
 
 /*
@@ -1051,7 +1053,7 @@ showversion(argv)
     char **argv;
 {
     if (phase == PHASE_INITIALIZE) {
-	printf("pppd version %s\n", VERSION);
+	fprintf(stderr, "pppd version %s\n", VERSION);
 	exit(0);
     }
     return 0;
@@ -1078,7 +1080,7 @@ option_error __V((char *fmt, ...))
     vslprintf(buf, sizeof(buf), fmt, args);
     va_end(args);
     if (phase == PHASE_INITIALIZE)
-	printf("%s: %s\n", progname, buf);
+	fprintf(stderr, "%s: %s\n", progname, buf);
     syslog(LOG_ERR, "%s", buf);
 }
 
@@ -1453,6 +1455,29 @@ callfile(argv)
     return ok;
 }
 
+#ifdef PPP_PRECOMPILED_FILTER
+/*
+ * setprecompiledpassfilter - Set the pass filter for packets using a
+ * precompiled expression
+ */
+static int
+setprecompiledpassfilter(argv)
+    char **argv;
+{
+    return pcap_pre_compiled (*argv, &pass_filter);
+}
+
+/*
+ * setactivefilter - Set the active filter for packets
+ */
+static int
+setprecompiledactivefilter(argv)
+    char **argv;
+{
+    return pcap_pre_compiled (*argv, &active_filter);
+}
+#endif
+
 #ifdef PPP_FILTER
 /*
  * setpassfilter - Set the pass filter for packets
@@ -1462,13 +1487,13 @@ setpassfilter(argv)
     char **argv;
 {
     pcap_t *pc;
-    int ret = 1;
+    int ret = 0;
 
     pc = pcap_open_dead(DLT_PPP_PPPD, 65535);
     if (pcap_compile(pc, &pass_filter, *argv, 1, netmask) == -1) {
 	option_error("error in pass-filter expression: %s\n",
 		     pcap_geterr(pc));
-	ret = 0;
+	ret = 1;
     }
     pcap_close(pc);
 
@@ -1483,13 +1508,13 @@ setactivefilter(argv)
     char **argv;
 {
     pcap_t *pc;
-    int ret = 1;
+    int ret = 0;
 
     pc = pcap_open_dead(DLT_PPP_PPPD, 65535);
     if (pcap_compile(pc, &active_filter, *argv, 1, netmask) == -1) {
 	option_error("error in active-filter expression: %s\n",
 		     pcap_geterr(pc));
-	ret = 0;
+	ret = 1;
     }
     pcap_close(pc);
 
@@ -1520,19 +1545,15 @@ setlogfile(argv)
     char **argv;
 {
     int fd, err;
-    uid_t euid;
 
-    euid = geteuid();
-    if (!privileged_option && seteuid(getuid()) == -1) {
-	option_error("unable to drop permissions to open %s: %m", *argv);
-	return 0;
-    }
+    if (!privileged_option)
+	seteuid(getuid());
     fd = open(*argv, O_WRONLY | O_APPEND | O_CREAT | O_EXCL, 0644);
     if (fd < 0 && errno == EEXIST)
 	fd = open(*argv, O_WRONLY | O_APPEND);
     err = errno;
-    if (!privileged_option && seteuid(euid) == -1)
-	fatal("unable to regain privileges: %m");
+    if (!privileged_option)
+	seteuid(0);
     if (fd < 0) {
 	errno = err;
 	option_error("Can't open log file %s: %m", *argv);

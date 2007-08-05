@@ -1,4 +1,4 @@
-DESTDIR = $(INSTROOT)@DESTDIR@
+DESTDIR = /usr
 BINDIR = $(DESTDIR)/sbin
 MANDIR = $(DESTDIR)/share/man/man8
 

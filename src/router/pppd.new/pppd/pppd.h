@@ -39,7 +39,7 @@
  * AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: pppd.h,v 1.91 2005/08/25 23:59:34 paulus Exp $
+ * $Id: pppd.h,v 1.88 2004/11/13 12:02:22 paulus Exp $
  */
 
 /*
@@ -298,11 +298,6 @@ extern char	remote_name[MAXNAMELEN]; /* Peer's name for authentication */
 extern bool	explicit_remote;/* remote_name specified with remotename opt */
 extern bool	demand;		/* Do dial-on-demand */
 extern char	*ipparam;	/* Extra parameter for ip up/down scripts */
-extern char	*ipupcustom;	/* Custom ip up script */
-extern char	*ipdowncustom;	/* Custom ip down script */
-extern char	*chapseccustom;	/* Custom chap-secrets file */
-extern char	*papseccustom;	/* Custom pap-secrets file */
-extern char	*srpseccustom;	/* Custom srp-secrets file */
 extern bool	cryptpap;	/* Others' PAP passwords are encrypted */
 extern int	idle_time_limit;/* Shut down link if idle for this long */
 extern int	holdoff;	/* Dead time before restarting */
@@ -317,16 +312,14 @@ extern bool	tune_kernel;	/* May alter kernel settings as necessary */
 extern int	connect_delay;	/* Time to delay after connect script */
 extern int	max_data_rate;	/* max bytes/sec through charshunt */
 extern int	req_unit;	/* interface unit number to use */
+extern char	path_ipup[MAXPATHLEN]; /* pathname of ip-up script */
+extern char	path_ipdown[MAXPATHLEN]; /* pathname of ip-down script */
 extern bool	multilink;	/* enable multilink operation */
 extern bool	noendpoint;	/* don't send or accept endpt. discrim. */
 extern char	*bundle_name;	/* bundle name for multilink */
 extern bool	dump_options;	/* print out option values */
 extern bool	dryrun;		/* check everything, print options, exit */
 extern int	child_wait;	/* # seconds to wait for children at end */
-
-#ifdef CHAPMS
-extern bool	ms_ignore_domain; /* Ignore any MS domain prefix */
-#endif
 
 #ifdef MAXOCTETS
 extern unsigned int maxoctets;	     /* Maximum octetes per session (in bytes) */
@@ -487,7 +480,7 @@ pid_t safe_fork __P((int, int, int));	/* Fork & close stuff in child */
 int  device_script __P((char *cmd, int in, int out, int dont_wait));
 				/* Run `cmd' with given stdin and stdout */
 pid_t run_program __P((char *prog, char **args, int must_exist,
-		       void (*done)(void *), void *arg, int wait));
+		       void (*done)(void *), void *arg));
 				/* Run program prog with args in child */
 void reopen_log __P((void));	/* (re)open the connection to syslog */
 void print_link_stats __P((void)); /* Print stats, if available */
@@ -501,7 +494,6 @@ void remove_notifier __P((struct notifier **, notify_func, void *));
 void notify __P((struct notifier *, int));
 int  ppp_send_config __P((int, int, u_int32_t, int, int));
 int  ppp_recv_config __P((int, int, u_int32_t, int, int));
-const char *protocol_name __P((int));
 void remove_pidfiles __P((void));
 void lock_db __P((void));
 void unlock_db __P((void));
@@ -521,16 +513,9 @@ size_t strlcat __P((char *, const char *, size_t));	/* safe strncpy */
 void dbglog __P((char *, ...));	/* log a debug message */
 void info __P((char *, ...));	/* log an informational message */
 void notice __P((char *, ...));	/* log a notice-level message */
-
-#define warn(a,...)
-#define error(a,...) exit (-1)
-#define fatal(a,...) exit (-2)
-
-//void warn __P((char *, ...));	/* log a warning message */
-//void error __P((char *, ...));	/* log an error message */
-//void fatal __P((char *, ...));	/* log an error message and die(1) */
-
-
+void warn __P((char *, ...));	/* log a warning message */
+void error __P((char *, ...));	/* log an error message */
+void fatal __P((char *, ...));	/* log an error message and die(1) */
 void init_pr_log __P((char *, int));	/* initialize for using pr_log */
 void pr_log __P((void *, char *, ...));	/* printer fn, output to syslog */
 void end_pr_log __P((void));	/* finish up after using pr_log */
@@ -579,7 +564,7 @@ void demand_conf __P((void));	/* config interface(s) for demand-dial */
 void demand_block __P((void));	/* set all NPs to queue up packets */
 void demand_unblock __P((void)); /* set all NPs to pass packets */
 void demand_discard __P((void)); /* set all NPs to discard packets */
-void demand_rexmit __P((int));	/* retransmit saved frames for an NP */
+void demand_rexmit __P((int, u_int32_t)); /* retransmit saved frames for an NP*/
 int  loop_chars __P((unsigned char *, int)); /* process chars from loopback */
 int  loop_frame __P((unsigned char *, int)); /* should we bring link up? */
 
@@ -658,7 +643,11 @@ int  sif6addr __P((int, eui64_t, eui64_t));
 int  cif6addr __P((int, eui64_t, eui64_t));
 				/* Remove an IPv6 address from i/f */
 #endif
+#ifndef __linux__
 int  sifdefaultroute __P((int, u_int32_t, u_int32_t));
+#else
+int  sifdefaultroute __P((int, u_int32_t, u_int32_t, bool replace_default_rt));
+#endif
 				/* Create default route through i/f */
 int  cifdefaultroute __P((int, u_int32_t, u_int32_t));
 				/* Delete default route through i/f */
@@ -698,10 +687,7 @@ int  options_from_list __P((struct wordlist *, int privileged));
 				/* Parse options from a wordlist */
 int  getword __P((FILE *f, char *word, int *newlinep, char *filename));
 				/* Read a word from a file */
-
-//#define option_error(fmt,args...)
 void option_error __P((char *fmt, ...));
-
 				/* Print an error message about an option */
 int int_option __P((char *, int *));
 				/* Simplified number_option for decimal ints */
