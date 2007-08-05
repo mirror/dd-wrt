@@ -42,7 +42,7 @@
 
 #ifdef IPX_CHANGE
 
-#define RCSID	"$Id: ipxcp.c,v 1.24 2005/08/25 23:59:34 paulus Exp $"
+#define RCSID	"$Id: ipxcp.c,v 1.23 2004/11/13 02:28:15 paulus Exp $"
 
 /*
  * TODO:
@@ -1458,7 +1458,7 @@ ipxcp_script(f, script)
     argv[11] = ipparam;
     argv[12] = strpid;
     argv[13] = NULL;
-    run_program(script, argv, 0, NULL, NULL, 0);
+    run_program(script, argv, 0, NULL, NULL);
 }
 
 /*

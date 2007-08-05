@@ -22,7 +22,7 @@
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: plugin.c,v 1.15 2006/05/29 23:29:16 paulus Exp $";
+"$Id: plugin.c,v 1.12 2004/11/04 10:07:37 paulus Exp $";
 
 #define _GNU_SOURCE 1
 #include "pppoe.h"
@@ -35,7 +35,6 @@ static char const RCSID[] =
 #include "pppd/pathnames.h"
 
 #include <linux/types.h>
-#include <syslog.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -173,15 +172,13 @@ PPPOEConnectDevice(void)
 	    (unsigned) conn->peerEth[5]);
 
     if (connect(conn->sessionSocket, (struct sockaddr *) &sp,
-		sizeof(struct sockaddr_pppox)) < 0) {
+		sizeof(struct sockaddr_pppox)) < 0)
 	fatal("Failed to connect PPPoE socket: %d %m", errno);
-	return -1;
-    }
 
     return conn->sessionSocket;
 }
 
-/*static void
+static void
 PPPOESendConfig(int mtu,
 		u_int32_t asyncmap,
 		int pcomp,
@@ -200,7 +197,6 @@ PPPOESendConfig(int mtu,
 	return;
     }
     strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
-//    info("set mtu rp-pppoe to %s (%d)\n",ifname,mtu);
     ifr.ifr_mtu = mtu;
     if (ioctl(sock, SIOCSIFMTU, &ifr) < 0) {
 	error("Couldn't set interface MTU to %d: %m", mtu);
@@ -208,17 +204,16 @@ PPPOESendConfig(int mtu,
     }
     (void) close (sock);
 }
-*/
+
+
 static void
 PPPOERecvConfig(int mru,
 		u_int32_t asyncmap,
 		int pcomp,
 		int accomp)
 {
-#if 0 /* broken protocol, but no point harrassing the users I guess... */
     if (mru > MAX_PPPOE_MTU)
 	warn("Couldn't increase MRU to %d", mru);
-#endif
 }
 
 /**********************************************************************
@@ -281,14 +276,16 @@ PPPoEDevnameHook(char *cmd, char **argv, int doit)
     int fd;
     struct ifreq ifr;
 
-    /*
-     * Take any otherwise-unrecognized option as a possible device name,
-     * and test if it is the name of a network interface with a
-     * hardware address whose sa_family is ARPHRD_ETHER.
-     */
+    /* Only do it if name is "ethXXX", "nasXXX", "tapXXX" or "nic-XXXX.
+       In latter case strip off the "nic-" */
+    /* Thanks to Russ Couturier for this fix */
     if (strlen(cmd) > 4 && !strncmp(cmd, "nic-", 4)) {
 	/* Strip off "nic-" */
 	cmd += 4;
+	} else if (strlen(cmd) < 3
+		|| (strncmp(cmd, "eth", 3) && strncmp(cmd, "nas", 3) && strncmp(cmd, "ixp", 3) && strncmp(cmd, "vlan", 4) && strncmp(cmd, "ath", 3)
+                   && strncmp(cmd, "tap", 3) && strncmp(cmd, "br", 2))) {
+	return 0;
     }
 
     /* Open a socket */
@@ -306,9 +303,8 @@ PPPoEDevnameHook(char *cmd, char **argv, int doit)
 		r = 0;
 	    } else {
 		if (ifr.ifr_hwaddr.sa_family != ARPHRD_ETHER) {
-		    if (doit)
-			error("Interface %s not Ethernet", cmd);
-		    r = 0;
+		    error("Interface %s not Ethernet", cmd);
+		    r=0;
 		}
 	    }
 	}
@@ -316,12 +312,30 @@ PPPoEDevnameHook(char *cmd, char **argv, int doit)
 
     /* Close socket */
     close(fd);
-    if (r && doit) {
+    if (r) {
 	strncpy(devnam, cmd, sizeof(devnam));
 	if (the_channel != &pppoe_channel) {
 
 	    the_channel = &pppoe_channel;
 	    modem = 0;
+
+	    lcp_allowoptions[0].neg_accompression = 0;
+	    lcp_wantoptions[0].neg_accompression = 0;
+
+	    lcp_allowoptions[0].neg_asyncmap = 0;
+	    lcp_wantoptions[0].neg_asyncmap = 0;
+
+	    lcp_allowoptions[0].neg_pcompression = 0;
+	    lcp_wantoptions[0].neg_pcompression = 0;
+
+	    ccp_allowoptions[0].deflate = 0 ;
+	    ccp_wantoptions[0].deflate = 0 ;
+
+	    ipcp_allowoptions[0].neg_vj=0;
+	    ipcp_wantoptions[0].neg_vj=0;
+
+	    ccp_allowoptions[0].bsd_compress = 0;
+	    ccp_wantoptions[0].bsd_compress = 0;
 
 	    PPPOEInitDevice();
 	}
@@ -348,11 +362,9 @@ plugin_init(void)
     }
 
     add_options(Options);
-
-    info("RP-PPPoE plugin version %s compiled against pppd %s",
-	 RP_VERSION, VERSION);
 }
 
+#ifdef unused
 /**********************************************************************
 *%FUNCTION: fatalSys
 *%ARGUMENTS:
@@ -406,42 +418,18 @@ sysErr(char const *str)
 {
     rp_fatal(str);
 }
+#endif
 
-void pppoe_check_options(void)
-{
-    lcp_allowoptions[0].neg_accompression = 0;
-    lcp_wantoptions[0].neg_accompression = 0;
-
-    lcp_allowoptions[0].neg_asyncmap = 0;
-    lcp_wantoptions[0].neg_asyncmap = 0;
-
-    lcp_allowoptions[0].neg_pcompression = 0;
-    lcp_wantoptions[0].neg_pcompression = 0;
-
-    if (lcp_allowoptions[0].mru > MAX_PPPOE_MTU)
-	lcp_allowoptions[0].mru = MAX_PPPOE_MTU;
-    if (lcp_wantoptions[0].mru > MAX_PPPOE_MTU)
-	lcp_wantoptions[0].mru = MAX_PPPOE_MTU;
-
-    ccp_allowoptions[0].deflate = 0;
-    ccp_wantoptions[0].deflate = 0;
-
-    ipcp_allowoptions[0].neg_vj = 0;
-    ipcp_wantoptions[0].neg_vj = 0;
-
-    ccp_allowoptions[0].bsd_compress = 0;
-    ccp_wantoptions[0].bsd_compress = 0;
-}
 
 struct channel pppoe_channel = {
     options: Options,
     process_extra_options: &PPPOEDeviceOptions,
-    check_options: pppoe_check_options,
+    check_options: NULL,
     connect: &PPPOEConnectDevice,
     disconnect: &PPPOEDisconnectDevice,
     establish_ppp: &generic_establish_ppp,
     disestablish_ppp: &generic_disestablish_ppp,
-    send_config: NULL,
+    send_config: &PPPOESendConfig,
     recv_config: &PPPOERecvConfig,
     close: NULL,
     cleanup: NULL
