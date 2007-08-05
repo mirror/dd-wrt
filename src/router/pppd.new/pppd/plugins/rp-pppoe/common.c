@@ -18,6 +18,10 @@ static char const RCSID[] =
 
 #include "pppoe.h"
 
+#ifdef HAVE_SYSLOG_H
+#include <syslog.h>
+#endif
+
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -46,17 +50,17 @@ parsePacket(PPPoEPacket *packet, ParseFunc *func, void *extra)
     UINT16_t tagType, tagLen;
 
     if (packet->ver != 1) {
-	error("Invalid PPPoE version (%u)", packet->ver);
+	syslog(LOG_ERR, "Invalid PPPoE version (%d)", (int) packet->ver);
 	return -1;
     }
     if (packet->type != 1) {
-	error("Invalid PPPoE type (%u)", packet->type);
+	syslog(LOG_ERR, "Invalid PPPoE type (%d)", (int) packet->type);
 	return -1;
     }
 
     /* Do some sanity checks on packet */
     if (len > ETH_DATA_LEN - 6) { /* 6-byte overhead for PPPoE header */
-	error("Invalid PPPoE packet length (%u)", len);
+	syslog(LOG_ERR, "Invalid PPPoE packet length (%u)", len);
 	return -1;
     }
 
@@ -72,7 +76,7 @@ parsePacket(PPPoEPacket *packet, ParseFunc *func, void *extra)
 	    return 0;
 	}
 	if ((curTag - packet->payload) + tagLen + TAG_HDR_SIZE > len) {
-	    error("Invalid PPPoE tag length (%u)", tagLen);
+	    syslog(LOG_ERR, "Invalid PPPoE tag length (%u)", tagLen);
 	    return -1;
 	}
 	func(tagType, tagLen, curTag+TAG_HDR_SIZE, extra);
@@ -101,17 +105,17 @@ findTag(PPPoEPacket *packet, UINT16_t type, PPPoETag *tag)
     UINT16_t tagType, tagLen;
 
     if (packet->ver != 1) {
-	error("Invalid PPPoE version (%u)", packet->ver);
+	syslog(LOG_ERR, "Invalid PPPoE version (%d)", (int) packet->ver);
 	return NULL;
     }
     if (packet->type != 1) {
-	error("Invalid PPPoE type (%u)", packet->type);
+	syslog(LOG_ERR, "Invalid PPPoE type (%d)", (int) packet->type);
 	return NULL;
     }
 
     /* Do some sanity checks on packet */
     if (len > ETH_DATA_LEN - 6) { /* 6-byte overhead for PPPoE header */
-	error("Invalid PPPoE packet length (%u)", len);
+	syslog(LOG_ERR, "Invalid PPPoE packet length (%u)", len);
 	return NULL;
     }
 
@@ -127,7 +131,7 @@ findTag(PPPoEPacket *packet, UINT16_t type, PPPoETag *tag)
 	    return NULL;
 	}
 	if ((curTag - packet->payload) + tagLen + TAG_HDR_SIZE > len) {
-	    error("Invalid PPPoE tag length (%u)", tagLen);
+	    syslog(LOG_ERR, "Invalid PPPoE tag length (%u)", tagLen);
 	    return NULL;
 	}
 	if (tagType == type) {
@@ -139,7 +143,6 @@ findTag(PPPoEPacket *packet, UINT16_t type, PPPoETag *tag)
     return NULL;
 }
 
-#ifdef unused
 /**********************************************************************
 *%FUNCTION: printErr
 *%ARGUMENTS:
@@ -152,10 +155,9 @@ findTag(PPPoEPacket *packet, UINT16_t type, PPPoETag *tag)
 void
 printErr(char const *str)
 {
-    fprintf(stderr, "pppoe: %s\n", str);
+    printf( "pppoe: %s\n", str);
     syslog(LOG_ERR, "%s", str);
 }
-#endif
 
 
 /**********************************************************************
@@ -170,7 +172,7 @@ strDup(char const *str)
 {
     char *copy = malloc(strlen(str)+1);
     if (!copy) {
-	fatal("strdup failed");
+	rp_fatal("strdup failed");
     }
     strcpy(copy, str);
     return copy;
@@ -465,10 +467,9 @@ sendPADT(PPPoEConnection *conn, char const *msg)
 	fprintf(conn->debugFile, "\n");
 	fflush(conn->debugFile);
     }
-    info("Sent PADT");
+    syslog(LOG_INFO,"Sent PADT");
 }
 
-#ifdef unused
 /**********************************************************************
 *%FUNCTION: parseLogErrs
 *%ARGUMENTS:
@@ -488,17 +489,16 @@ parseLogErrs(UINT16_t type, UINT16_t len, unsigned char *data,
     switch(type) {
     case TAG_SERVICE_NAME_ERROR:
 	syslog(LOG_ERR, "PADT: Service-Name-Error: %.*s", (int) len, data);
-	fprintf(stderr, "PADT: Service-Name-Error: %.*s\n", (int) len, data);
+	printf( "PADT: Service-Name-Error: %.*s\n", (int) len, data);
 	break;
     case TAG_AC_SYSTEM_ERROR:
 	syslog(LOG_ERR, "PADT: System-Error: %.*s", (int) len, data);
-	fprintf(stderr, "PADT: System-Error: %.*s\n", (int) len, data);
+	printf( "PADT: System-Error: %.*s\n", (int) len, data);
 	break;
     case TAG_GENERIC_ERROR:
 	syslog(LOG_ERR, "PADT: Generic-Error: %.*s", (int) len, data);
-	fprintf(stderr, "PADT: Generic-Error: %.*s\n", (int) len, data);
+	printf( "PADT: Generic-Error: %.*s\n", (int) len, data);
 	break;
     }
 }
-#endif
 

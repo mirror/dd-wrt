@@ -17,7 +17,13 @@
 
 #include "pppoe.h"
 
+char *xstrdup(const char *s);
 void usage(void);
+
+void die(int status)
+{
+	exit(status);
+}
 
 int main(int argc, char *argv[])
 {
@@ -26,17 +32,17 @@ int main(int argc, char *argv[])
 
     conn = malloc(sizeof(PPPoEConnection));
     if (!conn)
-	fatal("malloc");
+	fatalSys("malloc");
 
     memset(conn, 0, sizeof(PPPoEConnection));
 
     while ((opt = getopt(argc, argv, "I:D:VUAS:C:h")) > 0) {
 	switch(opt) {
 	case 'S':
-	    conn->serviceName = strDup(optarg);
+	    conn->serviceName = xstrdup(optarg);
 	    break;
 	case 'C':
-	    conn->acName = strDup(optarg);
+	    conn->acName = xstrdup(optarg);
 	    break;
 	case 'U':
 	    conn->useHostUniq = 1;
@@ -44,14 +50,14 @@ int main(int argc, char *argv[])
 	case 'D':
 	    conn->debugFile = fopen(optarg, "w");
 	    if (!conn->debugFile) {
-		fprintf(stderr, "Could not open %s: %s\n",
+		printf( "Could not open %s: %s\n",
 			optarg, strerror(errno));
 		exit(1);
 	    }
 	    fprintf(conn->debugFile, "pppoe-discovery %s\n", VERSION);
 	    break;
 	case 'I':
-	    conn->ifName = strDup(optarg);
+	    conn->ifName = xstrdup(optarg);
 	    break;
 	case 'A':
 	    /* this is the default */
@@ -68,7 +74,7 @@ int main(int argc, char *argv[])
 
     /* default interface name */
     if (!conn->ifName)
-	conn->ifName = strDup("eth0");
+	conn->ifName = strdup("eth0");
 
     conn->discoverySocket = -1;
     conn->sessionSocket = -1;
@@ -78,8 +84,41 @@ int main(int argc, char *argv[])
     exit(0);
 }
 
+void rp_fatal(char const *str)
+{
+    char buf[1024];
+
+    printErr(str);
+    sprintf(buf, "pppoe-discovery: %.256s", str);
+    exit(1);
+}
+
+void fatalSys(char const *str)
+{
+    char buf[1024];
+    int i = errno;
+
+    sprintf(buf, "%.256s: %.256s", str, strerror(i));
+    printErr(buf);
+    sprintf(buf, "pppoe-discovery: %.256s: %.256s", str, strerror(i));
+    exit(1);
+}
+
+void sysErr(char const *str)
+{
+    rp_fatal(str);
+}
+
+char *xstrdup(const char *s)
+{
+    register char *ret = strdup(s);
+    if (!ret)
+	sysErr("strdup");
+    return ret;
+}
+
 void usage(void)
 {
-    fprintf(stderr, "Usage: pppoe-discovery [options]\n");
-    fprintf(stderr, "\nVersion " VERSION "\n");
+    printf( "Usage: pppoe-discovery [options]\n");
+    printf( "\nVersion " VERSION "\n");
 }
