@@ -40,7 +40,7 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define RCSID	"$Id: upap.c,v 1.29 2002/12/04 23:03:33 paulus Exp $"
+#define RCSID	"$Id: upap.c,v 1.30 2005/07/13 10:41:58 paulus Exp $"
 
 /*
  * TODO:
@@ -498,7 +498,6 @@ upap_rauthack(u, inp, id, len)
 
     u->us_clientstate = UPAPCS_OPEN;
 
-    notice("PAP authentication succeeded");
     auth_withpeer_success(u->us_unit, PPP_PAP, 0);
 }
 

@@ -1,10 +1,10 @@
 #
 # pppd makefile for Linux
-# $Id: Makefile.linux,v 1.66 2004/11/13 12:02:22 paulus Exp $
+# $Id: Makefile.linux,v 1.69 2006/06/04 05:07:46 paulus Exp $
 #
 
 # Default installation locations
-DESTDIR = /usr
+DESTDIR = @DESTDIR@
 BINDIR = $(DESTDIR)/sbin
 MANDIR = $(DESTDIR)/share/man/man8
 INCDIR = $(DESTDIR)/include
@@ -32,7 +32,7 @@ endif
 
 # CC = gcc
 #
-COPTS = -O2 -pipe -Wall -g
+#COPTS = -O2 -pipe -Wall -g
 LIBS =
 
 # Uncomment the next 2 lines to include support for Microsoft's
@@ -50,9 +50,6 @@ MPPE=y
 # and that the kernel driver support PPP packet filtering.
 #FILTER=y
 
-# Support for precompiled filters
-#PRECOMPILED_FILTER=y
-
 # Uncomment the next line to enable multilink PPP (enabled by default)
 # Linux distributions: Please leave multilink ENABLED in your builds
 # of pppd!
@@ -65,7 +62,7 @@ MPPE=y
 
 #HAS_SHADOW=y
 #USE_PAM=y
-HAVE_INET6=y
+#HAVE_INET6=y
 
 # Enable plugins
 PLUGIN=y
@@ -82,7 +79,7 @@ INCLUDE_DIRS= -I../include
 
 COMPILE_FLAGS= -DHAVE_PATHS_H -DHAVE_MMAP
 
-CFLAGS= $(COPTS) $(COMPILE_FLAGS) $(INCLUDE_DIRS)
+CFLAGS= $(COPTS) $(COMPILE_FLAGS) $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"'
 
 ifdef CHAPMS
 CFLAGS   += -DCHAPMS=1
@@ -175,17 +172,9 @@ endif
 
 ifdef FILTER
 ifneq ($(wildcard /usr/include/pcap-bpf.h),)
-LIBS    += -lpcap -L$(STAGING_DIR)/usr/lib
-CFLAGS  += -DPPP_FILTER -I$(STAGING_DIR)/usr/include
+LIBS    += -lpcap
+CFLAGS  += -DPPP_FILTER
 endif
-endif
-
-ifdef PRECOMPILED_FILTER
-PPPDSRCS += pcap_pcc.c
-HEADERS  += pcap_pcc.h
-PPPDOBJS += pcap_pcc.o
-LIBS	+= $(STAGING_DIR)/usr/lib/libpcap.a
-CFLAGS	+= -DPPP_FILTER -DPPP_PRECOMPILED_FILTER -I$(STAGING_DIR)/usr/include
 endif
 
 ifdef HAVE_INET6
