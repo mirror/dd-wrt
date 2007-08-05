@@ -2842,7 +2842,7 @@ struct gozila_action gozila_actions[] = {
   /* Siafu addition */
   {"Ping", "wol", "", 1, REFRESH, ping_wol},
   /* Sveasoft addition */
-  {"Wireless_WDS", "save", "", 5, REFRESH, save_wds},
+  {"Wireless_WDS", "save", "", 0, REFRESH, save_wds},
   {"Ping", "startup", "", 1, SYS_RESTART, ping_startup},
   {"Ping", "firewall", "", 1, SYS_RESTART, ping_firewall},
   {"Ping", "custom", "", 0, REFRESH, ping_custom},
@@ -2872,7 +2872,7 @@ struct gozila_action gozila_actions[] = {
   {"Networking", "del_vlan", "", 0, REFRESH, del_vlan},
   {"Networking", "del_bridge", "", 0, REFRESH, del_bridge},
   {"Networking", "del_bridgeif", "", 0, REFRESH, del_bridgeif},
-  {"Networking", "save_networking", "", 5, REFRESH, save_networking},
+  {"Networking", "save_networking", "", 0, REFRESH, save_networking},
 #endif
   {"Wireless_Basic", "save", "", 1, REFRESH, wireless_save},
 #ifdef HAVE_WIVIZ
