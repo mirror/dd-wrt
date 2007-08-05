@@ -66,7 +66,7 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define RCSID	"$Id: main.c,v 1.148 2004/11/13 12:05:48 paulus Exp $"
+#define RCSID	"$Id: main.c,v 1.153 2006/06/04 03:52:50 paulus Exp $"
 
 #include <stdio.h>
 #include <ctype.h>
@@ -90,7 +90,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <sys/sysinfo.h>
 
 #include "pppd.h"
 #include "magic.h"
@@ -228,7 +227,6 @@ static struct subprocess *children;
 
 /* Prototypes for procedures local to this file. */
 
-static void check_time(void);
 static void setup_signals __P((void));
 static void create_pidfile __P((int pid));
 static void create_linkpidfile __P((int pid));
@@ -244,6 +242,7 @@ static void toggle_debug __P((int));
 static void open_ccp __P((int));
 static void bad_signal __P((int));
 static void holdoff_end __P((void *));
+static void forget_child __P((int pid, int status));
 static int reap_kids __P((void));
 static void childwait_end __P((void *));
 
@@ -315,9 +314,6 @@ main(argc, argv)
     struct passwd *pw;
     struct protent *protp;
     char numbuf[16];
-
-    strlcpy(path_ipup, _PATH_IPUP, sizeof(path_ipup));
-    strlcpy(path_ipdown, _PATH_IPDOWN, sizeof(path_ipdown));
 
     link_stats_valid = 0;
     new_phase(PHASE_INITIALIZE);
@@ -533,7 +529,6 @@ main(argc, argv)
 	    info("Starting link");
 	}
 
-	check_time();
 	gettimeofday(&start_time, NULL);
 	script_unsetenv("CONNECT_TIME");
 	script_unsetenv("BYTES_SENT");
@@ -558,6 +553,8 @@ main(argc, argv)
 		}
 	    }
 	}
+	/* restore FSMs to original state */
+	lcp_close(0, "");
 
 	if (!persist || asked_to_quit || (maxfail > 0 && unsuccess >= maxfail))
 	    break;
@@ -772,7 +769,8 @@ detach()
 	/* update pid files if they have been written already */
 	if (pidfilename[0])
 	    create_pidfile(pid);
-	create_linkpidfile(pid);
+	if (linkpidfile[0])
+	    create_linkpidfile(pid);
 	exit(0);		/* parent dies */
     }
     setsid();
@@ -895,14 +893,54 @@ struct protocol_list {
     { 0x4b,	"SNA over 802.2" },
     { 0x4d,	"SNA" },
     { 0x4f,	"IP6 Header Compression" },
+    { 0x51,	"KNX Bridging Data" },
+    { 0x53,	"Encryption" },
+    { 0x55,	"Individual Link Encryption" },
+    { 0x57,	"IPv6" },
+    { 0x59,	"PPP Muxing" },
+    { 0x5b,	"Vendor-Specific Network Protocol" },
+    { 0x61,	"RTP IPHC Full Header" },
+    { 0x63,	"RTP IPHC Compressed TCP" },
+    { 0x65,	"RTP IPHC Compressed non-TCP" },
+    { 0x67,	"RTP IPHC Compressed UDP 8" },
+    { 0x69,	"RTP IPHC Compressed RTP 8" },
     { 0x6f,	"Stampede Bridging" },
+    { 0x73,	"MP+" },
+    { 0xc1,	"NTCITS IPI" },
     { 0xfb,	"single-link compression" },
-    { 0xfd,	"1st choice compression" },
+    { 0xfd,	"Compressed Datagram" },
     { 0x0201,	"802.1d Hello Packets" },
     { 0x0203,	"IBM Source Routing BPDU" },
     { 0x0205,	"DEC LANBridge100 Spanning Tree" },
+    { 0x0207,	"Cisco Discovery Protocol" },
+    { 0x0209,	"Netcs Twin Routing" },
+    { 0x020b,	"STP - Scheduled Transfer Protocol" },
+    { 0x020d,	"EDP - Extreme Discovery Protocol" },
+    { 0x0211,	"Optical Supervisory Channel Protocol" },
+    { 0x0213,	"Optical Supervisory Channel Protocol" },
     { 0x0231,	"Luxcom" },
     { 0x0233,	"Sigma Network Systems" },
+    { 0x0235,	"Apple Client Server Protocol" },
+    { 0x0281,	"MPLS Unicast" },
+    { 0x0283,	"MPLS Multicast" },
+    { 0x0285,	"IEEE p1284.4 standard - data packets" },
+    { 0x0287,	"ETSI TETRA Network Protocol Type 1" },
+    { 0x0289,	"Multichannel Flow Treatment Protocol" },
+    { 0x2063,	"RTP IPHC Compressed TCP No Delta" },
+    { 0x2065,	"RTP IPHC Context State" },
+    { 0x2067,	"RTP IPHC Compressed UDP 16" },
+    { 0x2069,	"RTP IPHC Compressed RTP 16" },
+    { 0x4001,	"Cray Communications Control Protocol" },
+    { 0x4003,	"CDPD Mobile Network Registration Protocol" },
+    { 0x4005,	"Expand accelerator protocol" },
+    { 0x4007,	"ODSICP NCP" },
+    { 0x4009,	"DOCSIS DLL" },
+    { 0x400B,	"Cetacean Network Detection Protocol" },
+    { 0x4021,	"Stacker LZS" },
+    { 0x4023,	"RefTek Protocol" },
+    { 0x4025,	"Fibre Channel" },
+    { 0x4027,	"EMIT Protocols" },
+    { 0x405b,	"Vendor-Specific Protocol (VSP)" },
     { 0x8021,	"Internet Protocol Control Protocol" },
     { 0x8023,	"OSI Network Layer Control Protocol" },
     { 0x8025,	"Xerox NS IDP Control Protocol" },
@@ -922,17 +960,43 @@ struct protocol_list {
     { 0x804b,	"SNA over 802.2 Control Protocol" },
     { 0x804d,	"SNA Control Protocol" },
     { 0x804f,	"IP6 Header Compression Control Protocol" },
-    { 0x006f,	"Stampede Bridging Control Protocol" },
+    { 0x8051,	"KNX Bridging Control Protocol" },
+    { 0x8053,	"Encryption Control Protocol" },
+    { 0x8055,	"Individual Link Encryption Control Protocol" },
+    { 0x8057,	"IPv6 Control Protovol" },
+    { 0x8059,	"PPP Muxing Control Protocol" },
+    { 0x805b,	"Vendor-Specific Network Control Protocol (VSNCP)" },
+    { 0x806f,	"Stampede Bridging Control Protocol" },
+    { 0x8073,	"MP+ Control Protocol" },
+    { 0x80c1,	"NTCITS IPI Control Protocol" },
     { 0x80fb,	"Single Link Compression Control Protocol" },
     { 0x80fd,	"Compression Control Protocol" },
+    { 0x8207,	"Cisco Discovery Protocol Control" },
+    { 0x8209,	"Netcs Twin Routing" },
+    { 0x820b,	"STP - Control Protocol" },
+    { 0x820d,	"EDPCP - Extreme Discovery Protocol Ctrl Prtcl" },
+    { 0x8235,	"Apple Client Server Protocol Control" },
+    { 0x8281,	"MPLSCP" },
+    { 0x8285,	"IEEE p1284.4 standard - Protocol Control" },
+    { 0x8287,	"ETSI TETRA TNP1 Control Protocol" },
+    { 0x8289,	"Multichannel Flow Treatment Protocol" },
     { 0xc021,	"Link Control Protocol" },
     { 0xc023,	"Password Authentication Protocol" },
     { 0xc025,	"Link Quality Report" },
     { 0xc027,	"Shiva Password Authentication Protocol" },
     { 0xc029,	"CallBack Control Protocol (CBCP)" },
+    { 0xc02b,	"BACP Bandwidth Allocation Control Protocol" },
+    { 0xc02d,	"BAP" },
+    { 0xc05b,	"Vendor-Specific Authentication Protocol (VSAP)" },
     { 0xc081,	"Container Control Protocol" },
     { 0xc223,	"Challenge Handshake Authentication Protocol" },
+    { 0xc225,	"RSA Authentication Protocol" },
+    { 0xc227,	"Extensible Authentication Protocol" },
+    { 0xc229,	"Mitsubishi Security Info Exch Ptcl (SIEP)" },
+    { 0xc26f,	"Stampede Bridging Authorization Protocol" },
     { 0xc281,	"Proprietary Authentication Protocol" },
+    { 0xc283,	"Proprietary Authentication Protocol" },
+    { 0xc481,	"Proprietary Node ID Authentication Protocol" },
     { 0,	NULL },
 };
 
@@ -1198,36 +1262,6 @@ struct	callout {
 
 static struct callout *callout = NULL;	/* Callout list */
 static struct timeval timenow;		/* Current time */
-static long uptime_diff = 0;
-static int uptime_diff_set = 0;
-
-static void check_time(void)
-{
-	long new_diff;
-	struct timeval t;
-	struct sysinfo i;
-    struct callout *p;
-	
-	gettimeofday(&t, NULL);
-	sysinfo(&i);
-	new_diff = t.tv_sec - i.uptime;
-	
-	if (!uptime_diff_set) {
-		uptime_diff = new_diff;
-		uptime_diff_set = 1;
-		return;
-	}
-
-	if ((new_diff - 5 > uptime_diff) || (new_diff + 5 < uptime_diff)) {
-		/* system time has changed, update counters and timeouts */
-		info("System time change detected.");
-		start_time.tv_sec += new_diff - uptime_diff;
-		
-    	for (p = callout; p != NULL; p = p->c_next)
-			p->c_time.tv_sec += new_diff - uptime_diff;
-	}
-	uptime_diff = new_diff;
-}
 
 /*
  * timeout - Schedule a timeout.
@@ -1298,8 +1332,6 @@ calltimeout()
 {
     struct callout *p;
 
-	check_time();
-	
     while (callout != NULL) {
 	p = callout;
 
@@ -1327,8 +1359,6 @@ timeleft(tvp)
 {
     if (callout == NULL)
 	return NULL;
-	
-	check_time();
 
     gettimeofday(&timenow, NULL);
     tvp->tv_sec = callout->c_time.tv_sec - timenow.tv_sec;
@@ -1621,7 +1651,7 @@ device_script(program, in, out, dont_wait)
     setgid(getgid());
     setuid(uid);
     if (getuid() != uid) {
-	fprintf(stderr, "pppd: setuid failed\n");
+	printf( "pppd: setuid failed\n");
 	exit(1);
     }
     execl("/bin/sh", "sh", "-c", program, (char *)0);
@@ -1633,7 +1663,7 @@ device_script(program, in, out, dont_wait)
 
 /*
  * run-program - execute a program with given arguments,
- * but don't wait for it.
+ * but don't wait for it unless wait is non-zero.
  * If the program can't be executed, logs an error unless
  * must_exist is 0 and the program file doesn't exist.
  * Returns -1 if it couldn't fork, 0 if the file doesn't exist
@@ -1642,14 +1672,15 @@ device_script(program, in, out, dont_wait)
  * reap_kids) iff the return value is > 0.
  */
 pid_t
-run_program(prog, args, must_exist, done, arg)
+run_program(prog, args, must_exist, done, arg, wait)
     char *prog;
     char **args;
     int must_exist;
     void (*done) __P((void *));
     void *arg;
+    int wait;
 {
-    int pid;
+    int pid, status;
     struct stat sbuf;
 
     /*
@@ -1675,6 +1706,14 @@ run_program(prog, args, must_exist, done, arg)
 	if (debug)
 	    dbglog("Script %s started (pid %d)", prog, pid);
 	record_child(pid, prog, done, arg);
+	if (wait) {
+	    while (waitpid(pid, &status, 0) < 0) {
+		if (errno == EINTR)
+		    continue;
+		fatal("error waiting for script %s: %m", prog);
+	    }
+	    forget_child(pid, status);
+	}
 	return pid;
     }
 
@@ -1751,6 +1790,35 @@ childwait_end(arg)
 }
 
 /*
+ * forget_child - clean up after a dead child
+ */
+static void
+forget_child(pid, status)
+    int pid, status;
+{
+    struct subprocess *chp, **prevp;
+
+    for (prevp = &children; (chp = *prevp) != NULL; prevp = &chp->next) {
+        if (chp->pid == pid) {
+	    --n_children;
+	    *prevp = chp->next;
+	    break;
+	}
+    }
+    if (WIFSIGNALED(status)) {
+        warn("Child process %s (pid %d) terminated with signal %d",
+	     (chp? chp->prog: "??"), pid, WTERMSIG(status));
+    } else if (debug)
+        dbglog("Script %s finished (pid %d), status = 0x%x",
+	       (chp? chp->prog: "??"), pid,
+	       WIFEXITED(status) ? WEXITSTATUS(status) : status);
+    if (chp && chp->done)
+        (*chp->done)(chp->arg);
+    if (chp)
+        free(chp);
+}
+
+/*
  * reap_kids - get status from any dead child processes,
  * and log a message for abnormal terminations.
  */
@@ -1758,29 +1826,11 @@ static int
 reap_kids()
 {
     int pid, status;
-    struct subprocess *chp, **prevp;
 
     if (n_children == 0)
 	return 0;
     while ((pid = waitpid(-1, &status, WNOHANG)) != -1 && pid != 0) {
-	for (prevp = &children; (chp = *prevp) != NULL; prevp = &chp->next) {
-	    if (chp->pid == pid) {
-		--n_children;
-		*prevp = chp->next;
-		break;
-	    }
-	}
-	if (WIFSIGNALED(status)) {
-	    warn("Child process %s (pid %d) terminated with signal %d",
-		 (chp? chp->prog: "??"), pid, WTERMSIG(status));
-	} else if (debug)
-	    dbglog("Script %s finished (pid %d), status = 0x%x",
-		   (chp? chp->prog: "??"), pid,
-		   WIFEXITED(status) ? WEXITSTATUS(status) : status);
-	if (chp && chp->done)
-	    (*chp->done)(chp->arg);
-	if (chp)
-	    free(chp);
+        forget_child(pid, status);
     }
     if (pid == -1) {
 	if (errno == ECHILD)

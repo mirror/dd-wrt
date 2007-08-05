@@ -1,11 +1,11 @@
 #
 # Makefile for pppd under Solaris 2.
-# $Id: Makefile.sol2,v 1.26 2004/04/14 02:39:39 carlsonj Exp $
+# $Id: Makefile.sol2,v 1.27 2005/08/28 06:49:12 paulus Exp $
 #
 
 include ../Makedefs.com
 
-CFLAGS	=  -I../include -DSVR4 -DSOL2 $(COPTS)
+CFLAGS	=  -I../include -DSVR4 -DSOL2 $(COPTS) '-DDESTDIR="@DESTDIR@"'
 LIBS	= -lsocket -lnsl
 
 OBJS	=  main.o magic.o fsm.o lcp.o ipcp.o upap.o chap-new.o eap.o md5.o \

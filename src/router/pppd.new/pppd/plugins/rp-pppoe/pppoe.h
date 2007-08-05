@@ -307,18 +307,12 @@ void discovery(PPPoEConnection *conn);
 unsigned char *findTag(PPPoEPacket *packet, UINT16_t tagType,
 		       PPPoETag *tag);
 
-void dbglog(char *, ...);	/* log a debug message */
-void info(char *, ...);		/* log an informational message */
-void warn(char *, ...);		/* log a warning message */
-void error(char *, ...);	/* log an error message */
-void fatal(char *, ...);	/* log an error message and die(1) */
-
 #define SET_STRING(var, val) do { if (var) free(var); var = strDup(val); } while(0);
 
 #define CHECK_ROOM(cursor, start, len) \
 do {\
     if (((cursor)-(start))+(len) > MAX_PPPOE_PAYLOAD) { \
-        error("Would create too-long packet"); \
+        syslog(LOG_ERR, "Would create too-long packet"); \
         return; \
     } \
 } while(0)
