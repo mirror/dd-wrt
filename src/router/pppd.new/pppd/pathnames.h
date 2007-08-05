@@ -15,7 +15,7 @@
 #endif /* HAVE_PATHS_H */
 
 #ifndef _ROOT_PATH
-#define _ROOT_PATH
+#define _ROOT_PATH /tmp
 #endif
 
 #define _PATH_UPAPFILE 	 _ROOT_PATH "/etc/ppp/pap-secrets"
