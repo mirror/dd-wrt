@@ -1,16 +1,23 @@
-
 /*
- * Network services
+ * network.c
  *
- * Copyright 2001-2003, Broadcom Corporation
- * All Rights Reserved.
+ * Copyright (C) 2007 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License.
  *
- * $Id: network.c,v 1.8 2005/11/30 11:54:21 seg Exp $
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ *
+ * $Id:
  */
 
 #include <stdio.h>
@@ -2270,7 +2277,7 @@ start_wan (int status)
       fprintf (fp, "noipdefault\n"
 	       "noauth\n"
 	       "defaultroute\n"
-	       "noaccomp\n" "nobsdcomp\n" "nodeflate\n" 
+//	       "noaccomp\n" "nobsdcomp\n" "nodeflate\n" 
 //	       "maxfail 0\n"
 //               "nocrtscts\n"
 //               "sync\n"
@@ -2280,9 +2287,9 @@ start_wan (int status)
 //	       "noproxyarp\n"
 	       "asyncmap 0\n"
 	       "ipcp-accept-local\n"
-	       "ipcp-accept-remote\n"
+	       "ipcp-accept-remote\n");
 //	       "nodetach\n"
-	       "nopcomp\n" "novj\n" "novjccomp\n");
+//	       "nopcomp\n" "novj\n" "novjccomp\n");
       if (nvram_invmatch ("ppp_mppe", ""))
 	fprintf (fp, "%s\n", nvram_safe_get ("ppp_mppe"));
       else
