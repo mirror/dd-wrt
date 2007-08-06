@@ -1,5 +1,5 @@
 /*
- * gpio.c
+ * gpio_brcm.c
  *
  * Copyright (C) 2006 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
