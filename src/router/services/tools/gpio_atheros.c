@@ -1,5 +1,5 @@
 /*
- * gpio.c
+ * gpio_atheros.c
  *
  * Copyright (C) 2006 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
