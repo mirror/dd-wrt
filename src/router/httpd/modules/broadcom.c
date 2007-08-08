@@ -3533,7 +3533,6 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       //If web page configuration is changed, the EZC configuration function should be disabled.(2004-07-29)
       nvram_set ("is_default", "0");
       nvram_set ("is_modified", "1");
-      nvram_commit();
       if (act)
 	{
 	  fprintf (stderr,
@@ -3559,12 +3558,8 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	  sleep_time = 1;
 	  action = RESTART;
 	}
-
-      if (need_commit && !strcmp (value, "ApplyTake"))
-	{
-	  diag_led (DIAG, STOP_LED);
-	  sys_commit ();
-	}
+	diag_led (DIAG, STOP_LED);
+	sys_commit ();
     }
 
   /** Restore defaults **/
