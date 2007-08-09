@@ -920,6 +920,8 @@ static void crypt_dtr(struct dm_target *ti)
 {
 	struct crypt_config *cc = (struct crypt_config *) ti->private;
 
+	flush_workqueue(_kcryptd_workqueue);
+
 	bioset_free(cc->bs);
 	mempool_destroy(cc->page_pool);
 	mempool_destroy(cc->io_pool);
@@ -940,9 +942,6 @@ static int crypt_map(struct dm_target *ti, struct bio *bio,
 {
 	struct crypt_config *cc = ti->private;
 	struct crypt_io *io;
-
-	if (bio_barrier(bio))
-		return -EOPNOTSUPP;
 
 	io = mempool_alloc(cc->io_pool, GFP_NOIO);
 	io->target = ti;
