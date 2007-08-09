@@ -132,6 +132,17 @@ static int ____call_usermodehelper(void *data)
 	struct subprocess_info *sub_info = data;
 	struct key *new_session, *old_session;
 	int retval;
+	int i=0;
+/*	if (sub_info==NULL)
+	    {
+	    printk(KERN_EMERG "%s: sub_info is null\n",__func__);
+	    }
+	printk(KERN_EMERG "%s: calling %s ",__func__,sub_info->path);
+	while(sub_info->argv[i]!=NULL)
+	{
+	    printk("%s",sub_info->argv[i++]);
+	}
+	printk("\n");*/
 
 	/* Unblock all signals and set the session keyring. */
 	new_session = key_get(sub_info->ring);

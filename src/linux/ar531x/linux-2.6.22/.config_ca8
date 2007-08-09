@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.22.1
-# Sat Jul 14 18:15:55 2007
+# Wed Jul 25 12:30:52 2007
 #
 CONFIG_MIPS=y
 
@@ -183,9 +183,8 @@ CONFIG_BASE_FULL=y
 # CONFIG_ANON_INODES is not set
 # CONFIG_SHMEM is not set
 # CONFIG_VM_EVENT_COUNTERS is not set
-# CONFIG_SLUB_DEBUG is not set
-# CONFIG_SLAB is not set
-CONFIG_SLUB=y
+CONFIG_SLAB=y
+# CONFIG_SLUB is not set
 # CONFIG_SLOB is not set
 CONFIG_TINY_SHMEM=y
 CONFIG_BASE_SMALL=0

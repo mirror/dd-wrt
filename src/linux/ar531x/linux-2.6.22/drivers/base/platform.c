@@ -283,8 +283,8 @@ int platform_device_add(struct platform_device *pdev)
 		}
 	}
 
-	pr_debug("Registering platform device '%s'. Parent at %s\n",
-		 pdev->dev.bus_id, pdev->dev.parent->bus_id);
+//	printk(KERN_EMERG "%s: Registering platform device '%s'. Parent at %s\n",__func__,
+//		 pdev->dev.bus_id, pdev->dev.parent->bus_id);
 
 	ret = device_add(&pdev->dev);
 	if (ret == 0)
