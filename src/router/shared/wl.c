@@ -217,8 +217,11 @@ ieee80211_mhz2ieee (u_int freq)
     return 14;
   if (freq < 2484 + OFFSET)
     return (freq - (2407 + OFFSET)) / 5;
-  if (freq < (5000 + OFFSET))
+  if (freq < 4990 && freq > 4940)
+    return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
+  if (freq < 5000)
     return 15 + ((freq - (2512 + OFFSET)) / 20);
+
   return (freq - (5000 + OFFSET)) / 5;
 }
 
@@ -419,7 +422,7 @@ list_channelsext (const char *ifname, int allchans)
       for (i = 0; i < chans.ic_nchans; i++)
 	{
 	  c = &chans.ic_chans[i];
-	  if (isset (active, ieee80211_mhz2ieee (c->ic_freq)) || allchans)
+	  if (isset (active, c->ic_ieee) || allchans)
 	    achans.ic_chans[achans.ic_nchans++] = *c;
 	}
     }
