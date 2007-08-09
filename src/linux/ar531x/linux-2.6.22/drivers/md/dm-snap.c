@@ -522,9 +522,12 @@ static int snapshot_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 
 	/* Metadata must only be loaded into one table at once */
 	r = s->store.read_metadata(&s->store);
-	if (r) {
+	if (r < 0) {
 		ti->error = "Failed to read snapshot metadata";
 		goto bad6;
+	} else if (r > 0) {
+		s->valid = 0;
+		DMWARN("Snapshot is marked invalid.");
 	}
 
 	bio_list_init(&s->queued_bios);
@@ -884,9 +887,6 @@ static int snapshot_map(struct dm_target *ti, struct bio *bio,
 	if (!s->valid)
 		return -EIO;
 
-	if (unlikely(bio_barrier(bio)))
-		return -EOPNOTSUPP;
-
 	/* FIXME: should only take write lock if we need
 	 * to copy an exception */
 	down_write(&s->lock);
@@ -1156,9 +1156,6 @@ static int origin_map(struct dm_target *ti, struct bio *bio,
 {
 	struct dm_dev *dev = (struct dm_dev *) ti->private;
 	bio->bi_bdev = dev->bdev;
-
-	if (unlikely(bio_barrier(bio)))
-		return -EOPNOTSUPP;
 
 	/* Only tell snapshots if this is a write */
 	return (bio_rw(bio) == WRITE) ? do_origin(dev, bio) : DM_MAPIO_REMAPPED;
