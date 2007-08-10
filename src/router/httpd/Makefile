@@ -417,7 +417,7 @@ endif
 
 cert:
 	./gencert.sh
-
+	
 httpd: cgi.o ej.o httpd.o broadcom.o \
        index.o status.o dhcp.o log.o filters.o forward.o dynamic_route.o static_route.o wireless.o ddns.o \
        find_pattern.o lib.o $(ADDOBJ) diag.o wepkey.o md5c.o getservice.o dd-wrt.o nvramsr.o $(OBJS)
