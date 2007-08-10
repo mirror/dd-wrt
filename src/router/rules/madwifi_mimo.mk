@@ -15,9 +15,13 @@ endif
 
 ifeq ($(ARCH),armeb)
 madwifi_mimo:
+ifeq ($(CONFIG_BOESE),y)
+	make -C madwifi_mimo KERNELPATH=$(LINUXDIR) TARGET=xscale-boese-be-elf  
+	make -C madwifi_mimo/tools CFLAGS="-DBOESE=1 $(COPTS)" TARGET=xscale-boese-be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
+else
 	make -C madwifi_mimo KERNELPATH=$(LINUXDIR) TARGET=xscale-$(MADFLAG)be-elf  
 	make -C madwifi_mimo/tools CFLAGS="$(CONFIG_MADWIFIFLAGS) $(COPTS) -DNEED_PRINTF" TARGET=xscale-$(MADFLAG)be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin 
-
+endif
 madwifi_mimo-clean:
 	make -C madwifi_mimo clean KERNELPATH=$(LINUXDIR) TARGET=xscale-$(MADFLAG)be-elf
 	make -C madwifi_mimo/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
