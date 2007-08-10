@@ -2789,7 +2789,7 @@ enum
   REFRESH,
 };
 
-struct gozila_action gozila_actions[] = {
+static struct gozila_action gozila_actions[] = {
   /* SETUP */
   {"index", "wan_proto", "", 1, REFRESH, wan_proto},
   {"index", "dhcpfwd", "", 1, REFRESH, dhcpfwd},
