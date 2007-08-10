@@ -1,4 +1,6 @@
 
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,6 +19,7 @@
 #include <net/route.h>		/* AhMan  March 18 2005 */
 #include <sys/types.h>
 #include <signal.h>
+#include <dlfcn.h>
 
 #include <bcmnvram.h>
 #include <bcmconfig.h>
@@ -44,6 +47,7 @@
 /* AhMan  March 18 2005 */
 void start_tmp_ppp (int num);
 
+void
 del_routes (char *route)
 {
   char word[80], *tmp;
@@ -73,8 +77,6 @@ del_routes (char *route)
 
     route_del (ifname, atoi (metric) + 1, ipaddr, gateway, netmask);
   }
-
-  return 0;
 }
 
 int
@@ -258,6 +260,571 @@ stop_services (void)
 }
 
 
+static void
+handle_dhcpd (void)
+{
+  startstop ("udhcpd");
+}
+static void
+handle_index (void)
+{
+  unlink ("/tmp/ppp/log");
+#ifndef HAVE_MADWIFI
+  stop_service ("nas");
+#endif
+#ifdef HAVE_MADWIFI
+  stop_service ("stabridge");
+#endif
+#ifdef HAVE_VLANTAGGING
+  stop_service ("bridgesif");
+  stop_service ("vlantagging");
+#endif
+#ifdef HAVE_BONDING
+  stop_service ("bonding");
+#endif
+  stop_service ("lan");
+#ifdef HAVE_VLANTAGGING
+  stop_service ("bridging");
+#endif
+  stop_service ("wan");
+#ifdef HAVE_VLANTAGGING
+  start_service ("bridging");
+#endif
+  start_service ("lan");
+#ifdef HAVE_BONDING
+  start_service ("bonding");
+#endif
+#ifdef HAVE_VLANTAGGING
+  start_service ("vlantagging");
+  start_service ("bridgesif");
+#endif
+  start_service ("wan_boot");
+#ifdef HAVE_MADWIFI
+  start_service ("stabridge");
+#endif
+  startstop ("udhcpd");
+  startstop ("dnsmasq");
+#ifndef HAVE_MADWIFI
+  start_service ("nas");
+#ifdef HAVE_MSSID
+  start_service ("guest_nas");
+#endif
+#endif
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
+  startstop ("zebra");
+#endif
+#ifdef HAVE_OLSRD
+  startstop ("olsrd");
+#endif
+  startstop ("firewall");
+  startstop ("httpd");		//httpd will not accept connection anymore on wan/lan ip changes changes
+}
+
+static void
+handle_router (void)
+{
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
+  startstop ("zebra");
+#endif
+#ifdef HAVE_OLSRD
+  startstop ("olsrd");
+#endif
+}
+
+static void
+handle_hotspot (void)
+{
+#ifdef HAVE_WIFIDOG
+  startstop ("wifidog");
+#endif
+#ifdef HAVE_NOCAT
+  startstop ("splashd");
+#endif
+#ifdef HAVE_CHILLI
+  startstop ("chilli");
+#endif
+#ifdef HAVE_SPUTNIK_APD
+  startstop ("sputnik");
+#endif
+  eval ("/etc/config/http-redirect.firewall");
+  eval ("/etc/config/smtp-redirect.firewall");
+
+
+}
+
+static void
+handle_services (void)
+{
+#ifdef HAVE_PPPOERELAY
+  startstop ("pppoerelay");
+#endif
+  startstop ("udhcpd");
+  startstop ("syslog");
+#ifdef HAVE_RSTATS
+  startstop ("rstats");
+#endif
+#ifdef HAVE_NSTX
+  startstop ("nstxd");
+#endif
+#ifdef HAVE_PPPOESERVER
+  startstop ("firewall");
+  startstop ("pppoeserver");
+#endif
+  startstop ("dnsmasq");
+  startstop ("udhcpd");
+#ifdef HAVE_CPUTEMP
+  start_service ("hwmon");
+#endif
+#ifdef HAVE_TELNET
+#ifdef HAVE_REGISTER
+  if (isregistered ())
+#endif
+    startstop ("telnetd");
+#endif
+#ifdef HAVE_SNMP
+  startstop ("snmp");
+#endif
+#ifdef HAVE_OPENVPN
+  startstop ("openvpn");
+#endif
+#ifdef HAVE_PPTPD
+  startstop ("pptpd");
+#endif
+#ifdef HAVE_PPTP
+  eval ("/etc/config/pptpd_client.startup");
+#endif
+#ifdef HAVE_RFLOW
+  eval ("/etc/config/rflow.startup");
+#endif
+#ifdef HAVE_KAID
+  eval ("/etc/config/kaid.startup");
+#endif
+#ifdef HAVE_SSHD
+#ifdef HAVE_REGISTER
+  if (isregistered ())
+#endif
+    startstop ("sshd");
+#endif
+  startstop ("firewall");
+  startstop ("syslog");
+#ifdef HAVE_NEWMEDIA
+  startstop ("openvpnserversys");
+#endif
+
+}
+
+static void
+handle_management (void)
+{
+#ifndef HAVE_MADWIFI
+  stop_service ("nas");
+#endif
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
+  stop_service ("zebra");
+#endif
+  stop_service ("cron");
+  stop_service ("udhcpd");
+  start_service ("udhcpd");
+  start_service ("cron");
+#ifdef HAVE_IPV6
+  start_service ("ipv6");
+#endif
+#ifdef HAVE_RADVD
+  startstop ("radvd");
+#endif
+#ifdef HAVE_PPTPD
+  startstop ("pptpd");
+#endif
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
+  start_service ("zebra");
+#endif
+  startstop ("firewall");
+  startstop ("wshaper");
+  startstop ("httpd");
+
+#ifdef HAVE_WOL
+  startstop ("wol");
+#endif
+#ifndef HAVE_MADWIFI
+  start_service ("nas");
+#ifdef HAVE_MSSID
+  start_service ("guest_nas");
+#endif
+#endif
+
+}
+
+static void
+handle_pppoe (void)
+{
+  unlink ("/tmp/ppp/log");
+#ifndef HAVE_MADWIFI
+  stop_service ("nas");
+#endif
+#ifdef HAVE_MADWIFI
+  stop_service ("stabridge");
+#endif
+#ifdef HAVE_VLANTAGGING
+  stop_service ("bridgesif");
+  stop_service ("vlantagging");
+#endif
+  stop_service ("lan");
+#ifdef HAVE_BONDING
+  stop_service ("bonding");
+#endif
+#ifdef HAVE_VLANTAGGING
+  stop_service ("bridging");
+#endif
+  stop_service ("wan");
+#ifdef HAVE_VLANTAGGING
+  start_service ("bridging");
+#endif
+  start_service ("lan");
+#ifdef HAVE_BONDING
+  start_service ("bonding");
+#endif
+#ifdef HAVE_VLANTAGGING
+  start_service ("vlantagging");
+  start_service ("bridgesif");
+#endif
+  start_service ("wan_boot");
+#ifdef HAVE_MADWIFI
+  start_service ("stabridge");
+#endif
+#ifndef HAVE_MADWIFI
+  start_service ("nas");
+#ifdef HAVE_MSSID
+  start_service ("guest_nas");
+#endif
+#endif
+
+}
+static void
+handle_spppoe (void)
+{
+  stop_service ("wan");
+}
+static void
+handle_filters (void)
+{
+  stop_service ("cron");
+  startstop ("firewall");
+  startstop ("syslog");
+  startstop ("wshaper");
+  start_service ("cron");
+  startstop ("igmp_proxy");
+}
+static void
+handle_routing (void)
+{
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
+  stop_service ("zebra");
+#endif
+  startstop ("firewall");
+  start_service ("set_routes");
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
+  start_service ("zebra");
+#endif
+#ifdef HAVE_OLSRD
+  startstop ("olsrd");
+#endif
+
+}
+
+static void
+handle_alive (void)
+{
+  eval ("/etc/config/wdswatchdog.startup");
+  eval ("/etc/config/schedulerb.startup");
+  eval ("/etc/config/proxywatchdog.startup");
+
+}
+
+static void
+handle_forward (void)
+{
+  stop_service ("wshaper");
+  stop_service ("upnp");
+  stop_service ("firewall");
+  start_service ("firewall");
+  start_service ("upnp");
+  start_service ("wshaper");
+
+}
+static void
+handle_qos (void)
+{
+  startstop ("wshaper");
+}
+
+static void
+handle_forwardupnp (void)
+{
+#ifdef HAVE_UPNP
+  stop_service ("upnp");
+#endif
+  stop_service ("firewall");
+#ifdef HAVE_UPNP
+  start_service ("upnp");
+#endif
+  start_service ("firewall");
+  startstop ("wshaper");
+
+}
+
+static void
+handle_routedel (void)
+{
+  del_routes (nvram_safe_get ("action_service_arg1"));
+
+}
+struct SERVICES
+{
+  char *servicename;
+  void (*service) (void);
+};
+
+static void
+handle_ddns (void)
+{
+  startstop ("ddns");
+  nvram_set ("ddns_change", "update");
+
+}
+static void
+handle_ping (void)
+{
+  char *ip = nvram_safe_get ("ping_ip");
+  // use Ping.asp as a debugging console
+  char cmd[256] = { 0 };
+  //snprintf (cmd, sizeof (cmd), "%s > %s 2>&1 &", ip, PING_TMP);
+  setenv ("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
+//      snprintf (cmd, sizeof (cmd), "%s 2>&1 &", ip);
+//      system (cmd);
+
+  snprintf (cmd, sizeof (cmd),
+	    "alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip,
+	    PING_TMP);
+  system (cmd);
+
+}
+
+static void
+handle_upgrade (void)
+{
+  stop_service ("wan");
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
+  stop_service ("zebra");
+#endif
+#ifdef HAVE_OLSRD
+  stop_service ("olsrd");
+#endif
+#ifdef HAVE_UPNP
+  stop_service ("upnp");
+#endif
+  stop_service ("cron");
+
+}
+
+#ifdef HAVE_MIKLFISH
+static void
+handle_milkfish (void)
+{
+  stop_service ("milkfish");
+  start_service ("milkfish");
+
+}
+#endif
+static void
+handle_wireless (void)
+{
+#ifndef HAVE_MADWIFI
+  eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
+#endif
+
+#ifndef HAVE_MADWIFI
+  stop_service ("nas");
+#endif
+#ifdef HAVE_MADWIFI
+  stop_service ("stabridge");
+#endif
+  stop_service ("wan");
+#ifdef HAVE_VLANTAGGING
+  stop_service ("bridgesif");
+  stop_service ("vlantagging");
+#endif
+#ifdef HAVE_BONDING
+  stop_service ("bonding");
+#endif
+  stop_service ("lan");
+#ifdef HAVE_VLANTAGGING
+  stop_service ("bridging");
+#endif
+#ifndef HAVE_MSSID
+  if (nvram_match ("wl_akm", "wpa") ||
+      nvram_match ("wl_akm", "psk") ||
+      nvram_match ("wl_akm", "psk2") ||
+      nvram_match ("wl_akm", "wpa2") ||
+      nvram_match ("wl_akm", "psk psk2") ||
+      nvram_match ("wl_akm", "wpa wpa2") || nvram_match ("wl_akm", "radius"))
+    sleep (4);
+#endif
+#ifndef HAVE_MADWIFI
+  start_service ("wlconf");
+#endif
+#ifdef HAVE_VLANTAGGING
+  start_service ("bridging");
+#endif
+  start_service ("lan");
+#ifdef HAVE_BONDING
+  start_service ("bonding");
+#endif
+#ifdef HAVE_VLANTAGGING
+  start_service ("vlantagging");
+  start_service ("bridgesif");
+#endif
+  start_service ("wan");
+#ifdef HAVE_MADWIFI
+  start_service ("stabridge");
+#endif
+#ifndef HAVE_MADWIFI
+  start_service ("nas");
+#ifdef HAVE_MSSID
+  start_service ("guest_nas");
+#endif
+#endif
+  startstop ("httpd");		//httpd will not accept connection anymore on wan/lan ip changes changes
+
+}
+static void
+handle_wireless_2 (void)
+{
+  stop_service ("radio_timer");
+#ifndef HAVE_MADWIFI
+  eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
+#endif
+
+#ifndef HAVE_MADWIFI
+  stop_service ("nas");
+#endif
+#ifdef HAVE_MADWIFI
+  stop_service ("stabridge");
+#endif
+  if (nvram_match ("wl0_mode", "sta")
+      || nvram_match ("wl0_mode", "apsta")
+      || nvram_match ("wl0_mode", "apstawet"))
+    stop_service ("wan");
+#ifdef HAVE_VLANTAGGING
+  stop_service ("bridgesif");
+  stop_service ("vlantagging");
+#endif
+#ifdef HAVE_BONDING
+  stop_service ("bonding");
+#endif
+  stop_service ("lan");
+#ifdef HAVE_VLANTAGGING
+  stop_service ("bridging");
+#endif
+#ifndef HAVE_MSSID
+  if (nvram_match ("wl_akm", "wpa") ||
+      nvram_match ("wl_akm", "psk") ||
+      nvram_match ("wl_akm", "psk2") ||
+      nvram_match ("wl_akm", "wpa2") ||
+      nvram_match ("wl_akm", "psk psk2") ||
+      nvram_match ("wl_akm", "wpa wpa2") || nvram_match ("wl_akm", "radius"))
+    sleep (4);
+#endif
+#ifndef HAVE_MADWIFI
+  start_service ("wlconf");
+#endif
+#ifdef HAVE_VLANTAGGING
+  start_service ("bridging");
+#endif
+  start_service ("lan");
+#ifdef HAVE_BONDING
+  start_service ("bonding");
+#endif
+#ifdef HAVE_VLANTAGGING
+  start_service ("vlantagging");
+  start_service ("bridgesif");
+#endif
+  if (nvram_match ("wl0_mode", "sta")
+      || nvram_match ("wl0_mode", "apsta")
+      || nvram_match ("wl0_mode", "apstawet"))
+    start_service ("wan");
+#ifdef HAVE_MADWIFI
+  start_service ("stabridge");
+#endif
+#ifndef HAVE_MADWIFI
+  start_service ("nas");
+#ifdef HAVE_MSSID
+  start_service ("guest_nas");
+#endif
+#endif
+  start_service ("radio_timer");
+  if (nvram_match ("wl0_mode", "sta")
+      || nvram_match ("wl0_mode", "apsta")
+      || nvram_match ("wl0_mode", "apstawet"))
+    startstop ("httpd");	//httpd will not accept connection anymore on wan/lan ip changes changes
+#ifdef HAVE_MADWIFI
+  start_service ("hostapdwan");
+#endif
+
+}
+
+static void
+handle_dhcp_release (void)
+{
+  killall ("udhcpc", SIGUSR2);
+  sleep (1);
+
+}
+
+#ifdef HAVE_EOP_TUNNEL
+static void
+handle_eop (void)
+{
+  eval ("/etc/config/eop-tunnel.startup");
+  eval ("/etc/config/eop-tunnel.firewall");
+
+}
+#endif
+static struct SERVICES services_def[] = {
+  {"dhcp", handle_dhcpd},
+  {"index", handle_index},
+  {"router", handle_router},
+  {"hotspot", handle_hotspot},
+  {"services", handle_services},
+  {"management", handle_management},
+  {"start_pppoe", handle_pppoe},
+  {"start_pptp", handle_pppoe},
+  {"start_l2tp", handle_pppoe},
+  {"start_heartbeat", handle_pppoe},
+  {"stop_pppoe", handle_spppoe},
+  {"stop_pptp", handle_spppoe},
+  {"stop_l2tp", handle_spppoe},
+  {"stop_heartbeat", handle_spppoe},
+  {"filters", handle_filters},
+  {"routing", handle_routing},
+  {"alive", handle_alive},
+  {"forward", handle_forward},
+  {"qos", handle_qos},
+  {"forward_upnp", handle_forwardupnp},
+  {"static_route_del", handle_routedel},
+  {"ddns", handle_ddns},
+  {"start_ping", handle_ping},
+  {"http_upgrade", handle_upgrade},
+#ifdef HAVE_MIKLFISH
+  {"milkfish", handle_milkfish},
+#endif
+  {"wireless", handle_wireless},
+  {"wireless2", handle_wireless_2},
+  {"dhcp_release", handle_dhcp_release},
+#ifdef HAVE_EOP_TUNNEL
+  {"eop", handle_eop},
+#endif
+  {NULL, NULL}
+};
 
 int
 start_single_service (void)
@@ -271,519 +838,17 @@ start_single_service (void)
   foreach (service, services, next)
   {
     cprintf ("Restart service=[%s]\n", service);
-
-    if (!strcmp (service, "dhcp"))
+    int servicecount = 0;
+    while (services_def[servicecount].servicename != NULL)
       {
-	startstop ("udhcpd");
+	if (!strcmp (services_def[servicecount].servicename, service))
+	  services_def[servicecount].service ();
+	servicecount++;
       }
-    else if (!strcmp (service, "index"))
-      {
-	unlink ("/tmp/ppp/log");
-#ifndef HAVE_MADWIFI
-	stop_service ("nas");
-#endif
-#ifdef HAVE_MADWIFI
-	stop_service ("stabridge");
-#endif
-#ifdef HAVE_VLANTAGGING
-	stop_service ("bridgesif");
-	stop_service ("vlantagging");
-#endif
-#ifdef HAVE_BONDING
-	stop_service ("bonding");
-#endif
-	stop_service ("lan");
-#ifdef HAVE_VLANTAGGING
-	stop_service ("bridging");
-#endif
-	stop_service ("wan");
-#ifdef HAVE_VLANTAGGING
-	start_service ("bridging");
-#endif
-	start_service ("lan");
-#ifdef HAVE_BONDING
-	start_service ("bonding");
-#endif
-#ifdef HAVE_VLANTAGGING
-	start_service ("vlantagging");
-	start_service ("bridgesif");
-#endif
-	start_service ("wan_boot");
-#ifdef HAVE_MADWIFI
-	start_service ("stabridge");
-#endif
-	startstop ("udhcpd");
-	startstop ("dnsmasq");
-#ifndef HAVE_MADWIFI
-	start_service ("nas");
-#ifdef HAVE_MSSID
-	start_service ("guest_nas");
-#endif
-#endif
-#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	startstop ("zebra");
-#endif
-#ifdef HAVE_OLSRD
-	startstop ("olsrd");
-#endif
-	startstop ("firewall");
-	startstop ("httpd");	//httpd will not accept connection anymore on wan/lan ip changes changes
-      }
-/*// moved to filters (Firewall web GUI)    
-  else if (!strcmp (service, "logging"))
-    {
-      startstop ("firewall");
-      startstop ("syslog");
-    }
-*/
-/* Sveasoft addition */
-    else if (!strcmp (service, "router"))
-      {
-#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	startstop ("zebra");
-#endif
-#ifdef HAVE_OLSRD
-	startstop ("olsrd");
-#endif
-      }
-    else if (!strcmp (service, "hotspot"))
-      {
-#ifdef HAVE_WIFIDOG
-	startstop ("wifidog");
-#endif
-#ifdef HAVE_NOCAT
-	startstop ("splashd");
-#endif
-#ifdef HAVE_CHILLI
-	startstop ("chilli");
-#endif
-#ifdef HAVE_SPUTNIK_APD
-	startstop ("sputnik");
-#endif
-	eval ("/etc/config/http-redirect.firewall");
-	eval ("/etc/config/smtp-redirect.firewall");
-
-      }
-    else if (!strcmp (service, "services"))
-      {
-#ifdef HAVE_PPPOERELAY
-	startstop ("pppoerelay");
-#endif
-	startstop ("udhcpd");
-	startstop ("syslog");
-#ifdef HAVE_RSTATS
-	startstop ("rstats");
-#endif
-#ifdef HAVE_NSTX
-	startstop ("nstxd");
-#endif
-#ifdef HAVE_PPPOESERVER
-	startstop ("firewall");
-	startstop ("pppoeserver");
-#endif
-	startstop ("dnsmasq");
-	startstop ("udhcpd");
-#ifdef HAVE_CPUTEMP
-	start_service ("hwmon");
-#endif
-#ifdef HAVE_TELNET
-#ifdef HAVE_REGISTER
-	if (isregistered ())
-#endif
-	  startstop ("telnetd");
-#endif
-#ifdef HAVE_SNMP
-	startstop ("snmp");
-#endif
-#ifdef HAVE_OPENVPN
-	startstop ("openvpn");
-#endif
-#ifdef HAVE_PPTPD
-	startstop ("pptpd");
-#endif
-#ifdef HAVE_PPTP
-	eval ("/etc/config/pptpd_client.startup");
-#endif
-#ifdef HAVE_RFLOW
-	eval ("/etc/config/rflow.startup");
-#endif
-#ifdef HAVE_KAID
-	eval ("/etc/config/kaid.startup");
-#endif
-#ifdef HAVE_SSHD
-#ifdef HAVE_REGISTER
-	if (isregistered ())
-#endif
-	  startstop ("sshd");
-#endif
-	startstop ("firewall");
-	startstop ("syslog");
-#ifdef HAVE_NEWMEDIA
-	startstop ("openvpnserversys");
-#endif
-      }
-    else if (!strcmp (service, "management"))
-      {
-#ifndef HAVE_MADWIFI
-	stop_service ("nas");
-#endif
-#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	stop_service ("zebra");
-#endif
-	stop_service ("cron");
-	stop_service ("udhcpd");
-	start_service ("udhcpd");
-	start_service ("cron");
-#ifdef HAVE_IPV6
-	start_service ("ipv6");
-#endif
-#ifdef HAVE_RADVD
-	startstop ("radvd");
-#endif
-#ifdef HAVE_PPTPD
-	startstop ("pptpd");
-#endif
-#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	start_service ("zebra");
-#endif
-	startstop ("firewall");
-	startstop ("wshaper");
-	startstop ("httpd");
-
-#ifdef HAVE_WOL
-	startstop ("wol");
-#endif
-#ifndef HAVE_MADWIFI
-	start_service ("nas");
-#ifdef HAVE_MSSID
-	start_service ("guest_nas");
-#endif
-#endif
-
-      }
-
-/* end Sveasoft additon */
-    else if (!strcmp (service, "start_pppoe")
-	     || !strcmp (service, "start_pptp")
-	     || !strcmp (service, "start_l2tp")
-	     || !strcmp (service, "start_heartbeat"))
-      {
-	unlink ("/tmp/ppp/log");
-#ifndef HAVE_MADWIFI
-	stop_service ("nas");
-#endif
-#ifdef HAVE_MADWIFI
-	stop_service ("stabridge");
-#endif
-#ifdef HAVE_VLANTAGGING
-	stop_service ("bridgesif");
-	stop_service ("vlantagging");
-#endif
-	stop_service ("lan");
-#ifdef HAVE_BONDING
-	stop_service ("bonding");
-#endif
-#ifdef HAVE_VLANTAGGING
-	stop_service ("bridging");
-#endif
-	stop_service ("wan");
-#ifdef HAVE_VLANTAGGING
-	start_service ("bridging");
-#endif
-	start_service ("lan");
-#ifdef HAVE_BONDING
-	start_service ("bonding");
-#endif
-#ifdef HAVE_VLANTAGGING
-	start_service ("vlantagging");
-	start_service ("bridgesif");
-#endif
-	start_service ("wan_boot");
-#ifdef HAVE_MADWIFI
-	start_service ("stabridge");
-#endif
-#ifndef HAVE_MADWIFI
-	start_service ("nas");
-#ifdef HAVE_MSSID
-	start_service ("guest_nas");
-#endif
-#endif
-      }
-    else if (!strcmp (service, "stop_pppoe") || !strcmp (service, "stop_pptp")
-	     || !strcmp (service, "stop_l2tp")
-	     || !strcmp (service, "stop_heartbeat"))
-      {
-	stop_service ("wan");
-      }
-    else if (!strcmp (service, "filters"))
-      {
-	stop_service ("cron");
-	startstop ("firewall");
-	startstop ("syslog");
-	startstop ("wshaper");
-	start_service ("cron");
-	startstop ("igmp_proxy");
-      }
-    else if (!strcmp (service, "routing"))
-      {
-#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	stop_service ("zebra");
-#endif
-	startstop ("firewall");
-	start_service ("set_routes");
-#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	start_service ("zebra");
-#endif
-#ifdef HAVE_OLSRD
-	startstop ("olsrd");
-#endif
-      }
-    else if (!strcmp (service, "alive"))
-      {
-	eval ("/etc/config/wdswatchdog.startup");
-	eval ("/etc/config/schedulerb.startup");
-	eval ("/etc/config/proxywatchdog.startup");
-      }
-    else if (!strcmp (service, "forward"))
-      {
-	stop_service ("wshaper");
-	stop_service ("upnp");
-	stop_service ("firewall");
-	start_service ("firewall");
-	start_service ("upnp");
-	start_service ("wshaper");
-      }
-    else if (!strcmp (service, "qos"))
-      {
-	startstop ("wshaper");
-      }
-    else if (!strcmp (service, "forward_upnp"))
-      {
-#ifdef HAVE_UPNP
-	stop_service ("upnp");
-#endif
-	stop_service ("firewall");
-#ifdef HAVE_UPNP
-	start_service ("upnp");
-#endif
-	start_service ("firewall");
-	startstop ("wshaper");
-      }
-    else if (!strcmp (service, "static_route_del"))
-      {
-	del_routes (nvram_safe_get ("action_service_arg1"));
-      }
-    else if (!strcmp (service, "ddns"))
-      {
-	startstop ("ddns");
-	nvram_set ("ddns_change", "update");
-      }
-    else if (!strcmp (service, "start_ping"))
-      {
-	char *ip = nvram_safe_get ("ping_ip");
-	// use Ping.asp as a debugging console
-	char cmd[256] = { 0 };
-	//snprintf (cmd, sizeof (cmd), "%s > %s 2>&1 &", ip, PING_TMP);
-	setenv ("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
-//      snprintf (cmd, sizeof (cmd), "%s 2>&1 &", ip);
-//      system (cmd);
-
-	snprintf (cmd, sizeof (cmd),
-		  "alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip,
-		  PING_TMP);
-	system (cmd);
-
-      }
-#ifdef HAVE_TFTP
-    else if (!strcmp (service, "tftp_upgrade"))
-      {
-	stop_service ("wan");
-	stop_service ("httpd");
-#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	stop_service ("zebra");
-#endif
-#ifdef HAVE_UPNP
-	stop_service ("upnp");
-#endif
-	stop_service ("cron");
-      }
-#endif
-
-    else if (!strcmp (service, "http_upgrade"))
-      {
-	stop_service ("wan");
-#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	stop_service ("zebra");
-#endif
-#ifdef HAVE_OLSRD
-	stop_service ("olsrd");
-#endif
-#ifdef HAVE_UPNP
-	stop_service ("upnp");
-#endif
-	stop_service ("cron");
-      }
-#ifdef HAVE_MIKLFISH
-    else if (!strcmp (service, "milkfish"))
-      {
-	stop_service ("milkfish");
-	start_service ("milkfish");
-      }
-#endif
-    else if (!strcmp (service, "wireless"))
-      {
-#ifndef HAVE_MADWIFI
-	eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
-#endif
-
-#ifndef HAVE_MADWIFI
-	stop_service ("nas");
-#endif
-#ifdef HAVE_MADWIFI
-	stop_service ("stabridge");
-#endif
-	stop_service ("wan");
-#ifdef HAVE_VLANTAGGING
-	stop_service ("bridgesif");
-	stop_service ("vlantagging");
-#endif
-#ifdef HAVE_BONDING
-	stop_service ("bonding");
-#endif
-	stop_service ("lan");
-#ifdef HAVE_VLANTAGGING
-	stop_service ("bridging");
-#endif
-#ifndef HAVE_MSSID
-	if (nvram_match ("wl_akm", "wpa") ||
-	    nvram_match ("wl_akm", "psk") ||
-	    nvram_match ("wl_akm", "psk2") ||
-	    nvram_match ("wl_akm", "wpa2") ||
-	    nvram_match ("wl_akm", "psk psk2") ||
-	    nvram_match ("wl_akm", "wpa wpa2") ||
-	    nvram_match ("wl_akm", "radius"))
-	  sleep (4);
-#endif
-#ifndef HAVE_MADWIFI
-	start_service ("wlconf");
-#endif
-#ifdef HAVE_VLANTAGGING
-	start_service ("bridging");
-#endif
-	start_service ("lan");
-#ifdef HAVE_BONDING
-	start_service ("bonding");
-#endif
-#ifdef HAVE_VLANTAGGING
-	start_service ("vlantagging");
-	start_service ("bridgesif");
-#endif
-	start_service ("wan");
-#ifdef HAVE_MADWIFI
-	start_service ("stabridge");
-#endif
-#ifndef HAVE_MADWIFI
-	start_service ("nas");
-#ifdef HAVE_MSSID
-	start_service ("guest_nas");
-#endif
-#endif
-	startstop ("httpd");	//httpd will not accept connection anymore on wan/lan ip changes changes
-
-      }
-    else if (!strcmp (service, "wireless_2"))
-      {
-	stop_service ("radio_timer");
-#ifndef HAVE_MADWIFI
-	eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
-#endif
-
-#ifndef HAVE_MADWIFI
-	stop_service ("nas");
-#endif
-#ifdef HAVE_MADWIFI
-	stop_service ("stabridge");
-#endif
-	if (nvram_match ("wl0_mode", "sta")
-	    || nvram_match ("wl0_mode", "apsta")
-	    || nvram_match ("wl0_mode", "apstawet"))
-	  stop_service ("wan");
-#ifdef HAVE_VLANTAGGING
-	stop_service ("bridgesif");
-	stop_service ("vlantagging");
-#endif
-#ifdef HAVE_BONDING
-	stop_service ("bonding");
-#endif
-	stop_service ("lan");
-#ifdef HAVE_VLANTAGGING
-	stop_service ("bridging");
-#endif
-#ifndef HAVE_MSSID
-	if (nvram_match ("wl_akm", "wpa") ||
-	    nvram_match ("wl_akm", "psk") ||
-	    nvram_match ("wl_akm", "psk2") ||
-	    nvram_match ("wl_akm", "wpa2") ||
-	    nvram_match ("wl_akm", "psk psk2") ||
-	    nvram_match ("wl_akm", "wpa wpa2") ||
-	    nvram_match ("wl_akm", "radius"))
-	  sleep (4);
-#endif
-#ifndef HAVE_MADWIFI
-	start_service ("wlconf");
-#endif
-#ifdef HAVE_VLANTAGGING
-	start_service ("bridging");
-#endif
-	start_service ("lan");
-#ifdef HAVE_BONDING
-	start_service ("bonding");
-#endif
-#ifdef HAVE_VLANTAGGING
-	start_service ("vlantagging");
-	start_service ("bridgesif");
-#endif
-	if (nvram_match ("wl0_mode", "sta")
-	    || nvram_match ("wl0_mode", "apsta")
-	    || nvram_match ("wl0_mode", "apstawet"))
-	  start_service ("wan");
-#ifdef HAVE_MADWIFI
-	start_service ("stabridge");
-#endif
-#ifndef HAVE_MADWIFI
-	start_service ("nas");
-#ifdef HAVE_MSSID
-	start_service ("guest_nas");
-#endif
-#endif
-	start_service ("radio_timer");
-	if (nvram_match ("wl0_mode", "sta")
-	    || nvram_match ("wl0_mode", "apsta")
-	    || nvram_match ("wl0_mode", "apstawet"))
-	  startstop ("httpd");	//httpd will not accept connection anymore on wan/lan ip changes changes
-#ifdef HAVE_MADWIFI	  
-	start_service("hostapdwan");
-#endif	
-      }
-    else if (!strcmp (service, "dhcp_release"))
-      {
-	char sigusr[] = "-XX";
-	sprintf (sigusr, "-%d", SIGUSR2);
-	//killps("udhcpc",sigusr);
-	killall ("udhcpc", sigusr);
-	sleep (1);
-      }
-#ifdef HAVE_EOP_TUNNEL
-    else if (!strcmp (service, "eop"))
-      {
-	eval ("/etc/config/eop-tunnel.startup");
-	eval ("/etc/config/eop-tunnel.firewall");
-      }
-#endif
   }
-  
-  nvram_unset("action_service");
-  nvram_unset("action_service_arg1");
+
+  nvram_unset ("action_service");
+  nvram_unset ("action_service_arg1");
   return 0;
 }
 

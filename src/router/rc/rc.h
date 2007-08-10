@@ -292,7 +292,7 @@ extern int ipupdate_main (int argc, char **argv);
 extern int gpio_main (int argc, char **argv);
 extern int redial_main (int argc, char **argv);
 
-extern int del_routes (char *route);
+extern void del_routes (char *route);
 
 extern int start_single_service (void);
 
