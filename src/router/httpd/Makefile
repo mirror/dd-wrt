@@ -43,7 +43,7 @@ REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
 
 ifeq ($(CONFIG_SPECIALEDITION),y)
 CFLAGS += -DHAVE_SPECIALEDITION
-ADDOBJ = special.c
+ADDOBJ = special.o
 endif
 
 ifeq ($(CONFIG_ANTIFLASH),y)
@@ -86,10 +86,10 @@ CFLAGS += -DHAVE_BUFFALO -DDEFAULT_COUNTRY_CODE=\"$(CONFIG_DEFAULT_COUNTRYCODE)\
 endif
 ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
-OBJS += upgrade_rb500.c
+OBJS += upgrade_rb500.o
 else
 ifneq ($(CONFIG_X86),y)
-OBJS += upgrade.c
+OBJS += upgrade.o
 CFLAGS += -DHAVE_LOUD
 endif
 endif
@@ -124,7 +124,7 @@ endif
 
 ifeq ($(CONFIG_X86),y)
 CFLAGS += -DHAVE_X86
-OBJS += upgrade_x86.c
+OBJS += upgrade_x86.o
 endif
 
 ifeq ($(CONFIG_MAGICBOX),y)
@@ -222,11 +222,11 @@ endif
 
 ifeq ($(CONFIG_SPUTNIK_APD),y)
 CFLAGS += -DHAVE_SPUTNIK_APD
-OBJS += sputnik.c
+OBJS += sputnik.o
 endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
-OBJS += crc.c register.c
+OBJS += crc.o register.o
 endif
 #ifeq ($(HSIAB_SUPPORT),1)
 #CFLAGS += -I$(TOP)/hsiab
@@ -248,7 +248,7 @@ endif
 
 
 ifeq ($(DDM_SUPPORT),1)
-OBJS  += ddm.c
+OBJS  += ddm.o
 endif
 
 ifeq ($(CONFIG_ZEROIP),y)
@@ -333,38 +333,38 @@ CFLAGS += -DCONFIG_BRANDING
 endif
 
 ifeq ($(ARP_TABLE_SUPPORT),1)
-OBJS  += arp.c
+OBJS  += arp.o
 endif
 ifeq ($(EMI_TEST),1)
-OBJS  += emi_test.c
+OBJS  += emi_test.o
 endif
 ifeq ($(DEBUG_WEB),1)
 CFLAGS += -DMY_DEBUG
 endif
 ifeq ($(WAKE_ON_LAN_SUPPORT),1)
-OBJS  += wol.c
+OBJS  += wol.o
 endif
 ifeq ($(SAMBA_SUPPORT),1)
-OBJS  += samba.c
+OBJS  += samba.o
 endif
 #ifeq ($(HW_QOS_SUPPORT),1)
 #OBJS  += qos.o
 #endif
 ifeq ($(PERFORMANCE_SUPPORT),1)
-OBJS  += performance.c
+OBJS  += performance.o
 endif
 #ifeq ($(WL_STA_SUPPORT),1)
-OBJS  += site_survey.c
+OBJS  += site_survey.o
 #endif
 
 ifeq ($(CONFIG_PPPOESERVER),y)
 CFLAGS += -DHAVE_PPPOESERVER
-OBJS += chaps.c
+OBJS += chaps.o
 endif
 
 ifeq ($(CONFIG_MILKFISH),y)
 CFLAGS += -DHAVE_MILKFISH
-OBJS += milkfish.c
+OBJS += milkfish.o
 endif
 
 #OBJS += http.o
@@ -385,7 +385,7 @@ CFLAGS += -I$(TOP)/matrixssl
 LDFLAGS += -L$(TOP)/matrixssl/src -lmatrixsslstatic -lpthread
 CFLAGS += -DHAVE_MATRIXSSL
 CFLAGS += -DHAVE_HTTPS
-OBJS += matrixssl_xface.c
+OBJS += matrixssl_xface.o
 endif
 
 endif
@@ -418,9 +418,9 @@ endif
 cert:
 	./gencert.sh
 
-httpd: cgi.c ej.c httpd.c broadcom.c \
-       index.c status.c dhcp.c log.c filters.c forward.c dynamic_route.c static_route.c wireless.c ddns.c \
-       find_pattern.c lib.c $(ADDOBJ) diag.c wepkey.c md5c.c getservice.c dd-wrt.c nvramsr.c $(OBJS)
+httpd: cgi.o ej.o httpd.o broadcom.o \
+       index.o status.o dhcp.o log.o filters.o forward.o dynamic_route.o static_route.o wireless.o ddns.o \
+       find_pattern.o lib.o $(ADDOBJ) diag.o wepkey.o md5c.o getservice.o dd-wrt.o nvramsr.o $(OBJS)
 	gcc -o write_web write_web.c
 	./write_web www 
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
