@@ -147,5 +147,6 @@ obj-$(CONFIG_BMON) += bmon
 obj-$(CONFIG_HOSTAPD2) += hostapd2
 obj-$(CONFIG_WPA_SUPPLICANT2) += wpa_supplicant2
 obj-$(CONFIG_MIITOOL) += net-tools
+obj-$(CONFIG_TOR) += tor
 
 
