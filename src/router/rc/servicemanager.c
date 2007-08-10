@@ -98,6 +98,38 @@ start_service (char *name)
   cprintf ("start_sevice done()\n");
 }
 
+int
+start_service_fork (char *name)
+{
+//  lcdmessaged("Starting Service",name);
+  cprintf ("start_service\n");
+  char service[64];
+  sprintf (service, "/etc/config/%s", name);
+  FILE *ck = fopen (service, "rb");
+  if (ck != NULL)
+    {
+      fclose (ck);
+      cprintf ("found shell based service %s\n", service);
+      return system (service);
+    }
+  void *handle = load_service (name);
+  if (handle == NULL)
+    {
+      return -1;
+    }
+  void (*fptr) (void);
+  sprintf (service, "start_%s", name);
+  cprintf ("resolving %s\n", service);
+  fptr = (void (*)(void)) dlsym (handle, service);
+  if (fptr)
+    (*fptr) ();
+  else
+    fprintf (stderr, "function %s not found \n", service);
+  dlclose (handle);
+  return 0;
+  cprintf ("start_sevice done()\n");
+}
+
 
 void *
 start_service_nofree (char *name, void *handle)
