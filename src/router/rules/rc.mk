@@ -1,2 +1,2 @@
-rc: nvram shared
+rc: nvram shared libnet
 
