@@ -1,7 +1,7 @@
 busybox-config: 
 	cd busybox && rm -f Config.h && ln -sf configs/$(CONFIG_BUSYBOX_CONFIG).h Config.h
 
-busybox: busybox-config rc net-tools
+busybox: busybox-config net-tools bird dropbear rflow dhcpforwarder
 ifeq ($(ARCH),mipsel)
 ifeq ($(CONFIG_DIST),"micro")
 	cp busybox/.config_micro busybox/.config
