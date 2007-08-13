@@ -172,13 +172,13 @@ containsMAC (char *ip)
 }
 
 
-static int
+static void
 do_aqos_check (void)
 {
   if (!nvram_invmatch ("wshaper_enable", "0"))
-    return 0;
+    return;
   if (nvram_match ("qos_done", "0"))
-    return 0;
+    return;
 
   FILE *arp = fopen ("/proc/net/arp", "rb");
   char ip_buf[32];
@@ -263,7 +263,7 @@ do_aqos_check (void)
 }
 #endif
 #ifndef HAVE_MADWIFI
-static int
+static void
 do_ap_check (void)
 {
 
@@ -272,7 +272,7 @@ do_ap_check (void)
   start_service ("wds_check");
 //  do_wds_check ();
 
-  return 0;
+  return;
 }
 
 int
@@ -298,7 +298,7 @@ checkbssid (void)
 
 /* for Client/Wet mode */
 /* be nice to rewrite this to use sta_info_t if we had proper Broadcom API specs */
-static int
+static void
 do_client_check (void)
 {
   FILE *fp = NULL;
@@ -344,7 +344,7 @@ do_client_check (void)
 #endif
     }
   fclose (fp);
-  return 0;
+  return;
 }
 #endif
 
@@ -508,24 +508,24 @@ setACK (void)
   char *name = get_wdev ();
   if ((v = nvram_get ("wl0_distance")))
     {
-      
+
       rw_reg_t reg;
       uint32 shm;
 
       int val = atoi (v);
-      if (val!=0)
-      {
-      val = 9 + (val / 150) + ((val % 150) ? 1 : 0);
+      if (val != 0)
+	{
+	  val = 9 + (val / 150) + ((val % 150) ? 1 : 0);
 
-      shm = 0x10;
-      shm |= (val << 16);
-      WL_IOCTL (name, 197, &shm, sizeof (shm));
+	  shm = 0x10;
+	  shm |= (val << 16);
+	  WL_IOCTL (name, 197, &shm, sizeof (shm));
 
-      reg.byteoff = 0x684;
-      reg.val = val + 510;
-      reg.size = 2;
-      WL_IOCTL (name, 102, &reg, sizeof (reg));
-      }
+	  reg.byteoff = 0x684;
+	  reg.val = val + 510;
+	  reg.size = 2;
+	  WL_IOCTL (name, 102, &reg, sizeof (reg));
+	}
     }
 
 }

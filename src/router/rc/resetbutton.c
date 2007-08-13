@@ -262,13 +262,14 @@ period_check (int sig)
 {
   FILE *fp;
   unsigned int val = 0;
-  
-#ifdef HAVE_RADIOOFF  
-  if (initses == 1 && nvram_match ("radiooff_boot_off", "1") && nvram_match ("radiooff_button", "1"))
-  	{
-	 ses_mode = 1;
-	 initses = 0;
- 	}
+
+#ifdef HAVE_RADIOOFF
+  if (initses == 1 && nvram_match ("radiooff_boot_off", "1")
+      && nvram_match ("radiooff_button", "1"))
+    {
+      ses_mode = 1;
+      initses = 0;
+    }
 #endif
 
 //      time_t t;
@@ -329,10 +330,10 @@ period_check (int sig)
     case ROUTER_BUFFALO_WLA2G54C:
       sesgpio = 0x12;		//gpio 2, inversed
       break;
-    case ROUTER_BUFFALO_WBR2G54S:     
+    case ROUTER_BUFFALO_WBR2G54S:
       sesgpio = 0x04;		//gpio 4, normal
-      break;      
-#ifndef HAVE_BUFFALO      
+      break;
+#ifndef HAVE_BUFFALO
     case ROUTER_WRT54G:
     case ROUTER_WRT300N:
       sesgpio = 0x14;		//gpio 4, inversed
@@ -434,8 +435,7 @@ period_check (int sig)
 	      syslog (LOG_DEBUG,
 		      "SES /AOSS /EZ-setup button: turning radio on\n");
 #else
-	      syslog (LOG_DEBUG,
-		      "AOSS button: turning radio on\n");
+	      syslog (LOG_DEBUG, "AOSS button: turning radio on\n");
 #endif
 	    }
 #endif
@@ -465,8 +465,7 @@ period_check (int sig)
 	      syslog (LOG_DEBUG,
 		      "SES /AOSS /EZ-setup button: turning radio off\n");
 #else
-	      syslog (LOG_DEBUG,
-		      "AOSS button: turning radio off\n");
+	      syslog (LOG_DEBUG, "AOSS button: turning radio off\n");
 #endif
 	    }
 #endif
