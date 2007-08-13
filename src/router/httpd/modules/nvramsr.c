@@ -107,13 +107,12 @@ nvram_clear ()
   nvram_getall (buf, NVRAM_SPACE);
   char *p = buf;
   int i;
-  int len = strlen (p);
-  for (i = 0; i < len; i++)
-    if (p[i] == '=')
-      p[i] = 0;
   while (strlen (p) != 0)
     {
       int len = strlen (p);
+      for (i = 0; i < len; i++)
+	if (p[i] == '=')
+	  p[i] = 0;
       if (!isCritical (p))
 	nvram_immed_set (p, NULL);
       p += len + 1;
@@ -290,13 +289,12 @@ nv_file_out (char *path, webs_t wp)
   wfwrite (sign, 6, 1, wp);
   wfputc (backupcount & 255, wp);	//high byte
   wfputc (backupcount >> 8, wp);	//low byte
-  int len = strlen (p);
-  for (i = 0; i < len; i++)
-    if (p[i] == '=')
-      p[i] = 0;
   while (strlen (p) != 0)
     {
       int len = strlen (p);
+      for (i = 0; i < len i++)
+	if (p[i] == '=')
+	  p[i] = 0;
       char *name = p;
       wfputc (strlen (name), wp);
 
