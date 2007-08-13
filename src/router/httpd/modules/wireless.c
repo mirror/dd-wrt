@@ -88,7 +88,7 @@ int generate_key;
 extern void gen_key (char *genstr, int weptype);
 int nv_count;
 extern struct variable variables[];
-																																																																																																																																							    /* channel info structure *///from 11.9
+																																																																																																																																														    /* channel info structure *///from 11.9
 typedef struct
 {
   uint chan;			/* channel number */
@@ -949,7 +949,7 @@ ej_wireless_filter_table (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
-int
+void
 add_active_mac (webs_t wp)
 {
   char buf[1000] = "", *cur = buf;
@@ -989,7 +989,6 @@ add_active_mac (webs_t wp)
 		       wl_client_macs[atoi (index)].hwaddr);
     }
   nvram_set ("wl_active_mac", buf);
-  return 0;
 }
 
 
@@ -1577,7 +1576,7 @@ generate_wep_key (webs_t wp, int key, char *prefix)
   return 1;
 }
 
-int
+void
 generate_key_64 (webs_t wp)
 {
   char *var = websGetVar (wp, "wl_wep_bit", NULL);
@@ -1588,44 +1587,37 @@ generate_key_64 (webs_t wp)
   cprintf ("gen wep key 64");
   generate_key = 1;
 #ifdef HAVE_MADWIFI
-  ret =
-    generate_wep_key (wp, 64, websGetVar (wp, "security_varname", "ath0"));
+ generate_wep_key (wp, 64, websGetVar (wp, "security_varname", "ath0"));
 #else
-  ret = generate_wep_key (wp, 64, websGetVar (wp, "security_varname", "wl"));
+ generate_wep_key (wp, 64, websGetVar (wp, "security_varname", "wl"));
 #endif
-  return ret;
 }
 
-int
+void
 generate_key_128 (webs_t wp)
 {
   char *var = websGetVar (wp, "wl_wep_bit", NULL);
   if (var != NULL)
     nvram_set ("wl_wep_bit", var);
 
-  int ret;
   cprintf ("gen wep key 128");
   generate_key = 1;
 #ifdef HAVE_MADWIFI
-  ret =
-    generate_wep_key (wp, 128, websGetVar (wp, "security_varname", "ath0"));
+  generate_wep_key (wp, 128, websGetVar (wp, "security_varname", "ath0"));
 #else
-  ret = generate_wep_key (wp, 128, websGetVar (wp, "security_varname", "wl"));
+  generate_wep_key (wp, 128, websGetVar (wp, "security_varname", "wl"));
 #endif
-  return ret;
 }
 
-int
+void
 wl_active_onload (webs_t wp, char *arg)
 {
-  int ret = 0;
 
   if (!strcmp (nvram_safe_get ("wl_active_add_mac"), "1"))
     {
       websWrite (wp, arg);
     }
 
-  return ret;
 
 }
 
@@ -1836,7 +1828,7 @@ security_save_prefix (webs_t wp, char *prefix)
   return 0;
 }
 
-int
+void
 security_save (webs_t wp)
 {
   char *value = websGetVar (wp, "action", "");

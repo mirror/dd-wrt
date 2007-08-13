@@ -97,7 +97,7 @@ exec_cmd (char *cmd)
   return line;
 }
 
-int
+void
 show_other_info (webs_t wp)
 {
   int ret = 0;

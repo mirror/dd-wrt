@@ -774,7 +774,7 @@ validate_filter_web (webs_t wp, char *value, struct variable *v)
   D ("everything okay");
 }
 
-int
+void
 validate_filter_tod (webs_t wp)
 {
   char buf[256] = "";
@@ -898,11 +898,10 @@ validate_filter_tod (webs_t wp)
   nvram_set (filter_tod, buf);
   nvram_set (filter_tod_buf, tod_buf);
   D ("everything okay");
-  return 0;
 
 }
 
-int
+void
 delete_policy (webs_t wp, int which)
 {
   char filter_rule[] = "filter_ruleXXX";
@@ -940,26 +939,24 @@ delete_policy (webs_t wp, int which)
   nvram_set (filter_port_grp, "");
   nvram_set (filter_dport_grp, "");
   D ("okay");
-  return 1;
 }
 
-int
+void
 single_delete_policy (webs_t wp)
 {
   addAction ("filters");
-  int ret = 0;
   char *id = nvram_safe_get ("filter_id");
   D ("single delete policy");
-  ret = delete_policy (wp, atoi (id));
+  delete_policy (wp, atoi (id));
   D ("okay");
-  return ret;
+  return;
 }
 
-int
+void
 summary_delete_policy (webs_t wp)
 {
   addAction ("filters");
-  int i, ret = 0;
+  int i;
   D ("summary delete policy");
   for (i = 1; i <= 10; i++)
     {
@@ -968,13 +965,12 @@ summary_delete_policy (webs_t wp)
       snprintf (filter_sum, sizeof (filter_sum), "sum%d", i);
       sum = websGetVar (wp, filter_sum, NULL);
       if (sum)
-	ret += delete_policy (wp, i);
+	delete_policy (wp, i);
     }
   D ("okay");
-  return ret;
 }
 
-int
+void
 save_policy (webs_t wp)
 {
   char *f_id, *f_name, *f_status, *f_status2;
@@ -998,25 +994,25 @@ save_policy (webs_t wp)
     {
       error_value = 1;
       D ("invalid");
-      return -1;
+      return;
     }
   if (!valid_range (wp, f_id, &which[0]))
     {
       error_value = 1;
       D ("invalid");
-      return -1;
+      return;
     }
   if (!valid_choice (wp, f_status, &which[1]))
     {
       error_value = 1;
       D ("invalid");
-      return -1;
+      return;
     }
   if (!valid_choice (wp, f_status2, &which[2]))
     {
       error_value = 1;
       D ("invalid");
-      return -1;
+      return;
     }
 
   validate_filter_tod (wp);
@@ -1039,7 +1035,6 @@ save_policy (webs_t wp)
 
 
   D ("okay");
-  return 0;
 }
 
 void
@@ -1060,7 +1055,7 @@ validate_filter_policy (webs_t wp, char *value, struct variable *v)
  *
  */
 
-int
+void
 validate_services_port (webs_t wp)
 {
   char buf[8192] = "", services[8192] = "", *cur = buf, *svcs = NULL;
@@ -1126,13 +1121,12 @@ validate_services_port (webs_t wp)
       nvram_set (var, cur);
     }
   D ("okay");
-  return 1;
 }
 
-int
+void
 save_services_port (webs_t wp)
 {
-  int val = validate_services_port (wp);
+  validate_services_port (wp);
   char *value = websGetVar (wp, "action", "");
   addAction ("index");
   if (!strcmp (value, "ApplyTake"))
@@ -1140,7 +1134,6 @@ save_services_port (webs_t wp)
       nvram_commit ();
       service_restart ();
     }
-  return val;
 }
 
 void
@@ -1839,15 +1832,13 @@ ej_filter_port_services_get (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
-int
+void
 filtersummary_onload (webs_t wp, char *arg)
 {
-  int ret = 0;
   D ("filter summary unload");
   if (!strcmp (nvram_safe_get ("filter_summary"), "1"))
     {
       websWrite (wp, arg);
     }
   D ("okay");
-  return ret;
 }

@@ -19,7 +19,7 @@ struct variable
 {
   char *name;
   void (*validate) (webs_t wp, char *value, struct variable * v);
-  int (*validate2) (webs_t wp);
+  void (*validate2) (webs_t wp);
   char **argv;
   unsigned char nullok;
 };
