@@ -308,7 +308,7 @@ ej_show_ddns_status (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
-int
+void
 ddns_save_value (webs_t wp)
 {
   char *enable, *username, *passwd, *hostname, *dyndnstype, *wildcard,
@@ -319,7 +319,6 @@ ddns_save_value (webs_t wp)
 	  "8")},
   {argv:ARGV ("30")},
   }, *which;
-  int ret = -1;
   char _username[] = "ddns_username_X";
   char _passwd[] = "ddns_passwd_X";
   char _hostname[] = "ddns_hostname_X";
@@ -336,14 +335,14 @@ ddns_save_value (webs_t wp)
   if (!enable && !valid_choice (wp, enable, &which[0]))
     {
       error_value = 1;
-      return 1;
+      return;
     }
   int gethash = 0;
   if (atoi (enable) == 0)
     {
       // Disable
       nvram_set ("ddns_enable", enable);
-      return 1;
+      return;
     }
   else if (atoi (enable) == 1)
     {
@@ -425,7 +424,7 @@ ddns_save_value (webs_t wp)
   if (!username || !passwd || !hostname || !force)
     {
       error_value = 1;
-      return 1;
+      return;
     }
 
   nvram_set ("ddns_enable", enable);
@@ -458,11 +457,10 @@ ddns_save_value (webs_t wp)
   nvram_set (_url, url);
   nvram_set (_force, force);
 
-  return ret;
 }
 
-int
+void
 ddns_update_value (webs_t wp)
 {
-  return 1;
+
 }

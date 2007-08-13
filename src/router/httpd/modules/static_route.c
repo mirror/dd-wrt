@@ -199,7 +199,7 @@ addDeletion (char *word)
   else
     nvram_set ("action_service_arg1", word);
 }
-extern int save_olsrd (webs_t wp);
+extern void save_olsrd (webs_t wp);
 
 void
 validate_static_route (webs_t wp, char *value, struct variable *v)
@@ -486,7 +486,7 @@ ej_static_route_table (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
-int
+void
 delete_static_route (webs_t wp)
 {
   addAction ("routing");
@@ -542,5 +542,5 @@ delete_static_route (webs_t wp)
       nvram_commit ();
       service_restart ();
     }
-  return 0;
+  return;
 }

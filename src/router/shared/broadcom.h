@@ -89,7 +89,7 @@ struct variable {
 struct onload
 {
   char *name;
-  int (*go) (webs_t wp, char *arg);
+  void (*go) (webs_t wp, char *arg);
 };
 
 struct lease_t
@@ -106,7 +106,7 @@ struct apply_action
   char *service;
   int sleep_time;
   int action;
-  int (*go) (webs_t wp);
+  void (*go) (webs_t wp);
 };
 
 struct gozila_action
@@ -116,7 +116,7 @@ struct gozila_action
   char *service;
   int sleep_time;
   int action;
-  int (*go) (webs_t wp);
+  void (*go) (webs_t wp);
 };
 
 enum
@@ -157,10 +157,10 @@ extern void validate_catchall (webs_t wp, char *value, struct variable *v);
 extern void validate_lan_ipaddr (webs_t wp, char *value, struct variable *v);
 extern void validate_wan_ipaddr (webs_t wp, char *value, struct variable *v);
 extern void validate_portsetup (webs_t wp, char *value, struct variable *v);
-extern int clone_mac (webs_t wp);
-extern int dhcpfwd (webs_t wp);
-extern int set_wiviz (webs_t wp);
-extern int wan_proto (webs_t wp);
+extern void clone_mac (webs_t wp);
+extern void dhcpfwd (webs_t wp);
+extern void set_wiviz (webs_t wp);
+extern void wan_proto (webs_t wp);
 extern void ej_show_wan_to_switch (webs_t wp, int argc, char_t ** argv);	/* Added by Botho 10.May.06 */
 
 
@@ -186,21 +186,21 @@ extern void ej_localtime (webs_t wp, int argc, char_t ** argv);
 extern void ej_nvram_status_get (webs_t wp, int argc, char_t ** argv);
 extern void ej_nvram_get_len (webs_t wp, int argc, char_t ** argv);
 extern void ej_dhcp_remaining_time (webs_t wp, int argc, char_t ** argv);
-extern int dhcp_renew (webs_t wp);
-extern int add_olsrd (webs_t wp);
-extern int del_olsrd (webs_t wp);
-extern int save_macmode (webs_t wp);
-extern int dhcp_release (webs_t wp);
-extern int stop_ppp (webs_t wp);
-extern int add_bridge (webs_t wp);
-extern int add_vlan (webs_t wp);
-extern int add_bond (webs_t wp);
-extern int add_bridgeif (webs_t wp);
-extern int del_bridge (webs_t wp);
-extern int del_vlan (webs_t wp);
-extern int del_bond (webs_t wp);
-extern int del_bridgeif (webs_t wp);
-extern int save_networking (webs_t wp);
+extern void dhcp_renew (webs_t wp);
+extern void add_olsrd (webs_t wp);
+extern void del_olsrd (webs_t wp);
+extern void save_macmode (webs_t wp);
+extern void dhcp_release (webs_t wp);
+extern void stop_ppp (webs_t wp);
+extern void add_bridge (webs_t wp);
+extern void add_vlan (webs_t wp);
+extern void add_bond (webs_t wp);
+extern void add_bridgeif (webs_t wp);
+extern void del_bridge (webs_t wp);
+extern void del_vlan (webs_t wp);
+extern void del_bond (webs_t wp);
+extern void del_bridgeif (webs_t wp);
+extern void save_networking (webs_t wp);
 extern void ej_show_status_setting (webs_t wp, int argc, char_t ** argv);
 extern void ej_dumpip_conntrack (webs_t wp, int argc, char_t ** argv);
 extern void ej_ip_conntrack_table (webs_t wp, int argc, char_t ** argv);
@@ -217,7 +217,7 @@ extern char *dhcp_reltime (char *buf, time_t t);
 extern void ej_dumpleases (webs_t wp, int argc, char_t ** argv);
 extern void validate_dhcp (webs_t wp, char *value, struct variable *v);
 extern void dhcp_check (webs_t wp, char *value, struct variable *v);
-extern int delete_leases (webs_t wp);
+extern void delete_leases (webs_t wp);
 
 
 /* for log */
@@ -226,8 +226,8 @@ extern void ej_dumplog (webs_t wp, int argc, char_t ** argv);
 extern void ej_sputnik_apd_status (webs_t wp, int argc, char_t ** argv);
 extern void ej_show_sputnik (webs_t wp, int argc, char_t ** argv);
 #endif
-extern int log_onload (webs_t wp);
-extern int filtersummary_onload (webs_t wp, char *arg);
+extern void log_onload (webs_t wp);
+extern void filtersummary_onload (webs_t wp, char *arg);
 
 
 /* for upgrade */
@@ -238,7 +238,7 @@ extern int sys_restore (char *url, webs_t stream, int *total);
 extern void do_restore_post (char *url, webs_t stream, int len,
 			     char *boundary);
 extern void do_restore_cgi (char *url, webs_t stream);
-extern int macclone_onload (webs_t wp, char *arg);
+extern void macclone_onload (webs_t wp, char *arg);
 
 
 /* for filter */
@@ -265,11 +265,11 @@ extern void validate_filter_port (webs_t wp, char *value, struct variable *v);
 extern void validate_filter_web (webs_t wp, char *value, struct variable *v);
 extern void validate_blocked_service (webs_t wp, char *value,
 				      struct variable *v);
-extern int filter_onload (webs_t wp);
-extern int save_policy (webs_t wp);
-extern int summary_delete_policy (webs_t wp);
-extern int single_delete_policy (webs_t wp);
-extern int save_services_port (webs_t wp);
+extern void filter_onload (webs_t wp);
+extern void save_policy (webs_t wp);
+extern void summary_delete_policy (webs_t wp);
+extern void single_delete_policy (webs_t wp);
+extern void save_services_port (webs_t wp);
 
 
 /* for forward */
@@ -297,7 +297,7 @@ extern void validate_port_trigger (webs_t wp, char *value,
 extern void ej_dump_route_table (webs_t wp, int argc, char_t ** argv);
 extern void validate_dynamic_route (webs_t wp, char *value,
 				    struct variable *v);
-extern int dynamic_route_onload (webs_t wp);
+extern void dynamic_route_onload (webs_t wp);
 
 
 /* for static route */
@@ -305,7 +305,7 @@ extern void ej_static_route_setting (webs_t wp, int argc, char_t ** argv);
 extern void ej_static_route_table (webs_t wp, int argc, char_t ** argv);
 extern void validate_static_route (webs_t wp, char *value,
 				   struct variable *v);
-extern int delete_static_route (webs_t wp);
+extern void delete_static_route (webs_t wp);
 
 
 /* for wireless */
@@ -313,16 +313,16 @@ extern void validate_wl_key (webs_t wp, char *value, struct variable *v);
 extern void validate_wl_wep (webs_t wp, char *value, struct variable *v);
 extern void validate_wl_auth (webs_t wp, char *value, struct variable *v);
 extern void validate_d11_channel (webs_t wp, char *value, struct variable *v);
-extern int add_active_mac (webs_t wp);
-extern int wl_active_onload (webs_t wp, char *arg);
-extern int generate_key_64 (webs_t wp);
-extern int generate_key_128 (webs_t wp);
+extern void add_active_mac (webs_t wp);
+extern void wl_active_onload (webs_t wp, char *arg);
+extern void generate_key_64 (webs_t wp);
+extern void generate_key_128 (webs_t wp);
 extern void ej_showad (webs_t wp, int argc, char_t ** argv);
 extern void ej_get_wep_value (webs_t wp, int argc, char_t ** argv);
 extern void ej_get_wl_active_mac (webs_t wp, int argc, char_t ** argv);
 extern void ej_get_wl_value (webs_t wp, int argc, char_t ** argv);
 #ifdef HAVE_MSSID
-extern int security_save (webs_t wp);
+extern void security_save (webs_t wp);
 extern void ej_show_wpa_setting (webs_t wp, int argc, char_t ** argv,
 				 char *prefix);
 #else
@@ -345,8 +345,8 @@ extern void sr_config_cgi (char *path, webs_t wp);
 
 
 /* for ddns */
-extern int ddns_save_value (webs_t wp);
-extern int ddns_update_value (webs_t wp);
+extern void ddns_save_value (webs_t wp);
+extern void ddns_update_value (webs_t wp);
 extern void ej_show_ddns_status (webs_t wp, int argc, char_t ** argv);
 extern void ej_show_ddns_ip (webs_t wp, int argc, char_t ** argv);
 
@@ -364,13 +364,13 @@ extern void ej_wl_packet_get (webs_t wp, int argc, char_t ** argv);
 /* Ping and Traceroute */
 extern void ej_dump_ping_log (webs_t wp, int argc, char_t ** argv);
 //extern void ej_dump_traceroute_log (  webs_t wp, int argc, char_t ** argv);
-extern int diag_ping_start (webs_t wp);
-extern int diag_ping_stop (webs_t wp);
-extern int diag_ping_clear (webs_t wp);
+extern void diag_ping_start (webs_t wp);
+extern void diag_ping_stop (webs_t wp);
+extern void diag_ping_clear (webs_t wp);
 //extern int diag_traceroute_start (webs_t wp);
 //extern int diag_traceroute_stop (webs_t wp);
 //extern int diag_traceroute_clear (webs_t wp);
-extern int ping_onload (webs_t wp, char *arg);
+extern void ping_onload (webs_t wp, char *arg);
 //extern int traceroute_onload (webs_t wp, char *arg);
 
 /* Added by Botho 21.April.06 */
@@ -424,53 +424,53 @@ extern void ej_get_qosmacs2 (webs_t wp, int argc, char_t ** argv);
 extern void ej_show_infopage (webs_t wp, int argc, char_t ** argv);
 extern void ej_show_control (webs_t wp, int argc, char_t ** argv);
 extern void ej_get_clone_wmac (webs_t wp, int argc, char_t ** argv);
-extern int raduser_add (webs_t wp);
-extern int qos_add_svc (webs_t wp);
-extern int qos_add_ip (webs_t wp);
-extern int qos_add_mac (webs_t wp);
-extern int qos_save (webs_t wp);
-extern int ping_wol (webs_t wp);
-extern int ping_startup (webs_t wp);
-extern int ping_firewall (webs_t wp);
-extern int ping_custom (webs_t wp);
+extern void raduser_add (webs_t wp);
+extern void qos_add_svc (webs_t wp);
+extern void qos_add_ip (webs_t wp);
+extern void qos_add_mac (webs_t wp);
+extern void qos_save (webs_t wp);
+extern void ping_wol (webs_t wp);
+extern void ping_startup (webs_t wp);
+extern void ping_firewall (webs_t wp);
+extern void ping_custom (webs_t wp);
 /* end Sveasoft additions */
 
 
 #ifdef HAVE_MSSID
-extern int add_vifs (webs_t wp);
-extern int remove_vifs (webs_t wp);
+extern void add_vifs (webs_t wp);
+extern void remove_vifs (webs_t wp);
 #endif
 
 //extern int ej_show_virtualssid(  webs_t wp, int argc, char_t **argv);
 extern void ej_show_security (webs_t wp, int argc, char_t ** argv);
 
-extern int reg_validate (webs_t wp);
-extern int wireless_save (webs_t wp);
-extern int set_security (webs_t wp);
-extern int forward_add (webs_t wp);
-extern int forward_remove (webs_t wp);
-extern int lease_add (webs_t wp);
-extern int lease_remove (webs_t wp);
-extern int chap_user_add (webs_t wp);
-extern int chap_user_remove (webs_t wp);
+extern void reg_validate (webs_t wp);
+extern void  wireless_save (webs_t wp);
+extern void set_security (webs_t wp);
+extern void forward_add (webs_t wp);
+extern void forward_remove (webs_t wp);
+extern void lease_add (webs_t wp);
+extern void lease_remove (webs_t wp);
+extern void chap_user_add (webs_t wp);
+extern void chap_user_remove (webs_t wp);
 #ifdef HAVE_CHILLILOCAL
-extern int user_add (webs_t wp);
-extern int user_remove (webs_t wp);
+extern void user_add (webs_t wp);
+extern void  user_remove (webs_t wp);
 extern void ej_show_userlist (webs_t wp, int argc, char_t ** argv);
 extern void validate_userlist (webs_t wp, char *value, struct variable *v);
 #endif
-extern int forwardspec_add (webs_t wp);
-extern int forwardspec_remove (webs_t wp);
-extern int trigger_add (webs_t wp);
-extern int trigger_remove (webs_t wp);
+extern void forwardspec_add (webs_t wp);
+extern void forwardspec_remove (webs_t wp);
+extern void trigger_add (webs_t wp);
+extern void trigger_remove (webs_t wp);
 
 
 /* lonewolf additions */
 extern void ej_port_vlan_table (webs_t wp, int argc, char_t ** argv);
-extern int port_vlan_table_save (webs_t wp);
+extern void port_vlan_table_save (webs_t wp);
 extern void ej_if_config_table (webs_t wp, int argc, char_t ** argv);
-extern int if_config_table_save (webs_t wp);
-extern int alias_delete_ip (webs_t wp);
+extern void if_config_table_save (webs_t wp);
+extern void alias_delete_ip (webs_t wp);
 /* end lonewolf additions */
 
 extern int valid_ipaddr (webs_t wp, char *value, struct variable *v);
@@ -587,4 +587,4 @@ extern void ej_show_ppptime(webs_t wp, int argc, char_t ** argv);
 extern void ej_exec_milkfish_service(webs_t wp, int argc, char_t ** argv);
 #endif
 
-extern char *get_filter_services (void);
+extern void get_filter_services (char *services);

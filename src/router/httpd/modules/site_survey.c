@@ -218,7 +218,7 @@ ej_dump_wiviz_data (webs_t wp, int argc, char_t ** argv)	//Eko, for testing only
 }
 
 
-int
+void
 set_wiviz (webs_t wp)
 {
 
@@ -239,7 +239,6 @@ set_wiviz (webs_t wp)
   fclose (fp);
   killall ("wiviz", SIGUSR2);
 
-  return 1;
 }
 
 #endif
