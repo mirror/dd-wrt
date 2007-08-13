@@ -140,11 +140,7 @@ do_mon (void)
   struct mon *v;
   checkupgrade ();
   checknas ();
-  void *handle = load_service (NULL);
-  if (!handle)
-    return 1;
-  char service[64];
-  void (*fptr) (void);
+  void *handle = NULL;
 
   for (v = mons; v < &mons[sizeof (mons) / sizeof (*v)]; v++)
     {
@@ -161,15 +157,9 @@ do_mon (void)
 	{
 
 	  cprintf ("Maybe %s had died, we need to re-exec it\n", v->name);
-	  sprintf (service, "stop_%s", v->name);
-	  fptr = (void (*)(void)) dlsym (handle, service);
-	  if (fptr)
-	    fptr ();
+	  handle = stop_service_nofree (v->name, handle);
 	  killall (v->name, SIGKILL);
-	  sprintf (service, "start_%s", v->name);
-	  fptr = (void (*)(void)) dlsym (handle, service);
-	  if (fptr)
-	    fptr ();
+	  handle = start_service_nofree (v->name, handle);
 	}
       cprintf ("checking for %s done\n", v->name);
     }
