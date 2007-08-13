@@ -292,7 +292,7 @@ nv_file_out (char *path, webs_t wp)
   while (strlen (p) != 0)
     {
       int len = strlen (p);
-      for (i = 0; i < len i++)
+      for (i = 0; i < len; i++)
 	if (p[i] == '=')
 	  p[i] = 0;
       char *name = p;
