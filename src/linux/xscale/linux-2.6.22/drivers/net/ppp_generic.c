@@ -27,7 +27,6 @@
 #include <linux/kmod.h>
 #include <linux/init.h>
 #include <linux/list.h>
-#include <linux/devfs_fs_kernel.h>
 #include <linux/netdevice.h>
 #include <linux/poll.h>
 #include <linux/ppp_defs.h>
@@ -861,10 +860,6 @@ static int __init ppp_init(void)
 			goto out_chrdev;
 		}
 		device_create(ppp_class, NULL, MKDEV(PPP_MAJOR, 0), "ppp");
- 		err = devfs_mk_cdev(MKDEV(PPP_MAJOR, 0),
- 				S_IFCHR|S_IRUSR|S_IWUSR, "ppp");
- 		if (err)
- 			goto out_chrdev;
 	}
 
 out:
@@ -1712,6 +1707,7 @@ ppp_decompress_frame(struct ppp *ppp, struct sk_buff *skb)
 
 	if (proto == PPP_COMP) {
 		int obuff_size;
+
 
 		switch(ppp->rcomp->compress_proto) {
 		case CI_MPPE:
@@ -2697,7 +2693,6 @@ static void __exit ppp_cleanup(void)
 	cardmap_destroy(&all_ppp_units);
 	if (unregister_chrdev(PPP_MAJOR, "ppp") != 0)
 		printk(KERN_ERR "PPP: failed to unregister PPP device\n");
- 	devfs_remove("ppp");
 	device_destroy(ppp_class, MKDEV(PPP_MAJOR, 0));
 	class_destroy(ppp_class);
 }
