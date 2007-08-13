@@ -272,6 +272,7 @@ extern int stop_service (char *name);
 extern void *start_service_nofree (char *name,void *handle);
 extern void *stop_service_nofree (char *name,void *handle);
 extern void startstop (char *name);
+extern void *startstop_nofree (char *name,void *handle);
 
 extern int zebra_ospf_init (void);
 extern int zebra_ripd_init (void);
