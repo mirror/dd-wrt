@@ -15,10 +15,12 @@ refresh() {
       getnext_1361412021255354133211="$place.3.54.1.3.32.1.1.1"
       getnext_1361412021255354133214="$place.3.54.1.3.32.1.4.1"
       getnext_13614120212553541332126="$place.3.54.1.3.32.1.26.1"
+      getnext_13614120212553541332113="$place.3.54.1.3.32.1.13.1"
     else
       eval getnext_1361412021255354133211${lastid}="$place.3.54.1.3.32.1.1.$id"
       eval getnext_1361412021255354133214${lastid}="$place.3.54.1.3.32.1.4.$id"
       eval getnext_13614120212553541332126${lastid}="$place.3.54.1.3.32.1.26.$id"
+      eval getnext_13614120212553541332113${lastid}="$place.3.54.1.3.32.1.13.$id"
     fi
   
     rssi=$(wl_atheros rssi $mac | cut -d" " -f3)
@@ -37,6 +39,8 @@ refresh() {
     eval type_1361412021255354133214${id}='octet';
     eval value_13614120212553541332126${id}=$snr;
     eval type_13614120212553541332126${id}='integer';
+    eval value_13614120212553541332113${id}=$noise_reference;
+    eval type_13614120212553541332113${id}='integer';
 
     lastid=$id
     let id=$id+1
@@ -48,6 +52,7 @@ refresh() {
     eval getnext_1361412021255354133211${lastid}="$place.3.54.1.3.32.1.4.1"
     eval getnext_1361412021255354133214${lastid}="$place.3.54.1.3.32.1.26.1"
     eval getnext_13614120212553541332126${lastid}="NONE"
+    eval getnext_13614120212553541332113${lastid}="NONE"
   fi
 } 
 
