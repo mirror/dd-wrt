@@ -46,8 +46,8 @@ ledtool_main (int argc, char **argv)
 	  count--;
 	}
       times--;
-      if (times>0)
-        sleep (3);
+      if (times > 0)
+	sleep (3);
     }
 
   return 0;

@@ -184,7 +184,7 @@ main_loop (void)
 	}
     }
   else
-#endif 
+#endif
   if (brand == ROUTER_BUFFALO_WZRG144NH)
     {
       if (nvram_match ("fullswitch", "1")
@@ -684,7 +684,7 @@ main (int argc, char **argv)
     {
       if (argc >= 2)
 	{
-	  fprintf (stderr,"hotplug %s\n", argv[1]);
+	  fprintf (stderr, "hotplug %s\n", argv[1]);
 	  if (!strcmp (argv[1], "net"))
 	    return start_service ("hotplug_net");
 #ifdef HAVE_USBHOTPLUG
