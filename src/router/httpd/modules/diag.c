@@ -13,15 +13,14 @@
 #include <broadcom.h>
 
 
-int
+void
 diag_ping_start (webs_t wp)
 {
-  int ret = 0;
   char *ip = websGetVar (wp, "ping_ip", NULL);
   char *times = websGetVar (wp, "ping_times", NULL);
 
   if (!ip || !times || !strcmp (ip, ""))
-    return ret;
+    return;
   addAction ("start_ping");
   unlink (PING_TMP);
   nvram_set ("ping_ip", ip);
@@ -33,7 +32,7 @@ diag_ping_start (webs_t wp)
   //cprintf("cmd=[%s]\n",cmd);
   //system(cmd);
 
-  return ret;
+  return;
 }
 
 void
@@ -51,7 +50,7 @@ removeLineBreak (char *startup)
 
 }
 
-int
+void
 ping_startup (webs_t wp)
 {
   char *startup = websGetVar (wp, "ping_ip", NULL);
@@ -65,11 +64,11 @@ ping_startup (webs_t wp)
   chmod ("/tmp/.rc_startup", 0700);
 //  diag_ping_start(wp);
 
-  return 0;
+  return;
 
 }
 
-int
+void
 ping_firewall (webs_t wp)
 {
   char *firewall = websGetVar (wp, "ping_ip", NULL);
@@ -82,10 +81,10 @@ ping_firewall (webs_t wp)
   chmod ("/tmp/.rc_firewall", 0700);
   //diag_ping_start(wp);
 
-  return 0;
+  return;
 }
 
-int
+void
 ping_custom (webs_t wp)
 {
   char *custom = websGetVar (wp, "ping_ip", NULL);
@@ -102,29 +101,28 @@ ping_custom (webs_t wp)
     }
   //diag_ping_start(wp);
 
-  return 0;
+  return;
 }
 
-int
+void
 ping_wol (webs_t wp)
 {
-  int ret = 0;
   char *wol_type = websGetVar (wp, "wol_type", NULL);
 
   unlink (PING_TMP);
 
   if (!wol_type || !strcmp (wol_type, ""))
-    return ret;
+    return;
 
   if (!strcmp (wol_type, "update"))
     {
       char *wol_hosts = websGetVar (wp, "wol_hosts", NULL);
       if (!wol_hosts || !strcmp (wol_hosts, ""))
-	return ret;
+	return;
 
       nvram_set ("wol_hosts", wol_hosts);
       nvram_set ("wol_cmd", "");
-      return ret;
+      return;
     }
 
   char *manual_wol_mac = websGetVar (wp, "manual_wol_mac", NULL);
@@ -148,25 +146,23 @@ ping_wol (webs_t wp)
   snprintf (cmd, sizeof (cmd), "%s > %s 2>&1 &", wol_cmd, PING_TMP);
   system2 (cmd);
 
-  return ret;
 }
 
-int
+void
 diag_ping_stop (webs_t wp)
 {
-  return killall ("ping", SIGKILL);
+  killall ("ping", SIGKILL);
 }
 
-int
+void
 diag_ping_clear (webs_t wp)
 {
-  return unlink (PING_TMP);
+  unlink (PING_TMP);
 }
 
-int
+void
 ping_onload (webs_t wp, char *arg)
 {
-  int ret = 0;
   int pid;
   char *type = websGetVar (wp, "submit_type", "");
 
@@ -177,7 +173,6 @@ ping_onload (webs_t wp, char *arg)
       websWrite (wp, arg);
     }
 
-  return ret;
 }
 
 /* OBSOLETE

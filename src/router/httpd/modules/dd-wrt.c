@@ -839,7 +839,7 @@ ej_active_wireless2 (webs_t wp, int argc, char_t ** argv)
 #endif
 
 
-int
+void
 macro_add (char *a)
 {
   cprintf ("adding %s\n", a);
@@ -860,10 +860,10 @@ macro_add (char *a)
 	  nvram_set (a, buf);
 	}
     }
-  return 0;
+  return;
 }
 
-int
+void
 macro_rem (char *a, char *nv)
 {
   char *count;
@@ -900,75 +900,75 @@ macro_rem (char *a, char *nv)
 
 	}
     }
-  return 0;
+  return;
 }
 
-int
+void
 forward_remove (webs_t wp)
 {
-  return macro_rem ("forward_entries", "forward_port");
+  macro_rem ("forward_entries", "forward_port");
 }
 
-int
+void
 forward_add (webs_t wp)
 {
-  return macro_add ("forward_entries");
+  macro_add ("forward_entries");
 }
 
-int
+void
 lease_remove (webs_t wp)
 {
-  return macro_rem ("static_leasenum", "static_leases");
+  macro_rem ("static_leasenum", "static_leases");
 }
 
-int
+void
 lease_add (webs_t wp)
 {
-  return macro_add ("static_leasenum");
+  macro_add ("static_leasenum");
 }
 
 #ifdef HAVE_PPPOESERVER
-int
+void
 chap_user_add (webs_t wp)
 {
   char *var = websGetVar (wp, "pppoeserver_enabled", NULL);
   if (var != NULL)
     nvram_set ("pppoeserver_enabled", var);
-  return macro_add ("pppoeserver_chapsnum");
+  macro_add ("pppoeserver_chapsnum");
 }
 
-int
+void
 chap_user_remove (webs_t wp)
 {
   char *var = websGetVar (wp, "pppoeserver_enabled", NULL);
   if (var != NULL)
     nvram_set ("pppoeserver_enabled", var);
-  return macro_rem ("pppoeserver_chapsnum", "pppoeserver_chaps");
+  macro_rem ("pppoeserver_chapsnum", "pppoeserver_chaps");
 }
 #endif
 
-int
+void
 forwardspec_remove (webs_t wp)
 {
-  return macro_rem ("forwardspec_entries", "forward_spec");
+  macro_rem ("forwardspec_entries", "forward_spec");
 }
 
-int
+void
 forwardspec_add (webs_t wp)
 {
-  return macro_add ("forwardspec_entries");
+  macro_add ("forwardspec_entries");
 }
 
-int
+void
 trigger_remove (webs_t wp)
 {
-  return macro_rem ("trigger_entries", "port_trigger");
+  macro_rem ("trigger_entries", "port_trigger");
 }
 
-int
+void
 trigger_add (webs_t wp)
 {
-  return macro_add ("trigger_entries");
+  macro_add ("trigger_entries");
 }
 
 void
@@ -1053,7 +1053,7 @@ buildmac (char *in)
 
 #ifdef HAVE_RADLOCAL
 
-int
+void
 raduser_add (webs_t wp)
 {
   int radcount = 0;
@@ -1064,7 +1064,6 @@ raduser_add (webs_t wp)
   char count[16];
   sprintf (count, "%d", radcount);
   nvram_set ("iradius_count", count);
-  return 0;
 }
 
 void
@@ -1256,16 +1255,16 @@ validate_iradius (webs_t wp, char *value, struct variable *v)
 
 #ifdef HAVE_CHILLILOCAL
 
-int
+void
 user_remove (webs_t wp)
 {
-  return macro_rem ("fon_usernames", "fon_userlist");
+  macro_rem ("fon_usernames", "fon_userlist");
 }
 
-int
+void
 user_add (webs_t wp)
 {
-  return macro_add ("fon_usernames");
+  macro_add ("fon_usernames");
   //validate_userlist(wp);
 }
 
@@ -1489,12 +1488,11 @@ rep (char *in, char from, char to)
 
 #ifndef HAVE_MSSID
 
-int
+void
 set_security (webs_t wp)
 {
   char *var = websGetVar (wp, "security_varname", "security_mode");
   nvram_set (var, websGetVar (wp, var, "disabled"));
-  return 0;
 }
 
 char *
@@ -1556,7 +1554,7 @@ extern int getdevicecount (void);
 #endif
 
 
-int
+void
 set_security (webs_t wp)
 {
   char *var = websGetVar (wp, "security_varname", "security_mode");
@@ -1565,7 +1563,6 @@ set_security (webs_t wp)
   char *var2 = websGetVar (wp, var, "disabled");
 //rep(var,'X','.');
   nvram_set (var, var2);
-  return 0;
 }
 
 char *
@@ -1692,7 +1689,7 @@ ej_show_security (webs_t wp, int argc, char_t ** argv)
 
 
 
-int
+void
 dhcpfwd (webs_t wp)
 {
   int ret = 0;
@@ -1701,10 +1698,9 @@ dhcpfwd (webs_t wp)
   enable = websGetVar (wp, "dhcpfwd_enable", NULL);
   nvram_set ("dhcpfwd_enable", enable);
 
-  return ret;
 }
 
-int
+void
 wan_proto (webs_t wp)
 {
   int ret = 0;
@@ -1713,7 +1709,6 @@ wan_proto (webs_t wp)
   enable = websGetVar (wp, "wan_proto", NULL);
   nvram_set ("wan_proto", enable);
 
-  return ret;
 }
 
 
@@ -1991,7 +1986,7 @@ show_legend (webs_t wp, char *labelname, int *translate)
 
 
 #ifdef HAVE_OLSRD
-int
+void
 add_olsrd (webs_t wp)
 {
   char *ifname = websGetVar (wp, "olsrd_ifname", NULL);
@@ -2016,10 +2011,10 @@ add_olsrd (webs_t wp)
   nvram_set ("olsrd_interfaces", newadd);
   nvram_commit ();
   free (newadd);
-  return 0;
+  return;
 }
 
-int
+void
 del_olsrd (webs_t wp)
 {
   char *del = websGetVar (wp, "olsrd_delcount", NULL);
@@ -2041,10 +2036,10 @@ del_olsrd (webs_t wp)
   nvram_set ("olsrd_interfaces", newlist);
   nvram_commit ();
   free (newlist);
-  return 0;
+  return;
 }
 
-int
+void
 save_olsrd (webs_t wp)
 {
   char *wordlist = nvram_safe_get ("olsrd_interfaces");
@@ -2085,7 +2080,7 @@ save_olsrd (webs_t wp)
   nvram_set ("olsrd_interfaces", newlist);
   nvram_commit ();
   free (newlist);
-  return 0;
+  return;
 }
 
 void
@@ -2201,7 +2196,7 @@ ej_show_olsrd (webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_VLANTAGGING
 
 
-int
+void
 save_networking (webs_t wp)
 {
   char *value = websGetVar (wp, "action", "");
@@ -2222,11 +2217,11 @@ save_networking (webs_t wp)
       sprintf (var, "vlanifname%d", i);
       ifname = websGetVar (wp, var, NULL);
       if (!ifname)
-	return 0;
+	return;
       sprintf (var, "vlantag%d", i);
       tag = websGetVar (wp, var, NULL);
       if (!tag)
-	return 0;
+	return;
       strcat (buffer, ifname);
       strcat (buffer, ">");
       strcat (buffer, tag);
@@ -2250,11 +2245,11 @@ save_networking (webs_t wp)
       sprintf (var, "bondingifname%d", i);
       ifname = websGetVar (wp, var, NULL);
       if (!ifname)
-	return 0;
+	return;
       sprintf (var, "bondingattach%d", i);
       tag = websGetVar (wp, var, NULL);
       if (!tag)
-	return 0;
+	return;
       strcat (buffer, ifname);
       strcat (buffer, ">");
       strcat (buffer, tag);
@@ -2279,11 +2274,11 @@ save_networking (webs_t wp)
       sprintf (var, "bridgename%d", i);
       ifname = websGetVar (wp, var, NULL);
       if (!ifname)
-	return 0;
+	return;
       sprintf (var, "bridgestp%d", i);
       tag = websGetVar (wp, var, NULL);
       if (!tag)
-	return 0;
+	return;
       sprintf (var, "bridgeprio%d", i);
       prio = websGetVar (wp, var, NULL);
       if (!prio)
@@ -2319,11 +2314,11 @@ save_networking (webs_t wp)
       sprintf (var, "bridge%d", i);
       ifname = websGetVar (wp, var, NULL);
       if (!ifname)
-	return 0;
+	return;
       sprintf (var, "bridgeif%d", i);
       tag = websGetVar (wp, var, NULL);
       if (!tag)
-	return 0;
+	return;
       sprintf (var, "bridgeifprio%d", i);
       prio = websGetVar (wp, var, NULL);
       if (!prio)
@@ -2351,7 +2346,7 @@ save_networking (webs_t wp)
     }
 }
 
-int
+void
 add_vlan (webs_t wp)
 {
   static char word[256];
@@ -2372,10 +2367,10 @@ add_vlan (webs_t wp)
   sprintf (var, "%d", realcount);
   nvram_set ("vlan_tagcount", var);
   nvram_commit ();
-  return 0;
+  return;
 }
 
-int
+void
 del_vlan (webs_t wp)
 {
   static char word[256];
@@ -2383,7 +2378,7 @@ del_vlan (webs_t wp)
   char *next, *wordlist, *newwordlist;
   char *val = websGetVar (wp, "del_value", NULL);
   if (val == NULL)
-    return 0;
+    return;
   int todel = atoi (val);
   wordlist = nvram_safe_get ("vlan_tags");
   newwordlist = (char *) malloc (strlen (wordlist));
@@ -2407,11 +2402,11 @@ del_vlan (webs_t wp)
   nvram_commit ();
   free (newwordlist);
 
-  return 0;
+  return;
 }
 
 #ifdef HAVE_BONDING
-int
+void
 add_bond (webs_t wp)
 {
   static char word[256];
@@ -2432,11 +2427,11 @@ add_bond (webs_t wp)
   sprintf (var, "%d", realcount);
   nvram_set ("bonding_count", var);
   nvram_commit ();
-  return 0;
+  return;
 }
 
 
-int
+void
 del_bond (webs_t wp)
 {
   static char word[256];
@@ -2444,7 +2439,7 @@ del_bond (webs_t wp)
   char *next, *wordlist, *newwordlist;
   char *val = websGetVar (wp, "del_value", NULL);
   if (val == NULL)
-    return 0;
+    return;
   int todel = atoi (val);
   wordlist = nvram_safe_get ("bondings");
   newwordlist = (char *) malloc (strlen (wordlist));
@@ -2468,7 +2463,7 @@ del_bond (webs_t wp)
   nvram_commit ();
   free (newwordlist);
 
-  return 0;
+  return;
 }
 
 
@@ -2644,7 +2639,7 @@ ej_show_vlantagging (webs_t wp, int argc, char_t ** argv)
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 }
 
-int
+void
 del_bridge (webs_t wp)
 {
   static char word[256];
@@ -2652,7 +2647,7 @@ del_bridge (webs_t wp)
   char *next, *wordlist, *newwordlist;
   char *val = websGetVar (wp, "del_value", NULL);
   if (val == NULL)
-    return 0;
+    return;
   int todel = atoi (val);
   wordlist = nvram_safe_get ("bridges");
   newwordlist = (char *) malloc (strlen (wordlist));
@@ -2676,10 +2671,10 @@ del_bridge (webs_t wp)
   nvram_commit ();
   free (newwordlist);
 
-  return 0;
+  return;
 }
 
-int
+void
 add_bridge (webs_t wp)
 {
   static char word[256];
@@ -2700,7 +2695,7 @@ add_bridge (webs_t wp)
   sprintf (var, "%d", realcount);
   nvram_set ("bridges_count", var);
   nvram_commit ();
-  return 0;
+  return;
 }
 
 void
@@ -2823,7 +2818,7 @@ ej_show_bridgetable (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
-int
+void
 del_bridgeif (webs_t wp)
 {
   static char word[256];
@@ -2831,7 +2826,7 @@ del_bridgeif (webs_t wp)
   char *next, *wordlist, *newwordlist;
   char *val = websGetVar (wp, "del_value", NULL);
   if (val == NULL)
-    return 0;
+    return;
   int todel = atoi (val);
   wordlist = nvram_safe_get ("bridgesif");
   newwordlist = (char *) malloc (strlen (wordlist));
@@ -2855,10 +2850,10 @@ del_bridgeif (webs_t wp)
   nvram_commit ();
   free (newwordlist);
 
-  return 0;
+  return;
 }
 
-int
+void
 add_bridgeif (webs_t wp)
 {
 
@@ -2880,7 +2875,7 @@ add_bridgeif (webs_t wp)
   sprintf (var, "%d", realcount);
   nvram_set ("bridgesif_count", var);
   nvram_commit ();
-  return 0;
+  return;
 }
 
 void
@@ -3614,17 +3609,17 @@ get_vifcount (char *prefix)
 }
 
 
-int
+void
 add_vifs_single (char *prefix, int device)
 {
   int count = get_vifcount (prefix);
   if (count == 16)
-    return 0;
+    return;
   char vif[16];
   sprintf (vif, "%s_vifs", prefix);
   char *vifs = nvram_safe_get (vif);
   if (vifs == NULL)
-    return 0;
+    return;
   char *n = (char *) malloc (strlen (vifs) + 8);
   char v[80];
   char v2[80];
@@ -3671,20 +3666,19 @@ add_vifs_single (char *prefix, int device)
 
   //nvram_commit ();
   free (n);
-  return 0;
 }
 
-int
+void
 add_vifs (webs_t wp)
 {
   char *prefix = websGetVar (wp, "iface", NULL);
   if (prefix == NULL)
-    return 0;
+    return;
   int devcount = prefix[strlen (prefix) - 1] - '0';
-  return add_vifs_single (prefix, devcount);
+  add_vifs_single (prefix, devcount);
 }
 
-int
+void
 remove_vifs_single (char *prefix)
 {
   char wif[16];
@@ -3710,14 +3704,13 @@ remove_vifs_single (char *prefix)
       nvram_set (wif, copy);
     }
   //nvram_commit ();
-  return 0;
 }
 
-int
+void
 remove_vifs (webs_t wp)
 {
   char *prefix = websGetVar (wp, "iface", NULL);
-  return remove_vifs_single (prefix);
+  remove_vifs_single (prefix);
 }
 #endif
 
@@ -3945,7 +3938,7 @@ save_prefix (webs_t wp, char *prefix)
 
 }
 
-int
+void
 wireless_save (webs_t wp)
 {
   char *value = websGetVar (wp, "action", "");
@@ -3970,7 +3963,7 @@ wireless_save (webs_t wp)
 
 #endif
       if (vifs == NULL)
-	return 0;
+	return;
       foreach (var, vifs, next)
       {
 	save_prefix (wp, var);
@@ -3985,7 +3978,6 @@ wireless_save (webs_t wp)
       nvram_commit ();
       service_restart ();
     }
-  return 0;
 }
 
 void
@@ -5833,10 +5825,10 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
       cnt++;
       if (!strcmp (mode, "ap"))
 	{
-	  char *ref = nvram_get ("noise_reference");
+	  // char *ref = nvram_get ("noise_reference");
 	  noise = -98;
-	  if (ref)
-	    noise = atoi (ref);
+	  //if (ref)
+	  //noise = atoi (ref);
 	}
       websWrite (wp, "'%s','%d','%d','%d'", mac, rssi, noise, rssi - noise);
     }
@@ -5890,34 +5882,22 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
       system2 (cmd);
 
       // get noise value if not ap mode
-      if (strcmp (mode, "ap"))
-	snprintf (cmd, sizeof (cmd), "wl -i %s noise >> %s", iface, RSSI_TMP);
-      system2 (cmd);		// get RSSI value for mac
+//      if (strcmp (mode, "ap"))
+//      snprintf (cmd, sizeof (cmd), "wl -i %s noise >> %s", iface, RSSI_TMP);
+//      system2 (cmd);          // get RSSI value for mac
 
       fp2 = fopen (RSSI_TMP, "r");
       if (fgets (line, sizeof (line), fp2) != NULL)
 	{
 
 	  // get rssi
-//#ifdef HAVE_MSSID
 	  if (sscanf (line, "%d", &rssi) != 1)
 	    continue;
-
-//           noise=getNoise(iface);
-
-	  if (strcmp (mode, "ap") &&
+	  noise = getNoise (iface, NULL);
+/*	  if (strcmp (mode, "ap") &&
 	      fgets (line, sizeof (line), fp2) != NULL &&
 	      sscanf (line, "%d", &noise) != 1)
-	    continue;
-/*#else
-	  if (sscanf (line, "%s %s %d", list[0], list[1], &rssi) != 3)
-	    continue;
-//          noise=getNoise(iface);
-	  if (strcmp (mode, "ap") &&
-	      fgets (line, sizeof (line), fp2) != NULL &&
-	      sscanf (line, "%s %s %d", list[0], list[1], &noise) != 3)
-	    continue;
-#endif*/
+	    continue;*/
 	  // get noise for client/wet mode
 
 	  fclose (fp2);
@@ -5936,13 +5916,10 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
       if (cnt)
 	websWrite (wp, ",");
       cnt++;
-      if (!strcmp (mode, "ap"))
+/*      if (!strcmp (mode, "ap"))
 	{
-	  char *ref = nvram_get ("noise_reference");
-	  noise = -98;
-	  if (ref)
-	    noise = atoi (ref);
-	}
+	  noise = getNoise(iface,NULL); // null only for broadcom
+	}*/
       websWrite (wp, "'%s','%s','N/A','%d','%d','%d'", mac, iface, rssi,
 		 noise, rssi - noise);
     }
@@ -6041,13 +6018,8 @@ ej_active_wds (webs_t wp, int argc, char_t ** argv)
 	{
 
 	  // get rssi
-//#ifdef HAVE_MSSID
 	  if (sscanf (line, "%d", &rssi) != 1)
 	    continue;
-/*#else
-	  if (sscanf (line, "%s %s %d", list[0], list[1], &rssi) != 3)
-	    continue;
-#endif*/
 	  fclose (fp2);
 	}
       if (nvram_match ("maskmac", "1") && macmask)
@@ -6064,10 +6036,7 @@ ej_active_wds (webs_t wp, int argc, char_t ** argv)
       if (cnt)
 	websWrite (wp, ",");
       cnt++;
-      char *ref = nvram_get ("noise_reference");
-      int noise = -98;
-      if (ref)
-	noise = atoi (ref);
+      int noise = getNoise(iface,NULL);
       websWrite (wp,
 		 "\"%s\",\"%s\",\"%d\",\"%d\",\"%d\"",
 		 mac, desc, rssi, noise, rssi - noise);
@@ -6195,8 +6164,8 @@ save_wds (webs_t wp)
 }
 
 
-char *
-get_filter_services (void)
+void 
+get_filter_services (char *services)
 {
 /*	
 typedef struct _l7filters  //l7 and p2p filters
@@ -6359,7 +6328,8 @@ char temp[128] = "";
 		i++;
 		}	
 */
-  char services[8192] = "", svcs_var[32] = "";
+  
+  char svcs_var[32] = "";
   int index = 0;
 
   do
@@ -6369,7 +6339,7 @@ char temp[128] = "";
     }
   while (strlen (nvram_safe_get (svcs_var)) > 0 && index < 8);
 
-  return services;
+  return;
 }
 
 /*
@@ -6432,11 +6402,12 @@ ej_get_services_options (webs_t wp, int argc, char_t ** argv)
 int
 get_svc (char *svc, char *protocol, char *ports)
 {
-  char word[1024], *next, *services;
+  char word[1024], *next;
   char delim[] = "<&nbsp;>";
-
+  char services[8192];
 //      services = nvram_safe_get("filter_services");
-  services = get_filter_services ();
+  memset(services,0,8192);
+  get_filter_services (services);
 
   split (word, services, next, delim)
   {
@@ -6480,11 +6451,11 @@ get_svc (char *svc, char *protocol, char *ports)
     if (strcasecmp (svc, name) == 0)
       return 0;
   }
-
+  
   return -1;
 }
 
-int
+void
 qos_add_svc (webs_t wp)
 {
   char *var = websGetVar (wp, "wshaper_enable", NULL);
@@ -6502,7 +6473,7 @@ qos_add_svc (webs_t wp)
   memset (new_svcs, 0, sizeof (new_svcs));
 
   if (get_svc (add_svc, protocol, ports))
-    return -1;
+    return;
 
   if (strcmp (protocol, "l7") == 0)
     {
@@ -6513,7 +6484,7 @@ qos_add_svc (webs_t wp)
 
   /* if this service exists, return an error */
   if (strstr (svqos_svcs, add_svc))
-    return -1;
+    return;
 
   if (strlen (svqos_svcs) > 0)
     snprintf (new_svcs, 4095, "%s %s %s %s 30 |", svqos_svcs, add_svc,
@@ -6522,15 +6493,14 @@ qos_add_svc (webs_t wp)
     snprintf (new_svcs, 4095, "%s %s %s 30 |", add_svc, protocol, ports);
 
   if (strlen (new_svcs) >= sizeof (new_svcs))
-    return -1;
+    return;
 
   nvram_set ("svqos_svcs", new_svcs);
   nvram_commit ();
-  return 0;
 }
 
 
-int
+void
 qos_add_ip (webs_t wp)
 {
   char *var = websGetVar (wp, "wshaper_enable", NULL);
@@ -6553,22 +6523,21 @@ qos_add_ip (webs_t wp)
 
   /* if this ip exists, return an error */
   if (strstr (svqos_ips, add_ip))
-    return -1;
+    return;
 #ifdef HAVE_AQOS
   snprintf (new_ip, 4095, "%s %s 100 100 |", svqos_ips, add_ip);
 #else
   snprintf (new_ip, 4095, "%s %s 30 |", svqos_ips, add_ip);
 #endif
   if (strlen (new_ip) >= sizeof (new_ip))
-    return -1;
+    return;
 
   nvram_set ("svqos_ips", new_ip);
   nvram_commit ();
 
-  return 0;
 }
 
-int
+void
 qos_add_mac (webs_t wp)
 {
   char *var = websGetVar (wp, "wshaper_enable", NULL);
@@ -6592,22 +6561,21 @@ qos_add_mac (webs_t wp)
 
   /* if this mac exists, return an error */
   if (strstr (svqos_macs, add_mac))
-    return -1;
+    return;
 #ifdef HAVE_AQOS
   snprintf (new_mac, 4095, "%s %s 100 100 |", svqos_macs, add_mac);
 #else
   snprintf (new_mac, 4095, "%s %s 30 |", svqos_macs, add_mac);
 #endif
   if (strlen (new_mac) >= sizeof (new_mac))
-    return -1;
+    return;
 
   nvram_set ("svqos_macs", new_mac);
   nvram_commit ();
 
-  return 0;
 }
 
-int
+void
 qos_save (webs_t wp)
 {
   char *value = websGetVar (wp, "action", "");
@@ -6626,7 +6594,7 @@ qos_save (webs_t wp)
 
 
   if (strcmp (data, "0") == 0)
-    return -1;
+    return;
 
   snprintf (field, 31, "enable_game");
   data = websGetVar (wp, field, NULL);
@@ -6801,7 +6769,6 @@ qos_save (webs_t wp)
     }
 
 
-  return 0;
 }
 
 void
@@ -7062,7 +7029,7 @@ ej_port_vlan_table (webs_t wp, int argc, char_t ** argv)
 
 /* Note: VLAN #16 designates tagging.  There is no VLAN #16 (only 0-15) */
 
-int
+void
 port_vlan_table_save (webs_t wp)
 {
   int port = 0, vlan = 0, vlans[20], i;
@@ -7224,7 +7191,6 @@ port_vlan_table_save (webs_t wp)
 
   nvram_commit ();
 
-  return 0;
 }
 
 
@@ -8219,7 +8185,7 @@ save_macmode_if (webs_t wp, char *ifname)
 }
 
 
-int
+void
 save_macmode (webs_t wp)
 {
 #ifndef HAVE_MADWIFI
@@ -8244,6 +8210,6 @@ save_macmode (webs_t wp)
     }
 
 #endif
-  return 1;
+  return;
 
 }
