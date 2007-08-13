@@ -299,3 +299,13 @@ startstop (char *name)
   handle = start_service_nofree (name, handle);
   dlclose (handle);
 }
+
+void *
+startstop_nofree (char *name,void *handle)
+{
+  cprintf ("stop and start service (nofree)\n");
+  handle = stop_service_nofree (name, handle);
+  handle = start_service_nofree (name, handle);
+  return handle;
+}
+
