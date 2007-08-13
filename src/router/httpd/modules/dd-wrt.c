@@ -6036,7 +6036,7 @@ ej_active_wds (webs_t wp, int argc, char_t ** argv)
       if (cnt)
 	websWrite (wp, ",");
       cnt++;
-      int noise = getNoise(iface,NULL);
+      int noise = getNoise (iface, NULL);
       websWrite (wp,
 		 "\"%s\",\"%s\",\"%d\",\"%d\",\"%d\"",
 		 mac, desc, rssi, noise, rssi - noise);
@@ -6164,7 +6164,7 @@ save_wds (webs_t wp)
 }
 
 
-void 
+void
 get_filter_services (char *services)
 {
 /*	
@@ -6328,7 +6328,7 @@ char temp[128] = "";
 		i++;
 		}	
 */
-  
+
   char svcs_var[32] = "";
   int index = 0;
 
@@ -6406,7 +6406,7 @@ get_svc (char *svc, char *protocol, char *ports)
   char delim[] = "<&nbsp;>";
   char services[8192];
 //      services = nvram_safe_get("filter_services");
-  memset(services,0,8192);
+  memset (services, 0, 8192);
   get_filter_services (services);
 
   split (word, services, next, delim)
@@ -6451,7 +6451,7 @@ get_svc (char *svc, char *protocol, char *ports)
     if (strcasecmp (svc, name) == 0)
       return 0;
   }
-  
+
   return -1;
 }
 

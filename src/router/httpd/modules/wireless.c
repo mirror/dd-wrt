@@ -88,7 +88,7 @@ int generate_key;
 extern void gen_key (char *genstr, int weptype);
 int nv_count;
 extern struct variable variables[];
-																																																																																																																																														    /* channel info structure *///from 11.9
+																																																																																																																																																		/* channel info structure *///from 11.9
 typedef struct
 {
   uint chan;			/* channel number */
@@ -1587,9 +1587,9 @@ generate_key_64 (webs_t wp)
   cprintf ("gen wep key 64");
   generate_key = 1;
 #ifdef HAVE_MADWIFI
- generate_wep_key (wp, 64, websGetVar (wp, "security_varname", "ath0"));
+  generate_wep_key (wp, 64, websGetVar (wp, "security_varname", "ath0"));
 #else
- generate_wep_key (wp, 64, websGetVar (wp, "security_varname", "wl"));
+  generate_wep_key (wp, 64, websGetVar (wp, "security_varname", "wl"));
 #endif
 }
 
