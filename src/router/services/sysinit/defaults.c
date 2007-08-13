@@ -1174,7 +1174,6 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 
 #endif
-  {"noise_reference", "-98", 0},
 #ifdef HAVE_GGEW
   {"txant", "0", 0},
   {"wl_antdiv", "0", 0},

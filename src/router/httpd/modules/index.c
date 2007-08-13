@@ -204,14 +204,10 @@ ej_get_wl_domain (webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
-int
+void
 clone_mac (webs_t wp)
 {
-  int ret = 0;
-
   clone_wan_mac = 1;
-
-  return ret;
 }
 
 void
@@ -257,12 +253,12 @@ ej_get_clone_mac (webs_t wp, int argc, char_t ** argv)
     websWrite (wp, "00");
 }
 
-int
+void
 macclone_onload (webs_t wp, char *arg)
 {
 
   if (clone_wan_mac)
     websWrite (wp, arg);
 
-  return 0;
+  return;
 }

@@ -102,7 +102,7 @@ getNoise (char *ifname, unsigned char *macname)
   unsigned int noise;
   //rssi = 0;
   //char buf[WLC_IOCTL_MAXLEN];
-  if (wl_ioctl (ifname, WLC_GET_PHY_NOISE, &noise, sizeof (noise)) < 0)
+  wl_ioctl (ifname, WLC_GET_PHY_NOISE, &noise, sizeof (noise));
 
     /*wl_bss_info_t *bss_info = (wl_bss_info_t *) buf;
        memset(buf,0,WLC_IOCTL_MAXLEN);

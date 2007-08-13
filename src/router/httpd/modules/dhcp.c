@@ -235,7 +235,7 @@ ej_dumpleases (webs_t wp, int argc, char_t ** argv)
 }
 
 /* Delete lease */
-int
+void
 delete_leases (webs_t wp)
 {
   char buf[100];
@@ -244,7 +244,7 @@ delete_leases (webs_t wp)
   char *mac;
 
   if (nvram_match ("lan_proto", "static"))
-    return -1;
+    return;
 
   if (nvram_match ("fon_enable", "1")
       || (nvram_match ("chilli_nowifibridge", "1")
@@ -265,8 +265,6 @@ delete_leases (webs_t wp)
 
   snprintf (buf, sizeof (buf), "dhcp_release %s %s %s", iface, ip, mac);
   system2 (buf);
-
-  return 0;
 }
 
 
@@ -276,16 +274,15 @@ dhcp_check (webs_t wp, char *value, struct variable *v)
   return;			// The udhcpd can valid lease table when re-load udhcpd.leases. by honor 2003-08-05
 }
 
-int
+void
 dhcp_renew (webs_t wp)
 {
 
-  int ret = killall ("udhcpc", SIGUSR1);
+  killall ("udhcpc", SIGUSR1);
 
-  return ret;
 }
 
-int
+void
 dhcp_release (webs_t wp)
 {
 
@@ -298,5 +295,4 @@ dhcp_release (webs_t wp)
   unlink ("/tmp/get_lease_time");
   unlink ("/tmp/lease_time");
 
-  return 0;
 }

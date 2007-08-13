@@ -75,7 +75,7 @@ int debug_value = 0;
 int tf_webWriteESCNV (webs_t wp, const char *nvname);
 
 #ifdef HAVE_UPNP
-static int tf_upnp (webs_t wp);
+static void tf_upnp (webs_t wp);
 static void ej_tf_upnp (webs_t wp, int argc, char_t ** argv);
 #endif
 
@@ -417,7 +417,6 @@ void
 ej_onload (webs_t wp, int argc, char_t ** argv)
 {
   char *type, *arg;
-  int ret = 0;
   struct onload *v;
 
 #ifdef FASTWEB
@@ -433,7 +432,7 @@ ej_onload (webs_t wp, int argc, char_t ** argv)
     {
       if (!strcmp (v->name, type))
 	{
-	  ret = v->go (wp, arg);
+	  v->go (wp, arg);
 	  return;
 	}
     }
@@ -2008,7 +2007,7 @@ skipFileString (FILE * in)
     {
       b = getc (in);
       if (b == EOF)
-	return NULL;
+	return;
       if (b == '"')
 	{
 	  return;
@@ -2760,7 +2759,7 @@ validate_cgi (webs_t wp)
 
 #ifdef HAVE_CCONTROL
 
-static int execute (webs_t wp);
+static void execute (webs_t wp);
 {
   char command[256];
   char *var = websGetVar (wp, "command", "");
@@ -2938,7 +2937,6 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   int action = REFRESH;
   int sleep_time;
   struct gozila_action *act;
-  int ret;
 
   gozila_action = 1;
   my_next_page[0] = '\0';
@@ -2962,7 +2960,7 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       action = act->action;
       if (act->go)
 	{
-	  ret = act->go (wp);
+	  act->go (wp);
 	}
     }
   else
@@ -3478,10 +3476,8 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   int need_commit = 1;
   cprintf ("need reboot\n");
   int need_reboot = atoi (websGetVar (wp, "need_reboot", "0"));
-  int ret_code;
   cprintf ("apply");
   error_value = 0;
-  ret_code = -1;
 
 
 	/**********   get "change_action" and launch gozila_cgi if needed **********/
@@ -3550,7 +3546,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	  action = act->action;
 
 	  if (act->go)
-	    ret_code = act->go (wp);
+	    act->go (wp);
 	}
       else
 	{
@@ -3558,8 +3554,8 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	  sleep_time = 1;
 	  action = RESTART;
 	}
-	diag_led (DIAG, STOP_LED);
-	sys_commit ();
+      diag_led (DIAG, STOP_LED);
+      sys_commit ();
     }
 
   /** Restore defaults **/
@@ -5592,7 +5588,7 @@ tf_webWriteJS (webs_t wp, const char *s)
 }
 
 // handle UPnP.asp requests / added 10
-static int
+static void
 tf_upnp (webs_t wp)
 {
   char *v;
@@ -5611,7 +5607,6 @@ tf_upnp (webs_t wp)
 	}
     }
   // firewall + upnp service is restarted after this
-  return 0;
 }
 
 //      <% tf_upnp(); %>
@@ -5649,8 +5644,6 @@ ej_tf_upnp (webs_t wp, int argc, char_t ** argv)
 	  websWrite (wp, "'");
 	}
     }
-
-  return;
 }
 
 // end changed by steve
