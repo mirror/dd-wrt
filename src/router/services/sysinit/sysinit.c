@@ -162,6 +162,7 @@ start_wanup (void)
 #else
   runStartup ("/jffs/etc/config", ".wanup");	//if available
   runStartup ("/mmc/etc/config", ".wanup");	//if available
+  runStartup ("/tmp/etc/config", ".wanup");	//if available
 #endif
   return 0;
 }
