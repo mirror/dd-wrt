@@ -432,6 +432,8 @@ extern int getifcount (const char *ifprefix);
 extern int getIfList (char *buffer, char *ifprefix);
 extern int ifexists (const char *ifname);
 extern void getinterfacelist (const char *ifprefix, char *buffer);
+extern int count_processes (char *pidName);
+
 int isGrep(char *string,char *cmp);
 int softkill (char *name);
 
