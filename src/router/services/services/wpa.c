@@ -307,15 +307,6 @@ start_nas_single (char *type, char *prefix)
   {
   0};
 
-  // Sveasoft 2003-12-15 only start if enabled
-  /* if (!nvram_invmatch ("nas_enable", "0")
-     || nvram_match ("security_mode", "wep")
-     || nvram_match ("security_mode", "disabled"))
-     {
-     stop_nas ();
-     return 0;
-     }
-   */
   convert_wds ();
   {
 
@@ -324,7 +315,6 @@ start_nas_single (char *type, char *prefix)
     snprintf (conffile, sizeof (conffile), "/tmp/nas.%s%s.conf", prefix,
 	      type);
 #endif
-    /* Sveasoft rewrite - start nas with explicit parameters */
 
     char apmode[32];
     sprintf (apmode, "%s_mode", prefix);

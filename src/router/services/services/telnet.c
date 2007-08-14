@@ -26,7 +26,7 @@
 #include <utils.h>
 #include <syslog.h>
 #include <signal.h>
-/* begin Sveasoft additon */
+
 int
 start_telnetd (void)
 {
