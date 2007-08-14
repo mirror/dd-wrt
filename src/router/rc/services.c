@@ -860,7 +860,7 @@ static struct SERVICES services_def[] = {
   {"milkfish", handle_milkfish},
 #endif
   {"wireless", handle_wireless},
-  {"wireless2", handle_wireless_2},
+  {"wireless_2", handle_wireless_2},
   {"dhcp_release", handle_dhcp_release},
 #ifdef HAVE_EOP_TUNNEL
   {"eop", handle_eop},
