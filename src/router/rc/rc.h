@@ -187,7 +187,6 @@ void start_custom_script (void);
 extern int start_httpd (void);
 extern int stop_httpd (void);
 
-// Sveasoft additions
 #ifdef HAVE_TELNET
 extern int start_telnetd (void);
 extern int stop_telnetd (void);
@@ -274,6 +273,8 @@ extern void *stop_service_nofree (char *name,void *handle);
 extern void startstop (char *name);
 extern void *startstop_nofree (char *name,void *handle);
 extern int start_main (char *name, int argc, char **argv);
+extern int start_servicei (char *name, int param);
+
 
 extern int zebra_ospf_init (void);
 extern int zebra_ripd_init (void);
@@ -282,7 +283,9 @@ extern int zebra_ripd_init (void);
 #define RC_STARTUP  "rc_startup"
 #define RC_SHUTDOWN "rc_shutdown"
 
-// end Sveasoft additions
+
+extern int nvram_main(int argc,char **argv);
+extern int ledtool_main(int argc,char **argv);
 
 extern int filtersync_main (void);
 extern int filter_add (int seq);
