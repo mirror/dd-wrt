@@ -624,7 +624,7 @@ main (int argc, char **argv)
 #ifdef HAVE_PPTPD
   /* poptop [ stop start restart ]  */
   else if (strstr (base, "poptop"))
-    return pptpd_main (argc, argv);
+    return start_main("pptpd",argc, argv);
 #endif
 #ifndef HAVE_RB500
 #ifndef HAVE_X86
