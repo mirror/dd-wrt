@@ -779,7 +779,7 @@ getassoclist (char *ifname, unsigned char *list)
 
 #endif
 
-/* Sveasoft addition - return wirteless interface */
+/* return wireless interface */
 char *
 get_wdev (void)
 {
@@ -798,7 +798,6 @@ get_wdev (void)
 #endif
 }
 
-/* end Sveasoft addition */
 
 int
 wl_probe (char *name)

@@ -253,8 +253,6 @@ stop_services (void)
 #endif
   if (handle)
     dlclose (handle);
-// end Sveasoft additions
-//stop_eou();
 
   cprintf ("done\n");
   return 0;

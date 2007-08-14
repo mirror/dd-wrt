@@ -477,15 +477,8 @@ int
 start_zebra (void)
 {
 
-  // Sveasoft 2003-12-15 only start if enabled
   if (!nvram_invmatch ("zebra_enable", "0"))
     return 0;
-//      else if ( nvram_invmatch("wk_mode", "ospf") &&
-//                !strcmp(lt, "0") && !strcmp(lr, "0") &&
-//                !strcmp(wt, "0") && !strcmp(wr, "0") ){
-//              printf("routing disabled.\n");
-//              return 0;
-//      }
 
 #ifdef HAVE_BIRD
 
