@@ -254,7 +254,6 @@ start_ntpc (void)
 {
   char *servers = nvram_safe_get ("ntp_server");
 
-  // Sveasoft 2003-12-15 only start if enabled
   if (!nvram_invmatch ("ntpd_enable", "0"))
     return 0;
 
@@ -318,7 +317,6 @@ start_iptqueue (void)
 {
   int ret = 0;
 
-  // Sveasoft 2003-12-15 only start if enabled
   if (!nvram_invmatch ("iptqueue_enable", "0"))
     return 0;
 
@@ -347,7 +345,6 @@ start_cron (void)
   int ret = 0;
   struct stat buf;
 
-  // Sveasoft 2003-12-15 only start if enabled
   if (nvram_match ("cron_enable", "0"))
     return 0;
 
@@ -410,7 +407,6 @@ start_syslog (void)
 {
   int ret1 = 0, ret2 = 0;
 
-  // Sveasoft 2003-12-15 only start if enabled
   if (!nvram_invmatch ("syslogd_enable", "0"))
     return 0;
 
@@ -615,9 +611,6 @@ start_pptp (int status)
   };
   char username[80], passwd[80];
 
-  // Sveasoft 2003-12-15 only start if enabled
-  /* if (!nvram_invmatch("pppd_enable", "0"))
-     return 0; */
 
   stop_dhcpc ();
 #ifdef HAVE_PPPOE
@@ -854,7 +847,6 @@ start_pptp (int status)
 	eval ("listen", nvram_safe_get ("lan_ifname"));
     }
 
-  /* Sveasoft - make sure QoS comes up after pptp pppo device */
   start_wshaper ();
 
   cprintf ("done\n");

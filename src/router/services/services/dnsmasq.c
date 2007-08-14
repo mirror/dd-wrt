@@ -58,7 +58,6 @@ start_dnsmasq (void)
       nvram_commit ();
     }
 
-  // Sveasoft 2003-12-15 only start if enabled
   if (!nvram_invmatch ("dnsmasq_enable", "0"))
     {
       stop_dnsmasq ();

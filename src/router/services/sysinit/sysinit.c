@@ -169,7 +169,6 @@ start_wanup (void)
 
 
 
-// begin Sveasoft addition
 
 int
 start_create_rc_startup (void)
@@ -216,7 +215,6 @@ create_rc_file (char *name)
   return 0;
 }
 
-// end Sveasoft addition
 static void
 ses_cleanup (void)
 {
@@ -1060,7 +1058,6 @@ start_nvram (void)
     nvram_set ("wl_wep", "enabled");	// the nas need this value, the "restricted" is no longer need. (20040624 by honor)
 
 
-// begin Sveasoft additions
 #ifdef HAVE_SET_BOOT
   if (!nvram_match ("boot_wait_web", "0"))
     nvram_set ("boot_wait_web", "1");
@@ -1071,9 +1068,6 @@ start_nvram (void)
     nvram_set ("sshd_web", "1");
 #endif
 
-  /* added 2003-12-24 Sveasoft - force board to 14 channels by setting locale to Japan */
-//  nvram_set ("wl0_country_code", "JP");
-//  nvram_set ("wl0_country", "Japan");
 #ifndef HAVE_MSSID
   nvram_set ("wl0_country_code", "JP");
   nvram_set ("wl0_country", "Japan");
@@ -1083,14 +1077,9 @@ start_nvram (void)
       nvram_set ("opo", "0x0008");
       nvram_set ("ag0", "0x02");
     }
-// end Sveasoft addition
 // Fix for newer stylesheet settings, BrainSlayer, Eko
   char style[32];
 
-//  {"svqos_port1bw", "FULL", 0},
-//  {"svqos_port2bw", "FULL", 0},
-//  {"svqos_port3bw", "FULL", 0},
-//  {"svqos_port4bw", "FULL", 0},
 
   if (nvram_match ("svqos_port1bw", "full"))
     nvram_set ("svqos_port1bw", "FULL");

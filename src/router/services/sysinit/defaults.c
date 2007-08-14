@@ -1147,8 +1147,6 @@ struct nvram_tuple srouter_defaults[] = {
   {"info_passwd", "0", 0},
   {"macupd_enable", "0", 0},
   {"wl_radauth", "0", 0},
-  /* Sveasoft added defaults */
-  {"expert_mode", "0", 0},
   {"rc_startup", "", 0},
   {"rc_firewall", "", 0},
   {"rc_custom", "", 0},
@@ -1575,7 +1573,6 @@ struct nvram_tuple srouter_defaults[] = {
   {"log_accepted", "0", 0},	/* 0:Disable 1:Eanble */
   {"log_dropped", "0", 0},	/* 0:Disable 1:Eanble */
   {"log_rejected", "0", 0},	/* 0:Disable 1:Eanble */
-  /* end Sveasoft added defaults */
 
   /* start lonewolf mods */
   {"port0vlans", "1", 0},
