@@ -1,3 +1,9 @@
+Note: logwtmp plugin source file patchlevel.h must match pppd version
+on system if it is used.  Edit the file plugins/patchlevel.h
+accordingly.
+
+--
+
 Basic Installation
 ==================
 
@@ -180,9 +186,3 @@ operates.
      script, and exit.
 
 `configure' also accepts some other, not widely useful, options.
-
-Building packages
-=================
-
-   Just execute ./build.sh and it will build the package.
-Currently only RedHat is supported this way.

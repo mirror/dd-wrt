@@ -4,6 +4,8 @@ This is the pptpd project TODO list.
 means Junior Jobs, following the KDE tradition suggested by Adriaan de
 Groot in May 2004.)
 
+20060714-1, 1.3.2, bcrelay is built even if --enable-bcrelay is not used.
+
 20050105-1, 1.2.1, denial of service, for ten seconds (or --stimeout)
 the pptpd will not process further connections while it waits for a
 client to send data.  The second select() will prevent any further
@@ -14,46 +16,21 @@ successfully.  It also creates a cron.weekly entry that is not removed
 when the package is removed.  Yet to test if vpnstats.pl works okay.
 [JJ]
 
-20040831-0, 1.2.1, when preparing source for distribution (e.g. using
-reconf script), use an antique version of automake, requested by
-Charlie Brady on poptop-server mailing list, for compatibility with
-antique distribution versions like RH7.3 and RHEL3.  (Review, perhaps
-reject on the grounds that it is a packaging issue and use of very old
-distributions).  [JJ]
-
-20040811-0, 1.2.1, inconsistency in timers with RFC2637, IDLE_WAIT should be 60
-but is 65, MAX_ECHO_WAIT should be 60 but is 5, in pptpdefs.h, make these
-configurable, requested by Tobias Brox.  [JJ]
+20040811-0, 1.2.1, RFC2637 timers IDLE_WAIT and MAX_ECHO_WAIT, in
+pptpdefs.h, make these configurable, requested by Tobias Brox.  [JJ]
 
 20040623-0, 1.2.1, "Plugin /usr/lib/pptpd/pptpd-logwtmp.so is for pppd
 version 2.4.2, this is 2.4.3" happens if pppd 2.4.3 is installed, or
-vice versa if 2.4.2 is installed.  [JJ]
-
-20040525-0, 1.2.0-b4, "configure: WARNING: `missing' script is too
-old or missing"
+vice versa if 2.4.2 is installed.  [JJ] Workaround on common
+distributions is to use makepackage instead of "make install".
+pptpd.init is also affected, as it has a hardcoded path to pptpd.
+Configure script should detect or accept version of pppd to build
+against.
 
 20040521-4, 1.2.0-b3, running on Fedora Core 1, kernel ? , when a
 connection arrives a warning is issued by the kernel "application bug:
 pptpctrl($PID) has SIGCHLD set to SIG_IGN but calls wait().  (see the
 NOTES section of 'man 2 wait').  Workaround activated."
-
-20040521-3, 1.2.0-b3, possible related to 20040521-1, connection to a
-busy pptpd host shows many packets from the client being echoed back
-unprocessed, until the first packet emitted by pppd.
-[20041222, perhaps this is fixed by nologfd]
-
-20040521-2, 1.2.0-b3, with ppp 2.4.2, pptpd reports "GRE: Bad checksum
-from pppd" once or twice.
-
-20040521-1, 1.2.0-b3, on particularly slow pptpd systems (such as the
-maintainer's lab hosts) some race-like situation occurs after
-openpty(), pppd fails with "Failed to open /dev/pts/0: No such file or
-directory", and the remote client receives every packet back, quickly
-detecting "Serial line is looped back."  Subsequent connection
-attempts work fine.  Can be reproduced on a 266MHz Pentium II if
-memory is first purged with "dd < /dev/zero > tmp".  [20041222, if this is due
-to a reference counter failure, per George Ross, then we should be able to
-reproduce it easily in a test framework.]
 
 20040521-0, 1.2.0-b3, write bcrelay man page.  (Debian lintian for
 pptpd 1.1.4-0b4-1)  [JJ]
@@ -70,9 +47,6 @@ fakeroot.
 
 review debian bug reports for pptpd package
 http://bugs.debian.org/pptpd
-
-20040428-0, important, bcrelay failure, >bcrelay[357]: mainloop:
-Error, sendto failed! (rv=-1, errno=6), per mailing list thread.
 
 20040426-0 bug: terminating immediately on CALL_CLR_RQST from client
 (1.2.0-b3) may violate the RFC, but was done to fix zombie pppd, Bruno
@@ -92,64 +66,45 @@ bug: 1.2.0-b3 configfile.c opens, reads and closes /etc/pptpd.conf as
 many times as there are possible option values, and only returns the
 first match for a keyword, not the last.
 
-PPTP Server TODO
-----------------
+20030214, ignore EPERM on GRE write for a short time in case netfilter
+is being adjusted by ip-up scripts, Bug #181005.
 
-Type Legend
------------
-; comment
-+ done and tested
-= done but needs more testing
-- not yet implemented feature/operation
--- not implementing this
-* bug! kill it! kill it!
-** really big bad ugly bug
+20030801, 1.1.3, XP seems to need mtu negotiation 4 lower than
+serverside.  MS PPTP-server handles this correctly.
 
-REMAINING ITEMS
-+-----------+-------+----------+---------+------------------------------------------------------------+
-| date      | type& | version  | version | comment                                                    |
-|           | bug#  | affected | fixed   |                                                            |
-+-----------+-------+----------+---------+------------------------------------------------------------+
-|20030214   | -     | all      |         | ignore EPERM on GRE write for a short time in case         |
-|           |       |          |         | netfilter is being adjusted by ip-up scripts, Bug #181005  |
-+-----------+-------+----------+---------+------------------------------------------------------------+
-|20030801   | *     | <= 1.1.3 |         | XP seems to need mtu negotiation 4 lower than serverside.  |
-|           |       |          |         | MS PPTP-server handles this correctly.                     |
-+-----------+-------+----------+---------+------------------------------------------------------------+
-|20030620   | **    | <= 1.1.3 |         | PPTP daemon waiting for infinite time if the pptpd.conf    |
-|           |       |          |         | file does not have a new line character at the EOF. So we  |
-|           |       |          |         | need a config-check routine. It is allready there, but it  |
-|           |       |          |         | seems to output to stdout.                                 |
-+-----------+-------+----------+---------+------------------------------------------------------------+
-|20030611   | *     | <= 1.1.3 |         | pptpd incorrectly hides all pppd error output.  This is a  |
-|           |       |          |         | defect and should be fixed. It apparently doesn't even wait|
-|           |       |          |         | for and report the pppd exit status.                       |
-+-----------+-------+----------+---------+------------------------------------------------------------+
-|20030526   | -     | <= 1.1.3 |         | Make choice between slirp, pppd and BSD userspace PPPD     |
-|           |       |          |         | a runtime one instead of compile time                      |
-+-----------+-------+----------+---------+------------------------------------------------------------+
-|20030218   | --    | <= 1.1.3 | --      | Make Poptop ask IP-info from a real DHCP-server. It is     |
-|           |       |          |         | possible to get a Radius-server to do this.                |
-+-----------+-------+----------+---------+------------------------------------------------------------+
-|20030128   | -     | <= 1.1.3 |         | Make the logentries more verbose, so that they actually    |
-|           |       |          |         | mean something to the admins.	                      |
-+-----------+-------+----------+---------+------------------------------------------------------------+
-|20021220   | -     | <= 1.1.3 |         | Add a way to define pools for different usergroups.	      |
-+-----------+-------+----------+---------+------------------------------------------------------------+
-|19990802   | -	    | <= 1.1.3 |         | We don't actually implement any kind of window protocol,   |
-|	    |	    |          |         | congestion control, etc, etc.  Very simple algorithm which |
-|	    |	    |          |         | works well on LANs and good performance links but could be |
-|	    |	    |          |         | improved for slow distant dialups/bad routing and links.   |
-+-----------+-------+----------+---------+------------------------------------------------------------+
-|19990705   | -     | <= 1.1.3 |         | PNS mode and all things which go with it aren't supported  |
-|	    |	    |          |         | properly.  We're only an IP tunnelling PAC, and our        |
-|	    |	    |          |         | clients act as a PNS, as per the draft.  We may implement  |
-|	    |	    |          |         | PNS mode and related things like multiple calls from one   |
-|	    |	    |          |         | client IP in the future (post-1.0).	 		      |
-+-----------+-------+----------+---------+------------------------------------------------------------+
-|19990413   | -	    | <= 1.1.3 |         | SET LINK INFO (CTRL Message 15) is not fully implemented.  |
-|	    |	    |          |         | This doesn't cause any problem with Win95/98/NT or Linux   |
-|	    |	    |          |         | clients.  NT clients send a default set of ACCMs which we  |
-|      	    |       |          |         | validate and ignore, the others don't send anything.       |
-|	    |	    |          |         | Probably fine for all IP tunneling clients (post-1.0).     |
-+-----------+-------+----------+---------+------------------------------------------------------------+
+20030620, 1.1.3, PPTP daemon waiting for infinite time if the
+pptpd.conf file does not have a new line character at the EOF. So we
+need a config-check routine. It is allready there, but it seems to
+output to stdout.
+
+20030611, 1.1.3, pptpd incorrectly hides all pppd error output.  This
+is a defect and should be fixed. It apparently doesn't even wait for
+and report the pppd exit status.
+
+20030526, 1.1.3, Make choice between slirp, pppd and BSD userspace
+PPPD a runtime one instead of compile time.
+
+20030218, 1.1.3, ask IP-info from a real DHCP-server. It is possible
+to get a Radius-server to do this.
+
+20030128, 1.1.3, Make the logentries more verbose, so that they
+actually mean something to the admins.
+
+20021220, 1.1.3, Add a way to define pools for different usergroups.
+
+19990802, 1.1.3, We don't actually implement any kind of window
+protocol, congestion control, etc, etc.  Very simple algorithm which
+works well on LANs and good performance links but could be improved
+for slow distant dialups/bad routing and links.
+
+19990705, 1.1.3, PNS mode and all things which go with it aren't
+supported properly.  We're only an IP tunnelling PAC, and our clients
+act as a PNS, as per the draft.  We may implement PNS mode and related
+things like multiple calls from one client IP in the future
+(post-1.0).
+
+19990413, 1.1.3, SET LINK INFO (CTRL Message 15) is not fully
+implemented. This doesn't cause any problem with Win95/98/NT or Linux
+clients.  NT clients send a default set of ACCMs which we validate and
+ignore, the others don't send anything.  Probably fine for all IP
+tunneling clients (post-1.0).

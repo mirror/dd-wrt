@@ -4,7 +4,7 @@
  *
  * Additional autoconf defines for this program.
  *
- * $Id: acconfig.h,v 1.5 2005/01/14 02:58:10 quozl Exp $
+ * $Id: acconfig.h,v 1.6 2005/12/29 01:21:09 quozl Exp $
  */
 
 /* Use BSD User land PPP? */
@@ -12,9 +12,6 @@
 
 /* Use SLIRP? */
 #undef SLIRP
-
-/* Let PPPD choose the IP addresses? */
-#undef PPPD_IP_ALLOC
 
 /* Enable Broadcast Relay? */
 #undef BCRELAY

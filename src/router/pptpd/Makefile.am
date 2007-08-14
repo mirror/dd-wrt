@@ -3,7 +3,7 @@ AUTOMAKE_OPTIONS = no-dependencies foreign
 
 @SET_MAKE@
 
-##LIBFILES = -lxxx
+export LIBDIR=$(libdir)/pptpd
 INCLUDES = -I.
 ## Change this if you don't have gcc
 ## -pedantic removed for now (OpenBSD header files).
@@ -18,7 +18,7 @@ CFLAGS = -O2 -fno-builtin -Wall -DSBINDIR='"$(sbindir)"'
 man_MANS = pptpctrl.8 pptpd.8 pptpd.conf.5
 
 EXTRA_DIST = \
-README* ChangeLog* NEWS* TODO $(man_MANS) \
+html README* ChangeLog NEWS TODO $(man_MANS) \
 samples/chap-secrets samples/options.pptpd samples/pptpd.conf \
 Makefile.uClinux config.embed.h version reconf \
 tools/pptp-portslave tools/vpnstats tools/vpnstats.pl tools/vpnuser \
@@ -38,12 +38,12 @@ sbin_PROGRAMS = pptpd pptpctrl bcrelay
 # for dependencies, so just attribute them all to pptpd.
 
 pptpd_SOURCES = \
-	pptpd.c configfile.c pptpmanager.c compat.c inststr.c getopt.c getopt1.c \
-	compat.h configfile.h ctrlpacket.h defaults.h inststr.h our_getopt.h \
+	 pqueue.c pptpd.c configfile.c pptpmanager.c compat.c inststr.c getopt.c getopt1.c \
+	pqueue.h compat.h configfile.h ctrlpacket.h defaults.h inststr.h our_getopt.h \
 	our_syslog.h ppphdlc.h pptpctrl.h pptpdefs.h pptpgre.h pptpmanager.h
 
 pptpctrl_SOURCES = \
-	pptpctrl.c ctrlpacket.c inststr.c compat.c pptpgre.c ppphdlc.c
+	pqueue.c pptpctrl.c ctrlpacket.c inststr.c compat.c pptpgre.c ppphdlc.c
 
 pptpd_LDADD = $(XTRALIBS_MGR)
 
@@ -100,8 +100,10 @@ pptpd.o: pptpd.c config.h our_syslog.h our_getopt.h configfile.h \
   defaults.h compat.h pptpmanager.h
 
 pptpgre.o: pptpgre.c config.h our_syslog.h ppphdlc.h pptpgre.h pptpdefs.h \
-  defaults.h compat.h
+  pptpctrl.h defaults.h pqueue.h compat.h
 
 pptpmanager.o: pptpmanager.c config.h our_syslog.h configfile.h \
   defaults.h pptpctrl.h pptpdefs.h pptpmanager.h compat.h
+
+pqueue.o: pqueue.c pqueue.h
 
