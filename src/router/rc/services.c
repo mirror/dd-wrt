@@ -269,6 +269,7 @@ handle_index (void)
 {
   unlink ("/tmp/ppp/log");
   void *handle = NULL;
+  handle = stop_service_nofree ("igmp_proxy", handle);
 #ifndef HAVE_MADWIFI
   handle = stop_service_nofree ("nas", handle);
 #endif
