@@ -312,7 +312,6 @@ start_udhcpd (void)
 	}
       while (host_key[++i]);
     }
-  /* end Sveasoft addition */
   fclose (fp);
 
   /* Sveasoft addition - create static leases file */

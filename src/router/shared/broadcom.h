@@ -390,7 +390,6 @@ extern char *live_translate (char *tran);	//Eko
 extern void rep (char *in, char from, char to);
 
 
-/* Sveasoft additions */
 extern void save_wds (webs_t wp);
 extern void validate_iradius (webs_t wp, char *value, struct variable *v);
 extern void validate_wds (webs_t wp, char *value, struct variable *v);
@@ -433,7 +432,6 @@ extern void ping_wol (webs_t wp);
 extern void ping_startup (webs_t wp);
 extern void ping_firewall (webs_t wp);
 extern void ping_custom (webs_t wp);
-/* end Sveasoft additions */
 
 
 #ifdef HAVE_MSSID

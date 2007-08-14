@@ -24,7 +24,7 @@
 #define BCME_BUFTOOSHORT		-14	/* Buffer too short */
 #endif
 
-/* Sveasoft addition - get wireless interface */
+/* get wireless interface */
 extern char *get_wdev (void);
 
 /*
