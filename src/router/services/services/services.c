@@ -744,6 +744,11 @@ start_pptp (int status)
       else
 	perror ("/proc/sys/net/ipv4/ip_forward");
     }
+      char *wan_ifname = nvram_safe_get ("wan_ifname");
+      if (isClient ())
+      {
+      wan_ifname = get_wdev ();
+      }
 
 
   /* Bring up  WAN interface */
@@ -756,7 +761,6 @@ start_pptp (int status)
 
 //      char *pptp_server_ip = nvram_safe_get ("pptp_server_ip");
 //      char *wan_hostname = nvram_safe_get ("wan_hostname");
-      char *wan_ifname = nvram_safe_get ("wan_ifname");
 
       nvram_set ("wan_get_dns", "");
 
@@ -795,7 +799,7 @@ start_pptp (int status)
     }
   else
     {
-      ifconfig (nvram_safe_get ("wan_ifname"), IFUP,
+      ifconfig (wan_ifname, IFUP,
 		nvram_safe_get ("wan_ipaddr"),
 		nvram_safe_get ("wan_netmask"));
     }
@@ -844,7 +848,9 @@ start_pptp (int status)
 	}
       /* Trigger Connect On Demand if user ping pptp server */
       else
+      {
 	eval ("listen", nvram_safe_get ("lan_ifname"));
+      }
     }
 
   start_wshaper ();
