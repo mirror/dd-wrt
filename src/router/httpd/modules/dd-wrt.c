@@ -5997,7 +5997,7 @@ ej_active_wds (webs_t wp, int argc, char_t ** argv)
 
 
       rssi = 0;
-
+      memset(desc,0,30);
       for (i = 1; i <= 10; i++)
 	{
 	  snprintf (wdsvar, 30, "wl_wds%d_hwaddr", i);
