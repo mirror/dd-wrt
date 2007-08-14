@@ -697,7 +697,7 @@ start_pptp (int status)
 	  fprintf (fp, "noccp\n");	// Disable CCP (Compression Control Protocol)
 	}else
 	{
-	  fprintf (fp, "mppe-stateless\n");	// Disable mppe negotiation
+	  fprintf (fp, "mppe required,stateless\n");
         }
       fprintf (fp, "default-asyncmap\n");	// Disable  asyncmap  negotiation
       fprintf (fp, "nopcomp\n");	// Disable protocol field compression
