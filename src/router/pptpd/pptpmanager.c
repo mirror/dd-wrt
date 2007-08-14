@@ -3,7 +3,7 @@
  *
  * Manages the PoPToP sessions.
  *
- * $Id: pptpmanager.c,v 1.10 2005/01/05 23:07:09 quozl Exp $
+ * $Id: pptpmanager.c,v 1.14 2005/12/29 09:59:49 quozl Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -61,30 +61,12 @@ extern char *bindaddr;
 extern int pptp_debug;
 extern int pptp_noipparam;
 extern int pptp_logwtmp;
-
-#if !defined(PPPD_IP_ALLOC)
-extern char localIP[MAX_CONNECTIONS][16];
-extern char remoteIP[MAX_CONNECTIONS][16];
-
-/* for now, this contains all relavant info about a call
- * we are assuming that the remote and local IP's never change
- * and are set at startup.
- */
-struct callArray {
-	pid_t pid;
-	char pppRemote[16];
-	char pppLocal[16];
-};
+extern int pptp_delegate;
 
 /* option for timeout on starting ctrl connection */
-int pptp_stimeout = STIMEOUT_DEFAULT;
+extern int pptp_stimeout;
 
-/* global for signal handler */
-static struct callArray clientArray[MAX_CONNECTIONS];
-
-/* from IP parser */
-extern int maxConnections;
-#endif
+extern int pptp_connections;
 
 /* local function prototypes */
 static void connectCall(int clientSocket, int clientNumber);
@@ -93,35 +75,128 @@ static int createHostSocket(int *hostSocket);
 /* this end's call identifier */
 uint16_t unique_call_id = 0;
 
+/* slots - begin */
+
+/* data about connection slots */
+struct slot {
+  pid_t pid;
+  char *local;
+  char *remote;
+} *slots;
+
+/* number of connection slots allocated */
+int slot_count;
+
+static void slot_iterate(struct slot *slots, int count, void (*callback) (struct slot *slot))
+{
+  int i;
+  for(i=0; i<count; i++)
+    (*callback)(&slots[i]);
+}
+
+static void slot_slot_init(struct slot *slot)
+{
+  slot->pid = 0;
+  slot->local = NULL;
+  slot->remote = NULL;
+}
+
+void slot_init(int count)
+{
+  slot_count = count;
+  slots = (struct slot *) calloc(slot_count, sizeof(struct slot));
+  slot_iterate(slots, slot_count, slot_slot_init);
+}
+
+static void slot_slot_free(struct slot *slot)
+{
+  slot->pid = 0;
+  if (slot->local) free(slot->local);
+  slot->local = NULL;
+  if (slot->remote) free(slot->remote);
+  slot->remote = NULL;
+}
+
+void slot_free()
+{
+  slot_iterate(slots, slot_count, slot_slot_free);
+  free(slots);
+  slots = NULL;
+  slot_count = 0;
+}
+
+void slot_set_local(int i, char *ip)
+{
+  struct slot *slot = &slots[i];
+  if (slot->local) free(slot->local);
+  slot->local = strdup(ip);
+}
+
+void slot_set_remote(int i, char *ip)
+{
+  struct slot *slot = &slots[i];
+  if (slot->remote) free(slot->remote);
+  slot->remote = strdup(ip);
+}
+
+void slot_set_pid(int i, pid_t pid)
+{
+  struct slot *slot = &slots[i];
+  slot->pid = pid; 
+}
+
+int slot_find_by_pid(pid_t pid)
+{
+  int i;
+  for(i=0; i<slot_count; i++) {
+    struct slot *slot = &slots[i];
+    if (slot->pid == pid) return i;
+  }
+  return -1;
+}
+
+int slot_find_empty()
+{
+  return slot_find_by_pid(0);
+}
+
+char *slot_get_local(int i)
+{
+  struct slot *slot = &slots[i];
+  return slot->local; 
+}
+
+char *slot_get_remote(int i)
+{
+  struct slot *slot = &slots[i];
+  return slot->remote; 
+}
+
+/* slots - end */
+
 static void sigchld_responder(int sig)
 {
-	int chld, status;
+  int child, status;
 
-	while ((chld = waitpid(-1, &status, WNOHANG)) > 0) {
-#if !defined(PPPD_IP_ALLOC)
-		int i;
-		for (i = 0; i < maxConnections; i++)
-			if (clientArray[i].pid == chld)
-				break;
-		if (i < maxConnections) {
-			clientArray[i].pid = 0;
-			if (pptp_debug)
-				syslog(LOG_DEBUG, "MGR: Reaped child %d", chld);
-		} else
-			syslog(LOG_INFO, "MGR: Reaped unknown child %d", chld);
-#else
-		if (pptp_debug)
-			syslog(LOG_DEBUG, "MGR: Reaped child %d", chld);
-#endif
-	}
+  while ((child = waitpid(-1, &status, WNOHANG)) > 0) {
+    if (pptp_delegate) {
+      if (pptp_debug) syslog(LOG_DEBUG, "MGR: Reaped child %d", child);
+    } else {
+      int i;
+      i = slot_find_by_pid(child);
+      if (i != -1) {
+	slot_set_pid(i, 0);
+	if (pptp_debug) syslog(LOG_DEBUG, "MGR: Reaped child %d", child);
+      } else {
+	syslog(LOG_INFO, "MGR: Reaped unknown child %d", child);
+      }
+    }
+  }
 }
 
 int pptp_manager(int argc, char **argv)
 {
-	/* misc ints */
-#if !defined(PPPD_IP_ALLOC)
-	int loop;
-#endif
+	int firstOpen = -1;
 	int ctrl_pid;
 	socklen_t addrsize;
 
@@ -145,13 +220,10 @@ int pptp_manager(int argc, char **argv)
 
 	syslog(LOG_INFO, "MGR: Manager process started");
 
-#if !defined(PPPD_IP_ALLOC)
-	syslog(LOG_INFO, "MGR: Maximum of %d connections available", maxConnections);
-
-	for (loop = 0; loop < maxConnections; loop++) {
-		clientArray[loop].pid = 0;
+	if (!pptp_delegate) {
+		syslog(LOG_INFO, "MGR: Maximum of %d connections available", 
+		       pptp_connections);
 	}
-#endif
 
 	/* Connect the host socket and activate it for listening */
 	if (createHostSocket(&hostSocket) < 0) {
@@ -162,26 +234,17 @@ int pptp_manager(int argc, char **argv)
 
 	while (1) {
 		int max_fd;
-#if !defined(PPPD_IP_ALLOC)
-		int firstOpen = -1;
-
-		for (loop = 0; loop < maxConnections; loop++)
-			if (clientArray[loop].pid == 0) {
-				firstOpen = loop;
-				break;
-			}
-
 		FD_ZERO(&connSet);
-		if (firstOpen == -1) {
-			syslog(LOG_ERR, "MGR: No free connection slots or IPs - no more clients can connect!");
-			FD_CLR(hostSocket, &connSet);
-		} else {
+		if (pptp_delegate) {
 			FD_SET(hostSocket, &connSet);
+		} else {
+			firstOpen = slot_find_empty();
+			if (firstOpen == -1) {
+				syslog(LOG_ERR, "MGR: No free connection slots or IPs - no more clients can connect!");
+			} else {
+				FD_SET(hostSocket, &connSet);
+			}
 		}
-#else
-		FD_ZERO(&connSet);
-		FD_SET(hostSocket, &connSet);
-#endif
 		max_fd = hostSocket;
 
 		FD_SET(sig_fd, &connSet);
@@ -268,7 +331,7 @@ int pptp_manager(int argc, char **argv)
 					continue;
 				}
 
-				ph.length = htons(ph.length);
+				ph.length = ntohs(ph.length);
 				ph.pptp_type = ntohs(ph.pptp_type);
 				ph.magic = ntohl(ph.magic);
 				ph.ctrl_type = ntohs(ph.ctrl_type);
@@ -311,19 +374,14 @@ int pptp_manager(int argc, char **argv)
 					close(hostSocket);
 					if (pptp_debug)
 						syslog(LOG_DEBUG, "MGR: Launching " PPTP_CTRL_BIN " to handle client");
-#if !defined(PPPD_IP_ALLOC)
-					connectCall(clientSocket, firstOpen);
-#else
-					connectCall(clientSocket, 0);
-#endif
+					connectCall(clientSocket, !pptp_delegate ? firstOpen : 0);
 					_exit(1);
 					/* NORETURN */
 				default:	/* parent */
 					close(clientSocket);
 					unique_call_id += MAX_CALLS_PER_TCP_LINK;
-#if !defined(PPPD_IP_ALLOC)
-					clientArray[firstOpen].pid = ctrl_pid;
-#endif
+					if (!pptp_delegate)
+						slot_set_pid(firstOpen, ctrl_pid);
 					break;
 				}
 			}
@@ -450,17 +508,17 @@ static void connectCall(int clientSocket, int clientNumber)
 		/* send the CTRL manager the speed of the connection so it can fire pppd at that speed */
 		ctrl_argv[pptpctrl_argc++] = speedstr;
 	}
-#if PPPD_IP_ALLOC
-	/* no local or remote address to specify */
-	ctrl_argv[pptpctrl_argc++] = "0";
-	ctrl_argv[pptpctrl_argc++] = "0";
-#else
-	/* specify local & remote addresses for this call */
-	ctrl_argv[pptpctrl_argc++] = "1";
-	ctrl_argv[pptpctrl_argc++] = localIP[clientNumber];
-	ctrl_argv[pptpctrl_argc++] = "1";
-	ctrl_argv[pptpctrl_argc++] = remoteIP[clientNumber];
-#endif
+	if (pptp_delegate) {
+		/* no local or remote address to specify */
+		ctrl_argv[pptpctrl_argc++] = "0";
+		ctrl_argv[pptpctrl_argc++] = "0";
+	} else {
+		/* specify local & remote addresses for this call */
+		ctrl_argv[pptpctrl_argc++] = "1";
+		ctrl_argv[pptpctrl_argc++] = slot_get_local(clientNumber);
+		ctrl_argv[pptpctrl_argc++] = "1";
+		ctrl_argv[pptpctrl_argc++] = slot_get_remote(clientNumber);
+	}
 
 	/* our call id to be included in GRE packets the client
 	 * will send to us */

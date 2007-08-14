@@ -425,7 +425,7 @@ static void mainloop(int argc, char **argv)
   struct iflist *iflist = NULL;         // Initialised after the 1st packet
   struct sockaddr_ll sa;
   struct packet *ipp_p;
-  char *udppdu;
+  char *udppdu; // FIXME: warning: pointer targets in assignment differ in signedness
   fd_set sock_set;
   struct timeval time_2_wait;
   static struct ifsnr old_ifsnr[MAXIF+1]; // Old iflist to socket fd's mapping list
@@ -664,8 +664,16 @@ static void mainloop(int argc, char **argv)
                  */
                 if ((nrsent = sendto(cur_ifsnr[j].sock_nr, ipp_p, rlen, MSG_DONTWAIT|MSG_TRYHARD, (struct sockaddr *)&sa, salen)) < 0)
                 {
-                  syslog(LOG_ERR, "mainloop: Error, sendto failed! (rv=%d, errno=%d)", nrsent, errno);
-                  exit(1);
+		  if (errno == ENETDOWN) {
+		    syslog(LOG_NOTICE, "ignored ENETDOWN from sendto(), a network interface was going down?");
+		  } else if (errno == ENXIO) {
+		    syslog(LOG_NOTICE, "ignored ENXIO from sendto(), a network interface went down?");
+		  } else if (errno == ENOBUFS) {
+		    syslog(LOG_NOTICE, "ignored ENOBUFS from sendto(), temporary shortage of buffer memory");
+		  } else {
+		    syslog(LOG_ERR, "mainloop: Error, sendto failed! (rv=%d, errno=%d)", nrsent, errno);
+		    exit(1);
+		  }
                 }
                 NVBCR_PRINTF(("Successfully relayed %d bytes \n", nrsent));
                 if (vnologging == 0) {

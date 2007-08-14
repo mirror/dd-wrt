@@ -3,7 +3,7 @@
  *
  * Compatibility functions for different OSes
  *
- * $Id: compat.c,v 1.5 2005/01/05 11:01:51 quozl Exp $
+ * $Id: compat.c,v 1.6 2005/08/22 00:48:34 quozl Exp $
  */
 
 #if HAVE_CONFIG_H
@@ -172,12 +172,8 @@ void sigpipe_handler(int signum)
 /* assign a signal number to the pipe */
 void sigpipe_assign(int signum)
 {
-  sigset_t sigset;
   struct sigaction sa;
 
-  sigemptyset(&sigset);
-  sigaddset(&sigset, signum);
-  
   memset(&sa, 0, sizeof(sa));
   sa.sa_handler = sigpipe_handler;
   sigaction(signum, &sa, NULL);
