@@ -7,12 +7,21 @@
 		<div id="content">
 			<h2><% tran("service.pptp_legend"); %></h2>
 			<dl>
-				<dd>PPTP.....<br /><br />
-					<div class="note">
-						<h4>Note</h4>
-						<div>Please note....</div>
-					</div>
-				</dd>
+				<dd>PPTP Server Configuration</dd>
+				<dt>Server IP<dt>
+				<dd>Defines the Local IP of the PPTP Server. this should be almost the Local LAN IP<dd>
+				<dt>Client IP(s)<dt>
+				<dd>Must be a space separated list of IPs or a range of definition which will be used as pool for client ip assignment<dd>
+				<div class="note">
+					<h4>example:</h4>
+					<div>192.168.1.2-99</div>
+				</div>
+				<dt>CHAP-Secrets<dt>
+				<dd>Must be a list of secrets in standard linux CHAP secrets format<dd>
+				<div class="note">
+					<h4>example:</h4>
+					<div>myuser * mypassword *</div>
+				</div>			
 				<dt><% tran("service.pptp_legend"); %></dt>
 				<dd>Click <i>Save Settings</i> to save your settings or click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>
 			</dl>
