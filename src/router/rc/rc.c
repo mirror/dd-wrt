@@ -809,8 +809,6 @@ main (int argc, char **argv)
   else if (strstr (base, "wol"))
     return wol_main (argc, argv);
 #endif
-  else if (strstr (base, "sendudp"))
-    return sendudp_main (argc, argv);
   else if (strstr (base, "event"))
     return event_main (argc, argv);
   else if (strstr (base, "switch"))
