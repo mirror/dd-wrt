@@ -2,7 +2,7 @@
 #
 # Startup script for pptpd
 #
-# chkconfig: 345 85 15
+# chkconfig: - 85 15
 # description: PPTP server
 # processname: pptpd
 # config: /etc/pptpd.conf
@@ -31,7 +31,13 @@ case "$1" in
   status)
         status pptpd
         ;;
-  restart)
+  condrestart)
+	if [ -f /var/lock/subsys/pptpd ]; then
+		$0 stop
+		$0 start
+	fi
+	;;
+  reload|restart)
         $0 stop
         $0 start
         echo "Warning: a pptpd restart does not terminate existing "

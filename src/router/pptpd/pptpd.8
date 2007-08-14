@@ -1,4 +1,4 @@
-.TH PPTPD 8 "24 May 2004"
+.TH PPTPD 8 "29 December 2005"
 .SH NAME
 pptpd - PPTP VPN daemon
 .SH SYNOPSIS
@@ -95,6 +95,28 @@ as users connect and disconnect.  See
 .BR wtmp (1).
 
 .TP
+\fB-C\fR|\fB--connections \fIn
+limits the number of client connections that may be accepted.  Corresponds to the
+.BR connections
+option in 
+.IR pptpd.conf .
+If pptpd is allocating IP addresses (e.g. 
+.BR --delegate
+is not used) then the number of connections is also limited by the
+.BR remoteip
+option in 
+.IR pptpd.conf .
+
+.TP
+.BR -D | --delegate
+delegates the allocation of client IP addresses to 
+.BR pppd (8).
+Without this option, which is the default, pptpd manages the list of
+IP addresses for clients and passes the next free address to pppd.
+With this option, pptpd does not pass an address, and so pppd may use
+radius or chap-secrets to allocate an address.
+
+.TP
 .BR -v | --version
 displays the current version of the pptp daemon.
 
@@ -102,6 +124,44 @@ displays the current version of the pptp daemon.
 /etc/pptpd.conf
 .br
 /var/run/pptpd.pid
+
+.SH DEBUGGING
+To turn on debugging, add 'debug' to /etc/pptpd.conf and your
+PPP options file, and restart pptpd.
+.br
+.LP
+Typically the PPP options file is options.pptpd in /etc/ppp, though on
+some distributions it may be pptpd-options.  Use your package manager
+to find it, e.g. 'rpm -ql pptpd | grep options' or 'dpkg --listfiles
+pptpd | grep options'.
+.br
+.LP
+You may need to configure syslogd to catch debug messages.  e.g. edit
+/etc/syslog.conf and add something similar to the example below, then
+restart syslogd.
+.br
+.LP
+# debug logging
+.br
+*.debug;mail.none                                       /var/log/debug
+.br
+.LP
+This will log all debug information, except mail, to the file
+/var/log/debug.  Note that this is a lot of information and might
+flood your disks.  If performance is an issue, you can try turning off
+sync during your debugging, by prefixing the destination with '-'.
+.br
+.LP
+# debug logging
+.br
+*.debug;mail.none                                       -/var/log/debug
+.br
+.LP
+Disable this line and restart syslog after you are done debugging.
+See the syslog man pages for more details.
+.br
+.LP
+
 .SH AUTHORS
 Poptop is written by Matthew Ramsay <matthewr@moreton.com.au>, David Luyer
 <luyer@ucs.uwa.edu.au>, Kevin Thayer <tmk@netmagic.net>, Peter Galbavy

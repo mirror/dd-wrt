@@ -57,15 +57,15 @@ PROGRAMS = $(sbin_PROGRAMS)
 am_bcrelay_OBJECTS = bcrelay.$(OBJEXT)
 bcrelay_OBJECTS = $(am_bcrelay_OBJECTS)
 bcrelay_LDADD = $(LDADD)
-am_pptpctrl_OBJECTS = pptpctrl.$(OBJEXT) ctrlpacket.$(OBJEXT) \
-	inststr.$(OBJEXT) compat.$(OBJEXT) pptpgre.$(OBJEXT) \
-	ppphdlc.$(OBJEXT)
+am_pptpctrl_OBJECTS = pqueue.$(OBJEXT) pptpctrl.$(OBJEXT) \
+	ctrlpacket.$(OBJEXT) inststr.$(OBJEXT) compat.$(OBJEXT) \
+	pptpgre.$(OBJEXT) ppphdlc.$(OBJEXT)
 pptpctrl_OBJECTS = $(am_pptpctrl_OBJECTS)
 am__DEPENDENCIES_1 =
 pptpctrl_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_pptpd_OBJECTS = pptpd.$(OBJEXT) configfile.$(OBJEXT) \
-	pptpmanager.$(OBJEXT) compat.$(OBJEXT) inststr.$(OBJEXT) \
-	getopt.$(OBJEXT) getopt1.$(OBJEXT)
+am_pptpd_OBJECTS = pqueue.$(OBJEXT) pptpd.$(OBJEXT) \
+	configfile.$(OBJEXT) pptpmanager.$(OBJEXT) compat.$(OBJEXT) \
+	inststr.$(OBJEXT) getopt.$(OBJEXT) getopt1.$(OBJEXT)
 pptpd_OBJECTS = $(am_pptpd_OBJECTS)
 pptpd_DEPENDENCIES = $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
@@ -94,17 +94,18 @@ DIST_ARCHIVES = $(distdir).tar.gz
 GZIP_ENV = --best
 distuninstallcheck_listfiles = find . -type f -print
 distcleancheck_listfiles = find . -type f -print
-ACLOCAL = aclocal-1.9
+ACLOCAL = ${SHELL} /home/seg/DEV/broadcom/src/router/pptpd/missing --run aclocal-1.9
 AMDEP_FALSE = #
 AMDEP_TRUE = 
-AMTAR = tar
-AUTOCONF = autoconf
-AUTOHEADER = autoheader
-AUTOMAKE = automake-1.9
+AMTAR = ${SHELL} /home/seg/DEV/broadcom/src/router/pptpd/missing --run tar
+AUTOCONF = ${SHELL} /home/seg/DEV/broadcom/src/router/pptpd/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/seg/DEV/broadcom/src/router/pptpd/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/seg/DEV/broadcom/src/router/pptpd/missing --run automake-1.9
 AWK = gawk
+CC = $(ARCH)-linux-uclibc-gcc
 CCDEPMODE = depmode=none
 CFLAGS = $(COPTS) -fno-builtin -Wall -DSBINDIR='"$(sbindir)"'
-CPP = $(CC) -E
+CPP = $(ARCH)-linux-uclibc-gcc -E
 CPPFLAGS = 
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
@@ -112,8 +113,9 @@ DEPDIR = .deps
 ECHO_C = 
 ECHO_N = -n
 ECHO_T = 
-EGREP = grep -E
+EGREP = /usr/bin/grep -E
 EXEEXT = 
+GREP = /usr/bin/grep
 HAVE_OPENPTY = 
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
@@ -124,7 +126,7 @@ LIBOBJS =
 LIBS = 
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = makeinfo
+MAKEINFO = ${SHELL} /home/seg/DEV/broadcom/src/router/pptpd/missing --run makeinfo
 OBJEXT = o
 PACKAGE = pptpd
 PACKAGE_BUGREPORT = 
@@ -137,13 +139,11 @@ RANLIB = ranlib
 SET_MAKE = 
 SHELL = /bin/sh
 STRIP = strip
-VERSION = 1.2.3
+VERSION = 1.3.4
 XTRALIBS_CTRL = -lutil
 XTRALIBS_MGR = 
-XTRA_PROG = bcrelay
+XTRA_PROG = 
 ac_ct_CC = 
-ac_ct_RANLIB = 
-ac_ct_STRIP = 
 am__fastdepCC_FALSE = 
 am__fastdepCC_TRUE = #
 am__include = include
@@ -153,20 +153,27 @@ am__tar = ${AMTAR} chof - "$$tardir"
 am__untar = ${AMTAR} xf -
 bindir = ${exec_prefix}/bin
 build_alias = 
-datadir = ${prefix}/share
+datadir = ${datarootdir}
+datarootdir = ${prefix}/share
+docdir = ${datarootdir}/doc/${PACKAGE}
+dvidir = ${docdir}
 exec_prefix = ${prefix}
 host_alias = mips
+htmldir = ${docdir}
 includedir = /opt/openwrt/mipsel-linux-uclibc/include
-infodir = ${prefix}/info
-install_sh = /home/dd-wrt/3com/src/router/pptpd/install-sh
+infodir = ${datarootdir}/info
+install_sh = /home/seg/DEV/broadcom/src/router/pptpd/install-sh
 libdir = /opt/openwrt/mipsel-linux-uclibc/lib/
 libexecdir = ${exec_prefix}/libexec
+localedir = ${datarootdir}/locale
 localstatedir = ${prefix}/var
-mandir = ${prefix}/man
+mandir = ${datarootdir}/man
 mkdir_p = mkdir -p --
 oldincludedir = /usr/include
+pdfdir = ${docdir}
 prefix = /usr
 program_transform_name = s,x,x,
+psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
 sysconfdir = ${prefix}/etc
@@ -179,7 +186,7 @@ INCLUDES = -I.
 #CFLAGS = -O2 -fno-builtin -Wall -ansi -pedantic -Wmissing-prototypes -Werror -DSBINDIR='"$(sbindir)"'
 man_MANS = pptpctrl.8 pptpd.8 pptpd.conf.5
 EXTRA_DIST = \
-README* ChangeLog* NEWS* TODO $(man_MANS) \
+html README* ChangeLog NEWS TODO $(man_MANS) \
 samples/chap-secrets samples/options.pptpd samples/pptpd.conf \
 Makefile.uClinux config.embed.h version reconf \
 tools/pptp-portslave tools/vpnstats tools/vpnstats.pl tools/vpnuser \
@@ -196,12 +203,12 @@ debian/po/templates.pot
 # Header files are only used to determine what to put in a distribution, not
 # for dependencies, so just attribute them all to pptpd.
 pptpd_SOURCES = \
-	pptpd.c configfile.c pptpmanager.c compat.c inststr.c getopt.c getopt1.c \
-	compat.h configfile.h ctrlpacket.h defaults.h inststr.h our_getopt.h \
+	 pqueue.c pptpd.c configfile.c pptpmanager.c compat.c inststr.c getopt.c getopt1.c \
+	pqueue.h compat.h configfile.h ctrlpacket.h defaults.h inststr.h our_getopt.h \
 	our_syslog.h ppphdlc.h pptpctrl.h pptpdefs.h pptpgre.h pptpmanager.h
 
 pptpctrl_SOURCES = \
-	pptpctrl.c ctrlpacket.c inststr.c compat.c pptpgre.c ppphdlc.c
+	pqueue.c pptpctrl.c ctrlpacket.c inststr.c compat.c pptpgre.c ppphdlc.c
 
 pptpd_LDADD = $(XTRALIBS_MGR)
 pptpctrl_LDADD = $(XTRALIBS_CTRL)
@@ -676,6 +683,8 @@ uninstall-man: uninstall-man5 uninstall-man8
 
 
 
+export LIBDIR=$(libdir)/pptpd
+
 all-local:
 	for d in $(subdirs); do $(MAKE) $(MFLAGS) -C $$d all; done
 
@@ -720,10 +729,12 @@ pptpd.o: pptpd.c config.h our_syslog.h our_getopt.h configfile.h \
   defaults.h compat.h pptpmanager.h
 
 pptpgre.o: pptpgre.c config.h our_syslog.h ppphdlc.h pptpgre.h pptpdefs.h \
-  defaults.h compat.h
+  pptpctrl.h defaults.h pqueue.h compat.h
 
 pptpmanager.o: pptpmanager.c config.h our_syslog.h configfile.h \
   defaults.h pptpctrl.h pptpdefs.h pptpmanager.h compat.h
+
+pqueue.o: pqueue.c pqueue.h
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

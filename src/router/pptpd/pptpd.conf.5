@@ -1,4 +1,4 @@
-.TH PPTPD.CONF 5 "24 May 2004"
+.TH PPTPD.CONF 5 "29 December 2005"
 .SH NAME
 .B pptpd.conf
 - PPTP VPN daemon configuration
@@ -48,6 +48,25 @@ internal interface to the clients.
 Equivalent to the command line 
 .B --bcrelay
 option.
+
+.TP
+.BI "connections " n
+limits the number of client connections that may be accepted.
+If pptpd is allocating IP addresses (e.g. 
+.BR delegate
+is not used) then the number of connections is also limited by the
+.BR remoteip
+option.  The default is 100.
+
+.TP
+.BI "delegate"
+delegates the allocation of client IP addresses to 
+.BR pppd (8).
+Without this option, which is the default, pptpd manages the list of
+IP addresses for clients and passes the next free address to pppd.
+With this option, pptpd does not pass an address, and so pppd may use
+radius or chap-secrets to allocate an address.
+
 .TP
 .BI "localip " ip-specification
 one or many IP addresses to be used at the local end of the
@@ -56,10 +75,9 @@ is given, this address is used for all clients.  Otherwise, one address
 per client must be given, and if there are no free addresses then any new
 clients will be refused.
 .B localip
-will be ignored if
-.BR pptpd (8)
-was compiled with 
-.B --with-pppd-ip-alloc.
+will be ignored if the
+.B delegate
+option is used.
 .TP
 .BI "remoteip " ip-specification
 a list of IP addresses to assign to remote PPTP clients. Each
@@ -70,10 +88,9 @@ without restarting pptpd. A warning will be sent to
 .BR syslog (3)
 when the IP address pool is exhausted.
 .B remoteip
-will be ignored if
-.BR pptpd (8)
-was compiled with
-.B --with-pppd-ip-alloc.
+will be ignored if the
+.B delegate
+option is used.
 .TP
 .B noipparam
 by default, the original client IP address is given to

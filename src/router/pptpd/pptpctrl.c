@@ -3,7 +3,7 @@
  *
  * PPTP control connection between PAC-PNS pair
  *
- * $Id: pptpctrl.c,v 1.17 2005/01/24 22:04:13 quozl Exp $
+ * $Id: pptpctrl.c,v 1.20 2006/12/08 00:01:40 quozl Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -34,6 +34,7 @@
 #ifdef HAVE_OPENPTY
 #ifdef HAVE_PTY_H
 #include <pty.h>
+#include <termios.h>
 #endif
 #ifdef HAVE_LIBUTIL_H
 #include <libutil.h>
@@ -90,8 +91,16 @@ static void launch_pppd(char **pppaddrs, struct in_addr *inetaddrs);
 #define OUR_NB_MODE O_NDELAY
 #endif
 
-/* Macro to read command line args */
-#define GETARG(X) \
+/* read a command line argument, a flag alone */
+#define GETARG_INT(X) \
+	X = atoi(argv[arg++])
+
+/* read a command line argument, a string alone */
+#define GETARG_STRING(X) \
+	X = strdup(argv[arg++])
+
+/* read a command line argument, a presence flag followed by string */
+#define GETARG_VALUE(X) \
 	if(atoi(argv[arg++]) != 0) \
 		strlcpy(X, argv[arg++], sizeof(X)); \
 	else \
@@ -124,17 +133,15 @@ int main(int argc, char **argv)
 	signal(SIGCHLD, SIG_IGN);
 
 	/* note: update pptpctrl.8 if the argument list format is changed */
-	pptpctrl_debug = atoi(argv[arg++]);
-	noipparam = atoi(argv[arg++]);
-
-	GETARG(pppdxfig);
-	GETARG(speed);
-	GETARG(pppLocal);
-	GETARG(pppRemote);
-
-	if (arg < argc) unique_call_id = atoi(argv[arg++]);
-	if (arg < argc) ppp_binary = strdup(argv[arg++]);
-	if (arg < argc) pptp_logwtmp = atoi(argv[arg++]);
+	GETARG_INT(pptpctrl_debug);
+	GETARG_INT(noipparam);
+	GETARG_VALUE(pppdxfig);
+	GETARG_VALUE(speed);
+	GETARG_VALUE(pppLocal);
+	GETARG_VALUE(pppRemote);
+	if (arg < argc) GETARG_INT(unique_call_id);
+	if (arg < argc) GETARG_STRING(ppp_binary);
+	if (arg < argc) GETARG_INT(pptp_logwtmp);
 	
 	if (pptpctrl_debug) {
 		if (*pppLocal)
@@ -374,18 +381,16 @@ static void pptp_handle_ctrl_connection(char **pppaddrs, struct in_addr *inetadd
 						pty_fd = -1;
 					}
 				}
-				/* Start the call */
-				syslog(LOG_INFO, "CTRL: Starting call (launching pppd, opening GRE)");
-
-                                /* Fiddle with argv */
+                                /* change process title for accounting and status scripts */
                                 my_setproctitle(gargc, gargv,
                                       "pptpd [%s:%04X - %04X]",
                                       inet_ntoa(inetaddrs[1]),
                                       ntohs(((struct pptp_out_call_rply *) (rply_packet))->call_id_peer),
                                       ntohs(((struct pptp_out_call_rply *) (rply_packet))->call_id));
-
-				if ((pty_fd = startCall(pppaddrs, inetaddrs)) > maxfd)
-					maxfd = pty_fd;
+				/* start the call, by launching pppd */
+				syslog(LOG_INFO, "CTRL: Starting call (launching pppd, opening GRE)");
+				pty_fd = startCall(pppaddrs, inetaddrs);
+				if (pty_fd > maxfd) maxfd = pty_fd;
 				if ((gre_fd = pptp_gre_init(call_id_pair, pty_fd, inetaddrs)) > maxfd)
 					maxfd = gre_fd;
 				break;
@@ -567,6 +572,23 @@ static int startCall(char **pppaddrs, struct in_addr *inetaddrs)
 		syslog(LOG_ERR, "CTRL: openpty() error");
 		syslog_perror("openpty");
 		exit(1);
+	} else {
+		struct termios tios;
+
+		/* Turn off echo in the slave - to prevent loopback.
+		   pppd will do this, but might not do it before we
+		   try to send data. */
+		if (tcgetattr(tty_fd, &tios) < 0) {
+			syslog(LOG_ERR, "CTRL: tcgetattr() error");
+			syslog_perror("tcgetattr");
+			exit(1);
+		}
+		tios.c_lflag &= ~(ECHO | ECHONL);
+		if (tcsetattr(tty_fd, TCSAFLUSH, &tios) < 0) {
+			syslog(LOG_ERR, "CTRL: tcsetattr() error");
+			syslog_perror("tcsetattr");
+			exit(1);
+		}
 	}
 #endif
 	if (pptpctrl_debug) {
