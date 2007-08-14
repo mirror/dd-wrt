@@ -153,8 +153,6 @@ struct nvram_tuple srouter_defaults[] = {
   {"lan_ipaddr", "192.168.10.1", 0},	/* LAN IP address */
 #elif HAVE_34TELECOM
   {"lan_ipaddr", "192.168.1.4", 0},	/* LAN IP address */
-#elif HAVE_GW700
-  {"lan_ipaddr", "192.168.108.1", 0},	/* LAN IP address */
 #elif HAVE_SPUTNIK
   {"lan_ipaddr", "192.168.180.1", 0},	/* LAN IP address */
 #else
