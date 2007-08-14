@@ -236,6 +236,7 @@ request_freedns (char *user, char *password)
   unsigned char final[32];
   unsigned char out[64];
   char un[128];
+  unlink("/tmp/.hash");
   sprintf (un, "%s|%s", user, password);
   sha1_ctx_t context;
   sha1_begin (&context);
@@ -245,7 +246,7 @@ request_freedns (char *user, char *password)
   char request2[128] = { 0 };
   int i;
   for (i = 0; i < 20; i++)
-    sprintf (request, "%s%x", request, final[i]);
+    sprintf (request, "%s%02x", request, final[i]);
   system ("rm -f /tmp/.hash");
   sprintf (request2,
 	   "wget \"http://freedns.afraid.org/api/?action=getdyndns&sha=%s\" -O /tmp/.hash",
@@ -257,6 +258,11 @@ request_freedns (char *user, char *password)
   while (getc (in) != '?' && feof (in) == 0);
   i = 0;
   char *hash = malloc (64);
+  if (feof(in))
+    {
+    free(hash);
+    return NULL;
+    } 
   for (i = 0; i < 36; i++)
     hash[i] = getc (in);
   fclose (in);
@@ -445,7 +451,7 @@ ddns_save_value (webs_t wp)
 	}
       else
 	{
-	  nvram_set (_hostname, hostname);
+	  nvram_set (_hostname, "User/Password wrong");
 	}
     }
   else
