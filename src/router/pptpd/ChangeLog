@@ -1,3 +1,204 @@
+Mon Apr 16 10:32:40 2007  James Cameron  <quozl@us.netrek.org>
+
+	* pptpd-1.3.4.tar.gz: released.
+
+Mon Apr 16 09:38:13 2007  Phil Oester  <kernel@linuxace.com>
+
+	* pptpgre.c: fixes two packet reordering bugs, (1) the check for
+	out-of-order sequence numbers only validates that the sequence
+	received is greater than the previous sequence received.  But this
+	is invalid if for instance packet 20 is received after packet 10.
+	It should instead verify packet received is equal previous packet
+	plus one.  (2) the packet dequeue function was using the wrong
+	pointer, which led to corruption of all packets placed on the
+	queue when they were dequeued.  Thanks to James Cameron for the
+	testing tools which made discovery of these bugs possible.
+
+Thu Feb  8 09:59:00 2007  James Cameron  <quozl@us.netrek.org>
+
+	* plugins/pptpd-logwtmp.c (ip_up): accept either two forward or
+	two reverse slashes as the delimiter.
+
+Fri Dec  8 10:49:27 2006  Charlie Brady  <charlieb-poptop-server@e-smith.com>
+
+	* pptpctrl.c (startCall): turn off echo on the slave pty, so that
+	any packets that arrive before pppd is ready will not be echoed
+	back to the client.  Deprecate PPP_WAIT.
+
+Tue Sep  5 09:42:46 2006  James Cameron  <quozl@us.netrek.org>
+
+	* pptpd-1.3.3.tar.gz: released.
+
+Tue Sep  5 09:25:25 2006  James Cameron  <quozl@us.netrek.org>
+
+	* defaults.h: remove MAX_CONNECTIONS reference.
+
+	* samples/pptpd.conf: add connections clause, remove reference to
+	MAX_CONNECTIONS.
+
+Tue Sep  5 09:10:55 2006  James Cameron  <quozl@us.netrek.org>
+
+	* pptpd.c (processIPStr): add new informational message to
+	indicate when the number of connections is constrained by the
+	configured IP address ranges.
+
+Tue Sep  5 08:52:20 2006  James Cameron  <quozl@us.netrek.org>
+
+	* pptpd.c: fix segfault on -C option, cause was option string
+	didn't include argument flag for number of connections.  Closes
+	Gentoo Bug #132898 <http://bugs.gentoo.org/show_bug.cgi?id=132898>
+	thanks to Alin Nastac (mrness at gentoo.org) and Peter Volkov.
+
+Thu Aug  3 12:02:02 2006  James Cameron  <quozl@us.netrek.org>
+
+	* plugins/Makefile (LIBDIR), Makefile.am (LIBDIR): support build
+	of x86_64 mixed architecture.  From: Anton Gorlov.
+
+Thu Aug  3 11:14:59 2006  James Cameron  <quozl@us.netrek.org>
+
+	* configure.in: rewrite use of AC_ARG_WITH and AC_ARG_ENABLE to
+	more properly support the negative case.  Reported by: Phil
+	Oester.
+
+Thu Aug  3 09:55:25 2006  James Cameron  <quozl@us.netrek.org>
+
+	* plugins/Makefile: include libutil.  From: Anton Gorlov.
+
+Thu Apr 20 16:18:26 2006  James Cameron  <quozl@us.netrek.org>
+
+	* pptpd.init: ensures the service is not enabled by default when
+	installed, and adds a "condrestart" target that will restart the
+	daemon if and only if it's already running.  Reported by: Paul
+	Howarth.
+
+Tue Apr 18 14:47:29 2006  James Cameron  <quozl@us.netrek.org>
+
+	* pptpd-1.3.2.tar.gz: released.
+
+	* configure.in: fix --with flags to work --without, change
+	--with-bcrelay to --enable-bcrelay.
+
+Mon Mar 27 11:42:36 2006  James Cameron  <quozl@us.netrek.org>
+
+	* pptpgre.c (decaps_gre, dequeue_gre): only report to LOG_DEBUG if
+	the debug option is set.  Reported by: Thomas Stein
+	<thomas.stein@knowledgetools.de>
+
+Tue Feb 14 10:52:13 2006  James Cameron  <quozl@us.netrek.org>
+
+	* pptpd-1.3.1.tar.gz: released.
+
+Thu Dec 29 17:39:15 2005  James Cameron  <quozl@us.netrek.org>
+
+	* pptpd.c, pptpmanager.c, pptpmanager.h, defaults.h: make
+	connections limit a run-time option.
+
+Thu Dec 29 15:45:51 2005  James Cameron  <quozl@us.netrek.org>
+
+	* pptpd.c (launch_bcrelay): insufficient space was allocated in
+	the argv array for the number of elements used.
+
+Thu Dec 29 12:11:23 2005  James Cameron  <quozl@us.netrek.org>
+
+	* pptpd: remove PPPD_IP_ALLOC in favour of a configuration option.
+	
+	* pptpd.8: add --delegate
+	
+	* pptpd.conf.5, samples/pptpd.conf: add delegate option
+	
+	* config.h.in, configure.in: remove --with-pppd-ip-alloc option
+	
+	* pptpmanager.c, defaults.h, pptpd.c: convert from conditional
+	compilation to run-time checking.
+	
+	* samples/options.pptpd: describe how to force local IP for tunnel
+	even in delegate mode.
+
+	* INSTALL: remove build.sh reference.
+	
+Thu Dec 29 11:04:13 2005  James Cameron  <quozl@us.netrek.org>
+
+	* pptpgre.c (pptp_gre_init): prevent initial unwanted GRE ACK.
+	From: Jonathan Barker <jabarker@itstrategic.ca>
+
+Mon Nov 21 10:53:09 2005  James Cameron  <quozl@us.netrek.org>
+
+	* bcrelay.c (mainloop): ignore ENOBUFS rather than fail.
+	From: Rajkumar S <rajkumars@asianetindia.com>
+
+Mon Oct 31 09:21:11 2005  James Cameron  <quozl@us.netrek.org>
+
+	* pptpctrl.c: change GETARG to GETARG_VALUE and add a GETARG_INT
+	and GETARG_STRING macro, to improve readability.
+
+Mon Aug 22 10:45:14 2005  James Cameron  <quozl@us.netrek.org>
+
+	* compat.c (sigpipe_assign): remove superfluous sigset variable
+	and calls; they served no purpose.  Reported by: Pavol Gono.
+
+Wed Aug  3 19:04:07 2005  James Cameron  <quozl@us.netrek.org>
+
+	* plugins/pptpd-logwtmp.c: fix compilation warning by including
+	string.h
+
+	* ctrlpacket.c (read_pptp_packet): initialise return control
+	message type, to fix compilation warnings.
+
+	* pqueue.c: compilation fixes, use of log() and warn() replaced
+	with syslog().
+
+Wed Aug  3 17:33:40 2005  James Cameron  <quozl@us.netrek.org>
+
+	* pptpd-1.3.0.tar.gz: released.
+
+Tue Aug  2 21:31:25 2005  James Cameron  <quozl@us.netrek.org>
+
+	* samples/options.pptpd: disable Van Jacobson compression.
+	Reported by Pawel Pokrywka.
+
+Tue Aug  2 21:27:11 2005  James Cameron  <quozl@us.netrek.org>
+
+	* pptpgre.c: packet reordering implementation, contributed by Vijay
+	Bharadwaj.
+
+Tue Aug  2 19:32:47 2005  James Cameron  <quozl@us.netrek.org>
+
+	* pptpdefs.h (MAX_ECHO_WAIT, IDLE_WAIT): comply with RFC2637,
+	reported by Tobias Brox, updates 20040811-0.
+
+Tue Aug  2 19:30:30 2005  James Cameron  <quozl@us.netrek.org>
+
+	* plugins/pptpd-logwtmp.c (ip_up): implement
+	pptpd-logwtmp-strip-domain option, closes 20050401-1.
+
+Tue Aug  2 19:01:42 2005  James Cameron  <quozl@us.netrek.org>
+
+	* Makefile.am (EXTRA_DIST): add html directory, missing from
+	distribution, closes 20050729-1.
+
+Fri Jul 29 22:56:08 2005  James Cameron  <quozl@us.netrek.org>
+
+	* pptpdefs.h (PPP_WAIT): default ten seconds wait for PPP packets
+	to begin to be sent.
+
+	* pptpctrl.c (pptp_handle_ctrl_connection): wait for first packet
+	from pppd before continuing, an experimental fix for bug
+	20040521-1.
+
+Tue Jul 12 16:33:23 2005  James Cameron  <quozl@us.netrek.org>
+
+	* pptpmanager.c (pptpmanager): process initial packet header
+	length field properly.  Reported by: Alex Beregszaszi
+
+Thu Mar  3 16:19:17 2005  James Cameron  <quozl@us.netrek.org>
+
+	* bcrelay.c (mainloop): ignore ENETDOWN and ENXIO from sendto(2).
+	Closes 20040428-0.
+
+Thu Feb 24 11:48:08 2005  James Cameron  <quozl@us.netrek.org>
+
+	* pptpd.8: add section on debugging, contributed by Peter Mueller.
+
 Thu Feb 17 13:05:31 2005  James Cameron  <quozl@us.netrek.org>
 
 	* pptpd-1.2.3.tar.gz: released.

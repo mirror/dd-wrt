@@ -4,7 +4,7 @@
  * originally by C. S. Ananian
  * Modified for PoPToP
  *
- * $Id: pptpgre.c,v 1.4 2005/01/09 23:10:07 quozl Exp $
+ * $Id: pptpgre.c,v 1.9 2007/04/16 00:21:02 quozl Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -37,7 +37,9 @@
 #include "ppphdlc.h"
 #include "pptpgre.h"
 #include "pptpdefs.h"
+#include "pptpctrl.h"
 #include "defaults.h"
+#include "pqueue.h"
 
 #ifndef HAVE_STRERROR
 #include "compat.h"
@@ -45,7 +47,22 @@
 
 #define PACKET_MAX 8196
 
-static struct gre_state gre;
+typedef int (*callback_t)(int cl, void *pack, unsigned int len);
+
+/* test for a 32 bit counter overflow */
+#define WRAPPED( curseq, lastseq) \
+    ((((curseq) & 0xffffff00) == 0) && \
+     (((lastseq) & 0xffffff00 ) == 0xffffff00))
+
+static struct gre_state gre; 
+gre_stats_t stats; 
+
+static uint64_t time_now_usecs()
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (tv.tv_sec * 1000000) + tv.tv_usec;
+}
 
 int pptp_gre_init(u_int32_t call_id_pair, int pty_fd, struct in_addr *inetaddrs)
 {
@@ -77,8 +94,8 @@ int pptp_gre_init(u_int32_t call_id_pair, int pty_fd, struct in_addr *inetaddrs)
 		return -1;
 	}
 
-	gre.ack_sent = gre.ack_recv = gre.seq_sent = 0;
-	gre.seq_recv = 0xFFFFFFFF;
+	gre.seq_sent = 0;
+	gre.ack_sent = gre.ack_recv = gre.seq_recv = 0xFFFFFFFF;
 	/* seq_recv is -1, therefore next packet expected is seq 0,
 	   to comply with RFC 2637: 'The sequence number for each
 	   user session is set to zero at session startup.' */
@@ -285,15 +302,51 @@ int encaps_hdlc(int fd, void *pack, unsigned len)
 
 #undef ADD_CHAR
 
+
+static int dequeue_gre (callback_t callback, int cl)
+{
+	pqueue_t *head;
+	int status;
+	/* process packets in the queue that either are expected or
+	   have timed out. */
+	head = pqueue_head();
+	while ( head != NULL &&
+		( (head->seq == gre.seq_recv + 1) || /* wrap-around safe */
+		  (pqueue_expiry_time(head) <= 0)
+		  )
+		) {
+		/* if it is timed out... */
+		if (head->seq != gre.seq_recv + 1 ) {  /* wrap-around safe */
+			stats.rx_lost += head->seq - gre.seq_recv - 1;
+			if (pptpctrl_debug)
+				syslog(LOG_DEBUG, 
+				       "GRE: timeout waiting for %d packets", 
+				       head->seq - gre.seq_recv - 1);        
+		}
+		if (pptpctrl_debug)
+			syslog(LOG_DEBUG, "GRE: accepting #%d from queue", 
+			       head->seq);
+		gre.seq_recv = head->seq;
+		status = callback(cl, head->packet, head->packlen);
+		pqueue_del(head);
+		if (status < 0) return status;
+		head = pqueue_head();
+	}
+	return 0;
+}
+
+
 int decaps_gre(int fd, int (*cb) (int cl, void *pack, unsigned len), int cl)
 {
 	static unsigned char buffer[PACKET_MAX + 64 /*ip header */ ];
 	struct pptp_gre_header *header;
 	int status, ip_len = 0;
 
+	dequeue_gre(cb, cl);
 	if ((status = read(fd, buffer, sizeof(buffer))) <= 0) {
 		syslog(LOG_ERR, "GRE: read(fd=%d,buffer=%lx,len=%d) from network failed: status = %d error = %s",
 		       fd, (unsigned long) buffer, sizeof(buffer), status, status ? strerror(errno) : "No error");
+		stats.rx_errors++;
 		return -1;
 	}
 	/* strip off IP header, if present */
@@ -310,6 +363,7 @@ int decaps_gre(int fd, int (*cb) (int cl, void *pack, unsigned len), int cl)
 	    ((ntoh8(header->flags) & 0xF) != 0)) {	/* routing and recursion ctrl = 0  */
 		/* if invalid, discard this packet */
 		syslog(LOG_ERR, "GRE: Discarding packet by header check");
+		stats.rx_invalid++;
 		return 0;
 	}
 	if (header->call_id != GET_VALUE(PAC, gre.call_id_pair)) {
@@ -329,6 +383,13 @@ int decaps_gre(int fd, int (*cb) (int cl, void *pack, unsigned len), int cl)
 
 		if (seq_greater(ack, gre.ack_recv))
 			gre.ack_recv = ack;
+
+		/* also handle sequence number wrap-around  */
+		if (WRAPPED(ack,gre.ack_recv)) gre.ack_recv = ack;
+		if (gre.ack_recv == stats.pt.seq) {
+			int rtt = time_now_usecs() - stats.pt.time;
+			stats.rtt = (stats.rtt + rtt) / 2;
+		}
 	}
 	if (PPTP_GRE_IS_S(ntoh8(header->flags))) {	/* payload present */
 		unsigned headersize = sizeof(*header);
@@ -338,22 +399,37 @@ int decaps_gre(int fd, int (*cb) (int cl, void *pack, unsigned len), int cl)
 		if (!PPTP_GRE_IS_A(ntoh8(header->ver)))
 			headersize -= sizeof(header->ack);
 		/* check for incomplete packet (length smaller than expected) */
-		if (status - headersize < payload_len)
+		if (status - headersize < payload_len) {
+			stats.rx_truncated++;
 			return 0;
+		}
 		/* check for out-of-order sequence number */
-		if (seq_greater(seq, gre.seq_recv)) {
+		if (seq == gre.seq_recv + 1) {
+			if (pptpctrl_debug)
+				syslog(LOG_DEBUG, "GRE: accepting packet #%d", 
+				       seq);
+			stats.rx_accepted++;
 			gre.seq_recv = seq;
 			return cb(cl, buffer + ip_len + headersize, payload_len);
-		} else if(seq == gre.seq_recv) {
-			syslog(LOG_WARNING, "GRE: Discarding duplicate packet");
+		} else if (seq == gre.seq_recv) {
+			if (pptpctrl_debug)
+				syslog(LOG_DEBUG,
+				       "GRE: discarding duplicate or old packet #%d (expecting #%d)", 
+				       seq, gre.seq_recv + 1);
 			return 0;	/* discard duplicate packets */
 		} else {
-			syslog(LOG_WARNING, "GRE: Discarding out of order packet");
+			stats.rx_buffered++;
+			if (pptpctrl_debug)
+				syslog(LOG_DEBUG,
+				       "GRE: buffering packet #%d (expecting #%d, lost or reordered)",
+				       seq, gre.seq_recv + 1);
+			pqueue_add(seq, buffer + ip_len + headersize, payload_len);
 			return 0;	/* discard out-of-order packets */
 		}
 	}
 	return 0;		/* ack, but no payload */
 }
+
 
 int encaps_gre(int fd, void *pack, unsigned len)
 {
@@ -403,6 +479,7 @@ int encaps_gre(int fd, void *pack, unsigned len)
 	}
 	if (len > PACKET_MAX) {
 		syslog(LOG_ERR, "GRE: packet is too large %d", len);
+		stats.tx_oversize++;
 		return 0;	/* drop this, it's too big */
 	}
 #ifdef HAVE_WRITEV

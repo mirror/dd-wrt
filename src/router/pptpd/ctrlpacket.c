@@ -3,7 +3,7 @@
  *
  * PPTP Control Message packet reading, formatting and writing.
  *
- * $Id: ctrlpacket.c,v 1.5 2004/04/29 06:58:45 quozl Exp $
+ * $Id: ctrlpacket.c,v 1.6 2005/08/03 09:10:59 quozl Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -70,7 +70,7 @@ int read_pptp_packet(int clientFd, unsigned char *packet, unsigned char *rply_pa
 {
 
 	size_t bytes_read;
-	int pptp_ctrl_type;	/* Control Message Type */
+	int pptp_ctrl_type = 0;	/* Control Message Type */
 
 	/* read a packet and parse header */
 	if ((bytes_read = read_pptp_header(clientFd, packet, &pptp_ctrl_type)) <= 0) {
@@ -209,6 +209,7 @@ ssize_t read_pptp_header(int clientFd, unsigned char *packet, int *pptp_ctrl_typ
 	static char *buffer = NULL;	/* buffer between calls */
 	static int buffered = 0;	/* size of buffer */
 
+	*pptp_ctrl_type = 0;		/* initialise return arg	*/
 
 	/* read any previously buffered data */
 	if (buffered) {
@@ -377,9 +378,9 @@ void deal_start_ctrl_conn(unsigned char *packet, unsigned char *rply_packet, ssi
 	start_ctrl_conn_rply.max_channels = htons(MAX_CHANNELS);
 	start_ctrl_conn_rply.firmware_rev = htons(PPTP_FIRMWARE_VERSION);
 	bzero(start_ctrl_conn_rply.hostname, MAX_HOSTNAME_SIZE);
-	strncpy(start_ctrl_conn_rply.hostname, PPTP_HOSTNAME, MAX_HOSTNAME_SIZE);
+	strncpy((char *)start_ctrl_conn_rply.hostname, PPTP_HOSTNAME, MAX_HOSTNAME_SIZE);
 	bzero(start_ctrl_conn_rply.vendor, MAX_VENDOR_SIZE);
-	strncpy(start_ctrl_conn_rply.vendor, PPTP_VENDOR, MAX_VENDOR_SIZE);
+	strncpy((char *)start_ctrl_conn_rply.vendor, PPTP_VENDOR, MAX_VENDOR_SIZE);
 	COPY_CTRL_PACKET(start_ctrl_conn_rply, rply_packet, rply_size);
 	DEBUG_PACKET("START CTRL CONN RPLY");
 }

@@ -57,15 +57,15 @@ PROGRAMS = $(sbin_PROGRAMS)
 am_bcrelay_OBJECTS = bcrelay.$(OBJEXT)
 bcrelay_OBJECTS = $(am_bcrelay_OBJECTS)
 bcrelay_LDADD = $(LDADD)
-am_pptpctrl_OBJECTS = pptpctrl.$(OBJEXT) ctrlpacket.$(OBJEXT) \
-	inststr.$(OBJEXT) compat.$(OBJEXT) pptpgre.$(OBJEXT) \
-	ppphdlc.$(OBJEXT)
+am_pptpctrl_OBJECTS = pqueue.$(OBJEXT) pptpctrl.$(OBJEXT) \
+	ctrlpacket.$(OBJEXT) inststr.$(OBJEXT) compat.$(OBJEXT) \
+	pptpgre.$(OBJEXT) ppphdlc.$(OBJEXT)
 pptpctrl_OBJECTS = $(am_pptpctrl_OBJECTS)
 am__DEPENDENCIES_1 =
 pptpctrl_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_pptpd_OBJECTS = pptpd.$(OBJEXT) configfile.$(OBJEXT) \
-	pptpmanager.$(OBJEXT) compat.$(OBJEXT) inststr.$(OBJEXT) \
-	getopt.$(OBJEXT) getopt1.$(OBJEXT)
+am_pptpd_OBJECTS = pqueue.$(OBJEXT) pptpd.$(OBJEXT) \
+	configfile.$(OBJEXT) pptpmanager.$(OBJEXT) compat.$(OBJEXT) \
+	inststr.$(OBJEXT) getopt.$(OBJEXT) getopt1.$(OBJEXT)
 pptpd_OBJECTS = $(am_pptpd_OBJECTS)
 pptpd_DEPENDENCIES = $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
@@ -115,6 +115,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+GREP = @GREP@
 HAVE_OPENPTY = @HAVE_OPENPTY@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -143,8 +144,6 @@ XTRALIBS_CTRL = @XTRALIBS_CTRL@
 XTRALIBS_MGR = @XTRALIBS_MGR@
 XTRA_PROG = @XTRA_PROG@
 ac_ct_CC = @ac_ct_CC@
-ac_ct_RANLIB = @ac_ct_RANLIB@
-ac_ct_STRIP = @ac_ct_STRIP@
 am__fastdepCC_FALSE = @am__fastdepCC_FALSE@
 am__fastdepCC_TRUE = @am__fastdepCC_TRUE@
 am__include = @am__include@
@@ -155,19 +154,26 @@ am__untar = @am__untar@
 bindir = @bindir@
 build_alias = @build_alias@
 datadir = @datadir@
+datarootdir = @datarootdir@
+docdir = @docdir@
+dvidir = @dvidir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
+htmldir = @htmldir@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
+localedir = @localedir@
 localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
+pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
+psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
@@ -180,7 +186,7 @@ INCLUDES = -I.
 #CFLAGS = -O2 -fno-builtin -Wall -ansi -pedantic -Wmissing-prototypes -Werror -DSBINDIR='"$(sbindir)"'
 man_MANS = pptpctrl.8 pptpd.8 pptpd.conf.5
 EXTRA_DIST = \
-README* ChangeLog* NEWS* TODO $(man_MANS) \
+html README* ChangeLog NEWS TODO $(man_MANS) \
 samples/chap-secrets samples/options.pptpd samples/pptpd.conf \
 Makefile.uClinux config.embed.h version reconf \
 tools/pptp-portslave tools/vpnstats tools/vpnstats.pl tools/vpnuser \
@@ -197,12 +203,12 @@ debian/po/templates.pot
 # Header files are only used to determine what to put in a distribution, not
 # for dependencies, so just attribute them all to pptpd.
 pptpd_SOURCES = \
-	pptpd.c configfile.c pptpmanager.c compat.c inststr.c getopt.c getopt1.c \
-	compat.h configfile.h ctrlpacket.h defaults.h inststr.h our_getopt.h \
+	 pqueue.c pptpd.c configfile.c pptpmanager.c compat.c inststr.c getopt.c getopt1.c \
+	pqueue.h compat.h configfile.h ctrlpacket.h defaults.h inststr.h our_getopt.h \
 	our_syslog.h ppphdlc.h pptpctrl.h pptpdefs.h pptpgre.h pptpmanager.h
 
 pptpctrl_SOURCES = \
-	pptpctrl.c ctrlpacket.c inststr.c compat.c pptpgre.c ppphdlc.c
+	pqueue.c pptpctrl.c ctrlpacket.c inststr.c compat.c pptpgre.c ppphdlc.c
 
 pptpd_LDADD = $(XTRALIBS_MGR)
 pptpctrl_LDADD = $(XTRALIBS_CTRL)
@@ -677,6 +683,8 @@ uninstall-man: uninstall-man5 uninstall-man8
 
 @SET_MAKE@
 
+export LIBDIR=$(libdir)/pptpd
+
 all-local:
 	for d in $(subdirs); do $(MAKE) $(MFLAGS) -C $$d all; done
 
@@ -721,10 +729,12 @@ pptpd.o: pptpd.c config.h our_syslog.h our_getopt.h configfile.h \
   defaults.h compat.h pptpmanager.h
 
 pptpgre.o: pptpgre.c config.h our_syslog.h ppphdlc.h pptpgre.h pptpdefs.h \
-  defaults.h compat.h
+  pptpctrl.h defaults.h pqueue.h compat.h
 
 pptpmanager.o: pptpmanager.c config.h our_syslog.h configfile.h \
   defaults.h pptpctrl.h pptpdefs.h pptpmanager.h compat.h
+
+pqueue.o: pqueue.c pqueue.h
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
