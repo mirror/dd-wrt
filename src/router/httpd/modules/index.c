@@ -100,7 +100,10 @@ validate_wan_ipaddr (webs_t wp, char *value, struct variable *v)
   get_merge_ipaddr (wp, "wan_ipaddr", wan_ipaddr);
   get_merge_ipaddr (wp, "wan_netmask", wan_netmask);
   if (!strcmp (wan_proto, "pptp"))
+    {
+    nvram_set("pptp_pass","0"); //disable pptp passthrough
     get_merge_ipaddr (wp, "pptp_server_ip", wan_gateway);
+    }
   else
     get_merge_ipaddr (wp, "wan_gateway", wan_gateway);
 
