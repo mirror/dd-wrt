@@ -931,6 +931,7 @@ route.titl=" - 路由操作";
 route.h2="進階路由操作";
 route.mod="工作模式";
 route.bgp_legend="BGP設置";
+route.bgp_own_as="BGP Own AS#";
 route.bgp_ip="鄰近IP";
 route.bgp_as="鄰近AS#";
 route.rip2_mod="RIP2路由器";

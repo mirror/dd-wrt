@@ -711,6 +711,7 @@ route.titl=" - ルーティング";
 route.h2="詳細ルーティング";
 route.mod="ルーターのモード";
 route.bgp_legend="BGP 設定";
+route.bgp_own_as="BGP Own AS#";
 route.bgp_ip="近隣 IP";
 route.bgp_as="近隣 AS#";
 route.rip2_mod="RIP2 ルーター";

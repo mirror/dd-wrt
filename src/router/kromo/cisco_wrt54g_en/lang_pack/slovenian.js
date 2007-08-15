@@ -1024,6 +1024,7 @@ route.titl="Usmerjanje";
 route.h2="Napredno usmerjanje";
 route.mod="Naèin";
 route.bgp_legend="BGP nastavitve";
+route.bgp_own_as="BGP Own AS#";
 route.bgp_ip="Sosednji IP";
 route.bgp_as="Sosednji AS#";
 route.rip2_mod="RIP2 usmerjalnik";

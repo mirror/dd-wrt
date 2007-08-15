@@ -870,6 +870,7 @@ route.titl="Roteamento";
 route.h2="Roteamento Avançado";
 route.mod="Modo de Operação";
 route.bgp_legend="Configurações BGP";
+route.bgp_own_as="BGP Own AS#";
 route.bgp_ip="IP Vizinho";
 route.bgp_as="Número AS Vizinho";
 route.rip2_mod="Roteador RIP2";
