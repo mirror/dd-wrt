@@ -13,10 +13,6 @@
 			<input class="text" maxlength="100" size="39" name="wd_gwid" value="<% nvram_get("wd_gwid"); %>" />
 		</div>
 		<div class="setting">
-			<div class="label"><% tran("hotspot.wifidog_url"); %></div>
-			<input class="text" maxlength="100" size="39" name="wd_url" value="<% nvram_get("wd_url"); %>" />
-		</div>
-		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_httpdname"); %></div>
 			<input class="text" maxlength="100" size="39" name="wd_httpdname" value="<% nvram_get("wd_httpdname"); %>" />
 		</div>
