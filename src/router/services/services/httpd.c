@@ -35,9 +35,6 @@ start_httpd (void)
   if (nvram_invmatch ("http_enable", "0") && !is_exist ("/var/run/httpd.pid"))
     {
       chdir ("/www");
-//      if (chdir ("/tmp/www") == 0)
-//      cprintf ("[HTTPD Starting on /tmp/www]\n");
-//      else
       cprintf ("[HTTPD Starting on /www]\n");
       if (nvram_invmatch ("http_lanport", ""))
 	{
@@ -76,7 +73,6 @@ stop_httpd (void)
 {
   if (pidof ("httpd") > 0)
     syslog (LOG_INFO, "httpd : http daemon successfully stopped\n");
-  //int ret = killps("httpd",NULL);
   int ret = killall ("httpd", SIGTERM);
 
   unlink ("/var/run/httpd.pid");
