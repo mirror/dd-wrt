@@ -96,7 +96,7 @@ int write_site_survey (void);
 
 struct site_survey_list
 {
-  unsigned char SSID[32];
+  unsigned char SSID[33];
   unsigned char BSSID[18];
   unsigned char channel;	/* Channel no. */
   short RSSI;			/* receive signal strength (in dBm) */
