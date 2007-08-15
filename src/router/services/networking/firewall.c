@@ -2844,8 +2844,10 @@ start_firewall (void)
     sprintf (buf, "/usr/sbin/iptables -I INPUT -s %s -j ACCEPT", var);
     system2 (buf);
   }
+  stop_wifidog();
+  start_wifidog();
   cprintf ("ready");
-
+ 
   cprintf ("done\n");
   return 0;
 }
