@@ -36,11 +36,7 @@
 #define EXT_INTERFACE_DETECT_RETRY_INTERVAL 1
 
 /** Defaults configuration values */
-#ifndef SYSCONFDIR
-	#define DEFAULT_CONFIGFILE "/etc/wifidog.conf"
-#else
-	#define DEFAULT_CONFIGFILE SYSCONFDIR"/wifidog.conf"
-#endif	
+#define DEFAULT_CONFIGFILE "/tmp/etc/wifidog.conf"
 #define DEFAULT_DAEMON 1
 #define DEFAULT_DEBUGLEVEL LOG_INFO
 #define DEFAULT_HTTPDMAXCONN 10
