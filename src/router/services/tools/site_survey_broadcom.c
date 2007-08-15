@@ -42,7 +42,7 @@ int write_site_survey (void);
 
 struct site_survey_list
 {
-  uint8 SSID[32];
+  uint8 SSID[33];
   unsigned char BSSID[18];
   uint8 channel;		/* Channel no. */
   int16 RSSI;			/* receive signal strength (in dBm) */
