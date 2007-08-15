@@ -2623,7 +2623,8 @@ get_broadcast (char *ipaddr, char *netmask)
     {
       ip[i] = ip2[i];
       mask[i] = mask2[i];
-      ip[i] = (ip[i] & mask[i]) | !mask[i];
+//      ip[i] = (ip[i] & mask[i]) | !mask[i];
+      ip[i] = (ip[i] & mask[i]) | (0xff & ~mask[i]);
     }
 
   sprintf (ipaddr, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
