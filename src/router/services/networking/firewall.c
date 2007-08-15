@@ -1783,6 +1783,8 @@ filter_input (void)
   /* Sveasoft mod - accept OSPF protocol broadcasts */
   if (nvram_match ("wk_mode", "ospf"))
     save2file ("-A INPUT -p ospf -j ACCEPT\n");
+  if (nvram_match ("wk_mode", "bgp"))
+    save2file ("-A INPUT -p tcp --dport 179 -j ACCEPT\n");
 #ifdef HAVE_OLSRD
   if (nvram_match ("wk_mode", "olsr"))
     save2file ("-A INPUT -p udp --dport 698 -j ACCEPT\n");
@@ -1952,6 +1954,9 @@ filter_forward (void)
   if (nvram_match ("wk_mode", "ospf"))
     {
       save2file ("-A FORWARD -p ospf -j ACCEPT\n");
+    }
+  if (nvram_match ("wk_mode", "bgp"))
+    {
       save2file ("-A FORWARD -p tcp --sport 179 -j ACCEPT\n");	// BGP port
       save2file ("-A FORWARD -p tcp --dport 179 -j ACCEPT\n");	// BGP port
     }
