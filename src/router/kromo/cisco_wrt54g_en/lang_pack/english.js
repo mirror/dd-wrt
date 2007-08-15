@@ -1030,6 +1030,7 @@ route.h2="Advanced Routing";
 route.mod="Operating Mode";
 route.bgp_legend="BGP Settings";
 route.bgp_ip="Neighbor IP";
+route.bgp_own_as="BGP Own AS#";
 route.bgp_as="Neighbor AS#";
 route.rip2_mod="RIP2 Router";
 route.olsrd_mod="OLSR Router";

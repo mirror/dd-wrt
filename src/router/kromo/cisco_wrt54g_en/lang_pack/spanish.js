@@ -929,6 +929,7 @@ route.titl="Ruteo";
 route.h2="Ruteo Avanzado";
 route.mod="Modo de Operación";
 route.bgp_legend="Config BGP";
+route.bgp_own_as="BGP Own AS#";
 route.bgp_ip="IP Vecina";
 route.bgp_as="AS# Vecina";
 route.rip2_mod="Ruteo RIP2";

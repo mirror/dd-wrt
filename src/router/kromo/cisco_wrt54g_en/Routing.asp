@@ -140,7 +140,7 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("route.bgp_legend"); %></legend>
 								<div class="setting">
-									<div class="label">BGP</div>
+									<div class="label"><% tran("route.bgp_own_as"); %></div>
 									<input size="10" name="routing_bgp_as" value="<% nvram_get("routing_bgp_as"); %>" />
 								</div>
 								<div class="setting">

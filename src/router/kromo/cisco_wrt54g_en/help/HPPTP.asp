@@ -13,13 +13,13 @@
 				<dt>Client IP(s)<dt>
 				<dd>Must be a space separated list of IPs or a range of definition which will be used as pool for client ip assignment<dd>
 				<div class="note">
-					<h4>example:</h4>
+					<h4>example:</h4><br />
 					<div>192.168.1.2-99</div>
 				</div>
 				<dt>CHAP-Secrets<dt>
 				<dd>Must be a list of secrets in standard linux CHAP secrets format<dd>
 				<div class="note">
-					<h4>example:</h4>
+					<h4>example:</h4><br />
 					<div>myuser * mypassword *</div>
 				</div>			
 				<dt><% tran("service.pptp_legend"); %></dt>

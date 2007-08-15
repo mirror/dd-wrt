@@ -650,6 +650,7 @@ route.titl="Routing";
 route.h2="Routing Avanzato";
 route.mod="Modalità Operativa";
 route.bgp_legend="Impostazioni BGP";
+route.bgp_own_as="BGP Own AS#";
 route.bgp_ip="Neighbor IP";
 route.bgp_as="Neighbor AS#";
 route.rip2_mod="RIP2 Router";
