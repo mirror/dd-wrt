@@ -930,6 +930,7 @@ route.titl="Route";
 route.h2="Geavanceerde Routering";
 route.mod="Operatie Modus";
 route.bgp_legend="BGP Instellingen";
+route.bgp_own_as="BGP Own AS#";
 route.bgp_ip="Buur IP";
 route.bgp_as="Buur AS#";
 route.rip2_mod="RIP2 Router";

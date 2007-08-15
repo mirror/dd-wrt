@@ -933,6 +933,7 @@ route.titl="Routing";
 route.h2="Erweitertes Routing";
 route.mod="Betriebsmodus";
 route.bgp_legend="BGP-Einstellungen";
+route.bgp_own_as="BGP Eigner AS#";
 route.bgp_ip="Nachbar-IP";
 route.bgp_as="Nachbar-AS#";
 route.rip2_mod="RIP2-Router";
