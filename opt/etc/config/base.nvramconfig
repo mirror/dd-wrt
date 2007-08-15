@@ -228,7 +228,7 @@
  "stats_server"  "Stats Server"  "NULL"  "TRUE" "0"  EZC_SUPPORT
  "ezc_enable"  "EZConfig"  "CHOICE" "2"  "0"  "1"  "FALSE" "3"  
  "wl_afterburner"  "AfterBurner Technology"  "CHOICE" "3"  "on"  "off"  "auto"  "FALSE" "3"  
- "routing_bgp_neighbor_ip" "bgp ip" "NULL" "FALSE" "0"
+ "routing_bgp_neighbor_ip" "bgp ip" "MERGEIPADDRS" "FALSE" "0"
  "routing_bgp_neighbor_as" "bgp as" "NULL" "FALSE" "0"
  "routing_bgp_as" "bgp as" "NULL" "FALSE" "0"
  "router_style" "CSS Style" "NULL" "FALSE" "0"
