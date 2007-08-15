@@ -1047,6 +1047,7 @@ route.titl="Routage";
 route.h2="Routage Avancé";
 route.mod="Mode de Fonctionnement";
 route.bgp_legend="Paramètres BGP";
+route.bgp_own_as="BGP Own AS#";
 route.bgp_ip="Neighbor IP";
 route.bgp_as="Neighbor AS#";
 route.rip2_mod="Routage RIP2";
