@@ -9,6 +9,7 @@ wifidog-clean:
 wifidog-install:
 	install -D wifidog/src/wdctl $(INSTALLDIR)/wifidog/usr/sbin/wdctl
 	install -D wifidog/src/.libs/wifidog $(INSTALLDIR)/wifidog/usr/sbin/wifidog
+	install -D wifidog/libhttpd/.libs/libhttpd.so.0.0.0 $(INSTALLDIR)/wifidog/usr/lib/libhttpd.so.0
 	mkdir -p $(INSTALLDIR)/wifidog/etc/config
 	install -D wifidog/config/*.nvramconfig $(INSTALLDIR)/wifidog/etc/config
 	install -D wifidog/config/*.webhotspot $(INSTALLDIR)/wifidog/etc/config
