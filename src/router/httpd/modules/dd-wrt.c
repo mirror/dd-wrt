@@ -2894,6 +2894,9 @@ ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv)
   getIfList (bufferif2, "ixp");
   sprintf (bufferif, "%s %s", bufferif, bufferif2);
 #endif
+  getIfList (bufferif2, "vlan");
+  sprintf (bufferif, "%s %s", bufferif, bufferif2);
+
   memset (bufferif2, 0, 256);
   getIfList (bufferif2, "br");
   foreach (word, bufferif2, next)
