@@ -13,7 +13,7 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("alive.IP2"); %></div>
-			<input size="15" maxLength="15" class="text" name="squid_proxy_server_ip" value="<% nvram_get("squid_proxy_server_ip"); %>" />
+			<input size="15" maxLength="512" class="text" name="squid_proxy_server_ip" value="<% nvram_get("squid_proxy_server_ip"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("alive.port"); %></div>
