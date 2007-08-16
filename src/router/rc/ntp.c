@@ -148,6 +148,8 @@ do_ntp (void)			// called from ntp_main and process_monitor_main; called every h
       fscanf (up, "%lf", &sys_postuptime);
       fclose (up);
       double diffuptime = sys_postuptime - sys_preuptime;
+      if (diffuptime > 0.0)
+      {
       up = fopen ("/tmp/.wanuptime", "r");
       if (up)
 	{
@@ -158,6 +160,7 @@ do_ntp (void)			// called from ntp_main and process_monitor_main; called every h
 	  fprintf (up, "%lf", sys_postuptime);
 	  fclose (up);
 	}
+      }
 #ifdef HAVE_GATEWORX
       eval ("hwclock", "-w");
 #endif

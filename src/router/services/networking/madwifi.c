@@ -1150,7 +1150,7 @@ set_rate (char *dev)
     }
   else
     {
-      double ratef = atof (r) * 1000.0;
+      float ratef = atof (r) * 1000.0;
       int integerrate = (int) ratef;
       char set[32];
       sprintf (set, "%d", integerrate);
