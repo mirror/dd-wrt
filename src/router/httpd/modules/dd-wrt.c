@@ -5379,7 +5379,7 @@ ej_get_currate (webs_t wp, int argc, char_t ** argv)
 
 }
 #else
-extern double wifi_getrate (char *ifname);
+extern float wifi_getrate (char *ifname);
 #define KILO	1e3
 #define MEGA	1e6
 #define GIGA	1e9
@@ -5387,7 +5387,7 @@ extern double wifi_getrate (char *ifname);
 void
 ej_get_currate (webs_t wp, int argc, char_t ** argv)
 {
-  double rate = wifi_getrate (nvram_safe_get ("wifi_display"));
+  float rate = wifi_getrate (nvram_safe_get ("wifi_display"));
   char scale;
   int divisor;
 
@@ -5452,15 +5452,15 @@ ej_get_uptime (webs_t wp, int argc, char_t ** argv)
 
   unlink (UPTIME_TMP);
 
-  return;
+  return;	
 
 }
 
 void
 ej_get_wan_uptime (webs_t wp, int argc, char_t ** argv)
 {
-  double sys_uptime;
-  double uptime;
+  float sys_uptime;
+  float uptime;
   int days, minutes;
   FILE *fp, *fp2;
 
@@ -5471,17 +5471,15 @@ ej_get_wan_uptime (webs_t wp, int argc, char_t ** argv)
       websWrite (wp, "%s", live_translate ("status_router.notavail"));
       return;
     }
-  if (fscanf (fp, "%lf", &uptime) == 1)
+  if (fscanf (fp, "%f", &uptime) == 1)
     {
       fp2 = fopen ("/proc/uptime", "r");
-      fscanf (fp2, "%lf", &sys_uptime);
+      fscanf (fp2, "%f", &sys_uptime);
       fclose (fp2);
-
       uptime = sys_uptime - uptime;
       days = (int) uptime / (60 * 60 * 24);
       if (days)
 	websWrite (wp, "%d day%s, ", days, (days == 1 ? "" : "s"));
-
       minutes = (int) uptime / 60;
       websWrite (wp, "%d:%02d:%02d", (minutes / 60) % 24, minutes % 60,
 		 (int) uptime % 60);

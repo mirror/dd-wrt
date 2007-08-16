@@ -2794,15 +2794,15 @@ if (wanip!=0 && nvram_match("wan_ipaddr","0.0.0.0") && !nvram_match("wan_proto",
 
   led_control (LED_CONNECTED, LED_ON);
 
-  double sys_uptime;
+  float sys_uptime;
   FILE *up;
 
   up = fopen ("/proc/uptime", "r");
-  fscanf (up, "%lf", &sys_uptime);
+  fscanf (up, "%f", &sys_uptime);
   fclose (up);
 
   up = fopen ("/tmp/.wanuptime", "w");
-  fprintf (up, "%lf", sys_uptime);
+  fprintf (up, "%f", sys_uptime);
   fclose (up);
 
 
