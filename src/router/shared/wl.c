@@ -196,7 +196,7 @@ getsocket (void)
 }
 
 
-double
+float
 wifi_getrate (char *ifname)
 {
   struct iwreq wrq;
@@ -229,13 +229,13 @@ int
 wifi_getchannel (char *ifname)
 {
   struct iwreq wrq;
-  double freq;
+  float freq;
   int channel;
   strncpy (wrq.ifr_name, ifname, IFNAMSIZ);
   ioctl (getsocket (), SIOCGIWFREQ, &wrq);
 
   int i;
-  freq = (double) wrq.u.freq.m;
+  freq = (float) wrq.u.freq.m;
   for (i = 0; i < wrq.u.freq.e; i++)
     freq *= 10;
   freq /= 1000000;
