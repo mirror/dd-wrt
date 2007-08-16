@@ -145,6 +145,9 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       nvram_set ("wl0gpio0", "0");
       nvram_set ("wl0gpio5", "136");
       break;
+	case ROUTER_ASUS_WL500GD:
+      nvram_set ("wl0gpio0", "135");
+	  break;
     }
 #else //v23
 
@@ -162,6 +165,9 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       nvram_set ("wl0gpio0", "0");
       nvram_set ("wl0gpio5", "2");
       break;
+	case ROUTER_ASUS_WL500GD:
+	  nvram_unset ("wl0gpio0");
+	  break;
     }
 #endif
 
@@ -468,10 +474,6 @@ start_sysinit (void)
       nvram_unset ("gpio6");
       break;
    
-	case ROUTER_ASUS_WL500GD:
-	  nvram_unset ("wl0gpio0");
-	  break;  
-
     }
 
   /* ifnames */
