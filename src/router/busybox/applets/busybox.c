@@ -68,9 +68,6 @@ static void install_links(const char *busybox, int use_symbolic_links)
 #ifdef HAVE_DHCPFWD
   extern int dhcpforward_main(int argc,char *argv[]);
 #endif
-#ifdef HAVE_RFLOW
-  extern int rflow_main(int argc,char *argv[]);
-#endif
 #ifdef HAVE_BIRD
   extern int bird_main(int argc,char *argv[]);
 #endif
@@ -95,12 +92,6 @@ int main(int argc, char **argv)
   else if (strstr (base, "pppd"))
     return pppd_main(argc,argv);
 #endif*/
-#ifdef HAVE_RFLOW
-  else if (strstr (base, "rflow"))
-  {
-    return rflow_main(argc,argv);
-}
-#endif
 #ifdef HAVE_DDWRTHTTPD
   extern int httpd_main(int argc,char *argv[]);
   else if (strstr (base, "httpd"))
