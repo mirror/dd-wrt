@@ -1596,7 +1596,7 @@ show_security_prefix (webs_t wp, int argc, char_t ** argv, char *prefix)
   websWrite (wp, "<option value=\"psk\" %s>WPA Personal</option>\n",
 	     selmatch (var, "psk", "selected=\"selected\""));
   sprintf (sta, "%s_mode", prefix);
-  if (!nvram_match (sta, "sta"))
+  if (nvram_match (sta, "ap"))
     {
       websWrite (wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n",
 		 selmatch (var, "wpa", "selected=\"selected\""));
@@ -1604,7 +1604,7 @@ show_security_prefix (webs_t wp, int argc, char_t ** argv, char *prefix)
   websWrite (wp,
 	     "<option value=\"psk2\" %s>WPA2 Personal</option>\n",
 	     selmatch (var, "psk2", "selected=\"selected\""));
-  if (!nvram_match (sta, "sta"))
+  if (nvram_match (sta, "ap"))
     {
       websWrite (wp, "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n",
 		 selmatch (var, "wpa2", "selected=\"selected\""));
@@ -1620,7 +1620,7 @@ show_security_prefix (webs_t wp, int argc, char_t ** argv, char *prefix)
   websWrite (wp, "<option value=\"wep\" %s>WEP</option>\n",
 	     selmatch (var, "wep", "selected=\"selected\""));
 #ifdef HAVE_WPA_SUPPLICANT
-  if (nvram_match (sta, "sta"))
+  if (nvram_match (sta, "sta") || nvram_match (sta, "apsta") || nvram_match (sta, "wet"))
     {
       websWrite (wp, "<option value=\"8021X\" %s>802.1x</option>\n",
 		 selmatch (var, "8021X", "selected=\"selected\""));
