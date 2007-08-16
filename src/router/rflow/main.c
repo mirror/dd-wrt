@@ -59,8 +59,7 @@ static int netflow_destination (char* spec)
   return 0;
 }
 
-int
-rflow_main(int ac, char **av) {
+int main(int ac, char **av) {
 	struct timeval tv;
 	char *config_file = CONFIG_FILE;
 	int disable_servers = 0;

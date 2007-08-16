@@ -45,7 +45,7 @@ IPCAD_OBJS+= sigintr.o
 all: ${TARGETS}
 
 rflow: ${IPCAD_OBJS}
-	${AR} arc $-o $@.a ${IPCAD_OBJS}
+	${CC} ${CFLAGS} -o $@ ${IPCAD_OBJS} ${LDFLAGS} ${LIBS}
 
 .SUFFIXES:
 .SUFFIXES: .o .c .0 .8 .5

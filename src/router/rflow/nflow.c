@@ -5,11 +5,11 @@
 #include "opt.h"
 #include "nflow.h"
 
-static double
+static long
 get_time() {
 	struct timeval tv;
 	gettimeofday(&tv, 0);
-	return tv.tv_sec + (double)tv.tv_usec/1000000;
+	return tv.tv_sec;
 }
 
 static void process_netflow_cache(double now, server *srv, int force_flush);
@@ -24,10 +24,9 @@ void *
 netflow_exporter(void *srvp) {
 	server *srv = srvp;
 	sigset_t set, oset;
-	double time_to = 0;
-	double now;
+	long time_to = 0;
+	long now;
 	int sockfd;
-
 	sockfd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if(sockfd == -1) {
 		fprintf(stderr, "Can't create socket for %s.\n",
@@ -56,7 +55,7 @@ netflow_exporter(void *srvp) {
 	 * flushing expired entries.
 	 */
 	while(1) {
-		double tdiff;
+		long tdiff;
 
 		if(signoff_now)
 			break;
@@ -65,10 +64,10 @@ netflow_exporter(void *srvp) {
 		tdiff = time_to - now;
 		if(tdiff > 0) {
 			sigprocmask(SIG_UNBLOCK, &set, &oset);
-			usleep((int)((tdiff - (long)tdiff) * 1000000));
+			sleep(tdiff);
 			sigprocmask(SIG_SETMASK, &oset, NULL);
 		} else {
-			time_to = now + 0.9;	/* Almost one second */
+			time_to = now + 1;	/* Almost one second */
 			process_netflow_cache(now, srv, 0);
 		}
 	}

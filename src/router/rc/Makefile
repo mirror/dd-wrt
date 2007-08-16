@@ -442,9 +442,6 @@ endif
 #ifeq ($(CONFIG_DDNS),y)
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox ez-ipupdate
 #endif
-ifeq ($(CONFIG_RFLOW),y)
-	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox rflow
-endif
 ifeq ($(CONFIG_DHCPFORWARD),y)
 	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox dhcpfwd
 endif
