@@ -1577,6 +1577,7 @@ static void
 show_security_prefix (webs_t wp, int argc, char_t ** argv, char *prefix)
 {
   char var[80];
+  char sta[80];
 //char p2[80];
   cprintf ("show security prefix\n");
   sprintf (var, "%s_security_mode", prefix);
@@ -1596,24 +1597,24 @@ show_security_prefix (webs_t wp, int argc, char_t ** argv, char *prefix)
 	     selmatch (var, "psk", "selected=\"selected\""));
   sprintf (sta, "%s_mode", prefix);
   if (!nvram_match (sta, "sta"))
-  {
-  websWrite (wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n",
-	     selmatch (var, "wpa", "selected=\"selected\""));
-  }
+    {
+      websWrite (wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n",
+		 selmatch (var, "wpa", "selected=\"selected\""));
+    }
   websWrite (wp,
 	     "<option value=\"psk2\" %s>WPA2 Personal</option>\n",
 	     selmatch (var, "psk2", "selected=\"selected\""));
   if (!nvram_match (sta, "sta"))
-  {
-  websWrite (wp, "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n",
-	     selmatch (var, "wpa2", "selected=\"selected\""));
-  websWrite (wp,
-	     "<option value=\"psk psk2\" %s>WPA2 Personal Mixed</option>\n",
-	     selmatch (var, "psk psk2", "selected=\"selected\""));
-  websWrite (wp,
-	     "<option value=\"wpa wpa2\" %s>WPA2 Enterprise Mixed</option>\n",
-	     selmatch (var, "wpa wpa2", "selected=\"selected\""));
-  }
+    {
+      websWrite (wp, "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n",
+		 selmatch (var, "wpa2", "selected=\"selected\""));
+      websWrite (wp,
+		 "<option value=\"psk psk2\" %s>WPA2 Personal Mixed</option>\n",
+		 selmatch (var, "psk psk2", "selected=\"selected\""));
+      websWrite (wp,
+		 "<option value=\"wpa wpa2\" %s>WPA2 Enterprise Mixed</option>\n",
+		 selmatch (var, "wpa wpa2", "selected=\"selected\""));
+    }
   websWrite (wp, "<option value=\"radius\" %s>RADIUS</option>\n",
 	     selmatch (var, "radius", "selected=\"selected\""));
   websWrite (wp, "<option value=\"wep\" %s>WEP</option>\n",
@@ -5457,7 +5458,7 @@ ej_get_uptime (webs_t wp, int argc, char_t ** argv)
 
   unlink (UPTIME_TMP);
 
-  return;	
+  return;
 
 }
 
@@ -6004,7 +6005,7 @@ ej_active_wds (webs_t wp, int argc, char_t ** argv)
 
 
       rssi = 0;
-      memset(desc,0,30);
+      memset (desc, 0, 30);
       for (i = 1; i <= 10; i++)
 	{
 	  snprintf (wdsvar, 30, "wl_wds%d_hwaddr", i);
