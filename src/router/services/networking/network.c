@@ -2278,15 +2278,15 @@ start_wan (int status)
 	       "noauth\n"
 	       "defaultroute\n"
 	       "noaccomp\n" "nobsdcomp\n" "nodeflate\n" 
-//	       "maxfail 0\n"
+	       "maxfail 0\n"
 //               "nocrtscts\n"
 //               "sync\n"
 //               "local\n"
 //               "noixp\n"
 //             "lock\n"
 //	       "noproxyarp\n"
-	       "ipcp-accept-local\n"
-	       "ipcp-accept-remote\n"
+//	       "ipcp-accept-local\n"
+//	       "ipcp-accept-remote\n"
 //	       "nodetach\n"
 	       "nopcomp\n" );//"novj\n" "novjccomp\n");
       if (nvram_invmatch ("ppp_mppe", ""))
