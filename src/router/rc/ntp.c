@@ -99,8 +99,6 @@ do_ntp (void)			// called from ntp_main and process_monitor_main; called every h
 
   if (((servers = nvram_get ("ntp_server")) == NULL) || (*servers == 0))
     servers = "209.81.9.7 207.46.130.100 192.36.144.23 pool.ntp.org";
-  double sys_preuptime;
-  double sys_postuptime;
   FILE *up;
   up = fopen ("/proc/uptime", "r");
   fscanf (up, "%lf", &sys_preuptime);
@@ -142,25 +140,6 @@ do_ntp (void)			// called from ntp_main and process_monitor_main; called every h
 	    tv.tv_sec += dstEntry[dst].dstBias;
 	}
       settimeofday (&tv, NULL);
-      /* BrainSlayer: sync uptime to prevent negative uptime values in gui, the result may not be exact by second since the time for ntp execution is not measured in it */
-      FILE *up;
-      up = fopen ("/proc/uptime", "r");
-      fscanf (up, "%lf", &sys_postuptime);
-      fclose (up);
-      double diffuptime = sys_postuptime - sys_preuptime;
-      if (diffuptime > 0.0)
-      {
-      up = fopen ("/tmp/.wanuptime", "r");
-      if (up)
-	{
-	  fscanf (up, "%lf", &sys_postuptime);
-	  fclose (up);
-	  sys_postuptime += diffuptime;
-	  up = fopen ("/tmp/.wanuptime", "w");
-	  fprintf (up, "%lf", sys_postuptime);
-	  fclose (up);
-	}
-      }
 #ifdef HAVE_GATEWORX
       eval ("hwclock", "-w");
 #endif
