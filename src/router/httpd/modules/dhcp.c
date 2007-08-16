@@ -87,7 +87,7 @@ ej_dumpleases (webs_t wp, int argc, char_t ** argv)
 			     (hostname[0] ? hostname :
 			      live_translate ("share.unknown")), ip, mac,
 			     ((expires ==
-			       0) ? live_translate ("share.never") :
+			       0) ? live_translate ("share.sttic") :
 			      dhcp_reltime (buf, expires)), p + 1);
 		  ++count;
 		}
@@ -129,7 +129,7 @@ ej_dumpleases (webs_t wp, int argc, char_t ** argv)
 			 (hostname[0] ? hostname :
 			  live_translate ("share.unknown")), ip, mac,
 			 ((expires ==
-			   0) ? live_translate ("share.never") :
+			   0) ? live_translate ("share.sttic") :
 			  dhcp_reltime (buf, expires)), p + 1);
 	      ++count;
 	    }
