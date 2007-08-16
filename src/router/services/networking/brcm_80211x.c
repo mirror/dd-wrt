@@ -57,7 +57,7 @@ setupSupplicant (char *prefix)
     if (nvram_match (akm, "psk") ||
 	nvram_match (akm, "psk2") || nvram_match (akm, "psk psk2"))
     {
-      char fstr[32];
+      char fstr[64];
       char psk[16];
       sprintf (fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
       FILE *fp = fopen (fstr, "wb");
@@ -107,12 +107,16 @@ setupSupplicant (char *prefix)
       fprintf (fp, "\tpsk=\"%s\"\n", nvram_safe_get (psk));
       fprintf (fp, "}\n");
       fclose (fp);
+      if (!strcmp(prefix,"wl0"))
+      sprintf (psk, "-i%s", nvram_safe_get("wl0_ifname"));
+      else
       sprintf (psk, "-i%s", prefix);
+
       if (nvram_match (wmode, "wdssta") || nvram_match (wmode, "wet"))
 	eval ("wpa_supplicant", "-b", getBridge (prefix), "-B",
 	      "-Dmadwifi", psk, "-c", fstr);
       else
-	eval ("wpa_supplicant", "-B", "-Dmadwifi", psk, "-c", fstr);
+	eval ("wpa_supplicant", "-B", "-Dwext", psk, "-c", fstr);
     }
   else if (nvram_match (akm, "8021X"))
     {
