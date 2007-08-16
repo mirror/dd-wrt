@@ -116,7 +116,7 @@ maintainer-clean: distclean
 	rm -f config.h.in configure
 
 install: all
-#	install -D rflow $(INSTALLDIR)/usr/sbin/rflow
+	install -D rflow $(INSTALLDIR)/usr/sbin/rflow
 	install -D config/rflow.webservices $(INSTALLDIR)/etc/config/rflow.webservices
 	install -D config/rflow.startup $(INSTALLDIR)/etc/config/rflow.startup
 	install -D config/rflow.nvramconfig $(INSTALLDIR)/etc/config/rflow.nvramconfig
