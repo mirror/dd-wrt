@@ -50,6 +50,7 @@ CFLAGS +=	$(WARNINGS)
 CFLAGS +=	-O2
 CFLAGS +=	-g
 endif
+CFLAGS +=	-DNODEBUG
 
 ifdef OLSRD_PLUGIN
 # c and ld flags for libraries (plugins)
