@@ -32,6 +32,8 @@
 
 #include "conf.h"
 
+#ifndef NEED_PRINTF
+
 /** @internal
 Do not use directly, use the debug macro */
 void
@@ -68,3 +70,4 @@ _debug(char *filename, int line, int level, char *format, ...)
     }
 }
 
+#endif
