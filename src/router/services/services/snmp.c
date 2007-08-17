@@ -50,31 +50,20 @@ start_snmp (void)
   if (NULL == fp)
     return -1;
 
-  /* if smnpd_conf is defined and not the default use the contents as the config file */
-  if (strlen (nvram_safe_get ("snmpd_conf")) > 0
-      && strcmp (nvram_safe_get ("snmpd_conf"),
-		 "See http://www.net-snmp.org for expert snmpd.conf options"))
-    fprintf (fp, "%s", nvram_safe_get ("snmpd_conf"));
-  else
-    {
-      if (strlen (nvram_safe_get ("snmpd_syslocation")) > 0)
-	fprintf (fp, "syslocation %s\n",
-		 nvram_safe_get ("snmpd_syslocation"));
-      if (strlen (nvram_safe_get ("snmpd_syscontact")) > 0)
-	fprintf (fp, "syscontact %s\n", nvram_safe_get ("snmpd_syscontact"));
-      if (strlen (nvram_safe_get ("snmpd_sysname")) > 0)
-	fprintf (fp, "sysname %s\n", nvram_safe_get ("snmpd_sysname"));
-      if (strlen (nvram_safe_get ("snmpd_rocommunity")) > 0)
-	fprintf (fp, "rocommunity %s\n",
-		 nvram_safe_get ("snmpd_rocommunity"));
-      if (strlen (nvram_safe_get ("snmpd_rwcommunity")) > 0)
-	fprintf (fp, "rwcommunity %s\n",
-		 nvram_safe_get ("snmpd_rwcommunity"));
-    }
+  if (strlen (nvram_safe_get ("snmpd_syslocation")) > 0)
+    fprintf (fp, "syslocation %s\n", nvram_safe_get ("snmpd_syslocation"));
+  if (strlen (nvram_safe_get ("snmpd_syscontact")) > 0)
+    fprintf (fp, "syscontact %s\n", nvram_safe_get ("snmpd_syscontact"));
+  if (strlen (nvram_safe_get ("snmpd_sysname")) > 0)
+    fprintf (fp, "sysname %s\n", nvram_safe_get ("snmpd_sysname"));
+  if (strlen (nvram_safe_get ("snmpd_rocommunity")) > 0)
+    fprintf (fp, "rocommunity %s\n", nvram_safe_get ("snmpd_rocommunity"));
+  if (strlen (nvram_safe_get ("snmpd_rwcommunity")) > 0)
+    fprintf (fp, "rwcommunity %s\n", nvram_safe_get ("snmpd_rwcommunity"));
+  fprintf (fp, "sysservices 9\n");
   fprintf (fp, "pass_persist .1.3.6.1.4.1.2021.255 /etc/wl_snmpd.sh\n");
 
   fclose (fp);
-//  eval ("insmod", "wlcompat");
   ret = _eval (snmpd_argv, NULL, 0, &pid);
 
   cprintf ("done\n");
