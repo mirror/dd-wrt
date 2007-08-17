@@ -1729,20 +1729,20 @@ configure_single (int count)
 	  char mask[32];
 	  sprintf (ip, "%s_ipaddr", dev);
 	  sprintf (mask, "%s_netmask", dev);
-	  ifconfig (dev, IFUP, nvram_safe_get (ip), nvram_safe_get (mask));
+	  eval("ifconfig",dev, nvram_safe_get (ip), "netmask",nvram_safe_get (mask),"up");
 	}
     }
   else
     {
       char bridged[32];
       sprintf (bridged, "%s_bridged", dev);
-      if (default_match (bridged, "0", "1") && strcmp (getSTA (), dev))
+      if (default_match (bridged, "0", "1"))
 	{
 	  char ip[32];
 	  char mask[32];
 	  sprintf (ip, "%s_ipaddr", dev);
 	  sprintf (mask, "%s_netmask", dev);
-	  ifconfig (dev, IFUP, nvram_safe_get (ip), nvram_safe_get (mask));
+	  eval("ifconfig",dev, nvram_safe_get (ip), "netmask",nvram_safe_get (mask),"up");
 	}
     }
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
