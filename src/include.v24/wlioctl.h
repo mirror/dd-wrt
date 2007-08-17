@@ -421,6 +421,18 @@ typedef struct {
 	uint16	txctl1;		/* Radio TX_CTL1 value */
 } atten_t;
 
+/* Per-AC retry parameters */
+struct wme_tx_params_s {
+	uint8  short_retry;
+	uint8  short_fallback;
+	uint8  long_retry;
+	uint8  long_fallback;
+	uint16 max_rate;  /* In units of 512 Kbps */
+};
+typedef struct wme_tx_params_s wme_tx_params_t;
+#define WL_WME_TX_PARAMS_IO_BYTES (sizeof(wme_tx_params_t) * AC_COUNT)
+
+
 /* defines used by poweridx iovar - it controls power in a-band */
 /* current gain setting is maintained */
 #define WL_PWRIDX_PCL_OFF	-2	/* turn off PCL.  */
@@ -733,6 +745,8 @@ typedef struct wl_instance_info {
 #define WLC_GET_KEY_SEQ				183
 /* #define WLC_GET_GMODE_PROTECTION_CTS		198 */ /* no longer supported */
 /* #define WLC_SET_GMODE_PROTECTION_CTS		199 */ /* no longer supported */
+#define WLC_SCB_DEAUTHENTICATE_FOR_REASON	201
+#define WLC_TKIP_COUNTERMEASURES		202
 #define WLC_GET_PIOMODE				203
 #define WLC_SET_PIOMODE				204
 #define WLC_SET_LED				209
@@ -850,6 +864,10 @@ typedef struct {
 #define	WLC_BAND_5G		1	/* 5 Ghz */
 #define	WLC_BAND_2G		2	/* 2.4 Ghz */
 #define	WLC_BAND_ALL		3	/* all bands */
+#define	WLC_BAND_A		1	/* "a" band (5 Ghz) */
+#define	WLC_BAND_B		2	/* "b" band (2.4 Ghz) */
+
+
 
 /* phy types (returned by WLC_GET_PHYTPE) */
 #define	WLC_PHY_TYPE_A		0
@@ -912,11 +930,15 @@ typedef struct {
 #define WLC_N_PREAMBLE_MIXEDMODE	0
 #define WLC_N_PREAMBLE_GF		1
 
+#define WLC_N_BW_20ALL			0
+#define WLC_N_BW_40ALL			1
+#define WLC_N_BW_20IN2G_40IN5G		2
+
+
 /* Values for PM */
 #define PM_OFF	0
 #define PM_MAX	1
 #define PM_FAST 2
-
 
 
 typedef struct {
@@ -926,13 +948,17 @@ typedef struct {
 	int max_pw; 	/* maximum pulse width (20 MHz clocks) */
 	uint16 thresh0;	/* Radar detection, thresh 0 */
 	uint16 thresh1;	/* Radar detection, thresh 1 */
+	uint16 blank;	/* Radar detection, blank control */
+	uint16 fmdemodcfg;	/* Radar detection, fmdemod config */
 	int npulses_lp;  /* Radar detection, minimum long pulses */
 	int min_pw_lp; /* Minimum pulsewidth for long pulses */
 	int max_pw_lp; /* Maximum pulsewidth for long pulses */
 	int min_fm_lp; /* Minimum fm for long pulses */
 	int max_deltat_lp;  /* Maximum deltat for long pulses */
 	int min_deltat; /* Minimum spacing between pulses */
+	int max_deltat; /* Maximum spacing between pulses */
 } wl_radar_args_t;
+
 
 /* radar iovar SET defines */
 #define WL_RADAR_DETECTOR_OFF		0	/* radar detector off */
@@ -1007,6 +1033,31 @@ typedef struct tx_inst_power {
 #define WL_CAC_VAL		0x08000000
 #define WL_AMSDU_VAL		0x10000000
 #define WL_AMPDU_VAL		0x20000000
+
+#define WL_ERROR_VAL		0x00000001
+#define WL_TRACE_VAL		0x00000002
+#define WL_PRHDRS_VAL		0x00000004
+#define WL_PRPKT_VAL		0x00000008
+#define WL_INFORM_VAL		0x00000010
+#define WL_TMP_VAL		0x00000020
+#define WL_OID_VAL		0x00000040
+#define WL_RATE_VAL		0x00000080
+#define WL_ASSOC_VAL		0x00000100
+#define WL_PRUSR_VAL		0x00000200
+#define WL_PS_VAL		0x00000400
+#define WL_TXPWR_VAL		0x00000800
+#define WL_GMODE_VAL		0x00001000
+#define WL_DUAL_VAL		0x00002000
+#define WL_WSEC_VAL		0x00004000
+#define WL_WSEC_DUMP_VAL	0x00008000
+#define WL_LOG_VAL		0x00010000
+#define WL_NRSSI_VAL		0x00020000
+#define WL_LOFT_VAL		0x00040000
+#define WL_REGULATORY_VAL	0x00080000
+#define WL_ACI_VAL		0x00100000
+#define WL_RADAR_VAL		0x00200000
+
+
 
 /* max # of leds supported by GPIO (gpio pin# == led index#) */
 #define	WL_LED_NUMGPIO		16	/* gpio 0-15 */
