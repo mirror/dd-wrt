@@ -1,5 +1,7 @@
-wifidog:
+wifidog-configure:
 	cd wifidog && ./configure --disable-nls --prefix=/usr --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS)"
+
+wifidog:
 	$(MAKE) -C wifidog
 
 wifidog-clean:

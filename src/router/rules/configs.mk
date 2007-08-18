@@ -150,3 +150,6 @@ obj-$(CONFIG_MIITOOL) += net-tools
 obj-$(CONFIG_TOR) += tor
 
 
+obj-configure := $(foreach obj,$(obj-y) $(obj-n),$(obj)-configure)
+
+configure: $(obj-configure)

@@ -1,5 +1,7 @@
-e2fsprogs:
+e2fsprogs-configure:
 	cd e2fsprogs && ./configure --host=$(ARCH)-linux CFLAGS="-Os" CC="$(CROSS_COMPILE)gcc $(COPTS)" --with-gnu-ld --disable-rpath --disable-shared --enable-static --enable-elf-shlibs --enable-dynamic-e2fsck
+
+e2fsprogs:
 	make -C e2fsprogs
 
 e2fsprogs-install:
