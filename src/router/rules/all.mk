@@ -64,6 +64,9 @@ menuconfig: mconf
 
 oldconfig: oldconf
 
+
+configure: $(obj-configure)
+
 # Default configurations
 .config:
 	cp config/defconfig $@
