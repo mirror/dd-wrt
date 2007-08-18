@@ -2278,7 +2278,7 @@ start_wan (int status)
 	       "noauth\n"
 	       "defaultroute\n"
 	       "noaccomp\n" "nobsdcomp\n" "nodeflate\n" 
-	       "maxfail 0\n"
+//	       "maxfail 0\n"
 //               "nocrtscts\n"
 //               "sync\n"
 //               "local\n"
