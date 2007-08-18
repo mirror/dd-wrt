@@ -1,4 +1,4 @@
-freeradius:
+freeradius-configure:
 	cd freeradius && \
 	sys_lib_dlsearch_path_spec="$(ARCH)-uclibc" \
 	sys_lib_search_path_spec="$(ARCH)-uclibc" \
@@ -54,6 +54,8 @@ freeradius:
 	--without-rlm_unix \
 	--without-rlm_x99-token \
 	--without-rlm_sql_postgresql
+
+freeradius:
 	make -C freeradius
 
 freeradius-clean:
