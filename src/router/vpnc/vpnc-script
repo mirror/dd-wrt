@@ -107,7 +107,7 @@ do_pre_init() {
 }
 
 do_ifconfig() {
-	ifconfig "$TUNDEV" inet "$INTERNAL_IP4_ADDRESS" $ifconfig_syntax_ptp "$INTERNAL_IP4_ADDRESS" netmask 255.255.255.255 mtu 1412 up
+	ifconfig $TUNDEV $INTERNAL_IP4_ADDRESS pointopoint $INTERNAL_IP4_ADDRESS mtu 1412 up
 }
 
 destroy_tun_device() {
