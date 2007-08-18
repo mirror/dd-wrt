@@ -1,5 +1,7 @@
-gpsd:
+gpsd-configure:
 	cd gpsd && ./configure --host=$(ARCH)-linux --disable-fv18 --disable-python --disable-tripmate --disable-earthmate --disable-shared --without-x CFLAGS="$(COPTS) -DNEED_PRINTF -I../ncurses/include -L../ncurses/lib " --prefix=/usr 
+
+gpsd:
 	make  -C gpsd
 
 gpsd-clean:

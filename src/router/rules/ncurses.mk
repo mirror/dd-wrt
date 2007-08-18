@@ -1,4 +1,4 @@
-ncurses:
+ncurses-configure:
 	cd ncurses && ./configure --host=$(ARCH)-linux-uclibc --with-shared CFLAGS="$(COPTS) -DNEED_PRINTF" \
 		--enable-echo \
 		--enable-const \
@@ -14,6 +14,8 @@ ncurses:
 		--with-shared \
 		--with-terminfo-dirs=/etc/terminfo \
 		--with-default-terminfo-dir=/etc/terminfo 
+
+ncurses:
 	make -C ncurses
 
 ncurses-install:

@@ -1,5 +1,7 @@
-ethtool:
+ethtool-configure:
 	cd ethtool && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) -DNEED_PRINTF" --prefix=/usr
+
+ethtool:
 	make   -C ethtool
 
 ethtool-clean:
