@@ -1,5 +1,7 @@
-wol:
+wol-configure:
 	cd wol && ./configure --disable-nls --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS)"
+
+wol:
 	$(MAKE) -C wol
 
 wol-clean:

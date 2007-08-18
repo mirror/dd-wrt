@@ -1,14 +1,18 @@
-openvpn:
+openvpn-configure:
 	cd lzo && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS)"
-	make -C lzo clean
-	make -C lzo
-#	make j 4  -C openssl
-	#rm -f openssl/*.so*
 ifeq ($(CONFIG_NEWMEDIA),y)
 	cd openvpn && ./configure --host=$(ARCH)-linux CPPFLAGS="-I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-static --disable-shared --disable-pthread --disable-plugins --disable-debug --enable-password-save --enable-management --enable-lzo --enable-small --enable-server CFLAGS="$(COPTS)" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs"
-	make -C openvpn clean
 else
 	cd openvpn && ./configure --host=$(ARCH)-linux CPPFLAGS="-I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-static --disable-shared --disable-pthread --disable-plugins --disable-debug --disable-management --disable-socks --enable-lzo --enable-small --enable-server --enable-http --enable-password-save CFLAGS="$(COPTS)" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs"
+endif
+
+openvpn:
+	make -C lzo clean
+	make -C lzo
+	#rm -f openssl/*.so*
+ifeq ($(CONFIG_NEWMEDIA),y)
+	make -C openvpn clean
+else
 	make -C openvpn clean
 endif
 	make -C openvpn
