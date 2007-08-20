@@ -991,7 +991,7 @@ wl_iovar_getint (char *ifname, char *iovar, int *val)
  */
 static int
 wl_bssiovar_mkbuf (char *iovar, int bssidx, void *param, int paramlen,
-		   void *bufptr, int buflen, int *plen)
+		   void *bufptr, int buflen, unsigned int *plen)
 {
   char *prefix = "bsscfg:";
   int8 *p;
@@ -1043,8 +1043,7 @@ wl_bssiovar_setbuf (char *ifname, char *iovar, int bssidx, void *param,
   uint iolen;
 
   err =
-    wl_bssiovar_mkbuf (iovar, bssidx, param, paramlen, bufptr, buflen,
-		       &iolen);
+    wl_bssiovar_mkbuf (iovar, bssidx, param, paramlen, bufptr, buflen,&iolen);
   if (err)
     return err;
 
