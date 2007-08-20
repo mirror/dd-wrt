@@ -1,5 +1,5 @@
 # programs
-CCACHE ?=       $(shell sh -c "type -path ccache")
+CCACHE ?=       $(shell bash -c "type -path ccache")
 ifeq ($(origin CC),default)
 CC = 		$(CCACHE) gcc
 else
@@ -17,8 +17,9 @@ ETCDIR  ?= $(DESTDIR)/etc
 LIBDIR  ?= $(DESTDIR)/usr/lib
 DOCDIR  ?= $(DESTDIR)/usr/share/doc
 MANDIR  ?= $(DESTDIR)/usr/share/man
-CFGFILE ?= $(ETCDIR)/olsrd.conf
 EXENAME ?= olsrd
+CFGNAME ?= $(EXENAME).conf
+CFGFILE ?= $(ETCDIR)/$(CFGNAME)
 
 CPPFLAGS =	-Isrc -I$(TOPDIR)/src 
 
@@ -50,7 +51,6 @@ CFLAGS +=	$(WARNINGS)
 CFLAGS +=	-O2
 CFLAGS +=	-g
 endif
-CFLAGS +=	-DNODEBUG
 
 ifdef OLSRD_PLUGIN
 # c and ld flags for libraries (plugins)

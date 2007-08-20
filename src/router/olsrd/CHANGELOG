@@ -1,7 +1,43 @@
 This file states changes as of version 0.2.4:
-$Id: CHANGELOG,v 1.74 2007/08/02 21:42:40 bernd67 Exp $
+$Id: CHANGELOG,v 1.75 2007/08/19 23:12:18 bernd67 Exp $
 
 0.5.4 ---------------------------------------------------------------------
+
+QUAGGA
+updated to svn version 33
+
+PATCHES by Sven-Ola Tücke to be found on from
+http://download-master.berlin.freifunk.net/sven-ola/nylon/packages/olsrd/files/
+- 110-olsrd-double-wlancard-neigh-hack.patch:
+  This is a hack for Nodes having to wifi cards with the same channel,
+  bssid, IP-Range etc. If two nodes can see each other by means of two
+  possible links (here: two wifi cards with equal config), a bug is  triggered
+  with the Neigh-is-SYM detections. This small little hack prevents this.
+
+- 112-olsrd-nameservice-fixemptyname.patch:
+  This is an addon to my lat/lon stuff which will prevent olsrd from
+  running (oops?) if no hostname is given and the nameservice plugin
+  is loaded.
+
+- 113-olsrd-dyngwplain-pluginvers5.patch:
+  This updates the dyngwplain plugin to the new Plugin Iface
+
+- 140-olsrd-arprefreshed.patch:
+  This is a new one. Opens a packet socket and listen to UDP(698), extract
+  the sender MAC and refreshes the ARP cache whith that. Should speedup
+  especially in cases, if you initially try to use a longer routing path which normally
+  triggers a "ARP-Lookup-Chain".
+
+PATCH by Arnd Hannemann <hannemann@i4.informatik.rwth-aachen.de>
+olsr_makefile_make_use_of_exename.patch
+- This patch makes sure that the EXENAME variable of Makefile.inc is used
+  in Makefile.
+
+CLEANUPS
+- paving the way to activate -Wshadow, much mor todo
+- const-ify parameters here and there
+- use NULL for pointers (and not "0")
+- Killed "extern" declarations in (not generated) .c files
 
 0.5.3 ---------------------------------------------------------------------
 
