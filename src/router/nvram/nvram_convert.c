@@ -49,7 +49,6 @@ struct nvram_convert nvram_converts[] = {
   {WL ("dtim"), WL0 ("dtim"), D11G ("dtim")},
   {WL ("plcphdr"), WL0 ("plcphdr"), ""},
   {WL ("gmode_protection"), WL0 ("gmode_protection"), ""},
-  {WL ("radio"), WL0 ("radio"), ""},
   // Bellow change from 3.21.9.0
   {WL ("auth_mode"), WL0 ("auth_mode"), ""},
   {WL ("radius_ipaddr"), WL0 ("radius_ipaddr"), ""},
