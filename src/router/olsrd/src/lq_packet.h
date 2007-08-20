@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: lq_packet.h,v 1.6 2005/02/20 18:52:18 kattemat Exp $
+ * $Id: lq_packet.h,v 1.7 2007/08/19 23:00:22 bernd67 Exp $
  */
 
 #ifndef _OLSR_LQ_PACKET_H
@@ -157,5 +157,7 @@ void olsr_input_lq_hello(union olsr_message *ser, struct interface *inif,
 
 void olsr_input_lq_tc(union olsr_message *ser, struct interface *inif,
                       union olsr_ip_addr *from);
+
+extern olsr_bool lq_tc_pending;
 
 #endif
