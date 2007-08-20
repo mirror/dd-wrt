@@ -21,7 +21,7 @@ struct nvram_convert nvram_converts[] = {
 #else
   {WL ("ssid"), WL0 ("ssid"), ""},
 #endif
-  {WL ("radio"), WL0 ("mode"), ""},
+  {WL ("radio"), WL0 ("radio"), ""},
   {WL ("mode"), WL0 ("mode"), ""},
   {WL ("wds"), WL0 ("wds"), ""},
   {WL ("auth"), WL0 ("auth"), ""},
