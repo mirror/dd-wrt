@@ -24,6 +24,7 @@
 
 
 #include <utils.h>
+#include <wlutils.h>
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <cy_conf.h>
@@ -238,7 +239,6 @@ internal_getRouterBrand ()
   setRouter ("Wistron CA8-4");
   return ROUTER_BOARD_CA8;
 #else
-  char *et0;
 
   uint boardnum = strtoul (nvram_safe_get ("boardnum"), NULL, 0);
 
@@ -459,8 +459,7 @@ internal_getRouterBrand ()
     }
 
 
-
-  et0 = nvram_safe_get ("et0macaddr");
+  char *et0 = nvram_safe_get ("et0macaddr");
 
   if (boardnum == 100 && nvram_match ("boardtype", "bcm94710r4"))
     {
@@ -1436,7 +1435,7 @@ get_wan_face (void)
 	   || nvram_match ("wl0_mode", "apstawet")
 	   || nvram_match ("wl0_mode", "wet"))
     {
-
+    
       strcpy (localwanface, get_wdev ());
 
     }
@@ -2797,7 +2796,7 @@ skipline (FILE * in)
 
 //returns a physical interfacelist filtered by ifprefix. if ifprefix is NULL, all valid interfaces will be returned
 int
-getIfList (char *buffer, char *ifprefix)
+getIfList (char *buffer, const char *ifprefix)
 {
   FILE *in = fopen("/proc/net/dev","rb");
   char ifname[32];
@@ -2956,16 +2955,6 @@ f_exists (const char *path)	// note: anything but a directory
 }
 
 int
-f_read_string (const char *path, char *buffer, int max)
-{
-  if (max <= 0)
-    return -1;
-  int n = f_read (path, buffer, max - 1);
-  buffer[(n > 0) ? n : 0] = 0;
-  return n;
-}
-
-int
 f_read (const char *path, void *buffer, int max)
 {
   int f;
@@ -2977,6 +2966,18 @@ f_read (const char *path, void *buffer, int max)
   close (f);
   return n;
 }
+
+
+int
+f_read_string (const char *path, char *buffer, int max)
+{
+  if (max <= 0)
+    return -1;
+  int n = f_read (path, buffer, max - 1);
+  buffer[(n > 0) ? n : 0] = 0;
+  return n;
+}
+
 
 int
 wait_file_exists (const char *name, int max, int invert)
