@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: admin_interface.c,v 1.8 2007/04/20 14:06:18 bernd67 Exp $
+ * $Id: admin_interface.c,v 1.9 2007/08/19 23:00:22 bernd67 Exp $
  */
 
 /*
@@ -57,7 +57,6 @@
 #include <stdlib.h>
 
 #if 0
-extern int netsprintf(char *str, const char* format, ...);
 #define sprintf netsprintf
 #define NETDIRECT
 #endif

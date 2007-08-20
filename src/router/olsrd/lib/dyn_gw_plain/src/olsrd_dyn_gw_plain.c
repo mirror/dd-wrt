@@ -1,5 +1,5 @@
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
+ * Copyright (c) 2006, Sven-Ola Tuecke <sven-ola-aet-gmx.de>
  * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
  * All rights reserved.
  *
@@ -51,7 +51,7 @@
 
 #define DEBUGLEV 1
 
-#define PLUGIN_INTERFACE_VERSION 4
+#define PLUGIN_INTERFACE_VERSION 5
 
 static int has_inet_gateway;
 
@@ -65,14 +65,13 @@ olsrd_plugin_interface_version(void)
   return PLUGIN_INTERFACE_VERSION;
 }
 
-/**
- * Register parameters from config file
- * Called for all plugin parameters
- */
-int
-olsrd_plugin_register_param(char *key __attribute__((unused)), char *value __attribute__((unused)))
+static const struct olsrd_plugin_parameters plugin_parameters[] = {
+};
+
+void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size)
 {
-  return 1;
+    *params = plugin_parameters;
+    *size = sizeof(plugin_parameters)/sizeof(*plugin_parameters);
 }
 
 /**
@@ -82,6 +81,8 @@ olsrd_plugin_register_param(char *key __attribute__((unused)), char *value __att
 int
 olsrd_plugin_init(void)
 {
+  printf("OLSRD dyn_gw_plain plugin by Sven-Ola\n");
+  
   gw_net.v4 = INET_NET;
   gw_netmask.v4 = INET_PREFIX;
 

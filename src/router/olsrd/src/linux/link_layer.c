@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: link_layer.c,v 1.13 2007/04/25 22:08:17 bernd67 Exp $
+ * $Id: link_layer.c,v 1.14 2007/08/19 23:00:15 bernd67 Exp $
  */
 
 
@@ -68,14 +68,6 @@ poll_link_layer(void *);
 
 int
 add_spy_node(union olsr_ip_addr *, char *);
-
-
-extern char *
-sockaddr_to_string(struct sockaddr *);
-
-extern char *
-olsr_ip_to_string(union olsr_ip_addr *);
-
 
 #define	MAXIPLEN	60
 #define	MAXICMPLEN	76

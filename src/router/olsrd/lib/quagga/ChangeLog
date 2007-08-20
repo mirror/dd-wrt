@@ -1,3 +1,11 @@
+0.2.2: Immo 'FaUl' Wehrenberg <immo@chaostreff-dortmund.de>:
+	* make selected flag configurable (do not set it by default)
+	* configurable administrative distance now
+	* make it compile (and work) on *bsd (only tested on freebsd, please
+	  drop me a note if you test it on any other platform!)
+	* lot of bugfixes (now support for redistribute with
+	  ZEBRA_HEADER_MARKER), etc
+
 0.2.1: Immo 'FaUl' Wehrenberg <immo@chaostreff-dortmund.de>:
 	* now check (most of the) return-values of syscalls, improvement still
 	  possible...
