@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: scheduler.c,v 1.41 2007/08/02 12:24:37 bernd67 Exp $
+ * $Id: scheduler.c,v 1.42 2007/08/19 23:00:21 bernd67 Exp $
  */
 
 
@@ -51,11 +51,6 @@
 #include "mpr.h"
 #include "olsr.h"
 #include "build_msg.h"
-
-#if defined WIN32
-extern olsr_bool olsr_win32_end_request;
-extern olsr_bool olsr_win32_end_flag;
-#endif
 
 /* Timer data, global. Externed in defs.h */
 clock_t now_times;              /* current idea of times(2) reported uptime */

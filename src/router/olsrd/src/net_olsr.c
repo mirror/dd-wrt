@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: net_olsr.c,v 1.25 2007/08/02 22:07:19 bernd67 Exp $
+ * $Id: net_olsr.c,v 1.26 2007/08/19 23:00:22 bernd67 Exp $
  */
 
 #include "net_olsr.h"
@@ -45,10 +45,10 @@
 #include "net_os.h"
 #include "print_packet.h"
 #include "link_set.h"
+#include "lq_packet.h"
+
 #include <stdlib.h>
 #include <assert.h>
-
-extern olsr_bool lq_tc_pending;
 
 static olsr_bool disp_pack_out = OLSR_FALSE;
 

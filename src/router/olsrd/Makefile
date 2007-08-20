@@ -35,7 +35,7 @@
 # to the project. For more information see the website or contact
 # the copyright holders.
 #
-# $Id: Makefile,v 1.91 2007/08/02 20:54:01 bernd67 Exp $
+# $Id: Makefile,v 1.92 2007/08/19 20:47:09 bernd67 Exp $
 
 VERS =		0.5.4pre
 
@@ -60,9 +60,9 @@ CFGOBJS = 	$(CFGDIR)/oscan.o $(CFGDIR)/oparse.o $(CFGDIR)/olsrd_conf.o
 CFGDEPS = 	$(wildcard $(CFGDIR)/*.c) $(wildcard $(CFGDIR)/*.h) $(CFGDIR)/oparse.y $(CFGDIR)/oscan.lex
 TAG_SRCS = $(SRCS) $(HDRS) $(wildcard src/cfgparser/*.c) $(wildcard src/cfgparser/*.h) $(wildcard src/olsr_switch/*.c) $(wildcard src/olsr_switch/*.h)
 
-default_target: cfgparser olsrd
+default_target: cfgparser $(EXENAME)
 
-olsrd:		$(OBJS) $(CFGOBJS)
+$(EXENAME):		$(OBJS) $(CFGOBJS)
 		$(CC) $(LDFLAGS) -o $@ $(OBJS) $(CFGOBJS) $(LIBS)
 
 cfgparser:	$(CFGDEPS)
@@ -77,7 +77,7 @@ $(CFGOBJS):
 .PHONY: help libs clean_libs libs_clean clean uberclean install_libs libs_install install_bin install_olsrd install build_all install_all clean_all 
 
 clean:
-		-rm -f $(OBJS) $(SRCS:%.c=%.d) olsrd olsrd.exe
+		-rm -f $(OBJS) $(SRCS:%.c=%.d) $(EXENAME) $(EXENAME).exe
 		$(MAKECMD) -C $(CFGDIR) clean
 
 uberclean:	clean clean_libs
@@ -95,7 +95,7 @@ install_bin:
 
 install_olsrd:	install_bin
 		@echo ========= C O N F I G U R A T I O N - F I L E ============
-		@echo olsrd uses the configfile $(CFGFILE)
+		@echo $(EXENAME) uses the configfile $(CFGFILE)
 		@echo a default configfile. A sample RFC-compliance aimed
 		@echo configfile can be installed. Note that a LQ-based configfile
 		@echo can be found at files/olsrd.conf.default.lq
@@ -105,11 +105,11 @@ install_olsrd:	install_bin
 		@echo -------------------------------------------
 		@echo Edit $(CFGFILE) before running olsrd!!
 		@echo -------------------------------------------
-		@echo Installing manpages olsrd\(8\) and olsrd.conf\(5\)
+		@echo Installing manpages $(EXENAME)\(8\) and $(CFGNAME)\(5\)
 		mkdir -p $(MANDIR)/man8/
-		cp files/olsrd.8.gz $(MANDIR)/man8/olsrd.8.gz
+		cp files/olsrd.8.gz $(MANDIR)/man8/$(EXENAME).8.gz
 		mkdir -p $(MANDIR)/man5/
-		cp files/olsrd.conf.5.gz $(MANDIR)/man5/olsrd.conf.5.gz
+		cp files/olsrd.conf.5.gz $(MANDIR)/man5/$(CFGNAME).5.gz
 
 tags:
 		$(TAGCMD) -o $(TAGFILE) $(TAG_SRCS)
@@ -181,6 +181,6 @@ quagga:
 		$(MAKECMD) -C lib/quagga DESTDIR=$(DESTDIR) install 
 
 
-build_all:	cfgparser olsrd libs switch
+build_all:	cfgparser libs $(EXENAME) switch
 install_all:	install install_libs
 clean_all:	uberclean clean_libs

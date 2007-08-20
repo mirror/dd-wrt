@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: defs.h,v 1.61 2007/08/02 21:45:33 bernd67 Exp $
+ * $Id: defs.h,v 1.62 2007/08/19 23:00:22 bernd67 Exp $
  */
 
 
@@ -64,7 +64,7 @@
 
 #ifndef OLSRD_GLOBAL_CONF_FILE
 #define OLSRD_CONF_FILE_NAME	"olsrd.conf"
-#define OLSRD_GLOBAL_CONF_FILE	"/tmp/" OLSRD_CONF_FILE_NAME
+#define OLSRD_GLOBAL_CONF_FILE	"/etc/" OLSRD_CONF_FILE_NAME
 #endif
 
 #define	MAXMESSAGESIZE		1500	/* max broadcast size */
@@ -131,6 +131,11 @@ extern struct olsrd_config *olsr_cnf;
 extern clock_t now_times;              /* current idea of times(2) reported uptime */
 extern struct timeval now;	       /* current idea of time */
 extern struct tm *nowtm;	       /* current idea of time (in tm) */
+
+#if defined WIN32
+extern olsr_bool olsr_win32_end_request;
+extern olsr_bool olsr_win32_end_flag;
+#endif
 
 /*
  *IPC functions

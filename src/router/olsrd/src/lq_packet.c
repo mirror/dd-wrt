@@ -38,7 +38,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: lq_packet.c,v 1.24 2007/08/02 22:07:19 bernd67 Exp $
+ * $Id: lq_packet.c,v 1.25 2007/08/19 20:37:41 bernd67 Exp $
  */
 
 #include "olsr_protocol.h"
@@ -311,7 +311,7 @@ serialize_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
   struct lq_hello_neighbor *neigh;
   unsigned char *buff;
   int is_first;
-  int i, j;
+  int i;
 
   if (lq_hello == NULL || outif == NULL)
     return;
@@ -360,18 +360,17 @@ serialize_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
 
   for (i = 0; i <= MAX_NEIGH; i++) 
     {
-      for(j = 0; j <= MAX_LINK; j++)
+      static const int LINK_ORDER[] = {SYM_LINK, UNSPEC_LINK, ASYM_LINK, LOST_LINK};
+      unsigned int j;
+      for(j = 0; j < sizeof(LINK_ORDER) / sizeof(LINK_ORDER[0]); j++)
         {
-          if(j == HIDE_LINK)
-            continue;
-
           is_first = 1;
 
           // loop through neighbors
 
           for (neigh = lq_hello->neigh; neigh != NULL; neigh = neigh->next)
             {  
-              if (neigh->neigh_type != i || neigh->link_type != j)
+              if (neigh->neigh_type != i || neigh->link_type != LINK_ORDER[j])
                 continue;
 
               // we need space for an IP address plus link quality
@@ -426,7 +425,7 @@ serialize_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
                   size += sizeof (struct lq_hello_info_header);
 
                   info_head->reserved = 0;
-                  info_head->link_code = CREATE_LINK_CODE(i, j);
+                  info_head->link_code = CREATE_LINK_CODE(i, LINK_ORDER[j]);
                 }
 
               // add the current neighbor's IP address

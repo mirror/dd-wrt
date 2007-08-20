@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: link_set.c,v 1.69 2007/08/02 22:07:19 bernd67 Exp $
+ * $Id: link_set.c,v 1.70 2007/08/19 20:37:41 bernd67 Exp $
  */
 
 
@@ -794,23 +794,29 @@ replace_neighbor_link_set(struct neighbor_entry *old,
 static int
 check_link_status(struct hello_message *message, struct interface *in_if)
 {
+  int ret = UNSPEC_LINK;
   struct hello_neighbor  *neighbors;
 
   neighbors = message->neighbors;
   
   while(neighbors!=NULL)
     {
+      /*
+       * Note: If a neigh has 2 cards we can reach, the neigh
+       * will send a Hello with the same IP mentined twice
+       */
       if(COMP_IP(&neighbors->address, &in_if->ip_addr))
         {
 	  //printf("ok");
-	  return neighbors->link;
+	  ret = neighbors->link;
+	  if (SYM_LINK == ret) break;
 	}
 
       neighbors = neighbors->next; 
     }
 
 
-  return UNSPEC_LINK;
+  return ret;
 }
 
 
