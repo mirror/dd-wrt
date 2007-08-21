@@ -570,7 +570,7 @@ wlconf_up (char *name)
 	{
 #ifdef HAVE_MSSID
 #ifdef HAVE_ACK
-	  eval ("wl", "noack", "0");
+	  eval ("wl", "noack", "1");
 #endif
 	  // wlc_noack (0);
 #else
@@ -588,7 +588,7 @@ wlconf_up (char *name)
 	{
 #ifdef HAVE_MSSID
 #ifdef HAVE_ACK
-	  eval ("wl", "noack", "1");
+	  eval ("wl", "noack", "0");
 #endif
 	  //  wlc_noack (1);
 #else
