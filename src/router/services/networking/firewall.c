@@ -1164,8 +1164,8 @@ macgrp_chain (int seq, unsigned int mark, int urlenable)
       {
 	save2file ("-A grp_%d -m mac --mac-source %s -j advgrp_%d\n", seq,
 		   var, seq);
-//	save2file ("-A grp_%d -m mac --mac-destination %s -j advgrp_%d\n", seq,
-//		   var, seq);
+	save2file ("-A grp_%d -m mac --mac-destination %s -j advgrp_%d\n", seq,
+		   var, seq);
 
 	/*
 	   mark = urlenable  ? mark : webfilter  ? MARK_HTTP : 0;
@@ -1233,7 +1233,7 @@ ipgrp_chain (int seq, unsigned int mark, int urlenable)
 	foreach (var2, wordlist2, next2)
 	{
 	  save2file ("-A grp_%d -s %s -j advgrp_%d\n", seq, var2, seq);
-//	  save2file ("-A grp_%d -d %s -j advgrp_%d\n", seq, var2, seq);
+	  save2file ("-A grp_%d -d %s -j advgrp_%d\n", seq, var2, seq);
 
 	  /*
 	     mark = urlenable  ? mark : webfilter  ? MARK_HTTP : 0;
@@ -1940,13 +1940,18 @@ filter_forward (void)
        atoi (nvram_safe_get ("wan_mtu")) - 40);
 
   /* Filter Web application */
+//  if (webfilter)
+//    save2file ("-A FORWARD -i %s -o %s -p tcp -m tcp --dport %d "
+//	       "-m webstr --content %d -j %s\n",
+//	       lanface, wanface, HTTP_PORT, webfilter, log_reject);
   if (webfilter)
-    save2file ("-A FORWARD -i %s -o %s -p tcp -m tcp --dport %d "
+    save2file ("-A FORWARD -i %s -o %s -p tcp -m tcp "
 	       "-m webstr --content %d -j %s\n",
-	       lanface, wanface, HTTP_PORT, webfilter, log_reject);
+	       lanface, wanface, webfilter, log_reject);
 
   /* Filter setting by user definition */
-  save2file ("-A FORWARD -i %s -j lan2wan\n", lanface);
+//  save2file ("-A FORWARD -i %s -j lan2wan\n", lanface);
+  save2file ("-A FORWARD -j lan2wan\n");
 
   /* Filter by destination ports "filter_port" if firewall on */
   if (nvram_invmatch ("filter", "off"))
