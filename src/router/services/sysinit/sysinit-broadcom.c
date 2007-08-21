@@ -316,6 +316,7 @@ start_sysinit (void)
   led_control(LED_DIAG,LED_ON);
   char *rname = getRouter ();
   fprintf (stderr, "Booting Device:%s\n", rname);
+  
   switch (brand)
     {
     case ROUTER_BUFFALO_WZRRSG54:
@@ -418,6 +419,7 @@ start_sysinit (void)
       nvram_set ("wan_ifname", "eth1");
       nvram_set ("wan_ifnames", "eth1");
       break;
+      
     case ROUTER_WRT54G1X:
     if (check_vlan_support ())
 	    {
@@ -426,10 +428,12 @@ start_sysinit (void)
     	    nvram_set ("wan_ifnames", "vlan1");	    
 	    }
     break;
+    
     case ROUTER_WRT350N:
       nvram_set ("wan_ifname", "vlan2");
       nvram_set ("wan_ifnames", "vlan2");
       break;
+      
     case ROUTER_BUFFALO_WZRG144NH:
       nvram_set ("wan_ifname", "vlan1");
       nvram_set ("wan_ifnames", "vlan1");
@@ -669,8 +673,6 @@ check_cfe_nv (void)
 
   switch (getRouterBrand ())
     {
-
-    case ROUTER_BUFFALO_WBR54G:
     case ROUTER_BUFFALO_WZRRSG54:
       ret += check_nv ("lan_hwnames", "et0 wl0");
       ret += check_nv ("lan_ifnames", "eth0 eth2");
@@ -700,10 +702,6 @@ check_cfe_nv (void)
     case ROUTER_ASUS_WL500GD:
       ret += check_nv ("wl0_ifname", "eth1");
       return 0;
-      break;
-    case ROUTER_LINKSYS_WRT55AG:
-    case ROUTER_MOTOROLA_V1:
-    case ROUTER_WRT54G1X:
       break;
 
     case ROUTER_WRT54G:
