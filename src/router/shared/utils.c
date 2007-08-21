@@ -521,6 +521,17 @@ internal_getRouterBrand ()
 	  return ROUTER_RT480W;
 	}
     }
+    
+ if (nvram_match ("boardtype", "0x456"))
+    {
+      if (startswith (et0, "00:11:50") ||
+	  startswith (et0, "00:30:BD") || startswith (et0, "00:30:bd"))
+	{
+	  cprintf ("router is Belkin F5D7231-4 v1212UK\n");
+	  setRouter ("Belkin F5D7231-4 v1212UK");
+	  return ROUTER_RT480W;
+	}
+    }
 #endif
   if (boardnum == 2 && nvram_match ("boardtype", "bcm94710dev") && nvram_match ("melco_id", "29016"))	//Buffalo WLI2-TX1-G54)
     {
