@@ -517,14 +517,22 @@ start_sysinit (void)
 	      break;
 	    case ROUTER_WRT54G1X:
 	    case ROUTER_WRT54G:
-	    case ROUTER_RT480W:
-	    case ROUTER_BUFFALO_WLI2_TX1_G54:
 	      modules = "diag";
 	      eval ("insmod", "switch-core");
 	      if (eval ("insmod", "switch-robo"))
 		eval ("insmod", "switch-adm");
+		  break;
 
+	    case ROUTER_RT480W:
+	    case ROUTER_BUFFALO_WLI2_TX1_G54:
+	      modules =
+		nvram_invmatch ("ct_modules",
+				"") ? nvram_safe_get ("ct_modules") : "";
+	      eval ("insmod", "switch-core");
+	      if (eval ("insmod", "switch-robo"))
+		eval ("insmod", "switch-adm");		
 	      break;
+	      
 	    case ROUTER_WRT54G3G:
 	      modules =
 		nvram_invmatch ("ct_modules",
