@@ -4809,14 +4809,17 @@ ej_getwirelessstatus (webs_t wp, int argc, char_t ** argv)
   sprintf (mode, "%s_mode", m);
 
 #endif
-  websWrite (wp, "<script type=\"text/javascript\">");
   if (nvram_match (mode, "wet") || nvram_match (mode, "sta")
-      || nvram_match (mode, "infra") || nvram_match (mode, "apsta")
-      || nvram_match (mode, "apstawet"))
-    websWrite (wp, "Capture(info.ap)");
+      || nvram_match (mode, "infra"))
+    websWrite (wp, "<script type=\"text/javascript\">Capture(info.ap)</script>");
+  else if (nvram_match (mode, "apsta") || nvram_match (mode, "apstawet"))
+	{
+    websWrite (wp, "<script type=\"text/javascript\">Capture(info.ap)</script>");
+    websWrite (wp, " & ");
+    websWrite (wp, "<script type=\"text/javascript\">Capture(status_wireless.legend3)</script>");
+	}
   else
-    websWrite (wp, "Capture(status_wireless.legend3)");
-  websWrite (wp, "</script>");
+    websWrite (wp, "<script type=\"text/javascript\">Capture(status_wireless.legend3)</script>");
 }
 #endif
 static void
