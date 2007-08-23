@@ -190,12 +190,12 @@ sbutton.add_wol="Dodaj gostitelja";
 sbutton.manual_wol="Roèno zbujanje";
 sbutton.summary="Povzetek";
 sbutton.filterIP="Uredi seznam odjemalcev";
-sbutton.filterMac="Uredi seznam MAC filtrov";
+sbutton.filterMac="Uredi seznam filtra MAC";
 sbutton.filterSer="Dodaj/uredi storitev";
 sbutton.reboot="Ponovni zagon usmerjalnika";
 sbutton.help="   Pomoè  ";
-sbutton.wl_client_mac="MAC seznam brez¾iènih odjamalcev";
-sbutton.update_filter="Posodobi seznam filtrov";
+sbutton.wl_client_mac="Seznam MAC brez¾iènih odjamalcev";
+sbutton.update_filter="Posodobi seznam filtra";
 sbutton.join="Pove¾i";
 sbutton.log_in="Vhodni dnevnik";
 sbutton.log_out="Izhodni dnevnik";
@@ -478,7 +478,7 @@ diag.custom="Skript po meri";
 
 //help container
 
-hdiag.right2="Ukaze lahko za¾enete preko uporabni¹kega vmesnika. Vnesite ukaze v textovno polje in kliknite <em>" + sbutton.runcmd + "</em>.";
+hdiag.right2="Ukaze lahko za¾enete preko uporabni¹kega vmesnika. Vnesite ukaze v tekstovno polje in kliknite <em>" + sbutton.runcmd + "</em>.";
 
 
 
@@ -533,7 +533,7 @@ filter.polname="Ime smernice";
 filter.pcs="Odjemalci";
 filter.polallow="Dostop do medmre¾ja med izbranimi dnevi in urami.";
 filter.legend2="Dnevi";
-filter.time="Èasi";
+filter.time="Ure;
 filter.h24="24 ur";
 filter.legend3="Zaprte storitve ";
 filter.catchall="Ujemi vse protokole P2P";
@@ -932,6 +932,8 @@ management.clock_support="Ni podprto";
 
 management.mmc_legend="Podpora za MMC/SD kartice";
 management.mmc_srv="MMC naprava";
+management.mmc_gpiosel="Izbira GPIO no¾ic";
+management.mmc_gpiopins="GPIO no¾ice";
 
 management.samba_legend="CIFS avtomatski priklop";
 management.samba_srv="CIFS datoteèni sistem";
@@ -1305,7 +1307,7 @@ status_router.cputemp="Temperatura procesorja";
 
 hstatus_router.right2="To je ime usmerjalnika, kot ste ga doloèili v zavihku <i>Nemestitev</i>.";
 hstatus_router.right4="To je usmerjalnikov MAC naslov, kot ga vidi va¹ ponudnik interneta.";
-hstatus_router.right6="To je usmerjalnikova trenutna strojna programska oprema.";
+hstatus_router.right6="To je usmerjalnikova trenutna verzija strojne programske opreme.";
 hstatus_router.right8="To je trenutni èas.";
 hstatus_router.right10="To je èas neprekinjenega delovanja.";
 hstatus_router.right12="To so povpreène obremenitve v zadnji 1, 5 in 15 minutah.";
@@ -1575,9 +1577,9 @@ radius.label8="razveljavi Radius, èe stre¾nik ni na voljo";
 
 // ******************************************* Wireless_MAC.asp *******************************************//
 
-wl_mac.titl="MAC filter";
+wl_mac.titl="Filter MAC";
 wl_mac.h2="Brez¾ièni filter MAC";
-wl_mac.legend="MAC filter";
+wl_mac.legend="filter MAC";
 wl_mac.label="Uporabi filter";
 wl_mac.label2="Naèin filtra";
 wl_mac.deny="Prepreèi odjemalcem na seznamu dostop do brez¾iènega omre¾ja";
