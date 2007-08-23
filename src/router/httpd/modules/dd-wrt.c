@@ -1574,7 +1574,7 @@ selmatch (char *var, char *is, char *ret)
 }
 
 static void
-show_security_prefix (webs_t wp, int argc, char_t ** argv, char *prefix,int primary)
+show_security_prefix (webs_t wp, int argc, char_t ** argv, char *prefix)
 {
   char var[80];
   char sta[80];
@@ -1596,7 +1596,7 @@ show_security_prefix (webs_t wp, int argc, char_t ** argv, char *prefix,int prim
   websWrite (wp, "<option value=\"psk\" %s>WPA Personal</option>\n",
 	     selmatch (var, "psk", "selected=\"selected\""));
   sprintf (sta, "%s_mode", prefix);
-  if (!primary || nvram_match (sta, "ap"))
+  if (nvram_match (sta, "ap"))
     {
       websWrite (wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n",
 		 selmatch (var, "wpa", "selected=\"selected\""));
@@ -1604,13 +1604,16 @@ show_security_prefix (webs_t wp, int argc, char_t ** argv, char *prefix,int prim
   websWrite (wp,
 	     "<option value=\"psk2\" %s>WPA2 Personal</option>\n",
 	     selmatch (var, "psk2", "selected=\"selected\""));
-  if (!primary || nvram_match (sta, "ap"))
+  if (nvram_match (sta, "ap"))
     {
       websWrite (wp, "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n",
 		 selmatch (var, "wpa2", "selected=\"selected\""));
+	}
       websWrite (wp,
 		 "<option value=\"psk psk2\" %s>WPA2 Personal Mixed</option>\n",
 		 selmatch (var, "psk psk2", "selected=\"selected\""));
+  if (nvram_match (sta, "ap"))
+	{		 
       websWrite (wp,
 		 "<option value=\"wpa wpa2\" %s>WPA2 Enterprise Mixed</option>\n",
 		 selmatch (var, "wpa wpa2", "selected=\"selected\""));
@@ -1620,7 +1623,7 @@ show_security_prefix (webs_t wp, int argc, char_t ** argv, char *prefix,int prim
   websWrite (wp, "<option value=\"wep\" %s>WEP</option>\n",
 	     selmatch (var, "wep", "selected=\"selected\""));
 #ifdef HAVE_WPA_SUPPLICANT
-  if (!primary || nvram_match (sta, "sta") || nvram_match (sta, "apsta") || nvram_match (sta, "wet"))
+  if (nvram_match (sta, "sta") || nvram_match (sta, "apsta") || nvram_match (sta, "wet"))
     {
       websWrite (wp, "<option value=\"8021X\" %s>802.1x</option>\n",
 		 selmatch (var, "8021X", "selected=\"selected\""));
@@ -1656,7 +1659,7 @@ ej_show_security_single (webs_t wp, int argc, char_t ** argv, char *prefix)
   websWrite (wp,
 	     "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [%s] HWAddr [%s]</legend>\n",
 	     prefix, nvram_safe_get (ssid), nvram_safe_get (mac));
-  show_security_prefix (wp, argc, argv, prefix, 1);
+  show_security_prefix (wp, argc, argv, prefix);
   websWrite (wp, "</fieldset>\n<br />\n");
   foreach (var, vifs, next)
   {
@@ -1667,7 +1670,7 @@ ej_show_security_single (webs_t wp, int argc, char_t ** argv, char *prefix)
 	       "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [%s]</legend>\n",
 	       var, nvram_get (ssid));
     rep (var, '.', 'X');
-    show_security_prefix (wp, argc, argv, var, 0);
+    show_security_prefix (wp, argc, argv, var);
     websWrite (wp, "</fieldset>\n<br />\n");
   }
 
