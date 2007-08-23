@@ -64,7 +64,7 @@ share.sat_s1="六";
 share.expires="過期";
 share.yes="是";
 share.no="否";
-share.allow="允許 ";
+share.allow="允許\";
 share.deny="拒絕";
 share.range="範圍";
 share.use="使用";
@@ -348,7 +348,7 @@ bmenu.firwall="防火牆";
 bmenu.vpn="VPN";
 
 bmenu.accrestriction="訪問限制";
-bmenu.webaccess="WAN 訪問
+bmenu.webaccess="WAN 訪問";
 
 
 bmenu.applications="網路地址轉換（NAT） / 頻寬管理（QoS）";
@@ -645,7 +645,7 @@ hotspot.radnas="Radius NAS ID";
 hotspot.net="遠端 Network";
 hotspot.uam="UAM 秘密";
 hotspot.uamdns="UAM任意DNS";
-hotspot.allowuam="UAM被允許 ";
+hotspot.allowuam="UAM被允許\";
 hotspot.macauth="MACauth";
 hotspot.option="附加的Chillispot選項";
 
