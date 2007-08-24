@@ -40,8 +40,10 @@ ifneq ($(CONFIG_X86),y)
 OBJS += mtd.o
 endif
 endif
+ifneq ($(CONFIG_TW6600),y)
 ifeq ($(CONFIG_DIST),"micro")
 CFLAGS += -DHAVE_MICRO
+endif
 endif
 ifeq ($(CONFIG_DIST),"micro-special")
 CFLAGS += -DHAVE_MICRO
@@ -182,6 +184,12 @@ CFLAGS += -DHAVE_LS2
 endif
 ifeq ($(CONFIG_WHRAG108),y)
 CFLAGS += -DHAVE_WHRAG108
+endif
+ifeq ($(CONFIG_PB42),y)
+CFLAGS += -DHAVE_PB42
+endif
+ifeq ($(CONFIG_TW6600),y)
+CFLAGS += -DHAVE_TW6600
 endif
 ifeq ($(CONFIG_CA8),y)
 CFLAGS += -DHAVE_CA8
@@ -377,8 +385,10 @@ install: all
 	install rc $(INSTALLDIR)/sbin	
 	$(STRIP) $(INSTALLDIR)/sbin/rc
 	cd $(INSTALLDIR)/sbin && ln -sf rc init
+ifneq ($(CONFIG_TW6600),y)
 ifeq ($(CONFIG_DIST),"micro")
 	cd $(INSTALLDIR)/sbin && ln -sf rc brctl
+endif
 endif
 ifeq ($(CONFIG_DIST),"micro-special")
 	cd $(INSTALLDIR)/sbin && ln -sf rc brctl
