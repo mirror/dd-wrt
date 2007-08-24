@@ -102,7 +102,7 @@ start_sysinit (void)
 /* network drivers */
   eval ("insmod", "ag7100_mod");
 
-eval ("insmod", "ath_pci", "autocreate=none");
+//eval ("insmod", "ath_pci", "autocreate=none");
 eval ("insmod", "ath_mimo_pci");
 
   eval ("ifconfig", "wifi0", "up");
