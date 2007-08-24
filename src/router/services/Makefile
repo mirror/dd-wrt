@@ -26,6 +26,9 @@ OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o sysini
 ifeq ($(CONFIG_WHRAG108),y)
 OBJS += gpio_atheros.o
 else
+ifeq ($(CONFIG_TW6600),y)
+OBJS += gpio_atheros.o
+else
 ifeq ($(CONFIG_FONERA),y)
 OBJS += gpio_atheros.o
 else
@@ -34,6 +37,7 @@ OBJS += gpio_atheros.o
 else
 ifneq ($(CONFIG_XSCALE),y)
 OBJS += gpio_brcm.o
+endif
 endif
 endif
 endif
@@ -165,11 +169,13 @@ endif
 ifeq ($(CONFIG_KODATA),y)
 CFLAGS += -DHAVE_KODATA
 endif
+
+ifneq ($(CONFIG_TW6600),y)
 ifeq ($(CONFIG_DIST),"micro")
 CFLAGS += -DHAVE_MICRO
 OBJS += libbridge_if.o
 OBJS += libbridge_init.o
-
+endif
 endif
 ifeq ($(CONFIG_RADIOOFF),y)
   CFLAGS += -DHAVE_RADIOOFF
@@ -268,6 +274,12 @@ CFLAGS += -DHAVE_LS2
 endif
 ifeq ($(CONFIG_WHRAG108),y)
 CFLAGS += -DHAVE_WHRAG108
+endif
+ifeq ($(CONFIG_PB42),y)
+CFLAGS += -DHAVE_PB42
+endif
+ifeq ($(CONFIG_TW6600),y)
+CFLAGS += -DHAVE_TW6600
 endif
 ifeq ($(CONFIG_CA8),y)
 CFLAGS += -DHAVE_CA8

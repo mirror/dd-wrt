@@ -1184,6 +1184,12 @@ set_netmode (char *wif, char *dev, char *use)
     eval("iwpriv",use,"mode","1");
  }else
 #endif
+#ifdef HAVE_TW6600
+    if (!strncmp(use,"ath0",4))
+ {
+    eval("iwpriv",use,"mode","1");
+ }else
+#endif
 {
     eval ("iwpriv", use, "turbo", "0");
     eval ("iwpriv", use, "xr", "0");

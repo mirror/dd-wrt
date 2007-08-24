@@ -54,8 +54,10 @@ CFLAGS += -DDIST=\"$(CONFIG_DIST)\"
 ifeq ($(CONFIG_NOAD),y)
 CFLAGS += -DHAVE_NOAD
 endif
+ifneq ($(CONFIG_TW6600),y)
 ifeq ($(CONFIG_DIST),"micro")
 CFLAGS += -DHAVE_MICRO
+endif
 endif
 ifeq ($(CONFIG_GLAUCO),y)
 CFLAGS += -DHAVE_GLAUCO
@@ -145,6 +147,9 @@ CFLAGS += -DHAVE_LS2
 endif
 ifeq ($(CONFIG_WHRAG108),y)
 CFLAGS += -DHAVE_WHRAG108
+endif
+ifeq ($(CONFIG_TW6600),y)
+CFLAGS += -DHAVE_TW6600
 endif
 ifeq ($(CONFIG_CA8),y)
 CFLAGS += -DHAVE_CA8
@@ -343,7 +348,12 @@ CFLAGS += -DMY_DEBUG
 endif
 ifeq ($(WAKE_ON_LAN_SUPPORT),1)
 OBJS  += wol.o
+CFLAGS += -DHAVE_WOL
 endif
+ifeq ($(CONFIG_PB42),y)
+CFLAGS += -DHAVE_PB42
+endif
+
 ifeq ($(SAMBA_SUPPORT),1)
 OBJS  += samba.o
 endif

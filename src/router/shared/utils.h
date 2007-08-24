@@ -184,6 +184,10 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Fonera (Atheros SoC,...)
 #define ROUTER_BOARD_FONERA2200 0x3701
 
+#define ROUTER_BOARD_TW6600 0x3801
+
+#define ROUTER_BOARD_PB42 0x390f
+
 
 #define NVROUTER "DD_BOARD"
 

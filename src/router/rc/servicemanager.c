@@ -38,7 +38,6 @@
 		fclose(fp); \
 	} \
 } while (0)
-
 */
 
 void *

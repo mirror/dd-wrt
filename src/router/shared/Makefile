@@ -101,6 +101,12 @@ endif
 ifeq ($(CONFIG_WHRAG108),y)
   CFLAGS += -DHAVE_WHRAG108
 endif
+ifeq ($(CONFIG_PB42),y)
+  CFLAGS += -DHAVE_PB42
+endif
+ifeq ($(CONFIG_TW6600),y)
+  CFLAGS += -DHAVE_TW6600
+endif
 ifeq ($(CONFIG_CA8),y)
   CFLAGS += -DHAVE_CA8
 endif
