@@ -4117,6 +4117,10 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 	      if (!strcmp (menu[i][j], "Milkfish.asp"))
 		j++;
 #endif
+#ifndef HAVE_WOL
+	      if (!strcmp (menu[i][j], "Wol.asp"))
+		j++;
+#endif
 #ifndef HAVE_EOP_TUNNEL
 	      if (!strcmp (menu[i][j], "eop-tunnel.asp"))
 		j++;
@@ -4559,6 +4563,8 @@ ej_getrebootflags (webs_t wp, int argc, char_t ** argv)
 #elif HAVE_LS2
   websWrite (wp, "2");
 #elif HAVE_WHRAG108
+  websWrite (wp, "2");
+#elif HAVE_TW6600
   websWrite (wp, "2");
 #elif HAVE_CA8
   websWrite (wp, "2");

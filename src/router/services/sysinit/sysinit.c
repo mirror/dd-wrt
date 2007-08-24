@@ -348,6 +348,22 @@ start_restore_defaults (void)
     {"wan_ifnames", "eth1", 0},
     {0, 0, 0}
   };
+#elif HAVE_PB42
+  struct nvram_tuple generic[] = {
+    {"lan_ifname", "br0", 0},
+    {"lan_ifnames", "eth1 ath0 ath1", 0},
+    {"wan_ifname", "eth0", 0},
+    {"wan_ifnames", "eth0", 0},
+    {0, 0, 0}
+  };
+#elif HAVE_TW6600
+  struct nvram_tuple generic[] = {
+    {"lan_ifname", "br0", 0},
+    {"lan_ifnames", "ath0 ath1", 0},
+    {"wan_ifname", "eth0", 0},
+    {"wan_ifnames", "eth0", 0},
+    {0, 0, 0}
+  };
 #elif HAVE_CA8
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
@@ -459,6 +475,20 @@ start_restore_defaults (void)
       restore_defaults = 1;
     }
 #elif HAVE_WHRAG108
+  linux_overrides = generic;
+  int brand = getRouterBrand ();
+  if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
+    {
+      restore_defaults = 1;
+    }
+#elif HAVE_TW6600
+  linux_overrides = generic;
+  int brand = getRouterBrand ();
+  if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
+    {
+      restore_defaults = 1;
+    }
+#elif HAVE_PB42
   linux_overrides = generic;
   int brand = getRouterBrand ();
   if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
@@ -632,6 +662,12 @@ start_restore_defaults (void)
     }
 #endif
 #ifdef HAVE_WHRAG108
+  if (restore_defaults)
+    {
+      eval ("erase", "nvram");
+    }
+#endif
+#ifdef HAVE_TW6600
   if (restore_defaults)
     {
       eval ("erase", "nvram");
@@ -1118,8 +1154,10 @@ start_nvram (void)
   {
 
 #ifdef DIST
+#ifndef HAVE_TW6600
     if (nvram_match ("dist_type", "micro"))	//if dist_type micro, force to elegant
       nvram_set ("router_style", "elegant");
+#endif
 #endif
   }
 
