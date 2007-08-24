@@ -451,6 +451,10 @@ list_channelsext (const char *ifname, int allchans)
 	  if (!strcmp (ifname, "ath1"))
 	    continue;
 #endif
+#ifdef HAVE_TW6600
+	  if (!strcmp (ifname, "ath1"))
+	    continue;
+#endif
 	  if (nvram_invmatch (wl_mode, "a-only")
 	      && nvram_invmatch (wl_mode, "mixed"))
 	    continue;
@@ -472,6 +476,10 @@ list_channelsext (const char *ifname, int allchans)
 	  || IEEE80211_IS_CHAN_B (&achans.ic_chans[i]))
 	{
 #ifdef HAVE_WHRAG108
+	  if (!strcmp (ifname, "ath0"))
+	    continue;
+#endif
+#ifdef HAVE_TW6600
 	  if (!strcmp (ifname, "ath0"))
 	    continue;
 #endif

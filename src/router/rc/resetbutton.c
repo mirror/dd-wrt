@@ -92,7 +92,7 @@ getbuttonstate ()
 }
 #endif
 
-#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_CA8)
+#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)
 int
 getbuttonstate ()
 {
@@ -277,7 +277,7 @@ period_check (int sig)
 //      time(&t);
 //      DEBUG("resetbutton: now time=%d\n", t);
 
-#if defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_LS2) || defined(HAVE_CA8)
+#if defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)
   val = getbuttonstate ();
 #else
   if ((fp = fopen (GPIO_FILE, "r")))
@@ -297,7 +297,7 @@ period_check (int sig)
   int gpio = 0;
 
   int state = 0;
-#if defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_LS2) || defined(HAVE_CA8)
+#if defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)
   state = val;
 #else
   if ((brand & 0x000f) != 0x000f)
@@ -378,7 +378,7 @@ period_check (int sig)
 		printf ("resetbutton: factory default.\n");
 		syslog (LOG_DEBUG,
 			"Reset button: restoring factory defaults now!\n");
-#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8)
+#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600)
 		led_control (LED_DIAG, LED_ON);
 #endif
 		ACTION ("ACT_HW_RESTORE");
@@ -414,7 +414,7 @@ period_check (int sig)
 	  }
       }
     }
-#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8)
+#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600)
 
   else if ((sesgpio != 0x0f)
 	   && (((sesgpio & 0x10) == 0 && (val & push))
