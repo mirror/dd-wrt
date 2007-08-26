@@ -218,12 +218,18 @@
  */
 #define MACH_GROUP_BRCM        23	/* Broadcom boards              */
 
+
 /*
  * Valid machtype for group ATHEROS
  */
 #define MACH_GROUP_ATHEROS	26
-#define MACH_ATHEROS_AR5312	0	/* Atheros AR5312, AR2312/3/4	*/
-#define MACH_ATHEROS_AR5315	1	/* Atheros AR2315/6/7/8		*/
+#define MACH_ATHEROS_AR5312	0
+#define MACH_ATHEROS_AR2312	1
+#define MACH_ATHEROS_AR2313	2
+#define MACH_ATHEROS_AR2315	3
+#define MACH_ATHEROS_AR2316	4
+#define MACH_ATHEROS_AR2317	5
+#define MACH_ATHEROS_AR2318	6
 
 
 #define CL_SIZE			COMMAND_LINE_SIZE
