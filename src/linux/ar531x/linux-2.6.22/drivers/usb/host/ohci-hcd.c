@@ -920,11 +920,17 @@ MODULE_LICENSE ("GPL");
 #define PS3_SYSTEM_BUS_DRIVER	ps3_ohci_sb_driver
 #endif
 
+#ifdef CONFIG_USB_OHCI_AR7100
+#include "ohci-ar7100.c"
+#endif
+
+
 #if	!defined(PCI_DRIVER) &&		\
 	!defined(PLATFORM_DRIVER) &&	\
 	!defined(OF_PLATFORM_DRIVER) &&	\
 	!defined(SA1111_DRIVER) &&	\
-	!defined(PS3_SYSTEM_BUS_DRIVER)
+	!defined(PS3_SYSTEM_BUS_DRIVER) && \
+	!defined (CONFIG_USB_OHCI_AR7100)
 #error "missing bus glue for ohci-hcd"
 #endif
 

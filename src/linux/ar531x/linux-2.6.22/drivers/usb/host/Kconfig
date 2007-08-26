@@ -224,3 +224,14 @@ config USB_SL811_CS
 	  To compile this driver as a module, choose M here: the
 	  module will be called "sl811_cs".
 
+config USB_OHCI_AR7100
+    bool "USB OHCI support for AR7100"
+    depends on MACH_AR7100 && USB_OHCI_HCD
+    help
+        Support for AR7100 OHCI controller
+
+config USB_EHCI_AR7100
+    bool "USB EHCI support for AR7100"
+    depends on MACH_AR7100 && USB_EHCI_HCD
+    help
+        Support for AR7100 EHCI controller

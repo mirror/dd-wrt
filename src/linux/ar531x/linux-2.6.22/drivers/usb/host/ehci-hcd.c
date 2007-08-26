@@ -920,9 +920,12 @@ MODULE_DESCRIPTION (DRIVER_INFO);
 MODULE_AUTHOR (DRIVER_AUTHOR);
 MODULE_LICENSE ("GPL");
 
-#ifdef CONFIG_PCI
+#if defined(CONFIG_USB_EHCI_AR7100)
+#include "ehci-ar7100.c"
+#elif defined(CONFIG_PCI)
 #include "ehci-pci.c"
-#define	PCI_DRIVER		ehci_pci_driver
+#else
+#error "missing bus glue for ehci-hcd"
 #endif
 
 #ifdef CONFIG_MPC834x
@@ -938,6 +941,10 @@ MODULE_LICENSE ("GPL");
 #ifdef CONFIG_PPC_PS3
 #include "ehci-ps3.c"
 #define	PS3_SYSTEM_BUS_DRIVER	ps3_ehci_sb_driver
+#endif
+
+#ifdef CONFIG_USB_OHCI_AR7100
+#include "ohci-ar7100.c"
 #endif
 
 #if !defined(PCI_DRIVER) && !defined(PLATFORM_DRIVER) && \
