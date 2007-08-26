@@ -257,7 +257,6 @@ int __init ar5312_init_devices(void)
 
 	/* fixup flash width */
 	fctl = sysRegRead(AR531X_FLASHCTL) & FLASHCTL_MW;
-	printk(KERN_EMERG "fctl = %d\n",fctl);
 	switch (fctl) {
 		case FLASHCTL_MWx16:
 			ar5312_flash_data.width = 2;

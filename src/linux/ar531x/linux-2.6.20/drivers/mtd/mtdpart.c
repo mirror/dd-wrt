@@ -495,6 +495,7 @@ static struct mtd_part_parser *get_partition_parser(const char *name)
 {
 	struct list_head *this;
 	void *ret = NULL;
+	printk(KERN_NOTICE "Try parser %s\n",name);
 	spin_lock(&part_parser_lock);
 
 	list_for_each(this, &part_parsers) {

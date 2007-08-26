@@ -250,7 +250,7 @@ config MTD_OBSOLETE_CHIPS
 
 config MTD_AMDSTD
 	tristate "AMD compatible flash chip support (non-CFI)"
-	depends on MTD && MTD_OBSOLETE_CHIPS && BROKEN
+	depends on MTD && MTD_OBSOLETE_CHIPS
 	help
 	  This option enables support for flash chips using AMD-compatible
 	  commands, including some which are not CFI-compatible and hence

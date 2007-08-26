@@ -37,7 +37,7 @@ struct physmap_flash_info {
 
 static const char *rom_probe_types[] = { "cfi_probe", "jedec_probe", "map_rom", NULL };
 #ifdef CONFIG_MTD_PARTITIONS
-static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", NULL };
+static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", "VxBoot",NULL };
 #endif
 
 #ifdef CONFIG_MTD_PARTITIONS

@@ -203,14 +203,14 @@ restart:
 		}
 	}
 #endif
-	parts = kzalloc(sizeof(*parts)*nrparts + nulllen + namelen, GFP_KERNEL);
+	parts = kzalloc(sizeof(*parts)*(nrparts+1) + nulllen + namelen, GFP_KERNEL);
 
 	if (!parts) {
 		ret = -ENOMEM;
 		goto out;
 	}
 
-	nullname = (char *)&parts[nrparts];
+	nullname = (char *)&parts[nrparts+1];
 #ifdef CONFIG_MTD_REDBOOT_PARTS_UNALLOCATED
 	if (nulllen > 0) {
 		strcpy(nullname, nullstring);
@@ -232,8 +232,12 @@ restart:
 		parts[i].size = fl->img->size;
 		parts[i].offset = fl->img->flash_base;
 		parts[i].name = names;
-
+	    
 		strcpy(names, fl->img->name);
+		if (!memcmp(names, "FIS directory", 14))
+		    {
+		    parts[i].size=master->erasesize;
+		    }
 #ifdef CONFIG_MTD_REDBOOT_PARTS_READONLY
 		if (!memcmp(names, "RedBoot", 8) ||
 				!memcmp(names, "RedBoot config", 15) ||
@@ -256,9 +260,13 @@ restart:
 		fl = fl->next;
 		kfree(tmp_fl);
 	}
+	parts[nrparts].offset = parts[nrparts-1].offset+parts[nrparts-1].size;
+	parts[nrparts].size = master->erasesize;
+	parts[nrparts].name = "board_config";
+
 //BrainSlayer: extend zImage partition to include both, kernel and filesystem in one image
-	parts[1].size+=parts[2].size+0x10000;
-	ret = nrparts;
+	parts[1].size+=parts[2].size;
+	ret = nrparts+1;
 	*pparts = parts;
  out:
 	while (fl) {
