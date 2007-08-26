@@ -19,7 +19,7 @@
 #include <linux/mtd/cfi.h>
 #include <linux/mtd/gen_probe.h>
 
-//#define DEBUG_CFI
+#define DEBUG_CFI
 
 #ifdef DEBUG_CFI
 static void print_cfi_ident(struct cfi_ident *);
@@ -182,8 +182,7 @@ static int __xipram cfi_probe_chip(struct map_info *map, __u32 base,
 	xip_allowed(base, map);
 
 	printk(KERN_INFO "%s: Found %d x%d devices at 0x%x in %d-bit bank\n",
-	       map->name, cfi->interleave, cfi->device_type*8, base,
-	       map->bankwidth*8);
+	       map->name, cfi->interleave, cfi->device_type*8, base);
 
 	return 1;
 }
@@ -197,9 +196,9 @@ static int __xipram cfi_chip_setup(struct map_info *map,
 	int i;
 
 	xip_enable(base, map, cfi);
-#ifdef DEBUG_CFI
-	printk("Number of erase regions: %d\n", num_erase_regions);
-#endif
+//#ifdef DEBUG_CFI
+	printk(KERN_INFO "Number of erase regions: %d\n", num_erase_regions);
+//#endif
 	if (!num_erase_regions)
 		return 0;
 

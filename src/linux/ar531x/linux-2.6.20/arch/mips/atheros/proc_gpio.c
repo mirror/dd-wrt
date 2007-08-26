@@ -213,7 +213,7 @@ register_proc (void)
     }
   else
     {
-      gpiocount = 7;
+      gpiocount = 8;
     }
 
   /* create directory gpio */
@@ -275,8 +275,17 @@ cleanup_proc (void)
 {
   unsigned char i;
   char proc_name[16];
+  int gpiocount=0;
+  if (!strcmp (get_arch_type (), "Atheros AR5315"))
+    {
+      gpiocount = 22;
+    }
+  else
+    {
+      gpiocount = 8;
+    }
 
-  for (i = 0; i < 7; i++)
+  for (i = 0; i < gpiocount; i++)
     {
       sprintf (proc_name, "%i_in", i);
       remove_proc_entry (proc_name, gpio_dir);

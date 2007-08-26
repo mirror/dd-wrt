@@ -3204,7 +3204,6 @@ void netdev_run_todo(void)
 			continue;
 		}
 
-		netdev_unregister_sysfs(dev);
 		dev->reg_state = NETREG_UNREGISTERED;
 
 		netdev_wait_allrefs(dev);
@@ -3215,11 +3214,11 @@ void netdev_run_todo(void)
 		BUG_TRAP(!dev->ip6_ptr);
 		BUG_TRAP(!dev->dn_ptr);
 
-		/* It must be the very last action,
-		 * after this 'dev' may point to freed up memory.
-		 */
 		if (dev->destructor)
 			dev->destructor(dev);
+
+		/* Free network device */
+		kobject_put(&dev->class_dev.kobj);
 	}
 
 out:
@@ -3375,6 +3374,9 @@ int unregister_netdevice(struct net_device *dev)
 
 	/* Notifier chain MUST detach us from master device. */
 	BUG_TRAP(!dev->master);
+
+	/* Remove entries from sysfs */
+	netdev_unregister_sysfs(dev);
 
 	/* Finish processing unregister after unlock */
 	net_set_todo(dev);

@@ -68,6 +68,7 @@ config MTD_REDBOOT_PARTS
 	  SA1100 map driver (CONFIG_MTD_SA1100) has an option for this, for
 	  example.
 
+
 config MTD_REDBOOT_DIRECTORY_BLOCK
 	int "Location of RedBoot partition table"
 	depends on MTD_REDBOOT_PARTS

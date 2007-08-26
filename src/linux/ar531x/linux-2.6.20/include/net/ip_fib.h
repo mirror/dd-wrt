@@ -284,4 +284,6 @@ extern int  fib_proc_init(void);
 extern void fib_proc_exit(void);
 #endif
 
+extern rwlock_t fib_nhflags_lock;
+
 #endif  /* _NET_FIB_H */

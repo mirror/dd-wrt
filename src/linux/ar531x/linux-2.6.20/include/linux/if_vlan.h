@@ -79,6 +79,18 @@ struct vlan_group {
 	struct rcu_head		rcu;
 };
 
+/*static inline void vlan_group_set_device(struct vlan_group *vg, int vlan_id,
+					 struct net_device *dev)
+{
+	struct net_device **array;
+	if (!vg)
+		return;
+	array = vg->vlan_devices_arrays[vlan_id / VLAN_GROUP_ARRAY_PART_LEN];
+	array[vlan_id % VLAN_GROUP_ARRAY_PART_LEN] = dev;
+}
+*/
+
+
 struct vlan_priority_tci_mapping {
 	unsigned long priority;
 	unsigned short vlan_qos; /* This should be shifted when first set, so we only do it
