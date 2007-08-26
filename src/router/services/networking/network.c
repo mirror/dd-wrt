@@ -2352,13 +2352,15 @@ start_wan (int status)
 	}
       else
 	{
-//	  fprintf (fp, "noccp\n");
+	  fprintf (fp, "noccp\n");
 	  fprintf (fp, "nomppc\n");
 	}
       fprintf (fp, "noipdefault\n"
 	       "noauth\n"
 	       "defaultroute\n"
-	       "noaccomp\n" "nobsdcomp\n" "nodeflate\n" 
+	       "noaccomp\n" 
+	       "nobsdcomp\n" 
+	       "nodeflate\n" 
 //	       "maxfail 0\n"
 //               "nocrtscts\n"
 //               "sync\n"
@@ -2369,7 +2371,9 @@ start_wan (int status)
 //	       "ipcp-accept-local\n"
 //	       "ipcp-accept-remote\n"
 //	       "nodetach\n"
-	       "nopcomp\n" );//"novj\n" "novjccomp\n");
+	       "nopcomp\n" 
+	       "novj\n" 
+	       "novjccomp\n");
       if (nvram_invmatch ("ppp_mppe", ""))
 	fprintf (fp, "%s\n", nvram_safe_get ("ppp_mppe"));
       else
