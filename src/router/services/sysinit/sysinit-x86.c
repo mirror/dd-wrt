@@ -273,6 +273,8 @@ eval("insmod","crypto_null");
 
   if (detect ("Rhine-"))	// VIA Rhine-I, Rhine-II, Rhine-III
     eval ("insmod", "via-rhine");
+  if (detect ("[Rhine]"))	// VIA Rhine-I, Rhine-II, Rhine-III
+    eval ("insmod", "via-rhine");
 
   if (detect ("3c905"))		// 3Com
     eval ("insmod", "3c59x");
@@ -296,6 +298,8 @@ eval("insmod","crypto_null");
   else if (detect ("tulip"))
     eval ("insmod", "tulip");
   else if (detect ("DECchip 21142"))
+    eval ("insmod", "tulip");
+  else if (detect ("MX987x5"))
     eval ("insmod", "tulip");
 
   if (detect ("DGE-530T"))
