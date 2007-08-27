@@ -357,7 +357,6 @@ start_cron (void)
   mkdir ("/tmp/cron.d", 0700);
 
   buf_to_file ("/tmp/cron.d/check_ps", "*/2 * * * * root /sbin/check_ps\n");
-
   if (nvram_match ("reconnect_enable", "1"))	//pppoe reconnect
     {
       FILE *fp;
@@ -405,7 +404,7 @@ stop_cron (void)
     syslog (LOG_INFO, "cron : cron daemon successfully stopped\n");
   //ret = killps("cron","-9");
   ret = killall ("cron", SIGKILL);
-
+  eval("rm","-rf","/tmp/cron.d");
   cprintf ("done\n");
   return ret;
 }
