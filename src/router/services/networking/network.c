@@ -2745,7 +2745,7 @@ start_wan_done (char *wan_ifname)
   cprintf ("start firewall\n");
   /* Start firewall */
   start_firewall ();
-  cprintf ("start icmp proxy\n");
+  cprintf ("start igmp proxy\n");
 #ifdef HAVE_MULTICAST
   stop_igmp_proxy ();
   start_igmp_proxy ();
