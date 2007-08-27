@@ -361,7 +361,7 @@ start_cron (void)
     {
       FILE *fp;
       fp = fopen ("/tmp/cron.d/pppoe_reconnect", "w");
-      fprintf (fp, "%s %s * * * root /usr/bin/killall pppd",
+      fprintf (fp, "%s %s * * * root /usr/bin/killall pppd\n",
 	       nvram_safe_get ("reconnect_minutes"),
 	       nvram_safe_get ("reconnect_hours"));
       fclose (fp);
