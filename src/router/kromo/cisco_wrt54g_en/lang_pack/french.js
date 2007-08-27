@@ -163,8 +163,8 @@ share.execscript="Exécuter un script";
 share.user="User";
 share.privatekey="Clé privée";
 
-sbutton.save="OK";
-sbutton.apply="Appliquer";
+sbutton.save="Appliquer";
+sbutton.apply="Enregistrer";
 sbutton.saving="Enregistré";
 sbutton.cmd="Patientez ...";
 sbutton.cancel="Annuler";
@@ -734,6 +734,7 @@ idx_h.srv="Serveur Heart Beat";
 idx_h.con_strgy="Stratégie de connexion";
 idx_h.max_idle="Connexion à la demande : délai d'inactivité maximal";
 idx_h.alive="Maintenir la connexion : rappel après";
+idx_h.reconnect="Forcer la reconnexion";
 
 
 
