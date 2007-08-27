@@ -269,7 +269,9 @@ handle_index (void)
 {
   unlink ("/tmp/ppp/log");
   void *handle = NULL;
+#ifdef HAVE_MULTICAST
   handle = stop_service_nofree ("igmp_proxy", handle);
+#endif
 #ifndef HAVE_MADWIFI
   handle = stop_service_nofree ("nas", handle);
 #endif
@@ -310,6 +312,9 @@ handle_index (void)
 #ifdef HAVE_MSSID
   handle = start_service_nofree ("guest_nas", handle);
 #endif
+#endif
+#ifdef HAVE_MULTICAST
+  handle = start_service_nofree ("igmp_proxy", handle);
 #endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
   handle = startstop_nofree ("zebra", handle);
@@ -534,7 +539,9 @@ handle_filters (void)
   handle = startstop_nofree ("syslog", handle);
   handle = startstop_nofree ("wshaper", handle);
   handle = start_service_nofree ("cron", handle);
+#ifdef HAVE_MULTICAST
   handle = startstop_nofree ("igmp_proxy", handle);
+#endif
   if (handle)
     dlclose (handle);
 }
