@@ -36,7 +36,7 @@
 	</div>
 	<div id="idreconnect">
 		<div class="setting">
-			<div class="label"><% tran("alive.hour"); %></div>
+			<div class="label"><% tran("share.time"); %></div>
 			<select name="reconnect_hours">
 				<option value="00" <% nvram_selected("reconnect_hours","00"); %>>00</option>
 				<option value="01" <% nvram_selected("reconnect_hours","01"); %>>01</option>
