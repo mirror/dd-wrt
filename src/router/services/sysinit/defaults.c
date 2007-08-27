@@ -1852,7 +1852,7 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #endif
 #ifdef HAVE_FONERA
-  {"upgrade_delay", "12000", 0},
+  {"upgrade_delay", "1200", 0},
 #elif HAVE_MERAKI
   {"upgrade_delay", "600", 0},
 #elif HAVE_LS2
