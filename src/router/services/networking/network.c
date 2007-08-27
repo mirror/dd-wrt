@@ -2439,7 +2439,7 @@ start_wan (int status)
 		 "connect true\n" "ktune\n", idletime, atoi (idletime) * 2);
       else
 	fprintf (fp, "persist\n"
-		 "lcp-echo-interval 10\n" "lcp-echo-failure 3\n");
+		 "lcp-echo-interval 5\n" "lcp-echo-failure 10\n");
 
       fclose (fp);
 
