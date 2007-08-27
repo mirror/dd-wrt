@@ -234,6 +234,8 @@ function submitcheck(F) {
 	}
 }
 
+
+
 function to_submit(F) {
     submitcheck(F);
     apply(F);
@@ -262,7 +264,7 @@ addEvent(window, "load", function() {
 	setDNSMasq(document.setup);
 	
 	show_layer_ext(document.setup.ntp_enable, 'idntp', <% nvram_else_match("ntp_enable", "1", "1", "0"); %> == 1);
-	
+	show_layer_ext(document.setup.reconnect_enable, 'idreconnect', <% nvram_else_match("reconnect_enable", "1", "1", "0"); %> == 1);
 	update = new StatusbarUpdate();
 	update.start();
 	
