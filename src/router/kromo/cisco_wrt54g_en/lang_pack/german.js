@@ -137,7 +137,7 @@ share.standard="Standard";
 share.user="Nutzer";
 
 sbutton.save="Speichern";
-sbutton.apply="Übernehmen";
+sbutton.apply="Anwenden";
 sbutton.saving="Gespeichert";
 sbutton.cmd="Ausführen";
 sbutton.cancel="Einstellungen zurücknehmen";
@@ -171,7 +171,6 @@ sbutton.update_filter="Filter-Liste updaten";
 sbutton.join="Beitreten";
 sbutton.log_in="Eingehendes Log";
 sbutton.log_out="Ausgehendes Log";
-sbutton.apply="Anwenden";
 sbutton.edit_srv="Service hinzufügen/editieren";
 sbutton.routingtab="Routen-Tabelle anzeigen";
 sbutton.wanmac="Zeige aktuelle PC-MAC-Adresse";

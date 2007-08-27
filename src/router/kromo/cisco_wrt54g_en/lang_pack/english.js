@@ -199,7 +199,6 @@ sbutton.update_filter="Update Filter List";
 sbutton.join="Join";
 sbutton.log_in="Incoming Log";
 sbutton.log_out="Outgoing Log";
-sbutton.apply="Apply";
 sbutton.edit_srv="Add/Edit Service";
 sbutton.routingtab="Show Routing Table";
 sbutton.wanmac="Get Current PC MAC Address";

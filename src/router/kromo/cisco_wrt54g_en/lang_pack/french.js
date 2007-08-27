@@ -199,7 +199,6 @@ sbutton.update_filter="Liste des filtres";
 sbutton.join="Rejoindre";
 sbutton.log_in="Connexions entrantes";
 sbutton.log_out="Connexions sortantes";
-sbutton.apply="Valider";
 sbutton.edit_srv="Ajouter/Editer Service";
 sbutton.routingtab="Table de routage";
 sbutton.wanmac="Obtenir l\'adresse MAC du PC";
