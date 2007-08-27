@@ -1449,7 +1449,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
 		 seq, wordlist, log_reject);
     }
   /* Others will be accepted */
-  save2file ("-A advgrp_%d -j %s\n", seq, log_accept);
+//  save2file ("-A advgrp_%d -j %s\n", seq, log_accept);
 }
 
 static void
