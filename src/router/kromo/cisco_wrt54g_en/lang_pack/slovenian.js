@@ -164,7 +164,7 @@ share.privatekey="Osebni kljuè";
 
 
 sbutton.save="Shrani nastavitve";
-sbutton.apply="Uporabi nastavitve";
+sbutton.apply="Uporabi";
 sbutton.saving="Shranjeno";
 sbutton.cmd="Izvajam";
 sbutton.cancel="Preklièi spremembe";
@@ -199,7 +199,6 @@ sbutton.update_filter="Posodobi seznam filtra";
 sbutton.join="Pove¾i";
 sbutton.log_in="Vhodni dnevnik";
 sbutton.log_out="Izhodni dnevnik";
-sbutton.apply="Uporabi";
 sbutton.edit_srv="Dodaj/uredi storitev";
 sbutton.routingtab="Poka¾i usmerjalno tabelo";
 sbutton.wanmac="Prika¾i trenutni PCjev MAC naslov";
