@@ -358,13 +358,22 @@ start_cron (void)
 
   buf_to_file ("/tmp/cron.d/check_ps", "*/2 * * * * root /sbin/check_ps\n");
 
+  if (nvram_match ("reconnect_enable", "1"))	//pppoe reconnect
+    {
+      FILE *fp;
+      fp = fopen ("/tmp/cron.d/pppoe_reconnect", "w");
+      fprintf (fp, "%s %s * * * root /usr/bin/killall -9 pppd",
+	       nvram_safe_get ("reconnect_minutes"),
+	       nvram_safe_get ("reconnect_hours"));
+      fclose (fp);
+    }
   /* Additional options */
-  FILE *fp;
   int i = 0;
   unlink ("/tmp/cron.d/cron_jobs");
 
   if (nvram_invmatch ("cron_jobs", ""))
     {
+      FILE *fp;
       fp = fopen ("/tmp/cron.d/cron_jobs", "w");
       char *cron_job = nvram_safe_get ("cron_jobs");
 
@@ -695,10 +704,11 @@ start_pptp (int status)
 	{
 	  fprintf (fp, "nomppe\n");	// Disable mppe negotiation
 	  fprintf (fp, "noccp\n");	// Disable CCP (Compression Control Protocol)
-	}else
+	}
+      else
 	{
 	  fprintf (fp, "mppe required,stateless\n");
-        }
+	}
       fprintf (fp, "default-asyncmap\n");	// Disable  asyncmap  negotiation
       fprintf (fp, "nopcomp\n");	// Disable protocol field compression
       fprintf (fp, "noaccomp\n");	// Disable Address/Control compression
@@ -744,15 +754,15 @@ start_pptp (int status)
       else
 	perror ("/proc/sys/net/ipv4/ip_forward");
     }
-      char *wan_ifname = nvram_safe_get ("wan_ifname");
-      if (isClient ())
-      {
+  char *wan_ifname = nvram_safe_get ("wan_ifname");
+  if (isClient ())
+    {
 #ifdef HAVE_MADWIFI
       wan_ifname = getSTA ();
 #else
       wan_ifname = get_wdev ();
 #endif
-      }
+    }
 
 
   /* Bring up  WAN interface */
@@ -848,13 +858,13 @@ start_pptp (int status)
 	{
 	  start_force_to_dial ();
 //                      force_to_dial(nvram_safe_get("action_service"));
-	  nvram_unset("action_service");
+	  nvram_unset ("action_service");
 	}
       /* Trigger Connect On Demand if user ping pptp server */
       else
-      {
-	eval ("listen", nvram_safe_get ("lan_ifname"));
-      }
+	{
+	  eval ("listen", nvram_safe_get ("lan_ifname"));
+	}
     }
 
   start_wshaper ();
@@ -1095,7 +1105,7 @@ start_tmp_ppp (int num)
       sleep (3);
       // force_to_dial(nvram_safe_get("action_service"));
       start_force_to_dial ();
-      nvram_unset("action_service");
+      nvram_unset ("action_service");
     }
 
   close (s);
@@ -1272,7 +1282,7 @@ start_l2tp (int status)
       if (nvram_match ("action_service", "start_l2tp"))
 	{
 	  start_force_to_dial ();
-	  nvram_unset("action_service");
+	  nvram_unset ("action_service");
 	}
       /* Trigger Connect On Demand if user ping pptp server */
       else

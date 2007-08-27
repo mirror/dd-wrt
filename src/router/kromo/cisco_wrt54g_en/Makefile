@@ -77,6 +77,7 @@ ifeq ($(CONFIG_BUFFALO),y)
 #	cp elegant/style_ie.css $(INSTALLDIR)/www/style/buffalo
 #	cp buffalo/common.css $(INSTALLDIR)/www/style
 	cp buffalo/images/* $(INSTALLDIR)/www/images
+	cp buffalo/help/* $(INSTALLDIR)/www/help
 
 #	mkdir $(INSTALLDIR)/www/style/buffalo
 #	cp buffalo/style.css $(INSTALLDIR)/www/style/buffalo

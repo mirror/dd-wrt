@@ -723,6 +723,7 @@ idx_h.srv="Heart Beat Server";
 idx_h.con_strgy="Connection Strategy";
 idx_h.max_idle="Connect on Demand: Max Idle Time";
 idx_h.alive="Keep Alive: Redial Period";
+idx_h.reconnect="Force reconnect";
 
 
 
