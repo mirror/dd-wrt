@@ -723,6 +723,7 @@ idx_h.srv="HeartBeat stre¾nik";
 idx_h.con_strgy="Strategija povezovanja";
 idx_h.max_idle="Pove¾i po potrebi: najveèji nedejavni èas";
 idx_h.alive="Ohrani zvezo: èas ponovnega klicanja";
+idx_h.reconnect="Prisili ponovno povezovanje";
 
 
 
