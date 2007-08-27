@@ -324,6 +324,7 @@ handle_index (void)
 #endif
   handle = startstop_nofree ("firewall", handle);
   handle = startstop_nofree ("httpd", handle);	//httpd will not accept connection anymore on wan/lan ip changes changes
+  handle = startstop_nofree ("cron", handle);	//httpd will not accept connection anymore on wan/lan ip changes changes
   if (handle)
     dlclose (handle);
 }
