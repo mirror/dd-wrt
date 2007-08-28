@@ -4668,8 +4668,8 @@ ej_make_time_list (webs_t wp, int argc, char_t ** argv)
 	
 	for (i = st; i <= en; i++)
     {
-	  sprintf (ich, "%d", i);
-      websWrite (wp, "<option value=\"%d\" %s >%02d</option>\n", i, nvram_match (name, ich) ? "selected=\"selected\"" : "", i);
+	  sprintf (ic, "%d", i);
+      websWrite (wp, "<option value=\"%d\" %s >%02d</option>\n", i, nvram_match (name, ic) ? "selected=\"selected\"" : "", i);
     }
 
   return;
