@@ -4646,6 +4646,35 @@ ej_nvram_checked_js (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
+static void
+ej_make_time_list (webs_t wp, int argc, char_t ** argv)
+{
+  char *name, *start, *end;
+  int i, st, en;
+  char ic[2];
+
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s %s %s", &name, &start, &end);
+#else
+  if (ejArgs (argc, argv, "%s %s", &name, &start, &end) < 3)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+#endif
+	
+	st = atoi (start);
+	en = atoi (end);
+	
+	for (i = st; i <= en; i++)
+    {
+	  sprintf (ich, "%d", i);
+      websWrite (wp, "<option value=\"%d\" %s >%02d</option>\n", i, nvram_match (name, ich) ? "selected=\"selected\"" : "", i);
+    }
+
+  return;
+}
+
 #ifdef HAVE_CPUTEMP
 static void
 ej_get_cputemp (webs_t wp, int argc, char_t ** argv)
@@ -5489,6 +5518,7 @@ struct ej_handler ej_handlers[] = {
   {"show_timeoptions", ej_show_timeoptions},	//Eko
   {"show_wanipinfo", ej_show_wanipinfo},	//Eko
   {"show_clocks", ej_show_clocks},
+  {"make_time_list", ej_make_time_list},  //Eko
   {"getrebootflags", ej_getrebootflags},
   {"getwirelessmode", ej_getwirelessmode},
   {"getwirelessnetmode", ej_getwirelessnetmode},
