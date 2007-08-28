@@ -164,13 +164,13 @@ share.user="User";
 share.privatekey="Clé privée";
 
 sbutton.save="Enregistrer";
-sbutton.savetitle="Enregistrer les paramètres sans prise en compte immédiate";
+sbutton.savetitle="Enregistre les paramètres sans prise en compte immédiate";
 sbutton.apply="Appliquer";
-sbutton.applytitle="Appliquer les paramètres avec prise en compte immédiate";
+sbutton.applytitle="Applique les paramètres avec prise en compte immédiate";
 sbutton.saving="Enregistré";
 sbutton.cmd="Patientez ...";
 sbutton.cancel="Annuler";
-sbutton.canceltitle="Annuler la saisie de ce formulaire";
+sbutton.canceltitle="Annule les saisies de ce formulaire";
 sbutton.refres="Actualiser";
 sbutton.clos="Fermer";
 sbutton.del="Supprimer";
