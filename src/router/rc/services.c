@@ -111,7 +111,6 @@ start_services (void)
   handle = start_service_nofree ("wland", handle);
   handle = start_service_nofree ("wshaper", handle);
   handle = start_service_nofree ("cron", handle);
-  handle = start_service_nofree ("radio_timer", handle);
 
 #ifdef HAVE_PPTPD
   handle = start_service_nofree ("pptpd", handle);
