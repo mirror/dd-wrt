@@ -189,7 +189,6 @@ stop_services (void)
   handle = stop_service_nofree ("udhcpd", handle);
   handle = stop_service_nofree ("dns_clear_resolv", handle);
   handle = stop_service_nofree ("cron", handle);
-  handle = stop_service_nofree ("radio_timer", handle);
 
 #ifdef HAVE_TFTP
   handle = stop_service_nofree ("tftpd", handle);
@@ -268,6 +267,7 @@ handle_index (void)
 {
   unlink ("/tmp/ppp/log");
   void *handle = NULL;
+  handle = stop_service_nofree ("radio_timer", handle);
 #ifdef HAVE_MULTICAST
   handle = stop_service_nofree ("igmp_proxy", handle);
 #endif
@@ -312,6 +312,7 @@ handle_index (void)
   handle = start_service_nofree ("guest_nas", handle);
 #endif
 #endif
+  handle = start_service_nofree ("radio_timer", handle);
 #ifdef HAVE_MULTICAST
   handle = start_service_nofree ("igmp_proxy", handle);
 #endif
@@ -482,6 +483,7 @@ handle_pppoe (void)
 {
   unlink ("/tmp/ppp/log");
   void *handle = NULL;
+  handle = stop_service_nofree ("radio_timer", handle);
 #ifndef HAVE_MADWIFI
   handle = stop_service_nofree ("nas", handle);
 #endif
@@ -521,6 +523,7 @@ handle_pppoe (void)
   handle = start_service_nofree ("guest_nas", handle);
 #endif
 #endif
+  handle = start_service_nofree ("radio_timer", handle);
   if (handle)
     dlclose (handle);
 
