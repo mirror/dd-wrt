@@ -1735,6 +1735,7 @@ configure_single (int count)
 	  char mask[32];
 	  sprintf (ip, "%s_ipaddr", dev);
 	  sprintf (mask, "%s_netmask", dev);
+	  eval("ifconfig",dev,"mtu","1500");
 	  eval("ifconfig",dev, nvram_safe_get (ip), "netmask",nvram_safe_get (mask),"up");
 	}
     }
@@ -1748,6 +1749,7 @@ configure_single (int count)
 	  char mask[32];
 	  sprintf (ip, "%s_ipaddr", dev);
 	  sprintf (mask, "%s_netmask", dev);
+	  eval("ifconfig",dev,"mtu","1500");
 	  eval("ifconfig",dev, nvram_safe_get (ip), "netmask",nvram_safe_get (mask),"up");
 	}
     }
@@ -1784,6 +1786,7 @@ configure_single (int count)
 		char mask[32];
 		sprintf (ip, "%s_ipaddr", var);
 		sprintf (mask, "%s_netmask", var);
+		eval("ifconfig",var,"mtu","1500");
 		ifconfig (var, IFUP, nvram_safe_get (ip),
 			  nvram_safe_get (mask));
 		if (!strcmp (m, "sta") || !strcmp (m, "wdssta")
@@ -1894,6 +1897,7 @@ start_vifs (void)
 		    char mask[32];
 		    sprintf (ip, "%s_ipaddr", var);
 		    sprintf (mask, "%s_netmask", var);
+		    eval("ifconfig",var,"mtu","1500");
 		    ifconfig (var, IFUP, nvram_safe_get (ip),
 			      nvram_safe_get (mask));
 		  }
