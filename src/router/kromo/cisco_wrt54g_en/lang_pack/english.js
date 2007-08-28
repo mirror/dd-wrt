@@ -164,10 +164,13 @@ share.privatekey="Private Key";
 
 var sbutton = new Object();
 sbutton.save="Save";
+sbutton.savetitle="Only save settings without commit";
 sbutton.apply="Apply Settings";
+sbutton.applytitle="Apply settings immediatly";
 sbutton.saving="Saved";
 sbutton.cmd="Executing";
 sbutton.cancel="Cancel Changes";
+sbutton.canceltitle="Cancel Changes in this form only";
 sbutton.refres="Refresh";
 sbutton.clos="Close";
 sbutton.del="Delete";
