@@ -163,11 +163,14 @@ share.execscript="Exécuter un script";
 share.user="User";
 share.privatekey="Clé privée";
 
-sbutton.save="Appliquer";
-sbutton.apply="Enregistrer";
+sbutton.save="Enregistrer";
+sbutton.savetitle="Enregistrer les paramètres sans prise en compte immédiate";
+sbutton.apply="Appliquer";
+sbutton.applytitle="Appliquer les paramètres avec prise en compte immédiate";
 sbutton.saving="Enregistré";
 sbutton.cmd="Patientez ...";
 sbutton.cancel="Annuler";
+sbutton.canceltitle="Annuler la saisie de ce formulaire";
 sbutton.refres="Actualiser";
 sbutton.clos="Fermer";
 sbutton.del="Supprimer";
