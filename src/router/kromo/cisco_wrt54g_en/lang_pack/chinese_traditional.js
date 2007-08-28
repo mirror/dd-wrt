@@ -1,12 +1,9 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//	Chinese (Traditional) translation file - DD-WRT V23/V24 -2007/08/24                 //
+//	Chinese (Traditional) translation file - DD-WRT V23/V24 -2007/08/24
 //////////////////////////////////////////////////////////////////////////////////////////////
-
-
 // ******************************************* COMMON SHARE LABEL *******************************************//
 
-lang_charset.set="Big5";
-
+lang_charset.set="BIG5";
 
 share.firmware="韌體";
 share.time="時間";
@@ -64,7 +61,7 @@ share.sat_s1="六";
 share.expires="過期";
 share.yes="是";
 share.no="否";
-share.allow="允許 ";
+share.allow="允許";
 share.deny="拒絕";
 share.range="範圍";
 share.use="使用";
@@ -197,7 +194,6 @@ sbutton.update_filter="更新篩檢列表";
 sbutton.join="加入";
 sbutton.log_in="Incoming 日誌";
 sbutton.log_out="Outgoing 日誌";
-sbutton.apply="套用";
 sbutton.edit_srv="新增/編輯服務";
 sbutton.routingtab="顯示路由表";
 sbutton.wanmac="取得目前用戶端的MAC位址";
@@ -721,7 +717,7 @@ idx_h.srv="Heart Beat伺服器";
 idx_h.con_strgy="連接計畫";
 idx_h.max_idle="一經請求連結: 最大閒置時間";
 idx_h.alive="持續動作: 重撥間期";
-
+idx_h.reconnect="強制 重撥";
 
 
 // ******************************************* index_l2tp.asp *******************************************//
