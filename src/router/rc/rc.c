@@ -500,6 +500,7 @@ main_loop (void)
 	  start_service ("guest_nas");
 #endif
 #endif
+	  start_service ("radio_timer");
 
 
 	  cprintf ("create rc file\n");
