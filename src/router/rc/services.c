@@ -681,6 +681,7 @@ static void
 handle_wireless (void)
 {
   void *handle = NULL;
+  handle = stop_service_nofree ("radio_timer", handle);
 #ifndef HAVE_MADWIFI
   eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
 #endif
@@ -736,6 +737,7 @@ handle_wireless (void)
   handle = start_service_nofree ("guest_nas", handle);
 #endif
 #endif
+  handle = start_service_nofree ("radio_timer", handle);
   startstop ("httpd");		//httpd will not accept connection anymore on wan/lan ip changes changes
   if (handle)
     dlclose (handle);
