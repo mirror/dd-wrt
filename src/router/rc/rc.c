@@ -391,6 +391,7 @@ main_loop (void)
 	  cprintf ("STOP SERVICES\n");
 
 	  stop_services ();
+	  stop_service ("radio_timer");
 #ifndef HAVE_MADWIFI
 	  stop_service ("nas");
 #endif
