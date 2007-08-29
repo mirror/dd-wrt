@@ -1,5 +1,5 @@
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	Dutch reference translation file - DD-WRT V23 SP1 by Fabian 22/6/2006	Resynced 28/8/2007 by Blackraven	//
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	Dutch reference translation file - DD-WRT V23 SP1 by Fabian 22/6/2006	Resynced 28/8/2007 by Blackraven  //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -289,9 +289,7 @@ errmsg.err49="Radius is enkel beschikbaar in AP modus.";
 errmsg.err50="U moet een SSID ingeven.";
 
 // Management.asp error messages
-errmsg.err51="De router gebruikt momenteel het standaard wachtwoord. \
-			Ter beveiliging, moet u het wachtwoord veranderen alvorens u controle op afstand kan inschakelen. \
-			Klik op OK om uw wachtwoord te veranderen. Klik op Annuleren om controle op afstand ongewijzigd te laten.";
+errmsg.err51="De router gebruikt momenteel het standaard wachtwoord. Ter beveiliging, moet u het wachtwoord veranderen alvorens u controle op afstand kan inschakelen. Klik op OK om uw wachtwoord te veranderen. Klik op Annuleren om controle op afstand ongewijzigd te laten.";
 errmsg.err52="Wachtwoord confirmatie komt niet overeen.";
 
 // Port_Services.asp error messages
@@ -604,11 +602,7 @@ prforward.app="Applicatie";
 
 //help container
 
-hprforward.right2="Bepaalde applicaties vereisen bepaalde open poorten zodat ze correct kunnen functioneren. \
-	Voorbeelden van deze applicaties houden ook servers en bepaalde online games in. \
-	Wanneer een aanvraag voor een bepaalde poort toekomt van het internet, zal de route de data doorsturen naar de computer dat u wenst. \
-	Door veiligheids overwegingen, zou u het gebruik van poort forwarding moeten beperken tot de poorten dat u effectief gebruikt, \
-	u moet de <em>" + share.enable +"</em> checkbox uit vinken als u klaar bent met instellen.";
+hprforward.right2="Bepaalde applicaties vereisen bepaalde open poorten zodat ze correct kunnen functioneren. Voorbeelden van deze applicaties houden ook servers en bepaalde online games in. Wanneer een aanvraag voor een bepaalde poort toekomt van het internet, zal de route de data doorsturen naar de computer dat u wenst. Door veiligheids overwegingen, zou u het gebruik van poort forwarding moeten beperken tot de poorten dat u effectief gebruikt, u moet de <em>" + share.enable +"</em> checkbox uit vinken als u klaar bent met instellen.";
 
 
 // ******************************************* P2P.asp *******************************************//
@@ -620,11 +614,8 @@ p2p.ctorrent_srv="Ctorrent Service";
 
 //help container
 
-//hprforward.right2="Bepaalde applicaties vereisen bepaalde open poorten zodat ze correct kunnen functioneren. \
-	Voorbeelden van deze applicaties houden ook servers en bepaalde online games in. \
-	Wanneer een aanvraag voor een bepaalde poort toekomt van het internet, zal de route de data doorsturen naar de computer dat u wenst. \
-	Door veiligheids overwegingen, zou u het gebruik van poort forwarding moeten beperken tot de poorten dat u effectief gebruikt, \
-	u moet de <em>" + share.enable +"</em> checkbox uit vinken als u klaar bent met instellen.";
+//hpp2p.right2="Bepaalde applicaties vereisen bepaalde open poorten zodat ze correct kunnen functioneren. Voorbeelden van deze applicaties houden ook servers en bepaalde online games in. Wanneer een aanvraag voor een bepaalde poort toekomt van het internet, zal de route de data doorsturen naar de computer dat u wenst. Door veiligheids overwegingen, zou u het gebruik van poort forwarding moeten beperken tot de poorten dat u effectief gebruikt, u moet de <em>" + share.enable +"</em> checkbox uit vinken als u klaar bent met instellen.";
+
 
 
 // ******************************************* ForwardSpec.asp *******************************************//
@@ -637,11 +628,7 @@ pforward.from="Van poort";
 pforward.to="Naar poort";
 
 //help container
-hpforward.right2="Bepaalde applicaties vereisen bepaalde open poorten zodat ze correct kunnen functioneren. \
-Voorbeelden van deze applicaties houden ook servers en bepaalde online games in. \
-	Wanneer een aanvraag voor een bepaalde poort toekomt van het internet, zal de router de data doorsturen naar de computer die u wenst. \
-	Uit veiligheidsoverwegingen, zou u het gebruik van poort forwarding moeten beperken tot de poorten die u effectief gebruikt, \
-	u moet de <em>Activeer</em> checkbox uitvinken nadat u klaar bent met instellen.";
+hpforward.right2="Bepaalde applicaties vereisen bepaalde open poorten zodat ze correct kunnen functioneren. Voorbeelden van deze applicaties houden ook servers en bepaalde online games in. Wanneer een aanvraag voor een bepaalde poort toekomt van het internet, zal de router de data doorsturen naar de computer die u wenst. Uit veiligheidsoverwegingen, zou u het gebruik van poort forwarding moeten beperken tot de poorten die u effectief gebruikt, u moet de <em>Activeer</em> checkbox uitvinken nadat u klaar bent met instellen.";
 
 
 
@@ -1329,8 +1316,7 @@ hstatus_router.right6="Dit is de huidige firmware van de router.";
 hstatus_router.right8="Dit is de tijd verkregen van de ntp server ingesteld op de <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em> tab.";
 hstatus_router.right10="Dit is een berekening van de tijd dat de router \"up and running\" was.";
 hstatus_router.right12="Dit is een gegeven van drie nummers dat de belasting van het systeem voorstelt gedurende de laatste één, vijf of vijftien minuten.";
-hstatus_router.right14="Dit geeft de informatie die vereist is door uw ISP weer. \
-				Deze informatie werd ingegeven op de Setup Tab. U kan uw connectie <em>Verbinden</em> of <em>Verbreken</em> door op de knop te klikken.";
+hstatus_router.right14="Dit geeft de informatie die vereist is door uw ISP weer. Deze informatie werd ingegeven op de Setup Tab. U kan uw connectie <em>Verbinden</em> of <em>Verbreken</em> door op de knop te klikken.";
 
 
 // ******************************************* Status_Conntrack.asp *******************************************//
@@ -1417,8 +1403,7 @@ upgrad.mess1="Firmware upgraden kan enkele minuten duren.<br />Zet uw router NIE
 
 //help container
 
-hupgrad.right2="Klik op de <em>Bladeren...</em> knop om het firmware bestand te selecteren dat vereist is voor de upgrade.<br /><br /> \
-			Klik op de <em>Upgrade</em> knop om het upgrade proces te starten. De upgrade mag niet onderbroken worden.";
+hupgrad.right2="Klik op de <em>Bladeren...</em> knop om het firmware bestand te selecteren dat vereist is voor de upgrade.<br /><br /> Klik op de <em>Upgrade</em> knop om het upgrade proces te starten. De upgrade mag niet onderbroken worden.";
 
 
 
@@ -1512,8 +1497,7 @@ wanmac.wlan="Kloon Draadloos MAC";
 
 //help container
 
-hwanmac.right2="Sommige ISP's eisen dat je je MAC adres registreert. \
-			Indien je je MAC adres niet wilt herregistreren, kan je de router je MAC adres laten klonen met degene die je geregistreerd hebt bij je ISP.";
+hwanmac.right2="Sommige ISP's eisen dat je je MAC adres registreert. Indien je je MAC adres niet wilt herregistreren, kan je de router je MAC adres laten klonen met degene die je geregistreerd hebt bij je ISP.";
 
 
 
