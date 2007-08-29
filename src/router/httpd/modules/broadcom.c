@@ -2901,7 +2901,7 @@ static struct gozila_action gozila_actions[] = {
    save_services_port},
   {"QOSPort_Services", "save_qosservices", "filters", 2, REFRESH,
    save_services_port},
-  {"Ping", "start", "start_ping", 1, SERVICE_RESTART, diag_ping_start},
+  {"Ping", "start", "", 1, SERVICE_RESTART, diag_ping_start},
   {"Ping", "stop", "", 0, REFRESH, diag_ping_stop},
   {"Ping", "clear", "", 0, REFRESH, diag_ping_clear},
 #ifdef HAVE_MILKFISH
