@@ -164,9 +164,9 @@ share.user="User";
 share.privatekey="Clé privée";
 
 sbutton.save="Enregistrer";
-sbutton.savetitle="Enregistre les paramètres sans prise en compte immédiate";
+sbutton.savetitle="Enregistre les paramètres sans redémarrage des services";
 sbutton.apply="Appliquer";
-sbutton.applytitle="Applique les paramètres avec prise en compte immédiate";
+sbutton.applytitle="Applique les paramètres et redémarre tous les services";
 sbutton.saving="Enregistré";
 sbutton.cmd="Patientez ...";
 sbutton.cancel="Annuler";
