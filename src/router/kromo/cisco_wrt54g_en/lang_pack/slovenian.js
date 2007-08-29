@@ -164,10 +164,13 @@ share.privatekey="Osebni kljuè";
 
 
 sbutton.save="Shrani nastavitve";
+sbutton.savetitle="Samo shrani nastavitve, vendar jih ne uporabi";
 sbutton.apply="Uporabi";
+sbutton.applytitle="Takoj shrani in uporabi nastavitve";
 sbutton.saving="Shranjeno";
 sbutton.cmd="Izvajam";
 sbutton.cancel="Preklièi spremembe";
+sbutton.canceltitle="Preklièi spremembe na tej strani";
 sbutton.refres="Osve¾i";
 sbutton.clos="Zapri";
 sbutton.del="Izbri¹i";
