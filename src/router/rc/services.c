@@ -634,6 +634,7 @@ handle_ddns (void)
   nvram_set ("ddns_change", "update");
 
 }
+/*
 static void
 handle_ping (void)
 {
@@ -651,6 +652,7 @@ handle_ping (void)
   system (cmd);
 
 }
+*/
 
 static void
 handle_upgrade (void)
@@ -865,7 +867,7 @@ static struct SERVICES services_def[] = {
   {"forward_upnp", handle_forwardupnp},
   {"static_route_del", handle_routedel},
   {"ddns", handle_ddns},
-  {"start_ping", handle_ping},
+//  {"start_ping", handle_ping},
   {"http_upgrade", handle_upgrade},
 #ifdef HAVE_MIKLFISH
   {"milkfish", handle_milkfish},
