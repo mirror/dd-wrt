@@ -2,13 +2,17 @@
 		<script type="text/javascript">
 		//<![CDATA[
 
-function to_submit(F) {
+function submitcheck(F) {
+	F.save_button.value = sbutton.saving;
+}
+
+function to_apply(F) {
 	if( F.FactoryDefaults[0].checked == 1 ) {
 		if(!confirm(factdef.mess1)) {
 			return false;
 		}
-		F.save_button.value = sbutton.saving;
-		applyupdate(F);
+		submitcheck(F);
+		applytake(F);
 		return true;
 	}
 }
@@ -61,8 +65,8 @@ addEvent(window, "unload", function() {
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								document.write("<input class=\"button\" type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form);\" />");
-								document.write("<input class=\"button\" type=\"button\" name=\"reset_button\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.reload();\" />");
+								document.write("<input title=\"" + sbutton.applytitle + "\" class=\"button\" type=\"button\" name=\"save_button\" value=\"" + sbutton.apply + "\" onclick=\"to_apply(this.form);\" />");
+								document.write("<input title=\"" + sbutton.canceltitle + "\" class=\"button\" type=\"button\" name=\"reset_button\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.reload();\" />");
 								//]]>
 								</script>
 							</div>
