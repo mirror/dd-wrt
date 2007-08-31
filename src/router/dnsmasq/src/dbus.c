@@ -31,7 +31,7 @@ static dbus_bool_t add_watch(DBusWatch *watch, void *data)
     if (w->watch == watch)
       return TRUE;
 
-  if (!(w = malloc(sizeof(struct watch))))
+  if (!(w = whine_malloc(sizeof(struct watch))))
     return FALSE;
 
   w->watch = watch;
@@ -160,11 +160,11 @@ static void dbus_read_servers(DBusMessage *message)
 		    }
 		}
 	    
-	    if (!serv && (serv = malloc(sizeof (struct server))))
+	    if (!serv && (serv = whine_malloc(sizeof (struct server))))
 	      {
 		/* Not found, create a new one. */
 		if (domain)
-		  serv->domain = malloc(strlen(domain)+1);
+		  serv->domain = whine_malloc(strlen(domain)+1);
 		if (domain && !serv->domain)
 		  {
 		    free(serv);

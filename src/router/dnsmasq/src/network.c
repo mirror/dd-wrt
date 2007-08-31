@@ -134,9 +134,10 @@ static int iface_allowed(struct irec **irecp, int if_index,
 	    break;
 	  }
       
-      if (!lo && (lo = malloc(sizeof(struct iname))))
+      if (!lo && 
+	  (lo = whine_malloc(sizeof(struct iname))) &&
+	  (lo->name = whine_malloc(strlen(ifr.ifr_name)+1)))
 	{
-	  lo->name = safe_malloc(strlen(ifr.ifr_name)+1);
 	  strcpy(lo->name, ifr.ifr_name);
 	  lo->isloop = lo->used = 1;
 	  lo->next = daemon->if_names;
@@ -159,7 +160,7 @@ static int iface_allowed(struct irec **irecp, int if_index,
 #endif
 
   /* add to list */
-  if ((iface = malloc(sizeof(struct irec))))
+  if ((iface = whine_malloc(sizeof(struct irec))))
     {
       iface->addr = *addr;
       iface->netmask = netmask;
@@ -331,8 +332,7 @@ struct listener *create_wildcard_listeners(void)
       if ((tftpfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	return NULL;
       
-      if (setsockopt(tftpfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 ||
-	  !fix_fd(tftpfd) ||
+      if (!fix_fd(tftpfd) ||
 #if defined(HAVE_LINUX_NETWORK) 
 	  setsockopt(tftpfd, SOL_IP, IP_PKTINFO, &opt, sizeof(opt)) == -1 ||
 #elif defined(IP_RECVDSTADDR) && defined(IP_RECVIF)
@@ -374,14 +374,14 @@ struct listener *create_bound_listeners(void)
 	  setsockopt(new->tcpfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 ||
 	  !fix_fd(new->tcpfd) ||
 	  !fix_fd(new->fd))
-	die(_("failed to create listening socket: %s"), NULL);
+	die(_("failed to create listening socket: %s"), NULL, EC_BADNET);
       
 #ifdef HAVE_IPV6
       if (iface->addr.sa.sa_family == AF_INET6)
 	{
 	  if (setsockopt(new->fd, IPV6_LEVEL, IPV6_V6ONLY, &opt, sizeof(opt)) == -1 ||
 	      setsockopt(new->tcpfd, IPV6_LEVEL, IPV6_V6ONLY, &opt, sizeof(opt)) == -1)
-	    die(_("failed to set IPV6 options on listening socket: %s"), NULL);
+	    die(_("failed to set IPV6 options on listening socket: %s"), NULL, EC_BADNET);
 	}
 #endif
       
@@ -400,14 +400,14 @@ struct listener *create_bound_listeners(void)
 	    {
 	      prettyprint_addr(&iface->addr, daemon->namebuff);
 	      die(_("failed to bind listening socket for %s: %s"), 
-		  daemon->namebuff);
+		  daemon->namebuff, EC_BADNET);
 	    }
 	}
       else
 	 {
 	   listeners = new;     
 	   if (listen(new->tcpfd, 5) == -1)
-	     die(_("failed to listen on socket: %s"), NULL);
+	     die(_("failed to listen on socket: %s"), NULL, EC_BADNET);
 	 }
 
       if ((daemon->options & OPT_TFTP) && iface->addr.sa.sa_family == AF_INET && iface->dhcp_ok)
@@ -418,7 +418,7 @@ struct listener *create_bound_listeners(void)
 	      setsockopt(new->tftpfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 ||
 	      !fix_fd(new->tftpfd) ||
 	      bind(new->tftpfd, &iface->addr.sa, sa_len(&iface->addr)) == -1)
-	    die(_("failed to create TFTP socket: %s"), NULL);
+	    die(_("failed to create TFTP socket: %s"), NULL, EC_BADNET);
 	  iface->addr.in.sin_port = save;
 	}
     }
@@ -437,7 +437,7 @@ struct serverfd *allocate_sfd(union mysockaddr *addr, struct serverfd **sfds)
   
   /* need to make a new one. */
   errno = ENOMEM; /* in case malloc fails. */
-  if (!(sfd = malloc(sizeof(struct serverfd))))
+  if (!(sfd = whine_malloc(sizeof(struct serverfd))))
     return NULL;
   
   if ((sfd->fd = socket(addr->sa.sa_family, SOCK_DGRAM, 0)) == -1)
@@ -513,10 +513,12 @@ void check_servers(void)
       if (new->flags & (SERV_HAS_DOMAIN | SERV_FOR_NODOTS))
 	{
 	  char *s1, *s2;
-	  if (new->flags & SERV_HAS_DOMAIN)
-	    s1 = _("domain"), s2 = new->domain;
+	  if (!(new->flags & SERV_HAS_DOMAIN))
+	    s1 = _("unqualified"), s2 = _("names");
+	  else if (strlen(new->domain) == 0)
+	    s1 = _("default"), s2 = "";
 	  else
-	    s1 = _("unqualified"), s2 = _("domains");
+	    s1 = _("domain"), s2 = new->domain;
 	  
 	  if (new->flags & SERV_NO_ADDR)
 	    my_syslog(LOG_INFO, _("using local addresses only for %s %s"), s1, s2);
@@ -574,7 +576,9 @@ int reload_servers(char *fname)
       union mysockaddr addr, source_addr;
       char *token = strtok(line, " \t\n\r");
       
-      if (!token || strcmp(token, "nameserver") != 0)
+      if (!token)
+	continue;
+      if (strcmp(token, "nameserver") != 0 && strcmp(token, "server") != 0)
 	continue;
       if (!(token = strtok(NULL, " \t\n\r")))
 	continue;
@@ -612,7 +616,7 @@ int reload_servers(char *fname)
 	  serv = old_servers;
 	  old_servers = old_servers->next;
 	}
-      else if (!(serv = malloc(sizeof (struct server))))
+      else if (!(serv = whine_malloc(sizeof (struct server))))
 	continue;
       
       /* this list is reverse ordered: 

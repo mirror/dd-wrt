@@ -304,10 +304,10 @@ static unsigned char *skip_name(unsigned char *ansp, HEADER *header, size_t plen
 
 static unsigned char *skip_questions(HEADER *header, size_t plen)
 {
-  int q, qdcount = ntohs(header->qdcount);
+  int q;
   unsigned char *ansp = (unsigned char *)(header+1);
 
-  for (q = 0; q<qdcount; q++)
+  for (q = ntohs(header->qdcount); q != 0; q--)
     {
       if (!(ansp = skip_name(ansp, header, plen)))
 	return NULL;
@@ -349,7 +349,7 @@ unsigned int questions_crc(HEADER *header, size_t plen, char *name)
   unsigned int crc = 0xffffffff;
   unsigned char *p1, *p = (unsigned char *)(header+1);
 
-  for (q = 0; q < ntohs(header->qdcount); q++) 
+  for (q = ntohs(header->qdcount); q != 0; q--) 
     {
       if (!extract_name(header, plen, &p, name, 1))
 	return crc; /* bad packet */
@@ -426,7 +426,7 @@ unsigned char *find_pseudoheader(HEADER *header, size_t plen, size_t  *len, unsi
 
       if (header->opcode == QUERY)
 	{
-	  for (i = 0; i < ntohs(header->qdcount); i++)
+	  for (i = ntohs(header->qdcount); i != 0; i--)
 	    {
 	      if (!(ansp = skip_name(ansp, header, plen)))
 		return NULL;
@@ -496,21 +496,8 @@ static int private_net(struct in_addr addr)
     ((ip_addr & 0xFFF00000) == 0xAC100000)  /* 172.16.0.0/12  (private)  */ ||
     ((ip_addr & 0xFFFF0000) == 0xA9FE0000)  /* 169.254.0.0/16 (zeroconf) */ ;
 }
- 
-static void dns_doctor(HEADER *header, struct doctor *doctor, struct in_addr *addr)
-{
-  for (; doctor; doctor = doctor->next)
-    if (is_same_net(doctor->in, *addr, doctor->mask))
-      {
-	addr->s_addr &= ~doctor->mask.s_addr;
-	addr->s_addr |= (doctor->out.s_addr & doctor->mask.s_addr);
-	/* Since we munged the data, the server it came from is no longer authoritative */
-	header->aa = 0;
-	break;
-      }
-}
 
-static int find_soa(HEADER *header, struct doctor *doctor, size_t qlen)
+static int find_soa(HEADER *header, size_t qlen)
 {
   unsigned char *p;
   int qtype, qclass, rdlen;
@@ -522,7 +509,7 @@ static int find_soa(HEADER *header, struct doctor *doctor, size_t qlen)
       !(p = skip_section(p, ntohs(header->ancount), header, qlen)))
     return 0; /* bad packet */
   
-  for (i=0; i<ntohs(header->nscount); i++)
+  for (i = ntohs(header->nscount); i != 0; i--)
     {
       if (!(p = skip_name(p, header, qlen)))
 	return 0; /* bad packet */
@@ -557,8 +544,8 @@ static int find_soa(HEADER *header, struct doctor *doctor, size_t qlen)
 	return 0; /* bad packet */
     }
  
-  if (doctor)
-    for (i=0; i<ntohs(header->arcount); i++)
+  if (daemon->doctors)
+    for (i = ntohs(header->arcount); i != 0; i--)
       {
 	if (!(p = skip_name(p, header, qlen)))
 	  return 0; /* bad packet */
@@ -569,7 +556,24 @@ static int find_soa(HEADER *header, struct doctor *doctor, size_t qlen)
 	GETSHORT(rdlen, p);
 	
 	if ((qclass == C_IN) && (qtype == T_A))
-	  dns_doctor(header, doctor, (struct in_addr *)p);
+	  {
+	    struct doctor *doctor;
+	    struct in_addr addr;
+	    
+	    /* alignment */
+	    memcpy(&addr, p, INADDRSZ);
+	    
+	    for (doctor = daemon->doctors; doctor; doctor = doctor->next)
+	      if (is_same_net(doctor->in, addr, doctor->mask))
+		{
+		  addr.s_addr &= ~doctor->mask.s_addr;
+		  addr.s_addr |= (doctor->out.s_addr & doctor->mask.s_addr);
+		  /* Since we munged the data, the server it came from is no longer authoritative */
+		  header->aa = 0;
+		  memcpy(p, &addr, INADDRSZ);
+		  break;
+		}
+	  }
 	
 	p += rdlen;
 	
@@ -588,6 +592,7 @@ void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
   unsigned char *p, *p1, *endrr;
   int i, j, qtype, qclass, aqtype, aqclass, ardlen, res, searched_soa = 0;
   unsigned long ttl = 0;
+  struct all_addr addr;
 
   cache_start_insert();
 
@@ -595,13 +600,13 @@ void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
   if (daemon->doctors)
     {
       searched_soa = 1;
-      ttl = find_soa(header, daemon->doctors, qlen);
+      ttl = find_soa(header, qlen);
     }
   
   /* go through the questions. */
   p = (unsigned char *)(header+1);
   
-  for (i = 0; i<ntohs(header->qdcount); i++)
+  for (i = ntohs(header->qdcount); i != 0; i--)
     {
       int found = 0, cname_count = 5;
       struct crec *cpp = NULL;
@@ -621,7 +626,6 @@ void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
 	 represent them in the cache. */
       if (qtype == T_PTR)
 	{ 
-	  struct all_addr addr;
 	  int name_encoding = in_arpa_name_2_addr(name, &addr);
 	  
 	  if (!name_encoding)
@@ -633,7 +637,7 @@ void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
 	      if (!(p1 = skip_questions(header, qlen)))
 		return;
 	      
-	      for (j = 0; j<ntohs(header->ancount); j++) 
+	      for (j = ntohs(header->ancount); j != 0; j--) 
 		{
 		  if (!(res = extract_name(header, qlen, &p1, name, 0)))
 		    return; /* bad packet */
@@ -675,22 +679,29 @@ void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
 	      if (!searched_soa)
 		{
 		  searched_soa = 1;
-		  ttl = find_soa(header, NULL, qlen);
+		  ttl = find_soa(header, qlen);
 		}
 	      if (ttl)
-		cache_insert(name, &addr, now, ttl, name_encoding | F_REVERSE | F_NEG | flags);	
+		cache_insert(NULL, &addr, now, ttl, name_encoding | F_REVERSE | F_NEG | flags);	
 	    }
 	}
       else
 	{
 	  /* everything other than PTR */
 	  struct crec *newc;
-	  
+	  int addrlen;
+
 	  if (qtype == T_A)
-	    flags |= F_IPV4;
+	    {
+	      addrlen = INADDRSZ;
+	      flags |= F_IPV4;
+	    }
 #ifdef HAVE_IPV6
 	  else if (qtype == T_AAAA)
-	    flags |= F_IPV6;
+	    {
+	      addrlen = IN6ADDRSZ;
+	      flags |= F_IPV6;
+	    }
 #endif
 	  else 
 	    continue;
@@ -701,7 +712,7 @@ void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
 	      if (!(p1 = skip_questions(header, qlen)))
 		return;
 	      
-	      for (j = 0; j<ntohs(header->ancount); j++) 
+	      for (j = ntohs(header->ancount); j != 0; j--) 
 		{
 		  if (!(res = extract_name(header, qlen, &p1, name, 0)))
 		    return; /* bad packet */
@@ -736,9 +747,9 @@ void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
 		      else
 			{
 			  found = 1;
-			  if (aqtype == T_A)
-			    dns_doctor(header, daemon->doctors, (struct in_addr *)p1);
-			  newc = cache_insert(name, (struct all_addr *)p1, now, attl, flags | F_FORWARD);
+			  /* copy address into aligned storage */
+			  memcpy(&addr, p1, addrlen);
+			  newc = cache_insert(name, &addr, now, attl, flags | F_FORWARD);
 			  if (newc && cpp)
 			    {
 			      cpp->addr.cname.cache = newc;
@@ -759,13 +770,13 @@ void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
 	      if (!searched_soa)
 		{
 		  searched_soa = 1;
-		  ttl = find_soa(header, NULL, qlen);
+		  ttl = find_soa(header, qlen);
 		}
 	      /* If there's no SOA to get the TTL from, but there is a CNAME 
 		 pointing at this, inherit it's TTL */
 	      if (ttl || cpp)
 		{
-		  newc = cache_insert(name, (struct all_addr *)p, now, ttl ? ttl : cttl, F_FORWARD | F_NEG | flags);	
+		  newc = cache_insert(name, NULL, now, ttl ? ttl : cttl, F_FORWARD | F_NEG | flags);	
 		  if (newc && cpp)
 		    {
 		      cpp->addr.cname.cache = newc;
@@ -906,7 +917,7 @@ int check_for_bogus_wildcard(HEADER *header, size_t qlen, char *name,
   if (!(p = skip_questions(header, qlen)))
     return 0; /* bad packet */
 
-  for (i=0; i<ntohs(header->ancount); i++)
+  for (i = ntohs(header->ancount); i != 0; i--)
     {
       if (!extract_name(header, qlen, &p, name, 1))
 	return 0; /* bad packet */
@@ -1028,7 +1039,6 @@ size_t answer_request(HEADER *header, char *limit, size_t qlen,
   struct all_addr addr;
   unsigned int nameoffset;
   unsigned short flag;
-  int qdcount = ntohs(header->qdcount); 
   int q, ans, anscount = 0, addncount = 0;
   int dryrun = 0, sec_reqd = 0;
   int is_sign;
@@ -1063,7 +1073,7 @@ size_t answer_request(HEADER *header, char *limit, size_t qlen,
       dryrun = 1;
     }
 
-  if (!qdcount || header->opcode != QUERY )
+  if (ntohs(header->qdcount) == 0 || header->opcode != QUERY )
     return 0;
   
   for (rec = daemon->mxnames; rec; rec = rec->next)
@@ -1077,7 +1087,7 @@ size_t answer_request(HEADER *header, char *limit, size_t qlen,
   /* now process each question, answers go in RRs after the question */
   p = (unsigned char *)(header+1);
 
-  for (q=0; q<qdcount; q++)
+  for (q = ntohs(header->qdcount); q != 0; q--)
     {
       /* save pointer to name for copying into answers */
       nameoffset = p - (unsigned char *)header;

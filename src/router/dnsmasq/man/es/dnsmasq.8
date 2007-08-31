@@ -4,7 +4,7 @@ dnsmasq \- Un ligero servidor DHCP y DNS con caché.
 .SH SINOPSIS
 .B dnsmasq
 .I [OPCION]...
-.SH "DESCRIPCION"
+.SH "DESCRIPCIÓN"
 .BR dnsmasq
 es un ligero servidor DNS, TFTP y DHCP. Su propósito es proveer servicios DNS
 y DHCP a una red de área local.
@@ -16,7 +16,7 @@ hosts locales los cuales no aparecen en el DNS mundial puedan ser
 resueltos. También responde a búsquedas DNS para hosts configurados
 vía DHCP.
 .PP
-El servidor DHCP dnsmasq incluye soporte para assignación de direcciones
+El servidor DHCP dnsmasq incluye soporte para asignación de direcciones
 estáticas, redes múltiples, DHCP-relay y especificadores de subredes
 RFC3011. Automáticamente envía un predeterminado sensible de opciones
 DHCP, y puede ser configurado para enviar cualquier opciones DHCP deseadas,
@@ -24,7 +24,8 @@ incluyendo opciones encapsuladas por vendedores. Incluye un servidor seguro
 TFTP solo-lectura para permitir el inicio vía red/PXE de hosts DHCP. Tambíen
 incluye soporte para BOOTP.
 .PP
-Dnsmasq incluye soporte IPv6 para DNS, pero no para DHCP.
+Dnsmasq
+incluye soporte IPv6 para DNS, pero no para DHCP.
 .SH OPCIONES
 Nótese que en general parámetros ausentes son permitidos y deshabilitan
 funciones, por ejemplo "--pid-file=" deshabilita la escritura de un
@@ -89,7 +90,7 @@ funcionando sin ser bloqueado por syslog, y permite a syslog usar dnsmasq
 para búsquedas DNS sin riesgo de tranque. Si la coleta de líneas de bitácora
 se llena, dnsmasq bitacoreará el desbordamiento, y el número de mensajes
 perdidos. El tamaño predeterminado de coleta es 5, un valor sano sería 5-25,
-y el valor máximo de 100 es impuesto.
+y un límite de 100 es impuesto.
 .TP
 .B \-x, --pid-file=<path>
 Especificar un path alterno donde dnsmasq debe guardar su PID.
@@ -138,7 +139,7 @@ es usada. Si ninguna opción
 o
 .B \--listen-address
 es brindada, dnsmasq escucha en todas las interfaces disponibles excepto
-cualquiera fijada con la opción
+cualquiera fijada con opciones
 .B \--except-interface
 Interfaces IP alias (por ejemplo, "eth1:0") no pueden ser utilizadas con
 .B --interface
@@ -153,9 +154,9 @@ las opciones
 .B --interface
 y
 .B --except-interface
-no importa y la opción
+no importa y las opciones
 .B --except-interface
-siempre invalida las otras.
+siempre invalidan a las otras.
 .TP 
 .B \-2, --no-dhcp-interface=<nombre de interface>
 No proveer DHCP ni TFTP en la interface especificada, pero sí
@@ -171,7 +172,7 @@ direcciones IP y interfaces es usada. Nótese que si ninguna opción
 .B \--interface
 es brindada, pero sí se brinda la opción
 .B \--listen-address
-entonces dnsmasq no escuchará automáticamente en la interface
+, entonces dnsmasq no escuchará automáticamente en la interface
 loopback. Para obtener esto, su dirección IP, 127.0.0.1, debe ser
 explícitamente brindada como una opción
 .B \--listen-address
@@ -216,7 +217,7 @@ y 1.2.3.67 a 6.7.8.67. Esto es lo que
 ruteadores Cisco PIX llaman "DNS doctoring".
 .TP 
 .B \-B, --bogus-nxdomain=<dirección IP>
-Transformar respuestas que contienen la dirección IP brindada en
+Transformar respuestas que contienen la dirección IP brindada a
 respuestas tipo "Dominio no existe". La intención de esto es actuar
 en contra de una movida desviada hecha por Verisign en septiembre
 del 2003, cuando comenzaron a retornar la dirección de un servidor
@@ -258,7 +259,7 @@ opción requiere que dnsmasq haya sido compilado con soporte para DBus.
 .B \-o, --strict-order
 Por predeterminado, dnsmasq enviará búsquedas a cualquiera de los
 servidores upstream que conoce, y trata de favorecer servidores los
-cuales sabe que están activos. Fijar esta opcion forza a dnsmasq a
+cuales sabe que están activos. Fijar esta opción forza a dnsmasq a
 probar cada búsqueda con cada servidor estrictamente en el orden
 que aparecen en /etc/resolv.conf
 .TP
@@ -309,13 +310,13 @@ para hacer los archivos de configuración mas claros en este caso.
 La segunda dirección IP opcional después del carácter @ le dice
 a dnsmasq como fijar la dirección de remitente de las búsquedas
 hacia este servidor DNS. Debe ser una dirección perteneciente a
-la máquina en la cual corre dnsmasq, o de forma contraria esta
+la máquina en la cual corre dnsmasq, de forma contraria esta
 línea de servidor será bitacoreada y después ignorada. La opción
 query-port es ignorada para cualquier servidores que tengan una
 dirección remitente especificada, pero el puerto puede ser
 especificado directamente como parte de la dirección remitente.
 .TP
-.B \-A, --address=/<domain>/[domain/]<ipaddr>
+.B \-A, --address=/<dominio>/[dominio/]<dirección IP>
 Especificar una dirección IP para retornar por cualquier host en
 los dominios brindados. Búsquedas en estos dominios nunca son
 reenviadas, y siempre son respondidas con la dirección IP
@@ -357,7 +358,7 @@ la máquina donde dnsmasq está corriendo) para cada máquina local.
 Máquinas locales son aquellas en /etc/hosts o con arriendos DHCP.
 .TP
 .B \-W, --srv-host=<_servicio>.<_prot>.[<dominio>],[<target>[,<puerto>[,<prioridad>[,<peso>]]]]
-Retornar un record SRV DNS. Ver RFC2782 para detalles. Si no es
+Retornar un record DNS SRV. Ver RFC2782 para detalles. Si no es
 brindada, el dominio se predetermina a el brindado por
 .B --domain.
 El predeterminado para el dominio target está vacío, el predeterminado
@@ -375,6 +376,18 @@ comas.
 .B --ptr-record=<nombre>[,<target>]
 Retornar un récord DNS PTR.
 .TP
+.B --interface-name=<nombre>,<interface>
+Retornar un récord DNS, asociando el nombre con la dirección primaria
+en la interface brindada. Esta opción especifica un expediente tipo A
+para el nombre brindado de la misma forma que una línea de /etc/hosts,
+excepto que la dirección no es constante y es en vez tomada de la
+interface brindada. Si la interface está deshabilitada, nó configurada,
+o nó existente, un récord vacío es devuelto. El récord PTR relevante
+tambien es creado, trazando la dirección de la interface a el nombre.
+Más de un nombre puede ser asociado con una dirección de interface,
+repitiendo la opción. En tal caso, la primera instancia es usada para
+la traza reversa dirección-a-nombre.
+.TP
 .B \-c, --cache-size=<tamaño de caché>
 Fijar el tamaño del caché de dnsmasq. El predeterminado es 150 nombres.
 Fijar el tamaño a cero deshabilita el caché.
@@ -383,7 +396,6 @@ Fijar el tamaño a cero deshabilita el caché.
 Deshabilitar caché negativo. El caché negativo le permite a dnsmasq
 recordar resultados tipo "dominio no existe" desde servidores DNS
 upstream y responder búsquedas idénticas sin reenviarlas nuevamente.
-Esta opción deshabilita el caché negativo.
 .TP
 .B \-0, --dns-forward-max=<búsquedas>
 Fijar el número máximo de búsquedas DNS simultáneas. El valor
@@ -394,14 +406,14 @@ generar un número inmenso de búsquedas simultáneas.
 .TP
 .B \-F, --dhcp-range=[[net:]network-id,]<dirección-inicio>,<dirección-final>[[,<máscara>],<broadcast>][,<tiempo de arriendo predeterminado>]
 Habilitar el servidor DHCP. Direcciones serán distribuidas desde el
-rango <start-addr> hasta <end-addr> y desde direcciones definidas
+rango <dirección-inicio> hasta <dirección-final> y desde direcciones definidas
 estáticamente en opciones
 .B dhcp-host
-Si el tiempo de arriendo es brindado, entonces arriendos serán
-dados por esa cantidad de tiempo. El tiempo de arriendo es en
+Si el tiempo de arriendo es especificado, entonces arriendos serán
+otorgados por esa cantidad de tiempo. El tiempo de arriendo es en
 segundos, o minutos (por ejemplo, 45m), o horas (por ejemplo, 1h), o el
 literal "infinite". Esta opción puede ser repetida, con diferentes
-direcciones para habilitar servicio DHCP en más de una red. Para
+direcciones, para habilitar servicio DHCP en más de una red. Para
 redes conectadas diréctamente (en otras palabras, redes en las
 cuales la máquina corriendo dnsmasq tiene una interface) la
 máscara de subred es opcional. Pero, es requerida para redes que
@@ -433,7 +445,7 @@ alocada el mismo nombre de host, dirección IP, y tiempo de arriendo.
 Un nombre de host especificado de esta manera toma presedencia
 sobre cualquiera suministrado por el cliente DHCP en la máquina.
 También se permite omitir la direccion de hardware y incluir el
-nombre host; en tal caso la dirección IP y los tiempos de arriendo
+nombre de host; en tal caso la dirección IP y los tiempos de arriendo
 serán aplicables a cualquier máquina que reclame ese nombre.
 Por ejemplo:
 .B --dhcp-host=00:20:e0:3b:13:af,wap,infinite
@@ -480,16 +492,19 @@ Direcciones de hardware normalmente coinciden con cualquier
 tipo de red (ARP), pero es posible restringirlas a un tipo ARP
 singular precediendolo con el tipo ARP (en HEX) y "-". Así que
 .B --dhcp-host=06-00:20:e0:3b:13:af,1.2.3.4
-solo coincidaría una dirección de hardware Token-Ring, dado que
+solo coincidiría con una dirección de hardware Token-Ring, dado que
 el tipo ARP para Token-Ring es 6.
-.TP 
+.TP
+.B --dhcp-hostsfile=<archivo>
+Leer información host DHCP desde el archivo especificado. El archivo contiene información de un host por línea. El formato de una línea es igual que texto hacia la derecha de '=' en --dhcp-host. La ventaja de almacenar información host DHCP en este archivo es que puede ser cambiada sin tener que reiniciar dnsmasq. El archivo será re-leído cuando dnsmasq recibe un SIGHUP.
+.TP
 .B \-Z, --read-ethers
 Leer /etc/ethers en busca de información sobre hosts para el servidor
 DHCP. El formato de /etc/ethers es una dirección de hardware, seguida
 por ya sea un nombre de host o una dirección IP. Al ser leidas por
 dnsmasq, estas líneas tienen exáctamente el mismo efecto que opciones
 .B --dhcp-host
-que contienen la misma información.
+que contienen la misma información. /etc/ethers es re-leída cuando dnsmasq recibe un SIGHUP.
 .TP
 .B \-O, --dhcp-option=[<network-id>,[<network-id>,]][vendor:[<vendor-class>],][<opt>|option:<opt-name>],[<value>[,<value>]]
 Especificar opciones diferentes o extra a clientes DHCP. Por
@@ -503,21 +518,21 @@ otras opciones. La opción a ser enviada puede ser brindada como un
 número decimal o como "option:<option-name>". Los números de opción
 están especificados en RFC2132 y RFCs subsiguientes. El juego de
 option-names conocido por dnsmasq puede ser descubierto ejecutando
-"dnsmasq --help dhcp". Por ejemplo, para fijar a ruta predeterminada a
+"dnsmasq --help dhcp". Por ejemplo, para fijar la ruta predeterminada a
 192.168.4.4, hágase un
 .B --dhcp-option=3,192.168.4.4
 o
-.B --dhcp-option = option:router, 192.168.4.4
+.B --dhcp-option=option:router, 192.168.4.4
 y para fijar la dirección de servidor de tiempo a 192.168.0.4,
 hágase un
 .B --dhcp-option=42,192.168.0.4
 o
-.B --dhcp-option = option:ntp-server, 192.168.0.4
+.B --dhcp-option=option:ntp-server, 192.168.0.4
 La dirección especial 0.0.0.0 es entendida que significa "la
 dirección de la máquina que corre dnsmasq". Tipos de data permitidos
 son direcciones IP de cuatro segmentos, un número decimal, dígitos hex
 separados por colones, y un string de texto. Si las network-ids
-opcionales son brindadas, entonces esta opcion es solo enviada cuando
+opcionales son brindadas, entonces esta opción es solo enviada cuando
 todas las network-ids coinciden.
 
 Procesamiento especial es llevado a cabo en un argumento de texto para
@@ -561,7 +576,7 @@ encapsuladas.
 .B --dhcp-option-force=[<network-id>,[<network-id>,]][vendor:[<vendor-class>],]<opt>,[<value>[,<value>]]
 Esto funciona exáctamente de la misma forma que
 .B --dhcp-option
-excepto que la opción siempre será enviada, aún si el cliente no lo pide en
+excepto que la opción siempre será enviada, aún si el cliente no la pide en
 la lista de pedido de parámetros. Esto se necesita aveces, por ejemplo cuando
 enviando opciones a PXELinux.
 .TP
@@ -587,7 +602,7 @@ por ejemplo, usar esto para especificar una impresora diferente para
 hosts en la clase "cuentas" que para los de la clase "ingenieria".
 .TP
 .B \-4, --dhcp-mac=<network-id>,<dirección MAC>
-Mapear desde una dirección MAC a una network id. La dirección MAC
+Trazar desde una dirección MAC a una network id. La dirección MAC
 puede incluir comodínes. Por ejemplo:
 .B --dhcp-mac=3com,01:34:23:*:*:*
 fijaría el tag "3com" a cualquier host el cual su MAC coincida con
@@ -660,7 +675,7 @@ cuidado.
 .TP
 .B --log-dhcp
 Bitacoréo extra para DHCP: Bitacorear todas las opciones enviadas a
-clientes DHCP y los tags netid usados para determinarlos.
+clientes DHCP y las etiquetas netid usadas para determinarlos.
 .TP
 .B \-l, --dhcp-leasefile=<path>
 Usar el archivo especificado para almacenar información de arriendos
@@ -672,7 +687,7 @@ DNS si tienen un nombre de host. Esta funcionalidad pudo haber sido
 excluida de dnsmasq a la hora de compilación, y en tal caso ocurrirá
 un error. Nótese que la integración de archivos de
 arriendo ISC es una caracterísctica depreciada. No debería ser usada
-en instalaciones nuevas, y será eliminada en versiones futuras.
+en instalaciones nuevas, y será eliminada en una versión futura.
 .TP
 .B \-6 --dhcp-script=<path>
 Cuando un arriendo DHCP nuevo es creado, o uno viejo es
@@ -696,26 +711,30 @@ datos no son almacenados en la base de datos de arriendos de dnsmasq.
 Si dnsmasq fue compilado con HAVE_BROKEN_RTC, entonces la duración del
 arriendo (en segundos) es almacenada en DNSMASQ_LEASE_LENGTH, de otra
 manera el tiempo de vencimiento es almacenado en DNSMASQ_LEASE_EXPIRES.
+El número de segundos faltante para el vencimiento del arriendo siempre
+es almacenado en DNSMASQ_TIME_REMAINING.
 Si un arriendo solía tener un nombre de host, el cual es removido, un
 evento "old" es generado con el nuevo estado del arriendo, (por ejemplo, sin
 nombre), y el nombre anterior es brindado en la variable de ambiente
-DNSMASQ_OLD_HOSTNAME. Todos los descriptores de archivo están cerrados
+DNSMASQ_OLD_HOSTNAME.
+Todos los descriptores de archivo están cerrados
 excepto stdin, stdout, y stderr los cuales están abiertos a /dev/null
 (excepto en modo debug).
 Este guión no es invocado concurrentemente: si cambios de arriendos
 subsiguientes ocurren, el guión no es invocado otra vez hasta que
 cualquier invocación existente haga exit. Al inicio de dnsmasq, el guión
-será invocado para todos los arriendos existenetes mientras van siendo
+será invocado para todos los arriendos existentes mientras van siendo
 leídos desde el archivo de arriendos. Arriendos vencidos serán llamados
 con "del" y otros con "old". <path> debe ser un path absoluto, ninguna
-búsqueda PATH ocurre.
+búsqueda PATH ocurre. Cuando dnsmasq recibe una señal HUP, el guión será
+invocado para arriendos existentes con un evento "old".
 .TP
 .B \-9, --leasefile-ro
 Suprimir completamente el uso del archivo de arriendos. El archivo no será
-creado, leído, o escrito. Cambiar la manera en la cuál el archivo guión de
-cambio de arriendo es llamado, de tal forma que la base de datos de arriendos
-pueda ser mantenida en almacenaje externo por el archivo guión. Adicionálmente
-a las invocaciones brindadas en
+creado, leído, ni escrito. Cambiar la manera en la cuál el archivo guión de
+cambio de arriendo (si es brindado) es llamado, de tal forma que la base de
+datos de arriendospueda ser mantenida en almacenaje externo por el archivo
+guión. Adicionálmente a las invocaciones brindadas en
 .B --dhcp-script
 el archivo de cambio de arriendos es llamado una vez, al inicio de dnsmasq,
 con el único argumento "init". Cuando invocado de esta forma, el guión debería
@@ -766,6 +785,13 @@ uso de TFTP. Cuando esta opción está fijada, paths TFTP que incluyen ".." son
 rechazados, para prevenir que clientes salgan de la raíz especificada. Paths
 absolutos (los que comienzan con "/") están permitidos, pero deben estar
 dentro del tftp-root.
+.TP
+.B --tftp-unique-root
+Agregar la dirección IP del cliente TFTP como un componente path del lado del
+TFTP-root (en formato estándar de cuatro puntos). Solo válido si un tftp-root
+está fijado y el directorio existe. Por ejemplo, si tftp-root es "/tftp" y el
+cliente 1.2.3.4 pide el archivo "miarchivo" entonces el path efectivo será
+"/tftp/1.2.3.4/miarchivo" si /tftp/1.2.3.4 existe o /tftp/miarchivo si no.
 .TP
 .B --tftp-secure
 Habilitar modo TFTP seguro: sin esto, cualquier archivo que es leíble por el
@@ -825,8 +851,12 @@ siguientes escapes son permitidos: \\\\ \\" \\t \\a \\b \\r y \\n. El
 Al recibir un SIGHUP
 .B dnsmasq 
 libera su cache y entonces recarga
-.I /etc/hosts y /etc/ethers.
-Si
+.I /etc/hosts
+y
+.I /etc/ethers
+al igual que cualquier archivo brindado con --dhcp-hostsfile.
+El archivo guión de cambio de arriendos es llamado para todos los arriendos
+DHCP existentes. Si
 .B
 --no-poll
 está fijado entonces SIGHUP también re-lee
@@ -836,7 +866,7 @@ NO re-lee el archivo de configuración.
 .PP
 Al recibir un SIGUSR1,
 .B dnsmasq 
-escribe estadisticas de caché a la biácora del sistema. Escribe el tamaño
+escribe estadísticas de caché a la bitácora del sistema. Escribe el tamaño
 del caché, el numero de nombres que han tenido que ser removidos del
 caché antes de que vencieran para hacer espacio para nombres nuevos, y el
 número total de nombres que han sido insertados en el caché. En modo
@@ -851,13 +881,13 @@ Cuando recibe un SIGUSR2 y está bitacoreando diréctamente a un archivo (ver
 cerrará y reabrirá el archivo de bitácora. Nótese que durante esta
 operación, dnsmasq no estará corriendo como root. Al crear el archivo de
 bitácora, dnsmasq cambia el dueño del archivo a el usuario normal como
-el que corre. Logrotate debe ser configurado para crear un archivo de
+el que correrá. Logrotate debe ser configurado para crear un archivo de
 bitácora nuevo con permisos iguales al existente, antes de enviar
 SIGUSR2. Si búsquedas DNS TCP están en progreso, el archivo de bitácora
 viejo se mantendrá abierto en procesos hijos que están manejando
 búsquedas TCP, y puede continuarse a escribirle. Hay un límite de 150
 segundos, después de lo cual todos los procesos TCP existentes se habrán
-expirado: por esta razón, no es sabio configurar compresión de archivos
+vencido: por esta razón, no es sabio configurar compresión de archivos
 de bitácora para archivos que acaban de ser rotados. Con logrotate, las
 opciones requeridas son
 .B create
@@ -889,7 +919,7 @@ haya existido. Dnsmasq simplemente sigue revisando en caso de que
 .I /etc/resolv.conf 
 sea creado en algún momento. A dnsmasq se le puede decir que revise más
 de un archivo resolv.conf. Esto es útil en una laptop, donde ambos PPP y
-DHCP podrían estar siendo usados: dnsmasq puede ser fijado para revisar ambos:
+DHCP podrían estar siendo usados: dnsmasq puede ser fijado para revisar ambos
 .I /etc/ppp/resolv.conf 
 y
 .I /etc/dhcpc/resolv.conf 
@@ -965,9 +995,30 @@ esté presente para activar el servidor DHCP en una red particular.
 (Fijar --bootp-dynamic elimina la necesidad de trazados estáticos.) El
 parámetro de nombre de archivos en un pedido BOOTP es revisado para
 ver si coincide con algún network-id en configuraciónes
-.B  dhcp-option 
+.B dhcp-option 
 al igual que la etiqueta "bootp", permitiendo así algún control sobre
 las opciones devueltas a diferentes clases de hosts.
+
+.SH CÓDIGOS EXIT
+.PP
+0 - Dnsmasq hizo fork hacia el fondo exitosamente, o terminó de manera
+normal si ir al fondo no está habilitado.
+.PP
+1 - Un problema con la configuración ha sido detectado.
+.PP
+2 - Un problema con acceso a redes ocurrió (dirección en uso, intento
+de usar puertos privilegiados sin permiso).
+.PP
+3 - Un problema con una operación de sistema de archivos ocurrió (archivo
+o directorio ausente, permisos).
+.PP
+4 - Falla de alocación de memoria.
+.PP
+5 - Otro problema misceláneo.
+.PP
+11 o mayor - un codigo de retorno no cero fué recibido del llamado "init"
+del proceso de archivo guión de arriendos. El código exit de dnsmasq es
+el código exit del archivo guión con 10 sumado.
 
 .SH LIMITES
 Los valores predeterminados para limites de recursos son generálmente
@@ -979,19 +1030,20 @@ no escalaban tan bien.
 
 .PP
 Dnsmasq es capaz de soportar con DNS y DHCP a por lo menos mil (1,000)
-clientes. Por supuesto que para lograr esto debe ser aumentadoo el valor de
+clientes. Por supuesto que para lograr esto debe aumentarse el valor de
 .B --dhcp-lease-max
-debe ser incrementado, y tiempos de arriendo no deben ser muy cortos
-(menos de una hora). El valor de
+, y tiempos de arriendo no deben ser muy cortos (menos de una hora).
+El valor de
 .B --dns-forward-max
 puede ser aumentado: comienze con el equivalente a el número de clientes y
 auméntelo si parece lento el DNS. Nótese que el rendimiento DNS depende
 también de los servidores DNS upstream. El tamaño del caché DNS puede ser
 incrementado: el límite obligatorio es 10,000 nombres y el predeterminado
-(150) es muy bajo. Enviarle un SIGUSR1 a dnsmasq hace que bitacorée
+(150) es muy bajo. El enviarle un SIGUSR1 a dnsmasq hace que bitacorée
 información que es útil para afinar el tamaño de caché. Ver la sección
 .B NOTAS
 para detalles.
+
 .PP
 El servidor TFTP incorporado es capáz de soportar varias transferencias
 simultáneas de archivos: el límite absoluto está relacionado con el número
@@ -1002,6 +1054,7 @@ demasiado alto con
 será de-escalado y el límite real será bitacoreado al inicio. Nótese que más
 transferencias son posibles cuando el mismo archivo es enviado qué cuando
 cada transferencia envía un archivo diferente.
+
 .PP
 Es posible usar dnsmasq para negar publicidad Web usando una lista de
 servidores de banners bien conocidos, todos resolviendose a 127.0.0.1 o

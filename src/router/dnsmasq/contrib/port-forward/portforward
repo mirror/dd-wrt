@@ -23,6 +23,6 @@
 # will port forward port 53 UDP and TCP from this host to port 53 on dnsserver.
 #
 # Port forwards will recreated when dnsmasq restarts after a reboot, and
-# removed when DHCP leases expire. After editing this file, restart dnsmasq 
-# to install new iptables entries in the kernel.
+# removed when DHCP leases expire. After editing this file, send
+# SIGHUP to dnsmasq to install new iptables entries in the kernel.
 
