@@ -395,7 +395,7 @@ do_madwifi_check (void)
 	}
       char mode[32];
       sprintf (mode, "%s_mode", dev);
-      if (nvram_match (mode, "sta") || nvram_match (mode, "wdssta"))
+      if (nvram_match (mode, "sta") || nvram_match (mode, "wdssta") || nvram_match (mode, "wet"))
 	{
 	  int chan = wifi_getchannel (dev);
 //        fprintf(stderr,"chan %d %d\n",chan,lastchans[i]);
