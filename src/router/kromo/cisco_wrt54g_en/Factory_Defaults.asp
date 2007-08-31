@@ -12,7 +12,7 @@ function to_apply(F) {
 			return false;
 		}
 		submitcheck(F);
-		applytake(F);
+		applyupdate(F);
 		return true;
 	}
 }
