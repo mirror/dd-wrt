@@ -109,6 +109,7 @@ int canonicalise(char *s)
      also fail empty string and label > 63 chars */
   size_t dotgap = 0, l = strlen(s);
   char c;
+  int nowhite = 0;
 
   if (l == 0 || l > MAXDNAME) return 0;
 
@@ -124,9 +125,11 @@ int canonicalise(char *s)
 	dotgap = 0;
       else if (!legal_char(c) || (++dotgap > MAXLABEL))
 	return 0;
+      else if (c != ' ')
+	nowhite = 1;
       s++;
     }
-  return 1;
+  return nowhite;
 }
 
 unsigned char *do_rfc1035_name(unsigned char *p, char *sval)
@@ -151,10 +154,20 @@ void *safe_malloc(size_t size)
   void *ret = malloc(size);
   
   if (!ret)
-    die(_("could not get memory"), NULL);
+    die(_("could not get memory"), NULL, EC_NOMEM);
      
   return ret;
 }    
+
+void *whine_malloc(size_t size)
+{
+  void *ret = malloc(size);
+
+  if (!ret)
+    my_syslog(LOG_ERR, _("failed to allocate %d bytes"), (int) size);
+
+  return ret;
+}
 
 int sockaddr_isequal(union mysockaddr *s1, union mysockaddr *s2)
 {
@@ -334,7 +347,7 @@ int expand_buf(struct iovec *iov, size_t size)
   if (size <= iov->iov_len)
     return 1;
 
-  if (!(new = malloc(size)))
+  if (!(new = whine_malloc(size)))
     {
       errno = ENOMEM;
       return 0;

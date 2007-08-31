@@ -66,7 +66,7 @@ void log_start(struct passwd *ent_pw)
   max_logs = daemon->max_logs;
 
   if (!log_reopen(daemon->log_file))
-    die(_("cannot open %s: %s"), daemon->log_file ? daemon->log_file : "log");
+    die(_("cannot open %s: %s"), daemon->log_file ? daemon->log_file : "log", EC_FILE);
   
   /* If we're running as root and going to change uid later,
      change the ownership here so that the file is always owned by
@@ -224,7 +224,6 @@ static void log_write(void)
       return;
     }
 }
-#ifdef NEED_PRINTF
 
 void my_syslog(int priority, const char *format, ...)
 {
@@ -335,7 +334,6 @@ void my_syslog(int priority, const char *format, ...)
  
   va_end(ap);
 }
-#endif
 
 void set_log_writer(fd_set *set, int *maxfdp)
 {
@@ -365,7 +363,7 @@ void flush_log(void)
     }
 }
 
-void die(char *message, char *arg1)
+void die(char *message, char *arg1, int exit_code)
 {
   char *errmess = strerror(errno);
   
@@ -380,5 +378,5 @@ void die(char *message, char *arg1)
   my_syslog(LOG_CRIT, _("FAILED to start up"));
   flush_log();
   
-  exit(1);
+  exit(exit_code);
 }

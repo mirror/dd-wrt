@@ -254,7 +254,7 @@ or domain parts, to upstream nameservers. If the name is not known
 from /etc/hosts or DHCP then a "not found" answer is returned.
 .TP
 .B \-S, --local, --server=[/[<domain>]/[domain/]][<ipaddr>[#<port>][@<source>[#<port>]]]
-Specify IP address of upstream severs directly. Setting this flag does
+Specify IP address of upstream servers directly. Setting this flag does
 not suppress reading of /etc/resolv.conf, use -R to do that. If one or
 more 
 optional domains are given, that server is used only for those domains
@@ -366,8 +366,7 @@ Set the size of dnsmasq's cache. The default is 150 names. Setting the cache siz
 .B \-N, --no-negcache
 Disable negative caching. Negative caching allows dnsmasq to remember
 "no such domain" answers from upstream nameservers and answer
-identical queries without forwarding them again. This flag disables
-negative caching.
+identical queries without forwarding them again. 
 .TP
 .B \-0, --dns-forward-max=<queries>
 Set the maximum number of concurrent DNS queries. The default value is
@@ -461,6 +460,13 @@ ARP type by preceding them with the ARP-type (in HEX) and "-". so
 will only match a
 Token-Ring hardware address, since the ARP-address type for token ring
 is 6.
+.TP
+.B --dhcp-hostsfile=<file>
+Read DHCP host information from the specified file. The file contains 
+information about one host per line. The format of a line is the same
+as text to the right of '=' in --dhcp-host. The advantage of storing DHCP host information
+in this file is that it can be changed without re-starting dnsmasq:
+the file will be re-read when dnsmasq receives SIGHUP.
 .TP 
 .B \-Z, --read-ethers
 Read /etc/ethers for information about hosts for the DHCP server. The
@@ -468,7 +474,8 @@ format of /etc/ethers is a hardware address, followed by either a
 hostname or dotted-quad IP address. When read by dnsmasq these lines
 have exactly the same effect as
 .B --dhcp-host
-options containing the same information.
+options containing the same information. /etc/ethers is re-read when 
+dnsmasq receives SIGHUP.
 .TP
 .B \-O, --dhcp-option=[<network-id>,[<network-id>,]][vendor:[<vendor-class>],][<opt>|option:<opt-name>],[<value>[,<value>]]
 Specify different or extra options to DHCP clients. By default,
@@ -679,7 +686,9 @@ changes occur, the script is not invoked again until any existing
 invocation exits. At dnsmasq startup, the script will be invoked for
 all existing leases as they are read from the lease file. Expired
 leases will be called with "del" and others with "old". <path>
-must be an absolute pathname, no PATH search occurs.
+must be an absolute pathname, no PATH search occurs. When dnsmasq
+receives a HUP signal, the script will be invoked for existing leases
+with an "old " event. 
 .TP 
 .B \-9, --leasefile-ro
 Completely suppress use of the lease database file. The file will not
@@ -733,8 +742,15 @@ rejected, to stop clients getting outside the specified root.
 Absolute paths (starting with /) are allowed, but they must be within
 the tftp-root.
 .TP
+.B --tftp-unique-root
+Add the IP address of the TFTP client as a path component on the end
+of the TFTP-root (in standard dotted-quad format). Only valid if a
+tftp-root is set and the directory exists. For instance, if tftp-root is "/tftp" and client 
+1.2.3.4 requests file "myfile" then the effective path will be
+"/tftp/1.2.3.4/myfile" if /tftp/1.2.3.4 exists or /tftp/myfile otherwise.
+.TP
 .B --tftp-secure
-Enable TFTP secure mode: without this, any file which is readble by
+Enable TFTP secure mode: without this, any file which is readable by
 the dnsmasq process under normal unix access-control rules is
 available via TFTP. When the --tftp-secure flag is given, only files
 owned by the user running the dnsmasq process are accessible. If
@@ -790,8 +806,12 @@ corresponding to tab, bell, backspace, return and newline.
 When it receives a SIGHUP, 
 .B dnsmasq 
 clears its cache and then re-loads 
-.I /etc/hosts and /etc/ethers.
-If 
+.I /etc/hosts
+and 
+.I /etc/ethers 
+and any file given by --dhcp-hostsfile.
+The dhcp lease change script is called for all
+existing DHCP leases. If 
 .B
 --no-poll
 is set SIGHUP also re-reads
@@ -931,6 +951,27 @@ parameter in a BOOTP request is matched against netids in
 .B  dhcp-option 
 configurations, as is the tag "bootp", allowing some control over the options returned to
 different classes of hosts.
+
+.SH EXIT CODES
+.PP
+0 - Dnsmasq successfully forked into the background, or terminated
+normally if backgrounding is not enabled.
+.PP
+1 - A problem with configuration was detected.
+.PP
+2 - A problem with network access occurred (address in use, attempt
+to use privileged ports without permission).
+.PP
+3 - A problem occured with a filesystem operation (missing
+file/directory, permissions).
+.PP
+4 - Memory allocation failure.
+.PP
+5 - Other miscellaneous problem.
+.PP
+11 or greater - a non zero return code was received from the
+lease-script process "init" call. The exit code from dnsmasq is the
+script's exit code with 10 added. 
 
 .SH LIMITS
 The default values for resource limits in dnsmasq are generally

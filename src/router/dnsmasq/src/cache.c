@@ -104,7 +104,7 @@ static void rehash(int size)
   /* must succeed in getting first instance, failure later is non-fatal */
   if (!hash_table)
     new = safe_malloc(new_size * sizeof(struct crec *));
-  else if (new_size <= hash_size || !(new = malloc(new_size * sizeof(struct crec *))))
+  else if (new_size <= hash_size || !(new = whine_malloc(new_size * sizeof(struct crec *))))
     return;
 
   for(i = 0; i < new_size; i++)
@@ -227,17 +227,12 @@ char *cache_get_name(struct crec *crecp)
 
 static int is_outdated_cname_pointer(struct crec *crecp)
 {
-  struct crec *target = crecp->addr.cname.cache;
-
   if (!(crecp->flags & F_CNAME))
     return 0;
-
-  if (!target)
-    return 1;
-
-  if (crecp->addr.cname.uid == target->uid)
+  
+  if (crecp->addr.cname.cache && crecp->addr.cname.uid == crecp->addr.cname.cache->uid)
     return 0;
-
+  
   return 1;
 }
 
@@ -357,20 +352,11 @@ void cache_start_insert(void)
 struct crec *cache_insert(char *name, struct all_addr *addr, 
 			  time_t now,  unsigned long ttl, unsigned short flags)
 {
-#ifdef HAVE_IPV6
-  int addrlen = (flags & F_IPV6) ? IN6ADDRSZ : INADDRSZ;
-#else
-  int addrlen = INADDRSZ;
-#endif
   struct crec *new;
   union bigname *big_name = NULL;
   int freed_all = flags & F_REVERSE;
 
   log_query(flags | F_UPSTREAM, name, addr, 0, NULL, 0);
-
-  /* name is needed as workspace by log_query in this case */
-  if ((flags & F_NEG) && (flags & F_REVERSE))
-    name = NULL;
 
   /* CONFIG bit no needed except for logging */
   flags &= ~F_CONFIG;
@@ -425,7 +411,7 @@ struct crec *cache_insert(char *name, struct all_addr *addr,
 	    big_free = big_free->next;
 	  }
 	else if (!bignames_left ||
-		 !(big_name = (union bigname *)malloc(sizeof(union bigname))))
+		 !(big_name = (union bigname *)whine_malloc(sizeof(union bigname))))
 	  {
 	    insert_error = 1;
 	    return NULL;
@@ -446,12 +432,14 @@ struct crec *cache_insert(char *name, struct all_addr *addr,
       new->name.bname = big_name;
       new->flags |= F_BIGNAME;
     }
+
   if (name)
     strcpy(cache_get_name(new), name);
   else
     *cache_get_name(new) = 0;
+
   if (addr)
-    memcpy(&new->addr.addr, addr, addrlen);
+    new->addr.addr = *addr;
   else
     new->addr.cname.cache = NULL;
   
@@ -743,8 +731,8 @@ static int read_hostsfile(char *filename, int opts, char *buff, char *domain_suf
 	   {
 	     /* If set, add a version of the name with a default domain appended */
 	     if ((opts & OPT_EXPAND) && domain_suffix && !fqdn && 
-		 (cache = malloc(sizeof(struct crec) + 
-				 strlen(token)+2+strlen(domain_suffix)-SMALLDNAME)))
+		 (cache = whine_malloc(sizeof(struct crec) + 
+				       strlen(token)+2+strlen(domain_suffix)-SMALLDNAME)))
 	       {
 		 strcpy(cache->name.sname, token);
 		 strcat(cache->name.sname, ".");
@@ -753,7 +741,7 @@ static int read_hostsfile(char *filename, int opts, char *buff, char *domain_suf
 		 addr_dup = 1;
 		 name_count++;
 	       }
-	     if ((cache = malloc(sizeof(struct crec) + strlen(token)+1-SMALLDNAME)))
+	     if ((cache = whine_malloc(sizeof(struct crec) + strlen(token)+1-SMALLDNAME)))
 	       {
 		 strcpy(cache->name.sname, token);
 		 add_hosts_entry(cache, &addr, addrlen, flags, index, addr_dup);
@@ -876,7 +864,7 @@ void cache_add_dhcp_entry(char *host_name,
   if ((crec = dhcp_spare))
     dhcp_spare = dhcp_spare->next;
   else /* need new one */
-    crec = malloc(sizeof(struct crec));
+    crec = whine_malloc(sizeof(struct crec));
   
   if (crec) /* malloc may fail */
     {
@@ -897,7 +885,7 @@ void dump_cache(time_t now)
 	    (unsigned long)now, daemon->cachesize, cache_live_freed, cache_inserted); 
   
   if ((daemon->options & (OPT_DEBUG | OPT_LOG)) &&
-      (addrbuff || (addrbuff = malloc(ADDRSTRLEN))))
+      (addrbuff || (addrbuff = whine_malloc(ADDRSTRLEN))))
     {
       struct crec *cache ;
       int i;
@@ -971,54 +959,60 @@ static char *record_source(struct hostsfile *addn_hosts, int index)
 void log_query(unsigned short flags, char *name, struct all_addr *addr, 
 	       unsigned short type, struct hostsfile *addn_hosts, int index)
 {
-  char *source;
+  char *source, *dest = addrbuff;
   char *verb = "is";
   char types[20];
   
   if (!(daemon->options & OPT_LOG))
     return;
+
+  if (addr)
+    {
+#ifdef HAVE_IPV6
+      inet_ntop(flags & F_IPV4 ? AF_INET : AF_INET6,
+		addr, addrbuff, ADDRSTRLEN);
+#else
+      strncpy(addrbuff, inet_ntoa(addr->addr.addr4), ADDRSTRLEN);  
+#endif
+    }
+
+  if (flags & F_REVERSE)
+    {
+      dest = name;
+      name = addrbuff;
+    }
   
   if (flags & F_NEG)
     {
-      if (flags & F_REVERSE)
-#ifdef HAVE_IPV6
-	inet_ntop(flags & F_IPV4 ? AF_INET : AF_INET6,
-		  addr, name, MAXDNAME);
-#else
-        strcpy(name, inet_ntoa(addr->addr.addr4));  
-#endif
-	      
       if (flags & F_NXDOMAIN)
-	strcpy(addrbuff, "<NXDOMAIN>");
+	{
+	  if (flags & F_IPV4)
+	    dest = "NXDOMAIN-IPv4";
+	  else 
+	    dest = "NXDOMAIN-IPv6"; 
+	}
       else
-	strcpy(addrbuff, "<NODATA>");
-      
-      if (flags & F_IPV4)
-	strcat(addrbuff, "-IPv4");
-      else if (flags & F_IPV6)
-	strcat(addrbuff, "-IPv6");
+	{      
+	  if (flags & F_IPV4)
+	    dest = "NODATA-IPv4";
+	  else 
+	    dest = "NODATA-IPv6";
+	}
     }
   else if (flags & F_CNAME)
     {
       /* nasty abuse of IPV4 and IPV6 flags */
       if (flags & F_IPV4)
-	strcpy(addrbuff, "<MX>");
+	dest = "<MX>";
       else if (flags & F_IPV6)
-	strcpy(addrbuff, "<SRV>");
+	dest = "<SRV>";
       else if (flags & F_NXDOMAIN)
-	strcpy(addrbuff, "<TXT>");
+	dest = "<TXT>";
       else if (flags & F_BIGNAME)
-	strcpy(addrbuff, "<PTR>");
+	dest = "<PTR>";
       else
-	strcpy(addrbuff, "<CNAME>");
+	dest = "<CNAME>";
     }
-  else
-#ifdef HAVE_IPV6
-    inet_ntop(flags & F_IPV4 ? AF_INET : AF_INET6,
-	      addr, addrbuff, ADDRSTRLEN);
-#else
-    strcpy(addrbuff, inet_ntoa(addr->addr.addr4));  
-#endif
     
   if (flags & F_DHCP)
     source = "DHCP";
@@ -1053,9 +1047,6 @@ void log_query(unsigned short flags, char *name, struct all_addr *addr,
   if (strlen(name) == 0)
     name = ".";
 
-  if ((flags & F_FORWARD) | (flags & F_NEG))
-    my_syslog(LOG_DEBUG, "%s %s %s %s", source, name, verb, addrbuff);
-  else if (flags & F_REVERSE)
-    my_syslog(LOG_DEBUG, "%s %s is %s", source, addrbuff, name);
+  my_syslog(LOG_DEBUG, "%s %s %s %s", source, name, verb, dest);
 }
 

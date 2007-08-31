@@ -189,20 +189,20 @@ void load_dhcp(time_t now)
 			break;
 		      }
 
-		  if (!lease && (lease = malloc(sizeof(struct isc_lease))))
+		  if (!lease && (lease = whine_malloc(sizeof(struct isc_lease))))
 		    {
 		      lease->expires = ttd;
 		      lease->addr = host_address;
 		      lease->fqdn =  NULL;
 		      lease->next = leases;
-		      if (!(lease->name = malloc(strlen(hostname)+1)))
+		      if (!(lease->name = whine_malloc(strlen(hostname)+1)))
 			free(lease);
 		      else
 			{
 			  leases = lease;
 			  strcpy(lease->name, hostname);
 			  if (daemon->domain_suffix && 
-			      (lease->fqdn = malloc(strlen(hostname) + strlen(daemon->domain_suffix) + 2)))
+			      (lease->fqdn = whine_malloc(strlen(hostname) + strlen(daemon->domain_suffix) + 2)))
 			    {
 			      strcpy(lease->fqdn, hostname);
 			      strcat(lease->fqdn, ".");

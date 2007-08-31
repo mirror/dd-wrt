@@ -56,7 +56,7 @@ void netlink_init(void)
     }
   
   if (daemon->netlinkfd == -1)
-    die(_("cannot create netlink socket: %s"), NULL);
+    die(_("cannot create netlink socket: %s"), NULL, EC_MISC);
   
   iov.iov_len = 200;
   iov.iov_base = safe_malloc(iov.iov_len);

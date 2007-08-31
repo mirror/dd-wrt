@@ -101,6 +101,15 @@ struct event_desc {
 #define EVENT_EXEC_ERR  9
 #define EVENT_PIPE_ERR  10
 
+/* Exit codes. */
+#define EC_GOOD        0
+#define EC_BADCONF     1
+#define EC_BADNET      2
+#define EC_FILE        3
+#define EC_NOMEM       4
+#define EC_MISC        5
+#define EC_INIT_OFFSET 10
+
 /* Min buffer size: we check after adding each record, so there must be 
    memory for the largest packet, and the largest record so the
    min for DNS is PACKETSZ+MAXDNAME+RRFIXEDSZ which is < 1000.
@@ -136,6 +145,7 @@ struct event_desc {
 #define OPT_TFTP_SECURE    (1<<26)
 #define OPT_TFTP_NOBLOCK   (1<<27)
 #define OPT_LOG_OPTS       (1<<28)
+#define OPT_TFTP_APREF     (1<<29)
 
 struct all_addr {
   union {
@@ -248,14 +258,13 @@ union mysockaddr {
 #define SERV_FROM_RESOLV       1  /* 1 for servers from resolv, 0 for command line. */
 #define SERV_NO_ADDR           2  /* no server, this domain is local only */
 #define SERV_LITERAL_ADDRESS   4  /* addr is the answer, not the server */ 
-#define SERV_HAS_SOURCE        8  /* source address specified */
-#define SERV_HAS_DOMAIN       16  /* server for one domain only */
+#define SERV_HAS_DOMAIN        8  /* server for one domain only */
+#define SERV_HAS_SOURCE       16  /* source address defined */
 #define SERV_FOR_NODOTS       32  /* server for names with no domain part only */
 #define SERV_WARNED_RECURSIVE 64  /* avoid warning spam */
 #define SERV_FROM_DBUS       128  /* 1 if source is DBus */
 #define SERV_MARK            256  /* for mark-and-delete */
 #define SERV_TYPE    (SERV_HAS_DOMAIN | SERV_FOR_NODOTS)
-
 
 struct serverfd {
   int fd;
@@ -383,6 +392,7 @@ struct dhcp_config {
 #define CONFIG_FROM_ETHERS     256    /* entry created by /etc/ethers */
 #define CONFIG_ADDR_HOSTS      512    /* address added by from /etc/hosts */
 #define CONFIG_DECLINED       1024    /* address declined by client */
+#define CONFIG_BANK           2048    /* from dhcp hosts file */
 
 struct dhcp_opt {
   int opt, len, flags;
@@ -521,6 +531,7 @@ extern struct daemon {
   struct dhcp_mac *dhcp_macs;
   struct dhcp_boot *boot_config;
   struct dhcp_netid_list *dhcp_ignore, *dhcp_ignore_names;
+  char *dhcp_hosts_file;
   int dhcp_max, tftp_max; 
   unsigned int min_leasetime;
   struct doctor *doctors;
@@ -608,6 +619,7 @@ int legal_char(char c);
 int canonicalise(char *s);
 unsigned char *do_rfc1035_name(unsigned char *p, char *sval);
 void *safe_malloc(size_t size);
+void *whine_malloc(size_t size);
 int sa_len(union mysockaddr *addr);
 int sockaddr_isequal(union mysockaddr *s1, union mysockaddr *s2);
 int hostname_isequal(char *a, char *b);
@@ -626,16 +638,10 @@ void bump_maxfd(int fd, int *max);
 int read_write(int fd, unsigned char *packet, int size, int rw);
 
 /* log.c */
-void die(char *message, char *arg1);
+void die(char *message, char *arg1, int exit_code);
 void log_start(struct passwd *ent_pw);
 int log_reopen(char *log_file);
-
-#ifdef NEED_PRINTF
 void my_syslog(int priority, const char *format, ...);
-#else
-#define my_syslog(priority,fmt,...)
-#endif
-
 void set_log_writer(fd_set *set, int *maxfdp);
 void check_log_writer(fd_set *set);
 void flush_log(void);
@@ -643,6 +649,7 @@ void flush_log(void);
 /* option.c */
 void read_opts (int argc, char **argv, char *compile_opts);
 char *option_string(unsigned char opt);
+void one_file(char *file, int nest, int hosts);
 
 /* forward.c */
 void reply_query(struct serverfd *sfd, time_t now);
@@ -681,8 +688,9 @@ struct dhcp_config *find_config(struct dhcp_config *configs,
 				int hw_type, char *hostname);
 void dhcp_update_configs(struct dhcp_config *configs);
 void dhcp_read_ethers(void);
+void dhcp_read_hosts(void);
 struct dhcp_config *config_find_by_address(struct dhcp_config *configs, struct in_addr addr);
-int strip_hostname(char *hostname);
+char *strip_hostname(char *hostname);
 char *host_from_dns(struct in_addr addr);
 
 /* lease.c */
@@ -701,6 +709,7 @@ struct dhcp_lease *lease_find_by_addr(struct in_addr addr);
 void lease_prune(struct dhcp_lease *target, time_t now);
 void lease_update_from_configs(void);
 int do_script_run(time_t now);
+void rerun_scripts(void);
 
 /* rfc2131.c */
 size_t dhcp_reply(struct dhcp_context *context, char *iface_name, 
@@ -740,10 +749,13 @@ void set_dbus_listeners(int *maxfdp, fd_set *rset, fd_set *wset, fd_set *eset);
 #endif
 
 /* helper.c */
+#ifndef NO_FORK
 int create_helper(int log_fd, long max_fd);
 void helper_write(void);
-void queue_script(int action, struct dhcp_lease *lease, char *hostname, time_t now);
+void queue_script(int action, struct dhcp_lease *lease, 
+		  char *hostname, time_t now);
 int helper_buf_empty(void);
+#endif
 
 /* tftp.c */
 #ifdef HAVE_TFTP

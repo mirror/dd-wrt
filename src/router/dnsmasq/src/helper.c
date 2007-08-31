@@ -24,6 +24,8 @@
    main process.
 */
 
+#ifndef NO_FORK
+
 struct script_data
 {
   unsigned char action, hwaddr_len, hwaddr_type;
@@ -65,11 +67,13 @@ int create_helper(int event_fd, long max_fd)
       return pipefd[1];
     }
 
-  /* ignore SIGTERM, so that we can clean up when the main process gets hit */
+  /* ignore SIGTERM, so that we can clean up when the main process gets hit
+     and SIGALRM so that we can use sleep() */
   sigact.sa_handler = SIG_IGN;
   sigact.sa_flags = 0;
   sigemptyset(&sigact.sa_mask);
   sigaction(SIGTERM, &sigact, NULL);
+  sigaction(SIGALRM, &sigact, NULL);
 
   /* close all the sockets etc, we don't need them here */
   for (max_fd--; max_fd > 0; max_fd--)
@@ -128,21 +132,35 @@ int create_helper(int event_fd, long max_fd)
       if (!read_write(pipefd[0], buf, data.hostname_len + data.uclass_len + data.vclass_len, 1))
 	continue;
       
-      if ((pid = fork()) == -1)
-	continue;
+      /* possible fork errors are all temporary resource problems */
+      while ((pid = fork()) == -1 && (errno == EAGAIN || errno == ENOMEM))
+	sleep(2);
       
+      if (pid == -1)
+	continue;
+	  
       /* wait for child to complete */
       if (pid != 0)
 	{
-	  int status;
-
-	  waitpid(pid, &status, 0);
-	  
-	  /* On error send event back to main process for logging */
-	  if (WIFSIGNALED(status))
-	    send_event(event_fd, EVENT_KILLED, WTERMSIG(status));
-	  else if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
-	    send_event(event_fd, EVENT_EXITED, WEXITSTATUS(status));
+	  /* reap our children's children, if necessary */
+	  while (1)
+	    {
+	      int status;
+	      pid_t rc = wait(&status);
+	      
+	      if (rc == pid)
+		{
+		  /* On error send event back to main process for logging */
+		  if (WIFSIGNALED(status))
+		    send_event(event_fd, EVENT_KILLED, WTERMSIG(status));
+		  else if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+		    send_event(event_fd, EVENT_EXITED, WEXITSTATUS(status));
+		  break;
+		}
+	      
+	      if (rc == -1 && errno != EINTR)
+		break;
+	    }
 	  
 	  continue;
 	}
@@ -198,7 +216,8 @@ int create_helper(int event_fd, long max_fd)
 	{
 	  hostname = (char *)buf;
 	  hostname[data.hostname_len - 1] = 0;
-	  canonicalise(hostname);
+	  if (!canonicalise(hostname))
+	    hostname = NULL;
 	}
       
       if (data.action == ACTION_OLD_HOSTNAME && hostname)
@@ -230,7 +249,7 @@ void queue_script(int action, struct dhcp_lease *lease, char *hostname, time_t n
 {
   unsigned char *p;
   size_t size;
-  unsigned int hostname_len = 0, clid_len = 0, vclass_len = 0, uclass_len = 0;
+  unsigned int i, hostname_len = 0, clid_len = 0, vclass_len = 0, uclass_len = 0;
 
   /* no script */
   if (daemon->helperfd == -1)
@@ -255,7 +274,7 @@ void queue_script(int action, struct dhcp_lease *lease, char *hostname, time_t n
       if (size < sizeof(struct script_data) + 200)
 	size = sizeof(struct script_data) + 200;
 
-      if (!(new = malloc(size)))
+      if (!(new = whine_malloc(size)))
 	return;
       if (buf)
 	free(buf);
@@ -280,27 +299,28 @@ void queue_script(int action, struct dhcp_lease *lease, char *hostname, time_t n
   buf->remaining_time = (unsigned int)difftime(lease->expires, now);
 
   p = (unsigned char *)(buf+1);
-  if (buf->clid_len != 0)
+  if (clid_len != 0)
     {
       memcpy(p, lease->clid, clid_len);
       p += clid_len;
     }
-  if (buf->vclass_len != 0)
+  if (vclass_len != 0)
     {
       memcpy(p, lease->vendorclass, vclass_len);
       p += vclass_len;
     }
-  if (buf->uclass_len != 0)
+  if (uclass_len != 0)
     {
       memcpy(p, lease->userclass, uclass_len);
       p += uclass_len;
     }
-  if (buf->hostname_len != 0)
-    {
-      memcpy(p, hostname, hostname_len);
-      p += hostname_len;
-    }
-
+  /* substitute * for space */
+  for (i = 0; i < hostname_len; i++)
+    if ((daemon->options & OPT_LEASE_RO) && hostname[i] == ' ')
+      *(p++) = '*';
+    else
+      *(p++) = hostname[i];
+  
   bytes_in_buf = p - (unsigned char *)buf;
 }
 
@@ -330,5 +350,6 @@ void helper_write(void)
     }
 }
 
+#endif
 
 
