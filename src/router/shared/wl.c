@@ -722,7 +722,7 @@ getassoclist (char *ifname, unsigned char *list)
   if (nvram_match (netmode, "disabled"))
     return 0;
   int mincount = 0;
-  if (nvram_match (type, "wdssta") || nvram_match (type, "sta"))
+  if (nvram_match (type, "wdssta") || nvram_match (type, "sta") || nvram_match (type, "wet"))
     {
       int assoc = isAssociated (ifname);
       if (!assoc)
