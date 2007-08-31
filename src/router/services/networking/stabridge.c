@@ -54,6 +54,7 @@ start_stabridge (void)
 #endif
     {
       eval ("insmod", "ebtables");
+      eval ("insmod", "ebtable_filter");
       eval ("insmod", "ebtable_nat");
       eval ("insmod", "ebtable_broute");
       eval ("insmod", "ebt_arpnat");
@@ -87,6 +88,7 @@ stop_stabridge (void)
       eval ("rmmod", "ebt_arpnat");
       eval ("rmmod", "ebtable_broute");
       eval ("rmmod", "ebtable_nat");
+      eval ("rmmod", "ebtable_filter");
       eval ("rmmod", "ebtables");
     }
 
