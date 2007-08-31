@@ -514,11 +514,11 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name,
     }
   else if (client_hostname)
     {
-      if (!strip_hostname(client_hostname))
-	my_syslog(LOG_WARNING, 
-		  _("Ignoring DHCP host name %s because it has an illegal domain part"), 
-		  client_hostname);
-      else
+      char *d = strip_hostname(client_hostname);
+      if (d)
+	my_syslog(LOG_WARNING, _("Ignoring domain %s for DHCP host name %s"), d, client_hostname);
+      
+      if (strlen(client_hostname) != 0)
 	{
 	  hostname = client_hostname;
 	  if (!config)
@@ -895,9 +895,8 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name,
 		   /* If the user-class option started as counted strings, the first byte will be zero. */
 		   if (len != 0 && ucp[0] == 0)
 		     ucp++, len--;
-		   if (lease->userclass)
-		     free(lease->userclass);
-		   if ((lease->userclass = malloc(len+1)))
+		   free(lease->userclass);
+		   if ((lease->userclass = whine_malloc(len+1)))
 		     {
 		       memcpy(lease->userclass, ucp, len);
 		       lease->userclass[len] = 0;
@@ -908,9 +907,8 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name,
 		 {
 		   int len = option_len(opt);
 		   unsigned char *ucp = option_ptr(opt);
-		   if (lease->vendorclass)
-		     free(lease->vendorclass);
-		   if ((lease->vendorclass = malloc(len+1)))
+		   free(lease->vendorclass);
+		   if ((lease->vendorclass = whine_malloc(len+1)))
 		     {
 		       memcpy(lease->vendorclass, ucp, len);
 		       lease->vendorclass[len] = 0;
@@ -977,11 +975,12 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name,
 	  !(context = narrow_context(context, mess->ciaddr)))
 	return 0;
       
-      if (!lease)
-	{
-	  if ((lease = lease_find_by_addr(mess->ciaddr)) && lease->hostname)
-	    hostname = lease->hostname;
-	}
+      /* Find a least based on IP address if we didn't
+	 get one from MAC address/client-d */
+      if (!lease &&
+	  (lease = lease_find_by_addr(mess->ciaddr)) && 
+	  lease->hostname)
+	hostname = lease->hostname;
       
       if (!hostname)
 	hostname = host_from_dns(mess->ciaddr);

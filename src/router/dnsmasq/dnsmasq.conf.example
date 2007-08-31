@@ -210,7 +210,7 @@
 # run "dnsmasq --help dhcp" to get a list.
 # Note that all the common settings, such as netmask and
 # broadcast address, DNS server and default route, are given
-# sane defaults by dnsmasq. You very likely will not need any
+# sane defaults by dnsmasq. You very likely will not need 
 # any dhcp-options. If you use Windows clients and Samba, there
 # are some options which are recommended, they are detailed at the
 # end of this section.
@@ -339,7 +339,7 @@
 # whether it has a record of the lease or not. This avoids long timeouts
 # when a machine wakes up on a new network. DO NOT enable this if there's
 # the slighest chance that you might end up accidentally configuring a DHCP
-# server for your campus/company accidentally. The ISC server uses the same
+# server for your campus/company accidentally. The ISC server uses
 # the same option, and this URL provides more information:
 # http://www.isc.org/index.pl?/sw/dhcp/authoritative.php
 #dhcp-authoritative

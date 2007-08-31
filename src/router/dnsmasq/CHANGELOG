@@ -2262,7 +2262,8 @@ version 2.40
 	    global, instead of copying the same value around as the
 	    first argument to half the functions in the program.
 	    
-	    Updated Spanish manpage. Thanks to Chris Chatham.
+	    Updated Spanish manpage and message catalog. Thanks 
+	    to Chris Chatham.
 	    
 	    Added patch for support of DNS LOC records in
 	    contrib/dns-loc. Thanks to Lorenz Schori.
@@ -2286,7 +2287,61 @@ version 2.40
 	    allows third-party queries.
 	    
 	    Return "lease time remaining" in the reply to a DHCPINFORM
-	    request if the exists a lease for the host sending the
+	    request if there exists a lease for the host sending the
 	    request.
+
+	    Added --dhcp-hostsfile option. This gives a superset of
+	    the functionality provided by /etc/ethers. Thanks to 
+	    Greg Kurtzer for the suggestion.
+
+	    Accept keyword "server" as a synonym for "nameserver" in 
+	    resolv.conf. Thanks to Andrew Bartlett for the report.
+
+	    Add --tftp-unique-root option. Suggestion from Dermot
+	    Bradley.
+
+	    Tweak TFTP retry timer to avoid problems with difficult
+	    clients. Thanks to Dermot Bradley for assistance with
+	    this. 
+	    
+	    Continue to use unqualified hostnames provided by DHCP
+	    clients, even if the domain part is illegal. (The domain
+	    is	ignored, and an error logged.) Previously in this
+	    situation, the whole name whould have been
+	    rejected. Thanks to Jima for the patch.
+	    
+	    Handle EINTR returns from wait() correctly and reap
+	    our children's children if necessary. This fixes 
+	    a problem with zombie-creation under *BSD when using
+	    --dhcp-script.
+
+	    Escape spaces in hostnames when they are stored in the
+	    leases file and passed to the lease-change
+	    script. Suggestion from Ben Voigt.
+
+	    Re-run the lease chamge script with an "old" event for
+	    each lease when dnsmasq receives a SIGHUP.
+
+	    Added more useful exit codes, including passing on a
+	    non-zero exit code from the lease-script "init" call when
+	    --leasefile-ro is set.
+
+	    Log memory allocation failure whilst the daemon is
+	    running. Allocation failures during startup are fatal, 
+	    but lack of memory whilst running is worked around.
+	    This used to be silent, but now is logged.
+
+	    Fixed misaligned memory access which caused problems on
+	    Blackfin CPUs. Thanks to Alex Landau for the patch.
+
+	    Don't include (useless) script-calling code when NO_FORK
+	    is set. Since this tends to be used on very small uclinux 
+	    systems, it's worth-while to save some code-size.
+
+	    Don't set REUSEADDR on TFTP listening socket. There's no
+	    need to do so, and it creates confusing behaviour when
+	    inetd is also listening on the same port. Thanks to Erik
+	    Brown for spotting the problem.
+
 
 

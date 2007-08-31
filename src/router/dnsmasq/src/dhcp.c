@@ -29,7 +29,7 @@ void dhcp_init(void)
   struct dhcp_config *configs, *cp;
 
   if (fd == -1)
-    die (_("cannot create DHCP socket : %s"), NULL);
+    die (_("cannot create DHCP socket : %s"), NULL, EC_BADNET);
   
   if (!fix_fd(fd) || 
 #if defined(HAVE_LINUX_NETWORK)
@@ -38,7 +38,7 @@ void dhcp_init(void)
       setsockopt(fd, IPPROTO_IP, IP_RECVIF, &oneopt, sizeof(oneopt)) == -1 ||
 #endif
       setsockopt(fd, SOL_SOCKET, SO_BROADCAST, &oneopt, sizeof(oneopt)) == -1)  
-    die(_("failed to set options on DHCP socket: %s"), NULL);
+    die(_("failed to set options on DHCP socket: %s"), NULL, EC_BADNET);
   
   /* When bind-interfaces is set, there might be more than one dnmsasq
      instance binding port 67. That's OK if they serve different networks.
@@ -56,7 +56,7 @@ void dhcp_init(void)
       int rc = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &oneopt, sizeof(oneopt));
 #endif
       if (rc == -1)
-	die(_("failed to set SO_REUSE{ADDR|PORT} on DHCP socket: %s"), NULL);
+	die(_("failed to set SO_REUSE{ADDR|PORT} on DHCP socket: %s"), NULL, EC_BADNET);
     }
 #endif
   
@@ -69,7 +69,7 @@ void dhcp_init(void)
 #endif
 
   if (bind(fd, (struct sockaddr *)&saddr, sizeof(struct sockaddr_in)))
-    die(_("failed to bind DHCP server socket: %s"), NULL);
+    die(_("failed to bind DHCP server socket: %s"), NULL, EC_BADNET);
 
   daemon->dhcpfd = fd;
 
@@ -82,7 +82,7 @@ void dhcp_init(void)
     daemon->dhcp_icmp_fd = -1;
   else if ((daemon->dhcp_icmp_fd = make_icmp_sock()) == -1 ||
 	   setsockopt(daemon->dhcp_icmp_fd, SOL_SOCKET, SO_RCVBUF, &oneopt, sizeof(oneopt)) == -1 )
-    die(_("cannot create ICMP raw socket: %s."), NULL);
+    die(_("cannot create ICMP raw socket: %s."), NULL, EC_BADNET);
   
   /* Make BPF raw send socket */
   init_bpf();
@@ -94,12 +94,13 @@ void dhcp_init(void)
      Also check that FQDNs match the domain we are using. */
   for (configs = daemon->dhcp_conf; configs; configs = configs->next)
     {
+      char *domain;
       for (cp = configs->next; cp; cp = cp->next)
 	if ((configs->flags & cp->flags & CONFIG_ADDR) && configs->addr.s_addr == cp->addr.s_addr)
-	  die(_("duplicate IP address %s in dhcp-config directive."), inet_ntoa(cp->addr));
+	  die(_("duplicate IP address %s in dhcp-config directive."), inet_ntoa(cp->addr), EC_BADCONF);
       
-      if ((configs->flags & CONFIG_NAME) && !strip_hostname(configs->hostname))
-	die(_("illegal domain %s in dhcp-config directive."), configs->hostname );
+      if ((configs->flags & CONFIG_NAME) && (domain = strip_hostname(configs->hostname)))
+	die(_("illegal domain %s in dhcp-config directive."), domain, EC_BADCONF);
     }
   
   daemon->dhcp_packet.iov_len = sizeof(struct dhcp_packet); 
@@ -271,7 +272,7 @@ void dhcp_packet(time_t now)
 	 source port too, and send back to that.  If we're replying 
 	 to a DHCPINFORM, trust the source address always. */
       if ((!is_inform && dest.sin_addr.s_addr != mess->ciaddr.s_addr) ||
-	  !dest.sin_port)
+	  dest.sin_port == 0 || dest.sin_addr.s_addr == 0)
 	{
 	  dest.sin_port = htons(DHCP_CLIENT_PORT); 
 	  dest.sin_addr = mess->ciaddr;
@@ -553,7 +554,7 @@ int address_allocate(struct dhcp_context *context,
 		    /* at this point victim may hold an expired record */
 		    if (!victim)
 		      {
-			if ((victim = malloc(sizeof(struct ping_result))))
+			if ((victim = whine_malloc(sizeof(struct ping_result))))
 			  {
 			    victim->next = daemon->ping_results;
 			    daemon->ping_results = victim;
@@ -725,7 +726,7 @@ void dhcp_read_ethers(void)
 	}
       else 
 	{
-	  if (!canonicalise(ip) || !strip_hostname(ip))
+	  if (!canonicalise(ip) || strip_hostname(ip))
 	    {
 	      my_syslog(LOG_ERR, _("bad name at %s line %d"), ETHERSFILE, lineno); 
 	      continue;
@@ -750,7 +751,7 @@ void dhcp_read_ethers(void)
 	  
 	  if (!config)
 	    {
-	      if (!(config = malloc(sizeof(struct dhcp_config))))
+	      if (!(config = whine_malloc(sizeof(struct dhcp_config))))
 		continue;
 	      config->flags = CONFIG_FROM_ETHERS;
 	      config->wildcard_mask = 0;
@@ -762,7 +763,7 @@ void dhcp_read_ethers(void)
 	  
 	  if (flags & CONFIG_NAME)
 	    {
-	      if ((config->hostname = malloc(strlen(ip)+1)))
+	      if ((config->hostname = whine_malloc(strlen(ip)+1)))
 		strcpy(config->hostname, ip);
 	      else
 		config->flags &= ~CONFIG_NAME;
@@ -782,6 +783,61 @@ void dhcp_read_ethers(void)
   fclose(f);
 
   my_syslog(LOG_INFO, _("read %s - %d addresses"), ETHERSFILE, count);
+}
+
+void dhcp_read_hosts(void)
+{
+  struct dhcp_config *configs, *cp, **up;
+  int count;
+
+  /* remove existing... */
+  for (up = &daemon->dhcp_conf, configs = daemon->dhcp_conf; configs; configs = cp)
+    {
+      cp = configs->next;
+      
+      if (configs->flags & CONFIG_BANK)
+	{
+	  if (configs->flags & CONFIG_CLID)
+	    free(configs->clid);
+	  if (configs->flags & CONFIG_NETID)
+	    free(configs->netid.net);
+	  if (configs->flags & CONFIG_NAME)
+	    free(configs->hostname);
+
+	  *up = configs->next;
+	  free(configs);
+	}
+      else
+	up = &configs->next;
+    }
+  
+  one_file(daemon->dhcp_hosts_file, 1, 1);
+
+  for (count = 0, configs = daemon->dhcp_conf; configs; configs = configs->next)
+    {
+      if (configs->flags & CONFIG_BANK)
+	{
+	  char *domain;
+	  count++;
+	  
+	  for (cp = configs->next; cp; cp = cp->next)
+	    if ((configs->flags & cp->flags & CONFIG_ADDR) && configs->addr.s_addr == cp->addr.s_addr)
+	      {
+		my_syslog(LOG_ERR, _("duplicate IP address %s in %s."), inet_ntoa(cp->addr), daemon->dhcp_hosts_file);
+		configs->flags &= ~CONFIG_ADDR;
+	      }
+	  
+	  if ((configs->flags & CONFIG_NAME) && (domain = strip_hostname(configs->hostname)))
+	    {
+	      my_syslog(LOG_ERR, _("illegal domain %s in %s."), domain, daemon->dhcp_hosts_file);
+	      free(configs->hostname);
+	      configs->flags &= ~CONFIG_NAME;
+	    }
+	}
+    }
+
+  my_syslog(LOG_INFO, _("read %s - %d hosts"), daemon->dhcp_hosts_file, count);
+
 }
 
 void dhcp_update_configs(struct dhcp_config *configs)
@@ -830,26 +886,25 @@ char *host_from_dns(struct in_addr addr)
       hostname = daemon->dhcp_buff;
       strncpy(hostname, cache_get_name(lookup), 256);
       hostname[255] = 0;
-      if (!strip_hostname(hostname))
+      if (strip_hostname(hostname))
 	hostname = NULL;
     }
   
   return hostname;
 }
 
-int strip_hostname(char *hostname)
+/* return illegal domain or NULL if OK */
+char *strip_hostname(char *hostname)
 {
   char *dot = strchr(hostname, '.');
  
   if (!dot)
-    return 1;
-  
-  if (!daemon->domain_suffix || !hostname_isequal(dot+1, daemon->domain_suffix))
-    return 0;
+    return NULL;
   
   *dot = 0; /* truncate */
-  if (strlen(hostname) == 0)
-    return 0;
-
-  return 1;
+  
+  if (*(dot+1) && (!daemon->domain_suffix || !hostname_isequal(dot+1, daemon->domain_suffix)))
+    return dot+1;
+  
+  return NULL;
 }

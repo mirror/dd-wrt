@@ -103,7 +103,7 @@ int main (int argc, char **argv)
     }
 #ifndef HAVE_ISC_READER
   else if (!daemon->dhcp)
-    die(_("ISC dhcpd integration not available: set HAVE_ISC_READER in src/config.h"), NULL);
+    die(_("ISC dhcpd integration not available: set HAVE_ISC_READER in src/config.h"), NULL, EC_BADCONF);
 #endif
   
   /* Close any file descriptors we inherited apart from std{in|out|err} */
@@ -125,7 +125,7 @@ int main (int argc, char **argv)
 
 #ifndef HAVE_TFTP
   if (daemon->options & OPT_TFTP)
-    die(_("TFTP server not available: set HAVE_TFTP in src/config.h"), NULL);
+    die(_("TFTP server not available: set HAVE_TFTP in src/config.h"), NULL, EC_BADCONF);
 #endif
 
   now = dnsmasq_time();
@@ -139,7 +139,7 @@ int main (int argc, char **argv)
 	if (!tmp->isloop)
 	  c++;
       if (c != 1)
-	die(_("must set exactly one interface on broken systems without IP_RECVIF"), NULL);
+	die(_("must set exactly one interface on broken systems without IP_RECVIF"), NULL, EC_BADCONF);
 #endif
       /* Note that order matters here, we must call lease_init before
 	 creating any file descriptors which shouldn't be leaked
@@ -149,7 +149,7 @@ int main (int argc, char **argv)
     }
 
   if (!enumerate_interfaces())
-    die(_("failed to find list of interfaces: %s"), NULL);
+    die(_("failed to find list of interfaces: %s"), NULL, EC_MISC);
     
   if (daemon->options & OPT_NOWILD) 
     {
@@ -157,17 +157,17 @@ int main (int argc, char **argv)
 
       for (if_tmp = daemon->if_names; if_tmp; if_tmp = if_tmp->next)
 	if (if_tmp->name && !if_tmp->used)
-	  die(_("unknown interface %s"), if_tmp->name);
+	  die(_("unknown interface %s"), if_tmp->name, EC_BADNET);
   
       for (if_tmp = daemon->if_addrs; if_tmp; if_tmp = if_tmp->next)
 	if (!if_tmp->used)
 	  {
 	    prettyprint_addr(&if_tmp->addr, daemon->namebuff);
-	    die(_("no interface with address %s"), daemon->namebuff);
+	    die(_("no interface with address %s"), daemon->namebuff, EC_BADNET);
 	  }
     }
   else if (!(daemon->listeners = create_wildcard_listeners()))
-    die(_("failed to create listening socket: %s"), NULL);
+    die(_("failed to create listening socket: %s"), NULL, EC_BADNET);
   
   cache_init();
 
@@ -178,10 +178,10 @@ int main (int argc, char **argv)
       daemon->dbus = NULL;
       daemon->watches = NULL;
       if ((err = dbus_init()))
-	die(_("DBus error: %s"), err);
+	die(_("DBus error: %s"), err, EC_MISC);
     }
 #else
-  die(_("DBus not available: set HAVE_DBUS in src/config.h"), NULL);
+  die(_("DBus not available: set HAVE_DBUS in src/config.h"), NULL, EC_BADCONF);
 #endif
   
   /* If query_port is set then create a socket now, before dumping root
@@ -213,7 +213,7 @@ int main (int argc, char **argv)
   /* Use a pipe to carry signals and other events back to the event loop 
      in a race-free manner */
   if (pipe(pipefd) == -1 || !fix_fd(pipefd[0]) || !fix_fd(pipefd[1])) 
-    die(_("cannot create pipe: %s"), NULL);
+    die(_("cannot create pipe: %s"), NULL, EC_MISC);
   
   piperead = pipefd[0];
   pipewrite = pipefd[1];
@@ -231,12 +231,18 @@ int main (int argc, char **argv)
 #ifndef NO_FORK      
       if (!(daemon->options & OPT_NO_FORK))
 	{
-	  if (fork() != 0 )
-	    _exit(0);
+	  pid_t pid;
+	  
+	  if ((pid = fork()) == -1 )
+	    die(_("cannot fork into background: %s"), NULL, EC_MISC);
+	  
+	  if (pid != 0)
+	    _exit(EC_GOOD);
 	  
 	  setsid();
-	  
-	  if (fork() != 0)
+	  pid = fork();
+
+	  if (pid != 0 && pid != -1)
 	    _exit(0);
 	}
 #endif
@@ -259,7 +265,9 @@ int main (int argc, char **argv)
     }
   
   /* if we are to run scripts, we need to fork a helper before dropping root. */
+#ifndef NO_FORK
   daemon->helperfd = create_helper(pipewrite, max_fd);
+#endif
    
   ent_pw = daemon->username ? getpwnam(daemon->username) : NULL;
 
@@ -380,7 +388,7 @@ int main (int argc, char **argv)
   if (daemon->options & OPT_TFTP)
     {
 #ifdef FD_SETSIZE
-      if (FD_SETSIZE < max_fd)
+      if (FD_SETSIZE < (unsigned)max_fd)
 	max_fd = FD_SETSIZE;
 #endif
 
@@ -471,6 +479,7 @@ int main (int argc, char **argv)
       FD_SET(piperead, &rset);
       bump_maxfd(piperead, &maxfd);
 
+#ifndef NO_FORK
       while (helper_buf_empty() && do_script_run(now));
 
       if (!helper_buf_empty())
@@ -478,6 +487,10 @@ int main (int argc, char **argv)
 	  FD_SET(daemon->helperfd, &wset);
 	  bump_maxfd(daemon->helperfd, &maxfd);
 	}
+#else
+      /* need this for other side-effects */
+      while (do_script_run(now));
+#endif
       
       /* must do this just before select(), when we know no
 	 more calls to my_syslog() can occur */
@@ -538,8 +551,11 @@ int main (int argc, char **argv)
       if (daemon->dhcp && FD_ISSET(daemon->dhcpfd, &rset))
 	dhcp_packet(now);
 
+#ifndef NO_FORK
       if (daemon->helperfd != -1 && FD_ISSET(daemon->helperfd, &wset))
 	helper_write();
+#endif
+
     }
 }
 
@@ -550,7 +566,7 @@ static void sig_handler(int sig)
       /* ignore anything other than TERM during startup
 	 and in helper proc. (helper ignore TERM too) */
       if (sig == SIGTERM)
-	exit(0);
+	exit(EC_MISC);
     }
   else if (pid != getpid())
     {
@@ -610,6 +626,7 @@ static void async_event(int pipe, time_t now)
 	    reload_servers(daemon->resolv_files->name);
 	    check_servers();
 	  }
+	rerun_scripts();
 	break;
 	
       case EVENT_DUMP:
@@ -626,14 +643,16 @@ static void async_event(int pipe, time_t now)
 		
       case EVENT_CHILD:
 	/* See Stevens 5.10 */
-	/* Note that if a script process forks and then exits
-	   without waiting for its child, we will reap that child.
-	   It is not therefore safe to assume that any dying children
-	   whose pid != script_pid are TCP server threads. */ 
-	while ((p = waitpid(-1, NULL, WNOHANG)) > 0)
-	  for (i = 0 ; i < MAX_PROCS; i++)
-	    if (daemon->tcp_pids[i] == p)
-	      daemon->tcp_pids[i] = 0;
+	while ((p = waitpid(-1, NULL, WNOHANG)) != 0)
+	  if (p == -1)
+	    {
+	      if (errno != EINTR)
+		break;
+	    }      
+	  else 
+	    for (i = 0 ; i < MAX_PROCS; i++)
+	      if (daemon->tcp_pids[i] == p)
+		daemon->tcp_pids[i] = 0;
 	break;
 	
       case EVENT_KILLED:
@@ -666,6 +685,7 @@ static void async_event(int pipe, time_t now)
 	  if (daemon->tcp_pids[i] != 0)
 	    kill(daemon->tcp_pids[i], SIGALRM);
 	
+#ifndef NO_FORK
 	/* handle pending lease transitions */
 	if (daemon->helperfd != -1)
 	  {
@@ -677,13 +697,14 @@ static void async_event(int pipe, time_t now)
 	    } while (!helper_buf_empty() || do_script_run(now));
 	    close(daemon->helperfd);
 	  }
+#endif
 	
 	if (daemon->lease_stream)
 	  fclose(daemon->lease_stream);
 	
 	my_syslog(LOG_INFO, _("exiting on receipt of SIGTERM"));
 	flush_log();
-	exit(0);
+	exit(EC_GOOD);
       }
 }
 
@@ -746,6 +767,8 @@ void clear_cache_and_reload(time_t now)
     {
       if (daemon->options & OPT_ETHERS)
 	dhcp_read_ethers();
+      if (daemon->dhcp_hosts_file)
+	dhcp_read_hosts();
       dhcp_update_configs(daemon->dhcp_conf);
       lease_update_from_configs(); 
       lease_update_file(now); 

@@ -10,7 +10,7 @@
    GNU General Public License for more details.
 */
 
-#define VERSION "2.40test10"
+#define VERSION "2.40"
 
 #define FTABSIZ 150 /* max number of outstanding requests (default) */
 #define MAX_PROCS 20 /* max no children for TCP requests */
@@ -199,7 +199,8 @@ NOTES:
 #undef HAVE_SOCKADDR_SA_LEN
 /* Never use fork() on uClinux. Note that this is subtly different from the
    --keep-in-foreground option, since it also  suppresses forking new 
-   processes for TCP connections. It's intended for use on MMU-less kernels. */
+   processes for TCP connections and disables the call-a-script on leasechange
+   system. It's intended for use on MMU-less kernels. */
 #define NO_FORK
 
 #elif defined(__UCLIBC__)

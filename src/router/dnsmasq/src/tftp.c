@@ -124,7 +124,7 @@ void tftp_request(struct listener *listen, time_t now)
   addr.sin_len = sizeof(addr);
 #endif
   
-  if (!(transfer = malloc(sizeof(struct tftp_transfer))))
+  if (!(transfer = whine_malloc(sizeof(struct tftp_transfer))))
     return;
   
   if ((transfer->sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
@@ -134,7 +134,7 @@ void tftp_request(struct listener *listen, time_t now)
     }
   
   transfer->peer = peer;
-  transfer->timeout = now + 1;
+  transfer->timeout = now + 2;
   transfer->backoff = 1;
   transfer->block = 1;
   transfer->blocksize = 512;
@@ -188,7 +188,20 @@ void tftp_request(struct listener *listen, time_t now)
 	  strncat(daemon->namebuff, daemon->tftp_prefix, MAXDNAME);
 	  if (daemon->tftp_prefix[strlen(daemon->tftp_prefix)-1] != '/')
 	    strncat(daemon->namebuff, "/", MAXDNAME);
-	  
+
+	  if (daemon->options & OPT_TFTP_APREF)
+	    {
+	      size_t oldlen = strlen(daemon->namebuff);
+	      struct stat statbuf;
+	      
+	      strncat(daemon->namebuff, inet_ntoa(peer.sin_addr), MAXDNAME);
+	      strncat(daemon->namebuff, "/", MAXDNAME);
+	      
+	      /* remove unique-directory if it doesn't exist */
+	      if (stat(daemon->namebuff, &statbuf) == -1 || !S_ISDIR(statbuf.st_mode))
+		daemon->namebuff[oldlen] = 0;
+	    }
+		
 	  /* Absolute pathnames OK if they match prefix */
 	  if (filename[0] == '/')
 	    {
@@ -281,7 +294,7 @@ static struct tftp_file *check_tftp_fileperm(ssize_t *len)
 	return t->file;
       }
   
-  if (!(file = malloc(sizeof(struct tftp_file) + strlen(namebuff) + 1)))
+  if (!(file = whine_malloc(sizeof(struct tftp_file) + strlen(namebuff) + 1)))
     {
       errno = ENOMEM;
       goto oops;
@@ -369,7 +382,7 @@ void check_tftp_listeners(fd_set *rset, time_t now)
 	  int endcon = 0;
 
 	  /* timeout, retransmit */
-	  transfer->timeout += 1<<(transfer->backoff);
+	  transfer->timeout += 1 + (1<<transfer->backoff);
 	  	  
 	  /* we overwrote the buffer... */
 	  daemon->srv_save = NULL;
