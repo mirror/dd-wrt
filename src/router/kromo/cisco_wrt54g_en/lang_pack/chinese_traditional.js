@@ -1,34 +1,35 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//	Chinese (Traditional) translation file - DD-WRT V23/V24 -2007/08/24 UTF-8
+//Chinese (Traditional) translation file - DD-WRT V23/V24 -2007/08/31 UTF-8 by a9988cd
+//Chinese (Traditional) translation file - DD-WRT V23/V24 by JnJn 25/05/2006, 16/06/2007 by a9988cd, 2007/08/20 by bbyel 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // ******************************************* COMMON SHARE LABEL *******************************************//
 
 lang_charset.set="UTF-8";
 
-share.firmware="韌體";
-share.time="時間";
+share.firmware="Firmware";
+share.time="Time";
 share.interipaddr="WAN IP位址";
 share.more="更多...";
 share.help="幫助";
 share.enable="啟用";
 share.enabled="已啟用";
 share.disable="關閉";
-share.disabled="已關閉";
+share.disabled="關閉";
 share.usrname="用戶名";
 share.passwd="密碼";
 share.hostname="主機名";
 share.compression="PPP 壓縮";
-share.domainname="領域名稱";
-share.wandomainname="WAN 領域名稱";
-share.landomainname="LAN 領域名稱";
+share.domainname="網域名稱";
+share.wandomainname="WAN 網域名稱";
+share.landomainname="LAN 網域名稱";
 share.statu="狀態";
 share.start="開始";
 share.end="結束";
-share.proto="協議";
+share.proto="協定";
 share.ip="IP位址";
 share.mac="MAC位址";
 share.none="None";
-share.none2="沒有";
+share.none2="no";
 share.both="兩者";
 share.del="刪除";
 share.remove="移除";
@@ -116,7 +117,7 @@ share.connect="連接";
 share.connected="已連接";
 share.disconnect="斷線";
 share.disconnected="已斷線";
-share.info="信息";
+share.info="資訊";
 share.state="狀態";
 share.mode="模式";
 share.encrypt="加密";
@@ -330,7 +331,7 @@ bmenu.wireless="無線";
 bmenu.wirelessBasic="基本設定";
 bmenu.wirelessRadius="Radius";
 bmenu.wirelessSecurity="無線安全";
-bmenu.wirelessMac="MAC過濾";
+bmenu.wirelessMac="MAC存取控制";
 bmenu.wirelessAdvanced="進階設定";
 bmenu.wirelessWds="WDS";
 bmenu.wirelessWds0="Ath0-WDS";
@@ -346,7 +347,7 @@ bmenu.accrestriction="連線限制";
 bmenu.webaccess="WAN 連線";
 
 
-bmenu.applications="網路位址轉換（NAT） / 頻寬管理（QoS）";
+bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="埠區段轉發（映射）";
 bmenu.applicationspforwarding="埠轉發（映射）";
 bmenu.applicationsptriggering="埠觸發";
@@ -379,7 +380,7 @@ bmenu.servicesMilkfish="Milkfish";
 
 bmenu.statu="狀態";
 bmenu.statuRouter="路由器";
-bmenu.statuLAN="LAN介面";
+bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Sputnik 代理";
 bmenu.statuWLAN="無線";
 bmenu.statuVPN="OpenVPN";
@@ -391,8 +392,8 @@ bmenu.statuSysInfo="系統資訊";
 
 alive.titl="保持活動";
 alive.h2="持續活動";
-alive.legend="計劃重新啟動";
-alive.sevr1="計劃重啟";
+alive.legend="定時重新啟動";
+alive.sevr1="定時重啟";
 alive.hour="在設定的時間";
 alive.legend2="WDS/連接看門狗";
 alive.sevr2="開啟看門狗";
@@ -446,8 +447,8 @@ ddns.forceupd="Force Update Interval";
 
 
 ddnsm.all_closed="DDNS伺服器目前處於關閉狀態";
-ddnsm.all_resolving="正在解析領域名稱";
-ddnsm.all_errresolv="領域名稱解析失敗";
+ddnsm.all_resolving="正在解析網域名稱";
+ddnsm.all_errresolv="網域名稱解析失敗";
 ddnsm.all_connecting="正在連接到伺服器";
 ddnsm.all_connectfail="連接到伺服器失敗";
 ddnsm.all_disabled="DDNS功能關閉";
@@ -456,7 +457,7 @@ ddnsm.all_noip="Internet未連接";
 //help container
 
 hddns.right2="DDNS 充許您用網域名稱來取代IP位址。 這個服務動態的管理IP位址的變動，更新您的網域名稱資訊。您必須通過DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com 或Custom.com進行註冊。";
-hddns.right4="於輸入框內輸入整數數字型態做更新間隔 (日數)。當您的IP位址變更亦會自動完成更新。 當心您DDNS提供者更新濫用策略以避開或封鎖您的主機名稱及領域。";
+hddns.right4="於輸入框內輸入整數數字型態做更新間隔 (日數)。當您的IP位址變更亦會自動完成更新。 當心您DDNS提供者更新濫用策略以避開或封鎖您的主機名稱及網域。";
 
 
 
@@ -464,7 +465,7 @@ hddns.right4="於輸入框內輸入整數數字型態做更新間隔 (日數)。
 
 diag.titl=" 指令 ";
 diag.h2="指令";
-diag.legend="指令殼";
+diag.legend="指令介面";
 diag.cmd="指令";
 diag.startup="啟動";
 diag.firewall="防火牆";
@@ -794,7 +795,7 @@ idx.ntp_client="NTP 用戶";
 
 hidx.right2="這些設定最經常被有線電視操作人員使用。";
 hidx.right4="請輸入您的ISP提供的主機名。";
-hidx.right6="請輸入您的ISP提供的領域名稱。";
+hidx.right6="請輸入您的ISP提供的網域名稱。";
 hidx.right8="這是路由器的位址。";
 hidx.right10="T這是路由器的子網路遮罩。";
 hidx.right12="允許路由器管理您的IP位址。";
@@ -849,21 +850,21 @@ log.accept="接受的";
 management.titl="管理";
 management.h2="路由器管理";
 
-management.psswd_legend="路由器密碼";
-management.psswd_user="路由器用戶名";
-management.psswd_pass="路由器密碼";
-management.pass_conf="重新輸入從而確認";
+management.psswd_legend="密碼設定";
+management.psswd_user="使用者名稱";
+management.psswd_pass="使用者密碼";
+management.pass_conf="密碼確認";
 
 management.remote_legend="遠端管理";
-management.remote_gui="Web圖形介面管理";
+management.remote_gui="Web介面管理";
 management.remote_https="使用 HTTPS";
-management.remote_guiport="Web圖形介面埠";
+management.remote_guiport="Web介面埠";
 management.remote_ssh="SSH 管理";
 management.remote_sshport="SSH 遠端埠";
 
 management.web_legend="Web 連線";
-management.web_refresh="自動刷新（秒）";
-management.web_sysinfo="登入前啟用資訊網頁";
+management.web_refresh="畫面更新（秒）";
+management.web_sysinfo="登入前開啟資訊網頁";
 management.web_sysinfopass="資訊網頁密碼保護";
 management.web_sysinfomasq="資訊網頁MAC偽裝";
 
@@ -898,7 +899,7 @@ management.jffs_clean="清除 JFFS2";
 management.lang_legend="語言選擇";
 management.lang_srv="語言";
 management.lang_bulgarian="bulgarian [保加利亞語]";
-management.lang_chinese_traditional="Chinese traditional [正體中文]";
+management.lang_chinese_traditional="CHT[正體中文]";
 management.lang_chinese_simplified="Chinese Simplified  [簡體中文]";
 management.lang_croatian="croatian [克羅地亞]";
 management.lang_czech="czech [捷克]";
@@ -937,9 +938,9 @@ management.samba_stscript="啟動腳本";
 
 management.SIPatH_srv="SIPatH";
 management.SIPatH_port="SIP 埠";
-management.SIPatH_domain="SIP 領域";
+management.SIPatH_domain="SIP 網域";
 
-management.gui_style="路由器使用介面風格";
+management.gui_style="WEB介面風格";
 
 
 //help container
@@ -992,7 +993,7 @@ qos.maxuprate_b="最大 Kbits 上傳";
 qos.maxdownrate_b="最大 Kbits 下載";
 qos.maxrate_o="最大資料傳輸率";
 qos.legend4="MAC 優先順序";
-qos.legend5="乙太網埠優先順序";
+qos.legend5="LAN埠優先順序";
 qos.legend6="預設帶寬等級";
 qos.bandwidth="以Kbits表示的帶寬";
 
@@ -1028,7 +1029,7 @@ route.bgp_own_as="BGP Own AS#";
 route.bgp_as="鄰近 AS#";
 route.rip2_mod="RIP2 路由器";
 route.olsrd_mod="OLSR 路由器";
-route.olsrd_legend="OLSR 路由 (連接路由狀態優化)";
+route.olsrd_legend="OLSR 路由 (路由狀態最佳化)";
 route.olsrd_poll="Poll 傳輸率";
 route.olsrd_hna="Host Net Announce";
 route.olsrd_tc="TC Redundancy";
@@ -1062,7 +1063,7 @@ hroute.right10="決定主機和網路分配。";
 
 survey.titl="選址（Site Survey）";
 survey.h2="鄰近的無線網路";
-survey.thjoin="連接AP";
+survey.thjoin="連接";
 
 
 
@@ -1088,8 +1089,8 @@ service.dhcp_legend2="DHCP伺服器";
 service.dhcp_srv="DHCP Daemon";
 service.dhcp_jffs2="使用JFFS2作為用戶端租約資料庫";
 service.dhcp_nvramlease="使用NVRAM作為用戶端租約資料庫";
-service.dhcp_domain="已使用的領域";
-service.dhcp_landomain="LAN領域";
+service.dhcp_domain="已使用的網域";
+service.dhcp_landomain="LAN網域";
 service.dhcp_option="附加的DHCP選項";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
@@ -1295,7 +1296,7 @@ status_router.legend5="配置類型";
 status_router.www_loginstatus="登錄狀態";
 status_router.wanuptime="連接運行時間";
 status_router.leasetime="剩餘租約時間";
-status_router.notavail="沒有可用的";
+status_router.notavail="伺服器未連線";
 status_router.legend6="空間使用";
 status_router.inpvolt="板輸入電壓";
 status_router.cputemp="CPU 溫度";
@@ -1575,11 +1576,11 @@ radius.label8="如果伺服器不可用則越過Radius";
 
 // ******************************************* Wireless_MAC.asp *******************************************//
 
-wl_mac.titl="MAC篩檢";
-wl_mac.h2="無線MAC篩檢";
-wl_mac.legend="MAC篩檢";
-wl_mac.label="使用篩檢";
-wl_mac.label2="篩檢模式";
+wl_mac.titl="MAC存取控制";
+wl_mac.h2="無線MAC存取控制";
+wl_mac.legend="MAC存取控制";
+wl_mac.label="使用存取控制";
+wl_mac.label2="存取控制方式";
 wl_mac.deny="阻止所列PC機連接無線網路";
 wl_mac.allow="允許所列PC機連接無線網路";
 
@@ -1607,11 +1608,11 @@ wl_basic.wdssta="WDS Station";
 wl_basic.wdsap="WDS AP";
 wl_basic.mixed="混合";
 wl_basic.preamble="Short Preamble";
-wl_basic.b="B";
-wl_basic.a="A";
-wl_basic.g="G";
-wl_basic.bg="BG";
-wl_basic.n="N";
+wl_basic.b="Ｂ模式";
+wl_basic.a="Ａ模式";
+wl_basic.g="Ｇ模式";
+wl_basic.bg="ＢＧ模式";
+wl_basic.n="Ｎ模式";
 wl_basic.legend2="Radio時間限制";
 wl_basic.radio="Radio";
 wl_basic.radiotimer="Radio排程中";
@@ -1620,7 +1621,7 @@ wl_basic.radio_off="Radio 關閉";
 
 wl_basic.h2_v24="Wireless Physical Interface";
 wl_basic.h2_vi="Virtual Interfaces";
-wl_basic.regdom="管理領域";
+wl_basic.regdom="管理網域";
 wl_basic.TXpower="TX Power";
 wl_basic.AntGain="天線增益";
 wl_basic.diversity="差異";
