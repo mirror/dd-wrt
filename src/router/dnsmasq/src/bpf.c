@@ -40,7 +40,7 @@ void init_bpf(void)
 	    return;
 	}
       if (errno != EBUSY)
-	die(_("cannot create DHCP BPF socket: %s"), NULL);
+	die(_("cannot create DHCP BPF socket: %s"), NULL, EC_BADNET);
     }	     
 }
 

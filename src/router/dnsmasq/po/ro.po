@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dnsmasq 2.24\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-04-28 15:14+0100\n"
+"POT-Creation-Date: 2007-08-29 11:09+0100\n"
 "PO-Revision-Date: 2005-11-22 16:46+0000\n"
 "Last-Translator: Simon Kelley <simon@thekelleys.org.uk>\n"
 "Language-Team: Romanian <translation-team-ro@lists.sourceforge.net>\n"
@@ -15,31 +15,31 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 # for compatibility purposes the letters â, ă, ş, ţ and î can be written as their look-alike correspondent.
-#: cache.c:694
+#: cache.c:671
 #, fuzzy, c-format
 msgid "failed to load names from %s: %s"
 msgstr "încărcarea numelor din %s: %m a eşuat"
 
-#: cache.c:728 dhcp.c:715
+#: cache.c:705 dhcp.c:717
 #, c-format
 msgid "bad address at %s line %d"
 msgstr "adresă greşită în %s, linia %d"
 
-#: cache.c:775 dhcp.c:729
+#: cache.c:752 dhcp.c:731
 #, c-format
 msgid "bad name at %s line %d"
 msgstr "nume greşit în %s linia %d"
 
-#: cache.c:782 dhcp.c:783
+#: cache.c:759 dhcp.c:785
 #, c-format
 msgid "read %s - %d addresses"
 msgstr "citesc %s - %d adrese"
 
-#: cache.c:820
+#: cache.c:797
 msgid "cleared cache"
 msgstr "memoria temporară a fost ştearsă"
 
-#: cache.c:867
+#: cache.c:844
 #, c-format
 msgid ""
 "not giving name %s to the DHCP lease of %s because the name exists in %s "
@@ -48,7 +48,7 @@ msgstr ""
 "nu pot da numele %s împrumutului de adresă DHCP a lui %s deoarece "
 "numeleexistă în %s cu adresa %s"
 
-#: cache.c:907
+#: cache.c:884
 #, fuzzy, c-format
 msgid ""
 "time %lu, cache size %d, %d/%d cache insertions re-used unexpired cache "
@@ -57,358 +57,371 @@ msgstr ""
 "cantitate de memorie temporară %d, %d/%d stocări temporare aureutilizat "
 "locaţii neexpirate."
 
-#: util.c:154 option.c:752
+#: util.c:157 option.c:758
 msgid "could not get memory"
 msgstr "nu am putut aloca memorie"
 
-#: util.c:276
+#: util.c:167
+#, fuzzy, c-format
+msgid "failed to allocate %d bytes"
+msgstr "nu pot încărca %s: %n"
+
+#: util.c:272
 #, c-format
 msgid "infinite"
 msgstr "infinit"
 
-#: option.c:182
+#: option.c:188
 msgid "Specify local address(es) to listen on."
 msgstr "Specificaţi adresele locale deservite."
 
-#: option.c:183
+#: option.c:189
 msgid "Return ipaddr for all hosts in specified domains."
 msgstr "Afişează adresele IP ale maşinilor în domeniul dat."
 
-#: option.c:184
+#: option.c:190
 msgid "Fake reverse lookups for RFC1918 private address ranges."
 msgstr ""
 "Simulează căutări după adresă pentru domenii de adresă private (RFC1918)."
 
-#: option.c:185
+#: option.c:191
 msgid "Treat ipaddr as NXDOMAIN (defeats Verisign wildcard)."
 msgstr "Interpretează adresa IP ca NXDOMAIN (împotriva manipulărilor Verisign)"
 
-#: option.c:186
+#: option.c:192
 #, c-format
 msgid "Specify the size of the cache in entries (defaults to %s)."
 msgstr "Specifică mărimea înregistrărilor temporare (implicit e %s)."
 
-#: option.c:187
+#: option.c:193
 #, c-format
 msgid "Specify configuration file (defaults to %s)."
 msgstr "Specifică fişier de configurare (implicit e %s)."
 
-#: option.c:188
+#: option.c:194
 msgid "Do NOT fork into the background: run in debug mode."
 msgstr "NU porneşte în fundal: rulează în modul depanare."
 
-#: option.c:189
+#: option.c:195
 msgid "Do NOT forward queries with no domain part."
 msgstr "NU înainta cererile ce nu conţin domeniu DNS."
 
-#: option.c:190
+#: option.c:196
 msgid "Return self-pointing MX records for local hosts."
 msgstr "Răspunde cu înregistrări MX spre el însuşi pentru maşini locale."
 
-#: option.c:191
+#: option.c:197
 msgid "Expand simple names in /etc/hosts with domain-suffix."
 msgstr "Adaugă numelor simple din /etc/hosts numele domeniului ca sufix."
 
-#: option.c:192
+#: option.c:198
 msgid "Don't forward spurious DNS requests from Windows hosts."
 msgstr "Nu inainta cereri DNS defecte provenite de la maşini Windows."
 
-#: option.c:193
+#: option.c:199
 msgid "Enable DHCP in the range given with lease duration."
 msgstr "Activează DHCP în domeniul dat cu durată limitată de împrumut."
 
-#: option.c:194
+#: option.c:200
 #, c-format
 msgid "Change to this group after startup (defaults to %s)."
 msgstr "Rulează sub acest grup după pornire (implicit e %s)."
 
-#: option.c:195
+#: option.c:201
 msgid "Set address or hostname for a specified machine."
 msgstr "Schimbă adresa sau numele maşinii specificate."
 
-#: option.c:196
+#: option.c:202
+msgid "Read DHCP host specs from file"
+msgstr ""
+
+#: option.c:203
 #, c-format
 msgid "Do NOT load %s file."
 msgstr "Nu încarcă fişierul %s."
 
-#: option.c:197
+#: option.c:204
 #, c-format
 msgid "Specify a hosts file to be read in addition to %s."
 msgstr "Specifică spre citire un fişier hosts adiţional la %s."
 
-#: option.c:198
+#: option.c:205
 msgid "Specify interface(s) to listen on."
 msgstr "Specifică interfeţele deservite."
 
-#: option.c:199
+#: option.c:206
 msgid "Specify interface(s) NOT to listen on."
 msgstr "Specifică interfeţele NE-deservite."
 
-#: option.c:200
+#: option.c:207
 #, fuzzy
 msgid "Map DHCP user class to tag."
 msgstr "Leagă clasa de utilizator DHCP cu grup de opţiuni."
 
-#: option.c:201
+#: option.c:208
 msgid "Map RFC3046 circuit-id to tag."
 msgstr ""
 
-#: option.c:202
+#: option.c:209
 msgid "Map RFC3046 remote-id to tag."
 msgstr ""
 
-#: option.c:203
+#: option.c:210
 msgid "Map RFC3993 subscriber-id to tag."
 msgstr ""
 
-#: option.c:204
+#: option.c:211
 #, fuzzy
 msgid "Don't do DHCP for hosts with tag set."
 msgstr "Nu furniza DHCP maşinilor din grupul de opţiuni."
 
-#: option.c:205
+#: option.c:212
 msgid "Do NOT fork into the background, do NOT run in debug mode."
 msgstr "NU porneşte în fundal, NU rulează în modul depanare."
 
-#: option.c:206
+#: option.c:213
 msgid "Assume we are the only DHCP server on the local network."
 msgstr "Presupune că suntem singurul server DHCP din reţeaua locală."
 
-#: option.c:207
+#: option.c:214
 #, c-format
 msgid "Specify where to store DHCP leases (defaults to %s)."
 msgstr "Specifică fişierul de stocare a împrumuturilor DHCP (implicit e %s)."
 
-#: option.c:208
+#: option.c:215
 msgid "Return MX records for local hosts."
 msgstr "Răspunde cu întregistrări MX pentru maşini locale."
 
-#: option.c:209
+#: option.c:216
 msgid "Specify an MX record."
 msgstr "Specifică o înregistrare MX."
 
-#: option.c:210
+#: option.c:217
 msgid "Specify BOOTP options to DHCP server."
 msgstr "Specifică opţiuni BOOTP serverului DHCP."
 
-#: option.c:211
+#: option.c:218
 #, c-format
 msgid "Do NOT poll %s file, reload only on SIGHUP."
 msgstr "Nu încărca fişierul %s, citeşte-l doar la SIGHUP."
 
-#: option.c:212
+#: option.c:219
 msgid "Do NOT cache failed search results."
 msgstr "NU memora rezultatele de căutare DNS eşuatată."
 
-#: option.c:213
+#: option.c:220
 #, c-format
 msgid "Use nameservers strictly in the order given in %s."
 msgstr "Foloseşte servere DNS strict în ordinea dată în %s."
 
-#: option.c:214
+#: option.c:221
 #, fuzzy
 msgid "Specify options to be sent to DHCP clients."
 msgstr "Configurează opţiuni în plusce trebuie trimise clienţilor DHCP."
 
-#: option.c:215
+#: option.c:222
 msgid "DHCP option sent even if the client does not request it."
 msgstr ""
 
-#: option.c:216
+#: option.c:223
 msgid "Specify port to listen for DNS requests on (defaults to 53)."
 msgstr "Specifică numărul portului pentru cereri DNS (implicit e 53)."
 
-#: option.c:217
+#: option.c:224
 #, c-format
 msgid "Maximum supported UDP packet size for EDNS.0 (defaults to %s)."
 msgstr "Marimea maximă a pachetului UDP pentru EDNS.0 (implicit e %s)."
 
-#: option.c:218
+#: option.c:225
 msgid "Log queries."
 msgstr "Înregistrează tranzacţiile."
 
-#: option.c:219
+#: option.c:226
 msgid "Force the originating port for upstream queries."
 msgstr "Forţează acest port pentru datele ce pleacă."
 
-#: option.c:220
+#: option.c:227
 msgid "Do NOT read resolv.conf."
 msgstr "NU citi fişierul resolv.conf"
 
-#: option.c:221
+#: option.c:228
 #, c-format
 msgid "Specify path to resolv.conf (defaults to %s)."
 msgstr "Specifică calea către resolv.conf (implicit e %s)."
 
-#: option.c:222
+#: option.c:229
 msgid "Specify address(es) of upstream servers with optional domains."
 msgstr "Specifică adresele server(elor) superioare cu domenii opţionale."
 
-#: option.c:223
+#: option.c:230
 msgid "Never forward queries to specified domains."
 msgstr "Nu înaintează cererile spre domeniile specificate."
 
-#: option.c:224
+#: option.c:231
 msgid "Specify the domain to be assigned in DHCP leases."
 msgstr "Specifică domeniul de transmis prin DHCP."
 
-#: option.c:225
+#: option.c:232
 msgid "Specify default target in an MX record."
 msgstr "Specifică o ţintă într-o înregistrare MX."
 
-#: option.c:226
+#: option.c:233
 msgid "Specify time-to-live in seconds for replies from /etc/hosts."
 msgstr "Specifică TTL în secunde pentru răspunsurile din /etc/hosts."
 
-#: option.c:227
+#: option.c:234
 #, c-format
 msgid "Change to this user after startup. (defaults to %s)."
 msgstr "Rulează sub acest utilizator după pornire. (implicit e %s)."
 
-#: option.c:228
+#: option.c:235
 #, fuzzy
 msgid "Map DHCP vendor class to tag."
 msgstr "Trimite opţiuni DHCP în funcţie de marca plăcii de reţea."
 
-#: option.c:229
+#: option.c:236
 msgid "Display dnsmasq version and copyright information."
 msgstr "Afişează versiunea dnsmasq şi drepturile de autor."
 
-#: option.c:230
+#: option.c:237
 msgid "Translate IPv4 addresses from upstream servers."
 msgstr "Traduce adresele IPv4 de la serverele DNS superioare."
 
-#: option.c:231
+#: option.c:238
 msgid "Specify a SRV record."
 msgstr "Specifică o înregistrare SRV."
 
-#: option.c:232
+#: option.c:239
 msgid "Display this message. Use --help dhcp for known DHCP options."
 msgstr ""
 
-#: option.c:233
+#: option.c:240
 #, fuzzy, c-format
 msgid "Specify path of PID file (defaults to %s)."
 msgstr "Specifică o cale pentru fişierul PID. (implicit %s)."
 
-#: option.c:234
+#: option.c:241
 #, c-format
 msgid "Specify maximum number of DHCP leases (defaults to %s)."
 msgstr "Specifică numărul maxim de împrumuturi DHCP (implicit %s)."
 
-#: option.c:235
+#: option.c:242
 msgid "Answer DNS queries based on the interface a query was sent to."
 msgstr ""
 "Răspunde cererilor DNS în funcţie de interfaţa pe care a venit cererea."
 
-#: option.c:236
+#: option.c:243
 msgid "Specify TXT DNS record."
 msgstr "Specifică o înregistrare TXT."
 
-#: option.c:237
+#: option.c:244
 #, fuzzy
 msgid "Specify PTR DNS record."
 msgstr "Specifică o înregistrare TXT."
 
-#: option.c:238
+#: option.c:245
 msgid "Give DNS name to IPv4 address of interface."
 msgstr ""
 
-#: option.c:239
+#: option.c:246
 msgid "Bind only to interfaces in use."
 msgstr "Ascultă doar pe interfeţele active."
 
-#: option.c:240
+#: option.c:247
 #, c-format
 msgid "Read DHCP static host information from %s."
 msgstr "Citeşte informaţii DHCP statice despre maşină din %s."
 
-#: option.c:241
+#: option.c:248
 msgid "Enable the DBus interface for setting upstream servers, etc."
 msgstr "Activeaza interfaţa DBus pentru configurarea serverelor superioare."
 
-#: option.c:242
+#: option.c:249
 msgid "Do not provide DHCP on this interface, only provide DNS."
 msgstr "Nu activează DHCP ci doar DNS pe această interfaţă."
 
-#: option.c:243
+#: option.c:250
 msgid "Enable dynamic address allocation for bootp."
 msgstr "Activează alocarea dinamică a adreselor pentru BOOTP."
 
-#: option.c:244
+#: option.c:251
 #, fuzzy
 msgid "Map MAC address (with wildcards) to option set."
 msgstr "Trimite opţiuni DHCP în funcţie de marca plăcii de reţea."
 
-#: option.c:246
+#: option.c:253
 msgid "Treat DHCP requests on aliases as arriving from interface."
 msgstr ""
 
-#: option.c:248
+#: option.c:255
 msgid "Disable ICMP echo address checking in the DHCP server."
 msgstr ""
 
-#: option.c:249
+#: option.c:256
 msgid "Script to run on DHCP lease creation and destruction."
 msgstr ""
 
-#: option.c:250
+#: option.c:257
 msgid "Read configuration from all the files in this directory."
 msgstr ""
 
-#: option.c:251
+#: option.c:258
 #, fuzzy
 msgid "Log to this syslog facility or file. (defaults to DAEMON)"
 msgstr "Rulează sub acest utilizator după pornire. (implicit e %s)."
 
-#: option.c:252
+#: option.c:259
 msgid "Read leases at startup, but never write the lease file."
 msgstr ""
 
-#: option.c:253
+#: option.c:260
 #, fuzzy, c-format
 msgid "Maximum number of concurrent DNS queries. (defaults to %s)"
 msgstr "Specifică numărul maxim de împrumuturi DHCP (implicit %s)."
 
-#: option.c:254
+#: option.c:261
 #, c-format
 msgid "Clear DNS cache when reloading %s."
 msgstr ""
 
-#: option.c:255
+#: option.c:262
 msgid "Ignore hostnames provided by DHCP clients."
 msgstr ""
 
-#: option.c:256
+#: option.c:263
 msgid "Enable integrated read-only TFTP server."
 msgstr ""
 
-#: option.c:257
+#: option.c:264
 msgid "Export files by TFTP only from the specified subtree."
 msgstr ""
 
-#: option.c:258
+#: option.c:265
+msgid "Add client IP address to tftp-root."
+msgstr ""
+
+#: option.c:266
 msgid "Allow access only to files owned by the user running dnsmasq."
 msgstr ""
 
-#: option.c:259
+#: option.c:267
 #, fuzzy, c-format
 msgid "Maximum number of conncurrent TFTP transfers (defaults to %s)."
 msgstr "Specifică numărul maxim de împrumuturi DHCP (implicit %s)."
 
-#: option.c:260
+#: option.c:268
 msgid "Disable the TFTP blocksize extension."
 msgstr ""
 
-#: option.c:261
+#: option.c:269
 msgid "Extra logging for DHCP."
 msgstr ""
 
-#: option.c:262
+#: option.c:270
 msgid "Enable async. logging; optionally set queue length."
 msgstr ""
 
-#: option.c:495
+#: option.c:501
 #, c-format
 msgid ""
 "Usage: dnsmasq [options]\n"
@@ -417,167 +430,172 @@ msgstr ""
 "Utilizare: dnsmasq [opţiuni]\n"
 "\n"
 
-#: option.c:497
+#: option.c:503
 #, c-format
 msgid "Use short options only on the command line.\n"
 msgstr "Folosiţi opţiunile prescurtate doar în linie de comandă.\n"
 
-#: option.c:499
+#: option.c:505
 #, c-format
 msgid "Valid options are :\n"
 msgstr "Opţiunile valide sunt:\n"
 
-#: option.c:520
+#: option.c:526
 #, c-format
 msgid "Known DHCP options:\n"
 msgstr ""
 
-#: option.c:593
+#: option.c:599
 msgid "bad dhcp-option"
 msgstr "dhcp-option invalid"
 
-#: option.c:649
+#: option.c:655
 #, fuzzy
 msgid "bad IP address"
 msgstr "citesc %s - %d adrese"
 
-#: option.c:747
+#: option.c:753
 msgid "bad domain in dhcp-option"
 msgstr "domeniu DNS invalid în declaraţia dhcp-option"
 
-#: option.c:803
+#: option.c:809
 msgid "dhcp-option too long"
 msgstr "declararea dhcp-option este prea lungă"
 
-#: option.c:847
+#: option.c:853
 #, fuzzy, c-format
 msgid "cannot access directory %s: %s"
 msgstr "nu pot citi %s: %s"
 
-#: option.c:866 tftp.c:310
+#: option.c:872 tftp.c:313
 #, fuzzy, c-format
 msgid "cannot access %s: %s"
 msgstr "nu pot citi %s: %s"
 
-#: option.c:947
+#: option.c:913
+msgid "only one dhcp-hostsfile allowed"
+msgstr ""
+
+#: option.c:962
 msgid "bad MX preference"
 msgstr "preferinţă MX invalidă"
 
-#: option.c:956
+#: option.c:971
 msgid "bad MX name"
 msgstr "nume MX invalid"
 
-#: option.c:974
+#: option.c:989
 msgid "bad MX target"
 msgstr "ţintă MX invalidă"
 
-#: option.c:986
+#: option.c:1001
 msgid "cannot run scripts under uClinux"
 msgstr ""
 
-#: option.c:1181 option.c:1192
+#: option.c:1196 option.c:1207
 msgid "bad port"
 msgstr "port invalid"
 
-#: option.c:1334
+#: option.c:1349
 msgid "bad bridge-interface"
 msgstr ""
 
-#: option.c:1376
+#: option.c:1391
 msgid "bad dhcp-range"
 msgstr "dhcp-range invalid"
 
-#: option.c:1404
+#: option.c:1419
 msgid "only one netid tag allowed"
 msgstr ""
 
-#: option.c:1446
+#: option.c:1461
 msgid "inconsistent DHCP range"
 msgstr "domeniu DHCP inconsistent"
 
-#: option.c:1618
-msgid "bad dhcp-host"
-msgstr "dhcp-host invalid"
+#: option.c:1637
+#, fuzzy
+msgid "bad DHCP host name"
+msgstr "nume MX invalid"
 
-#: option.c:1824
+#: option.c:1861
 #, fuzzy
 msgid "bad interface name"
 msgstr "nume MX invalid"
 
-#: option.c:1848
+#: option.c:1885
 #, fuzzy
 msgid "bad PTR record"
 msgstr "înregistrare SRV invalidă"
 
-#: option.c:1872
+#: option.c:1909
 msgid "bad TXT record"
 msgstr "înregistrare TXT invalidă"
 
-#: option.c:1904
+#: option.c:1941
 msgid "TXT record string too long"
 msgstr "şirul de caractere pentru înregistrarea TXT este prea lung"
 
-#: option.c:1943
+#: option.c:1980
 msgid "bad SRV record"
 msgstr "înregistrare SRV invalidă"
 
-#: option.c:1955
+#: option.c:1992
 msgid "bad SRV target"
 msgstr "ţintă SRV invalidă"
 
-#: option.c:1966
+#: option.c:2003
 msgid "invalid port number"
 msgstr "număr de port invalid"
 
-#: option.c:1976
+#: option.c:2013
 msgid "invalid priority"
 msgstr "prioritate invalidă"
 
-#: option.c:1986
+#: option.c:2023
 msgid "invalid weight"
 msgstr "pondere invalidă"
 
-#: option.c:2017
+#: option.c:2054
 #, c-format
 msgid "files nested too deep in %s"
 msgstr ""
 
-#: option.c:2024 tftp.c:460
+#: option.c:2062 tftp.c:467
 #, c-format
 msgid "cannot read %s: %s"
 msgstr "nu pot citi %s: %s"
 
-#: option.c:2068
+#: option.c:2114
 msgid "missing \""
 msgstr "lipseşte \""
 
-#: option.c:2109
+#: option.c:2161
 msgid "bad option"
 msgstr "opţiune invalidă"
 
-#: option.c:2111
+#: option.c:2163
 msgid "extraneous parameter"
 msgstr "parametru nerecunoscut"
 
-#: option.c:2113
+#: option.c:2165
 msgid "missing parameter"
 msgstr "parametru lipsa"
 
-#: option.c:2115
+#: option.c:2173
 msgid "error"
 msgstr "eroare"
 
-#: option.c:2120
+#: option.c:2179
 #, c-format
 msgid "%s at line %d of %%s"
 msgstr "%s la linia %d din %%s"
 
-#: option.c:2190
+#: option.c:2252
 #, c-format
 msgid "Dnsmasq version %s  %s\n"
 msgstr "dnsmasq versiunea %s  %s\n"
 
-#: option.c:2191
+#: option.c:2253
 #, c-format
 msgid ""
 "Compile time options %s\n"
@@ -586,54 +604,54 @@ msgstr ""
 "Opţiuni cu care a fost compilat %s\n"
 "\n"
 
-#: option.c:2192
+#: option.c:2254
 #, c-format
 msgid "This software comes with ABSOLUTELY NO WARRANTY.\n"
 msgstr "Acest program vine FĂRĂ NICI O GARANŢIE.\n"
 
-#: option.c:2193
+#: option.c:2255
 #, c-format
 msgid "Dnsmasq is free software, and you are welcome to redistribute it\n"
 msgstr "Dnsmasq este un program gratuit, sunteţi invitaţi să-l redistribuiţi\n"
 
-#: option.c:2194
+#: option.c:2256
 #, c-format
 msgid "under the terms of the GNU General Public License, version 2.\n"
 msgstr "în termenii Licenţei publice generale GNU, versiunea 2.\n"
 
-#: option.c:2205
+#: option.c:2267
 msgid "try --help"
 msgstr ""
 
-#: option.c:2207
+#: option.c:2269
 msgid "try -w"
 msgstr ""
 
-#: option.c:2210
+#: option.c:2272
 #, fuzzy, c-format
 msgid "bad command line options: %s"
 msgstr "opţiuni în linie de comandă invalide: %s."
 
-#: option.c:2251
+#: option.c:2313
 #, c-format
 msgid "cannot get host-name: %s"
 msgstr "nu pot citi numele maşinii: %s"
 
-#: option.c:2279
+#: option.c:2341
 msgid "only one resolv.conf file allowed in no-poll mode."
 msgstr "se permite un singur fişier resolv.conf în modul no-poll"
 
-#: option.c:2289
+#: option.c:2351
 msgid "must have exactly one resolv.conf to read domain from."
 msgstr ""
 "am nevoie de un singur resolv.conf din care să citesc numele domeniului."
 
-#: option.c:2292 network.c:549
+#: option.c:2354 network.c:549
 #, fuzzy, c-format
 msgid "failed to read %s: %s"
 msgstr "nu pot citi %s: %n"
 
-#: option.c:2310
+#: option.c:2372
 #, c-format
 msgid "no search directive found in %s"
 msgstr "nu s-a găsit nici un criteriu de căutare în %s"
@@ -643,7 +661,7 @@ msgstr "nu s-a găsit nici un criteriu de căutare în %s"
 msgid "nameserver %s refused to do a recursive query"
 msgstr "serverul DNS %s refuză interogările recursive"
 
-#: isc.c:73 dnsmasq.c:539
+#: isc.c:73 dnsmasq.c:723
 #, fuzzy, c-format
 msgid "failed to access %s: %s"
 msgstr "accesarea serverului %s a eşuat: %n"
@@ -653,7 +671,7 @@ msgstr "accesarea serverului %s a eşuat: %n"
 msgid "failed to load %s: %s"
 msgstr "nu pot încărca %s: %n"
 
-#: isc.c:93 dnsmasq.c:561
+#: isc.c:93 dnsmasq.c:745
 #, c-format
 msgid "reading %s"
 msgstr "citesc %s"
@@ -673,52 +691,56 @@ msgstr "Împrumutul DHCP pentru %s va fi ignorat deoarece are domeniu invalid"
 msgid "unknown interface %s in bridge-interface"
 msgstr "interfaţă necunoscută %s"
 
-#: network.c:379 dnsmasq.c:142
+#: network.c:377 dnsmasq.c:170
 #, c-format
 msgid "failed to create listening socket: %s"
 msgstr "creearea socket-ului de ascultare a eşuat: %s"
 
-#: network.c:386
+#: network.c:384
 #, c-format
 msgid "failed to set IPV6 options on listening socket: %s"
 msgstr "configurarea opţiunilor IPv6 a eşuat pe socket-ul de ascultare: %s"
 
-#: network.c:404
+#: network.c:402
 #, c-format
 msgid "failed to bind listening socket for %s: %s"
 msgstr "activarea socket-ului de ascultare pentru %s a eşuat: %s"
 
-#: network.c:412
+#: network.c:410
 #, c-format
 msgid "failed to listen on socket: %s"
 msgstr "ascultarea pe socket a eşuat: %s"
 
-#: network.c:423
+#: network.c:421
 #, fuzzy, c-format
 msgid "failed to create TFTP socket: %s"
 msgstr "creearea socket-ului de ascultare a eşuat: %s"
 
-#: network.c:495
+#: network.c:493
 #, c-format
 msgid "ignoring nameserver %s - local interface"
 msgstr "ignorăm serverul DNS %s - interfaţă locală"
 
-#: network.c:504
+#: network.c:502
 #, fuzzy, c-format
 msgid "ignoring nameserver %s - cannot make/bind socket: %s"
 msgstr "ignorăm serverul DNS %s - nu pot creea/activa socket-ul: %s"
 
-#: network.c:519
-msgid "domain"
-msgstr "domeniu"
-
-#: network.c:521
+#: network.c:517
 msgid "unqualified"
 msgstr "invalid"
 
+#: network.c:517
+msgid "names"
+msgstr ""
+
+#: network.c:519
+msgid "default"
+msgstr ""
+
 #: network.c:521
-msgid "domains"
-msgstr "domenii"
+msgid "domain"
+msgstr "domeniu"
 
 #: network.c:524
 #, c-format
@@ -735,148 +757,173 @@ msgstr "folosim serverul DNS %s#%d pentru %s %s"
 msgid "using nameserver %s#%d"
 msgstr "folosim serverul DNS %s#%d"
 
-#: dnsmasq.c:102
+#: dnsmasq.c:106
 msgid ""
 "ISC dhcpd integration not available: set HAVE_ISC_READER in src/config.h"
 msgstr ""
 "Integrarea cu ISC dhcpd nu este disponibilă:puneţi HAVE_ISC_HEADER în src/"
 "config.h"
 
-#: dnsmasq.c:119
+#: dnsmasq.c:128
 #, fuzzy
 msgid "TFTP server not available: set HAVE_TFTP in src/config.h"
 msgstr "DBus nu este disponibil: puneţi HAVE_DBUS in src/config.h"
 
-#: dnsmasq.c:124
-#, c-format
-msgid "failed to find list of interfaces: %s"
-msgstr "enumerarea interfeţelor a eşuat: %s"
-
-#: dnsmasq.c:132
-#, c-format
-msgid "unknown interface %s"
-msgstr "interfaţă necunoscută %s"
-
-#: dnsmasq.c:138
-#, c-format
-msgid "no interface with address %s"
-msgstr "nu exista interfaţă pentru adresa %s"
-
-#: dnsmasq.c:157
+#: dnsmasq.c:142
 msgid "must set exactly one interface on broken systems without IP_RECVIF"
 msgstr ""
 "trebuie specificată exact o singură interfaţă pe sistemele defectece nu au "
 "IP_RECVIF"
 
-#: dnsmasq.c:170 dnsmasq.c:666
+#: dnsmasq.c:152
+#, c-format
+msgid "failed to find list of interfaces: %s"
+msgstr "enumerarea interfeţelor a eşuat: %s"
+
+#: dnsmasq.c:160
+#, c-format
+msgid "unknown interface %s"
+msgstr "interfaţă necunoscută %s"
+
+#: dnsmasq.c:166
+#, c-format
+msgid "no interface with address %s"
+msgstr "nu exista interfaţă pentru adresa %s"
+
+#: dnsmasq.c:181 dnsmasq.c:538
 #, c-format
 msgid "DBus error: %s"
 msgstr "eroare DBus: %s"
 
-#: dnsmasq.c:173
+#: dnsmasq.c:184
 msgid "DBus not available: set HAVE_DBUS in src/config.h"
 msgstr "DBus nu este disponibil: puneţi HAVE_DBUS in src/config.h"
 
-#: dnsmasq.c:204
+#: dnsmasq.c:216
 #, fuzzy, c-format
 msgid "cannot create pipe: %s"
 msgstr "nu pot citi %s: %s"
 
-#: dnsmasq.c:345
+#: dnsmasq.c:237
+#, c-format
+msgid "cannot fork into background: %s"
+msgstr ""
+
+#: dnsmasq.c:335
 #, c-format
 msgid "started, version %s cachesize %d"
 msgstr "am ponit, versiunea %s memorie temporară %d"
 
-#: dnsmasq.c:347
+#: dnsmasq.c:337
 #, c-format
 msgid "started, version %s cache disabled"
 msgstr "am pornit, versiunea %s memorie temporară dezactivată"
 
-#: dnsmasq.c:349
+#: dnsmasq.c:339
 #, c-format
 msgid "compile time options: %s"
 msgstr "compilat cu opţiunile: %s"
 
-#: dnsmasq.c:355
+#: dnsmasq.c:345
 msgid "DBus support enabled: connected to system bus"
 msgstr "suportul DBus activ: sunt conectat la magistrala sistem"
 
-#: dnsmasq.c:357
+#: dnsmasq.c:347
 msgid "DBus support enabled: bus connection pending"
 msgstr "suportul DBus activ: aştept conexiunea la magistrală"
 
-#: dnsmasq.c:362
+#: dnsmasq.c:352
 msgid "setting --bind-interfaces option because of OS limitations"
 msgstr "specific opţiunea --bind-interfaces din cauza limitărilor SO"
 
-#: dnsmasq.c:367
+#: dnsmasq.c:357
 #, c-format
 msgid "warning: interface %s does not currently exist"
 msgstr "atenţie: interfaţa %s nu există momentan"
 
-#: dnsmasq.c:372
+#: dnsmasq.c:362
 msgid "warning: ignoring resolv-file flag because no-resolv is set"
 msgstr ""
 
-#: dnsmasq.c:375
+#: dnsmasq.c:365
 #, fuzzy
 msgid "warning: no upstream servers configured"
 msgstr "configurăm serverele superioare prin Dbus"
 
-#: dnsmasq.c:379
+#: dnsmasq.c:369
 #, c-format
 msgid "asynchronous logging enabled, queue limit is %d messages"
 msgstr ""
 
-#: dnsmasq.c:391
+#: dnsmasq.c:381
 #, c-format
 msgid "DHCP, static leases only on %.0s%s, lease time %s"
 msgstr "DHCP, împrumuturi statice doar către  %.0s%s, timpul reînoirii %s"
 
-#: dnsmasq.c:392
+#: dnsmasq.c:382
 #, c-format
 msgid "DHCP, IP range %s -- %s, lease time %s"
 msgstr "DHCP, domeniu IP %s -- %s, timpul reînoirii %s"
 
-#: dnsmasq.c:408
+#: dnsmasq.c:396
 msgid "root is "
 msgstr ""
 
-#: dnsmasq.c:408
+#: dnsmasq.c:396
 #, fuzzy
 msgid "enabled"
 msgstr "dezactivat"
 
-#: dnsmasq.c:410
+#: dnsmasq.c:398
 msgid "secure mode"
 msgstr ""
 
-#: dnsmasq.c:430
+#: dnsmasq.c:418
 #, c-format
 msgid "restricting maximum simultaneous TFTP transfers to %d"
 msgstr ""
 
-#: dnsmasq.c:439
+#: dnsmasq.c:427
 #, c-format
 msgid "warning: setting capabilities failed: %s"
 msgstr ""
 
-#: dnsmasq.c:441
+#: dnsmasq.c:429
 msgid "running as root"
 msgstr "rulez ca root"
 
-#: dnsmasq.c:572
-#, fuzzy, c-format
-msgid "no servers found in %s, will retry"
-msgstr "nu s-a găsit nici un criteriu de căutare în %s"
+#: dnsmasq.c:540
+msgid "connected to system DBus"
+msgstr "magistrala sistem Dbus conectată"
 
-#: dnsmasq.c:631
+#: dnsmasq.c:659
+#, c-format
+msgid "child process killed by signal %d"
+msgstr ""
+
+#: dnsmasq.c:663
+#, c-format
+msgid "child process exited with status %d"
+msgstr ""
+
+#: dnsmasq.c:667
+#, fuzzy, c-format
+msgid "failed to execute %s: %s"
+msgstr "accesarea serverului %s a eşuat: %n"
+
+#: dnsmasq.c:671
+#, fuzzy, c-format
+msgid "failed to create helper: %s"
+msgstr "nu pot citi %s: %n"
+
+#: dnsmasq.c:705
 msgid "exiting on receipt of SIGTERM"
 msgstr "am primit SIGTERM, am terminat"
 
-#: dnsmasq.c:668
-msgid "connected to system DBus"
-msgstr "magistrala sistem Dbus conectată"
+#: dnsmasq.c:756
+#, fuzzy, c-format
+msgid "no servers found in %s, will retry"
+msgstr "nu s-a găsit nici un criteriu de căutare în %s"
 
 #: dhcp.c:32
 #, c-format
@@ -903,42 +950,57 @@ msgstr "activarea socket-ului server-ului DHCP a eşuat: %s"
 msgid "cannot create ICMP raw socket: %s."
 msgstr "nu pot creea socket ICMP raw: %s."
 
-#: dhcp.c:97
+#: dhcp.c:100
 #, c-format
 msgid "duplicate IP address %s in dhcp-config directive."
 msgstr "adresă IP duplicat %s în declaraţia dhcp-config."
 
-#: dhcp.c:219
+#: dhcp.c:103
+#, fuzzy, c-format
+msgid "illegal domain %s in dhcp-config directive."
+msgstr "adresă IP duplicat %s în declaraţia dhcp-config."
+
+#: dhcp.c:221
 #, c-format
 msgid "DHCP packet received on %s which has no address"
 msgstr ""
 
-#: dhcp.c:350
+#: dhcp.c:352
 #, c-format
 msgid "DHCP range %s -- %s is not consistent with netmask %s"
 msgstr "domeniu DHCP %s -- %s nu este consistent cu masca de reţea %s"
 
-#: dhcp.c:667
+#: dhcp.c:669
 #, fuzzy, c-format
 msgid "failed to read %s:%s"
 msgstr "nu pot citi %s: %n"
 
-#: dhcp.c:702
+#: dhcp.c:704
 #, c-format
 msgid "bad line at %s line %d"
 msgstr "linie invalidă în %s rândul %d"
 
-#: dhcp.c:809
+#: dhcp.c:826
+#, fuzzy, c-format
+msgid "duplicate IP address %s in %s."
+msgstr "adresă IP duplicat %s în declaraţia dhcp-config."
+
+#: dhcp.c:832
+#, c-format
+msgid "illegal domain %s in %s."
+msgstr ""
+
+#: dhcp.c:839
+#, fuzzy, c-format
+msgid "read %s - %d hosts"
+msgstr "citesc %s - %d adrese"
+
+#: dhcp.c:866
 #, c-format
 msgid "duplicate IP address %s (%s) in dhcp-config directive"
 msgstr "adresă IP duplicat %s (%s) în declaraţia dhcp-config."
 
-#: dhcp.c:845
-#, c-format
-msgid "Ignoring DHCP host name %s because it has an illegal domain part"
-msgstr "Ignor numele DHCP al maşinii %s deoarece are domeniu DNS ilegal"
-
-#: lease.c:50
+#: lease.c:54
 #, fuzzy, c-format
 msgid "cannot open or create lease file %s: %s"
 msgstr "nu pot creea sau deschide fişierul cu împrumuturi: %s"
@@ -947,17 +1009,17 @@ msgstr "nu pot creea sau deschide fişierul cu împrumuturi: %s"
 msgid "too many stored leases"
 msgstr "prea multe împrumuturi stocate"
 
-#: lease.c:113
+#: lease.c:121
 #, fuzzy, c-format
 msgid "cannot run lease-init script %s: %s"
 msgstr "nu pot citi %s: %s"
 
-#: lease.c:119
+#: lease.c:127
 #, c-format
 msgid "lease-init script returned exit code %s"
 msgstr ""
 
-#: lease.c:217
+#: lease.c:234
 #, fuzzy, c-format
 msgid "failed to write %s: %s (retry in %us)"
 msgstr "nu pot citi %s: %n"
@@ -990,124 +1052,129 @@ msgstr ""
 msgid "Available DHCP range: %s -- %s"
 msgstr ""
 
-#: rfc2131.c:339 rfc2131.c:370
+#: rfc2131.c:347 rfc2131.c:378
 msgid "disabled"
 msgstr "dezactivat"
 
-#: rfc2131.c:382 rfc2131.c:831
+#: rfc2131.c:390 rfc2131.c:852
 msgid "address in use"
 msgstr "adresa este folosită"
 
-#: rfc2131.c:385
+#: rfc2131.c:393
 msgid "no address configured"
 msgstr "adresă lipsă"
 
-#: rfc2131.c:398 rfc2131.c:699
+#: rfc2131.c:406 rfc2131.c:720
 msgid "no address available"
 msgstr "nici o adresă disponibilă"
 
-#: rfc2131.c:408
+#: rfc2131.c:416
 #, c-format
 msgid "Limit of %d leases exceeded."
 msgstr ""
 
-#: rfc2131.c:409 rfc2131.c:841
+#: rfc2131.c:417 rfc2131.c:862
 msgid "no leases left"
 msgstr "nu mai am de unde să împrumut"
 
-#: rfc2131.c:413 rfc2131.c:805
+#: rfc2131.c:421 rfc2131.c:826
 msgid "wrong network"
 msgstr "reţea greşită"
 
-#: rfc2131.c:579
+#: rfc2131.c:519
+#, c-format
+msgid "Ignoring domain %s for DHCP host name %s"
+msgstr ""
+
+#: rfc2131.c:598
 #, c-format
 msgid "Vendor class: %s"
 msgstr ""
 
-#: rfc2131.c:581
+#: rfc2131.c:600
 #, c-format
 msgid "User class: %s"
 msgstr ""
 
-#: rfc2131.c:622
+#: rfc2131.c:641
 #, fuzzy, c-format
 msgid "disabling DHCP static address %s for %s"
 msgstr "dezactivăm adresele DHCP statice %s"
 
-#: rfc2131.c:643
+#: rfc2131.c:662
 msgid "unknown lease"
 msgstr "împrumut necunoscut"
 
-#: rfc2131.c:652 rfc2131.c:951
+#: rfc2131.c:671 rfc2131.c:970
 msgid "ignored"
 msgstr "ignorat"
 
-#: rfc2131.c:672
+#: rfc2131.c:691
 #, c-format
 msgid "not using configured address %s because it is leased to %s"
 msgstr ""
 
-#: rfc2131.c:682
+#: rfc2131.c:701
 #, c-format
 msgid ""
 "not using configured address %s because it is in use by the server or relay"
 msgstr ""
 
-#: rfc2131.c:685
+#: rfc2131.c:704
 #, c-format
 msgid "not using configured address %s because it was previously declined"
 msgstr ""
 
-#: rfc2131.c:768
-msgid "wrong address"
-msgstr "adresă greşită"
-
-#: rfc2131.c:781
-msgid "lease not found"
-msgstr "împrumutul nu a fost găsit"
-
-#: rfc2131.c:813
-msgid "address not available"
-msgstr "adresă indisponibilă"
-
-#: rfc2131.c:824
-msgid "static lease available"
-msgstr "împrumut static este disponibil"
-
-#: rfc2131.c:828
-msgid "address reserved"
-msgstr "adresă rezervată"
-
-#: rfc2131.c:834
+#: rfc2131.c:718 rfc2131.c:855
 msgid "no unique-id"
 msgstr ""
 
-#: rfc2131.c:1215
+#: rfc2131.c:789
+msgid "wrong address"
+msgstr "adresă greşită"
+
+#: rfc2131.c:802
+msgid "lease not found"
+msgstr "împrumutul nu a fost găsit"
+
+#: rfc2131.c:834
+msgid "address not available"
+msgstr "adresă indisponibilă"
+
+#: rfc2131.c:845
+msgid "static lease available"
+msgstr "împrumut static este disponibil"
+
+#: rfc2131.c:849
+msgid "address reserved"
+msgstr "adresă rezervată"
+
+#: rfc2131.c:1252
 #, c-format
 msgid "tags: %s"
 msgstr ""
 
-#: rfc2131.c:1297
+#: rfc2131.c:1334
 #, fuzzy, c-format
 msgid "cannot send DHCP/BOOTP option %d: no space left in packet"
 msgstr "nu pot trimite opţiunea DHCP %d: nu mai este loc în pachet"
 
-#: rfc2131.c:1452
+#: rfc2131.c:1488
 #, fuzzy, c-format
 msgid "requested options: %s"
 msgstr "compilat cu opţiunile: %s"
 
-#: rfc2131.c:1483
+#: rfc2131.c:1519
 #, c-format
 msgid "server name: %s"
 msgstr ""
 
-#: rfc2131.c:1495
+#: rfc2131.c:1531
 #, c-format
 msgid "bootfile name: %s"
 msgstr ""
 
-#: rfc2131.c:1504
+#: rfc2131.c:1540
 #, fuzzy, c-format
 msgid "next server: %s"
 msgstr "eroare DBus: %s"
@@ -1117,16 +1184,16 @@ msgstr "eroare DBus: %s"
 msgid "cannot create netlink socket: %s"
 msgstr "nu pot să activez socket-ul netlink: %s"
 
-#: netlink.c:232
+#: netlink.c:226
 #, fuzzy, c-format
 msgid "netlink returns error: %s"
 msgstr "eroare DBus: %s"
 
-#: dbus.c:112
+#: dbus.c:111
 msgid "attempt to set an IPv6 server address via DBus - no IPv6 support"
 msgstr "incerc să configurez un server IPv6 prin Dbus - nu este suport IPv6"
 
-#: dbus.c:239
+#: dbus.c:237
 msgid "setting upstream servers from DBus"
 msgstr "configurăm serverele superioare prin Dbus"
 
@@ -1134,74 +1201,68 @@ msgstr "configurăm serverele superioare prin Dbus"
 msgid "could not register a DBus message handler"
 msgstr "nu pot activa o interfaţă de mesaje DBus"
 
-#: bpf.c:48
+#: bpf.c:43
 #, c-format
 msgid "cannot create DHCP BPF socket: %s"
 msgstr "nu pot creea socket DHCP BPF: %s"
 
-#: bpf.c:76
+#: bpf.c:71
 #, fuzzy, c-format
 msgid "DHCP request for unsupported hardware type (%d) received on %s"
 msgstr "cerere DHCP pentru dispozitiv nesuportat (%d) recepţionată prin %s"
-
-#: helper.c:142
-#, c-format
-msgid "child process killed by signal %d"
-msgstr ""
-
-#: helper.c:144
-#, c-format
-msgid "child process exited with status %d"
-msgstr ""
-
-#: helper.c:213
-#, fuzzy, c-format
-msgid "failed to execute %s: %s"
-msgstr "accesarea serverului %s a eşuat: %n"
 
 #: tftp.c:158
 #, c-format
 msgid "unsupported request from %s"
 msgstr ""
 
-#: tftp.c:239
+#: tftp.c:236
 #, c-format
 msgid "TFTP sent %s to %s"
 msgstr ""
 
-#: tftp.c:306
+#: tftp.c:259
 #, fuzzy, c-format
 msgid "file %s not found"
 msgstr "împrumutul nu a fost găsit"
 
-#: tftp.c:362
+#: tftp.c:369
 #, c-format
 msgid "TFTP error %d %s received from %s"
 msgstr ""
 
-#: tftp.c:393
+#: tftp.c:400
 #, fuzzy, c-format
 msgid "TFTP failed sending %s to %s"
 msgstr "nu pot citi %s: %n"
 
-#: log.c:70
+#: log.c:69
 #, fuzzy, c-format
 msgid "cannot open %s: %s"
 msgstr "nu pot deschide %s:%s"
 
-#: log.c:115
+#: log.c:146
 #, c-format
 msgid "overflow: %d log entries lost"
 msgstr ""
 
-#: log.c:200
+#: log.c:223
 #, c-format
 msgid "log failed: %s"
 msgstr ""
 
-#: log.c:339
+#: log.c:378
 msgid "FAILED to start up"
 msgstr "pornirea A EŞUAT"
+
+#~ msgid "bad dhcp-host"
+#~ msgstr "dhcp-host invalid"
+
+#~ msgid "domains"
+#~ msgstr "domenii"
+
+#~ msgid "Ignoring DHCP host name %s because it has an illegal domain part"
+#~ msgstr "Ignor numele DHCP al maşinii %s deoarece are domeniu DNS ilegal"
 
 #~ msgid "Display this message."
 #~ msgstr "Afişează acest mesaj."

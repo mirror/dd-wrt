@@ -672,7 +672,7 @@ unsigned char *tcp_request(int confd, time_t now,
   unsigned short qtype, gotname;
   unsigned char c1, c2;
   /* Max TCP packet + slop */
-  unsigned char *packet = malloc(65536 + MAXDNAME + RRFIXEDSZ);
+  unsigned char *packet = whine_malloc(65536 + MAXDNAME + RRFIXEDSZ);
   HEADER *header;
   struct server *last_server;
   
@@ -828,7 +828,7 @@ static struct frec *allocate_frec(time_t now)
 {
   struct frec *f;
   
-  if ((f = (struct frec *)malloc(sizeof(struct frec))))
+  if ((f = (struct frec *)whine_malloc(sizeof(struct frec))))
     {
       f->next = frec_list;
       f->time = now;
