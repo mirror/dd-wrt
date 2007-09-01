@@ -63,6 +63,7 @@
 #include <shutils.h>
 #include <wlutils.h>
 #include <cy_conf.h>
+#include <cymac.h>
 //#include <ledcontrol.h>
 
 
@@ -427,7 +428,13 @@ start_restore_defaults (void)
    */
   char *et0mac = nvram_safe_get ("et0macaddr");
   char *et1mac = nvram_safe_get ("et1macaddr");
-
+  unsigned char mac[20];
+if (nvram_get("il0macaddr")==NULL)
+    {
+      strcpy (mac, et0mac);
+      MAC_ADD (mac);
+      nvram_set("il0macaddr",mac);    
+    }
 
 #ifdef HAVE_RB500
   linux_overrides = generic;
