@@ -196,8 +196,10 @@ static int __init ebt_log_init(void)
 	ret = ebt_register_watcher(&log);
 	if (ret < 0)
 		return ret;
-	nf_log_register(PF_BRIDGE, &ebt_log_logger);
-	return 0;
+	ret = nf_log_register(PF_BRIDGE, &ebt_log_logger);
+	if (ret < 0 && ret != -EEXIST)
+		ebt_unregister_watcher(&log);
+	return ret;
 }
 
 static void __exit ebt_log_fini(void)

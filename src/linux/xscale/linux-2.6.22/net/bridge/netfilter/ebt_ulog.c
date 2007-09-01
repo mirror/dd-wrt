@@ -308,8 +308,12 @@ static int __init ebt_ulog_init(void)
 	else if ((ret = ebt_register_watcher(&ulog)))
 		sock_release(ebtulognl->sk_socket);
 
-	if (ret == 0)
-		nf_log_register(PF_BRIDGE, &ebt_ulog_logger);
+	if (nf_log_register(PF_BRIDGE, &ebt_ulog_logger) < 0) {
+		printk(KERN_WARNING "ebt_ulog: not logging via ulog "
+		       "since somebody else already registered for PF_BRIDGE\n");
+		/* we cannot make module load fail here, since otherwise
+		 * ebtables userspace would abort */
+	}
 
 	return ret;
 }
