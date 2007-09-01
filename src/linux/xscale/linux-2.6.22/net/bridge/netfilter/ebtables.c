@@ -1518,8 +1518,6 @@ static struct nf_sockopt_ops ebt_sockopts =
 static int __init ebtables_init(void)
 {
 	int ret;
-	if (br_netfilter_init())
-		return 1;
 
 	mutex_lock(&ebt_mutex);
 	list_add(&ebt_standard_target.list, &ebt_targets);
@@ -1535,7 +1533,6 @@ static void __exit ebtables_fini(void)
 {
 	nf_unregister_sockopt(&ebt_sockopts);
 	printk(KERN_NOTICE "Ebtables v2.0 unregistered\n");
-	br_netfilter_fini();
 }
 
 EXPORT_SYMBOL(ebt_register_table);
