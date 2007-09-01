@@ -18,6 +18,9 @@ endif
 ifeq ($(CONFIG_MAGICBOX),y)
 MODULE:=networksettings.rb532
 endif
+ifeq ($(CONFIG_BUFFALO),y)
+MODULE:=networksettings.buffalo
+endif
 
 clean:
 	@true
