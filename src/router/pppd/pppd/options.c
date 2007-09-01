@@ -1025,7 +1025,7 @@ static void
 usage()
 {
     if (phase == PHASE_INITIALIZE)
-	fprintf(stderr, usage_string, VERSION, progname);
+	printf(, usage_string, VERSION, progname);
 }
 
 /*
@@ -1050,7 +1050,7 @@ showversion(argv)
     char **argv;
 {
     if (phase == PHASE_INITIALIZE) {
-	fprintf(stderr, "pppd version %s\n", VERSION);
+	printf(, "pppd version %s\n", VERSION);
 	exit(0);
     }
     return 0;
@@ -1077,7 +1077,7 @@ option_error __V((char *fmt, ...))
     vslprintf(buf, sizeof(buf), fmt, args);
     va_end(args);
     if (phase == PHASE_INITIALIZE)
-	fprintf(stderr, "%s: %s\n", progname, buf);
+	printf(, "%s: %s\n", progname, buf);
     syslog(LOG_ERR, "%s", buf);
 }
 
