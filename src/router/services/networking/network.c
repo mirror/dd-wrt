@@ -2361,6 +2361,7 @@ start_wan (int status)
 	       "noaccomp\n" 
 	       "nobsdcomp\n" 
 	       "nodeflate\n" 
+	       "debug\n"
 //	       "maxfail 0\n"
 //               "nocrtscts\n"
 //               "sync\n"
