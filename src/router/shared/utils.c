@@ -1094,6 +1094,11 @@ led_control (int type, int act)
       diag_gpio = 0x17;
       bridge_gpio = 0x11;
       break;
+    case ROUTER_BUFFALO_WZRG144NH:
+      diag_gpio = 0x13;
+      bridge_gpio = 0x11;
+      ses_gpio = 0x12;
+      break;
 #ifndef HAVE_BUFFALO
     case ROUTER_MOTOROLA:
       power_gpio = 0x01;
