@@ -1651,7 +1651,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_CA8
   {"ip_conntrack_max", "16384", 0},
 #else
-  {"ip_conntrack_max", "512", 0},
+  {"ip_conntrack_max", "4096", 0},
 #endif
   {"ip_conntrack_tcp_timeouts", "3600", 0},
   {"ip_conntrack_udp_timeouts", "120", 0},
