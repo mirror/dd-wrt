@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 //Chinese (Traditional) translation file - DD-WRT V23/V24 -2007/08/31 UTF-8 by a9988cd
-//Chinese (Traditional) translation file - DD-WRT V23/V24 by JnJn 25/05/2006, 16/06/2007 by a9988cd, 2007/08/20 by bbyel 
+//Chinese (Traditional) translation file - DD-WRT V23/V24 16/06/2007 by a9988cd, 2007/08/20 by bbyel 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // ******************************************* COMMON SHARE LABEL *******************************************//
 
@@ -22,7 +22,7 @@ share.compression="PPP 壓縮";
 share.domainname="網域名稱";
 share.wandomainname="WAN 網域名稱";
 share.landomainname="LAN 網域名稱";
-share.statu="狀態";
+share.statu="資訊";
 share.start="開始";
 share.end="結束";
 share.proto="協定";
@@ -98,7 +98,7 @@ share.right="右";
 share.left="左";
 share.share_key="共用金鑰";
 share.inter="更新(秒)";
-share.srv="服務名稱";
+share.srv="協定名稱";
 share.port_range="埠範圍";
 share.priority="優先順序";
 share.gateway="閘道";
@@ -159,7 +159,7 @@ share.standard="標準（Standard）";
 share.execscript="Excecute script";
 share.user="用戶";
 share.privatekey="私密金鑰";
-
+sbutton.apply="儲存重啟";
 sbutton.save="儲存設定";
 sbutton.saving="已儲存";
 sbutton.cmd="正在執行";
@@ -173,7 +173,7 @@ sbutton.remove="移除";
 sbutton.modify="修改";
 sbutton.deleted="已刪除";
 sbutton.delall="全部刪除";
-sbutton.autorefresh="自動更新狀態[開]";
+sbutton.autorefresh="自動更新資訊[開]";
 sbutton.backup="備份";
 sbutton.restore="恢復";
 sbutton.cptotext="編輯";
@@ -184,10 +184,10 @@ sbutton.custom="儲存自訂指令";
 sbutton.wol="喚醒";
 sbutton.add_wol="增加主機";
 sbutton.manual_wol="手動喚醒";
-sbutton.summary="綜述";
+sbutton.summary="總覽";
 sbutton.filterIP="編輯PC列表";
 sbutton.filterMac="編輯MAC篩檢列表";
-sbutton.filterSer="新增/編輯服務";
+sbutton.filterSer="新增/編輯";
 sbutton.reboot="重新啟動路由器";
 sbutton.help="   幫助  ";
 sbutton.wl_client_mac="無線用戶端MAC列表";
@@ -195,7 +195,7 @@ sbutton.update_filter="更新篩檢列表";
 sbutton.join="加入";
 sbutton.log_in="Incoming 日誌";
 sbutton.log_out="Outgoing 日誌";
-sbutton.edit_srv="新增/編輯服務";
+sbutton.edit_srv="新增/編輯";
 sbutton.routingtab="顯示路由表";
 sbutton.wanmac="取得目前用戶端的MAC位址";
 sbutton.dhcprel="DHCP 釋放";
@@ -210,21 +210,21 @@ sbutton.allways_off="一直關閉";
 
 // ******************************************* COMMON ERROR MESSAGES  *******************************************//
 
-errmsg.err0="您必須輸入一個用戶名。";
-errmsg.err1="您必須輸入一個路由器名稱。";
-errmsg.err2="超出範圍，請調整起始IP位址或用戶的個數。";
-errmsg.err3="您必須至少選擇一個日期。"
-errmsg.err4="結束時間必須比開始時間大。";
-errmsg.err5="MAC位址長度不正確。";
-errmsg.err6="您必須輸入一個密碼。";
-errmsg.err7="您必須輸入一個主機名。";
-errmsg.err8="您必須輸入一個IP位址或者網域名稱。";
-errmsg.err9="非法DMZ IP位址。";
-errmsg.err10="確認密碼與所輸入密碼不相符。請重新輸入密碼。";
+errmsg.err0="您必須輸入一個用戶名.";
+errmsg.err1="您必須輸入一個路由器名稱.";
+errmsg.err2="超出範圍,請調整起始IP位址或用戶的個數.";
+errmsg.err3="您必須至少選擇一個日期."
+errmsg.err4="結束時間必須比開始時間大.";
+errmsg.err5="MAC位址長度不正確.";
+errmsg.err6="您必須輸入一個密碼.";
+errmsg.err7="您必須輸入一個主機名.";
+errmsg.err8="您必須輸入一個IP位址或者網域名稱.";
+errmsg.err9="非法DMZ IP位址.";
+errmsg.err10="確認密碼與所輸入密碼不相符.請重新輸入密碼.";
 errmsg.err11="在密碼中不允許使用空格";
-errmsg.err12="你必須輸入一個要運行的指令。";
-errmsg.err13="升級失敗。";
-errmsg.err45="HTTPS模式下不可用！請使用HTTP模式連接。";
+errmsg.err12="你必須輸入一個要運行的指令.";
+errmsg.err13="升級失敗.";
+errmsg.err45="HTTPS模式下不可用！請使用HTTP模式連接.";
 errmsg.err46="HTTPS模式下不可用";
 
 
@@ -232,29 +232,29 @@ errmsg.err46="HTTPS模式下不可用";
 errmsg.err14=" 值超出範圍 [";
 errmsg.err15="WAN MAC位址超出範圍 [00 - ff].";
 errmsg.err16="MAC位址的第二個字元必須是偶數 : [0, 2, 4, 6, 8, A, C, E].";
-errmsg.err17="MAC位址不正確。";
-errmsg.err18="MAC位址長度不正確。";
-errmsg.err19="MAC位址不能是廣播MAC位址。"
+errmsg.err17="MAC位址不正確.";
+errmsg.err18="MAC位址長度不正確.";
+errmsg.err19="MAC位址不能是廣播MAC位址."
 errmsg.err20="輸入MAC位址,如 (xx:xx:xx:xx:xx:xx) 的格式";
 errmsg.err21="無效的MAC位址格式";
 errmsg.err22="WAN MAC位址不正確";
 errmsg.err23="無效16進制數值 ";
 errmsg.err24=" 找到如下MAC位址 ";
-errmsg.err25="金鑰值不正確。";
-errmsg.err26="金鑰的長度不正確。";
-errmsg.err27="非法子網路遮罩。";
+errmsg.err25="金鑰值不正確.";
+errmsg.err26="金鑰的長度不正確.";
+errmsg.err27="非法子網路遮罩.";
 errmsg.err28=" 含有非法字元, 字元必須是 [ 0 - 9 ].";
-errmsg.err29=" 含有非法ASCII碼。";
-errmsg.err30=" 含有非法16進制數字。";
-errmsg.err31=" 數值非法。";
-errmsg.err32="IP位址和閘道不在同一子網中。";
-errmsg.err33="IP位址與閘道不能相同。";
-errmsg.err34=" 中不允許含有空格。";
+errmsg.err29=" 含有非法ASCII碼.";
+errmsg.err30=" 含有非法16進制數字.";
+errmsg.err31=" 數值非法.";
+errmsg.err32="IP位址和閘道不在同一子網中.";
+errmsg.err33="IP位址與閘道不能相同.";
+errmsg.err34=" 中不允許含有空格.";
 
 //Wol.asp error messages
-errmsg.err35="你必須輸入一個MAC位址來執行操作。";
-errmsg.err36="你必須輸入一個網路廣播位址來執行操作。";
-errmsg.err37="你必須輸入一個UDP埠來執行操作。";
+errmsg.err35="你必須輸入一個MAC位址來執行操作.";
+errmsg.err36="你必須輸入一個網路廣播位址來執行操作.";
+errmsg.err37="你必須輸入一個UDP埠來執行操作.";
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
@@ -265,31 +265,31 @@ errmsg.err41="關鍵字長度無效 ";
 errmsg.err43="重新獲取金鑰間隔";
 
 //config.asp error messages
-errmsg.err42="請選擇一個用來恢復的設定檔。";
+errmsg.err42="請選擇一個用來恢復的設定檔.";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="總檢查次數超過128次。";
+errmsg.err44="總檢查次數超過128次.";
 
 //Site_Survey.asp error messages
-errmsg.err47="無效SSID。";
+errmsg.err47="無效SSID.";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS與目前路由器的設定不相容。 請檢查以下幾點 :\n * 無線模式必須被設定為AP（接入點） \n * WDS下不支援WPA2 \n * WDS下不支援僅B模式的無線網路";
+errmsg.err48="WDS與目前路由器的設定不相容. 請檢查以下幾點 :\n * 無線模式必須被設定為AP（接入點） \n * WDS下不支援WPA2 \n * WDS下不支援僅B模式的無線網路";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius僅在AP（接入點）模式下可用。";
+errmsg.err49="Radius僅在AP（接入點）模式下可用.";
 
 //Wireless_Basic.asp error messages
-errmsg.err50="你必須輸入一個SSID。";
+errmsg.err50="你必須輸入一個SSID.";
 
 // Management.asp error messages
-errmsg.err51="本路由器目前設定的密碼為預設密碼。 基於安全考量, 你必須在開啟遠端管理介面之前變更密碼。 按確定鍵來變更密碼。 按取消鍵保持遠端管理特性關閉。";
+errmsg.err51="本路由器目前設定的密碼為預設密碼. 基於安全考量, 你必須在開啟遠端管理介面之前變更密碼. 按確定鍵來變更密碼. 按取消鍵保持遠端管理特性關閉.";
 errmsg.err52="密碼確認不正確";
 
 // Port_Services.asp error messages
-errmsg.err53="完成所有設定操作後, 請點選應用鍵來儲存設定。";
-errmsg.err54="你必須輸入一個服務名稱。";
-errmsg.err55="此服務名稱已存在。";
+errmsg.err53="完成所有設定操作後, 請點選應用鍵來儲存設定.";
+errmsg.err54="你必須輸入一個服務名稱.";
+errmsg.err55="此服務名稱已存在.";
 
 // QoS.asp error messages
 errmsg.err56="埠值超出範圍  [0 - 65535]";
@@ -302,14 +302,14 @@ errmsg.err103=" 降低此項 ";
 errmsg.err58="刪除此租約？";
 
 //Status_Wireless.asp error messages
-errmsg.err59="不可用！請啟用無線網路。";
+errmsg.err59="不可用！請啟用無線網路.";
 
 //Upgrade.asp error messages
-errmsg.err60="請選擇要升級的檔案。";
-errmsg.err61="不正確的鏡像檔。";
+errmsg.err60="請選擇要升級的檔案.";
+errmsg.err61="不正確的鏡像檔.";
 
 //Services.asp error messages
-errmsg.err62=" 已經定義為靜態的租約。";
+errmsg.err62=" 已經定義為靜態的租約.";
 
 //Saving message
 errmsg.err100="進行中...<br/>請稍後.";
@@ -350,7 +350,7 @@ bmenu.webaccess="WAN 連線";
 bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="埠區段轉發（映射）";
 bmenu.applicationspforwarding="埠轉發（映射）";
-bmenu.applicationsptriggering="埠觸發";
+bmenu.applicationsptriggering="通訊埠觸發";
 bmenu.applicationsUpnp="UPnP";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
@@ -363,7 +363,7 @@ bmenu.sipathstatus="狀態";
 
 bmenu.admin="管理";
 bmenu.adminManagement="基本管理";
-bmenu.adminAlive="保持活動";
+bmenu.adminAlive="保持連線";
 bmenu.adminLog="日誌";
 bmenu.adminDiag="指令";
 bmenu.adminWol="網路喚醒（WOL）";
@@ -371,8 +371,8 @@ bmenu.adminFactory="出廠預設值";
 bmenu.adminUpgrade="韌體升級";
 bmenu.adminBackup="備份";
 
-bmenu.services="服務";
-bmenu.servicesServices="服務";
+bmenu.services="伺服器";
+bmenu.servicesServices="伺服器";
 bmenu.servicesPppoesrv="PPPoE 伺服器";
 bmenu.servicesPptp="PPTP";
 bmenu.servicesHotspot="熱點";
@@ -390,8 +390,8 @@ bmenu.statuSysInfo="系統資訊";
 
 // ******************************************* Alive.asp *******************************************//
 
-alive.titl="保持活動";
-alive.h2="持續活動";
+alive.titl="保持連線";
+alive.h2="持續連線";
 alive.legend="定時重新啟動";
 alive.sevr1="定時重啟";
 alive.hour="在設定的時間";
@@ -405,8 +405,8 @@ alive.port="代理伺服器埠號";
 
 //help container
 
-halive.right2="選擇何時重新啟動路由器。在普通管理標籤中的Cron選項必須被開啟。";
-halive.right4="最多允許3個IP位址，之間使用 <em>空格</em> 區隔<BR/>IP位址格式為 xxx.xxx.xxx.xxx.";
+halive.right2="選擇何時重新啟動路由器.在普通管理標籤中的Cron選項必須被開啟.";
+halive.right4="最多允許3個IP位址,之間使用 <em>空格</em> 區隔<BR/>IP位址格式為 xxx.xxx.xxx.xxx.";
 
 
 
@@ -415,26 +415,26 @@ halive.right4="最多允許3個IP位址，之間使用 <em>空格</em> 區隔<BR
 config.titl="備份 & 恢復";
 config.h2="備份設定";
 config.legend="備份設定";
-config.mess1="按 \"" + sbutton.backup + "\" 按鈕將設定備份檔案下載到您的個人電腦。";
+config.mess1="按 \"" + sbutton.backup + "\" 按鈕將設定備份檔案儲存到您的個人電腦.";
 config.h22="恢復設定";
 config.legend2="恢復設定";
 config.mess2="請選擇一個用來恢復的檔案";
 config.mess3="W A R N I N G";
-config.mess4="請僅上傳使用符合此機器的韌體版本或是從相同型號路由器上的備份的檔。<br />請勿上傳任何不是使用本介面所創建的檔！";
+config.mess4="請僅上傳使用符合此機器的韌體版本或是從相同型號路由器上的備份的檔.<br />請勿上傳任何不是使用本介面所創建的檔！";
 
 //help container
 
-hconfig.right2="您可以備份目前的設定配置以備將來重置路由器至出廠預設值時可恢復配置的設定。<br /><br />按 <em>備份</em> 按鈕備份您的目前設定。";
-hconfig.right4="按 <em>瀏覽...</em> 按鈕瀏覽到您目前存放在個人電腦上的設定檔。<br /><br />按 <em>" + sbutton.restore + "</em> 按鈕使用設定檔覆蓋目前所有的設定設定。";
+hconfig.right2="您可以備份目前的設定配置以備將來重置路由器至出廠預設值時可恢復配置的設定.<br /><br />按 <em>備份</em> 按鈕備份您的目前設定.";
+hconfig.right4="按 <em>瀏覽...</em> 按鈕瀏覽到您目前存放在個人電腦上的設定檔.<br /><br />按 <em>" + sbutton.restore + "</em> 按鈕使用設定檔覆蓋目前所有的設定設定.";
 
 
 
 // ******************************************* DDNS.asp *******************************************//
 
 ddns.titl="動態 DNS"
-ddns.h2="動態功能系統網域名稱 (DDNS)";
+ddns.h2="動態名稱伺服器 (DDNS)";
 ddns.legend="DDNS";
-ddns.srv="DDNS 服務";
+ddns.srv="DDNS 伺服器";
 ddns.emailaddr="E-mail位址";
 ddns.typ="類型";
 ddns.dynamic="動態";
@@ -442,7 +442,7 @@ ddns.custom="自訂";
 ddns.wildcard="萬用字元";
 ddns.statu="DDNS狀態";
 ddns.system="DYNDNS 伺服器";
-ddns.options="DDNS 額外選項";
+ddns.options="DDNS 附加選項";
 ddns.forceupd="Force Update Interval";
 
 
@@ -451,13 +451,13 @@ ddnsm.all_resolving="正在解析網域名稱";
 ddnsm.all_errresolv="網域名稱解析失敗";
 ddnsm.all_connecting="正在連接到伺服器";
 ddnsm.all_connectfail="連接到伺服器失敗";
-ddnsm.all_disabled="DDNS功能關閉";
+ddnsm.all_disabled="DDNS 關閉";
 ddnsm.all_noip="Internet未連接";
 
 //help container
 
-hddns.right2="DDNS 充許您用網域名稱來取代IP位址。 這個服務動態的管理IP位址的變動，更新您的網域名稱資訊。您必須通過DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com 或Custom.com進行註冊。";
-hddns.right4="於輸入框內輸入整數數字型態做更新間隔 (日數)。當您的IP位址變更亦會自動完成更新。 當心您DDNS提供者更新濫用策略以避開或封鎖您的主機名稱及網域。";
+hddns.right2="DDNS 充許您用網域名稱來取代IP位址. 這個伺服器態管理IP位址的變動,更新您的網域名稱資訊.您必須通過DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com 或Custom.com進行註冊.";
+hddns.right4="於輸入框內輸入整數數字型態做更新間隔 (日數).當您的IP位址變更亦會自動完成更新.";
 
 
 
@@ -473,7 +473,7 @@ diag.custom="自訂";
 
 //help container
 
-hdiag.right2="您可以通過Web管理介面執行指令行。 將指令輸入本文區域並按 <em>" + sbutton.runcmd + "</em>  按鈕進行提交。";
+hdiag.right2="您可以通過Web管理介面執行指令行. 將指令輸入本文區域並按 <em>" + sbutton.runcmd + "</em>  按鈕執行.";
 
 
 
@@ -488,7 +488,7 @@ dmz.host="DMZ主機IP位址";
 
 //help container
 
-hdmz.right2="啟用這個選項將使特定IP的主機暴露於Internet上。所有的埠都可以從Internet連入。";
+hdmz.right2="啟用這個選項將使特定IP的主機暴露於Internet上.所有的埠都可以從Internet連入.";
 
 
 
@@ -499,11 +499,11 @@ factdef.h2="出廠預設值";
 factdef.legend="重置路由器設定";
 factdef.restore="恢復出廠預設值";
 
-factdef.mess1="警告! 如果您按確認，此設備將被重置為工廠預設值而先前所有的設定將會全部清除。";
+factdef.mess1="警告! 如果您按確認,此設備將被重置為工廠預設值而先前所有的設定將會全部清除.";
 
 //help container
 
-hfactdef.right1="此操作將使目前所有設定回復至出廠預設值，您目前所有設定設定將全部清除。";
+hfactdef.right1="此操作將使目前所有設定回復至出廠預設值,您目前所有設定設定將全部清除.";
 
 
 
@@ -511,7 +511,7 @@ hfactdef.right1="此操作將使目前所有設定回復至出廠預設值，您
 
 filterIP.titl="用戶端列表";
 filterIP.h2="用戶列表";
-filterIP.h3="請輸入用戶端MAC位址，格式為: xx:xx:xx:xx:xx:xx";
+filterIP.h3="請輸入用戶端MAC位址,格式為: xx:xx:xx:xx:xx:xx";
 filterIP.h32="請輸入用戶端IP位址";
 filterIP.h33="請輸入用戶端IP範圍";
 filterIP.ip_range="IP範圍";
@@ -526,29 +526,29 @@ filter.legend="連線計畫";
 filter.pol="計畫";
 filter.polname="計畫的名稱";
 filter.pcs="PC列表";
-filter.polallow="選定的日期和時間允許上網。";
+filter.polallow="選定的日期和時間允許上網.";
 filter.legend2="日期";
 filter.time="時間";
 filter.h24="24小時";
-filter.legend3="禁止的服務";
+filter.legend3="禁止的協定";
 filter.catchall="所有P2P協定";
 filter.legend4="使用URL位址封鎖Web網頁";
 filter.legend5="使用關鍵字封鎖Web網頁";
 
 filter.mess1="刪除此計畫？";
-filter.mess2="您必須至少選擇一個日期。";
-filter.mess3="結束時間必須大於起始時間。";
+filter.mess2="您必須至少選擇一個日期.";
+filter.mess3="結束時間必須大於起始時間.";
 
 //help container
 
-hfilter.right2="您可以最多定義10條連線計畫。按 <em>" + sbutton.del + "</em> 按鈕刪除一條計畫，或者按 <em>" + sbutton.summary + "</em> 按鈕察看計畫總覽。";
-hfilter.right4="啟用或停用一條計畫。";
-hfilter.right6="您可以為您的計畫指定一個名稱。";
-hfilter.right8="請選擇您希望您的計畫被應用的日期。";
-hfilter.right10="請輸入您希望您的計畫被應用的時間。";
-hfilter.right12="您可以選擇停止特定的服務。按 <em>" + sbutton.filterSer + "</em> 按鈕更改這些設定。";
-hfilter.right14="您可以通過輸入特定Web網頁的URL來禁止對其連線。";
-hfilter.right16="您可以通過輸入包含在特定Web網頁頁面中的關鍵字來禁止對其連線。";
+hfilter.right2="您可以最多定義10條連線計畫.按 <em>" + sbutton.del + "</em> 按鈕刪除一條計畫,或者按 <em>" + sbutton.summary + "</em> 按鈕察看計畫總覽.";
+hfilter.right4="啟用或停用一條計畫.";
+hfilter.right6="您可以為您的計畫指定一個名稱.";
+hfilter.right8="請選擇您希望您的計畫被應用的日期.";
+hfilter.right10="請輸入您希望您的計畫被應用的時間.";
+hfilter.right12="您可以選擇停止特定的協定.按 <em>" + sbutton.filterSer + "</em> 按鈕更改這些設定.";
+hfilter.right14="您可以通過輸入特定Web網頁的URL來禁止對其連線.";
+hfilter.right16="您可以通過輸入包含在特定Web網頁頁面中的關鍵字來禁止對其連線.";
 
 
 
@@ -567,7 +567,7 @@ firewall.titl="防火牆";
 firewall.h2="安全";
 firewall.legend="防火牆保護";
 firewall.firewall="SPI防火牆";
-firewall.legend2="附加的篩檢程式";
+firewall.legend2="附加的過濾程式";
 firewall.proxy="過濾 Proxy";
 firewall.cookies="過濾 Cookies";
 firewall.applet="過濾 Java Applets";
@@ -580,7 +580,7 @@ filter.port113="過濾IDENT (埠 113)";
 
 //help container
 
-hfirewall.right2="啟用或停用SPI防火牆。";
+hfirewall.right2="啟用或停用SPI防火牆.";
 
 
 
@@ -593,7 +593,7 @@ prforward.app="應用程式";
 
 //help container
 
-hprforward.right2="某些應用程式可能需要打開特定埠才能正常工作。 舉例來說，這些應用程式包括伺服器軟體和一些線上遊戲。當從Internet接收到一個針對特定埠的請求時，路由器將會把這些資料路由到您指定的電腦。基於安全的考慮，您可能想只對您需要使用的埠設定埠轉發（映射），同時，在您完成之後，取消對 <em>" + share.enable +"</em> 核取方塊的選定。";
+hprforward.right2="某些應用程式可能需要打開特定埠才能正常工作. 舉例來說,這些應用程式包括伺服器軟體和一些線上遊戲.當從Internet接收到一個針對特定埠的請求時,路由器將會把這些資料路由到您指定的電腦.基於安全的考慮,您可能想只對您需要使用的埠設定通訊埠轉發（映射）,同時,在您完成之後,取消對 <em>" + share.enable +"</em> 核取方塊的選定.";
 
 
 // ******************************************* P2P.asp *******************************************//
@@ -612,8 +612,8 @@ p2p.ctorrent_srv="Ctorrent服務";
 
 // ******************************************* ForwardSpec.asp *******************************************//
 
-pforward.titl="埠轉發（映射）";
-pforward.h2="埠轉發（映射）";
+pforward.titl="通訊埠轉發（映射）";
+pforward.h2="通訊埠轉發（映射）";
 pforward.legend="轉發（映射）";
 pforward.app="應用程式";
 pforward.from="來源埠";
@@ -621,7 +621,7 @@ pforward.to="目的地埠";
 
 //help container
 
-hpforward.right2="某些應用程式可能需要打開特定埠才能正常工作。 舉例來說，這些應用程式包括伺服器軟體和一些線上遊戲。當從Internet接收到一個針對特定埠的請求時，路由器將會把這些資料路由到您指定的電腦。基於安全的考慮，您可能想只對您需要使用的埠設定埠轉發（映射），同時，在您完成之後，取消對 <em>" + share.enable +"</em> 核取方塊的選定。";
+hpforward.right2="某些應用程式可能需要打開特定埠才能正常工作. 舉例來說,這些應用程式包括伺服器軟體和一些線上遊戲.當從Internet接收到一個針對特定埠的請求時,路由器將會把這些資料路由到您指定的電腦.基於安全的考慮,您可能想只對您需要使用的埠設定通訊埠轉發（映射）,同時,在您完成之後,取消對 <em>" + share.enable +"</em> 核取方塊的選定.";
 
 
 
@@ -643,7 +643,7 @@ hotspot.uam="UAM 秘密";
 hotspot.uamdns="UAM任意DNS";
 hotspot.allowuam="UAM被允許 ";
 hotspot.macauth="MACauth";
-hotspot.option="附加的Chillispot選項";
+hotspot.option="Chillispot附加選項";
 
 hotspot.fon_chilli="Chillispot本地用戶管理";
 hotspot.fon_user="用戶列表";
@@ -793,15 +793,15 @@ idx.ntp_client="NTP 用戶";
 
 //help container
 
-hidx.right2="這些設定最經常被有線電視操作人員使用。";
-hidx.right4="請輸入您的ISP提供的主機名。";
-hidx.right6="請輸入您的ISP提供的網域名稱。";
-hidx.right8="這是路由器的位址。";
-hidx.right10="T這是路由器的子網路遮罩。";
-hidx.right12="允許路由器管理您的IP位址。";
-hidx.right14="您希望起始的位址。";
-hidx.right16="您可以限制您的路由器提交的位址個數。";
-hidx.right18="請選擇您所在的時區和夏令時（DST）期間。本路由器可以使用本地時間或者UTC時間。";
+hidx.right2="這些設定最經常被有線電視操作人員使用.";
+hidx.right4="請輸入您的ISP提供的主機名.";
+hidx.right6="請輸入您的ISP提供的網域名稱.";
+hidx.right8="這是路由器的位址.";
+hidx.right10="T這是路由器的子網路遮罩.";
+hidx.right12="允許路由器管理您的IP位址.";
+hidx.right14="您希望起始的位址.";
+hidx.right16="您可以限制您的路由器提交的位址個數.";
+hidx.right18="請選擇您所在的時區和夏令時（DST）期間.本路由器可以使用本地時間或者UTC時間.";
 
 
 
@@ -892,40 +892,40 @@ management.ipv6_srv="IPv6";
 management.ipv6_rad="Radvd 已開啟";
 management.ipv6_radconf="Radvd 設定";
 
-management.jffs_legend="JFFS2 支持";
+management.jffs_legend="JFFS2 儲存區域";
 management.jffs_srv="JFFS2";
 management.jffs_clean="清除 JFFS2";
 
-management.lang_legend="語言選擇";
-management.lang_srv="語言";
-management.lang_bulgarian="bulgarian [保加利亞語]";
-management.lang_chinese_traditional="CHT[正體中文]";
-management.lang_chinese_simplified="Chinese Simplified  [簡體中文]";
-management.lang_croatian="croatian [克羅地亞]";
-management.lang_czech="czech [捷克]";
-management.lang_dutch="dutch [荷蘭語]";
-management.lang_portuguese_braz="portuguese (巴西語)";
-management.lang_english="english [英語]";
-management.lang_polish="polish [波蘭語]";
-management.lang_french="french [法語]";
-management.lang_german="german [德語]";
-management.lang_italian="italian [義大利語]";
-management.lang_brazilian="brazilian [巴西語]";
-management.lang_slovenian="slovenian [斯洛文尼亞語]";
-management.lang_spanish="spanish [西班牙語]";
-management.lang_swedish="swedish [瑞典語]";
-management.lang_japanese="japanese [日本語]";
+management.lang_legend="多國語言";
+management.lang_srv="語言選擇";
+management.lang_bulgarian="保加利亞";
+management.lang_chinese_traditional="正體中文";
+management.lang_chinese_simplified="簡體中文";
+management.lang_croatian="克羅埃西亞";
+management.lang_czech="捷克";
+management.lang_dutch="荷蘭";
+management.lang_portuguese_braz="巴西";
+management.lang_english="English";
+management.lang_polish="波蘭語";
+management.lang_french="法語";
+management.lang_german="德語";
+management.lang_italian="義大利";
+management.lang_brazilian="巴西";
+management.lang_slovenian="斯洛維尼亞";
+management.lang_spanish="西班牙";
+management.lang_swedish="瑞典";
+management.lang_japanese="日本";
 
-management.net_legend="IP過濾設定（為P2P調整這些設定）";
-management.net_port="最大埠數";
-management.net_tcptimeout="TCP超時（秒）";
-management.net_udptimeout="UDP超時（秒）";
+management.net_legend="IP過濾設定（ P2P 專用）";
+management.net_port="NAT sessions";
+management.net_tcptimeout="TCP_timeout（秒）";
+management.net_udptimeout="UDP_timeout（秒）";
 
 management.clock_legend="超頻";
 management.clock_frq="頻率";
-management.clock_support="不支持";
+management.clock_support="不支援";
 
-management.mmc_legend="MMC/SD卡支持";
+management.mmc_legend="MMC/SD卡支援";
 management.mmc_srv="MMC 設備";
 management.mmc_gpiosel="GPIO pins 選擇";
 management.mmc_gpiopins="GPIO pins";
@@ -945,8 +945,8 @@ management.gui_style="WEB介面風格";
 
 //help container
 
-hmanagement.right1="自動更新:";
-hmanagement.right2="調整Web圖形介面自動更新時間。輸入0完全關閉這個特性。";
+hmanagement.right1="畫面更新:";
+hmanagement.right2="調整Web介面自動更新時間.輸入 0 關閉更新.";
 
 
 
@@ -973,15 +973,15 @@ networking.iface="介面";
 
 // ******************************************* QoS.asp *******************************************//
 
-qos.titl="服務品質";
-qos.h2="服務品質 (QoS)";
+qos.titl="頻寬管理器";
+qos.h2="頻寬管理器 (QoS)";
 qos.legend="QoS 設定";
 qos.srv="開啟 QoS";
 qos.type="資料封包計劃器";
 qos.uplink="上行 (kbps)";
 qos.dnlink="下行 (kbps)";
-qos.gaming="遊戲優化";
-qos.legend2="服務優先順序";
+qos.gaming="線上遊戲最佳化";
+qos.legend2="協定優先順序";
 qos.prio_x="Exempt（豁免）";
 qos.prio_p="Premium（促進）";
 qos.prio_e="Express（快速）";
@@ -1000,13 +1000,13 @@ qos.bandwidth="以Kbits表示的帶寬";
 //help container
 
 hqos.right1="上行:";
-hqos.right2="將此設定為您的總上行限制的80%-95%（最大）。";
+hqos.right2="將此設定為您的總上行限制的80%-95%（最大）.";
 hqos.right3="下行:";
-hqos.right4="將此設定為您的總下行限制的80%-100%（最大）。";
-hqos.right6="您可以注意消耗頻寬的應用程式，進而控制您的資料傳輸速率。";
-hqos.right8="您可以為一個給定的IP位址或者IP區段指定優先順序。";
-hqos.right10="您可以通過為一個設備指定設備名，制定優先順序並輸入MAC位址。";
-hqos.right12="你可以依據你的設備來插進哪個LAN埠控制數據傳輸速度，您可以為設備連接從一到四的LAN埠上從而制定優先順序。";
+hqos.right4="將此設定為您的總下行限制的80%-100%（最大）.";
+hqos.right6="您可以注意消耗頻寬的應用程式,進而控制您的資料傳輸速率.";
+hqos.right8="您可以為一個給定的IP位址或者IP區段指定優先順序.";
+hqos.right10="您可以通過為一個設備指定設備名,制定優先順序並輸入MAC位址.";
+hqos.right12="你可以依據你的設備來插進哪個LAN埠控制數據傳輸速度,您可以為設備連接從一到四的LAN埠上從而制定優先順序.";
 
 
 
@@ -1052,11 +1052,11 @@ route.static_ip="目的地LAN IP";
 
 //help container
 
-hroute.right2="如果本路由器正主控您的Internet連接，選擇 <em>閘道</em> 模式。如果您的網路中存在另外一個路由器，選擇 <em>路由</em> 模式。";
-hroute.right4="這是唯一的路由號，您可以設定最多20條路由。";
-hroute.right6="設定您想要指定給這條路由的名稱。";
-hroute.right8="這是您想要設定靜態路由的遠端主機。";
-hroute.right10="決定主機和網路分配。";
+hroute.right2="如果本路由器正主控您的Internet連接,選擇 <em>閘道</em> 模式.如果您的網路中存在另外一個路由器,選擇 <em>路由</em> 模式.";
+hroute.right4="這是唯一的路由號,您可以設定最多20條路由.";
+hroute.right6="設定您想要指定給這條路由的名稱.";
+hroute.right8="這是您想要設定靜態路由的遠端主機.";
+hroute.right10="決定主機和網路分配.";
 
 
 // ******************************************* Site_Survey.asp *******************************************//
@@ -1070,8 +1070,8 @@ survey.thjoin="連接";
 // ******************************************* Services.asp *******************************************//
 
 
-service.titl="服務";
-service.h2="服務管理";
+service.titl="伺服器";
+service.h2="伺服器管理";
 
 //kaid
 service.kaid_legend="XBOX Kaid";
@@ -1091,11 +1091,11 @@ service.dhcp_jffs2="使用JFFS2作為用戶端租約資料庫";
 service.dhcp_nvramlease="使用NVRAM作為用戶端租約資料庫";
 service.dhcp_domain="已使用的網域";
 service.dhcp_landomain="LAN網域";
-service.dhcp_option="附加的DHCP選項";
+service.dhcp_option="DHCP附加選項";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_loc="本地DNS";
-service.dnsmasq_opt="附加的DNSMasq選項";
+service.dnsmasq_opt="DNSMasq附加選項";
 
 //pptp.webservices
 service.pptp_legend="PPTP";
@@ -1154,7 +1154,7 @@ service.pppoesrv_chaps="本地User管理 (CHAP Secrets)";
 service.snmp_legend="SNMP";
 service.snmp_srv="SNMP";
 service.snmp_loc="位置";
-service.snmp_contact="聯繫";
+service.snmp_contact="連接";
 service.snmp_name="名稱";
 service.snmp_read="RO 群社";
 service.snmp_write="RW 群社";
@@ -1174,14 +1174,14 @@ service.vpn_certtype="ns證書類型（nsCertType）";
 service.vpn_clikey="用戶端私鑰";
 
 //sshd.webservices
-service.ssh_legend="安全外殼（Secure Shell）";
-service.ssh_srv="SSHd";
+service.ssh_legend="信任授權機制（Secure Shell）";
+service.ssh_srv="SSH信任授權機制";
 service.ssh_password="密碼登錄";
 service.ssh_key="授權金鑰";
 
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP Button";
-service.radiooff_srv="用此按鈕關上radio";
+service.radiooff_srv="用此按鈕關閉無線網路";
 
 //ses.webservices ====> might replace the above radiooff_button
 service.ses_legend="SES / AOSS 按鈕";
@@ -1196,16 +1196,16 @@ service.hwmon_hystemp="溫度低於標準 (風扇關閉)";
 
 //rstat.webservices
 service.rstats_legend="頻寬監控";
-service.rstats_srv="rstats Daemon";
+service.rstats_srv="頻寬監控";
 service.rstats_path="儲存頻寬數據到";
 service.rstats_time="儲存間隔";
 service.rstats_usrdir="用戶指南";
 
 //nstx.webservices
 service.nstx_legend="IP over DNS的通道";
-service.nstx_srv="nstx Daemon";
+service.nstx_srv="IP over DNS";
 service.nstx_ipenable="Bind to this IP only";
-service.nstx_log="打開debug訊息";
+service.nstx_log="打開除錯訊息";
 
 // ******************************************* eop-tunnel.asp *******************************************//
 
@@ -1227,18 +1227,18 @@ eoip.bridging="橋接";
 // ******************************************* Sipath.asp + cgi *******************************************//
 
 sipath.titl="SiPath 總覽";
-sipath.phone_titl="電話本";
+sipath.phone_titl="電話簿";
 sipath.status_titl="狀態";
 
 
 
 // ******************************************* Status_Lan.asp *******************************************//
 
-status_lan.titl="LAN狀態";
+status_lan.titl="LAN資訊";
 status_lan.h2="本地網路";
-status_lan.legend="LAN 狀態";
+status_lan.legend="LAN 資訊";
 status_lan.h22="動態主機配置協定";
-status_lan.legend2="DHCP狀態";
+status_lan.legend2="DHCP資訊";
 status_lan.legend3="DHCP用戶端";
 status_lan.legend4="使用中的用戶端";
 status_lan.concount="Conn. Count";
@@ -1246,11 +1246,11 @@ status_lan.conratio="Ratio";
 
 //help container
 
-hstatus_lan.right2="這是您的本地乙太網路中看到的路由器的MAC位址。";
-hstatus_lan.right4="這是您的本地乙太網路中看到的路由器的IP位址。";
-hstatus_lan.right6="當路由器使用一個子網路遮罩的時候，它被顯示在這裏。";
-hstatus_lan.right8="如果您將您的路由器當作DHCP伺服器使用，那將被顯示在這裏。";
-hstatus_lan.right10="按任意MAC位址，您將能獲取該網路介面的「唯一組織識別碼」（IEEE標準OUI資料庫搜索）。";
+hstatus_lan.right2="這是您的本地乙太網路中看到的路由器的MAC位址.";
+hstatus_lan.right4="這是您的本地乙太網路中看到的路由器的IP位址.";
+hstatus_lan.right6="當路由器使用一個子網路遮罩的時候,它被顯示在這裏.";
+hstatus_lan.right8="如果您將您的路由器當作DHCP伺服器使用,那將被顯示在這裏.";
+hstatus_lan.right10="按任意MAC位址,您將能獲取該網路介面的「唯一組織識別碼」（IEEE標準OUI資料庫搜索）.";
 
 
 // ******************************************* Status_Bandwidth.asp *******************************************//
@@ -1268,7 +1268,7 @@ status_band.sys_up="開機時間";
 
 // ******************************************* Status_Router.asp *******************************************//
 
-status_router.titl="路由器狀態";
+status_router.titl="路由器資訊";
 status_router.h2="路由器資訊";
 status_router.legend="系統";
 status_router.sys_model="路由器型號";
@@ -1304,46 +1304,46 @@ status_router.cputemp="CPU 溫度";
 
 //help container
 
-hstatus_router.right2="這是您在 <i>設定</i> 標籤中所指定的路由器的名稱。";
-hstatus_router.right4="這是您的ISP所看到的路由器的MAC位址。";
-hstatus_router.right6="這是路由器目前的韌體。";
+hstatus_router.right2="這是您在 <i>設定</i> 標籤中所指定的路由器的名稱.";
+hstatus_router.right4="這是您的ISP所看到的路由器的MAC位址.";
+hstatus_router.right6="這是路由器目前的韌體.";
 hstatus_router.right8="這是由ntp伺服器所設定得到 <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em> 時間";
-hstatus_router.right10="這個數值表示路由器\"啟動\"並且運行的時間。";
-hstatus_router.right12="這裏給的三個數位表示系統在過去1、5、15分鐘時間內的系統負載。";
-hstatus_router.right14="這裏顯示您的ISP所需要將您連接到Internet的資訊。 這些資訊被輸入在設定標籤中。通過按這裏的按鈕，您可以 <em>連接</em> 或者 <em>關閉</em> 您的連接。";
+hstatus_router.right10="這個數值表示路由器\"啟動\"並且運行的時間.";
+hstatus_router.right12="這裏給的三個數位表示系統在過去1、5、15分鐘時間內的系統負載.";
+hstatus_router.right14="這裏顯示您的ISP所需要將您連接到Internet的資訊. 這些資訊被輸入在設定標籤中.通過按這裏的按鈕,您可以 <em>連接</em> 或者 <em>關閉</em> 您的連接.";
 
 
 // ******************************************* Status_Conntrack.asp *******************************************//
 
-status_conn.titl="活動的IP連接表";
-status_conn.h2="活動的IP連接";
+status_conn.titl="連線中的IP連接表";
+status_conn.h2="連線中的IP連接";
 
 
 
 // ******************************************* Status_SputnikAPD.asp *******************************************//
 
-status_sputnik.titl="Sputnik 代理狀態";
+status_sputnik.titl="Sputnik 代理資訊";
 status_sputnik.h2="Sputnik&reg; Agent&trade;";
 status_sputnik.manage="管理器";
 status_sputnik.license="SCC 授權編號";
 
 //help container
 
-hstatus_sputnik.right1="Sputnik 代理狀態";
-hstatus_sputnik.right2="此螢幕顯示Sputnik代理操作的狀態。";
-hstatus_sputnik.right4="本連線點所連接到的Sputnik控制中心。";
-hstatus_sputnik.right6="目前代理狀態。";
-hstatus_sputnik.right8="您的Sputnik控制中心的授權數。";
+hstatus_sputnik.right1="Sputnik 代理資訊";
+hstatus_sputnik.right2="此螢幕顯示Sputnik代理操作的資訊.";
+hstatus_sputnik.right4="本連線點所連接到的Sputnik控制中心.";
+hstatus_sputnik.right6="目前代理資訊.";
+hstatus_sputnik.right8="您的Sputnik控制中心的授權數.";
 
 
 
 // ******************************************* Status_Wireless.asp *******************************************//
 
-status_wireless.titl="無線狀態";
+status_wireless.titl="無線資訊";
 status_wireless.h2="無線";
-status_wireless.legend="無線狀態";
+status_wireless.legend="無線資訊";
 status_wireless.net="網路";
-status_wireless.pptp="PPTP狀態";
+status_wireless.pptp="PPTP資訊";
 status_wireless.legend2="無線封包資訊";
 status_wireless.rx="已接收的 (RX)";
 status_wireless.tx="已傳送的 (TX)";
@@ -1354,8 +1354,8 @@ status_wireless.wds="WDS節點";
 
 //help container
 
-hstatus_wireless.right2="這是您在您的本地無線網路中看到的路由器的MAC位址。";
-hstatus_wireless.right4="正如您在在無線標籤裏所設定的，這裏將顯示網路所使用的無線模式（混合，僅G，僅B或者關閉）。";
+hstatus_wireless.right2="這是您在您的本地無線網路中看到的路由器的MAC位址.";
+hstatus_wireless.right4="正如您在在無線標籤裏所設定的,這裏將顯示網路所使用的無線模式（混合,僅G,僅B或者關閉）.";
 
 
 
@@ -1366,20 +1366,20 @@ status_openvpn.titl="OpenVPN Status";
 
 // ******************************************* Triggering.asp *******************************************//
 
-trforward.titl="觸發通訊埠";
-trforward.h2="觸發通訊埠";
+trforward.titl="通訊埠觸發";
+trforward.h2="通訊埠觸發";
 trforward.legend="虛擬伺服器（映射）";
-trforward.trrange="已觸發通訊埠範圍";
+trforward.trrange="通訊埠觸發範圍";
 trforward.fwdrange="已開啟虛擬伺服器（映射）的埠範圍";
-trforward.app="應用程式。";
+trforward.app="應用程式.";
 
 //help container
 
-htrforward.right2="輸入觸發通訊埠的應用名稱。";
-htrforward.right4="為每一個應用程式列出被觸發的埠範圍。請參考Internet應用程式說明檔來查尋所需要的埠號。";
-htrforward.right6="為每一個應用程式列出虛擬伺服器（映射）的埠範圍。請參考Internet應用程式說明檔來查詢所需要的埠號。";
-htrforward.right8="輸入被觸發和虛擬伺服器（映射）埠範圍的起始埠號。";
-htrforward.right10="輸入觸發通訊埠和虛擬伺服器（映射）埠範圍的終止埠號。";
+htrforward.right2="輸入通訊埠觸發的應用名稱.";
+htrforward.right4="為每一個應用程式列出被觸發的埠範圍.請參考Internet應用程式說明檔來查尋所需要的埠號.";
+htrforward.right6="為每一個應用程式列出虛擬伺服器（映射）的埠範圍.請參考Internet應用程式說明檔來查詢所需要的埠號.";
+htrforward.right8="輸入被觸發和虛擬伺服器（映射）埠範圍的起始埠號.";
+htrforward.right10="輸入通訊埠觸發和虛擬伺服器（映射）埠範圍的終止埠號.";
 
 
 
@@ -1388,16 +1388,16 @@ htrforward.right10="輸入觸發通訊埠和虛擬伺服器（映射）埠範圍
 upgrad.titl="韌體升級";
 upgrad.h2="韌體管理";
 upgrad.legend="韌體升級";
-upgrad.info1="在刷新之後，還原到";
+upgrad.info1="在刷新之後,還原到";
 upgrad.resetOff="不還原";
 upgrad.resetOn="預設值";
 upgrad.file="請選擇一個用來升級的檔";
 upgrad.warning="（警 告）";
-upgrad.mess1="升級韌體可能需要花費數分鐘的時間。<br />請不要任意關閉電源或者按Reset 鍵！";
+upgrad.mess1="升級韌體可能需要花費數分鐘的時間.<br />請不要任意關閉電源或者按Reset 鍵！";
 
 //help container
 
-hupgrad.right2="按 <em>瀏覽...</em> 按鈕選擇要上傳到路由器的韌體檔。<br /><br /> 按 <em>升級</em> 按鈕開始進行韌體升級。升級過程中絕對不可以被打斷。";
+hupgrad.right2="按 <em>瀏覽...</em> 按鈕選擇要上傳到路由器的韌體檔.<br /><br /> 按 <em>升級</em> 按鈕開始進行韌體升級.升級過程中絕對不可以被打斷.";
 
 
 
@@ -1407,7 +1407,7 @@ upnp.titl="UPnP";
 upnp.h2="通用即插即用 (UPnP)";
 upnp.legend="虛擬伺服器（映射）";
 upnp.legend2="UPnP設定";
-upnp.serv="UPnP服務";
+upnp.serv="UPnP伺服器";
 upnp.clear="在啟動時清除虛擬伺服器（映射）";
 upnp.url="發送陳述 URL";
 upnp.msg1="刪除租用";
@@ -1416,8 +1416,8 @@ upnp.msg2="刪除所有項目？";
 
 //help container
 
-hupnp.right2="按垃圾桶刪除單一條目。";
-hupnp.right4="允許應用程式自動地設定埠轉發（映射）";
+hupnp.right2="按垃圾桶刪除單一條目.";
+hupnp.right4="允許應用程式自動地設定通訊埠轉發（映射）";
 
 
 
@@ -1425,14 +1425,14 @@ hupnp.right4="允許應用程式自動地設定埠轉發（映射）";
 
 vpn.titl="VPN";
 vpn.h2="虛擬專用網路（VPN）";
-vpn.legend="透過VPN";
-vpn.ipsec="透過IPSec";
-vpn.pptp="透過PPTP";
-vpn.l2tp="透過L2TP";
+vpn.legend="VPN Passthrough";
+vpn.ipsec="IPSec Passthrough";
+vpn.pptp="PPTP Passthrough";
+vpn.l2tp="L2TP Passthrough";
 
 //help container
 
-hvpn.right1="您可以選擇啟用透過IPSec，PPTP 和/或 L2TP，從而允許您的網路設備通過VPN進行通訊。";
+hvpn.right1="您可以選擇啟用IPSec,PPTP , L2TP Passthrough,從而允許您的網路設備通過VPN進行通訊.";
 
 
 // ******************************************* Vlan.asp *******************************************//
@@ -1477,7 +1477,7 @@ wol.pass="安全的密碼";
 
 hwol.right2="本頁面允許您 <em>喚醒</em> 在您本地網路上的主機 (例如. 本地連接你的路由器). 您可以手動喚醒主機 <em>"+sbutton.wol+"</em> 或是透過程式自動排程來喚醒 "+wol.srv+".";
 hwol.right4="MAC位址使用如下格式輸入 xx:xx:xx:xx:xx:xx (例如. 01:23:45:67:89:AB) 並且必須分開用 <em>空白</em>";
-hwol.right6="IP位址通常是本地網路的廣播位址，但是如果目標主機並為連接到路由器的本地網路，則應該設定為遠端位址。"
+hwol.right6="IP位址通常是本地網路的廣播位址,但是如果目標主機並為連接到路由器的本地網路,則應該設定為遠端位址."
 
 
 
@@ -1491,7 +1491,7 @@ wanmac.wlan="複製無線MAC";
 
 //help container
 
-hwanmac.right2="某些ISP可能要求您註冊您的MAC位址。如果您不想重新註冊您的MAC位址，您可以將路由器的MAC位址複製為您註冊在您的ISP處的MAC位址。";
+hwanmac.right2="某些ISP可能要求您註冊您的MAC位址.如果您不想重新註冊您的MAC位址,您可以將路由器的MAC位址複製為您註冊在您的ISP處的MAC位址.";
 
 
 
@@ -1520,25 +1520,25 @@ sec80211x.clientcertif="用戶端認證";
 
 //help container
 
-hwpa.right2="您可以從關閉、WEP、WPA預共用金鑰、WPA RADIUS或者RADIUS中選取一種。在你的網路上的全部設備必須使用相同的安全模式。";
+hwpa.right2="您可以從關閉、WEP、WPA預共用金鑰、WPA RADIUS或者RADIUS中選取一種.在你的網路上的全部設備必須使用相同的安全模式.";
 
 
 
 // ******************************************* WL_FilterTable.asp *******************************************//
 
-wl_filter.titl="MAC位址篩檢列表";
-wl_filter.h2="MAC位址篩檢列表";
+wl_filter.titl="MAC位址過濾列表";
+wl_filter.h2="MAC位址過濾列表";
 wl_filter.h3="使用如下格式輸入MAC位址&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
 
 
 
 // ******************************************* WL_ActiveTable.asp *******************************************//
 
-wl_active.titl="活動的無線用戶端MAC列表";
+wl_active.titl="連線中的無線用戶端MAC列表";
 wl_active.h2="無線用戶端MAC列表";
-wl_active.h3="啟用MAC篩檢";
-wl_active.active="活動的用戶端";
-wl_active.inactive="不活動的用戶端";
+wl_active.h3="啟用MAC過濾";
+wl_active.active="連線中的用戶端";
+wl_active.inactive="未連線的用戶端";
 
 
 
@@ -1561,7 +1561,7 @@ wds.legend2="額外的選項";
 // ******************************************* Wireless_radauth.asp *******************************************//
 
 radius.titl="Radius";
-radius.h2="遠端授權撥入用戶服務（Radius）";
+radius.h2="遠端授權撥入用戶伺服器（Radius）";
 radius.legend="Radius";
 radius.label="MAC Radius用戶端";
 radius.label2="MAC格式";
@@ -1581,8 +1581,8 @@ wl_mac.h2="無線MAC存取控制";
 wl_mac.legend="MAC存取控制";
 wl_mac.label="使用存取控制";
 wl_mac.label2="存取控制方式";
-wl_mac.deny="阻止所列PC機連接無線網路";
-wl_mac.allow="允許所列PC機連接無線網路";
+wl_mac.deny="禁止所列的MAC連接無線網路";
+wl_mac.allow="允許所列的MAC連接無線網路";
 
 
 
@@ -1608,28 +1608,28 @@ wl_basic.wdssta="WDS Station";
 wl_basic.wdsap="WDS AP";
 wl_basic.mixed="混合";
 wl_basic.preamble="Short Preamble";
-wl_basic.b="Ｂ模式";
-wl_basic.a="Ａ模式";
-wl_basic.g="Ｇ模式";
-wl_basic.bg="ＢＧ模式";
-wl_basic.n="Ｎ模式";
-wl_basic.legend2="Radio時間限制";
-wl_basic.radio="Radio";
-wl_basic.radiotimer="Radio排程中";
-wl_basic.radio_on="Radio 開啟";
-wl_basic.radio_off="Radio 關閉";
+wl_basic.b="B模式";
+wl_basic.a="A模式";
+wl_basic.g="G模式";
+wl_basic.bg="BG模式";
+wl_basic.n="N模式";
+wl_basic.legend2="無線網路自動 開/關 ";
+wl_basic.radio="無線網路";
+wl_basic.radiotimer="無線網路開關設定";
+wl_basic.radio_on="無線網路 開啟";
+wl_basic.radio_off="無線網路 關閉";
 
 wl_basic.h2_v24="Wireless Physical Interface";
 wl_basic.h2_vi="Virtual Interfaces";
 wl_basic.regdom="管理網域";
-wl_basic.TXpower="TX Power";
+wl_basic.TXpower="發射功率";
 wl_basic.AntGain="天線增益";
 wl_basic.diversity="差異";
 wl_basic.primary="主要";
 wl_basic.secondary="次要";
 wl_basic.network="網路設定";
 wl_basic.unbridged="Unbridged";
-wl_basic.bridged="已橋接";
+wl_basic.bridged="橋接";
 wl_basic.turbo="加速模式";
 wl_basic.extrange="擴大範圍";
 wl_basic.supergcomp="Super G 壓縮";
@@ -1645,9 +1645,9 @@ wl_basic.sifstime="OFDM SIFS 時間";
 wl_basic.preambletime="OFDM Preamble 時間";
 //help container
 
-hwl_basic.right2="如果您想剔除無線-G用戶端，選擇 <em>B</em> 模式。如果您想關閉無線連線，選擇 <em>關閉</em>.";
+hwl_basic.right2="如果您想排除無線-G用戶端,選擇 <em>B</em> 模式.如果您想關閉無線連線,選擇 <em>關閉</em>.";
 hwl_basic.right3="感度範圍: ";
-hwl_basic.right4="調整ack時序。輸入0將完全關閉ack時序。";
+hwl_basic.right4="調整ack時序.輸入0將完全關閉ack時序(V.24 無此功能).";
 
 
 
@@ -1674,8 +1674,8 @@ wl_adv.label14="Preamble";
 wl_adv.reference="雜訊參照";
 wl_adv.label15="Xmit功率";
 wl_adv.label16="Afterburner";
-wl_adv.label17="無線用戶圖形介面登入";
-wl_adv.label18="WMM 支持";
+wl_adv.label17="無線用戶WEB介面登入";
+wl_adv.label18="支援無線多媒體";
 wl_adv.label19="No-Acknowledgement";
 wl_adv.label20="Shortslot Override";
 wl_adv.label21="Transmission Maximum Rate";
@@ -1685,7 +1685,7 @@ wl_adv.col2="CWmax";
 wl_adv.col3="AIFSN";
 wl_adv.col4="TXOP(b)";
 wl_adv.col5="TXOP(a/g)";
-wl_adv.col6="Admin 強制";
+wl_adv.col6="Admin Forced";
 wl_adv.row1="背景";
 wl_adv.row2="最大努力";
 wl_adv.row3="視訊";
@@ -1696,40 +1696,40 @@ wl_adv.shrt="短"; 				//************* don't use .short ! **************
 
 //help container
 
-hwl_adv.right2="您可以從自動或者共用金鑰中選擇一個。共用金鑰授權更加安全，但是所有在您網路中的設備必須支援共用金鑰授權。";
-hwl_basic.right6="按任意時數來開啟或關閉無線訊號 (<em>綠色</em> 表示允許的無線進入，和 <em>紅色</em> 表示禁止無線進入。";
+hwl_adv.right2="您可以從自動或者共用金鑰中選擇一個.共用金鑰授權更加安全,但是所有在您網路中的設備必須支援共用金鑰授權.";
+hwl_basic.right6="按任意時數來開啟或關閉無線訊號 (<em>綠色</em> 表示允許的無線進入,和 <em>紅色</em> 表示禁止無線進入.";
 
 
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//
 
-fail.mess1="您所輸入的數值是無效的。請再試一次。";
-fail.mess2="升級失敗。";
+fail.mess1="您所輸入的數值是無效的.請再試一次.";
+fail.mess2="升級失敗.";
 
 
 
 // ******************************************* Success*.asp / Reboot.asp  *******************************************//
 
-success.saved="設定已儲存。";
-success.restore="設定已恢復。<br/>正在重新啟動。請稍候...";
-success.upgrade="升級成功。<br/>正在重新啟動。請稍候...";
-success.success_noreboot="設定成功。";
-success.success_reboot=success.success_noreboot + "<br />正在重新啟動。請稍候...";
+success.saved="設定已儲存.";
+success.restore="設定已恢復.<br/>正在重新啟動.請稍候...";
+success.upgrade="升級成功.<br/>正在重新啟動.請稍候...";
+success.success_noreboot="設定成功.";
+success.success_reboot=success.success_noreboot + "<br />正在重新啟動.請稍候...";
 
-success.alert_reset="所有設定已經被恢復到預設值。<br /><br />";
+success.alert_reset="所有設定已經被恢復到預設值.<br /><br />";
 success.alert1="P請在再次連接前檢查以下內容:";
-success.alert2="如果您更改了您的路由器的IP位址，請注意您必須release並且renew您網路上用戶端的位址。";
-success.alert3="如果您是通過WLAN連接的，請加入網路並且按 <em>繼續</em>.";
+success.alert2="如果您更改了您的路由器的IP位址,請注意您必須release並且renew您網路上用戶端的位址.";
+success.alert3="如果您是通過WLAN連接的,請加入網路並且按 <em>繼續</em>.";
 
 // ******************************************* Logout.asp  *******************************************//
 
-logout.message="您已成功登出。<br />感謝您使用 DD-WRT !";
+logout.message="您已成功登出.<br />感謝您使用 DD-WRT !";
 
 
 // *****************************************************		OLD PAGES 		************************************************************************//
 // **************************************************************** DHCPTable.asp **********************************************************************//
 
-dhcp.titl="DHCP活動IP列表";
-dhcp.h2="DHCP活動IP列表";
+dhcp.titl="DHCP連線中IP列表";
+dhcp.h2="DHCP連線中IP列表";
 dhcp.server="DHCP 伺服器IP位址 :";
 dhcp.tclient="用戶端主機名";
 
