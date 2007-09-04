@@ -1216,6 +1216,10 @@ service.nstx_srv="nstx Daemon";
 service.nstx_ipenable="Bind to this IP only";
 service.nstx_log="Switch on debug messages";
 
+
+//milkfish.webservices
+service.database_subscribers="Local Subscribers";
+
 // ******************************************* eop-tunnel.asp *******************************************//
 var eoip = new Object();
 eoip.titl="EoIP Tunnel";

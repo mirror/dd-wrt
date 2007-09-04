@@ -2905,7 +2905,8 @@ static struct gozila_action gozila_actions[] = {
   {"Ping", "stop", "", 0, REFRESH, diag_ping_stop},
   {"Ping", "clear", "", 0, REFRESH, diag_ping_clear},
 #ifdef HAVE_MILKFISH
-//
+  {"Milkfish_database", "add_milkfish_user", "", 0, REFRESH, milkfish_user_add},
+  {"Milkfish_database", "remove_milkfish_user", "", 0, REFRESH, milkfish_user_remove},
 #endif
 };
 
@@ -5576,9 +5577,9 @@ struct ej_handler ej_handlers[] = {
 #endif
   {"show_routeif", ej_show_routeif},
 #ifdef HAVE_MILKFISH
-  {"show_phonebook", ej_show_phonebook},
-  {"show_ppptime", ej_show_ppptime},
   {"exec_milkfish_service", ej_exec_milkfish_service},
+  {"exec_show_subscribers", ej_show_subscribers},
+  {"exec_mf_test", ej_mf_test},
 #endif
 
   {NULL, NULL}

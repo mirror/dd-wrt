@@ -62,22 +62,22 @@ fi
 #    nvram set sip_port=5060
 #    nvram set need_commit=1
 #fi
-
+# Hat hier doch nichts zu suchen?
 # Start the milkfish services
-$(which milkfish_services) start
+#$(which milkfish_services) start
 
 #dbtet module setup
-mkdir -p /var/openser/dbtext/
-cp /etc/openser/dbtext/aliases /var/openser/dbtext/
-cp /etc/openser/dbtext/location /var/openser/dbtext/
-cp /etc/openser/dbtext/subscriber /var/openser/dbtext/
-cp /etc/openser/dbtext/version /var/openser/dbtext/
-cp /etc/openser/dbtext/uri /var/openser/dbtext/
-cp /etc/openser/dbtext/grp /var/openser/dbtext/
+#mkdir -p /var/openser/dbtext/
+#cp /etc/openser/dbtext/aliases /var/openser/dbtext/
+#cp /etc/openser/dbtext/location /var/openser/dbtext/
+#cp /etc/openser/dbtext/subscriber /var/openser/dbtext/
+#cp /etc/openser/dbtext/version /var/openser/dbtext/
+#cp /etc/openser/dbtext/uri /var/openser/dbtext/
+#cp /etc/openser/dbtext/grp /var/openser/dbtext/
 
 # firewall configuration
-WAN=$(nvram get wan_iface)
-iptables -t nat -A prerouting_rule -i $WAN -p udp --dport 5060 -j ACCEPT
-iptables        -A input_rule      -i $WAN -p udp --dport 5060 -j ACCEPT
+#WAN=$(nvram get wan_iface)
+#iptables -t nat -A prerouting_rule -i $WAN -p udp --dport 5060 -j ACCEPT
+#iptables        -A input_rule      -i $WAN -p udp --dport 5060 -j ACCEPT
 
 exit 0

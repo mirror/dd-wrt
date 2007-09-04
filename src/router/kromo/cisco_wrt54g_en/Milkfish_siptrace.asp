@@ -27,6 +27,7 @@ function to_submit(F) {
                                         <div class="submitFooter">
 						<script type="text/javascript">
 						//<![CDATA[
+						submitFooterButton(0,0,0,0,0,1);
 						//submitFooterButton(1,1,0,0,0,1);
 						//]]>
 						</script>
