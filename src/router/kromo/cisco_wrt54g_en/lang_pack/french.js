@@ -378,7 +378,7 @@ bmenu.servicesServices="Services";
 bmenu.servicesPppoesrv="Serveur PPPoE";
 bmenu.servicesPptp="PPTP";
 bmenu.servicesHotspot="Hotspot";
-bmenu.servicesMilkfish="Milkfish";
+bmenu.servicesMilkfish="Milkfish Routeur de SIP";
 
 bmenu.statu="Statut";
 bmenu.statuRouter="Routeur";

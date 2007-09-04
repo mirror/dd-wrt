@@ -989,6 +989,23 @@ chap_user_remove (webs_t wp)
 }
 #endif
 
+#ifdef HAVE_MILKFISH
+void
+milkfish_user_add (webs_t wp)
+{
+//  macro_add ("mf_subscribernum");
+}
+
+void
+milkfish_user_remove (webs_t wp)
+{
+//  macro_rem ("mf_subscribernum", "mf_subscribers");
+}
+#endif
+
+
+
+
 void
 forwardspec_remove (webs_t wp)
 {
