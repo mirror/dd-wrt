@@ -173,6 +173,9 @@ stop_services (void)
 {
   void *handle = NULL;
   //stop_ses();
+#ifdef HAVE_MULTICAST
+  handle = stop_service_nofree ("igmp_proxy", handle);
+#endif
 #ifdef HAVE_PPPOERELAY
   handle = stop_service_nofree ("pppoerelay", handle);
 #endif
@@ -313,9 +316,6 @@ handle_index (void)
 #endif
 #endif
   handle = start_service_nofree ("radio_timer", handle);
-#ifdef HAVE_MULTICAST
-  handle = start_service_nofree ("igmp_proxy", handle);
-#endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
   handle = startstop_nofree ("zebra", handle);
 #endif
