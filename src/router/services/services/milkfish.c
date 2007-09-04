@@ -30,11 +30,11 @@
 void
 stop_milkfish (void)
 {
-  if (pidof ("rtpproxy") > 0 || pidof ("openserctl") > 0)
+  if (pidof ("rtpproxy") > 0 || pidof ("openser") > 0)
     syslog (LOG_INFO, "Milkfish service successfully stopped\n");
 
   killall ("rtpproxy", SIGTERM);
-  killall ("openserctl", SIGTERM);
+  killall ("openser", SIGTERM);
 }
 
 void
@@ -42,7 +42,7 @@ start_milkfish (void)
 {
   if (nvram_match ("milkfish_enabled", "1"))
     {
-      eval ("/etc/config/milkfish.sh");
+      eval ("/etc/config/milkfish.startup");
       eval ("/etc/config/milkfish.netup");	//start rtpproxy and openserctl
 
       syslog (LOG_INFO, "Milkfish service successfully started\n");

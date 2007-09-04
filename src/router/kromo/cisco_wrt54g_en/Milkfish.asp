@@ -79,17 +79,17 @@ addEvent(window, "unload", function() {
 			<div class="label">Milkfish Password</div>
 			<input size="27" name="milkfish_password" value="<% nvram_get("milkfish_password"); %>" />
 		</div>
-		<div class="setting">
+<!--		<div class="setting">
 			<div class="label">Milkfish Audit</div>
 			<input class="spaceradio" type="radio" name="milkfish_audit" value="on" <% nvram_checked("milkfish_audit", "on"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="milkfish_audit" value="off" <% nvram_checked("milkfish_audit", "off"); %> /><% tran("share.disable"); %>
-		</div>
+		</div>-->
 		<div class="setting">
 			<div class="label">Milkfish SIP Trace</div>
 			<input class="spaceradio" type="radio" name="milkfish_siptrace" value="on" <% nvram_checked("milkfish_siptrace", "on"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="milkfish_siptrace" value="off" <% nvram_checked("milkfish_siptrace", "off"); %> /><% tran("share.disable"); %>
 		</div>
-		<div class="setting">
+<!--		<div class="setting">
 			<div class="label">Dynamic SIP</div>
 			<input class="spaceradio" type="radio" name="milkfish_dynsip" value="on" <% nvram_checked("milkfish_dynsip", "on"); %> onclick="show_layer_ext(this, 'idmilkfish_dynsip', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="milkfish_dynsip" value="off" <% nvram_checked("milkfish_dynsip", "off"); %> onclick="show_layer_ext(this, 'idmilkfish_dynsip', false)" /><% tran("share.disable"); %>
@@ -111,7 +111,7 @@ addEvent(window, "unload", function() {
 			<div class="label">Dynamic SIP Password</div>
 			<input size="27" name="milkfish_dspassword" value="<% nvram_get("milkfish_dspassword"); %>" />
 		</div>
-		</div>
+		</div>-->
 	<br />
 
 	<fieldset>
@@ -196,15 +196,6 @@ addEvent(window, "unload", function() {
 </div>
 </fieldset>
 <br/>
-
-	<h2>Milkfish Status</h2>
-
-	<fieldset>
-		<legend>Current Status</legend>
-		<% exec_milkfish_service("milkfish_services status"); %>
-	</fieldset>
-	<br />
-							
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
