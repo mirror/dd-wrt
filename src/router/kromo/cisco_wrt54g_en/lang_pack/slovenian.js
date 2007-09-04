@@ -383,7 +383,7 @@ bmenu.servicesServices="Storitve";
 bmenu.servicesPppoesrv="PPPoE stre¾nik";
 bmenu.servicesPptp="PPTP";
 bmenu.servicesHotspot="Hotspot";
-bmenu.servicesMilkfish="Milkfish";
+bmenu.servicesMilkfish="Milkfish SIP Usmerjalnik";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Usmerjalnik";
