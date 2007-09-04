@@ -72,12 +72,6 @@ start_stabridge (void)
 void
 stop_stabridge (void)
 {
-#ifdef HAVE_MADWIFI
-  if (getWET ())
-#else
-  if (nvram_match ("wl0_mode", "wet"))
-#endif
-    {
       eval ("ebtables", "-t", "broute", "-D", "BROUTING", "--protocol",
 	    "0x888e", "--in-interface", getWET (), "-j", "DROP");
       eval ("ebtables", "-t", "nat", "-D", "POSTROUTING", "--out-interface",
@@ -90,6 +84,4 @@ stop_stabridge (void)
       eval ("rmmod", "ebtable_nat");
       eval ("rmmod", "ebtable_filter");
       eval ("rmmod", "ebtables");
-    }
-
 }

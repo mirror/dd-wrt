@@ -1234,11 +1234,11 @@ start_lan (void)
       br_add_bridge (lan_ifname);
 #ifdef HAVE_MICRO
       struct timeval tv;
-      tv.tv_sec = 0;
+      tv.tv_sec = 1;
       tv.tv_usec = 0;
       br_set_bridge_forward_delay (lan_ifname, &tv);
 #else
-      eval ("brctl", "setfd", lan_ifname, "0");
+      eval ("brctl", "setfd", lan_ifname, "1");
 #endif
       //eval ("brctl", "addbr", lan_ifname);
       //eval ("brctl", "setfd", lan_ifname, "0");
@@ -1727,11 +1727,11 @@ start_lan (void)
 
 #ifdef HAVE_MICRO
 	  struct timeval tv;
-	  tv.tv_sec = 0;
+	  tv.tv_sec = 1;
 	  tv.tv_usec = 0;
 	  br_set_bridge_forward_delay (lan_ifname, &tv);
 #else
-	  eval ("brctl", "setfd", lan_ifname, "0");
+	  eval ("brctl", "setfd", lan_ifname, "1");
 #endif
 
 	  //eval ("brctl", "delbr", "br1");
@@ -3264,10 +3264,10 @@ start_hotplug_net (void)
 {
 #ifdef HAVE_MADWIFI
   char *interface, *action, *devaction;
- fprintf(stderr,"Hotplug\n");
+// fprintf(stderr,"Hotplug\n");
    if (!(interface = getenv ("INTERFACE")) || !(action = getenv ("ACTION")) || !(devaction = getenv ("DEVACTION")))
     return 0;
- fprintf(stderr,"Hotplug %s\n",action);
+// fprintf(stderr,"Hotplug %s\n",action);
    if (!strcmp(action,"change"))
     {
     char *vlan = getenv("VLAN");
@@ -3280,7 +3280,8 @@ start_hotplug_net (void)
 	eval ("vconfig", "add", interface, vlan);
 	char devname[32];
 	sprintf(devname,"%s.%04d",interface,atoi(vlan));
-	fprintf(stderr,"adding WDS Interface %s for Station %s\n",devname,getenv("WDSNODE"));
+	
+	syslog (LOG_INFO,"adding WDS Interface %s for Station %s\n",devname,getenv("WDSNODE"));
 	    eval("ifconfig",devname,"up");
 	if (nvram_match(bridged,"1"))
 	    eval("brctl","addif",getBridge(interface),devname);	
@@ -3290,7 +3291,7 @@ start_hotplug_net (void)
 	eval ("vconfig","set_name_type","DEV_PLUS_VID");
 	char devname[32];
 	sprintf(devname,"%s.%04d",interface,atoi(vlan));
-	fprintf(stderr,"removing WDS Interface %s for Station %s\n",devname,getenv("WDSNODE"));
+	syslog (LOG_INFO,"removing WDS Interface %s for Station %s\n",devname,getenv("WDSNODE"));
 	eval("ifconfig",devname,"down");
 	if (nvram_match(bridged,"1"))
 	    eval("brctl","delif",getBridge(interface),devname);	
