@@ -50,8 +50,8 @@ start_rstats (void)
     {
       stop_rstats ();
       eval ("rstats");
+	  syslog (LOG_INFO, "rstats daemon successfully started\n");
     }
-  syslog (LOG_INFO, "rstats daemon successfully started\n");
 }
 
 #endif
