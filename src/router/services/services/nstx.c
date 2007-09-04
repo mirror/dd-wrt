@@ -42,8 +42,8 @@ start_nstxd (void)
     {
       stop_nstxd ();
       eval ("nstxd");
+      syslog (LOG_INFO, "nstxd daemon successfully started\n");
     }
-  syslog (LOG_INFO, "nstxd daemon successfully started\n");
 }
 
 #endif
