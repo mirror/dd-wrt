@@ -1150,8 +1150,9 @@ led_control (int type, int act)
       power_gpio = 0x03;
       wlan_gpio = 0x14;
       break;
-
+    case ROUTER_WRT150N:
     case ROUTER_WRT300N:
+	  power_gpio = 0x01;
       diag_gpio = 0x11;  //power led blink to indicate fac.def.
       break;
     case ROUTER_ASUS_WL500G:
