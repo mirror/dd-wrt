@@ -9,18 +9,19 @@
 #CC = mipsel-linux-uclibc-gcc
 CFLAGS = $(COPTS)
 
-CFLAGS += -DIGMP_SEND_THE_SECOND_QUERY_PACKET=1
+CFLAGS += -DIGMP_SEND_THE_SECOND_QUERY_PACKET=1 -DNEED_PRINTF
 
-CFLAGS += -DIGMP_BLOCK_SOME_SPEC_ADDRS=1
+CFLAGS += -DIGMP_BLOCK_SOME_SPEC_ADDRS=1 -I$(TOP)/../include.v24 -I$(TOP)/shared -DHND_FIX -fomit-frame-pointer
 
+LDFLAGS = -L$(TOP)/netconf -lnetconf 
 
 all: igmp-proxy
 
 # List of all object modules that make up the IGMPProxy.
-OBJECTS = igmprt.o util.o
+OBJECTS = igmprt.o proxy.o igmpv2.o util.o filter.o
 
 igmp-proxy: $(OBJECTS)
-	$(CC) $(CFLAGS) $(OBJECTS) -o igmprt
+	$(CC) $(CFLAGS) $(OBJECTS) -o igmprt -L$(TOP)/netconf -L$(TOP)/nvram -lnetconf -lnvram
 
 igmp_proxy.o: igmp_proxy.c
 	$(CC) $(CFLAGS) -c igmp_proxy.c
