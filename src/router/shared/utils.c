@@ -295,7 +295,7 @@ internal_getRouterBrand ()
     }
   if (boardnum == 45 && nvram_match ("boardtype", "0x0472") && nvram_match("boardrev","0x23") && nvram_match("parkid","1"))
     {
-      cprintf ("router is Asus WL-500GW\n");
+      cprintf ("router is Asus WL-500W\n");
       setRouter ("Asus WL-500W");
       return ROUTER_ASUS_WL500W;
     }
@@ -1108,25 +1108,29 @@ led_control (int type, int act)
 #ifndef HAVE_BUFFALO
     case ROUTER_MOTOROLA:
       power_gpio = 0x01;
-      diag_gpio = 0x11;
+      diag_gpio = 0x11;  //power led blink / off to indicate factory defaults
       break;
     case ROUTER_RT210W:
       power_gpio = 0x15;
+      diag_gpio = 0x05;  //power led blink / off to indicate factory defaults
       connected_gpio = 0x10;
       wlan_gpio = 0x13;
       break;
     case ROUTER_RT480W:
       power_gpio = 0x15;
+      diag_gpio = 0x05;  //power led blink / off to indicate factory defaults
       connected_gpio = 0x10;
       break;
     case ROUTER_MICROSOFT_MN700:
       power_gpio = 0x06;
+      diag_gpio = 0x16;  //power led blink / off to indicate factory defaults
       break;
     case ROUTER_ASUS_WL500GD:
-      diag_gpio = 0x00;  //power led off to indicate factory defaults
+      diag_gpio = 0x00;  //power led blink / off to indicate factory defaults
       break;
     case ROUTER_ASUS_WL500G_PRE:
       power_gpio = 0x11;
+      diag_gpio = 0x01;  //power led blink / off to indicate factory defaults
       break;
     case ROUTER_WRT54G3G:
     case ROUTER_WRTSL54GS:
@@ -1145,6 +1149,7 @@ led_control (int type, int act)
     case ROUTER_DELL_TRUEMOBILE_2300:
     case ROUTER_DELL_TRUEMOBILE_2300_V2:
       power_gpio = 0x17;
+      diag_gpio = 0x07;  //power led blink / off to indicate factory defaults
       wlan_gpio = 0x16;
       break;
     case ROUTER_NETGEAR_WNR834B:
@@ -1154,30 +1159,32 @@ led_control (int type, int act)
       break;
     case ROUTER_SITECOM_WL105B:
       power_gpio = 0x03;
+      diag_gpio = 0x13;  //power led blink / off to indicate factory defaults
       wlan_gpio = 0x14;
       break;
     case ROUTER_WRT150N:
     case ROUTER_WRT300N:
-	  power_gpio = 0x01;
-      diag_gpio = 0x11;  //power led blink to indicate fac.def.
+      power_gpio = 0x01;
+      diag_gpio = 0x11;  //power led blink / off to indicate fac.def.
       break;
     case ROUTER_ASUS_WL500G:
       power_gpio = 0x10;
-      diag_gpio = 0x00;  //power led off to indicate factory defaults
+      diag_gpio = 0x00;  //power led blink /off to indicate factory defaults
       break;
     case ROUTER_ASUS_WL500W:
       power_gpio = 0x15;
-      diag_gpio = 0x05;  //power led off to indicate factory defaults
+      diag_gpio = 0x05;  //power led blink /off to indicate factory defaults
       break;
 #endif
     }
-if (type==LED_DIAG && v1func==1) 
+if (type == LED_DIAG && v1func == 1) 
     {
-    if (act==LED_ON)
-	C_led(1);
+    if (act == LED_ON)
+      C_led (1);
     else    
-	C_led(0);
+      C_led (0);
     }
+
   switch (type)
     {
     case LED_POWER:
