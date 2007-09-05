@@ -376,6 +376,9 @@ CFLAGS += -DHAVE_MILKFISH
 OBJS += milkfish.o
 endif
 
+#use this do disable number of arguments checking (less code and faster exec)
+CFLAGS += -DFASTWEB
+
 #OBJS += http.o
 
 ifneq ($(CONFIG_NOSSL),y)
