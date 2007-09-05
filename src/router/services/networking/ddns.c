@@ -99,7 +99,7 @@ init_ddns (void)
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_3");
     break;
 
-  case 4
+  case 4:
     strcpy (service, "default@no-ip.com");
     
       snprintf (_username, sizeof (_username), "%s", "ddns_username_4");
@@ -117,7 +117,7 @@ init_ddns (void)
       snprintf (_conf, sizeof (_conf), "%s", "ddns_conf");
     break;
     
-  case 6;
+  case 6:
     strcpy (service, "dyndns@3322.org");
     
       snprintf (_username, sizeof (_username), "%s", "ddns_username_6");
