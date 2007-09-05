@@ -107,10 +107,10 @@ setupSupplicant (char *prefix)
       fprintf (fp, "\tpsk=\"%s\"\n", nvram_safe_get (psk));
       fprintf (fp, "}\n");
       fclose (fp);
-      if (!strcmp(prefix,"wl0"))
-      sprintf (psk, "-i%s", nvram_safe_get("wl0_ifname"));
+      if (!strcmp (prefix, "wl0"))
+	sprintf (psk, "-i%s", nvram_safe_get ("wl0_ifname"));
       else
-      sprintf (psk, "-i%s", prefix);
+	sprintf (psk, "-i%s", prefix);
 
       if (nvram_match (wmode, "wdssta") || nvram_match (wmode, "wet"))
 	eval ("wpa_supplicant", "-b", getBridge (prefix), "-B",
@@ -200,10 +200,10 @@ setupSupplicant (char *prefix)
 	}
       fprintf (fp, "}\n");
       fclose (fp);
-      if (!strcmp(prefix,"wl0"))
-      sprintf (psk, "-i%s", nvram_safe_get("wl0_ifname"));
+      if (!strcmp (prefix, "wl0"))
+	sprintf (psk, "-i%s", nvram_safe_get ("wl0_ifname"));
       else
-      sprintf (psk, "-i%s", prefix);
+	sprintf (psk, "-i%s", prefix);
 
       char bvar[32];
       sprintf (bvar, "%s_bridged", prefix);
@@ -223,7 +223,8 @@ setupSupplicant (char *prefix)
 
 }
 
-void start_supplicant(void) //for testing only
+void
+start_supplicant (void)		//for testing only
 {
-setupSupplicant("wl0");
+  setupSupplicant ("wl0");
 }
