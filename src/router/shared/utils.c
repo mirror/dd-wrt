@@ -295,7 +295,7 @@ internal_getRouterBrand ()
     }
   if (boardnum == 45 && nvram_match ("boardtype", "0x0472") && nvram_match("boardrev","0x23") && nvram_match("parkid","1"))
     {
-      cprintf ("router is Asus WL-500GD\n");
+      cprintf ("router is Asus WL-500GW\n");
       setRouter ("Asus WL-500W");
       return ROUTER_ASUS_WL500W;
     }
