@@ -662,7 +662,7 @@ setupSupplicant (char *prefix)
   char wmode[16];
   sprintf (akm, "%s_akm", prefix);
   sprintf (wmode, "%s_mode", prefix);
-      sprintf(bridged,"%s_bridged",prefix);
+  sprintf (bridged, "%s_bridged", prefix);
   if (nvram_match (akm, "wep"))
     {
       char key[16];
@@ -739,9 +739,10 @@ setupSupplicant (char *prefix)
       fprintf (fp, "}\n");
       fclose (fp);
       sprintf (psk, "-i%s", prefix);
-      if ((nvram_match (wmode, "wdssta") || nvram_match (wmode, "wet")) && nvram_match(bridged,"1"))
-	eval ("wpa_supplicant", "-b", getBridge (prefix), "-B",
-	      "-Dmadwifi", psk, "-c", fstr);
+      if ((nvram_match (wmode, "wdssta") || nvram_match (wmode, "wet"))
+	  && nvram_match (bridged, "1"))
+	eval ("wpa_supplicant", "-b", getBridge (prefix), "-B", "-Dmadwifi",
+	      psk, "-c", fstr);
       else
 	eval ("wpa_supplicant", "-B", "-Dmadwifi", psk, "-c", fstr);
     }
@@ -828,7 +829,8 @@ setupSupplicant (char *prefix)
       fprintf (fp, "}\n");
       fclose (fp);
       sprintf (psk, "-i%s", prefix);
-      if (nvram_match (bridged, "1") && (nvram_match (wmode, "wdssta") || nvram_match (wmode, "wet")))
+      if (nvram_match (bridged, "1")
+	  && (nvram_match (wmode, "wdssta") || nvram_match (wmode, "wet")))
 	eval ("wpa_supplicant", "-b", nvram_safe_get ("lan_ifname"), "-B",
 	      "-Dmadwifi", psk, "-c", fstr);
       else
@@ -926,7 +928,8 @@ setupHostAP (char *prefix, int iswan)
 	  sprintf (psk, "%s_wpa_psk", prefix);
 	  fprintf (fp, "wpa_passphrase=%s\n", nvram_safe_get (psk));
 	  fprintf (fp, "wpa_key_mgmt=WPA-PSK\n");
-	}else
+	}
+      else
 	{
 //        if (nvram_invmatch (akm, "radius"))
 	  fprintf (fp, "wpa_key_mgmt=WPA-EAP\n");
@@ -1178,49 +1181,51 @@ set_netmode (char *wif, char *dev, char *use)
 //  eval ("iwconfig", use, "channel", "0");
 //  else
   {
-#ifdef HAVE_WHRAG108  
-    if (!strncmp(use,"ath0",4))
- {
-    eval("iwpriv",use,"mode","1");
- }else
+#ifdef HAVE_WHRAG108
+    if (!strncmp (use, "ath0", 4))
+      {
+	eval ("iwpriv", use, "mode", "1");
+      }
+    else
 #endif
 #ifdef HAVE_TW6600
-    if (!strncmp(use,"ath0",4))
- {
-    eval("iwpriv",use,"mode","1");
- }else
+    if (!strncmp (use, "ath0", 4))
+      {
+	eval ("iwpriv", use, "mode", "1");
+      }
+    else
 #endif
-{
-    eval ("iwpriv", use, "turbo", "0");
-    eval ("iwpriv", use, "xr", "0");
-    if (!strcmp (netmode, "mixed"))
-      eval ("iwpriv", use, "mode", "0");
-    if (!strcmp (netmode, "b-only"))
-      eval ("iwpriv", use, "mode", "2");
-    if (!strcmp (netmode, "g-only"))
       {
-	eval ("iwpriv", use, "mode", "3");
-	eval ("iwpriv", use, "protmode", "0");
-      }
-    if (!strcmp (netmode, "ng-only"))
-      {
-	eval ("iwpriv", use, "mode", "7");
-	eval ("iwpriv", use, "protmode", "0");
-      }
-    if (!strcmp (netmode, "na-only"))
-      {
-	eval ("iwpriv", use, "mode", "6");
-      }
-    if (!strcmp (netmode, "bg-mixed"))
-      {
-	eval ("iwpriv", use, "mode", "3");
-	eval ("iwpriv", use, "protmode", "1");
-      }
+	eval ("iwpriv", use, "turbo", "0");
+	eval ("iwpriv", use, "xr", "0");
+	if (!strcmp (netmode, "mixed"))
+	  eval ("iwpriv", use, "mode", "0");
+	if (!strcmp (netmode, "b-only"))
+	  eval ("iwpriv", use, "mode", "2");
+	if (!strcmp (netmode, "g-only"))
+	  {
+	    eval ("iwpriv", use, "mode", "3");
+	    eval ("iwpriv", use, "protmode", "0");
+	  }
+	if (!strcmp (netmode, "ng-only"))
+	  {
+	    eval ("iwpriv", use, "mode", "7");
+	    eval ("iwpriv", use, "protmode", "0");
+	  }
+	if (!strcmp (netmode, "na-only"))
+	  {
+	    eval ("iwpriv", use, "mode", "6");
+	  }
+	if (!strcmp (netmode, "bg-mixed"))
+	  {
+	    eval ("iwpriv", use, "mode", "3");
+	    eval ("iwpriv", use, "protmode", "1");
+	  }
 
-    if (!strcmp (netmode, "a-only"))
-      eval ("iwpriv", use, "mode", "1");
+	if (!strcmp (netmode, "a-only"))
+	  eval ("iwpriv", use, "mode", "1");
+      }
   }
-}
   if (default_match (turbo, "1", "0"))
     {
       {
@@ -1561,23 +1566,23 @@ configure_single (int count)
   sprintf (wmm, "%s_wmm", dev);
   eval ("iwpriv", dev, "wmm", default_get (wmm, "0"));
 //  eval ("iwpriv", dev, "uapsd","0");
-  eval ("iwpriv",dev,"scandisable","0");
- int disablescan=0;
+  eval ("iwpriv", dev, "scandisable", "0");
+  int disablescan = 0;
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
     {
       cprintf ("set channel\n");
       char *ch = default_get (channel, "0");
       if (strcmp (ch, "0") == 0)
 	{
-	  eval ("iwpriv",dev,"scandisable","0");
+	  eval ("iwpriv", dev, "scandisable", "0");
 	  eval ("iwconfig", dev, "channel", "0");
 	}
       else
 	{
 	  char freq[64];
 	  sprintf (freq, "%sM", ch);
-	  eval ("iwpriv",dev,"scandisable","1");
-	  disablescan=1;
+	  eval ("iwpriv", dev, "scandisable", "1");
+	  disablescan = 1;
 	  eval ("iwconfig", dev, "freq", freq);
 	}
     }
@@ -1610,7 +1615,7 @@ configure_single (int count)
   vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
     foreach (var, vifs, next)
-        {
+    {
       sprintf (net, "%s_net_mode", var);
       if (nvram_match (net, "disabled"))
 	continue;
@@ -1639,7 +1644,7 @@ configure_single (int count)
       if (!strcmp (m, "wdsap"))
 	eval ("iwpriv", var, "wdsvlan", "0");
       if (disablescan)
-      	  eval ("iwpriv",var,"scandisable","1");
+	eval ("iwpriv", var, "scandisable", "1");
 
       cnt++;
     }
@@ -1735,8 +1740,9 @@ configure_single (int count)
 	  char mask[32];
 	  sprintf (ip, "%s_ipaddr", dev);
 	  sprintf (mask, "%s_netmask", dev);
-	  eval("ifconfig",dev,"mtu","1500");
-	  eval("ifconfig",dev, nvram_safe_get (ip), "netmask",nvram_safe_get (mask),"up");
+	  eval ("ifconfig", dev, "mtu", "1500");
+	  eval ("ifconfig", dev, nvram_safe_get (ip), "netmask",
+		nvram_safe_get (mask), "up");
 	}
     }
   else
@@ -1749,8 +1755,9 @@ configure_single (int count)
 	  char mask[32];
 	  sprintf (ip, "%s_ipaddr", dev);
 	  sprintf (mask, "%s_netmask", dev);
-	  eval("ifconfig",dev,"mtu","1500");
-	  eval("ifconfig",dev, nvram_safe_get (ip), "netmask",nvram_safe_get (mask),"up");
+	  eval ("ifconfig", dev, "mtu", "1500");
+	  eval ("ifconfig", dev, nvram_safe_get (ip), "netmask",
+		nvram_safe_get (mask), "up");
 	}
     }
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
@@ -1786,7 +1793,7 @@ configure_single (int count)
 		char mask[32];
 		sprintf (ip, "%s_ipaddr", var);
 		sprintf (mask, "%s_netmask", var);
-		eval("ifconfig",var,"mtu","1500");
+		eval ("ifconfig", var, "mtu", "1500");
 		ifconfig (var, IFUP, nvram_safe_get (ip),
 			  nvram_safe_get (mask));
 		if (!strcmp (m, "sta") || !strcmp (m, "wdssta")
@@ -1832,9 +1839,9 @@ configure_single (int count)
 	setupSupplicant (var);
     }
 /*  set_rate (dev);*/
- 
+
   m = default_get (wl, "ap");
-  eval ("iwpriv",dev,"scandisable","0");
+  eval ("iwpriv", dev, "scandisable", "0");
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
     {
       cprintf ("set channel\n");
@@ -1847,12 +1854,12 @@ configure_single (int count)
 	{
 	  char freq[64];
 	  sprintf (freq, "%sM", ch);
-	  eval ("iwpriv",dev,"scandisable","1");
+	  eval ("iwpriv", dev, "scandisable", "1");
 	  eval ("iwconfig", dev, "freq", freq);
-	  sleep(1);
-	  eval("ifconfig",dev,"down");
-	  sleep(1);
-	  eval("ifconfig",dev,"up");
+	  sleep (1);
+	  eval ("ifconfig", dev, "down");
+	  sleep (1);
+	  eval ("ifconfig", dev, "up");
 	}
     }
 }
@@ -1897,7 +1904,7 @@ start_vifs (void)
 		    char mask[32];
 		    sprintf (ip, "%s_ipaddr", var);
 		    sprintf (mask, "%s_netmask", var);
-		    eval("ifconfig",var,"mtu","1500");
+		    eval ("ifconfig", var, "mtu", "1500");
 		    ifconfig (var, IFUP, nvram_safe_get (ip),
 			      nvram_safe_get (mask));
 		  }

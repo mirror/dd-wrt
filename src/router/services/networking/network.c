@@ -560,11 +560,11 @@ wlconf_up (char *name)
       rw_reg_t reg;
       uint32 shm;
 
-#ifndef HAVE_MSSID      
-  struct stat buf;
-  int notexists = stat ("/tmp/ackdisabled", &buf); 
+#ifndef HAVE_MSSID
+      struct stat buf;
+      int notexists = stat ("/tmp/ackdisabled", &buf);
 #endif
-      
+
       val = atoi (v);
       if (val == 0)
 	{
@@ -574,13 +574,13 @@ wlconf_up (char *name)
 #endif
 	  // wlc_noack (0);
 #else
-	  if (notexists != 0)  //file not exists
+	  if (notexists != 0)	//file not exists
 	    {
-	    eval ("/etc/txackset.sh", "0");	// disable ack timing
-	    FILE *test = fopen ("/tmp/ackdisabled", "wb");
-	    fprintf (test, "yes");
-	    fclose (test);
- 		}
+	      eval ("/etc/txackset.sh", "0");	// disable ack timing
+	      FILE *test = fopen ("/tmp/ackdisabled", "wb");
+	      fprintf (test, "yes");
+	      fclose (test);
+	    }
 #endif
 	  return 0;
 	}
@@ -592,10 +592,10 @@ wlconf_up (char *name)
 #endif
 	  //  wlc_noack (1);
 #else
-	  if (notexists == 0)  //file exists
+	  if (notexists == 0)	//file exists
 	    {
-	    eval ("/etc/txackset.sh", "1");	// enable ack timing (not required, enable per default)
-	    unlink ("/tmp/ackdisabled");
+	      eval ("/etc/txackset.sh", "1");	// enable ack timing (not required, enable per default)
+	      unlink ("/tmp/ackdisabled");
 	    }
 #endif
 	}
@@ -771,41 +771,42 @@ start_lan (void)
 #endif
 #ifdef HAVE_FONERA
 
-  if (getRouterBrand() == ROUTER_BOARD_FONERA2200)
-  {
-  if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
-      || nvram_match ("wan_proto", "disabled"))
+  if (getRouterBrand () == ROUTER_BOARD_FONERA2200)
     {
-      nvram_set ("lan_ifname", "br0");
-      nvram_set ("lan_ifnames", "vlan0 vlan1 ath0");
-      nvram_set ("wan_ifname", "");
-      nvram_set ("wan_ifnames", "");
+      if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
+	  || nvram_match ("wan_proto", "disabled"))
+	{
+	  nvram_set ("lan_ifname", "br0");
+	  nvram_set ("lan_ifnames", "vlan0 vlan1 ath0");
+	  nvram_set ("wan_ifname", "");
+	  nvram_set ("wan_ifnames", "");
+	}
+      else
+	{
+	  nvram_set ("lan_ifname", "br0");
+	  nvram_set ("lan_ifnames", "vlan1 ath0");
+	  nvram_set ("wan_ifname", "vlan1");
+	  nvram_set ("wan_ifnames", "vlan1");
+	}
     }
   else
     {
-      nvram_set ("lan_ifname", "br0");
-      nvram_set ("lan_ifnames", "vlan1 ath0");
-      nvram_set ("wan_ifname", "vlan1");
-      nvram_set ("wan_ifnames", "vlan1");
+      if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
+	  || nvram_match ("wan_proto", "disabled"))
+	{
+	  nvram_set ("lan_ifname", "br0");
+	  nvram_set ("lan_ifnames", "eth0 ath0");
+	  nvram_set ("wan_ifname", "");
+	  nvram_set ("wan_ifnames", "");
+	}
+      else
+	{
+	  nvram_set ("lan_ifname", "br0");
+	  nvram_set ("lan_ifnames", "ath0");
+	  nvram_set ("wan_ifname", "eth0");
+	  nvram_set ("wan_ifnames", "eth0");
+	}
     }
-  }else
-  {
-  if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
-      || nvram_match ("wan_proto", "disabled"))
-    {
-      nvram_set ("lan_ifname", "br0");
-      nvram_set ("lan_ifnames", "eth0 ath0");
-      nvram_set ("wan_ifname", "");
-      nvram_set ("wan_ifnames", "");
-    }
-  else
-    {
-      nvram_set ("lan_ifname", "br0");
-      nvram_set ("lan_ifnames", "ath0");
-      nvram_set ("wan_ifname", "eth0");
-      nvram_set ("wan_ifnames", "eth0");
-    }
-  }
   strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
   ioctl (s, SIOCGIFHWADDR, &ifr);
   nvram_set ("et0macaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
@@ -1193,7 +1194,7 @@ start_lan (void)
       strcpy (mac, nvram_safe_get ("il0macaddr"));
 #endif
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
-      
+
       if (nvram_match ("wl0_hwaddr", "") || !nvram_get ("wl0_hwaddr"))
 	{
 	  nvram_set ("wl0_hwaddr", mac);
@@ -1326,7 +1327,7 @@ start_lan (void)
 		MAC_ADD (mac);
 		MAC_ADD (mac);	// The wireless mac equal lan mac add 2
 #else
-		strcpy(mac,nvram_safe_get("il0macaddr"));
+		strcpy (mac, nvram_safe_get ("il0macaddr"));
 #endif
 		ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
 		if (nvram_match ("wl0_hwaddr", "")
@@ -1554,21 +1555,23 @@ start_lan (void)
   char staticlan[32];
   sprintf (staticlan, "%s:0", lan_ifname);
 #if defined(HAVE_FONERA) || defined(HAVE_CA8)
-  if (getRouterBrand() != ROUTER_BOARD_FONERA2200)
-  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
-      || nvram_match ("ath0_mode", "wet")
-      || nvram_match ("wan_proto", "disabled"))
-    {
+  if (getRouterBrand () != ROUTER_BOARD_FONERA2200)
+    if (nvram_match ("ath0_mode", "sta")
+	|| nvram_match ("ath0_mode", "wdssta")
+	|| nvram_match ("ath0_mode", "wet")
+	|| nvram_match ("wan_proto", "disabled"))
+      {
 #endif
 
-      eval ("ifconfig", "eth0:0", "down");
+	eval ("ifconfig", "eth0:0", "down");
 //add fallback ip
-      eval ("ifconfig", staticlan, "169.254.255.1", "netmask", "255.255.0.0");
+	eval ("ifconfig", staticlan, "169.254.255.1", "netmask",
+	      "255.255.0.0");
 
 #if defined(HAVE_FONERA) || defined(HAVE_CA8)
-    }
-  else
-    eval ("ifconfig", staticlan, "0.0.0.0", "down");
+      }
+    else
+      eval ("ifconfig", staticlan, "0.0.0.0", "down");
 #endif
 
   /* Get current LAN hardware address */
@@ -2064,9 +2067,9 @@ start_wan (int status)
 					   "") ?
     nvram_safe_get ("pppoe_wan_ifname") : "eth0";
 #elif HAVE_FONERA
-  if (getRouterBrand() == ROUTER_BOARD_FONERA2200)
-  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
-					   "") ?
+  if (getRouterBrand () == ROUTER_BOARD_FONERA2200)
+    char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
+					     "") ?
     nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
   else
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
@@ -2161,21 +2164,22 @@ start_wan (int status)
 
   ifconfig (wan_ifname, 0, NULL, NULL);
 #if defined(HAVE_FONERA) || defined(HAVE_CA8)
-  if (getRouterBrand() != ROUTER_BOARD_FONERA2200)
-  {
-  char staticlan[32];
-  sprintf (staticlan, "%s:0", wan_ifname);
-  if (!nvram_match ("ath0_mode", "sta")
-      && !nvram_match ("ath0_mode", "wdssta")
-      && !nvram_match ("ath0_mode", "wet")
-      && !nvram_match ("wan_proto", "disabled"))
+  if (getRouterBrand () != ROUTER_BOARD_FONERA2200)
     {
-      eval ("ifconfig", "br0:0", "down");
-      eval ("ifconfig", staticlan, "169.254.255.1", "netmask", "255.255.0.0");
+      char staticlan[32];
+      sprintf (staticlan, "%s:0", wan_ifname);
+      if (!nvram_match ("ath0_mode", "sta")
+	  && !nvram_match ("ath0_mode", "wdssta")
+	  && !nvram_match ("ath0_mode", "wet")
+	  && !nvram_match ("wan_proto", "disabled"))
+	{
+	  eval ("ifconfig", "br0:0", "down");
+	  eval ("ifconfig", staticlan, "169.254.255.1", "netmask",
+		"255.255.0.0");
+	}
+      else
+	eval ("ifconfig", staticlan, "0.0.0.0", "down");
     }
-  else
-    eval ("ifconfig", staticlan, "0.0.0.0", "down");
-  }
 #endif
 
 //fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
@@ -2197,8 +2201,8 @@ start_wan (int status)
 #ifndef HAVE_BUFFALO
       MAC_ADD (mac);		// The wan mac equal lan mac add 1
 #else
-     if (!strcmp(wan_ifname,"eth1"))
-        strcpy(mac,nvram_safe_get("il0macaddr"));
+      if (!strcmp (wan_ifname, "eth1"))
+	strcpy (mac, nvram_safe_get ("il0macaddr"));
 #endif
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
     }
@@ -2357,24 +2361,21 @@ start_wan (int status)
 	}
       fprintf (fp, "noipdefault\n"
 	       "noauth\n"
-	       "defaultroute\n"
-	       "noaccomp\n" 
-	       "nobsdcomp\n" 
-	       "nodeflate\n" 
-//	       "debug\n"
-//	       "maxfail 0\n"
+	       "defaultroute\n" "noaccomp\n" "nobsdcomp\n" "nodeflate\n"
+//             "debug\n"
+//             "maxfail 0\n"
 //               "nocrtscts\n"
 //               "sync\n"
 //               "local\n"
 //               "noixp\n"
 //             "lock\n"
-//	       "noproxyarp\n"
-//	       "ipcp-accept-local\n"
-//	       "ipcp-accept-remote\n"
-//	       "nodetach\n"
+//             "noproxyarp\n"
+//             "ipcp-accept-local\n"
+//             "ipcp-accept-remote\n"
+//             "nodetach\n"
 	       "nopcomp\n");
-//	       "novj\n" 
-//	       "novjccomp\n");
+//             "novj\n" 
+//             "novjccomp\n");
       if (nvram_invmatch ("ppp_mppe", ""))
 	fprintf (fp, "%s\n", nvram_safe_get ("ppp_mppe"));
       else
@@ -2498,7 +2499,7 @@ start_wan (int status)
 	    {
 	      sleep (3);
 	      start_force_to_dial ();
-	      nvram_unset("action_service");
+	      nvram_unset ("action_service");
 	    }
 	}
       else
@@ -2543,8 +2544,10 @@ start_wan (int status)
   cprintf ("dhcp client ready\n");
 
   /* Get current WAN hardware address */
-//  fprintf(stderr,"get wan addr of %s\n",wan_ifname);
-  strncpy (ifr.ifr_name, wan_ifname, IFNAMSIZ);
+  if (!strncmp (wan_ifname, "ppp", 3))
+    strncpy (ifr.ifr_name, nvram_safe_get ("wan_ifname"), IFNAMSIZ);
+  else
+    strncpy (ifr.ifr_name, wan_ifname, IFNAMSIZ);
   cprintf ("get current hardware adress");
   {
     if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
@@ -2847,27 +2850,30 @@ start_wan_done (char *wan_ifname)
       SET_LED (GET_IP_ERROR);
     }
 /* check ip addresses for validity */
-uint32 wanip;
-uint32 wannm;
-inet_aton (nvram_safe_get ("wan_ipaddr"), (struct in_addr *) &wanip);
-inet_aton (nvram_safe_get ("wan_netmask"), (struct in_addr *) &wannm);
-uint32 lanip;
-uint32 lannm;
-inet_aton (nvram_safe_get ("lan_ipaddr"), (struct in_addr *) &lanip);
-inet_aton (nvram_safe_get ("lan_netmask"), (struct in_addr *) &lannm);
+  uint32 wanip;
+  uint32 wannm;
+  inet_aton (nvram_safe_get ("wan_ipaddr"), (struct in_addr *) &wanip);
+  inet_aton (nvram_safe_get ("wan_netmask"), (struct in_addr *) &wannm);
+  uint32 lanip;
+  uint32 lannm;
+  inet_aton (nvram_safe_get ("lan_ipaddr"), (struct in_addr *) &lanip);
+  inet_aton (nvram_safe_get ("lan_netmask"), (struct in_addr *) &lannm);
 
-if (wanip!=0 && nvram_match("wan_ipaddr","0.0.0.0") && !nvram_match("wan_proto","disabled"))
+  if (wanip != 0 && nvram_match ("wan_ipaddr", "0.0.0.0")
+      && !nvram_match ("wan_proto", "disabled"))
     {
-    int iperror=0;
-    if ((wanip&wannm) == (lanip&wannm)) iperror=1;
-    if ((lanip&lannm) == (wanip&lannm)) iperror=1;
-    if (iperror)
-	eval("ledtool","5"); //blink 5 times the 3 time interval     
+      int iperror = 0;
+      if ((wanip & wannm) == (lanip & wannm))
+	iperror = 1;
+      if ((lanip & lannm) == (wanip & lannm))
+	iperror = 1;
+      if (iperror)
+	eval ("ledtool", "5");	//blink 5 times the 3 time interval     
     }
 /* end */
 
 
-  
+
   cprintf ("running custom DD-WRT ipup scripts\n");
   runStartup ("/etc/config", ".ipup");
 #ifdef HAVE_RB500
@@ -2917,10 +2923,10 @@ if (wanip!=0 && nvram_match("wan_ipaddr","0.0.0.0") && !nvram_match("wan_proto",
   nvram_set ("wanup", "1");
 #ifdef HAVE_MILKFISH
   if (nvram_match ("milkfish_enabled", "1"))
-{
-  cprintf ("starting milkfish netup script\n");
-  eval ("/etc/config/milkfish.netup");
-}
+    {
+      cprintf ("starting milkfish netup script\n");
+      eval ("/etc/config/milkfish.netup");
+    }
 #endif
 #ifdef HAVE_SPUTNIK_APD
   stop_sputnik ();
@@ -3042,7 +3048,7 @@ stop_wan (void)
 
   /* Bring down WAN interfaces */
   ifconfig (wan_ifname, 0, NULL, NULL);
-  eval("ifconfig", wan_ifname, "down"); //to allow for MAC clone to take effect
+  eval ("ifconfig", wan_ifname, "down");	//to allow for MAC clone to take effect
 #ifdef HAVE_PPP
 /*	    eval("rmmod","pppoe");
 	    eval("rmmod","pppox");
@@ -3103,8 +3109,8 @@ start_set_routes (void)
       continue;
     if (!strcmp (ipaddr, "0.0.0.0"))
       {
-      eval ("route", "del", "default");
-      eval ("route", "add", "default", "gw", gateway);
+	eval ("route", "del", "default");
+	eval ("route", "add", "default", "gw", gateway);
       }
     else
       route_add (ifname, atoi (metric) + 1, ipaddr, gateway, netmask);
@@ -3265,39 +3271,42 @@ start_hotplug_net (void)
 #ifdef HAVE_MADWIFI
   char *interface, *action, *devaction;
 // fprintf(stderr,"Hotplug\n");
-   if (!(interface = getenv ("INTERFACE")) || !(action = getenv ("ACTION")) || !(devaction = getenv ("DEVACTION")))
+  if (!(interface = getenv ("INTERFACE")) || !(action = getenv ("ACTION"))
+      || !(devaction = getenv ("DEVACTION")))
     return 0;
 // fprintf(stderr,"Hotplug %s\n",action);
-   if (!strcmp(action,"change"))
+  if (!strcmp (action, "change"))
     {
-    char *vlan = getenv("VLAN");
-    char bridged[32];
-    sprintf(bridged,"%s_bridged",interface);
-    if (!strcmp(devaction,"wds_add"))
+      char *vlan = getenv ("VLAN");
+      char bridged[32];
+      sprintf (bridged, "%s_bridged", interface);
+      if (!strcmp (devaction, "wds_add"))
 	{
-	
-	eval ("vconfig","set_name_type","DEV_PLUS_VID");
-	eval ("vconfig", "add", interface, vlan);
-	char devname[32];
-	sprintf(devname,"%s.%04d",interface,atoi(vlan));
-	
-	syslog (LOG_INFO,"adding WDS Interface %s for Station %s\n",devname,getenv("WDSNODE"));
-	    eval("ifconfig",devname,"up");
-	if (nvram_match(bridged,"1"))
-	    eval("brctl","addif",getBridge(interface),devname);	
+
+	  eval ("vconfig", "set_name_type", "DEV_PLUS_VID");
+	  eval ("vconfig", "add", interface, vlan);
+	  char devname[32];
+	  sprintf (devname, "%s.%04d", interface, atoi (vlan));
+
+	  syslog (LOG_INFO, "adding WDS Interface %s for Station %s\n",
+		  devname, getenv ("WDSNODE"));
+	  eval ("ifconfig", devname, "up");
+	  if (nvram_match (bridged, "1"))
+	    eval ("brctl", "addif", getBridge (interface), devname);
 	}
-    if (!strcmp(devaction,"wds_del"))
+      if (!strcmp (devaction, "wds_del"))
 	{
-	eval ("vconfig","set_name_type","DEV_PLUS_VID");
-	char devname[32];
-	sprintf(devname,"%s.%04d",interface,atoi(vlan));
-	syslog (LOG_INFO,"removing WDS Interface %s for Station %s\n",devname,getenv("WDSNODE"));
-	eval("ifconfig",devname,"down");
-	if (nvram_match(bridged,"1"))
-	    eval("brctl","delif",getBridge(interface),devname);	
-	eval ("vconfig", "rem", devname);
-	}    
-    }    
+	  eval ("vconfig", "set_name_type", "DEV_PLUS_VID");
+	  char devname[32];
+	  sprintf (devname, "%s.%04d", interface, atoi (vlan));
+	  syslog (LOG_INFO, "removing WDS Interface %s for Station %s\n",
+		  devname, getenv ("WDSNODE"));
+	  eval ("ifconfig", devname, "down");
+	  if (nvram_match (bridged, "1"))
+	    eval ("brctl", "delif", getBridge (interface), devname);
+	  eval ("vconfig", "rem", devname);
+	}
+    }
   return 0;
 #else
 
