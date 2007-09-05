@@ -400,7 +400,9 @@ int tty_establish_ppp (int tty_fd)
  */
     if (ioctl(tty_fd, TIOCEXCL, 0) < 0) {
 	if ( ! ok_error ( errno ))
+	{
 	    warn("Couldn't make tty exclusive: %m");
+	}
     }
 /*
  * Demand mode - prime the old ppp device to relinquish the unit.
@@ -436,7 +438,9 @@ int tty_establish_ppp (int tty_fd)
 		     (kdebugflag * SC_DEBUG) & SC_LOGB);
     } else {
 	if (ioctl(tty_fd, TIOCSETD, &tty_disc) < 0 && !ok_error(errno))
+	{
 	    warn("Couldn't reset tty to normal line discipline: %m");
+	}
     }
 
     return ret_fd;
@@ -517,7 +521,9 @@ int generic_establish_ppp (int fd)
 	if (initfdflags == -1 ||
 	    fcntl(fd, F_SETFL, initfdflags | O_NONBLOCK) == -1) {
 	    if ( ! ok_error (errno))
+	    {
 		warn("Couldn't set device to non-blocking mode: %m");
+	    }
 	}
     }
 
@@ -559,18 +565,24 @@ void tty_disestablish_ppp(int tty_fd)
  */
 	if (ioctl(tty_fd, TIOCSETD, &tty_disc) < 0) {
 	    if ( ! ok_error (errno))
+	    {
 		error("ioctl(TIOCSETD, N_TTY): %m (line %d)", __LINE__);
+	    }
 	}
 
 	if (ioctl(tty_fd, TIOCNXCL, 0) < 0) {
 	    if ( ! ok_error (errno))
+	    {
 		warn("ioctl(TIOCNXCL): %m (line %d)", __LINE__);
+	    }
 	}
 
 	/* Reset non-blocking mode on fd. */
 	if (initfdflags != -1 && fcntl(tty_fd, F_SETFL, initfdflags) < 0) {
 	    if ( ! ok_error (errno))
+	    {
 		warn("Couldn't restore device fd flags: %m");
+	    }
 	}
     }
 flushfailed:
@@ -621,11 +633,15 @@ static int make_ppp_unit()
 	}
 	ppp_dev_fd = open("/dev/ppp", O_RDWR);
 	if (ppp_dev_fd < 0)
+	 {
 		fatal("Couldn't open /dev/ppp: %m");
+	 }
 	flags = fcntl(ppp_dev_fd, F_GETFL);
 	if (flags == -1
 	    || fcntl(ppp_dev_fd, F_SETFL, flags | O_NONBLOCK) == -1)
+	    {
 		warn("Couldn't set /dev/ppp to nonblock: %m");
+	    }
 
 	ifunit = req_unit;
 	x = ioctl(ppp_dev_fd, PPPIOCNEWUNIT, &ifunit);
@@ -635,7 +651,9 @@ static int make_ppp_unit()
 		x = ioctl(ppp_dev_fd, PPPIOCNEWUNIT, &ifunit);
 	}
 	if (x < 0)
+	{
 		error("Couldn't create new ppp unit: %m");
+	}
 	return x;
 }
 
@@ -998,7 +1016,9 @@ void restore_tty (int tty_fd)
 
 	if (tcsetattr(tty_fd, TCSAFLUSH, &inittermios) < 0) {
 	    if (! ok_error (errno))
+	    {
 		warn("tcsetattr: %m (line %d)", __LINE__);
+	    }
 	}
     }
 }
@@ -1028,9 +1048,12 @@ void output (int unit, unsigned char *p, int len)
     if (write(fd, p, len) < 0) {
 	if (errno == EWOULDBLOCK || errno == EAGAIN || errno == ENOBUFS
 	    || errno == ENXIO || errno == EIO || errno == EINTR)
+	    {
 	    warn("write: warning: %m (%d)", errno);
-	else
+	    }
+	else{
 	    error("write: %m (%d)", errno);
+	    }
     }
 }
 
@@ -1197,7 +1220,9 @@ void tty_send_config(int mtu, u_int32_t asyncmap, int pcomp, int accomp)
 	link_mtu = mtu;
 	if (ioctl(ppp_fd, PPPIOCSASYNCMAP, (caddr_t) &asyncmap) < 0) {
 		if (errno != EIO && errno != ENOTTY)
+		{
 			error("Couldn't set transmit async character map: %m");
+		}
 		++error_count;
 		return;
 	}
@@ -1301,9 +1326,13 @@ int set_filters(struct bpf_program *pass, struct bpf_program *active)
 	fp.filter = (struct sock_filter *) pass->bf_insns;
 	if (ioctl(ppp_dev_fd, PPPIOCSPASS, &fp) < 0) {
 		if (errno == ENOTTY)
+		{
 			warn("kernel does not support PPP filtering");
+		}
 		else
+		{
 			error("Couldn't set pass-filter in kernel: %m");
+		}
 		return 0;
 	}
 	fp.len = active->bf_len;
@@ -1590,11 +1619,15 @@ int sifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
 
     if (defaultroute_exists(&rt) && strcmp(rt.rt_dev, ifname) != 0) {
 	if (rt.rt_flags & RTF_GATEWAY)
+	{
 	    error("not replacing existing default route via %I",
 		  SIN_ADDR(rt.rt_gateway));
+	}
 	else
+	{
 	    error("not replacing existing default route through %s",
 		  rt.rt_dev);
+	}
 	return 0;
     }
 
@@ -1692,7 +1725,9 @@ int sifproxyarp (int unit, u_int32_t his_adr)
 		int fd = open(forw_path, O_WRONLY);
 		if (fd >= 0) {
 		    if (write(fd, "1", 1) != 1)
+		    {
 			error("Couldn't enable IP forwarding: %m");
+		    }
 		    close(fd);
 		}
 	    }
@@ -1721,7 +1756,9 @@ int cifproxyarp (int unit, u_int32_t his_adr)
 
 	if (ioctl(sock_fd, SIOCDARP, (caddr_t)&arpreq) < 0) {
 	    if ( ! ok_error ( errno ))
+	    {
 		warn("ioctl(SIOCDARP): %m");
+	    }
 	    return 0;
 	}
     }
@@ -1888,7 +1925,9 @@ u_int32_t GetMask (u_int32_t addr)
     ifc.ifc_req = ifs;
     if (ioctl(sock_fd, SIOCGIFCONF, &ifc) < 0) {
 	if ( ! ok_error ( errno ))
+	{
 	    warn("ioctl(SIOCGIFCONF): %m (line %d)", __LINE__);
+	}
 	return mask;
     }
 
@@ -2196,7 +2235,9 @@ void logwtmp (const char *line, const char *name, const char *host)
 	flock(wtmp, LOCK_EX);
 
 	if (write (wtmp, (char *)&ut, sizeof(ut)) != sizeof(ut))
+	{
 	    warn("error writing %s: %m", _PATH_WTMP);
+	}
 
 	flock(wtmp, LOCK_UN);
 
@@ -2559,10 +2600,14 @@ get_pty(master_fdp, slave_fdp, slave_name, uid)
 #ifdef TIOCSPTLCK
 	    ptn = 0;
 	    if (ioctl(mfd, TIOCSPTLCK, &ptn) < 0)
+	    {
 		warn("Couldn't unlock pty slave %s: %m", pty_name);
+	    }
 #endif
 	    if ((sfd = open(pty_name, O_RDWR | O_NOCTTY)) < 0)
+	    {
 		warn("Couldn't open pty slave %s: %m", pty_name);
+	    }
 	}
     }
 #endif /* TIOCGPTN */
@@ -2599,9 +2644,13 @@ get_pty(master_fdp, slave_fdp, slave_name, uid)
 	tios.c_oflag  = 0;
 	tios.c_lflag  = 0;
 	if (tcsetattr(sfd, TCSAFLUSH, &tios) < 0)
+	{
 	    warn("couldn't set attributes on pty: %m");
+	}
     } else
+    {
 	warn("couldn't get attributes on pty: %m");
+    }
 
     return 1;
 }
@@ -2635,15 +2684,19 @@ open_ppp_loopback(void)
     flags = fcntl(master_fd, F_GETFL);
     if (flags == -1 ||
 	fcntl(master_fd, F_SETFL, flags | O_NONBLOCK) == -1)
+	{
 	warn("couldn't set master loopback to nonblock: %m");
-
+	}
     flags = fcntl(ppp_fd, F_GETFL);
     if (flags == -1 ||
 	fcntl(ppp_fd, F_SETFL, flags | O_NONBLOCK) == -1)
+	{
 	warn("couldn't set slave loopback to nonblock: %m");
-
+	}
     if (ioctl(ppp_fd, TIOCSETD, &ppp_disc) < 0)
+    {
 	fatal("ioctl(TIOCSETD): %m (line %d)", __LINE__);
+    }
 /*
  * Find out which interface we were given.
  */

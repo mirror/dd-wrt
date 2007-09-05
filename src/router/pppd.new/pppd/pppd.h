@@ -518,14 +518,21 @@ int slprintf __P((char *, int, char *, ...));		/* sprintf++ */
 int vslprintf __P((char *, int, char *, va_list));	/* vsprintf++ */
 size_t strlcpy __P((char *, const char *, size_t));	/* safe strcpy */
 size_t strlcat __P((char *, const char *, size_t));	/* safe strncpy */
-void dbglog __P((char *, ...));	/* log a debug message */
-void info __P((char *, ...));	/* log an informational message */
-void notice __P((char *, ...));	/* log a notice-level message */
 
-#define warn(a,...)
-#define error(a,...) exit (-1)
-#define fatal(a,...) exit (-2)
+#define option_error(fmt,args...) { }
+//void option_error __P((char *fmt, ...));
 
+//void dbglog __P((char *, ...));	/* log a debug message */
+//void info __P((char *, ...));	/* log an informational message */
+//void notice __P((char *, ...));	/* log a notice-level message */
+
+
+#define notice(fmt,...) { }
+#define info(fmt,...) { }
+#define dbglog(fmt,...) { }
+#define warn(fmt,...) { }
+#define error(fmt,...) { ++error_count; }
+#define fatal(fmt,...) { die(1); }
 //void warn __P((char *, ...));	/* log a warning message */
 //void error __P((char *, ...));	/* log an error message */
 //void fatal __P((char *, ...));	/* log an error message and die(1) */
@@ -699,8 +706,6 @@ int  options_from_list __P((struct wordlist *, int privileged));
 int  getword __P((FILE *f, char *word, int *newlinep, char *filename));
 				/* Read a word from a file */
 
-//#define option_error(fmt,args...)
-void option_error __P((char *fmt, ...));
 
 				/* Print an error message about an option */
 int int_option __P((char *, int *));

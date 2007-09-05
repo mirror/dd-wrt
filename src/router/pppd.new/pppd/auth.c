@@ -588,9 +588,13 @@ void start_link(unit)
      * incoming events (reply, timeout, etc.).
      */
     if (ifunit >= 0)
+    {
 	notice("Connect: %s <--> %s", ifname, ppp_devnam);
+    }
     else
+    {
 	notice("Starting negotiation on %s", ppp_devnam);
+    }
     add_fd(fd_ppp);
 
     status = EXIT_NEGOTIATION_FAILED;
@@ -1286,18 +1290,23 @@ auth_check_options()
 	    option_error(
 "(because this system has a default route to the internet)");
 	} else if (explicit_remote)
+	{
 	    option_error(
 "The remote system (%s) is required to authenticate itself",
 			 remote_name);
+	}
 	else
+	{
 	    option_error(
 "The remote system is required to authenticate itself");
+	}
 	option_error(
 "but I couldn't find any suitable secret (password) for it to use to do so.");
 	if (lacks_ip)
+	{
 	    option_error(
 "(None of the available passwords would let it use an IP address.)");
-
+	}
 	exit(1);
     }
 
