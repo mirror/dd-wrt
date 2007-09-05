@@ -181,6 +181,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_BUFFALO_WZRG144NH:
     case ROUTER_BUFFALO_WZRG300N:
     case ROUTER_NETGEAR_WNR834B:
+    case ROUTER_ASUS_WL500W:
       eval ("insmod", "wl");	//load module
       break;
     default:
@@ -413,6 +414,7 @@ start_sysinit (void)
     case ROUTER_NETGEAR_WNR834B:
     case ROUTER_WRT150N:
     case ROUTER_WRT300N:
+    case ROUTER_ASUS_WL500W:
     case ROUTER_BUFFALO_WLAH_G54:
     case ROUTER_BUFFALO_WAPM_HP_AM54G54:
     case ROUTER_WRTSL54GS:
