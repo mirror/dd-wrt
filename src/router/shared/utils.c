@@ -1165,6 +1165,10 @@ led_control (int type, int act)
       power_gpio = 0x10;
       diag_gpio = 0x00;  //power led off to indicate factory defaults
       break;
+    case ROUTER_ASUS_WL500W:
+      power_gpio = 0x15;
+      diag_gpio = 0x05;  //power led off to indicate factory defaults
+      break;
 #endif
     }
 if (type==LED_DIAG && v1func==1) 
