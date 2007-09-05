@@ -72,22 +72,22 @@ start_stabridge (void)
 void
 stop_stabridge (void)
 {
-      eval ("ebtables", "-t", "broute", "-D", "BROUTING", "--protocol",
-	    "0x888e", "--in-interface", getWET (), "-j", "DROP");
-      eval ("ebtables", "-t", "nat", "-D", "POSTROUTING", "--out-interface",
-	    getWET (), "-j", "arpnat", "--arpnat-target", "ACCEPT");
-      eval ("ebtables", "-t", "nat", "-D", "PREROUTING", "--in-interface",
-	    getWET (), "-j", "arpnat", "--arpnat-target", "ACCEPT");
-      // flush the tables, since getWET will not find the interface
-      // in the nvram (if changed from client-bridge to whatever)
-      // Fix, cause the rmmod command does not
-      // remove the modules (..if rules are in?).
-      eval ("ebtables", "-t", "broute", "-F");
-      eval ("ebtables", "-t", "nat", "-F");
-      eval ("rmmod", "ebt_broute");
-      eval ("rmmod", "ebt_arpnat");
-      eval ("rmmod", "ebtable_broute");
-      eval ("rmmod", "ebtable_nat");
-      eval ("rmmod", "ebtable_filter");
-      eval ("rmmod", "ebtables");
+  eval ("ebtables", "-t", "broute", "-D", "BROUTING", "--protocol",
+	"0x888e", "--in-interface", getWET (), "-j", "DROP");
+  eval ("ebtables", "-t", "nat", "-D", "POSTROUTING", "--out-interface",
+	getWET (), "-j", "arpnat", "--arpnat-target", "ACCEPT");
+  eval ("ebtables", "-t", "nat", "-D", "PREROUTING", "--in-interface",
+	getWET (), "-j", "arpnat", "--arpnat-target", "ACCEPT");
+  // flush the tables, since getWET will not find the interface
+  // in the nvram (if changed from client-bridge to whatever)
+  // Fix, cause the rmmod command does not
+  // remove the modules (..if rules are in?).
+  eval ("ebtables", "-t", "broute", "-F");
+  eval ("ebtables", "-t", "nat", "-F");
+  eval ("rmmod", "ebt_broute");
+  eval ("rmmod", "ebt_arpnat");
+  eval ("rmmod", "ebtable_broute");
+  eval ("rmmod", "ebtable_nat");
+  eval ("rmmod", "ebtable_filter");
+  eval ("rmmod", "ebtables");
 }

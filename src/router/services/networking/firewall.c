@@ -987,8 +987,8 @@ macgrp_chain (int seq, unsigned int mark, int urlenable)
       {
 	save2file ("-A grp_%d -m mac --mac-source %s -j advgrp_%d\n", seq,
 		   var, seq);
-	save2file ("-A grp_%d -m mac --mac-destination %s -j advgrp_%d\n", seq,
-		   var, seq);
+	save2file ("-A grp_%d -m mac --mac-destination %s -j advgrp_%d\n",
+		   seq, var, seq);
 
 	/*
 	   mark = urlenable  ? mark : webfilter  ? MARK_HTTP : 0;
@@ -1122,23 +1122,23 @@ portgrp_chain (int seq, unsigned int mark, int urlenable)
   }
 }
 
-char * 
-fw_get_filter_services (void) 
-	 	{ 
-	 	  static char services[8192] = "", svcs_var[31] = "filter_services0"; 
-	 	  int index = 0; 
-	 	 
-	 	  while (strlen (nvram_safe_get (svcs_var)) > 0 && index < 8) 
-	 	    { 
-	 	      snprintf (svcs_var, 31, "filter_services%d", index); 
-	 	      strcat (services, nvram_safe_get (svcs_var)); 
-	 	      index++; 
-	 	 
-	 	 
-	 	    } 
-	 	 
-	 	  return services; 
-	 	} 
+char *
+fw_get_filter_services (void)
+{
+  static char services[8192] = "", svcs_var[31] = "filter_services0";
+  int index = 0;
+
+  while (strlen (nvram_safe_get (svcs_var)) > 0 && index < 8)
+    {
+      snprintf (svcs_var, 31, "filter_services%d", index);
+      strcat (services, nvram_safe_get (svcs_var));
+      index++;
+
+
+    }
+
+  return services;
+}
 
 static void
 advgrp_chain (int seq, unsigned int mark, int urlenable)
@@ -1765,8 +1765,8 @@ filter_forward (void)
   /* Filter Web application */
 //  if (webfilter)
 //    save2file ("-A FORWARD -i %s -o %s -p tcp -m tcp --dport %d "
-//	       "-m webstr --content %d -j %s\n",
-//	       lanface, wanface, HTTP_PORT, webfilter, log_reject);
+//             "-m webstr --content %d -j %s\n",
+//             lanface, wanface, HTTP_PORT, webfilter, log_reject);
   if (webfilter)
     save2file ("-A FORWARD -i %s -o %s -p tcp -m tcp "
 	       "-m webstr --content %d -j %s\n",
@@ -2696,11 +2696,11 @@ start_firewall (void)
     system2 (buf);
   }
 #ifdef HAVE_WIFIDOG
-  stop_wifidog();
-  start_wifidog();
+  stop_wifidog ();
+  start_wifidog ();
 #endif
   cprintf ("ready");
- 
+
   cprintf ("done\n");
   return 0;
 }
