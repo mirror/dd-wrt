@@ -738,7 +738,7 @@ ej_show_wds_subnet (webs_t wp, int argc, char_t ** argv)
 #else
   char *interface = "wl";
 #ifdef FASTWEB
-  ejArgs (ejArgs (argc, argv, "%d", &index);
+  ejArgs (argc, argv, "%d", &index);
 #else
   if (ejArgs (argc, argv, "%d", &index) < 1)
     {
@@ -5267,7 +5267,7 @@ ej_get_wds_ip (webs_t wp, int argc, char_t ** argv)
     }
 #endif
 #endif
-  else if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
+  if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
     return;
   else if (ip_idx < 0 || ip_idx > 3)
     return;
@@ -5319,7 +5319,7 @@ ej_get_wds_netmask (webs_t wp, int argc, char_t ** argv)
 #endif
 #endif
 
-  else if (wds_idx < 1 || wds_idx > 6)
+  if (wds_idx < 1 || wds_idx > 6)
     return;
   else if (nm_idx < 0 || nm_idx > 3)
     return;
@@ -5373,7 +5373,7 @@ ej_get_wds_gw (webs_t wp, int argc, char_t ** argv)
 #endif
 #endif
 
-  else if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
+  if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
     return;
   else if (gw_idx < 0 || gw_idx > 3)
     return;
@@ -5423,7 +5423,7 @@ ej_get_br1_ip (webs_t wp, int argc, char_t ** argv)
     }
 #endif
 #endif
-  else if (ip_idx < 0 || ip_idx > 3)
+  if (ip_idx < 0 || ip_idx > 3)
     return;
   char br1[32];
   sprintf (br1, "%s_br1_ipaddr", interface);
@@ -5471,7 +5471,7 @@ ej_get_br1_netmask (webs_t wp, int argc, char_t ** argv)
     }
 #endif
 #endif
-  else if (nm_idx < 0 || nm_idx > 3)
+  if (nm_idx < 0 || nm_idx > 3)
     return;
   char nms[32];
   sprintf (nms, "%s_br1_netmask", interface);
