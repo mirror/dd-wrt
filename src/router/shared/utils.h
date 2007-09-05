@@ -188,7 +188,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 #define ROUTER_BOARD_PB42 0x390f
 
-#define ROUTER_BOARD_WL500W 0x4006
+// Asus WL500W (MINO, 4704 cpu, fccid: Asus MSQWL500W)
+#define ROUTER_ASUS_WL500W 0x4006
 
 #define NVROUTER "DD_BOARD"
 
