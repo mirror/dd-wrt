@@ -263,6 +263,9 @@ endif
 ifeq ($(CONFIG_L2TP),y)
 CFLAGS += -DHAVE_L2TP
 endif
+ifeq ($(CONFIG_HEARTBEAT),y)
+CFLAGS += -DHAVE_HEARTBEAT
+endif
 
 ifeq ($(CONFIG_BOOT_WAIT_ON),y)
 CFLAGS += -DBOOT_WAIT_ON
