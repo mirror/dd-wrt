@@ -59,115 +59,94 @@ char _conf[] = "ddns_conf_X";
 int
 init_ddns (void)
 {
-  int flag = 0;
 
-  if (nvram_match ("ddns_enable", "0"))
+  int flag = atoi (nvram_safe_get ("ddns_enable"));
+
+  switch (flag)
+  {
+  case 0:  //ddns disabled
     return -1;
-
-  else if (nvram_match ("ddns_enable", "1"))
-    {
+    break;
+    
+  case 1:
       if (nvram_match ("ddns_dyndnstype", "2"))
 	strcpy (service, "statdns@dyndns.org");
       else if (nvram_match ("ddns_dyndnstype", "3"))
 	strcpy (service, "custom@dyndns.org");
       else
 	strcpy (service, "dyndns@dyndns.org");
-      flag = 1;
-    }
-  else if (nvram_match ("ddns_enable", "2"))
-    {
-      strcpy (service, "default@freedns.afraid.org");
-      flag = 2;
-    }
-  else if (nvram_match ("ddns_enable", "3"))
-    {
-      strcpy (service, "default@zoneedit.com");
-      flag = 3;
-    }
-  else if (nvram_match ("ddns_enable", "4"))
-    {
-      strcpy (service, "default@no-ip.com");
-      flag = 4;
-    }
-  else if (nvram_match ("ddns_enable", "5"))
-    {
-      strcpy (service, "custom@http_svr_basic_auth");
-      flag = 5;
-    }
-  /* botho 30/07/06 : add www.3322.org */
-  else if (nvram_match ("ddns_enable", "6"))
-    {
-      strcpy (service, "dyndns@3322.org");
-      flag = 6;
-    }
-  else if (nvram_match ("ddns_enable", "7"))
-    {
-      strcpy (service, "default@easydns.com");
-      flag = 7;
-    }
-  else if (nvram_match ("ddns_enable", "8"))
-    {
-      strcpy (service, "default@tzo.com");
-      flag = 8;
-    }
 
-/* botho 30/07/06 : add www.3322.org */
-  if (flag == 1)
-    {
       snprintf (_username, sizeof (_username), "%s", "ddns_username");
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname");
       snprintf (_dyndnstype, sizeof (_dyndnstype), "%s", "ddns_dyndnstype");
-      snprintf (_wildcard, sizeof (_wildcard), "%s", "ddns_wildcard");
-    }
-  else if (flag == 2)
-    {
+      snprintf (_wildcard, sizeof (_wildcard), "%s", "ddns_wildcard");	
+	break;
+	
+  case 2:
+    strcpy (service, "default@freedns.afraid.org");
+    
       snprintf (_username, sizeof (_username), "%s", "ddns_username_2");
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_2");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_2");
-      
-    }
-  else if (flag == 3)
-    {
+    break;
+    
+  case 3:
+    strcpy (service, "default@zoneedit.com");
+    
       snprintf (_username, sizeof (_username), "%s", "ddns_username_3");
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_3");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_3");
-    }
-  else if (flag == 4)
-    {
+    break;
+
+  case 4
+    strcpy (service, "default@no-ip.com");
+    
       snprintf (_username, sizeof (_username), "%s", "ddns_username_4");
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_4");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_4");
-    }
-  else if (flag == 5)
-    {
+    break;
+
+  case 5:
+    strcpy (service, "custom@http_svr_basic_auth");
+    
       snprintf (_username, sizeof (_username), "%s", "ddns_username_5");
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_5");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_5");
       snprintf (_url, sizeof (_url), "%s", "ddns_url");
       snprintf (_conf, sizeof (_conf), "%s", "ddns_conf");
-    }
-  else if (flag == 6)
-    {
+    break;
+    
+  case 6;
+    strcpy (service, "dyndns@3322.org");
+    
       snprintf (_username, sizeof (_username), "%s", "ddns_username_6");
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_6");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_6");
       snprintf (_dyndnstype, sizeof (_dyndnstype), "%s", "ddns_dyndnstype_6");
       snprintf (_wildcard, sizeof (_wildcard), "%s", "ddns_wildcard_6");
-    }
-  else if (flag == 7)
-    {
+    break;
+    
+  case 7:
+    strcpy (service, "default@easydns.com");
+    
       snprintf (_username, sizeof (_username), "%s", "ddns_username_7");
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_7");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_7");
       snprintf (_wildcard, sizeof (_wildcard), "%s", "ddns_wildcard_7");
-    }
-  else if (flag == 8)
-    {
+    break;
+    
+  case 8:
+    strcpy (service, "default@tzo.com");
+    
       snprintf (_username, sizeof (_username), "%s", "ddns_username_8");
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_8");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_8");
-    }
+    break;
+    
+  default:
+    return -1;
+  }
 
   return 0;
 }
