@@ -148,11 +148,15 @@ ej_show_sysinfo (webs_t wp, int argc, char_t ** argv)
 {
   char *type;
 
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s", &type);
+#else
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 
   if (type && !strcmp (type, "other"))
     show_other_info (wp);

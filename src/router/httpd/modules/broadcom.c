@@ -56,7 +56,6 @@ int error_value = 0;
 int browser_method;
 int debug_value = 0;
 
-#define FASTWEB			//use this do disable number of arguments checking
 
 //static char * rfctime(const time_t *timep);
 //static char * reltime(unsigned int seconds);
