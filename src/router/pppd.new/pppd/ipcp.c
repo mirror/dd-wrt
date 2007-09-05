@@ -1766,7 +1766,9 @@ ipcp_up(f)
 	    mask = GetMask(go->ouraddr);
 	    if (!sifaddr(f->unit, go->ouraddr, ho->hisaddr, mask)) {
 		if (debug)
+		{
 		    warn("Interface configuration failed");
+		}
 		ipcp_close(f->unit, "Interface configuration failed");
 		return;
 	    }
@@ -1794,7 +1796,9 @@ ipcp_up(f)
 #if !(defined(SVR4) && (defined(SNI) || defined(__USLC__)))
 	if (!sifaddr(f->unit, go->ouraddr, ho->hisaddr, mask)) {
 	    if (debug)
+	    {
 		warn("Interface configuration failed");
+	    }
 	    ipcp_close(f->unit, "Interface configuration failed");
 	    return;
 	}
@@ -1806,7 +1810,9 @@ ipcp_up(f)
 	/* bring the interface up for IP */
 	if (!sifup(f->unit)) {
 	    if (debug)
+	    {
 		warn("Interface failed to come up");
+	    }
 	    ipcp_close(f->unit, "Interface configuration failed");
 	    return;
 	}
@@ -1814,7 +1820,9 @@ ipcp_up(f)
 #if (defined(SVR4) && (defined(SNI) || defined(__USLC__)))
 	if (!sifaddr(f->unit, go->ouraddr, ho->hisaddr, mask)) {
 	    if (debug)
+	    {
 		warn("Interface configuration failed");
+	    }
 	    ipcp_close(f->unit, "Interface configuration failed");
 	    return;
 	}

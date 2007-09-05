@@ -1097,9 +1097,13 @@ get_input()
     if (debug) {
 	const char *pname = protocol_name(protocol);
 	if (pname != NULL)
+	{
 	    warn("Unsupported protocol '%s' (0x%x) received", pname, protocol);
+	}
 	else
+	{
 	    warn("Unsupported protocol 0x%x received", protocol);
+	}
     }
     lcp_sprotrej(0, p - PPP_HDRLEN, len + PPP_HDRLEN);
 }
@@ -1651,7 +1655,7 @@ device_script(program, in, out, dont_wait)
     setgid(getgid());
     setuid(uid);
     if (getuid() != uid) {
-	printf( "pppd: setuid failed\n");
+	fprintf(stderr, "pppd: setuid failed\n");
 	exit(1);
     }
     execl("/bin/sh", "sh", "-c", program, (char *)0);

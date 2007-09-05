@@ -500,9 +500,13 @@ chap_handle_status(struct chap_client_state *cs, int code, int id,
 	}
 	if (msg) {
 		if (len > 0)
+		{
 			info("%s: %.*v", msg, len, pkt);
+		}
 		else
+		{
 			info("%s", msg);
+		}
 	}
 	if (code == CHAP_SUCCESS)
 		auth_withpeer_success(0, PPP_CHAP, cs->digest->code);

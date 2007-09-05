@@ -680,6 +680,7 @@ log_write(level, buf)
 /*
  * fatal - log an error message and die horribly.
  */
+/*
 void
 fatal __V((char *fmt, ...))
 {
@@ -696,12 +697,9 @@ fatal __V((char *fmt, ...))
     logit(LOG_ERR, fmt, pvar);
     va_end(pvar);
 
-    die(1);			/* as promised */
+    die(1);			
 }
 
-/*
- * error - log an error message.
- */
 void
 error __V((char *fmt, ...))
 {
@@ -720,9 +718,6 @@ error __V((char *fmt, ...))
     ++error_count;
 }
 
-/*
- * warn - log a warning message.
- */
 void
 warn __V((char *fmt, ...))
 {
@@ -739,10 +734,8 @@ warn __V((char *fmt, ...))
     logit(LOG_WARNING, fmt, pvar);
     va_end(pvar);
 }
-
+*/
 /*
- * notice - log a notice-level message.
- */
 void
 notice __V((char *fmt, ...))
 {
@@ -759,11 +752,8 @@ notice __V((char *fmt, ...))
     logit(LOG_NOTICE, fmt, pvar);
     va_end(pvar);
 }
-
-/*
- * info - log an informational message.
- */
-void
+*/
+/*void
 info __V((char *fmt, ...))
 {
     va_list pvar;
@@ -779,10 +769,8 @@ info __V((char *fmt, ...))
     logit(LOG_INFO, fmt, pvar);
     va_end(pvar);
 }
-
+*/
 /*
- * dbglog - log a debug message.
- */
 void
 dbglog __V((char *fmt, ...))
 {
@@ -799,7 +787,7 @@ dbglog __V((char *fmt, ...))
     logit(LOG_DEBUG, fmt, pvar);
     va_end(pvar);
 }
-
+*/
 /*
  * dump_packet - print out a packet in readable form if it is interesting.
  * Assumes len >= PPP_HDRLEN.
