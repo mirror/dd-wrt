@@ -853,12 +853,20 @@ static struct SERVICES services_def[] = {
   {"management", handle_management},
   {"start_pppoe", handle_pppoe},
   {"start_pptp", handle_pppoe},
+#ifdef HAVE_L2TP
   {"start_l2tp", handle_pppoe},
+#endif
+#ifdef HAVE_HEARTBEAT
   {"start_heartbeat", handle_pppoe},
+#endif
   {"stop_pppoe", handle_spppoe},
   {"stop_pptp", handle_spppoe},
+#ifdef HAVE_L2TP
   {"stop_l2tp", handle_spppoe},
+#endif
+#ifdef HAVE_HEARTBEAT
   {"stop_heartbeat", handle_spppoe},
+#endif
   {"filters", handle_filters},
   {"routing", handle_routing},
   {"alive", handle_alive},
@@ -1031,6 +1039,7 @@ redial_main (int argc, char **argv)
 		  start_service ("wan_redial");
 		}
 #endif
+#ifdef HAVE_L2TP
 #if defined(HAVE_PPTP) || defined(HAVE_PPPOE)
 	      else
 #endif
@@ -1040,10 +1049,12 @@ redial_main (int argc, char **argv)
 		  sleep (1);
 		  start_service ("l2tp_redial");
 		}
+#endif
 //      Moded by Boris Bakchiev
 //      We dont need this at all.
 //      But if this code is executed by any of pppX programs we might have to do this.
 
+#ifdef HAVE_HEARTBEAT
 	      else if (nvram_match ("wan_proto", "heartbeat"))
 		{
 		  if (is_running ("bpalogin") == 0)
@@ -1054,6 +1065,7 @@ redial_main (int argc, char **argv)
 		    }
 
 		}
+#endif
 
 	      exit (0);
 	      break;

@@ -1115,7 +1115,7 @@ start_tmp_ppp (int num)
 //=====================================================================================================
 
 
-
+#ifdef HAVE_L2TP
 int
 start_l2tp (int status)
 {
@@ -1323,7 +1323,7 @@ stop_l2tp (void)
   cprintf ("done\n");
   return ret;
 }
-
+#endif
 
 
 
