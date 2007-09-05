@@ -93,11 +93,15 @@ ej_static_route_setting (webs_t wp, int argc, char_t ** argv)
   int temp;
   char new_name[200];
 
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s %d", &arg, &count);
+#else
   if (ejArgs (argc, argv, "%s %d", &arg, &count) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 
   page = websGetVar (wp, "route_page", NULL);
   if (!page)
@@ -451,11 +455,15 @@ ej_static_route_table (webs_t wp, int argc, char_t ** argv)
   char *type;
   char word[256], *next;
 
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s", &type);
+#else
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 
   page = atoi (websGetVar (wp, "route_page", "0"));	// default to 0
 

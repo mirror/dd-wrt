@@ -85,11 +85,15 @@ ej_nvram_status_get (webs_t wp, int argc, char_t ** argv)
   struct dns_lists *dns_list = NULL;
   int wan_link = check_wan_link (0);
 
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s", &type);
+#else
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
   if (nvram_match ("wan_proto", "pptp"))
     {
       wan_ipaddr =
@@ -222,11 +226,15 @@ ej_show_status (webs_t wp, int argc, char_t ** argv)
     {
 
       /* get type  [ refresh | reload ] */
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s", &type);
+#else
       if (ejArgs (argc, argv, "%s", &type) < 1)
 	{
 	  websError (wp, 400, "Insufficient args\n");
 	  return;
 	}
+#endif
       /* get ppp status , if /tmp/ppp/link exist, the connection is enabled */
       wan_link = check_wan_link (0);
 
