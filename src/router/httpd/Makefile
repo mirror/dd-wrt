@@ -346,8 +346,7 @@ endif
 ifeq ($(DEBUG_WEB),1)
 CFLAGS += -DMY_DEBUG
 endif
-ifeq ($(WAKE_ON_LAN_SUPPORT),1)
-OBJS  += wol.o
+ifeq ($(CONFIG_WOL),y)
 CFLAGS += -DHAVE_WOL
 endif
 ifeq ($(CONFIG_PB42),y)
