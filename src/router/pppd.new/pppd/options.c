@@ -158,7 +158,8 @@ static int readfile __P((char **));
 static int callfile __P((char **));
 static int showversion __P((char **));
 static int showhelp __P((char **));
-static void usage __P((void));
+#define usage() { }
+//static void usage __P((void));
 static int setlogfile __P((char **));
 #ifdef PLUGIN
 static int loadplugin __P((char **));
@@ -1022,12 +1023,12 @@ print_options(printer, arg)
 /*
  * usage - print out a message telling how to use the program.
  */
-static void
-usage()
-{
-    if (phase == PHASE_INITIALIZE)
-	printf(usage_string, VERSION, progname);
-}
+//static void
+//usage()
+//{
+//    if (phase == PHASE_INITIALIZE)
+//	fprintf(stderr, usage_string, VERSION, progname);
+//}
 
 /*
  * showhelp - print out usage message and exit.
@@ -1051,7 +1052,7 @@ showversion(argv)
     char **argv;
 {
     if (phase == PHASE_INITIALIZE) {
-	printf("pppd version %s\n", VERSION);
+	fprintf(stderr, "pppd version %s\n", VERSION);
 	exit(0);
     }
     return 0;
@@ -1078,7 +1079,7 @@ option_error __V((char *fmt, ...))
     vslprintf(buf, sizeof(buf), fmt, args);
     va_end(args);
     if (phase == PHASE_INITIALIZE)
-	printf("%s: %s\n", progname, buf);
+	fprintf(stderr, "%s: %s\n", progname, buf);
     syslog(LOG_ERR, "%s", buf);
 }
 
