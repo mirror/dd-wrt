@@ -575,19 +575,27 @@ lcp_rprotrej(f, inp, len)
     for (i = 0; (protp = protocols[i]) != NULL; ++i)
 	if (protp->protocol == prot && protp->enabled_flag) {
 	    if (pname == NULL)
+	    {
 		dbglog("Protocol-Reject for 0x%x received", prot);
+	    }
 	    else
+	    {
 		dbglog("Protocol-Reject for '%s' (0x%x) received", pname,
 		       prot);
+	    }
 	    (*protp->protrej)(f->unit);
 	    return;
 	}
 
     if (pname == NULL)
+    {
 	warn("Protocol-Reject for unsupported protocol 0x%x", prot);
-    else
+    }
+    else{
+    
 	warn("Protocol-Reject for unsupported protocol '%s' (0x%x)", pname,
 	     prot);
+    }
 }
 
 
@@ -2254,7 +2262,9 @@ LcpEchoCheck (f)
      * Start the timer for the next interval.
      */
     if (lcp_echo_timer_running)
+    {
 	warn("assertion lcp_echo_timer_running==0 failed");
+    }
     TIMEOUT (LcpEchoTimeout, f, lcp_echo_interval);
     lcp_echo_timer_running = 1;
 }
