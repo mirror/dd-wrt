@@ -29,7 +29,10 @@
 #include <sys/types.h>
 #include <bcmnvram.h>
 #include <shutils.h>
+#include <syslog.h>
 #include "snmp.h"
+
+#define SNMP_CONF_FILE	"/var/snmp/snmpd.conf"
 
 int
 start_snmp (void)
@@ -37,8 +40,7 @@ start_snmp (void)
   int ret = 0;
   pid_t pid;
 
-  char fname[] = "/var/snmp/snmpd.conf";
-  char *snmpd_argv[] = { "/usr/sbin/snmpd", "-c", fname, NULL };
+  char *snmpd_argv[] = { "/usr/sbin/snmpd", "-c", SNMP_CONF_FILE, NULL };
   FILE *fp = NULL;
 
   stop_snmp ();
@@ -46,7 +48,7 @@ start_snmp (void)
   if (!nvram_invmatch ("snmpd_enable", "0"))
     return 0;
 
-  fp = fopen (fname, "w");
+  fp = fopen (SNMP_CONF_FILE, "w");
   if (NULL == fp)
     return -1;
 
@@ -67,6 +69,7 @@ start_snmp (void)
   ret = _eval (snmpd_argv, NULL, 0, &pid);
 
   cprintf ("done\n");
+  syslog (LOG_INFO, "snmpd : SNMP daemon successfully started\n");
 
   return ret;
 }
@@ -78,6 +81,8 @@ stop_snmp (void)
 
   ret = killall ("snmpd", SIGKILL);
   cprintf ("done\n");
+  if (pidof ("snmpd") > 0)
+    syslog (LOG_INFO, "snmpd : SNMP daemon successfully stopped\n");
 
   return ret;
 }
