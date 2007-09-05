@@ -58,20 +58,18 @@ do_mssid (char *lan_ifname)
 //      char bss[32];
 //      sprintf (bss, "%s_bss_enabled", var);
 //      if (nvram_match (bss, "1"))
-	{
+      {
 #ifndef HAVE_BUFFALO
-	  if (nvram_match ("wl0_mode", "apsta"))
-	    ether_atoe (nvram_safe_get ("wan_hwaddr"),
-			ifr.ifr_hwaddr.sa_data);
-	  else
+	if (nvram_match ("wl0_mode", "apsta"))
+	  ether_atoe (nvram_safe_get ("wan_hwaddr"), ifr.ifr_hwaddr.sa_data);
+	else
 #endif
-	    ether_atoe (nvram_safe_get ("wl0_hwaddr"),
-			ifr.ifr_hwaddr.sa_data);
+	  ether_atoe (nvram_safe_get ("wl0_hwaddr"), ifr.ifr_hwaddr.sa_data);
 
-	  ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-	  strncpy (ifr.ifr_name, var, IFNAMSIZ);
-	  ioctl (s, SIOCSIFHWADDR, &ifr);
-	}
+	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	strncpy (ifr.ifr_name, var, IFNAMSIZ);
+	ioctl (s, SIOCSIFHWADDR, &ifr);
+      }
       if (nvram_match (bridged, "1"))
 	{
 	  ifconfig (var, IFUP, NULL, NULL);
