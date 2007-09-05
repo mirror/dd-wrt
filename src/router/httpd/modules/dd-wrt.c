@@ -726,18 +726,26 @@ ej_show_wds_subnet (webs_t wp, int argc, char_t ** argv)
   int index = -1;
 #ifdef HAVE_MADWIFI
   char *interface;
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%d %s", &index, &interface);
+#else
   if (ejArgs (argc, argv, "%d %s", &index, &interface) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 #else
   char *interface = "wl";
+#ifdef FASTWEB
+  ejArgs (ejArgs (argc, argv, "%d", &index);
+#else
   if (ejArgs (argc, argv, "%d", &index) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 #endif
   char br1[32];
   sprintf (br1, "%s_br1_enable", interface);
@@ -5238,18 +5246,26 @@ ej_get_wds_ip (webs_t wp, int argc, char_t ** argv)
 
 #ifdef HAVE_MADWIFI
   char *interface;
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%d %d %s", &wds_idx, &ip_idx, &interface);
+#else
   if (ejArgs (argc, argv, "%d %d %s", &wds_idx, &ip_idx, &interface) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 #else
   char *interface = "wl";
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%d %d", &wds_idx, &ip_idx);
+#else
   if (ejArgs (argc, argv, "%d %d", &wds_idx, &ip_idx) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 #endif
   else if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
     return;
@@ -5281,18 +5297,26 @@ ej_get_wds_netmask (webs_t wp, int argc, char_t ** argv)
 
 #ifdef HAVE_MADWIFI
   char *interface;
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%d %d %s", &wds_idx, &nm_idx, &interface);
+#else
   if (ejArgs (argc, argv, "%d %d %s", &wds_idx, &nm_idx, &interface) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 #else
   char *interface = "wl";
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%d %d", &wds_idx, &nm_idx);
+#else
   if (ejArgs (argc, argv, "%d %d", &wds_idx, &nm_idx) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 #endif
 
   else if (wds_idx < 1 || wds_idx > 6)
@@ -5327,18 +5351,26 @@ ej_get_wds_gw (webs_t wp, int argc, char_t ** argv)
 
 #ifdef HAVE_MADWIFI
   char *interface;
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%d %d %s", &wds_idx, &gw_idx, &interface);
+#else
   if (ejArgs (argc, argv, "%d %d %s", &wds_idx, &gw_idx, &interface) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 #else
   char *interface = "wl";
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%d %d", &wds_idx, &gw_idx);
+#else
   if (ejArgs (argc, argv, "%d %d", &wds_idx, &gw_idx) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 #endif
 
   else if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
@@ -5370,18 +5402,26 @@ ej_get_br1_ip (webs_t wp, int argc, char_t ** argv)
 
 #ifdef HAVE_MADWIFI
   char *interface;
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%d %s", &ip_idx, &interface);
+#else
   if (ejArgs (argc, argv, "%d %s", &ip_idx, &interface) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 #else
   char *interface = "wl";
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%d", &ip_idx);
+#else
   if (ejArgs (argc, argv, "%d", &ip_idx) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 #endif
   else if (ip_idx < 0 || ip_idx > 3)
     return;
@@ -5410,18 +5450,26 @@ ej_get_br1_netmask (webs_t wp, int argc, char_t ** argv)
 
 #ifdef HAVE_MADWIFI
   char *interface;
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%d %s", &nm_idx, &interface);
+#else
   if (ejArgs (argc, argv, "%d %s", &nm_idx, &interface) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 #else
   char *interface = "wl";
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%d", &nm_idx);
+#else
   if (ejArgs (argc, argv, "%d", &nm_idx) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 #endif
   else if (nm_idx < 0 || nm_idx > 3)
     return;
@@ -5827,11 +5875,15 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
   char line[80];
   char cmd[80];
   int macmask;
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%d", &macmask);
+#else
   if (ejArgs (argc, argv, "%d", &macmask) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 
   unlink (RSSI_TMP);
   int cnt = 0;
@@ -5932,12 +5984,16 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
   char line[80];
   char cmd[80];
   int macmask;
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%d", &macmask);
+#else
   if (ejArgs (argc, argv, "%d", &macmask) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return 0;
     }
-
+#endif
+    
   unlink (RSSI_TMP);
   char wlmode[32];
   sprintf (wlmode, "%s_mode", visible);
@@ -6140,18 +6196,26 @@ ej_get_wdsp2p (webs_t wp, int argc, char_t ** argv)
   char nvramvar[32] = { 0 };
 #ifdef HAVE_MADWIFI
   char *interface;
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%d %s", &index, &interface);
+#else
   if (ejArgs (argc, argv, "%d %s", &index, &interface) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 #else
   char *interface = "wl";
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%d", &index);
+#else
   if (ejArgs (argc, argv, "%d", &index) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 #endif
   char wlwds[32];
   sprintf (wlwds, "%s_wds1_enable", interface);
@@ -6864,11 +6928,15 @@ ej_get_clone_wmac (webs_t wp, int argc, char_t ** argv)
   char *c;
   int mac, which;
   int dofree = 0;
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%d", &which);
+#else
   if (ejArgs (argc, argv, "%d", &which) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 
   if (nvram_match ("def_whwaddr", "00:00:00:00:00:00"))
     {
@@ -7754,12 +7822,15 @@ ej_gethostnamebyip (webs_t wp, int argc, char_t ** argv)
 {
   char buf[200];
   char *argument;
-
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s", &argument);
+#else
   if (ejArgs (argc, argv, "%s", &argument) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 
   if (argc == 1)
     {
@@ -7925,11 +7996,15 @@ ej_bandwidth (webs_t wp, int argc, char_t ** argv)
   int sig;
   char *argument;
 
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s", &argument);
+#else
   if (ejArgs (argc, argv, "%s", &argument) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 
   if (argc == 1)
     {

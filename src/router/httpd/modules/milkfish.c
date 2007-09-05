@@ -37,10 +37,14 @@ ej_exec_milkfish_service (webs_t wp, int argc, char_t ** argv)
   char line[254];
   char *request;
 
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s", &request);
+#else
   if (ejArgs (argc, argv, "%s", &request) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
     }
+#endif
 
   if ((fp = popen (request, "r")))
     {
