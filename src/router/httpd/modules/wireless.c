@@ -885,11 +885,15 @@ ej_wireless_filter_table (webs_t wp, int argc, char_t ** argv)
 
   char *mac_mess = "MAC";
 
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s %s", &type, &ifname);
+#else
   if (ejArgs (argc, argv, "%s %s", &type, &ifname) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 
   if (!strcmp (type, "input"))
     {
@@ -1204,11 +1208,15 @@ ej_wireless_active_table (webs_t wp, int argc, char_t ** argv)
   int dhcp_table_count;
   char cmd[80];
 
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s", &type);
+#else
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 
   if (!strcmp (type, "online"))
     {
@@ -1403,11 +1411,15 @@ ej_get_wep_value (webs_t wp, int argc, char_t ** argv)
   char *type, *bit;
   char *value = "", new_value[50] = "";
 
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s", &type);
+#else
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
   cprintf ("get wep value %s\n", type);
 #ifdef HAVE_MADWIFI
   bit = GOZILA_GET ("ath0_wep_bit");
@@ -1656,11 +1668,15 @@ ej_get_wl_value (webs_t wp, int argc, char_t ** argv)
 {
   char *type;
 
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s", &type);
+#else
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
   if (!strcmp (type, "default_dtim"))
     {
       websWrite (wp, "1");	// This is a best value for 11b test
@@ -1865,11 +1881,15 @@ ej_show_wpa_setting (webs_t wp, int argc, char_t ** argv, char *prefix)
   char var[80];
   sprintf (var, "%s_security_mode", prefix);
   cprintf ("show wpa setting\n");
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s", &type);
+#else
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
   rep (var, '.', 'X');
   security_mode = GOZILA_GET (var);
   rep (var, 'X', '.');
@@ -1902,12 +1922,15 @@ void
 ej_show_wpa_setting (webs_t wp, int argc, char_t ** argv)
 {
   char *type, *security_mode;
-
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s", &type);
+#else
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 
   security_mode = GOZILA_GET ("security_mode");
 
@@ -1945,11 +1968,15 @@ ej_wl_ioctl (webs_t wp, int argc, char_t ** argv)
   char *op, *type, *var;
   char *name;
 
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s %s %s", &op, &type, &var);
+#else
   if (ejArgs (argc, argv, "%s %s %s", &op, &type, &var) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 
   if ((unit = atoi (nvram_safe_get ("wl_unit"))) < 0)
     return;
@@ -2184,12 +2211,16 @@ ej_wme_match_op (webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *output;
   char word[256], *next;
-
+  
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s %s %s", &name, &match, &output);
+#else
   if (ejArgs (argc, argv, "%s %s %s", &name, &match, &output) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 
   foreach (word, nvram_safe_get (name), next)
   {
