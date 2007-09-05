@@ -175,8 +175,9 @@ update_value (void)
  * variables, The script should configure the interface, and set any
  * other relavent parameters (default gateway, dns server, etc).
 */
+#ifdef HAVE_HEARTBEAT
 extern void start_heartbeat_boot (void);
-
+#endif
 static int
 bound (void)
 {
