@@ -545,6 +545,7 @@ if (nvram_get("il0macaddr")==NULL)
     case ROUTER_WRT300N:
     case ROUTER_NETGEAR_WNR834B:
     case ROUTER_ASUS_WL500G:
+    case ROUTER_ASUS_WL500W:
 #endif
     case ROUTER_BUFFALO_WZRG300N:
     case ROUTER_BUFFALO_WLAH_G54:
