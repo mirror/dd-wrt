@@ -473,7 +473,7 @@ addEvent(window, "unload", function() {
 									</select>
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
-									document.write("(" + share.deflt + ": " + share.auto + ")");
+									document.write("(" + share.deflt + ": " + share.disable + ")");
 									//]]>
 									</script></span>
 								</div>
