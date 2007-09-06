@@ -32,11 +32,11 @@ install:
 #	-cp -a SysInfo.htm $(INSTALLDIR)/www/
 #	-cp -a SysInfo1.htm $(INSTALLDIR)/www/
 ifeq ($(CONFIG_MSSID),y)
-	-cp -a Info.htm.v24 $(INSTALLDIR)/www/Info.htm
-	-cp -a Info.live.htm.v24 $(INSTALLDIR)/www/Info.live.htm
+	-cp -a Info.htm $(INSTALLDIR)/www/Info.htm
+	-cp -a Info.live.htm $(INSTALLDIR)/www/Info.live.htm
 else
-	-cp -a Info.htm $(INSTALLDIR)/www/
-	-cp -a Info.live.htm $(INSTALLDIR)/www/
+	-cp -a Info.htm.v23 $(INSTALLDIR)/www/
+	-cp -a Info.live.htm.v23 $(INSTALLDIR)/www/
 endif
 ifeq ($(CONFIG_REGISTER),y)
 	-cp -a register.asp $(INSTALLDIR)/www/register.asp

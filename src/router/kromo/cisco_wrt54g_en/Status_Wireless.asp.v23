@@ -8,12 +8,12 @@ function setWirelessTable() {
 	cleanTable(table);
 	if(!val.length) {
 		var cell = table.insertRow(-1).insertCell(-1);
-		cell.colSpan = 7;
+		cell.colSpan = 5;
 		cell.align = "center";
 		cell.innerHTML = "- " + share.none + " -";
 		return;
 	}
-	for(var i = 0; i < val.length; i = i + 6) {
+	for(var i = 0; i < val.length; i = i + 4) {
 		var row = table.insertRow(-1);
 		
 		var mac = val[i];
@@ -27,9 +27,7 @@ function setWirelessTable() {
 		row.insertCell(-1).innerHTML = val[i + 1];
 		row.insertCell(-1).innerHTML = val[i + 2];
 		row.insertCell(-1).innerHTML = val[i + 3];
-		row.insertCell(-1).innerHTML = val[i + 4];
-		row.insertCell(-1).innerHTML = val[i + 5];
-		setMeterBar(row.insertCell(-1), (val[i + 3] == "0" ? 0 : parseInt(val[i + 3]) * 1.24 + 116), "");
+		setMeterBar(row.insertCell(-1), (val[i + 1] == "0" ? 0 : parseInt(val[i + 1]) * 1.24 + 116), "");
 	}
 }
 
@@ -94,14 +92,6 @@ addEvent(window, "load", function() {
 
 });
 
-function refresh(F)
-{
-F.submit();
-apply();
-}
-
-
-
 addEvent(window, "unload", function() {
 	update.stop();
 });
@@ -121,16 +111,11 @@ addEvent(window, "unload", function() {
 
 				<div id="main">
 					<div id="contents">
-						<form name="Status_Wireless" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button" value="Status_Wireless" />
-							<input type="hidden" name="next_page" value="Status_Wireless.asp" />
-                  					<input type="hidden" name="change_action" value="gozila_cgi" />
-							<input type="hidden" name="submit_type" value="refresh" />
+						<form action="apply.cgi" method="<% get_http_method(); %>">
 							<h2><% tran("status_wireless.h2"); %></h2>
 							
 							<fieldset>
 								<legend><% tran("status_wireless.legend"); %></legend>
-								<% show_wifiselect(); %>
 								<div class="setting">
 									<div class="label"><% tran("share.mac"); %></div>
 									<script type="text/javascript">
@@ -144,7 +129,7 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("wl_basic.radio"); %></div>
 									<span id="wl_radio"><% get_radio_state(); %></span>&nbsp;
-								</div>								
+								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.mode"); %></div>
 									<% getwirelessmode(); %>&nbsp;
@@ -155,7 +140,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.ssid"); %></div>
-									<span id="wl_ssid"><% getwirelessssid(); %></span>&nbsp;
+									<span id="wl_ssid"><% nvram_get("wl_ssid"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.channel"); %></div>
@@ -163,13 +148,24 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label">Xmit</div>
-									<span id="wl_xmit"><% get_txpower(); %></span>&nbsp;
+									<span id="wl_xmit"><% nvram_get("txpwr"); %> mW</span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.rates"); %></div>
 									<span id="wl_rate"><% get_currate(); %></span>&nbsp;
 								</div>
-								    <% getencryptionstatus(); %>
+								<div class="setting">
+									<div class="label"><% tran("share.encrypt"); %></div>
+									<% nvram_match("security_mode", "disabled", "<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_invmatch("security_mode", "disabled", "<script type="text/javascript">Capture(share.enabled)</script>,&nbsp;"); %>
+									<% nvram_match("security_mode", "psk", "WPA Personal"); %>
+									<% nvram_match("security_mode", "wpa", "WPA Enterprise"); %>
+									<% nvram_match("security_mode", "psk2", "WPA2 Personal Only"); %>
+									<% nvram_match("security_mode", "wpa2", "WPA2 Enterprise Only"); %>
+									<% nvram_match("security_mode", "psk psk2", "WPA2 Personal Mixed"); %>
+									<% nvram_match("security_mode", "wpa wpa2", "WPA2 Enterprise Mixed"); %>
+									<% nvram_match("security_mode", "radius", "RADIUS"); %>
+									<% nvram_match("security_mode", "wep", "WEP"); %>&nbsp;
+								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_wireless.pptp"); %></div>
 									<% nvram_else_match("pptpd_connected", "1", "<script type="text/javascript">Capture(share.connected)</script>", "<script type="text/javascript">Capture(share.disconnected)</script>"); %>&nbsp;
@@ -190,12 +186,10 @@ addEvent(window, "unload", function() {
 							
 							<h2><% tran("status_wireless.h22"); %></h2>
 							<fieldset>
-								<legend><% getwirelessstatus(); %></legend>
+								<legend><% nvram_match("wl_mode", "wet", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "ap", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %><% nvram_match("wl_mode", "sta", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "infra", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "apsta", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %></legend>
 								<table class="table center" cellspacing="5" id="wireless_table" summary="wireless clients table">
 									<tr>
-										<th width="28%"><% tran("share.mac"); %></th>
-										<th width="16%"><% tran("share.intrface"); %></th>
-										<th width="8%"><% tran("share.rate"); %></th>
+										<th width="52%"><% tran("share.mac"); %></th>
 										<th width="8%"><% tran("share.signal"); %></th>
 										<th width="8%"><% tran("share.noise"); %></th>
 										<th width="8%">SNR</th>
@@ -207,7 +201,7 @@ addEvent(window, "unload", function() {
 							<div id="wds" style="display:none">
 								<fieldset>
 									<legend><% tran("status_wireless.wds"); %></legend>
-									<table class="table center" cellspacing="5" id="wds_table" summary="wds clients table">
+									<table class="table center" cellspacing="5" id="wds_table">
 										<tr>
 											<th width="28%"><% tran("share.mac"); %></th>
 											<th width="24%"><% tran("share.descr"); %></th>
@@ -218,13 +212,12 @@ addEvent(window, "unload", function() {
 										</tr>
 									</table>
 								</fieldset><br />
-								
 							</div>
 							<div class="center">
 								<script type="text/javascript">
 								//<![CDATA[
-								document.write("<input class=\"button\" type=\"button\" name=\"site_survey\" value=\"" + sbutton.survey + "\" onclick=\"<% nvram_else_match("wl0_net_mode", "disabled", "alert(errmsg.err59)", "openWindow('Site_Survey.asp', 760, 700)"); %>\" />");
-								<% support_invmatch("WIVIZ_SUPPORT","1","/"); %><% support_invmatch("WIVIZ_SUPPORT","1","/"); %>document.write("<input class=\"button\" type=\"button\" name=\"wiviz_survey\" value=\"Wiviz survey\" onclick=\"<% nvram_else_match("wl0_net_mode", "disabled", "alert(errmsg.err59)", "openWindow('Wiviz_Survey.asp', 760, 700)"); %>\" />");
+								document.write("<input class=\"button\" type=\"button\" name=\"site_survey\" value=\"" + sbutton.survey + "\" onclick=\"<% nvram_else_match("wl_net_mode", "disabled", "alert(errmsg.err59)", "openWindow('Site_Survey.asp', 760, 700)"); %>\" />");
+								<% support_invmatch("WIVIZ_SUPPORT","1","/"); %><% support_invmatch("WIVIZ_SUPPORT","1","/"); %>document.write("<input class=\"button\" type=\"button\" name=\"wiviz_survey\" value=\"Wiviz survey\" onclick=\"<% nvram_else_match("wl_net_mode", "disabled", "alert(errmsg.err59)", "openWindow('Wiviz_Survey.asp', 760, 700)"); %>\" />");
 								//]]>
 								</script>
 							</div><br />
