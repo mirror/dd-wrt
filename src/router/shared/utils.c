@@ -201,6 +201,9 @@ internal_getRouterBrand ()
 #elif HAVE_MAGICBOX
   setRouter ("MagicBox");
   return ROUTER_BOARD_MAGICBOX;
+#elif HAVE_MR3202A
+  setRouter ("MR3202A");
+  return ROUTER_BOARD_FONERA;
 #elif HAVE_FONERA
   struct mii_ioctl_data *data;
   struct ifreq iwr;
