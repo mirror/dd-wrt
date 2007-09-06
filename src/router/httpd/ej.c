@@ -376,7 +376,7 @@ getWebsFileLen (char *path)
 }
 
 void
-do_ej (char *path, webs_t stream)	// jimmy, https, 8/4/2003
+do_ej (char *path, webs_t stream,char *query)	// jimmy, https, 8/4/2003
 {
 
 //open file and read into memory

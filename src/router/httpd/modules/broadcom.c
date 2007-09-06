@@ -3007,13 +3007,13 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 
   cprintf ("refresh to %s\n", path);
   if (!strncmp (path, "WL_FilterTable", strlen ("WL_FilterTable")))
-    do_filtertable (path, wp);	//refresh
+    do_filtertable (path, wp, NULL);	//refresh
 #ifdef HAVE_MADWIFI
   else if (!strncmp (path, "Wireless_WDS", strlen ("Wireless_WDS")))
-    do_wds (path, wp);		//refresh
+    do_wds (path, wp, NULL);	//refresh
 #endif
   else
-    do_ej (path, wp);		//refresh
+    do_ej (path, wp, NULL);	//refresh
   websDone (wp, 200);
 
   gozila_action = 0;		//reset gozila_action
@@ -3407,7 +3407,7 @@ ej_show_modules (webs_t wp, int argc, char_t ** argv)
 	      if (endswith (entry->d_name, argv[0]))
 		{
 		  sprintf (buf, "%s/%s", directories[idx], entry->d_name);
-		  do_ej (buf, wp);
+		  do_ej (buf, wp, NULL);
 		}
 	    }
 	  else
@@ -3415,23 +3415,13 @@ ej_show_modules (webs_t wp, int argc, char_t ** argv)
 	      if (endswith (entry->d_name, ".webconfig"))
 		{
 		  sprintf (buf, "%s/%s", directories[idx], entry->d_name);
-		  do_ej (buf, wp);
+		  do_ej (buf, wp, NULL);
 		}
 	    }
 	}
       closedir (directory);
     }
   return;
-}
-
-
-static void
-do_shell_script (char *url, webs_t stream)
-{
-  char buf[256];
-  sprintf (buf, "%s >/tmp/shellout.asp", url);
-  system2 (buf);
-  do_ej ("/tmp/shellout.asp", stream);
 }
 
 
@@ -3596,7 +3586,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   /** GUI Logout **/// Experimental, not work yet ... 
   else if (!strncmp (value, "Logout", 6))
     {
-      do_ej ("Logout.asp", wp);
+      do_ej ("Logout.asp", wp, NULL);
       websDone (wp, 200);
       do_logout ();
       return 1;
@@ -3639,13 +3629,13 @@ footer:
 
 	cprintf ("refresh to %s\n", path);
 	if (!strncmp (path, "WL_FilterTable", strlen ("WL_FilterTable")))
-	  do_filtertable (path, wp);	//refresh
+	  do_filtertable (path, wp, NULL);	//refresh
 #ifdef HAVE_MADWIFI
 	else if (!strncmp (path, "Wireless_WDS", strlen ("Wireless_WDS")))
-	  do_wds (path, wp);	//refresh
+	  do_wds (path, wp, NULL);	//refresh
 #endif
 	else
-	  do_ej (path, wp);	//refresh
+	  do_ej (path, wp, NULL);	//refresh
 	websDone (wp, 200);
       }
 //      else
@@ -3656,7 +3646,7 @@ footer:
     }
   else
     {
-      do_ej ("Reboot.asp", wp);
+      do_ej ("Reboot.asp", wp, NULL);
       websDone (wp, 200);
 //      sleep (5);
       sys_reboot ();
@@ -3822,54 +3812,56 @@ do_apply_post (char *url, webs_t stream, int len, char *boundary)
 }
 
 static void
-do_style (char *url, webs_t stream)
+do_style (char *url, webs_t stream, char *query)
 {
   char *style = nvram_get ("router_style");
   if (style == NULL || strlen (style) == 0)
-    do_file ("kromo.css", stream);
+    do_file ("kromo.css", stream, NULL);
   else
-    do_file (style, stream);
+    do_file (style, stream, NULL);
 }
 
 
-#ifdef HAVE_CHILLI
+
 static void
-do_fon_cgi (char *url, webs_t wp)
+do_fetchif (char *url, webs_t stream, char *query)
 {
-
-//  nvram_set ("router_style", "");
-  nvram_set ("wl_ssid", "FON_HotSpot");
-  nvram_set ("wl_ap_isolate", "1");	/* AP isolate mode */
-  nvram_set ("dnsmasq_enable", "0");
-  nvram_set ("dhcp_dnsmasq", "0");
-  nvram_set ("chilli_enable", "1");
-  nvram_set ("chilli_url", "https://login.fon.com/cp/index.php");
-  nvram_set ("chilli_radius", "radius01.fon.com");
-  nvram_set ("chilli_backup", "radius02.fon.com");
-  nvram_set ("chilli_pass", "garrafon");
-  nvram_set ("chilli_dns1", "0.0.0.0");
-  nvram_set ("chilli_interface", "wlan");
-  nvram_set ("chilli_radiusnasid", "");
-  nvram_set ("chilli_uamsecret", "garrafon");
-  nvram_set ("chilli_uamanydns", "1");
-  nvram_set ("chilli_uamallowed",
-	     "www.fon.com,www.paypal.com,www.paypalobjects.com,www.skype.com,www.dd-wrt.com,www.dd-wrt.org,www.dd-wrt.com.de,213.134.45.0/24");
-  nvram_set ("chilli_macauth", "0");
-  nvram_set ("chilli_additional", "");
-  nvram_set ("fon_enable", "1");
-  nvram_commit ();
-  do_ej ("Reboot.asp", wp);
-  websDone (wp, 200);
-//  sleep (5);
-  sys_reboot ();
-  init_cgi (NULL);
-
+  char call[64];
+  char buffer[256];
+  if (query==NULL || strlen(query)==0)
+    return;
+  int strbuffer = 0;
+  FILE *in = popen ("date", "rb");
+  if (in == NULL)
+    return;
+  while (!feof (in))
+    {
+      int f = getc (in);
+      if (f == EOF || f == 0)
+	break;
+      buffer[strbuffer++] = f;
+    }
+  pclose (in);
+  
+  sprintf (call, "grep \"%s:\" /proc/net/dev", query);
+  in = popen (call, "rb");
+  if (in == NULL)
+    return;
+  while (!feof (in))
+    {
+      int f = getc (in);
+      if (f == EOF || f == 0)
+	break;
+      buffer[strbuffer++] = f;
+    }
+  buffer[strbuffer] = 0;
+  pclose (in);
+  websWrite (stream, "%s", buffer);
 }
 
-#endif
 
 static void
-do_apply_cgi (char *url, webs_t stream)
+do_apply_cgi (char *url, webs_t stream, char *q)
 {
   char *path, *query;
 
@@ -3892,6 +3884,68 @@ do_apply_cgi (char *url, webs_t stream)
   init_cgi (NULL);
 }
 
+static void
+show_bwif (webs_t wp, char *ifname, char *name)
+{
+  websWrite (wp, "<h2>%s - %s</h2>\n", live_translate ("status_band.h2"),
+	     name);
+  websWrite (wp, "<fieldset>\n");
+  websWrite (wp,
+	     "<embed src=\"/graph_if.svg?%s\" width=\"600\" height=\"300\" type=\"image/svg+xml\"/>\n",
+	     ifname);
+  websWrite (wp, "</fieldset>\n");
+}
+
+#ifdef HAVE_MADWIFI
+extern int getdevicecount (void);
+#endif
+
+static void
+ej_show_bandwidth (webs_t wp, int argc, char_t ** argv)
+{
+  char *next;
+  char var[80];
+  show_bwif (wp, nvram_safe_get ("lan_ifname"), "LAN");
+  if (!nvram_match ("wan_proto", "disabled"))
+    show_bwif (wp, nvram_safe_get ("wan_iface"), "WAN");
+#ifdef HAVE_MADWIFI
+  int c = getdevicecount ();
+  int i;
+  for (i = 0; i < c; i++)
+    {
+      char dev[32];
+      sprintf (dev, "ath%d", i);
+      char name[32];
+      sprintf (name, "Wireless (%s)", dev);
+      show_bwif (wp, dev, name);
+      char v[60];
+      sprintf (v, "%s_vifs", dev);
+      char *vifs = nvram_safe_get (v);
+      if (vifs == NULL)
+	continue;
+      foreach (var, vifs, next)
+      {
+	sprintf (name, "Wireless (%s)", var);
+	show_bwif (wp, var, name);
+      }
+
+    }
+
+#else
+  show_bwif (wp, get_wdev (), "Wireless");
+  char v[60];
+  sprintf (v, "wl0_vifs");
+  char *vifs = nvram_safe_get (v);
+  if (vifs == NULL)
+    return;
+  foreach (var, vifs, next)
+  {
+    char name[32];
+    sprintf (name, "Wireless (%s)", var);
+    show_bwif (wp, var, name);
+  }
+#endif
+}
 
 void
 ej_get_http_method (webs_t wp, int argc, char_t ** argv)
@@ -3917,10 +3971,10 @@ getLanguageName ()
 }
 
 static void
-do_language (char *path, webs_t stream)	//jimmy, https, 8/4/2003
+do_language (char *path, webs_t stream, char *query)	//jimmy, https, 8/4/2003
 {
   char *lang = getLanguageName ();
-  do_file (lang, stream);
+  do_file (lang, stream, NULL);
   free (lang);
   return;
 }
@@ -4139,12 +4193,8 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 		j++;
 	      if ((!openvpn) && !strcmp (menu[i][j], "Status_OpenVPN.asp"))	//jump over OpenVPN
 		j++;
-#ifndef HAVE_RSTATS
-	      if (!strcmp (menu[i][j], "Status_Bandwidth.asp"))
-		j++;
-#endif
 #ifdef HAVE_MICRO
-	      if (!strcmp (menu[i][j], "Status_Bandwidth.asp"))	//jump over bandtwidth in micro build
+	      if (!strcmp (menu[i][j], "Status_Bandwidth.asp"))	//jump over bandwidth in micro build
 		j++;
 #endif
 	      if ((!auth) && !strcmp (menu[i][j], "Info.htm"))	//jump over Sys-Info
@@ -4411,7 +4461,6 @@ struct mime_handler mime_handlers[] = {
   {"Diagnostics.asp", "text/html", no_cache, NULL, do_ej, do_auth2},
 #endif
   {"register.asp", "text/html", no_cache, NULL, do_ej, NULL},
-  {"**.sh", "text/html", no_cache, NULL, do_shell_script, do_auth},
   {"WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable, do_auth},
 //#endif
 #ifdef HAVE_MADWIFI
@@ -4437,6 +4486,7 @@ struct mime_handler mime_handlers[] = {
 
 #endif
   {"**.css", "text/css", NULL, NULL, do_file, NULL},
+  {"**.svg", "image/svg+xml", NULL, NULL, do_file, NULL},
   {"**.gif", "image/gif", NULL, NULL, do_file, NULL},
   {"**.png", "image/png", NULL, NULL, do_file, NULL},
   {"**.jpg", "image/jpeg", NULL, NULL, do_file, NULL},
@@ -4455,9 +4505,7 @@ struct mime_handler mime_handlers[] = {
   {"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
    do_auth},
 #endif
-#ifdef HAVE_CHILLI
-  {"fon.cgi*", "text/html", no_cache, NULL, do_fon_cgi, do_auth},
-#endif
+  {"fetchif.cgi*", "text/html", no_cache, NULL, do_fetchif, do_auth},
 #ifdef HAVE_DDLAN
   {"apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, NULL},
   {"upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi,
@@ -4995,23 +5043,25 @@ ej_get_radio_state (webs_t wp, int argc, char_t ** argv)
   int radiooff = -1;
 
 #ifdef HAVE_MADWIFI
-char *ifname = nvram_safe_get("wifi_display");
-if (strlen(ifname)>0)
+  char *ifname = nvram_safe_get ("wifi_display");
+  if (strlen (ifname) > 0)
     {
-    int state = get_radiostate(ifname);
-  switch (state)
-    {
-    case 1:
-      websWrite (wp, "%s", live_translate ("wl_basic.radio_on"));
-      break;
-    case -1:
-      websWrite (wp, "%s", live_translate ("share.unknown"));
-      break;
-    default:			// 1: software disabled, 2: hardware disabled, 3: both are disabled
-      websWrite (wp, "%s", live_translate ("wl_basic.radio_off"));
-      break;
+      int state = get_radiostate (ifname);
+      switch (state)
+	{
+	case 1:
+	  websWrite (wp, "%s", live_translate ("wl_basic.radio_on"));
+	  break;
+	case -1:
+	  websWrite (wp, "%s", live_translate ("share.unknown"));
+	  break;
+	default:		// 1: software disabled, 2: hardware disabled, 3: both are disabled
+	  websWrite (wp, "%s", live_translate ("wl_basic.radio_off"));
+	  break;
+	}
     }
-    }else{
+  else
+    {
       websWrite (wp, "%s", live_translate ("share.unknown"));
     }
 #else
@@ -5573,6 +5623,7 @@ struct ej_handler ej_handlers[] = {
 #ifdef HAVE_RSTATS
   {"bandwidth", ej_bandwidth},
 #endif
+  {"show_bandwidth", ej_show_bandwidth},
 #ifdef HAVE_PORTSETUP
   {"portsetup", ej_portsetup},
 #endif
