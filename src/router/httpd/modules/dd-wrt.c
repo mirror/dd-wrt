@@ -5546,8 +5546,8 @@ void
 ej_get_currate (webs_t wp, int argc, char_t ** argv)
 {
   char mode[32];
-  int state = get_radiostate(nvram_safe_get ("wifi_display"));
-  if (state==0 || state==-1)
+  int state = get_radiostate (nvram_safe_get ("wifi_display"));
+  if (state == 0 || state == -1)
     {
       websWrite (wp, "%s", live_translate ("share.disabled"));
       return;
@@ -5743,8 +5743,8 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
   struct iwreq iwr;
   if (!ifexists (ifname))
     return cnt;
-  int state=get_radiostate(ifname);
-  if (state==0 || state==-1)
+  int state = get_radiostate (ifname);
+  if (state == 0 || state == -1)
     return cnt;
   s = socket (AF_INET, SOCK_DGRAM, 0);
   if (s < 0)
@@ -8063,7 +8063,7 @@ ej_bandwidth (webs_t wp, int argc, char_t ** argv)
       unlink (name);
       killall ("rstats", sig);
       wait_file_exists (name, 5, 0);
-      do_file (name, wp);
+      do_file (name, wp, NULL);
       unlink (name);
     }
 }
@@ -8289,7 +8289,7 @@ ej_show_macfilter (webs_t wp, int argc, char_t ** argv)
 
 //and now the tricky part (more dirty as dirty)
 void
-do_filtertable (char *path, webs_t stream)
+do_filtertable (char *path, webs_t stream, char *query)
 {
   char *temp2 = &path[indexof (path, '-') + 1];
   char ifname[16];
@@ -8309,7 +8309,7 @@ do_filtertable (char *path, webs_t stream)
 }
 
 void
-do_wds (char *path, webs_t stream)
+do_wds (char *path, webs_t stream, char *query)
 {
   char *temp2 = &path[indexof (path, '-') + 1];
   char ifname[16];

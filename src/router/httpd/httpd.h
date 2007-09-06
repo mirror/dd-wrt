@@ -78,7 +78,7 @@ struct mime_handler {
 	char *mime_type;
 	char *extra_header;
 	void (*input)(char *path, FILE *stream, int len, char *boundary);
-	void (*output)(char *path, FILE *stream);
+	void (*output)(char *path, FILE *stream,char *query);
 	int (*auth)(char *userid, char *passwd, char *realm);
 };
 typedef struct
@@ -99,7 +99,7 @@ extern void set_cgi(char *name, char *value);
 extern int count_cgi();
 
 /* Regular file handler */
-extern void do_file(char *path, webs_t stream);
+extern void do_file(char *path, webs_t stream,char *query);
 
 /* GoAhead 2.1 compatibility */
 //typedef FILE * webs_t;
@@ -124,7 +124,7 @@ int websWrite(webs_t wp, char *fmt, ...);
 extern char *websGetVar(webs_t wp, char *var, char *d);
 
 #define websSetVar(wp, var, value) set_cgi(var, value)
-#define websDefaultHandler(wp, urlPrefix, webDir, arg, url, path, query) ({ do_ej(path, wp); fflush(wp); 1; })
+#define websDefaultHandler(wp, urlPrefix, webDir, arg, url, path, query) ({ do_ej(path, wp,""); fflush(wp); 1; })
 #define websWriteData(wp, buf, nChars) ({ int TMPVAR = wfwrite(buf, 1, nChars, wp); wfflush(wp); TMPVAR; })
 #define websWriteDataNonBlock websWriteData
 #define a_assert(a)
@@ -135,11 +135,11 @@ extern int ejArgs(int argc, char_t **argv, char_t *fmt, ...);
 extern FILE *getWebsFile(char *path);
 extern int getWebsFileLen(char *path);
 
-extern void do_ej(char *path, webs_t stream);
+extern void do_ej(char *path, webs_t stream,char *query);
 extern char *zencrypt (char *passwd);
 
-extern void do_filtertable(char *path, webs_t stream);
-extern void do_wds(char *path, webs_t stream);
+extern void do_filtertable(char *path, webs_t stream,char *query);
+extern void do_wds(char *path, webs_t stream,char *query);
 extern void do_ej_buffer(char *buffer, webs_t stream);
 int do_auth (char *userid, char *passwd, char *realm);
 void Initnvramtab (void);
