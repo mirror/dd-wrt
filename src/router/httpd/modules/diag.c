@@ -18,7 +18,7 @@ diag_ping_start (webs_t wp)
 {
   char *ip = websGetVar (wp, "ping_ip", NULL);
 
-  if (!ip  || !strcmp (ip, ""))
+  if (!ip || !strcmp (ip, ""))
     return;
 
   unlink (PING_TMP);
@@ -237,7 +237,7 @@ ej_dump_ping_log (webs_t wp, int argc, char_t ** argv)
     }
 
   unlink (PING_TMP);
-    
+
   return;
 }
 

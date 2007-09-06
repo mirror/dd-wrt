@@ -108,13 +108,13 @@ ej_show_subscribers (webs_t wp, int argc, char_t ** argv)
   int i;
   char buffer[1024], *count;
   int c = 0;
- // count = nvram_safe_get ("mf_subscribernum");
- count = 1; 
- if (count == NULL || strlen (count) == 0)
+  // count = nvram_safe_get ("mf_subscribernum");
+  count = 1;
+  if (count == NULL || strlen (count) == 0)
     {
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-                 "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
+		 "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
     }
   c = atoi (count);
@@ -122,22 +122,22 @@ ej_show_subscribers (webs_t wp, int argc, char_t ** argv)
     {
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-                 "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
+		 "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
     }
-  for (i = 0; i < c; i++)  
-  {
+  for (i = 0; i < c; i++)
+    {
       websWrite (wp, "<tr><td>\n");
       CHAPSHOW
-        ("<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",
-         i);
+	("<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+	 i);
       websWrite (wp, "Horst");
       //show_subscriber_table (wp, "user", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
       CHAPSHOW
-        ("<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",
-         i);
+	("<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+	 i);
       websWrite (wp, "Wanschura");
       //show_subscriber_table (wp, "pass", i);
       websWrite (wp, "\" /></td>\n");

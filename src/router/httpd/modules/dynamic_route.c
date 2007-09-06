@@ -35,7 +35,7 @@ ej_dump_route_table (webs_t wp, int argc, char_t ** argv)
       return;
     }
 #endif
-    
+
   /* open route table */
   if ((fp = fopen ("/proc/net/route", "r")) == NULL)
     {

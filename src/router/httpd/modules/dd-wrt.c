@@ -1669,7 +1669,8 @@ selmatch (char *var, char *is, char *ret)
 }
 
 static void
-show_security_prefix (webs_t wp, int argc, char_t ** argv, char *prefix,int primary)
+show_security_prefix (webs_t wp, int argc, char_t ** argv, char *prefix,
+		      int primary)
 {
   char var[80];
   char sta[80];
@@ -1703,12 +1704,12 @@ show_security_prefix (webs_t wp, int argc, char_t ** argv, char *prefix,int prim
     {
       websWrite (wp, "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n",
 		 selmatch (var, "wpa2", "selected=\"selected\""));
-	}
-      websWrite (wp,
-		 "<option value=\"psk psk2\" %s>WPA2 Personal Mixed</option>\n",
-		 selmatch (var, "psk psk2", "selected=\"selected\""));
+    }
+  websWrite (wp,
+	     "<option value=\"psk psk2\" %s>WPA2 Personal Mixed</option>\n",
+	     selmatch (var, "psk psk2", "selected=\"selected\""));
   if (!primary || nvram_match (sta, "ap"))
-	{
+    {
       websWrite (wp,
 		 "<option value=\"wpa wpa2\" %s>WPA2 Enterprise Mixed</option>\n",
 		 selmatch (var, "wpa wpa2", "selected=\"selected\""));
@@ -1718,7 +1719,8 @@ show_security_prefix (webs_t wp, int argc, char_t ** argv, char *prefix,int prim
   websWrite (wp, "<option value=\"wep\" %s>WEP</option>\n",
 	     selmatch (var, "wep", "selected=\"selected\""));
 #ifdef HAVE_WPA_SUPPLICANT
-  if (!primary || nvram_match (sta, "sta") || nvram_match (sta, "apsta") || nvram_match (sta, "wet"))
+  if (!primary || nvram_match (sta, "sta") || nvram_match (sta, "apsta")
+      || nvram_match (sta, "wet"))
     {
       websWrite (wp, "<option value=\"8021X\" %s>802.1x</option>\n",
 		 selmatch (var, "8021X", "selected=\"selected\""));
@@ -3246,7 +3248,8 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 	      else
 		ofs = 5.000f;
 	      ofs += (float) (chanlist[i] * 0.005f);
-	      if (i == 13) ofs = 2.484f;   //ch 14 is 2.484, not 2.477 GHz
+	      if (i == 13)
+		ofs = 2.484f;	//ch 14 is 2.484, not 2.477 GHz
 	      websWrite (wp, ", \"%0.3f\"", ofs);
 	    }
 	  websWrite (wp, ");\n");
@@ -3473,33 +3476,33 @@ show_netmode (webs_t wp, char *prefix)
   if (!strcmp (prefix, "ath1"))
 #endif
 #ifdef HAVE_TW6600
-  if (!strcmp (prefix, "ath1"))
+    if (!strcmp (prefix, "ath1"))
 #endif
-    websWrite (wp,
-	       "document.write(\"<option value=\\\"b-only\\\" %s>\" + wl_basic.b + \"</option>\");\n",
-	       nvram_match (wl_net_mode,
-			    "b-only") ? "selected=\\\"selected\\\"" : "");
+      websWrite (wp,
+		 "document.write(\"<option value=\\\"b-only\\\" %s>\" + wl_basic.b + \"</option>\");\n",
+		 nvram_match (wl_net_mode,
+			      "b-only") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_WHRAG108
   if (!strcmp (prefix, "ath1"))
 #endif
 #ifdef HAVE_TW6600
-  if (!strcmp (prefix, "ath1"))
+    if (!strcmp (prefix, "ath1"))
 #endif
-    websWrite (wp,
-	       "document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n",
-	       nvram_match (wl_net_mode,
-			    "g-only") ? "selected=\\\"selected\\\"" : "");
+      websWrite (wp,
+		 "document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n",
+		 nvram_match (wl_net_mode,
+			      "g-only") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_WHRAG108
   if (!strcmp (prefix, "ath1"))
 #endif
 #ifdef HAVE_TW6600
-  if (!strcmp (prefix, "ath1"))
+    if (!strcmp (prefix, "ath1"))
 #endif
-    websWrite (wp,
-	       "document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n",
-	       nvram_match (wl_net_mode,
-			    "bg-mixed") ? "selected=\\\"selected\\\"" : "");
+      websWrite (wp,
+		 "document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n",
+		 nvram_match (wl_net_mode,
+			      "bg-mixed") ? "selected=\\\"selected\\\"" : "");
 #else
 #ifdef HAVE_WHRAG108
   if (!strcmp (prefix, "ath1"))
@@ -3528,12 +3531,12 @@ show_netmode (webs_t wp, char *prefix)
   if (!strcmp (prefix, "ath0"))
 #endif
 #ifdef HAVE_TW6600
-  if (!strcmp (prefix, "ath0"))
+    if (!strcmp (prefix, "ath0"))
 #endif
-    websWrite (wp,
-	       "document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n",
-	       nvram_match (wl_net_mode,
-			    "a-only") ? "selected=\\\"selected\\\"" : "");
+      websWrite (wp,
+		 "document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n",
+		 nvram_match (wl_net_mode,
+			      "a-only") ? "selected=\\\"selected\\\"" : "");
 #endif
 
 #endif
@@ -4214,7 +4217,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 //  sprintf (maxpower, "%s_maxpower", prefix);
   if (!strcmp (prefix, "ath0"))	//show client only on first interface
     {
-#if !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_MERAKI) 
+#if !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_MERAKI)
 
       websWrite (wp, " 	<div class=\"setting\">\n");
       websWrite (wp,
@@ -5542,6 +5545,13 @@ extern float wifi_getrate (char *ifname);
 void
 ej_get_currate (webs_t wp, int argc, char_t ** argv)
 {
+  char mode[32];
+  sprintf (mode, "%s_net_mode", nvram_safe_get ("wifi_display"));
+  if (nvram_match (mode, "disabled"))
+    {
+      websWrite (wp, "%s", live_translate ("share.disabled"));
+      return;
+    }
   float rate = wifi_getrate (nvram_safe_get ("wifi_display"));
   char scale;
   int divisor;
@@ -5564,7 +5574,6 @@ ej_get_currate (webs_t wp, int argc, char_t ** argv)
 	  divisor = KILO;
 	}
     }
-  char mode[32];
   sprintf (mode, "%s_turbo", nvram_safe_get ("wifi_display"));
   if (nvram_match (mode, "1"))
     rate *= 2;
@@ -5589,7 +5598,7 @@ ej_get_uptime (webs_t wp, int argc, char_t ** argv)
   unlink (UPTIME_TMP);
 
   snprintf (cmd, 254, "uptime 2>&1 > %s", UPTIME_TMP);
-cprintf("calling getuptime\n");
+  cprintf ("calling getuptime\n");
   system2 (cmd);
 
   if ((fp = fopen (UPTIME_TMP, "r")) != NULL)
@@ -5602,12 +5611,12 @@ cprintf("calling getuptime\n");
       if (uptime[i] == 0xa || uptime[i] == 0xd)
 	uptime[i] = 0;
     }
-cprintf("write uptime back to screen\n");
+  cprintf ("write uptime back to screen\n");
   websWrite (wp, "%s", uptime);
 
-cprintf("close\n");
+  cprintf ("close\n");
   fclose (fp);
-cprintf("unlink\n");
+  cprintf ("unlink\n");
 
   unlink (UPTIME_TMP);
 
@@ -6023,7 +6032,7 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
       return 0;
     }
 #endif
-    
+
   unlink (RSSI_TMP);
   char wlmode[32];
   sprintf (wlmode, "%s_mode", visible);
