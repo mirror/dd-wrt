@@ -124,8 +124,7 @@
 			<a class='action' href='javascript:sta_static(this)'>Set DHCP static IP</a>
 -->			</span>
 			<span id='detail_local_actions' class='actionlist'>
-<!--			<center>OpenWRT actions</center>
-			<a class='action' href='/cgi-bin/webif.sh'>Web configuration</a>
+<!--			<center>DD-WRT actions</center>
 			<a class='action' href='javascript:ap_join_box(this)'>Join a network</a>
 			<a class='action' href='javascript:ap_setup(this)'>AP settings</a>
 -->			</span>
@@ -138,48 +137,8 @@
 		</div>
 		<div class='slidingbody'>
 			Content<br>
-			Content<br>
-			badger<br>
-			badger<br>
-			badger<br>
-			badger<br>
-			badger<br>
-			badger<br>
-			mushroom?
 		</div>
 	</div> -->
-<!--	<div class='expando'>
-		<div class='slidingheader' id='configuration' onClick='toggleExpando(this)'>
-			Local Configuration
-		</div>
-		<div class='slidingbody'>
-			<center>Actions</center>
-			<a href='javascript:centerObj(selfrouterdiv)' class='action'>Select this router</a>
-			<a href='javascript:commit(this)' class='action'>Commit NVRAM changes</a>
-			<center>Radio Settings</center>
-			<form action='/cgi-bin/wiviz2-radio.cgi' method='get' id='radioform'>
-			SSID:<br>
-			<input type='text' name='ssid' width=100% maxlength=32><br>
-			Channel: <input type='text' name='channel' size=2 value='6'><br>
-			Encryption:<br>
-			<select name='encryption'>
-			<option value='none'>Open</option>
-			<option value='wep'>WEP</option>
-			<option value='noch' selected='selected'>Don't change</option>
-			</select><br>
-			Key (blank=unchanged):<br>
-			<input type='text' width=100% name='key'><br>
-			Mode:<br>
-			<select name='mode'>
-			<option value='ap'>Access point</option>
-			<option value='sta'>Client mode</option>
-			<option value='noch'>Don't change</option>
-			</select><br>
-			<input type='submit' value='Apply changes' onclick="alert('Unimplemented')">
-			</form>
-		</div>
-	</div> -->
-	
 		<div class='expando'>
 		<div class='slidingheader' id='configuration' onClick="self.close()">
 			Close
