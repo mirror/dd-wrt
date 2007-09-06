@@ -555,7 +555,35 @@ ej_get_clkfreq (webs_t wp, int argc, char_t ** argv)
 void
 ej_get_clkfreq (webs_t wp, int argc, char_t ** argv)
 {
-  websWrite (wp, "400");
+  FILE *fp = fopen ("/proc/cpuinfo", "rb");
+  if (fp == NULL)
+    {
+      websWrite (wp, "unknown");
+      return;
+    }
+  int cnt = 0;
+  int b = 0;
+  while (b != EOF)
+    {
+      b = getc (fp);
+      if (b == ':')
+	cnt++;
+      if (cnt == 5)
+	{
+	  getc (fp);
+	  char cpuclk[4];
+	  cpuclk[0] = getc (fp);
+	  cpuclk[1] = getc (fp);
+	  cpuclk[2] = getc (fp);
+	  cpuclk[3] = 0;
+	  websWrite (wp, cpuclk);
+	  fclose (fp);
+	  return;
+	}
+    }
+
+  fclose (fp);
+  websWrite (wp, "unknown");
   return;
 }
 #elif HAVE_TW6600
@@ -4374,7 +4402,6 @@ ej_show_wireless_single (webs_t wp, char *prefix)
     }
 #endif
   showOption (wp, "wl_basic.diversity", wl_diversity);
-#if !defined(HAVE_FONERA)
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" >\n",
 	     wl_width);
@@ -4391,7 +4418,6 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "//]]>\n</script>\n");
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
-#endif
 
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label12)</script></div><select name=\"%s\" >\n",
@@ -5563,6 +5589,7 @@ ej_get_uptime (webs_t wp, int argc, char_t ** argv)
   unlink (UPTIME_TMP);
 
   snprintf (cmd, 254, "uptime 2>&1 > %s", UPTIME_TMP);
+cprintf("calling getuptime\n");
   system2 (cmd);
 
   if ((fp = fopen (UPTIME_TMP, "r")) != NULL)
@@ -5575,9 +5602,12 @@ ej_get_uptime (webs_t wp, int argc, char_t ** argv)
       if (uptime[i] == 0xa || uptime[i] == 0xd)
 	uptime[i] = 0;
     }
+cprintf("write uptime back to screen\n");
   websWrite (wp, "%s", uptime);
 
+cprintf("close\n");
   fclose (fp);
+cprintf("unlink\n");
 
   unlink (UPTIME_TMP);
 
