@@ -2904,8 +2904,10 @@ static struct gozila_action gozila_actions[] = {
   {"Ping", "stop", "", 0, REFRESH, diag_ping_stop},
   {"Ping", "clear", "", 0, REFRESH, diag_ping_clear},
 #ifdef HAVE_MILKFISH
-  {"Milkfish_database", "add_milkfish_user", "", 0, REFRESH, milkfish_user_add},
-  {"Milkfish_database", "remove_milkfish_user", "", 0, REFRESH, milkfish_user_remove},
+  {"Milkfish_database", "add_milkfish_user", "", 0, REFRESH,
+   milkfish_user_add},
+  {"Milkfish_database", "remove_milkfish_user", "", 0, REFRESH,
+   milkfish_user_remove},
 #endif
 };
 
@@ -4662,14 +4664,15 @@ ej_make_time_list (webs_t wp, int argc, char_t ** argv)
       return;
     }
 #endif
-	
-	st = atoi (start);
-	en = atoi (end);
-	
-	for (i = st; i <= en; i++)
+
+  st = atoi (start);
+  en = atoi (end);
+
+  for (i = st; i <= en; i++)
     {
-	  sprintf (ic, "%d", i);
-      websWrite (wp, "<option value=\"%d\" %s >%02d</option>\n", i, nvram_match (name, ic) ? "selected=\"selected\"" : "", i);
+      sprintf (ic, "%d", i);
+      websWrite (wp, "<option value=\"%d\" %s >%02d</option>\n", i,
+		 nvram_match (name, ic) ? "selected=\"selected\"" : "", i);
     }
 
   return;
@@ -4846,15 +4849,19 @@ ej_getwirelessstatus (webs_t wp, int argc, char_t ** argv)
 #endif
   if (nvram_match (mode, "wet") || nvram_match (mode, "sta")
       || nvram_match (mode, "infra"))
-    websWrite (wp, "<script type=\"text/javascript\">Capture(info.ap)</script>");
+    websWrite (wp,
+	       "<script type=\"text/javascript\">Capture(info.ap)</script>");
   else if (nvram_match (mode, "apsta") || nvram_match (mode, "apstawet"))
-	{
-    websWrite (wp, "<script type=\"text/javascript\">Capture(info.ap)</script>");
-    websWrite (wp, " & ");
-    websWrite (wp, "<script type=\"text/javascript\">Capture(status_wireless.legend3)</script>");
-	}
+    {
+      websWrite (wp,
+		 "<script type=\"text/javascript\">Capture(info.ap)</script>");
+      websWrite (wp, " & ");
+      websWrite (wp,
+		 "<script type=\"text/javascript\">Capture(status_wireless.legend3)</script>");
+    }
   else
-    websWrite (wp, "<script type=\"text/javascript\">Capture(status_wireless.legend3)</script>");
+    websWrite (wp,
+	       "<script type=\"text/javascript\">Capture(status_wireless.legend3)</script>");
 }
 #endif
 static void
@@ -5518,7 +5525,7 @@ struct ej_handler ej_handlers[] = {
   {"show_timeoptions", ej_show_timeoptions},	//Eko
   {"show_wanipinfo", ej_show_wanipinfo},	//Eko
   {"show_clocks", ej_show_clocks},
-  {"make_time_list", ej_make_time_list},  //Eko
+  {"make_time_list", ej_make_time_list},	//Eko
   {"getrebootflags", ej_getrebootflags},
   {"getwirelessmode", ej_getwirelessmode},
   {"getwirelessnetmode", ej_getwirelessnetmode},

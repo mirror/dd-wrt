@@ -88,7 +88,7 @@ int generate_key;
 extern void gen_key (char *genstr, int weptype);
 int nv_count;
 extern struct variable variables[];
-																																																																																																																																																		/* channel info structure *///from 11.9
+																																																																																																																																																					    /* channel info structure *///from 11.9
 typedef struct
 {
   uint chan;			/* channel number */
@@ -2211,7 +2211,7 @@ ej_wme_match_op (webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *output;
   char word[256], *next;
-  
+
 #ifdef FASTWEB
   ejArgs (argc, argv, "%s %s %s", &name, &match, &output);
 #else
