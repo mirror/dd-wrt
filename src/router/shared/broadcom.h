@@ -129,7 +129,7 @@ enum
 
 
 
-extern void addAction(char *action);
+extern void addAction (char *action);
 /* SEG addition for dynamic nvram layout */
 extern void Initnvramtab (void);
 extern void prefix_ip_get (char *name, char *buf, int type);
@@ -443,7 +443,7 @@ extern void remove_vifs (webs_t wp);
 extern void ej_show_security (webs_t wp, int argc, char_t ** argv);
 
 extern void reg_validate (webs_t wp);
-extern void  wireless_save (webs_t wp);
+extern void wireless_save (webs_t wp);
 extern void set_security (webs_t wp);
 extern void forward_add (webs_t wp);
 extern void forward_remove (webs_t wp);
@@ -453,7 +453,7 @@ extern void chap_user_add (webs_t wp);
 extern void chap_user_remove (webs_t wp);
 #ifdef HAVE_CHILLILOCAL
 extern void user_add (webs_t wp);
-extern void  user_remove (webs_t wp);
+extern void user_remove (webs_t wp);
 extern void ej_show_userlist (webs_t wp, int argc, char_t ** argv);
 extern void validate_userlist (webs_t wp, char *value, struct variable *v);
 #endif
@@ -580,9 +580,9 @@ extern void show_wep (webs_t wp, char *prefix);
 extern char *get_wep_value (char *type, char *_bit, char *prefix);
 
 #ifdef HAVE_MILKFISH
-extern void ej_exec_milkfish_service(webs_t wp, int argc, char_t ** argv);
-extern void ej_show_subscribers(webs_t wp, int argc, char_t ** argv);
-extern void ej_mf_test(webs_t wp, int argc, char_t ** argv);
+extern void ej_exec_milkfish_service (webs_t wp, int argc, char_t ** argv);
+extern void ej_show_subscribers (webs_t wp, int argc, char_t ** argv);
+extern void ej_mf_test (webs_t wp, int argc, char_t ** argv);
 extern void milkfish_user_add (webs_t wp);
 extern void milkfish_user_remove (webs_t wp);
 #endif

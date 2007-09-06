@@ -113,7 +113,7 @@ int
 system2 (char *command)
 {
 #ifndef HAVE_SILENCE
- fprintf(stderr,"system: %s\n",command);
+  fprintf (stderr, "system: %s\n", command);
 #endif
   return system (command);
 }
@@ -129,13 +129,13 @@ _eval (char *const argv[], char *path, int timeout, int *ppid)
 //  char buf[254] = "";
 #ifndef HAVE_SILENCE
 
-int i = 0;
-  fprintf (stderr,"executing from %s ", path);
+  int i = 0;
+  fprintf (stderr, "executing from %s ", path);
   while (argv[i] != NULL)
     {
-      fprintf (stderr,"%s ", argv[i++]);
+      fprintf (stderr, "%s ", argv[i++]);
     }
-  fprintf (stderr,"\n");
+  fprintf (stderr, "\n");
 #endif
 
   switch (pid = fork ())
@@ -596,13 +596,15 @@ osifname_to_nvifname (const char *osifname, char *nvifname_buf,
 #endif
 
 
-int indexof(char *str,char c)
+int
+indexof (char *str, char c)
 {
-if (str==NULL)return -1;
-int i;
-int slen=strlen(str);
-for (i=0;i<slen;i++)
-    if (str[(slen-1)-i]==c)return (slen-1)-i;
-return -1;
+  if (str == NULL)
+    return -1;
+  int i;
+  int slen = strlen (str);
+  for (i = 0; i < slen; i++)
+    if (str[(slen - 1) - i] == c)
+      return (slen - 1) - i;
+  return -1;
 }
-

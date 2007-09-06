@@ -12,11 +12,13 @@
  * $Id: wl.c,v 1.3 2005/11/11 09:26:19 seg Exp $
  */
 #include <string.h>
+#include <unistd.h>
 
 #include <typedefs.h>
 #include <bcmutils.h>
 #include <wlutils.h>
 #include <shutils.h>
+#include <utils.h>
 #include <bcmnvram.h>
 
 
@@ -104,19 +106,19 @@ getNoise (char *ifname, unsigned char *macname)
   //char buf[WLC_IOCTL_MAXLEN];
   wl_ioctl (ifname, WLC_GET_PHY_NOISE, &noise, sizeof (noise));
 
-    /*wl_bss_info_t *bss_info = (wl_bss_info_t *) buf;
-       memset(buf,0,WLC_IOCTL_MAXLEN);
+  /*wl_bss_info_t *bss_info = (wl_bss_info_t *) buf;
+     memset(buf,0,WLC_IOCTL_MAXLEN);
 
-       wl_ioctl(name, WLC_GET_BSS_INFO, bss_info, WLC_IOCTL_MAXLEN);
-       if ((wl_ioctl(name, WLC_GET_AP, &ap, sizeof(ap)) < 0) || ap) {
-       if (wl_ioctl(name, WLC_GET_PHY_NOISE, &noise, sizeof(noise)) < 0)
-       noise = 0;
-       } else {
-       // somehow the structure doesn't fit here
-       rssi = buf[82];
-       noise = buf[84];
-       } */
-    return noise;
+     wl_ioctl(name, WLC_GET_BSS_INFO, bss_info, WLC_IOCTL_MAXLEN);
+     if ((wl_ioctl(name, WLC_GET_AP, &ap, sizeof(ap)) < 0) || ap) {
+     if (wl_ioctl(name, WLC_GET_PHY_NOISE, &noise, sizeof(noise)) < 0)
+     noise = 0;
+     } else {
+     // somehow the structure doesn't fit here
+     rssi = buf[82];
+     noise = buf[84];
+     } */
+  return noise;
 }
 
 
@@ -245,6 +247,28 @@ wifi_getchannel (char *ifname)
   return channel;
 }
 
+
+int
+get_radiostate (char *ifname)
+{
+  char mode[32];
+  sprintf (mode, "%s_net_mode", ifname);
+  if (nvram_match (mode, "disabled"))
+    return 0;
+  struct ifreq ifr;
+  int skfd = getsocket ();
+  strncpy (ifr.ifr_name, ifname, sizeof (ifr.ifr_name));
+  if (ioctl (skfd, SIOCGIFFLAGS, &ifr) < 0)
+    {
+      return -1;
+    }
+  if ((ifr.ifr_flags & IFF_UP))
+    {
+      return 1;
+    }
+  return 0;
+}
+
 #define IOCTL_ERR(x) [x - SIOCIWFIRSTPRIV] "ioctl[" #x "]"
 static int
 do80211priv (struct iwreq *iwr, const char *ifname, int op, void *data,
@@ -353,7 +377,7 @@ isAssociated (char *ifname)
 }
 
 int
-getAssocMAC (char *ifname,char *mac)
+getAssocMAC (char *ifname, char *mac)
 {
   struct iwreq wrq;
   int i;
@@ -373,25 +397,28 @@ getAssocMAC (char *ifname,char *mac)
   return ret;
 }
 
-int is_ar5008(int devnum)
+int
+is_ar5008 (int devnum)
 {
-char sys[64];
-sprintf(sys,"/proc/sys/dev/wifi%d/mimo",devnum);
-FILE *tmp=fopen(sys,"rb");
-if (tmp==NULL)
+  char sys[64];
+  sprintf (sys, "/proc/sys/dev/wifi%d/mimo", devnum);
+  FILE *tmp = fopen (sys, "rb");
+  if (tmp == NULL)
     return 0;
-fclose(tmp);
-return 1;
+  fclose (tmp);
+  return 1;
 }
-int is_wifar5008(char *dev)
+
+int
+is_wifar5008 (char *dev)
 {
-char sys[64];
-sprintf(sys,"/proc/sys/dev/%s/mimo",dev);
-FILE *tmp=fopen(sys,"rb");
-if (tmp==NULL)
+  char sys[64];
+  sprintf (sys, "/proc/sys/dev/%s/mimo", dev);
+  FILE *tmp = fopen (sys, "rb");
+  if (tmp == NULL)
     return 0;
-fclose(tmp);
-return 1;
+  fclose (tmp);
+  return 1;
 }
 
 static struct wifi_channels *
@@ -717,20 +744,21 @@ getassoclist (char *ifname, unsigned char *list)
   char type[32];
   char netmode[32];
   unsigned int *count = (unsigned int *) list;
-  sprintf (type, "%s_mode",ifname);
-  sprintf (netmode, "%s_net_mode",ifname);
+  sprintf (type, "%s_mode", ifname);
+  sprintf (netmode, "%s_net_mode", ifname);
   if (nvram_match (netmode, "disabled"))
     return 0;
   int mincount = 0;
-  if (nvram_match (type, "wdssta") || nvram_match (type, "sta") || nvram_match (type, "wet"))
+  if (nvram_match (type, "wdssta") || nvram_match (type, "sta")
+      || nvram_match (type, "wet"))
     {
       int assoc = isAssociated (ifname);
       if (!assoc)
 	return 0;
       char mac[6];
-      getAssocMAC (ifname,mac);
+      getAssocMAC (ifname, mac);
       memcpy (&list[4], mac, 6);
-      count[0]=1;
+      count[0] = 1;
       mincount = 1;
     }
   s = socket (AF_INET, SOCK_DGRAM, 0);
@@ -1051,7 +1079,8 @@ wl_bssiovar_setbuf (char *ifname, char *iovar, int bssidx, void *param,
   uint iolen;
 
   err =
-    wl_bssiovar_mkbuf (iovar, bssidx, param, paramlen, bufptr, buflen,&iolen);
+    wl_bssiovar_mkbuf (iovar, bssidx, param, paramlen, bufptr, buflen,
+		       &iolen);
   if (err)
     return err;
 

@@ -219,15 +219,16 @@ internal_getRouterBrand ()
   data->phy_id = 0x1f;
   data->reg_num = 0x1;
   ioctl (s, SIOCGMIIREG, &iwr);
-  close(s);
-  if (data->val_out&0xffff!=0xffff) // marvell phy
+  close (s);
+  if (data->val_out & 0xffff != 0xffff)	// marvell phy
     {
-    setRouter ("Fonera+");
-    return ROUTER_BOARD_FONERA2200;    
-    }else
-    { 
-    setRouter ("Fonera 2100/2200");
-    return ROUTER_BOARD_FONERA;
+      setRouter ("Fonera+");
+      return ROUTER_BOARD_FONERA2200;
+    }
+  else
+    {
+      setRouter ("Fonera 2100/2200");
+      return ROUTER_BOARD_FONERA;
     }
 #elif HAVE_MERAKI
   setRouter ("Meraki Mini");
@@ -296,7 +297,8 @@ internal_getRouterBrand ()
       setRouter ("Asus WL-500g Deluxe");
       return ROUTER_ASUS_WL500GD;
     }
-  if (boardnum == 45 && nvram_match ("boardtype", "0x0472") && nvram_match("boardrev","0x23") && nvram_match("parkid","1"))
+  if (boardnum == 45 && nvram_match ("boardtype", "0x0472")
+      && nvram_match ("boardrev", "0x23") && nvram_match ("parkid", "1"))
     {
       cprintf ("router is Asus WL-500W\n");
       setRouter ("Asus WL-500W");
@@ -318,26 +320,32 @@ internal_getRouterBrand ()
       setRouter ("Buffalo WLA2-G54C / WLI3-TX1-G54");
       return ROUTER_BUFFALO_WLA2G54C;
     }
-  if (boardnum == 0 && nvram_match("melco_id","29090") && nvram_match("boardflags","0x0010") && nvram_match("boardrev","0x10"))
+  if (boardnum == 0 && nvram_match ("melco_id", "29090")
+      && nvram_match ("boardflags", "0x0010")
+      && nvram_match ("boardrev", "0x10"))
     {
       cprintf ("router is Buffalo WLAH-G54\n");
       setRouter ("Buffalo WLAH-G54");
-      return ROUTER_BUFFALO_WLAH_G54;    
-    
+      return ROUTER_BUFFALO_WLAH_G54;
+
     }
-  if (boardnum == 0 && nvram_match("melco_id","31070") && nvram_match("boardflags","0x2288") && nvram_match("boardrev","0x10"))
+  if (boardnum == 0 && nvram_match ("melco_id", "31070")
+      && nvram_match ("boardflags", "0x2288")
+      && nvram_match ("boardrev", "0x10"))
     {
       cprintf ("router is Buffalo WAPM-HP-AM54G54\n");
       setRouter ("Buffalo WAPM-HP-AM54G54");
-      return ROUTER_BUFFALO_WAPM_HP_AM54G54;    
+      return ROUTER_BUFFALO_WAPM_HP_AM54G54;
     }
-  if (nvram_match ("boardnum", "00") && nvram_match ("boardrev", "0x11") && nvram_match ("boardtype", "0x048e") && nvram_match ("melco_id", "32093")) 	
+  if (nvram_match ("boardnum", "00") && nvram_match ("boardrev", "0x11")
+      && nvram_match ("boardtype", "0x048e")
+      && nvram_match ("melco_id", "32093"))
     {
       cprintf ("router is Buffalo WHR-G125\n");
       setRouter ("Buffalo WHR-G125");
       return ROUTER_BUFFALO_WHRG54S;
     }
-       
+
   if (nvram_match ("boardnum", "00") &&
       nvram_match ("boardrev", "0x13") && nvram_match ("boardtype", "0x467"))
     {
@@ -375,7 +383,7 @@ internal_getRouterBrand ()
 	  && !nvram_match ("buffalo_hp", "1"))
 	{
 	  cprintf ("router is Buffalo WHR-HP-G54DD\n");
-//	  nvram_set ("boardflags", "0x2758");  /* removed, to be FCC/CE valid */
+//        nvram_set ("boardflags", "0x2758");  /* removed, to be FCC/CE valid */
 	  nvram_set ("buffalo_hp", "1");
 	  setRouter ("Buffalo WHR-HP-G54DD");
 	  return ROUTER_BUFFALO_WHRG54S;
@@ -504,20 +512,20 @@ internal_getRouterBrand ()
 	  return ROUTER_RT210W;
 	}
     }
-      
-	if (nvram_match ("boardtype", "bcm94710r4") && nvram_match ("boardnum", ""))
+
+  if (nvram_match ("boardtype", "bcm94710r4") && nvram_match ("boardnum", ""))
     {
       cprintf ("router is Askey board RT2100W\n");
-	  setRouter ("Askey board RT2100W-D65)");
-	  return ROUTER_BRCM4702_GENERIC;
-	}
-	
-	if (nvram_match ("boardtype", "0x0100") && nvram_match ("boardnum", ""))
+      setRouter ("Askey board RT2100W-D65)");
+      return ROUTER_BRCM4702_GENERIC;
+    }
+
+  if (nvram_match ("boardtype", "0x0100") && nvram_match ("boardnum", ""))
     {
       cprintf ("router is Askey board RT2206D\n");
-	  setRouter ("Askey board RT2206D-D56");
-	  return ROUTER_BRCM4702_GENERIC;
-	}
+      setRouter ("Askey board RT2206D-D56");
+      return ROUTER_BRCM4702_GENERIC;
+    }
 
   if (nvram_match ("boardtype", "0x0101"))
     {
@@ -536,8 +544,8 @@ internal_getRouterBrand ()
 	  return ROUTER_RT480W;
 	}
     }
-    
- if (nvram_match ("boardtype", "0x456"))
+
+  if (nvram_match ("boardtype", "0x456"))
     {
       if (startswith (et0, "00:11:50") ||
 	  startswith (et0, "00:30:BD") || startswith (et0, "00:30:bd"))
@@ -624,7 +632,10 @@ internal_getRouterBrand ()
 	}
     }
 #endif
-  if (boardnum == 0 && nvram_match ("boardtype", "0x478") && nvram_match ("cardbus", "0") && nvram_match("boardrev","0x10") && nvram_match("boardflags","0x110") && nvram_match("melco_id","32027"))
+  if (boardnum == 0 && nvram_match ("boardtype", "0x478")
+      && nvram_match ("cardbus", "0") && nvram_match ("boardrev", "0x10")
+      && nvram_match ("boardflags", "0x110")
+      && nvram_match ("melco_id", "32027"))
     {
       setRouter ("Buffalo WZR-G144NH");
       return ROUTER_BUFFALO_WZRG144NH;
@@ -678,13 +689,13 @@ internal_getRouterBrand ()
       setRouter ("U.S.Robotics USR5430");
       return ROUTER_USR_5430;
     }
-      
+
   if (boardnum == 10496 && nvram_match ("boardtype", "0x456"))
     {
       setRouter ("U.S.Robotics USR5461");
       return ROUTER_USR_5461;
-    } 
-      
+    }
+
   if (boardnum == 1024 && nvram_match ("boardtype", "0x0446"))
     {
       char *cfe = nvram_safe_get ("cfe_version");
@@ -734,7 +745,7 @@ internal_getRouterBrand ()
   cprintf ("router is wrt54g\n");
   return ROUTER_WRT54G;
 #else
-  eval("event","3","1","15");
+  eval ("event", "3", "1", "15");
   return 0;
 #endif
 #endif
@@ -988,8 +999,9 @@ diag_led (int type, int act)
     return diag_led_4712 (type, act);
   else if (brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
     return diag_led_4702 (type, act);
-  else if ((brand == ROUTER_WRTSL54GS || brand == ROUTER_WRT350N || brand == ROUTER_BUFFALO_WZRG144NH)
-	   && type == DIAG)
+  else
+    if ((brand == ROUTER_WRTSL54GS || brand == ROUTER_WRT350N
+	 || brand == ROUTER_BUFFALO_WZRG144NH) && type == DIAG)
     return diag_led_4704 (type, act);
   else
     {
@@ -1035,7 +1047,7 @@ led_control (int type, int act)
   int ses_gpio = 0x0f;		//use for SES1 (Linksys), AOSS (Buffalo) ....
   int ses2_gpio = 0x0f;
   int wlan_gpio = 0x0f;		//use this only if wlan led is not controlled by hardware!
-  int v1func=0;
+  int v1func = 0;
   switch (getRouterBrand ())	//gpio definitions here: 0xYZ, Y=0:normal, Y=1:inverted, Z:gpio number (f=disabled)
     {
 #ifndef HAVE_BUFFALO
@@ -1048,7 +1060,7 @@ led_control (int type, int act)
       break;
     case ROUTER_WRT54G1X:
       connected_gpio = 0x13;
-      v1func=1;
+      v1func = 1;
       break;
     case ROUTER_WRT350N:
       connected_gpio = 0x13;
@@ -1073,11 +1085,11 @@ led_control (int type, int act)
     case ROUTER_BUFFALO_WLAH_G54:
       diag_gpio = 0x17;
       ses_gpio = 0x16;
-    break;    
+      break;
     case ROUTER_BUFFALO_WAPM_HP_AM54G54:
       diag_gpio = 0x17;
       ses_gpio = 0x11;
-    break;
+      break;
     case ROUTER_BOARD_WHRAG108:
       diag_gpio = 0x17;
       bridge_gpio = 0x14;
@@ -1092,8 +1104,8 @@ led_control (int type, int act)
     case ROUTER_BUFFALO_WLI_TX4_G54HP:
       diag_gpio = 0x17;
       bridge_gpio = 0x11;
-      ses_gpio = 0x16; 
-    break; 
+      ses_gpio = 0x16;
+      break;
     case ROUTER_BUFFALO_WZRRSG54:
       diag_gpio = 0x17;
       vpn_gpio = 0x11;
@@ -1111,29 +1123,29 @@ led_control (int type, int act)
 #ifndef HAVE_BUFFALO
     case ROUTER_MOTOROLA:
       power_gpio = 0x01;
-      diag_gpio = 0x11;  //power led blink / off to indicate factory defaults
+      diag_gpio = 0x11;		//power led blink / off to indicate factory defaults
       break;
     case ROUTER_RT210W:
       power_gpio = 0x15;
-      diag_gpio = 0x05;  //power led blink / off to indicate factory defaults
+      diag_gpio = 0x05;		//power led blink / off to indicate factory defaults
       connected_gpio = 0x10;
       wlan_gpio = 0x13;
       break;
     case ROUTER_RT480W:
       power_gpio = 0x15;
-      diag_gpio = 0x05;  //power led blink / off to indicate factory defaults
+      diag_gpio = 0x05;		//power led blink / off to indicate factory defaults
       connected_gpio = 0x10;
       break;
     case ROUTER_MICROSOFT_MN700:
       power_gpio = 0x06;
-      diag_gpio = 0x16;  //power led blink / off to indicate factory defaults
+      diag_gpio = 0x16;		//power led blink / off to indicate factory defaults
       break;
     case ROUTER_ASUS_WL500GD:
-      diag_gpio = 0x00;  //power led blink / off to indicate factory defaults
+      diag_gpio = 0x00;		//power led blink / off to indicate factory defaults
       break;
     case ROUTER_ASUS_WL500G_PRE:
       power_gpio = 0x11;
-      diag_gpio = 0x01;  //power led blink / off to indicate factory defaults
+      diag_gpio = 0x01;		//power led blink / off to indicate factory defaults
       break;
     case ROUTER_WRT54G3G:
     case ROUTER_WRTSL54GS:
@@ -1152,7 +1164,7 @@ led_control (int type, int act)
     case ROUTER_DELL_TRUEMOBILE_2300:
     case ROUTER_DELL_TRUEMOBILE_2300_V2:
       power_gpio = 0x17;
-      diag_gpio = 0x07;  //power led blink / off to indicate factory defaults
+      diag_gpio = 0x07;		//power led blink / off to indicate factory defaults
       wlan_gpio = 0x16;
       break;
     case ROUTER_NETGEAR_WNR834B:
@@ -1162,30 +1174,30 @@ led_control (int type, int act)
       break;
     case ROUTER_SITECOM_WL105B:
       power_gpio = 0x03;
-      diag_gpio = 0x13;  //power led blink / off to indicate factory defaults
+      diag_gpio = 0x13;		//power led blink / off to indicate factory defaults
       wlan_gpio = 0x14;
       break;
     case ROUTER_WRT150N:
     case ROUTER_WRT300N:
       power_gpio = 0x01;
-      diag_gpio = 0x11;  //power led blink / off to indicate fac.def.
+      diag_gpio = 0x11;		//power led blink / off to indicate fac.def.
       break;
     case ROUTER_ASUS_WL500G:
       power_gpio = 0x10;
-      diag_gpio = 0x00;  //power led blink /off to indicate factory defaults
+      diag_gpio = 0x00;		//power led blink /off to indicate factory defaults
       break;
     case ROUTER_ASUS_WL500W:
       power_gpio = 0x15;
-      diag_gpio = 0x05;  //power led blink /off to indicate factory defaults
+      diag_gpio = 0x05;		//power led blink /off to indicate factory defaults
       break;
 #endif
     }
-if (type == LED_DIAG && v1func == 1) 
+  if (type == LED_DIAG && v1func == 1)
     {
-    if (act == LED_ON)
-      C_led (1);
-    else    
-      C_led (0);
+      if (act == LED_ON)
+	C_led (1);
+      else
+	C_led (0);
     }
 
   switch (type)
@@ -1483,7 +1495,7 @@ get_wan_face (void)
 	   || nvram_match ("wl0_mode", "apstawet")
 	   || nvram_match ("wl0_mode", "wet"))
     {
-    
+
       strcpy (localwanface, get_wdev ());
 
     }
@@ -2210,12 +2222,15 @@ get_wl_assoc_mac (int *c)
 
   wlmac = NULL;
   count = *c = 0;
-  
+
 #ifdef HAVE_MSSID
-  char assoccmd[4][32] = {"wl assoclist", "wl -i wl0.1 assoclist", "wl -i wl0.2 assoclist", "wl -i wl0.3 assoclist"};
+  char assoccmd[4][32] =
+    { "wl assoclist", "wl -i wl0.1 assoclist", "wl -i wl0.2 assoclist",
+    "wl -i wl0.3 assoclist"
+  };
   int ifcnt = 4;
 #else
-  char assoccmd[1][16] = {"wl assoclist"};
+  char assoccmd[1][16] = { "wl assoclist" };
   int ifcnt = 1;
 #endif
   int i;
@@ -2223,39 +2238,40 @@ get_wl_assoc_mac (int *c)
 //  fprintf(stderr,"assoclist\n");
 
   for (i = 0; i < ifcnt; i++)
-  {
-  if ((fp = popen (assoccmd[i], "r")))
     {
-	  gotit = 1;
-      while (fgets (line, sizeof (line), fp) != NULL)
+      if ((fp = popen (assoccmd[i], "r")))
 	{
-	  strcpy (list[0], "");
-	  strcpy (list[1], "");
+	  gotit = 1;
+	  while (fgets (line, sizeof (line), fp) != NULL)
+	    {
+	      strcpy (list[0], "");
+	      strcpy (list[1], "");
 
-	  if (sscanf (line, "%s %s", list[0], list[1]) != 2)	// assoclist 00:11:22:33:44:55
-	    continue;
-	  if (strcmp (list[0], "assoclist"))
-	    continue;
+	      if (sscanf (line, "%s %s", list[0], list[1]) != 2)	// assoclist 00:11:22:33:44:55
+		continue;
+	      if (strcmp (list[0], "assoclist"))
+		continue;
 
-	  wlmac = realloc (wlmac, sizeof (struct wl_assoc_mac) * (count + 1));
+	      wlmac =
+		realloc (wlmac, sizeof (struct wl_assoc_mac) * (count + 1));
 
-	  memset (&wlmac[count], 0, sizeof (struct wl_assoc_mac));
-	  strncpy (wlmac[count].mac, list[1], sizeof (wlmac[0].mac));
-	  count++;
+	      memset (&wlmac[count], 0, sizeof (struct wl_assoc_mac));
+	      strncpy (wlmac[count].mac, list[1], sizeof (wlmac[0].mac));
+	      count++;
+	    }
+
+	  pclose (fp);
 	}
+    }
 
-      pclose (fp);
-	} 
-  }
-  
   if (gotit)
-  { 
+    {
       //cprintf("Count of wl assoclist mac is %d\n", count);
       *c = count;
       return wlmac;
-  }
+    }
   else
-      return NULL;
+    return NULL;
 }
 
 struct mtu_lists mtu_list[] = {
@@ -2740,6 +2756,7 @@ route_del (char *name, int metric, char *dst, char *gateway, char *genmask)
 {
   return route_manip (SIOCDELRT, name, metric, dst, gateway, genmask);
 }
+
 //#endif
 
 
@@ -2757,7 +2774,7 @@ getSTA (void)
       char netmode[32];
       sprintf (mode, "ath%d_mode", i);
       sprintf (netmode, "ath%d_net_mode", i);
-      if (nvram_match (mode, "sta") && !nvram_match(netmode,"disabled"))
+      if (nvram_match (mode, "sta") && !nvram_match (netmode, "disabled"))
 	{
 	  return stalist[i];
 	}
@@ -2777,7 +2794,7 @@ getWET (void)
       char netmode[32];
       sprintf (mode, "ath%d_mode", i);
       sprintf (netmode, "ath%d_net_mode", i);
-      if (nvram_match (mode, "wet") && !nvram_match(netmode,"disabled"))
+      if (nvram_match (mode, "wet") && !nvram_match (netmode, "disabled"))
 	{
 	  return stalist[i];
 	}
@@ -2846,7 +2863,7 @@ skipline (FILE * in)
 int
 getIfList (char *buffer, const char *ifprefix)
 {
-  FILE *in = fopen("/proc/net/dev","rb");
+  FILE *in = fopen ("/proc/net/dev", "rb");
   char ifname[32];
 //skip the first 2 lines
   skipline (in);
@@ -3135,11 +3152,12 @@ killall (const char *name, int sig)
   return -2;
 }
 
-int isGrep(char *string,char *cmp)
+int
+isGrep (char *string, char *cmp)
 {
   char devcall[128];
   int res;
-  sprintf (devcall, "%s|grep \"%s\"|/bin/wc -l",string,cmp);
+  sprintf (devcall, "%s|grep \"%s\"|/bin/wc -l", string, cmp);
 //system(devcall);
   FILE *in = popen (devcall, "rb");
   fscanf (in, "%d", &res);
@@ -3154,6 +3172,7 @@ softkill (char *name)
   killall (name, SIGKILL);
   return 0;
 }
+
 #ifdef HAVE_AQOS
 
 static char *
@@ -3165,71 +3184,103 @@ get_wshaper_dev (void)
     return "br0";
 }
 
-void add_userip(char *ip, int idx,char *upstream,char *downstream)
+void
+add_userip (char *ip, int idx, char *upstream, char *downstream)
 {
-int base = 120+idx;
-char up[32];
-char down[32];
-char ups[32];
-char downs[32];
-sprintf(up,"1:%d",base);
-sprintf(down,"1:%d",base+1);
-sprintf(ups,"%skbit",upstream);
-sprintf(downs,"%skbit",downstream);
+  int base = 120 + idx;
+  char up[32];
+  char down[32];
+  char ups[32];
+  char downs[32];
+  sprintf (up, "1:%d", base);
+  sprintf (down, "1:%d", base + 1);
+  sprintf (ups, "%skbit", upstream);
+  sprintf (downs, "%skbit", downstream);
 
-if (nvram_match("qos_type","0"))
+  if (nvram_match ("qos_type", "0"))
     {
-    eval("tc","class","add","dev",get_wshaper_dev(),"parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
-    eval("tc","filter","add","dev",get_wshaper_dev(),"parent","1:","protocol","ip","prio","1","u32","match","ip","src",ip,"flowid",up);
-    eval("tc","class","add","dev","imq0","parent","1:","classid",down,"htb","rate",downs,"ceil",downs);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","dst",ip,"flowid",down);
-    }else
-    {
-    eval("tc","class","add","dev",get_wshaper_dev(),"parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
-    eval("tc","filter","add","dev",get_wshaper_dev(),"parent","1:","protocol","ip","prio","1","u32","match","ip","src",ip,"flowid",up);
-    eval("tc","class","add","dev","imq0","parent","1:","classid",down,"htb","rate",downs,"ceil",downs);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","ip","dst",ip,"flowid",down);
+      eval ("tc", "class", "add", "dev", get_wshaper_dev (), "parent", "1:",
+	    "classid", up, "htb", "rate", ups, "ceil", ups);
+      eval ("tc", "filter", "add", "dev", get_wshaper_dev (), "parent", "1:",
+	    "protocol", "ip", "prio", "1", "u32", "match", "ip", "src", ip,
+	    "flowid", up);
+      eval ("tc", "class", "add", "dev", "imq0", "parent", "1:", "classid",
+	    down, "htb", "rate", downs, "ceil", downs);
+      eval ("tc", "filter", "add", "dev", "imq0", "parent", "1:", "protocol",
+	    "ip", "prio", "1", "u32", "match", "ip", "dst", ip, "flowid",
+	    down);
     }
-    
+  else
+    {
+      eval ("tc", "class", "add", "dev", get_wshaper_dev (), "parent", "1:",
+	    "classid", up, "htb", "rate", ups, "ceil", ups);
+      eval ("tc", "filter", "add", "dev", get_wshaper_dev (), "parent", "1:",
+	    "protocol", "ip", "prio", "1", "u32", "match", "ip", "src", ip,
+	    "flowid", up);
+      eval ("tc", "class", "add", "dev", "imq0", "parent", "1:", "classid",
+	    down, "htb", "rate", downs, "ceil", downs);
+      eval ("tc", "filter", "add", "dev", "imq0", "parent", "1:", "protocol",
+	    "ip", "prio", "1", "u32", "match", "ip", "dst", ip, "flowid",
+	    down);
+    }
+
 }
 
-void add_usermac(char *mac, int idx,char *upstream,char *downstream)
+void
+add_usermac (char *mac, int idx, char *upstream, char *downstream)
 {
-unsigned char octet[6];
-ether_atoe (mac, octet);
+  unsigned char octet[6];
+  ether_atoe (mac, octet);
 
-int base = 120+idx;
-char up[32];
-char down[32];
-char ups[32];
-char downs[32];
-char oct2[32];
-char oct4[32];
-char doct2[32];
-char doct4[32];
-sprintf(up,"1:%d",base);
-sprintf(down,"1:%d",base+1);
-sprintf(ups,"%skbit",upstream);
-sprintf(downs,"%skbit",downstream);
+  int base = 120 + idx;
+  char up[32];
+  char down[32];
+  char ups[32];
+  char downs[32];
+  char oct2[32];
+  char oct4[32];
+  char doct2[32];
+  char doct4[32];
+  sprintf (up, "1:%d", base);
+  sprintf (down, "1:%d", base + 1);
+  sprintf (ups, "%skbit", upstream);
+  sprintf (downs, "%skbit", downstream);
 
-sprintf(oct2,"%X%X",octet[4],octet[5]);
-sprintf(oct4,"%X%X%X%X",octet[0],octet[1],octet[2],octet[3]);
+  sprintf (oct2, "%X%X", octet[4], octet[5]);
+  sprintf (oct4, "%X%X%X%X", octet[0], octet[1], octet[2], octet[3]);
 
-sprintf(doct4,"%X%X%X%X",octet[2],octet[3],octet[4],octet[5]);
-sprintf(doct2,"%X%X",octet[0],octet[1]);
+  sprintf (doct4, "%X%X%X%X", octet[2], octet[3], octet[4], octet[5]);
+  sprintf (doct2, "%X%X", octet[0], octet[1]);
 
-if (nvram_match("qos_type","0"))
+  if (nvram_match ("qos_type", "0"))
     {
-    eval("tc","class","add","dev",get_wshaper_dev(),"parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
-    eval("tc","filter","add","dev",get_wshaper_dev(),"parent","1:","protocol","ip","prio","1","u32","match","u16","0x0800","0xFFFF","at","-2","match","u16",oct2,"0xFFFF","at","-4","match","u32",oct4,"0xFFFFFFFF","at","-8","flowid",up);
-    eval("tc","class","add","dev","imq0","parent","1:","classid",down,"htb","rate",downs,"ceil",downs);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","u16","0x0800","0xFFFF","at","-2","match","u32",doct4,"0xFFFFFFFF","at","-12","match","u16",doct2,"0xFFFF","at","-14","flowid",down);
-    }else
+      eval ("tc", "class", "add", "dev", get_wshaper_dev (), "parent", "1:",
+	    "classid", up, "htb", "rate", ups, "ceil", ups);
+      eval ("tc", "filter", "add", "dev", get_wshaper_dev (), "parent", "1:",
+	    "protocol", "ip", "prio", "1", "u32", "match", "u16", "0x0800",
+	    "0xFFFF", "at", "-2", "match", "u16", oct2, "0xFFFF", "at", "-4",
+	    "match", "u32", oct4, "0xFFFFFFFF", "at", "-8", "flowid", up);
+      eval ("tc", "class", "add", "dev", "imq0", "parent", "1:", "classid",
+	    down, "htb", "rate", downs, "ceil", downs);
+      eval ("tc", "filter", "add", "dev", "imq0", "parent", "1:", "protocol",
+	    "ip", "prio", "1", "u32", "match", "u16", "0x0800", "0xFFFF",
+	    "at", "-2", "match", "u32", doct4, "0xFFFFFFFF", "at", "-12",
+	    "match", "u16", doct2, "0xFFFF", "at", "-14", "flowid", down);
+    }
+  else
     {
-    eval("tc","class","add","dev",get_wshaper_dev(),"parent","1:","classid",up,"htb","rate",ups,"ceil",ups);
-    eval("tc","filter","add","dev",get_wshaper_dev(),"parent","1:","protocol","ip","prio","1","u32","match","u16","0x0800","0xFFFF","at","-2","match","u16",oct2,"0xFFFF","at","-4","match","u32",oct4,"0xFFFFFFFF","at","-8","flowid",up);
-    eval("tc","class","add","dev","imq0","parent","1:","classid",down,"htb","rate",downs,"ceil",downs);
-    eval("tc","filter","add","dev","imq0","parent","1:","protocol","ip","prio","1","u32","match","u16","0x0800","0xFFFF","at","-2","match","u32",doct4,"0xFFFFFFFF","at","-12","match","u16",doct2,"0xFFFF","at","-14","flowid",down);
+      eval ("tc", "class", "add", "dev", get_wshaper_dev (), "parent", "1:",
+	    "classid", up, "htb", "rate", ups, "ceil", ups);
+      eval ("tc", "filter", "add", "dev", get_wshaper_dev (), "parent", "1:",
+	    "protocol", "ip", "prio", "1", "u32", "match", "u16", "0x0800",
+	    "0xFFFF", "at", "-2", "match", "u16", oct2, "0xFFFF", "at", "-4",
+	    "match", "u32", oct4, "0xFFFFFFFF", "at", "-8", "flowid", up);
+      eval ("tc", "class", "add", "dev", "imq0", "parent", "1:", "classid",
+	    down, "htb", "rate", downs, "ceil", downs);
+      eval ("tc", "filter", "add", "dev", "imq0", "parent", "1:", "protocol",
+	    "ip", "prio", "1", "u32", "match", "u16", "0x0800", "0xFFFF",
+	    "at", "-2", "match", "u32", doct4, "0xFFFFFFFF", "at", "-12",
+	    "match", "u16", doct2, "0xFFFF", "at", "-14", "flowid", down);
     }
 
 }
@@ -3430,4 +3481,3 @@ lcdmessaged (char *dual, char *message)
 
 
 #endif
-

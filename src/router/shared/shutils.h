@@ -50,7 +50,7 @@ extern int waitfor (int fd, int timeout);
  * @param	ppid	NULL to wait for child termination or pointer to pid
  * @return	return value of executed command or errno
  */
- 
+
 extern int _eval (char *const argv[], char *path, int timeout, pid_t * ppid);
 
 /* 
@@ -115,7 +115,7 @@ extern int osifname_to_nvifname (const char *osifname, char *nvifname_buf,
 
 extern int system2 (char *command);
 
-extern int get_ifname_unit(const char* ifname, int *unit, int *subunit);
+extern int get_ifname_unit (const char *ifname, int *unit, int *subunit);
 
 /*
  * Concatenate two strings together into a caller supplied buffer

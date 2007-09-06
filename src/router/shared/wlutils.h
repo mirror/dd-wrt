@@ -60,8 +60,9 @@ int getwdslist (char *name, unsigned char *list);
 int getNoise (char *ifname, unsigned char *name);
 
 #ifdef HAVE_MADWIFI
+int get_radiostate (char *ifname);
 
-int isAssociated(char *ifname);
+int isAssociated (char *ifname);
 
 unsigned int getRegDomain (const char *country);
 unsigned int getCountry (const char *country);
