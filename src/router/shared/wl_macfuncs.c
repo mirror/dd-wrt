@@ -225,7 +225,7 @@ set_maclist (char *iface, char *buf)
   for (i = 0; i < maclist->count; i++)
     {
       memcpy (sa.sa_data, &maclist->ea[i], IEEE80211_ADDR_LEN);
-      fprintf(stderr,"maclist add %s\n",ieee80211_ntoa(&maclist->ea[i]));
+      fprintf (stderr, "maclist add %s\n", ieee80211_ntoa (&maclist->ea[i]));
       do80211priv (iface, IEEE80211_IOCTL_ADDMAC, &sa, sizeof (sa));
     }
 }
@@ -236,7 +236,8 @@ security_deny (char *iface)
   printf ("Policy Deny\n");
 #endif
 //  fprintf(stderr,"maclist deny\n");
-  set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_POLICY_ALLOW);
+  set80211param (iface, IEEE80211_PARAM_MACCMD,
+		 IEEE80211_MACCMD_POLICY_ALLOW);
 }
 
 void
@@ -246,8 +247,7 @@ security_allow (char *iface)
   printf ("Policy Deny\n");
 #endif
 //  fprintf(stderr,"maclist allow\n");
-  set80211param (iface, IEEE80211_PARAM_MACCMD,
-		 IEEE80211_MACCMD_POLICY_DENY);
+  set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_POLICY_DENY);
 }
 
 void

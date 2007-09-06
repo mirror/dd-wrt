@@ -5546,8 +5546,8 @@ void
 ej_get_currate (webs_t wp, int argc, char_t ** argv)
 {
   char mode[32];
-  sprintf (mode, "%s_net_mode", nvram_safe_get ("wifi_display"));
-  if (nvram_match (mode, "disabled"))
+  int state = get_radiostate(nvram_safe_get ("wifi_display"));
+  if (state==0 || state==-1)
     {
       websWrite (wp, "%s", live_translate ("share.disabled"));
       return;
@@ -5742,6 +5742,9 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
   int s, len;
   struct iwreq iwr;
   if (!ifexists (ifname))
+    return cnt;
+  int state=get_radiostate(ifname);
+  if (state==0 || state==-1)
     return cnt;
   s = socket (AF_INET, SOCK_DGRAM, 0);
   if (s < 0)
