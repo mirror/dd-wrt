@@ -159,13 +159,13 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BOARD_LS2 0x2e01
 
 // Buffalo WAPM-HP-AM54G54 (only available on japanese market, dual radio 2.4 and 5 ghz broadcom)
-#define ROUTER_BUFFALO_WAPM_HP_AM54G54 0x2f05 
+#define ROUTER_BUFFALO_WAPM_HP_AM54G54 0x2f05
 
 // Buffalo WLAH-G54 (only available on japanese market, single radio 2.4 ghz)
-#define ROUTER_BUFFALO_WLAH_G54 0x3004 
+#define ROUTER_BUFFALO_WLAH_G54 0x3004
 
 // Buffalo WZR-G144HH(only available on japanese market, 802.11n, Gigabit switch. similar to WRT350N)
-#define ROUTER_BUFFALO_WZRG144NH 0x3117 
+#define ROUTER_BUFFALO_WZRG144NH 0x3117
 
 // U.S.Robotics USR5430 bridge (4712 cpu, no switch, fccid: ?)
 #define ROUTER_USR_5430 0x3210
@@ -186,18 +186,18 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 #define ROUTER_BOARD_TW6600 0x3801
 
-#define ROUTER_BOARD_PB42 0x390f // Atheros PB42 prototype (AR5416 MIMO Wifi, 400 Mhz Mips CPU, 32 MB RAM)
+#define ROUTER_BOARD_PB42 0x390f	// Atheros PB42 prototype (AR5416 MIMO Wifi, 400 Mhz Mips CPU, 32 MB RAM)
 
 // Asus WL500W (MIMO, 4704 cpu, fccid: Asus MSQWL500W)
 #define ROUTER_ASUS_WL500W 0x4006
 
 #define NVROUTER "DD_BOARD"
 
-extern char *getBridge(char *ifname);
-extern char *getRealBridge(char *ifname);
+extern char *getBridge (char *ifname);
+extern char *getRealBridge (char *ifname);
 extern char *getSTA (void);
 extern char *getWET (void);
-extern int contains(const char *string,char value);
+extern int contains (const char *string, char value);
 extern int getcpurev (void);
 extern int check_vlan_support (void);
 extern int startswith (char *source, char *cmp);
@@ -235,7 +235,8 @@ extern void decode (char *buf, int len);
 extern int led_control (int type, int act);
 enum
 { LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN,
-    LED_SES, LED_SES2, LED_WLAN };
+  LED_SES, LED_SES2, LED_WLAN
+};
 enum
 { LED_ON, LED_OFF, LED_FLASH };
 
@@ -412,8 +413,9 @@ void lcdmessaged (char *dual, char *message);
 #endif
 
 #ifdef HAVE_AQOS
-extern void add_usermac(char *mac, int idx,char *upstream,char *downstream);
-extern void add_userip(char *ip, int idx,char *upstream,char *downstream);
+extern void add_usermac (char *mac, int idx, char *upstream,
+			 char *downstream);
+extern void add_userip (char *ip, int idx, char *upstream, char *downstream);
 #endif
 
 void getHostName (char *buf, char *ip);
@@ -440,7 +442,7 @@ extern int ifexists (const char *ifname);
 extern void getinterfacelist (const char *ifprefix, char *buffer);
 extern int count_processes (char *pidName);
 
-int isGrep(char *string,char *cmp);
+int isGrep (char *string, char *cmp);
 int softkill (char *name);
 
 #define MAX_WDS_DEVS 10

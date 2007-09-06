@@ -4995,12 +4995,27 @@ ej_get_radio_state (webs_t wp, int argc, char_t ** argv)
   int radiooff = -1;
 
 #ifdef HAVE_MADWIFI
-  radiooff = 0;
-  //????;  no idea how to check this
+char *ifname = nvram_safe_get("wifi_display");
+if (strlen(ifname)>0)
+    {
+    int state = get_radiostate(ifname);
+  switch (state)
+    {
+    case 1:
+      websWrite (wp, "%s", live_translate ("wl_basic.radio_on"));
+      break;
+    case -1:
+      websWrite (wp, "%s", live_translate ("share.unknown"));
+      break;
+    default:			// 1: software disabled, 2: hardware disabled, 3: both are disabled
+      websWrite (wp, "%s", live_translate ("wl_basic.radio_off"));
+      break;
+    }
+    }else{
+      websWrite (wp, "%s", live_translate ("share.unknown"));
+    }
 #else
   wl_ioctl (get_wdev (), WLC_GET_RADIO, &radiooff, sizeof (int));
-
-#endif
 
   switch ((radiooff & WL_RADIO_SW_DISABLE))
     {
@@ -5014,6 +5029,7 @@ ej_get_radio_state (webs_t wp, int argc, char_t ** argv)
       websWrite (wp, "%s", live_translate ("wl_basic.radio_off"));
       break;
     }
+#endif
 }
 
 static void
