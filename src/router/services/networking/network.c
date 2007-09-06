@@ -2104,6 +2104,9 @@ start_wan (int status)
 					   "") ?
     nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
 #endif
+#ifdef HAVE_MULTICAST
+  stop_igmp_proxy ();
+#endif
   /* Rewritten by Eko, May 10, 2006 */
   int brand = getRouterBrand ();
   switch (brand)
