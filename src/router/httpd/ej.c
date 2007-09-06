@@ -284,9 +284,9 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		  *end++ = '\0';
 
 		  /* Call function */
-		  cdebug (func);
+		  cprintf ("calling %s\n",func);
 		  call (func, stream);
-		  cdebug (func);
+		  cprintf ("leaving %s\n",func);
 		}
 	      asp = NULL;
 	      len = 0;
