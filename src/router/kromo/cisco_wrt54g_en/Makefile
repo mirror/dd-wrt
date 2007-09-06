@@ -9,7 +9,7 @@ all:
 install:
 #	rm -rf $(INSTALLDIR)/www
 	install -d $(INSTALLDIR)/www
-	install -m 644 $(wildcard *.asp) $(wildcard *.css) $(wildcard *.jpg) $(wildcard *.gif) $(wildcard *.js) $(wildcard *.htm) $(wildcard *.ico) $(wildcard *.html) $(INSTALLDIR)/www
+	install -m 644 $(wildcard *.asp) $(wildcard *.svg) $(wildcard *.css) $(wildcard *.jpg) $(wildcard *.gif) $(wildcard *.js) $(wildcard *.htm) $(wildcard *.ico) $(wildcard *.html) $(INSTALLDIR)/www
 
 ifeq ($(CONFIG_DIST),"micro")
 	rm -f $(INSTALLDIR)/www/images/favicon.ico
@@ -37,7 +37,11 @@ ifneq ($(CONFIG_DIST),"micro-special")
 	mkdir -p $(INSTALLDIR)/www/js
 endif
 endif
-
+ifeq ($(CONFIG_TW6600),y)
+	cp -a help $(INSTALLDIR)/www
+	rm -f $(INSTALLDIR)/www/common_micro.js
+	mkdir -p $(INSTALLDIR)/www/js
+endif
 
 
 	cp -a lang_pack $(INSTALLDIR)/www
@@ -340,6 +344,10 @@ ifneq ($(CONFIG_UPNP),y)
 	rm -f $(INSTALLDIR)/www/UPnP.live.asp
 	rm -f $(INSTALLDIR)/www/help/HUPnP.asp
 endif
+ifneq ($(CONFIG_WOL),y)
+	rm -f $(INSTALLDIR)/www/Wol.asp
+	rm -f $(INSTALLDIR)/www/help/HWol.asp
+endif
 
 ifneq ($(CONFIG_NOCAT),y)
 	rm -f $(INSTALLDIR)/www/splash.html
@@ -424,12 +432,12 @@ endif
 	cd $(INSTALLDIR)/www  &&  find . -iname "CVS" | xargs rm -rf
 	cd $(INSTALLDIR)/www  &&  find . -iname ".svn" | xargs rm -rf
 
-	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico images/*/*.png images/*/*.gif js/* lang_pack/* style/* style/*/* style/*/*/* style/*/*/*/* style/*/*/*/*/* > $(SRCBASE)/router/httpd/html.c 
+	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.svg *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico images/*/*.png images/*/*.gif js/* lang_pack/* style/* style/*/* style/*/*/* style/*/*/*/* style/*/*/*/*/* > $(SRCBASE)/router/httpd/html.c 
 ifeq ($(CONFIG_PWC),y)
 	rm -rf $(INSTALLDIR)/www/style/pwc/ddwrt
 	rm -rf $(INSTALLDIR)/www/style/pwc/default
 endif
-	cd $(INSTALLDIR)/www && rm -f *.asp *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/*.css style/*.png style/*/* images/*/*.png images/*/*.gif js/* lang_pack/*
+	cd $(INSTALLDIR)/www && rm -f *.asp *.svg *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/*.css style/*.png style/*/* images/*/*.png images/*/*.gif js/* lang_pack/*
 
 #	cd $(INSTALLDIR)/www  &&  find . -name "*lzma" | xargs rm -f
 #../../../../tools/webcomp . filelist $(INSTALLDIR)/www/*.asp $(INSTALLDIR)/www/*.htm  > webrom.c

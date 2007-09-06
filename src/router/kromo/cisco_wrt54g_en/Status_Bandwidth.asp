@@ -36,10 +36,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							
-							<h2><% tran("status_band.h2"); %></h2>
-							
-<br /><br/>Still under development  ....<br /><br />
-						
+							<% show_bandwidth(); %>
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
