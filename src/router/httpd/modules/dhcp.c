@@ -281,15 +281,15 @@ dhcp_check (webs_t wp, char *value, struct variable *v)
 void
 dhcp_renew (webs_t wp)
 {
-
+  killall ("igmprt", SIGTERM);
   killall ("udhcpc", SIGUSR1);
-
 }
 
 void
 dhcp_release (webs_t wp)
 {
 
+  killall ("igmprt", SIGTERM);
   nvram_set ("wan_ipaddr", "0.0.0.0");
   nvram_set ("wan_netmask", "0.0.0.0");
   nvram_set ("wan_gateway", "0.0.0.0");
