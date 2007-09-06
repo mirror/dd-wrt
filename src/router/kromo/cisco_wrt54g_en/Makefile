@@ -345,9 +345,9 @@ ifneq ($(CONFIG_NOCAT),y)
 	rm -f $(INSTALLDIR)/www/splash.html
 	rm -f $(INSTALLDIR)/www/status.html
 endif
-ifeq ($(CONFIG_MSSID),y)
-	cp Status_Wireless.asp.v24 $(INSTALLDIR)/www/Status_Wireless.asp
-	cp Status_Wireless.live.asp.v24 $(INSTALLDIR)/www/Status_Wireless.live.asp
+ifneq ($(CONFIG_MSSID),y)
+	cp Status_Wireless.asp.v23 $(INSTALLDIR)/www/Status_Wireless.asp
+	cp Status_Wireless.live.asp.v23 $(INSTALLDIR)/www/Status_Wireless.live.asp
 endif	
 ifneq ($(CONFIG_WIVIZ),y)
 	rm -f $(INSTALLDIR)/www/Wiviz_Survey.asp

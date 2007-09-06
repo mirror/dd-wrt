@@ -1,6 +1,6 @@
 <% do_pagehead("info.titl"); %>
 		<script type="text/javascript">//
-		//<![CDATA[
+//<![CDATA[
 
 function setWirelessTable() {
 	var table = document.getElementById("wireless_table");
@@ -8,12 +8,12 @@ function setWirelessTable() {
 	cleanTable(table);
 	if(!val.length) {
 		var cell = table.insertRow(-1).insertCell(-1);
-		cell.colSpan = 5;
+		cell.colSpan = 7;
 		cell.align = "center";
 		cell.innerHTML = "- " + share.none + " -";
 		return;
 	}
-	for(var i = 0; i < val.length; i = i + 4) {
+	for(var i = 0; i < val.length; i = i + 6) {
 		var row = table.insertRow(-1);
 		
 		var mac = val[i];
@@ -31,7 +31,9 @@ function setWirelessTable() {
 		row.insertCell(-1).innerHTML = val[i + 1];
 		row.insertCell(-1).innerHTML = val[i + 2];
 		row.insertCell(-1).innerHTML = val[i + 3];
-		setMeterBar(row.insertCell(-1), (val[i + 1] == "0" ? 0 : parseInt(val[i + 1]) * 1.24 + 116), "");
+		row.insertCell(-1).innerHTML = val[i + 4];		
+		row.insertCell(-1).innerHTML = val[i + 5];		
+		setMeterBar(row.insertCell(-1), (val[i + 3] == "0" ? 0 : parseInt(val[i + 3]) * 1.24 + 116), "");
 	}
 }
 
@@ -123,6 +125,7 @@ function setMemoryValues(val) {
 	setElementContent("mem_cached", memCached.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
 	setElementContent("mem_active", memActive.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
 	setElementContent("mem_inactive", memInactive.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
+<% nvram_invmatch("show_hidden","1","/"); %><% nvram_invmatch("show_hidden","1","/"); %>	setElementContent("mem_hidden", "32 MB / 32 MB");
 }
 
 var update;
@@ -130,8 +133,8 @@ var update;
 addEvent(window, "load", function() {
 	setPacketInfo("<% wl_packet_get(); %>");
 	setMemoryValues("<% dumpmeminfo(); %>");
-	setWirelessTable(<% active_wireless(1); %>);
-	setWDSTable(<% active_wds(1); %>);
+<% haswifi("/"); %><% haswifi("/"); %>	setWirelessTable(<% active_wireless(1); %>);
+<% haswifi("/"); %><% haswifi("/"); %>	setWDSTable(<% active_wds(1); %>);
 	setDHCPTable(<% dumpleases(1); %>);
 	setElementVisible("dhcp", "<% nvram_get("lan_proto"); %>" == "dhcp");
 
@@ -161,6 +164,12 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 
+function refresh(F)
+{
+F.submit();
+apply();
+}
+
 //]]>
 </script>
 	</head>
@@ -175,7 +184,9 @@ addEvent(window, "unload", function() {
 						<div id="menuMain">
 							<ul id="menuMainList">
 								<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
+								<% haswifi("<!--"); %>
 								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
+								<% haswifi("-->"); %>
 								<li><a href="Services.asp"><% tran("bmenu.services"); %></a></li>
 								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
 								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
@@ -202,7 +213,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label">LAN MAC</div>
-									<script type="text/javascript">//
+									<script type="text/javascript">
 									//<![CDATA[
 									document.write("<span id=\"lan_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("lan_hwaddr"); %>')\" >");
 									document.write("<% nvram_get("lan_hwaddr"); %>");
@@ -218,8 +229,9 @@ addEvent(window, "unload", function() {
 									document.write("<% nvram_get("wan_hwaddr"); %>");
 									document.write("</span>");
 									//]]>
-								  </script>&nbsp;
+									</script>&nbsp;
 								</div>
+								<% haswifi("<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("info.wlanmac"); %></div>
 									<script type="text/javascript">
@@ -230,18 +242,21 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script>&nbsp;
 								</div>
+								<% haswifi("-->"); %>
 								<div class="setting">
 									<div class="label">WAN IP</div>
-									<% nvram_match("wl_mode","wet","<script type="text/javascript">Capture(share.disabled)</script><!--"); %><% nvram_match("wan_proto","disabled","<script type="text/javascript">Capture(share.disabled)</script><!--"); %><% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %>&nbsp;
+									<% nvram_match("wl0_mode","wet","<script type="text/javascript">Capture(share.disabled)</script><!--"); %><% nvram_match("wl0_mode","apstawet","<script type="text/javascript">Capture(share.disabled)</script><!--"); %><% nvram_match("wan_proto","disabled","<script type="text/javascript">Capture(share.disabled)</script><!--"); %><% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl0_mode","apstawet","-->"); %><% nvram_match("wl0_mode","wet","-->"); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label">LAN IP</div>
 									<span id="lan_ip"><% nvram_get("lan_ipaddr"); %></span>&nbsp;
 								</div>
 							</fieldset><br />
+<% haswifi("<!--"); %>
 							
 							<fieldset>
 								<legend><% tran("share.wireless"); %></legend>
+								<% show_wifiselect(); %>
 								<div class="setting">
 									<div class="label"><% tran("wl_basic.radio"); %></div>
 									<span id="wl_radio"><% get_radio_state(); %></span>&nbsp;
@@ -252,11 +267,11 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_wireless.net"); %></div>
-									<% getwirelessnetmode(); %>&nbsp;
+									<% getwirelessnetmode(); %>&nbsp;								
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.ssid"); %></div>
-									<% nvram_get("wl_ssid"); %>&nbsp;
+									<% getwirelessssid(); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.channel"); %></div>
@@ -264,7 +279,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label">Xmit</div>
-									<span id="wl_xmit"><% nvram_get("txpwr"); %> mW</span>&nbsp;
+									<span id="wl_xmit"><% get_txpower(); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.rates"); %></div>
@@ -283,6 +298,7 @@ addEvent(window, "unload", function() {
 									<span id="packet_tx"></span>&nbsp;
 								</div>
 							</fieldset><br />
+<% haswifi("-->"); %>
 						</div>
 
 						<div class="col2r">
@@ -294,7 +310,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label">WRT-radauth</div>
-									<% nvram_invmatch("wl_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script><!--"); %><% nvram_match("wl_radauth","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("wl_radauth","1","<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvram_invmatch("wl_mode", "ap", "-->"); %>&nbsp;
+								<% nvram_invmatch("wl0_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script><!--"); %><% nvram_match("wl0_radauth","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("wl0_radauth","1","<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvram_invmatch("wl0_mode", "ap", "-->"); %>&nbsp;
 								</div>
 								<% nvram_match("dist_type", "mini", "<!--"); %>
 								<% nvram_match("dist_type", "micro", "<!--"); %>
@@ -354,6 +370,12 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("status_router.mem_inactive"); %></div>
 									<span id="mem_inactive"></span>&nbsp;
 								</div>
+<% nvram_invmatch("show_hidden","1","<!--"); %>
+								<div class="setting">
+									<div class="label"><% tran("status_router.mem_hidden"); %></div>
+									<span id="mem_hidden"></span>&nbsp;
+								</div>
+<% nvram_invmatch("show_hidden","1","-->"); %>
 							</fieldset><br />
 							
 							<fieldset>
@@ -380,7 +402,7 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script>
 								</div>
-
+								
 								<div class="setting">
 									<div class="label">MMC</div>
 									<script type="text/javascript">
@@ -393,12 +415,15 @@ addEvent(window, "unload", function() {
 							</fieldset><br />
 							
 						</div><br clear="all" />
+<% haswifi("<!--"); %>
 						<h2><% tran("share.wireless"); %></h2>
 						<fieldset>
-							<legend><% nvram_match("wl_mode", "wet", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "ap", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %><% nvram_match("wl_mode", "sta", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "infra", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "apsta", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %><% nvram_match("wl_mode", "apstawet", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %></legend>
+							<legend><% getwirelessstatus(); %></legend>
 							<table class="table center" cellspacing="5" id="wireless_table" summary="wireless clients table">
 								<tr>
-									<th width="52%"><% tran("share.mac"); %></th>
+									<th width="28%"><% tran("share.mac"); %></th>
+									<th width="16%"><% tran("share.intrface"); %></th>
+									<th width="8%"><% tran("share.rate"); %></th>
 									<th width="8%"><% tran("share.signal"); %></th>
 									<th width="8%"><% tran("share.noise"); %></th>
 									<th width="8%">SNR</th>
@@ -423,6 +448,8 @@ addEvent(window, "unload", function() {
 							</fieldset><br />
 							
 						</div>
+<% haswifi("-->"); %>
+
 						<div id="dhcp" style="display:none">
 							<h2><% tran("share.dhcp"); %></h2>
 							<fieldset>
@@ -441,6 +468,11 @@ addEvent(window, "unload", function() {
 						<div class="center">
 							<% show_paypal(); %>
 						</div><br />
+				    <form name="Info" action="apply.cgi" method="<% get_http_method(); %>">
+							<input type="hidden" name="submit_button" value="Info" />
+							<input type="hidden" name="next_page" value="Info.htm" />
+                  					<input type="hidden" name="change_action" value="gozila_cgi" />
+							<input type="hidden" name="submit_type" value="refresh" />
 						<div class="submitFooter">
 							<script type="text/javascript">
 							 //<![CDATA[
@@ -449,6 +481,7 @@ addEvent(window, "unload", function() {
 							 //]]>
 							 </script>
 						</div>
+					    </form>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
