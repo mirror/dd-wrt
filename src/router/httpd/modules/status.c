@@ -227,7 +227,7 @@ ej_show_status (webs_t wp, int argc, char_t ** argv)
 
       /* get type  [ refresh | reload ] */
 #ifdef FASTWEB
-  ejArgs (argc, argv, "%s", &type);
+      ejArgs (argc, argv, "%s", &type);
 #else
       if (ejArgs (argc, argv, "%s", &type) < 1)
 	{
