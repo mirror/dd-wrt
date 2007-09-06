@@ -35,17 +35,17 @@ static int upgrade_ret;
 
 void
 //do_upgrade_cgi(char *url, FILE *stream)
-do_upgrade_cgi (char *url, webs_t stream)	//jimmy, https, 8/6/2003
+do_upgrade_cgi (char *url, webs_t stream, char *query)	//jimmy, https, 8/6/2003
 {
 #ifndef ANTI_FLASH
 
   if (upgrade_ret)
     {
-      do_ej ("Fail_u_s.asp", stream);
+      do_ej ("Fail_u_s.asp", stream, NULL);
     }
   else
     {
-      do_ej ("Success_u_s.asp", stream);
+      do_ej ("Success_u_s.asp", stream, NULL);
     }
   websDone (stream, 200);
 
@@ -58,7 +58,7 @@ do_upgrade_cgi (char *url, webs_t stream)	//jimmy, https, 8/6/2003
 
 #else
 
-  do_ej ("Fail_u_s.asp", stream);
+  do_ej ("Fail_u_s.asp", stream, NULL);
   websDone (stream, 200);
 
 #endif

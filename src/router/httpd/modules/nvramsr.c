@@ -244,12 +244,12 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 }
 
 void
-sr_config_cgi (char *path, webs_t wp)
+sr_config_cgi (char *path, webs_t wp, char *query)
 {
   if (restore_ret != 0)
-    do_ej ("Fail.asp", wp);
+    do_ej ("Fail.asp", wp, NULL);
   else
-    do_ej ("Success_rest.asp", wp);
+    do_ej ("Success_rest.asp", wp, NULL);
 
   websDone (wp, 200);
 
@@ -263,7 +263,7 @@ sr_config_cgi (char *path, webs_t wp)
 }
 
 void
-nv_file_out (char *path, webs_t wp)
+nv_file_out (char *path, webs_t wp, char *query)
 {
 
   int backupcount = 0;

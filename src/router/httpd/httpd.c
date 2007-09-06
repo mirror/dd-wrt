@@ -477,8 +477,9 @@ match_one (const char *pattern, int patternlen, const char *string)
 
 void
 //do_file(char *path, FILE *stream)
-do_file (char *path, webs_t stream)	//jimmy, https, 8/4/2003
+do_file (char *path, webs_t stream,char *query)	//jimmy, https, 8/4/2003
 {
+
 #ifdef HAVE_VFS
   int c;
   entry *e;
@@ -890,7 +891,7 @@ handle_request (void)
 	  return;
 	}
 
-      do_ej ("/tmp/shellout.asp", conn_fp);
+      do_ej ("/tmp/shellout.asp", conn_fp,"");
       unlink ("/tmp/shellout.asp");
       unlink ("/tmp/exec.tmp");
       unlink ("/tmp/exec.query");
@@ -985,7 +986,7 @@ handle_request (void)
 		}
 	      if (handler->output)
 		{
-		  handler->output (file, conn_fp);
+		  handler->output (file, conn_fp,query);
 		}
 	      break;
 	    }
