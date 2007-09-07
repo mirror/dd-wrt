@@ -641,7 +641,8 @@ int read_write(int fd, unsigned char *packet, int size, int rw);
 void die(char *message, char *arg1, int exit_code);
 void log_start(struct passwd *ent_pw);
 int log_reopen(char *log_file);
-void my_syslog(int priority, const char *format, ...);
+#define my_syslog(prio,fmt,...) { }
+//void my_syslog(int priority, const char *format, ...);
 void set_log_writer(fd_set *set, int *maxfdp);
 void check_log_writer(fd_set *set);
 void flush_log(void);

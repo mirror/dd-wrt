@@ -332,9 +332,13 @@ int main (int argc, char **argv)
 #endif
 
   if (daemon->cachesize != 0)
+  {
     my_syslog(LOG_INFO, _("started, version %s cachesize %d"), VERSION, daemon->cachesize);
+  }
   else
+  {
     my_syslog(LOG_INFO, _("started, version %s cache disabled"), VERSION);
+  }
   
   my_syslog(LOG_INFO, _("compile time options: %s"), compile_opts);
   

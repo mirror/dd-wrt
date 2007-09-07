@@ -314,9 +314,13 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name,
 	{
 	  strcpy(daemon->namebuff, inet_ntoa(context_tmp->start));
 	  if (context_tmp->flags & CONTEXT_STATIC)
+	  {
 	    my_syslog(LOG_INFO, _("Available DHCP subnet: %s/%s"), daemon->namebuff, inet_ntoa(context_tmp->netmask));
+	  }
 	  else
+	  {
 	    my_syslog(LOG_INFO, _("Available DHCP range: %s -- %s"), daemon->namebuff, inet_ntoa(context_tmp->end));
+	  }
 	}
     }
 
@@ -698,10 +702,14 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name,
 		    if (context->router.s_addr == config->addr.s_addr)
 		      break;
 		  if (tmp)
+		  {
 		    my_syslog(LOG_WARNING, _("not using configured address %s because it is in use by the server or relay"), addrs);
+		  }
 		  else if (have_config(config, CONFIG_DECLINED) &&
 			   difftime(now, config->decline_time) < (float)DECLINE_BACKOFF)
+		    {
 		    my_syslog(LOG_WARNING, _("not using configured address %s because it was previously declined"), addrs);
+		    }
 		  else
 		    conf = config->addr;
 		}

@@ -225,6 +225,7 @@ static void log_write(void)
     }
 }
 
+#ifdef NEED_PRINTF
 void my_syslog(int priority, const char *format, ...)
 {
   va_list ap;
@@ -334,7 +335,7 @@ void my_syslog(int priority, const char *format, ...)
  
   va_end(ap);
 }
-
+#endif
 void set_log_writer(fd_set *set, int *maxfdp)
 {
   if (entries && log_fd != -1 && connection_good)
