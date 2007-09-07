@@ -168,17 +168,22 @@ dump_entry(STRUCT_ENTRY *e, const TC_HANDLE_T handle)
 	if (strcmp(t->u.user.name, STANDARD_TARGET) == 0) {
 		int pos = *(int *)t->data;
 		if (pos < 0)
+		{
 			printf("verdict=%s\n",
 			       pos == -NF_ACCEPT-1 ? "NF_ACCEPT"
 			       : pos == -NF_DROP-1 ? "NF_DROP"
 			       : pos == -NF_QUEUE-1 ? "NF_QUEUE"
 			       : pos == RETURN ? "RETURN"
 			       : "UNKNOWN");
+		}
 		else
+		{
 			printf("verdict=%u\n", pos);
+		}
 	} else if (strcmp(t->u.user.name, IPT_ERROR_TARGET) == 0)
+	{
 		printf("error=`%s'\n", t->data);
-
+	}
 	printf("\n");
 	return 0;
 }

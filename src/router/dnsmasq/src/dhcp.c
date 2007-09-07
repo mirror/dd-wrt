@@ -863,8 +863,10 @@ void dhcp_update_configs(struct dhcp_config *configs)
 	(crec->flags & F_HOSTS))
       {
 	if (config_find_by_address(configs, crec->addr.addr.addr.addr4))
+	{
 	  my_syslog(LOG_WARNING, _("duplicate IP address %s (%s) in dhcp-config directive"), 
 		    inet_ntoa(crec->addr.addr.addr.addr4), config->hostname);
+	}
 	else
 	  {
 	    config->addr = crec->addr.addr.addr.addr4;
