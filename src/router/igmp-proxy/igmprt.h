@@ -1,288 +1,160 @@
-/*
- * Copyright 2007, Broadcom Corporation
- * All Rights Reserved.                
- *                                     
- * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;   
- * the contents of this file may not be disclosed to third parties, copied
- * or duplicated in any form, in whole or in part, without the prior      
- * written permission of Broadcom Corporation.                            
- *
- * $Id$
- */
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <signal.h>
-
-#include <sys/param.h>
-
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <bits/socket.h>
-#include <sys/ioctl.h>
-#include <sys/uio.h>
-
-#include <netinet/if_ether.h>
-#include <net/if.h>
-
-#include <netinet/in_systm.h>
-#include <linux/ip.h>
-#include <linux/mroute.h>
-
-#include <syslog.h>
-#include <assert.h>
-
+#ifndef __IGMPRT_H__
+#define __IGMPRT_H__
 #include "util.h"
-#include "igmp.h"
 
+#define	IGMP_TIMER_SCALE	10
+#define IGMP_DEF_RV		2
+#define IGMP_DEF_QI		125
+#ifdef IGMP_STARTUP_QUERY_INTERVAL
+#define IGMP_DEF_FIRST_QI		30
+#endif
+#define IGMP_DEF_QRI		10
+#if 0
+#define IGMP_GMI		((IGMP_DEF_RV * IGMP_DEF_QI) + (IGMP_DEF_QRI * IGMP_TIMER_SCALE))
+#define IGMP_OQPI		((IGMP_DEF_RV * IGMP_DEF_QI) + (IGMP_DEF_QRI * IGMP_TIMER_SCALE)/2)
+#else
+#define IGMP_GMI		((IGMP_DEF_RV * IGMP_DEF_QI) + IGMP_DEF_QRI)
+#define IGMP_OQPI		((IGMP_DEF_RV * IGMP_DEF_QI) + IGMP_DEF_QRI/2)
+#endif
+#define IGMP_DEF_LMQI		1
+#define IGMP_DEF_LMQC		IGMP_DEF_RV
 
-// eddie typedef u_short vifi_t; 
-extern vifi_t   numvifs;
-extern unsigned long upstream;
-extern int      forward_upstream;
+#define UPSTREAM_INTERFACE	1
+#define DOWNSTREAM_INTERFACE	2
+/* ******* zg 2007-01-04 porting WAG54Gv3 Source code ******* */
+/* ******* To fix cdrouter v3.4 item 295(cdrouter_mcast_11) bug ******* */
+#define BOTHSTREAM_INTERFACE    3
 
-#define UNKNOWN -1
-#define EMPTY 0
-#define IGMPVERSION 1
-#define IS_QUERIER  2
+#define MAX_NUMBER_GROUPS	128
+#define MAX_NUMBER_QUERIES	100
+#define	MAX_BUFFER_SIZE		1600
+#define MAXCTRLSIZE		(sizeof(struct cmsghdr) +sizeof(struct in_pktinfo))
 
-#define DEFAULT_VERSION 22
-#define DEFAULT_ISQUERIER 1
-#define configfile "igmprt.conf"
+#define htonl(x)		__bswap_32 (x)
+#define LOCAL_MCAST(x)		(((x) & htonl(0xFFFFFF00)) == htonl(0xE0000000))
+#define show_usage()		usage(argv[0])
 
-#define	MAX_MSGBUFSIZE		9180
-#define MAXVIFS	                32
-#define	MAX_ADDRS	       	500
-#define TRUE	         	1
-#define FALSE	         	0
+#ifdef IGMP_SEND_THE_SECOND_QUERY_PACKET_AFTER_RECEIVE_ONE
+// receive_state -- 0, 1, 2, 3
+#define RECEIVE_NONE 0
+#define RECEIVE_FIRST 1
+#define RECEIVE_SECOND 2
+#define RECEIVE_BOTH 3
+#endif
 
-// eddie
-#define	INADDR_ALLRTRS_IGMPV3_GROUP 0xE0000016U
-#define INADDR_DVMPR 0xE0000004U
-#define INADDR_OSPF 0xE0000005U
-#define INADDR_PIM 0xE0000009U
+/* IGMP router config */
+typedef struct _igmp_cfg_t {
+        /* ******* zg 2007-01-04 porting WAG54Gv3 Source code ******* */
+        /* ******* To fix cdrouter v3.4 item 295(cdrouter_mcast_11) bug ******* */
+	char upstream_ifname[IFNAMSIZ];
+        char bothstream_ifaceName[2][IFNAMSIZ];
+	int igmp_oqp;  /* other querier present timer */
+	int igmp_qi;   /* query interval */
+	int igmp_qri;  /* query response interval */
+	int igmp_gmi;  /* group membership interval */
+	int igmp_lmqi; /* last member query interval */
+	int igmp_lmqc; /* last member query count */
+} igmp_cfg_t;
 
-// eddie
-#define MAXCTRLSIZE						\
-	(sizeof(struct cmsghdr) + sizeof(struct sockaddr_in) +	\
-	sizeof(struct cmsghdr) + sizeof(int) + 32)
+/* IGMP query format */
+typedef struct _igmpq_t {
+	set_t links;
+	int type;
+	int max_resp_time;
+	unsigned int group_addr;
+} igmpq_t;
 
-#define CMSG_IFINDEX(cmsg) 				\
-	(((struct sockaddr_dl*)(cmsg + 1))->sdl_index)	\
+/* IGMP group type */
+typedef struct _igmp_group_t {
+	set_t links;
+	igmp_cfg_t *config;
+	unsigned int group_addr;
+	int group_timer;
+	int v1_host_timer;
+	int rtx_timer;
+	int state;
+	igmpq_t *query_list;
+#ifdef IGMP_SEND_THE_SECOND_QUERY_PACKET_AFTER_RECEIVE_ONE
+	int receive_state; // 0, 1, 2, 3
+	int sent_packets; // 2, 1, 0
+#endif
+} igmp_group_t;
 
-#define VALID_ADDR(x)\
-     ((ntohl((x).s_addr) != INADDR_ALLRTRS_GROUP) &&  (ntohl((x).s_addr) != INADDR_ALLHOSTS_GROUP) && (ntohl((x).s_addr) != INADDR_ALLRTRS_IGMPV3_GROUP) && (ntohl((x).s_addr) != INADDR_DVMPR) && (ntohl((x).s_addr) != INADDR_PIM))
-
-
-#define IGMP_DBG(fmt, args...)
-
-
-// typedef u_short vifi_t; 
-/*
- * IGMP interface type 
- */
-typedef struct _igmp_interface_t {
-    struct in_addr  igmpi_addr;
-    char            igmpi_name[IFNAMSIZ];
-    vifi_t          igmpi_index;
-    int             igmpi_type;	/* interface type:upstream/downstream */
-    igmp_group_t   *igmpi_groups;
-    sch_query_t    *sch_group_query;
-    int             igmpi_version;
-    int             igmpi_isquerier;
-    int             igmpi_qi;	/* query interval */
-    int             igmpi_qri;	/* query response interval */
-    int             igmpi_gmi;	/* group membership interval */
-    int             igmpi_oqp;	/* other querier present timer */
-    int             igmpi_rv;	/* robustness variable */
-    int             igmpi_ti_qi;	/* timer: query interval */
-    int             igmpi_socket;	/* igmp socket */
-    struct _igmp_interface_t *igmpi_next;
-    int             igmpi_save_flags;
-    char           *igmpi_buf;
-    int             igmpi_bufsize;
-    int             igmpi_multienabled;	/* From Sean Lee's GUI per PVC */
+/* IGMP interface type */
+typedef struct _igmp_interface_t {		
+	set_t links;
+	int mode;
+	int socket;
+	char name[IFNAMSIZ];
+	int if_index;
+	struct in_addr ip_addr;
+	short int flags;
+	unsigned int vif_index;
+	int is_querier;
+	int general_query_timer;
+	int querier_present_timer;
+	igmp_group_t *group_database;
+#ifdef IGMP_STARTUP_QUERY_INTERVAL
+	int bStartUp;
+#endif
 } igmp_interface_t;
 
-/*
- * proxy membership database 
- */
-typedef struct membership_db {
-    struct {
-	struct in_addr  group;
-	int             fmode;
-	int             numsources;
-	struct in_addr  sources[500];
-    } membership;
-    struct membership_db *next;
-} membership_db;
-
-
-/*
- * IGMP router type 
- */
+/* IGMP router type */
 typedef struct _igmp_router_t {
-    igmp_interface_t *igmprt_interfaces;
-    membership_db  *igmprt_membership_db;
-    int             igmprt_flag_timer;
-    int             igmprt_flag_input;
-    int             igmprt_running;
-    int             igmprt_up_socket;
-    int             igmprt_socket;
+	igmp_interface_t *network_if_list;
+	igmp_cfg_t config;
+	igmp_interface_t *upstream_interface;
+        /* ******* zg 2007-01-04 porting WAG54Gv3 Source code ******* */
+        /* ******* To fix cdrouter v3.4 item 295(cdrouter_mcast_11) bug ******* */
+        //Cached entry to the network interface that is confgiured as BOTHSTREAM.
+        igmp_interface_t *ptr_bothstream_interface[2];
+	int igmp_socket;
+	igmp_group_t *free_group_list;
+	igmpq_t *free_query_list;
 } igmp_router_t;
 
-
-/***
- *
- * routines
- *
- ***/
-/*
- * sources routines 
- */
-igmp_src_t     *igmp_group_src_add(igmp_group_t * gp,
-				   struct in_addr srcaddr);
-
-igmp_src_t     *igmp_group_src_lookup(igmp_group_t * gp,
-				      struct in_addr srcaddr);
-
-void            igmp_src_cleanup(igmp_group_t * gp, igmp_src_t * src);
+/* IGMP group states */
+enum {
+	IGMP_NO_MEMBERS_PRESENT,
+	IGMP_MEMBERS_PRESENT,
+	IGMP_V1_MEMBERS_PRESENT,
+	IGMP_CHECKING_MEMBERSHIP
+};
 
 
+/* Prototype declarations */
+/* ******* zg 2007-01-04 porting WAG54Gv3 Source code ******* */
+/* ******* To fix cdrouter v3.4 item 295(cdrouter_mcast_11) bug ******* */
+//igmp_group_t* igmp_group_timer_expire(igmp_router_t*,igmp_interface_t*,igmp_group_t*);
+//igmp_group_t* igmp_rtx_timer_expire(igmp_router_t*,igmp_interface_t*,igmp_group_t*);
+igmp_group_t* igmp_group_timer_expire(igmp_router_t*,igmp_interface_t*,igmp_group_t*,int);
+igmp_group_t* igmp_rtx_timer_expire(igmp_router_t*,igmp_interface_t*,igmp_group_t*,int);
 
-/*
- * group routines 
- */
+igmp_group_t* igmprt_group_lookup(igmp_interface_t*,unsigned int);
+int igmprt_init(igmp_router_t*);
+void igmprt_stop(igmp_router_t*);
+void igmprt_kill(void);
+void igmprt_tick(void);
+void igmp_interface_cleanup(igmp_router_t*,igmp_interface_t*);
+void igmp_timer_expire(igmp_router_t*);
+void igmp_v1_host_timer_expire(igmp_router_t*,igmp_interface_t*,igmp_group_t*);
+void igmprt_send_query(igmp_router_t*,igmp_interface_t*,unsigned char,unsigned int);
+void igmprt_received_general_query(igmp_router_t*,igmp_interface_t*,struct iphdr*);
+void igmprt_received_v1_report(igmp_router_t*,igmp_interface_t*,struct igmphdr*);
+void igmprt_received_v2_report(igmp_router_t*,igmp_interface_t*,struct igmphdr*);
+void igmprt_received_leave(igmp_router_t*,igmp_interface_t*,struct igmphdr*);
+void igmp_read_data(igmp_router_t*);
+void igmp_add_membership(igmp_router_t*,igmp_group_t*);
+/* ******* zg 2007-01-04 porting WAG54Gv3 Source code ******* */
+/* ******* To fix cdrouter v3.4 item 295(cdrouter_mcast_11) bug ******* */
+//void igmp_drop_membership(igmp_router_t*,igmp_group_t*);
+void igmp_drop_membership(igmp_router_t*,igmp_group_t*,igmp_interface_t*, int);
 
-igmp_group_t   *igmp_group_create(struct in_addr groupaddr);
+void usage(char*);
+void log(int,char*,...);
 
-void
-                igmp_group_cleanup(igmp_interface_t * ifp, igmp_group_t * gp, igmp_router_t * router);
+#ifdef IGMP_BLOCK_SOME_SPEC_ADDRS
+int is_spec_addr(unsigned int group);
+#endif
 
-void
-                igmp_group_handle_isex(igmp_router_t * router, igmp_interface_t * ifp, igmp_group_t * gp,
-				       int numsrc,
-				       struct in_addr *sources);
-
-void
-                igmp_group_print(igmp_group_t * gp);
-
-/*
- * interface routines 
- */
-
-igmp_interface_t *igmp_interface_create(struct in_addr ifaddr,
-					char *ifname, vifi_t index,int type);
-
-void
-                igmp_interface_cleanup(igmp_interface_t * ifp);
-
-igmp_group_t   *igmp_interface_group_add(igmp_router_t * router,
-					 igmp_interface_t * ifp,
-					 struct in_addr groupaddr);
-
-igmp_group_t   *igmp_interface_group_lookup(igmp_interface_t * ifp,
-					    struct in_addr groupaddr);
-
-void
-                igmp_interface_membership_report_v12(igmp_router_t * router, igmp_interface_t * ifp, struct in_addr src,
-						     igmpr_t * report,
-						     int len);
-void
-                igmp_interface_membership_leave_v2(igmp_router_t * router, igmp_interface_t * ifp, struct in_addr src,
-						   igmpr_t * report,
-						   int len);
-
-void
-                igmp_interface_print(igmp_interface_t * ifp);
-
-/*
- * router routines 
- */
-
-int
-                igmprt_init(igmp_router_t * igmprt);
-
-void
-                igmprt_cleanup(igmp_router_t * igmprt);
-
-igmp_interface_t *igmprt_interface_lookup(igmp_router_t * igmprt,
-					  struct in_addr ifaddr);
-
-igmp_group_t   *igmprt_group_lookup(igmp_router_t * igmprt,
-				    struct in_addr ifaddr,
-				    struct in_addr groupaddr);
-
-igmp_interface_t *igmprt_interface_add(igmp_router_t * igmprt,
-				       struct in_addr ifaddr, char *ifname,
-				       vifi_t index,int type);
-
-igmp_group_t   *igmprt_group_add(igmp_router_t * igmprt,
-				 struct in_addr ifaddr,
-				 struct in_addr groupaddr);
-
-void
-                igmprt_timer();
-
-void           *igmprt_timer_thread(void *arg);
-
-void
-                igmprt_input(igmp_router_t * igmprt, igmp_interface_t * ifp);
-
-void           *igmprt_input_thread(void *arg);
-
-void
-                igmprt_start(igmp_router_t * igmprt);
-
-void
-                igmprt_stop(igmp_router_t * igmprt);
-
-void
-                igmprt_print(igmp_router_t * igmprt);
-
-void
-                igmprt_membership_query(igmp_router_t * igmprt, igmp_interface_t * ifp,
-					struct in_addr *group,
-					struct in_addr *sources,
-					int numsrc, int SRSP);
-
-void
-                receive_membership_query(igmp_interface_t * ifp, struct in_addr gp, struct in_addr *sources, u_long src_query, int numsrc, int srsp);
-
-void
-                send_sh_query(igmp_router_t * router, igmp_interface_t * ifp);
-void
-                send_group_specific_query(igmp_router_t * router, igmp_interface_t * ifp, igmp_group_t * gp);
-void
-                send_group_src_specific_q(igmp_router_t * router, igmp_interface_t * ifp, igmp_group_t * gp, struct in_addr *sources, int numsrc);
-
-/*
- * proxy routines 
- */
-
-void
-                k_init_proxy(int socket);
-void
-                k_stop_proxy(int socket);
-int
-                k_proxy_add_vif(int socket, unsigned long vifaddr, vifi_t vifi);
-int
-                k_proxy_del_mfc(int socket, u_long source, u_long group);
-int
-                k_proxy_chg_mfc(int socket, u_long source, u_long group, vifi_t outvif, int fstate);
-membership_db  *create_membership(struct in_addr group, int fmode,
-				  int numsources, struct in_addr *sources);
-membership_db  *find_membership(membership_db * membership,
-				struct in_addr group);
-membership_db  *update_multi(igmp_router_t * igmprt, struct in_addr group,
-			     int fmode, int nsources,
-			     struct in_addr *sources);
-int
-                find_source(struct in_addr sr, int nsources, struct in_addr *sources);
-void            igmprt_timer_querier(igmp_interface_t * ifp);
-void            igmprt_timer_group(igmp_router_t * router,
-				   igmp_interface_t * ifp);
-/* FILE-CSTYLED */
+#endif
