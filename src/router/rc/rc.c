@@ -587,7 +587,7 @@ main (int argc, char **argv)
     }
 
   /* Set TZ for all rc programs */
-char tz[] = "UTC+00:00";
+char tz[10] = "UTC+00:00";
 char *tznvram = nvram_safe_get ("time_zone");
 int hour = 0;
 int minute = 0;
@@ -599,7 +599,7 @@ int minute = 0;
   else if (strstr (tznvram, ".75"))
     minute = 45;
 
-  sprintf (tz, "UTC%s%02d:%02d", hour >= 0 ? "+" : "", hour, minute);
+  snprintf (tz, 10, "UTC%s%02d:%02d", hour >= 0 ? "+" : "", hour, minute);
   
   cprintf ("TZ=%s\n", tz);
   
