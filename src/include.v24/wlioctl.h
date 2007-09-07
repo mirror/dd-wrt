@@ -751,6 +751,9 @@ typedef struct wl_instance_info {
 #define WLC_SET_PIOMODE				204
 #define WLC_SET_LED				209
 #define WLC_GET_LED				210
+#define WLC_GET_INTERFERENCE_MODE		211
+#define WLC_SET_INTERFERENCE_MODE		212
+
 #define WLC_GET_CHANNEL_SEL			215
 #define WLC_START_CHANNEL_SEL			216
 #define WLC_GET_VALID_CHANNELS			217
