@@ -17,6 +17,11 @@
 	<input class="spaceradio" type="radio" name="ppp_compression" value="0" <% nvram_checked("ppp_compression","0"); %> /><% tran("share.disable"); %> 
 </div>
 <div class="setting">
+	<div class="label"><% tran("share.vdsl"); %></div>
+	<input class="spaceradio" type="radio" name="wan_vdsl" value="1" <% nvram_checked("wan_vdsl","1"); %> /><% tran("share.enable"); %>&nbsp;
+	<input class="spaceradio" type="radio" name="wan_vdsl" value="0" <% nvram_checked("wan_vdsl","0"); %> /><% tran("share.disable"); %> 
+</div>
+<div class="setting">
 	<div class="label"><% tran("service.pptpd_encry"); %></div>
 	<input size="27" maxlength="63" onblur="valid_name(this,service.pptpd_encry)" name="ppp_mppe" value="<% nvram_get("ppp_mppe"); %>" />
 </div>

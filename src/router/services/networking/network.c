@@ -2312,36 +2312,6 @@ start_wan (int status)
 
       // Lets open option file and enter all the parameters.
       fp = fopen ("/tmp/ppp/options.pppoe", "w");
-#if 0
-      // pty is used by pppd to initiate PPPoE binary for connection negotiation
-      fprintf (fp, "pty '/usr/sbin/pppoe -I %s", pppoe_wan_ifname);
-
-
-      // This allows us to select a specific PPPoE service provider (only available via command line setting nvram variable ppp_service to service provider
-      if (nvram_invmatch ("pppoe_service", ""))
-	fprintf (fp, " -S %s", nvram_safe_get ("pppoe_service"));
-
-      // This allows us to select a specific PPPoE access concentrator (only available via command line setting nvram variable ppp_ac to concentrators name
-      if (nvram_invmatch ("pppoe_ac", ""))
-	fprintf (fp, " -C %s", nvram_safe_get ("pppoe_ac"));
-
-      // This allows us to clamp MSS to a specific value.
-      // Warning!!! This _may_ break IPSec connections using this interface if using this options.
-      // if at all possible clampmss should be used in iptables during tcp handshaking (syn)
-      // If IPSec used on this interface, rely on lower MTU and clamp MSS using iptables on traffic before IPSec tunnel
-      // Do not forget about IPSec overhead when clamping with iptables.
-      if (nvram_invmatch ("pppoe_clampmss", ""))
-	if (atoi (nvram_safe_get ("pppoe_clampmss")) > 0)
-	  fprintf (fp, " -m %s", nvram_safe_get ("pppoe_clampmss"));
-
-      // Experimental synchronous transfer mode
-      // Will not work on all ISP's or kernel's.
-      // If it does, consider yourself lucky and enjoy greatly reduced CPU usage and faster troughtput
-      if (nvram_match ("pppoe_synchronous", "1"))
-	fprintf (fp, " -s'\nsync\n");
-      else
-	fprintf (fp, "'\n");
-#endif
       // rp-pppoe kernelmode plugin
       fprintf (fp, "plugin /usr/lib/rp-pppoe.so");
 
@@ -2349,7 +2319,17 @@ start_wan (int status)
 	fprintf (fp, " rp_pppoe_service %s",
 		 nvram_safe_get ("pppoe_service"));
       fprintf (fp, "\n");
-      fprintf (fp, "nic-%s\n", pppoe_wan_ifname);
+      if (nvram_match ("wan_vdsl", "1"))	// Deutsche Telekom VDSL2 Vlan 7 Tag
+	{
+	  eval ("vconfig", "set_name_type", "DEV_PLUS_VID");
+	  eval ("vconfig", "add", pppoe_wan_ifname, "7");
+	  char nic[32];
+	  sprintf (nic, "%s.0007", pppoe_wan_ifname);
+	  eval ("ifconfig", nic, "up");
+	  fprintf (fp, "nic-%s\n", nic);
+	}
+      else
+	fprintf (fp, "nic-%s\n", pppoe_wan_ifname);
 
       // Those are default options we use + user/passwd
       // By using user/password options we dont have to deal with chap/pap secrets files.
