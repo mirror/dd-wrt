@@ -95,7 +95,10 @@ int main(int argc, char *argv[])
 		if(expires == (long)EXPIRES_NEVER) {
 			printf("never\n");
 		} else if (mode == REMAINING) {
-			if (!expires) printf("expired\n");
+			if (!expires) 
+			{
+			printf("expired\n");
+			}
 			else {
 				if (expires > 60*60*24) {
 					printf("%ld days, ", expires / (60*60*24));
@@ -111,7 +114,9 @@ int main(int argc, char *argv[])
 				}
 				printf("%ld seconds\n", expires);
 			}
-		} else printf("%s", ctime(&expires));
+		} else {
+		printf("%s", ctime(&expires));
+		}
 	}
 	fclose(fp);
 	

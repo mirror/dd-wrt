@@ -90,11 +90,11 @@ usage (int status)
 {
   if (status)
     {
-      fprintf (stderr, _("Try `%s --help' for more information.\n"), program_name);
+      printf( _("Try `%s --help' for more information.\n"), program_name);
     }
   else
     {
-      fprintf (stdout, _("\
+      printf( _("\
 Usage: %s [OPTION] ... MAC-ADDRESS ...\n\
 Wake On LAN client - wakes up magic packet compliant machines.\n\n\
     --help          display this help and exit\n\
@@ -112,11 +112,11 @@ Each MAC-ADDRESS is written as x:x:x:x:x:x, where x is a hexadecimal number\n\
 between 0 and ff which represents one byte of the address, which is in\n\
 network byte order (big endian).\n"), program_name);
 
-      fprintf (stdout, _("\n\
+      printf (_("\n\
 PASS is written as x-x-x-x-x-x, where x is a hexadecimal number between 0\n\
 and ff which represents one byte of the password.\n"));
 
-      fprintf (stdout, _("\nReport bugs to <krennwallner@aon.at>\n"));
+      printf (_("\nReport bugs to <krennwallner@aon.at>\n"));
     }
 
   exit (status);
@@ -127,8 +127,8 @@ and ff which represents one byte of the password.\n"));
 static void
 version (void)
 {
-  fprintf (stdout, PACKAGE " " VERSION "\n\n");
-  fprintf (stdout, _("\
+  printf( PACKAGE " " VERSION "\n\n");
+  printf( _("\
 Copyright (C) 2000-2004 Thomas Krennwallner <krennwallner@aon.at>\n\
 This is free software; see the source for copying conditions. There is NO\n\
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\
