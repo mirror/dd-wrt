@@ -184,7 +184,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wan_hwaddr", "", 0},	/* WAN interface MAC address */
 
   /* WAN TCP/IP parameters */
-
+  {"wan_vdsl","0",0}, 
 #ifdef HAVE_SKYTRON
   {"wan_proto", "static", 0},	/* [static|dhcp|pppoe|disabled] */
   {"wan_ipaddr", "10.254.254.254", 0},	/* WAN IP address */
