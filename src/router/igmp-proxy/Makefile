@@ -18,7 +18,7 @@ LDFLAGS = -L$(TOP)/netconf -lnetconf
 all: igmp-proxy
 
 # List of all object modules that make up the IGMPProxy.
-OBJECTS = igmprt.o proxy.o igmpv2.o util.o filter.o
+OBJECTS = igmprt.o util.o
 
 igmp-proxy: $(OBJECTS)
 	$(CC) $(CFLAGS) $(OBJECTS) -o igmprt -L$(TOP)/netconf -L$(TOP)/nvram -lnetconf -lnvram

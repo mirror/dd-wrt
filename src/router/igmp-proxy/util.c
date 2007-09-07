@@ -1,334 +1,137 @@
-/*
- * Copyright 2007, Broadcom Corporation
- * All Rights Reserved.                
- *                                     
- * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;   
- * the contents of this file may not be disclosed to third parties, copied
- * or duplicated in any form, in whole or in part, without the prior      
- * written permission of Broadcom Corporation.                            
- *
- * $Id$
- */
-
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdarg.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <net/if.h>
-#include <linux/mroute.h>
-#include <bcmnvram.h>
-
 #include "util.h"
 
-int             log_level;
-extern char     upstream_interface[10][IFNAMSIZ];
-
-void
-wait_for_interfaces()
+void list_add(set_t **ptr_list, set_t *ptr_node)
 {
-    int             fd = 0;
-    struct ifreq    iface;
-    int             i = 0;
-    int             try = 0;
+	set_t *ptr_head;
 
-    if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
-	return;
-
-    for (i = 0; i < 10; i++) {
-	if (strlen(upstream_interface[i]) > 1) {
-	    strncpy(iface.ifr_name, upstream_interface[i], IFNAMSIZ);
-	    while ((ioctl(fd, SIOCGIFADDR, &iface) < 0) && (try < 6)) {
-		while (sleep(1) > 0);
-		try++;
-	    }
+	if (*ptr_list == NULL) {
+		ptr_node->next = NULL;
+		*ptr_list = ptr_node;
+		return;
 	}
-    }				// sleep for 6 sec max.
 
-    close(fd);
-}
-
-
-int
-upstream_interface_lookup(char *s)
-{
-    int             i;
-
-    for (i = 0; i < 10; i++)
-	if (strcmp(s, upstream_interface[i]) == 0)
-	    return 1;
-
-    return 0;
-}
-char           *
-myif_indextoname(int sockfd, unsigned int ifindex, char *ifname)
-{
-    struct ifreq    ifr;
-    int             status;
-
-    memset(&ifr, 0, sizeof(struct ifreq));
-    ifr.ifr_ifindex = ifindex;
-
-    status = ioctl(sockfd, SIOCGIFNAME, &ifr);
-
-    if (status < 0) {
-	// printf("ifindex %d has no device \n",ifindex);
-	return NULL;
-    } else
-	return strncpy(ifname, ifr.ifr_name, IFNAMSIZ);
-}
-
-/*
- * Set/reset the IP_MULTICAST_LOOP. Set/reset is specified by "flag".
- */
-void
-k_set_loop(socket, flag)
-     int             socket;
-     int             flag;
-{
-    u_char          loop;
-
-    loop = flag;
-    if (setsockopt(socket, IPPROTO_IP, IP_MULTICAST_LOOP,
-		   (char *) &loop, sizeof(loop)) < 0)
-	printf("setsockopt IP_MULTICAST_LOOP %u\n", loop);
-}
-
-/*
- * Set the IP_MULTICAST_IF option on local interface ifa.
- */
-void
-k_set_if(socket, ifa)
-     int             socket;
-     u_long          ifa;
-{
-    struct in_addr  adr;
-
-    adr.s_addr = ifa;
-    if (setsockopt(socket, IPPROTO_IP, IP_MULTICAST_IF,
-		   (char *) &adr, sizeof(adr)) < 0)
-	printf("ERROR in setsockopt IP_MULTICAST_IF \n");
-}
-
-
-/*
- * void debug(int level)
- *
- * Write to stdout
- */
-void
-debug(int level, const char *fmt, ...)
-{
-    va_list         args;
-
-    if (level < log_level)
+	ptr_head = *ptr_list;
+	ptr_node->next = ptr_head;
+	*ptr_list = ptr_node;
 	return;
-    va_start(args, fmt);
-    vprintf(fmt, args);
-    va_end(args);
+}
+
+void list_cat(set_t **ptr_dst, set_t **ptr_src)
+{
+	set_t *ptr_node;
+	set_t *ptr_prev;
+
+	if (*ptr_src == NULL)
+		return;
+
+	if (*ptr_dst == NULL) {
+		*ptr_dst = *ptr_src;
+		return;
+	}
+
+	ptr_node = *ptr_dst;
+	ptr_prev = NULL;
+
+	while (ptr_node != NULL) {
+		ptr_prev = ptr_node;
+		ptr_node = ptr_node->next;
+	}
+
+	ptr_prev->next = *ptr_src;
+	return;
+}
+
+set_t* list_remove(set_t **ptr_list)
+{
+	set_t*	ptr_head;
+	set_t*	ptr_node;
+
+	if (*ptr_list == NULL)
+		return NULL;
+
+	ptr_head = *ptr_list;
+	ptr_node = *ptr_list;
+
+	ptr_head = ptr_head->next;
+	*ptr_list = ptr_head;
+
+	ptr_node->next = NULL;
+	return ptr_node;
+}
+
+int list_remove_node(set_t **ptr_list, set_t *ptr_remove)
+{
+	set_t *ptr_node;
+	set_t *ptr_next;
+	set_t *ptr_prev;
+
+	ptr_node = *ptr_list;
+
+	ptr_prev = NULL;
+	ptr_next = ptr_node->next;
+
+	while (ptr_node != NULL) {
+		if (ptr_node == ptr_remove)
+			break;
+
+		ptr_prev = ptr_node;
+		ptr_node = ptr_node->next;
+		ptr_next = ptr_node->next;
+	}
+
+	if (ptr_node == NULL)
+		return -1;
+
+	if ((ptr_prev == NULL) && (ptr_next == NULL)) {
+		*ptr_list = NULL;
+		return 0;
+	}
+	
+	if ((ptr_prev == NULL) && (ptr_next != NULL)) {
+		ptr_remove->next = NULL; 
+		*ptr_list = ptr_next;
+
+		return 0;
+	}
+
+	ptr_remove->next = NULL; 
+	ptr_prev->next = ptr_next;
+
+	return 0;
+}
+
+set_t* list_get_head(set_t **ptr_list)
+{
+	return *ptr_list;
+}
+
+set_t* list_get_next(set_t *ptr_list)
+{	
+	return ptr_list->next;
 }
 
 /*
- * u_short in_cksum(u_short *addr, int len)
- *
  * Compute the inet checksum
  */
-unsigned short
-in_cksum(unsigned short *addr, int len)
+unsigned short in_cksum(unsigned short *addr, int len)
 {
-    int             nleft = len;
-    int             sum = 0;
+    int nleft = len;
+    int sum = 0;
     unsigned short *w = addr;
-    unsigned short  answer = 0;
+    unsigned short answer = 0;
 
     while (nleft > 1) {
-	sum += *w++;
-	nleft -= 2;
+        sum += *w++;
+        nleft -= 2;
     }
     if (nleft == 1) {
-	*(unsigned char *) (&answer) = *(unsigned char *) w;
-	sum += answer;
+        *(unsigned char*)(&answer) = *(unsigned char*)w;
+        sum += answer;
     }
     sum = (sum >> 16) + (sum & 0xffff);
     answer = ~sum;
     return (answer);
 }
 
-/*
- * interface_list_t* get_interface_list(short af, short flags, short unflags)
- *
- * Get the list of interfaces with an address from family af, and whose flags 
- * match 'flags' and don't match 'unflags'. 
- */
-interface_list_t *
-get_interface_list(short af, short flags, short unflags)
-{
-    char           *p,
-                    buf[IFNAMSIZ];
-    interface_list_t *ifp,
-                   *ifprev,
-                   *list;
-    struct sockaddr *psa;
-    struct ifreq    ifr;
-    int             sockfd;
-    int             i,
-                    err;
-
-    sockfd = socket(PF_INET, SOCK_DGRAM, 0);
-    if (sockfd <= 0)
-	return NULL;
-
-    list = ifp = ifprev = NULL;
-    for (i = 0; i <= 32; i++) {
-	p = myif_indextoname(sockfd, i, buf);
-	if (p == NULL)
-	    continue;
-
-	/*
-	 * skip the one user did not enable from webUI 
-	 */
-	int type = UPSTREAM;
-	if (upstream_interface_lookup(p) == 0 && strncmp(p, "br", 2) != 0)
-	  {
-	    char bridged[32];
-	    sprintf(bridged,"%s_bridged",p);
-	    if (nvram_get(bridged)==NULL)
-		continue;
-	    if (nvram_match(bridged,"1"))
-		continue;
-	    type = DOWNSTREAM;
-          }
-	if (strncmp(p, "br", 2) == 0 && upstream_interface_lookup(p)==0)
-	    type = DOWNSTREAM;
-	    
-	strncpy(ifr.ifr_name, p, IFNAMSIZ);
-	err = ioctl(sockfd, SIOCGIFADDR, (void *) &ifr);
-	psa = &ifr.ifr_ifru.ifru_addr;
-	// eddie
-	ifp = (interface_list_t *) malloc(sizeof(*ifp));
-	if (ifp) {
-	    ifp->ifl_index = i;
-	    // printf("ifp->ifl_index=%d name=%s\n",i,ifr.ifr_name);
-	    strncpy(ifp->ifl_name, ifr.ifr_name, IFNAMSIZ);
-	    memcpy(&ifp->ifl_addr, psa, sizeof(*psa));
-	    ifp->ifl_next = NULL;
-	    ifp->type = type;
-	    if (list == NULL)
-		list = ifp;
-	    if (ifprev != NULL)
-		ifprev->ifl_next = ifp;
-	    ifprev = ifp;
-	}
-    }
-    close(sockfd);
-    return list;
-}
-
-/*
- * void free_interface_list(interface_list_t *ifl)
- *
- * Free a list of interfaces
- */
-void
-free_interface_list(interface_list_t * ifl)
-{
-    interface_list_t *ifp = ifl;
-
-    while (ifp) {
-	ifl = ifp;
-	ifp = ifp->ifl_next;
-	free(ifl);
-    }
-}
-
-/*
- * short get_interface_flags(char *ifname)
- *
- * Get the value of the flags for a certain interface 
- */
-short
-get_interface_flags(char *ifname)
-{
-    struct ifreq    ifr;
-    int             sockfd,
-                    err;
-
-    sockfd = socket(PF_INET, SOCK_DGRAM, 0);
-    if (sockfd <= 0)
-	return -1;
-    strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
-    err = ioctl(sockfd, SIOCGIFFLAGS, (void *) &ifr);
-    close(sockfd);
-    if (err == -1)
-	return -1;
-    return ifr.ifr_flags;
-}
-
-/*
- * short set_interface_flags(char *ifname, short flags)
- *
- * Set the value of the flags for a certain interface 
- */
-short
-set_interface_flags(char *ifname, short flags)
-{
-    struct ifreq    ifr;
-    int             sockfd,
-                    err;
-
-    sockfd = socket(PF_INET, SOCK_DGRAM, 0);
-    if (sockfd <= 0)
-	return -1;
-    strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
-    ifr.ifr_flags = flags;
-    err = ioctl(sockfd, SIOCSIFFLAGS, (void *) &ifr);
-    close(sockfd);
-    if (err == -1)
-	return -1;
-    return 0;
-}
-
-/*
- * short get_interface_flags(char *ifname)
- *
- * Get the value of the flags for a certain interface 
- */
-int
-get_interface_mtu(char *ifname)
-{
-    struct ifreq    ifr;
-    int             sockfd,
-                    err;
-
-    sockfd = socket(PF_INET, SOCK_DGRAM, 0);
-    if (sockfd <= 0)
-	return -1;
-    strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
-    err = ioctl(sockfd, SIOCGIFMTU, (void *) &ifr);
-    close(sockfd);
-    if (err == -1)
-	return -1;
-    return ifr.ifr_mtu;
-}
-
-/*
- * int mrouter_onoff(int sockfd, int onoff)
- *
- * Tell the kernel if a multicast router is on or off 
- */
-int
-mrouter_onoff(int sockfd, int onoff)
-{
-    int             err,
-                    cmd,
-                    i;
-
-    cmd = (onoff) ? MRT_INIT : MRT_DONE;
-    i = 1;
-    err = setsockopt(sockfd, IPPROTO_IP, cmd, (void *) &i, sizeof(i));
-    return err;
-}
-/* FILE-CSTYLED */
