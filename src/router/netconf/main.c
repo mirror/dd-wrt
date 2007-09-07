@@ -50,9 +50,13 @@ print_fw(netconf_fw_t *fw)
 
 	/* IP protocol */
 	if (fw->match.ipproto == IPPROTO_TCP)
+	{
 		printf(" tcp");
+	}
 	else if (fw->match.ipproto == IPPROTO_UDP)
+	{
 		printf(" udp");
+	}
 
 	/* Match source IP address */
 	if (fw->match.src.ipaddr.s_addr & fw->match.src.netmask.s_addr) {
@@ -62,7 +66,9 @@ print_fw(netconf_fw_t *fw)
 		if (fw->match.src.netmask.s_addr != 0xffffffff)
 			printf("/%s", inet_ntoa(fw->match.src.netmask));
 	} else
+	{
 		printf(" src anywhere");
+	}
 
 	/* Match source TCP/UDP port range */
 	if (fw->match.ipproto && valid_ports(fw->match.src.ports[0], fw->match.src.ports[1])) {
@@ -164,16 +170,24 @@ print_fw(netconf_fw_t *fw)
 		app = (netconf_app_t *) fw;
 		printf(" autofw ");
 		if (app->proto == IPPROTO_TCP)
+		{
 			printf("tcp ");
+		}
 		else if (app->proto == IPPROTO_UDP)
+		{
 			printf("udp ");
+		}
 		printf("dpt:%hu", ntohs(app->dport[0]));
 		if (ntohs(app->dport[1]) > ntohs(app->dport[0]))
+		{
 			printf("-%hu", ntohs(app->dport[1]));
+		}
 		printf(" ");
 		printf("to:%hu", ntohs(app->to[0]));
 		if (ntohs(app->to[1]) > ntohs(app->to[0]))
+		{
 			printf("-%hu", ntohs(app->to[1]));
+		}
 		printf(" ");
 	}
 
