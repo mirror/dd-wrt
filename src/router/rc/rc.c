@@ -587,7 +587,24 @@ main (int argc, char **argv)
     }
 
   /* Set TZ for all rc programs */
-  setenv ("TZ", nvram_safe_get ("time_zone"), 1);
+char *tz = "UTC+00:00";
+char *tznvram = nvram_safe_get ("time_zone");
+int hour = 0;
+int minute = 0;
+
+  hour = atoi (tznvram);
+
+  if (strstr (tznvram, ".5"))
+    minute = 30;
+  else if (strstr (tznvram, ".75"))
+    minute = 45;
+
+  sprintf (tz, "UTC%s%02d:%02d", hour >= 0 ? "+" : "", hour, minute);
+  
+  cprintf ("TZ=%s\n", tz);
+  
+  setenv ("TZ", tz, 1);
+  /* end set TZ */
 
   if (strstr (base, "startservice"))
     {
