@@ -129,9 +129,13 @@ static void print_ip(char *prefix, u_int32_t ip, u_int32_t mask, int invert)
 		IP_PARTS(ip));
 
 	if (mask != 0xffffffff) 
+	{
 		printf("/%u.%u.%u.%u ", IP_PARTS(mask));
+	}
 	else
+	{
 		printf(" ");
+	}
 }
 
 /* We want this to be readable, so only print out neccessary fields.

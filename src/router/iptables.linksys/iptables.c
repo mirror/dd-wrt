@@ -1094,13 +1094,19 @@ print_header(unsigned int format, const char *chain, iptc_handle_t *handle)
 	} else {
 		unsigned int refs;
 		if (!iptc_get_references(&refs, chain, handle))
+		{
 			printf(" (ERROR obtaining refs)\n");
+		}
 		else
+		{
 			printf(" (%u references)\n", refs);
+		}
 	}
 
 	if (format & FMT_LINENUMBERS)
+		{
 		printf(FMT("%-4s ", "%s "), "num");
+		}
 	if (!(format & FMT_NOCOUNTS)) {
 		if (format & FMT_KILOMEGAGIGA) {
 			printf(FMT("%5s ","%s "), "pkts");
@@ -1111,10 +1117,14 @@ print_header(unsigned int format, const char *chain, iptc_handle_t *handle)
 		}
 	}
 	if (!(format & FMT_NOTARGET))
+	{
 		printf(FMT("%-9s ","%s "), "target");
+	}
 	fputs(" prot ", stdout);
 	if (format & FMT_OPTIONS)
+	{
 		fputs("opt", stdout);
+	}
 	if (format & FMT_VIA) {
 		printf(FMT(" %-6s ","%s "), "in");
 		printf(FMT("%-6s ","%s "), "out");
@@ -1139,7 +1149,9 @@ print_match(const struct ipt_entry_match *m,
 			printf("%s ", match->name);
 	} else {
 		if (m->u.user.name[0])
+		{
 			printf("UNKNOWN match `%s' ", m->u.user.name);
+		}
 	}
 	/* Don't stop iterating. */
 	return 0;
@@ -1181,9 +1193,13 @@ print_firewall(const struct ipt_entry *fw,
 	{
 		char *pname = proto_to_name(fw->ip.proto, format&FMT_NUMERIC);
 		if (pname)
+		{
 			printf(FMT("%-5s", "%s "), pname);
+		}
 		else
+		{
 			printf(FMT("%-5hu", "%hu "), fw->ip.proto);
+		}
 	}
 
 	if (format & FMT_OPTIONS) {
@@ -1226,7 +1242,9 @@ print_firewall(const struct ipt_entry *fw,
 
 	fputc(fw->ip.invflags & IPT_INV_SRCIP ? '!' : ' ', stdout);
 	if (fw->ip.smsk.s_addr == 0L && !(format & FMT_NUMERIC))
+	{
 		printf(FMT("%-19s ","%s "), "anywhere");
+	}
 	else {
 		if (format & FMT_NUMERIC)
 			sprintf(buf, "%s", addr_to_dotted(&(fw->ip.src)));
@@ -1238,7 +1256,9 @@ print_firewall(const struct ipt_entry *fw,
 
 	fputc(fw->ip.invflags & IPT_INV_DSTIP ? '!' : ' ', stdout);
 	if (fw->ip.dmsk.s_addr == 0L && !(format & FMT_NUMERIC))
+	{
 		printf(FMT("%-19s","-> %s"), "anywhere");
+	}
 	else {
 		if (format & FMT_NUMERIC)
 			sprintf(buf, "%s", addr_to_dotted(&(fw->ip.dst)));
@@ -1943,10 +1963,14 @@ int do_command(int argc, char *argv[], char **table, iptc_handle_t *handle)
 
 		case 'V':
 			if (invert)
+			{
 				printf("Not %s ;-)\n", program_version);
+			}
 			else
+			{
 				printf("%s v%s\n",
 				       program_name, program_version);
+			}
 			exit(0);
 
 		case '0':

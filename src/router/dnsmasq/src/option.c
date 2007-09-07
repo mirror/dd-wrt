@@ -2178,7 +2178,9 @@ void one_file(char *file, int nest, int hosts)
 	oops:
 	  sprintf(buff, _("%s at line %d of %%s"), errmess, lineno);
 	  if (hosts)
+	   {
 	    my_syslog(LOG_ERR, buff, file);
+	   }
 	  else
 	    die(buff, file, EC_BADCONF);
 	}
