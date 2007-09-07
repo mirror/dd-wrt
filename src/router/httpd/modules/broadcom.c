@@ -3907,7 +3907,19 @@ ej_show_bandwidth (webs_t wp, int argc, char_t ** argv)
   char var[80];
   show_bwif (wp, nvram_safe_get ("lan_ifname"), "LAN");
   if (!nvram_match ("wan_proto", "disabled"))
-    show_bwif (wp, nvram_safe_get ("wan_iface"), "WAN");
+    {
+	if (strlen(nvram_safe_get("wan_iface"))>0)
+	{
+	show_bwif (wp, nvram_safe_get ("wan_iface"), "WAN");
+	}
+	else
+	{
+	    if (strlen(nvram_safe_get("wan_ifname"))>0)
+	    {
+	    show_bwif (wp, nvram_safe_get ("wan_ifname"), "WAN");
+	    }
+	}
+    }
 #ifdef HAVE_MADWIFI
   int c = getdevicecount ();
   int i;
