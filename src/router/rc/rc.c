@@ -587,7 +587,7 @@ main (int argc, char **argv)
     }
 
   /* Set TZ for all rc programs */
-char *tz = "UTC+00:00";
+char tz[] = "UTC+00:00";
 char *tznvram = nvram_safe_get ("time_zone");
 int hour = 0;
 int minute = 0;
