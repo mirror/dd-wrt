@@ -4193,10 +4193,6 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 		j++;
 	      if ((!openvpn) && !strcmp (menu[i][j], "Status_OpenVPN.asp"))	//jump over OpenVPN
 		j++;
-#ifdef HAVE_MICRO
-	      if (!strcmp (menu[i][j], "Status_Bandwidth.asp"))	//jump over bandwidth in micro build
-		j++;
-#endif
 	      if ((!auth) && !strcmp (menu[i][j], "Info.htm"))	//jump over Sys-Info
 		j++;
 
