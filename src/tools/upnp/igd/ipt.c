@@ -55,9 +55,12 @@ void print_rule(const netconf_nat_t *nat_current)
 	printf("unknown <0x%x>  ", nat_current->match.ipproto);
     }
     if (nat_current->target == NETCONF_DNAT)
+    {
 	printf("DNAT\n");
-    else
+    }else
+    {
 	printf("UNNOWN <0x%x>\n", nat_current->target);
+    }
 
     if (strlen(nat_current->match.in.name) > 0) {
 	printf("\tinput interface: %s\n", nat_current->match.in.name);
