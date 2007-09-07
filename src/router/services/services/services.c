@@ -404,7 +404,7 @@ stop_cron (void)
     syslog (LOG_INFO, "cron : cron daemon successfully stopped\n");
   //ret = killps("cron","-9");
   ret = killall ("cron", SIGKILL);
-  eval("rm","-rf","/tmp/cron.d");
+  eval ("rm", "-rf", "/tmp/cron.d");
   cprintf ("done\n");
   return ret;
 }
@@ -565,6 +565,11 @@ stop_pppoe (void)
   if (pidof ("pppd") > 0)
     syslog (LOG_INFO, "pppoe process successfully stopped\n");
   ret = killall ("pppd", SIGTERM);
+  if (nvram_match ("wan_vdsl", "1"))
+    {
+      eval ("ifconfig", nvram_safe_get ("wan_iface"), "down");
+      eval ("vconfig", "rem", nvram_safe_get ("wan_iface"));
+    }
 //  ret += killall ("ip-up", SIGKILL);
 //  ret += killall ("ip-down", SIGKILL);
 
