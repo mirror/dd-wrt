@@ -3891,9 +3891,10 @@ show_bwif (webs_t wp, char *ifname, char *name)
 	     name);
   websWrite (wp, "<fieldset>\n");
   websWrite (wp,
-	     "<embed src=\"/graph_if.svg?%s\" width=\"600\" height=\"300\" type=\"image/svg+xml\"/>\n",
+	     "<embed src=\"/graph_if.svg?%s\" width=\"555\" height=\"275\" type=\"image/svg+xml\"/>\n",
 	     ifname);
   websWrite (wp, "</fieldset>\n");
+  websWrite (wp, "<br />\n");
 }
 
 #ifdef HAVE_MADWIFI
