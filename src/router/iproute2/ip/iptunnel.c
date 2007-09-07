@@ -431,30 +431,46 @@ void print_tunnel(struct ip_tunnel_parm *p)
 	}
 
 	if (p->iph.ttl)
+	{
 		printf(" ttl %d ", p->iph.ttl);
+	}
 	else
+	{
 		printf(" ttl inherit ");
+	}
 	
 	if (p->iph.tos) {
 		SPRINT_BUF(b1);
 		printf(" tos");
 		if (p->iph.tos&1)
+		{
 			printf(" inherit");
+		}
 		if (p->iph.tos&~1)
+		{
 			printf("%c%s ", p->iph.tos&1 ? '/' : ' ',
 			       rtnl_dsfield_n2a(p->iph.tos&~1, b1, sizeof(b1)));
+		}
 	}
 
 	if (!(p->iph.frag_off&htons(IP_DF)))
+	{
 		printf(" nopmtudisc");
+	}
 
 	if ((p->i_flags&GRE_KEY) && (p->o_flags&GRE_KEY) && p->o_key == p->i_key)
+	{
 		printf(" key %s", s3);
+	}
 	else if ((p->i_flags|p->o_flags)&GRE_KEY) {
 		if (p->i_flags&GRE_KEY)
+		{
 			printf(" ikey %s ", s3);
+		}
 		if (p->o_flags&GRE_KEY)
+		{
 			printf(" okey %s ", s4);
+		}
 	}
 
 	if (p->i_flags&GRE_SEQ)
