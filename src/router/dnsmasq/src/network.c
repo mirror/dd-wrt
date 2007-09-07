@@ -521,12 +521,18 @@ void check_servers(void)
 	    s1 = _("domain"), s2 = new->domain;
 	  
 	  if (new->flags & SERV_NO_ADDR)
+	  {
 	    my_syslog(LOG_INFO, _("using local addresses only for %s %s"), s1, s2);
+	  }
 	  else if (!(new->flags & SERV_LITERAL_ADDRESS))
+	  {
 	    my_syslog(LOG_INFO, _("using nameserver %s#%d for %s %s"), daemon->namebuff, port, s1, s2);
+	  }
 	}
       else
+      {
 	my_syslog(LOG_INFO, _("using nameserver %s#%d"), daemon->namebuff, port); 
+      }
     }
   
   daemon->servers = ret;

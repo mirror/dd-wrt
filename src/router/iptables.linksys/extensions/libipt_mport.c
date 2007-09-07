@@ -193,9 +193,13 @@ print_port(u_int16_t port, u_int8_t protocol, int numeric)
 	char *service;
 
 	if (numeric || (service = port_to_service(port, protocol)) == NULL)
+	{
 		printf("%u", port);
+	}
 	else
+	{
 		printf("%s", service);
+	}
 }
 
 /* Prints out the matchinfo. */
