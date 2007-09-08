@@ -1678,7 +1678,6 @@ wl_adv.label12="TX Antenne";
 wl_adv.label13="RX Antenne";
 wl_adv.label14="Preambule";
 wl_adv.reference="Ruis Voorkeur";
-wl_adv.label15="Zendvermogen";
 wl_adv.label16="Afterburner";
 wl_adv.label17="Draadloze GUI Toegang";
 wl_adv.label18="WMM Ondersteuning";

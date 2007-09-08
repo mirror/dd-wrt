@@ -1675,7 +1675,6 @@ wl_adv.label12="Oddajna antena";
 wl_adv.label13="Sprejemna antena";
 wl_adv.label14="Preambula";
 wl_adv.reference="Referenca ¹uma";
-wl_adv.label15="Oddajna moè";
 wl_adv.label16="Afterburner";
 wl_adv.label17="Brez¾ièni dostop do uporabni¹kega vmesnika";
 wl_adv.label18="WMM podpora";

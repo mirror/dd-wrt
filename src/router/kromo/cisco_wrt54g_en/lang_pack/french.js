@@ -1693,7 +1693,6 @@ wl_adv.label12="Antenne TX";
 wl_adv.label13="Antenne RX";
 wl_adv.label14="Préambule";
 wl_adv.reference="Référence de bruit";
-wl_adv.label15="Puissance TX";
 wl_adv.label16="SpeedBooster";
 wl_adv.label17="Accès à la console par WIFI";
 wl_adv.label18="Support de WMM";

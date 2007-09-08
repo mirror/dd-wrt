@@ -1005,7 +1005,6 @@ wl_adv.label12="TX Antena";
 wl_adv.label13="RX Antena";
 wl_adv.label14="Naglowek";
 wl_adv.reference="Czulosc";
-wl_adv.label15="Moc wypromieniowania";
 wl_adv.label16="Dopalacz";
 wl_adv.label17="Ochrona wireless GUI";
 wl_adv.label18="Wsparcie dla WMM";
