@@ -1109,7 +1109,6 @@ wl_adv.label12="TX アンテナ";
 wl_adv.label13="RX アンテナ";
 wl_adv.label14="プリアンブル";
 wl_adv.reference="ノイズリファレンス";
-wl_adv.label15="Xmit パワー";
 wl_adv.label16="アフターバーナー";
 wl_adv.label17="無線 LAN でインターフェースへアクセス";
 wl_adv.label18="WMM 対応";
