@@ -1435,7 +1435,6 @@ wl_adv.label12="Antena TX (transf)";
 wl_adv.label13="Antena RX (recep)";
 wl_adv.label14="Preámbulo";
 wl_adv.reference="Referencia Ruído";
-wl_adv.label15="TX Power";
 wl_adv.label16="Afterburner";
 wl_adv.label17="Acceso GUI via Wi-Fi";
 wl_adv.label18="Soporte WMM";

@@ -162,7 +162,7 @@ addEvent(window, "unload", function() {
 									<span id="wl_channel"><% get_curchannel(); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Xmit</div>
+									<div class="label"><% tran("wl_basic.TXpower"); %></div>
 									<span id="wl_xmit"><% get_txpower(); %></span>&nbsp;
 								</div>
 								<div class="setting">

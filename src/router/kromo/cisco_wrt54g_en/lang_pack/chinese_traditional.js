@@ -1672,7 +1672,6 @@ wl_adv.label12="傳送天線";
 wl_adv.label13="接受天線";
 wl_adv.label14="Preamble";
 wl_adv.reference="雜訊參照";
-wl_adv.label15="Xmit功率";
 wl_adv.label16="Afterburner";
 wl_adv.label17="無線用戶WEB介面登入";
 wl_adv.label18="支援無線多媒體";

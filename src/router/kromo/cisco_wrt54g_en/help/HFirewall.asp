@@ -31,8 +31,7 @@
 				
 				<dt><% tran("filter.port113"); %></dt>
 				<dd>Prevents WAN access to port 113.</dd>
-								
-				<dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>
+			
 			</dl>
 			
 			<h2><% tran("log.h2"); %></h2>
@@ -50,7 +49,9 @@
 				
 				<dt><% tran("sbutton.log_out"); %></dt>
 				<dd>To see a temporary log of the Router's most recent outgoing traffic, click the <i>Outgoing Log</i> button.</dd>
-				<dd>Click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>
+				
+				<dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>
+
 			</dl>
 			
 		</div>
