@@ -134,14 +134,17 @@ site_survey_main (int argc, char *argv[])
   unsigned char *cp;
   int len;
   system2 ("iwlist ath0 scan >/dev/null");
-  char *sta=getSTA();
-  if (sta==NULL)sta=getWET();
-  if (sta==NULL)
+  char *sta = getSTA ();
+  if (sta == NULL)
     {
-    fprintf(stderr,"Site survey not applicable in AP mode\n");
-    return 0;
+      sta = getWET ();
     }
-  len = do80211priv (getSTA(), IEEE80211_IOCTL_SCAN_RESULTS, buf, sizeof (buf));
+  if (sta == NULL)
+    {
+      fprintf (stderr, "Site survey not applicable in AP mode\n");
+      return 0;
+    }
+  len = do80211priv (sta, IEEE80211_IOCTL_SCAN_RESULTS, buf, sizeof (buf));
 
   if (len == -1)
     fprintf (stderr, "unable to get scan results");
