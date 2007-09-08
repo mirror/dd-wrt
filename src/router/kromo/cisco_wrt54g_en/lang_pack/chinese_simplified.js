@@ -1440,7 +1440,6 @@ wl_adv.label12="传送天线";
 wl_adv.label13="接受天线";
 wl_adv.label14="Preamble";
 wl_adv.reference="噪声参照";
-wl_adv.label15="Xmit功率";
 wl_adv.label16="Afterburner";
 wl_adv.label17="无线图形用户界面访问";
 wl_adv.label18="WMM支持";

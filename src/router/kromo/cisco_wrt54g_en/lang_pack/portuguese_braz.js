@@ -1310,7 +1310,6 @@ wl_adv.label12="Antena TX (Transmissão)";
 wl_adv.label13="Antena RX (Recepção)";
 wl_adv.label14="Preamble";
 wl_adv.reference="Ruído de Referência";
-wl_adv.label15="Força de Xmit";
 wl_adv.label16="Afterburner";
 wl_adv.label17="Acesso Wireless à Interface de Configuração";
 wl_adv.label18="Suporte WMM";

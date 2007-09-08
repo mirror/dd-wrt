@@ -974,7 +974,6 @@ wl_adv.label12="Antenna TX";
 wl_adv.label13="Antenna RX";
 wl_adv.label14="Preambolo";
 wl_adv.reference="Rumore Di Riferimento";
-wl_adv.label15="Potenza Xmit";
 wl_adv.label16="Afterburner";
 wl_adv.label17="Accesso GUI Wireless";
 wl_adv.label18="Supporto WMM";
