@@ -27,33 +27,36 @@
 #include <fcntl.h>
 
 
-void gwrite(int gpio,int value)
+void
+gwrite (int gpio, int value)
 {
-FILE *in;
-char buf[64];
-sprintf(buf,"/proc/gpio/%d_dir",gpio);
-in=fopen(buf,"wb");
-fprintf(in,"0");
-fclose(in);
-sprintf(buf,"/proc/gpio/%d_out",gpio);
-in=fopen(buf,"wb");
-fprintf(in,"%d",value);
-fclose(in);
+  FILE *in;
+  char buf[64];
+  sprintf (buf, "/proc/gpio/%d_dir", gpio);
+  in = fopen (buf, "wb");
+  fprintf (in, "0");
+  fclose (in);
+  sprintf (buf, "/proc/gpio/%d_out", gpio);
+  in = fopen (buf, "wb");
+  fprintf (in, "%d", value);
+  fclose (in);
 }
-int gread(int gpio)
+
+int
+gread (int gpio)
 {
-FILE *in;
-int ret;
-char buf[64];
-sprintf(buf,"/proc/gpio/%d_dir",gpio);
-in=fopen(buf,"wb");
-fprintf(in,"1");
-fclose(in);
-sprintf(buf,"/proc/gpio/%d_in",gpio);
-in=fopen(buf,"rb");
-fscanf(in,"%d",&ret);
-fclose(in);
-return ret;
+  FILE *in;
+  int ret;
+  char buf[64];
+  sprintf (buf, "/proc/gpio/%d_dir", gpio);
+  in = fopen (buf, "wb");
+  fprintf (in, "1");
+  fclose (in);
+  sprintf (buf, "/proc/gpio/%d_in", gpio);
+  in = fopen (buf, "rb");
+  fscanf (in, "%d", &ret);
+  fclose (in);
+  return ret;
 }
 
 int
@@ -74,10 +77,10 @@ gpio_main (int argc, char **argv)
   pin = atoi (argv[2]);
   if (!strcmp (argv[1], "poll"))
     {
-      
+
       while (1)
 	{
-	  gpio = gread(pin);
+	  gpio = gread (pin);
 	  if (gpio != old_gpio)
 	    fprintf (stdout, "%02X\n", gpio);
 	  old_gpio = gpio;
@@ -87,11 +90,11 @@ gpio_main (int argc, char **argv)
     {
       if (!strcmp (argv[1], "enable"))
 	{
-	  gwrite(pin,1);
+	  gwrite (pin, 1);
 	}
       else
 	{
-	  gwrite(pin,0);
+	  gwrite (pin, 0);
 	}
     }
 
