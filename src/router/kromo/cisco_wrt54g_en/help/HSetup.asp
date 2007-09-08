@@ -47,6 +47,15 @@
 				<dt><% tran("share.usrname"); %> / <% tran("share.passwd"); %></dt>
 				<dd>Enter the User Name and Password you use when logging onto your ISP through a PPPoE or PPTP connection.</dd>
 				
+				<dt><% tran("share.compression"); %></dt>
+				<dd>The PPP Compression provides a method to negotiate and utilize compression protocols over PPP encapsulated links. It's based on the MPPC protocol (Microsoft Point-to-Point Compression). It is a protocol designed for transfering compressed datagrams over point-to-point links.</dd>
+				
+				<dt><% tran("service.pptpd_encry"); %></dt>
+				<dd>MPPE stands for Microsoft Point-to-Point Encryption. It is a protocol designed for transfering encrypted datagrams over point-to-point links.</dd>
+				
+				<dt><% tran("idx_h.reconnect"); %></dt>
+				<dd>This option schedules the pppoe reconnection by killing the pppd daemon and restart it.</dd>
+				
 				<dt><% tran("idx_h.max_idle"); %></dt>
 				<dd>You can configure the router to disconnect your Internet connection after a specified period of inactivity (Max Idle Time). If your Internet connection has been terminated due to inactivity, Connect on Demand enables the router to automatically re-establish your connection as soon as you attempt to access the Internet again. If you wish to activate Connect on Demand, click the radio button. If you want your Internet connection to remain active at all times, enter 0 in the Max Idle Time field. Otherwise, enter the number of minutes you want to have elapsed before your Internet connection terminates.</dd>
 				
