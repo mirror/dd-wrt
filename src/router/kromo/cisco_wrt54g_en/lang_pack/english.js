@@ -1686,7 +1686,6 @@ wl_adv.label12="TX Antenna";
 wl_adv.label13="RX Antenna";
 wl_adv.label14="Preamble";
 wl_adv.reference="Noise Reference";
-wl_adv.label15="TX Power";
 wl_adv.label16="Afterburner";
 wl_adv.label17="Wireless GUI Access";
 wl_adv.label18="WMM Support";
