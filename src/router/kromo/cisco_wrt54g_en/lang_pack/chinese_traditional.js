@@ -1576,6 +1576,52 @@ wl_mac.label2="存取控制方式";
 wl_mac.deny="禁止所列的MAC連接無線網路";
 wl_mac.allow="允許所列的MAC連接無線網路";
 
+// ******************************************* Wireless_Advanced.asp *******************************************//
+
+wl_adv.titl="進階無線設定";
+wl_adv.h2="進階無線設定";
+wl_adv.legend="進階設定";
+wl_adv.legend2="無線多媒體支援設定";
+wl_adv.label="認證類型";
+wl_adv.label2="基本速率";
+wl_adv.label3="傳輸速率";
+wl_adv.label4="CTS保護模式";
+wl_adv.label5="Frame Burst";
+wl_adv.label6="信標間隙";
+wl_adv.label7="DTIM 間隙";
+wl_adv.label8="Fragmentation Threshold";
+wl_adv.label9="RTS值";
+wl_adv.label10="最大關聯的用戶端數";
+wl_adv.label11="AP獨立";
+wl_adv.label12="傳送天線";
+wl_adv.label13="接受天線";
+wl_adv.label14="Preamble";
+wl_adv.reference="雜訊參照";
+wl_adv.label16="Afterburner";
+wl_adv.label17="無線用戶WEB介面登入";
+wl_adv.label18="支援無線多媒體";
+wl_adv.label19="No-Acknowledgement";
+wl_adv.label20="Shortslot Override";
+wl_adv.label21="Transmission Maximum Rate";
+wl_adv.table1="EDCA AP 參數（AP到用戶端）";
+wl_adv.col1="CWmin";
+wl_adv.col2="CWmax";
+wl_adv.col3="AIFSN";
+wl_adv.col4="TXOP(b)";
+wl_adv.col5="TXOP(a/g)";
+wl_adv.col6="Admin Forced";
+wl_adv.row1="背景";
+wl_adv.row2="最大努力";
+wl_adv.row3="視訊";
+wl_adv.row4="語音";
+wl_adv.table2="EDCA STA參數（用戶端到AP）";
+wl_adv.lng="長"; 					//************* don't use .long ! *************
+wl_adv.shrt="短"; 				//************* don't use .short ! **************
+
+//help container
+
+hwl_adv.right2="您可以從自動或者共用金鑰中選擇一個.共用金鑰授權更加安全,但是所有在您網路中的設備必須支援共用金鑰授權.";
+hwl_basic.right6="按任意時數來開啟或關閉無線訊號 (<em>綠色</em> 表示允許的無線進入,和 <em>紅色</em> 表示禁止無線進入.";
 
 
 // ******************************************* Wireless_Basic.asp *******************************************//
@@ -1640,56 +1686,6 @@ wl_basic.preambletime="OFDM Preamble 時間";
 hwl_basic.right2="如果您想排除無線-G用戶端,選擇 <em>B</em> 模式.如果您想關閉無線連線,選擇 <em>關閉</em>.";
 hwl_basic.right3="感度範圍: ";
 hwl_basic.right4="調整ack時序.輸入0將完全關閉ack時序(V.24 無此功能).";
-
-
-
-// ******************************************* Wireless_Advanced.asp *******************************************//
-
-wl_adv.titl="進階無線設定";
-wl_adv.h2="進階無線設定";
-wl_adv.legend="進階設定";
-wl_adv.legend2="無線多媒體支援設定";
-wl_adv.label="認證類型";
-wl_adv.label2="基本速率";
-wl_adv.label3="傳輸速率";
-wl_adv.label4="CTS保護模式";
-wl_adv.label5="Frame Burst";
-wl_adv.label6="信標間隙";
-wl_adv.label7="DTIM 間隙";
-wl_adv.label8="Fragmentation Threshold";
-wl_adv.label9="RTS值";
-wl_adv.label10="最大關聯的用戶端數";
-wl_adv.label11="AP獨立";
-wl_adv.label12="傳送天線";
-wl_adv.label13="接受天線";
-wl_adv.label14="Preamble";
-wl_adv.reference="雜訊參照";
-wl_adv.label16="Afterburner";
-wl_adv.label17="無線用戶WEB介面登入";
-wl_adv.label18="支援無線多媒體";
-wl_adv.label19="No-Acknowledgement";
-wl_adv.label20="Shortslot Override";
-wl_adv.label21="Transmission Maximum Rate";
-wl_adv.table1="EDCA AP 參數（AP到用戶端）";
-wl_adv.col1="CWmin";
-wl_adv.col2="CWmax";
-wl_adv.col3="AIFSN";
-wl_adv.col4="TXOP(b)";
-wl_adv.col5="TXOP(a/g)";
-wl_adv.col6="Admin Forced";
-wl_adv.row1="背景";
-wl_adv.row2="最大努力";
-wl_adv.row3="視訊";
-wl_adv.row4="語音";
-wl_adv.table2="EDCA STA參數（用戶端到AP）";
-wl_adv.lng="長"; 					//************* don't use .long ! *************
-wl_adv.shrt="短"; 				//************* don't use .short ! **************
-
-//help container
-
-hwl_adv.right2="您可以從自動或者共用金鑰中選擇一個.共用金鑰授權更加安全,但是所有在您網路中的設備必須支援共用金鑰授權.";
-hwl_basic.right6="按任意時數來開啟或關閉無線訊號 (<em>綠色</em> 表示允許的無線進入,和 <em>紅色</em> 表示禁止無線進入.";
-
 
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//
 

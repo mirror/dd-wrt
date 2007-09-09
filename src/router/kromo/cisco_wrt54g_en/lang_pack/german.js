@@ -1450,6 +1450,51 @@ wl_mac.deny="WLAN-MAC-Adressen, die nicht auf das Netzwerk zugreifen dürfen";
 wl_mac.allow="WLAN-MAC-Adressen, die auf das Netzwerk zugreifen dürfen";
 
 
+// **************************************************************** Wireless_Advanced.asp ***************************************************************//
+
+wl_adv.titl="Erweiterte WLAN-Einstellungen";
+wl_adv.h2="Erweiterte WLAN-Einstellungen";
+wl_adv.legend="Erweiterte Einstellungen";
+wl_adv.legend2="Einstellungen WLAN-Multimedia";
+wl_adv.label="Authentifizierungs-Typ";
+wl_adv.label2="Basis-Rate";
+wl_adv.label3="Übertragungsrate (Fix)";
+wl_adv.label4="CTS Protection Mode";
+wl_adv.label5="Frame Burst";
+wl_adv.label6="Beacon Interval";
+wl_adv.label7="DTIM Interval";
+wl_adv.label8="Fragmentation Threshold";
+wl_adv.label9="RTS Threshold";
+wl_adv.label10="Max Associated Clients";
+wl_adv.label11="AP Isolation";
+wl_adv.label12="TX Antenne";
+wl_adv.label13="RX Antenne";
+wl_adv.label14="Preamble";
+wl_adv.reference="Noise-Referenz";
+wl_adv.label16="Afterburner";
+wl_adv.label17="WLAN-GUI-Zugriff";
+wl_adv.label18="WMM-Unterstützung";
+wl_adv.label19="No-Acknowledgement";
+wl_adv.label21="Übertragungsrate (Max)";
+wl_adv.table1="EDCA AP Parameter (AP nach Client)";
+wl_adv.col1="CWmin";
+wl_adv.col2="CWmax";
+wl_adv.col3="AIFSN";
+wl_adv.col4="TXOP(b)";
+wl_adv.col5="TXOP(a/g)";
+wl_adv.col6="Admin Forced";
+wl_adv.row1="Background";
+wl_adv.row2="Best Effort";
+wl_adv.row3="Video";
+wl_adv.row4="Voice";
+wl_adv.table2="EDCA STA Parameter (Client nach AP)";
+wl_adv.lng="Lang"; 					//************* don't use .long ! *************
+wl_adv.shrt="Kurz"; 				//************* don't use .short ! **************
+
+//help container
+
+hwl_adv.right2="Sie können Auto oder Shared Key wählen. Die Shared Key Authentifizierung ist wesentlich sicherer, allerdings muss dazu jedes Gerät in Ihrem Netzwerk diesen Betriebsmodus unterstützen.";
+
 
 // **************************************************************** Wireless_Basic.asp ***************************************************************//
 
@@ -1499,55 +1544,6 @@ wl_basic.regulatory="Regulierung";
 hwl_basic.right2="Wenn Sie G-Clients komplett ausschließen wollen, sollten Sie <em>Nur-B</em> wählen. Wenn Sie den WLAN Zugriff abschalten wollen, wählen Sie <em>abschalten</em>.";
 hwl_basic.right3="Empfindlichkeitsbereich: ";
 hwl_basic.right4="Setzt das ACK Timing. 0 Schaltet das ACK timing komplett ab.";
-
-
-
-// **************************************************************** Wireless_Advanced.asp ***************************************************************//
-
-wl_adv.titl="Erweiterte WLAN-Einstellungen";
-wl_adv.h2="Erweiterte WLAN-Einstellungen";
-wl_adv.legend="Erweiterte Einstellungen";
-wl_adv.legend2="Einstellungen WLAN-Multimedia";
-wl_adv.label="Authentifizierungs-Typ";
-wl_adv.label2="Basis-Rate";
-wl_adv.label3="Übertragungsrate (Fix)";
-wl_adv.label4="CTS Protection Mode";
-wl_adv.label5="Frame Burst";
-wl_adv.label6="Beacon Interval";
-wl_adv.label7="DTIM Interval";
-wl_adv.label8="Fragmentation Threshold";
-wl_adv.label9="RTS Threshold";
-wl_adv.label10="Max Associated Clients";
-wl_adv.label11="AP Isolation";
-wl_adv.label12="TX Antenne";
-wl_adv.label13="RX Antenne";
-wl_adv.label14="Preamble";
-wl_adv.reference="Noise-Referenz";
-wl_adv.label16="Afterburner";
-wl_adv.label17="WLAN-GUI-Zugriff";
-wl_adv.label18="WMM-Unterstützung";
-wl_adv.label19="No-Acknowledgement";
-wl_adv.label21="Übertragungsrate (Max)";
-wl_adv.table1="EDCA AP Parameter (AP nach Client)";
-wl_adv.col1="CWmin";
-wl_adv.col2="CWmax";
-wl_adv.col3="AIFSN";
-wl_adv.col4="TXOP(b)";
-wl_adv.col5="TXOP(a/g)";
-wl_adv.col6="Admin Forced";
-wl_adv.row1="Background";
-wl_adv.row2="Best Effort";
-wl_adv.row3="Video";
-wl_adv.row4="Voice";
-wl_adv.table2="EDCA STA Parameter (Client nach AP)";
-wl_adv.lng="Lang"; 					//************* don't use .long ! *************
-wl_adv.shrt="Kurz"; 				//************* don't use .short ! **************
-
-//help container
-
-hwl_adv.right2="Sie können Auto oder Shared Key wählen. Die Shared Key Authentifizierung ist wesentlich sicherer, allerdings muss dazu jedes Gerät in Ihrem Netzwerk diesen Betriebsmodus unterstützen.";
-
-
 
 // **************************************************************** Fail_s.asp & Fail_u_s.asp & Fail.asp **********************************************************************//
 
