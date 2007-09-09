@@ -338,7 +338,7 @@ apply();
 									<div class="label">Rstats</div>
 									<% nvram_else_match("rstats_enable","0","<script type="text/javascript">Capture(share.disabled)</script>","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 								</div>
-								<% support_invmatch("RSTAT_SUPPORT","1","<!--"); %>
+								<% support_invmatch("RSTAT_SUPPORT","1","-->"); %>
 								<% nvram_match("dist_type", "micro", "-->"); %>
 							</fieldset><br />
 							
