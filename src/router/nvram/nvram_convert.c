@@ -17,7 +17,7 @@ struct nvram_convert
 struct nvram_convert nvram_converts[] = {
   // Bellow change from 3.11.48.7
 #ifdef HAVE_MADWIFI
-  {ATH0 ("ssid"), WL0 ("ssid"), ""},
+  {WL ("ssid"), ATH0 ("ssid"), ""},
 #else
   {WL ("ssid"), WL0 ("ssid"), ""},
 #endif
