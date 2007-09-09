@@ -1123,6 +1123,13 @@ ej_support_invmatch (webs_t wp, int argc, char_t ** argv)
       return;
     }
 #endif
+#ifndef HAVE_RSTATS
+  if (!strcmp (name, "RSTAT_SUPPORT") && !strcmp (value, "1"))
+    {
+      websWrite (wp, output);
+      return;
+    }
+#endif
   if (!strcmp (name, "WL_AFTERBURNER") && !strcmp (value, "1"))
     {
 
