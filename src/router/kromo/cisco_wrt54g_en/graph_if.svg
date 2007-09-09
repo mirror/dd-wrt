@@ -64,6 +64,8 @@ POSSIBILITY OF SUCH DAMAGE.
 	<line id='axis_x' x1='2' y1='299' x2='600' y2='299' stroke='black' />
 	<line id='axis_y' x1='1' y1='300' x2='1' y2='0' stroke='black' />
 </g>
+<script type="text/ecmascript" xlink:href="lang_pack/english.js" />
+<script type="text/ecmascript" xlink:href="lang_pack/language.js" />
 <script type="text/ecmascript">
 <![CDATA[
 if (typeof getURL == 'undefined') {
@@ -143,8 +145,10 @@ function init(evt) {
 }
 
 function do_translation() {
-	SVGDoc.getElementById('switch_unit').firstChild.data = status_band.unit + unit + '/s';
-	SVGDoc.getElementById('switch_scale').firstChild.data = status_band.scale + scale_type + ')';
+	SVGDoc.getElementById('switch_unit').firstChild.data = status_band.chg_unit + unit + '/s';
+	SVGDoc.getElementById('switch_scale').firstChild.data = status_band.chg_scale + scale_type + ')';
+	SVGDoc.getElementById('error').firstChild.data = status_band.chg_error;
+	SVGDoc.getElementById('collect_initial').firstChild.data = status_band.chg_collect_initial;
 }
 
 function switch_unit(event) {
