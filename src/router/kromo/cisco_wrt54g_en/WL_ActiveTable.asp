@@ -86,7 +86,7 @@ addEvent(window, "load", function() {
 						<td colspan="4">&nbsp;</td>
 					</tr>
 				</tbody>
-			</table></br />
+			</table><br />
 			<div class="submitFooter">
 					<script type="text/javascript">
 					//<![CDATA[
