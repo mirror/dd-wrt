@@ -59,7 +59,6 @@ addEvent(window, "unload", function() {
 							<dt class="term"><% tran("status_band.chg_scale"); %>:</dt>
 							<dd class="definition"><% tran("hstatus_band.right2"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HDDNS.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
