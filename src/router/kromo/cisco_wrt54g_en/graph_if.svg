@@ -47,7 +47,7 @@ POSSIBILITY OF SUCH DAMAGE.
 	<text id='graph_in_txt'  x='54' y='15' fill='green'>--</text>
 	<text id='graph_out_txt' x='54' y='35' fill='red'>--</text>
 
-	<text id='switch_unit'  x='200' y='15' fill='#435370' cursor='pointer'><% tran("status_band.switch_unit"); %></text>
+	<text id='switch_unit'  x='200' y='15' fill='#435370' cursor='pointer'>Switch to bytes/s</text>
 	<text id='switch_scale' x='200' y='35' fill='#435370' cursor='pointer'>Autoscale (follow)</text>
 
 	<text id='error'           x='300' y='125' text-anchor='middle' visibility='hidden' fill='blue'>Cannot get data about interface</text>

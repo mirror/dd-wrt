@@ -10,8 +10,14 @@ addEvent(window, "load", function() {
 		document.getElementsByName("refresh_button")[0].style.background = '#DADADA';
 		document.getElementsByName("refresh_button")[0].style.cursor = "default";
 	}
+	
+	update = new StatusbarUpdate();
+	update.start();
 });
 
+addEvent(window, "unload", function() {
+	update.stop();
+});
 		//]]>
 		</script>
 	</head>
