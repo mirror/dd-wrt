@@ -1258,8 +1258,8 @@ hstatus_lan.right10="S klikom na MAC naslov boste dobili ime iz Organizationally
 
 // ******************************************* Status_Bandwidth.asp *******************************************//
 
-status_band.titl="Bandwidth Monitoring";
-status_band.h2="Bandwidth Monitoring";
+status_band.titl="Nadzor pasovne ¹irine";
+status_band.h2="Nadzor pasovne ¹irine";
 
 /
 // ******************************************* Status_Router.asp *******************************************//
