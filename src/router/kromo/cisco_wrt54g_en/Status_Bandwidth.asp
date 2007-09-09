@@ -5,17 +5,13 @@
 var update;
 
 addEvent(window, "load", function() {
-	
-	update = new StatusbarUpdate();
-	update.start();
-
+	if(document.getElementsByName("refresh_button")) {
+		document.getElementsByName("refresh_button")[0].disabled = true;
+		document.getElementsByName("refresh_button")[0].style.background = '#DADADA';
+		document.getElementsByName("refresh_button")[0].style.cursor = "default";
+	}
 });
 
-addEvent(window, "unload", function() {
-	update.stop();
-
-});	
-	
 		//]]>
 		</script>
 	</head>

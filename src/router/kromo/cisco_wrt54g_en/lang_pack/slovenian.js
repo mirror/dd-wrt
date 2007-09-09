@@ -1256,20 +1256,12 @@ hstatus_lan.right6="To je maska podmre¾e, kadar jo usmerjalnik uporablja.";
 hstatus_lan.right8="Kadar uporabljate usmerjalnik kot DHCP stre¾nik, je to vidno tukaj.";
 hstatus_lan.right10="S klikom na MAC naslov boste dobili ime iz Organizationally Unique Identifier of the network interface (IEEE Standards OUI baze podatkov).";
 
-
 // ******************************************* Status_Bandwidth.asp *******************************************//
 
-status_band.titl="Nadzor pasovne ¹irine";
-status_band.h2="Nadzor pasovne ¹irine";
-status_band.legend="Sistem";
-status_band.sys_model="Model usmerjalnika";
-status_band.sys_firmver="Verzija strojne programske opreme";
-status_band.sys_time="Trenutni èas";
-status_band.sys_up="Neprekinjeno delovanje";
+status_band.titl="Bandwidth Monitoring";
+status_band.h2="Bandwidth Monitoring";
 
-
-
-
+/
 // ******************************************* Status_Router.asp *******************************************//
 
 status_router.titl="Status usmerjalnika";

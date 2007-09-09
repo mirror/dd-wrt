@@ -1266,12 +1266,6 @@ hstatus_lan.right10="Door op een MAC adres te klikken, zal u de producent van de
 
 status_band.titl="Bandbreedte Monitoring";
 status_band.h2="Bandbreedte Monitoring";
-status_band.legend="Systeem";
-status_band.sys_model="Router Model";
-status_band.sys_firmver="Firmware Versie";
-status_band.sys_time="Huidige Tijd";
-status_band.sys_up="Uptime";
-
 
 
 // ******************************************* Status_Router.asp *******************************************//
