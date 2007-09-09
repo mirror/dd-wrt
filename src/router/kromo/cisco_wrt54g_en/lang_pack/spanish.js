@@ -1380,40 +1380,6 @@ wl_mac.label2="Modo de Filtrado";
 wl_mac.deny="Evitar que entren en la red inalámbrica los PCs listados";
 wl_mac.allow="Permitir que entren en la red inalámbrica los PCs listados";
 
-
-
-// ******************************************* Wireless_Basic.asp *******************************************//
-
-wl_basic.titl="Wi-Fi";
-wl_basic.h2="Wi-Fi";
-wl_basic.legend="Configuración Básica";
-wl_basic.label="Modo Inalámbrico";
-wl_basic.label2="Modo de Red Wi-Fi";
-wl_basic.label3="Nombre de Red Wi-Fi (SSID)";
-wl_basic.label4="Canal Inalámbrico";
-wl_basic.label5="Broadcast SSID Inalámbrico";
-wl_basic.label6="Sensitivity Range (ACK Timing)";
-wl_basic.ap="AP";
-wl_basic.client="Cliente";
-wl_basic.clientBridge="Puente Cliente";
-wl_basic.adhoc="Adhoc";
-wl_basic.mixed="Mezcla";
-wl_basic.b="Sólo-B";
-wl_basic.g="Sólo-G";
-wl_basic.legend2="Radio Time Restrictions";
-wl_basic.radio="Radio";
-wl_basic.radiotimer="Radio Scheduling";
-wl_basic.radio_on="Radio is On";
-wl_basic.radio_off="Radio is Off";
-
-//help container
-
-hwl_basic.right2="Si deseas que excluír a los clientes Wireless-G, debes elegir el modo <em>Sólo-B</em>. Si lo que quieres es desabilitar el acceso inalámbrico (cualquiera) debes escoger <em>Desactivar</em>.";
-hwl_basic.right3="Rango Sensividad: ";
-hwl_basic.right4="Ajusta el Tiempo de ACK (acknowledgement - reconocimiento). 0 deshabilita el Tiempo de ACK timing completamente.";
-
-
-
 // ******************************************* Wireless_Advanced.asp *******************************************//
 
 wl_adv.titl="Configuración Wi-Fi Avanzada";
@@ -1458,6 +1424,37 @@ wl_adv.shrt="Corto"; 				//************* don't use .short ! **************
 
 hwl_adv.right2="Deberías escoger entre <em>Auto</em> ó <em>Clave Compartida</em>. La autenticación por clave compartida es más segura, pero todos los dispositivos en tu red deberán soportar <em>Autenticación por Clave Compartida</em>.";
 
+
+
+// ******************************************* Wireless_Basic.asp *******************************************//
+
+wl_basic.titl="Wi-Fi";
+wl_basic.h2="Wi-Fi";
+wl_basic.legend="Configuración Básica";
+wl_basic.label="Modo Inalámbrico";
+wl_basic.label2="Modo de Red Wi-Fi";
+wl_basic.label3="Nombre de Red Wi-Fi (SSID)";
+wl_basic.label4="Canal Inalámbrico";
+wl_basic.label5="Broadcast SSID Inalámbrico";
+wl_basic.label6="Sensitivity Range (ACK Timing)";
+wl_basic.ap="AP";
+wl_basic.client="Cliente";
+wl_basic.clientBridge="Puente Cliente";
+wl_basic.adhoc="Adhoc";
+wl_basic.mixed="Mezcla";
+wl_basic.b="Sólo-B";
+wl_basic.g="Sólo-G";
+wl_basic.legend2="Radio Time Restrictions";
+wl_basic.radio="Radio";
+wl_basic.radiotimer="Radio Scheduling";
+wl_basic.radio_on="Radio is On";
+wl_basic.radio_off="Radio is Off";
+
+//help container
+
+hwl_basic.right2="Si deseas que excluír a los clientes Wireless-G, debes elegir el modo <em>Sólo-B</em>. Si lo que quieres es desabilitar el acceso inalámbrico (cualquiera) debes escoger <em>Desactivar</em>.";
+hwl_basic.right3="Rango Sensividad: ";
+hwl_basic.right4="Ajusta el Tiempo de ACK (acknowledgement - reconocimiento). 0 deshabilita el Tiempo de ACK timing completamente.";
 
 
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//

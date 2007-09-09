@@ -1583,6 +1583,54 @@ wl_mac.label2="Filter Modus";
 wl_mac.deny="Verbied toegang tot het draadloos netwerk voor de PC's toegevoegd aan de lijst";
 wl_mac.allow="Sta enkel toegang toe aan de PC's die toegevoegd zijn aan de lijst";
 
+// ******************************************* Wireless_Advanced.asp *******************************************//
+
+wl_adv.titl="Geavanceerde Draadloze Instellingen";
+wl_adv.h2="Geavanceerde Draadloze Instellingen";
+wl_adv.legend="Geavanceerde Instellingen";
+wl_adv.legend2="Draadloze Multimedia Ondersteuning Instellingen";
+wl_adv.label="Authenticatie Type";
+wl_adv.label2="Basis Rate";
+wl_adv.label3="Transmissie Rate";
+wl_adv.label4="CTS Protectie Modus";
+wl_adv.label5="Frame Burst";
+wl_adv.label6="Beacon Interval";
+wl_adv.label7="DTIM Interval";
+wl_adv.label8="Fragmentatie Drempel";
+wl_adv.label9="RTS Drempel";
+wl_adv.label10="Max Toegewezen Clienten";
+wl_adv.label11="AP Isolatie";
+wl_adv.label12="TX Antenne";
+wl_adv.label13="RX Antenne";
+wl_adv.label14="Preambule";
+wl_adv.reference="Ruis Voorkeur";
+wl_adv.label16="Afterburner";
+wl_adv.label17="Draadloze GUI Toegang";
+wl_adv.label18="WMM Ondersteuning";
+wl_adv.label19="Geen-Bevestiging";
+wl_adv.label20="Shortslot Override";
+wl_adv.label21="Transmissie Maximum Rate";
+wl_adv.table1="EDCA AP Parameters (AP naar Client)";
+wl_adv.col1="CWmin";
+wl_adv.col2="CWmax";
+wl_adv.col3="AIFSN";
+wl_adv.col4="TXOP(b)";
+wl_adv.col5="TXOP(a/g)";
+wl_adv.col6="Admin Forced";
+wl_adv.row1="Achtergrond";
+wl_adv.row2="Best Effort";
+wl_adv.row3="Video";
+wl_adv.row4="Voice";
+wl_adv.table2="EDCA STA Parameters (Client to AP)";
+wl_adv.lng="Lang"; 					//************* don't use .long ! *************
+wl_adv.shrt="Kort"; 				//************* don't use .short ! **************
+
+//help container
+
+hwl_adv.right2="U kunt kiezen uit Auto of Shared Key. Shared key authenticatie is veiliger, maar alle apparaten op uw netwerk moeten dit ook ondersteunen.";
+hwl_basic.right6="Klik op een uur om het radio signaal in of uit te schakelen. (<em>groen</em> geeft toegestane draadloze toegang aan, <em>rood</em> geblokkeerde draadloze toegang)";
+
+
 
 
 // ******************************************* Wireless_Basic.asp *******************************************//
@@ -1648,56 +1696,6 @@ wl_basic.preambletime="OFDM Preambule Tijd";
 hwl_basic.right2="Indien u Draadloos-G clienten wilt verbieden, kies dan <em>alleen-B</em> modus. Indien u draadloze toegang geheel wilt verbieden, kies dan <em>Deactiveer</em>.";
 hwl_basic.right3="Gevoeligheid Range: ";
 hwl_basic.right4="Pas de ack timing aan. 0 schakelt ack timing volledig uit.";
-
-
-
-// ******************************************* Wireless_Advanced.asp *******************************************//
-
-wl_adv.titl="Geavanceerde Draadloze Instellingen";
-wl_adv.h2="Geavanceerde Draadloze Instellingen";
-wl_adv.legend="Geavanceerde Instellingen";
-wl_adv.legend2="Draadloze Multimedia Ondersteuning Instellingen";
-wl_adv.label="Authenticatie Type";
-wl_adv.label2="Basis Rate";
-wl_adv.label3="Transmissie Rate";
-wl_adv.label4="CTS Protectie Modus";
-wl_adv.label5="Frame Burst";
-wl_adv.label6="Beacon Interval";
-wl_adv.label7="DTIM Interval";
-wl_adv.label8="Fragmentatie Drempel";
-wl_adv.label9="RTS Drempel";
-wl_adv.label10="Max Toegewezen Clienten";
-wl_adv.label11="AP Isolatie";
-wl_adv.label12="TX Antenne";
-wl_adv.label13="RX Antenne";
-wl_adv.label14="Preambule";
-wl_adv.reference="Ruis Voorkeur";
-wl_adv.label16="Afterburner";
-wl_adv.label17="Draadloze GUI Toegang";
-wl_adv.label18="WMM Ondersteuning";
-wl_adv.label19="Geen-Bevestiging";
-wl_adv.label20="Shortslot Override";
-wl_adv.label21="Transmissie Maximum Rate";
-wl_adv.table1="EDCA AP Parameters (AP naar Client)";
-wl_adv.col1="CWmin";
-wl_adv.col2="CWmax";
-wl_adv.col3="AIFSN";
-wl_adv.col4="TXOP(b)";
-wl_adv.col5="TXOP(a/g)";
-wl_adv.col6="Admin Forced";
-wl_adv.row1="Achtergrond";
-wl_adv.row2="Best Effort";
-wl_adv.row3="Video";
-wl_adv.row4="Voice";
-wl_adv.table2="EDCA STA Parameters (Client to AP)";
-wl_adv.lng="Lang"; 					//************* don't use .long ! *************
-wl_adv.shrt="Kort"; 				//************* don't use .short ! **************
-
-//help container
-
-hwl_adv.right2="U kunt kiezen uit Auto of Shared Key. Shared key authenticatie is veiliger, maar alle apparaten op uw netwerk moeten dit ook ondersteunen.";
-hwl_basic.right6="Klik op een uur om het radio signaal in of uit te schakelen. (<em>groen</em> geeft toegestane draadloze toegang aan, <em>rood</em> geblokkeerde draadloze toegang)";
-
 
 
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//
