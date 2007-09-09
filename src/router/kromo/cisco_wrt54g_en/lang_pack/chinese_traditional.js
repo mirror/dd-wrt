@@ -1257,14 +1257,6 @@ hstatus_lan.right10="按任意MAC位址,您將能獲取該網路介面的「唯�
 
 status_band.titl="頻寬監控";
 status_band.h2="頻寬監控中";
-status_band.legend="系統";
-status_band.sys_model="路由器模式";
-status_band.sys_firmver="韌體版本";
-status_band.sys_time="目前時間";
-status_band.sys_up="開機時間";
-
-
-
 
 // ******************************************* Status_Router.asp *******************************************//
 
