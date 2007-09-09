@@ -728,9 +728,19 @@ internal_getRouterBrand ()
       (nvram_match ("boardtype", "0x0101")
        || nvram_match ("boardtype", "0x0101\r")))
     {
+	  char *cfe = nvram_safe_get ("CFEver");
+      if (!strncmp (cfe, "GW_WR110G", 9))
+      {
+      cprintf ("router is Sparklan WX-6615GT\n");
+      setRouter ("Sparklan WX-6615GT");
+      return ROUTER_DELL_TRUEMOBILE_2300_V2;
+      }
+      else
+      {
       cprintf ("router is Dell TrueMobile 2300 v2\n");
       setRouter ("Dell TrueMobile 2300 v2");
       return ROUTER_DELL_TRUEMOBILE_2300_V2;
+      }
     }
 #endif
   if (nvram_match ("boardtype", "bcm94710ap"))
