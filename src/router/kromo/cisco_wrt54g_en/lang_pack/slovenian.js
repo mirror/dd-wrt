@@ -1587,6 +1587,52 @@ wl_mac.label2="Naèin filtra";
 wl_mac.deny="Prepreèi odjemalcem na seznamu dostop do brez¾iènega omre¾ja";
 wl_mac.allow="Dovoli odjemalcem na seznamu dostop do brez¾iènega omre¾ja";
 
+// ******************************************* Wireless_Advanced.asp *******************************************//
+
+wl_adv.titl="Napredne brez¾iène nastavitve";
+wl_adv.h2="Napredne brez¾iène nastavitve";
+wl_adv.legend="Napredne nastavitve";
+wl_adv.legend2="Nastavitve za podporo brez¾iènim multimedijem";
+wl_adv.label="Naèin overovljanja";
+wl_adv.label2="Osnovna hitrost";
+wl_adv.label3="Hitrost oddajanja";
+wl_adv.label4="CTS naèin za¹èite";
+wl_adv.label5="Frame Burst";
+wl_adv.label6="Signalni interval";
+wl_adv.label7="DTIM interval";
+wl_adv.label8="Prag drobitve";
+wl_adv.label9="RTS prag";
+wl_adv.label10="Najveèje ¹t. pridru¾enih odjemalcev";
+wl_adv.label11="AP osamitev";
+wl_adv.label12="Oddajna antena";
+wl_adv.label13="Sprejemna antena";
+wl_adv.label14="Preambula";
+wl_adv.reference="Referenca ¹uma";
+wl_adv.label16="Afterburner";
+wl_adv.label17="Brez¾ièni dostop do uporabni¹kega vmesnika";
+wl_adv.label18="WMM podpora";
+wl_adv.label19="Brez potrditve";
+wl_adv.label20="Razveljavi Shortslot";
+wl_adv.label21="Najveèja hitrost oddajanja";
+wl_adv.table1="EDCA AP parameteri (AP do odjemalca)";
+wl_adv.col1="CWmin";
+wl_adv.col2="CWmaks";
+wl_adv.col3="AIFSN";
+wl_adv.col4="TXOP(b)";
+wl_adv.col5="TXOP(a/g)";
+wl_adv.col6="Upravni¹ko prisiljen";
+wl_adv.row1="Ozadje";
+wl_adv.row2="Najbolj¹i trud";
+wl_adv.row3="Slika";
+wl_adv.row4="Glas";
+wl_adv.table2="EDCA STA parametri (odjemalec do AP)";
+wl_adv.lng="Dolga"; 				//************* don't use .long ! *************
+wl_adv.shrt="Kratka"; 				//************* don't use .short ! **************
+
+//help container
+
+hwl_adv.right2="Izberete lahko med Avto ali Deljeni kljuè. Overovljanje z deljenim kljuèem je bolj varno, toda vse naprave na va¹i mre¾i morajo podpirati ta naèin.";
+hwl_basic.right6="Klikni na uro za omogoèenje ali onemogoèenje radijskega signala (<em>zeleno</em> pomeni dovoljen brez¾ièni dostop, <em>rdeèe</em> pomeni nedovoljen brez¾ièni dostop)";
 
 
 // ******************************************* Wireless_Basic.asp *******************************************//
@@ -1650,55 +1696,6 @@ wl_basic.preambletime="OFDM Preamble èas";
 hwl_basic.right2="Èe ¾elite prepovedati vstop odjemalcem G, izberite <em>Samo-B</em> naèin. Èe ¾elite izkljuèiti brez¾ièno omre¾je, izberite <em>Onemogoèie</em>.";
 hwl_basic.right3="Obmoèje obèutljivosti: ";
 hwl_basic.right4="Prilagodi ACK uèasenje. 0 (niè) popolnoma onemogoèi ACK uèasenje.";
-
-
-
-// ******************************************* Wireless_Advanced.asp *******************************************//
-
-wl_adv.titl="Napredne brez¾iène nastavitve";
-wl_adv.h2="Napredne brez¾iène nastavitve";
-wl_adv.legend="Napredne nastavitve";
-wl_adv.legend2="Nastavitve za podporo brez¾iènim multimedijem";
-wl_adv.label="Naèin overovljanja";
-wl_adv.label2="Osnovna hitrost";
-wl_adv.label3="Hitrost oddajanja";
-wl_adv.label4="CTS naèin za¹èite";
-wl_adv.label5="Frame Burst";
-wl_adv.label6="Signalni interval";
-wl_adv.label7="DTIM interval";
-wl_adv.label8="Prag drobitve";
-wl_adv.label9="RTS prag";
-wl_adv.label10="Najveèje ¹t. pridru¾enih odjemalcev";
-wl_adv.label11="AP osamitev";
-wl_adv.label12="Oddajna antena";
-wl_adv.label13="Sprejemna antena";
-wl_adv.label14="Preambula";
-wl_adv.reference="Referenca ¹uma";
-wl_adv.label16="Afterburner";
-wl_adv.label17="Brez¾ièni dostop do uporabni¹kega vmesnika";
-wl_adv.label18="WMM podpora";
-wl_adv.label19="Brez potrditve";
-wl_adv.label20="Razveljavi Shortslot";
-wl_adv.label21="Najveèja hitrost oddajanja";
-wl_adv.table1="EDCA AP parameteri (AP do odjemalca)";
-wl_adv.col1="CWmin";
-wl_adv.col2="CWmaks";
-wl_adv.col3="AIFSN";
-wl_adv.col4="TXOP(b)";
-wl_adv.col5="TXOP(a/g)";
-wl_adv.col6="Upravni¹ko prisiljen";
-wl_adv.row1="Ozadje";
-wl_adv.row2="Najbolj¹i trud";
-wl_adv.row3="Slika";
-wl_adv.row4="Glas";
-wl_adv.table2="EDCA STA parametri (odjemalec do AP)";
-wl_adv.lng="Dolga"; 				//************* don't use .long ! *************
-wl_adv.shrt="Kratka"; 				//************* don't use .short ! **************
-
-//help container
-
-hwl_adv.right2="Izberete lahko med Avto ali Deljeni kljuè. Overovljanje z deljenim kljuèem je bolj varno, toda vse naprave na va¹i mre¾i morajo podpirati ta naèin.";
-hwl_basic.right6="Klikni na uro za omogoèenje ali onemogoèenje radijskega signala (<em>zeleno</em> pomeni dovoljen brez¾ièni dostop, <em>rdeèe</em> pomeni nedovoljen brez¾ièni dostop)";
 
 
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//

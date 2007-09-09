@@ -1504,6 +1504,53 @@ wl_mac.label2="Filter Mode";
 wl_mac.deny="Prevent clients listed from accessing the wireless network";
 wl_mac.allow="Permit only clients listed to access the wireless network";
 
+// ** Wireless_Advanced.asp **//
+var wl_adv = new Object();
+wl_adv.titl="Advanced Wireless Settings";
+wl_adv.h2="Advanced Wireless Settings";
+wl_adv.legend="Advanced Settings";
+wl_adv.legend2="Wireless Multimedia Support Settings";
+wl_adv.label="Authentication Type";
+wl_adv.label2="Basic Rate";
+wl_adv.label3="Transmission Fixed Rate";
+wl_adv.label4="CTS Protection Mode";
+wl_adv.label5="Frame Burst";
+wl_adv.label6="Beacon Interval";
+wl_adv.label7="DTIM Interval";
+wl_adv.label8="Fragmentation Threshold";
+wl_adv.label9="RTS Threshold";
+wl_adv.label10="Max Associated Clients";
+wl_adv.label11="AP Isolation";
+wl_adv.label12="TX Antenna";
+wl_adv.label13="RX Antenna";
+wl_adv.label14="Preamble";
+wl_adv.reference="Noise Reference";
+wl_adv.label16="Afterburner";
+wl_adv.label17="Wireless GUI Access";
+wl_adv.label18="WMM Support";
+wl_adv.label19="No-Acknowledgement";
+wl_adv.label20="Shortslot Override";
+wl_adv.label21="Transmission Maximum Rate";
+wl_adv.table1="EDCA AP Parameters (AP to Client)";
+wl_adv.col1="CWmin";
+wl_adv.col2="CWmax";
+wl_adv.col3="AIFSN";
+wl_adv.col4="TXOP(b)";
+wl_adv.col5="TXOP(a/g)";
+wl_adv.col6="Admin Forced";
+wl_adv.row1="Background";
+wl_adv.row2="Best Effort";
+wl_adv.row3="Video";
+wl_adv.row4="Voice";
+wl_adv.table2="EDCA STA Parameters (Client to AP)";
+wl_adv.lng="Long"; 					//************* don't use .long ! *************
+wl_adv.shrt="Short"; 				//************* don't use .short ! **************
+
+//help container
+var hwl_adv = new Object();
+hwl_adv.right2="You may choose from Auto or Shared Key. Shared key authentication is more secure, but all devices on your network must also support Shared Key authentication.";
+hwl_basic.right6="Click any hour to enable or disable the radio signal (<em>green</em> indicates allowed Wireless access, and <em>red</em> indicates blocked Wireless access)";
+
 
 // ** Wireless_Basic.asp **//
 var wl_basic = new Object();
@@ -1561,60 +1608,11 @@ wl_basic.specialmode="2.3 Ghz Mode";
 wl_basic.wifi_bonding="Wifi Bonding";
 wl_basic.sifstime="OFDM SIFS Time";
 wl_basic.preambletime="OFDM Preamble Time";
-
-// ** Wireless_Advanced.asp **//
-var wl_adv = new Object();
-wl_adv.titl="Advanced Wireless Settings";
-wl_adv.h2="Advanced Wireless Settings";
-wl_adv.legend="Advanced Settings";
-wl_adv.legend2="Wireless Multimedia Support Settings";
-wl_adv.label="Authentication Type";
-wl_adv.label2="Basic Rate";
-wl_adv.label3="Transmission Fixed Rate";
-wl_adv.label4="CTS Protection Mode";
-wl_adv.label5="Frame Burst";
-wl_adv.label6="Beacon Interval";
-wl_adv.label7="DTIM Interval";
-wl_adv.label8="Fragmentation Threshold";
-wl_adv.label9="RTS Threshold";
-wl_adv.label10="Max Associated Clients";
-wl_adv.label11="AP Isolation";
-wl_adv.label12="TX Antenna";
-wl_adv.label13="RX Antenna";
-wl_adv.label14="Preamble";
-wl_adv.reference="Noise Reference";
-wl_adv.label16="Afterburner";
-wl_adv.label17="Wireless GUI Access";
-wl_adv.label18="WMM Support";
-wl_adv.label19="No-Acknowledgement";
-wl_adv.label20="Shortslot Override";
-wl_adv.label21="Transmission Maximum Rate";
-wl_adv.table1="EDCA AP Parameters (AP to Client)";
-wl_adv.col1="CWmin";
-wl_adv.col2="CWmax";
-wl_adv.col3="AIFSN";
-wl_adv.col4="TXOP(b)";
-wl_adv.col5="TXOP(a/g)";
-wl_adv.col6="Admin Forced";
-wl_adv.row1="Background";
-wl_adv.row2="Best Effort";
-wl_adv.row3="Video";
-wl_adv.row4="Voice";
-wl_adv.table2="EDCA STA Parameters (Client to AP)";
-wl_adv.lng="Long"; 					//************* don't use .long ! *************
-wl_adv.shrt="Short"; 				//************* don't use .short ! **************
-
 //help container
 var hwl_basic = new Object();
-hwl_basic.right2="If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.</br><b>Note :</b> when changing wireless mode, some advanced parameters - <em><a href=\"Wireless_Advanced.asp\">"+bmenu.wirelessAdvanced+"</a></em> - are succeptibles to be modified ("+wl_adv.label16+", "+wl_adv.label2+" or "+wl_adv.label5+").";
+hwl_basic.right2="If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.</br><b>Note :</b> when changing wireless mode, some advanced parameters - <em><a href=\"Wireless_Advanced.asp\">" + bmenu.wirelessAdvanced + "</a></em> - are succeptibles to be modified (" + wl_adv.label16 + ", " + wl_adv.label2 + " or " + wl_adv.label5 + ").";
 hwl_basic.right3="Sensitivity Range: ";
 hwl_basic.right4="Adjusts the ack timing. 0 disables ack timing completely.";
-
-//help container
-var hwl_adv = new Object();
-hwl_adv.right2="You may choose from Auto or Shared Key. Shared key authentication is more secure, but all devices on your network must also support Shared Key authentication.";
-hwl_basic.right6="Click any hour to enable or disable the radio signal (<em>green</em> indicates allowed Wireless access, and <em>red</em> indicates blocked Wireless access)";
-
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
 var fail = new Object();

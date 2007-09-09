@@ -1363,6 +1363,51 @@ wl_mac.label2="Mode de Filtrage";
 wl_mac.deny="Bloquer l'accès au réseau sans fil pour les ordinateurs référencés";
 wl_mac.allow="Autoriser l'accès au réseau sans fil pour les ordinateurs référencés";
 
+// ** Wireless_Advanced.asp **//
+wl_adv.titl="Paramètres sans fil avancés";
+wl_adv.h2="Paramètres sans fil avancés";
+wl_adv.legend="Paramètres Avancés";
+wl_adv.legend2="Paramètres Sans Fil Multimedia (WMM)";
+wl_adv.label="Type d'authentification";
+wl_adv.label2="Taux de base";
+wl_adv.label3="Taux de transmission";
+wl_adv.label4="Mode de protection CTS";
+wl_adv.label5="Rafale de trames";
+wl_adv.label6="Intervalle de transmission de balise";
+wl_adv.label7="Intervalle DTIM";
+wl_adv.label8="Seuil de fragmentation";
+wl_adv.label9="Seuil RTS";
+wl_adv.label10="Clients sans fil max.";
+wl_adv.label11="Mode isolation AP";
+wl_adv.label12="Antenne TX";
+wl_adv.label13="Antenne RX";
+wl_adv.label14="Préambule";
+wl_adv.reference="Référence de bruit";
+wl_adv.label16="SpeedBooster";
+wl_adv.label17="Accès à la console par WIFI";
+wl_adv.label18="Support de WMM";
+wl_adv.label19="No-Acknowledgement";
+wl_adv.label20="Mode Shortslot";
+wl_adv.table1="Paramètres EDCA AP (AP vers Client)";
+wl_adv.col1="CWmin";
+wl_adv.col2="CWmax";
+wl_adv.col3="AIFSN";
+wl_adv.col4="TXOP(b)";
+wl_adv.col5="TXOP(a/g)";
+wl_adv.col6="Admin. Forcé";
+wl_adv.row1="Arrière plan";
+wl_adv.row2="Meilleurs effort";
+wl_adv.row3="Vidéo";
+wl_adv.row4="Voix";
+wl_adv.table2="Paramètres EDCA STA (Client vers AP)";
+wl_adv.lng="Long";
+wl_adv.shrt="Court";
+
+//help container
+
+hwl_adv.right2="La valeur <em>Auto</em> définie par défaut vous permet de choisir entre une authentification <em>Système ouvert</em> ou <em>Clé partagée</em>. En mode d'authentification <em>Système ouvert</em>, l'expéditeur et le destinataire n'utilisent pas de clé WEP pour l'authentification. En revanche, ils utilisent ce type de clé en mode <em>Clé partagée</em>.";
+hwl_basic.right6="Sélectionnez les heures pendant lesquelles le signal radio sans fil sera activé (<em>vert</em> indique que le signal sans fil est activé, et <em>rouge</em> indique que le signal est désactivé).";
+
 // ** Wireless_Basic.asp **//
 wl_basic.titl="Sans Fil";
 wl_basic.h2="Sans Fil";
@@ -1419,58 +1464,11 @@ wl_basic.wifi_bonding="Wifi Bonding";
 wl_basic.sifstime="OFDM SIFS Time";
 wl_basic.preambletime="OFDM Preamble Time";
 
-
-
-// ** Wireless_Advanced.asp **//
-wl_adv.titl="Paramètres sans fil avancés";
-wl_adv.h2="Paramètres sans fil avancés";
-wl_adv.legend="Paramètres Avancés";
-wl_adv.legend2="Paramètres Sans Fil Multimedia (WMM)";
-wl_adv.label="Type d'authentification";
-wl_adv.label2="Taux de base";
-wl_adv.label3="Taux de transmission";
-wl_adv.label4="Mode de protection CTS";
-wl_adv.label5="Rafale de trames";
-wl_adv.label6="Intervalle de transmission de balise";
-wl_adv.label7="Intervalle DTIM";
-wl_adv.label8="Seuil de fragmentation";
-wl_adv.label9="Seuil RTS";
-wl_adv.label10="Clients sans fil max.";
-wl_adv.label11="Mode isolation AP";
-wl_adv.label12="Antenne TX";
-wl_adv.label13="Antenne RX";
-wl_adv.label14="Préambule";
-wl_adv.reference="Référence de bruit";
-wl_adv.label16="SpeedBooster";
-wl_adv.label17="Accès à la console par WIFI";
-wl_adv.label18="Support de WMM";
-wl_adv.label19="No-Acknowledgement";
-wl_adv.label20="Mode Shortslot";
-wl_adv.table1="Paramètres EDCA AP (AP vers Client)";
-wl_adv.col1="CWmin";
-wl_adv.col2="CWmax";
-wl_adv.col3="AIFSN";
-wl_adv.col4="TXOP(b)";
-wl_adv.col5="TXOP(a/g)";
-wl_adv.col6="Admin. Forcé";
-wl_adv.row1="Arrière plan";
-wl_adv.row2="Meilleurs effort";
-wl_adv.row3="Vidéo";
-wl_adv.row4="Voix";
-wl_adv.table2="Paramètres EDCA STA (Client vers AP)";
-wl_adv.lng="Long";
-wl_adv.shrt="Court";
-
-
 //help container
 hwl_basic.right2="Si vous disposez à la fois des périphériques 802.11g et 802.11b sur votre réseau, conservez le paramètre par défaut <em>Mixte</em>. Si vous utilisez uniquement des périphériques 802.11g, sélectionnez <em>G-uniquement</em>. Si vous travaillez uniquement avec des périphériques 802.11b, sélectionnez <em>B-uniquement</em>. Si votre réseau n'est muni d'aucun périphérique sans fil, sélectionnez l'option <em>Désactiver</em>.</br><b>Remarque :</b> quand vous changez de mode, certains paramètres avancés - <em><a href=\"Wireless_Advanced.asp\">"+bmenu.wirelessAdvanced+"</a></em> - sont succeptibles d'être modifiés ("+wl_adv.label16+", "+wl_adv.label2+" ou "+wl_adv.label5+").";
 hwl_basic.right3="Sensibilité: ";
 hwl_basic.right4="Permet de régler le <em>ack timing</em>. 0 désactive complètement cette fonctionnalité.";
 
-//help container
-
-hwl_adv.right2="La valeur <em>Auto</em> définie par défaut vous permet de choisir entre une authentification <em>Système ouvert</em> ou <em>Clé partagée</em>. En mode d'authentification <em>Système ouvert</em>, l'expéditeur et le destinataire n'utilisent pas de clé WEP pour l'authentification. En revanche, ils utilisent ce type de clé en mode <em>Clé partagée</em>.";
-hwl_basic.right6="Sélectionnez les heures pendant lesquelles le signal radio sans fil sera activé (<em>vert</em> indique que le signal sans fil est activé, et <em>rouge</em> indique que le signal est désactivé).";
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
 

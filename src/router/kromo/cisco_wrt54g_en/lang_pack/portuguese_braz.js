@@ -1258,37 +1258,6 @@ wl_mac.deny="Prevenir que os PCs listados acessem a rede wireless";
 wl_mac.allow="Permitir que somente os PCs listados acessem a rede wireless";
 
 
-// ******************************************* Wireless_Basic.asp *******************************************//
-
-wl_basic.titl="Wireless";
-wl_basic.h2="Wireless";
-wl_basic.legend="Configurações Básicas";
-wl_basic.label="Modo Wireless";
-wl_basic.label2="Modo de Rede Wireless";
-wl_basic.label3="Nome da Rede Wireless (SSID)";
-wl_basic.label4="Canal Wireless";
-wl_basic.label5="Broadcast SSID Wireless";
-wl_basic.label6="Escala de Sensibilidade (Sincronismo ACK)";
-wl_basic.ap="Access Point";
-wl_basic.client="Cliente";
-wl_basic.repeater="Repetidor";
-wl_basic.clientBridge="Cliente Bridge";
-wl_basic.adhoc="Adhoc";
-wl_basic.mixed="Misto";
-wl_basic.b="Somente-B";
-wl_basic.a="Somente-A";
-wl_basic.g="Somente-G";
-wl_basic.legend2="Radio Time Restrictions";
-wl_basic.radio="Radio";
-wl_basic.radiotimer="Radio Scheduling";
-wl_basic.radio_on="Radio is On";
-wl_basic.radio_off="Radio is Off";
-
-hwl_basic.right2="Se você deseja excluir clientes Wireless-G, escolha o modo <em>Somente-B</em>. Se você deseja excluir clientes Wireless-B, escolha o modo <em>Somente-G</em>. Se você deseja desabilitar o acesso wireless, escolha <em>Desabilitar</em>.";
-hwl_basic.right3="Escala de Sensibilidade: ";
-hwl_basic.right4="Ajuste do sincronismo ACK. Se desejar desabilitar o sincronismo ACK use o valor 0.";
-
-
 // ******************************************* Wireless_Advanced.asp *******************************************//
 
 wl_adv.titl="Configurações Wireless Avançadas";
@@ -1329,9 +1298,37 @@ wl_adv.table2="Parâmetros EDCA Cliente (Cliente para Access Point)";
 wl_adv.lng="Longo"; 					//************* don't use .long ! *************
 wl_adv.shrt="Curto"; 				//************* don't use .short ! **************
 
-
-
 hwl_adv.right2="Você pode escolher entre <em>Automático</em> e <em>Chave Compartilhada</em>. A autenticação de Chave Compartilhada é mais segura, mas todos os dispositivos da rede devem suportar este modo de autenticação.";
+
+// ******************************************* Wireless_Basic.asp *******************************************//
+
+wl_basic.titl="Wireless";
+wl_basic.h2="Wireless";
+wl_basic.legend="Configurações Básicas";
+wl_basic.label="Modo Wireless";
+wl_basic.label2="Modo de Rede Wireless";
+wl_basic.label3="Nome da Rede Wireless (SSID)";
+wl_basic.label4="Canal Wireless";
+wl_basic.label5="Broadcast SSID Wireless";
+wl_basic.label6="Escala de Sensibilidade (Sincronismo ACK)";
+wl_basic.ap="Access Point";
+wl_basic.client="Cliente";
+wl_basic.repeater="Repetidor";
+wl_basic.clientBridge="Cliente Bridge";
+wl_basic.adhoc="Adhoc";
+wl_basic.mixed="Misto";
+wl_basic.b="Somente-B";
+wl_basic.a="Somente-A";
+wl_basic.g="Somente-G";
+wl_basic.legend2="Radio Time Restrictions";
+wl_basic.radio="Radio";
+wl_basic.radiotimer="Radio Scheduling";
+wl_basic.radio_on="Radio is On";
+wl_basic.radio_off="Radio is Off";
+
+hwl_basic.right2="Se você deseja excluir clientes Wireless-G, escolha o modo <em>Somente-B</em>. Se você deseja excluir clientes Wireless-B, escolha o modo <em>Somente-G</em>. Se você deseja desabilitar o acesso wireless, escolha <em>Desabilitar</em>.";
+hwl_basic.right3="Escala de Sensibilidade: ";
+hwl_basic.right4="Ajuste do sincronismo ACK. Se desejar desabilitar o sincronismo ACK use o valor 0.";
 
 
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//
