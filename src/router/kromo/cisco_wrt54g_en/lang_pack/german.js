@@ -1131,6 +1131,11 @@ hstatus_lan.right6="Wenn der Router eine Subnetz-Maske nutzt, wird diese hier an
 hstatus_lan.right8="Wenn Sie den Router als DHCP-Server nutzen, wird dies hier angezeigt.";
 hstatus_lan.right10="Indem Sie auf irgendeine MAC-Adresse klicken, erhalten Sie die OUI ID, welche auf den Hersteller des Geräts rückschließen lässt.";
 
+// ******************************************* Status_Bandwidth.asp *******************************************//
+
+status_band.titl="Bandwidth Monitoring";
+status_band.h2="Bandwidth Monitoring";
+
 // **************************************************************** Status_Router.asp **********************************************************************//
 
 status_router.titl="Router-Status";
