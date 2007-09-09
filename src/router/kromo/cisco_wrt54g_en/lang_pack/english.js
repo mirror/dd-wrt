@@ -1276,6 +1276,11 @@ status_band.chg_scale="Autoscale (";
 status_band.chg_error="Cannot get data about interface";
 status_band.chg_collect_initial="Collecting initial data, please wait...";
 
+//help container
+var hstatus_band = new Object();
+hstatus_band.right1="Click the label to switch unit (bytes/s or bits/s).";
+hstatus_band.right2="Click the label to choise graph scale type.";
+
 // ******************************************* Status_Router.asp *******************************************//
 var status_router = new Object();
 status_router.titl="Router Status";

@@ -1260,8 +1260,15 @@ hstatus_lan.right10="S klikom na MAC naslov boste dobili ime iz Organizationally
 
 status_band.titl="Nadzor pasovne ¹irine";
 status_band.h2="Nadzor pasovne ¹irine";
+status_band.chg_unit="Switch to ";
+status_band.chg_scale="Autoscale (";
+status_band.chg_error="Cannot get data about interface";
+status_band.chg_collect_initial="Collecting initial data, please wait...";
 
-/
+//help container
+hstatus_band.right1="Click the label to switch unit (bytes/s or bits/s).";
+hstatus_band.right2="Click the label to choise graph scale type.";
+
 // ******************************************* Status_Router.asp *******************************************//
 
 status_router.titl="Status usmerjalnika";

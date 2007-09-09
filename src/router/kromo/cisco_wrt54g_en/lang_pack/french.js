@@ -1102,6 +1102,14 @@ hstatus_lan.right10="En cliquant sur n\'importe quelle adresse Mac, vous obtiend
 // ******************************************* Status_Bandwidth.asp *******************************************//
 status_band.titl="Statut de la Bande Passante";
 status_band.h2="Etat de la Bande Passante";
+status_band.chg_unit="Echelle en ";
+status_band.chg_scale="Echelle auto (";
+status_band.chg_error="Impossible d'obtenir les interfaces réseaux";
+status_band.chg_collect_initial="Mise en cache des données, veuillez patienter SVP...";
+
+//help container
+hstatus_band.right1="Cliquez sur l'étiquette \"Echelle en ...\" pour changer d'unité (bytes/s ou bits/s).";
+hstatus_band.right2="Cliquer sur \"Echelle auto ...\" permet de modifier le type d'échelle (<i>follow</i> ajuste l'echelle en permance tandis que <i>up<i/> ajuste l'échelle sur le pic maximum constaté.";
 
 // ******************************************* Status_Router.asp *******************************************//
 status_router.titl="Statut du Routeur";
