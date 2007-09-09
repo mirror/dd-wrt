@@ -9,7 +9,7 @@
 				<div class="setting">
 					<div class="label"><% tran("status_router.net_conntrack"); %></div>
 					<% dumpip_conntrack(); %>
-				</div></br>
+				</div><br />
 				<table class="table" cellspacing="4" id="conntrack_table" summary="conntrack table">
 					<tr>
 						<th><% tran("filterSum.polnum"); %></th>
