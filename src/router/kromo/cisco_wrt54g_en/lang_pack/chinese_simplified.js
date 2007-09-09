@@ -1385,40 +1385,6 @@ wl_mac.label2="过滤器模式";
 wl_mac.deny="阻止所列PC机访问无线网络";
 wl_mac.allow="只允许所列PC机访问无线网络";
 
-
-
-// ******************************************* Wireless_Basic.asp *******************************************//
-
-wl_basic.titl="无线";
-wl_basic.h2="无线";
-wl_basic.legend="基本设置";
-wl_basic.label="无线模式";
-wl_basic.label2="无线网络模式";
-wl_basic.label3="无线网络名（SSID）";
-wl_basic.label4="无线频道";
-wl_basic.label5="无线SSID广播";
-wl_basic.label6="感受范围（ACK时序）";
-wl_basic.ap="访问点（AP）";
-wl_basic.client="客户端";
-wl_basic.clientBridge="客户端网桥";
-wl_basic.adhoc="Adhoc";
-wl_basic.mixed="混合";
-wl_basic.b="仅B";
-wl_basic.g="仅G";
-wl_basic.legend2="Radio Time Restrictions";
-wl_basic.radio="Radio";
-wl_basic.radiotimer="Radio Scheduling";
-wl_basic.radio_on="Radio is On";
-wl_basic.radio_off="Radio is Off";
-
-//help container
-
-hwl_basic.right2="如果您想剔除无线-G客户端，选择 <em>仅B</em> 模式。如果您想禁用无线访问，选择 <em>禁用</em>。";
-hwl_basic.right3="感受范围：";
-hwl_basic.right4="调整ack时序。输入0将完全禁用ack时序。";
-
-
-
 // ******************************************* Wireless_Advanced.asp *******************************************//
 
 wl_adv.titl="高级无线设置";
@@ -1463,6 +1429,36 @@ wl_adv.shrt="短"; 				//************* don't use .short ! **************
 
 hwl_adv.right2="您可以从自动或者共享秘钥中选择一个。共享秘钥授权更加安全，但是所有在您网络中的设备必须支持共享秘钥授权。";
 
+
+// ******************************************* Wireless_Basic.asp *******************************************//
+
+wl_basic.titl="无线";
+wl_basic.h2="无线";
+wl_basic.legend="基本设置";
+wl_basic.label="无线模式";
+wl_basic.label2="无线网络模式";
+wl_basic.label3="无线网络名（SSID）";
+wl_basic.label4="无线频道";
+wl_basic.label5="无线SSID广播";
+wl_basic.label6="感受范围（ACK时序）";
+wl_basic.ap="访问点（AP）";
+wl_basic.client="客户端";
+wl_basic.clientBridge="客户端网桥";
+wl_basic.adhoc="Adhoc";
+wl_basic.mixed="混合";
+wl_basic.b="仅B";
+wl_basic.g="仅G";
+wl_basic.legend2="Radio Time Restrictions";
+wl_basic.radio="Radio";
+wl_basic.radiotimer="Radio Scheduling";
+wl_basic.radio_on="Radio is On";
+wl_basic.radio_off="Radio is Off";
+
+//help container
+
+hwl_basic.right2="如果您想剔除无线-G客户端，选择 <em>仅B</em> 模式。如果您想禁用无线访问，选择 <em>禁用</em>。";
+hwl_basic.right3="感受范围：";
+hwl_basic.right4="调整ack时序。输入0将完全禁用ack时序。";
 
 
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//
