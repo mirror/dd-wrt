@@ -1137,7 +1137,7 @@ status_band.titl="Bandbreiten Monitor";
 status_band.h2="Bandbreiten Monitor";
 status_band.chg_unit="Wechseln zu ";
 status_band.chg_scale="Auto Anpassung";
-status_band.chg_error="Daten des Interfaces sind nicht ermittelbar";
+status_band.chg_error="Die Daten des Interfaces sind nicht ermittelbar";
 status_band.chg_collect_initial="Initiale Datenerfassung...";
 
 //help container
