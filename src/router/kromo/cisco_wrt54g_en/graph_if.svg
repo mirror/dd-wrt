@@ -104,7 +104,7 @@ if (typeof getURL == 'undefined') {
 					{
 						success : true,
 						content : http_request.responseText,
-						contentType : http_request.getResponseHeader("Content-Type") 
+						contentType : http_request.getResponseHeader("Content-Type")
 					}
 				);
 			}
@@ -129,11 +129,11 @@ var scale_type = 'follow';
 
 var fetch_url='';
 
-function init(evt) {	
-	/* hacked in fix for all browsers by spectra 
-	 * he says is 'ugly', and someone may want to redo the 'right' way */	 
+function init(evt) {
+	/* hacked in fix for all browsers by spectra
+	 * he says is 'ugly', and someone may want to redo the 'right' way */
 	fetch_url=location.search.split('?');
-	fetch_url='/fetchif.cgi?' + fetch_url[fetch_url.length-1];		
+	fetch_url='/fetchif.cgi?' + fetch_url[fetch_url.length-1];
 	/* end hacked in fix */	
 	SVGDoc = evt.target.ownerDocument;
 	do_translation();
@@ -152,13 +152,13 @@ function do_translation() {
 }
 
 function switch_unit(event) {
-	SVGDoc.getElementById('switch_unit').firstChild.data = 'Switch to ' + unit + '/s';
+	SVGDoc.getElementById('switch_unit').firstChild.data = status_band.chg_unit + unit + '/s';
 	unit = (unit == 'bits') ? 'bytes' : 'bits';
 }
 
 function switch_scale(event) {
 	scale_type = (scale_type == 'up') ? 'follow' : 'up';
-	SVGDoc.getElementById('switch_scale').firstChild.data = 'Autoscale (' + scale_type + ')';
+	SVGDoc.getElementById('switch_scale').firstChild.data = status_band.chg_scale + scale_type + ')';
 }
 
 function fetch_data() {

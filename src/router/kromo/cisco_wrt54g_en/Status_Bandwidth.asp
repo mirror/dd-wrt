@@ -51,7 +51,16 @@ addEvent(window, "unload", function() {
 					</div>
 				</div>
 				<div id="helpContainer">
-					
+					<div id="help">
+						<div><h2><% tran("share.help"); %></h2></div>
+						<dl>
+							<dt class="term"><% tran("status_band.chg_unit"); %>:</dt>
+							<dd class="definition"><% tran("hstatus_band.right1"); %></dd>
+							<dt class="term"><% tran("status_band.chg_scale"); %>:</dt>
+							<dd class="definition"><% tran("hstatus_band.right2"); %></dd>
+						</dl><br />
+						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HDDNS.asp');"><% tran("share.more"); %></a>
+					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
