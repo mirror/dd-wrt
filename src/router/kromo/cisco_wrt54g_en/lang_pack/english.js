@@ -1561,11 +1561,6 @@ wl_basic.specialmode="2.3 Ghz Mode";
 wl_basic.wifi_bonding="Wifi Bonding";
 wl_basic.sifstime="OFDM SIFS Time";
 wl_basic.preambletime="OFDM Preamble Time";
-//help container
-var hwl_basic = new Object();
-hwl_basic.right2="If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.</br><b>Note :</b> when changing wireless mode, some advanced parameters - <em><a href=\"Wireless_Advanced.asp\">"+bmenu.wirelessAdvanced+"</a></em> - are succeptibles to be modified ("+wl_adv.label16+", "+wl_adv.label2+" or "+wl_adv.label5+").";
-hwl_basic.right3="Sensitivity Range: ";
-hwl_basic.right4="Adjusts the ack timing. 0 disables ack timing completely.";
 
 // ** Wireless_Advanced.asp **//
 var wl_adv = new Object();
@@ -1608,6 +1603,12 @@ wl_adv.row4="Voice";
 wl_adv.table2="EDCA STA Parameters (Client to AP)";
 wl_adv.lng="Long"; 					//************* don't use .long ! *************
 wl_adv.shrt="Short"; 				//************* don't use .short ! **************
+
+//help container
+var hwl_basic = new Object();
+hwl_basic.right2="If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.</br><b>Note :</b> when changing wireless mode, some advanced parameters - <em><a href=\"Wireless_Advanced.asp\">"+bmenu.wirelessAdvanced+"</a></em> - are succeptibles to be modified ("+wl_adv.label16+", "+wl_adv.label2+" or "+wl_adv.label5+").";
+hwl_basic.right3="Sensitivity Range: ";
+hwl_basic.right4="Adjusts the ack timing. 0 disables ack timing completely.";
 
 //help container
 var hwl_adv = new Object();
