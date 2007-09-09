@@ -3945,7 +3945,8 @@ ej_show_bandwidth (webs_t wp, int argc, char_t ** argv)
     }
 
 #else
-  show_bwif (wp, get_wdev (), "%s", live_translate ("share.wireless"));
+  sprintf (name, "%s", live_translate ("share.wireless"));
+  show_bwif (wp, get_wdev (), name);
 /*  char v[60];
   sprintf (v, "wl0_vifs");
   char *vifs = nvram_safe_get (v);
