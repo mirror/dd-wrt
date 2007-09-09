@@ -1136,7 +1136,7 @@ hstatus_lan.right10="Indem Sie auf irgendeine MAC-Adresse klicken, erhalten Sie 
 status_band.titl="Bandwidth Monitoring";
 status_band.h2="Bandwidth Monitoring";
 status_band.chg_unit="Switch to ";
-status_band.chg_scale="Autoscale (";
+status_band.chg_scale="Autoscale";
 status_band.chg_error="Cannot get data about interface";
 status_band.chg_collect_initial="Collecting initial data, please wait...";
 
