@@ -203,9 +203,15 @@ do_aqos_check (void)
   defaulup = nvram_safe_get ("default_uplevel");
   defauldown = nvram_safe_get ("default_downlevel");
   if (defaulup == NULL || strlen (defaulup) == 0)
-    return;
+    {
+      fclose (arp);
+      return;
+    }
   if (defauldown == NULL || strlen (defauldown) == 0)
-    return;
+    {
+      fclose (arp);
+      return;
+    }
 //  fprintf(stderr,"skip first line in arp\n");
   while (fgetc (arp) != '\n');
 
