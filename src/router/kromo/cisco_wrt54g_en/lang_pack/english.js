@@ -1271,9 +1271,10 @@ hstatus_lan.right10="By clicking on any MAC address, you will obtain the Organiz
 var status_band = new Object();
 status_band.titl="Bandwidth Monitoring";
 status_band.h2="Bandwidth Monitoring";
-status_band.unit="Switch to ";
-status_band.scale="Autoscale (";
-
+status_band.chg_unit="Switch to ";
+status_band.chg_scale="Autoscale (";
+status_band.chg_error="Cannot get data about interface";
+status_band.chg_collect_initial="Collecting initial data, please wait...";
 
 // ******************************************* Status_Router.asp *******************************************//
 var status_router = new Object();
