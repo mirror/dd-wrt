@@ -1419,10 +1419,6 @@ wl_basic.wifi_bonding="Wifi Bonding";
 wl_basic.sifstime="OFDM SIFS Time";
 wl_basic.preambletime="OFDM Preamble Time";
 
-//help container
-hwl_basic.right2="Si vous disposez à la fois des périphériques 802.11g et 802.11b sur votre réseau, conservez le paramètre par défaut <em>Mixte</em>. Si vous utilisez uniquement des périphériques 802.11g, sélectionnez <em>G-uniquement</em>. Si vous travaillez uniquement avec des périphériques 802.11b, sélectionnez <em>B-uniquement</em>. Si votre réseau n'est muni d'aucun périphérique sans fil, sélectionnez l'option <em>Désactiver</em>.</br><b>Remarque :</b> quand vous changez de mode, certains paramètres avancés - <em><a href=\"Wireless_Advanced.asp\">"+bmenu.wirelessAdvanced+"</a></em> - sont succeptibles d'être modifiés ("+wl_adv.label16+", "+wl_adv.label2+" ou "+wl_adv.label5+").";
-hwl_basic.right3="Sensibilité: ";
-hwl_basic.right4="Permet de régler le <em>ack timing</em>. 0 désactive complètement cette fonctionnalité.";
 
 
 // ** Wireless_Advanced.asp **//
@@ -1464,6 +1460,12 @@ wl_adv.row4="Voix";
 wl_adv.table2="Paramètres EDCA STA (Client vers AP)";
 wl_adv.lng="Long";
 wl_adv.shrt="Court";
+
+
+//help container
+hwl_basic.right2="Si vous disposez à la fois des périphériques 802.11g et 802.11b sur votre réseau, conservez le paramètre par défaut <em>Mixte</em>. Si vous utilisez uniquement des périphériques 802.11g, sélectionnez <em>G-uniquement</em>. Si vous travaillez uniquement avec des périphériques 802.11b, sélectionnez <em>B-uniquement</em>. Si votre réseau n'est muni d'aucun périphérique sans fil, sélectionnez l'option <em>Désactiver</em>.</br><b>Remarque :</b> quand vous changez de mode, certains paramètres avancés - <em><a href=\"Wireless_Advanced.asp\">"+bmenu.wirelessAdvanced+"</a></em> - sont succeptibles d'être modifiés ("+wl_adv.label16+", "+wl_adv.label2+" ou "+wl_adv.label5+").";
+hwl_basic.right3="Sensibilité: ";
+hwl_basic.right4="Permet de régler le <em>ack timing</em>. 0 désactive complètement cette fonctionnalité.";
 
 //help container
 
