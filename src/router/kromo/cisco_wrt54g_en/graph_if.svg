@@ -134,11 +134,17 @@ function init(evt) {
 	fetch_url='/fetchif.cgi?' + fetch_url[fetch_url.length-1];		
 	/* end hacked in fix */	
 	SVGDoc = evt.target.ownerDocument;
+	do_translation();
 	SVGDoc.getElementById("switch_unit").addEventListener("mousedown", switch_unit, false);
 	SVGDoc.getElementById("switch_scale").addEventListener("mousedown", switch_scale, false);
 	
 	fetch_data();
 	setInterval('fetch_data()', 1000);
+}
+
+function do_translation() {
+	SVGDoc.getElementById('switch_unit').firstChild.data = status_band.unit + unit + '/s';
+	SVGDoc.getElementById('switch_scale').firstChild.data = status_band.scale + scale_type + ')';
 }
 
 function switch_unit(event) {
