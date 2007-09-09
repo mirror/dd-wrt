@@ -3929,7 +3929,7 @@ ej_show_bandwidth (webs_t wp, int argc, char_t ** argv)
       char dev[32];
       sprintf (dev, "ath%d", i);
       char name[32];
-      sprintf (name, "Wireless (%s)", dev);
+      sprintf (name, "%s (%s)", live_translate ("share.wireless"), dev);
       show_bwif (wp, dev, name);
       char v[60];
       sprintf (v, "%s_vifs", dev);
@@ -3938,14 +3938,14 @@ ej_show_bandwidth (webs_t wp, int argc, char_t ** argv)
 	continue;
       foreach (var, vifs, next)
       {
-	sprintf (name, "Wireless (%s)", var);
+	sprintf (name, "%s (%s)", live_translate ("share.wireless"), var);
 	show_bwif (wp, var, name);
       }
 
     }
 
 #else
-  show_bwif (wp, get_wdev (), "Wireless");
+  show_bwif (wp, get_wdev (), "%s", live_translate ("share.wireless"));
 /*  char v[60];
   sprintf (v, "wl0_vifs");
   char *vifs = nvram_safe_get (v);
@@ -3954,7 +3954,7 @@ ej_show_bandwidth (webs_t wp, int argc, char_t ** argv)
   foreach (var, vifs, next)
   {
     char name[32];
-    sprintf (name, "Wireless (%s)", var);
+    sprintf (name, "%s (%s)", live_translate ("share.wireless"), var);
     show_bwif (wp, var, name);
   }*/
 #endif
