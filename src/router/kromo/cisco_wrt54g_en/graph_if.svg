@@ -41,11 +41,11 @@ POSSIBILITY OF SUCH DAMAGE.
 <g id='graph'>
 	<rect id='bg' x1='0' y1='0' width='600' height='300' fill='white' />
 
-	<text id='graph_in_lbl'  x='50' y='15' fill='green' text-anchor='end'>In</text>
-	<text id='graph_out_lbl' x='50' y='35' fill='red' text-anchor='end'>Out</text>
+	<text id='graph_in_lbl'  x='60' y='15' fill='green' text-anchor='end'>In</text>
+	<text id='graph_out_lbl' x='60' y='35' fill='red' text-anchor='end'>Out</text>
 
-	<text id='graph_in_txt'  x='54' y='15' fill='green'>--</text>
-	<text id='graph_out_txt' x='54' y='35' fill='red'>--</text>
+	<text id='graph_in_txt'  x='64' y='15' fill='green'>--</text>
+	<text id='graph_out_txt' x='64' y='35' fill='red'>--</text>
 
 	<text id='switch_unit'  x='200' y='15' fill='#435370' cursor='pointer'>Switch to bytes/s</text>
 	<text id='switch_scale' x='200' y='35' fill='#435370' cursor='pointer'>Autoscale (follow)</text>
@@ -138,13 +138,14 @@ function init(evt) {
 	SVGDoc = evt.target.ownerDocument;
 	do_translation();
 	SVGDoc.getElementById("switch_unit").addEventListener("mousedown", switch_unit, false);
-	SVGDoc.getElementById("switch_scale").addEventListener("mousedown", switch_scale, false);
-	
+	SVGDoc.getElementById("switch_scale").addEventListener("mousedown", switch_scale, false);	
 	fetch_data();
 	setInterval('fetch_data()', 1000);
 }
 
 function do_translation() {
+	SVGDoc.getElementById('graph_in_lbl').firstChild.data = status_band.strin;
+	SVGDoc.getElementById('graph_out_lbl').firstChild.data = status_band.strout;
 	SVGDoc.getElementById('switch_unit').firstChild.data = status_band.chg_unit + unit + '/s';
 	SVGDoc.getElementById('switch_scale').firstChild.data = status_band.chg_scale + ' (' + scale_type + ')';
 	SVGDoc.getElementById('error').firstChild.data = status_band.chg_error;
