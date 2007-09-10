@@ -332,6 +332,7 @@ bmenu.setuprouting="Advanced Routing";
 bmenu.setupvlan="VLANs";
 bmenu.setupeop="EoIP Tunnel";
 bmenu.networking="Networking";
+
 bmenu.wireless="Wireless";
 bmenu.wirelessBasic="Basic Settings";
 bmenu.wirelessRadius="Radius";
@@ -343,11 +344,15 @@ bmenu.wirelessWds0="Ath0-WDS";
 bmenu.wirelessWds1="Ath1-WDS";
 bmenu.wirelessWds2="Ath2-WDS";
 bmenu.wirelessWds3="Ath3-WDS";
+
 bmenu.security="Security";
 bmenu.firwall="Firewall";
 bmenu.vpn="VPN";
+
 bmenu.accrestriction="Access Restrictions";
 bmenu.webaccess="WAN Access";
+
+
 bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Port Range Forwarding";
 bmenu.applicationspforwarding="Port Forwarding";
@@ -356,10 +361,12 @@ bmenu.applicationsUpnp="UPnP";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 bmenu.applicationsP2P="P2P";
+
 bmenu.sipath="SIPatH";
 bmenu.sipathoverview="Overview";
 bmenu.sipathphone="Phonebook";
 bmenu.sipathstatus="Status";
+
 bmenu.admin="Administration";
 bmenu.adminManagement="Management";
 bmenu.adminAlive="Keep Alive";
@@ -369,12 +376,14 @@ bmenu.adminWol="WOL";
 bmenu.adminFactory="Factory Defaults";
 bmenu.adminUpgrade="Firmware Upgrade";
 bmenu.adminBackup="Backup";
+
 bmenu.services="Services";
 bmenu.servicesServices="Services";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="PPTP";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Milkfish SIP Router";
+
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
 bmenu.statuLAN="LAN";
@@ -1120,8 +1129,8 @@ service.radiooff_srv="Use this button for turning off radio";
 service.radiooff_bootoff="Turn radio off at boot";
 
 //ses.webservices ====> might replace the above radiooff_button
-service.ses_legend="SES / AOSS Button";
-service.ses_srv="SES / AOSS Button action";
+service.ses_legend="SES / AOSS / EZ-SETUP Button";
+service.ses_srv="Button action";
 service.ses_toggleradio="Toggle Wireless";
 service.ses_script="Custom Script";
 
