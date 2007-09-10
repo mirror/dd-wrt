@@ -1207,6 +1207,8 @@ status_band.chg_unit="Switch to ";
 status_band.chg_scale="Autoscale";
 status_band.chg_error="Cannot get data about interface";
 status_band.chg_collect_initial="Collecting initial data, please wait...";
+status_band.strin="In";
+status_band.strout="Out";
 
 //help container
 var hstatus_band = new Object();
