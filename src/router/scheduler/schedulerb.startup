@@ -27,8 +27,6 @@ if [ "$(nvram get schedule_enable)" = "1" ]; then
 	    nvram set cron_enable=1
 	    nvram set need_commit=1
 	fi
-        stopservice cron
-        startservice cron
     fi
 else
 	rm -f /tmp/cron.d/check_schedules
