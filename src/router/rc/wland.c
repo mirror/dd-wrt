@@ -124,18 +124,20 @@ int
 containsIP (char *ip)
 {
   FILE *in;
-  char buf_ip[20];
+  char buf_ip[32];
   char *i, *net;
+  char cip[32];
+  strcpy(cip,ip);
   in = fopen ("/tmp/aqos_ips", "rb");
   if (in == NULL)
     return 0;
 //cprintf("scan for ip %s\n",ip);
-  while (fscanf (in, "%s", buf_ip) != EOF)
+  while (fscanf (in, "%s", buf_ip) == 1)
     {
       i = (char *) &buf_ip[0];
       net = strsep (&i, "/");
       cprintf ("found %s/%s\n", net, i);
-      if (compareNet (net, i, ip))
+      if (compareNet (net, i, cip))
 	{
 //        printf ("%s/%s fits to %s\n", net, i, ip);
 	  fclose (in);
@@ -199,7 +201,6 @@ do_aqos_check (void)
       cprintf ("/proc/net/arp missing, check kernel config\n");
       return;
     }
-  fprintf(stderr,"get level definition\n");
   defaulup = nvram_safe_get ("default_uplevel");
   defauldown = nvram_safe_get ("default_downlevel");
   if (defaulup == NULL || strlen (defaulup) == 0)
@@ -212,11 +213,9 @@ do_aqos_check (void)
       fclose (arp);
       return;
     }
-  fprintf(stderr,"skip first line in arp\n");
   while (fgetc (arp) != '\n');
 
 //fscanf(arp,"%s %s %s %s %s %s",ip_buf,hw_buf,fl_buf,mac_buf,mask_buf,dev_buf); //skip first line
-fprintf(stderr,"reading arp table\n");
   while (fscanf
 	 (arp, "%s %s %s %s %s %s", ip_buf, hw_buf, fl_buf, mac_buf, mask_buf,
 	  dev_buf) == 6)
@@ -225,17 +224,15 @@ fprintf(stderr,"reading arp table\n");
       if (wan && strlen (wan) > 0 && !strcmp (dev_buf, wan))
 	continue;
 
- fprintf(stderr,"reading mac/ip table\n");
+     
       cmac = containsMAC (mac_buf);
       cip = containsIP (ip_buf);
 
 
       if (cip || cmac)
 	{
-      fprintf(stderr,"ip's already added, continue\n");
 	  continue;
 	}
-fprintf(stderr,"nothing found for %s %s\n",ip_buf,mac_buf);
 
       if (!cmac && strlen (mac_buf) > 0)
 	{
@@ -243,11 +240,9 @@ fprintf(stderr,"nothing found for %s %s\n",ip_buf,mac_buf);
 	  char addition[128];
 	  sprintf (addition, "echo \"%s\" >>/tmp/aqos_macs", mac_buf);
 	  system2 (addition);
-        fprintf(stderr,"addition mac %s\n",addition);
 	  //create default rule for mac
 	  add_usermac (mac_buf, qosidx, defaulup, defauldown);
 	  qosidx += 2;
-        fprintf(stderr,"done mac\n");
 	}
       if (!cip && strlen (ip_buf) > 0)
 	{
@@ -256,14 +251,13 @@ fprintf(stderr,"nothing found for %s %s\n",ip_buf,mac_buf);
 	  sprintf (ipnet, "%s/32", ip_buf);
 	  sprintf (addition, "echo \"%s\" >>/tmp/aqos_ips", ipnet);
 	  system2 (addition);
-        fprintf(stderr,"addition ip %s\n",addition);
 	  //create default rule for ip
 	  add_userip (ipnet, qosidx, defaulup, defauldown);
-        fprintf(stderr,"done ip\n");
 	  qosidx += 2;
 	}
+	memset(ip_buf,0,32);
+	memset(mac_buf,0,32);
     }
-fprintf(stderr,"done with arp\n");
   fclose (arp);
 
 }
@@ -275,9 +269,7 @@ do_ap_check (void)
 
 //  if (nvram_match ("apwatchdog_enable", "1"))
 //    do_ap_watchdog ();
-fprintf(stderr,"start WDS check\n");
   start_service ("wds_check");
-fprintf(stderr,"end WDS check\n");
 //  do_wds_check ();
 
   return;
@@ -406,17 +398,14 @@ do_madwifi_check (void)
       if (nvram_match (mode, "sta") || nvram_match (mode, "wdssta") || nvram_match (mode, "wet"))
 	{
 	  int chan = wifi_getchannel (dev);
-//        fprintf(stderr,"chan %d %d\n",chan,lastchans[i]);
 	  if (lastchans[i] == 0 && chan < 1000)
 	    lastchans[i] = chan;
 	  else
 	    {
-//        fprintf(stderr,"chan2 %d %d\n",chan,lastchans[i]);
 	      if (chan == lastchans[i])
 		{
 		  int count = getassoclist (dev, &assoclist[0]);
 
-//        fprintf(stderr,"count %d\n",count);
 		  if (count == 0 || count == -1)
 		    {
 		      char *next;
@@ -431,13 +420,11 @@ do_madwifi_check (void)
 			{
 			  foreach (var, vifs, next)
 			  {
-//                          fprintf(stderr,"shutting down %s\n",var);
 			    eval ("/sbin/ifconfig", var, "down");
 			  }
 			}
 
 		      notstarted[i] = 0;
-//                          fprintf(stderr,"restarting %s\n",dev);
 		      eval ("/sbin/ifconfig", dev, "down");
 		      sleep (1);
 		      eval ("/sbin/ifconfig", dev, "up");
@@ -460,7 +447,6 @@ do_madwifi_check (void)
 			{
 			  foreach (var, vifs, next)
 			  {
-//                         fprintf(stderr,"restarting %s\n",var);
 			    eval ("/sbin/ifconfig", var, "up");
 			    eval ("startservice", "set_routes");
 			  }
