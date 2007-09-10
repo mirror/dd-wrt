@@ -571,10 +571,14 @@ handle_routing (void)
 static void
 handle_alive (void)
 {
+  void *handle = NULL;  
+  handle = stop_service_nofree ("cron", handle);
   eval ("/etc/config/wdswatchdog.startup");
   eval ("/etc/config/schedulerb.startup");
   eval ("/etc/config/proxywatchdog.startup");
-
+  handle = start_service_nofree ("cron", handle);
+  if (handle)
+    dlclose (handle);
 }
 
 static void
