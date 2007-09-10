@@ -3206,7 +3206,6 @@ add_userip (char *ip, int idx, char *upstream, char *downstream)
   sprintf (down, "1:%d", base + 1);
   sprintf (ups, "%skbit", upstream);
   sprintf (downs, "%skbit", downstream);
-fprintf(stderr,"add %s idx %d up %s down %s\n",ip,idx,upstream,downstream);
   if (nvram_match ("qos_type", "0"))
     {
       eval ("tc", "class", "add", "dev", get_wshaper_dev (), "parent", "1:",
@@ -3233,7 +3232,6 @@ fprintf(stderr,"add %s idx %d up %s down %s\n",ip,idx,upstream,downstream);
 	    "ip", "prio", "1", "u32", "match", "ip", "dst", ip, "flowid",
 	    down);
     }
-fprintf(stderr,"done()\n");
 
 }
 
