@@ -102,14 +102,14 @@ do_ap_watchdog (void)
 int
 compareNet (char *ip, char *net, char *dest)
 {
-if (ip==NULL ||net==NULL || dest==NULL)
+  if (ip == NULL || net == NULL || dest == NULL)
     return 0;
-char ips2[32];
-char dest2[32];
-strcpy(ips2,ip);
-strcpy(dest2,dest);
-ip = ips2;
-dest = dest2;
+  char ips2[32];
+  char dest2[32];
+  strcpy (ips2, ip);
+  strcpy (dest2, dest);
+  ip = ips2;
+  dest = dest2;
   unsigned int ip1 = atoi (strsep (&ip, "."));
   unsigned int ip2 = atoi (strsep (&ip, "."));
   unsigned int ip3 = atoi (strsep (&ip, "."));
@@ -120,9 +120,10 @@ dest = dest2;
   unsigned int dip3 = atoi (strsep (&dest, "."));
   unsigned int dip4 = atoi (dest);
 
-  unsigned int fullip = (ip1 << 24) + (ip2 << 16) + (ip3 << 8) + ip4;
-  unsigned int dfullip = (dip1 << 24) + (dip2 << 16) + (dip3 << 8) + dip4;
-  int n = 1 << atoi (net);	//convert net to full mask
+  unsigned int fullip = (ip1 << 24) | (ip2 << 16) | (ip3 << 8) | ip4;
+  unsigned int dfullip = (dip1 << 24) | (dip2 << 16) | (dip3 << 8) | dip4;
+  unsigned long long n = (unsigned long long) 1 << (unsigned long long) atoi (net);	//convert net to full mask
+  n--;
   if ((dfullip & n) == (fullip & n))
     return 1;
   return 0;
@@ -135,7 +136,7 @@ containsIP (char *ip)
   char buf_ip[32];
   char *i, *net;
   char cip[32];
-  strcpy(cip,ip);
+  strcpy (cip, ip);
   in = fopen ("/tmp/aqos_ips", "rb");
   if (in == NULL)
     return 0;
@@ -155,7 +156,7 @@ containsIP (char *ip)
 	  return 1;
 	}
 //      fprintf (stderr,"%s/%s dosnt fit to %s\n", net, i, ip);
-      memset(buf_ip,0,32);
+      memset (buf_ip, 0, 32);
     }
   fclose (in);
 //fprintf(stderr,"no ip found\n");
@@ -236,7 +237,7 @@ do_aqos_check (void)
       if (wan && strlen (wan) > 0 && !strcmp (dev_buf, wan))
 	continue;
 
-     
+
       cmac = containsMAC (mac_buf);
       cip = containsIP (ip_buf);
 
@@ -267,8 +268,8 @@ do_aqos_check (void)
 	  add_userip (ipnet, qosidx, defaulup, defauldown);
 	  qosidx += 2;
 	}
-	memset(ip_buf,0,32);
-	memset(mac_buf,0,32);
+      memset (ip_buf, 0, 32);
+      memset (mac_buf, 0, 32);
     }
   fclose (arp);
 
@@ -407,7 +408,8 @@ do_madwifi_check (void)
 	}
       char mode[32];
       sprintf (mode, "%s_mode", dev);
-      if (nvram_match (mode, "sta") || nvram_match (mode, "wdssta") || nvram_match (mode, "wet"))
+      if (nvram_match (mode, "sta") || nvram_match (mode, "wdssta")
+	  || nvram_match (mode, "wet"))
 	{
 	  int chan = wifi_getchannel (dev);
 	  if (lastchans[i] == 0 && chan < 1000)
