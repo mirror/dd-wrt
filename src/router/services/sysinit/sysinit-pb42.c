@@ -103,7 +103,7 @@ start_sysinit (void)
   eval ("insmod", "ag7100_mod");
 
 //eval ("insmod", "ath_pci", "autocreate=none");
-eval ("insmod", "ath_mimo_pci");
+  eval ("insmod", "ath_mimo_pci");
 
   eval ("ifconfig", "wifi0", "up");
 
@@ -118,9 +118,11 @@ eval ("insmod", "ath_mimo_pci");
   return 0;
   cprintf ("done\n");
 }
+
 int
 check_cfe_nv (void)
 {
+  nvram_set ("portprio_support", "0");
   return 0;
 }
 
@@ -129,6 +131,7 @@ check_pmon_nv (void)
 {
   return 0;
 }
+
 void
 start_overclocking (void)
 {

@@ -205,10 +205,10 @@ start_sysinit (void)
   eval ("insmod", "ath_ahb", "autocreate=none");
 
 
-  system("echo 2 >/proc/sys/dev/wifi0/ledpin");
-  system("echo 1 >/proc/sys/dev/wifi0/softled");
-  system("echo 3 >/proc/sys/dev/wifi1/ledpin");
-  system("echo 1 >/proc/sys/dev/wifi1/softled");
+  system ("echo 2 >/proc/sys/dev/wifi0/ledpin");
+  system ("echo 1 >/proc/sys/dev/wifi0/softled");
+  system ("echo 3 >/proc/sys/dev/wifi1/ledpin");
+  system ("echo 1 >/proc/sys/dev/wifi1/softled");
 
   eval ("ifconfig", "wifi0", "up");
   eval ("ifconfig", "wifi1", "up");
@@ -224,9 +224,11 @@ start_sysinit (void)
   return 0;
   cprintf ("done\n");
 }
+
 int
 check_cfe_nv (void)
 {
+  nvram_set ("portprio_support", "0");
   return 0;
 }
 
@@ -235,6 +237,7 @@ check_pmon_nv (void)
 {
   return 0;
 }
+
 void
 start_overclocking (void)
 {

@@ -78,7 +78,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"os_version", EPI_VERSION_STR, 0},	/* OS revision */
   {"os_date", __DATE__, 0},	/* OS date */
   {"ct_modules", "", 0},	/* CyberTAN kernel modules */
-  {"wait_time","5",0},
+  {"wait_time", "5", 0},
   /* Miscellaneous parameters */
   {"timer_interval", "3600", 0},	/* Timer interval in seconds */
   {"time_zone", "+01", 0},	/* Time zone (GNU TZ format) */
@@ -173,7 +173,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"lan_domain", "", 0},	/* LAN domain name */
 #endif
   {"lan_lease", "86400", 0},	/* LAN lease time in seconds */
-//  {"lan_lease", "1440", 0},	/* LAN lease time in seconds */
+//  {"lan_lease", "1440", 0},   /* LAN lease time in seconds */
 
   /* WAN H/W parameters */
 
@@ -184,7 +184,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wan_hwaddr", "", 0},	/* WAN interface MAC address */
 
   /* WAN TCP/IP parameters */
-  {"wan_vdsl","0",0}, 
+  {"wan_vdsl", "0", 0},
 #ifdef HAVE_SKYTRON
   {"wan_proto", "static", 0},	/* [static|dhcp|pppoe|disabled] */
   {"wan_ipaddr", "10.254.254.254", 0},	/* WAN IP address */
@@ -446,7 +446,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"ppp_static_ip", "", 0},	/* PPPoE Static IP */
   {"ppp_get_ac", "", 0},	/* PPPoE Server ac name */
   {"ppp_get_srv", "", 0},	/* PPPoE Server service name */
-  {"ppp_compression", "0", 0},		/* PPPoE compr. */
+  {"ppp_compression", "0", 0},	/* PPPoE compr. */
   {"ppp_mppe", "", 0},		/* PPPoE mppe parameters */
 
   /* Wireless parameters */
@@ -1618,7 +1618,7 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_WTS
   {"language", "spanish", 0},
 #elif HAVE_BUFFALO
-  {"language",DEFAULT_LANGUAGE,0},
+  {"language", DEFAULT_LANGUAGE, 0},
 #else
   {"language", "english", 0},
 #endif
@@ -1632,7 +1632,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"mmc_di", "0", 0},
   {"mmc_do", "0", 0},
   {"mmc_clk", "0", 0},
-  {"mmc_cs", "0", 0},    
+  {"mmc_cs", "0", 0},
 #endif
 #ifdef HAVE_RB500
   {"ip_conntrack_max", "32768", 0},
@@ -1778,8 +1778,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"sip_port", "5060", 0},
   {"sip_domain", "sip.skytron.de", 0},
 #else
-  {"sip_port", "5060", 0},          /* MILKFISH SETTING */ //this setting is not evaluated/used by the milkfish scripts for milkfish-dd 1.0 - fs070712
-  {"sip_domain", "192.168.1.1", 0}, /* MILKFISH SETTING */ //set "192.168.1.1" as default - not setting at all disables dbtextctl script - fs070712
+  {"sip_port", "5060", 0},	/* MILKFISH SETTING *///this setting is not evaluated/used by the milkfish scripts for milkfish-dd 1.0 - fs070712
+  {"sip_domain", "192.168.1.1", 0},	/* MILKFISH SETTING *///set "192.168.1.1" as default - not setting at all disables dbtextctl script - fs070712
 #endif
 #ifdef HAVE_AQOS
   {"default_uplevel", "1000", 0},	//set a useful value to prevent deadlock
@@ -1843,7 +1843,7 @@ struct nvram_tuple srouter_defaults[] = {
 */
 #endif
 #ifdef HAVE_SPUTNIK_APD
-  
+
 #ifdef HAVE_SPUTNIK
   {"sputnik_mjid_type", "0", 0},
   {"sputnik_mjid", "sputnik@wifi.sputnik.com", 0},
@@ -2125,7 +2125,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"milkfish_username", "", 0},	/* MILKFISH SETTING */
   {"milkfish_password", "", 0},	/* MILKFISH SETTING */
   {"milkfish_routerid", "", 0},	/* MILKFISH SETTING */
-  {"milkfish_ppptime", "off", 0},	/* MILKFISH SETTING - keep always "off" on dd-wrt !*/
+  {"milkfish_ppptime", "off", 0},	/* MILKFISH SETTING - keep always "off" on dd-wrt ! */
   {"milkfish_audit", "off", 0},	/* MILKFISH SETTING */
   {"milkfish_dynsip", "off", 0},	/* MILKFISH SETTING */
   {"milkfish_siptrace", "off", 0},	/* MILKFISH SETTING */
@@ -2141,9 +2141,9 @@ struct nvram_tuple srouter_defaults[] = {
   {"olsrd_lqlevel", "2", 0},
   {"olsrd_hysteresis", "0", 0},
 #endif
-  {"reconnect_enable","0",0},
-  {"reconnect_hours","0",0},
-  {"reconnect_minutes","0",0},
+  {"reconnect_enable", "0", 0},
+  {"reconnect_hours", "0", 0},
+  {"reconnect_minutes", "0", 0},
 
   {0, 0, 0}
 };
