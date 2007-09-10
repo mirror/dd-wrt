@@ -118,27 +118,37 @@ system ("echo 1 > /proc/sys/dev/adm6996/port1/enable 2>&1 > /dev/null");
 #ifndef HAVE_CA8
 #ifndef HAVE_PB42
 #ifndef HAVE_TW6600
+  if (nvram_match ("portprio_support", "1"))
+    {
+      system2 ("echo 1 > /proc/switch/eth0/port/1/enable 2>&1 > /dev/null");
+      system2 ("echo 1 > /proc/switch/eth0/port/2/enable 2>&1 > /dev/null");
+      system2 ("echo 1 > /proc/switch/eth0/port/3/enable 2>&1 > /dev/null");
+      system2 ("echo 1 > /proc/switch/eth0/port/4/enable 2>&1 > /dev/null");
 
-  system2 ("echo 1 > /proc/switch/eth0/port/1/enable 2>&1 > /dev/null");
-  system2 ("echo 1 > /proc/switch/eth0/port/2/enable 2>&1 > /dev/null");
-  system2 ("echo 1 > /proc/switch/eth0/port/3/enable 2>&1 > /dev/null");
-  system2 ("echo 1 > /proc/switch/eth0/port/4/enable 2>&1 > /dev/null");
+      system2
+	("echo 0 > /proc/switch/eth0/port/1/prio-enable 2>&1 > /dev/null");
+      system2
+	("echo 0 > /proc/switch/eth0/port/2/prio-enable 2>&1 > /dev/null");
+      system2
+	("echo 0 > /proc/switch/eth0/port/3/prio-enable 2>&1 > /dev/null");
+      system2
+	("echo 0 > /proc/switch/eth0/port/4/prio-enable 2>&1 > /dev/null");
 
-  system2 ("echo 0 > /proc/switch/eth0/port/1/prio-enable 2>&1 > /dev/null");
-  system2 ("echo 0 > /proc/switch/eth0/port/2/prio-enable 2>&1 > /dev/null");
-  system2 ("echo 0 > /proc/switch/eth0/port/3/prio-enable 2>&1 > /dev/null");
-  system2 ("echo 0 > /proc/switch/eth0/port/4/prio-enable 2>&1 > /dev/null");
 
+      system2 ("echo AUTO > /proc/switch/eth0/port/1/media 2>&1 > /dev/null");
+      system2 ("echo AUTO > /proc/switch/eth0/port/2/media 2>&1 > /dev/null");
+      system2 ("echo AUTO > /proc/switch/eth0/port/3/media 2>&1 > /dev/null");
+      system2 ("echo AUTO > /proc/switch/eth0/port/4/media 2>&1 > /dev/null");
 
-  system2 ("echo AUTO > /proc/switch/eth0/port/1/media 2>&1 > /dev/null");
-  system2 ("echo AUTO > /proc/switch/eth0/port/2/media 2>&1 > /dev/null");
-  system2 ("echo AUTO > /proc/switch/eth0/port/3/media 2>&1 > /dev/null");
-  system2 ("echo AUTO > /proc/switch/eth0/port/4/media 2>&1 > /dev/null");
-
-  system2 ("echo FULL > /proc/switch/eth0/port/1/bandwidth 2>&1 > /dev/null");
-  system2 ("echo FULL > /proc/switch/eth0/port/2/bandwidth 2>&1 > /dev/null");
-  system2 ("echo FULL > /proc/switch/eth0/port/3/bandwidth 2>&1 > /dev/null");
-  system2 ("echo FULL > /proc/switch/eth0/port/4/bandwidth 2>&1 > /dev/null");
+      system2
+	("echo FULL > /proc/switch/eth0/port/1/bandwidth 2>&1 > /dev/null");
+      system2
+	("echo FULL > /proc/switch/eth0/port/2/bandwidth 2>&1 > /dev/null");
+      system2
+	("echo FULL > /proc/switch/eth0/port/3/bandwidth 2>&1 > /dev/null");
+      system2
+	("echo FULL > /proc/switch/eth0/port/4/bandwidth 2>&1 > /dev/null");
+    }
 #endif
 #endif
 #endif
@@ -162,37 +172,40 @@ svqos_set_ports (void)
 #ifndef HAVE_X86
 #ifndef HAVE_TW6600
 #ifndef HAVE_PB42
-  int loop = 1;
-  char cmd[255] = { 0 }, nvram_var[32] =
-  {
-  0}, *level;
-
-  svqos_reset_ports ();
-
-  for (loop = 1; loop < 5; loop++)
+  if (nvram_match ("portprio_support", "1"))
     {
-      snprintf (nvram_var, 31, "svqos_port%dbw", loop);
+      int loop = 1;
+      char cmd[255] = { 0 }, nvram_var[32] =
+      {
+      0}, *level;
 
-      if (strcmp ("0", nvram_safe_get (nvram_var)))
-	snprintf (cmd, 254,
-		  "echo %s > /proc/switch/eth0/port/%d/bandwidth 2>&1 > /dev/null",
-		  nvram_safe_get (nvram_var), loop);
-      else
-	snprintf (cmd, 254, "echo 0 > /proc/switch/eth0/port/%d/enable",
-		  loop);
-      system2 (cmd);
+      svqos_reset_ports ();
 
-      snprintf (cmd, 254,
-		"echo 1 > /proc/switch/eth0/port/%d/prio-enable 2>&1 > /dev/null",
-		loop);
-      system2 (cmd);
+      for (loop = 1; loop < 5; loop++)
+	{
+	  snprintf (nvram_var, 31, "svqos_port%dbw", loop);
 
-      snprintf (nvram_var, 31, "svqos_port%dprio", loop);
-      level = nvram_safe_get (nvram_var);
-      snprintf (cmd, 254,
-		"echo %d > /proc/switch/eth0/port/%d/prio 2>&1 > /dev/null",
-		atoi (level) / 10 - 1, loop);
-      system2 (cmd);
+	  if (strcmp ("0", nvram_safe_get (nvram_var)))
+	    snprintf (cmd, 254,
+		      "echo %s > /proc/switch/eth0/port/%d/bandwidth 2>&1 > /dev/null",
+		      nvram_safe_get (nvram_var), loop);
+	  else
+	    snprintf (cmd, 254, "echo 0 > /proc/switch/eth0/port/%d/enable",
+		      loop);
+	  system2 (cmd);
+
+	  snprintf (cmd, 254,
+		    "echo 1 > /proc/switch/eth0/port/%d/prio-enable 2>&1 > /dev/null",
+		    loop);
+	  system2 (cmd);
+
+	  snprintf (nvram_var, 31, "svqos_port%dprio", loop);
+	  level = nvram_safe_get (nvram_var);
+	  snprintf (cmd, 254,
+		    "echo %d > /proc/switch/eth0/port/%d/prio 2>&1 > /dev/null",
+		    atoi (level) / 10 - 1, loop);
+	  system2 (cmd);
+	}
     }
 #endif
 #endif

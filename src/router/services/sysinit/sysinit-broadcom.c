@@ -498,6 +498,7 @@ start_sysinit (void)
     {
       char module[80], *modules, *next;
       //modules="wl switch-core";
+      nvram_set ("portprio_support", "1");
 
       if (check_vlan_support () && check_hw_type () != BCM5325E_CHIP)
 	{
@@ -505,6 +506,7 @@ start_sysinit (void)
 	    {
 	    case ROUTER_WRT350N:
 	    case ROUTER_BUFFALO_WZRG144NH:
+	      nvram_set ("portprio_support", "0");
 	      modules = "bcm57xxlsys";
 	      break;
 	    case ROUTER_LINKSYS_WRT55AG:
@@ -557,6 +559,7 @@ start_sysinit (void)
 	    {
 	    case ROUTER_WRT350N:
 	    case ROUTER_BUFFALO_WZRG144NH:
+	      nvram_set ("portprio_support", "0");
 	      modules = "bcm57xxlsys";
 	      break;
 	    case ROUTER_LINKSYS_WRT55AG:
@@ -575,6 +578,7 @@ start_sysinit (void)
 		eval ("insmod", "switch-adm");
 	      break;
 	    case ROUTER_BUFFALO_WZRRSG54:
+	      nvram_set ("portprio_support", "0");
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") : "";
@@ -586,10 +590,14 @@ start_sysinit (void)
 				  "") ? nvram_safe_get ("ct_modules") :
 		  "switch-core switch-robo pcmcia_core yenta_socket ds";
 	      else
-		modules =
-		  nvram_invmatch ("ct_modules",
-				  "") ? nvram_safe_get ("ct_modules") :
-		  "pcmcia_core yenta_socket ds";
+		{
+		  nvram_set ("portprio_support", "0");
+
+		  modules =
+		    nvram_invmatch ("ct_modules",
+				    "") ? nvram_safe_get ("ct_modules") :
+		    "pcmcia_core yenta_socket ds";
+		}
 	      break;
 
 	    default:
@@ -599,9 +607,12 @@ start_sysinit (void)
 				  "") ? nvram_safe_get ("ct_modules") :
 		  "switch-core switch-robo";
 	      else
-		modules =
-		  nvram_invmatch ("ct_modules",
-				  "") ? nvram_safe_get ("ct_modules") : "";
+		{
+		  nvram_set ("portprio_support", "0");
+		  modules =
+		    nvram_invmatch ("ct_modules",
+				    "") ? nvram_safe_get ("ct_modules") : "";
+		}
 	      break;
 	    }
 	}
@@ -679,7 +690,6 @@ int
 check_cfe_nv (void)
 {
   int ret = 0;
-  nvram_set ("portprio_support", "1");
   switch (getRouterBrand ())
     {
     case ROUTER_BUFFALO_WZRRSG54:
