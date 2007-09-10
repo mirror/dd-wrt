@@ -277,7 +277,7 @@ addEvent(window, "unload", function() {
 								</table>
 							</fieldset><br />
 							<% show_default_level(); %>
-							
+<% nvram_match("portprio_support","0","<!--"); %>							
 							<fieldset>
 								<legend><% tran("qos.legend5"); %></legend>
 								<table>
@@ -488,6 +488,7 @@ addEvent(window, "unload", function() {
 									</tr>
 								</table>
 							</fieldset><br />
+<% nvram_match("portprio_support","0","-->"); %>							
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
