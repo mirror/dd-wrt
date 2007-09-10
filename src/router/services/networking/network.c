@@ -2067,14 +2067,15 @@ start_wan (int status)
 					   "") ?
     nvram_safe_get ("pppoe_wan_ifname") : "eth0";
 #elif HAVE_FONERA
+  char *pppoe_wan_ifname = NULL;
   if (getRouterBrand () == ROUTER_BOARD_FONERA2200)
-    char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
-					     "") ?
-    nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
+    pppoe_wan_ifname =
+      nvram_invmatch ("pppoe_wan_ifname",
+		      "") ? nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
   else
-  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
-					   "") ?
-    nvram_safe_get ("pppoe_wan_ifname") : "eth0";
+    pppoe_wan_ifname =
+      nvram_invmatch ("pppoe_wan_ifname",
+		      "") ? nvram_safe_get ("pppoe_wan_ifname") : "eth0";
 #elif HAVE_LS2
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
@@ -3413,7 +3414,9 @@ init_mtu (char *wan_proto)
 void
 start_wds_check (void)
 {
-  int s = 0;
+  int s, sock;
+  if ((sock = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+    return;
 
   /* Sveasoft - Bring up and configure wds interfaces */
   /* logic - if separate ip defined bring it up */
@@ -3437,7 +3440,7 @@ start_wds_check (void)
       memset (&ifr, 0, sizeof (struct ifreq));
 
       snprintf (ifr.ifr_name, IFNAMSIZ, wdsdevname);
-      ioctl (s, SIOCGIFFLAGS, &ifr);
+      ioctl (sock, SIOCGIFFLAGS, &ifr);
 
       if ((ifr.ifr_flags & (IFF_RUNNING | IFF_UP)) == (IFF_RUNNING | IFF_UP))
 	continue;
@@ -3493,7 +3496,7 @@ start_wds_check (void)
 	}
 
     }
-
+  close (sock);
   if (nvram_match ("lan_stp", "0"))
     {
 #ifdef HAVE_MICRO
