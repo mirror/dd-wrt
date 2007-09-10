@@ -209,14 +209,14 @@ start_sysinit (void)
   eval ("insmod", "ixp400_eth");
   eval ("ifconfig", "ixp0", "0.0.0.0", "up");
   eval ("ifconfig", "ixp1", "0.0.0.0", "up");
-  if (getRouterBrand()==ROUTER_BOARD_GATEWORX_GW2345) //lets load the spi drivers for this switch
-  {
-    eval("insmod","spi-algo-bit");
-    eval("insmod","spi-ixp4xx");
-    eval("insmod","ks8995m");
-    sleep(1);
-    system("echo R01=01 > /proc/driver/KS8995M"); // enable switch 
-  }
+  if (getRouterBrand () == ROUTER_BOARD_GATEWORX_GW2345)	//lets load the spi drivers for this switch
+    {
+      eval ("insmod", "spi-algo-bit");
+      eval ("insmod", "spi-ixp4xx");
+      eval ("insmod", "ks8995m");
+      sleep (1);
+      system ("echo R01=01 > /proc/driver/KS8995M");	// enable switch 
+    }
   eval ("insmod", "ocf");
   eval ("insmod", "cryptodev");
 //  eval ("insmod", "ixp4xx", "init_crypto=0");
@@ -236,7 +236,7 @@ start_sysinit (void)
 #ifdef HAVE_MADWIFI_MIMO
   eval ("insmod", "ath_mimo_pci");
 #endif
- // eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
+  // eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
 
   if (ifexists ("wifi0"))
     eval ("ifconfig", "wifi0", "up");
@@ -258,7 +258,7 @@ start_sysinit (void)
 /*
 Configure mac addresses by reading data from eeprom
 */
-//  char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom";	/* bank2=0x100 */
+//  char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom";  /* bank2=0x100 */
   char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom";	/* bank2=0x100 */
   FILE *file = fopen (filename, "r");
   unsigned char buf[16];
@@ -302,9 +302,11 @@ Configure mac addresses by reading data from eeprom
     }
   return 0;
 }
+
 int
 check_cfe_nv (void)
 {
+  nvram_set ("portprio_support", "0");
   return 0;
 }
 
@@ -313,6 +315,7 @@ check_pmon_nv (void)
 {
   return 0;
 }
+
 void
 start_overclocking (void)
 {
