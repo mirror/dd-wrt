@@ -366,6 +366,19 @@ start_cron (void)
 	       nvram_safe_get ("reconnect_hours"));
       fclose (fp);
     }
+  /* reboot scheduler */  
+  unlink ("/tmp/cron.d/check_schedules"); 
+  if (nvram_match ("schedule_enable", "1") && nvram_match ("schedule_hour_time", "2")) 
+    {
+      FILE *fp;
+      fp = fopen ("/tmp/cron.d/check_schedules", "w");
+      fprintf (fp, "%s %s * * %s root /sbin/reboot\n",
+	       nvram_safe_get ("schedule_minutes"),
+	       nvram_safe_get ("schedule_hours"),
+	       nvram_safe_get ("schedule_weekdays"));
+      fclose (fp);
+    }      
+  
   /* Additional options */
   int i = 0;
   unlink ("/tmp/cron.d/cron_jobs");
