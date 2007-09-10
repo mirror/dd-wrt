@@ -102,6 +102,14 @@ do_ap_watchdog (void)
 int
 compareNet (char *ip, char *net, char *dest)
 {
+if (ip==NULL ||net==NULL || dest==NULL)
+    return 0;
+char ips2[32];
+char dest2[32];
+strcpy(ips2,ip);
+strcpy(dest2,dest);
+ip = ips2;
+dest = dest2;
   unsigned int ip1 = atoi (strsep (&ip, "."));
   unsigned int ip2 = atoi (strsep (&ip, "."));
   unsigned int ip3 = atoi (strsep (&ip, "."));
@@ -131,22 +139,26 @@ containsIP (char *ip)
   in = fopen ("/tmp/aqos_ips", "rb");
   if (in == NULL)
     return 0;
-//cprintf("scan for ip %s\n",ip);
-  while (fscanf (in, "%s", buf_ip) == 1)
+
+
+//fprintf(stderr,"scan for ip %s\n",ip);
+  while (fscanf (in, "%s", buf_ip) != EOF)
     {
+//    fprintf(stderr,"begin\n");
       i = (char *) &buf_ip[0];
       net = strsep (&i, "/");
-      cprintf ("found %s/%s\n", net, i);
+//      fprintf(stderr,"found %s/%s\n", net, i);
       if (compareNet (net, i, cip))
 	{
-//        printf ("%s/%s fits to %s\n", net, i, ip);
+//        fprintf (stderr,"%s/%s fits to %s\n", net, i, ip);
 	  fclose (in);
 	  return 1;
 	}
-//      printf ("%s/%s dosnt fit to %s\n", net, i, ip);
+//      fprintf (stderr,"%s/%s dosnt fit to %s\n", net, i, ip);
+      memset(buf_ip,0,32);
     }
   fclose (in);
-//cprintf("no ip found\n");
+//fprintf(stderr,"no ip found\n");
   return 0;
 }
 static int qosidx = 1000;
