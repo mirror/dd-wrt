@@ -199,7 +199,7 @@ do_aqos_check (void)
       cprintf ("/proc/net/arp missing, check kernel config\n");
       return;
     }
-  // fprintf(stderr,"get level definition\n");
+  fprintf(stderr,"get level definition\n");
   defaulup = nvram_safe_get ("default_uplevel");
   defauldown = nvram_safe_get ("default_downlevel");
   if (defaulup == NULL || strlen (defaulup) == 0)
@@ -212,11 +212,11 @@ do_aqos_check (void)
       fclose (arp);
       return;
     }
-//  fprintf(stderr,"skip first line in arp\n");
+  fprintf(stderr,"skip first line in arp\n");
   while (fgetc (arp) != '\n');
 
 //fscanf(arp,"%s %s %s %s %s %s",ip_buf,hw_buf,fl_buf,mac_buf,mask_buf,dev_buf); //skip first line
-  //fprintf(stderr,"reading arp table\n");
+fprintf(stderr,"reading arp table\n");
   while (fscanf
 	 (arp, "%s %s %s %s %s %s", ip_buf, hw_buf, fl_buf, mac_buf, mask_buf,
 	  dev_buf) == 6)
@@ -225,17 +225,17 @@ do_aqos_check (void)
       if (wan && strlen (wan) > 0 && !strcmp (dev_buf, wan))
 	continue;
 
-// fprintf(stderr,"reading mac/ip table\n");
+ fprintf(stderr,"reading mac/ip table\n");
       cmac = containsMAC (mac_buf);
       cip = containsIP (ip_buf);
 
 
       if (cip || cmac)
 	{
-//      fprintf(stderr,"ip's already added, continue\n");
+      fprintf(stderr,"ip's already added, continue\n");
 	  continue;
 	}
-//fprintf(stderr,"nothing found for %s %s\n",ip_buf,mac_buf);
+fprintf(stderr,"nothing found for %s %s\n",ip_buf,mac_buf);
 
       if (!cmac && strlen (mac_buf) > 0)
 	{
@@ -243,11 +243,11 @@ do_aqos_check (void)
 	  char addition[128];
 	  sprintf (addition, "echo \"%s\" >>/tmp/aqos_macs", mac_buf);
 	  system2 (addition);
-//        fprintf(stderr,"addition mac %s\n",addition);
+        fprintf(stderr,"addition mac %s\n",addition);
 	  //create default rule for mac
 	  add_usermac (mac_buf, qosidx, defaulup, defauldown);
 	  qosidx += 2;
-//        fprintf(stderr,"done mac\n");
+        fprintf(stderr,"done mac\n");
 	}
       if (!cip && strlen (ip_buf) > 0)
 	{
@@ -256,14 +256,14 @@ do_aqos_check (void)
 	  sprintf (ipnet, "%s/32", ip_buf);
 	  sprintf (addition, "echo \"%s\" >>/tmp/aqos_ips", ipnet);
 	  system2 (addition);
-//        fprintf(stderr,"addition ip %s\n",addition);
+        fprintf(stderr,"addition ip %s\n",addition);
 	  //create default rule for ip
 	  add_userip (ipnet, qosidx, defaulup, defauldown);
-//        fprintf(stderr,"done ip\n");
+        fprintf(stderr,"done ip\n");
 	  qosidx += 2;
 	}
     }
-//fprintf(stderr,"done with arp\n");
+fprintf(stderr,"done with arp\n");
   fclose (arp);
 
 }
@@ -275,7 +275,9 @@ do_ap_check (void)
 
 //  if (nvram_match ("apwatchdog_enable", "1"))
 //    do_ap_watchdog ();
+fprintf(stderr,"start WDS check\n");
   start_service ("wds_check");
+fprintf(stderr,"end WDS check\n");
 //  do_wds_check ();
 
   return;
