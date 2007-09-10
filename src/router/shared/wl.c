@@ -747,14 +747,20 @@ getassoclist (char *ifname, unsigned char *list)
   sprintf (type, "%s_mode", ifname);
   sprintf (netmode, "%s_net_mode", ifname);
   if (nvram_match (netmode, "disabled"))
+    {
+    free(buf);
     return 0;
+    }
   int mincount = 0;
   if (nvram_match (type, "wdssta") || nvram_match (type, "sta")
       || nvram_match (type, "wet"))
     {
       int assoc = isAssociated (ifname);
       if (!assoc)
+        {
+	free(buf);
 	return 0;
+	}
       char mac[6];
       getAssocMAC (ifname, mac);
       memcpy (&list[4], mac, 6);
