@@ -1206,7 +1206,9 @@ status_band.h2="Nadzor pasovne ¹irine";
 status_band.chg_unit="Preklopi na ";
 status_band.chg_scale="Samodejno merilo";
 status_band.chg_error="Ne morem zbrati podatkov o vmesniku";
-status_band.chg_collect_initial="Zbiram zacetne podatke, prosimo pocakajte...";
+status_band.chg_collect_initial="Zbiram zaèetne podatke, prosimo poèakajte...";
+status_band.strin="Noter";
+status_band.strout="Ven";
 
 //help container
 
