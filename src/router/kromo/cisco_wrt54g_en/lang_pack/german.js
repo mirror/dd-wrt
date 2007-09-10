@@ -1136,11 +1136,13 @@ hstatus_lan.right10="Indem Sie auf irgendeine MAC-Adresse klicken, erhalten Sie 
 status_band.titl="Bandbreiten Monitor";
 status_band.h2="Bandbreiten Monitor";
 status_band.chg_unit="Wechseln zu ";
-status_band.chg_scale="Auto Anpassung";
+status_band.chg_scale="Automatische Anpassung";
 status_band.chg_error="Die Daten des Interfaces sind nicht ermittelbar";
 status_band.chg_collect_initial="Initiale Datenerfassung...";
 status_band.strin="Eingang";
 status_band.strout="Ausgang";
+status_band.follow="folgen";
+status_band.up="oben";
 
 //help container
 hstatus_band.right1="Klicken Sie den Text an um die Einheiten zu wechseln (bytes/s oder bits/s).";

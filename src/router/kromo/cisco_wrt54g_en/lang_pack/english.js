@@ -1209,6 +1209,8 @@ status_band.chg_error="Cannot get data about interface";
 status_band.chg_collect_initial="Collecting initial data, please wait...";
 status_band.strin="In";
 status_band.strout="Out";
+status_band.follow="follow";
+status_band.up="up";
 
 //help container
 var hstatus_band = new Object();

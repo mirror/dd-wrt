@@ -158,7 +158,7 @@ function switch_unit(event) {
 }
 
 function switch_scale(event) {
-	scale_type = (scale_type == 'up') ? 'follow' : 'up';
+	scale_type = (scale_type == status_band.up) ? status_band.follow : status_band.up;
 	SVGDoc.getElementById('switch_scale').firstChild.data = status_band.chg_scale + ' (' + scale_type + ')';
 }
 
