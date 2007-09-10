@@ -137,8 +137,9 @@ start_modules (void)
   runStartup ("/etc/config", ".startup");
 #ifndef HAVE_MADWIFI
 #ifdef HAVE_RADIOOFF
-  if (nvram_match ("radiooff_button", "1") && nvram_match ("radiooff_boot_off", "1"))
-  	eval ("wl", "radio", "off");
+  if (nvram_match ("radiooff_button", "1")
+      && nvram_match ("radiooff_boot_off", "1"))
+    eval ("wl", "radio", "off");
 #endif
 #endif
 #ifdef HAVE_RB500
@@ -429,11 +430,11 @@ start_restore_defaults (void)
   char *et0mac = nvram_safe_get ("et0macaddr");
   char *et1mac = nvram_safe_get ("et1macaddr");
   unsigned char mac[20];
-if (nvram_get("il0macaddr")==NULL)
+  if (nvram_get ("il0macaddr") == NULL)
     {
       strcpy (mac, et0mac);
       MAC_ADD (mac);
-      nvram_set("il0macaddr",mac);    
+      nvram_set ("il0macaddr", mac);
     }
 
 #ifdef HAVE_RB500
@@ -530,8 +531,8 @@ if (nvram_get("il0macaddr")==NULL)
 
   if (restore_defaults)
     cprintf ("Restoring defaults...");
-    nvram_unset ("wan_to_lan");  //important for some AP
-    
+  nvram_unset ("wan_to_lan");	//important for some AP
+
 //    }
 
 /* Delete dynamically generated variables */
@@ -708,12 +709,12 @@ if (nvram_get("il0macaddr")==NULL)
 #ifndef HAVE_FON
   if (restore_defaults)
     {
-	  if (brand == ROUTER_MOTOROLA)
+      if (brand == ROUTER_MOTOROLA)
 	{
 	  nvram_set ("vlan0ports", "0 1 2 3 5*");
 	  nvram_set ("vlan1ports", "4 5");
-	}    
-	  if (nvram_match ("boardnum", "WAP54GV3_8M_0614"))
+	}
+      if (nvram_match ("boardnum", "WAP54GV3_8M_0614"))
 	{
 	  nvram_set ("vlan0ports", "3 2 1 0 5*");
 	  nvram_set ("vlan1ports", "4 5");
@@ -892,12 +893,12 @@ if (nvram_get("il0macaddr")==NULL)
 	}
     }
 
-cprintf("check CFE nv\n");
+  cprintf ("check CFE nv\n");
   if (check_now_boot () == CFE_BOOT)
     check_cfe_nv ();
   else if (check_now_boot () == PMON_BOOT)
     check_pmon_nv ();
-cprintf("restore defaults\n");
+  cprintf ("restore defaults\n");
 
   /* Commit values */
   if (restore_defaults)
@@ -1031,8 +1032,8 @@ start_nvram (void)
   nvram_set ("wan_get_dns", "");
   nvram_set ("filter_id", "1");
   nvram_set ("wl_active_add_mac", "0");
-  nvram_set ("ddns_change", ""); 
-  nvram_unset("action_service");
+  nvram_set ("ddns_change", "");
+  nvram_unset ("action_service");
   nvram_set ("wan_get_domain", "");
 
 
@@ -1244,6 +1245,3 @@ unset_nvram (void)
 
 
 }
-
-
-

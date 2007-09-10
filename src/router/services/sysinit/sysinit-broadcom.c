@@ -145,9 +145,9 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       nvram_set ("wl0gpio0", "0");
       nvram_set ("wl0gpio5", "136");
       break;
-	case ROUTER_ASUS_WL500GD:
-	  nvram_unset ("wl0gpio0");
-	  break;
+    case ROUTER_ASUS_WL500GD:
+      nvram_unset ("wl0gpio0");
+      break;
     }
 #else //v23
 
@@ -165,9 +165,9 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       nvram_set ("wl0gpio0", "0");
       nvram_set ("wl0gpio5", "2");
       break;
-	case ROUTER_ASUS_WL500GD:
-	  nvram_unset ("wl0gpio0");
-	  break;
+    case ROUTER_ASUS_WL500GD:
+      nvram_unset ("wl0gpio0");
+      break;
     }
 #endif
 
@@ -314,10 +314,10 @@ start_sysinit (void)
   cprintf ("sysinit() get router\n");
 
   int brand = getRouterBrand ();
-  led_control(LED_DIAG,LED_ON);
+  led_control (LED_DIAG, LED_ON);
   char *rname = getRouter ();
   fprintf (stderr, "Booting Device:%s\n", rname);
-  
+
   switch (brand)
     {
     case ROUTER_BUFFALO_WZRRSG54:
@@ -363,17 +363,17 @@ start_sysinit (void)
       nvram_set ("wan_ifnames", "eth1");
       break;
 
-	case ROUTER_BUFFALO_WBR54G:  //for WLA-G54
+    case ROUTER_BUFFALO_WBR54G:	//for WLA-G54
       nvram_set ("wan_ifname", "eth1");
-      nvram_set ("wan_ifnames", "eth1");	
-      if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))  // = no lan
-      	{
-	    nvram_set ("lan_ifnames", "eth2");
-      	nvram_set ("wan_ifname", "eth0");
-      	nvram_set ("wan_ifnames", "eth0");
-  		}
+      nvram_set ("wan_ifnames", "eth1");
+      if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))	// = no lan
+	{
+	  nvram_set ("lan_ifnames", "eth2");
+	  nvram_set ("wan_ifname", "eth0");
+	  nvram_set ("wan_ifnames", "eth0");
+	}
       break;
-            
+
     case ROUTER_BUFFALO_WLI2_TX1_G54:
     case ROUTER_BUFFALO_WLAG54C:
     case ROUTER_WAP54G_V1:
@@ -383,12 +383,12 @@ start_sysinit (void)
       nvram_set ("wan_ifname", "eth0");	//WAN to nonexist. iface.
       nvram_set ("wan_ifnames", "eth0");
       nvram_set ("port_swap", "1");
-      if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))  // = no lan
-      	{
-	    nvram_set ("lan_ifnames", "eth2");
-      	nvram_set ("wan_ifname", "eth1");
-      	nvram_set ("wan_ifnames", "eth1");
-  		}
+      if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))	// = no lan
+	{
+	  nvram_set ("lan_ifnames", "eth2");
+	  nvram_set ("wan_ifname", "eth1");
+	  nvram_set ("wan_ifnames", "eth1");
+	}
       break;
 
     case ROUTER_MOTOROLA_WE800G:
@@ -398,12 +398,12 @@ start_sysinit (void)
       nvram_set ("wan_ifnames", "eth0");
       nvram_set ("port_swap", "1");
       eval ("gpio", "disable", "7");
-      if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))  // = no lan
-      	{
-	    nvram_set ("lan_ifnames", "eth2");
-      	nvram_set ("wan_ifname", "eth1");
-      	nvram_set ("wan_ifnames", "eth1");
-  		}
+      if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))	// = no lan
+	{
+	  nvram_set ("lan_ifnames", "eth2");
+	  nvram_set ("wan_ifname", "eth1");
+	  nvram_set ("wan_ifnames", "eth1");
+	}
       break;
 
     case ROUTER_MOTOROLA_V1:
@@ -421,21 +421,21 @@ start_sysinit (void)
       nvram_set ("wan_ifname", "eth1");
       nvram_set ("wan_ifnames", "eth1");
       break;
-      
+
     case ROUTER_WRT54G1X:
-    if (check_vlan_support ())
-	    {
-    	    nvram_set ("lan_ifnames", "vlan0 eth2");
-    	    nvram_set ("wan_ifname", "vlan1");
-    	    nvram_set ("wan_ifnames", "vlan1");	    
-	    }
-    break;
-    
+      if (check_vlan_support ())
+	{
+	  nvram_set ("lan_ifnames", "vlan0 eth2");
+	  nvram_set ("wan_ifname", "vlan1");
+	  nvram_set ("wan_ifnames", "vlan1");
+	}
+      break;
+
     case ROUTER_WRT350N:
       nvram_set ("wan_ifname", "vlan2");
       nvram_set ("wan_ifnames", "vlan2");
       break;
-      
+
     case ROUTER_BUFFALO_WZRG144NH:
       nvram_set ("wan_ifname", "vlan1");
       nvram_set ("wan_ifnames", "vlan1");
@@ -460,12 +460,12 @@ start_sysinit (void)
       nvram_set ("wl0_ifname", "eth1");
       nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
       nvram_set ("wan_ifnames", "eth2");
-      if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))  // = no lan
-      	{
-	    nvram_set ("lan_ifnames", "eth1");
-      	nvram_set ("wan_ifname", "eth0");
-      	nvram_set ("wan_ifnames", "eth0");
-  		}
+      if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))	// = no lan
+	{
+	  nvram_set ("lan_ifnames", "eth1");
+	  nvram_set ("wan_ifname", "eth0");
+	  nvram_set ("wan_ifnames", "eth0");
+	}
       break;
 
     case ROUTER_DELL_TRUEMOBILE_2300_V2:	//we must fix cfe defaults with CR added
@@ -479,7 +479,7 @@ start_sysinit (void)
       nvram_set ("gpio5", "adm_rc");
       nvram_unset ("gpio6");
       break;
-   
+
     }
 
   /* ifnames */
@@ -487,7 +487,7 @@ start_sysinit (void)
   strcpy (wlifname, nvram_safe_get ("wl0_ifname"));
 
   /* set pppoe_wan_ifname */
-  nvram_set ("pppoe_wan_ifname", wanifname); 
+  nvram_set ("pppoe_wan_ifname", wanifname);
 
   /* Modules */
   uname (&name);
@@ -523,7 +523,7 @@ start_sysinit (void)
 	      eval ("insmod", "switch-core");
 	      if (eval ("insmod", "switch-robo"))
 		eval ("insmod", "switch-adm");
-		  break;
+	      break;
 
 	    case ROUTER_RT480W:
 	    case ROUTER_BUFFALO_WLI2_TX1_G54:
@@ -532,9 +532,9 @@ start_sysinit (void)
 				"") ? nvram_safe_get ("ct_modules") : "";
 	      eval ("insmod", "switch-core");
 	      if (eval ("insmod", "switch-robo"))
-		eval ("insmod", "switch-adm");		
+		eval ("insmod", "switch-adm");
 	      break;
-	      
+
 	    case ROUTER_WRT54G3G:
 	      modules =
 		nvram_invmatch ("ct_modules",
@@ -601,8 +601,7 @@ start_sysinit (void)
 	      else
 		modules =
 		  nvram_invmatch ("ct_modules",
-				  "") ? nvram_safe_get ("ct_modules") :
-		  "";
+				  "") ? nvram_safe_get ("ct_modules") : "";
 	      break;
 	    }
 	}
@@ -680,7 +679,7 @@ int
 check_cfe_nv (void)
 {
   int ret = 0;
-
+  nvram_set ("portprio_support", "1");
   switch (getRouterBrand ())
     {
     case ROUTER_BUFFALO_WZRRSG54:
@@ -911,7 +910,7 @@ overclock (void)
 void
 start_overclocking (void)
 {
-cprintf("Overclocking...\n");
+  cprintf ("Overclocking...\n");
   overclock ();
-cprintf("Overclocking, done\n");
+  cprintf ("Overclocking, done\n");
 }

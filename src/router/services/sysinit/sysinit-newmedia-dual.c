@@ -148,9 +148,11 @@ start_sysinit (void)
   return 0;
   cprintf ("done\n");
 }
+
 int
 check_cfe_nv (void)
 {
+  nvram_set ("portprio_support", "0");
   return 0;
 }
 
@@ -159,6 +161,7 @@ check_pmon_nv (void)
 {
   return 0;
 }
+
 void
 start_overclocking (void)
 {

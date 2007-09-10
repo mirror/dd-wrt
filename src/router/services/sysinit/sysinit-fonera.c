@@ -107,9 +107,9 @@ start_sysinit (void)
 
   if (brand == ROUTER_BOARD_FONERA2200)
     {
-    eval ("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-    eval ("/sbin/vconfig", "add","eth0","0"); // lan 
-    eval ("/sbin/vconfig", "add","eth0","1"); // wan
+      eval ("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+      eval ("/sbin/vconfig", "add", "eth0", "0");	// lan 
+      eval ("/sbin/vconfig", "add", "eth0", "1");	// wan
     }
 //  eval ("insmod", "ipv6");
 
@@ -119,9 +119,11 @@ start_sysinit (void)
 
   return 0;
 }
+
 int
 check_cfe_nv (void)
 {
+  nvram_set ("portprio_support", "0");
   return 0;
 }
 
@@ -130,6 +132,7 @@ check_pmon_nv (void)
 {
   return 0;
 }
+
 void
 start_overclocking (void)
 {
