@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Script to start/stop spanning tree called from kernel
 # Make sure umask is sane
@@ -8,7 +8,7 @@ umask 022
 PATH="/sbin:/usr/sbin:/bin:/usr/bin"
 export PATH
 
-if [ $# -ne 2 ]; then
+if [ "$#" -ne 2 ]; then
    echo "Usage: bridge-stp <bridge> {start|stop}"
    exit 1
 fi
@@ -25,8 +25,9 @@ checkpid() {
 	        local line p
 		read line < "$pid_file"
 		for p in $line ; do
-			[ -z "${p//[0-9]/}" -a -d "/proc/$p" ] && pid="$pid $p"
+			[ -d "/proc/$p" ] && pid="$pid $p"
 		done
+		
 	        if [ -n "$pid" ]; then
 	                return 0
 	        fi
@@ -38,7 +39,7 @@ checkpid() {
 daemon() {
     local pid
     checkpid $pid_file
-
+    echo $pid
     [ -n "$pid" ] && return
     # start it
     /sbin/rstpd
@@ -53,9 +54,9 @@ start() {
 case $2 in
      start) 
 	daemon
-	exec /sbin/rstpctl $bridge on ;;
+	exec /sbin/rstpctl rstp $bridge on ;;
      stop)  
-	exec /sbin/rstpctl $bridge off ;;
+	exec /sbin/rstpctl rstp $bridge off ;;
      *)
      	echo "Unknown action:" $2
 	echo "Usage: bridge-stp <bridge> {start|stop}"

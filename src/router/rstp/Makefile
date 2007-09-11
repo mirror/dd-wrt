@@ -1,5 +1,5 @@
 
-DSOURCES =  brstate.c libnetlink.c epoll_loop.c bridge_track.c \
+DSOURCES =  brstate.c libnetlink.c epoll.o epoll_loop.c bridge_track.c \
 	   packet.c ctl_socket.c netif_utils.c main.c brmon.c
 
 DOBJECTS = $(DSOURCES:.c=.o)
@@ -32,7 +32,7 @@ clean:
 install: all
 	install -m 755 -d $(INSTALLDIR)/sbin
 	install -m 755 rstpd $(INSTALLDIR)/sbin
-	install -m 755 bridge-stp $(INSTALLDIR)/sbin
+	install -m 755 bridge-stp $(INSTALLDIR)/sbin/bridge-stp2
 	install -m 755 rstpctl $(INSTALLDIR)/sbin
 
 # RPM Building, as non root

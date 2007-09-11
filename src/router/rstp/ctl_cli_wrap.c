@@ -27,7 +27,7 @@
 #include "ctl_socket_client.h"
 #include "log.h"
 
-CLIENT_SIDE_FUNCTION(enable_bridge_rstp)
+    CLIENT_SIDE_FUNCTION(enable_bridge_rstp)
     CLIENT_SIDE_FUNCTION(get_bridge_state)
     CLIENT_SIDE_FUNCTION(set_bridge_config)
     CLIENT_SIDE_FUNCTION(get_port_state)
