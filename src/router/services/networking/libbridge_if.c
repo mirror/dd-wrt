@@ -160,9 +160,13 @@ br_set (const char *bridge, const char *name,
 }
 
 int
-br_set_bridge_forward_delay (const char *br, struct timeval *tv)
+br_set_bridge_forward_delay (const char *br, int sec)
 {
-  return br_set (br, "forward_delay", __tv_to_jiffies (tv),
+  struct timeval tv;
+  tv.tv_sec = sec;
+  tv.tv_usec = 0;
+
+  return br_set (br, "forward_delay", __tv_to_jiffies (&tv),
 		 BRCTL_SET_BRIDGE_FORWARD_DELAY);
 }
 
