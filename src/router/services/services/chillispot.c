@@ -79,41 +79,7 @@ start_chilli (void)
   fprintf (fp, "radiusserver1 %s\n", nvram_get ("chilli_radius"));
   fprintf (fp, "radiusserver2 %s\n", nvram_get ("chilli_backup"));
   fprintf (fp, "radiussecret %s\n", nvram_get ("chilli_pass"));
-  if (nvram_match ("chilli_interface", "wlan")
-      || nvram_match ("chilli_interface", "wan"))
-    {
-#ifdef HAVE_MADWIFI
-      if (nvram_match ("ath0_mode", "ap"))
-	fprintf (fp, "dhcpif ath0\n");
-      else
-	fprintf (fp, "dhcpif ath1\n");
-#else
-#ifndef HAVE_MSSID
-      fprintf (fp, "dhcpif %s\n", get_wdev ());
-#else
-      if (nvram_match ("wl0_mode", "apsta"))
-	{
-	  fprintf (fp, "dhcpif wl0.1\n");
-	}
-      else
-	{
-	  fprintf (fp, "dhcpif %s\n", get_wdev ());
-	}
-#endif
-#endif
-    }
-  else
-    {
-      if (nvram_match ("chilli_interface", "wanwlan"))
-	{
-	  fprintf (fp, "dhcpif br0\n");
-	}
-      else
-	{
-
-	  fprintf (fp, "dhcpif vlan0\n");
-	}
-    }
+  fprintf (fp, "dhcpif %s\n",nvram_safe_get("chilli_interface"));
 
   fprintf (fp, "uamserver %s\n", nvram_get ("chilli_url"));
   if (nvram_invmatch ("chilli_dns1", "0.0.0.0")
