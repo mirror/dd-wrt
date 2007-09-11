@@ -5673,7 +5673,9 @@ struct ej_handler ej_handlers[] = {
   {"exec_show_subscribers", ej_show_subscribers},
   {"exec_mf_test", ej_mf_test},
 #endif
-
+#ifdef HAVE_CHILLI
+  {"show_chilliif",ej_show_chilliif},
+#endif
   {NULL, NULL}
 };
 #endif /* !WEBS */
