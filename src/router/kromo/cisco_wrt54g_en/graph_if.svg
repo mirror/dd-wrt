@@ -125,7 +125,7 @@ var plot_out = new Array();
 var max_num_points = 120;  // maximum number of plot data points
 var step = 600 / max_num_points ;
 var unit = 'bits';
-var scale_type = 'follow';
+var scale_type = status_band.follow;
 
 var fetch_url='';
 
@@ -232,10 +232,10 @@ function plot_data(obj) {
 	SVGDoc.getElementById('graph_out_txt').firstChild.data = formatSpeed(plot_out[index_plot], unit);
 
 	// determine peak for sensible scaling
-	if (scale_type == 'up') {
+	if (scale_type == status_band.up) {
 		if (plot_in[index_plot] > max) max = plot_in[index_plot];
 		if (plot_out[index_plot] > max) max = plot_out[index_plot];
-	} else if (scale_type == 'follow') {
+	} else if (scale_type == status_band.follow) {
 		i = 0;
 		max = 0;
 		while (i < plot_in.length) {
