@@ -109,6 +109,9 @@ endif
 ifeq ($(CONFIG_USB),y)
 CFLAGS += -DHAVE_USB
 endif
+ifeq ($(CONFIG_RSTP),y)
+CFLAGS += -DHAVE_RSTP
+endif
 ifeq ($(CONFIG_VLANTAGGING),y)
 CFLAGS += -DHAVE_VLANTAGGING
 endif

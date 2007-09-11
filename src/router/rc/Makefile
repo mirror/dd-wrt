@@ -314,6 +314,10 @@ ifeq ($(CONFIG_SVQOS),y)
 CFLAGS += -DHAVE_SVQOS
 endif
 
+ifeq ($(CONFIG_RSTP),y)
+CFLAGS += -DHAVE_RSTP
+endif
+
 ifeq ($(CONFIG_SNMP),y)
 CFLAGS += -DHAVE_SNMP
 endif
