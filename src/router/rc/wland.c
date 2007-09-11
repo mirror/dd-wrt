@@ -90,7 +90,8 @@ do_ap_watchdog (void)
       wl_ioctl (get_wdev (), WLC_UP, NULL, 0);
 
       eval ("/usr/sbin/wlconf", get_wdev (), "down");
-      wlconf_up (get_wdev ());
+      eval("startservice","wlconf");
+//      wlconf_up (get_wdev ());
 
     }
 
@@ -321,7 +322,7 @@ do_client_check (void)
 
   system2 ("/usr/sbin/wl assoc 2>&1 > /tmp/.xassocx");
   if ((fp = fopen ("/tmp/.xassocx", "r")) == NULL)
-    return -1;
+    return;
 
   len = fread (buf, 1, 1023, fp);
 
