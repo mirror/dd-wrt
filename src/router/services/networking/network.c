@@ -3434,12 +3434,12 @@ start_wds_check (void)
       sprintf (wdsdevname, "wl_wds%d_if", s);
       dev = nvram_safe_get (wdsdevname);
 
-      if (nvram_invmatch (wdsvarname, "1"))
+      if (nvram_match (wdsvarname, "0"))   // wds_s disabled
 	continue;
 
       memset (&ifr, 0, sizeof (struct ifreq));
 
-      snprintf (ifr.ifr_name, IFNAMSIZ, wdsdevname);
+      snprintf (ifr.ifr_name, IFNAMSIZ, dev);
       ioctl (sock, SIOCGIFFLAGS, &ifr);
 
       if ((ifr.ifr_flags & (IFF_RUNNING | IFF_UP)) == (IFF_RUNNING | IFF_UP))
