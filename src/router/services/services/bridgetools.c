@@ -63,6 +63,94 @@ brctl_main (int argc, char **argv)
   br_shutdown ();
 }
 #else
+
+
+
+#if 0
+
+int
+br_set_stp_state (const char *br, int stp_state)
+{
+  if (!ifexists (br))
+    return -1;
+  if (stp_state == 1)
+    {
+//      syslog (LOG_INFO, "stp is set to on\n");
+      return eval ("/sbin/rstpctl", "rstp", br, "on");
+    }
+  else
+    {
+//      syslog (LOG_INFO, "stp is set to off\n");
+      return eval ("/sbin/rstpctl", "rstp", br, "off");
+    }
+}
+int
+br_set_port_prio (const char *br, char *port, char *prio)
+{
+  if (!ifexists (br))
+    return -1;
+  return eval ("/sbin/rstpctl", "setportprio", br, port, prio);
+}
+
+int
+br_set_bridge_prio (const char *br, char *prio)
+{
+  if (!ifexists (br))
+    return -1;
+  return eval ("/sbin/rstpctl", "setbridgeprio", br, prio);
+}
+
+int
+br_set_bridge_forward_delay (const char *br, int sec)
+{
+  char delay[32];
+  sprintf (delay, "%d", sec);
+  return eval ("/sbin/rstpctl", "setfdelay", br, delay);
+
+}
+#else
+int
+br_set_bridge_forward_delay (const char *br, int sec)
+{
+  char delay[32];
+  sprintf (delay, "%d", sec);
+  return eval ("/usr/sbin/brctl", "setfd", br, delay);
+}
+
+int
+br_set_stp_state (const char *br, int stp_state)
+{
+  if (!ifexists (br))
+    return -1;
+  if (stp_state == 1)
+    {
+//      syslog (LOG_INFO, "stp is set to on\n");
+      return eval ("/usr/sbin/brctl", "stp", br, "on");
+    }
+  else
+    {
+//      syslog (LOG_INFO, "stp is set to off\n");
+      return eval ("/usr/sbin/brctl", "stp", br, "off");
+    }
+}
+int
+br_set_port_prio (const char *br, char *port, char *prio)
+{
+  if (!ifexists (br))
+    return -1;
+  return eval ("/usr/sbin/brctl", "setportprio", br, port, prio);
+}
+
+int
+br_set_bridge_prio (const char *br, char *prio)
+{
+  if (!ifexists (br))
+    return -1;
+  return eval ("/usr/sbin/brctl", "setbridgeprio", br, prio);
+}
+
+
+#endif
 int
 br_add_bridge (const char *brname)
 {
@@ -97,20 +185,4 @@ br_del_interface (const char *br, const char *dev)
   return eval ("/usr/sbin/brctl", "delif", br, dev);
 }
 
-int
-br_set_stp_state (const char *br, int stp_state)
-{
-  if (!ifexists (br))
-    return -1;
-  if (stp_state == 1)
-    {
-//      syslog (LOG_INFO, "stp is set to on\n");
-      return eval ("/usr/sbin/brctl", "stp", br, "on");
-    }
-  else
-    {
-//      syslog (LOG_INFO, "stp is set to off\n");
-      return eval ("/usr/sbin/brctl", "stp", br, "off");
-    }
-}
 #endif

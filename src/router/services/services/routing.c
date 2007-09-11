@@ -193,11 +193,11 @@ zebra_ospf_init (void)
   if (strlen (nvram_safe_get ("ospfd_conf")) > 0)
     {
       char *addconf = nvram_safe_get ("ospfd_conf");
-      i=0;
+      i = 0;
       do
 	{
-	  if (addconf[i]!=0xd)
-	  putc (addconf[i], fp);
+	  if (addconf[i] != 0xd)
+	    putc (addconf[i], fp);
 	}
       while (addconf[i++]);
     }

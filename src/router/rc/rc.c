@@ -318,7 +318,6 @@ main_loop (void)
 #endif
 
   fclose (fp);
-
   /* Loop forever */
   for (;;)
     {
@@ -401,6 +400,10 @@ main_loop (void)
 #ifdef HAVE_MADWIFI
 	  stop_service ("stabridge");
 #endif
+#ifdef HAVE_RSTP
+eval("killall","rstpd");
+unlink("/tmp/.rstp_server");
+#endif
 #ifdef HAVE_VLANTAGGING
 	  stop_service ("bridging");
 #endif
@@ -467,10 +470,10 @@ main_loop (void)
 	  start_service ("vlantagging");
 	  start_service ("bridgesif");
 #endif
-
 #ifdef HAVE_REGISTER
 	  start_service ("mkfiles");
 #endif
+
 
 	  cprintf ("start services\n");
 	  start_services ();
@@ -493,7 +496,7 @@ main_loop (void)
 	      eval ("/sbin/ifconfig", get_wdev (), "up");
 	    }
 #ifdef HAVE_MADWIFI
-	  start_service ("stabridge");
+    	  start_service ("stabridge");
 #endif
 #ifndef HAVE_MADWIFI
 	  start_service ("nas");
@@ -530,6 +533,12 @@ main_loop (void)
 #endif
 	  cprintf ("start syslog\n");
 	  startstop ("syslog");
+#ifdef HAVE_RSTP
+//just experimental for playing
+  eval("brctl","stp","br0","off");
+  eval("rstpd");
+  eval("rstpctl","rstp","br0","on");
+#endif
 
 	  system ("/etc/postinit");
 

@@ -64,7 +64,7 @@ stop_vlantagging (void)
     sprintf (vlan_name, "%s.%s", tag, port);
     if (ifexists (vlan_name))
       {
-      eval ("vconfig", "rem", vlan_name);
+	eval ("vconfig", "rem", vlan_name);
       }
   }
 }
@@ -72,9 +72,10 @@ void
 start_bridgesif (void)
 {
   if (nvram_match ("lan_stp", "0"))
-    eval ("brctl", "stp", "br0", "off");
+    br_set_stp_state ("br0", 0);
   else
-    eval ("brctl", "stp", "br0", "on");
+    br_set_stp_state ("br0", 1);
+
   static char word[256];
   char *next, *wordlist;
   wordlist = nvram_safe_get ("bridgesif");
@@ -88,9 +89,9 @@ start_bridgesif (void)
       break;
     if (strncmp (tag, "EOP", 3))
       {
-	eval ("brctl", "addif", tag, port);
+	br_add_interface (tag, port);
 	if (prio)
-	  eval ("brctl", "setportprio", tag, port, prio);
+	  br_set_port_prio (tag, port, prio);
       }
   }
 
@@ -115,13 +116,13 @@ start_bridging (void)
     char netmask[32];
     sprintf (netmask, "%s_netmask", tag);
 
-    eval ("brctl", "addbr", tag);
+    br_add_bridge (tag);
     if (!strcmp (port, "On"))
       br_set_stp_state (tag, 1);
     else
       br_set_stp_state (tag, 0);
     if (prio)
-      eval ("brctl", "setbridgeprio", tag, prio);
+      br_set_bridge_prio (tag, prio);
     if (!nvram_match (ipaddr, "0.0.0.0") && !nvram_match (netmask, "0.0.0.0"))
       {
 	eval ("ifconfig", tag, nvram_safe_get (ipaddr), "netmask",
@@ -207,7 +208,7 @@ stop_bridgesif (void)
     if (!tag || !port)
       break;
     if (ifexists (port))
-      eval ("brctl", "delif", tag, port);
+      br_del_interface (tag, port);
   }
 }
 
@@ -228,7 +229,7 @@ stop_bridging (void)
     if (ifexists (tag))
       {
 	eval ("ifconfig", tag, "down");
-	eval ("brctl", "delbr", tag);
+	br_del_bridge (tag);
       }
   }
 }
