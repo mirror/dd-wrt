@@ -33,7 +33,7 @@ start_pppoerelay (void)
   if (nvram_match ("pppoerelay_enable", "1"))
     {
 #ifdef HAVE_MADWIFI
-      if (getSTA())
+      if (getSTA ())
 	eval ("pppoe-relay", "-S", getSTA (), "-C", "br0");
       else
 #else

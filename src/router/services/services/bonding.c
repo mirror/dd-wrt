@@ -56,7 +56,7 @@ start_bonding (void)
       sprintf (word, "bond%d", i);
       char *br = getRealBridge (word);
       if (br)
-	eval ("brctl", "addif", br, word);
+	br_add_interface (br, word);
 
     }
 }
@@ -72,7 +72,7 @@ stop_bonding (void)
 	{
 	  char *br = getRealBridge (bond);
 	  if (br)
-	    eval ("brctl", "delif", br, bond);
+	    br_del_interface (br, bond);
 	  eval ("ifconfig", bond, "down");
 	}
     }

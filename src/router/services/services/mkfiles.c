@@ -104,6 +104,7 @@ start_mkfiles (void)
 
   system2 ("/bin/mkdir -p /var/spool");
   system2 ("/bin/mkdir -p /var/spool/cron");
+  system2 ("/bin/mkdir -p /var/lock/subsys");
   system2 ("/bin/mkdir -p /var/spool/cron/crontabs");
   system2 ("/bin/touch /var/spool/cron/crontabs/root");
   system2 ("/bin/mkdir -p /var/lib");

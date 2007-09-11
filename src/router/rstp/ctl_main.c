@@ -830,6 +830,7 @@ int main(int argc, char *const *argv)
 
 	if (ctl_client_init()) {
 		fprintf(stderr, "can't setup control connection\n");
+	ctl_client_cleanup();
 		return 1;
 	}
 

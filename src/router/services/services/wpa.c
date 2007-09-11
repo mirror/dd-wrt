@@ -256,8 +256,9 @@ start_nas_wan (void)
     }
 #endif
 }
+
 #ifdef HAVE_WPA_SUPPLICANT
-extern void setupSupplicant(char *prefix);
+extern void setupSupplicant (char *prefix);
 #endif
 int
 start_nas (void)
@@ -272,11 +273,11 @@ start_nas (void)
     {
       cprintf ("start nas wan\n");
 #ifdef HAVE_WPA_SUPPLICANT
-      if (nvram_match("wl0_akm","8021X") && nvram_match("wl0_mode","sta"))
-        setupSupplicant("wl0");
+      if (nvram_match ("wl0_akm", "8021X") && nvram_match ("wl0_mode", "sta"))
+	setupSupplicant ("wl0");
       else
 #endif
-      start_nas_wan ();
+	start_nas_wan ();
 
     }
   else
@@ -523,7 +524,7 @@ stop_nas (void)
       killall ("nas", SIGKILL);
     }
 #ifdef HAVE_WPA_SUPPLICANT
-    killall ("wpa_supplicant",SIGKILL);
+  killall ("wpa_supplicant", SIGKILL);
 #endif
 // clean
 #ifdef HAVE_MSSID

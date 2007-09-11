@@ -1234,19 +1234,13 @@ start_lan (void)
     {
       br_add_bridge (lan_ifname);
 #ifdef HAVE_MICRO
-      struct timeval tv;
-      tv.tv_sec = 1;
-      tv.tv_usec = 0;
-      br_set_bridge_forward_delay (lan_ifname, &tv);
+      br_set_bridge_forward_delay (lan_ifname, 1);
 #else
-      eval ("brctl", "setfd", lan_ifname, "1");
+      br_set_bridge_forward_delay (lan_ifname, 1);
 #endif
-      //eval ("brctl", "addbr", lan_ifname);
-      //eval ("brctl", "setfd", lan_ifname, "0");
       if (check_hw_type () != BCM4702_CHIP)
 	{
 	  br_set_stp_state (lan_ifname, 0);
-	  //eval ("brctl", "stp", lan_ifname, "off");
 	}
       else
 	br_set_stp_state (lan_ifname, 1);
@@ -1388,12 +1382,7 @@ start_lan (void)
 	cprintf ("configure %s\n", name);
 	if (strcmp (name, "wl0"))	//check if the interface is a buffalo wireless
 	  {
-//#ifdef HAVE_PORTSETUP
 	    do_portsetup (lan_ifname, name);
-//#else
-//          br_add_interface (lan_ifname, name);
-//#endif
-	    //eval ("brctl", "addif", lan_ifname, name);
 	  }
 	else
 	  {
@@ -1728,18 +1717,8 @@ start_lan (void)
 	  br_del_bridge ("br1");
 	  br_add_bridge ("br1");
 
-#ifdef HAVE_MICRO
-	  struct timeval tv;
-	  tv.tv_sec = 1;
-	  tv.tv_usec = 0;
-	  br_set_bridge_forward_delay (lan_ifname, &tv);
-#else
-	  eval ("brctl", "setfd", lan_ifname, "1");
-#endif
+	  br_set_bridge_forward_delay (lan_ifname, 1);
 
-	  //eval ("brctl", "delbr", "br1");
-	  //eval ("brctl", "addbr", "br1");
-	  //eval ("brctl", "setfd", "br1", "0");
 
 	  if (nvram_match ("lan_stp", "0"))
 	    br_set_stp_state ("br1", 0);	//eval ("brctl", "stp", "br1", "off");
@@ -1950,7 +1929,6 @@ start_lan (void)
   else
     br_set_stp_state ("br0", 1);
 
-  //system ("/usr/sbin/brctl stp br0 off");
 
   free (lan_ifnames);
   free (lan_ifname);
@@ -2005,10 +1983,8 @@ stop_lan (void)
 #endif
 	ifconfig (name, 0, NULL, NULL);
 	br_del_interface (lan_ifname, name);
-	//eval ("brctl", "delif", lan_ifname, name);
       }
       br_del_bridge (lan_ifname);
-      //eval ("brctl", "delbr", lan_ifname);
     }
   /* Bring down specific interface */
 #ifndef HAVE_MADWIFI
@@ -2814,7 +2790,6 @@ start_wan_done (char *wan_ifname)
 #endif
 
       br_set_stp_state (nvram_safe_get ("lan_ifname"), 0);
-      //eval ("brctl", "stp", nvram_safe_get ("lan_ifname"), "off");
     }
   else
     {
@@ -2924,19 +2899,16 @@ start_wan_done (char *wan_ifname)
 
 #ifndef HAVE_MSSID
   br_del_interface (nvram_safe_get ("lan_ifname"), get_wdev ());
-  //eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
   ifconfig (get_wdev (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
 #else
   if (nvram_match ("wl0_mode", "apsta"))
     {
       br_del_interface (nvram_safe_get ("lan_ifname"), "wl0.1");
-//      eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), "wl0.1");
       ifconfig ("wl0.1", IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
     }
   else if (nvram_match ("wl0_mode", "ap"))
     {
       br_del_interface (nvram_safe_get ("lan_ifname"), get_wdev ());
-//      eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
       ifconfig (get_wdev (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
     }
 #ifdef HAVE_CHILLI
@@ -2951,19 +2923,16 @@ start_wan_done (char *wan_ifname)
     {
 #ifndef HAVE_MSSID
       br_del_interface (nvram_safe_get ("lan_ifname"), get_wdev ());
-//      eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
       ifconfig (get_wdev (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
 #else
       if (nvram_match ("wl0_mode", "apsta"))
 	{
 	  br_del_interface (nvram_safe_get ("lan_ifname"), "wl0.1");
-//        eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), "wl0.1");
 	  ifconfig ("wl0.1", IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
 	}
       else if (nvram_match ("wl0_mode", "ap"))
 	{
 	  br_del_interface (nvram_safe_get ("lan_ifname"), get_wdev ());
-//        eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), get_wdev ());
 	  ifconfig (get_wdev (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
 	}
 #ifdef HAVE_CHILLI
@@ -3060,7 +3029,6 @@ stop_wan (void)
 #endif
 
     }
-//    eval ("brctl", "addif", nvram_safe_get ("lan_ifname"), getwlif ());
 
   cprintf ("done\n");
 }
@@ -3276,7 +3244,7 @@ start_hotplug_net (void)
 		  devname, getenv ("WDSNODE"));
 	  eval ("ifconfig", devname, "up");
 	  if (nvram_match (bridged, "1"))
-	    eval ("brctl", "addif", getBridge (interface), devname);
+	    br_add_interface (getBridge (interface), devname);
 	}
       if (!strcmp (devaction, "wds_del"))
 	{
@@ -3287,7 +3255,7 @@ start_hotplug_net (void)
 		  devname, getenv ("WDSNODE"));
 	  eval ("ifconfig", devname, "down");
 	  if (nvram_match (bridged, "1"))
-	    eval ("brctl", "delif", getBridge (interface), devname);
+	    br_del_interface (getBridge (interface), devname);
 	  eval ("vconfig", "rem", devname);
 	}
     }
@@ -3434,7 +3402,7 @@ start_wds_check (void)
       sprintf (wdsdevname, "wl_wds%d_if", s);
       dev = nvram_safe_get (wdsdevname);
 
-      if (nvram_match (wdsvarname, "0"))   // wds_s disabled
+      if (nvram_match (wdsvarname, "0"))	// wds_s disabled
 	continue;
 
       memset (&ifr, 0, sizeof (struct ifreq));
@@ -3473,10 +3441,6 @@ start_wds_check (void)
 #ifdef HAVE_MICRO
 	  br_shutdown ();
 #endif
-
-	  //  eval("killall","-9","nas");
-	  //eval ("brctl", "addif", "br1", dev);
-//        notify_nas ("lan", "br1", "up");
 	}
       /* LAN WDS type */
       else if (nvram_match (wdsvarname, "3"))
@@ -3486,8 +3450,6 @@ start_wds_check (void)
 	  br_init ();
 #endif
 	  br_add_interface ("br0", dev);
-//        eval("killall","-9","nas");
-//        eval ("brctl", "addif", "br0", dev);
 #ifdef HAVE_MICRO
 	  br_shutdown ();
 #endif
@@ -3522,7 +3484,6 @@ start_wds_check (void)
 
     }
 
-  //system ("/usr/sbin/brctl stp br0 off");
 
   return;
 }
