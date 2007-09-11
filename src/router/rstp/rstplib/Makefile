@@ -21,9 +21,9 @@
 #**********************************************************************/
 
 DEFS=
-CC = gcc
+#CC = gcc
 #CFLAGS = -g -Wall -D_REENTRANT -D__LINUX__ -DSTP_DBG=1 
-CFLAGS = -g -O -Wall -D_REENTRANT -D__LINUX__
+CFLAGS = $(COPTS) -O -Wall -D_REENTRANT -D__LINUX__
 
 INCLUDES = -I.
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS)
