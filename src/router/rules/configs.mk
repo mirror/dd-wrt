@@ -148,6 +148,7 @@ obj-$(CONFIG_HOSTAPD2) += hostapd2
 obj-$(CONFIG_WPA_SUPPLICANT2) += wpa_supplicant2
 obj-$(CONFIG_MIITOOL) += net-tools
 obj-$(CONFIG_TOR) += tor
+obj-$(CONFIG_RSTP) += rstp
 
 
 obj-configure := $(foreach obj,$(obj-y) $(obj-n),$(obj)-configure)
