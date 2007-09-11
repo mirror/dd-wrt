@@ -843,12 +843,16 @@ int main(int argc, char *const *argv)
 	if (argc < cmd->nargs + 1 || argc > cmd->nargs + cmd->optargs + 1) {
 		printf("Incorrect number of arguments for command\n");
 		printf("Usage: rstpctl %s %s\n", cmd->name, cmd->help);
+	ctl_client_cleanup();
 		return 1;
 	}
 
-	return cmd->func(argc, argv);
+	int ret = cmd->func(argc, argv);
+	ctl_client_cleanup();
+	return ret;
 
       help:
 	help();
+	ctl_client_cleanup();
 	return 1;
 }
