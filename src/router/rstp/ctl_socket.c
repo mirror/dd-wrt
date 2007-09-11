@@ -41,13 +41,11 @@ int server_socket(void)
 	int s;
 
 	TST(strlen(RSTP_SERVER_SOCK_NAME) < sizeof(sa.sun_path), -1);
-
 	s = socket(PF_UNIX, SOCK_DGRAM, 0);
 	if (s < 0) {
 		ERROR("Couldn't open unix socket: %m");
 		return -1;
 	}
-
 	set_socket_address(&sa, RSTP_SERVER_SOCK_NAME);
 
 	if (bind(s, (struct sockaddr *)&sa, sizeof(sa)) != 0) {
@@ -86,7 +84,6 @@ void ctl_rcv_handler(uint32_t events, struct epoll_event_handler *p)
 	struct sockaddr_un sa;
 	struct iovec iov[2];
 	int l;
-
 	msg.msg_name = &sa;
 	msg.msg_namelen = sizeof(sa);
 	msg.msg_iov = iov;
@@ -146,4 +143,5 @@ void ctl_socket_cleanup(void)
 {
 	remove_epoll(&ctl_handler);
 	close(ctl_handler.fd);
+	unlink(RSTP_SERVER_SOCK_NAME);
 }

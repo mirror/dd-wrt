@@ -35,6 +35,7 @@
 #include "log.h"
 
 static int fd = -1;
+static char tmpname[64];
 
 int ctl_client_init(void)
 {
@@ -51,8 +52,7 @@ int ctl_client_init(void)
 	set_socket_address(&sa_svr, RSTP_SERVER_SOCK_NAME);
 
 	struct sockaddr_un sa;
-	char tmpname[64];
-	sprintf(tmpname, "RSTPCTL_%d", getpid());
+	sprintf(tmpname, "/tmp/RSTPCTL_%d", getpid());
 	set_socket_address(&sa, tmpname);
 	/* We need this bind. The autobind on connect isn't working properly.
 	   The server doesn't get a proper sockaddr in recvmsg if we don't do this.
@@ -79,6 +79,7 @@ void ctl_client_cleanup(void)
 		close(fd);
 		fd = -1;
 	}
+	unlink(tmpname);
 }
 
 int send_ctl_message(int cmd, void *inbuf, int lin, void *outbuf, int *lout,
