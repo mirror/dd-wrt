@@ -41,10 +41,10 @@ struct ctl_msg_hdr {
  do {\
   (sa)->sun_family = AF_UNIX; \
   memset((sa)->sun_path, 0, sizeof((sa)->sun_path)); \
-  strcpy((sa)->sun_path + 1, (string)); \
+  strcpy((sa)->sun_path, (string)); \
  } while (0)
 
-#define RSTP_SERVER_SOCK_NAME ".rstp_server"
+#define RSTP_SERVER_SOCK_NAME "/tmp/.rstp_server"
 
 /* COMMANDS */
 

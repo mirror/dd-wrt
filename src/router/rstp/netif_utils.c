@@ -75,13 +75,13 @@ int ethtool_get_speed_duplex(char *ifname, int *speed, int *duplex)
 
 	ecmd.cmd = ETHTOOL_GSET;
 	ifr.ifr_data = (caddr_t) & ecmd;
-	if (ioctl(netsock, SIOCETHTOOL, &ifr) < 0) {
-		ERROR("Cannot get link status for %s: %m\n", ifname);
-		return -1;
-	}
+	if (ioctl(netsock, SIOCETHTOOL, &ifr) < 0) {  // failover
+	    *speed = 100;	/* Ethtool speed is in Mbps */
+	    *duplex = 0;	/* We have same convention as ethtool.*/
+	}else{
 	*speed = ecmd.speed;	/* Ethtool speed is in Mbps */
-	*duplex = ecmd.duplex;	/* We have same convention as ethtool.
-				   0 = half, 1 = full */
+	*duplex = ecmd.duplex;	/* We have same convention as ethtool.*/
+	}			   
 	return 0;
 }
 
