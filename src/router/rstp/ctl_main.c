@@ -166,7 +166,7 @@ static int do_showbridge(const char *br_name)
 
 	printf("BridgeId:        ");
 	print_bridge_id(&uid_state.bridge_id, 0);
-	printf("     Bridge Proirity: %lu (0x%lX)\n",
+	printf("     Bridge Priority: %lu (0x%lX)\n",
 	       (unsigned long)uid_state.bridge_id.prio,
 	       (unsigned long)uid_state.bridge_id.prio);
 	if (uid_cfg.force_version < 2)
