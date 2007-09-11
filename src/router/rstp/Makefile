@@ -9,7 +9,7 @@ CTLSOURCES = ctl_main.c ctl_cli_wrap.c ctl_socket_client.c
 CTLOBJECTS = $(CTLSOURCES:.c=.o)
 
 #CC=gcc
-CFLAGS = -Wall -Werror $(COPTS) -D_REENTRANT -D__LINUX__ -DVERSION=$(version) -DBUILD=$(build) -I. -I./include -I./rstplib
+CFLAGS = -Wall -Werror -DNEED_PRINTF $(COPTS) -D_REENTRANT -D__LINUX__ -DVERSION=$(version) -DBUILD=$(build) -I. -I./include -I./rstplib
 
 all: rstpd rstpctl
 
@@ -32,6 +32,7 @@ clean:
 install: all
 	install -m 755 -d $(INSTALLDIR)/sbin
 	install -m 755 rstpd $(INSTALLDIR)/sbin
+	install -m 755 bridge-stp $(INSTALLDIR)/sbin
 	install -m 755 rstpctl $(INSTALLDIR)/sbin
 
 # RPM Building, as non root
