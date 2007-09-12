@@ -1,4 +1,4 @@
-<% do_pagehead("ddns.titl"); %>
+<<% do_pagehead("ddns.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
 
@@ -129,20 +129,21 @@ addEvent(window, "unload", function() {
 										document.write("<option value=\"0\" <% nvram_selmatch("ddns_enable", "0", "selected"); %> >" + share.disable + "</option>");
 										//]]>
 										</script>
-										<option value="1" <% nvram_selected("ddns_enable", "1"); %>>DynDNS.org</option>
-										<option value="2" <% nvram_selected("ddns_enable", "2"); %>>freedns.afraid.org</option>
-										<option value="3" <% nvram_selected("ddns_enable", "3"); %>>ZoneEdit.com</option>
-										<option value="4" <% nvram_selected("ddns_enable", "4"); %>>No-IP.com</option>
-										<option value="6" <% nvram_selected("ddns_enable", "6"); %>>3322.org</option>
-										<option value="7" <% nvram_selected("ddns_enable", "7"); %>>easyDNS.com</option>
-										<option value="8" <% nvram_selected("ddns_enable", "8"); %>>TZO.com</option>
+										<option value="1" <% nvram_selmatch("ddns_enable", "1", "selected"); %> >DynDNS.org</option>
+										<option value="2" <% nvram_selmatch("ddns_enable", "2", "selected"); %> >freedns.afraid.org</option>
+										<option value="3" <% nvram_selmatch("ddns_enable", "3", "selected"); %> >ZoneEdit.com</option>
+										<option value="4" <% nvram_selmatch("ddns_enable", "4", "selected"); %> >No-IP.com</option>
+										<option value="6" <% nvram_selmatch("ddns_enable", "6", "selected"); %> >3322.org</option>
+										<option value="7" <% nvram_selmatch("ddns_enable", "7", "selected"); %> >easyDNS.com</option>
+										<option value="8" <% nvram_selmatch("ddns_enable", "8", "selected"); %> >TZO.com</option>
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"5\" <% nvram_selected_js("ddns_enable", "5"); %>>" + ddns.custom + "</option>");
+										document.write("<option value=\"5\" <% nvram_selmatch("ddns_enable", "5", "selected"); %> >" + ddns.custom + "</option>");
 										//]]>
 										</script>
 									</select>
 								</div>
+
 
 					<% nvram_selmatch("ddns_enable","0","<!--"); %>
 					<% nvram_selmatch("ddns_enable","2","<!--"); %>
