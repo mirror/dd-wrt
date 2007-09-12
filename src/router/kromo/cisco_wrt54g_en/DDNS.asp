@@ -1,4 +1,4 @@
-<<% do_pagehead("ddns.titl"); %>
+<% do_pagehead("ddns.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
 
