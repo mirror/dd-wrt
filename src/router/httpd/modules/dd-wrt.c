@@ -8423,7 +8423,7 @@ ej_show_chilliif (webs_t wp, int argc, char_t ** argv)
 	     nvram_safe_get ("lan_ifname"), nvram_match ("chilli_interface",
 							 nvram_safe_get
 							 ("lan_ifname")) ?
-	     "selected" : "");
+	     "selected=\"selected\"" : "");
   char *next;
   char var[80];
 #ifndef HAVE_MADWIFI
@@ -8431,13 +8431,13 @@ ej_show_chilliif (webs_t wp, int argc, char_t ** argv)
 	     nvram_safe_get ("wl0_ifname"), nvram_match ("chilli_interface",
 							 nvram_safe_get
 							 ("wl0_ifname")) ?
-	     "selected" : "");
+	     "selected=\"selected\"" : "");
   sprintf (var, "wl0_vifs");
   char *names = nvram_safe_get (var);
   foreach (var, names, next)
   {
     websWrite (wp, "<option value=\"%s\" %s >WLAN</option>\n", var,
-	       nvram_match ("chilli_interface", var) ? "selected" : "");
+	       nvram_match ("chilli_interface", var) ? "selected=\"selected\"" : "");
   }
 #else
   int i;
