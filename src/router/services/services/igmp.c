@@ -49,9 +49,12 @@ start_igmp_proxy (void)
 
   if (nvram_match ("block_multicast", "0"))
     {
-//      if (nvram_match ("wan_proto", "disabled"))
+      if (nvram_match ("wan_proto", "disabled"))
+      {
 //	ret = _eval (igmp_proxybr_argv, NULL, 0, &pid);
-//      else
+    return ret;
+      }
+      else
 	ret = _eval (igmp_proxy_argv, NULL, 0, &pid);
       syslog (LOG_INFO, "igmprt : multicast daemon successfully started\n");
     }
