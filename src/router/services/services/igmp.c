@@ -38,20 +38,20 @@ start_igmp_proxy (void)
     get_wan_face (),
     NULL
   };
-/*
+
   char *igmp_proxybr_argv[] = { "igmprt",
     "-i",
     nvram_safe_get ("lan_ifname"),
     NULL
   };
-*/
+  
   stop_igmp_proxy ();
 
   if (nvram_match ("block_multicast", "0"))
     {
       if (nvram_match ("wan_proto", "disabled"))
       {
-//	ret = _eval (igmp_proxybr_argv, NULL, 0, &pid);
+	ret = _eval (igmp_proxybr_argv, NULL, 0, &pid);
     return ret;
       }
       else
