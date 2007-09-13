@@ -187,10 +187,14 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 #define ROUTER_BOARD_TW6600 0x3801
 
-#define ROUTER_BOARD_PB42 0x390f	// Atheros PB42 prototype (AR5416 MIMO Wifi, 400 Mhz Mips CPU, 32 MB RAM)
+// Atheros PB42 prototype (AR5416 MIMO Wifi, 400 Mhz Mips CPU, 32 MB RAM)
+#define ROUTER_BOARD_PB42 0x390f
 
 // Asus WL500W (MIMO, 4704 cpu, fccid: Asus MSQWL500W)
-#define ROUTER_ASUS_WL500W 0x4006
+#define ROUTER_ASUS_WL500W 0x3a06
+
+// Sitecom WL-111 (4702 cpu, fccid: ?)
+#define ROUTER_SITECOM_WL111 0x3b0f
 
 #define NVROUTER "DD_BOARD"
 
