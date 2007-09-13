@@ -586,9 +586,16 @@ internal_getRouterBrand ()
 
   if (boardnum == 2 && nvram_match ("GemtekPmonVer", "1"))
     {
-      cprintf ("router is Sitecom wl105b\n");
+      cprintf ("router is Sitecom wl-105b\n");
       setRouter ("Sitecom WL-105(b)");
       return ROUTER_SITECOM_WL105B;
+    }
+    
+  if (boardnum == 2 && nvram_match ("GemtekPmonVer", "7") && nvram_match ("boardtype", "bcm94710dev"))
+    {
+      cprintf ("router is Sitecom wl-111\n");
+      setRouter ("Sitecom WL-111");
+      return ROUTER_SITECOM_WL111;
     }
 
   if (nvram_match ("GemtekPmonVer", "9"))	//Must be Motorola wr850g v1 or we800g v1 or Linksys wrt55ag v1
@@ -2365,6 +2372,7 @@ check_vlan_support (void)
     case ROUTER_MOTOROLA_WE800G:
     case ROUTER_WAP54G_V1:
     case ROUTER_SITECOM_WL105B:
+    case ROUTER_SITECOM_WL111:
     case ROUTER_BUFFALO_WLI2_TX1_G54:
     case ROUTER_BUFFALO_WLI_TX4_G54HP:
     case ROUTER_BRCM4702_GENERIC:
