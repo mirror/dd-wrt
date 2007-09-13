@@ -125,6 +125,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
   switch (brand)
     {
     case ROUTER_ASUS_WL500G_PRE:
+    case ROUTER_ASUS_WL500W:
     case ROUTER_WRT54G:
     case ROUTER_MOTOROLA:
     case ROUTER_BUFFALO_WLAG54C:
