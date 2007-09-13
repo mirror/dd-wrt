@@ -1511,7 +1511,7 @@ igmprt_input_thread(void *arg)
 	}
     }
     if (maxfd == 0) {
-	syslog(LOG_NOTICE, "igmp:no interface available\n");
+//	syslog(LOG_NOTICE, "igmp:no interface available\n");
 	return NULL;
     }
     /*
