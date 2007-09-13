@@ -757,7 +757,16 @@ internal_getRouterBrand ()
       return ROUTER_BUFFALO_WBR54G;
     }
 #ifndef HAVE_BUFFALO
-
+  if (nvram_match ("boardtype", "0x048e") &&
+      nvram_match ("boardnum", "42") &&
+      nvram_match ("boardrev", "0x10"))
+    {
+  setRouter ("Linksys WRT54G v8");
+  cprintf ("router is wrt54g v8\n");
+  return ROUTER_WRT54G;
+    
+    }
+  
   setRouter ("Linksys WRT54G/GL/GS");
   cprintf ("router is wrt54g\n");
   return ROUTER_WRT54G;
