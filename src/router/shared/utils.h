@@ -194,7 +194,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_ASUS_WL500W 0x3a06
 
 // Sitecom WL-111 (4702 cpu, fccid: ?)
-#define ROUTER_SITECOM_WL111 0x3b0f
+#define ROUTER_SITECOM_WL111 0x3b10
 
 #define NVROUTER "DD_BOARD"
 
