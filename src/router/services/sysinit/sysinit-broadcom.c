@@ -391,7 +391,14 @@ start_sysinit (void)
 	  nvram_set ("wan_ifnames", "eth1");
 	}
       break;
-
+      
+    case ROUTER_SITECOM_WL111:
+      nvram_set ("lan_ifnames", "eth0 eth2");
+      nvram_set ("wl0_ifname", "eth2");
+      nvram_set ("wan_ifname", "eth1");	
+      nvram_set ("wan_ifnames", "eth1");
+      break;
+      
     case ROUTER_MOTOROLA_WE800G:
       nvram_set ("lan_ifnames", "eth1 eth2");
       nvram_set ("wl0_ifname", "eth2");
