@@ -1029,13 +1029,13 @@ chap_user_remove (webs_t wp)
 void
 milkfish_user_add (webs_t wp)
 {
-//  macro_add ("mf_subscribernum");
+  macro_add ("milkfish_ddsubscribersnum");
 }
 
 void
 milkfish_user_remove (webs_t wp)
 {
-//  macro_rem ("mf_subscribernum", "mf_subscribers");
+  macro_rem ("milkfish_ddsubscribersnum", "milkfish_ddsubscribers");
 }
 #endif
 

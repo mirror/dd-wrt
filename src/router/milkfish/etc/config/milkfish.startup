@@ -49,6 +49,7 @@ cp /etc/openser/dbtext/grp /var/openser/dbtext/
 
 #restore dbtext parts which may have been saved into nvram
 $(which milkfish_services) sipdb restorenv
+$(which milkfish_services) sipdb restorenvdd
 
 # firewall configuration
 #openwrt
