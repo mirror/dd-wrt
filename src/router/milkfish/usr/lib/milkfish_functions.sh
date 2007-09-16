@@ -20,7 +20,7 @@
 #                                                                    #
 # The Milkfish Router Services - Shell Function Library              #
 #                                                                    #
-# Built/Version:  20070701                                           #
+# Built/Version:  20070914                                           #
 # Author/Contact: Franz Streibl <fronce@sipwerk.com>                 #
 # Copyright (C) 2007 by sipwerk - All rights reserved.               #
 #                                                                    #
@@ -478,6 +478,29 @@ mf_sipdb_flushnv () {
     nvram set milkfish_subscriber= && echo "Done."
     mf_feedback "Flushing SIP aliases database in NVRAM..."
     nvram set milkfish_aliases= && echo "Done."
+}
+
+mf_sipdb_restorenvdd () {
+    [ -d /var/openser/dbtext ] &&\
+    mf_feedback "Restoring SIP ddsubscriber database from NVRAM..."
+    if [ ! -z "$(nvram get milkfish_ddsubscribers)" ]; then 
+	nvram get milkfish_ddsubscribers | tr ' ' '\n' | awk -F : '{print "dbtextctl add " $1 " " $2 " " "$(nvram get sip_domain)"}'
+	nvram get milkfish_ddsubscribers | tr ' ' '\n' | awk -F : '{print "dbtextctl add " $1 " " $2 " " "$(nvram get sip_domain)"}' > /tmp/restorenvdd.sh
+	[ -e /tmp/restorenvdd.sh ] && chmod +x /tmp/restorenvdd.sh && /tmp/restorenvdd.sh && rm /tmp/restorenvdd.sh
+	echo "Done."
+    else
+	echo "Empty."
+    fi
+#    mf_feedback "Restoring SIP ddaliases database from NVRAM..."
+#    if [ ! -z "$(nvram get milkfish_ddaliases)" ]; then 
+#	nvram get milkfish_ddaliases | tr ' ' '\n' #| awk -F : '{print "dbtextctl add " $1 " " $2 " " "$(nvram get sip_domain)"}'
+#	nvram get milkfish_ddaliases | tr ' ' '\n' #| awk -F : '{print "dbtextctl add " $1 " " $2 " " "$(nvram get sip_domain)"}' > /tmp/restorenvdd.sh
+#	[ -e /tmp/restorenvdd.sh ] && chmod +x /tmp/restorenvdd.sh && /tmp/restorenvdd.sh && rm /tmp/restorenvdd.sh
+#	echo "Done."
+#    else
+#	echo "Empty."
+#    fi
+    #milkfish_services openserctl restart
 }
 
 mf_sipdb_restorenv () {
