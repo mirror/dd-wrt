@@ -59,7 +59,7 @@ ej_exec_milkfish_service (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
-/*
+
 
 void
 show_subscriber_table (webs_t wp, char *type, int which)
@@ -70,7 +70,7 @@ show_subscriber_table (webs_t wp, char *type, int which)
   char *user, *pass;
   static char new_user[200], new_pass[200];
   int temp;
-  wordlist = nvram_safe_get ("mf_subscribers");
+  wordlist = nvram_safe_get ("milkfish_ddsubscribers");
   temp = which;
 
   foreach (word, wordlist, next)
@@ -93,12 +93,12 @@ show_subscriber_table (webs_t wp, char *type, int which)
             httpd_filter_name (pass, new_pass, sizeof (new_pass), GET);
             websWrite (wp, "%s", new_pass);
           }
-          }
         return;
       }
+   }
 }
 
-*/
+
 
 #define CHAPSHOW(a,b) sprintf(buffer,a,b); do_ej_buffer(buffer,wp);
 
@@ -107,16 +107,16 @@ ej_show_subscribers (webs_t wp, int argc, char_t ** argv)
 {
   int i;
   char buffer[1024], *count;
-  int c = 0;
-  // count = nvram_safe_get ("mf_subscribernum");
-  count = 1;
+  int c;
+
+  count = nvram_safe_get ("milkfish_ddsubscribersnum");
   if (count == NULL || strlen (count) == 0)
-    {
+  {
       websWrite (wp, "<tr>\n");
       websWrite (wp,
 		 "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
-    }
+  }
   c = atoi (count);
   if (c <= 0)
     {
@@ -131,15 +131,15 @@ ej_show_subscribers (webs_t wp, int argc, char_t ** argv)
       CHAPSHOW
 	("<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",
 	 i);
-      websWrite (wp, "Horst");
-      //show_subscriber_table (wp, "user", i);
+      //websWrite (wp, "Horst");
+      show_subscriber_table (wp, "user", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
       CHAPSHOW
 	("<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",
 	 i);
-      websWrite (wp, "Wanschura");
-      //show_subscriber_table (wp, "pass", i);
+      //websWrite (wp, "Wanschura");
+      show_subscriber_table (wp, "pass", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "</tr>\n");
     }

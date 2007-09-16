@@ -2093,6 +2093,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"milkfish_audit", "off", 0},	/* MILKFISH SETTING */
   {"milkfish_dynsip", "off", 0},	/* MILKFISH SETTING */
   {"milkfish_siptrace", "off", 0},	/* MILKFISH SETTING */
+  {"milkfish_ddsubscribers", "", 0},      /* MILKFISH SETTING */
+  {"milkfish_ddsubscribersnum", "0", 0},      /* MILKFISH SETTING */
 #endif
 #ifdef HAVE_OLSRD
   {"olsrd_pollsize", "0.1", 0},
