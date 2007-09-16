@@ -9,6 +9,10 @@
 			<dl>
 				<dt>Milkfish-dd - Personal VoIP/IM Router - v1.0</dt>
 				<ul class="wide">
+				<br><b>Welcome to the Milkfish on DD-WRT...</b><br>
+				The Milkfish enables the operation and management of several SIP phones in spite of NAT.<br><br>
+				<u>Provider Phone Configuration</u>: The IP address of this router is the <b>Outbound Proxy</b> and <b>STUN is deactivated</b>.<br><br>
+				<u>Local Phone Configuration</u>: The IP address of this router is the <b>SIP Server</b> and <b>a local subscriber account was added</b>.<br>
 				<br>Key features are...<br>
 				<li>the first free and <a href="http://wiki.milkfish.org/index.php?n=MilkfishServices.Homesip" target="new">user specific alphanumeric dialing</a> infrastructure - choose <b>yourname.homesip.net</b></li>
 				<li>improved NAT traversal by means of a combined SIP-RTP-proxy - equipped with a selective STUNBLOCKER</li>
