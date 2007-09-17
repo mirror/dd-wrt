@@ -172,6 +172,7 @@ function fetch_data() {
 
 function plot_data(obj) {
 	if (!obj.success) return handle_error();  // getURL failed to get data
+	if (!obj.content) return handle_error();  // getURL get empty data, IE problem
 
 	// parse incoming data
 	// (format: "date" output, newline, proper line of /proc/net/dev)
