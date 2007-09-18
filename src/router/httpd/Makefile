@@ -233,6 +233,10 @@ ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
 OBJS += crc.o register.o
 endif
+ifeq ($(CONFIG_SUPERCHANNEL),y)
+CFLAGS += -DHAVE_SUPERCHANNEL
+OBJS += crc.o register.o
+endif
 #ifeq ($(HSIAB_SUPPORT),1)
 #CFLAGS += -I$(TOP)/hsiab
 #LDFLAGS += -L$(TOP)/openssl -L$(TOP)/hsiab -lcrypto -lssl -lhsiab

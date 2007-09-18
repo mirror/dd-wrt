@@ -1540,7 +1540,7 @@ wl_basic.extrange="Extended Range (XR)";
 wl_basic.extchannel="Erweiterter Kanal Modus";
 wl_basic.outband="Outdoor Band";
 wl_basic.channel_width="Kanal Breite";
-wl_basic.regulatory="Regulierung";
+wl_basic.regulatory="SuperKanal";
 
 
 //help container
