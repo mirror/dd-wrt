@@ -506,14 +506,14 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_MAKSAT
   {"show_hidden", "1", 0},
-  {"ath_regulatory", "0", 0},
+  {"ath_regulatory", "1", 0},
   {"wl0_ssid", "maksat", 0},	/* Service set ID (network name) */
   {"ath0_ssid", "maksat", 0},	/* Service set ID (network name) */
 #else
 #ifdef HAVE_BOESE
-  {"ath_regulatory", "0", 0},
-#else
   {"ath_regulatory", "1", 0},
+#else
+  {"ath_regulatory", "0", 0},
 #endif
 #ifdef HAVE_BUFFALO
   {"wl0_ssid", "BUFFALO", 0},	/* Service set ID (network name) */
