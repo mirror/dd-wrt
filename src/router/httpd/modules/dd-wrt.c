@@ -4198,7 +4198,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
   char wl_regdomain[16];
   sprintf (wl_regdomain, "%s_regdomain", prefix);
-  if (nvram_match ("ath_regulatory", "1"))
+  if (nvram_match ("ath_regulatory", "0"))
     {
       websWrite (wp,
 		 "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
@@ -4243,7 +4243,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "</div>\n");
   sprintf (power, "%s_antgain", prefix);
 #ifndef HAVE_MAKSAT
-  if (nvram_match ("ath_regulatory", "1"))
+  if (nvram_match ("ath_regulatory", "0"))
 #endif
     {
       websWrite (wp, "<div class=\"setting\">\n");
@@ -4387,7 +4387,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
 //  showOption (wp, "wl_basic.extchannel", wl_xchanmode);
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
-  if (nvram_match ("ath_regulatory", "1"))
+  if (nvram_match ("ath_regulatory", "0"))
     {
       showOption (wp, "wl_basic.outband", wl_outdoor);
     }
