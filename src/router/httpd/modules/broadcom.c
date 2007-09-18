@@ -2886,6 +2886,9 @@ static struct gozila_action gozila_actions[] = {
 #ifdef HAVE_REGISTER
   {"Register", "activate", "", 1, RESTART, reg_validate},
 #endif
+#ifdef HAVE_SUPERCHANNEL
+  {"SuperChannel", "activate", "", 1, REFRESH, superchannel_validate},
+#endif
   {"Services", "add_lease", "", 0, REFRESH, lease_add},
   {"Services", "remove_lease", "", 0, REFRESH, lease_remove},
 #ifdef HAVE_PPPOESERVER
@@ -4097,9 +4100,9 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   char menu[8][11][32] =
     { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp",
        "Networking.asp", "", "", "", "", ""},
-  {"Wireless_Basic.asp", "Wireless_radauth.asp", "WL_WPATable.asp",
+  {"Wireless_Basic.asp", "SuperChannel.asp","Wireless_radauth.asp", "WL_WPATable.asp",
    "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "",
-   "", "", ""},
+   "", ""},
   {"Services.asp", "PPPoE_Server.asp", "PPTP.asp", "Hotspot.asp",
    "Milkfish.asp", "eop-tunnel.asp", "", "", "", "", ""},
   {"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", ""},
@@ -4117,8 +4120,8 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   char menuname[8][11][32] =
     { {"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting",
        "setupvlan", "networking", "", "", "", ""},
-  {"wireless", "wirelessBasic", "wirelessRadius", "wirelessSecurity",
-   "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", "", ""},
+  {"wireless", "wirelessBasic","wirelessSuperchannel", "wirelessRadius", "wirelessSecurity",
+   "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", ""},
   {"services", "servicesServices", "servicesPppoesrv", "servicesPptp",
    "servicesHotspot", "servicesMilkfish", "setupeop", "", "", "", ""},
   {"security", "firwall", "vpn", "", "", "", "", "", "", "", ""},
@@ -4139,8 +4142,8 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   int a;
   for (a = 0; a < ifcount; a++)
     {
-      sprintf (&menu[1][a + 5][0], "Wireless_WDS-ath%d.asp", a);
-      sprintf (&menuname[1][a + 6][0], "wirelessWds%d", a);
+      sprintf (&menu[1][a + 6][0], "Wireless_WDS-ath%d.asp", a);
+      sprintf (&menuname[1][a + 7][0], "wirelessWds%d", a);
     }
 #endif
 
@@ -4184,6 +4187,13 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_MICRO
 	      if (!strcmp (menu[i][j], "PPTP.asp"))	//jump over PPTP in micro build
 		j++;
+#endif
+#ifndef HAVE_SUPERCHANNEL
+	      if (!strcmp (menu[i][j], "SuperChannel.asp"))	//jump over PPTP in micro build
+		j++;
+#else
+	      if (!strcmp (menu[i][j], "SuperChannel.asp") && issuperchannel())	//jump over PPTP in micro build
+	      	j++;
 #endif
 #ifdef HAVE_GLAUCO
 	      if (!strcmp (menu[i][j], "Factory_Defaults.asp"))

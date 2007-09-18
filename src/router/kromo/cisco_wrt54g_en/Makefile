@@ -344,6 +344,9 @@ ifneq ($(CONFIG_UPNP),y)
 	rm -f $(INSTALLDIR)/www/UPnP.live.asp
 	rm -f $(INSTALLDIR)/www/help/HUPnP.asp
 endif
+ifneq ($(CONFIG_SUPERCHANNEL),y)
+	rm -f $(INSTALLDIR)/www/SuperChannel.asp
+endif
 ifneq ($(CONFIG_WOL),y)
 	rm -f $(INSTALLDIR)/www/Wol.asp
 	rm -f $(INSTALLDIR)/www/help/HWol.asp
