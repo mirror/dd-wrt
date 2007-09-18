@@ -1341,75 +1341,6 @@ setMacFilter (char *iface)
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
-static void
-adjust_regulatory (int count)
-{
-  char dev[10];
-  char wif[10];
-  char turbo[16];
-  char gain[32];
-  char country[64];
-  char bw[16];
-  char sifs[32];
-  char preamble[32];
-  sprintf (wif, "wifi%d", count);
-  sprintf (dev, "ath%d", count);
-  sprintf (turbo, "%s_turbo", dev);
-  sprintf (gain, "%s_antgain", dev);
-  sprintf (country, "%s_regdomain", dev);
-  sprintf (bw, "%s_channelbw", dev);
-  default_get (country, "UNITED_STATES");
-  sprintf (country, "%s_outdoor", dev);
-  sprintf (sifs, "%s_sifstime", dev);
-  sprintf (preamble, "%s_preambletime", dev);
-  default_get (country, "0");
-  default_get (gain, "6");
-//  if (count == 0)
-  {
-    long tb = atol (nvram_safe_get (turbo));
-    setsysctrl (wif, "turbo", tb);
-    long s = atol (nvram_default_get (sifs, "16"));
-    long p = atol (nvram_default_get (preamble, "20"));
-//    setsysctrl (wif, "sifstime", s);
-//    setsysctrl (wif, "preambletime", p);
-
-    long regulatory = atol (nvram_default_get ("ath_regulatory", "0"));
-    {
-//#if !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_MERAKI)
-      if (regulatory == 0)
-	{
-	  setsysctrl (wif, "regulatory", regulatory);
-	  setsysctrl (wif, "setregdomain", 0);
-	  setsysctrl (wif, "outdoor", 0);
-	  setsysctrl (wif, "countrycode", 0);
-	  setsysctrl (wif, "antennagain", 0);
-	}
-      else
-//#endif
-	{
-	  sprintf (country, "%s_regdomain", dev);
-	  setsysctrl (wif, "regulatory", 1);
-	  setsysctrl (wif, "setregdomain",
-		      getRegDomain (default_get (country, "UNITED_STATES")));
-	  setsysctrl (wif, "countrycode",
-		      getCountry (default_get (country, "UNITED_STATES")));
-	  sprintf (country, "%s_outdoor", dev);
-	  setsysctrl (wif, "outdoor", atoi (default_get (country, "0")));
-	  setsysctrl (wif, "antennagain", atoi (default_get (gain, "6")));
-	}
-    }
-  }
-//#ifndef HAVE_FONERA 
-  char *wid = nvram_safe_get (bw);
-  int width = 20;
-  if (wid)
-    width = atoi (wid);
-  char buf[64];
-  setsysctrl (wif, "channelbw", (long) width);
-//#endif
-
-
-}
 
 static void
 configure_single (int count)
@@ -1941,6 +1872,7 @@ stop_vifs (void)
     }
 
 }
+extern void adjust_regulatory (int count);
 
 void
 configure_wifi (void)		//madwifi implementation for atheros based cards

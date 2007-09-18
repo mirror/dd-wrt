@@ -444,6 +444,7 @@ extern void remove_vifs (webs_t wp);
 extern void ej_show_security (webs_t wp, int argc, char_t ** argv);
 
 extern void reg_validate (webs_t wp);
+extern void superchannel_validate (webs_t wp);
 extern void wireless_save (webs_t wp);
 extern void set_security (webs_t wp);
 extern void forward_add (webs_t wp);
