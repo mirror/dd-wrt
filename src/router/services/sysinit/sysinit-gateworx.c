@@ -153,6 +153,7 @@ start_sysinit (void)
   eval ("mkdir", "/tmp/www");
   eval ("mknod", "/dev/gpio", "c", "127", "0");
   eval ("mknod", "/dev/nvram", "c", "229", "0");
+  eval ("mknod", "/dev/ppp", "c", "128", "0");
   eval ("mknod", "/dev/rtc", "c", "254", "0");
   eval ("mknod", "/dev/crypto", "c", "10", "70");
   eval ("mount", "-o", "remount,rw", "/");
