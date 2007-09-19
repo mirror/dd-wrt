@@ -110,7 +110,7 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
   /* Feed write from a temporary FIFO */
   if (!mktemp (upload_fifo) ||
       mkfifo (upload_fifo, S_IRWXU) < 0 ||
-      (ret = _eval (write_argv, NULL, 0, &pid)) ||
+      (ret = _evalpid (write_argv, NULL, 0, &pid)) ||
       !(fifo = fopen (upload_fifo, "w")))
     {
       if (!ret)

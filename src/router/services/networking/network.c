@@ -395,7 +395,7 @@ start_dhcpc (char *wan_ifname)
       i++;
     }
 
-  _eval (dhcp_argv, NULL, 0, &pid);
+  _evalpid (dhcp_argv, NULL, 0, &pid);
 
 }
 
@@ -3141,7 +3141,7 @@ notify_nas (char *type, char *ifname, char *action)
       argv[8] = nvram_safe_get (strcat_r (prefix, "ssid", tmp));
     }
   int pid;
-  return _eval (argv, ">/dev/console", 0, &pid);
+  return _evalpid (argv, ">/dev/console", 0, &pid);
 }
 #endif
 /*

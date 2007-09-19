@@ -2285,7 +2285,7 @@ app_savefile (char *port, int direction, int protocol, int app_prio)
       };
       pid_t pid;
 
-      _eval (argv, NULL, 0, &pid);
+      _evalpid (argv, NULL, 0, &pid);
     }
 }
 

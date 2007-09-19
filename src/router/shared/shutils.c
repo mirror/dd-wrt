@@ -119,7 +119,7 @@ system2 (char *command)
 }
 
 int
-_eval (char *const argv[], char *path, int timeout, int *ppid)
+_evalpid (char *const argv[], char *path, int timeout, int *ppid)
 {
   pid_t pid;
   int status;
@@ -221,6 +221,11 @@ _eval (char *const argv[], char *path, int timeout, int *ppid)
     }
 }
 
+int
+_eval (char *const argv[])
+{
+return _evalpid(argv,NULL,0,NULL);
+}
 /* 
  * Concatenates NULL-terminated list of arguments into a single
  * commmand and executes it
