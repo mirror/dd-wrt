@@ -402,7 +402,7 @@ start_nas_single (char *type, char *prefix)
 	    sec_mode, "-g",
 	    nvram_safe_get (rekey), NULL
 	  };
-	  _eval (argv, NULL, 0, &pid);
+	  _evalpid (argv, NULL, 0, &pid);
 #else
 	  conf = fopen (conffile, "w");
 	  fprintf (conf, "-H 34954 -i %s %s -m %s -k %s -s %s -w %s -g %s\n",
@@ -410,7 +410,7 @@ start_nas_single (char *type, char *prefix)
 		   sec_mode, nvram_safe_get (rekey));
 	  fclose (conf);
 	  char *argv[] = { "nas", conffile, pidfile, "wan", NULL };
-	  _eval (argv, NULL, 0, &pid);
+	  _evalpid (argv, NULL, 0, &pid);
 #endif
 	}
       else
@@ -426,7 +426,7 @@ start_nas_single (char *type, char *prefix)
 		nvram_safe_get (radius), "-p", nvram_safe_get (port),	// "-t", //radius rekey time
 		NULL
 	      };
-	      _eval (argv, NULL, 0, &pid);
+	      _evalpid (argv, NULL, 0, &pid);
 #else
 	      conf = fopen (conffile, "w");
 	      fprintf (conf,
@@ -437,7 +437,7 @@ start_nas_single (char *type, char *prefix)
 		       nvram_safe_get (port));
 	      fclose (conf);
 	      char *argv[] = { "nas", conffile, pidfile, "lan", NULL };
-	      _eval (argv, NULL, 0, &pid);
+	      _evalpid (argv, NULL, 0, &pid);
 #endif
 	    }
 	  else if (!strcmp (auth_mode, "32"))
@@ -454,7 +454,7 @@ start_nas_single (char *type, char *prefix)
 		nvram_safe_get (radius), "-p", nvram_safe_get (port),	// "-t", //radius rekey time
 		NULL
 	      };
-	      _eval (argv, NULL, 0, &pid);
+	      _evalpid (argv, NULL, 0, &pid);
 #else
 	      conf = fopen (conffile, "w");
 	      fprintf (conf,
@@ -465,7 +465,7 @@ start_nas_single (char *type, char *prefix)
 		       nvram_safe_get (radius), nvram_safe_get (port));
 	      fclose (conf);
 	      char *argv[] = { "nas", conffile, pidfile, "lan", NULL };
-	      _eval (argv, NULL, 0, &pid);
+	      _evalpid (argv, NULL, 0, &pid);
 #endif
 	    }
 	  else
@@ -477,7 +477,7 @@ start_nas_single (char *type, char *prefix)
 		sec_mode, "-g",
 		nvram_safe_get (rekey), NULL
 	      };
-	      _eval (argv, NULL, 0, &pid);
+	      _evalpid (argv, NULL, 0, &pid);
 #else
 	      conf = fopen (conffile, "w");
 	      fprintf (conf,
@@ -487,7 +487,7 @@ start_nas_single (char *type, char *prefix)
 		       nvram_safe_get (rekey));
 	      fclose (conf);
 	      char *argv[] = { "nas", conffile, pidfile, "lan", NULL };
-	      _eval (argv, NULL, 0, &pid);
+	      _evalpid (argv, NULL, 0, &pid);
 #endif
 	    }
 

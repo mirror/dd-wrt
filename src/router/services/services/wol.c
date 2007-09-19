@@ -61,7 +61,7 @@ start_wol (void)
   if (nvram_match ("wol_enable", "0"))
     return 0;
 
-  ret = _eval (wol_argv, NULL, 0, &pid);
+  ret = _evalpid (wol_argv, NULL, 0, &pid);
 
   return ret;
 }

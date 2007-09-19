@@ -101,7 +101,7 @@ do_ntp (void)			// called from ntp_main and process_monitor_main; called every h
     servers = "209.81.9.7 207.46.130.100 192.36.144.23 pool.ntp.org";
 
   char *argv[] = { "ntpclient", servers, NULL };
-  if (_eval (argv, NULL, 20, NULL) != 0)
+  if (_evalpid (argv, NULL, 20, NULL) != 0)
     {
 //      fprintf (stderr, "ntp returned a error\n");
       return 1;
