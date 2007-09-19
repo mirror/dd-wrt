@@ -35,15 +35,15 @@ endif
 
 ifeq ($(ARCH),mips)
 ifeq ($(ARCHITECTURE),fonera)
-madwifi:
+madwifi_mimo:
 	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=ap51 BUS=AHB TOOLPATH=$(LINUXDIR) LDOPTS="--no-warn-mismatch"
 	make -C madwifi.dev/madwifi.dev/tools TARGET=ap51 BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR)
 
-madwifi-clean:
+madwifi_mimo-clean:
 	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=ap51 BUS=AHB TOOLPATH=$(LINUXDIR)
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean BUS=AHB TOOLPATH=$(LINUXDIR)
 
-madwifi-install:
+madwifi_mimo-install:
 	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR) install
 	make -C madwifi.dev/madwifi.dev/ KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR) DESTDIR=$(INSTALLDIR)/madwifi TARGET=ap51 install
@@ -109,18 +109,17 @@ else
 endif
 
 else
-madwifi:
-	make -C madwifi/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=mipsisa32-be-elf
-	make -C madwifi/madwifi.dev/tools TARGET=mipsisa32-be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
+madwifi_mimo:
+	make -C madwifi_mimo/ KERNELPATH=$(LINUXDIR) TARGET=mipsisa32-be-elf
+	make -C madwifi_mimo/tools TARGET=mipsisa32-be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
 
-madwifi-clean:
-	make -C madwifi/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=mipsisa32-be-elf
-	make -C madwifi/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
+madwifi_mimo-clean:
+	make -C madwifi_mimo/ clean KERNELPATH=$(LINUXDIR) TARGET=mipsisa32-be-elf
+	make -C madwifi_mimo/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
 
-madwifi-install:
+madwifi_mimo-install:
 	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
-	make -C madwifi/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
-	make -C madwifi/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=mipsisa32-be-elf install
+	make -C madwifi_mimo KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=mipsisa32-be-elf install
 endif
 endif
 endif
