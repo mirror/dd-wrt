@@ -3901,8 +3901,9 @@ show_bwif (webs_t wp, char *ifname, char *name)
 	     name);
   websWrite (wp, "<fieldset>\n");
   websWrite (wp,
-	     "<embed src=\"/graph_if.svg?%s\" width=\"555\" height=\"275\" type=\"image/svg+xml\"/>\n",
+	     "<iframe src=\"/graph_if.svg?%s\" width=\"555\" height=\"275\" frameborder=\"0\" type=\"image/svg+xml\">\n",
 	     ifname);
+  websWrite (wp, "</iframe>\n");
   websWrite (wp, "</fieldset>\n");
   websWrite (wp, "<br />\n");
 }
