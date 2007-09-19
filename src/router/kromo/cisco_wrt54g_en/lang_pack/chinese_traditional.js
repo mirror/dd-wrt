@@ -1259,17 +1259,17 @@ hstatus_lan.right10="按任意MAC位址,您將能獲取該網路介面的「唯�
 
 status_band.titl="頻寬監控";
 status_band.h2="頻寬監控中";
-status_band.chg_unit="單位切換 ";
-status_band.chg_scale="自動調整顯示範圍";
-status_band.chg_error="無介面資料";
-status_band.chg_collect_initial="收集資料中, 請稍後...";
-status_band.strin="內"; 
-status_band.strout="外";
+status_band.chg_unit="SWITCH TO ";
+status_band.chg_scale="AUTOSCALE";
+status_band.chg_error="Cannot get data about interface";
+status_band.chg_collect_initial="Collecting initial data, please wait...";
+status_band.strin="IN"; 
+status_band.strout="OUT";
 
 //help container
 
-hstatus_band.right1="按鈕選擇 (bytes/s or bits/s).";
-hstatus_band.right2="按鈕選擇調整顯示範圍.";
+hstatus_band.right1="按 SWITCH TO 選擇 (bytes/s or bits/s).";
+hstatus_band.right2="按 AUTOSCALE 調整顯示範圍.";
 
 // ** Status_Router.asp **//
 
