@@ -1488,6 +1488,7 @@ start_lan (void)
     }
 
   free (lan_ifname);
+  free (wan_ifname);
   free (lan_ifnames);
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_NOWIFI
