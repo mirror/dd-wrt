@@ -93,8 +93,8 @@ start_service (char *name)
   else
     fprintf (stderr, "function %s not found \n", service);
   dlclose (handle);
-  return 0;
   cprintf ("start_sevice done()\n");
+  return 0;
 }
 
 int
@@ -125,8 +125,8 @@ start_service_fork (char *name)
   else
     fprintf (stderr, "function %s not found \n", service);
   dlclose (handle);
-  return 0;
   cprintf ("start_sevice done()\n");
+  return 0;
 }
 
 
@@ -159,8 +159,8 @@ start_service_nofree (char *name, void *handle)
     (*fptr) ();
   else
     fprintf (stderr, "function %s not found \n", service);
-  return handle;
   cprintf ("start_sevice_nofree done()\n");
+  return handle;
 }
 
 
@@ -296,7 +296,8 @@ startstop (char *name)
   cprintf ("stop and start service\n");
   handle = stop_service_nofree (name, handle);
   handle = start_service_nofree (name, handle);
-  dlclose (handle);
+  if (handle)
+    dlclose (handle);
 }
 
 void *
