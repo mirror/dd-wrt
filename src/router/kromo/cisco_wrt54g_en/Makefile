@@ -393,6 +393,7 @@ endif
 	rm -f $(INSTALLDIR)/www/About_test.htm
 	rm -f $(INSTALLDIR)/www/Logout.asp
 	rm -f $(INSTALLDIR)/www/SysInfo.htm
+	rm -f $(INSTALLDIR)/www/graph_cpu.svg	
 	
 ifeq ($(CONFIG_RAMON),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/newmedia/ install
