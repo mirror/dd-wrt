@@ -7,7 +7,5 @@ bmon:
 	make -C bmon
 
 bmon-clean:
-	make -C bmon/src clean
-	make -C bmon/libnl clean
-
-
+	make -C bmon/libnl clean 
+	make -C bmon clean

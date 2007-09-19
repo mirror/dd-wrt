@@ -27,13 +27,26 @@ ifeq ($(ARCH),mips)
 ifeq ($(ARCHITECTURE),fonera)
 	cp busybox/.config_fonera busybox/.config
 else
-ifeq ($(ARCHITECTURE),whrag108)
+ifeq ($(ARCHITECTURE),mr3202a)
 	cp busybox/.config_fonera busybox/.config
+else
+ifeq ($(ARCHITECTURE),whrag108)
+ifeq ($(CONFIG_DIST),"micro")
+	cp busybox/.config_micro_atheros busybox/.config
+else
+	cp busybox/.config_fonera busybox/.config
+endif
 else
 ifeq ($(ARCHITECTURE),ca8)
 	cp busybox/.config_fonera busybox/.config
 else
+ifeq ($(ARCHITECTURE),pb42)
+	cp busybox/.config_fonera busybox/.config
+else
 	cp busybox/.config_3com busybox/.config
+endif
+
+endif
 endif
 endif
 endif
