@@ -66,7 +66,7 @@ start_snmp (void)
   fprintf (fp, "pass_persist .1.3.6.1.4.1.2021.255 /etc/wl_snmpd.sh\n");
 
   fclose (fp);
-  ret = _eval (snmpd_argv, NULL, 0, &pid);
+  ret = _evalpid (snmpd_argv, NULL, 0, &pid);
 
   cprintf ("done\n");
   syslog (LOG_INFO, "snmpd : SNMP daemon successfully started\n");
