@@ -4170,7 +4170,11 @@ getMaxPower (char *ifname)
 #ifndef HAVE_SUPERCHANNEL
 int inline issuperchannel(void)
 {
+#ifdef HAVE_MAKSAT
+return 1;
+#else
 return 0;
+#endif
 }
 #endif
 
