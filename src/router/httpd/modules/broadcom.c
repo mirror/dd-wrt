@@ -5646,7 +5646,7 @@ struct ej_handler ej_handlers[] = {
   {"get_voltage", ej_get_voltage},
   {"show_voltage", ej_show_voltage},
 #endif
-#ifdef HAVE_REGISTER
+#if defined(HAVE_REGISTER) || defined(HAVE_SUPERCHANNEL)
   {"getregcode", ej_getregcode},
 #endif
 #ifdef HAVE_RSTATS
