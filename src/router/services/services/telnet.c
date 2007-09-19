@@ -40,7 +40,7 @@ start_telnetd (void)
   if (!nvram_invmatch ("telnetd_enable", "0"))
     return 0;
 
-  ret = _eval (telnetd_argv, NULL, 0, &pid);
+  ret = _evalpid (telnetd_argv, NULL, 0, &pid);
   syslog (LOG_INFO, "telnetd : telnet daemon successfully started\n");
 
   cprintf ("done\n");

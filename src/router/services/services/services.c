@@ -265,7 +265,7 @@ start_ntpc (void)
       };
       pid_t pid;
 
-      _eval (nas_argv, NULL, 0, &pid);
+      _evalpid (nas_argv, NULL, 0, &pid);
       syslog (LOG_INFO, "ntpclient : ntp client successfully started\n");
     }
 
@@ -472,7 +472,7 @@ start_redial (void)
 
   symlink ("/sbin/rc", "/tmp/ppp/redial");
 
-  ret = _eval (redial_argv, NULL, 0, &pid);
+  ret = _evalpid (redial_argv, NULL, 0, &pid);
   syslog (LOG_INFO, "ppp_redial : redial process successfully started\n");
 
   cprintf ("done\n");
@@ -835,7 +835,7 @@ start_pptp (int status)
 		nvram_safe_get ("wan_ipaddr"),
 		nvram_safe_get ("wan_netmask"));
     }
-  ret = _eval (pptp_argv, NULL, 0, NULL);
+  ret = _evalpid (pptp_argv, NULL, 0, NULL);
 
 
 /*	if(nvram_match("pptp_usedhcp", "1")){
@@ -1039,7 +1039,7 @@ start_pppoe (int pppoe_num)
   unlink ("/tmp/ppp/options.pppoe");
   unlink ("/tmp/ppp/connect-errors");
 
-  _eval (pppoe_argv, NULL, 0, &pid);
+  _evalpid (pppoe_argv, NULL, 0, &pid);
 
   if (nvram_match (ppp_demand[pppoe_num], "1"))
     {
@@ -1287,7 +1287,7 @@ start_l2tp (int status)
   //ifconfig(nvram_safe_get("wan_ifname"), IFUP,
   //       nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 
-  ret = _eval (l2tp_argv, NULL, 0, NULL);
+  ret = _evalpid (l2tp_argv, NULL, 0, NULL);
   sleep (1);
   snprintf (l2tpctrl, sizeof (l2tpctrl),
 	    "/usr/sbin/l2tp-control \"start-session %s\"",
@@ -1373,7 +1373,7 @@ start_wland (void)
 //  if( nvram_match("apwatchdog_enable", "0") )
 //          return 0;
 
-  ret = _eval (wland_argv, NULL, 0, &pid);
+  ret = _evalpid (wland_argv, NULL, 0, &pid);
   syslog (LOG_INFO, "wland : WLAN daemon successfully started\n");
   cprintf ("done\n");
   return ret;
@@ -1390,7 +1390,7 @@ start_process_monitor (void)
   pid_t pid;
 
   char *argv[] = { "process_monitor", NULL };
-  int ret = _eval (argv, NULL, 0, &pid);
+  int ret = _evalpid (argv, NULL, 0, &pid);
   syslog (LOG_INFO, "process_monitor successfully started\n");
 
   cprintf ("done");
@@ -1420,7 +1420,7 @@ start_radio_timer (void)
   pid_t pid;
 
   char *argv[] = { "radio_timer", NULL };
-  int ret = _eval (argv, NULL, 0, &pid);
+  int ret = _evalpid (argv, NULL, 0, &pid);
   syslog (LOG_INFO,
 	  "radio_timer : radio timer daemon successfully started\n");
 
@@ -1482,7 +1482,7 @@ start_force_to_dial (void)
       return ret;
     }
 #endif
-  _eval (ping_argv, NULL, 3, NULL);
+  _evalpid (ping_argv, NULL, 3, NULL);
 
   return ret;
 }

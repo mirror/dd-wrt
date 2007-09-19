@@ -51,7 +51,9 @@ extern int waitfor (int fd, int timeout);
  * @return	return value of executed command or errno
  */
 
-extern int _eval (char *const argv[], char *path, int timeout, pid_t * ppid);
+int _evalpid (char *const argv[], char *path, int timeout, int *ppid);
+
+extern int _eval (char *const argv[]);
 
 /* 
  * Concatenates NULL-terminated list of arguments into a single
@@ -171,7 +173,7 @@ strcat_r (const char *s1, const char *s2, char *buf)
 /* Simple version of _eval() (no timeout and wait for child termination) */
 #define eval(cmd, args...) ({ \
 	char *argv[] = { cmd, ## args, NULL }; \
-	_eval(argv, ">/dev/console", 0, NULL); \
+	_eval(argv); \
 })
 
 /* Copy each token in wordlist delimited by space into word */
