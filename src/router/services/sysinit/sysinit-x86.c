@@ -50,9 +50,15 @@
 static int
 detect (char *devicename)
 {
+FILE *tmp=fopen("/tmp/devices","rb");
+if (tmp==NULL)
+    {
+    system("/sbin/lspci>/tmp/devices");
+    }else
+fclose(tmp);
   char devcall[128];
   int res;
-  sprintf (devcall, "/sbin/lspci|/bin/grep \"%s\"|/bin/wc -l", devicename);
+  sprintf (devcall, "cat /tmp/devices|/bin/grep \"%s\"|/bin/wc -l", devicename);
 //system(devcall);
   FILE *in = popen (devcall, "rb");
   fscanf (in, "%d", &res);
@@ -101,6 +107,7 @@ start_sysinit (void)
   /* /tmp */
   mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
   mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
+  eval ("mknod", "/dev/ppp", "c", "128", "0");
   char dev[64];
   int index = getdiscindex ();
   if (index == -1)
