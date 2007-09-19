@@ -162,7 +162,8 @@ start_services (void)
 #ifdef HAVE_MILKFISH
   handle = start_service_nofree ("milkfish", handle);
 #endif
-  dlclose (handle);
+  if (handle)
+    dlclose (handle);
 
   cprintf ("done\n");
   return 0;
@@ -265,6 +266,7 @@ handle_dhcpd (void)
 {
   startstop ("udhcpd");
 }
+
 static void
 handle_index (void)
 {
@@ -685,6 +687,7 @@ handle_milkfish (void)
   startstop ("milkfish");
 }
 #endif
+
 static void
 handle_wireless (void)
 {
