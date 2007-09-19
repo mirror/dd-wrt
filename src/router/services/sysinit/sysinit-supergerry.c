@@ -66,7 +66,7 @@ start_sysinit (void)
   // fix for linux kernel 2.6
   mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
   eval ("mkdir", "/tmp/www");
-  eval ("mknod", "/dev/ppp", "c", "128", "0");
+  eval ("mknod", "/dev/ppp", "c", "108", "0");
 
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
