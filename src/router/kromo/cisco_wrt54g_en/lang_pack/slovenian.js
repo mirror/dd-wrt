@@ -1206,9 +1206,11 @@ status_band.h2="Nadzor pasovne ¹irine";
 status_band.chg_unit="Preklopi na ";
 status_band.chg_scale="Samodejno merilo";
 status_band.chg_error="Ne morem zbrati podatkov o vmesniku";
-status_band.chg_collect_initial="Zbiram zaèetne podatke, prosimo poèakajte...";
+status_band.chg_collect_initial="Zbiram zacetne podatke, prosimo pocakajte...";
 status_band.strin="Noter";
 status_band.strout="Ven";
+status_band.follow="sledi";
+status_band.up="gor";
 
 //help container
 
@@ -1612,7 +1614,7 @@ wl_basic.extchannel="Raz¹irjeni naèin kanalov";
 wl_basic.outband="Zunanji pas";
 wl_basic.channel_width="©irina kanalov";
 wl_basic.channel_wide="©iroki kanali";
-wl_basic.regulatory="Regulatorski";
+wl_basic.regulatory="SuperKanal";
 wl_basic.specialmode="2.3 Ghz naèin";
 wl_basic.wifi_bonding="Wifi vezanje";
 wl_basic.sifstime="OFDM SIFS èas";
