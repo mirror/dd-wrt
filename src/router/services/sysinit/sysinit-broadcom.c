@@ -392,14 +392,14 @@ start_sysinit (void)
 	  nvram_set ("wan_ifnames", "eth1");
 	}
       break;
-      
+
     case ROUTER_SITECOM_WL111:
       nvram_set ("lan_ifnames", "eth0 eth2");
       nvram_set ("wl0_ifname", "eth2");
-      nvram_set ("wan_ifname", "eth1");	
+      nvram_set ("wan_ifname", "eth1");
       nvram_set ("wan_ifnames", "eth1");
       break;
-      
+
     case ROUTER_MOTOROLA_WE800G:
       nvram_set ("lan_ifnames", "eth1 eth2");
       nvram_set ("wl0_ifname", "eth2");
@@ -734,7 +734,8 @@ check_cfe_nv (void)
 
     case ROUTER_WRT54G:
       ret += check_nv ("aa0", "3");
-      if (check_hw_type () == BCM5352E_CHIP)
+      if (check_hw_type () == BCM5352E_CHIP
+	  || check_hw_type () == BCM5354G_CHIP)
 	ret += check_nv ("ag0", "0x02");
       else
 	ret += check_nv ("ag0", "255");
@@ -764,6 +765,13 @@ check_cfe_nv (void)
 #ifndef HAVE_MSSID
 	  ret += check_nv ("pa0maxpwr", "0x4e");
 #endif
+	}
+      else if (check_hw_type () == BCM5354G_CHIP)
+	{
+	  ret += check_nv ("pa0itssit", "62");
+	  ret += check_nv ("pa0b0", "0x1326");
+	  ret += check_nv ("pa0b1", "0xFB51");
+	  ret += check_nv ("pa0b2", "0xFE87");
 	}
       else if (check_hw_type () == BCM4705_BCM5397_EWC_CHIP)
 	{

@@ -1570,6 +1570,21 @@ start_lan (void)
   if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
     {
       nvram_set ("lan_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+      if (getRouterBrand()==ROUTER_DLINK_DIR320)
+        {
+	if (strlen(nvram_safe_get("et0macaddr"))==12)
+	    {
+	    char wlmac[32];
+	    strcpy(wlmac,nvram_safe_get("wl0_hwaddr"));
+	    MAC_SUB(wlmac);
+	    nvram_set("et0macaddr",wlmac);
+	    nvram_unset("lan_hwaddr");
+	    nvram_unset("wan_hwaddr");
+	    //fis dlink quirk, by restarting system. utils.c will automaticly assign the et0macaddr then
+	    nvram_commit();
+	    eval("event","5","1","15");
+	    }
+	}
 #ifdef HAVE_RB500
       nvram_set ("et0macaddr", nvram_safe_get ("lan_hwaddr"));
 #endif
