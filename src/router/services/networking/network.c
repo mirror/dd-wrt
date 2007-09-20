@@ -2750,7 +2750,7 @@ start_wan_done (char *wan_ifname)
 #ifdef HAVE_UPNP
   stop_upnp ();
 #endif
-  stop_cron ();
+//  stop_cron ();
   stop_wshaper ();
   cprintf ("start zebra\n");
 #ifdef HAVE_BIRD
@@ -2760,8 +2760,8 @@ start_wan_done (char *wan_ifname)
 #ifdef HAVE_UPNP
   start_upnp ();
 #endif
-  cprintf ("start cron\n");
-  start_cron ();
+//  cprintf ("start cron\n");
+//  start_cron ();
   cprintf ("start wshaper\n");
   start_wshaper ();
 
