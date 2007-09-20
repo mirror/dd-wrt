@@ -212,13 +212,17 @@ get_regdomain (unsigned long int base_addr)
       // fprintf (stderr,
 //             "Mmap of device at 0x%08X for 0x%X bytes failed!\n",
 //             base_addr, ATHEROS_PCI_MEM_SIZE);
+      close (fd);
       return -3;
     }
   if (vt_ar5211_eeprom_read ((unsigned char *) membase, 0xBF, &sdata))
     {
       //  fprintf (stderr, "EEPROM read failed\n");
+      munmap (membase, ATHEROS_PCI_MEM_SIZE);
+      close (fd);
       return -1;
     }
+  munmap (membase, ATHEROS_PCI_MEM_SIZE);
   close (fd);
   return sdata;
 
@@ -254,6 +258,7 @@ set_regdomain (unsigned long int base_addr, int code)
       // fprintf (stderr,
 //             "Mmap of device at 0x%08X for 0x%X bytes failed!\n",
 //             base_addr, ATHEROS_PCI_MEM_SIZE);
+      close (fd);
       return -3;
     }
 
@@ -266,6 +271,7 @@ set_regdomain (unsigned long int base_addr, int code)
     {
       //  fprintf (stderr, "EEPROM read failed\n");
       errcode = -4;
+      munmap (membase, ATHEROS_PCI_MEM_SIZE);
       close (fd);
       return errcode;
     }
@@ -275,6 +281,7 @@ set_regdomain (unsigned long int base_addr, int code)
     {
       //  fprintf (stderr, "EEPROM write failed\n");
       errcode = -4;
+      munmap (membase, ATHEROS_PCI_MEM_SIZE);
       close (fd);
       return errcode;
     }
@@ -283,6 +290,7 @@ set_regdomain (unsigned long int base_addr, int code)
     {
       //  fprintf (stderr, "EEPROM read failed\n");
       errcode = -4;
+      munmap (membase, ATHEROS_PCI_MEM_SIZE);
       close (fd);
       return errcode;
     }
@@ -293,6 +301,7 @@ set_regdomain (unsigned long int base_addr, int code)
 //             new_cc, sdata);
       errcode = -4;
     }
+  munmap (membase, ATHEROS_PCI_MEM_SIZE);
   close (fd);
   return errcode;
 }
@@ -452,7 +461,7 @@ static int
 setsysctrl (const char *dev, const char *control, u_long value)
 {
   char buffer[256];
-  FILE *fd;
+//  FILE *fd;
 
   snprintf (buffer, sizeof (buffer), "echo %li > /proc/sys/dev/%s/%s", value,
 	    dev, control);
