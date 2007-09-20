@@ -248,7 +248,7 @@ stop_ddns (void)
 {
   int ret;
   
-  if (pidof ("inadyn") > 0
+  if (pidof ("inadyn") > 0)
     syslog (LOG_INFO, "DDNS : inadyn daemon successfully stopped\n");
     
   unlink ("/tmp/ddns/ddns.log");
