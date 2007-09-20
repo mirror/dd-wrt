@@ -196,6 +196,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Sitecom WL-111 (4702 cpu, fccid: ?)
 #define ROUTER_SITECOM_WL111 0x3b10
 
+// Dlink DIR-320 (5354 cpu, fccid: ?)
 #define ROUTER_DLINK_DIR320 0x3c0f
 
 #define NVROUTER "DD_BOARD"

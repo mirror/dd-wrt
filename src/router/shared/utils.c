@@ -762,11 +762,11 @@ internal_getRouterBrand ()
       nvram_match ("boardrev", "0x35") &&
       nvram_match ("sdram_init", "0x000b"))
     {
-      setRouter ("DLINK DIR-320\n");
+      setRouter ("D-Link DIR-320\n");
       return ROUTER_DLINK_DIR320;
     }
-  if (nvram_match ("boardtype", "0x048e") &&
-      nvram_match ("boardnum", "42") && nvram_match ("boardrev", "0x10"))
+  if (boardnum == 42 &&
+      nvram_match ("boardtype", "0x048e") && nvram_match ("boardrev", "0x10"))
     {
       setRouter ("Linksys WRT54G v8");
       cprintf ("router is wrt54g v8\n");
