@@ -55,7 +55,7 @@ detect (char *devicename)
 //system(devcall);
   FILE *in = popen (devcall, "rb");
   fscanf (in, "%d", &res);
-  fclose (in);
+  pclose (in);
   return res > 0 ? 1 : 0;
 }
 
@@ -67,39 +67,39 @@ checkupdate (void)
   FILE *in =
     popen ("/bin/cat /dev/mtdblock/0|/bin/grep NewMedia|wc -l", "rb");
   fscanf (in, "%d", &res);
-  fclose (in);
+  pclose (in);
   if (res == 0)
     {
       in = popen ("/bin/cat /dev/mtdblock/0|/bin/grep 2.02|wc -l", "rb");
       fscanf (in, "%d", &res2);
-      fclose (in);
+      pclose (in);
     }
   if (res == 1)
     {
       in = popen ("/bin/cat /dev/mtdblock/0|/bin/grep 2.03|wc -l", "rb");
       fscanf (in, "%d", &res2);
-      fclose (in);
+      pclose (in);
     }
   if (res2 == 2)		//redboot update is needed
     {
       in = popen ("/bin/dmesg|/bin/grep \"Memory: 64MB\"|wc -l", "rb");
       fscanf (in, "%d", &res);
-      fclose (in);
+      pclose (in);
       if (res == 1)
 	res2 = 64;
       in = popen ("/bin/dmesg|/bin/grep \"Memory: 32MB\"|wc -l", "rb");
       fscanf (in, "%d", &res);
-      fclose (in);
+      pclose (in);
       if (res == 1)
 	res2 = 32;
       in = popen ("/bin/dmesg|/bin/grep \"Memory: 128MB\"|wc -l", "rb");
       fscanf (in, "%d", &res);
-      fclose (in);
+      pclose (in);
       if (res == 1)
 	res2 = 128;
       in = popen ("/bin/dmesg|/bin/grep \"Memory: 256MB\"|wc -l", "rb");
       fscanf (in, "%d", &res);
-      fclose (in);
+      pclose (in);
       if (res == 1)
 	res2 = 256;
       fprintf (stderr, "updating redboot %d MB\n", res2);
@@ -274,6 +274,8 @@ Configure mac addresses by reading data from eeprom
 
   eval ("ifconfig", "ixp0", "0.0.0.0", "up");
   eval ("ifconfig", "ixp1", "0.0.0.0", "up");
+  
+  fclose (file);
 
 /*  if (getRouterBrand()==ROUTER_BOARD_GATEWORX_GW2345) //lets load the spi drivers for this switch
   {
