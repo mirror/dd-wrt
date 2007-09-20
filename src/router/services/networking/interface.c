@@ -135,7 +135,6 @@ start_config_vlan (void)
   char tmp[200];
 
 // configure ports
-
   system2 ("echo 1 > /proc/switch/eth0/reset");
   for (i = 0; i < 16; i++)
     {
