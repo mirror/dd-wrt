@@ -19,6 +19,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 */
 
 // Linksys WRT54G, WRT54GS and WRT54GL all models except WRT54G v1.0, v1.1 (fccid: Linksys Q87-WRT54G..., Q87_WT54G...)
+// Linksys WRT54Gv8, WRT54GSv7 (5354 cpu, fccid: Linksys Q87-WRT54GV8, Q87-WRT54GSV7)
 #define ROUTER_WRT54G 0x0116
 
 // Linksys WRT54G v1.0 and v1.1, Alnet ALL0277 (4702 cpu, fccid: v1: Linksys PKW-WM54G; v1.1: Linksys Q87-WRT54G11)
@@ -30,13 +31,13 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Asus WL-500G-Deluxe (5365 cpu), (fccid: Asus MSQWL500GD)
 #define ROUTER_ASUS_WL500GD 0x0406
 
-// Buffalo WBR-G54, WLA-G54 (4702 cpu)
+// Buffalo WBR-G54, WLA-G54 (4702 cpu, WLA-G54 has no switch)
 #define ROUTER_BUFFALO_WBR54G 0x0504
 
 // Buffalo WBR2-G54 / WLA2-G54 (4712 + ADM6996 switch, fccid: Buffalo FDI-04600142-0), WBR2-G54S and Buffalo WLA2-G54L
 #define ROUTER_BUFFALO_WBR2G54S 0x0607
 
-// Buffalo WLA2-G54C == WLI3-TX1-G54 (4712 cpu, no switch),(fccid: Buffalo FDI-09101669-0)
+// Buffalo WLA2-G54C == WLI3-TX1-G54 (4712 cpu, no switch, fccid: Buffalo FDI-09101669-0)
 #define ROUTER_BUFFALO_WLA2G54C 0x0710
 
 // Buffalo WHR-G54S (fccid: Buffalo FDI-04600264-0) and WHR-HP-G54 (fccid: Buffalo FDI-09101577-0)
@@ -52,7 +53,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Motorola WR850G v2/v3, WR850GP (4712 cpu, ADM6996 switch, fccid Motorola ACQWR850GV2)
 #define ROUTER_MOTOROLA 0x0b15
 
-// RT210W and RT211W generic and branded (fccid: Askey H8N-RT210W, H8N-RT211W), (4702 cpu)
+// RT210W and RT211W generic and branded (4702 cpu, fccid: Askey H8N-RT210W, H8N-RT211W)
 // H8N-RT210W: Siemens se505 v1, Belkin F5D7230-4 v1000, v1xxx < 1444
 // H8N-RT211W: Belkin F5D7130
 #define ROUTER_RT210W 0x0c0f
@@ -67,7 +68,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // NMN A/B/G Router Protoype (266 Mhz Xscale, dual minipci)
 #define ROUTER_BOARD_XSCALE 0x0e01
 
-// Generic BRCM 4702 boards: e.g. Asus WL300g (fccid: Asus MSQWL300G)
+// Generic BRCM 4702 boards: e.g. Asus WL300g (4702 cpu, fccid: Asus MSQWL300G)
 #define ROUTER_BRCM4702_GENERIC 0x0f0f
 
 // Buffalo WLI_TX4_G54HP bridge
@@ -112,6 +113,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Generic x86 PC / WRAP / Soekris
 #define ROUTER_BOARD_X86 0x1e0f
 
+// ?
 #define ROUTER_SUPERGERRY 0x1f0f
 
 // Linksys WRT350N (4705 cpu, Gbit switch, PCMCIA radio card, fccid: Linksys Q87-WRT350N)
@@ -157,6 +159,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Linksys WRT150N (4704 cpu, BCM5325F switch), (fccid: Linksys Q87-WRT150N)
 #define ROUTER_WRT150N 0x2d16
 
+// ?
 #define ROUTER_BOARD_LS2 0x2e01
 
 // Buffalo WAPM-HP-AM54G54 (only available on japanese market, dual radio 2.4 and 5 ghz broadcom)
@@ -165,7 +168,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Buffalo WLAH-G54 (only available on japanese market, single radio 2.4 ghz)
 #define ROUTER_BUFFALO_WLAH_G54 0x3004
 
-// Buffalo WZR-G144HH(only available on japanese market, 802.11n, Gigabit switch. similar to WRT350N)
+// Buffalo WZR-G144HH (only available on japanese market, 802.11n, Gigabit switch. similar to WRT350N)
 #define ROUTER_BUFFALO_WZRG144NH 0x3117
 
 // U.S.Robotics USR5430 bridge (4712 cpu, no switch, fccid: ?)
@@ -180,11 +183,13 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Asus WL500g (4702 cpu, fccid: Asus MSQWL500G)
 #define ROUTER_ASUS_WL500G 0x3506
 
+// ?
 #define ROUTER_BOARD_CA8 0x3606
 
 // Fonera (Atheros SoC,...)
 #define ROUTER_BOARD_FONERA2200 0x3701
 
+// ?
 #define ROUTER_BOARD_TW6600 0x3801
 
 // Atheros PB42 prototype (AR5416 MIMO Wifi, 400 Mhz Mips CPU, 32 MB RAM)
@@ -196,7 +201,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Sitecom WL-111 (4702 cpu, fccid: ?)
 #define ROUTER_SITECOM_WL111 0x3b10
 
-// Dlink DIR-320 (5354 cpu, fccid: ?)
+// D-Link DIR-320 (5354 cpu, fccid: ?)
 #define ROUTER_DLINK_DIR320 0x3c17
 
 #define NVROUTER "DD_BOARD"
