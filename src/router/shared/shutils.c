@@ -224,7 +224,7 @@ _evalpid (char *const argv[], char *path, int timeout, int *ppid)
 int
 _eval (char *const argv[])
 {
-return _evalpid(argv,NULL,0,NULL);
+return _evalpid(argv,">/dev/console",0,NULL);
 }
 /* 
  * Concatenates NULL-terminated list of arguments into a single

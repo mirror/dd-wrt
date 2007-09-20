@@ -762,7 +762,7 @@ internal_getRouterBrand ()
       nvram_match ("boardrev", "0x35") &&
       nvram_match ("sdram_init", "0x000b"))
     {
-      setRouter ("DLink DIR-320\n");
+      setRouter ("DLINK DIR-320\n");
       return ROUTER_DLINK_DIR320;
     }
   if (nvram_match ("boardtype", "0x048e") &&
