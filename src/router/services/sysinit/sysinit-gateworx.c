@@ -103,28 +103,10 @@ checkupdate (void)
       if (res == 1)
 	res2 = 256;
       fprintf (stderr, "updating redboot %d MB\n", res2);
-      switch (res2)
-	{
-	case 32:
-	  eval ("tar", "-xaf", "/usr/lib/firmware/redboot.tg7", "-C", "/tmp");
-	  eval ("mtd", "-r", "-f", "write", "/tmp/rb-32.bin", "RedBoot");
-	  break;
-	case 64:
-	  eval ("tar", "-xaf", "/usr/lib/firmware/redboot.tg7", "-C", "/tmp");
-	  eval ("mtd", "-r", "-f", "write", "/tmp/rb-64.bin", "RedBoot");
-	  break;
-	case 128:
-	  eval ("tar", "-xaf", "/usr/lib/firmware/redboot.tg7", "-C", "/tmp");
-	  eval ("mtd", "-r", "-f", "write", "/tmp/rb-128.bin", "RedBoot");
-	  break;
-	case 256:
-	  eval ("tar", "-xaf", "/usr/lib/firmware/redboot.tg7", "-C", "/tmp");
-	  eval ("mtd", "-r", "-f", "write", "/tmp/rb-256.bin", "RedBoot");
-	  break;
-	default:
-	  fprintf (stderr, "no valid image found\n");
-	  break;
-	}
+      char fname[64];
+      sprintf(fname,"/tmp/rb-%d.bin",res2); 
+      eval ("tar", "-xaf", "/usr/lib/firmware/redboot.tg7", "-C", "/tmp");
+      eval ("mtd", "-r", "-f", "write", fname, "RedBoot");
     }
 }
 
