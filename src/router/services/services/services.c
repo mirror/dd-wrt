@@ -124,19 +124,19 @@ start_vpn_modules (void)
     {
       eval ("/sbin/insmod", "nf_conntrack_proto_gre");
       syslog (LOG_INFO,
-	      "vpn modules : nf_conntrack_proto_gre successfully started\n");
+	      "vpn modules : nf_conntrack_proto_gre successfully loaded\n");
       eval ("/sbin/insmod", "nf_nat_proto_gre");
       syslog (LOG_INFO,
-	      "vpn modules : nf_nat_proto_gre successfully started\n");
+	      "vpn modules : nf_nat_proto_gre successfully loaded\n");
     }
 
   if (nvram_match ("pptp_pass", "1"))
     {
       eval ("/sbin/insmod", "nf_conntrack_pptp");
       syslog (LOG_INFO,
-	      "vpn modules : nf_conntrack_pptp successfully started\n");
+	      "vpn modules : nf_conntrack_pptp successfully loaded\n");
       eval ("/sbin/insmod", "nf_nat_pptp");
-      syslog (LOG_INFO, "vpn modules : nf_nat_pptp successfully started\n");
+      syslog (LOG_INFO, "vpn modules : nf_nat_pptp successfully loaded\n");
     }
 
 #else
@@ -145,18 +145,18 @@ start_vpn_modules (void)
     {
       eval ("/sbin/insmod", "ip_conntrack_proto_gre");
       syslog (LOG_INFO,
-	      "vpn modules : ip_conntrack_proto_gre successfully started\n");
+	      "vpn modules : ip_conntrack_proto_gre successfully loaded\n");
       eval ("/sbin/insmod", "ip_nat_proto_gre");
       syslog (LOG_INFO,
-	      "vpn modules : ip_nat_proto_gre successfully started\n");
+	      "vpn modules : ip_nat_proto_gre successfully loaded\n");
     }
   if (nvram_match ("pptp_pass", "1"))
     {
       eval ("/sbin/insmod", "ip_conntrack_pptp");
       syslog (LOG_INFO,
-	      "vpn modules : ip_conntrack_pptp successfully started\n");
+	      "vpn modules : ip_conntrack_pptp successfully loaded\n");
       eval ("/sbin/insmod", "ip_nat_pptp");
-      syslog (LOG_INFO, "vpn modules : ip_nat_pptp successfully started\n");
+      syslog (LOG_INFO, "vpn modules : ip_nat_pptp successfully loaded\n");
     }
 #endif
 }
@@ -167,24 +167,18 @@ stop_vpn_modules (void)
 {
 #if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)
   eval ("/sbin/rmmod", "nf_nat_pptp");
-  syslog (LOG_INFO, "vpn modules : nf_nat_pptp successfully stopped\n");
   eval ("/sbin/rmmod", "nf_conntrack_pptp");
-  syslog (LOG_INFO, "vpn modules : nf_conntrack_pptp successfully stopped\n");
   eval ("/sbin/rmmod", "nf_nat_proto_gre");
-  syslog (LOG_INFO, "vpn modules : nf_nat_proto_gre successfully stopped\n");
   eval ("/sbin/rmmod", "nf_conntrack_proto_gre");
   syslog (LOG_INFO,
-	  "vpn modules : nf_conntrack_proto_gre successfully stopped\n");
+	  "vpn modules : vpn modules successfully unloaded\n");
 #else
-  eval ("/sbin/rmmod", "ip_nat_proto_gre");
-  syslog (LOG_INFO, "vpn modules : ip_nat_proto_gre successfully stopped\n");
   eval ("/sbin/rmmod", "ip_nat_pptp");
-  syslog (LOG_INFO, "vpn modules : ip_nat_pptp successfully stopped\n");
+  eval ("/sbin/rmmod", "ip_nat_proto_gre");
   eval ("/sbin/rmmod", "ip_conntrack_pptp");
-  syslog (LOG_INFO, "vpn modules : ip_conntrack_pptp successfully stopped\n");
   eval ("/sbin/rmmod", "ip_conntrack_proto_gre");
   syslog (LOG_INFO,
-	  "vpn modules : ip_conntrack_proto_gre successfully stopped\n");
+	  "vpn modules : vpn modules successfully unloaded\n");
 
 #endif
 }
@@ -293,7 +287,7 @@ start_resetbutton (void)
 
   ret = eval ("resetbutton");
   syslog (LOG_INFO,
-	  "resetbutton : reset button daemon successfully started\n");
+	  "reset button : resetbutton daemon successfully started\n");
 
   cprintf ("done\n");
   return ret;
@@ -305,7 +299,7 @@ stop_resetbutton (void)
   int ret = 0;
   if (pidof ("resetbutton") > 0)
     syslog (LOG_INFO,
-	    "resetbutton : resetbutton daemon successfully stopped\n");
+	    "reset button : resetbutton daemon successfully stopped\n");
   ret = killall ("resetbutton", SIGKILL);
 
   cprintf ("done\n");
@@ -621,7 +615,7 @@ stop_dhcpc (void)
   int ret = 0;
   if (pidof ("udhcpc") > 0)
     syslog (LOG_INFO, "udhcpc : udhcp client process successfully stopped\n");
-  ret += killall ("udhcpc", SIGTERM);
+  ret = killall ("udhcpc", SIGTERM);
 
   cprintf ("done\n");
   return ret;
