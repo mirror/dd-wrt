@@ -762,7 +762,7 @@ internal_getRouterBrand ()
       nvram_match ("boardrev", "0x35") &&
       nvram_match ("sdram_init", "0x000b"))
     {
-      cprintf ("rouetr is D-Link DIR-320\n");
+      cprintf ("router is D-Link DIR-320\n");
       setRouter ("D-Link DIR-320");
       return ROUTER_DLINK_DIR320;
     }
@@ -1969,7 +1969,7 @@ check_action (void)
       else if (!strcmp (buf, "ACT_HW_RESTORE"))
 	{
 	  fprintf (stderr,
-		   "Receiving restore commond from resetbutton ...\n");
+		   "Receiving restore command from resetbutton ...\n");
 	  return ACT_HW_RESTORE;
 	}
       else if (!strcmp (buf, "ACT_NVRAM_COMMIT"))
@@ -2509,7 +2509,10 @@ wds_dev_config (int dev, int up)
       netmask = nvram_safe_get (wds_netmask_var);
 
       if (!strstr (wds_list, hwaddr))
-	return -1;
+      {
+        close (s);
+        return -1;
+      }
 
 #ifdef WDS_DEBUG
       fprintf (fp, "checking validity\n");
@@ -2517,7 +2520,10 @@ wds_dev_config (int dev, int up)
 
       if (!sv_valid_hwaddr (hwaddr) || !sv_valid_ipaddr (ip)
 	  || !sv_valid_ipaddr (netmask))
-	return -1;
+      {
+        close (s);
+        return -1;
+      }
 
 #ifdef WDS_DEBUG
       fprintf (fp, "valid mac %s ip %s nm %s\n", hwaddr, ip, netmask);
@@ -2686,7 +2692,7 @@ sv_valid_ipaddr (char *value)
 
 }
 
-// note - networl address returned in ipaddr
+// note - network address returned in ipaddr
 void
 get_network (char *ipaddr, char *netmask)
 {
