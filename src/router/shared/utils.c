@@ -590,8 +590,9 @@ internal_getRouterBrand ()
       setRouter ("Sitecom WL-105(b)");
       return ROUTER_SITECOM_WL105B;
     }
-    
-  if (boardnum == 2 && nvram_match ("GemtekPmonVer", "7") && nvram_match ("boardtype", "bcm94710dev"))
+
+  if (boardnum == 2 && nvram_match ("GemtekPmonVer", "7")
+      && nvram_match ("boardtype", "bcm94710dev"))
     {
       cprintf ("router is Sitecom wl-111\n");
       setRouter ("Sitecom WL-111");
@@ -735,19 +736,19 @@ internal_getRouterBrand ()
       (nvram_match ("boardtype", "0x0101")
        || nvram_match ("boardtype", "0x0101\r")))
     {
-	  char *cfe = nvram_safe_get ("CFEver");
+      char *cfe = nvram_safe_get ("CFEver");
       if (!strncmp (cfe, "GW_WR110G", 9))
-      {
-      cprintf ("router is Sparklan WX-6615GT\n");
-      setRouter ("Sparklan WX-6615GT");
-      return ROUTER_DELL_TRUEMOBILE_2300_V2;
-      }
+	{
+	  cprintf ("router is Sparklan WX-6615GT\n");
+	  setRouter ("Sparklan WX-6615GT");
+	  return ROUTER_DELL_TRUEMOBILE_2300_V2;
+	}
       else
-      {
-      cprintf ("router is Dell TrueMobile 2300 v2\n");
-      setRouter ("Dell TrueMobile 2300 v2");
-      return ROUTER_DELL_TRUEMOBILE_2300_V2;
-      }
+	{
+	  cprintf ("router is Dell TrueMobile 2300 v2\n");
+	  setRouter ("Dell TrueMobile 2300 v2");
+	  return ROUTER_DELL_TRUEMOBILE_2300_V2;
+	}
     }
 #endif
   if (nvram_match ("boardtype", "bcm94710ap"))
@@ -758,15 +759,21 @@ internal_getRouterBrand ()
     }
 #ifndef HAVE_BUFFALO
   if (nvram_match ("boardtype", "0x048e") &&
-      nvram_match ("boardnum", "42") &&
-      nvram_match ("boardrev", "0x10"))
+      nvram_match ("boardrev", "0x35") &&
+      nvram_match ("sdram_init", "0x000b"))
     {
-  setRouter ("Linksys WRT54G v8");
-  cprintf ("router is wrt54g v8\n");
-  return ROUTER_WRT54G;
-    
+      setRouter ("DLink DIR-320\n");
+      return ROUTER_DLINK_DIR320;
     }
-  
+  if (nvram_match ("boardtype", "0x048e") &&
+      nvram_match ("boardnum", "42") && nvram_match ("boardrev", "0x10"))
+    {
+      setRouter ("Linksys WRT54G v8");
+      cprintf ("router is wrt54g v8\n");
+      return ROUTER_WRT54G;
+
+    }
+
   setRouter ("Linksys WRT54G/GL/GS");
   cprintf ("router is wrt54g\n");
   return ROUTER_WRT54G;
@@ -2027,6 +2034,8 @@ show_hw_type (int type)
     cprintf ("BCM4704 + BCM5325F\n");
   else if (type == BCM5352E_CHIP)
     cprintf ("BCM5352E\n");
+  else if (type == BCM5354G_CHIP)
+    cprintf ("BCM5354G\n");
   else if (type == BCM4712_CHIP)
     cprintf ("BCM4712 + ADMtek\n");
   else if (type == BCM4704_BCM5325F_EWC_CHIP)
@@ -2048,6 +2057,8 @@ check_hw_type (void)
     return BCM4702_CHIP;
   else if (btype == 0x0708 && !(boardflags & BFL_ENETADM))
     return BCM5325E_CHIP;
+  else if (btype == 0x048e)
+    return BCM5354G_CHIP;
   else if (btype == 0x042f && !(boardflags & BFL_ENETADM))
     return BCM4704_BCM5325F_CHIP;
   else if (btype == 0x478)
@@ -2144,6 +2155,7 @@ get_device_name (void)
     case BCM5325E_CHIP:
     case BCM4704_BCM5325F_CHIP:
     case BCM5352E_CHIP:
+    case BCM5354G_CHIP:
       i = 0;
       break;
     case BCM4702_CHIP:
