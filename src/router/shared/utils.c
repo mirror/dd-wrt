@@ -3188,7 +3188,7 @@ isGrep (char *string, char *cmp)
 //system(devcall);
   FILE *in = popen (devcall, "rb");
   fscanf (in, "%d", &res);
-  fclose (in);
+  pclose (in);
   return res > 0 ? 1 : 0;
 
 }
