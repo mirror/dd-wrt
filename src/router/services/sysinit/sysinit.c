@@ -897,10 +897,10 @@ start_restore_defaults (void)
     }
 
   cprintf ("check CFE nv\n");
-  if (check_now_boot () == CFE_BOOT)
-    check_cfe_nv ();
-  else if (check_now_boot () == PMON_BOOT)
+  if (check_now_boot () == PMON_BOOT)
     check_pmon_nv ();
+  else
+    check_cfe_nv ();
   cprintf ("restore defaults\n");
 
   /* Commit values */
