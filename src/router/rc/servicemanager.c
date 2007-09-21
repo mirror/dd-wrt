@@ -29,7 +29,7 @@
 #define cprintf(fmt, args...)
 
 
-/*
+#ifndef cprintf
 #define cprintf(fmt, args...) do { \
 	FILE *fp = fopen("/dev/console", "w"); \
 	if (fp) { \
@@ -38,7 +38,7 @@
 		fclose(fp); \
 	} \
 } while (0)
-*/
+#endif
 
 void *
 load_service (char *name)
