@@ -808,8 +808,6 @@ start_lan (void)
 	}
     }
 #else
-  if (getRouterBrand () == ROUTER_BOARD_FONERA2200)
-    {
       if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
 	  || nvram_match ("wan_proto", "disabled"))
 	{
@@ -825,7 +823,6 @@ start_lan (void)
 	  nvram_set ("wan_ifname", "vlan2");
 	  nvram_set ("wan_ifnames", "vlan2");
 	}
-    }
 #endif
   strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
   ioctl (s, SIOCGIFHWADDR, &ifr);
