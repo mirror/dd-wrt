@@ -587,6 +587,7 @@ extern void ej_show_subscribers (webs_t wp, int argc, char_t ** argv);
 extern void ej_mf_test (webs_t wp, int argc, char_t ** argv);
 extern void milkfish_user_add (webs_t wp);
 extern void milkfish_user_remove (webs_t wp);
+extern void validate_subscribers (webs_t wp, char *value, struct variable *v);
 #endif
 
 extern void get_filter_services (char *services);

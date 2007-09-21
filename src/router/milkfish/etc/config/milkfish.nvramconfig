@@ -9,6 +9,6 @@
  "milkfish_dynsipurl" "dynsip update url"  "NAME"  "255"  "TRUE" "3"
  "milkfish_audit" "audit"   "CHOICE" "2" "off" "on"  "FALSE" "0" 
  "milkfish_siptrace" "SIPtrace"   "CHOICE" "2" "off" "on"  "FALSE" "0"
- "milkfish_ddsubscribers"  "Password"  "PASSWORD"  "255"  "TRUE" "0"
  "milkfish_ddsubscribersnum"  "number subscriber"  "RANGE"  "1"  "10" "TRUE" "0"
+ "milkfish_ddsubscribers" "" "MFSUBSCRIBERS" "FALSE" "0"
 
