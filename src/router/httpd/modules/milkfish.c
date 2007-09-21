@@ -59,6 +59,76 @@ ej_exec_milkfish_service (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
+void
+validate_subscribers (webs_t wp, char *value, struct variable *v)
+{
+
+  int i, error = 0;
+  char *buf, *cur;
+  int count, sof;
+  struct variable subscriber_variables[] = {
+  {argv:ARGV ("30")},
+  {argv:ARGV ("30")},
+    {NULL},
+  }, *which;
+  buf = nvram_safe_get ("milkfish_ddsubscribersnum");
+  if (buf == NULL || strlen (buf) == 0)
+    return;
+  count = atoi (buf);
+  sof = (count * 128) + 1;
+  buf = (char *) malloc (sof);
+  cur = buf;
+  buf[0] = 0;
+
+  for (i = 0; i < count; i++)
+    {
+
+      char subscriber_user[] = "userXXX";
+      char subscriber_pass[] = "passXXX";
+      char *user = "", new_user[200] = "", *pass = "", new_pass[200] =
+        "";
+
+      snprintf (subscriber_user, sizeof (subscriber_user), "user%d", i);
+      snprintf (subscriber_pass, sizeof (subscriber_pass), "pass%d", i);
+
+      user = websGetVar (wp, subscriber_user, "");
+      pass = websGetVar (wp, subscriber_pass, "");
+
+      which = &subscriber_variables[0];
+      if (strcmp (user, ""))
+        {
+          if (!valid_name (wp, user, &which[0]))
+            {
+              error_value = 1;
+              continue;
+            }
+          else
+            {
+              httpd_filter_name (user, new_user, sizeof (new_user), SET);
+            }
+        }
+
+      if (strcmp (pass, ""))
+        {
+          if (!valid_name (wp, pass, &which[1]))
+            {
+              error_value = 1;
+              continue;
+            }
+          else
+            {
+              httpd_filter_name (pass, new_pass, sizeof (new_pass), SET);
+            }
+        }
+      cur += snprintf (cur, buf + sof - cur, "%s%s:%s",
+                  cur == buf ? "" : " ", new_user, new_pass);
+
+    }
+  if (!error)
+    nvram_set (v->name, buf);
+  free (buf);
+
+}
 
 
 void

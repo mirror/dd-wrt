@@ -209,6 +209,26 @@ addEvent(window, "unload", function() {
 				<div id="helpContainer">
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
+                                               <dl>
+                                                        <dt class="term"><% tran("service.milkfish_mainswitch"); %>:</dt>
+                                                        <dd class="definition"><% tran("service.hmilkfish_right2"); %></dd>
+                                                        <dt class="term"><% tran("service.milkfish_fromswitch"); %>:</dt>
+                                                        <dd class="definition"><% tran("service.hmilkfish_right4"); %></dd>
+                                                        <dt class="term"><% tran("service.milkfish_fromdomain"); %>:</dt>
+                                                        <dd class="definition"><% tran("service.hmilkfish_right6"); %></dd>
+                                                        <dt class="term"><% tran("service.milkfish_username"); %>:</dt>
+                                                        <dd class="definition"><% tran("service.hmilkfish_right8"); %></dd>
+                                                        <dt class="term"><% tran("service.milkfish_password"); %>:</dt>
+                                                        <dd class="definition"><% tran("service.hmilkfish_right10"); %></dd>
+                                                        <dt class="term"><% tran("service.milkfish_siptrace"); %>:</dt>
+                                                        <dd class="definition"><% tran("service.hmilkfish_right12"); %></dd>
+                                                        <dt class="term"><% tran("service.milkfish_subscribers"); %>:</dt>
+                                                        <dd class="definition"><% tran("service.hmilkfish_right14"); %></dd>
+                                                        <dt class="term"><% tran("service.milkfish_aliases"); %>:</dt>
+                                                        <dd class="definition"><% tran("service.hmilkfish_right16"); %></dd>
+                                                        <dt class="term"><% tran("service.milkfish_dynsip"); %>:</dt>
+                                                        <dd class="definition"><% tran("service.hmilkfish_right18"); %></dd>
+                                                </dl>
 						<br/>
 						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HMilkfish.asp');"><% tran("share.more"); %></a>
 					</div>
