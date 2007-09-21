@@ -127,6 +127,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_ASUS_WL500G_PRE:
     case ROUTER_ASUS_WL500W:
     case ROUTER_WRT54G:
+    case ROUTER_WRT54G_V8:
     case ROUTER_MOTOROLA:
     case ROUTER_BUFFALO_WLAG54C:
       nvram_set ("wl0gpio0", "136");
@@ -526,8 +527,15 @@ start_sysinit (void)
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
 		"switch-core switch-adm";
-
 	      break;
+	      
+	    case ROUTER_WRT54G_V8:
+	      modules =
+		nvram_invmatch ("ct_modules",
+				"") ? nvram_safe_get ("ct_modules") :
+		"switch-core switch-robo";
+		  break;
+		  
 	    case ROUTER_WRT54G1X:
 	    case ROUTER_WRT54G:
 	      modules = "diag";
@@ -733,6 +741,7 @@ check_cfe_nv (void)
       break;
 
     case ROUTER_WRT54G:
+    case ROUTER_WRT54G_V8: 
       ret += check_nv ("aa0", "3");
       if (check_hw_type () == BCM5352E_CHIP
 	  || check_hw_type () == BCM5354G_CHIP)
