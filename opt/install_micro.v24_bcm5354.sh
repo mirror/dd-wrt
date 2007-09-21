@@ -17,6 +17,9 @@ make shared-clean
 make httpd-clean
 rm busybox/busybox
 rm busybox/applets/busybox.o
+
+make configure
+
 cd ..
 #make clean
 make
@@ -88,7 +91,7 @@ export TARGETDIR=../src/router/mipsel-uclibc/target
 #cp dd-wrt.v23_wrtsl54gs.bin ~/GruppenLW/dd-wrt.v24_wrtsl54gs.bin
 
 #cp dd-wrt.v23_wrt54gsv4.bin ~/GruppenLW/dd-wrt.v24_wrt54gsv4.bin
-cp dd-wrt.v23.trx ~/GruppenLW/dd-wrt.v24_micro_wrt54gv8.bin
+cp dd-wrt.v23.trx /GruppenLW/dd-wrt.v24_micro_wrt54gv8.bin
 
 
 #cp dd-wrt.v23.prefinal5_asus.trx ~/GruppenLW
