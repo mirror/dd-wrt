@@ -337,9 +337,9 @@ start_restore_defaults (void)
 #elif HAVE_LS2
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
-    {"lan_ifnames", "ath0", 0},
-    {"wan_ifname", "eth0", 0},
-    {"wan_ifnames", "eth0", 0},
+    {"lan_ifnames", "vlan1 ath0", 0},
+    {"wan_ifname", "vlan2", 0},
+    {"wan_ifnames", "vlan2", 0},
     {0, 0, 0}
   };
 #elif HAVE_WHRAG108
