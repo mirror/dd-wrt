@@ -3,8 +3,8 @@
  * original cryptosoft for BSD by Angelos D. Keromytis (angelos@cis.upenn.edu)
  * but is mostly unrecognisable,
  *
- * Written by David McCullough <david_mccullough@au.securecomputing.com>
- * Copyright (C) 2004-2006 David McCullough <david_mccullough@au.securecomputing.com>
+ * Written by David McCullough <david_mccullough@securecomputing.com>
+ * Copyright (C) 2004-2007 David McCullough
  * Copyright (C) 2004-2005 Intel Corporation.
  *
  * LICENSE TERMS
@@ -52,15 +52,20 @@
 #include <cryptodev.h>
 #include <uio.h>
 
+struct {
+	softc_device_decl	sc_dev;
+} swcr_softc;
+
 #define offset_in_page(p) ((unsigned long)(p) & ~PAGE_MASK)
 
 /* Software session entry */
 
-#define SW_TYPE_CIPHER	0
-#define SW_TYPE_HMAC	1
-#define SW_TYPE_AUTH2	2
-#define SW_TYPE_HASH	3
-#define SW_TYPE_COMP	4
+#define SW_TYPE_CIPHER		0
+#define SW_TYPE_HMAC		1
+#define SW_TYPE_AUTH2		2
+#define SW_TYPE_HASH		3
+#define SW_TYPE_COMP		4
+#define SW_TYPE_BLKCIPHER	5
 
 struct swcr_data {
 	int					sw_type;
@@ -68,54 +73,154 @@ struct swcr_data {
 	struct crypto_tfm	*sw_tfm;
 	union {
 		struct {
-			char sw_key[HMAC_BLOCK_LEN];
-			unsigned int  sw_klen;
-			unsigned int  sw_authlen;
+			char *sw_key;
+			int  sw_klen;
+			int  sw_mlen;
 		} hmac;
+		void *sw_comp_buf;
 	} u;
 	struct swcr_data	*sw_next;
 };
 
-static int32_t swcr_id = -1;
+#ifndef CRYPTO_TFM_MODE_CBC
+/*
+ * As of linux-2.6.21 this is no longer defined, and presumably no longer
+ * needed to be passed into the crypto core code.
+ */
+#define	CRYPTO_TFM_MODE_CBC	0
+#define	CRYPTO_TFM_MODE_ECB	0
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
+	/*
+	 * Linux 2.6.19 introduced a new Crypto API, setup macro's to convert new
+	 * API into old API.
+	 */
+
+	/* Symmetric/Block Cipher */
+	struct blkcipher_desc
+	{
+		struct crypto_tfm *tfm;
+		void *info;
+	};
+	#define ecb(X)								#X
+	#define cbc(X)								#X
+	#define crypto_has_blkcipher(X, Y, Z)		crypto_alg_available(X, 0)
+	#define crypto_blkcipher_cast(X)			X
+	#define crypto_blkcipher_tfm(X)				X
+	#define crypto_alloc_blkcipher(X, Y, Z)		crypto_alloc_tfm(X, mode)
+	#define crypto_blkcipher_ivsize(X)			crypto_tfm_alg_ivsize(X)
+	#define crypto_blkcipher_blocksize(X)		crypto_tfm_alg_blocksize(X)
+	#define crypto_blkcipher_setkey(X, Y, Z)	crypto_cipher_setkey(X, Y, Z)
+	#define crypto_blkcipher_encrypt_iv(W, X, Y, Z)	\
+				crypto_cipher_encrypt_iv((W)->tfm, X, Y, Z, (u8 *)((W)->info))
+	#define crypto_blkcipher_decrypt_iv(W, X, Y, Z)	\
+				crypto_cipher_decrypt_iv((W)->tfm, X, Y, Z, (u8 *)((W)->info))
+
+	/* Hash/HMAC/Digest */
+	struct hash_desc
+	{
+		struct crypto_tfm *tfm;
+	};
+	#define hmac(X)							#X
+	#define crypto_has_hash(X, Y, Z)		crypto_alg_available(X, 0)
+	#define crypto_hash_cast(X)				X
+	#define crypto_hash_tfm(X)				X
+	#define crypto_alloc_hash(X, Y, Z)		crypto_alloc_tfm(X, mode)
+	#define crypto_hash_digestsize(X)		crypto_tfm_alg_digestsize(X)
+	#define crypto_hash_digest(W, X, Y, Z)	\
+				crypto_digest_digest((W)->tfm, X, sg_num, Z)
+
+	/* Asymmetric Cipher */
+	#define crypto_has_cipher(X, Y, Z)		crypto_alg_available(X, 0)
+
+	/* Compression */
+	#define crypto_has_comp(X, Y, Z)		crypto_alg_available(X, 0)
+	#define crypto_comp_tfm(X)				X
+	#define crypto_comp_cast(X)				X
+	#define crypto_alloc_comp(X, Y, Z)		crypto_alloc_tfm(X, mode)
+#else
+	#define ecb(X)	"ecb(" #X ")"
+	#define cbc(X)	"cbc(" #X ")"
+	#define hmac(X)	"hmac(" #X ")"
+#endif /* if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19) */
+
+struct crypto_details
+{
+	char *alg_name;
+	int mode;
+	int sw_type;
+};
+
+/*
+ * This needs to be kept updated with CRYPTO_xxx list (cryptodev.h).
+ * If the Algorithm is not supported, then insert a {NULL, 0, 0} entry.
+ *
+ * IMPORTANT: The index to the array IS CRYPTO_xxx.
+ */
+static struct crypto_details
+		crypto_details[CRYPTO_ALGORITHM_MAX + 1] = {
+			{ NULL, 0, 0 }, /* CRYPTO_xxx index starts at 1 */
+			{ cbc(des), CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
+			{ cbc(des3_ede), CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
+			{ cbc(blowfish), CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
+			{ cbc(cast5), CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
+			{ cbc(skipjack), CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
+			{ hmac(md5), 0, SW_TYPE_HMAC },
+			{ hmac(sha1), 0, SW_TYPE_HMAC },
+			{ hmac(ripemd160), 0, SW_TYPE_HMAC },
+			{ "md5-kpdk??", 0, SW_TYPE_HASH },
+			{ "sha1-kpdk??", 0, SW_TYPE_HASH },
+			{ cbc(aes), CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
+			{ ecb(arc4), CRYPTO_TFM_MODE_ECB, SW_TYPE_BLKCIPHER },
+			{ "md5", 0, SW_TYPE_HASH },
+			{ "sha1", 0, SW_TYPE_HASH },
+			{ hmac(digest_null), 0, SW_TYPE_HMAC },
+			{ cbc(cipher_null), CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
+			{ "deflate", 0, SW_TYPE_COMP },
+			{ hmac(sha256), 0, SW_TYPE_HMAC },
+			{ hmac(sha384), 0, SW_TYPE_HMAC },
+			{ hmac(sha512), 0, SW_TYPE_HMAC },
+			{ cbc(camellia), CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
+			{ "sha256", 0, SW_TYPE_HASH },
+			{ "sha384", 0, SW_TYPE_HASH },
+			{ "sha512", 0, SW_TYPE_HASH },
+			{ "ripemd160", 0, SW_TYPE_HASH },
+		};			
+
+int32_t swcr_id = -1;
+module_param(swcr_id, int, 0444);
+MODULE_PARM_DESC(swcr_id, "Read-Only OCF ID for cryptosoft driver");
+
+int swcr_fail_if_compression_grows = 1;
+module_param(swcr_fail_if_compression_grows, int, 0644);
+MODULE_PARM_DESC(swcr_fail_if_compression_grows,
+                "Treat compression that results in more data as a failure");
+
 static struct swcr_data **swcr_sessions = NULL;
 static u_int32_t swcr_sesnum = 0;
 
-static	int swcr_process(void *, struct cryptop *, int);
-static	int swcr_newsession(void *, u_int32_t *, struct cryptoini *);
-static	int swcr_freesession(void *, u_int64_t);
+static	int swcr_process(device_t, struct cryptop *, int);
+static	int swcr_newsession(device_t, u_int32_t *, struct cryptoini *);
+static	int swcr_freesession(device_t, u_int64_t);
 
-static int debug = 0;
-module_param(debug, int, 0);
-MODULE_PARM_DESC(debug,
-	   "Enable debug");
+static device_method_t swcr_methods = {
+	/* crypto device methods */
+	DEVMETHOD(cryptodev_newsession,	swcr_newsession),
+	DEVMETHOD(cryptodev_freesession,swcr_freesession),
+	DEVMETHOD(cryptodev_process,	swcr_process),
+};
 
-static void
-skb_copy_bits_back(struct sk_buff *skb, int offset, caddr_t cp, int len)
-{
-	int i;
-	if (offset < skb_headlen(skb)) {
-		memcpy(skb->data + offset, cp, min_t(int, skb_headlen(skb), len));
-		len -= skb_headlen(skb);
-		cp += skb_headlen(skb);
-	}
-	offset -= skb_headlen(skb);
-	for (i = 0; len > 0 && i < skb_shinfo(skb)->nr_frags; i++) {
-		if (offset < skb_shinfo(skb)->frags[i].size) {
-			memcpy(page_address(skb_shinfo(skb)->frags[i].page) +
-					skb_shinfo(skb)->frags[i].page_offset,
-					cp, min_t(int, skb_shinfo(skb)->frags[i].size, len));
-			len -= skb_shinfo(skb)->frags[i].size;
-			cp += skb_shinfo(skb)->frags[i].size;
-		}
-		offset -= skb_shinfo(skb)->frags[i].size;
-	}
-}
+#define debug swcr_debug
+int swcr_debug = 0;
+module_param(swcr_debug, int, 0644);
+MODULE_PARM_DESC(swcr_debug, "Enable debug");
 
 /*
  * Generate a new software session.
  */
 static int
-swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
+swcr_newsession(device_t dev, u_int32_t *sid, struct cryptoini *cri)
 {
 	struct swcr_data **swd;
 	u_int32_t i;
@@ -143,7 +248,7 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 		} else
 			swcr_sesnum *= 2;
 
-		swd = kmalloc(swcr_sesnum * sizeof(struct swcr_data *), GFP_ATOMIC);
+		swd = kmalloc(swcr_sesnum * sizeof(struct swcr_data *), SLAB_ATOMIC);
 		if (swd == NULL) {
 			/* Reset session number */
 			if (swcr_sesnum == CRYPTO_SW_SESSIONS)
@@ -170,129 +275,65 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 
 	while (cri) {
 		*swd = (struct swcr_data *) kmalloc(sizeof(struct swcr_data),
-				GFP_ATOMIC);
+				SLAB_ATOMIC);
 		if (*swd == NULL) {
 			swcr_freesession(NULL, i);
-			dprintk("%s,%d: EINVAL\n", __FILE__, __LINE__);
+			dprintk("%s,%d: ENOBUFS\n", __FILE__, __LINE__);
 			return ENOBUFS;
 		}
 		memset(*swd, 0, sizeof(struct swcr_data));
 
-		algo = NULL;
-		mode = 0;
-		sw_type = SW_TYPE_CIPHER;
+		if (cri->cri_alg > CRYPTO_ALGORITHM_MAX) {
+			printk("cryptosoft: Unknown algorithm 0x%x\n", cri->cri_alg);
+			swcr_freesession(NULL, i);
+			return EINVAL;
+		}
 
+		algo = crypto_details[cri->cri_alg].alg_name;
+		if (!algo || !*algo) {
+			printk("cryptosoft: Unsupported algorithm 0x%x\n", cri->cri_alg);
+			swcr_freesession(NULL, i);
+			return EINVAL;
+		}
+
+		mode = crypto_details[cri->cri_alg].mode;
+		sw_type = crypto_details[cri->cri_alg].sw_type;
+
+		/* Algorithm specific configuration */
 		switch (cri->cri_alg) {
-		case CRYPTO_DES_CBC:
-			algo = "des";
-			mode = CRYPTO_TFM_MODE_CBC;
-			break;
-		case CRYPTO_3DES_CBC:
-			algo = "des3_ede";
-			mode = CRYPTO_TFM_MODE_CBC;
-			break;
-		case CRYPTO_BLF_CBC:
-			algo = "blowfish";
-			mode = CRYPTO_TFM_MODE_CBC;
-			break;
-		case CRYPTO_CAST_CBC:
-			algo = "cast5";
-			mode = CRYPTO_TFM_MODE_CBC;
-			break;
-		case CRYPTO_SKIPJACK_CBC:
-			algo = "skipjack";
-			mode = CRYPTO_TFM_MODE_CBC;
-			break;
-		case CRYPTO_RIJNDAEL128_CBC:
-			algo = "aes";
-			mode = CRYPTO_TFM_MODE_CBC;
-			break;
 		case CRYPTO_NULL_CBC:
-			algo = "cipher_null";
-			mode = 0;
 			cri->cri_klen = 0; /* make it work with crypto API */
-			break;
-
-#if defined(CONFIG_CRYPTO_HMAC) || defined(CONFIG_CRYPTO_HMAC_MODULE)
-		case CRYPTO_MD5_HMAC:
-			algo = "hmac(md5)";
-			sw_type = SW_TYPE_HMAC;
-			(*swd)->u.hmac.sw_authlen = 12;
-			break;
-		case CRYPTO_SHA1_HMAC:
-			algo = "hmac(sha1)";
-			sw_type = SW_TYPE_HMAC;
-			(*swd)->u.hmac.sw_authlen = 12;
-			break;
-		case CRYPTO_SHA2_HMAC:
-			if (cri->cri_klen == 256)
-				algo = "hmac(sha256)";
-			else if (cri->cri_klen == 384)
-				algo = "hmac(sha384)";
-			else if (cri->cri_klen == 512)
-				algo = "hmac(sha512)";
-			sw_type = SW_TYPE_HMAC;
-			break;
-		case CRYPTO_NULL_HMAC:
-			algo = "digest_null";
-			sw_type = SW_TYPE_HMAC;
-			break;
-		case CRYPTO_RIPEMD160_HMAC:
-			algo = "ripemd160";
-			sw_type = SW_TYPE_HMAC;
-			break;
-		case CRYPTO_MD5:
-			algo = "md5";
-			sw_type = SW_TYPE_HASH;
-			(*swd)->u.hmac.sw_authlen = 16;
-			break;
-		case CRYPTO_SHA1:
-			algo = "sha1";
-			sw_type = SW_TYPE_HASH;
-			(*swd)->u.hmac.sw_authlen = 20;
-			break;
-#endif /* defined(CONFIG_CRYPTO_HMAC) || defined(CONFIG_CRYPTO_HMAC_MODULE) */
-
-		case CRYPTO_MD5_KPDK:
-			algo = "??";
-			sw_type = SW_TYPE_AUTH2;
-			break;
-		case CRYPTO_SHA1_KPDK:
-			algo = "??";
-			sw_type = SW_TYPE_AUTH2;
-			break;
-		case CRYPTO_DEFLATE_COMP:
-			algo = "deflate";
-			sw_type = SW_TYPE_COMP;
 			break;
 		default:
 			break;
 		}
 
-		if (!algo || !*algo) {
-			printk("cryptosoft: Unknown algo 0x%x\n", cri->cri_alg);
-			swcr_freesession(NULL, i);
-			return EINVAL;
-		}
+		if (sw_type == SW_TYPE_BLKCIPHER) {
+			dprintk("%s crypto_alloc_blkcipher(%s, 0x%x)\n", __FUNCTION__,
+					algo, mode);
 
-		dprintk("%s crypto_alloc_tfm(%s, 0x%x)\n", __FUNCTION__, algo, mode);
+			(*swd)->sw_tfm = crypto_blkcipher_tfm(
+								crypto_alloc_blkcipher(algo, 0,
+									CRYPTO_ALG_ASYNC));
+			if (!(*swd)->sw_tfm) {
+				dprintk("cryptosoft: crypto_alloc_blkcipher failed(%s,0x%x)\n",
+						algo,mode);
+				swcr_freesession(NULL, i);
+				return EINVAL;
+			}
 
-		(*swd)->sw_tfm = crypto_alloc_tfm(algo, mode);
-		if (!(*swd)->sw_tfm) {
-			dprintk("cryptosoft: crypto_alloc_tfm failed(%s,0x%x)\n",algo,mode);
-			swcr_freesession(NULL, i);
-			return EINVAL;
-		}
-
-		if (sw_type == SW_TYPE_CIPHER) {
 			if (debug) {
-				dprintk("%s key:", __FUNCTION__);
+				dprintk("%s key:cri->cri_klen=%d,(cri->cri_klen + 7)/8=%d",
+						__FUNCTION__,cri->cri_klen,(cri->cri_klen + 7)/8);
 				for (i = 0; i < (cri->cri_klen + 7) / 8; i++)
+				{
 					dprintk("%s0x%x", (i % 8) ? " " : "\n    ",cri->cri_key[i]);
+				}
 				dprintk("\n");
 			}
-			error = crypto_cipher_setkey((*swd)->sw_tfm, cri->cri_key,
-					(cri->cri_klen + 7) / 8);
+			error = crypto_blkcipher_setkey(
+						crypto_blkcipher_cast((*swd)->sw_tfm), cri->cri_key,
+							(cri->cri_klen + 7) / 8);
 			if (error) {
 				printk("cryptosoft: setkey failed %d (crt_flags=0x%x)\n", error,
 						(*swd)->sw_tfm->crt_flags);
@@ -300,10 +341,50 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 				return error;
 			}
 		} else if (sw_type == SW_TYPE_HMAC || sw_type == SW_TYPE_HASH) {
+			dprintk("%s crypto_alloc_hash(%s, 0x%x)\n", __FUNCTION__,
+					algo, mode);
+
+			(*swd)->sw_tfm = crypto_hash_tfm(
+								crypto_alloc_hash(algo, 0, CRYPTO_ALG_ASYNC));
+
+			if (!(*swd)->sw_tfm) {
+				dprintk("cryptosoft: crypto_alloc_hash failed(%s,0x%x)\n",
+						algo, mode);
+				swcr_freesession(NULL, i);
+				return EINVAL;
+			}
+
 			(*swd)->u.hmac.sw_klen = (cri->cri_klen + 7) / 8;
-			if (HMAC_BLOCK_LEN < (*swd)->u.hmac.sw_klen)
-				printk("%s,%d: ERROR ERROR ERROR\n", __FILE__, __LINE__);
+			(*swd)->u.hmac.sw_key = (char *)kmalloc((*swd)->u.hmac.sw_klen,
+				SLAB_ATOMIC);
+			if ((*swd)->u.hmac.sw_key == NULL) {
+				swcr_freesession(NULL, i);
+				dprintk("%s,%d: ENOBUFS\n", __FILE__, __LINE__);
+				return ENOBUFS;
+			}
 			memcpy((*swd)->u.hmac.sw_key, cri->cri_key, (*swd)->u.hmac.sw_klen);
+			if (cri->cri_mlen) {
+				(*swd)->u.hmac.sw_mlen = cri->cri_mlen;
+			} else {
+				(*swd)->u.hmac.sw_mlen =
+						crypto_hash_digestsize(
+								crypto_hash_cast((*swd)->sw_tfm));
+			}
+		} else if (sw_type == SW_TYPE_COMP) {
+			(*swd)->sw_tfm = crypto_comp_tfm(
+					crypto_alloc_comp(algo, 0, CRYPTO_ALG_ASYNC));
+			if (!(*swd)->sw_tfm) {
+				dprintk("cryptosoft: crypto_alloc_comp failed(%s,0x%x)\n",
+						algo, mode);
+				swcr_freesession(NULL, i);
+				return EINVAL;
+			}
+			(*swd)->u.sw_comp_buf = kmalloc(CRYPTO_MAX_DATA_LEN, SLAB_ATOMIC);
+			if ((*swd)->u.sw_comp_buf == NULL) {
+				swcr_freesession(NULL, i);
+				dprintk("%s,%d: ENOBUFS\n", __FILE__, __LINE__);
+				return ENOBUFS;
+			}
 		} else {
 			printk("cryptosoft: Unhandled sw_type %d\n", sw_type);
 			swcr_freesession(NULL, i);
@@ -323,7 +404,7 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
  * Free a session.
  */
 static int
-swcr_freesession(void *arg, u_int64_t tid)
+swcr_freesession(device_t dev, u_int64_t tid)
 {
 	struct swcr_data *swd;
 	u_int32_t sid = CRYPTO_SESID2LID(tid);
@@ -343,6 +424,13 @@ swcr_freesession(void *arg, u_int64_t tid)
 		swcr_sessions[sid] = swd->sw_next;
 		if (swd->sw_tfm)
 			crypto_free_tfm(swd->sw_tfm);
+		if (swd->sw_type == SW_TYPE_COMP) {
+			if (swd->u.sw_comp_buf)
+				kfree(swd->u.sw_comp_buf);
+		} else {
+			if (swd->u.hmac.sw_key)
+				kfree(swd->u.hmac.sw_key);
+		}
 		kfree(swd);
 	}
 	return 0;
@@ -352,12 +440,11 @@ swcr_freesession(void *arg, u_int64_t tid)
  * Process a software request.
  */
 static int
-swcr_process(void *arg, struct cryptop *crp, int hint)
+swcr_process(device_t dev, struct cryptop *crp, int hint)
 {
 	struct cryptodesc *crd;
 	struct swcr_data *sw;
 	u_int32_t lid;
-	int type;
 #define SCATTERLIST_MAX 16
 	struct scatterlist sg[SCATTERLIST_MAX];
 	int sg_num, sg_len, skip;
@@ -439,8 +526,6 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 		if (crp->crp_flags & CRYPTO_F_SKBUF) {
 			int i, len;
 
-			type = CRYPTO_BUF_SKBUF;
-
 			sg_num = 0;
 			sg_len = 0;
 
@@ -477,13 +562,11 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 		} else if (crp->crp_flags & CRYPTO_F_IOV) {
 			int len;
 
-			type = CRYPTO_BUF_IOV;
-
 			sg_len = 0;
-			for (sg_num = 0; sg_len < crd->crd_len &&
+			for (sg_num = 0; sg_len <= crd->crd_len &&
 					sg_num < uiop->uio_iovcnt &&
 					sg_num < SCATTERLIST_MAX; sg_num++) {
-				if (skip < uiop->uio_iov[sg_num].iov_len) {
+				if (skip <= uiop->uio_iov[sg_num].iov_len) {
 					sg[sg_num].page   =
 							virt_to_page(uiop->uio_iov[sg_num].iov_base+skip);
 					sg[sg_num].offset =
@@ -498,7 +581,6 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 					skip -= uiop->uio_iov[sg_num].iov_len;
 			}
 		} else {
-			type = CRYPTO_BUF_CONTIG;
 			sg[0].page   = virt_to_page(crp->crp_buf + skip);
 			sg[0].offset = offset_in_page(crp->crp_buf + skip);
 			sg_len = (crp->crp_ilen - skip);
@@ -510,16 +592,19 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 
 
 		switch (sw->sw_type) {
-		case SW_TYPE_CIPHER: {
-			unsigned char iv[64/*FIXME*/];
+		case SW_TYPE_BLKCIPHER: {
+			unsigned char iv[EALG_MAX_BLOCK_LEN];
 			unsigned char *ivp = iv;
-			int ivsize =
-			   	crypto_blkcipher_ivsize(crypto_blkcipher_cast(sw->sw_tfm));
+			int ivsize = 
+				crypto_blkcipher_ivsize(crypto_blkcipher_cast(sw->sw_tfm));
+			struct blkcipher_desc desc;
 
-			if (sg_len < crypto_blkcipher_blocksize(crypto_blkcipher_cast(sw->sw_tfm))) {
+			if (sg_len < crypto_blkcipher_blocksize(
+					crypto_blkcipher_cast(sw->sw_tfm))) {
 				crp->crp_etype = EINVAL;
 				dprintk("%s,%d: EINVAL len %d < %d\n", __FILE__, __LINE__,
-						sg_len, crypto_tfm_alg_blocksize(sw->sw_tfm));
+						sg_len, crypto_blkcipher_blocksize(
+							crypto_blkcipher_cast(sw->sw_tfm)));
 				goto done;
 			}
 
@@ -539,7 +624,9 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 								crd->crd_key[i]);
 					dprintk("\n");
 				}
-				error = crypto_blkcipher_setkey(crypto_blkcipher_cast(sw->sw_tfm), crd->crd_key, (crd->crd_klen + 7) / 8);
+				error = crypto_blkcipher_setkey(
+							crypto_blkcipher_cast(sw->sw_tfm), crd->crd_key,
+							(crd->crd_klen + 7) / 8);
 				if (error) {
 					dprintk("cryptosoft: setkey failed %d (crt_flags=0x%x)\n",
 							error, sw->sw_tfm->crt_flags);
@@ -547,10 +634,10 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 				}
 			}
 
+			memset(&desc, 0, sizeof(desc));
+			desc.tfm = crypto_blkcipher_cast(sw->sw_tfm);
+
 			if (crd->crd_flags & CRD_F_ENCRYPT) { /* encrypt */
-				struct blkcipher_desc desc;
-				memset(&desc, 0, sizeof(desc));
-				desc.tfm = crypto_blkcipher_cast(sw->sw_tfm);
 
 				if (crd->crd_flags & CRD_F_IV_EXPLICIT) {
 					ivp = crd->crd_iv;
@@ -561,104 +648,127 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 				 * do we have to copy the IV back to the buffer ?
 				 */
 				if ((crd->crd_flags & CRD_F_IV_PRESENT) == 0) {
-					if (type == CRYPTO_BUF_CONTIG)
-						memcpy(crp->crp_buf + crd->crd_inject, ivp, ivsize);
-					else if (type == CRYPTO_BUF_SKBUF)
-						skb_copy_bits_back(skb, crd->crd_inject, ivp, ivsize);
-					else if (type == CRYPTO_BUF_IOV)
-						cuio_copyback(uiop,crd->crd_inject,ivsize,(caddr_t)ivp);
+					crypto_copyback(crp->crp_flags, crp->crp_buf,
+							crd->crd_inject, ivsize, (caddr_t)ivp);
 				}
-				crypto_blkcipher_set_iv(crypto_blkcipher_cast(sw->sw_tfm), ivp, ivsize);
-				crypto_blkcipher_encrypt(&desc, sg, sg, sg_len);
+				desc.info = ivp;
+				crypto_blkcipher_encrypt_iv(&desc, sg, sg, sg_len);
 
 			} else { /*decrypt */
-				struct blkcipher_desc desc;
-				memset(&desc, 0, sizeof(desc));
-				desc.tfm = crypto_blkcipher_cast(sw->sw_tfm);
 
 				if (crd->crd_flags & CRD_F_IV_EXPLICIT) {
 					ivp = crd->crd_iv;
 				} else {
-					if (type == CRYPTO_BUF_CONTIG)
-						memcpy(ivp, crp->crp_buf + crd->crd_inject, ivsize);
-					else if (type == CRYPTO_BUF_SKBUF)
-						skb_copy_bits(skb, crd->crd_inject, ivp, ivsize);
-					else if (type == CRYPTO_BUF_IOV)
-						cuio_copydata(uiop,crd->crd_inject,ivsize,(caddr_t)ivp);
+					crypto_copydata(crp->crp_flags, crp->crp_buf,
+							crd->crd_inject, ivsize, (caddr_t)ivp);
 				}
-				crypto_blkcipher_set_iv(crypto_blkcipher_cast(sw->sw_tfm), ivp, ivsize);
+				desc.info = ivp;
 				crypto_blkcipher_decrypt_iv(&desc, sg, sg, sg_len);
 			}
 			} break;
 		case SW_TYPE_HMAC:
 		case SW_TYPE_HASH:
-#if defined(CONFIG_CRYPTO_HMAC) || defined(CONFIG_CRYPTO_HMAC_MODULE)
 			{
-			char result[AALG_MAX_RESULT_LEN];
-			int alen;
-			/*
-			 * if the authlen is set,  use it,  otherwise use the
-			 * digest size.
-			 */
-			if (sw->u.hmac.sw_authlen)
-				alen = sw->u.hmac.sw_authlen;
-			else
-				alen = crypto_tfm_alg_digestsize(sw->sw_tfm);
-			/*
-			 * check we have room for the result,  the IOV option
-			 * can have it's own local space,  check for that as well
-			 */
-			if (crp->crp_ilen - crd->crd_inject < alen &&
-					((type != CRYPTO_BUF_IOV || !crp->crp_mac))) {
-				dprintk("cryptosoft: EINVAL len=%d, inject=%d digestsize=%d\n",
-						crd->crd_skip + sg_len, crd->crd_inject, alen);
+			char result[HASH_MAX_LEN];
+			struct hash_desc desc;
+
+			/* check we have room for the result */
+			if (crp->crp_ilen - crd->crd_inject < sw->u.hmac.sw_mlen) {
+				dprintk(
+			"cryptosoft: EINVAL crp_ilen=%d, len=%d, inject=%d digestsize=%d\n",
+						crp->crp_ilen, crd->crd_skip + sg_len, crd->crd_inject,
+						sw->u.hmac.sw_mlen);
 				crp->crp_etype = EINVAL;
 				goto done;
 			}
+
+			memset(&desc, 0, sizeof(desc));
+			desc.tfm = crypto_hash_cast(sw->sw_tfm);
+
 			memset(result, 0, sizeof(result));
+
 			if (sw->sw_type == SW_TYPE_HMAC) {
-#if 1
-				struct hash_desc desc;
-				memset(&desc, 0, sizeof(desc));
-				desc.tfm = crypto_hash_cast(sw->sw_tfm);
-				crypto_hash_setkey(crypto_hash_cast(sw->sw_tfm),
-					   	sw->u.hmac.sw_key, sw->u.hmac.sw_klen);
-				crypto_hash_digest(&desc, sg, sg_num, result);
-#else
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
 				crypto_hmac(sw->sw_tfm, sw->u.hmac.sw_key, &sw->u.hmac.sw_klen,
 						sg, sg_num, result);
-#endif
-			} else /* SW_TYPE_HASH */
-				crypto_digest_digest(sw->sw_tfm, sg, sg_num, result);
-
-			if (type == CRYPTO_BUF_CONTIG) {
-				memcpy(crp->crp_buf + crd->crd_inject, result, alen);
-			} else if (type == CRYPTO_BUF_IOV) {
-				if (crp->crp_mac) {
-					memcpy(crp->crp_mac, result, alen);
-				} else {
-					cuio_copyback(uiop, crd->crd_inject, alen, result);
-				}
-			} else if (type == CRYPTO_BUF_SKBUF) {
-				skb_copy_bits_back(skb, crd->crd_inject, result, alen);
-			} else
-				printk("cryptosoft: unknown buffer type 0x%x\n", type);
-			}
 #else
-			crp->crp_etype = EINVAL;
-			goto done;
-#endif
+				crypto_hash_setkey(desc.tfm, sw->u.hmac.sw_key,
+						sw->u.hmac.sw_klen);
+				crypto_hash_digest(&desc, sg, sg_len, result);
+#endif /* #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19) */
+				
+			} else { /* SW_TYPE_HASH */
+				crypto_hash_digest(&desc, sg, sg_len, result);
+			}
+
+			crypto_copyback(crp->crp_flags, crp->crp_buf,
+					crd->crd_inject, sw->u.hmac.sw_mlen, result);
+			}
 			break;
 
-		case SW_TYPE_COMP:
-#if 0
-			data = allocate contiguous buffer (crp->crp_buf, crd->crd_len)
-			if (crd->crd_flags & CRD_F_COMP)
-				ret = crypto_comp_compress(sw->sw_tfm, data, len, result, &dlen);
-			else
-				ret = crypto_comp_decompress(sw->sw_tfm, data, len, result, &dlen);
-#endif
-			break;
+		case SW_TYPE_COMP: {
+			void *ibuf = NULL;
+			void *obuf = sw->u.sw_comp_buf;
+			int ilen = sg_len, olen = CRYPTO_MAX_DATA_LEN;
+			int ret = 0;
+
+			/*
+			 * we need to use an additional copy if there is more than one
+			 * input chunk since the kernel comp routines do not handle
+			 * SG yet.  Otherwise we just use the input buffer as is.
+			 * Rather than allocate another buffer we just split the tmp
+			 * buffer we already have.
+			 * Perhaps we should just use zlib directly ?
+			 */
+			if (sg_num > 1) {
+				int blk;
+
+				ibuf = obuf;
+				for (blk = 0; blk < sg_num; blk++) {
+					memcpy(obuf, page_address(sg[blk].page) + sg[blk].offset,
+							sg[blk].length);
+					obuf += sg[blk].length;
+				}
+				olen -= sg_len;
+			} else
+				ibuf = page_address(sg[0].page) + sg[0].offset;
+
+			if (crd->crd_flags & CRD_F_ENCRYPT) { /* compress */
+				ret = crypto_comp_compress(crypto_comp_cast(sw->sw_tfm),
+						ibuf, ilen, obuf, &olen);
+				if (!ret && olen > crd->crd_len) {
+					dprintk("cryptosoft: ERANGE compress %d into %d\n",
+							crd->crd_len, olen);
+					if (swcr_fail_if_compression_grows)
+						ret = ERANGE;
+				}
+			} else { /* decompress */
+				ret = crypto_comp_decompress(crypto_comp_cast(sw->sw_tfm),
+						ibuf, ilen, obuf, &olen);
+				if (!ret && (olen + crd->crd_inject) > crp->crp_olen) {
+					dprintk("cryptosoft: ETOOSMALL decompress %d into %d, "
+							"space for %d,at offset %d\n",
+							crd->crd_len, olen, crp->crp_olen, crd->crd_inject);
+					ret = ETOOSMALL;
+				}
+			}
+			if (ret)
+				dprintk("%s,%d: ret = %d\n", __FILE__, __LINE__, ret);
+
+			/*
+			 * on success copy result back,
+			 * linux crpyto API returns -errno,  we need to fix that
+			 */
+			crp->crp_etype = ret < 0 ? -ret : ret;
+			if (ret == 0) {
+				/* copy back the result and return it's size */
+				crypto_copyback(crp->crp_flags, crp->crp_buf,
+						crd->crd_inject, olen, obuf);
+				crp->crp_olen = olen;
+			}
+
+
+			} break;
 
 		default:
 			/* Unknown/unsupported algorithm */
@@ -676,33 +786,101 @@ done:
 static int
 cryptosoft_init(void)
 {
+	int i, sw_type, mode;
+	char *algo;
+
 	dprintk("%s(%p)\n", __FUNCTION__, cryptosoft_init);
-	swcr_id = crypto_get_driverid(CRYPTOCAP_F_SOFTWARE | CRYPTOCAP_F_SYNC);
-	if (swcr_id < 0)
-		panic("Software crypto device cannot initialize!");
-	crypto_register(swcr_id, CRYPTO_DES_CBC,
-	    0, 0, swcr_newsession, swcr_freesession, swcr_process, NULL);
+
+	softc_device_init(&swcr_softc, "cryptosoft", 0, swcr_methods);
+
+	swcr_id = crypto_get_driverid(softc_get_device(&swcr_softc),
+			CRYPTOCAP_F_SOFTWARE | CRYPTOCAP_F_SYNC);
+	if (swcr_id < 0) {
+		printk("Software crypto device cannot initialize!");
+		return -ENODEV;
+	}
+
 #define	REGISTER(alg) \
-	crypto_register(swcr_id, alg, 0,0,NULL,NULL,NULL,NULL)
-	REGISTER(CRYPTO_3DES_CBC);
-	REGISTER(CRYPTO_BLF_CBC);
-	REGISTER(CRYPTO_CAST_CBC);
-	REGISTER(CRYPTO_SKIPJACK_CBC);
-	REGISTER(CRYPTO_NULL_CBC);
-	REGISTER(CRYPTO_MD5);
-	REGISTER(CRYPTO_SHA1);
-	REGISTER(CRYPTO_MD5_HMAC);
-	REGISTER(CRYPTO_SHA1_HMAC);
-	REGISTER(CRYPTO_SHA2_HMAC);
-	REGISTER(CRYPTO_RIPEMD160_HMAC);
-	REGISTER(CRYPTO_NULL_HMAC);
-	REGISTER(CRYPTO_MD5_KPDK);
-	REGISTER(CRYPTO_SHA1_KPDK);
-	REGISTER(CRYPTO_MD5);
-	REGISTER(CRYPTO_SHA1);
-	REGISTER(CRYPTO_RIJNDAEL128_CBC);
-	REGISTER(CRYPTO_DEFLATE_COMP);
-#undef REGISTER
+		crypto_register(swcr_id, alg, 0,0);
+
+	for (i = CRYPTO_ALGORITHM_MIN; i <= CRYPTO_ALGORITHM_MAX; ++i)
+	{
+		
+		algo = crypto_details[i].alg_name;
+		if (!algo || !*algo)
+		{
+			dprintk("%s:Algorithm %d not supported\n", __FUNCTION__, i);
+			continue;
+		}
+
+		mode = crypto_details[i].mode;
+		sw_type = crypto_details[i].sw_type;
+
+		switch (sw_type)
+		{
+			case SW_TYPE_CIPHER:
+				if (crypto_has_cipher(algo, 0, CRYPTO_ALG_ASYNC))
+				{
+					REGISTER(i);
+				}
+				else
+				{
+					dprintk("%s:CIPHER algorithm %d:'%s' not supported\n",
+								__FUNCTION__, i, algo);
+				}
+				break;
+			case SW_TYPE_HMAC:
+				if (crypto_has_hash(algo, 0, CRYPTO_ALG_ASYNC))
+				{
+					REGISTER(i);
+				}
+				else
+				{
+					dprintk("%s:HMAC algorithm %d:'%s' not supported\n",
+								__FUNCTION__, i, algo);
+				}
+				break;
+			case SW_TYPE_HASH:
+				if (crypto_has_hash(algo, 0, CRYPTO_ALG_ASYNC))
+				{
+					REGISTER(i);
+				}
+				else
+				{
+					dprintk("%s:HASH algorithm %d:'%s' not supported\n",
+								__FUNCTION__, i, algo);
+				}
+				break;
+			case SW_TYPE_COMP:
+				if (crypto_has_comp(algo, 0, CRYPTO_ALG_ASYNC))
+				{
+					REGISTER(i);
+				}
+				else
+				{
+					dprintk("%s:COMP algorithm %d:'%s' not supported\n",
+								__FUNCTION__, i, algo);
+				}
+				break;
+			case SW_TYPE_BLKCIPHER:
+				if (crypto_has_blkcipher(algo, 0, CRYPTO_ALG_ASYNC))
+				{
+					REGISTER(i);
+				}
+				else
+				{
+					dprintk("%s:BLKCIPHER algorithm %d:'%s' not supported\n",
+								__FUNCTION__, i, algo);
+				}
+				break;
+			default:
+				dprintk(
+				"%s:Algorithm Type %d not supported (algorithm %d:'%s')\n",
+					__FUNCTION__, sw_type, i, algo);
+				break;
+		}
+	}
+
 	return(0);
 }
 
@@ -718,5 +896,5 @@ module_init(cryptosoft_init);
 module_exit(cryptosoft_exit);
 
 MODULE_LICENSE("Dual BSD/GPL");
-MODULE_AUTHOR("David McCullough <dmccullough@cyberguard.com>");
+MODULE_AUTHOR("David McCullough <david_mccullough@securecomputing.com>");
 MODULE_DESCRIPTION("Cryptosoft (OCF module for kernel crypto)");

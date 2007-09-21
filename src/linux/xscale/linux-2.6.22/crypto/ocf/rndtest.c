@@ -1,7 +1,8 @@
 /*	$OpenBSD$	*/
 
 /*
- * OCF/Linux port done by David McCullough <david_mccullough@au.securecomputing.com>
+ * OCF/Linux port done by David McCullough <david_mccullough@securecomputing.com>
+ * Copyright (C) 2006-2007 David McCullough
  * Copyright (C) 2004-2005 Intel Corporation.
  * The license and original author are listed below.
  *
@@ -38,12 +39,17 @@
 #ifndef AUTOCONF_INCLUDED
 #include <linux/config.h>
 #endif
-#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/list.h>
+#include <linux/wait.h>
+#include <linux/time.h>
 #include <linux/version.h>
+#include <linux/unistd.h>
+#include <linux/kernel.h>
 #include <linux/string.h>
+#include <linux/time.h>
+#include <cryptodev.h>
 #include "rndtest.h"
-
-#define bzero(s,l) memset(s, 0, l)
 
 static struct rndtest_stats rndstats;
 
@@ -81,10 +87,10 @@ rndtest_test(struct rndtest_state *rsp)
 }
 
 
-extern int *crypto_debug;
+extern int crypto_debug;
 #define rndtest_verbose 2
 #define rndtest_report(rsp, failure, fmt, a...) \
-	{ if (failure || *crypto_debug) { printk("rng_test: " fmt "\n", a); } else; }
+	{ if (failure || crypto_debug) { printk("rng_test: " fmt "\n", a); } else; }
 
 #define	RNDTEST_MONOBIT_MINONES	9725
 #define	RNDTEST_MONOBIT_MAXONES	10275

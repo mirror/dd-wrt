@@ -755,7 +755,6 @@ static int unix_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 	unsigned hash;
 	struct unix_address *addr;
 	struct hlist_head *list;
-
 	err = -EINVAL;
 	if (sunaddr->sun_family != AF_UNIX)
 		goto out;
@@ -775,7 +774,6 @@ static int unix_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 	err = -EINVAL;
 	if (u->addr)
 		goto out_up;
-
 	err = -ENOMEM;
 	addr = kmalloc(sizeof(*addr)+addr_len, GFP_KERNEL);
 	if (!addr)
@@ -800,8 +798,9 @@ static int unix_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 		dentry = lookup_create(&nd, 0);
 		err = PTR_ERR(dentry);
 		if (IS_ERR(dentry))
+		    {
 			goto out_mknod_unlock;
-
+		    }
 		/*
 		 * All right, let's create it.
 		 */
@@ -809,7 +808,9 @@ static int unix_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 		       (SOCK_INODE(sock)->i_mode & ~current->fs->umask);
 		err = vfs_mknod(nd.dentry->d_inode, dentry, mode, 0);
 		if (err)
+		    {
 			goto out_mknod_dput;
+		    }
 		mutex_unlock(&nd.dentry->d_inode->i_mutex);
 		dput(nd.dentry);
 		nd.dentry = dentry;

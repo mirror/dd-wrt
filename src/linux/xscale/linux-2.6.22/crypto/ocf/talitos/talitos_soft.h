@@ -39,6 +39,7 @@ struct desc_cryptop_pair {
  * Holds data specific to a single talitos device.
  */
 struct talitos_softc {
+	softc_device_decl	sc_cdev;
 	struct platform_device	*sc_dev;	/* device backpointer */
 	ocf_iomem_t		sc_base_addr;
 	int			sc_irq;
@@ -69,6 +70,7 @@ struct talitos_session {
 	u_int32_t	ses_hmac[5];		/* hmac inner state */
 	u_int32_t	ses_hmac_len;		/* hmac length */
 	u_int32_t	ses_iv[4];		/* DES/3DES/AES iv */
+	u_int32_t	ses_mlen;		/* desired hash result len (12=ipsec or 16) */
 };
 
 #define	TALITOS_SESSION(sid)	((sid) & 0x0fffffff)

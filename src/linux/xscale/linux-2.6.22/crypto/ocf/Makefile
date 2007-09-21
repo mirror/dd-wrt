@@ -1,113 +1,57 @@
-
-ifdef obj
-my_inc_base = $(obj)
-else
-my_inc_base = .
-O_TARGET := ocfdrv.o
-endif
-
 # for SGlinux builds
 -include $(ROOTDIR)/modules/.config
 
-obj-$(CONFIG_OCF_OCF)        += $(obj-base)ocf.o
-obj-$(CONFIG_OCF_CRYPTODEV)  += $(obj-base)cryptodev.o
-obj-$(CONFIG_OCF_CRYPTOSOFT) += $(obj-base)cryptosoft.o
+OCF_OBJS = crypto.o criov.o
 
-obj-$(CONFIG_OCF_SAFE)       += $(obj-base)safe/safe.o
-obj-$(CONFIG_OCF_HIFN)       += $(obj-base)hifn/hifn7751.o
-obj-$(CONFIG_OCF_IXP4XX)     += $(obj-base)ixp4xx/ixp4xx.o
-obj-$(CONFIG_OCF_TALITOS)    += $(obj-base)talitos/talitos.o
-obj-$(CONFIG_OCF_OCFNULL)    += $(obj-base)ocfnull/ocfnull.o
-
-obj-$(CONFIG_OCF_BENCH)      += $(obj-base)ocf-bench.o
-
-ifndef obj
-list-multi += ocf.o
-export-objs += crypto.o criov.o random.o
+ifdef CONFIG_OCF_RANDOMHARVEST
+OCF_OBJS += random.o
 endif
-
-ocf-objs   := $(obj-base)crypto.o $(obj-base)criov.o $(obj-base)random.o
 
 ifdef CONFIG_OCF_FIPS
-ocf-objs     += $(obj-base)rndtest.o
-EXTRA_CFLAGS += -DFIPS_TEST_RNG
+OCF_OBJS += rndtest.o
+EXTRA_CFLAGS += -DFIPS_TEST_RNG=1
 endif
 
-EXTRA_CFLAGS += -I$(my_inc_base)/.
-
-#
-# You will need to point this at your Intel ixp425 includes,  this portion
-# of the Makefile only really works under SGLinux with the appropriate libs
-# installed.  They can be downloaded from http://www.snapgear.org/
-#
-
-ifdef CONFIG_IXP400_LIB
-IX_XSCALE_SW := drivers/ixp400/ixp400_xscale_sw
-OSAL_DIR := $(IX_XSCALE_SW)/../ixp_osal
-
-IXP_CFLAGS = \
-	-I$(ROOTDIR)/. \
-	-I$(IX_XSCALE_SW)/src/include \
-	-I$(OSAL_DIR)/ \
-	-I$(OSAL_DIR)/os/linux/include/ \
-	-I$(OSAL_DIR)/os/linux/include/modules/ \
-	-I$(OSAL_DIR)/os/linux/include/modules/ioMem/ \
-	-I$(OSAL_DIR)/os/linux/include/modules/core/ \
-	-I$(OSAL_DIR)/os/linux/include/modules/bufferMgt/ \
-	-I$(OSAL_DIR)/os/linux/include/core/  \
-	-I$(OSAL_DIR)/os/linux/include/platforms/ \
-	-I$(OSAL_DIR)/os/linux/include/platforms/ixp400/ \
-	-I$(OSAL_DIR)/os/linux/include/platforms/ixp400/ixp425 \
-	-I$(OSAL_DIR)/os/linux/include/platforms/ixp400/ixp465 \
-	-I$(OSAL_DIR)/os/linux/include/core/ \
-	-I$(OSAL_DIR)/include/ \
-	-I$(OSAL_DIR)/include/modules/ \
-	-I$(OSAL_DIR)/include/modules/bufferMgt/ \
-	-I$(OSAL_DIR)/include/modules/ioMem/ \
-	-I$(OSAL_DIR)/include/modules/core/ \
-	-I$(OSAL_DIR)/include/platforms/ \
-	-I$(OSAL_DIR)/include/platforms/ixp400/ \
-	-I$(OSAL_DIR)/include/platforms/ixp400/ixp425 \
-	-I$(OSAL_DIR)/include/platforms/ixp400/ixp465 \
-	-I$(IX_XSCALE_SW)/src/linux \
-	-DUSE_IXP4XX_CRYPTO
-endif
-ifdef CONFIG_IXP400_LIB_1_4
-IXP_CFLAGS   = \
-	-I$(ROOTDIR)/. \
-	-I$(ROOTDIR)/modules/ixp425/ixp400-1.4/ixp400_xscale_sw/src/include \
-	-I$(ROOTDIR)/modules/ixp425/ixp400-1.4/ixp400_xscale_sw/src/linux \
-	-DUSE_IXP4XX_CRYPTO
-endif
-ifndef IXPDIR
-IXPDIR = ixp-version-is-not-supported
-endif
-
-ifeq ($(CONFIG_MACH_IXDP465),y)
-IXP_CFLAGS += -D__ixp46X
+ifndef obj
+	obj ?= .
+	_obj = subdir
+	mod-subdirs := safe hifn ixp4xx talitos ocfnull
+	export-objs += crypto.o criov.o random.o
+	list-multi += ocf.o
 else
-IXP_CFLAGS += -D__ixp42X
+	_obj = obj
 endif
 
-CFLAGS_ixp4xx/ixp4xx.o += $(IXP_CFLAGS)
-CFLAGS_ixp4xx.o += $(IXP_CFLAGS)
-CFLAGS_ocf-bench.o += $(IXP_CFLAGS)
+EXTRA_CFLAGS += -I$(obj)/.
+
+obj-$(CONFIG_OCF_OCF)         += ocf.o
+obj-$(CONFIG_OCF_CRYPTODEV)   += cryptodev.o
+obj-$(CONFIG_OCF_CRYPTOSOFT)  += cryptosoft.o
+obj-$(CONFIG_OCF_BENCH)       += ocf-bench.o
+
+$(_obj)-$(CONFIG_OCF_SAFE)    += safe/
+$(_obj)-$(CONFIG_OCF_HIFN)    += hifn/
+$(_obj)-$(CONFIG_OCF_IXP4XX)  += ixp4xx/
+$(_obj)-$(CONFIG_OCF_TALITOS) += talitos/
+$(_obj)-$(CONFIG_OCF_OCFNULL) += ocfnull/
+
+ocf-objs := $(OCF_OBJS)
+
+$(list-multi) dummy1: $(ocf-objs)
+	$(LD) -r -o $@ $(ocf-objs)
+
+.PHONY:
+clean:
+	rm -f *.o *.ko .*.o.flags .*.ko.cmd .*.o.cmd .*.mod.o.cmd *.mod.c
+	rm -f */*.o */*.ko */.*.o.cmd */.*.ko.cmd */.*.mod.o.cmd */*.mod.c */.*.o.flags
 
 ifdef TOPDIR
 -include $(TOPDIR)/Rules.make
 endif
 
-.PHONY: clean mrproper distclean
-clean:
-	rm -f $(obj-m) *.o *.ko .*.o.flags .*.ko.cmd .*.o.cmd .*.mod.o.cmd *.mod.c
-	rm -f */*.o */*.ko */.*.o.cmd */.*.ko.cmd */.*.mod.o.cmd */*.mod.c */.*.o.flags
-
-mrproper: clean
-	rm -f .depend
-distclean: mrproper
-
-$(obj-base)ocf.o: $(ocf-objs)
-	$(LD) -r -o $@ $(ocf-objs)
+#
+# release gen targets
+#
 
 .PHONY: patch
 patch:
@@ -124,8 +68,8 @@ patch:
 		) | while read t; do \
 			diff -Nau /dev/null $$t | sed 's?^+++ \./?+++ linux/crypto/ocf/?'; \
 		done > $$patch; \
-		cat patches/linux-2.4.29-ocf.patch $$patch > $$patch24; \
-		cat patches/linux-2.6.11-ocf.patch $$patch > $$patch26
+		cat patches/linux-2.4.35-ocf.patch $$patch > $$patch24; \
+		cat patches/linux-2.6.22-ocf.patch $$patch > $$patch26
 
 .PHONY: tarball
 tarball:
@@ -159,9 +103,3 @@ tarball:
 		tar cvf /tmp/crypto-tools-$$REL.tar \
 					--exclude=CVS \
 					--exclude=.* \
-					--exclude=*.o \
-					--exclude=cryptotest \
-					--exclude=cryptokeytest \
-					crypto-tools; \
-		gzip -9 /tmp/crypto-tools-$$REL.tar
-

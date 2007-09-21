@@ -646,7 +646,6 @@ asmlinkage long compat_sys_socketcall(int call, u32 __user *args)
 	int ret;
 	u32 a[6];
 	u32 a0, a1;
-
 	if (call < SYS_SOCKET || call > SYS_RECVMSG)
 		return -EINVAL;
 	if (copy_from_user(a, args, nas[call]))
