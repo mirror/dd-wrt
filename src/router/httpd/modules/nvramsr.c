@@ -105,6 +105,7 @@ nvram_clear ()
 {
   char *buf = (char *) malloc (NVRAM_SPACE);
   nvram_getall (buf, NVRAM_SPACE);
+  nvram_open();
   char *p = buf;
   int i;
   while (strlen (p) != 0)
@@ -117,6 +118,7 @@ nvram_clear ()
 	nvram_immed_set (p, NULL);
       p += len + 1;
     }
+  nvram_close();
 }
 void
 nv_file_in (char *url, webs_t wp, int len, char *boundary)
@@ -160,8 +162,8 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
   len -= 6;
   if (!strcmp (sign, "DD-WRT"))
     {
-      nvram_open ();
       nvram_clear ();
+      nvram_open ();
       unsigned char b;
       wfread ((char *) &b, 1, 1, wp);
       count = b;
