@@ -204,6 +204,9 @@ internal_getRouterBrand ()
 #elif HAVE_MR3202A
   setRouter ("MR3202A");
   return ROUTER_BOARD_FONERA;
+#elif HAVE_DIR300
+  setRouter ("D-Link DIR-300");
+  return ROUTER_BOARD_FONERA;
 #elif HAVE_FONERA
   struct mii_ioctl_data *data;
   struct ifreq iwr;

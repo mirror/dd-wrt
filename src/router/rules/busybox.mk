@@ -30,6 +30,9 @@ else
 ifeq ($(ARCHITECTURE),mr3202a)
 	cp busybox/.config_fonera busybox/.config
 else
+ifeq ($(ARCHITECTURE),dir300)
+	cp busybox/.config_fonera busybox/.config
+else
 ifeq ($(ARCHITECTURE),whrag108)
 ifeq ($(CONFIG_DIST),"micro")
 	cp busybox/.config_micro_atheros busybox/.config
@@ -46,6 +49,7 @@ else
 	cp busybox/.config_3com busybox/.config
 endif
 
+endif
 endif
 endif
 endif
