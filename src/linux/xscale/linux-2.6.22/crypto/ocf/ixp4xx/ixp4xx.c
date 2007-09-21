@@ -3,7 +3,8 @@
  * This driver requires the IXP400 Access Library that is available
  * from Intel in order to operate (or compile).
  *
- * Written by David McCullough <david_mccullough@au.securecomputing.com>
+ * Written by David McCullough <david_mccullough@securecomputing.com>
+ * Copyright (C) 2006-2007 David McCullough
  * Copyright (C) 2004-2005 Intel Corporation.
  *
  * LICENSE TERMS
@@ -45,9 +46,6 @@
 #include <linux/interrupt.h>
 #include <asm/scatterlist.h>
 
-#include <cryptodev.h>
-#include <uio.h>
-
 #include <IxTypes.h>
 #include <IxOsBuffMgt.h>
 #include <IxNpeDl.h>
@@ -55,6 +53,9 @@
 #include <IxQMgr.h>
 #include <IxOsServices.h>
 #include <IxOsCacheMMU.h>
+
+#include <cryptodev.h>
+#include <uio.h>
 
 #ifndef IX_MBUF_PRIV
 #define IX_MBUF_PRIV(x) ((x)->priv)
@@ -70,6 +71,7 @@ struct ixp_q {
 	struct cryptodesc	*ixp_q_acrd;
 	IX_MBUF				 ixp_q_mbuf;
 	unsigned char		 ixp_q_iv_data[IX_CRYPTO_ACC_MAX_CIPHER_IV_LENGTH];
+	unsigned char		*ixp_q_iv;
 };
 
 struct ixp_data {
@@ -88,7 +90,6 @@ struct ixp_data {
 	struct work_struct   ixp_registration_work;
 	struct list_head	 ixp_q;				/* unprocessed requests */
 };
-
 
 #ifdef __ixp46X
 
@@ -122,31 +123,59 @@ static int32_t			 ixp_id = -1;
 static struct ixp_data **ixp_sessions = NULL;
 static u_int32_t		 ixp_sesnum = 0;
 
-static int ixp_process(void *, struct cryptop *, int);
-static int ixp_newsession(void *, u_int32_t *, struct cryptoini *);
-static int ixp_freesession(void *, u_int64_t);
+static int ixp_process(device_t, struct cryptop *, int);
+static int ixp_newsession(device_t, u_int32_t *, struct cryptoini *);
+static int ixp_freesession(device_t, u_int64_t);
+#ifdef __ixp46X
+static int ixp_kprocess(device_t, struct cryptkop *krp, int hint);
+#endif
 
 static struct kmem_cache *qcache;
 
-static int debug = 0;
-module_param(debug, int, 0);
-MODULE_PARM_DESC(debug, "Enable debug");
+#define debug ixp_debug
+static int ixp_debug = 0;
+module_param(ixp_debug, int, 0644);
+MODULE_PARM_DESC(ixp_debug, "Enable debug");
 
-static int init_crypto = 1;
-module_param(init_crypto, int, 0);
-MODULE_PARM_DESC(init_crypto, "Call ixCryptoAccInit (default is 1)");
+static int ixp_init_crypto = 1;
+module_param(ixp_init_crypto, int, 0444); /* RO after load/boot */
+MODULE_PARM_DESC(ixp_init_crypto, "Call ixCryptoAccInit (default is 1)");
 
-static void ixp_process_pending(struct work_struct *);
-static void ixp_registration(struct work_struct *);
+static void ixp_process_pending(void *arg);
+static void ixp_registration(void *arg);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+static void ixp_process_pending_wq(struct work_struct *work);
+static void ixp_registration_wq(struct work_struct *work);
+#endif
+
+/*
+ * dummy device structure
+ */
+
+static struct {
+	softc_device_decl	sc_dev;
+} ixpdev;
+
+static device_method_t ixp_methods = {
+	/* crypto device methods */
+	DEVMETHOD(cryptodev_newsession,	ixp_newsession),
+	DEVMETHOD(cryptodev_freesession,ixp_freesession),
+	DEVMETHOD(cryptodev_process,	ixp_process),
+#ifdef __ixp46X
+	DEVMETHOD(cryptodev_kprocess,	ixp_kprocess),
+#endif
+};
 
 /*
  * Generate a new software session.
  */
 static int
-ixp_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
+ixp_newsession(device_t dev, u_int32_t *sid, struct cryptoini *cri)
 {
 	struct ixp_data *ixp;
 	u_int32_t i;
+#define AUTH_LEN(cri, def) \
+	(cri->cri_mlen ? cri->cri_mlen : (def))
 
 	dprintk("%s()\n", __FUNCTION__);
 	if (sid == NULL || cri == NULL) {
@@ -170,7 +199,7 @@ ixp_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 		} else
 			ixp_sesnum *= 2;
 
-		ixpd = kmalloc(ixp_sesnum * sizeof(struct ixp_data *), GFP_ATOMIC);
+		ixpd = kmalloc(ixp_sesnum * sizeof(struct ixp_data *), SLAB_ATOMIC);
 		if (ixpd == NULL) {
 			/* Reset session number */
 			if (ixp_sesnum == CRYPTO_SW_SESSIONS)
@@ -193,7 +222,7 @@ ixp_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 	}
 
 	ixp_sessions[i] = (struct ixp_data *) kmalloc(sizeof(struct ixp_data),
-			GFP_ATOMIC);
+			SLAB_ATOMIC);
 	if (ixp_sessions[i] == NULL) {
 		ixp_freesession(NULL, i);
 		dprintk("%s,%d: EINVAL\n", __FILE__, __LINE__);
@@ -253,8 +282,7 @@ ixp_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 		case CRYPTO_MD5_HMAC:
 			ixp->ixp_auth_alg = cri->cri_alg;
 			ixp->ixp_ctx.authCtx.authAlgo = IX_CRYPTO_ACC_AUTH_MD5;
-			ixp->ixp_ctx.authCtx.authDigestLen =
-				cri->cri_alg == CRYPTO_MD5_HMAC ? 12 : 16;
+			ixp->ixp_ctx.authCtx.authDigestLen = AUTH_LEN(cri, MD5_HASH_LEN);
 			ixp->ixp_ctx.authCtx.aadLen = 0;
 			ixp->ixp_ctx.authCtx.authKeyLen = (cri->cri_klen + 7) / 8;
 			if (ixp->ixp_ctx.authCtx.authKeyLen != IX_CRYPTO_ACC_MD5_KEY_128)
@@ -268,8 +296,7 @@ ixp_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 		case CRYPTO_SHA1_HMAC:
 			ixp->ixp_auth_alg = cri->cri_alg;
 			ixp->ixp_ctx.authCtx.authAlgo = IX_CRYPTO_ACC_AUTH_SHA1;
-			ixp->ixp_ctx.authCtx.authDigestLen =
-				cri->cri_alg == CRYPTO_SHA1_HMAC ? 12 : 20;
+			ixp->ixp_ctx.authCtx.authDigestLen = AUTH_LEN(cri, SHA1_HASH_LEN);
 			ixp->ixp_ctx.authCtx.aadLen = 0;
 			ixp->ixp_ctx.authCtx.authKeyLen = (cri->cri_klen + 7) / 8;
 			if (ixp->ixp_ctx.authCtx.authKeyLen != IX_CRYPTO_ACC_SHA1_KEY_160)
@@ -287,8 +314,13 @@ ixp_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 		cri = cri->cri_next;
 	}
 
-	INIT_WORK(&ixp->ixp_pending_work, ixp_process_pending);
-	INIT_WORK(&ixp->ixp_registration_work, ixp_registration);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+	INIT_WORK(&ixp->ixp_pending_work, ixp_process_pending_wq);
+	INIT_WORK(&ixp->ixp_registration_work, ixp_registration_wq);
+#else
+	INIT_WORK(&ixp->ixp_pending_work, ixp_process_pending, ixp);
+	INIT_WORK(&ixp->ixp_registration_work, ixp_registration, ixp);
+#endif
 
 	return 0;
 }
@@ -298,7 +330,7 @@ ixp_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
  * Free a session.
  */
 static int
-ixp_freesession(void *arg, u_int64_t tid)
+ixp_freesession(device_t dev, u_int64_t tid)
 {
 	u_int32_t sid = CRYPTO_SESID2LID(tid);
 
@@ -340,7 +372,6 @@ ixp_q_process(struct ixp_q *q)
 {
 	IxCryptoAccStatus status;
 	struct ixp_data *ixp = q->ixp_q_data;
-	unsigned char *iv = NULL;
 	int auth_off = 0;
 	int auth_len = 0;
 	int crypt_off = 0;
@@ -351,21 +382,13 @@ ixp_q_process(struct ixp_q *q)
 
 	if (q->ixp_q_ccrd) {
 		if (q->ixp_q_ccrd->crd_flags & CRD_F_IV_EXPLICIT) {
-			iv = q->ixp_q_ccrd->crd_iv;
-		} else if (q->ixp_q_crp->crp_flags & CRYPTO_F_SKBUF) {
-			iv = q->ixp_q_iv_data;
-			skb_copy_bits((struct sk_buff *) q->ixp_q_crp->crp_buf,
-					q->ixp_q_ccrd->crd_inject,
-					iv, ixp->ixp_ctx.cipherCtx.cipherInitialVectorLen);
-		} else if (q->ixp_q_crp->crp_flags & CRYPTO_F_IOV) {
-			iv = q->ixp_q_iv_data;
-			cuio_copydata((struct uio *) q->ixp_q_crp->crp_buf,
+			q->ixp_q_iv = q->ixp_q_ccrd->crd_iv;
+		} else {
+			q->ixp_q_iv = q->ixp_q_iv_data;
+			crypto_copydata(q->ixp_q_crp->crp_flags, q->ixp_q_crp->crp_buf,
 					q->ixp_q_ccrd->crd_inject,
 					ixp->ixp_ctx.cipherCtx.cipherInitialVectorLen,
-					(caddr_t) iv);
-		} else {
-			iv = ((unsigned char *) q->ixp_q_crp->crp_buf) +
-				                    q->ixp_q_ccrd->crd_inject;
+					(caddr_t) q->ixp_q_iv);
 		}
 
 		if (q->ixp_q_acrd) {
@@ -388,7 +411,7 @@ ixp_q_process(struct ixp_q *q)
 			/*
 			 * DAVIDM fix this limitation one day by using
 			 * a buffer pool and chaining,  it is not currently
-			 * needed for user space acceleration
+			 * needed for current user/kernel space acceleration
 			 */
 			printk("ixp: Cannot handle fragmented skb's yet !\n");
 			q->ixp_q_crp->crp_etype = ENOENT;
@@ -403,7 +426,7 @@ ixp_q_process(struct ixp_q *q)
 			/*
 			 * DAVIDM fix this limitation one day by using
 			 * a buffer pool and chaining,  it is not currently
-			 * needed for user space acceleration
+			 * needed for current user/kernel space acceleration
 			 */
 			printk("ixp: Cannot handle more than 1 iovec yet !\n");
 			q->ixp_q_crp->crp_etype = ENOENT;
@@ -421,7 +444,8 @@ ixp_q_process(struct ixp_q *q)
 	IX_MBUF_PRIV(&q->ixp_q_mbuf) = q;
 
 	status = ixCryptoAccAuthCryptPerform(ixp->ixp_ctx_id, &q->ixp_q_mbuf,
-			NULL, auth_off, auth_len, crypt_off, crypt_len, icv_off, iv);
+			NULL, auth_off, auth_len, crypt_off, crypt_len, icv_off,
+			q->ixp_q_iv);
 
 	if (IX_CRYPTO_ACC_STATUS_SUCCESS == status)
 		return;
@@ -446,12 +470,12 @@ done:
  */
 
 static void
-ixp_process_pending(struct work_struct *work)
+ixp_process_pending(void *arg)
 {
-        struct ixp_data *ixp = container_of(work, struct ixp_data, ixp_pending_work);
+	struct ixp_data *ixp = arg;
 	struct ixp_q *q = NULL;
 
-	dprintk("%s(%p)\n", __FUNCTION__, ixp);
+	dprintk("%s(%p)\n", __FUNCTION__, arg);
 
 	if (!ixp)
 		return;
@@ -463,6 +487,14 @@ ixp_process_pending(struct work_struct *work)
 	}
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+static void
+ixp_process_pending_wq(struct work_struct *work)
+{
+	struct ixp_data *ixp = container_of(work, struct ixp_data, ixp_pending_work);
+	ixp_process_pending(ixp);
+}
+#endif
 
 /*
  * callback for when context registration is complete
@@ -550,17 +582,7 @@ ixp_perform_cb(
 		return;
 	}
 
-	if (status == IX_CRYPTO_ACC_STATUS_SUCCESS) {
-		if ((q->ixp_q_crp->crp_flags & CRYPTO_F_IOV) && q->ixp_q_crp->crp_mac) {
-			if (q->ixp_q_acrd) {
-				struct uio *uiop = (struct uio *) q->ixp_q_crp->crp_buf;
-		        if (uiop->uio_iovcnt != 1)
-					printk("ixp4xx: bad iovcnt!\n");
-				memcpy(q->ixp_q_crp->crp_mac, uiop->uio_iov[0].iov_base,
-						q->ixp_q_data->ixp_ctx.authCtx.authDigestLen);
-			}
-		}
-	} else {
+	if (status != IX_CRYPTO_ACC_STATUS_SUCCESS) {
 		printk("ixp: perform failed status=%d\n", status);
 		q->ixp_q_crp->crp_etype = EINVAL;
 	}
@@ -580,9 +602,9 @@ ixp_perform_cb(
  */
 
 static void
-ixp_registration(struct work_struct *work)
+ixp_registration(void *arg)
 {
-        struct ixp_data *ixp = container_of(work, struct ixp_data, ixp_registration_work);
+	struct ixp_data *ixp = arg;
 	struct ixp_q *q = NULL;
 	IX_MBUF *pri = NULL, *sec = NULL;
 	int status;
@@ -610,9 +632,9 @@ ixp_registration(struct work_struct *work)
 		pri = &ixp->ixp_pri_mbuf;
 		sec = &ixp->ixp_sec_mbuf;
 		IX_MBUF_MLEN(pri)  = IX_MBUF_PKT_LEN(pri) = 128;
-		IX_MBUF_MDATA(pri) = (unsigned char *) kmalloc(128, GFP_ATOMIC);
+		IX_MBUF_MDATA(pri) = (unsigned char *) kmalloc(128, SLAB_ATOMIC);
 		IX_MBUF_MLEN(sec)  = IX_MBUF_PKT_LEN(sec) = 128;
-		IX_MBUF_MDATA(sec) = (unsigned char *) kmalloc(128, GFP_ATOMIC);
+		IX_MBUF_MDATA(sec) = (unsigned char *) kmalloc(128, SLAB_ATOMIC);
 	}
 
 	status = ixCryptoAccCtxRegister(
@@ -647,12 +669,20 @@ ixp_registration(struct work_struct *work)
 	}
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+static void
+ixp_registration_wq(struct work_struct *work)
+{
+	struct ixp_data *ixp = container_of(work, struct ixp_data, ixp_registration_work);
+	ixp_registration(ixp);
+}
+#endif
 
 /*
  * Process a request.
  */
 static int
-ixp_process(void *arg, struct cryptop *crp, int hint)
+ixp_process(device_t dev, struct cryptop *crp, int hint)
 {
 	struct ixp_data *ixp;
 	unsigned int lid;
@@ -694,7 +724,7 @@ ixp_process(void *arg, struct cryptop *crp, int hint)
 	/*
 	 * setup a new request ready for queuing
 	 */
-	q = kmem_cache_alloc(qcache, GFP_ATOMIC);
+	q = kmem_cache_alloc(qcache, SLAB_ATOMIC);
 	if (q == NULL) {
 		dprintk("%s,%d: ENOMEM\n", __FILE__, __LINE__);
 		crp->crp_etype = ENOMEM;
@@ -871,7 +901,7 @@ ixp_copy_obuf(struct crparam *p, IxCryptoAccPkeEauOpResult *op, UINT32 *buf)
 
 	if (len > 0) {
 		dprintk("%s - obuf is %d (z=%d, ob=%d) bytes too small\n",
-				__FUNCTION__, len, z, p->crp_nbits / 8)
+				__FUNCTION__, len, z, p->crp_nbits / 8);
 		return -1;
 	}
 
@@ -964,7 +994,7 @@ ixp_kperform_cb(
 
 
 static int
-ixp_kprocess(void *arg, struct cryptkop *krp, int hint)
+ixp_kprocess(device_t dev, struct cryptkop *krp, int hint)
 {
 	struct ixp_pkq *q;
 	int rc = 0;
@@ -1032,6 +1062,7 @@ err:
 
 
 
+#ifdef CONFIG_OCF_RANDOMHARVEST
 /*
  * We run the random number generator output through SHA so that it
  * is FIPS compliant.
@@ -1096,6 +1127,7 @@ ixp_read_random(void *arg, u_int32_t *buf, int maxwords)
 
 	return rc;
 }
+#endif /* CONFIG_OCF_RANDOMHARVEST */
 
 #endif /* __ixp46X */
 
@@ -1110,7 +1142,7 @@ ixp_init(void)
 {
 	dprintk("%s(%p)\n", __FUNCTION__, ixp_init);
 
-	if (init_crypto && ixCryptoAccInit() != IX_CRYPTO_ACC_STATUS_SUCCESS)
+	if (ixp_init_crypto && ixCryptoAccInit() != IX_CRYPTO_ACC_STATUS_SUCCESS)
 		printk("ixCryptoAccInit failed, assuming already initialised!\n");
 
 	qcache = kmem_cache_create("ixp4xx_q", sizeof(struct ixp_q), 0,
@@ -1120,15 +1152,16 @@ ixp_init(void)
 		return -ENOENT;
 	}
 
-	ixp_id = crypto_get_driverid(0);
+	memset(&ixpdev, 0, sizeof(ixpdev));
+	softc_device_init(&ixpdev, "ixp4xx", 0, ixp_methods);
+
+	ixp_id = crypto_get_driverid(softc_get_device(&ixpdev),CRYPTOCAP_F_HARDWARE);
 	if (ixp_id < 0)
 		panic("IXP/OCF crypto device cannot initialize!");
 
-	crypto_register(ixp_id, CRYPTO_DES_CBC,
-	    0, 0, ixp_newsession, ixp_freesession, ixp_process, NULL);
-
 #define	REGISTER(alg) \
-	crypto_register(ixp_id,alg,0,0,NULL,NULL,NULL,NULL)
+	crypto_register(ixp_id,alg,0,0)
+	REGISTER(CRYPTO_DES_CBC);
 	REGISTER(CRYPTO_3DES_CBC);
 	REGISTER(CRYPTO_RIJNDAEL128_CBC);
 	REGISTER(CRYPTO_MD5);
@@ -1146,8 +1179,10 @@ ixp_init(void)
 	 * http://www.openssl.org/news/secadv_20030219.txt
 	 */
 	ixCryptoAccPkeEauExpConfig(0, 0);
-	crypto_kregister(ixp_id, CRK_MOD_EXP, 0, ixp_kprocess, NULL);
+	crypto_kregister(ixp_id, CRK_MOD_EXP, 0);
+#ifdef CONFIG_OCF_RANDOMHARVEST
 	crypto_rregister(ixp_id, ixp_read_random, NULL);
+#endif
 #endif
 
 	return 0;

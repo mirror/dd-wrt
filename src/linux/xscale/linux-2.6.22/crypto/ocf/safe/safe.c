@@ -1,6 +1,6 @@
 /*-
- * Linux port done by David McCullough <david_mccullough@au.securecomputing.com>
- * Copyright (C) 2004-2006 David McCullough
+ * Linux port done by David McCullough <david_mccullough@securecomputing.com>
+ * Copyright (C) 2004-2007 David McCullough
  * The license and original author are listed below.
  *
  * Copyright (c) 2003 Sam Leffler, Errno Consulting
@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
-__FBSDID("$FreeBSD: src/sys/dev/safe/safe.c,v 1.8 2005/03/01 08:58:04 imp Exp $");
+__FBSDID("$FreeBSD: src/sys/dev/safe/safe.c,v 1.18 2007/03/21 03:42:50 sam Exp $");
  */
 
 #ifndef AUTOCONF_INCLUDED
@@ -51,16 +51,6 @@ __FBSDID("$FreeBSD: src/sys/dev/safe/safe.c,v 1.8 2005/03/01 08:58:04 imp Exp $"
 #include <asm/io.h>
 
 /*
- * some support for older kernels
- */
-
-#ifndef IRQ_NONE
-#define IRQ_NONE
-#define IRQ_HANDLED
-#define irqreturn_t void
-#endif
-
-/*
  * SafeNet SafeXcel-1141 hardware crypto accelerator
  */
 
@@ -69,33 +59,16 @@ __FBSDID("$FreeBSD: src/sys/dev/safe/safe.c,v 1.8 2005/03/01 08:58:04 imp Exp $"
 #include <safe/safereg.h>
 #include <safe/safevar.h>
 
-#define read_random(p,l) get_random_bytes(p,l)
-
-#define KASSERT(c,p)	if (!(c)) { printk p ; } else
-
 #if 1
-#define	DPRINTF(a...)	if (debug) { printk("safe: " a); } else
+#define	DPRINTF(a)	do { \
+						if (debug) { \
+							printk("%s: ", sc ? \
+								device_get_nameunit(sc->sc_dev) : "safe"); \
+							printk a; \
+						} \
+					} while (0)
 #else
-#define	DPRINTF(a...)
-#endif
-
-#define DELAY(x)	udelay(x)
-
-#define bcopy(s,d,l)			memcpy(d,s,l)
-#define bzero(p,l)				memset(p,0,l)
-
-#define	READ_REG(sc,r)			readl((sc)->sc_base_addr + (r))
-#define WRITE_REG(sc,r,val)		writel((val), (sc)->sc_base_addr + (r))
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-#define pci_set_consistent_dma_mask(dev, mask) (0)
-#endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,10)
-#define pci_dma_sync_single_for_cpu pci_dma_sync_single
-#endif
-
-#ifndef DMA_32BIT_MASK
-#define DMA_32BIT_MASK  0x00000000ffffffffULL
+#define	DPRINTF(a)
 #endif
 
 /*
@@ -143,32 +116,49 @@ u_int8_t hmac_opad_buffer[64] = {
 /* add proc entry for this */
 struct safe_stats safestats;
 
-static	int debug = 0;
-module_param(debug, int, 0);
-MODULE_PARM_DESC(debug, "Enable debug");
+#define debug safe_debug
+int safe_debug = 0;
+module_param(safe_debug, int, 0644);
+MODULE_PARM_DESC(safe_debug, "Enable debug");
 
-#ifndef SAFE_NO_RNG
-static	int safe_rngbufsize = 8;		/* 32 bytes each read  */
-module_param(safe_rngbufsize, int, 0);
+static	void safe_callback(struct safe_softc *, struct safe_ringentry *);
+static	void safe_feed(struct safe_softc *, struct safe_ringentry *);
+#if defined(CONFIG_OCF_RANDOMHARVEST) && !defined(SAFE_NO_RNG)
+static	void safe_rng_init(struct safe_softc *);
+int safe_rngbufsize = 8;		/* 32 bytes each read  */
+module_param(safe_rngbufsize, int, 0644);
 MODULE_PARM_DESC(safe_rngbufsize, "RNG polling buffer size (32-bit words)");
-static	int safe_rngmaxalarm = 8;		/* max alarms before reset */
-module_param(safe_rngmaxalarm, int, 0);
+int safe_rngmaxalarm = 8;		/* max alarms before reset */
+module_param(safe_rngmaxalarm, int, 0644);
 MODULE_PARM_DESC(safe_rngmaxalarm, "RNG max alarms before reset");
 #endif /* SAFE_NO_RNG */
 
-
-static void safe_callback(struct safe_softc *sc, struct safe_ringentry *re);
 static void safe_totalreset(struct safe_softc *sc);
-static int safe_dmamap_aligned(const struct safe_operand *op);
+static int safe_dmamap_aligned(struct safe_softc *sc, const struct safe_operand *op);
 static int safe_dmamap_uniform(struct safe_softc *sc, const struct safe_operand *op);
 static int safe_free_entry(struct safe_softc *sc, struct safe_ringentry *re);
-static int safe_kprocess(void *arg, struct cryptkop *krp, int hint);
+static int safe_kprocess(device_t dev, struct cryptkop *krp, int hint);
 static int safe_kstart(struct safe_softc *sc);
-static int safe_ksigbits(struct crparam *cr);
+static int safe_ksigbits(struct safe_softc *sc, struct crparam *cr);
 static void safe_kfeed(struct safe_softc *sc);
 static void safe_kpoll(unsigned long arg);
 static void safe_kload_reg(struct safe_softc *sc, u_int32_t off,
 								u_int32_t len, struct crparam *n);
+
+static	int safe_newsession(device_t, u_int32_t *, struct cryptoini *);
+static	int safe_freesession(device_t, u_int64_t);
+static	int safe_process(device_t, struct cryptop *, int);
+
+static device_method_t safe_methods = {
+	/* crypto device methods */
+	DEVMETHOD(cryptodev_newsession,	safe_newsession),
+	DEVMETHOD(cryptodev_freesession,safe_freesession),
+	DEVMETHOD(cryptodev_process,	safe_process),
+	DEVMETHOD(cryptodev_kprocess,	safe_kprocess),
+};
+
+#define	READ_REG(sc,r)			readl((sc)->sc_base_addr + (r))
+#define WRITE_REG(sc,r,val)		writel((val), (sc)->sc_base_addr + (r))
 
 #define SAFE_MAX_CHIPS 8
 static struct safe_softc *safe_chip_idx[SAFE_MAX_CHIPS];
@@ -188,7 +178,7 @@ pci_map_linear(
 	dma_addr_t tmp;
 	int chunk, tlen = len;
 
-	tmp = pci_map_single(sc->sc_dev, addr, len, PCI_DMA_BIDIRECTIONAL);
+	tmp = pci_map_single(sc->sc_pcidev, addr, len, PCI_DMA_BIDIRECTIONAL);
 
 	buf->mapsize += len;
 	while (len > 0) {
@@ -214,7 +204,7 @@ pci_map_uio(struct safe_softc *sc, struct safe_operand *buf, struct uio *uio)
 	struct iovec *iov = uio->uio_iov;
 	int n;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	buf->mapsize = 0;
 	buf->nsegs = 0;
@@ -238,7 +228,7 @@ pci_map_skb(struct safe_softc *sc,struct safe_operand *buf,struct sk_buff *skb)
 {
 	int i;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	buf->mapsize = 0;
 	buf->nsegs = 0;
@@ -264,9 +254,9 @@ pci_sync_operand(struct safe_softc *sc, struct safe_operand *buf)
 {
 	int i;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 	for (i = 0; i < buf->nsegs; i++)
-		pci_dma_sync_single_for_cpu(sc->sc_dev, buf->segs[i].ds_addr,
+		pci_dma_sync_single_for_cpu(sc->sc_pcidev, buf->segs[i].ds_addr,
 				buf->segs[i].ds_len, PCI_DMA_BIDIRECTIONAL);
 }
 #endif
@@ -275,13 +265,13 @@ static void
 pci_unmap_operand(struct safe_softc *sc, struct safe_operand *buf)
 {
 	int i;
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 	for (i = 0; i < buf->nsegs; i++) {
 		if (buf->segs[i].ds_tlen) {
-			DPRINTF("%s - unmap %d 0x%x %d\n", __FUNCTION__, i, buf->segs[i].ds_addr, buf->segs[i].ds_tlen);
-			pci_unmap_single(sc->sc_dev, buf->segs[i].ds_addr,
+			DPRINTF(("%s - unmap %d 0x%x %d\n", __FUNCTION__, i, buf->segs[i].ds_addr, buf->segs[i].ds_tlen));
+			pci_unmap_single(sc->sc_pcidev, buf->segs[i].ds_addr,
 					buf->segs[i].ds_tlen, PCI_DMA_BIDIRECTIONAL);
-			DPRINTF("%s - unmap %d 0x%x %d done\n", __FUNCTION__, i, buf->segs[i].ds_addr, buf->segs[i].ds_tlen);
+			DPRINTF(("%s - unmap %d 0x%x %d done\n", __FUNCTION__, i, buf->segs[i].ds_addr, buf->segs[i].ds_tlen));
 		}
 		buf->segs[i].ds_addr = 0;
 		buf->segs[i].ds_len = 0;
@@ -290,29 +280,6 @@ pci_unmap_operand(struct safe_softc *sc, struct safe_operand *buf)
 	buf->nsegs = 0;
 	buf->mapsize = 0;
 	buf->map = 0;
-}
-
-
-static void
-skb_copy_bits_back(struct sk_buff *skb, int offset, caddr_t cp, int len)
-{
-	int i;
-	if (offset < skb_headlen(skb)) {
-		memcpy(skb->data + offset, cp, min_t(int, skb_headlen(skb), len));
-		len -= skb_headlen(skb);
-		cp += skb_headlen(skb);
-	}
-	offset -= skb_headlen(skb);
-	for (i = 0; len > 0 && i < skb_shinfo(skb)->nr_frags; i++) {
-		if (offset < skb_shinfo(skb)->frags[i].size) {
-			memcpy(page_address(skb_shinfo(skb)->frags[i].page) +
-					skb_shinfo(skb)->frags[i].page_offset,
-					cp, min_t(int, skb_shinfo(skb)->frags[i].size, len));
-			len -= skb_shinfo(skb)->frags[i].size;
-			cp += skb_shinfo(skb)->frags[i].size;
-		}
-		offset -= skb_shinfo(skb)->frags[i].size;
-	}
 }
 
 
@@ -332,7 +299,7 @@ safe_intr(int irq, void *arg, struct pt_regs *regs)
 
 	stat = READ_REG(sc, SAFE_HM_STAT);
 
-	DPRINTF("%s(stat=0x%x)\n", __FUNCTION__, stat);
+	DPRINTF(("%s(stat=0x%x)\n", __FUNCTION__, stat));
 
 	if (stat == 0)		/* shared irq, not for us */
 		return IRQ_NONE;
@@ -361,14 +328,14 @@ safe_intr(int irq, void *arg, struct pt_regs *regs)
 			 * in the event that an entry is allocated but not used
 			 * because of a setup error.
 			 */
-			DPRINTF("%s re->re_desc.d_csr=0x%x\n", __FUNCTION__, re->re_desc.d_csr);
+			DPRINTF(("%s re->re_desc.d_csr=0x%x\n", __FUNCTION__, re->re_desc.d_csr));
 			if (re->re_desc.d_csr != 0) {
 				if (!SAFE_PE_CSR_IS_DONE(re->re_desc.d_csr)) {
-					DPRINTF("%s !CSR_IS_DONE\n", __FUNCTION__);
+					DPRINTF(("%s !CSR_IS_DONE\n", __FUNCTION__));
 					break;
 				}
 				if (!SAFE_PE_LEN_IS_DONE(re->re_desc.d_len)) {
-					DPRINTF("%s !LEN_IS_DONE\n", __FUNCTION__);
+					DPRINTF(("%s !LEN_IS_DONE\n", __FUNCTION__));
 					break;
 				}
 				sc->sc_nqchip--;
@@ -384,7 +351,7 @@ safe_intr(int irq, void *arg, struct pt_regs *regs)
 	 * Check to see if we got any DMA Error
 	 */
 	if (stat & SAFE_INT_PE_ERROR) {
-		printk("safe: dmaerr dmastat %08x\n",
+		printk("%s: dmaerr dmastat %08x\n", device_get_nameunit(sc->sc_dev),
 				(int)READ_REG(sc, SAFE_PE_DMASTAT));
 		safestats.st_dmaerr++;
 		safe_totalreset(sc);
@@ -395,8 +362,8 @@ safe_intr(int irq, void *arg, struct pt_regs *regs)
 
 	if (sc->sc_needwakeup) {		/* XXX check high watermark */
 		int wakeup = sc->sc_needwakeup & (CRYPTO_SYMQ|CRYPTO_ASYMQ);
-		DPRINTF("%s: wakeup crypto %x\n", __func__,
-			sc->sc_needwakeup);
+		DPRINTF(("%s: wakeup crypto %x\n", __func__,
+			sc->sc_needwakeup));
 		sc->sc_needwakeup &= ~wakeup;
 		crypto_unblock(sc->sc_cid, wakeup);
 	}
@@ -410,7 +377,7 @@ safe_intr(int irq, void *arg, struct pt_regs *regs)
 static void
 safe_feed(struct safe_softc *sc, struct safe_ringentry *re)
 {
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 #ifdef SAFE_DEBUG
 	if (debug) {
 		safe_dump_ringstate(sc, __func__);
@@ -424,25 +391,96 @@ safe_feed(struct safe_softc *sc, struct safe_ringentry *re)
 	WRITE_REG(sc, SAFE_HI_RD_DESCR, 0);
 }
 
+#define	N(a)	(sizeof(a) / sizeof (a[0]))
+static void
+safe_setup_enckey(struct safe_session *ses, caddr_t key)
+{
+	int i;
+
+	bcopy(key, ses->ses_key, ses->ses_klen / 8);
+
+	/* PE is little-endian, insure proper byte order */
+	for (i = 0; i < N(ses->ses_key); i++)
+		ses->ses_key[i] = htole32(ses->ses_key[i]);
+}
+
+static void
+safe_setup_mackey(struct safe_session *ses, int algo, caddr_t key, int klen)
+{
+#ifdef HMAC_HACK
+	MD5_CTX md5ctx;
+	SHA1_CTX sha1ctx;
+	int i;
+
+
+	for (i = 0; i < klen; i++)
+		key[i] ^= HMAC_IPAD_VAL;
+
+	if (algo == CRYPTO_MD5_HMAC) {
+		MD5Init(&md5ctx);
+		MD5Update(&md5ctx, key, klen);
+		MD5Update(&md5ctx, hmac_ipad_buffer, MD5_HMAC_BLOCK_LEN - klen);
+		bcopy(md5ctx.md5_st8, ses->ses_hminner, sizeof(md5ctx.md5_st8));
+	} else {
+		SHA1Init(&sha1ctx);
+		SHA1Update(&sha1ctx, key, klen);
+		SHA1Update(&sha1ctx, hmac_ipad_buffer,
+		    SHA1_HMAC_BLOCK_LEN - klen);
+		bcopy(sha1ctx.h.b32, ses->ses_hminner, sizeof(sha1ctx.h.b32));
+	}
+
+	for (i = 0; i < klen; i++)
+		key[i] ^= (HMAC_IPAD_VAL ^ HMAC_OPAD_VAL);
+
+	if (algo == CRYPTO_MD5_HMAC) {
+		MD5Init(&md5ctx);
+		MD5Update(&md5ctx, key, klen);
+		MD5Update(&md5ctx, hmac_opad_buffer, MD5_HMAC_BLOCK_LEN - klen);
+		bcopy(md5ctx.md5_st8, ses->ses_hmouter, sizeof(md5ctx.md5_st8));
+	} else {
+		SHA1Init(&sha1ctx);
+		SHA1Update(&sha1ctx, key, klen);
+		SHA1Update(&sha1ctx, hmac_opad_buffer,
+		    SHA1_HMAC_BLOCK_LEN - klen);
+		bcopy(sha1ctx.h.b32, ses->ses_hmouter, sizeof(sha1ctx.h.b32));
+	}
+
+	for (i = 0; i < klen; i++)
+		key[i] ^= HMAC_OPAD_VAL;
+
+#if 0
+	/*
+	 * this code prevents SHA working on a BE host,
+	 * so it is obviously wrong.  I think the byte
+	 * swap setup we do with the chip fixes this for us
+	 */
+
+	/* PE is little-endian, insure proper byte order */
+	for (i = 0; i < N(ses->ses_hminner); i++) {
+		ses->ses_hminner[i] = htole32(ses->ses_hminner[i]);
+		ses->ses_hmouter[i] = htole32(ses->ses_hmouter[i]);
+	}
+#endif
+#else /* HMAC_HACK */
+	printk("safe: md5/sha not implemented\n");
+#endif /* HMAC_HACK */
+}
+#undef N
+
 /*
  * Allocate a new 'session' and return an encoded session id.  'sidp'
  * contains our registration id, and should contain an encoded session
  * id on successful allocation.
  */
 static int
-safe_newsession(void *arg, u_int32_t *sidp, struct cryptoini *cri)
+safe_newsession(device_t dev, u_int32_t *sidp, struct cryptoini *cri)
 {
-#define	N(a)	(sizeof(a) / sizeof (a[0]))
+	struct safe_softc *sc = device_get_softc(dev);
 	struct cryptoini *c, *encini = NULL, *macini = NULL;
-	struct safe_softc *sc = arg;
 	struct safe_session *ses = NULL;
-#ifdef HMAC_HACK
-	MD5_CTX md5ctx;
-	SHA1_CTX sha1ctx;
-#endif /* HMAC_HACK */
-	int i, sesn;
+	int sesn;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	if (sidp == NULL || cri == NULL || sc == NULL)
 		return (EINVAL);
@@ -487,7 +525,7 @@ safe_newsession(void *arg, u_int32_t *sidp, struct cryptoini *cri)
 
 	if (sc->sc_sessions == NULL) {
 		ses = sc->sc_sessions = (struct safe_session *)
-			kmalloc(sizeof(struct safe_session), GFP_ATOMIC);
+			kmalloc(sizeof(struct safe_session), SLAB_ATOMIC);
 		if (ses == NULL)
 			return (ENOMEM);
 		memset(ses, 0, sizeof(struct safe_session));
@@ -504,7 +542,7 @@ safe_newsession(void *arg, u_int32_t *sidp, struct cryptoini *cri)
 		if (ses == NULL) {
 			sesn = sc->sc_nsessions;
 			ses = (struct safe_session *)
-				kmalloc((sesn + 1) * sizeof(struct safe_session), GFP_ATOMIC);
+				kmalloc((sesn + 1) * sizeof(struct safe_session), SLAB_ATOMIC);
 			if (ses == NULL)
 				return (ENOMEM);
 			memset(ses, 0, (sesn + 1) * sizeof(struct safe_session));
@@ -528,91 +566,40 @@ safe_newsession(void *arg, u_int32_t *sidp, struct cryptoini *cri)
 		read_random(ses->ses_iv, sizeof(ses->ses_iv));
 
 		ses->ses_klen = encini->cri_klen;
-		bcopy(encini->cri_key, ses->ses_key, ses->ses_klen / 8);
-		/* PE is little-endian, insure proper byte order */
-		for (i = 0; i < N(ses->ses_key); i++)
-			ses->ses_key[i] = cpu_to_le32(ses->ses_key[i]);
+		if (encini->cri_key != NULL)
+			safe_setup_enckey(ses, encini->cri_key);
 	}
 
 	if (macini) {
-#ifdef HMAC_HACK
-		for (i = 0; i < macini->cri_klen / 8; i++)
-			macini->cri_key[i] ^= HMAC_IPAD_VAL;
-
-		if (macini->cri_alg == CRYPTO_MD5_HMAC) {
-			MD5Init(&md5ctx);
-			MD5Update(&md5ctx, macini->cri_key,
-			    macini->cri_klen / 8);
-			MD5Update(&md5ctx, hmac_ipad_buffer,
-			    HMAC_BLOCK_LEN - (macini->cri_klen / 8));
-			bcopy(md5ctx.md5_st8, ses->ses_hminner,
-			    sizeof(md5ctx.md5_st8));
-		} else {
-			SHA1Init(&sha1ctx);
-			SHA1Update(&sha1ctx, macini->cri_key,
-			    macini->cri_klen / 8);
-			SHA1Update(&sha1ctx, hmac_ipad_buffer,
-			    HMAC_BLOCK_LEN - (macini->cri_klen / 8));
-			bcopy(sha1ctx.h.b32, ses->ses_hminner,
-			    sizeof(sha1ctx.h.b32));
+		ses->ses_mlen = macini->cri_mlen;
+		if (ses->ses_mlen == 0) {
+			if (macini->cri_alg == CRYPTO_MD5_HMAC)
+				ses->ses_mlen = MD5_HASH_LEN;
+			else
+				ses->ses_mlen = SHA1_HASH_LEN;
 		}
 
-		for (i = 0; i < macini->cri_klen / 8; i++)
-			macini->cri_key[i] ^= (HMAC_IPAD_VAL ^ HMAC_OPAD_VAL);
-
-		if (macini->cri_alg == CRYPTO_MD5_HMAC) {
-			MD5Init(&md5ctx);
-			MD5Update(&md5ctx, macini->cri_key,
+		if (macini->cri_key != NULL) {
+			safe_setup_mackey(ses, macini->cri_alg, macini->cri_key,
 			    macini->cri_klen / 8);
-			MD5Update(&md5ctx, hmac_opad_buffer,
-			    HMAC_BLOCK_LEN - (macini->cri_klen / 8));
-			bcopy(md5ctx.md5_st8, ses->ses_hmouter,
-			    sizeof(md5ctx.md5_st8));
-		} else {
-			SHA1Init(&sha1ctx);
-			SHA1Update(&sha1ctx, macini->cri_key,
-			    macini->cri_klen / 8);
-			SHA1Update(&sha1ctx, hmac_opad_buffer,
-			    HMAC_BLOCK_LEN - (macini->cri_klen / 8));
-			bcopy(sha1ctx.h.b32, ses->ses_hmouter,
-			    sizeof(sha1ctx.h.b32));
 		}
-
-		for (i = 0; i < macini->cri_klen / 8; i++)
-			macini->cri_key[i] ^= HMAC_OPAD_VAL;
-#if 0
-		/*
-		 * this code prevent SHA working on a BE host,
-		 * so it is obviously wrong.  I think the byte
-		 * swap setup we do with the chip fixes this for us
-		 */
-		/* PE is little-endian, insure proper byte order */
-		for (i = 0; i < N(ses->ses_hminner); i++) {
-			ses->ses_hminner[i] = cpu_to_le32(ses->ses_hminner[i]);
-			ses->ses_hmouter[i] = cpu_to_le32(ses->ses_hmouter[i]);
-		}
-#endif
-#else /* HMAC_HACK */
-		printk("safe: no MD5 or SHA yet\n");
-#endif /* HMAC_HACK */
 	}
 
-	*sidp = SAFE_SID(sc->sc_num, sesn);
+	*sidp = SAFE_SID(device_get_unit(sc->sc_dev), sesn);
 	return (0);
-#undef N
 }
 
 /*
  * Deallocate a session.
  */
 static int
-safe_freesession(void *arg, u_int64_t tid)
+safe_freesession(device_t dev, u_int64_t tid)
 {
-	struct safe_softc *sc = arg;
+	struct safe_softc *sc = device_get_softc(dev);
 	int session, ret;
 	u_int32_t sid = ((u_int32_t) tid) & 0xffffffff;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	if (sc == NULL)
 		return (EINVAL);
@@ -628,10 +615,10 @@ safe_freesession(void *arg, u_int64_t tid)
 
 
 static int
-safe_process(void *arg, struct cryptop *crp, int hint)
+safe_process(device_t dev, struct cryptop *crp, int hint)
 {
+	struct safe_softc *sc = device_get_softc(dev);
 	int err = 0, i, nicealign, uniform;
-	struct safe_softc *sc = arg;
 	struct cryptodesc *crd1, *crd2, *maccrd, *enccrd;
 	int bypass, oplen, ivsize;
 	caddr_t iv;
@@ -643,7 +630,7 @@ safe_process(void *arg, struct cryptop *crp, int hint)
 	u_int32_t cmd0, cmd1, staterec;
 	unsigned long flags;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	if (crp == NULL || crp->crp_callback == NULL || sc == NULL) {
 		safestats.st_invalid++;
@@ -748,6 +735,9 @@ safe_process(void *arg, struct cryptop *crp, int hint)
 	}
 
 	if (enccrd) {
+		if (enccrd->crd_flags & CRD_F_KEY_EXPLICIT)
+			safe_setup_enckey(ses, enccrd->crd_key);
+
 		if (enccrd->crd_alg == CRYPTO_DES_CBC) {
 			cmd0 |= SAFE_SA_CMD0_DES;
 			cmd1 |= SAFE_SA_CMD1_CBC;
@@ -788,12 +778,8 @@ safe_process(void *arg, struct cryptop *crp, int hint)
 			else
 				iv = (caddr_t) ses->ses_iv;
 			if ((enccrd->crd_flags & CRD_F_IV_PRESENT) == 0) {
-				if (crp->crp_flags & CRYPTO_F_SKBUF)
-					skb_copy_bits_back(re->re_src_skb,
-						enccrd->crd_inject, iv, ivsize);
-				else if (crp->crp_flags & CRYPTO_F_IOV)
-					cuio_copyback(re->re_src_io,
-						enccrd->crd_inject, ivsize, iv);
+				crypto_copyback(crp->crp_flags, crp->crp_buf,
+				    enccrd->crd_inject, ivsize, iv);
 			}
 			bcopy(iv, re->re_sastate.sa_saved_iv, ivsize);
 			/* make iv LE */
@@ -805,15 +791,14 @@ safe_process(void *arg, struct cryptop *crp, int hint)
 		} else {
 			cmd0 |= SAFE_SA_CMD0_INBOUND;
 
-			if (enccrd->crd_flags & CRD_F_IV_EXPLICIT)
+			if (enccrd->crd_flags & CRD_F_IV_EXPLICIT) {
 				bcopy(enccrd->crd_iv,
 					re->re_sastate.sa_saved_iv, ivsize);
-			else if (crp->crp_flags & CRYPTO_F_SKBUF) {
-				skb_copy_bits(re->re_src_skb, enccrd->crd_inject,
-					(caddr_t)re->re_sastate.sa_saved_iv, ivsize);
-			} else if (crp->crp_flags & CRYPTO_F_IOV)
-				cuio_copydata(re->re_src_io, enccrd->crd_inject,
-					ivsize, (caddr_t)re->re_sastate.sa_saved_iv);
+			} else {
+				crypto_copydata(crp->crp_flags, crp->crp_buf,
+				    enccrd->crd_inject, ivsize,
+				    (caddr_t)re->re_sastate.sa_saved_iv);
+			}
 			/* make iv LE */
 			for (i = 0; i < ivsize/sizeof(re->re_sastate.sa_saved_iv[0]); i++)
 				re->re_sastate.sa_saved_iv[i] =
@@ -835,6 +820,11 @@ safe_process(void *arg, struct cryptop *crp, int hint)
 	}
 
 	if (maccrd) {
+		if (maccrd->crd_flags & CRD_F_KEY_EXPLICIT) {
+			safe_setup_mackey(ses, maccrd->crd_alg,
+			    maccrd->crd_key, maccrd->crd_klen / 8);
+		}
+
 		if (maccrd->crd_alg == CRYPTO_MD5_HMAC) {
 			cmd0 |= SAFE_SA_CMD0_MD5;
 			cmd1 |= SAFE_SA_CMD1_HMAC;	/* NB: enable HMAC */
@@ -867,45 +857,45 @@ safe_process(void *arg, struct cryptop *crp, int hint)
 		bypass = maccrd->crd_skip;
 		coffset = enccrd->crd_skip - maccrd->crd_skip;
 		if (coffset < 0) {
-			DPRINTF("%s: hash does not precede crypt; "
+			DPRINTF(("%s: hash does not precede crypt; "
 				"mac skip %u enc skip %u\n",
-				__func__, maccrd->crd_skip, enccrd->crd_skip);
+				__func__, maccrd->crd_skip, enccrd->crd_skip));
 			safestats.st_skipmismatch++;
 			err = EINVAL;
 			goto errout;
 		}
 		oplen = enccrd->crd_skip + enccrd->crd_len;
 		if (maccrd->crd_skip + maccrd->crd_len != oplen) {
-			DPRINTF("%s: hash amount %u != crypt amount %u\n",
+			DPRINTF(("%s: hash amount %u != crypt amount %u\n",
 				__func__, maccrd->crd_skip + maccrd->crd_len,
-				oplen);
+				oplen));
 			safestats.st_lenmismatch++;
 			err = EINVAL;
 			goto errout;
 		}
 #ifdef SAFE_DEBUG
 		if (debug) {
-			printk("mac: skip %d, len %d, inject %d\n",
+			printf("mac: skip %d, len %d, inject %d\n",
 			    maccrd->crd_skip, maccrd->crd_len,
 			    maccrd->crd_inject);
-			printk("enc: skip %d, len %d, inject %d\n",
+			printf("enc: skip %d, len %d, inject %d\n",
 			    enccrd->crd_skip, enccrd->crd_len,
 			    enccrd->crd_inject);
-			printk("bypass %d coffset %d oplen %d\n",
+			printf("bypass %d coffset %d oplen %d\n",
 				bypass, coffset, oplen);
 		}
 #endif
 		if (coffset & 3) {	/* offset must be 32-bit aligned */
-			DPRINTF("%s: coffset %u misaligned\n",
-				__func__, coffset);
+			DPRINTF(("%s: coffset %u misaligned\n",
+				__func__, coffset));
 			safestats.st_coffmisaligned++;
 			err = EINVAL;
 			goto errout;
 		}
 		coffset >>= 2;
 		if (coffset > 255) {	/* offset must be <256 dwords */
-			DPRINTF("%s: coffset %u too big\n",
-				__func__, coffset);
+			DPRINTF(("%s: coffset %u too big\n",
+				__func__, coffset));
 			safestats.st_cofftoobig++;
 			err = EINVAL;
 			goto errout;
@@ -937,7 +927,7 @@ safe_process(void *arg, struct cryptop *crp, int hint)
 	}
 	/* XXX verify multiple of 4 when using s/g */
 	if (bypass > 96) {		/* bypass offset must be <= 96 bytes */
-		DPRINTF("%s: bypass %u too big\n", __func__, bypass);
+		DPRINTF(("%s: bypass %u too big\n", __func__, bypass));
 		safestats.st_bypasstoobig++;
 		err = EINVAL;
 		goto errout;
@@ -956,13 +946,13 @@ safe_process(void *arg, struct cryptop *crp, int hint)
 			goto errout;
 		}
 	}
-	nicealign = safe_dmamap_aligned(&re->re_src);
+	nicealign = safe_dmamap_aligned(sc, &re->re_src);
 	uniform = safe_dmamap_uniform(sc, &re->re_src);
 
-	DPRINTF("src nicealign %u uniform %u nsegs %u\n",
-		nicealign, uniform, re->re_src.nsegs);
+	DPRINTF(("src nicealign %u uniform %u nsegs %u\n",
+		nicealign, uniform, re->re_src.nsegs));
 	if (re->re_src.nsegs > 1) {
-		re->re_desc.d_src = sc->sc_sp_dma +
+		re->re_desc.d_src = sc->sc_spalloc.dma_paddr +
 			((caddr_t) sc->sc_spfree - (caddr_t) sc->sc_spring);
 		for (i = 0; i < re->re_src_nsegs; i++) {
 			/* NB: no need to check if there's space */
@@ -998,7 +988,7 @@ safe_process(void *arg, struct cryptop *crp, int hint)
 				goto errout;
 			}
 			if (uniform != 1) {
-				printk("safe: !uniform source\n");
+				device_printf(sc->sc_dev, "!uniform source\n");
 				if (!uniform) {
 					/*
 					 * There's no way to handle the DMA
@@ -1026,7 +1016,7 @@ safe_process(void *arg, struct cryptop *crp, int hint)
 		}
 
 		if (re->re_dst.nsegs > 1) {
-			re->re_desc.d_dst = sc->sc_dp_dma +
+			re->re_desc.d_dst = sc->sc_dpalloc.dma_paddr +
 			    ((caddr_t) sc->sc_dpfree - (caddr_t) sc->sc_dpring);
 			for (i = 0; i < re->re_dst_nsegs; i++) {
 				pd = sc->sc_dpfree;
@@ -1108,13 +1098,13 @@ safe_callback(struct safe_softc *sc, struct safe_ringentry *re)
 	struct cryptop *crp = (struct cryptop *)re->re_crp;
 	struct cryptodesc *crd;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	safestats.st_opackets++;
 	safestats.st_obytes += re->re_dst.mapsize;
 
 	if (re->re_desc.d_csr & SAFE_PE_CSR_STATUS) {
-		printk("safe: csr 0x%x cmd0 0x%x cmd1 0x%x\n",
+		device_printf(sc->sc_dev, "csr 0x%x cmd0 0x%x cmd1 0x%x\n",
 			re->re_desc.d_csr,
 			re->re_sa.sa_cmd0, re->re_sa.sa_cmd1);
 		safestats.st_peoperr++;
@@ -1130,7 +1120,7 @@ safe_callback(struct safe_softc *sc, struct safe_ringentry *re)
 	 * it in as the return value and reclaim the original.
 	 */
 	if ((crp->crp_flags & CRYPTO_F_SKBUF) && re->re_src_skb != re->re_dst_skb) {
-		printk("safe: no CRYPTO_F_SKBUF swapping support");
+		device_printf(sc->sc_dev, "no CRYPTO_F_SKBUF swapping support\n");
 		/* kfree_skb(skb) */
 		/* crp->crp_buf = (caddr_t)re->re_dst_skb */
 		return;
@@ -1139,6 +1129,7 @@ safe_callback(struct safe_softc *sc, struct safe_ringentry *re)
 	if (re->re_flags & SAFE_QFLAGS_COPYOUTIV) {
 		/* copy out IV for future use */
 		for (crd = crp->crp_desc; crd; crd = crd->crd_next) {
+			int i;
 			int ivsize;
 
 			if (crd->crd_alg == CRYPTO_DES_CBC ||
@@ -1148,29 +1139,14 @@ safe_callback(struct safe_softc *sc, struct safe_ringentry *re)
 				ivsize = 4*sizeof(u_int32_t);
 			} else
 				continue;
-			if (crp->crp_flags & CRYPTO_F_SKBUF) {
-				int i;
-				skb_copy_bits((struct sk_buff *)crp->crp_buf,
-					crd->crd_skip + crd->crd_len - ivsize,
-					(caddr_t)sc->sc_sessions[re->re_sesn].ses_iv,
-					ivsize);
-				for (i = 0;
-						i < ivsize/sizeof(sc->sc_sessions[re->re_sesn].ses_iv[0]);
-						i++)
-					sc->sc_sessions[re->re_sesn].ses_iv[i] =
-						cpu_to_le32(sc->sc_sessions[re->re_sesn].ses_iv[i]);
-			} else if (crp->crp_flags & CRYPTO_F_IOV) {
-				int i;
-				cuio_copydata((struct uio *)crp->crp_buf,
-					crd->crd_skip + crd->crd_len - ivsize,
-					ivsize,
-					(caddr_t)sc->sc_sessions[re->re_sesn].ses_iv);
-				for (i = 0;
-						i < ivsize/sizeof(sc->sc_sessions[re->re_sesn].ses_iv[0]);
-						i++)
-					sc->sc_sessions[re->re_sesn].ses_iv[i] =
-						cpu_to_le32(sc->sc_sessions[re->re_sesn].ses_iv[i]);
-			}
+			crypto_copydata(crp->crp_flags, crp->crp_buf,
+			    crd->crd_skip + crd->crd_len - ivsize, ivsize,
+			    (caddr_t)sc->sc_sessions[re->re_sesn].ses_iv);
+			for (i = 0;
+					i < ivsize/sizeof(sc->sc_sessions[re->re_sesn].ses_iv[0]);
+					i++)
+				sc->sc_sessions[re->re_sesn].ses_iv[i] =
+					cpu_to_le32(sc->sc_sessions[re->re_sesn].ses_iv[i]);
 			break;
 		}
 	}
@@ -1201,14 +1177,10 @@ safe_callback(struct safe_softc *sc, struct safe_ringentry *re)
 				re->re_sastate.sa_saved_indigest[2] =
 					cpu_to_le32(re->re_sastate.sa_saved_indigest[2]);
 			}
-			if (crp->crp_flags & CRYPTO_F_SKBUF) {
-				skb_copy_bits_back((struct sk_buff *)crp->crp_buf,
-							crd->crd_inject,
-							(caddr_t)re->re_sastate.sa_saved_indigest, 12);
-			} else if (crp->crp_flags & CRYPTO_F_IOV && crp->crp_mac) {
-				bcopy((caddr_t)re->re_sastate.sa_saved_indigest,
-					crp->crp_mac, 12);
-			}
+			crypto_copyback(crp->crp_flags, crp->crp_buf,
+			    crd->crd_inject,
+			    sc->sc_sessions[re->re_sesn].ses_mlen,
+			    (caddr_t)re->re_sastate.sa_saved_indigest);
 			break;
 		}
 	}
@@ -1216,7 +1188,7 @@ safe_callback(struct safe_softc *sc, struct safe_ringentry *re)
 }
 
 
-#ifndef SAFE_NO_RNG
+#if defined(CONFIG_OCF_RANDOMHARVEST) && !defined(SAFE_NO_RNG)
 #define	SAFE_RNG_MAXWAIT	1000
 
 static void
@@ -1225,7 +1197,7 @@ safe_rng_init(struct safe_softc *sc)
 	u_int32_t w, v;
 	int i;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	WRITE_REG(sc, SAFE_RNG_CTRL, 0);
 	/* use default value according to the manual */
@@ -1269,7 +1241,7 @@ safe_rng_init(struct safe_softc *sc)
 static __inline void
 safe_rng_disable_short_cycle(struct safe_softc *sc)
 {
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	WRITE_REG(sc, SAFE_RNG_CTRL,
 		READ_REG(sc, SAFE_RNG_CTRL) &~ SAFE_RNG_CTRL_SHORTEN);
@@ -1278,7 +1250,7 @@ safe_rng_disable_short_cycle(struct safe_softc *sc)
 static __inline void
 safe_rng_enable_short_cycle(struct safe_softc *sc)
 {
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	WRITE_REG(sc, SAFE_RNG_CTRL, 
 		READ_REG(sc, SAFE_RNG_CTRL) | SAFE_RNG_CTRL_SHORTEN);
@@ -1289,8 +1261,6 @@ safe_rng_read(struct safe_softc *sc)
 {
 	int i;
 
-	//DPRINTF("%s()\n", __FUNCTION__);
-
 	i = 0;
 	while (READ_REG(sc, SAFE_RNG_STAT) != 0 && ++i < SAFE_RNG_MAXWAIT)
 		;
@@ -1298,12 +1268,12 @@ safe_rng_read(struct safe_softc *sc)
 }
 
 static int
-safe_read_random(void *arg, int *buf, int maxwords)
+safe_read_random(void *arg, u_int32_t *buf, int maxwords)
 {
 	struct safe_softc *sc = (struct safe_softc *) arg;
 	int i, rc;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 	
 	safestats.st_rng++;
 	/*
@@ -1330,8 +1300,8 @@ retry:
 	if (READ_REG(sc, SAFE_RNG_ALM_CNT) > safe_rngmaxalarm) {
 		u_int32_t freq_inc, w;
 
-		DPRINTF("%s: alarm count %u exceeds threshold %u\n", __func__,
-			(unsigned)READ_REG(sc, SAFE_RNG_ALM_CNT), safe_rngmaxalarm);
+		DPRINTF(("%s: alarm count %u exceeds threshold %u\n", __func__,
+			(unsigned)READ_REG(sc, SAFE_RNG_ALM_CNT), safe_rngmaxalarm));
 		safestats.st_rngalarm++;
 		safe_rng_enable_short_cycle(sc);
 		freq_inc = 18;
@@ -1358,7 +1328,7 @@ retry:
 
 	return(rc);
 }
-#endif /* SAFE_NO_RNG */
+#endif /* defined(CONFIG_OCF_RANDOMHARVEST) && !defined(SAFE_NO_RNG) */
 
 
 /*
@@ -1373,7 +1343,7 @@ safe_reset_board(struct safe_softc *sc)
 	 * Reset the device.  The manual says no delay
 	 * is needed between marking and clearing reset.
 	 */
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	v = READ_REG(sc, SAFE_PE_DMACFG) &~
 		(SAFE_PE_DMACFG_PERESET | SAFE_PE_DMACFG_PDRRESET |
@@ -1393,7 +1363,7 @@ safe_init_board(struct safe_softc *sc)
 {
 	u_int32_t v, dwords;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	v = READ_REG(sc, SAFE_PE_DMACFG);
 	v &=~ (   SAFE_PE_DMACFG_PEMODE
@@ -1431,7 +1401,8 @@ safe_init_board(struct safe_softc *sc)
 		 * particle descriptors (<= 256 bytes).
 		 */
 		WRITE_REG(sc, SAFE_DMA_CFG, 256);
-		printk("safe: Reduce max DMA size to %u words for rev %u.%u WAR\n",
+		device_printf(sc->sc_dev,
+			"Reduce max DMA size to %u words for rev %u.%u WAR\n",
 			(unsigned) ((READ_REG(sc, SAFE_DMA_CFG)>>2) & 0xff),
 			(unsigned) SAFE_REV_MAJ(sc->sc_chiprev),
 			(unsigned) SAFE_REV_MIN(sc->sc_chiprev));
@@ -1441,8 +1412,8 @@ safe_init_board(struct safe_softc *sc)
 	}
 
 	/* NB: operands+results are overlaid */
-	WRITE_REG(sc, SAFE_PE_PDRBASE, sc->sc_ring_dma);
-	WRITE_REG(sc, SAFE_PE_RDRBASE, sc->sc_ring_dma);
+	WRITE_REG(sc, SAFE_PE_PDRBASE, sc->sc_ringalloc.dma_paddr);
+	WRITE_REG(sc, SAFE_PE_RDRBASE, sc->sc_ringalloc.dma_paddr);
 	/*
 	 * Configure ring entry size and number of items in the ring.
 	 */
@@ -1453,8 +1424,8 @@ safe_init_board(struct safe_softc *sc)
 		(dwords << SAFE_PE_RINGCFG_OFFSET_S) | SAFE_MAX_NQUEUE);
 	WRITE_REG(sc, SAFE_PE_RINGPOLL, 0);	/* disable polling */
 
-	WRITE_REG(sc, SAFE_PE_GRNGBASE, sc->sc_sp_dma);
-	WRITE_REG(sc, SAFE_PE_SRNGBASE, sc->sc_dp_dma);
+	WRITE_REG(sc, SAFE_PE_GRNGBASE, sc->sc_spalloc.dma_paddr);
+	WRITE_REG(sc, SAFE_PE_SRNGBASE, sc->sc_dpalloc.dma_paddr);
 	WRITE_REG(sc, SAFE_PE_PARTSIZE,
 		(SAFE_TOTAL_DPART<<16) | SAFE_TOTAL_SPART);
 	/*
@@ -1485,7 +1456,7 @@ safe_init_board(struct safe_softc *sc)
 static void
 safe_cleanchip(struct safe_softc *sc)
 {
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	if (sc->sc_nqchip != 0) {
 		struct safe_ringentry *re = sc->sc_back;
@@ -1510,7 +1481,7 @@ safe_free_entry(struct safe_softc *sc, struct safe_ringentry *re)
 {
 	struct cryptop *crp;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	/*
 	 * Free header MCR
@@ -1538,7 +1509,7 @@ safe_free_entry(struct safe_softc *sc, struct safe_ringentry *re)
 static void
 safe_totalreset(struct safe_softc *sc)
 {
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	safe_reset_board(sc);
 	safe_init_board(sc);
@@ -1551,11 +1522,11 @@ safe_totalreset(struct safe_softc *sc)
  * but the last segment must be a multiple of 4 bytes.
  */
 static int
-safe_dmamap_aligned(const struct safe_operand *op)
+safe_dmamap_aligned(struct safe_softc *sc, const struct safe_operand *op)
 {
 	int i;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	for (i = 0; i < op->nsegs; i++) {
 		if (op->segs[i].ds_addr & 3)
@@ -1580,7 +1551,7 @@ safe_dmamap_uniform(struct safe_softc *sc, const struct safe_operand *op)
 {
 	int result = 1;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	if (op->nsegs > 0) {
 		int i;
@@ -1596,13 +1567,13 @@ safe_dmamap_uniform(struct safe_softc *sc, const struct safe_operand *op)
 }
 
 static int
-safe_kprocess(void *arg, struct cryptkop *krp, int hint)
+safe_kprocess(device_t dev, struct cryptkop *krp, int hint)
 {
-	struct safe_softc *sc = arg;
+	struct safe_softc *sc = device_get_softc(dev);
 	struct safe_pkq *q;
 	unsigned long flags;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	if (sc == NULL) {
 		krp->krp_status = EINVAL;
@@ -1645,26 +1616,26 @@ safe_kstart(struct safe_softc *sc)
 	int exp_bits, mod_bits, base_bits;
 	u_int32_t op, a_off, b_off, c_off, d_off;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	if (krp->krp_iparams < 3 || krp->krp_oparams != 1) {
 		krp->krp_status = EINVAL;
 		return (1);
 	}
 
-	base_bits = safe_ksigbits(&krp->krp_param[SAFE_CRK_PARAM_BASE]);
+	base_bits = safe_ksigbits(sc, &krp->krp_param[SAFE_CRK_PARAM_BASE]);
 	if (base_bits > 2048)
 		goto too_big;
 	if (base_bits <= 0)		/* 5. base not zero */
 		goto too_small;
 
-	exp_bits = safe_ksigbits(&krp->krp_param[SAFE_CRK_PARAM_EXP]);
+	exp_bits = safe_ksigbits(sc, &krp->krp_param[SAFE_CRK_PARAM_EXP]);
 	if (exp_bits > 2048)
 		goto too_big;
 	if (exp_bits <= 0)		/* 1. exponent word length > 0 */
 		goto too_small;		/* 4. exponent not zero */
 
-	mod_bits = safe_ksigbits(&krp->krp_param[SAFE_CRK_PARAM_MOD]);
+	mod_bits = safe_ksigbits(sc, &krp->krp_param[SAFE_CRK_PARAM_MOD]);
 	if (mod_bits > 2048)
 		goto too_big;
 	if (mod_bits <= 32)		/* 2. modulus word length > 1 */
@@ -1744,13 +1715,13 @@ bad_domain:
 }
 
 static int
-safe_ksigbits(struct crparam *cr)
+safe_ksigbits(struct safe_softc *sc, struct crparam *cr)
 {
 	u_int plen = (cr->crp_nbits + 7) / 8;
 	int i, sig = plen * 8;
 	u_int8_t c, *p = cr->crp_p;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	for (i = plen - 1; i >= 0; i--) {
 		c = p[i];
@@ -1771,7 +1742,7 @@ safe_kfeed(struct safe_softc *sc)
 {
 	struct safe_pkq *q, *tmp;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	if (list_empty(&sc->sc_pkq) && sc->sc_pkq_cur == NULL)
 		return;
@@ -1795,20 +1766,22 @@ safe_kfeed(struct safe_softc *sc)
 static void
 safe_kpoll(unsigned long arg)
 {
-	struct safe_softc *sc;
+	struct safe_softc *sc = NULL;
 	struct safe_pkq *q;
 	struct crparam *res;
 	int i;
 	u_int32_t buf[64];
 	unsigned long flags;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	if (arg >= SAFE_MAX_CHIPS)
 		return;
 	sc = safe_chip_idx[arg];
-	if (!sc)
+	if (!sc) {
+		DPRINTF(("%s() - bad callback\n", __FUNCTION__));
 		return;
+	}
 
 	spin_lock_irqsave(&sc->sc_pkmtx, flags);
 	if (sc->sc_pkq_cur == NULL)
@@ -1831,7 +1804,7 @@ safe_kpoll(unsigned long arg)
 	 * reduce the bits that need copying if possible
 	 */
 	res->crp_nbits = min(res->crp_nbits,sc->sc_pk_reslen * 8);
-	res->crp_nbits = safe_ksigbits(res);
+	res->crp_nbits = safe_ksigbits(sc, res);
 
 	for (i = SAFE_PK_RAM_START; i < SAFE_PK_RAM_END; i += 4)
 		WRITE_REG(sc, i, 0);
@@ -1851,7 +1824,7 @@ safe_kload_reg(struct safe_softc *sc, u_int32_t off, u_int32_t len,
 {
 	u_int32_t buf[64], i;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	bzero(buf, sizeof(buf));
 	bcopy(n->crp_p, buf, (n->crp_nbits + 7) / 8);
@@ -1865,7 +1838,7 @@ safe_kload_reg(struct safe_softc *sc, u_int32_t off, u_int32_t len,
 static void
 safe_dump_dmastatus(struct safe_softc *sc, const char *tag)
 {
-	DPRINTF("%s: ENDIAN 0x%x SRC 0x%x DST 0x%x STAT 0x%x\n"
+	printf("%s: ENDIAN 0x%x SRC 0x%x DST 0x%x STAT 0x%x\n"
 		, tag
 		, READ_REG(sc, SAFE_DMA_ENDIAN)
 		, READ_REG(sc, SAFE_DMA_SRCADDR)
@@ -1877,7 +1850,7 @@ safe_dump_dmastatus(struct safe_softc *sc, const char *tag)
 static void
 safe_dump_intrstate(struct safe_softc *sc, const char *tag)
 {
-	DPRINTF("%s: HI_CFG 0x%x HI_MASK 0x%x HI_DESC_CNT 0x%x HU_STAT 0x%x HM_STAT 0x%x\n"
+	printf("%s: HI_CFG 0x%x HI_MASK 0x%x HI_DESC_CNT 0x%x HU_STAT 0x%x HM_STAT 0x%x\n"
 		, tag
 		, READ_REG(sc, SAFE_HI_CFG)
 		, READ_REG(sc, SAFE_HI_MASK)
@@ -1893,7 +1866,7 @@ safe_dump_ringstate(struct safe_softc *sc, const char *tag)
 	u_int32_t estat = READ_REG(sc, SAFE_PE_ERNGSTAT);
 
 	/* NB: assume caller has lock on ring */
-	DPRINTF("%s: ERNGSTAT %x (next %u) back %lu front %lu\n",
+	printf("%s: ERNGSTAT %x (next %u) back %lu front %lu\n",
 		tag,
 		estat, (estat >> SAFE_PE_ERNGSTAT_NEXT_S),
 		(unsigned long)(sc->sc_back - sc->sc_ring),
@@ -1906,7 +1879,7 @@ safe_dump_request(struct safe_softc *sc, const char* tag, struct safe_ringentry 
 	int ix, nsegs;
 
 	ix = re - sc->sc_ring;
-	DPRINTF("%s: %p (%u): csr %x src %x dst %x sa %x len %x\n"
+	printf("%s: %p (%u): csr %x src %x dst %x sa %x len %x\n"
 		, tag
 		, re, ix
 		, re->re_desc.d_csr
@@ -1916,27 +1889,27 @@ safe_dump_request(struct safe_softc *sc, const char* tag, struct safe_ringentry 
 		, re->re_desc.d_len
 	);
 	if (re->re_src.nsegs > 1) {
-		ix = (re->re_desc.d_src - sc->sc_sp_dma) /
+		ix = (re->re_desc.d_src - sc->sc_spalloc.dma_paddr) /
 			sizeof(struct safe_pdesc);
 		for (nsegs = re->re_src.nsegs; nsegs; nsegs--) {
-			printk(" spd[%u] %p: %p size %u flags %x"
+			printf(" spd[%u] %p: %p size %u flags %x"
 				, ix, &sc->sc_spring[ix]
 				, (caddr_t)(uintptr_t) sc->sc_spring[ix].pd_addr
 				, sc->sc_spring[ix].pd_size
 				, sc->sc_spring[ix].pd_flags
 			);
 			if (sc->sc_spring[ix].pd_size == 0)
-				printk(" (zero!)");
-			printk("\n");
+				printf(" (zero!)");
+			printf("\n");
 			if (++ix == SAFE_TOTAL_SPART)
 				ix = 0;
 		}
 	}
 	if (re->re_dst.nsegs > 1) {
-		ix = (re->re_desc.d_dst - sc->sc_dp_dma) /
+		ix = (re->re_desc.d_dst - sc->sc_dpalloc.dma_paddr) /
 			sizeof(struct safe_pdesc);
 		for (nsegs = re->re_dst.nsegs; nsegs; nsegs--) {
-			printk(" dpd[%u] %p: %p flags %x\n"
+			printf(" dpd[%u] %p: %p flags %x\n"
 				, ix, &sc->sc_dpring[ix]
 				, (caddr_t)(uintptr_t) sc->sc_dpring[ix].pd_addr
 				, sc->sc_dpring[ix].pd_flags
@@ -1945,9 +1918,9 @@ safe_dump_request(struct safe_softc *sc, const char* tag, struct safe_ringentry 
 				ix = 0;
 		}
 	}
-	printk("sa: cmd0 %08x cmd1 %08x staterec %x\n",
+	printf("sa: cmd0 %08x cmd1 %08x staterec %x\n",
 		re->re_sa.sa_cmd0, re->re_sa.sa_cmd1, re->re_sa.sa_staterec);
-	printk("sa: key %x %x %x %x %x %x %x %x\n"
+	printf("sa: key %x %x %x %x %x %x %x %x\n"
 		, re->re_sa.sa_key[0]
 		, re->re_sa.sa_key[1]
 		, re->re_sa.sa_key[2]
@@ -1957,27 +1930,27 @@ safe_dump_request(struct safe_softc *sc, const char* tag, struct safe_ringentry 
 		, re->re_sa.sa_key[6]
 		, re->re_sa.sa_key[7]
 	);
-	printk("sa: indigest %x %x %x %x %x\n"
+	printf("sa: indigest %x %x %x %x %x\n"
 		, re->re_sa.sa_indigest[0]
 		, re->re_sa.sa_indigest[1]
 		, re->re_sa.sa_indigest[2]
 		, re->re_sa.sa_indigest[3]
 		, re->re_sa.sa_indigest[4]
 	);
-	printk("sa: outdigest %x %x %x %x %x\n"
+	printf("sa: outdigest %x %x %x %x %x\n"
 		, re->re_sa.sa_outdigest[0]
 		, re->re_sa.sa_outdigest[1]
 		, re->re_sa.sa_outdigest[2]
 		, re->re_sa.sa_outdigest[3]
 		, re->re_sa.sa_outdigest[4]
 	);
-	printk("sr: iv %x %x %x %x\n"
+	printf("sr: iv %x %x %x %x\n"
 		, re->re_sastate.sa_saved_iv[0]
 		, re->re_sastate.sa_saved_iv[1]
 		, re->re_sastate.sa_saved_iv[2]
 		, re->re_sastate.sa_saved_iv[3]
 	);
-	printk("sr: hashbc %u indigest %x %x %x %x %x\n"
+	printf("sr: hashbc %u indigest %x %x %x %x %x\n"
 		, re->re_sastate.sa_saved_hashbc
 		, re->re_sastate.sa_saved_indigest[0]
 		, re->re_sastate.sa_saved_indigest[1]
@@ -1992,10 +1965,8 @@ safe_dump_ring(struct safe_softc *sc, const char *tag)
 {
 	unsigned long flags;
 
-	DPRINTF("%s()\n", __FUNCTION__);
-
 	spin_lock_irqsave(&sc->sc_ringmtx, flags);
-	printk("\nSafeNet Ring State:\n");
+	printf("\nSafeNet Ring State:\n");
 	safe_dump_intrstate(sc, tag);
 	safe_dump_dmastatus(sc, tag);
 	safe_dump_ringstate(sc, tag);
@@ -2020,7 +1991,7 @@ static int safe_probe(struct pci_dev *dev, const struct pci_device_id *ent)
 	dma_addr_t raddr;
 	static int num_chips = 0;
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	if (pci_enable_device(dev) < 0)
 		return(-ENODEV);
@@ -2041,56 +2012,59 @@ static int safe_probe(struct pci_dev *dev, const struct pci_device_id *ent)
 		return(-ENOMEM);
 	memset(sc, 0, sizeof(*sc));
 
+	softc_device_init(sc, "safe", num_chips, safe_methods);
+
 	sc->sc_irq = -1;
 	sc->sc_cid = -1;
-	sc->sc_dev = dev;
-	sc->sc_num = num_chips++;
-	if (sc->sc_num < SAFE_MAX_CHIPS)
-		safe_chip_idx[sc->sc_num] = sc;
+	sc->sc_pcidev = dev;
+	if (num_chips < SAFE_MAX_CHIPS) {
+		safe_chip_idx[device_get_unit(sc->sc_dev)] = sc;
+		num_chips++;
+	}
 
 	INIT_LIST_HEAD(&sc->sc_pkq);
 	spin_lock_init(&sc->sc_pkmtx);
 
-	pci_set_drvdata(sc->sc_dev, sc);
+	pci_set_drvdata(sc->sc_pcidev, sc);
 
 	/* we read its hardware registers as memory */
-	mem_start = pci_resource_start(sc->sc_dev, 0);
-	mem_len   = pci_resource_len(sc->sc_dev, 0);
+	mem_start = pci_resource_start(sc->sc_pcidev, 0);
+	mem_len   = pci_resource_len(sc->sc_pcidev, 0);
 
 	sc->sc_base_addr = (ocf_iomem_t) ioremap(mem_start, mem_len);
 	if (!sc->sc_base_addr) {
-		printk("safe: failed to ioremap 0x%x-0x%x\n",
+		device_printf(sc->sc_dev, "failed to ioremap 0x%x-0x%x\n",
 				mem_start, mem_start + mem_len - 1);
 		goto out;
 	}
 
 	/* fix up the bus size */
-	if (pci_set_dma_mask(sc->sc_dev, DMA_32BIT_MASK)) {
-		printk("safe: No usable DMA configuration, aborting.\n");
+	if (pci_set_dma_mask(sc->sc_pcidev, DMA_32BIT_MASK)) {
+		device_printf(sc->sc_dev, "No usable DMA configuration, aborting.\n");
 		goto out;
 	}
-	if (pci_set_consistent_dma_mask(sc->sc_dev, DMA_32BIT_MASK)) {
-		printk("safe: No usable consistent DMA configuration, aborting.\n");
+	if (pci_set_consistent_dma_mask(sc->sc_pcidev, DMA_32BIT_MASK)) {
+		device_printf(sc->sc_dev, "No usable consistent DMA configuration, aborting.\n");
 		goto out;
 	}
 
-	pci_set_master(sc->sc_dev);
+	pci_set_master(sc->sc_pcidev);
 
-	pci_read_config_dword(sc->sc_dev, PCI_COMMAND, &cmd);
+	pci_read_config_dword(sc->sc_pcidev, PCI_COMMAND, &cmd);
 
 	if (!(cmd & PCI_COMMAND_MEMORY)) {
-		printk("safe: failed to enable memory mapping\n");
+		device_printf(sc->sc_dev, "failed to enable memory mapping\n");
 		goto out;
 	}
 
 	if (!(cmd & PCI_COMMAND_MASTER)) {
-		printk("safe: failed to enable bus mastering\n");
+		device_printf(sc->sc_dev, "failed to enable bus mastering\n");
 		goto out;
 	}
 
-	rc = request_irq(dev->irq, safe_intr, SA_SHIRQ, "safe", sc);
+	rc = request_irq(dev->irq, safe_intr, IRQF_SHARED, "safe", sc);
 	if (rc) {
-		printk("safe: failed to hook irq %d\n", sc->sc_irq);
+		device_printf(sc->sc_dev, "failed to hook irq %d\n", sc->sc_irq);
 		goto out;
 	}
 	sc->sc_irq = dev->irq;
@@ -2101,22 +2075,22 @@ static int safe_probe(struct pci_dev *dev, const struct pci_device_id *ent)
 	/*
 	 * Allocate packet engine descriptors.
 	 */
-	sc->sc_ring_vma = pci_alloc_consistent(sc->sc_dev,
+	sc->sc_ringalloc.dma_vaddr = pci_alloc_consistent(sc->sc_pcidev,
 			SAFE_MAX_NQUEUE * sizeof (struct safe_ringentry),
-			&sc->sc_ring_dma);
-	if (!sc->sc_ring_vma) {
-		printk("safe: cannot allocate PE descriptor ring\n");
+			&sc->sc_ringalloc.dma_paddr);
+	if (!sc->sc_ringalloc.dma_vaddr) {
+		device_printf(sc->sc_dev, "cannot allocate PE descriptor ring\n");
 		goto out;
 	}
 
 	/*
 	 * Hookup the static portion of all our data structures.
 	 */
-	sc->sc_ring = (struct safe_ringentry *) sc->sc_ring_vma;
+	sc->sc_ring = (struct safe_ringentry *) sc->sc_ringalloc.dma_vaddr;
 	sc->sc_ringtop = sc->sc_ring + SAFE_MAX_NQUEUE;
 	sc->sc_front = sc->sc_ring;
 	sc->sc_back = sc->sc_ring;
-	raddr = sc->sc_ring_dma;
+	raddr = sc->sc_ringalloc.dma_paddr;
 	bzero(sc->sc_ring, SAFE_MAX_NQUEUE * sizeof(struct safe_ringentry));
 	for (i = 0; i < SAFE_MAX_NQUEUE; i++) {
 		struct safe_ringentry *re = &sc->sc_ring[i];
@@ -2133,90 +2107,81 @@ static int safe_probe(struct pci_dev *dev, const struct pci_device_id *ent)
 	/*
 	 * Allocate scatter and gather particle descriptors.
 	 */
-	sc->sc_sp_vma = pci_alloc_consistent(sc->sc_dev,
+	sc->sc_spalloc.dma_vaddr = pci_alloc_consistent(sc->sc_pcidev,
 			SAFE_TOTAL_SPART * sizeof (struct safe_pdesc),
-			&sc->sc_sp_dma);
-	if (!sc->sc_sp_vma) {
-		printk("safe: cannot allocate source particle descriptor ring\n");
+			&sc->sc_spalloc.dma_paddr);
+	if (!sc->sc_spalloc.dma_vaddr) {
+		device_printf(sc->sc_dev, "cannot allocate source particle descriptor ring\n");
 		goto out;
 	}
-	sc->sc_spring = (struct safe_pdesc *) sc->sc_sp_vma;
+	sc->sc_spring = (struct safe_pdesc *) sc->sc_spalloc.dma_vaddr;
 	sc->sc_springtop = sc->sc_spring + SAFE_TOTAL_SPART;
 	sc->sc_spfree = sc->sc_spring;
 	bzero(sc->sc_spring, SAFE_TOTAL_SPART * sizeof(struct safe_pdesc));
 
-	sc->sc_dp_vma = pci_alloc_consistent(sc->sc_dev,
+	sc->sc_dpalloc.dma_vaddr = pci_alloc_consistent(sc->sc_pcidev,
 			SAFE_TOTAL_DPART * sizeof (struct safe_pdesc),
-			&sc->sc_dp_dma);
-	if (!sc->sc_dp_vma) {
-		printk("safe: cannot allocate destination particle descriptor ring\n");
+			&sc->sc_dpalloc.dma_paddr);
+	if (!sc->sc_dpalloc.dma_vaddr) {
+		device_printf(sc->sc_dev, "cannot allocate destination particle descriptor ring\n");
 		goto out;
 	}
-	sc->sc_dpring = (struct safe_pdesc *) sc->sc_dp_vma;
+	sc->sc_dpring = (struct safe_pdesc *) sc->sc_dpalloc.dma_vaddr;
 	sc->sc_dpringtop = sc->sc_dpring + SAFE_TOTAL_DPART;
 	sc->sc_dpfree = sc->sc_dpring;
 	bzero(sc->sc_dpring, SAFE_TOTAL_DPART * sizeof(struct safe_pdesc));
 
-	sc->sc_cid = crypto_get_driverid(0);
+	sc->sc_cid = crypto_get_driverid(softc_get_device(sc), CRYPTOCAP_F_HARDWARE);
 	if (sc->sc_cid < 0) {
-		printk("safe: could not get crypto driver id\n");
+		device_printf(sc->sc_dev, "could not get crypto driver id\n");
 		goto out;
 	}
 
-	printk("safe:");
+	printf("%s:", device_get_nameunit(sc->sc_dev));
 
 	devinfo = READ_REG(sc, SAFE_DEVINFO);
 	if (devinfo & SAFE_DEVINFO_RNG) {
 		sc->sc_flags |= SAFE_FLAGS_RNG;
-		printk(" rng");
+		printf(" rng");
 	}
 	if (devinfo & SAFE_DEVINFO_PKEY) {
-		printk(" key");
+		printf(" key");
 		sc->sc_flags |= SAFE_FLAGS_KEY;
-		crypto_kregister(sc->sc_cid, CRK_MOD_EXP, 0,
-			safe_kprocess, sc);
+		crypto_kregister(sc->sc_cid, CRK_MOD_EXP, 0);
 #if 0
-		crypto_kregister(sc->sc_cid, CRK_MOD_EXP_CRT, 0,
-			safe_kprocess, sc);
+		crypto_kregister(sc->sc_cid, CRK_MOD_EXP_CRT, 0);
 #endif
 		init_timer(&sc->sc_pkto);
 		sc->sc_pkto.function = safe_kpoll;
-		sc->sc_pkto.data = (unsigned long) sc->sc_num;
+		sc->sc_pkto.data = (unsigned long) device_get_unit(sc->sc_dev);
 	}
 	if (devinfo & SAFE_DEVINFO_DES) {
-		printk(" des/3des");
-		crypto_register(sc->sc_cid, CRYPTO_3DES_CBC, 0, 0,
-			safe_newsession, safe_freesession, safe_process, sc);
-		crypto_register(sc->sc_cid, CRYPTO_DES_CBC, 0, 0,
-			safe_newsession, safe_freesession, safe_process, sc);
+		printf(" des/3des");
+		crypto_register(sc->sc_cid, CRYPTO_3DES_CBC, 0, 0);
+		crypto_register(sc->sc_cid, CRYPTO_DES_CBC, 0, 0);
 	}
 	if (devinfo & SAFE_DEVINFO_AES) {
-		printk(" aes");
-		crypto_register(sc->sc_cid, CRYPTO_AES_CBC, 0, 0,
-			safe_newsession, safe_freesession, safe_process, sc);
+		printf(" aes");
+		crypto_register(sc->sc_cid, CRYPTO_AES_CBC, 0, 0);
 	}
 	if (devinfo & SAFE_DEVINFO_MD5) {
-		printk(" md5");
-		crypto_register(sc->sc_cid, CRYPTO_MD5_HMAC, 0, 0,
-			safe_newsession, safe_freesession, safe_process, sc);
+		printf(" md5");
+		crypto_register(sc->sc_cid, CRYPTO_MD5_HMAC, 0, 0);
 	}
 	if (devinfo & SAFE_DEVINFO_SHA1) {
-		printk(" sha1");
-		crypto_register(sc->sc_cid, CRYPTO_SHA1_HMAC, 0, 0,
-			safe_newsession, safe_freesession, safe_process, sc);
+		printf(" sha1");
+		crypto_register(sc->sc_cid, CRYPTO_SHA1_HMAC, 0, 0);
 	}
-	printk(" null");
-	crypto_register(sc->sc_cid, CRYPTO_NULL_CBC, 0, 0,
-		safe_newsession, safe_freesession, safe_process, sc);
-	crypto_register(sc->sc_cid, CRYPTO_NULL_HMAC, 0, 0,
-		safe_newsession, safe_freesession, safe_process, sc);
+	printf(" null");
+	crypto_register(sc->sc_cid, CRYPTO_NULL_CBC, 0, 0);
+	crypto_register(sc->sc_cid, CRYPTO_NULL_HMAC, 0, 0);
 	/* XXX other supported algorithms */
-	printk("\n");
+	printf("\n");
 
 	safe_reset_board(sc);		/* reset h/w */
 	safe_init_board(sc);		/* init h/w */
 
-#ifndef SAFE_NO_RNG
+#if defined(CONFIG_OCF_RANDOMHARVEST) && !defined(SAFE_NO_RNG)
 	if (sc->sc_flags & SAFE_FLAGS_RNG) {
 		safe_rng_init(sc);
 		crypto_rregister(sc->sc_cid, safe_read_random, sc);
@@ -2230,18 +2195,18 @@ out:
 		crypto_unregister_all(sc->sc_cid);
 	if (sc->sc_irq != -1)
 		free_irq(sc->sc_irq, sc);
-	if (sc->sc_ring_vma)
-		pci_free_consistent(sc->sc_dev,
+	if (sc->sc_ringalloc.dma_vaddr)
+		pci_free_consistent(sc->sc_pcidev,
 				SAFE_MAX_NQUEUE * sizeof (struct safe_ringentry),
-				sc->sc_ring_vma, sc->sc_ring_dma);
-	if (sc->sc_sp_vma)
-		pci_free_consistent(sc->sc_dev,
+				sc->sc_ringalloc.dma_vaddr, sc->sc_ringalloc.dma_paddr);
+	if (sc->sc_spalloc.dma_vaddr)
+		pci_free_consistent(sc->sc_pcidev,
 				SAFE_TOTAL_DPART * sizeof (struct safe_pdesc),
-				sc->sc_sp_vma, sc->sc_sp_dma);
-	if (sc->sc_dp_vma)
-		pci_free_consistent(sc->sc_dev,
+				sc->sc_spalloc.dma_vaddr, sc->sc_spalloc.dma_paddr);
+	if (sc->sc_dpalloc.dma_vaddr)
+		pci_free_consistent(sc->sc_pcidev,
 				SAFE_TOTAL_DPART * sizeof (struct safe_pdesc),
-				sc->sc_dp_vma, sc->sc_dp_dma);
+				sc->sc_dpalloc.dma_vaddr, sc->sc_dpalloc.dma_paddr);
 	kfree(sc);
 	return(-ENODEV);
 }
@@ -2250,7 +2215,7 @@ static void safe_remove(struct pci_dev *dev)
 {
 	struct safe_softc *sc = pci_get_drvdata(dev);
 
-	DPRINTF("%s()\n", __FUNCTION__);
+	DPRINTF(("%s()\n", __FUNCTION__));
 
 	/* XXX wait/abort active ops */
 
@@ -2264,22 +2229,22 @@ static void safe_remove(struct pci_dev *dev)
 
 	if (sc->sc_irq != -1)
 		free_irq(sc->sc_irq, sc);
-	if (sc->sc_ring_vma)
-		pci_free_consistent(sc->sc_dev,
+	if (sc->sc_ringalloc.dma_vaddr)
+		pci_free_consistent(sc->sc_pcidev,
 				SAFE_MAX_NQUEUE * sizeof (struct safe_ringentry),
-				sc->sc_ring_vma, sc->sc_ring_dma);
-	if (sc->sc_sp_vma)
-		pci_free_consistent(sc->sc_dev,
+				sc->sc_ringalloc.dma_vaddr, sc->sc_ringalloc.dma_paddr);
+	if (sc->sc_spalloc.dma_vaddr)
+		pci_free_consistent(sc->sc_pcidev,
 				SAFE_TOTAL_DPART * sizeof (struct safe_pdesc),
-				sc->sc_sp_vma, sc->sc_sp_dma);
-	if (sc->sc_dp_vma)
-		pci_free_consistent(sc->sc_dev,
+				sc->sc_spalloc.dma_vaddr, sc->sc_spalloc.dma_paddr);
+	if (sc->sc_dpalloc.dma_vaddr)
+		pci_free_consistent(sc->sc_pcidev,
 				SAFE_TOTAL_DPART * sizeof (struct safe_pdesc),
-				sc->sc_dp_vma, sc->sc_dp_dma);
+				sc->sc_dpalloc.dma_vaddr, sc->sc_dpalloc.dma_paddr);
 	sc->sc_irq = -1;
-	sc->sc_ring_vma = NULL;
-	sc->sc_sp_vma = NULL;
-	sc->sc_dp_vma = NULL;
+	sc->sc_ringalloc.dma_vaddr = NULL;
+	sc->sc_spalloc.dma_vaddr = NULL;
+	sc->sc_dpalloc.dma_vaddr = NULL;
 }
 
 static struct pci_device_id safe_pci_tbl[] = {
@@ -2299,8 +2264,15 @@ static struct pci_driver safe_driver = {
 
 static int __init safe_init (void)
 {
-	DPRINTF("%s(%p)\n", __FUNCTION__, safe_init);
-	return pci_module_init(&safe_driver);
+	struct safe_softc *sc = NULL;
+	int rc;
+
+	DPRINTF(("%s(%p)\n", __FUNCTION__, safe_init));
+
+	rc = pci_register_driver(&safe_driver);
+	pci_register_driver_compat(&safe_driver, rc);
+
+	return rc;
 }
 
 static void __exit safe_exit (void)
@@ -2312,5 +2284,5 @@ module_init(safe_init);
 module_exit(safe_exit);
 
 MODULE_LICENSE("BSD");
-MODULE_AUTHOR("David McCullough <david_mccullough@au.securecomputing.com>");
+MODULE_AUTHOR("David McCullough <david_mccullough@securecomputing.com>");
 MODULE_DESCRIPTION("OCF driver for safenet PCI crypto devices");

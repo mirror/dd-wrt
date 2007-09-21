@@ -8,8 +8,8 @@
  *
  * This code written by Kim A. B. Phillips <kim.phillips@freescale.com>
  * some code copied from files with the following:
- * Copyright (C) 2004 David McCullough <davidm@snapgear.com>
-
+ * Copyright (C) 2004-2007 David McCullough <david_mccullough@securecomputing.com
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -133,24 +133,25 @@
 #include "talitos_dev.h"
 #include "talitos_soft.h"
 
+static device_method_t talitos_methods = {
+	/* crypto device methods */
+	DEVMETHOD(cryptodev_newsession,	talitos_newsession),
+	DEVMETHOD(cryptodev_freesession,talitos_freesession),
+	DEVMETHOD(cryptodev_process,	talitos_process),
+};
+
 #define read_random(p,l) get_random_bytes(p,l)
 
 const char talitos_driver_name[] = "Talitos OCF";
-const char talitos_driver_version[] = "0.1";
+const char talitos_driver_version[] = "0.2";
 
-static int talitos_process(void *, struct cryptop *, int);
-static int talitos_newsession(void *, u_int32_t *, struct cryptoini *);
-static int talitos_freesession(void *, u_int64_t);
+static int talitos_newsession(device_t dev, u_int32_t *sidp,
+								struct cryptoini *cri);
+static int talitos_freesession(device_t dev, u_int64_t tid);
+static int talitos_process(device_t dev, struct cryptop *crp, int hint);
 static void dump_talitos_status(struct talitos_softc *sc);
-static void skb_copy_bits_back(struct sk_buff *skb, int offset, caddr_t cp,
-								 int len);
-static int talitos_read_random(void *arg, u_int32_t *buf, int maxwords);
-static void talitos_rng_init(struct talitos_softc *sc);
-static int talitos_newsession(void *arg, u_int32_t *sidp, 
-							struct cryptoini *cri);
 static int talitos_submit(struct talitos_softc *sc, struct talitos_desc *td, 
 								int chsel);
-static int talitos_process(void *arg, struct cryptop *crp, int hint);
 static void talitos_doneprocessing(struct talitos_softc *sc);
 static void talitos_init_device(struct talitos_softc *sc);
 static void talitos_reset_device_master(struct talitos_softc *sc);
@@ -158,10 +159,15 @@ static void talitos_reset_device(struct talitos_softc *sc);
 static void talitos_errorprocessing(struct talitos_softc *sc);
 static int talitos_probe(struct platform_device *pdev);
 static int talitos_remove(struct platform_device *pdev);
+#ifdef CONFIG_OCF_RANDOMHARVEST
+static int talitos_read_random(void *arg, u_int32_t *buf, int maxwords);
+static void talitos_rng_init(struct talitos_softc *sc);
+#endif
 
-static int debug = 0;
-module_param(debug, int, 0);
-MODULE_PARM_DESC(debug, "Enable debug");
+#define debug talitos_debug
+int talitos_debug = 0;
+module_param(talitos_debug, int, 0644);
+MODULE_PARM_DESC(talitos_debug, "Enable debug");
 
 static inline void talitos_write(volatile unsigned *addr, u32 val)
 {
@@ -180,65 +186,43 @@ static void dump_talitos_status(struct talitos_softc *sc)
 	unsigned int v, v_hi, i, *ptr;
 	v = talitos_read(sc->sc_base_addr + TALITOS_MCR);
 	v_hi = talitos_read(sc->sc_base_addr + TALITOS_MCR_HI);
-	printk(KERN_INFO DRV_NAME ": MCR          0x%08x_%08x\n", v, v_hi);
+	printk(KERN_INFO "%s: MCR          0x%08x_%08x\n",
+			device_get_nameunit(sc->sc_cdev), v, v_hi);
 	v = talitos_read(sc->sc_base_addr + TALITOS_IMR);
 	v_hi = talitos_read(sc->sc_base_addr + TALITOS_IMR_HI);
-	printk(KERN_INFO DRV_NAME ": IMR          0x%08x_%08x\n", v, v_hi);
+	printk(KERN_INFO "%s: IMR          0x%08x_%08x\n",
+			device_get_nameunit(sc->sc_cdev), v, v_hi);
 	v = talitos_read(sc->sc_base_addr + TALITOS_ISR);
 	v_hi = talitos_read(sc->sc_base_addr + TALITOS_ISR_HI);
-	printk(KERN_INFO DRV_NAME ": ISR          0x%08x_%08x\n", v, v_hi);
+	printk(KERN_INFO "%s: ISR          0x%08x_%08x\n",
+			device_get_nameunit(sc->sc_cdev), v, v_hi);
 	for (i = 0; i < sc->sc_num_channels; i++) { 
 		v = talitos_read(sc->sc_base_addr + i*TALITOS_CH_OFFSET + 
 			TALITOS_CH_CDPR);
 		v_hi = talitos_read(sc->sc_base_addr + i*TALITOS_CH_OFFSET + 
 			TALITOS_CH_CDPR_HI);
-		printk(KERN_INFO DRV_NAME ": CDPR     ch%d 0x%08x_%08x\n", 
-			i, v, v_hi);
+		printk(KERN_INFO "%s: CDPR     ch%d 0x%08x_%08x\n", 
+				device_get_nameunit(sc->sc_cdev), i, v, v_hi);
 	}
 	for (i = 0; i < sc->sc_num_channels; i++) { 
 		v = talitos_read(sc->sc_base_addr + i*TALITOS_CH_OFFSET + 
 			TALITOS_CH_CCPSR);
 		v_hi = talitos_read(sc->sc_base_addr + i*TALITOS_CH_OFFSET + 
 			TALITOS_CH_CCPSR_HI);
-		printk(KERN_INFO DRV_NAME ": CCPSR    ch%d 0x%08x_%08x\n", 
-			i, v, v_hi);
+		printk(KERN_INFO "%s: CCPSR    ch%d 0x%08x_%08x\n", 
+				device_get_nameunit(sc->sc_cdev), i, v, v_hi);
 	}
 	ptr = sc->sc_base_addr + TALITOS_CH_DESCBUF;
 	for (i = 0; i < 16; i++) { 
 		v = talitos_read(ptr++); v_hi = talitos_read(ptr++);
-		printk(KERN_INFO DRV_NAME 
-			": DESCBUF  ch0 0x%08x_%08x (tdp%02d)\n", 
-			v, v_hi, i);
+		printk(KERN_INFO "%s: DESCBUF  ch0 0x%08x_%08x (tdp%02d)\n", 
+				device_get_nameunit(sc->sc_cdev), v, v_hi, i);
 	}
 	return;
 }
 
 
-/* taken from crypto/ocf/safe/safe.c driver */
-static void
-skb_copy_bits_back(struct sk_buff *skb, int offset, caddr_t cp, int len)
-{
-	int i;
-	if (offset < skb_headlen(skb)) {
-		memcpy(skb->data + offset, cp, 
-			min_t(int, skb_headlen(skb), len));
-		len -= skb_headlen(skb);
-		cp += skb_headlen(skb);
-	}
-	offset -= skb_headlen(skb);
-	for (i = 0; len > 0 && i < skb_shinfo(skb)->nr_frags; i++) {
-		if (offset < skb_shinfo(skb)->frags[i].size) {
-			memcpy(page_address(skb_shinfo(skb)->frags[i].page) +
-					skb_shinfo(skb)->frags[i].page_offset,
-					cp, min_t(int, 
-					skb_shinfo(skb)->frags[i].size, len));
-			len -= skb_shinfo(skb)->frags[i].size;
-			cp += skb_shinfo(skb)->frags[i].size;
-		}
-		offset -= skb_shinfo(skb)->frags[i].size;
-	}
-}
-
+#ifdef CONFIG_OCF_RANDOMHARVEST
 /* 
  * pull random numbers off the RNG FIFO, not exceeding amount available
  */
@@ -254,7 +238,8 @@ talitos_read_random(void *arg, u_int32_t *buf, int maxwords)
 	/* check for things like FIFO underflow */
 	v = talitos_read(sc->sc_base_addr + TALITOS_RNGISR_HI);
 	if (unlikely(v)) {
-		printk(KERN_ERR DRV_NAME ": RNGISR_HI error %08x\n", v);
+		printk(KERN_ERR "%s: RNGISR_HI error %08x\n",
+				device_get_nameunit(sc->sc_cdev), v);
 		return 0;
 	}
 	/*
@@ -308,7 +293,8 @@ talitos_rng_init(struct talitos_softc *sc)
 	 */
 	v = talitos_read(sc->sc_base_addr + TALITOS_RNGISR_HI);
 	if (v) {
-		printk(KERN_ERR DRV_NAME ": RNGISR_HI error %08x\n", v);
+		printk(KERN_ERR "%s: RNGISR_HI error %08x\n",
+			device_get_nameunit(sc->sc_cdev), v);
 		return;
 	}
 	/*
@@ -317,15 +303,16 @@ talitos_rng_init(struct talitos_softc *sc)
 	 */
 	return;
 }
+#endif /* CONFIG_OCF_RANDOMHARVEST */
 
 /*
  * Generate a new software session.
  */
 static int
-talitos_newsession(void *arg, u_int32_t *sidp, struct cryptoini *cri)
+talitos_newsession(device_t dev, u_int32_t *sidp, struct cryptoini *cri)
 {
 	struct cryptoini *c, *encini = NULL, *macini = NULL;
-	struct talitos_softc *sc = arg;
+	struct talitos_softc *sc = device_get_softc(dev);
 	struct talitos_session *ses = NULL;
 	int sesn;
 
@@ -384,7 +371,7 @@ talitos_newsession(void *arg, u_int32_t *sidp, struct cryptoini *cri)
 
 	if (sc->sc_sessions == NULL) {
 		ses = sc->sc_sessions = (struct talitos_session *)
-			kmalloc(sizeof(struct talitos_session), GFP_ATOMIC);
+			kmalloc(sizeof(struct talitos_session), SLAB_ATOMIC);
 		if (ses == NULL)
 			return ENOMEM;
 		memset(ses, 0, sizeof(struct talitos_session));
@@ -403,7 +390,7 @@ talitos_newsession(void *arg, u_int32_t *sidp, struct cryptoini *cri)
 			sesn = sc->sc_nsessions;
 			ses = (struct talitos_session *) kmalloc(
 				(sesn + 1) * sizeof(struct talitos_session), 
-				GFP_ATOMIC);
+				SLAB_ATOMIC);
 			if (ses == NULL)
 				return ENOMEM;
 			memset(ses, 0,
@@ -434,12 +421,23 @@ talitos_newsession(void *arg, u_int32_t *sidp, struct cryptoini *cri)
 			memcpy(ses->ses_hmac, macini->cri_key,
 				ses->ses_hmac_len);
 		}
-	} else 
-	if (macini) {
+	} else if (macini) {
 		/* doing hash */
 		ses->ses_klen = (macini->cri_klen + 7) / 8;
 		memcpy(ses->ses_key, macini->cri_key, ses->ses_klen);
 	}
+
+	/* back compat way of determining MSC result len */
+	if (macini) {
+		ses->ses_mlen = macini->cri_mlen;
+		if (ses->ses_mlen == 0) {
+			if (macini->cri_alg == CRYPTO_MD5_HMAC)
+				ses->ses_mlen = MD5_HASH_LEN;
+			else
+				ses->ses_mlen = SHA1_HASH_LEN;
+		}
+	}
+
 	/* really should make up a template td here, 
 	 * and only fill things like i/o and direction in process() */
 
@@ -452,9 +450,9 @@ talitos_newsession(void *arg, u_int32_t *sidp, struct cryptoini *cri)
  * Deallocate a session.
  */
 static int
-talitos_freesession(void *arg, u_int64_t tid)
+talitos_freesession(device_t dev, u_int64_t tid)
 {
-	struct talitos_softc *sc = arg;
+	struct talitos_softc *sc = device_get_softc(dev);
 	int session, ret;
 	u_int32_t sid = ((u_int32_t) tid) & 0xffffffff;
 
@@ -491,10 +489,10 @@ talitos_submit(
 }
 
 static int
-talitos_process(void *arg, struct cryptop *crp, int hint)
+talitos_process(device_t dev, struct cryptop *crp, int hint)
 {
 	int i, err = 0, ivsize;
-	struct talitos_softc *sc = arg;
+	struct talitos_softc *sc = device_get_softc(dev);
 	struct cryptodesc *crd1, *crd2, *maccrd, *enccrd;
 	caddr_t iv;
 	struct talitos_session *ses;
@@ -550,6 +548,13 @@ talitos_process(void *arg, struct cryptop *crp, int hint)
 	/* find and reserve next available descriptor-cryptop pair */
 	for (i = 0; i < sc->sc_chfifo_len; i++) {
 		if (sc->sc_chnfifo[chsel][i].cf_desc.hdr == 0) {
+			/* 
+			 * ensure correct descriptor formation by
+			 * avoiding inadvertently setting "optional" entries
+			 * e.g. not using "optional" dptr2 for MD/HMAC descs
+			 */
+			memset(&sc->sc_chnfifo[chsel][i].cf_desc,
+				0, sizeof(*td));
 			/* reserve it with done notification request bit */
 			sc->sc_chnfifo[chsel][i].cf_desc.hdr |= 
 				TALITOS_DONE_NOTIFY;
@@ -642,7 +647,8 @@ talitos_process(void *arg, struct cryptop *crp, int hint)
 			maccrd = crd2;
 		} else {
 			/* We cannot order the SEC as requested */
-			printk(DRV_NAME ": cannot do the order\n");
+			printk("%s: cannot do the order\n",
+					device_get_nameunit(sc->sc_cdev));
 			err = EINVAL;
 			goto errout;
 		}
@@ -652,7 +658,8 @@ talitos_process(void *arg, struct cryptop *crp, int hint)
 		/* using SKB buffers */
 		struct sk_buff *skb = (struct sk_buff *)crp->crp_buf;
 		if (skb_shinfo(skb)->nr_frags) {
-			printk(DRV_NAME ": skb frags unimplemented\n");
+			printk("%s: skb frags unimplemented\n",
+					device_get_nameunit(sc->sc_cdev));
 			err = EINVAL;
 			goto errout;
 		}
@@ -668,7 +675,8 @@ talitos_process(void *arg, struct cryptop *crp, int hint)
 		/* using IOV buffers */
 		struct uio *uiop = (struct uio *)crp->crp_buf;
 		if (uiop->uio_iovcnt > 1) {
-			printk(DRV_NAME ": iov frags unimplemented\n");
+			printk("%s: iov frags unimplemented\n",
+					device_get_nameunit(sc->sc_cdev));
 			err = EINVAL;
 			goto errout;
 		}
@@ -722,8 +730,8 @@ talitos_process(void *arg, struct cryptop *crp, int hint)
 				chsel, td->ptr[in_fifo].len);
 			break;
 		default:
-			printk(DRV_NAME ": unimplemented enccrd->crd_alg %d\n",
-				enccrd->crd_alg);
+			printk("%s: unimplemented enccrd->crd_alg %d\n",
+					device_get_nameunit(sc->sc_cdev), enccrd->crd_alg);
 			err = EINVAL;
 			goto errout;
 		}
@@ -743,47 +751,31 @@ talitos_process(void *arg, struct cryptop *crp, int hint)
 			else
 				iv = (caddr_t) ses->ses_iv;
 			if ((enccrd->crd_flags & CRD_F_IV_PRESENT) == 0) {
-				if (crp->crp_flags & CRYPTO_F_SKBUF)     {
-					skb_copy_bits_back(
-						(struct sk_buff *)
-						(crp->crp_buf),
-						enccrd->crd_inject, 
-						iv, ivsize);
-				}
-				else if (crp->crp_flags & CRYPTO_F_IOV)  {
-					cuio_copyback((struct uio *)
-						(crp->crp_buf),  
-						enccrd->crd_inject, 
-						ivsize, iv);
-				}
+				crypto_copyback(crp->crp_flags, crp->crp_buf,
+				    enccrd->crd_inject, ivsize, iv);
 			}
 		} else {
 			td->hdr |= TALITOS_DIR_INBOUND; 
-			if (enccrd->crd_flags & CRD_F_IV_EXPLICIT)
-				iv = enccrd->crd_iv;
-			else
-				iv = (caddr_t) ses->ses_iv;
-			if ((enccrd->crd_flags & CRD_F_IV_PRESENT) == 0) {
-				if (crp->crp_flags & CRYPTO_F_SKBUF)     {
-					skb_copy_bits((struct sk_buff *)
-						(crp->crp_buf),
-						enccrd->crd_inject, 
-						iv, ivsize);
-				}
-				else if (crp->crp_flags & CRYPTO_F_IOV)  {
-					cuio_copyback((struct uio *)
-						(crp->crp_buf),
-						enccrd->crd_inject,
-						ivsize, iv);
-				}
+			if (enccrd->crd_flags & CRD_F_IV_EXPLICIT) {
+				bcopy(enccrd->crd_iv,
+					re->re_sastate.sa_saved_iv, ivsize);
+			} else {
+				crypto_copydata(crp->crp_flags, crp->crp_buf,
+				    enccrd->crd_inject, ivsize,
+				    (caddr_t)re->re_sastate.sa_saved_iv);
 			}
 		}
 		td->ptr[cipher_iv].ptr = dma_map_single(NULL, iv, ivsize, 
 			DMA_TO_DEVICE);
 		td->ptr[cipher_iv].len = ivsize;
-		td->ptr[cipher_iv_out].ptr = dma_map_single(NULL, iv, ivsize, 
-			DMA_TO_DEVICE);
-		td->ptr[cipher_iv_out].len = ivsize;
+		/*
+		 * we don't need the cipher iv out length/pointer
+		 * field to do ESP IPsec. Therefore we set the len field as 0,
+		 * which tells the SEC not to do anything with this len/ptr
+		 * field. Previously, when length/pointer as pointing to iv,
+		 * it gave us corruption of packets.
+		 */
+		td->ptr[cipher_iv_out].len = 0;
 	}
 	if (enccrd && maccrd) {
 		int bypass, coffset, oplen;
@@ -806,7 +798,8 @@ talitos_process(void *arg, struct cryptop *crp, int hint)
 				break;
 			default:
 				/* We cannot order the SEC as requested */
-				printk(DRV_NAME ": cannot do the order\n");
+				printk("%s: cannot do the order\n",
+						device_get_nameunit(sc->sc_cdev));
 				err = EINVAL;
 				goto errout;
 		}
@@ -820,20 +813,18 @@ talitos_process(void *arg, struct cryptop *crp, int hint)
 			td->ptr[hmac_key].ptr = dma_map_single(NULL, 
 				ses->ses_hmac, ses->ses_hmac_len, DMA_TO_DEVICE);
 			td->ptr[hmac_key].len = ses->ses_hmac_len;
-			bypass = maccrd->crd_skip;
-			coffset = enccrd->crd_skip - maccrd->crd_skip;
-			oplen = enccrd->crd_skip + enccrd->crd_len;
 			td->ptr[in_fifo].ptr  += enccrd->crd_skip;
 			td->ptr[in_fifo].len  =  enccrd->crd_len;
 			td->ptr[out_fifo].ptr += enccrd->crd_skip;
 			td->ptr[out_fifo].len =  enccrd->crd_len;
 			/* bytes of HMAC to postpend to ciphertext */
-			td->ptr[out_fifo].extent =  12;	/* ipsec */
+			td->ptr[out_fifo].extent =  ses->ses_mlen;
 			td->ptr[hmac_data].ptr += maccrd->crd_skip; 
-			td->ptr[hmac_data].len = coffset ; 
+			td->ptr[hmac_data].len = enccrd->crd_skip - maccrd->crd_skip;
 		}
 		if (enccrd->crd_flags & CRD_F_KEY_EXPLICIT) {
-			printk(DRV_NAME ": CRD_F_KEY_EXPLICIT unimplemented\n");
+			printk("%s: CRD_F_KEY_EXPLICIT unimplemented\n",
+					device_get_nameunit(sc->sc_cdev));
 		}
 	}
 	if (!enccrd && maccrd) {
@@ -862,7 +853,7 @@ talitos_process(void *arg, struct cryptop *crp, int hint)
 				break;
 			default:
 				/* We cannot order the SEC as requested */
-				DPRINTF(DRV_NAME ": cannot do the order\n");
+				DPRINTF("cannot do the order\n");
 				err = EINVAL;
 				goto errout;
 		}
@@ -1001,8 +992,8 @@ talitos_intr(int irq, void *arg, struct pt_regs *regs)
 
 	if (unlikely(v & TALITOS_ISR_ERROR)) {
 		/* Okay, Houston, we've had a problem here. */
-		printk(KERN_DEBUG DRV_NAME 
-			": got error interrupt - ISR 0x%08x_%08x\n", v, v_hi);
+		printk(KERN_DEBUG "%s: got error interrupt - ISR 0x%08x_%08x\n",
+				device_get_nameunit(sc->sc_cdev), v, v_hi);
 		talitos_errorprocessing(sc);
 	} else
 	if (likely(v & TALITOS_ISR_DONE)) {
@@ -1036,7 +1027,7 @@ talitos_init_device(struct talitos_softc *sc)
 	v |= TALITOS_IMR_ALL;
 	talitos_write(sc->sc_base_addr + TALITOS_IMR, v);
 	v = talitos_read(sc->sc_base_addr + TALITOS_IMR_HI);
-	v |= TALITOS_IMR_HI_ALL;
+	v |= TALITOS_IMR_HI_ERRONLY;
 	talitos_write(sc->sc_base_addr + TALITOS_IMR_HI, v);
 	return;
 }
@@ -1091,10 +1082,19 @@ talitos_reset_device(struct talitos_softc *sc)
 
 /* Set up the crypto device structure, private data,
  * and anything else we need before we start */
+#ifdef CONFIG_PPC_MERGE
+static int talitos_probe(struct of_device *ofdev, const struct of_device_id *match)
+#else
 static int talitos_probe(struct platform_device *pdev)
+#endif
 {
-	struct talitos_softc *sc;
+	struct talitos_softc *sc = NULL;
 	struct resource *r;
+#ifdef CONFIG_PPC_MERGE
+	struct device *device = &ofdev->dev;
+	struct device_node *np = ofdev->node;
+	const unsigned int *prop;
+#endif
 	static int num_chips = 0;
 	int rc;
 	int i;
@@ -1106,29 +1106,49 @@ static int talitos_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	memset(sc, 0, sizeof(*sc));
 
+	softc_device_init(sc, DRV_NAME, num_chips, talitos_methods);
+
 	sc->sc_irq = -1;
 	sc->sc_cid = -1;
+#ifdef CONFIG_PPC_MERGE
 	sc->sc_dev = pdev;
+#else
+	sc->sc_dev = device;
+#endif
 	sc->sc_num = num_chips++;
 
+#ifdef CONFIG_PPC_MERGE
 	platform_set_drvdata(sc->sc_dev, sc);
+#else
+	dev_set_drvdata(device, sc);
+#endif
 
 	/* get the irq line */
+#ifdef CONFIG_PPC_MERGE
+	err = of_address_to_resource(np, 0, &res);
+	if (err)
+		return -EINVAL;
+
+	sc->sc_irq = irq_of_parse_and_map(np, 0);
+#else
+	/* get a pointer to the register memory */
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+
 	sc->sc_irq = platform_get_irq(pdev, 0);
-	rc = request_irq(sc->sc_irq, talitos_intr, 0, DRV_NAME, sc);
+#endif
+	rc = request_irq(sc->sc_irq, talitos_intr, 0,
+			device_get_nameunit(sc->sc_cdev), sc);
 	if (rc) {
-		printk(KERN_ERR DRV_NAME ": failed to hook irq %d\n", 
-			sc->sc_irq);
+		printk(KERN_ERR "%s: failed to hook irq %d\n", 
+				device_get_nameunit(sc->sc_cdev), sc->sc_irq);
 		sc->sc_irq = -1;
 		goto out;
 	}
 
-	/* get a pointer to the register memory */
-	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-
 	sc->sc_base_addr = (ocf_iomem_t) ioremap(r->start, (r->end - r->start));
 	if (!sc->sc_base_addr) {
-		printk(KERN_ERR DRV_NAME ": failed to ioremap\n");
+		printk(KERN_ERR "%s: failed to ioremap\n",
+				device_get_nameunit(sc->sc_cdev));
 		goto out;
 	}
 
@@ -1137,6 +1157,21 @@ static int talitos_probe(struct platform_device *pdev)
 		 | talitos_read(sc->sc_base_addr + TALITOS_ID_HI);
 	DPRINTF("sec id 0x%llx\n", sc->sc_chiprev);
 
+#ifdef CONFIG_PPC_MERGE
+	/* get SEC properties from device tree, defaulting to SEC 2.0 */
+
+	prop = of_get_property(np, "num-channels", NULL);
+	sc->sc_num_channels = prop ? *prop : TALITOS_NCHANNELS_SEC_2_0;
+
+	prop = of_get_property(np, "channel-fifo-len", NULL);
+	sc->sc_chfifo_len = prop ? *prop : TALITOS_CHFIFOLEN_SEC_2_0;
+
+	prop = of_get_property(np, "exec-units-mask", NULL);
+	sc->sc_exec_units = prop ? *prop : TALITOS_HAS_EUS_SEC_2_0;
+
+	prop = of_get_property(np, "descriptor-types-mask", NULL);
+	sc->sc_desc_types = prop ? *prop : TALITOS_HAS_DESCTYPES_SEC_2_0;
+#else
 	/* bulk should go away with openfirmware flat device tree support */
 	if (sc->sc_chiprev & TALITOS_ID_SEC_2_0) {
 		sc->sc_num_channels = TALITOS_NCHANNELS_SEC_2_0;
@@ -1144,9 +1179,11 @@ static int talitos_probe(struct platform_device *pdev)
 		sc->sc_exec_units = TALITOS_HAS_EUS_SEC_2_0;
 		sc->sc_desc_types = TALITOS_HAS_DESCTYPES_SEC_2_0;
 	} else {
-		printk(KERN_ERR DRV_NAME ": failed to id device\n");
+		printk(KERN_ERR "%s: failed to id device\n",
+				device_get_nameunit(sc->sc_cdev));
 		goto out;
 	}
+#endif
 
 	/* + 1 is for the meta-channel lock used by the channel scheduler */
 	sc->sc_chnfifolock = (spinlock_t *) kmalloc(
@@ -1184,56 +1221,47 @@ static int talitos_probe(struct platform_device *pdev)
 
 	sc->sc_cid = crypto_get_driverid(0);
 	if (sc->sc_cid < 0) {
-		printk(KERN_ERR DRV_NAME ": could not get crypto driver id\n");
+		printk(KERN_ERR "%s: could not get crypto driver id\n",
+				device_get_nameunit(sc->sc_cdev));
 		goto out;
 	}
 
 	/* register algorithms with the framework */
-	printk(DRV_NAME ":");
+	printk("%s:", device_get_nameunit(sc->sc_cdev));
 
 	if (sc->sc_exec_units & TALITOS_HAS_EU_RNG)  {
 		printk(" rng");
+#ifdef CONFIG_OCF_RANDOMHARVEST
 		talitos_rng_init(sc);
 		crypto_rregister(sc->sc_cid, talitos_read_random, sc);
+#endif
 	}
 	if (sc->sc_exec_units & TALITOS_HAS_EU_DEU) {
 		printk(" des/3des");
-		crypto_register(sc->sc_cid, CRYPTO_3DES_CBC, 0, 0,
-			talitos_newsession, talitos_freesession,
-			talitos_process, sc);
-		crypto_register(sc->sc_cid, CRYPTO_DES_CBC, 0, 0,
-			talitos_newsession, talitos_freesession,
-			talitos_process, sc);
+		crypto_register(sc->sc_cid, CRYPTO_3DES_CBC, 0, 0);
+		crypto_register(sc->sc_cid, CRYPTO_DES_CBC, 0, 0);
 	}
 	if (sc->sc_exec_units & TALITOS_HAS_EU_AESU) {
 		printk(" aes");
-		crypto_register(sc->sc_cid, CRYPTO_AES_CBC, 0, 0,
-			talitos_newsession, talitos_freesession,
-			talitos_process, sc);
+		crypto_register(sc->sc_cid, CRYPTO_AES_CBC, 0, 0);
 	}
 	if (sc->sc_exec_units & TALITOS_HAS_EU_MDEU) {
 		printk(" md5");
-		crypto_register(sc->sc_cid, CRYPTO_MD5, 0, 0,
-			talitos_newsession, talitos_freesession,
-			talitos_process, sc);
+		crypto_register(sc->sc_cid, CRYPTO_MD5, 0, 0);
 		/* HMAC support only with IPsec for now */
-		crypto_register(sc->sc_cid, CRYPTO_MD5_HMAC, 0, 0,
-			talitos_newsession, talitos_freesession,
-			talitos_process, sc);
+		crypto_register(sc->sc_cid, CRYPTO_MD5_HMAC, 0, 0);
 		printk(" sha1");
-		crypto_register(sc->sc_cid, CRYPTO_SHA1, 0, 0,
-			talitos_newsession, talitos_freesession,
-			talitos_process, sc);
+		crypto_register(sc->sc_cid, CRYPTO_SHA1, 0, 0);
 		/* HMAC support only with IPsec for now */
-		crypto_register(sc->sc_cid, CRYPTO_SHA1_HMAC, 0, 0,
-			talitos_newsession, talitos_freesession,
-			talitos_process, sc);
+		crypto_register(sc->sc_cid, CRYPTO_SHA1_HMAC, 0, 0);
 	}
 	printk("\n");
 	return 0;
 
 out:
+#ifndef CONFIG_PPC_MERGE
 	talitos_remove(pdev);
+#endif
 	return -ENOMEM;
 }
 
@@ -1243,6 +1271,8 @@ static int talitos_remove(struct platform_device *pdev)
 	int i;
 
 	DPRINTF("%s()\n", __FUNCTION__);
+	if (sc->sc_cid >= 0)
+		crypto_unregister_all(sc->sc_cid);
 	if (sc->sc_chnfifo) {
 		for (i = 0; i < sc->sc_num_channels; i++)
 			if (sc->sc_chnfifo[i])
@@ -1253,8 +1283,6 @@ static int talitos_remove(struct platform_device *pdev)
 		kfree(sc->sc_chnlastalg);
 	if (sc->sc_chnfifolock)
 		kfree(sc->sc_chnfifolock);
-	if (sc->sc_cid >= 0)
-		crypto_unregister_all(sc->sc_cid);
 	if (sc->sc_irq != -1)
 		free_irq(sc->sc_irq, sc);
 	if (sc->sc_base_addr)
@@ -1263,6 +1291,34 @@ static int talitos_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#ifdef CONFIG_PPC_MERGE
+static struct of_device_id talitos_match[] = {
+	{
+		.type = "crypto",
+		.compatible = "talitos",
+	},
+	{},
+};
+
+MODULE_DEVICE_TABLE(of, talitos_match);
+
+static struct of_platform_driver talitos_driver = {
+	.name		= DRV_NAME,
+	.match_table	= talitos_match,
+	.probe		= talitos_probe,
+	.remove		= talitos_remove,
+};
+
+static int __init talitos_init(void)
+{
+	return of_platform_driver_register(&talitos_driver);
+}
+
+static void __exit talitos_exit(void)
+{
+	of_platform_driver_unregister(&talitos_driver);
+}
+#else
 /* Structure for a platform device driver */
 static struct platform_driver talitos_driver = {
 	.probe = talitos_probe,
@@ -1281,6 +1337,7 @@ static void __exit talitos_exit(void)
 {
 	platform_driver_unregister(&talitos_driver);
 }
+#endif
 
 module_init(talitos_init);
 module_exit(talitos_exit);

@@ -1,7 +1,7 @@
 /*
  * A loadable module that benchmarks the OCF crypto speed from kernel space.
  *
- * Copyright (C) 2004-2006 David McCullough <david_mccullough@au.securecomputing.com>
+ * Copyright (C) 2004-2007 David McCullough <david_mccullough@securecomputing.com>
  *
  * LICENSE TERMS
  *
@@ -108,6 +108,9 @@ static uint64_t ocf_cryptoid;
 static int ocf_init(void);
 static int ocf_cb(struct cryptop *crp);
 static void ocf_request(void *arg);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+static void ocf_request_wq(struct work_struct *work);
+#endif
 
 static int
 ocf_init(void)
@@ -155,7 +158,11 @@ ocf_cb(struct cryptop *crp)
 		return 0;
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+	INIT_WORK(&r->work, ocf_request_wq);
+#else
 	INIT_WORK(&r->work, ocf_request, r);
+#endif
 	schedule_work(&r->work);
 	return 0;
 }
@@ -201,6 +208,15 @@ ocf_request(void *arg)
 	crypto_dispatch(crp);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+static void
+ocf_request_wq(struct work_struct *work)
+{
+	request_t *r = container_of(work, request_t, work);
+	ocf_request(r);
+}
+#endif
+
 /*************************************************************************/
 #ifdef BENCH_IXP_ACCESS_LIB
 /*************************************************************************/
@@ -219,6 +235,9 @@ static void ixp_register_cb(UINT32 ctx_id, IX_MBUF *bufp,
 static void ixp_perform_cb(UINT32 ctx_id, IX_MBUF *sbufp, IX_MBUF *dbufp,
 					IxCryptoAccStatus status);
 static void ixp_request(void *arg);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+static void ixp_request_wq(struct work_struct *work);
+#endif
 
 static int
 ixp_init(void)
@@ -242,9 +261,9 @@ ixp_init(void)
 	ixp_ctx.operation = IX_CRYPTO_ACC_OP_ENCRYPT_AUTH ;
 
 	IX_MBUF_MLEN(&ixp_pri)  = IX_MBUF_PKT_LEN(&ixp_pri) = 128;
-	IX_MBUF_MDATA(&ixp_pri) = (unsigned char *) kmalloc(128, GFP_ATOMIC);
+	IX_MBUF_MDATA(&ixp_pri) = (unsigned char *) kmalloc(128, SLAB_ATOMIC);
 	IX_MBUF_MLEN(&ixp_sec)  = IX_MBUF_PKT_LEN(&ixp_sec) = 128;
-	IX_MBUF_MDATA(&ixp_sec) = (unsigned char *) kmalloc(128, GFP_ATOMIC);
+	IX_MBUF_MDATA(&ixp_sec) = (unsigned char *) kmalloc(128, SLAB_ATOMIC);
 
 	status = ixCryptoAccCtxRegister(&ixp_ctx, &ixp_pri, &ixp_sec,
 			ixp_register_cb, ixp_perform_cb, &ixp_ctx_id);
@@ -297,7 +316,11 @@ ixp_perform_cb(
 		return;
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+	INIT_WORK(&r->work, ixp_request_wq);
+#else
 	INIT_WORK(&r->work, ixp_request, r);
+#endif
 	schedule_work(&r->work);
 }
 
@@ -320,6 +343,15 @@ ixp_request(void *arg)
 	}
 	return;
 }
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+static void
+ixp_request_wq(struct work_struct *work)
+{
+	request_t *r = container_of(work, request_t, work);
+	ixp_request(r);
+}
+#endif
 
 /*************************************************************************/
 #endif /* BENCH_IXP_ACCESS_LIB */
@@ -400,5 +432,5 @@ module_init(ocfbench_init);
 module_exit(ocfbench_exit);
 
 MODULE_LICENSE("BSD");
-MODULE_AUTHOR("David McCullough <david_mccullough@au.securecomputing.com>");
+MODULE_AUTHOR("David McCullough <david_mccullough@securecomputing.com>");
 MODULE_DESCRIPTION("Benchmark various in-kernel crypto speeds");

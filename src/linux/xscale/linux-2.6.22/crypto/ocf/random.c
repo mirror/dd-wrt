@@ -5,7 +5,8 @@
  *
  * This should be fast and callable from timers/interrupts
  *
- * Written by David McCullough <david_mccullough@au.securecomputing.com>
+ * Written by David McCullough <david_mccullough@securecomputing.com>
+ * Copyright (C) 2006-2007 David McCullough
  * Copyright (C) 2004-2005 Intel Corporation.
  *
  * LICENSE TERMS
@@ -54,11 +55,15 @@
 #include "rndtest.h"
 #endif
 
+#ifndef HAS_RANDOM_INPUT_WAIT
+#error "Please do not enable OCF_RANDOMHARVEST unless you have applied patches"
+#endif
+
 /*
  * a hack to access the debug levels from the crypto driver
  */
-extern int *crypto_debug;
-#define debug (*crypto_debug)
+extern int crypto_debug;
+#define debug crypto_debug
 
 /*
  * a list of all registered random providers
@@ -70,7 +75,7 @@ static int initted = 0;
 struct random_op {
 	struct list_head random_list;
 	u_int32_t driverid;
-	int (*read_random)(void *arg, int *buf, int len);
+	int (*read_random)(void *arg, u_int32_t *buf, int len);
 	void *arg;
 };
 
@@ -78,11 +83,6 @@ static int random_proc(void *arg);
 
 static pid_t		randomproc = (pid_t) -1;
 static spinlock_t	random_lock;
-
-static int errno;
-static inline _syscall3(int,open,const char *,file,int, flags, int, mode);
-static inline _syscall3(int,ioctl,int,fd,unsigned int,cmd,unsigned long,arg);
-static inline _syscall3(int,poll,struct pollfd *,pollfds,unsigned int,nfds,long,timeout);
 
 /*
  * just init the spin locks
@@ -104,7 +104,7 @@ crypto_random_init(void)
 int
 crypto_rregister(
 	u_int32_t driverid,
-	int (*read_random)(void *arg, int *buf, int len),
+	int (*read_random)(void *arg, u_int32_t *buf, int len),
 	void *arg)
 {
 	unsigned long flags;
@@ -113,10 +113,6 @@ crypto_rregister(
 
 	dprintk("%s,%d: %s(0x%x, %p, %p)\n", __FILE__, __LINE__,
 			__FUNCTION__, driverid, read_random, arg);
-
-	/* FIXME: currently random support is broken for 64bit OS's */
-	if (sizeof(int) != sizeof(long))
-		return 0;
 
 	if (!initted)
 		crypto_random_init();
@@ -183,14 +179,15 @@ crypto_runregister_all(u_int32_t driverid)
 EXPORT_SYMBOL(crypto_runregister_all);
 
 /*
- * while we can write to /dev/random continue to read random data from
- * the drivers
+ * while we can add entropy to random.c continue to read random data from
+ * the drivers and push it to random.
  */
 static int
 random_proc(void *arg)
 {
-	int rfd, n;
-	struct pollfd pfd;
+	int n;
+	int wantcnt;
+	int bufcnt = 0;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 	daemonize();
@@ -198,74 +195,46 @@ random_proc(void *arg)
 	sigemptyset(&current->blocked);
 	recalc_sigpending(current);
 	spin_unlock_irq(&current->sigmask_lock);
-	sprintf(current->comm, "random");
+	sprintf(current->comm, "ocf-random");
 #else
-	daemonize("random");
+	daemonize("ocf-random");
 	allow_signal(SIGKILL);
 #endif
 
 	(void) get_fs();
 	set_fs(get_ds());
 
-	rfd = open("/dev/random", O_RDWR, 0);
-	if (rfd == -1)
-		printk("crypto: open failed /dev/random: %d\n", errno);
-
-	while (rfd != -1) {
 #ifdef FIPS_TEST_RNG
 #define NUM_INT (RNDTEST_NBYTES/sizeof(int))
 #else
 #define NUM_INT 32
 #endif
-		static int			buf[2 + NUM_INT];
-		static int			bufcnt  = 0;
+
+	wantcnt = NUM_INT;   /* start by adding some entropy */
+
+	/*
+	 * its possible due to errors or driver removal that we no longer
+	 * have anything to do,  if so exit or we will consume all the CPU
+	 * doing nothing
+	 */
+	while (!list_empty(&random_ops)) {
+		static int			buf[NUM_INT];
 		struct random_op	*rops, *tmp;
 
-		if (signal_pending(current)) {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-			spin_lock_irq(&current->sigmask_lock);
-#endif
-			flush_signals(current);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-			spin_unlock_irq(&current->sigmask_lock);
-#endif
-			spin_lock_irq(&random_lock);
-			if (list_empty(&random_ops))
-				goto exit_locked;
-			spin_unlock_irq(&random_lock);
-		}
-
-		/*
-		 * if we have a certified buffer,  we can send some data
-		 * to /dev/random and move along
-		 */
 #ifdef FIPS_TEST_RNG
-		if (bufcnt == NUM_INT) {
-#else
-		if (bufcnt) {
+		if (wantcnt)
+			wantcnt = NUM_INT; /* FIPs mode can do 20000 bits or none */
 #endif
-			pfd.fd = rfd;
-			pfd.events = POLLOUT;
-			pfd.revents = 0;
 
-			if (poll(&pfd, 1, -1) == -1) {
-				if (errno == EINTR)
-					continue;
-
-				printk("crypto: poll failed: %d\n", errno);
-				break;
-			}
-
-			buf[0] = NUM_INT * sizeof(int) * 8;
-			buf[1] = NUM_INT * sizeof(int);
-			(void) ioctl(rfd, RNDADDENTROPY, (unsigned long) buf);
-			bufcnt = 0;
-		}
-
-		while (bufcnt < NUM_INT && !signal_pending(current)) {
+		/* see if we can get enough entropy to make the world
+		 * a better place.
+		 */
+		while (bufcnt < wantcnt && bufcnt < NUM_INT) {
 			list_for_each_entry_safe(rops, tmp, &random_ops, random_list) {
-				n = (*rops->read_random)(rops->arg, &buf[2+bufcnt],
-						NUM_INT - bufcnt);
+
+				n = (*rops->read_random)(rops->arg, &buf[bufcnt],
+							 NUM_INT - bufcnt);
+
 				/* on failure remove the random number generator */
 				if (n == -1) {
 					list_del(&rops->random_list);
@@ -275,24 +244,59 @@ random_proc(void *arg)
 				} else if (n > 0)
 					bufcnt += n;
 			}
+			/* give up CPU for a bit, just in case as this is a loop */
 			schedule();
 		}
 
+
 #ifdef FIPS_TEST_RNG
-		if (rndtest_buf((unsigned char *) &buf[2])) {
+		if (bufcnt > 0 && rndtest_buf((unsigned char *) &buf[0])) {
 			dprintk("crypto: buffer had fips errors, discarding\n");
 			bufcnt = 0;
 		}
 #endif
+
+		/*
+		 * if we have a certified buffer,  we can send some data
+		 * to /dev/random and move along
+		 */
+		if (bufcnt > 0) {
+			/* add what we have */
+			random_input_words(buf, bufcnt, bufcnt*sizeof(int)*8);
+			bufcnt = 0;
+		}
+
+		/* give up CPU for a bit so we don't hog while filling */
+		schedule();
+
+		/* wait for needing more */
+		wantcnt = random_input_wait();
+
+		if (wantcnt <= 0)
+			wantcnt = 0; /* try to get some info again */
+		else
+		 	/* round up to one word or we can loop forever */
+			wantcnt = (wantcnt + (sizeof(int)*8)) / (sizeof(int)*8);
+		if (wantcnt > NUM_INT) {
+			wantcnt = NUM_INT;
+		}
+
+		if (signal_pending(current)) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+			spin_lock_irq(&current->sigmask_lock);
+#endif
+			flush_signals(current);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+			spin_unlock_irq(&current->sigmask_lock);
+#endif
+		}
 	}
 
 	spin_lock_irq(&random_lock);
-exit_locked:
 	randomproc = (pid_t) -1;
 	started = 0;
 	spin_unlock_irq(&random_lock);
 
 	return 0;
 }
-
 
