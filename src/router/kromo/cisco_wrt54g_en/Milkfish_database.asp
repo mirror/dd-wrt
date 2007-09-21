@@ -13,14 +13,12 @@ function to_apply(F) {
 function milkfish_user_add_submit(F) {
         F.change_action.value="gozila_cgi";
         F.submit_type.value = "add_milkfish_user";
-        checked(F);
         F.submit();
 }
 
 function milkfish_user_remove_submit(F) {
         F.change_action.value="gozila_cgi";
         F.submit_type.value = "remove_milkfish_user";
-        checked(F);
         F.submit();
 }
 		
@@ -35,6 +33,7 @@ function milkfish_user_remove_submit(F) {
 		<input type="hidden" name="change_action" />
 		<input type="hidden" name="submit_type" />
 		<input type="hidden" name="commit" value="1" />
+                <input type="hidden" name="milkfish_ddsubscribers" />
 			<div id="main">
 				<div id="contentsInfo">
 					<h2>Milkfish SIP database</h2>

@@ -2412,6 +2412,15 @@ Initnvramtab ()
 		      tmp->validate = validate_chaps;
 		    }
 #endif
+
+#ifdef HAVE_MILKFISH
+                  if (!stricmp (tmpstr, "MFSUBSCRIBERS"))
+                    {
+                      tmp->validate = validate_subscribers;
+                    }
+#endif
+
+
 		  free (tmpstr);
 		  tmpstr = getFileString (in);
 		  if (!stricmp (tmpstr, "TRUE"))
