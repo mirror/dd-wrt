@@ -44,7 +44,6 @@
 #include <shutils.h>
 #include <utils.h>
 
-char wanifname[8], wlifname[8];
 
 int
 start_sysinit (void)
