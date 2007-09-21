@@ -462,4 +462,116 @@ struct tc_netem_corr
 
 #define NETEM_DIST_SCALE	8192
 
+/* WRR section */
+
+/* Other includes */
+#include <linux/if_ether.h>
+
+// A sub weight and of a class
+// All numbers are represented as parts of (2^64-1).
+struct tc_wrr_class_weight {
+  __u64 val;  // Current value                        (0 is not valid)
+  __u64 decr; // Value pr bytes                       (2^64-1 is not valid)
+  __u64 incr; // Value pr seconds                     (2^64-1 is not valid)
+  __u64 min;  // Minimal value                        (0 is not valid)
+  __u64 max;  // Minimal value                        (0 is not valid)
+
+  // The time where the above information was correct:
+  time_t tim;
+};
+
+// Pakcet send when modifying a class:
+struct tc_wrr_class_modf {
+  // Not-valid values are ignored.
+  struct tc_wrr_class_weight weight1;
+  struct tc_wrr_class_weight weight2;
+};
+
+// Packet returned when quering a class:
+struct tc_wrr_class_stats {
+  char used; // If this is false the information below is invalid
+
+  struct tc_wrr_class_modf class_modf;
+
+  unsigned char addr[ETH_ALEN];
+  char usemac;    // True if addr is a MAC address, else it is an IP address
+                  // (this value is only for convience, it is always the same
+		  //  value as in the qdisc)
+  int heappos;    // Current heap position or 0 if not in heap  
+  __u64 penal_ls; // Penalty value in heap (ls)
+  __u64 penal_ms; // Penalty value in heap (ms)
+};
+
+// Qdisc-wide penalty information (boolean values - 2 not valid)
+struct tc_wrr_qdisc_weight {
+  char weight_mode; // 0=No automatic change to weight
+                    // 1=Decrease normally
+		    // 2=Also multiply with number of machines
+		    // 3=Instead multiply with priority divided
+		    //   with priority of the other.
+		    // -1=no change
+};
+
+// Packet send when modifing a qdisc:
+struct tc_wrr_qdisc_modf {
+  // Not-valid values are ignored:
+  struct tc_wrr_qdisc_weight weight1;
+  struct tc_wrr_qdisc_weight weight2;
+};
+
+// Packet send when creating a qdisc:
+struct tc_wrr_qdisc_crt {
+  struct tc_wrr_qdisc_modf qdisc_modf;
+  
+  char srcaddr;      // 1=lookup source, 0=lookup destination
+  char usemac;       // 1=Classify on MAC addresses, 0=classify on IP
+  char usemasq;      // 1=Classify based on masqgrading - only valid
+                     //   if usemac is zero
+  int bands_max;     // Maximal number of bands (i.e.: classes)  
+  int proxy_maxconn; // If differnt from 0 then we support proxy remapping
+                     // of packets. And this is the number of maximal
+		     // concurrent proxy connections.
+};
+
+// Packet returned when quering a qdisc:
+struct tc_wrr_qdisc_stats {
+  struct tc_wrr_qdisc_crt qdisc_crt;
+  int proxy_curconn;		     
+  int nodes_in_heap;  // Current number of bands wanting to send something
+  int bands_cur;      // Current number of bands used (i.e.: MAC/IP addresses seen)
+  int bands_reused;   // Number of times this band has been reused.
+  int packets_requed; // Number of times packets have been requeued.
+  __u64 priosum;      // Sum of priorities in heap where 1 is 2^32
+};
+
+struct tc_wrr_qdisc_modf_std {
+  // This indicates which of the tc_wrr_qdisc_modf structers this is:
+  char proxy; // 0=This struct
+
+  // Should we also change a class?
+  char change_class;
+
+  // Only valid if change_class is false
+  struct tc_wrr_qdisc_modf qdisc_modf;
+    
+  // Only valid if change_class is true:
+  unsigned char addr[ETH_ALEN]; // Class to change (non-used bytes should be 0)
+  struct tc_wrr_class_modf class_modf; // The change    
+};
+
+// Used for proxyrempping:
+struct tc_wrr_qdisc_modf_proxy {
+  // This indicates which of the tc_wrr_qdisc_modf structers this is:
+  char proxy; // 1=This struct
+  
+  // This is 1 if the proxyremap information should be reset
+  char reset;
+  
+  // changec is the number of elements in changes.
+  int changec; 
+  
+  // This is an array of type ProxyRemapBlock:
+  long changes[0];  
+};
+
 #endif

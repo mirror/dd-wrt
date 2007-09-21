@@ -15,6 +15,7 @@
  * Rewrote bits to get rid of console_lock
  *	01Mar01 Andrew Morton <andrewm@uow.edu.au>
  */
+#define ISPRINTK 1
 
 #include <linux/kernel.h>
 #include <linux/mm.h>
