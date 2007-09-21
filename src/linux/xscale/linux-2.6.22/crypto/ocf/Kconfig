@@ -1,4 +1,3 @@
-
 menu "OCF Configuration"
 
 config OCF_OCF
@@ -6,9 +5,15 @@ config OCF_OCF
 	help
 	  A linux port of the OpenBSD/FreeBSD crypto framework.
 
+config OCF_RANDOMHARVEST
+	tristate "crypto random --- harvest entropy for /dev/random"
+	depends on OCF_OCF
+	help
+	  Includes code to harvest random numbers from devices that support it.
+
 config OCF_FIPS
 	tristate "enable fips RNG checks"
-	depends on OCF_OCF
+	depends on OCF_OCF && OCF_RANDOMHARVEST
 	help
 	  Run all RNG provided data through a fips check before
 	  adding it /dev/random's entropy pool.
@@ -21,7 +26,7 @@ config OCF_CRYPTODEV
 
 config OCF_CRYPTOSOFT
 	tristate "cryptosoft (software crypto engine)"
-	depends on CRYPTO && OCF_OCF
+	depends on OCF_OCF
 	help
 	  A software driver for the OCF framework that uses
 	  the kernel CryptoAPI.
@@ -35,7 +40,7 @@ config OCF_SAFE
 
 config OCF_IXP4XX
 	tristate "IXP4xx (HW crypto engine)"
-	depends on OCF_OCF && ARM
+	depends on OCF_OCF
 	help
 	  XScale IXP4xx crypto accelerator driver.  Requires the
 	  Intel Access library.
@@ -46,6 +51,13 @@ config OCF_HIFN
 	help
 	  OCF driver for various HIFN based crypto accelerators.
 	  (7951, 7955, 7956, 7751, 7811)
+
+config OCF_HIFNHIPP
+	tristate "Hifn HIPP (HW packet crypto engine)"
+	depends on OCF_OCF
+	help
+	  OCF driver for various HIFN (HIPP) based crypto accelerators
+	  (7855)
 
 config OCF_TALITOS
 	tristate "talitos (HW crypto engine)"

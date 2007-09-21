@@ -5,6 +5,8 @@ comment 'OCF Configuration'
 tristate 'OCF (Open Cryptograhic Framework)' CONFIG_OCF_OCF
 dep_tristate '  enable fips RNG checks (fips check on RNG data before use)' \
 				CONFIG_OCF_FIPS $CONFIG_OCF_OCF
+dep_tristate '  enable harvesting entropy for /dev/random' \
+				CONFIG_OCF_RANDOMHARVEST $CONFIG_OCF_OCF
 dep_tristate '  cryptodev (user space support)' \
 				CONFIG_OCF_CRYPTODEV $CONFIG_OCF_OCF
 dep_tristate '  cryptosoft (software crypto engine)' \

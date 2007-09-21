@@ -4,8 +4,8 @@
  * zero cost encryption,  of course you will need to run it at both ends
  * since it does no crypto at all.
  *
- * Written by David McCullough <david_mccullough@au.securecomputing.com>
- * Copyright (C) 2006 David McCullough 
+ * Written by David McCullough <david_mccullough@securecomputing.com>
+ * Copyright (C) 2006-2007 David McCullough 
  *
  * LICENSE TERMS
  *
@@ -51,19 +51,35 @@
 static int32_t			 null_id = -1;
 static u_int32_t		 null_sesnum = 0;
 
-static int null_process(void *, struct cryptop *, int);
-static int null_newsession(void *, u_int32_t *, struct cryptoini *);
-static int null_freesession(void *, u_int64_t);
+static int null_process(device_t, struct cryptop *, int);
+static int null_newsession(device_t, u_int32_t *, struct cryptoini *);
+static int null_freesession(device_t, u_int64_t);
 
-static int debug = 0;
-module_param(debug, int, 0);
-MODULE_PARM_DESC(debug, "Enable debug");
+#define debug ocfnull_debug
+int ocfnull_debug = 0;
+module_param(ocfnull_debug, int, 0644);
+MODULE_PARM_DESC(ocfnull_debug, "Enable debug");
+
+/*
+ * dummy device structure
+ */
+
+static struct {
+	softc_device_decl	sc_dev;
+} nulldev;
+
+static device_method_t null_methods = {
+	/* crypto device methods */
+	DEVMETHOD(cryptodev_newsession,	null_newsession),
+	DEVMETHOD(cryptodev_freesession,null_freesession),
+	DEVMETHOD(cryptodev_process,	null_process),
+};
 
 /*
  * Generate a new software session.
  */
 static int
-null_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
+null_newsession(device_t arg, u_int32_t *sid, struct cryptoini *cri)
 {
 	dprintk("%s()\n", __FUNCTION__);
 	if (sid == NULL || cri == NULL) {
@@ -82,7 +98,7 @@ null_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
  * Free a session.
  */
 static int
-null_freesession(void *arg, u_int64_t tid)
+null_freesession(device_t arg, u_int64_t tid)
 {
 	u_int32_t sid = CRYPTO_SESID2LID(tid);
 
@@ -103,7 +119,7 @@ null_freesession(void *arg, u_int64_t tid)
  * Process a request.
  */
 static int
-null_process(void *arg, struct cryptop *crp, int hint)
+null_process(device_t arg, struct cryptop *crp, int hint)
 {
 	unsigned int lid;
 
@@ -149,15 +165,17 @@ null_init(void)
 {
 	dprintk("%s(%p)\n", __FUNCTION__, null_init);
 
-	null_id = crypto_get_driverid(0);
+	memset(&nulldev, 0, sizeof(nulldev));
+	softc_device_init(&nulldev, "ocfnull", 0, null_methods);
+
+	null_id = crypto_get_driverid(softc_get_device(&nulldev),
+				CRYPTOCAP_F_HARDWARE);
 	if (null_id < 0)
 		panic("ocfnull: crypto device cannot initialize!");
 
-	crypto_register(null_id, CRYPTO_DES_CBC,
-	    0, 0, null_newsession, null_freesession, null_process, NULL);
-
 #define	REGISTER(alg) \
-	crypto_register(null_id,alg,0,0,NULL,NULL,NULL,NULL)
+	crypto_register(null_id,alg,0,0)
+	REGISTER(CRYPTO_DES_CBC);
 	REGISTER(CRYPTO_3DES_CBC);
 	REGISTER(CRYPTO_RIJNDAEL128_CBC);
 	REGISTER(CRYPTO_MD5);
@@ -181,5 +199,5 @@ module_init(null_init);
 module_exit(null_exit);
 
 MODULE_LICENSE("Dual BSD/GPL");
-MODULE_AUTHOR("David McCullough <david_mccullough@au.securecomputing.com>");
+MODULE_AUTHOR("David McCullough <david_mccullough@securecomputing.com>");
 MODULE_DESCRIPTION("ocfnull - claims a lot but does nothing");

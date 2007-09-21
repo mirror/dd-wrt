@@ -1169,7 +1169,7 @@ static int __sock_create(int family, int type, int protocol,
 	module_put(pf->owner);
 	err = security_socket_post_create(sock, family, type, protocol, kern);
 	if (err)
-		goto out_release;
+		goto out_sock_release;
 	*res = sock;
 
 	return 0;
@@ -1333,6 +1333,7 @@ asmlinkage long sys_bind(int fd, struct sockaddr __user *umyaddr, int addrlen)
 			err = security_socket_bind(sock,
 						   (struct sockaddr *)address,
 						   addrlen);
+//			printk(KERN_ERR "call bind for family %d\n",sock->ops->family);
 			if (!err)
 				err = sock->ops->bind(sock,
 						      (struct sockaddr *)

@@ -1,4 +1,4 @@
-/* $FreeBSD: src/sys/dev/hifn/hifn7751var.h,v 1.7 2005/01/19 17:03:35 sam Exp $ */
+/* $FreeBSD: src/sys/dev/hifn/hifn7751var.h,v 1.9 2007/03/21 03:42:49 sam Exp $ */
 /*	$OpenBSD: hifn7751var.h,v 1.42 2002/04/08 17:49:42 jason Exp $	*/
 
 /*-
@@ -112,6 +112,7 @@ struct hifn_dma {
 
 struct hifn_session {
 	int hs_used;
+	int hs_mlen;
 	u_int8_t hs_iv[HIFN_MAX_IV_LENGTH];
 };
 
@@ -135,7 +136,9 @@ typedef int bus_size_t;
  * Holds data specific to a single HIFN board.
  */
 struct hifn_softc {
-	struct pci_dev		*sc_dev;	/* device backpointer */
+	softc_device_decl		 sc_dev;
+
+	struct pci_dev		*sc_pcidev;	/* PCI device pointer */
 	spinlock_t		sc_mtx;		/* per-instance lock */
 
 	int			sc_num;		/* for multiple devs */
@@ -180,6 +183,9 @@ struct hifn_softc {
 	int			sc_needwakeup;	/* ops q'd wating on resources */
 	int			sc_curbatch;	/* # ops submitted w/o int */
 	int			sc_suspended;
+#ifdef HIFN_VULCANDEV
+	struct cdev            *sc_pkdev;
+#endif
 };
 
 #define	HIFN_LOCK(_sc)		spin_lock_irqsave(&(_sc)->sc_mtx, l_flags)

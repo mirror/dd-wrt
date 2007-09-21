@@ -1,6 +1,6 @@
 /*-
  * The linux port of this code done by David McCullough
- * Copyright (C) 2004-2005 David McCullough <david_mccullough@au.securecomputing.com>
+ * Copyright (C) 2004-2007 David McCullough <david_mccullough@securecomputing.com>
  * The license and original author are listed below.
  *
  * Copyright (c) 2003 Sam Leffler, Errno Consulting
@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD: src/sys/dev/safe/safevar.h,v 1.1 2003/07/21 21:46:07 sam Exp $
+ * $FreeBSD: src/sys/dev/safe/safevar.h,v 1.2 2006/05/17 18:34:26 pjd Exp $
  */
 #ifndef _SAFE_SAFEVAR_H_
 #define	_SAFE_SAFEVAR_H_
@@ -58,6 +58,15 @@
 #define SAFE_DEF_CACHELINE	0x01	/* Cache Line setting */
 
 #ifdef __KERNEL__
+/*
+ * State associated with the allocation of each chunk
+ * of memory setup for DMA.
+ */
+struct safe_dma_alloc {
+	dma_addr_t		dma_paddr;
+	void			*dma_vaddr;
+};
+
 /*
  * Cryptographic operand state.  One of these exists for each
  * source and destination operand passed in from the crypto
@@ -133,70 +142,57 @@ struct safe_session {
 	u_int32_t	ses_used;
 	u_int32_t	ses_klen;		/* key length in bits */
 	u_int32_t	ses_key[8];		/* DES/3DES/AES key */
+	u_int32_t	ses_mlen;		/* hmac length in bytes */
 	u_int32_t	ses_hminner[5];		/* hmac inner state */
 	u_int32_t	ses_hmouter[5];		/* hmac outer state */
 	u_int32_t	ses_iv[4];		/* DES/3DES/AES iv */
 };
 
 struct safe_pkq {
-	struct list_head		 pkq_list;
-	struct cryptkop			*pkq_krp;
+	struct list_head	pkq_list;
+	struct cryptkop		*pkq_krp;
 };
 
 struct safe_softc {
-	int						 sc_num;		/* if we have multiple chips */
+	softc_device_decl	sc_dev;
+	u32			sc_irq;
 
-	struct pci_dev			*sc_dev;
+	struct pci_dev		*sc_pcidev;
+	ocf_iomem_t		sc_base_addr;
 
-	ocf_iomem_t				 sc_base_addr;
-	u32						 sc_irq;
+	u_int			sc_chiprev;	/* major/minor chip revision */
+	int			sc_flags;	/* device specific flags */
+#define	SAFE_FLAGS_KEY		0x01		/* has key accelerator */
+#define	SAFE_FLAGS_RNG		0x02		/* hardware rng */
+	int			sc_suspended;
+	int			sc_needwakeup;	/* notify crypto layer */
+	int32_t			sc_cid;		/* crypto tag */
 
-	u32						 sc_cid;		/* crypto tag */
-
-	u32						 sc_chiprev;	/* major/minor chip revision */
-
-	dma_addr_t				 sc_ring_dma;
-	void					*sc_ring_vma;
-	spinlock_t				 sc_ringmtx;	/* PE ring lock */
-
-	struct safe_ringentry	*sc_ring;		/* PE ring */
+	struct safe_dma_alloc	sc_ringalloc;	/* PE ring allocation state */
+	struct safe_ringentry	*sc_ring;	/* PE ring */
 	struct safe_ringentry	*sc_ringtop;	/* PE ring top */
-	struct safe_ringentry	*sc_front;		/* next free entry */
-	struct safe_ringentry	*sc_back;		/* next pending entry */
+	struct safe_ringentry	*sc_front;	/* next free entry */
+	struct safe_ringentry	*sc_back;	/* next pending entry */
+	int			sc_nqchip;	/* # passed to chip */
+	spinlock_t		sc_ringmtx;	/* PE ring lock */
+	struct safe_pdesc	*sc_spring;	/* src particle ring */
+	struct safe_pdesc	*sc_springtop;	/* src particle ring top */
+	struct safe_pdesc	*sc_spfree;	/* next free src particle */
+	struct safe_dma_alloc	sc_spalloc;	/* src particle ring state */
+	struct safe_pdesc	*sc_dpring;	/* dest particle ring */
+	struct safe_pdesc	*sc_dpringtop;	/* dest particle ring top */
+	struct safe_pdesc	*sc_dpfree;	/* next free dest particle */
+	struct safe_dma_alloc	sc_dpalloc;	/* dst particle ring state */
+	int			sc_nsessions;	/* # of sessions */
+	struct safe_session	*sc_sessions;	/* sessions */
 
-	dma_addr_t				 sc_sp_dma;
-	void					*sc_sp_vma;
+	struct timer_list	sc_pkto;	/* PK polling */
+	spinlock_t		sc_pkmtx;	/* PK lock */
+	struct list_head	sc_pkq;		/* queue of PK requests */
+	struct safe_pkq		*sc_pkq_cur;	/* current processing request */
+	u_int32_t		sc_pk_reslen, sc_pk_resoff;
 
-	struct safe_pdesc		*sc_spring;		/* src particle ring */
-	struct safe_pdesc		*sc_springtop;	/* src particle ring top */
-	struct safe_pdesc		*sc_spfree;		/* next free src particle */
-
-	dma_addr_t				 sc_dp_dma;
-	void					*sc_dp_vma;
-
-	struct safe_pdesc		*sc_dpring;		/* dest particle ring */
-	struct safe_pdesc		*sc_dpringtop;	/* dest particle ring top */
-	struct safe_pdesc		*sc_dpfree;		/* next free dest particle */
-
-
-	int						 sc_flags;		/* device specific flags */
-#define	SAFE_FLAGS_KEY		 0x01			/* has key accelerator */
-#define	SAFE_FLAGS_RNG		 0x02			/* hardware rng */
-
-	int						 sc_suspended;
-	int						 sc_needwakeup;	/* notify crypto layer */
-
-	int						 sc_nqchip;		/* # passed to chip */
-	int						 sc_nsessions;	/* # of sessions */
-	struct safe_session		*sc_sessions;	/* sessions */
-
-	struct timer_list		 sc_pkto;		/* PK polling */
-	spinlock_t				 sc_pkmtx;		/* PK lock */
-	struct list_head		 sc_pkq;		/* queue of PK requests */
-	struct safe_pkq			*sc_pkq_cur;	/* current processing request */
-	u_int32_t				 sc_pk_reslen, sc_pk_resoff;
-
-	int						 sc_max_dsize;	/* maximum safe DMA size */
+	int			sc_max_dsize;	/* maximum safe DMA size */
 };
 #endif /* __KERNEL__ */
 
