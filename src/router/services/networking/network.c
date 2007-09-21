@@ -3075,7 +3075,16 @@ start_set_routes (void)
 {
   char word[80], *tmp;
   char *ipaddr, *netmask, *gateway, *metric, *ifname;
-
+  if (!nvram_match("wan_gateway","0.0.0.0"))
+    {
+    eval ("route", "del", "default");
+    eval("route","add","default","gw",nvram_safe_get("wan_gateway"));
+    }
+  if (!nvram_match("lan_gateway","0.0.0.0"))
+    {
+    eval ("route", "del", "default");
+    eval("route","add","default","gw",nvram_safe_get("lan_gateway"));
+    }
   foreach (word, nvram_safe_get ("static_route"), tmp)
   {
     netmask = word;
