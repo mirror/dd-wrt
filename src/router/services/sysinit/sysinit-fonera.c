@@ -43,9 +43,8 @@
 #include <shutils.h>
 #include <utils.h>
 
-char wanifname[8], wlifname[8];
 
-
+extern void vlan_init(int num);
 
 int
 start_sysinit (void)
@@ -104,14 +103,10 @@ start_sysinit (void)
   eval ("insmod", "ar2313");
   eval ("insmod", "ath_ahb", "autocreate=none");
   eval ("ifconfig", "wifi0", "up");
-  int brand = getRouterBrand ();
-
-  if (brand == ROUTER_BOARD_FONERA2200)
-    {
-      eval ("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-      eval ("/sbin/vconfig", "add", "eth0", "0");	// lan 
-      eval ("/sbin/vconfig", "add", "eth0", "1");	// wan
-    }
+#ifdef HAVE_LS2
+  eval ("ifconfig", "eth0", "up");	// wan
+  vlan_init (5); // 4 lan + 1 wan, but only first one is used
+#endif
 //  eval ("insmod", "ipv6");
 
   /* Set a sane date */
