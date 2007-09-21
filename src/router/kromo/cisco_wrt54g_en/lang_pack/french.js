@@ -1062,6 +1062,35 @@ service.nstx_srv="Démon nstx";
 service.nstx_ipenable="Limiter à une seul IP";
 service.nstx_log="Activer Debug";
 
+//milkfish.webservices
+service.database_subscribers="Local Subscribers";
+service.milkfish_mainswitch="Main Switch";
+service.milkfish_fromswitch="From-Substitution";
+service.milkfish_fromdomain="From-Domain";
+service.milkfish_username="Milkfish Username";
+service.milkfish_password="Milkfish Password";
+service.milkfish_siptrace="Milkfish SIP Trace";
+service.milkfish_subscribers="Local Subscribers";
+service.milkfish_aliases="Local Aliases";
+service.milkfish_dynsip="Dynamic SIP";
+service.milkfish_dynsipdomain="DynSIP Domain";
+service.milkfish_dynsipurl="DynSIP Update URL";
+service.milkfish_dsusername="DynSIP Username";
+service.milkfish_dspassword="DynSIP Password";
+service.hmilkfish_right2="Enables/Disables your Milkfish SIP Router.";
+service.hmilkfish_right4="Enables/Disables being called back after your WAN IP has changed.";
+service.hmilkfish_right6="Callee calls back this Domain (instead of your WAN IP) as you sent it as your From:-Domain.";
+service.hmilkfish_right8="Here goes your Milkfish Community Forum Username - Registration enables yourname.homesip.net";
+service.hmilkfish_right10="Here goes your Milkfish Community Forum Password - Registration enables yourname.homesip.net";
+service.hmilkfish_right12="Enables/Disables basic SIP Tracing on your router.";
+service.hmilkfish_right14="Local SIP Subscribers are locally managed SIP Accounts.";
+service.hmilkfish_right16="Local SIP Aliases are SIP Forwards similar to Email Forwards.";
+service.hmilkfish_right18="Enables/Disables Dynamic SIP (i.e. Homesip.net Service)";
+service.hmilkfish_right20="not implemented yet - leave empty";
+service.hmilkfish_right22="not implemented yet - leave empty";
+service.hmilkfish_right24="not implemented yet - leave empty";
+service.hmilkfish_right26="not implemented yet - leave empty";
+
 // ** eop-tunnel.asp **//
 eoip.titl="Tunel EoIP";
 eoip.tunnel="Tunel";
