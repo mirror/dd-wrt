@@ -773,8 +773,8 @@ internal_getRouterBrand ()
       nvram_match ("boardtype", "0x048e") && nvram_match ("boardrev", "0x10"))
     {
       cprintf ("router is wrt54g v8\n");
-      setRouter ("Linksys WRT54G v8");
-      return ROUTER_WRT54G;
+      setRouter ("Linksys WRT54Gv8 / GSv7");
+      return ROUTER_WRT54G_V8;
 
     }
 
@@ -1089,6 +1089,7 @@ led_control (int type, int act)
     {
 #ifndef HAVE_BUFFALO
     case ROUTER_WRT54G:
+    case ROUTER_WRT54G_V8:
       power_gpio = 0x01;
       dmz_gpio = 0x17;
       connected_gpio = 0x13;	//ses orange
