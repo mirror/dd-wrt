@@ -77,7 +77,7 @@ addEvent(window, "unload", function() {
 		</div>
 		<div class="setting">
 			<div class="label">Milkfish Password</div>
-			<input size="27" name="milkfish_password" value="<% nvram_get("milkfish_password"); %>" />
+			<input type="password" size="27" name="milkfish_password" value="<% nvram_get("milkfish_password"); %>" />
 		</div>
 <!--		<div class="setting">
 			<div class="label">Milkfish Audit</div>
@@ -89,12 +89,12 @@ addEvent(window, "unload", function() {
 			<input class="spaceradio" type="radio" name="milkfish_siptrace" value="on" <% nvram_checked("milkfish_siptrace", "on"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="milkfish_siptrace" value="off" <% nvram_checked("milkfish_siptrace", "off"); %> /><% tran("share.disable"); %>
 		</div>
-<!--		<div class="setting">
+		<div class="setting">
 			<div class="label">Dynamic SIP</div>
 			<input class="spaceradio" type="radio" name="milkfish_dynsip" value="on" <% nvram_checked("milkfish_dynsip", "on"); %> onclick="show_layer_ext(this, 'idmilkfish_dynsip', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="milkfish_dynsip" value="off" <% nvram_checked("milkfish_dynsip", "off"); %> onclick="show_layer_ext(this, 'idmilkfish_dynsip', false)" /><% tran("share.disable"); %>
 		</div>
-		<div id="idmilkfish_dynsip">
+<!--		<div id="idmilkfish_dynsip">
 		<div class="setting">
 			<div class="label">Dynamic SIP Domain</div>
 			<input size="27" name="milkfish_dynsipdomain" value="<% nvram_get("milkfish_dynsipdomain"); %>" />
@@ -142,11 +142,12 @@ addEvent(window, "unload", function() {
 		<legend>SIP Database</legend>
 				<script type="text/javascript">
 				//<![CDATA[
-				document.write("<input class=\"button\" type=\"button\" value=\"SIP Database\" onclick=\"openWindow('Milkfish_database.asp', 820, 730);\" />");
+				document.write("<input class=\"button\" type=\"button\" value=\"Local Subscribers\" onclick=\"openWindow('Milkfish_database.asp', 820, 730);\" />");
 				//]]>
+                                //<![CDATA[
+                                document.write("<input class=\"button\" type=\"button\" value=\"Local Aliases\" onclick=\"openWindow('Milkfish_aliases.asp', 820, 730);\" />");
+                                //]]>
 				</script>
-
-
 	</fieldset>
 	
 <br />
@@ -191,8 +192,21 @@ addEvent(window, "unload", function() {
 	</fieldset>
 	
 <br />
+	<fieldset>
+            <div class="center"><br />
+    		<b>donations@milkfish.org</b>:&nbsp;&nbsp;<br />
+                <!-- Begin moneybookers button code --> <a target="_blank" href="http://www.moneybookers.com/?rid=3255388"><img border="0" style="border-color: #8b8583; border-width: 1px" src="images/88_en_interpayments.gif" /></a> <!-- End of moneybookers button code -->
+                <br>
+                <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank"><input type="hidden" name="cmd" value="_s-xclick"><input type="image" src="images/paypal.gif" border="0" name="submit" alt=""><img alt="" border="0" src="https://www.paypal.com/de_DE/i/scr/pixel.gif" width="1" height="1"><input type="hidden" name="encrypted" value="-----BEGIN PKCS7-----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-----END PKCS7-----"></form>
+            <br></div>
+	</fieldset>
+<!--	<fieldset>
 
-
+	    <div class="center">powered by<br><img src="images/sipwerk.png" alt="sipwerk logo" /></div><br />
+	    
+	</fieldset>
+-->
+<br />	
 </div>
 </fieldset>
 <br/>
@@ -222,12 +236,12 @@ addEvent(window, "unload", function() {
                                                         <dd class="definition"><% tran("service.hmilkfish_right10"); %></dd>
                                                         <dt class="term"><% tran("service.milkfish_siptrace"); %>:</dt>
                                                         <dd class="definition"><% tran("service.hmilkfish_right12"); %></dd>
+                                                        <dt class="term"><% tran("service.milkfish_dynsip"); %>:</dt>
+                                                        <dd class="definition"><% tran("service.hmilkfish_right18"); %></dd>
                                                         <dt class="term"><% tran("service.milkfish_subscribers"); %>:</dt>
                                                         <dd class="definition"><% tran("service.hmilkfish_right14"); %></dd>
                                                         <dt class="term"><% tran("service.milkfish_aliases"); %>:</dt>
                                                         <dd class="definition"><% tran("service.hmilkfish_right16"); %></dd>
-                                                        <dt class="term"><% tran("service.milkfish_dynsip"); %>:</dt>
-                                                        <dd class="definition"><% tran("service.hmilkfish_right18"); %></dd>
                                                 </dl>
 						<br/>
 						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HMilkfish.asp');"><% tran("share.more"); %></a>

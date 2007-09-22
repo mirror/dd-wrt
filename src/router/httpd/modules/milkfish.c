@@ -201,14 +201,12 @@ ej_show_subscribers (webs_t wp, int argc, char_t ** argv)
       CHAPSHOW
 	("<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",
 	 i);
-      //websWrite (wp, "Horst");
       show_subscriber_table (wp, "user", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
       CHAPSHOW
 	("<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",
 	 i);
-      //websWrite (wp, "Wanschura");
       show_subscriber_table (wp, "pass", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "</tr>\n");
@@ -217,9 +215,172 @@ ej_show_subscribers (webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_mf_test (webs_t wp, int argc, char_t ** argv)
+validate_aliases (webs_t wp, char *value, struct variable *v)
 {
 
-  websWrite (wp, "Test\n");
+  int i, error = 0;
+  char *buf, *cur;
+  int count, sof;
+  struct variable alias_variables[] = {
+  {argv:ARGV ("30")},
+  {argv:ARGV ("30")},
+    {NULL},
+  }, *which;
+  buf = nvram_safe_get ("milkfish_ddaliasesnum");
+  if (buf == NULL || strlen (buf) == 0)
+    return;
+  count = atoi (buf);
+  sof = (count * 128) + 1;
+  buf = (char *) malloc (sof);
+  cur = buf;
+  buf[0] = 0;
+
+  for (i = 0; i < count; i++)
+    {
+
+      char alias_user[] = "userXXX";
+      char alias_pass[] = "passXXX";
+      char *user = "", new_user[200] = "", *pass = "", new_pass[200] =
+        "";
+
+      snprintf (alias_user, sizeof (alias_user), "user%d", i);
+      snprintf (alias_pass, sizeof (alias_pass), "pass%d", i);
+
+      user = websGetVar (wp, alias_user, "");
+      pass = websGetVar (wp, alias_pass, "");
+
+      which = &alias_variables[0];
+      if (strcmp (user, ""))
+        {
+          if (!valid_name (wp, user, &which[0]))
+            {
+              error_value = 1;
+              continue;
+            }
+          else
+            {
+              httpd_filter_name (user, new_user, sizeof (new_user), SET);
+            }
+        }
+
+      if (strcmp (pass, ""))
+        {
+          if (!valid_name (wp, pass, &which[1]))
+            {
+              error_value = 1;
+              continue;
+            }
+          else
+            {
+              httpd_filter_name (pass, new_pass, sizeof (new_pass), SET);
+            }
+        }
+      cur += snprintf (cur, buf + sof - cur, "%s%s:%s",
+                  cur == buf ? "" : " ", new_user, new_pass);
+
+    }
+  if (!error)
+    nvram_set (v->name, buf);
+  free (buf);
+
+}
+
+
+void
+show_aliases_table (webs_t wp, char *type, int which)
+{
+
+  static char word[256];
+  char *next, *wordlist;
+  char *user, *pass;
+  static char new_user[200], new_pass[200];
+  int temp;
+  wordlist = nvram_safe_get ("milkfish_ddaliases");
+  temp = which;
+
+  foreach (word, wordlist, next)
+  {
+    if (which-- == 0)
+      {
+        pass = word;
+        user = strsep (&pass, ":");
+        if (!user || !pass)
+          continue;
+
+
+        if (!strcmp (type, "user"))
+          {
+            httpd_filter_name (user, new_user, sizeof (new_user), GET);
+            websWrite (wp, "%s", new_user);
+          }
+        else if (!strcmp (type, "pass"))
+          {
+            httpd_filter_name (pass, new_pass, sizeof (new_pass), GET);
+            websWrite (wp, "%s", new_pass);
+          }
+        return;
+      }
+   }
+}
+
+
+void
+ej_show_aliases (webs_t wp, int argc, char_t ** argv)
+{
+  int i;
+  char buffer[1024], *count;
+  int c;
+
+  count = nvram_safe_get ("milkfish_ddaliasesnum");
+  if (count == NULL || strlen (count) == 0)
+  {
+      websWrite (wp, "<tr>\n");
+      websWrite (wp,
+                 "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
+      websWrite (wp, "</tr>\n");
+  }
+  c = atoi (count);
+  if (c <= 0)
+    {
+      websWrite (wp, "<tr>\n");
+      websWrite (wp,
+                 "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
+      websWrite (wp, "</tr>\n");
+    }
+  for (i = 0; i < c; i++)
+    {
+      websWrite (wp, "<tr><td>\n");
+      CHAPSHOW
+        ("<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+         i);
+      show_aliases_table (wp, "user", i);
+      websWrite (wp, "\" /></td>\n");
+      websWrite (wp, "<td>\n");
+      CHAPSHOW
+        ("<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+         i);
+      show_aliases_table (wp, "pass", i);
+      websWrite (wp, "\" /></td>\n");
+      websWrite (wp, "</tr>\n");
+    }
   return;
 }
+
+void
+milkfish_sip_message (webs_t wp)
+{
+  char *message = websGetVar (wp, "sip_message", NULL);
+  char *dest = websGetVar (wp, "sip_message_dest", NULL);  
+
+  //char cmd[256] = { 0 };
+
+  //setenv ("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
+
+  //snprintf (cmd, sizeof (cmd),
+  //          "alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip,
+  //          PING_TMP);
+  //system (cmd);
+
+  return;
+}
+

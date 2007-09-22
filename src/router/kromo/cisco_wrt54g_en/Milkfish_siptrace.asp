@@ -21,7 +21,7 @@ function to_submit(F) {
 			<div id="main">
 				<div id="contentsInfo">
 					<h2>Milkfish SIP Trace</h2><br /><br />
-					<b>Reload page to update trace</b>
+					<b>Close and open this window again to update trace...</b>
 					<br /><br />
                                         <% exec_milkfish_service("cat /var/log/sip_trace.log"); %>
                                         <div class="submitFooter">

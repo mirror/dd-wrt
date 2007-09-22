@@ -1037,6 +1037,18 @@ milkfish_user_remove (webs_t wp)
 {
   macro_rem ("milkfish_ddsubscribersnum", "milkfish_ddsubscribers");
 }
+
+void
+milkfish_alias_add (webs_t wp)
+{
+  macro_add ("milkfish_ddaliasesnum");
+}
+
+void
+milkfish_alias_remove (webs_t wp)
+{
+  macro_rem ("milkfish_ddaliasesnum", "milkfish_ddaliases");
+}
 #endif
 
 
