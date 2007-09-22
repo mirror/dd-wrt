@@ -161,6 +161,10 @@ share.standard="Standard";
 share.execscript="Excecute script";
 share.user="User";
 share.privatekey="Private Key";
+share.bytes="bytes";
+share.kbytes="KB";
+share.mbytes="MB";
+share.gbytes="GB";
 
 var sbutton = new Object();
 sbutton.save="Save";

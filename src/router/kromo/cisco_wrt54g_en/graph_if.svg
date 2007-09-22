@@ -154,7 +154,7 @@ function do_translation() {
 
 function switch_unit(event) {
 	SVGDoc.getElementById('switch_unit').firstChild.data = status_band.chg_unit + unit + '/s';
-	unit = (unit == 'bits') ? 'bytes' : 'bits';
+	unit = (unit == 'bits') ? share.bytes : 'bits';
 }
 
 function switch_scale(event) {
@@ -310,7 +310,7 @@ function isNumber(a) {
 
 function formatSpeed(speed, unit) {
 	if (unit == 'bits') return formatSpeedBits(speed);
-	if (unit == 'bytes') return formatSpeedBytes(speed);
+	if (unit == share.bytes) return formatSpeedBytes(speed);
 }
 
 function formatSpeedBits(speed) {
@@ -323,10 +323,10 @@ function formatSpeedBits(speed) {
 
 function formatSpeedBytes(speed) {
 	// format speed in bytes/sec, input:  bytes/sec
-	if (speed < 1048576) return Math.round(speed / 10.24)/100 + " KB/s";
-	if (speed < 1073741824) return Math.round(speed / 10485.76)/100 + " MB/s";
+	if (speed < 1048576) return Math.round(speed / 10.24)/100 + " " + share.kbytes + "/s";
+	if (speed < 1073741824) return Math.round(speed / 10485.76)/100 + " " + share.mbytes + "/s";
 	// else
-	return Math.round(speed / 10737418.24)/100 + " GB/s";  // wow!
+	return Math.round(speed / 10737418.24)/100 + " " + share.mbytes + "/s";  // wow!
 }
 
 ]]>
