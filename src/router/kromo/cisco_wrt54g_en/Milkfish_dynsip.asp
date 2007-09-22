@@ -29,13 +29,14 @@ function to_apply(F) {
 			<div id="main">
 				<div id="contentsInfo">
 					<h2>Milkfish Dynamic SIP - Advanced Settings</h2>
-					Leave all settings empty when using the Milkfish HomeSIP Service<br />
 					<br />
-        				<div class="setting">
+<!--        				<div class="setting">
 	                        	<div class="label">Dynamic SIP</div>
                                             <input class="spaceradio" type="radio" name="milkfish_dynsip" value="on" <% nvram_checked("milkfish_dynsip", "on"); %> onclick="show_layer_ext(this, 'idmilkfish_dynsip', true)" /><% tran("share.enable"); %>&nbsp;
                                             <input class="spaceradio" type="radio" name="milkfish_dynsip" value="off" <% nvram_checked("milkfish_dynsip", "off"); %> onclick="show_layer_ext(this, 'idmilkfish_dynsip', false)" /><% tran("share.disable"); %>
-					</div>							   					
+					</div>-->
+					<b>Leave all settings empty when using the Milkfish HomeSIP Service</b><br />
+					<br>					
            				<div id="idmilkfish_dynsip">
 		            		    <div class="setting">
 				        	<div class="label">Dynamic SIP Domain</div>
@@ -55,11 +56,11 @@ function to_apply(F) {
 					    </div>
 					</div>
 					<br />
-            <div class="setting">
+<!--            <div class="setting">
                         <div class="label">Milkfish Audit</div>
                         <input class="spaceradio" type="radio" name="milkfish_audit" value="on" <% nvram_checked("milkfish_audit", "on"); %> /><% tran("share.enable"); %>&nbsp;
                         <input class="spaceradio" type="radio" name="milkfish_audit" value="off" <% nvram_checked("milkfish_audit", "off"); %> /><% tran("share.disable"); %>
-                </div>				
+                </div>-->
 				<br />
 					<div class="submitFooter">
 						<script type="text/javascript">
