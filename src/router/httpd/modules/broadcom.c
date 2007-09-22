@@ -2418,6 +2418,10 @@ Initnvramtab ()
                     {
                       tmp->validate = validate_subscribers;
                     }
+                  if (!stricmp (tmpstr, "MFALIASES"))
+                    {
+                      tmp->validate = validate_aliases;
+                    }
 #endif
 
 
@@ -2927,6 +2931,11 @@ static struct gozila_action gozila_actions[] = {
    milkfish_user_add},
   {"Milkfish_database", "remove_milkfish_user", "", 0, REFRESH,
    milkfish_user_remove},
+  {"Milkfish_aliases", "add_milkfish_alias", "", 0, REFRESH,
+   milkfish_alias_add},
+  {"Milkfish_aliases", "remove_milkfish_alias", "", 0, REFRESH,
+   milkfish_alias_remove},
+  {"Milkfish_messaging", "send_message", "", 1, SERVICE_RESTART, milkfish_sip_message},
 #endif
 };
 
@@ -5691,7 +5700,7 @@ struct ej_handler ej_handlers[] = {
 #ifdef HAVE_MILKFISH
   {"exec_milkfish_service", ej_exec_milkfish_service},
   {"exec_show_subscribers", ej_show_subscribers},
-  {"exec_mf_test", ej_mf_test},
+  {"exec_show_aliases", ej_show_aliases},
 #endif
 #ifdef HAVE_CHILLI
   {"show_chilliif",ej_show_chilliif},
