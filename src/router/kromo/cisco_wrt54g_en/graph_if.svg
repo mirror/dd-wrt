@@ -44,11 +44,11 @@ POSSIBILITY OF SUCH DAMAGE.
 	<text id='graph_in_lbl'  x='60' y='15' fill='green' text-anchor='end'>In</text>
 	<text id='graph_out_lbl' x='60' y='35' fill='red' text-anchor='end'>Out</text>
 
-	<text id='graph_in_txt'  x='64' y='15' fill='green'>--</text>
-	<text id='graph_out_txt' x='64' y='35' fill='red'>--</text>
+	<text id='graph_in_txt'  x='70' y='15' fill='green'>--</text>
+	<text id='graph_out_txt' x='70' y='35' fill='red'>--</text>
 
-	<text id='switch_unit'  x='200' y='15' fill='#435370' cursor='pointer'>Switch to bytes/s</text>
-	<text id='switch_scale' x='200' y='35' fill='#435370' cursor='pointer'>Autoscale (follow)</text>
+	<text id='switch_unit'  x='250' y='15' fill='#435370' cursor='pointer'>Switch to bytes/s</text>
+	<text id='switch_scale' x='250' y='35' fill='#435370' cursor='pointer'>Autoscale (follow)</text>
 
 	<text id='error'           x='300' y='125' text-anchor='middle' visibility='hidden' fill='blue'>Cannot get data about interface</text>
 	<text id='collect_initial' x='300' y='125' text-anchor='middle' visibility='hidden' fill='gray'>Collecting initial data, please wait...</text>
