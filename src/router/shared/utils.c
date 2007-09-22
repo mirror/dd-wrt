@@ -769,6 +769,12 @@ internal_getRouterBrand ()
     {
       cprintf ("router is D-Link DIR-320\n");
       setRouter ("D-Link DIR-320");
+      //apply some fixes
+      if (nvram_get("vlan2ports")!=NULL)
+      {
+        nvram_unset("vlan2ports");
+        nvram_unset("vlan2hwname");
+      }
       return ROUTER_DLINK_DIR320;
     }
   if (boardnum == 42 &&
