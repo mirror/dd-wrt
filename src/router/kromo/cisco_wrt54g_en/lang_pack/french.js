@@ -158,6 +158,10 @@ share.standard="Standard";
 share.execscript="Exécuter un script";
 share.user="User";
 share.privatekey="Clé privée";
+share.bytes="octets";
+share.kbytes="Ko";
+share.mbytes="Mo";
+share.gbytes="Go";
 
 sbutton.save="Enregistrer";
 sbutton.savetitle="Enregistre les paramètres sans redémarrage des services";
@@ -1135,6 +1139,10 @@ status_band.chg_unit="Echelle en ";
 status_band.chg_scale="Echelle auto";
 status_band.chg_error="Impossible d'obtenir les interfaces réseaux";
 status_band.chg_collect_initial="Mise en cache des données, veuillez patienter SVP...";
+status_band.strin="Entrant";
+status_band.strout="Sortant";
+status_band.follow="Suivre";
+status_band.up="Haut";
 
 //help container
 hstatus_band.right1="Cliquez sur l'étiquette \"<em>Echelle en...</em>\" pour changer d'unité (bytes/s ou bits/s).";
