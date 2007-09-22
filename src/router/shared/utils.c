@@ -82,6 +82,8 @@ getcpurev (void)
 	    return 7;
 	  if (!strcmp (cpurev, "BCM3302 V0.8"))
 	    return 8;
+	  if (!strcmp (cpurev, "BCM3302 V2.9")) // BCM5354
+	    return 29;
 	  return -1;
 	}
     }
