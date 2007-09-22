@@ -3,8 +3,16 @@
 		//<![CDATA[
 
 function to_submit(F) {
+	F.change_action.value = "";
+	F.submit_type.value = "";
 	F.save_button.value = sbutton.saving;
 	apply(F);
+}
+function to_apply(F) {
+	F.change_action.value = "";
+	F.submit_type.value = "";
+	F.save_button.value = sbutton.saving;
+	applytake(F);
 }
 		
 		//]]>
@@ -15,7 +23,7 @@ function to_submit(F) {
 		<form name="setup" action="applyuser.cgi" method="<% get_http_method(); %>">
 		<input type="hidden" name="submit_button" value="Milkfish" />
 		<input type="hidden" name="action" value="Apply" />
-		<input type="hidden" name="change_action" value="gozila_cgi" />
+		<input type="hidden" name="change_action" />
 		<input type="hidden" name="submit_type" />
 		<input type="hidden" name="commit" value="1" />
 			<div id="main">
