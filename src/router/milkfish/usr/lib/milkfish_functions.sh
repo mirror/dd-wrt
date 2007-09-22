@@ -20,7 +20,7 @@
 #                                                                    #
 # The Milkfish Router Services - Shell Function Library              #
 #                                                                    #
-# Built/Version:  20070914                                           #
+# Built/Version:  20070921                                           #
 # Author/Contact: Franz Streibl <fronce@sipwerk.com>                 #
 # Copyright (C) 2007 by sipwerk - All rights reserved.               #
 #                                                                    #
@@ -491,15 +491,15 @@ mf_sipdb_restorenvdd () {
     else
 	echo "Empty."
     fi
-#    mf_feedback "Restoring SIP ddaliases database from NVRAM..."
-#    if [ ! -z "$(nvram get milkfish_ddaliases)" ]; then 
-#	nvram get milkfish_ddaliases | tr ' ' '\n' #| awk -F : '{print "dbtextctl add " $1 " " $2 " " "$(nvram get sip_domain)"}'
-#	nvram get milkfish_ddaliases | tr ' ' '\n' #| awk -F : '{print "dbtextctl add " $1 " " $2 " " "$(nvram get sip_domain)"}' > /tmp/restorenvdd.sh
-#	[ -e /tmp/restorenvdd.sh ] && chmod +x /tmp/restorenvdd.sh && /tmp/restorenvdd.sh && rm /tmp/restorenvdd.sh
-#	echo "Done."
-#    else
-#	echo "Empty."
-#    fi
+    mf_feedback "Restoring SIP ddaliases database from NVRAM..."
+    if [ ! -z "$(nvram get milkfish_ddaliases)" ]; then 
+	[ -e /var/openser/dbtext/aliases ] && nvram get milkfish_ddaliases | tr ' ' '\n' | awk -F : '{print "[ -z \"$(grep " $1 ": /var/openser/dbtext/aliases)\" ] && echo \"" $1 "::sip\\:" $2 "::0:1.00:Milkfish-Alias:42::0:0:128:Milkfish-Router:\" >> /var/openser/dbtext/aliases" }'
+	[ -e /var/openser/dbtext/aliases ] && nvram get milkfish_ddaliases | tr ' ' '\n' | awk -F : '{print "[ -z \"$(grep " $1 ": /var/openser/dbtext/aliases)\" ] && echo \"" $1 "::sip\\:" $2 "::0:1.00:Milkfish-Alias:42::0:0:128:Milkfish-Router:\" >> /var/openser/dbtext/aliases" }' > /tmp/restorenvdd.sh
+	[ -e /tmp/restorenvdd.sh ] && chmod +x /tmp/restorenvdd.sh && /tmp/restorenvdd.sh && rm /tmp/restorenvdd.sh
+	echo "Done."
+    else
+	echo "Empty."
+    fi
     #milkfish_services openserctl restart
 }
 
