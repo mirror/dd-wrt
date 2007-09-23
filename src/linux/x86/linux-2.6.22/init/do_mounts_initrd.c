@@ -79,7 +79,7 @@ static void __init handle_initrd(void)
 		return;
 	}
 
-	ROOT_DEV = new_decode_dev(real_root_dev);
+	ROOT_DEV[0] = new_decode_dev(real_root_dev);
 	mount_root();
 
 	printk(KERN_NOTICE "Trying to move old root to /initrd ... ");
