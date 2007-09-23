@@ -1145,7 +1145,7 @@ status_band.follow="Suivre";
 status_band.up="Haut";
 
 //help container
-hstatus_band.right1="Cliquez sur l'étiquette \"<em>Echelle en...</em>\" pour changer d'unité (bytes/s ou bits/s).";
+hstatus_band.right1="Cliquez sur l'étiquette \"<em>Echelle en...</em>\" pour changer d'unité (octets/s ou bits/s).";
 hstatus_band.right2="Cliquer sur \"<em>Echelle auto ...</em>\" permet de modifier le type d'échelle (<em>follow</em> ajuste l'echelle en permanence tandis que <em>up</em> ajuste l'echelle sur le pic maximum constaté).";
 
 // ** Status_Router.asp **//
