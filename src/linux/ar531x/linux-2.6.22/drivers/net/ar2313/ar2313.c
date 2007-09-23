@@ -160,6 +160,36 @@ static void ar2313_multicast_list(struct net_device *dev);
 #endif
 
 
+#define ADM_CHIP_ID1_EXPECTATION                   0x1020 
+#define ADM_CHIP_ID2_EXPECTATION                   0x0007 
+#define ADM_PHY_ADDR                               0x5
+#define PHY_ADDR_SW_PORT 0
+#define ADM_SW_AUTO_MDIX_EN     0x8000
+
+static int isadm=0;
+
+static void setupADM(struct net_device *dev)
+{	
+   unsigned int sw_port_addr[6] = {1,3,5,7,8,9};
+   unsigned int  phyUnit;
+   unsigned short  reg = 0;
+   unsigned int  phyBase;
+
+int phyID1 = armiiread(dev, 0x5,0x0);
+int phyID2 = armiiread(dev, 0x5,0x1);
+printk(KERN_INFO "Phy %X:%X\n",phyID1,phyID2);
+    if(((phyID1 & 0xfff0) == ADM_CHIP_ID1_EXPECTATION) && (phyID2 == ADM_CHIP_ID2_EXPECTATION)){
+	printk(KERN_INFO "ADM6996FC detected!\n");
+	isadm=1;
+        for(phyUnit=0;phyUnit<6;phyUnit++) {
+    	   reg = armiiread(dev,PHY_ADDR_SW_PORT,sw_port_addr[phyUnit]);
+    	   reg |= ADM_SW_AUTO_MDIX_EN;
+           armiiwrite(dev,PHY_ADDR_SW_PORT,sw_port_addr[phyUnit],reg);
+	}
+	}
+}
+
+
 int __init ar2313_probe(struct platform_device *pdev)
 {
 	struct net_device *dev;
@@ -238,8 +268,7 @@ int __init ar2313_probe(struct platform_device *pdev)
 			printk("Can't remap phy registers\n");
 			return (-ENXIO);
 		}
-	}
-
+ 	}
 	sp->dma_regs =
 		ioremap_nocache(virt_to_phys(ar_eth_base + 0x1000),
 						sizeof(*sp->dma_regs));
@@ -765,6 +794,7 @@ static int ar2313_init(struct net_device *dev)
 	 * Init hardware
 	 */
 	ar2313_reset_reg(dev);
+        setupADM(dev);
 
 	/* 
 	 * Get the IRQ
@@ -1382,7 +1412,6 @@ static int netdev_ethtool_ioctl(struct net_device *dev, void *useraddr)
 
 	return -EOPNOTSUPP;
 }
-
 static int ar2313_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 {
 	struct mii_ioctl_data *data = (struct mii_ioctl_data *) &ifr->ifr_data;
