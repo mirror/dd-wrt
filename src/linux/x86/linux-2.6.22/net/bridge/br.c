@@ -41,9 +41,9 @@ static int __init br_init(void)
 	if (err)
 		goto err_out1;
 
-//	err = br_netfilter_init();
-//	if (err)
-//		goto err_out1;
+	err = br_netfilter_init();
+	if (err)
+		goto err_out1;
 
 	err = register_netdevice_notifier(&br_device_notifier);
 	if (err)
@@ -74,7 +74,7 @@ static void __exit br_deinit(void)
 	rcu_assign_pointer(br_stp_sap->rcv_func, NULL);
 
 	br_netlink_fini();
-//	br_netfilter_fini();
+	br_netfilter_fini();
 	unregister_netdevice_notifier(&br_device_notifier);
 	brioctl_set(NULL);
 
