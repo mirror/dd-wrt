@@ -436,7 +436,7 @@ cert:
 	
 httpd: cgi.o ej.o httpd.o broadcom.o \
        index.o status.o dhcp.o log.o filters.o forward.o dynamic_route.o static_route.o wireless.o ddns.o \
-       find_pattern.o lib.o $(ADDOBJ) diag.o wepkey.o md5c.o getservice.o dd-wrt.o nvramsr.o $(OBJS)
+       find_pattern.o lib.o $(ADDOBJ) diag.o wepkey.o getservice.o dd-wrt.o nvramsr.o $(OBJS)
 	gcc -o write_web write_web.c
 	./write_web www 
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
