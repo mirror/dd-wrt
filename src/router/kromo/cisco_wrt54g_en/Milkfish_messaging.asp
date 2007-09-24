@@ -28,34 +28,36 @@ function milkfish_sip_message_submit(F) {
 		<input type="hidden" name="change_action" />
 		<input type="hidden" name="submit_type" />
 		<input type="hidden" name="commit" value="1" />
-			<div id="main">
-				<div id="contentsInfo">
-					<h2>Milkfish SIP messaging</h2>
-                                                <div class="setting">
-                                                     <div class="label"><% tran("service.milkfish_destination"); %></div>
-                                                          <textarea id="sip_message_dest" name="sip_message_dest" rows="1" cols="50" style="font-family:Courier, Courier New" wrap="off"></textarea>
-                                                </div>
-                                                <br/>
-                                                <div class="setting">
-                                                     <div class="label"><% tran("service.milkfish_sipmessage"); %></div>
-                                                          <textarea id="sip_message" name="sip_message" rows="1" cols="50" style="font-family:Courier, Courier New" wrap="off"></textarea>
-                                                </div>
-                                                <br/>
-                        <div class="center">
-                                <script type="text/javascript">
-                                //<![CDATA[
-                                   document.write("<input class=\"button\" type=\"button\" name=\"add_button\" value=\"Send\" onclick=\"milkfish_sip_message_submit(this.form);\" />");
+		<div id="main">
+			<div id="contentsInfo">
+				<h2>Milkfish SIP messaging</h2>
+                                    <div class="setting">
+                                       <div class="label"><% tran("service.milkfish_destination"); %></div>
+                                       <input id="sip_message_dest" name="sip_message_dest" type="text" size="50" maxlength="50" value="sip:"> 
+ <!--    <textarea id="sip_message_dest" name="sip_message_dest" rows="1" cols="40" style="font-family:Courier, Courier New" wrap="off">sip:</textarea> -->
+                                    </div>
+                                    <br/>
+                                    <div class="setting">
+                                       <div class="label"><% tran("service.milkfish_sipmessage"); %></div>
+                                       <input id="sip_message" name="sip_message" type="text" size="50" maxlength="175">                                       
+ <!--  <textarea id="sip_message" name="sip_message" rows="1" cols="40" style="font-family:Courier, Courier New" wrap="off"></textarea> -->
+                                    </div>
+                                    <br/>
+                                    <div class="center">
+                                       <script type="text/javascript">
+                                       //<![CDATA[
+                                        document.write("<input class=\"button\" type=\"button\" name=\"add_button\" value=\"Send\" onclick=\"milkfish_sip_message_submit(this.form);\" />");
 //]]>
-                                </script>
-                        </div>
-
-					<div class="submitFooter">
-						<script type="text/javascript">
-						//<![CDATA[
-						submitFooterButton(1,1,0,0,0,1);
-						//]]>
-						</script>
-					</div>
+                                       </script>
+                                    </div>
+                                    <br/>
+                                        <div class="submitFooter">
+                                                <script type="text/javascript">
+                                                //<![CDATA[
+                                                submitFooterButton(0,0,0,0,0,1);
+                                                //]]>
+                                                </script>
+                                        </div>
 				</div>
 			</div>
 		</form>

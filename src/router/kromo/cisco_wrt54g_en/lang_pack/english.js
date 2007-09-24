@@ -1176,6 +1176,7 @@ service.milkfish_dynsipurl="DynSIP Update URL";
 service.milkfish_dsusername="DynSIP Username";
 service.milkfish_dspassword="DynSIP Password";
 service.milkfish_sipmessage="SIP Message";
+service.milkfish_destination="SIP Destination";
 //service.milkfish_="";//
 service.hmilkfish_right2="Enables/Disables your Milkfish SIP Router.";
 service.hmilkfish_right4="Enables/Disables From:-Headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled, if you want to allow callees to call you back if your WAN IP has changed.";
