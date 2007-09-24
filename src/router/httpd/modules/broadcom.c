@@ -4749,12 +4749,12 @@ ej_make_time_list (webs_t wp, int argc, char_t ** argv)
 {
   char *name, *start, *end;
   int i, st, en;
-  char ic[2];
+  char ic[16];
 
 #ifdef FASTWEB
   ejArgs (argc, argv, "%s %s %s", &name, &start, &end);
 #else
-  if (ejArgs (argc, argv, "%s %s", &name, &start, &end) < 3)
+  if (ejArgs (argc, argv, "%s %s %s", &name, &start, &end) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
       return;

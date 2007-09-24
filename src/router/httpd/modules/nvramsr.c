@@ -103,6 +103,7 @@ isCritical (char *name)
 static void
 nvram_clear ()
 {
+fprintf(stderr,"clearing nvram\n");
   char *buf = (char *) malloc (NVRAM_SPACE);
   nvram_getall (buf, NVRAM_SPACE);
   nvram_open();
@@ -119,6 +120,7 @@ nvram_clear ()
       p += len + 1;
     }
   nvram_close();
+fprintf(stderr,"done()\n");
 }
 void
 nv_file_in (char *url, webs_t wp, int len, char *boundary)
@@ -197,6 +199,7 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 //          fprintf(stderr,"len %d,%d of %d %s = %s\n",len,i,count,name,value);
 	  if (!isCritical (name))
 	    {
+	      fprintf(stderr,"set %s=%s\n",name,value);
 	      nvram_immed_set (name, value);
 	    }
 	  free (value);
