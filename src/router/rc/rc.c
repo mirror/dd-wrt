@@ -518,6 +518,9 @@ unlink("/tmp/.rstp_server");
 	      system ("/etc/init.d/rcS");	// start openwrt startup script (siPath impl)
 	      cprintf ("start modules\n");
 	      start_service ("modules");
+#ifdef HAVE_MILKFISH
+	      start_service ("milkfish_boot");
+#endif
 	      if (nvram_invmatch ("rc_custom", ""))	//create custom script
 		{
 		  nvram2file ("rc_custom", "/tmp/custom.sh");
