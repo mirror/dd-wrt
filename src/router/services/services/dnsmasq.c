@@ -217,14 +217,7 @@ start_dnsmasq (void)
   /* Additional options */
   if (nvram_invmatch ("dnsmasq_options", ""))
     {
-      char *host_key = nvram_safe_get ("dnsmasq_options");
-      i = 0;
-      do
-	{
-	  if (host_key[i] != 0x0D)
-	    fprintf (fp, "%c", host_key[i]);
-	}
-      while (host_key[++i]);
+      fwritenvram("dnsmasq_options",fp);
     }
   fclose (fp);
 
