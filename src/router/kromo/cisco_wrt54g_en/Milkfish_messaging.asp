@@ -47,7 +47,7 @@ function milkfish_sip_message_submit(F) {
                                        <script type="text/javascript">
                                        //<![CDATA[
                                         document.write("<input class=\"button\" type=\"button\" name=\"add_button\" value=\"Send\" onclick=\"milkfish_sip_message_submit(this.form);\" />");
-//]]>
+				//]]>
                                        </script>
                                     </div>
                                     <br/>
@@ -62,4 +62,4 @@ function milkfish_sip_message_submit(F) {
 			</div>
 		</form>
 	</body>
-</html
+</html>
