@@ -49,4 +49,45 @@ start_milkfish (void)
     }
 }
 
+void
+start_milkfish_boot (void)
+{
+  MD5_CTX MD;
+
+  if (nvram_get ("milkfish_routerid") == NULL)
+    {
+      char hash[32];
+      char *et0 = nvram_safe_get ("et0macaddr");
+      MD5Init (&MD);
+      MD5Update (&MD, et0, 17);
+      MD5Final ((unsigned char *) hash, &MD);
+      nvram_set ("milkfish_routerid", hash);
+      nvram_set ("need_commit", "1");
+    }
+// Start the milkfish services
+  eval ("/usr/sbin/milkfish_services", "start");
+// dbtext module setup
+  eval ("mkdir", "-p", "/var/openser/dbtext/");
+  eval ("cp", "/etc/openser/dbtext/aliases", "/var/openser/dbtext/");
+  eval ("cp", "/etc/openser/dbtext/location", "/var/openser/dbtext/");
+  eval ("cp", "/etc/openser/dbtext/subscriber", "/var/openser/dbtext/");
+  eval ("cp", "/etc/openser/dbtext/version", "/var/openser/dbtext/");
+  eval ("cp", "/etc/openser/dbtext/uri", "/var/openser/dbtext/");
+  eval ("cp", "/etc/openser/dbtext/grp", "/var/openser/dbtext/");
+
+// restore dbtext parts which may have been saved into nvram
+  eval ("/usr/sbin/milkfish_services", "sipdb", "restorenv");
+  eval ("/usr/sbin/milkfish_services", "sipdb", "restorenvdd");
+
+// firewall configuration
+  char *wan = get_wan_face ();
+if (wan)
+{
+  eval ("iptables", "-t", "nat", "-A", "prerouting_rule", "-i", wan, "-p",
+	"udp", "--dport", "5060", "-j", "ACCEPT");
+  eval ("iptables", "-t", "nat", "-A", "input_rule", "-i", wan, "-p", "udp",
+	"--dport", "5060", "-j", "ACCEPT");
+}
+  return;
+}
 #endif
