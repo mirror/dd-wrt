@@ -661,11 +661,8 @@ validate_port_trigger (webs_t wp, char *value, struct variable *v)
  * name:on:both:1000-2000>3000-4000
  */
 
-void
-ej_port_trigger_table (webs_t wp, int argc, char_t ** argv)
+void port_trigger_table (webs_t wp, char *type, int which)
 {
-  char *type;
-  int which;
 
   static char word[256];
   char *next, *wordlist;
@@ -673,16 +670,6 @@ ej_port_trigger_table (webs_t wp, int argc, char_t ** argv)
     NULL, *o_from = NULL, *o_to = NULL;
   static char new_name[200];
   int temp;
-
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %d", &type, &which);
-#else
-  if (ejArgs (argc, argv, "%s %d", &type, &which) < 2)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return;
-    }
-#endif
 
   wordlist = nvram_safe_get ("port_trigger");
   temp = which;
