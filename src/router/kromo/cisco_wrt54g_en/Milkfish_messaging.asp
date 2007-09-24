@@ -37,11 +37,16 @@ function milkfish_sip_message_submit(F) {
  <!--    <textarea id="sip_message_dest" name="sip_message_dest" rows="1" cols="40" style="font-family:Courier, Courier New" wrap="off">sip:</textarea> -->
                                     </div>
                                     <br/>
-                                    <div class="setting">
-                                       <div class="label"><% tran("service.milkfish_sipmessage"); %></div>
-                                       <input id="sip_message" name="sip_message" type="text" size="50" maxlength="175">                                       
- <!--  <textarea id="sip_message" name="sip_message" rows="1" cols="40" style="font-family:Courier, Courier New" wrap="off"></textarea> -->
-                                    </div>
+				    <div class="setting">
+					<div class="label"><% tran("service.milkfish_sipmessage"); %></div>
+					<textarea cols="40" rows="4" id="sip_message" name="sip_message"></textarea>
+					<script type="text/javascript">
+					//<![CDATA[
+					    var sip_message = fix_cr( '<% nvram_get("sip_message"); %>' );
+					    document.getElementById("sip_message").value = sip_message;
+					//]]>
+					</script>
+				    </div>
                                     <br/>
                                     <div class="center">
                                        <script type="text/javascript">
