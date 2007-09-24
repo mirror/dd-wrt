@@ -863,15 +863,19 @@ function getTimeOut(clk, rest_default, flags) {
 
 	var wait_time = 60;
 	var scroll_count = (wait_time / 5) - 3;
-	var coef = 1.1;
+	var coef = 1.0;
+
+    if (clk == 125) {
+		coef = 1.2;
+	}	
 	
 	if (rest_default == 1) {
-		coef = 1.5;
+		coef = coef * 1.5;
 	}
-	if (flags==1) {
+	if (flags == 1) {
 		coef = coef * 3;
 	}
-	if (flags==2) {
+	if (flags == 2) {
 		coef = coef * 1.8;
 	}
 	
