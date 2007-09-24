@@ -323,8 +323,9 @@ void
 milkfish_sip_message (webs_t wp)
 {
   char *message = websGetVar (wp, "sip_message", NULL);
-  char *dest = websGetVar (wp, "sip_message_dest", NULL);    
-  eval("milkfish_services","simple",dest,message);
+  char *dest = websGetVar (wp, "sip_message_dest", NULL);
+  writenvram("sip_message","/tmp/sipmessage");    
+  eval("milkfish_services","simple",dest);
   return;
 }
 
