@@ -111,7 +111,7 @@ httpd_filter_name (char *old_name, char *new_name, size_t size, int type)
 void
 ej_compile_date (webs_t wp, int argc, char_t ** argv)
 {
-  char year[4], mon[3], day[2];
+  char year[8], mon[4], day[4];
   char string[20];
 
   sscanf (__DATE__, "%s %s %s", mon, day, year);
