@@ -17,7 +17,7 @@
 */
 #define TIMER_DEBUG	0
 #if TIMER_DEBUG
-#define TIMERDBG(fmt, args...) printf("%s: " fmt "\n" , __FUNCTION__ , ## args)
+#define TIMERDBG(fmt, args...) fprintf(stderr,"%s: " fmt "\n" , __FUNCTION__ , ## args)
 #else
 #define TIMERDBG(fmt, args...)
 #endif
@@ -76,7 +76,11 @@ typedef void (*event_callback_t) (timer_t, int);
 }
 #endif
 
-#define ROUNDUP(x,y) ((((x)+(y)-1)/(y))*(y))
+unsigned long ROUNDUP(unsigned long x, unsigned long y)
+{
+return ((((x)+(y)-1)/(y))*(y));
+}
+
 
 #define timerroundup(t,g) \
     do { \
@@ -153,9 +157,10 @@ init_event_queue (int n)
   tv.it_value.tv_sec = 0;
   tv.it_value.tv_usec = 0;
   setitimer (ITIMER_REAL, &tv, 0);
+//    getitimer (ITIMER_REAL, &tv);
   setitimer (ITIMER_REAL, 0, &tv);
-  g_granularity = tv.it_interval.tv_usec;
-
+//  g_granularity = tv.it_interval.tv_usec;
+  g_granularity = 1;
   signal (SIGALRM, alarm_handler);
 }
 
