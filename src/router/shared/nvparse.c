@@ -32,29 +32,8 @@
 #include <nvparse.h>
 #include <utils.h>
 #include <bcmconfig.h>
+extern char * safe_snprintf(char *str, int *len, const char *fmt, ...);
 
-char *
-safe_snprintf (char *str, int *len, const char *fmt, ...)
-{
-  va_list ap;
-  int n;
-
-  va_start (ap, fmt);
-  n = vsnprintf (str, *len, fmt, ap);
-  va_end (ap);
-
-  if (n > 0)
-    {
-      str += n;
-      *len -= n;
-    }
-  else if (n < 0)
-    {
-      *len = 0;
-    }
-
-  return str;
-}
 
 #ifdef __CONFIG_NAT__
 bool
