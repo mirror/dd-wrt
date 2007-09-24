@@ -1,3 +1,0 @@
-#!/bin/sh
-# True if IPV4OPTSSTRIP patch is applied.
-[ -f $KERNEL_DIR/net/ipv4/netfilter/ipt_IPV4OPTSSTRIP.c ] && echo IPV4OPTSSTRIP
