@@ -190,6 +190,8 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
     putc (getc (fifo), out);
   fclose (out);
   eval ("dd", "if=/tmp/flash", dev);
+  eval ("dd", "if=/tmp/flash", dev);
+  eval ("dd", "if=/tmp/flash", dev);
 
   /* Wait for write to terminate */
 //  waitpid (pid, &ret, 0);
