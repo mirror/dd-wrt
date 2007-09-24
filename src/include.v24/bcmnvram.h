@@ -146,13 +146,14 @@ extern int BCMINIT(nvram_getall)(char *buf, int count);
 
 extern int file2nvram(char *filename, char *varname);
 extern int nvram2file(char *varname, char *filename);
+extern void writenvram(char *var,char *file);
 
 #endif /* _LANGUAGE_ASSEMBLY */
 
 #define NVRAM_MAGIC		0x48534C46	/* 'FLSH' */
 #define NVRAM_VERSION		1
 #define NVRAM_HEADER_SIZE	20
-#if defined(HAVE_XSCALE) || defined(HAVE_X86) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108)
+#if defined(HAVE_XSCALE) || defined(HAVE_X86) || defined(HAVE_WHRAG108)
 #define NVRAM_SPACE		0x10000
 #else
 #define NVRAM_SPACE		0x8000
