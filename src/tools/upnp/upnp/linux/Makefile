@@ -48,7 +48,7 @@ OBJDIR=obj
 
 SOURCES = upnp.c ssdp.c http.c gena.c soap.c \
 	  service.c device.c  \
-	  linux_osl.c uio.c
+	  uio.c
 
 SOURCES.OBJ := $(SOURCES)
 SOURCES.OBJ := $(patsubst %.c,$(OBJDIR)/%.o,$(SOURCES.OBJ))
