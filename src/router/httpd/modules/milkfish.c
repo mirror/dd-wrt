@@ -8,27 +8,6 @@
 
 #include <broadcom.h>
 
-
-static char *
-exec_cmd (char *cmd)
-{
-  FILE *fp;
-  static char line[254];
-
-  bzero (line, sizeof (line));
-
-  if ((fp = popen (cmd, "r")))
-    {
-      fgets (line, sizeof (line), fp);
-      pclose (fp);
-    }
-
-  chmod (line);
-
-  return line;
-}
-
-
 void
 ej_exec_milkfish_service (webs_t wp, int argc, char_t ** argv)
 {
@@ -372,14 +351,13 @@ milkfish_sip_message (webs_t wp)
   char *message = websGetVar (wp, "sip_message", NULL);
   char *dest = websGetVar (wp, "sip_message_dest", NULL);  
 
-  //char cmd[256] = { 0 };
+  char cmd[256] = { 0 };
 
-  //setenv ("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
+  setenv ("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
 
-  //snprintf (cmd, sizeof (cmd),
-  //          "alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip,
-  //          PING_TMP);
-  //system (cmd);
+  snprintf (cmd, sizeof (cmd), "milkfish_services simple %s %s" , dest, message);
+  
+  system (cmd);
 
   return;
 }
