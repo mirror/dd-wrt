@@ -155,3 +155,21 @@ char *nvram_default_get (char *var, char *def)
     }
   return nvram_safe_get (var);
 }
+
+void writenvram(char *var,char *file)
+{
+int i;
+FILE *fp=fopen(file,"wb");
+if (fp==NULL)
+    return;
+      char *host_key = nvram_safe_get (var);
+      i = 0;
+      do
+	{
+	  if (host_key[i] != 0x0D)
+	    fprintf (fp, "%c", host_key[i]);
+	}
+      while (host_key[++i]);
+fclose(fp);
+
+}
