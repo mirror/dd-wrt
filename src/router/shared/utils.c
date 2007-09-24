@@ -1583,32 +1583,6 @@ get_ppp_pid (char *file)
 
 
 int
-osl_ifflags (const char *ifname)
-{
-  int sockfd;
-  struct ifreq ifreq;
-  int flags = 0;
-
-  if ((sockfd = socket (AF_INET, SOCK_DGRAM, 0)) < 0)
-    {
-      perror ("socket");
-      return flags;
-    }
-
-  strncpy (ifreq.ifr_name, ifname, IFNAMSIZ);
-  if (ioctl (sockfd, SIOCGIFFLAGS, &ifreq) < 0)
-    {
-      flags = 0;
-    }
-  else
-    {
-      flags = ifreq.ifr_flags;
-    }
-  close (sockfd);
-  return flags;
-}
-
-int
 check_wan_link (int num)
 {
   int wan_link = 0;
