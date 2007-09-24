@@ -324,7 +324,20 @@ milkfish_sip_message (webs_t wp)
 {
   char *message = websGetVar (wp, "sip_message", NULL);
   char *dest = websGetVar (wp, "sip_message_dest", NULL);
-  writenvram("sip_message","/tmp/sipmessage");    
+int i;
+FILE *fp=fopen("/tmp/sipmessage","wb");
+if (fp==NULL)
+    return;
+      char *host_key = message;
+      i = 0;
+      do
+	{
+	  if (host_key[i] != 0x0D)
+	    fprintf (fp, "%c", host_key[i]);
+	}
+      while (host_key[++i]);
+putc(0xa,fp);
+fclose(fp);
   eval("milkfish_services","simple",dest);
   return;
 }
