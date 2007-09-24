@@ -159,7 +159,8 @@ init_event_queue (int n)
   setitimer (ITIMER_REAL, &tv, 0);
 //    getitimer (ITIMER_REAL, &tv);
   setitimer (ITIMER_REAL, 0, &tv);
-//  g_granularity = tv.it_interval.tv_usec;
+  g_granularity = tv.it_interval.tv_usec;
+  if (g_granularity<1)
   g_granularity = 1;
   signal (SIGALRM, alarm_handler);
 }
