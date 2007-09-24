@@ -149,43 +149,30 @@ show_subscriber_table (webs_t wp, char *type, int which)
 
 
 
-#define CHAPSHOW(a,b) sprintf(buffer,a,b); do_ej_buffer(buffer,wp);
 
 void
 ej_show_subscribers (webs_t wp, int argc, char_t ** argv)
 {
   int i;
-  char buffer[1024], *count;
+  char *count;
   int c;
 
   count = nvram_safe_get ("milkfish_ddsubscribersnum");
-  if (count == NULL || strlen (count) == 0)
+  if (count == NULL || strlen (count) == 0 || (c=atoi(count))<=0)
   {
       websWrite (wp, "<tr>\n");
       websWrite (wp,
 		 "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
   }
-  c = atoi (count);
-  if (c <= 0)
-    {
-      websWrite (wp, "<tr>\n");
-      websWrite (wp,
-		 "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
-      websWrite (wp, "</tr>\n");
-    }
   for (i = 0; i < c; i++)
     {
       websWrite (wp, "<tr><td>\n");
-      CHAPSHOW
-	("<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",
-	 i);
+      websWrite (wp, "<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",i);
       show_subscriber_table (wp, "user", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      CHAPSHOW
-	("<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",
-	 i);
+      websWrite (wp, "<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",i);
       show_subscriber_table (wp, "pass", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "</tr>\n");
@@ -307,37 +294,24 @@ void
 ej_show_aliases (webs_t wp, int argc, char_t ** argv)
 {
   int i;
-  char buffer[1024], *count;
+  char *count;
   int c;
-
   count = nvram_safe_get ("milkfish_ddaliasesnum");
-  if (count == NULL || strlen (count) == 0)
+  if (count == NULL || strlen (count) == 0 || (c=atoi(count))<=0)
   {
       websWrite (wp, "<tr>\n");
       websWrite (wp,
                  "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
   }
-  c = atoi (count);
-  if (c <= 0)
-    {
-      websWrite (wp, "<tr>\n");
-      websWrite (wp,
-                 "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
-      websWrite (wp, "</tr>\n");
-    }
   for (i = 0; i < c; i++)
     {
       websWrite (wp, "<tr><td>\n");
-      CHAPSHOW
-        ("<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",
-         i);
+      websWrite (wp, "<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",i);
       show_aliases_table (wp, "user", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      CHAPSHOW
-        ("<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",
-         i);
+      websWrite (wp, "<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",i);
       show_aliases_table (wp, "pass", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "</tr>\n");
@@ -349,16 +323,8 @@ void
 milkfish_sip_message (webs_t wp)
 {
   char *message = websGetVar (wp, "sip_message", NULL);
-  char *dest = websGetVar (wp, "sip_message_dest", NULL);  
-
-  char cmd[256] = { 0 };
-
-  setenv ("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
-
-  snprintf (cmd, sizeof (cmd), "milkfish_services simple %s %s" , dest, message);
-  
-  system (cmd);
-
+  char *dest = websGetVar (wp, "sip_message_dest", NULL);    
+  eval("milkfish_services","simple",dest,message);
   return;
 }
 

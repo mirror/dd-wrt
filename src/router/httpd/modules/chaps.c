@@ -176,13 +176,12 @@ show_chaps_table (webs_t wp, char *type, int which)
 }
 
 
-#define CHAPSHOW(a,b) sprintf(buffer,a,b); do_ej_buffer(buffer,wp);
 
 void
 ej_show_chaps (webs_t wp, int argc, char_t ** argv)
 {
   int i;
-  char buffer[1024], *count;
+  char *count;
   int c = 0;
   count = nvram_safe_get ("pppoeserver_chapsnum");
   if (count == NULL || strlen (count) == 0)
@@ -203,26 +202,19 @@ ej_show_chaps (webs_t wp, int argc, char_t ** argv)
   for (i = 0; i < c; i++)
     {
       websWrite (wp, "<tr><td>\n");
-      CHAPSHOW
-	("<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",
-	 i);
+      websWrite (wp,"<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",i);
       show_chaps_table (wp, "user", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      CHAPSHOW
-	("<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",
-	 i);
+      websWrite (wp,"<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",i);
       show_chaps_table (wp, "pass", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      CHAPSHOW
-	("<input class=\"num\" maxlength=\"15\" size=\"26\" name=\"ip%d\" value=\"",
-	 i);
+      websWrite (wp,"<input class=\"num\" maxlength=\"15\" size=\"26\" name=\"ip%d\" value=\"",i);
       show_chaps_table (wp, "ip", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      CHAPSHOW ("<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ",
-		i);
+      websWrite (wp,"<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ",i);
       show_chaps_table (wp, "enable", i);
       websWrite (wp, " /></td>\n");
       websWrite (wp, "</tr>\n");

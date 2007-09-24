@@ -3141,8 +3141,6 @@ getFileLen (FILE * in)
   return len;
 }
 
-#define FWSHOW2(a,b,c) sprintf(buffer,a,b,c); do_ej_buffer(buffer,wp);
-#define FWSHOW1(a,b) sprintf(buffer,a,b); do_ej_buffer(buffer,wp);
 
 static void
 ej_show_forward (webs_t wp, int argc, char_t ** argv)
@@ -3150,19 +3148,10 @@ ej_show_forward (webs_t wp, int argc, char_t ** argv)
 //        char_t *url, char_t *path, char_t *query)
 {
   int i;
-  char buffer[1024], *count;
+  char *count;
   int c = 0;
   count = nvram_safe_get ("forward_entries");
-  if (count == NULL || strlen (count) == 0)
-    {
-      //return -1;      botho 07/03/06 add "- None -" if empty
-      websWrite (wp, "<tr>\n");
-      websWrite (wp,
-		 "<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
-      websWrite (wp, "</tr>\n");
-    }
-  c = atoi (count);
-  if (c <= 0)
+  if (count == NULL || strlen (count) == 0 || (c=atoi(count))<=0)
     {
       //return -1;      botho 07/03/06 add "- None -" if empty
       websWrite (wp, "<tr>\n");
@@ -3173,24 +3162,18 @@ ej_show_forward (webs_t wp, int argc, char_t ** argv)
   for (i = 0; i < c; i++)
     {
       websWrite (wp, "<tr><td>\n");
-      FWSHOW1
-	("<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"",
-	 i);
+      websWrite (wp, "<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"",i);
       port_forward_table (wp, "name", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      FWSHOW1
-	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
-	 i);
+      websWrite (wp, "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",i);
       port_forward_table (wp, "from", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      FWSHOW1
-	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
-	 i);
+      websWrite (wp, "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",i);
       port_forward_table (wp, "to", i);
       websWrite (wp, "\"/></td>\n");
-      FWSHOW1 ("<td><select size=\"1\" name=\"pro%d\">\n", i);
+      websWrite (wp, "<td><select size=\"1\" name=\"pro%d\">\n", i);
       websWrite (wp, "<option value=\"tcp\" ");
       port_forward_table (wp, "sel_tcp", i);
       websWrite (wp, ">TCP</option>\n");
@@ -3204,13 +3187,11 @@ ej_show_forward (webs_t wp, int argc, char_t ** argv)
       	\n//]]>\n</script>\n");
       websWrite (wp, "</select></td>\n");
       websWrite (wp, "<td>\n");
-      FWSHOW1
-	("<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"",
-	 i);
+      websWrite (wp, "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"",i);
       port_forward_table (wp, "ip", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      FWSHOW1 ("<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
+      websWrite (wp, "<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
       port_forward_table (wp, "enable", i);
       websWrite (wp, " /></td>\n");
       websWrite (wp, "</tr>\n");
@@ -3224,20 +3205,10 @@ ej_show_forward_spec (webs_t wp, int argc, char_t ** argv)
 //        char_t *url, char_t *path, char_t *query)
 {
   int i;
-  char buffer[1024], *count;
+  char *count;
   int c = 0;
   count = nvram_safe_get ("forwardspec_entries");
-  if (count == NULL || strlen (count) == 0)
-    {
-      //return -1;      botho 07/03/06 add "- None -" if empty
-      //websWrite (wp, "<tr></tr><tr></tr>\n");
-      websWrite (wp, "<tr>\n");
-      websWrite (wp,
-		 "<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
-      websWrite (wp, "</tr>\n");
-    }
-  c = atoi (count);
-  if (c <= 0)
+  if (count == NULL || strlen (count) == 0 || (c=atoi(count))<=0)
     {
       //return -1;      botho 07/03/06 add "- None -" if empty
       //websWrite (wp, "<tr></tr><tr></tr>\n");
@@ -3249,18 +3220,15 @@ ej_show_forward_spec (webs_t wp, int argc, char_t ** argv)
   for (i = 0; i < c; i++)
     {
       websWrite (wp, "<tr><td>\n");
-      FWSHOW1
-	("<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"",
-	 i);
+      websWrite (wp, "<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"",i);
       port_forward_spec (wp, "name", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      FWSHOW1
-	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
+      websWrite (wp, "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
 	 i);
       port_forward_spec (wp, "from", i);
       websWrite (wp, "\" /></td>\n");
-      FWSHOW1 ("<td><select size=\"1\" name=\"pro%d\">\n", i);
+      websWrite (wp, "<td><select size=\"1\" name=\"pro%d\">\n", i);
       websWrite (wp, "<option value=\"tcp\" ");
       port_forward_spec (wp, "sel_tcp", i);
       websWrite (wp, ">TCP</option>\n");
@@ -3274,19 +3242,17 @@ ej_show_forward_spec (webs_t wp, int argc, char_t ** argv)
       		\n//]]>\n</script>\n");
       websWrite (wp, "</select></td>\n");
       websWrite (wp, "<td>\n");
-      FWSHOW1
-	("<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"",
+      websWrite (wp, "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"",
 	 i);
       port_forward_spec (wp, "ip", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      FWSHOW1
-	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
+      websWrite (wp, "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
 	 i);
       port_forward_spec (wp, "to", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      FWSHOW1 ("<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
+      websWrite (wp, "<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
       port_forward_spec (wp, "enable", i);
       websWrite (wp, " /></td>\n");
       websWrite (wp, "</tr>\n");
@@ -3299,22 +3265,11 @@ ej_show_triggering (webs_t wp, int argc, char_t ** argv)
 {
   int i;
   char *count;
-  char buffer[1024];
   int c = 0;
   count = nvram_safe_get ("trigger_entries");
-  if (count == NULL || strlen (count) == 0)
+  if (count == NULL || strlen (count) == 0 || (c=atoi(count))<=0)
     {
       //return -1;      botho 04/03/06 add "- None -" if empty
-      //websWrite (wp, "<tr></tr><tr></tr>\n");
-      websWrite (wp, "<tr>\n");
-      websWrite (wp,
-		 "<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
-      websWrite (wp, "</tr>\n");
-    }
-  c = atoi (count);
-  if (c <= 0)
-    {
-      //return -1;      botho 07/03/06 add "- None -" if empty
       //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
@@ -3324,30 +3279,56 @@ ej_show_triggering (webs_t wp, int argc, char_t ** argv)
   for (i = 0; i < c; i++)
     {
       websWrite (wp, "<tr><td>\n");
-      FWSHOW2
-	("<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value='<%% port_trigger_table(\"name\",\"%d\"); %%>' />\n",
-	 i, i);
-      websWrite (wp, "</td><td>\n");
-      FWSHOW2
-	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value='<%% port_trigger_table(\"i_from\",\"%d\"); %%>' /> to\n",
-	 i, i);
-      websWrite (wp, "</td><td>\n");
-      FWSHOW2
-	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value='<%% port_trigger_table(\"i_to\",\"%d\"); %%>' />\n",
-	 i, i);
-      websWrite (wp, "</td><td>\n");
-      FWSHOW2
-	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value='<%% port_trigger_table(\"o_from\",\"%d\"); %%>' /> to\n",
-	 i, i);
-      websWrite (wp, "</td><td>\n");
-      FWSHOW2
-	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value='<%% port_trigger_table(\"o_to\",\"%d\"); %%>' />\n",
-	 i, i);
-      websWrite (wp, "</td><td>\n");
-      FWSHOW2
-	("<input type=\"checkbox\" name=\"enable%d\" value=\"on\" <%% port_trigger_table(\"enable\",\"%d\"); %%> />\n",
-	 i, i);
-      websWrite (wp, "</td></tr>\n");
+      //name
+      websWrite (wp,"<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value='\n",i);
+      port_trigger_table(wp,"name",i);
+      websWrite (wp,"' />\n</td><td>\n");
+      //i_from
+      websWrite (wp,"<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value='\n",i);
+      port_trigger_table(wp,"i_from",i);
+      websWrite (wp,"' />\n</td><td>\n");
+      //i_to
+      websWrite (wp,"<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value='\n",i);
+      port_trigger_table(wp,"i_to",i);
+      websWrite (wp,"' />\n</td><td>\n");
+      //o_from
+      websWrite (wp,"<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value='\n",i);
+      port_trigger_table(wp,"o_from",i);
+      websWrite (wp,"' />\n</td><td>\n");
+      //o_to
+      websWrite (wp,"<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value='\n",i);
+      port_trigger_table(wp,"o_to",i);
+      websWrite (wp,"' />\n</td><td>\n");
+      //enable
+      websWrite (wp,"<input type=\"checkbox\" name=\"enable%d\" value=\"on\" ",i);
+      port_trigger_table(wp,"enable",i);
+      websWrite (wp,"' />\n</td></tr>\n");
+
+//      FWSHOW2
+//	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value='<%% port_trigger_table(\"i_from\",\"%d\"); %%>' /> to\n",
+//	 i, i);
+//      websWrite (wp, "</td><td>\n");
+
+
+//      FWSHOW2
+//	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value='<%% port_trigger_table(\"i_to\",\"%d\"); %%>' />\n",
+//	 i, i);
+//      websWrite (wp, "</td><td>\n");
+
+
+//      FWSHOW2
+//	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value='<%% port_trigger_table(\"o_from\",\"%d\"); %%>' /> to\n",
+//	 i, i);
+//      websWrite (wp, "</td><td>\n");
+
+//      FWSHOW2
+//	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value='<%% port_trigger_table(\"o_to\",\"%d\"); %%>' />\n",
+//	 i, i);
+
+//      FWSHOW2
+//	("<input type=\"checkbox\" name=\"enable%d\" value=\"on\" <%% port_trigger_table(\"enable\",\"%d\"); %%> />\n",
+//	 i, i);
+//      websWrite (wp, "</td></tr>\n");
     }
   return;
 }
@@ -5528,7 +5509,6 @@ struct ej_handler ej_handlers[] = {
 //  changed by steve
 //  {"forward_upnp", ej_forward_upnp},
 //   end changed by steve
-  {"port_trigger_table", ej_port_trigger_table},
   /* for route */
   {"static_route_table", ej_static_route_table},
   {"static_route_setting", ej_static_route_setting},
