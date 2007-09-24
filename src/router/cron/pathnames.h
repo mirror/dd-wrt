@@ -77,6 +77,6 @@
 # define _PATH_BSHELL "/bin/sh"
 #endif
 
-#ifndef _PATH_DEFPATH
+//#ifndef _PATH_DEFPATH
 # define _PATH_DEFPATH "/usr/bin:/bin:/sbin:/usr/sbin:/jffs/sbin:/jffs/bin:/jffs/usr/bin:/jffs/usr/sbin"
-#endif
+//#endif
