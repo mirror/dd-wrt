@@ -30,7 +30,7 @@ endif
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -fpic 
 LDFLAGS += -L.
-OBJS := nvparse.o shutils.o wl.o wl_linux.o wl_macfuncs.o linux_timer.o utils.o nvports.o linux_osl.o
+OBJS := nvparse.o shutils.o wl.o wl_linux.o wl_macfuncs.o linux_timer.o utils.o nvports.o linux_osl.o md5c.o
 #defaults.o
 ifeq ($(CONFIG_MAGICBOX),y)
 CFLAGS += -fpic

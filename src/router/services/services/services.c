@@ -170,15 +170,13 @@ stop_vpn_modules (void)
   eval ("/sbin/rmmod", "nf_conntrack_pptp");
   eval ("/sbin/rmmod", "nf_nat_proto_gre");
   eval ("/sbin/rmmod", "nf_conntrack_proto_gre");
-  syslog (LOG_INFO,
-	  "vpn modules : vpn modules successfully unloaded\n");
+  syslog (LOG_INFO, "vpn modules : vpn modules successfully unloaded\n");
 #else
   eval ("/sbin/rmmod", "ip_nat_pptp");
   eval ("/sbin/rmmod", "ip_nat_proto_gre");
   eval ("/sbin/rmmod", "ip_conntrack_pptp");
   eval ("/sbin/rmmod", "ip_conntrack_proto_gre");
-  syslog (LOG_INFO,
-	  "vpn modules : vpn modules successfully unloaded\n");
+  syslog (LOG_INFO, "vpn modules : vpn modules successfully unloaded\n");
 
 #endif
 }
