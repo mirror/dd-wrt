@@ -284,7 +284,7 @@ extern void validate_staticleases (webs_t wp, char *value,
 				   struct variable *v);
 extern void validate_forward_spec (webs_t wp, char *value,
 				   struct variable *v);
-extern void ej_port_trigger_table (webs_t wp, int argc, char_t ** argv);
+extern void port_trigger_table (webs_t wp, char *which, int type);
 extern void validate_port_trigger (webs_t wp, char *value,
 				   struct variable *v);
 
