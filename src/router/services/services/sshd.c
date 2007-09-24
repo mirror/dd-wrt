@@ -166,14 +166,7 @@ write_key_file (char *keyname, char *keyfile, int chmodval)
       cprintf ("Can't open %s\n", keyfile);
       return -1;
     }
-
-  do
-    {
-      if (host_key[i] != 0x0D)
-	fprintf (fd, "%c", host_key[i]);
-    }
-  while (host_key[++i]);
-
+  fwritenvram(keyname,fd);
   // add CR at end
   if (host_key[i - 1] != 0x0A)
     fprintf (fd, "%c", 0x0A);
