@@ -18,6 +18,7 @@
 #ifndef _LANGUAGE_ASSEMBLY
 
 #include <typedefs.h>
+#include <stdio.h>
 
 struct nvram_header {
 	uint32 magic;
