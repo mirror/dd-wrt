@@ -195,17 +195,7 @@ write_nvram (char *name, char *nv)
 {
   if (nvram_invmatch (nv, ""))
     {
-      FILE *fp = fopen (name, "wb");
-
-      char *host_key = nvram_safe_get (nv);
-      int i = 0;
-      do
-	{
-	  if (host_key[i] != 0x0D)
-	    fprintf (fp, "%c", host_key[i]);
-	}
-      while (host_key[++i]);
-      fclose (fp);
+      writenvram(nv,name);
     }
   else
     return -1;
