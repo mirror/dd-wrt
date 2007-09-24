@@ -579,7 +579,7 @@ p_header: p_value
 Contact: <sip:devnull@$(nvram get sip_domain):9>
 Content-Type: text/plain; charset=UTF-8" > /tmp/msg;
     echo "." >> /tmp/msg;
-    echo "$2 $3 $4 $5 $6 $7 $8 $9 $10 $11 $13 $14 $15" >> /tmp/msg;
+    cat /tmp/sipmessage >> /tmp/msg
     echo "." >> /tmp/msg;
     echo "EOF" >> /tmp/msg;
     #cat /tmp/msg;
