@@ -148,6 +148,7 @@ extern int file2nvram(char *filename, char *varname);
 extern int nvram2file(char *varname, char *filename);
 extern void writenvram(char *var,char *file);
 
+extern void fwritenvram(char *var,FILE *fp);
 #endif /* _LANGUAGE_ASSEMBLY */
 
 #define NVRAM_MAGIC		0x48534C46	/* 'FLSH' */
