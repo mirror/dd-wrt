@@ -26,6 +26,7 @@
 #include <utils.h>
 #include <syslog.h>
 #include <signal.h>
+#include <md5.h>
 
 void
 stop_milkfish (void)
