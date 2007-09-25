@@ -33,7 +33,7 @@
 #sleep 10
 #WAN=$(/usr/sbin/nvram get wan_ifname)
 # dd-wrt
-WAN=$(/usr/sbin/nvram get wan_iface)
+WAN=$(/sbin/get_wanface)
 LAN=$(/usr/sbin/nvram get lan_ifname)
 LANADDR=$(/sbin/ifconfig $LAN|awk 'sub("inet addr:","") {print $1}')
 WANADDR=$(/sbin/ifconfig $WAN|awk 'sub("inet addr:","") {print $1}')

@@ -582,7 +582,12 @@ unlink("/tmp/.rstp_server");
 
 }
 
-
+int
+get_wanface (int argc, char **argv)
+{
+fprintf(stdout,"%s",get_wan_face());
+return 0;
+}
 
 int
 main (int argc, char **argv)
@@ -856,6 +861,8 @@ int minute = 0;
     return watchdog_main (argc, argv);
   else if (strstr (base, "nvram"))
     return nvram_main (argc, argv);
+  else if (strstr (base, "get_wanface"))
+    return get_wanface (argc, argv);
 #ifndef HAVE_XSCALE
   else if (strstr (base, "ledtool"))
     return ledtool_main (argc, argv);
