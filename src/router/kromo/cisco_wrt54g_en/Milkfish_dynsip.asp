@@ -35,7 +35,7 @@ function to_apply(F) {
                                             <input class="spaceradio" type="radio" name="milkfish_dynsip" value="on" <% nvram_checked("milkfish_dynsip", "on"); %> onclick="show_layer_ext(this, 'idmilkfish_dynsip', true)" /><% tran("share.enable"); %>&nbsp;
                                             <input class="spaceradio" type="radio" name="milkfish_dynsip" value="off" <% nvram_checked("milkfish_dynsip", "off"); %> onclick="show_layer_ext(this, 'idmilkfish_dynsip', false)" /><% tran("share.disable"); %>
 					</div>-->
-					<b>Leave all settings empty when using the Milkfish HomeSIP Service</b><br />
+					<b>Leaving all settings empty will automatically default to the Milkfish HomeSIP Service.<br /><br />If unsure, leave everything unset.</b><br />
 					<br>					
            				<div id="idmilkfish_dynsip">
 		            		    <div class="setting">
