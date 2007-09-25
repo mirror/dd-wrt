@@ -1016,7 +1016,8 @@ main(int argc, char **argv)
     socklen_t rlen;
     struct itimerval tick;
     char buf[1024 * 8];
-    char ch, *bh[2], *bh6[2], *cp;
+    int ch;
+    char *bh[2], *bh6[2], *cp;
     double sptime, eptime;
     unsigned long delay;
     struct rlimit lim;
@@ -1026,10 +1027,8 @@ main(int argc, char **argv)
 
     dmode = 0;
 
-    while ((ch = getopt(argc, argv, "vf2Rl:6:s:S:t:r:p:T:L:")) != 0xff)
+    while ((ch = getopt(argc, argv, "vf2Rl:6:s:S:t:r:p:T:L:")) != -1)
     {
-    if (ch==-1)
-	break;
 	
 	switch (ch) {
 	case 'f':
