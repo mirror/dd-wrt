@@ -1026,7 +1026,11 @@ main(int argc, char **argv)
 
     dmode = 0;
 
-    while ((ch = getopt(argc, argv, "vf2Rl:6:s:S:t:r:p:T:L:")) != -1)
+    while ((ch = getopt(argc, argv, "vf2Rl:6:s:S:t:r:p:T:L:")) != 0xff)
+    {
+    if (ch==-1)
+	break;
+	
 	switch (ch) {
 	case 'f':
 	    nodaemon = 1;
@@ -1113,6 +1117,7 @@ main(int argc, char **argv)
 	default:
 	    usage();
 	}
+    }
     argc -= optind;
     argv += optind;
 
