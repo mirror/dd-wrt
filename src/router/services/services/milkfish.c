@@ -55,7 +55,7 @@ start_milkfish_boot (void)
 {
   MD5_CTX MD;
 
-  if (nvram_get ("milkfish_routerid") == NULL)
+  if (strlen(nvram_safe_get ("milkfish_routerid")) != 32)
     {
       char hash[32];
       char *et0 = nvram_safe_get ("et0macaddr");
