@@ -401,6 +401,7 @@ ifeq ($(CONFIG_DIST),"micro-special")
 	cd $(INSTALLDIR)/sbin && ln -sf rc brctl
 endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc erase
+	cd $(INSTALLDIR)/sbin && ln -sf rc get_wanface
 	cd $(INSTALLDIR)/sbin && ln -sf rc ledtool
 	cd $(INSTALLDIR)/sbin && ln -sf rc write
 	cd $(INSTALLDIR)/sbin && ln -sf rc restore
