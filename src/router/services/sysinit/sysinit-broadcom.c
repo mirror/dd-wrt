@@ -461,6 +461,11 @@ start_sysinit (void)
       nvram_set ("vlan1ports", "0 5");
       break;
 
+    case ROUTER_ASUS_WL500GD:
+    case ROUTER_ASUS_WL550GE:
+      nvram_set ("wl0_ifname", "eth1");
+      break;
+ 
     case ROUTER_BUFFALO_WLA2G54C:
     case ROUTER_WAP54G_V2:
     case ROUTER_VIEWSONIC_WAPBR_100:
@@ -734,10 +739,6 @@ check_cfe_nv (void)
       ret += check_nv ("ccode", "0");
       break;
 #ifndef HAVE_BUFFALO
-    case ROUTER_ASUS_WL500GD:
-      ret += check_nv ("wl0_ifname", "eth1");
-      return 0;
-      break;
 
     case ROUTER_WRT54G:
     case ROUTER_WRT54G_V8: 
