@@ -583,6 +583,7 @@ extern char *get_wep_value (char *type, char *_bit, char *prefix);
 
 #ifdef HAVE_MILKFISH
 extern void ej_exec_milkfish_service (webs_t wp, int argc, char_t ** argv);
+extern void ej_exec_milkfish_phonebook (webs_t wp, int argc, char_t ** argv);
 extern void ej_show_subscribers (webs_t wp, int argc, char_t ** argv);
 extern void milkfish_user_add (webs_t wp);
 extern void milkfish_user_remove (webs_t wp);
