@@ -2017,6 +2017,10 @@ show_hw_type (int type)
     cprintf ("BCM4702\n");
   else if (type == BCM5325E_CHIP)
     cprintf ("BCM4712L + BCM5325E\n");
+  else if (type == BCM5365_CHIP)
+    cprintf ("BCM5365\n");
+  else if (type == BCM5350_CHIP)
+    cprintf ("BCM5350\n");
   else if (type == BCM4704_BCM5325F_CHIP)
     cprintf ("BCM4704 + BCM5325F\n");
   else if (type == BCM5352E_CHIP)
@@ -2044,6 +2048,10 @@ check_hw_type (void)
     return BCM4702_CHIP;
   else if (btype == 0x0708 && !(boardflags & BFL_ENETADM))
     return BCM5325E_CHIP;
+  else if (btype == 0x456)
+    return BCM5350_CHIP;
+  else if (!strncmp (boardtype, "bcm95365", 8))
+    return BCM5365_CHIP;    
   else if (btype == 0x048e)
     return BCM5354G_CHIP;
   else if (btype == 0x042f && !(boardflags & BFL_ENETADM))
@@ -2140,6 +2148,8 @@ get_device_name (void)
   switch (check_hw_type ())
     {
     case BCM5325E_CHIP:
+    case BCM5350_CHIP;
+    case BCM5365_CHIP;
     case BCM4704_BCM5325F_CHIP:
     case BCM5352E_CHIP:
     case BCM5354G_CHIP:
