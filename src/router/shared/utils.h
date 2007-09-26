@@ -22,7 +22,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_WRT54G 0x0116
 
 // Linksys WRT54Gv8, WRT54GSv7 (5354 cpu, fccid: Linksys Q87-WRT54GV8, Q87-WRT54GSV7)
-#define ROUTER_WRT54G_V8 0x020f
+#define ROUTER_WRT54G_V8 0x0216
 
 // Linksys WRT54G v1.0 and v1.1, Alnet ALL0277 (4702 cpu, fccid: v1: Linksys PKW-WM54G; v1.1: Linksys Q87-WRT54G11)
 #define ROUTER_WRT54G1X 0x0316
