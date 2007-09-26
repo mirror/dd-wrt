@@ -494,7 +494,10 @@ start_sysinit (void)
       nvram_set ("gpio5", "adm_rc");
       nvram_unset ("gpio6");
       break;
-
+      
+    case ROUTER_WRT54G_V8:
+      nvram_set ("reset_gpio", "7");
+      break;
     }
 
   /* ifnames */
@@ -781,6 +784,7 @@ check_cfe_nv (void)
 	  ret += check_nv ("pa0b0", "0x1326");
 	  ret += check_nv ("pa0b1", "0xFB51");
 	  ret += check_nv ("pa0b2", "0xFE87");
+	  ret += check_nv ("reset_gpio", "7");
 	}
       else if (check_hw_type () == BCM4705_BCM5397_EWC_CHIP)
 	{
