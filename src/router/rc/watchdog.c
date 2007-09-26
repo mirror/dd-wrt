@@ -10,6 +10,7 @@
 static void
 watchdog (void)
 {
+  int brand = getRouterBrand ();
   int radiostate = -1;
   int oldstate = -1;
 
@@ -39,10 +40,10 @@ watchdog (void)
 	      led_control (LED_WLAN, LED_OFF);
 #ifndef HAVE_MADWIFI
 	      /* Disable wireless will cause diag led blink, so we want to stop it. */
-	      if (getRouterBrand () == ROUTER_WRT54G)
+	      if (brand == ROUTER_WRT54G)
 		diag_led (DIAG, STOP_LED);
 	      /* Disable wireless will cause power led off, so we want to turn it on. */
-	      if (getRouterBrand () == ROUTER_WRT54G_V8)
+	      if (brand == ROUTER_WRT54G_V8)
 		led_control (LED_POWER, LED_ON);
 #endif
 	    }
