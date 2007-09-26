@@ -197,14 +197,17 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Atheros PB42 prototype (AR5416 MIMO Wifi, 400 Mhz Mips CPU, 32 MB RAM)
 #define ROUTER_BOARD_PB42 0x3a0f
 
-// Asus WL500W (MIMO, 4704 cpu, fccid: Asus MSQWL500W)
+// Asus WL-500W (MIMO, 4704 cpu, fccid: Asus MSQWL500W)
 #define ROUTER_ASUS_WL500W 0x3b06
 
+// Asus WL550gE (5352E cpu, fccid: Asus MSQWL550GE)
+#define ROUTER_ASUS_WL550GE 0x3c06
+
 // Sitecom WL-111 (4702 cpu, fccid: ?)
-#define ROUTER_SITECOM_WL111 0x3c10
+#define ROUTER_SITECOM_WL111 0x3d10
 
 // D-Link DIR-320 (5354 cpu, fccid: ?)
-#define ROUTER_DLINK_DIR320 0x3d17
+#define ROUTER_DLINK_DIR320 0x3e17
 
 #define NVROUTER "DD_BOARD"
 
