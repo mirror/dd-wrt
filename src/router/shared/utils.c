@@ -302,12 +302,20 @@ internal_getRouterBrand ()
       setRouter ("Asus WL-500g Deluxe");
       return ROUTER_ASUS_WL500GD;
     }
+    
   if (boardnum == 45 && nvram_match ("boardtype", "0x0472")
       && nvram_match ("boardrev", "0x23") && nvram_match ("parkid", "1"))
     {
       cprintf ("router is Asus WL-500W\n");
       setRouter ("Asus WL-500W");
       return ROUTER_ASUS_WL500W;
+    }
+    
+  if (boardnum == 45 && nvram_match ("boardtype", "0x467"))
+    {
+      cprintf ("router is Asus WL-550G\n");
+      setRouter ("Asus WL-550G");
+      return ROUTER_ASUS_WL550G;
     }
 #endif
   if (nvram_match ("boardnum", "00") &&
