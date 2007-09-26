@@ -313,9 +313,9 @@ internal_getRouterBrand ()
     
   if (boardnum == 45 && nvram_match ("boardtype", "0x467"))
     {
-      cprintf ("router is Asus WL-550G\n");
-      setRouter ("Asus WL-550G");
-      return ROUTER_ASUS_WL550G;
+      cprintf ("router is Asus WL-550gE\n");
+      setRouter ("Asus WL-550gE");
+      return ROUTER_ASUS_WL550GE;
     }
 #endif
   if (nvram_match ("boardnum", "00") &&
