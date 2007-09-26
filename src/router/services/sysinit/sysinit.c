@@ -559,6 +559,7 @@ start_restore_defaults (void)
       break;
 #ifndef HAVE_BUFFALO
     case ROUTER_ASUS_WL500GD:
+    case ROUTER_ASUS_WL550GE:
       linux_overrides = vlan;
       break;
     case ROUTER_WRT350N:
