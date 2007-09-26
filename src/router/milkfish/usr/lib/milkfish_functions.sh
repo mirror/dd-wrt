@@ -20,7 +20,7 @@
 #                                                                    #
 # The Milkfish Router Services - Shell Function Library              #
 #                                                                    #
-# Built/Version:  20070921                                           #
+# Built/Version:  20070925                                           #
 # Author/Contact: Franz Streibl <fronce@sipwerk.com>                 #
 # Copyright (C) 2007 by sipwerk - All rights reserved.               #
 #                                                                    #
@@ -403,6 +403,15 @@ mf_phonebook_html () {
     echo "<h3>Detailed local phonebook</h3>" &&\
     openserctl ul show | grep "^domain    :\|^aor       :\|^Contact\|^Expires\|^Call-ID\|^User-Agent\|^State" | sed -e "s/^\(domain \)/==============================<br>\1/" | awk 'sub("","<br>") {print}' &&\
     echo "<br>==============================<br>"
+}
+
+mf_phonebook_htmltable () {
+    echo "<table border=1><tr><td><br><h3>Local Contact List</h3>" &&\
+    openserctl ul show | grep 'aor   :' | awk '{print $3}' | sed -e "s/^\('\)/<\/td><\/tr><tr><td>\1/" | awk 'sub("","<br>") {print}' | sed -e "s/'//" | sed -e "s/'//" | awk '{print $1}' &&\
+    echo "</td></tr></table><br><br><br>" &&\
+    echo "<table border=1><tr><td><br><h3>Detailed Local Phonebook</h3>" &&\
+    openserctl ul show | grep "^domain    :\|^aor       :\|^Contact\|^Expires\|^Call-ID\|^User-Agent\|^State" | sed -e "s/^\(domain \)/<\/td><\/tr><tr><td>\1/" | awk 'sub("","<br>") {print}' &&\
+    echo "</td></tr></table><br>"
 }
 
 mf_sipdb_adduser () {
