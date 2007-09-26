@@ -5654,6 +5654,7 @@ struct ej_handler ej_handlers[] = {
   {"show_routeif", ej_show_routeif},
 #ifdef HAVE_MILKFISH
   {"exec_milkfish_service", ej_exec_milkfish_service},
+  {"exec_milkfish_phonebook", ej_exec_milkfish_phonebook},
   {"exec_show_subscribers", ej_show_subscribers},
   {"exec_show_aliases", ej_show_aliases},
 #endif

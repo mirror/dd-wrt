@@ -20,7 +20,7 @@
 #                                                                    #
 # The Milkfish Router Services - Main Executable Shell Script        #
 #                                                                    #
-# Built/Version:  20070914                                           #
+# Built/Version:  20070925                                           #
 # Author/Contact: Franz Streibl <fronce@sipwerk.com>                 #
 # Copyright (C) 2007 by sipwerk - All rights reserved.               #
 #                                                                    #
@@ -180,7 +180,7 @@ case $1 in
 	    exit 1
 	fi
 	mf_feedback "Sending SIMPLE message to $2 ..."
-	mf_simple $2 $3 $4 $5 $6 $7 $8 $9 $10 $11 $12 $13 $14 $15 $16
+	mf_simple $2 $3 $4 $5 $6 $7 $8 $9 $10 $11 $12 $13 $14 $15 $16 $17 $18 $19 $20 $21 $22 $23
 	exit 0
       ;;
     phonebook)
@@ -189,6 +189,10 @@ case $1 in
       ;;
     phonebookhtml)
 	mf_phonebook_html
+	exit 0
+      ;;
+    phonebookhtmltable)
+	mf_phonebook_htmltable
 	exit 0
       ;;
     sipdb)
