@@ -2156,8 +2156,8 @@ get_device_name (void)
   switch (check_hw_type ())
     {
     case BCM5325E_CHIP:
-    case BCM5350_CHIP;
-    case BCM5365_CHIP;
+    case BCM5350_CHIP:
+    case BCM5365_CHIP:
     case BCM4704_BCM5325F_CHIP:
     case BCM5352E_CHIP:
     case BCM5354G_CHIP:
