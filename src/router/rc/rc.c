@@ -240,6 +240,7 @@ main_loop (void)
   switch (brand)
     {
     case ROUTER_ASUS_WL500GD:
+    case ROUTER_ASUS_WL550GE:
     case ROUTER_MOTOROLA:
     case ROUTER_RT480W:
     case ROUTER_WRT350N:
