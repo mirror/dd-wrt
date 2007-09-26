@@ -41,6 +41,9 @@ watchdog (void)
 	      /* Disable wireless will cause diag led blink, so we want to stop it. */
 	      if (getRouterBrand () == ROUTER_WRT54G)
 		diag_led (DIAG, STOP_LED);
+	      /* Disable wireless will cause power led off, so we want to turn it on. */
+	      if (getRouterBrand () == ROUTER_WRT54G_V8)
+		led_control (LED_POWER, LED_ON);
 #endif
 	    }
 
