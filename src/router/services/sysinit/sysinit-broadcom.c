@@ -587,12 +587,11 @@ start_sysinit (void)
 
 	      break;
 	    case ROUTER_ASUS_WL500GD:
-	      modules =
+	    case ROUTER_ASUS_WL550GE:
+          modules =
 		nvram_invmatch ("ct_modules",
-				"") ? nvram_safe_get ("ct_modules") : "";
-	      eval ("insmod", "switch-core");
-	      if (eval ("insmod", "switch-robo"))
-		eval ("insmod", "switch-adm");
+				"") ? nvram_safe_get ("ct_modules") :
+		"switch-core switch-robo";
 	      break;
 	    case ROUTER_BUFFALO_WZRRSG54:
 	      nvram_set ("portprio_support", "0");
