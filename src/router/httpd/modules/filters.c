@@ -738,9 +738,11 @@ validate_filter_web (webs_t wp, char *value, struct variable *v)
 
       if (!strcmp (host, ""))
 	continue;
-
+      int offset=0;
+      if (startswith(host,"http://"))
+    	  offset=7;
       cur += snprintf (cur, buf + sizeof (buf) - cur, "%s%s",
-		       cur == buf ? "" : "<&nbsp;>", host);
+		       cur == buf ? "" : "<&nbsp;>", &host[offset]);
     }
 
   if (strcmp (buf, ""))
