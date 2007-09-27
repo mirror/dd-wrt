@@ -14,6 +14,7 @@
 				<u>Provider Phone Configuration</u>: The IP address of this router is the <b>Outbound Proxy</b> or <b>Outbound Server</b> and <b>STUN is deactivated</b>.<br>
 				All other settings should be set according to the providers recommendation.<br><br>
 				<u>Local Phone Configuration</u>: The IP address of this router is the <b>SIP Server</b> or <b>Registrar Server</b> and <b>a local subscriber account was added</b>.<br>
+r				<br>Dynamic SIP needs a valid User Account set to work. Homesip Users need to be registered at the Milkfish Forum.<br>
 				<br>Key features are...<br>
 				<li>the first free and <a href="http://wiki.milkfish.org/index.php?n=MilkfishServices.Homesip" target="new">user specific alphanumeric dialing</a> infrastructure - choose <b>yourname.homesip.net</b></li>
 				<li>improved NAT traversal by means of a combined SIP-RTP-proxy - equipped with a selective STUNBLOCKER</li>
@@ -48,7 +49,7 @@
 						Please note that this software is under development and comes with absolutely no warranty, to the extend permitted by applicable law.</div>
 					</div><br />
 					<div class="note">
-        					<div class="center">Milkfish is powered by<br><img border="1" src="../images/sipwerk.png" alt="sipwerk logo" /></div><br />
+        					<div class="center">Milkfish is powered by...<br><a target="_blank" href="http://www.sipwerk.com"><img border="1" src="../images/sipwerk.png" alt="sipwerk logo" /></a><br></div><br />
 					</div><br />
 				</dd>
 				<dd>Click <i>Save Settings</i> to save your settings or click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>

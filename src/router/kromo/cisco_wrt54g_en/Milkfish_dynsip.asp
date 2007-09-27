@@ -21,7 +21,7 @@ function to_apply(F) {
 	
 	<body>
 		<form name="setup" action="applyuser.cgi" method="<% get_http_method(); %>">
-		<input type="hidden" name="submit_button" value="Milkfish" />
+		<input type="hidden" name="submit_button" value="Milkfish_dynsip" />
 		<input type="hidden" name="action" value="Apply" />
 		<input type="hidden" name="change_action" />
 		<input type="hidden" name="submit_type" />
