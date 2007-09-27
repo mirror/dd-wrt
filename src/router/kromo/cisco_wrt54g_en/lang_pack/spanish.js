@@ -487,8 +487,8 @@ filter.time="Times";
 filter.h24="24 Horas";
 filter.legend3="Servicios Bloquedos";
 filter.catchall="Capturar todos los protocolos P2P";
-filter.legend5="Bloqueo Web mediante direción URL";
-filter.legend4="Bloqueo Web mediante palabra clave";
+filter.legend4="Bloqueo Web mediante direción URL";
+filter.legend5="Bloqueo Web mediante palabra clave";
 
 filter.mess1="¿Borrar la política?";
 filter.mess2="Debes elegir al menos un día.";
