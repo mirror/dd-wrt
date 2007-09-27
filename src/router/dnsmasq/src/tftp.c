@@ -137,7 +137,7 @@ void tftp_request(struct listener *listen, time_t now)
   transfer->timeout = now + 2;
   transfer->backoff = 1;
   transfer->block = 1;
-  transfer->blocksize = 512;
+  transfer->blocksize = daemon->tftp_blocksize;
   transfer->file = NULL;
   transfer->opt_blocksize = transfer->opt_transize = 0;
 

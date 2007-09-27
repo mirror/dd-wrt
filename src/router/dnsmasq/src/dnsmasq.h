@@ -141,12 +141,14 @@ struct event_desc {
 #define OPT_NO_PING        (1<<21)
 #define OPT_LEASE_RO       (1<<22)
 #define OPT_RELOAD         (1<<24)
+
+#define OPT_LOG_OPTS       (1<<28)
 #define OPT_TFTP           (1<<25)
+#ifdef HAVE_TFTP
 #define OPT_TFTP_SECURE    (1<<26)
 #define OPT_TFTP_NOBLOCK   (1<<27)
-#define OPT_LOG_OPTS       (1<<28)
 #define OPT_TFTP_APREF     (1<<29)
-
+#endif
 struct all_addr {
   union {
     struct in_addr addr4;
@@ -478,6 +480,8 @@ struct ping_result {
   struct ping_result *next;
 };
 
+#ifdef HAVE_TFTP
+
 struct tftp_file {
   int refcount, fd;
   off_t size;
@@ -485,7 +489,6 @@ struct tftp_file {
   ino_t inode;
   char filename[];
 };
-
 struct tftp_transfer {
   int sockfd;
   time_t timeout;
@@ -496,6 +499,7 @@ struct tftp_transfer {
   struct tftp_file *file;
   struct tftp_transfer *next;
 };
+#endif
 
 extern struct daemon {
   /* datastuctures representing the command-line and 
@@ -532,7 +536,10 @@ extern struct daemon {
   struct dhcp_boot *boot_config;
   struct dhcp_netid_list *dhcp_ignore, *dhcp_ignore_names;
   char *dhcp_hosts_file;
-  int dhcp_max, tftp_max; 
+  int dhcp_max;
+#ifdef HAVE_TFTP
+  int tftp_max; 
+#endif
   unsigned int min_leasetime;
   struct doctor *doctors;
   unsigned short edns_pktsz;
@@ -570,10 +577,13 @@ extern struct daemon {
 #ifdef HAVE_DBUS
   struct watch *watches;
 #endif
+#ifdef HAVE_TFTP
 
   /* TFTP stuff */
   struct tftp_transfer *tftp_trans;
   char *tftp_prefix; 
+  int tftp_blocksize;
+#endif
 } *daemon;
 
 /* cache.c */
