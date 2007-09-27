@@ -534,8 +534,8 @@ filter.time="時間";
 filter.h24="24小時";
 filter.legend3="禁止的協定";
 filter.catchall="所有P2P協定";
-filter.legend4="使用URL位址封鎖Web網頁";
-filter.legend5="使用關鍵字封鎖Web網頁";
+filter.legend5="使用URL位址封鎖Web網頁";
+filter.legend4="使用關鍵字封鎖Web網頁";
 
 filter.mess1="刪除此計畫？";
 filter.mess2="您必須至少選擇一個日期.";

@@ -500,8 +500,8 @@ filter.time="Plage Horaire";
 filter.h24="24 Heures";
 filter.legend3="Services Bloqués";
 filter.catchall="Interdire P2P";
-filter.legend4="Blocage de site Web par adresse URL";
-filter.legend5="Blocage de site Web par mot clé";
+filter.legend5="Blocage de site Web par adresse URL";
+filter.legend4="Blocage de site Web par mot clé";
 
 filter.mess1="Effacer la stratégie ?";
 filter.mess2="Veuillez sélectionner au moins un jour du calendrier.";
