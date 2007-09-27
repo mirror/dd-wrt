@@ -486,8 +486,8 @@ filter.time="时间";
 filter.h24="24小时";
 filter.legend3="被封禁的服务";
 filter.catchall="捕获所有P2P协议";
-filter.legend5="通过URL地址封锁Web站点";
-filter.legend4="通过关键字封锁Web站点";
+filter.legend4="通过URL地址封锁Web站点";
+filter.legend5="通过关键字封锁Web站点";
 
 filter.mess1="删除此策略？";
 filter.mess2="您必须至少选择一个日期。";

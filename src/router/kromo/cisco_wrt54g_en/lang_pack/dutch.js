@@ -541,8 +541,8 @@ filter.time="Uren";
 filter.h24="24 Uur";
 filter.legend3="Geblokkeerde Diensten";
 filter.catchall="Blokkeer alle P2P Protocollen";
-filter.legend5="Website Verbieden Per URL";
 filter.legend4="Website Verbieden Per URL";
+filter.legend5="Website Verbieden Per URL";
 
 filter.mess1="Verwijder het Beleid?";
 filter.mess2="U moet een dag selecteren.";
