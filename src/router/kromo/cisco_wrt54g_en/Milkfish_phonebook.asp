@@ -25,7 +25,7 @@ function to_apply(F) {
 			<div id="main">
 				<div id="contentsInfo">
 					<h2>Milkfish - SIP Phonebook</h2>
-                                        <% exec_milkfish_service("milkfish_services phonebook"); %>
+                                        <% exec_milkfish_phonebook("milkfish_services phonebookhtmltable"); %>
                                         <div class="submitFooter">
 						<script type="text/javascript">
 						//<![CDATA[
