@@ -409,7 +409,7 @@ struct listener *create_bound_listeners(void)
 	   if (listen(new->tcpfd, 5) == -1)
 	     die(_("failed to listen on socket: %s"), NULL, EC_BADNET);
 	 }
-
+#ifdef HAVE_TFTP
       if ((daemon->options & OPT_TFTP) && iface->addr.sa.sa_family == AF_INET && iface->dhcp_ok)
 	{
 	  short save = iface->addr.in.sin_port;
@@ -421,6 +421,7 @@ struct listener *create_bound_listeners(void)
 	    die(_("failed to create TFTP socket: %s"), NULL, EC_BADNET);
 	  iface->addr.in.sin_port = save;
 	}
+#endif
     }
 
   return listeners;

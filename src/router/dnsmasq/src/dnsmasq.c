@@ -457,8 +457,12 @@ int main (int argc, char **argv)
 	}
 
       /* Whilst polling for the dbus, or doing a tftp transfer, wake every quarter second */
+#ifdef HAVE_TFTP
       if (daemon->tftp_trans ||
 	  ((daemon->options & OPT_DBUS) && !daemon->dbus))
+#else
+      if (((daemon->options & OPT_DBUS) && !daemon->dbus))
+#endif
 	{
 	  t.tv_sec = 0;
 	  t.tv_usec = 250000;
