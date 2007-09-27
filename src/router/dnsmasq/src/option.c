@@ -46,6 +46,7 @@ struct myoption {
 #define LOPT_BANK      272
 #define LOPT_DHCP_HOST 273
 #define LOPT_APREF     274
+#define LOPT_BLOCKSIZE 275
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -120,17 +121,22 @@ static const struct myoption opts[] =
     {"dns-forward-max", 1, 0, '0'},
     {"clear-on-reload", 0, 0, LOPT_RELOAD },
     {"dhcp-ignore-names", 2, 0, LOPT_NO_NAMES },
+#ifdef HAVE_TFTP
     {"enable-tftp", 0, 0, LOPT_TFTP },
     {"tftp-secure", 0, 0, LOPT_SECURE },
     {"tftp-unique-root", 0, 0, LOPT_APREF },
     {"tftp-root", 1, 0, LOPT_PREFIX },
+    {"tftp-blocksize", 1, 0, LOPT_BLOCKSIZE },
     {"tftp-max", 1, 0, LOPT_TFTP_MAX },
+#endif
     {"ptr-record", 1, 0, LOPT_PTR },
 #if defined(__FreeBSD__) || defined(__DragonFly__)
     {"bridge-interface", 1, 0 , LOPT_BRIDGE },
 #endif
     {"dhcp-option-force", 1, 0, LOPT_FORCE },
+#ifdef HAVE_TFTP
     {"tftp-no-blocksize", 0, 0, LOPT_NOBLOCK },
+#endif
     {"log-dhcp", 0, 0, LOPT_LOG_OPTS },
     {"log-async", 2, 0, LOPT_MAX_LOGS },
     {"dhcp-circuitid", 1, 0, LOPT_CIRCUIT },
@@ -170,11 +176,13 @@ static const struct optflags optmap[] = {
   { '5',            OPT_NO_PING },
   { '9',            OPT_LEASE_RO },
   { LOPT_RELOAD,    OPT_RELOAD },
+  { LOPT_LOG_OPTS,  OPT_LOG_OPTS },
+#ifdef HAVE_TFTP
   { LOPT_TFTP,      OPT_TFTP },
   { LOPT_SECURE,    OPT_TFTP_SECURE },
   { LOPT_NOBLOCK,   OPT_TFTP_NOBLOCK },
-  { LOPT_LOG_OPTS,  OPT_LOG_OPTS },
   { LOPT_APREF,     OPT_TFTP_APREF },
+#endif
   { 'v',            0},
   { 'w',            0},
   { 0, 0 }
@@ -260,12 +268,15 @@ static const struct {
   { "-0, --dns-forward-max=<queries>", gettext_noop("Maximum number of concurrent DNS queries. (defaults to %s)"), "!" }, 
   { "    --clear-on-reload", gettext_noop("Clear DNS cache when reloading %s."), RESOLVFILE },
   { "    --dhcp-ignore-names[=<id>]", gettext_noop("Ignore hostnames provided by DHCP clients."), NULL },
+#ifdef HAVE_TFTP
   { "    --enable-tftp", gettext_noop("Enable integrated read-only TFTP server."), NULL },
   { "    --tftp-root=<directory>", gettext_noop("Export files by TFTP only from the specified subtree."), NULL },
   { "    --tftp-unique-root", gettext_noop("Add client IP address to tftp-root."), NULL },
   { "    --tftp-secure", gettext_noop("Allow access only to files owned by the user running dnsmasq."), NULL },
   { "    --tftp-max=<connections>", gettext_noop("Maximum number of conncurrent TFTP transfers (defaults to %s)."), "#" },
+  { "    --tftp-blocksize", gettext_noop("Configures the default TFTP blocksize"), NULL },
   { "    --tftp-no-blocksize", gettext_noop("Disable the TFTP blocksize extension."), NULL },
+#endif
   { "    --log-dhcp", gettext_noop("Extra logging for DHCP."), NULL },
   { "    --log-async[=<log lines>]", gettext_noop("Enable async. logging; optionally set queue length."), NULL },
   { NULL, NULL, NULL }
@@ -1330,15 +1341,19 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
       if (!atoi_check(arg, &daemon->dhcp_max))
 	option = '?';
       break;
-      
+
+#ifdef HAVE_TFTP      
     case LOPT_TFTP_MAX:  /*  --tftp-max */
       if (!atoi_check(arg, &daemon->tftp_max))
 	option = '?';
       break;  
-
     case  LOPT_PREFIX: /* --tftp-prefix */
       daemon->tftp_prefix = safe_string_alloc(arg);
       break;
+    case  LOPT_BLOCKSIZE: /* --tftp-blocksize */
+      daemon->tftp_blocksize = atoi(arg);
+      break;
+#endif
 
 #if defined(__FreeBSD__) || defined(__DragonFly__)
     case LOPT_BRIDGE:   /* --bridge-interface */
@@ -2212,7 +2227,10 @@ void read_opts(int argc, char **argv, char *compile_opts)
   daemon->groupname = CHGRP;
   daemon->runfile =  RUNFILE;
   daemon->dhcp_max = MAXLEASES;
+#ifdef HAVE_TFTP      
+  daemon->tftp_blocksize = 512;
   daemon->tftp_max = TFTP_MAX_CONNECTIONS;
+#endif
   daemon->edns_pktsz = EDNS_PKTSZ;
   daemon->log_fac = -1;
   add_txt("version.bind", "dnsmasq-" VERSION );
