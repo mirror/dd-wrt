@@ -488,8 +488,8 @@ filter.time="Zeiten";
 filter.h24="24 Stunden";
 filter.legend3="Blockierte Services";
 filter.catchall="Alle P2P-Protokolle abfangen";
-filter.legend5="Webseite mit Hilfe einer URL blockieren";
-filter.legend4="Webseite mit Hilfe von Schlagworten blockieren";
+filter.legend4="Webseite mit Hilfe einer URL blockieren";
+filter.legend5="Webseite mit Hilfe von Schlagworten blockieren";
 
 filter.mess1="Löschen der Richtlinie?";
 filter.mess2="Sie müssen mindestens einen Tag angeben.";
