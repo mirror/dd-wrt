@@ -34,7 +34,6 @@ function milkfish_sip_message_submit(F) {
                                     <div class="setting">
                                        <div class="label"><% tran("service.milkfish_destination"); %></div>
                                        <input id="sip_message_dest" name="sip_message_dest" type="text" size="50" maxlength="50" value="sip:"> 
- <!--    <textarea id="sip_message_dest" name="sip_message_dest" rows="1" cols="40" style="font-family:Courier, Courier New" wrap="off">sip:</textarea> -->
                                     </div>
                                     <br/>
 				    <div class="setting">
@@ -55,6 +54,8 @@ function milkfish_sip_message_submit(F) {
 				//]]>
                                        </script>
                                     </div>
+				    <br/><br/>
+                                    <b>Please note: Not all SIP Clients (Soft- or Hardphones) support SIP Messaging.<br /><br />Please refer to your SIP Clients Datasheet or Documentation to learn more about SIP Messaging capabilities.</b><br /><br />
                                     <br/>
                                         <div class="submitFooter">
                                                 <script type="text/javascript">
