@@ -183,7 +183,7 @@ main_loop (void)
 	    }
 	}
     }
-  else if (brand == ROUTER_LINKSYS_WTR54G)  //it has 1 LAN + 1 WAN port
+  else if (brand == ROUTER_LINKSYS_WTR54GS)  //it has 1 LAN + 1 WAN port
     {
       if (nvram_match ("fullswitch", "1")
 	  && (nvram_invmatch ("wl0_mode", "ap")
