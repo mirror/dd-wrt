@@ -464,7 +464,6 @@ start_sysinit (void)
       nvram_set ("wl0_ifname", "eth2");
       nvram_set ("wan_ifname", "vlan1");	// fix for Asus WL500gPremium WAN problem.
       nvram_set ("wan_ifnames", "vlan1");
-      nvram_set ("vlan1ports", "0 5");
       break;
 
     case ROUTER_ASUS_WL500GD:
