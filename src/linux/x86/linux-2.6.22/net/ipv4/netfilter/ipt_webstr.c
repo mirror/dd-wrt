@@ -179,7 +179,7 @@ static int get_http_info(const struct sk_buff *skb, int flags, httpinfo_t *info)
     int ret = 0;
 
 
-    SPARQ_LOG("%s: seq=%u\n", __FUNCTION__, ntohl(tcph->seq));
+//    printk(KERN_EMERG "%s: seq=%u\n", __FUNCTION__, ntohl(tcph->seq));
 
     /* Basic checking, is it HTTP packet? */
     if (datalen < 10)
@@ -194,7 +194,7 @@ static int get_http_info(const struct sk_buff *skb, int flags, httpinfo_t *info)
     /* find the 'Host: ' value */
     found = find_pattern2(data, datalen, "Host: ", 
 	    sizeof("Host: ") - 1, '\r', &offset, &hostlen);
-    SPARQ_LOG("Host found=%d\n", found);
+    //printk(KERN_EMERG "Host found=%d\n", found);
 
     if (!found || !hostlen)
 	return ret;
@@ -204,7 +204,7 @@ static int get_http_info(const struct sk_buff *skb, int flags, httpinfo_t *info)
     strncpy(info->host, data + offset, hostlen);
     *(info->host + hostlen) = 0;		/* null-terminated */
     info->hostlen = hostlen;
-    SPARQ_LOG("HOST=%s, hostlen=%d\n", info->host, info->hostlen);
+    //printk(KERN_EMERG "HOST=%s, hostlen=%d\n", info->host, info->hostlen);
 
     if (!(flags & HTTP_URL))
 	return ret;
@@ -226,7 +226,7 @@ static int get_http_info(const struct sk_buff *skb, int flags, httpinfo_t *info)
     strncpy(info->url + hostlen, data + offset, pathlen);
     *(info->url + hostlen + pathlen) = 0;	/* null-terminated */
     info->urllen = hostlen + pathlen;
-    SPARQ_LOG("URL=%s, urllen=%d\n", info->url, info->urllen);
+    //printk(KERN_EMERG "URL=%s, urllen=%d\n", info->url, info->urllen);
 
     return ret;
 }
@@ -332,7 +332,7 @@ match(const struct sk_buff *skb,
 	    }
 	    split(needle, wordlist, next, token) {
 		nlen = strlen(needle);
-		SPARQ_LOG("keyword=%s, nlen=%d, hlen=%d\n", needle, nlen, hlen);
+		//printk(KERN_EMERG "keyword=%s, nlen=%d, hlen=%d\n", needle, nlen, hlen);
 		if (!nlen || !hlen || nlen > hlen) continue;
 		if (search(needle, haystack, nlen, hlen) != NULL) {
 		    found = 1;
