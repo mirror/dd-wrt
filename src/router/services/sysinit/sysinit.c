@@ -718,6 +718,11 @@ start_restore_defaults (void)
 	  nvram_set ("vlan0ports", "0 1 2 3 5*");
 	  nvram_set ("vlan1ports", "4 5");
 	}
+      if (brand == ROUTER_LINKSYS_WTR54GS)
+	{
+	  nvram_set ("vlan0ports", "0 5*");
+	  nvram_set ("vlan1ports", "1 5");
+	}
       if (brand == ROUTER_ASUS_WL550GE)
 	{
 	  nvram_set ("vlan0ports", "1 2 3 4 5*");
