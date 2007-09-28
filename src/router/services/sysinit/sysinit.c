@@ -839,6 +839,9 @@ start_restore_defaults (void)
 	    case ROUTER_LINKSYS_WTR54GS:
 	      nvram_set ("vlan1ports", "1 5");
 	      break;
+	    case ROUTER_ASUS_WL500G_PRE:
+	      nvram_set ("vlan1ports", "0 5");
+	      break;	 
 		case ROUTER_MOTOROLA:
 		case ROUTER_LINKSYS_WRT55AG:
 		case ROUTER_RT480W:
