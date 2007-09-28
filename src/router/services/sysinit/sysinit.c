@@ -1178,7 +1178,7 @@ start_nvram (void)
 
 #ifdef DIST
 #ifndef HAVE_TW6600
-    if (nvram_match ("dist_type", "micro"))	//if dist_type micro, force to elegant
+    if (nvram_match ("dist_type", "micro") || nvram_match ("dist_type", "micro-special"))	//if dist_type micro, force to elegant
       nvram_set ("router_style", "elegant");
 #endif
 #endif
