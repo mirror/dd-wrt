@@ -793,6 +793,15 @@ internal_getRouterBrand ()
       return ROUTER_WRT54G_V8;
 
     }
+    
+  if (boardnum == 56 &&
+      nvram_match ("boardtype", "0x456") && nvram_match ("boardrev", "0x10"))
+    {
+      cprintf ("router is wtr54gs\n");
+      setRouter ("Linksys WTR54GS v1");
+      return ROUTER_LINKSYS_WTR54GS;
+
+    }
 
   setRouter ("Linksys WRT54G/GL/GS");
   cprintf ("router is wrt54g\n");
