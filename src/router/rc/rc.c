@@ -183,6 +183,24 @@ main_loop (void)
 	    }
 	}
     }
+  else if (brand == ROUTER_LINKSYS_WTR54G)  //it has 1 LAN + 1 WAN port
+    {
+      if (nvram_match ("fullswitch", "1")
+	  && (nvram_invmatch ("wl0_mode", "ap")
+	      || nvram_match ("wan_proto", "disabled")))
+	{
+	  nvram_set ("vlan0ports", "0 1 5*");
+	  nvram_set ("vlan1ports", "");
+	}
+      else
+	{
+	  if (nvram_match ("vlan0ports", "0 1 5*"))
+	    {
+	      nvram_set ("vlan0ports", "");
+	      nvram_set ("vlan1ports", "");
+	    }
+	}
+    }
   else
 #endif
   if (brand == ROUTER_BUFFALO_WZRG144NH)
