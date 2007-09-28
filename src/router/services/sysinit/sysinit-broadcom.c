@@ -130,8 +130,13 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_WRT54G_V8:
     case ROUTER_MOTOROLA:
     case ROUTER_BUFFALO_WLAG54C:
+      nvram_set ("wl0gpio0", "136");
+      break;
     case ROUTER_LINKSYS_WTR54GS:
       nvram_set ("wl0gpio0", "136");
+      nvram_set ("wl0gpio1", "0");
+      nvram_set ("wl0gpio2", "0");
+      nvram_set ("wl0gpio3", "0");
       break;
     case ROUTER_BUFFALO_WBR54G:
     case ROUTER_BUFFALO_WBR2G54S:
