@@ -1289,7 +1289,7 @@ static void __exit ieee1394_cleanup(void)
 	devfs_remove("ieee1394");
 }
 
-fs_initcall(ieee1394_init); /* same as ohci1394 */
+module_init(ieee1394_init);
 module_exit(ieee1394_cleanup);
 
 /* Exported symbols */
