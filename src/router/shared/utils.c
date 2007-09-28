@@ -1254,6 +1254,8 @@ led_control (int type, int act)
       power_gpio = 0x15;
       diag_gpio = 0x05;		//power led blink /off to indicate factory defaults
       break;
+    case ROUTER_LINKSYS_WTR54GS:
+      diag_gpio = 0x01;
 #endif
     }
   if (type == LED_DIAG && v1func == 1)
