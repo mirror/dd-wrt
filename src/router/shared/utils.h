@@ -209,6 +209,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // D-Link DIR-320 (5354 cpu, fccid: ?)
 #define ROUTER_DLINK_DIR320 0x3e17
 
+// Linksys WTR54GS v1 travel router (5350 cpu, fccid: Q87-WTR54GS)
+#define ROUTER_LINKSYS_WTR54GS 0x3f13
+
 #define NVROUTER "DD_BOARD"
 
 extern char *getBridge (char *ifname);
