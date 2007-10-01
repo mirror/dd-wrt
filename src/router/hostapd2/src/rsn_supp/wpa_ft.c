@@ -229,7 +229,7 @@ static u8 * wpa_ft_gen_req_ies(struct wpa_sm *sm, size_t *len,
 	pos += sizeof(*mdie);
 	os_memcpy(mdie->mobility_domain, sm->mobility_domain,
 		  MOBILITY_DOMAIN_ID_LEN);
-	mdie->ft_capab = RSN_FT_CAPAB_FT_OVER_AIR;
+	mdie->ft_capab = 0; /* FIX: copy from the target AP's MDIE */
 
 	/* FTIE[SNonce, R0KH-ID] */
 	*pos++ = WLAN_EID_FAST_BSS_TRANSITION;

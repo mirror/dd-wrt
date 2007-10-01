@@ -1512,6 +1512,11 @@ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
 	}
 	params.wep_tx_keyidx = ssid->wep_tx_keyidx;
 
+	if (wpa_s->driver_4way_handshake &&
+	    (params.key_mgmt_suite == KEY_MGMT_PSK ||
+	     params.key_mgmt_suite == KEY_MGMT_FT_PSK))
+		params.passphrase = ssid->passphrase;
+
 #ifdef CONFIG_IEEE80211W
 	switch (ssid->ieee80211w) {
 	case NO_IEEE80211W:
@@ -1987,7 +1992,11 @@ void wpa_supplicant_rx_eapol(void *ctx, const u8 *src_addr,
 		return;
 	}
 
-	if (wpa_s->eapol_received == 0) {
+	if (wpa_s->eapol_received == 0 &&
+	    (!wpa_s->driver_4way_handshake ||
+	     (wpa_s->key_mgmt != WPA_KEY_MGMT_PSK &&
+	      wpa_s->key_mgmt != WPA_KEY_MGMT_FT_PSK) ||
+	     wpa_s->wpa_state != WPA_COMPLETED)) {
 		/* Timeout for completing IEEE 802.1X and WPA authentication */
 		wpa_supplicant_req_auth_timeout(
 			wpa_s,
@@ -2016,7 +2025,18 @@ void wpa_supplicant_rx_eapol(void *ctx, const u8 *src_addr,
 	    eapol_sm_rx_eapol(wpa_s->eapol, src_addr, buf, len) > 0)
 		return;
 	wpa_drv_poll(wpa_s);
-	wpa_sm_rx_eapol(wpa_s->wpa, src_addr, buf, len);
+	if (!wpa_s->driver_4way_handshake)
+		wpa_sm_rx_eapol(wpa_s->wpa, src_addr, buf, len);
+	else if (wpa_s->key_mgmt == WPA_KEY_MGMT_IEEE8021X ||
+		 wpa_s->key_mgmt == WPA_KEY_MGMT_FT_IEEE8021X) {
+		/*
+		 * Set portValid = TRUE here since we are going to skip 4-way
+		 * handshake processing which would normally set portValid. We
+		 * need this to allow the EAPOL state machines to be completed
+		 * without going through EAPOL-Key handshake.
+		 */
+		eapol_sm_notify_portValid(wpa_s->eapol, TRUE);
+	}
 }
 
 
@@ -2220,6 +2240,57 @@ static int wpa_supplicant_init_iface(struct wpa_supplicant *wpa_s,
 }
 
 
+#ifdef IEEE8021X_EAPOL
+static void wpa_supplicant_eapol_cb(struct eapol_sm *eapol, int success,
+				    void *ctx)
+{
+	struct wpa_supplicant *wpa_s = ctx;
+	int res, pmk_len;
+	u8 pmk[PMK_LEN];
+
+	wpa_printf(MSG_DEBUG, "EAPOL authentication completed %ssuccessfully",
+		   success ? "" : "un");
+
+	if (!success || !wpa_s->driver_4way_handshake)
+		return;
+
+	if (wpa_s->key_mgmt != WPA_KEY_MGMT_IEEE8021X &&
+	    wpa_s->key_mgmt != WPA_KEY_MGMT_FT_IEEE8021X)
+		return;
+
+	wpa_printf(MSG_DEBUG, "Configure PMK for driver-based RSN 4-way "
+		   "handshake");
+
+	pmk_len = PMK_LEN;
+	res = eapol_sm_get_key(eapol, pmk, PMK_LEN);
+	if (res) {
+		/*
+		 * EAP-LEAP is an exception from other EAP methods: it
+		 * uses only 16-byte PMK.
+		 */
+		res = eapol_sm_get_key(eapol, pmk, 16);
+		pmk_len = 16;
+	}
+
+	if (res) {
+		wpa_printf(MSG_DEBUG, "Failed to get PMK from EAPOL state "
+			   "machines");
+		return;
+	}
+
+	if (wpa_drv_set_key(wpa_s, WPA_ALG_PMK, NULL, 0, 0, NULL, 0, pmk,
+			    pmk_len)) {
+		wpa_printf(MSG_DEBUG, "Failed to set PMK to the driver");
+	}
+
+	eloop_cancel_timeout(wpa_supplicant_scan, wpa_s, NULL);
+	wpa_supplicant_cancel_auth_timeout(wpa_s);
+	wpa_supplicant_set_state(wpa_s, WPA_COMPLETED);
+
+}
+#endif /* IEEE8021X_EAPOL */
+
+
 static int wpa_supplicant_init_eapol(struct wpa_supplicant *wpa_s)
 {
 #ifdef IEEE8021X_EAPOL
@@ -2243,6 +2314,8 @@ static int wpa_supplicant_init_eapol(struct wpa_supplicant *wpa_s)
 	ctx->opensc_engine_path = wpa_s->conf->opensc_engine_path;
 	ctx->pkcs11_engine_path = wpa_s->conf->pkcs11_engine_path;
 	ctx->pkcs11_module_path = wpa_s->conf->pkcs11_module_path;
+	ctx->cb = wpa_supplicant_eapol_cb;
+	ctx->cb_ctx = wpa_s;
 	wpa_s->eapol = eapol_sm_init(ctx);
 	if (wpa_s->eapol == NULL) {
 		os_free(ctx);
@@ -2392,11 +2465,14 @@ static int wpa_supplicant_init_iface2(struct wpa_supplicant *wpa_s,
 		return -1;
 	}
 
-	if (wpa_drv_get_capa(wpa_s, &capa) == 0 &&
-	    capa.flags & WPA_DRIVER_FLAGS_USER_SPACE_MLME) {
-		wpa_s->use_client_mlme = 1;
-		if (ieee80211_sta_init(wpa_s))
-			return -1;
+	if (wpa_drv_get_capa(wpa_s, &capa) == 0) {
+		if (capa.flags & WPA_DRIVER_FLAGS_USER_SPACE_MLME) {
+			wpa_s->use_client_mlme = 1;
+			if (ieee80211_sta_init(wpa_s))
+				return -1;
+		}
+		if (capa.flags & WPA_DRIVER_FLAGS_4WAY_HANDSHAKE)
+			wpa_s->driver_4way_handshake = 1;
 	}
 
 	return 0;
