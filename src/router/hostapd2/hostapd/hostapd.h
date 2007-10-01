@@ -36,7 +36,7 @@
 #endif /* ETH_P_EAPOL */
 
 #ifndef ETH_P_RRB
-#define ETH_P_RRB 0x1234 /* FIX: Ethertype not assigned yet */
+#define ETH_P_RRB 0x890D
 #endif /* ETH_P_RRB */
 
 #include "config.h"

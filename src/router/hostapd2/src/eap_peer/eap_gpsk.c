@@ -1,5 +1,5 @@
 /*
- * EAP peer method: EAP-GPSK (draft-ietf-emu-eap-gpsk-04.txt)
+ * EAP peer method: EAP-GPSK (draft-ietf-emu-eap-gpsk-06.txt)
  * Copyright (c) 2006-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -196,8 +196,8 @@ static int eap_gpsk_select_csuite(struct eap_sm *sm,
 	csuite = (struct eap_gpsk_csuite *) csuite_list;
 	for (i = 0; i < count; i++) {
 		int vendor, specifier;
-		vendor = WPA_GET_BE24(csuite->vendor);
-		specifier = WPA_GET_BE24(csuite->specifier);
+		vendor = WPA_GET_BE32(csuite->vendor);
+		specifier = WPA_GET_BE16(csuite->specifier);
 		wpa_printf(MSG_DEBUG, "EAP-GPSK: CSuite[%d]: %d:%d",
 			   i, vendor, specifier);
 		if (data->vendor == EAP_GPSK_VENDOR_IETF &&
@@ -356,8 +356,8 @@ static u8 * eap_gpsk_send_gpsk_2(struct eap_gpsk_data *data, u8 identifier,
 	rpos += csuite_list_len;
 
 	csuite = (struct eap_gpsk_csuite *) rpos;
-	WPA_PUT_BE24(csuite->vendor, data->vendor);
-	WPA_PUT_BE24(csuite->specifier, data->specifier);
+	WPA_PUT_BE32(csuite->vendor, data->vendor);
+	WPA_PUT_BE16(csuite->specifier, data->specifier);
 	rpos = (u8 *) (csuite + 1);
 
 	if (eap_gpsk_derive_keys(data->psk, data->psk_len,
@@ -444,8 +444,8 @@ const u8 * eap_gpsk_validate_csuite(struct eap_gpsk_data *data, const u8 *pos,
 		return NULL;
 	}
 	csuite = (const struct eap_gpsk_csuite *) pos;
-	vendor = WPA_GET_BE24(csuite->vendor);
-	specifier = WPA_GET_BE24(csuite->specifier);
+	vendor = WPA_GET_BE32(csuite->vendor);
+	specifier = WPA_GET_BE16(csuite->specifier);
 	pos += sizeof(*csuite);
 	if (vendor != data->vendor || specifier != data->specifier) {
 		wpa_printf(MSG_DEBUG, "EAP-GPSK: CSuite_Sel (%d:%d) does not "

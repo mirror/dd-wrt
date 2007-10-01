@@ -197,6 +197,14 @@ struct wpa_driver_associate_params {
 	 * mobility domain is currently active.
 	 */
 	const u8 *ft_md;
+
+	/**
+	 * passphrase - RSN passphrase for PSK
+	 *
+	 * This value is made available only for WPA/WPA2-Personal (PSK) and
+	 * only for drivers that set WPA_DRIVER_FLAGS_4WAY_HANDSHAKE.
+	 */
+	const char *passphrase;
 };
 
 /**
@@ -227,6 +235,9 @@ struct wpa_driver_capa {
 #define WPA_DRIVER_FLAGS_DRIVER_IE	0x00000001
 #define WPA_DRIVER_FLAGS_SET_KEYS_AFTER_ASSOC 0x00000002
 #define WPA_DRIVER_FLAGS_USER_SPACE_MLME 0x00000004
+/* Driver takes care of RSN 4-way handshake internally; PMK is configured with
+ * struct wpa_driver_ops::set_key using alg = WPA_ALG_PMK */
+#define WPA_DRIVER_FLAGS_4WAY_HANDSHAKE 0x00000008
 	unsigned int flags;
 };
 
@@ -347,7 +358,8 @@ struct wpa_driver_ops {
 	 * set_key - Configure encryption key
 	 * @priv: private driver interface data
 	 * @alg: encryption algorithm (%WPA_ALG_NONE, %WPA_ALG_WEP,
-	 *	%WPA_ALG_TKIP, %WPA_ALG_CCMP, %WPA_ALG_IGTK, %WPA_ALG_DHV);
+	 *	%WPA_ALG_TKIP, %WPA_ALG_CCMP, %WPA_ALG_IGTK, %WPA_ALG_DHV,
+	 *	%WPA_ALG_PMK);
 	 *	%WPA_ALG_NONE clears the key.
 	 * @addr: address of the peer STA or ff:ff:ff:ff:ff:ff for
 	 *	broadcast/default keys

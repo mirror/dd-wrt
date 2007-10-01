@@ -277,6 +277,23 @@ int main(int argc, char *argv[])
 			printf("OMAC1-AES-128 test vector %d failed\n", i);
 			ret++;
 		}
+
+		if (tv->msg_len > 1) {
+			const u8 *addr[2];
+			size_t len[2];
+
+			addr[0] = tv->msg;
+			len[0] = 1;
+			addr[1] = tv->msg + 1;
+			len[1] = tv->msg_len - 1;
+
+			omac1_aes_128_vector(tv->k, 2, addr, len, result);
+			if (memcmp(result, tv->tag, 16) != 0) {
+				printf("OMAC1-AES-128(vector) test vector %d "
+				       "failed\n", i);
+				ret++;
+			}
+		}
 	}
 
 	ret += test_eax();

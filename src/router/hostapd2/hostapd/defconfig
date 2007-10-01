@@ -30,6 +30,11 @@ CONFIG_DRIVER_HOSTAP=y
 # wireless-dev.git tree).
 #WIRELESS_DEV=/usr/src/wireless-dev
 #CFLAGS += -I$(WIRELESS_DEV)/net/mac80211
+# driver_devicescape.c requires a rather new libnl, probably not
+# shipped with your distribution yet
+#LIBNL=/usr/src/libnl
+#CFLAGS += -I$(LIBNL)/include
+#LIBS += -L$(LIBNL)/lib
 
 # Driver interface for FreeBSD net80211 layer (e.g., Atheros driver)
 #CONFIG_DRIVER_BSD=y

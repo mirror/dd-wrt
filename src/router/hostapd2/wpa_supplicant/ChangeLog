@@ -6,6 +6,18 @@ ChangeLog for wpa_supplicant
 	* added support for fallback from abbreviated TLS handshake to
 	  full handshake when using EAP-FAST (e.g., due to an expired
 	  PAC-Opaque)
+	* updated EAP Generalized Pre-Shared Key (EAP-GPSK) to use the latest
+	  draft (draft-ietf-emu-eap-gpsk-06.txt)
+	* added support for drivers that take care of RSN 4-way handshake
+	  internally (WPA_DRIVER_FLAGS_4WAY_HANDSHAKE in get_capa flags and
+	  WPA_ALG_PMK in set_key)
+	* added an experimental port for Mac OS X (CONFIG_DRIVER_OSX=y in
+	  .config); this version supports only ap_scan=2 mode and allow the
+	  driver to take care of the 4-way handshake
+	* fixed a buffer overflow in parsing TSF from scan results when using
+	  driver_wext.c with a driver that includes the TSF (e.g., iwl4965)
+	  [Bug 232]
+	* updated FT support to use the latest draft, IEEE 802.11r/D8.0
 
 2007-05-28 - v0.6.0
 	* added network configuration parameter 'frequency' for setting

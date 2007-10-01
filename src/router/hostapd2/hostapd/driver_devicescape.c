@@ -16,29 +16,32 @@
 
 #include "includes.h"
 #include <sys/ioctl.h>
-
-#ifdef USE_KERNEL_HEADERS
-#include <asm/types.h>
+#include <netlink/genl/genl.h>
+#include <netlink/genl/family.h>
+#include <netlink/genl/ctrl.h>
+#include <netlink/msg.h>
+#include <netlink/attr.h>
+#include <linux/nl80211.h>
+#include <net/if.h>
 #include <linux/if_packet.h>
 #include <linux/if_ether.h>   /* The L2 protocols */
-#include <linux/if_arp.h>
 #include <linux/wireless.h>
-#else /* USE_KERNEL_HEADERS */
 #include <net/if_arp.h>
-#include <netpacket/packet.h>
-#include "wireless_copy.h"
-#endif /* USE_KERNEL_HEADERS */
 
 #include "hostapd.h"
 #include "driver.h"
 #include "ieee802_1x.h"
 #include "eloop.h"
-#include "priv_netlink.h"
 #include "ieee802_11.h"
 #include "sta_info.h"
 #include "hw_features.h"
 #include <hostapd_ioctl.h>
 #include <ieee80211_common.h>
+
+/* there used to be this constant in the kernel sources, but
+ * the kernel no longer needs it.... we use it internally.... */
+#define ieee80211_msg_passive_scan 3
+
 /* from net/mac80211.h */
 enum {
 	MODE_IEEE80211A = 0 /* IEEE 802.11a */,
@@ -62,6 +65,9 @@ struct i802_driver_data {
 	int wext_sock; /* socket for wireless events */
 
 	int we_version;
+	struct nl_handle *nl_handle;
+	struct nl_cache *nl_cache;
+	struct genl_family *nl80211;
 };
 
 
@@ -690,28 +696,20 @@ static int i802_set_generic_elem(const char *ifname, void *priv,
 				 const u8 *elem, size_t elem_len)
 {
 	struct i802_driver_data *drv = priv;
-	struct prism2_hostapd_param *param;
-	u8 *buf;
-	size_t blen;
-	int ret = 0;
+	struct iwreq iwr;
 
-	blen = sizeof(*param) + elem_len;
-	buf = os_zalloc(blen);
-	if (buf == NULL)
+	memset(&iwr, 0, sizeof(iwr));
+
+	os_strlcpy(iwr.ifr_name, drv->hapd->conf->iface, IFNAMSIZ);
+	iwr.u.data.length = elem_len;
+	iwr.u.data.pointer = (void*)elem;
+
+	if (ioctl(drv->ioctl_sock, SIOCSIWGENIE, &iwr) < 0) {
+		perror("Failed to set generic info element");
 		return -1;
-
-	param = (struct prism2_hostapd_param *) buf;
-	param->cmd = PRISM2_HOSTAPD_SET_GENERIC_INFO_ELEM;
-	param->u.set_generic_info_elem.len = elem_len;
-	memcpy(param->u.set_generic_info_elem.data, elem, elem_len);
-
-	if (hostapd_ioctl_iface(ifname, drv, param, blen)) {
-		printf("%s: Failed to set generic info element\n", drv->iface);
-		ret = -1;
 	}
-	free(buf);
 
-	return ret;
+	return 0;
 }
 
 
@@ -790,56 +788,103 @@ static int i802_set_tx_queue_params(void *priv, int queue, int aifs,
 }
 
 
-static int i802_bss_add(void *priv, const char *ifname, const u8 *bssid)
+static void nl80211_remove_iface(struct i802_driver_data *drv, int ifidx)
 {
-	struct i802_driver_data *drv = priv;
-	struct prism2_hostapd_param *param;
+	struct nl_msg *msg;
 
-	param = os_zalloc(sizeof(struct prism2_hostapd_param) + ETH_ALEN);
-	if (param == NULL)
+	msg = nlmsg_alloc();
+	if (!msg)
+		goto nla_put_failure;
+
+	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
+		    0, NL80211_CMD_DEL_VIRTUAL_INTERFACE, 0);
+	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, ifidx);
+	if (nl_send_auto_complete(drv->nl_handle, msg) < 0 ||
+	    nl_wait_for_ack(drv->nl_handle) < 0)
+	nla_put_failure:
+		printf("Failed to remove interface.\n");
+	nlmsg_free(msg);
+}
+
+
+static int nl80211_create_iface(struct i802_driver_data *drv,
+				const char *ifname,
+				enum nl80211_iftype iftype,
+				const u8 *addr)
+{
+	struct nl_msg *msg;
+	int ifidx;
+	struct ifreq ifreq;
+	struct iwreq iwr;
+
+	msg = nlmsg_alloc();
+	if (!msg)
 		return -1;
 
-	param->cmd = PRISM2_HOSTAPD_ADD_IF;
-	param->u.if_info.type = HOSTAP_IF_BSS;
-	memcpy(param->u.if_info.data, bssid, ETH_ALEN);
-	os_strlcpy((char *) param->u.if_info.name, ifname, IFNAMSIZ);
+	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
+		    0, NL80211_CMD_ADD_VIRTUAL_INTERFACE, 0);
+	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX,
+		    if_nametoindex(drv->hapd->conf->iface));
+	NLA_PUT_STRING(msg, NL80211_ATTR_IFNAME, ifname);
+	NLA_PUT_U32(msg, NL80211_ATTR_IFTYPE, iftype);
 
-	if (hostapd_ioctl(drv, param,
-			  sizeof(struct prism2_hostapd_param) + ETH_ALEN)) {
-		printf("Could not add bss iface: %s.\n", ifname);
-		free(param);
+	if (nl_send_auto_complete(drv->nl_handle, msg) < 0 ||
+	    nl_wait_for_ack(drv->nl_handle) < 0) {
+ nla_put_failure:
+		printf("Failed to create interface %s.\n", ifname);
+		nlmsg_free(msg);
 		return -1;
 	}
 
-	free(param);
+	nlmsg_free(msg);
 
+	ifidx = if_nametoindex(ifname);
+
+	if (ifidx <= 0)
+		return -1;
+
+	if (addr) {
+		switch (iftype) {
+		case NL80211_IFTYPE_AP:
+			os_strlcpy(ifreq.ifr_name, ifname, IFNAMSIZ);
+			memcpy(ifreq.ifr_hwaddr.sa_data, addr, ETH_ALEN);
+			ifreq.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+
+			if (ioctl(drv->ioctl_sock, SIOCSIFHWADDR, &ifreq)) {
+				nl80211_remove_iface(drv, ifidx);
+				return -1;
+			}
+			break;
+		case NL80211_IFTYPE_WDS:
+			memset(&iwr, 0, sizeof(iwr));
+			os_strlcpy(iwr.ifr_name, ifname, IFNAMSIZ);
+			iwr.u.addr.sa_family = ARPHRD_ETHER;
+			memcpy(iwr.u.addr.sa_data, addr, ETH_ALEN);
+			if (ioctl(drv->ioctl_sock, SIOCSIWAP, &iwr))
+				return -1;
+			break;
+		default:
+			/* nothing */
+			break;
+		}
+	}
+
+	return ifidx;
+}
+
+
+static int i802_bss_add(void *priv, const char *ifname, const u8 *bssid)
+{
+	if (nl80211_create_iface(priv, ifname, NL80211_IFTYPE_AP, bssid) < 0)
+		return -1;
 	return 0;
 }
 
 
 static int i802_bss_remove(void *priv, const char *ifname)
 {
-	struct i802_driver_data *drv = priv;
-	struct prism2_hostapd_param *param;
-	int ret = 0;
-
-	param = os_zalloc(sizeof(struct prism2_hostapd_param) + ETH_ALEN);
-	if (param == NULL)
-		return -1;
-
-	param->cmd = PRISM2_HOSTAPD_REMOVE_IF;
-	param->u.if_info.type = HOSTAP_IF_BSS;
-	os_strlcpy((char *) param->u.if_info.name, ifname, IFNAMSIZ);
-
-	if (hostapd_ioctl(drv, param,
-			  sizeof(struct prism2_hostapd_param) + ETH_ALEN)) {
-		printf("Could not remove iface: %s.\n", ifname);
-		ret = -1;
-	}
-
-	free(param);
-
-	return ret;
+	nl80211_remove_iface(priv, if_nametoindex(ifname));
+	return 0;
 }
 
 
@@ -932,27 +977,11 @@ static int i802_set_dtim_period(const char *ifname, void *priv, int value)
 }
 
 
-static int i802_set_broadcast_ssid(void *priv, int value)
-{
-	struct i802_driver_data *drv = priv;
-	return hostap_ioctl_prism2param(drv, PRISM2_PARAM_BROADCAST_SSID,
-					value);
-}
-
-
 static int i802_set_cts_protect(void *priv, int value)
 {
 	struct i802_driver_data *drv = priv;
 	return hostap_ioctl_prism2param(drv,
 					PRISM2_PARAM_CTS_PROTECT_ERP_FRAMES,
-					value);
-}
-
-
-static int i802_set_key_tx_rx_threshold(void *priv, int value)
-{
-	struct i802_driver_data *drv = priv;
-	return hostap_ioctl_prism2param(drv, PRISM2_PARAM_KEY_TX_RX_THRESHOLD,
 					value);
 }
 
@@ -972,13 +1001,13 @@ static int i802_set_short_slot_time(void *priv, int value)
 }
 
 
-static int i802_if_type(enum hostapd_driver_if_type type)
+static enum nl80211_iftype i802_if_type(enum hostapd_driver_if_type type)
 {
 	switch (type) {
 	case HOSTAPD_IF_VLAN:
-		return HOSTAP_IF_VLAN;
+		return NL80211_IFTYPE_AP_VLAN;
 	case HOSTAPD_IF_WDS:
-		return HOSTAP_IF_WDS;
+		return NL80211_IFTYPE_WDS;
 	}
 	return -1;
 }
@@ -988,32 +1017,8 @@ static int i802_if_add(const char *iface, void *priv,
 		       enum hostapd_driver_if_type type, char *ifname,
 		       const u8 *addr)
 {
-	struct i802_driver_data *drv = priv;
-	struct prism2_hostapd_param *param;
-
-	param = malloc(sizeof(struct prism2_hostapd_param) + ETH_ALEN);
-	if (!param)
+	if (nl80211_create_iface(priv, ifname, i802_if_type(type), addr) < 0)
 		return -1;
-	memset(param, 0, sizeof(param));
-
-	param->cmd = PRISM2_HOSTAPD_ADD_IF;
-	param->u.if_info.type = i802_if_type(type);
-	if (addr)
-		memcpy(param->u.if_info.data, addr, ETH_ALEN);
-	else
-		memset(param->u.if_info.data, 0, ETH_ALEN);
-	os_strlcpy((char *) param->u.if_info.name, ifname, IFNAMSIZ);
-
-	/* FIX: should the size have + ETH_ALEN ? */
-	if (hostapd_ioctl_iface(iface, drv, param,
-				sizeof(struct prism2_hostapd_param))) {
-		printf("Could not add iface: %s.\n", ifname);
-		free(param);
-		return -1;
-	}
-
-	os_strlcpy(ifname, (char *) param->u.if_info.name, IFNAMSIZ);
-	free(param);
 	return 0;
 }
 
@@ -1021,60 +1026,15 @@ static int i802_if_add(const char *iface, void *priv,
 static int i802_if_update(void *priv, enum hostapd_driver_if_type type,
 			  char *ifname, const u8 *addr)
 {
-	struct i802_driver_data *drv = priv;
-	struct prism2_hostapd_param *param;
-
-	param = malloc(sizeof(struct prism2_hostapd_param) + ETH_ALEN);
-	if (!param)
-		return -1;
-	memset(param, 0, sizeof(param));
-
-	param->cmd = PRISM2_HOSTAPD_UPDATE_IF;
-	param->u.if_info.type = i802_if_type(type);
-	if (addr)
-		memcpy(param->u.if_info.data, addr, ETH_ALEN);
-	else
-		memset(param->u.if_info.data, 0, ETH_ALEN);
-	os_strlcpy((char *) param->u.if_info.name, ifname, IFNAMSIZ);
-
-	/* FIX: should the size have + ETH_ALEN ? */
-	if (hostapd_ioctl(drv, param, sizeof(struct prism2_hostapd_param))) {
-		printf("Could not update iface: %s.\n", ifname);
-		free(param);
-		return -1;
-	}
-
-	os_strlcpy(ifname, (char *) param->u.if_info.name, IFNAMSIZ);
-	free(param);
-	return 0;
+	/* unused at the moment */
+	return -1;
 }
 
 
 static int i802_if_remove(void *priv, enum hostapd_driver_if_type type,
 			  const char *ifname, const u8 *addr)
 {
-	struct i802_driver_data *drv = priv;
-	struct prism2_hostapd_param *param;
-
-	param = malloc(sizeof(struct prism2_hostapd_param) + ETH_ALEN);
-	if (!param)
-		return -1;
-	memset(param, 0, sizeof(param));
-
-	param->cmd = PRISM2_HOSTAPD_REMOVE_IF;
-	param->u.if_info.type = i802_if_type(type);
-	if (addr)
-		memcpy(param->u.if_info.data, addr, ETH_ALEN);
-	else
-		memset(param->u.if_info.data, 0, ETH_ALEN);
-	os_strlcpy((char *) param->u.if_info.name, ifname, IFNAMSIZ);
-	if (hostapd_ioctl(drv, param, sizeof(struct prism2_hostapd_param))) {
-		printf("Could not remove iface: %s.\n", ifname);
-		free(param);
-		return -1;
-	}
-
-	free(param);
+	nl80211_remove_iface(priv, if_nametoindex(ifname));
 	return 0;
 }
 
@@ -1354,25 +1314,32 @@ static void handle_frame(struct hostapd_iface *iface, u8 *buf, size_t len,
 	int msg_type = ntohl(fi->msg_type);
 	struct hostapd_frame_info hfi;
 
+#if 0 /* TODO */
 	/* special handling for message types without IEEE 802.11 header */
 	if (msg_type == ieee80211_msg_set_aid_for_sta) {
-#if 0 /* TODO */
 		ieee802_11_set_aid_for_sta(iface->bss[0], buf, data_len);
-#endif
 		return;
 	}
+#endif
+# if 0
+/* TODO
+ * get key notification from kernel again... it doesn't give one now
+ * because this code doesn't care
+ */
 	if (msg_type == ieee80211_msg_key_threshold_notification) {
-#if 0 /* TODO */
 		ieee802_11_key_threshold_notification(iface->bss[0], buf,
 						      data_len);
-#endif
 		return;
 	}
+#endif
 
 	/* PS-Poll frame from not associated is 16 bytes. All other frames
-	 * passed to hostapd are 24 bytes or longer. */
-	if (len < 24 &&
-	    (msg_type != ieee80211_msg_sta_not_assoc || len < 16)) {
+	 * passed to hostapd are 24 bytes or longer.
+	 * Right now, the kernel doesn't send us any frames from not-associated
+	 * because the code here doesn't care. TODO: add support to kernel
+	 * and send DEAUTH/DISASSOC to them...
+	 */
+	if (len < 24) {
 		printf("handle_frame: too short (%lu), type %d\n",
 		       (unsigned long) len, msg_type);
 		return;
@@ -1432,15 +1399,27 @@ static void handle_frame(struct hostapd_iface *iface, u8 *buf, size_t len,
 	case ieee80211_msg_tx_callback_fail:
 		handle_tx_callback(hapd, buf, data_len, 0);
 		return;
+/*
+ * TODO
+ * the kernel never sends this any more, add new nl80211
+ * notification if you need this.
+
 	case ieee80211_msg_wep_frame_unknown_key:
-		/* TODO: ieee802_11_rx_unknown_key(hapd, buf, data_len); */
+		ieee802_11_rx_unknown_key(hapd, buf, data_len);
 		return;
+ */
 	case ieee80211_msg_michael_mic_failure:
 		hostapd_michael_mic_failure(hapd, buf, data_len);
 		return;
-	case ieee80211_msg_sta_not_assoc:
-		/* TODO: ieee802_11_rx_sta_not_assoc(hapd, buf, data_len); */
+/*
+ * TODO
+ * We should be telling them to go away. But we don't support that now.
+ * See also below and above for other TODO items related to this.
+
+ 	case ieee80211_msg_sta_not_assoc:
+		ieee802_11_rx_sta_not_assoc(hapd, buf, data_len);
 		return;
+ */
 	default:
 		printf("handle_frame: unknown msg_type %d\n", msg_type);
 		return;
@@ -1538,6 +1517,32 @@ static int i802_init_sockets(struct i802_driver_data *drv)
 	drv->ioctl_sock = socket(PF_INET, SOCK_DGRAM, 0);
 	if (drv->ioctl_sock < 0) {
 		perror("socket[PF_INET,SOCK_DGRAM]");
+		return -1;
+	}
+
+	/*
+	 * initialise generic netlink and nl80211
+	 */
+	drv->nl_handle = nl_handle_alloc();
+	if (!drv->nl_handle) {
+		printf("Failed to allocate netlink handle.\n");
+		return -1;
+	}
+
+	if (genl_connect(drv->nl_handle)) {
+		printf("Failed to connect to generic netlink.\n");
+		return -1;
+	}
+
+	drv->nl_cache = genl_ctrl_alloc_cache(drv->nl_handle);
+	if (!drv->nl_cache) {
+		printf("Failed to allocate generic netlink cache.\n");
+		return -1;
+	}
+
+	drv->nl80211 = genl_ctrl_search_by_name(drv->nl_cache, "nl80211");
+	if (!drv->nl80211) {
+		printf("nl80211 not found.\n");
 		return -1;
 	}
 
@@ -1944,9 +1949,6 @@ static void * i802_init(struct hostapd_data *hapd)
 	if (i802_init_sockets(drv))
 		goto failed;
 
-	/* Enable the radio by default. */
-	(void) hostap_ioctl_prism2param(drv, PRISM2_PARAM_RADIO_ENABLED, 1);
-
 	return drv;
 
 failed:
@@ -1959,18 +1961,21 @@ static void i802_deinit(void *priv)
 {
 	struct i802_driver_data *drv = priv;
 
-	/* Disable the radio. */
-	(void) hostap_ioctl_prism2param(drv, PRISM2_PARAM_RADIO_ENABLED, 0);
-
 	/* Disable management interface */
 	(void) hostap_ioctl_prism2param(drv, PRISM2_PARAM_MGMT_IF, 0);
 
 	(void) hostapd_set_iface_flags(drv, 0);
 
-	if (drv->sock >= 0)
+	if (drv->sock >= 0) {
+		eloop_unregister_read_sock(drv->sock);
 		close(drv->sock);
+	}
 	if (drv->ioctl_sock >= 0)
 		close(drv->ioctl_sock);
+
+	genl_family_put(drv->nl80211);
+	nl_cache_free(drv->nl_cache);
+	nl_handle_destroy(drv->nl_handle);
 
 	free(drv);
 }
@@ -2013,9 +2018,7 @@ const struct wpa_driver_ops wpa_driver_devicescape_ops = {
 	.set_internal_bridge = i802_set_internal_bridge,
 	.set_beacon_int = i802_set_beacon_int,
 	.set_dtim_period = i802_set_dtim_period,
-	.set_broadcast_ssid = i802_set_broadcast_ssid,
 	.set_cts_protect = i802_set_cts_protect,
-	.set_key_tx_rx_threshold = i802_set_key_tx_rx_threshold,
 	.set_preamble = i802_set_preamble,
 	.set_short_slot_time = i802_set_short_slot_time,
 	.set_tx_queue_params = i802_set_tx_queue_params,

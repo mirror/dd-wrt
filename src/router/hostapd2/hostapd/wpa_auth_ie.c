@@ -140,17 +140,17 @@ int wpa_write_rsn_ie(struct wpa_auth_config *conf, u8 *buf, size_t len,
 	count = pos;
 	pos += 2;
 
-	if (conf->wpa_pairwise & WPA_CIPHER_CCMP) {
+	if (conf->rsn_pairwise & WPA_CIPHER_CCMP) {
 		RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_CCMP);
 		pos += RSN_SELECTOR_LEN;
 		num_suites++;
 	}
-	if (conf->wpa_pairwise & WPA_CIPHER_TKIP) {
+	if (conf->rsn_pairwise & WPA_CIPHER_TKIP) {
 		RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_TKIP);
 		pos += RSN_SELECTOR_LEN;
 		num_suites++;
 	}
-	if (conf->wpa_pairwise & WPA_CIPHER_NONE) {
+	if (conf->rsn_pairwise & WPA_CIPHER_NONE) {
 		RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_NONE);
 		pos += RSN_SELECTOR_LEN;
 		num_suites++;
@@ -158,7 +158,7 @@ int wpa_write_rsn_ie(struct wpa_auth_config *conf, u8 *buf, size_t len,
 
 	if (num_suites == 0) {
 		wpa_printf(MSG_DEBUG, "Invalid pairwise cipher (%d).",
-			   conf->wpa_pairwise);
+			   conf->rsn_pairwise);
 		return -1;
 	}
 	WPA_PUT_LE16(count, num_suites);
@@ -546,10 +546,14 @@ int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 	else
 		sm->wpa_key_mgmt = WPA_KEY_MGMT_PSK;
 
-	ciphers = data.pairwise_cipher & wpa_auth->conf.wpa_pairwise;
+	if (version == WPA_PROTO_RSN)
+		ciphers = data.pairwise_cipher & wpa_auth->conf.rsn_pairwise;
+	else
+		ciphers = data.pairwise_cipher & wpa_auth->conf.wpa_pairwise;
 	if (!ciphers) {
-		wpa_printf(MSG_DEBUG, "Invalid WPA pairwise cipher (0x%x) "
+		wpa_printf(MSG_DEBUG, "Invalid %s pairwise cipher (0x%x) "
 			   "from " MACSTR,
+			   version == WPA_PROTO_RSN ? "RSN" : "WPA",
 			   data.pairwise_cipher, MAC2STR(sm->addr));
 		return WPA_INVALID_PAIRWISE;
 	}
