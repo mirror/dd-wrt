@@ -444,9 +444,10 @@ wpa_supplicant_select_bss(struct wpa_supplicant *wpa_s, struct wpa_ssid *group,
 				wpa_printf(MSG_DEBUG, "   skip - disabled");
 				continue;
 			}
-			if (bss->ssid_len != ssid->ssid_len ||
-			    os_memcmp(bss->ssid, ssid->ssid,
-				      bss->ssid_len) != 0) {
+			if (ssid->ssid_len != 0 &&
+			    (bss->ssid_len != ssid->ssid_len ||
+			     os_memcmp(bss->ssid, ssid->ssid,
+				       bss->ssid_len) != 0)) {
 				wpa_printf(MSG_DEBUG, "   skip - "
 					   "SSID mismatch");
 				continue;
@@ -520,7 +521,7 @@ static void wpa_supplicant_event_scan_results(struct wpa_supplicant *wpa_s)
 
 	wpa_supplicant_dbus_notify_scan_results(wpa_s);
 
-	if (wpa_s->conf->ap_scan == 2)
+	if (wpa_s->conf->ap_scan == 2 || wpa_s->disconnected)
 		return;
 	results = wpa_s->scan_results;
 	num = wpa_s->num_scan_results;
@@ -733,6 +734,19 @@ static void wpa_supplicant_event_assoc(struct wpa_supplicant *wpa_s,
 		wpa_supplicant_req_auth_timeout(wpa_s, 10, 0);
 	}
 	wpa_supplicant_cancel_scan(wpa_s);
+
+	if (wpa_s->driver_4way_handshake &&
+	    (wpa_s->key_mgmt == WPA_KEY_MGMT_PSK ||
+	     wpa_s->key_mgmt == WPA_KEY_MGMT_FT_PSK)) {
+		/*
+		 * We are done; the driver will take care of RSN 4-way
+		 * handshake.
+		 */
+		wpa_supplicant_cancel_auth_timeout(wpa_s);
+		wpa_supplicant_set_state(wpa_s, WPA_COMPLETED);
+		eapol_sm_notify_portValid(wpa_s->eapol, TRUE);
+		eapol_sm_notify_eap_success(wpa_s->eapol, TRUE);
+	}
 }
 
 

@@ -281,9 +281,8 @@ struct rsn_mdie {
 	u8 ft_capab;
 } STRUCT_PACKED;
 
-#define RSN_FT_CAPAB_FT_OVER_AIR BIT(0)
-#define RSN_FT_CAPAB_FT_OVER_DS BIT(1)
-#define RSN_FT_CAPAB_FT_RESOURCE_REQ_SUPP BIT(2)
+#define RSN_FT_CAPAB_FT_OVER_DS BIT(0)
+#define RSN_FT_CAPAB_FT_RESOURCE_REQ_SUPP BIT(1)
 
 struct rsn_ftie {
 	u8 mic_control[2];

@@ -168,6 +168,7 @@ static void hostapd_config_defaults_bss(struct hostapd_bss_config *bss)
 	bss->wpa_key_mgmt = WPA_KEY_MGMT_PSK;
 	bss->wpa_pairwise = WPA_CIPHER_TKIP;
 	bss->wpa_group = WPA_CIPHER_TKIP;
+	bss->rsn_pairwise = 0;
 
 	bss->max_num_sta = MAX_STA_COUNT;
 
@@ -1254,6 +1255,7 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 	char buf[256], *pos;
 	int line = 0;
 	int errors = 0;
+	int pairwise;
 	size_t i;
 
 	f = fopen(fname, "r");
@@ -1644,11 +1646,20 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 				       "cipher suite '%s'\n",
 				       bss->wpa_pairwise, pos);
 				errors++;
-			} else {
-				if (bss->wpa_pairwise & WPA_CIPHER_TKIP)
-					bss->wpa_group = WPA_CIPHER_TKIP;
-				else
-					bss->wpa_group = WPA_CIPHER_CCMP;
+			}
+		} else if (strcmp(buf, "rsn_pairwise") == 0) {
+			bss->rsn_pairwise =
+				hostapd_config_parse_cipher(line, pos);
+			if (bss->rsn_pairwise == -1 ||
+			    bss->rsn_pairwise == 0)
+				errors++;
+			else if (bss->rsn_pairwise &
+				 (WPA_CIPHER_NONE | WPA_CIPHER_WEP40 |
+				  WPA_CIPHER_WEP104)) {
+				printf("Line %d: unsupported pairwise "
+				       "cipher suite '%s'\n",
+				       bss->rsn_pairwise, pos);
+				errors++;
 			}
 #ifdef CONFIG_RSN_PREAUTH
 		} else if (strcmp(buf, "rsn_preauth") == 0) {
@@ -1902,6 +1913,20 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 		 * keys */
 		bss->broadcast_key_idx_min = 0;
 	}
+
+	/* Select group cipher based on the enabled pairwise cipher suites */
+	pairwise = 0;
+	if (bss->wpa & 1)
+		pairwise |= bss->wpa_pairwise;
+	if (bss->wpa & 2) {
+		if (bss->rsn_pairwise == 0)
+			bss->rsn_pairwise = bss->wpa_pairwise;
+		pairwise |= bss->rsn_pairwise;
+	}
+	if (pairwise & WPA_CIPHER_TKIP)
+		bss->wpa_group = WPA_CIPHER_TKIP;
+	else
+		bss->wpa_group = WPA_CIPHER_CCMP;
 
 	for (i = 0; i < conf->num_bss; i++) {
 		bss = &conf->bss[i];

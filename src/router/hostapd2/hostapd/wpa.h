@@ -21,9 +21,9 @@
 #pragma pack(push, 1)
 #endif /* _MSC_VER */
 
-/* IEEE 802.11r/D5.0, 11A.9.3 - Remote request/response frame definition */
+/* IEEE 802.11r/D8.0, 11A.10.3 - Remote request/response frame definition */
 struct ft_rrb_frame {
-	u8 version; /* FT_RRB_VERSION */
+	u8 frame_type; /* RSN_REMOTE_FRAME_TYPE_FT_RRB */
 	u8 packet_type; /* FT_PACKET_REQUEST/FT_PACKET_RESPONSE */
 	u16 action_length; /* little endian length of action_frame */
 	u8 ap_address[ETH_ALEN];
@@ -33,17 +33,17 @@ struct ft_rrb_frame {
 	 */
 } STRUCT_PACKED;
 
-#define FT_RRB_VERSION 1
+#define RSN_REMOTE_FRAME_TYPE_FT_RRB 1
 
 #define FT_PACKET_REQUEST 0
 #define FT_PACKET_RESPONSE 1
-/* "Vendor-specific types for R0KH-R1KH protocol; not defined in 802.11r */
+/* Vendor-specific types for R0KH-R1KH protocol; not defined in 802.11r */
 #define FT_PACKET_R0KH_R1KH_PULL 200
 #define FT_PACKET_R0KH_R1KH_RESP 201
 #define FT_PACKET_R0KH_R1KH_PUSH 202
 
 #ifndef ETH_P_RRB
-#define ETH_P_RRB 0x1234 /* FIX: Ethertype not assigned yet */
+#define ETH_P_RRB 0x890D
 #endif /* ETH_P_RRB */
 
 #define FT_R0KH_R1KH_PULL_DATA_LEN 44
@@ -51,7 +51,7 @@ struct ft_rrb_frame {
 #define FT_R0KH_R1KH_PUSH_DATA_LEN 80
 
 struct ft_r0kh_r1kh_pull_frame {
-	u8 version; /* FT_RRB_VERSION */
+	u8 frame_type; /* RSN_REMOTE_FRAME_TYPE_FT_RRB */
 	u8 packet_type; /* FT_PACKET_R0KH_R1KH_PULL */
 	u16 data_length; /* little endian length of data (44) */
 	u8 ap_address[ETH_ALEN];
@@ -65,7 +65,7 @@ struct ft_r0kh_r1kh_pull_frame {
 } STRUCT_PACKED;
 
 struct ft_r0kh_r1kh_resp_frame {
-	u8 version; /* FT_RRB_VERSION */
+	u8 frame_type; /* RSN_REMOTE_FRAME_TYPE_FT_RRB */
 	u8 packet_type; /* FT_PACKET_R0KH_R1KH_RESP */
 	u16 data_length; /* little endian length of data (76) */
 	u8 ap_address[ETH_ALEN];
@@ -80,7 +80,7 @@ struct ft_r0kh_r1kh_resp_frame {
 } STRUCT_PACKED;
 
 struct ft_r0kh_r1kh_push_frame {
-	u8 version; /* FT_RRB_VERSION */
+	u8 frame_type; /* RSN_REMOTE_FRAME_TYPE_FT_RRB */
 	u8 packet_type; /* FT_PACKET_R0KH_R1KH_PUSH */
 	u16 data_length; /* little endian length of data (80) */
 	u8 ap_address[ETH_ALEN];
@@ -134,6 +134,7 @@ struct wpa_auth_config {
 	int wpa_group_rekey;
 	int wpa_strict_rekey;
 	int wpa_gmk_rekey;
+	int rsn_pairwise;
 	int rsn_preauth;
 	int eapol_version;
 	int peerkey;

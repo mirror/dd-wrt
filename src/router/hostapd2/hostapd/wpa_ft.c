@@ -66,7 +66,7 @@ int wpa_write_mdie(struct wpa_auth_config *conf, u8 *buf, size_t len)
 	*pos++ = MOBILITY_DOMAIN_ID_LEN + 1;
 	os_memcpy(pos, conf->mobility_domain, MOBILITY_DOMAIN_ID_LEN);
 	pos += MOBILITY_DOMAIN_ID_LEN;
-	capab = RSN_FT_CAPAB_FT_OVER_AIR | RSN_FT_CAPAB_FT_OVER_DS;
+	capab = RSN_FT_CAPAB_FT_OVER_DS;
 	*pos++ = capab;
 
 	return pos - buf;
@@ -294,7 +294,7 @@ static int wpa_ft_pull_pmk_r1(struct wpa_authenticator *wpa_auth,
 		   "address " MACSTR, MAC2STR(r0kh->addr));
 
 	os_memset(&frame, 0, sizeof(frame));
-	frame.version = FT_RRB_VERSION;
+	frame.frame_type = RSN_REMOTE_FRAME_TYPE_FT_RRB;
 	frame.packet_type = FT_PACKET_R0KH_R1KH_PULL;
 	frame.data_length = host_to_le16(FT_R0KH_R1KH_PULL_DATA_LEN);
 	os_memcpy(frame.ap_address, wpa_auth->addr, ETH_ALEN);
@@ -953,7 +953,7 @@ int wpa_ft_action_rx(struct wpa_state_machine *sm, const u8 *data, size_t len)
 
 	/* RRB - Forward action frame to the target AP */
 	frame = os_malloc(sizeof(*frame) + len);
-	frame->version = FT_RRB_VERSION;
+	frame->frame_type = RSN_REMOTE_FRAME_TYPE_FT_RRB;
 	frame->packet_type = FT_PACKET_REQUEST;
 	frame->action_length = host_to_le16(len);
 	os_memcpy(frame->ap_address, sm->wpa_auth->addr, ETH_ALEN);
@@ -1003,7 +1003,7 @@ static int wpa_ft_rrb_rx_request(struct wpa_authenticator *wpa_auth,
 	rlen = 2 + 2 * ETH_ALEN + 2 + resp_ies_len;
 
 	frame = os_malloc(sizeof(*frame) + rlen);
-	frame->version = FT_RRB_VERSION;
+	frame->frame_type = RSN_REMOTE_FRAME_TYPE_FT_RRB;
 	frame->packet_type = FT_PACKET_RESPONSE;
 	frame->action_length = host_to_le16(rlen);
 	os_memcpy(frame->ap_address, wpa_auth->addr, ETH_ALEN);
@@ -1074,7 +1074,7 @@ static int wpa_ft_rrb_rx_pull(struct wpa_authenticator *wpa_auth,
 		   MACSTR, MAC2STR(f.r1kh_id), MAC2STR(f.s1kh_id));
 
 	os_memset(&resp, 0, sizeof(resp));
-	resp.version = FT_RRB_VERSION;
+	resp.frame_type = RSN_REMOTE_FRAME_TYPE_FT_RRB;
 	resp.packet_type = FT_PACKET_R0KH_R1KH_RESP;
 	resp.data_length = host_to_le16(FT_R0KH_R1KH_RESP_DATA_LEN);
 	os_memcpy(resp.ap_address, wpa_auth->addr, ETH_ALEN);
@@ -1266,15 +1266,15 @@ int wpa_ft_rrb_rx(struct wpa_authenticator *wpa_auth, const u8 *src_addr,
 	pos += sizeof(*frame);
 
 	alen = le_to_host16(frame->action_length);
-	wpa_printf(MSG_DEBUG, "FT: RRB frame - version=%d packet_type=%d "
+	wpa_printf(MSG_DEBUG, "FT: RRB frame - frame_type=%d packet_type=%d "
 		   "action_length=%d ap_address=" MACSTR,
-		   frame->version, frame->packet_type, alen,
+		   frame->frame_type, frame->packet_type, alen,
 		   MAC2STR(frame->ap_address));
 
-	if (frame->version != FT_RRB_VERSION) {
-		/* Discard frame per IEEE 802.11r/D4.1, 8A.8.3 */
+	if (frame->frame_type != RSN_REMOTE_FRAME_TYPE_FT_RRB) {
+		/* Discard frame per IEEE 802.11r/D8.0, 10A.10.3 */
 		wpa_printf(MSG_DEBUG, "FT: RRB discarded frame with "
-			   "unrecognized version %d", frame->version);
+			   "unrecognized type %d", frame->frame_type);
 		return -1;
 	}
 
@@ -1372,7 +1372,7 @@ static void wpa_ft_generate_pmk_r1(struct wpa_authenticator *wpa_auth,
 	struct os_time now;
 
 	os_memset(&frame, 0, sizeof(frame));
-	frame.version = FT_RRB_VERSION;
+	frame.frame_type = RSN_REMOTE_FRAME_TYPE_FT_RRB;
 	frame.packet_type = FT_PACKET_R0KH_R1KH_PUSH;
 	frame.data_length = host_to_le16(FT_R0KH_R1KH_PUSH_DATA_LEN);
 	os_memcpy(frame.ap_address, wpa_auth->addr, ETH_ALEN);
