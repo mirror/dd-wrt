@@ -1205,6 +1205,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
 
 	  for (i = 0; i < strlen (realname); i++)
 	    realname[i] = tolower (realname[i]);
+	  eval("insmod","ipt_layer7");
 	  save2file ("-A advgrp_%d -m layer7 --l7proto %s -j %s\n",
 		     seq, realname, log_drop);
 	}
@@ -1237,7 +1238,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
 	    proto = "waste";
 	  else if (!strcasecmp (realname, "xdcc"))
 	    proto = "xdcc";
-
+	eval("insmod","ipt_ipp2p");
 	  save2file ("-A advgrp_%d -p tcp -m ipp2p --%s -j %s\n", seq, proto,
 		     log_drop);
 
@@ -1248,6 +1249,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
   /* p2p catchall */
   if (nvram_match (nvname, "1"))
     {
+     eval("insmod","ipt_ipp2p");
       save2file ("-A advgrp_%d -p tcp -m ipp2p --ipp2p -j %s\n", seq,
 		 log_drop);
     }
@@ -1256,6 +1258,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
   wordlist = nvram_safe_get (nvname);
   if (strcmp (wordlist, ""))
     {
+      eval("insmod","ipt_webstr");
       save2file ("-A advgrp_%d -p tcp -m tcp -m webstr --host \"%s\" -j %s\n",
 		 seq, wordlist, log_reject);
     }
@@ -1264,6 +1267,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
   wordlist = nvram_safe_get (nvname);
   if (strcmp (wordlist, ""))
     {
+      eval("insmod","ipt_webstr");
       save2file ("-A advgrp_%d -p tcp -m tcp -m webstr --url \"%s\" -j %s\n",
 		 seq, wordlist, log_reject);
     }
@@ -1768,10 +1772,12 @@ filter_forward (void)
 //             "-m webstr --content %d -j %s\n",
 //             lanface, wanface, HTTP_PORT, webfilter, log_reject);
   if (webfilter)
+  {  
+    eval("insmod","ipt_webstr");
     save2file ("-A FORWARD -i %s -o %s -p tcp -m tcp "
 	       "-m webstr --content %d -j %s\n",
 	       lanface, wanface, webfilter, log_reject);
-
+  }
   /* Filter setting by user definition */
 //  save2file ("-A FORWARD -i %s -j lan2wan\n", lanface);
   save2file ("-A FORWARD -j lan2wan\n");
@@ -2719,7 +2725,24 @@ stop_firewall (void)
     sprintf (buf, "/usr/sbin/iptables -D INPUT -s %s -j ACCEPT", var);
     system2 (buf);
   }
-
+  char num[32];
+  int i;
+  for (i=0;i<10;i++)
+    {
+    eval("iptables","-F","lan2wan");
+    sprintf(num,"grp_%d",i);
+    eval("iptables","-F",num);
+    sprintf(num,"advgrp_%d",i);
+    eval("iptables","-F",num);
+    }
+  eval("rmmod","ipt_webstr");
+  eval("rmmod","ipt_layer7");
+  eval("rmmod","ipt_ipp2p");
+  eval("rmmod","ipt_mark");
+  eval("rmmod","ipt_TRIGGER");
+  eval("rmmod","ipt_CONNMARK");
+  eval("rmmod","ipt_mac");
+  eval("rmmod","ipt_IMQ");
   cprintf ("done\n");
   return 0;
 }

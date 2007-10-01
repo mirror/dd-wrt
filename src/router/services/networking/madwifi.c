@@ -1283,6 +1283,29 @@ configure_single (int count)
       sprintf (mode, "%s_mode", var);
       m = default_get (mode, "ap");
 
+      if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
+	{
+	  cprintf ("set channel\n");
+	  char *ch = default_get (channel, "0");
+	  if (strcmp (ch, "0") == 0)
+	    {
+	      eval ("iwpriv", var, "scandisable", "0");
+	      eval ("iwconfig", var, "channel", "0");
+	    }
+	  else
+	    {
+	      char freq[64];
+	      sprintf (freq, "%sM", ch);
+	      eval ("iwpriv", var, "scandisable", "1");
+	      disablescan = 1;
+	      eval ("iwconfig", var, "freq", freq);
+	    }
+	}
+      else
+	{
+	  set_scanlist (dev, wif);
+	}
+
       eval ("iwpriv", var, "bgscan", "0");
 #ifdef HAVE_MAKSAT
       eval ("iwconfig", var, "essid", default_get (ssid, "maksat_vap"));
