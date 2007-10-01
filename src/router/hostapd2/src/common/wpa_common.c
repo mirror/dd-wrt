@@ -396,7 +396,7 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 /**
  * wpa_derive_pmk_r0 - Derive PMK-R0 and PMKR0Name
  *
- * IEEE 802.11r/D5.0 - 8.5.1.5.3
+ * IEEE 802.11r/D8.0 - 8.5.1.5.3
  */
 void wpa_derive_pmk_r0(const u8 *xxkey, size_t xxkey_len,
 		       const u8 *ssid, size_t ssid_len,
@@ -410,7 +410,7 @@ void wpa_derive_pmk_r0(const u8 *xxkey, size_t xxkey_len,
 	size_t len[2];
 
 	/*
-	 * R0-Key-Data = KDF-384(XXKey, "R0 Key Derivation",
+	 * R0-Key-Data = KDF-384(XXKey, "FT-R0",
 	 *                       SSIDlength || SSID || MDID || R0KHlength ||
 	 *                       R0KH-ID || S0KH-ID)
 	 * XXKey is either the second 256 bits of MSK or PSK.
@@ -431,15 +431,15 @@ void wpa_derive_pmk_r0(const u8 *xxkey, size_t xxkey_len,
 	os_memcpy(pos, s0kh_id, ETH_ALEN);
 	pos += ETH_ALEN;
 
-	sha256_prf(xxkey, xxkey_len, "R0 Key Derivation", buf, pos - buf,
+	sha256_prf(xxkey, xxkey_len, "FT-R0", buf, pos - buf,
 		   r0_key_data, sizeof(r0_key_data));
 	os_memcpy(pmk_r0, r0_key_data, PMK_LEN);
 
 	/*
-	 * PMKR0Name = Truncate-128(SHA-256("R0 Key Name" || PMK-R0Name-Salt)
+	 * PMKR0Name = Truncate-128(SHA-256("FT-R0" || PMK-R0Name-Salt)
 	 */
-	addr[0] = (const u8 *) "R0 Key Name";
-	len[0] = 11;
+	addr[0] = (const u8 *) "FT-R0";
+	len[0] = 5;
 	addr[1] = r0_key_data + PMK_LEN;
 	len[1] = 16;
 
@@ -451,7 +451,7 @@ void wpa_derive_pmk_r0(const u8 *xxkey, size_t xxkey_len,
 /**
  * wpa_derive_pmk_r1_name - Derive PMKR1Name
  *
- * IEEE 802.11r/D5.0 - 8.5.1.5.4
+ * IEEE 802.11r/D8.0 - 8.5.1.5.4
  */
 void wpa_derive_pmk_r1_name(const u8 *pmk_r0_name, const u8 *r1kh_id,
 			    const u8 *s1kh_id, u8 *pmk_r1_name)
@@ -461,11 +461,11 @@ void wpa_derive_pmk_r1_name(const u8 *pmk_r0_name, const u8 *r1kh_id,
 	size_t len[4];
 
 	/*
-	 * PMKR1Name = Truncate-128(SHA-256("R1 Key Name" || PMKR0Name ||
+	 * PMKR1Name = Truncate-128(SHA-256("FT-R1" || PMKR0Name ||
 	 *                                  R1KH-ID || S1KH-ID))
 	 */
-	addr[0] = (const u8 *) "R1 Key Name";
-	len[0] = 11;
+	addr[0] = (const u8 *) "FT-R1";
+	len[0] = 5;
 	addr[1] = pmk_r0_name;
 	len[1] = WPA_PMK_NAME_LEN;
 	addr[2] = r1kh_id;
@@ -481,7 +481,7 @@ void wpa_derive_pmk_r1_name(const u8 *pmk_r0_name, const u8 *r1kh_id,
 /**
  * wpa_derive_pmk_r1 - Derive PMK-R1 and PMKR1Name from PMK-R0
  *
- * IEEE 802.11r/D5.0 - 8.5.1.5.4
+ * IEEE 802.11r/D8.0 - 8.5.1.5.4
  */
 void wpa_derive_pmk_r1(const u8 *pmk_r0, const u8 *pmk_r0_name,
 		       const u8 *r1kh_id, const u8 *s1kh_id,
@@ -490,15 +490,14 @@ void wpa_derive_pmk_r1(const u8 *pmk_r0, const u8 *pmk_r0_name,
 	u8 buf[FT_R1KH_ID_LEN + ETH_ALEN];
 	u8 *pos;
 
-	/* PMK-R1 = KDF-256(PMK-R0, "R1 Key Derivation", R1KH-ID || S1KH-ID) */
+	/* PMK-R1 = KDF-256(PMK-R0, "FT-R1", R1KH-ID || S1KH-ID) */
 	pos = buf;
 	os_memcpy(pos, r1kh_id, FT_R1KH_ID_LEN);
 	pos += FT_R1KH_ID_LEN;
 	os_memcpy(pos, s1kh_id, ETH_ALEN);
 	pos += ETH_ALEN;
 
-	sha256_prf(pmk_r0, PMK_LEN, "R1 Key Derivation", buf, pos - buf,
-		   pmk_r1, PMK_LEN);
+	sha256_prf(pmk_r0, PMK_LEN, "FT-R1", buf, pos - buf, pmk_r1, PMK_LEN);
 
 	wpa_derive_pmk_r1_name(pmk_r0_name, r1kh_id, s1kh_id, pmk_r1_name);
 }
@@ -507,7 +506,7 @@ void wpa_derive_pmk_r1(const u8 *pmk_r0, const u8 *pmk_r0_name,
 /**
  * wpa_pmk_r1_to_ptk - Derive PTK and PTKName from PMK-R1
  *
- * IEEE 802.11r/D5.0 - 8.5.1.5.5
+ * IEEE 802.11r/D8.0 - 8.5.1.5.5
  */
 void wpa_pmk_r1_to_ptk(const u8 *pmk_r1, const u8 *snonce, const u8 *anonce,
 		       const u8 *sta_addr, const u8 *bssid,
@@ -520,7 +519,7 @@ void wpa_pmk_r1_to_ptk(const u8 *pmk_r1, const u8 *snonce, const u8 *anonce,
 	size_t len[6];
 
 	/*
-	 * PTK = KDF-PTKLen(PMK-R1, "PTK Key derivation", SNonce || ANonce ||
+	 * PTK = KDF-PTKLen(PMK-R1, "FT-PTK", SNonce || ANonce ||
 	 *                  BSSID || STA-ADDR)
 	 */
 	pos = buf;
@@ -533,17 +532,16 @@ void wpa_pmk_r1_to_ptk(const u8 *pmk_r1, const u8 *snonce, const u8 *anonce,
 	os_memcpy(pos, sta_addr, ETH_ALEN);
 	pos += ETH_ALEN;
 
-	sha256_prf(pmk_r1, PMK_LEN, "PTK Key derivation", buf, pos - buf,
-		   ptk, ptk_len);
+	sha256_prf(pmk_r1, PMK_LEN, "FT-PTK", buf, pos - buf, ptk, ptk_len);
 
 	/*
-	 * PTKName = Truncate-128(SHA-256(PMKR1Name || "PTK Name" || SNonce ||
+	 * PTKName = Truncate-128(SHA-256(PMKR1Name || "FT-PTK" || SNonce ||
 	 *                                ANonce || BSSID || STA-ADDR))
 	 */
 	addr[0] = pmk_r1_name;
 	len[0] = WPA_PMK_NAME_LEN;
-	addr[1] = (const u8 *) "PTK Name";
-	len[1] = 8;
+	addr[1] = (const u8 *) "FT-PTK";
+	len[1] = 6;
 	addr[2] = snonce;
 	len[2] = WPA_NONCE_LEN;
 	addr[3] = anonce;

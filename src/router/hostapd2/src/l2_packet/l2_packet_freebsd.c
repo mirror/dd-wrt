@@ -14,6 +14,9 @@
  */
 
 #include "includes.h"
+#ifdef __APPLE__
+#include <net/bpf.h>
+#endif /* __APPLE__ */
 #include <pcap.h>
 
 #include <sys/ioctl.h>
@@ -136,7 +139,6 @@ static int l2_packet_init_libpcap(struct l2_packet_data *l2,
 	}
 
 	pcap_freecode(&pcap_fp);
-#ifndef __APPLE__
 	/*
 	 * When libpcap uses BPF we must enable "immediate mode" to
 	 * receive frames right away; otherwise the system may
@@ -151,7 +153,6 @@ static int l2_packet_init_libpcap(struct l2_packet_data *l2,
 			/* XXX should we fail? */
 		}
 	}
-#endif /* !__APPLE__ */
 
 	eloop_register_read_sock(pcap_get_selectable_fd(l2->pcap),
 				 l2_packet_receive, l2, l2->pcap);
@@ -233,8 +234,11 @@ struct l2_packet_data * l2_packet_init(
 void l2_packet_deinit(struct l2_packet_data *l2)
 {
 	if (l2 != NULL) {
-		if (l2->pcap)
+		if (l2->pcap) {
+			eloop_unregister_read_sock(
+				pcap_get_selectable_fd(l2->pcap));
 			pcap_close(l2->pcap);
+		}
 		os_free(l2);
 	}
 }

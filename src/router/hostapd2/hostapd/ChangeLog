@@ -8,6 +8,15 @@ ChangeLog for hostapd
 	  have a suitable TLS library and a minimal code size is required
 	* added support for EAP-FAST server method to the integrated EAP
 	  server
+	* updated EAP Generalized Pre-Shared Key (EAP-GPSK) to use the latest
+	  draft (draft-ietf-emu-eap-gpsk-06.txt)
+	* added a new configuration parameter, rsn_pairwise, to allow different
+	  pairwise cipher suites to be enabled for WPA and RSN/WPA2
+	  (note: if wpa_pairwise differs from rsn_pairwise, the driver will
+	  either need to support this or will have to use the WPA/RSN IEs from
+	  hostapd; currently, the included madwifi and bsd driver interfaces do
+	  not have support for this)
+	* updated FT support to use the latest draft, IEEE 802.11r/D8.0
 
 2007-05-28 - v0.6.0
 	* added experimental IEEE 802.11r/D6.0 support

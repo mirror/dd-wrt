@@ -460,8 +460,7 @@ static void ieee80211_authenticate(struct wpa_supplicant *wpa_s)
 			mdie = (struct rsn_mdie *) (bss->mdie + 2);
 		if (mdie &&
 		    os_memcmp(mdie->mobility_domain, wpa_s->mlme.current_md,
-			      MOBILITY_DOMAIN_ID_LEN) == 0 &&
-		    (mdie->ft_capab & RSN_FT_CAPAB_FT_OVER_AIR)) {
+			      MOBILITY_DOMAIN_ID_LEN) == 0) {
 			wpa_printf(MSG_DEBUG, "MLME: Trying to use FT "
 				   "over-the-air");
 			wpa_s->mlme.auth_alg = WLAN_AUTH_FT;
@@ -586,15 +585,14 @@ static void ieee80211_send_assoc(struct wpa_supplicant *wpa_s)
 	    wpa_s->mlme.auth_alg != WLAN_AUTH_FT &&
 	    bss && bss->mdie &&
 	    bss->mdie_len >= 2 + sizeof(struct rsn_mdie) &&
-	    bss->mdie[1] >= sizeof(struct rsn_mdie) &&
-	    bss->mdie[2 + MOBILITY_DOMAIN_ID_LEN] & RSN_FT_CAPAB_FT_OVER_AIR) {
+	    bss->mdie[1] >= sizeof(struct rsn_mdie)) {
 		pos = buf + blen;
 		blen += 2 + sizeof(struct rsn_mdie);
 		*pos++ = WLAN_EID_MOBILITY_DOMAIN;
 		*pos++ = sizeof(struct rsn_mdie);
 		os_memcpy(pos, bss->mdie + 2, MOBILITY_DOMAIN_ID_LEN);
 		pos += MOBILITY_DOMAIN_ID_LEN;
-		*pos++ = RSN_FT_CAPAB_FT_OVER_AIR;
+		*pos++ = 0; /* FIX: copy from the target AP's MDIE */
 	}
 
 	if ((wpa_s->mlme.key_mgmt == KEY_MGMT_FT_802_1X ||

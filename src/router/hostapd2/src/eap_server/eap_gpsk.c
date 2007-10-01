@@ -1,5 +1,5 @@
 /*
- * hostapd / EAP-GPSK (draft-ietf-emu-eap-gpsk-04.txt) server
+ * hostapd / EAP-GPSK (draft-ietf-emu-eap-gpsk-06.txt) server
  * Copyright (c) 2006-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -84,17 +84,17 @@ static void * eap_gpsk_init(struct eap_sm *sm)
 	data->csuite_count = 0;
 	if (eap_gpsk_supported_ciphersuite(EAP_GPSK_VENDOR_IETF,
 					   EAP_GPSK_CIPHER_AES)) {
-		WPA_PUT_BE24(data->csuite_list[data->csuite_count].vendor,
+		WPA_PUT_BE32(data->csuite_list[data->csuite_count].vendor,
 			     EAP_GPSK_VENDOR_IETF);
-		WPA_PUT_BE24(data->csuite_list[data->csuite_count].specifier,
+		WPA_PUT_BE16(data->csuite_list[data->csuite_count].specifier,
 			     EAP_GPSK_CIPHER_AES);
 		data->csuite_count++;
 	}
 	if (eap_gpsk_supported_ciphersuite(EAP_GPSK_VENDOR_IETF,
 					   EAP_GPSK_CIPHER_SHA256)) {
-		WPA_PUT_BE24(data->csuite_list[data->csuite_count].vendor,
+		WPA_PUT_BE32(data->csuite_list[data->csuite_count].vendor,
 			     EAP_GPSK_VENDOR_IETF);
-		WPA_PUT_BE24(data->csuite_list[data->csuite_count].specifier,
+		WPA_PUT_BE16(data->csuite_list[data->csuite_count].specifier,
 			     EAP_GPSK_CIPHER_SHA256);
 		data->csuite_count++;
 	}
@@ -192,8 +192,8 @@ static u8 * eap_gpsk_build_gpsk_3(struct eap_sm *sm,
 	memcpy(pos, data->rand_server, EAP_GPSK_RAND_LEN);
 	pos += EAP_GPSK_RAND_LEN;
 	csuite = (struct eap_gpsk_csuite *) pos;
-	WPA_PUT_BE24(csuite->vendor, data->vendor);
-	WPA_PUT_BE24(csuite->specifier, data->specifier);
+	WPA_PUT_BE32(csuite->vendor, data->vendor);
+	WPA_PUT_BE16(csuite->specifier, data->specifier);
 	pos += sizeof(*csuite);
 
 	/* no PD_Payload_2 */
@@ -396,13 +396,13 @@ static void eap_gpsk_process_gpsk_2(struct eap_sm *sm,
 	if (i == data->csuite_count) {
 		wpa_printf(MSG_DEBUG, "EAP-GPSK: Peer selected unsupported "
 			   "ciphersuite %d:%d",
-			   WPA_GET_BE24(csuite->vendor),
-			   WPA_GET_BE24(csuite->specifier));
+			   WPA_GET_BE32(csuite->vendor),
+			   WPA_GET_BE16(csuite->specifier));
 		eap_gpsk_state(data, FAILURE);
 		return;
 	}
-	data->vendor = WPA_GET_BE24(csuite->vendor);
-	data->specifier = WPA_GET_BE24(csuite->specifier);
+	data->vendor = WPA_GET_BE32(csuite->vendor);
+	data->specifier = WPA_GET_BE16(csuite->specifier);
 	wpa_printf(MSG_DEBUG, "EAP-GPSK: CSuite_Sel %d:%d",
 		   data->vendor, data->specifier);
 	pos += sizeof(*csuite);	

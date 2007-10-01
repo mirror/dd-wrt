@@ -349,6 +349,7 @@ struct wpa_supplicant {
 
 	struct wpa_client_mlme mlme;
 	int use_client_mlme;
+	int driver_4way_handshake;
 };
 
 

@@ -1380,6 +1380,7 @@ static void wext_get_scan_custom(struct iw_event *iwe,
 			wpa_printf(MSG_INFO, "Invalid TSF length (%d)", bytes);
 			return;
 		}
+		bytes /= 2;
 		hexstr2bin(spos, bin, bytes);
 		res->tsf += WPA_GET_BE64(bin);
 	}

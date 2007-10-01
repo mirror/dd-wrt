@@ -107,7 +107,7 @@ void hmac_sha256(const u8 *key, size_t key_len, const u8 *data,
 
 
 /**
- * sha256_prf - SHA256-based Pseudo-Random Function (IEEE 802.11r, 8.5a.3)
+ * sha256_prf - SHA256-based Pseudo-Random Function (IEEE 802.11r, 8.5.1.5.2)
  * @key: Key for PRF
  * @key_len: Length of the key in bytes
  * @label: A unique label for each purpose of the PRF
@@ -132,7 +132,7 @@ void sha256_prf(const u8 *key, size_t key_len, const char *label,
 	addr[0] = counter_le;
 	len[0] = 2;
 	addr[1] = (u8 *) label;
-	len[1] = os_strlen(label) + 1;
+	len[1] = os_strlen(label);
 	addr[2] = data;
 	len[2] = data_len;
 	addr[3] = length_le;

@@ -1,6 +1,6 @@
 /*
  * Testing tool for X.509v3 routines
- * Copyright (c) 2006, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2006-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -15,8 +15,8 @@
 #include "includes.h"
 
 #include "common.h"
-#include "asn1.h"
-#include "x509v3.h"
+#include "tls/asn1.h"
+#include "tls/x509v3.h"
 
 extern int wpa_debug_level;
 
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 			return -1;
 		}
 
-		cert = x509_certificate_parse(buf, len);
+		cert = x509_certificate_parse((u8 *) buf, len);
 		if (cert == NULL) {
 			printf("Failed to parse X.509 certificate\n");
 			return -1;

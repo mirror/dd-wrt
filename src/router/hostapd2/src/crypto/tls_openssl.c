@@ -2385,6 +2385,33 @@ static int tls_sess_sec_cb(SSL *s, void *secret, int *secret_len,
 }
 
 
+#ifdef SSL_OP_NO_TICKET
+static void tls_hello_ext_cb(SSL *s, int client_server, int type,
+			     unsigned char *data, int len, void *arg)
+{
+	struct tls_connection *conn = arg;
+
+	if (conn == NULL || conn->session_ticket_cb == NULL)
+		return;
+
+	wpa_printf(MSG_DEBUG, "OpenSSL: %s: type=%d length=%d", __func__,
+		   type, len);
+
+	if (type == TLSEXT_TYPE_session_ticket && !client_server) {
+		os_free(conn->session_ticket);
+		conn->session_ticket = NULL;
+
+		wpa_hexdump(MSG_DEBUG, "OpenSSL: ClientHello SessionTicket "
+			    "extension", data, len);
+		conn->session_ticket = os_malloc(len);
+		if (conn->session_ticket == NULL)
+			return;
+
+		os_memcpy(conn->session_ticket, data, len);
+		conn->session_ticket_len = len;
+	}
+}
+#else /* SSL_OP_NO_TICKET */
 static int tls_hello_ext_cb(SSL *s, TLS_EXTENSION *ext, void *arg)
 {
 	struct tls_connection *conn = arg;
@@ -2411,6 +2438,7 @@ static int tls_hello_ext_cb(SSL *s, TLS_EXTENSION *ext, void *arg)
 
 	return 0;
 }
+#endif /* SSL_OP_NO_TICKET */
 #endif /* EAP_FAST || EAP_FAST_DYNAMIC */
 
 
@@ -2427,14 +2455,24 @@ int tls_connection_set_session_ticket_cb(void *tls_ctx,
 		if (SSL_set_session_secret_cb(conn->ssl, tls_sess_sec_cb,
 					      conn) != 1)
 			return -1;
+#ifdef SSL_OP_NO_TICKET
+		SSL_set_tlsext_debug_callback(conn->ssl, tls_hello_ext_cb);
+		SSL_set_tlsext_debug_arg(conn->ssl, conn);
+#else /* SSL_OP_NO_TICKET */
 		if (SSL_set_hello_extension_cb(conn->ssl, tls_hello_ext_cb,
 					       conn) != 1)
 			return -1;
+#endif /* SSL_OP_NO_TICKET */
 	} else {
 		if (SSL_set_session_secret_cb(conn->ssl, NULL, NULL) != 1)
 			return -1;
+#ifdef SSL_OP_NO_TICKET
+		SSL_set_tlsext_debug_callback(conn->ssl, NULL);
+		SSL_set_tlsext_debug_arg(conn->ssl, conn);
+#else /* SSL_OP_NO_TICKET */
 		if (SSL_set_hello_extension_cb(conn->ssl, NULL, NULL) != 1)
 			return -1;
+#endif /* SSL_OP_NO_TICKET */
 	}
 
 	return 0;

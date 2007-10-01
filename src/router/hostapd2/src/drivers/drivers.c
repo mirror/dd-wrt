@@ -58,6 +58,9 @@ extern struct wpa_driver_ops wpa_driver_test_ops; /* driver_test.c */
 #ifdef CONFIG_DRIVER_RALINK
 extern struct wpa_driver_ops wpa_driver_ralink_ops; /* driver_ralink.c */
 #endif /* CONFIG_DRIVER_RALINK */
+#ifdef CONFIG_DRIVER_OSX
+extern struct wpa_driver_ops wpa_driver_osx_ops; /* driver_osx.m */
+#endif /* CONFIG_DRIVER_OSX */
 
 
 struct wpa_driver_ops *wpa_supplicant_drivers[] =
@@ -104,5 +107,8 @@ struct wpa_driver_ops *wpa_supplicant_drivers[] =
 #ifdef CONFIG_DRIVER_RALINK
 	&wpa_driver_ralink_ops,
 #endif /* CONFIG_DRIVER_RALINK */
+#ifdef CONFIG_DRIVER_OSX
+	&wpa_driver_osx_ops,
+#endif /* CONFIG_DRIVER_OSX */
 	NULL
 };
