@@ -194,7 +194,6 @@ endif
 ifeq ($(CONFIG_CA8),y)
 CFLAGS += -DHAVE_CA8
 endif
-OBJS += wland.o
 ifeq ($(CONFIG_WIVIZ),y)
 OBJS += run_wiviz.o
 OBJS += autokill_wiviz.o
