@@ -810,7 +810,7 @@ int minute = 0;
 #endif
     }
   else if (strstr (base, "wland"))
-    return wland_main (argc, argv);
+    return start_main ("wland", argc, argv);
 //  else if (strstr (base, "write_boot"))
 //    return write_boot ("/tmp/boot.bin", "pmon");
 
