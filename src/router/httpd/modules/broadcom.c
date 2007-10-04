@@ -955,6 +955,29 @@ ej_nvram_else_match (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
+
+
+static void
+ej_nstartswith (webs_t wp, int argc, char_t ** argv)
+{
+  char *name, *match, *output;
+
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s %s %s", &name, &match, &output);
+#else
+  if (ejArgs (argc, argv, "%s %s %s", &name, &match, &output) < 3)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+#endif
+  char *str = nvram_safe_get(name);
+  if (strncmp(str,match,strlen(match)))
+    websWrite (wp, output);
+
+  return;
+}
+
 /*
  * Example:
  * wan_proto=dhcp
@@ -5661,6 +5684,7 @@ struct ej_handler ej_handlers[] = {
 #ifdef HAVE_CHILLI
   {"show_chilliif",ej_show_chilliif},
 #endif
+  {"nstartswith", ej_nstartswith},
   {NULL, NULL}
 };
 #endif /* !WEBS */
