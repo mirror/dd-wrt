@@ -810,6 +810,7 @@ management.lang_spanish="espagnol";
 management.lang_swedish="suédois";
 management.lang_polish="polonais";
 management.lang_japanese="japonais";
+management.lang_hungarian="hongrois";
 management.net_legend="Filtrage IP (modifier pour une utilisation P2P)";
 management.net_port="Nombre de connexions maximum";
 management.net_tcptimeout="TCP Timeout (en secondes)";
