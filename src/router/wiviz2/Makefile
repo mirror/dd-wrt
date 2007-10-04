@@ -4,7 +4,7 @@
 #CC=~/buildroot/staging_dir_mipsel/bin/mipsel-linux-gcc
 include $(TOP)/.config
 
-LIBS=../libpcap_noring/libpcap.a -lnvram -lshared
+LIBS=../libpcap_noring/libpcap.a -lcrypt -lnvram -lshared
 
 CCOPTS=$(COPTS) 
 INCLUDE=../libpcap_noring
@@ -12,7 +12,11 @@ SOURCES=wiviz.c wl_access.c channelhopper.c
 OBJS=wiviz.o wl_access.o channelhopper.o
 TARGET=wiviz
 ifeq ($(CONFIG_MSSID),y)
+ifeq ($(CONFIG_BUFFALO),y)
+CCOPTS	+= -I$(SRCBASE)/include.bcm -L../shared -L../nvram
+else
 CCOPTS	+= -I$(SRCBASE)/include.v24 -L../shared -L../nvram
+endif
 else
 CCOPTS	+= -I$(SRCBASE)/include.v23 -L../shared -L../nvram
 endif
