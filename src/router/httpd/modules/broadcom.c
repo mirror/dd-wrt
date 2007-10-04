@@ -958,7 +958,7 @@ ej_nvram_else_match (webs_t wp, int argc, char_t ** argv)
 
 
 static void
-ej_nstartswith (webs_t wp, int argc, char_t ** argv)
+ej_startswith (webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *output;
 
@@ -972,7 +972,7 @@ ej_nstartswith (webs_t wp, int argc, char_t ** argv)
     }
 #endif
   char *str = nvram_safe_get(name);
-  if (strncmp(str,match,strlen(match)))
+  if (!strncmp(str,match,strlen(match)))
     websWrite (wp, output);
 
   return;
@@ -5684,7 +5684,7 @@ struct ej_handler ej_handlers[] = {
 #ifdef HAVE_CHILLI
   {"show_chilliif",ej_show_chilliif},
 #endif
-  {"nstartswith", ej_nstartswith},
+  {"startswith", ej_startswith},
   {NULL, NULL}
 };
 #endif /* !WEBS */
