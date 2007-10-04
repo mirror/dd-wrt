@@ -810,7 +810,7 @@ start_restore_defaults (void)
 	    {
 	    case ROUTER_LINKSYS_WTR54GS:
 	      nvram_set ("vlan0ports", "0 5*");
-	      break;		    
+	      break;
 	    case ROUTER_ASUS_WL500G_PRE:
 	      nvram_set ("vlan0ports", "1 2 3 4 5*");
 	      break;
@@ -836,12 +836,12 @@ start_restore_defaults (void)
 	    {
 	      switch (brand)
 		{
-	    case ROUTER_LINKSYS_WTR54GS:
-	      nvram_set ("vlan1ports", "1 5");
-	      break;
-	    case ROUTER_ASUS_WL500G_PRE:
-	      nvram_set ("vlan1ports", "0 5");
-	      break;	 
+		case ROUTER_LINKSYS_WTR54GS:
+		  nvram_set ("vlan1ports", "1 5");
+		  break;
+		case ROUTER_ASUS_WL500G_PRE:
+		  nvram_set ("vlan1ports", "0 5");
+		  break;
 		case ROUTER_MOTOROLA:
 		case ROUTER_LINKSYS_WRT55AG:
 		case ROUTER_RT480W:
@@ -1001,36 +1001,6 @@ do_timer (void)
 	if(nvram_get(old)) \
 		nvram_set(new, nvram_safe_get(old));
 
-static void
-to64 (char *s, long v, int n)
-{
-
-  unsigned char itoa64[] =
-    "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
-  while (--n >= 0)
-    {
-      *s++ = itoa64[v & 0x3f];
-      v >>= 6;
-    }
-}
-
-static char *
-zencrypt (char *passwd)
-{
-  char salt[6];
-  struct timeval tv;
-  char *crypt (const char *, const char *);
-
-  gettimeofday (&tv, 0);
-
-  to64 (&salt[0], random (), 3);
-  to64 (&salt[3], tv.tv_usec, 3);
-  salt[5] = '\0';
-
-  return crypt (passwd, salt);
-}
-
 int
 start_nvram (void)
 {
@@ -1160,23 +1130,10 @@ start_nvram (void)
   //dirty fix for WBR2 units
 
 
-  if ((nvram_get ("nvram_ver") == NULL || !nvram_match ("nvram_ver", "2"))
-      && nvram_get ("http_passwd") != NULL)
+  if (strlen (nvram_safe_get ("http_username")) == 0)
     {
-      if (strlen (nvram_safe_get ("http_username")) == 0)
-	nvram_set ("http_username", zencrypt ("root"));
-      if (strlen (nvram_safe_get ("http_passwd")) == 0)
-	nvram_set ("http_passwd", zencrypt ("admin"));
-
-      nvram_set ("http_passwd", zencrypt (nvram_safe_get ("http_passwd")));
       nvram_set ("http_username", zencrypt ("root"));
-      if (nvram_get ("newhttp_passwd") != NULL)
-	{
-	  nvram_set ("newhttp_passwd",
-		     zencrypt (nvram_safe_get ("newhttp_passwd")));
-	  nvram_set ("newhttp_username",
-		     zencrypt (nvram_safe_get ("newhttp_username")));
-	}
+      nvram_set ("http_passwd", zencrypt ("admin"));
     }
 
 #ifdef DIST

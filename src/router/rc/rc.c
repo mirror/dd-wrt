@@ -874,6 +874,8 @@ int minute = 0;
 #endif
   else if (strstr (base, "getbridgeprio"))
     return start_main ("getbridgeprio", argc, argv);
+  else if (strstr (base, "setuserpasswd"))
+    return start_main ("setuserpasswd", argc, argv);
   else if (strstr (base, "getbridge"))
     return start_main ("getbridge", argc, argv);
   else if (strstr (base, "watchdog"))
