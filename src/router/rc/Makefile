@@ -415,6 +415,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc getbridgeprio
 	cd $(INSTALLDIR)/sbin && ln -sf rc ipupdated
 	cd $(INSTALLDIR)/sbin && ln -sf rc redial
+	cd $(INSTALLDIR)/sbin && ln -sf rc setuserpasswd
 	cd $(INSTALLDIR)/usr/sbin && ln -sf /sbin/rc nvram
 	cd $(INSTALLDIR)/sbin && ln -sf rc hb_connect
 	cd $(INSTALLDIR)/sbin && ln -sf rc hb_disconnect

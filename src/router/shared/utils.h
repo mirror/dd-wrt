@@ -252,6 +252,7 @@ extern void set_host_domain_name (void);
 
 extern void encode (char *buf, int len);
 extern void decode (char *buf, int len);
+extern char * zencrypt (char *passwd);
 
 extern int led_control (int type, int act);
 enum

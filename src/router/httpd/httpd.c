@@ -187,35 +187,6 @@ initialize_listen_socket (usockaddr * usaP)
     }
   return listen_fd;
 }
-static void
-to64 (char *s, long v, int n)
-{
-
-  unsigned char itoa64[] =
-    "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
-  while (--n >= 0)
-    {
-      *s++ = itoa64[v & 0x3f];
-      v >>= 6;
-    }
-}
-
-char *
-zencrypt (char *passwd)
-{
-  char salt[6];
-  struct timeval tv;
-  char *crypt (const char *, const char *);
-
-  gettimeofday (&tv, 0);
-
-  to64 (&salt[0], random (), 3);
-  to64 (&salt[3], tv.tv_usec, 3);
-  salt[5] = '\0';
-
-  return crypt (passwd, salt);
-}
 
 static int
 auth_check (char *dirname, char *authorization)
