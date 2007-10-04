@@ -311,7 +311,7 @@ clean:
 
 libshared.so: $(OBJS)
 #	$(CC) -shared -o $@ $(CFLAGS) $(OBJS) 
-	$(CC) -shared $(CFLAGS) -o $@ $^ -L../nvram -lnvram
+	$(CC) -shared $(CFLAGS) -o $@ $^ -L../nvram -lcrypt -lnvram
 
 libshared.a: $(OBJS)
 	$(AR) arc -o  $@ $^
