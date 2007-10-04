@@ -880,6 +880,7 @@ management.lang_slovenian="slovenian";
 management.lang_spanish="spanish";
 management.lang_swedish="swedish";
 management.lang_japanese="japanese";
+management.lang_hungarian="hungarian";
 management.net_legend="IP Filter Settings (adjust these for P2P)";
 management.net_port="Maximum Ports";
 management.net_tcptimeout="TCP Timeout (in seconds)";
