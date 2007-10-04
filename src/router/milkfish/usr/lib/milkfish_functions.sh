@@ -120,7 +120,7 @@ mf_router_status () {
     echo "$(openserctl fifo t_stats)"
     echo ""
     echo "NVRAM:"
-    echo "$(nvram get sip_domain | awk '{print "SIP_DOMAIN: " $1}';)"
+    echo "$(nvram get milkfish_fromdomain | awk '{print "SIP_DOMAIN: " $1}';)"
     echo "$( nvram get openser_cfg | awk '{print "OPENSER_CFG: " $1}';)"
     echo ""
     echo "Processes (first receiver process per IP:port):"
@@ -415,7 +415,7 @@ mf_phonebook_htmltable () {
 }
 
 mf_sipdb_adduser () {
-    dbtextctl add $1 $2 $(nvram get sip_domain) &&\
+    dbtextctl add $1 $2 $(nvram get milkfish_fromdomain) &&\
     milkfish_services audit openser noexit &&\
     openserctl stop && sleep 3 && openserctl start
 }
@@ -493,8 +493,8 @@ mf_sipdb_restorenvdd () {
     [ -d /var/openser/dbtext ] &&\
     mf_feedback "Restoring SIP ddsubscriber database from NVRAM..."
     if [ ! -z "$(nvram get milkfish_ddsubscribers)" ]; then 
-	nvram get milkfish_ddsubscribers | tr ' ' '\n' | awk -F : '{print "dbtextctl add " $1 " " $2 " " "$(nvram get sip_domain)"}'
-	nvram get milkfish_ddsubscribers | tr ' ' '\n' | awk -F : '{print "dbtextctl add " $1 " " $2 " " "$(nvram get sip_domain)"}' > /tmp/restorenvdd.sh
+	nvram get milkfish_ddsubscribers | tr ' ' '\n' | awk -F : '{print "dbtextctl add " $1 " " $2 " " "$(nvram get milkfish_fromdomain)"}'
+	nvram get milkfish_ddsubscribers | tr ' ' '\n' | awk -F : '{print "dbtextctl add " $1 " " $2 " " "$(nvram get milkfish_fromdomain)"}' > /tmp/restorenvdd.sh
 	[ -e /tmp/restorenvdd.sh ] && chmod +x /tmp/restorenvdd.sh && /tmp/restorenvdd.sh && rm /tmp/restorenvdd.sh
 	echo "Done."
     else
@@ -580,12 +580,12 @@ mf_simple () {
 MESSAGE
 $1
 .
-From: sip:mf@$(nvram get sip_domain)
+From: sip:mf@$(nvram get milkfish_fromdomain)
 To: $1
 foo: bar_special_header
 x: y
 p_header: p_value
-Contact: <sip:devnull@$(nvram get sip_domain):9>
+Contact: <sip:devnull@$(nvram get milkfish_fromdomain):9>
 Content-Type: text/plain; charset=UTF-8" > /tmp/msg;
     echo "." >> /tmp/msg;
     cat /tmp/sipmessage >> /tmp/msg
