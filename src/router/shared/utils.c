@@ -94,7 +94,8 @@ getcpurev (void)
 int
 startswith (char *source, char *cmp)
 {
-  int i;
+return !strncmp(source,cmp,strlen(cmp));
+/*  int i;
   if (cmp == NULL)
     return 0;
   if (source == NULL)
@@ -107,7 +108,7 @@ startswith (char *source, char *cmp)
   for (i = 0; i < clen; i++)
     if (source[i] != cmp[i])
       return 0;
-  return 1;
+  return 1;*/
 }
 
 
