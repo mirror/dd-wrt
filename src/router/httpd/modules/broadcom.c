@@ -971,8 +971,7 @@ ej_startswith (webs_t wp, int argc, char_t ** argv)
       return;
     }
 #endif
-  char *str = nvram_safe_get(name);
-  if (!strncmp(str,match,strlen(match)))
+  if (startswith(nvram_safe_get(name),match,strlen(match)))
     websWrite (wp, output);
 
   return;
