@@ -1061,6 +1061,15 @@ ej_ifndef (webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_ACK
   if (!strcmp(name, "ACK")) return;
 #endif
+#ifdef HAVE_SAMBA
+  if (!strcmp(name, "SAMBA")) return;
+#endif
+#ifdef HAVE_JFFS2
+  if (!strcmp(name, "JFFS2")) return;
+#endif
+#ifdef HAVE_MMC
+  if (!strcmp(name, "MMC")) return;
+#endif
 // HAVE_AFTERBURNER
   if (!strcmp (name, "AFTERBURNER"))
     {
@@ -1086,7 +1095,7 @@ ej_ifndef (webs_t wp, int argc, char_t ** argv)
 	}
 #endif
     }
-// end HAVE:AFTERBURNER
+// end HAVE_AFTERBURNER
 
   websWrite (wp, output);
 
