@@ -313,7 +313,7 @@ apply();
 								<% nvram_invmatch("wl0_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script><!--"); %><% nvram_match("wl0_radauth","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("wl0_radauth","1","<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvram_invmatch("wl0_mode", "ap", "-->"); %>&nbsp;
 								</div>
 								<% nvram_match("dist_type", "mini", "<!--"); %>
-								<% nvram_match("dist_type", "micro", "<!--"); %>
+								<% ifdef("MICRO", "<!--"); %>
 								<div class="setting">
 									<div class="label">WRT-rflow</div>
 									<% nvram_match("rflow_enable","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("rflow_enable","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
@@ -333,7 +333,7 @@ apply();
 									<% nvram_else_match("apd_enable","0","<script type="text/javascript">Capture(share.disabled)</script>","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 								</div>
 								<% nvram_match("dist_type", "mini", "-->"); %>
-								<% nvram_match("dist_type", "micro", "-->"); %>
+								<% ifdef("MICRO", "-->"); %>
 							</fieldset><br />
 							
 							<fieldset>

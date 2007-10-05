@@ -297,7 +297,7 @@ addEvent(window, "unload", function() {
 									<% nvram_invmatch("wl_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script><!--"); %><% nvram_match("wl_radauth","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("wl_radauth","1","<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvram_invmatch("wl_mode", "ap", "-->"); %>&nbsp;
 								</div>
 								<% nvram_match("dist_type", "mini", "<!--"); %>
-								<% nvram_match("dist_type", "micro", "<!--"); %>
+								<% ifdef("MICRO", "<!--"); %>
 								<div class="setting">
 									<div class="label">WRT-rflow</div>
 									<% nvram_match("rflow_enable","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("rflow_enable","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
@@ -317,13 +317,13 @@ addEvent(window, "unload", function() {
 									<% nvram_else_match("apd_enable","0","<script type="text/javascript">Capture(share.disabled)</script>","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 								</div>
 								<% nvram_match("dist_type", "mini", "-->"); %>
-								<% support_invmatch("RSTAT_SUPPORT","1","<!--"); %>
+								<% ifndef("RSTATS","<!--"); %>
 								<div class="setting">
 									<div class="label">Rstats</div>
 									<% nvram_else_match("rstats_enable","0","<script type="text/javascript">Capture(share.disabled)</script>","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 								</div>
-								<% support_invmatch("RSTAT_SUPPORT","1","-->"); %>
-								<% nvram_match("dist_type", "micro", "-->"); %>
+								<% ifndef("RSTATS","-->"); %>
+								<% ifdef("MICRO", "-->"); %>
 							</fieldset><br />
 							
 							<fieldset>
