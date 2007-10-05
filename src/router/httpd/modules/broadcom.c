@@ -999,6 +999,22 @@ ej_ifdef (webs_t wp, int argc, char_t ** argv)
 	   return;
    }
 #endif 
+  if (!strcmp(name, "MINI"))  //to include mini + mini-special
+  {
+	  if (startswith (nvram_safe_get("dist_type"), "mini"))
+	  {
+		  websWrite (wp, output);    
+		  return;
+	  }
+  }
+  if (!strcmp(name, "VPN"))  //to include vpn + vpn-special
+  {
+	  if (startswith (nvram_safe_get("dist_type"), "vpn"))
+      {
+		  websWrite (wp, output);    
+		  return;
+	  }
+  }
 #ifdef HAVE_MULTICAST
   if (!strcmp(name, "MULTICAST"))
    {
@@ -1048,7 +1064,7 @@ ej_ifndef (webs_t wp, int argc, char_t ** argv)
 
 #ifdef HAVE_MICRO
   if (!strcmp(name, "MICRO")) return;
-#endif 
+#endif
 #ifdef HAVE_MULTICAST
   if (!strcmp(name, "MULTICAST")) return;
 #endif
