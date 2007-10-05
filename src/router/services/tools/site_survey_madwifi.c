@@ -33,6 +33,7 @@
 #include <ctype.h>
 #include <getopt.h>
 #include <err.h>
+#include <shutils.h>
 
 #include "wireless_copy.h"
 #include "net80211/ieee80211.h"
