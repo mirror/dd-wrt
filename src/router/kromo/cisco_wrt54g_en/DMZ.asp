@@ -87,7 +87,7 @@ addEvent(window, "unload", function() {
 							<dt class="term"><% tran("dmz.legend"); %>:</dt>
 							<dd class="definition"><% tran("hdmz.right2"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HDMZ.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HDMZ.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
