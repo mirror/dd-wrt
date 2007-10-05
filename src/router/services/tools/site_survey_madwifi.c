@@ -133,17 +133,8 @@ site_survey_main (int argc, char *argv[])
   char ssid[31];
   unsigned char *cp;
   int len;
-  system2 ("iwlist ath0 scan >/dev/null");
-  char *sta = getSTA ();
-  if (sta == NULL)
-    {
-      sta = getWET ();
-    }
-  if (sta == NULL)
-    {
-      fprintf (stderr, "Site survey not applicable in AP mode\n");
-      return 0;
-    }
+  char *sta = nvram_safe_get("wifi_display");
+  eval ("iwlist",sta,"scan");
   len = do80211priv (sta, IEEE80211_IOCTL_SCAN_RESULTS, buf, sizeof (buf));
 
   if (len == -1)
