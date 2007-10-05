@@ -71,7 +71,7 @@ addEvent(window, "unload", function() {
 							<dt class="term"><% tran("p2p.h2"); %>:</dt>
 							<dd class="definition"><% tran("hp2p.right2"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HP2P.asp')"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HP2P.asp')"><% tran("share.more"); %></a>
 					</div>
 					-->
 				</div>

@@ -527,7 +527,7 @@ addEvent(window, "unload", function() {
 							<dd class="definition"><% tran("hfilter.right16"); %></dd>
 						</dl>
 						<br />
-						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HFilters.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HFilters.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

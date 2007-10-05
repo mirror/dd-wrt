@@ -473,7 +473,7 @@ addEvent(window, "unload", function() {
 							<dt class="term"><% tran("ddns.forceupd"); %>:</dt>
 							<dd class="definition"><% tran("hddns.right4"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HDDNS.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HDDNS.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

@@ -233,7 +233,7 @@ addEvent(window, "unload", function() {
 						<dd class="definition"><% tran("hwl_basic.right4"); %></dd>
 <% support_invmatch("ACK","1","-->"); %>
 					</dl><br />
-					<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HWireless.asp')"><% tran("share.more"); %></a>
+					<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HWireless.asp')"><% tran("share.more"); %></a>
 				</div>
 			</div>
 			<div id="floatKiller"></div>
