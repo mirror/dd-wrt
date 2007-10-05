@@ -375,6 +375,7 @@ ifneq ($(CONFIG_MILKFISH),y)
 	rm -f $(INSTALLDIR)/www/Milkfish_database.asp
 	rm -f $(INSTALLDIR)/www/Milkfish_messaging.asp
 	rm -f $(INSTALLDIR)/www/help/HMilkfish.asp
+	rm -f $(INSTALLDIR)/www/images/sipwerk.png
 endif
 ifneq ($(CONFIG_EOP_TUNNEL),y)
 	rm -f $(INSTALLDIR)/www/help/HEoIP.asp
