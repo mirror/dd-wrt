@@ -228,10 +228,10 @@ addEvent(window, "unload", function() {
 					<dl>
 						<dt class="term"><% tran("wl_basic.label2"); %>:</dt>
 						<dd class="definition"><% tran("hwl_basic.right2"); %></dd>
-<% support_invmatch("ACK","1","<!--"); %>
+<% ifndef("ACK", "<!--"); %>
 						<dt class="term"><% tran("hwl_basic.right3"); %></dt>
 						<dd class="definition"><% tran("hwl_basic.right4"); %></dd>
-<% support_invmatch("ACK","1","-->"); %>
+<% ifndef("ACK", "-->"); %>
 					</dl><br />
 					<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HWireless.asp')"><% tran("share.more"); %></a>
 				</div>
