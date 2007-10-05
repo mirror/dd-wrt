@@ -180,7 +180,7 @@ addEvent(window, "unload", function() {
 							<dt class="term"><% tran("hwl_basic.right3"); %></dt>
 							<dd class="definition"><% tran("hwl_basic.right4"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HWireless.asp')"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HWireless.asp')"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

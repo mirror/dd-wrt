@@ -70,7 +70,7 @@ function to_submit(F) {
 			<div id="helpContainer">
 				<div id="help">
 					<div><h2><% tran("share.help"); %></h2></div>
-					<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HSuperChannel.asp')"><% tran("share.more"); %></a>
+					<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HSuperChannel.asp')"><% tran("share.more"); %></a>
 				</div>
 			</div>
 			<div id="floatKiller"></div>

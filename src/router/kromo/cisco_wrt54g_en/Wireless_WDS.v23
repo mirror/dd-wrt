@@ -463,7 +463,7 @@ document.write("<option value='<% nvram_selmatch("wl_br1_nat", "2", "selected");
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
 						<br />
-						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HWDS.asp')"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HWDS.asp')"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

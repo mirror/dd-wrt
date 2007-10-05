@@ -131,11 +131,11 @@ addEvent(window, "unload", function() {
 											<input class="spaceradio" type="checkbox" value="1" name="_block_wan" <% nvram_checked("block_wan", "1"); %> /><% tran("firewall.ping"); %>
 										</div>
 										
-										<% support_invmatch("MULTICAST_SUPPORT", "1", "<!--"); %>
+										<% ifndef("MULTICAST", "<!--"); %>
 										<div class="setting">
 											<input class="spaceradio" type="checkbox" value="1" name="_block_multicast" <% nvram_checked("block_multicast", "1"); %> /><% tran("firewall.muticast"); %>
 										</div>
-										<% support_invmatch("MULTICAST_SUPPORT", "1", "-->"); %>
+										<% ifndef("MULTICAST", "-->"); %>
 										
 										<div class="setting">
 											<input class="spaceradio" type="checkbox" value="1" name="_block_loopback" <% nvram_checked("block_loopback", "1"); %> /><% tran("filter.nat"); %>
@@ -236,7 +236,7 @@ addEvent(window, "unload", function() {
 							<dt class="term"><% tran("firewall.legend"); %>:</dt>
 							<dd class="definition"><% tran("hfirewall.right2"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HFirewall.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HFirewall.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 			<div id="floatKiller"></div>

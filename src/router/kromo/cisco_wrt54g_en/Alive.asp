@@ -99,7 +99,7 @@ addEvent(window, "unload", function() {
 							<dt class="term"><% tran("alive.IP"); %>:</dt>
 							<dd class="definition"><% tran("halive.right4"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HAlive.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HAlive.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

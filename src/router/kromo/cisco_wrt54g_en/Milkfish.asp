@@ -245,7 +245,7 @@ addEvent(window, "unload", function() {
                                                         <dd class="definition"><% tran("service.hmilkfish_right16"); %></dd>
                                                 </dl>
 						<br/>
-						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HMilkfish.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HMilkfish.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
