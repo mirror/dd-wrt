@@ -1306,7 +1306,7 @@ configure_single (int count)
 	  set_scanlist (dev, wif);
 	}
 
-      eval ("iwpriv", var, "bgscan", "0");
+//      eval ("iwpriv", var, "bgscan", "0");
 #ifdef HAVE_MAKSAT
       eval ("iwconfig", var, "essid", default_get (ssid, "maksat_vap"));
 #else
@@ -1360,7 +1360,7 @@ configure_single (int count)
 #endif
   cprintf ("set broadcast flag\n");	//hide ssid
   eval ("iwpriv", dev, "hide_ssid", default_get (broadcast, "0"));
-  eval ("iwpriv", dev, "bgscan", "0");
+//  eval ("iwpriv", dev, "bgscan", "0");
   m = default_get (wl, "ap");
 
 
