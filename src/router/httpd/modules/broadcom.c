@@ -977,6 +977,58 @@ ej_startswith (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
+static void
+ej_ifdef (webs_t wp, int argc, char_t ** argv)
+{
+  char *name, *output;
+
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s %s", &name, &output);
+#else
+  if (ejArgs (argc, argv, "%s %s", &name, &output) < 2)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+#endif
+
+#ifdef HAVE_MICRO
+  if (!strcmp(name, "MICRO")) websWrite (wp, output);
+#endif 
+#ifdef HAVE_MULTICAST
+  if (!strcmp(name, "MULTICAST")) websWrite (wp, output);
+#endif
+
+  return;
+}
+
+static void
+ej_ifndef (webs_t wp, int argc, char_t ** argv)
+{
+  char *name, *output;
+
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s %s", &name, &output);
+#else
+  if (ejArgs (argc, argv, "%s %s", &name, &output) < 2)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+#endif
+
+#ifdef HAVE_MICRO
+  if (!strcmp(name, "MICRO")) return;
+#endif 
+#ifdef HAVE_MULTICAST
+  if (!strcmp(name, "MULTICAST")) return;
+#endif
+
+  websWrite (wp, output);
+
+  return;
+}
+
 /*
  * Example:
  * wan_proto=dhcp
@@ -4297,14 +4349,12 @@ ej_do_pagehead (webs_t wp, int argc, char_t ** argv)	//Eko
   websWrite (wp,
 	     "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
 	     live_translate ("lang_charset.set"));
-  if (nvram_invmatch ("dist_type", "micro"))
-    {
+#ifndef HAVE_MICRO
       websWrite (wp,
 		 "\t\t<link rel=\"icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
       websWrite (wp,
 		 "\t\t<link rel=\"shortcut icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
-    }
-
+#endif
   websWrite (wp,
 	     "\t\t<script type=\"text/javascript\" src=\"common.js\"></script>\n");
   websWrite (wp,
@@ -5684,6 +5734,8 @@ struct ej_handler ej_handlers[] = {
   {"show_chilliif",ej_show_chilliif},
 #endif
   {"startswith", ej_startswith},
+  {"ifdef", ej_ifdef},
+  {"ifndef", ej_ifndef},
   {NULL, NULL}
 };
 #endif /* !WEBS */
