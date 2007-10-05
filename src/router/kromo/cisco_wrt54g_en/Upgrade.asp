@@ -115,7 +115,7 @@ addEvent(window, "unload", function() {
 							<dd class="definition"><% tran("hupgrad.right2"); %></dd>
 						</dl>
 						<br/>
-						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HUpgrade.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HUpgrade.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
