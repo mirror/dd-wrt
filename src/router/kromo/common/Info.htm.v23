@@ -317,13 +317,13 @@ addEvent(window, "unload", function() {
 									<% nvram_else_match("apd_enable","0","<script type="text/javascript">Capture(share.disabled)</script>","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 								</div>
 								<% nvram_match("dist_type", "mini", "-->"); %>
+								<% ifdef("MICRO", "-->"); %>
 								<% ifndef("RSTATS","<!--"); %>
 								<div class="setting">
 									<div class="label">Rstats</div>
 									<% nvram_else_match("rstats_enable","0","<script type="text/javascript">Capture(share.disabled)</script>","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 								</div>
 								<% ifndef("RSTATS","-->"); %>
-								<% ifdef("MICRO", "-->"); %>
 							</fieldset><br />
 							
 							<fieldset>
@@ -360,8 +360,7 @@ addEvent(window, "unload", function() {
 							
 							<fieldset>
 								<legend><% tran("status_router.legend6"); %></legend>
-							
-								<% nvram_match("dist_type", "vpn", "<!--"); %>
+				<% ifndef("SAMBA", "<!--"); %>
 									<div class="setting">
 										<div class="label">CIFS</div>
 										<script type="text/javascript">
@@ -371,8 +370,8 @@ addEvent(window, "unload", function() {
 										//]]>
 										</script>
 									</div>
-								<% nvram_match("dist_type", "vpn", "-->"); %>
-								
+				<% ifndef("SAMBA", "-->"); %>
+				<% ifndef("JFFS2", "<!--"); %>
 								<div class="setting">
 									<div class="label">JFFS2</div>
 									<script type="text/javascript">
@@ -382,7 +381,8 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script>
 								</div>
-
+				<% ifndef("JFFS2", "-->"); %>
+				<% ifndef("MMC", "<!--"); %>
 								<div class="setting">
 									<div class="label">MMC</div>
 									<script type="text/javascript">
@@ -392,6 +392,7 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script>
 								</div>
+				<% ifndef("MMC", "-->"); %>
 							</fieldset><br />
 							
 						</div><br clear="all" />
