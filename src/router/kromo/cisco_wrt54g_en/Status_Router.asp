@@ -202,7 +202,7 @@ addEvent(window, "unload", function() {
 							
 							<fieldset>
 								<legend><% tran("status_router.legend6"); %></legend>
-				<% nvram_match("dist_type", "vpn", "<!--"); %>
+				<% ifndef("SAMBA", "<!--"); %>
 									<div class="setting">
 										<div class="label">CIFS</div>
 										<script type="text/javascript">
@@ -212,7 +212,8 @@ addEvent(window, "unload", function() {
 										//]]>
 										</script>
 									</div>
-				<% nvram_match("dist_type", "vpn", "-->"); %>
+				<% ifndef("SAMBA", "-->"); %>
+				<% ifndef("JFFS2", "<!--"); %>
 								<div class="setting">
 									<div class="label">JFFS2</div>
 									<script type="text/javascript">
@@ -222,6 +223,8 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script>
 								</div>
+				<% ifndef("JFFS2", "-->"); %>
+				<% ifndef("MMC", "<!--"); %>
 								<div class="setting">
 									<div class="label">MMC</div>
 									<script type="text/javascript">
@@ -231,6 +234,7 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script>
 								</div>
+				<% ifndef("MMC", "-->"); %>
 							</fieldset><br />
 							
 							<fieldset>
