@@ -363,6 +363,15 @@ endif
 ifeq ($(SAMBA_SUPPORT),1)
 OBJS  += samba.o
 endif
+ifeq ($(CONFIG_SAMBA),y)
+CFLAGS += -DHAVE_SAMBA
+endif
+ifeq ($(CONFIG_JFFS2),y)
+CFLAGS += -DHAVE_JFFS2
+endif
+ifeq ($(CONFIG_MMC),y)
+CFLAGS += -DHAVE_MMC
+endif
 #ifeq ($(HW_QOS_SUPPORT),1)
 #OBJS  += qos.o
 #endif
