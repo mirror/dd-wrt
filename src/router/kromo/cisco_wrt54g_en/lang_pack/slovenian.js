@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 26.apr.2007, svn 6826	//
+//				Slovenian translation DD-WRT by Eko, last revision: 05.oct.2007, svn 8115	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 // IMPORTANT: for live values use UTF-8 Unicode Character Set
 
@@ -161,6 +161,10 @@ share.standard="Standard";
 share.execscript="Za¾eni script";
 share.user="Uporabnik";
 share.privatekey="Osebni kljuè";
+share.bytes="bajtov";
+share.kbytes="KB";
+share.mbytes="MB";
+share.gbytes="GB";
 
 
 sbutton.save="Shrani nastavitve";
@@ -336,6 +340,7 @@ bmenu.networking="Omre¾enje";
 bmenu.wireless="Brez¾ièno";
 bmenu.wirelessBasic="Osnovne nastavitve";
 bmenu.wirelessRadius="Radius";
+bmenu.wirelessSuperchannel="SuperChannel";
 bmenu.wirelessSecurity="Brez¾ièna za¹èita";
 bmenu.wirelessMac="Filter MAC";
 bmenu.wirelessAdvanced="Napredne nastavitve";
@@ -875,6 +880,7 @@ management.lang_slovenian="sloven¹èina";
 management.lang_spanish="¹pan¹èina";
 management.lang_swedish="¹ved¹èina";
 management.lang_japanese="japon¹èina";
+management.lang_hungarian="mad¾ar¹èina";
 management.net_legend="Nastavitve IP filtra (nastavite za P2P)";
 management.net_port="Najveèje ¹t. vrat";
 management.net_tcptimeout="TCP èasovna omejitev (v sekundah)";
@@ -1154,6 +1160,40 @@ service.nstx_log="Sporoèila za razhro¹èevanje";
 
 //milkfish.webservices
 service.database_subscribers="Lokalni naroèniki";
+service.database_aliases="Local Aliases";
+service.milkfish_alias="Alias";
+service.milkfish_uri="SIP URI";
+service.milkfish_mainswitch="Main Switch";
+service.milkfish_fromswitch="From-Substitution";
+service.milkfish_fromdomain="From-Domain";
+service.milkfish_username="Milkfish Username";
+service.milkfish_password="Milkfish Password";
+service.milkfish_siptrace="Milkfish SIP Trace";
+service.milkfish_subscribers="Local Subscribers";
+service.milkfish_aliases="Local Aliases";
+service.milkfish_dynsip="Dynamic SIP";
+service.milkfish_dynsipdomain="DynSIP Domain";
+service.milkfish_dynsipurl="DynSIP Update URL";
+service.milkfish_dsusername="DynSIP Username";
+service.milkfish_dspassword="DynSIP Password";
+service.milkfish_sipmessage="SIP Message";
+service.milkfish_destination="SIP Destination";
+//service.milkfish_="";//
+service.hmilkfish_right2="Enables/Disables your Milkfish SIP Router.";
+service.hmilkfish_right4="Enables/Disables From:-Headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled, if you want to allow callees to call you back if your WAN IP has changed";
+service.hmilkfish_right6="Callee calls back this Domain (instead of your WAN IP) when you send it as your From:-Domain instead of your WAN IP. From-Substitution needs to be enabled for this setting to take effect";
+service.hmilkfish_right8="Here goes your Milkfish Community Forum Username - Registration allocates you yourname.homesip.net";
+service.hmilkfish_right10="Here goes your Milkfish Community Forum Password - Registration allocates you yourname.homesip.net";
+service.hmilkfish_right12="Enables/Disables basic SIP Tracing on your router";
+service.hmilkfish_right14="Local SIP Subscribers are locally managed SIP Accounts";
+service.hmilkfish_right16="Local SIP Aliases are SIP Forwards similar to Email Forwards. Can be used to forward alphanumeric to numeric phone user accounts or vice versa";
+service.hmilkfish_right18="Enables/Disables Dynamic SIP (i.e. Homesip.net Service) - Username and Password need to be set";
+service.hmilkfish_right20="not implemented yet - leave empty";
+service.hmilkfish_right22="not implemented yet - leave empty";
+service.hmilkfish_right24="not implemented yet - leave empty";
+service.hmilkfish_right26="not implemented yet - leave empty";
+//service.hmilkfish_="";//
+
 
 // ** eop-tunnel.asp **//
 
@@ -1556,8 +1596,8 @@ wl_adv.row2="Najbolj¹i trud";
 wl_adv.row3="Slika";
 wl_adv.row4="Glas";
 wl_adv.table2="EDCA STA parametri (odjemalec do AP)";
-wl_adv.lng="Dolga"; 				//************* don't use .long ! *************
-wl_adv.shrt="Kratka"; 				//************* don't use .short ! **************
+wl_adv.lng="Dolga";
+wl_adv.shrt="Kratka";
 
 //help container
 
