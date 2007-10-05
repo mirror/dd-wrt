@@ -312,7 +312,7 @@ apply();
 									<div class="label">WRT-radauth</div>
 								<% nvram_invmatch("wl0_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script><!--"); %><% nvram_match("wl0_radauth","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("wl0_radauth","1","<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvram_invmatch("wl0_mode", "ap", "-->"); %>&nbsp;
 								</div>
-								<% nvram_match("dist_type", "mini", "<!--"); %>
+								<% ifdef("MINI", "<!--"); %>
 								<% ifdef("MICRO", "<!--"); %>
 								<div class="setting">
 									<div class="label">WRT-rflow</div>
@@ -322,17 +322,17 @@ apply();
 									<div class="label">MAC-upd</div>
 									<% nvram_match("macupd_enable","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("macupd_enable","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 								</div>
-								<% nvram_match("dist_type", "vpn", "<!--"); %>
+								<% ifdef("VPN", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("management.samba_legend"); %></div>
 									<% nvram_match("samba_mount","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("samba_mount","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 								</div>
-								<% nvram_match("dist_type", "vpn", "-->"); %>
+								<% ifdef("VPN", "-->"); %>
 								<div class="setting">
 									<div class="label"><% tran("bmenu.statuSputnik"); %></div>
 									<% nvram_else_match("apd_enable","0","<script type="text/javascript">Capture(share.disabled)</script>","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 								</div>
-								<% nvram_match("dist_type", "mini", "-->"); %>
+								<% ifdef("MINI", "-->"); %>
 								<% ifdef("MICRO", "-->"); %>
 							</fieldset><br />
 							
