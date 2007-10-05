@@ -58,6 +58,9 @@ ifneq ($(CONFIG_TW6600),y)
 ifeq ($(CONFIG_DIST),"micro")
 CFLAGS += -DHAVE_MICRO
 endif
+ifeq ($(CONFIG_DIST),"micro-special")
+CFLAGS += -DHAVE_MICRO
+endif
 endif
 ifeq ($(CONFIG_GLAUCO),y)
 CFLAGS += -DHAVE_GLAUCO
