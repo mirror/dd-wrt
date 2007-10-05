@@ -993,10 +993,39 @@ ej_ifdef (webs_t wp, int argc, char_t ** argv)
 #endif
 
 #ifdef HAVE_MICRO
-  if (!strcmp(name, "MICRO")) websWrite (wp, output);
+  if (!strcmp(name, "MICRO"))
+   {
+	   websWrite (wp, output);
+	   return;
+   }
 #endif 
 #ifdef HAVE_MULTICAST
-  if (!strcmp(name, "MULTICAST")) websWrite (wp, output);
+  if (!strcmp(name, "MULTICAST"))
+   {
+	   websWrite (wp, output);
+	   return;
+   }
+#endif
+#ifdef HAVE_WIVIZ
+  if (!strcmp(name, "WIVIZ"))
+   {
+	   websWrite (wp, output);
+	   return;
+   }
+#endif
+#ifdef HAVE_RSTATS
+  if (!strcmp(name, "RSTATS"))
+   {
+	   websWrite (wp, output);
+	   return;
+   }
+#endif
+#ifdef HAVE_ACK
+  if (!strcmp(name, "ACK"))
+   {
+	   websWrite (wp, output);
+	   return;
+   }
 #endif
 
   return;
@@ -1023,6 +1052,41 @@ ej_ifndef (webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_MULTICAST
   if (!strcmp(name, "MULTICAST")) return;
 #endif
+#ifdef HAVE_WIVIZ
+  if (!strcmp(name, "WIVIZ")) return;
+#endif
+#ifdef HAVE_RSTATS
+  if (!strcmp(name, "RSTATS")) return;
+#endif
+#ifdef HAVE_ACK
+  if (!strcmp(name, "ACK")) return;
+#endif
+// HAVE_AFTERBURNER
+  if (!strcmp (name, "AFTERBURNER"))
+    {
+#ifdef HAVE_MADWIFI
+      return;
+#else
+      int afterburner = 0;
+      char cap[WLC_IOCTL_SMLEN];
+      char caps[WLC_IOCTL_SMLEN];
+      char *name = nvram_safe_get ("wl0_ifname");
+      char *next;
+
+      if (wl_iovar_get (name, "cap", (void *) caps, WLC_IOCTL_SMLEN) == 0)
+    {
+	  foreach (cap, caps, next)
+	  {
+	    if (!strcmp (cap, "afterburner"))
+	      afterburner = 1;
+	  }
+
+	  if (afterburner)
+	    return;
+	}
+#endif
+    }
+// end HAVE:AFTERBURNER
 
   websWrite (wp, output);
 
@@ -1104,214 +1168,6 @@ ej_nvram_invmatch (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
-/*
- * Example:
- * HEARTBEAT_SUPPORT = 1
- * <% support_match("HEARTBEAT_SUPPORT", "0", "selected"); %> does not produce
- * <% support_match("HEARTBEAT_SUPPORT", "1", "selected"); %> produces "selected"
- */
-static void
-ej_support_match (webs_t wp, int argc, char_t ** argv)
-{
-  char *name, *value, *output;
-
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %s %s", &name, &value, &output);
-#else
-  if (ejArgs (argc, argv, "%s %s %s", &name, &value, &output) < 3)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return;
-    }
-#endif
-
-#ifdef HAVE_HTTPS
-  if (do_ssl)
-    {
-      if (!strcmp (name, "HTTPS"))
-	{
-	  return;
-	}
-    }
-#endif
-
-  if (!strcmp (name, "WL_STA_SUPPORT") ||
-      !strcmp (name, "BACKUP_RESTORE_SUPPORT") ||
-      !strcmp (name, "SYSLOG_SUPPORT"))
-    return;
-#ifdef HAVE_MULTICAST
-  if (!strcmp (name, "MULTICAST_SUPPORT") && !strcmp (value, "1"))
-    websWrite (wp, output);
-#endif
-#ifdef HAVE_ACK
-  if (!strcmp (name, "ACK") && !strcmp (value, "1"))
-    websWrite (wp, output);
-#endif
-
-  return;
-}
-
-
-/*
- * Example:
- * HEARTBEAT_SUPPORT = 1
- * <% support_invmatch("HEARTBEAT_SUPPORT", "1", "<!--"); %> does not produce
- * HEARTBEAT_SUPPORT = 0
- * <% support_invmatch("HEARTBEAT_SUPPORT", "1", "-->"); %> produces "-->"
- */
-static void
-ej_support_invmatch (webs_t wp, int argc, char_t ** argv)
-{
-  char *name, *value, *output;
-
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %s %s", &name, &value, &output);
-#else
-  if (ejArgs (argc, argv, "%s %s %s", &name, &value, &output) < 3)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return;
-    }
-#endif
-
-#ifdef HAVE_HTTPS
-  if (do_ssl)
-    {
-      if (!strcmp (name, "HTTPS"))
-	{
-	  return;
-	}
-    }
-#endif
-#ifndef HAVE_WIVIZ
-  if (!strcmp (name, "WIVIZ_SUPPORT") && !strcmp (value, "1"))
-    {
-      websWrite (wp, output);
-      return;
-    }
-#endif
-#ifndef HAVE_ACK
-  if (!strcmp (name, "ACK") && !strcmp (value, "1"))
-    {
-      websWrite (wp, output);
-      return;
-    }
-#endif
-#ifndef HAVE_RSTATS
-  if (!strcmp (name, "RSTAT_SUPPORT") && !strcmp (value, "1"))
-    {
-      websWrite (wp, output);
-      return;
-    }
-#endif
-  if (!strcmp (name, "WL_AFTERBURNER") && !strcmp (value, "1"))
-    {
-
-#ifdef HAVE_MADWIFI
-      websWrite (wp, output);
-#else
-      int afterburner = 0;
-      char cap[WLC_IOCTL_SMLEN];
-      char caps[WLC_IOCTL_SMLEN];
-      char *name = nvram_safe_get ("wl0_ifname");
-      char *next;
-
-      if (wl_iovar_get (name, "cap", (void *) caps, WLC_IOCTL_SMLEN))
-	websWrite (wp, output);
-      else
-	{
-	  foreach (cap, caps, next)
-	  {
-	    if (!strcmp (cap, "afterburner"))
-	      afterburner = 1;
-	  }
-
-	  if (!afterburner)
-	    websWrite (wp, output);
-	}
-#endif
-      return;
-    }
-
-  if (!strcmp (name, "WL_STA_SUPPORT") ||
-      !strcmp (name, "BACKUP_RESTORE_SUPPORT") ||
-      !strcmp (name, "SYSLOG_SUPPORT"))
-    {
-      websWrite (wp, output);
-      return;
-    }
-#ifdef HAVE_MULTICAST
-  if (!strcmp (name, "MULTICAST_SUPPORT") && strcmp (value, "1"))
-    websWrite (wp, output);
-  return;
-#endif
-//        websWrite(wp,output);
-  return;
-
-  //websWrite (wp, output);
-}
-
-/*
- * Example:
- * HEARTBEAT_SUPPORT = 1
- * <% support_elsematch("HEARTBEAT_SUPPORT", "1", "black", "red"); %> procude "black"
- */
-static void
-ej_support_elsematch (webs_t wp, int argc, char_t ** argv)
-{
-  char *name, *value, *output1, *output2;
-
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %s %s %s", &name, &value, &output1, &output2);
-#else
-  if (ejArgs (argc, argv, "%s %s %s %s", &name, &value, &output1, &output2) <
-      3)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return;
-    }
-#endif
-
-#ifdef HAVE_HTTPS
-  if (do_ssl)
-    {
-      if (!strcmp (name, "HTTPS"))
-	{
-	  websWrite (wp, output1);
-	  return;
-	}
-    }
-#endif
-
-
-  if (!strcmp (name, "WL_STA_SUPPORT") ||
-      !strcmp (name, "BACKUP_RESTORE_SUPPORT") ||
-      !strcmp (name, "SYSLOG_SUPPORT"))
-    {
-      websWrite (wp, output2);
-      return;
-    }
-#ifdef HAVE_MULTICAST
-  if (!strcmp (name, "MULTICAST_SUPPORT") && !strcmp (value, "1"))
-    {
-      websWrite (wp, output1);
-      return;
-    }
-#endif
-
-/*
-  struct support_list *v;
-  for (v = supports; v < &supports[SUPPORT_COUNT]; v++)
-    {
-      if (!strcmp (v->supp_name, name) && !strcmp (v->supp_value, value))
-	{
-	  websWrite (wp, output1);
-	  return;
-	}
-    }
-*/
-  websWrite (wp, output2);
-}
 
 static void
 ej_scroll (webs_t wp, int argc, char_t ** argv)
@@ -5491,9 +5347,6 @@ struct ej_handler ej_handlers[] = {
   {"nvram_status_get", ej_nvram_status_get},
   {"nvram_real_get", ej_nvram_real_get},
   {"webs_get", ej_webs_get},
-  {"support_match", ej_support_match},
-  {"support_invmatch", ej_support_invmatch},
-  {"support_elsematch", ej_support_elsematch},
   {"get_firmware_version", ej_get_firmware_version},
   {"get_firmware_title", ej_get_firmware_title},
   {"get_firmware_svnrev", ej_get_firmware_svnrev},
