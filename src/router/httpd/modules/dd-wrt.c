@@ -894,6 +894,7 @@ ej_active_wireless2 (webs_t wp, int argc, char_t ** argv)
 	      websWrite (wp, "</tr>\n");
 	    }
 	}
+    fclose (fp);
     }
 
   unlink (ASSOCLIST_TMP);
@@ -7921,22 +7922,22 @@ ej_wl_packet_get (webs_t wp, int argc, char_t ** argv)
   struct dev_info
   {
     char ifname[10];
-    unsigned long rx_bytes;
+//    unsigned long rx_bytes;
     unsigned long rx_pks;
     unsigned long rx_errs;
     unsigned long rx_drops;
-    unsigned long rx_fifo;
-    unsigned long rx_frame;
-    unsigned long rx_com;
-    unsigned long rx_mcast;
-    unsigned long tx_bytes;
+//    unsigned long rx_fifo;
+//    unsigned long rx_frame;
+//    unsigned long rx_com;
+//    unsigned long rx_mcast;
+//    unsigned long tx_bytes;
     unsigned long tx_pks;
     unsigned long tx_errs;
     unsigned long tx_drops;
-    unsigned long tx_fifo;
+//    unsigned long tx_fifo;
     unsigned long tx_colls;
-    unsigned long tx_carr;
-    unsigned long tx_com;
+//    unsigned long tx_carr;
+//    unsigned long tx_com;
   } info;
 
   info.rx_pks = info.rx_errs = info.rx_drops = 0;
@@ -7973,7 +7974,7 @@ Inter-|   Receive                                                |  Transmit
 	  if (strstr (line, nvram_safe_get ("wl0_ifname")))
 #endif
 	    {
-	      sscanf (line + ifl + 1,
+/*	      sscanf (line + ifl + 1,
 		      "%ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld",
 		      &info.rx_bytes, &info.rx_pks, &info.rx_errs,
 		      &info.rx_drops, &info.rx_fifo, &info.rx_frame,
@@ -7981,6 +7982,13 @@ Inter-|   Receive                                                |  Transmit
 		      &info.tx_pks, &info.tx_errs, &info.tx_drops,
 		      &info.tx_fifo, &info.tx_colls, &info.tx_carr,
 		      &info.tx_com);
+*/
+	      sscanf (line + ifl + 1,
+		      "%*ld %ld %ld %ld %*ld %*ld %*ld %*ld %*ld %ld %ld %ld %*ld %ld %*ld %*ld",
+		      &info.rx_pks, &info.rx_errs,
+		      &info.rx_drops,
+		      &info.tx_pks, &info.tx_errs, &info.tx_drops,
+		      &info.tx_colls);
 	    }
 
 	}
