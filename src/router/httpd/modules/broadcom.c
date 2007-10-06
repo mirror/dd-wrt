@@ -1112,6 +1112,12 @@ ej_ifndef (webs_t wp, int argc, char_t ** argv)
 #endif
     }
 // end HAVE_AFTERBURNER
+// HAVE_HASWIFI
+  if (!strcmp(name, "HASWIFI"))
+    {
+  	if (haswifi ()) return;
+    }
+// end HAVE_HASWIFI
 
   websWrite (wp, output);
 
@@ -1145,26 +1151,6 @@ ej_nvram_match (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
-static void
-ej_haswifi (webs_t wp, int argc, char_t ** argv)
-{
-  char *output;
-
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s", &output);
-#else
-  if (ejArgs (argc, argv, "%s", &output) < 1)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return;
-    }
-#endif
-
-  if (!haswifi ())
-    websWrite (wp, output);
-
-  return;
-}
 
 /*
  * Example:
@@ -1193,7 +1179,7 @@ ej_nvram_invmatch (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
-
+/*
 static void
 ej_scroll (webs_t wp, int argc, char_t ** argv)
 {
@@ -1216,7 +1202,7 @@ ej_scroll (webs_t wp, int argc, char_t ** argv)
 
   return;
 }
-
+*/
 /*
  * Example:
  * filter_mac=00:12:34:56:78:00 00:87:65:43:21:00
@@ -5381,7 +5367,7 @@ struct ej_handler ej_handlers[] = {
   {"get_single_mac", ej_get_single_mac},
   {"prefix_ip_get", ej_prefix_ip_get},
   {"no_cache", ej_no_cache},
-  {"scroll", ej_scroll},
+//  {"scroll", ej_scroll},
   {"get_dns_ip", ej_get_dns_ip},
   {"onload", ej_onload},
   {"get_web_page_name", ej_get_web_page_name},
@@ -5460,7 +5446,7 @@ struct ej_handler ej_handlers[] = {
 /*	{ "per_port_option", ej_per_port_option}, */
   {"get_http_prefix", ej_get_http_prefix},
   {"dump_site_survey", ej_dump_site_survey},
-  {"show_meminfo", ej_show_meminfo},
+//  {"show_meminfo", ej_show_meminfo},
   {"get_mtu", ej_get_mtu},
   {"get_url", ej_get_url},
 /* Sveasoft additions */
@@ -5580,7 +5566,6 @@ struct ej_handler ej_handlers[] = {
 #ifdef HAVE_PORTSETUP
   {"portsetup", ej_portsetup},
 #endif
-  {"haswifi", ej_haswifi},
   {"show_macfilter", ej_show_macfilter},
   {"list_mac_layers", ej_list_mac_layers},
 #ifdef HAVE_VLANTAGGING
