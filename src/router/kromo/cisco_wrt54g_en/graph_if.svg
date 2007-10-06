@@ -153,8 +153,8 @@ function do_translation() {
 }
 
 function switch_unit(event) {
+	unit = (unit == 'bits') ? 'bits' : share.bytes;
 	SVGDoc.getElementById('switch_unit').firstChild.data = status_band.chg_unit + unit + '/s';
-	unit = (unit == 'bits') ? share.bytes : 'bits';
 }
 
 function switch_scale(event) {
