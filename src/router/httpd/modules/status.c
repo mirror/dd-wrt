@@ -387,7 +387,7 @@ ej_link(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 */
-
+/*
 void
 ej_show_meminfo (webs_t wp, int argc, char_t ** argv)
 {
@@ -403,3 +403,4 @@ ej_show_meminfo (webs_t wp, int argc, char_t ** argv)
     }
   return;
 }
+*/
