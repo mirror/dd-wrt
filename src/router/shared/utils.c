@@ -74,13 +74,13 @@ getcpurev (void)
 	    cpurev[i] = getc (fp);
 	  cpurev[i] = 0;
 	  fclose (fp);
-	  if (!strcmp (cpurev, "BCM4710 V0.0"))	//old 125 MHz
+	  if (!strcmp (cpurev, "BCM4710 V0.0"))	// BCM4702, BCM4710 (old 125 MHz)
 	    return 0;
-	  if (!strcmp (cpurev, "BCM3302 V0.6"))	//4704
+	  if (!strcmp (cpurev, "BCM3302 V0.6"))	// BCM4704
 	    return 6;
-	  if (!strcmp (cpurev, "BCM3302 V0.7"))
+	  if (!strcmp (cpurev, "BCM3302 V0.7")) // BCM4712, BCM5365
 	    return 7;
-	  if (!strcmp (cpurev, "BCM3302 V0.8"))
+	  if (!strcmp (cpurev, "BCM3302 V0.8")) // BCM5350, BCM5352
 	    return 8;
 	  if (!strcmp (cpurev, "BCM3302 V2.9")) // BCM5354
 	    return 29;
