@@ -1907,6 +1907,7 @@ start_lan (void)
 	      ifr.ifr_data = ifrdata;
 	    }
 	}
+	close (s);
     }
 
 #undef HAVE_RB500
