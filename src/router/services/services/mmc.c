@@ -35,6 +35,20 @@ start_mmc (void)
     
 #ifdef HAVE_FONERA
     int res = eval("insmod","mmc");
+      if (!res)
+	{
+	  //device detected
+	  eval ("insmod", "ext2");
+	  if (mount
+	      ("/dev/mmc", "/mmc", "ext2", MS_MGC_VAL, NULL))
+	    {
+	      //device not formated
+	      eval ("/sbin/mke2fs", "-F", "-b", "1024",
+		    "/dev/mmc");
+	      mount ("/dev/mmc", "/mmc", "ext2", MS_MGC_VAL,
+		     NULL);
+	    }
+	}
 #else    
       int res = 1;
       int mmc_di = 0, mmc_do = 0, mmc_clk = 0, mmc_cs = 0;
@@ -89,9 +103,6 @@ start_mmc (void)
       if ((mmc_di + mmc_do + mmc_clk + mmc_cs) > 5)	//eval only if at least 0, 1, 2, 3
 	res = eval ("insmod", "mmc", dddi, dddo, ddclk, ddcs);	//eval("insmod","mmc", "DDDI=0x04", "DDDO=0x10", "DDCLK=0x08", "DDCS=0x80");
 
-
-
-#endif
       if (!res)
 	{
 	  //device detected
@@ -106,6 +117,9 @@ start_mmc (void)
 		     NULL);
 	    }
 	}
+
+
+#endif
     }
 }
 

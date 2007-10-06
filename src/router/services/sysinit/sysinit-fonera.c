@@ -67,6 +67,11 @@ start_sysinit (void)
   eval ("mkdir", "/tmp/www");
   eval ("mknod", "/dev/nvram", "c", "229", "0");
   eval ("mknod", "/dev/ppp", "c", "108", "0");
+  eval ("mknod", "-m","0660","/dev/mmc","b","126","0");
+  eval ("mknod", "-m","0660","/dev/mmc0","b","126","1");
+  eval ("mknod", "-m","0660","/dev/mmc1","b","126","2");
+  eval ("mknod", "-m","0660","/dev/mmc2","b","126","3");
+  eval ("mknod", "-m","0660","/dev/mmc3","b","126","4");
 
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
