@@ -75,7 +75,11 @@ obj-$(CONFIG_NOCAT) += nocat
 obj-$(CONFIG_RTPPROXY) += rtpproxy
 obj-$(CONFIG_SAMBA) += samba
 obj-$(CONFIG_RADAUTH) += radauth
+ifneq ($(CONFIG_FONERA),y)
 obj-$(CONFIG_MMC) += mmc
+else
+obj-$(CONFIG_MMC) += mmc-fonera
+endif
 obj-$(CONFIG_ZEROIP) += shat
 obj-$(CONFIG_KAID) += kaid
 obj-$(CONFIG_ROBOCFG) += robocfg
