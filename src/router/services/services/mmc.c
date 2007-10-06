@@ -32,6 +32,10 @@ start_mmc (void)
 {
   if (nvram_match ("mmc_enable", "1"))
     {
+    
+#ifdef HAVE_FONERA
+    int res = eval("insmod","mmc");
+#else    
       int res = 1;
       int mmc_di = 0, mmc_do = 0, mmc_clk = 0, mmc_cs = 0;
       char dddi[16], dddo[16], ddclk[16], ddcs[16];
@@ -87,28 +91,7 @@ start_mmc (void)
 
 
 
-/*      res = eval ("insmod", "mmc"); */
-
-/*    if (res)
-	{
-	eval("rmmod","mmc_wrt1");
-        res = eval("insmod","mmc_wrt2");
-	}
-    if (res)
-        {
-	eval("rmmod","mmc_wrt2");
-        res = eval("insmod","mmc_buf1");
-	}
-    if (res)
-        {
-	eval("rmmod","mmc_buf1");
-        res = eval("insmod","mmc_buf2");
-	}
-    if (res)
-        {
-	eval("rmmod","mmc_buf2");
-	}    */
-
+#endif
       if (!res)
 	{
 	  //device detected
