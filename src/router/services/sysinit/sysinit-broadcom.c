@@ -55,7 +55,7 @@ check_brcm_cpu_type (void)
   fcpu = fopen ("/proc/cpuinfo", "r");
 
   if (fcpu == NULL)
-    sprintf ("Open /proc/cpuinfo fail...0\n");
+    cprintf ("Open /proc/cpuinfo fail...0\n");
   else
     {
       char buf[500];
@@ -91,17 +91,17 @@ check_brcm_cpu_type (void)
       fclose (fcpu);
       if (!strcmp (cpu_type, "BCM4710") || !strcmp (cpu_type, "BCM4702"))
 	{
-	  sprintf ("We got BCM4702 board...\n");
+	  cprintf ("We got BCM4702 board...\n");
 	  nvram_set ("cpu_type", cpu_type);
 	}
       else if (!strcmp (cpu_type, "BCM3302") || !strcmp (cpu_type, "BCM4712"))
 	{
-	  sprintf ("We got BCM4712 board...\n");
+	  cprintf ("We got BCM4712 board...\n");
 	  nvram_set ("cpu_type", cpu_type);
 	}
       else
 	{
-	  sprintf ("We got unknown board...\n");
+	  cprintf ("We got unknown board...\n");
 	  nvram_set ("cpu_type", cpu_type);
 	}
     }
