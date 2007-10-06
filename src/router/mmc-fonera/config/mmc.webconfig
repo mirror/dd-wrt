@@ -1,0 +1,11 @@
+
+<fieldset>
+	<legend><% tran("management.mmc_legend"); %></legend>
+	<div class="setting">
+		<div class="label"><% tran("management.mmc_srv"); %></div>
+		<input class="spaceradio" type="radio" value="1" name="mmc_enable0" <% nvram_checked("mmc_enable0","1"); %> onclick="show_layer_ext(this, 'idmmc', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="mmc_enable0" <% nvram_checked("mmc_enable0","0"); %> onclick="show_layer_ext(this, 'idmmc', false)" /><% tran("share.disable"); %>
+	</div>
+	<div id="idmmc">
+	</div>	
+</fieldset><br/>
