@@ -104,7 +104,7 @@ ej_show_clocks (webs_t wp, int argc, char_t ** argv)
 
   if (tab == 7)
     c = oldclocks;
-  else if (tab == 8)
+  else if (tab == 8 && check_hw_type() != BCM5350_CHIP)
     c = newclocks;
   else
     {
