@@ -4252,7 +4252,7 @@ ej_do_pagehead (webs_t wp, int argc, char_t ** argv)	//Eko
   websWrite (wp, "\t\t<title>%s", nvram_get ("router_name"));
   if (strlen (title) != 0)
     {
-      websWrite (wp, "- %s", live_translate (title));
+      websWrite (wp, " - %s", live_translate (title));
     }
   websWrite (wp, "</title>\n");
 
