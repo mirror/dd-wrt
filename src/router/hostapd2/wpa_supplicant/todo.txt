@@ -114,3 +114,10 @@ To do:
   passphrase, pin)
 - wpa_gui: add support for setting and showing priority, id_str, auth_alg
   (open/shared for static WEP)
+
+- cleanup TLS/PEAP/TTLS/FAST fragmentation: both the handshake and Appl. Data
+  phases should be able to use the same functions for this;
+  the last step in processing sent should be this code and rest of the code
+  should not need to care about fragmentation at all
+- test EAP-FAST peer with OpenSSL and verify that fallback to full handshake
+  (ServerHello followed by something else than ChangeCipherSpec)
