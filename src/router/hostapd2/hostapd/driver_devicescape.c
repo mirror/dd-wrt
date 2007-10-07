@@ -692,27 +692,6 @@ static int i802_sta_set_flags(void *priv, const u8 *addr,
 }
 
 
-static int i802_set_generic_elem(const char *ifname, void *priv,
-				 const u8 *elem, size_t elem_len)
-{
-	struct i802_driver_data *drv = priv;
-	struct iwreq iwr;
-
-	memset(&iwr, 0, sizeof(iwr));
-
-	os_strlcpy(iwr.ifr_name, drv->hapd->conf->iface, IFNAMSIZ);
-	iwr.u.data.length = elem_len;
-	iwr.u.data.pointer = (void*)elem;
-
-	if (ioctl(drv->ioctl_sock, SIOCSIWGENIE, &iwr) < 0) {
-		perror("Failed to set generic info element");
-		return -1;
-	}
-
-	return 0;
-}
-
-
 static int i802_set_channel_flag(void *priv, int mode, int chan, int flag,
 				 unsigned char power_level,
 				 unsigned char antenna_max)
@@ -797,7 +776,7 @@ static void nl80211_remove_iface(struct i802_driver_data *drv, int ifidx)
 		goto nla_put_failure;
 
 	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
-		    0, NL80211_CMD_DEL_VIRTUAL_INTERFACE, 0);
+		    0, NL80211_CMD_DEL_INTERFACE, 0);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, ifidx);
 	if (nl_send_auto_complete(drv->nl_handle, msg) < 0 ||
 	    nl_wait_for_ack(drv->nl_handle) < 0)
@@ -822,7 +801,7 @@ static int nl80211_create_iface(struct i802_driver_data *drv,
 		return -1;
 
 	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
-		    0, NL80211_CMD_ADD_VIRTUAL_INTERFACE, 0);
+		    0, NL80211_CMD_NEW_INTERFACE, 0);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX,
 		    if_nametoindex(drv->hapd->conf->iface));
 	NLA_PUT_STRING(msg, NL80211_ATTR_IFNAME, ifname);
@@ -1992,7 +1971,6 @@ const struct wpa_driver_ops wpa_driver_devicescape_ops = {
 	.set_encryption = i802_set_encryption,
 	.get_seqnum = i802_get_seqnum,
 	.flush = i802_flush,
-	.set_generic_elem = i802_set_generic_elem,
 	.read_sta_data = i802_read_sta_data,
 	.send_eapol = i802_send_eapol,
 	.sta_set_flags = i802_sta_set_flags,
