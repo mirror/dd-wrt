@@ -124,7 +124,7 @@ var plot_out = new Array();
 
 var max_num_points = 120;  // maximum number of plot data points
 var step = 600 / max_num_points ;
-var unit = 'bits';
+var unit = share.bytes;
 var scale_type = status_band.follow;
 
 var fetch_url='';
@@ -153,8 +153,8 @@ function do_translation() {
 }
 
 function switch_unit(event) {
-	SVGDoc.getElementById('switch_unit').firstChild.data = status_band.chg_unit + unit + '/s';
 	unit = (unit == 'bits') ? share.bytes : 'bits'; 
+	SVGDoc.getElementById('switch_unit').firstChild.data = status_band.chg_unit + unit + '/s';
 }
 
 function switch_scale(event) {
@@ -309,8 +309,8 @@ function isNumber(a) {
 }
 
 function formatSpeed(speed, unit) {
-	if (unit == 'bits') return formatSpeedBits(speed);
-	if (unit == share.bytes) return formatSpeedBytes(speed);
+	if (unit == 'bits') return formatSpeedBytes(speed);
+	if (unit == share.bytes) return formatSpeedBits(speed);
 }
 
 function formatSpeedBits(speed) {
