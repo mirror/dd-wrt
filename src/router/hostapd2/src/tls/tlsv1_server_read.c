@@ -546,6 +546,7 @@ static int tls_process_client_key_exchange_rsa(
 				   "data");
 			tlsv1_server_alert(conn, TLS_ALERT_LEVEL_FATAL,
 					   TLS_ALERT_INTERNAL_ERROR);
+			os_free(out);
 			return -1;
 		}
 	}
