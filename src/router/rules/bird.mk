@@ -58,8 +58,11 @@ bird: bird-symlinks
 
 bird-install:
 	@true
-#	install -D bird/bird $(INSTALLDIR)/bird/usr/sbin/bird
-#	$(STRIP) $(INSTALLDIR)/bird/usr/sbin/bird
+	install -D bird/bird $(INSTALLDIR)/bird/usr/sbin/bird
+	$(STRIP) $(INSTALLDIR)/bird/usr/sbin/bird
+
+#bird-configure:
+#	cd bird && ./configure --build=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr --disable-client --with-sysconfig=sysdep/cf/linux-22.h --localstatedir=/tmp/bird --sysconfdir=/tmp/bird --no-create --no-recursion CC=$(ARCH)-linux-uclibc-gcc bird_cv_c_endian=big-endian
 
 bird-clean:
 	$(MAKE) -C bird clean

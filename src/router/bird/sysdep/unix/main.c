@@ -400,7 +400,7 @@ parse_args(int argc, char **argv)
  */
 
 int
-bird_main(int argc, char **argv)
+main(int argc, char **argv)
 {
 #ifdef HAVE_LIBDMALLOC
   if (!getenv("DMALLOC_OPTIONS"))
