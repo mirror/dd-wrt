@@ -448,9 +448,9 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc stopservice
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dns
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox httpd
-ifeq ($(CONFIG_BIRD),y)
-	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox bird
-endif
+#ifeq ($(CONFIG_BIRD),y)
+#	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox bird
+#endif
 
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox dnsmasq
 	cd $(INSTALLDIR)/usr/sbin && ln -sf /usr/sbin/iptables iptables-restore
@@ -467,9 +467,9 @@ endif
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox pppd
 #endif
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
-	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox dropbearkonvert && ln -sf /bin/busybox dropbearkey && ln -sf /bin/busybox dbclient && ln -sf /bin/busybox dropbear
+	cd $(INSTALLDIR)/usr/sbin && ln -sf /usr/sbin/dropbearmulti dropbearconvert && ln -sf /usr/sbin/dropbearmulti dropbearkey && ln -sf /usr/sbin/dropbearmulti dbclient && ln -sf /usr/sbin/dropbearmulti dropbear
 	mkdir -p $(INSTALLDIR)/usr/bin
-	cd $(INSTALLDIR)/usr/bin && ln -sf /bin/busybox ssh && ln -sf /bin/busybox scp
+	cd $(INSTALLDIR)/usr/bin && ln -sf /usr/sbin/dropbearmulti ssh && ln -sf /usr/sbin/dropbearmulti scp
 endif
 ifeq ($(CONFIG_PPTPD),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc poptop
