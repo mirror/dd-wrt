@@ -34,8 +34,10 @@
 #include "kex.h"
 #include "channel.h"
 #include "atomicio.h"
+#include "runopts.h"
 
 static void checktimeouts();
+static long select_timeout();
 static int ident_readln(int fd, char* buf, int count);
 
 struct sshsession ses; /* GLOBAL */
@@ -59,7 +61,8 @@ void common_session_init(int sock, char* remotehost) {
 	ses.sock = sock;
 	ses.maxfd = sock;
 
-	ses.connecttimeout = 0;
+	ses.connect_time = 0;
+	ses.last_packet_time = 0;
 	
 	if (pipe(ses.signal_pipe) < 0) {
 		dropbear_exit("signal pipe failed");
@@ -69,7 +72,7 @@ void common_session_init(int sock, char* remotehost) {
 	
 	kexfirstinitialise(); /* initialise the kex state */
 
-	ses.writepayload = buf_new(MAX_TRANS_PAYLOAD_LEN);
+	ses.writepayload = buf_new(TRANS_MAX_PAYLOAD_LEN);
 	ses.transseq = 0;
 
 	ses.readbuf = NULL;
@@ -80,9 +83,12 @@ void common_session_init(int sock, char* remotehost) {
 	initqueue(&ses.writequeue);
 
 	ses.requirenext = SSH_MSG_KEXINIT;
-	ses.dataallowed = 0; /* don't send data yet, we'll wait until after kex */
+	ses.dataallowed = 1; /* we can send data until we actually 
+							send the SSH_MSG_KEXINIT */
 	ses.ignorenext = 0;
 	ses.lastpacket = 0;
+	ses.reply_queue_head = NULL;
+	ses.reply_queue_tail = NULL;
 
 	/* set all the algos to none */
 	ses.keys = (struct key_context*)m_malloc(sizeof(struct key_context));
@@ -126,7 +132,7 @@ void session_loop(void(*loophandler)()) {
 	/* main loop, select()s for all sockets in use */
 	for(;;) {
 
-		timeout.tv_sec = SELECT_TIMEOUT;
+		timeout.tv_sec = select_timeout();
 		timeout.tv_usec = 0;
 		FD_ZERO(&writefd);
 		FD_ZERO(&readfd);
@@ -192,6 +198,10 @@ void session_loop(void(*loophandler)()) {
 				process_packet();
 			}
 		}
+		
+		/* if required, flush out any queued reply packets that
+		were being held up during a KEX */
+		maybe_flush_reply_queue();
 
 		/* process pipes etc for the channels, ses.dataallowed == 0
 		 * during rekeying ) */
@@ -352,20 +362,22 @@ static int ident_readln(int fd, char* buf, int count) {
 	return pos+1;
 }
 
+void send_msg_ignore() {
+	CHECKCLEARTOWRITE();
+	buf_putbyte(ses.writepayload, SSH_MSG_IGNORE);
+	buf_putstring(ses.writepayload, "", 0);
+	encrypt_packet();
+}
+
 /* Check all timeouts which are required. Currently these are the time for
  * user authentication, and the automatic rekeying. */
 static void checktimeouts() {
 
-	struct timeval tv;
-	long secs;
+	time_t now;
 
-	if (gettimeofday(&tv, 0) < 0) {
-		dropbear_exit("Error getting time");
-	}
-
-	secs = tv.tv_sec;
+	now = time(NULL);
 	
-	if (ses.connecttimeout != 0 && secs > ses.connecttimeout) {
+	if (ses.connect_time != 0 && now - ses.connect_time >= AUTH_TIMEOUT) {
 			dropbear_close("Timeout before auth");
 	}
 
@@ -375,10 +387,27 @@ static void checktimeouts() {
 	}
 
 	if (!ses.kexstate.sentkexinit
-			&& (secs - ses.kexstate.lastkextime >= KEX_REKEY_TIMEOUT
-			|| ses.kexstate.datarecv+ses.kexstate.datatrans >= KEX_REKEY_DATA)){
+			&& (now - ses.kexstate.lastkextime >= KEX_REKEY_TIMEOUT
+			|| ses.kexstate.datarecv+ses.kexstate.datatrans >= KEX_REKEY_DATA)) {
 		TRACE(("rekeying after timeout or max data reached"))
 		send_msg_kexinit();
 	}
+	
+	if (opts.keepalive_secs > 0 
+		&& now - ses.last_packet_time >= opts.keepalive_secs) {
+		send_msg_ignore();
+	}
 }
 
+static long select_timeout() {
+	/* determine the minimum timeout that might be required, so
+	as to avoid waking when unneccessary */
+	long ret = LONG_MAX;
+	if (KEX_REKEY_TIMEOUT > 0)
+		ret = MIN(KEX_REKEY_TIMEOUT, ret);
+	if (AUTH_TIMEOUT > 0)
+		ret = MIN(AUTH_TIMEOUT, ret);
+	if (opts.keepalive_secs > 0)
+		ret = MIN(opts.keepalive_secs, ret);
+	return ret;
+}

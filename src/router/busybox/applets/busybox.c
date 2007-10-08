@@ -55,23 +55,23 @@ static void install_links(const char *busybox, int use_symbolic_links)
 #define install_links(x,y)
 #endif /* CONFIG_FEATURE_INSTALLER */
 
-#ifdef HAVE_SSHD
+/*#ifdef HAVE_SSHD
   extern int dropbearkey_main(int argc,char *argv[]);
   extern int dropbearconvert_main(int argc,char *argv[]);
   extern int dropbear_main(int argc,char *argv[]);
   extern int cli_main(int argc,char *argv[]);
   extern int scp_main(int argc,char *argv[]);
-#endif
+#endif*/
 #ifdef HAVE_ARP
   extern int arp_main(int argc,char *argv[]);
 #endif
 #ifdef HAVE_DHCPFWD
   extern int dhcpforward_main(int argc,char *argv[]);
 #endif
-#ifdef HAVE_BIRD
+/*#ifdef HAVE_BIRD
   extern int bird_main(int argc,char *argv[]);
 #endif
-
+*/
 
 int main(int argc, char **argv)
 {
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
   else if (strstr (base, "httpd"))
     return httpd_main(argc,argv);
 #endif
-#ifdef HAVE_SSHD
+/*#ifdef HAVE_SSHD
   else if (strstr (base, "dropbearkey"))
     return dropbearkey_main(argc,argv);
   else if (strstr (base, "dropbearkonvert"))
@@ -110,11 +110,11 @@ int main(int argc, char **argv)
     return cli_main(argc,argv);    
   else if (strstr (base, "scp"))
     return scp_main(argc,argv);
-#endif
-#ifdef HAVE_BIRD
-  else if (strstr (base, "bird"))
+#endif*/
+/*#ifdef HAVE_BIRD
+ else if (strstr (base, "bird"))
     return bird_main(argc, argv);
-#endif    
+#endif    */
 #ifdef HAVE_ARP
   else if (!strcmp (base, "arp"))
     return arp_main(argc,argv);
