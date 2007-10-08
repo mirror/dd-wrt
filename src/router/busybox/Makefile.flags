@@ -41,12 +41,12 @@ LDFLAGS	+= -L../nvram -L../mipsel-uclibc/install/nvram/usr/lib -L../shared -L../
 #LIBRARIES += ../net-tools/arp.a ../net-tools/lib/libnet-tools.a		
 #CFLAGS += -DHAVE_ARP
 #endif
-ifeq ($(CONFIG_DROPBEAR_SSHD),y)
+#ifeq ($(CONFIG_DROPBEAR_SSHD),y)
 #OBJS += sshd.o
-CFLAGS += -DHAVE_SSHD
-LIBRARIES += -L../zlib ../dropbear/dropbear.a ../dropbear/libtomcrypt/libtomcrypt.a ../dropbear/libtommath/libtommath.a -lutil -lz 
+#CFLAGS += -DHAVE_SSHD
+#LIBRARIES += -L../zlib ../dropbear/dropbear.a ../dropbear/libtomcrypt/libtomcrypt.a ../dropbear/libtommath/libtommath.a -lutil -lz 
 #LDFLAGS += -Wl,--gc-sections
-endif
+#endif
 ifeq ($(CONFIG_DHCPFORWARD),y)
 CFLAGS += -DHAVE_DHCPFWD
 LIBRARIES += ../dhcpforwarder/dhcpfwd.a
@@ -55,11 +55,11 @@ endif
 ifeq ($(CONFIG_NOMESSAGE),y)
 CFLAGS += -DHAVE_NOMESSAGE
 endif
-ifeq ($(CONFIG_BIRD),y)
-CFLAGS += -DHAVE_BIRD
-LIBRARIES += ../bird/bird.a
-LIBRARIES += ../bird/obj/lib/birdlib.a
-endif
+#ifeq ($(CONFIG_BIRD),y)
+#CFLAGS += -DHAVE_BIRD
+#LIBRARIES += ../bird/bird.a
+#LIBRARIES += ../bird/obj/lib/birdlib.a
+#endif
 ifeq ($(CONFIG_BRANDING),y)
 CFLAGS += -DHAVE_BRANDING
 endif

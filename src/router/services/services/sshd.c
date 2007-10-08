@@ -190,7 +190,7 @@ generate_dropbear_rsa_host_key (void)
 
   eval ("dropbearkey", "-t", "rsa", "-f", RSA_HOST_KEY_FILE);
 
-  eval ("dropbearkonvert", "dropbear", "openssh", RSA_HOST_KEY_FILE,
+  eval ("dropbearconvert", "dropbear", "openssh", RSA_HOST_KEY_FILE,
 	TMP_HOST_KEY_FILE);
 
   fp = fopen (TMP_HOST_KEY_FILE, "r");

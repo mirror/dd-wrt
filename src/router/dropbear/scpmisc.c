@@ -42,7 +42,7 @@
 
 #include "includes.h"
 #include "scpmisc.h"
-/*
+
 void *
 xmalloc(size_t size)
 {
@@ -79,7 +79,7 @@ xrealloc(void *ptr, size_t new_size)
 	}
 	return new_ptr;
 }
-*/
+
 void
 xfree(void *ptr)
 {
@@ -89,7 +89,7 @@ xfree(void *ptr)
 	}
 	free(ptr);
 }
-/*
+
 char *
 xstrdup(const char *str)
 {
@@ -101,7 +101,7 @@ xstrdup(const char *str)
 	strncpy(cp, str, len);
 	return cp;
 }
-*/
+
 char *
 cleanhostname(char *host)
 {
