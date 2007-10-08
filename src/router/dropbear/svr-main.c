@@ -111,7 +111,6 @@ static void main_inetd() {
 #ifdef NON_INETD_MODE
 void main_noinetd() {
 	fd_set fds;
-	struct timeval seltimeout;
 	unsigned int i, j;
 	int val;
 	int maxsock = -1;
@@ -130,6 +129,19 @@ void main_noinetd() {
 	   hostkeys. */
 	commonsetup();
 
+	/* sockets to identify pre-authenticated clients */
+	for (i = 0; i < MAX_UNAUTH_CLIENTS; i++) {
+		childpipes[i] = -1;
+	}
+	bzero(preauth_addrs, sizeof(preauth_addrs));
+	
+	/* Set up the listening sockets */
+	listensockcount = listensockets(listensocks, MAX_LISTEN_ADDR, &maxsock);
+	if (listensockcount == 0)
+	{
+		dropbear_exit("No listening ports available.");
+	}
+
 	/* fork */
 	if (svr_opts.forkbg) {
 		int closefds = 0;
@@ -147,7 +159,7 @@ void main_noinetd() {
 	if (svr_opts.forkbg) {
 		dropbear_log(LOG_INFO, "Running in background");
 	} else {
-		dropbear_log(LOG_INFO, "Not forking");
+		dropbear_log(LOG_INFO, "Not backgrounding");
 	}
 
 	/* create a PID file so that we can be killed easily */
@@ -157,26 +169,10 @@ void main_noinetd() {
 		fclose(pidfile);
 	}
 
-	/* sockets to identify pre-authenticated clients */
-	for (i = 0; i < MAX_UNAUTH_CLIENTS; i++) {
-		childpipes[i] = -1;
-	}
-	bzero(preauth_addrs, sizeof(preauth_addrs));
-	
-	/* Set up the listening sockets */
-	listensockcount = listensockets(listensocks, MAX_LISTEN_ADDR, &maxsock);
-	if (listensockcount == 0)
-	{
-		dropbear_exit("No listening ports available.");
-	}
-
 	/* incoming connection select loop */
 	for(;;) {
 
 		FD_ZERO(&fds);
-		
-		seltimeout.tv_sec = 60;
-		seltimeout.tv_usec = 0;
 		
 		/* listening sockets */
 		for (i = 0; i < listensockcount; i++) {
@@ -191,7 +187,7 @@ void main_noinetd() {
 			}
 		}
 
-		val = select(maxsock+1, &fds, NULL, NULL, &seltimeout);
+		val = select(maxsock+1, &fds, NULL, NULL, NULL);
 
 		if (exitflag) {
 			unlink(svr_opts.pidfile);
@@ -199,7 +195,7 @@ void main_noinetd() {
 		}
 		
 		if (val == 0) {
-			/* timeout reached */
+			/* timeout reached - shouldn't happen. eh */
 			continue;
 		}
 

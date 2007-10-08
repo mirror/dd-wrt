@@ -1,7 +1,7 @@
 busybox-config: 
 	cd busybox && rm -f Config.h && ln -sf configs/$(CONFIG_BUSYBOX_CONFIG).h Config.h
 
-busybox: busybox-config net-tools bird dropbear dhcpforwarder
+busybox: busybox-config net-tools bird dhcpforwarder
 ifeq ($(ARCH),mipsel)
 ifeq ($(CONFIG_DIST),"micro")
 	cp busybox/.config_micro busybox/.config
@@ -26,25 +26,35 @@ endif
 ifeq ($(ARCH),mips)
 ifeq ($(ARCHITECTURE),fonera)
 	cp busybox/.config_fonera busybox/.config
+ifeq ($(CONFIG_MMC),y)
+	echo CONFIG_MKE2FS=y >> busybox/.config
+else
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+endif
 else
 ifeq ($(ARCHITECTURE),mr3202a)
 	cp busybox/.config_fonera busybox/.config
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),dir300)
 	cp busybox/.config_fonera busybox/.config
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),whrag108)
 ifeq ($(CONFIG_DIST),"micro")
 	cp busybox/.config_micro_atheros busybox/.config
 else
 	cp busybox/.config_fonera busybox/.config
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 endif
 else
 ifeq ($(ARCHITECTURE),ca8)
 	cp busybox/.config_fonera busybox/.config
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),pb42)
 	cp busybox/.config_fonera busybox/.config
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 else
 	cp busybox/.config_3com busybox/.config
 endif
