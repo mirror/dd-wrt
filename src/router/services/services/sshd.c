@@ -75,7 +75,7 @@ start_sshd (void)
       changed = 1;
     }
   cprintf ("convert key\n");
-  eval ("dropbearkonvert", "openssh", "dropbear", RSA_HOST_KEY_FILE,
+  eval ("dropbearconvert", "openssh", "dropbear", RSA_HOST_KEY_FILE,
 	RSA_HOST_KEY_FILE);
   cprintf ("write dss key\n");
   if (write_key_file (NVRAM_DSS_KEY_NAME, DSS_HOST_KEY_FILE, 0600) == -1)
@@ -87,7 +87,7 @@ start_sshd (void)
   cprintf ("convert dss key\n");
   if (changed)
     nvram_commit ();
-  eval ("dropbearkonvert", "openssh", "dropbear", DSS_HOST_KEY_FILE,
+  eval ("dropbearconvert", "openssh", "dropbear", DSS_HOST_KEY_FILE,
 	DSS_HOST_KEY_FILE);
   cprintf ("write authorized keys\n");
   write_key_file ("sshd_authorized_keys", AUTHORIZED_KEYS_FILE, 0600);
@@ -222,7 +222,7 @@ generate_dropbear_dss_host_key (void)
 
   eval ("dropbearkey", "-t", "dss", "-f", DSS_HOST_KEY_FILE);
 
-  eval ("dropbearkonvert", "dropbear", "openssh", DSS_HOST_KEY_FILE,
+  eval ("dropbearconvert", "dropbear", "openssh", DSS_HOST_KEY_FILE,
 	TMP_HOST_KEY_FILE);
 
   fp = fopen (TMP_HOST_KEY_FILE, "r");
