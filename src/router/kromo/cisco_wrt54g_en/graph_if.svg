@@ -271,7 +271,7 @@ function plot_data(obj) {
 }
 
 function makeRoundMax(max) {
-	if (unit == 'bits') {
+	if (unit == share.bytes) {
 		rmax = 1250;
 		i = 0;
 		while (max > rmax) {
