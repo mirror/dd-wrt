@@ -889,6 +889,9 @@ overclock (void)
 
   switch (clk)
     {
+    case 150:
+      nvram_set ("clkfreq", "150,75");
+      break;	    
     case 183:
       nvram_set ("clkfreq", "183,92");
       break;
