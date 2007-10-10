@@ -92,6 +92,30 @@ getcpurev (void)
 }
 
 int
+cpu_plltype (void)
+{
+  int cpurev = getcpurev ();
+  int cputype = check_hw_type ();
+
+	  if (cpurev == 0)	// BCM4702, BCM4710 (old 125 MHz)
+	    return 0;
+	  if (cpurev == 6)	// BCM4704
+	    return 0;
+	  if (cpurev == 7)  // BCM4712, BCM5365
+	    return 4;
+	  if (cpurev == 8 && cputype == BCM5350_CHIP) // BCM5350
+	    return 3;
+	  if (cpurev == 8 && cputype != BCM5350_CHIP) // BCM5352
+	    return 7;
+	  if (cpurev == 29) // BCM5354, only supports fixed 240 MHz
+	    return 0;
+	  if (cputype == BCM4705_BCM5397_EWC_CHIP) // BCM4705
+	    return 0; // could use table 2
+
+  return 0;
+}
+
+int
 startswith (char *source, char *cmp)
 {
 return !strncmp(source,cmp,strlen(cmp));
