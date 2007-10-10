@@ -845,7 +845,7 @@ check_pmon_nv (void)
 static void
 overclock (void)
 {
-  int rev = getcpurev ();
+  int rev = cpu_plltype ();
   char *ov = nvram_get ("overclocking");
   if (ov == NULL)
     return;
@@ -867,12 +867,17 @@ overclock (void)
     if (dup[i] == ',')
       dup[i] = 0;
   int cclk = atoi (dup);
-  if (cclk < 192 && rev == 7)
+  if (cclk < 150 && rev == 3)
     {
       cprintf ("clkfreq is %d (%s), this is unsupported\n", cclk, dup);
       return;			//unsupported
     }
-  if (cclk < 183 && rev == 8)
+  if (cclk < 192 && rev == 4)
+    {
+      cprintf ("clkfreq is %d (%s), this is unsupported\n", cclk, dup);
+      return;			//unsupported
+    }
+  if (cclk < 183 && rev == 7)
     {
       cprintf ("clkfreq is %d (%s), this is unsupported\n", cclk, dup);
       return;			//unsupported
