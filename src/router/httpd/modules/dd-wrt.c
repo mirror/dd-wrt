@@ -44,11 +44,13 @@
 #include <bcmnvram.h>
 
 
-
-static unsigned int oldclocks[9] =
+static unsigned int type3_clocks[9] =
+  { 150, 200,   0,   0,   0,   0,   0,   0,   0 };
+static unsigned int type4_clocks[9] =
   { 192, 200, 216, 228, 240, 252, 264, 280, 300 };
-static unsigned int newclocks[9] =
+static unsigned int type7_clocks[9] =
   { 183, 187, 198, 200, 216, 225, 233, 237, 250 };
+
 
 void
 show_ipnetmask (webs_t wp, char *var)
@@ -99,13 +101,15 @@ show_ipnetmask (webs_t wp, char *var)
 void
 ej_show_clocks (webs_t wp, int argc, char_t ** argv)
 {
-  int tab = getcpurev ();
+  int tab = cpu_plltype ();
   unsigned int *c;
 
-  if (tab == 7)
-    c = oldclocks;
-  else if (tab == 8 && check_hw_type() != BCM5350_CHIP)
-    c = newclocks;
+  if (tab == 3)
+    c = type3_clocks;
+  else if (tab == 4)
+    c = type4_clocks;
+  else if (tab == 7)
+    c = type7_clocks;
   else
     {
       websWrite (wp,
@@ -120,11 +124,13 @@ ej_show_clocks (webs_t wp, int argc, char_t ** argv)
   for (i = 0; i < 9; i++)
     {
       char clock[16];
+      if (c[i] != 0)
+      {
       sprintf (clock, "%d", c[i]);
       websWrite (wp, "<option value=\"%d\" %s >%d MHz</option>\n", c[i],
 		 nvram_match ("overclocking",
 			      clock) ? "selected=\"selected\"" : "", c[i]);
-
+      }
     }
   websWrite (wp, "</select>\n</div>\n");
 }
