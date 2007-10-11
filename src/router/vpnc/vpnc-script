@@ -144,7 +144,7 @@ if [ -n "$IPROUTE" ]; then
 		NETWORK="$1"
 		NETMASK="$2"
 		NETMASKLEN="$3"
-		$IPROUTE route add "$NETWORK/$NETMASKLEN" dev "$TUNDEV"
+		$IPROUTE route replace "$NETWORK/$NETMASKLEN" dev "$TUNDEV"
 		$IPROUTE route flush cache
 	}
 	
