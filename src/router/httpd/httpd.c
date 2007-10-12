@@ -870,6 +870,7 @@ handle_request (void)
     }
   else
     {
+    fprintf(stderr,"requesting %s\n",file);
       /* extract url args if present */
       query = strchr (file, '?');
       if (query)
