@@ -4222,7 +4222,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
   char wl_regdomain[16];
   sprintf (wl_regdomain, "%s_regdomain", prefix);
-  if (nvram_match ("ath_regulatory", "0"))
+  if (nvram_match ("ath_regulatory", "0") || !issuperchannel())
     {
       websWrite (wp,
 		 "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
