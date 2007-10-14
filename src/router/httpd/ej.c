@@ -339,6 +339,11 @@ return buf;
 FILE *
 getWebsFile (char *path)
 {
+/*char tmpfile[64];
+sprintf(tmpfile,"/tmp/%s",path);
+//fprintf(stderr,"read %s\n",path);
+FILE *web = fopen(tmpfile,"rb");
+if (web!=NULL)return web;*/
 cprintf("opening %s\n",path);
   char *buf = NULL;
   int i = 0;
@@ -346,7 +351,7 @@ cprintf("opening %s\n",path);
     {
       if (!strcmp (websRomPageIndex[i].path, path))
 	{
-	  FILE *web=fopen("/etc/www","rb");
+	 FILE *web=fopen("/etc/www","rb");
 	  fseek(web,websRomPageIndex[i].offset,0);
 cprintf("found %s\n",path);
 	  return web;
@@ -363,6 +368,17 @@ getWebsFileLen (char *path)
 {
   int len = 0;
   int i = 0;
+/*char tmpfile[64];
+sprintf(tmpfile,"/tmp/%s",path);
+//fprintf(stderr,"read %s\n",path);
+FILE *web = fopen(tmpfile,"rb");
+if (web!=NULL)
+    {
+    fseek(web,0,SEEK_END);
+    len=ftell(web);
+    fclose(web);
+    return len;
+    }*/
   while (websRomPageIndex[i].path != NULL)
     {
       if (!strcmp (websRomPageIndex[i].path, path))
