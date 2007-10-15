@@ -1,4 +1,4 @@
-#
+#u
 # milli_httpd Makefile
 #
 # Copyright 2001-2003, Broadcom Corporation
@@ -94,7 +94,11 @@ CFLAGS += -DHAVE_RB500
 OBJS += upgrade_rb500.o
 else
 ifneq ($(CONFIG_X86),y)
+ifeq ($(CONFIG_BUFFALO),y)
+OBJS += upgrade_buffalo.o
+else
 OBJS += upgrade.o
+endif
 CFLAGS += -DHAVE_LOUD
 endif
 endif
