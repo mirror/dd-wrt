@@ -1,3 +1,26 @@
+2007 10 10
+Added liveforspeed.
+
+2007 10 03
+Added teamfortress2.  Fixed name of http-freshdownload.  Removed symlink 
+tls.pat --> ssl.pat because it will be rejected when it checks the name.
+Updated some comments.  Re-benchmarked all patterns and updated meta-info
+in files.  Set boundaries for my 450MHz PIII at:
+
+* Very fast: 0–2 seconds.
+* Fast: 2–8 seconds.
+* Not so fast: 8–100 seconds.
+* Slow: >100 seconds
+
+2007 07 27
+Added documentation to ftp.  Added armagetron.
+
+2007 06 22
+Added replaytv-ivs.
+
+2007 05 09
+Fixed smtp pattern for userspace.
+
 2007 01 14
 Added cimd and chikka.  Added chikka data to testing suite.  Tweaks to testing
 suite.
