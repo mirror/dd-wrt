@@ -171,7 +171,7 @@ shutdown_system (void)
 
   cprintf ("Sending SIGTERM to all processes\n");
   kill (-1, SIGTERM);
-  sleep (1);
+  sleep (5);
 
   cprintf ("Sending SIGKILL to all processes\n");
   kill (-1, SIGKILL);
