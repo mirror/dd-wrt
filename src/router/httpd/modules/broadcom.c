@@ -3217,22 +3217,22 @@ ej_show_triggering (webs_t wp, int argc, char_t ** argv)
     }
   for (i = 0; i < c; i++)
     {     
-      websWrite (wp, "<tr>");
+      websWrite (wp, "<tr>\n");
       websWrite (wp,"<td><input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"",i);
       port_trigger_table(wp,"name",i);
-      websWrite (wp,"\" /></td>");
+      websWrite (wp,"\" /></td>\n");
       websWrite (wp,"<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",i);
       port_trigger_table(wp,"i_from",i);
-      websWrite (wp,"\" /></td>");
+      websWrite (wp,"\" /></td>\n");
       websWrite (wp,"<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",i);
       port_trigger_table(wp,"i_to",i);
-      websWrite (wp,"\" /></td>");
+      websWrite (wp,"\" /></td>\n");
       websWrite (wp,"<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",i);
       port_trigger_table(wp,"o_from",i);
-      websWrite (wp,"\" /></td>");
+      websWrite (wp,"\" /></td>\n");
       websWrite (wp,"<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",i);
       port_trigger_table(wp,"o_to",i);
-      websWrite (wp,"\" /></td>");
+      websWrite (wp,"\" /></td>\n");
       websWrite (wp,"<td><input type=\"checkbox\" value=\"on\" name=\"enable%d\" ",i);
       port_trigger_table(wp,"enable",i);
       websWrite (wp, " /></td>\n");
