@@ -176,6 +176,9 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_ASUS_WL500GD:
       nvram_unset ("wl0gpio0");
       break;
+    case ROUTER_BELKIN_F5D7230_V2000:
+      nvram_set ("wl0gpio3", "2");
+      break;    
     }
 #endif
 
