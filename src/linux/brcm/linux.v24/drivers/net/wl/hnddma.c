@@ -320,7 +320,7 @@ dma_attach(osl_t *osh, char *name, sb_t *sbh, void *dmaregstx, void *dmaregsrx,
 #endif
 	
 	if ((sb_coreflagshi(sbh, 0, 0) & SBTMH_DMA64) == SBTMH_DMA64) {
-		printk("DMA64 supported!\n");
+		//printk("DMA64 supported!\n");
 	}
 
 	/* check arguments */

@@ -178,4 +178,9 @@ osl_pci_slot(osl_t *osh)
 	return PCI_SLOT(((struct pci_dev *)osh->pdev)->devfn);
 }
 
+
+#define	PKTSETPRIO(skb, x)		(((struct sk_buff*)(skb))->priority = (x))
+#define	PKTDATA(osh, skb)		(((struct sk_buff*)(skb))->data)
+
+
 #endif

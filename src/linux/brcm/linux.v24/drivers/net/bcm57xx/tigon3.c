@@ -11,10 +11,8 @@
 /* History:                                                                   */
 /******************************************************************************/
 
-/* $Id$ */
+/* $Id: tigon3.c,v 1.10 2007/06/01 05:58:19 michael Exp $ */
 
-#include <osl.h>
-#include "typedefs.h"
 #include "mm.h"
 #include "bcmdevs.h"
 #include "bcmutils.h"

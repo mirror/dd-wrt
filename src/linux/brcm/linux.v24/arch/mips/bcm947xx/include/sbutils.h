@@ -15,7 +15,7 @@
 
 #ifndef	_sbutils_h_
 #define	_sbutils_h_
-
+#include <osl.h>
 /* 
  * Datastructure to export all chip specific common variables
  * public (read-only) portion of sbutils handle returned by

@@ -257,6 +257,9 @@ static int arp_seq_open(struct inode *inode, struct file *file)
 	struct seq_file *seq;
 	int rc = -EAGAIN;
 
+	if (!clip_tbl_hook)
+		goto out;
+
 	state = kmalloc(sizeof(*state), GFP_KERNEL);
 	if (!state) {
 		rc = -ENOMEM;

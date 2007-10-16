@@ -144,6 +144,14 @@ struct mii_ioctl_data {
 	u16		val_out;
 };
 
+/* This structure is used in SIOCXREG_STATUS ioctl calls*/
+struct reg_ioctl_data {
+        u16             page_num;
+        u16             addr_num;
+        u16             len;
+	u16		val_in[4];
+	u16		val_out[4];
+};
 
 static inline struct mii_ioctl_data *if_mii(struct ifreq *rq)
 {
