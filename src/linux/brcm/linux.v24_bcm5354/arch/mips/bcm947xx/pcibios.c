@@ -133,19 +133,17 @@ void __init
 pcibios_init(void)
 {
 	ulong flags;
-
-	if (!(sbh = sb_kattach(SB_OSH)))
+	printk(KERN_EMERG "init pci\n");
+    	if (!(sbh = sb_kattach(SB_OSH)))
 		panic("sb_kattach failed");
 	spin_lock_init(&sbh_lock);
 
 	spin_lock_irqsave(&sbh_lock, flags);
-	sbpci_init(sbh);
+	int status = sbpci_init(sbh);
 	spin_unlock_irqrestore(&sbh_lock, flags);
-
-	set_io_port_base((unsigned long) ioremap_nocache(SB_PCI_MEM, 0x04000000));
-
-	/* Scan the SB bus */
-	pci_scan_bus(0, &pcibios_ops, NULL);
+	    set_io_port_base((unsigned long) ioremap_nocache(SB_PCI_MEM, 0x04000000));
+	    /* Scan the SB bus */
+	    pci_scan_bus(0, &pcibios_ops, NULL);
 
 }
 

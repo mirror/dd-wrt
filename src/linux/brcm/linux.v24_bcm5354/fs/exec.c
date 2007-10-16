@@ -591,6 +591,7 @@ int flush_old_exec(struct linux_binprm * bprm)
 {
 	char * name;
 	int i, ch, retval;
+	unsigned new_mm_dumpable;
 	struct signal_struct * oldsig;
 	struct files_struct * files;
 	char tcomm[sizeof(current->comm)];
@@ -626,10 +627,12 @@ int flush_old_exec(struct linux_binprm * bprm)
 
 	current->sas_ss_sp = current->sas_ss_size = 0;
 
+	new_mm_dumpable = 0; /* no change */
 	if (current->euid == current->uid && current->egid == current->gid) {
-		current->mm->dumpable = 1;
+		new_mm_dumpable = 1;
 		current->task_dumpable = 1;
 	}
+
 	name = bprm->filename;
 	for (i=0; (ch = *(name++)) != '\0';) {
 		if (ch == '/')
@@ -645,9 +648,13 @@ int flush_old_exec(struct linux_binprm * bprm)
 
 	de_thread(current);
 
-	if (bprm->e_uid != current->euid || bprm->e_gid != current->egid || 
-	    permission(bprm->file->f_dentry->d_inode,MAY_READ))
+	if (bprm->e_uid != current->euid || bprm->e_gid != current->egid) {
 		current->mm->dumpable = 0;
+		current->pdeath_signal = 0;
+	} else if (permission(bprm->file->f_dentry->d_inode, MAY_READ)) {
+		current->mm->dumpable = 0;
+	} else if (new_mm_dumpable)
+		current->mm->dumpable = 1;
 
 	/* An exec changes our domain. We are no longer part of the thread
 	   group */
@@ -772,6 +779,7 @@ void compute_creds(struct linux_binprm *bprm)
 	if (bprm->e_uid != current->uid || bprm->e_gid != current->gid ||
 	    !cap_issubset(new_permitted, current->cap_permitted)) {
                 current->mm->dumpable = 0;
+		current->pdeath_signal = 0;
 		
 		lock_kernel();
 		if (must_not_trace_exec(current)

@@ -1134,7 +1134,6 @@ sb_findcoreidx(sb_t *sbh, uint coreid, uint coreunit)
 	sb_info_t *si;
 	uint found;
 	uint i;
-//printk(KERN_EMERG "sb_findcoreidx\n");
 
 	si = SB_INFO(sbh);
 
@@ -1225,7 +1224,6 @@ void*
 sb_setcore(sb_t *sbh, uint coreid, uint coreunit)
 {
 	uint idx;
-//printk(KERN_EMERG "sb_setcore\n");
 
 	idx = sb_findcoreidx(sbh, coreid, coreunit);
 	if (!GOODIDX(idx))

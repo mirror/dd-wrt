@@ -1243,6 +1243,7 @@ void ip_ct_refresh(struct ip_conntrack *ct, unsigned long extra_jiffies)
 			add_timer(&ct->timeout);
 		}
 	}
+	
 	WRITE_UNLOCK(&ip_conntrack_lock);
 }
 

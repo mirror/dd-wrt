@@ -13,6 +13,7 @@ endif
 
 # Chip mappings
 obj-$(CONFIG_MTD_BCM947XX)	+= bcm947xx-flash.o
+obj-$(CONFIG_MTD_BCM947XX_VX)	+= bcm947xx-flash-vx.o
 obj-$(CONFIG_MTD_CDB89712)	+= cdb89712.o
 obj-$(CONFIG_MTD_ARM_INTEGRATOR)+= integrator-flash.o
 obj-$(CONFIG_MTD_CFI_FLAGADM)	+= cfi_flagadm.o

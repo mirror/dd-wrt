@@ -561,7 +561,8 @@ static void print_banner( struct Scsi_Host *shpnt )
    printk( "\n" );
 }
 
-static int __init fdomain_setup( char *str )
+/* no __init, may be called from fdomain_stubs.c */
+int fdomain_setup( char *str )
 {
 	int ints[4];
 

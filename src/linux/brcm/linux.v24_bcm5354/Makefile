@@ -1,7 +1,7 @@
 VERSION = 2
 PATCHLEVEL = 4
 SUBLEVEL = 35
-EXTRAVERSION =
+EXTRAVERSION = 
 
 KERNELRELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 
@@ -91,12 +91,13 @@ export MODLIB
 #
 
 check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi)
+if_gcc4 = $(shell if echo __GNUC__ | $(CC) -E -xc - | grep -q '^4$$' > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi)
 
 CPPFLAGS := -D__KERNEL__ -I$(HPATH)
 
 CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
 	  -fno-strict-aliasing -fno-common
-CFLAGS += -fno-builtin-sprintf
+CFLAGS += -fno-builtin-strpbrk -fno-builtin-sprintf
 
 
 ifndef CONFIG_FRAME_POINTER

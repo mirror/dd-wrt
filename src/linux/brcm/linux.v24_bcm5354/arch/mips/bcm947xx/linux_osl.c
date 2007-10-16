@@ -197,7 +197,7 @@ osl_pktget(osl_t *osh, uint len)
 
 	return ((void*) skb);
 }
-
+#ifdef CONFIG_NET
 /* Free the driver packet. Free the tag if present */
 void
 osl_pktfree(osl_t *osh, void *p, bool send)
@@ -233,7 +233,7 @@ osl_pktfree(osl_t *osh, void *p, bool send)
 		skb = nskb;
 	}
 }
-
+#endif
 uint32
 osl_pci_read_config(osl_t *osh, uint offset, uint size)
 {
