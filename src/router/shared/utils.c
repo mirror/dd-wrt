@@ -570,9 +570,18 @@ internal_getRouterBrand ()
       if (startswith (et0, "00:11:50") ||
 	  startswith (et0, "00:30:BD") || startswith (et0, "00:30:bd"))
 	{
+      if (nvram_match ("Belkin_ver", "2000")
+      {
+	  cprintf ("router is Belkin F5D7230-4 v2000\n");
+	  setRouter ("Belkin F5D7230-4 v2000");
+	  return ROUTER_BELKIN_F5D7230_V2000;	      
+      }	
+      else
+      {      
 	  cprintf ("router is Belkin F5D7230-4 v1444\n");
 	  setRouter ("Belkin F5D7230-4 v1444");
 	  return ROUTER_RT480W;
+      }
 	}
       if (startswith (et0, "00:01:E3") ||
 	  startswith (et0, "00:01:e3") || startswith (et0, "00:90:96"))
@@ -1221,6 +1230,7 @@ led_control (int type, int act)
       wlan_gpio = 0x13;
       break;
     case ROUTER_RT480W:
+    case ROUTER_BELKIN_F5D7230_V2000:
       power_gpio = 0x15;
       diag_gpio = 0x05;		//power led blink / off to indicate factory defaults
       connected_gpio = 0x10;
@@ -2440,6 +2450,7 @@ check_vlan_support (void)
     case ROUTER_BUFFALO_WLI_TX4_G54HP:
     case ROUTER_BRCM4702_GENERIC:
     case ROUTER_ASUS_WL500G:
+    case ROUTER_BELKIN_F5D7230_V2000:
 #endif
       return 0;
       break;
