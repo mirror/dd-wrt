@@ -92,6 +92,5 @@ extern uint pktcopy(osl_t *osh, void *p, uint offset, int len, uchar *buf);
 extern uint pkttotlen(osl_t *osh, void *p);
 extern void *pktlast(osl_t *osh, void *p);
 
-extern void pktsetprio(void *pkt, bool update_vtag);
 
 #endif	/* _pktq_h_ */

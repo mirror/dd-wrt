@@ -64,6 +64,8 @@ _export(bcm_ether_ntoa)
 _export(bcm_ether_atoe)
 _export(bcm_atoi)
 _export(osl_delay)
+_export(pktsetprio)
+
 
 _export(getgpiopin)
 _export(nvram_get)
@@ -75,3 +77,6 @@ _export(nvram_commit)
 _export(srom_read)
 _export(srom_write)
 
+_export(osl_mfree)
+_export(osl_malloc)
+_export(osl_malloced)

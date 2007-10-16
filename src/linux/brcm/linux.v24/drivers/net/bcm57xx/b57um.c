@@ -10,7 +10,7 @@
 /*                                                                            */
 /******************************************************************************/
 
-/* $Id$ */
+/* $Id: b57um.c,v 1.31 2007/06/01 05:58:13 michael Exp $ */
 
 char bcm5700_driver[] = "bcm5700";
 char bcm5700_version[] = "8.3.14";
@@ -18,7 +18,7 @@ char bcm5700_date[] = "(11/2/05)";
 
 #define B57UM
 #include "mm.h"
-
+#include <linux/mii.h> //@.@jack add it 2006/06/28.
 #include "typedefs.h"
 #include "epivers.h"
 #include "osl.h"
@@ -28,8 +28,12 @@ char bcm5700_date[] = "(11/2/05)";
 #include "sbconfig.h"
 #include "sbutils.h"
 #include "hndgige.h"
+//#include "robo.h"
 #include "etioctl.h"
 #include "bcmrobo.h"
+#include "robo_register.c"
+extern void robo_config_qos(robo_info_t *robo);
+#include "robo_qos.c"
 
 /* this is needed to get good and stable performances */
 #define EXTRA_HDR BCMEXTRAHDROOM
@@ -614,6 +618,13 @@ bcm5700_ioctl32(unsigned int fd, unsigned int cmd, unsigned long arg,
 		if (strcmp(rq.ifr_name, tmp_dev->name) == 0) {
 			ret = bcm5700_ioctl(tmp_dev, &rq, cmd);
 			if (ret == 0) {
+				
+                                /*if (cmd == SIOCGREG_STATUS)
+                                {
+				   printk("bcm5700_ioctl32...\n");
+                                   if (mm_copy_to_user((char *) arg, rq, strlen(rq)))
+                                        return -EFAULT;
+                                } */
 				if (nrq->cmd == NICE_CMD_GET_STATS_BLOCK)
 					return ret;
 
@@ -1012,6 +1023,7 @@ int attached_to_ICH4_or_older( struct pci_dev *pdev)
 	}
 	return 0;
 }
+void robo_set_power_mode(void *h);
 
 static int
 __devinit bcm5700_init_board(struct pci_dev *pdev, struct net_device **dev_out, int board_idx)
@@ -1158,6 +1170,9 @@ __devinit bcm5700_init_board(struct pci_dev *pdev, struct net_device **dev_out, 
 			goto robo_fail;
 		}
 
+		/* 5397 power mode setting */
+		robo_set_power_mode(robo->h);
+
 		/* Enable the switch */
 		if (bcm_robo_enable_switch(robo)) {
 			B57_ERR(("robo_setup: robo_enable_switch failed\n"));
@@ -1168,6 +1183,11 @@ robo_fail:
 		}
 		pUmDevice->robo = (void *)robo;
 	}
+	
+/*@.@Jack initial qos form robo 2006/06/3*/
+#ifdef linux
+                	//robo_config_qos(pUmDevice->robo);
+#endif
 
 	if ((pDevice->Flags & JUMBO_CAPABLE_FLAG) == 0) {
 		if (dev->mtu > 1500) {
@@ -4085,10 +4105,80 @@ STATIC int bcm5700_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
 	PLM_DEVICE_BLOCK pDevice = (PLM_DEVICE_BLOCK) pUmDevice;
 	u16 *data = (u16 *)&rq->ifr_data;
-	u32 value;
+	u32 value = 0;
+	u16 page_num =0, addr_num =0, len =0;
 	unsigned long flags;
 
 	switch(cmd) {
+	case SIOCGREG_STATUS: //Get register
+	{
+		struct reg_ioctl_data *rdata =(struct reg_ioctl_data *)rq->ifr_data;
+                robo_info_t *robo = (robo_info_t *)pUmDevice->robo;
+		page_num = rdata->page_num;
+		addr_num = rdata->addr_num;
+		len = rdata->len;
+                printk("b57um SIOCGREG_STATUS cmd page[0x%x]addr[0x%x]len[%d].\n",page_num,addr_num,len);
+		if (len == 6)
+		{
+			ReadDataFromRegister(robo,page_num,addr_num,len,(void *)&rdata->val_out);
+			printk("val[0x%04x-0x%04x-0x%04x].\n",rdata->val_out[0],rdata->val_out[1],rdata->val_out[2]);
+		}
+		else if (len == 8)
+		{
+			ReadDataFromRegister(robo,page_num,addr_num,len,(void *)&rdata->val_out);
+                        printk("val[0x%04x%04x-0x%04x%04x].\n",rdata->val_out[0],rdata->val_out[1],
+				rdata->val_out[2],rdata->val_out[3]);
+		}
+		else if (len == 4) 
+		{
+			ReadDataFromRegister(robo,page_num,addr_num,len,(void *)&rdata->val_out);
+                        printk("val[0x%04x%04x].\n",rdata->val_out[0],rdata->val_out[1]);
+		}
+		else 
+		{
+                        ReadDataFromRegister(robo,page_num,addr_num,len,(void *)&rdata->val_out);
+                        printk("val[0x%04x].\n",rdata->val_out[0]);
+
+		}
+                if (mm_copy_to_user(rq->ifr_data, rdata, sizeof(struct reg_ioctl_data)))
+		{
+			printk("Fail mm_copy_to_user.\n");
+                        return -EFAULT;
+		}
+                return 0;
+	}
+	break;
+	case SIOCSREG_STATUS://Set register
+	{
+                struct reg_ioctl_data * wdata =(struct reg_ioctl_data *)rq->ifr_data;
+		len = wdata->len;
+		page_num = wdata->page_num;
+		addr_num = wdata->addr_num;
+                robo_info_t *robo = (robo_info_t *)pUmDevice->robo;
+                if (len == 6)
+                {
+                        WriteDataToRegister(robo,page_num,addr_num,len,(void *)&wdata->val_in);
+                        //printk("val[0x%04x-0x%04x-0x%04x].\n",val48[0],val48[1],val48[2]);
+                }
+                else if (len == 8)
+                {
+                        WriteDataToRegister(robo,page_num,addr_num,len,(void *)&wdata->val_in);
+                        //printk("val[0x%04x-0x%04x-0x%04x-0x%04x].\n",val64[0],val64[1],val64[2],val64[3]);
+                }
+                else if (len == 4)
+                {
+                        WriteDataToRegister(robo,page_num,addr_num,len,(void *)&wdata->val_in);
+                        //printk("val[0x%08x].\n",value);
+                }
+		else
+		{
+                        WriteDataToRegister(robo,page_num,addr_num,len,(void *)&wdata->val_in);
+                        //printk("len[%d] val[0x%04x].\n",len,val16);
+		}
+
+                return 0;
+	}
+	break;
 #ifdef SIOCGMIIPHY
 	case SIOCGMIIPHY:		/* Get the address of the PHY in use. */
 
@@ -4271,7 +4361,6 @@ STATIC int bcm5700_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 		B57_INFO(("Qos flag now: %d\n", pUmDevice->qos));
 		return 0;
 
-#ifdef BCMDBG
 	case SIOCGETCDUMP:
 	{
 		char *buf;
@@ -4284,11 +4373,13 @@ STATIC int bcm5700_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 
 		if (b57_msg_level & 0x10000)
 			bcmdumplog(buf, 4096);
+#ifdef BCMDBG
 		else {
 			struct bcmstrbuf b;
 			bcm_binit(&b, buf, 4096);
 			b57_dump(dev, &b);
 		}
+#endif /* BCMDBG */
 		value = mm_copy_to_user(rq->ifr_data, buf, 4096);
 
 		MFREE(SB_OSH, buf, 4096);
@@ -4298,7 +4389,6 @@ STATIC int bcm5700_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 		else
 			return 0;
 	}
-#endif /* BCMDBG */
 
 #ifdef NICE_SUPPORT
 	case SIOCNICE:
@@ -5702,7 +5792,7 @@ MM_IndicateRxPackets(PLM_DEVICE_BLOCK pDevice)
 		if (pUmDevice->qos) {
 			uint rc;
 
-			rc = pktsetprio(skb, TRUE);
+			rc = pktsetprio2(skb, TRUE);
 			if (rc & (PKTPRIO_VDSCP | PKTPRIO_DSCP))
 				dscp_prio = rc & VLAN_PRI_MASK;
 			if (rc != 0)
@@ -6197,3 +6287,42 @@ poll_bcm5700(struct net_device *dev)
 	}
 }
 #endif
+
+void robo_set_power_mode(void *h)
+{
+	int status = 0;
+	int i;
+	uint8 mode8;
+	uint16 mode16;
+	uint32 flags = 0, temp32 = 0,val32 = 0, savephyaddr = 0;
+	PUM_DEVICE_BLOCK pudev = (PUM_DEVICE_BLOCK)h;
+	PLM_DEVICE_BLOCK pdev = &pudev->lm_dev;
+
+	/*Brcm,Alex,2006.7.20. Adding Phy power mode setting*/
+	BCM5700_PHY_LOCK(pudev, flags);
+	savephyaddr = pdev->PhyAddr;
+
+	for(i = 0; i < 8; i++)
+	{
+		pdev->PhyAddr = i;
+		temp32 = 0x2007;
+		LM_WritePhy(pdev, 0x18, temp32);
+		LM_ReadPhy(pdev, 0x18, &val32);
+	//	printk(KERN_ERR "Alex: port = %x, read value =%x\n",i, val32);
+		temp32 = 0xc042;
+		LM_WritePhy(pdev, 0x18, temp32);
+		/*Read back*/
+		temp32 = 0x2007;
+		val32 = 0;
+		LM_WritePhy(pdev, 0x18, temp32);
+		LM_ReadPhy(pdev, 0x18, &val32);
+	//	printk(KERN_ERR "Alex: read back value =%x\n",val32);
+	}
+
+	pdev->PhyAddr = savephyaddr;
+	BCM5700_PHY_UNLOCK(pudev, flags);
+
+	/*end of Brcm,Alex,2006.7.20. Adding Phy power mode setting*/
+
+}
+

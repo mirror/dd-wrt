@@ -14,6 +14,7 @@
 #ifndef	_bcmutils_h_
 #define	_bcmutils_h_
 
+#include <typedefs.h>
 /* ** driver-only section ** */
 #ifdef BCMDRIVER
 
@@ -59,6 +60,17 @@ extern unsigned char bcm_ctype[];
 struct  ether_addr {
 	uint8 octet[6];
 } __attribute__((packed));
+
+/* Get priority from a packet and pass it back in scb (or equiv) */
+extern uint pktsetprio(void *pkt, bool update_vtag);
+#define	PKTPRIO_VDSCP	0x100		/* DSCP prio found after VLAN tag */
+#define	PKTPRIO_VLAN	0x200		/* VLAN prio found */
+#define	PKTPRIO_UPD	0x400		/* DSCP used to update VLAN prio */
+#define	PKTPRIO_DSCP	0x800		/* DSCP prio found */
+
+/* string */
+extern int bcm_atoi(char *s);
+
 
 /* string */
 extern uchar bcm_toupper(uchar c);
