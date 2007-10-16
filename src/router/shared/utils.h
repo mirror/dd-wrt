@@ -212,7 +212,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Linksys WTR54GS v1 travel router (5350 cpu, fccid: Q87-WTR54GS)
 #define ROUTER_LINKSYS_WTR54GS 0x3f13
 
-// Belkin F5D7230 v2000 (4712 cpu, serial flash)
+// Belkin F5D7230 v2000 (4712 cpu, 5325E switch, serial flash, fccid: K7SF5D7234A)
 #define ROUTER_BELKIN_F5D7230_V2000 0x400f
 
 #define NVROUTER "DD_BOARD"
