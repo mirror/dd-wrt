@@ -84,13 +84,17 @@ _export(osl_malloc)
 _export(osl_malloced)
 _export(osl_mfree)
 _export(osl_pktdup)
+#ifdef CONFIG_NET
 _export(osl_pktfree)
+#endif
 _export(osl_pktget)
 
 _export(pktcopy)
 _export(pktlast)
 _export(pktq_deq)
+#ifdef CONFIG_NET
 _export(pktq_flush)
+#endif
 _export(pktq_init)
 _export(pktq_mdeq)
 _export(pktq_mlen)
@@ -100,7 +104,9 @@ _export(pktq_peek_tail)
 _export(pktq_penq)
 _export(pktq_penq_head)
 _export(pktq_setmax)
+#ifdef CONFIG_NET
 _export(pktq_pflush)
+#endif
 _export(pktsetprio)
 _export(pkttotlen)
 
