@@ -383,6 +383,7 @@ start_sysinit (void)
 	}
       break;
 
+    case ROUTER_BELKIN_F5D7230_V2000:
     case ROUTER_BUFFALO_WLI2_TX1_G54:
     case ROUTER_BUFFALO_WLAG54C:
     case ROUTER_WAP54G_V1:
