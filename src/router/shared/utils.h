@@ -63,7 +63,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // H8N-RT211W: Belkin F5D7130
 #define ROUTER_RT210W 0x0e0f
 
-// RT480W generic and branded (4712 cpu, ADM6996 switch, fccid: Askey H8N-RT480W),
+// RT480W generic and branded (4712 cpu, ADM6996 switch, fccid: Askey H8NRT480W),
 // Siemens se505 v2, Belkin F5D7230-4 v1444 (2MB flash, fccid: Belkin K7S-F5D72304)
 #define ROUTER_RT480W 0x0f0f
 
@@ -211,6 +211,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 // Linksys WTR54GS v1 travel router (5350 cpu, fccid: Q87-WTR54GS)
 #define ROUTER_LINKSYS_WTR54GS 0x3f13
+
+// Belkin F5D7230 v2000 (4712 cpu, serial flash)
+#define ROUTER_BELKIN_F5D7230_V2000 0x400f
 
 #define NVROUTER "DD_BOARD"
 
