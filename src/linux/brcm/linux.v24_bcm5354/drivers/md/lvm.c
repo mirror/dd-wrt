@@ -394,7 +394,7 @@ static char pv_name[NAME_LEN];
 /* static char rootvg[NAME_LEN] = { 0, }; */
 static int lock = 0;
 static int _lock_open_count = 0;
-static uint vg_count = 0;
+uint vg_count = 0;
 static long lvm_chr_open_count = 0;
 static DECLARE_WAIT_QUEUE_HEAD(lvm_wait);
 

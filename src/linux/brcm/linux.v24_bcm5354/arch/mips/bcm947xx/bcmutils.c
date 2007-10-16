@@ -11,6 +11,7 @@
  * $Id$
  */
 
+#include <linux/autoconf.h>
 #include <typedefs.h>
 #include <bcmdefs.h>
 #include <stdarg.h>
@@ -213,7 +214,7 @@ pktq_pdeq_tail(struct pktq *pq, int prec)
 
 	return p;
 }
-
+#ifdef CONFIG_NET
 void
 pktq_pflush(osl_t *osh, struct pktq *pq, int prec, bool dir)
 {
@@ -233,7 +234,7 @@ pktq_pflush(osl_t *osh, struct pktq *pq, int prec, bool dir)
 	ASSERT(q->len == 0);
 	q->tail = NULL;
 }
-
+#endif
 bool
 pktq_pdel(struct pktq *pq, void *pktbuf, int prec)
 {
@@ -407,6 +408,7 @@ pktq_peek_tail(struct pktq *pq, int *prec_out)
 
 	return (pq->q[prec].tail);
 }
+#ifdef CONFIG_NET
 
 void
 pktq_flush(osl_t *osh, struct pktq *pq, bool dir)
@@ -416,7 +418,7 @@ pktq_flush(osl_t *osh, struct pktq *pq, bool dir)
 		pktq_pflush(osh, pq, prec, dir);
 	ASSERT(pq->len == 0);
 }
-
+#endif
 /* Return sum of lengths of a specific set of precedences */
 int
 pktq_mlen(struct pktq *pq, uint prec_bmp)

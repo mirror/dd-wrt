@@ -255,7 +255,6 @@ struct ip_conntrack
 		unsigned int app_data_len;
 	} layer7;
 #endif
-
 };
 
 /* get master conntrack via master expectation */

@@ -85,7 +85,7 @@ typedef struct scsi_info_t {
     dev_node_t		node[8];
 } scsi_info_t;
 
-extern void fdomain_setup(char *str, int *ints);
+extern int fdomain_setup(char *str);
 
 static void fdomain_release(u_long arg);
 static int fdomain_event(event_t event, int priority,
@@ -253,7 +253,7 @@ static void fdomain_config(dev_link_t *link)
     ints[1] = link->io.BasePort1;
     ints[2] = link->irq.AssignedIRQ;
     sprintf(str, "%d,%d", link->io.BasePort1, link->irq.AssignedIRQ);
-    fdomain_setup(str, ints);
+    fdomain_setup(str);
     
     scsi_register_module(MODULE_SCSI_HA, &driver_template);
 

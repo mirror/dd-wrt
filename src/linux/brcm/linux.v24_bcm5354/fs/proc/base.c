@@ -738,15 +738,12 @@ static int proc_base_readdir(struct file * filp,
 
 static int task_dumpable(struct task_struct *task)
 {
-	int dumpable = 0;
-	struct mm_struct *mm;
+	int retval;
 
 	task_lock(task);
-	mm = task->mm;
-	if (mm)
-		dumpable = mm->dumpable;
+	retval = is_dumpable(task);
 	task_unlock(task);
-	return dumpable;
+	return retval;
 }
 
 

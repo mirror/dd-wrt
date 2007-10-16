@@ -29352,6 +29352,18 @@ CONFIG_IP_NF_MATCH_LAYER7_MAXDATALEN
    Unless you know what you're doing, leave it at the default of 2048
    Bytes.
 
+CONFIG_IP_NF_MATCH_LAYER7
+   Say Y if you want to be able to classify connections (and their 
+   packets) based on regular expression matching of their application 
+   layer data.   This is one way to classify applications such as 
+   peer-to-peer filesharing systems that do not always use the same 
+   port.
+
+   To compile it as a module, choose M here.  If unsure, say N.
+
+CONFIG_IP_NF_MATCH_LAYER7_DEBUG
+   Say Y to get lots of debugging output.
+
 #
 # A couple of things I keep forgetting:
 #   capitalize: AppleTalk, Ethernet, DOS, DMA, FAT, FTP, Internet,
