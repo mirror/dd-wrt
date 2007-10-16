@@ -570,7 +570,7 @@ internal_getRouterBrand ()
       if (startswith (et0, "00:11:50") ||
 	  startswith (et0, "00:30:BD") || startswith (et0, "00:30:bd"))
 	{
-      if (nvram_match ("Belkin_ver", "2000")
+      if (nvram_match ("Belkin_ver", "2000"))
       {
 	  cprintf ("router is Belkin F5D7230-4 v2000\n");
 	  setRouter ("Belkin F5D7230-4 v2000");
