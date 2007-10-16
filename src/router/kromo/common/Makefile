@@ -35,8 +35,8 @@ ifeq ($(CONFIG_MSSID),y)
 	-cp -a Info.htm $(INSTALLDIR)/www/Info.htm
 	-cp -a Info.live.htm $(INSTALLDIR)/www/Info.live.htm
 else
-	-cp -a Info.htm.v23 $(INSTALLDIR)/www/
-	-cp -a Info.live.htm.v23 $(INSTALLDIR)/www/
+	-cp -a Info.htm.v23 $(INSTALLDIR)/www/Info.htm
+	-cp -a Info.live.htm.v23 $(INSTALLDIR)/www/Info.live.htm
 endif
 ifeq ($(CONFIG_REGISTER),y)
 	-cp -a register.asp $(INSTALLDIR)/www/register.asp
