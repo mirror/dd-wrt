@@ -196,49 +196,6 @@ osl_pktfree(osl_t *osh, void *p, bool send)
 	}
 }
 
-void*
-osl_malloc(osl_t *osh, uint size)
-{
-	void *addr;
-
-	/* only ASSERT if osh is defined */
-	if (osh)
-		ASSERT(osh->magic == OS_HANDLE_MAGIC);
-
-	if ((addr = kmalloc(size, GFP_ATOMIC)) == NULL) {
-		if (osh)
-			osh->failed++;
-		return (NULL);
-	}
-	if (osh)
-		osh->malloced += size;
-
-	return (addr);
-}
-
-void
-osl_mfree(osl_t *osh, void *addr, uint size)
-{
-	if (osh) {
-		ASSERT(osh->magic == OS_HANDLE_MAGIC);
-		osh->malloced -= size;
-	}
-	kfree(addr);
-}
-
-uint
-osl_malloced(osl_t *osh)
-{
-	ASSERT((osh && (osh->magic == OS_HANDLE_MAGIC)));
-	return (osh->malloced);
-}
-
-uint osl_malloc_failed(osl_t *osh)
-{
-	ASSERT((osh && (osh->magic == OS_HANDLE_MAGIC)));
-	return (osh->failed);
-}
-
 
 /* Clone a packet.
  * The pkttag contents are NOT cloned.

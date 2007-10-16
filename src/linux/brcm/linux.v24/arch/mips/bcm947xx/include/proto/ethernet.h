@@ -93,7 +93,6 @@
 	((foo) >= ETHER_MIN_LEN && (foo) <= ETHER_MAX_LEN)
 
 
-#ifndef __INCif_etherh     /* Quick and ugly hack for VxWorks */
 /*
  * Structure of a 10Mb/s Ethernet header.
  */
@@ -102,6 +101,7 @@ struct	ether_header {
 	uint8	ether_shost[ETHER_ADDR_LEN];
 	uint16	ether_type;
 } PACKED;
+#ifndef NOETHREQ     /* Quick and ugly hack for VxWorks */
 
 /*
  * Structure of a 48-bit Ethernet address.

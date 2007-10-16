@@ -486,61 +486,6 @@ bcm_ether_atoe(char *p, struct ether_addr *ea)
 	return (i == 6);
 }
 
-/* Takes an Ethernet frame and sets out-of-bound PKTPRIO
- * Also updates the inplace vlan tag if requested
- */
-void
-pktsetprio(void *pkt, bool update_vtag)
-{
-	struct ether_header *eh;
-	struct ethervlan_header *evh;
-	uint8 *pktdata;
-	int priority = 0;
-
-	pktdata = (uint8 *) PKTDATA(NULL, pkt);
-	ASSERT(ISALIGNED((uintptr)pktdata, sizeof(uint16)));
-
-	eh = (struct ether_header *) pktdata;
-
-	if (ntoh16(eh->ether_type) == ETHER_TYPE_8021Q) {
-		uint16 vlan_tag;
-		int vlan_prio, dscp_prio = 0;
-
-		evh = (struct ethervlan_header *)eh;
-
-		vlan_tag = ntoh16(evh->vlan_tag);
-		vlan_prio = (int) (vlan_tag >> VLAN_PRI_SHIFT) & VLAN_PRI_MASK;
-
-		if (ntoh16(evh->ether_type) == ETHER_TYPE_IP) {
-			uint8 *ip_body = pktdata + sizeof(struct ethervlan_header);
-			uint8 tos_tc = IP_TOS(ip_body);
-			dscp_prio = (int)(tos_tc >> IPV4_TOS_PREC_SHIFT);
-		}
-
-		/* DSCP priority gets precedence over 802.1P (vlan tag) */
-		priority = (dscp_prio != 0) ? dscp_prio : vlan_prio;
-
-		/* 
-		 * If the DSCP priority is not the same as the VLAN priority,
-		 * then overwrite the priority field in the vlan tag, with the
-		 * DSCP priority value. This is required for Linux APs because
-		 * the VLAN driver on Linux, overwrites the skb->priority field
-		 * with the priority value in the vlan tag
-		 */
-		if (update_vtag && (priority != vlan_prio)) {
-			vlan_tag &= ~(VLAN_PRI_MASK << VLAN_PRI_SHIFT);
-			vlan_tag |= (uint16)priority << VLAN_PRI_SHIFT;
-			evh->vlan_tag = hton16(vlan_tag);
-		}
-	} else if (ntoh16(eh->ether_type) == ETHER_TYPE_IP) {
-		uint8 *ip_body = pktdata + sizeof(struct ether_header);
-		uint8 tos_tc = IP_TOS(ip_body);
-		priority = (int)(tos_tc >> IPV4_TOS_PREC_SHIFT);
-	}
-
-	ASSERT(priority >= 0 && priority <= MAXPRIO);
-	PKTSETPRIO(pkt, priority);
-}
 
 static char bcm_undeferrstr[BCME_STRLEN];
 

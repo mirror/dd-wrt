@@ -1,7 +1,7 @@
 /*
  * HND SiliconBackplane Gigabit Ethernet core software interface
  *
- * Copyright 2006, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,13 +9,14 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id$
+ * $Id: hndgige.c,v 1.6 2007/06/01 05:59:06 michael Exp $
  */
 
 #include <typedefs.h>
 #include <osl.h>
 #include <pcicfg.h>
 #include <sbconfig.h>
+#include <bcmutils.h>
 #include <sbutils.h>
 #include <sbgige.h>
 #include <hndpci.h>

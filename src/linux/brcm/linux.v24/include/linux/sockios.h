@@ -81,6 +81,9 @@
 #define SIOCGMIIREG	0x8948		/* Read MII PHY register.	*/
 #define SIOCSMIIREG	0x8949		/* Write MII PHY register.	*/
 
+#define SIOCGREG_STATUS  0x8996          /* Read Switch register (for debug)*/
+#define SIOCSREG_STATUS  0x8997          /* Write Switch register(for debug)*/
+
 #define SIOCWANDEV	0x894A		/* get/set netdev parameters	*/
 
 /* ARP cache control calls. */

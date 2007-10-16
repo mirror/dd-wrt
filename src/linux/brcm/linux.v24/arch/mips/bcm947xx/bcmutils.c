@@ -20,6 +20,12 @@
 #include <bcmnvram.h>
 #include <bcmendian.h>
 #include <bcmdevs.h>
+#define NOETHREQ 1
+#include <proto/ethernet.h>
+#include <proto/vlan.h>
+#include <proto/bcmip.h>
+#include <proto/bcmtcp.h>
+#include <proto/802.1d.h>
 
 unsigned char bcm_ctype[] = {
 	_BCM_C,_BCM_C,_BCM_C,_BCM_C,_BCM_C,_BCM_C,_BCM_C,_BCM_C,			/* 0-7 */
@@ -345,3 +351,145 @@ bcmstrstr(char *haystack, char *needle)
 			return (&haystack[i]);
 	return (NULL);
 }
+
+/* Takes an Ethernet frame and sets out-of-bound PKTPRIO.
+ * Also updates the inplace vlan tag if requested.
+ * For debugging, it returns an indication of what it did.
+ */
+uint
+pktsetprio(void *pkt, bool update_vtag)
+{
+	struct ether_header *eh;
+	struct ethervlan_header *evh;
+	uint8 *pktdata;
+	int priority = 0;
+	int rc = 0;
+
+	pktdata = (uint8 *) PKTDATA(NULL, pkt);
+	ASSERT(ISALIGNED((uintptr)pktdata, sizeof(uint16)));
+
+	eh = (struct ether_header *) pktdata;
+
+	if (ntoh16(eh->ether_type) == ETHER_TYPE_8021Q) {
+		uint16 vlan_tag;
+		int vlan_prio, dscp_prio = 0;
+
+		evh = (struct ethervlan_header *)eh;
+
+		vlan_tag = ntoh16(evh->vlan_tag);
+		vlan_prio = (int) (vlan_tag >> VLAN_PRI_SHIFT) & VLAN_PRI_MASK;
+
+		if (ntoh16(evh->ether_type) == ETHER_TYPE_IP) {
+			uint8 *ip_body = pktdata + sizeof(struct ethervlan_header);
+			uint8 tos_tc = IP_TOS(ip_body);
+			dscp_prio = (int)(tos_tc >> IPV4_TOS_PREC_SHIFT);
+			if ((IP_VER(ip_body) == IP_VER_4) && (IPV4_PROT(ip_body) == IP_PROT_TCP)) {
+				int ip_len;
+				int src_port;
+				bool src_port_exc;
+				uint8 *tcp_hdr;
+
+				ip_len = IPV4_PAYLOAD_LEN(ip_body);
+				tcp_hdr = IPV4_NO_OPTIONS_PAYLOAD(ip_body);
+				src_port = TCP_SRC_PORT(tcp_hdr);
+				src_port_exc = (src_port == 10110) || (src_port == 10120) ||
+					(src_port == 10130) || (src_port == 10140);
+
+				if ((ip_len == 40) && src_port_exc && TCP_IS_ACK(tcp_hdr)) {
+					dscp_prio = 7;
+				}
+			}
+		}
+
+		/* DSCP priority gets precedence over 802.1P (vlan tag) */
+		if (dscp_prio != 0) {
+			priority = dscp_prio;
+			rc |= PKTPRIO_VDSCP;
+		} else {
+			priority = vlan_prio;
+			rc |= PKTPRIO_VLAN;
+		}
+		/* 
+		 * If the DSCP priority is not the same as the VLAN priority,
+		 * then overwrite the priority field in the vlan tag, with the
+		 * DSCP priority value. This is required for Linux APs because
+		 * the VLAN driver on Linux, overwrites the skb->priority field
+		 * with the priority value in the vlan tag
+		 */
+		if (update_vtag && (priority != vlan_prio)) {
+			vlan_tag &= ~(VLAN_PRI_MASK << VLAN_PRI_SHIFT);
+			vlan_tag |= (uint16)priority << VLAN_PRI_SHIFT;
+			evh->vlan_tag = hton16(vlan_tag);
+			rc |= PKTPRIO_UPD;
+		}
+	} else if (ntoh16(eh->ether_type) == ETHER_TYPE_IP) {
+		uint8 *ip_body = pktdata + sizeof(struct ether_header);
+		uint8 tos_tc = IP_TOS(ip_body);
+		priority = (int)(tos_tc >> IPV4_TOS_PREC_SHIFT);
+		rc |= PKTPRIO_DSCP;
+		if ((IP_VER(ip_body) == IP_VER_4) && (IPV4_PROT(ip_body) == IP_PROT_TCP)) {
+			int ip_len;
+			int src_port;
+			bool src_port_exc;
+			uint8 *tcp_hdr;
+
+			ip_len = IPV4_PAYLOAD_LEN(ip_body);
+			tcp_hdr = IPV4_NO_OPTIONS_PAYLOAD(ip_body);
+			src_port = TCP_SRC_PORT(tcp_hdr);
+			src_port_exc = (src_port == 10110) || (src_port == 10120) ||
+				(src_port == 10130) || (src_port == 10140);
+
+			if ((ip_len == 40) && src_port_exc && TCP_IS_ACK(tcp_hdr)) {
+				priority = 7;
+			}
+		}
+	}
+
+	ASSERT(priority >= 0 && priority <= MAXPRIO);
+	PKTSETPRIO(pkt, priority);
+	return (rc | priority);
+}
+
+void*
+osl_malloc(osl_t *osh, uint size)
+{
+	void *addr;
+
+	/* only ASSERT if osh is defined */
+	if (osh)
+		ASSERT(osh->magic == OS_HANDLE_MAGIC);
+
+	if ((addr = kmalloc(size, GFP_ATOMIC)) == NULL) {
+		if (osh)
+			osh->failed++;
+		return (NULL);
+	}
+	if (osh)
+		osh->malloced += size;
+
+	return (addr);
+}
+
+void
+osl_mfree(osl_t *osh, void *addr, uint size)
+{
+	if (osh) {
+		ASSERT(osh->magic == OS_HANDLE_MAGIC);
+		osh->malloced -= size;
+	}
+	kfree(addr);
+}
+
+uint
+osl_malloced(osl_t *osh)
+{
+	ASSERT((osh && (osh->magic == OS_HANDLE_MAGIC)));
+	return (osh->malloced);
+}
+
+uint osl_malloc_failed(osl_t *osh)
+{
+	ASSERT((osh && (osh->magic == OS_HANDLE_MAGIC)));
+	return (osh->failed);
+}
+
