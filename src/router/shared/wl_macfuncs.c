@@ -23,6 +23,7 @@
 
 #ifndef HAVE_MADWIFI
 #include <wlutils.h>
+#include <memory.h>
 #include <wlioctl.h>
 
 #include <bcmnvram.h>
