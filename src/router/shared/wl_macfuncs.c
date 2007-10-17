@@ -56,10 +56,14 @@ security_allow (char *iface)
   wl_ioctl (iface, WLC_SET_MACMODE, &val, sizeof (val));
 }
 
+
 void
 kick_mac (char *iface, char *mac)
 {
-  wl_ioctl (iface, 0x8f, mac, 6);	/* Kick station off AP */
+  scb_val_t scb_val;
+  scb_val.val = (uint32) DOT11_RC_NOT_AUTH;
+  memcpy(&scb_val.ea, mac, ETHER_ADDR_LEN);
+  wl_ioctl (iface, WLC_SCB_DEAUTHENTICATE_FOR_REASON, &scb_val, sizeof(scb_val));	/* Kick station off AP */
 }
 #else
 #include <sys/types.h>
