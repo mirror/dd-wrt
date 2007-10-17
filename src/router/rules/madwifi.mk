@@ -51,6 +51,7 @@ endif
 
 
 ifeq ($(ARCH),mips)
+
 ifeq ($(ARCHITECTURE),fonera)
 madwifi:
 ifeq ($(CONFIG_BOESE),y)
@@ -141,6 +142,7 @@ ifeq ($(CONFIG_BOESE),y)
 else
 	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR)  DESTDIR=$(INSTALLDIR)/madwifi TARGET=ap43-$(MADFLAG) install
 endif
+else
 ifeq ($(ARCHITECTURE),ls5)
 madwifi:
 #	make -C madwifi.dev/madwifi.dev/diag TARGET=xscale-$(MADFLAG)be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin 
@@ -170,8 +172,6 @@ ifeq ($(CONFIG_BOESE),y)
 else
 	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR)  DESTDIR=$(INSTALLDIR)/madwifi TARGET=ap43-$(MADFLAG) install
 endif
-
-
 
 else
 ifeq ($(ARCHITECTURE),mr3202a)
