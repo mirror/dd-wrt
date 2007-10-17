@@ -592,6 +592,8 @@ internal_getRouterBrand ()
 	}
     }
 
+  int bflags; 
+  char bftemp[16]; 
   if (nvram_match ("boardtype", "0x456"))
     {
       if (startswith (et0, "00:11:50") ||
@@ -599,6 +601,25 @@ internal_getRouterBrand ()
 	{
 	  cprintf ("router is Belkin F5D7231-4 v1212UK\n");
 	  setRouter ("Belkin F5D7231-4 v1212UK");
+	  bflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
+	  bflags = bflags | 0x010;
+	  sprintf (bftemp, "0x%04X", bflags);
+	  nvram_set ("boardflags", btemp);
+	  return ROUTER_RT480W;
+	}
+    }
+    
+  if (nvram_match ("boardtype", "0x467"))
+    {
+      if (startswith (et0, "00:11:50") ||
+	  startswith (et0, "00:30:BD") || startswith (et0, "00:30:bd"))
+	{
+	  cprintf ("router is Belkin F5D7231-4 v2000\n");
+	  setRouter ("Belkin F5D7231-4 v2000");
+	  bflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
+	  bflags = bflags | 0x010;
+	  sprintf (bftemp, "0x%04X", bflags);
+	  nvram_set ("boardflags", btemp);
 	  return ROUTER_RT480W;
 	}
     }
