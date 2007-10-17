@@ -65,6 +65,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 // RT480W generic and branded (4712 cpu, ADM6996 switch, fccid: Askey H8NRT480W),
 // Siemens se505 v2, Belkin F5D7230-4 v1444 (2MB flash, fccid: Belkin K7S-F5D72304)
+// Belkin F5D7231-4 v1212UK (5352E cpu, fccid: Askey H8NRT2406W), F5D7231-4 v2000 (5352E cpu, fccid: Belkin K7SF5D7231B)
 #define ROUTER_RT480W 0x0f0f
 
 // Microtik RouterBOARD 500
