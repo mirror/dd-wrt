@@ -28,6 +28,7 @@
 #include "ar531x.h"
 
 char *board_config, *radio_config;
+
 extern int early_serial_setup(struct uart_port *port);
 
 static u8 *find_board_config(char *flash_limit)
@@ -199,6 +200,7 @@ const char *get_arch_type(void)
 	return "Atheros (unknown)";
 }
 
+
 void __init plat_timer_setup(struct irqaction *irq)
 {
 	unsigned int count;
@@ -217,6 +219,40 @@ asmlinkage void plat_irq_dispatch(void)
 	DO_AR5315(ar5315_irq_dispatch();)
 }
 
+/* ARGSUSED */
+irqreturn_t
+spurious_irq_handler(int cpl, void *dev_id)
+{
+    /* 
+    printk("spurious_irq_handler: %d  cause=0x%8.8x  status=0x%8.8x\n",
+	   cpl, cause_intrs, status_intrs); 
+    */
+	return IRQ_NONE;
+}
+
+/* ARGSUSED */
+irqreturn_t
+spurious_misc_handler(int cpl, void *dev_id)
+{
+    /*
+    printk("spurious_misc_handler: 0x%x isr=0x%8.8x imr=0x%8.8x\n",
+	   cpl, ar531x_isr, ar531x_imr);
+    */
+	return IRQ_NONE;
+}
+
+static struct irqaction spurious_irq  = {
+	.handler	= spurious_irq_handler,
+	.flags		= IRQF_DISABLED,
+	.name		= "spurious_irq",
+};
+
+static struct irqaction spurious_misc  = {
+	.handler	= spurious_misc_handler,
+	.flags		= IRQF_DISABLED,
+	.name		= "spurious_misc",
+};
+
 void __init arch_init_irq(void)
 {
 	clear_c0_status(ST0_IM);
@@ -225,6 +261,11 @@ void __init arch_init_irq(void)
 	/* Initialize interrupt controllers */
 	DO_AR5312(ar5312_misc_intr_init(AR531X_MISC_IRQ_BASE);)
 	DO_AR5315(ar5315_misc_intr_init(AR531X_MISC_IRQ_BASE);)
+
+	/* Default "spurious interrupt" handlers */
+	setup_irq(AR531X_IRQ_NONE, &spurious_irq);
+	setup_irq(AR531X_MISC_IRQ_NONE, &spurious_misc);
+
 }
 
 EXPORT_SYMBOL(get_system_type);
