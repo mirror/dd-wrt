@@ -200,7 +200,7 @@ start_config_vlan (void)
 int
 start_setup_vlans (void)
 {
-#if defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42)
+#if defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5)
   return 0;
 #else
   /* VLAN #16 is just a convieniant way of storing tagging info.  There is no VLAN #16 */
@@ -431,6 +431,9 @@ flush_interfaces (void)
 	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
 #elif HAVE_LS2
   snprintf (all_ifnames, 255, "%s %s %s", "eth0 vlan1 vlan2",
+	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
+#elif HAVE_LS5
+  snprintf (all_ifnames, 255, "%s %s %s", "eth0",
 	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
 #elif HAVE_FONERA
   snprintf (all_ifnames, 255, "%s %s %s", "eth0 vlan0 vlan1",
