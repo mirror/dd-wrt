@@ -604,7 +604,7 @@ internal_getRouterBrand ()
 	  bflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
 	  bflags = bflags | 0x010;
 	  sprintf (bftemp, "0x%04X", bflags);
-	  nvram_set ("boardflags", btemp);
+	  nvram_set ("boardflags", bftemp);
 	  return ROUTER_RT480W;
 	}
     }
@@ -619,7 +619,7 @@ internal_getRouterBrand ()
 	  bflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
 	  bflags = bflags | 0x010;
 	  sprintf (bftemp, "0x%04X", bflags);
-	  nvram_set ("boardflags", btemp);
+	  nvram_set ("boardflags", bftemp);
 	  return ROUTER_RT480W;
 	}
     }
