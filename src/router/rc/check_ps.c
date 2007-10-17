@@ -124,7 +124,7 @@ checkupgrade (void)
       fprintf (stderr,
 	       "found firmware upgrade, flashing now, but we will wait for another 30 seconds\n");
       sleep (30);
-#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42)
+#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5)
       eval ("write", "/tmp/firmware.bin", "rootfs");
 #else
       eval ("write", "/tmp/firmware.bin", "linux");

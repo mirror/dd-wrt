@@ -522,6 +522,41 @@ ej_get_clkfreq (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "unknown");
   return;
 }
+#elif HAVE_LS5
+void
+ej_get_clkfreq (webs_t wp, int argc, char_t ** argv)
+{
+  FILE *fp = fopen ("/proc/cpuinfo", "rb");
+  if (fp == NULL)
+    {
+      websWrite (wp, "unknown");
+      return;
+    }
+  int cnt = 0;
+  int b = 0;
+  while (b != EOF)
+    {
+      b = getc (fp);
+      if (b == ':')
+	cnt++;
+      if (cnt == 4)
+	{
+	  getc (fp);
+	  char cpuclk[4];
+	  cpuclk[0] = getc (fp);
+	  cpuclk[1] = getc (fp);
+	  cpuclk[2] = getc (fp);
+	  cpuclk[3] = 0;
+	  websWrite (wp, cpuclk);
+	  fclose (fp);
+	  return;
+	}
+    }
+
+  fclose (fp);
+  websWrite (wp, "unknown");
+  return;
+}
 #elif HAVE_WHRAG108
 void
 ej_get_clkfreq (webs_t wp, int argc, char_t ** argv)
@@ -3521,18 +3556,22 @@ show_netmode (webs_t wp, char *prefix)
 #ifdef HAVE_TW6600
     if (!strcmp (prefix, "ath1"))
 #endif
+#ifndef HAVE_LS5
       websWrite (wp,
 		 "document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n",
 		 nvram_match (wl_net_mode,
 			      "bg-mixed") ? "selected=\\\"selected\\\"" : "");
+#endif
 #else
 #ifdef HAVE_WHRAG108
   if (!strcmp (prefix, "ath1"))
 #endif
+#ifndef HAVE_LS5
     websWrite (wp,
 	       "document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n",
 	       nvram_match (wl_net_mode,
 			    "g-only") ? "selected=\\\"selected\\\"" : "");
+#endif
 #endif
   if (has_mimo ())
     {
@@ -3549,7 +3588,7 @@ show_netmode (webs_t wp, char *prefix)
 	       nvram_match (wl_net_mode,
 			    "a-only") ? "selected=\\\"selected\\\"" : "");
 #else
-#ifdef HAVE_WHRAG108
+#if HAVE_WHRAG108
   if (!strcmp (prefix, "ath0"))
 #endif
 #ifdef HAVE_TW6600

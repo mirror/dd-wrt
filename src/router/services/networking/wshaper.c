@@ -113,6 +113,7 @@ system ("echo 1 > /proc/sys/dev/adm6996/port1/enable 2>&1 > /dev/null");
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_FONERA
 #ifndef HAVE_LS2
+#ifndef HAVE_LS5
 #ifndef HAVE_X86
 #ifndef HAVE_WHRAG108
 #ifndef HAVE_CA8
@@ -158,6 +159,7 @@ system ("echo 1 > /proc/sys/dev/adm6996/port1/enable 2>&1 > /dev/null");
 #endif
 #endif
 #endif
+#endif
 }
 
 int
@@ -167,6 +169,7 @@ svqos_set_ports (void)
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_FONERA
 #ifndef HAVE_LS2
+#ifndef HAVE_LS5
 #ifndef HAVE_WHRAG108
 #ifndef HAVE_CA8
 #ifndef HAVE_X86
@@ -207,6 +210,7 @@ svqos_set_ports (void)
 	  system2 (cmd);
 	}
     }
+#endif
 #endif
 #endif
 #endif
@@ -699,6 +703,9 @@ stop_wshaper (void)
 #elif HAVE_LS2
   ret = eval (script_name, "stop", "XX", "vlan1");
   ret = eval (script_name, "stop", "XX", "vlan2");
+  ret = eval (script_name, "stop", "XX", "ath0");
+#elif HAVE_LS5
+  ret = eval (script_name, "stop", "XX", "eth0");
   ret = eval (script_name, "stop", "XX", "ath0");
 #elif HAVE_DIR300
   ret = eval (script_name, "stop", "XX", "vlan1");

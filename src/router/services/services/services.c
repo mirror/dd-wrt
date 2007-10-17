@@ -118,7 +118,7 @@ addHost (char *host, char *ip)
 void
 start_vpn_modules (void)
 {
-#if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X86) ||defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)
+#if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X86) ||defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5)
   if ((nvram_match ("pptp_pass", "1") || nvram_match ("l2tp_pass", "1")
        || nvram_match ("ipsec_pass", "1")))
     {
@@ -165,7 +165,7 @@ start_vpn_modules (void)
 void
 stop_vpn_modules (void)
 {
-#if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)
+#if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5)
   eval ("/sbin/rmmod", "nf_nat_pptp");
   eval ("/sbin/rmmod", "nf_conntrack_pptp");
   eval ("/sbin/rmmod", "nf_nat_proto_gre");
