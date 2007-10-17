@@ -4547,6 +4547,8 @@ ej_getrebootflags (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "2");
 #elif HAVE_LS2
   websWrite (wp, "2");
+#elif HAVE_LS5
+  websWrite (wp, "2");
 #elif HAVE_WHRAG108
   websWrite (wp, "2");
 #elif HAVE_TW6600
