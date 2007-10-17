@@ -38,21 +38,27 @@
 #include <sys/time.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
 
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
 
+#define SIOCGMIIREG	0x8948	/* Read MII PHY register.       */
+#define SIOCSMIIREG	0x8949	/* Write MII PHY register.      */
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <linux/if.h>
+#include <linux/sockios.h>
+#include <linux/mii.h>
 
+//highly experimental
 
-extern void vlan_init(int num);
 
 int
 start_sysinit (void)
 {
-  char buf[PATH_MAX];
   struct utsname name;
-  struct stat tmp_stat;
   time_t tm = 0;
   unlink ("/etc/nvram/.lock");
   cprintf ("sysinit() proc\n");
@@ -67,6 +73,7 @@ start_sysinit (void)
   mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
   eval ("mkdir", "/tmp/www");
   eval ("mknod", "/dev/nvram", "c", "229", "0");
+  eval ("mknod", "/dev/ppp", "c", "108", "0");
 
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
@@ -99,17 +106,22 @@ start_sysinit (void)
 
   /* Modules */
   uname (&name);
+
 /* network drivers */
   eval ("insmod", "ar2313");
+
   eval ("insmod", "ath_ahb", "autocreate=none");
+
   eval ("ifconfig", "wifi0", "up");
-//  vlan_init (5); // 4 lan + 1 wan
+
+  eval ("insmod", "ipv6");
 
   /* Set a sane date */
   stime (&tm);
   nvram_set ("wl0_ifname", "ath0");
 
   return 0;
+  cprintf ("done\n");
 }
 
 int

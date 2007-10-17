@@ -372,15 +372,15 @@ vlan_init (int numports)
   unsigned int phyReg;
   unsigned int phyAddr;
   int i;
-  for (i=0;i<numports-1;i++) // last one will be wan port
-  {
-    ipPhyInfo[i].VLANTableSetting = IP_LAN_PORT_VLAN; 
-  }
-  ipPhyInfo[i++].VLANTableSetting = IP_WAN_PORT_VLAN; 
-  ipPhyInfo[i].VLANTableSetting = IP_WAN_PORT_VLAN; 
-  ipPhyInfo[i].isEnetPort = FALSE; 
-  ipPhyInfo[i].isPhyAlive = TRUE; 
-  ipPhyInfo[i++].phyAddr = 0x0; 
+  for (i = 0; i < numports - 1; i++)	// last one will be wan port
+    {
+      ipPhyInfo[i].VLANTableSetting = IP_LAN_PORT_VLAN;
+    }
+  ipPhyInfo[i++].VLANTableSetting = IP_WAN_PORT_VLAN;
+  ipPhyInfo[i].VLANTableSetting = IP_WAN_PORT_VLAN;
+  ipPhyInfo[i].isEnetPort = FALSE;
+  ipPhyInfo[i].isPhyAlive = TRUE;
+  ipPhyInfo[i++].phyAddr = 0x0;
   numports = i;
   fprintf (stderr, "Reset ICPLUS Phy\n");
   for (phyUnit = 0; phyUnit < numports; phyUnit++)
@@ -502,9 +502,7 @@ vlan_init (int numports)
   phyReg = phyReg & ~VID_INDX_SEL_M;
   setPhy (IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_9_REG, phyReg);
 
- eval ("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
- eval ("/sbin/vconfig", "add", "eth0", "1");	 
- eval ("/sbin/vconfig", "add", "eth0", "2");	 
+  eval ("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+  eval ("/sbin/vconfig", "add", "eth0", "1");
+  eval ("/sbin/vconfig", "add", "eth0", "2");
 }
-
-
