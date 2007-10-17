@@ -54,7 +54,6 @@
 
 #define SPIFLASH "spiflash: "
 
-#define ROOTFS_NAME "rootfs"
 #define MIN(a,b)        ((a) < (b) ? (a) : (b))
 
 #define busy_wait(condition, wait) \
@@ -432,15 +431,9 @@ static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", NULL };
 
 static int spiflash_probe(struct platform_device *pdev)
 {
-   	int result = -1, i, j;
-	u32 len;
+   	int result = -1;
    	int index, num_parts;
 	struct mtd_info *mtd;
-	struct  mtd_partition  *mtd_parts;
-	char *buf;
-	struct mtd_partition *part;
-	struct squashfs_super_block *sb;
-	u32 config_start;
 
 	spidata->mmraddr = ioremap_nocache(SPI_FLASH_MMR, SPI_FLASH_MMR_SIZE);
 	spin_lock_init(&spidata->mutex);
@@ -485,63 +478,10 @@ static int spiflash_probe(struct platform_device *pdev)
 
    	/* parse redboot partitions */
 	num_parts = parse_mtd_partitions(mtd, part_probe_types, &spidata->parsed_parts, 0);
-	mtd_parts = kzalloc(sizeof(struct mtd_partition) * MAX_PARTS, GFP_KERNEL);
-	buf = kmalloc(mtd->erasesize, GFP_KERNEL);
-	sb = (struct squashfs_super_block *) buf;
-	for (i = j = 0; i < num_parts; i++, j++) {
-		part = &mtd_parts[j];
-		memcpy(part, &spidata->parsed_parts[i], sizeof(struct mtd_partition));
-		
-		if (!strcmp(part->name, ROOTFS_NAME)) {
-			/* create the root device */
-			ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, i);
-
-			part->size -= mtd->erasesize;
-			config_start = part->offset + part->size;
-
-/*			while ((mtd->read(mtd, part->offset, mtd->erasesize, &len, buf) == 0) &&
-					(len == mtd->erasesize) &&
-					(*((u32 *) buf) == SQUASHFS_MAGIC) &&
-					(sb->bytes_used > 0)) {
-					
-				memcpy(&mtd_parts[j + 1], part, sizeof(struct mtd_partition));
-			
-				len = (u32) sb->bytes_used;
-				len += (part->offset & 0x000fffff);
-				len +=  (mtd->erasesize - 1);
-				len &= ~(mtd->erasesize - 1);
-				len -= (part->offset & 0x000fffff);
-
-				if (len + mtd->erasesize > part->size)
-					break;
-
-				part = &mtd_parts[++j];
-				
-				part->offset += len;
-				part->size -= len;
-
-				part->name = kmalloc(10, GFP_KERNEL);
-				sprintf(part->name, "rootfs%d", j - i);
-			}*/
-		}
-		if (!strcmp(part->name, "RedBoot config")) {
-			/* add anoterh partition for the board config data */
-			memcpy(&mtd_parts[j + 1], part, sizeof(struct mtd_partition));
-			j++;
-			part = &mtd_parts[j];
-			part->offset += part->size;
-			part->size = mtd->erasesize;
-			
-			part->name = kmalloc(16, GFP_KERNEL);
-			sprintf(part->name, "board_config");
-		}
-	}
-	num_parts += j - i;
-	kfree(buf);
 	if (!num_parts)
 		goto error;
 
-   	result = add_mtd_partitions(mtd, mtd_parts, num_parts);
+	result = add_mtd_partitions(mtd, spidata->parsed_parts, num_parts);
 	spidata->mtd = mtd;
 	
    	return (result);
