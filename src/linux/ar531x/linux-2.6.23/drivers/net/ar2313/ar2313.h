@@ -5,6 +5,11 @@
 #include <asm/bootinfo.h>
 #include <ar531x_platform.h>
 
+#define BOOL int
+#define UINT32 u32
+#define TRUE 1
+#define FALSE 0
+
 /*
  * probe link timer - 5 secs
  */
@@ -45,6 +50,10 @@ static inline int tx_space(u32 csm, u32 prd)
 #define AR2313_GET_VERSION	10
 #define AR2313_TEST_HANG	11
 #define AR2313_SYNC		12
+
+#define AR2313_EPHY_UNKNOWN 0
+#define AR2313_EPHY_ICSPLUS 1
+#define AR2313_EPHY_MARWELL 2
 
 
 //
@@ -94,6 +103,7 @@ typedef struct {
 	volatile unsigned int cur_tx_buf_addr;	/* 0x50 (CSR20) */
 	volatile unsigned int cur_rx_buf_addr;	/* 0x50 (CSR21) */
 } DMA;
+
 
 /*
  * Struct private for the Sibyte.
@@ -155,10 +165,10 @@ struct ar2313_private {
 
 	struct timer_list link_timer;
 	unsigned short phy;			/* merlot phy = 1, samsung phy = 0x1f */
+	unsigned short eth_phy;		/* typ eth phy  ICPLUS, MARWELL etc... */
 	unsigned short mac;
 	unsigned short link;		/* 0 - link down, 1 - link up */
 	u16 phyData;
-
 	struct tasklet_struct rx_tasklet;
 	int unloading;
 };

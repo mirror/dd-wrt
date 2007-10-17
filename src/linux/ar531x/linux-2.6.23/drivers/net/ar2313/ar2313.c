@@ -4,6 +4,7 @@
  * Copyright (C) 2004 by Sameer Dekate <sdekate@arubanetworks.com>
  * Copyright (C) 2006 Imre Kaloz <kaloz@openwrt.org>
  * Copyright (C) 2006-2007 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2007 Tomas Dlabac <tomas@dlabac.net>
  *
  * Thanks to Atheros for providing hardware and documentation
  * enabling me to write this driver.
@@ -78,7 +79,8 @@
 
 #include "dma.h"
 #include "ar2313.h"
-
+#include "mvPhy.h"
+#include "ipPhy.h"
 /*
  * New interrupt handler strategy:
  *
@@ -137,7 +139,7 @@
 
 #ifdef MODULE
 MODULE_AUTHOR
-	("Sameer Dekate <sdekate@arubanetworks.com>, Imre Kaloz <kaloz@openwrt.org>, Felix Fietkau <nbd@openwrt.org>");
+	("Sameer Dekate <sdekate@arubanetworks.com>, Imre Kaloz <kaloz@openwrt.org>, Felix Fietkau <nbd@openwrt.org> Tomas Dlabac <tomas@dlabac.net>");
 MODULE_DESCRIPTION("AR2313 Ethernet driver");
 MODULE_LICENSE("GPL");
 #endif
@@ -148,6 +150,7 @@ MODULE_LICENSE("GPL");
 static short armiiread(struct net_device *dev, short phy, short reg);
 static void armiiwrite(struct net_device *dev, short phy, short reg,
 					   short data);
+
 #ifdef TX_TIMEOUT
 static void ar2313_tx_timeout(struct net_device *dev);
 #endif
@@ -158,37 +161,6 @@ static void ar2313_multicast_list(struct net_device *dev);
 #ifndef ERR
 #define ERR(fmt, args...) printk("%s: " fmt, __func__, ##args)
 #endif
-
-
-#define ADM_CHIP_ID1_EXPECTATION                   0x1020 
-#define ADM_CHIP_ID2_EXPECTATION                   0x0007 
-#define ADM_PHY_ADDR                               0x5
-#define PHY_ADDR_SW_PORT 0
-#define ADM_SW_AUTO_MDIX_EN     0x8000
-
-static int isadm=0;
-
-static void setupADM(struct net_device *dev)
-{	
-   unsigned int sw_port_addr[6] = {1,3,5,7,8,9};
-   unsigned int  phyUnit;
-   unsigned short  reg = 0;
-   unsigned int  phyBase;
-
-int phyID1 = armiiread(dev, 0x5,0x0);
-int phyID2 = armiiread(dev, 0x5,0x1);
-printk(KERN_INFO "Phy %X:%X\n",phyID1,phyID2);
-    if(((phyID1 & 0xfff0) == ADM_CHIP_ID1_EXPECTATION) && (phyID2 == ADM_CHIP_ID2_EXPECTATION)){
-	printk(KERN_INFO "ADM6996FC detected!\n");
-	isadm=1;
-        for(phyUnit=0;phyUnit<6;phyUnit++) {
-    	   reg = armiiread(dev,PHY_ADDR_SW_PORT,sw_port_addr[phyUnit]);
-    	   reg |= ADM_SW_AUTO_MDIX_EN;
-           armiiwrite(dev,PHY_ADDR_SW_PORT,sw_port_addr[phyUnit],reg);
-	}
-	}
-}
-
 
 int __init ar2313_probe(struct platform_device *pdev)
 {
@@ -218,10 +190,10 @@ int __init ar2313_probe(struct platform_device *pdev)
 	if (!res)
 		return -ENODEV;
 
+	sp->eth_phy = AR2313_EPHY_UNKNOWN;
 	sp->link = 0;
 	ar_eth_base = res->start;
 	sp->phy = sp->cfg->phy;
-
 	sprintf(buf, "eth%d_irq", pdev->id);
 	dev->irq = platform_get_irq_byname(pdev, buf);
 
@@ -268,7 +240,8 @@ int __init ar2313_probe(struct platform_device *pdev)
 			printk("Can't remap phy registers\n");
 			return (-ENXIO);
 		}
- 	}
+	}
+
 	sp->dma_regs =
 		ioremap_nocache(virt_to_phys(ar_eth_base + 0x1000),
 						sizeof(*sp->dma_regs));
@@ -620,53 +593,81 @@ static void ar2313_check_link(struct net_device *dev)
 {
 	struct ar2313_private *sp = dev->priv;
 	u16 phyData;
-
-	phyData = armiiread(dev, sp->phy, MII_BMSR);
-	if (sp->phyData != phyData) {
-		if (phyData & BMSR_LSTATUS) {
-			/* link is present, ready link partner ability to deterine
-			   duplexity */
-			int duplex = 0;
-			u16 reg;
-
-			sp->link = 1;
-			reg = armiiread(dev, sp->phy, MII_BMCR);
-			if (reg & BMCR_ANENABLE) {
-				/* auto neg enabled */
-				reg = armiiread(dev, sp->phy, MII_LPA);
-				duplex = (reg & (LPA_100FULL | LPA_10FULL)) ? 1 : 0;
-			} else {
-				/* no auto neg, just read duplex config */
-				duplex = (reg & BMCR_FULLDPLX) ? 1 : 0;
+	u16 reg;
+	u16 duplex;
+	
+	switch (sp->eth_phy) {
+		
+		case AR2313_EPHY_MARWELL:
+			
+			phyData = armiiread(dev, 0x10 , MV_PHY_SPECIFIC_STATUS);
+			phyData |= armiiread(dev, 0x11 , MV_PHY_SPECIFIC_STATUS);
+			phyData |= armiiread(dev, 0x12 , MV_PHY_SPECIFIC_STATUS);		
+			if (sp->phyData != phyData) {
+				if (phyData & MV_STATUS_REAL_TIME_LINK_UP) {
+					sp->link = 1;
+					if (phyData & MV_STATUS_RESOLVED_DUPLEX_FULL )
+						duplex=1;
+					else
+						duplex=2;
+				}					
+				else 
+					duplex=0;
+				
+				sp->phyData = phyData;
 			}
-
-			printk(KERN_INFO "%s: Configuring MAC for %s duplex\n",
-				   dev->name, (duplex) ? "full" : "half");
-
-			if (duplex) {
-				/* full duplex */
-				sp->eth_regs->mac_control =
-					((sp->eth_regs->
-					  mac_control | MAC_CONTROL_F) & ~MAC_CONTROL_DRO);
-			} else {
-				/* half duplex */
-				sp->eth_regs->mac_control =
-					((sp->eth_regs->
-					  mac_control | MAC_CONTROL_DRO) & ~MAC_CONTROL_F);
+		break;
+		
+		case AR2313_EPHY_ICSPLUS:
+			
+			phyData = armiiread(dev, sp->phy, IP_PHY_STATUS);
+			if (sp->phyData != phyData) {
+				if (phyData & IP_STATUS_LINK_PASS)  {
+					sp->link = 1;
+					reg = armiiread(dev, sp->phy,IP_LINK_PARTNER_ABILITY);
+					if ((reg & IP_LINK_100BASETX_FULL_DUPLEX) || (reg & IP_LINK_10BASETX_FULL_DUPLEX))
+						duplex = 1;
+					else 
+						duplex = 2;
+				}
+				else 
+					duplex = 0;
+				
+				sp->phyData = phyData;
 			}
-		} else {
-			/* no link */
-			sp->link = 0;
-		}
-		sp->phyData = phyData;
+		break;
 	}
-}
 
+	
+	switch (duplex) {
+			case 1:	
+				/* FULL DUPLEX */
+				printk ("%s: Full duplex\n",dev->name);
+				sp->eth_regs->mac_control = ((sp->eth_regs->  mac_control | MAC_CONTROL_F) & ~MAC_CONTROL_DRO);					
+				break;
+			case 2:
+				/* HALF DUPLEX */
+				printk ("%s: Half duplex\n",dev->name);			
+				sp->eth_regs->mac_control = ((sp->eth_regs->  mac_control | MAC_CONTROL_DRO) & ~MAC_CONTROL_F);
+				break;
+			case 0:
+				/* no link */
+				printk ("%s: No link\n",dev->name);
+				sp->link = 0;
+				break;
+		}
+	
+}
 static int ar2313_reset_reg(struct net_device *dev)
 {
 	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
 	unsigned int ethsal, ethsah;
 	unsigned int flags;
+	u16 atuControl;
+	u16 phyData;
+	u16 phyAddr;
+	u16 switchPortAddr;
+	u16 portAssociationVector;
 
 	*sp->int_regs |= sp->cfg->reset_mac;
 	mdelay(10);
@@ -677,6 +678,65 @@ static int ar2313_reset_reg(struct net_device *dev)
 	*sp->int_regs &= ~sp->cfg->reset_phy;
 	mdelay(10);
 
+    phyData = armiiread(dev, 0x10, MV_PHY_ID1);
+	phyData = armiiread(dev, 0x10, MV_PHY_ID1);
+	if (phyData == MV_PHY_ID1_EXPECTATION) {
+		phyData = armiiread(dev, 0x10, MV_PHY_ID2);
+		if ((phyData & MV_OUI_LSB_MASK) != MV_OUI_LSB_EXPECTATION)
+			printk("%s: Invalid PHY ID2 Expected 0x%04x, read 0x%04x\n", dev->name, MV_OUI_LSB_EXPECTATION,phyData);
+		else {
+			printk ("%s: Found PHY MARWELL model 0x%x revision 0x%x\n", dev->name, (phyData & MV_MODEL_NUM_MASK) >> MV_MODEL_NUM_SHIFT,
+                   (phyData & MV_REV_NUM_MASK) >> MV_REV_NUM_SHIFT);
+			sp->eth_phy = AR2313_EPHY_MARWELL;
+		}
+	}
+	phyData = armiiread(dev, IP_PHY1_ADDR, IP_PHY_ID1);
+	phyData = armiiread(dev, IP_PHY1_ADDR, IP_PHY_ID1);
+	if (phyData == IP_PHY_ID1_EXPECTATION) {
+		phyData = armiiread(dev, IP_PHY1_ADDR, IP_PHY_ID2);
+		if ((phyData & IP_OUI_LSB_MASK) != IP_OUI_LSB_EXPECTATION) 
+            printk ("%s: Invalid PHY ID2 Expected 0x%04x, read 0x%04x\n", dev->name, IP_OUI_LSB_EXPECTATION,phyData);
+		else {
+			printk ("%s: Found PHY ICPLUS model 0x%x revision 0x%x\n", dev->name, (phyData & IP_MODEL_NUM_MASK) >> IP_MODEL_NUM_SHIFT,
+                   (phyData & IP_REV_NUM_MASK) >> IP_REV_NUM_SHIFT);
+			sp->eth_phy = AR2313_EPHY_ICSPLUS;
+		}
+	}
+			
+	switch (sp->eth_phy) {
+		
+		case AR2313_EPHY_ICSPLUS:
+			/* start auto negogiation on phy */
+			armiiwrite(dev, IP_PHY1_ADDR, IP_AUTONEG_ADVERT,  IP_ADVERTISE_ALL);
+			armiiwrite(dev, IP_PHY1_ADDR, IP_PHY_CONTROL, IP_CTRL_AUTONEGOTIATION_ENABLE | IP_CTRL_START_AUTONEGOTIATION);
+			break;
+		case AR2313_EPHY_MARWELL:
+			/* Initialize global switch settings */
+    		atuControl  = MV_ATUCTRL_AGE_TIME_DEFAULT << MV_ATUCTRL_AGE_TIME_SHIFT;
+    		atuControl |= MV_ATUCTRL_ATU_SIZE_DEFAULT << MV_ATUCTRL_ATU_SIZE_SHIFT;
+    		armiiwrite(dev, MV_SWITCH_GLOBAL_ADDR, MV_ATU_CONTROL, atuControl);
+			/* Reset PHYs and start autonegoation on each. */
+			for (phyAddr = 0x10; phyAddr < 0x16; phyAddr++)
+				armiiwrite(dev, phyAddr, MV_PHY_CONTROL, MV_CTRL_SOFTWARE_RESET | MV_CTRL_AUTONEGOTIATION_ENABLE);
+			/*enable whichever PHY ports are supposed  to be enabled according to administrative configuration. */
+			portAssociationVector = 1;
+			for (switchPortAddr = 0x18; switchPortAddr < 0x1e; switchPortAddr++) {
+				armiiwrite(dev, switchPortAddr, MV_PORT_CONTROL, MV_PORT_CONTROL_PORT_STATE_FORWARDING);
+				armiiwrite(dev, switchPortAddr, MV_PORT_ASSOCIATION_VECTOR, portAssociationVector);
+				flags = armiiread(dev, switchPortAddr, MV_PORT_BASED_VLAN_MAP);
+				portAssociationVector <<= 1;
+			}
+			
+			//mv_phySetup(dev);
+			break;
+		default:
+			printk ("%s: UNKNOWN PHY - abort !\n", dev->name);
+			return (1);
+			break;
+	}
+	
+	
+	
 	sp->dma_regs->bus_mode = (DMA_BUS_MODE_SWR);
 	mdelay(10);
 	sp->dma_regs->bus_mode =
@@ -794,7 +854,6 @@ static int ar2313_init(struct net_device *dev)
 	 * Init hardware
 	 */
 	ar2313_reset_reg(dev);
-        setupADM(dev);
 
 	/* 
 	 * Get the IRQ
@@ -1360,6 +1419,7 @@ static int netdev_ethtool_ioctl(struct net_device *dev, void *useraddr)
 {
 	struct ar2313_private *np = dev->priv;
 	u32 cmd;
+	u16 phyData;
 
 	if (get_user(cmd, (u32 *) useraddr))
 		return -EFAULT;
@@ -1402,8 +1462,23 @@ static int netdev_ethtool_ioctl(struct net_device *dev, void *useraddr)
 		/* get link status */
 	case ETHTOOL_GLINK:{
 			struct ethtool_value edata = { ETHTOOL_GLINK };
-			edata.data =
-				(armiiread(dev, np->phy, MII_BMSR) & BMSR_LSTATUS) ? 1 : 0;
+
+			switch (np->eth_phy) {
+		
+				case AR2313_EPHY_MARWELL:
+			
+					phyData = armiiread(dev, 0x10 , MV_PHY_SPECIFIC_STATUS);
+					phyData |= armiiread(dev, 0x11 , MV_PHY_SPECIFIC_STATUS);
+					phyData |= armiiread(dev, 0x12 , MV_PHY_SPECIFIC_STATUS);		
+					edata.data = (phyData & MV_STATUS_REAL_TIME_LINK_UP) ? 1 : 0;
+					break;
+		
+				case AR2313_EPHY_ICSPLUS:
+			
+					edata.data = (armiiread(dev, np->phy, MII_BMSR) & BMSR_LSTATUS) ? 1 : 0;	
+					break;
+			}
+	
 			if (copy_to_user(useraddr, &edata, sizeof(edata)))
 				return -EFAULT;
 			return 0;
@@ -1412,6 +1487,7 @@ static int netdev_ethtool_ioctl(struct net_device *dev, void *useraddr)
 
 	return -EOPNOTSUPP;
 }
+
 static int ar2313_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 {
 	struct mii_ioctl_data *data = (struct mii_ioctl_data *) &ifr->ifr_data;
@@ -1467,12 +1543,15 @@ static struct net_device_stats *ar2313_get_stats(struct net_device *dev)
 
 static short armiiread(struct net_device *dev, short phy, short reg)
 {
+
+short outp;
+
 	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
 	volatile ETHERNET_STRUCT *ethernet = sp->phy_regs;
-
 	ethernet->mii_addr = MII_ADDR(phy, reg);
 	while (ethernet->mii_addr & MII_ADDR_BUSY);
-	return (ethernet->mii_data >> MII_DATA_SHIFT);
+	outp=ethernet->mii_data >> MII_DATA_SHIFT;
+	return (outp);
 }
 
 static void
@@ -1480,7 +1559,6 @@ armiiwrite(struct net_device *dev, short phy, short reg, short data)
 {
 	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
 	volatile ETHERNET_STRUCT *ethernet = sp->phy_regs;
-
 	while (ethernet->mii_addr & MII_ADDR_BUSY);
 	ethernet->mii_data = data << MII_DATA_SHIFT;
 	ethernet->mii_addr = MII_ADDR(phy, reg) | MII_ADDR_WRITE;
