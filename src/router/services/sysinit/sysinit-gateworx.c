@@ -214,7 +214,7 @@ start_sysinit (void)
 
 
 
-  eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
+  eval ("insmod", "ath_pci");
 
 #ifdef HAVE_MADWIFI_MIMO
   eval ("insmod", "ath_mimo_pci");
