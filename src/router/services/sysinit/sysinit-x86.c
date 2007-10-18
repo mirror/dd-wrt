@@ -321,7 +321,7 @@ eval("insmod","crypto_null");
   eval ("ifconfig", "eth3", "0.0.0.0", "up");
 
 #ifndef HAVE_NOWIFI
-  eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
+  eval ("insmod", "ath_pci");
 #ifdef HAVE_MADWIFI_MIMO
   eval ("insmod", "ath_mimo_pci");
 #endif

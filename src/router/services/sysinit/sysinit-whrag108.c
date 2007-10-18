@@ -202,7 +202,7 @@ start_sysinit (void)
 /* network drivers */
   eval ("insmod", "ar2313");
 
-  eval ("insmod", "ath_ahb", "autocreate=none");
+  eval ("insmod", "ath_ahb");
 
 
   system ("echo 2 >/proc/sys/dev/wifi0/ledpin");
