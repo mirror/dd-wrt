@@ -1,15 +1,15 @@
 /*
  * Broadcom SiliconBackplane chipcommon serial flash interface
  *
- * Copyright 2001-2003, Broadcom Corporation   
- * All Rights Reserved.   
- *    
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY   
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM   
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS   
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.   
+ * Copyright 2006, Broadcom Corporation      
+ * All Rights Reserved.      
+ *       
+ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
+ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM      
+ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS      
+ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.      
  *
- * $Id: sflash.c,v 1.1.1.3 2003/11/10 17:43:38 hyin Exp $
+ * $Id$
  */
 
 #include <linux/config.h>
@@ -24,36 +24,26 @@
 #include <linux/delay.h>
 #include <asm/io.h>
 
-#ifdef CONFIG_MTD_PARTITIONS
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-#include <linux/minix_fs.h>
-#include <linux/ext2_fs.h>
-#include <linux/romfs_fs.h>
-#include <linux/cramfs_fs.h>
-#include <linux/jffs2.h>
-#endif
-
 #include <typedefs.h>
-#include <bcmdevs.h>
-#include <bcmutils.h>
 #include <osl.h>
 #include <bcmutils.h>
+#include <bcmdevs.h>
 #include <bcmnvram.h>
+#include <sbutils.h>
 #include <sbconfig.h>
 #include <sbchipc.h>
 #include <sflash.h>
-#include <trxhdr.h>
 
 #ifdef CONFIG_MTD_PARTITIONS
 extern struct mtd_partition * init_mtd_partitions(struct mtd_info *mtd, size_t size);
 #endif
 
 struct sflash_mtd {
+	sb_t *sbh;
 	chipcregs_t *cc;
 	struct semaphore lock;
 	struct mtd_info mtd;
-	struct mtd_erase_region_info regions[1];
+	struct mtd_erase_region_info region;
 };
 
 /* Private global state */
@@ -66,7 +56,7 @@ sflash_mtd_poll(struct sflash_mtd *sflash, unsigned int offset, int timeout)
 	int ret = 0;
 
 	for (;;) {
-		if (!sflash_poll(sflash->cc, offset)) {
+		if (!sflash_poll(sflash->sbh, sflash->cc, offset)) {
 			ret = 0;
 			break;
 		}
@@ -101,7 +91,7 @@ sflash_mtd_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u
 
 	*retlen = 0;
 	while (len) {
-		if ((bytes = sflash_read(sflash->cc, (uint) from, len, buf)) < 0) {
+		if ((bytes = sflash_read(sflash->sbh, sflash->cc, (uint) from, len, buf)) < 0) {
 			ret = bytes;
 			break;
 		}
@@ -132,7 +122,7 @@ sflash_mtd_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, co
 
 	*retlen = 0;
 	while (len) {
-		if ((bytes = sflash_write(sflash->cc, (uint) to, len, buf)) < 0) {
+		if ((bytes = sflash_write(sflash->sbh, sflash->cc, (uint) to, len, buf)) < 0) {
 			ret = bytes;
 			break;
 		}
@@ -172,7 +162,7 @@ sflash_mtd_erase(struct mtd_info *mtd, struct erase_info *erase)
 		for (j = 0; j < mtd->eraseregions[i].numblocks; j++) {
 			if (addr == mtd->eraseregions[i].offset + mtd->eraseregions[i].erasesize * j &&
 			    len >= mtd->eraseregions[i].erasesize) {
-				if ((ret = sflash_erase(sflash->cc, addr)) < 0)
+				if ((ret = sflash_erase(sflash->sbh, sflash->cc, addr)) < 0)
 					break;
 				if ((ret = sflash_mtd_poll(sflash, addr, 10 * HZ)))
 					break;
@@ -210,7 +200,7 @@ sflash_mtd_init(void)
 	struct pci_dev *pdev;
 	int ret = 0;
 	struct sflash *info;
-	uint bank, i;
+	uint i;
 #ifdef CONFIG_MTD_PARTITIONS
 	struct mtd_partition *parts;
 #endif
@@ -223,6 +213,13 @@ sflash_mtd_init(void)
 	memset(&sflash, 0, sizeof(struct sflash_mtd));
 	init_MUTEX(&sflash.lock);
 
+	/* attach to the backplane */
+	if (!(sflash.sbh = sb_kattach(SB_OSH))) {
+		printk(KERN_ERR "sflash: error attaching to backplane\n");
+		ret = -EIO;
+		goto fail;
+	}
+
 	/* Map registers and flash base */
 	if (!(sflash.cc = ioremap_nocache(pci_resource_start(pdev, 0),
 					  pci_resource_len(pdev, 0)))) {
@@ -232,31 +229,26 @@ sflash_mtd_init(void)
 	}
 
 	/* Initialize serial flash access */
-	info = sflash_init(sflash.cc);
-
-	if (!info) {
+	if (!(info = sflash_init(sflash.sbh, sflash.cc))) {
 		printk(KERN_ERR "sflash: found no supported devices\n");
 		ret = -ENODEV;
 		goto fail;
 	}
 
-	/* Setup banks */
-	sflash.regions[0].offset = 0;
-	sflash.regions[0].erasesize = info->blocksize;
-	sflash.regions[0].numblocks = info->numblocks;
-	if (sflash.regions[0].erasesize > sflash.mtd.erasesize)
-		sflash.mtd.erasesize = sflash.regions[0].erasesize;
-	if (sflash.regions[0].erasesize * sflash.regions[0].numblocks) {
-		sflash.mtd.size += sflash.regions[0].erasesize * sflash.regions[0].numblocks;
-	}
+	/* Setup region info */
+	sflash.region.offset = 0;
+	sflash.region.erasesize = info->blocksize;
+	sflash.region.numblocks = info->numblocks;
+	if (sflash.region.erasesize > sflash.mtd.erasesize)
+		sflash.mtd.erasesize = sflash.region.erasesize;
+	sflash.mtd.size = info->size;
 	sflash.mtd.numeraseregions = 1;
-	ASSERT(sflash.mtd.size == info->size);
 
 	/* Register with MTD */
 	sflash.mtd.name = "sflash";
 	sflash.mtd.type = MTD_NORFLASH;
 	sflash.mtd.flags = MTD_CAP_NORFLASH;
-	sflash.mtd.eraseregions = sflash.regions;
+	sflash.mtd.eraseregions = &sflash.region;
 	sflash.mtd.module = THIS_MODULE;
 	sflash.mtd.erase = sflash_mtd_erase;
 	sflash.mtd.read = sflash_mtd_read;
@@ -280,6 +272,8 @@ sflash_mtd_init(void)
  fail:
 	if (sflash.cc)
 		iounmap((void *) sflash.cc);
+	if (sflash.sbh)
+		sb_detach(sflash.sbh);
 	return ret;
 }
 
@@ -292,6 +286,7 @@ sflash_mtd_exit(void)
 	del_mtd_device(&sflash.mtd);
 #endif
 	iounmap((void *) sflash.cc);
+	sb_detach(sflash.sbh);
 }
 
 module_init(sflash_mtd_init);
