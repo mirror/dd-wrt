@@ -37,7 +37,7 @@
 #include <sbchipc.h>
 #include <sbutils.h>
 #include <sbmips.h>
-
+#define CONFIG_SFLASH
 #ifdef CONFIG_SFLASH
 #include <sflash.h>
 #endif
