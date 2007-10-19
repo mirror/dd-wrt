@@ -3,6 +3,7 @@
 
 struct xt_mac_info {
     unsigned char srcaddr[ETH_ALEN];
+    inr type;
     int invert;
 };
 #endif /*_XT_MAC_H*/
