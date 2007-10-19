@@ -19,12 +19,14 @@ help(void)
 	printf(
 "MAC v%s options:\n"
 " --mac-source [!] XX:XX:XX:XX:XX:XX\n"
+" --mac-destination [!] XX:XX:XX:XX:XX:XX\n"
 "				Match source MAC address\n"
 "\n", IPTABLES_VERSION);
 }
 
 static struct option opts[] = {
 	{ "mac-source", 1, 0, '1' },
+	{ "mac-destination", 1, 0, '2' },
 	{0}
 };
 
@@ -68,6 +70,15 @@ parse(int c, char **argv, int invert, unsigned int *flags,
 		parse_mac(argv[optind-1], macinfo);
 		if (invert)
 			macinfo->invert = 1;
+		macinfo->type=0;
+		*flags = 1;
+		break;
+	case '2':
+		check_inverse(optarg, &invert, &optind, 0);
+		parse_mac(argv[optind-1], macinfo);
+		if (invert)
+			macinfo->invert = 1;
+		macinfo->type=1;
 		*flags = 1;
 		break;
 
@@ -108,6 +119,7 @@ print(const struct ipt_ip *ip,
 		printf("! ");
 	
 	print_mac(((struct ipt_mac_info *)match->data)->srcaddr);
+	
 }
 
 /* Saves the union ipt_matchinfo in parsable form to stdout. */
@@ -115,10 +127,16 @@ static void save(const struct ipt_ip *ip, const struct ipt_entry_match *match)
 {
 	if (((struct ipt_mac_info *)match->data)->invert)
 		printf("! ");
-
+	if (((struct ipt_mac_info *)match->data)->type==0)
+	{
 	printf("--mac-source ");
 	print_mac(((struct ipt_mac_info *)match->data)->srcaddr);
-}
+	}else
+	{
+	printf("--mac-destination ");
+	print_mac(((struct ipt_mac_info *)match->data)->srcaddr);
+	}
+}	
 
 static struct iptables_match mac = { 
 	.next		= NULL,
