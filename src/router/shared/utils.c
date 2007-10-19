@@ -595,8 +595,8 @@ internal_getRouterBrand ()
 	}
     }
 
-  int bflags; 
-  char bftemp[16]; 
+//  int bflags; 
+//  char bftemp[16]; 
   if (nvram_match ("boardtype", "0x456"))
     {
       if (startswith (et0, "00:11:50") ||
@@ -604,10 +604,10 @@ internal_getRouterBrand ()
 	{
 	  cprintf ("router is Belkin F5D7231-4 v1212UK\n");
 	  setRouter ("Belkin F5D7231-4 v1212UK");
-	  bflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
-	  bflags = bflags | 0x010;
-	  sprintf (bftemp, "0x%04X", bflags);
-	  nvram_set ("boardflags", bftemp);
+//	  bflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
+//	  bflags = bflags | 0x010;
+//	  sprintf (bftemp, "0x%04X", bflags);
+//	  nvram_set ("boardflags", bftemp);
 	  return ROUTER_BELKIN_F5D7231;
 	}
     }
@@ -619,10 +619,10 @@ internal_getRouterBrand ()
 	{
 	  cprintf ("router is Belkin F5D7231-4 v2000\n");
 	  setRouter ("Belkin F5D7231-4 v2000");
-	  bflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
-	  bflags = bflags | 0x010;
-	  sprintf (bftemp, "0x%04X", bflags);
-	  nvram_set ("boardflags", bftemp);
+//	  bflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
+//	  bflags = bflags | 0x010;
+//	  sprintf (bftemp, "0x%04X", bflags);
+//	  nvram_set ("boardflags", bftemp);
 	  return ROUTER_BELKIN_F5D7231;
 	}
     }
