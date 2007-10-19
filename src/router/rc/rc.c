@@ -888,6 +888,10 @@ int minute = 0;
   else if (strstr (base, "ledtool"))
     return ledtool_main (argc, argv);
 #endif
+#ifdef HAVE_REGISTER
+  else if (strstr (base, "regshell"))
+    return reg_main (argc, argv);
+#endif
 //  else if (strstr (base, "reboot"))
 //    shutdown_system();
   return 1;
