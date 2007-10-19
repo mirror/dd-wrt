@@ -608,7 +608,7 @@ internal_getRouterBrand ()
 	  bflags = bflags | 0x010;
 	  sprintf (bftemp, "0x%04X", bflags);
 	  nvram_set ("boardflags", bftemp);
-	  return ROUTER_RT480W;
+	  return ROUTER_BELKIN_F5D7231;
 	}
     }
     
@@ -623,7 +623,7 @@ internal_getRouterBrand ()
 	  bflags = bflags | 0x010;
 	  sprintf (bftemp, "0x%04X", bflags);
 	  nvram_set ("boardflags", bftemp);
-	  return ROUTER_RT480W;
+	  return ROUTER_BELKIN_F5D7231;
 	}
     }
 #endif
