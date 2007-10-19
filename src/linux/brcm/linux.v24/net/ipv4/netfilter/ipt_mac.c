@@ -18,12 +18,27 @@ match(const struct sk_buff *skb,
 {
     const struct ipt_mac_info *info = matchinfo;
 
+    switch(info->type)
+    {
+    case 0:
     /* Is mac pointer valid? */
     return (skb->mac.raw >= skb->head
 	    && (skb->mac.raw + ETH_HLEN) <= skb->data
 	    /* If so, compare... */
 	    && ((memcmp(skb->mac.ethernet->h_source, info->srcaddr, ETH_ALEN)
 		== 0) ^ info->invert));
+    break;
+    case 0:
+    return (skb->mac.raw >= skb->head
+	    && (skb->mac.raw + ETH_HLEN) <= skb->data
+	    /* If so, compare... */
+	    && ((memcmp(skb->mac.ethernet->h_dest, info->srcaddr, ETH_ALEN)
+		== 0) ^ info->invert));
+    break;
+    default:
+    return 0;
+    break;
+    }
 }
 
 static int
