@@ -344,7 +344,7 @@ start_sysinit (void)
 
     case ROUTER_RT480W:
     case ROUTER_USR_5461:
-    case ROUTER_BELKIN_F5D7321:
+    case ROUTER_BELKIN_F5D7231:
       setup_4712 ();
       break;
 
