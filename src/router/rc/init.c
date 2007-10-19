@@ -106,6 +106,7 @@ ddrun_shell (int timeout, int nowait)
     "TERM=vt100",
     "TERMINFO=/etc/terminfo",
     "HOME=/",
+    "PS1=\\u@\\h:\\w\\$ ",
     "PATH=/usr/bin:/bin:/usr/sbin:/sbin:/jffs/usr/bin:/jffs/bin:/jffs/usr/sbin:/jffs/sbin",
     "LD_LIBRARY_PATH=/usr/lib:/lib:/jffs/usr/lib:/jffs/lib",
     "SHELL=" SHELL,
