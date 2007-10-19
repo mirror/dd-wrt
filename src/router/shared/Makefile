@@ -40,12 +40,13 @@ endif
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
   CFLAGS += -DHAVE_DROPBEAR -DHAVE_SSHD
 endif
-OBJS += register.o
+
 ifeq ($(CONFIG_SUPERCHANNEL),y)
 CFLAGS += -DHAVE_SUPERCHANNEL
 endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
+OBJS += register.o
 endif
 
 ifeq ($(CONFIG_SILENCE),y)
