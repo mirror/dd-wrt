@@ -425,6 +425,9 @@ endif
 ifneq ($(CONFIG_XSCALE),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc gpio
 endif
+ifeq ($(CONFIG_REGISTER),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc regshell
+endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc listen
 	cd $(INSTALLDIR)/sbin && ln -sf rc check_ps
 	cd $(INSTALLDIR)/sbin && ln -sf rc ddns_success
