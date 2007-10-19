@@ -973,6 +973,8 @@ macgrp_chain (int seq, unsigned int mark, int urlenable)
   if (strcmp (wordlist, "") == 0)
     return;
 
+  eval ("insmod", "ipt_mac");
+
   if (mark == MARK_DROP)
     {
       foreach (var, wordlist, next)
@@ -1207,7 +1209,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
 
 	  for (i = 0; i < strlen (realname); i++)
 	    realname[i] = tolower (realname[i]);
-	  eval("insmod","ipt_layer7");
+	  eval("insmod", "ipt_layer7");
 	  save2file ("-A advgrp_%d -m layer7 --l7proto %s -j %s\n",
 		     seq, realname, log_drop);
 	}
@@ -1240,7 +1242,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
 	    proto = "waste";
 	  else if (!strcasecmp (realname, "xdcc"))
 	    proto = "xdcc";
-	eval("insmod","ipt_ipp2p");
+	eval("insmod", "ipt_ipp2p");
 	  save2file ("-A advgrp_%d -p tcp -m ipp2p --%s -j %s\n", seq, proto,
 		     log_drop);
 
@@ -1251,7 +1253,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
   /* p2p catchall */
   if (nvram_match (nvname, "1"))
     {
-     eval("insmod","ipt_ipp2p");
+     eval("insmod", "ipt_ipp2p");
       save2file ("-A advgrp_%d -p tcp -m ipp2p --ipp2p -j %s\n", seq,
 		 log_drop);
     }
@@ -1260,7 +1262,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
   wordlist = nvram_safe_get (nvname);
   if (strcmp (wordlist, ""))
     {
-      eval("insmod","ipt_webstr");
+      eval("insmod", "ipt_webstr");
       save2file ("-A advgrp_%d -p tcp -m tcp -m webstr --host \"%s\" -j %s\n",
 		 seq, wordlist, log_reject);
     }
@@ -1269,7 +1271,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
   wordlist = nvram_safe_get (nvname);
   if (strcmp (wordlist, ""))
     {
-      eval("insmod","ipt_webstr");
+      eval("insmod", "ipt_webstr");
       save2file ("-A advgrp_%d -p tcp -m tcp -m webstr --url \"%s\" -j %s\n",
 		 seq, wordlist, log_reject);
     }
@@ -1775,7 +1777,7 @@ filter_forward (void)
 //             lanface, wanface, HTTP_PORT, webfilter, log_reject);
   if (webfilter)
   {  
-    eval("insmod","ipt_webstr");
+    eval("insmod", "ipt_webstr");
     save2file ("-A FORWARD -i %s -o %s -p tcp -m tcp "
 	       "-m webstr --content %d -j %s\n",
 	       lanface, wanface, webfilter, log_reject);
