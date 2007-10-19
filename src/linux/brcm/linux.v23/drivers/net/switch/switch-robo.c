@@ -55,8 +55,8 @@
 #define SIOCGETCPHYRD           (SIOCDEVPRIVATE + 9)
 #define SIOCSETCPHYWR           (SIOCDEVPRIVATE + 10)
 
-//#define ROBO_DBG(fmt, args...) printk(fmt, ##args);
-#define ROBO_DBG(fmt, args...)
+#define ROBO_DBG(fmt, args...) printk(fmt, ##args);
+//#define ROBO_DBG(fmt, args...)
 
 static int use_et = 0;
 static int is_5350 = 0;
