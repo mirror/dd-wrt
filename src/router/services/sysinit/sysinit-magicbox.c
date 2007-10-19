@@ -64,14 +64,21 @@ start_sysinit (void)
   mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
   // fix for linux kernel 2.6
   mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
+  eval ("mknod", "/dev/nvram", "c", "229", "0");
   eval ("mknod", "/dev/ppp", "c", "108", "0");
   eval ("mkdir", "/tmp/www");
 
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
   eval ("/bin/tar", "-xzf", "/dev/mtdblock/2", "-C", "/");
-//  eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
-//  eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
+  FILE *in = fopen ("/tmp/nvram/nvram.db", "rb");
+  if (in != NULL)
+    {
+      fclose (in);
+      eval ("/usr/sbin/convertnvram");
+      eval ("/usr/sbin/mtd", "erase", "nvram");
+      nvram_commit ();
+    }
   cprintf ("sysinit() var\n");
 
   /* /var */
