@@ -981,8 +981,8 @@ macgrp_chain (int seq, unsigned int mark, int urlenable)
       {
 	save2file ("-A grp_%d -m mac --mac-source %s -j %s\n", seq, var,
 		   log_drop);
-//	save2file ("-A grp_%d -m mac --mac-destination %s -j %s\n", seq, var,
-//		   log_drop);
+	save2file ("-A grp_%d -m mac --mac-destination %s -j %s\n", seq, var,
+		   log_drop);
       }
     }
   else
@@ -991,8 +991,8 @@ macgrp_chain (int seq, unsigned int mark, int urlenable)
       {
 	save2file ("-A grp_%d -m mac --mac-source %s -j advgrp_%d\n", seq,
 		   var, seq);
-//	save2file ("-A grp_%d -m mac --mac-destination %s -j advgrp_%d\n",
-//		   seq, var, seq);
+	save2file ("-A grp_%d -m mac --mac-destination %s -j advgrp_%d\n",
+		   seq, var, seq);
 
 	/*
 	   mark = urlenable  ? mark : webfilter  ? MARK_HTTP : 0;
