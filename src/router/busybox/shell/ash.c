@@ -1656,10 +1656,10 @@ static void initvar(void)
 	 * PS1 depends on uid
 	 */
 #if defined(CONFIG_FEATURE_COMMAND_EDITING) && defined(CONFIG_FEATURE_SH_FANCY_PROMPT)
-	vps1.text = "PS1=\\w \\$ ";
+	vps1.text = "PS1=\\u@\\h:\\w\\$ ";
 #else
 	if (!geteuid())
-		vps1.text = "PS1=# ";
+		vps1.text = "PS1=\\u@\\h:\\w\\$ ";
 #endif
 	vp = varinit;
 	end = vp + sizeof(varinit) / sizeof(varinit[0]);

@@ -860,7 +860,7 @@ static void cmdedit_set_initial_prompt(void)
 #else
 	PS1 = getenv("PS1");
 	if(PS1==0)
-		PS1 = "\\w \\$ ";
+		PS1 = "\\u@\\h:\\w\\$ ";
 #endif
 }
 
