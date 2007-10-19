@@ -139,9 +139,21 @@ ddrun_shell (int timeout, int nowait)
 
       /* Now run it.  The new program will take over this PID, 
        * so nothing further in init.c should be run. */
+#ifdef HAVE_REGISTER
+    if (isregistered())
+#endif
       execve (SHELL, (char *[])
 	      {
 	      "/bin/login", NULL}, envp);
+#ifdef HAVE_REGISTER
+    else
+    {
+    envp[6]="SHELL=/sbin/regshell";
+      execve ("/sbin/regshell", (char *[])
+	      {
+	      "/sbin/regshell", NULL}, envp); 
+    }
+#endif
 
       /* We're still here?  Some error happened. */
       perror (SHELL);

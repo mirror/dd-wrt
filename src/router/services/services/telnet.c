@@ -34,13 +34,22 @@ start_telnetd (void)
   pid_t pid;
 
   char *telnetd_argv[] = { "/usr/sbin/telnetd", NULL };
-
+#ifdef HAVE_REGISTER
+  char *telnetd_argv_reg[] = { "/usr/sbin/telnetd", "-l","/sbin/regshell",NULL };
+#endif
   stop_telnetd ();
 
   if (!nvram_invmatch ("telnetd_enable", "0"))
     return 0;
 
-  ret = _evalpid (telnetd_argv, NULL, 0, &pid);
+#ifdef HAVE_REGISTER
+    if (isregistered())
+#endif
+	ret = _evalpid (telnetd_argv, NULL, 0, &pid);
+#ifdef HAVE_REGISTER
+    else
+	ret = _evalpid (telnetd_argv_reg, NULL, 0, &pid);
+#endif
   syslog (LOG_INFO, "telnetd : telnet daemon successfully started\n");
 
   cprintf ("done\n");

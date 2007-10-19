@@ -88,10 +88,7 @@ start_services (void)
   handle = start_service_nofree ("hwmon", handle);
 #endif
 #ifdef HAVE_TELNET
-#ifdef HAVE_REGISTER
-  if (isregistered ())
-#endif
-    handle = start_service_nofree ("telnetd", handle);
+  handle = start_service_nofree ("telnetd", handle);
 #endif
   handle = start_service_nofree ("syslog", handle);
 #ifdef HAVE_TFTP
@@ -206,9 +203,6 @@ stop_services (void)
 #endif
   handle = stop_service_nofree ("wland", handle);
 #ifdef HAVE_TELNET
-#ifdef HAVE_REGISTER
-  if (isregistered ())
-#endif
     handle = stop_service_nofree ("telnetd", handle);
 #endif
 #ifdef HAVE_SSHD
@@ -396,9 +390,6 @@ handle_services (void)
   handle = start_service_nofree ("hwmon", handle);
 #endif
 #ifdef HAVE_TELNET
-#ifdef HAVE_REGISTER
-  if (isregistered ())
-#endif
     handle = startstop_nofree ("telnetd", handle);
 #endif
 #ifdef HAVE_SNMP
