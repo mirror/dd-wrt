@@ -344,10 +344,15 @@ start_sysinit (void)
 
     case ROUTER_RT480W:
     case ROUTER_USR_5461:
-    case ROUTER_BELKIN_F5D7231:
       setup_4712 ();
       break;
 
+    case ROUTER_BELKIN_F5D7231:
+      setup_4712 ();
+      if (nvram_match ("vlan1ports", "0 5u"))
+         nvram_set ("vlan1ports", "0 5");
+      break;      
+     
     case ROUTER_RT210W:
       setup_4712 ();
       nvram_set ("wan_ifname", "eth1");	// fix for Belkin f5d7230 v1000 WAN problem.
