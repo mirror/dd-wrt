@@ -2461,6 +2461,11 @@ check_vlan_support (void)
   int brand = getRouterBrand ();
   switch (brand)
     {
+#ifndef HAVE_BUFFALO
+    case ROUTER_ASUS_WL500GD:
+      return 1;
+      break;
+#endif
     case ROUTER_BUFFALO_WLAG54C:
     case ROUTER_BUFFALO_WLA2G54C:
 #ifndef HAVE_BUFFALO
