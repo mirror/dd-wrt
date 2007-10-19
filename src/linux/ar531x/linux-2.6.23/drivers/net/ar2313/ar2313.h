@@ -53,7 +53,8 @@ static inline int tx_space(u32 csm, u32 prd)
 
 #define AR2313_EPHY_UNKNOWN 0
 #define AR2313_EPHY_ICSPLUS 1
-#define AR2313_EPHY_MARWELL 2
+#define AR2313_EPHY_MARVELL 2
+#define AR2313_EPHY_ADMTEK  3
 
 
 //
