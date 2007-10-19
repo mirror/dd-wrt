@@ -81,6 +81,7 @@
 #include "ar2313.h"
 #include "mvPhy.h"
 #include "ipPhy.h"
+#include "admPhy.h"
 /*
  * New interrupt handler strategy:
  *
@@ -161,6 +162,8 @@ static void ar2313_multicast_list(struct net_device *dev);
 #ifndef ERR
 #define ERR(fmt, args...) printk("%s: " fmt, __func__, ##args)
 #endif
+
+
 
 int __init ar2313_probe(struct platform_device *pdev)
 {
@@ -598,7 +601,7 @@ static void ar2313_check_link(struct net_device *dev)
 	
 	switch (sp->eth_phy) {
 		
-		case AR2313_EPHY_MARWELL:
+		case AR2313_EPHY_MARVELL:
 			
 			phyData = armiiread(dev, 0x10 , MV_PHY_SPECIFIC_STATUS);
 			phyData |= armiiread(dev, 0x11 , MV_PHY_SPECIFIC_STATUS);
@@ -636,6 +639,24 @@ static void ar2313_check_link(struct net_device *dev)
 				sp->phyData = phyData;
 			}
 		break;
+		case AR2313_EPHY_ADMTEK:
+		    phyData = armiiread(dev,sp->phy, ADM_PHY_STATUS);
+		    if (sp->phyData != phyData) {
+			    if (phyData & ADM_STATUS_LINK_PASS) {
+				    sp->link = 1;
+        			    reg = armiiread(dev,sp->phy, ADM_LINK_PARTNER_ABILITY);
+        			    if ((reg & ADM_LINK_100BASETX_FULL_DUPLEX) || (reg & ADM_LINK_10BASETX_FULL_DUPLEX)) 
+					    duplex = 1;
+				    else
+					    duplex = 2;	
+		    
+			    }
+			    else
+				    duplex = 0;
+			    sp->phyData = phyData;
+		    }
+
+
 	}
 
 	
@@ -663,6 +684,11 @@ static int ar2313_reset_reg(struct net_device *dev)
 	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
 	unsigned int ethsal, ethsah;
 	unsigned int flags;
+   unsigned int sw_port_addr[6] = {1,3,5,7,8,9};
+   unsigned int  phyUnit;
+   unsigned short  reg = 0;
+   unsigned int  phyBase;
+
 	u16 atuControl;
 	u16 phyData;
 	u16 phyAddr;
@@ -678,18 +704,19 @@ static int ar2313_reset_reg(struct net_device *dev)
 	*sp->int_regs &= ~sp->cfg->reset_phy;
 	mdelay(10);
 
-    phyData = armiiread(dev, 0x10, MV_PHY_ID1);
+        phyData = armiiread(dev, 0x10, MV_PHY_ID1);
 	phyData = armiiread(dev, 0x10, MV_PHY_ID1);
 	if (phyData == MV_PHY_ID1_EXPECTATION) {
 		phyData = armiiread(dev, 0x10, MV_PHY_ID2);
 		if ((phyData & MV_OUI_LSB_MASK) != MV_OUI_LSB_EXPECTATION)
 			printk("%s: Invalid PHY ID2 Expected 0x%04x, read 0x%04x\n", dev->name, MV_OUI_LSB_EXPECTATION,phyData);
 		else {
-			printk ("%s: Found PHY MARWELL model 0x%x revision 0x%x\n", dev->name, (phyData & MV_MODEL_NUM_MASK) >> MV_MODEL_NUM_SHIFT,
+			printk ("%s: Found PHY MARVELL model 0x%x revision 0x%x\n", dev->name, (phyData & MV_MODEL_NUM_MASK) >> MV_MODEL_NUM_SHIFT,
                    (phyData & MV_REV_NUM_MASK) >> MV_REV_NUM_SHIFT);
-			sp->eth_phy = AR2313_EPHY_MARWELL;
+			sp->eth_phy = AR2313_EPHY_MARVELL;
 		}
 	}
+
 	phyData = armiiread(dev, IP_PHY1_ADDR, IP_PHY_ID1);
 	phyData = armiiread(dev, IP_PHY1_ADDR, IP_PHY_ID1);
 	if (phyData == IP_PHY_ID1_EXPECTATION) {
@@ -702,15 +729,29 @@ static int ar2313_reset_reg(struct net_device *dev)
 			sp->eth_phy = AR2313_EPHY_ICSPLUS;
 		}
 	}
+
+        int phyID1 = armiiread(dev, 0x5,0x0);
+        phyID1 = armiiread(dev, 0x5,0x0);
+        int phyID2 = armiiread(dev, 0x5,0x1);
+        if(((phyID1 & 0xfff0) == ADM_CHIP_ID1_EXPECTATION) && (phyID2 == ADM_CHIP_ID2_EXPECTATION)){
+	printk(KERN_INFO "ADM6996FC detected!\n");
+	sp->eth_phy = AR2313_EPHY_ADMTEK;
+	}
 			
 	switch (sp->eth_phy) {
-		
+		case AR2313_EPHY_ADMTEK:
+    		for(phyUnit=0;phyUnit<6;phyUnit++) {
+    			reg = armiiread(dev,PHY_ADDR_SW_PORT,sw_port_addr[phyUnit]);
+    			reg |= ADM_SW_AUTO_MDIX_EN;
+        		armiiwrite(dev,PHY_ADDR_SW_PORT,sw_port_addr[phyUnit],reg);
+		}
+		break;
 		case AR2313_EPHY_ICSPLUS:
 			/* start auto negogiation on phy */
 			armiiwrite(dev, IP_PHY1_ADDR, IP_AUTONEG_ADVERT,  IP_ADVERTISE_ALL);
 			armiiwrite(dev, IP_PHY1_ADDR, IP_PHY_CONTROL, IP_CTRL_AUTONEGOTIATION_ENABLE | IP_CTRL_START_AUTONEGOTIATION);
 			break;
-		case AR2313_EPHY_MARWELL:
+		case AR2313_EPHY_MARVELL:
 			/* Initialize global switch settings */
     		atuControl  = MV_ATUCTRL_AGE_TIME_DEFAULT << MV_ATUCTRL_AGE_TIME_SHIFT;
     		atuControl |= MV_ATUCTRL_ATU_SIZE_DEFAULT << MV_ATUCTRL_ATU_SIZE_SHIFT;
@@ -1465,7 +1506,7 @@ static int netdev_ethtool_ioctl(struct net_device *dev, void *useraddr)
 
 			switch (np->eth_phy) {
 		
-				case AR2313_EPHY_MARWELL:
+				case AR2313_EPHY_MARVELL:
 			
 					phyData = armiiread(dev, 0x10 , MV_PHY_SPECIFIC_STATUS);
 					phyData |= armiiread(dev, 0x11 , MV_PHY_SPECIFIC_STATUS);
@@ -1477,8 +1518,12 @@ static int netdev_ethtool_ioctl(struct net_device *dev, void *useraddr)
 			
 					edata.data = (armiiread(dev, np->phy, MII_BMSR) & BMSR_LSTATUS) ? 1 : 0;	
 					break;
+				case AR2313_EPHY_ADMTEK:
+
+					phyData = armiiread(dev,np->phy, ADM_PHY_STATUS);
+					edata.data = (phyData & ADM_STATUS_LINK_PASS) ? 1 : 0;
+					break;
 			}
-	
 			if (copy_to_user(useraddr, &edata, sizeof(edata)))
 				return -EFAULT;
 			return 0;
