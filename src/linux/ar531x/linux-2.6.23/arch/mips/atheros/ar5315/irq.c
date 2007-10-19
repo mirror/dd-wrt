@@ -76,8 +76,8 @@ asmlinkage void ar5315_irq_dispatch(void)
 			do_IRQ(AR531X_MISC_IRQ_NONE);
 	} else if (pending & CAUSEF_IP7)
 		do_IRQ(AR531X_IRQ_CPU_CLOCK);
-	else
-		do_IRQ(AR531X_IRQ_NONE);
+//	else
+//		do_IRQ(AR531X_IRQ_NONE);
 }
 
 static void ar5315_gpio_intr_enable(unsigned int irq)
@@ -325,6 +325,6 @@ void ar5315_misc_intr_init(int irq_base)
 	}
 	setup_irq(AR531X_MISC_IRQ_AHB_PROC, &ar5315_ahb_proc_interrupt);
 	setup_irq(AR5315_IRQ_MISC_INTRS, &cascade);
-	ar5315_gpio_intr_init(AR531X_GPIO_IRQ_BASE);
+//	ar5315_gpio_intr_init(AR531X_GPIO_IRQ_BASE);
 }
 
