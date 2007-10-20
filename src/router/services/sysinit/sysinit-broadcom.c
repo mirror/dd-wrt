@@ -336,7 +336,6 @@ start_sysinit (void)
       check_brcm_cpu_type ();
       setup_4712 ();
       nvram_set ("wan_ifname", "eth1");
-	  nvram_set ("wan_ifnames", "eth1");
       break;
 
     case ROUTER_MOTOROLA:
@@ -352,7 +351,6 @@ start_sysinit (void)
     case ROUTER_BELKIN_F5D7231:
       nvram_set ("lan_ifnames", "vlan0 eth1");
       nvram_set ("wan_ifname", "vlan1");
-      nvram_set ("wan_ifnames", "vlan1");
       nvram_set ("wl0_ifname", "eth1");
       if (nvram_match ("vlan1ports", "0 5u"))
          nvram_set ("vlan1ports", "0 5");
@@ -363,7 +361,6 @@ start_sysinit (void)
     case ROUTER_RT210W:
       setup_4712 ();
       nvram_set ("wan_ifname", "eth1");	// fix for Belkin f5d7230 v1000 WAN problem.
-      nvram_set ("wan_ifnames", "eth1");
       if (nvram_get ("et0macaddr") == NULL || nvram_get ("et0macaddr") == "")
 	{
 	  nvram_set ("et0macaddr", "00:16:E3:00:00:10");	//fix for missing cfe default = dead LAN ports.
@@ -374,7 +371,6 @@ start_sysinit (void)
     case ROUTER_ASUS_WL500G:
       setup_4712 ();
       nvram_set ("wan_ifname", "eth1");	// fix for Belkin f5d7230 v1000 WAN problem.
-      nvram_set ("wan_ifnames", "eth1");
 
       if (nvram_get ("et0macaddr") == NULL || nvram_get ("et0macaddr") == "")
 	{
@@ -385,17 +381,14 @@ start_sysinit (void)
     case ROUTER_DELL_TRUEMOBILE_2300:
       setup_4712 ();
       nvram_set ("wan_ifname", "eth1");	// fix for WAN problem.
-      nvram_set ("wan_ifnames", "eth1");
       break;
 
     case ROUTER_BUFFALO_WBR54G:	//for WLA-G54
       nvram_set ("wan_ifname", "eth1");
-      nvram_set ("wan_ifnames", "eth1");
       if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))	// = no lan
 	{
 	  nvram_set ("lan_ifnames", "eth2");
 	  nvram_set ("wan_ifname", "eth0");
-	  nvram_set ("wan_ifnames", "eth0");
 	}
       break;
 
@@ -406,13 +399,11 @@ start_sysinit (void)
       nvram_set ("lan_ifnames", "eth1 eth2");
       nvram_set ("wl0_ifname", "eth2");
       nvram_set ("wan_ifname", "eth0");	//WAN to nonexist. iface.
-      nvram_set ("wan_ifnames", "eth0");
       nvram_set ("port_swap", "1");
       if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))	// = no lan
 	{
 	  nvram_set ("lan_ifnames", "eth2");
 	  nvram_set ("wan_ifname", "eth1");
-	  nvram_set ("wan_ifnames", "eth1");
 	}
       break;
 
@@ -420,27 +411,23 @@ start_sysinit (void)
       nvram_set ("lan_ifnames", "eth0 eth2");
       nvram_set ("wl0_ifname", "eth2");
       nvram_set ("wan_ifname", "eth1");
-      nvram_set ("wan_ifnames", "eth1");
       break;
 
     case ROUTER_MOTOROLA_WE800G:
       nvram_set ("lan_ifnames", "eth1 eth2");
       nvram_set ("wl0_ifname", "eth2");
       nvram_set ("wan_ifname", "eth0");	//WAN to nonexist. iface.
-      nvram_set ("wan_ifnames", "eth0");
       nvram_set ("port_swap", "1");
       eval ("gpio", "disable", "7");
       if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))	// = no lan
 	{
 	  nvram_set ("lan_ifnames", "eth2");
 	  nvram_set ("wan_ifname", "eth1");
-	  nvram_set ("wan_ifnames", "eth1");
 	}
       break;
 
     case ROUTER_MOTOROLA_V1:
       nvram_set ("wan_ifname", "eth1");
-	  nvram_set ("wan_ifnames", "eth1");
       eval ("gpio", "disable", "7");
       break;
 
@@ -454,7 +441,6 @@ start_sysinit (void)
     case ROUTER_WRTSL54GS:
     case ROUTER_MICROSOFT_MN700:
       nvram_set ("wan_ifname", "eth1");
-      nvram_set ("wan_ifnames", "eth1");
       break;
 
     case ROUTER_WRT54G1X:
@@ -462,18 +448,15 @@ start_sysinit (void)
 	{
 	  nvram_set ("lan_ifnames", "vlan0 eth2");
 	  nvram_set ("wan_ifname", "vlan1");
-	  nvram_set ("wan_ifnames", "vlan1");
 	}
       break;
 
     case ROUTER_WRT350N:
       nvram_set ("wan_ifname", "vlan2");
-      nvram_set ("wan_ifnames", "vlan2");
       break;
 
     case ROUTER_BUFFALO_WZRG144NH:
       nvram_set ("wan_ifname", "vlan1");
-      nvram_set ("wan_ifnames", "vlan1");
       break;
 
     case ROUTER_ASUS_WL500G_PRE:
@@ -482,7 +465,6 @@ start_sysinit (void)
       nvram_set ("lan_ifnames", "vlan0 eth2");
       nvram_set ("wl0_ifname", "eth2");
       nvram_set ("wan_ifname", "vlan1");	// fix for Asus WL500gPremium WAN problem.
-      nvram_set ("wan_ifnames", "vlan1");
       break;
 
     case ROUTER_ASUS_WL500GD:
@@ -499,12 +481,10 @@ start_sysinit (void)
       nvram_set ("lan_ifnames", "eth0 eth1");
       nvram_set ("wl0_ifname", "eth1");
       nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
-      nvram_set ("wan_ifnames", "eth2");
       if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))	// = no lan
 	{
 	  nvram_set ("lan_ifnames", "eth1");
 	  nvram_set ("wan_ifname", "eth0");
-	  nvram_set ("wan_ifnames", "eth0");
 	}
       break;
 
@@ -529,7 +509,8 @@ start_sysinit (void)
   strcpy (wanifname, nvram_safe_get ("wan_ifname"));
   strcpy (wlifname, nvram_safe_get ("wl0_ifname"));
 
-  /* set pppoe_wan_ifname */
+  /* set wan_uifnames and pppoe_wan_ifname */
+  nvram_set ("wan_ifnames", wanifname);
   nvram_set ("pppoe_wan_ifname", wanifname);
 
   /* Modules */
