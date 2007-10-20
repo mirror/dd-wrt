@@ -218,7 +218,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Belkin F5D7231-4 v1212UK (5352E cpu, fccid: Askey H8NRT2406W), F5D7231-4 v2000 (5352E cpu, fccid: Belkin K7SF5D7231B)
 #define ROUTER_BELKIN_F5D7231 0x410f
 
-// Linksys WAP54G v3 (5352E cpu, fccid: Linksys Q87-WAP54GV3)
+// Linksys WAP54G v3, WAP54G v3.1 (5352E cpu, fccid: Linksys Q87-WAP54GV3, Q87-WAP54GV31)
 #define ROUTER_WAP54G_V3 0x4210
 
 #define NVROUTER "DD_BOARD"
