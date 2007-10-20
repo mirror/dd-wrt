@@ -2163,17 +2163,7 @@ start_wan (int status)
 #ifdef HAVE_MULTICAST
   stop_igmp_proxy ();
 #endif
-  /* Rewritten by Eko, May 10, 2006 */
-  int brand = getRouterBrand ();
-  switch (brand)
-    {
-    case ROUTER_MICROSOFT_MN700:
-    case ROUTER_BUFFALO_WZRRSG54:
-    case ROUTER_MOTOROLA_V1:
-      if (!strcmp (nvram_safe_get ("pppoe_wan_ifname"), ""))
-	pppoe_wan_ifname = "eth1";
-      break;
-    }
+
 #endif
 #ifndef HAVE_MADWIFI
   if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "apstawet"))

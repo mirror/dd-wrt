@@ -335,6 +335,8 @@ start_sysinit (void)
     case ROUTER_BUFFALO_WZRRSG54:
       check_brcm_cpu_type ();
       setup_4712 ();
+      nvram_set ("wan_ifname", "eth1");
+	  nvram_set ("wan_ifnames", "eth1");
       break;
 
     case ROUTER_MOTOROLA:
@@ -348,9 +350,14 @@ start_sysinit (void)
       break;
 
     case ROUTER_BELKIN_F5D7231:
-      setup_4712 ();
+      nvram_set ("lan_ifnames", "vlan0 eth1");
+      nvram_set ("wan_ifname", "vlan1");
+      nvram_set ("wan_ifnames", "vlan1");
+      nvram_set ("wl0_ifname", "eth1");
       if (nvram_match ("vlan1ports", "0 5u"))
          nvram_set ("vlan1ports", "0 5");
+      if (nvram_match ("boardflags", "0x388"))
+         nvram_set ("boardflags", "0x398");
       break;      
      
     case ROUTER_RT210W:
@@ -432,6 +439,8 @@ start_sysinit (void)
       break;
 
     case ROUTER_MOTOROLA_V1:
+      nvram_set ("wan_ifname", "eth1");
+	  nvram_set ("wan_ifnames", "eth1");
       eval ("gpio", "disable", "7");
       break;
 
@@ -443,6 +452,7 @@ start_sysinit (void)
     case ROUTER_BUFFALO_WLAH_G54:
     case ROUTER_BUFFALO_WAPM_HP_AM54G54:
     case ROUTER_WRTSL54GS:
+    case ROUTER_MICROSOFT_MN700:
       nvram_set ("wan_ifname", "eth1");
       nvram_set ("wan_ifnames", "eth1");
       break;
