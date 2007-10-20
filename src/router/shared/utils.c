@@ -595,21 +595,11 @@ internal_getRouterBrand ()
 	}
     }
 
-//  int bflags; 
-//  char bftemp[16]; 
-  if (nvram_match ("boardtype", "0x456"))
+  if (nvram_match ("boardtype", "0x456") && nvram_match ("hw_model", "F5D7231-4"))
     {
-      if (startswith (et0, "00:11:50") ||
-	  startswith (et0, "00:30:BD") || startswith (et0, "00:30:bd"))
-	{
 	  cprintf ("router is Belkin F5D7231-4 v1212UK\n");
 	  setRouter ("Belkin F5D7231-4 v1212UK");
-//	  bflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
-//	  bflags = bflags | 0x010;
-//	  sprintf (bftemp, "0x%04X", bflags);
-//	  nvram_set ("boardflags", bftemp);
 	  return ROUTER_BELKIN_F5D7231;
-	}
     }
     
   if (nvram_match ("boardtype", "0x467"))
@@ -619,10 +609,6 @@ internal_getRouterBrand ()
 	{
 	  cprintf ("router is Belkin F5D7231-4 v2000\n");
 	  setRouter ("Belkin F5D7231-4 v2000");
-//	  bflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
-//	  bflags = bflags | 0x010;
-//	  sprintf (bftemp, "0x%04X", bflags);
-//	  nvram_set ("boardflags", bftemp);
 	  return ROUTER_BELKIN_F5D7231;
 	}
     }
@@ -2127,6 +2113,8 @@ check_hw_type (void)
     return BCM4702_CHIP;
   else if (btype == 0x0708 && !(boardflags & BFL_ENETADM))
     return BCM5325E_CHIP;
+  else if (btype == 0x456 && getRouterBrand () == ROUTER_BELKIN_F5D7231)  //stupid Belkin!
+    return BCM5352E_CHIP;    
   else if (btype == 0x456)
     return BCM5350_CHIP;
   else if (!strncmp (boardtype, "bcm95365", 8))
