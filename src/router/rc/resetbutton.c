@@ -350,6 +350,9 @@ period_check (int sig)
     case ROUTER_ASUS_WL500W:
       sesgpio = 0x07;       //gpio 7, normal
       break;
+    case ROUTER_WAP54G_V3:
+      sesgpio = 0x1e;		//gpio 14, inversed
+      break;
 #endif
     default:
       sesgpio = 0x0f;		//gpio unknown, disabled
