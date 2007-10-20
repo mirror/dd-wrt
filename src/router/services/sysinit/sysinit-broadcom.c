@@ -128,6 +128,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_ASUS_WL500W:
     case ROUTER_WRT54G:
     case ROUTER_WRT54G_V8:
+    case ROUTER_WAP54G_V3:
     case ROUTER_MOTOROLA:
     case ROUTER_BUFFALO_WLAG54C:
       nvram_set ("wl0gpio0", "136");
@@ -471,7 +472,7 @@ start_sysinit (void)
     case ROUTER_ASUS_WL550GE:
       nvram_set ("wl0_ifname", "eth1");
       break;
- 
+
     case ROUTER_BUFFALO_WLA2G54C:
     case ROUTER_WAP54G_V2:
     case ROUTER_VIEWSONIC_WAPBR_100:
@@ -503,13 +504,24 @@ start_sysinit (void)
     case ROUTER_WRT54G_V8:
       nvram_set ("reset_gpio", "7");
       break;
-    }
+    
+    case ROUTER_WAP54G_V3:
+      nvram_set ("lan_ifnames", "vlan0 eth1");
+      nvram_set ("wl0_ifname", "eth1");
+      nvram_set ("wan_ifname", "vlan1");	//WAN to nonexist. iface.
+      if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))	// = no lan
+	{
+	  nvram_set ("lan_ifnames", "vlan1 eth1");
+	  nvram_set ("wan_ifname", "vlan0");
+	}
+      break;
+   }
 
   /* ifnames */
   strcpy (wanifname, nvram_safe_get ("wan_ifname"));
   strcpy (wlifname, nvram_safe_get ("wl0_ifname"));
 
-  /* set wan_uifnames and pppoe_wan_ifname */
+  /* set wan_ifnames and pppoe_wan_ifname */
   nvram_set ("wan_ifnames", wanifname);
   nvram_set ("pppoe_wan_ifname", wanifname);
 
