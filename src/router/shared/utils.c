@@ -847,6 +847,15 @@ internal_getRouterBrand ()
 
     }
 
+  if (nvram_match("boardnum", "WAP54GV3_8M_0614") && nvram_match ("boardtype", "0x0467")
+    && nvram_match ("WAPver", "3"))
+    {
+      cprintf ("router is WAP54G v3\n");
+      setRouter ("Linksys WAP54G v3");
+      return ROUTER_WAP54G_V3;
+
+    }
+    
   setRouter ("Linksys WRT54G/GL/GS");
   cprintf ("router is wrt54g\n");
   return ROUTER_WRT54G;
