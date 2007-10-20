@@ -505,16 +505,17 @@ start_sysinit (void)
       nvram_set ("reset_gpio", "7");
       break;
     
-    case ROUTER_WAP54G_V3:
-      nvram_set ("lan_ifnames", "vlan0 eth1");
-      nvram_set ("wl0_ifname", "eth1");
-      nvram_set ("wan_ifname", "vlan1");	//WAN to nonexist. iface.
-      if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))	// = no lan
-	{
-	  nvram_set ("lan_ifnames", "vlan1 eth1");
-	  nvram_set ("wan_ifname", "vlan0");
-	}
-      break;
+//    case ROUTER_WAP54G_V3:
+//      nvram_set ("lan_ifnames", "vlan0 eth1");
+//      nvram_set ("wl0_ifname", "eth1");
+//      nvram_set ("wan_ifname", "vlan1");	//WAN to nonexist. iface.
+//      if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))	// = no lan
+//	{
+//	  nvram_set ("lan_ifnames", "vlan1 eth1");
+//	  nvram_set ("wan_ifname", "vlan0");
+//	}
+//      break;
+
    }
 
   /* ifnames */
