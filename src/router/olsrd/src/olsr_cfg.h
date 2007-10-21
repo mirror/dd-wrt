@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsr_cfg.h,v 1.31 2007/05/13 22:23:55 bernd67 Exp $
+ * $Id: olsr_cfg.h,v 1.34 2007/09/16 21:20:17 bernd67 Exp $
  */
 
 
@@ -45,7 +45,13 @@
 
 #include "olsr_types.h"
 
-/* Default valuse not declared in olsr_protocol.h */
+#if defined linux
+#  define LINUX_POLICY_ROUTING 1
+#else
+#  define LINUX_POLICY_ROUTING 0
+#endif
+
+/* Default values not declared in olsr_protocol.h */
 #define DEF_POLLRATE        0.05
 #define DEF_NICCHGPOLLRT    2.5
 #define DEF_WILL_AUTO       OLSR_TRUE
@@ -58,7 +64,7 @@
 #define DEF_LQ_FISH         0
 #define DEF_LQ_DIJK_LIMIT   255
 #define DEF_LQ_DIJK_INTER   0.0
-#define DEF_LQ_WSIZE        10
+#define DEF_LQ_WSIZE        12
 #define DEF_CLEAR_SCREEN    OLSR_FALSE
 
 /* Bounds */
@@ -200,6 +206,7 @@ struct olsrd_config
   int                      ip_version;
   olsr_bool                allow_no_interfaces;
   olsr_u16_t               tos;
+  olsr_u8_t                rttable;
   olsr_bool                willingness_auto;
   olsr_u8_t                willingness;
   int                      ipc_connections;
@@ -225,6 +232,7 @@ struct olsrd_config
 
   /* Stuff set by olsrd */
   size_t                   ipsize;               /* Size of address */
+  olsr_8_t                 maxplen;              /* maximum prefix len */
   olsr_u16_t               system_tick_divider;  /* Tick resolution */
   olsr_bool                del_gws;              /* Delete InternetGWs at startup */
   union olsr_ip_addr       main_addr;            /* Main address of this node */
@@ -234,7 +242,11 @@ struct olsrd_config
   float                    max_tc_vtime;
 
   int                      ioctl_s;              /* Socket used for ioctl calls */
+#if LINUX_POLICY_ROUTING
+  int                      rtnl_s;               /* Socket used for rtnetlink messages */
+#else
   int                      rts;                  /* Socket used for route changes on BSDs */
+#endif
 };
 
 #if defined __cplusplus

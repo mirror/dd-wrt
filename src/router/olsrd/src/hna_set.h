@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: hna_set.h,v 1.14 2005/05/29 12:47:45 br1 Exp $
+ * $Id: hna_set.h,v 1.15 2007/09/05 16:11:10 bernd67 Exp $
  */
 
 
@@ -72,6 +72,9 @@ extern size_t netmask_size;
 
 int
 olsr_init_hna_set(void);
+
+int
+olsr_get_hna_prefix_len(struct hna_net *);
 
 struct hna_net *
 olsr_lookup_hna_net(struct hna_net *, union olsr_ip_addr *, union hna_netmask *);

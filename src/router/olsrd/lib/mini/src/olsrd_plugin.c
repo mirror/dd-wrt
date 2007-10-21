@@ -29,7 +29,7 @@
  *
  */
 
-/* $Id: olsrd_plugin.c,v 1.3 2007/04/20 13:46:02 bernd67 Exp $ */
+/* $Id: olsrd_plugin.c,v 1.5 2007/09/17 21:57:05 bernd67 Exp $ */
 
  /*
  * Example plugin for olsrd.org OLSR daemon
@@ -40,10 +40,12 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "../../../src/olsrd_plugin.h"
+
 #include "olsrd_plugin.h"
 #include "olsr.h"
 
-#define PLUGIN_INTERFACE_VERSION 1
+#define PLUGIN_INTERFACE_VERSION 5
 
 
 /****************************************************************************
@@ -54,25 +56,30 @@
  * Plugin interface version
  * Used by main olsrd to check plugin interface version
  */
-int 
-olsrd_plugin_interface_version(void)
+int olsrd_plugin_interface_version(void)
 {
-	return PLUGIN_INTERFACE_VERSION;
+    return PLUGIN_INTERFACE_VERSION;
 }
 
+
+static int set_plugin_test(const char *value, void *data __attribute__((unused)), set_plugin_parameter_addon addon __attribute__((unused)))
+{
+    printf("\n*** MINI: parameter test: %s\n", value);
+    return 0;
+}
 
 /**
  * Register parameters from config file
  * Called for all plugin parameters
  */
-int
-olsrd_plugin_register_param(char *key, char *value)
+static const struct olsrd_plugin_parameters plugin_parameters[] = {
+    { .name = "test",   .set_plugin_parameter = &set_plugin_test,      .data = NULL },
+};
+
+void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size)
 {
-	if(!strcmp(key, "test")) {
-		printf("\n*** MINI: parameter test: %s\n", value);
-		return 1;
-	}
-	return 0;
+    *params = plugin_parameters;
+    *size = sizeof(plugin_parameters)/sizeof(*plugin_parameters);
 }
 
 
@@ -98,28 +105,23 @@ olsrd_plugin_init(void)
 
 /* attention: make static to avoid name clashes */
 
-static void __attribute__ ((constructor)) 
-my_init(void);
-
-static void __attribute__ ((destructor)) 
-my_fini(void);
+static void my_init(void) __attribute__ ((constructor));
+static void my_fini(void) __attribute__ ((destructor));
 
 
 /**
  * Optional Private Constructor
  */
-static void
-my_init(void)
+static void my_init(void)
 {
-	printf("*** MINI: constructor\n");
+    printf("*** MINI: constructor\n");
 }
 
 
 /**
  * Optional Private Destructor
  */
-static void
-my_fini(void)
+static void my_fini(void)
 {
-	printf("*** MINI: destructor\n");
+    printf("*** MINI: destructor\n");
 }

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: local_hna_set.c,v 1.13 2007/04/20 13:46:04 bernd67 Exp $
+ * $Id: local_hna_set.c,v 1.14 2007/10/15 20:58:33 bernd67 Exp $
  */
 
 #include "defs.h"
@@ -44,7 +44,7 @@
 #include "olsr.h"
 
 void
-add_local_hna4_entry(union olsr_ip_addr *net, union olsr_ip_addr *mask)
+add_local_hna4_entry(const union olsr_ip_addr *net, const union olsr_ip_addr *mask)
 {
   struct hna4_entry *new_entry;
 
@@ -60,14 +60,14 @@ add_local_hna4_entry(union olsr_ip_addr *net, union olsr_ip_addr *mask)
 
 
 void
-add_local_hna6_entry(union olsr_ip_addr *net, olsr_u16_t prefix_len)
+add_local_hna6_entry(const union olsr_ip_addr *net, const olsr_u16_t prefix_len)
 {
   struct hna6_entry *new_entry;
 
   new_entry = olsr_malloc(sizeof(struct hna6_entry), "Add local HNA entry 6");
   
   memcpy(&new_entry->net, net, sizeof(struct in6_addr));
-  prefix_len = prefix_len;
+  new_entry->prefix_len = prefix_len;
 
   /* Queue */
   new_entry->next = olsr_cnf->hna6_entries;
@@ -76,7 +76,7 @@ add_local_hna6_entry(union olsr_ip_addr *net, olsr_u16_t prefix_len)
 
 
 int
-remove_local_hna4_entry(union olsr_ip_addr *net, union olsr_ip_addr *mask)
+remove_local_hna4_entry(const union olsr_ip_addr *net, const union olsr_ip_addr *mask)
 {
   struct hna4_entry *h4 = olsr_cnf->hna4_entries, *h4prev = NULL;
 
@@ -104,7 +104,7 @@ remove_local_hna4_entry(union olsr_ip_addr *net, union olsr_ip_addr *mask)
 
 
 int
-remove_local_hna6_entry(union olsr_ip_addr *net, olsr_u16_t prefix_len)
+remove_local_hna6_entry(const union olsr_ip_addr *net, const olsr_u16_t prefix_len)
 {
   struct hna6_entry *h6, *h6prev = NULL;
 
@@ -128,7 +128,7 @@ remove_local_hna6_entry(union olsr_ip_addr *net, olsr_u16_t prefix_len)
 }
 
 struct hna4_entry *
-find_local_hna4_entry(union olsr_ip_addr *net, olsr_u32_t mask)
+find_local_hna4_entry(const union olsr_ip_addr *net, const olsr_u32_t mask)
 {
   struct hna4_entry *h4 = olsr_cnf->hna4_entries;
 
@@ -148,7 +148,7 @@ find_local_hna4_entry(union olsr_ip_addr *net, olsr_u32_t mask)
 
 
 struct hna6_entry *
-find_local_hna6_entry(union olsr_ip_addr *net, olsr_u16_t prefix_len)
+find_local_hna6_entry(const union olsr_ip_addr *net, const olsr_u16_t prefix_len)
 {
   struct hna6_entry *h6 = olsr_cnf->hna6_entries;
 

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: mpr.c,v 1.17 2007/04/25 22:08:09 bernd67 Exp $
+ * $Id: mpr.c,v 1.18 2007/10/05 08:06:12 bernd67 Exp $
  */
 
 #include "defs.h"
@@ -468,7 +468,7 @@ olsr_calculate_mpr(void)
 
   olsr_clear_mprs();
   two_hop_count = olsr_calculate_two_hop_neighbors();
-  two_hop_covered_count += add_will_always_nodes();
+  two_hop_covered_count = add_will_always_nodes();
 
   /*
    *Calculate MPRs based on WILLINGNESS

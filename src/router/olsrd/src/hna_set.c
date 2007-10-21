@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: hna_set.c,v 1.20 2007/08/02 22:07:19 bernd67 Exp $
+ * $Id: hna_set.c,v 1.22 2007/09/17 22:24:22 bernd67 Exp $
  */
 
 #include "defs.h"
@@ -69,7 +69,7 @@ olsr_init_hna_set(void)
   /* Since the holdingtime is assumed to be rather large for 
    * HNA entries, the timeoutfunction is only ran once every second
    */
-  olsr_register_scheduler_event(&olsr_time_out_hna_set, NULL, 1, 0, NULL);
+  olsr_register_scheduler_event_dijkstra(&olsr_time_out_hna_set, NULL, 1, 0, NULL);
 
   for(idx=0;idx<HASHSIZE;idx++)
     {
@@ -80,7 +80,15 @@ olsr_init_hna_set(void)
   return 1;
 }
 
-
+int
+olsr_get_hna_prefix_len(struct hna_net *hna)
+{
+  if (olsr_cnf->ip_version == AF_INET) {
+    return olsr_netmask_to_prefix((union olsr_ip_addr *)&hna->A_netmask.v4);
+  } else {
+    return hna->A_netmask.v6;
+  }
+}
 
 
 /**
@@ -365,4 +373,8 @@ olsr_print_hna_set(void)
 
 }
 
-
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */

@@ -36,7 +36,7 @@
 # to the project. For more information see the website or contact
 # the copyright holders.
 #
-# $Id: Makefile,v 1.29 2007/08/02 19:59:15 bernd67 Exp $
+# $Id: Makefile,v 1.30 2007/09/17 21:44:15 bernd67 Exp $
 
 TOPDIR=../..
 include $(TOPDIR)/Makefile.inc
@@ -95,13 +95,17 @@ oscan.c:	oscan.lex Makefile
 			-e '/^static/s/yygrowstack[\(][\)]/yygrowstack(void)/' \
 			-e '/^static/s/input[\(][\)]/input(void)/' \
 			-e '/^static  *void  *yy_fatal_error/s/^\(.*)\);$$/\1 __attribute__((noreturn));/' \
+			-e '/^#line/s/$(subst .,\.,$@-tmp)/$@/' \
 			< oscan.c-tmp >oscan.c
 		$(RM) oscan.c-tmp
+
+oscan.o: CFLAGS := $(filter-out -Wunreachable-code -Wsign-compare, $(CFLAGS)) -Wno-sign-compare
 
 oparse.c:	oparse.y olsrd_conf.h Makefile
 		$(BISON) -d -o oparse.c oparse.y
 
-#oscan.o oparse.o:: CFLAGS := $(filter-out -Wunreachable-code, $(CFLAGS))
+oparse.o: CFLAGS := $(filter-out -Wunreachable-code, $(CFLAGS))
+
 
 .PHONY: install clean uberclean
 

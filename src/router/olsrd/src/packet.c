@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: packet.c,v 1.23 2007/08/02 22:07:19 bernd67 Exp $
+ * $Id: packet.c,v 1.25 2007/10/20 15:16:32 bernd67 Exp $
  */
 
 
@@ -93,7 +93,7 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
   int                     idx;
 
 #ifdef DEBUG
-  OLSR_PRINTF(3, "\tBuilding HELLO on interface %d\n", outif->if_nr);
+  OLSR_PRINTF(3, "\tBuilding HELLO on interface %s\n", outif->int_name);
 #endif
 
   message->neighbors=NULL;

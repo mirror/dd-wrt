@@ -33,7 +33,7 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: olsrd_secure.c,v 1.27 2007/08/02 14:37:09 bernd67 Exp $
+ * $Id: olsrd_secure.c,v 1.28 2007/10/20 15:16:32 bernd67 Exp $
  */
 
 
@@ -449,7 +449,8 @@ add_signature(olsr_u8_t *pck, int *size)
 {
   struct s_olsrmsg *msg;
 #ifdef DEBUG
-  int i, j;
+  unsigned int i;
+  int j;
   char *sigmsg;                                                                                        
 #endif
   
@@ -527,8 +528,9 @@ validate_packet(char *pck, int *size)
   time_t rec_time;
 
 #ifdef DEBUG
-  int i, j;
-  char *sigmsg;
+  unsigned int i;
+  int j;
+  olsr_u8_t *sigmsg;
 #endif
 
   /* Find size - signature message */
@@ -545,7 +547,7 @@ validate_packet(char *pck, int *size)
   olsr_printf(1, "Input message:\n");
   
   j = 0;
-  sigmsg = (char *)sig;
+  sigmsg = (olsr_u8_t *)sig;
 
   for(i = 0; i < sizeof(struct s_olsrmsg); i++)
     {
@@ -608,7 +610,7 @@ validate_packet(char *pck, int *size)
 #ifdef DEBUG
   olsr_printf(1, "Recevied hash:\n");
   
-  sigmsg = (char *)sig->sig.signature;
+  sigmsg = (olsr_u8_t *)sig->sig.signature;
 
   for(i = 0; i < SIGNATURE_SIZE; i++)
     {

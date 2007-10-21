@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: ifnet.c,v 1.49 2007/05/13 22:23:55 bernd67 Exp $
+ * $Id: ifnet.c,v 1.52 2007/10/20 12:59:08 bernd67 Exp $
  */
 
 
@@ -128,7 +128,7 @@ check_interface_updates(void *foo __attribute__((unused)))
         {
 #ifdef DEBUG
           /* Don't check this interface */
-          OLSR_PRINTF(3, "Not checking interface %s\n", tmp_if->name)
+          OLSR_PRINTF(3, "Not checking interface %s\n", tmp_if->name);
 #endif
           continue;
         }
@@ -704,15 +704,17 @@ add_hemu_if(struct olsr_if *iface)
   return 1;
 }
 
-static char basename[32];
-char* if_basename(char* name);
-char* if_basename(char* name)
+static char basenamestr[32];
+static const char* if_basename(const char* name);
+static const char* if_basename(const char* name)
 {
 	char *p = strchr(name, ':');
-	if (0 == p || p - name >= (int)(sizeof(basename) / sizeof(basename[0]) - 1)) return name;
-	memcpy(basename, name, p - name);
-	basename[p - name] = 0;
-	return basename;
+	if (NULL == p || p - name >= (int)(sizeof(basenamestr) / sizeof(basenamestr[0]) - 1)) {
+        	return name;
+        }
+	memcpy(basenamestr, name, p - name);
+	basenamestr[p - name] = 0;
+	return basenamestr;
 }
 
 /**
