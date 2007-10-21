@@ -845,7 +845,7 @@ internal_getRouterBrand ()
       return ROUTER_LINKSYS_WTR54GS;
     }
 
-  if (nvram_match("boardnum", "WAP54GV3_8M_0614") && (nvram_match ("boardtype", "0x0467") || (nvram_match ("boardtype", "0x467"))
+  if (nvram_match("boardnum", "WAP54GV3_8M_0614") && (nvram_match ("boardtype", "0x0467") || nvram_match ("boardtype", "0x467"))
     && nvram_match ("WAPver", "3"))
     {
       cprintf ("router is WAP54G v3\n");
