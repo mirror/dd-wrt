@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: mpr.c,v 1.18 2007/10/05 08:06:12 bernd67 Exp $
+ * $Id: mpr.c,v 1.19 2007/10/21 20:53:13 bernd67 Exp $
  */
 
 #include "defs.h"
@@ -592,11 +592,11 @@ olsr_optimize_mpr_set(void)
     }
 }
 
-
-
 void
 olsr_print_mpr_set(void)
 {
+#ifndef NODEBUG
+  /* The whole function makes no sense without it. */
   int index;
 
   OLSR_PRINTF(1, "MPR SET: ");
@@ -616,4 +616,5 @@ olsr_print_mpr_set(void)
 	}
     }
   OLSR_PRINTF(1, "\n");
+#endif
 }
