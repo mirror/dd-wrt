@@ -519,7 +519,8 @@ start_sysinit (void)
       break;
     
     case ROUTER_WAP54G_V3:
-        eval ("gpio", "enable", "0");  //reset gpio 0 for reset button   
+        eval ("gpio", "enable", "0");  //reset gpio 0 for reset button 
+          
 //      nvram_set ("vlan0ports", "1 5*");
 //      nvram_set ("vlan1ports", "4 5");
 //      if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))	// = no lan
