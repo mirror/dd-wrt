@@ -132,6 +132,13 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_BUFFALO_WLAG54C:
       nvram_set ("wl0gpio0", "136");
       break;
+    case ROUTER_WAP54G_V3:
+      nvram_set ("wl0gpio0", "0");
+      nvram_set ("wl0gpio2", "255");
+      nvram_set ("wl0gpio3", "255");
+      nvram_set ("wl0gpio5", "136");
+      break;
+
     case ROUTER_LINKSYS_WTR54GS:
       nvram_set ("wl0gpio0", "136");
       nvram_set ("wl0gpio1", "0");
@@ -173,6 +180,13 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       nvram_set ("wl0gpio0", "0");
       nvram_set ("wl0gpio5", "2");
       break;
+    case ROUTER_WAP54G_V3:
+      nvram_set ("wl0gpio0", "0");
+      nvram_set ("wl0gpio2", "255");
+      nvram_set ("wl0gpio3", "255");
+      nvram_set ("wl0gpio5", "2");
+      break;
+
     case ROUTER_ASUS_WL500GD:
       nvram_unset ("wl0gpio0");
       break;
@@ -504,16 +518,16 @@ start_sysinit (void)
       nvram_set ("reset_gpio", "7");
       break;
     
-//    case ROUTER_WAP54G_V3:
-//      nvram_set ("lan_ifnames", "vlan0 eth1");
-//      nvram_set ("wl0_ifname", "eth1");
-//      nvram_set ("wan_ifname", "vlan1");	//WAN to nonexist. iface.
+    case ROUTER_WAP54G_V3:
+        eval ("gpio", "enable", "0");  //reset gpio 0 for reset button   
+//      nvram_set ("vlan0ports", "1 5*");
+//      nvram_set ("vlan1ports", "4 5");
 //      if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))	// = no lan
 //	{
-//	  nvram_set ("lan_ifnames", "vlan1 eth1");
-//	  nvram_set ("wan_ifname", "vlan0");
+//	  nvram_set ("vlan0ports", "4 5*");
+//	  nvram_set ("vlan1ports", "1 5");
 //	}
-//      break;
+      break;
 
    }
 
