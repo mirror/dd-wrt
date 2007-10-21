@@ -835,7 +835,6 @@ internal_getRouterBrand ()
       cprintf ("router is wrt54g v8\n");
       setRouter ("Linksys WRT54Gv8 / GSv7");
       return ROUTER_WRT54G_V8;
-
     }
     
   if (boardnum == 56 &&
@@ -844,7 +843,6 @@ internal_getRouterBrand ()
       cprintf ("router is wtr54gs\n");
       setRouter ("Linksys WTR54GS v1");
       return ROUTER_LINKSYS_WTR54GS;
-
     }
 
   if (nvram_match("boardnum", "WAP54GV3_8M_0614") && nvram_match ("boardtype", "0x0467")
@@ -853,7 +851,6 @@ internal_getRouterBrand ()
       cprintf ("router is WAP54G v3\n");
       setRouter ("Linksys WAP54G v3");
       return ROUTER_WAP54G_V3;
-
     }
     
   setRouter ("Linksys WRT54G/GL/GS");
