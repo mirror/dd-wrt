@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: hna_set.c,v 1.22 2007/09/17 22:24:22 bernd67 Exp $
+ * $Id: hna_set.c,v 1.23 2007/10/21 20:37:58 bernd67 Exp $
  */
 
 #include "defs.h"
@@ -45,7 +45,7 @@
 
 
 struct hna_entry hna_set[HASHSIZE];
-size_t netmask_size;
+static size_t netmask_size;
 
 
 /**
@@ -81,7 +81,7 @@ olsr_init_hna_set(void)
 }
 
 int
-olsr_get_hna_prefix_len(struct hna_net *hna)
+olsr_get_hna_prefix_len(const struct hna_net *hna)
 {
   if (olsr_cnf->ip_version == AF_INET) {
     return olsr_netmask_to_prefix((union olsr_ip_addr *)&hna->A_netmask.v4);
@@ -101,7 +101,7 @@ olsr_get_hna_prefix_len(struct hna_net *hna)
  *@return the localted entry or NULL of not found
  */
 struct hna_net *
-olsr_lookup_hna_net(struct hna_net *nets, union olsr_ip_addr *net, union hna_netmask *mask)
+olsr_lookup_hna_net(const struct hna_net *nets, const union olsr_ip_addr *net, const union hna_netmask *mask)
 {
   struct hna_net *tmp_net;
 
@@ -121,8 +121,6 @@ olsr_lookup_hna_net(struct hna_net *nets, union olsr_ip_addr *net, union hna_net
 }
 
 
-
-
 /**
  *Lookup a gateway entry
  *
@@ -131,15 +129,13 @@ olsr_lookup_hna_net(struct hna_net *nets, union olsr_ip_addr *net, union hna_net
  *@return the located entry or NULL if not found
  */
 struct hna_entry *
-olsr_lookup_hna_gw(union olsr_ip_addr *gw)
+olsr_lookup_hna_gw(const union olsr_ip_addr *gw)
 {
   struct hna_entry *tmp_hna;
-  olsr_u32_t hash;
-
+  olsr_u32_t hash = olsr_hashing(gw);
+  
   //OLSR_PRINTF(5, "TC: lookup entry\n");
 
-  hash = olsr_hashing(gw);
-  
   /* Check for registered entry */
   for(tmp_hna = hna_set[hash].next;
       tmp_hna != &hna_set[hash];
@@ -163,7 +159,7 @@ olsr_lookup_hna_gw(union olsr_ip_addr *gw)
  *@return the created entry
  */
 struct hna_entry *
-olsr_add_hna_entry(union olsr_ip_addr *addr)
+olsr_add_hna_entry(const union olsr_ip_addr *addr)
 {
   struct hna_entry *new_entry;
   olsr_u32_t hash;
@@ -202,13 +198,10 @@ olsr_add_hna_entry(union olsr_ip_addr *addr)
  *@return the newly created entry
  */
 struct hna_net *
-olsr_add_hna_net(struct hna_entry *hna_gw, union olsr_ip_addr *net, union hna_netmask *mask)
+olsr_add_hna_net(struct hna_entry *hna_gw, const union olsr_ip_addr *net, const union hna_netmask *mask)
 {
-  struct hna_net *new_net;
-
-
   /* Add the net */
-  new_net = olsr_malloc(sizeof(struct hna_net), "Add HNA net");
+  struct hna_net *new_net = olsr_malloc(sizeof(struct hna_net), "Add HNA net");
   
   /* Fill struct */
   COPY_IP(&new_net->A_network_addr, net);
@@ -240,7 +233,7 @@ olsr_add_hna_net(struct hna_entry *hna_gw, union olsr_ip_addr *net, union hna_ne
  *@return nada
  */
 void
-olsr_update_hna_entry(union olsr_ip_addr *gw, union olsr_ip_addr *net, union hna_netmask *mask, float vtime)
+olsr_update_hna_entry(const union olsr_ip_addr *gw, const union olsr_ip_addr *net, const union hna_netmask *mask, const float vtime)
 {
   struct hna_entry *gw_entry;
   struct hna_net *net_entry;

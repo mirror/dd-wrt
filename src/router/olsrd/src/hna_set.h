@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: hna_set.h,v 1.15 2007/09/05 16:11:10 bernd67 Exp $
+ * $Id: hna_set.h,v 1.16 2007/10/21 20:37:58 bernd67 Exp $
  */
 
 
@@ -67,29 +67,28 @@ struct hna_entry
 
 
 extern struct hna_entry hna_set[HASHSIZE];
-extern size_t netmask_size;
 
 
 int
 olsr_init_hna_set(void);
 
 int
-olsr_get_hna_prefix_len(struct hna_net *);
+olsr_get_hna_prefix_len(const struct hna_net *);
 
 struct hna_net *
-olsr_lookup_hna_net(struct hna_net *, union olsr_ip_addr *, union hna_netmask *);
+olsr_lookup_hna_net(const struct hna_net *, const union olsr_ip_addr *, const union hna_netmask *);
 
 struct hna_entry *
-olsr_lookup_hna_gw(union olsr_ip_addr *);
+olsr_lookup_hna_gw(const union olsr_ip_addr *);
 
 struct hna_entry *
-olsr_add_hna_entry(union olsr_ip_addr *);
+olsr_add_hna_entry(const union olsr_ip_addr *);
 
 struct hna_net *
-olsr_add_hna_net(struct hna_entry *, union olsr_ip_addr *, union hna_netmask *);
+olsr_add_hna_net(struct hna_entry *, const union olsr_ip_addr *, const union hna_netmask *);
 
 void
-olsr_update_hna_entry(union olsr_ip_addr *, union olsr_ip_addr *, union hna_netmask *, float);
+olsr_update_hna_entry(const union olsr_ip_addr *, const union olsr_ip_addr *, const union hna_netmask *, const float);
 
 void
 olsr_time_out_hna_set(void *);
