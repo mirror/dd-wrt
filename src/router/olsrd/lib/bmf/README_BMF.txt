@@ -1,6 +1,6 @@
 BASIC MULTICAST FORWARDING PLUGIN FOR OLSRD
 by Erik Tromp (erik.tromp@nl.thalesgroup.com, erik_tromp@hotmail.com)
-Version 1.5
+Version 1.5.1
 
 1. Introduction
 ---------------
@@ -17,14 +17,14 @@ in the past 3-6 seconds are forwarded.
 2. How to build and install
 ---------------------------
 
-Download the olsr-bmf-v1.5.tar.gz file and save it into your OLSRD
+Download the olsr-bmf-v1.5.1.tar.gz file and save it into your OLSRD
 base install directory.
 
 Change directory (cd) to your OLSRD base install directory.
 
 At the command prompt, type:
 
-  tar -zxvf ./olsr-bmf-v1.5.tar.gz
+  tar -zxvf ./olsr-bmf-v1.5.1.tar.gz
 
 then type:
 
@@ -47,7 +47,7 @@ Set permissions, e.g.:
 To configure BMF in OLSR, you must edit the file /etc/olsrd.conf
 to load the BMF plugin. For example, add the following lines:
 
-  LoadPlugin "olsrd_bmf.so.1.5"
+  LoadPlugin "olsrd_bmf.so.1.5.1"
   {
     # No PlParam entries required for basic operation
   }
@@ -64,8 +64,8 @@ olsrd daemon by entering at the shell prompt:
 Look at the output; it should list the BMF plugin, e.g.:
 
   ---------- Plugin loader ----------
-  Library: olsrd_bmf.so.1.5
-  OLSRD Basic Multicast Forwarding plugin 1.5 (May 16 2007 14:30:57)
+  Library: olsrd_bmf.so.1.5.1
+  OLSRD Basic Multicast Forwarding plugin 1.5.1 (Sep  4 2007 11:13:43)
     (C) Thales Communications Huizen, Netherlands
     Erik Tromp (erik.tromp@nl.thalesgroup.com)
   Checking plugin interface version...  4 - OK
@@ -190,7 +190,7 @@ the /etc/olsrd.conf file.
 The following gives an overview of all plugin parameters that can be
 configured:
 
-  LoadPlugin "olsrd_bmf.so.1.5"
+  LoadPlugin "olsrd_bmf.so.1.5.1"
   {
     # Specify the name of the BMF network interface.
     # Defaults to "bmf0".
@@ -331,7 +331,7 @@ want to forward multicast and local-broadcast IP packets, specify these
 interfaces one by one as "NonOlsrIf" parameters in the BMF plugin section
 of /etc/olsrd.conf. For example:
 
-  LoadPlugin "olsrd_bmf.so.1.5"
+  LoadPlugin "olsrd_bmf.so.1.5.1"
   {
     # Non-OLSR interfaces to participate in the multicast flooding
     PlParam     "NonOlsrIf"  "eth2"
@@ -389,7 +389,7 @@ Therefore, override the default IP address and prefix length of
 the BMF network interface, by editing the /etc/olsrd.conf file.
 For example:
 
-  LoadPlugin "olsrd_bmf.so.1.5"
+  LoadPlugin "olsrd_bmf.so.1.5.1"
   {
       PlParam "BmfInterfaceIp" "10.10.10.4/24"
   }
@@ -524,6 +524,15 @@ the BMF network interface, either by specifying the interface name itself
 
 10. Version history
 -------------------
+
+3 September 2007: Version 1.5.1
+
+* Fixed a bug that would cause BMF to crash (and OLSR with it) if a link
+  was timing out --> thanks to Frank Renwick
+* Fixed bug in the checking of the packet length --> thanks to Frank Renwick
+* Fixed a bug in shutdown, which cause a crash if the BMF thread was not
+  yet running --> thanks to Bernd Petrovitsch
+* Updated to OLSR plugin interface version 5.
 
 16 May 2007: Version 1.5
 

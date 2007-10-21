@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: duplicate_set.c,v 1.15 2007/04/25 22:08:07 bernd67 Exp $
+ * $Id: duplicate_set.c,v 1.16 2007/09/17 22:24:22 bernd67 Exp $
  */
 
 
@@ -66,7 +66,7 @@ olsr_init_duplicate_table(void)
   /* Since the holdingtime is rather large for duplicate
    * entries the timeoutfunction is only ran every 2 seconds
    */
-  olsr_register_scheduler_event(&olsr_time_out_duplicate_table, NULL, 2, 0, NULL);
+  olsr_register_scheduler_event_dijkstra(&olsr_time_out_duplicate_table, NULL, 2, 0, NULL);
   
   for(i = 0; i < HASHSIZE; i++)
     {

@@ -44,16 +44,6 @@
 #include <net/if.h> /* IFNAMSIZ, IFHWADDRLEN */
 #include <sys/types.h> /* u_int8_t, u_int16_t */
 
-/* Offsets and sizes into IP-ethernet packets */
-#define IPV4_ADDR_SIZE 4
-#define ETH_TYPE_OFFSET (2*IFHWADDRLEN)
-#define ETH_TYPE_LEN 2
-#define IP_HDR_OFFSET (ETH_TYPE_OFFSET + ETH_TYPE_LEN)
-#define IPV4_OFFSET_SRCIP 12
-#define IPV4_OFFSET_DSTIP (IPV4_OFFSET_SRCIP + IPV4_ADDR_SIZE)
-
-#define IPV4_TYPE 0x0800
-
 /* BMF-encapsulated packets are Ethernet-IP-UDP packets, which start
  * with a 8-bytes BMF header (struct TEncapHeader), followed by the
  * encapsulated Ethernet-IP packet itself */
@@ -67,7 +57,7 @@ struct TEncapHeader
   u_int32_t crc32;
 } __attribute__((__packed__));
 
-#define	ENCAP_HDR_LEN ((int)sizeof(struct TEncapHeader))
+#define ENCAP_HDR_LEN ((int)sizeof(struct TEncapHeader))
 #define BMF_ENCAP_TYPE 1
 #define BMF_ENCAP_LEN 6
 

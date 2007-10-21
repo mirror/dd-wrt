@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: mpr_selector_set.c,v 1.17 2007/04/25 22:08:09 bernd67 Exp $
+ * $Id: mpr_selector_set.c,v 1.18 2007/09/17 22:24:22 bernd67 Exp $
  */
 
 
@@ -61,7 +61,7 @@ olsr_init_mprs_set(void)
   /* Initial values */
   ansn = 0;
 
-  olsr_register_timeout_function(&olsr_time_out_mprs_set);
+  olsr_register_timeout_function(&olsr_time_out_mprs_set, OLSR_TRUE);
   
   mprs_list.next = &mprs_list;
   mprs_list.prev = &mprs_list;

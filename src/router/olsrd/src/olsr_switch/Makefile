@@ -9,7 +9,7 @@ BINNAME = olsr_switch
 endif
 
 default_target:	$(OBJS)
-	$(CC) $(LDFLAGS) -o $(TOPDIR)/$(BINNAME) $(OBJS) $(LIBS)
+	$(CC) $(LDFLAGS) -o $(TOPDIR)/$(BINNAME) $(OBJS) $(LIBS) $(OS_LIB_PTHREAD)
 
 clean:
 	rm -f *.[od]

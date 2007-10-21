@@ -2,6 +2,7 @@
  * Copyright (c) 2006, Jens Nachtigall <nachtigall@web.de>
  * Copyright (c) 2005, Bruno Randolf <bruno.randolf@4g-systems.biz>
  * Copyright (c) 2004, Andreas Tønnesen(andreto-at-olsr.org)
+ * Copyright (c) 2007, Sven-Ola <sven-ola@gmx.de>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -30,7 +31,7 @@
  *
  */
 
-/* $Id: nameservice.c,v 1.24 2007/07/02 10:59:12 bernd67 Exp $ */
+/* $Id: nameservice.c,v 1.32 2007/10/05 20:24:47 bernd67 Exp $ */
 
 /*
  * Dynamic linked library for UniK OLSRd
@@ -56,13 +57,11 @@
 #include "mid_set.h"
 #include "link_set.h"
 
+#include "plugin_util.h"
 #include "nameservice.h"
 #include "olsrd_copy.h"
 #include "compat.h"
 
-
-/* send buffer: huge */
-static char buffer[10240];
 
 /* config parameters */
 static char my_hosts_file[MAX_FILE + 1];
@@ -74,7 +73,7 @@ static char my_resolv_file[MAX_FILE +1];
 static char my_services_file[MAX_FILE + 1];
 static char latlon_in_file[MAX_FILE + 1];
 static char my_latlon_file[MAX_FILE + 1];
-float my_lat = 0.0, my_lon = 0.0;
+static float my_lat = 0.0, my_lon = 0.0;
 
 /* the databases (using hashing)
  * for hostnames, service_lines and dns-servers
@@ -82,32 +81,29 @@ float my_lat = 0.0, my_lon = 0.0;
  * my own hostnames, service_lines and dns-servers
  * are store in a linked list (without hashing)
  * */
-struct db_entry* list[HASHSIZE];
-struct name_entry *my_names = NULL;
-olsr_bool name_table_changed = OLSR_TRUE;
+static struct db_entry* list[HASHSIZE];
+static struct name_entry *my_names = NULL;
+static olsr_bool name_table_changed = OLSR_TRUE;
 
-struct db_entry* service_list[HASHSIZE];
-struct name_entry *my_services = NULL;
-olsr_bool service_table_changed = OLSR_TRUE;
+static struct db_entry* service_list[HASHSIZE];
+static struct name_entry *my_services = NULL;
+static olsr_bool service_table_changed = OLSR_TRUE;
 
-struct db_entry* forwarder_list[HASHSIZE];
-struct name_entry *my_forwarders = NULL;
-olsr_bool forwarder_table_changed = OLSR_TRUE;
+static struct db_entry* forwarder_list[HASHSIZE];
+static struct name_entry *my_forwarders = NULL;
+static olsr_bool forwarder_table_changed = OLSR_TRUE;
 
-struct db_entry* latlon_list[HASHSIZE];
-olsr_bool latlon_table_changed = OLSR_TRUE;
+static struct db_entry* latlon_list[HASHSIZE];
+static olsr_bool latlon_table_changed = OLSR_TRUE;
 
-/* regualar expression to be matched by valid hostnames, compiled in name_init() */
-regex_t regex_t_name;
-regmatch_t regmatch_t_name;
+/* regular expression to be matched by valid hostnames, compiled in name_init() */
+static regex_t regex_t_name;
+static regmatch_t regmatch_t_name;
 
-/* regualar expression to be matched by valid service_lines, compiled in name_init() */
-regex_t regex_t_service;
-int pmatch_service = 10;
-regmatch_t regmatch_t_service[10];
-
-static void free_routing_table_list(struct rt_entry **list) ;
-static struct rt_entry *host_lookup_routing_table(union olsr_ip_addr *);
+/* regular expression to be matched by valid service_lines, compiled in name_init() */
+static regex_t regex_t_service;
+static int pmatch_service = 10;
+static regmatch_t regmatch_t_service[10];
 
 /**
  * do initialization
@@ -166,93 +162,101 @@ name_constructor(void)
 }
 
 
-/**
- * called for all plugin parameters
- */
-int
-olsrd_plugin_register_param(char *key, char *value)
+static int set_nameservice_server(const char *value, void *data, set_plugin_parameter_addon addon)
 {
-	if(!strcmp(key, "interval")) {
-		my_interval = atoi(value);
-		OLSR_PRINTF(1, "\nNAME PLUGIN: parameter interval: %d\n", my_interval);
+	union olsr_ip_addr ip;
+	struct name_entry **v = data;
+	if (0 == strlen(value))
+	{
+		*v = add_name_to_list(*v, "", addon.ui, NULL);
+                OLSR_PRINTF(1, "%s got %s (main address)\n", "Got", value);
+		return 0;
 	}
-	else if(!strcmp(key, "timeout")) {
-		my_timeout = atof(value);
-		OLSR_PRINTF(1, "\nNAME PLUGIN: parameter timeout: %f\n", my_timeout);
-	} 
-	else if(!strcmp(key, "hosts-file")) {
-		strncpy( my_hosts_file, value, MAX_FILE );
-		OLSR_PRINTF(1, "\nNAME PLUGIN: parameter filename: %s\n", my_hosts_file);
+	else if (0 < inet_pton(olsr_cnf->ip_version, value, &ip))
+	{
+		*v = add_name_to_list(*v, "", addon.ui, &ip);
+                OLSR_PRINTF(1, "%s got %s\n", "Got", value);
+		return 0;
 	}
-	else if(!strcmp(key, "resolv-file")) {
-		strncpy(my_resolv_file, value, MAX_FILE);
-		OLSR_PRINTF(1, "\nNAME PLUGIN: parameter resolv file: %s\n", my_resolv_file);
+	else
+	{
+                OLSR_PRINTF(0, "Illegal IP address \"%s\"", value);
 	}
-	else if(!strcmp(key, "suffix")) {
-		strncpy(my_suffix, value, MAX_SUFFIX);
-		OLSR_PRINTF(1, "\nNAME PLUGIN: parameter suffix: %s\n", my_suffix);
-	}
-	else if(!strcmp(key, "add-hosts")) {
-		strncpy(my_add_hosts, value, MAX_FILE);
-		OLSR_PRINTF(1, "\nNAME PLUGIN: parameter additional host: %s\n", my_add_hosts);
-	}
-	else if(!strcmp(key, "services-file")) {
-		strncpy(my_services_file, value, MAX_FILE);
-		OLSR_PRINTF(1,"\nNAME PLUGIN: parameter services-file: %s", my_services_file);
-	}
-	else if(!strcmp(key, "lat")) {
-		my_lat = atof(value);
-		OLSR_PRINTF(1,"\nNAME PLUGIN: parameter lat: %f\n", my_lat);
-	}
-	else if(!strcmp(key, "lon")) {
-		my_lon = atof(value);
-		OLSR_PRINTF(1,"\nNAME PLUGIN: parameter lon: %f\n", my_lon);
-	}
-	else if(!strcmp(key, "latlon-file")) {
-		strncpy( my_latlon_file, value, MAX_FILE );
-		OLSR_PRINTF(1, "\nNAME PLUGIN: parameter latlon-file: %s\n", my_latlon_file);
-	}
-	else if(!strcmp(key, "latlon-infile")) {
-		strncpy( latlon_in_file, value, MAX_FILE );
-		OLSR_PRINTF(1, "\nNAME PLUGIN: parameter latlon-infile: %s\n", latlon_in_file);
-	}
-	else if(!strcmp(key, "dns-server")) {
-		union olsr_ip_addr ip;
-		if (strlen(value) == 0) {
-			my_forwarders = add_name_to_list(my_forwarders, "", NAME_FORWARDER, NULL);
-			OLSR_PRINTF(1,"\nNAME PLUGIN: parameter dns-server: (main address)");
-		} else if (inet_pton(olsr_cnf->ip_version, value, &ip) > 0) {
-			my_forwarders = add_name_to_list(my_forwarders, "", NAME_FORWARDER, &ip);
-			OLSR_PRINTF(1,"\nNAME PLUGIN: parameter dns-server: (%s)", value);
-		} else {
-			OLSR_PRINTF(1,"\nNAME PLUGIN: invalid parameter dns-server: %s ", value);
-		}
-	}
-	else if(!strcmp(key, "name")) {
-		// name for main address
-		my_names = add_name_to_list(my_names, value, NAME_HOST, NULL);
-		OLSR_PRINTF(1,"\nNAME PLUGIN: parameter name: %s (main address)", value);
-	}
-	else if(!strcmp(key, "service")) {
-		// name for main address
-		my_services = add_name_to_list(my_services, value, NAME_SERVICE, NULL);
-		OLSR_PRINTF(1,"\nNAME PLUGIN: parameter service: %s (main address)", value);
-	}
-	else {
-		// assume this is an IP address and hostname
-		union olsr_ip_addr ip;
-		
-		if (inet_pton(olsr_cnf->ip_version, key, &ip) > 0) {
-			// the IP is validated later
-			my_names = add_name_to_list(my_names, value, NAME_HOST, &ip);
-			OLSR_PRINTF(1,"\nNAME PLUGIN: parameter name %s (%s)", value, key);
-		} 
-		else {
-			OLSR_PRINTF(1, "\nNAME PLUGIN: invalid IP %s for name %s!\n", key, value);
-		}
-	}
-
 	return 1;
+}
+
+static int set_nameservice_name(const char *value, void *data, set_plugin_parameter_addon addon)
+{
+	struct name_entry **v = data;
+	if (0 < strlen(value))
+	{
+		*v = add_name_to_list(*v, (char*)value, addon.ui, NULL);
+                OLSR_PRINTF(1, "%s got %s (main address)\n", "Got", value);
+		return 0;
+	}
+	else
+	{
+                OLSR_PRINTF(0, "Illegal name \"%s\"", value);
+	}
+	return 1;
+}
+
+static int set_nameservice_host(const char *value, void *data, set_plugin_parameter_addon addon)
+{
+	union olsr_ip_addr ip;
+	struct name_entry **v = data;
+	if (0 < inet_pton(olsr_cnf->ip_version, addon.pc, &ip))
+	{
+		// the IP is validated later
+		*v = add_name_to_list(*v, (char*)value, NAME_HOST, &ip);
+                OLSR_PRINTF(1, "%s: %s got %s\n", "Got", addon.pc, value);
+		return 0;
+	}
+	else
+	{
+                OLSR_PRINTF(0, "%s: Illegal IP address \"%s\"", addon.pc, value);
+	}
+	return 1;
+}
+
+static int set_nameservice_float(const char *value, void *data, set_plugin_parameter_addon addon __attribute__((unused)))
+{
+    const float thefloat = atof(value);
+    if (data != NULL)
+    {
+        float *v = data;
+        *v = thefloat;
+        OLSR_PRINTF(1, "%s float %f\n", "Got", thefloat);
+    }
+    else
+    {
+        OLSR_PRINTF(0, "%s float %f\n", "Ignored", thefloat);
+    }
+    return 0;
+}
+
+static const struct olsrd_plugin_parameters plugin_parameters[] = {
+    { .name = "interval",      .set_plugin_parameter = &set_plugin_int,         .data = &my_interval },
+    { .name = "timeout",       .set_plugin_parameter = &set_nameservice_float,  .data = &my_timeout },
+    { .name = "hosts-file",    .set_plugin_parameter = &set_plugin_string,      .data = &my_hosts_file,    .addon = {sizeof(my_hosts_file)} },
+    { .name = "resolv-file",   .set_plugin_parameter = &set_plugin_string,      .data = &my_resolv_file,   .addon = {sizeof(my_resolv_file)} },
+    { .name = "suffix",        .set_plugin_parameter = &set_plugin_string,      .data = &my_suffix,        .addon = {sizeof(my_suffix)} },
+    { .name = "add-hosts",     .set_plugin_parameter = &set_plugin_string,      .data = &my_add_hosts,     .addon = {sizeof(my_add_hosts)} },
+    { .name = "services-file", .set_plugin_parameter = &set_plugin_string,      .data = &my_services_file, .addon = {sizeof(my_services_file)} },
+    { .name = "lat",           .set_plugin_parameter = &set_nameservice_float,  .data = &my_lat },
+    { .name = "lon",           .set_plugin_parameter = &set_nameservice_float,  .data = &my_lon },
+    { .name = "latlon-file",   .set_plugin_parameter = &set_plugin_string,      .data = &my_latlon_file,   .addon = {sizeof(my_latlon_file)} },
+    { .name = "latlon-infile", .set_plugin_parameter = &set_plugin_string,      .data = &latlon_in_file,   .addon = {sizeof(latlon_in_file)} },
+    { .name = "dns-server",    .set_plugin_parameter = &set_nameservice_server, .data = &my_forwarders,    .addon = {NAME_FORWARDER} },
+    { .name = "name",          .set_plugin_parameter = &set_nameservice_name,   .data = &my_names,         .addon = {NAME_HOST} },
+    { .name = "service",       .set_plugin_parameter = &set_nameservice_name,   .data = &my_services,      .addon = {NAME_SERVICE} },
+    { .name = "",              .set_plugin_parameter = &set_nameservice_host,   .data = &my_names },
+};
+
+void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size)
+{
+    *params = plugin_parameters;
+    *size = sizeof(plugin_parameters)/sizeof(*plugin_parameters);
 }
 
 
@@ -261,7 +265,7 @@ olsrd_plugin_register_param(char *key, char *value)
  * to the front of my_list
  */
 struct name_entry* 
-add_name_to_list(struct name_entry *my_list, char *value, int type, const union olsr_ip_addr *ip) 
+add_name_to_list(struct name_entry *my_list, const char *value, int type, const union olsr_ip_addr *ip) 
 {
 	struct name_entry *tmp = olsr_malloc(sizeof(struct name_entry), "new name_entry add_name_to_list");
 	tmp->name = strndup( value, MAX_NAME );
@@ -325,9 +329,9 @@ name_init(void)
 	//regex_service = "^[[:alnum:]]+://(([[:alnum:]_.-]+.olsr)|([[:digit:]]{1,3}\\.[[:digit:]]{1,3}\\.[[:digit:]]{1,3}\\.[[:digit:]]{1,3}))
 	//                 :    port              /path      |(tcp OR udp) |short description
 	//                 :[[:digit:]]+[[:alnum:]/?._=#-]*\\|(tcp|udp)\\|[^|[:cntrl:]]+$";
-	strcat (strcat (strcat(regex_service, "^[[:alnum:]]+://(([[:alnum:]_.-]+"),
-		my_suffix),
-		")|([[:digit:]]{1,3}\\.[[:digit:]]{1,3}\\.[[:digit:]]{1,3}\\.[[:digit:]]{1,3})):[[:digit:]]+[[:alnum:]/?._=#-]*\\|(tcp|udp)\\|[^|[:cntrl:]]+$");
+    strcpy(regex_service, "^[[:alnum:]]+://(([[:alnum:]_.-]+");
+    strcat(regex_service, my_suffix);
+	strcat(regex_service, ")|([[:digit:]]{1,3}\\.[[:digit:]]{1,3}\\.[[:digit:]]{1,3}\\.[[:digit:]]{1,3})):[[:digit:]]+[[:alnum:]/?._=#-]*\\|(tcp|udp)\\|[^|[:cntrl:]]+$");
 
 	/* #1: call regcomp() to compile the regex */
 	if ((ret = regcomp(&regex_t_service, regex_service , REG_EXTENDED )) != 0)
@@ -372,7 +376,7 @@ name_init(void)
 
 	/* register functions with olsrd */
 	olsr_parser_add_function(&olsr_parser, PARSER_TYPE, 1);
-	olsr_register_timeout_function(&olsr_timeout);
+	olsr_register_timeout_function(&olsr_timeout, OLSR_TRUE);
 	olsr_register_scheduler_event(&olsr_event, NULL, my_interval, 0, NULL);
 
 	return 1;
@@ -474,18 +478,35 @@ free_all_list_entries(struct db_entry **this_db_list)
  * time out old list entries
  * and write changes to file
  */
+
+static int timeout_roundrobin = 0;
+
 void
 olsr_timeout(void)
 {
-	timeout_old_names(list, &name_table_changed);
-	timeout_old_names(forwarder_list, &forwarder_table_changed);
-	timeout_old_names(service_list, &service_table_changed);
-	timeout_old_names(latlon_list, &latlon_table_changed);
-
-	write_resolv_file();
-	write_hosts_file();
-	write_services_file();
-	write_latlon_file();
+	switch(timeout_roundrobin++)
+	{
+		case 0:
+			timeout_old_names(list, &name_table_changed);
+			timeout_old_names(forwarder_list, &forwarder_table_changed);
+			timeout_old_names(service_list, &service_table_changed);
+			timeout_old_names(latlon_list, &latlon_table_changed);
+			break;
+		case 1:
+			write_resolv_file(); // if forwarder_table_changed
+			break;
+		case 2:
+			write_hosts_file(); // if name_table_changed
+			break;
+		case 3:
+			write_services_file(); // if service_table_changed
+			break;
+		case 4:
+			write_latlon_file(); // latlon_table_changed
+			break;
+		default:
+			timeout_roundrobin = 0;
+	} // switch
 }
 
 void
@@ -527,7 +548,9 @@ timeout_old_names(struct db_entry **this_list, olsr_bool *this_table_changed)
 void
 olsr_event(void *foo __attribute__((unused)))
 {
-	union olsr_message *message = (union olsr_message*)buffer;
+    /* send buffer: huge */
+    char buffer[10240];
+    union olsr_message *message = (union olsr_message *)buffer;
 	struct interface *ifn;
 	int namesize;
 
@@ -602,12 +625,12 @@ olsr_parser(union olsr_message *m, struct interface *in_if, union olsr_ip_addr *
 		
 	/* Fetch the message based on IP version */
 	if(olsr_cnf->ip_version == AF_INET) {
-		vtime = ME_TO_DOUBLE(m->v4.olsr_vtime);
+		vtime = me_to_double(m->v4.olsr_vtime);
 		size = ntohs(m->v4.olsr_msgsize);
 		namemessage = (struct namemsg*)&m->v4.message;
 	}
 	else {
-		vtime = ME_TO_DOUBLE(m->v6.olsr_vtime);
+		vtime = me_to_double(m->v6.olsr_vtime);
 		size = ntohs(m->v6.olsr_msgsize);
 		namemessage = (struct namemsg*)&m->v6.message;
 	}
@@ -825,7 +848,7 @@ decap_namemsg(struct name *from_packet, struct name_entry **to, olsr_bool *this_
 
 
 /**
- * unpack the received message and delegate to the decapsilation function for each
+ * unpack the received message and delegate to the decapsulation function for each
  * name/service/forwarder entry in the message
  */
 void
@@ -1065,6 +1088,44 @@ write_services_file(void)
 }
 
 /**
+ * Sort the nameserver pointer array.
+ *
+ * fresh entries are at the beginning of the array and
+ * the best entry is at the end of the array.
+ */
+static void
+select_best_nameserver(struct rt_entry **rt)
+{
+    int nameserver_idx;
+    struct rt_entry *rt1, *rt2;
+
+    for (nameserver_idx = 0;
+         nameserver_idx < NAMESERVER_COUNT;
+         nameserver_idx++) {
+
+        rt1 = rt[nameserver_idx];
+        rt2 = rt[nameserver_idx+1];
+
+        /*
+         * compare the next two pointers in the array.
+         * if the second pointer is NULL then percolate it up.
+         */
+        if (!rt2 || olsr_cmp_rt(rt1, rt2)) {
+
+            /*
+             * first is better, swap the pointers.
+             */
+            OLSR_PRINTF(6, "NAME PLUGIN: nameserver %s, etx %.3f\n",
+                        olsr_ip_to_string(&rt1->rt_dst.prefix),
+                        rt1->rt_best->rtp_metric.etx);
+
+            rt[nameserver_idx] = rt2;
+            rt[nameserver_idx+1] = rt1;
+        }
+    }
+}
+
+/**
  * write the 3 best upstream DNS servers to resolv.conf file
  * best means the 3 with the best etx value in routing table
  */
@@ -1072,16 +1133,19 @@ void
 write_resolv_file(void)
 {
 	int hash;
-	struct name_entry *name, *tmp_dns, *last_dns, *dnslist = NULL;
+	struct name_entry *name;
 	struct db_entry *entry;
-	struct rt_entry *best_routes = NULL;
-	struct rt_entry *route, *tmp = NULL, *last;
+	struct rt_entry *route;
+    static struct rt_entry *nameserver_routes[NAMESERVER_COUNT+1];
 	FILE* resolv;
 	int i=0;
 	time_t currtime;
-	
+
 	if (!forwarder_table_changed || my_forwarders != NULL || my_resolv_file[0] == '\0')
 		return;
+
+    /* clear the array of 3+1 nameserver routes */
+    memset(nameserver_routes, 0, sizeof(nameserver_routes));
 
 	for (hash = 0; hash < HASHSIZE; hash++) 
 	{
@@ -1089,71 +1153,30 @@ write_resolv_file(void)
 		{
 			for (name = entry->names; name != NULL; name = name->next) 
 			{
-				
-				/* find the nearest one */
-				route = host_lookup_routing_table(&name->ip);
+
+				route = olsr_lookup_routing_table(&name->ip);
+
+                OLSR_PRINTF(6, "NAME PLUGIN: check route for nameserver %s %s",
+							olsr_ip_to_string(&name->ip),
+                            route ? "suceeded" : "failed");
+
 				if (route==NULL) // it's possible that route is not present yet
 					continue;
-				
-				if (best_routes == NULL || route->rt_etx < best_routes->rt_etx) {
-					OLSR_PRINTF(6, "NAME PLUGIN: best nameserver %s\n",
-						olsr_ip_to_string(&name->ip));
-					if (best_routes!=NULL)
-						OLSR_PRINTF(6, "NAME PLUGIN: better than %f (%s)\n",
-							best_routes->rt_etx,
-							olsr_ip_to_string(&best_routes->rt_dst));
-					
-					tmp = olsr_malloc(sizeof(struct rt_entry), "new rt_entry");
-					memcpy(&tmp->rt_dst, &route->rt_dst, olsr_cnf->ipsize);
-					tmp->rt_etx = route->rt_etx;
-					tmp->next = best_routes;
-					best_routes = tmp;
-					tmp_dns = olsr_malloc(sizeof(struct name_entry), "write_resolv name_entry");
-					COPY_IP(&tmp_dns->ip, &name->ip);
-					tmp_dns->type = name->type;
-					tmp_dns->len = 0;
-					tmp_dns->name = NULL;
-					tmp_dns->next = dnslist;
-					dnslist = tmp_dns;
-				} else {
-					// queue in etx order
-					last = best_routes;
-					last_dns = dnslist;
-					while ( last->next!=NULL && i<3 ) {
-						if (last->next->rt_etx > route->rt_etx)
-							break;
-						last = last->next;
-						last_dns = last_dns->next;
-						i++;
-					}
-					if (i<3) {
-						OLSR_PRINTF(6, "NAME PLUGIN: queue %f (%s)",
-							route->rt_etx,
-							olsr_ip_to_string(&name->ip));
-						OLSR_PRINTF(6, " after %f (%s)\n", 
-							last->rt_etx, olsr_ip_to_string(&last_dns->ip));
-						
-						tmp = olsr_malloc(sizeof(struct rt_entry), "new rt_entry");
-						memcpy(&tmp->rt_dst, &route->rt_dst, olsr_cnf->ipsize);
-						tmp->rt_etx = route->rt_etx;
-						tmp->next = last->next;
-						last->next = tmp;
 
-						tmp_dns = olsr_malloc(sizeof(struct name_entry), "write_resolv name_entry");
-						COPY_IP(&tmp_dns->ip, &name->ip);
-						tmp_dns->type = name->type;
-						tmp_dns->len = 0;
-						tmp_dns->name = NULL;
-						tmp_dns->next = last_dns->next;
-						last_dns->next = tmp_dns;
-					} else {
-						OLSR_PRINTF(6, "NAME PLUGIN: don't need more than 3 nameservers\n");
-					}
-				}
+                /* enqueue it on the head of list */
+                *nameserver_routes = route;
+                OLSR_PRINTF(6, "NAME PLUGIN: found nameserver %s, etx %.3f",
+							olsr_ip_to_string(&name->ip),
+                            route->rt_best->rtp_metric.etx);
+
+                /* find the closet one */
+                select_best_nameserver(nameserver_routes);
 			}
 		}
 	}
-	if (best_routes==NULL)
+
+    /* if there is no best route we are done */
+	if (nameserver_routes[NAMESERVER_COUNT]==NULL)
 		return;
 		 
 	/* write to file */
@@ -1165,15 +1188,21 @@ write_resolv_file(void)
 	}
 	fprintf(resolv, "### this file is overwritten regularly by olsrd\n");
 	fprintf(resolv, "### do not edit\n\n");
-	i=0;
-	for (tmp_dns=dnslist; tmp_dns!=NULL && i<3; tmp_dns=tmp_dns->next) {
-		OLSR_PRINTF(6, "NAME PLUGIN: nameserver %s\n", olsr_ip_to_string(&tmp_dns->ip));
-		fprintf(resolv, "nameserver %s\n", olsr_ip_to_string(&tmp_dns->ip));
-		i++;
-	}
-	free_name_entry_list(&dnslist);
-	if(tmp != NULL) {
-		free_routing_table_list(&tmp);
+
+	for (i = NAMESERVER_COUNT; i >= 0; i--) {
+
+        route = nameserver_routes[i];
+
+        OLSR_PRINTF(2, "NAME PLUGIN: nameserver_routes #%d %p\n", i, route);
+
+        if (!route) {
+            continue;
+        }
+
+		OLSR_PRINTF(2, "NAME PLUGIN: nameserver %s\n",
+                    olsr_ip_to_string(&route->rt_dst.prefix));
+		fprintf(resolv, "nameserver %s\n",
+                olsr_ip_to_string(&route->rt_dst.prefix));
 	}
 	if (time(&currtime)) {
 		fprintf(resolv, "\n### written by olsrd at %s", ctime(&currtime));
@@ -1196,23 +1225,6 @@ free_name_entry_list(struct name_entry **list)
 		*tmp = (*tmp)->next;
 		free( to_delete->name );
 		to_delete->name = NULL;
-		free( to_delete );
-		to_delete = NULL;
-	}
-}
-
-
-/**
- * completely free a list of rt_entries
- */
-static void 
-free_routing_table_list(struct rt_entry **list) 
-{
-	struct rt_entry **tmp = list;
-	struct rt_entry *to_delete;
-	while (*tmp != NULL) {
-		to_delete = *tmp;
-		*tmp = (*tmp)->next;
 		free( to_delete );
 		to_delete = NULL;
 	}
@@ -1279,51 +1291,6 @@ allowed_ip(union olsr_ip_addr *addr)
 		}
 	}
 	return OLSR_FALSE;
-}
-
-static struct rt_entry *
-host_lookup_routing_table(union olsr_ip_addr *dst)
-{
-	olsr_u32_t index;
-	union olsr_ip_addr tmp_ip, tmp_msk;
-	struct rt_entry *walker;
-
-	walker = olsr_lookup_routing_table(dst);
-	if (walker != NULL)
-		return walker;
-
-	for (index = 0; index < HASHSIZE; index++) {
-		for (walker = hna_routes[index].next;
-		   walker != &hna_routes[index]; walker = walker->next) {
-			if (COMP_IP(&walker->rt_dst, dst))
-				return walker;
-			if (olsr_cnf->ip_version == AF_INET) {
-				if ( walker->rt_mask.v4 != 0 &&
-				    (dst->v4 & walker->rt_mask.v4) ==
-				    walker->rt_dst.v4 ) {
-					OLSR_PRINTF(6, "MATCHED\n");
-					return walker;
-				}
-			} else {
-				int i;
-				
-				if ( walker->rt_mask.v6 == 0 )
-					continue;
-				olsr_prefix_to_netmask(&tmp_msk,
-					walker->rt_mask.v6);
-				for (i = 0; i < 16; i++) {
-					tmp_ip.v6.s6_addr[i] =
-						dst->v6.s6_addr[i] &
-						tmp_msk.v6.s6_addr[i];
-				}
-				if (COMP_IP(&tmp_ip, &walker->rt_dst)) {
-					OLSR_PRINTF(6, "MATCHED\n");
-					return walker;
-				}
-			}
-		}
-	}
-	return NULL;
 }
 
 /** check if name has the right syntax, i.e. it must adhere to a special regex 
@@ -1450,9 +1417,9 @@ void lookup_defhna_latlon(union olsr_ip_addr *ip)
 	struct rt_entry* rt_hna;
 	memset(ip, 0, sizeof(ip));
 	memset(&dest, 0, sizeof(dest));
-	if (NULL != (rt_hna = olsr_lookup_hna_routing_table(&dest)))
+	if (NULL != (rt_hna = olsr_lookup_routing_table(&dest)))
 	{
-		COPY_IP(ip, &rt_hna->rt_router);
+		COPY_IP(ip, &rt_hna->rt_best->rtp_nexthop.gateway);
 	}
 }
 
@@ -1488,8 +1455,12 @@ write_latlon_file(void)
 	FILE* js;
 	struct olsr_if *ifs;
 	union olsr_ip_addr ip;
+    struct tc_entry *tc;
+    struct tc_edge_entry *tc_edge;
 
-	if (!latlon_table_changed) return;
+	if (!my_names || !latlon_table_changed) {
+        return;
+    }
 	OLSR_PRINTF(2, "NAME PLUGIN: writing latlon file\n");
 
 	js = fopen( my_latlon_file, "w" );
@@ -1559,27 +1530,21 @@ write_latlon_file(void)
 			}
 		}
 	}
-	for (hash = 0; hash < HASHSIZE; hash++) 
-	{
-		struct tc_entry *entry = tc_table[hash].next;
-		while(entry != &tc_table[hash])
-		{
-			struct topo_dst *dst_entry = entry->destinations.next;
-			while(dst_entry != &entry->destinations)
-			{
-				fprintf(js, "Link('%s','%s',%f,%f,%f);\n", 
-					olsr_ip_to_string(&dst_entry->T_dest_addr),
-					olsr_ip_to_string(&entry->T_last_addr), 
-					dst_entry->link_quality,
-					dst_entry->inverse_link_quality,
-					(dst_entry->link_quality * dst_entry->inverse_link_quality) ?
-						1.0 / (dst_entry->link_quality * dst_entry->inverse_link_quality) :
-						0.0);
-				dst_entry = dst_entry->next;
-			}
-			entry = entry->next;
-		}
-	}
+
+    OLSR_FOR_ALL_TC_ENTRIES(tc) {
+        OLSR_FOR_ALL_TC_EDGE_ENTRIES(tc, tc_edge) {
+
+            fprintf(js, "Link('%s','%s',%f,%f,%f);\n", 
+					olsr_ip_to_string(&tc_edge->T_dest_addr),
+					olsr_ip_to_string(&tc->addr), 
+					tc_edge->link_quality,
+					tc_edge->inverse_link_quality,
+					(tc_edge->link_quality * tc_edge->inverse_link_quality) ?
+                    1.0 / (tc_edge->link_quality * tc_edge->inverse_link_quality) :
+                    0.0);
+
+        } OLSR_FOR_ALL_TC_EDGE_ENTRIES_END(tc, tc_edge);
+    } OLSR_FOR_ALL_TC_ENTRIES_END(tc);
 
 	fclose(js);
 	latlon_table_changed = OLSR_FALSE;

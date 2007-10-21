@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: defs.h,v 1.62 2007/08/19 23:00:22 bernd67 Exp $
+ * $Id: defs.h,v 1.65 2007/10/20 21:07:24 bernd67 Exp $
  */
 
 
@@ -59,8 +59,9 @@
 #include "net_olsr.h" /* IPaddr -> string conversions is used by everyone */
 #include "olsr_cfg.h"
 
-#define SOFTWARE_VERSION	"olsr.org - " VERSION
-#define OLSRD_VERSION_DATE	"       *** " SOFTWARE_VERSION " (" __DATE__ ") ***\n"
+extern const char olsrd_version[];
+extern const char build_date[]; 
+extern const char build_host[];
 
 #ifndef OLSRD_GLOBAL_CONF_FILE
 #define OLSRD_CONF_FILE_NAME	"olsrd.conf"
@@ -72,6 +73,7 @@
 #define UDP_IPV6_HDRSIZE        62
 
 #define MIN_PACKET_SIZE(ver)	((int)(sizeof(olsr_u8_t) * (((ver) == AF_INET) ? 4 : 7)))
+
 /* Debug helper macro */
 #ifdef DEBUG
 #define olsr_debug(lvl, format, args...) do {                           \
@@ -99,6 +101,12 @@ extern FILE *debug_handle;
 
 
 #define ARRAYSIZE(x)	(sizeof(x)/sizeof(*(x)))
+#ifndef MAX
+#define MAX(x,y)	((x) > (y) ? (x) : (y))
+#endif
+#ifndef MIN
+#define MIN(x,y)	((x) < (y) ? (x) : (y))
+#endif
 
 /*
  * Queueing macros
@@ -156,8 +164,5 @@ shutdown_ipc(void);
 
 int
 ipc_output(struct olsr *);
-
-int
-ipc_route_send_rtentry(union olsr_ip_addr*, union olsr_ip_addr *, int, int, char *);
 
 #endif

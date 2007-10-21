@@ -29,7 +29,7 @@
  *
  */
 
-/* $Id: nameservice.h,v 1.12 2007/07/02 10:59:12 bernd67 Exp $ */
+/* $Id: nameservice.h,v 1.14 2007/10/05 20:24:47 bernd67 Exp $ */
  
 /*
  * Dynamic linked library for UniK OLSRd
@@ -60,6 +60,7 @@
 #define PARSER_TYPE		MESSAGE_TYPE
 #define EMISSION_INTERVAL	120 /* two minutes */
 #define NAME_VALID_TIME		1800 /* half one hour */
+#define NAMESERVER_COUNT        3
 
 #define NAME_PROTOCOL_VERSION	1
 
@@ -119,7 +120,7 @@ int
 encap_namemsg(struct namemsg *);
 
 struct name_entry*
-add_name_to_list(struct name_entry *my_list, char *value, int type, const union olsr_ip_addr *ip);
+add_name_to_list(struct name_entry *my_list, const char *value, int type, const union olsr_ip_addr *ip);
 
 struct name_entry*
 remove_nonvalid_names_from_list(struct name_entry *my_list, int type);

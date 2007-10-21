@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: admin_interface.c,v 1.9 2007/08/19 23:00:22 bernd67 Exp $
+ * $Id: admin_interface.c,v 1.10 2007/10/20 20:41:04 bernd67 Exp $
  */
 
 /*
@@ -65,17 +65,8 @@
 int
 build_admin_body(char *buf, olsr_u32_t bufsize __attribute__((unused)))
 {
-  int size = 0, i = 0;
-
-  while(admin_frame[i] && strcmp(admin_frame[i], "<!-- BASICSETTINGS -->\n"))
-    {
-      size += snprintf(&buf[size], bufsize-size, admin_frame[i]);
-      i++;
-    }
-  
-  if(!admin_frame[i])
-    return size;
-
+  int size = 0;
+  size += snprintf(&buf[size], bufsize-size, admin_frame_prolog);
 
   size += snprintf(&buf[size], bufsize-size, "<tr>\n");
 
@@ -96,91 +87,64 @@ build_admin_body(char *buf, olsr_u32_t bufsize __attribute__((unused)))
   size += snprintf(&buf[size], bufsize-size, admin_basic_setting_int,
 		  "Willingness:", "willingness", 1, olsr_cnf->willingness);
 
-  size += snprintf(&buf[size], bufsize-size, "</tr>\n");
-  size += snprintf(&buf[size], bufsize-size, "<tr>\n");
+  size += snprintf(&buf[size], bufsize-size, "</tr>\n"
+                                             "<tr>\n");
 
-  if(olsr_cnf->use_hysteresis)
-    {
-      size += snprintf(&buf[size], bufsize-size, admin_basic_setting_float,
-		      "Hyst scaling:", "hyst_scaling", 4, olsr_cnf->hysteresis_param.scaling);
+  if(olsr_cnf->use_hysteresis) {
+    size += snprintf(&buf[size], bufsize-size, admin_basic_setting_float,
+                     "Hyst scaling:", "hyst_scaling", 4, olsr_cnf->hysteresis_param.scaling);
 
-      size += snprintf(&buf[size], bufsize-size, admin_basic_setting_float,
-		      "Lower thr:", "hyst_lower", 4, olsr_cnf->hysteresis_param.thr_low);
-      size += snprintf(&buf[size], bufsize-size, admin_basic_setting_float,
-		      "Upper thr:", "hyst_upper", 4, olsr_cnf->hysteresis_param.thr_high);
-    }
-  else
-    {
-      size += snprintf(&buf[size], bufsize-size, "<td>Hysteresis disabled</td>\n");
-    }
+    size += snprintf(&buf[size], bufsize-size, admin_basic_setting_float,
+                     "Lower thr:", "hyst_lower", 4, olsr_cnf->hysteresis_param.thr_low);
+    size += snprintf(&buf[size], bufsize-size, admin_basic_setting_float,
+                     "Upper thr:", "hyst_upper", 4, olsr_cnf->hysteresis_param.thr_high);
+  } else {
+    size += snprintf(&buf[size], bufsize-size, "<td>Hysteresis disabled</td>\n");
+  }
 
-  size += snprintf(&buf[size], bufsize-size, "</tr>\n");
-  size += snprintf(&buf[size], bufsize-size, "<tr>\n");
+  size += snprintf(&buf[size], bufsize-size, "</tr>\n"
+                                             "<tr>\n");
   
-  if(olsr_cnf->lq_level)
-    {
-      size += snprintf(&buf[size], bufsize-size, admin_basic_setting_int,
-		      "LQ level:", "lq_level", 1, olsr_cnf->lq_level);
-      size += snprintf(&buf[size], bufsize-size, admin_basic_setting_int,
-		      "LQ winsize:", "lq_wsize", 2, olsr_cnf->lq_wsize);
-    }
-  else
-    {
-      size += snprintf(&buf[size], bufsize-size, "<td>LQ disabled</td>\n");
-    }
+  if(olsr_cnf->lq_level) {
+    size += snprintf(&buf[size], bufsize-size, admin_basic_setting_int,
+                     "LQ level:", "lq_level", 1, olsr_cnf->lq_level);
+    size += snprintf(&buf[size], bufsize-size, admin_basic_setting_int,
+                     "LQ winsize:", "lq_wsize", 2, olsr_cnf->lq_wsize);
+  } else {
+    size += snprintf(&buf[size], bufsize-size, "<td>LQ disabled</td>\n");
+  }
 
-
-  size += snprintf(&buf[size], bufsize-size, "</tr>\n");
-  size += snprintf(&buf[size], bufsize-size, "<tr>\n");
-
+  size += snprintf(&buf[size], bufsize-size, "</tr>\n"
+                                             "<tr>\n");
   size += snprintf(&buf[size], bufsize-size, "</tr>\n");
   
-  i++;
+  size += snprintf(&buf[size], bufsize-size, admin_frame_mid);
 
-  while(admin_frame[i] && strcmp(admin_frame[i], "<!-- HNAENTRIES -->\n"))
-    {
-      size += snprintf(&buf[size], bufsize-size, admin_frame[i]);
-      i++;
+  if(olsr_cnf->ip_version == AF_INET) {
+    struct hna4_entry *hna4;      
+    for(hna4 = olsr_cnf->hna4_entries; hna4; hna4 = hna4->next)	{
+      const char * const net = olsr_ip_to_string((union olsr_ip_addr *)&hna4->net);
+      const char * const mask = olsr_ip_to_string((union olsr_ip_addr *)&hna4->netmask);
+      size += snprintf(&buf[size], bufsize-size,
+                       "<tr><td halign=\"middle\"><input type=\"checkbox\" name=\"del_hna%s*%s\" class=\"input_checkbox\"></td><td>%s</td><td>%s</td></tr>\n", 
+                       net,
+                       mask,
+                       net,
+                       mask);
     }
-
-  if(!admin_frame[i] || !admin_frame[i+1])
-    return size;
-
-  i++;
-
-  if((olsr_cnf->ip_version == AF_INET) && (olsr_cnf->hna4_entries))
-    {
-      struct hna4_entry *hna4;
-      
-      for(hna4 = olsr_cnf->hna4_entries; hna4; hna4 = hna4->next)
-	{
-	  size += snprintf(&buf[size], bufsize-size, admin_frame[i], 
-			  olsr_ip_to_string((union olsr_ip_addr *)&hna4->net),
-			  olsr_ip_to_string((union olsr_ip_addr *)&hna4->netmask),
-			  olsr_ip_to_string((union olsr_ip_addr *)&hna4->net),
-			  olsr_ip_to_string((union olsr_ip_addr *)&hna4->netmask));
-	}
+  } else {
+    struct hna6_entry *hna6;
+    for(hna6 = olsr_cnf->hna6_entries; hna6; hna6 = hna6->next) {
+      const char * const net = olsr_ip_to_string((union olsr_ip_addr *)&hna6->net);
+      size += snprintf(&buf[size], bufsize-size,
+                       "<tr><td halign=\"middle\"><input type=\"checkbox\" name=\"del_hna%s*%d\" class=\"input_checkbox\"></td><td>%s</td><td>%d</td></tr>\n", 
+                       net,
+                       hna6->prefix_len,
+                       net,
+                       hna6->prefix_len);
     }
-  else if((olsr_cnf->ip_version == AF_INET6) && (olsr_cnf->hna6_entries))
-    {
-      struct hna6_entry *hna6;
-	
-      for(hna6 = olsr_cnf->hna6_entries; hna6; hna6 = hna6->next)
-	{
-	  size += snprintf(&buf[size], bufsize-size, admin_frame[i], 
-			  olsr_ip_to_string((union olsr_ip_addr *)&hna6->net),
-			  "TBD"/*hna6->prefix_len*/);
-	}
-    }
-  
-  i++;
-
-  while(admin_frame[i])
-    {
-      size += snprintf(&buf[size], bufsize-size, admin_frame[i]);
-      i++;
-    }
-  
+  }
+  size += snprintf(&buf[size], bufsize-size, admin_frame_epilog);
   return size;
 }
 

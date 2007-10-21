@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: kernel_routes.c,v 1.20 2007/04/25 22:22:15 bernd67 Exp $
+ * $Id: kernel_routes.c,v 1.23 2007/09/05 22:17:26 bernd67 Exp $
  */
 
 #include <stdio.h>
@@ -52,32 +52,40 @@
 
 char *StrError(unsigned int ErrNo);
 
-int olsr_ioctl_add_route(struct rt_entry *Dest)
+/**
+ *Insert a route in the kernel routing table
+ *
+ *@param destination the route to add
+ *
+ *@return negative on error
+ */
+int olsr_ioctl_add_route(struct rt_entry *rt)
 {
   MIB_IPFORWARDROW Row;
+  union olsr_ip_addr mask;
   unsigned long Res;
-  char Str1[16], Str2[16], Str3[16];
 
-  inet_ntop(AF_INET, &Dest->rt_dst.v4, Str1, 16);
-  inet_ntop(AF_INET, &Dest->rt_mask.v4, Str2, 16);
-  inet_ntop(AF_INET, &Dest->rt_router.v4, Str3, 16);
-
-  OLSR_PRINTF(1, "Adding IPv4 route with metric %d to %s/%s via %s and I/F 0x%x.\n",
-              Dest->rt_metric + Dest->rt_if->int_metric, Str1, Str2, Str3, Dest->rt_if->if_index);
+  OLSR_PRINTF(2, "KERN: Adding %s\n", olsr_rt_to_string(rt));
 
   memset(&Row, 0, sizeof (MIB_IPFORWARDROW));
 
-  Row.dwForwardDest = Dest->rt_dst.v4;
-  Row.dwForwardMask = Dest->rt_mask.v4;
+  Row.dwForwardDest = rt->rt_dst.prefix.v4;
+
+  if (!olsr_prefix_to_netmask(&mask, rt->rt_dst.prefix_len)) {
+    return -1;
+  } else {
+      Row.dwForwardMask = mask.v4;
+  }
+
   Row.dwForwardPolicy = 0;
-  Row.dwForwardNextHop = Dest->rt_router.v4;
-  Row.dwForwardIfIndex = Dest->rt_if->if_index;
+  Row.dwForwardNextHop = rt->rt_best->rtp_nexthop.gateway.v4;
+  Row.dwForwardIfIndex = rt->rt_best->rtp_nexthop.iif_index;
   // MIB_IPROUTE_TYPE_DIRECT and MIB_IPROUTE_TYPE_INDIRECT
-  Row.dwForwardType = (Dest->rt_dst.v4 == Dest->rt_router.v4) ? 3 : 4;
+  Row.dwForwardType = (rt->rt_dst.prefix.v4 == rt->rt_best->rtp_nexthop.gateway.v4) ? 3 : 4;
   Row.dwForwardProto = 3; // MIB_IPPROTO_NETMGMT
   Row.dwForwardAge = INFINITE;
   Row.dwForwardNextHopAS = 0;
-  Row.dwForwardMetric1 = Dest->rt_metric + Dest->rt_if->int_metric;
+  Row.dwForwardMetric1 = RT_METRIC_DEFAULT;
   Row.dwForwardMetric2 = -1;
   Row.dwForwardMetric3 = -1;
   Row.dwForwardMetric4 = -1;
@@ -104,46 +112,59 @@ int olsr_ioctl_add_route(struct rt_entry *Dest)
     return -1;
   }
 
-  if(olsr_cnf->open_ipc)
-    ipc_route_send_rtentry(&Dest->rt_dst, &Dest->rt_router, Dest->rt_metric,
-                           1, Dest->rt_if->int_name);
+  /*
+   * Send IPC route update message
+   */
+  if(olsr_cnf->open_ipc) {
+    ipc_route_send_rtentry(&rt->rt_dst.prefix, &rt->rt_best->rtp_nexthop.gateway,
+        rt->rt_best->rtp_metric.hops, 1,
+        if_ifwithindex_name(rt->rt_best->rtp_nexthop.iif_index));
+  }
 
   return 0;
 }
 
 // XXX - to be implemented
 
-int olsr_ioctl_add_route6(struct rt_entry *Dest __attribute__((unused)))
+int olsr_ioctl_add_route6(struct rt_entry *rt __attribute__((unused)))
 {
   return 0;
 }
 
-int olsr_ioctl_del_route(struct rt_entry *Dest)
+/**
+ *Remove a route from the kernel
+ *
+ *@param destination the route to remove
+ *
+ *@return negative on error
+ */
+int olsr_ioctl_del_route(struct rt_entry *rt)
 {
   MIB_IPFORWARDROW Row;
+  union olsr_ip_addr mask;
   unsigned long Res;
-  char Str1[16], Str2[16], Str3[16];
 
-  inet_ntop(AF_INET, &Dest->rt_dst.v4, Str1, 16);
-  inet_ntop(AF_INET, &Dest->rt_mask.v4, Str2, 16);
-  inet_ntop(AF_INET, &Dest->rt_router.v4, Str3, 16);
-
-  OLSR_PRINTF(1, "Deleting IPv4 route with metric %d to %s/%s via %s and I/F 0x%x.\n",
-              Dest->rt_metric + Dest->rt_if->int_metric, Str1, Str2, Str3, Dest->rt_if->if_index);
+  OLSR_PRINTF(2, "KERN: Deleting %s\n", olsr_rt_to_string(rt));
 
   memset(&Row, 0, sizeof (MIB_IPFORWARDROW));
 
-  Row.dwForwardDest = Dest->rt_dst.v4;
-  Row.dwForwardMask = Dest->rt_mask.v4;
+  Row.dwForwardDest = rt->rt_dst.prefix.v4;
+
+  if (!olsr_prefix_to_netmask(&mask, rt->rt_dst.prefix_len)) {
+    return -1;
+  } else {
+      Row.dwForwardMask = mask.v4;
+  }
+
   Row.dwForwardPolicy = 0;
-  Row.dwForwardNextHop = Dest->rt_router.v4;
-  Row.dwForwardIfIndex = Dest->rt_if->if_index;
+  Row.dwForwardNextHop = rt->rt_nexthop.gateway.v4;
+  Row.dwForwardIfIndex = rt->rt_nexthop.iif_index;
   // MIB_IPROUTE_TYPE_DIRECT and MIB_IPROUTE_TYPE_INDIRECT
-  Row.dwForwardType = (Dest->rt_dst.v4 == Dest->rt_router.v4) ? 3 : 4;
+  Row.dwForwardType = (rt->rt_dst.prefix.v4 == rt->rt_nexthop.gateway.v4) ? 3 : 4;
   Row.dwForwardProto = 3; // MIB_IPPROTO_NETMGMT
   Row.dwForwardAge = INFINITE;
   Row.dwForwardNextHopAS = 0;
-  Row.dwForwardMetric1 = Dest->rt_metric + Dest->rt_if->int_metric;
+  Row.dwForwardMetric1 = RT_METRIC_DEFAULT;
   Row.dwForwardMetric2 = -1;
   Row.dwForwardMetric3 = -1;
   Row.dwForwardMetric4 = -1;
@@ -162,15 +183,19 @@ int olsr_ioctl_del_route(struct rt_entry *Dest)
     return -1;
   }
 
-  if(olsr_cnf->open_ipc)
-    ipc_route_send_rtentry(&Dest->rt_dst, NULL, Dest->rt_metric, 0, NULL);
+  /*
+   * Send IPC route update message
+   */
+  if(olsr_cnf->open_ipc) {
+    ipc_route_send_rtentry(&rt->rt_dst.prefix, NULL, 0 , 0, NULL);
+  }
 
   return 0;
 }
 
 // XXX - to be implemented
 
-int olsr_ioctl_del_route6(struct rt_entry *Dest __attribute__((unused)))
+int olsr_ioctl_del_route6(struct rt_entry *rt __attribute__((unused)))
 {
   return 0;
 }

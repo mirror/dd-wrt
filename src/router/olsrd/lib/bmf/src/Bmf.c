@@ -63,10 +63,10 @@
 #include "mpr_selector_set.h" /* olsr_lookup_mprs_set() */
 #include "link_set.h" /* get_best_link_to_neighbor() */
 
-/* Plugin includes */
+/* BMF includes */
 #include "NetworkInterfaces.h" /* TBmfInterface, CreateBmfNetworkInterfaces(), CloseBmfNetworkInterfaces() */
 #include "Address.h" /* IsMulticast() */
-#include "Packet.h" /* ETH_TYPE_OFFSET, IFHWADDRLEN etc. */
+#include "Packet.h" /* ENCAP_HDR_LEN, BMF_ENCAP_TYPE, BMF_ENCAP_LEN etc. */
 #include "PacketHistory.h" /* InitPacketHistory() */
 
 static pthread_t BmfThread;
@@ -158,7 +158,7 @@ static void EncapsulateAndForwardPacket(
   int i;
 
   /* Retrieve at most two best neigbors to forward the packet to */
-  bestNeighborLinks = GetBestTwoNeighbors(intf, NULL, NULL, NULL, &nPossibleNeighbors);
+  GetBestTwoNeighbors(&bestNeighborLinks, intf, NULL, NULL, NULL, &nPossibleNeighbors);
 
   if (nPossibleNeighbors <= 0)
   {
@@ -759,13 +759,13 @@ static void BmfEncapsulationPacketReceived(
       int i;
 
       /* Retrieve at most two best neigbors to forward the packet to */
-      bestNeighborLinks =
-        GetBestTwoNeighbors(
-          walker,
-          &mcSrc,
-          forwardedBy,
-          forwardedTo,
-          &nPossibleNeighbors);
+      GetBestTwoNeighbors(
+        &bestNeighborLinks,
+        walker,
+        &mcSrc,
+        forwardedBy,
+        forwardedTo,
+        &nPossibleNeighbors);
 
       if (nPossibleNeighbors <= 0)
       {
@@ -1152,7 +1152,6 @@ static void DoBmf(void)
          * - the IP header of the encapsulation IP packet
          * - the UDP header of the encapsulation IP packet
          * - the encapsulation header
-         * - the Ethernet header in the encapsulated Ethernet packet
          * - a minimum IP header inside the encapsulated packet
          * Note: on a VLAN interface, the value returned by 'recvfrom' may (but need
          * not) be 4 (bytes) larger than the value returned on a non-VLAN interface, for
@@ -1161,7 +1160,6 @@ static void DoBmf(void)
           GetIpHeaderLength(rxBuffer) +
           sizeof(struct udphdr) +
           ENCAP_HDR_LEN +
-          IP_HDR_OFFSET +
           sizeof(struct ip);
         if (nBytes < minimumLength)
         {
@@ -1196,6 +1194,7 @@ static void DoBmf(void)
         struct sockaddr_in from;
         socklen_t fromLen = sizeof(from);
         int nBytes;
+        int minimumLength;
         union olsr_ip_addr forwardedBy;
 
         /* An encapsulated packet was received */
@@ -1221,9 +1220,11 @@ static void DoBmf(void)
         /* Check if the number of received bytes is large enough for a minimal BMF
          * encapsulation packet, at least:
          * - the encapsulation header
-         * - the Ethernet header in the encapsulated Ethernet packet
          * - a minimum IP header inside the encapsulated packet */
-        if (nBytes < ENCAP_HDR_LEN + IP_HDR_OFFSET + (int)sizeof(struct ip))
+        minimumLength =
+          ENCAP_HDR_LEN +
+          sizeof(struct ip);
+        if (nBytes < minimumLength)
         {
           olsr_printf(
             1,
@@ -1472,44 +1473,4 @@ void CloseBmf(void)
   /* Clean up after the BmfThread has been killed */
   CloseBmfNetworkInterfaces();
 } /* CloseBmf */
-
-/* -------------------------------------------------------------------------
- * Function   : RegisterBmfParameter
- * Description: Register a configuration parameter with the BMF process
- * Input      : key - the parameter name, e.g. "DropMac" or "NonOlsrIf"
- *              value - the parameter value
- * Output     : none
- * Return     : fatal error (<0), minor error (0) or success (>0)
- * Data Used  : none
- * ------------------------------------------------------------------------- */
-int RegisterBmfParameter(char* key, char* value)
-{
-  if (strcmp(key, "NonOlsrIf") == 0)
-  {
-    return AddNonOlsrBmfIf(value);
-  }
-  else if (strcmp(key, "DoLocalBroadcast") == 0)
-  {
-    return DoLocalBroadcast(value);
-  }
-  else if (strcmp(key, "BmfInterface") == 0)
-  {
-    return SetBmfInterfaceName(value);
-  }
-  else if (strcmp(key, "BmfInterfaceIp") == 0)
-  {
-    return SetBmfInterfaceIp(value);
-  }
-  else if (strcmp(key, "CapturePacketsOnOlsrInterfaces") == 0)
-  {
-    return SetCapturePacketsOnOlsrInterfaces(value);
-  }
-  else if (strcmp(key, "BmfMechanism") == 0)
-  {
-    return SetBmfMechanism(value);
-  }
-
-  /* Key not recognized */
-  return 0;
-} /* RegisterBmfParameter */
 

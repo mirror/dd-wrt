@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: lq_avl.c,v 1.11 2007/08/02 22:00:46 bernd67 Exp $
+ * $Id: lq_avl.c,v 1.13 2007/09/05 16:30:50 bernd67 Exp $
  */
 
 #include <stddef.h>
@@ -50,10 +50,13 @@
 #define AVLMIN(x, y) ((x < y) ? x : y)
 
 /*
- * dummy comparison pointer
- * set to zero for a fast inline ipv4 comparison
+ * default comparison pointers 
+ * set to the respective compare function.
+ * if avl_comp_default is set to zero, a fast
+ * inline ipv4 comparison will be executed.
  */
 int (*avl_comp_default)(void *, void *) = NULL;
+int (*avl_comp_prefix_default)(void *, void *);
 
 int avl_comp_ipv4(void *ip1, void *ip2)
 {
@@ -69,6 +72,9 @@ int avl_comp_ipv6(void *ip1, void *ip2)
 void avl_init(struct avl_tree *tree, int (*comp)(void *, void *))
 {
   tree->root = NULL;
+  tree->first = NULL;
+  tree->last = NULL;
+  tree->count = 0;
   tree->comp = comp;
 }
 
@@ -259,35 +265,51 @@ static void post_insert(struct avl_tree *tree, struct avl_node *node)
   return;
 }
 
-static void avl_insert_before(struct avl_node *pos_node, struct avl_node *node)
+static void avl_insert_before(struct avl_tree *tree, struct avl_node *pos_node,
+                              struct avl_node *node)
 {
   if (pos_node->prev != NULL)
     pos_node->prev->next = node;
+  else
+    tree->first = node;
 
   node->prev = pos_node->prev;
   node->next = pos_node;
 
   pos_node->prev = node;
+
+  tree->count++;
 }
 
-static void avl_insert_after(struct avl_node *pos_node, struct avl_node *node)
+static void avl_insert_after(struct avl_tree *tree, struct avl_node *pos_node,
+                             struct avl_node *node)
 {
   if (pos_node->next != NULL)
     pos_node->next->prev = node;
+  else
+    tree->last = node;
 
   node->prev = pos_node;
   node->next = pos_node->next;
 
   pos_node->next = node;
+
+  tree->count++;
 }
 
-static void avl_remove(struct avl_node *node)
+static void avl_remove(struct avl_tree *tree, struct avl_node *node)
 {
   if (node->prev != NULL)
     node->prev->next = node->next;
+  else
+    tree->first = node->next;
 
   if (node->next != NULL)
     node->next->prev = node->prev;
+  else
+    tree->last = node->prev;
+
+  tree->count--;
 }
 
 int avl_insert(struct avl_tree *tree, struct avl_node *new, int allow_duplicates)
@@ -310,6 +332,9 @@ int avl_insert(struct avl_tree *tree, struct avl_node *new, int allow_duplicates
   if (tree->root == NULL)
   {
     tree->root = new;
+    tree->first = new;
+    tree->last = new;
+    tree->count = 1;
     return 0;
   }
 
@@ -328,18 +353,18 @@ int avl_insert(struct avl_tree *tree, struct avl_node *new, int allow_duplicates
 
   if (diff == 0)
   {
-    if (allow_duplicates == 0)
+    if (allow_duplicates == AVL_DUP_NO)
       return -1;
 
     new->leader = 0;
 
-    avl_insert_after(last, new);
+    avl_insert_after(tree, last, new);
     return 0;
   }
 
   if (node->balance == 1)
   {
-    avl_insert_before(node, new);
+    avl_insert_before(tree, node, new);
 
     node->balance = 0;
     new->parent = node;
@@ -349,7 +374,7 @@ int avl_insert(struct avl_tree *tree, struct avl_node *new, int allow_duplicates
   
   if (node->balance == -1)
   {
-    avl_insert_after(last, new);
+    avl_insert_after(tree, last, new);
 
     node->balance = 0;
     new->parent = node;
@@ -359,7 +384,7 @@ int avl_insert(struct avl_tree *tree, struct avl_node *new, int allow_duplicates
 
   if (diff < 0)
   {
-    avl_insert_before(node, new);
+    avl_insert_before(tree, node, new);
 
     node->balance = -1;
     new->parent = node;
@@ -368,7 +393,7 @@ int avl_insert(struct avl_tree *tree, struct avl_node *new, int allow_duplicates
     return 0;
   }
 
-  avl_insert_after(last, new);
+  avl_insert_after(tree, last, new);
 
   node->balance = 1;
   new->parent = node;
@@ -453,6 +478,7 @@ static struct avl_node *avl_local_min(struct avl_node *node)
   return node;
 }
 
+#if 0
 static struct avl_node *avl_local_max(struct avl_node *node)
 {
   while (node->right != NULL)
@@ -460,6 +486,7 @@ static struct avl_node *avl_local_max(struct avl_node *node)
 
   return node;
 }
+#endif
 
 static void avl_delete_worker(struct avl_tree *tree, struct avl_node *node)
 {
@@ -661,27 +688,17 @@ void avl_delete(struct avl_tree *tree, struct avl_node *node)
       avl_delete_worker(tree, node);
   }
 
-  avl_remove(node);
+  avl_remove(tree, node);
 }
 
 struct avl_node *avl_walk_first(struct avl_tree *tree)
 {
-  struct avl_node *node = tree->root;
-
-  if (node == NULL)
-    return NULL;
-
-  return avl_local_min(node);
+  return tree->first;
 }
 
 struct avl_node *avl_walk_last(struct avl_tree *tree)
 {
-  struct avl_node *node = tree->root;
-
-  if (node == NULL)
-    return NULL;
-
-  return avl_local_max(node);
+  return tree->last;
 }
 
 struct avl_node *avl_walk_next(struct avl_node *node)

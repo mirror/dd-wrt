@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: rebuild_packet.c,v 1.21 2007/04/25 22:08:13 bernd67 Exp $
+ * $Id: rebuild_packet.c,v 1.22 2007/08/28 20:45:17 bernd67 Exp $
  */
 
 
@@ -87,7 +87,7 @@ hna_chgestruct(struct hna_message *hmsg, union olsr_message *m)
       //printf("HNA from %s\n\n", olsr_ip_to_string((union olsr_ip_addr *)&hmsg->originator));
 
       /* Get vtime */
-      hmsg->vtime = ME_TO_DOUBLE(m->v4.olsr_vtime);
+      hmsg->vtime = me_to_double(m->v4.olsr_vtime);
 
       tmp_pairs = NULL;
       hna_pairs = NULL;
@@ -127,7 +127,7 @@ hna_chgestruct(struct hna_message *hmsg, union olsr_message *m)
       hmsg->hop_count =  m->v6.hopcnt;
       
       /* Get vtime */
-      hmsg->vtime = ME_TO_DOUBLE(m->v6.olsr_vtime);
+      hmsg->vtime = me_to_double(m->v6.olsr_vtime);
       
       tmp_pairs = NULL;
       hna_pairs = NULL;
@@ -212,7 +212,7 @@ mid_chgestruct(struct mid_message *mmsg, union olsr_message *m)
       mmsg->mid_addr = NULL;
 
       /* Get vtime */
-      mmsg->vtime = ME_TO_DOUBLE(m->v4.olsr_vtime);
+      mmsg->vtime = me_to_double(m->v4.olsr_vtime);
 
       //printf("Sequencenuber of MID from %s is %d\n", ip_to_string(&mmsg->addr), mmsg->mid_seqno);
 
@@ -262,7 +262,7 @@ mid_chgestruct(struct mid_message *mmsg, union olsr_message *m)
       mmsg->mid_addr = NULL;
 
       /* Get vtime */
-      mmsg->vtime = ME_TO_DOUBLE(m->v6.olsr_vtime);
+      mmsg->vtime = me_to_double(m->v6.olsr_vtime);
 
       //printf("Sequencenuber of MID from %s is %d\n", ip_to_string(&mmsg->addr), mmsg->mid_seqno);
 
@@ -373,10 +373,10 @@ hello_chgestruct(struct hello_message *hmsg, union olsr_message *m)
 
 
       /* Get vtime */
-      hmsg->vtime = ME_TO_DOUBLE(m->v4.olsr_vtime);
+      hmsg->vtime = me_to_double(m->v4.olsr_vtime);
 
       /* Get htime */
-      hmsg->htime = ME_TO_DOUBLE(m->v4.message.hello.htime);
+      hmsg->htime = me_to_double(m->v4.message.hello.htime);
 
       /* Willingness */
       hmsg->willingness = m->v4.message.hello.willingness;
@@ -417,10 +417,10 @@ hello_chgestruct(struct hello_message *hmsg, union olsr_message *m)
       hmsg->packet_seq_number = ntohs(m->v6.seqno);
 
       /* Get vtime */
-      hmsg->vtime = ME_TO_DOUBLE(m->v6.olsr_vtime);
+      hmsg->vtime = me_to_double(m->v6.olsr_vtime);
 
       /* Get htime */
-      hmsg->htime = ME_TO_DOUBLE(m->v6.message.hello.htime);
+      hmsg->htime = me_to_double(m->v6.message.hello.htime);
 
       /* Willingness */
       hmsg->willingness = m->v6.message.hello.willingness;
@@ -496,7 +496,7 @@ tc_chgestruct(struct tc_message *tmsg, union olsr_message *m, union olsr_ip_addr
 
 
       /* Get vtime */
-      tmsg->vtime = ME_TO_DOUBLE(m->v4.olsr_vtime);
+      tmsg->vtime = me_to_double(m->v4.olsr_vtime);
 
       OLSR_PRINTF(3, "Got TC vtime: %f\n", tmsg->vtime);
 
@@ -538,7 +538,7 @@ tc_chgestruct(struct tc_message *tmsg, union olsr_message *m, union olsr_ip_addr
       /* Check if sender is symmetric neighbor here !! */
       
       /* Get vtime */
-      tmsg->vtime = ME_TO_DOUBLE(m->v6.olsr_vtime);
+      tmsg->vtime = me_to_double(m->v6.olsr_vtime);
 
       OLSR_PRINTF(3, "Got TC vtime: %f\n", tmsg->vtime);
 

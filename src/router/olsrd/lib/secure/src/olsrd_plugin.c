@@ -33,7 +33,7 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: olsrd_plugin.c,v 1.13 2007/07/15 21:47:17 bernd67 Exp $
+ * $Id: olsrd_plugin.c,v 1.15 2007/09/17 21:57:05 bernd67 Exp $
  */
 
 
@@ -90,7 +90,7 @@ static void my_fini(void)
   secure_plugin_exit();
 }
 
-static int store_string(const char *value, void *data)
+static int store_string(const char *value, void *data, set_plugin_parameter_addon addon __attribute__((unused)))
 {
   char *str = data;
   snprintf(str, FILENAME_MAX+1, "%s", value);

@@ -40,7 +40,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_txtinfo.c,v 1.7 2007/07/15 19:29:37 bernd67 Exp $
+ * $Id: olsrd_txtinfo.c,v 1.12 2007/10/14 14:11:11 bernd67 Exp $
  */
 
 /*
@@ -143,11 +143,14 @@ void olsr_plugin_exit(void)
 static int
 plugin_ipc_init(void)
 {
-    struct sockaddr_in sin;
+    struct sockaddr_storage sst;
+    struct sockaddr_in *sin;
+    struct sockaddr_in6 *sin6;
     olsr_u32_t yes = 1;
+    socklen_t addrlen;
 
     /* Init ipc socket */
-    if ((ipc_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+    if ((ipc_socket = socket(olsr_cnf->ip_version, SOCK_STREAM, 0)) == -1) {
 #ifndef NODEBUG
         olsr_printf(1, "(TXTINFO) socket()=%s\n", strerror(errno));
 #endif
@@ -169,13 +172,29 @@ plugin_ipc_init(void)
         /* Bind the socket */
 
         /* complete the socket structure */
-        memset(&sin, 0, sizeof(sin));
-        sin.sin_family = AF_INET;
-        sin.sin_addr.s_addr = INADDR_ANY;
-        sin.sin_port = htons(ipc_port);
+        memset(&sst, 0, sizeof(sst));
+        if (olsr_cnf->ip_version == AF_INET) {
+           sin = (struct sockaddr_in *)&sst;
+           sin->sin_family = AF_INET;
+           addrlen = sizeof(struct sockaddr_in);
+#ifdef SIN6_LEN
+           sin->sin_len = addrlen;
+#endif
+           sin->sin_addr.s_addr = INADDR_ANY;
+           sin->sin_port = htons(ipc_port);
+        } else {
+           sin6 = (struct sockaddr_in6 *)&sst;
+           sin6->sin6_family = AF_INET6;
+           addrlen = sizeof(struct sockaddr_in6);
+#ifdef SIN6_LEN
+           sin6->sin6_len = addrlen;
+#endif
+           sin6->sin6_addr = in6addr_any;
+           sin6->sin6_port = htons(ipc_port);
+        }
       
         /* bind the socket to the port number */
-        if (bind(ipc_socket, (struct sockaddr *) &sin, sizeof(sin)) == -1) {
+        if (bind(ipc_socket, (struct sockaddr *) &sst, addrlen) == -1) {
 #ifndef NODEBUG
             olsr_printf(1, "(TXTINFO) bind()=%s\n", strerror(errno));
 #endif
@@ -204,13 +223,15 @@ plugin_ipc_init(void)
 
 static void ipc_action(int fd)
 {
-    struct sockaddr_in pin;
-    char *addr;  
+    struct sockaddr_storage pin;
+    struct sockaddr_in *sin4;
+    struct sockaddr_in6 *sin6;
+    char addr[INET6_ADDRSTRLEN];
     fd_set rfds;
     struct timeval tv;
     int neighonly = 0;
 
-    socklen_t addrlen = sizeof(struct sockaddr_in);
+    socklen_t addrlen = sizeof(struct sockaddr_storage);
 
     if(ipc_open)
         return;
@@ -223,11 +244,28 @@ static void ipc_action(int fd)
     }
 
     tv.tv_sec = tv.tv_usec = 0;
-    addr = inet_ntoa(pin.sin_addr);
-    if (ntohl(pin.sin_addr.s_addr) != ntohl(ipc_accept_ip.v4)) {
-        olsr_printf(1, "(TXTINFO) From host(%s) not allowed!\n", addr);
-        close(ipc_connection);
-        return;
+    if (olsr_cnf->ip_version == AF_INET) {
+        sin4 = (struct sockaddr_in *)&pin;
+        if (inet_ntop(olsr_cnf->ip_version, &sin4->sin_addr, addr,
+           INET6_ADDRSTRLEN) == NULL)
+             addr[0] = '\0';
+        if (!COMP_IP(&sin4->sin_addr, &ipc_accept_ip.v4)) {
+            olsr_printf(1, "(TXTINFO) From host(%s) not allowed!\n", addr);
+            close(ipc_connection);
+            return;
+        }
+    } else {
+        sin6 = (struct sockaddr_in6 *)&pin;
+        if (inet_ntop(olsr_cnf->ip_version, &sin6->sin6_addr, addr,
+           INET6_ADDRSTRLEN) == NULL)
+             addr[0] = '\0';
+       /* Use in6addr_any (::) in olsr.conf to allow anybody. */
+        if (!COMP_IP(&in6addr_any, &ipc_accept_ip.v6) &&
+           !COMP_IP(&sin6->sin6_addr, &ipc_accept_ip.v6)) {
+            olsr_printf(1, "(TXTINFO) From host(%s) not allowed!\n", addr);
+            close(ipc_connection);
+            return;
+        }
     }
     ipc_open = 1;
 #ifndef NODEBUG
@@ -237,7 +275,7 @@ static void ipc_action(int fd)
     /* purge read buffer to prevent blocking on linux*/
     FD_ZERO(&rfds);
     FD_SET((unsigned int)ipc_connection, &rfds); /* Win32 needs the cast here */
-    if(select(ipc_connection+1, &rfds, NULL, NULL, &tv)) {
+    if(0 <= select(ipc_connection+1, &rfds, NULL, NULL, &tv)) {
         char requ[128];
         ssize_t s = recv(ipc_connection, (void*)&requ, sizeof(requ), 0); /* Win32 needs the cast here */
         if (0 < s) {
@@ -309,37 +347,26 @@ static void ipc_print_neigh_link(void)
 
 static void ipc_print_routes(void)
 {
-    int size = 0, index;
-    struct rt_entry *routes;
+    struct rt_entry *rt;
+    struct avl_node *rt_tree_node;
 
-    ipc_sendf("Table: Routes\nDestination\tGateway\tMetric\tETX\tInterface\tType\n");
+    ipc_sendf("Table: Routes\nDestination\tGateway\tMetric\tETX\tInterface\n");
 
-    /* Neighbors */
-    for(index = 0;index < HASHSIZE; index++) {
-        for(routes = routingtable[index].next;
-            routes != &routingtable[index];
-            routes = routes->next) {
-            size = 0;
-            ipc_sendf( "%s\t%s\t%d\t%.2f\t%s\tHOST\n",
-                       olsr_ip_to_string(&routes->rt_dst),
-                       olsr_ip_to_string(&routes->rt_router),
-                       routes->rt_metric,
-                       routes->rt_etx,
-                       routes->rt_if->int_name);
-	}
-    }
+    /* Walk the route table */
+    for (rt_tree_node = avl_walk_first(&routingtree);
+         rt_tree_node;
+         rt_tree_node = avl_walk_next(rt_tree_node)) {
 
-    /* HNA */
-    for(index = 0;index < HASHSIZE;index++) {
-        for(routes = hna_routes[index].next;
-            routes != &hna_routes[index];
-            routes = routes->next) {
-            ipc_sendf("%s\t%s\t%d\t%s\t\tHNA\n",
-                      olsr_ip_to_string(&routes->rt_dst),
-                      olsr_ip_to_string(&routes->rt_router),
-                      routes->rt_metric,
-                      routes->rt_if->int_name);
-	}
+        rt = rt_tree_node->data;
+
+        ipc_sendf( "%s/%d\t%s\t%d\t%.3f\t%s\t\n",
+                   olsr_ip_to_string(&rt->rt_dst.prefix),
+                   rt->rt_dst.prefix_len,
+                   olsr_ip_to_string(&rt->rt_best->rtp_nexthop.gateway),
+                   rt->rt_best->rtp_metric.hops,
+                   rt->rt_best->rtp_metric.etx,
+                   if_ifwithindex_name(rt->rt_best->rtp_nexthop.iif_index));
+
     }
     ipc_sendf("\n");
 
@@ -347,32 +374,24 @@ static void ipc_print_routes(void)
 
 static void ipc_print_topology(void)
 {
-    int index;
-    struct tc_entry *entry;
-    struct topo_dst *dst_entry;
+    struct tc_entry *tc;
+    struct tc_edge_entry *tc_edge;
 
     ipc_sendf("Table: Topology\nDestination IP\tLast hop IP\tLQ\tILQ\tETX\n");
 
     /* Topology */  
-    for(index = 0; index < HASHSIZE; index++) {
-        /* For all TC entries */
-        entry = tc_table[index].next;
-        while(entry != &tc_table[index]) {
-            /* For all destination entries of that TC entry */
-            dst_entry = entry->destinations.next;
-            while(dst_entry != &entry->destinations) {
-                ipc_sendf( "%s\t%s\t%0.2f\t%0.2f\t%0.2f\n", 
-                           olsr_ip_to_string(&dst_entry->T_dest_addr),
-                           olsr_ip_to_string(&entry->T_last_addr), 
-                           dst_entry->link_quality,
-                           dst_entry->inverse_link_quality,
-                           (dst_entry->link_quality * dst_entry->inverse_link_quality) ? 1.0 / (dst_entry->link_quality * dst_entry->inverse_link_quality) : 0.0);
-		
-                dst_entry = dst_entry->next;
-	    }
-            entry = entry->next;
-	}
-    }
+    OLSR_FOR_ALL_TC_ENTRIES(tc) {
+        OLSR_FOR_ALL_TC_EDGE_ENTRIES(tc, tc_edge) {
+            ipc_sendf( "%s\t%s\t%0.2f\t%0.2f\t%0.2f\n", 
+                       olsr_ip_to_string(&tc_edge->T_dest_addr),
+                       olsr_ip_to_string(&tc->addr), 
+                       tc_edge->link_quality,
+                       tc_edge->inverse_link_quality,
+                       (tc_edge->link_quality * tc_edge->inverse_link_quality) ? 1.0 / (tc_edge->link_quality * tc_edge->inverse_link_quality) : 0.0);
+
+        } OLSR_FOR_ALL_TC_EDGE_ENTRIES_END(tc, tc_edge);
+    } OLSR_FOR_ALL_TC_ENTRIES_END(tc);
+
     ipc_sendf("\n");
 }
 

@@ -38,7 +38,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: oscan.lex,v 1.24 2007/05/17 20:35:16 bernd67 Exp $
+ * $Id: oscan.lex,v 1.27 2007/10/10 20:44:34 bernd67 Exp $
  */
 
 
@@ -71,7 +71,7 @@ int yylex_destroy(void);
 int yylex(void);
 
 static struct conf_token *get_conf_token(void);
-static struct conf_token *get_string_token(const char * const s, int const n);
+static struct conf_token *get_string_token(const char * const s, const size_t n);
 static struct conf_token *get_integer_token(const char * const s);
 static struct conf_token *get_floating_token(const char * const s);
 static struct conf_token *get_boolean_token(const olsr_bool b);
@@ -85,13 +85,13 @@ static struct conf_token *get_conf_token(void)
     return t;
 }
 
-static struct conf_token *get_string_token(const char * const s, int const n)
+static struct conf_token *get_string_token(const char * const s, const size_t n)
 {
     struct conf_token *rv = get_conf_token();
     if (rv != NULL) {
         rv->string = malloc(n+1);
         if (rv->string == NULL) {
-            fprintf(stderr, "Cannot allocate %d bytes for string token data.\n", n+1);
+          fprintf(stderr, "Cannot allocate %lu bytes for string token data.\n", (unsigned long)(n+1)); /* size_t on 64bit */
             free(rv);
             return NULL;
         }
@@ -130,24 +130,29 @@ static struct conf_token *get_boolean_token(const olsr_bool b)
 
 %}
 
+%option never-interactive
+%option noalways-interactive
+%option nomain
+%option nostack
 %option noyywrap
 
 DECDIGIT [0-9]
 FLOAT {DECDIGIT}+\.{DECDIGIT}+
-HEXDIGIT [a-f][A-F][0-9]
+HEX8 [a-fA-F0-9]
+QUAD {DECDIGIT}{1,3}
 
-IPV4ADDR ({DECDIGIT}){1,3}\.({DECDIGIT}){1,3}\.({DECDIGIT}){1,3}\.({DECDIGIT}){1,3}
+IPV4ADDR {QUAD}\.{QUAD}\.{QUAD}\.{QUAD}
 
-HEXBYTE ([a-f]|[A-F]|[0-9]){1,4}
+HEX16 {HEX8}{1,4}
 
-IP6PAT1 ({HEXBYTE}:){7}{HEXBYTE}
-IP6PAT2 {HEXBYTE}::({HEXBYTE}:){0,5}{HEXBYTE}
-IP6PAT3 ({HEXBYTE}:){2}:({HEXBYTE}:){0,4}{HEXBYTE}
-IP6PAT4 ({HEXBYTE}:){3}:({HEXBYTE}:){0,3}{HEXBYTE}
-IP6PAT5 ({HEXBYTE}:){4}:({HEXBYTE}:){0,2}{HEXBYTE}
-IP6PAT6 ({HEXBYTE}:){5}:({HEXBYTE}:){0,1}{HEXBYTE}
-IP6PAT7 ({HEXBYTE}:){6}:{HEXBYTE}
-IP6PAT8 ({HEXBYTE}:){1,7}:
+IP6PAT2 ({HEX16}:){1}:({HEX16}:){0,5}{HEX16}
+IP6PAT3 ({HEX16}:){2}:({HEX16}:){0,4}{HEX16}
+IP6PAT4 ({HEX16}:){3}:({HEX16}:){0,3}{HEX16}
+IP6PAT5 ({HEX16}:){4}:({HEX16}:){0,2}{HEX16}
+IP6PAT6 ({HEX16}:){5}:({HEX16}:){0,1}{HEX16}
+IP6PAT7 ({HEX16}:){6}:({HEX16})
+IP6PAT1 ({HEX16}:){7}{HEX16}
+IP6PAT8 ({HEX16}:){1,7}:
 IP6PAT9 ::
 
 IPV6ADDR {IP6PAT1}|{IP6PAT2}|{IP6PAT3}|{IP6PAT4}|{IP6PAT5}|{IP6PAT6}|{IP6PAT7}|{IP6PAT8}|{IP6PAT9}
@@ -177,7 +182,7 @@ IPV6ADDR {IP6PAT1}|{IP6PAT2}|{IP6PAT3}|{IP6PAT4}|{IP6PAT5}|{IP6PAT6}|{IP6PAT7}|{
     return TOK_STRING;
 }
 
-0x{HEXDIGIT}+ {
+0x{HEX8}+ {
     yylval = get_integer_token(yytext);
     return TOK_INTEGER;
 }
@@ -297,6 +302,11 @@ IPV6ADDR {IP6PAT1}|{IP6PAT2}|{IP6PAT3}|{IP6PAT4}|{IP6PAT5}|{IP6PAT6}|{IP6PAT7}|{
 "TosValue" {
     yylval = NULL;
     return TOK_TOS;
+}
+
+"RtTable" {
+  yylval = NULL;
+  return TOK_RTTABLE;
 }
 
 "Willingness" {

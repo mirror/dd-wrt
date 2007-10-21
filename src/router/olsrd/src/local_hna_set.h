@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: local_hna_set.h,v 1.10 2007/02/10 19:27:32 bernd67 Exp $
+ * $Id: local_hna_set.h,v 1.11 2007/10/15 20:58:33 bernd67 Exp $
  */
 
 
@@ -47,22 +47,22 @@
 #include "olsr_types.h"
 
 void
-add_local_hna4_entry(union olsr_ip_addr *, union olsr_ip_addr *);
+add_local_hna4_entry(const union olsr_ip_addr *, const union olsr_ip_addr *);
 
 void
-add_local_hna6_entry(union olsr_ip_addr *, olsr_u16_t);
+add_local_hna6_entry(const union olsr_ip_addr *, const olsr_u16_t);
 
 int
-remove_local_hna4_entry(union olsr_ip_addr *, union olsr_ip_addr *);
+remove_local_hna4_entry(const union olsr_ip_addr *, const union olsr_ip_addr *);
 
 int
-remove_local_hna6_entry(union olsr_ip_addr *, olsr_u16_t);
+remove_local_hna6_entry(const union olsr_ip_addr *, const olsr_u16_t);
 
 struct hna4_entry *
-find_local_hna4_entry(union olsr_ip_addr *net, olsr_u32_t mask);
+find_local_hna4_entry(const union olsr_ip_addr *net, const olsr_u32_t mask);
 
 struct hna6_entry *
-find_local_hna6_entry(union olsr_ip_addr *net, olsr_u16_t prefix_len);
+find_local_hna6_entry(const union olsr_ip_addr *net, const olsr_u16_t prefix_len);
 
 int
 check_inet_gw(void);

@@ -1,6 +1,6 @@
 
 +====================================================================+
-| README - olsr.org OLSR daemon 0.5.3, 02.08.2007                    |
+| README - olsr.org OLSR daemon 0.5.4rc1, 02.08.2007                    |
 +====================================================================+
 
 Andreas Tonnesen(andreto@olsr.org)
@@ -460,4 +460,4 @@ limitations with respect to testing and maturity apply. Building and
 installing works in the same was as on FreeBSD.
 
 
-$Id: README,v 1.21 2007/08/02 20:02:56 bernd67 Exp $
+$Id: README,v 1.22 2007/09/13 22:52:55 bernd67 Exp $

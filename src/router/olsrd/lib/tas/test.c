@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: test.c,v 1.2 2007/07/15 17:48:55 bernd67 Exp $
+ * $Id: test.c,v 1.4 2007/09/17 21:57:05 bernd67 Exp $
  */
 
 #include "src/link.h"
@@ -88,7 +88,7 @@ int main(int ac, char *av[])
         return 1;
       }
 
-      if (httpSetAddress(av[i]) < 0)
+      if (httpSetAddress(av[i], NULL, (set_plugin_parameter_addon){0}) < 0)
       {
         fprintf(stderr, "cannot set address\n");
         return 1;
@@ -104,7 +104,7 @@ int main(int ac, char *av[])
         return 1;
       }
 
-      if (httpSetPort(av[i]) < 0)
+      if (httpSetPort(av[i], NULL, (set_plugin_parameter_addon){0}) < 0)
       {
         fprintf(stderr, "cannot set port\n");
         return 1;
@@ -120,7 +120,7 @@ int main(int ac, char *av[])
         return 1;
       }
 
-      if (httpSetWorkDir(av[i]) < 0)
+      if (httpSetWorkDir(av[i], NULL, (set_plugin_parameter_addon){0}) < 0)
       {
         fprintf(stderr, "cannot set work directory\n");
         return 1;
@@ -136,7 +136,7 @@ int main(int ac, char *av[])
         return 1;
       }
 
-      if (httpSetRootDir(av[i]) < 0)
+      if (httpSetRootDir(av[i], NULL, (set_plugin_parameter_addon){0}) < 0)
       {
         fprintf(stderr, "cannot set root directory\n");
         return 1;
@@ -152,7 +152,7 @@ int main(int ac, char *av[])
         return 1;
       }
 
-      httpSetIndexFile(av[i]);
+      httpSetIndexFile(av[i], NULL, (set_plugin_parameter_addon){0});
     }
 
     else if (strcmp(av[i], "--user") == 0)
@@ -164,7 +164,7 @@ int main(int ac, char *av[])
         return 1;
       }
 
-      httpSetUser(av[i]);
+      httpSetUser(av[i], NULL, (set_plugin_parameter_addon){0});
     }
 
     else if (strcmp(av[i], "--password") == 0)
@@ -176,7 +176,7 @@ int main(int ac, char *av[])
         return 1;
       }
 
-      httpSetPassword(av[i]);
+      httpSetPassword(av[i], NULL, (set_plugin_parameter_addon){0});
     }
 
     else if (strcmp(av[i], "--sess-time") == 0)
@@ -188,7 +188,7 @@ int main(int ac, char *av[])
         return 1;
       }
 
-      if (httpSetSessTime(av[i]) < 0)
+      if (httpSetSessTime(av[i], NULL, (set_plugin_parameter_addon){0}) < 0)
       {
         fprintf(stderr, "cannot set session timeout\n");
         return 1;
@@ -204,7 +204,7 @@ int main(int ac, char *av[])
         return 1;
       }
 
-      httpSetPubDir(av[i]);
+      httpSetPubDir(av[i], NULL, (set_plugin_parameter_addon){0});
     }
 
     else if (strcmp(av[i], "--quantum") == 0)
@@ -216,7 +216,7 @@ int main(int ac, char *av[])
         return 1;
       }
 
-      if (httpSetQuantum(av[i]) < 0)
+      if (httpSetQuantum(av[i], NULL, (set_plugin_parameter_addon){0}) < 0)
       {
         fprintf(stderr, "cannot set quantum\n");
         return 1;
@@ -232,7 +232,7 @@ int main(int ac, char *av[])
         return 1;
       }
 
-      if (httpSetMessTime(av[i]) < 0)
+      if (httpSetMessTime(av[i], NULL, (set_plugin_parameter_addon){0}) < 0)
       {
         fprintf(stderr, "cannot set message timeout\n");
         return 1;
@@ -248,7 +248,7 @@ int main(int ac, char *av[])
         return 1;
       }
 
-      if (httpSetMessLimit(av[i]) < 0)
+      if (httpSetMessLimit(av[i], NULL, (set_plugin_parameter_addon){0}) < 0)
       {
         fprintf(stderr, "cannot set message queue limit\n");
         return 1;

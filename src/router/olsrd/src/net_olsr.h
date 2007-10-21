@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: net_olsr.h,v 1.9 2007/04/25 22:08:09 bernd67 Exp $
+ * $Id: net_olsr.h,v 1.13 2007/09/16 21:20:16 bernd67 Exp $
  */
 
 
@@ -45,6 +45,7 @@
 #define _NET_OLSR
 
 #include "defs.h"
+#include "interfaces.h"
 #include "process_routes.h"
 #include <arpa/inet.h>
 #include <net/if.h>
@@ -88,10 +89,10 @@ int
 olsr_prefix_to_netmask(union olsr_ip_addr *, olsr_u16_t);
 
 olsr_u16_t
-olsr_netmask_to_prefix(union olsr_ip_addr *);
+olsr_netmask_to_prefix(const union olsr_ip_addr *);
 
 char *
-sockaddr_to_string(struct sockaddr *);
+sockaddr_to_string(const struct sockaddr *);
 
 const char *
 ip_to_string(const olsr_u32_t *);
@@ -109,9 +110,9 @@ int
 del_ptf(packet_transform_function);
 
 olsr_bool
-olsr_validate_address(union olsr_ip_addr *);
+olsr_validate_address(const union olsr_ip_addr *);
 
 void
-olsr_add_invalid_address(union olsr_ip_addr *);
+olsr_add_invalid_address(const union olsr_ip_addr *);
 
 #endif

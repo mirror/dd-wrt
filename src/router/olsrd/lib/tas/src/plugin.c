@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: plugin.c,v 1.8 2007/04/20 13:46:03 bernd67 Exp $
+ * $Id: plugin.c,v 1.13 2007/09/17 22:24:22 bernd67 Exp $
  */
 
 #include <string.h>
@@ -50,6 +50,7 @@
 #include "http.h"
 #include "glua.h"
 #include "glua_ext.h"
+#include "olsrd_plugin.h"
 
 #include <defs.h>
 #include <olsr.h>
@@ -67,6 +68,8 @@
 #include <mpr_selector_set.h>
 #include <duplicate_set.h>
 
+#define PLUGIN_INTERFACE_VERSION 5
+
 #define MESSAGE_TYPE 129
 
 int olsrd_plugin_interface_version(void);
@@ -79,9 +82,7 @@ static union olsr_ip_addr *mainAddr;
 static struct interface *intTab = NULL;
 static struct neighbor_entry *neighTab = NULL;
 static struct mid_entry *midTab = NULL;
-static struct tc_entry *tcTab = NULL;
 static struct hna_entry *hnaTab = NULL;
-static struct rt_entry *routeTab = NULL;
 static struct olsrd_config *config = NULL;
 
 static int iterIndex;
@@ -218,26 +219,22 @@ void iterNeighTabInit(void)
 
 int iterRouteTabNext(char *buff, int len)
 {
+  struct avl_node *rt_tree_node;
+
   if (iterRouteTab == NULL)
     return -1;
 
   snprintf(buff, len, "destination~%s~gateway~%s~interface~%s~metric~%d~",
-           rawIpAddrToString(&iterRouteTab->rt_dst, ipAddrLen),
-           rawIpAddrToString(&iterRouteTab->rt_router, ipAddrLen),
-           iterRouteTab->rt_if->int_name, iterRouteTab->rt_metric);
+           rawIpAddrToString(&iterRouteTab->rt_dst.prefix, ipAddrLen),
+           rawIpAddrToString(&iterRouteTab->rt_best->rtp_nexthop.gateway, ipAddrLen),
+           if_ifwithindex_name(iterRouteTab->rt_best->rtp_nexthop.iif_index),
+           iterRouteTab->rt_best->rtp_metric.hops);
 
-  iterRouteTab = iterRouteTab->next;
-
-  if (iterRouteTab == &routeTab[iterIndex])
-  {
-    iterRouteTab = NULL;
-    
-    while (++iterIndex < HASHSIZE)
-      if (routeTab[iterIndex].next != &routeTab[iterIndex])
-      {
-        iterRouteTab = routeTab[iterIndex].next;
-        break;
-      }
+  rt_tree_node = avl_walk_next(&iterRouteTab->rt_tree_node);
+  if (rt_tree_node) {
+      iterRouteTab = rt_tree_node->data;
+  } else {
+      iterRouteTab = NULL;
   }
 
   return 0;
@@ -245,45 +242,40 @@ int iterRouteTabNext(char *buff, int len)
 
 void iterRouteTabInit(void)
 {
-  iterRouteTab = NULL;
+  struct avl_node *node;
 
-  if (routeTab == NULL)
-    return;
+  avl_init(&routingtree, avl_comp_prefix_default);
+  routingtree_version = 0;
 
-  for (iterIndex = 0; iterIndex < HASHSIZE; iterIndex++)
-    if (routeTab[iterIndex].next != &routeTab[iterIndex])
-    {
-      iterRouteTab = routeTab[iterIndex].next;
-      break;
-    }
+  node = avl_walk_first(&routingtree);
+  iterRouteTab = node ? node->data : NULL;
+
 }
 
 int iterTcTabNext(char *buff, int len)
 {
   int res;
   int i;
-  struct topo_dst *dest;
+  struct tc_edge_entry *tc_edge;
   
   if (iterTcTab == NULL)
     return -1;
 
   res = snprintf(buff, len,
                  "main~%s~[~destinations~",
-                 rawIpAddrToString(&iterTcTab->T_last_addr, ipAddrLen));
-
-  i = 0;
+                 rawIpAddrToString(&iterTcTab->addr, ipAddrLen));
 
   len -= res;
   buff += res;
 
   len -= 2;
+  i = 0;
 
-  for (dest = iterTcTab->destinations.next; dest != &iterTcTab->destinations;
-       dest = dest->next)
-  {
+  OLSR_FOR_ALL_TC_EDGE_ENTRIES(iterTcTab, tc_edge) {
+
     res = snprintf(buff, len, "[~%d~address~%s~etx~%f~]~", i,
-                   rawIpAddrToString(&dest->T_dest_addr, ipAddrLen),
-                   lqToEtx(dest->link_quality, dest->inverse_link_quality));
+                   rawIpAddrToString(&tc_edge->T_dest_addr, ipAddrLen),
+                   lqToEtx(tc_edge->link_quality, tc_edge->inverse_link_quality));
 
     if (res < len)
       buff += res;
@@ -294,40 +286,23 @@ int iterTcTabNext(char *buff, int len)
       break;
 
     i++;
-  }
-
+  } OLSR_FOR_ALL_TC_EDGE_ENTRIES_END(iterTcTab, tc_edge);
+  
   strcpy(buff, "]~");
 
-  iterTcTab = iterTcTab->next;
-
-  if (iterTcTab == &tcTab[iterIndex])
-  {
-    iterTcTab = NULL;
-    
-    while (++iterIndex < HASHSIZE)
-      if (tcTab[iterIndex].next != &tcTab[iterIndex])
-      {
-        iterTcTab = tcTab[iterIndex].next;
-        break;
-      }
-  }
+  iterTcTab = olsr_getnext_tc_entry(iterTcTab);
 
   return 0;
 }
 
 void iterTcTabInit(void)
 {
-  iterTcTab = NULL;
+  struct avl_node *node;
+  
+  avl_init(&tc_tree, avl_comp_prefix_default);
 
-  if (tcTab == NULL)
-    return;
-
-  for (iterIndex = 0; iterIndex < HASHSIZE; iterIndex++)
-    if (tcTab[iterIndex].next != &tcTab[iterIndex])
-    {
-      iterTcTab = tcTab[iterIndex].next;
-      break;
-    }
+  node = avl_walk_first(&tc_tree);
+  iterTcTab = node ? node->data : NULL;
 }
 
 static void parserFunc(union olsr_message *msg, struct interface *inInt,
@@ -462,7 +437,7 @@ static void serviceFunc(void)
 
 int olsrd_plugin_interface_version(void)
 {
-  return 4;
+  return PLUGIN_INTERFACE_VERSION;
 }
 
 int olsrd_plugin_init(void)
@@ -473,108 +448,40 @@ int olsrd_plugin_init(void)
   intTab = ifnet;
   neighTab = neighbortable;
   midTab = mid_set;
-  tcTab = tc_table;
   hnaTab = hna_set;
-  routeTab = routingtable;
   config = olsr_cnf;
 
   httpInit();
   
-  olsr_register_timeout_function(serviceFunc);
+  olsr_register_timeout_function(serviceFunc, OLSR_FALSE);
   olsr_parser_add_function(parserFunc, MESSAGE_TYPE, 1);
 
   return 0;
 }
 
-int olsrd_plugin_register_param(char *name, char *value)
+static const struct olsrd_plugin_parameters plugin_parameters[] = {
+    { .name = "address",   .set_plugin_parameter = &httpSetAddress,   .data = NULL },
+    { .name = "port",      .set_plugin_parameter = &httpSetPort,      .data = NULL },
+    { .name = "rootdir",   .set_plugin_parameter = &httpSetRootDir,   .data = NULL },
+    { .name = "workdir",   .set_plugin_parameter = &httpSetWorkDir,   .data = NULL },
+    { .name = "indexfile", .set_plugin_parameter = &httpSetIndexFile, .data = NULL },
+    { .name = "user",      .set_plugin_parameter = &httpSetUser,      .data = NULL },
+    { .name = "password",  .set_plugin_parameter = &httpSetPassword,  .data = NULL },
+    { .name = "sesstime",  .set_plugin_parameter = &httpSetSessTime,  .data = NULL },
+    { .name = "pubdir",    .set_plugin_parameter = &httpSetPubDir,    .data = NULL },
+    { .name = "quantum",   .set_plugin_parameter = &httpSetQuantum,   .data = NULL },
+    { .name = "messtime",  .set_plugin_parameter = &httpSetMessTime,  .data = NULL },
+    { .name = "messlimit", .set_plugin_parameter = &httpSetMessLimit, .data = NULL },
+};
+
+void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size)
 {
-  if (strcmp(name, "address") == 0)
-  {
-    if (httpSetAddress(value) < 0)
-      return 0;
-
-    return 1;
-  }
-
-  if (strcmp(name, "port") == 0)
-  {
-    if (httpSetPort(value) < 0)
-      return 0;
-
-    return 1;
-  }
-
-  if (strcmp(name, "rootdir") == 0)
-  {
-    if (httpSetRootDir(value) < 0)
-      return 0;
-
-    return 1;
-  }
-
-  if (strcmp(name, "workdir") == 0)
-  {
-    if (httpSetWorkDir(value) < 0)
-      return 0;
-
-    return 1;
-  }
-
-  if (strcmp(name, "indexfile") == 0)
-  {
-    httpSetIndexFile(value);
-    return 1;
-  }
-
-  if (strcmp(name, "user") == 0)
-  {
-    httpSetUser(value);
-    return 1;
-  }
-
-  if (strcmp(name, "password") == 0)
-  {
-    httpSetPassword(value);
-    return 1;
-  }
-
-  if (strcmp(name, "sesstime") == 0)
-  {
-    if (httpSetSessTime(value) < 0)
-      return 0;
-
-    return 1;
-  }
-
-  if (strcmp(name, "pubdir") == 0)
-  {
-    httpSetPubDir(value);
-    return 1;
-  }
-
-  if (strcmp(name, "quantum") == 0)
-  {
-    if (httpSetQuantum(value) < 0)
-      return 0;
-
-    return 1;
-  }
-
-  if (strcmp(name, "messtime") == 0)
-  {
-    if (httpSetMessTime(value) < 0)
-      return 0;
-
-    return 1;
-  }
-
-  if (strcmp(name, "messlimit") == 0)
-  {
-    if (httpSetMessLimit(value) < 0)
-      return 0;
-
-    return 1;
-  }
-
-  return 0;
+    *params = plugin_parameters;
+    *size = sizeof(plugin_parameters)/sizeof(*plugin_parameters);
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */

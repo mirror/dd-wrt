@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_pgraph.c,v 1.6 2007/08/02 14:38:34 bernd67 Exp $
+ * $Id: olsrd_pgraph.c,v 1.8 2007/09/13 15:31:59 bernd67 Exp $
  */
 
 /*
@@ -46,6 +46,8 @@
 
 #include "olsrd_pgraph.h"
 #include "socket_parser.h"
+#include "olsrd_plugin.h"
+#include "plugin_util.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -56,37 +58,107 @@
 #define close(x) closesocket(x)
 #endif
 
+#define PLUGIN_NAME    "OLSRD pgraph plugin"
+#define PLUGIN_VERSION "0.1"
+#define PLUGIN_AUTHOR   "Richard Gopaul"
+#define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION " by " PLUGIN_AUTHOR
+#define PLUGIN_INTERFACE_VERSION 5
+
+static union olsr_ip_addr ipc_accept_ip;
+static int ipc_port;
+
 static int ipc_socket;
-static int ipc_open;
 static int ipc_connection;
-static int ipc_socket_up;
 
-static void
-ipc_print_neigh_link(struct neighbor_entry *neighbor);
+void my_init(void) __attribute__((constructor));
 
-static void
-ipc_print_tc_link(struct tc_entry *entry, struct topo_dst *dst_entry);
+void my_fini(void) __attribute__((destructor));
+
+/*
+ * Defines the version of the plugin interface that is used
+ * THIS IS NOT THE VERSION OF YOUR PLUGIN!
+ * Do not alter unless you know what you are doing!
+ */
+int 
+olsrd_plugin_interface_version(void)
+{
+   return PLUGIN_INTERFACE_VERSION;
+}
+
+
+/**
+ *Constructor
+ */
+void
+my_init(void)
+{
+  /* Print plugin info to stdout */
+  printf("%s\n", MOD_DESC);
+
+  /* defaults for parameters */
+  ipc_port = 2004;
+  if (olsr_cnf->ip_version == AF_INET) {
+    ipc_accept_ip.v4 = htonl(INADDR_LOOPBACK);
+  } else {
+    ipc_accept_ip.v6 = in6addr_loopback;
+  }
+  ipc_socket = -1;
+  ipc_connection = -1;
+}
+
+/**
+ *Destructor
+ */
+void
+my_fini(void)
+{
+  if(ipc_socket >= 0) {
+    close(ipc_socket);
+    ipc_socket = -1;
+  }
+  if(ipc_connection >= 0) {
+    close(ipc_connection);
+    ipc_connection = -1;
+  }
+
+}
+
+static const struct olsrd_plugin_parameters plugin_parameters[] = {
+    { .name = "port",   .set_plugin_parameter = &set_plugin_port,      .data = &ipc_port },
+    { .name = "accept", .set_plugin_parameter = &set_plugin_ipaddress, .data = &ipc_accept_ip },
+};
+
+void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size)
+{
+    *params = plugin_parameters;
+    *size = sizeof(plugin_parameters)/sizeof(*plugin_parameters);
+}
+
+/* Event function to register with the sceduler */
+static int pcf_event(int, int, int);
+
+static void ipc_action(int);
 
 #if 0
-static void
-ipc_print_net(union olsr_ip_addr *, union olsr_ip_addr *, union hna_netmask *);
+static struct link_entry *olsr_neighbor_best_link(union olsr_ip_addr *main);
 #endif
 
-static int
-ipc_send(const char *, int);
+static void ipc_print_neigh_link(struct neighbor_entry *neighbor);
 
-static void
-ipc_print_neigh_link(struct neighbor_entry *);
+static void ipc_print_tc_link(struct tc_entry *entry, struct tc_edge_entry *dst_entry);
 
-static int
-plugin_ipc_init(void);
+#if 0
+static void ipc_print_net(union olsr_ip_addr *, union olsr_ip_addr *, union hna_netmask *);
+#endif
 
-void
-olsr_plugin_exit(void);
+static int ipc_send(const char *, int);
+
+static void ipc_print_neigh_link(struct neighbor_entry *);
+
+static int plugin_ipc_init(void);
 
 
-static void
-ipc_print_neigh_link(struct neighbor_entry *neighbor)
+static void ipc_print_neigh_link(struct neighbor_entry *neighbor)
 {
   char buf[256];
   int len;
@@ -133,13 +205,11 @@ ipc_print_neigh_link(struct neighbor_entry *neighbor)
  *This function is called by the my_init
  *function in uolsrd_plugin.c
  */
-int
-olsrd_plugin_init(void)
+int olsrd_plugin_init(void)
 {
 
   /* Initial IPC value */
-  ipc_open = 0;
-  ipc_socket_up = 0;
+  ipc_socket = -1;
 
   /* Register the "ProcessChanges" function */
   register_pcf(&pcf_event);
@@ -147,8 +217,7 @@ olsrd_plugin_init(void)
   return 1;
 }
 
-static int
-plugin_ipc_init(void)
+static int plugin_ipc_init(void)
 {
   struct sockaddr_in sin;
   olsr_u32_t yes = 1;
@@ -170,7 +239,7 @@ plugin_ipc_init(void)
 #ifdef __FreeBSD__
       if (setsockopt(ipc_socket, SOL_SOCKET, SO_NOSIGPIPE, (char *)&yes, sizeof(yes)) < 0) 
       {
-	perror("SO_REUSEADDR failed");
+	perror("SO_NOSIGPIPE failed");
 	return 0;
       }
 #endif
@@ -200,14 +269,12 @@ plugin_ipc_init(void)
 
       /* Register with olsrd */
       add_olsr_socket(ipc_socket, &ipc_action);
-      ipc_socket_up = 1;
     }
 
   return 1;
 }
 
-void
-ipc_action(int fd __attribute__((unused)))
+static void ipc_action(int fd __attribute__((unused)))
 {
   struct sockaddr_in pin;
   socklen_t addrlen;
@@ -235,7 +302,6 @@ ipc_action(int fd __attribute__((unused)))
       else
 	{
 */
-	  ipc_open = 1;
 	  olsr_printf(1, "(DOT DRAW)IPC: Connection from %s\n",addr);
           len = sprintf(buf, "add node %s\n", olsr_ip_to_string(&olsr_cnf->main_addr));
   	  ipc_send(buf, len);
@@ -245,31 +311,18 @@ ipc_action(int fd __attribute__((unused)))
 
 }
 
-/*
- * destructor - called at unload
- */
-void
-olsr_plugin_exit(void)
-{
-  if(ipc_open)
-    close(ipc_socket);
-}
-
-
-
 /**
  *Scheduled event
  */
-int
-pcf_event(int changes_neighborhood,
-	  int changes_topology,
-	  int changes_hna __attribute__((unused)))
+static int pcf_event(int changes_neighborhood,
+                     int changes_topology,
+                     int changes_hna __attribute__((unused)))
 {
   int res;
   olsr_u8_t index;
   struct neighbor_entry *neighbor_table_tmp;
-  struct tc_entry *entry;
-  struct topo_dst *dst_entry;
+  struct tc_entry *tc;
+  struct tc_edge_entry *tc_edge;
 
   res = 0;
 
@@ -293,22 +346,11 @@ pcf_event(int changes_neighborhood,
 	}
 
       /* Topology */  
-      for(index=0;index<HASHSIZE;index++)
-	{
-	  /* For all TC entries */
-	  entry = tc_table[index].next;
-	  while(entry != &tc_table[index])
-	    {
-	      /* For all destination entries of that TC entry */
-	      dst_entry = entry->destinations.next;
-	      while(dst_entry != &entry->destinations)
-		{
-		  ipc_print_tc_link(entry, dst_entry);
-		  dst_entry = dst_entry->next;
-		}
-	      entry = entry->next;
-	    }
-	}
+      OLSR_FOR_ALL_TC_ENTRIES(tc) {
+          OLSR_FOR_ALL_TC_EDGE_ENTRIES(tc, tc_edge) {
+              ipc_print_tc_link(tc, tc_edge);
+          } OLSR_FOR_ALL_TC_EDGE_ENTRIES_END(tc, tc_edge);
+      } OLSR_FOR_ALL_TC_ENTRIES_END(tc);
 
       ipc_send(" end ", strlen(" end "));
 
@@ -340,7 +382,7 @@ pcf_event(int changes_neighborhood,
     }
 
 
-  if(!ipc_socket_up)
+  if(ipc_socket == -1)
     plugin_ipc_init();
 
   return res;
@@ -348,8 +390,7 @@ pcf_event(int changes_neighborhood,
 
 #if 0
 #define MIN_LINK_QUALITY 0.01
-static double 
-calc_etx(double loss, double neigh_loss) 
+static double calc_etx(double loss, double neigh_loss) 
 {
   if (loss < MIN_LINK_QUALITY || neigh_loss < MIN_LINK_QUALITY)
     return 0.0;
@@ -358,8 +399,7 @@ calc_etx(double loss, double neigh_loss)
 }
 #endif
 
-static void
-ipc_print_tc_link(struct tc_entry *entry, struct topo_dst *dst_entry)
+static void ipc_print_tc_link(struct tc_entry *entry, struct tc_edge_entry *dst_entry)
 {
   char buf[256];
   int len;
@@ -367,7 +407,7 @@ ipc_print_tc_link(struct tc_entry *entry, struct topo_dst *dst_entry)
   const char* adr;
 //  double etx = calc_etx( dst_entry->link_quality, dst_entry->inverse_link_quality );
 
-  main_adr = olsr_ip_to_string(&entry->T_last_addr);
+  main_adr = olsr_ip_to_string(&entry->addr);
   adr = olsr_ip_to_string(&dst_entry->T_dest_addr);
   len = sprintf( buf, "add link %s %s\n", main_adr, adr );
   ipc_send(buf, len);
@@ -401,29 +441,29 @@ ipc_print_net(union olsr_ip_addr *gw, union olsr_ip_addr *net, union hna_netmask
 #endif
 
 
-static int
-ipc_send(const char *data, int size)
+static int ipc_send(const char *data, int size)
 {
-  if(!ipc_open)
+  if(ipc_connection == -1)
     return 0;
 
 #if defined __FreeBSD__ || defined __MacOSX__
-  if (send(ipc_connection, data, size, 0) < 0) 
+#define FLAG 0
 #else
-  if (send(ipc_connection, data, size, MSG_NOSIGNAL) < 0) 
+#define FLAG MSG_NOSIGNAL
 #endif
+  if (send(ipc_connection, data, size, FLAG) < 0) 
     {
       olsr_printf(1, "(DOT DRAW)IPC connection lost!\n");
       close(ipc_connection);
-      ipc_open = 0;
+      ipc_connection = -1;
       return -1;
     }
 
   return 1;
 }
 
-
-struct link_entry *olsr_neighbor_best_link(union olsr_ip_addr *main)
+#if 0
+static struct link_entry *olsr_neighbor_best_link(union olsr_ip_addr *main)
 {
   struct link_entry *walker;
   double best = 0.0;
@@ -450,4 +490,4 @@ struct link_entry *olsr_neighbor_best_link(union olsr_ip_addr *main)
 
   return res;
 }
-
+#endif

@@ -1,4 +1,3 @@
-
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
  * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
@@ -37,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: main.c,v 1.96 2007/05/08 23:10:37 bernd67 Exp $
+ * $Id: main.c,v 1.100 2007/09/17 22:24:22 bernd67 Exp $
  */
 
 #include <unistd.h>
@@ -55,6 +54,12 @@
 #include "apm.h"
 #include "net_os.h"
 #include "build_msg.h"
+
+#if LINUX_POLICY_ROUTING
+#include <linux/types.h>
+#include <linux/rtnetlink.h>
+#include <fcntl.h>
+#endif
 
 /* Global stuff externed in defs.h */
 FILE *debug_handle;             /* Where to send debug(defaults to stdout) */
@@ -149,9 +154,10 @@ main(int argc, char *argv[])
       nowtm = localtime((time_t *)&now.tv_sec);
     }
     
-  printf("\n *** %s ***\n Build date: %s\n http://www.olsr.org\n\n", 
-	 SOFTWARE_VERSION, 
-	 __DATE__);
+  printf("\n *** %s ***\n Build date: %s on %s\n http://www.olsr.org\n\n", 
+	 olsrd_version, 
+	 build_date,
+         build_host);
     
   /* Using PID as random seed */
   srandom(getpid());
@@ -266,6 +272,15 @@ main(int argc, char *argv[])
       olsr_exit(__func__, 0);
     }
 
+#if LINUX_POLICY_ROUTING
+  if ((olsr_cnf->rtnl_s = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE)) < 0) 
+    {
+      olsr_syslog(OLSR_LOG_ERR, "rtnetlink socket: %m");
+      olsr_exit(__func__, 0);
+    }
+  fcntl(olsr_cnf->rtnl_s, F_SETFL, O_NONBLOCK);
+#endif
+
 #if defined __FreeBSD__ || defined __MacOSX__ || defined __NetBSD__ || defined __OpenBSD__
   if ((olsr_cnf->rts = socket(PF_ROUTE, SOCK_RAW, 0)) < 0)
     {
@@ -319,13 +334,15 @@ main(int argc, char *argv[])
   /* Set ipsize */
   if(olsr_cnf->ip_version == AF_INET6)
     {
-      OLSR_PRINTF(1, "Using IP version 6\n");
+      OLSR_PRINTF(1, "Using IP version %d\n", 6);
       olsr_cnf->ipsize = sizeof(struct in6_addr);
+      olsr_cnf->maxplen = 128;
     }
   else
     {
-      OLSR_PRINTF(1, "Using IP version 4\n");
-      olsr_cnf->ipsize = sizeof(olsr_u32_t);
+      OLSR_PRINTF(1, "Using IP version %d\n", 4);
+      olsr_cnf->ipsize = sizeof(struct in_addr);
+      olsr_cnf->maxplen = 32;
     }
 
   /* Initialize net */
@@ -368,7 +385,7 @@ main(int argc, char *argv[])
 #ifndef WIN32
   if((olsr_cnf->debug_level == 0) && (!olsr_cnf->no_fork))
     {
-      printf("%s detaching from the current process...\n", SOFTWARE_VERSION);
+      printf("%s detaching from the current process...\n", olsrd_version);
       if(daemon(0, 0) < 0)
 	{
 	  printf("daemon(3) failed: %s\n", strerror(errno));
@@ -383,7 +400,7 @@ main(int argc, char *argv[])
   OLSR_PRINTF(1, "Main address: %s\n\n", olsr_ip_to_string(&olsr_cnf->main_addr));
 
   /* Start syslog entry */
-  olsr_syslog(OLSR_LOG_INFO, "%s successfully started", SOFTWARE_VERSION);
+  olsr_syslog(OLSR_LOG_INFO, "%s successfully started", olsrd_version);
 
   /*
    *signal-handlers
@@ -402,7 +419,7 @@ main(int argc, char *argv[])
 #endif
 
   /* Register socket poll event */
-  olsr_register_timeout_function(&poll_sockets);
+  olsr_register_timeout_function(&poll_sockets, OLSR_FALSE);
 
   /* Starting scheduler */
   scheduler();
@@ -488,14 +505,18 @@ olsr_shutdown(int signal)
   /* ioctl socket */
   close(olsr_cnf->ioctl_s);
 
+#if LINUX_POLICY_ROUTING
+  close(olsr_cnf->rtnl_s);
+#endif
+
 #if defined __FreeBSD__ || defined __MacOSX__ || defined __NetBSD__ || defined __OpenBSD__
   /* routing socket */
   close(olsr_cnf->rts);
 #endif
 
-  olsr_syslog(OLSR_LOG_INFO, "%s stopped", SOFTWARE_VERSION);
+  olsr_syslog(OLSR_LOG_INFO, "%s stopped", olsrd_version);
 
-  OLSR_PRINTF(1, "\n <<<< %s - terminating >>>>\n           http://www.olsr.org\n", SOFTWARE_VERSION);
+  OLSR_PRINTF(1, "\n <<<< %s - terminating >>>>\n           http://www.olsr.org\n", olsrd_version);
 
   exit(olsr_cnf->exit_value);
 }
