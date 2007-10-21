@@ -1,13 +1,113 @@
 This file states changes as of version 0.2.4:
-$Id: CHANGELOG,v 1.75 2007/08/19 23:12:18 bernd67 Exp $
+$Id: CHANGELOG,v 1.101 2007/10/20 11:55:23 bernd67 Exp $
+
+0.5.5 ---------------------------------------------------------------------
 
 0.5.4 ---------------------------------------------------------------------
 
-QUAGGA
-updated to svn version 33
+QUAGGA by Immo 'FaUl' Wehrenberg <immo.olsr@do.bundessicherheitsministerium.de>
+- updated to svn version 33
 
-PATCHES by Sven-Ola Tücke to be found on from
+BMF PLUGIN  by Erik Tromp <erik_tromp@hotmail.com>
+- updated to 1.5.1
+- updated to latest plugin interfaces changes and killed warnings (by Bernd
+  Petrovitsch <bernd@firmix.at>)
+
+PATCH by Hannes Gredler <hannes@gredler.at> which rewrites the route handling.
+To quote him:
+----  snip  ----
+change list:
+- get rid of separate routing tables for HNA and per-node routes, everything is
+  now unified in an AVL routing tree (&routingtree)
+
+- introduce walking macros (OLSR_FOR_ALL_RT_ENTRIES()) that hide the internal
+  structure of the RIB for making life of the plugin authors easier.
+
+- get rid of different SPF implementations for LQ and non-LQ code paths. a
+  non-LQ edge is simply substituted with a cost of 1.0
+
+- get rid of host masks - a new data type olsr_prefix is introduced which is
+  basically an ip address plus a prefix length.
+
+  do not install the metric in the kernel FIB - for the kernel its pointless
+  if the route gets installed with a metric of N or M.
+
+  we do not need to update the kernel FIB if we have hop count only changes
+  (for example if there is a reroute action further downstream)
+
+  the only things which triggers a kernel FIB route update is a next hop
+  change (a next hop is neighboring gateway router plus an interface).
+
+  all OLSR routes are installed with a metric of 2
+
+- separate between rt_entry and rt_path - the former is a route installed in the
+  kernel with an next hop. the latter is a candidate for best path selection
+  after SPF calculation has been done. in the rt_entry we keep a pointer to the
+  best_path and also to the next hop that was installed in the kernel FIB.
+
+  we always keep all originator of a route, if a route originator goes away we
+  can easy recompute the best path for the route.
+
+  the next hop in the rt_entry gets only updated upon a successful route_add
+  call - that way we always remember what next hop to delete.
+
+  stray routes should be history now.
+
+- tweak the linked list toolkit to operate on circular lists.
+
+- get rid of malloc calls for building the kernel update list. the list node is
+  now embedded in the rt_entry.
+
+- introduce three queues (add/chg/del) for kernel updates.
+
+- for neighbor route dependency tracking the neighbor routes are queued first or
+  last (depending on which queue you work on)
+
+- rework all the plugins which directly manipulate rt entries.
+
+- rework the plugins that read from the routing table (most notably nameserver,
+  httpinfo and quagga plugin)
+
+- lots of comments that explains the intentions and purpose of this code-piece.
+
+non RT related stuff:
+- use a list rather than a tree for storing the post-SPF results, which further
+  improves the raw-SPF runtime.
+
+- add display of SPF runtime (masked behind #ifdef SPF_PROFILING)
+
+- http://gredler.at/download/olsrd/neighbor_routes3.diff: This updates the own
+  IP address (read: the main address) after changes (e.g. on
+  `ifup wlan0; sleep 1; ifdown wlan0`) and kills the
+  olsr_fill_routing_table_with_neighbors() function.
+----  snip  ----
+And Sven-Ola Tuecke <mail2news@commando.de> fixed an instability issue on interface
+up/down operations (see 102-olsrd-rt-refactoring-fixes.patch below) and a missing
+initialization.
+
+PATCH by Hannes Gredler <hannes@gredler.at> which "consolidates
+the link-state database and the spf-calculation in order
+to calculate routes more efficiently".
+To quote him (more):
+----  snip  ----
+- use the link-state (tc) database for SPF calculations rather than
+  replicating the notion of vertices and edges for a SPF run.
+  this heavily reduces malloc() calls and shrinks the total CPU
+  load of the route calculation path between 60%-80%.
+----  snip  ----
+
+PATCHES by Sven-Ola Tücke <mail2news@commando.de> to be found on from
 http://download-master.berlin.freifunk.net/sven-ola/nylon/packages/olsrd/files/
+- 102-olsrd-rt-refactoring-fixes.patch
+  Because you changed a lot of basics: It's time to handle a general
+  flaw in the routing system. Plase take a look at chk_if_changed(). This
+  will free() any "struct interface" pointer without warning at any time.
+  This is why it's possile to SEGV olsrd with a simple "ifdown xxx". 
+  The patch replaces the (maybe) invalid pointer with an index reference
+  "iif_index". You can always ask the OS for a name. Please note, that I do
+  not have a working BSD toolchain, so I've placed an #error in the IPv6
+  BSD-part where the author/porter has started to hack something funny.
+
 - 110-olsrd-double-wlancard-neigh-hack.patch:
   This is a hack for Nodes having to wifi cards with the same channel,
   bssid, IP-Range etc. If two nodes can see each other by means of two
@@ -25,19 +125,86 @@ http://download-master.berlin.freifunk.net/sven-ola/nylon/packages/olsrd/files/
 - 140-olsrd-arprefreshed.patch:
   This is a new one. Opens a packet socket and listen to UDP(698), extract
   the sender MAC and refreshes the ARP cache whith that. Should speedup
-  especially in cases, if you initially try to use a longer routing path which normally
-  triggers a "ARP-Lookup-Chain".
+  especially in cases, if you initially try to use a longer routing path which
+  normally triggers a "ARP-Lookup-Chain".
+- 106-olsrd-nameserviceparams.patch:
+  This patch converts more plugins to the new interface version.
+- 104-olsrd-policy-routing.patch
+  Reworked this one to discard GPL helper functions. Also checked IPv6 and
+  re-included the IPC hookup. The patch adds a "RtTable [number]" for
+  /etc/olsrd.conf which is simply the Linux
+  policy routing table to use. Defaults to 254 (== main). 
+  This patch was modified/clenaed up by <bernd@firmix.at> to use "#if"
+  instead of "#ifdef" as it's more robust against typos.
+- 110-olsrd-fixpacketprint.patch, 112-olsrd-nameservice-fixemptyname.patch,
+  113-olsrd-txtinfo-fixhttpget.patch, 114-olsrd-timeoutlimit.patch,
+  115-olsrd-nameserviceparamfix.patch and
+  116-olsrd-fix-pluginparam-addons.patch fixing the compilation warning
+  on 64bit and lots of other improvements.
+- "Save the fish" patch: Avoid forwarding of packets with too low TTL. This
+  kills lots of packet forwarding storms.
+  NB: The oneliner was applied by hand by BP and formatted to look (in BPs O)
+  more readable.
 
 PATCH by Arnd Hannemann <hannemann@i4.informatik.rwth-aachen.de>
 olsr_makefile_make_use_of_exename.patch
 - This patch makes sure that the EXENAME variable of Makefile.inc is used
   in Makefile.
 
-CLEANUPS
-- paving the way to activate -Wshadow, much mor todo
+PATCHES by John Hay <jhay@meraka.org.za>
+- update to new FreeBSD WLAN API
+- do not require /bin/bash, use /bin/sh
+- Fixed alignment so that olsrd runs on FreeBSD/arm
+- allow more interface in an IPv6 subnet on FreeBSD
+- use PREFIX and DESTDIR as all the other Makefile.$OS also for FreeBSD
+- make txtinfo plugin work with IPv6
+
+PATCH by Andreas Jacobs <jacobs@i4.informatik.rwth-aachen.de>
+- fix the loss link quality calculation for "windows size % 4 != 0"
+
+PATCH by Acinonyx <acinonyxs@yahoo.gr>
+- Bug fix: include $(TOPDIR)/Makefile.inc at the begin in the Quagga plugin
+
+PATCH by David Cornejo <dcornejo@gmail.com>
+- fixed an "+=" of an uninitialized variable (detected with/by the
+  scan.coverty.com).
+
+BUG erported by Aaron Kaplan <aaron@lo-res.org>
+- BSD-xargs doesn't know "-r".
+
+PATCHES and CLEANUPS by Bernd Petrovitsch <bernd@firmix.at>
+- Made a function from the ME_TO_DOUBLE() macro (in src/mantissa.h).
+  This saves code throughout the code even on i386 and will even more
+  on architectures without floating point units and "-msoft-float".
+- And the mathemathics in src/mantissa.h is reformulated to minimize
+  floating point operations to save CPU power - especially on embedded
+  devices.
+- I rewrote the half of src/lq_packet.[ch] which deals with incoming
+  packets. This was triggered with performance output of gcc produced
+  by Sven-Ola Tuecke at CCCamp07.
+  This kills *lots* of (more than) superflous malloc()s and the same
+  number of (free()s). And it also kills some code and copying around of
+  data.
+- Make it compile without warning with flex-2.5.33 (to be found on Fedora 7
+  and Gentoo in Sep-2007) again.
+
+- converted the dyn_gw plugin to plugin interface version 5 (which leaves
+  the quagga plugion as the last with the old one).
+- paving the way to activate -Wshadow, much more to do
 - const-ify parameters here and there
 - use NULL for pointers (and not "0")
 - Killed "extern" declarations in (not generated) .c files
+
+- Based on a patch by Gianni Costanzi <gianni.costanzi@gmail.com> (so credits
+  and thanks have to go there):
+  added OS_CFLAG_PTHREAD Makefile variable since gcc (on Linux) requests this
+  in the manual page.
+  Changes/additions:
+  - I added definitions to all OS-specific Makefile.$OS with the value similar
+    to the value in OS_LIB_PTHREAD (either empty or "-pthread").
+  - The variable is added to CPPFLAGS (and not CFLAGS) since CPPFLAGS is used
+    for all cpp and gcc calls (and gcc's man page indicates that it sets
+    variables for both of them).
 
 0.5.3 ---------------------------------------------------------------------
 
@@ -88,8 +255,8 @@ Upgrade to olsr-bmf 1.5 from Erik Tromp <erik_tromp@hotmail.com>
 latitude/longitude support is now in the nameservice plugin done by
 Sven-Ola Tuecke <mail2news@commando.de>
 
-added the spf refactoring patch from  Hannes Gredler <hannes@gredler.at> whicht saves
-a noteworthy amount of CPU time. To quote him:
+added the spf refactoring patch from  Hannes Gredler <hannes@gredler.at> which
+saves a noteworthy amount of CPU time. To quote him:
 ----  snip  ----
 1. use of an AVL tree as a min-heap implementation
 

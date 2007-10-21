@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include "olsrd_plugin.h"
+#include "plugin_util.h"
 #include "olsr.h"
 #include "scheduler.h"
 #include "defs.h"
@@ -29,75 +30,98 @@
 #define PLUGIN_VERSION "0.2.2"
 #define PLUGIN_AUTHOR  "Immo 'FaUl' Wehrenberg"
 #define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION " by " PLUGIN_AUTHOR
-#define PLUGIN_INTERFACE_VERSION 4
+#define PLUGIN_INTERFACE_VERSION 5
 
 static void __attribute__ ((constructor)) my_init(void);
 static void __attribute__ ((destructor)) my_fini(void);
-static void redist_hna (void);
+
+static set_plugin_parameter set_redistribute;
+static set_plugin_parameter set_exportroutes;
+static set_plugin_parameter set_distance;
+static set_plugin_parameter set_localpref;
 
 
-int olsrd_plugin_interface_version() {
+int olsrd_plugin_interface_version (void) {
   return PLUGIN_INTERFACE_VERSION;
 }
 
+static const struct olsrd_plugin_parameters plugin_parameters[] = {
+  { .name = "redistribute", .set_plugin_parameter = &set_redistribute, },
+  { .name = "ExportRoutes", .set_plugin_parameter = &set_exportroutes, },
+  { .name = "Distance",     .set_plugin_parameter = &set_distance,     },
+  { .name = "LocalPref",    .set_plugin_parameter = &set_localpref,    },
+};
 
-int olsrd_plugin_register_param(char *key, char *value) {
-  const char *zebra_route_types[] = {"system","kernel","connect","static",
-			      "rip","ripng","ospf","ospf6","isis",
- 			      "bgp","hsls", NULL};
-  unsigned char i = 0;
+void olsrd_get_plugin_parameters (const struct olsrd_plugin_parameters **params,
+				  int *size) {
+  *params = plugin_parameters;
+  *size = sizeof plugin_parameters / sizeof *plugin_parameters;
+}
 
-  if(!strcmp(key, "redistribute")) {
-    for (i = 0; zebra_route_types[i]; i++)
-      if (!strcmp(value, zebra_route_types[i])) {
-	zebra_redistribute(i);
-	return 1;
-      }
-  }
-  else if(!strcmp(key, "ExportRoutes")) {
-    if (!strcmp(value, "only")) {
-      if (!olsr_addroute_remove_function(&olsr_ioctl_add_route, AF_INET))
-	puts ("AIII, could not remove the kernel route exporter");
-      if (!olsr_delroute_remove_function(&olsr_ioctl_del_route, AF_INET))
-	puts ("AIII, could not remove the kernel route deleter");
-      olsr_addroute_add_function(&zebra_add_olsr_v4_route, AF_INET);
-      olsr_delroute_add_function(&zebra_del_olsr_v4_route, AF_INET);
-      zebra_export_routes(1);
-      return 1;
+static int set_redistribute (const char *value, 
+			     void *data __attribute__((unused)),
+			     set_plugin_parameter_addon addon __attribute__((unused))) {
+  const char *zebra_route_types[] = {"system","kernel","connect",
+					      "static","rip","ripng","ospf",
+					      "ospf6","isis","bgp","hsls"};
+  unsigned int i;
+
+  for (i = 0; i < ARRAYSIZE(zebra_route_types); i++) {
+    if (!strcmp(value, zebra_route_types[i])) {
+      zebra_redistribute(i);
+      return 0;
     }
-    else if (!strcmp(value, "additional")) {
-      olsr_addroute_add_function(&zebra_add_olsr_v4_route, AF_INET);
-      olsr_delroute_add_function(&zebra_del_olsr_v4_route, AF_INET);
-      zebra_export_routes(1);
-      return 1;
-    }
-    else zebra_export_routes(0);
   }
-  else if (!strcmp(key, "Distance")) {
-    unsigned int distance = atoi (value);
-    if (distance < 255)
-      zebra_olsr_distance(distance);
-      return 1;
+  return 1;
+}
+
+static int set_exportroutes (const char *value, 
+			     void *data __attribute__((unused)),
+			     set_plugin_parameter_addon addon __attribute__((unused))) {
+  if (!strcmp(value, "only")) {
+    if (!olsr_addroute_remove_function(&olsr_ioctl_add_route, AF_INET))
+      puts ("AIII, could not remove the kernel route exporter");
+    if (!olsr_delroute_remove_function(&olsr_ioctl_del_route, AF_INET))
+      puts ("AIII, could not remove the kernel route deleter");
+    olsr_addroute_add_function(&zebra_add_olsr_v4_route, AF_INET);
+    olsr_delroute_add_function(&zebra_del_olsr_v4_route, AF_INET);
+    zebra_export_routes(1);
   }
-  
-  else if (!strcmp(key, "LocalPref")) {
-    if (!strcmp(value, "true")) 
-      zebra_olsr_localpref();
-    else if (strcmp (value, "false"))
-      return -1;
-    return 1;
+  else if (!strcmp(value, "additional")) {
+    olsr_addroute_add_function(&zebra_add_olsr_v4_route, AF_INET);
+    olsr_delroute_add_function(&zebra_del_olsr_v4_route, AF_INET);
+    zebra_export_routes(1);
   }
-  return -1;
+  else zebra_export_routes(0);
+  return 0;
+}
+
+static int set_distance(const char *value, void *data __attribute__((unused)), 
+			set_plugin_parameter_addon addon __attribute__((unused))) {
+  int distance;
+
+  if (set_plugin_int(value, &distance, addon)) return 1;
+  if (distance < 0 || distance > 255) return 1;
+  zebra_olsr_distance(distance);
+  return 0;
+}
+ 
+static int set_localpref(const char *value, void *data __attribute__((unused)), 
+			 set_plugin_parameter_addon addon __attribute__((unused))) {
+  int b;
+
+  if (set_plugin_boolean(value, &b, addon)) return 1;
+  if (b) zebra_olsr_localpref();
+  return 0;
 }
 
 
-int olsrd_plugin_init() {
+int olsrd_plugin_init(void) {
   if(olsr_cnf->ip_version != AF_INET) {
     fputs("see the source - ipv6 so far not supported\n" ,stderr);
     return 1;
   }
 
-  //  olsr_register_timeout_function(&olsr_timeout);
   olsr_register_scheduler_event(&zebra_check, NULL, 1, 0, NULL);
   return 0;
 }

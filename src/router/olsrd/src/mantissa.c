@@ -36,9 +36,8 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: mantissa.c,v 1.8 2005/05/25 13:36:26 kattemat Exp $
+ * $Id: mantissa.c,v 1.9 2007/08/28 20:45:17 bernd67 Exp $
  */
-
 
 #include "mantissa.h"
 
@@ -58,38 +57,77 @@
  */
 
 olsr_u8_t
-double_to_me(double interval)
+double_to_me(const double interval)
 {
-  olsr_u8_t a, b;
+    olsr_u8_t a, b;
 
-  b = 0;
-
-  while(interval / VTIME_SCALE_FACTOR >= (1<<b))
-    b++;
-
-  if(b == 0)
-    {
-      a = 1;
-      b = 0;
-    } 
-  else 
-    {
-      b--;
-      if (b > 15)
-	{
-	  a = 15;
-	  b = 15;
-	} 
-      else 
-	{ 
-	  a = (int)(16*((double)interval/(VTIME_SCALE_FACTOR*(double)(1<<b))-1));
-	  while(a >= 16)
-	    {
-	      a -= 16;
-	      b++;
-	    }
-	}
+    /* It is sufficent to compare the integer part since we test on >=.
+     * So we have now only a floating point division and the rest of the loop
+     * are only integer operations.
+     */
+    const unsigned int unscaled_interval = interval / VTIME_SCALE_FACTOR;
+    b = 0;
+    while (unscaled_interval >= (1U << b)) {
+        b++;
     }
-  //printf("Generated mantissa/exponent(%d/%d): %d from %f\n", a, b, (olsr_u8_t) (a*16+b), interval);  //printf("Resolves back to: %f\n", ME_TO_DOUBLE(((a<<4)|(b&0x0F))));
-  return (olsr_u8_t) ((a<<4)|(b&0x0F));
+
+    if(b == 0) {
+        a = 1;
+        b = 0;
+    } else {
+        b--;
+        if (b > 15) {
+            a = 15;
+            b = 15;
+        } else {
+            /* And again some maths simplification from the former version:
+             *    a = 16 * ((double)interval / (VTIME_SCALE_FACTOR * (double)(1 << b)) - 1)
+             * Since interval is already double:
+             *    a = 16 * (interval / (VTIME_SCALE_FACTOR * (double)(1 << b)) - 1)
+             * first, we can get rid of parentheses and change the * to a /
+             *    a = 16 * (interval / VTIME_SCALE_FACTOR / (double)(1 << b) - 1)
+             * then we make an integer addition from the floating point addition
+             *    a = (int)(16.0 * interval / VTIME_SCALE_FACTOR / (double)(1 << b)) - 16
+             * and we loose an unnecessary cast
+             *    a = (int)(16.0 * interval / VTIME_SCALE_FACTOR / (1 << b)) - 16
+             */
+            a = (int)(16.0 * interval / VTIME_SCALE_FACTOR / (1 << b)) - 16;
+            b += a >> 4;
+            a &= 0x0f;
+        }
+    }
+    //printf("Generated mantissa/exponent(%d/%d): %d from %f\n", a, b, (olsr_u8_t) (a*16+b), interval);  //printf("Resolves back to: %f\n", me_to_double(((a<<4)|(b&0x0F))));
+    return (a << 4) | (b & 0x0F);
+}
+
+/**
+ * Function for converting a mantissa/exponent 8bit value back
+ * to double as described in RFC3626:
+ *
+ * value = C*(1+a/16)*2^b [in seconds]
+ *
+ *  where a is the integer represented by the four highest bits of the
+ *  field and b the integer represented by the four lowest bits of the
+ *  field.
+ *
+ * me is the 8 bit mantissa/exponent value
+ *
+ * To avoid expensive floating maths, we transform the equation:
+ *     value = C * (1 + a / 16) * 2^b
+ * first, we make an int addition from the floating point addition:
+ *     value = C * ((16 + a) / 16) * 2^b
+ * then we get rid of a pair of parentheses
+ *     value = C * (16 + a) / 16 * 2^b
+ * and now we make an int multiplication from the floating point one
+ *     value = C * (16 + a) * 2^b / 16
+ * so that we can make a shift from the multiplication
+ *     value = C * ((16 + a) << b) / 16
+ * and sionce C and 16 are constants
+ *     value = ((16 + a) << b) * C / 16
+ */
+double me_to_double(const olsr_u8_t me)
+{
+    const olsr_u8_t a = me >> 4;
+    const olsr_u8_t b = me & 0x0F;
+    return ((16 + a) << b) * VTIME_SCALE_FACTOR / 16.0;
 }

@@ -32,6 +32,7 @@
 #include "log.h"
 #include "defs.h"
 #include "local_hna_set.h"
+#include "routing_table.h"
 
 #ifdef USE_UNIX_DOMAIN_SOCKET
 #include <sys/un.h>
@@ -60,8 +61,8 @@ static struct {
 
 
 /* prototypes intern */
-static char *try_read (ssize_t *);
-static char* zebra_route_packet (struct ipv4_route r, ssize_t *);
+static unsigned char *try_read (ssize_t *);
+static unsigned char* zebra_route_packet (struct ipv4_route r, ssize_t *);
 static int parse_interface_add (unsigned char *, size_t);
 static int parse_interface_delete (unsigned char *, size_t);
 static int parse_interface_up (unsigned char *, size_t);
@@ -77,13 +78,16 @@ static void zebra_connect (void);
 
 static uint32_t prefixlentomask (uint8_t);
 static void free_ipv4_route (struct ipv4_route);
+/* 
 static void update_olsr_zebra_routes (struct ipv4_route*, struct ipv4_route*);
 static struct ipv4_route *zebra_create_ipv4_route_table_entry (uint32_t,
 							       uint32_t,
 							       uint32_t);
 static struct ipv4_route *zebra_create_ipv4_route_table (void);
 static void zebra_free_ipv4_route_table (struct ipv4_route*);
-static uint8_t masktoprefixlen (uint32_t);
+*/
+
+/*static uint8_t masktoprefixlen (uint32_t);*/
 
 
 #ifdef MY_DEBUG
@@ -164,15 +168,14 @@ void init_zebra (void) {
 void zebra_cleanup (void) {
   int i;
   struct rt_entry *tmp;
+  
   if (zebra.options & OPTION_EXPORT) {
-    for (i = 0; i < HASHSIZE; i++) {
-      for (tmp = routingtable[i].next; tmp != &routingtable[i]; tmp = tmp->next)
-	zebra_del_olsr_v4_route (tmp);     
-      for (tmp = hna_routes[i].next; tmp != &hna_routes[i]; tmp = tmp->next)
-	zebra_del_olsr_v4_route (tmp) ;   }
-  }  
+    OLSR_FOR_ALL_RT_ENTRIES(tmp) {
+      zebra_del_olsr_v4_route(tmp);
+    } OLSR_FOR_ALL_RT_ENTRIES_END(tmp);
+  }
 
-  for (i = 0; ZEBRA_ROUTE_MAX - 1; i++)
+  for (i = 0; i < ZEBRA_ROUTE_MAX; i++)
     if (zebra.redistribute[i]) zebra_disable_redistribute(i + 1);
 }
 
@@ -185,15 +188,12 @@ static void zebra_reconnect (void) {
   if (!zebra.status & STATUS_CONNECTED) return; // try again next time
 
   if (zebra.options & OPTION_EXPORT) {
-    for (i = 0; i < HASHSIZE; i++) {
-      for (tmp = routingtable[i].next; tmp != &routingtable[i]; tmp = tmp->next)
-	zebra_add_olsr_v4_route (tmp);     
-      for (tmp = hna_routes[i].next; tmp != &hna_routes[i]; tmp = tmp->next)
-	zebra_add_olsr_v4_route (tmp);
-    }
+    OLSR_FOR_ALL_RT_ENTRIES(tmp) {
+      zebra_add_olsr_v4_route (tmp);
+    } OLSR_FOR_ALL_RT_ENTRIES_END(tmp);
   }  
 
-  for (i = 0; ZEBRA_ROUTE_MAX - 1; i++)
+  for (i = 0; i < ZEBRA_ROUTE_MAX; i++)
     if (zebra.redistribute[i]) zebra_redistribute(i + 1);
   /* Zebra sends us all routes of type it knows after 
      zebra_redistribute(type) */
@@ -203,6 +203,8 @@ static void zebra_reconnect (void) {
 
 /* Connect to the zebra-daemon, returns a socket */
 static void zebra_connect (void) {
+  
+  int ret;
 
 #ifndef USE_UNIX_DOMAIN_SOCKET
   struct sockaddr_in i;
@@ -216,8 +218,6 @@ static void zebra_connect (void) {
 
   zebra.sock = socket (AF_UNIX,SOCK_STREAM, 0);
 #endif
-
-  int ret;
 
   if (zebra.sock <0 )
     olsr_exit("(QUAGGA) Could not create socket!", EXIT_FAILURE);
@@ -241,7 +241,8 @@ static void zebra_connect (void) {
 /* Sends a command to zebra, command is 
    the command defined in zebra.h, options is the packet-payload, 
    optlen the length, of the payload */
-char zebra_send_command (unsigned char command, char * options, int optlen) {
+unsigned char zebra_send_command (unsigned char command, 
+                                  unsigned char *options, int optlen) {
 
 #ifdef ZEBRA_HEADER_MARKER
   char *p = olsr_malloc (optlen + 6, "zebra_send_command");
@@ -295,14 +296,15 @@ char zebra_send_command (unsigned char command, char * options, int optlen) {
 
 /* Creates a Route-Packet-Payload, needs address, netmask, nexthop, 
    distance, and a pointer of an size_t */
-static char* zebra_route_packet (struct ipv4_route r, ssize_t *optlen) {
+static unsigned char* zebra_route_packet (struct ipv4_route r, 
+                                          ssize_t *optlen) {
 
   int count;
 
-  char *cmdopt, *t;
+  unsigned char *cmdopt, *t;
   *optlen = 4; // first: type, flags, message, prefixlen
   *optlen += r.prefixlen / 8 + (r.prefixlen % 8 ? 1 : 0); // + prefix
-  if (r.message & ZAPI_MESSAGE_NEXTHOP)
+  if (r.message & ZAPI_MESSAGE_NEXTHOP) {
     if (r.nexthops->type == ZEBRA_NEXTHOP_IPV4 
 	|| r.nexthops->type == ZEBRA_NEXTHOP_IPV4_IFINDEX){
       *optlen += (sizeof r.nexthops->payload.v4 
@@ -310,6 +312,7 @@ static char* zebra_route_packet (struct ipv4_route r, ssize_t *optlen) {
     }
     else if (r.nexthops->type == 0) 
       *optlen += 5;
+  }
   if (r.message & ZAPI_MESSAGE_IFINDEX)
     *optlen += r.ind_num * sizeof *r.index + 1;
   if (r.message & ZAPI_MESSAGE_DISTANCE)
@@ -363,7 +366,7 @@ static char* zebra_route_packet (struct ipv4_route r, ssize_t *optlen) {
 /* adds a route to zebra-daemon */
 int zebra_add_v4_route (struct ipv4_route r) {
   
-  char *cmdopt;
+  unsigned char *cmdopt;
   ssize_t optlen;
   int retval;
 
@@ -378,7 +381,7 @@ int zebra_add_v4_route (struct ipv4_route r) {
 /* deletes a route from the zebra-daemon */
 int zebra_delete_v4_route (struct ipv4_route r) {
   
-  char *cmdopt;
+  unsigned char *cmdopt;
   ssize_t optlen;
   int retval;
 
@@ -393,8 +396,8 @@ int zebra_delete_v4_route (struct ipv4_route r) {
 
 
 /* Check wether there is data from zebra aviable */
-void zebra_check (void* foo) {
-  char *data, *f;
+void zebra_check (void* foo __attribute__((unused))) {
+  unsigned char *data, *f;
   ssize_t len, ret;
 
   if (!(zebra.status & STATUS_CONNECTED)) {
@@ -406,9 +409,8 @@ void zebra_check (void* foo) {
     f = data;
     do {
       ret = zebra_parse_packet (f, len);
-      if (!ret) { // something wired happened
+      if (!ret) // something wired happened
 	olsr_exit ("(QUAGGA) Zero message length??? ", EXIT_FAILURE);
-      }
       f += ret;
     } while ((f - data) < len);
     free (data);
@@ -418,7 +420,7 @@ void zebra_check (void* foo) {
 
 // tries to read a packet from zebra_socket
 // if there is something to read - make sure to read whole packages
-static char *try_read (ssize_t *len) {
+static unsigned char *try_read (ssize_t *len) {
   unsigned char *buf = NULL;
   ssize_t ret = 0, bsize = 0;
   uint16_t length = 0, l = 0;
@@ -492,7 +494,7 @@ int zebra_parse_packet (unsigned char *packet, ssize_t maxlen) {
   length = ntohs (length);
   
   if (maxlen < length) {
-    olsr_printf (1, "(QUAGGA) maxlen = %d, packet_length = %d\n", maxlen, length);
+    olsr_printf (1, "(QUAGGA) maxlen = %lu, packet_length = %d\n", (unsigned long)maxlen, length);
     olsr_exit ("(QUAGGA) programmer is an idiot", EXIT_FAILURE);
   }
 
@@ -522,38 +524,38 @@ int zebra_parse_packet (unsigned char *packet, ssize_t maxlen) {
 }
 
 
-static int parse_interface_add (unsigned char *opt, size_t len) {
+static int parse_interface_add (unsigned char *opt __attribute__((unused)), size_t len __attribute__((unused))) {
   //todo
   return 0;
 }
 
 
-static int parse_interface_delete (unsigned char *opt, size_t len) {
+static int parse_interface_delete (unsigned char *opt __attribute__((unused)), size_t len __attribute__((unused))) {
   //todo
   return 0;
 }
 
 
-static int parse_interface_address_add (unsigned char *opt, size_t len) {
+static int parse_interface_address_add (unsigned char *opt __attribute__((unused)), size_t len __attribute__((unused))) {
   
   //todo
   return 0;
 }
 
-static int parse_interface_up (unsigned char *opt, size_t len) {
+static int parse_interface_up (unsigned char *opt __attribute__((unused)), size_t len __attribute__((unused))) {
   
   //todo
   return 0;
 }
 
-static int parse_interface_down (unsigned char *opt, size_t len) {
+static int parse_interface_down (unsigned char *opt __attribute__((unused)), size_t len __attribute__((unused))) {
   
   //todo
   return 0;
 }
 
 
-static int parse_interface_address_delete (unsigned char *opt, size_t  len) {
+static int parse_interface_address_delete (unsigned char *opt __attribute__((unused)), size_t  len __attribute__((unused))) {
   //todo
   return 0;
 }
@@ -642,7 +644,7 @@ static int ipv4_route_delete (unsigned char *opt, size_t len) {
   
 }
 
-static int parse_ipv6_route_add (unsigned char *opt, size_t len) {
+static int parse_ipv6_route_add (unsigned char *opt __attribute__((unused)), size_t len __attribute__((unused))) {
   //todo
   return 0;
 }
@@ -720,6 +722,7 @@ static void free_ipv4_route (struct ipv4_route r) {
 
 }
 
+/*
 static uint8_t masktoprefixlen (uint32_t mask) {
   
   uint8_t prefixlen = 0;
@@ -731,6 +734,7 @@ static uint8_t masktoprefixlen (uint32_t mask) {
   return prefixlen;
   
 }
+*/
 
 int zebra_add_olsr_v4_route (struct rt_entry *r) {
   
@@ -740,14 +744,15 @@ int zebra_add_olsr_v4_route (struct rt_entry *r) {
   route.type = ZEBRA_ROUTE_OLSR; // OLSR
   route.message = ZAPI_MESSAGE_METRIC;
   route.flags = zebra.flags;
-  route.prefixlen = masktoprefixlen (r->rt_mask.v4);
-  route.prefix = r->rt_dst.v4;
-  if ((r->rt_router.v4 == r->rt_dst.v4 && route.prefixlen == 32)){
+  route.prefixlen =(r->rt_dst.prefix_len);
+  route.prefix = r->rt_dst.prefix.v4;
+  if ((r->rt_best->rtp_nexthop.gateway.v4 == r->rt_dst.prefix.v4 && 
+       route.prefixlen == 32)) {
     route.message |= ZAPI_MESSAGE_IFINDEX | ZAPI_MESSAGE_NEXTHOP;
     route.ind_num = 1;
     route.index = olsr_malloc (sizeof *route.index, 
 			       "zebra_add_olsr_v4_route");
-    *route.index = htonl(r->rt_if->if_index);
+    *route.index = htonl(r->rt_best->rtp_nexthop.iif_index);
     route.nexthops = olsr_malloc (sizeof route.nexthops->type +
 				  sizeof route.nexthops->payload,
 				  "zebra_add_olsr_v4_route");
@@ -762,10 +767,10 @@ int zebra_add_olsr_v4_route (struct rt_entry *r) {
 				   sizeof route.nexthops->payload), 
 				   "zebra_add_olsr_v4_route");
     route.nexthops->type = ZEBRA_NEXTHOP_IPV4;
-    route.nexthops->payload.v4 = r->rt_router.v4;
+    route.nexthops->payload.v4 = r->rt_best->rtp_nexthop.gateway.v4;
   }
 
-  route.metric = r->rt_metric;
+  route.metric = r->rt_best->rtp_metric.hops;
   route.metric = htonl(route.metric);
 
   if (zebra.distance) {
@@ -785,14 +790,15 @@ int zebra_del_olsr_v4_route (struct rt_entry *r) {
   route.type = ZEBRA_ROUTE_OLSR; // OLSR
   route.message = ZAPI_MESSAGE_METRIC;
   route.flags = zebra.flags;
-  route.prefixlen = masktoprefixlen (r->rt_mask.v4);
-  route.prefix = r->rt_dst.v4;
-  if ((r->rt_router.v4 == r->rt_dst.v4 && route.prefixlen == 32)){
+  route.prefixlen = r->rt_dst.prefix_len;
+  route.prefix = r->rt_dst.prefix.v4;
+  if ((r->rt_best->rtp_nexthop.gateway.v4 == r->rt_dst.prefix.v4 && 
+       route.prefixlen == 32)){
     route.message |= ZAPI_MESSAGE_IFINDEX;
     route.ind_num = 1;
     route.index = olsr_malloc (sizeof *route.index, 
 			       "zebra_add_olsr_v4_route");
-    *route.index = htonl (r->rt_if->if_index);
+    *route.index = htonl (r->rt_best->rtp_nexthop.iif_index);
     route.nexthops = olsr_malloc (sizeof route.nexthops->type +
 				  sizeof route.nexthops->payload,
 				  "zebra_add_olsr_v4_route");
@@ -807,9 +813,9 @@ int zebra_del_olsr_v4_route (struct rt_entry *r) {
 				   sizeof route.nexthops->payload), 
 				  "zebra_add_olsr_v4_route");
     route.nexthops->type = ZEBRA_NEXTHOP_IPV4;
-    route.nexthops->payload.v4 = r->rt_router.v4;
+    route.nexthops->payload.v4 = r->rt_best->rtp_nexthop.gateway.v4;
   }
-  route.metric = r->rt_metric;
+  route.metric = r->rt_best->rtp_metric.hops;
   route.metric = htonl (route.metric);
   
   if (zebra.distance) {
@@ -817,12 +823,13 @@ int zebra_del_olsr_v4_route (struct rt_entry *r) {
     route.distance = zebra.distance;
   }
 
-  del_v4_route_status(route);
+  retval = zebra_delete_v4_route(route);
+
   free_ipv4_route (route);
   return retval;
 }
 
-void zebra_olsr_distance (char dist) {
+void zebra_olsr_distance (unsigned char dist) {
   zebra.distance = dist;
 }
 
@@ -830,7 +837,7 @@ void zebra_olsr_localpref (void) {
   zebra.flags &= ZEBRA_FLAG_SELECTED;
 }
 
-void zebra_export (char t) {
+void zebra_export_routes (unsigned char t) {
   if (t)
     zebra.options |= OPTION_EXPORT;
   else

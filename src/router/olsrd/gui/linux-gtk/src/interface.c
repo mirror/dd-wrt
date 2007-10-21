@@ -106,7 +106,7 @@ create_main_window (void)
 
   main_window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   gtk_object_set_data (GTK_OBJECT (main_window), "main_window", main_window);
-  gtk_window_set_title (GTK_WINDOW (main_window), (SOFTWARE_VERSION));
+  gtk_window_set_title (GTK_WINDOW (main_window), (olsrd_version));
   gtk_window_set_default_size(GTK_WINDOW (main_window), 600, 550);
   gtk_signal_connect(GTK_OBJECT(main_window),
 		     "destroy",
@@ -1253,7 +1253,7 @@ set_net_info(gchar *info, int disp_button)
   gtk_label_set_text((GtkLabel *)info_label, info); 
   gtk_label_set_text((GtkLabel *)net_label, "Connected"); 
 
-  strcat(title, SOFTWARE_VERSION);
+  strcat(title, olsrd_version);
   strcat(title, " - ");
   strcat(title, ip_to_string(&main_addr));
 

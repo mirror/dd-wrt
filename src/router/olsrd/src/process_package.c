@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: process_package.c,v 1.41 2007/08/02 22:07:19 bernd67 Exp $
+ * $Id: process_package.c,v 1.42 2007/09/13 15:31:59 bernd67 Exp $
  */
 
 
@@ -228,8 +228,8 @@ olsr_tc_tap(struct tc_message *message, struct interface *in_if,
       goto forward;
     }
 
-  OLSR_PRINTF(3, "Processing TC from %s\n",
-              olsr_ip_to_string(&message->originator));
+  OLSR_PRINTF(3, "Processing TC from %s, seq 0x%04x\n",
+              olsr_ip_to_string(&message->originator), message->ansn);
 
   /*
    *      If the sender interface (NB: not originator) of this message
@@ -272,10 +272,6 @@ olsr_tc_tap(struct tc_message *message, struct interface *in_if,
       /* Update destinations */
       if(olsr_tc_update_mprs(tc_last, message))
         changes_topology = OLSR_TRUE;
-
-      /* Delete possible empty TC entry */
-      if(changes_topology)
-        olsr_tc_delete_entry_if_empty(tc_last);
     }
 
   else

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsr_types.h,v 1.8 2007/06/28 22:34:52 bernd67 Exp $
+ * $Id: olsr_types.h,v 1.9 2007/09/05 16:11:11 bernd67 Exp $
  */
 
 /*
@@ -96,6 +96,12 @@ union olsr_ip_addr
   */
   olsr_u32_t v4;
   struct in6_addr v6;
+};
+
+struct olsr_ip_prefix
+{
+  union olsr_ip_addr prefix;
+  olsr_u8_t prefix_len;
 };
 
 union hna_netmask

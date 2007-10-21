@@ -1,11 +1,41 @@
+######################
+#
+# Highlevel configuration options for all
+#
+# $Id: Makefile.inc,v 1.37 2007/10/20 20:23:12 bernd67 Exp $
+#
+
+# activate debugging with 1 or deactivate with 0
+DEBUG ?= 0
+
+# compile OLSR_PRINTF out
+NO_DEBUG_MESSAGES ?= 0
+
+# the optimize option to be set for gcc
+OPTIMIZE ?= -O2
+
+# enable mudflap with 1 or deactivate with 0
+# you need a recent enough gcc and the libmudflap installed
+MUDFLAP ?= 0
+
+
+######################
+#
+# Lowlevel options and rules
+#
+
 # programs
-CCACHE ?=       $(shell bash -c "type -path ccache")
+CCACHE ?=       $(shell which ccache 2> /dev/null)
 ifeq ($(origin CC),default)
 CC = 		$(CCACHE) gcc
 else
 CC ?= 		$(CCACHE) gcc
 endif
+ifeq ($(DEBUG),0)
 STRIP ?=	strip
+else
+STRIP ?=	:
+endif
 BISON ?=	bison
 FLEX ?=		flex
 TAGCMD ?=	etags
@@ -21,7 +51,10 @@ EXENAME ?= olsrd
 CFGNAME ?= $(EXENAME).conf
 CFGFILE ?= $(ETCDIR)/$(CFGNAME)
 
-CPPFLAGS =	-Isrc -I$(TOPDIR)/src 
+CPPFLAGS =	-Isrc
+ifneq ($(TOPDIR),.)
+CPPFLAGS +=	-I$(TOPDIR)/src
+endif
 
 # add gcc warnings and optimizations if CFLAGS not set
 ifndef CFLAGS
@@ -40,16 +73,33 @@ WARNINGS +=	-Wmissing-format-attribute
 WARNINGS +=	-Wno-multichar
 WARNINGS +=	-Wno-deprecated-declarations
 #WARNINGS +=	-Wredundant-decls
+ifeq ($(MUDFLAP),0)
+# work around a bug in gcc-4.*
 WARNINGS +=	-Wnested-externs
+endif
+# Alas, htons() triggers this so we can't seriously activate it.
 #WARNINGS +=	-Wunreachable-code
 WARNINGS +=	-Winline
 WARNINGS +=	-Wdisabled-optimization
 #WARNINGS +=	-Werror
+WARNINGS +=	-finline-functions-called-once
+WARNINGS +=	-fearly-inlining
+ifeq ($(DEBUG),0)
+WARNINGS +=	-fomit-framepointers
+endif
+# we have small inline functions in src/lq_route.c which should always be inlined
+WARNINGS +=	-finline-limit=50
 WARNINGS :=	$(shell CC="$(CC)" $(TOPDIR)/gcc-warnings $(WARNINGS))
 endif
 CFLAGS +=	$(WARNINGS)
-CFLAGS +=	-O2
-CFLAGS +=	-g
+CFLAGS +=	$(OPTIMIZE)
+CFLAGS +=	$(EXTRA_CFLAGS)
+
+# Must be specified along with -lpthread on linux
+CPPFLAGS +=	$(OS_CFLAG_PTHREAD)
+endif
+ifneq ($(MUDFLAP),0)
+CFLAGS +=	-fmudflapth
 endif
 
 ifdef OLSRD_PLUGIN
@@ -61,19 +111,21 @@ else
 # c and ld flags for main
 LDFLAGS +=	-Wl,-export-dynamic 
 endif
+ifneq ($(MUDFLAP),0)
+LIBS +=		-lmudflapth
+endif
+LIBS +=		$(OS_LIB_PTHREAD)
 
 ###################################
 #
 # options to save space on small systems
 
 # we have plugins with the old interface
-CPPFLAGS +=	-DSUPPORT_OLD_PLUGIN_VERSIONS=1
+#CPPFLAGS +=	-DSUPPORT_OLD_PLUGIN_VERSIONS=1
 
 # search sources and headers in current dir and in src/
 SRCS +=		$(wildcard src/*.c *.c)
 HDRS +=		$(wildcard src/*.h *.h)
-
-all: default_target
 
 # OS detection
 ifeq ($(OS),Windows_NT)
@@ -86,24 +138,27 @@ ifeq ($(OS),UNKNOWN)
 all: help
 else
 # include OS specifics
-include $(TOPDIR)/make/Makefile.$(OS)
 all: default_target
+include $(TOPDIR)/make/Makefile.$(OS)
 endif
 
 # one object for each source file
 OBJS +=		$(SRCS:%.c=%.o)
 
 # debugging or non-debugging flags
-ifdef DEBUG
+ifeq ($(DEBUG),1)
 CPPFLAGS +=	-DDEBUG
+CFLAGS +=	-g
+else
+CPPFLAGS +=	-DNDEBUG
 endif
-ifdef NODEBUG
+ifeq ($(NO_DEBUG_MESSAGES),1)
 CPPFLAGS +=	-DNODEBUG
 endif
 
 # fully automatic and working dependency generation
 %.d: %.c
-	@$(CC) -M $(CPPFLAGS) "$<" | sed -e '1s|\($(*F)\)\.o[ :]*|$(*D)/\1.o $@: Makefile $(TOPDIR)$(if $(TOPDIR),/)Makefile.inc \\\n  |g' >"$@"
+	@$(CC) -M $(CPPFLAGS) "$<" | sed -e '1s|\($(*F)\)\.o[ :]*|$(*D)/\1.o $@: Makefile $(TOPDIR)$(if $(TOPDIR),/)Makefile.inc |g' >"$@"
 
 # we always need the includes and defines
 # for legacy since now

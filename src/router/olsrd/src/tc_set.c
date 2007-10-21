@@ -1,6 +1,7 @@
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
+ * Copyright (c) 2004, Andreas TÃ¸nnesen(andreto@olsr.org)
+ * LSDB rewrite (c) 2007, Hannes Gredler (hannes@gredler.at)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -36,393 +37,583 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: tc_set.c,v 1.27 2007/08/02 22:07:19 bernd67 Exp $
+ * $Id: tc_set.c,v 1.32 2007/10/17 07:30:34 bernd67 Exp $
  */
-
 
 #include "tc_set.h"
 #include "olsr.h"
 #include "scheduler.h"
 #include "lq_route.h"
+#include "lq_avl.h"
+#include "assert.h"
 
-
-struct tc_entry tc_table[HASHSIZE];
-
+/* Root of the link state database */
+struct avl_tree tc_tree;
+struct tc_entry *tc_myself; /* Shortcut to ourselves */
 
 /**
  * Initialize the topology set
  *
  */
-
 int
 olsr_init_tc(void)
 {
-  int idx;
   OLSR_PRINTF(5, "TC: init topo\n");
 
-  olsr_register_timeout_function(&olsr_time_out_tc_set);
+  olsr_register_timeout_function(&olsr_time_out_tc_set, OLSR_TRUE);
 
-  for(idx=0;idx<HASHSIZE;idx++)
-    {
-      tc_table[idx].next = &tc_table[idx];
-      tc_table[idx].prev = &tc_table[idx];
-    }
+  avl_init(&tc_tree, avl_comp_default);
 
+  /*
+   * Add a TC entry for ourselves.
+   */
+  tc_myself = olsr_add_tc_entry(&olsr_cnf->main_addr);
   return 1;
 }
 
-
 /**
- *Delete a TC entry if it has no associated
- *destinations
- *
- *@param entry the TC entry to check and possibly delete
- *
- *@return 1 if entry deleted 0 if not
+ * The main ip address has changed.
+ * Do the needful.
  */
-
-int
-olsr_tc_delete_entry_if_empty(struct tc_entry *entry)
+void
+olsr_change_myself_tc(void)
 {
+  struct tc_edge_entry *tc_edge;
 
-  //OLSR_PRINTF(1, "TC: del entry if empty\n");
+  if (tc_myself) {
 
-  if(entry->destinations.next == &entry->destinations)
-    {
-      /* dequeue */
-      DEQUEUE_ELEM(entry);
-      //entry->prev->next = entry->next;
-      //entry->next->prev = entry->prev;
-      OLSR_PRINTF(1, "TC-SET: Deleting empty entry %s ->\n", olsr_ip_to_string(&entry->T_last_addr));
-      free(entry);
-      return 1;
+    /*
+     * Check if there was a change.
+     */
+    if (COMP_IP(&tc_myself->addr, &olsr_cnf->main_addr)) {
+      return;
     }
-  return 0;
+
+    /*
+     * Flush all edges. This causes our own tc_entry to vanish.
+     */
+    OLSR_FOR_ALL_TC_EDGE_ENTRIES(tc_myself, tc_edge) {
+      olsr_delete_tc_edge_entry(tc_edge);
+    } OLSR_FOR_ALL_TC_EDGE_ENTRIES_END(tc_myself, tc_edge);
+  }
+
+  /*
+   * The old entry for ourselves is gone, generate a new one and trigger SPF.
+   */
+  tc_myself = olsr_add_tc_entry(&olsr_cnf->main_addr);
+  changes_topology = OLSR_TRUE;
 }
 
+/**
+ * Delete a TC entry.
+ *
+ * @param entry the TC entry to delete
+ *
+ */
+static void
+olsr_delete_tc_entry(struct tc_entry *tc)
+{
 
+#if 0
+  OLSR_PRINTF(1, "TC: del entry %s\n", olsr_ip_to_string(&tc->addr));
+#endif
+
+  /* The edgetree must be empty before */
+  assert(!tc->edge_tree.count);
+
+  avl_delete(&tc_tree, &tc->vertex_node);
+  free(tc);
+}
 
 /**
- * Look up a entry from the TC tabe based
- * on address
+ * Look up a entry from the TC tree based on address
  *
- *@param adr the address to look for
- *
- *@return the entry found or NULL
+ * @param adr the address to look for
+ * @return the entry found or NULL
  */
-
 struct tc_entry *
 olsr_lookup_tc_entry(union olsr_ip_addr *adr)
 {
-  struct tc_entry *entries;
-  olsr_u32_t hash;
+  struct avl_node *node;
 
-  //OLSR_PRINTF(1, "TC: lookup entry\n");
+#if 0
+  OLSR_PRINTF(1, "TC: lookup entry\n");
+#endif
 
-  hash = olsr_hashing(adr);
+  node = avl_find(&tc_tree, adr);
 
-  for(entries = tc_table[hash].next; 
-      entries != &tc_table[hash]; 
-      entries = entries->next)
-    {
-      //printf("TC lookup checking: %s\n", olsr_ip_to_string(&entries->T_last_addr));
-      if(COMP_IP(adr, &entries->T_last_addr))
-	return entries;
-    }
+  if (node) {
+    return node->data;
+  }
 
   return NULL;
 }
 
+/**
+ * Grab the next topology entry.
+ *
+ * @param adr the address to look for
+ * @return the entry found or NULL
+ */
+struct tc_entry *
+olsr_getnext_tc_entry(struct tc_entry *tc)
+{
+  struct avl_node *node;
+
+  node = avl_walk_next(&tc->vertex_node);
+
+  if (node) {
+    return node->data;
+  }
+
+  return NULL;
+}
 
 /**
- *Add a new tc_entry to the tc set
+ * Add a new tc_entry to the tc tree
  *
- *@param (last)adr address of the entry
- *
- *@return a pointer to the created entry
+ * @param (last)adr address of the entry
+ * @return a pointer to the created entry
  */
-
 struct tc_entry *
 olsr_add_tc_entry(union olsr_ip_addr *adr)
 {
-  struct tc_entry *new_entry;
-  olsr_u32_t hash;
+  struct tc_entry *tc;
 
-  OLSR_PRINTF(1, "TC: adding entry %s\n", olsr_ip_to_string(adr));
+#if 0
+  OLSR_PRINTF(1, "TC: add entry %s\n", olsr_ip_to_string(adr));
+#endif
 
-  hash = olsr_hashing(adr);
-
-  new_entry = olsr_malloc(sizeof(struct tc_entry), "New TC entry");
+  tc = olsr_malloc(sizeof(struct tc_entry), "add TC entry");
+  if (!tc) {
+    return NULL;
+  }
+  memset(tc, 0, sizeof(struct tc_entry));
 
   /* Fill entry */
-  COPY_IP(&new_entry->T_last_addr, adr);
-  new_entry->destinations.next = &new_entry->destinations;
-  new_entry->destinations.prev = &new_entry->destinations;
+  COPY_IP(&tc->addr, adr);
+  tc->vertex_node.data = tc;
+  tc->vertex_node.key = &tc->addr;
 
-  /* Queue entry */
-  QUEUE_ELEM(tc_table[hash], new_entry);
   /*
-  new_entry->next = tc_table[hash].next;
-  new_entry->prev = tc_table[hash].next->prev;
-  tc_table[hash].next->prev = new_entry;
-  tc_table[hash].next = new_entry;
-  */
+   * Insert into the global tc tree.
+   */
+  avl_insert(&tc_tree, &tc->vertex_node, AVL_DUP_NO);
 
-  return new_entry;
+  /*
+   * Initialize subtree for further edges to come.
+   */
+  avl_init(&tc->edge_tree, avl_comp_default);
+
+  return tc;
+}
+
+/**
+ * format a tc_edge contents into a buffer
+ */
+char *
+olsr_tc_edge_to_string(struct tc_edge_entry *tc_edge)
+{
+  struct tc_entry *tc;
+  static char buff[128];
+
+  tc = tc_edge->tc;
+
+  snprintf(buff, sizeof(buff),
+           "%s > %s, lq %.3f, inv-lq %.3f, etx %.3f",
+           olsr_ip_to_string(&tc->addr),
+           olsr_ip_to_string(&tc_edge->T_dest_addr),
+           tc_edge->link_quality,
+           tc_edge->inverse_link_quality,
+           tc_edge->etx);
+
+  return buff;
+}
+
+/**
+ * Set the TC edge expiration timer.
+ *
+ * all timer setting shall be done using this function since
+ * it does also the correct insertion and sorting in the timer tree.
+ * The timer param is a relative timer expressed in milliseconds.
+ */
+static void
+olsr_set_tc_edge_timer(struct tc_edge_entry *tc_edge, unsigned int timer)
+{
+  tc_edge->T_time = GET_TIMESTAMP(timer);
+}
+
+/*
+ * If the edge does not have a minimum acceptable link quality
+ * set the etx cost to infinity such that it gets ignored during
+ * SPF calculation.
+ */
+void
+olsr_calc_tc_edge_entry_etx(struct tc_edge_entry *tc_edge)
+{
+  if (tc_edge->link_quality >= MIN_LINK_QUALITY &&
+      tc_edge->inverse_link_quality >= MIN_LINK_QUALITY) {
+        
+    tc_edge->etx = 1.0 / (tc_edge->link_quality * tc_edge->inverse_link_quality);
+  } else {
+    tc_edge->etx = INFINITE_ETX;
+  }
+}
+
+/**
+ * Add a new tc_edge_entry to the tc_edge_tree
+ *
+ * @param (last)adr address of the entry
+ * @return a pointer to the created entry
+ */
+struct tc_edge_entry *
+olsr_add_tc_edge_entry(struct tc_entry *tc, union olsr_ip_addr *addr,
+                       olsr_u16_t ansn, unsigned int vtime,
+                       float link_quality, float neigh_link_quality)
+{
+  struct tc_entry *tc_neighbor;
+  struct tc_edge_entry *tc_edge, *tc_edge_inv;
+
+  tc_edge = olsr_malloc(sizeof(struct tc_edge_entry), "add TC edge");
+  if (!tc_edge) {
+    return NULL;
+  }
+  memset(tc_edge, 0, sizeof(struct tc_edge_entry));
+
+  /* Fill entry */
+  COPY_IP(&tc_edge->T_dest_addr, addr);
+  olsr_set_tc_edge_timer(tc_edge, vtime*1000);
+  tc_edge->T_seq = ansn;
+  tc_edge->edge_node.data = tc_edge;
+  tc_edge->edge_node.key = &tc_edge->T_dest_addr;
+
+  if (olsr_cnf->lq_level > 0) {
+
+    tc_edge->link_quality = neigh_link_quality;
+    tc_edge->inverse_link_quality = link_quality;
+
+  } else {
+
+    /*
+     * Set the link quality to 1.0 to mimikry a hopcount alike
+     * behaviour for nodes not supporting the LQ extensions.
+     */
+    tc_edge->link_quality = 1.0;
+    tc_edge->inverse_link_quality = 1.0;
+  }
+
+  /*
+   * Insert into the edge tree.
+   */
+  avl_insert(&tc->edge_tree, &tc_edge->edge_node, AVL_DUP_NO);
+
+  /*
+   * Connect backpointer.
+   */
+  tc_edge->tc = tc;
+
+#if 0
+  OLSR_PRINTF(1, "TC: add edge entry %s\n", olsr_tc_edge_to_string(tc_edge));
+#endif
+
+  /*
+   * Check if the neighboring router and the inverse edge is in the lsdb.
+   * Create short cuts to the inverse edge for faster SPF execution.
+   */
+  tc_neighbor = olsr_lookup_tc_entry(&tc_edge->T_dest_addr);
+  if (tc_neighbor) {
+
+#if 0
+    OLSR_PRINTF(1, "TC:   found neighbor tc_entry %s\n",
+                olsr_ip_to_string(&tc_neighbor->addr));
+#endif
+
+    tc_edge_inv = olsr_lookup_tc_edge(tc_neighbor, &tc->addr);
+    if (tc_edge_inv) {
+
+#if 0
+      OLSR_PRINTF(1, "TC:   found inverse edge for %s\n",
+                  olsr_ip_to_string(&tc_edge_inv->T_dest_addr));
+#endif
+
+      /*
+       * Connect the edges mutually.
+       */
+      tc_edge_inv->edge_inv = tc_edge;
+      tc_edge->edge_inv = tc_edge_inv;
+
+    }
+  }
+
+  /*
+   * Update the etx.
+   */
+  olsr_calc_tc_edge_entry_etx(tc_edge);
+
+  return tc_edge;
 }
 
 
 /**
- *Delete all destinations that have a
- *lower ANSN than the one in the message
+ * Delete a TC edge entry.
  *
- *@param entry the entry to delete destenations from
- *@param msg the message to fetch the ANSN from
- *
- *@return 1 if any destinations were deleted 0 if not
+ * @param tc the TC entry
+ * @param tc_edge the TC edge entry
  */
-
-int
-olsr_tc_delete_mprs(struct tc_entry *entry, struct tc_message *msg)
+void
+olsr_delete_tc_edge_entry(struct tc_edge_entry *tc_edge)
 {
-  struct topo_dst *tmp_dsts, *dst_to_del;
+  struct tc_entry *tc;
+  struct tc_edge_entry *tc_edge_inv;
+
+#if 0
+  OLSR_PRINTF(1, "TC: del edge entry %s\n", olsr_tc_edge_to_string(tc_edge));
+#endif
+
+  tc = tc_edge->tc;
+  avl_delete(&tc->edge_tree, &tc_edge->edge_node);
+
+  /*
+   * Clear the backpointer of our inverse edge.
+   */
+  tc_edge_inv = tc_edge->edge_inv;
+  if (tc_edge_inv) {
+    tc_edge_inv->edge_inv = NULL;
+  }
+
+  /*
+   * Delete the tc_entry if the last edge is gone.
+   */
+  if (!tc_edge->tc->edge_tree.count) {
+
+    /*
+     * Only remove remote tc entries.
+     */
+    if (tc_edge->tc != tc_myself) {
+      olsr_delete_tc_entry(tc_edge->tc);
+    }
+  }
+
+  free(tc_edge);
+}
+
+
+/**
+ * Delete all destinations that have a
+ * lower ANSN than the one in the message
+ *
+ * @param tc the entry to delete edges from
+ * @param msg the message to fetch the ANSN from
+ * @return 1 if any destinations were deleted 0 if not
+ */
+int
+olsr_tc_delete_mprs(struct tc_entry *tc, struct tc_message *msg)
+{
+  struct tc_edge_entry *tc_edge;
   int retval;
 
-  //OLSR_PRINTF(5, "TC: deleting MPRS\n");
+#if 0
+  OLSR_PRINTF(5, "TC: deleting MPRS\n");
+#endif
 
-  tmp_dsts = entry->destinations.next;
   retval = 0;
 
-  while(tmp_dsts != &entry->destinations)
-    {
-      if(SEQNO_GREATER_THAN(msg->ansn, tmp_dsts->T_seq))
-	{
-	  /* Delete entry */
-	  dst_to_del = tmp_dsts;
-	  tmp_dsts = tmp_dsts->next;
+  OLSR_FOR_ALL_TC_EDGE_ENTRIES(tc, tc_edge) {
 
-	  /* dequeue */
-	  DEQUEUE_ELEM(dst_to_del);
+    if (SEQNO_GREATER_THAN(msg->ansn, tc_edge->T_seq)) {
 
-	  free(dst_to_del);
-	  retval = 1;
-	}
-      else
-	tmp_dsts = tmp_dsts->next;
-
+      /*
+       * Do not delete the edge now, just mark the edge as down.
+       * Downed edges will be ignored by the SPF computation.
+       * It could be that a TC message spans across multiple packets,
+       * which causes an edge delete followed by an edge add.
+       * If the edge gets refreshed in subsequent packets then we have
+       * avoided a two edge transistion.
+       * If the edge really went away then after the garbage collection
+       * timer has expired olsr_time_out_tc_set() will do the needful.
+       */
+      tc_edge->flags |= OLSR_TC_EDGE_DOWN;
+      olsr_set_tc_edge_timer(tc_edge, OLSR_TC_EDGE_GC_TIME);
+      retval = 1;
     }
+  } OLSR_FOR_ALL_TC_EDGE_ENTRIES_END(tc, tc_edge);
 
   return retval;
 }
 
+/*
+ * Determine if a etx change was more than 10%
+ * Need to know this for triggering a SPF calculation.
+ */
+static olsr_bool
+olsr_etx_significant_change(float etx1, float etx2)
+{
+  float rel_lq;
+
+  if (etx1 == 0.0 || etx2 == 0.0) {
+    return OLSR_TRUE;
+  }
+
+  rel_lq = etx1 / etx2;
+
+  if (rel_lq > 1.1 || rel_lq < 0.9) {
+    return OLSR_TRUE;
+  }
+
+  return OLSR_FALSE;
+}
 
 /**
- *Update the destinations registered on an entry.
- *Creates new dest-entries if not registered.
- *Bases update on a receivied TC message
+ * Update the destinations registered on an entry.
+ * Creates new dest-entries if not registered.
+ * Bases update on a receivied TC message
  *
- *@param entry the TC entry to check
- *@msg the TC message to update by
- *
- *@return 1 if entries are added 0 if not
+ * @param entry the TC entry to check
+ * @msg the TC message to update by
+ * @return 1 if entries are added 0 if not
  */
-
 int
-olsr_tc_update_mprs(struct tc_entry *entry, struct tc_message *msg)
+olsr_tc_update_mprs(struct tc_entry *tc, struct tc_message *msg)
 {
   struct tc_mpr_addr *mprs;
-  struct topo_dst *new_topo_dst, *existing_dst;
-  int retval;
+  struct tc_edge_entry *tc_edge;
+  int edge_change;
 
-  //OLSR_PRINTF(1, "TC: update MPRS\n");
+#if 0
+  OLSR_PRINTF(1, "TC: update MPRS\n");
+#endif
 
-  retval = 0;
-
+  edge_change = 0;
 
   mprs = msg->multipoint_relay_selector_address;
   
   /* Add all the MPRs */
 
-  while(mprs != NULL)
-    {
-      existing_dst = olsr_tc_lookup_dst(entry, &mprs->address);
+  while (mprs) {
 
-      if(existing_dst == NULL)
-	{
-	  /* New entry */
-	  new_topo_dst = olsr_malloc(sizeof(struct topo_dst), "add TC destination");
+    /* First check if we know this edge */
+    tc_edge = olsr_lookup_tc_edge(tc, &mprs->address);
 
-	  memset(new_topo_dst, 0, sizeof(struct topo_dst));
+    if(!tc_edge) {
+      
+      /*
+       * Yet unknown - create it.
+       */
+      olsr_add_tc_edge_entry(tc, &mprs->address, msg->ansn,
+                             (unsigned int )msg->vtime,
+                             mprs->link_quality, mprs->neigh_link_quality);
+      edge_change = 1;
 
-	  COPY_IP(&new_topo_dst->T_dest_addr, &mprs->address);
-	  new_topo_dst->T_time = GET_TIMESTAMP(msg->vtime*1000);
-	  new_topo_dst->T_seq = msg->ansn;
+    } else {
 
-          if (olsr_cnf->lq_level > 0)
-            {
-              new_topo_dst->link_quality = mprs->neigh_link_quality;
-              new_topo_dst->inverse_link_quality = mprs->link_quality;
+      /*
+       * We know this edge - Update entry.
+       */
+      olsr_set_tc_edge_timer(tc_edge, msg->vtime*1000);
+      tc_edge->T_seq = msg->ansn;
 
-              new_topo_dst->saved_link_quality = new_topo_dst->link_quality;
-              new_topo_dst->saved_inverse_link_quality =
-                new_topo_dst->inverse_link_quality;
-            }
+      /*
+       * Clear the (possibly set) down flag.
+       */
+      tc_edge->flags &= ~OLSR_TC_EDGE_DOWN;
 
-	  /* Add to queue */
-	  new_topo_dst->prev = &entry->destinations;
-	  new_topo_dst->next = entry->destinations.next;
-	  entry->destinations.next->prev = new_topo_dst;
-	  entry->destinations.next = new_topo_dst;
+      /*
+       * Determine if the etx change is meaningful enough
+       * in order to trigger a SPF calculation.
+       */
+      if (olsr_etx_significant_change(tc_edge->link_quality,
+                                      mprs->neigh_link_quality)) {
 
-	  retval = 1;
-	}
-      else
-	{
-	  /* Update entry */
-	  existing_dst->T_time = GET_TIMESTAMP(msg->vtime*1000);
-	  existing_dst->T_seq = msg->ansn;
+        if (msg->hop_count <= olsr_cnf->lq_dlimit)
+          edge_change = 1;
+      }
+      tc_edge->link_quality = mprs->neigh_link_quality;
 
-          if (olsr_cnf->lq_level > 0)
-            {
-              double saved_lq, rel_lq;
+      if (olsr_etx_significant_change(tc_edge->inverse_link_quality,
+                                      mprs->link_quality)) {
 
-              saved_lq = existing_dst->saved_link_quality;
+        if (msg->hop_count <= olsr_cnf->lq_dlimit)
+          edge_change = 1;
+      }
+      tc_edge->inverse_link_quality = mprs->link_quality;
 
-              if (saved_lq == 0.0)
-                saved_lq = -1.0;
+      /*
+       * Update the etx.
+       */
+      olsr_calc_tc_edge_entry_etx(tc_edge);
 
-              existing_dst->link_quality = mprs->neigh_link_quality;
+#if 0
+      if (edge_change) {          
+        OLSR_PRINTF(1, "TC:   chg edge entry %s\n",
+                    olsr_tc_edge_to_string(tc_edge));
+      }
+#endif
 
-              rel_lq = existing_dst->link_quality / saved_lq;
-
-              if (rel_lq > 1.1 || rel_lq < 0.9)
-                {
-                  existing_dst->saved_link_quality =
-                    existing_dst->link_quality;
-
-                  if (msg->hop_count <= olsr_cnf->lq_dlimit)
-                    retval = 1;
-
-                  else
-                    OLSR_PRINTF(3, "Skipping Dijkstra (4)\n");
-                }
-
-              saved_lq = existing_dst->saved_inverse_link_quality;
-
-              if (saved_lq == 0.0)
-                saved_lq = -1.0;
-
-              existing_dst->inverse_link_quality = mprs->link_quality;
-
-              rel_lq = existing_dst->inverse_link_quality / saved_lq;
-
-              if (rel_lq > 1.1 || rel_lq < 0.9)
-                {
-                  existing_dst->saved_inverse_link_quality =
-                    existing_dst->inverse_link_quality;
-
-                  if (msg->hop_count <= olsr_cnf->lq_dlimit)
-                    retval = 1;
-
-                  else
-                    OLSR_PRINTF(3, "Skipping Dijkstra (5)\n");
-                }
-            }
-	}
-
-      mprs = mprs->next;
     }
+    mprs = mprs->next;
+  }
 
-  return retval;
+  return edge_change;
 }
 
-
-
 /**
- *Lookup a destination in a TC entry
+ * Lookup an edge hanging off a TC entry.
  *
- *@param entry the entry to check
- *@param dst_addr the destination address to check for
- *
- *@return a pointer to the topo_dst found - or NULL
+ * @param entry the entry to check
+ * @param dst_addr the destination address to check for
+ * @return a pointer to the tc_edge found - or NULL
  */
-struct topo_dst *
-olsr_tc_lookup_dst(struct tc_entry *entry, union olsr_ip_addr *dst_addr)
+struct tc_edge_entry *
+olsr_lookup_tc_edge(struct tc_entry *tc, union olsr_ip_addr *edge_addr)
 {
-  struct topo_dst *dsts;
+  struct avl_node *edge_node;
   
-  //OLSR_PRINTF(1, "TC: lookup dst\n");
+#if 0
+  OLSR_PRINTF(1, "TC: lookup dst\n");
+#endif
 
-  for(dsts = entry->destinations.next; 
-      dsts != &entry->destinations; 
-      dsts = dsts->next)
-    {
-      if(COMP_IP(dst_addr, &dsts->T_dest_addr))
-	return dsts;
-    }
+  edge_node = avl_find(&tc->edge_tree, edge_addr);
+
+  if (edge_node) {
+    return edge_node->data;
+  }
+
   return NULL;
 }
 
 /**
- * Time out entries
+ * Walk the timers and time out entries.
  *
- *@return nada
+ * @return nada
  */
-
 void
 olsr_time_out_tc_set(void)
 {
-  int idx;
+  struct tc_entry *tc;
+  struct tc_edge_entry *tc_edge;
 
-  for(idx=0;idx<HASHSIZE;idx++)
-    {
-      /* For all TC entries */
-      struct tc_entry *entry = tc_table[idx].next;
-      while(entry != &tc_table[idx])
-	{
-          struct tc_entry *entry2;
-	  //printf("INDEX: %d\n", idx);
-	  /* For all destination entries of that TC entry */
-	  int deleted = 0;
-	  struct topo_dst *dst_entry = entry->destinations.next;
-	  while(dst_entry != &entry->destinations)
-	    {
-	      /* If timed out - delete */
-	      if(TIMED_OUT(dst_entry->T_time))
-		{
-                  struct topo_dst *dst_to_delete;
-		  deleted = 1;
-		  /* Dequeue */
-		  DEQUEUE_ELEM(dst_entry);
-		  dst_to_delete = dst_entry;
-		  dst_entry = dst_entry->next;
+  OLSR_FOR_ALL_TC_ENTRIES(tc)
+    OLSR_FOR_ALL_TC_EDGE_ENTRIES(tc, tc_edge) {
 
-		  /* Delete */
-		  free(dst_to_delete);
-
-		  changes_topology = OLSR_TRUE;
-
-		}
-	      else
-		dst_entry = dst_entry->next;
-	    }
-	  /* Delete entry if no destinations */
-	  entry2 = entry;
-	  entry = entry->next;
-	  if(deleted)
-	    olsr_tc_delete_entry_if_empty(entry2);
-	}
+    /*
+     * Delete outdated edges.
+     */
+    if(TIMED_OUT(tc_edge->T_time)) {
+      olsr_delete_tc_edge_entry(tc_edge);
+      changes_topology = OLSR_TRUE;
     }
+  } OLSR_FOR_ALL_TC_EDGE_ENTRIES_END(tc, tc_edge);
+  OLSR_FOR_ALL_TC_ENTRIES_END(tc)
 }
 
-
 /**
- *Print the topology table to stdout
+ * Print the topology table to stdout
  */
 int
 olsr_print_tc_table(void)
 {
-  int i;
+  struct tc_entry *tc;
+  struct tc_edge_entry *tc_edge;
   char *fstr;
   float etx;
   
@@ -443,26 +634,28 @@ olsr_print_tc_table(void)
       fstr = "%-30s%-30s  %5.3f  %5.3f  %.2f\n";
     }
 
-  for (i = 0; i < HASHSIZE; i++)
-    {
-      struct tc_entry *entry;
-      for(entry = tc_table[i].next;entry != &tc_table[i];entry = entry->next)
-        {
-          struct topo_dst *dst_entry;
-          for(dst_entry = entry->destinations.next;dst_entry != &entry->destinations;dst_entry = dst_entry->next)
-            {
-              if (dst_entry->link_quality < MIN_LINK_QUALITY ||
-                  dst_entry->inverse_link_quality < MIN_LINK_QUALITY)
-                etx = 0.0;
-              else
-                etx = 1.0 / (dst_entry->link_quality * dst_entry->inverse_link_quality);
+  OLSR_FOR_ALL_TC_ENTRIES(tc) {
+    OLSR_FOR_ALL_TC_EDGE_ENTRIES(tc, tc_edge) {
 
-              OLSR_PRINTF(1, fstr, olsr_ip_to_string(&entry->T_last_addr),
-                          olsr_ip_to_string(&dst_entry->T_dest_addr),
-                          dst_entry->link_quality, dst_entry->inverse_link_quality,
-                          etx);
-            }
-        }
-    }
+      if (tc_edge->link_quality < MIN_LINK_QUALITY ||
+          tc_edge->inverse_link_quality < MIN_LINK_QUALITY) {
+        etx = 0.0;
+      } else {
+        etx = 1.0 / (tc_edge->link_quality * tc_edge->inverse_link_quality);
+      }
+
+      OLSR_PRINTF(1, fstr, olsr_ip_to_string(&tc->addr),
+                  olsr_ip_to_string(&tc_edge->T_dest_addr),
+                  tc_edge->link_quality, tc_edge->inverse_link_quality, etx);
+
+    } OLSR_FOR_ALL_TC_EDGE_ENTRIES_END(tc, tc_edge);
+  } OLSR_FOR_ALL_TC_ENTRIES_END(tc);
+
   return 1;
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */

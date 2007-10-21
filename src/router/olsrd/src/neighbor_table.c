@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: neighbor_table.c,v 1.33 2007/08/02 21:57:06 bernd67 Exp $
+ * $Id: neighbor_table.c,v 1.34 2007/09/17 22:24:22 bernd67 Exp $
  */
 
 
@@ -60,7 +60,7 @@ olsr_init_neighbor_table(void)
 {
   int i;
 
-  olsr_register_timeout_function(&olsr_time_out_neighborhood_tables);
+  olsr_register_timeout_function(&olsr_time_out_neighborhood_tables, OLSR_TRUE);
   for(i = 0; i < HASHSIZE; i++)
     {
       neighbortable[i].next = &neighbortable[i];

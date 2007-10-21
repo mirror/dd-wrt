@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsr.c,v 1.56 2007/08/01 16:22:57 bernd67 Exp $
+ * $Id: olsr.c,v 1.60 2007/10/16 10:01:29 bernd67 Exp $
  */
 
 /**
@@ -156,7 +156,7 @@ olsr_process_changes(void)
   if (olsr_cnf->debug_level > 0 && olsr_cnf->clear_screen && isatty(1))
   {
       clear_console();
-      printf("%s", OLSRD_VERSION_DATE);
+      printf("       *** %s (%s on %s) ***\n", olsrd_version, build_date, build_host);
   }
 
   if (changes_neighborhood)
@@ -172,38 +172,18 @@ olsr_process_changes(void)
           olsr_calculate_lq_mpr();
         }
 
-      if (olsr_cnf->lq_level < 2)
-        {
-          olsr_calculate_routing_table();
-          olsr_calculate_hna_routes();
-        }
+      olsr_calculate_routing_table();
+      olsr_calculate_hna_routes();
     }
   
-  else if (changes_topology)
+  else if (changes_topology || changes_hna)
     {
       /* calculate the routing table and HNA */
 
-      if (olsr_cnf->lq_level < 2)
-        {
-          olsr_calculate_routing_table();
-          olsr_calculate_hna_routes();
-        }
+        olsr_calculate_routing_table();
+        olsr_calculate_hna_routes();
     }
 
-  else if (changes_hna)
-    {
-      /* update HNA routes */
-
-      if (olsr_cnf->lq_level < 2)
-        {
-          olsr_calculate_hna_routes();
-        }
-    }
-  
-  if (olsr_cnf->lq_level >= 2)
-    {
-      olsr_calculate_lq_routing_table();
-    }
   
   if (olsr_cnf->debug_level > 0)
     {      
@@ -264,8 +244,10 @@ olsr_init_tables(void)
   /* Set avl tree comparator */
   if (olsr_cnf->ipsize == 4) {
     avl_comp_default = NULL;
+    avl_comp_prefix_default = avl_comp_ipv4_prefix;
   } else {
     avl_comp_default = avl_comp_ipv6;
+    avl_comp_prefix_default = avl_comp_ipv6_prefix;
   }
 
   /* Initialize link set */
@@ -282,9 +264,6 @@ olsr_init_tables(void)
 
   /* Initialize two hop table */
   olsr_init_two_hop_table();
-
-  /* Initialize old route table */
-  olsr_init_old_table();
 
   /* Initialize topology */
   olsr_init_tc();
@@ -320,8 +299,11 @@ olsr_forward_message(union olsr_message *m,
   struct neighbor_entry *neighbor;
   int msgsize;
   struct interface *ifn;
+  const int ttl = olsr_cnf->ip_version == AF_INET ? m->v4.ttl : m->v6.ttl;
 
-
+  if (ttl < 2) {
+    return 0;
+  }
   if(!olsr_check_dup_table_fwd(originator, seqno, &in_if->ip_addr))
     {
 #ifdef DEBUG
@@ -415,14 +397,9 @@ olsr_forward_message(union olsr_message *m,
 
 void
 set_buffer_timer(struct interface *ifn)
-{
-  float jitter;
-      
+{      
   /* Set timer */
-  jitter = (float) random()/RAND_MAX;
-  jitter *= olsr_cnf->max_jitter;
-
-  ifn->fwdtimer = GET_TIMESTAMP(jitter*1000);
+  ifn->fwdtimer = GET_TIMESTAMP(random() * olsr_cnf->max_jitter * 1000 / RAND_MAX);
 }
 
 void
@@ -506,7 +483,7 @@ olsr_msgtype_to_string(olsr_u8_t msgtype)
       break;
     }
 
-  snprintf(type, 20, "UNKNOWN(%d)", msgtype);
+  snprintf(type, sizeof(type), "UNKNOWN(%d)", msgtype);
   return type;
 }
 
@@ -532,7 +509,7 @@ olsr_link_to_string(olsr_u8_t linktype)
       break;
     }
 
-  snprintf(type, 20, "UNKNOWN(%d)", linktype);
+  snprintf(type, sizeof(type), "UNKNOWN(%d)", linktype);
   return type;
 }
 
@@ -554,7 +531,7 @@ olsr_status_to_string(olsr_u8_t status)
       break;
     }
 
-  snprintf(type, 20, "UNKNOWN(%d)", status);
+  snprintf(type, sizeof(type), "UNKNOWN(%d)", status);
   return type;
 }
 
@@ -590,9 +567,8 @@ olsr_exit(const char *msg, int val)
 void *
 olsr_malloc(size_t size, const char *id)
 {
-  void *ptr;
-
-  if((ptr = malloc(size)) == 0) 
+  void *ptr = malloc(size);
+  if(ptr == 0) 
     {
       const char * const err_msg = strerror(errno);
       OLSR_PRINTF(1, "OUT OF MEMORY: %s\n", err_msg);

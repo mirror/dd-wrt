@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_pgraph.h,v 1.2 2007/04/20 13:46:03 bernd67 Exp $
+ * $Id: olsrd_pgraph.h,v 1.3 2007/08/30 22:49:12 bernd67 Exp $
  */
 
 /*
@@ -70,21 +70,8 @@
 #include "mid_set.h"
 #include "link_set.h"
 
-extern struct in_addr ipc_accept_ip;
-extern int ipc_port;
+void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size);
 
-extern char netmask[5];
-
-/* Event function to register with the sceduler */
-int
-pcf_event(int, int, int);
-
-void
-ipc_action(int);
-
-char *
-olsr_netmask_to_string(union hna_netmask *);
-
-struct link_entry *olsr_neighbor_best_link(union olsr_ip_addr *main);
+int olsrd_plugin_interface_version(void);
 
 #endif

@@ -41,13 +41,14 @@
  * ------------------------------------------------------------------------- */
 
 #include "olsr_types.h" /* olsr_ip_addr */
+#include "olsrd_plugin.h" /* union set_plugin_parameter_addon */
 #include "interfaces.h" /* struct interface */
 
 struct TBmfInterface;
 
 extern int EnableLocalBroadcast;
 
-int DoLocalBroadcast(const char* enable);
+int DoLocalBroadcast(const char* enable, void* data, set_plugin_parameter_addon addon);
 int IsMulticast(union olsr_ip_addr* ipAddress);
 int IsOlsrOrBmfPacket(unsigned char* ipPacket);
 

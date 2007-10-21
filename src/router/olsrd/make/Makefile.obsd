@@ -21,6 +21,7 @@ LDFLAGS +=	-fPIC
 endif
 
 OS_LIB_PTHREAD =
+OS_CFLAG_PTHREAD =
 OS_LIB_DYNLOAD =
 
 # Local Variables:

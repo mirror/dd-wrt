@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: process_routes.h,v 1.10 2007/01/31 12:36:50 bernd67 Exp $
+ * $Id: process_routes.h,v 1.12 2007/09/16 21:14:25 bernd67 Exp $
  */
 
 #include "routing_table.h"
@@ -47,8 +47,9 @@
 
 #include <sys/ioctl.h>
 
-extern struct rt_entry old_routes[HASHSIZE];
-extern struct rt_entry old_hna[HASHSIZE];
+extern struct list_node add_kernel_list;
+extern struct list_node chg_kernel_list;
+extern struct list_node del_kernel_list;
 
 void
 olsr_init_export_route(void);
@@ -77,32 +78,13 @@ olsr_export_add_route6 (struct rt_entry*);
 int
 olsr_export_del_route6 (struct rt_entry*); 
 
-
-int
-olsr_init_old_table(void);
-
-int
-olsr_find_up_route(struct rt_entry *dst,struct rt_entry *table);
-
-struct destination_n *
-olsr_build_update_list(struct rt_entry *from_table, struct rt_entry *in_table);
-
 void
 olsr_update_kernel_routes(void);
 
-void
-olsr_update_kernel_hna_routes(void);
-
-void
-olsr_move_route_table(struct rt_entry *, struct rt_entry *);
-
-void
-olsr_delete_routes_from_kernel(struct destination_n *delete_kernel_list);
-
-void
-olsr_add_routes_in_kernel(struct destination_n *add_kernel_list);
-
 int
 olsr_delete_all_kernel_routes(void);
+
+olsr_u8_t
+olsr_rt_flags(const struct rt_entry *);
 
 #endif

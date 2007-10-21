@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_conf.c,v 1.54 2007/05/13 22:23:55 bernd67 Exp $
+ * $Id: olsrd_conf.c,v 1.55 2007/09/13 16:08:13 bernd67 Exp $
  */
 
 
@@ -446,6 +446,7 @@ set_default_cnf(struct olsrd_config *cnf)
     cnf->ip_version  = AF_INET;
     cnf->allow_no_interfaces = DEF_ALLOW_NO_INTS;
     cnf->tos = DEF_TOS;
+    cnf->rttable = 254;
     cnf->willingness_auto = DEF_WILL_AUTO;
     cnf->ipc_connections = DEF_IPC_CONNECTIONS;
     cnf->open_ipc = cnf->ipc_connections ? OLSR_TRUE : OLSR_FALSE;
@@ -473,7 +474,11 @@ set_default_cnf(struct olsrd_config *cnf)
     cnf->exit_value = EXIT_SUCCESS;
     cnf->max_tc_vtime = 0.0;
     cnf->ioctl_s = 0;
+#if LINUX_POLICY_ROUTING
+    cnf->rtnl_s = 0;
+#else
     cnf->rts = 0;
+#endif
 }
 
 
@@ -549,6 +554,7 @@ olsrd_print_cnf(struct olsrd_config *cnf)
   else
     printf("No interfaces    : NOT ALLOWED\n");
   printf("TOS              : 0x%02x\n", cnf->tos);
+  printf("RtTable          : 0x%02x\n", cnf->rttable);
   if(cnf->willingness_auto)
     printf("Willingness      : AUTO\n");
   else

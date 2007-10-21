@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_dot_draw.c,v 1.26 2007/07/23 12:58:38 bernd67 Exp $
+ * $Id: olsrd_dot_draw.c,v 1.27 2007/09/13 15:31:58 bernd67 Exp $
  */
 
 /*
@@ -102,7 +102,7 @@ static void
 ipc_print_neigh_link(struct neighbor_entry *neighbor);
 
 static void
-ipc_print_tc_link(struct tc_entry *entry, struct topo_dst *dst_entry);
+ipc_print_tc_link(struct tc_entry *entry, struct tc_edge_entry *dst_entry);
 
 static void
 ipc_print_net(union olsr_ip_addr *, union olsr_ip_addr *, union hna_netmask *);
@@ -297,8 +297,8 @@ pcf_event(int changes_neighborhood,
   int res;
   olsr_u8_t index;
   struct neighbor_entry *neighbor_table_tmp;
-  struct tc_entry *entry;
-  struct topo_dst *dst_entry;
+  struct tc_entry *tc;
+  struct tc_edge_entry *tc_edge;
   struct hna_entry *tmp_hna;
   struct hna_net *tmp_net;
 
@@ -323,22 +323,11 @@ pcf_event(int changes_neighborhood,
 	}
 
       /* Topology */  
-      for(index=0;index<HASHSIZE;index++)
-	{
-	  /* For all TC entries */
-	  entry = tc_table[index].next;
-	  while(entry != &tc_table[index])
-	    {
-	      /* For all destination entries of that TC entry */
-	      dst_entry = entry->destinations.next;
-	      while(dst_entry != &entry->destinations)
-		{
-		  ipc_print_tc_link(entry, dst_entry);
-		  dst_entry = dst_entry->next;
-		}
-	      entry = entry->next;
-	    }
-	}
+      OLSR_FOR_ALL_TC_ENTRIES(tc) {
+          OLSR_FOR_ALL_TC_EDGE_ENTRIES(tc, tc_edge) {
+              ipc_print_tc_link(tc, tc_edge);
+          } OLSR_FOR_ALL_TC_EDGE_ENTRIES_END(tc, tc_edge);
+      } OLSR_FOR_ALL_TC_ENTRIES_END(tc);
 
       /* HNA entries */
       for(index=0;index<HASHSIZE;index++)
@@ -388,13 +377,13 @@ calc_etx(double loss, double neigh_loss)
 
 
 static void
-ipc_print_tc_link(struct tc_entry *entry, struct topo_dst *dst_entry)
+ipc_print_tc_link(struct tc_entry *entry, struct tc_edge_entry *dst_entry)
 {
   char buf[256];
   const char* adr;
   double etx = calc_etx( dst_entry->link_quality, dst_entry->inverse_link_quality );
 
-  adr = olsr_ip_to_string(&entry->T_last_addr);
+  adr = olsr_ip_to_string(&entry->addr);
   sprintf( buf, "\"%s\" -> ", adr );
   ipc_send_str(buf);
   

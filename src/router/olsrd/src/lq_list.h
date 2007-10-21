@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: lq_list.h,v 1.5 2007/02/10 17:36:51 bernd67 Exp $
+ * $Id: lq_list.h,v 1.6 2007/09/05 16:11:10 bernd67 Exp $
  */
 
 #ifndef _LQ_LIST_H
@@ -47,32 +47,18 @@ struct list_node
 {
   struct list_node *next;
   struct list_node *prev;
-
   void *data;
 };
 
-struct list
-{
-  struct list_node *head;
-  struct list_node *tail;
-};
+void list_head_init(struct list_node *);
+void list_node_init(struct list_node *);
+int list_node_on_list(struct list_node *);
+int list_is_empty(struct list_node *);
 
-void list_init(struct list *list);
+void list_add_before(struct list_node *, struct list_node *);
+void list_add_after(struct list_node *, struct list_node *);
 
-#define list_get_head(node) ((node)->head)
-#define list_get_tail(node) ((node)->tail)
-#define list_get_next(node) ((node)->next)
-#define list_get_prev(node) ((node)->prev)
-
-void list_add_head(struct list *list, struct list_node *node);
-void list_add_tail(struct list *list, struct list_node *node);
-
-void list_add_before(struct list *list, struct list_node *pos_node,
-                     struct list_node *node);
-void list_add_after(struct list *list, struct list_node *pos_node,
-                    struct list_node *node);
-
-void list_remove(struct list *list, struct list_node *node);
+void list_remove(struct list_node *);
 
 #endif
 

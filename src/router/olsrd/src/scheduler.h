@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: scheduler.h,v 1.13 2007/04/20 13:46:04 bernd67 Exp $
+ * $Id: scheduler.h,v 1.14 2007/09/17 22:24:22 bernd67 Exp $
  */
 
 
@@ -72,10 +72,13 @@ void
 signal_link_changes(olsr_bool);
 
 int
-olsr_register_timeout_function(void (*)(void));
+olsr_register_timeout_function(void (*)(void), olsr_bool);
 
 int
-olsr_remove_timeout_function(void (*)(void));
+olsr_remove_timeout_function(void (*)(void), olsr_bool);
+
+int
+olsr_register_scheduler_event_dijkstra(void (*)(void *), void *, float, float, olsr_u8_t *);
 
 int
 olsr_register_scheduler_event(void (*)(void *), void *, float, float, olsr_u8_t *);

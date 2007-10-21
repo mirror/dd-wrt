@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: link_set.h,v 1.31 2007/02/10 19:27:32 bernd67 Exp $
+ * $Id: link_set.h,v 1.32 2007/10/05 20:10:24 bernd67 Exp $
  */
 
 
@@ -83,14 +83,13 @@ struct link_entry
   int loss_seqno_valid;
   int loss_missed_hellos;
 
-  int lost_packets;
-  int total_packets;
+  unsigned int lost_packets;
+  unsigned int total_packets;
 
   double loss_link_quality, loss_link_quality2;
   double loss_link_multiplier;
 
-  int loss_window_size;
-  int loss_index;
+  unsigned int loss_index;
 
   unsigned char loss_bitmap[16];
 
@@ -118,32 +117,32 @@ void
 olsr_init_link_set(void);
 
 void
-del_if_link_entries(union olsr_ip_addr *);
+del_if_link_entries(const union olsr_ip_addr *);
 
 struct link_entry *
-get_best_link_to_neighbor(union olsr_ip_addr *);
+get_best_link_to_neighbor(const union olsr_ip_addr *);
 
 struct link_entry *
-lookup_link_entry(union olsr_ip_addr *, union olsr_ip_addr *remote_main, struct interface *);
+lookup_link_entry(const union olsr_ip_addr *, const union olsr_ip_addr *remote_main, const struct interface *);
 
 struct link_entry *
-update_link_entry(union olsr_ip_addr *, union olsr_ip_addr *, struct hello_message *, struct interface *);
+update_link_entry(const union olsr_ip_addr *, const union olsr_ip_addr *, const struct hello_message *, const struct interface *);
 
 int
-check_neighbor_link(union olsr_ip_addr *);
+check_neighbor_link(const union olsr_ip_addr *);
 
 int
-replace_neighbor_link_set(struct neighbor_entry *,
+replace_neighbor_link_set(const struct neighbor_entry *,
 			  struct neighbor_entry *);
 
 int
-lookup_link_status(struct link_entry *);
+lookup_link_status(const struct link_entry *);
 
 void 
 olsr_update_packet_loss_hello_int(struct link_entry *, double);
 
 void 
-olsr_update_packet_loss(union olsr_ip_addr *, struct interface *, olsr_u16_t);
+olsr_update_packet_loss(const union olsr_ip_addr *, const struct interface *, olsr_u16_t);
 
 void 
 olsr_print_link_set(void);

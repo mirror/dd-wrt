@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: plugin_loader.c,v 1.29 2007/08/01 16:16:05 bernd67 Exp $
+ * $Id: plugin_loader.c,v 1.32 2007/09/17 21:57:06 bernd67 Exp $
  */
 
 #include "plugin_loader.h"
@@ -211,7 +211,8 @@ static int olsr_add_dl(struct olsr_plugin *plugin)
 
         plugin->register_param = dlsym(plugin->dlhandle, "olsrd_plugin_register_param");
         if(plugin->register_param == NULL) {
-            OLSR_PRINTF(1, "FAILED: \"%s\"\n", dlerror());
+            OLSR_PRINTF(0, "FAILED: \"%s\"\n", dlerror());
+            return -1;
         } else {
             OLSR_PRINTF(1, "OK\n");
         }
@@ -248,9 +249,12 @@ static int init_olsr_plugin(struct olsr_plugin *entry)
             unsigned int i;
             int rc = 0;
             for (i = 0; i < entry->plugin_parameters_size; i++) {
-                if (strcasecmp(entry->plugin_parameters[i].name, params->key) == 0) {
+                if (0 == entry->plugin_parameters[i].name[0] ||
+                    0 == strcasecmp(entry->plugin_parameters[i].name, params->key))
+                {
                     /* we have found it! */
-                    rc = entry->plugin_parameters[i].set_plugin_parameter(params->value, entry->plugin_parameters[i].data);
+                    rc = entry->plugin_parameters[i].set_plugin_parameter(params->value, entry->plugin_parameters[i].data,
+                        0 == entry->plugin_parameters[i].name[0] ? (set_plugin_parameter_addon)params->key : entry->plugin_parameters[i].addon);
                     if (rc != 0) {
                         fprintf(stderr, "\nFatal error in plugin parameter \"%s\"/\"%s\"\n", params->key, params->value);
                         rv = -1;

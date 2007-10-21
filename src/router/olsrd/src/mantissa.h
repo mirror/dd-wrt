@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: mantissa.h,v 1.9 2005/05/29 12:47:45 br1 Exp $
+ * $Id: mantissa.h,v 1.10 2007/08/28 20:45:17 bernd67 Exp $
  */
 
 
@@ -60,10 +60,8 @@
  * me is the 8 bit mantissa/exponent value
  *
  */
-#define ME_TO_DOUBLE(me) \
-  (double)(VTIME_SCALE_FACTOR*(1+(double)(me>>4)/16)*(double)(1<<(me&0x0F)))
+double me_to_double(const olsr_u8_t);
 
-olsr_u8_t
-double_to_me(double);
+olsr_u8_t double_to_me(const double);
 
 #endif

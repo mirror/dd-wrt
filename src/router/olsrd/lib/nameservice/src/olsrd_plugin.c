@@ -29,7 +29,7 @@
  *
  */
 
-/* $Id: olsrd_plugin.c,v 1.14 2007/07/15 17:41:33 bernd67 Exp $ */
+/* $Id: olsrd_plugin.c,v 1.15 2007/08/25 19:48:42 bernd67 Exp $ */
 
 /*
  * Dynamic linked library for olsr.org olsrd
@@ -45,7 +45,7 @@
 #define PLUGIN_VERSION "0.3"
 #define PLUGIN_AUTHOR   "Bruno Randolf, Jens Nachtigall, Sven-Ola"
 #define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION
-#define PLUGIN_INTERFACE_VERSION 4
+#define PLUGIN_INTERFACE_VERSION 5
 
 
 static void __attribute__ ((constructor)) 

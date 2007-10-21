@@ -37,87 +37,71 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: lq_list.c,v 1.5 2007/02/10 17:36:51 bernd67 Exp $
+ * $Id: lq_list.c,v 1.6 2007/09/05 16:11:10 bernd67 Exp $
  */
 
 #include <stdlib.h>
 #include "lq_list.h"
 
-void list_init(struct list *list)
+/* init a circular list  */
+void list_head_init(struct list_node *node)
 {
-  list->head = NULL;
-  list->tail = NULL;
+  node->prev = node;
+  node->next = node;
 }
 
-void list_add_head(struct list *list, struct list_node *node)
+void list_node_init(struct list_node *node)
 {
-  if (list->head != NULL)
-    list->head->prev = node;
-
-  else
-    list->tail = node;
-
   node->prev = NULL;
-  node->next = list->head;
-
-  list->head = node;
-}
-
-void list_add_tail(struct list *list, struct list_node *node)
-{
-  if (list->tail != NULL)
-    list->tail->next = node;
-
-  else
-    list->head = node;
-
-  node->prev = list->tail;
   node->next = NULL;
-
-  list->tail = node;
 }
 
-void list_add_before(struct list *list, struct list_node *pos_node,
-                     struct list_node *node)
+int list_node_on_list(struct list_node *node)
 {
-  if (pos_node->prev != NULL)
-    pos_node->prev->next = node;
+  if (node->prev || node->next) {
+    return 1;
+  }
 
-  else
-    list->head = node;
-
-  node->prev = pos_node->prev;
-  node->next = pos_node;
-
-  pos_node->prev = node;
+  return 0;
 }
 
-void list_add_after(struct list *list, struct list_node *pos_node,
-                    struct list_node *node)
+int list_is_empty(struct list_node *node)
 {
-  if (pos_node->next != NULL)
-    pos_node->next->prev = node;
+  if (node->prev == node && node->next == node) {
+    return 1;
+  }
 
-  else
-    list->tail = node;
-
-  node->prev = pos_node;
-  node->next = pos_node->next;
-
-  pos_node->next = node;
+  return 0;
 }
 
-void list_remove(struct list *list, struct list_node *node)
+void list_add_after(struct list_node *pos_node, struct list_node *new_node)
 {
-  if (node == list->head)
-    list->head = node->next;
+  new_node->next = pos_node->next;
+  new_node->prev = pos_node;
 
-  else
-    node->prev->next = node->next;
-
-  if (node == list->tail)
-    list->tail = node->prev;
-
-  else
-    node->next->prev = node->prev;
+  pos_node->next->prev = new_node;
+  pos_node->next = new_node;
 }
+
+void list_add_before(struct list_node *pos_node, struct list_node *new_node)
+{
+  new_node->prev = pos_node->prev;
+  new_node->next = pos_node;
+
+  pos_node->prev->next = new_node;
+  pos_node->prev = new_node;
+}
+
+void list_remove(struct list_node *del_node)
+{
+  del_node->next->prev = del_node->prev;
+  del_node->prev->next = del_node->next;
+
+  list_node_init(del_node);
+}
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */
