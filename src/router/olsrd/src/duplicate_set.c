@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: duplicate_set.c,v 1.16 2007/09/17 22:24:22 bernd67 Exp $
+ * $Id: duplicate_set.c,v 1.17 2007/10/21 20:15:51 bernd67 Exp $
  */
 
 
@@ -86,7 +86,7 @@ olsr_init_duplicate_table(void)
  *@return positive on success
  */
 struct dup_entry *
-olsr_add_dup_entry(union olsr_ip_addr *originator, olsr_u16_t seqno)
+olsr_add_dup_entry(const union olsr_ip_addr *originator, const olsr_u16_t seqno)
 {
   olsr_u32_t hash;
   struct dup_entry *new_dup_entry;
@@ -125,7 +125,7 @@ olsr_add_dup_entry(union olsr_ip_addr *originator, olsr_u16_t seqno)
  *
  */
 int
-olsr_check_dup_table_proc(union olsr_ip_addr *originator, olsr_u16_t seqno)
+olsr_check_dup_table_proc(const union olsr_ip_addr *originator, const olsr_u16_t seqno)
 {
   olsr_u32_t hash;
   struct dup_entry *tmp_dup_table;
@@ -149,15 +149,14 @@ olsr_check_dup_table_proc(union olsr_ip_addr *originator, olsr_u16_t seqno)
 }
 
 
-
 /**
  * Check wether or not a message should be forwarded
  *
  */
 int
-olsr_check_dup_table_fwd(union olsr_ip_addr *originator, 
-		     olsr_u16_t seqno,
-		     union olsr_ip_addr *int_addr)
+olsr_check_dup_table_fwd(const union olsr_ip_addr *originator, 
+                         const olsr_u16_t seqno,
+                         const union olsr_ip_addr *int_addr)
 {
   olsr_u32_t hash;
   struct dup_entry *tmp_dup_table;
@@ -192,8 +191,6 @@ olsr_check_dup_table_fwd(union olsr_ip_addr *originator,
 
   return 1;
 }
-
-
 
 
 /**
@@ -256,12 +253,10 @@ olsr_time_out_duplicate_table(void *foo __attribute__((unused)))
 }
 
 
-
-
 int
-olsr_update_dup_entry(union olsr_ip_addr *originator, 
-		      olsr_u16_t seqno, 
-		      union olsr_ip_addr *iface)
+olsr_update_dup_entry(const union olsr_ip_addr *originator, 
+		      const olsr_u16_t seqno, 
+		      const union olsr_ip_addr *iface)
 {
   olsr_u32_t hash;
   struct dup_entry *tmp_dup_table;
@@ -302,12 +297,9 @@ olsr_update_dup_entry(union olsr_ip_addr *originator,
   return 1;
 }
 
-
-
-
 int
-olsr_set_dup_forward(union olsr_ip_addr *originator, 
-		     olsr_u16_t seqno)
+olsr_set_dup_forward(const union olsr_ip_addr *originator, 
+		     const olsr_u16_t seqno)
 {
   olsr_u32_t hash;
   struct dup_entry *tmp_dup_table;

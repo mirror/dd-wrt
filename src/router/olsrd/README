@@ -1,12 +1,16 @@
 
 +====================================================================+
-| README - olsr.org OLSR daemon 0.5.4rc1, 02.08.2007                    |
+| README - olsr.org OLSR daemon 0.5.4, 21.10.2007                    |
 +====================================================================+
 
+Authors:
 Andreas Tonnesen(andreto@olsr.org)
 Thomas Lopatic  (thomas@lopatic.de)
+Aaron Kaplan (aaron@lo-res.org)
+
 
 http://www.olsr.org
+
 
 CONTENTS:
 
@@ -58,6 +62,9 @@ http://sourceforge.net/projects/olsrd/
 
 Olsrd source or binaries can be downloaded from olsr.org. CVS is available
 for the cutting edge features ;-)
+
+The current Olsrd work is done via http://olsr.funkfeuer.at/ in the OLSR-NG
+project.
 
 
 =================
@@ -138,6 +145,8 @@ it with custom actions.
     shared key can participate in the routing.
     You need to have the OpenSSL libs installed to use this plugin.
 
+
+
 ========================
  * LINK QUALITY ROUTING
 ========================
@@ -163,9 +172,9 @@ Future work concentrates on reduction of ressource (ab)use and to make
 it more scalable. Of course additional useful plugins are always
 appreciated.
 
-Future releases of the 0.4 series will be maintainance releases focused
-on bugfixing. Work will soon begin on a 0.5 series where we will focus
-much more on new ideas. 0.4 and 0.5 might coexist for some time. 
+The current track of development is documented in the OLSR-NG 
+project: http://olsr.funkfeuer.at
+
 
 ----------------------------------------------------------------------
  II.  - BUILDING AND RUNNING OLSRD
@@ -186,14 +195,17 @@ for download at olsr.org
 
 Ports exist for all major operating systems:
 - Linux
+- Mac OS X
 - NetBSD/OpenBSD/FreeBSD: ATM the main development occurs on Linux with
          GNU tools so occasionally it needs some minor tweaks to compile
          it on *BSD. Please send patches if you fix problems there.
 - Win32: You need (the relevant parts of) cygwin to compile the daemon
          as such. The installer and GUI needs VisualC++ though.
+         Win32 is the least supported port. Feel free to send patches!
 
 Packages for the operating systems and various distributions are available
 at olsr.org. Feel free to package it and announce it on the mailing lists.
+
 
 ===========
  * PLUGINS
@@ -219,18 +231,18 @@ olsrd		+/+	+/+	+/+	+/+	+/+	?
 olsr_switch	+/+	+/+	+/+	+/+	+/+	?
 ------------------------------------------------------------
 PLUGINS
-bmf		+/+	+/?	+/+	+/+	+/+	?
-dot_draw	+/+	+/?	+/+	+/+	+/+	?
-dyn_gw		+/+	+/?	+/-	+/-	+/-	?
-dyn_gw_plain	+/+	+/?	+/-	+/-	+/-	?
-httpinfo	+/+	+/+	+/+	+/+	+/+	?
-mini		+/+	+/?	+/+	+/+	+/+	?
-nameservice	+/+	+/?	+/+	+/+	+/+	?
-pgraph		+/+	+/+	+/+	+/+	+/+	?
+bmf		+/+	+/?	+/+	+/+	+/+	-
+dot_draw	+/+	+/?	+/+	+/+	+/+	+/+
+dyn_gw		+/+	+/?	+/-	+/-	+/-	+/+
+dyn_gw_plain	+/+	+/?	+/-	+/-	+/-	+/+
+httpinfo	+/+	+/+	+/+	+/+	+/+	+/+
+mini		+/+	+/?	+/+	+/+	+/+	+/+
+nameservice	+/+	+/?	+/+	+/+	+/+	+/+
+pgraph		+/+	+/+	+/+	+/+	+/+	+/+
 quagga		+/+	-/-	+/+	+/+	+/+	?
-secure		+/+	+/+	+/+	+/+	+/+	?
+secure		+/+	+/+	+/+	+/+	+/+	+/+
 tas		+/+	-	-	-	-	?
-txtinfo		+/+	+/+	+/+	+/+	+/+	?
+txtinfo		+/+	+/+	+/+	+/+	+/+	+/+
 ------------------------------------------------------------
 
 LEGEND:   +/+ = compiles/runs
@@ -460,4 +472,4 @@ limitations with respect to testing and maturity apply. Building and
 installing works in the same was as on FreeBSD.
 
 
-$Id: README,v 1.22 2007/09/13 22:52:55 bernd67 Exp $
+$Id: README,v 1.23 2007/10/21 21:16:11 ipo23 Exp $

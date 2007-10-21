@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: link_set.c,v 1.74 2007/10/05 20:10:24 bernd67 Exp $
+ * $Id: link_set.c,v 1.75 2007/10/21 20:09:09 bernd67 Exp $
  */
 
 
@@ -948,6 +948,8 @@ olsr_time_out_hysteresis(void)
 
 void olsr_print_link_set(void)
 {
+#ifndef NODEBUG
+  /* The whole function makes no sense without it. */
   struct link_entry *walker;
   const int addrsize = olsr_cnf->ip_version == AF_INET ? 15 : 39;
 
@@ -976,6 +978,7 @@ void olsr_print_link_set(void)
 		walker->neigh_link_quality,
                 etx);
   }
+#endif
 }
 
 static void update_packet_loss_worker(struct link_entry *entry, int lost)
