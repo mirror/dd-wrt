@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: ipc_frontend.c,v 1.33 2007/08/02 22:07:19 bernd67 Exp $
+ * $Id: ipc_frontend.c,v 1.36 2007/10/13 12:31:04 bernd67 Exp $
  */
 
 /*
@@ -270,11 +270,15 @@ frontend_msgparser(union olsr_message *msg, struct interface *in_if __attribute_
  *@return negative on error
  */
 int
-ipc_route_send_rtentry(union olsr_ip_addr *dst, union olsr_ip_addr *gw, int met, int add, char *int_name)
+ipc_route_send_rtentry(union olsr_ip_addr *dst, union olsr_ip_addr *gw,
+                       int met, int add, const char *int_name)
 {
   struct ipcmsg packet;
-  //int i, x;
   char *tmp;
+
+  if(!olsr_cnf->open_ipc) {
+    return -1;
+  }
 
   if(!ipc_active)
     return 0;
@@ -333,9 +337,7 @@ ipc_route_send_rtentry(union olsr_ip_addr *dst, union olsr_ip_addr *gw, int met,
 static int
 ipc_send_all_routes(int fd)
 {
-  struct rt_entry  *destination;
-  struct interface *ifn;
-  int               idx;
+  struct rt_entry  *rt;
   struct ipcmsg packet;
   char *tmp;
   
@@ -343,99 +345,31 @@ ipc_send_all_routes(int fd)
   if(!ipc_active)
     return 0;
   
-  for(idx=0;idx<HASHSIZE;idx++)
-    {
-      for(destination = routingtable[idx].next;
-	  destination != &routingtable[idx];
-	  destination = destination->next)
-	{
-	  ifn = destination->rt_if;
+  OLSR_FOR_ALL_RT_ENTRIES(rt) {
+
+    memset(&packet, 0, sizeof(struct ipcmsg));
+    packet.size = htons(IPC_PACK_SIZE);
+    packet.msgtype = ROUTE_IPC;
 	  
-
-	  memset(&packet, 0, sizeof(struct ipcmsg));
-	  packet.size = htons(IPC_PACK_SIZE);
-	  packet.msgtype = ROUTE_IPC;
+    COPY_IP(&packet.target_addr, &rt->rt_dst.prefix);
 	  
-	  COPY_IP(&packet.target_addr, &destination->rt_dst);
-	  
-	  packet.add = 1;
+    packet.add = 1;
+    packet.metric = (olsr_u8_t)(rt->rt_best->rtp_metric.hops);
 
-	  if(olsr_cnf->ip_version == AF_INET)
-	    {
-	      packet.metric = (olsr_u8_t)(destination->rt_metric - 1);
-	    }
-	  else
-	    {
-	      packet.metric = (olsr_u8_t)destination->rt_metric;
-	    }
-	  COPY_IP(&packet.gateway_addr, &destination->rt_router);
+    COPY_IP(&packet.gateway_addr, &rt->rt_nexthop.gateway);
 
-	  if(ifn)
-	    memcpy(&packet.device[0], ifn->int_name, 4);
-	  else
-	    memset(&packet.device[0], 0, 4);
+    memcpy(&packet.device[0], if_ifwithindex_name(rt->rt_nexthop.iif_index), 4);
 
-
-	  tmp = (char *) &packet;
+    tmp = (char *) &packet;
   
-	  if (send(fd, tmp, IPC_PACK_SIZE, MSG_NOSIGNAL) < 0) // MSG_NOSIGNAL to avoid sigpipe
-	    {
-	      OLSR_PRINTF(1, "(RT_ENTRY)IPC connection lost!\n");
-	      CLOSE(ipc_conn);
-	      //olsr_cnf->open_ipc = 0;
-	      ipc_active = OLSR_FALSE;
-	      return -1;
-	    }
-
-	}
+    /* MSG_NOSIGNAL to avoid sigpipe */
+    if (send(fd, tmp, IPC_PACK_SIZE, MSG_NOSIGNAL) < 0) {
+      OLSR_PRINTF(1, "(RT_ENTRY)IPC connection lost!\n");
+      CLOSE(ipc_conn);
+      ipc_active = OLSR_FALSE;
+      return -1;
     }
-
-  for(idx=0;idx<HASHSIZE;idx++)
-    {
-      for(destination = hna_routes[idx].next;
-	  destination != &hna_routes[idx];
-	  destination = destination->next)
-	{
-	  ifn = destination->rt_if;
-
-	  packet.size = htons(IPC_PACK_SIZE);
-	  packet.msgtype = ROUTE_IPC;
-	  
-	  COPY_IP(&packet.target_addr, &destination->rt_dst);
-	  
-	  packet.add = 1;
-
-	  if(olsr_cnf->ip_version == AF_INET)
-	    {
-	      packet.metric = (olsr_u8_t)(destination->rt_metric - 1);
-	    }
-	  else
-	    {
-	      packet.metric = (olsr_u8_t)destination->rt_metric;
-	    }
-	  COPY_IP(&packet.gateway_addr, &destination->rt_router);
-
-	  if(ifn)
-	    memcpy(&packet.device[0], ifn->int_name, 4);
-	  else
-	    memset(&packet.device[0], 0, 4);
-
-
-	  tmp = (char *) &packet;
-  
-	  if (send(ipc_conn, tmp, IPC_PACK_SIZE, MSG_NOSIGNAL) < 0) // MSG_NOSIGNAL to avoid sigpipe
-	    {
-	      OLSR_PRINTF(1, "(RT_ENTRY)IPC connection lost!\n");
-	      CLOSE(ipc_conn);
-	      //olsr_cnf->open_ipc = 0;
-	      ipc_active = OLSR_FALSE;
-	      return -1;
-	    }
-
-	}
-    }
-
-
+  } OLSR_FOR_ALL_RT_ENTRIES_END(rt);
   return 1;
 }
 
@@ -549,3 +483,9 @@ shutdown_ipc(void)
   
   return 1;
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */

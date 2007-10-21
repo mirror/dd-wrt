@@ -43,10 +43,11 @@
 /* BMF plugin data */
 #define PLUGIN_NAME "OLSRD Basic Multicast Forwarding (BMF) plugin"
 #define PLUGIN_NAME_SHORT "OLSRD BMF"
-#define PLUGIN_VERSION "1.5 (" __DATE__ " " __TIME__ ")"
+#define PLUGIN_VERSION "1.5.1 (" __DATE__ " " __TIME__ ")"
 #define PLUGIN_COPYRIGHT "  (C) Thales Communications Huizen, Netherlands"
 #define PLUGIN_AUTHOR "  Erik Tromp (eriktromp@users.sourceforge.net)"
 #define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION "\n" PLUGIN_COPYRIGHT "\n" PLUGIN_AUTHOR
+#define PLUGIN_INTERFACE_VERSION 5
 
 /* UDP-Port on which multicast packets are encapsulated */
 #define BMF_ENCAP_PORT 50698

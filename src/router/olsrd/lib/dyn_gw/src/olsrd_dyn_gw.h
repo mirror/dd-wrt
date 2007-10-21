@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_dyn_gw.h,v 1.12 2007/04/20 14:06:18 bernd67 Exp $
+ * $Id: olsrd_dyn_gw.h,v 1.13 2007/09/13 15:41:12 bernd67 Exp $
  */
 
 #ifndef _OLSRD_PLUGIN_TEST
@@ -50,13 +50,10 @@
 
 #define PROCENTRY_ROUTE "/proc/net/route"
 
-int
-olsrd_plugin_init(void);
+int olsrd_plugin_init(void);
 
-int 
-olsrd_plugin_interface_version(void);
+int olsrd_plugin_interface_version(void);
 
-int
-olsrd_plugin_register_param(char *key, char *value);
+void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size);
 
 #endif

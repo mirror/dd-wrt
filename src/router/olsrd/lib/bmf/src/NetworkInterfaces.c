@@ -121,15 +121,17 @@ int CapturePacketsOnOlsrInterfaces = 0;
  * Description: Overrule the default network interface name ("bmf0") of the
  *              EtherTunTap interface
  * Input      : ifname - network interface name (e.g. "mybmf0")
+ *              data - not used
+ *              addon - not used
  * Output     : none
- * Return     : fail (0) or success (1)
+ * Return     : success (0) or fail (1)
  * Data Used  : EtherTunTapIfName
  * ------------------------------------------------------------------------- */
-int SetBmfInterfaceName(const char* ifname)
+int SetBmfInterfaceName(const char* ifname, void* data __attribute__((unused)), set_plugin_parameter_addon addon  __attribute__((unused)))
 {
   strncpy(EtherTunTapIfName, ifname, IFNAMSIZ - 1);
   EtherTunTapIfName[IFNAMSIZ - 1] = '\0'; /* Ensures null termination */
-  return 1;
+  return 0;
 } /* SetBmfInterfaceName */
 
 /* -------------------------------------------------------------------------
@@ -137,12 +139,14 @@ int SetBmfInterfaceName(const char* ifname)
  * Description: Overrule the default IP address and prefix length
  *              ("10.255.255.253/30") of the EtherTunTap interface
  * Input      : ip - IP address string, followed by '/' and prefix length
+ *              data - not used
+ *              addon - not used
  * Output     : none
- * Return     : fail (0) or success (1)
+ * Return     : success (0) or fail (1)
  * Data Used  : EtherTunTapIp, EtherTunTapIpMask, EtherTunTapIpBroadcast,
  *              TunTapIpOverruled
  * ------------------------------------------------------------------------- */
-int SetBmfInterfaceIp(const char* ip)
+int SetBmfInterfaceIp(const char* ip, void* data __attribute__((unused)), set_plugin_parameter_addon addon  __attribute__((unused)))
 {
 #define IPV4_MAX_ADDRLEN 16
 #define IPV4_MAX_PREFIXLEN 32
@@ -162,7 +166,7 @@ int SetBmfInterfaceIp(const char* ip)
   if (slashAt == NULL || slashAt - ip >= IPV4_MAX_ADDRLEN)
   {
     /* No prefix length specified, or IP address too long */
-    return 0;
+    return 1;
   }
 
   strncpy(ipAddr, ip, slashAt - ip);
@@ -170,7 +174,7 @@ int SetBmfInterfaceIp(const char* ip)
   if (inet_aton(ipAddr, &sinaddr) == 0)
   {
     /* Invalid address passed */
-    return 0;
+    return 1;
   }
 
   EtherTunTapIp = ntohl(sinaddr.s_addr);
@@ -179,8 +183,8 @@ int SetBmfInterfaceIp(const char* ip)
   prefixLen = atoi(++slashAt);
   if (prefixLen <= 0 || prefixLen > IPV4_MAX_PREFIXLEN)
   {
-	  return 0;
-	}
+    return 1;
+  }
 
   /* Compose IP subnet mask in host byte order */
   EtherTunTapIpMask = 0;
@@ -198,7 +202,7 @@ int SetBmfInterfaceIp(const char* ip)
 
   TunTapIpOverruled = 1;
 
-  return 1;
+  return 0;
 } /* SetBmfInterfaceIp */
 
 /* -------------------------------------------------------------------------
@@ -206,25 +210,27 @@ int SetBmfInterfaceIp(const char* ip)
  * Description: Overrule the default setting, enabling or disabling the
  *              capturing of packets on OLSR-enabled interfaces.
  * Input      : enable - either "yes" or "no"
+ *              data - not used
+ *              addon - not used
  * Output     : none
- * Return     : fail (0) or success (1)
+ * Return     : success (0) or fail (1)
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-int SetCapturePacketsOnOlsrInterfaces(const char* enable)
+int SetCapturePacketsOnOlsrInterfaces(const char* enable, void* data __attribute__((unused)), set_plugin_parameter_addon addon  __attribute__((unused)))
 {
   if (strcmp(enable, "yes") == 0)
   {
     CapturePacketsOnOlsrInterfaces = 1;
-    return 1;
+    return 0;
   }
   else if (strcmp(enable, "no") == 0)
   {
     CapturePacketsOnOlsrInterfaces = 0;
-    return 1;
+    return 0;
   }
 
   /* Value not recognized */
-  return 0;
+  return 1;
 } /* SetCapturePacketsOnOlsrInterfaces */
 
 /* -------------------------------------------------------------------------
@@ -232,25 +238,27 @@ int SetCapturePacketsOnOlsrInterfaces(const char* enable)
  * Description: Overrule the default BMF mechanism to either BM_BROADCAST or
  *              BM_UNICAST_PROMISCUOUS.
  * Input      : mechanism - either "Broadcast" or "UnicastPromiscuous"
+ *              data - not used
+ *              addon - not used
  * Output     : none
- * Return     : fail (0) or success (1)
+ * Return     : success (0) or fail (1)
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-int SetBmfMechanism(const char* mechanism)
+int SetBmfMechanism(const char* mechanism, void* data __attribute__((unused)), set_plugin_parameter_addon addon  __attribute__((unused)))
 {
   if (strcmp(mechanism, "Broadcast") == 0)
   {
     BmfMechanism = BM_BROADCAST;
-    return 1;
+    return 0;
   }
   else if (strcmp(mechanism, "UnicastPromiscuous") == 0)
   {
     BmfMechanism = BM_UNICAST_PROMISCUOUS;
-    return 1;
+    return 0;
   }
 
   /* Value not recognized */
-  return 0;
+  return 1;
 } /* SetBmfMechanism */
 
 /* -------------------------------------------------------------------------
@@ -402,22 +410,22 @@ static float CalcEtx(float loss, float neigh_loss)
  *                packet
  *              forwardedTo - the IP address of the node to which the BMF packet
  *                was directed
- * Output     : nPossibleNeighbors - number of found possible neighbors
- * Return     : The list of the two best neighbors. If only one best neighbor is
- *              found, the second list entry is NULL. If no neigbors are found,
- *              the first and second list entries are both NULL.
+ * Output     : result - the list of the two best neighbors. If only one best
+ *                neighbor is found, the second list entry is NULL. If no neigbors
+ *                are found, the first and second list entries are both NULL.
+ *              nPossibleNeighbors - number of found possible neighbors
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-struct TBestNeighbors GetBestTwoNeighbors(
+void GetBestTwoNeighbors(
+  struct TBestNeighbors* result,
   struct TBmfInterface* intf,
   union olsr_ip_addr* source,
   union olsr_ip_addr* forwardedBy,
   union olsr_ip_addr* forwardedTo,
   int* nPossibleNeighbors)
 {
-  struct TBestNeighbors result;
-  result.links[0] = NULL;
-  result.links[1] = NULL;
+  result->links[0] = NULL;
+  result->links[1] = NULL;
 
   /* handle the non-LQ case */
 
@@ -489,13 +497,13 @@ struct TBestNeighbors GetBestTwoNeighbors(
 
       /* In the non-LQ case, it is not possible to select neigbors
        * by quality or cost. So just remember the first two found links. */
-      if (result.links[0] == NULL)
+      if (result->links[0] == NULL)
       {
-        result.links[0] = walker;
+        result->links[0] = walker;
       }
-      else if (result.links[1] == NULL)
+      else if (result->links[1] == NULL)
       {
-        result.links[1] = walker;
+        result->links[1] = walker;
       } /* if */
     } /* for */
 
@@ -506,9 +514,9 @@ struct TBestNeighbors GetBestTwoNeighbors(
 #ifdef USING_THALES_LINK_COST_ROUTING
 
     struct link_entry* walker;
-    float previousLinkCost = INFINITE_COST;
-    float bestLinkCost = INFINITE_COST;
-    float oneButBestLinkCost = INFINITE_COST;
+    float previousLinkCost = 2 * INFINITE_COST;
+    float bestLinkCost = 2 * INFINITE_COST;
+    float oneButBestLinkCost = 2 * INFINITE_COST;
     *nPossibleNeighbors = 0;
 
     if (forwardedBy != NULL)
@@ -581,6 +589,17 @@ struct TBestNeighbors GetBestTwoNeighbors(
       }
 
       /* Found a candidate neighbor to direct our packet to */
+
+      if (walker->link_cost >= INFINITE_COST)
+      {
+        OLSR_PRINTF(
+          9,
+          "%s: ----> Not forwarding to %s: link is timing out\n",
+          PLUGIN_NAME_SHORT,
+          olsr_ip_to_string(&walker->neighbor_iface_addr));
+
+        continue; /* for */
+      }
 
       /* Compare costs to check if the candidate neighbor is best reached via 'intf' */
       OLSR_PRINTF(
@@ -670,13 +689,13 @@ struct TBestNeighbors GetBestTwoNeighbors(
       /* Remember the best two links. If all are very bad, remember none. */
       if (walker->link_cost < bestLinkCost)
       {
-        result.links[1] = result.links[0];
-        result.links[0] = walker;
+        result->links[1] = result->links[0];
+        result->links[0] = walker;
         bestLinkCost = walker->link_cost;
       }
       else if (walker->link_cost < oneButBestLinkCost)
       {
-        result.links[1] = walker;
+        result->links[1] = walker;
         oneButBestLinkCost = walker->link_cost;
       } /* if */
     } /* for */
@@ -684,9 +703,9 @@ struct TBestNeighbors GetBestTwoNeighbors(
 #else /* USING_THALES_LINK_COST_ROUTING */
         
     struct link_entry* walker;
-    float previousLinkEtx = INFINITE_ETX;
-    float bestEtx = INFINITE_ETX; 
-    float oneButBestEtx = INFINITE_ETX; 
+    float previousLinkEtx = 2 * INFINITE_ETX;
+    float bestEtx = 2 * INFINITE_ETX; 
+    float oneButBestEtx = 2 * INFINITE_ETX;
     *nPossibleNeighbors = 0;
 
     if (forwardedBy != NULL)
@@ -769,6 +788,17 @@ struct TBestNeighbors GetBestTwoNeighbors(
         walker->loss_link_quality,
         walker->neigh_link_quality);
  
+      if (currEtx >= INFINITE_ETX)
+      {
+        OLSR_PRINTF(
+          9,
+          "%s: ----> Not forwarding to %s: link is timing out\n",
+          PLUGIN_NAME_SHORT,
+          olsr_ip_to_string(&walker->neighbor_iface_addr));
+
+        continue; /* for */
+      }
+
       /* Compare costs to check if the candidate neighbor is best reached via 'intf' */
       OLSR_PRINTF(
         9,
@@ -832,16 +862,16 @@ struct TBestNeighbors GetBestTwoNeighbors(
         tcLastHop = olsr_lookup_tc_entry(MainAddressOf(forwardedBy));
         if (tcLastHop != NULL)
         {
-          struct topo_dst* tcDest;
+          struct tc_edge_entry* tc_edge;
 
-          /* TODO: olsr_tc_lookup_dst() is not thread-safe. */
-          tcDest = olsr_tc_lookup_dst(tcLastHop, MainAddressOf(&walker->neighbor_iface_addr));
+          /* TODO: olsr_lookup_tc_edge() is not thread-safe. */
+          tc_edge = olsr_lookup_tc_edge(tcLastHop, MainAddressOf(&walker->neighbor_iface_addr));
 
-          if (tcDest != NULL)
+          if (tc_edge != NULL)
           {
             float tcEtx = CalcEtx(
-              tcDest->link_quality,
-              tcDest->inverse_link_quality);
+              tc_edge->link_quality,
+              tc_edge->inverse_link_quality);
 
             if (previousLinkEtx + currEtx > tcEtx)
             {
@@ -865,13 +895,13 @@ struct TBestNeighbors GetBestTwoNeighbors(
       /* Remember the best two links. If all are very bad, remember none. */
       if (currEtx < bestEtx)
       {
-        result.links[1] = result.links[0];
-        result.links[0] = walker;
+        result->links[1] = result->links[0];
+        result->links[0] = walker;
         bestEtx = currEtx;
       }
       else if (currEtx < oneButBestEtx)
       {
-        result.links[1] = walker;
+        result->links[1] = walker;
         oneButBestEtx = currEtx;
       } /* if */
     } /* for */
@@ -881,7 +911,7 @@ struct TBestNeighbors GetBestTwoNeighbors(
   } /* if */
 
   /* Display the result of the neighbor search */
-  if (result.links[0] == NULL)
+  if (result->links[0] == NULL)
   {
     OLSR_PRINTF(
       9,
@@ -901,20 +931,19 @@ struct TBestNeighbors GetBestTwoNeighbors(
     OLSR_PRINTF(
       9,
       "%s",
-      olsr_ip_to_string(&result.links[0]->neighbor_iface_addr));
+      olsr_ip_to_string(&result->links[0]->neighbor_iface_addr));
 
-    if (result.links[1] != NULL)
+    if (result->links[1] != NULL)
     {
       OLSR_PRINTF(
         9,
         ", %s",
-        olsr_ip_to_string(&result.links[1]->neighbor_iface_addr));
+        olsr_ip_to_string(&result->links[1]->neighbor_iface_addr));
     } /* if */
 
     OLSR_PRINTF(9, "\n");
   } /* if */
 
-  return result;
 } /* GetBestTwoNeighbors */
 
 /* -------------------------------------------------------------------------
@@ -1734,11 +1763,13 @@ static int nNonOlsrIfs = 0;
  * Description: Add an non-OLSR enabled network interface to the list of BMF-enabled
  *              network interfaces
  * Input      : ifName - network interface (e.g. "eth0")
+ *              data - not used
+ *              addon - not used
  * Output     : none
- * Return     : fail (0) or success (1)
+ * Return     : success (0) or fail (1)
  * Data Used  : NonOlsrIfNames
  * ------------------------------------------------------------------------- */
-int AddNonOlsrBmfIf(const char* ifName)
+int AddNonOlsrBmfIf(const char* ifName, void* data __attribute__((unused)), set_plugin_parameter_addon addon  __attribute__((unused)))
 {
   assert(ifName != NULL);
 
@@ -1749,13 +1780,13 @@ int AddNonOlsrBmfIf(const char* ifName)
       "%s: too many non-OLSR interfaces specified, maximum is %d\n",
       PLUGIN_NAME,
       MAX_NON_OLSR_IFS);
-    return 0;
+    return 1;
   }
 
   strncpy(NonOlsrIfNames[nNonOlsrIfs], ifName, IFNAMSIZ - 1);
   NonOlsrIfNames[nNonOlsrIfs][IFNAMSIZ - 1] = '\0'; /* Ensures null termination */
   nNonOlsrIfs++;
-  return 1;
+  return 0;
 } /* AddNonOlsrBmfIf */
 
 /* -------------------------------------------------------------------------

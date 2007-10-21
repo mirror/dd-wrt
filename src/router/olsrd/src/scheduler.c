@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: scheduler.c,v 1.42 2007/08/19 23:00:21 bernd67 Exp $
+ * $Id: scheduler.c,v 1.43 2007/09/17 22:24:22 bernd67 Exp $
  */
 
 
@@ -326,7 +326,7 @@ olsr_remove_scheduler_event(void (*event_function)(void *),
       if((entry->function == event_function) &&
 	 (entry->param == par) &&
 	 (entry->trigger == trigger) &&
-	 (entry->interval == interval))
+	 (0.0 > interval || entry->interval == interval))
 	{
 	  if(entry == event_functions)
 	    {
@@ -347,12 +347,48 @@ olsr_remove_scheduler_event(void (*event_function)(void *),
   return 0;
 }
 
+/*
+ * Sven-Ola, 2007: Since the original timing and flagging is changed (which
+ * saves lots of CPU time - see LinkQualityDijkstraLimit) the original timeout
+ * functions called every olsr_cnf->polltime uses too much CPU now. Because the
+ * changes_xxx handling is switched off with LQDL, it should be OK to call
+ * all timeout handlers at a much lower rate. To overcome UDP packet loss,
+ * a very low pollrate is used.
+ */
+
+static float dijkstra_initial = 0.0;
 
 int
-olsr_register_timeout_function(void (*time_out_function)(void))
+olsr_register_scheduler_event_dijkstra(void (*event_function)(void *), 
+			      void *par,
+			      float interval, 
+			      float initial, 
+			      olsr_u8_t *trigger)
+{
+  if (1 < olsr_cnf->lq_level && 0.0 < olsr_cnf->lq_dinter)
+  {
+    dijkstra_initial += olsr_cnf->lq_dinter / 10.0;
+    return olsr_register_scheduler_event(event_function, par, olsr_cnf->lq_dinter, dijkstra_initial, trigger);
+  }
+  return olsr_register_scheduler_event(event_function, par, interval, initial, trigger);
+}
+
+int
+olsr_register_timeout_function(void (*time_out_function)(void), olsr_bool dijkstra_limit_ok)
 {
   struct timeout_entry *new_entry;
 
+  if (dijkstra_limit_ok && 1 < olsr_cnf->lq_level && 0.0 < olsr_cnf->lq_dinter)
+  {
+    dijkstra_initial += olsr_cnf->lq_dinter / 10.0;
+    return olsr_register_scheduler_event(
+      (void *)time_out_function,
+      NULL,
+      olsr_cnf->lq_dinter,
+      dijkstra_initial,
+      NULL);
+  }
+  
   /* check that this entry is not added already */
   new_entry = timeout_functions;
   while(new_entry)
@@ -379,10 +415,20 @@ olsr_register_timeout_function(void (*time_out_function)(void))
 
 
 int
-olsr_remove_timeout_function(void (*time_out_function)(void))
+olsr_remove_timeout_function(void (*time_out_function)(void), olsr_bool dijkstra_limit_ok)
 {
   struct timeout_entry *entry, *prev;
 
+  if (dijkstra_limit_ok && 1 < olsr_cnf->lq_level && 0.0 < olsr_cnf->lq_dinter)
+  {
+    return olsr_remove_scheduler_event(
+      (void *)time_out_function,
+      NULL,
+      -1.0,
+      -1.0,
+      NULL);
+  }
+  
   /* check that this entry is not added already */
   entry = timeout_functions;
   prev = NULL;

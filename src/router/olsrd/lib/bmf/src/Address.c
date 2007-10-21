@@ -62,25 +62,27 @@ int EnableLocalBroadcast = 1;
  * Description: Overrule the default setting, enabling or disabling the
  *              flooding of local broadcast packets
  * Input      : enable - either "yes" or "no"
+ *              data - not used
+ *              addon - not used
  * Output     : none
- * Return     : fail (0) or success (1)
+ * Return     : success (0) or fail (1)
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-int DoLocalBroadcast(const char* enable)
+int DoLocalBroadcast(const char* enable, void* data __attribute__((unused)), set_plugin_parameter_addon addon  __attribute__((unused)))
 {
   if (strcmp(enable, "yes") == 0)
   {
     EnableLocalBroadcast = 1;
-    return 1;
+    return 0;
   }
   else if (strcmp(enable, "no") == 0)
   {
     EnableLocalBroadcast = 0;
-    return 1;
+    return 0;
   }
 
   /* Value not recognized */
-  return 0;
+  return 1;
 }
 
 /* -------------------------------------------------------------------------

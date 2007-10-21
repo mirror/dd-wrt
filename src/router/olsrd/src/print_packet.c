@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: print_packet.c,v 1.10 2007/04/22 20:25:48 bernd67 Exp $
+ * $Id: print_packet.c,v 1.12 2007/09/17 22:14:07 bernd67 Exp $
  */
 
 #include "print_packet.h"
@@ -109,7 +109,7 @@ print_olsr_serialized_message(FILE *handle, union olsr_message *msg)
   fprintf(handle, "    Type: %s, size: %d, vtime: %0.2f\n", 
 	  olsr_msgtype_to_string(msg->v4.olsr_msgtype), 
 	  ntohs(msg->v4.olsr_msgsize),
-	  ME_TO_DOUBLE(msg->v4.olsr_vtime));
+	  me_to_double(msg->v4.olsr_vtime));
   fprintf(handle, "    TTL: %d, Hopcnt: %d, seqno: %d\n",
 	  (olsr_cnf->ip_version == AF_INET) ? msg->v4.ttl : msg->v6.ttl,
 	  (olsr_cnf->ip_version == AF_INET) ? msg->v4.hopcnt : msg->v6.hopcnt,
@@ -192,7 +192,7 @@ print_hellomsg(FILE *handle, olsr_u8_t *data, olsr_16_t totsize)
   union olsr_ip_addr *haddr;
   int hellosize = totsize - ((olsr_cnf->ip_version == AF_INET) ? OLSR_MSGHDRSZ_IPV4 : OLSR_MSGHDRSZ_IPV6);
 
-  fprintf(handle, "    +Htime: %0.2f\n", ME_TO_DOUBLE(data[2]));
+  fprintf(handle, "    +Htime: %0.2f\n", me_to_double(data[2]));
 
   fprintf(handle, "    +Willingness: %d\n", data[3]);
 
@@ -259,7 +259,7 @@ print_hellomsg_lq(FILE *handle, olsr_u8_t *data, olsr_16_t totsize)
   union olsr_ip_addr *haddr;
   int hellosize = totsize - ((olsr_cnf->ip_version == AF_INET) ? OLSR_MSGHDRSZ_IPV4 : OLSR_MSGHDRSZ_IPV6);
 
-  fprintf(handle, "    +Htime: %0.2f\n", ME_TO_DOUBLE(data[2]));
+  fprintf(handle, "    +Htime: %0.2f\n", me_to_double(data[2]));
 
   fprintf(handle, "    +Willingness: %d\n", data[3]);
 
@@ -339,7 +339,7 @@ print_olsr_tcmsg_lq(FILE *handle, olsr_u8_t *data, olsr_16_t totsize)
       fprintf(handle, "    +LQ: %d, ", *data);
       data += 1;
       fprintf(handle, "RLQ: %d\n", *data);
-      data += 2;
+      data += 3;
       remsize -= (olsr_cnf->ipsize + 4);
     }
 

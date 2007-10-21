@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_dyn_gw.c,v 1.21 2007/05/08 23:49:00 bernd67 Exp $
+ * $Id: olsrd_dyn_gw.c,v 1.23 2007/09/17 21:57:05 bernd67 Exp $
  */
 
 /*
@@ -52,6 +52,7 @@
 #include "scheduler.h"
 #include "olsr.h"
 #include "local_hna_set.h"
+#include "defs.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -100,7 +101,7 @@ struct ping_list {
 };
 
 static struct ping_list *
-add_to_ping_list(char *, struct ping_list *);
+add_to_ping_list(const char *, struct ping_list *);
 
 struct hna_list {
   union olsr_ip_addr hna_net;
@@ -133,58 +134,94 @@ olsr_event_doing_hna(void *);
 
 /**
  * read config file parameters
- */  
-int
-olsrd_plugin_register_param(char *key, char *value)
+ */
+static int set_plugin_double(const char *value, void *data, set_plugin_parameter_addon addon __attribute__((unused)))
 {
-  /* foo_addr is only used for call to inet_aton */ 
-  struct in_addr foo_addr;
-  int retval = -1;
-  int i;
-  union olsr_ip_addr temp_net;
-  union olsr_ip_addr temp_netmask;
-  char s_netaddr[16];
-  char s_mask[16];
- 
-  //printf("%s():%s->%s\n",__func__,key,value);
-  
-  if (!strcmp(key, "Interval")) {
-    if (sscanf(value, "%d", &check_interval) == 1) {
-      retval = 1;
+    char *endptr;
+    const double d = strtod(value, &endptr);
+    if (*endptr != '\0' || endptr == value) {
+        OLSR_PRINTF(0, "Illegal double \"%s\"", value);
+        return 1;
     }
-  }else if (!strcmp(key, "Ping")) {
-    /* if value contains a valid IPaddr, then add it to the list */
-    //if (inet_aton(strdup(value), &foo_addr)) {
-	if (inet_aton(value, &foo_addr)) {
-	    /*if first ping without hna then assume inet gateway*/
-		if (the_hna_list==NULL){
-		    temp_net.v4 = INET_NET;
-		    temp_netmask.v4 = INET_PREFIX;
-		    if ((the_hna_list = add_to_hna_list(the_hna_list,&temp_net,&temp_netmask))==NULL)
-			    return retval;
-		}
-		the_hna_list->ping_hosts=add_to_ping_list(value, the_hna_list->ping_hosts);
-		retval = 1;
+    if (data != NULL) {
+        double *v = data;
+        *v = d;
+        OLSR_PRINTF(1, "%s double %lf\n", "Got", d);
+    } else {
+        OLSR_PRINTF(0, "%s double %lf\n", "Ignored", d);
     }
-  }else if (!strcmp(key, "HNA")) {
-	  //192.168.1.0  255.255.255.0
-	  i=sscanf(value,"%15s %15s",s_netaddr,s_mask);
-	  //printf("%s():i:%i; net:%s; mask:%s\n",__func__,i,s_netaddr,s_mask);
-	  if (inet_aton(s_netaddr, &foo_addr)) {
-		  temp_net.v4=foo_addr.s_addr;
-		  //printf("GOT: %s(%08x)",inet_ntoa(foo_addr),foo_addr.s_addr);
-		  if (inet_aton(s_mask, &foo_addr)) {
-			  temp_netmask.v4=foo_addr.s_addr;
-			  //printf("/%s(%08x)\n",inet_ntoa(foo_addr),foo_addr.s_addr);
-			  //printf("%s():got->%s/%s\n",__func__,olsr_ip_to_string((union olsr_ip_addr *)&));
-			  if ((the_hna_list = add_to_hna_list(the_hna_list,&temp_net,&temp_netmask))!=NULL)
-				  retval = 1;
-		  }
-	  }
-  }
-  return retval;
+    return 0;
 }
 
+static int set_plugin_ping(const char *value, void *data __attribute__((unused)), set_plugin_parameter_addon addon __attribute__((unused)))
+{
+    union olsr_ip_addr foo_addr;
+
+    if (inet_pton(olsr_cnf->ip_version, value, &foo_addr) <= 0) {
+        OLSR_PRINTF(0, "Illegal IP address \"%s\"", value);
+        return 1;
+    }
+    /*if first ping without hna then assume inet gateway*/
+    if (the_hna_list == NULL){
+        union olsr_ip_addr temp_net;
+        union olsr_ip_addr temp_netmask;
+        temp_net.v4 = INET_NET;
+        temp_netmask.v4 = INET_PREFIX;
+        the_hna_list = add_to_hna_list(the_hna_list, &temp_net, &temp_netmask);
+        if (the_hna_list == NULL) {
+            return 1;
+        }
+    }
+    the_hna_list->ping_hosts = add_to_ping_list(value, the_hna_list->ping_hosts);
+    return 0;
+}
+
+static int set_plugin_hna(const char *value, void *data __attribute__((unused)), set_plugin_parameter_addon addon __attribute__((unused)))
+{
+    union olsr_ip_addr temp_net;
+    union olsr_ip_addr temp_netmask;
+    char s_netaddr[128];
+    char s_mask[128];
+
+    //192.168.1.0  255.255.255.0
+    int i = sscanf(value,"%128s %128s", s_netaddr, s_mask);
+    if (i != 2) {
+        OLSR_PRINTF(0, "Cannot get IP address and netmask from \"%s\"", value);
+        return 1;
+    }
+
+    //printf("%s():i:%i; net:%s; mask:%s\n",__func__,i,s_netaddr,s_mask);
+    if (inet_pton(olsr_cnf->ip_version, s_netaddr, &temp_net) <= 0) {
+        OLSR_PRINTF(0, "Illegal IP address \"%s\"", s_netaddr);
+        return 1;
+    }
+
+    //printf("GOT: %s(%08x)",inet_ntoa(foo_addr),foo_addr.s_addr);
+    if (inet_pton(olsr_cnf->ip_version, s_netaddr, &temp_netmask) <= 0) {
+        OLSR_PRINTF(0, "Illegal netmask \"%s\"", s_netaddr);
+        return 1;
+    }
+
+    //printf("/%s(%08x)\n",inet_ntoa(foo_addr),foo_addr.s_addr);
+    //printf("%s():got->%s/%s\n",__func__,olsr_ip_to_string((union olsr_ip_addr *)&));
+    the_hna_list = add_to_hna_list(the_hna_list, &temp_net, &temp_netmask);
+    if (the_hna_list != NULL) {
+        return 1;
+    }
+    return 0;
+}
+
+static const struct olsrd_plugin_parameters plugin_parameters[] = {
+    { .name = "interval", .set_plugin_parameter = &set_plugin_double, .data = &check_interval },
+    { .name = "ping",     .set_plugin_parameter = &set_plugin_ping,   .data = NULL },
+    { .name = "hna",      .set_plugin_parameter = &set_plugin_hna,    .data = NULL },
+};
+
+void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size)
+{
+    *params = plugin_parameters;
+    *size = sizeof(plugin_parameters)/sizeof(*plugin_parameters);
+}
 
 /**
  *Do initialization here
@@ -375,7 +412,7 @@ ping_is_possible(struct ping_list *the_ping_list)
 
 /* add the valid IPs to the head of the list */
 static struct ping_list *
-add_to_ping_list(char *ping_address, struct ping_list *the_ping_list)
+add_to_ping_list(const char *ping_address, struct ping_list *the_ping_list)
 {
   struct ping_list *new = malloc(sizeof(struct ping_list));
   if(!new)

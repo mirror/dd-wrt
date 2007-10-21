@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: net_olsr.c,v 1.26 2007/08/19 23:00:22 bernd67 Exp $
+ * $Id: net_olsr.c,v 1.30 2007/09/16 21:20:16 bernd67 Exp $
  */
 
 #include "net_olsr.h"
@@ -102,40 +102,16 @@ net_set_disp_pack_out(olsr_bool val)
 void
 init_net(void)
 {
-  /* Block invalid addresses */
-  if(olsr_cnf->ip_version == AF_INET)
-    {
-      union olsr_ip_addr addr;
-      int i;
-      /* IPv4 */
-      for(i = 0; deny_ipv4_defaults[i] != NULL; i++)
-	{
-	  if(inet_pton(olsr_cnf->ip_version, deny_ipv4_defaults[i], &addr) <= 0)
-	    {
-	      fprintf(stderr, "Error converting fixed IP %s for deny rule!!\n",
-		      deny_ipv4_defaults[i]);
-	      continue;
-	    }
-	  olsr_add_invalid_address(&addr);
-	}
+  const char * const *defaults = olsr_cnf->ip_version == AF_INET ? deny_ipv4_defaults : deny_ipv6_defaults;
+  
+  for (; *defaults != NULL; defaults++) {
+    union olsr_ip_addr addr;
+    if(inet_pton(olsr_cnf->ip_version, *defaults, &addr) <= 0){
+      fprintf(stderr, "Error converting fixed IP %s for deny rule!!\n", *defaults);
+      continue;
     }
-  else 
-    {
-      union olsr_ip_addr addr;
-      int i;
-      /* IPv6 */
-      for(i = 0; deny_ipv6_defaults[i] != NULL; i++)
-	{
-	  if(inet_pton(olsr_cnf->ip_version, deny_ipv6_defaults[i], &addr) <= 0)
-	    {
-	      fprintf(stderr, "Error converting fixed IP %s for deny rule!!\n",
-		      deny_ipv6_defaults[i]);
-	      continue;
-	    }
-	  olsr_add_invalid_address(&addr);
-	}
-
-    }
+    olsr_add_invalid_address(&addr);
+  }
 }
 
 /**
@@ -521,14 +497,14 @@ olsr_prefix_to_netmask(union olsr_ip_addr *adr, olsr_u16_t prefix)
  * @return the prefix length
  */
 olsr_u16_t
-olsr_netmask_to_prefix(union olsr_ip_addr *adr)
+olsr_netmask_to_prefix(const union olsr_ip_addr *adr)
 {
-  olsr_u16_t prefix;
-  int i, tmp;
+  olsr_u16_t prefix = 0;
+  unsigned int i;
 
   prefix = 0;
 
-  for(i = 0; i < 16; i++)
+  for(i = 0; i < olsr_cnf->ipsize; i++)
     {
       if(adr->v6.s6_addr[i] == 0xff)
 	{
@@ -536,6 +512,7 @@ olsr_netmask_to_prefix(union olsr_ip_addr *adr)
 	}
       else
 	{
+          int tmp;
 	  for(tmp = adr->v6.s6_addr[i];
 	      tmp > 0;
 	      tmp = (tmp << 1) & 0xff)
@@ -551,7 +528,6 @@ olsr_netmask_to_prefix(union olsr_ip_addr *adr)
 }
 
 
-
 /**
  *Converts a sockaddr struct to a string representing
  *the IP address from the sockaddr struct
@@ -562,12 +538,10 @@ olsr_netmask_to_prefix(union olsr_ip_addr *adr)
  *@return a char pointer to the string containing the IP
  */
 char *
-sockaddr_to_string(struct sockaddr *address_to_convert)
+sockaddr_to_string(const struct sockaddr *address_to_convert)
 {
-  struct sockaddr_in           *address;
-  
-  address=(struct sockaddr_in *)address_to_convert; 
-  return(inet_ntoa(address->sin_addr));
+  const struct sockaddr_in *address = (const struct sockaddr_in *)address_to_convert; 
+  return inet_ntoa(address->sin_addr);
   
 }
 
@@ -642,7 +616,7 @@ olsr_ip_to_string(const union olsr_ip_addr *addr)
 
 
 void
-olsr_add_invalid_address(union olsr_ip_addr *adr)
+olsr_add_invalid_address(const union olsr_ip_addr *adr)
 {
   struct deny_address_entry *new_entry;
 
@@ -667,9 +641,9 @@ olsr_add_invalid_address(union olsr_ip_addr *adr)
  *@return a char pointer to the string containing the IP
  */
 olsr_bool
-olsr_validate_address(union olsr_ip_addr *adr)
+olsr_validate_address(const union olsr_ip_addr *adr)
 {
-  struct deny_address_entry *deny_entry = deny_entries;
+  const struct deny_address_entry *deny_entry = deny_entries;
 
   while(deny_entry)
     {
@@ -685,3 +659,9 @@ olsr_validate_address(union olsr_ip_addr *adr)
 
   return OLSR_TRUE;
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */

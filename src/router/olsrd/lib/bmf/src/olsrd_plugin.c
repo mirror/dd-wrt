@@ -49,8 +49,8 @@
 /* BMF includes */
 #include "Bmf.h" /* InitBmf(), CloseBmf(), RegisterBmfParameter() */
 #include "PacketHistory.h" /* InitPacketHistory() */
-
-#define PLUGIN_INTERFACE_VERSION 4
+#include "NetworkInterfaces.h" /* AddNonOlsrBmfIf(), SetBmfInterfaceIp(), ... */
+#include "Address.h" /* DoLocalBroadcast() */
 
 static void __attribute__ ((constructor)) my_init(void);
 static void __attribute__ ((destructor)) my_fini(void);
@@ -116,23 +116,31 @@ void olsr_plugin_exit(void)
   CloseBmf();
 }
 
-/* -------------------------------------------------------------------------
- * Function   : olsrd_plugin_register_param
- * Description: Register parameters from config file
- * Input      : key - the parameter name
- *              value - the parameter value
- * Output     : none
- * Return     : fatal error (<0), minor error (0) or success (>0)
- * Data Used  : none
- * Notes      : Called by main OLSR (init_olsr_plugin) for all plugin parameters
- * ------------------------------------------------------------------------- */
-int olsrd_plugin_register_param(char* key, char* value)
-{
-  assert(key != NULL && value != NULL);
+static const struct olsrd_plugin_parameters plugin_parameters[] = {
+    { .name = "NonOlsrIf", .set_plugin_parameter = &AddNonOlsrBmfIf, .data = NULL },
+    { .name = "DoLocalBroadcast", .set_plugin_parameter = &DoLocalBroadcast, .data = NULL },
+    { .name = "BmfInterface", .set_plugin_parameter = &SetBmfInterfaceName, .data = NULL },
+    { .name = "BmfInterfaceIp", .set_plugin_parameter = &SetBmfInterfaceIp, .data = NULL },
+    { .name = "CapturePacketsOnOlsrInterfaces", .set_plugin_parameter = &SetCapturePacketsOnOlsrInterfaces, .data = NULL },
+    { .name = "BmfMechanism", .set_plugin_parameter = &SetBmfMechanism, .data = NULL },
+};
 
-  return RegisterBmfParameter(key, value);
+/* -------------------------------------------------------------------------
+ * Function   : olsrd_get_plugin_parameters
+ * Description: Return the parameter table and its size
+ * Input      : none
+ * Output     : params - the parameter table
+ *              size - its size in no. of entries
+ * Return     : none
+ * Data Used  : plugin_parameters
+ * Notes      : Called by main OLSR (init_olsr_plugin) for all plugins
+ * ------------------------------------------------------------------------- */
+void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size)
+{
+    *params = plugin_parameters;
+    *size = sizeof(plugin_parameters)/sizeof(*plugin_parameters);
 }
- 
+
 /* -------------------------------------------------------------------------
  * Function   : my_init
  * Description: Plugin constructor

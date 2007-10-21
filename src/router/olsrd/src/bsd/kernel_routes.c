@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: kernel_routes.c,v 1.11 2007/05/02 07:41:20 bernd67 Exp $
+ * $Id: kernel_routes.c,v 1.14 2007/10/04 22:27:31 bernd67 Exp $
  */
 
 
@@ -49,7 +49,7 @@
 
 static unsigned int seq = 0;
 
-static int add_del_route(struct rt_entry *dest, int add)
+static int add_del_route(struct rt_entry *rt, int add)
 {
   struct rt_msghdr *rtm;
   unsigned char buff[512];
@@ -58,17 +58,17 @@ static int add_del_route(struct rt_entry *dest, int add)
   struct sockaddr_dl *sdl;
   struct ifaddrs *addrs;
   struct ifaddrs *awalker;
+  struct rt_nexthop *nexthop;
+  union olsr_ip_addr mask;
   int step, step2;
   int len;
-  char Str1[16], Str2[16], Str3[16];
   int flags;
 
-  inet_ntop(AF_INET, &dest->rt_dst.v4, Str1, 16);
-  inet_ntop(AF_INET, &dest->rt_mask.v4, Str2, 16);
-  inet_ntop(AF_INET, &dest->rt_router.v4, Str3, 16);
-
-  OLSR_PRINTF(1, "%s IPv4 route to %s/%s via %s.\n",
-    (add != 0) ? "Adding" : "Removing", Str1, Str2, Str3);
+  if (add) {
+      OLSR_PRINTF(2, "KERN: Adding %s\n", olsr_rtp_to_string(rt->rt_best));
+  } else {
+      OLSR_PRINTF(2, "KERN: Deleting %s\n", olsr_rt_to_string(rt));
+  }
 
   memset(buff, 0, sizeof (buff));
   memset(&sin, 0, sizeof (sin));
@@ -81,7 +81,7 @@ static int add_del_route(struct rt_entry *dest, int add)
 
   rtm = (struct rt_msghdr *)buff;
 
-  flags = dest->rt_flags;
+  flags = olsr_rt_flags(rt);
 
   // the host is directly reachable, so use cloning and a /32 net
   // routing table entry
@@ -101,14 +101,15 @@ static int add_del_route(struct rt_entry *dest, int add)
 
   walker = buff + sizeof (struct rt_msghdr);
 
-  sin.sin_addr.s_addr = dest->rt_dst.v4;
+  sin.sin_addr.s_addr = rt->rt_dst.prefix.v4;
 
   memcpy(walker, &sin, sizeof (sin));
   walker += step;
 
+  nexthop = olsr_get_nh(rt);
   if ((flags & RTF_GATEWAY) != 0)
   {
-    sin.sin_addr.s_addr = dest->rt_router.v4;
+    sin.sin_addr.s_addr = nexthop->gateway.v4;
 
     memcpy(walker, &sin, sizeof (sin));
     walker += step;
@@ -127,12 +128,12 @@ static int add_del_route(struct rt_entry *dest, int add)
 
     for (awalker = addrs; awalker != NULL; awalker = awalker->ifa_next)
       if (awalker->ifa_addr->sa_family == AF_LINK &&
-          strcmp(awalker->ifa_name, dest->rt_if->int_name) == 0)
+          strcmp(awalker->ifa_name, if_ifwithindex_name(nexthop->iif_index)) == 0)
         break;
 
     if (awalker == NULL)
     {
-      fprintf(stderr, "interface %s not found\n", dest->rt_if->int_name);
+      fprintf(stderr, "interface %s not found\n", if_ifwithindex_name(nexthop->iif_index));
       freeifaddrs(addrs);
       return -1;
     }
@@ -145,7 +146,10 @@ static int add_del_route(struct rt_entry *dest, int add)
     freeifaddrs(addrs);
   }
 
-  sin.sin_addr.s_addr = dest->rt_mask.v4;
+  if (!olsr_prefix_to_netmask(&mask, rt->rt_dst.prefix_len)) {
+    return -1;
+  }
+  sin.sin_addr.s_addr = mask.v4;
 
   memcpy(walker, &sin, sizeof (sin));
   walker += step;
@@ -160,32 +164,32 @@ static int add_del_route(struct rt_entry *dest, int add)
   return 0;
 }
 
-int olsr_ioctl_add_route(struct rt_entry *dest)
+int olsr_ioctl_add_route(struct rt_entry *rt)
 {
-  return add_del_route(dest, 1);
+  return add_del_route(rt, 1);
 }
 
-int olsr_ioctl_del_route(struct rt_entry *dest)
+int olsr_ioctl_del_route(struct rt_entry *rt)
 {
-  return add_del_route(dest, 0);
+  return add_del_route(rt, 0);
 }
 
-static int add_del_route6(struct rt_entry *dest, int add)
+static int add_del_route6(struct rt_entry *rt, int add)
 {
   struct rt_msghdr *rtm;
   unsigned char buff[512];
   unsigned char *walker;
   struct sockaddr_in6 sin6;
   struct sockaddr_dl sdl;
+  struct rt_nexthop *nexthop;
   int step, step_dl;
   int len;
-  char Str1[40], Str2[40];
 
-  inet_ntop(AF_INET6, &dest->rt_dst.v6, Str1, 40);
-  inet_ntop(AF_INET6, &dest->rt_router.v6, Str2, 40);
-
-  OLSR_PRINTF(1, "%s IPv6 route to %s/%d via %s.\n", 
-    (add != 0) ? "Adding" : "Removing", Str1, dest->rt_mask.v6, Str2);
+  if (add) {
+      OLSR_PRINTF(2, "KERN: Adding %s\n", olsr_rtp_to_string(rt->rt_best));
+  } else {
+      OLSR_PRINTF(2, "KERN: Deleting %s\n", olsr_rt_to_string(rt));
+  }
 
   memset(buff, 0, sizeof (buff));
   memset(&sin6, 0, sizeof (sin6));
@@ -203,21 +207,30 @@ static int add_del_route6(struct rt_entry *dest, int add)
   rtm->rtm_version = RTM_VERSION;
   rtm->rtm_type = (add != 0) ? RTM_ADD : RTM_DELETE;
   rtm->rtm_index = 0;
-  rtm->rtm_flags = dest->rt_flags;
+  rtm->rtm_flags = olsr_rt_flags(rt);
   rtm->rtm_addrs = RTA_DST | RTA_GATEWAY;
   rtm->rtm_seq = ++seq;
 
   walker = buff + sizeof (struct rt_msghdr);
 
-  memcpy(&sin6.sin6_addr.s6_addr, &dest->rt_dst.v6, sizeof(struct in6_addr));
+  memcpy(&sin6.sin6_addr.s6_addr, &rt->rt_dst.prefix.v6, sizeof(struct in6_addr));
 
   memcpy(walker, &sin6, sizeof (sin6));
   walker += step;
 
+  nexthop = olsr_get_nh(rt);
   if ((rtm->rtm_flags & RTF_GATEWAY) != 0)
   {
-    memcpy(&sin6.sin6_addr.s6_addr, &dest->rt_router.v6, sizeof(struct in6_addr));
+    memcpy(&sin6.sin6_addr.s6_addr, &nexthop->gateway.v6, sizeof(struct in6_addr));
 
+    memset(&sin6.sin6_addr.s6_addr, 0, 8);
+    sin6.sin6_addr.s6_addr[0] = 0xfe;
+    sin6.sin6_addr.s6_addr[1] = 0x80;
+    sin6.sin6_scope_id = nexthop->iif_index;
+#ifdef __KAME__
+    *(u_int16_t *)&sin6.sin6_addr.s6_addr[2] = htons(sin6.sin6_scope_id);
+    sin6.sin6_scope_id = 0;
+#endif
     memcpy(walker, &sin6, sizeof (sin6));
     walker += step;
   }
@@ -226,47 +239,79 @@ static int add_del_route6(struct rt_entry *dest, int add)
 
   else
   {
-    memcpy(&sin6.sin6_addr.s6_addr, &dest->rt_if->int6_addr.sin6_addr.s6_addr,
-      sizeof(struct in6_addr));
+    memcpy(&sin6.sin6_addr.s6_addr,  &rt->rt_dst.prefix.v6, sizeof(struct in6_addr));
+    memset(&sin6.sin6_addr.s6_addr, 0, 8);
+    sin6.sin6_addr.s6_addr[0] = 0xfe;
+    sin6.sin6_addr.s6_addr[1] = 0x80;
+    sin6.sin6_scope_id = nexthop->iif_index;
+#ifdef __KAME__
+    *(u_int16_t *)&sin6.sin6_addr.s6_addr[2] = htons(sin6.sin6_scope_id);
+    sin6.sin6_scope_id = 0;
+#endif
 
     memcpy(walker, &sin6, sizeof (sin6));
     walker += step;
-    rtm->rtm_flags |= RTF_LLINFO;
+    rtm->rtm_flags |= RTF_GATEWAY;
   }
 
   if ((rtm->rtm_flags & RTF_HOST) == 0)
   {
-    olsr_prefix_to_netmask((union olsr_ip_addr *)&sin6.sin6_addr, dest->rt_mask.v6);
+    olsr_prefix_to_netmask((union olsr_ip_addr *)&sin6.sin6_addr, rt->rt_dst.prefix_len);
     memcpy(walker, &sin6, sizeof (sin6));
     walker += step;
     rtm->rtm_addrs |= RTA_NETMASK;
   }
 
-  if ((rtm->rtm_flags & RTF_GATEWAY) != 0)
-  {
-    strcpy(&sdl.sdl_data[0], dest->rt_if->int_name);
-    sdl.sdl_nlen = (u_char)strlen(dest->rt_if->int_name);
-    memcpy(walker, &sdl, sizeof (sdl));
-    walker += step_dl;
-    rtm->rtm_addrs |= RTA_IFP;
-  }
-
   rtm->rtm_msglen = (unsigned short)(walker - buff);
 
   len = write(olsr_cnf->rts, buff, rtm->rtm_msglen);
-
-  if (len < rtm->rtm_msglen)
+  if (len < 0 && !(errno == EEXIST || errno == ESRCH))
     fprintf(stderr, "cannot write to routing socket: %s\n", strerror(errno));
+
+  /* If we get an EEXIST error while adding, delete and retry. */
+  if (len < 0 && errno == EEXIST && rtm->rtm_type == RTM_ADD) {
+    struct rt_msghdr *drtm;
+    unsigned char dbuff[512];
+
+    memset(dbuff, 0, sizeof (dbuff));
+    drtm = (struct rt_msghdr *)dbuff;
+    drtm->rtm_version = RTM_VERSION;
+    drtm->rtm_type = RTM_DELETE;
+    drtm->rtm_addrs = RTA_DST;
+    drtm->rtm_index = 0;
+    drtm->rtm_flags = olsr_rt_flags(rt);
+    drtm->rtm_seq = ++seq;
+
+    walker = dbuff + sizeof (struct rt_msghdr);
+    memcpy(&sin6.sin6_addr.s6_addr, &rt->rt_dst.prefix.v6,
+	sizeof(struct in6_addr));
+    memcpy(walker, &sin6, sizeof (sin6));
+    walker += step;
+    drtm->rtm_msglen = (unsigned short)(walker - dbuff);
+    len = write(olsr_cnf->rts, dbuff, drtm->rtm_msglen);
+    if (len < 0)
+      fprintf(stderr, "cannot delete route: %s\n", strerror(errno));
+    rtm->rtm_seq = ++seq;
+    len = write(olsr_cnf->rts, buff, rtm->rtm_msglen);
+    if (len < 0)
+      fprintf(stderr, "still cannot add route: %s\n", strerror(errno));
+  }
 
   return 0;
 }
 
-int olsr_ioctl_add_route6(struct rt_entry *dest)
+int olsr_ioctl_add_route6(struct rt_entry *rt)
 {
-  return add_del_route6(dest, 1);
+  return add_del_route6(rt, 1);
 }
 
-int olsr_ioctl_del_route6(struct rt_entry *dest)
+int olsr_ioctl_del_route6(struct rt_entry *rt)
 {
-  return add_del_route6(dest, 0);
+  return add_del_route6(rt, 0);
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */

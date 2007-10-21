@@ -38,7 +38,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: oparse.y,v 1.33 2007/05/13 21:49:59 bernd67 Exp $
+ * $Id: oparse.y,v 1.34 2007/09/13 16:08:13 bernd67 Exp $
  */
 
 
@@ -143,6 +143,7 @@ static int lq_mult_helper(YYSTYPE ip_addr_arg, YYSTYPE mult_arg)
 %token TOK_INTERFACE
 %token TOK_NOINT
 %token TOK_TOS
+%token TOK_RTTABLE
 %token TOK_WILLINGNESS
 %token TOK_IPCCON
 %token TOK_USEHYST
@@ -197,6 +198,7 @@ stmt:       idebug
           | iipversion
           | bnoint
           | atos
+          | arttable
           | awillingness
           | busehyst
           | fhystscale
@@ -828,6 +830,16 @@ atos: TOK_TOS TOK_INTEGER
 {
   PARSER_DEBUG_PRINTF("TOS: %d\n", $2->integer);
   cnf->tos = $2->integer;
+
+  free($2);
+
+}
+;
+
+arttable: TOK_RTTABLE TOK_INTEGER
+{
+  if(PARSER_DEBUG) printf("RtTable: %d\n", $2->integer);
+  cnf->rttable = $2->integer;
 
   free($2);
 

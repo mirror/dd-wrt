@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: html.h,v 1.7 2007/02/04 22:37:36 bernd67 Exp $
+ * $Id: html.h,v 1.11 2007/10/20 20:41:04 bernd67 Exp $
  */
 
 /*
@@ -84,128 +84,103 @@ static const char *httpinfo_css[] =
 
 
 
-static const char *http_ok_head[] =
-{
-  "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n",
-  "<HEAD>\n",
-  "<META http-equiv=\"Content-type\" content=\"text/html; charset=ISO-8859-1\">\n",
-  "<TITLE>olsr.org httpinfo plugin</TITLE>\n",
-  "<link rel=\"icon\" href=\"favicon.ico\" type=\"image/x-icon\">\n",
-  "<link rel=\"shortcut icon\" href=\"favicon.ico\" type=\"image/x-icon\">\n",
-  "<link rel=\"stylesheet\" type=\"text/css\" href=\"httpinfo.css\">\n",
-  "</HEAD>\n",
-  "<body bgcolor=\"#ffffff\" text=\"#000000\">\n",
+static const char * const http_ok_head =
+  "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n"
+  "<HEAD>\n"
+  "<META http-equiv=\"Content-type\" content=\"text/html; charset=ISO-8859-1\">\n"
+  "<TITLE>olsr.org httpinfo plugin</TITLE>\n"
+  "<link rel=\"icon\" href=\"favicon.ico\" type=\"image/x-icon\">\n"
+  "<link rel=\"shortcut icon\" href=\"favicon.ico\" type=\"image/x-icon\">\n"
+  "<link rel=\"stylesheet\" type=\"text/css\" href=\"httpinfo.css\">\n"
+  "</HEAD>\n"
+  "<body bgcolor=\"#ffffff\" text=\"#000000\">\n"
   "<table align=\"center\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"800\">"
-  "<tbody><tr bgcolor=\"#ffffff\">",
-  "<td align=\"left\" height=\"69\" valign=\"middle\" width=\"80%\">",
-  "<font color=\"black\" face=\"timesroman\" size=\"6\">&nbsp;&nbsp;&nbsp;olsr.org OLSR daemon</font></td>",
-  "<td align=\"right\" height=\"69\" valign=\"middle\" width=\"20%\">",
-  "<img src=\"/logo.gif\" alt=\"olsrd logo\"></td>",
-  "</tr>",
-  "<p>",
-  "</table>",
-  "<!-- END HEAD -->\n\n",
-  NULL
-};
+  "<tbody><tr bgcolor=\"#ffffff\">"
+  "<td align=\"left\" height=\"69\" valign=\"middle\" width=\"80%\">"
+  "<font color=\"black\" face=\"timesroman\" size=\"6\">&nbsp;&nbsp;&nbsp;olsr.org OLSR daemon</font></td>"
+  "<td align=\"right\" height=\"69\" valign=\"middle\" width=\"20%\">"
+  "<img src=\"/logo.gif\" alt=\"olsrd logo\"></td>"
+  "</tr>"
+  "</tbody>"
+  "</table>"
+  "<!-- END HEAD -->\n\n";
 
 
 
-static const char *html_tabs[] =
-{
-  "<table align=\"center\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"800\">\n",
-  "<tr bgcolor=\"#ffffff\"><td>\n",
-  "<ul id=\"tabnav\">\n",
-  "<!-- TAB ELEMENTS -->",
-  "<li><a href=\"%s\" %s>%s</a></li>\n",
-  "</ul>\n",
-  "</td></tr>\n",
-  "<tr><td>\n",
-  NULL
-};
+static const char * const html_tabs_prolog =
+  "<table align=\"center\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"800\">\n"
+  "<tr bgcolor=\"#ffffff\"><td>\n"
+  "<ul id=\"tabnav\">\n";
 
+static const char * const html_tabs_epilog =
+  "</ul>\n"
+  "</td></tr>\n"
+  "<tr><td>\n";
 
-
-
-
-static const char *http_ok_tail[] =
-{
-    "\n<!-- START TAIL -->\n\n",
-    "<div id=\"footer\">\n\n",
-    "<p><center>\n",
-    "(C)2005 Andreas T&oslash;nnesen<br>\n",
-    "<a href=\"http://www.olsr.org/\">http://www.olsr.org</a>\n",
-    "</center>\n",
-    "</div>\n",
-    "</body></html>\n",
-    NULL
-};
+static const char * const http_ok_tail =
+  "<!-- START TAIL -->\n"
+  "<div id=\"footer\">\n"
+  "<center>\n"
+  "(C)2005 Andreas T&oslash;nnesen<br/>\n"
+  "<a href=\"http://www.olsr.org/\">http://www.olsr.org</a>\n"
+  "</center>\n"
+  "</div>\n"
+  "</body></html>\n";
 
 static const char *cfgfile_body[] =
 {
     "\n\n",
-    "<b>This is a automatically generated configuration\n",
-    "file based on the current olsrd configuration of this node.<br>\n",
-    "<hr>\n",
+    "<strong>This is a automatically generated configuration\n",
+    "file based on the current olsrd configuration of this node.<br/>\n",
+    "<hr/>\n",
     "<pre>\n",
     "<!-- CFGFILE -->",
-    "</pre>\n<hr>\n",
+    "</pre>\n<hr/>\n",
     NULL
 };
 
 
-static const char *about_frame[] =
+static const char about_frame[] =
 {
-    "<b>" PLUGIN_NAME " version " PLUGIN_VERSION "</b><br>\n"
-    "by Andreas T&oslash;nnesen (C)2005.<br>\n",
+    "<strong>" PLUGIN_NAME " version " PLUGIN_VERSION "</strong><br/>\n"
+    "by Andreas T&oslash;nnesen (C)2005.<br/>\n"
+    "Compiled "
 #ifdef ADMIN_INTERFACE
-    "Compiled <i>with experimental admin interface</i> " __DATE__ "<hr>\n"
-#else
-    "Compiled " __DATE__ "<hr>\n"
+              "<em>with experimental admin interface</em> "
 #endif
-    "This plugin implements a HTTP server that supplies\n",
-    "the client with various dynamic web pages representing\n",
-    "the current olsrd status.<br>The different pages include:\n",
-    "<ul>\n<li><b>Configuration</b> - This page displays information\n",
-    "about the current olsrd configuration. This includes various\n",
-    "olsr settings such as IP version, MID/TC redundancy, hysteresis\n",
-    "etc. Information about the current status of the interfaces on\n",
-    "which olsrd is configured to run is also displayed. Loaded olsrd\n",
-    "plugins are shown with their plugin parameters. Finally all local\n",
-    "HNA entries are shown. These are the networks that the local host\n",
-    "will anounce itself as a gateway to.</li>\n",
-    "<li><b>Routes</b> - This page displays all routes currently set in\n",
-    "the kernel <i>by olsrd</i>. The type of route is also displayed(host\n",
-    "or HNA).</li>\n",
-    "<li><b>Links/Topology</b> - This page displays all information about\n",
-    "links, neighbors, topology, MID and HNA entries.</li>\n",
-    "<li><b>All</b> - Here all the previous pages are displayed as one.\n",
-    "This is to make all information available as easy as possible(for example\n",
-    "for a script) and using as few resources as possible.</li>\n",
+                                                           "%s at %s<hr/>\n"
+    "This plugin implements a HTTP server that supplies\n"
+    "the client with various dynamic web pages representing\n"
+    "the current olsrd status.<br/>The different pages include:\n"
+    "<ul>\n<li><strong>Configuration</strong> - This page displays information\n"
+    "about the current olsrd configuration. This includes various\n"
+    "olsr settings such as IP version, MID/TC redundancy, hysteresis\n"
+    "etc. Information about the current status of the interfaces on\n"
+    "which olsrd is configured to run is also displayed. Loaded olsrd\n"
+    "plugins are shown with their plugin parameters. Finally all local\n"
+    "HNA entries are shown. These are the networks that the local host\n"
+    "will anounce itself as a gateway to.</li>\n"
+    "<li><strong>Routes</strong> - This page displays all routes currently set in\n"
+    "the kernel <em>by olsrd</em>. The type of route is also displayed(host\n"
+    "or HNA).</li>\n"
+    "<li><strong>Links/Topology</strong> - This page displays all information about\n"
+    "links, neighbors, topology, MID and HNA entries.</li>\n"
+    "<li><strong>All</strong> - Here all the previous pages are displayed as one.\n"
+    "This is to make all information available as easy as possible(for example\n"
+    "for a script) and using as few resources as possible.</li>\n"
 #ifdef ADMIN_INTERFACE
-    "<li><b>Admin</b> - This page is highly experimental(and unsecure)!\n",
-    "As of now it is not working at all but it provides a impression of\n",
-    "the future possibilities of httpinfo. This is to be a interface to\n",
+    "<li><strong>Admin</strong> - This page is highly experimental(and unsecure)!\n"
+    "As of now it is not working at all but it provides a impression of\n"
+    "the future possibilities of httpinfo. This is to be a interface to\n"
     "changing olsrd settings in realtime. These settings include various\n"
-    "\"basic\" settings and local HNA settings.\n",
+    "\"basic\" settings and local HNA settings.</li>\n"
 #endif
-    "<li><b>About</b> - this help page.</li>\n</ul>",
-    "<hr>\n",
-    "Send questions or comments to\n",
-    "<a href=\"mailto:olsr-users@olsr.org\">olsr-users@olsr.org</a> or\n",
-    "<a href=\"mailto:andreto-at-olsr.org\">andreto-at-olsr.org</a><br>\n"
-    "Official olsrd homepage: <a href=\"http://www.olsr.org/\">http://www.olsr.org</a><br>\n",
-    NULL
+    "<li><strong>About</strong> - this help page.</li>\n</ul>"
+    "<hr/>\n"
+    "Send questions or comments to\n"
+    "<a href=\"mailto:olsr-users@olsr.org\">olsr-users@olsr.org</a> or\n"
+    "<a href=\"mailto:andreto-at-olsr.org\">andreto-at-olsr.org</a><br/>\n"
+    "Official olsrd homepage: <a href=\"http://www.olsr.org/\">http://www.olsr.org</a><br/>\n"
 };
-
-
-
-static const char *http_frame[] =
-{
-  "<div id=\"maintable\">\n",
-  "<!-- BODY -->",
-  "</div>\n",
-  NULL
-};
-
 
 #endif

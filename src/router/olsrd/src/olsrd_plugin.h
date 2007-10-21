@@ -29,7 +29,7 @@
  *
  */
 
-/* $Id: olsrd_plugin.h,v 1.3 2007/07/15 19:29:37 bernd67 Exp $ */
+/* $Id: olsrd_plugin.h,v 1.6 2007/09/17 21:57:06 bernd67 Exp $ */
 
 /*
  * Example plugin for olsrd.org OLSR daemon
@@ -78,12 +78,18 @@ int olsrd_plugin_register_param(char *key, char *value);
 
 /* Interface version 5 */
 
-typedef int (*set_plugin_parameter)(const char *value, void *data);
+typedef union {
+    unsigned int ui;
+    char *pc;
+} set_plugin_parameter_addon;
+
+typedef int set_plugin_parameter(const char *value, void *data, set_plugin_parameter_addon addon);
 
 struct olsrd_plugin_parameters {
     const char *name;
-    set_plugin_parameter set_plugin_parameter;
+    set_plugin_parameter *set_plugin_parameter;
     void *data;
+    set_plugin_parameter_addon addon;
 };
 
 /**

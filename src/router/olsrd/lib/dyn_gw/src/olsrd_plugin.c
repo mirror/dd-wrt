@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_plugin.c,v 1.14 2007/04/20 14:19:44 bernd67 Exp $
+ * $Id: olsrd_plugin.c,v 1.15 2007/09/13 15:41:12 bernd67 Exp $
  */
 
 #include "olsrd_plugin.h"
@@ -48,15 +48,14 @@
 #define PLUGIN_VERSION "0.4"
 #define PLUGIN_AUTHOR   "Various artists"
 #define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION " by " PLUGIN_AUTHOR
-#define PLUGIN_INTERFACE_VERSION 4
+#define PLUGIN_INTERFACE_VERSION 5
 
 
 /**
  * "Private" declarations
  */
 
-static void __attribute__ ((constructor)) 
-my_init(void);
+static void my_init(void) __attribute__ ((constructor));
 
 
 /*
@@ -79,6 +78,4 @@ my_init(void)
 {
   /* Print plugin info to stdout */
   printf("%s\n", MOD_DESC);
-
-  return;
 }

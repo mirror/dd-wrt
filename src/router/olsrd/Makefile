@@ -35,35 +35,32 @@
 # to the project. For more information see the website or contact
 # the copyright holders.
 #
-# $Id: Makefile,v 1.92 2007/08/19 20:47:09 bernd67 Exp $
+# $Id: Makefile,v 1.101 2007/10/20 11:55:23 bernd67 Exp $
 
-VERS =		0.5.4pre
-
-all:
+VERS =		0.5.5pre
 
 TOPDIR = .
 include Makefile.inc
 
-CPPFLAGS +=	-DVERSION=\"$(VERS)\"
-
+# pass generated variables to save time
 MAKECMD = $(MAKE) OS="$(OS)" WARNINGS="$(WARNINGS)"
 
-LIBS +=		$(OS_LIB_DYNLOAD)
+LIBS +=		$(OS_LIB_DYNLOAD) $(OS_LIB_PTHREAD)
 
 ifeq ($(OS), win32)
 LDFLAGS +=	-Wl,--out-implib=libolsrd.a -Wl,--export-all-symbols
 endif
 
-SWITCHDIR =     src/olsr_switch
+SWITCHDIR =	src/olsr_switch
 CFGDIR =	src/cfgparser
 CFGOBJS = 	$(CFGDIR)/oscan.o $(CFGDIR)/oparse.o $(CFGDIR)/olsrd_conf.o
-CFGDEPS = 	$(wildcard $(CFGDIR)/*.c) $(wildcard $(CFGDIR)/*.h) $(CFGDIR)/oparse.y $(CFGDIR)/oscan.lex
-TAG_SRCS = $(SRCS) $(HDRS) $(wildcard src/cfgparser/*.c) $(wildcard src/cfgparser/*.h) $(wildcard src/olsr_switch/*.c) $(wildcard src/olsr_switch/*.h)
+CFGDEPS = 	$(wildcard $(CFGDIR)/*.[ch]) $(CFGDIR)/oparse.y $(CFGDIR)/oscan.lex
+TAG_SRCS =	$(SRCS) $(HDRS) $(wildcard $(CFGDIR)/*.[ch] $(SWITCHDIR)/*.[ch])
 
 default_target: cfgparser $(EXENAME)
 
-$(EXENAME):		$(OBJS) $(CFGOBJS)
-		$(CC) $(LDFLAGS) -o $@ $(OBJS) $(CFGOBJS) $(LIBS)
+$(EXENAME):	$(OBJS) $(CFGOBJS) src/builddata.o
+		$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 cfgparser:	$(CFGDEPS)
 		$(MAKECMD) -C $(CFGDIR)
@@ -74,15 +71,29 @@ switch:
 $(CFGOBJS):
 		$(MAKECMD) -C $(CFGDIR)
 
+# generate it always
+#	.PHONY: src/builddata.c
+src/builddata.c:
+	@$(RM) "$@"
+	@echo "#include \"defs.h\"" >> "$@" 
+	@echo "const char olsrd_version[] = \"olsr.org - $(VERS)\";" >> "$@" 
+	@date +"const char build_date[] = \"%Y-%m-%d %H:%M:%S\";" >> "$@" 
+	@echo "const char build_host[] = \"$(shell hostname)\";" >> "$@" 
+
+
 .PHONY: help libs clean_libs libs_clean clean uberclean install_libs libs_install install_bin install_olsrd install build_all install_all clean_all 
 
 clean:
-		-rm -f $(OBJS) $(SRCS:%.c=%.d) $(EXENAME) $(EXENAME).exe
+		-rm -f $(OBJS) $(SRCS:%.c=%.d) $(EXENAME) $(EXENAME).exe src/builddata.c
+ifeq ($(OS), win32)
+		-rm -f libolsrd.a
+endif
 		$(MAKECMD) -C $(CFGDIR) clean
 
 uberclean:	clean clean_libs
 		-rm -f $(TAGFILE)
-		find . \( -name '*.[od]' -o -name '*~' \) -print | xargs -r rm -f
+		# BSD-xargs has no "--no-run-if-empty" aka "-r"
+		find . \( -name '*.[od]' -o -name '*~' \) -print0 | xargs -0 rm -f
 		$(MAKECMD) -C $(CFGDIR) uberclean
 		$(MAKECMD) -C $(SWITCHDIR) clean
 
@@ -181,6 +192,6 @@ quagga:
 		$(MAKECMD) -C lib/quagga DESTDIR=$(DESTDIR) install 
 
 
-build_all:	cfgparser libs $(EXENAME) switch
+build_all:	all cfgparser $(EXENAME) switch libs
 install_all:	install install_libs
 clean_all:	uberclean clean_libs
