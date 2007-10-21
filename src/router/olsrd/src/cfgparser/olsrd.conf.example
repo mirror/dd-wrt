@@ -120,6 +120,15 @@ Pollrate	0.05
 
 TcRedundancy	0
 
+#
+# NatThreshold 
+#
+# (currently this is only in the freifunk firmware)
+# If the NAT-Endpoint (the preferred 0/0 HNA 
+# emitting node) is to be changed, the ETX value of the current 0/0 is 
+# compared to the new one. If the ETX difference is too small, the default 
+# route isn't changed. 
+#NatThreshold  0.9
 
 #
 # MPR coverage

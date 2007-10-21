@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: duplicate_set.h,v 1.10 2005/02/20 18:52:18 kattemat Exp $
+ * $Id: duplicate_set.h,v 1.11 2007/10/21 20:15:51 bernd67 Exp $
  */
 
 #ifndef _OLSR_DUP_TABLE
@@ -71,10 +71,10 @@ void
 olsr_time_out_duplicate_table(void *);
 
 int
-olsr_check_dup_table_proc(union olsr_ip_addr *, olsr_u16_t);
+olsr_check_dup_table_proc(const union olsr_ip_addr *, const olsr_u16_t);
 
 int
-olsr_check_dup_table_fwd(union olsr_ip_addr *, olsr_u16_t, union olsr_ip_addr *);
+olsr_check_dup_table_fwd(const union olsr_ip_addr *, const olsr_u16_t, const union olsr_ip_addr *);
 
 void
 olsr_del_dup_entry(struct dup_entry *);
@@ -83,13 +83,13 @@ void
 olsr_print_duplicate_table(void);
 
 struct dup_entry *
-olsr_add_dup_entry(union olsr_ip_addr *, olsr_u16_t);
+olsr_add_dup_entry(const union olsr_ip_addr *, const olsr_u16_t);
 
 int
-olsr_update_dup_entry(union olsr_ip_addr *, olsr_u16_t, union olsr_ip_addr *);
+olsr_update_dup_entry(const union olsr_ip_addr *, const olsr_u16_t, const union olsr_ip_addr *);
 
 int
-olsr_set_dup_forward(union olsr_ip_addr *, olsr_u16_t);
+olsr_set_dup_forward(const union olsr_ip_addr *, const olsr_u16_t);
 
 int
 olsr_check_dup_forward(union olsr_ip_addr *, olsr_u16_t);
