@@ -20,6 +20,7 @@ ifeq ($(CONFIG_IPTABLES),y)
 #	install -D iptables/iptables-restore $(INSTALLDIR)/iptables/usr/sbin/iptables-restore
 #	$(STRIP) $(INSTALLDIR)/iptables/usr/sbin/iptables-restore
 	ln -sf /usr/sbin/iptables $(INSTALLDIR)/iptables/usr/sbin/iptables-restore
+	ln -sf /usr/sbin/iptables $(INSTALLDIR)/iptables/usr/sbin/iptables-save
 
         ifeq ($(CONFIG_L7),y)
 		  install -d $(INSTALLDIR)/iptables/etc/l7-protocols
