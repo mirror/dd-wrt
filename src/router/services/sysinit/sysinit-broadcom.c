@@ -517,7 +517,11 @@ start_sysinit (void)
     case ROUTER_WRT54G_V8:
       nvram_set ("reset_gpio", "7");
       break;
-    
+      
+    case ROUTER_LINKSYS_WTR54GS:
+        eval ("gpio", "enable", "3");  //prevent reboot loop on reset
+        break;
+            
     case ROUTER_WAP54G_V3:
         eval ("gpio", "enable", "0");  //reset gpio 0 for reset button 
           
