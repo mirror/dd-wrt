@@ -1308,6 +1308,9 @@ led_control (int type, int act)
     case ROUTER_LINKSYS_WTR54GS:
       diag_gpio = 0x01;
       break;
+    case ROUTER_WAP54G_V1:
+      diag_gpio = 0x13;
+      break;
     case ROUTER_WAP54G_V3:
       ses_gpio = 0x1c;
       connected_gpio = 0x06;
