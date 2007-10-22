@@ -621,7 +621,10 @@ internal_getRouterBrand ()
     }
 #ifndef HAVE_BUFFALO
 
-  if (boardnum == 2 && nvram_match ("GemtekPmonVer", "10"))
+  char *gemtek = nvram_safe_get ("GemtekPmonVer");
+  uint gemteknum = strtoul (gemtek, NULL, 0);
+  
+  if (boardnum == 2 && gemteknum == 10)
     {
       if (startswith (et0, "00:0C:E5") ||
 	  startswith (et0, "00:0c:e5") ||
@@ -635,20 +638,27 @@ internal_getRouterBrand ()
 	}
       else
 	{
-	  cprintf ("router is Linksys wap54g v1\n");
-	  setRouter ("Linksys WAP54G v1");
+	  cprintf ("router is Linksys wap54g v1.1\n");
+	  setRouter ("Linksys WAP54G v1.1");
 	  return ROUTER_WAP54G_V1;
 	}
     }
 
-  if (boardnum == 2 && nvram_match ("GemtekPmonVer", "1"))
+  if (boardnum == 2 && (startswith (gemtek "RC") || gemteknum == 1))
+    {
+	  cprintf ("router is Linksys wap54g v1\n");
+	  setRouter ("Linksys WAP54G v1");
+	  return ROUTER_WAP54G_V1;
+    }
+        
+  if (boardnum == 2 && gemteknum == 1)
     {
       cprintf ("router is Sitecom wl-105b\n");
       setRouter ("Sitecom WL-105(b)");
       return ROUTER_SITECOM_WL105B;
     }
 
-  if (boardnum == 2 && nvram_match ("GemtekPmonVer", "7")
+  if (boardnum == 2 && gemteknum == 7)
       && nvram_match ("boardtype", "bcm94710dev"))
     {
       cprintf ("router is Sitecom wl-111\n");
@@ -656,7 +666,7 @@ internal_getRouterBrand ()
       return ROUTER_SITECOM_WL111;
     }
 
-  if (nvram_match ("GemtekPmonVer", "9"))	//Must be Motorola wr850g v1 or we800g v1 or Linksys wrt55ag v1
+  if (gemteknum == 9)	//Must be Motorola wr850g v1 or we800g v1 or Linksys wrt55ag v1
     {
       if (startswith (et0, "00:0C:E5") ||
 	  startswith (et0, "00:0c:e5") ||
@@ -665,7 +675,8 @@ internal_getRouterBrand ()
 	  startswith (et0, "00:0C:11") ||
 	  startswith (et0, "00:0c:11") ||
 	  startswith (et0, "00:11:22") ||
-	  startswith (et0, "00:0C:90") || startswith (et0, "00:0c:90"))
+	  startswith (et0, "00:0C:90") ||
+	  startswith (et0, "00:0c:90"))
 	{
 	  if (!strlen (nvram_safe_get ("phyid_num")))
 	    {
