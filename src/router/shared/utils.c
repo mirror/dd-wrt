@@ -651,8 +651,7 @@ internal_getRouterBrand ()
       return ROUTER_SITECOM_WL105B;
     }
 
-  if (boardnum == 2 && gemteknum == 7)
-      && nvram_match ("boardtype", "bcm94710dev"))
+  if (boardnum == 2 && gemteknum == 7 && nvram_match ("boardtype", "bcm94710dev"))
     {
       cprintf ("router is Sitecom wl-111\n");
       setRouter ("Sitecom WL-111");
