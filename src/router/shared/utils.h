@@ -121,7 +121,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Linksys WRT350N (4705 cpu, Gbit switch, PCMCIA radio card, fccid: Linksys Q87-WRT350N)
 #define ROUTER_WRT350N 0x2116
 
-// Linksys WAP54G v1 (4702 cpu, no switch, fccid: Linksys PKW-WAP54G)
+// Linksys WAP54G v1 and v1.1 (4702 cpu, no switch, fccid: Linksys PKW-WAP54G)
+// 2 different boards (same fccid): WX5510_Vxx and WX5541_Vxx
 #define ROUTER_WAP54G_V1 0x2210
 
 // Linksys WAP54G v2 (4712 cpu, no switch, fccid: Linksys Q87-WAP54GV2)
