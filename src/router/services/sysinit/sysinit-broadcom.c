@@ -138,7 +138,12 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       nvram_set ("wl0gpio3", "255");
       nvram_set ("wl0gpio5", "136");
       break;
-
+    case ROUTER_ASUS_WL520GUGC:
+      nvram_set ("wl0gpio0", "0");
+      nvram_set ("wl0gpio1", "136");      
+      nvram_set ("wl0gpio2", "0");
+      nvram_set ("wl0gpio3", "0");
+      break;
     case ROUTER_LINKSYS_WTR54GS:
       nvram_set ("wl0gpio0", "136");
       nvram_set ("wl0gpio1", "0");
@@ -479,6 +484,8 @@ start_sysinit (void)
       nvram_set ("lan_ifnames", "vlan0 eth2");
       nvram_set ("wl0_ifname", "eth2");
       nvram_set ("wan_ifname", "vlan1");	// fix for Asus WL500gPremium WAN problem.
+      if (nvram_match ("vlan1ports", "0 5u"))
+         nvram_set ("vlan1ports", "0 5");
       break;
 
     case ROUTER_ASUS_WL500GD:
@@ -529,7 +536,6 @@ start_sysinit (void)
             
     case ROUTER_WAP54G_V3:
         eval ("gpio", "enable", "0");  //reset gpio 0 for reset button 
-          
 //      nvram_set ("vlan0ports", "1 5*");
 //      nvram_set ("vlan1ports", "4 5");
 //      if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))	// = no lan
