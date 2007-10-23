@@ -624,30 +624,23 @@ internal_getRouterBrand ()
   char *gemtek = nvram_safe_get ("GemtekPmonVer");
   uint gemteknum = strtoul (gemtek, NULL, 0);
   
-  if (boardnum == 2 && gemteknum == 10)
-    {
-      if (startswith (et0, "00:0C:E5") ||
+  if (boardnum == 2 && gemteknum == 10 &&
+     (startswith (et0, "00:0C:E5") ||
 	  startswith (et0, "00:0c:e5") ||
 	  startswith (et0, "00:0C:10") ||
 	  startswith (et0, "00:0c:10") ||
-	  startswith (et0, "00:0C:11") || startswith (et0, "00:0c:11"))
+	  startswith (et0, "00:0C:11") ||
+	  startswith (et0, "00:0c:11")))
 	{
 	  cprintf ("router Motorola WE800G v1\n");
 	  setRouter ("Motorola WE800G v1");
 	  return ROUTER_MOTOROLA_WE800G;
 	}
-      else
-	{
-	  cprintf ("router is Linksys wap54g v1.1\n");
-	  setRouter ("Linksys WAP54G v1.1");
-	  return ROUTER_WAP54G_V1;
-	}
-    }
 
-  if (boardnum == 2 && (startswith (gemtek "RC") || gemteknum == 1))
+  if (boardnum == 2 && (startswith (gemtek "RC") || gemteknum == 1 || gemteknum == 10))
     {
-	  cprintf ("router is Linksys wap54g v1\n");
-	  setRouter ("Linksys WAP54G v1");
+	  cprintf ("router is Linksys wap54g v1.x\n");
+	  setRouter ("Linksys WAP54G v1.x");
 	  return ROUTER_WAP54G_V1;
     }
         
