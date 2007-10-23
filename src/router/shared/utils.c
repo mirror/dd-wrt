@@ -637,7 +637,7 @@ internal_getRouterBrand ()
 	  return ROUTER_MOTOROLA_WE800G;
 	}
 
-  if (boardnum == 2 && (startswith (gemtek "RC") || gemteknum == 1 || gemteknum == 10))
+  if (boardnum == 2 && (startswith (gemtek, "RC") || gemteknum == 1 || gemteknum == 10))
     {
 	  cprintf ("router is Linksys wap54g v1.x\n");
 	  setRouter ("Linksys WAP54G v1.x");
