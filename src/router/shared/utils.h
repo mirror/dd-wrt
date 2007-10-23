@@ -222,6 +222,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Linksys WAP54G v3, WAP54G v3.1 (5352E cpu, fccid: Linksys Q87-WAP54GV3, Q87-WAP54GV31)
 #define ROUTER_WAP54G_V3 0x4210
 
+// Asus WL-520GU / WL-520GC (5354 cpu, fccid: Asus MSQWL520GUGC)
+#define ROUTER_ASUS_WL520GUGC 0x430f
+
 #define NVROUTER "DD_BOARD"
 
 extern char *getBridge (char *ifname);
