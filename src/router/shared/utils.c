@@ -859,8 +859,8 @@ internal_getRouterBrand ()
   if (nvram_match("boardnum", "WAP54GV3_8M_0614") && (nvram_match ("boardtype", "0x0467") || nvram_match ("boardtype", "0x467"))
     && nvram_match ("WAPver", "3"))
     {
-      cprintf ("router is WAP54G v3\n");
-      setRouter ("Linksys WAP54G v3");
+      cprintf ("router is WAP54G v3.x\n");
+      setRouter ("Linksys WAP54G v3.x");
       return ROUTER_WAP54G_V3;
     }
     
@@ -1267,6 +1267,7 @@ led_control (int type, int act)
       diag_gpio = 0x16;		//power led blink / off to indicate factory defaults
       break;
     case ROUTER_ASUS_WL500GD:
+    case ROUTER_ASUS_WL520GUGC:
       diag_gpio = 0x00;		//power led blink / off to indicate factory defaults
       break;
     case ROUTER_ASUS_WL500G_PRE:
