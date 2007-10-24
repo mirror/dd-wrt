@@ -169,6 +169,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       nvram_unset ("wl0gpio0");
       break;
     case ROUTER_BELKIN_F5D7230_V2000:
+    case ROUTER_BELKIN_F5D7231:
       nvram_set ("wl0gpio3", "136");
       break;
     }
@@ -376,7 +377,7 @@ start_sysinit (void)
       nvram_set ("wl0_ifname", "eth1");
       if (nvram_match ("vlan1ports", "0 5u"))
          nvram_set ("vlan1ports", "0 5");
-      if (nvram_match ("boardflags", "0x388"))
+      if (nvram_match ("boardflags", "0x388") || nvram_match ("boardflags", "0x0388"))
          nvram_set ("boardflags", "0x398");
       break;      
      
