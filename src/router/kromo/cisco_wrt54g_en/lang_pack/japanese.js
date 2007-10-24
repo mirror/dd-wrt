@@ -17,7 +17,7 @@ share.disable="無効";
 share.disabled="無効";
 share.usrname="ユーザ名";
 share.passwd="パスワード";
-share.hostname="機器名";
+share.hostname="ホスト名";
 share.vdsl="DTAG VDSL Vlan Tagging";
 share.compression="PPP圧縮";
 share.domainname="ドメイン名";
@@ -30,13 +30,13 @@ share.proto="プロトコル";
 share.ip="IPアドレス";
 share.mac="MACアドレス";
 share.none="無し";
-share.none2="しない";
+share.none2="ノー";
 share.both="両方";
 share.del="削除";
 share.remove="削除";
 share.descr="詳細";
-share.from="開始";
-share.to="終了";
+share.from="From";
+share.to="To";
 share.about="About";
 share.everyday="毎日";
 share.sun="日曜";
@@ -110,7 +110,7 @@ share.router="ルータ";
 share.static_lease="静的割り当て";
 share.srvip="サーバIP";
 share.localdns="LAN側DNS";
-share.minutes="秒";
+share.minutes="分";
 share.oui="OUI 検索";
 share.sttic="固定";
 share.connecting="接続を試みています";
@@ -399,7 +399,7 @@ bmenu.statuSysInfo="システム情報";
 // ** Alive.asp **//
 
 alive.titl="キープアライブ";
-alive.h2="キープアライブ";
+alive.h2="キープアライブ設定";
 alive.legend="定時再起動";
 alive.sevr1="定期的に再起動";
 alive.hour="指定時刻に再起動を行う";
@@ -414,7 +414,7 @@ alive.port="プロキシのポート";
 //help container
 
 halive.right2="再起動を行う時刻を指定します。時刻指定を行うためには、Cronサービスが動作している必要があります。";
-halive.right4="確認を行うIPアドレスは3つまで指定することができます。複数のアドレスを指定する場合はs、<em>スペース</em>で区切って入力してください。<BR/>IPアドレスの入力形式は次の通りです：xxx.xxx.xxx.xxx.";
+halive.right4="確認を行うIPアドレスは3つまで指定することができます。複数のアドレスを指定する場合は、<em>スペース</em>で区切って入力してください。<BR/>IPアドレスの入力形式は次の通りです：xxx.xxx.xxx.xxx.";
 
 
 // ** config.asp **//
@@ -437,8 +437,8 @@ hconfig.right4="このページの「設定保存」で保存したファイル�
 
 // ** DDNS.asp **//
 
-ddns.titl="ダイナミックDNS"
-ddns.h2="ダイナミックDNS (DDNS)";
+ddns.titl="ダイナミックDNS";
+ddns.h2="ダイナミックDNS (DDNS) 設定";
 ddns.legend="DDNS";
 ddns.srv="DDNSサービス名";
 ddns.emailaddr="E-mail";
@@ -447,7 +447,7 @@ ddns.dynamic="動的";
 ddns.custom="手動設定";
 ddns.wildcard="ワイルドカードの利用";
 ddns.statu="DDNS 動作ステータス";
-ddns.system="DynDNS サーバ";
+ddns.system="DDNS サーバ";
 ddns.options="追加オプション";
 ddns.forceupd="自動更新間隔";
 
@@ -484,7 +484,7 @@ hdiag.right2="Webインターフェース上でコンソールコマンドを実
 // ** DMZ.asp **//
 
 dmz.titl="DMZ";
-dmz.h2="DHZ";
+dmz.h2="DMZ設定";
 dmz.legend="DMZネットワーク";
 dmz.serv="DMZアドレスの設定";
 dmz.host="DMZホストのIPアドレス";
@@ -520,7 +520,7 @@ filterIP.ip_range="IPアドレス範囲";
 // ** Filter.asp **//
 
 filter.titl="アクセス制限・タイマ";
-filter.h2="インターネット側";
+filter.h2="インターネットアクセス設定";
 filter.legend="クライアントの指定";
 filter.pol="ポリシー";
 filter.polname="ポリシー名";
@@ -531,7 +531,7 @@ filter.time="時間";
 filter.h24="終日(24時間)";
 filter.legend3="遮断するサービス";
 filter.catchall="全てのP2Pプロトコルを遮断";
-filter.legend4="特定のWebサイトを遮断(URIを指定)";
+filter.legend4="特定のWebサイトを遮断(URLを指定)";
 filter.legend5="特定のキーワードを持つWebサイトを遮断";
 filter.mess1="このポリシーを削除してもよろしいですか？";
 filter.mess2="少なくとも1つ以上の曜日を指定してください";
@@ -560,7 +560,7 @@ filterSum.polday="時刻";
 // ** Firewall.asp **//
 
 firewall.titl="Firewall";
-firewall.h2="Firewall";
+firewall.h2="Firewall設定";
 firewall.legend="Firewall保護";
 firewall.firewall="SPI Firewall";
 firewall.legend2="追加フィルタ";
@@ -582,7 +582,7 @@ hfirewall.right2="SPI Firewall機能の有効/無効を切り替えることが�
 // ** Forward.asp **//
 
 prforward.titl="アドレス変換(Port範囲指定)";
-prforward.h2="Port範囲のアドレス変換";
+prforward.h2="Port範囲指定のアドレス変換設定";
 prforward.legend="アドレス変換ルール";
 prforward.app="アプリケーション名";
 
@@ -607,11 +607,11 @@ p2p.ctorrent_srv="Ctorrent サービス";
 // ** ForwardSpec.asp **//
 
 pforward.titl="アドレス変換(Port)";
-pforward.h2="アドレス変換(Port指定)";
+pforward.h2="Port指定のアドレス変換設定";
 pforward.legend="アドレス変換ルール";
 pforward.app="アプリケーション名";
-pforward.from="開始ポート";
-pforward.to="終了ポート";
+pforward.from="WAN側ポート";
+pforward.to="LAN側ポート";
 
 //help container
 
@@ -621,7 +621,7 @@ hpforward.right2="インターネットを利用するアプリケーション(�
 // ** Hotspot.asp **//
 
 hotspot.titl="ホットスポット";
-hotspot.h2="ホットスポットサービス";
+hotspot.h2="ホットスポットサービスの設定";
 hotspot.legend="Chillispot";
 hotspot.nowifibridge="LAN側ブリッジから無線 LANデバイスを分離";
 hotspot.hotspot="Chillispot";
@@ -740,7 +740,7 @@ idx.stp="Spanning Tree";
 idx.stp_mess="(COMCAST ISPを利用している場合は使用しません)";
 idx.optional="詳細設定";
 idx.mtu="MTU";
-idx.h23="LAN接続";
+idx.h23="ネットワーク設定";
 idx.routerip="LAN側接続";
 idx.lanip="IPアドレス";
 idx.legend2="インターネット側Port";
@@ -749,10 +749,10 @@ idx.legend3="時刻設定";
 idx.timeset="タイムゾーン";
 idx.dsttime="サマータイム設定 (DST)";
 idx.static_ip="手動設定";
-idx.dhcp="DHCP";
+idx.dhcp="DHCP (IP自動取得)";
 idx.dhcp_legend="DHCP";
 idx.dhcp_type="LAN側DHCP";
-idx.dhcp_srv="DHCP サーバとして動作";
+idx.dhcp_srv="DHCP サーバ";
 idx.dhcp_fwd="DHCP Relay サーバとして動作";
 idx.dhcp_start="割り当て開始アドレス";
 idx.dhcp_end="割り当て終了アドレス";		//used in Status_Lan.asp
@@ -812,7 +812,7 @@ log_out.th_port="ポート番号";
 // ** Log.asp **//
 
 log.titl="Log";
-log.h2="Firewall Log";
+log.h2="Firewall Log 設定";
 log.legend="Log";
 log.lvl="Log 出力レベル";
 log.drop="Dropしたパケットを記録";
@@ -823,7 +823,7 @@ log.accept="Acceptしたパケットを記録";
 // ** Management.asp **//
 
 management.titl="管理";
-management.h2="機器管理";
+management.h2="管理設定";
 management.psswd_legend="管理ユーザ";
 management.psswd_user="管理ユーザ名";
 management.psswd_pass="管理パスワード";
@@ -926,7 +926,7 @@ networking.iface="インターフェース";
 // ** QoS.asp **//
 
 qos.titl="Quality of Service";
-qos.h2="Quality Of Service (QoS)";
+qos.h2="Quality Of Service (QoS) 設定";
 qos.legend="QoS 設定";
 qos.srv="QoS機能";
 qos.type="スケジュール方式";
@@ -1047,7 +1047,7 @@ service.dnsmasq_opt="DNSMasqサービス 追加オプション";
 
 //pptp.webservices
 service.pptp_legend="PPTP";
-service.pptp_srv="PPTP サーバ";
+service.pptp_srv="PPTP サーバ設定";
 service.pptp_client="クライアントIPアドレス";
 service.pptp_chap="CHAP-Secrets";
 
@@ -1061,7 +1061,7 @@ service.telnet_legend="Telnet";
 service.telnet_srv="Telnet サービス";
 
 //pptpd_client.webservices
-service.pptpd_legend="PPTP クライアント";
+service.pptpd_legend="PPTP クライアント設定";
 service.pptpd_option="PPTP クライアント・オプション";
 service.pptpd_ipdns="PPTPサーバ名";
 service.pptpd_subnet="接続先のネットワークアドレス";
@@ -1081,7 +1081,7 @@ service.pppoe_legend="PPPoE Relay";
 service.pppoe_srv="Relay";
 
 //pppoe-server.webservices
-service.pppoesrv_legend="PPPoE サーバ";
+service.pppoesrv_legend="PPPoE サーバ設定";
 service.pppoesrv_srv="RP-PPPoE サービス";
 service.pppoesrv_srvopt="RP-PPPoE オプション";
 service.pppoesrv_compr="圧縮";
@@ -1352,7 +1352,7 @@ status_openvpn.titl="OpenVPN Status";
 // ** Triggering.asp **//
 
 trforward.titl="アドレス変換(Trigger指定)";
-trforward.h2="Trigger指定アドレス変換";
+trforward.h2="Trigger指定のアドレス変換設定";
 trforward.legend="変換ルール";
 trforward.trrange="Triggerポート(LAN→インターネット)";
 trforward.fwdrange="転送ポート(インターネット→LAN)";
@@ -1406,7 +1406,7 @@ hupnp.right4="クライアントのアプリケーションが、UPnPプロト�
 // ** VPN.asp **//
 
 vpn.titl="VPN";
-vpn.h2="VPN";
+vpn.h2="VPN設定";
 vpn.legend="VPN パススルー";
 vpn.ipsec="IPSec パススルー";
 vpn.pptp="PPTP パススルー";
@@ -1420,7 +1420,7 @@ hvpn.right1="これらの機能を利用すると、LAN側ネットワークの�
 // ** Vlan.asp **//
 
 vlan.titl="VLAN";
-vlan.h2="VLAN";
+vlan.h2="VLAN設定";
 vlan.legend="VLANリスト";
 vlan.bridge="割当先：<br />ブリッジ";
 vlan.tagged="Tagged/Uplink";
@@ -1448,7 +1448,7 @@ wol.mac="MAC アドレス";
 wol.broadcast="ブロードキャストアドレス";
 wol.udp="UDP ポート";
 wol.msg1="ホストの削除";
-wol.h22="自動WOL";
+wol.h22="自動WOL設定";
 wol.legend5="Wake-On-LAN";
 wol.srv="Wake-On-Lan自動起動";
 wol.pass="SecureOn パスワード";
@@ -1476,7 +1476,7 @@ hwanmac.right2="一部のISPでは、接続機器のMACアドレスの登録が�
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
 
 wpa.titl="無線LANセキュリティ";
-wpa.h2="セキュリティ";
+wpa.h2="セキュリティ設定";
 wpa.secmode="無線LAN認証";
 wpa.legend="無線LANの暗号化";
 wpa.auth_mode="Network Authentication";
@@ -1519,7 +1519,7 @@ wl_active.inactive="未接続クライアント";
 // ** Wireless_WDS.asp **//
 
 wds.titl="WDS";
-wds.h2="WDS";
+wds.h2="WDS設定";
 wds.legend="WDS接続先設定";
 wds.label="Lazy WDS";
 wds.label2="WDS サブネット";
@@ -1534,7 +1534,7 @@ wds.legend2="詳細設定";
 // ** Wireless_radauth.asp **//
 
 radius.titl="MAC-RADIUS";
-radius.h2="MAC-RADIUS";
+radius.h2="MAC-RADIUS設定";
 radius.legend="MAC-RADIUS認証";
 radius.label="MAC-RADIUS認証";
 radius.label2="MACアドレスのフォーマット";
@@ -1549,7 +1549,7 @@ radius.label8="サーバと通信できない場合は認証を停止";
 // ** Wireless_MAC.asp **//
 
 wl_mac.titl="MACアドレスフィルタ";
-wl_mac.h2="無線LAN MACフィルタ";
+wl_mac.h2="無線LAN MACフィルタ設定";
 wl_mac.legend="MACアドレスフィルタ";
 wl_mac.label="MACアドレスフィルタ";
 wl_mac.label2="フィルタ動作モード";
@@ -1605,7 +1605,7 @@ hwl_adv.right2="「自動」もしくは「共有キー」のいずれかを指�
 // ** Wireless_Basic.asp **//
 
 wl_basic.titl="基本";
-wl_basic.h2="無線LAN 物理インターフェース";
+wl_basic.h2="無線LAN 物理インターフェース設定";
 wl_basic.legend="無線LAN 基本設定";
 wl_basic.label="無線LAN MAC動作モード";
 wl_basic.label2="無線LAN PHY動作モード";
@@ -1634,8 +1634,8 @@ wl_basic.radio="Radio";
 wl_basic.radiotimer="無線LANタイマ";
 wl_basic.radio_on="無線LAN有効";
 wl_basic.radio_off="無線LAN無効";
-wl_basic.h2_v24="無線LAN 物理インターフェース";
-wl_basic.h2_vi="無線LAN 仮想インターフェース";
+wl_basic.h2_v24="無線LAN 物理インターフェース設定";
+wl_basic.h2_vi="無線LAN 仮想インターフェース設定";
 wl_basic.regdom="Regulatory Domain";
 wl_basic.TXpower="送信出力";
 wl_basic.AntGain="アンテナゲイン";
