@@ -1280,8 +1280,8 @@ led_control (int type, int act)
       power_gpio = 0x01;
       dmz_gpio = 0x10;
       connected_gpio = 0x17;	//ses orange
-      ses_gpio = 0x15;		//ses white
-      ses2_gpio = 0x17;		//ses orange    
+      ses_gpio = 0x15;			//ses white
+      ses2_gpio = 0x17;			//ses orange    
       break;
     case ROUTER_MOTOROLA_WE800G:
     case ROUTER_MOTOROLA_V1:
@@ -1323,6 +1323,7 @@ led_control (int type, int act)
       break;
     case ROUTER_WAP54G_V1:
       diag_gpio = 0x13;
+      wlan_gpio = 0x14;		// LINK led
       break;
     case ROUTER_WAP54G_V3:
       ses_gpio = 0x1c;
