@@ -145,6 +145,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       nvram_set ("wl0gpio3", "0");
       break;
     case ROUTER_LINKSYS_WTR54GS:
+    case ROUTER_WAP54G_V1:
       nvram_set ("wl0gpio0", "136");
       nvram_set ("wl0gpio1", "0");
       nvram_set ("wl0gpio2", "0");
@@ -183,6 +184,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       nvram_set ("wl0gpio0", "130");
       break;
     case ROUTER_MOTOROLA:
+    case ROUTER_WAP54G_V1:
       nvram_set ("wl0gpio0", "2");
       break;
     case ROUTER_BUFFALO_WLA2G54C:
@@ -195,7 +197,6 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       nvram_set ("wl0gpio3", "255");
       nvram_set ("wl0gpio5", "2");
       break;
-
     case ROUTER_ASUS_WL500GD:
       nvram_unset ("wl0gpio0");
       break;
@@ -353,6 +354,8 @@ start_sysinit (void)
   char *rname = getRouter ();
   fprintf (stderr, "Booting Device:%s\n", rname);
 
+  nvram_unset ("port_swap");
+  
   switch (brand)
     {
     case ROUTER_BUFFALO_WZRRSG54:
