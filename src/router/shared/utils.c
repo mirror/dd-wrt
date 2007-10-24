@@ -1258,6 +1258,7 @@ led_control (int type, int act)
       break;
     case ROUTER_RT480W:
     case ROUTER_BELKIN_F5D7230_V2000:
+    case ROUTER_BELKIN_F5D7231:
       power_gpio = 0x15;
       diag_gpio = 0x05;		//power led blink / off to indicate factory defaults
       connected_gpio = 0x10;
