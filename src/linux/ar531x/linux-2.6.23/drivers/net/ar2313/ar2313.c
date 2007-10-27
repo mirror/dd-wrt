@@ -657,6 +657,7 @@ static void ar2313_check_link(struct net_device *dev)
 		    }
 		default:
 		phyData = armiiread(dev, sp->phy, MII_BMSR);
+		if (sp->phyData != phyData) {
 		if (phyData & BMSR_LSTATUS) {
 			/* link is present, ready link partner ability to deterine
 			   duplexity */
@@ -693,6 +694,7 @@ static void ar2313_check_link(struct net_device *dev)
 			sp->link = 0;
 		}
 		sp->phyData = phyData;
+		}
 		break;
 	}
 
