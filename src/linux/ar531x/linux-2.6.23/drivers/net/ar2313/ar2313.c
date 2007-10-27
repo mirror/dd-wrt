@@ -655,8 +655,45 @@ static void ar2313_check_link(struct net_device *dev)
 				    duplex = 0;
 			    sp->phyData = phyData;
 		    }
+		default:
+		phyData = armiiread(dev, sp->phy, MII_BMSR);
+		if (phyData & BMSR_LSTATUS) {
+			/* link is present, ready link partner ability to deterine
+			   duplexity */
+			duplex = 0;
+			u16 reg;
 
+			sp->link = 1;
+			reg = armiiread(dev, sp->phy, MII_BMCR);
+			if (reg & BMCR_ANENABLE) {
+				/* auto neg enabled */
+				reg = armiiread(dev, sp->phy, MII_LPA);
+				duplex = (reg & (LPA_100FULL | LPA_10FULL)) ? 1 : 0;
+			} else {
+				/* no auto neg, just read duplex config */
+				duplex = (reg & BMCR_FULLDPLX) ? 1 : 0;
+			}
 
+			printk(KERN_INFO "%s: Configuring MAC for %s duplex\n",
+				   dev->name, (duplex) ? "full" : "half");
+
+			if (duplex) {
+				/* full duplex */
+				sp->eth_regs->mac_control =
+					((sp->eth_regs->
+					  mac_control | MAC_CONTROL_F) & ~MAC_CONTROL_DRO);
+			} else {
+				/* half duplex */
+				sp->eth_regs->mac_control =
+					((sp->eth_regs->
+					  mac_control | MAC_CONTROL_DRO) & ~MAC_CONTROL_F);
+			}
+		} else {
+			/* no link */
+			sp->link = 0;
+		}
+		sp->phyData = phyData;
+		break;
 	}
 
 	
@@ -771,8 +808,7 @@ static int ar2313_reset_reg(struct net_device *dev)
 			//mv_phySetup(dev);
 			break;
 		default:
-			printk ("%s: UNKNOWN PHY - abort !\n", dev->name);
-			return (1);
+			printk ("%s: UNKNOWN PHY - ignore !\n", dev->name);
 			break;
 	}
 	
@@ -1523,6 +1559,10 @@ static int netdev_ethtool_ioctl(struct net_device *dev, void *useraddr)
 					phyData = armiiread(dev,np->phy, ADM_PHY_STATUS);
 					edata.data = (phyData & ADM_STATUS_LINK_PASS) ? 1 : 0;
 					break;
+				default:
+					edata.data = (armiiread(dev, np->phy, MII_BMSR) & BMSR_LSTATUS) ? 1 : 0;
+				break;
+	
 			}
 			if (copy_to_user(useraddr, &edata, sizeof(edata)))
 				return -EFAULT;
