@@ -51,7 +51,11 @@ getchannels (unsigned int *list)
       list[count++] = chan;
     }
   pclose (in);
-  return count;
+#ifdef BUFFALO_JP
+    return count-1;
+#else
+    return count;
+#endif
 }
 
 int
