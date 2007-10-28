@@ -1220,6 +1220,13 @@ led_control (int type, int act)
       bridge_gpio = 0x14;
       ses_gpio = 0x10;
       break;
+#ifdef HAVE_DIR300
+    case ROUTER_BOARD_FONERA:
+      diag_gpio = 0x13;
+      bridge_gpio = 0x14;
+      ses_gpio = 0x11;
+      break;
+#endif
     case ROUTER_BOARD_TW6600:
       diag_gpio = 0x17;
       bridge_gpio = 0x14;
