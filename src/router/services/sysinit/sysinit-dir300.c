@@ -131,6 +131,8 @@ start_sysinit (void)
   eval ("insmod", "ath_ahb");
   eval ("ifconfig", "wifi0", "up");
   eval ("ifconfig", "eth0", "up");	// wan
+  system ("echo 2 >/proc/sys/dev/wifi0/ledpin");
+  system ("echo 1 >/proc/sys/dev/wifi0/softled");
   vlan_init (5); // 4 lan + 1 wan
 //  eval ("insmod", "ipv6");
 
