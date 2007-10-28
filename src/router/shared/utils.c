@@ -426,13 +426,21 @@ internal_getRouterBrand ()
 	  cprintf ("router is Buffalo WHR-HP-G54DD\n");
 //        nvram_set ("boardflags", "0x2758");  /* removed, to be FCC/CE valid */
 	  nvram_set ("buffalo_hp", "1");
+#ifdef BUFFALO_JP
+	  setRouter ("Buffalo AS-A100");
+#else
 	  setRouter ("Buffalo WHR-HP-G54DD");
+#endif
 	  return ROUTER_BUFFALO_WHRG54S;
 	}
       if (nvram_match ("buffalo_hp", "1"))
 	{
 	  cprintf ("router is Buffalo WHR-HP-G54DD\n");
+#ifdef BUFFALO_JP
+	  setRouter ("Buffalo AS-A100");
+#else
 	  setRouter ("Buffalo WHR-HP-G54DD");
+#endif
 	  return ROUTER_BUFFALO_WHRG54S;
 	}
 #endif

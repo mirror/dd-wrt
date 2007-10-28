@@ -56,6 +56,9 @@ endif
 ifeq ($(CONFIG_BUFFALO),y)
   CFLAGS += -DHAVE_BUFFALO
 endif
+ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),JP)
+  CFLAGS += -DBUFFALO_JP
+endif
 ifeq ($(CONFIG_SAMBA),y)
   CFLAGS += -DHAVE_SAMBA
 endif
