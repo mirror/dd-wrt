@@ -34,7 +34,7 @@ gwrite (int gpio, int value)
   char buf[64];
   sprintf (buf, "/proc/gpio/%d_dir", gpio);
   in = fopen (buf, "wb");
-  fprintf (in, "0");
+  fprintf (in, "1");
   fclose (in);
   sprintf (buf, "/proc/gpio/%d_out", gpio);
   in = fopen (buf, "wb");
@@ -50,7 +50,7 @@ gread (int gpio)
   char buf[64];
   sprintf (buf, "/proc/gpio/%d_dir", gpio);
   in = fopen (buf, "wb");
-  fprintf (in, "1");
+  fprintf (in, "0");
   fclose (in);
   sprintf (buf, "/proc/gpio/%d_in", gpio);
   in = fopen (buf, "rb");
