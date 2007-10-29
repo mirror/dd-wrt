@@ -904,7 +904,8 @@ getRouterBrand ()
 int
 diag_led_4702 (int type, int act)
 {
-#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5)
+
+#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_FONERA)
   return 0;
 #else
   if (act == START_LED)
@@ -1154,7 +1155,7 @@ led_control (int type, int act)
 /* type: LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN, LED_SES, LED_SES2, LED_WLAN
  * act: LED_ON, LED_OFF, LED_FLASH */
 {
-#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_LS5)
+#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_LS5)  && !defined(HAVE_DIR300)
   return 0;
 #else
 
@@ -1230,9 +1231,9 @@ led_control (int type, int act)
       break;
 #ifdef HAVE_DIR300
     case ROUTER_BOARD_FONERA:
-      diag_gpio = 0x13;
-      bridge_gpio = 0x14;
-      ses_gpio = 0x11;
+      diag_gpio = 0x03;
+      bridge_gpio = 0x04;
+      ses_gpio = 0x01;
       break;
 #endif
     case ROUTER_BOARD_TW6600:
