@@ -434,7 +434,7 @@ addEvent(window, "unload", function() {
 									</select>
 								</div>
 								<div class="setting">
-									<div class="label"><% tran("share.srvip"); %></div>
+									<div class="label"><% tran("share.srvipname"); %></div>
 									<input maxlength="32" size="25" name="ntp_server" value="<% nvram_get("ntp_server"); %>" />
 								</div>
 								</div>

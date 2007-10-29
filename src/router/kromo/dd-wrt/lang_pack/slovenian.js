@@ -110,6 +110,7 @@ share.vintrface="Navidezni vmesniki";
 share.router="Usmerjalnik";
 share.static_lease="Statièni zakupi";
 share.srvip="IP stre¾nika";
+share.srvipname="IP stre¾nika";
 share.localdns="Lokalni DNS";
 share.minutes="minut";
 share.oui="Iskanje OUI";

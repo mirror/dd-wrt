@@ -103,6 +103,7 @@ share.vintrface="Interfacce Virtuali";
 share.router="Router";
 share.static_lease="Assegnamento Statico";
 share.srvip="Server IP";
+share.srvipname="Server IP/Name";
 share.localdns="DNS Locale";
 share.minutes="minuti";
 share.oui="Ricerca OUI";

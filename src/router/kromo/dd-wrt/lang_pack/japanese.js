@@ -109,6 +109,7 @@ share.vintrface="仮想インターフェース";
 share.router="ルータ";
 share.static_lease="静的割り当て";
 share.srvip="サーバIP";
+share.srvipname="サーバIP";
 share.localdns="LAN側DNS";
 share.minutes="分";
 share.oui="OUI 検索";
