@@ -28,6 +28,9 @@
 #include <signal.h>
 #include <md5.h>
 
+void start_milkfish_boot (void);
+
+
 void
 stop_milkfish (void)
 {
