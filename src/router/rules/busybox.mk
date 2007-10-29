@@ -7,12 +7,17 @@ ifeq ($(CONFIG_DIST),"micro")
 	cp busybox/.config_micro busybox/.config
 	cd busybox && make oldconfig
 else
+ifeq ($(CONFIG_DIST),"micro-special")
+	cp busybox/.config_micro busybox/.config
+	cd busybox && make oldconfig
+else
 ifeq ($(CONFIG_DIST),"mini")
 	cp busybox/.config_mini busybox/.config
 	cd busybox && make oldconfig
 else
 	cp busybox/.config_std busybox/.config
 	cd busybox && make oldconfig
+endif
 endif
 endif
 endif
