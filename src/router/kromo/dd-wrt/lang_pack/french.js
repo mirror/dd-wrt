@@ -107,6 +107,7 @@ share.vintrface="Interface Virtuelle";
 share.router="Routeur";
 share.static_lease="Réservation d'adresse";
 share.srvip="IP Serveur";
+share.srvipname="IP Serveur";
 share.localdns="DNS Local";
 share.minutes="minutes";
 share.oui="Recherche OUI";
