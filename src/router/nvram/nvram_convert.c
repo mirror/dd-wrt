@@ -51,6 +51,8 @@ struct nvram_convert nvram_converts[] = {
   {WL ("gmode_protection"), WL0 ("gmode_protection"), ""},
   // Bellow change from 3.21.9.0
   {WL ("auth_mode"), WL0 ("auth_mode"), ""},
+  {WL ("radauth"), WL0 ("radauth"), ""},
+  {WL ("radmactype"), WL0 ("radmactype"), ""},
   {WL ("radius_ipaddr"), WL0 ("radius_ipaddr"), ""},
   {WL ("radius_port"), WL0 ("radius_port"), ""},
   {WL ("radius_key"), WL0 ("radius_key"), ""},
