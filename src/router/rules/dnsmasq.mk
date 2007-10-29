@@ -1,5 +1,9 @@
 dnsmasq:
+ifeq ($(CONFIG_DNSMASQ_TFTP),y)
 	$(MAKE) -C dnsmasq COPTS=-DHAVE_BROKEN_RTC CFLAGS="$(COPTS)"
+else
+	$(MAKE) -C dnsmasq "COPTS=-DHAVE_BROKEN_RTC -DNO_TFTP" CFLAGS="$(COPTS)"
+endif
 	$(MAKE) -C dnsmasq/contrib/wrt CFLAGS="$(COPTS)"
 
 dnsmasq-install:
