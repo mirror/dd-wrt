@@ -50,6 +50,7 @@ start_openvpnserver (void)
   FILE *fp = fopen ("/tmp/openvpn/route-up.sh", "wb");
   if (fp == NULL)
     return -1;
+  fprintf (fp, "startservice set_routes\n");
   fprintf (fp, "iptables -I INPUT -i tun0 -j ACCEPT\n");
   fclose (fp);
   fp = fopen ("/tmp/openvpn/route-down.sh", "wb");

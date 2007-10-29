@@ -60,6 +60,31 @@ del_pppoe_natrule (void)
     }
 }
 
+static void makeipup(void)
+{
+int mss;
+  if (nvram_match ("mtu_enable", "1"))
+    mss = atoi (nvram_safe_get ("wan_mtu")) - 40 - 108;
+  else
+    mss = 1500 - 40 - 108;
+
+  FILE *fp = fopen ("/tmp/pppoeserver/ip-up", "w");
+  fprintf (fp, "#!/bin/sh\n"
+	   "/sbin/startservice set_routes\n"  // reinitialize routing, just in case that a target route exists
+	   "/usr/sbin/iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS --set-mss %d\n"
+	   "/usr/sbin/iptables -I INPUT -i $1 -j ACCEPT\n"
+	   "/usr/sbin/iptables -I FORWARD -i $1 -j ACCEPT\n", mss + 1, mss);
+  fclose (fp);
+  fp = fopen ("/tmp/pppoeserver/ip-down", "w");
+  fprintf (fp, "#!/bin/sh\n"
+	   "/usr/sbin/iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS --set-mss %d\n"
+	   "/usr/sbin/iptables -D INPUT -i $1 -j ACCEPT\n"
+	   "/usr/sbin/iptables -D FORWARD -i $1 -j ACCEPT\n", mss + 1, mss);
+  fclose (fp);
+  chmod ("/tmp/pppoeserver/ip-up", 0744);
+  chmod ("/tmp/pppoeserver/ip-down", 0744);
+
+}
 void
 start_pppoeserver (void)
 {
@@ -69,8 +94,8 @@ start_pppoeserver (void)
       if (nvram_default_match ("pppoeradius_enabled", "0", "0"))
 	{
 	  FILE *fp;
-	  mkdir ("/tmp/ppp", 0777);
-	  fp = fopen ("/tmp/ppp/pppoe-server-options", "wb");
+	  mkdir ("/tmp/pppoeserver", 0777);
+	  fp = fopen ("/tmp/pppoeserver/pppoe-server-options", "wb");
 	  //  fprintf (fp, "crtscts\n");
 	  if (nvram_default_match ("pppoeserver_bsdcomp", "0", "0"))
 	    fprintf (fp, "nobsdcomp\n");
@@ -158,6 +183,8 @@ start_pppoeserver (void)
 	  fprintf (fp, "noproxyarp\n");
 	  fprintf (fp, "noktune\n");
 	  fprintf (fp, "netmask 255.255.255.255\n");
+	  fprintf (fp, "ip-up-script /tmp/pppoeserver/ip-up\n"
+	  fprintf (fp, "ip-down-script /tmp/pppoeserver/ip-down\n"
 	  fclose (fp);
 
 	  //parse chaps from nvram to file
@@ -166,7 +193,7 @@ start_pppoeserver (void)
 	  char *user, *pass, *ip, *enable;
 	  wordlist = nvram_safe_get ("pppoeserver_chaps");
 
-	  fp = fopen ("/tmp/ppp/chap-secrets", "wb");
+	  fp = fopen ("/tmp/pppoeserver/chap-secrets", "wb");
 
 	  foreach (word, wordlist, next)
 	  {
@@ -190,14 +217,15 @@ start_pppoeserver (void)
 
 	  }
 	  fclose (fp);
+	  makeipup();
 //end parsing
 	  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"), "-R", nvram_safe_get ("pppoeserver_remoteaddr"));	//todo, make interface and base address configurable, see networking page options
 	}
       else
 	{
 	  FILE *fp;
-	  mkdir ("/tmp/ppp", 0777);
-	  fp = fopen ("/tmp/ppp/pppoe-server-options", "wb");
+	  mkdir ("/tmp/pppoeserver", 0777);
+	  fp = fopen ("/tmp/pppoeserver/pppoe-server-options", "wb");
 //        fprintf (fp, "crtscts\n");
 	  if (nvram_default_match ("pppoeserver_bsdcomp", "0", "0"))
 	    fprintf (fp, "nobsdcomp\n");
@@ -286,15 +314,17 @@ start_pppoeserver (void)
 	  fprintf (fp, "netmask 255.255.255.255\n");
 	  fprintf (fp, "plugin radius.so\n");
 	  fprintf (fp, "plugin radattr.so\n");
+	  fprintf (fp, "ip-up-script /tmp/pppoeserver/ip-up\n"
+	  fprintf (fp, "ip-down-script /tmp/pppoeserver/ip-down\n"
 	  fclose (fp);
-	  mkdir ("/tmp/ppp/radius", 0777);
-	  fp = fopen ("/tmp/ppp/radius/radiusclient.conf", "wb");
+	  mkdir ("/tmp/pppoeserver/radius", 0777);
+	  fp = fopen ("/tmp/pppoeserver/radius/radiusclient.conf", "wb");
 	  fprintf (fp, "auth_order\tradius\n");
 	  fprintf (fp, "login_tries\t4\n");
 	  fprintf (fp, "login_timeout\t60\n");
 	  fprintf (fp, "nologin\t/etc/nologin\n");
 	  fprintf (fp, "issue\t/etc/issue\n");
-	  fprintf (fp, "servers\t/tmp/ppp/radius/servers\n");
+	  fprintf (fp, "servers\t/tmp/pppoeserver/radius/servers\n");
 	  fprintf (fp, "dictionary\t/etc/dictionary\n");
 	  fprintf (fp, "login_radius\t/usr/local/sbin/login.radius\n");
 	  fprintf (fp, "seqfile\t/var/run/radius.seq\n");
@@ -310,9 +340,10 @@ start_pppoeserver (void)
 		   nvram_safe_get ("pppoeserver_authserverip"),
 		   nvram_safe_get ("pppoeserver_acctserverport"));
 	  fclose (fp);
-	  fp = fopen ("/tmp/ppp/radius/servers", "wb");
+	  fp = fopen ("/tmp/pppoeserver/radius/servers", "wb");
 	  fprintf (fp, "%s %s\n", nvram_safe_get ("pppoeserver_authserverip"), nvram_safe_get ("pppoeserver_sharedkey"));	//todo, shared secret for radius server, see above for server name, must be identical
 	  fclose (fp);
+	  makeipup();
 	  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"), "-R", nvram_safe_get ("pppoeserver_remoteaddr"));	//todo, make interface and base address configurable, remote addr as well, see networking page options
 	}
       syslog (LOG_INFO, "rp-pppoe : pppoe server successfully started\n");
