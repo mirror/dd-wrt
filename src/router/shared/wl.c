@@ -71,6 +71,7 @@ getassoclist (char *name, unsigned char *list)
 
   unsigned int *count = (unsigned int *) list;
   ret = wl_ioctl (name, WLC_GET_ASSOCLIST, list, 8192);
+  unsigned int *count = (unsigned int *) list;
 //}else
 //{
 //char buf[WLC_IOCTL_MAXLEN];

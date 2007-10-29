@@ -2420,7 +2420,7 @@ get_wl_assoc_mac (int *c)
 }
 
 struct mtu_lists mtu_list[] = {
-#if COUNTRY == JAPAN
+#ifdef BUFFALO_JP
   {"pppoe", "576", "1454"},
 #else
   {"pppoe", "576", "1492"},
