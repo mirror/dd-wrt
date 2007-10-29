@@ -110,6 +110,7 @@ share.vintrface="Virtual Interfaces";
 share.router="Router";
 share.static_lease="Static Leases";
 share.srvip="Server IP";
+share.srvipname="Server IP/Name";
 share.localdns="Local DNS";
 share.minutes="minutes";
 share.oui="OUI Search";
