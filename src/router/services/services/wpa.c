@@ -33,6 +33,49 @@
 #include <syslog.h>
 #include <wlutils.h>
 
+
+void start_radius(char *prefix)
+{
+      char psk[64];
+      //  wrt-radauth $IFNAME $server $port $share $override $mackey $maxun &
+      char ifname[32];
+      strcpy(ifname,prefix);
+      if (!strcmp(ifname,"wl0"))
+        strcpy(ifname,nvram_safe_get("wl0_ifname"));
+      char ap[32];
+      
+      char radauth[32];
+      sprintf(radauth,"%s_radauth",prefix);
+      sprintf(ap,"%s_mode",prefix);
+      if (nvram_match(radauth,"1") && nvram_match(ap,"ap"))
+      {	       
+      sprintf (psk, "%s_radius_ipaddr", prefix);
+      char *server = nvram_safe_get (psk);
+      sprintf (psk, "%s_radius_port", prefix);
+      char *port = nvram_safe_get (psk);
+      sprintf (psk, "%s_radius_key", prefix);
+      char *share = nvram_safe_get (psk);
+      char exec[64];
+      char type[32];
+      sprintf (type, "%s_radmactype", prefix);
+      char *pragma = "";
+      if (nvram_default_match (type, "0", "0"))
+	pragma = "-n1 ";
+      if (nvram_match (type, "1"))
+	pragma = "-n2 ";
+      if (nvram_match (type, "2"))
+	pragma = "-n3 ";
+      if (nvram_match (type, "3"))
+	pragma = "";
+      sleep (1);		//some delay is usefull
+      sprintf (exec, "wrt-radauth %s %s %s %s %s 1 1 0 &", pragma, ifname,
+	       server, port, share);
+      system2 (exec);
+      }
+
+
+}
+
 int start_nas_single (char *type, char *prefix);
 
 // #define HAVE_NASCONF  //use this to parse nas parameters from conf file. 
@@ -151,6 +194,8 @@ getAuthMode (char *prefix)
     return "255";
 }
 
+
+
 char *
 getKey (char *prefix)
 {
@@ -212,6 +257,7 @@ static void start_nas_ap(char *prefix,char *type)
 void
 start_nas_lan (void)
 {
+  start_radius("wl0"); // quick fix, should be vif capable in future
   start_nas_single ("lan", "wl0");
 
 #ifdef HAVE_MSSID

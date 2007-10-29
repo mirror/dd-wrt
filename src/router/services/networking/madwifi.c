@@ -720,7 +720,7 @@ setupHostAP (char *prefix, int iswan)
       if (nvram_match (type, "3"))
 	pragma = "";
       sleep (1);		//some delay is usefull
-      sprintf (exec, "wrt-radauth %s%s %s %s %s 1 1 0 &", pragma, prefix,
+      sprintf (exec, "wrt-radauth %s %s %s %s %s 1 1 0 &", pragma, prefix,
 	       server, port, share);
       system2 (exec);
 
