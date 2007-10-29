@@ -56,6 +56,9 @@ endif
 ifeq ($(CONFIG_ACK),y)
 CFLAGS += -DHAVE_ACK
 endif
+ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),JP)
+  CFLAGS += -DBUFFALO_JP
+endif
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 CFLAGS += -DHAVE_MADWIFI_MIMO
 endif
