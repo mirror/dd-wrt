@@ -563,7 +563,7 @@ stop_nas (void)
   if (pidof ("wrt-radauth") > 0)
   {
     syslog (LOG_INFO, "RADAUTH : RADAUTH daemon successfully stopped\n");
-    killall("wrt-radauth");
+    killall("wrt-radauth",SIGKILL);
   }
 
   while (pidof ("nas") > 0)
