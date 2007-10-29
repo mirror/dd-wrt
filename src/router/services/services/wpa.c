@@ -560,6 +560,12 @@ stop_nas (void)
   if (pidof ("nas") > 0)
     syslog (LOG_INFO, "NAS : NAS daemon successfully stopped\n");
 
+  if (pidof ("wrt-radauth") > 0)
+  {
+    syslog (LOG_INFO, "RADAUTH : RADAUTH daemon successfully stopped\n");
+    killall("wrt-radauth");
+  }
+
   while (pidof ("nas") > 0)
     {
       /* NAS sometimes won't exit properly on a normal kill */
