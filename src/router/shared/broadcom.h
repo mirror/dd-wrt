@@ -18,7 +18,7 @@
 //      #define service_restart() eval("event","3","1","16")
 
 #define sys_restart() eval("event","3","1","1")
-#define sys_reboot() eval("event","3","1","15")
+#define sys_reboot() eval("sync"); eval("event","3","1","15")
 
 #define sys_stats(url) eval("stats", (url))
 #define ARGV(args...) ((char *[]) { args, NULL })
@@ -129,7 +129,7 @@ enum
 
 
 
-extern void addAction(char *action);
+extern void addAction (char *action);
 /* SEG addition for dynamic nvram layout */
 extern void Initnvramtab (void);
 extern void prefix_ip_get (char *name, char *buf, int type);
@@ -167,6 +167,7 @@ extern void ej_show_wan_to_switch (webs_t wp, int argc, char_t ** argv);	/* Adde
 /* for status */
 extern int nvram_selmatch (webs_t wp, char *name, char *match);
 extern void ej_show_wifiselect (webs_t wp, int argc, char_t ** argv);
+extern void ej_show_chilliif (webs_t wp, int argc, char_t ** argv);
 extern void ej_portsetup (webs_t wp, int argc, char_t ** argv);
 extern void ej_bandwidth (webs_t wp, int argc, char_t ** argv);
 extern void ej_show_paypal (webs_t wp, int argc, char_t ** argv);
@@ -233,7 +234,7 @@ extern void filtersummary_onload (webs_t wp, char *arg);
 /* for upgrade */
 extern void do_upgrade_post (char *url, webs_t stream, int len,
 			     char *boundary);
-extern void do_upgrade_cgi (char *url, webs_t stream);
+extern void do_upgrade_cgi (char *url, webs_t stream,char *query);
 extern int sys_restore (char *url, webs_t stream, int *total);
 extern void do_restore_post (char *url, webs_t stream, int len,
 			     char *boundary);
@@ -283,7 +284,7 @@ extern void validate_staticleases (webs_t wp, char *value,
 				   struct variable *v);
 extern void validate_forward_spec (webs_t wp, char *value,
 				   struct variable *v);
-extern void ej_port_trigger_table (webs_t wp, int argc, char_t ** argv);
+extern void port_trigger_table (webs_t wp, char *which, int type);
 extern void validate_port_trigger (webs_t wp, char *value,
 				   struct variable *v);
 
@@ -340,8 +341,8 @@ extern void validate_wl_net_mode (webs_t wp, char *value, struct variable *v);
 
 /* for nvram save-restore */
 extern void nv_file_in (char *url, webs_t stream, int len, char *boundary);
-extern void nv_file_out (char *path, webs_t wp);
-extern void sr_config_cgi (char *path, webs_t wp);
+extern void nv_file_out (char *path, webs_t wp,char *query);
+extern void sr_config_cgi (char *path, webs_t wp,char *query);
 
 
 /* for ddns */
@@ -443,7 +444,8 @@ extern void remove_vifs (webs_t wp);
 extern void ej_show_security (webs_t wp, int argc, char_t ** argv);
 
 extern void reg_validate (webs_t wp);
-extern void  wireless_save (webs_t wp);
+extern void superchannel_validate (webs_t wp);
+extern void wireless_save (webs_t wp);
 extern void set_security (webs_t wp);
 extern void forward_add (webs_t wp);
 extern void forward_remove (webs_t wp);
@@ -453,7 +455,7 @@ extern void chap_user_add (webs_t wp);
 extern void chap_user_remove (webs_t wp);
 #ifdef HAVE_CHILLILOCAL
 extern void user_add (webs_t wp);
-extern void  user_remove (webs_t wp);
+extern void user_remove (webs_t wp);
 extern void ej_show_userlist (webs_t wp, int argc, char_t ** argv);
 extern void validate_userlist (webs_t wp, char *value, struct variable *v);
 #endif
@@ -580,9 +582,17 @@ extern void show_wep (webs_t wp, char *prefix);
 extern char *get_wep_value (char *type, char *_bit, char *prefix);
 
 #ifdef HAVE_MILKFISH
-extern void ej_show_phonebook(webs_t wp, int argc, char_t ** argv);
-extern void ej_show_ppptime(webs_t wp, int argc, char_t ** argv);
-extern void ej_exec_milkfish_service(webs_t wp, int argc, char_t ** argv);
+extern void ej_exec_milkfish_service (webs_t wp, int argc, char_t ** argv);
+extern void ej_exec_milkfish_phonebook (webs_t wp, int argc, char_t ** argv);
+extern void ej_show_subscribers (webs_t wp, int argc, char_t ** argv);
+extern void milkfish_user_add (webs_t wp);
+extern void milkfish_user_remove (webs_t wp);
+extern void validate_subscribers (webs_t wp, char *value, struct variable *v);
+extern void ej_show_aliases (webs_t wp, int argc, char_t ** argv);
+extern void milkfish_alias_add (webs_t wp);
+extern void milkfish_alias_remove (webs_t wp);
+extern void validate_aliases (webs_t wp, char *value, struct variable *v);
+extern void milkfish_sip_message (webs_t wp);
 #endif
 
 extern void get_filter_services (char *services);
