@@ -3389,7 +3389,7 @@ init_mtu (char *wan_proto)
       if (nvram_match ("mtu_enable", "0"))
 	{			// Auto
 	  nvram_set ("mtu_enable", "1");
-#if COUNTRY == JAPAN
+#ifdef BUFFALO_JP
 	  nvram_set ("wan_mtu", "1454");	// set max value
 #else
 	  nvram_set ("wan_mtu", "1492");	// set max value
@@ -3399,7 +3399,7 @@ init_mtu (char *wan_proto)
 	}
       else
 	{			// Manual
-#if COUNTRY == JAPAN
+#ifdef BUFFALO_JP
 	  if (atoi (nvram_safe_get ("wan_mtu")) > 1454)
 	    {
 	      nvram_set ("wan_mtu", "1454");
