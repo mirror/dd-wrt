@@ -2,11 +2,7 @@ www-install:
 	rm -rf $(INSTALLDIR)/www
 	install -d $(INSTALLDIR)/www
 	install -d $(INSTALLDIR)/www/www
-ifeq ($(KROMOGUI),y)
-	$(MAKE) -C kromo/$(WEB_PAGE) install INSTALLDIR=$(INSTALLDIR)/www
-else
-	$(MAKE) -C www/$(WEB_PAGE) install INSTALLDIR=$(INSTALLDIR)/www
-endif
+	$(MAKE) -C kromo/dd-wrt install INSTALLDIR=$(INSTALLDIR)/www
 
 www: 
 	rm -rf $(INSTALLDIR)/www
@@ -16,17 +12,9 @@ endif
 ifeq ($(CONFIG_WIVIZ),y)
 	$(MAKE) -C wiviz2 wwwinstall INSTALLDIR=$(INSTALLDIR)/wiviz2
 endif
-ifeq ($(KROMOGUI),y)
-	$(MAKE) -C kromo/$(WEB_PAGE) install INSTALLDIR=$(INSTALLDIR)/www
-else
-	$(MAKE) -C www/$(WEB_PAGE) install INSTALLDIR=$(INSTALLDIR)/www
-endif
+	$(MAKE) -C kromo/dd-wrt install INSTALLDIR=$(INSTALLDIR)/www
 
 www-distclean www-clean:
-ifeq ($(KROMOGUI),y)
-	$(MAKE) -C kromo/$(WEB_PAGE) clean
-else
-	$(MAKE) -C www/$(WEB_PAGE) clean
-endif
+	$(MAKE) -C kromo/dd-wrt clean
 
 
