@@ -1131,11 +1131,13 @@ start_nvram (void)
   nvram_set ("wl0_country_code", "JP");
   nvram_set ("wl0_country", "Japan");
 #endif
+#ifndef HAVE_BUFFALO
   if (check_hw_type () == BCM5352E_CHIP)
     {
       nvram_set ("opo", "0x0008");
       nvram_set ("ag0", "0x02");
     }
+#endif
 // Fix for newer stylesheet settings, BrainSlayer, Eko
   char style[32];
 
