@@ -170,6 +170,7 @@ start_pptpd (void)
 
   fp = fopen ("/tmp/pptpd/ip-up", "w");
   fprintf (fp, "#!/bin/sh\n"
+	   "/sbin/startservice set_routes\n"  // reinitialize routing, just in case that a target route exists
 	   "/usr/sbin/iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS --set-mss %d\n"
 	   "/usr/sbin/iptables -I INPUT -i $1 -j ACCEPT\n"
 	   "/usr/sbin/iptables -I FORWARD -i $1 -j ACCEPT\n"
