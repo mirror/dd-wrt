@@ -81,7 +81,11 @@ struct nvram_tuple srouter_defaults[] = {
   {"wait_time", "5", 0},
   /* Miscellaneous parameters */
   {"timer_interval", "3600", 0},	/* Timer interval in seconds */
+#ifdef BUFFALO_JP
+  {"time_zone", "+01", 0},	/* Time zone (GNU TZ format) */
+#else
   {"time_zone", "+09", 0},	/* Time zone (GNU TZ format) */
+#endif
   {"daylight_time", "3", 0},	/* Automatically adjust clock for daylight */
 
 #ifdef HAVE_SKYTRON
