@@ -106,6 +106,7 @@ share.vintrface="Virtuális Interfész";
 share.router="Forgalomirányító";
 share.static_lease="Statikus bérlet";
 share.srvip="Szerver IP";
+share.srvipname="Szerver IP";
 share.localdns="Helyi DNS";
 share.minutes="Percek";
 share.oui="OUI Keresés";
