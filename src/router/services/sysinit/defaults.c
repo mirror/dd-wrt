@@ -82,12 +82,12 @@ struct nvram_tuple srouter_defaults[] = {
   /* Miscellaneous parameters */
   {"timer_interval", "3600", 0},	/* Timer interval in seconds */
 #ifdef BUFFALO_JP
-  {"time_zone", "+01", 0},	/* Time zone (GNU TZ format) */
-#else
+  {"daylight_time", "1", 0},	/* japan has no summertime option */
   {"time_zone", "+09", 0},	/* Time zone (GNU TZ format) */
-#endif
+#else
   {"daylight_time", "3", 0},	/* Automatically adjust clock for daylight */
-
+  {"time_zone", "+01", 0},	/* Time zone (GNU TZ format) */
+#endif
 #ifdef HAVE_SKYTRON
   {"ntp_server", "ntp0.fau.de", 0},	/* NTP server *//* Modify */
 #else
