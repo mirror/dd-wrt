@@ -197,9 +197,13 @@ static struct radius_attr_type *radius_get_attr_type(u8 type)
 static void print_char(char c)
 {
 	if (c >= 32 && c < 127)
+	{
 		printf("%c", c);
+	}
 	else
+	{
 		printf("<%02x>", c);
+	}
 }
 
 
@@ -259,9 +263,13 @@ static void radius_msg_dump_attr(struct radius_attr_hdr *hdr)
 
 	case RADIUS_ATTR_INT32:
 		if (len == 4)
+		{
 			printf("      Value: %u\n", WPA_GET_BE32(pos));
+		}
 		else
+		{
 			printf("      Invalid INT32 length %d\n", len);
+		}
 		break;
 
 	default:
