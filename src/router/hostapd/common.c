@@ -315,9 +315,11 @@ static void _wpa_hexdump_ascii(int level, const char *title, const u8 *buf,
 		printf("   ");
 		for (i = 0; i < llen; i++) {
 			if (isprint(pos[i]))
+			{
 				printf("%c", pos[i]);
-			else
+			}else{
 				printf("_");
+			}
 		}
 		for (i = llen; i < line_len; i++)
 			printf(" ");
