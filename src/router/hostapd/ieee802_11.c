@@ -348,9 +348,13 @@ void ieee802_11_print_ssid(const u8 *ssid, u8 len)
 	int i;
 	for (i = 0; i < len; i++) {
 		if (ssid[i] >= 32 && ssid[i] < 127)
+		{
 			printf("%c", ssid[i]);
+		}
 		else
+		{
 			printf("<%02x>", ssid[i]);
+		}
 	}
 }
 
