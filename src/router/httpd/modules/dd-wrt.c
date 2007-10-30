@@ -3303,7 +3303,7 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 	      else
 		ofs = 5.000f;
 	      ofs += (float) (chanlist[i] * 0.005f);
-	      if (i == 14) //0 = auto, 1 - 14
+	      if (i == 13)  //ch = i+1, e.g. i=0 ch=1; i=13 ch=14
  		ofs = 2.484f;	//ch 14 is 2.484, not 2.477 GHz
 	      websWrite (wp, ", \"%0.3f\"", ofs);
 	    }
