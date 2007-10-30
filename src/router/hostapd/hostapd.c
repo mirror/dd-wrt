@@ -1321,9 +1321,13 @@ static void setup_interface2_wrapper(struct hostapd_iface *iface, int status)
 {
 	int ret = status;
 	if (ret)
+	{
 		printf("Could not select hw_mode and channel. (%d)\n", ret);
+	}
 	else
+	{
 		ret = setup_interface2(iface);
+	}
 
 	setup_interface_finalize(iface, ret);
 }
@@ -1572,7 +1576,7 @@ const struct driver_ops * driver_lookup(const char *name)
 
 static void show_version(void)
 {
-	fprintf(stderr,
+	printf(
 		"hostapd v" VERSION_STR "\n"
 		"User space daemon for IEEE 802.11 AP management,\n"
 		"IEEE 802.1X/WPA/WPA2/EAP/RADIUS Authenticator\n"
@@ -1584,7 +1588,7 @@ static void show_version(void)
 static void usage(void)
 {
 	show_version();
-	fprintf(stderr,
+	printf(
 		"\n"
 		"usage: hostapd [-hdBKtv] [-P <PID file>] "
 		"<configuration file(s)>\n"
