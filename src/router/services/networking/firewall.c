@@ -576,6 +576,11 @@ nat_prerouting (void)
 	       nvram_safe_get ("lan_ipaddr"));
 #endif
 
+#ifdef HAVE_MILKFISH
+ //  save2file ("-t nat -A PREROUTING -i %s -p udp --dport 5060 -j ACCEPT\n", wanface);
+#endif
+
+
   /* Initiate suspense string for  parse_port_forward() */
   suspense = malloc (1);
   *suspense = 0;
@@ -598,6 +603,7 @@ nat_prerouting (void)
   if (dmzenable)
     save2file ("-A PREROUTING -d %s -j DNAT --to-destination %s%s\n", wanaddr,
 	       lan_cclass, nvram_safe_get ("dmz_ipaddr"));
+
 }
 
 
@@ -1665,6 +1671,10 @@ filter_input (void)
   if (nvram_match ("remote_upgrade", "1"))
     save2file ("-A INPUT -p udp -m udp --dport %d -j %s\n", TFTP_PORT,
 	       TARG_PASS);
+#endif
+
+#ifdef HAVE_MILKFISH
+   save2file ("-A INPUT -p udp -i %s --dport 5060 -j ACCEPT\n", wanface);
 #endif
 
   /* Ident request backs by telnet or IRC server */
