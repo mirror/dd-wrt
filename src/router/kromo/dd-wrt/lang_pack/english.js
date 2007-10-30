@@ -1160,6 +1160,8 @@ service.nstx_ipenable="Bind to this IP only";
 service.nstx_log="Switch on debug messages";
 
 //milkfish.webservices
+service.milkfish_siprouter="Milkfish SIP Router";
+service.milkfish_database="Milkfish SIP Database";
 service.database_subscribers="Local Subscribers";
 service.database_aliases="Local Aliases";
 service.milkfish_alias="Alias";
@@ -1169,10 +1171,15 @@ service.milkfish_fromswitch="From-Substitution";
 service.milkfish_fromdomain="From-Domain";
 service.milkfish_username="Milkfish Username";
 service.milkfish_password="Milkfish Password";
-service.milkfish_siptrace="Milkfish SIP Trace";
+service.milkfish_audit="Milkfish Audit";
+service.milkfish_siptrace="SIP Trace";
 service.milkfish_subscribers="Local Subscribers";
 service.milkfish_aliases="Local Aliases";
 service.milkfish_dynsip="Dynamic SIP";
+service.milkfish_status="SIP Status";
+service.milkfish_database="SIP Database";
+service.milkfish_messaging="SIP Messaging";
+service.milkfish_phonebook="SIP Phonebook";
 service.milkfish_dynsipdomain="DynSIP Domain";
 service.milkfish_dynsipurl="DynSIP Update URL";
 service.milkfish_dsusername="DynSIP Username";

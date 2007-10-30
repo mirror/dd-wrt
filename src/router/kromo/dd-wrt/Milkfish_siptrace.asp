@@ -20,7 +20,7 @@ function to_submit(F) {
 		<input type="hidden" name="commit" value="1" />
 			<div id="main">
 				<div id="contentsInfo">
-					<h2>Milkfish SIP Trace</h2><br /><br />
+					<h2><% tran("service.milkfish_siptrace"); %></h2><br /><br />
 					<b>Close and open this window again to update trace...</b>
 					<br /><br />
                                         <% exec_milkfish_service("cat /var/log/sip_trace.log"); %>
