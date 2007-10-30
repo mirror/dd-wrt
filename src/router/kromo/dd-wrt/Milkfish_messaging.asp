@@ -30,7 +30,7 @@ function milkfish_sip_message_submit(F) {
 		<input type="hidden" name="commit" value="1" />
 		<div id="main">
 			<div id="contentsInfo">
-				<h2>Milkfish SIP messaging</h2>
+				<h2><% tran("service.milkfish_messaging"); %></h2>
                                     <div class="setting">
                                        <div class="label"><% tran("service.milkfish_destination"); %></div>
                                        <input id="sip_message_dest" name="sip_message_dest" type="text" size="50" maxlength="50" value="sip:"> 

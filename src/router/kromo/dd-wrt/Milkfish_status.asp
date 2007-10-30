@@ -20,7 +20,7 @@ function to_submit(F) {
 		<input type="hidden" name="commit" value="1" />
 			<div id="main">
 				<div id="contentsInfo">
-					<h2>Milkfish - SIP Status</h2>
+					<h2><% tran("service.milkfish_status"); %></h2>
                                         <% exec_milkfish_service("milkfish_services status"); %>
                                         <div class="submitFooter">
 						<script type="text/javascript">
