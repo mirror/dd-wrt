@@ -1,12 +1,12 @@
 
 #ifndef CFLAGS
-CFLAGS = $(COPTS) -MMD -Wall
+CFLAGS = $(COPTS) -MMD -Wall -fpic
 #endif
 
 # Include directories for CVS version
 CFLAGS += -I. -I../utils -I../hostapd
 
-ALL=wpa_supplicant wpa_passphrase wpa_cli dynamic_eap_methods
+ALL=wpa_supplicant
 
 all: verify_config $(ALL)
 
