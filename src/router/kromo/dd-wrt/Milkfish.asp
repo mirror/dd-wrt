@@ -57,65 +57,47 @@ addEvent(window, "unload", function() {
 	<fieldset>
 		<legend><% tran("bmenu.servicesMilkfish"); %></legend>
 			<div class="setting">
-			<div class="label">Milkfish Main Switch</div>
+			<div class="label"><% tran("service.milkfish_mainswitch"); %></div>
 				<input class="spaceradio" type="radio" name="milkfish_enabled" value="1" <% nvram_checked("milkfish_enabled", "1"); %> onclick="show_layer_ext(this, 'idmilkfish', true)" /><% tran("share.enable"); %>&nbsp;
 				<input class="spaceradio" type="radio" name="milkfish_enabled" value="0" <% nvram_checked("milkfish_enabled", "0"); %> onclick="show_layer_ext(this, 'idmilkfish', false)" /><% tran("share.disable"); %>
 			</div>
 <div id="idmilkfish">
 		<div class="setting">
-			<div class="label">From-Substitution</div>
+			<div class="label"><% tran("service.milkfish_fromswitch"); %></div>
 			<input class="spaceradio" type="radio" name="milkfish_fromswitch" value="on" <% nvram_checked("milkfish_fromswitch", "on"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="milkfish_fromswitch" value="off" <% nvram_checked("milkfish_fromswitch", "off"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
-			<div class="label">From-Domain</div>
+			<div class="label"><% tran("service.milkfish_fromdomain"); %></div>
 			<input size="27" name="milkfish_fromdomain" value="<% nvram_get("milkfish_fromdomain"); %>" />
 		</div>
 		<div class="setting">
-			<div class="label">Milkfish Username</div>
+			<div class="label"><% tran("service.milkfish_username"); %></div>
 			<input size="27" name="milkfish_username" value="<% nvram_get("milkfish_username"); %>" />
 		</div>
 		<div class="setting">
-			<div class="label">Milkfish Password</div>
+			<div class="label"><% tran("service.milkfish_password"); %></div>
 			<input type="password" size="27" name="milkfish_password" value="<% nvram_get("milkfish_password"); %>" />
 		</div>
 <!--		<div class="setting">
-			<div class="label">Milkfish Audit</div>
+			<div class="label"><% tran("service.milkfish_audit"); %></div>
 			<input class="spaceradio" type="radio" name="milkfish_audit" value="on" <% nvram_checked("milkfish_audit", "on"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="milkfish_audit" value="off" <% nvram_checked("milkfish_audit", "off"); %> /><% tran("share.disable"); %>
 		</div>-->
 		<div class="setting">
-			<div class="label">Milkfish SIP Trace</div>
+			<div class="label"><% tran("service.milkfish_siptrace"); %></div>
 			<input class="spaceradio" type="radio" name="milkfish_siptrace" value="on" <% nvram_checked("milkfish_siptrace", "on"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="milkfish_siptrace" value="off" <% nvram_checked("milkfish_siptrace", "off"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
-			<div class="label">Dynamic SIP</div>
+			<div class="label"><% tran("service.milkfish_dynsip"); %></div>
 			<input class="spaceradio" type="radio" name="milkfish_dynsip" value="on" <% nvram_checked("milkfish_dynsip", "on"); %> onclick="show_layer_ext(this, 'idmilkfish_dynsip', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="milkfish_dynsip" value="off" <% nvram_checked("milkfish_dynsip", "off"); %> onclick="show_layer_ext(this, 'idmilkfish_dynsip', false)" /><% tran("share.disable"); %>
 		</div>
-<!--		<div id="idmilkfish_dynsip">
-		<div class="setting">
-			<div class="label">Dynamic SIP Domain</div>
-			<input size="27" name="milkfish_dynsipdomain" value="<% nvram_get("milkfish_dynsipdomain"); %>" />
-		</div>
-		<div class="setting">
-			<div class="label">Dynamic SIP Update URL</div>
-			<input size="27" name="milkfish_dynsipurl" value="<% nvram_get("milkfish_dynsipurl"); %>" />
-		</div>
-		<div class="setting">
-			<div class="label">Dynamic SIP Username</div>
-			<input size="27" name="milkfish_dsusername" value="<% nvram_get("milkfish_dsusername"); %>" />
-		</div>
-		<div class="setting">
-			<div class="label">Dynamic SIP Password</div>
-			<input size="27" name="milkfish_dspassword" value="<% nvram_get("milkfish_dspassword"); %>" />
-		</div>
-		</div>-->
 	<br />
 
 	<fieldset>
-		<legend>SIP Status</legend>
+		<legend><% tran("service.milkfish_status"); %></legend>
 				<script type="text/javascript">
 				//<![CDATA[
 				document.write("<input class=\"button\" type=\"button\" value=\"SIP Status\" onclick=\"openWindow('Milkfish_status.asp', 820, 730);\" />");
@@ -126,7 +108,7 @@ addEvent(window, "unload", function() {
 <br />
 
 	<fieldset>
-		<legend>SIP Phonebook</legend>
+		<legend><% tran("service.milkfish_phonebook"); %></legend>
 				<script type="text/javascript">
 				//<![CDATA[
 				document.write("<input class=\"button\" type=\"button\" value=\"SIP Phonebook\" onclick=\"openWindow('Milkfish_phonebook.asp', 820, 730);\" />");
@@ -139,7 +121,7 @@ addEvent(window, "unload", function() {
 
 
 	<fieldset>
-		<legend>SIP Database</legend>
+		<legend><% tran("service.milkfish_database"); %></legend>
 				<script type="text/javascript">
 				//<![CDATA[
 				document.write("<input class=\"button\" type=\"button\" value=\"Local Subscribers\" onclick=\"openWindow('Milkfish_database.asp', 820, 730);\" />");
@@ -155,7 +137,7 @@ addEvent(window, "unload", function() {
 
 
 	<fieldset>
-		<legend>SIP Messaging</legend>
+		<legend><% tran("service.milkfish_messaging"); %></legend>
 				<script type="text/javascript">
 				//<![CDATA[
 				document.write("<input class=\"button\" type=\"button\" value=\"SIP Messaging\" onclick=\"openWindow('Milkfish_messaging.asp', 820, 730);\" />");
@@ -170,7 +152,7 @@ addEvent(window, "unload", function() {
 
 
 	<fieldset>
-		<legend>SIP Trace</legend>
+		<legend><% tran("service.milkfish_siptrace"); %></legend>
 				<script type="text/javascript">
 				//<![CDATA[
 				document.write("<input class=\"button\" type=\"button\" value=\"SIP Trace\" onclick=\"openWindow('Milkfish_siptrace.asp', 820, 730);\" />");
@@ -182,9 +164,10 @@ addEvent(window, "unload", function() {
 	
 <br />
 
-<div id="idmilkfish_dynsip">
+<!--<div id="idmilkfish_dynsip">-->
+<div id="idmilkfish">
 	<fieldset>
-		<legend>Advanced Dynamic SIP Settings</legend>
+		<legend><% tran("service.milkfish_dynsip"); %></legend>
 				<script type="text/javascript">
 				//<![CDATA[
 				document.write("<input class=\"button\" type=\"button\" value=\"Advanced DynSIP Settings\" onclick=\"openWindow('Milkfish_dynsip.asp', 820, 730);\" />");

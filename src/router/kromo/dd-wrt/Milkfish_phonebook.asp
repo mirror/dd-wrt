@@ -24,7 +24,7 @@ function to_apply(F) {
 		<input type="hidden" name="commit" value="1" />
 			<div id="main">
 				<div id="contentsInfo">
-					<h2>Milkfish - SIP Phonebook</h2>
+					<h2><% tran("service.milkfish_phonebook"); %></h2>
                                         <% exec_milkfish_phonebook("milkfish_services phonebookhtmltable"); %>
                                         <div class="submitFooter">
 						<script type="text/javascript">

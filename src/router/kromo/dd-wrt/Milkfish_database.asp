@@ -36,7 +36,7 @@ function milkfish_user_remove_submit(F) {
                 <input type="hidden" name="milkfish_ddsubscribers" />
 			<div id="main">
 				<div id="contentsInfo">
-					<h2>Milkfish SIP database</h2>
+					<h2><% tran("service.milkfish_database"); %></h2>
 					<br />
         <fieldset>
                 <legend><% tran("service.database_subscribers"); %></legend>

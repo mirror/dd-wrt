@@ -28,39 +28,29 @@ function to_apply(F) {
 		<input type="hidden" name="commit" value="1" />
 			<div id="main">
 				<div id="contentsInfo">
-					<h2>Milkfish Dynamic SIP - Advanced Settings</h2>
-					<br />
-<!--        				<div class="setting">
-	                        	<div class="label">Dynamic SIP</div>
-                                            <input class="spaceradio" type="radio" name="milkfish_dynsip" value="on" <% nvram_checked("milkfish_dynsip", "on"); %> onclick="show_layer_ext(this, 'idmilkfish_dynsip', true)" /><% tran("share.enable"); %>&nbsp;
-                                            <input class="spaceradio" type="radio" name="milkfish_dynsip" value="off" <% nvram_checked("milkfish_dynsip", "off"); %> onclick="show_layer_ext(this, 'idmilkfish_dynsip', false)" /><% tran("share.disable"); %>
-					</div>-->
+					<h2><% tran("service.milkfish_dynsip"); %></h2>
+					<br/>
 					<b>Leaving all settings empty will automatically default to the Milkfish HomeSIP Service.<br /><br />If unsure, leave everything unset.</b><br />
 					<br>					
-           				<div id="idmilkfish_dynsip">
+           				
 		            		    <div class="setting">
-				        	<div class="label">Dynamic SIP Domain</div>
+				        	<div class="label"><% tran("service.milkfish_dynsipdomain"); %></div>
 						<input size="27" name="milkfish_dynsipdomain" value="<% nvram_get("milkfish_dynsipdomain"); %>" />
 					    </div>
 					    <div class="setting">
-					        <div class="label">Dynamic SIP Update URL</div>
+					        <div class="label"><% tran("service.milkfish_dynsipurl"); %></div>
 					        <input size="27" name="milkfish_dynsipurl" value="<% nvram_get("milkfish_dynsipurl"); %>" />
 					    </div>
 					    <div class="setting">
-					        <div class="label">Dynamic SIP Username</div>
+					        <div class="label"><% tran("service.milkfish_dsusername"); %></div>
 						<input size="27" name="milkfish_dsusername" value="<% nvram_get("milkfish_dsusername"); %>" />
 					    </div>
 					    <div class="setting">
-						<div class="label">Dynamic SIP Password</div>
+						<div class="label"><% tran("service.milkfish_dspassword"); %></div>
 					        <input size="27" name="milkfish_dspassword" value="<% nvram_get("milkfish_dspassword"); %>" />
 					    </div>
-					</div>
+					
 					<br />
-<!--            <div class="setting">
-                        <div class="label">Milkfish Audit</div>
-                        <input class="spaceradio" type="radio" name="milkfish_audit" value="on" <% nvram_checked("milkfish_audit", "on"); %> /><% tran("share.enable"); %>&nbsp;
-                        <input class="spaceradio" type="radio" name="milkfish_audit" value="off" <% nvram_checked("milkfish_audit", "off"); %> /><% tran("share.disable"); %>
-                </div>-->
 				<br />
 					<div class="submitFooter">
 						<script type="text/javascript">
