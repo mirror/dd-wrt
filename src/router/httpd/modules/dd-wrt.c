@@ -4763,18 +4763,26 @@ show_radius (webs_t wp, char *prefix, int showmacformat)
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label4)</script></div>\n");
   sprintf (var, "%s_radius_port", prefix);
   websWrite (wp,
-	     "<input name=\"%s_radius_port\" size=\"3\" maxlength=\"5\" onblur=\"valid_range(this,1,65535,radius.label4)\" value=\"%s\" /></div>\n",
+	     "<input name=\"%s_radius_port\" size=\"3\" maxlength=\"5\" onblur=\"valid_range(this,1,65535,radius.label4)\" value=\"%s\" />\n",
 	     prefix, nvram_safe_get (var));
   websWrite (wp,
-	     "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 1812)\");\n//]]>\n</script></span>\n");
+	     "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 1812)\");\n//]]>\n</script></span>\n</div>\n");
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label7)</script></div>\n");
   sprintf (var, "%s_radius_key", prefix);
   websWrite (wp,
-	     "<input name=\"%s_radius_key\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-	     prefix, nvram_safe_get (var));
+	     "<input type=\"password\" id=\"%s_radius_key\" name=\"%s_radius_key\" onblur=\"valid_psk_length(this)\" maxlength=\"79\" size=\"32\" value=\"",
+	     prefix, prefix);
+  tf_webWriteESCNV (wp, var);
+  websWrite (wp, "\" />&nbsp;&nbsp;&nbsp;\n");
+  websWrite (wp,
+	     "<input type=\"checkbox\" name=\"%s_radius_unmask\" value=\"0\" onclick=\"setElementMask('%s_radius_key', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
+	     prefix, prefix);
+  websWrite (wp, "</div>\n");
+
 }
+
 
 
 #ifdef HAVE_WPA_SUPPLICANT
