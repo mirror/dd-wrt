@@ -291,12 +291,10 @@ ej_show_status (webs_t wp, int argc, char_t ** argv)
 void
 ej_show_wan_domain (webs_t wp, int argc, char_t ** argv)
 {
-  char *wan_domain;
-
   if (nvram_invmatch ("wan_domain", ""))
-    tf_webWriteESCNV (wp, wan_domain);
+    tf_webWriteESCNV (wp, nvram_safe_get("wan_domain"));
   else
-    tf_webWriteESCNV (wp, wan_get_domain);
+    tf_webWriteESCNV (wp, nvram_safe_get("wan_get_domain"));
   return;
 }
 
