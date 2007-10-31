@@ -5984,6 +5984,8 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
   unsigned char buf[WLC_IOCTL_MAXLEN];
   memset (buf, 0, WLC_IOCTL_MAXLEN);
   char *iface = get_wdev ();
+  if (!ifexists (iface))
+    return;
   int r = getassoclist (iface, buf);
   if (r < 0)
     return;
@@ -6086,7 +6088,8 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
       return 0;
     }
 #endif
-
+  if (!ifexists (iface))
+    return cnt;
   unlink (RSSI_TMP);
   char wlmode[32];
   sprintf (wlmode, "%s_mode", visible);
@@ -6217,6 +6220,8 @@ ej_active_wds (webs_t wp, int argc, char_t ** argv)
     return;
   unsigned char buf[WLC_IOCTL_MAXLEN];
   char *iface = get_wdev ();
+  if (!ifexists (iface))
+    return;
   int r = getwdslist (iface, buf);
   if (r < 0)
     return;
