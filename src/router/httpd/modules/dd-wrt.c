@@ -4772,7 +4772,7 @@ show_radius (webs_t wp, char *prefix, int showmacformat)
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label7)</script></div>\n");
   sprintf (var, "%s_radius_key", prefix);
   websWrite (wp,
-	     "<input type=\"password\" id=\"%s_radius_key\" name=\"%s_radius_key\" onblur=\"valid_psk_length(this)\" maxlength=\"79\" size=\"32\" value=\"",
+	     "<input type=\"password\" id=\"%s_radius_key\" name=\"%s_radius_key\" maxlength=\"79\" size=\"32\" value=\"",
 	     prefix, prefix);
   tf_webWriteESCNV (wp, var);
   websWrite (wp, "\" />&nbsp;&nbsp;&nbsp;\n");
