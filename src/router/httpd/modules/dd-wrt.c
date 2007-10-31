@@ -1809,18 +1809,20 @@ ej_show_security_single (webs_t wp, int argc, char_t ** argv, char *prefix)
   websWrite (wp, "<fieldset>\n");
   //cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
   websWrite (wp,
-	     "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [%s] HWAddr [%s]</legend>\n",
-	     prefix, nvram_safe_get (ssid), nvram_safe_get (mac));
+	     "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [", prefix);
+  tf_webWriteESCNV (wp, ssid);  //fix for broken html page if ssid contains html tag
+  websWrite (wp, "] HWAddr [%s]</legend>\n", nvram_safe_get (mac));
   show_security_prefix (wp, argc, argv, prefix, 1);
   websWrite (wp, "</fieldset>\n<br />\n");
   foreach (var, vifs, next)
   {
     sprintf (ssid, "%s_ssid", var);
     websWrite (wp, "<fieldset>\n");
-    //cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
+    //cprintf("getting %s %s\n", ssid,nvram_safe_get(ssid));
     websWrite (wp,
-	       "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [%s]</legend>\n",
-	       var, nvram_get (ssid));
+	       "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", var);
+    tf_webWriteESCNV (wp, ssid);  //fix for broken html page if ssid contains html tag
+    websWrite (wp, "]</legend>\n");
     rep (var, '.', 'X');
     show_security_prefix (wp, argc, argv, var, 0);
     websWrite (wp, "</fieldset>\n<br />\n");
@@ -3700,8 +3702,9 @@ show_virtualssid (webs_t wp, char *prefix)
   {
     sprintf (ssid, "%s_ssid", var);
     websWrite (wp,
-	       "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [%s]</legend>\n",
-	       var, nvram_safe_get (ssid));
+	       "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", var);
+    tf_webWriteESCNV (wp, ssid);  //fix for broken html page if ssid contains html tag
+    websWrite (wp, "]</legend>\n");
     websWrite (wp, "<div class=\"setting\">\n");
     websWrite (wp,
 	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div>\n");
@@ -4254,8 +4257,9 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     prefix);
   websWrite (wp, "<fieldset>\n");
   websWrite (wp,
-	     "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [%s] HWAddr [%s]</legend>\n",
-	     prefix, nvram_safe_get (wl_ssid), nvram_safe_get (wl_macaddr));
+	     "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [", prefix),
+  tf_webWriteESCNV (wp, wl_ssid);  //fix for broken html page if ssid contains html tag
+  websWrite (wp, "] HWAddr [%s]</legend>\n", nvram_safe_get (wl_macaddr));
   char power[16];
   // char maxpower[16];
 #ifdef HAVE_MADWIFI

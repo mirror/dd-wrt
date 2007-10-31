@@ -4853,12 +4853,12 @@ static void
 ej_getwirelessssid (webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
-  char *mode = "wl0_ssid";
+  char *ssid = "wl0_ssid";
 #else
-  char mode[32];
-  sprintf (mode, "%s_ssid", nvram_safe_get ("wifi_display"));
+  char ssid[32];
+  sprintf (ssid, "%s_ssid", nvram_safe_get ("wifi_display"));
 #endif
-  websWrite (wp, "%s", nvram_safe_get (mode));
+  tf_webWriteESCNV (wp, ssid);
 }
 static void
 ej_getwirelessmode (webs_t wp, int argc, char_t ** argv)
