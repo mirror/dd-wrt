@@ -840,6 +840,8 @@ get_wdev (void)
       return "ath0";
     }
 #else
+  if (wl_probe ("eth1") && wl_probe ("eth2"))  //in case radio is broken or mini-pci radio is not installed
+    return nvram_safe_get ("wl0_ifname");
   if (wl_probe ("eth2"))
     return "eth1";
   else
