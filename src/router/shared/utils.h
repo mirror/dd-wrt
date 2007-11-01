@@ -236,6 +236,7 @@ extern int getcpurev (void);
 extern int cpu_plltype (void);
 extern int check_vlan_support (void);
 extern int startswith (char *source, char *cmp);
+extern int count_occurences (char *source, int cmp);
 extern int getRouterBrand (void);
 extern int diag_led (int type, int act);
 extern int C_led (int i);
