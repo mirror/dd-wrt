@@ -135,6 +135,19 @@ return !strncmp(source,cmp,strlen(cmp));
   return 1;*/
 }
 
+int
+count_occurences (char *source, int cmp)
+{
+   int i, cnt = 0;
+   int len = strlen (source);
+
+   for (i = 0; i < len; i++)
+       {
+       if (source[i] == cmp)
+          cnt++;
+       }
+   return cnt;
+}
 
 void
 setRouter (char *name)
