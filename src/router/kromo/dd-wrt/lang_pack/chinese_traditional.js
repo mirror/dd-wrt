@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//Chinese (Traditional) translation file - DD-WRT V23/V24 -2007/08/31 UTF-8 by a9988cd
-//Chinese (Traditional) translation file - DD-WRT V23/V24 16/06/2007 by a9988cd, 2007/08/20 by bbyel 
+//Chinese (Traditional) translation file - DD-WRT V23/V24 2007/11/03 UTF-8 by a9988cd (大力丸)
+//Chinese (Traditional) translation file - DD-WRT V23/V24 2007/08/20 by bbyel 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // ** COMMON SHARE LABEL **//
 
@@ -24,7 +24,7 @@ share.compression="PPP 壓縮";
 share.domainname="網域名稱";
 share.wandomainname="WAN 網域名稱";
 share.landomainname="LAN 網域名稱";
-share.statu="資訊";
+share.statu="連線計畫";
 share.start="開始";
 share.end="結束";
 share.proto="協定";
@@ -110,6 +110,7 @@ share.vintrface="Virtual 介面";
 share.router="路由器";
 share.static_lease="靜態租用";
 share.srvip="伺服器IP";
+share.srvipname="伺服器 IP/名稱";
 share.localdns="Local DNS";
 share.minutes="分鐘";
 share.oui="OUI 搜索";
@@ -279,18 +280,18 @@ errmsg.err47="無效SSID.";
 errmsg.err48="WDS與目前路由器的設定不相容. 請檢查以下幾點 :\n * 無線模式必須被設定為AP（接入點） \n * WDS下不支援WPA2 \n * WDS下不支援僅B模式的無線網路";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius僅在AP（接入點）模式下可用.";
+errmsg.err49="Radius 必須在 AP 模式下使用.";
 
 //Wireless_Basic.asp error messages
-errmsg.err50="你必須輸入一個SSID.";
+errmsg.err50="必須輸入一個SSID.";
 
 // Management.asp error messages
 errmsg.err51="本路由器目前設定的密碼為預設密碼. 基於安全考量, 你必須在開啟遠端管理介面之前變更密碼. 按確定鍵來變更密碼. 按取消鍵保持遠端管理特性關閉.";
 errmsg.err52="密碼確認不正確";
 
 // Port_Services.asp error messages
-errmsg.err53="完成所有設定操作後, 請點選應用鍵來儲存設定.";
-errmsg.err54="你必須輸入一個服務名稱.";
+errmsg.err53="完成所有設定操作後, 請點選 儲存重起 鍵來儲存設定.";
+errmsg.err54="必須輸入一個服務名稱.";
 errmsg.err55="此服務名稱已存在.";
 
 // QoS.asp error messages
@@ -308,7 +309,7 @@ errmsg.err59="不可用！請啟用無線網路.";
 
 //Upgrade.asp error messages
 errmsg.err60="請選擇要升級的檔案.";
-errmsg.err61="不正確的鏡像檔.";
+errmsg.err61="不正確的影像檔.";
 
 //Services.asp error messages
 errmsg.err62=" 已經定義為靜態的租約.";
@@ -320,7 +321,7 @@ errmsg.err102="正在更新韌體...<br/>請稍後.";
 
 // **  COMMON MENU ENTRIES  **//
 
-bmenu.setup="設定";
+bmenu.setup="基本設定";
 bmenu.setupbasic="基本設定";
 bmenu.setupddns="動態DNS（DDNS）";
 bmenu.setupmacclone="MAC位址複製";
@@ -329,7 +330,7 @@ bmenu.setupvlan="VLANs";
 bmenu.setupeop="EoIP 通道";
 bmenu.networking="網路";
 
-bmenu.wireless="無線";
+bmenu.wireless="無線網路";
 bmenu.wirelessBasic="基本設定";
 bmenu.wirelessRadius="Radius";
 bmenu.wirelessSecurity="無線安全";
@@ -341,7 +342,7 @@ bmenu.wirelessWds1="Ath1-WDS";
 bmenu.wirelessWds2="Ath2-WDS";
 bmenu.wirelessWds3="Ath3-WDS";
 
-bmenu.security="安全";
+bmenu.security="系統安全";
 bmenu.firwall="防火牆";
 bmenu.vpn="VPN";
 
@@ -363,7 +364,7 @@ bmenu.sipathoverview="總覽";
 bmenu.sipathphone="電話本";
 bmenu.sipathstatus="狀態";
 
-bmenu.admin="管理";
+bmenu.admin="系統管理";
 bmenu.adminManagement="基本管理";
 bmenu.adminAlive="保持連線";
 bmenu.adminLog="日誌";
@@ -380,10 +381,10 @@ bmenu.servicesPptp="PPTP";
 bmenu.servicesHotspot="熱點";
 bmenu.servicesMilkfish="Milkfish";
 
-bmenu.statu="狀態";
+bmenu.statu="系統狀態";
 bmenu.statuRouter="路由器";
-bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Sputnik 代理";
+bmenu.statuLAN="區域網路";
+bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="無線網路";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="頻寬監控";
@@ -417,12 +418,12 @@ halive.right4="最多允許3個IP位址,之間使用 <em>空格</em> 區隔<BR/>
 config.titl="備份 & 恢復";
 config.h2="備份設定";
 config.legend="備份設定";
-config.mess1="按 \"" + sbutton.backup + "\" 按鈕將設定備份檔案儲存到您的個人電腦.";
+config.mess1="按 \"" + sbutton.backup + "\" 按鈕將設定備份檔案儲存至個人電腦.";
 config.h22="恢復設定";
 config.legend2="恢復設定";
 config.mess2="請選擇一個用來恢復的檔案";
 config.mess3="W A R N I N G";
-config.mess4="請僅上傳使用符合此機器的韌體版本或是從相同型號路由器上的備份的檔.<br />請勿上傳任何不是使用本介面所創建的檔！";
+config.mess4="請僅上傳使用符合此機器的韌體版本或是從相同型號路由器上的備份的檔.<br />請勿上傳任何不是使用本介面所建立的檔！";
 
 //help container
 
@@ -523,14 +524,14 @@ filterIP.ip_range="IP範圍";
 // ** Filter.asp **//
 
 filter.titl="連線限制";
-filter.h2="WAN 連線";
+filter.h2="WAN 連線限制";
 filter.legend="連線計畫";
-filter.pol="計畫";
-filter.polname="計畫的名稱";
+filter.pol="計畫目錄";
+filter.polname="計畫名稱";
 filter.pcs="PC列表";
 filter.polallow="選定的日期和時間允許上網.";
 filter.legend2="日期";
-filter.time="時間";
+filter.time="時間範圍";
 filter.h24="24小時";
 filter.legend3="禁止的協定";
 filter.catchall="所有P2P協定";
@@ -566,7 +567,7 @@ filterSum.polday="（每天的）時間";
 // ** Firewall.asp **//
 
 firewall.titl="防火牆";
-firewall.h2="安全";
+firewall.h2="安全設定";
 firewall.legend="防火牆保護";
 firewall.firewall="SPI防火牆";
 firewall.legend2="附加的過濾程式";
@@ -934,9 +935,9 @@ management.mmc_gpiopins="GPIO pins";
 
 
 management.samba_legend="CIFS 自動載入";
-management.samba_srv="Common Internet File System";
+management.samba_srv="網路上的芳鄰";
 management.samba_share="共用";
-management.samba_stscript="啟動腳本";
+management.samba_stscript="啟動script";
 
 management.SIPatH_srv="SIPatH";
 management.SIPatH_port="SIP 埠";
@@ -980,8 +981,8 @@ qos.h2="頻寬管理器 (QoS)";
 qos.legend="QoS 設定";
 qos.srv="開啟 QoS";
 qos.type="資料封包計劃器";
-qos.uplink="上行 (kbps)";
-qos.dnlink="下行 (kbps)";
+qos.uplink="上傳 (kbps)";
+qos.dnlink="下載 (kbps)";
 qos.gaming="線上遊戲最佳化";
 qos.legend2="協定優先順序";
 qos.prio_x="Exempt（豁免）";
@@ -1001,10 +1002,10 @@ qos.bandwidth="以Kbits表示的帶寬";
 
 //help container
 
-hqos.right1="上行:";
-hqos.right2="將此設定為您的總上行限制的80%-95%（最大）.";
-hqos.right3="下行:";
-hqos.right4="將此設定為您的總下行限制的80%-100%（最大）.";
+hqos.right1="上傳:";
+hqos.right2="將此設定為您的總上傳限制的80%-95%（最大）.";
+hqos.right3="下載:";
+hqos.right4="將此設定為您的總下載限制的80%-100%（最大）.";
 hqos.right6="您可以注意消耗頻寬的應用程式,進而控制您的資料傳輸速率.";
 hqos.right8="您可以為一個給定的IP位址或者IP區段指定優先順序.";
 hqos.right10="您可以通過為一個設備指定設備名,制定優先順序並輸入MAC位址.";
@@ -1024,6 +1025,7 @@ routetbl.th1="目的地LAN IP";
 
 route.titl="路由器設定";
 route.h2="進階路由器設定";
+route.metric="公尺";
 route.mod="工作模式";
 route.bgp_legend="BGP 設定";
 route.bgp_ip="鄰近 IP";
@@ -1261,8 +1263,8 @@ status_band.titl="頻寬監控";
 status_band.h2="頻寬監控中";
 status_band.chg_unit="SWITCH TO ";
 status_band.chg_scale="AUTOSCALE";
-status_band.chg_error="Cannot get data about interface";
-status_band.chg_collect_initial="Collecting initial data, please wait...";
+status_band.chg_error="無法取得資料";
+status_band.chg_collect_initial="資料收集中, 請稍候...";
 status_band.strin="IN"; 
 status_band.strout="OUT";
 
@@ -1393,12 +1395,12 @@ htrforward.right10="輸入通訊埠觸發和虛擬伺服器（映射）埠範圍
 upgrad.titl="韌體升級";
 upgrad.h2="韌體管理";
 upgrad.legend="韌體升級";
-upgrad.info1="在刷新之後,還原到";
+upgrad.info1="韌體更新之後,還原到";
 upgrad.resetOff="不還原";
 upgrad.resetOn="預設值";
 upgrad.file="請選擇一個用來升級的檔";
 upgrad.warning="（警 告）";
-upgrad.mess1="升級韌體可能需要花費數分鐘的時間.<br />請不要任意關閉電源或者按Reset 鍵！";
+upgrad.mess1="韌體升級需要花費數分鐘的時間.<br />請不要關閉電源或者按Reset 鍵！";
 
 //help container
 
@@ -1414,7 +1416,7 @@ upnp.legend="虛擬伺服器（映射）";
 upnp.legend2="UPnP設定";
 upnp.serv="UPnP伺服器";
 upnp.clear="在啟動時清除虛擬伺服器（映射）";
-upnp.url="發送陳述 URL";
+upnp.url="發布 UPnP網址";
 upnp.msg1="刪除租用";
 upnp.msg2="刪除所有項目？";
 
@@ -1505,7 +1507,7 @@ hwanmac.right2="某些ISP可能要求您註冊您的MAC位址.如果您不想重
 
 wpa.titl="無線安全";
 wpa.h2="無線安全";
-wpa.secmode="安全模式";
+wpa.secmode="加密模式";
 wpa.legend="無線加密";
 wpa.auth_mode="網路授權";
 wpa.wpa="WPA";
@@ -1525,7 +1527,7 @@ sec80211x.clientcertif="用戶端認證";
 
 //help container
 
-hwpa.right2="您可以從關閉、WEP、WPA預共用金鑰、WPA RADIUS或者RADIUS中選取一種.在你的網路上的全部設備必須使用相同的安全模式.";
+hwpa.right2="您可以從關閉、WEP、WPA預共用金鑰、WPA RADIUS或者RADIUS中選取一種.在你的網路上的全部設備必須使用相同的加密模式.";
 
 
 
@@ -1650,20 +1652,20 @@ wl_basic.label5="無線SSID廣播";
 wl_basic.label6="感度範圍（ACK時序）";
 wl_basic.scanlist="ScanList";
 wl_basic.ap="AP";
-wl_basic.client="用戶端";
-wl_basic.repeater="中繼器";
-wl_basic.repeaterbridge="中繼器橋接";
-wl_basic.clientBridge="用戶端橋接";
+wl_basic.client="Client";
+wl_basic.repeater="Repeater";
+wl_basic.repeaterbridge="Repeater Bridge";
+wl_basic.clientBridge="Client Bridge";
 wl_basic.adhoc="Adhoc";
 wl_basic.wdssta="WDS Station";
 wl_basic.wdsap="WDS AP";
-wl_basic.mixed="混合";
+wl_basic.mixed="混合模式";
 wl_basic.preamble="Short Preamble";
-wl_basic.b="B模式";
-wl_basic.a="A模式";
-wl_basic.g="G模式";
-wl_basic.bg="BG模式";
-wl_basic.n="N模式";
+wl_basic.b="B_模式";
+wl_basic.a="A_模式";
+wl_basic.g="G_模式";
+wl_basic.bg="BG_模式";
+wl_basic.n="N_模式";
 wl_basic.legend2="無線網路自動 開/關 ";
 wl_basic.radio="無線網路";
 wl_basic.radiotimer="無線網路開關設定";
@@ -1699,6 +1701,7 @@ wl_basic.preambletime="OFDM Preamble 時間";
 hwl_basic.right2="如果您想排除無線-G用戶端,選擇 <em>B</em> 模式.如果您想關閉無線連線,選擇 <em>關閉</em>.";
 hwl_basic.right3="感度範圍: ";
 hwl_basic.right4="調整ack時序.輸入0將完全關閉ack時序(V.24 無此功能).";
+hwl_basic.right6="按 時間表格 開啟或關閉無線網路 (<em>green</em> 無線網路開啟, and <em>red</em> 無線網路關閉)";
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
 
