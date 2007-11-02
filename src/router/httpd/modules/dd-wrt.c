@@ -5028,9 +5028,13 @@ show_wep (webs_t wp, char *prefix)
 	     "</select>\n</div>\n<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wep.passphrase)</script></div>\n");
   websWrite (wp,
 	     "<input name=%s_passphrase maxlength=\"16\" size=\"20\" value=\"", prefix);
-    nvram_set ("passphrase_temp", get_wep_value ("passphrase", bit, prefix));
+
+  char p_temp[128];
+  sprintf (p_temp, "%s", get_wep_value ("passphrase", bit, prefix));
+  nvram_set ("passphrase_temp", p_temp);
   tf_webWriteESCNV (wp, "passphrase_temp");
-    nvram_unset ("passphrase_temp");
+  nvram_unset ("passphrase_temp");
+
   websWrite (wp, "\" />");
 
   websWrite (wp,
