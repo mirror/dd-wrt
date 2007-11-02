@@ -1323,7 +1323,7 @@ ej_wireless_active_table (webs_t wp, int argc, char_t ** argv)
   //if(dhcp_lease_table)  free(dhcp_lease_table);
   return;
 }
-
+/*
 char *
 get_wep_value (char *type, char *_bit, char *prefix)
 {
@@ -1403,6 +1403,73 @@ get_wep_value (char *type, char *_bit, char *prefix)
 
   return "";
 }
+*/
+char *
+get_wep_value (char *type, char *_bit, char *prefix)
+{
+
+  int cnt;	
+  char *wordlist;
+  char wl_wep[] = "wlX.XX_wep_XXXXXX";
+  char temp[256]="";
+
+  if (generate_key)
+    {
+      snprintf (wl_wep, sizeof (wl_wep), "%s_wep_gen", prefix);
+    }
+  else
+    {
+      snprintf (wl_wep, sizeof (wl_wep), "%s_wep_buf", prefix);
+    }
+
+  cprintf ("get %s from %s with bit %s and prefix %s\n", type, wl_wep, _bit,
+	   prefix);
+
+  wordlist = nvram_safe_get (wl_wep);
+  
+
+  if (!strcmp (wordlist, ""))
+      return "";
+ 
+  cnt = count_occurences (wordlist, ':');
+ 
+  cprintf ("wordlist = %s\n", wordlist);
+
+
+    if (!strcmp (type, "passphrase"))
+      {
+       substring (0, pos_nthoccurence (wordlist, ':', cnt - 4), wordlist, temp);
+       return temp;
+      }
+    else if (!strcmp (type, "key1"))
+      {
+       substring (pos_nthoccurence (wordlist, ':', cnt - 4) + 1, pos_nthoccurence (wordlist, ':', cnt - 3), wordlist, temp);
+       return temp;
+      }
+    else if (!strcmp (type, "key2"))
+      {
+       substring (pos_nthoccurence (wordlist, ':', cnt - 3) + 1, pos_nthoccurence (wordlist, ':', cnt - 2), wordlist, temp);
+       return temp;
+      }
+    else if (!strcmp (type, "key3"))
+      { 
+       substring (pos_nthoccurence (wordlist, ':', cnt - 2) + 1, pos_nthoccurence (wordlist, ':', cnt - 1), wordlist, temp);
+       return temp;
+      }
+    else if (!strcmp (type, "key4"))
+      { 
+       substring (pos_nthoccurence (wordlist, ':', cnt - 1) + 1, pos_nthoccurence (wordlist, ':', cnt), wordlist, temp);
+       return temp;
+      }
+    else if (!strcmp (type, "tx"))
+      {
+       substring (pos_nthoccurence (wordlist, ':', cnt) + 1, strlen (wordlist), wordlist, temp);
+       return temp;
+      }
+
+  return "";
+}
+
 
 void
 ej_get_wep_value (webs_t wp, int argc, char_t ** argv)
