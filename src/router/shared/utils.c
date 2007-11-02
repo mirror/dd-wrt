@@ -149,6 +149,32 @@ count_occurences (char *source, int cmp)
    return cnt;
 }
 
+int
+pos_nthoccurence (char *source, int cmp, int which)
+{
+   int i, cnt = 0;
+   int len = strlen (source);
+
+   for (i=0; i < len; i++)
+	   {
+		if (source[i] == cmp)
+          cnt++;
+		if (cnt == which)
+          return i;
+       }
+   return -1;
+}
+
+char *
+substring (int start, int stop, const char *src, char *dst)
+{
+   int count = stop - start;
+
+   sprintf(dst, "%.*s", count, src + start);
+
+   return dst;
+}
+
 void
 setRouter (char *name)
 {
