@@ -975,6 +975,7 @@ routetbl.th1="Destination LAN IP";
 var route = new Object();
 route.titl="Routing";
 route.h2="Advanced Routing";
+route.metric="Metric";
 route.mod="Operating Mode";
 route.bgp_legend="BGP Settings";
 route.bgp_ip="Neighbor IP";
