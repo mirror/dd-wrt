@@ -75,7 +75,8 @@ del_routes (char *route)
     if (!strcmp (ipaddr, "0.0.0.0"))
       eval ("route", "del", "default", "gw", gateway);
 
-    route_del (ifname, atoi (metric) + 1, ipaddr, gateway, netmask);
+    eval("route","del","-net",ipaddr,"netmask",netmask,"gw",gateway);
+//    route_del (ifname, atoi (metric) + 1, ipaddr, gateway, netmask);
   }
 }
 
