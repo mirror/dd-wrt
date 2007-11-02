@@ -891,6 +891,7 @@ routetbl.th1="IP Destination sur le LAN";
 // ** Routing.asp **//
 route.titl="Routage";
 route.h2="Routage Avancé";
+route.metric="Métrique";
 route.mod="Mode de Fonctionnement";
 route.bgp_legend="Paramètres BGP";
 route.bgp_own_as="BGP Own AS#";
