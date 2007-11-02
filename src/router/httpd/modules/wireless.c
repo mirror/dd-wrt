@@ -1328,7 +1328,7 @@ char *
 get_wep_value (char *type, char *_bit, char *prefix)
 {
   static char word[200];
-  char *next, *wordlist;
+  char *wordlist;
   char wl_wep[] = "wlX.XX_wep_XXXXXX";
   char *wl_passphrase, *wl_key1, *wl_key2, *wl_key3, *wl_key4, *wl_key_tx;
 
@@ -1345,30 +1345,29 @@ get_wep_value (char *type, char *_bit, char *prefix)
 	   prefix);
 
   wordlist = nvram_safe_get (wl_wep);
+  
+  if (!strcmp (wordlist, ""))
+      return "";
+  
   cprintf ("wordlist = %s\n", wordlist);
-  //if(strcmp(wordlist,"") && !strcmp(_bit,"64")){
-  foreach (word, wordlist, next)
-  {
+	  
+	strcpy(word, wordlist);
+	
     wl_key1 = word;
     wl_passphrase = strsep (&wl_key1, ":");
-    if (!wl_passphrase || !wl_key1)
-      continue;
+
     wl_key2 = wl_key1;
     wl_key1 = strsep (&wl_key2, ":");
-    if (!wl_key1 || !wl_key2)
-      continue;
+
     wl_key3 = wl_key2;
     wl_key2 = strsep (&wl_key3, ":");
-    if (!wl_key2 || !wl_key3)
-      continue;
+
     wl_key4 = wl_key3;
     wl_key3 = strsep (&wl_key4, ":");
-    if (!wl_key3 || !wl_key4)
-      continue;
+
     wl_key_tx = wl_key4;
     wl_key4 = strsep (&wl_key_tx, ":");
-    if (!wl_key4 || !wl_key_tx)
-      continue;
+
 
     cprintf ("key1 = %s\n", wl_key1);
     cprintf ("key2 = %s\n", wl_key2);
@@ -1401,7 +1400,7 @@ get_wep_value (char *type, char *_bit, char *prefix)
       {
 	return wl_key_tx;
       }
-  }
+
   return "";
 }
 
