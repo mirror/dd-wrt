@@ -63,6 +63,8 @@ ej_show_routeif (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "<option value=\"wan\" %s >WAN</option>\n",
 	     nvram_match ("wan_ifname",
 			  ifname) ? "selected=\"selected\"" : "");
+  websWrite (wp, "<option value=\"any\" %s >ANY</option>\n",
+	     strcmp ("any", ifnamecopy) == 0 ? "selected=\"selected\"" : "");
   memset (word, 0, 256);
   next = NULL;
   foreach (word, bufferif, next)
@@ -226,13 +228,12 @@ validate_static_route (webs_t wp, char *value, struct variable *v)
   {argv:ARGV ("lan", "wan")},
   };
 
-  char *name, ipaddr[20], netmask[20], gateway[20], *metric =
-    "0", *ifname, *page;
+  char *name, ipaddr[20], netmask[20], gateway[20], *metric , *ifname, *page;
   char new_name[80];
   char temp[30], *val = NULL;
 
   name = websGetVar (wp, "route_name", "");	// default empty if no find route_name
-
+  metric = websGetVar (wp, "route_metric", "0");
   /* validate ip address */
   strcpy (ipaddr, "");
   for (i = 0; i < 4; i++)

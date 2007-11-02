@@ -3143,6 +3143,11 @@ start_set_routes (void)
 	eval ("route", "add", "default", "gw", gateway);
       }
     else
+    if (!strcmp (ifname, "any"))
+    {
+    eval("route","add","-net",ipaddr,"netmask",netmask,"gw",gateway,"metric",metric);
+    }
+    else    
       route_add (ifname, atoi (metric) + 1, ipaddr, gateway, netmask);
   }
 }

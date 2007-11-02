@@ -195,6 +195,10 @@ addEvent(window, "unload", function() {
 									<input name="route_name" size="25" maxlength="25" onblur="valid_name(this,route.static_name)" value="<% static_route_setting("name",""); %>" />
 								</div>
 								<div class="setting">
+									<div class="label"><% tran("route.metric"); %></div>
+									<input name="route_metric" size="4" maxlength="4" onblur="valid_range(this,0,9999,route.metric)" class="num" value="<% static_route_setting("metric",""); %>" />
+								</div>
+								<div class="setting">
 									<div class="label"><% tran("routetbl.th1"); %></div>
 									<input type="hidden" name="route_ipaddr" value="4" />
 									<input name="route_ipaddr_0" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.th1)" class="num" value="<% static_route_setting("ipaddr","0"); %>" />.<input name="route_ipaddr_1" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.th1)" class="num" value="<% static_route_setting("ipaddr","1"); %>" />.<input name="route_ipaddr_2" size="3" maxlength="3" onblur="valid_range(this,0,255,routetbl.th1)" class="num" value="<% static_route_setting("ipaddr","2"); %>" />.<input name="route_ipaddr_3" size="3" maxlength="3" onblur="valid_range(this,0,254,routetbl.th1)" class="num" value="<% static_route_setting("ipaddr","3"); %>" />
