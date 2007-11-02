@@ -4454,7 +4454,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
 //  showOption (wp, "wl_basic.extchannel", wl_xchanmode);
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
-  if (nvram_match ("ath_regulatory", "1"))
+  if (nvram_match ("ath_regulatory", "1") || !issuperchannel())
     {
       showOption (wp, "wl_basic.outband", wl_outdoor);
     }
