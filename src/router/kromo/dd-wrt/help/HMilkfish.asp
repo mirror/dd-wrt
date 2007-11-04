@@ -14,8 +14,8 @@
 				<u>Provider Phone Configuration</u>: The IP address of this router is the <b>Outbound Proxy</b> or <b>Outbound Server</b> and <b>STUN is deactivated</b>.<br>
 				All other settings should be set according to the providers recommendation.<br><br>
 				<u>Local Phone Configuration</u>: The IP address of this router is the <b>SIP Server</b> or <b>Registrar Server</b> and <b>a local subscriber account was added</b>.<br>
-r				<br>Dynamic SIP needs a valid User Account set to work. Homesip Users need to be registered at the Milkfish Forum.<br>
-				<br>Key features are...<br>
+				<br>Dynamic SIP needs a valid User Account set to work. Homesip Users need to be registered at the Milkfish Forum.<br>
+<!--				<br>Key features are...<br>
 				<li>the first free and <a href="http://wiki.milkfish.org/index.php?n=MilkfishServices.Homesip" target="new">user specific alphanumeric dialing</a> infrastructure - choose <b>yourname.homesip.net</b></li>
 				<li>improved NAT traversal by means of a combined SIP-RTP-proxy - equipped with a selective STUNBLOCKER</li>
 				<li>support for LAN-connected PBX-Adapter hardwares - find an example <a href="http://wiki.milkfish.org/index.php?n=TheMilkfish.FritzBox" target="new">here</a></li>
@@ -24,7 +24,7 @@ r				<br>Dynamic SIP needs a valid User Account set to work. Homesip Users need 
 				<li>direct dialling through the <a href="http://www.sipbroker.com" target="new">SIPBroker</a> Network Directory using <b>*1</b> as a prefix before the SIPBroker <i>SIP-Code</i></li>
 				<li>SIP/SIMPLE messaging via web interface</li>
 				<li>Find more feature descriptions <a href="http://www.milkfish.org/?page_id=7" target="new">here</a> or <a href="http://wiki.milkfish.org/index.php?n=Milkfish-dd.Features" target="new">there</a>...</li>
-				</ul><br />
+-->				</ul><br />
 					<div class="note">
 						<h4>Get support...</h4>
 						<div><br />
