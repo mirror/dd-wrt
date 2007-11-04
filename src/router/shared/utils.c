@@ -789,20 +789,30 @@ internal_getRouterBrand ()
   if (boardnum == 42 &&
       nvram_match ("boardtype", "0x478") && nvram_match ("cardbus", "1"))
     {
+      cprintf ("router is Linksys WRT350N\n");
       setRouter ("Linksys WRT350N");
       return ROUTER_WRT350N;
     }
 
   if (boardnum == 42 && nvram_match ("boardtype", "bcm94710dev"))
     {
-      setRouter ("Linksys WRT54G 1.x");
+      cprintf ("router is Linksys WRT54G v1.x\n");
+      setRouter ("Linksys WRT54G v1.x");
       return ROUTER_WRT54G1X;
     }
 
   if (boardnum == 1 && nvram_match ("boardtype", "0x0446"))
     {
+      cprintf ("router is U.S. Robotics USR5430\n");
       setRouter ("U.S.Robotics USR5430");
       return ROUTER_USR_5430;
+    }
+    
+  if (boardnum == 1 && nvram_match ("boardtype", "0x456"))
+    {
+      cprintf ("router is Netgear WG602 v3\n");	    
+      setRouter ("Netgear WG602 v3");
+      return ROUTER_NETGEAR_WG602_V3;
     }
 
   if (boardnum == 10496 && nvram_match ("boardtype", "0x456"))

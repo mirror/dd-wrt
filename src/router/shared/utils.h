@@ -225,6 +225,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Asus WL-520GU / WL-520GC (5354 cpu, fccid: Asus MSQWL520GUGC)
 #define ROUTER_ASUS_WL520GUGC 0x4312
 
+// Netgear WG602 v3 (5350 cpu, fccid: Netgear PY3WG602V3)
+#define ROUTER_NETGEAR_WG602_V3 0x440f
+
 #define NVROUTER "DD_BOARD"
 
 extern char *getBridge (char *ifname);
