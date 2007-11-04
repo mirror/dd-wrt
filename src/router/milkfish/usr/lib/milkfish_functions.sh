@@ -20,7 +20,7 @@
 #                                                                    #
 # The Milkfish Router Services - Shell Function Library              #
 #                                                                    #
-# Built/Version:  20070925                                           #
+# Built/Version:  20071104                                           #
 # Author/Contact: Franz Streibl <fronce@sipwerk.com>                 #
 # Copyright (C) 2007 by sipwerk - All rights reserved.               #
 #                                                                    #
@@ -538,6 +538,49 @@ mf_sipdb_storenv () {
     [ -e /var/openser/dbtext/aliases ] && mf_feedback "Storing volatile SIP DB aliases to NVRAM..." &&\
     nvram set milkfish_aliases=$(cat /var/openser/dbtext/aliases | head -n11 | sed -e ':a;N;$!ba;s/\n/<+>/g;s/ /<->/g') &&\
     echo "Done."
+}
+
+mf_ddactive () {
+    DDACTIVEFILE=/tmp/ddactive.txt
+    DDACTIVEFILE2=/tmp/ddactive2.txt
+    DDACTIVEFILE3=/tmp/ddactive3.txt
+    [ -e $DDACTIVEFILE ] && rm $DDACTIVEFILE
+    [ -e $DDACTIVEFILE2 ] && rm $DDACTIVEFILE2
+    [ -e $DDACTIVEFILE3 ] && rm $DDACTIVEFILE3
+    openserctl ul show | grep "^aor       :\|^Contact\|^User-Agent" | sed -e "s/sip://" | awk -F : '{print $2 " " $3}' | awk -F "'" '{print $2}' | sed -e "s/ /_/g;s/;/\\\;/g" > $DDACTIVEFILE
+    LINES=$(wc -l $DDACTIVEFILE | awk '{print $1}')
+    CONTACTS=$(( $LINES / 3 ))
+    #echo $CONTACTS
+    #cat $DDACTIVEFILE
+    while [ $CONTACTS -gt 0 ];
+    do {
+	#echo $CONTACTS
+	#echo $(( $CONTACTS *3 - 2 ))
+	SIPUSER=$(head -n$(( $CONTACTS * 3 - 2 )) $DDACTIVEFILE | tail -n1)
+	SIPCONTACT=$(head -n$(( $CONTACTS * 3 - 1 )) $DDACTIVEFILE | tail -n1)
+	SIPAGENT=$(head -n$(( $CONTACTS * 3 - 0 )) $DDACTIVEFILE | tail -n1)
+	echo $SIPUSER:$SIPCONTACT:$SIPAGENT >> $DDACTIVEFILE2
+	#echo $SIPCONTACT
+	#echo $SIPAGENT
+	#echo $CONTACTS
+	let "CONTACTS--"
+	}
+    done;
+    #cat $DDACTIVEFILE2
+    cat $DDACTIVEFILE2 | grep -v Milkfish-Router >> $DDACTIVEFILE3
+    #cat $DDACTIVEFILE3 | wc -l
+    #cat $DDACTIVEFILE3
+    NVRAMNUM=$(cat $DDACTIVEFILE3 | wc -l)
+    NVRAMSTRING=$(cat $DDACTIVEFILE3 | tr '\n' ' ')
+    #echo $NVRAMNUM
+    #echo $NVRAMSTRING
+    #NVRAMSTRING2=$NVRAMSTRING
+    # | sed -e "s/ /\\\ /g")
+    nvram set milkfish_ddactive="$NVRAMSTRING"
+    nvram set milkfish_ddactivenum=$NVRAMNUM
+    [ -e $DDACTIVEFILE ] && rm $DDACTIVEFILE
+    [ -e $DDACTIVEFILE2 ] && rm $DDACTIVEFILE2
+    [ -e $DDACTIVEFILE3 ] && rm $DDACTIVEFILE3
 }
 
 
