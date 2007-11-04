@@ -421,6 +421,14 @@ start_restore_defaults (void)
     {"wan_ifnames", "eth0", 0},
     {0, 0, 0}
   };
+  
+  struct nvram_tuple generic_3[] = {
+    {"lan_ifname", "br0", 0},
+    {"lan_ifnames", "eth0 eth1", 0},
+    {"wan_ifname", "eth2", 0},
+    {"wan_ifnames", "eth2", 0},
+    {0, 0, 0}
+  };
 #endif
 
   struct nvram_tuple *linux_overrides;
@@ -592,6 +600,15 @@ start_restore_defaults (void)
     case ROUTER_SITECOM_WL105B:
       linux_overrides = generic_2;
       break;
+    case ROUTER_BUFFALO_WLA2G54C:
+    case ROUTER_WAP54G_V2:
+    case ROUTER_VIEWSONIC_WAPBR_100:
+    case ROUTER_USR_5430:
+    case ROUTER_BUFFALO_WLI_TX4_G54HP:
+    case ROUTER_BELKIN_F5D7230_V2000:
+    case ROUTER_NETGEAR_WG602_V3:
+      linux_overrides = generic_3;
+      break;    
     case ROUTER_RT480W:
     case ROUTER_RT210W:
 #endif
