@@ -1,0 +1,106 @@
+* {
+font-family:Tahoma, Arial, Helvetica, sans-serif;
+font-size:1em;
+text-align:justify;
+}
+tt {
+font-family:Courier, Courier New
+}
+body {
+background:#fff;
+margin:.906em;
+font-size:69%;
+}
+#header {
+position:relative;
+height:4.257em;
+}
+#header .logo {
+background:url(logo-help.png) left center no-repeat;
+height:4.076em;
+width:314px;
+}
+#header .navig {
+position:absolute;
+top:4.537em;
+right:.815em;
+}
+#header .navig a {
+font-weight:bold;
+text-decoration:none;
+color:#666;
+}
+#header .navig a:hover {
+color:#000;
+}
+h2 {
+margin:0 0 .906em 0;
+background:#ccc;
+padding:.181em .725em;
+border-style:solid;
+border-color:#ddd #999 #999 #ddd;
+border-width:.09em;
+}
+dl {
+padding:0;
+margin:0;
+}
+dt {
+margin:0 0 .362em 0;
+font-weight:bold;
+}
+dd {
+padding-bottom:.908em;
+border-bottom:dotted .09em #ccc;
+margin:0 0 .908em 0;
+}
+ul, ol {
+padding:0;
+margin:0;
+}
+ul.wide li, ol.wide li {
+margin-top:1em;
+}
+ul {
+list-style:square;
+}
+ul li {
+margin-left:1.5em;
+}
+ol {
+list-style:decimal;
+}
+ol li {
+margin-left:2.5em;
+}
+a {
+text-decoration:none;
+color:#00f;
+}
+a:hover {
+text-decoration:underline;
+color:#33f;
+}
+div.also, div.note {
+padding:.725em;
+border-style:solid;
+border-width:.09em;
+}
+div.also {
+background:#ddd;
+border-color:#eee #aaa #aaa #eee;
+}
+div.note {
+background:#ddf;
+border-color:#eef #aaf #aaf #eef;
+}
+div.note h4, div.also h4 {
+float:left;
+margin:0;
+}
+div.note div {
+margin-left:3.4em;
+}
+div.also ul {
+margin-left:5em;
+}
