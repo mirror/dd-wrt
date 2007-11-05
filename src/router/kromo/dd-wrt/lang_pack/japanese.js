@@ -304,7 +304,7 @@ errmsg.err55="入力したサービスは既に使用されています";
 errmsg.err56="ポート番号が正しくありません。[0 - 65535]の範囲内である必要があります";
 
 // Routing.asp error messages
-errmsg.err57="この項目を削除し手もよろしいですか？";
+errmsg.err57="この項目を削除してもよろしいですか？";
 errmsg.err103=" は小さすぎます。最小値は次の値です： ";
 
 // Status_Lan.asp error messages
