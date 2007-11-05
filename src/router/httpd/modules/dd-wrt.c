@@ -5051,24 +5051,28 @@ show_wep (webs_t wp, char *prefix)
 
 
 char *mlen="10";
+char *mlen2="12";
 if (!strcmp(bit,"128"))	
+{
     mlen="26";
+    mlen2="30";
+}
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 1</div>\n");
   websWrite (wp, "<input name=%s_key1 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-	     prefix, mlen,mlen,get_wep_value ("key1", bit, prefix));
+	     prefix, mlen2,mlen,get_wep_value ("key1", bit, prefix));
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 2</div>\n");
   websWrite (wp, "<input name=%s_key2 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-	     prefix,mlen,mlen, get_wep_value ("key2", bit, prefix));
+	     prefix,mlen2,mlen, get_wep_value ("key2", bit, prefix));
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 3</div>\n");
   websWrite (wp, "<input name=%s_key3 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-	     prefix,mlen,mlen, get_wep_value ("key3", bit, prefix));
+	     prefix,mlen2,mlen, get_wep_value ("key3", bit, prefix));
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 4</div>\n");
   websWrite (wp, "<input name=%s_key4 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-	     prefix,mlen,mlen, get_wep_value ("key4", bit, prefix));
+	     prefix,mlen2,mlen, get_wep_value ("key4", bit, prefix));
   websWrite (wp, "</div>\n");
 }
 
