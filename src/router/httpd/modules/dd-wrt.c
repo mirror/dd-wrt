@@ -5049,22 +5049,26 @@ show_wep (webs_t wp, char *prefix)
 	       "<input class=\"button\" type=\"button\" value=\"Generate\" onclick=generateKey128(this.form,\"%s\") name=wepGenerate />\n</div>",
 	       prefix);
 
+
+char *mlen="10";
+if (!strcmp(bit,"128"))	
+    mlen="26";
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 1</div>\n");
-  websWrite (wp, "<input name=%s_key1 size=\"36\" value=\"%s\" /></div>\n",
-	     prefix, get_wep_value ("key1", bit, prefix));
+  websWrite (wp, "<input name=%s_key1 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
+	     prefix, bit,bit,get_wep_value ("key1", bit, prefix));
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 2</div>\n");
-  websWrite (wp, "<input name=%s_key2 size=\"36\" value=\"%s\" /></div>\n",
-	     prefix, get_wep_value ("key2", bit, prefix));
+  websWrite (wp, "<input name=%s_key2 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
+	     prefix, bit,bit, get_wep_value ("key2", bit, prefix));
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 3</div>\n");
-  websWrite (wp, "<input name=%s_key3 size=\"36\" value=\"%s\" /></div>\n",
-	     prefix, get_wep_value ("key3", bit, prefix));
+  websWrite (wp, "<input name=%s_key3 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
+	     prefix, bit,bit, get_wep_value ("key3", bit, prefix));
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 4</div>\n");
-  websWrite (wp, "<input name=%s_key4 size=\"36\" value=\"%s\" /></div>\n",
-	     prefix, get_wep_value ("key4", bit, prefix));
+  websWrite (wp, "<input name=%s_key4 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
+	     prefix, bit,bit, get_wep_value ("key4", bit, prefix));
   websWrite (wp, "</div>\n");
 }
 
