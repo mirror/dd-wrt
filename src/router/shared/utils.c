@@ -2982,7 +2982,7 @@ getSTA (void)
       char netmode[32];
       sprintf (mode, "ath%d_mode", i);
       sprintf (netmode, "ath%d_net_mode", i);
-      if ((nvram_match (mode, "wdssta") || nvram_match (mode, "sta")) && !nvram_match (netmode, "disabled"))
+      if (nvram_match (mode, "sta") && !nvram_match (netmode, "disabled"))
 	{
 	  return stalist[i];
 	}
