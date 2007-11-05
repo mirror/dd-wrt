@@ -317,10 +317,10 @@ addEvent(window, "unload", function() {
 								</div><br />
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label6"); %></div>
-									<input class="num" name="wl_bcn" size="6" maxlength="5" onblur="valid_range(this,1,65535,wl_adv.label6)" value="<% nvram_selget("wl_bcn"); %>" />&nbsp;
+									<input class="num" name="wl_bcn" size="6" maxlength="5" onblur="valid_range(this,10,65535,wl_adv.label6)" value="<% nvram_selget("wl_bcn"); %>" />&nbsp;
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
-									document.write("(" + share.deflt + ": 100ms, " + share.range + ": 1 - 65535)");
+									document.write("(" + share.deflt + ": 100ms, " + share.range + ": 10 - 65535)");
 									//]]>
 									</script></span>
 								</div>
