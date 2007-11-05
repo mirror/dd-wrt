@@ -3734,10 +3734,10 @@ show_virtualssid (webs_t wp, char *prefix)
 	       "document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n",
 	       nvram_match (wl_mode,
 			    "ap") ? "selected=\\\"selected\\\"" : "");
-    websWrite (wp,
-	       "document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n",
-	       nvram_match (wl_mode,
-			    "wdssta") ? "selected=\\\"selected\\\"" : "");
+//    websWrite (wp,
+//	       "document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n",
+//	       nvram_match (wl_mode,
+//			    "wdssta") ? "selected=\\\"selected\\\"" : "");
     websWrite (wp,
 	       "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n",
 	       nvram_match (wl_mode,
