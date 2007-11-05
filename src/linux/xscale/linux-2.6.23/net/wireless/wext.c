@@ -233,24 +233,24 @@ static const struct iw_ioctl_description standard_ioctl[] = {
 	[SIOCSIWESSID	- SIOCIWFIRST] = {
 		.header_type	= IW_HEADER_TYPE_POINT,
 		.token_size	= 1,
-		.max_tokens	= IW_ESSID_MAX_SIZE + 1,
+		.max_tokens	= IW_ESSID_MAX_SIZE,
 		.flags		= IW_DESCR_FLAG_EVENT,
 	},
 	[SIOCGIWESSID	- SIOCIWFIRST] = {
 		.header_type	= IW_HEADER_TYPE_POINT,
 		.token_size	= 1,
-		.max_tokens	= IW_ESSID_MAX_SIZE + 1,
+		.max_tokens	= IW_ESSID_MAX_SIZE,
 		.flags		= IW_DESCR_FLAG_DUMP,
 	},
 	[SIOCSIWNICKN	- SIOCIWFIRST] = {
 		.header_type	= IW_HEADER_TYPE_POINT,
 		.token_size	= 1,
-		.max_tokens	= IW_ESSID_MAX_SIZE + 1,
+		.max_tokens	= IW_ESSID_MAX_SIZE,
 	},
 	[SIOCGIWNICKN	- SIOCIWFIRST] = {
 		.header_type	= IW_HEADER_TYPE_POINT,
 		.token_size	= 1,
-		.max_tokens	= IW_ESSID_MAX_SIZE + 1,
+		.max_tokens	= IW_ESSID_MAX_SIZE,
 	},
 	[SIOCSIWRATE	- SIOCIWFIRST] = {
 		.header_type	= IW_HEADER_TYPE_PARAM,
@@ -337,7 +337,7 @@ static const struct iw_ioctl_description standard_ioctl[] = {
 		.max_tokens	= sizeof(struct iw_pmksa),
 	},
 };
-static const int standard_ioctl_num = ARRAY_SIZE(standard_ioctl);
+static const unsigned standard_ioctl_num = ARRAY_SIZE(standard_ioctl);
 
 /*
  * Meta-data about all the additional standard Wireless Extension events
@@ -387,11 +387,9 @@ static const struct iw_ioctl_description standard_event[] = {
 		.max_tokens	= sizeof(struct iw_pmkid_cand),
 	},
 };
-static const int standard_event_num = ARRAY_SIZE(standard_event);
+static const unsigned standard_event_num = ARRAY_SIZE(standard_event);
 
 /* Size (in bytes) of the various private data types */
-
-/* Size (in bytes) of various events */
 static const char iw_priv_type_size[] = {
 	0,				/* IW_PRIV_TYPE_NONE */
 	1,				/* IW_PRIV_TYPE_BYTE */
@@ -416,6 +414,21 @@ static const int event_type_size[] = {
 	IW_EV_POINT_LEN,		/* Without variable payload */
 	IW_EV_PARAM_LEN,		/* IW_HEADER_TYPE_PARAM */
 	IW_EV_QUAL_LEN,			/* IW_HEADER_TYPE_QUAL */
+};
+
+/* Size (in bytes) of various events, as packed */
+static const int event_type_pk_size[] = {
+	IW_EV_LCP_PK_LEN,		/* IW_HEADER_TYPE_NULL */
+	0,
+	IW_EV_CHAR_PK_LEN,		/* IW_HEADER_TYPE_CHAR */
+	0,
+	IW_EV_UINT_PK_LEN,		/* IW_HEADER_TYPE_UINT */
+	IW_EV_FREQ_PK_LEN,		/* IW_HEADER_TYPE_FREQ */
+	IW_EV_ADDR_PK_LEN,		/* IW_HEADER_TYPE_ADDR */
+	0,
+	IW_EV_POINT_PK_LEN,		/* Without variable payload */
+	IW_EV_PARAM_PK_LEN,		/* IW_HEADER_TYPE_PARAM */
+	IW_EV_QUAL_PK_LEN,		/* IW_HEADER_TYPE_QUAL */
 };
 
 /************************ COMMON SUBROUTINES ************************/
@@ -461,16 +474,6 @@ static struct iw_statistics *get_wireless_stats(struct net_device *dev)
 	if ((dev->wireless_handlers != NULL) &&
 	   (dev->wireless_handlers->get_wireless_stats != NULL))
 		return dev->wireless_handlers->get_wireless_stats(dev);
-	/* Old location, field to be removed in next WE */
-	if(dev->get_wireless_stats) {
-		static int printed_message;
-
-		if (!printed_message++)
-			printk(KERN_DEBUG "%s (WE) : Driver using old /proc/net/wireless support, please fix driver !\n",
-				dev->name);
-
-		return dev->get_wireless_stats(dev);
-	}
 
 	/* Not found */
 	return NULL;
@@ -738,11 +741,38 @@ static int ioctl_standard_call(struct net_device *	dev,
 		int	extra_size;
 		int	user_length = 0;
 		int	err;
+		int	essid_compat = 0;
 
 		/* Calculate space needed by arguments. Always allocate
 		 * for max space. Easier, and won't last long... */
 		extra_size = descr->max_tokens * descr->token_size;
 
+		/* Check need for ESSID compatibility for WE < 21 */
+		switch (cmd) {
+		case SIOCSIWESSID:
+		case SIOCGIWESSID:
+		case SIOCSIWNICKN:
+		case SIOCGIWNICKN:
+			if (iwr->u.data.length == descr->max_tokens + 1)
+				essid_compat = 1;
+			else if (IW_IS_SET(cmd) && (iwr->u.data.length != 0)) {
+				char essid[IW_ESSID_MAX_SIZE + 1];
+
+				err = copy_from_user(essid, iwr->u.data.pointer,
+						     iwr->u.data.length *
+						     descr->token_size);
+				if (err)
+					return -EFAULT;
+
+				if (essid[iwr->u.data.length - 1] == '\0')
+					essid_compat = 1;
+			}
+			break;
+		default:
+			break;
+		}
+
+		iwr->u.data.length -= essid_compat;
 
 		/* Check what user space is giving us */
 		if (IW_IS_SET(cmd)) {
@@ -800,6 +830,7 @@ static int ioctl_standard_call(struct net_device *	dev,
 		/* Call the handler */
 		ret = handler(dev, &info, &(iwr->u), extra);
 
+		iwr->u.data.length += essid_compat;
 
 		/* If we have something to return to the user */
 		if (!ret && IW_IS_GET(cmd)) {
@@ -979,7 +1010,7 @@ static int ioctl_private_call(struct net_device *dev, struct ifreq *ifr,
  * Main IOCTl dispatcher.
  * Check the type of IOCTL and call the appropriate wrapper...
  */
-int wireless_process_ioctl(struct ifreq *ifr, unsigned int cmd)
+static int wireless_process_ioctl(struct ifreq *ifr, unsigned int cmd)
 {
 	struct net_device *dev;
 	iw_handler	handler;
