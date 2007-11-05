@@ -592,23 +592,27 @@ start_restore_defaults (void)
     case ROUTER_BUFFALO_WZRG144NH:
       linux_overrides = wzr144nhvlan;
       break;
-    case ROUTER_BUFFALO_WLI2_TX1_G54:
-    case ROUTER_BUFFALO_WLAG54C:
 #ifndef HAVE_BUFFALO
     case ROUTER_MOTOROLA_WE800G:
     case ROUTER_WAP54G_V1:
     case ROUTER_SITECOM_WL105B:
+#endif    
+    case ROUTER_BUFFALO_WLI2_TX1_G54:
+    case ROUTER_BUFFALO_WLAG54C:
       linux_overrides = generic_2;
       break;
-    case ROUTER_BUFFALO_WLA2G54C:
+#ifndef HAVE_BUFFALO      
     case ROUTER_WAP54G_V2:
     case ROUTER_VIEWSONIC_WAPBR_100:
     case ROUTER_USR_5430:
-    case ROUTER_BUFFALO_WLI_TX4_G54HP:
     case ROUTER_BELKIN_F5D7230_V2000:
     case ROUTER_NETGEAR_WG602_V3:
+#endif
+    case ROUTER_BUFFALO_WLA2G54C:
+    case ROUTER_BUFFALO_WLI_TX4_G54HP:   
       linux_overrides = generic_3;
-      break;    
+      break;
+#ifndef HAVE_BUFFALO    
     case ROUTER_RT480W:
     case ROUTER_RT210W:
 #endif
