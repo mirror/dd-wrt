@@ -1,0 +1,51 @@
+#
+# HID driver configuration
+#
+menuconfig HID_SUPPORT
+	bool "HID Devices"
+	depends on INPUT
+	default y
+	---help---
+	  Say Y here to get to see options for various computer-human interface
+	  device drivers. This option alone does not add any kernel code.
+
+	  If you say N, all options in this submenu will be skipped and disabled.
+
+if HID_SUPPORT
+
+config HID
+	tristate "Generic HID support"
+	depends on INPUT
+	default y
+	---help---
+	  A human interface device (HID) is a type of computer device that
+	  interacts directly with and takes input from humans. The term "HID"
+	  most commonly used to refer to the USB-HID specification, but other
+	  devices (such as, but not strictly limited to, Bluetooth) are
+	  designed using HID specification (this involves certain keyboards,
+	  mice, tablets, etc). This option compiles into kernel the generic
+	  HID layer code (parser, usages, etc.), which can then be used by
+	  transport-specific HID implementation (like USB or Bluetooth).
+
+	  For docs and specs, see http://www.usb.org/developers/hidpage/
+
+	  If unsure, say Y
+
+config HID_DEBUG
+	bool "HID debugging support"
+	default y if !EMBEDDED
+	depends on HID
+	---help---
+	This option lets the HID layer output diagnostics about its internal
+	state, resolve HID usages, dump HID fields, etc. Individual HID drivers
+	use this debugging facility to output information about individual HID
+	devices, etc.
+
+	This feature is useful for those who are either debugging the HID parser
+	or any HID hardware device.
+
+	If unsure, say N
+
+source "drivers/hid/usbhid/Kconfig"
+
+endif # HID_SUPPORT
