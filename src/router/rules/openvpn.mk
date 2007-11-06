@@ -9,7 +9,7 @@ endif
 openvpn:
 	make -C lzo clean
 	make -C lzo
-	rm -f openssl/*.so*
+#	rm -f openssl/*.so*
 ifeq ($(CONFIG_NEWMEDIA),y)
 	make -C openvpn clean
 else
