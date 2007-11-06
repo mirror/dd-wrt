@@ -45,10 +45,11 @@ int logfile_setup(char *);
 void logfile_cleanup();
 void lowercase(char *);
 void debug_setdaemon(int);
-void debug_printf(unsigned char, char *, ...);
-void debug_printf_nl(unsigned char, char *, ...);
-void debug_hex_printf(unsigned char, uint8_t *, int);
-void debug_hex_dump(unsigned char, uint8_t *, int);
+
+#define debug_printf(a, n, ...) 
+#define debug_printf_nl(a, n, ...) 
+#define debug_hex_printf(a, n, ...) 
+#define debug_hex_dump(a, n, ...) 
 void debug_set_flags(int);
 void debug_alpha_set_flags(char *);
 int xsup_assert_long(int, char *, int, char *, int, const char *);
