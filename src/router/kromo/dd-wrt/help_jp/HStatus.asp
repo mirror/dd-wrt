@@ -22,8 +22,8 @@
 				<dd>この製品に搭載されているCPUを表示します</dd>
 				<dt>CPU Clock</dt>
 				<dd>CPUの動作クロックを表示します</dd>
-				<dt>Host Name</dt>
-				<dd>The Host Name is the name of the router. This entry is necessary for some ISPs.</dd>
+				<dt>ホスト名</dt>
+				<dd>この機器の名称を示します。一部のISPではホスト名を設定しなければならない場合があります。</dd>
 				<dt>インターネット接続方法</dt>
 				<dd>使用しているインターネット接続方法を表示します</dd>
 				<dt>IPアドレス・サブネットマスク・ゲートウェイ</dt>
