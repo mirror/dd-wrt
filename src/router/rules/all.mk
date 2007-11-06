@@ -170,6 +170,7 @@ include rules/bmon.mk
 include rules/ethtool.mk
 include rules/openlldp.mk
 #include rules/tor.mk
+include rules/strace.mk
 
 # Generic rules
 #
