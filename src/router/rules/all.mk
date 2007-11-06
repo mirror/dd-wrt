@@ -168,6 +168,7 @@ include rules/milkfish.mk
 include rules/quagga.mk
 include rules/bmon.mk
 include rules/ethtool.mk
+include rules/openlldp.mk
 #include rules/tor.mk
 
 # Generic rules
