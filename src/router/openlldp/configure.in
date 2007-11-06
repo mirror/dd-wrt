@@ -103,6 +103,14 @@ if test $FRAMER = "linux"; then
    fi
 fi
 
+AC_CHECK_LIB(confuse, cfg_title, 
+[AC_CHECK_HEADER(confuse.h, CONFUSE="yes", AC_MSG_WARN([*** libconfuse not found - LLDP MED Location functionality will be missing ***]))],)
+
+if test $CONFUSE = "yes"; then
+    MORELIBS="$MORELIBS -lconfuse"
+    AC_DEFINE(USE_CONFUSE)
+fi
+
 CFLAGS="$GGDBFLAGS $CFLAGS"
 
 dnl Touch the makefile.in to avoid running automake the next time we

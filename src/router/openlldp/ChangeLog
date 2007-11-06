@@ -1,3 +1,10 @@
+Changes from 0.3 to 0.4 ()
+	Added Roar Petterson's man page. (Thanks Roar! ;)
+	Disabled promiscuous mode on Mac OS X.
+	Added Karl Heinz's LLDP-MED patches. (Thanks Karl! ;)
+	Added lldpneighbors CLI tool.
+	Added MSAP caching code.
+	RX state machine timer fixes for cleaning up stale MSAP entries.
 Changes from 0.1 to 0.2 (February 27, 2007)
 	Reworked TLV TX logic.
 	Better interface handling code.

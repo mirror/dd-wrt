@@ -1,4 +1,4 @@
- /** @file lldp_tx_sm.h
+/** @file lldp_tx_sm.h
  *
  * \brief OpenLLDP TX Statemachine Header
  *
@@ -16,7 +16,12 @@
 #ifndef LLDP_TX_SM_H
 #define LLDP_TX_SM_H
 
+#ifdef WIN32
+#include "stdintwin.h"
+#else
 #include <stdint.h>
+#endif
+
 #include "lldp_port.h"
 
 
@@ -49,7 +54,9 @@ void tx_do_tx_info_frame(struct lldp_port *lldp_port);
 void tx_display_timers(struct lldp_port *lldp_port);
 void tx_do_tx_shutdown_frame(struct lldp_port *lldp_port);
 
+#ifndef WIN32
 uint16_t min(uint16_t value1, uint16_t value2);
 uint16_t max(uint16_t value1, uint16_t value2);
+#endif // WIN32
 
 #endif /* LLDP_TX_SM_H */

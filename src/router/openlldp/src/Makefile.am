@@ -3,14 +3,16 @@ AUTOMAKE_OPTIONS=foreign no-dependencies
 CORELIBS = @CORELIBS@
 MORELIBS = @MORELIBS@ @DARWINLIBS@
 MOREDEFS = @MOREDEFS@
-INCLUDES = @INCS@ @DARWININCS@
+INCLUDES = @INCS@ @DARWININCS@ -I $(srcdir) -I $(srcdir)/tlv
 DEFS = @DEFS@ $(MOREDEFS)
 #CFLAGS = -O0 -fprofile-arcs -ftest-coverage
-CFLAGS =  
+CFLAGS = -O0 
 
 CLEANFILES = 
 
 sbin_PROGRAMS = lldpd
+bin_PROGRAMS = lldpneighbors
+
 lldpd_SOURCES = \
 	lldp_main.c lldp_debug.c lldp_neighbor.c \
 	lldp_port.h \
@@ -25,3 +27,7 @@ lldpd_SOURCES = \
 	framehandlers/bpf/bpflib.c framehandlers/bpf/bpflib.h \
 	framehandlers/linux/lldp_linux_framer.h framehandlers/linux/lldp_linux_framer.c 
 lldpd_LDADD = $(CORELIBS) $(MORELIBS)
+
+lldpneighbors_SOURCES = \
+	lldpneighbors.c
+lldpneighbors_LDADD = $(CORELIBS)
