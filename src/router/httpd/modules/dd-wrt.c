@@ -1150,8 +1150,8 @@ ej_show_paypal (webs_t wp, int argc, char_t ** argv)
 #else
     websWrite (wp,
 	       "<img style=\"border-width: 1px; border-color: #8B8583;\" src=\"images/88_en_interpayments.gif\" alt=\"donate thru interpayments\" />\n");
+#endif	       
   websWrite (wp, "</a>\n");
-#endif
 #endif
   return;
 }
