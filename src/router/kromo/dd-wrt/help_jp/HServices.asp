@@ -45,7 +45,8 @@
 						<div>Xboxは、本機のEthernetポートに接続されている必要があります。</div>
 					</div>
 				</dd>
-				
+<!--				
+<< PPTP is already moved to other page:
 				<dt><% tran("service.pptp_legend"); %></dt>
 				<dd>PPTPはWindowsXPをはじめ、Microsoftや他のネットワークベンダで利用されているVPN技術です。PPTPを利用することによって、遠隔地からこの製品やLAN側のネットワークにアクセスすることができます。
 					<ul class="wide">
@@ -68,7 +69,8 @@
 						<li>パスワード &ndash; PPTPサーバへ接続するためのパスワードを指定します。</li>
 					</ul>
 				</dd>
-
+>> PPTP is already moved to other page:
+-->
 				<dt><% tran("service.rflow_legend"); %></dt>
 				<dd>RFlow Collectorはこの製品のネットワーク利用状況を監視するための管理ツールです。<br/>
 					<ul class="wide">
