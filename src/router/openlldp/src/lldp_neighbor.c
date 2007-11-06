@@ -47,7 +47,7 @@ int get_sys_desc() {
 
   strcpy(lldp_systemdesc, sysinfo.machine);
   strcat(lldp_systemdesc, "/");
-  strcat(lldp_systemdesc, sysinfo.sysname);  
+  strcat(lldp_systemdesc, "DD-WRT Linux");  
   strcat(lldp_systemdesc, " ");
   strcat(lldp_systemdesc, sysinfo.release);
 
