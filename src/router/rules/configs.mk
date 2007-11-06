@@ -153,6 +153,7 @@ obj-$(CONFIG_WPA_SUPPLICANT2) += wpa_supplicant2
 obj-$(CONFIG_MIITOOL) += net-tools
 obj-$(CONFIG_TOR) += tor
 obj-$(CONFIG_RSTP) += rstp
+obj-$(CONFIG_STRACE) += strace
 obj-$(CONFIG_OPENLLDP) += openlldp
 
 
