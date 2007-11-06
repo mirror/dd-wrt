@@ -14,7 +14,11 @@
 #ifndef LLDP_RX_SM_H
 #define LLDP_RX_SM_H
 
+#ifdef WIN32
+#include "stdintwin.h"
+#else
 #include <stdint.h>
+#endif // WIN32
 #include "lldp_port.h"
 
 // States from the receive state machine diagram (IEEE 802.1AB 10.5.5.3)

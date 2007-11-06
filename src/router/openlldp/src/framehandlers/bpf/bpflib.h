@@ -1,3 +1,4 @@
+#include <sys/types.h>
 
 int bpf_set_timeout(int fd, struct timeval * tv_p);
 int bpf_get_data_link(int fd, u_int * dl_p);

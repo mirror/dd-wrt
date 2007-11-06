@@ -28,28 +28,31 @@
 #define NUM_DEBUG_TLV        3
 #define DEBUG_TLV            0x04
 
-#define NUM_DEBUG_INT        4
-#define DEBUG_INT            0x08
+#define NUM_DEBUG_MSAP       4
+#define DEBUG_MSAP           0x08
 
-#define NUM_DEBUG_SNMP       5
-#define DEBUG_SNMP           0x10
+#define NUM_DEBUG_INT        5
+#define DEBUG_INT            0x10
 
-#define NUM_DEBUG_EVERYTHING 6
-#define DEBUG_EVERYTHING     0x20
+#define NUM_DEBUG_SNMP       6
+#define DEBUG_SNMP           0x20
 
-#define NUM_DEBUG_EXCESSIVE  7
-#define DEBUG_EXCESSIVE      0x40
+#define NUM_DEBUG_EVERYTHING 7
+#define DEBUG_EVERYTHING     0x40
+
+#define NUM_DEBUG_EXCESSIVE  8
+#define DEBUG_EXCESSIVE      0x80
 
 /* Borrowed from Open1X */
 int logfile_setup(char *);
 void logfile_cleanup();
 void lowercase(char *);
 void debug_setdaemon(int);
-
-#define debug_printf(a, n, ...) 
-#define debug_printf_nl(a, n, ...) 
-#define debug_hex_printf(a, n, ...) 
-#define debug_hex_dump(a, n, ...) 
+void debug_printf(unsigned char, char *, ...);
+void debug_printf_nl(unsigned char, char *, ...);
+void debug_hex_printf(uint32_t, uint8_t *, int);
+void debug_hex_dump(unsigned char, uint8_t *, int);
+void debug_hex_strcat(uint8_t *dest, uint8_t *hextodump, int size);
 void debug_set_flags(int);
 void debug_alpha_set_flags(char *);
 int xsup_assert_long(int, char *, int, char *, int, const char *);
