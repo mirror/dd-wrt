@@ -14,7 +14,7 @@
 #ifndef LLDP_TLV_H
 #define LLDP_TLV_H
 
-#include "lldp_port.h"
+#include "../lldp_port.h"
 
 /* TLV Types from section 9.4.1 of IEEE 802.1AB */
 #define END_OF_LLDPDU_TLV       0    /* MANDATORY */
@@ -28,6 +28,7 @@
 #define MANAGEMENT_ADDRESS_TLV  8    /* OPTIONAL  */
 /* 9 - 126 are reserved */
 #define ORG_SPECIFIC_TLV        127  /* OPTIONAL */
+
 /* TLV Subtypes from section 9 of IEEE 802.1AB */
 
 /* Chassis ID TLV Subtypes */
@@ -66,26 +67,65 @@
 /* 8 - 15 reserved */
 /* End System Capabilities TLV Subtypes */
 
+/* Location Data Format Type Values */
+#define LCI_COORDINATE	1
+#define LCI_CIVIC	2
+#define LCI_ELIN	3
+/* 4 - 255 reserved for future expansion */
+/* End Location Data Format Type Values */
+
 /* End TLV Subtypes from section 9 of IEEE 802.1AB */
 
+/* IANA Family Number Assignments */
+/* http://www.iana.org/assignments/address-family-numbers */
+#define IANA_RESERVED_LOW     0
+#define IANA_IP               1
+#define IANA_IP6              2
+#define IANA_NSAP             3
+#define IANA_HDLC             4
+#define IANA_BBN_1822         5
+#define IANA_802              6
+#define IANA_E_163            7
+#define IANA_E_164_ATM        8
+#define IANA_F_69             9 
+#define IANA_X_121           10
+#define IANA_IPX             11
+#define IANA_APPLETALK       12
+#define IANA_DECNET_IV       13
+#define IANA_BANYAN_VINES    14
+#define IANA_E_164_NSAP      15
+#define IANA_DNS             16
+#define IANA_DISTINGUISHED   17
+#define IANA_AS_NUMBER       18
+#define IANA_XTP_IPV4        19
+#define IANA_XTP_IPV6        20
+#define IANA_XTP_XTP         21
+#define IANA_FIBRE_PORT_NAME 22
+#define IANA_FIBRE_NODE_NAME 23
+#define IANA_GWID            24
+#define IANA_AFI_L2VPN       25
+// Everything from 26 to 65534 is Unassigned
+#define IANA_RESERVED_HIGH   65535
+/* End IANA Family Number Assignments */
+
 struct lldp_tlv_validation_errors {
-  uint64_t errors;
-  uint8_t chassis_id_tlv_count;
-  uint8_t port_id_tlv_count;
-  uint8_t ttl_tlv_count;
-  uint8_t port_description_tlv_count;
-  uint8_t system_name_tlv_count;
-  uint8_t system_description_tlv_count;
-  uint8_t system_capabilities_tlv_count;
-  uint8_t management_address_tlv_count;
+    uint64_t errors;
+    uint8_t chassis_id_tlv_count;
+    uint8_t port_id_tlv_count;
+    uint8_t ttl_tlv_count;
+    uint8_t port_description_tlv_count;
+    uint8_t system_name_tlv_count;
+    uint8_t system_description_tlv_count;
+    uint8_t system_capabilities_tlv_count;
+    uint8_t management_address_tlv_count;
 };
 
 struct lldp_test_case {
-  // Pointer to a tlv template
-  struct lldp_tlv_template *test_case;
+    // Pointer to a tlv template
+    struct lldp_tlv_template *test_case;
 
-  // Pointer to the next test case
-  struct lldp_test_cases *next;
+    // Pointer to the next test case
+    struct lldp_test_cases *next;
 };
 
 struct lldp_tlv *create_end_of_lldpdu_tlv(struct lldp_port *lldp_port);
@@ -115,6 +155,9 @@ uint8_t validate_system_capabilities_tlv(struct lldp_tlv *tlv);
 struct lldp_tlv *create_management_address_tlv(struct lldp_port *lldp_port);
 uint8_t validate_management_address_tlv(struct lldp_tlv *tlv);
 
+struct lldp_tlv *create_lldpmed_location_identification_tlv(struct lldp_port *lldp_port);
+struct lldp_tlv *validate_lldpmed_location_identification_tlv(struct lldp_tlv *tlv);  // NB todo
+
 // Should probably allow this create function to specify the OUI in question?
 struct lldp_tlv *create_organizationally_specific_tlv(struct lldp_port *lldp_port, uint8_t *oui);
 uint8_t validate_organizationally_specific_tlv(struct lldp_tlv *tlv);
@@ -127,10 +170,14 @@ extern uint8_t (*validate_tlv[])(struct lldp_tlv *tlv);
 #define XVALIDTLV     0
 #define XEINVALIDTLV -1
 
+char *decode_organizationally_specific_tlv(struct lldp_tlv *tlv);
 
-void decode_tlv_subtype(struct lldp_tlv *tlv);
+char *decode_network_address(uint8_t *network_address);
+char *decode_tlv_subtype(struct lldp_tlv *tlv);
 void decode_oui_tlv(struct lldp_tlv *tlv);
-void decode_tlv_system_capabilities( uint16_t system_capabilities, uint16_t enabled_capabilities);
+char *decode_tlv_system_capabilities( uint16_t system_capabilities, uint16_t enabled_capabilities);
+char *decode_management_address(struct lldp_tlv *tlv);
+char *decode_ipv4_address(uint8_t *ipv4_address);
 char *capability_name(uint16_t capability);
 char *tlv_typetoname(uint8_t tlv_type);
 uint8_t tlvcpy(struct lldp_tlv *dst, struct lldp_tlv *src);
@@ -144,7 +191,24 @@ void tlvCleanupLLDP();
 
 uint8_t initializeTLVFunctionValidators();
 
+char *tlv_typetoname(uint8_t tlv_type);
+
+
 
 struct lldp_tlv *initialize_tlv();
+
+//structure for locatation configuration data needed for LLDP-MED location identification TLV
+struct lci_s {
+  int location_data_format;  
+  char *coordinate_based_lci;
+  int civic_what;
+  char *civic_countrycode;
+  char *civic_ca[33];
+  char *elin;
+  char *config_file;
+};
+
+
+
 
 #endif /* LLDP_TLV_H */
