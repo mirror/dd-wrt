@@ -1,0 +1,9 @@
+Changes from 0.1 to 0.2 (February 27, 2007)
+	Reworked TLV TX logic.
+	Better interface handling code.
+	Memory leak fixes.
+	Stack smash fix.
+	Initial Doxygen comments.
+	Rudimentary TX state machine timers.
+	Fixed a CPU grind problem with select().
+	Cleaned up debug output.
