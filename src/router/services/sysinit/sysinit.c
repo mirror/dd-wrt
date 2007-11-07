@@ -770,7 +770,9 @@ start_restore_defaults (void)
 	  nvram_set ("vlan0ports", "1 2 3 4 5*");
 	  nvram_set ("vlan1ports", "0 5");
 	}
-      if (nvram_match ("boardnum", "WAP54GV3_8M_0614"))
+      if (brand == ROUTER_WRT54G_V8
+       || nvram_match ("bootnv_ver", "4")
+       || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
 	{
 	  nvram_set ("vlan0ports", "3 2 1 0 5*");
 	  nvram_set ("vlan1ports", "4 5");
@@ -798,7 +800,8 @@ start_restore_defaults (void)
   if (brand == ROUTER_WRT350N)
     {
 
-      if (!nvram_get ("vlan1ports") || nvram_match ("vlan1ports", ""))
+      if (!nvram_get ("vlan1ports")
+      || nvram_match ("vlan1ports", ""))
 	{
 	  nvram_set ("vlan1ports", "1 2 3 4 8*");
 	}
@@ -863,7 +866,8 @@ start_restore_defaults (void)
 	      nvram_set ("vlan0ports", "0 1 2 3 5*");
 	      break;
 	    default:
-	      if (nvram_match ("bootnv_ver", "4")
+	      if (brand == ROUTER_WRT54G_V8 
+	      || nvram_match ("bootnv_ver", "4")
 		  || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
 		nvram_set ("vlan0ports", "3 2 1 0 5*");
 	      else
@@ -891,8 +895,9 @@ start_restore_defaults (void)
 		  nvram_set ("vlan1ports", "4 5");
 		  break;
 		default:
-		  if (nvram_match ("bootnv_ver", "4")
-		      || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
+		  if (brand == ROUTER_WRT54G_V8
+		    ||nvram_match ("bootnv_ver", "4")
+		    || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
 		    nvram_set ("vlan1ports", "4 5");
 		  else
 		    nvram_set ("vlan1ports", "0 5");
