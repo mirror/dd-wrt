@@ -309,11 +309,6 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("wl_adv.label5"); %></div>
 									<input class="spaceradio" type="radio" name="wl_frameburst" value="on" <% nvram_checked("wl_frameburst", "on"); %> /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" name="wl_frameburst" value="off" <% nvram_checked("wl_frameburst", "off"); %> /><% tran("share.disable"); %>
-									<span class="default"><script type="text/javascript">
-									//<![CDATA[
-									document.write("(" + share.deflt + ": " + share.enable + ")");
-									//]]>
-									</script></span>
 								</div><br />
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label6"); %></div>
