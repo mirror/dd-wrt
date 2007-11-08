@@ -42,7 +42,7 @@ struct nvram_convert nvram_converts[] = {
   {WL ("country"), WL0 ("country"), ""},
   {WL ("closed"), WL0 ("closed"), ""},
   {WL ("lazywds"), WL0 ("lazywds"), ""},
-  {WL ("wep"), WL0 ("wep"), ""},
+//  {WL ("wep"), WL0 ("wep"), ""},
   {WL ("macmode"), WL0 ("macmode"), ""},
   {WL ("rate"), WL0 ("rate"), D11G ("rate")},
   {WL ("frag"), WL0 ("frag"), D11G ("frag")},
