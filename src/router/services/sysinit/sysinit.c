@@ -800,8 +800,7 @@ start_restore_defaults (void)
   if (brand == ROUTER_WRT350N)
     {
 
-      if (!nvram_get ("vlan1ports")
-      || nvram_match ("vlan1ports", ""))
+      if (!nvram_get ("vlan1ports") || nvram_match ("vlan1ports", ""))
 	{
 	  nvram_set ("vlan1ports", "1 2 3 4 8*");
 	}
