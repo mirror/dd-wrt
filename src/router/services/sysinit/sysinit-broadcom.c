@@ -385,7 +385,7 @@ start_sysinit (void)
       if (nvram_match ("vlan1ports", "0 5u"))
          nvram_set ("vlan1ports", "0 5");
       if (nvram_match ("boardflags", "0x388") || nvram_match ("boardflags", "0x0388"))
-         nvram_set ("boardflags", "0x398");
+         nvram_set ("boardflags", "0x0f58");
       break;      
      
     case ROUTER_RT210W:
