@@ -210,7 +210,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // D-Link DIR-320 (5354 cpu, fccid: ?)
 #define ROUTER_DLINK_DIR320 0x3e17
 
-// Linksys WTR54GS v1 travel router (5350 cpu, fccid: Q87-WTR54GS)
+// Linksys WTR54GS travel router (5350 cpu, fccid: v1, v2: Q87-WTR54GS; v2.1 Q87-WTR54GSV21)
 #define ROUTER_LINKSYS_WTR54GS 0x3f13
 
 // Belkin F5D7230 v2000 (4712 cpu, 5325E switch, serial flash, fccid: K7SF5D7234A)

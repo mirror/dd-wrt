@@ -909,7 +909,7 @@ internal_getRouterBrand ()
       nvram_match ("boardtype", "0x456") && nvram_match ("boardrev", "0x10"))
     {
       cprintf ("router is wtr54gs\n");
-      setRouter ("Linksys WTR54GS v1");
+      setRouter ("Linksys WTR54GS");
       return ROUTER_LINKSYS_WTR54GS;
     }
 
