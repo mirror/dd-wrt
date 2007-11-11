@@ -429,7 +429,9 @@ internal_getRouterBrand ()
   if (nvram_match ("boardnum", "00") &&
       nvram_match ("boardrev", "0x13") && nvram_match ("boardtype", "0x467"))
     {
-      if (nvram_match ("boardflags", "0x1658") || nvram_match ("boardflags", "0x2658"))	//maybe the amp is on, it's hp anyway ???
+      if (nvram_match ("boardflags", "0x1658")
+       || nvram_match ("boardflags", "0x2658")
+       || nvram_match ("boardflags", "0x3658"))	//maybe the amp is on, it's hp anyway ???
 	{
 	  cprintf ("router is Buffalo WLI-TX4-G54HP\n");
 	  setRouter ("Buffalo WLI-TX4-G54HP");
@@ -452,7 +454,7 @@ internal_getRouterBrand ()
 	  setRouter ("Buffalo WHR-HP-G54");
 	  return ROUTER_BUFFALO_WHRG54S;
 	}
-      if (nvram_match ("buffalo_hp", "1"))
+      if (nvram_match ("buffalo_hp", "1") || nvram_match ("boardflags", "0x3758"))
 	{
 	  cprintf ("router is Buffalo WHR-HP-G54\n");
 	  setRouter ("Buffalo WHR-HP-G54");
