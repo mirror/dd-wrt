@@ -384,8 +384,6 @@ start_sysinit (void)
       nvram_set ("wl0_ifname", "eth1");
       if (nvram_match ("vlan1ports", "0 5u"))
          nvram_set ("vlan1ports", "0 5");
-      if (nvram_match ("boardflags", "0x388") || nvram_match ("boardflags", "0x0388"))
-         nvram_set ("boardflags", "0x0f58");
       break;      
      
     case ROUTER_RT210W:
@@ -566,6 +564,36 @@ start_sysinit (void)
   /* set wan_ifnames and pppoe_wan_ifname */
   nvram_set ("wan_ifnames", wanifname);
   nvram_set ("pppoe_wan_ifname", wanifname);
+  
+  /* additional boardflags adjustment */
+  switch (brand)
+    {
+    case ROUTER_BELKIN_F5D7231:	    
+      if (nvram_match ("boardflags", "0x388") || nvram_match ("boardflags", "0x0388"))
+         nvram_set ("boardflags", "0x0f58");
+      break;
+      
+    case ROUTER_BUFFALO_WLI_TX4_G54HP:
+      if (!nvram_match ("buffalo_hp", "1")
+       && (nvram_match ("boardflags", "0x1658") || nvram_match ("boardflags", "0x2658")))
+        {
+        nvram_set ("buffalo_hp", "1"))
+#ifndef HAVE_BUFFALO  // if HAVE_BUFFALO not used to be FCC/CE valid   
+        nvram_set ("boardflags", "0x3658");  // enable high gain PA
+#endif 
+        }
+      break;
+      
+    case ROUTER_BUFFALO_WHRG54S:  //for HP only
+      if (!nvram_match ("buffalo_hp", "1") && nvram_match ("boardflags", "0x1758"))
+        {
+	    nvram_set ("buffalo_hp", "1");
+#ifndef HAVE_BUFFALO  // if HAVE_BUFFALO not used to be FCC/CE valid 
+        nvram_set ("boardflags", "0x3758");  // enable high gain PA
+#endif
+        }
+      break;
+    } 
 
   /* Modules */
   uname (&name);
