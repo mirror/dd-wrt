@@ -577,7 +577,7 @@ start_sysinit (void)
       if (!nvram_match ("buffalo_hp", "1")
        && (nvram_match ("boardflags", "0x1658") || nvram_match ("boardflags", "0x2658")))
         {
-        nvram_set ("buffalo_hp", "1"))
+        nvram_set ("buffalo_hp", "1");
 #ifndef HAVE_BUFFALO  // if HAVE_BUFFALO not used to be FCC/CE valid   
         nvram_set ("boardflags", "0x3658");  // enable high gain PA
 #endif 
