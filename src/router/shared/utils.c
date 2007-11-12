@@ -431,60 +431,33 @@ internal_getRouterBrand ()
     {
       if (nvram_match ("boardflags", "0x1658")
        || nvram_match ("boardflags", "0x2658")
-       || nvram_match ("boardflags", "0x3658"))	//maybe the amp is on, it's hp anyway ???
+       || nvram_match ("boardflags", "0x3658"))
 	{
 	  cprintf ("router is Buffalo WLI-TX4-G54HP\n");
 	  setRouter ("Buffalo WLI-TX4-G54HP");
 	  return ROUTER_BUFFALO_WLI_TX4_G54HP;
 	}
-      if (nvram_match ("boardflags", "0x2758")
-	  && !nvram_match ("buffalo_hp", "1"))
+      if (!nvram_match ("buffalo_hp", "1") && nvram_match ("boardflags", "0x2758"))
 	{
 	  cprintf ("router is Buffalo WHR-G54S\n");
 	  setRouter ("Buffalo WHR-G54S");
 	  return ROUTER_BUFFALO_WHRG54S;
 	}
-#ifndef HAVE_BUFFALO
-      if (nvram_match ("boardflags", "0x1758")
-	  && !nvram_match ("buffalo_hp", "1"))
+      if (nvram_match ("buffalo_hp", "1") || nvram_match ("boardflags", "0x1758"))
 	{
-	  cprintf ("router is Buffalo WHR-HP-G54\n");
-	  nvram_set ("boardflags", "0x2758");
-	  nvram_set ("buffalo_hp", "1");
-	  setRouter ("Buffalo WHR-HP-G54");
-	  return ROUTER_BUFFALO_WHRG54S;
-	}
-      if (nvram_match ("buffalo_hp", "1") || nvram_match ("boardflags", "0x3758"))
-	{
+#ifndef HAVE_BUFFALO		
 	  cprintf ("router is Buffalo WHR-HP-G54\n");
 	  setRouter ("Buffalo WHR-HP-G54");
-	  return ROUTER_BUFFALO_WHRG54S;
-	}
 #else
-      if (nvram_match ("boardflags", "0x1758")
-	  && !nvram_match ("buffalo_hp", "1"))
-	{
-	  cprintf ("router is Buffalo WHR-HP-G54DD\n");
-//        nvram_set ("boardflags", "0x2758");  /* removed, to be FCC/CE valid */
-	  nvram_set ("buffalo_hp", "1");
-#ifdef BUFFALO_JP
-	  setRouter ("Buffalo AS-A100");
-#else
-	  setRouter ("Buffalo WHR-HP-G54DD");
-#endif
-	  return ROUTER_BUFFALO_WHRG54S;
-	}
-      if (nvram_match ("buffalo_hp", "1"))
-	{
 	  cprintf ("router is Buffalo WHR-HP-G54DD\n");
 #ifdef BUFFALO_JP
 	  setRouter ("Buffalo AS-A100");
 #else
 	  setRouter ("Buffalo WHR-HP-G54DD");
 #endif
+#endif
 	  return ROUTER_BUFFALO_WHRG54S;
 	}
-#endif
     }
 
   if (nvram_match ("boardnum", "00") &&
