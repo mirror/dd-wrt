@@ -412,6 +412,7 @@ start_sysinit (void)
       break;
 
     case ROUTER_BUFFALO_WBR54G:	//for WLA-G54
+	  nvram_set ("lan_ifnames", "eth0 eth2");
       nvram_set ("wan_ifname", "eth1");
       if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))	// = no lan
 	{
