@@ -1194,7 +1194,11 @@ start_nvram (void)
 #ifndef HAVE_TW6600
 #ifdef HAVE_MICRO
 //if dist_type micro, force to elegant
+  if (!nvram_match ("router_style", "blue") || !nvram_match ("router_style", "cyan") || !nvram_match ("router_style", "green")
+    || !nvram_match ("router_style", "red") || !nvram_match ("router_style", "yellow"))
+    {
       nvram_set ("router_style", "elegant");
+    }
 #endif
 #endif
 #endif
