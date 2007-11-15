@@ -3734,7 +3734,6 @@ do_stylecss (char *url, webs_t stream)
 {
   char *style = nvram_get ("router_style");
   int sdata[30];
-  int i;
 
 
   int blue[30]=  { 0x36f, 0xfff, 0x68f, 0x24d, 0x24d, 0x68f, 0x57f, 0xccf, 0x78f, 0x35d, 0x35c, 0x78f,
@@ -3758,19 +3757,18 @@ do_stylecss (char *url, webs_t stream)
                    0x999, 0xdd5, 0xdd5, 0x660, 0xee7, 0x000 };
  
 
-  for (i = 0; i < 30; i++)
-  {                  
+                 
   if (!strcmp (style, "blue"))
-  	sdata [i] = blue[i];
+  	memcpy (sdata, blue, 30 * sizeof(int));
   else if (!strcmp (style, "cyan"))
-  	sdata [i] = cyan[i];
+  	memcpy (sdata, cyan, 30 * sizeof(int));
   else if (!strcmp (style, "red"))
-  	sdata [i] = red[i];
+  	memcpy (sdata, red, 30 * sizeof(int));
   else if (!strcmp (style, "green"))
-  	sdata [i] = green[i];
+  	memcpy (sdata, green, 30 * sizeof(int));
   else if (!strcmp (style, "yellow"))
-  	sdata [i] = yellow[i];
-  }
+  	memcpy (sdata, yellow, 30 * sizeof(int));
+
 
   	
   websWrite (stream, "@import url(../common.css);\n");
