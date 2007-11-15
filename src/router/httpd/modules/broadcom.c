@@ -3758,7 +3758,7 @@ do_stylecss (char *url, webs_t stream)
                    0x999, 0xdd5, 0xdd5, 0x660, 0xee7, 0x000 };
  
 
-  for (i = 0; i < 30, i++)
+  for (i = 0; i < 30; i++)
   {                  
   if (!strcmp (style, "blue"))
   	sdata [i] = blue[i];
