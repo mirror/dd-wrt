@@ -3728,6 +3728,102 @@ do_apply_post (char *url, webs_t stream, int len, char *boundary)
     }
 }
 
+
+static void
+do_stylecss (char *url, webs_t stream)
+{
+  char *style = nvram_get ("router_style");
+  int sdata[30];
+
+
+  int blue[30]=  { 0x36f, 0xfff, 0x68f, 0x24d, 0x24d, 0x68f, 0x57f, 0xccf, 0x78f, 0x35d, 0x35c, 0x78f,
+                   0x78f, 0xfff, 0x9af, 0x46e, 0x46e, 0x9af, 0x36f, 0xccf, 0xfff, 0x69f, 0xfff, 0xfff,
+                   0x999, 0x69f, 0x69f, 0xccf, 0x78f, 0xfff };
+                  
+  int cyan[30] = { 0x099, 0xfff, 0x3bb, 0x066, 0x066, 0x3bb, 0x3bb, 0xcff, 0x4cc, 0x1aa, 0x1aa, 0x4cc,
+                   0x6cc, 0xfff, 0x8dd, 0x5bb, 0x5bb, 0x8dd, 0x099, 0xcff, 0xfff, 0x3bb, 0xfff, 0xfff,
+                   0x999, 0x3bb, 0x3bb, 0xcff, 0x6cc, 0xfff };
+                   
+  int green[30]= { 0x090, 0xfff, 0x3b3, 0x060, 0x060, 0x3b3, 0x3b3, 0xcfc, 0x4c4, 0x1a1, 0x1a1, 0x4c4,
+                   0x6c6, 0xfff, 0x8d8, 0x5b5, 0x5b5, 0x8d8, 0x090, 0xcfc, 0xfff, 0x3b3, 0xfff, 0xfff,
+                   0x999, 0x3b3, 0x3b3, 0xcfc, 0x6c6, 0xfff };
+                   
+  int red[30] =  { 0xc00, 0xfff, 0xe33, 0x800, 0x800, 0xe33, 0xd55, 0xfcc, 0xe77, 0xc44, 0xc44, 0xe77,
+                   0xe77, 0xfff, 0xf99, 0xd55, 0xd55, 0xf99, 0xc00, 0xfcc, 0xfff, 0xd55, 0xfff, 0x999,
+                   0xd55, 0xd55, 0xfcc, 0xe77, 0xfff }                   
+
+  int yellow[30]={ 0xcc0, 0x000, 0xee3, 0x880, 0x880, 0xee3, 0xdd5, 0x660, 0xee7, 0xbb4, 0xbb4, 0xee7,
+                   0xee7, 0x000, 0xff9, 0xcc5, 0xcc5, 0xff9, 0x990, 0x660, 0x000, 0xdd5, 0x000, 0xfff,
+                   0x999, 0xdd5, 0x660, 0xee7, 0x000 }
+ 
+                 
+  if (!strcmp (style, "blue"))
+  	memcpy (sdata, blue, 30);
+  else if (!strcmp (style, "cyan"))
+  	memcpy (sdata, cyan, 30);
+  else if (!strcmp (style, "red"))
+  	memcpy (sdata, red, 30);
+  else if (!strcmp (style, "green"))
+  	memcpy (sdata, green, 30);
+  else if (!strcmp (style, "yellow"))
+  	memcpy (sdata, green, 30);
+
+  	
+  websWrite (stream, "@import url(../common.css);\n");
+  websWrite (stream, "#menuSub,\n");
+  websWrite (stream, "#menuMainList li span,\n"); 
+  websWrite (stream, "#help h2 {\n");
+  websWrite (stream, "background:#%03x;\n", sdata[0]);
+  websWrite (stream, "color:#%03x;\n", sdata[1]);
+  websWrite (stream, "border-color:#%03x #%03x #%03x #%03x;\n", sdata[2],  sdata [3], sdata[4], sdata[5]);
+  websWrite (stream, "}\n");
+  websWrite (stream, "#menuSubList li a {\n");
+  websWrite (stream, "background:#%03x;\n", sdata[6]);
+  websWrite (stream, "color:#%03x;\n", sdata[7]);
+  websWrite (stream, "border-color:#%03x #%03x #%03x #%03x;\n", sdata[8], sdata[9], sdata[10], sdata[11]);
+  websWrite (stream, "}\n");
+  websWrite (stream, "#menuSubList li a:hover {\n");
+  websWrite (stream, "background:#%03x;\n", sdata[12]);
+  websWrite (stream, "color:#%03x;\n", sdata[13]);
+  websWrite (stream, "border-color:#%03x #%03x #%03x #%03x;\n", sdata[14], sdata[15], sdata[16], sdata[17]);
+  websWrite (stream, "}\n");
+  websWrite (stream, "fieldset legend {\n");
+  websWrite (stream, "color:#%03x;\n", sdata[18]);
+  websWrite (stream, "}\n");
+  websWrite (stream, "#help a {\n");
+  websWrite (stream, "color:#%03x;\n", sdata[19]);
+  websWrite (stream, "}\n");
+  websWrite (stream, "#help a:hover {\n");
+  websWrite (stream, "color:#%03x;\n", sdata[20]);
+  websWrite (stream, "}\n");
+  websWrite (stream, ".meter .bar {\n");
+  websWrite (stream, "background-color: #%03x;\n", sdata[21]);
+  websWrite (stream, "}\n");
+  websWrite (stream, ".meter .text {\n");
+  websWrite (stream, "color:#%03x;\n", sdata[22]);
+  websWrite (stream, "}\n");
+  websWrite (stream, ".progressbar {\n");
+  websWrite (stream, "background-color: #%03x;\n", sdata[23]);
+  websWrite (stream, "border-color: #%03x;\n", sdata[24]);
+  websWrite (stream, "font-size:.09em;\n");
+  websWrite (stream, "border-width:.09em;\n");
+  websWrite (stream, "}\n");
+  websWrite (stream, ".progressbarblock {\n");
+  websWrite (stream, "background-color: #%03x;\n", sdata[25]);
+  websWrite (stream, "font-size:.09em;\n");
+  websWrite (stream, "}\n");
+  websWrite (stream, "input.button {\n");
+  websWrite (stream, "background: #%03x;\n", sdata[26]);
+  websWrite (stream, "color: #%03x;\n", sdata[27]);
+  websWrite (stream, "}\n");
+  websWrite (stream, "input.button:hover {\n");
+  websWrite (stream, "background: #%03x;\n", sdata[28]);
+  websWrite (stream, "color: #%03x;\n", sdata[29]);
+  websWrite (stream, "}\n");
+  
+}
+
+
 static void
 do_style (char *url, webs_t stream, char *query)
 {
@@ -4420,6 +4516,11 @@ struct mime_handler mime_handlers[] = {
   {"**.html", "text/html", no_cache, NULL, do_ej, NULL},
 
 #endif
+  {"style/blue/style.css", "text/css", NULL, NULL, do_stylecss, NULL},
+  {"style/cyan/style.css", "text/css", NULL, NULL, do_stylecss, NULL},
+  {"style/green/style.css", "text/css", NULL, NULL, do_stylecss, NULL},
+  {"style/red/style.css", "text/css", NULL, NULL, do_stylecss, NULL},
+  {"style/yellow/style.css", "text/css", NULL, NULL, do_stylecss, NULL},
   {"**.css", "text/css", NULL, NULL, do_file, NULL},
   {"**.svg", "image/svg+xml", NULL, NULL, do_file, NULL},
   {"**.gif", "image/gif", NULL, NULL, do_file, NULL},
