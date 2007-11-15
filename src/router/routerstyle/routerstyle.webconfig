@@ -1,3 +1,4 @@
+<% ifdef("MICRO", "<!--"); %>
 <script type="text/javascript">
 //<![CDATA[
 function previewStyle(val) {
@@ -19,6 +20,7 @@ document.forms[0].onreset = function() {
 }
 //]]>
 </script>
+<% ifdef("MICRO", "-->"); %>
 <fieldset>
 	<legend><% tran("management.gui_style"); %></legend>
 	<div class="setting">
