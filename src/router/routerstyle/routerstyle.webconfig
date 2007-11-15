@@ -1,4 +1,3 @@
-<% ifdef("MICRO", "<!--"); %>
 <script type="text/javascript">
 //<![CDATA[
 function previewStyle(val) {
@@ -20,7 +19,6 @@ document.forms[0].onreset = function() {
 }
 //]]>
 </script>
-<% ifdef("MICRO", "-->"); %>
 <fieldset>
 	<legend><% tran("management.gui_style"); %></legend>
 	<div class="setting">
@@ -28,10 +26,12 @@ document.forms[0].onreset = function() {
 		<select name="router_style">
 		    <% show_styles(); %>
 		</select>&nbsp;
+	<% ifdef("MICRO", "<!--"); %>
 		<script type="text/javascript">
 		//<![CDATA[
 		document.write("<input class=\"button\" type=\"button\" name=\"preview_button\" value=\"" + sbutton.preview + "\" onclick=\"previewStyle(this.form.router_style.value)\" />");
 		//]]>
 		</script>
+	<% ifdef("MICRO", "-->"); %>
 	</div>
 </fieldset><br />
