@@ -5658,7 +5658,9 @@ struct ej_handler ej_handlers[] = {
   {"do_hpagehead", ej_do_hpagehead},	//Eko
   {"show_timeoptions", ej_show_timeoptions},	//Eko
   {"show_wanipinfo", ej_show_wanipinfo},	//Eko
+#ifdef HAVE_OVERCLOCKING
   {"show_clocks", ej_show_clocks},
+#endif
   {"make_time_list", ej_make_time_list},	//Eko
   {"getrebootflags", ej_getrebootflags},
   {"getwirelessmode", ej_getwirelessmode},
