@@ -769,6 +769,14 @@ internal_getRouterBrand ()
       return ROUTER_WRT350N;
     }
 
+  if (nvram_match("boardnum","20070615") &&
+      nvram_match ("boardtype", "0x478") && nvram_match ("cardbus", "0"))
+    {
+      cprintf ("router is Linksys WRT600N\n");
+      setRouter ("Linksys WRT600N");
+      return ROUTER_WRT600N;
+    }
+
   if (boardnum == 42 && nvram_match ("boardtype", "bcm94710dev"))
     {
       cprintf ("router is Linksys WRT54G v1.x\n");
@@ -1157,7 +1165,7 @@ diag_led (int type, int act)
   else if (brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
     return diag_led_4702 (type, act);
   else
-    if ((brand == ROUTER_WRTSL54GS || brand == ROUTER_WRT350N
+    if ((brand == ROUTER_WRTSL54GS || brand == ROUTER_WRT350N || brand == ROUTER_WRT600N
 	 || brand == ROUTER_BUFFALO_WZRG144NH) && type == DIAG)
     return diag_led_4704 (type, act);
   else
@@ -1224,6 +1232,11 @@ led_control (int type, int act)
       connected_gpio = 0x13;
       power_gpio = 0x01;
       ses2_gpio = 0x13;		//ses orange                    
+      break;
+    case ROUTER_WRT600N:
+      connected_gpio = 0x13;
+//      power_gpio = 0x01;
+      ses2_gpio = 0x18;		//ses orange                    
       break;
     case ROUTER_LINKSYS_WRT55AG:
       connected_gpio = 0x13;
