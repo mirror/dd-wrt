@@ -167,6 +167,7 @@ main_loop (void)
 #ifndef HAVE_BUFFALO
   if (brand == ROUTER_WRT600N)
     {
+      nvram_set("vlan2hwname","et0");
       if (nvram_match ("fullswitch", "1")
 	  && (nvram_invmatch ("wl0_mode", "ap")
 	      || nvram_match ("wan_proto", "disabled")))
@@ -276,8 +277,6 @@ main_loop (void)
   switch (brand)
     {
     case ROUTER_WRT600N:
-    if (nvram_get("vlan2hwname")==NULL)
-	nvram_set("vlan2hwname","et0");
     case ROUTER_ASUS_WL500GD:
     case ROUTER_ASUS_WL550GE:
     case ROUTER_MOTOROLA:
