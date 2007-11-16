@@ -50,7 +50,8 @@ ifneq ($(CONFIG_LANGUAGE),y)
 	rm -f $(INSTALLDIR)/www/lang_pack/*.js
 	rm -f $(INSTALLDIR)/www/images/dd-wrt.gif	
 	rm -f $(INSTALLDIR)/www/images/logo.png
-	rm -f $(INSTALLDIR)/www/images/88*	
+	rm -f $(INSTALLDIR)/www/images/88*
+	rm -f $(INSTALLDIR)/www/images/valid-xhtml10.png	
 	cp lang_pack/english.js $(INSTALLDIR)/www/lang_pack/
 endif
 	$(TOP)/tools/jsformat $(INSTALLDIR)/www/lang_pack/*.js
