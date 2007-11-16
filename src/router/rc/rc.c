@@ -378,7 +378,9 @@ main_loop (void)
 
 	case RESTART:
 	  lcdmessage ("RESTART SYSTEM");
+#ifdef HAVE_OVERCLOCKING
 	  start_service ("overclocking");
+#endif
 	  cprintf ("RESET NVRAM VARS\n");
 	  nvram_set ("wl0_lazy_wds", nvram_safe_get ("wl_lazy_wds"));
 #ifndef HAVE_MSSID
