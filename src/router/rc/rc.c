@@ -165,7 +165,25 @@ main_loop (void)
   nvram_set ("vlan1ports", "");
 #else
 #ifndef HAVE_BUFFALO
-  if (brand == ROUTER_WRT350N)
+  if (brand == ROUTER_WRT600N)
+    {
+      if (nvram_match ("fullswitch", "1")
+	  && (nvram_invmatch ("wl0_mode", "ap")
+	      || nvram_match ("wan_proto", "disabled")))
+	{
+	  nvram_set ("vlan0ports", "0 1 2 3 4 8*");
+	  nvram_set ("vlan2ports", "");
+	}
+      else
+	{
+	  if (nvram_match ("vlan0ports", "0 1 2 3 4 8*"))
+	    {
+	      nvram_set ("vlan0ports", "");
+	      nvram_set ("vlan2ports", "");
+	    }
+	}
+    }
+  else if (brand == ROUTER_WRT350N)
     {
       if (nvram_match ("fullswitch", "1")
 	  && (nvram_invmatch ("wl0_mode", "ap")
@@ -257,6 +275,9 @@ main_loop (void)
 #ifndef HAVE_RB500
   switch (brand)
     {
+    case ROUTER_WRT600N:
+    if (nvram_get("vlan2hwname")==NULL)
+	nvram_set("vlan2hwname","et0");
     case ROUTER_ASUS_WL500GD:
     case ROUTER_ASUS_WL550GE:
     case ROUTER_MOTOROLA:

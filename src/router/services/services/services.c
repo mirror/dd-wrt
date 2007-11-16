@@ -273,7 +273,7 @@ start_resetbutton (void)
 {
   int ret = 0;
 
-  ret = eval ("resetbutton");
+//  ret = eval ("resetbutton");
   syslog (LOG_INFO,
 	  "reset button : resetbutton daemon successfully started\n");
 

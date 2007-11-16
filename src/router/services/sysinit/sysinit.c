@@ -406,6 +406,14 @@ start_restore_defaults (void)
     {0, 0, 0}
   };
 
+  struct nvram_tuple wrt600vlan[] = {
+    {"lan_ifname", "br0", 0},
+    {"lan_ifnames", "vlan0 eth1 eth2 eth3", 0},
+    {"wan_ifname", "vlan2", 0},
+    {"wan_ifnames", "vlan2", 0},
+    {0, 0, 0}
+  };
+
   struct nvram_tuple wzr144nhvlan[] = {
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "vlan2 eth1", 0},
@@ -587,6 +595,9 @@ start_restore_defaults (void)
       break;
     case ROUTER_WRT350N:
       linux_overrides = wrt350vlan;
+      break;
+    case ROUTER_WRT600N:
+      linux_overrides = wrt600vlan;
       break;
 #endif
     case ROUTER_BUFFALO_WZRG144NH:
@@ -797,7 +808,22 @@ start_restore_defaults (void)
       nvram_set ("lan_ipaddr", "192.168.0.1");
     }
 #endif
-  if (brand == ROUTER_WRT350N)
+  if (brand == ROUTER_WRT600N)
+    {
+
+      if (!nvram_get ("vlan0ports") || nvram_match ("vlan0ports", ""))
+	{
+	  nvram_set ("vlan0ports", "1 2 3 4 8*");
+	}
+      if (nvram_invmatch ("fullswitch", "1"))
+	{
+	  if (!nvram_get ("vlan2ports") || nvram_match ("vlan2ports", ""))
+	    {
+	      nvram_set ("vlan2ports", "0 8");
+	    }
+	}
+    }
+  else if (brand == ROUTER_WRT350N)
     {
 
       if (!nvram_get ("vlan1ports") || nvram_match ("vlan1ports", ""))
