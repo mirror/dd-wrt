@@ -1,0 +1,51 @@
+@import url(../common.css);
+#menuSub,
+#menuMainList li span, 
+#help h2 {
+background:#cc0;
+color:#000;
+border-color:#ee3 #880 #880 #ee3;
+}
+#menuSubList li a {
+background:#dd5;
+color:#660;
+border-color:#ee7 #bb4 #bb4 #ee7;
+}
+#menuSubList li a:hover {
+background:#ee7;
+color:#000;
+border-color:#ff9 #cc5 #cc5 #ff9;
+}
+fieldset legend {
+color:#990;
+}
+#help a {
+color:#660;
+}
+#help a:hover {
+color:#000;
+}
+.meter .bar {
+background-color: #dd5;
+}
+.meter .text {
+color:#000;
+}
+.progressbar {
+background-color: #fff;
+border-color: #999;
+font-size:.09em;
+border-width:.09em;
+}
+.progressbarblock {
+background-color: #dd5;
+font-size:.09em;
+}
+input.button {
+background: #dd5;
+color: #660;
+}
+input.button:hover {
+background: #ee7;
+color: #000;
+}
