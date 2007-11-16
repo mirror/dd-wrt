@@ -3848,7 +3848,7 @@ do_stylecss_ie (char *url, webs_t stream)
   websWrite (stream, "padding:0 .09em;\n");
   websWrite (stream, "}\n");
 }
-
+/*
 static void
 do_style (char *url, webs_t stream, char *query)
 {
@@ -3858,7 +3858,7 @@ do_style (char *url, webs_t stream, char *query)
   else
     do_file (style, stream, NULL);
 }
-
+*/
 
 
 static void
@@ -4524,7 +4524,7 @@ struct mime_handler mime_handlers[] = {
 #endif
   {"**.asp", "text/html", no_cache, NULL, do_ej, do_auth},
   {"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL},
-  {"style.css", "text/css", NULL, NULL, do_style, NULL},
+//  {"style.css", "text/css", NULL, NULL, do_style, NULL},
   {"common.js", "text/javascript", NULL, NULL, do_file, NULL},
   {"lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL},
 
