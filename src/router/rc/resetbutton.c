@@ -347,6 +347,9 @@ period_check (int sig)
     case ROUTER_WRT350N:
       sesgpio = 0x18;		//gpio 8, inversed
       break;
+//    case ROUTER_WRT350N:
+//      sesgpio = 0x18;		//gpio 8, inversed
+//      break;
     case ROUTER_ASUS_WL500W:
       sesgpio = 0x07;       //gpio 7, normal
       break;

@@ -157,6 +157,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_BUFFALO_WBR2G54S:
     case ROUTER_WRT150N:
     case ROUTER_WRT300N:
+    case ROUTER_WRT600N:
     case ROUTER_WRT350N:
       nvram_set ("wl0gpio0", "8");
       break;
@@ -217,6 +218,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_WRT150N:
     case ROUTER_WRT300N:
     case ROUTER_WRT350N:
+    case ROUTER_WRT600N:
     case ROUTER_BUFFALO_WZRG144NH:
     case ROUTER_BUFFALO_WZRG300N:
     case ROUTER_NETGEAR_WNR834B:
@@ -483,6 +485,9 @@ start_sysinit (void)
     case ROUTER_WRT350N:
       nvram_set ("wan_ifname", "vlan2");
       break;
+    case ROUTER_WRT600N:
+      nvram_set ("wan_ifname", "vlan2");
+      break;
 
     case ROUTER_BUFFALO_WZRG144NH:
       nvram_set ("wan_ifname", "vlan1");
@@ -612,6 +617,7 @@ start_sysinit (void)
 	  switch (brand)
 	    {
 	    case ROUTER_WRT350N:
+	    case ROUTER_WRT600N:
 	    case ROUTER_BUFFALO_WZRG144NH:
 	      nvram_set ("portprio_support", "0");
 	      modules = "bcm57xxlsys";
@@ -673,6 +679,7 @@ start_sysinit (void)
 	  switch (brand)
 	    {
 	    case ROUTER_WRT350N:
+	    case ROUTER_WRT600N:
 	    case ROUTER_BUFFALO_WZRG144NH:
 	      nvram_set ("portprio_support", "0");
 	      modules = "bcm57xxlsys";
