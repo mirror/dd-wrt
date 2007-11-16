@@ -93,7 +93,7 @@ ifeq ($(CONFIG_RED),y)
 	mkdir $(INSTALLDIR)/www/style/red
 #	cp red/style.css $(INSTALLDIR)/www/style/red
 #	cp red/style_ie.css $(INSTALLDIR)/www/style/red
-    touch (INSTALLDIR)/www/style/red/style.css
+	touch (INSTALLDIR)/www/style/red/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp red/logo.png $(INSTALLDIR)/www/style
 endif
@@ -110,7 +110,7 @@ ifeq ($(CONFIG_BLUE),y)
 	mkdir $(INSTALLDIR)/www/style/blue
 #	cp blue/style.css $(INSTALLDIR)/www/style/blue
 #	cp blue/style_ie.css $(INSTALLDIR)/www/style/blue
-    touch (INSTALLDIR)/www/style/blue/style.css
+	touch (INSTALLDIR)/www/style/blue/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp blue/logo.png $(INSTALLDIR)/www/style
 endif
@@ -119,7 +119,7 @@ ifeq ($(CONFIG_ELEGANT),y)
 	mkdir $(INSTALLDIR)/www/style/elegant
 #	cp elegant/style.css $(INSTALLDIR)/www/style/elegant
 #	cp elegant/style_ie.css $(INSTALLDIR)/www/style/elegant
-    touch (INSTALLDIR)/www/style/elegant/style.css
+	touch (INSTALLDIR)/www/style/elegant/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp elegant/logo.png $(INSTALLDIR)/www/style
 endif
@@ -128,7 +128,7 @@ ifeq ($(CONFIG_CYAN),y)
 	mkdir $(INSTALLDIR)/www/style/cyan
 #	cp cyan/style.css $(INSTALLDIR)/www/style/cyan
 #	cp cyan/style_ie.css $(INSTALLDIR)/www/style/cyan
-    touch (INSTALLDIR)/www/style/cyan/style.css
+	touch (INSTALLDIR)/www/style/cyan/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp cyan/logo.png $(INSTALLDIR)/www/style
 endif
@@ -153,7 +153,7 @@ ifeq ($(CONFIG_YELLOW),y)
 	mkdir $(INSTALLDIR)/www/style/yellow
 #	cp yellow/style.css $(INSTALLDIR)/www/style/yellow
 #	cp yellow/style_ie.css $(INSTALLDIR)/www/style/yellow
-    touch (INSTALLDIR)/www/style/yellow/style.css
+	touch (INSTALLDIR)/www/style/yellow/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp yellow/logo.png $(INSTALLDIR)/www/style
 endif
@@ -162,7 +162,7 @@ ifeq ($(CONFIG_GREEN),y)
 	mkdir $(INSTALLDIR)/www/style/green
 #	cp green/style.css $(INSTALLDIR)/www/style/green
 #	cp green/style_ie.css $(INSTALLDIR)/www/style/green
-    touch (INSTALLDIR)/www/style/green/style.css
+	touch (INSTALLDIR)/www/style/green/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp green/logo.png $(INSTALLDIR)/www/style
 endif
@@ -171,7 +171,7 @@ ifeq ($(CONFIG_ORANGE),y)
 	mkdir $(INSTALLDIR)/www/style/orange
 #	cp orange/style.css $(INSTALLDIR)/www/style/orange
 #	cp orange/style_ie.css $(INSTALLDIR)/www/style/orange
-    touch (INSTALLDIR)/www/style/orange/style.css
+	touch (INSTALLDIR)/www/style/orange/style.css
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp orange/logo.png $(INSTALLDIR)/www/style
 endif
