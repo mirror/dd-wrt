@@ -855,11 +855,16 @@ check_cfe_nv (void)
 
 	  ret += check_nv ("sdram_init", "0x010b");
 	  ret += check_nv ("sdram_config", "0x0062");
+
 	  if (nvram_match ("clkfreq", "200")
+#ifdef HAVE_OVERCLOCKING
 	      && nvram_match ("overclocking", "200"))
+#endif
 	    {
 	      ret += check_nv ("clkfreq", "216");
+#ifdef HAVE_OVERCLOCKING
 	      nvram_set ("overclocking", "216");
+#endif
 	    }
 
 	  if (ret)
@@ -937,6 +942,7 @@ check_pmon_nv (void)
 static void
 overclock (void)
 {
+#ifdef HAVE_OVERCLOCKING
   int rev = cpu_plltype ();
   char *ov = nvram_get ("overclocking");
   if (ov == NULL)
@@ -1050,12 +1056,15 @@ overclock (void)
       kill (1, SIGTERM);
       exit (0);
     }
+#endif
 }
 
 void
 start_overclocking (void)
 {
+#ifdef HAVE_OVERCLOCKING
   cprintf ("Overclocking...\n");
   overclock ();
   cprintf ("Overclocking, done\n");
+#endif
 }

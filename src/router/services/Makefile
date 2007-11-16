@@ -50,6 +50,9 @@ ifeq ($(CONFIG_RSTATS),y)
 CFLAGS += -DHAVE_RSTATS
 OBJS += rstats.o
 endif
+ifeq ($(CONFIG_OVERCLOCKING),y)
+CFLAGS += -DHAVE_OVERCLOCKING
+endif
 ifeq ($(CONFIG_IPV6),y)
 CFLAGS += -DHAVE_IPV6
 endif
