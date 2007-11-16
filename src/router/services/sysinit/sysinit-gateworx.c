@@ -70,13 +70,13 @@ checkupdate (void)
   pclose (in);
   if (res == 0)
     {
-      in = popen ("/bin/cat /dev/mtdblock/0|/bin/grep 2.02|wc -l", "rb");
+      in = popen ("/bin/cat /dev/mtdblock/0|/bin/grep \"2\\.02\"|wc -l", "rb");
       fscanf (in, "%d", &res2);
       pclose (in);
     }
   if (res == 1)
     {
-      in = popen ("/bin/cat /dev/mtdblock/0|/bin/grep 2.03|wc -l", "rb");
+      in = popen ("/bin/cat /dev/mtdblock/0|/bin/grep \"2\\.03\"|wc -l", "rb");
       fscanf (in, "%d", &res2);
       pclose (in);
     }
