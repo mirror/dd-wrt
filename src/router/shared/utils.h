@@ -228,6 +228,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Netgear WG602 v3 (5350 cpu, fccid: Netgear PY3WG602V3)
 #define ROUTER_NETGEAR_WG602_V3 0x4411
 
+#define ROUTER_WRT600N 0x4517
+
 #define NVROUTER "DD_BOARD"
 
 extern char *getBridge (char *ifname);
