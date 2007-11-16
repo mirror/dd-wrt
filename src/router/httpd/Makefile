@@ -68,6 +68,9 @@ endif
 ifeq ($(CONFIG_WIVIZ),y)
 CFLAGS += -DHAVE_WIVIZ
 endif
+ifeq ($(CONFIG_OVERCLOCKING),y)
+CFLAGS += -DHAVE_OVERCLOCKING
+endif
 ifeq ($(CONFIG_RADLOCAL),y)
 CFLAGS += -DHAVE_RADLOCAL
 endif

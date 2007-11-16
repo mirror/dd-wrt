@@ -43,14 +43,14 @@
 #include <utils.h>
 #include <bcmnvram.h>
 
-
+#ifdef HAVE_OVERCLOCKING
 static unsigned int type3_clocks[9] =
   { 150, 200,   0,   0,   0,   0,   0,   0,   0 };
 static unsigned int type4_clocks[9] =
   { 192, 200, 216, 228, 240, 252, 264, 280, 300 };
 static unsigned int type7_clocks[9] =
   { 183, 187, 198, 200, 216, 225, 233, 237, 250 };
-
+#endif
 
 void
 show_ipnetmask (webs_t wp, char *var)
@@ -98,6 +98,7 @@ show_ipnetmask (webs_t wp, char *var)
 
 }
 
+#ifdef HAVE_OVERCLOCKING
 void
 ej_show_clocks (webs_t wp, int argc, char_t ** argv)
 {
@@ -134,6 +135,7 @@ ej_show_clocks (webs_t wp, int argc, char_t ** argv)
     }
   websWrite (wp, "</select>\n</div>\n");
 }
+#endif
 
 void
 ej_show_routing (webs_t wp, int argc, char_t ** argv)
