@@ -51,6 +51,9 @@ endif
 ifeq ($(CONFIG_RSTATS),y)
 CFLAGS += -DHAVE_RSTATS
 endif
+ifeq ($(CONFIG_OVERCLOCKING),y)
+CFLAGS += -DHAVE_OVERCLOCKING
+endif
 ifeq ($(CONFIG_ACK),y)
 CFLAGS += -DHAVE_ACK
 endif
