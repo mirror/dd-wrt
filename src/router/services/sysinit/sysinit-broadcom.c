@@ -286,7 +286,6 @@ setup_4712 (void)
 	      nvram_set ("lan_ifnames", "vlan0 eth1");
 	      nvram_set ("vlan0hwname", "et0");
 	      nvram_set ("vlan1hwname", "et0");
-	      nvram_set ("pppoe_ifname", "vlan1");
 	      nvram_set ("wl0_ifname", "eth1");
 //              nvram_set ("need_commit","1");
 	    }
@@ -307,7 +306,6 @@ setup_4712 (void)
       strcpy (wanifname, "eth1");
       strcpy (wlifname, "eth2");
       nvram_set ("wl0_ifname", "eth2");
-      nvram_set ("pppoe_ifname", "eth1");
       if (!strcmp (nvram_safe_get ("wan_ifname"), ""))
 	nvram_set ("lan_ifnames", "eth0 eth1 eth2 wlanb0 wlana0");
       else
@@ -367,7 +365,9 @@ start_sysinit (void)
     case ROUTER_BUFFALO_WZRRSG54:
       check_brcm_cpu_type ();
       setup_4712 ();
+	  nvram_set ("lan_ifnames", "eth0 eth2");
       nvram_set ("wan_ifname", "eth1");
+      nvram_set ("wl0_ifname", "eth2");
       break;
 
     case ROUTER_MOTOROLA:
@@ -567,9 +567,10 @@ start_sysinit (void)
   strcpy (wanifname, nvram_safe_get ("wan_ifname"));
   strcpy (wlifname, nvram_safe_get ("wl0_ifname"));
 
-  /* set wan_ifnames and pppoe_wan_ifname */
+  /* set wan_ifnames, pppoe_wan_ifname and pppoe_ifname*/
   nvram_set ("wan_ifnames", wanifname);
   nvram_set ("pppoe_wan_ifname", wanifname);
+  nvram_set ("pppoe_ifname", wanifname);
   
   /* additional boardflags adjustment */
   switch (brand)
@@ -815,12 +816,7 @@ check_cfe_nv (void)
     {
     case ROUTER_BUFFALO_WZRRSG54:
       ret += check_nv ("lan_hwnames", "et0 wl0");
-      ret += check_nv ("lan_ifnames", "eth0 eth2");
       ret += check_nv ("wan_hwname", "et1");
-      ret += check_nv ("wan_ifname", "eth1");
-      ret += check_nv ("wan_ifnames", "eth1");
-      ret += check_nv ("pppoe_ifname", "eth1");
-      ret += check_nv ("wl0_ifname", "eth2");
       ret += check_nv ("vlans", "0");
       break;
     case ROUTER_BUFFALO_WBR2G54S:
@@ -934,25 +930,26 @@ check_pmon_nv (void)
   return 0;
 }
 
-#define ISCLK(a) nvram_match("clkfreq",a);
-static void
-overclock (void)
+
+void
+start_overclocking (void)
 {
 #ifdef HAVE_OVERCLOCKING
+  cprintf ("Overclocking started\n");
+  
   int rev = cpu_plltype ();
+  if (rev == 0)
+    return;			//unsupported
+    
   char *ov = nvram_get ("overclocking");
   if (ov == NULL)
     return;
   int clk = atoi (ov);
+
   if (nvram_get ("clkfreq") == NULL)
     return;			//unsupported
-  if (nvram_match ("clkfreq", "125"))
-    return;			//unsupported
-  if (rev == 0)
-    return;			//unsupported
 
-//int cclk = atoi(nvram_safe_get("clkfreq"));
-//if (cclk<192)return; //unsupported
+
   char *pclk = nvram_safe_get ("clkfreq");
   char dup[64];
   strcpy (dup, pclk);
@@ -961,17 +958,7 @@ overclock (void)
     if (dup[i] == ',')
       dup[i] = 0;
   int cclk = atoi (dup);
-  if (cclk < 150 && rev == 3)
-    {
-      cprintf ("clkfreq is %d (%s), this is unsupported\n", cclk, dup);
-      return;			//unsupported
-    }
-  if (cclk < 192 && rev == 4)
-    {
-      cprintf ("clkfreq is %d (%s), this is unsupported\n", cclk, dup);
-      return;			//unsupported
-    }
-  if (cclk < 183 && rev == 7)
+  if ((cclk < 150 && rev == 3) || (cclk < 192 && rev == 4) || (cclk < 183 && rev == 7))
     {
       cprintf ("clkfreq is %d (%s), this is unsupported\n", cclk, dup);
       return;			//unsupported
@@ -985,59 +972,78 @@ overclock (void)
 
 
   int set = 1;
+  int clk2 = 0;
+  char clkfr[16];
 
   switch (clk)
     {
     case 150:
-      nvram_set ("clkfreq", "150,75");
+      clk2 = 75;
+//      nvram_set ("clkfreq", "150,75");
       break;	    
     case 183:
-      nvram_set ("clkfreq", "183,92");
+      clk2 = 92;
+//      nvram_set ("clkfreq", "183,92");
       break;
     case 187:
-      nvram_set ("clkfreq", "187,94");
+      clk2 = 94;
+//      nvram_set ("clkfreq", "187,94");
       break;
     case 192:
-      nvram_set ("clkfreq", "192,96");
+      clk2 = 96;
+//      nvram_set ("clkfreq", "192,96");
       break;
     case 198:
-      nvram_set ("clkfreq", "198,98");
+      clk2 = 98;
+//      nvram_set ("clkfreq", "198,98");
       break;
     case 200:
-      nvram_set ("clkfreq", "200,100");
+      clk2 = 100;
+//      nvram_set ("clkfreq", "200,100");
       break;
     case 216:
-      nvram_set ("clkfreq", "216,108");
+      clk2 = 108;
+//      nvram_set ("clkfreq", "216,108");
       break;
     case 225:
-      nvram_set ("clkfreq", "225,113");
+      clk2 = 113;
+//      nvram_set ("clkfreq", "225,113");
       break;
     case 228:
-      nvram_set ("clkfreq", "228,114");
+      clk2 = 114;
+//      nvram_set ("clkfreq", "228,114");
       break;
     case 233:
-      nvram_set ("clkfreq", "233,116");
+      clk2 = 116;
+//      nvram_set ("clkfreq", "233,116");
       break;
     case 237:
-      nvram_set ("clkfreq", "237,119");
+      clk2 = 119;
+//     nvram_set ("clkfreq", "237,119");
       break;
     case 240:
-      nvram_set ("clkfreq", "240,120");
+      clk2 = 120;
+//      nvram_set ("clkfreq", "240,120");
       break;
     case 250:
-      nvram_set ("clkfreq", "250,125");
+      clk2 = 125;
+//      nvram_set ("clkfreq", "250,125");
       break;
     case 252:
-      nvram_set ("clkfreq", "252,126");
+      clk2 = 126;
+//      nvram_set ("clkfreq", "252,126");
       break;
     case 264:
-      nvram_set ("clkfreq", "264,132");
+      clk2 = 132;
+//      nvram_set ("clkfreq", "264,132");
       break;
     case 280:
-      nvram_set ("clkfreq", "280,120");
+      clk2 = 120;
+//      nvram_set ("clkfreq", "280,120");
       break;
     case 300:
-      nvram_set ("clkfreq", "300,120");
+      clk2 = 120;
+//      nvram_set ("clkfreq", "300,120");
       break;
     default:
       set = 0;
@@ -1048,19 +1054,13 @@ overclock (void)
     {
       cprintf ("clock frequency adjusted from %d to %d, reboot needed\n",
 	       cclk, clk);
+      sprintf (clkfr, "%d,%d", clk, clk2);
+      nvram set ("clkfreq", clkfr);
       nvram_commit ();
+      cprintf ("Overclocking done, rebooting...\n");
       kill (1, SIGTERM);
       exit (0);
     }
 #endif
 }
 
-void
-start_overclocking (void)
-{
-#ifdef HAVE_OVERCLOCKING
-  cprintf ("Overclocking...\n");
-  overclock ();
-  cprintf ("Overclocking, done\n");
-#endif
-}
