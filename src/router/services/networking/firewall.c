@@ -633,57 +633,57 @@ nat_postrouting (void)
 	  //for class C subnets
 	  if (!strcmp (nmask, "255.255.255.0"))
 	    loopmask = "0/24";
-	  else if (!strcmp (nmask, "255.255.255.128"))
+	  if (!strcmp (nmask, "255.255.255.128"))
 	    loopmask = "0/25";
-	  else if (!strcmp (nmask, "255.255.255.192"))
+	  if (!strcmp (nmask, "255.255.255.192"))
 	    loopmask = "0/26";
-	  else if (!strcmp (nmask, "255.255.255.224"))
+	  if (!strcmp (nmask, "255.255.255.224"))
 	    loopmask = "0/27";
-	  else if (!strcmp (nmask, "255.255.255.240"))
+	  if (!strcmp (nmask, "255.255.255.240"))
 	    loopmask = "0/28";
-	  else if (!strcmp (nmask, "255.255.255.248"))
+	  if (!strcmp (nmask, "255.255.255.248"))
 	    loopmask = "0/29";
-	  else if (!strcmp (nmask, "255.255.255.252"))
+	  if (!strcmp (nmask, "255.255.255.252"))
 	    loopmask = "0/30";
-//          else if (!strcmp (nmask, "255.255.255.254"))
+//         if (!strcmp (nmask, "255.255.255.254"))
 //            loopmask = "0/31";
-	  else if (!strcmp (nmask, "255.255.255.255"))
+	  if (!strcmp (nmask, "255.255.255.255"))
 	    loopmask = "0/32";
 
 	  //for class B subnets
-	  else if (!strcmp (nmask, "255.255.0.0"))
+	  if (!strcmp (nmask, "255.255.0.0"))
 	    loopmask = "0/16";
-	  else if (!strcmp (nmask, "255.255.128.0"))
+	  if (!strcmp (nmask, "255.255.128.0"))
 	    loopmask = "0/17";
-	  else if (!strcmp (nmask, "255.255.192.0"))
+	  if (!strcmp (nmask, "255.255.192.0"))
 	    loopmask = "0/18";
-	  else if (!strcmp (nmask, "255.255.224.0"))
+	  if (!strcmp (nmask, "255.255.224.0"))
 	    loopmask = "0/19";
-	  else if (!strcmp (nmask, "255.255.240.0"))
+	  if (!strcmp (nmask, "255.255.240.0"))
 	    loopmask = "0/20";
-	  else if (!strcmp (nmask, "255.255.248.0"))
+	  if (!strcmp (nmask, "255.255.248.0"))
 	    loopmask = "0/21";
-	  else if (!strcmp (nmask, "255.255.252.0"))
+	  if (!strcmp (nmask, "255.255.252.0"))
 	    loopmask = "0/22";
-	  else if (!strcmp (nmask, "255.255.254.0"))
+	  if (!strcmp (nmask, "255.255.254.0"))
 	    loopmask = "0/23";
 
 	  //for class A subnets
-	  else if (!strcmp (nmask, "255.0.0.0"))
+	  if (!strcmp (nmask, "255.0.0.0"))
 	    loopmask = "0/8";
-	  else if (!strcmp (nmask, "255.128.0.0"))
+	  if (!strcmp (nmask, "255.128.0.0"))
 	    loopmask = "0/9";
-	  else if (!strcmp (nmask, "255.192.0.0"))
+	  if (!strcmp (nmask, "255.192.0.0"))
 	    loopmask = "0/10";
-	  else if (!strcmp (nmask, "255.224.0.0"))
+	  if (!strcmp (nmask, "255.224.0.0"))
 	    loopmask = "0/11";
-	  else if (!strcmp (nmask, "255.240.0.0"))
+	  if (!strcmp (nmask, "255.240.0.0"))
 	    loopmask = "0/12";
-	  else if (!strcmp (nmask, "255.248.0.0"))
+	  if (!strcmp (nmask, "255.248.0.0"))
 	    loopmask = "0/13";
-	  else if (!strcmp (nmask, "255.252.0.0"))
+	  if (!strcmp (nmask, "255.252.0.0"))
 	    loopmask = "0/14";
-	  else if (!strcmp (nmask, "255.254.0.0"))
+	  if (!strcmp (nmask, "255.254.0.0"))
 	    loopmask = "0/15";
 
 	  save2file
@@ -1221,27 +1221,27 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
 
 	  if (!strcasecmp (realname, "gnutella"))
 	    proto = "gnu";
-	  else if (!strcasecmp (realname, "bearshare"))
+	  if (!strcasecmp (realname, "bearshare"))
 	    proto = "gnu";
-	  else if (!strcasecmp (realname, "edonkey"))
+	  if (!strcasecmp (realname, "edonkey"))
 	    proto = "edk";
-	  else if (!strcasecmp (realname, "kazaa"))
+	  if (!strcasecmp (realname, "kazaa"))
 	    proto = "kazaa";
-	  else if (!strcasecmp (realname, "directconnect"))
+	  if (!strcasecmp (realname, "directconnect"))
 	    proto = "dc";
-	  else if (!strcasecmp (realname, "bittorrent"))
+	  if (!strcasecmp (realname, "bittorrent"))
 	    proto = "bit";
-	  else if (!strcasecmp (realname, "applejuice"))
+	  if (!strcasecmp (realname, "applejuice"))
 	    proto = "apple";
-	  else if (!strcasecmp (realname, "soulseek"))
+	  if (!strcasecmp (realname, "soulseek"))
 	    proto = "soul";
-	  else if (!strcasecmp (realname, "ares"))
+	  if (!strcasecmp (realname, "ares"))
 	    proto = "ares";
-	  else if (!strcasecmp (realname, "mute"))
+	  if (!strcasecmp (realname, "mute"))
 	    proto = "mute";
-	  else if (!strcasecmp (realname, "waste"))
+	  if (!strcasecmp (realname, "waste"))
 	    proto = "waste";
-	  else if (!strcasecmp (realname, "xdcc"))
+	  if (!strcasecmp (realname, "xdcc"))
 	    proto = "xdcc";
 	eval("insmod", "ipt_ipp2p");
 	  save2file ("-A advgrp_%d -p tcp -m ipp2p --%s -j %s\n", seq, proto,

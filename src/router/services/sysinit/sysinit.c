@@ -1189,9 +1189,6 @@ start_nvram (void)
       nvram_set ("ag0", "0x02");  // Antenna Gain definition in dbm
     }
 #endif
-// Fix for newer stylesheet settings, BrainSlayer, Eko
-  char style[32];
-
 
   if (nvram_match ("svqos_port1bw", "full"))
     nvram_set ("svqos_port1bw", "FULL");
@@ -1219,9 +1216,9 @@ start_nvram (void)
 #ifdef DIST
 #ifndef HAVE_TW6600
 #ifdef HAVE_MICRO
-//if dist_type micro, force to elegant
-  if (!nvram_match ("router_style", "blue") && !nvram_match ("router_style", "cyan") && !nvram_match ("router_style", "elegant") && !nvram_match ("router_style", "green")
-    && !nvram_match ("router_style", "orange") && !nvram_match ("router_style", "red") && !nvram_match ("router_style", "yellow"))
+//if dist_type micro, check styles, and force to elegant if needed
+ char *style = nvram_safe_get ("router_style");
+ if (!strstr ("blue cyan elegant green orange red yellow", style))
     {
       nvram_set ("router_style", "elegant");
     }
