@@ -1055,7 +1055,7 @@ start_overclocking (void)
       cprintf ("clock frequency adjusted from %d to %d, reboot needed\n",
 	       cclk, clk);
       sprintf (clkfr, "%d,%d", clk, clk2);
-      nvram set ("clkfreq", clkfr);
+      nvram_set ("clkfreq", clkfr);
       nvram_commit ();
       cprintf ("Overclocking done, rebooting...\n");
       kill (1, SIGTERM);
