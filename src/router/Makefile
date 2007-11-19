@@ -290,7 +290,7 @@ ifeq ($(CONFIG_KAID),y)
 endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 	cp $(LINUXDIR)/arch/mips/bcm947xx/compressed/piggy mipsel-uclibc/vmlinux
-	../../opt/loader-0.02/lzma e -lc1 -lp2 -pb2 mipsel-uclibc/vmlinux mipsel-uclibc/vmlinuz
+	../../opt/loader-0.02/lzma e -lc2 -lp2 -pb2 -d21 mipsel-uclibc/vmlinux mipsel-uclibc/vmlinuz
 #endif
 #
 # Configuration rules
