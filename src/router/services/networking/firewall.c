@@ -628,63 +628,106 @@ nat_postrouting (void)
       if (nvram_match ("loopback_enable", "1"))
 	{
 	  //added for logic test
-	  char *loopmask = "";
-	  char *nmask = nvram_get ("lan_netmask");
-	  //for class C subnets
-	  if (!strcmp (nmask, "255.255.255.0"))
-	    loopmask = "0/24";
-	  if (!strcmp (nmask, "255.255.255.128"))
-	    loopmask = "0/25";
-	  if (!strcmp (nmask, "255.255.255.192"))
-	    loopmask = "0/26";
-	  if (!strcmp (nmask, "255.255.255.224"))
-	    loopmask = "0/27";
-	  if (!strcmp (nmask, "255.255.255.240"))
-	    loopmask = "0/28";
-	  if (!strcmp (nmask, "255.255.255.248"))
-	    loopmask = "0/29";
-	  if (!strcmp (nmask, "255.255.255.252"))
-	    loopmask = "0/30";
-//         if (!strcmp (nmask, "255.255.255.254"))
-//            loopmask = "0/31";
-	  if (!strcmp (nmask, "255.255.255.255"))
-	    loopmask = "0/32";
+	  char *loopmask = "0/24";  //default value for 255.255.255.0
+	  char *nmask = nvram_safe_get ("lan_netmask");
+	  int ip0 = get_single_ip (nmask, 0);
+	  int ip1 = get_single_ip (nmask, 1);
+	  int ip2 = get_single_ip (nmask, 2);
+	  int ip3 = get_single_ip (nmask, 3);
 
-	  //for class B subnets
-	  if (!strcmp (nmask, "255.255.0.0"))
-	    loopmask = "0/16";
-	  if (!strcmp (nmask, "255.255.128.0"))
-	    loopmask = "0/17";
-	  if (!strcmp (nmask, "255.255.192.0"))
-	    loopmask = "0/18";
-	  if (!strcmp (nmask, "255.255.224.0"))
-	    loopmask = "0/19";
-	  if (!strcmp (nmask, "255.255.240.0"))
-	    loopmask = "0/20";
-	  if (!strcmp (nmask, "255.255.248.0"))
-	    loopmask = "0/21";
-	  if (!strcmp (nmask, "255.255.252.0"))
-	    loopmask = "0/22";
-	  if (!strcmp (nmask, "255.255.254.0"))
-	    loopmask = "0/23";
-
-	  //for class A subnets
-	  if (!strcmp (nmask, "255.0.0.0"))
-	    loopmask = "0/8";
-	  if (!strcmp (nmask, "255.128.0.0"))
-	    loopmask = "0/9";
-	  if (!strcmp (nmask, "255.192.0.0"))
-	    loopmask = "0/10";
-	  if (!strcmp (nmask, "255.224.0.0"))
-	    loopmask = "0/11";
-	  if (!strcmp (nmask, "255.240.0.0"))
-	    loopmask = "0/12";
-	  if (!strcmp (nmask, "255.248.0.0"))
-	    loopmask = "0/13";
-	  if (!strcmp (nmask, "255.252.0.0"))
-	    loopmask = "0/14";
-	  if (!strcmp (nmask, "255.254.0.0"))
-	    loopmask = "0/15";
+	  if (ip0 == 255 && ip1 == 255 && ip2 == 255 )  //for class C subnets
+	  {
+		  switch (ip3)
+		  {
+			  case 0:  //255.255.255.0
+			   loopmask = "0/24";
+			   break;
+			  case 128:  //255.255.255.128
+			   loopmask = "0/25";
+			   break;	  
+			  case 192:  //255.255.255.192
+			   loopmask = "0/26";
+			   break;
+			  case 224:  //255.255.255.224
+			   loopmask = "0/27";
+			   break;
+			  case 240:  //255.255.255.240
+			   loopmask = "0/28";
+			   break;
+			  case 248:  //255.255.255.248
+			   loopmask = "0/29";
+			   break;
+			  case 252:  //255.255.255.252
+			   loopmask = "0/30";
+			   break;
+//			  case 254:  //255.255.255.254
+//			   loopmask = "0/31";
+//			   break;
+			  case 255:  //255.255.255.255
+			   loopmask = "0/32";
+			   break;
+		   }
+	   }		  	  
+	  if (ip0 == 255 && ip1 == 255 && ip3 == 0)  //for class B subnets
+	  {
+		  switch (ip2)
+		  {
+			  case 0:  //255.255.0.0
+			   loopmask = "0/16";
+			   break;
+			  case 128:  //255.255.128.0
+			   loopmask = "0/17";
+			   break;	  
+			  case 192:  //255.255.192.0
+			   loopmask = "0/18";
+			   break;
+			  case 224:  //255.255.224.0
+			   loopmask = "0/19";
+			   break;
+			  case 240:  //255.255.240.0
+			   loopmask = "0/20";
+			   break;
+			  case 248:  //255.255.248.0
+			   loopmask = "0/21";
+			   break;
+			  case 252:  //255.255.252.0
+			   loopmask = "0/22";
+			   break;
+			  case 254:  //255.255.254.0
+			   loopmask = "0/23";
+			   break;
+		   }
+	   }
+	  if (ip0 == 255 && ip2 == 0 && ip3 == 0)  //for class A subnets
+	  {
+		  switch (ip1)
+		  {
+			  case 0:  //255.0.0.0
+			   loopmask = "0/8";
+			   break;
+			  case 128:  //255.128.0.0
+			   loopmask = "0/9";
+			   break;	  
+			  case 192:  //255.192.0.0
+			   loopmask = "0/10";
+			   break;
+			  case 224:  //255.224.0.0
+			   loopmask = "0/11";
+			   break;
+			  case 240:  //255.240.0.0
+			   loopmask = "0/12";
+			   break;
+			  case 248:  //255.248.0.0
+			   loopmask = "0/13";
+			   break;
+			  case 252:  //255.252.0.0
+			   loopmask = "0/14";
+			   break;
+			  case 254:  //255.254.0.0
+			   loopmask = "0/15";
+			   break;
+		   }
+	   }			   			   			  			   			   	  
 
 	  save2file
 	    ("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
