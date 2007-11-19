@@ -328,28 +328,27 @@ period_check (int sig)
       sesgpio = 0x10;		//gpio 0, inversed
       break;
     case ROUTER_BUFFALO_WLA2G54C:
-    case ROUTER_LINKSYS_WTR54GS:
       sesgpio = 0x12;		//gpio 2, inversed
       break;
     case ROUTER_BUFFALO_WBR2G54S:
       sesgpio = 0x04;		//gpio 4, normal
       break;
 #ifndef HAVE_BUFFALO
+    case ROUTER_LINKSYS_WTR54GS:
+      sesgpio = 0x12;		//gpio 2, inversed
+      break;
     case ROUTER_WRT54G:
     case ROUTER_WRT54G_V8:
+    case ROUTER_WRT150N:
     case ROUTER_WRT300N:
       sesgpio = 0x14;		//gpio 4, inversed
       break;
     case ROUTER_ASUS_WL500G_PRE:
-    case ROUTER_WRT150N:
       sesgpio = 0x04;		//gpio 4, normal
       break;
     case ROUTER_WRT350N:
       sesgpio = 0x18;		//gpio 8, inversed
       break;
-//    case ROUTER_WRT350N:
-//      sesgpio = 0x18;		//gpio 8, inversed
-//      break;
     case ROUTER_ASUS_WL500W:
       sesgpio = 0x07;       //gpio 7, normal
       break;
