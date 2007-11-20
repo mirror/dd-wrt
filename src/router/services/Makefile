@@ -286,6 +286,7 @@ CFLAGS += -DHAVE_DIR300
 OBJS += icplus.o
 endif
 ifeq ($(CONFIG_MR3202A),y)
+CFLAGS += -DHAVE_MR3202A
 OBJS += admtek.o
 endif
 ifeq ($(CONFIG_FONERA),y)
