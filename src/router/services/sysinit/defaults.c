@@ -582,7 +582,6 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #ifdef HAVE_NEWMEDIA
   {"wl_radio", "1", 0},		/* Enable (1) or disable (0) radio */
-  {"wl_closed", "1", 0},	/* Closed (hidden) network */
 #else
 #ifdef HAVE_MADWIFI
   {"ath0_radio", "1", 0},	/* Enable (1) or disable (0) radio */
