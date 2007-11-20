@@ -598,13 +598,14 @@ struct nvram_tuple srouter_defaults[] = {
   {"ath5_closed", "0", 0},	/* Closed (hidden) network */
 #else
   {"wl_radio", "1", 0},		/* Enable (1) or disable (0) radio */
-  {"wl_closed", "0", 0},	/* Closed (hidden) network */
 #ifdef HAVE_MSSID
   {"wl0_radio", "1", 0},	/* Enable (1) or disable (0) radio */
   {"wl0_closed", "0", 0},	/* Closed (hidden) network */
   {"wl0.1_closed", "0", 0},	/* Closed (hidden) network */
   {"wl0.2_closed", "0", 0},	/* Closed (hidden) network */
   {"wl0.3_closed", "0", 0},	/* Closed (hidden) network */
+#else
+  {"wl_closed", "0", 0},	/* Closed (hidden) network */
 #endif
 
 #endif
