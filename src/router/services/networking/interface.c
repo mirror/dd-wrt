@@ -429,6 +429,9 @@ flush_interfaces (void)
 #elif HAVE_DIR300
   snprintf (all_ifnames, 255, "%s %s %s", "eth0 vlan1 vlan2",
 	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
+#elif HAVE_MR3202A
+  snprintf (all_ifnames, 255, "%s %s %s", "eth0 vlan1 vlan2",
+	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
 #elif HAVE_LS2
   snprintf (all_ifnames, 255, "%s %s %s", "eth0 vlan1 vlan2",
 	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));

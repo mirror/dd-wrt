@@ -769,8 +769,7 @@ start_lan (void)
   strncpy (ifr.ifr_name, "eth1", IFNAMSIZ);
   ioctl (s, SIOCSIFHWADDR, &ifr);
 #endif
-#ifdef HAVE_FONERA
-#ifndef HAVE_DIR300
+#ifdef HAVE_FONERA && !defined(HAVE_DIR300) && !defined(HAVE_MR3202A)
   if (getRouterBrand () == ROUTER_BOARD_FONERA2200)
     {
       if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
@@ -807,7 +806,12 @@ start_lan (void)
 	  nvram_set ("wan_ifnames", "eth0");
 	}
     }
-#else
+  strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
+  ioctl (s, SIOCGIFHWADDR, &ifr);
+  nvram_set ("et0macaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+  strcpy (mac, nvram_safe_get ("et0macaddr"));
+#endif
+#ifdef HAVE_DIR300
       if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
 	  || nvram_match ("wan_proto", "disabled"))
 	{
@@ -823,7 +827,27 @@ start_lan (void)
 	  nvram_set ("wan_ifname", "vlan2");
 	  nvram_set ("wan_ifnames", "vlan2");
 	}
+  strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
+  ioctl (s, SIOCGIFHWADDR, &ifr);
+  nvram_set ("et0macaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+  strcpy (mac, nvram_safe_get ("et0macaddr"));
 #endif
+#ifdef HAVE_MR3202A
+      if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
+	  || nvram_match ("wan_proto", "disabled"))
+	{
+	  nvram_set ("lan_ifname", "br0");
+	  nvram_set ("lan_ifnames", "vlan1 vlan2 ath0");
+	  nvram_set ("wan_ifname", "");
+	  nvram_set ("wan_ifnames", "");
+	}
+      else
+	{
+	  nvram_set ("lan_ifname", "br0");
+	  nvram_set ("lan_ifnames", "vlan1 ath0");
+	  nvram_set ("wan_ifname", "vlan2");
+	  nvram_set ("wan_ifnames", "vlan2");
+	}
   strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
   ioctl (s, SIOCGIFHWADDR, &ifr);
   nvram_set ("et0macaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
@@ -2114,6 +2138,10 @@ start_wan (int status)
 					   "") ?
     nvram_safe_get ("pppoe_wan_ifname") : "eth0";
 #elif HAVE_DIR300
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
+					   "") ?
+    nvram_safe_get ("pppoe_wan_ifname") : "vlan2";
+#elif HAVE_MR3202A
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
     nvram_safe_get ("pppoe_wan_ifname") : "vlan2";

@@ -104,7 +104,8 @@ start_sysinit (void)
   eval ("insmod", "ar2313");
   eval ("insmod", "ath_ahb");
   eval ("ifconfig", "wifi0", "up");
-//  vlan_init (5); // 4 lan + 1 wan
+  eval ("ifconfig", "eth0", "up");
+  vlan_init (5); // 1 lan + 1 wan
 
   /* Set a sane date */
   stime (&tm);
