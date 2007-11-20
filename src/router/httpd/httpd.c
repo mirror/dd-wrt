@@ -742,10 +742,17 @@ handle_request (void)
   if (file[0] == '\0' || file[len - 1] == '/')
     {
 	{
+	  if (strcmp (server_dir, "/www"))  // to allow to use router as a WEB server
+	  {
+	    file = "index.htm";
+	  }
+	  else
+	  {
 	  if (nvram_invmatch ("status_auth", "0"))
 	    file = "Info.htm";
 	  else
 	    file = "index.asp";
+	  }
 	}
     }
   else
