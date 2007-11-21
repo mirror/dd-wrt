@@ -237,17 +237,6 @@ auth_check (char *dirname, char *authorization)
       return 0;
     }
 
-/*fprintf(stderr,"1Enc %s\n",auth_userid);
-fprintf(stderr,"1Enc2 %s\n",auth_passwd);
-
-fprintf(stderr,"2Enc %s\n",authinfo);
-fprintf(stderr,"2Enc2 %s\n",authpass);
-
-fprintf(stderr,"3Enc %s\n",enc1);
-fprintf(stderr,"3Enc2 %s\n",enc2);
-
-
-*/
 
   if (strcmp (enc1, auth_userid) == 0 && strcmp (enc2, auth_passwd) == 0)
     {
@@ -629,7 +618,6 @@ handle_request (void)
   /* To prevent http receive https packets, cause http crash (by honor 2003/09/02) */
   if (strncasecmp (line, "GET", 3) && strncasecmp (line, "POST", 4))
     {
-      fprintf (stderr, "Bad Request!\n");
 //      free(line);
       return;
     }
@@ -661,7 +649,7 @@ handle_request (void)
   /* Parse the rest of the request headers. */
   //while ( fgets( cur, line + sizeof(line) - cur, conn_fp ) != (char*) 0 )
   //exec=fopen("/tmp/logweb.tmp","wb");
-
+   
   while (wfgets (cur, line + LINE_LEN - cur, conn_fp) != 0)	//jimmy,https,8/4/2003
     {
       //    fwrite(cur,1,line + LINE_LEN - cur,exec);
@@ -741,8 +729,9 @@ handle_request (void)
 #else
   if (file[0] == '\0' || file[len - 1] == '/')
     {
+
 	{
-	  if (strcmp (server_dir, "/www"))  // to allow to use router as a WEB server
+	  if (server_dir!=NULL && strcmp (server_dir, "/www"))  // to allow to use router as a WEB server
 	  {
 	    file = "index.htm";
 	  }
@@ -765,6 +754,7 @@ handle_request (void)
     }
 #endif
 
+
 #ifdef HAVE_REGISTER
   if (!registered)
     {
@@ -778,18 +768,6 @@ handle_request (void)
 
 #endif
 
-#ifdef HAVE_MACBIND
-
-#include "../../../opt/mac.h"
-
-  if (!nvram_match ("et0macaddr", MACBRAND))
-    {
-      send_error (200, "Unlicensed Copy", (char *) 0,
-		  "This firmware is a unlicensed copy");
-      return;
-    }
-
-#endif
   if (containsstring (file, "cgi-bin"))
     {
 
@@ -1354,8 +1332,8 @@ cprintf("done()\n");
 	      return errno;
 	    }
 	}
-
       get_client_ip_mac (conn_fd);
+fprintf(stderr,"handle request\n");
       handle_request ();
       wfflush (conn_fp);	// jimmy, https, 8/4/2003
       wfclose (conn_fp);	// jimmy, https, 8/4/2003
