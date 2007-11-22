@@ -595,13 +595,16 @@ static void __init param_sysfs_builtin(void)
 
 	for (i=0; i < __stop___param - __start___param; i++) {
 		char *dot;
+		size_t max_name_len;
 
 		kp = &__start___param[i];
+		max_name_len =
+			min_t(size_t, MAX_KBUILD_MODNAME, strlen(kp->name));
 
-		/* We do not handle args without periods. */
-		dot = memchr(kp->name, '.', MAX_KBUILD_MODNAME);
+		dot = memchr(kp->name, '.', max_name_len);
 		if (!dot) {
-			DEBUGP("couldn't find period in %s\n", kp->name);
+			DEBUGP("couldn't find period in first %d characters "
+			       "of %s\n", MAX_KBUILD_MODNAME, kp->name);
 			continue;
 		}
 		name_len = dot - kp->name;

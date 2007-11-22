@@ -37,11 +37,25 @@ match(const struct sk_buff *skb,
     const struct xt_mac_info *info = matchinfo;
 
     /* Is mac pointer valid? */
+    switch(info->type)
+    {
+    case 0:
     return skb_mac_header(skb) >= skb->head &&
 	   skb_mac_header(skb) + ETH_HLEN <= skb->data
 	   /* If so, compare... */
 	   && ((!compare_ether_addr(eth_hdr(skb)->h_source, info->srcaddr))
 		^ info->invert);
+    case 1:
+    return skb_mac_header(skb) >= skb->head &&
+	   skb_mac_header(skb) + ETH_HLEN <= skb->data
+	   /* If so, compare... */
+	   && ((!compare_ether_addr(eth_hdr(skb)->h_dest, info->srcaddr))
+		^ info->invert);
+    break;
+    default:
+    return 0;
+    break;
+    }
 }
 
 static struct xt_match xt_mac_match[] __read_mostly = {
