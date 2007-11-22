@@ -1333,7 +1333,6 @@ cprintf("done()\n");
 	    }
 	}
       get_client_ip_mac (conn_fd);
-fprintf(stderr,"handle request\n");
       handle_request ();
       wfflush (conn_fp);	// jimmy, https, 8/4/2003
       wfclose (conn_fp);	// jimmy, https, 8/4/2003
