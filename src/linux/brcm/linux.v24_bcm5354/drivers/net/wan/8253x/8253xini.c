@@ -3041,3 +3041,4 @@ module_init(auraXX20_probe);
 module_exit(auraXX20_cleanup);
 MODULE_DESCRIPTION("Aurora Multiport Multiprotocol Serial Driver");
 MODULE_AUTHOR("Joachim Martillo <martillo@telfordtools.com>");
+MODULE_LICENSE("GPL");
