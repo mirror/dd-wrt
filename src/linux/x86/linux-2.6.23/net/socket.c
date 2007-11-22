@@ -1245,11 +1245,14 @@ asmlinkage long sys_socketpair(int family, int type, int protocol,
 		goto out_release_both;
 
 	fd1 = sock_alloc_fd(&newfile1);
-	if (unlikely(fd1 < 0))
+	if (unlikely(fd1 < 0)) {
+		err = fd1;
 		goto out_release_both;
+	}
 
 	fd2 = sock_alloc_fd(&newfile2);
 	if (unlikely(fd2 < 0)) {
+		err = fd2;
 		put_filp(newfile1);
 		put_unused_fd(fd1);
 		goto out_release_both;
@@ -2230,6 +2233,7 @@ int kernel_accept(struct socket *sock, struct socket **newsock, int flags)
 	err = sock->ops->accept(sock, *newsock, flags);
 	if (err < 0) {
 		sock_release(*newsock);
+		*newsock = NULL;
 		goto done;
 	}
 
