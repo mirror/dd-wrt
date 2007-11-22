@@ -3760,7 +3760,7 @@ show_virtualssid (webs_t wp, char *prefix)
 
   websWrite (wp, "<div class=\"center\">\n");
 #ifdef HAVE_MADWIFI
-  if (count < 16)
+  if (count < 8)
 #else
   if (count < WL_MAXBSSCFG)
 #endif
