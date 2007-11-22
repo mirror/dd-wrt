@@ -1633,3 +1633,4 @@ module_exit(gt96100_cleanup_module);
 
 MODULE_AUTHOR("Steve Longerbeam <stevel@mvista.com>");
 MODULE_DESCRIPTION("GT96100 Ethernet driver");
+MODULE_LICENSE("GPL");

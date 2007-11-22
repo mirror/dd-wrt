@@ -482,3 +482,6 @@ exit_mals(void)
 
 module_init(init_mals);
 module_exit(exit_mals);
+MODULE_AUTHOR("Armin Kuster");
+MODULE_DESCRIPTION("ibm ocp ethernet driver (MAL)");
+MODULE_LICENSE("GPL");

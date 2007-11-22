@@ -98,6 +98,7 @@ static char version1[] __devinitdata =
 
 MODULE_AUTHOR("Mitch Lichtenberg (Broadcom Corp.)");
 MODULE_DESCRIPTION("Broadcom SiByte SOC GB Ethernet driver");
+MODULE_LICENSE("GPL");
 MODULE_PARM(debug, "i");
 MODULE_PARM(noisy_mii, "i");
 MODULE_PARM(options, "1-" __MODULE_STRING(MAX_UNITS) "i");

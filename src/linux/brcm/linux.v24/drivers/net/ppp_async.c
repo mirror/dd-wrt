@@ -624,7 +624,7 @@ ppp_async_encode(struct asyncppp *ap)
 	*buf++ = PPP_FLAG;
 	ap->olim = buf;
 
-	kfree_skb(ap->tpkt);
+	dev_kfree_skb_any(ap->tpkt);
 	ap->tpkt = 0;
 	return 1;
 }
