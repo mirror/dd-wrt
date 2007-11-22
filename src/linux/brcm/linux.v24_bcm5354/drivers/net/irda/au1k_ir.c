@@ -891,6 +891,7 @@ static struct net_device_stats *au1k_irda_stats(struct net_device *dev)
 #ifdef MODULE
 MODULE_AUTHOR("Pete Popov <ppopov@mvista.com>");
 MODULE_DESCRIPTION("Au1000 IrDA Device Driver");
+MODULE_LICENSE("GPL");
 
 module_init(au1k_irda_init);
 module_exit(au1k_irda_exit);

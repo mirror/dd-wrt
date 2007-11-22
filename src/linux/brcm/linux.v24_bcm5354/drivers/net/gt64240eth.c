@@ -1791,3 +1791,6 @@ static struct net_device_stats *gt64240_get_stats(struct net_device *dev)
 
 	return &gp->stats;
 }
+MODULE_AUTHOR("MontaVista Software, Inc.");
+MODULE_DESCRIPTION("Ethernet driver for the MIPS GT96100 Advanced Communication Controller. Modified for the Gallileo/Marvell GT-64240 Communication Controller.");
+MODULE_LICENSE("GPL");
