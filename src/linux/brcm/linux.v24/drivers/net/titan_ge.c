@@ -2039,6 +2039,9 @@ static void __init titan_ge_cleanup_module(void)
 
 module_init(titan_ge_init_module);
 module_exit(titan_ge_cleanup_module);
+MODULE_AUTHOR("Manish Lachwani");
+MODULE_DESCRIPTION("Titan ethernet ports driver");
+MODULE_LICENSE("GPL");
 
 /*
  * Initialize the Rx descriptor ring for the Titan Ge
