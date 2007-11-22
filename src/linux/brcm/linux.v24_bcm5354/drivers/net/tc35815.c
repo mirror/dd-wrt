@@ -1777,3 +1777,6 @@ static void __exit tc35815_cleanup_module(void)
 }
 module_init(tc35815_init_module);
 module_exit(tc35815_cleanup_module);
+MODULE_AUTHOR("MontaVista Software Inc.");
+MODULE_DESCRIPTION("TOSHIBA TC35815CF PCI 10/100Mbps ethernet driver");
+MODULE_LICENSE("GPL");
