@@ -1252,6 +1252,9 @@ MODULE_PARM(irq, "1-" __MODULE_STRING(MAX_3C523_CARDS) "i");
 MODULE_PARM(io, "1-" __MODULE_STRING(MAX_3C523_CARDS) "i");
 MODULE_PARM_DESC(io, "EtherLink/MC I/O base address(es)");
 MODULE_PARM_DESC(irq, "EtherLink/MC IRQ number(s)");
+MODULE_AUTHOR("Chris Beauregard");
+MODULE_DESCRIPTION("net-3-driver for the 3c523 Etherlink/MC card (i82586 Ethernet chip)");
+MODULE_LICENSE("GPL");
 
 int init_module(void)
 {
