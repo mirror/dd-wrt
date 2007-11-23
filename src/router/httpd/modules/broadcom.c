@@ -3728,6 +3728,15 @@ do_apply_post (char *url, webs_t stream, int len, char *boundary)
     }
 }
 
+#ifndef HAVE_MADWIFI
+static void
+do_cfebackup (char *url, webs_t stream)
+{
+	system2 ("cat /dev/mtd/0 > /tmp/cfe.bin");
+	do_file ("/tmp/cfe.bin", stream, NULL);
+	unlink ("/tmp/cfe.bin");
+}
+#endif
 
 static void
 do_stylecss (char *url, webs_t stream)
@@ -4610,7 +4619,9 @@ struct mime_handler mime_handlers[] = {
    do_auth},
   {"nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, do_auth},
 #endif
-
+#ifndef HAVE_MADWIFI
+  {"backup/cfe.bin", "application/octet-stream", no_cache, NULL, do_cfebackup, do_auth},
+#endif
 //for ddm
   {NULL, NULL, NULL, NULL, NULL, NULL}
 };
