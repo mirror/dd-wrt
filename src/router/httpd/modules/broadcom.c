@@ -3728,7 +3728,7 @@ do_apply_post (char *url, webs_t stream, int len, char *boundary)
     }
 }
 
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)
 static void
 do_cfebackup (char *url, webs_t stream)
 {
@@ -4619,7 +4619,7 @@ struct mime_handler mime_handlers[] = {
    do_auth},
   {"nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, do_auth},
 #endif
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)
   {"backup/cfe.bin", "application/octet-stream", no_cache, NULL, do_cfebackup, do_auth},
 #endif
 //for ddm
