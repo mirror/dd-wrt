@@ -27,7 +27,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Linksys WRT54G v1.0 and v1.1, Alnet ALL0277 (4702 cpu, fccid: v1: Linksys PKW-WM54G; v1.1: Linksys Q87-WRT54G11)
 #define ROUTER_WRT54G1X 0x0316
 
-// Linksys WRTSL54GS (4704 cpu, BCM5325E switch), (fccid: Linksys Q87-WTSLGS, same without USB: Q87-WRTH54GS) 
+// Linksys WRTSL54GS (4704 cpu, BCM5325E switch, fccid: Linksys Q87-WTSLGS, same without USB: Q87-WRTH54GS) 
 #define ROUTER_WRTSL54GS 0x0416
 
 // Linksys WRT55AG v1 (4702 cpu, dual minipci (Broadcom + Atheros), fccid: Linksys PKW-WRT55AG)
@@ -39,17 +39,19 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Buffalo WBR-G54, WLA-G54 (4702 cpu, WLA-G54 has no switch)
 #define ROUTER_BUFFALO_WBR54G 0x0704
 
-// Buffalo WBR2-G54 / WLA2-G54 (4712 + ADM6996 switch, fccid: Buffalo FDI-04600142-0), WBR2-G54S and Buffalo WLA2-G54L
+// Buffalo WBR2-G54 / WLA2-G54 (4712 + ADM6996 switch, fccid: Buffalo FDI-04600142-0),
+// Buffalo WBR2-G54S, WLA2-G54L
 #define ROUTER_BUFFALO_WBR2G54S 0x0807
 
 // Buffalo WLA2-G54C == WLI3-TX1-G54 (4712 cpu, no switch, fccid: Buffalo FDI-09101669-0)
 #define ROUTER_BUFFALO_WLA2G54C 0x0910
 
 // Buffalo WHR-G54S (fccid: Buffalo FDI-04600264-0) and WHR-HP-G54 (fccid: Buffalo FDI-09101577-0)
-// Buffalo WHR-G125, WHR-HP-G125 (fccid: Buffalo FDI-09101584-0) (5354 cpu)
+// Buffalo WHR-G125, WHR-HP-G125 (5354 cpu, fccid: Buffalo FDI-09101584-0)
 #define ROUTER_BUFFALO_WHRG54S 0x0a04
 
-// Buffalo WZR-RS-G54 (4704 cpu), WZR-G54, WZR-HP-G54 (4704 cpu, fccid: Buffalo FDI-09101457-0), WHR3-AG54, WVR-G54-NF, WHR2-A54G54
+// Buffalo WZR-RS-G54 (4704 cpu), WZR-G54, WZR-HP-G54 (4704 cpu, fccid: Buffalo FDI-09101457-0), 
+// Buffalo WHR3-AG54, WVR-G54-NF, WHR2-A54G54
 #define ROUTER_BUFFALO_WZRRSG54 0x0b04
 
 // Motorola WR850G v1 (4702 cpu, fccid Motorola ACQWR850G) 
@@ -82,16 +84,16 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Microsoft MN-700 (4702 cpu), (fccid: Microsoft C3KMN700)
 #define ROUTER_MICROSOFT_MN700 0x1417
 
-// Buffalo WLA-G54C == WLI-TX1-G54 (4702 cpu - no switch), (fccid: QDS-BRCM1005)
+// Buffalo WLA-G54C == WLI-TX1-G54 (4702 cpu - no switch, fccid: QDS-BRCM1005)
 #define ROUTER_BUFFALO_WLAG54C 0x1510
 
-// Asus WL-500g Premium (4704 cpu, BCM5325E switch), (fccid: Asus MSQWL500GP)
+// Asus WL-500g Premium (4704 cpu, BCM5325E switch, (fccid: Asus MSQWL500GP)
 #define ROUTER_ASUS_WL500G_PRE 0x1600
 
 // Buffalo WZR-G300N MIMO Router (radio fccid: Buffalo FDI-09101466-0)
 #define ROUTER_BUFFALO_WZRG300N 0x1704
 
-// Linksys WRT300N v1 (4704 cpu, BCM5325F switch), (fccid: Linksys Q87-WRT300N or Q87-WRT300NV1)
+// Linksys WRT300N v1 (4704 cpu, BCM5325F switch, fccid: Linksys Q87-WRT300N or Q87-WRT300NV1)
 #define ROUTER_WRT300N 0x1816
 
 // Buffalo WHR-AM54G54
@@ -159,13 +161,13 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Sitecom WL-105(b) (4702 cpu, no switch, fccid: Gemtek MXF-A910910AB - no A-band)
 #define ROUTER_SITECOM_WL105B 0x2d10
 
-// Linksys WRT150N (4704 cpu, BCM5325F switch), (fccid: Linksys Q87-WRT150N)
+// Linksys WRT150N (4704 cpu, BCM5325F switch, (fccid: Linksys Q87-WRT150N)
 #define ROUTER_WRT150N 0x2e16
 
 // ?
 #define ROUTER_BOARD_LS2 0x2f01
 
-// Buffalo WAPM-HP-AM54G54 (only available on japanese market, dual radio 2.4 and 5 ghz broadcom)
+// Buffalo WAPM-HP-AM54G54 (only available on japanese market, dual radio 2.4 and 5 GHz Broadcom)
 #define ROUTER_BUFFALO_WAPM_HP_AM54G54 0x3005
 
 // Buffalo WLAH-G54 (only available on japanese market, single radio 2.4 ghz)
@@ -216,7 +218,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Belkin F5D7230 v2000 (4712 cpu, 5325E switch, serial flash, fccid: K7SF5D7234A)
 #define ROUTER_BELKIN_F5D7230_V2000 0x400f
 
-// Belkin F5D7231-4 v1212UK (5352E cpu, fccid: Askey H8NRT2406W), F5D7231-4 v2000 (5352E cpu, fccid: Belkin K7SF5D7231B)
+// Belkin F5D7231-4 v1212UK (5352E cpu, fccid: Askey H8NRT2406W)
+// Belkin F5D7231-4 v2000 (5352E cpu, fccid: Belkin K7SF5D7231B)
 #define ROUTER_BELKIN_F5D7231 0x410f
 
 // Linksys WAP54G v3, WAP54G v3.1 (5352E cpu, fccid: Linksys Q87-WAP54GV3, Q87-WAP54GV31)
@@ -228,6 +231,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Netgear WG602 v3 (5350 cpu, fccid: Netgear PY3WG602V3)
 #define ROUTER_NETGEAR_WG602_V3 0x4411
 
+// Linksys WRT600N (4704 cpu, Gigabit switch, dual radio 2.4 and 5 GHz Broadcom, fccid: Linksys Q87-WRT600NV1, Q87-WRT600NV11)
 #define ROUTER_WRT600N 0x4517
 
 #define NVROUTER "DD_BOARD"
