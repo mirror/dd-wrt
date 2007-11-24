@@ -6869,8 +6869,16 @@ qos_save (webs_t wp)
 
 
   if (strcmp (data, "0") == 0)
+  {
+    addAction ("qos");
+    if (!strcmp (value, "ApplyTake"))
+    {
+      nvram_commit ();
+      service_restart ();
+    }
     return;
-
+  }
+  
   snprintf (field, 31, "enable_game");
   data = websGetVar (wp, field, NULL);
   nvram_set ("enable_game", data);
