@@ -8571,3 +8571,31 @@ ej_show_chilliif (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "</select>\n");
 }
 #endif
+
+#ifdef HAVE_RFLOW
+void
+ej_show_rflowif (webs_t wp, int argc, char_t ** argv)
+{
+  websWrite (wp, "<option value=\"%s\" %s >LAN &amp; WLAN</option>\n",
+	     nvram_safe_get ("lan_ifname"), nvram_match ("rflow_if", nvram_safe_get ("lan_ifname")) ? "selected=\"selected\"" : "");
+	     
+  char *lanifs = nvram_safe_get ("lan_ifnames");
+  char *lanif;
+  if (strlen (lanifs) != 0)
+  {
+    lanif = strtok (lanifs, " ");                  
+    websWrite (wp, "<option value=\"%s\" %s >LAN</option>\n",
+	     lanif, nvram_match ("rflow_if", lanif) ? "selected=\"selected\"" : "");
+  }
+      
+  websWrite (wp, "<option value=\"%s\" %s >WLAN</option>\n",
+	     nvram_safe_get ("wl0_ifname"), nvram_match ("rflow_if", nvram_safe_get ("wl0_ifname")) ? "selected=\"selected\"" : "");
+
+  char *wanif = nvram_safe_get ("wan_ifname");	 
+  if (strlen (wanif) != 0)
+  {
+  websWrite (wp, "<option value=\"%s\" %s >WAN</option>\n",
+	     wanif, nvram_match ("rflow_if", wanif) ? "selected=\"selected\"" : "");
+  }
+}
+#endif
