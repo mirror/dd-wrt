@@ -142,6 +142,10 @@ ifeq ($(CONFIG_CHILLISPOT),y)
   CFLAGS += -DHAVE_CHILLI
 endif
 
+ifeq ($(CONFIG_RFLOW),y)
+CFLAGS += -DHAVE_RFLOW
+endif
+
 ifeq ($(CONFIG_DDLAN),y)
   CFLAGS += -DHAVE_DDLAN
 endif
