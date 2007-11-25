@@ -8580,10 +8580,12 @@ ej_show_rflowif (webs_t wp, int argc, char_t ** argv)
 	     nvram_safe_get ("lan_ifname"), nvram_match ("rflow_if", nvram_safe_get ("lan_ifname")) ? "selected=\"selected\"" : "");
 	     
   char *lanifs = nvram_safe_get ("lan_ifnames");
+  char tmp[128];
   char *lanif;
   if (strlen (lanifs) != 0)
   {
-    lanif = strtok (lanifs, " ");                  
+    strcpy (tmp, lanifs);
+    lanif = strtok (tmp, " ");
     websWrite (wp, "<option value=\"%s\" %s >LAN</option>\n",
 	     lanif, nvram_match ("rflow_if", lanif) ? "selected=\"selected\"" : "");
   }
