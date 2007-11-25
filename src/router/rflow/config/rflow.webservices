@@ -46,10 +46,7 @@
 	<div class="setting">
 		<div class="label"><% tran("share.intrface"); %></div>
 		<select name="rflow_if">
-		    <option value="br0" <% nvram_selected("rflow_if","br0"); %>>LAN &amp; WLAN</option>
-		    <option value="<% nvram_get("wan_ifname"); %>" <% nvram_selmatch("rflow_if","<% nvram_get("wan_ifname"); %>","selected=\"selected\""); %>>WAN</option>
-		    <option value="<% nvram_get("wl0_ifname"); %>" <% nvram_selmatch("rflow_if","<% nvram_get("wl0_ifname"); %>","selected=\"selected\""); %>>WLAN</option>
-		    <option value="vlan0" <% nvram_selected("rflow_if","vlan0"); %>>LAN</option>
+		<% show_rflowif(); %>
 		</select>
 	</div>
 	<div class="setting">
