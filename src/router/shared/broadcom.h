@@ -596,3 +596,7 @@ extern void milkfish_sip_message (webs_t wp);
 #endif
 
 extern void get_filter_services (char *services);
+
+#ifdef HAVE_RFLOW
+extern void ej_show_rflowif (webs_t wp, int argc, char_t ** argv);
+#endif
