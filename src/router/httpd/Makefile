@@ -215,6 +215,10 @@ ifeq ($(CONFIG_UPNP),y)
 CFLAGS += -DHAVE_UPNP
 endif
 
+ifeq ($(CONFIG_RFLOW),y)
+CFLAGS += -DHAVE_RFLOW
+endif
+
 ifeq ($(CONFIG_BIRD),y)
 CFLAGS += -DHAVE_BIRD
 endif
