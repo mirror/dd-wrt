@@ -5736,7 +5736,10 @@ struct ej_handler ej_handlers[] = {
   {"exec_show_aliases", ej_show_aliases},
 #endif
 #ifdef HAVE_CHILLI
-  {"show_chilliif",ej_show_chilliif},
+  {"show_chilliif", ej_show_chilliif},
+#endif
+#ifdef HAVE_RFLOW
+  {"show_rflowif", ej_show_rflowif},
 #endif
   {"startswith", ej_startswith},
   {"ifdef", ej_ifdef},
