@@ -270,7 +270,7 @@ internal_getRouterBrand ()
 #elif HAVE_MR3202A
   setRouter ("MR3202A");
   return ROUTER_BOARD_FONERA;
-#elif HAVE_AIRLINK101
+#elif HAVE_AR430W
   setRouter ("Airlink-101 AR430W");
   return ROUTER_BOARD_FONERA;
 #elif HAVE_DIR300
