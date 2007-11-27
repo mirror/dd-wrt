@@ -190,7 +190,15 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
 	  cprintf
 	    ("upgrade_ver[%s] upgrade_ver[%ld] intel_ver[%ld] 4712_ver[%ld]\n",
 	     ver, ver1, ver2, ver3);
+/*	  if (!memcmp(&buf[0], "RECOVER",7))
+	  {
+	  *total -= count;
+	  safe_fwrite (&buf[7], 1,
+		       count - 7, fifo);
 
+	  i++;
+	  continue;
+	  }*/
 	  if (memcmp (&buf[0], &CODE_PATTERN_WRT54G, 4)
 	      && memcmp (&buf[0], &CODE_PATTERN_WRT54GS, 4)
 	      && memcmp (&buf[0], &CODE_PATTERN_WRT150N, 4)
