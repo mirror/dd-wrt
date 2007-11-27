@@ -35,7 +35,6 @@ static void br_pass_frame_up(struct net_bridge *br, struct sk_buff *skb)
 	NF_HOOK(PF_BRIDGE, NF_BR_LOCAL_IN, skb, indev, NULL,
 		netif_receive_skb);
 }
-
 /* note: already called with rcu_read_lock (preempt_disabled) */
 int br_handle_frame_finish(struct sk_buff *skb)
 {
@@ -163,3 +162,4 @@ drop:
 	}
 	return NULL;
 }
+EXPORT_SYMBOL(br_handle_frame_finish);
