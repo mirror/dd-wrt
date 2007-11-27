@@ -39,20 +39,27 @@ static int __init br_init(void)
 
 	err = br_fdb_init();
 	if (err)
+	{
+	printk(KERN_ERR "bridge: fdp_init failed\n");
 		goto err_out1;
+	}
 
-	err = br_netfilter_init();
-	if (err)
-		goto err_out1;
+//	err = br_netfilter_init();
+//	if (err)
+//		goto err_out1;
 
 	err = register_netdevice_notifier(&br_device_notifier);
 	if (err)
+	{
+	printk(KERN_ERR "bridge: register_netdevice_notifier failed\n");
 		goto err_out2;
-
+	}
 	err = br_netlink_init();
 	if (err)
+	{
+	printk(KERN_ERR "bridge: br_netlink_init failed\n");
 		goto err_out3;
-
+	}
 	brioctl_set(br_ioctl_deviceless_stub);
 	br_handle_frame_hook = br_handle_frame;
 
@@ -63,7 +70,7 @@ static int __init br_init(void)
 err_out3:
 	unregister_netdevice_notifier(&br_device_notifier);
 err_out2:
-	br_netfilter_fini();
+//	br_netfilter_fini();
 err_out1:
 	llc_sap_put(br_stp_sap);
 	return err;
@@ -74,7 +81,7 @@ static void __exit br_deinit(void)
 	rcu_assign_pointer(br_stp_sap->rcv_func, NULL);
 
 	br_netlink_fini();
-	br_netfilter_fini();
+//	br_netfilter_fini();
 	unregister_netdevice_notifier(&br_device_notifier);
 	brioctl_set(NULL);
 
