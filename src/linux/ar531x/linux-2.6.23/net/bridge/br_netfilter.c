@@ -174,24 +174,6 @@ static inline void nf_bridge_save_header(struct sk_buff *skb)
 					 skb->nf_bridge->data, header_size);
 }
 
-/*
- * When forwarding bridge frames, we save a copy of the original
- * header before processing.
- */
-int nf_bridge_copy_header(struct sk_buff *skb)
-{
-	int err;
-	int header_size = ETH_HLEN + nf_bridge_encap_header_len(skb);
-
-	err = skb_cow_head(skb, header_size);
-	if (err)
-		return err;
-
-	skb_copy_to_linear_data_offset(skb, -header_size,
-				       skb->nf_bridge->data, header_size);
-	__skb_push(skb, nf_bridge_encap_header_len(skb));
-	return 0;
-}
 
 /* PF_BRIDGE/PRE_ROUTING *********************************************/
 /* Undo the changes made for ip6tables PREROUTING and continue the
@@ -994,6 +976,6 @@ void br_netfilter_fini(void)
 	unregister_sysctl_table(brnf_sysctl_header);
 #endif
 }
-EXPORT_SYMBOL(br_netfilter_init);
-EXPORT_SYMBOL(br_netfilter_fini);
+//EXPORT_SYMBOL(br_netfilter_init);
+//EXPORT_SYMBOL(br_netfilter_fini);
 
