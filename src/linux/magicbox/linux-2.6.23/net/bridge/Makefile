@@ -10,6 +10,6 @@ bridge-y	:= br.o br_device.o br_fdb.o br_forward.o br_if.o br_input.o \
 
 bridge-$(CONFIG_SYSFS) += br_sysfs_if.o br_sysfs_br.o
 
-bridge-$(CONFIG_BRIDGE_NETFILTER) += br_netfilter.o
+#bridge-$(CONFIG_BRIDGE_NETFILTER) += br_netfilter.o
 
 obj-$(CONFIG_BRIDGE_NF_EBTABLES) += netfilter/
