@@ -935,6 +935,7 @@ macgrp_chain (int seq, unsigned int mark, int urlenable)
 	return;
 
   eval ("insmod", "ipt_mac");
+  eval ("insmod", "xt_mac");
 
   if (mark == MARK_DROP)
 	{
@@ -2707,9 +2708,12 @@ stop_firewall (void)
   eval("rmmod","ipt_layer7");
   eval("rmmod","ipt_ipp2p");
   eval("rmmod","ipt_mark");
+  eval("rmmod","xt_mark");
   eval("rmmod","ipt_TRIGGER");
   eval("rmmod","ipt_CONNMARK");
+  eval("rmmod","xt_CONNMARK");
   eval("rmmod","ipt_mac");
+  eval("rmmod","xt_mac");
   eval("rmmod","ipt_IMQ");
   cprintf ("done\n");
   return 0;

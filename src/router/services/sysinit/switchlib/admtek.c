@@ -63,7 +63,7 @@
 
 #define ADM_VLAN_TAG_VALID                   0x81
 #define ADM_VLAN_TAG_SIZE                    4
-#define ADM_VLAN_TAG_OFFSET                  12   /* After DA & SA */
+#define ADM_VLAN_TAG_OFFSET                  12	/* After DA & SA */
 
 /*****************/
 /* PHY Registers */
@@ -101,31 +101,33 @@
 
 /* Advertisement register. */
 #define ADM_ADVERTISE_100FULL                0x0100
-#define ADM_ADVERTISE_100HALF                0x0080  
-#define ADM_ADVERTISE_10FULL                 0x0040  
-#define ADM_ADVERTISE_10HALF                 0x0020  
+#define ADM_ADVERTISE_100HALF                0x0080
+#define ADM_ADVERTISE_10FULL                 0x0040
+#define ADM_ADVERTISE_10HALF                 0x0020
 
 #define ADM_ADVERTISE_ALL (ADM_ADVERTISE_10HALF | ADM_ADVERTISE_10FULL | \
                        ADM_ADVERTISE_100HALF | ADM_ADVERTISE_100FULL)
-               
 
-int adm_phySetup(int ethUnit);
-int adm_phyIsUp(int ethUnit);
-int adm_phyIsFullDuplex(int ethUnit);
-int adm_phySpeed(int ethUnit);
+
+int adm_phySetup (int ethUnit);
+int adm_phyIsUp (int ethUnit);
+int adm_phyIsFullDuplex (int ethUnit);
+int adm_phySpeed (int ethUnit);
 
 
 /* PHY selections and access functions */
 
-typedef enum {
-    PHY_SRCPORT_INFO, 
-    PHY_PORTINFO_SIZE,
+typedef enum
+{
+  PHY_SRCPORT_INFO,
+  PHY_PORTINFO_SIZE,
 } PHY_CAP_TYPE;
 
-typedef enum {
-    PHY_SRCPORT_NONE,
-    PHY_SRCPORT_VLANTAG, 
-    PHY_SRCPORT_TRAILER,
+typedef enum
+{
+  PHY_SRCPORT_NONE,
+  PHY_SRCPORT_VLANTAG,
+  PHY_SRCPORT_TRAILER,
 } PHY_SRCPORT_TYPE;
 
 #define DRV_LOG(DBG_SW, X0, X1, X2, X3, X4, X5, X6)
@@ -143,13 +145,14 @@ typedef enum {
 /*
  * Track per-PHY port information.
  */
-typedef struct {
-    int   isEnetPort;       /* normal enet port */
-    int   isPhyAlive;       /* last known state of link */
-    int    ethUnit;          /* MAC associated with this phy port */
-    unsigned int phyBase;
-    unsigned int phyAddr;          /* PHY registers associated with this phy port */
-    unsigned int VLANTableSetting; /* Value to be written to VLAN table */
+typedef struct
+{
+  int isEnetPort;		/* normal enet port */
+  int isPhyAlive;		/* last known state of link */
+  int ethUnit;			/* MAC associated with this phy port */
+  unsigned int phyBase;
+  unsigned int phyAddr;		/* PHY registers associated with this phy port */
+  unsigned int VLANTableSetting;	/* Value to be written to VLAN table */
 } ipPhyInfo_t;
 
 #define ADM_PHY0_ADDR   0x10
@@ -186,67 +189,64 @@ typedef struct {
  * Per-PHY information, indexed by PHY unit number.
  */
 ipPhyInfo_t ipPhyInfo[] = {
-    /*
-     * On AP30/AR5312, all PHYs are associated with MAC0.
-     * AP30/AR5312's MAC1 isn't used for anything.
-     * CONFIG_VENETDEV==1 (router) configuration:
-     *    Ports 0,1,2, and 3 are "LAN ports"
-     *    Port 4 is a WAN port
-     *    Port 5 connects to MAC0 in the AR5312
-     * CONFIG_VENETDEV==0 (bridge) configuration:
-     *    Ports 0,1,2,3,4 are "LAN ports"
-     *    Port 5 connects to the MAC0 in the AR5312
-     */
-    {TRUE,   /* phy port 0 -- LAN port 0 */
-     FALSE,
-     ENET_UNIT_DEFAULT,
-     0,
-     ADM_PHY0_ADDR,
-     ADM_LAN_PORT_VLAN
-    },
+  /*
+   * On AP30/AR5312, all PHYs are associated with MAC0.
+   * AP30/AR5312's MAC1 isn't used for anything.
+   * CONFIG_VENETDEV==1 (router) configuration:
+   *    Ports 0,1,2, and 3 are "LAN ports"
+   *    Port 4 is a WAN port
+   *    Port 5 connects to MAC0 in the AR5312
+   * CONFIG_VENETDEV==0 (bridge) configuration:
+   *    Ports 0,1,2,3,4 are "LAN ports"
+   *    Port 5 connects to the MAC0 in the AR5312
+   */
+  {TRUE,			/* phy port 0 -- LAN port 0 */
+   FALSE,
+   ENET_UNIT_DEFAULT,
+   0,
+   ADM_PHY0_ADDR,
+   ADM_LAN_PORT_VLAN},
 
-    {TRUE,   /* phy port 1 -- LAN port 1 */
-     FALSE,
-     ENET_UNIT_DEFAULT,
-     0,
-     ADM_PHY1_ADDR,
-     ADM_LAN_PORT_VLAN
-    },
+  {TRUE,			/* phy port 1 -- LAN port 1 */
+   FALSE,
+   ENET_UNIT_DEFAULT,
+   0,
+   ADM_PHY1_ADDR,
+   ADM_LAN_PORT_VLAN},
 
-    {TRUE,   /* phy port 2 -- LAN port 2 */
-     FALSE,
-     ENET_UNIT_DEFAULT,
-     0,
-     ADM_PHY2_ADDR, 
-     ADM_LAN_PORT_VLAN
-    },
+  {TRUE,			/* phy port 2 -- LAN port 2 */
+   FALSE,
+   ENET_UNIT_DEFAULT,
+   0,
+   ADM_PHY2_ADDR,
+   ADM_LAN_PORT_VLAN},
 
-    {TRUE,   /* phy port 3 -- LAN port 3 */
-     FALSE,
-     ENET_UNIT_DEFAULT,
-     0,
-     ADM_PHY3_ADDR, 
-     ADM_LAN_PORT_VLAN
-    },
+  {TRUE,			/* phy port 3 -- LAN port 3 */
+   FALSE,
+   ENET_UNIT_DEFAULT,
+   0,
+   ADM_PHY3_ADDR,
+   ADM_LAN_PORT_VLAN},
 
-    {TRUE,   /* phy port 4 -- WAN port or LAN port 4 */
-     FALSE,
-     0,
-     0,
-     ADM_PHY4_ADDR, 
-     ADM_LAN_PORT_VLAN   /* Send to all ports */
-    },
+  {TRUE,			/* phy port 4 -- WAN port or LAN port 4 */
+   FALSE,
+   0,
+   0,
+   ADM_PHY4_ADDR,
+   ADM_LAN_PORT_VLAN		/* Send to all ports */
+   },
 
-    {FALSE,  /* phy port 5 -- CPU port (no RJ45 connector) */
-     TRUE,
-     ENET_UNIT_DEFAULT,
-     0,
-     0x00, 
-     ADM_LAN_PORT_VLAN    /* Send to all ports */
-    },
+  {FALSE,			/* phy port 5 -- CPU port (no RJ45 connector) */
+   TRUE,
+   ENET_UNIT_DEFAULT,
+   0,
+   0x00,
+   ADM_LAN_PORT_VLAN		/* Send to all ports */
+   },
 };
 
-char *bcmstrstr (char *haystack, char *needle)
+char *
+bcmstrstr (char *haystack, char *needle)
 {
   int len, nlen;
   int i;
@@ -286,8 +286,8 @@ char *bcmstrstr (char *haystack, char *needle)
             ADM_ETHUNIT(phyUnit) == (ethUnit))
 
 /* Forward references */
-int       adm_phyIsLinkAlive(int phyUnit);
-void       adm_get_counters(void);
+int adm_phyIsLinkAlive (int phyUnit);
+void adm_get_counters (void);
 
 
 
@@ -331,6 +331,20 @@ getPhy (int addr, int reg)
   return data->val_out;
 }
 
+
+void
+config_bw (void)
+{
+  int i, nr, reg;
+  static int port_conf[] = { 0x01, 0x03, 0x05, 0x07, 0x08, 0x09 };
+  for (nr = 0; nr < 5; nr++)
+    {
+      reg = getPhy (0, port_conf[nr]);
+      reg |= 0x800f;
+      setPhy (0, port_conf[nr], reg);
+    }
+}
+
 #define ADM_CHIP_ID1_EXPECTATION                   0x1020
 #define ADM_CHIP_ID2_EXPECTATION                   0x0007
 #define ADM_PHY_ADDR                               0x5
@@ -339,263 +353,316 @@ getPhy (int addr, int reg)
 #define ADM_SW_AUTO_MDIX_EN     0x8000
 
 
-void config_vlan(void)
+void
+config_vlan (void)
 {
 
-	/* Port configuration */
-	struct {
-		unsigned char addr;	/* port configuration register */
-		unsigned short vlan;	/* vlan port mapping */
-		unsigned char tagged;	/* output tagging */
-		unsigned char cpu;	/* cpu port? 1 - yes, 0 - no */
-		unsigned short pvid;	/* cpu port pvid */
-	} port_cfg_tab[] = {
-		{1, 1<<0, 0, 0, -1},
-		{3, 1<<2, 0, 0, -1},
-		{5, 1<<4, 0, 0, -1},
-		{7, 1<<6, 0, 0, -1},
-		{8, 1<<7, 0, 0, -1},
-		{9, 1<<8, 1, 1, -1}	/* output tagging for linux... */
-	};
-	/* Vlan ports bitmap */
-	struct {
-		unsigned char addr;	/* vlan port map register */
-	} vlan_cfg_tab[] = {
-		{0x13},
-		{0x14},
-		{0x15},
-		{0x16},
-		{0x17},
-		{0x18},
-		{0x19},
-		{0x1a},
-		{0x1b},
-		{0x1c},
-		{0x1d},
-		{0x1e},
-		{0x1f},
-		{0x20},
-		{0x21},
-		{0x22}
-	};
-	unsigned short vid, i;
+  /* Port configuration */
+  struct
+  {
+    unsigned char addr;		/* port configuration register */
+    unsigned short vlan;	/* vlan port mapping */
+    unsigned char tagged;	/* output tagging */
+    unsigned char cpu;		/* cpu port? 1 - yes, 0 - no */
+    unsigned short pvid;	/* cpu port pvid */
+  } port_cfg_tab[] =
+  {
+    {
+    1, 1 << 0, 0, 0, -1},
+    {
+    3, 1 << 2, 0, 0, -1},
+    {
+    5, 1 << 4, 0, 0, -1},
+    {
+    7, 1 << 6, 0, 0, -1},
+    {
+    8, 1 << 7, 0, 0, -1},
+    {
+    9, 1 << 8, 1, 1, -1}	/* output tagging for linux... */
+  };
+  /* Vlan ports bitmap */
+  struct
+  {
+    unsigned char addr;		/* vlan port map register */
+  } vlan_cfg_tab[] =
+  {
+    {
+    0x13},
+    {
+    0x14},
+    {
+    0x15},
+    {
+    0x16},
+    {
+    0x17},
+    {
+    0x18},
+    {
+    0x19},
+    {
+    0x1a},
+    {
+    0x1b},
+    {
+    0x1c},
+    {
+    0x1d},
+    {
+    0x1e},
+    {
+    0x1f},
+    {
+    0x20},
+    {
+    0x21},
+    {
+    0x22}
+  };
+  unsigned short vid, i;
 
-setPhy(0,0x11,0xff30);
+  setPhy (0, 0x11, 0xff30);
 
 
-	for (vid = 0; vid < 16; vid ++) {
-		char port[] = "XXXX", *next, *ports, *cur;
-		char vlanports[] = "vlanXXXXports";
-		uint16 vlan_map = 0;
-		int port_num, len;
-		uint16 port_cfg;
+  for (vid = 0; vid < 16; vid++)
+    {
+      char port[] = "XXXX", *next, *ports, *cur;
+      char vlanports[] = "vlanXXXXports";
+      uint16 vlan_map = 0;
+      int port_num, len;
+      uint16 port_cfg;
 
-		/* no members if VLAN id is out of limitation */
-		if (vid > VLAN_MAXVID)
-			goto vlan_setup;
+      /* no members if VLAN id is out of limitation */
+      if (vid > VLAN_MAXVID)
+	goto vlan_setup;
 
-		/* get nvram port settings */
-		sprintf(vlanports, "vlan%dports", vid);
-		ports = nvram_get(vlanports);
+      /* get nvram port settings */
+      sprintf (vlanports, "vlan%dports", vid);
+      ports = nvram_get (vlanports);
 
-		/* disable this vlan if not defined */
-		if (!ports)
-			goto vlan_setup;
+      /* disable this vlan if not defined */
+      if (!ports)
+	goto vlan_setup;
 
-		/*
-		* port configuration register (0x01, 0x03, 0x05, 0x07, 0x08, 0x09):
-		*   input/output tagging, pvid, auto mdix, auto negotiation, ...
-		* cpu port needs special handing to support pmon/cfe/linux...
-		*/
-		for (cur = ports; cur; cur = next) {
-			/* tokenize the port list */
-			while (*cur == ' ')
-				cur ++;
-			next = bcmstrstr(cur, " ");
-			len = next ? next - cur : strlen(cur);
-			if (!len)
-				break;
-			if (len > sizeof(port) - 1)
-				len = sizeof(port) - 1;
-			strncpy(port, cur, len);
-			port[len] = 0;
+      /*
+       * port configuration register (0x01, 0x03, 0x05, 0x07, 0x08, 0x09):
+       *   input/output tagging, pvid, auto mdix, auto negotiation, ...
+       * cpu port needs special handing to support pmon/cfe/linux...
+       */
+      for (cur = ports; cur; cur = next)
+	{
+	  /* tokenize the port list */
+	  while (*cur == ' ')
+	    cur++;
+	  next = bcmstrstr (cur, " ");
+	  len = next ? next - cur : strlen (cur);
+	  if (!len)
+	    break;
+	  if (len > sizeof (port) - 1)
+	    len = sizeof (port) - 1;
+	  strncpy (port, cur, len);
+	  port[len] = 0;
 
-			/* make sure port # is within the range */
-			port_num = atoi(port);
-			if (port_num >= sizeof(port_cfg_tab) / sizeof(port_cfg_tab[0])) {
-				fprintf(stderr,"number %d is out of range\n", port_num);
-				continue;
-			}
+	  /* make sure port # is within the range */
+	  port_num = atoi (port);
+	  if (port_num >= sizeof (port_cfg_tab) / sizeof (port_cfg_tab[0]))
+	    {
+	      fprintf (stderr, "number %d is out of range\n", port_num);
+	      continue;
+	    }
 
-			/* build vlan port map */
-			vlan_map |= port_cfg_tab[port_num].vlan;
+	  /* build vlan port map */
+	  vlan_map |= port_cfg_tab[port_num].vlan;
 
-			/* cpu port needs special care */
-			if (port_cfg_tab[port_num].cpu) {
-				/* cpu port's default VLAN is lan! */
-				if (strchr(port, '*'))
-					port_cfg_tab[port_num].pvid = vid;
-				/* will be done later */
-				continue;
-			}
+	  /* cpu port needs special care */
+	  if (port_cfg_tab[port_num].cpu)
+	    {
+	      /* cpu port's default VLAN is lan! */
+	      if (strchr (port, '*'))
+		port_cfg_tab[port_num].pvid = vid;
+	      /* will be done later */
+	      continue;
+	    }
 
-			/* configure port */
-			port_cfg = 0x8000 |	/* auto mdix */
-				(vid << 10) | 	/* pvid */
-				0x000f;		/* full duplex, 100Mbps, auto neg, flow ctrl */
-			setPhy(0,port_cfg_tab[port_num].addr, port_cfg);
-		}
-vlan_setup:
-		/* vlan port map register (0x13 - 0x22) */
-		setPhy(0,vlan_cfg_tab[vid].addr, vlan_map);
+	  /* configure port */
+	  port_cfg = 0x8000 |	/* auto mdix */
+	    (vid << 10) |	/* pvid */
+	    0x000f;		/* full duplex, 100Mbps, auto neg, flow ctrl */
+	  setPhy (0, port_cfg_tab[port_num].addr, port_cfg);
 	}
+    vlan_setup:
+      /* vlan port map register (0x13 - 0x22) */
+      setPhy (0, vlan_cfg_tab[vid].addr, vlan_map);
+    }
 
-	/* cpu port config: auto mdix, pvid, output tagging, ... */
-	for (i = 0; i < sizeof(port_cfg_tab)/sizeof(port_cfg_tab[0]); i ++) {
-		uint16 tagged, pvid;
-		uint16 port_cfg;
+  /* cpu port config: auto mdix, pvid, output tagging, ... */
+  for (i = 0; i < sizeof (port_cfg_tab) / sizeof (port_cfg_tab[0]); i++)
+    {
+      uint16 tagged, pvid;
+      uint16 port_cfg;
 
-		/* cpu port only */
-		if (port_cfg_tab[i].cpu == 0 || port_cfg_tab[i].pvid == 0xffff)
-			continue;
+      /* cpu port only */
+      if (port_cfg_tab[i].cpu == 0 || port_cfg_tab[i].pvid == 0xffff)
+	continue;
 
-		/* configure port */
-		tagged = port_cfg_tab[i].tagged ? 1 : 0;
-		pvid = port_cfg_tab[i].pvid;
-		port_cfg = 0x8000 |	/* auto mdix */
-			(pvid << 10) | 	/* pvid */
-			(tagged << 4) |	/* output tagging */
-			0x000f;		/* full duplex, 100Mbps, auto neg, flow ctrl */
-		setPhy(0, port_cfg_tab[i].addr, port_cfg);
-	}
+      /* configure port */
+      tagged = port_cfg_tab[i].tagged ? 1 : 0;
+      pvid = port_cfg_tab[i].pvid;
+      port_cfg = 0x8000 |	/* auto mdix */
+	(pvid << 10) |		/* pvid */
+	(tagged << 4) |		/* output tagging */
+	0x000f;			/* full duplex, 100Mbps, auto neg, flow ctrl */
+      setPhy (0, port_cfg_tab[i].addr, port_cfg);
+    }
 
 }
+
 
 void
 vlan_init (int numports)
 {
-    int ethUnit=0;
-    int     phyUnit;
-    unsigned short  phyHwStatus;
-    unsigned short  timeout;
-    int     liveLinks = 0;
-    unsigned int  phyBase = 0;
-    int    foundPhy = FALSE;
-    unsigned int  phyAddr;
-    
-    /* Reset PHYs*/
-    for (phyUnit=0; phyUnit < ADM_PHY_MAX; phyUnit++) {
-        if (!ADM_IS_ETHUNIT(phyUnit, ethUnit)) {
-            continue;
-        }
+  int ethUnit = 0;
+  int phyUnit;
+  unsigned short phyHwStatus;
+  unsigned short timeout;
+  int liveLinks = 0;
+  unsigned int phyBase = 0;
+  int foundPhy = FALSE;
+  unsigned int phyAddr;
 
-        phyAddr = ADM_PHYADDR(phyUnit);
-        setPhy(phyAddr, ADM_PHY_CONTROL,
-                    ADM_CTRL_SOFTWARE_RESET);
+  /* Reset PHYs */
+  for (phyUnit = 0; phyUnit < ADM_PHY_MAX; phyUnit++)
+    {
+      if (!ADM_IS_ETHUNIT (phyUnit, ethUnit))
+	{
+	  continue;
+	}
+
+      phyAddr = ADM_PHYADDR (phyUnit);
+      setPhy (phyAddr, ADM_PHY_CONTROL, ADM_CTRL_SOFTWARE_RESET);
     }
-    /*
-     * After the phy is reset, it takes a little while before
-     * it can respond properly.
-     */
-    sleep(1);
+  /*
+   * After the phy is reset, it takes a little while before
+   * it can respond properly.
+   */
+  sleep (1);
 
 
-    /* start auto negogiation on each phy */
-    for (phyUnit=0; phyUnit < ADM_PHY_MAX; phyUnit++) {
-        if (!ADM_IS_ETHUNIT(phyUnit, ethUnit)) {
-            continue;
-        }
+  /* start auto negogiation on each phy */
+  for (phyUnit = 0; phyUnit < ADM_PHY_MAX; phyUnit++)
+    {
+      if (!ADM_IS_ETHUNIT (phyUnit, ethUnit))
+	{
+	  continue;
+	}
 
-        phyAddr = ADM_PHYADDR(phyUnit);
-        
-        setPhy(phyAddr, ADM_AUTONEG_ADVERT,
-                                        ADM_ADVERTISE_ALL);
+      phyAddr = ADM_PHYADDR (phyUnit);
 
-        setPhy(phyAddr, ADM_PHY_CONTROL,
-                    ADM_CTRL_AUTONEGOTIATION_ENABLE | ADM_CTRL_START_AUTONEGOTIATION);
-    }
+      setPhy (phyAddr, ADM_AUTONEG_ADVERT, ADM_ADVERTISE_ALL);
 
-    /*
-     * Wait up to .75 seconds for ALL associated PHYs to finish
-     * autonegotiation.  The only way we get out of here sooner is
-     * if ALL PHYs are connected AND finish autonegotiation.
-     */
-    timeout=5;
-    for (phyUnit=0; (phyUnit < ADM_PHY_MAX) /*&& (timeout > 0) */; phyUnit++) {
-        if (!ADM_IS_ETHUNIT(phyUnit, ethUnit)) {
-            continue;
-        }
-        for (;;) {
-            phyAddr = ADM_PHYADDR(phyUnit);
-
-            phyHwStatus = getPhy(phyAddr, ADM_PHY_STATUS);
-
-            if (ADM_AUTONEG_DONE(phyHwStatus)) {
-            fprintf(stderr,"Port %d, Neg Success\n", phyUnit);
-                break;
-            }
-            if (timeout == 0) {
-                fprintf(stderr,"Port %d, Negogiation timeout\n", phyUnit);
-                break;
-            }
-            if (--timeout == 0) {
-                fprintf(stderr,"Port %d, Negogiation timeout\n", phyUnit);
-                break;
-            }
-	    sleep(1);
-        }
+      setPhy (phyAddr, ADM_PHY_CONTROL,
+	      ADM_CTRL_AUTONEGOTIATION_ENABLE |
+	      ADM_CTRL_START_AUTONEGOTIATION);
     }
 
-    /*
-     * All PHYs have had adequate time to autonegotiate.
-     * Now initialize software status.
-     *
-     * It's possible that some ports may take a bit longer
-     * to autonegotiate; but we can't wait forever.  They'll
-     * get noticed by mv_phyCheckStatusChange during regular
-     * polling activities.
-     */
-    for (phyUnit=0; phyUnit < ADM_PHY_MAX; phyUnit++) {
-        if (!ADM_IS_ETHUNIT(phyUnit, ethUnit)) {
-            continue;
-        }
+  /*
+   * Wait up to .75 seconds for ALL associated PHYs to finish
+   * autonegotiation.  The only way we get out of here sooner is
+   * if ALL PHYs are connected AND finish autonegotiation.
+   */
+  timeout = 5;
+  for (phyUnit = 0; (phyUnit < ADM_PHY_MAX) /*&& (timeout > 0) */ ; phyUnit++)
+    {
+      if (!ADM_IS_ETHUNIT (phyUnit, ethUnit))
+	{
+	  continue;
+	}
+      for (;;)
+	{
+	  phyAddr = ADM_PHYADDR (phyUnit);
 
-        if (adm_phyIsLinkAlive(phyUnit)) {
-            liveLinks++;
-            ADM_IS_PHY_ALIVE(phyUnit) = TRUE;
-        } else {
-            ADM_IS_PHY_ALIVE(phyUnit) = FALSE;
-        }
+	  phyHwStatus = getPhy (phyAddr, ADM_PHY_STATUS);
 
-        fprintf(stderr,"eth%d: Phy Status=%4.4x\n",ethUnit, getPhy(ADM_PHYADDR(phyUnit),ADM_PHY_STATUS));
+	  if (ADM_AUTONEG_DONE (phyHwStatus))
+	    {
+	      fprintf (stderr, "Port %d, Neg Success\n", phyUnit);
+	      break;
+	    }
+	  if (timeout == 0)
+	    {
+	      fprintf (stderr, "Port %d, Negogiation timeout\n", phyUnit);
+	      break;
+	    }
+	  if (--timeout == 0)
+	    {
+	      fprintf (stderr, "Port %d, Negogiation timeout\n", phyUnit);
+	      break;
+	    }
+	  sleep (1);
+	}
     }
 
-    /*
-     * XXX
-     */
-nvram_set("vlan0ports","0 5*");
-nvram_set("vlan1ports","1 2 3 4 5");
-  config_vlan();
+  /*
+   * All PHYs have had adequate time to autonegotiate.
+   * Now initialize software status.
+   *
+   * It's possible that some ports may take a bit longer
+   * to autonegotiate; but we can't wait forever.  They'll
+   * get noticed by mv_phyCheckStatusChange during regular
+   * polling activities.
+   */
+  for (phyUnit = 0; phyUnit < ADM_PHY_MAX; phyUnit++)
+    {
+      if (!ADM_IS_ETHUNIT (phyUnit, ethUnit))
+	{
+	  continue;
+	}
+
+      if (adm_phyIsLinkAlive (phyUnit))
+	{
+	  liveLinks++;
+	  ADM_IS_PHY_ALIVE (phyUnit) = TRUE;
+	}
+      else
+	{
+	  ADM_IS_PHY_ALIVE (phyUnit) = FALSE;
+	}
+
+      fprintf (stderr, "eth%d: Phy Status=%4.4x\n", ethUnit,
+	       getPhy (ADM_PHYADDR (phyUnit), ADM_PHY_STATUS));
+    }
+
+  /*
+   * XXX
+   */
+  nvram_set ("vlan0ports", "0 5*");
+  nvram_set ("vlan1ports", "1 2 3 4 5");
+  config_vlan ();
+  config_bw ();
   eval ("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
   eval ("/sbin/vconfig", "add", "eth0", "0");
   eval ("/sbin/vconfig", "add", "eth0", "1");
 }
 
+
 int
-adm_phyIsLinkAlive(int phyUnit)
+adm_phyIsLinkAlive (int phyUnit)
 {
-    unsigned short phyHwStatus;
-    unsigned int phyBase;
-    unsigned int phyAddr;
+  unsigned short phyHwStatus;
+  unsigned int phyBase;
+  unsigned int phyAddr;
 
-    phyAddr = ADM_PHYADDR(phyUnit);
+  phyAddr = ADM_PHYADDR (phyUnit);
 
-    phyHwStatus = getPhy(phyAddr, ADM_PHY_STATUS);
+  phyHwStatus = getPhy (phyAddr, ADM_PHY_STATUS);
 
-    if (phyHwStatus & ADM_STATUS_LINK_PASS) {
-        return TRUE;
-    } else {
-        return FALSE;
+  if (phyHwStatus & ADM_STATUS_LINK_PASS)
+    {
+      return TRUE;
+    }
+  else
+    {
+      return FALSE;
     }
 }
 
@@ -603,4 +670,12 @@ void
 start_vlantest (void)
 {
   config_vlan ();
+  config_bw ();
 }
+
+/*
+void main(int argc,char *argv[])
+{
+  config_vlan ();
+config_bw();
+}*/
