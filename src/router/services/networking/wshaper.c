@@ -327,7 +327,9 @@ svqos_iptables (void)
 	    dev);
   system2 (cmd);
 eval("insmod","ipt_mark");
+eval("insmod","xt_mark");
 eval("insmod","ipt_CONNMARK");
+eval("insmod","xt_CONNMARK");
   system2
     ("/usr/sbin/iptables -t mangle -A SVQOS_OUT -j CONNMARK --restore-mark");
   system2
@@ -384,6 +386,7 @@ eval("insmod","ipt_CONNMARK");
       if (strcmp (dev, "br0"))
 	{
           eval("insmod","ipt_mac");
+          eval("insmod","xt_mac");
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t mangle -D PREROUTING -m mac --mac-source %s -j MARK --set-mark %s",
 		    data, level);
