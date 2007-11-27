@@ -117,7 +117,7 @@ system2 (char *command)
 #endif
   return system (command);
 }
-
+//FILE *debugfp=NULL;
 int
 _evalpid (char *const argv[], char *path, int timeout, int *ppid)
 {
@@ -126,16 +126,18 @@ _evalpid (char *const argv[], char *path, int timeout, int *ppid)
   int fd;
   int flags;
   int sig;
+//if (debugfp==NULL)
+//    debugfp = fopen("/tmp/evallog.log","wb");
 //  char buf[254] = "";
 #ifndef HAVE_SILENCE
 
   int i = 0;
-  fprintf (stderr, "executing from %s ", path);
   while (argv[i] != NULL)
     {
-      fprintf (stderr, "%s ", argv[i++]);
+      fprintf (debugfp, "%s ", argv[i++]);
     }
-  fprintf (stderr, "\n");
+  fprintf (debugfp, "\n");
+  fflush(debugfp);
 #endif
 
   switch (pid = fork ())

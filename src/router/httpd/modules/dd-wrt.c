@@ -4445,9 +4445,9 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   sprintf (wl_xr, "%s_xr", prefix);
   show_rates (wp, prefix, 0);
   show_rates (wp, prefix, 1);
-#if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
+//#if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
   showOption (wp, "wl_basic.turbo", wl_turbo);
-#endif
+//#endif
   showOption (wp, "wl_basic.preamble", wl_preamble);
   showOption (wp, "wl_basic.extrange", wl_xr);
   showOption (wp, "wl_basic.supergcomp", wl_comp);
