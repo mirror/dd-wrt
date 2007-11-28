@@ -112,7 +112,7 @@ clean :
 distclean : clean
 	-rm -f vpnc-debug.c vpnc-debug.h vpnc.ps vpnc.8 .depend
 
-install-common: all
+install-common: 
 	install -d $(DESTDIR)$(ETCDIR) $(DESTDIR)$(BINDIR) $(DESTDIR)$(SBINDIR) 
 	if [ "`uname -s | cut -c-6`" = "CYGWIN" ]; then \
 		install vpnc-script-win $(DESTDIR)$(ETCDIR)/vpnc-script; \
@@ -126,17 +126,14 @@ install-common: all
 
 install : install-common
 	install -m755 vpnc $(DESTDIR)$(SBINDIR)
-	install -m755 cisco-decrypt $(DESTDIR)$(BINDIR)
 
 install-strip : install-common
 	install -s -m755 vpnc $(DESTDIR)$(SBINDIR)
-	install -s -m755 cisco-decrypt $(DESTDIR)$(BINDIR)
 
 uninstall :
 	rm -f $(DESTDIR)$(SBINDIR)/vpnc \
 		$(DESTDIR)$(SBINDIR)/vpnc-disconnect \
-		$(DESTDIR)$(BINDIR)/pcf2vpnc \
-		$(DESTDIR)$(BINDIR)/cisco-decrypt 
+		$(DESTDIR)$(BINDIR)/pcf2vpnc 
 	@echo NOTE: remove $(DESTDIR)$(ETCDIR) manually
 
 .PHONY : clean distclean dist all install install-strip uninstall
