@@ -146,9 +146,9 @@ AUTOMAKE = ${SHELL} /home/seg/DEV/broadcom/src/router/vpnc/libgcrypt/missing --r
 AWK = gawk
 CC = mipsel-linux-uclibc-gcc
 CCAS = mipsel-linux-uclibc-gcc
-CCASFLAGS = -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -W -Wall -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -Wmissing-declarations -Wwrite-strings -I/home/seg/DEV/broadcom/src/router/mipsel-uclibc/install/vpnc/usr/include -L/home/seg/DEV/broadcom/src/router/mipsel-uclibc/install/vpnc/usr/lib
+CCASFLAGS = -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -W -Wall -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -Wmissing-declarations -Wwrite-strings -I/home/seg/DEV/broadcom/src/router/mipsel-uclibc/install/vpnc/vpnc/usr/include -L/home/seg/DEV/broadcom/src/router/mipsel-uclibc/install/vpnc/vpnc/usr/lib
 CCDEPMODE = depmode=gcc3
-CFLAGS = -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -W -Wall -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -Wmissing-declarations -Wwrite-strings -I/home/seg/DEV/broadcom/src/router/mipsel-uclibc/install/vpnc/usr/include -L/home/seg/DEV/broadcom/src/router/mipsel-uclibc/install/vpnc/usr/lib -Wall
+CFLAGS = -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -W -Wall -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -Wmissing-declarations -Wwrite-strings -I/home/seg/DEV/broadcom/src/router/mipsel-uclibc/install/vpnc/vpnc/usr/include -L/home/seg/DEV/broadcom/src/router/mipsel-uclibc/install/vpnc/vpnc/usr/lib -Wall
 CPP = mipsel-linux-uclibc-gcc -E
 CPPFLAGS = 
 CROSS_COMPILING_FALSE = #
@@ -174,7 +174,7 @@ GCRYPT_DIGESTS =  crc.lo md4.lo md5.lo sha256.lo sha512.lo tiger.lo rmd160.lo sh
 GCRYPT_PUBKEY_CIPHERS =  dsa.lo rsa.lo elgamal.lo
 GCRYPT_RANDOM =  rndlinux.lo
 GPG_ERROR_CFLAGS = 
-GPG_ERROR_CONFIG = /home/seg/DEV/broadcom/src/router/mipsel-uclibc/install/vpnc/usr/bin/gpg-error-config
+GPG_ERROR_CONFIG = /home/seg/DEV/broadcom/src/router/mipsel-uclibc/install/vpnc/vpnc/usr/bin/gpg-error-config
 GPG_ERROR_LIBS = -lgpg-error
 GREP = /usr/bin/grep
 HAVE_LD_VERSION_SCRIPT_FALSE = #
@@ -183,7 +183,7 @@ INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = ${SHELL} $(install_sh) -c -s
-LDFLAGS = -L/home/seg/DEV/broadcom/src/router/mipsel-uclibc/install/vpnc/usr/lib  
+LDFLAGS = -L/home/seg/DEV/broadcom/src/router/mipsel-uclibc/install/vpnc/vpnc/usr/lib  
 LIBGCRYPT_CIPHERS = arcfour blowfish cast5 des aes twofish serpent rfc2268
 LIBGCRYPT_CONFIG_API_VERSION = 1
 LIBGCRYPT_CONFIG_CFLAGS = 
