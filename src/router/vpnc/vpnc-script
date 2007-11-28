@@ -58,7 +58,7 @@ esac
 
 DEFAULT_ROUTE_FILE=/var/run/vpnc/defaultroute
 RESOLV_CONF_BACKUP=/var/run/vpnc/resolv.conf-backup
-FULL_SCRIPTNAME=/usr/local/sbin/vpnc
+FULL_SCRIPTNAME=/usr/sbin/vpnc
 SCRIPTNAME=`basename $FULL_SCRIPTNAME`
 
 # some systems, eg. Darwin & FreeBSD, prune /var/run on boot
