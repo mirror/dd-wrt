@@ -14,6 +14,7 @@
  * __APPLE__      Darwin / MacOS X
  * __sun__        SunOS / Solaris
  * __CYGWIN__
+ * __SKYOS__
  *
  */
 
@@ -36,7 +37,7 @@ int tun_read(int fd, unsigned char *buf, int len);
 int tun_get_hwaddr(int fd, char *dev, uint8_t *hwaddr);
 
 /***************************************************************************/
-#if defined(__linux__)
+#if defined(__linux__) || defined(__GLIBC__)
 #include <error.h>
 
 #define HAVE_VASPRINTF 1
@@ -69,6 +70,11 @@ int tun_get_hwaddr(int fd, char *dev, uint8_t *hwaddr);
 #define HAVE_FGETLN    1
 #define HAVE_UNSETENV  1
 #define HAVE_SETENV    1
+#endif
+
+/***************************************************************************/
+#if defined(__FreeBSD_kernel__)
+#define HAVE_SA_LEN 1
 #endif
 
 /***************************************************************************/
@@ -118,6 +124,18 @@ int tun_get_hwaddr(int fd, char *dev, uint8_t *hwaddr);
 /* where is this defined? */
 #include <sys/socket.h>
 const char *inet_ntop(int af, const void *src, char *dst, size_t cnt);
+#endif
+/***************************************************************************/
+#if defined (__SKYOS__)
+#define HAVE_UNSETENV  1
+
+#ifndef IPPROTO_ENCAP
+#define IPPROTO_ENCAP 4
+#endif
+
+#ifndef IPPROTO_ESP
+#define IPPROTO_ESP 50
+#endif
 #endif
 /***************************************************************************/
 #if defined (__CYGWIN__)

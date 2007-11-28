@@ -15,7 +15,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-   $Id: isakmp.h 131 2007-02-16 09:49:30Z Maurice Massar $
+   $Id: isakmp.h 245 2007-09-09 13:56:41Z Joerg Mayer $
 */
 
 #ifndef __ISAKMP_H__
@@ -28,24 +28,30 @@
 
 /* Payload types */
 enum isakmp_payload_enum {
-	ISAKMP_PAYLOAD_NONE = 0,
-	ISAKMP_PAYLOAD_SA,
-	ISAKMP_PAYLOAD_P,
-	ISAKMP_PAYLOAD_T,
-	ISAKMP_PAYLOAD_KE,
-	ISAKMP_PAYLOAD_ID,
-	ISAKMP_PAYLOAD_CERT,
-	ISAKMP_PAYLOAD_CR,
-	ISAKMP_PAYLOAD_HASH,
-	ISAKMP_PAYLOAD_SIG,
-	ISAKMP_PAYLOAD_NONCE,
-	ISAKMP_PAYLOAD_N,
-	ISAKMP_PAYLOAD_D,
-	ISAKMP_PAYLOAD_VID,
+	ISAKMP_PAYLOAD_NONE = 0,	/* RFC 2408 */
+	ISAKMP_PAYLOAD_SA,		/* RFC 2408 */
+	ISAKMP_PAYLOAD_P,		/* RFC 2408 */
+	ISAKMP_PAYLOAD_T,		/* RFC 2408 */
+	ISAKMP_PAYLOAD_KE,		/* RFC 2408 */
+	ISAKMP_PAYLOAD_ID,		/* RFC 2408 */
+	ISAKMP_PAYLOAD_CERT,		/* RFC 2408 */
+	ISAKMP_PAYLOAD_CR,		/* RFC 2408 */
+	ISAKMP_PAYLOAD_HASH,		/* RFC 2408 */
+	ISAKMP_PAYLOAD_SIG,		/* RFC 2408 */
+	ISAKMP_PAYLOAD_NONCE,		/* RFC 2408 */
+	ISAKMP_PAYLOAD_N,		/* RFC 2408 */
+	ISAKMP_PAYLOAD_D,		/* RFC 2408 */
+	ISAKMP_PAYLOAD_VID,		/* RFC 2408 */
 	ISAKMP_PAYLOAD_MODECFG_ATTR,
-	ISAKMP_PAYLOAD_NAT_D,
-	ISAKMP_PAYLOAD_NAT_OA,
-	ISAKMP_PAYLOAD_NAT_D_OLD = 0x82
+	ISAKMP_PAYLOAD_SAK,		/* RFC 3547 */
+	ISAKMP_PAYLOAD_SAT,		/* RFC 3547 */
+	ISAKMP_PAYLOAD_KD,		/* RFC 3547 */
+	ISAKMP_PAYLOAD_SEQNO,		/* RFC 3547 */
+	ISAKMP_PAYLOAD_POP,		/* RFC 3547 */
+	ISAKMP_PAYLOAD_NAT_D,		/* RFC 3947 */
+	ISAKMP_PAYLOAD_NAT_OA,		/* RFC 3947 */
+	ISAKMP_PAYLOAD_NAT_D_OLD = 0x82,
+	ISAKMP_PAYLOAD_FRAG = 0x84
 };
 
 /* Exchange types.  */
@@ -67,7 +73,7 @@ enum isakmp_doi_enum {
 	ISAKMP_DOI_IPSEC
 };
 
-/* Notify message types.  */
+/* Notify message types (error: 1-16383; status: 16384-65535).  */
 enum isakmp_notify_enum {
 	ISAKMP_N_INVALID_PAYLOAD_TYPE = 1,
 	ISAKMP_N_DOI_NOT_SUPPORTED,
@@ -103,7 +109,30 @@ enum isakmp_notify_enum {
 	ISAKMP_N_IPSEC_RESPONDER_LIFETIME = 24576,
 	ISAKMP_N_IPSEC_REPLAY_STATUS,
 	ISAKMP_N_IPSEC_INITIAL_CONTACT,
-	ISAKMP_N_CISCO_LOAD_BALANCE = 40501
+	ISAKMP_N_CISCO_HELLO = 30000,
+	ISAKMP_N_CISCO_WWTEBR,
+	ISAKMP_N_CISCO_SHUT_UP,
+	ISAKMP_N_IOS_KEEP_ALIVE_REQ = 32768,
+	ISAKMP_N_IOS_KEEP_ALIVE_ACK,
+	ISAKMP_N_R_U_THERE = 36136,
+	ISAKMP_N_R_U_THERE_ACK,
+	ISAKMP_N_CISCO_LOAD_BALANCE = 40501,
+	ISAKMP_N_CISCO_PRESHARED_KEY_HASH = 40503
+};
+
+/* Certificate types.  */
+enum isakmp_certificate_enum {
+	ISAKMP_CERT_NONE = 0,
+	ISAKMP_CERT_PKCS7_X509,
+	ISAKMP_CERT_PGP,
+	ISAKMP_CERT_DNS_SIG_KEY,
+	ISAKMP_CERT_X509_SIG,
+	ISAKMP_CERT_X509_KEX_EXCHANGE,
+	ISAKMP_CERT_KERBEROS_TOKENS,
+	ISAKMP_CERT_CRL,
+	ISAKMP_CERT_ARL,
+	ISAKMP_CERT_SPKI,
+	ISAKMP_CERT_X509_ATTRIBUTE
 };
 
 /* IKE attribute types.  */
@@ -159,6 +188,10 @@ enum ike_auth_enum {
 	IKE_AUTH_EL_GAMAL_ENC,
 	IKE_AUTH_EL_GAMAL_ENC_REV,
 	IKE_AUTH_ECDSA_SIG,
+	IKE_AUTH_HybridInitRSA = 64221,
+	IKE_AUTH_HybridRespRSA,
+	IKE_AUTH_HybridInitDSS,
+	IKE_AUTH_HybridRespDSS,
 	IKE_AUTH_XAUTHInitPreShared = 65001,
 	IKE_AUTH_XAUTHRespPreShared,
 	IKE_AUTH_XAUTHInitDSS,
@@ -332,34 +365,18 @@ enum ipsec_auth_enum {
 #define ISAKMP_MESSAGE_ID_O		20
 #define ISAKMP_PAYLOAD_O		28
 
-/* Support for draft-ietf-ipsec-isakmp-xauth-06.txt (yuk).  */
-#define XAUTH_VENDOR_ID { 0x09, 0x00, 0x26, 0x89, 0xDF, 0xD6, 0xB7, 0x12 }
-/* From dead-peer-detection RFC 3706 */
-#define DPD_VENDOR_ID { 0xAF, 0xCA, 0xD7, 0x13, 0x68, 0xA1, 0xF1, 0xC9, \
-	0x6B, 0x86, 0x96, 0xFC, 0x77, 0x57, 0x01, 0x00}
-#define UNITY_VENDOR_ID { 0x12, 0xF5, 0xF2, 0x8C, 0x45, 0x71, 0x68, 0xA9, \
-	0x70, 0x2D, 0x9F, 0xE2, 0x74, 0xCC, 0x01, 0x00 }
-#define UNKNOWN_VENDOR_ID { 0x12, 0x6E, 0x1F, 0x57, 0x72, 0x91, 0x15, 0x3B, \
-	0x20, 0x48, 0x5F, 0x7F, 0x15, 0x5B, 0x4B, 0xC8 }
-
-/* draft-ietf-ipsec-nat-t-ike-00 */
-#define NATT_VENDOR_ID_00 { 0x44, 0x85, 0x15, 0x2d, 0x18, 0xb6, 0xbb, 0xcd, \
-	0x0b, 0xe8, 0xa8, 0x46, 0x95, 0x79, 0xdd, 0xcc }
-/* draft-ietf-ipsec-nat-t-ike-01 */
-#define NATT_VENDOR_ID_01 { 0x16, 0xf6, 0xca, 0x16, 0xe4, 0xa4, 0x06, 0x6d, \
-	0x83, 0x82, 0x1a, 0x0f, 0x0a, 0xea, 0xa8, 0x62 }
-/* draft-ietf-ipsec-nat-t-ike-02 */
-#define NATT_VENDOR_ID_02 { 0xcd, 0x60, 0x46, 0x43, 0x35, 0xdf, 0x21, 0xf8, \
-	0x7c, 0xfd, 0xb2, 0xfc, 0x68, 0xb6, 0xa4, 0x48 }
-/* draft-ietf-ipsec-nat-t-ike-02\n */
-#define NATT_VENDOR_ID_02n { 0x90, 0xCB, 0x80, 0x91, 0x3E, 0xBB, 0x69, 0x6E, \
-	0x08, 0x63, 0x81, 0xB5, 0xEC, 0x42, 0x7B, 0x1F }
-/* RFC 3947 */
-#define NATT_VENDOR_ID_RFC { 0x4A, 0x13, 0x1C, 0x81, 0x07, 0x03, 0x58, 0x45, \
-	0x5C, 0x57, 0x28, 0xF2, 0x0E, 0x95, 0x45, 0x2F }
+/* defined in vpnc.c */
+extern const unsigned char VID_XAUTH[];
+extern const unsigned char VID_DPD[];
+extern const unsigned char VID_UNITY[];
+extern const unsigned char VID_UNKNOWN[];
+extern const unsigned char VID_NATT_00[];
+extern const unsigned char VID_NATT_01[];
+extern const unsigned char VID_NATT_02[];
+extern const unsigned char VID_NATT_02N[];
+extern const unsigned char VID_NATT_RFC[];
 
 /* Support for draft-ietf-ipsec-isakmp-mode-cfg-05.txt (yuk).  */
-
 enum isakmp_modecfg_cfg_enum {
 	ISAKMP_MODECFG_CFG_REQUEST = 1,
 	ISAKMP_MODECFG_CFG_REPLY,

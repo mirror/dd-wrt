@@ -15,7 +15,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-   $Id: tunip.h 131 2007-02-16 09:49:30Z Maurice Massar $
+   $Id: tunip.h 212 2007-08-21 18:37:05Z Joerg Mayer $
 */
 
 #ifndef __TUNIP_H__
@@ -23,6 +23,7 @@
 
 #include "isakmp.h"
 
+#include <time.h>
 #include <net/if.h>
 
 struct lifetime {
@@ -74,6 +75,8 @@ struct sa_block {
 	int esp_fd; /* raw socket for ip-esp or Cisco-UDP or ike_fd (NAT-T) */
 	
 	struct {
+		int timeout;
+		uint8_t *resend_hash;
 		uint16_t src_port, dst_port;
 		uint8_t i_cookie[ISAKMP_COOKIE_LENGTH];
 		uint8_t r_cookie[ISAKMP_COOKIE_LENGTH];
@@ -82,12 +85,18 @@ struct sa_block {
 		uint8_t *initial_iv;
 		uint8_t *skeyid_a;
 		uint8_t *skeyid_d;
-		int auth_algo; /* PSK, PSK+Xauth, ToDo: Cert/Hybrid/... */
+		int auth_algo; /* PSK, PSK+Xauth, Hybrid ToDo: Cert/... */
 		int cry_algo, md_algo;
 		size_t ivlen, md_len;
 		uint8_t current_iv_msgid[4];
 		uint8_t *current_iv;
 		struct lifetime life;
+		int do_dpd;
+		int dpd_idle;
+		uint32_t dpd_seqno;
+		uint32_t dpd_seqno_ack;
+		time_t dpd_sent;
+		unsigned int dpd_attempts;
 	} ike;
 	uint8_t our_address[4], our_netmask[4];
 	struct {

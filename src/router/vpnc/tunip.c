@@ -21,7 +21,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-   $Id: tunip.c 147 2007-02-19 20:49:52Z Maurice Massar $
+   $Id: tunip.c 231 2007-09-03 16:40:59Z Joerg Mayer $
 */
 
 /* borrowed from pipsecd (-; */
@@ -63,7 +63,9 @@
 #include <netinet/in_systm.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#ifndef __SKYOS__
 #include <netinet/ip_icmp.h>
+#endif
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <string.h>
@@ -77,7 +79,7 @@
 #include <pthread.h>
 #endif
 
-#ifndef __sun__
+#if !defined(__sun__) && !defined(__SKYOS__)
 #include <err.h>
 #endif
 
@@ -118,7 +120,8 @@ struct encap_method {
 #define MAX_HEADER 72
 #define MAX_PACKET 4096
 int volatile do_kill;
-static uint8_t global_buffer[MAX_HEADER + MAX_PACKET + ETH_HLEN];
+static uint8_t global_buffer_rx[MAX_HEADER + MAX_PACKET + ETH_HLEN];
+static uint8_t global_buffer_tx[MAX_HEADER + MAX_PACKET + ETH_HLEN];
 
 /*
  * in_cksum --
@@ -164,7 +167,7 @@ static int encap_rawip_recv(struct sa_block *s, unsigned char *buf, unsigned int
 	ssize_t r;
 	struct ip *p = (struct ip *)buf;
 	struct sockaddr_in from;
-	size_t fromlen = sizeof(from);
+	socklen_t fromlen = sizeof(from);
 	
 	r = recvfrom(s->esp_fd, buf, bufsize, 0, (struct sockaddr *)&from, &fromlen);
 	if (r == -1) {
@@ -351,18 +354,14 @@ static void encap_esp_encapsulate(struct sa_block *s)
 	gcry_create_nonce(iv, s->ipsec.iv_len);
 	hex_dump("iv", iv, s->ipsec.iv_len, NULL);
 
-#if 1
 	hex_dump("sending ESP packet (before crypt)", s->ipsec.tx.buf, s->ipsec.tx.buflen, NULL);
-#endif
 
 	if (s->ipsec.cry_algo) {
 		gcry_cipher_setiv(s->ipsec.tx.cry_ctx, iv, s->ipsec.iv_len);
 		gcry_cipher_encrypt(s->ipsec.tx.cry_ctx, cleartext, cleartextlen, NULL, 0);
 	}
 
-#if 1
 	hex_dump("sending ESP packet (after crypt)", s->ipsec.tx.buf, s->ipsec.tx.buflen, NULL);
-#endif
 
 	/* Handle optional authentication field */
 	if (s->ipsec.md_algo) {
@@ -373,9 +372,7 @@ static void encap_esp_encapsulate(struct sa_block *s)
 			+ s->ipsec.tx.var_header_size + cleartextlen,
 			1, s->ipsec.tx.key_md, s->ipsec.md_len);
 		s->ipsec.tx.buflen += 12; /*gcry_md_get_algo_dlen(md_algo); see RFC .. only use 96 bit */
-#if 1
 		hex_dump("sending ESP packet (after ah)", s->ipsec.tx.buf, s->ipsec.tx.buflen, NULL);
-#endif
 	}
 }
 
@@ -557,9 +554,8 @@ static int encap_esp_recv_peer(struct sa_block *s)
 		syslog(LOG_ALERT, "Inconsistent next_header %d", next_header);
 		return -1;
 	}
-#if 0
-	printf("pad len: %d, next_header: %d\n", padlen, next_header);
-#endif
+	DEBUG(3, printf("pad len: %d, next_header: %d\n", padlen, next_header));
+
 	len -= padlen + 2;
 	s->ipsec.rx.buflen -= padlen + 2;
 
@@ -592,14 +588,6 @@ static void encap_udp_new(struct encap_method *encap)
 	encap->recv_peer = encap_esp_recv_peer;
 	encap->fixed_header_size = sizeof(esp_encap_header_t);
 }
-
-#ifdef __CYGWIN__
-/*
- * TODO: use libgcrypt init to make it thread-safe
- *       instead of this mutex
- */
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-#endif
 
 /*
  * Process ARP 
@@ -677,7 +665,7 @@ static void process_tun(struct sa_block *s)
 {
 	int pack;
 	int size = MAX_PACKET;
-	uint8_t *start = global_buffer + MAX_HEADER;
+	uint8_t *start = global_buffer_rx + MAX_HEADER;
 	
 	if (opt_if_mode == IF_MODE_TAP) {
 		/* Make sure IP packet starts at buf + MAX_HEADER */
@@ -687,10 +675,6 @@ static void process_tun(struct sa_block *s)
 	
 	/* Receive a packet from the tunnel interface */
 	pack = tun_read(s->tun_fd, start, size);
-	
-#if defined(__CYGWIN__)
-	pthread_mutex_lock(&mutex);
-#endif
 	
 	hex_dump("Rx pkt", start, pack, NULL);
 	
@@ -709,7 +693,10 @@ static void process_tun(struct sa_block *s)
 		return;
 	}
 	
-	if (((struct ip *)(global_buffer + MAX_HEADER))->ip_dst.s_addr == s->dst.s_addr) {
+	/* Don't access the contents of the buffer other than byte aligned.
+	 * 12: Offset of ip source address in ip header,
+	 *  4: Length of IP address */
+	if (!memcmp(global_buffer_rx + MAX_HEADER + 12, &s->dst.s_addr, 4)) {
 		syslog(LOG_ALERT, "routing loop to %s",
 			inet_ntoa(s->dst));
 		return;
@@ -717,21 +704,16 @@ static void process_tun(struct sa_block *s)
 	
 	/* Encapsulate and send to the other end of the tunnel */
 	s->ipsec.life.tx += pack;
-	s->ipsec.em->send_peer(s, global_buffer, pack);
+	s->ipsec.em->send_peer(s, global_buffer_rx, pack);
 }
 
 static void process_socket(struct sa_block *s)
 {
 	/* Receive a packet from a socket */
 	int pack;
-	uint8_t *start = global_buffer;
+	uint8_t *start = global_buffer_tx;
 	esp_encap_header_t *eh;
 
-	
-#if defined(__CYGWIN__)
-	pthread_mutex_lock(&mutex);
-#endif
-	
 	if (opt_if_mode == IF_MODE_TAP) {
 		start += ETH_HLEN;
 	}
@@ -770,7 +752,6 @@ static void *tun_thread (void *arg)
 	
 	while (!do_kill) {
 		process_tun(s);
-		pthread_mutex_unlock(&mutex);
 	}
 	return NULL;
 }
@@ -781,17 +762,20 @@ static void vpnc_main_loop(struct sa_block *s)
 	fd_set rfds, refds;
 	int nfds=0;
 	int enable_keepalives;
+	int timed_mode;
 	ssize_t len;
-	struct timeval select_timeout = { .tv_sec = 9, .tv_usec = 500000 };
+	struct timeval select_timeout;
+	struct timeval normal_timeout;
 	time_t next_ike_keepalive=0;
+	time_t next_ike_dpd=0;
 #if defined(__CYGWIN__)
 	pthread_t tid;
 #endif
 	
 	/* non-esp marker, nat keepalive payload (0xFF) */
-	char keepalive_v2[5] = { 0x00, 0x00, 0x00, 0x00, 0xFF };
-	char keepalive_v1[1] = { 0xFF };
-	char *keepalive;
+	uint8_t keepalive_v2[5] = { 0x00, 0x00, 0x00, 0x00, 0xFF };
+	uint8_t keepalive_v1[1] = { 0xFF };
+	uint8_t *keepalive;
 	size_t keepalive_size;
 	
 	if (s->ipsec.natt_active_mode == NATT_ACTIVE_DRAFT_OLD) {
@@ -804,6 +788,9 @@ static void vpnc_main_loop(struct sa_block *s)
 	
 	/* send keepalives if UDP encapsulation is enabled */
 	enable_keepalives = (s->ipsec.encap_mode != IPSEC_ENCAP_TUNNEL);
+	
+	/* regular wakeups if keepalives on ike or dpd active */
+	timed_mode = ((enable_keepalives && s->ike_fd != s->esp_fd) || s->ike.do_dpd);
 	
 	FD_ZERO(&rfds);
 	
@@ -827,34 +814,67 @@ static void vpnc_main_loop(struct sa_block *s)
 	}
 #endif
 	
-	if (enable_keepalives && s->ike_fd != s->esp_fd) {
-		/* send initial nat ike keepalive packet */
-		next_ike_keepalive = time(NULL) + 9;
-		keepalive_ike(s);
+	normal_timeout.tv_sec = 86400;
+	normal_timeout.tv_usec = 0;
+	
+	if (s->ike.do_dpd) {
+		/* send initial dpd request */
+		next_ike_dpd = time(NULL) + s->ike.dpd_idle;
+		dpd_ike(s);
+		normal_timeout.tv_sec = s->ike.dpd_idle;
+		normal_timeout.tv_usec = 0;
 	}
+	
+	if (enable_keepalives) {
+		normal_timeout.tv_sec = 9;
+		normal_timeout.tv_usec = 500000;
 
+		if (s->ike_fd != s->esp_fd) {
+			/* send initial nat ike keepalive packet */
+			next_ike_keepalive = time(NULL) + 9;
+			keepalive_ike(s);
+		}
+	}
+	
+	select_timeout = normal_timeout;
+	
 	while (!do_kill) {
 		int presult;
 		
 		do {
 			struct timeval *tvp = NULL;
 			FD_COPY(&rfds, &refds);
-			if (enable_keepalives)
+			if (s->ike.do_dpd || enable_keepalives)
 				tvp = &select_timeout;
 			presult = select(nfds, &refds, NULL, NULL, tvp);
-			if (presult == 0 && enable_keepalives) {
-				if (s->ike_fd != s->esp_fd) {
-					/* send nat ike keepalive packet */
-					next_ike_keepalive = time(NULL) + 9;
-					keepalive_ike(s);
-				}
-				/* send nat keepalive packet */
-				if (send(s->esp_fd, keepalive, keepalive_size, 0) == -1) {
-					syslog(LOG_ERR, "sendto: %m");
-				}
+			if (presult == 0 && (s->ike.do_dpd || enable_keepalives)) {
 				/* reset to max timeout */
-				select_timeout.tv_sec = 9;
-				select_timeout.tv_usec = 500000;
+				select_timeout = normal_timeout;
+				if (enable_keepalives) {
+					if (s->ike_fd != s->esp_fd) {
+						/* send nat ike keepalive packet */
+						next_ike_keepalive = time(NULL) + 9;
+						keepalive_ike(s);
+					}
+					/* send nat keepalive packet */
+					if (send(s->esp_fd, keepalive, keepalive_size, 0) == -1) {
+						syslog(LOG_ERR, "sendto: %m");
+					}
+				}
+				if (s->ike.do_dpd) {
+					time_t now = time(NULL);
+					if (s->ike.dpd_seqno != s->ike.dpd_seqno_ack) {
+						/* Wake up more often for dpd attempts */
+						select_timeout.tv_sec = 5;
+						select_timeout.tv_usec = 0;
+						dpd_ike(s);
+						next_ike_dpd = now + s->ike.dpd_idle;
+					}
+					else if (now >= next_ike_dpd) {
+						dpd_ike(s);
+						next_ike_dpd = now + s->ike.dpd_idle;
+					}
+				}
 			}
 			DEBUG(2,printf("lifetime status: %ld of %u seconds used, %u|%u of %u kbytes used\n",
 				time(NULL) - s->ipsec.life.start,
@@ -876,47 +896,64 @@ static void vpnc_main_loop(struct sa_block *s)
 		
 		if (FD_ISSET(s->esp_fd, &refds) ) {
 			process_socket(s);
-#if defined(__CYGWIN__)
-			pthread_mutex_unlock(&mutex);
-#endif
 		}
 		
 		if (s->ike_fd != s->esp_fd && FD_ISSET(s->ike_fd, &refds) ) {
 			DEBUG(3,printf("received something on ike fd..\n"));
-#if defined(__CYGWIN__)
-			pthread_mutex_lock(&mutex);
-#endif
-			len = recv(s->ike_fd, global_buffer, MAX_HEADER + MAX_PACKET, 0);
-			process_late_ike(s, global_buffer, len);
-#if defined(__CYGWIN__)
-			pthread_mutex_unlock(&mutex);
-#endif
+			len = recv(s->ike_fd, global_buffer_tx, MAX_HEADER + MAX_PACKET, 0);
+			process_late_ike(s, global_buffer_tx, len);
 		}
 
-		if (enable_keepalives && s->ike_fd != s->esp_fd) {
-			time_t cur_time = time(NULL);
-			if (cur_time >= next_ike_keepalive) {
-				/* send nat ike keepalive packet now */
-				next_ike_keepalive = cur_time + 9;
-				keepalive_ike(s);
-				/* reset to max timeout */
-				select_timeout.tv_sec = 9;
-				select_timeout.tv_usec = 500000;
+		if (timed_mode) {
+			time_t now = time(NULL);
+			time_t next_up = now + 86400;
+			if (enable_keepalives) {
+				/* never wait more than 9 seconds for a UDP keepalive */
+				next_up = now + 9;
+				if (s->ike_fd != s->esp_fd) {
+					if (now >= next_ike_keepalive) {
+						/* send nat ike keepalive packet now */
+						next_ike_keepalive = now + 9;
+						keepalive_ike(s);
+						select_timeout = normal_timeout;
+					}
+					if (next_ike_keepalive < next_up)
+						next_up = next_ike_keepalive;
+				}
 			}
-			else {
-				/* Reduce timeout so next ike keepalive goes on schedule */
-				select_timeout.tv_sec = next_ike_keepalive - cur_time;
-				select_timeout.tv_usec = 0;
+			if (s->ike.do_dpd) {
+				if (s->ike.dpd_seqno != s->ike.dpd_seqno_ack) {
+					dpd_ike(s);
+					next_ike_dpd = now + s->ike.dpd_idle;
+					if (now + 5 < next_up)
+						next_up = now + 5;
+				}
+				else if (now >= next_ike_dpd) {
+					dpd_ike(s);
+					next_ike_dpd = now + s->ike.dpd_idle;
+				}
+				if (next_ike_dpd < next_up)
+					next_up = next_ike_dpd;
 			}
+			/* Reduce timeout so next activity happens on schedule */
+			select_timeout.tv_sec = next_up - now;
+			select_timeout.tv_usec = 0;
 		}
 
 	}
 	
 	tun_close(s->tun_fd, s->tun_name);
-	if (do_kill == -1)
-		syslog(LOG_NOTICE, "connection terminated by peer");
-	else
-		syslog(LOG_NOTICE, "terminated by signal: %d", do_kill);
+	switch (do_kill) {
+		case -2:
+			syslog(LOG_NOTICE, "connection terminated by dead peer detection");
+			break;
+		case -1:
+			syslog(LOG_NOTICE, "connection terminated by peer");
+			break;
+		default:
+			syslog(LOG_NOTICE, "terminated by signal: %d", do_kill);
+			break;
+	}
 }
 
 static void killit(int signum)
@@ -1011,16 +1048,15 @@ void vpnc_doit(struct sa_block *s)
 			close(1); open("/dev/null", O_WRONLY, 0666);
 			close(2); open("/dev/null", O_WRONLY, 0666);
 			setsid();
-			openlog("vpnc", LOG_PID, LOG_DAEMON);
-			write_pidfile(pidfile);
 		} else {
 			printf("VPNC started in background (pid: %d)...\n", (int)pid);
 			exit(0);
 		}
 	} else {
 		printf("VPNC started in foreground...\n");
-		openlog("vpnc", LOG_PID, LOG_DAEMON);
 	}
+	openlog("vpnc", LOG_PID, LOG_DAEMON);
+	write_pidfile(pidfile);
 	
 	vpnc_main_loop(s);
 	

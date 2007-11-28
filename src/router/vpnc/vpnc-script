@@ -16,7 +16,32 @@
 #* CISCO_SPLIT_INC_%d_SPORT     -- source port (often just 0)
 #* CISCO_SPLIT_INC_%d_DPORT     -- destination port (often just 0)
 
+# FIXMEs:
+
+# Section A: route handling
+
+# 1) The 3 values CISCO_SPLIT_INC_%d_PROTOCOL/SPORT/DPORT are currently being ignored
+#   In order to use them, we'll probably need os specific solutions
+#   * Linux: iptables -t mangle -I PREROUTING <conditions> -j ROUTE --oif $TUNDEV
+#       This would be an *alternative* to changing the routes (and thus 2) and 3)
+#       shouldn't be relevant at all)
+# 2) There are two different functions to set routes: generic routes and the
+#   default route. Why isn't the defaultroute handled via the generic route case?
+# 3) In the split tunnel case, all routes but the default route might get replaced
+#   without getting restored later. We should explicitely check and save them just
+#   like the defaultroute
+# 4) Replies to a dhcp-server should never be sent into the tunnel
+
+# Section B: Split DNS handling
+
+# 1) Maybe dnsmasq can do something like that
+# 2) Parse dns packets going out via tunnel and redirect them to original dns-server
+
 #set -x
+
+# =========== script (variable) setup ====================================
+
+PATH=/sbin:/usr/sbin:$PATH
 
 OS="`uname -s`"
 
@@ -33,10 +58,12 @@ esac
 
 DEFAULT_ROUTE_FILE=/var/run/vpnc/defaultroute
 RESOLV_CONF_BACKUP=/var/run/vpnc/resolv.conf-backup
+FULL_SCRIPTNAME=/usr/local/sbin/vpnc
+SCRIPTNAME=`basename $FULL_SCRIPTNAME`
 
 # some systems, eg. Darwin & FreeBSD, prune /var/run on boot
 if ! [ -d "/var/run/vpnc" ]; then
-       mkdir -p /var/run/vpnc
+	mkdir -p /var/run/vpnc
 fi
 
 # stupid SunOS: no blubber in /usr/local/bin ... (on stdout)
@@ -54,60 +81,21 @@ else
 	route_syntax_netmask="-netmask"
 fi
 
-####
+if [ -x /sbin/resolvconf ]; then # Optional tool on Debian, Ubuntu, Gentoo
+	MODIFYRESOLVCONF=modify_resolvconf_manager
+	RESTORERESOLVCONF=restore_resolvconf_manager
+elif [ -x /sbin/modify_resolvconf ]; then # Mandatory tool on Suse
+	MODIFYRESOLVCONF=modify_resolvconf_suse
+	RESTORERESOLVCONF=restore_resolvconf_suse
+else # Generic for any OS
+	MODIFYRESOLVCONF=modify_resolvconf_generic
+	RESTORERESOLVCONF=restore_resolvconf_generic
+fi
 
-kernel_is_2_6_or_above() {
-	case `uname -r` in
-		1.*|2.[012345]*)
-			return 1
-			;;
-		*)
-			return 0
-			;;
-	esac
-}
-
-do_pre_init() {
-	if [ "$OS" = "Linux" ]; then
-		if (exec 6<> /dev/net/tun) > /dev/null 2>&1 ; then
-			:
-		else # can't open /dev/net/tun
-			test -e /proc/sys/kernel/modprobe && `cat /proc/sys/kernel/modprobe` tun 2>/dev/null
-			# fix for broken devfs in kernel 2.6.x
-			if [ "`readlink /dev/net/tun`" = misc/net/tun \
-				-a ! -e /dev/net/misc/net/tun -a -e /dev/misc/net/tun ] ; then
-				ln -sf /dev/misc/net/tun /dev/net/tun
-			fi
-			# make sure tun device exists
-			if [ ! -e /dev/net/tun ]; then
-				mkdir -p /dev/net
-				mknod -m 0640 /dev/net/tun c 10 200
-			fi
-			# workaround for a possible latency caused by udev, sleep max. 10s
-			if kernel_is_2_6_or_above ; then
-				for x in `seq 100` ; do
-					(exec 6<> /dev/net/tun) > /dev/null 2>&1 && break;
-					sleep 0.1
-				done
-			fi
-		fi
-	elif [ "$OS" = "FreeBSD" ]; then
-		if [ ! -e /dev/tun ]; then
-			kldload if_tun
-		fi
-	elif [ "$OS" = "NetBSD" ]; then
-		:
-	elif [ "$OS" = "OpenBSD" ]; then
-		:
-	elif [ "$OS" = "SunOS" ]; then
-		:
-	elif [ "$OS" = "Darwin" ]; then
-		:
-	fi
-}
+# =========== tunnel interface handling ====================================
 
 do_ifconfig() {
-	ifconfig $TUNDEV $INTERNAL_IP4_ADDRESS pointopoint $INTERNAL_IP4_ADDRESS mtu 1412 up
+	ifconfig "$TUNDEV" inet "$INTERNAL_IP4_ADDRESS" $ifconfig_syntax_ptp "$INTERNAL_IP4_ADDRESS" netmask 255.255.255.255 mtu 1412 up
 }
 
 destroy_tun_device() {
@@ -117,6 +105,8 @@ destroy_tun_device() {
 		;;
 	esac
 }
+
+# =========== route handling ====================================
 
 if [ -n "$IPROUTE" ]; then
 	fix_ip_get_output () {
@@ -135,8 +125,7 @@ if [ -n "$IPROUTE" ]; then
 	
 	set_default_route() {
 		$IPROUTE route | grep '^default' | fix_ip_get_output > "$DEFAULT_ROUTE_FILE"
-		$IPROUTE route $route_syntax_del default
-		$IPROUTE route add default dev "$TUNDEV"
+		$IPROUTE route replace default dev "$TUNDEV"
 		$IPROUTE route flush cache
 	}
 	
@@ -149,25 +138,26 @@ if [ -n "$IPROUTE" ]; then
 	}
 	
 	reset_default_route() {
-		$IPROUTE route $route_syntax_del default > /dev/null 2>&1
-		$IPROUTE route add `cat "$DEFAULT_ROUTE_FILE"`
-		$IPROUTE route flush cache
+		if [ -s "$DEFAULT_ROUTE_FILE" ]; then
+			$IPROUTE route replace `cat "$DEFAULT_ROUTE_FILE"`
+			$IPROUTE route flush cache
+			rm -f -- "$DEFAULT_ROUTE_FILE"
+		fi
 	}
 	
 	del_network_route() {
-		# linux deletes routes automatically if the device is shut down
-		return
-		#NETWORK="$1"
-		#NETMASK="$2"
-		#NETMASKLEN="$3"
-		#$IPROUTE route $route_syntax_del "$NETWORK/$NETMASKLEN" dev "$TUNDEV" 
-		#$IPROUTE route flush cache
+		NETWORK="$1"
+		NETMASK="$2"
+		NETMASKLEN="$3"
+		$IPROUTE route $route_syntax_del "$NETWORK/$NETMASKLEN" dev "$TUNDEV" 
+		$IPROUTE route flush cache
 	}
-else
+else # use route command
 	get_default_gw() {
 		# isn't -n supposed to give --numeric output?
 		# apperently not...
-		netstat -r -n | sed 's/default/0.0.0.0/' | grep '^0.0.0.0' | awk '{print $2}'
+		# Get rid of lines containing IPv6 addresses (':')
+		netstat -r -n | sed 's/default/0.0.0.0/' | sed 's/^.*:.*$//' | grep '^0.0.0.0' | awk '{print $2}'
 	}
 	
 	set_vpngateway_route() {
@@ -181,7 +171,7 @@ else
 	set_default_route() {
 		DEFAULTGW="`get_default_gw`"
 		echo "$DEFAULTGW" > "$DEFAULT_ROUTE_FILE"
-		route $route_syntax_del default "$DEFAULTGW"
+		route $route_syntax_del default
 		route add default $route_syntax_gw "$INTERNAL_IP4_ADDRESS"
 	}
 	
@@ -189,12 +179,16 @@ else
 		NETWORK="$1"
 		NETMASK="$2"
 		NETMASKLEN="$3"
+		del_network_route "$NETWORK" "$NETMASK" "$NETMASKLEN"
 		route add -net "$NETWORK" $route_syntax_netmask "$NETMASK" $route_syntax_gw "$INTERNAL_IP4_ADDRESS"
 	}
 	
 	reset_default_route() {
-		route $route_syntax_del default
-		route add default $route_syntax_gw `cat "$DEFAULT_ROUTE_FILE"`
+		if [ -s "$DEFAULT_ROUTE_FILE" ]; then
+			route $route_syntax_del default
+			route add default $route_syntax_gw `cat "$DEFAULT_ROUTE_FILE"`
+			rm -f -- "$DEFAULT_ROUTE_FILE"
+		fi
 	}
 	
 	del_network_route() {
@@ -211,15 +205,21 @@ else
 	}
 fi
 
-write_resolvconf() {
+# =========== resolv.conf handling ====================================
+
+# =========== resolv.conf handling for any OS =========================
+
+modify_resolvconf_generic() {
 	grep '^#@VPNC_GENERATED@' /etc/resolv.conf > /dev/null 2>&1 || cp -- /etc/resolv.conf "$RESOLV_CONF_BACKUP"
 	NEW_RESOLVCONF="#@VPNC_GENERATED@ -- this file is generated by vpnc
 # and will be overwritten by vpnc
 # as long as the above mark is intact"
 
+	# Remember the original value of CISCO_DEF_DOMAIN we need it later
+	CISCO_DEF_DOMAIN_ORIG="$CISCO_DEF_DOMAIN"
 	# Don't step on INTERNAL_IP4_DNS value, use a temporary variable
 	INTERNAL_IP4_DNS_TEMP="$INTERNAL_IP4_DNS"
-	exec 6< /etc/resolv.conf
+	exec 6< "$RESOLV_CONF_BACKUP"
 	while read LINE <&6 ; do
 		case "$LINE" in
 			nameserver*)
@@ -261,51 +261,53 @@ search $CISCO_DEF_DOMAIN"
 				;;
 			# 10.4 and later require use of scutil for DNS to work properly
 			*)
-				scutil >/dev/null 2>&1 <<-EOF
-					open
-					d.init
-					d.add ServerAddresses * $INTERNAL_IP4_DNS
-					set State:/Network/Service/$TUNDEV/DNS
-					get State:/Network/Global/IPv4
-					d.remove PrimaryService
-					d.remove PrimaryInterface
-					d.add Addresses * $INTERNAL_IP4_ADDRESS
-					d.add SubnetMasks * 255.255.255.255
-					d.add InterfaceName $TUNDEV
-					set State:/Network/Service/$TUNDEV/IPv4
-					close
-				EOF
-				if [ -n "$CISCO_DEF_DOMAIN" ]; then
-					scutil >/dev/null 2>&1 <<-EOF
-						open
-						get State:/Network/Service/$TUNDEV/DNS
-						d.add DomainName $CISCO_DEF_DOMAIN
-						d.add SearchDomains * $CISCO_DEF_DOMAIN
-						d.add SupplementalMatchDomains * $CISCO_DEF_DOMAIN
-						set State:/Network/Service/$TUNDEV/DNS
-						close
-					EOF
+				OVERRIDE_PRIMARY=""
+				if [ -n "$CISCO_SPLIT_INC" ]; then
+					if [ $CISCO_SPLIT_INC -lt 1 ]; then
+						# Must override for correct default route
+						# Cannot use multiple DNS matching in this case
+						OVERRIDE_PRIMARY='d.add OverridePrimary # 1'
+					fi
 				fi
 				# Uncomment the following if/fi pair to use multiple
 				# DNS matching when available.  When multiple DNS matching
 				# is present, anything reading the /etc/resolv.conf file
 				# directly will probably not work as intended.
-				#if [ -z "$CISCO_DEF_DOMAIN" ]; then
+				#if [ -z "$CISCO_DEF_DOMAIN_ORIG" ]; then
 					# Cannot use multiple DNS matching without a domain
+					OVERRIDE_PRIMARY='d.add OverridePrimary # 1'
+				#fi
+				scutil >/dev/null 2>&1 <<-EOF
+					open
+					d.init
+					d.add ServerAddresses * $INTERNAL_IP4_DNS
+					set State:/Network/Service/$TUNDEV/DNS
+					d.init
+					d.add Router $INTERNAL_IP4_ADDRESS
+					d.add Addresses * $INTERNAL_IP4_ADDRESS
+					d.add SubnetMasks * 255.255.255.255
+					d.add InterfaceName $TUNDEV
+					$OVERRIDE_PRIMARY
+					set State:/Network/Service/$TUNDEV/IPv4
+					close
+				EOF
+				if [ -n "$CISCO_DEF_DOMAIN_ORIG" ]; then
 					scutil >/dev/null 2>&1 <<-EOF
 						open
-						get State:/Network/Service/$TUNDEV/IPv4
-						d.add OverridePrimary # 1
-						set State:/Network/Service/$TUNDEV/IPv4
+						get State:/Network/Service/$TUNDEV/DNS
+						d.add DomainName $CISCO_DEF_DOMAIN_ORIG
+						d.add SearchDomains * $CISCO_DEF_DOMAIN_ORIG
+						d.add SupplementalMatchDomains * $CISCO_DEF_DOMAIN_ORIG
+						set State:/Network/Service/$TUNDEV/DNS
 						close
 					EOF
-				#fi
+				fi
 				;;
 		esac
 	fi
 }
 
-reset_resolvconf() {
+restore_resolvconf_generic() {
 	if [ ! -e "$RESOLV_CONF_BACKUP" ]; then
 		return
 	fi
@@ -329,6 +331,99 @@ reset_resolvconf() {
 		esac
 	fi
 }
+# === resolv.conf handling via /sbin/modify_resolvconf (Suse) =====================
+
+# Suse provides a script that modifies resolv.conf. Use it because it will
+# restart/reload all other services that care about it (e.g. lwresd).
+
+modify_resolvconf_suse()
+{
+	RESOLV_OPTS=''
+	test -n "$INTERNAL_IP4_DNS" && RESOLV_OPTS="-n \"$INTERNAL_IP4_DNS\""
+	test -n "$CISCO_DEF_DOMAIN" && RESOLV_OPTS="$RESOLV_OPTS -d $CISCO_DEF_DOMAIN"
+	test -n "$RESOLV_OPTS" && eval /sbin/modify_resolvconf modify -s $SCRIPTNAME -p $SCRIPTNAME -f $FULL_SCRIPTNAME -e $TUNDEV $RESOLV_OPTS -t \"This file was created by $SCRIPTNAME\"
+}
+
+# Restore resolv.conf to old contents on Suse
+restore_resolvconf_suse()
+{
+	/sbin/modify_resolvconf restore -s vpnc -p $SCRIPTNAME -f $FULL_SCRIPTNAME -e $TUNDEV
+}
+
+# === resolv.conf handling via /sbin/resolvconf (Debian, Ubuntu, Gentoo)) =========
+
+modify_resolvconf_manager() {
+	NEW_RESOLVCONF=""
+	for i in $INTERNAL_IP4_DNS; do
+		NEW_RESOLVCONF="$NEW_RESOLVCONF
+nameserver $i"
+	done
+	if [ -n "$CISCO_DEF_DOMAIN" ]; then
+		NEW_RESOLVCONF="$NEW_RESOLVCONF
+domain $CISCO_DEF_DOMAIN"
+	fi
+	echo "$NEW_RESOLVCONF" | /sbin/resolvconf -a $TUNDEV
+}
+
+restore_resolvconf_manager() {
+	/sbin/resolvconf -d $TUNDEV
+}
+
+# ========= Toplevel state handling  =======================================
+
+kernel_is_2_6_or_above() {
+	case `uname -r` in
+		1.*|2.[012345]*)
+			return 1
+			;;
+		*)
+			return 0
+			;;
+	esac
+}
+
+do_pre_init() {
+	if [ "$OS" = "Linux" ]; then
+		if (exec 6<> /dev/net/tun) > /dev/null 2>&1 ; then
+			:
+		else # can't open /dev/net/tun
+			test -e /proc/sys/kernel/modprobe && `cat /proc/sys/kernel/modprobe` tun 2>/dev/null
+			# fix for broken devfs in kernel 2.6.x
+			if [ "`readlink /dev/net/tun`" = misc/net/tun \
+				-a ! -e /dev/net/misc/net/tun -a -e /dev/misc/net/tun ] ; then
+				ln -sf /dev/misc/net/tun /dev/net/tun
+			fi
+			# make sure tun device exists
+			if [ ! -e /dev/net/tun ]; then
+				mkdir -p /dev/net
+				mknod -m 0640 /dev/net/tun c 10 200
+			fi
+			# workaround for a possible latency caused by udev, sleep max. 10s
+			if kernel_is_2_6_or_above ; then
+				for x in `seq 100` ; do
+					(exec 6<> /dev/net/tun) > /dev/null 2>&1 && break;
+					sleep 0.1
+				done
+			fi
+		fi
+	elif [ "$OS" = "FreeBSD" ]; then
+		if [ ! -e /dev/tun ]; then
+			kldload if_tun
+		fi
+	elif [ "$OS" = "GNU/kFreeBSD" ]; then
+		if [ ! -e /dev/tun ]; then
+			kldload if_tun
+		fi
+	elif [ "$OS" = "NetBSD" ]; then
+		:
+	elif [ "$OS" = "OpenBSD" ]; then
+		:
+	elif [ "$OS" = "SunOS" ]; then
+		:
+	elif [ "$OS" = "Darwin" ]; then
+		:
+	fi
+}
 
 do_connect() {
 	if [ -n "$CISCO_BANNER" ]; then
@@ -345,7 +440,11 @@ do_connect() {
 			eval NETWORK="\${CISCO_SPLIT_INC_${i}_ADDR}"
 			eval NETMASK="\${CISCO_SPLIT_INC_${i}_MASK}"
 			eval NETMASKLEN="\${CISCO_SPLIT_INC_${i}_MASKLEN}"
-			set_network_route "$NETWORK" "$NETMASK" "$NETMASKLEN"
+			if [ $NETWORK != "0.0.0.0" ]; then
+				set_network_route "$NETWORK" "$NETMASK" "$NETMASKLEN"
+			else
+				set_default_route
+			fi
 			i=`expr $i + 1`
 		done
 		for i in $INTERNAL_IP4_DNS ; do
@@ -356,7 +455,7 @@ do_connect() {
 	fi
 	
 	if [ -n "$INTERNAL_IP4_DNS" ]; then
-		write_resolvconf
+		$MODIFYRESOLVCONF
 	fi
 }
 
@@ -368,27 +467,30 @@ do_disconnect() {
 			eval NETWORK="\${CISCO_SPLIT_INC_${i}_ADDR}"
 			eval NETMASK="\${CISCO_SPLIT_INC_${i}_MASK}"
 			eval NETMASKLEN="\${CISCO_SPLIT_INC_${i}_MASKLEN}"
-			del_network_route "$NETWORK" "$NETMASK" "$NETMASKLEN"
+			if [ $NETWORK != "0.0.0.0" ]; then
+				# FIXME: This doesn't restore previously overwritten
+				#        routes.
+				del_network_route "$NETWORK" "$NETMASK" "$NETMASKLEN"
+			else
+				reset_default_route
+			fi
 			i=`expr $i + 1`
 		done
 		for i in $INTERNAL_IP4_DNS ; do
 			del_network_route "$i" "255.255.255.255" "32"
 		done
 	else
-		if [ -s "$DEFAULT_ROUTE_FILE" ]; then
-			reset_default_route
-			rm -f -- "$DEFAULT_ROUTE_FILE"
-		fi
+		reset_default_route
 	fi
 	
 	del_vpngateway_route
 	
 	if [ -n "$INTERNAL_IP4_DNS" ]; then
-		reset_resolvconf
+		$RESTORERESOLVCONF
 	fi
 }
 
-####
+#### Main
 
 if [ -z "$reason" ]; then
 	echo "this script must be called from vpnc" 1>&2

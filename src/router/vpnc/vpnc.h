@@ -15,7 +15,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-   $Id: vpnc.h 139 2007-02-18 01:59:36Z Maurice Massar $
+   $Id: vpnc.h 245 2007-09-09 13:56:41Z Joerg Mayer $
 */
 
 #ifndef __VPNC_H__
@@ -25,5 +25,7 @@
 
 void process_late_ike(struct sa_block *s, uint8_t *r_packet, ssize_t r_length);
 void keepalive_ike(struct sa_block *s);
+void dpd_ike(struct sa_block *s);
+void print_vid(const unsigned char *vid, uint16_t len);
 
 #endif

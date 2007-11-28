@@ -88,8 +88,8 @@ Information is passed from vpnc via enviroment variables:
 #* CISCO_SPLIT_INC_%d_SPORT     -- source port (often just 0)
 #* CISCO_SPLIT_INC_%d_DPORT     -- destination port (often just 0)
 
-Currently vpnc-script is not directyl configurable from configfiles.
-However, an workaround is to use a "wrapper-script" like this, to
+Currently vpnc-script is not directly configurable from configfiles.
+However, a workaround is to use a "wrapper-script" like this, to
 disable /etc/resolv.conf rewriting and setup a custom split-routing:
 
 ------------------------------
@@ -117,3 +117,31 @@ CISCO_SPLIT_INC_0_DPORT=0
 Store this example script, for example in /etc/vpnc/custom-script,
 do a "chmod +x /etc/vpnc/custom-script" and add
 "Script /etc/vpnc/custom-script" to your configuration.
+
+===================================================================
+
+To use the hybrid extension add
+	Use Hybrid Auth
+to your .conf file or add
+	--hybrid
+when starting vpnc.
+
+The trusted root certificate may be passed by adding
+	CA-File <root_certificate.pem>
+to your .conf file or adding
+	--ca-file <root_certificate.pem>
+when starting vpnc.
+
+The trusted root certificate may be contained in a directory by adding
+	CA-Dir <trusted_certificate_directory>
+to your .conf file or adding
+	--ca-dir <trusted_certificate_directory>
+when starting vpnc.
+The default is 
+	/etc/ssl
+
+As the trusted certificate is referenced by the hash of the subject name, 
+the directory has to contain the certificate named like this hash_value. 
+A link can also be used like in /etc/ssl/Certs.
+The hash value can be calculated by e.g.
+	openssl x509 -in <ca_certfile.pem> -noout -hash
