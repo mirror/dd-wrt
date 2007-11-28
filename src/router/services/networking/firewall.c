@@ -2707,13 +2707,19 @@ stop_firewall (void)
   eval("rmmod","ipt_webstr");
   eval("rmmod","ipt_layer7");
   eval("rmmod","ipt_ipp2p");
+  if (nvram_invmatch ("apd_enable", "0"))
+  {
   eval("rmmod","ipt_mark");
   eval("rmmod","xt_mark");
+  }
   eval("rmmod","ipt_TRIGGER");
   eval("rmmod","ipt_CONNMARK");
   eval("rmmod","xt_CONNMARK");
+  if (nvram_invmatch ("apd_enable", "0"))
+  {
   eval("rmmod","ipt_mac");
   eval("rmmod","xt_mac");
+  }
   eval("rmmod","ipt_IMQ");
   cprintf ("done\n");
   return 0;
