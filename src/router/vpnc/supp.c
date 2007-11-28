@@ -55,6 +55,14 @@ const supported_algo_t supp_crypt[] = {
 const supported_algo_t supp_auth[] = {
 	{"psk", 0, IKE_AUTH_PRESHARED, 0, 0},
 	{"psk+xauth", 0, IKE_AUTH_XAUTHInitPreShared, 0, 0},
+#ifdef OPENSSL_GPL_VIOLATION
+#if 0
+	{"cert(dsa)", 0, IKE_AUTH_RSA_SIG, 0, 0},
+	{"cert(rsasig)", 0, IKE_AUTH_DSS, 0, 0},
+	{"hybrid(dsa)", 0, IKE_AUTH_DSS, 0, 0},
+#endif /* 0 */
+	{"hybrid(rsa)", 0, IKE_AUTH_HybridInitRSA, 0, 0},
+#endif /* OPENSSL_GPL_VIOLATION */
 	{NULL, 0, 0, 0, 0}
 };
 
