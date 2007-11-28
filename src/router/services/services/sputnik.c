@@ -32,11 +32,13 @@ int
 start_sputnik (void)
 {
   int ret;
-  eval("insmod","ipt_mark");
-  eval("insmod","ipt_mac");
   // Only start if enabled
   if (!nvram_invmatch ("apd_enable", "0"))
     return 0;
+  eval("insmod","ipt_mark");
+  eval("insmod","ipt_mac");
+  eval("insmod","xt_mark");
+  eval("insmod","xt_mac");
 
   ret = eval ("sputnik");
   syslog (LOG_INFO, "sputnik : sputnik daemon successfully started\n");
