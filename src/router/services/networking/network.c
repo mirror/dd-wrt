@@ -507,14 +507,14 @@ wlconf_up (char *name)
   WL_IOCTL (name, WLC_CURRENT_PWR, &val, sizeof (val));
 #else
 //convert mw to qdbm and set override flag
-  float value = 10 * log (val) / M_LN10;
+/*  float value = 10 * log (val) / M_LN10;
   value *= 4;
   value += 0.5;
   val = (int) value;
   val |= WL_TXPWR_OVERRIDE;
   wl_iovar_setint (name, "qtxpower", val);
-
-//eval("wl","txpwr1","-m","-o",nvram_safe_get("txpwr"));
+*/
+eval("wl","txpwr1","-m","-o",nvram_safe_get("txpwr"));
 #endif
   /* Set txant */
   val = atoi (nvram_safe_get ("txant"));
