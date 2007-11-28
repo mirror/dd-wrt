@@ -314,9 +314,9 @@ static int open_tun_device (char *guid, char *dev, enum if_mode_enum mode)
 		return -1;
 	}
 	
-	//
-	// Return fd
-	//
+	/*
+	 * Return fd
+	 */
 	return cygwin_attach_handle_to_fd(NULL, -1, handle, 1, GENERIC_READ | GENERIC_WRITE);
 }
 
