@@ -15,7 +15,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-   $Id: config.c 133 2007-02-16 17:22:06Z Maurice Massar $
+   $Id: config.c 242 2007-09-09 07:55:21Z Joerg Mayer $
 */
 
 #define _GNU_SOURCE
@@ -39,7 +39,7 @@ const char *config[LAST_CONFIG];
 
 int opt_debug = 0;
 int opt_nd;
-int opt_1des, opt_no_encryption;
+int opt_1des, opt_no_encryption, opt_auth_mode;
 enum natt_mode_enum opt_natt_mode;
 enum vendor_enum opt_vendor;
 enum if_mode_enum opt_if_mode;
@@ -54,6 +54,7 @@ void hex_dump(const char *str, const void *data, ssize_t len, const struct debug
 	if (opt_debug < 3)
 		return;
 
+	printf("   ");
 	switch (len) {
 	case DUMP_UINT8:
 		decodedval = val_to_string(*(uint8_t *)p, decode);
@@ -69,10 +70,10 @@ void hex_dump(const char *str, const void *data, ssize_t len, const struct debug
 		return;
 	}
 
-	printf("%s:%c", str, (len <= 32) ? ' ' : '\n');
+	printf("%s:%s", str, (len <= 16) ? " " : "\n   ");
 	for (i = 0; i < (size_t)len; i++) {
 		if (i && !(i % 32))
-			printf("\n");
+			printf("\n   ");
 		else if (i && !(i % 4))
 			printf(" ");
 		printf("%02x", p[i]);
@@ -204,11 +205,6 @@ static void config_deobfuscate(int obfuscated, int clear)
 	return;
 }
 
-static const char *config_def_description(void)
-{
-	return "default value for this option";
-}
-
 static const char *config_def_ike_dh(void)
 {
 	return "dh2";
@@ -217,6 +213,11 @@ static const char *config_def_ike_dh(void)
 static const char *config_def_pfs(void)
 {
 	return "server";
+}
+
+static const char *config_def_local_addr(void)
+{
+	return "0.0.0.0";
 }
 
 static const char *config_def_local_port(void)
@@ -237,6 +238,21 @@ static const char *config_def_natt_mode(void)
 static const char *config_def_udp_port(void)
 {
 	return "10000";
+}
+
+static const char *config_def_dpd_idle(void)
+{
+	return "300";
+}
+
+static const char *config_ca_dir(void)
+{
+	return "/etc/ssl/certs";
+}
+
+static const char *config_def_auth_mode(void)
+{
+	return "psk";
 }
 
 static const char *config_def_app_version(void)
@@ -267,7 +283,7 @@ static const char *config_def_vendor(void)
 static const struct config_names_s {
 	enum config_enum nm;
 	const int needsArgument;
-	const int lvl;
+	const int long_only;
 	const char *option;
 	const char *name;
 	const char *type;
@@ -279,13 +295,6 @@ static const struct config_names_s {
 	 * fix the parser to care about ' ' or '\t' after the wanted
 	 * option... */
 	{
-		CONFIG_NONE, 0, 0,
-		"commandline option,",
-		"configfile variable, ",
-		"argument type",
-		"description",
-		config_def_description
-	}, {
 		CONFIG_IPSEC_GATEWAY, 1, 0,
 		"--gateway",
 		"IPSec gateway ",
@@ -346,7 +355,7 @@ static const struct config_names_s {
 		"--xauth-inter",
 		"Xauth interactive",
 		NULL,
-		"enable interactive extended authentication (for challange response auth)",
+		"enable interactive extended authentication (for challenge response auth)",
 		NULL
 	}, {
 		CONFIG_VENDOR, 1, 1,
@@ -377,8 +386,8 @@ static const struct config_names_s {
 		"command is executed using system() to configure the interface,\n"
 		"routing and so on. Device name, IP, etc. are passed using enviroment\n"
 		"variables, see README. This script is executed right after ISAKMP is\n"
-		"done, but befor tunneling is enabled. It is called when vpnc\n"
-		"terminates too\n",
+		"done, but before tunneling is enabled. It is called when vpnc\n"
+		"terminates, too\n",
 		config_def_script
 	}, {
 		CONFIG_IKE_DH, 1, 1,
@@ -413,7 +422,7 @@ static const struct config_names_s {
 		"--application-version",
 		"Application version ",
 		"<ASCII string>",
-		"Application Version to report",
+		"Application Version to report. Note: Default string is generated at runtime.",
 		config_def_app_version
 	}, {
 		CONFIG_IF_NAME, 1, 1,
@@ -436,7 +445,12 @@ static const struct config_names_s {
 		"--debug",
 		"Debug ",
 		"<0/1/2/3/99>",
-		"Show verbose debug messages",
+		"Show verbose debug messages\n"
+		" *  0: Do not print debug information.\n"
+		" *  1: Print minimal debug information.\n"
+		" *  2: Show statemachine and packet/payload type information.\n"
+		" *  3: Dump everything exluding authentication data.\n"
+		" * 99: Dump everything including authentication data (e.g. passwords).\n",
 		NULL
 	}, {
 		CONFIG_ND, 0, 1,
@@ -453,6 +467,13 @@ static const struct config_names_s {
 		"store the pid of background process in <filename>",
 		config_def_pid_file
 	}, {
+		CONFIG_LOCAL_ADDR, 1, 1,
+		"--local-addr",
+		"Local Addr ",
+		"<ip/hostname>",
+		"local IP to use for ISAKMP / ESP / ... (0.0.0.0 == automatically assign)",
+		config_def_local_addr
+	}, {
 		CONFIG_LOCAL_PORT, 1, 1,
 		"--local-port",
 		"Local Port ",
@@ -464,11 +485,19 @@ static const struct config_names_s {
 		"--udp-port",
 		"Cisco UDP Encapsulation Port ",
 		"<0-65535>",
-		"local UDP port number to use (0 == use random port)\n"
+		"Local UDP port number to use (0 == use random port).\n"
 		"This is only relevant if cisco-udp nat-traversal is used.\n"
 		"This is the _local_ port, the remote udp port is discovered automatically.\n"
-		"It is especially not the cisco-tcp port\n",
+		"It is especially not the cisco-tcp port.\n",
 		config_def_udp_port
+	}, {
+		CONFIG_DPD_IDLE, 1, 1,
+		"--dpd-idle",
+		"DPD idle timeout (our side) ",
+		"<0,10-86400>",
+		"Send DPD packet after not receiving anything for <idle> seconds.\n"
+		"Use 0 to disable DPD completely (both ways).\n",
+		config_def_dpd_idle
 	}, {
 		CONFIG_NON_INTERACTIVE, 0, 1,
 		"--non-inter",
@@ -476,6 +505,30 @@ static const struct config_names_s {
 		NULL,
 		"Don't ask anything, exit on missing options",
 		NULL
+	}, {
+ 		CONFIG_AUTH_MODE, 1, 1,
+		"--auth-mode",
+		"IKE Authmode ",
+		"<psk/cert/hybrid>",
+		"Authentication mode:\n"
+		" * psk:    pre-shared key (default)\n"
+		" * cert:   server + client certificate (not implemented yet)\n"
+		" * hybrid: server certificate + xauth (if built with openssl support)\n",
+		config_def_auth_mode
+	}, {
+		CONFIG_CA_FILE, 1, 1,
+		"--ca-file",
+		"CA-File ",
+		"<filename>",
+		"filename and path to the CA-PEM-File",
+		NULL
+	}, {
+		CONFIG_CA_DIR, 1, 1,
+		"--ca-dir",
+		"CA-Dir ",
+		"<directory>",
+		"path of the trusted CA-Directory",
+		config_ca_dir
 	}, {
 		0, 0, 0, NULL, NULL, NULL, NULL, NULL
 	}
@@ -530,11 +583,9 @@ static void read_config_file(const char *name, const char **configs, int missing
 			line[--llen] = 0;
 		linenum++;
 		for (i = 0; config_names[i].name != NULL; i++) {
-			if (config_names[i].nm == CONFIG_NONE)
-				continue;
 			if (strncasecmp(config_names[i].name, line,
 					strlen(config_names[i].name)) == 0) {
-				/* boolean implementation, using harmles pointer targets as true */
+				/* boolean implementation, using harmless pointer targets as true */
 				if (!config_names[i].needsArgument) {
 					configs[config_names[i].nm] = config_names[i].name;
 					break;
@@ -568,34 +619,34 @@ static void print_desc(const char *pre, const char *text)
 		printf("%s%s\n", pre, p);
 }
 
-static void print_usage(char *argv0, int long_help)
+static void print_usage(char *argv0, int print_level)
 {
 	int c;
 
 	printf("Usage: %s [--version] [--print-config] [--help] [--long-help] [options] [config files]\n\n",
 		argv0);
-	printf("Legend:\n");
+	printf("Options:\n");
 	for (c = 0; config_names[c].name != NULL; c++) {
-		if (config_names[c].lvl > long_help)
+		if (config_names[c].long_only > print_level)
 			continue;
 
-		printf("  %s %s\n"
-			"  %s%s\n",
-			(config_names[c].option == NULL ? "(configfile only option)" :
-				config_names[c].option),
+		printf("  %s %s\n", (config_names[c].option == NULL ?
+				"(configfile only option)" : config_names[c].option),
 			((config_names[c].type == NULL || config_names[c].option == NULL) ?
-				"" : config_names[c].type),
-			config_names[c].name,
-			(config_names[c].type == NULL ? "" : config_names[c].type));
+				"" : config_names[c].type));
+
 		print_desc("      ", config_names[c].desc);
 
 		if (config_names[c].get_def != NULL)
 			printf("    Default: %s\n", config_names[c].get_def());
 
+		printf("  conf-variable: %s%s\n", config_names[c].name,
+			(config_names[c].type == NULL ? "" : config_names[c].type));
+
 		printf("\n");
 	}
 	
-	if (!long_help)
+	if (!print_level)
 		printf("Use --long-help to see all options\n\n");
 	
 	printf("Report bugs to vpnc@unix-ag.uni-kl.de\n");
@@ -611,6 +662,12 @@ static void print_version(void)
 		"You may redistribute copies of vpnc under the terms of the GNU General\n"
 		"Public License.  For more information about these matters, see the files\n"
 		"named COPYING.\n");
+#ifdef OPENSSL_GPL_VIOLATION
+	printf("Built with openssl (certificate) support. Be aware of the\n"
+		"license implications.\n");
+#else /* OPENSSL_GPL_VIOLATION */
+	printf("Built without openssl (certificate) support.\n");
+#endif /* OPENSSL_GPL_VIOLATION */
 	printf("\n");
 
 	printf("Supported DH-Groups:");
@@ -652,7 +709,6 @@ void do_config(int argc, char **argv)
 
 		for (c = 0; config_names[c].name != NULL && !known; c++) {
 			if (config_names[c].option == NULL
-				|| config_names[c].nm == CONFIG_NONE
 				|| strncmp(argv[i], config_names[c].option,
 					strlen(config_names[c].option)) != 0)
 				continue;
@@ -707,13 +763,31 @@ void do_config(int argc, char **argv)
 	
 	if (!print_config) {
 		for (i = 0; config_names[i].name != NULL; i++)
-			if (!config[config_names[i].nm] && i != CONFIG_NONE
+			if (!config[config_names[i].nm]
 				&& config_names[i].get_def != NULL)
 				config[config_names[i].nm] = config_names[i].get_def();
 		
 		opt_debug = (config[CONFIG_DEBUG]) ? atoi(config[CONFIG_DEBUG]) : 0;
 		opt_nd = (config[CONFIG_ND]) ? 1 : 0;
 		opt_1des = (config[CONFIG_ENABLE_1DES]) ? 1 : 0;
+
+		if (!strcmp(config[CONFIG_AUTH_MODE], "psk")) {
+			opt_auth_mode = AUTH_MODE_PSK;
+		} else if (!strcmp(config[CONFIG_AUTH_MODE], "cert")) {
+			opt_auth_mode = AUTH_MODE_CERT;
+		} else if (!strcmp(config[CONFIG_AUTH_MODE], "hybrid")) {
+			opt_auth_mode = AUTH_MODE_HYBRID;
+		} else {
+			printf("%s: unknown authentication mode %s\nknown modes: psk cert hybrid\n", argv[0], config[CONFIG_AUTH_MODE]);
+			exit(1);
+		}
+#ifndef OPENSSL_GPL_VIOLATION
+		if (opt_auth_mode == AUTH_MODE_HYBRID ||
+			opt_auth_mode == AUTH_MODE_CERT) {
+			printf("%s was built without openssl: Can't do hybrid or cert mode.\n", argv[0]);
+			exit(1);
+		}
+#endif
 		opt_no_encryption = (config[CONFIG_ENABLE_NO_ENCRYPTION]) ? 1 : 0;
 		opt_udpencapport=atoi(config[CONFIG_UDP_ENCAP_PORT]);
 		

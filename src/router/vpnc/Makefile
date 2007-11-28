@@ -1,7 +1,7 @@
 # Makefile for an IPSec VPN client compatible with Cisco equipment.
 # Copyright (C) 2002  Geoffrey Keating
 # Copyright (C) 2003-2004  Maurice Massar
-# Copyright (C) 2006 Dan Villiom Podlaski Christiansen
+# Copyright (C) 2006-2007 Dan Villiom Podlaski Christiansen
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
-# $Id: Makefile 148 2007-02-19 20:51:14Z Maurice Massar $
+# $Id: Makefile 236 2007-09-05 20:40:59Z Joerg Mayer $
 
 DESTDIR=$(INSTALLDIR)
 PREFIX=/usr
@@ -34,7 +34,21 @@ BINSRCS = $(addsuffix .c,$(BINS))
 VERSION := $(shell sh mk-version)
 RELEASE_VERSION := $(shell cat VERSION)
 
-#CC=gcc
+# The license of vpnc (Gpl >= 2) is quite likely incompatible with the
+# openssl license. Openssl is currently used to provide certificate
+# support for vpnc (hybrid only).
+# While it is OK for users to build their own binaries linking in openssl
+# with vpnc and even providing dynamically linked binaries it is probably
+# not OK to provide the binaries inside a distribution.
+# See http://www.gnome.org/~markmc/openssl-and-the-gpl.html for further
+# details.
+# Some distributions like Suse and Fedora seem to think otherwise.
+
+# Comment this in to obtain a binary with certificate support which is
+# GPL incompliant though.
+#OPENSSL_GPL_VIOLATION = -DOPENSSL_GPL_VIOLATION
+#OPENSSLLIBS = -lcrypto
+
 CFLAGS += -W -Wall $(COPTS) -Wmissing-declarations -Wwrite-strings -I$(INSTALLDIR)/vpnc/usr/include
 CPPFLAGS = -DVERSION=\"$(VERSION)\"
 LDFLAGS = -L$(INSTALLDIR)/vpnc/usr/lib  
@@ -43,7 +57,10 @@ CFLAGS +=  -L$(INSTALLDIR)/vpnc/usr/lib
 ifeq ($(shell uname -s), SunOS)
 LDFLAGS += -lnsl -lresolv -lsocket
 endif
-
+ifneq (,$(findstring Apple,$(shell $(CC) --version)))
+# enabled in FSF GCC, disabled by default in Apple GCC
+CFLAGS += -fstrict-aliasing -freorder-blocks -fsched-interblock
+endif
 
 all : gnupg $(BINS)
 
@@ -54,8 +71,12 @@ gnupg :
 	cd libgcrypt && ./configure --host=$(ARCH)-linux --prefix=/usr --with-gpg-error-prefix=$(INSTALLDIR)/vpnc/usr
 	make -C libgcrypt install DESTDIR=$(INSTALLDIR)/vpnc
 
+
 vpnc : $(OBJS) vpnc.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(INSTALLDIR)/vpnc/usr/lib/libgcrypt.a  $(INSTALLDIR)/vpnc/usr/lib/libgpg-error.a
+
+vpnc.8 : vpnc.8.template makeman.pl vpnc
+	./makeman.pl
 
 cisco-decrypt : cisco-decrypt.o config.o supp.o sysdep.o vpnc-debug.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(INSTALLDIR)/vpnc/usr/lib/libgcrypt.a  $(INSTALLDIR)/vpnc/usr/lib/libgpg-error.a
@@ -83,35 +104,39 @@ vpnc-%.tar.gz :
 	tar zcf ../$@ vpnc-$*
 	rm -rf vpnc-$*
 
-dist : VERSION vpnc-$(RELEASE_VERSION).tar.gz
+dist : VERSION vpnc.8 vpnc-$(RELEASE_VERSION).tar.gz
 
 clean :
 	-rm -f $(OBJS) $(BINOBJS) $(BINS) tags
 
 distclean : clean
-	-rm -f vpnc-debug.c vpnc-debug.h vpnc.ps .depend
+	-rm -f vpnc-debug.c vpnc-debug.h vpnc.ps vpnc.8 .depend
 
-install :
-	rm -rf $(DESTDIR)
-	install -d $(DESTDIR)$(ETCDIR) $(DESTDIR)$(BINDIR) $(DESTDIR)$(SBINDIR)
-	install vpnc-script $(DESTDIR)$(ETCDIR)
-	install -m 600 vpnc.conf $(DESTDIR)$(ETCDIR)/default.conf
-	install vpnc vpnc-disconnect $(DESTDIR)$(SBINDIR)
-	install pcf2vpnc $(DESTDIR)$(BINDIR)
+install-common: all
+	install -d $(DESTDIR)$(ETCDIR) $(DESTDIR)$(BINDIR) $(DESTDIR)$(SBINDIR) 
+	if [ "`uname -s | cut -c-6`" = "CYGWIN" ]; then \
+		install vpnc-script-win $(DESTDIR)$(ETCDIR)/vpnc-script; \
+		install vpnc-script-win.js $(DESTDIR)$(ETCDIR); \
+	else \
+		install vpnc-script $(DESTDIR)$(ETCDIR); \
+	fi
+	install -m600 vpnc.conf $(DESTDIR)$(ETCDIR)/default.conf
+	install -m755 vpnc-disconnect $(DESTDIR)$(SBINDIR)
+	install -m755 pcf2vpnc $(DESTDIR)$(BINDIR)
 
-install-strip : all
-	install -d $(DESTDIR)$(ETCDIR) $(DESTDIR)$(SBINDIR)
-	install vpnc-script $(DESTDIR)$(ETCDIR)
-	install -m 600 vpnc.conf $(DESTDIR)$(ETCDIR)/default.conf
-	install pcf2vpnc $(DESTDIR)$(BINDIR)
-	install -s vpnc $(DESTDIR)$(SBINDIR)
-	install vpnc-disconnect $(DESTDIR)$(SBINDIR)
+install : install-common
+	install -m755 vpnc $(DESTDIR)$(SBINDIR)
+	install -m755 cisco-decrypt $(DESTDIR)$(BINDIR)
+
+install-strip : install-common
+	install -s -m755 vpnc $(DESTDIR)$(SBINDIR)
+	install -s -m755 cisco-decrypt $(DESTDIR)$(BINDIR)
 
 uninstall :
 	rm -f $(DESTDIR)$(SBINDIR)/vpnc \
 		$(DESTDIR)$(SBINDIR)/vpnc-disconnect \
 		$(DESTDIR)$(BINDIR)/pcf2vpnc \
-		$(DESTDIR)$(MANDIR)/man8/vpnc.8
+		$(DESTDIR)$(BINDIR)/cisco-decrypt 
 	@echo NOTE: remove $(DESTDIR)$(ETCDIR) manually
 
 .PHONY : clean distclean dist all install install-strip uninstall

@@ -16,7 +16,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-   $Id: isakmp-pkt.c 118 2007-02-08 04:23:58Z Maurice Massar $
+   $Id: isakmp-pkt.c 245 2007-09-09 13:56:41Z Joerg Mayer $
 */
 
 #include <assert.h>
@@ -28,6 +28,8 @@
 #include "sysdep.h"
 #include "config.h"
 #include "isakmp-pkt.h"
+#include "math_group.h"
+#include "vpnc.h"
 
 void *xallocc(size_t x)
 {
@@ -493,6 +495,8 @@ static struct isakmp_attribute *parse_isakmp_attributes(const uint8_t ** data_p,
 		r->u.attr_16 = length;
 		if ((ISAKMP_XAUTH_ATTRIB_TYPE <= r->type)
 			&& (r->type <= ISAKMP_XAUTH_ATTRIB_ANSWER)
+			&& (r->type != ISAKMP_XAUTH_ATTRIB_STATUS)
+			&& (length > 0)
 			&& (opt_debug < 99))
 			DEBUG(3, printf("(not dumping xauth data)\n"));
 		else
@@ -503,7 +507,10 @@ static struct isakmp_attribute *parse_isakmp_attributes(const uint8_t ** data_p,
 		hex_dump("t.attributes.type", &r->type, DUMP_UINT16, attr_type_to_debug_strings(decode_proto));
 		r->af = isakmp_attr_lots;
 		r->u.lots.length = length;
-		if ((ISAKMP_XAUTH_ATTRIB_TYPE <= r->type) && (r->type <= ISAKMP_XAUTH_ATTRIB_ANSWER)
+		if ((ISAKMP_XAUTH_ATTRIB_TYPE <= r->type)
+			&& (r->type <= ISAKMP_XAUTH_ATTRIB_ANSWER)
+			&& (r->type != ISAKMP_XAUTH_ATTRIB_STATUS)
+			&& (length > 0)
 			&& (opt_debug < 99))
 			DEBUG(3, printf("(not dumping xauth data length)\n"));
 		else
@@ -536,7 +543,10 @@ static struct isakmp_attribute *parse_isakmp_attributes(const uint8_t ** data_p,
 		} else {
 			r->u.lots.data = xallocc(length);
 			fetchn(r->u.lots.data, length);
-			if ((ISAKMP_XAUTH_ATTRIB_TYPE <= type) && (type <= ISAKMP_XAUTH_ATTRIB_ANSWER)
+			if ((ISAKMP_XAUTH_ATTRIB_TYPE <= type)
+				&& (type <= ISAKMP_XAUTH_ATTRIB_ANSWER)
+				&& (r->type != ISAKMP_XAUTH_ATTRIB_STATUS)
+				&& (length > 0)
 				&& (opt_debug < 99))
 				DEBUG(3, printf("(not dumping xauth data)\n"));
 			else
@@ -561,6 +571,7 @@ static struct isakmp_payload *parse_isakmp_payload(uint8_t type,
 		4, 12, 8, 8, 4, 8, 5, 5, 4, 4, 4, 12, 12, 4, 8
 	};
 
+	DEBUG(3, printf("\n"));
 	hex_dump("PARSING PAYLOAD type", &type, DUMP_UINT8, isakmp_payload_enum_array);
 	if (type == 0)
 		return NULL;
@@ -683,6 +694,8 @@ static struct isakmp_payload *parse_isakmp_payload(uint8_t type,
 		r->u.ke.data = xallocc(r->u.ke.length);
 		fetchn(r->u.ke.data, r->u.ke.length);
 		hex_dump("ke.data", r->u.ke.data, r->u.ke.length, NULL);
+		if (type == ISAKMP_PAYLOAD_VID)
+			print_vid(r->u.ke.data, r->u.ke.length);
 		break;
 	case ISAKMP_PAYLOAD_ID:
 		r->u.id.type = fetch1();
@@ -690,7 +703,7 @@ static struct isakmp_payload *parse_isakmp_payload(uint8_t type,
 		r->u.id.protocol = fetch1();
 		hex_dump("id.protocol", &r->u.id.protocol, DUMP_UINT8, NULL); /* IP protocol nr */
 		r->u.id.port = fetch2();
-		hex_dump("id.port", &r->u.id.port, sizeof(r->u.id.port), NULL);
+		hex_dump("id.port", &r->u.id.port, DUMP_UINT16, NULL);
 		r->u.id.length = length - 8;
 		r->u.id.data = xallocc(r->u.id.length);
 		fetchn(r->u.id.data, r->u.id.length);
@@ -701,6 +714,7 @@ static struct isakmp_payload *parse_isakmp_payload(uint8_t type,
 		r->u.cert.encoding = fetch1();
 		hex_dump("cert.encoding", &r->u.cert.encoding, DUMP_UINT8, NULL);
 		r->u.cert.length = length - 5;
+		r->u.cert.data = xallocc(r->u.cert.length);
 		fetchn(r->u.cert.data, r->u.cert.length);
 		hex_dump("cert.data", r->u.cert.data, r->u.cert.length, NULL);
 		break;
@@ -796,7 +810,8 @@ struct isakmp_packet *parse_isakmp_packet(const uint8_t * data, size_t data_len,
 		goto error;
 	}
 
-	DEBUG(3, printf("\nBEGIN_PARSE\n"));
+	DEBUG(3, printf("BEGIN_PARSE\n"));
+	DEBUG(3, printf("Recieved Packet Len: %d\n", data_len));
 	fetchn(r->i_cookie, ISAKMP_COOKIE_LENGTH);
 	hex_dump("i_cookie", r->i_cookie, ISAKMP_COOKIE_LENGTH, NULL);
 	fetchn(r->r_cookie, ISAKMP_COOKIE_LENGTH);
@@ -834,7 +849,7 @@ struct isakmp_packet *parse_isakmp_packet(const uint8_t * data, size_t data_len,
 	if (reason != 0)
 		goto error;
 
-	DEBUG(3, printf("PARSE_OK\n\n"));
+	DEBUG(3, printf("PARSE_OK\n"));
 	return r;
 
       error:

@@ -32,9 +32,17 @@ int main(int argc, char *argv[])
 	
 	gcry_check_version(NULL);
 
-        if (argc == 1)
-          fprintf(stderr, "Usage: %s DEADBEEF...012345678 424242...7261\n",
-                  argv[0]);
+	if (argc == 1 || *argv[1] == '-') {
+		fprintf(stderr,
+			"\nUsage: %s DEADBEEF...012345678 424242...7261\n"
+			"    Print decoded result to stdout\n\n",
+			argv[0]);
+		exit(1);
+	}
+	/* Hack for use in pcf2vpnc */
+	if (*argv[1] == 'q') {
+		exit(1);
+	}
 	
 	for (i = 1; i < argc; i++) {
 		ret = hex2bin(argv[i], &bin, &len);

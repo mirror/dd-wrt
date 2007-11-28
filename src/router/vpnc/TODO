@@ -1,7 +1,5 @@
 TODO list
 
-* --local-address
-
 * clean up scripts
   - config-support for vpnc-script
   - customizable handling of routing
@@ -17,23 +15,45 @@ TODO list
   - get a rid of remaining (non-const) global variables
 
 * implement phase1 rekeying (with or without xauth-reauthentication)
-* implement DPD, RFC3 706 Dead Peer Detection
 * implement compression
 * try a list of gateways (backup server)
+* Generate the manpage command line part directly from vpnc
 
 * optionally use in-kernel-ipsec with pf-key
   - merge patch
 
 * add support for pcap and dump decrypted traffic
 
-* research:
+* research/bugs:
   - usernames containing "@" unable to login
   - ipsec over tcp
   - nortel support?
+  - segfault if > 100 routes/acls (to large paket? read size?)
+    (probably "fixed" by increasing the size in r_packet in vpnc.c,
+    but why did it crash?)
+  - amd64 somehow broken? maybe gcc bugs??
+  - some debug prints get the endianess wrong
+  - In case the psk in hybrid isn't correct, the server sends annother AM_2
+    packet - to port 500 of course, even if we are using nat-t and talked on
+    4500 already. We currently don't handle that.
 
 * optional drop root (rekey? reconnect? vpnc-script calls?)
-* implement hybrid-auth
+  - Don't drop privileges, ever, but allow to be run suid.
+  - If euid != ruid, clear out env on program start.
+  - Sanitize variables for vpnc-script (snarf code from
+    callscript.c from dhcpclient).
+  - If euid != ruid, disable command line options (but not the profile
+    parameter).
+  - If euid != ruid, treat profiles as filenames only. They must not
+    be paths, i.e. contain PATHSEP. Read them relative to /etc/vpnc.
+  - Make sure vpnc-disconnect only kills processes owned by same user.
+
 * implement certificate support
+* implement dsa certificates in hybrid mode
+* Adapt lifetime (when given as time) to certificate lifetime etc
+  (rfc2401, 4.4.3)
+* implement main mode for phase 1 (needed to *use* certificates in
+  many cases)
 
 * factor out crypto stuff (cipher, hmac, dh)
   - http://libtomcrypt.org/features.html
@@ -51,6 +71,9 @@ TODO list
 
 ----
 
+* DONE implement hybrid-auth
+* DONE implement DPD, RFC 3706 Dead Peer Detection
+* DONE --local-address
 * DONE implement phase2 rekeying
 * DONE support rsa-SecurID token which sometimes needs 2 IDs
 * DONE add macosx support

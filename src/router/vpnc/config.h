@@ -15,7 +15,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-   $Id: config.h 117 2007-02-08 02:55:59Z Maurice Massar $
+   $Id: config.h 226 2007-09-01 15:13:42Z Joerg Mayer $
 */
 
 #ifndef __CONFIG_H__
@@ -27,7 +27,6 @@
 #include "vpnc-debug.h"
 
 enum config_enum {
-	CONFIG_NONE,
 	CONFIG_SCRIPT,
 	CONFIG_DEBUG,
 	CONFIG_DOMAIN,
@@ -36,6 +35,7 @@ enum config_enum {
 	CONFIG_ND,
 	CONFIG_NON_INTERACTIVE,
 	CONFIG_PID_FILE,
+	CONFIG_LOCAL_ADDR,
 	CONFIG_LOCAL_PORT,
 	CONFIG_VERSION,
 	CONFIG_IF_NAME,
@@ -53,6 +53,10 @@ enum config_enum {
 	CONFIG_VENDOR,
 	CONFIG_NATT_MODE,
 	CONFIG_UDP_ENCAP_PORT,
+	CONFIG_DPD_IDLE,
+	CONFIG_AUTH_MODE,
+	CONFIG_CA_FILE,
+	CONFIG_CA_DIR,
 	LAST_CONFIG
 };
 
@@ -79,17 +83,28 @@ enum if_mode_enum {
 	IF_MODE_TAP
 };
 
+enum auth_mode_enum {
+	AUTH_MODE_PSK,
+	AUTH_MODE_RSA1,
+	AUTH_MODE_RSA2,
+	AUTH_MODE_CERT,
+	AUTH_MODE_HYBRID
+};
+
 extern const char *config[LAST_CONFIG];
 
 extern enum vendor_enum opt_vendor;
 extern int opt_debug;
 extern int opt_nd;
-extern int opt_1des, opt_no_encryption;
+extern int opt_1des, opt_no_encryption, opt_auth_mode;
 extern enum natt_mode_enum opt_natt_mode;
 extern enum if_mode_enum opt_if_mode;
 extern uint16_t opt_udpencapport;
 
-#define DEBUG(lvl, a) do {if (opt_debug >= (lvl)) {a;}} while (0)
+#define DEBUGTOP(lvl, a)
+// do {if(opt_debug >= (lvl)){printf("\n");(a);printf("\n");}} while (0)
+#define DEBUG(lvl, a)
+// do {if (opt_debug >= (lvl)) {if(opt_debug>1)printf("   "); a;}} while (0)
 
 extern void hex_dump(const char *str, const void *data, ssize_t len, const struct debug_strings *decode);
 extern void do_config(int argc, char **argv);
