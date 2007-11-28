@@ -32,7 +32,8 @@ int
 start_sputnik (void)
 {
   int ret;
-
+  eval("insmod","ipt_mark");
+  eval("insmod","ipt_mac");
   // Only start if enabled
   if (!nvram_invmatch ("apd_enable", "0"))
     return 0;
@@ -49,6 +50,8 @@ stop_sputnik (void)
   if (pidof ("sputnik") > 0)
     syslog (LOG_INFO, "sputnik : sputnik daemon successfully stopped\n");
   int ret = killall ("sputnik", SIGTERM);
+//  eval("rmmod","ipt_mac");
+//  eval("rmmod","ipt_mark");
 
   cprintf ("done\n");
   return ret;
