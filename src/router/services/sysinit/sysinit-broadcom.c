@@ -44,6 +44,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <bcmdevs.h>
+#include <cymac.h>
 
 static void
 check_brcm_cpu_type (void)
@@ -563,12 +564,13 @@ start_sysinit (void)
 
    }
    
-  /* fix il0macaddr */
+  /* fix il0macaddr to be lanmac+2*/
   unsigned char mac[20]; 
   if (nvram_match ("port_swap", "1"))
     strcpy (mac, nvram_safe_get ("et1macaddr"));
   else
     strcpy (mac, nvram_safe_get ("et0macaddr"));
+  MAC_ADD (mac);
   MAC_ADD (mac);
   nvram_set ("il0macaddr", mac);
    
