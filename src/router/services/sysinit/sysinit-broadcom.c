@@ -361,6 +361,8 @@ start_sysinit (void)
 
   nvram_unset ("port_swap");
   
+  int need_reboot = 0;
+  
   switch (brand)
     {
     case ROUTER_BUFFALO_WZRRSG54:
@@ -395,6 +397,7 @@ start_sysinit (void)
       if (nvram_get ("et0macaddr") == NULL || nvram_get ("et0macaddr") == "")
 	{
 	  nvram_set ("et0macaddr", "00:16:E3:00:00:10");	//fix for missing cfe default = dead LAN ports.
+	  need_reboot = 1;
 	}
       break;
 
@@ -406,6 +409,7 @@ start_sysinit (void)
       if (nvram_get ("et0macaddr") == NULL || nvram_get ("et0macaddr") == "")
 	{
 	  nvram_set ("et0macaddr", "00:0C:6E:00:00:10");	//fix for missing cfe default = dead LAN ports.
+	  need_reboot = 1;
 	}
       break;
 
@@ -564,7 +568,10 @@ start_sysinit (void)
 
    }
    
-  /* fix il0macaddr to be lanmac+2*/
+  /* fix il0macaddr to be lanmac+2 */
+  if (nvram_get ("il0macaddr") = NULL)
+    need_reboot = 1;
+  
   unsigned char mac[20]; 
   if (nvram_match ("port_swap", "1"))
     strcpy (mac, nvram_safe_get ("et1macaddr"));
@@ -612,6 +619,14 @@ start_sysinit (void)
         }
       break;
     } 
+    
+  if (need_reboot)
+    {
+      cprintf ("Need reboot now to set some mac addresses\n");
+      nvram_commit ();
+      kill (1, SIGTERM);
+      exit (0);
+    }
 
   /* Modules */
   uname (&name);
