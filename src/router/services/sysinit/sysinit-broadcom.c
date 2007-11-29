@@ -562,7 +562,16 @@ start_sysinit (void)
       break;
 
    }
-
+   
+  /* fix il0macaddr */
+  unsigned char mac[20]; 
+  if (nvram_match ("port_swap", "1"))
+    strcpy (mac, nvram_safe_get ("et1macaddr"));
+  else
+    strcpy (mac, nvram_safe_get ("et0macaddr"));
+  MAC_ADD (mac);
+  nvram_set ("il0macaddr", mac);
+   
   /* ifnames */
   strcpy (wanifname, nvram_safe_get ("wan_ifname"));
   strcpy (wlifname, nvram_safe_get ("wl0_ifname"));
