@@ -305,9 +305,9 @@ start_setup_vlans (void)
 	  }
 	}
 #ifndef HAVE_BUFFALO
-      MAC_ADD (mac);
-      if (i == 1)
-	MAC_ADD (mac);		// base MAC +2 is taken by wireless...
+//      MAC_ADD (mac);
+//      if (i == 1)
+//	MAC_ADD (mac);		// base MAC +2 is taken by wireless...
 #endif
     }
 
