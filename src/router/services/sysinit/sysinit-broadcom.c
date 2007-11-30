@@ -569,7 +569,7 @@ start_sysinit (void)
    }
    
   /* fix il0macaddr to be lanmac+2 */
-  if (nvram_get ("il0macaddr") = NULL)
+  if (nvram_get ("il0macaddr") == NULL)
     need_reboot = 1;
   
   unsigned char mac[20]; 
