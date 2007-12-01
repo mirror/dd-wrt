@@ -20,7 +20,7 @@
 #                                                                    #
 # The Milkfish Router Services - Main Executable Shell Script        #
 #                                                                    #
-# Built/Version:  20070925                                           #
+# Built/Version:  20071103                                           #
 # Author/Contact: Franz Streibl <fronce@sipwerk.com>                 #
 # Copyright (C) 2007 by sipwerk - All rights reserved.               #
 #                                                                    #
@@ -193,6 +193,10 @@ case $1 in
       ;;
     phonebookhtmltable)
 	mf_phonebook_htmltable
+	exit 0
+      ;;
+    ddactive)
+	mf_ddactive
 	exit 0
       ;;
     sipdb)
