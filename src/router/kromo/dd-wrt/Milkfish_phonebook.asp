@@ -25,7 +25,19 @@ function to_apply(F) {
 			<div id="main">
 				<div id="contentsInfo">
 					<h2><% tran("service.milkfish_phonebook"); %></h2>
-                                        <% exec_milkfish_phonebook("milkfish_services phonebookhtmltable"); %>
+        <% exec_milkfish_service("milkfish_services ddactive"); %>
+        <fieldset>
+                <legend><% tran("service.milkfish_registrations"); %></legend>
+                        <table class="table center" summary="chap secrets table">
+                        <tr>
+                                <th width="30%"><% tran("share.user"); %></th>
+                                <th width="30%"><% tran("service.milkfish_contact"); %></th>
+                                <th width="30%"><% tran("service.milkfish_agent"); %></th>
+                        </tr>
+                         <% exec_show_registrations(); %>
+                        </table><br />
+        </fieldset>
+
                                         <div class="submitFooter">
 						<script type="text/javascript">
 						//<![CDATA[
