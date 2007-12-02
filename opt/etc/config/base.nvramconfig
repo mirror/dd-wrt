@@ -29,7 +29,7 @@
  "lan_proto"  "LAN Protocol"  "CHOICE" "2"  "dhcp"  "static"  "FALSE" "3"
  "dhcp_check"  "DHCP check"  "DHCP"  "FALSE" "0"
  "dhcp_start"  "DHCP Server LAN IP Address Range"  "RANGE"  "0" "255"  "FALSE" "3"
- "dhcp_num"  "DHCP Users"  "RANGE"  "1" "253"  "FALSE" "0"
+ "dhcp_num"  "DHCP Users"  "RANGE"  "0" "253"  "FALSE" "0"
  "dhcp_lease"  "DHCP Client Lease Time"  "RANGE"  "0" "99999"  "FALSE" "0"
  "dhcpfwd_enable" "DHCP Forwarder" "CHOICE" "2" "0" "1" "FALSE" "0"
  "dhcpfwd_ip" "DHCP source ip" "MERGEIPADDRS" "FALSE" "0"
