@@ -725,7 +725,7 @@ hidx.right8="Saisissez l'adresse IP du routeur.";
 hidx.right10="Saisissez le masque de sous-réseau du routeur.";
 hidx.right12="Vous pouvez utiliser le routeur en tant que serveur DHCP de votre réseau. Un serveur DHCP permet d'attribuer automatiquement une adresse IP à chaque ordinateur de votre réseau.";
 hidx.right14="Saisissez une valeur de début pour la publication d'adresses IP sur le serveur DHCP.";
-hidx.right16="Saisissez le nombre maximal d'ordinateurs auxquels le serveur DHCP doit attribuer des adresses IP. Ce nombre ne peut être supérieur à 253.";
+hidx.right16="Saisissez le nombre maximal d'ordinateurs auxquels le serveur DHCP doit attribuer des adresses IP. Ce nombre ne peut être supérieur à 253. 0 permet d'accepter uniquement les baux statiques.";
 hidx.right18="Changez le fuseau horaire de votre réseau à partir du menu déroulant. Le routeur peut utiliser l'heure UTC ou l'heure locale.";
 
 // ** Join.asp **//
