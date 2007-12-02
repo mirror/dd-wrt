@@ -1938,7 +1938,7 @@ ej_show_dhcpd_settings (webs_t wp, int argc, char_t ** argv)
       websWrite (wp, "</div>\n");
       websWrite (wp, "<div class=\"setting\">\n");
       websWrite (wp,
-		 "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_maxusers)</script></div><input class=\"num\" name=\"dhcp_num\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,253,idx.dhcp_maxusers)\" value=\"%s\" /></div>\n",
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_maxusers)</script></div><input class=\"num\" name=\"dhcp_num\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,253,idx.dhcp_maxusers)\" value=\"%s\" /></div>\n",
 		 nvram_safe_get ("dhcp_num"));
       websWrite (wp, "<div class=\"setting\">\n");
       websWrite (wp,
