@@ -184,12 +184,19 @@ start_dnsmasq (void)
 		 get_single_ip (nvram_safe_get ("lan_ipaddr"), 1),
 		 get_single_ip (nvram_safe_get ("lan_ipaddr"), 2),
 		 nvram_safe_get ("dhcp_start"));
-	fprintf (fp, "%d.%d.%d.%d,",
+	if (nvram_match ("dhcp_num", "0"))
+	  {
+	  fprintf (fp, "static,");
+	  }
+	else
+	  {    		 
+	  fprintf (fp, "%d.%d.%d.%d,",
 		 get_single_ip (nvram_safe_get ("lan_ipaddr"), 0),
 		 get_single_ip (nvram_safe_get ("lan_ipaddr"), 1),
 		 get_single_ip (nvram_safe_get ("lan_ipaddr"), 2),
 		 atoi (nvram_safe_get ("dhcp_start")) +
 		 atoi (nvram_safe_get ("dhcp_num")) - 1);
+      }
 	fprintf (fp, "%s,", nvram_safe_get ("lan_netmask"));
 	fprintf (fp, "%sm\n", nvram_safe_get ("dhcp_lease"));
 	int leasenum = atoi (nvram_safe_get ("static_leasenum"));
