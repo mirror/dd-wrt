@@ -783,7 +783,7 @@ hidx.right8="To je naslov usmerjalnika.";
 hidx.right10="To je maska podmre¾e usmerjalnika.";
 hidx.right12="Dovoli usmerjalniku, da upravlja z va¹imi IP naslovi.";
 hidx.right14="®eljeni zaèetni naslov.";
-hidx.right16="Omejite lahko ¹tevilo naslovov, ki jih dodeli va¹ usmerjalnik.";
+hidx.right16="Omejite lahko ¹tevilo naslovov, ki jih dodeli va¹ usmerjalnik. 0 pomeni, da bo router dodelil le vnaprej doloèene statiène zakupe.";
 hidx.right18="Izberite va¹o èasovno cono in obdobje poletnega èasa. Usmerjalnik lahko uparablja lokalni èas ali èas UTC.";
 
 
