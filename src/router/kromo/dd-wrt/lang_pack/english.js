@@ -783,7 +783,7 @@ hidx.right8="This is the address of the router.";
 hidx.right10="This is the subnet mask of the router.";
 hidx.right12="Allows the router to manage your IP addresses.";
 hidx.right14="The address you would like to start with.";
-hidx.right16="You may limit the number of addresses your router hands out.";
+hidx.right16="You may limit the number of addresses your router hands out. 0 means only predefined static leases will be handed out.";
 hidx.right18="Choose the time zone you are in and Summer Time (DST) period. The router can use local time or UTC time.";
 
 
