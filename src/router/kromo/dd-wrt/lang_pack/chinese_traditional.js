@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//Chinese (Traditional) translation file - DD-WRT V23/V24 2007/11/03 UTF-8 by a9988cd (大力丸)
+//Chinese (Traditional) translation file - DD-WRT V23/V24 2007/12/03 UTF-8 by a9988cd (大力丸)
 //Chinese (Traditional) translation file - DD-WRT V23/V24 2007/08/20 by bbyel 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // ** COMMON SHARE LABEL **//
@@ -213,19 +213,19 @@ sbutton.allways_off="一直關閉";
 
 // ** COMMON ERROR MESSAGES  **//
 
-errmsg.err0="您必須輸入一個用戶名.";
-errmsg.err1="您必須輸入一個路由器名稱.";
+errmsg.err0="必須輸入一個用戶名.";
+errmsg.err1="必須輸入一個路由器名稱.";
 errmsg.err2="超出範圍,請調整開始IP位址或用戶的個數.";
-errmsg.err3="您必須至少選擇一個日期."
+errmsg.err3="必須至少選擇一個日期."
 errmsg.err4="結束時間必須比開始時間大.";
 errmsg.err5="MAC位址長度不正確.";
-errmsg.err6="您必須輸入一個密碼.";
-errmsg.err7="您必須輸入一個主機名.";
-errmsg.err8="您必須輸入一個IP位址或者網域名稱.";
+errmsg.err6="必須輸入一個密碼.";
+errmsg.err7="必須輸入一個主機名.";
+errmsg.err8="必須輸入一個IP位址或者網域名稱.";
 errmsg.err9="不正確的DMZ IP位址.";
 errmsg.err10="確認密碼與所輸入密碼不相符.請重新輸入密碼.";
 errmsg.err11="在密碼中不允許使用空格";
-errmsg.err12="你必須輸入一個要運行的指令.";
+errmsg.err12="必須輸入一個要執行的指令.";
 errmsg.err13="升級失敗.";
 errmsg.err45="HTTPS模式下不可用！請使用HTTP模式連接.";
 errmsg.err46="HTTPS模式下不可用";
@@ -381,7 +381,7 @@ bmenu.servicesPptp="PPTP";
 bmenu.servicesHotspot="熱點";
 bmenu.servicesMilkfish="Milkfish";
 
-bmenu.statu="系統狀態";
+bmenu.statu="機器狀態";
 bmenu.statuRouter="路由器";
 bmenu.statuLAN="區域網路";
 bmenu.statuSputnik="Sputnik Agent";
@@ -423,12 +423,12 @@ config.h22="恢復設定";
 config.legend2="恢復設定";
 config.mess2="請選擇一個用來恢復的檔案";
 config.mess3="W A R N I N G";
-config.mess4="請僅上傳使用符合此機器的韌體版本或是從相同型號路由器上的備份的檔.<br />請勿上傳任何不是使用本介面所建立的檔！";
+config.mess4="請上傳使用符合此機器的韌體版本或是從相同型號及相同版本路由器上的備份檔.<br />請勿上傳任何不是使用本介面所建立的檔！";
 
 //help container
 
-hconfig.right2="您可以備份目前的設定配置以備將來重置路由器至出廠預設值時可恢復配置的設定.<br /><br />按 <em>備份</em> 按鈕備份您的目前設定.";
-hconfig.right4="按 <em>瀏覽...</em> 按鈕瀏覽到您目前存放在個人電腦上的設定檔.<br /><br />按 <em>" + sbutton.restore + "</em> 按鈕使用設定檔覆蓋目前所有的設定設定.";
+hconfig.right2="您可以備份目前的設定配置以備將來重置路由器至DD-WRT預設值時可恢復配置的設定.<br /><br />按 <em>備份</em> 按鈕備份您的目前設定.";
+hconfig.right4="按 <em>瀏覽...</em> 按鈕瀏覽到您目前存放在個人電腦上的設定檔.<br /><br />按 <em>" + sbutton.restore + "</em> 按鈕使用設定檔覆蓋目前所有的設定.";
 
 
 
@@ -459,7 +459,7 @@ ddnsm.all_noip="Internet未連接";
 
 //help container
 
-hddns.right2="DDNS 充許您用網域名稱來取代IP位址. 這個伺服器態管理IP位址的變動,更新您的網域名稱資訊.您必須通過DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com 或Custom.com進行註冊.";
+hddns.right2="DDNS 充許您用網域名稱來取代IP位址. 這個伺服器能管理IP位址的變動,更新您的網域名稱資訊.您必須有以下之一的帳號 DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com 或Custom.com.";
 hddns.right4="於輸入框內輸入整數數字型態做更新間隔 (日數).當您的IP位址變更亦會自動完成更新.";
 
 
@@ -476,7 +476,7 @@ diag.custom="自訂";
 
 //help container
 
-hdiag.right2="您可以通過Web管理介面執行指令行. 將指令輸入本文區域並按 <em>" + sbutton.runcmd + "</em>  按鈕執行.";
+hdiag.right2="您可以通過Web管理介面執行指令行. 將指令輸入 指令介面 區域並按 <em>" + sbutton.runcmd + "</em>  按鈕執行.";
 
 
 
@@ -491,7 +491,7 @@ dmz.host="DMZ主機IP位址";
 
 //help container
 
-hdmz.right2="啟用這個選項將使特定IP的主機暴露於Internet上.所有的埠都可以從Internet連入.";
+hdmz.right2="啟用這個選項使特定IP的主機連接於Internet上.所有的埠都可以從Internet連入.";
 
 
 
@@ -500,9 +500,9 @@ hdmz.right2="啟用這個選項將使特定IP的主機暴露於Internet上.所�
 factdef.titl="出廠預設值";
 factdef.h2="出廠預設值";
 factdef.legend="重置路由器設定";
-factdef.restore="恢復出廠預設值";
+factdef.restore="恢復DD-WRT預設值";
 
-factdef.mess1="警告! 如果您按確認,此設備將被重置為工廠預設值而先前所有的設定將會全部清除.";
+factdef.mess1="警告! 如果您按確認,此設備將被恢復為DD-WRT預設值,先前所有的設定全部清除.";
 
 //help container
 
@@ -544,14 +544,14 @@ filter.mess3="結束時間必須大於開始時間.";
 
 //help container
 
-hfilter.right2="您可以最多定義10條連線計畫.按 <em>" + sbutton.del + "</em> 按鈕刪除一條計畫,或者按 <em>" + sbutton.summary + "</em> 按鈕察看計畫總覽.";
+hfilter.right2="最多可以定義10條連線計畫.按 <em>" + sbutton.del + "</em> 按鈕刪除一條計畫,或者按 <em>" + sbutton.summary + "</em> 按鈕察看計畫總覽.";
 hfilter.right4="啟用或關閉一條計畫.";
-hfilter.right6="您可以為您的計畫指定一個名稱.";
-hfilter.right8="請選擇您希望您的計畫被應用的日期.";
-hfilter.right10="請輸入您希望您的計畫被應用的時間.";
-hfilter.right12="您可以選擇停止特定的協定.按 <em>" + sbutton.filterSer + "</em> 按鈕更改這些設定.";
-hfilter.right14="您可以通過輸入特定Web網頁的URL來禁止對其連線.";
-hfilter.right16="您可以通過輸入包含在特定Web網頁頁面中的關鍵字來禁止對其連線.";
+hfilter.right6="為 計畫 指定一個名稱.";
+hfilter.right8="請選擇您的計畫開啟日期.";
+hfilter.right10="請輸入您的計畫開啟時間.";
+hfilter.right12="選擇停止特定的協定.按 <em>" + sbutton.filterSer + "</em> 按鈕更改這些設定.";
+hfilter.right14="輸入特定Web網頁的URL來禁止對其連線.";
+hfilter.right16="輸入在特定Web網頁頁面中的關鍵字來禁止對其連線.";
 
 
 
@@ -796,14 +796,14 @@ idx.ntp_client="網路校時";
 
 //help container
 
-hidx.right2="這些設定最經常被有線電視操作人員使用.";
+hidx.right2="Cable使用者的常用選項.";
 hidx.right4="請輸入您的ISP提供的主機名.";
 hidx.right6="請輸入您的ISP提供的網域名稱.";
-hidx.right8="這是路由器的位址.";
-hidx.right10="這是路由器的子網路遮罩.";
-hidx.right12="允許路由器管理您的IP位址.";
-hidx.right14="您希望開始的位址.";
-hidx.right16="您可以限制您的路由器提交的位址個數.";
+hidx.right8="路由器的位址.";
+hidx.right10="路由器的子網路遮罩.";
+hidx.right12="路由器自動分配IP位址.";
+hidx.right14="DHCP開始分配的位址.";
+hidx.right16="限制DHCP分配的位址數.輸入0 ,只分配預先設定的靜態位址";
 hidx.right18="請選擇您所在的時區和夏令時（DST）期間.本路由器可以使用本地時間或者UTC時間.";
 
 
@@ -1423,7 +1423,7 @@ upnp.msg2="刪除所有項目？";
 
 //help container
 
-hupnp.right2="按垃圾桶刪除單一條目.";
+hupnp.right2="按垃圾桶刪除單一項目.";
 hupnp.right4="允許應用程式自動地設定通訊埠轉發（映射）";
 
 
