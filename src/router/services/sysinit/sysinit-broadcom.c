@@ -567,7 +567,7 @@ start_sysinit (void)
       break;
 
    }
-   
+#if 0   
   /* fix il0macaddr to be lanmac+2 */
   if (nvram_get ("il0macaddr") == NULL)
     need_reboot = 1;
@@ -580,7 +580,7 @@ start_sysinit (void)
   MAC_ADD (mac);
   MAC_ADD (mac);
   nvram_set ("il0macaddr", mac);
-   
+#endif   
   /* ifnames */
   strcpy (wanifname, nvram_safe_get ("wan_ifname"));
   strcpy (wlifname, nvram_safe_get ("wl0_ifname"));
