@@ -1247,6 +1247,19 @@ start_lan (void)
     }
   else
     {
+     strcpy (mac, nvram_safe_get ("il0macaddr"));
+
+     if (strlen (mac) == 0)
+     {
+      if (nvram_match ("port_swap", "1"))
+         strcpy (mac, nvram_safe_get ("et1macaddr"));
+      else
+         strcpy (mac, nvram_safe_get ("et0macaddr"));
+     }
+     MAC_ADD (mac);
+    
+#if 0	    
+	    
 //#ifndef HAVE_BUFFALO
 //      if (nvram_match ("port_swap", "1"))
 //	strcpy (mac, nvram_safe_get ("et1macaddr"));
@@ -1257,6 +1270,7 @@ start_lan (void)
 //#else
       strcpy (mac, nvram_safe_get ("il0macaddr"));
 //#endif
+#endif
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
 
       if (nvram_match ("wl0_hwaddr", "") || !nvram_get ("wl0_hwaddr"))
@@ -1377,6 +1391,17 @@ start_lan (void)
 	      }
 	    else
 	      {
+	     strcpy (mac, nvram_safe_get ("il0macaddr"));
+
+	     if (strlen (mac) == 0)
+	     {
+	      if (nvram_match ("port_swap", "1"))
+	         strcpy (mac, nvram_safe_get ("et1macaddr"));
+	      else
+	         strcpy (mac, nvram_safe_get ("et0macaddr"));
+	     }
+	     MAC_ADD (mac);
+#if 0
 //#ifndef HAVE_BUFFALO
 //		if (nvram_match ("port_swap", "1"))
 //		  strcpy (mac, nvram_safe_get ("et1macaddr"));
@@ -1387,6 +1412,7 @@ start_lan (void)
 //#else
 		strcpy (mac, nvram_safe_get ("il0macaddr"));
 //#endif
+#endif
 		ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
 		if (nvram_match ("wl0_hwaddr", "")
 		    || !nvram_get ("wl0_hwaddr"))
@@ -2271,6 +2297,30 @@ start_wan (int status)
   else
     {
       unsigned char mac[20];
+      
+     if (!strcmp (wan_ifname, get_wdev()))  //sta mode
+     {
+     strcpy (mac, nvram_safe_get ("il0macaddr"));
+
+     if (strlen (mac) == 0)
+     {
+      if (nvram_match ("port_swap", "1"))
+         strcpy (mac, nvram_safe_get ("et1macaddr"));
+      else
+         strcpy (mac, nvram_safe_get ("et0macaddr"));
+     MAC_ADD (mac);
+     }
+     }
+     else
+     {
+      if (nvram_match ("port_swap", "1"))
+         strcpy (mac, nvram_safe_get ("et1macaddr"));
+      else
+         strcpy (mac, nvram_safe_get ("et0macaddr"));
+     MAC_ADD (mac);
+     }
+     
+#if 0   
       if (nvram_match ("port_swap", "1"))
 	strcpy (mac, nvram_safe_get ("et1macaddr"));
       else
@@ -2281,6 +2331,7 @@ start_wan (int status)
       if (!strcmp (wan_ifname, get_wdev()))
 	strcpy (mac, nvram_safe_get ("il0macaddr"));
 //#endif
+#endif
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
     }
 
