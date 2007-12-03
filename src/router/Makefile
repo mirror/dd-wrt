@@ -105,13 +105,19 @@ obj-distclean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-distclean)
 # Basic rules
 #
 
-all: clean_target $(obj-y) $(LINUXDIR)/.config
-        # Also build kernel
+all: clean_target $(obj-y) $(LINUXDIR)/.config kernel
+
+
+kernel:
 	# Also build kernel
 ifeq ($(CONFIG_DIST),"micro")
 	cp $(LINUXDIR)/.config_micro $(LINUXDIR)/.config
 else
+ifeq ($(CONFIG_DIST),"micro-special")
+	cp $(LINUXDIR)/.config_micro $(LINUXDIR)/.config
+else
 	cp $(LINUXDIR)/.config_std $(LINUXDIR)/.config
+endif
 endif
 ifeq ($(CONFIG_REGISTER),y)
 	cp $(LINUXDIR)/.config_register $(LINUXDIR)/.config
@@ -123,6 +129,27 @@ endif
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -C $(LINUXDIR) modules ; \
 	fi
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/broadcom/vmlinux.lzma
+	make -C lzma-loader/broadcom clean
+	make -C lzma-loader/broadcom 
+	dd if=lzma-loader/broadcom/lzma.elf of=$(ARCH)-uclibc/lzma_vmlinux bs=65536 conv=sync
+	$(ARCH)-linux-objcopy -O binary $(ARCH)-uclibc/lzma_vmlinux $(ARCH)-uclibc/lzma_vmlinus 
+
+bootloader:
+	$(MAKE) -C $(LINUXDIR) oldconfig	
+	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -C $(LINUXDIR) zImage ; \
+	fi
+	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -C $(LINUXDIR) modules ; \
+	fi
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/broadcom/vmlinux.lzma
+	make -C lzma-loader/broadcom clean
+	make -C lzma-loader/broadcom 
+	cp lzma-loader/broadcom/lzma.elf $(ARCH)-uclibc/lzma_vmlinux
+	$(ARCH)-linux-objcopy -O binary $(ARCH)-uclibc/lzma_vmlinux $(ARCH)-uclibc/lzma_vmlinus 
 
 	
 clean: $(obj-clean)
@@ -200,43 +227,62 @@ endif
 #ifeq ($(CONFIG_MSSID),y)
 #	cp ../wl/wl/wl_v24.o $(TARGETDIR)/lib/modules/2.4.33-rc1/wl.o
 #else
-	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/wl/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	if test -d "$(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/wl"; then mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/wl/* $(TARGETDIR)/lib/modules/$(LINUXVER); fi              
+ifeq ($(CONFIG_VXOVER),y)
+	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/wl.o
+endif
+
 ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
 	if test -d "$(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/wireless"; then mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/wireless/* $(TARGETDIR)/lib/modules/$(LINUXVER); fi
 endif
+endif
 ifeq ($(CONFIG_MSSID),y)
-ifneq ($(CONFIG_BCM5354),y)
+#ifneq ($(CONFIG_BCM5354),y)
 ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
 	cp bcm57xx/bcm57xx.o $(TARGETDIR)/lib/modules/$(LINUXVER)/bcm57xxlsys.o
 endif
 endif
+#endif
 endif
 #endif
 #	mv $(TARGETDIR)/lib/modules/2.4.33-pre3/kernel/fs/fat/* $(TARGETDIR)/lib/modules/2.4.33-pre3
 ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jffs2/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+ifeq ($(CONFIG_SAMBA),y)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/cifs/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+endif
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext2/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+endif
 endif
 ifeq ($(CONFIG_DIST),"mini")
 	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/cifs*
 endif
 #	mv $(TARGETDIR)/lib/modules/2.4.33-pre3/kernel/fs/vfat/* $(TARGETDIR)/lib/modules/2.4.33-prc1re3
 ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
 ifneq ($(CONFIG_MSSID),y)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/lib/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 endif
 endif
+endif
 ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/bridge/netfilter/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+endif
 endif
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv4/netfilter/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv4/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
 ifeq ($(CONFIG_IPV6),y)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv6/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 endif
 endif
+endif
+	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/imq.o $(TARGETDIR)/lib/modules/$(LINUXVER)
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_USB),y)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext3/* $(TARGETDIR)/lib/modules/$(LINUXVER)
@@ -291,6 +337,7 @@ endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 	cp $(LINUXDIR)/arch/mips/bcm947xx/compressed/piggy mipsel-uclibc/vmlinux
 	../../opt/loader-0.02/lzma e -lc2 -lp2 -pb2 -d21 mipsel-uclibc/vmlinux mipsel-uclibc/vmlinuz
+#	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/target.squashfs -noappend -root-owned -le
 #endif
 #
 # Configuration rules
