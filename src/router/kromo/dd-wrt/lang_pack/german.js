@@ -731,7 +731,7 @@ hidx.right8="Dies ist die lokale IP-Adresse Ihres Routers im LAN.";
 hidx.right10="Dies ist die Subnetz-Maske Ihres Routers.";
 hidx.right12="Erlaubt dem Router, Ihre IP-Adressen zu verwalten.";
 hidx.right14="Die erste IP-Adresse die vergeben werden soll.";
-hidx.right16="Sie können hier die Anzahl der IP-Adressen einschränken, die der Router maximal vergeben kann.";
+hidx.right16="Sie können hier die Anzahl der IP-Adressen einschränken, die der Router maximal vergeben kann. 0 bedeutet das nur vordefinierte statische Leases zur Vergabe verwendet werden.";
 hidx.right18="Wählen Sie hier Ihre Zeitzone und die Sommerzeit-Einstellungen. Der Router kann auch die Lokalzeit nutzen.";
 
 
