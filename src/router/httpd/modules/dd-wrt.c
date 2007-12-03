@@ -7076,15 +7076,13 @@ ej_get_clone_wmac (webs_t wp, int argc, char_t ** argv)
 
   if (nvram_match ("def_whwaddr", "00:00:00:00:00:00"))
     {
-    char cmac[32];
-
 	     if (strlen (nvram_safe_get ("il0macaddr")) == 0)
 	     {
 	      if (nvram_match ("port_swap", "1"))
-	         c = strcpy (cmac, nvram_safe_get ("et1macaddr"));
+	         c = strdup (nvram_safe_get ("et1macaddr"));
 	      else
-	         c = strcpy (cmac, nvram_safe_get ("et0macaddr"));
-	     MAC_ADD (cmac);
+	         c = strdup (nvram_safe_get ("et0macaddr"));
+	     MAC_ADD (c);
          }
          else
          {
