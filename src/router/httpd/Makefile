@@ -18,7 +18,7 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
-CFLAGS	= $(COPTS)
+CFLAGS	= $(COPTS) -fpic
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ -Imodules
@@ -419,7 +419,7 @@ ifneq ($(CONFIG_NOSSL),y)
 ifneq ($(CONFIG_MATRIXSSL),y)
 ifeq ($(CONFIG_OPENSSL),y)
 CFLAGS += -I$(TOP)/openssl/include  -I$(TOP)/openssl/include/openssl
-LDFLAGS += -L$(TOP)/openssl -L../openssl -lcrypto -lssl
+LDFLAGS += -L$(TOP)/openssl -L$(TOP)/openssl -lcrypto -lssl
 CFLAGS += -DHAVE_OPENSSL
 CFLAGS += -DHAVE_HTTPS
 endif
