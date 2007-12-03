@@ -64,7 +64,8 @@ getassoclist (char *name, unsigned char *list)
 //int ap;
 //if ((wl_ioctl(name, WLC_GET_AP, &ap, sizeof(ap)) < 0) || ap) 
 //{
-  int ret, num;
+  int ret;
+  unsigned int num;
 
   num = (sizeof (*list) - 4) / 6;	/* Maximum number of entries in the buffer */
   memcpy (list, &num, 4);	/* First 4 bytes are the number of ent. */
@@ -88,7 +89,7 @@ getassoclist (char *name, unsigned char *list)
 	l->count=1;
 	memcpy(&l->ea,&sta_info->ea,6);*/
 if (ret<0)
-    return 0;
+    return -1;
   return count[0];
 }
 
