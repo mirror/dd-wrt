@@ -1,3 +1,17 @@
+2007 11 22
+Added battlefield2142.
+
+2007 11 03
+Simplified imesh pattern in an attempt to avoid the kernel crash that 
+some people have reported (but that I have not been able to duplicate).
+
+Improved shoutcast pattern.  Now should actually work.
+
+Reclassified imap, pop3, vnc, and irc to great.  (These haven't changed 
+in a long time, I think I understand them quite well, and I've heard no 
+complaints.)  Downgraded freenet to poor, since it almost certainly 
+doesn't work (but I haven't retested it).
+
 2007 10 10
 Added liveforspeed.
 
