@@ -25,9 +25,9 @@ ADDLIB+=ipx_ntop.o ipx_pton.o
 HOSTCC = $(CC) 
 #ipsel-linux-uclibc-gcc
 CCOPTS = -D_GNU_SOURCE $(COPTS) -Wstrict-prototypes -Wall
-CFLAGS = $(CCOPTS) -I../include $(DEFINES)
+CFLAGS = $(CCOPTS) -I../include $(DEFINES) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-LDLIBS += -L../lib -lnetlink -lutil
+LDLIBS += -L../lib -lnetlink -lutil -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 SUBDIRS=lib ip tc
 
