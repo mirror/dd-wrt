@@ -62,9 +62,9 @@ static void install_links(const char *busybox, int use_symbolic_links)
   extern int cli_main(int argc,char *argv[]);
   extern int scp_main(int argc,char *argv[]);
 #endif*/
-#ifdef HAVE_ARP
+/*#ifdef HAVE_ARP
   extern int arp_main(int argc,char *argv[]);
-#endif
+#endif*/
 #ifdef HAVE_DHCPFWD
   extern int dhcpforward_main(int argc,char *argv[]);
 #endif
@@ -115,10 +115,10 @@ int main(int argc, char **argv)
  else if (strstr (base, "bird"))
     return bird_main(argc, argv);
 #endif    */
-#ifdef HAVE_ARP
+/*#ifdef HAVE_ARP
   else if (!strcmp (base, "arp"))
     return arp_main(argc,argv);
-#endif
+#endif*/
 //  else if (strstr (base, "dnsmasq"))
 //    return dnsmasq_main(argc, argv);    
 
