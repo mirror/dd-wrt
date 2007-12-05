@@ -11,7 +11,7 @@
 OBJS=event.o event_tcp.o hash.o event_sig.o
 SRCS=$(OBJS:.o=.c)
 HDRS=event.h event_tcp.h eventpriv.h hash.h
-CFLAGS=$(COPTS) -I..
+CFLAGS=$(COPTS) -I.. -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 all: libevent.a
 
