@@ -55,8 +55,8 @@ ifdef SYSLOG
 CFLAGS += -DSYSLOG
 endif
 
-CFLAGS += -W -Wall -Wstrict-prototypes -DVERSION='"$(VER)"'
-
+CFLAGS += -W -Wall -Wstrict-prototypes -DVERSION='"$(VER)"' $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 ifdef DEBUG
 CFLAGS += -g -DDEBUG -DMY_DEBUG
 STRIP=true
@@ -64,6 +64,7 @@ else
 CFLAGS += -fomit-frame-pointer
 STRIP=$(CROSS_COMPILE)strip
 endif
+
 
 all: $(EXEC1) $(EXEC2) $(EXEC3)
 	# $(STRIP) --remove-section=.note --remove-section=.comment $(EXEC1) $(EXEC2) $(EXEC3)
