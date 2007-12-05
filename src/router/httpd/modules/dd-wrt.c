@@ -3208,9 +3208,7 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
   sprintf (wl_mode, "%s_mode", prefix);
   char wl_net_mode[16];
   sprintf (wl_net_mode, "%s_net_mode", prefix);
-  if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta")
-      || nvram_match (wl_mode, "apstawet") || nvram_match (wl_mode, "wdsap")
-      || nvram_match (wl_mode, "infra"))
+  if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "wdsap") || nvram_match (wl_mode, "infra"))
     {
       char wl_channel[16];
       sprintf (wl_channel, "%s_channel", prefix);
@@ -4552,8 +4550,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div><input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"%s\" /></div>\n",
 	     wl_ssid, nvram_safe_get (wl_ssid));
 
-  if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta")
-      || nvram_match (wl_mode, "apstawet") || nvram_match (wl_mode, "wdsap")
+  if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "wdsap")
       || nvram_match (wl_mode, "infra"))
     {
 
