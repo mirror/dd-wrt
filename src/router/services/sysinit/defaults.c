@@ -1175,15 +1175,15 @@ struct nvram_tuple srouter_defaults[] = {
   {"ath5_txpwrdbm", "16", 0},
 #else
 #ifdef HAVE_POWERNOC
-  {"txpwr", "200", 0},
+  {"wl0_txpwr", "200", 0},
 #elif HAVE_DDLAN
-  {"txpwr", "100", 0},
+  {"wl0_txpwr", "100", 0},
 #elif HAVE_SKYTRON
-  {"txpwr", "251", 0},
+  {"wl0_txpwr", "251", 0},
 #elif HAVE_SAGAR
-  {"txpwr", "100", 0},
+  {"wl0_txpwr", "100", 0},
 #else
-  {"txpwr", "28", 0},
+  {"wl0_txpwr", "28", 0},
 #endif
 
 #endif

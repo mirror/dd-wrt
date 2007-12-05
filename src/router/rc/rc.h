@@ -302,7 +302,7 @@ extern void del_routes (char *route);
 extern int start_single_service (void);
 
 extern int write_boot (const char *path, const char *mtd);
-extern void do_mssid (char *lan_ifname);
+extern void do_mssid (char *lan_ifname,char *wlname);
 extern int init_mtu (char *wan_proto);
 extern int force_to_dial (void);
 extern char *range (char *start, char *end);

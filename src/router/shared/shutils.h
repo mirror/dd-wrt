@@ -160,11 +160,9 @@ strcat_r (const char *s1, const char *s2, char *buf)
 #ifndef HAVE_SILENCE
 
 #define cprintf(fmt, args...) do { \
-	FILE *fp = fopen("/dev/console", "w"); \
-	if (fp) { \
-		fprintf(fp, fmt, ## args); \
-		fclose(fp); \
-	} \
+		fprintf(stderr, fmt, ## args); \
+		fflush(stderr); \
+		sleep(2); \
 } while (0)
 #else
 #define cprintf(fmt, args...)

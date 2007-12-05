@@ -134,10 +134,9 @@ _evalpid (char *const argv[], char *path, int timeout, int *ppid)
   int i = 0;
   while (argv[i] != NULL)
     {
-      fprintf (debugfp, "%s ", argv[i++]);
+      fprintf (stderr, "%s ", argv[i++]);
     }
-  fprintf (debugfp, "\n");
-  fflush(debugfp);
+  fprintf (stderr, "\n");
 #endif
 
   switch (pid = fork ())

@@ -779,7 +779,7 @@ start_sysinit (void)
 #endif
       }
 
-//      loadWlModule ();
+      loadWlModule ();
 
 #ifdef HAVE_USB
 //load usb driver. we will add samba server, ftp server and ctorrent support in future

@@ -919,9 +919,9 @@ internal_getRouterBrand ()
 }
 
 int
-has_mimo ()
+has_mimo (char *prefix)
 {
-  if (nvram_match ("wl0_phytypes", "n"))
+  if (nvram_nmatch ("n","%s_phytypes", prefix))
     return 1;
   return 0;
 }
@@ -3005,12 +3005,32 @@ getWET (void)
 char *
 getSTA ()
 {
+  int c = get_wl_instances ();
+  int i;
+  for (i = 0; i < c; i++)
+    {
+      if (nvram_nmatch ("sta","wl%d_mode", i) && !nvram_nmatch ("disabled","wl%d_net_mode",i))
+	{
+	  return get_wl_instance_name(i);
+	}
+
+    }
   return NULL;
 }
 
 char *
 getWET ()
 {
+  int c = get_wl_instances ();
+  int i;
+  for (i = 0; i < c; i++)
+    {
+      if (nvram_nmatch ("wet","wl%d_mode", i) && !nvram_nmatch ("disabled","wl%d_net_mode",i))
+	{
+	  return get_wl_instance_name(i);
+	}
+
+    }
   return NULL;
 }
 
