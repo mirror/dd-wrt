@@ -227,6 +227,7 @@
  "wl_wme_sta_vi" "WME STA VI" "WMEPARAM" "FALSE" "0"
  "wl_wme_sta_vo" "WME STA VO" "WMEPARAM" "FALSE" "0"
  "wl_maxassoc" "MAX Assoc Clients" "RANGE" "1" "256" "FALSE" "0"
+ "wl_btc_mode" "BT Coexistence" "CHOICE" "3" "0" "1" "2" "FALSE" "0"
  "enable_game" "enable game" "NULL" "FALSE" "0"
  "default_level" "default qos level" "NULL" "FALSE" "0"
  "static_leases" "static leases" "STATICLEASES" "TRUE" "0"
