@@ -1691,7 +1691,8 @@ filter_forward (void)
   char dev[16];
   char var[80];
   char wifivifs[16];
-  for (i = 0; i < getdevicecount (); i++)
+  int devcount = getdevicecount();
+  for (i = 0; i < devcount; i++)
 	{
 	  sprintf (wifivifs, "ath%d_vifs", i);
 	  save2file ("-A INPUT -i ath%d -j ACCEPT\n", i);
@@ -1705,20 +1706,25 @@ filter_forward (void)
 	}
 	}
 #else
+  int i;
   char *next;
   char dev[16];
   char var[80];
   char wifivifs[16];
-  save2file ("-A INPUT -i %s -j ACCEPT\n", get_wdev ());
-  save2file ("-A FORWARD -i %s -j ACCEPT\n", get_wdev ());
+  int devcount = get_wl_instances();
+  for (i = 0; i < devcount; i++)
+	{
+	  sprintf (wifivifs, "wl%d_vifs", i);
+  save2file ("-A INPUT -i %s -j ACCEPT\n", get_wl_instance_name(i));
+  save2file ("-A FORWARD -i %s -j ACCEPT\n", get_wl_instance_name(i));
 
-  sprintf (wifivifs, "wl0_vifs");
   char *vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
 	foreach (var, vifs, next)
 	{
 	  save2file ("-A INPUT -i %s -j ACCEPT\n", var);
 	  save2file ("-A FORWARD -i %s -j ACCEPT\n", var);
+	}
 	}
 #endif
 
