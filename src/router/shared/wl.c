@@ -32,7 +32,7 @@ struct nvram_tuple router_defaults[] = {
 
 #ifndef HAVE_MADWIFI
 int
-getchannels (unsigned int *list)
+getchannels (unsigned int *list,char *ifname)
 {
   // int ret, num;
 //  num = (sizeof (*list) - 4) / 6;     /* Maximum number of entries in the buffer */
@@ -40,7 +40,9 @@ getchannels (unsigned int *list)
 
 //  ret = wl_ioctl (name, WLC_GET_VALID_CHANNELS, list, 128);
 //fprintf(stderr,"get channels\n");
-  FILE *in = popen ("wl channels", "r");
+char exec[64];
+sprintf(exec,"wl -i %s channels",ifname);
+  FILE *in = popen (exec, "r");
 #ifndef HAVE_MSSID
   while (fgetc (in) != ':');
 #endif
@@ -829,6 +831,51 @@ getassoclist (char *ifname, unsigned char *list)
 
 #endif
 
+
+char *get_wl_instance_name(int instance)
+{
+if (get_wl_instance("eth3")==instance)
+    return "eth3";
+if (get_wl_instance("eth2")==instance)
+    return "eth2";
+if (get_wl_instance("eth1")==instance)
+    return "eth1";
+if (get_wl_instance("eth0")==instance)
+    return "eth0";
+} 
+
+int get_wl_instances(void)
+{
+if (get_wl_instance("eth3")==1)
+    return 2;
+if (get_wl_instance("eth2")==1)
+    return 2;
+if (get_wl_instance("eth1")==1)
+    return 2;
+return 1;    
+}
+int get_wl_instance(char *name)
+{
+int unit;
+int ret;
+ret = wl_ioctl (name, WLC_GET_INSTANCE, &unit, sizeof (unit));
+if (ret==0)
+    return unit;
+return ret;
+/*if (!strcmp(name,"eth0") && !wl_probe("eth0"))
+    return 0;
+if (!strcmp(name,"eth1") && !wl_probe("eth1"))
+    {
+    if (!wl_probe("eth0"))return 1;
+    else return 0;
+    }
+if (!strcmp(name,"eth2") && !wl_probe("eth2"))
+    {
+    if (!wl_probe("eth1"))return 1;
+    else return 0;
+    }
+return -1;*/
+}
 /* return wireless interface */
 char *
 get_wdev (void)

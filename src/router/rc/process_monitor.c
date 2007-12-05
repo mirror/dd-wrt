@@ -93,27 +93,28 @@ process_monitor_main (void)
       if ((abs (now.tv_sec - then.tv_sec) > 100000000)
 	  && nvram_match ("snmpd_enable", "1"))
 	{
-	  stop_service ("snmp");
+	  eval("stopservice","snmp");
 	  sleep (1);
 	  syslog (LOG_DEBUG, "Restarting snmpd\n");
-	  start_service ("snmp");
+	  eval("startservice","snmp");
+	  
 	}
 #endif
 #ifdef HAVE_WIFIDOG		//dirty fix for wifidog
       if ((abs (now.tv_sec - then.tv_sec) > 100000000)
 	  && nvram_match ("wd_enable", "1"))
 	{
-	  stop_service ("wifidog");
+	  eval("stopservice","wifidog");
 	  sleep (1);
 	  syslog (LOG_DEBUG, "Restarting Wifidog daemon\n");
-	  start_service ("wifidog");
+	  eval("startservice","wifidog");
 	}
 #endif
 //give user a chance to use resetbutton for first 4 min even if disabled and time is not synched
       if (then.tv_sec > 240 && nvram_match ("resetbutton_enable", "0")
 	  && pidof ("resetbutton") > 0)
 	{
-	  stop_service ("resetbutton");
+	  eval("stopservice","resetbutton");
 	}
 
       syslog (LOG_DEBUG, "We need to re-update after %d seconds\n",
