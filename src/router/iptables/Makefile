@@ -31,7 +31,7 @@ RELEASE_DIR:=/tmp
 #DO_IPV6:=1
 #endif
 
-COPT_FLAGS:=$(COPTS) -DNEED_PRINTF
+COPT_FLAGS:=$(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections
 CFLAGS:=$(COPT_FLAGS) -Wall -Wunused -I$(KERNEL_DIR)/include -Iinclude/ -DIPTABLES_VERSION=\"$(IPTABLES_VERSION)\" #-g -DDEBUG #-pg # -DIPTC_DEBUG
 NO_SHARED_LIBS=1
 DO_MULTI=1
