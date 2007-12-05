@@ -834,23 +834,23 @@ getassoclist (char *ifname, unsigned char *list)
 
 char *get_wl_instance_name(int instance)
 {
-if (get_wl_instance("eth3")==instance)
-    return "eth3";
-if (get_wl_instance("eth2")==instance)
-    return "eth2";
 if (get_wl_instance("eth1")==instance)
     return "eth1";
+if (get_wl_instance("eth2")==instance)
+    return "eth2";
 if (get_wl_instance("eth0")==instance)
     return "eth0";
+if (get_wl_instance("eth3")==instance)
+    return "eth3";
 } 
 
 int get_wl_instances(void)
 {
-if (get_wl_instance("eth3")==1)
+if (get_wl_instance("eth1")==1)
     return 2;
 if (get_wl_instance("eth2")==1)
     return 2;
-if (get_wl_instance("eth1")==1)
+if (get_wl_instance("eth3")==1)
     return 2;
 return 1;    
 }
