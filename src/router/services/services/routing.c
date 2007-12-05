@@ -420,9 +420,8 @@ bird_init (void)
 		     nvram_safe_get ("lan_ifname"));
 	  if (nvram_match ("routing_wan", "on"))
 	    {
-	      if (nvram_match ("wl_mode", "sta")
-		  || nvram_match ("wl_mode", "apsta"))
-		fprintf (fp, "	interface \"%s\" { };\n", get_wdev ());
+	      if (getSTA())
+		fprintf (fp, "	interface \"%s\" { };\n", getSTA ());
 	      else
 		fprintf (fp, "	interface \"%s\" { };\n",
 			 nvram_safe_get ("wan_ifname"));
