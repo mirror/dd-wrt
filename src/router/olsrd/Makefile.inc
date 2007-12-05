@@ -12,7 +12,7 @@ DEBUG ?= 0
 NO_DEBUG_MESSAGES ?= 0
 
 # the optimize option to be set for gcc
-OPTIMIZE ?= -O2
+OPTIMIZE ?= $(COPTS)
 
 # enable mudflap with 1 or deactivate with 0
 # you need a recent enough gcc and the libmudflap installed
@@ -150,7 +150,8 @@ ifeq ($(DEBUG),1)
 CPPFLAGS +=	-DDEBUG
 CFLAGS +=	-g
 else
-CPPFLAGS +=	-DNDEBUG
+CPPFLAGS +=	-DNDEBUG 
+#CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 ifeq ($(NO_DEBUG_MESSAGES),1)
 CPPFLAGS +=	-DNODEBUG
