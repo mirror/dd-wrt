@@ -79,11 +79,11 @@ DEFS		= -s
 #INSTALL = installbsd
 INSTALL = install
 #<<any special load flags>>
-LDFLAGS		+= -s
+LDFLAGS		+= -s -ffunction-sections -fdata-sections -Wl,--gc-sections
 #################################### end configurable stuff
 
 SHELL		=	/bin/sh
-CFLAGS		=	$(OPTIM) $(INCLUDE) $(COMPAT) $(DEFS)
+CFLAGS		=	$(OPTIM) $(INCLUDE) $(COMPAT) $(DEFS) $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 INFOS		=	README CHANGES FEATURES INSTALL CONVERSION THANKS MAIL
 MANPAGES	=	bitstring.3 crontab.5 crontab.1 cron.8 putman.sh
