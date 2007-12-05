@@ -232,14 +232,14 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       wl_hwaddr("eth1",macbuf);
       ether_etoa((uchar *)macbuf, eaddr);
       nvram_set("wl0_hwaddr",eaddr);      
-/*      if (!nvram_match("et0macaddr",eaddr))
+      MAC_SUB(eaddr);
+      if (!nvram_match("et0macaddr",eaddr))
         {
-        MAC_SUB(eaddr);
         nvram_set("et0macaddr",eaddr);
 	nvram_commit();
         kill (1, SIGTERM);
         exit (0);
-	}*/
+	}
       wl_hwaddr("eth2",macbuf);
       ether_etoa((uchar *)macbuf, eaddr);
       nvram_set("wl1_hwaddr",eaddr);      
