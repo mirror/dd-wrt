@@ -14,7 +14,7 @@ HANDLERS=sync-pppd.so cmd.so
 
 OBJS=pty.o sync-pppd.o dstring.o
 SRCS=$(OBJS:.o=.c)
-CFLAGS=-g $(COPTS)  -I.. -I../libevent -I../../libevent -Wall
+CFLAGS=-g $(COPTS)  -I.. -I../libevent -I../../libevent -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 all: $(HANDLERS) l2tp-control
 

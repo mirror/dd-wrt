@@ -26,10 +26,10 @@ install_dir=/usr/bin/install -c -d
 sbindir=${exec_prefix}/sbin
 
 OBJS=auth.o debug.o dgram.o main.o md5.o network.o options.o peer.o session.o tunnel.o utils.o
-EXTRA_LIBS=libevent/*.o -ldl
+EXTRA_LIBS=libevent/*.o -ldl -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 SRCS=$(OBJS:.o=.c)
-CFLAGS=$(COPTS) -I.. -Ilibevent -Wall -Wstrict-prototypes -D_GNU_SOURCE -DVERSION=\"$(VERSION)\" -DPREFIX=\"$(prefix)\"
+CFLAGS=$(COPTS) -I.. -Ilibevent -Wall -Wstrict-prototypes -D_GNU_SOURCE -DVERSION=\"$(VERSION)\" -DPREFIX=\"$(prefix)\" -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 TARGETS=l2tpd libl2tp.a handlers
 
