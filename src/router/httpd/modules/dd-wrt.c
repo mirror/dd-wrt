@@ -4934,7 +4934,7 @@ show_80211X (webs_t wp, char *prefix)
 
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
-	     "<div class=\"label\">P<script type=\"text/javascript\">Capture(share.privatekey)</script></div>\n");
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(share.privatekey)</script></div>\n");
   websWrite (wp,
 	     "<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xprv\" name=\"%s_tls8021xprv\"></textarea><script language=\"text/javascript\">\n//<![CDATA[\n ",
 	     prefix, prefix);
