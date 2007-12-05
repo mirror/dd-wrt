@@ -1003,7 +1003,10 @@ start_restore_defaults (void)
       nvram_commit ();
       cprintf ("done\n");
       for (i = 0; i < MAX_NVPARSE; i++)
+      {
 	del_wds_wsec (0, i);
+	del_wds_wsec (1, i);
+      }
     }
 }
 
