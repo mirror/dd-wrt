@@ -6,7 +6,7 @@ refresh() {
 
   id=1
   lastid=0
-  noise_reference=$(nvram get noise_reference)
+  noise_reference=$(wl noise | cut -d" " -f3)
   
   for mac in $(wl assoclist | cut -d" " -f2)
   do
@@ -15,10 +15,12 @@ refresh() {
       getnext_1361412021255="$place.3.54.1.3.32.1.1.1"
       getnext_1361412021255354133211="$place.3.54.1.3.32.1.1.1"
       getnext_1361412021255354133214="$place.3.54.1.3.32.1.4.1"
+      getnext_13614120212553541332113="$place.3.54.1.3.32.1.13.1"
       getnext_13614120212553541332126="$place.3.54.1.3.32.1.26.1"
     else
       eval getnext_1361412021255354133211${lastid}="$place.3.54.1.3.32.1.1.$id"
       eval getnext_1361412021255354133214${lastid}="$place.3.54.1.3.32.1.4.$id"
+      eval getnext_13614120212553541332113${lastid}="$place.3.54.1.3.32.1.13.$id"
       eval getnext_13614120212553541332126${lastid}="$place.3.54.1.3.32.1.26.$id"
     fi
   
@@ -35,6 +37,8 @@ refresh() {
     eval type_1361412021255354133211${id}='integer';
     eval value_1361412021255354133214${id}='$mac';
     eval type_1361412021255354133214${id}='octet';
+    eval value_13614120212553541332113${id}=$noise_reference;
+    eval type_13614120212553541332113${id}='integer';
     eval value_13614120212553541332126${id}=$snr;
     eval type_13614120212553541332126${id}='integer';
 
@@ -46,7 +50,8 @@ refresh() {
   if test $lastid -ne 0
   then
     eval getnext_1361412021255354133211${lastid}="$place.3.54.1.3.32.1.4.1"
-    eval getnext_1361412021255354133214${lastid}="$place.3.54.1.3.32.1.26.1"
+    eval getnext_1361412021255354133214${lastid}="$place.3.54.1.3.32.1.13.1"
+    eval getnext_13614120212553541332113${lastid}="$place.3.54.1.3.32.1.26.1"
     eval getnext_13614120212553541332126${lastid}="NONE"
   fi
 } 
