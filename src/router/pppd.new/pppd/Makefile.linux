@@ -79,7 +79,7 @@ INCLUDE_DIRS= -I../include
 
 COMPILE_FLAGS= -DHAVE_PATHS_H -DHAVE_MMAP
 
-CFLAGS= $(COPTS) $(COMPILE_FLAGS) $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"'
+CFLAGS= $(COPTS) $(COMPILE_FLAGS) $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"' -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 ifdef CHAPMS
 CFLAGS   += -DCHAPMS=1
@@ -97,7 +97,7 @@ endif
 # EAP SRP-SHA1
 ifdef USE_SRP
 CFLAGS	+= -DUSE_SRP -DOPENSSL -I/usr/local/ssl/include
-LIBS	+= -lsrp -L/usr/local/ssl/lib -lcrypto
+LIBS	+= -lsrp -L/usr/local/ssl/lib -lcrypto -ffunction-sections -fdata-sections -Wl,--gc-sections
 TARGETS	+= srp-entry
 EXTRAINSTALL = $(INSTALL) -c -m 555 srp-entry $(BINDIR)/srp-entry
 MANPAGES += srp-entry.8
