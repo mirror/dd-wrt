@@ -104,7 +104,7 @@ AUTOMAKE = ${SHELL} /home/seg/DEV/broadcom/src/router/pptpd/missing --run automa
 AWK = gawk
 CC = $(ARCH)-linux-uclibc-gcc
 CCDEPMODE = depmode=none
-CFLAGS = $(COPTS) -fno-builtin -Wall -DSBINDIR='"$(sbindir)"'
+CFLAGS = $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -fno-builtin -Wall -DSBINDIR='"$(sbindir)"'
 CPP = $(ARCH)-linux-uclibc-gcc -E
 CPPFLAGS = 
 CYGPATH_W = echo
@@ -121,7 +121,7 @@ INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = ${SHELL} $(install_sh) -c -s
-LDFLAGS = 
+LDFLAGS =  -ffunction-sections -fdata-sections -Wl,--gc-sections
 LIBOBJS = 
 LIBS = 
 LN_S = ln -s
