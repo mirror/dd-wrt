@@ -71,7 +71,7 @@ SOURCES.OBJ := $(patsubst %.c,$(OBJDIR)/%.o,$(SOURCES.OBJ))
 
 TARGET = upnp
 LIBS = -L../../upnp/linux -L$(SRCBASE)/router/netconf \
-	-L$(SRCBASE)/router/nvram -L$(SRCBASE)/router/shared -lupnp -lnetconf -lnvram -lshared
+	-L$(SRCBASE)/router/nvram -L$(SRCBASE)/router/shared -lupnp -lnetconf -lnvram -lshared -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 all : $(OBJDIR) $(TARGET)
 
