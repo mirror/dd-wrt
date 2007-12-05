@@ -122,7 +122,7 @@ nvram_get (const char *name)
     free (off);
   //unlock();
 
-//fprintf(stderr,"nvram_get %s = %s\n",name,value!=NULL?value:"");
+fprintf(stderr,"nvram_get %s = %s\n",name,value!=NULL?value:"");
 //fprintf(stderr,"NVRAM_GET(%s)=%s\n",name,value);
   return value;
 }

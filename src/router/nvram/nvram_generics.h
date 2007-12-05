@@ -1,4 +1,5 @@
 #include <malloc.h>
+#include <stdarg.h>
 
 #define cprintf(fmt, args...)
 
@@ -117,6 +118,35 @@ int nvram_prefix_match(const char *name, const char *prefix,char *match)
 char p[64];
 sprintf(p,"%s_%s",prefix,name);
 return nvram_match(p,match);
+}
+
+int nvram_nmatch(char *match,const char *fmt,...)
+{
+char varbuf[64];
+va_list args;
+va_start(args, (char*)fmt);
+vsnprintf(varbuf, sizeof(varbuf), fmt, args);
+va_end(args);
+return nvram_match(varbuf,match);
+}
+
+char *nvram_nget(const char *fmt,...)
+{
+char varbuf[64];
+va_list args;
+va_start(args, (char*)fmt);
+vsnprintf(varbuf, sizeof(varbuf), fmt, args);
+va_end(args);
+return nvram_safe_get(varbuf);
+}
+char *nvram_nset(char *value,const char *fmt,...)
+{
+char varbuf[64];
+va_list args;
+va_start(args, (char*)fmt);
+vsnprintf(varbuf, sizeof(varbuf), fmt, args);
+va_end(args);
+return nvram_set(varbuf,value);
 }
 
 char *nvram_safe_get(const char *name)
