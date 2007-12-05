@@ -412,8 +412,12 @@ else
 
 	if (!strcmp (prefix, "wl0"))
 	  {
-	    iface = get_wdev ();
-	  }
+	    iface = get_instance_name(0);
+	  }else
+	if (!strcmp (prefix, "wl1"))
+	  {
+	    iface = get_instance_name(1);
+	  }	  
 	else
 	  {
 	    iface = prefix;
