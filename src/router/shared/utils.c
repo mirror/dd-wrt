@@ -1685,14 +1685,9 @@ get_wan_face (void)
 	strncpy (localwanface, nvram_safe_get ("pppd_pppifname"), IFNAMSIZ);
     }
 #ifndef HAVE_MADWIFI
-  else if (nvram_match ("wl0_mode", "sta")
-	   || nvram_match ("wl0_mode", "apsta")
-	   || nvram_match ("wl0_mode", "apstawet")
-	   || nvram_match ("wl0_mode", "wet"))
+  else if (getSTA ())
     {
-
-      strcpy (localwanface, get_wdev ());
-
+	strcpy (localwanface, getSTA ());
     }
 #else
   else if (getSTA ())
@@ -3009,7 +3004,7 @@ getSTA ()
   int i;
   for (i = 0; i < c; i++)
     {
-      if (nvram_nmatch ("sta","wl%d_mode", i) && !nvram_nmatch ("disabled","wl%d_net_mode",i))
+      if ((nvram_nmatch ("sta","wl%d_mode", i) || nvram_nmatch ("apsta","wl%d_mode", i)) && !nvram_nmatch ("disabled","wl%d_net_mode",i))
 	{
 	  return get_wl_instance_name(i);
 	}
@@ -3025,7 +3020,7 @@ getWET ()
   int i;
   for (i = 0; i < c; i++)
     {
-      if (nvram_nmatch ("wet","wl%d_mode", i) && !nvram_nmatch ("disabled","wl%d_net_mode",i))
+      if ((nvram_nmatch ("wet","wl%d_mode", i) ||nvram_nmatch ("apstawet","wl%d_mode", i)) && !nvram_nmatch ("disabled","wl%d_net_mode",i))
 	{
 	  return get_wl_instance_name(i);
 	}

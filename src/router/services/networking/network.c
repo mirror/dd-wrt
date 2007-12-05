@@ -1798,9 +1798,11 @@ start_lan (void)
   /* Sveasoft - create separate WDS subnet bridge if enabled */
 #ifdef HAVE_MADWIFI
   int cnt = getifcount ("wifi");
+#else
+  int cnt = get_wl_instances();
+#endif
   int c;
   for (c = 0; c < cnt; c++)
-#endif
     {
 #ifdef HAVE_MADWIFI
       char br1enable[32];
@@ -1810,9 +1812,12 @@ start_lan (void)
       sprintf (br1ipaddr, "ath%d_br1_ipaddr", c);
       sprintf (br1netmask, "ath%d_br1_netmask", c);
 #else
-      char *br1enable = "wl_br1_enable";
-      char *br1ipaddr = "wl_br1_ipaddr";
-      char *br1netmask = "wl_br1_netmask";
+      char br1enable[32];
+      char br1ipaddr[32];
+      char br1netmask[32];
+      sprintf (br1enable, "wl%d_br1_enable", c);
+      sprintf (br1ipaddr, "wl%d_br1_ipaddr", c);
+      sprintf (br1netmask, "wl%d_br1_netmask", c);
 #endif
       if (nvram_get (br1enable) == NULL)
 	nvram_set (br1enable, "0");
@@ -1860,9 +1865,7 @@ start_lan (void)
   /* logic - if separate ip defined bring it up */
   /*         else if flagged for br1 and br1 is enabled add to br1 */
   /*         else add it to the br0 bridge */
-#ifdef HAVE_MADWIFI
   for (c = 0; c < cnt; c++)
-#endif
     {
 
       for (s = 1; s <= MAX_WDS_DEVS; s++)
@@ -1878,9 +1881,12 @@ start_lan (void)
 	  if (nvram_get (wdsvarname) == NULL)
 	    nvram_set (wdsvarname, "0");
 #else
-	  sprintf (wdsvarname, "wl_wds%d_enable", s);
-	  sprintf (wdsdevname, "wl_wds%d_if", s);
-	  char *br1enable = "wl_br1_enable";
+	  char br1enable[32];
+	  sprintf (wdsvarname, "wl%d_wds%d_enable", c, s);
+	  sprintf (wdsdevname, "wl%d_wds%d_if", c, s);
+	  sprintf (br1enable, "wl%d_br1_enable", c);
+	  if (nvram_get (wdsvarname) == NULL)
+	    nvram_set (wdsvarname, "0");
 #endif
 	  dev = nvram_safe_get (wdsdevname);
 	  if (strlen (dev) == 0)
@@ -1897,8 +1903,8 @@ start_lan (void)
 	      snprintf (wdsip, 31, "ath%d_wds%d_ipaddr", c, s);
 	      snprintf (wdsnm, 31, "ath%d_wds%d_netmask", c, s);
 #else
-	      snprintf (wdsip, 31, "wl_wds%d_ipaddr", s);
-	      snprintf (wdsnm, 31, "wl_wds%d_netmask", s);
+	      snprintf (wdsip, 31, "wl%d_wds%d_ipaddr",c, s);
+	      snprintf (wdsnm, 31, "wl%d_wds%d_netmask",c, s);
 #endif
 
 	      snprintf (wdsbc, 31, "%s", nvram_safe_get (wdsip));
@@ -2214,14 +2220,14 @@ start_wan (int status)
 
 #endif
 #ifndef HAVE_MADWIFI
-  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "apstawet"))
+  if (getWET())
     {
       dns_to_resolv ();
       return;
     }
   if (isClient ())
     {
-      pppoe_wan_ifname = get_wdev ();
+      pppoe_wan_ifname = getSTA();
     }
 
 #else
@@ -3546,6 +3552,10 @@ start_wds_check (void)
   /* logic - if separate ip defined bring it up */
   /*         else if flagged for br1 and br1 is enabled add to br1 */
   /*         else add it to the br0 bridge */
+int cnt = get_wl_instances();
+int c;
+for (c=0;c<cnt;c++)
+{
   for (s = 1; s <= MAX_WDS_DEVS; s++)
     {
       char wdsvarname[32] = { 0 };
@@ -3554,8 +3564,8 @@ start_wds_check (void)
       struct ifreq ifr;
 
 
-      sprintf (wdsvarname, "wl_wds%d_enable", s);
-      sprintf (wdsdevname, "wl_wds%d_if", s);
+      sprintf (wdsvarname, "wl%d_wds%d_enable", c,s);
+      sprintf (wdsdevname, "wl%d_wds%d_if", c,s);
       dev = nvram_safe_get (wdsdevname);
 
       if (nvram_match (wdsvarname, "0"))	// wds_s disabled
@@ -3576,8 +3586,8 @@ start_wds_check (void)
 	  char wdsbc[32] = { 0 };
 	  char wdsnm[32] = { 0 };
 
-	  snprintf (wdsip, 31, "wl_wds%d_ipaddr", s);
-	  snprintf (wdsnm, 31, "wl_wds%d_netmask", s);
+	  snprintf (wdsip, 31, "wl%d_wds%d_ipaddr",c, s);
+	  snprintf (wdsnm, 31, "wl%d_wds%d_netmask",c, s);
 
 	  snprintf (wdsbc, 31, "%s", nvram_safe_get (wdsip));
 	  get_broadcast (wdsbc, nvram_safe_get (wdsnm));
@@ -3586,7 +3596,7 @@ start_wds_check (void)
 	}
       /* Subnet WDS type */
       else if (nvram_match (wdsvarname, "2")
-	       && nvram_match ("wl_br1_enable", "1"))
+	       && nvram_nmatch ("1","wl%d_br1_enable", c))
 	{
 	  eval ("ifconfig", dev, "up");
 #ifdef HAVE_MICRO
@@ -3614,6 +3624,7 @@ start_wds_check (void)
 	}
 
     }
+}
   close (sock);
   if (nvram_match ("lan_stp", "0"))
     {
