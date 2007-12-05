@@ -3,16 +3,15 @@ CC=gcc
 endif
 
 ifndef CFLAGS
-CFLAGS = -MMD $(COPTS) -Wall
+CFLAGS = -MMD $(COPTS) -Wall 
 endif
-
-CFLAGS += -I.
+CFLAGS += -I. -ffunction-sections -fdata-sections -Wl,--gc-sections
 CFLAGS += -I../src
 CFLAGS += -I../src/crypto
 CFLAGS += -I../src/utils
 CFLAGS += -I../src/common
 CFLAGS += -I../src/rsn_supp
-
+LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 ALL=wpa_supplicant wpa_passphrase wpa_cli
 
 all: verify_config $(ALL) dynamic_eap_methods
