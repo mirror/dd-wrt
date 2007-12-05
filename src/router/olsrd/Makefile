@@ -51,6 +51,7 @@ ifeq ($(OS), win32)
 LDFLAGS +=	-Wl,--out-implib=libolsrd.a -Wl,--export-all-symbols
 endif
 
+#LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 SWITCHDIR =	src/olsr_switch
 CFGDIR =	src/cfgparser
 CFGOBJS = 	$(CFGDIR)/oscan.o $(CFGDIR)/oparse.o $(CFGDIR)/olsrd_conf.o
