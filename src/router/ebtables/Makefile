@@ -22,7 +22,8 @@ override INITDIR:=$(DESTDIR)$(INITDIR)
 override SYSCONFIGDIR:=$(DESTDIR)$(SYSCONFIGDIR)
 
 
-CFLAGS += -DNEED_PRINTF -I$(LINUXDIR)/include
+CFLAGS += -DNEED_PRINTF -I$(LINUXDIR)/include -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS = -ffunction-sections -fdata-sections -Wl,--gc-sections
 #CC:=gcc
 #LD:=ld
 
