@@ -166,6 +166,7 @@ share.bytes="bajtov";
 share.kbytes="KB";
 share.mbytes="MB";
 share.gbytes="GB";
+share.preempt="Predkup";
 
 
 sbutton.save="Shrani nastavitve";
@@ -350,6 +351,8 @@ bmenu.wirelessWds0="Ath0-WDS";
 bmenu.wirelessWds1="Ath1-WDS";
 bmenu.wirelessWds2="Ath2-WDS";
 bmenu.wirelessWds3="Ath3-WDS";
+bmenu.wirelessWdswl0="WL0-WDS";
+bmenu.wirelessWdswl1="WL1-WDS";
 
 bmenu.security="Za¹èita";
 bmenu.firwall="Po¾arni zid";
@@ -975,6 +978,7 @@ routetbl.th1="Ciljni LAN IP";
 
 route.titl="Usmerjanje";
 route.h2="Napredno usmerjanje";
+route.metric="Metrika";
 route.mod="Naèin";
 route.bgp_legend="BGP nastavitve";
 route.bgp_ip="Sosednji IP";
@@ -1160,6 +1164,8 @@ service.nstx_ipenable="Ve¾i samo na ta IP";
 service.nstx_log="Sporoèila za razhro¹èevanje";
 
 //milkfish.webservices
+service.milkfish_siprouter="Milkfish SIP router";
+service.milkfish_database="Milkfish SIP Database";
 service.database_subscribers="Lokalni naroèniki";
 service.database_aliases="Local Aliases";
 service.milkfish_alias="Alias";
@@ -1169,10 +1175,15 @@ service.milkfish_fromswitch="From-Substitution";
 service.milkfish_fromdomain="From-Domain";
 service.milkfish_username="Milkfish Username";
 service.milkfish_password="Milkfish Password";
-service.milkfish_siptrace="Milkfish SIP Trace";
+service.milkfish_audit="Milkfish Audit";
+service.milkfish_siptrace="SIP Trace";
 service.milkfish_subscribers="Local Subscribers";
 service.milkfish_aliases="Local Aliases";
 service.milkfish_dynsip="Dynamic SIP";
+service.milkfish_status="SIP Status";
+service.milkfish_database="SIP Database";
+service.milkfish_messaging="SIP Messaging";
+service.milkfish_phonebook="SIP Phonebook";
 service.milkfish_dynsipdomain="DynSIP Domain";
 service.milkfish_dynsipurl="DynSIP Update URL";
 service.milkfish_dsusername="DynSIP Username";
@@ -1585,6 +1596,7 @@ wl_adv.label18="WMM podpora";
 wl_adv.label19="Brez potrditve";
 wl_adv.label20="Razveljavi Shortslot";
 wl_adv.label21="Najveèja hitrost oddajanja";
+wl_adv.label22="Naèin koeksistenca z Bluetoothom";
 wl_adv.table1="EDCA AP parameteri (AP do odjemalca)";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmaks";
@@ -1664,7 +1676,7 @@ wl_basic.preambletime="OFDM Preamble èas";
 
 hwl_basic.right2="Èe ¾elite prepovedati vstop odjemalcem G, izberite <em>Samo-B</em> naèin. Èe ¾elite izkljuèiti brez¾ièno omre¾je, izberite <em>Onemogoèie</em>.";
 hwl_basic.right3="Obmoèje obèutljivosti: ";
-hwl_basic.right4="Prilagodi ACK uèasenje. 0 (niè) popolnoma onemogoèi ACK uèasenje.";
+hwl_basic.right4="Prilagodi ACK uèasenje. 0 onemogoèi ACK uèasenje.";
 hwl_basic.right6="Klikni na uro za omogoèenje ali onemogoèenje radijskega signala (<em>zeleno</em> pomeni dovoljen brez¾ièni dostop, <em>rdeèe</em> pomeni nedovoljen brez¾ièni dostop)";
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
