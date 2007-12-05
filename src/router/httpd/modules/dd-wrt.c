@@ -6128,7 +6128,7 @@ for (i=0;i<c;i++)
 {
   char wlif[32];
   sprintf(wlif,"wl%d",i);
-  cnt = ej_active_wireless_if (wp, argc, argv, get_wdev (), wlif, cnt);
+  cnt = ej_active_wireless_if (wp, argc, argv, get_wl_instance_name(i), wlif, cnt);
   char *next;
   char var[80];
   char *vifs = nvram_nget ("wl%d_vifs",i);
@@ -6341,6 +6341,7 @@ save_wds (webs_t wp)
 
   sprintf (wds_enable_var, "%s_br1_nat", interface);
   wds_enable_val = websGetVar (wp, wds_enable_var, NULL);
+fprintf(stderr,"setting %s to %s\n",wds_enable_var,wds_enable_val);
   nvram_set (wds_enable_var, wds_enable_val);
 
   return;
