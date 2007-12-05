@@ -11,9 +11,9 @@ CFLAGS = $(COPTS)
 
 CFLAGS += -DIGMP_SEND_THE_SECOND_QUERY_PACKET=1 -DNEED_PRINTF
 
-CFLAGS += -DIGMP_BLOCK_SOME_SPEC_ADDRS=1 -I$(TOP)/../include.v24 -I$(TOP)/shared -DHND_FIX -fomit-frame-pointer
+CFLAGS += -DIGMP_BLOCK_SOME_SPEC_ADDRS=1 -I$(TOP)/../include.v24 -I$(TOP)/shared -DHND_FIX -fomit-frame-pointer -fpic -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-LDFLAGS = -L$(TOP)/netconf -lnetconf 
+LDFLAGS = -L$(TOP)/netconf -lnetconf -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 all: igmp-proxy
 
