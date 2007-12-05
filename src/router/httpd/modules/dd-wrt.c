@@ -6333,13 +6333,14 @@ save_wds (webs_t wp)
     {
       sprintf (wds_enable_var, "%s_wds%d_enable", interface, h);
       wds_enable_val = websGetVar (wp, wds_enable_var, NULL);
-fprintf(stderr,"save %s=%s\n",wds_enable_var,wds_enable_val);
       nvram_set (wds_enable_var, wds_enable_val);
     }
   sprintf (wds_enable_var, "%s_br1_enable", interface);
-
   wds_enable_val = websGetVar (wp, wds_enable_var, NULL);
-fprintf(stderr,"save %s=%s\n",wds_enable_var,wds_enable_val);
+  nvram_set (wds_enable_var, wds_enable_val);
+
+  sprintf (wds_enable_var, "%s_br1_nat", interface);
+  wds_enable_val = websGetVar (wp, wds_enable_var, NULL);
   nvram_set (wds_enable_var, wds_enable_val);
 
   return;
