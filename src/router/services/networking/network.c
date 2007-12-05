@@ -1413,8 +1413,6 @@ start_lan (void)
 		  {
 		    nvram_nset (mac,"wl%d_hwaddr", instance);
 		    nvram_commit ();
-		  }
-	      }
 	    ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 	    strncpy (ifr.ifr_name, wl_face, IFNAMSIZ);
 
@@ -1422,6 +1420,8 @@ start_lan (void)
 	      perror ("Write wireless mac fail : ");
 	    else
 	      cprintf ("Write wireless mac successfully\n");
+		  }
+	      }
 #ifdef HAVE_MSSID
 	    set_vifsmac (mac);
 #endif
@@ -2297,8 +2297,9 @@ start_wan (int status)
   else
     {
       unsigned char mac[20];
-      
-     if (!strcmp (wan_ifname, get_wdev()))  //sta mode
+      char *wlifname = getSTA();
+      if (!wlifname)wlifname=getWET();
+     if (wlifname && !strcmp (wan_ifname, wlifname))  //sta mode
      {
      strcpy (mac, nvram_safe_get ("il0macaddr"));
 
@@ -2318,6 +2319,14 @@ start_wan (int status)
       else
          strcpy (mac, nvram_safe_get ("et0macaddr"));
      MAC_ADD (mac);
+  if (memcmp (ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN))
+    {
+      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+      ioctl (s, SIOCSIFHWADDR, &ifr);
+      cprintf ("Write WAN mac successfully\n");
+    }
+  else
+    perror ("Write WAN mac fail : ");
      }
      
 #if 0   
@@ -2335,14 +2344,6 @@ start_wan (int status)
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
     }
 
-  if (memcmp (ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN))
-    {
-      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-      ioctl (s, SIOCSIFHWADDR, &ifr);
-      cprintf ("Write WAN mac successfully\n");
-    }
-  else
-    perror ("Write WAN mac fail : ");
 
 #endif
 //fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
