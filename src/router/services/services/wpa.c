@@ -257,12 +257,7 @@ static void start_nas_ap(char *prefix,char *type)
 }
 */
 void
-start_nas_lan (void)
-{
-int cnt = get_wl_instances();
-
-int c;
-for (c=0;c<cnt;c++)
+start_nas_lan (int c)
 {
 char wlname[32];
 sprintf(wlname,"wl%d",c);
@@ -280,17 +275,11 @@ sprintf(wlname,"wl%d",c);
     }
 #endif
 }
-}
 
 
 
 void
-start_nas_wan (void)
-{
-int cnt = get_wl_instances();
-
-int c;
-for (c=0;c<cnt;c++)
+start_nas_wan (int c)
 {
 char wlname[32];
 sprintf(wlname,"wl%d",c);
@@ -317,7 +306,6 @@ sprintf(wlname,"wl%d",c);
 	}
     }
 #endif
-}
 }
 
 #ifdef HAVE_WPA_SUPPLICANT
@@ -347,13 +335,13 @@ sprintf(wlname,"wl%d",c);
 	setupSupplicant (wlname);
       else
 #endif
-	start_nas_wan ();
+	start_nas_wan (c);
 
     }
   else
     {
       cprintf ("start nas lan\n");
-      start_nas_lan ();
+      start_nas_lan (c);
     }
 }
   return 1;
