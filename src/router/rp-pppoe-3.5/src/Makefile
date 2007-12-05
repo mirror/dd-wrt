@@ -63,7 +63,7 @@ PATHS='-DPPPOE_PATH="$(PPPOE_PATH)"' '-DPPPD_PATH="$(PPPD_PATH)"' \
 	'-DPLUGIN_PATH="$(PLUGIN_PATH)"' \
 	'-DPPPOE_SERVER_OPTIONS="$(PPPOESERVER_PPPD_OPTIONS)"'
 
-CFLAGS= $(COPTS) -Wall -Wstrict-prototypes -ansi -pedantic $(LIC_INCDIR) $(DEFINES) $(LIC_DEFINE) $(PATHS) -Ilibevent
+CFLAGS= $(COPTS) -Wall -Wstrict-prototypes -ansi -pedantic $(LIC_INCDIR) $(DEFINES) $(LIC_DEFINE) $(PATHS) -Ilibevent -ffunction-sections -fdata-sections -Wl,--gc-sections
 ifeq ($(CONFIG_PPPOERELAY),y)
 CFLAGS += -DHAVE_PPPOERELAY
 endif
@@ -83,10 +83,10 @@ pppoe-sniff: pppoe-sniff.o if.o common.o debug.o
 
 ifeq ($(CONFIG_PPPOESERVER),y)
 pppoe-multi: multicall.o pppoe-server.o if.o debug.o common.o relay.o md5.o libevent/libevent.a 
-	$(CC) -o pppoe-multi relay.o multicall.o pppoe-server.o if.o debug.o common.o md5.o $(PPPOE_SERVER_LIBS) -Llibevent -levent
+	$(CC) -ffunction-sections -fdata-sections -Wl,--gc-sections -o pppoe-multi relay.o multicall.o pppoe-server.o if.o debug.o common.o md5.o $(PPPOE_SERVER_LIBS) -Llibevent -levent
 else
 pppoe-multi: multicall.o if.o debug.o common.o relay.o md5.o  
-	$(CC) -o pppoe-multi relay.o multicall.o if.o debug.o common.o
+	$(CC) -ffunction-sections -fdata-sections -Wl,--gc-sections -o pppoe-multi relay.o multicall.o if.o debug.o common.o
 
 endif
 pppoe: pppoe.o if.o debug.o common.o ppp.o discovery.o
