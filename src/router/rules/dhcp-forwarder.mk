@@ -1,5 +1,5 @@
 dhcpforwarder-configure:
-	cd dhcpforwarder && ./configure --host=$(ARCH)-linux-elf --sysconfdir=/tmp/dhcp-fwd CC=$(ARCH)-linux-uclibc-gcc CFLAGS="$(COPTS) -DHAVE_MALLOC=1 -Drpl_malloc=malloc -DNEED_PRINTF" 
+	cd dhcpforwarder && ./configure --host=$(ARCH)-linux-elf --sysconfdir=/tmp/dhcp-fwd CC=$(ARCH)-linux-uclibc-gcc CFLAGS="$(COPTS) -DHAVE_MALLOC=1 -Drpl_malloc=malloc -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -fpic" 
 
 dhcpforwarder:
 	$(MAKE) -C dhcpforwarder

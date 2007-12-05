@@ -14,7 +14,8 @@
 include $(TOP)/.config
 
 UPNP	:= $(SRCBASE)/tools/upnp/igd/linux
-CFLAGS	+= -s $(COPTS) -fpic
+CFLAGS	+= -s $(COPTS) -fpic -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 ifeq ($(CONFIG_GATEWORX),y)
 CFLAGS += -DHAVE_GATEWORX
 endif

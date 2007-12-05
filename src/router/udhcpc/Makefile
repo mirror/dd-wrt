@@ -20,8 +20,8 @@ USRSHAREDIR=${prefix}/share
 #endif
 
 
-CFLAGS += -I$(SRCBASE)/include/ -I$(SRCBASE)/router/shared/ -I$(SRCBASE)/
-#LDFLAGS =  -L$(TOP)/shared -lshared  -L$(TOP)/nvram -lnvram
+CFLAGS += -I$(SRCBASE)/include/ -I$(SRCBASE)/router/shared/ -I$(SRCBASE)/ $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS =  -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 #CROSS_COMPILE=arm-uclibc-
 CC = $(CROSS_COMPILE)gcc
