@@ -18,13 +18,13 @@
 
 #CC=mipsel-linux-uclibc-gcc
 
-CFLAGS=$(COPTS) -DUSE_MMAP
+CFLAGS=$(COPTS) -DUSE_MMAP -ffunction-sections -fdata-sections -Wl,--gc-sections
 #CFLAGS=-O -DMAX_WBITS=14 -DMAX_MEM_LEVEL=7
 #CFLAGS=-g -DDEBUG
 #CFLAGS=-O3 -Wall -Wwrite-strings -Wpointer-arith -Wconversion \
 #           -Wstrict-prototypes -Wmissing-prototypes
 
-LDFLAGS=-L. libz.a
+LDFLAGS=-L. libz.a -ffunction-sections -fdata-sections -Wl,--gc-sections
 LDSHARED=mipsel-linux-uclibc-gcc
 CPP=mipsel-linux-uclibc-gcc -E
 
