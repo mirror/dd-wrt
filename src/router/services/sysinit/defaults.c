@@ -1816,6 +1816,7 @@ struct nvram_tuple srouter_defaults[] = {
 
 #ifdef HAVE_MSSID
   {"wl_wme", "on", 0},		/* WME mode (off|on) */
+  {"wl1_wme", "on", 0},		/* WME mode (off|on) */
 #else
   {"wl_wme", "off", 0},		/* WME mode (off|on) */
 #endif
@@ -1834,7 +1835,21 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl_wme_no_ack", "off", 0},	/* WME No-Acknowledgmen mode */
   {"wl_wme_apsd", "on", 0},	/* WME APSD mode */
 
+  {"wl1_wme_sta_bk", "15 1023 7 0 0 off off", 0},	/* WME STA AC_BK paramters */
+  {"wl1_wme_sta_be", "15 1023 3 0 0 off off", 0},	/* WME STA AC_BE paramters */
+  {"wl1_wme_sta_vi", "7 15 2 6016 3008 off off", 0},	/* WME STA AC_VI paramters */
+  {"wl1_wme_sta_vo", "3 7 2 3264 1504 off off", 0},	/* WME STA AC_VO paramters */
+
+  /* EDCA parameters for AP */
+  {"wl1_wme_ap_bk", "15 1023 7 0 0 off off", 0},	/* WME AP AC_BK paramters */
+  {"wl1_wme_ap_be", "15 63 3 0 0 off off", 0},	/* WME AP AC_BE paramters */
+  {"wl1_wme_ap_vi", "7 15 1 6016 3008 off off", 0},	/* WME AP AC_VI paramters */
+  {"wl1_wme_ap_vo", "3 7 1 3264 1504 off off", 0},	/* WME AP AC_VO paramters */
+  {"wl1_wme_no_ack", "off", 0},	/* WME No-Acknowledgmen mode */
+  {"wl1_wme_apsd", "on", 0},	/* WME APSD mode */
+
   {"wl_maxassoc", "128", 0},	/* Max associations driver could support */
+  {"wl1_maxassoc", "128", 0},	/* Max associations driver could support */
 #ifdef HAVE_ZEROIP
   {"shat_enable", "0", 0},
   {"shat_range", "192.168.2.96/27", 0},
