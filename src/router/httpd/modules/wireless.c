@@ -1925,7 +1925,14 @@ security_save (webs_t wp)
       security_save_prefix (wp, b);
     }
 #else
-  security_save_prefix (wp, "wl0");
+  int dc = get_wl_instances ();
+  int i;
+  for (i = 0; i < dc; i++)
+    {
+      char b[16];
+      sprintf (b, "wl%d", i);
+      security_save_prefix (wp, b);
+    }
 #endif
   if (!strcmp (value, "ApplyTake"))
     {
