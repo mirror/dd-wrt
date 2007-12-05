@@ -858,6 +858,8 @@ int get_wl_instance(char *name)
 {
 int unit;
 int ret;
+if (!ifexists(name))
+    return -1;
 ret = wl_ioctl (name, WLC_GET_INSTANCE, &unit, sizeof (unit));
 if (ret==0)
     return unit;
@@ -888,12 +890,13 @@ get_wdev (void)
       return "ath0";
     }
 #else
-  if (wl_probe ("eth1") && wl_probe ("eth2"))  //in case radio is broken or mini-pci radio is not installed
-    return nvram_safe_get ("wl0_ifname");
-  if (wl_probe ("eth2"))
+  if (!wl_probe ("eth1"))
     return "eth1";
-  else
+  if (!wl_probe ("eth2"))
     return "eth2";
+  if (!wl_probe ("eth0"))
+    return "eth0";
+    return nvram_safe_get ("wl0_ifname");
 #endif
 }
 
