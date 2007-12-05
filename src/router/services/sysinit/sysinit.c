@@ -400,7 +400,7 @@ start_restore_defaults (void)
 
   struct nvram_tuple wrt350vlan[] = {
     {"lan_ifname", "br0", 0},
-    {"lan_ifnames", "vlan1 eth1 eth2 eth3", 0},
+    {"lan_ifnames", "vlan1 eth0", 0},
     {"wan_ifname", "vlan2", 0},
     {"wan_ifnames", "vlan2", 0},
     {0, 0, 0}
@@ -408,7 +408,7 @@ start_restore_defaults (void)
 
   struct nvram_tuple wrt600vlan[] = {
     {"lan_ifname", "br0", 0},
-    {"lan_ifnames", "vlan0 eth1 eth2 eth3", 0},
+    {"lan_ifnames", "vlan0 eth0 eth1", 0},
     {"wan_ifname", "vlan2", 0},
     {"wan_ifnames", "vlan2", 0},
     {0, 0, 0}
@@ -416,7 +416,7 @@ start_restore_defaults (void)
 
   struct nvram_tuple wzr144nhvlan[] = {
     {"lan_ifname", "br0", 0},
-    {"lan_ifnames", "vlan2 eth1", 0},
+    {"lan_ifnames", "vlan2 eth0", 0},
     {"wan_ifname", "vlan1", 0},
     {"wan_ifnames", "vlan1", 0},
     {0, 0, 0}
