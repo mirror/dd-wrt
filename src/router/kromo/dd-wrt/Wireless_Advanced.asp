@@ -474,6 +474,23 @@ addEvent(window, "unload", function() {
 								</div>
 								<% ifndef("AFTERBURNER", "-->"); %>
 								<div class="setting">
+									<div class="label"><% tran("wl_adv.label22"); %></div>
+									<select name="wl_btc_mode">
+										<script type="text/javascript">
+										//<![CDATA[
+										document.write("<option value=\"0\" <% nvram_selected_js("wl_btc_mode", "0"); %>>" + share.disable + "</option>");
+										document.write("<option value=\"1\" <% nvram_selected_js("wl_btc_mode", "1"); %>>" + share.enable + "</option>");
+										document.write("<option value=\"2\" <% nvram_selected_js("wl_btc_mode", "2"); %>>" + share.preempt + "</option>");
+										//]]>
+										</script>
+									</select>
+									<span class="default"><script type="text/javascript">
+									//<![CDATA[
+									document.write("(" + share.deflt + ": " + share.disable + ")");
+									//]]>
+									</script></span>
+								</div>
+								<div class="setting">
 									<div class="label"><% tran("wl_adv.label17"); %></div>
 									<input class="spaceradio" type="radio" name="web_wl_filter" value="0" <% nvram_checked("web_wl_filter", "0"); %> /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" name="web_wl_filter" value="1" <% nvram_checked("web_wl_filter", "1"); %> /><% tran("share.disable"); %>

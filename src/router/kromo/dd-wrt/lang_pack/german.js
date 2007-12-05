@@ -136,6 +136,7 @@ share.unknown="Unbekannt";
 share.expired="abgelaufen";
 share.standard="Standard";
 share.user="Nutzer";
+share.preempt="Bevorzugung";
 
 sbutton.save="Speichern";
 sbutton.apply="Anwenden";
