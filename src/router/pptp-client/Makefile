@@ -13,13 +13,13 @@ PPPDIR=$(DESTDIR)/etc/ppp
 
 #CC	= gcc
 RM	= rm -f
-OPTIMIZE= $(COPTS)
+OPTIMIZE= $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 #OPTIMIZE= -O0
 DEBUG	= -g
 INCLUDE =
 CFLAGS  = -Wall $(OPTIMIZE) $(DEBUG) $(INCLUDE)
-LIBS	= -lutil
+LIBS	= -lutil -ffunction-sections -fdata-sections -Wl,--gc-sections
 LDFLAGS	=
 
 PPTP_BIN = pptp
