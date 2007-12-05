@@ -757,11 +757,7 @@ start_pptp (int status)
   char *wan_ifname = nvram_safe_get ("wan_ifname");
   if (isClient ())
     {
-#ifdef HAVE_MADWIFI
       wan_ifname = getSTA ();
-#else
-      wan_ifname = get_wdev ();
-#endif
     }
 
 
@@ -918,11 +914,7 @@ start_pppoe (int pppoe_num)
   char *wan_ifname = nvram_safe_get ("wan_ifname");
   if (isClient ())
     {
-#ifdef HAVE_MADWIFI
       wan_ifname = getSTA ();
-#else
-      wan_ifname = get_wdev ();
-#endif
     }
 
   pid_t pid;

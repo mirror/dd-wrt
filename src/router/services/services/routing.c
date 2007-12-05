@@ -127,13 +127,16 @@ zebra_ospf_init (void)
       fprintf (fp, "interface %s\n", wf);
       fprintf (fp, "passive interface lo\n");
 
-      if (nvram_match ("wl_br1_enable", "1"))
+int cnt = get_wl_instances();
+int c;
+for (c=0;c<cnt;c++)
+{
+      if (nvram_nmatch ("1","wl%d_br1_enable", c))
 	{
 	  fprintf (fp, "!\n! 'Subnet' WDS bridge\n");
 	  fprintf (fp, "interface br1\n");
 	}
-
-      if (nvram_match ("wl0_mode", "ap"))
+      if (nvram_nmatch ("ap","wl%d_mode", c))
 	for (s = 1; s <= MAX_WDS_DEVS; s++)
 	  {
 	    char wdsvarname[32] = { 0 };
@@ -142,10 +145,10 @@ zebra_ospf_init (void)
 	    char wdsdevospf[32] = { 0 };
 	    char *dev;
 
-	    sprintf (wdsvarname, "wl_wds%d_enable", s);
-	    sprintf (wdsdevname, "wl_wds%d_if", s);
-	    sprintf (wdsdevlabel, "wl_wds%d_desc", s);
-	    sprintf (wdsdevospf, "wl_wds%d_ospf", s);
+	    sprintf (wdsvarname, "wl%d_wds%d_enable",c, s);
+	    sprintf (wdsdevname, "wl%d_wds%d_if",c, s);
+	    sprintf (wdsdevlabel, "wl%d_wds%d_desc",c, s);
+	    sprintf (wdsdevospf, "wl%d_wds%d_ospf",c, s);
 	    dev = nvram_safe_get (wdsdevname);
 
 	    if (nvram_match (wdsvarname, "1"))
@@ -158,8 +161,8 @@ zebra_ospf_init (void)
 			   nvram_safe_get (wdsdevospf));
 	      }
 	  }
-
       fprintf (fp, "!\n");
+}
       fprintf (fp, "router ospf\n");
       fprintf (fp, " ospf router-id %s\n", nvram_safe_get ("lan_ipaddr"));
       fprintf (fp, " redistribute kernel\n");

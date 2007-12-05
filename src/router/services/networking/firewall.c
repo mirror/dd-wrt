@@ -1588,8 +1588,11 @@ filter_input (void)
 	save2file ("-A INPUT -p udp --dport 698 -j ACCEPT\n");
 #endif
   /* Sveasoft mod - default for br1/separate subnet WDS type */
-  if (nvram_match ("wl_br1_enable", "1") && nvram_invmatch ("wl_br1_nat", "1")
-	  && nvram_invmatch ("wl_br1_nat", "2"))
+  if (nvram_match ("wl0_br1_enable", "1") && nvram_invmatch ("wl0_br1_nat", "1")
+	  && nvram_invmatch ("wl0_br1_nat", "2"))
+	save2file ("-A INPUT -i br1 -j ACCEPT\n");
+  if (nvram_match ("wl1_br1_enable", "1") && nvram_invmatch ("wl1_br1_nat", "1")
+	  && nvram_invmatch ("wl1_br1_nat", "2"))
 	save2file ("-A INPUT -i br1 -j ACCEPT\n");
 #ifdef HAVE_VLANTAGGING
   add_bridges ("INPUT", 0);
@@ -1662,7 +1665,10 @@ void
 filter_output (void)
 {
   /* Sveasoft mod - default for br1/separate subnet WDS type */
-  if (nvram_match ("wl_br1_enable", "1") && nvram_invmatch ("wl_br1_nat", "1")
+  if (nvram_match ("wl0_br1_enable", "1") && nvram_invmatch ("wl0_br1_nat", "1")
+	  && nvram_invmatch ("wl_br1_nat", "2"))
+	save2file ("-A OUTPUT -o br1 -j ACCEPT\n");
+  if (nvram_match ("wl1_br1_enable", "1") && nvram_invmatch ("wl1_br1_nat", "1")
 	  && nvram_invmatch ("wl_br1_nat", "2"))
 	save2file ("-A OUTPUT -o br1 -j ACCEPT\n");
 #ifdef HAVE_VLANTAGGING
@@ -1778,10 +1784,10 @@ filter_forward (void)
 	}
 #endif
   /* Sveasoft mod - FORWARD br1 to br0, protecting br0 */
-  if (nvram_match ("wl_br1_enable", "1"))
+  if (nvram_match ("wl0_br1_enable", "1"))
 	{
 
-	  if (nvram_match ("wl_br1_nat", "1"))
+	  if (nvram_match ("wl0_br1_nat", "1"))
 	{
 	  save2file ("-A FORWARD -i br0 -o br1 -j ACCEPT\n");
 	  save2file
@@ -1789,7 +1795,7 @@ filter_forward (void)
 	}
 
 	  /* Sveasoft mod - FORWARD br0 to br1, protecting br1 */
-	  else if (nvram_match ("wl_br1_nat", "2"))
+	  else if (nvram_match ("wl0_br1_nat", "2"))
 	{
 	  save2file ("-A FORWARD -o br0 -i br1 -j ACCEPT\n");
 	  save2file

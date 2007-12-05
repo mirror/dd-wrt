@@ -47,11 +47,7 @@ void
 start_stabridge (void)
 {
 
-#ifdef HAVE_MADWIFI
   if (getWET ())
-#else
-  if (nvram_match ("wl0_mode", "wet"))
-#endif
     {
       eval ("insmod", "ebtables");
       eval ("insmod", "ebtable_filter");

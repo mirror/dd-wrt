@@ -750,11 +750,7 @@ stop_wshaper (void)
   stop_firewall ();
   start_firewall ();
   char *dev = get_wshaper_dev ();
-  char *wl0mode = nvram_get ("wl0_mode");
-  if (wl0mode == NULL)
-    wl0mode = "";
-  if (strcmp (dev, "br0") && strcmp (wl0mode, "wet") && getWET () == NULL
-      && strcmp (wl0mode, "apstawet"))
+  if (strcmp (dev, "br0") && getWET () == NULL)
     {
       eval ("rmmod", "ebt_dnat");
       eval ("rmmod", "ebt_snat");
