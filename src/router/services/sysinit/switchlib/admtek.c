@@ -53,242 +53,244 @@
 #include <utils.h>
 
 
-#define VLAN_MAXVID	15	/* Max. VLAN ID supported/allowed */
 
-#define ADM_PHY0_ADDR   0x10
-#define ADM_PHY1_ADDR   0x11
-#define ADM_PHY2_ADDR   0x12
-#define ADM_PHY3_ADDR   0x13
-#define ADM_PHY4_ADDR   0x14
 
-#define ADM_VLAN_TAG_VALID                   0x81
-#define ADM_VLAN_TAG_SIZE                    4
-#define ADM_VLAN_TAG_OFFSET                  12	/* After DA & SA */
+#define ADM_PHY_BASE_REG_NUM	0x20
+
+#define ADM_SW_PHY_PORT0_REG    0x0001
+#define ADM_SW_PHY_PORT1_REG    0x0003
+#define ADM_SW_PHY_PORT2_REG    0x0005
+#define ADM_SW_PHY_PORT3_REG    0x0007
+#define ADM_SW_PHY_PORT4_REG    0x0008
+#define ADM_SW_PHY_PORT5_REG    0x0009
+#define ADM_SW_VLAN_MODE_REG    0x0011
+
+#define ADM_SW_SYS_CTL_REG1	0x000b
+#define ADM_SW_VLAN_MAP_REG     0x0013
 
 /*****************/
 /* PHY Registers */
 /*****************/
-#define ADM_PHY_CONTROL                 0
-#define ADM_PHY_STATUS                  1
-#define ADM_PHY_ID1                     2
-#define ADM_PHY_ID2                     3
-#define ADM_AUTONEG_ADVERT              4
-#define ADM_LINK_PARTNER_ABILITY        5
-#define ADM_AUTONEG_EXPANSION           6
-
+#define ADM_PHY_BASE_ADDR	 0x0200
+#define ADM_PHY_CONTROL          0x00
+#define ADM_PHY_STATUS		 0x01
+#define ADM_PHY_ID1              0x02
+#define ADM_PHY_ID2              0x03
+#define ADM_AUTONEG_ADVERT       0x04
+#define ADM_PHY_AN_STATUS_REG	 0x05
 
 /* ADM_PHY_CONTROL fields */
-#define ADM_CTRL_SOFTWARE_RESET                    0x8000
-#define ADM_CTRL_SPEED_100                         0x2000
-#define ADM_CTRL_AUTONEGOTIATION_ENABLE            0x1000
-#define ADM_CTRL_START_AUTONEGOTIATION             0x0200
-#define ADM_CTRL_SPEED_FULL_DUPLEX                 0x0100
+#define ADM_CTRL_SOFTWARE_RESET         0x8000
+#define ADM_CTRL_SPEED_100              0x2000
+#define ADM_CTRL_AUTONEGOTIATION_ENABLE 0x1000
+#define ADM_CTRL_START_AUTONEGOTIATION  0x0200
+#define ADM_CTRL_SPEED_FULL_DUPLEX      0x0100
 
-/* Phy status fields */
-#define ADM_STATUS_AUTO_NEG_DONE                   0x0020
-#define ADM_STATUS_LINK_PASS                       0x0004
+/* ADM_PHY_STATUS fields */
+#define ADM_STATUS_LINK_PASS     0x0004
+#define ADM_STATUS_AUTO_NEG_DONE 0x0020
 
-#define ADM_AUTONEG_DONE(ip_phy_status)                   \
-    (((ip_phy_status) &                                  \
-        (ADM_STATUS_AUTO_NEG_DONE)) ==                    \
-        (ADM_STATUS_AUTO_NEG_DONE))
-
-/* Link Partner ability */
-#define ADM_LINK_100BASETX_FULL_DUPLEX       0x0100
-#define ADM_LINK_100BASETX                   0x0080
-#define ADM_LINK_10BASETX_FULL_DUPLEX        0x0040
-#define ADM_LINK_10BASETX                    0x0020
+/* Auto_Negotiation Link Partner */
+#define ADM_PHY_LINK_100FULL	0x0100
+#define ADM_PHY_LINK_100HALF	0x0080
+#define ADM_PHY_LINK_10FULL		0x0040
+#define ADM_PHY_LINK_10HALF		0x0020
 
 /* Advertisement register. */
 #define ADM_ADVERTISE_100FULL                0x0100
-#define ADM_ADVERTISE_100HALF                0x0080
-#define ADM_ADVERTISE_10FULL                 0x0040
-#define ADM_ADVERTISE_10HALF                 0x0020
+#define ADM_ADVERTISE_100HALF                0x0080  
+#define ADM_ADVERTISE_10FULL                 0x0040  
+#define ADM_ADVERTISE_10HALF                 0x0020  
 
 #define ADM_ADVERTISE_ALL (ADM_ADVERTISE_10HALF | ADM_ADVERTISE_10FULL | \
                        ADM_ADVERTISE_100HALF | ADM_ADVERTISE_100FULL)
+               
+#define ADM_AUTONEG_DONE(adm_phy_status)                   \
+    (((adm_phy_status) &                                   \
+        (ADM_STATUS_AUTO_NEG_DONE)) ==                      \
+        (ADM_STATUS_AUTO_NEG_DONE))
+
+/* ADM_PHY_ID1 fields */
+#define ADM_PHY_ID1_EXPECTATION                    0x002e 
+
+#define ADM_CHIP_ID1_EXPECTATION                   0x1020 
+#define ADM_CHIP_ID2_EXPECTATION                   0x0007 
+
+/* ADM_PHY_ID2 fields */
+#define ADM_OUI_LSB_MASK                           0xfc00
+#define ADM_OUI_LSB_EXPECTATION                    0xcc00
+#define ADM_OUI_LSB_SHIFT                              10
+#define ADM_MODEL_NUM_MASK                         0x03f0
+#define ADM_MODEL_NUM_SHIFT                             4
+#define ADM_REV_NUM_MASK                           0x000f
+#define ADM_REV_NUM_SHIFT                               0
+
+#define ADM_SW_MAC_CLONE_EN     0x10
+#define ADM_SW_VLAN_MODE_SEL    0x20
+
+#define ADM_SW_CPU_PORT_NUM			0xA000 /* The CPU is attached to Port 5 */
+#define ADM_SW_SPECIAOL_TAG_RX		0x1000
+#define ADM_SW_SPECIAOL_TAG_TX		0x0800
+#define ADM_SW_SPECIAOL_TAG_PAUSE	0x0400
+#define ADM_SW_SMAX_PKT_SIZE		0x0080 /* MAx Packet Length is 1536 */
+#define ADM_SW_SYS_CTL3_CONFIG		ADM_SW_CPU_PORT_NUM | ADM_SW_SPECIAOL_TAG_RX | ADM_SW_SPECIAOL_TAG_TX |\
+								ADM_SW_SPECIAOL_TAG_PAUSE | ADM_SW_SMAX_PKT_SIZE
+#define ADM_SW_FLOW_CTRL_EN     0x0001
+#define ADM_SW_AUTO_NEGO_EN     0x0002
+#define ADM_SW_100M_SPEED_EN    0x0004
+#define ADM_SW_FULL_DUP_EN      0x0008
+#define ADM_SW_OUT_PKT_TAG_EN   0x0010
+#define ADM_SW_PORT_VLAN_ID_1   0x0400
+#define ADM_SW_PORT_VLAN_ID_2   0x0800
+#define ADM_SW_AUTO_MDIX_EN     0x8000
+                                       /*PORT: 5 4 3 x 2 x 1 x 0  */
+#define ADM_SW_LAN_MAP_TAB      0x0180 /*      1 1 0 0 0 0 0 0 0  */
+#define ADM_SW_WAN_MAP_TAB      0x0101 /*      1 0 0 0 0 0 0 0 1  */
+#define ADM_SW_ALLPORT_MAP_TAB  0x01D5 /*      1 1 1 0 1 0 1 0 1  */
+
+#define ADM_SW_LAN_PORT_CONFIG  (ADM_SW_AUTO_MDIX_EN | ADM_SW_PORT_VLAN_ID_1 | \
+                             ADM_SW_FULL_DUP_EN | ADM_SW_100M_SPEED_EN | \
+                             ADM_SW_AUTO_NEGO_EN | ADM_SW_FLOW_CTRL_EN)
+                         
+#define ADM_SW_WAN_PORT_CONFIG  (ADM_SW_AUTO_MDIX_EN | ADM_SW_PORT_VLAN_ID_2 | \
+                             ADM_SW_FULL_DUP_EN | ADM_SW_100M_SPEED_EN | \
+                             ADM_SW_AUTO_NEGO_EN | ADM_SW_FLOW_CTRL_EN)
+                          
+#define ADM_SW_MII_PORT_CONFIG  (ADM_SW_AUTO_MDIX_EN | \
+                             ADM_SW_OUT_PKT_TAG_EN | ADM_SW_FULL_DUP_EN | \
+                             ADM_SW_100M_SPEED_EN | ADM_SW_AUTO_NEGO_EN | \
+                             ADM_SW_FLOW_CTRL_EN)
+#define ADM_SW_LAN_VID ( ADM_SW_PORT_VLAN_ID_1 >> 10 )& 0xf
+#define ADM_SW_WAN_VID ( ADM_SW_PORT_VLAN_ID_2 >> 10 )& 0xf
+
+/* PHY Addresses */
+#define ADM_PHY0_ADDR   (ADM_PHY_BASE_ADDR / ADM_PHY_BASE_REG_NUM)
+#define ADM_PHY1_ADDR   ((ADM_PHY_BASE_ADDR / ADM_PHY_BASE_REG_NUM) + 1)
+#define ADM_PHY2_ADDR   ((ADM_PHY_BASE_ADDR / ADM_PHY_BASE_REG_NUM) + 2)
+#define ADM_PHY3_ADDR   ((ADM_PHY_BASE_ADDR / ADM_PHY_BASE_REG_NUM) + 3)
+#define ADM_PHY4_ADDR   ((ADM_PHY_BASE_ADDR / ADM_PHY_BASE_REG_NUM) + 4)
+
+#define ADM_VLAN_TAG_VALID                   0x81
+#define ADM_VLAN_TAG_SIZE                    4
+#define ADM_VLAN_TAG_OFFSET                  12   /* After DA & SA */
+#define ADM_SPECIAL_TAG_VALID                0x8
+
+/*
+ * On AR5312 with CONFIG_VENETDEV==1,
+ *   ports 0..3 are LAN ports  (accessed through ae0)
+ *   port 4 is the WAN port.   (accessed through ae1)
+ * 
+ * The phy switch settings in the mvPhyInfo table are set accordingly.
+ */
+#define ADM_WAN_PORT          0
+#define ADM_IS_LAN_PORT(port) ((port) == 4)
+#define ADM_IS_WAN_PORT(port) ((port) == ADM_WAN_PORT)
 
 
-int adm_phySetup (int ethUnit);
-int adm_phyIsUp (int ethUnit);
-int adm_phyIsFullDuplex (int ethUnit);
-int adm_phySpeed (int ethUnit);
-
-
-/* PHY selections and access functions */
-
-typedef enum
-{
-  PHY_SRCPORT_INFO,
-  PHY_PORTINFO_SIZE,
-} PHY_CAP_TYPE;
-
-typedef enum
-{
-  PHY_SRCPORT_NONE,
-  PHY_SRCPORT_VLANTAG,
-  PHY_SRCPORT_TRAILER,
-} PHY_SRCPORT_TYPE;
-
-#define DRV_LOG(DBG_SW, X0, X1, X2, X3, X4, X5, X6)
-#define DRV_MSG(x,a,b,c,d,e,f)
-#define DRV_PRINT(DBG_SW,X)
+#define ENET_UNIT_DEFAULT 0
 
 #define ADM_LAN_PORT_VLAN          1
 #define ADM_WAN_PORT_VLAN          2
 
-#define ENET_UNIT_DEFAULT 1
-
-#define TRUE    1
-#define FALSE   0
-
+#define UINT32 unsigned int
+#define UINT16 unsigned short
+#define BOOL int
 /*
  * Track per-PHY port information.
  */
-typedef struct
-{
-  int isEnetPort;		/* normal enet port */
-  int isPhyAlive;		/* last known state of link */
-  int ethUnit;			/* MAC associated with this phy port */
-  unsigned int phyBase;
-  unsigned int phyAddr;		/* PHY registers associated with this phy port */
-  unsigned int VLANTableSetting;	/* Value to be written to VLAN table */
-} ipPhyInfo_t;
-
-#define ADM_PHY0_ADDR   0x10
-#define ADM_PHY1_ADDR   0x11
-#define ADM_PHY2_ADDR   0x12
-#define ADM_PHY3_ADDR   0x13
-#define ADM_PHY4_ADDR   0x14
-
-#define P0_TXL  0xcc
-#define P5_TXL  0xdc
-
-#define P0_TXH  0xcd
-#define P5_TXH  0xdd
-
-#define P0_TXBL 0xde
-#define P5_TXBL 0xee
-
-#define P0_TXBH 0xdf
-#define P5_TXBH 0xef
-
-#define P0_RXL  0xac
-#define P5_RXL  0xb8
-
-#define P0_RXH  0xa9
-#define P5_RXH  0xb9
-
-#define P0_ERRL 0x102
-#define P5_ERRL 0x112
-
-#define P0_ERRH 0x103
-#define P5_ERRH 0x113
+typedef struct {
+    BOOL   isEnetPort;       /* normal enet port */
+    BOOL   isPhyAlive;       /* last known state of link */
+    int    ethUnit;          /* MAC associated with this phy port */
+    UINT32 phyAddr;          /* PHY registers associated with this phy port */
+    UINT32 configReg;        /* Port config register */
+    UINT32 VLANTableSetting; /* Value to be written to VLAN table */
+} admPhyInfo_t;
 
 /*
  * Per-PHY information, indexed by PHY unit number.
  */
-ipPhyInfo_t ipPhyInfo[] = {
-  /*
-   * On AP30/AR5312, all PHYs are associated with MAC0.
-   * AP30/AR5312's MAC1 isn't used for anything.
-   * CONFIG_VENETDEV==1 (router) configuration:
-   *    Ports 0,1,2, and 3 are "LAN ports"
-   *    Port 4 is a WAN port
-   *    Port 5 connects to MAC0 in the AR5312
-   * CONFIG_VENETDEV==0 (bridge) configuration:
-   *    Ports 0,1,2,3,4 are "LAN ports"
-   *    Port 5 connects to the MAC0 in the AR5312
-   */
-  {TRUE,			/* phy port 0 -- LAN port 0 */
-   FALSE,
-   ENET_UNIT_DEFAULT,
-   0,
-   ADM_PHY0_ADDR,
-   ADM_LAN_PORT_VLAN},
+admPhyInfo_t admPhyInfo[] = {
+    /*
+     * On AP30/AR5312, all PHYs are associated with MAC0.
+     * AP30/AR5312's MAC1 isn't used for anything.
+     * CONFIG_VENETDEV==1 (router) configuration:
+     *    Ports 0,1,2, and 3 are "LAN ports"
+     *    Port 4 is a WAN port
+     *    Port 5 connects to MAC0 in the AR5312
+     * CONFIG_VENETDEV==0 (bridge) configuration:
+     *    Ports 0,1,2,3,4 are "LAN ports"
+     *    Port 5 connects to the MAC0 in the AR5312
+     */
+    {TRUE,   /* phy port 0 -- WAN port */
+     FALSE,
+     ENET_UNIT_DEFAULT,
+     ADM_PHY0_ADDR,
+     ADM_SW_PHY_PORT0_REG,
+     ADM_WAN_PORT_VLAN   /* WAN port */
+    },
 
-  {TRUE,			/* phy port 1 -- LAN port 1 */
-   FALSE,
-   ENET_UNIT_DEFAULT,
-   0,
-   ADM_PHY1_ADDR,
-   ADM_LAN_PORT_VLAN},
+    {TRUE,   /* phy port 1 -- NC */
+     FALSE,
+     ENET_UNIT_DEFAULT,
+     ADM_PHY1_ADDR,
+     ADM_SW_PHY_PORT1_REG,
+     ADM_LAN_PORT_VLAN
+    },
 
-  {TRUE,			/* phy port 2 -- LAN port 2 */
-   FALSE,
-   ENET_UNIT_DEFAULT,
-   0,
-   ADM_PHY2_ADDR,
-   ADM_LAN_PORT_VLAN},
+    {TRUE,   /* phy port 2 -- NC */
+     FALSE,
+     ENET_UNIT_DEFAULT,
+     ADM_PHY2_ADDR, 
+     ADM_SW_PHY_PORT2_REG,
+     ADM_LAN_PORT_VLAN
+    },
 
-  {TRUE,			/* phy port 3 -- LAN port 3 */
-   FALSE,
-   ENET_UNIT_DEFAULT,
-   0,
-   ADM_PHY3_ADDR,
-   ADM_LAN_PORT_VLAN},
+    {TRUE,   /* phy port 3 -- NC */
+     FALSE,
+     ENET_UNIT_DEFAULT,
+     ADM_PHY3_ADDR, 
+     ADM_SW_PHY_PORT3_REG,
+     ADM_LAN_PORT_VLAN
+    },
 
-  {TRUE,			/* phy port 4 -- WAN port or LAN port 4 */
-   FALSE,
-   0,
-   0,
-   ADM_PHY4_ADDR,
-   ADM_LAN_PORT_VLAN		/* Send to all ports */
-   },
+    {TRUE,   /* phy port 4 -- LAN port */
+     FALSE,
+     ENET_UNIT_DEFAULT,
+     ADM_PHY4_ADDR, 
+     ADM_SW_PHY_PORT4_REG,
+     ADM_LAN_PORT_VLAN
+    },
 
-  {FALSE,			/* phy port 5 -- CPU port (no RJ45 connector) */
-   TRUE,
-   ENET_UNIT_DEFAULT,
-   0,
-   0x00,
-   ADM_LAN_PORT_VLAN		/* Send to all ports */
-   },
+    {FALSE,  /* phy port 5 -- CPU port (no RJ45 connector) */
+     TRUE,
+     ENET_UNIT_DEFAULT,
+     0x00, 
+     ADM_SW_PHY_PORT5_REG,
+     ADM_WAN_PORT_VLAN
+    },
 };
 
-char *
-bcmstrstr (char *haystack, char *needle)
-{
-  int len, nlen;
-  int i;
+#define ADM_GLOBALREGBASE    ((UINT32) (PHYS_TO_K1(AR5315_ENET0)))
 
-  if ((haystack == NULL) || (needle == NULL))
-    return (haystack);
-
-  nlen = strlen (needle);
-  len = strlen (haystack) - nlen + 1;
-
-  for (i = 0; i < len; i++)
-    if (memcmp (needle, &haystack[i], nlen) == 0)
-      return (&haystack[i]);
-  return (NULL);
-}
-
-#define ADM_GLOBALREGBASE    0
-
-//#define ADM_PHY_MAX (sizeof(ipPhyInfo) / sizeof(ipPhyInfo[0]))
-#define ADM_PHY_MAX 5
+#define ADM_PHY_MAX (sizeof(admPhyInfo) / sizeof(admPhyInfo[0]))
 
 /* Range of valid PHY IDs is [MIN..MAX] */
 #define ADM_ID_MIN 0
 #define ADM_ID_MAX (ADM_PHY_MAX-1)
 
 /* Convenience macros to access myPhyInfo */
-#define ADM_IS_ENET_PORT(phyUnit) (ipPhyInfo[phyUnit].isEnetPort)
-#define ADM_IS_PHY_ALIVE(phyUnit) (ipPhyInfo[phyUnit].isPhyAlive)
-#define ADM_ETHUNIT(phyUnit) (ipPhyInfo[phyUnit].ethUnit)
-#define ADM_PHYBASE(phyUnit) (ipPhyInfo[phyUnit].phyBase)
-#define ADM_PHYADDR(phyUnit) (ipPhyInfo[phyUnit].phyAddr)
-#define ADM_VLAN_TABLE_SETTING(phyUnit) (ipPhyInfo[phyUnit].VLANTableSetting)
+#define ADM_IS_ENET_PORT(phyUnit) (admPhyInfo[phyUnit].isEnetPort)
+#define ADM_IS_PHY_ALIVE(phyUnit) (admPhyInfo[phyUnit].isPhyAlive)
+#define ADM_ETHUNIT(phyUnit) (admPhyInfo[phyUnit].ethUnit)
+#define ADM_PHYADDR(phyUnit) (admPhyInfo[phyUnit].phyAddr)
+#define ADM_CONFIG_REG(phyUnit) (admPhyInfo[phyUnit].configReg)
+#define ADM_VLAN_TABLE_SETTING(phyUnit) (admPhyInfo[phyUnit].VLANTableSetting)
 
 
 #define ADM_IS_ETHUNIT(phyUnit, ethUnit) \
             (ADM_IS_ENET_PORT(phyUnit) &&        \
             ADM_ETHUNIT(phyUnit) == (ethUnit))
-
-/* Forward references */
-int adm_phyIsLinkAlive (int phyUnit);
-void adm_get_counters (void);
-
 
 
 
@@ -332,18 +334,6 @@ getPhy (int addr, int reg)
 }
 
 
-void
-config_bw (void)
-{
-  int i, nr, reg;
-  static int port_conf[] = { 0x01, 0x03, 0x05, 0x07, 0x08, 0x09 };
-  for (nr = 0; nr < 5; nr++)
-    {
-      reg = getPhy (0, port_conf[nr]);
-      reg |= 0x800f;
-      setPhy (0, port_conf[nr], reg);
-    }
-}
 
 #define ADM_CHIP_ID1_EXPECTATION                   0x1020
 #define ADM_CHIP_ID2_EXPECTATION                   0x0007
@@ -353,295 +343,213 @@ config_bw (void)
 #define ADM_SW_AUTO_MDIX_EN     0x8000
 
 
+
 void
 config_vlan (void)
 {
+    UINT32  phyBase;
+    UINT32  phyAddr;
+    UINT32  reg = 0;
+    int phyUnit;
+ 
 
-  /* Port configuration */
-  struct
-  {
-    unsigned char addr;		/* port configuration register */
-    unsigned short vlan;	/* vlan port mapping */
-    unsigned char tagged;	/* output tagging */
-    unsigned char cpu;		/* cpu port? 1 - yes, 0 - no */
-    unsigned short pvid;	/* cpu port pvid */
-  } port_cfg_tab[] =
-  {
-    {
-    1, 1 << 0, 0, 0, -1},
-    {
-    3, 1 << 2, 0, 0, -1},
-    {
-    5, 1 << 4, 0, 0, -1},
-    {
-    7, 1 << 6, 0, 0, -1},
-    {
-    8, 1 << 7, 0, 0, -1},
-    {
-    9, 1 << 8, 1, 1, -1}	/* output tagging for linux... */
-  };
-  /* Vlan ports bitmap */
-  struct
-  {
-    unsigned char addr;		/* vlan port map register */
-  } vlan_cfg_tab[] =
-  {
-    {
-    0x13},
-    {
-    0x14},
-    {
-    0x15},
-    {
-    0x16},
-    {
-    0x17},
-    {
-    0x18},
-    {
-    0x19},
-    {
-    0x1a},
-    {
-    0x1b},
-    {
-    0x1c},
-    {
-    0x1d},
-    {
-    0x1e},
-    {
-    0x1f},
-    {
-    0x20},
-    {
-    0x21},
-    {
-    0x22}
-  };
-  unsigned short vid, i;
+    /* 
+     * Set PVID for the ports, Port 0-3 are LAN ports and 
+     * Port 4 is WAN Port
+     */
+    for (phyUnit=0; phyUnit < ADM_PHY_MAX; phyUnit++) {
 
-  setPhy (0, 0x11, 0xff30);
+        phyAddr = ADM_CONFIG_REG(phyUnit)/ADM_PHY_BASE_REG_NUM;
+        reg = getPhy(phyAddr, ADM_CONFIG_REG(phyUnit));
+    
+        if (ADM_IS_LAN_PORT(phyUnit)) {
+            reg = ADM_SW_LAN_PORT_CONFIG;
 
+        } else if (ADM_IS_WAN_PORT(phyUnit)) {
+            reg = ADM_SW_WAN_PORT_CONFIG;
 
-  for (vid = 0; vid < 16; vid++)
-    {
-      char port[] = "XXXX", *next, *ports, *cur;
-      char vlanports[] = "vlanXXXXports";
-      uint16 vlan_map = 0;
-      int port_num, len;
-      uint16 port_cfg;
-
-      /* no members if VLAN id is out of limitation */
-      if (vid > VLAN_MAXVID)
-	goto vlan_setup;
-
-      /* get nvram port settings */
-      sprintf (vlanports, "vlan%dports", vid);
-      ports = nvram_get (vlanports);
-
-      /* disable this vlan if not defined */
-      if (!ports)
-	goto vlan_setup;
-
-      /*
-       * port configuration register (0x01, 0x03, 0x05, 0x07, 0x08, 0x09):
-       *   input/output tagging, pvid, auto mdix, auto negotiation, ...
-       * cpu port needs special handing to support pmon/cfe/linux...
-       */
-      for (cur = ports; cur; cur = next)
-	{
-	  /* tokenize the port list */
-	  while (*cur == ' ')
-	    cur++;
-	  next = bcmstrstr (cur, " ");
-	  len = next ? next - cur : strlen (cur);
-	  if (!len)
-	    break;
-	  if (len > sizeof (port) - 1)
-	    len = sizeof (port) - 1;
-	  strncpy (port, cur, len);
-	  port[len] = 0;
-
-	  /* make sure port # is within the range */
-	  port_num = atoi (port);
-	  if (port_num >= sizeof (port_cfg_tab) / sizeof (port_cfg_tab[0]))
-	    {
-	      fprintf (stderr, "number %d is out of range\n", port_num);
-	      continue;
-	    }
-
-	  /* build vlan port map */
-	  vlan_map |= port_cfg_tab[port_num].vlan;
-
-	  /* cpu port needs special care */
-	  if (port_cfg_tab[port_num].cpu)
-	    {
-	      /* cpu port's default VLAN is lan! */
-	      if (strchr (port, '*'))
-		port_cfg_tab[port_num].pvid = vid;
-	      /* will be done later */
-	      continue;
-	    }
-
-	  /* configure port */
-	  port_cfg = 0x8000 |	/* auto mdix */
-	    (vid << 10) |	/* pvid */
-	    0x000f;		/* full duplex, 100Mbps, auto neg, flow ctrl */
-	  setPhy (0, port_cfg_tab[port_num].addr, port_cfg);
-	}
-    vlan_setup:
-      /* vlan port map register (0x13 - 0x22) */
-      setPhy (0, vlan_cfg_tab[vid].addr, vlan_map);
+        } else {
+            reg |= ADM_SW_OUT_PKT_TAG_EN;
+        }
+        setPhy(phyAddr, ADM_CONFIG_REG(phyUnit), reg);
     }
 
-  /* cpu port config: auto mdix, pvid, output tagging, ... */
-  for (i = 0; i < sizeof (port_cfg_tab) / sizeof (port_cfg_tab[0]); i++)
-    {
-      uint16 tagged, pvid;
-      uint16 port_cfg;
+    /* Set up the port memberships for the VLAN Groups 1 and 2 */
+    phyAddr = (ADM_SW_VLAN_MAP_REG + ADM_LAN_PORT_VLAN) / ADM_PHY_BASE_REG_NUM;
+    setPhy( phyAddr, (ADM_SW_VLAN_MAP_REG + ADM_LAN_PORT_VLAN),
+                ADM_SW_LAN_MAP_TAB); 
 
-      /* cpu port only */
-      if (port_cfg_tab[i].cpu == 0 || port_cfg_tab[i].pvid == 0xffff)
-	continue;
+    phyAddr = (ADM_SW_VLAN_MAP_REG + ADM_WAN_PORT_VLAN) / ADM_PHY_BASE_REG_NUM;
+    setPhy( phyAddr, (ADM_SW_VLAN_MAP_REG + ADM_WAN_PORT_VLAN),
+                ADM_SW_WAN_MAP_TAB); 
 
-      /* configure port */
-      tagged = port_cfg_tab[i].tagged ? 1 : 0;
-      pvid = port_cfg_tab[i].pvid;
-      port_cfg = 0x8000 |	/* auto mdix */
-	(pvid << 10) |		/* pvid */
-	(tagged << 4) |		/* output tagging */
-	0x000f;			/* full duplex, 100Mbps, auto neg, flow ctrl */
-      setPhy (0, port_cfg_tab[i].addr, port_cfg);
+    /* Put the chip in 802.1q mode */
+    phyAddr = ADM_SW_VLAN_MODE_REG / ADM_PHY_BASE_REG_NUM;
+    setPhy( phyAddr, ADM_SW_VLAN_MODE_REG,
+                (ADM_SW_MAC_CLONE_EN | ADM_SW_VLAN_MODE_SEL));
+
+
+}
+static void
+adm_verifyReady(int ethUnit)
+{
+    UINT32  phyBase = 0;
+    UINT16  phyID1;
+    UINT16  phyID2;
+
+    phyID1 = getPhy(0x5, 0x0);
+    phyID2 = getPhy(0x5, 0x1);
+    if(((phyID1 & 0xfff0) == ADM_CHIP_ID1_EXPECTATION) && (phyID2 == ADM_CHIP_ID2_EXPECTATION)) { 
+        fprintf(stderr,"Found ADM6996FC! PHYID1 is 0x%x, PHYID2 is 0x%x\n", phyID1, phyID2);
     }
-
+    else {
+        fprintf(stderr,"Couldn't Found ADM6996FC!\n, PHYID1 is 0x%x, PHYID2 is 0x%x\n", phyID1, phyID2);
+    }
 }
 
 
 void
 vlan_init (int numports)
 {
-  int ethUnit = 0;
-  int phyUnit;
-  unsigned short phyHwStatus;
-  unsigned short timeout;
-  int liveLinks = 0;
-  unsigned int phyBase = 0;
-  int foundPhy = FALSE;
-  unsigned int phyAddr;
+    int     phyUnit;
+    UINT16  phyHwStatus;
+    UINT16  timeout;
+    int     liveLinks = 0;
+    UINT32  phyBase = 0;
+    BOOL    foundPhy = FALSE;
+    UINT32  phyAddr;
+    UINT32  reg = 0;
 
-  /* Reset PHYs */
-  for (phyUnit = 0; phyUnit < ADM_PHY_MAX; phyUnit++)
-    {
-      if (!ADM_IS_ETHUNIT (phyUnit, ethUnit))
-	{
-	  continue;
-	}
+    /* Reset PHYs*/
+    for (phyUnit=0; phyUnit < ADM_PHY_MAX; phyUnit++) {
+        if (!ADM_IS_ETHUNIT(phyUnit, 0)) {
+            continue;
+        }
 
-      phyAddr = ADM_PHYADDR (phyUnit);
-      setPhy (phyAddr, ADM_PHY_CONTROL, ADM_CTRL_SOFTWARE_RESET);
+        phyAddr = ADM_PHYADDR(phyUnit);
+
+        setPhy(phyAddr, ADM_PHY_CONTROL,
+                    ADM_CTRL_SOFTWARE_RESET);
     }
-  /*
-   * After the phy is reset, it takes a little while before
-   * it can respond properly.
-   */
-  sleep (1);
+    /*
+     * After the phy is reset, it takes a little while before
+     * it can respond properly.
+     */
+    sleep(1);
+    /* Verify that the switch is what we think it is, and that it's ready */
+    adm_verifyReady(0);
 
+    /* LAN SETTING: enable Auto-MDIX */
+    phyAddr = ADM_SW_PHY_PORT0_REG / ADM_PHY_BASE_REG_NUM;
+    reg = getPhy( phyAddr, ADM_SW_PHY_PORT0_REG);
+    reg |= ADM_SW_AUTO_MDIX_EN;
+    setPhy( phyAddr, ADM_SW_PHY_PORT0_REG, reg);
+    phyAddr = ADM_SW_PHY_PORT1_REG / ADM_PHY_BASE_REG_NUM;
+    reg = getPhy( phyAddr, ADM_SW_PHY_PORT1_REG);
+    reg |= ADM_SW_AUTO_MDIX_EN;
+    setPhy (phyAddr, ADM_SW_PHY_PORT1_REG, reg); 
+    phyAddr = ADM_SW_PHY_PORT2_REG / ADM_PHY_BASE_REG_NUM;
+    getPhy( phyAddr, ADM_SW_PHY_PORT2_REG);
+    reg |= ADM_SW_AUTO_MDIX_EN;
+    setPhy( phyAddr, ADM_SW_PHY_PORT2_REG, reg); 
+    phyAddr = ADM_SW_PHY_PORT3_REG / ADM_PHY_BASE_REG_NUM;
+    reg = getPhy( phyAddr, ADM_SW_PHY_PORT3_REG);
+    reg |= ADM_SW_AUTO_MDIX_EN;
+    setPhy( phyAddr, ADM_SW_PHY_PORT3_REG, reg); 
+    phyAddr = ADM_SW_PHY_PORT4_REG / ADM_PHY_BASE_REG_NUM;
+    reg = getPhy( phyAddr, ADM_SW_PHY_PORT4_REG);
+    reg |= ADM_SW_AUTO_MDIX_EN;
+    setPhy( phyAddr, ADM_SW_PHY_PORT4_REG, reg); 
+    phyAddr = ADM_SW_PHY_PORT5_REG / ADM_PHY_BASE_REG_NUM;
+    reg = getPhy( phyAddr, ADM_SW_PHY_PORT5_REG);
+    reg |= ADM_SW_AUTO_MDIX_EN;
+    setPhy( phyAddr, ADM_SW_PHY_PORT5_REG, reg); 
 
-  /* start auto negogiation on each phy */
-  for (phyUnit = 0; phyUnit < ADM_PHY_MAX; phyUnit++)
-    {
-      if (!ADM_IS_ETHUNIT (phyUnit, ethUnit))
-	{
-	  continue;
-	}
+    /* See if there's any configuration data for this enet */
+    for (phyUnit=0; phyUnit < ADM_PHY_MAX; phyUnit++) {
+        if (ADM_ETHUNIT(phyUnit) != 0) {
+            continue;
+        }
 
-      phyAddr = ADM_PHYADDR (phyUnit);
-
-      setPhy (phyAddr, ADM_AUTONEG_ADVERT, ADM_ADVERTISE_ALL);
-
-      setPhy (phyAddr, ADM_PHY_CONTROL,
-	      ADM_CTRL_AUTONEGOTIATION_ENABLE |
-	      ADM_CTRL_START_AUTONEGOTIATION);
-    }
-
-  /*
-   * Wait up to .75 seconds for ALL associated PHYs to finish
-   * autonegotiation.  The only way we get out of here sooner is
-   * if ALL PHYs are connected AND finish autonegotiation.
-   */
-  timeout = 5;
-  for (phyUnit = 0; (phyUnit < ADM_PHY_MAX) /*&& (timeout > 0) */ ; phyUnit++)
-    {
-      if (!ADM_IS_ETHUNIT (phyUnit, ethUnit))
-	{
-	  continue;
-	}
-      for (;;)
-	{
-	  phyAddr = ADM_PHYADDR (phyUnit);
-
-	  phyHwStatus = getPhy (phyAddr, ADM_PHY_STATUS);
-
-	  if (ADM_AUTONEG_DONE (phyHwStatus))
-	    {
-	      fprintf (stderr, "Port %d, Neg Success\n", phyUnit);
-	      break;
-	    }
-	  if (timeout == 0)
-	    {
-	      fprintf (stderr, "Port %d, Negogiation timeout\n", phyUnit);
-	      break;
-	    }
-	  if (--timeout == 0)
-	    {
-	      fprintf (stderr, "Port %d, Negogiation timeout\n", phyUnit);
-	      break;
-	    }
-	  sleep (1);
-	}
+        foundPhy = TRUE;
+        break;
     }
 
-  /*
-   * All PHYs have had adequate time to autonegotiate.
-   * Now initialize software status.
-   *
-   * It's possible that some ports may take a bit longer
-   * to autonegotiate; but we can't wait forever.  They'll
-   * get noticed by mv_phyCheckStatusChange during regular
-   * polling activities.
-   */
-  for (phyUnit = 0; phyUnit < ADM_PHY_MAX; phyUnit++)
-    {
-      if (!ADM_IS_ETHUNIT (phyUnit, ethUnit))
-	{
-	  continue;
-	}
-
-      if (adm_phyIsLinkAlive (phyUnit))
-	{
-	  liveLinks++;
-	  ADM_IS_PHY_ALIVE (phyUnit) = TRUE;
-	}
-      else
-	{
-	  ADM_IS_PHY_ALIVE (phyUnit) = FALSE;
-	}
-
-      fprintf (stderr, "eth%d: Phy Status=%4.4x\n", ethUnit,
-	       getPhy (ADM_PHYADDR (phyUnit), ADM_PHY_STATUS));
+    if (!foundPhy) {
+        return FALSE; /* No PHY's configured for this ethUnit */
     }
 
-  /*
-   * XXX
-   */
-  nvram_set ("vlan0ports", "0 5*");
-  nvram_set ("vlan1ports", "1 2 3 4 5");
+    /* start auto negogiation on each phy */
+    for (phyUnit=0; phyUnit < ADM_PHY_MAX; phyUnit++) {
+        if (!ADM_IS_ETHUNIT(phyUnit, 0)) {
+            continue;
+        }
+        phyAddr = ADM_PHYADDR(phyUnit);
+
+        setPhy( phyAddr, ADM_AUTONEG_ADVERT,
+                                        ADM_ADVERTISE_ALL);
+
+        setPhy( phyAddr, ADM_PHY_CONTROL,
+                    ADM_CTRL_AUTONEGOTIATION_ENABLE | ADM_CTRL_START_AUTONEGOTIATION);
+    }
+
+    /*
+     * Wait up to .75 seconds for ALL associated PHYs to finish
+     * autonegotiation.  The only way we get out of here sooner is
+     * if ALL PHYs are connected AND finish autonegotiation.
+     */
+    timeout=15;
+    for (phyUnit=0; (phyUnit < ADM_PHY_MAX) /*&& (timeout > 0)*/; phyUnit++) {
+        if (!ADM_IS_ETHUNIT(phyUnit, 0)) {
+            continue;
+        }
+        for (;;) {
+            phyAddr = ADM_PHYADDR(phyUnit);
+
+            phyHwStatus = getPhy( phyAddr, ADM_PHY_STATUS);
+
+            if (ADM_AUTONEG_DONE(phyHwStatus)) {
+                fprintf(stderr,"Port %d, Negotiation Success\n", phyUnit);
+                break;
+            }
+            if (timeout == 0) {
+                fprintf(stderr,"Port %d, Negotiation timeout\n", phyUnit);
+                break;
+            }
+            if (--timeout == 0) {
+                fprintf(stderr,"Port %d, Negotiation timeout\n", phyUnit);
+                break;
+            }
+
+            usleep(75);
+        }
+    }
+
+    /*
+     * All PHYs have had adequate time to autonegotiate.
+     * Now initialize software status.
+     *
+     * It's possible that some ports may take a bit longer
+     * to autonegotiate; but we can't wait forever.  They'll
+     * get noticed by mv_phyCheckStatusChange during regular
+     * polling activities.
+     */
+    for (phyUnit=0; phyUnit < ADM_PHY_MAX; phyUnit++) {
+
+        if (adm_phyIsLinkAlive(phyUnit)) {
+            liveLinks++;
+            ADM_IS_PHY_ALIVE(phyUnit) = TRUE;
+        } else {
+            ADM_IS_PHY_ALIVE(phyUnit) = FALSE;
+        }
+
+        fprintf(stderr,"adm_phySetup: eth%d phy%d: Phy Status=%4.4x\n",0, phyUnit, getPhy(ADM_PHYADDR(phyUnit),ADM_PHY_STATUS));
+    }
+
   config_vlan ();
-  config_bw ();
   eval ("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-  eval ("/sbin/vconfig", "add", "eth0", "0");
   eval ("/sbin/vconfig", "add", "eth0", "1");
+  eval ("/sbin/vconfig", "add", "eth0", "2");
 }
 
 
@@ -669,8 +577,7 @@ adm_phyIsLinkAlive (int phyUnit)
 void
 start_vlantest (void)
 {
-  config_vlan ();
-  config_bw ();
+  vlan_init(0);
 }
 
 /*
