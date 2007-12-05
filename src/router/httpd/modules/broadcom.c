@@ -2801,7 +2801,16 @@ static struct gozila_action gozila_actions[] = {
   /* Siafu addition */
   {"Ping", "wol", "", 1, REFRESH, ping_wol},
   /* Sveasoft addition */
-  {"Wireless_WDS", "save", "", 0, REFRESH, save_wds},
+ // {"Wireless_WDS", "save", "", 0, REFRESH, save_wds},
+#ifndef HAVE_MADWIFI
+  {"Wireless_WDS-wl0", "save", "", 0, REFRESH, save_wds},
+  {"Wireless_WDS-wl1", "save", "", 0, REFRESH, save_wds},
+#else
+  {"Wireless_WDS-ath0", "save", "", 0, REFRESH, save_wds},
+  {"Wireless_WDS-ath1", "save", "", 0, REFRESH, save_wds},
+  {"Wireless_WDS-ath2", "save", "", 0, REFRESH, save_wds},
+  {"Wireless_WDS-ath3", "save", "", 0, REFRESH, save_wds},
+#endif
   {"Ping", "startup", "", 1, SYS_RESTART, ping_startup},
   {"Ping", "firewall", "", 1, SYS_RESTART, ping_firewall},
   {"Ping", "custom", "", 0, REFRESH, ping_custom},
