@@ -27,6 +27,10 @@
 /* get wireless interface */
 extern char *get_wdev (void);
 
+extern int get_wl_instance (char *ifname);
+extern int get_wl_instances (void);
+extern char * get_wl_instance_name (int instance);
+
 /*
  * Pass a wlioctl request to the specified interface.
  * @param	name	interface name
@@ -54,7 +58,7 @@ extern int wl_probe (char *name);
 
 
 /* Returns the list of associated stations in the pre-existing buffer list */
-int getchannels (unsigned int *list);
+int getchannels (unsigned int *list,char *ifname);
 int getassoclist (char *name, unsigned char *list);
 int getwdslist (char *name, unsigned char *list);
 int getNoise (char *ifname, unsigned char *name);
