@@ -134,7 +134,7 @@ extern void addAction (char *action);
 extern void Initnvramtab (void);
 extern void prefix_ip_get (char *name, char *buf, int type);
 
-extern int has_mimo (void);
+extern int has_mimo (char *prefix);
 
 
 /* for index */

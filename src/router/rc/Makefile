@@ -24,6 +24,8 @@ LDFLAGS	+= -s -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram
 CFLAGS += -I$(LINUXDIR)
 endif
 
+#LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
+
 OBJS := rc.o init.o servicemanager.o services.o stats.o crc.o http.o
 OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o radio_timer.o watchdog.o event.o nvram.o ledtool.o
 

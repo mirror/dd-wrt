@@ -463,15 +463,15 @@ wlconf_up (char *name)
       nvram_commit ();
     }
 #endif
-  if (nvram_match ("wl0_mode", "infra"))
+int instance = get_wl_instance(name);
+
+  if (nvram_nmatch ("infra","wl%d_mode", instance))
     {
-      nvram_set ("wl_infra", "0");
-      nvram_set ("wl0_infra", "0");
+      nvram_nset ("0","wl%d_infra", instance);
     }
   else
     {
-      nvram_set ("wl_infra", "1");
-      nvram_set ("wl0_infra", "1");
+      nvram_nset ("1","wl%d_infra", instance);
     }
   ret = eval ("wlconf", name, "up");
 /*  eval("wl","radio","off");
@@ -480,7 +480,7 @@ wlconf_up (char *name)
   eval("wl","srl","16");
   eval("wl","interference","0");
   eval("wl","radio","on");*/
-  gmode = atoi (nvram_safe_get ("wl0_gmode"));
+  gmode = atoi (nvram_nget ("wl%d_gmode",instance));
 
   /* Get current phy type */
   WL_IOCTL (name, WLC_GET_PHYTYPE, &phytype, sizeof (phytype));
@@ -488,16 +488,16 @@ wlconf_up (char *name)
   // set preamble type for b cards
   if (phytype == PHY_TYPE_B || gmode == 0)
     {
-      if (nvram_match ("wl0_plcphdr", "long"))
+      if (nvram_nmatch ("long","wl%d_plcphdr", instance))
 	val = WLC_PLCP_LONG;
-      else if (nvram_match ("wl0_plcphdr", "short"))
+      else if (nvram_nmatch ("short","wl%d_plcphdr", instance))
 	val = WLC_PLCP_SHORT;
       else
 	val = WLC_PLCP_AUTO;
       WL_IOCTL (name, WLC_SET_PLCPHDR, &val, sizeof (val));
     }
   // adjust txpwr and txant
-  val = atoi (nvram_safe_get ("txpwr"));
+  val = atoi (nvram_nget ("wl%d_txpwr",instance));
   if (val < 0 || val > TXPWR_MAX)
     val = TXPWR_DEFAULT;
 #ifndef HAVE_MSSID
@@ -514,10 +514,10 @@ wlconf_up (char *name)
   val |= WL_TXPWR_OVERRIDE;
   wl_iovar_setint (name, "qtxpower", val);
 */
-eval("wl","txpwr1","-m","-o",nvram_safe_get("txpwr"));
+eval("wl","txpwr1","-m","-o",nvram_nget("wl%d_txpwr",instance));
 #endif
   /* Set txant */
-  val = atoi (nvram_safe_get ("txant"));
+  val = atoi (nvram_nget ("wl%d_txant",instance));
   if (val < 0 || val > 3 || val == 2)
     val = 3;
   WL_IOCTL (name, WLC_SET_TXANT, &val, sizeof (val));
@@ -530,32 +530,32 @@ eval("wl","txpwr1","-m","-o",nvram_safe_get("txpwr"));
 	val = 0;
     }
 */
-  val = atoi (nvram_safe_get ("wl0_antdiv"));
+  val = atoi (nvram_nget ("wl%d_antdiv",instance));
   WL_IOCTL (name, WLC_SET_ANTDIV, &val, sizeof (val));
 
   /* search for "afterburner" string */
-  char *afterburner = nvram_safe_get ("wl0_afterburner");
+  char *afterburner = nvram_nget ("wl%d_afterburner",instance);
 
   if (!strcmp (afterburner, "on"))
-    eval ("wl", "afterburner_override", "1");
+    eval ("wl", "-i",name,"afterburner_override", "1");
   else if (!strcmp (afterburner, "off"))
-    eval ("wl", "afterburner_override", "0");
+    eval ("wl","-i",name, "afterburner_override", "0");
   else				//auto
-    eval ("wl", "afterburner_override", "-1");
+    eval ("wl","-i",name, "afterburner_override", "-1");
 
-  char *shortslot = nvram_safe_get ("wl0_shortslot");
+  char *shortslot = nvram_nget ("wl%d_shortslot",instance);
 
   if (!strcmp (shortslot, "long"))
-    eval ("wl", "shortslot_override", "0");
+    eval ("wl","-i",name, "shortslot_override", "0");
   else if (!strcmp (shortslot, "short"))
-    eval ("wl", "shortslot_override", "1");
+    eval ("wl","-i",name, "shortslot_override", "1");
   else				//auto
-    eval ("wl", "shortslot_override", "-1");
+    eval ("wl","-i",name, "shortslot_override", "-1");
 
 
   // Set ACK Timing. Thx to Nbd
   char *v;
-  if ((v = nvram_get ("wl0_distance")))
+  if ((v = nvram_nget ("wl%d_distance",instance)))
     {
       rw_reg_t reg;
       uint32 shm;
@@ -570,7 +570,7 @@ eval("wl","txpwr1","-m","-o",nvram_safe_get("txpwr"));
 	{
 #ifdef HAVE_MSSID
 #ifdef HAVE_ACK
-	  eval ("wl", "noack", "1");
+	  eval ("wl","-i",name, "noack", "1");
 #endif
 	  // wlc_noack (0);
 #else
@@ -588,7 +588,7 @@ eval("wl","txpwr1","-m","-o",nvram_safe_get("txpwr"));
 	{
 #ifdef HAVE_MSSID
 #ifdef HAVE_ACK
-	  eval ("wl", "noack", "0");
+	  eval ("wl","-i",name, "noack", "0");
 #endif
 	  //  wlc_noack (1);
 #else
@@ -606,7 +606,7 @@ eval("wl","txpwr1","-m","-o",nvram_safe_get("txpwr"));
 #ifdef HAVE_ACK
       char strv[32];
       sprintf (strv, "%d", val);
-      eval ("wl", "acktiming", strv);
+      eval ("wl", "-i",name,"acktiming", strv);
 #else
 /*      shm = 0x10;
       shm |= (val << 16);
@@ -644,14 +644,14 @@ eval("wl","txpwr1","-m","-o",nvram_safe_get("txpwr"));
 		}
 */
 
-  if (nvram_match ("wl0_mode", "infra"))
+  if (nvram_nmatch ("infra","wl%d_mode", instance))
     {
-      eval ("wl", "infra", "0");
-      eval ("wl", "ssid", nvram_safe_get ("wl0_ssid"));
+      eval ("wl","-i",name, "infra", "0");
+      eval ("wl","-i",name, "ssid", nvram_nget ("wl%d_ssid",instance));
     }
 #ifdef HAVE_MSSID
 #ifndef HAVE_MADWIFI
-  eval ("wl", "vlan_mode", "0");
+  eval ("wl","-i",name, "vlan_mode", "0");
 #endif
 #endif
   return ret;
@@ -660,14 +660,8 @@ eval("wl","txpwr1","-m","-o",nvram_safe_get("txpwr"));
 int
 isClient (void)
 {
-#ifndef HAVE_MADWIFI
-  if (nvram_match ("wl0_mode", "sta") || nvram_match ("wl0_mode", "apsta")
-      || nvram_match ("wl0_mode", "apstawet"))
-    return 1;
-#else
   if (getSTA ())
     return 1;
-#endif
   return 0;
 
 }
@@ -697,9 +691,7 @@ do_portsetup (char *lan, char *ifname)
     }
   else
     {
-      sprintf (var, "%s_ipaddr", ifname);
-      sprintf (var2, "%s_netmask", ifname);
-      ifconfig (ifname, IFUP, nvram_safe_get (var), nvram_safe_get (var2));
+      ifconfig (ifname, IFUP, nvram_nget ("%s_ipaddr",ifname), nvram_nget ("%s_netmask",ifname));
     }
 
 }
@@ -1230,11 +1222,9 @@ start_lan (void)
 #endif
 
 
-  /* Write wireless mac */
-  cprintf ("Write wireless mac\n");
 
   /* you gotta bring it down before you can set its MAC */
-  cprintf ("configure wl_face\n");
+  cprintf ("configure wl_face %s\n",wl_face);
   ifconfig (wl_face, 0, 0, 0);
 #ifndef HAVE_MADWIFI
 
@@ -1279,13 +1269,15 @@ start_lan (void)
 	  nvram_commit ();
 	}
     }
+  /* Write wireless mac */
+  cprintf ("Write wireless mac\n");
   ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
   strncpy (ifr.ifr_name, wl_face, IFNAMSIZ);
 
-  if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
-    perror ("Write wireless mac fail : ");
-  else
-    cprintf ("Write wireless mac successfully\n");
+//  if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
+//    perror ("Write wireless mac fail : ");
+//  else
+//    cprintf ("Write wireless mac successfully\n");
 #ifdef HAVE_MSSID
   set_vifsmac (mac);
 #endif
@@ -1303,6 +1295,7 @@ start_lan (void)
       nvram_set ("wan_hwaddr", mac);
     }
 
+  cprintf ("wl_face up %s\n",wl_face);
   ifconfig (wl_face, IFUP, 0, 0);
 #ifdef HAVE_MICRO
   br_init ();
@@ -1414,10 +1407,11 @@ start_lan (void)
 //#endif
 #endif
 		ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
-		if (nvram_match ("wl0_hwaddr", "")
-		    || !nvram_get ("wl0_hwaddr"))
+		int instance = get_wl_instance(name);
+		if (nvram_nmatch ("","wl%d_hwaddr",instance )
+		    || !nvram_nget ("wl%d_hwaddr",instance))
 		  {
-		    nvram_set ("wl0_hwaddr", mac);
+		    nvram_nset (mac,"wl%d_hwaddr", instance);
 		    nvram_commit ();
 		  }
 	      }
@@ -1498,7 +1492,7 @@ start_lan (void)
 		led_control (LED_BRIDGE, LED_ON);
 #ifdef HAVE_MSSID
 		enable_dhcprelay (lan_ifname);
-		do_mssid (lan_ifname);
+		do_mssid (lan_ifname,name);
 #endif
 	      }
 
@@ -1508,7 +1502,7 @@ start_lan (void)
 
 		br_add_interface (getBridge (name), name);	//eval ("brctl", "addif", lan_ifname, name);
 #ifdef HAVE_MSSID
-		do_mssid (lan_ifname);
+		do_mssid (lan_ifname,name);
 #endif
 	      }
 #ifdef HAVE_MSSID
@@ -1533,7 +1527,7 @@ start_lan (void)
 //              eval ("brctl", "addif", lan_ifname, name);
 #ifndef HAVE_FON
 		if (nvram_match ("fon_enable", "0"))
-		  do_mssid (lan_ifname);
+		  do_mssid (lan_ifname,name);
 #endif
 	      }
 #endif

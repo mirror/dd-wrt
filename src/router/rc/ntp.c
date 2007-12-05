@@ -50,9 +50,9 @@ check_udhcpd (timer_t t, int arg)
 	      killall ("dnsmasq", SIGKILL);
 	      killall ("udhcpd", SIGKILL);
 	      sleep (1);
-	      start_service ("udhcpd");
+	      eval("startservice","udhcpd");
 	      sleep (1);
-	      start_service ("dnsmasq");
+	      eval("startservice","dnsmasq");
 	    }
 	}
       else
@@ -62,9 +62,9 @@ check_udhcpd (timer_t t, int arg)
 	      killall ("dnsmasq", SIGKILL);
 	      killall ("udhcpd", SIGKILL);
 	      sleep (1);
-	      start_service ("udhcpd");
+	      eval("startservice","udhcpd");
 	      sleep (1);
-	      start_service ("dnsmasq");
+	      eval("startservice","dnsmasq");
 	    }
 	}
     }
@@ -183,7 +183,7 @@ ntp_main (timer_t t, int arg)
     return;			// don't execute if not online
 
 //              syslog(LOG_INFO, "time updated: %s\n", ctime(&now));
-  stop_service ("ntpc");
+  eval("stopservice","ntpc");
   if (do_ntp () == 0)
     {
       if (arg == FIRST)

@@ -1836,7 +1836,15 @@ void
 ej_show_security (webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
-  return ej_show_security_single (wp, argc, argv, "wl0");
+  int c = get_wl_instances ();
+  int i;
+  for (i = 0; i < c; i++)
+    {
+      char buf[16];
+      sprintf (buf, "wl%d", i);
+      ej_show_security_single (wp, argc, argv, buf);
+    }
+  return;
 #else
   int c = getdevicecount ();
   int i;
@@ -3261,25 +3269,27 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 	  free (chan);
 	}
 #else
+int instance = 0;
+if (!strcmp(prefix,"wl1"))instance=1;
       if (type == 1 && !nvram_match (wl_net_mode, "g-only")
 	  && !nvram_match (wl_net_mode, "a-only")
 	  && !nvram_match (wl_net_mode, "bg-mixed")
 	  && nvram_match (wl_nbw, "40"))
 	{
-	  int ch = atoi (nvram_safe_get ("wl0_wchannel"));
+	  int ch = atoi (nvram_nget ("wl%d_wchannel",instance));
 	  websWrite (wp, "var max_channel = 2;\n");
-	  websWrite (wp, "var wl0_channel = '%s';\n",
+	  websWrite (wp, "var wl%d_channel = '%s';\n",instance,
 		     nvram_safe_get (wl_wchannel));
 	  websWrite (wp,
 		     "var freq = new Array(\"Auto\",\"2.412\",\"2.417\",\"2.422\",\"2.427\",\"2.432\",\"2.437\",\"2.442\",\"2.447\",\"2.452\",\"2.457\",\"2.462\",\"2.467\",\"2.472\",\"2.484\");\n");
 	  char *sel = "";
-	  if (nvram_match ("wl0_nctrlsb", "lower"))
+	  if (nvram_nmatch ("lower","wl%d_nctrlsb", instance))
 	    sel = "selected";
 
 	  websWrite (wp,
 		     " document.write(\"<option value=%d %s>%d - \"+freq[%d]+\" GHz</option>\");\n",
 		     ch - 2, sel, ch - 2, ch - 2);
-	  if (nvram_match ("wl0_nctrlsb", "upper"))
+	  if (nvram_nmatch ("upper","wl%d_nctrlsb", instance))
 	    sel = "selected";
 	  websWrite (wp,
 		     " document.write(\"<option value=%d %s>%d - \"+freq[%d]+\" GHz</option>\");\n",
@@ -3290,10 +3300,11 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 	{
 
 	  unsigned int chanlist[128];
-	  int chancount = getchannels (chanlist);
+	  char *ifn = get_wl_instance_name(instance);
+	  int chancount = getchannels (chanlist,ifn);
 
 	  websWrite (wp, "var max_channel = %d;\n", chancount);
-	  websWrite (wp, "var wl0_channel = '%s';\n",
+	  websWrite (wp, "var wl%d_channel = '%s';\n",instance,
 		     nvram_safe_get (wl_channel));
 	  websWrite (wp, "var offset = %d;\n", chanlist[0]);
 	  websWrite (wp, "var buf = \"\";\n");
@@ -3313,7 +3324,7 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 	    }
 	  websWrite (wp, ");\n");
 	  websWrite (wp, "for(i=0; i<=max_channel ; i++) {\n");
-	  websWrite (wp, "	if(i == wl0_channel) buf = \"selected\";\n");
+	  websWrite (wp, "	if(i == wl%d_channel) buf = \"selected\";\n",instance);
 	  websWrite (wp, "	else buf = \"\";\n");
 	  websWrite (wp, "	if (i==0)\n");
 	  websWrite (wp,
@@ -3524,7 +3535,7 @@ show_netmode (webs_t wp, char *prefix)
 	     "document.write(\"<option value=\\\"mixed\\\" %s>\" + wl_basic.mixed + \"</option>\");\n",
 	     nvram_match (wl_net_mode,
 			  "mixed") ? "selected=\\\"selected\\\"" : "");
-  if (has_mimo ())
+  if (has_mimo (prefix))
     {
       websWrite (wp,
 		 "document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n",
@@ -3575,7 +3586,7 @@ show_netmode (webs_t wp, char *prefix)
 			    "g-only") ? "selected=\\\"selected\\\"" : "");
 #endif
 #endif
-  if (has_mimo ())
+  if (has_mimo (prefix))
     {
       websWrite (wp,
 		 "document.write(\"<option value=\\\"n-only\\\" %s>\" + wl_basic.n + \"</option>\");\n",
@@ -3584,6 +3595,7 @@ show_netmode (webs_t wp, char *prefix)
     }
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
 #ifndef HAVE_MADWIFI
+
   if (nvram_match ("wl0_phytypes", "ga") || nvram_match ("wl0_phytypes", "a"))
     websWrite (wp,
 	       "document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n",
@@ -4136,8 +4148,15 @@ wireless_save (webs_t wp)
   char var[80];
   char vif[16];
 #ifndef HAVE_MADWIFI
-  save_prefix (wp, "wl0");
-  char *vifs = nvram_safe_get ("wl0_vifs");
+ int c = get_wl_instances();
+  int i;
+  for (i = 0; i < c; i++)
+    {
+      sprintf (vif, "wl%d_vifs", i);
+      char buf[16];
+      sprintf (buf, "wl%d", i);
+      save_prefix (wp, buf);
+      char *vifs = nvram_safe_get (vif);
 #else
   int c = getdevicecount ();
   int i;
@@ -4156,9 +4175,7 @@ wireless_save (webs_t wp)
       {
 	save_prefix (wp, var);
       }
-#ifdef HAVE_MADWIFI
     }
-#endif
   //nvram_commit ();
 #endif
   if (!strcmp (value, "ApplyTake"))
@@ -4322,6 +4339,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
       websWrite (wp, "</div>\n");
     }
 #endif
+
 #ifdef HAVE_MADWIFI
 //  if (!strcmp (prefix, "ath0"))
 #endif
@@ -4552,9 +4570,9 @@ ej_show_wireless_single (webs_t wp, char *prefix)
       || nvram_match (wl_mode, "infra"))
     {
 
-      if (has_mimo ()
-	  && (nvram_match ("wl0_net_mode", "n-only")
-	      || nvram_match ("wl0_net_mode", "mixed")))
+      if (has_mimo (prefix)
+	  && (nvram_nmatch ("n-only","%s_net_mode", prefix)
+	      || nvram_nmatch ("mixed,""%s_net_mode", prefix)))
 	{
 
 	  websWrite (wp, "<div class=\"setting\">\n");
@@ -4656,7 +4674,14 @@ ej_show_wireless (webs_t wp, int argc, char_t ** argv)
       ej_show_wireless_single (wp, buf);
     }
 #else
-  ej_show_wireless_single (wp, "wl0");
+int c = get_wl_instances();
+  int i;
+  for (i = 0; i < c; i++)
+    {
+      char buf[16];
+      sprintf (buf, "wl%d", i);
+      ej_show_wireless_single (wp, buf);
+    }
 #endif
   return;
 }
@@ -4704,7 +4729,7 @@ show_preshared (webs_t wp, char *prefix)
   sprintf (var, "%s_wpa_gtk_rekey", prefix);
   websWrite (wp,
 	     "<input class=\"num\" name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"5\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />\n",
-	     prefix, nvram_safe_get (var));
+	     prefix, nvram_default_get (var,"3600"));
   websWrite (wp,
 	     "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 3600, \" + share.range + \": 1 - 99999)\");\n//]]>\n</script></span>\n");
   websWrite (wp, "</div>\n");
@@ -4766,7 +4791,7 @@ show_radius (webs_t wp, char *prefix, int showmacformat)
   sprintf (var, "%s_radius_port", prefix);
   websWrite (wp,
 	     "<input name=\"%s_radius_port\" size=\"3\" maxlength=\"5\" onblur=\"valid_range(this,1,65535,radius.label4)\" value=\"%s\" />\n",
-	     prefix, nvram_safe_get (var));
+	     prefix, nvram_default_get (var,"1812"));
   websWrite (wp,
 	     "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 1812)\");\n//]]>\n</script></span>\n</div>\n");
   websWrite (wp, "<div class=\"setting\">\n");
@@ -4980,7 +5005,7 @@ show_wparadius (webs_t wp, char *prefix)
   sprintf (var, "%s_wpa_gtk_rekey", prefix);
   websWrite (wp,
 	     "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />",
-	     prefix, nvram_safe_get (var));
+	     prefix, nvram_default_get (var,"3600"));
   websWrite (wp, "</div>\n");
   websWrite (wp, "</div>\n");
 }
@@ -4998,6 +5023,7 @@ show_wep (webs_t wp, char *prefix)
 	     "<input type=\"hidden\" name=\"%s_wep\" value=\"restricted\" />",
 	     prefix);
   sprintf (var, "%s_key", prefix);
+  nvram_default_get(var,"0");
   websWrite (wp,
 	     "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_key\" %s />1&nbsp;\n",
 	     prefix, selmatch (var, "1", "checked=\"checked\""));

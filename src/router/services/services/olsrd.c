@@ -73,12 +73,14 @@ start_olsrd (void)
   fprintf (fp, "LoadPlugin \"olsrd_dyn_gw_plain.so\"\n");
   fprintf (fp, "{\n");
   fprintf (fp, "}\n");
+#ifndef HAVE_MICRO
   fprintf (fp, "LoadPlugin \"olsrd_httpinfo.so\"\n");
   fprintf (fp, "{\n");
   fprintf (fp, "\tPlParam \"port\"\t\"8080\"\n");
   fprintf (fp, "\tPlParam \"Host\"\t\"127.0.0.1\"\n");
   fprintf (fp, "\tPlParam \"Net\"\t\"%s 255.255.255.0\"\n", net);
   fprintf (fp, "}\n");
+#endif
   fprintf (fp, "IpcConnect\n");
   fprintf (fp, "{\n");
   fprintf (fp, "\tMaxConnections\t1\n");

@@ -52,7 +52,7 @@ watchdog (void)
 	}
 /* end software wlan led control */
 
-      sleep (10);
+      sleep (2);
     }
 }
 

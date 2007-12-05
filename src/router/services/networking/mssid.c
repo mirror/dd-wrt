@@ -40,14 +40,14 @@
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 void
-do_mssid (char *lan_ifname)
+do_mssid (char *lan_ifname,char *wlifname)
 {
   //bridge the virtual interfaces too
   struct ifreq ifr;
   int s;
   char *next;
   char var[80];
-  char *vifs = nvram_safe_get ("wl0_vifs");
+  char *vifs = nvram_nget ("wl%d_vifs",get_wl_instance(wlifname));
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
   if (vifs != NULL)
@@ -64,7 +64,7 @@ do_mssid (char *lan_ifname)
 //	  ether_atoe (nvram_safe_get ("wan_hwaddr"), ifr.ifr_hwaddr.sa_data);
 //	else
 //#endif
-	  ether_atoe (nvram_safe_get ("wl0_hwaddr"), ifr.ifr_hwaddr.sa_data);
+	  ether_atoe (nvram_nget ("wl%d_hwaddr",get_wl_instance(wlifname)), ifr.ifr_hwaddr.sa_data);
 
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 	strncpy (ifr.ifr_name, var, IFNAMSIZ);
@@ -77,11 +77,7 @@ do_mssid (char *lan_ifname)
 	}
       else
 	{
-	  char ip[32];
-	  char mask[32];
-	  sprintf (ip, "%s_ipaddr", var);
-	  sprintf (mask, "%s_netmask", var);
-	  ifconfig (var, IFUP, nvram_safe_get (ip), nvram_safe_get (mask));
+	  ifconfig (var, IFUP, nvram_nget ("%s_ipaddr",var), nvram_nget ("%s_netmask",var));
 	}
     }
   close (s);
