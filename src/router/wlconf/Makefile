@@ -13,13 +13,25 @@
 #
 include $(TOP)/.config
 
+#ifeq ($(CONFIG_BUFFALO),y)
+#CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/
+#else
 CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/
+#endif
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -s -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -DBCMWPA2
-LDFLAGS	+= -L$(TOP)/nvram -lnvram -L$(TOP)/shared -lshared
+CFLAGS	+= -s -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -DBCMWPA2 -fpic -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS	+= -L$(TOP)/nvram -lnvram -L$(TOP)/shared -lshared -ffunction-sections -fdata-sections -Wl,--gc-sections
+ifeq ($(CONFIG_BUFFALO),y)
+CFLAGS += -DHAVE_BUFFALO -DBUFFALO_COUNTRY="\"$(CONFIG_COUNTRY)\""
+endif
 
 ifeq ($(CONFIG_MSSID),y)
+ifeq ($(CONFIG_BUFFALO),y)
 OBJS := wlconf.o 
+#OBJS := wlconfbcm.o 
+else
+OBJS := wlconf.o 
+endif
 else
 OBJS := 
 endif
