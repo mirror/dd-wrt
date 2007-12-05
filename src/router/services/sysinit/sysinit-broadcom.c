@@ -219,13 +219,24 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_WRT150N:
     case ROUTER_WRT300N:
     case ROUTER_WRT350N:
-    case ROUTER_WRT600N:
     case ROUTER_BUFFALO_WZRG144NH:
     case ROUTER_BUFFALO_WZRG300N:
     case ROUTER_NETGEAR_WNR834B:
     case ROUTER_ASUS_WL500W:
       eval ("insmod", "wl");	//load module
       break;
+    case ROUTER_WRT600N:
+      eval ("insmod", "wl");	//load module
+      char macbuf[32];
+      char eaddr[32];
+      wl_hwaddr("eth1",macbuf);
+      ether_etoa((uchar *)macbuf, eaddr);
+      nvram_set("wl0_hwaddr",eaddr);      
+//      MAC_SUB(eaddr);
+//      nvram_set("et0macaddr",eaddr);
+      wl_hwaddr("eth2",macbuf);
+      ether_etoa((uchar *)macbuf, eaddr);
+      nvram_set("wl1_hwaddr",eaddr);      
     default:
       boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
       fprintf (stderr, "boardflags are 0x%04X\n", boardflags);
