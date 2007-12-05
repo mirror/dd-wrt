@@ -232,11 +232,12 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       wl_hwaddr("eth1",macbuf);
       ether_etoa((uchar *)macbuf, eaddr);
       nvram_set("wl0_hwaddr",eaddr);      
-//      MAC_SUB(eaddr);
-//      nvram_set("et0macaddr",eaddr);
+      MAC_SUB(eaddr);
+      nvram_set("et0macaddr",eaddr);
       wl_hwaddr("eth2",macbuf);
       ether_etoa((uchar *)macbuf, eaddr);
       nvram_set("wl1_hwaddr",eaddr);      
+      break;
     default:
       boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
       fprintf (stderr, "boardflags are 0x%04X\n", boardflags);
