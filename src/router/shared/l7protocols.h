@@ -7,7 +7,7 @@ typedef struct _l7filters  //l7 and p2p filters
 	char *protocol;
 	} l7filters;
 
-l7filters l7filters filters_list[] = {
+l7filters filters_list[] = {
 	{ "100bao",				"l7" },		// 100bao - a Chinese P2P protocol/program - http://www.100bao.com
 	{ "aim",				"l7"},		// AIM - AOL instant messenger (OSCAR and TOC)
 	{ "aimwebcontent" ,		"l7" },		// AIM web content - ads/news content downloaded by AOL Instant Messenger
