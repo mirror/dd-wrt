@@ -32,15 +32,9 @@ start_pppoerelay (void)
   killall ("pppoe-relay", SIGTERM);
   if (nvram_match ("pppoerelay_enable", "1"))
     {
-#ifdef HAVE_MADWIFI
       if (getSTA ())
 	eval ("pppoe-relay", "-S", getSTA (), "-C", "br0");
       else
-#else
-      if (nvram_match ("wl_mode", "sta"))
-	eval ("pppoe-relay", "-S", get_wdev (), "-C", "br0");
-      else
-#endif
 	eval ("pppoe-relay", "-S", nvram_safe_get ("wan_ifname"), "-C",
 	      "br0");
 

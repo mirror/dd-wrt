@@ -42,6 +42,8 @@ void start_radius(char *prefix)
       strcpy(ifname,prefix);
       if (!strcmp(ifname,"wl0"))
         strcpy(ifname,nvram_safe_get("wl0_ifname"));
+      if (!strcmp(ifname,"wl1"))
+        strcpy(ifname,nvram_safe_get("wl1_ifname"));
       char ap[32];
       
       char radauth[32];
@@ -81,15 +83,15 @@ int start_nas_single (char *type, char *prefix);
 // #define HAVE_NASCONF  //use this to parse nas parameters from conf file. 
 
 static void
-convert_wds (void)
+convert_wds (int instance)
 {
   char wds_mac[254];
   char buf[254];
 
-  if (nvram_match ("wl_wds", ""))	// For Router, accept all WDS link
+  if (nvram_nmatch ("","wl%d_wds", instance))	// For Router, accept all WDS link
     strcpy (wds_mac, "*");
   else				// For AP, assign remote WDS MAC
-    strcpy (wds_mac, nvram_safe_get ("wl_wds"));
+    strcpy (wds_mac, nvram_nget ("wl%d_wds",instance));
 
   /* For WPA-PSK mode, we want to convert wl_wds_mac to wl0_wds0 ... wl0_wds255 */
   if (nvram_match ("security_mode", "psk")
@@ -103,7 +105,7 @@ convert_wds (void)
 
       foreach (mac, wds_mac, next)
       {
-	snprintf (wl_wds, sizeof (wl_wds), "wl0_wds%d", i);
+	snprintf (wl_wds, sizeof (wl_wds), "wl%d_wds%d",instance, i);
 	snprintf (buf, sizeof (buf), "%s,auto,%s,%s,%s,%s",
 		  mac,
 		  nvram_safe_get ("wl_crypto"),
@@ -111,7 +113,7 @@ convert_wds (void)
 #ifndef HAVE_MSSID
 		  nvram_safe_get ("wl_ssid"), nvram_safe_get ("wl_wpa_psk"));
 #else
-		  nvram_safe_get ("wl0_ssid"), nvram_safe_get ("wl_wpa_psk"));
+		  nvram_nget ("wl%d_ssid",instance), nvram_safe_get ("wl_wpa_psk"));
 #endif
 	nvram_set (wl_wds, buf);
 	i++;
@@ -119,7 +121,7 @@ convert_wds (void)
 
       /* Del unused entry */
       for (j = i; j < MAX_NVPARSE; j++)
-	del_wds_wsec (0, j);
+	del_wds_wsec (instance, j);
     }
 }
 
@@ -257,20 +259,27 @@ static void start_nas_ap(char *prefix,char *type)
 void
 start_nas_lan (void)
 {
-  start_radius("wl0"); // quick fix, should be vif capable in future
-  start_nas_single ("lan", "wl0");
+int cnt = get_wl_instances();
+
+int c;
+for (c=0;c<cnt;c++)
+{
+char wlname[32];
+sprintf(wlname,"wl%d",c);
+  start_radius(wlname); // quick fix, should be vif capable in future
+  start_nas_single ("lan", wlname);
 
 #ifdef HAVE_MSSID
   char *next;
   char var[80];
-  char *vifs = nvram_safe_get ("wl0_vifs");
+  char *vifs = nvram_nget ("wl%d_vifs",c);
   if (strlen (vifs))
     foreach (var, vifs, next)
     {
       start_nas_single ("lan", var);
     }
 #endif
-
+}
 }
 
 
@@ -278,13 +287,20 @@ start_nas_lan (void)
 void
 start_nas_wan (void)
 {
-  start_nas_single ("wan", "wl0");
+int cnt = get_wl_instances();
+
+int c;
+for (c=0;c<cnt;c++)
+{
+char wlname[32];
+sprintf(wlname,"wl%d",c);
+  start_nas_single ("wan", wlname);
 
 #ifdef HAVE_MSSID
   char *next;
   char var[80];
   char vif[16];
-  char *vifs = nvram_safe_get ("wl0_vifs");
+  char *vifs = nvram_nget ("wl%d_vifs",c);
   if (strlen (vifs))
     foreach (var, vifs, next)
     {
@@ -302,6 +318,7 @@ start_nas_wan (void)
     }
 #endif
 }
+}
 
 #ifdef HAVE_WPA_SUPPLICANT
 extern void setupSupplicant (char *prefix);
@@ -312,15 +329,22 @@ start_nas (void)
 #ifdef HAVE_MSSID
   unlink ("/tmp/.nas");
 #endif
-  if (nvram_match ("wl0_mode", "sta")
-      || nvram_match ("wl0_mode", "wet")
-      || nvram_match ("wl0_mode", "apsta")
-      || nvram_match ("wl0_mode", "apstawet"))
+int cnt = get_wl_instances();
+
+int c;
+for (c=0;c<cnt;c++)
+{
+char wlname[32];
+sprintf(wlname,"wl%d",c);
+  if (nvram_nmatch ("sta","wl%d_mode", c)
+      || nvram_nmatch ("wet","wl%d_mode", c)
+      || nvram_nmatch ("apsta","wl%d_mode", c)
+      || nvram_nmatch ("apstawet","wl%d_mode", c))
     {
       cprintf ("start nas wan\n");
 #ifdef HAVE_WPA_SUPPLICANT
-      if (nvram_match ("wl0_akm", "8021X") && nvram_match ("wl0_mode", "sta"))
-	setupSupplicant ("wl0");
+      if (nvram_nmatch ("8021X","wl%d_akm", c) && nvram_nmatch ("sta","wl%d_mode", c))
+	setupSupplicant (wlname);
       else
 #endif
 	start_nas_wan ();
@@ -331,6 +355,7 @@ start_nas (void)
       cprintf ("start nas lan\n");
       start_nas_lan ();
     }
+}
   return 1;
 }
 
@@ -354,7 +379,10 @@ start_nas_single (char *type, char *prefix)
   {
   0};
 
-  convert_wds ();
+if (!strcmp(prefix,"wl0"))
+  convert_wds (0);
+else
+  convert_wds (1);
   {
 
     snprintf (pidfile, sizeof (pidfile), "/tmp/nas.%s%s.pid", prefix, type);
@@ -584,18 +612,28 @@ stop_nas (void)
 #endif
   unlink ("/tmp/nas.wl0wan.pid");
   unlink ("/tmp/nas.wl0lan.pid");
+  unlink ("/tmp/nas.wl1wan.pid");
+  unlink ("/tmp/nas.wl1lan.pid");
 #ifdef HAVE_NASCONF
   unlink ("/tmp/nas.wl0wan.conf");
   unlink ("/tmp/nas.wl0lan.conf");
+  unlink ("/tmp/nas.wl1wan.conf");
+  unlink ("/tmp/nas.wl1lan.conf");
 #endif
 #ifdef HAVE_MSSID
   unlink ("/tmp/nas.wl0.1lan.pid");
   unlink ("/tmp/nas.wl0.2lan.pid");
   unlink ("/tmp/nas.wl0.3lan.pid");
+  unlink ("/tmp/nas.wl1.1lan.pid");
+  unlink ("/tmp/nas.wl1.2lan.pid");
+  unlink ("/tmp/nas.wl1.3lan.pid");
 #ifdef HAVE_NASCONF
   unlink ("/tmp/nas.wl0.1lan.conf");
   unlink ("/tmp/nas.wl0.2lan.conf");
   unlink ("/tmp/nas.wl0.3lan.conf");
+  unlink ("/tmp/nas.wl1.1lan.conf");
+  unlink ("/tmp/nas.wl1.2lan.conf");
+  unlink ("/tmp/nas.wl1.3lan.conf");
 #endif
 #endif
 

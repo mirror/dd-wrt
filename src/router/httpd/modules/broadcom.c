@@ -2977,10 +2977,10 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   cprintf ("refresh to %s\n", path);
   if (!strncmp (path, "WL_FilterTable", strlen ("WL_FilterTable")))
     do_filtertable (path, wp, NULL);	//refresh
-#ifdef HAVE_MADWIFI
+//#ifdef HAVE_MADWIFI
   else if (!strncmp (path, "Wireless_WDS", strlen ("Wireless_WDS")))
     do_wds (path, wp, NULL);	//refresh
-#endif
+//#endif
   else
     do_ej (path, wp, NULL);	//refresh
   websDone (wp, 200);
@@ -3547,10 +3547,10 @@ footer:
 	cprintf ("refresh to %s\n", path);
 	if (!strncmp (path, "WL_FilterTable", strlen ("WL_FilterTable")))
 	  do_filtertable (path, wp, NULL);	//refresh
-#ifdef HAVE_MADWIFI
+//#ifdef HAVE_MADWIFI
 	else if (!strncmp (path, "Wireless_WDS", strlen ("Wireless_WDS")))
 	  do_wds (path, wp, NULL);	//refresh
-#endif
+//#endif
 	else
 	  do_ej (path, wp, NULL);	//refresh
 	websDone (wp, 200);
@@ -4181,7 +4181,21 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   for (a = 0; a < ifcount; a++)
     {
       sprintf (&menu[1][a + 6][0], "Wireless_WDS-ath%d.asp", a);
+      if (ifcount==1)
+      sprintf (&menuname[1][a + 7][0], "wirelessWds", a);
+      else
       sprintf (&menuname[1][a + 7][0], "wirelessWds%d", a);
+    }
+#else
+  int ifcount = get_wl_instances();
+  int a;
+  for (a = 0; a < ifcount; a++)
+    {
+      sprintf (&menu[1][a + 6][0], "Wireless_WDS-wl%d.asp", a);
+      if (ifcount==1)
+      sprintf (&menuname[1][a + 7][0], "wirelessWds", a);
+      else
+      sprintf (&menuname[1][a + 7][0], "wirelessWdswl%d", a);
     }
 #endif
 
@@ -4528,9 +4542,9 @@ struct mime_handler mime_handlers[] = {
   {"register.asp", "text/html", no_cache, NULL, do_ej, NULL},
   {"WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable, do_auth},
 //#endif
-#ifdef HAVE_MADWIFI
+//#ifdef HAVE_MADWIFI
   {"Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth},
-#endif
+//#endif
   {"**.asp", "text/html", no_cache, NULL, do_ej, do_auth},
   {"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL},
 //  {"style.css", "text/css", NULL, NULL, do_style, NULL},

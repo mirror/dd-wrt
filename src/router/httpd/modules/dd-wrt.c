@@ -4648,7 +4648,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label6)</script></div>\n");
   websWrite (wp,
 	     "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%s\" />\n",
-	     power, nvram_safe_get (power));
+	     power, nvram_default_get (power,"2000"));
   websWrite (wp,
 	     "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 2000 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
   websWrite (wp, "</div>\n");
@@ -5136,13 +5136,9 @@ validate_wds (webs_t wp, char *value, struct variable *v)
   char desc[48] = "";
   char wds_if[32] = { 0 };
   char wds_list[199] = "";
-#ifdef HAVE_MADWIFI
   char *interface = websGetVar (wp, "interface", NULL);
   if (interface == NULL)
     return;
-#else
-  char *interface = "wl";
-#endif
 
   char wl0wds[32];
   sprintf (wl0wds, "%s_wds", interface);
@@ -5314,13 +5310,7 @@ validate_wds (webs_t wp, char *value, struct variable *v)
       snprintf (wdsif_var, 31, "%s_if", wds);
       if (!nvram_match (enabled_var, "0"))
 	{
-#ifdef HAVE_MADWIFI
 	  snprintf (wds_if, 31, "wds%s.%d", interface, (devcount++));
-#elif HAVE_MSSID
-	  snprintf (wds_if, 31, "wds0.%d", (devcount++));
-#else
-	  snprintf (wds_if, 31, "wds0.491%d", 50 + (devcount++));
-#endif
 	  nvram_set (wdsif_var, wds_if);
 	}
       else
@@ -5337,21 +5327,12 @@ ej_get_wds_mac (webs_t wp, int argc, char_t ** argv)
   int mac = -1, wds_idx = -1, mac_idx = -1;
   char *c, wds_var[32] = "";
 
-#ifdef HAVE_MADWIFI
   char *interface;
   if (ejArgs (argc, argv, "%d %d %s", &wds_idx, &mac_idx, &interface) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-#else
-  char *interface = "wl";
-  if (ejArgs (argc, argv, "%d %d", &wds_idx, &mac_idx) < 2)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return;
-    }
-#endif
   else if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
     return;
   else if (mac_idx < 0 || mac_idx > 5)
@@ -5379,8 +5360,6 @@ ej_get_wds_ip (webs_t wp, int argc, char_t ** argv)
   int ip = -1, wds_idx = -1, ip_idx = -1;
   char *c, wds_var[32] = "";
 
-
-#ifdef HAVE_MADWIFI
   char *interface;
 #ifdef FASTWEB
   ejArgs (argc, argv, "%d %d %s", &wds_idx, &ip_idx, &interface);
@@ -5390,18 +5369,6 @@ ej_get_wds_ip (webs_t wp, int argc, char_t ** argv)
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-#endif
-#else
-  char *interface = "wl";
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%d %d", &wds_idx, &ip_idx);
-#else
-  if (ejArgs (argc, argv, "%d %d", &wds_idx, &ip_idx) < 2)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return;
-    }
-#endif
 #endif
   if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
     return;
@@ -5430,8 +5397,6 @@ ej_get_wds_netmask (webs_t wp, int argc, char_t ** argv)
   int nm = -1, wds_idx = -1, nm_idx = -1;
   char *c, wds_var[32] = "";
 
-
-#ifdef HAVE_MADWIFI
   char *interface;
 #ifdef FASTWEB
   ejArgs (argc, argv, "%d %d %s", &wds_idx, &nm_idx, &interface);
@@ -5441,18 +5406,6 @@ ej_get_wds_netmask (webs_t wp, int argc, char_t ** argv)
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-#endif
-#else
-  char *interface = "wl";
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%d %d", &wds_idx, &nm_idx);
-#else
-  if (ejArgs (argc, argv, "%d %d", &wds_idx, &nm_idx) < 2)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return;
-    }
-#endif
 #endif
 
   if (wds_idx < 1 || wds_idx > 6)
@@ -5483,9 +5436,6 @@ ej_get_wds_gw (webs_t wp, int argc, char_t ** argv)
   int gw = -1, wds_idx = -1, gw_idx = -1;
   char *c, wds_var[32] = "";
 
-
-
-#ifdef HAVE_MADWIFI
   char *interface;
 #ifdef FASTWEB
   ejArgs (argc, argv, "%d %d %s", &wds_idx, &gw_idx, &interface);
@@ -5495,18 +5445,6 @@ ej_get_wds_gw (webs_t wp, int argc, char_t ** argv)
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-#endif
-#else
-  char *interface = "wl";
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%d %d", &wds_idx, &gw_idx);
-#else
-  if (ejArgs (argc, argv, "%d %d", &wds_idx, &gw_idx) < 2)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return;
-    }
-#endif
 #endif
 
   if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
@@ -5536,7 +5474,6 @@ ej_get_br1_ip (webs_t wp, int argc, char_t ** argv)
   int ip = -1, ip_idx = -1;
   char *c;
 
-#ifdef HAVE_MADWIFI
   char *interface;
 #ifdef FASTWEB
   ejArgs (argc, argv, "%d %s", &ip_idx, &interface);
@@ -5546,18 +5483,6 @@ ej_get_br1_ip (webs_t wp, int argc, char_t ** argv)
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-#endif
-#else
-  char *interface = "wl";
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%d", &ip_idx);
-#else
-  if (ejArgs (argc, argv, "%d", &ip_idx) < 1)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return;
-    }
-#endif
 #endif
   if (ip_idx < 0 || ip_idx > 3)
     return;
@@ -5584,7 +5509,6 @@ ej_get_br1_netmask (webs_t wp, int argc, char_t ** argv)
   char *c;
 
 
-#ifdef HAVE_MADWIFI
   char *interface;
 #ifdef FASTWEB
   ejArgs (argc, argv, "%d %s", &nm_idx, &interface);
@@ -5594,18 +5518,6 @@ ej_get_br1_netmask (webs_t wp, int argc, char_t ** argv)
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-#endif
-#else
-  char *interface = "wl";
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%d", &nm_idx);
-#else
-  if (ejArgs (argc, argv, "%d", &nm_idx) < 1)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return;
-    }
-#endif
 #endif
   if (nm_idx < 0 || nm_idx > 3)
     return;
@@ -6223,10 +6135,16 @@ void
 ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 {
   int cnt = 0;
-  cnt = ej_active_wireless_if (wp, argc, argv, get_wdev (), "wl0", cnt);
+int c = get_wl_instances();
+int i;
+for (i=0;i<c;i++)
+{
+  char wlif[32];
+  sprintf(wlif,"wl%d",i);
+  cnt = ej_active_wireless_if (wp, argc, argv, get_wdev (), wlif, cnt);
   char *next;
   char var[80];
-  char *vifs = nvram_safe_get ("wl0_vifs");
+  char *vifs = nvram_nget ("wl%d_vifs",i);
   if (vifs == NULL)
     return;
 
@@ -6234,6 +6152,7 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
   {
     cnt = ej_active_wireless_if (wp, argc, argv, var, var, cnt);
   }
+}
 }
 
 
@@ -6243,10 +6162,16 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 #endif
 
 #define WDS_RSSI_TMP	"/tmp/.rssi"
-#define WDS_CMD			"wl wds"
-
 void
-ej_active_wds (webs_t wp, int argc, char_t ** argv)
+ej_active_wds(webs_t wp, int argc, char_t ** argv)
+{
+int cnt = get_wl_instances();
+int c;
+for (c=0;c<cnt;c++)
+    ej_active_wds_instance(wp,argc,argv,c);
+}
+void
+ej_active_wds_instance (webs_t wp, int argc, char_t ** argv,int instance)
 {
 #ifndef HAVE_MADWIFI
   int rssi = 0, i;
@@ -6269,13 +6194,13 @@ ej_active_wds (webs_t wp, int argc, char_t ** argv)
 
   unlink (WDS_RSSI_TMP);
 
-  mode = nvram_safe_get ("wl_mode");
+  mode = nvram_nget ("wl%d_mode",instance);
 
   if (strcmp (mode, "ap") && strcmp (mode, "apsta")
       && strcmp (mode, "apstawet"))
     return;
   unsigned char buf[WLC_IOCTL_MAXLEN];
-  char *iface = get_wdev ();
+  char *iface = get_wl_instance_name(instance);
   if (!ifexists (iface))
     return;
   int r = getwdslist (iface, buf);
@@ -6293,10 +6218,10 @@ ej_active_wds (webs_t wp, int argc, char_t ** argv)
       memset (desc, 0, 30);
       for (i = 1; i <= 10; i++)
 	{
-	  snprintf (wdsvar, 30, "wl_wds%d_hwaddr", i);
+	  snprintf (wdsvar, 30, "wl%d_wds%d_hwaddr",instance, i);
 	  if (nvram_match (wdsvar, mac))
 	    {
-	      snprintf (wdsvar, 30, "wl_wds%d_desc", i);
+	      snprintf (wdsvar, 30, "wl%d_wds%d_desc",instance, i);
 	      snprintf (desc, sizeof (desc), "%s", nvram_get (wdsvar));
 	      if (!strcmp (nvram_get (wdsvar), ""))
 		strcpy (desc, "&nbsp;");
@@ -6348,7 +6273,6 @@ ej_get_wdsp2p (webs_t wp, int argc, char_t ** argv)
   {
   0, 0, 0, 0};
   char nvramvar[32] = { 0 };
-#ifdef HAVE_MADWIFI
   char *interface;
 #ifdef FASTWEB
   ejArgs (argc, argv, "%d %s", &index, &interface);
@@ -6358,18 +6282,6 @@ ej_get_wdsp2p (webs_t wp, int argc, char_t ** argv)
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-#endif
-#else
-  char *interface = "wl";
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%d", &index);
-#else
-  if (ejArgs (argc, argv, "%d", &index) < 1)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return;
-    }
-#endif
 #endif
   char wlwds[32];
   sprintf (wlwds, "%s_wds1_enable", interface);
@@ -6444,11 +6356,7 @@ save_wds (webs_t wp)
 {
   char *wds_enable_val, wds_enable_var[32] = { 0 };
   int h = 0;
-#ifdef HAVE_MADWIFI
   char *interface = websGetVar (wp, "interface", NULL);
-#else
-  char *interface = "wl";
-#endif
   for (h = 1; h <= MAX_WDS_DEVS; h++)
     {
       sprintf (wds_enable_var, "%s_wds%d_enable", interface, h);
@@ -8363,9 +8271,23 @@ void
 ej_list_mac_layers (webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
-  websWrite (wp,
-	     "show_layer_ext(document.wireless.wl_macmode1, 'idmacwl', \"%s\" == \"other\");\n",
-	     nvram_match ("wl_macmode1", "other") ? "other" : "disabled");
+  int c = get_wl_instances ();
+  char devs[32];
+  int i;
+  for (i = 0; i < c; i++)
+    {
+      char macmode[32];
+      char id[32];
+      sprintf (devs, "wl%d", i);
+      sprintf (macmode, "%s_macmode1", devs);
+      sprintf (id, "idmac%s", devs);
+      rep (id, '.', 'X');
+      rep (macmode, '.', 'X');
+      websWrite (wp,
+		 "show_layer_ext(document.wireless.%s, '%s', \"%s\" == \"other\");\n",
+		 macmode, id, nvram_match (macmode,
+					   "other") ? "other" : "disabled");
+    }
 
 #else
 
@@ -8412,7 +8334,14 @@ void
 ej_show_macfilter (webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
-  show_macfilter_if (wp, "wl");
+  int c = get_wl_instances ();
+  char devs[32];
+  int i;
+  for (i = 0; i < c; i++)
+    {
+      sprintf (devs, "wl%d", i);
+      show_macfilter_if (wp, devs);
+    }
 #else
   int c = getdevicecount ();
   char devs[32];
@@ -8539,7 +8468,14 @@ void
 save_macmode (webs_t wp)
 {
 #ifndef HAVE_MADWIFI
-  save_macmode_if (wp, "wl");
+  int c = get_wl_instances ();
+  char devs[32];
+  int i;
+  for (i = 0; i < c; i++)
+    {
+      sprintf (devs, "wl%d", i);
+      save_macmode_if (wp, devs);
+    }
 #else
   int c = getdevicecount ();
   char devs[32];
