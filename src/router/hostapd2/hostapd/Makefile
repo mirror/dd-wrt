@@ -2,9 +2,7 @@ ifndef CC
 CC=gcc
 endif
 
-ifndef CFLAGS
-CFLAGS = -MMD $(COPTS) -Wall
-endif
+CFLAGS = -MMD $(COPTS) -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 # define HOSTAPD_DUMP_STATE to include SIGUSR1 handler for dumping state to
 # a file (undefine it, if you want to save in binary size)
@@ -15,6 +13,7 @@ CFLAGS += -I../src/crypto
 CFLAGS += -I../src/utils
 CFLAGS += -I../src/common
 
+LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 # Uncomment following line and set the path to your kernel tree include
 # directory if your C library does not include all header files.
 # CFLAGS += -DUSE_KERNEL_HEADERS -I/usr/src/linux/include
