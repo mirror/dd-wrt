@@ -32,7 +32,12 @@ endif
 
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
+ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),JP)
+	cp -a help_jp $(INSTALLDIR)/www
+	mv $(INSTALLDIR)/www/help_jp $(INSTALLDIR)/www/help 
+else
 	cp -a help $(INSTALLDIR)/www
+endif
 	rm -f $(INSTALLDIR)/www/common_micro.js
 	mkdir -p $(INSTALLDIR)/www/js
 endif
