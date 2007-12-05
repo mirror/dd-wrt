@@ -1,8 +1,9 @@
 *** WHAT'S GOING ON? ***
 
-These are patterns (protocol definitions) for the Linux layer 7 packet
-classifier (l7-filter).  To use them, you need the kernel and iptables
-patches available at http://sf.net/projects/l7-filter/ .  See the HOWTO.
+These are patterns (protocol definitions) for the Linux layer 7 packet 
+classifier (l7-filter).  To use them, you need the kernel and iptables 
+patches (or l7-filter userspace version) available at 
+http://sf.net/projects/l7-filter/ .  See the HOWTOs.
 
 To install these patterns into their default location, say "make install".
 
