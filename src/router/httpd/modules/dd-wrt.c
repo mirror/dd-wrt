@@ -795,7 +795,6 @@ void
 ej_show_wds_subnet (webs_t wp, int argc, char_t ** argv)
 {
   int index = -1;
-#ifdef HAVE_MADWIFI
   char *interface;
 #ifdef FASTWEB
   ejArgs (argc, argv, "%d %s", &index, &interface);
@@ -805,18 +804,6 @@ ej_show_wds_subnet (webs_t wp, int argc, char_t ** argv)
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-#endif
-#else
-  char *interface = "wl";
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%d", &index);
-#else
-  if (ejArgs (argc, argv, "%d", &index) < 1)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return;
-    }
-#endif
 #endif
   char br1[32];
   sprintf (br1, "%s_br1_enable", interface);
