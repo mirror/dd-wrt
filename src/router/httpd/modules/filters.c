@@ -1734,7 +1734,7 @@ ej_filter_port_services_get (webs_t wp, int argc, char_t ** argv)
 {
   char *type;
   int which;
-  char word[1024], *next, services[8192] = "", svcs_var[32] = "";
+  char word[1024], *next;
   char delim[] = "<&nbsp;>";
   int index = 0;
 
@@ -1746,18 +1746,16 @@ ej_filter_port_services_get (webs_t wp, int argc, char_t ** argv)
       return;
     }
 
-  do
-    {
-      snprintf (svcs_var, 31, "filter_services%d", index++);
-      strcat (services, nvram_safe_get (svcs_var));
-    }
-  while (strlen (nvram_safe_get (svcs_var)) > 0 && index < 8);
-
+  char services[8192];
+  memset (services, 0, 8192);
+  
+  get_filter_services (services);
+    
 
   if (!strcmp (type, "all_list"))
     {
       int count = 0;
-//              services = nvram_safe_get("filter_services");
+
       split (word, services, next, delim)
       {
 	int len = 0;
