@@ -1210,6 +1210,16 @@ start_nvram (void)
       nvram_set ("http_passwd", zencrypt ("admin"));
     }
 
+  //clean old filter_servicesX to free nvram
+  nvram_unset ("filter_services0");
+  nvram_unset ("filter_services1");
+  nvram_unset ("filter_services2");
+  nvram_unset ("filter_services3");
+  nvram_unset ("filter_services4");
+  nvram_unset ("filter_services5");
+  nvram_unset ("filter_services6");
+  nvram_unset ("filter_services7");   
+    
 #ifdef DIST
   nvram_set ("dist_type", DIST);
 #endif
