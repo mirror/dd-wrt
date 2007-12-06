@@ -1104,24 +1104,22 @@ validate_services_port (webs_t wp)
 		from, to);
   }
 
-  /* segment filter_services into <= 1024 byte lengths */
+
+  // segment filter_services into <= 1024 byte lengths
   cur = buf;
-  index = 0;
-  while (strlen (cur) >= 1024)
-    {
-      snprintf (var, 31, "filter_services%d", index);
+       fprintf (stderr, "cur=%s\n", cur);
+
       memcpy (word, cur, 1024);
       word[1025] = 0;
-      nvram_set (var, word);
+      nvram_set ("filter_services", word);
       cur += 1024;
-      index++;
-    }
 
   if (strlen (cur) > 0)
     {
-      snprintf (var, 31, "filter_services%d", index);
-      nvram_set (var, cur);
+      nvram_set ("filter_services_1", cur);
     }
+
+//  nvram_set ("filter_services", cur);
   D ("okay");
 }
 
@@ -1749,11 +1747,18 @@ ej_filter_port_services_get (webs_t wp, int argc, char_t ** argv)
   char services[8192];
   memset (services, 0, 8192);
   
-  get_filter_services (services);
-    
+//  get_filter_services (services);
 
-  if (!strcmp (type, "all_list"))
+  if (!strcmp (type, "all_list") || !strcmp (type, "user_list"))
     {
+	 if (!strcmp (type, "all_list"))
+	 	get_filter_services (services);
+	 else //user_list only
+	 	{
+	    strcat (services, nvram_safe_get ("filter_services"));	//this is user defined filters
+	    strcat (services, nvram_safe_get ("filter_services_1"));	//this is user defined filters	 	   
+    	}
+    	
       int count = 0;
 
       split (word, services, next, delim)
