@@ -1087,7 +1087,7 @@ portgrp_chain (int seq, unsigned int mark, int urlenable)
 	  }
   }
 }
-
+/*
 char *
 fw_get_filter_services (void)
 {
@@ -1105,18 +1105,24 @@ fw_get_filter_services (void)
 
   return services;
 }
-
+*/
 static void
 advgrp_chain (int seq, unsigned int mark, int urlenable)
 {
   char nvname[100];
   char *wordlist, word[1024], *next;
-  char *services, srv[1024], *next2;
+  char services[8192], srv[1024], *next2;
   char delim[] = "<&nbsp;>";
   cprintf ("add advgrp_chain\n");
 
   /* filter_services=$NAME:006:My ICQ$PROT:002:17$PORT:009:5000:5010<&nbsp;>.. */
-  services = fw_get_filter_services (); //nvram_safe_get("filter_services");
+//  services = fw_get_filter_services (); //nvram_safe_get("filter_services");
+
+  memset (services, 0, 8192);
+  get_filter_services (services);
+ 
+
+
   /* filter_port_grp5=My ICQ<&nbsp;>Game boy */
   sprintf (nvname, "filter_port_grp%d", seq);
   wordlist = nvram_safe_get (nvname);
