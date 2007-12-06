@@ -781,7 +781,7 @@ ip_phyIsFullDuplex (struct net_device *dev)
 
 
 unsigned int mv_addrs[] =
-  { 0x10, 0x11, 0x12, 0x13,0x15 };
+  { 0x10, 0x11, 0x12, 0x13,0x14 };
 
 int
 mv_phyIsFullDuplex (struct net_device *dev)
@@ -811,7 +811,7 @@ mv_phyIsFullDuplex (struct net_device *dev)
 	      if (!fullduplex)
 	      fullduplex = 2;
 	    }else
-	  if ((phyHwStatus & MV_STATUS_RESOLVED_DUPLEX_FULL) && (phyHwStatus & IP_LINK_10BASETX))
+	  if ((phyHwStatus & MV_STATUS_RESOLVED_DUPLEX_FULL))
 	    {
 	      state |= 8;
 	      fullduplex = 1;
