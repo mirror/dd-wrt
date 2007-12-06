@@ -89,7 +89,7 @@ export INSTALLDIR := $(PLATFORMDIR)/install
 export TARGETDIR := $(PLATFORMDIR)/target
 
 
-obj-y += libcrypto
+#obj-y += libcrypto
 #
 # Configuration
 #
@@ -112,11 +112,14 @@ kernel:
 	# Also build kernel
 ifeq ($(CONFIG_DIST),"micro")
 	cp $(LINUXDIR)/.config_micro $(LINUXDIR)/.config
+#	cd $(LINUXDIR) && make clean
 else
 ifeq ($(CONFIG_DIST),"micro-special")
 	cp $(LINUXDIR)/.config_micro $(LINUXDIR)/.config
+#	cd $(LINUXDIR) && make clean
 else
 	cp $(LINUXDIR)/.config_std $(LINUXDIR)/.config
+#	cd $(LINUXDIR) && make clean
 endif
 endif
 ifeq ($(CONFIG_REGISTER),y)
