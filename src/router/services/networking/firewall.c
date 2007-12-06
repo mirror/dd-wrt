@@ -42,6 +42,7 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <l7protocols.h>
 
 #ifndef DEVELOPE_ENV
 #include <bcmnvram.h>
@@ -1087,6 +1088,31 @@ portgrp_chain (int seq, unsigned int mark, int urlenable)
 	  }
   }
 }
+
+void
+fw_get_filter_services (char *services)
+{
+
+  l7filters *filters = filters_list;
+  int namelen, protolen;
+  char temp[128] = "";
+
+	while (filters->name)  //add l7 and p2p filters
+		{
+		namelen = strlen (filters->name);
+		protolen = strlen (filters->protocol);
+
+		sprintf (temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>", namelen, filters->name, protolen, filters->protocol);
+		strcat (services, temp);
+		filters++;
+		}
+
+	strcat (services, nvram_safe_get ("filter_services"));	//this is user defined filters
+	strcat (services, nvram_safe_get ("filter_services_1"));   
+
+  return;
+}
+
 /*
 char *
 fw_get_filter_services (void)
@@ -1119,7 +1145,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
 //  services = fw_get_filter_services (); //nvram_safe_get("filter_services");
 
   memset (services, 0, 8192);
-  get_filter_services (services);
+  fw_get_filter_services (services);
  
 
 
