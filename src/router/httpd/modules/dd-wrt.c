@@ -6365,7 +6365,8 @@ get_filter_services (char *services)
 		filters++;
 		}
 
-	strcat (services, nvram_safe_get ("filter_services"));	//this is user defined filters    
+	strcat (services, nvram_safe_get ("filter_services"));	//this is user defined filters
+	strcat (services, nvram_safe_get ("filter_services_1"));   
 
   return;
 }
@@ -6436,7 +6437,7 @@ get_svc (char *svc, char *protocol, char *ports)
 //      services = nvram_safe_get("filter_services");
   memset (services, 0, 8192);
   get_filter_services (services);
-
+  
   split (word, services, next, delim)
   {
     int len = 0;
