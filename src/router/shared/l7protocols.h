@@ -130,7 +130,7 @@ l7filters filters_list[] = {
 	{ "tftp",				"l7" },		// TFTP - Trivial File Transfer Protocol - used for bootstrapping - RFC 1350
 	{ "thecircle",			"p2p" },	// The Circle - P2P application - http://thecircle.org.au
 	{ "tls",				"l7" },		// SSL and TLS - Secure Socket Layer / Transport Layer Security - RFC 2246
-	{ "tor"					"l7" },		// Tor - The Onion Router - used for anonymization - http://tor.eff.org
+	{ "tor",				"l7" },		// Tor - The Onion Router - used for anonymization - http://tor.eff.org
 	{ "tsp",				"l7" },		// TSP - Berkely UNIX Time Synchronization Protocol
 	{ "unknown",			"l7" },		// -
 	{ "uucp",				"l7" },		// UUCP - Unix to Unix Copy
