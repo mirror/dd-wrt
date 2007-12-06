@@ -21,6 +21,7 @@ services_length=0;
 
 function setValue() {
 	document.PortServices.ServiceTable.selectedIndex = 0;
+	if (services_length == 0)	return;
 	document.PortServices.Add_Service_Name.value =
 		services[document.PortServices.ServiceTable.options[document.PortServices.ServiceTable.selectedIndex].value].name;
 	switch(services[document.PortServices.ServiceTable.options[
