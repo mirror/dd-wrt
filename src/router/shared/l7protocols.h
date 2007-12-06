@@ -17,7 +17,7 @@ l7filters filters_list[] = {
 	{ "audiogalaxy",		"l7" },		// Audiogalaxy - (defunct) Peer to Peer filesharing
 	{ "battlefield1942",	"l7" },		// Battlefield 1942 - An EA game
 	{ "battlefield2",		"l7" },		// Battlefield 2 - An EA game.
-	{ "battlefield2142",	"L7" },		// Battlefield 2142 - An EA game.
+	{ "battlefield2142",	"l7" },		// Battlefield 2142 - An EA game.
 	{ "bgp",				"l7" },		// BGP - Border Gateway Protocol - RFC 1771
 	{ "biff",				"l7" },		// Biff - new mail notification
 	{ "bittorrent",			"p2p" },	// Bittorrent - P2P filesharing / publishing tool - http://www.bittorrent.com
