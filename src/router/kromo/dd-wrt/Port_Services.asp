@@ -17,7 +17,7 @@ function service(id, name, port_start, port_end, protocol) {
 services=new Array();
 services_length=0;
 /* Init. services data structure */
-<% filter_port_services_get("all_list", "0"); %>
+<% filter_port_services_get("user_list", "0"); %>
 
 function setValue() {
 	document.PortServices.ServiceTable.selectedIndex = 0;
@@ -41,14 +41,6 @@ function setValue() {
 	 case "both":
 	 case 23:
 	 	document.PortServices.Add_Service_Protocol.selectedIndex = 3;
-		break;
-	 case "l7":
-	 case 99:
-	 	document.PortServices.Add_Service_Protocol.selectedIndex = 4;
-		break;
-	 case "p2p":
-	 case 100:
-	 	document.PortServices.Add_Service_Protocol.selectedIndex = 5;
 		break;
 	}
 	document.PortServices.Add_Service_Port_S.value =
@@ -80,16 +72,6 @@ function onchange_ServiceTable(index, name, protocol, start, end){
 	 case 23:
 	 case "23":
 		protocol.selectedIndex = 3;
-		break;
-	 case "l7":
-	 case 99:
-	 case "99":
-		protocol.selectedIndex = 4;
-		break;
-	 case "p2p":
-	 case 100:
-	 case "100":
-		protocol.selectedIndex = 5;
 		break;
 	}
 	
@@ -216,7 +198,7 @@ applytake(F);
 }
 
 function onchange_Prot(I) {
-	if(I == "1" || I == "99" || I == "100") {
+	if(I == "1") {
 		setElementsActive("Add_Service_Port_S", "Add_Service_Port_E", false);
 	} else {
 		setElementsActive("Add_Service_Port_S", "Add_Service_Port_E", true);
@@ -279,8 +261,6 @@ addEvent(window, "unload", function() {
 					<option value="6">TCP</option>
 					<option value="17">UDP</option>
 					<option value="23">TCP &amp; UDP</option>
-					<option value="99">L7</option>
-					<option value="100">P2P</option>
 				</select>
 			</div>
 			<div class="setting">
