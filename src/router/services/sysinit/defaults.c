@@ -353,6 +353,7 @@ struct nvram_tuple srouter_defaults[] = {
 
   /* Services List */
   {"filter_services", "", 0},  /* only user defined filters */
+  {"filter_services_1", "", 0},
 
   /* Port forwards */
   {"dmz_enable", "0", 0},	/* Enable (1) or Disable (0) */
