@@ -140,7 +140,7 @@
 
 #ifdef MODULE
 MODULE_AUTHOR
-  ("Sameer Dekate <sdekate@arubanetworks.com>, Imre Kaloz <kaloz@openwrt.org>, Felix Fietkau <nbd@openwrt.org> Tomas Dlabac <tomas@dlabac.net>");
+  ("Sameer Dekate <sdekate@arubanetworks.com>, Imre Kaloz <kaloz@openwrt.org>, Felix Fietkau <nbd@openwrt.org>, Tomas Dlabac <tomas@dlabac.net>, Sebastian Gottschall <brainslayer@dd-wrt.com>");
 MODULE_DESCRIPTION ("AR2313 Ethernet driver");
 MODULE_LICENSE ("GPL");
 #endif
@@ -778,6 +778,74 @@ ip_phyIsFullDuplex (struct net_device *dev)
   return fullduplex;
 }
 
+
+
+unsigned int mv_addrs[] =
+  { 0x10, 0x11, 0x12, 0x13,0x15 };
+
+int
+mv_phyIsFullDuplex (struct net_device *dev)
+{
+  int phyUnit;
+  int fullduplex = 0;
+  int state = 0;
+  unsigned short phyHwStatus;
+  static unsigned char states[5] = { -1, -1, -1, -1, -1 };
+  for (phyUnit = 0; phyUnit < 5; phyUnit++)
+    {
+
+      state = 0;
+      phyHwStatus = armiiread (dev, mv_addrs[phyUnit],MV_PHY_SPECIFIC_STATUS);
+      if ((phyHwStatus & MV_STATUS_REAL_TIME_LINK_UP))
+	{
+	  state |= 0x10;
+	  phyHwStatus = armiiread (dev,mv_addrs[phyUnit], MV_PHY_SPECIFIC_STATUS);
+	  if ((phyHwStatus & MV_STATUS_RESOLVED_DUPLEX_FULL) && (phyHwStatus & MV_STATUS_RESOLVED_SPEED_100))
+	    {
+	      state |= 2;
+	      fullduplex = 1;
+	    }else
+	  if ((phyHwStatus & MV_STATUS_RESOLVED_SPEED_100))
+	    {
+	      state |= 1;
+	      if (!fullduplex)
+	      fullduplex = 2;
+	    }else
+	  if ((phyHwStatus & MV_STATUS_RESOLVED_DUPLEX_FULL) && (phyHwStatus & IP_LINK_10BASETX))
+	    {
+	      state |= 8;
+	      fullduplex = 1;
+	    }else
+	    {
+	      state |= 4;
+	      if (!fullduplex)
+	      fullduplex = 2;
+	    }
+	}
+      if (states[phyUnit] != state)
+	{
+	  states[phyUnit] = state;
+	  printk (KERN_INFO);
+	  if (!(state & 0x10))
+	    {
+	      printk ("Port %d: down\n", phyUnit);
+	    }
+	  else
+	    {
+	      if ((state & 1))
+		printk ("Port %d: 100 Mbit Half duplex\n", phyUnit);
+	      if ((state & 2))
+		printk ("Port %d: 100 Mbit Full duplex\n", phyUnit);
+	      if ((state & 4))
+		printk ("Port %d: 10 Mbit Half duplex\n", phyUnit);
+	      if ((state & 8))
+		printk ("Port %d: 10 Mbit Full duplex\n", phyUnit);
+	    }
+	}
+    }
+  return fullduplex;
+}
+
 static void
 ar2313_check_link (struct net_device *dev)
 {
@@ -790,67 +858,13 @@ ar2313_check_link (struct net_device *dev)
     {
 
     case AR2313_EPHY_MARVELL:
-
-      phyData = armiiread (dev, 0x10, MV_PHY_SPECIFIC_STATUS);
-      phyData |= armiiread (dev, 0x11, MV_PHY_SPECIFIC_STATUS);
-      phyData |= armiiread (dev, 0x12, MV_PHY_SPECIFIC_STATUS);
-      if (sp->phyData != phyData)
-	{
-	  if (phyData & MV_STATUS_REAL_TIME_LINK_UP)
-	    {
-	      sp->link = 1;
-	      if (phyData & MV_STATUS_RESOLVED_DUPLEX_FULL)
-		duplex = 1;
-	      else
-		duplex = 2;
-	    }
-	  else
-	    duplex = 0;
-
-	  sp->phyData = phyData;
-	}
+      duplex = mv_phyIsFullDuplex(dev);
       break;
-
     case AR2313_EPHY_ICSPLUS:
       duplex = ip_phyIsFullDuplex (dev);
-
-/*      phyData = armiiread (dev, sp->phy, IP_PHY_STATUS);
-      if (sp->phyData != phyData)
-	{
-	  if (phyData & IP_STATUS_LINK_PASS)
-	    {
-	      sp->link = 1;
-	      reg = armiiread (dev, sp->phy, IP_LINK_PARTNER_ABILITY);
-	      if ((reg & IP_LINK_100BASETX_FULL_DUPLEX)
-		  || (reg & IP_LINK_10BASETX_FULL_DUPLEX))
-		duplex = 1;
-	      else
-		duplex = 2;
-	    }
-	  else
-	    duplex = 0;
-
-	  sp->phyData = phyData;
-	}*/
       break;
     case AR2313_EPHY_ADMTEK:
       duplex = adm_phyIsFullDuplex (dev);
-/*	printk(KERN_EMERG "check admtek\n");
-		    phyData = armiiread(dev,sp->phy, ADM_PHY_STATUS);
-		    if (sp->phyData != phyData) {
-			    if (phyData & ADM_STATUS_LINK_PASS) {
-				    sp->link = 1;
-        			    reg = armiiread(dev,sp->phy, ADM_LINK_PARTNER_ABILITY);
-        			    if ((reg & ADM_LINK_100BASETX_FULL_DUPLEX) || (reg & ADM_LINK_10BASETX_FULL_DUPLEX)) 
-					    duplex = 1;
-				    else
-					    duplex = 2;	
-		    
-			    }
-			    else
-				    duplex = 0;
-			    sp->phyData = phyData;
-		    }*/
       break;
     default:
       phyData = armiiread (dev, sp->phy, MII_BMSR);
@@ -1795,7 +1809,6 @@ netdev_ethtool_ioctl (struct net_device *dev, void *useraddr)
 {
   struct ar2313_private *np = dev->priv;
   u32 cmd;
-  u16 phyData;
 
   if (get_user (cmd, (u32 *) useraddr))
     return -EFAULT;
@@ -1849,22 +1862,13 @@ netdev_ethtool_ioctl (struct net_device *dev, void *useraddr)
 	  {
 
 	  case AR2313_EPHY_MARVELL:
-
-	    phyData = armiiread (dev, 0x10, MV_PHY_SPECIFIC_STATUS);
-	    phyData |= armiiread (dev, 0x11, MV_PHY_SPECIFIC_STATUS);
-	    phyData |= armiiread (dev, 0x12, MV_PHY_SPECIFIC_STATUS);
-	    edata.data = (phyData & MV_STATUS_REAL_TIME_LINK_UP) ? 1 : 0;
+	    edata.data = mv_phyIsFullDuplex(dev)>0 ? 1 : 0;
 	    break;
-
 	  case AR2313_EPHY_ICSPLUS:
-
-	    edata.data =
-	      (armiiread (dev, np->phy, MII_BMSR) & BMSR_LSTATUS) ? 1 : 0;
+	    edata.data = ip_phyIsFullDuplex(dev)>0 ? 1 : 0;
 	    break;
 	  case AR2313_EPHY_ADMTEK:
-
-	    phyData = armiiread (dev, np->phy, ADM_PHY_STATUS);
-	    edata.data = (phyData & ADM_STATUS_LINK_PASS) ? 1 : 0;
+	    edata.data = adm_phyIsFullDuplex(dev)>0 ? 1 : 0;
 	    break;
 	  default:
 	    edata.data =
