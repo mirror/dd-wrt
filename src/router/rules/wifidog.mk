@@ -1,5 +1,5 @@
 wifidog-configure:
-	cd wifidog && ./configure --disable-nls --prefix=/usr --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS)"
+	cd wifidog && ./configure --disable-nls --prefix=/usr --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 wifidog:
 	$(MAKE) -C wifidog
