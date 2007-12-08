@@ -1509,19 +1509,23 @@ start_lan (void)
 	    if (nvram_match (wl_name, "apsta"))
 	      {
 #ifndef HAVE_MADWIFI
-		eval ("wl", "ap", "0");
-		eval ("wl", "infra", "1");
+//		eval ("wl", "ap", "0");
+		eval ("wl", "-i", getSTA(), "ap", "0");
+//		eval ("wl", "infra", "1");
+		eval ("wl", "-i", getSTA(), "infra", "1");
 		wl_ioctl (wl_name, WLC_SCAN, svbuf, sizeof (svbuf));
 		wlconf_up (name);
 #endif
 		//eval("wlconf", name, "up");
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);
 #ifndef HAVE_MADWIFI
-		eval ("wl", "ap", "0");
+//		eval ("wl", "ap", "0");
+		eval ("wl", "-i", getSTA(), "ap", "0");
 #ifndef HAVE_MSSID
 		eval ("wl", "ssid", nvram_get ("wl_ssid"));
 #else
-		eval ("wl", "ssid", nvram_get ("wl0_ssid"));
+//		eval ("wl", "ssid", nvram_get ("wl0_ssid"));
+		eval("wl","-i", getSTA(), "ssid", nvram_nget("wl%d_ssid", get_wl_instance(getSTA())) );
 #endif
 #endif
 //              eval ("brctl", "addif", lan_ifname, name);
@@ -1536,8 +1540,10 @@ start_lan (void)
 	    if (nvram_match (wl_name, "infra"))
 	      {
 #ifndef HAVE_MADWIFI
-		eval ("wl", "ap", "0");
-		eval ("wl", "infra", "0");
+//		eval ("wl", "ap", "0");
+		eval ("wl", "-i", getSTA(), "ap", "0");
+//		eval ("wl", "infra", "0");
+		eval ("wl", "-i", getSTA(), "infra", "0");
 		wl_ioctl (wl_name, WLC_SCAN, svbuf, sizeof (svbuf));
 		wlconf_up (name);
 #endif
@@ -1557,11 +1563,13 @@ start_lan (void)
 		//eval("wlconf", name, "up");
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);
 #ifndef HAVE_MADWIFI
-		eval ("wl", "ap", "0");
+//		eval ("wl", "ap", "0");
+		eval ("wl", "-i", getSTA(), "ap", "0");
 #ifndef HAVE_MSSID
 		eval ("wl", "ssid", nvram_get ("wl_ssid"));
 #else
-		eval ("wl", "ssid", nvram_get ("wl0_ssid"));
+//		eval ("wl", "ssid", nvram_get ("wl0_ssid"));
+		eval("wl","-i", getSTA(), "ssid", nvram_nget("wl%d_ssid", get_wl_instance(getSTA())) );
 #endif
 #endif
 	      }
