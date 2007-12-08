@@ -5301,10 +5301,10 @@ validate_wds (webs_t wp, char *value, struct variable *v)
 //quick and dirty
 if (!strcmp(interface,"wl0"))
 	  snprintf (wds_if, 31, "wds0.%d", (devcount++));
-if (!strcmp(interface,"wl1"))
+else if (!strcmp(interface,"wl1"))
 	  snprintf (wds_if, 31, "wds1.%d", (devcount++));
 else
-	  snprintf (wds_if, 31, "wds0.%d", get_wl_instance(interface), (devcount++));
+	  snprintf (wds_if, 31, "wds%d.%d", get_wl_instance(interface), (devcount++));
 #endif
 	  nvram_set (wdsif_var, wds_if);
 	}
