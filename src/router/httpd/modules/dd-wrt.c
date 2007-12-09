@@ -122,11 +122,13 @@ ej_show_clocks (webs_t wp, int argc, char_t ** argv)
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(management.clock_frq)</script></div>\n");
   websWrite (wp, "<select name=\"overclocking\">\n");
-
+  
+      char clock[16];
       while (c[i] != 0)
       {
+        sprintf (clock, "%d", c[i]);
         websWrite (wp, "<option value=\"%d\" %s >%d MHz</option>\n", c[i],
-		 nvram_nmatch ("%d", "overclocking", c[i]) ? "selected=\"selected\"" : "", c[i]);
+		 nvram_match ("overclocking", clock) ? "selected=\"selected\"" : "", c[i]);
       }
   websWrite (wp, "</select>\n</div>\n");
 }
@@ -3086,12 +3088,10 @@ ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_EOP_TUNNEL
   for (i = 1; i < 11; i++)
     {
-      char oet[32];
-      char oeten[32];
       char EOP[32];
       sprintf (oet, "oet%d_bridged", i);
       sprintf (oeten, "oet%d_en", i);
-      if (nvram_match (oet, "1") && nvram_match (oeten, "1"))
+      if (nvram_nmatch (oet, "1", "oet%d_bridged", i) && nvram_nmatch ("1", "oet%d_en", i))
 	{
 	  sprintf (EOP, "EOP%d", i);
 	  sprintf (bufferif, "%s %s", bufferif, EOP);
