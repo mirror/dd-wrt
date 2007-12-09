@@ -102,7 +102,7 @@ cpu_plltype (void)
 	  if (cpurev == 6)	// BCM4704
 	    return 0;
 	  if (cpurev == 7 && cputype == BCM5365_CHIP) // BCM5365 only supports fixed 200 MHz
-	    return 0	  
+	    return 0;	  
 	  if (cpurev == 7 && cputype != BCM5365_CHIP) // BCM4712
 	    return 4;
 	  if (cpurev == 8 && cputype == BCM5350_CHIP) // BCM5350
