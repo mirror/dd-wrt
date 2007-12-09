@@ -151,7 +151,7 @@ addEvent(window, "load", function() {
 	setRadioTable();
 	setWMM("<% nvram_get("wl_wme"); %>");
 	show_layer_ext(document.wireless.wl_wme, 'idwl_wme', <% nvram_else_match("wl_wme", "on", "1", "0"); %> == 1);
-	show_layer_ext(document.wireless.radio_timer_enable, 'radio', <% nvram_else_match("radio_timer_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.wireless.radio0_timer_enable, 'radio', <% nvram_else_match("radio0_timer_enable", "1", "1", "0"); %> == 1);
 	initWlTimer('<% nvram_get("radio0_on_time"); %>');
 	
 	update = new StatusbarUpdate();
@@ -475,8 +475,8 @@ addEvent(window, "unload", function() {
 								<legend><% tran("wl_basic.legend2"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("wl_basic.radiotimer"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="radio_timer_enable" <% nvram_checked("radio_timer_enable", "1"); %> onclick="show_layer_ext(this, 'radio', true)" /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="radio_timer_enable" <% nvram_checked("radio_timer_enable", "0"); %> onclick="show_layer_ext(this, 'radio', false)" /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" value="1" name="radio0_timer_enable" <% nvram_checked("radio0_timer_enable", "1"); %> onclick="show_layer_ext(this, 'radio', true)" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="radio0_timer_enable" <% nvram_checked("radio0_timer_enable", "0"); %> onclick="show_layer_ext(this, 'radio', false)" /><% tran("share.disable"); %>
 									<span class="default">
 										<script type="text/javascript">
 										//<![CDATA[
