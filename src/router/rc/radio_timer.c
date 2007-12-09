@@ -52,7 +52,6 @@ radio_timer_main (void)
 	  radiotime1 = (radiotime1 >> (24 - currtime->tm_hour - 1)) & 3;	//get pattern only (last two bits)
 #endif
 
-	  gentime = currtime->tm_min;	//gentime = min
 
 	  if (currtime->tm_min != 0)
 	    needchange = 1;	//prevet to be executed more than once when min == 0
