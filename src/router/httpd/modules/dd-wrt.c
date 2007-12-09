@@ -45,12 +45,12 @@
 #include <l7protocols.h>
 
 #ifdef HAVE_OVERCLOCKING
-static unsigned int type3_clocks[9] =
-  { 150, 200,   0,   0,   0,   0,   0,   0,   0 };
-static unsigned int type4_clocks[9] =
-  { 192, 200, 216, 228, 240, 252, 264, 280, 300 };
-static unsigned int type7_clocks[9] =
-  { 183, 187, 198, 200, 216, 225, 233, 237, 250 };
+static unsigned int type3_clocks[3] =
+  { 150, 200, 0};
+static unsigned int type4_clocks[10] =
+  { 192, 200, 216, 228, 240, 252, 264, 280, 300, 0 };
+static unsigned int type7_clocks[10] =
+  { 183, 187, 198, 200, 216, 225, 233, 237, 250, 0 };
 #endif
 
 void
@@ -122,18 +122,12 @@ ej_show_clocks (webs_t wp, int argc, char_t ** argv)
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(management.clock_frq)</script></div>\n");
   websWrite (wp, "<select name=\"overclocking\">\n");
-  int i;
-  for (i = 0; i < 9; i++)
-    {
-      char clock[16];
-      if (c[i] != 0)
+
+      while (c[i] != 0)
       {
-      sprintf (clock, "%d", c[i]);
-      websWrite (wp, "<option value=\"%d\" %s >%d MHz</option>\n", c[i],
-		 nvram_match ("overclocking",
-			      clock) ? "selected=\"selected\"" : "", c[i]);
+        websWrite (wp, "<option value=\"%d\" %s >%d MHz</option>\n", c[i],
+		 nvram_nmatch ("%d", "overclocking", c[i]) ? "selected=\"selected\"" : "", c[i]);
       }
-    }
   websWrite (wp, "</select>\n</div>\n");
 }
 #endif
