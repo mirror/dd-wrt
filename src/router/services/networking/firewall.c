@@ -1747,8 +1747,9 @@ filter_forward (void)
   for (i = 0; i < devcount; i++)
 	{
 	  sprintf (wifivifs, "wl%d_vifs", i);
-  save2file ("-A INPUT -i %s -j ACCEPT\n", get_wl_instance_name(i));
-  save2file ("-A FORWARD -i %s -j ACCEPT\n", get_wl_instance_name(i));
+	  char *iname = get_wl_instance_name(i);
+  save2file ("-A INPUT -i %s -j ACCEPT\n", iname);
+  save2file ("-A FORWARD -i %s -j ACCEPT\n", iname);
 
   char *vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
