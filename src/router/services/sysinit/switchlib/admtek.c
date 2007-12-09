@@ -1,5 +1,5 @@
 /*
- * icplus.c
+ * admtek.c
  *
  * Copyright (C) 2007 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
