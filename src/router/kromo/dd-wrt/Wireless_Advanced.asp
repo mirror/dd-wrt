@@ -371,12 +371,12 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label12"); %></div>
-									<select name="txant">
+									<select name="wl0_txant">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"0\" <% nvram_selected_js("txant", "0"); %>>" + share.right + "</option>");
-										document.write("<option value=\"1\" <% nvram_selected_js("txant", "1"); %>>" + share.left + "</option>");
-										document.write("<option value=\"3\" <% nvram_selected_js("txant", "3"); %>>" + share.auto + "</option>");
+										document.write("<option value=\"0\" <% nvram_selected_js("wl0_txant", "0"); %>>" + share.right + "</option>");
+										document.write("<option value=\"1\" <% nvram_selected_js("wl0_txant", "1"); %>>" + share.left + "</option>");
+										document.write("<option value=\"3\" <% nvram_selected_js("wl0_txant", "3"); %>>" + share.auto + "</option>");
 										//]]>
 										</script>
 									</select>
@@ -388,12 +388,12 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label13"); %></div>
-									<select name="wl_antdiv">
+									<select name="wl0_antdiv">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"0\" <% nvram_selected_js("wl_antdiv", "0"); %>>" + share.right + "</option>");
-										document.write("<option value=\"1\" <% nvram_selected_js("wl_antdiv", "1"); %>>" + share.left + "</option>");
-										document.write("<option value=\"3\" <% nvram_selected_js("wl_antdiv", "3"); %>>" + share.auto + "</option>");
+										document.write("<option value=\"0\" <% nvram_selected_js("wl0_antdiv", "0"); %>>" + share.right + "</option>");
+										document.write("<option value=\"1\" <% nvram_selected_js("wl0_antdiv", "1"); %>>" + share.left + "</option>");
+										document.write("<option value=\"3\" <% nvram_selected_js("wl0_antdiv", "3"); %>>" + share.auto + "</option>");
 										//]]>
 										</script>
 									</select>
