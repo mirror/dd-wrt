@@ -15,14 +15,18 @@
 #include <shutils.h>
 #include <syslog.h>
 #include <utils.h>
+#include <wlutils.h>
 
 int
 radio_timer_main (void)
 {
 
-  long radiotime;		//4 byte int number (24 bits from gui + 1 bit for midnight)
+  long radiotime0;		//4 byte int number (24 bits from gui + 1 bit for midnight)
+#ifdef HAVE_MSSID
+  long radiotime1;		//4 byte int number (24 bits from gui + 1 bit for midnight)
+#endif
+
   int firsttime, needchange;
-  int gentime;			//general-time holds year or hour or minute
 
   needchange = 1;
   firsttime = 1;
@@ -36,64 +40,89 @@ radio_timer_main (void)
       time (&tloc);		// get time in seconds since epoch
       currtime = localtime (&tloc);	// convert seconds to date structure
 
-      gentime = currtime->tm_year;	//gentime = year
-
-
-      if (gentime > 100) //ntp time must be set  && radio must be on
+      if (currtime->tm_year > 100) //ntp time must be set
 	{
 
-	  gentime = currtime->tm_hour;	//gentime = hour
-
-	  radiotime = strtol (nvram_get ("radio0_on_time"), NULL, 2);	//convert binary string to long int
-	  radiotime += ((radiotime & 1) << 24);	//duplicate 23-24h bit to the start to take care of midnight
-	  radiotime = (radiotime >> (24 - gentime - 1)) & 3;	//get pattern only (last two bits)
+	  radiotime0 = strtol (nvram_get ("radio0_on_time"), NULL, 2);	//convert binary string to long int
+	  radiotime0 += ((radiotime0 & 1) << 24);	//duplicate 23-24h bit to the start to take care of midnight
+	  radiotime0 = (radiotime0 >> (24 - currtime->tm_hour - 1)) & 3;	//get pattern only (last two bits)
+#ifdef HAVE_MSSID
+	  radiotime1 = strtol (nvram_get ("radio1_on_time"), NULL, 2);	//convert binary string to long int
+	  radiotime1 += ((radiotime1 & 1) << 24);	//duplicate 23-24h bit to the start to take care of midnight
+	  radiotime1 = (radiotime1 >> (24 - currtime->tm_hour - 1)) & 3;	//get pattern only (last two bits)
+#endif
 
 	  gentime = currtime->tm_min;	//gentime = min
 
-	  if (gentime != 0)
+	  if (currtime->tm_min != 0)
 	    needchange = 1;	//prevet to be executed more than once when min == 0
 
 	  if (firsttime)	//first time change
 	    {
-	      switch (radiotime)
+	      switch (radiotime0)
 		{
 		case 3:	//11
-		  radiotime = 1;	//01
+		  radiotime0 = 1;	//01
 		  break;
 		case 0:	//00
-		  radiotime = 2;	//10
+		  radiotime0 = 2;	//10
 		  break;
 		}
+#ifdef HAVE_MSSID
+	      switch (radiotime1)
+		{
+		case 3:	//11
+		  radiotime1 = 1;	//01
+		  break;
+		case 0:	//00
+		  radiotime1 = 2;	//10
+		  break;
+		}
+#endif
 	    }
 
-	  if (((gentime == 0) && (needchange)) || (firsttime))	//change when min = 0 or firstime
+	  if (( (needchange) && currtime->tm_min == 0) || (firsttime))	//change when min = 0 or firstime
 	    {
-	      switch (radiotime)
+	      switch (radiotime0)
 		{
 		case 1:	//01 - turn radio on
-		  syslog (LOG_DEBUG, "Turning radio on\n");
+		  syslog (LOG_DEBUG, "Turning radio 0 on\n");
 
 #ifdef HAVE_MADWIFI
 		  eval ("ifconfig", "ath0", "up");
 #elif HAVE_MSSID
-		  eval ("wl", "radio", "on");
+		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "on");
 #else
 		  eval ("wl", "radio", "on");
 #endif
 		  break;
 
 		case 2:	//10 - turn radio off
-		  syslog (LOG_DEBUG, "Turning radio off\n");
+		  syslog (LOG_DEBUG, "Turning radio 0 off\n");
 
 #ifdef HAVE_MADWIFI
 		  eval ("ifconfig", "ath0", "down");
 #elif HAVE_MSSID
-		  eval ("wl", "radio", "off");
+		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "off");
 #else
 		  eval ("wl", "radio", "off");
 #endif
 		  break;
 		}
+#ifdef HAVE_MSSID
+	      switch (radiotime1)
+		{
+		case 1:	//01 - turn radio on
+		  syslog (LOG_DEBUG, "Turning radio 1 on\n");
+		  eval ("wl", "-i", get_wl_instance_name(1), "radio", "on");
+		  break;
+
+		case 2:	//10 - turn radio off
+		  syslog (LOG_DEBUG, "Turning radio 1 off\n");
+		  eval ("wl", "-i", get_wl_instance_name(1), "radio", "off");
+		  break;
+		}
+#endif
 	      needchange = 0;
 	      firsttime = 0;
 	    }
