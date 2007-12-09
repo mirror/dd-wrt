@@ -73,6 +73,19 @@ checkupdate (void)
       in = popen ("/bin/cat /dev/mtdblock/0|/bin/grep \"2\\.02\"|wc -l", "rb");
       fscanf (in, "%d", &res2);
       pclose (in);
+      if (res2==0)
+	{
+        in = popen ("/bin/cat /dev/mtdblock/0|/bin/grep \"2\\.04\"|wc -l", "rb");
+        fscanf (in, "%d", &res2);
+        pclose (in);
+	if (res2==1)
+	    {
+    	    fprintf (stderr, "updating avila type 2 redboot\n");
+	    eval ("tar", "-xaf", "/usr/lib/firmware/redboot.tg7", "-C", "/tmp");
+    	    eval ("mtd", "-r", "-f", "write", "/tmp/avila-rb.bin", "RedBoot");
+	    return;
+	    }
+	}        
     }
   if (res == 1)
     {
@@ -80,7 +93,7 @@ checkupdate (void)
       fscanf (in, "%d", &res2);
       pclose (in);
     }
-  if (res2 == 2)		//redboot update is needed
+  if (res2 == 1)		//redboot update is needed
     {
       in = popen ("/bin/dmesg|/bin/grep \"Memory: 64MB\"|wc -l", "rb");
       fscanf (in, "%d", &res);
