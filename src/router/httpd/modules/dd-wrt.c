@@ -3089,8 +3089,6 @@ ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv)
   for (i = 1; i < 11; i++)
     {
       char EOP[32];
-      sprintf (oet, "oet%d_bridged", i);
-      sprintf (oeten, "oet%d_en", i);
       if (nvram_nmatch ("1", "oet%d_bridged", i) && nvram_nmatch ("1", "oet%d_en", i))
 	{
 	  sprintf (EOP, "EOP%d", i);
