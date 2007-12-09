@@ -3,8 +3,8 @@ include $(TOP)/.config
 all:
 ifeq ($(CONFIG_MSSID),y)
 	if test -e "src/Makefile"; then make -C src; fi
-	@true
 endif
+	@true
 
 clean:
 	if test -e "src/Makefile"; then make -C src clean; fi
