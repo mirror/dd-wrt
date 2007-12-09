@@ -80,13 +80,20 @@ radio_timer_main (void)
 #endif
 	    }
 
+	  if (nvram_match ("radio0_timer_enable", "0"))
+	    radiotime0 = 0;
+	  if (nvram_match ("radio1_timer_enable", "0"))
+	    radiotime1 = 0;
+	    
 	  if (( (needchange) && currtime->tm_min == 0) || (firsttime))	//change when min = 0 or firstime
 	    {
 	      switch (radiotime0)
 		{
+		case 0:
+		  break;  //do nothing, radio0 timer disabled
+		  
 		case 1:	//01 - turn radio on
 		  syslog (LOG_DEBUG, "Turning radio 0 on\n");
-
 #ifdef HAVE_MADWIFI
 		  eval ("ifconfig", "ath0", "up");
 #elif HAVE_MSSID
@@ -98,7 +105,6 @@ radio_timer_main (void)
 
 		case 2:	//10 - turn radio off
 		  syslog (LOG_DEBUG, "Turning radio 0 off\n");
-
 #ifdef HAVE_MADWIFI
 		  eval ("ifconfig", "ath0", "down");
 #elif HAVE_MSSID
@@ -111,6 +117,9 @@ radio_timer_main (void)
 #ifdef HAVE_MSSID
 	      switch (radiotime1)
 		{
+		case 0:
+		  break;  //do nothing, radio1 timer disabled
+		  
 		case 1:	//01 - turn radio on
 		  syslog (LOG_DEBUG, "Turning radio 1 on\n");
 		  eval ("wl", "-i", get_wl_instance_name(1), "radio", "on");
