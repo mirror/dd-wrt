@@ -48,6 +48,7 @@ do_mssid (char *lan_ifname,char *wlifname)
   char *next;
   char var[80];
   char *vifs = nvram_nget ("wl%d_vifs",get_wl_instance(wlifname));
+  int instance = get_wl_instance(wlifname);
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
   if (vifs != NULL)
@@ -64,7 +65,7 @@ do_mssid (char *lan_ifname,char *wlifname)
 //	  ether_atoe (nvram_safe_get ("wan_hwaddr"), ifr.ifr_hwaddr.sa_data);
 //	else
 //#endif
-	  ether_atoe (nvram_nget ("wl%d_hwaddr",get_wl_instance(wlifname)), ifr.ifr_hwaddr.sa_data);
+	  ether_atoe (nvram_nget ("wl%d_hwaddr",instance), ifr.ifr_hwaddr.sa_data);
 
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 	strncpy (ifr.ifr_name, var, IFNAMSIZ);
