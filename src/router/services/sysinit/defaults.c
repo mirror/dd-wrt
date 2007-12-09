@@ -1167,11 +1167,15 @@ struct nvram_tuple srouter_defaults[] = {
   {"txant", "0", 0},
   {"wl_antdiv", "0", 0},
 #elif HAVE_BUFFALO
-  {"txant", "0", 0},
-  {"wl_antdiv", "3", 0},
+  {"wl0_txant", "0", 0},
+  {"wl0_antdiv", "3", 0},
+  {"wl1_txant", "0", 0},
+  {"wl1_antdiv", "3", 0},
 #else
-  {"txant", "3", 0},
-  {"wl_antdiv", "3", 0},
+  {"wl0_txant", "3", 0},
+  {"wl0_antdiv", "3", 0},
+  {"wl1_txant", "3", 0},
+  {"wl1_antdiv", "3", 0},
 #endif
 
   {"apwatchdog_enable", "0", 0},
