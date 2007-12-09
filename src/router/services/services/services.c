@@ -1388,8 +1388,16 @@ stop_process_monitor (void)
 int
 start_radio_timer (void)
 {
-  if (nvram_match ("radio_timer_enable", "0"))
+  if (nvram_match ("radio0_timer_enable", "0") && nvram_match ("radio1_timer_enable", "0"))
     return 0;
+#ifdef HAVE_MADWIFI
+      if (nvram_match ("ath0_net_mode", "disabled"))
+#elif HAVE_MSSID
+      if (nvram_match ("wl0_net_mode", "disabled") && nvram_match ("wl1_net_mode", "disabled"))
+#else
+      if (nvram_match ("wl_net_mode", "disabled"))
+#endif 
+	return 0;   
 
   pid_t pid;
 
