@@ -257,18 +257,6 @@ MACHINE_START(IXCDP1100, "Intel IXCDP1100 Development Platform")
 	.init_machine	= ixdp425_init,
 MACHINE_END
 #endif
-#ifdef CONFIG_ARCH_LOFT
-MACHINE_START(LOFT, "Giant Shoulder Inc Loft board")
-	/* Maintainer: Tom Billman <kernel@giantshoulderinc.com> */
-	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
-	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,
-	.map_io		= ixp4xx_map_io,
-	.init_irq	= ixp4xx_init_irq,
-	.timer		= &ixp4xx_timer,
-	.boot_params	= 0x0100,
-	.init_machine	= ixdp425_init,
-MACHINE_END
-#endif
 
 #ifdef CONFIG_MACH_KIXRP435
 MACHINE_START(KIXRP435, "Intel KIXRP435 Reference Platform")
