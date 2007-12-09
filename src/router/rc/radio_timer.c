@@ -38,13 +38,8 @@ radio_timer_main (void)
 
       gentime = currtime->tm_year;	//gentime = year
 
-#ifdef HAVE_MADWIFI
-      if ((gentime > 100) && nvram_invmatch ("ath0_net_mode", "disabled"))	//ntp time must be set  && radio must be on
-#elif HAVE_MSSID
-      if ((gentime > 100) && nvram_invmatch ("wl0_net_mode", "disabled"))
-#else
-      if ((gentime > 100) && nvram_invmatch ("wl_net_mode", "disabled"))
-#endif
+
+      if (gentime > 100) //ntp time must be set  && radio must be on
 	{
 
 	  gentime = currtime->tm_hour;	//gentime = hour
