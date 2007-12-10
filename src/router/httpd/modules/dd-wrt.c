@@ -7781,9 +7781,13 @@ ej_wl_packet_get (webs_t wp, int argc, char_t ** argv)
 {
   char line[256];
   FILE *fp;
+#ifdef HAVE_MADWIFI
+    char *ifname = nvram_safe_get ("wifi_display");
+#else
+    char *ifname = nvram_safe_get ("wl0_ifname");
+#endif
   struct dev_info
   {
-    char ifname[10];
 //    unsigned long rx_bytes;
     unsigned long rx_pks;
     unsigned long rx_errs;
@@ -7807,7 +7811,7 @@ ej_wl_packet_get (webs_t wp, int argc, char_t ** argv)
 
   if ((fp = fopen (PROC_DEV, "r")) == NULL)
     {
-      websError (wp, 400, "Cann't open %s\n", PROC_DEV);
+      websError (wp, 400, "Can't open %s\n", PROC_DEV);
       return;
     }
   else
@@ -7830,11 +7834,8 @@ Inter-|   Receive                                                |  Transmit
 	  while (line[ifl] != ':')
 	    ifl++;
 	  line[ifl] = 0;	/* interface */
-#ifdef HAVE_MADWIFI
-	  if (strstr (line, nvram_safe_get ("wifi_display")))
-#else
-	  if (strstr (line, nvram_safe_get ("wl0_ifname")))
-#endif
+
+	  if (strstr (line, ifname))
 	    {
 /*	      sscanf (line + ifl + 1,
 		      "%ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld",
