@@ -3882,9 +3882,11 @@ do_style (char *url, webs_t stream, char *query)
 static void
 do_fetchif (char *url, webs_t stream, char *query)
 {
-  char call[64];
+  char line[256];
+  int f = 0;
+  int i, llen;
   char buffer[256];
-  if (query==NULL || strlen(query)==0)
+  if (query == NULL || strlen (query) == 0)
     return;
   int strbuffer = 0;
   FILE *in = popen ("date", "rb");
@@ -3892,26 +3894,33 @@ do_fetchif (char *url, webs_t stream, char *query)
     return;
   while (!feof (in))
     {
-      int f = getc (in);
-      if (f == EOF || f == 0)
-	break;
+      f = getc (in);
+      if (f == 0 || f == EOF)
+	    break;
       buffer[strbuffer++] = f;
     }
   pclose (in);
   
-  sprintf (call, "grep \"%s:\" /proc/net/dev", query);
-  in = popen (call, "rb");
+  in = fopen ("/proc/net/dev", "rb");
   if (in == NULL)
     return;
-  while (!feof (in))
-    {
-      int f = getc (in);
-      if (f == EOF || f == 0)
-	break;
-      buffer[strbuffer++] = f;
-    }
+
+  while (fgets (line, sizeof (line), in) != NULL)
+  {
+  if (!strchr (line, ':'))
+	 continue;
+  if (strstr (line, query))
+   { 
+	  llen = strlen (line);
+	  for (i = 0; i < llen; i++)
+	  {
+        buffer[strbuffer++] = line[i];
+      }
+      break;
+   }
+  }
   buffer[strbuffer] = 0;
-  pclose (in);
+  fclose (in);
   websWrite (stream, "%s", buffer);
 }
 
