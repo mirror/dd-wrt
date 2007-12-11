@@ -157,8 +157,11 @@ site_survey_main (int argc, char *argv[])
       int noise = 256;
       noise -= (int) sr->isr_noise;
       site_survey_lists[i].phy_noise = -noise;
-      site_survey_lists[i].RSSI =
-	(int) site_survey_lists[i].phy_noise + (int) sr->isr_rssi;
+      if (sr->isr_noise==0)
+        {
+        site_survey_lists[i].phy_noise = -95;
+	}
+      site_survey_lists[i].RSSI = (int) site_survey_lists[i].phy_noise + (int) sr->isr_rssi;
       site_survey_lists[i].capability = sr->isr_capinfo;
       site_survey_lists[i].rate_count = sr->isr_nrates;
       cp += sr->isr_len, len -= sr->isr_len;

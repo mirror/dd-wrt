@@ -349,7 +349,12 @@ do_client_check (void)
 #ifndef HAVE_MSSID
       eval ("wl", "join", nvram_safe_get ("wl_ssid"));
 #else
+if (nvram_match("roaming_enable","1"))
+    {
+      eval ("wl", "join", nvram_safe_get ("roaming_ssid"));
+    }else{
       eval ("wl", "join", nvram_safe_get ("wl0_ssid"));
+    }
 #endif
 //      join(nvram_get("wl_ssid"));
       fclose (fp);
