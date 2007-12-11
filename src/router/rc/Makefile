@@ -136,7 +136,7 @@ endif
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI
 OBJS += ../wireless-tools/libiw.so.29 
-
+OBJS += roaming_daemon.o
 endif
 ifeq ($(CONFIG_FON),y)
 CFLAGS += -DHAVE_FON
@@ -408,6 +408,7 @@ ifeq ($(CONFIG_DIST),"micro-special")
 	cd $(INSTALLDIR)/sbin && ln -sf rc brctl
 endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc erase
+	cd $(INSTALLDIR)/sbin && ln -sf rc roaming_daemon
 	cd $(INSTALLDIR)/sbin && ln -sf rc get_wanface
 	cd $(INSTALLDIR)/sbin && ln -sf rc ledtool
 	cd $(INSTALLDIR)/sbin && ln -sf rc write
@@ -434,6 +435,7 @@ ifeq ($(CONFIG_REGISTER),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc regshell
 endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc listen
+	cd $(INSTALLDIR)/sbin && ln -sf rc supplicant
 	cd $(INSTALLDIR)/sbin && ln -sf rc check_ps
 	cd $(INSTALLDIR)/sbin && ln -sf rc ddns_success
 	cd $(INSTALLDIR)/sbin && ln -sf rc process_monitor

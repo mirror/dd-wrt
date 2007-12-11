@@ -1639,7 +1639,7 @@ start_lan (void)
 
   char staticlan[32];
   sprintf (staticlan, "%s:0", lan_ifname);
-#if defined(HAVE_FONERA) || defined(HAVE_CA8)
+#if defined(HAVE_FONERA) || defined(HAVE_CA8) && !defined(HAVE_MR3202A)
   if (getRouterBrand () != ROUTER_BOARD_FONERA2200)
     if (nvram_match ("ath0_mode", "sta")
 	|| nvram_match ("ath0_mode", "wdssta")
@@ -1653,7 +1653,7 @@ start_lan (void)
 	eval ("ifconfig", staticlan, "169.254.255.1", "netmask",
 	      "255.255.0.0");
 
-#if defined(HAVE_FONERA) || defined(HAVE_CA8)
+#if defined(HAVE_FONERA) || defined(HAVE_CA8) && !defined(HAVE_MR3202A)
       }
     else
       eval ("ifconfig", staticlan, "0.0.0.0", "down");
@@ -2277,7 +2277,7 @@ start_wan (int status)
   memset (ifr.ifr_hwaddr.sa_data, 0, ETHER_ADDR_LEN);
 
   ifconfig (wan_ifname, 0, NULL, NULL);
-#if defined(HAVE_FONERA) || defined(HAVE_CA8)
+#if defined(HAVE_FONERA) || defined(HAVE_CA8) && !defined(HAVE_MR3202A)
   if (getRouterBrand () != ROUTER_BOARD_FONERA2200)
     {
       char staticlan[32];

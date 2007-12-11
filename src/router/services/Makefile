@@ -19,7 +19,7 @@ LDFLAGS += -lm
 CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
 CFLAGS  += $(COPTS) -fpic 
 OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o iptable.o defaults.o \
-       bridgetools.o igmp.o wpa.o vlantagging.o httpd.o wland.o setuserpw.o
+       bridgetools.o igmp.o wpa.o vlantagging.o httpd.o wland.o setuserpw.o 
 
 
 ifeq ($(CONFIG_WHRAG108),y)
