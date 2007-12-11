@@ -5595,41 +5595,20 @@ ej_get_currate (webs_t wp, int argc, char_t ** argv)
 }
 #endif
 
-#define UPTIME_TMP	"/tmp/.uptime"
 void
 ej_get_uptime (webs_t wp, int argc, char_t ** argv)
 {
-  char uptime[200] = { 0 }, cmd[200] =
-  {
-  0};
+  char line[256];
   FILE *fp;
-  unlink (UPTIME_TMP);
-
-  snprintf (cmd, 254, "uptime 2>&1 > %s", UPTIME_TMP);
-  cprintf ("calling getuptime\n");
-  system2 (cmd);
-
-  if ((fp = fopen (UPTIME_TMP, "r")) != NULL)
-    fgets (uptime, sizeof (uptime), fp);
-  else
-    return;
-  int i = 0;
-  while (uptime[i++] != 0 && i < 199)
+  
+  if (fp = popen ("uptime", "r"))
     {
-      if (uptime[i] == 0xa || uptime[i] == 0xd)
-	uptime[i] = 0;
+	fgets (line, sizeof (line), fp);
+    line[strlen (line) - 1] = '\0';  // replace new line with null
+	websWrite (wp, "%s", line);
+	pclose (fp);
     }
-  cprintf ("write uptime back to screen\n");
-  websWrite (wp, "%s", uptime);
-
-  cprintf ("close\n");
-  fclose (fp);
-  cprintf ("unlink\n");
-
-  unlink (UPTIME_TMP);
-
-  return;
-
+return;
 }
 
 void
