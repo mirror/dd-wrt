@@ -842,6 +842,7 @@ if (get_wl_instance("eth0")==instance)
     return "eth0";
 if (get_wl_instance("eth3")==instance)
     return "eth3";
+return "eth1"; // dirty for debugging
 } 
 
 int get_wl_instances(void)

@@ -464,7 +464,8 @@ wlconf_up (char *name)
     }
 #endif
 int instance = get_wl_instance(name);
-
+if (instance==-1)
+    return -1; //no wireless device
   if (nvram_nmatch ("infra","wl%d_mode", instance))
     {
       nvram_nset ("0","wl%d_infra", instance);
@@ -1408,6 +1409,8 @@ start_lan (void)
 #endif
 		ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
 		int instance = get_wl_instance(name);
+		if (instance==-1)
+		    continue; // no wireless device
 		if (nvram_nmatch ("","wl%d_hwaddr",instance )
 		    || !nvram_nget ("wl%d_hwaddr",instance))
 		  {
