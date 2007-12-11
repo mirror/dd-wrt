@@ -134,7 +134,7 @@ CFLAGS += -DHAVE_MEDIASERVER
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
-CFLAGS += -DHAVE_MADWIFI
+CFLAGS += -DHAVE_MADWIFI -DHAVE_ROAMING
 OBJS += ../wireless-tools/libiw.so.29 
 OBJS += roaming_daemon.o
 endif
