@@ -116,6 +116,8 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
 {
 
   int brand = getRouterBrand ();
+      char macbuf[32];
+      char eaddr[32];
 
 #ifdef HAVE_MSSID		//v24
 
@@ -227,8 +229,6 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       break;
     case ROUTER_WRT600N:
       eval ("insmod", "wl");	//load module
-      char macbuf[32];
-      char eaddr[32];
       wl_hwaddr("eth1",macbuf);
       ether_etoa((uchar *)macbuf, eaddr);
       nvram_set("wl0_hwaddr",eaddr);      
