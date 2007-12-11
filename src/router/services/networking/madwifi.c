@@ -384,7 +384,7 @@ getMaxPower (char *ifname)
 MADWIFI Encryption Setup
 */
 void
-setupSupplicant (char *prefix)
+setupSupplicant (char *prefix,char *ssidoverride)
 {
   char akm[16];
   char bridged[32];
@@ -435,7 +435,8 @@ setupSupplicant (char *prefix)
 
       fprintf (fp, "network={\n");
       sprintf (psk, "%s_ssid", prefix);
-      fprintf (fp, "\tssid=\"%s\"\n", nvram_safe_get (psk));
+      if (!ssidoverride)ssidoverride = nvram_safe_get (psk);
+      fprintf (fp, "\tssid=\"%s\"\n", ssidoverride);
 //      fprintf (fp, "\tmode=0\n");
       fprintf (fp, "\tscan_ssid=1\n");
       fprintf (fp, "\tkey_mgmt=WPA-PSK\n");
@@ -493,7 +494,8 @@ setupSupplicant (char *prefix)
       fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
       fprintf (fp, "network={\n");
       sprintf (psk, "%s_ssid", prefix);
-      fprintf (fp, "\tssid=\"%s\"\n", nvram_safe_get (psk));
+      if (!ssidoverride)ssidoverride = nvram_safe_get (psk);
+      fprintf (fp, "\tssid=\"%s\"\n", ssidoverride);
       fprintf (fp, "\tscan_ssid=1\n");
       if (nvram_prefix_match ("8021xtype", prefix, "tls"))
 	{
@@ -573,6 +575,11 @@ setupSupplicant (char *prefix)
 
 
 }
+void supplicant_main(int argc,char *argv[])
+{
+setupSupplicant (argv[1],argv[2]);
+}
+
 
 void
 setupHostAP (char *prefix, int iswan)
@@ -1451,7 +1458,7 @@ configure_single (int count)
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
     setupHostAP (dev, 0);
   else
-    setupSupplicant (dev);
+    setupSupplicant (dev,NULL);
 // vif netconfig
   vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL && strlen (vifs) > 0)
@@ -1524,7 +1531,7 @@ configure_single (int count)
       if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
 	setupHostAP (var, 0);
       else
-	setupSupplicant (var);
+	setupSupplicant (var,NULL);
     }
 /*  set_rate (dev);*/
 
@@ -1738,6 +1745,8 @@ if (ifexists(wif))
       nvram_commit ();
       need_commit = 0;
     }
+if (getSTA() || getWET())
+    eval("roaming_daemon");
 }
 
 
