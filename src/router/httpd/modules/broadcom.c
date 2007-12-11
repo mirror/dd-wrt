@@ -4978,7 +4978,7 @@ static void
 ej_get_txpower (webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
-  websWrite (wp, "%s mW", nvram_safe_get ("txpwr"));
+  websWrite (wp, "%s mW", nvram_safe_get ("wl0_txpwr"));
 #else
   char mode[32];
   char m[32];
