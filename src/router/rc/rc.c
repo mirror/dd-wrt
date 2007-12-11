@@ -904,10 +904,12 @@ int minute = 0;
     return watchdog_main (argc, argv);
   else if (strstr (base, "nvram"))
     return nvram_main (argc, argv);
+#ifdef HAVE_ROAMING
   else if (strstr (base, "roaming_daemon"))
     return roaming_daemon_main(argc, argv);
   else if (strstr (base, "supplicant"))
     return start_main ("supplicant", argc, argv);
+#endif
   else if (strstr (base, "get_wanface"))
     return get_wanface (argc, argv);
 #ifndef HAVE_XSCALE
