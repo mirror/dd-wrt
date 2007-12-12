@@ -593,6 +593,7 @@ extern void milkfish_alias_add (webs_t wp);
 extern void milkfish_alias_remove (webs_t wp);
 extern void validate_aliases (webs_t wp, char *value, struct variable *v);
 extern void milkfish_sip_message (webs_t wp);
+extern void ej_show_registrations (webs_t wp, int argc, char_t ** argv);
 #endif
 
 extern void get_filter_services (char *services);
