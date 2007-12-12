@@ -39,7 +39,7 @@ function milkfish_user_remove_submit(F) {
 					<h2><% tran("service.milkfish_database"); %></h2>
 					<br />
         <fieldset>
-                <legend><% tran("service.database_subscribers"); %></legend>
+                <legend><% tran("service.milkfish_subscribers"); %></legend>
                         <table class="table center" summary="chap secrets table">
                         <tr>
                                 <th width="30%"><% tran("share.user"); %></th>
