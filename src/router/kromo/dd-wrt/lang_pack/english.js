@@ -1165,9 +1165,6 @@ service.nstx_log="Switch on debug messages";
 
 //milkfish.webservices
 service.milkfish_siprouter="Milkfish SIP Router";
-service.milkfish_database="Milkfish SIP Database";
-service.database_subscribers="Local Subscribers";
-service.database_aliases="Local Aliases";
 service.milkfish_alias="Alias";
 service.milkfish_uri="SIP URI";
 service.milkfish_mainswitch="Main Switch";
