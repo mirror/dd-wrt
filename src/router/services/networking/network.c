@@ -2262,16 +2262,23 @@ start_wan (int status)
 #ifndef HAVE_MADWIFI
   else
     {
-      unsigned char mac[20];
-      char *wlifname = getSTA();
-      if (!wlifname)wlifname=getWET();
+     unsigned char mac[20];
+     char *wlifname = getSTA();
+     
+     if (!wlifname)
+     {
+        wlifname = getWET();
+     }  
      if (wlifname && !strcmp (wan_ifname, wlifname))  //sta mode
      {
-     strcpy (mac, getWirelessMac());
+     	strcpy (mac, getWirelessMac());
      }
      else
      {
-	 strcpy (mac, getWANMac());
+	 	strcpy (mac, getWANMac());
+     }
+     
+     ether_atoe (mac, ifr.ifr_hwaddr.sa_data);     
  	 
   if (memcmp (ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN))
     {
@@ -2280,10 +2287,8 @@ start_wan (int status)
       cprintf ("Write WAN mac successfully\n");
     }
   else
-    perror ("Write WAN mac fail : ");
-     }
+      perror ("Write WAN mac fail : ");
 
-      ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
     }
 
 
