@@ -1238,30 +1238,9 @@ start_lan (void)
     }
   else
     {
-     strcpy (mac, nvram_safe_get ("il0macaddr"));
+     strcpy (mac, getWirelessMac());
 
-     if (strlen (mac) == 0)
-     {
-      if (nvram_match ("port_swap", "1"))
-         strcpy (mac, nvram_safe_get ("et1macaddr"));
-      else
-         strcpy (mac, nvram_safe_get ("et0macaddr"));
-     }
-     MAC_ADD (mac);
-    
-#if 0	    
-	    
-//#ifndef HAVE_BUFFALO
-//      if (nvram_match ("port_swap", "1"))
-//	strcpy (mac, nvram_safe_get ("et1macaddr"));
-//      else
-//	strcpy (mac, nvram_safe_get ("et0macaddr"));
-//      MAC_ADD (mac);
-//      MAC_ADD (mac);		// The wireless mac equal lan mac add 2
-//#else
-      strcpy (mac, nvram_safe_get ("il0macaddr"));
-//#endif
-#endif
+
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
 
       if (nvram_match ("wl0_hwaddr", "") || !nvram_get ("wl0_hwaddr"))
@@ -1286,13 +1265,8 @@ start_lan (void)
   if (nvram_match ("wl_mode", "sta"))
     {
       unsigned char mac[20];
-      if (nvram_match ("port_swap", "1"))
-	strcpy (mac, nvram_safe_get ("et1macaddr"));
-      else
-	strcpy (mac, nvram_safe_get ("et0macaddr"));
-#ifndef HAVE_BUFFALO
-      MAC_ADD (mac);
-#endif
+	strcpy (mac, getWANMac);
+
       nvram_set ("wan_hwaddr", mac);
     }
 
@@ -1385,28 +1359,9 @@ start_lan (void)
 	      }
 	    else
 	      {
-	     strcpy (mac, nvram_safe_get ("il0macaddr"));
+	     strcpy (mac, getWirelessMac());
 
-	     if (strlen (mac) == 0)
-	     {
-	      if (nvram_match ("port_swap", "1"))
-	         strcpy (mac, nvram_safe_get ("et1macaddr"));
-	      else
-	         strcpy (mac, nvram_safe_get ("et0macaddr"));
-	     }
-	     MAC_ADD (mac);
-#if 0
-//#ifndef HAVE_BUFFALO
-//		if (nvram_match ("port_swap", "1"))
-//		  strcpy (mac, nvram_safe_get ("et1macaddr"));
-//		else
-//		  strcpy (mac, nvram_safe_get ("et0macaddr"));
-//		MAC_ADD (mac);
-//		MAC_ADD (mac);	// The wireless mac equal lan mac add 2
-//#else
-		strcpy (mac, nvram_safe_get ("il0macaddr"));
-//#endif
-#endif
+
 		ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
 		int instance = get_wl_instance(name);
 		if (instance==-1)
@@ -2312,24 +2267,12 @@ start_wan (int status)
       if (!wlifname)wlifname=getWET();
      if (wlifname && !strcmp (wan_ifname, wlifname))  //sta mode
      {
-     strcpy (mac, nvram_safe_get ("il0macaddr"));
-
-     if (strlen (mac) == 0)
-     {
-      if (nvram_match ("port_swap", "1"))
-         strcpy (mac, nvram_safe_get ("et1macaddr"));
-      else
-         strcpy (mac, nvram_safe_get ("et0macaddr"));
-     MAC_ADD (mac);
-     }
+     strcpy (mac, getWirelessMac());
      }
      else
      {
-      if (nvram_match ("port_swap", "1"))
-         strcpy (mac, nvram_safe_get ("et1macaddr"));
-      else
-         strcpy (mac, nvram_safe_get ("et0macaddr"));
-     MAC_ADD (mac);
+	 strcpy (mac, getWANMac());
+ 	 
   if (memcmp (ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN))
     {
       ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
@@ -2339,19 +2282,7 @@ start_wan (int status)
   else
     perror ("Write WAN mac fail : ");
      }
-     
-#if 0   
-      if (nvram_match ("port_swap", "1"))
-	strcpy (mac, nvram_safe_get ("et1macaddr"));
-      else
-	strcpy (mac, nvram_safe_get ("et0macaddr"));
-//#ifndef HAVE_BUFFALO
-//      MAC_ADD (mac);		// The wan mac equal lan mac add 1
-//#else
-      if (!strcmp (wan_ifname, get_wdev()))
-	strcpy (mac, nvram_safe_get ("il0macaddr"));
-//#endif
-#endif
+
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
     }
 
