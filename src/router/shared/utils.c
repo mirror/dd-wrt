@@ -36,6 +36,7 @@
 #include <linux/if_ether.h>
 //#include <linux/mii.h>
 #include <linux/sockios.h>
+#include <cymac.h>
 
 #define SIOCGMIIREG	0x8948	/* Read MII PHY register.       */
 #define SIOCSMIIREG	0x8949	/* Write MII PHY register.      */
