@@ -39,8 +39,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Buffalo WBR-G54, WLA-G54 (4702 cpu, WLA-G54 has no switch)
 #define ROUTER_BUFFALO_WBR54G 0x0704
 
-// Buffalo WBR2-G54 / WLA2-G54 (4712 + ADM6996 switch, fccid: Buffalo FDI-04600142-0),
-// Buffalo WBR2-G54S, WLA2-G54L
+// Buffalo WBR2-G54 (4712 + ADM6996 switch, fccid: Buffalo FDI-04600142-0),
+// Buffalo WBR2-G54S, WLA2-G54L (= WLA2-G54 in Japan)
 #define ROUTER_BUFFALO_WBR2G54S 0x0807
 
 // Buffalo WLA2-G54C == WLI3-TX1-G54 (4712 cpu, no switch, fccid: Buffalo FDI-09101669-0)
@@ -279,6 +279,10 @@ extern void set_host_domain_name (void);
 extern void encode (char *buf, int len);
 extern void decode (char *buf, int len);
 extern char * zencrypt (char *passwd);
+
+extern char *getLANMac (void);
+extern char *getWirelessMac (void);
+extern char *getWANMac (void);
 
 extern int led_control (int type, int act);
 enum
