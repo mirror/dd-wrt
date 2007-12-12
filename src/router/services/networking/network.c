@@ -1265,7 +1265,7 @@ start_lan (void)
   if (nvram_match ("wl_mode", "sta"))
     {
       unsigned char mac[20];
-	strcpy (mac, getWANMac);
+	strcpy (mac, getWANMac());
 
       nvram_set ("wan_hwaddr", mac);
     }
