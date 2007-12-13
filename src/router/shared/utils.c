@@ -3419,34 +3419,30 @@ zencrypt (char *passwd)
   return crypt (passwd, salt);
 }
 
-char *getLANMac (void)
+void getLANMac (char *newmac)
 {
-  unsigned char mac[20];
-	
-	strcpy (mac, nvram_safe_get ("et0macaddr"));
+	strcpy (newmac, nvram_safe_get ("et0macaddr"));
   
   	if (nvram_match ("port_swap", "1"))
   		{
   		if (strlen(nvram_safe_get ("et1macaddr")) != 0) //safe: maybe et1macaddr not there?
   			{
-			strcpy (mac, nvram_safe_get ("et1macaddr"));
+			strcpy (newmac, nvram_safe_get ("et1macaddr"));
 			}
 		else
 			{
-			MAC_ADD(mac);  //et0macaddr +1
+			MAC_ADD(newmac);  //et0macaddr +1
 			}
 		}
 	
-	return mac;
+	return;
 }
 
-char *getWirelessMac (void)
+void getWirelessMac (char *newmac)
 {
-  unsigned char mac[20];
-
 	if (strlen(nvram_safe_get ("il0macaddr")) != 0)
 		{
-		strcpy (mac, nvram_safe_get ("il0macaddr"));
+		strcpy (newmac, nvram_safe_get ("il0macaddr"));
 		}
 	else
 		{
@@ -3454,50 +3450,48 @@ char *getWirelessMac (void)
   			{
   			if (strlen(nvram_safe_get ("et1macaddr")) != 0) //safe: maybe et1macaddr not there?
   				{
-				strcpy (mac, nvram_safe_get ("et1macaddr"));
-				MAC_ADD (mac);  //et1macaddr +2
-				MAC_ADD (mac);		
+				strcpy (newmac, nvram_safe_get ("et1macaddr"));
+				MAC_ADD (newmac);  //et1macaddr +2
+				MAC_ADD (newmac);		
 				}
 			else
 				{
-				strcpy (mac, nvram_safe_get ("et0macaddr"));
-				MAC_ADD (mac);  //et0macaddr +3
-				MAC_ADD (mac);
-				MAC_ADD (mac);				
+				strcpy (newmac, nvram_safe_get ("et0macaddr"));
+				MAC_ADD (newmac);  //et0macaddr +3
+				MAC_ADD (newmac);
+				MAC_ADD (newmac);				
 				}
 			}
 		else
 			{
-			strcpy (mac, nvram_safe_get ("et0macaddr"));
-			MAC_ADD (mac);  //et0macaddr +2
-			MAC_ADD (mac);
+			strcpy (newmac, nvram_safe_get ("et0macaddr"));
+			MAC_ADD (newmac);  //et0macaddr +2
+			MAC_ADD (newmac);
 			}
 		}
 	
-	return mac;		
+	return;		
 }
 
-char *getWANMac (void)
+void getWANMac (char *newmac)
 {
-  unsigned char mac[20];
-	
-	strcpy (mac, nvram_safe_get ("et0macaddr"));
-	MAC_ADD (mac);  //et0macaddr +1
+	strcpy (newmac, nvram_safe_get ("et0macaddr"));
+	MAC_ADD (newmac);  //et0macaddr +1
   
   	if (nvram_match ("port_swap", "1"))
   		{
   		if (strlen(nvram_safe_get ("et1macaddr")) != 0) //safe: maybe et1macaddr not there?
   			{
-			strcpy (mac, nvram_safe_get ("et1macaddr"));
-			MAC_ADD (mac);  //et1macaddr +1			
+			strcpy (newmac, nvram_safe_get ("et1macaddr"));
+			MAC_ADD (newmac);  //et1macaddr +1			
 			}
 		else
 			{
-			MAC_ADD (mac);  //et0macaddr +2
+			MAC_ADD (newmac);  //et0macaddr +2
 			}
 		}
 	
-	return mac;	
+	return;	
 }
 
 #ifdef HAVE_AQOS
