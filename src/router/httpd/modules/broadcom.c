@@ -71,7 +71,6 @@ int debug_value = 0;
 
 
 //tofu
-int tf_webWriteESCNV (webs_t wp, const char *nvname);
 
 #ifdef HAVE_UPNP
 static void tf_upnp (webs_t wp);
@@ -516,44 +515,15 @@ sys_commit (void)
 }
 
 
-char *
-rfctime (const time_t * timep)
+char *rfctime (const time_t * timep, char *s)
 {
-  static char s[201];
   struct tm tm;
-
   setenv ("TZ", nvram_safe_get ("time_zone"), 1);
   memcpy (&tm, localtime (timep), sizeof (struct tm));
-  //strftime(s, 200, "%a, %d %b %Y %H:%M:%S %z", &tm);
   strftime (s, 200, "%a, %d %b %Y %H:%M:%S", &tm);	// spec for linksys
   return s;
 }
 
-static char *
-reltime (unsigned int seconds)
-{
-  static char s[] = "XXXXX days, XX hours, XX minutes, XX seconds";
-  char *c = s;
-
-  if (seconds > 86400)		//60 * 60 * 24
-    {
-      c += sprintf (c, "%d days, ", seconds / 86400);	//60 * 60 * 24
-      seconds %= 86400;		//60 * 60 * 24
-    }
-  if (seconds > 3600)		//60 * 60 
-    {
-      c += sprintf (c, "%d hours, ", seconds / 3600);	//60 * 60
-      seconds %= 3600;		//60 * 60
-    }
-  if (seconds > 60)
-    {
-      c += sprintf (c, "%d minutes, ", seconds / 60);
-      seconds %= 60;
-    }
-  c += sprintf (c, "%d seconds", seconds);
-
-  return s;
-}
 
 /*
  * Example:
@@ -1267,16 +1237,6 @@ ej_get_dns_ip (webs_t wp, int argc, char_t ** argv)
   }
 
   websWrite (wp, "0");		// not find
-}
-
-
-static unsigned long
-inet_atoul (char *cp)
-{
-  struct in_addr in;
-
-  (void) inet_aton (cp, &in);
-  return in.s_addr;
 }
 
 int
@@ -3703,7 +3663,7 @@ extern int post;
 static void			// support GET and POST 2003-08-22
 do_apply_post (char *url, webs_t stream, int len, char *boundary)
 {
-  char buf[1024];
+  unsigned char buf[1024];
   int count;
 
   if (post == 1)
@@ -3739,7 +3699,7 @@ do_apply_post (char *url, webs_t stream, int len, char *boundary)
 
 #if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)
 static void
-do_cfebackup (char *url, webs_t stream)
+do_cfebackup (char *url, webs_t stream,char *query)
 {
 	system2 ("cat /dev/mtd/0 > /tmp/cfe.bin");
 	do_file ("/tmp/cfe.bin", stream, NULL);
@@ -3748,7 +3708,7 @@ do_cfebackup (char *url, webs_t stream)
 #endif
 
 static void
-do_stylecss (char *url, webs_t stream)
+do_stylecss (char *url, webs_t stream, char *query)
 {
   char *style = nvram_get ("router_style");
   long sdata[30];
@@ -3852,7 +3812,7 @@ do_stylecss (char *url, webs_t stream)
 }
 
 static void
-do_stylecss_ie (char *url, webs_t stream)
+do_stylecss_ie (char *url, webs_t stream, char *query)
 {
   websWrite (stream, ".submitFooter input {\n");
   websWrite (stream, "padding:.362em .453em;\n");
@@ -3883,7 +3843,6 @@ static void
 do_fetchif (char *url, webs_t stream, char *query)
 {
   char line[256];
-  int f = 0;
   int i, llen;
   char buffer[256];
   if (query == NULL || strlen (query) == 0)
@@ -3966,8 +3925,6 @@ extern int getdevicecount (void);
 static void
 ej_show_bandwidth (webs_t wp, int argc, char_t ** argv)
 {
-  char *next;
-  char var[80];
   show_bwif (wp, nvram_safe_get ("lan_ifname"), "LAN");
   if (!nvram_match ("wan_proto", "disabled"))
     {
@@ -3984,6 +3941,8 @@ ej_show_bandwidth (webs_t wp, int argc, char_t ** argv)
 	}
     }
 #ifdef HAVE_MADWIFI
+  char var[80];
+  char *next;
   int c = getdevicecount ();
   int i;
   for (i = 0; i < c; i++)

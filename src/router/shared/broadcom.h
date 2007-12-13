@@ -486,7 +486,7 @@ extern int get_dns_ip (char *name, int which, int count);
 extern int get_single_ip (char *ipaddr, int which);
 extern int get_merge_ipaddr (webs_t wp, char *name, char *ipaddr);
 extern int get_merge_mac (webs_t wp, char *name, char *macaddr);
-extern char *rfctime (const time_t * timep);
+extern char *rfctime (const time_t * timep, char *t);
 extern int legal_ipaddr (char *value);
 extern int legal_hwaddr (char *value);
 extern int legal_netmask (char *value);
@@ -495,6 +495,7 @@ extern int find_pattern (const char *data, size_t dlen,
 			 const char *pattern, size_t plen,
 			 char term,
 			 unsigned int *numoff, unsigned int *numlen);
+extern int tf_webWriteESCNV (webs_t wp, const char *nvname);
 
 extern int find_match_pattern (char *name, size_t mlen,
 			       const char *data,
