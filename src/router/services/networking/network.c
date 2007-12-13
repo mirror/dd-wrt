@@ -1254,21 +1254,23 @@ start_lan (void)
   ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
   strncpy (ifr.ifr_name, wl_face, IFNAMSIZ);
 
+//  eval("wl","-i",wl_face,"down");
 //  if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
 //    perror ("Write wireless mac fail : ");
 //  else
 //    cprintf ("Write wireless mac successfully\n");
+//  eval("wl","-i",wl_face,"up");
 #ifdef HAVE_MSSID
   set_vifsmac (mac);
 #endif
 #endif
-  if (nvram_match ("wl_mode", "sta"))
+/*  if (nvram_match ("wl_mode", "sta"))
     {
       unsigned char mac[20];
 	  getWANMac (mac);
 
       nvram_set ("wan_hwaddr", mac);
-    }
+    }*/
 
   cprintf ("wl_face up %s\n",wl_face);
   ifconfig (wl_face, IFUP, 0, 0);
@@ -1374,10 +1376,16 @@ start_lan (void)
 	    ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 	    strncpy (ifr.ifr_name, wl_face, IFNAMSIZ);
 
+#ifndef HAVE_MADWIFI
+	    eval("wl","-i",name,"down");	    
+#endif
 	    if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
 	      perror ("Write wireless mac fail : ");
 	    else
 	      cprintf ("Write wireless mac successfully\n");
+#ifndef HAVE_MADWIFI
+	    eval("wl","-i",name,"up");	    
+#endif
 		  }
 	      }
 #ifdef HAVE_MSSID
@@ -2275,7 +2283,7 @@ start_wan (int status)
      }
      else
      {
-	 	getWANMac (mac);
+	getWANMac (mac);
      }
      
      ether_atoe (mac, ifr.ifr_hwaddr.sa_data);     
@@ -2283,7 +2291,15 @@ start_wan (int status)
   if (memcmp (ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN))
     {
       ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+#ifndef HAVE_MADWIFI
+if (wlifname && !strcmp (wan_ifname, wlifname))      
+      eval("wl","-i",wan_ifname,"down");
+#endif
       ioctl (s, SIOCSIFHWADDR, &ifr);
+#ifndef HAVE_MADWIFI
+if (wlifname && !strcmp (wan_ifname, wlifname))      
+      eval("wl","-i",wan_ifname,"up");
+#endif
       cprintf ("Write WAN mac successfully\n");
     }
   else
