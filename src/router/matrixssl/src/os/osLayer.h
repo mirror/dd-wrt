@@ -185,8 +185,7 @@ extern void matrixPtrDebugMsg(char *message, void *arg);
 #define matrixStrDebugMsg(x, y)
 #define matrixIntDebugMsg(x, y)
 #define matrixPtrDebugMsg(x, y)
-#define sslAssert(C)  if (C) ; else \
-	{fprintf(stderr, "%s:%d sslAssert(%s)\n",__FILE__, __LINE__, #C); }
+#define sslAssert(C)  
 #endif /* DEBUG */
 
 #ifdef __cplusplus
