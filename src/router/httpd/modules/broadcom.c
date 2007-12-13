@@ -3889,19 +3889,15 @@ do_fetchif (char *url, webs_t stream, char *query)
   if (query == NULL || strlen (query) == 0)
     return;
   int strbuffer = 0;
-  FILE *in = popen ("date", "rb");
-  if (in == NULL)
-    return;
-  while (!feof (in))
-    {
-      f = getc (in);
-      if (f == 0 || f == EOF)
-	    break;
-      buffer[strbuffer++] = f;
-    }
-  pclose (in);
-  
-  in = fopen ("/proc/net/dev", "rb");
+  time_t tm;
+  struct tm tm_time;
+  time(&tm);
+  memcpy(&tm_time, localtime(&tm), sizeof(tm_time));
+  char *date_fmt = "%a %b %e %H:%M:%S %Z %Y";
+  strftime(buffer, 200, date_fmt, &tm_time);
+  strbuffer = strlen(buffer);
+  buffer[strbuffer++]='\n';
+  FILE *in = fopen ("/proc/net/dev", "rb");
   if (in == NULL)
     return;
 
@@ -4211,7 +4207,7 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
     {
       sprintf (&menu[1][a + 6][0], "Wireless_WDS-wl%d.asp", a);
       if (ifcount==1)
-      sprintf (&menuname[1][a + 7][0], "wirelessWds", a);
+      sprintf (&menuname[1][a + 7][0], "wirelessWds");
       else
       sprintf (&menuname[1][a + 7][0], "wirelessWdswl%d", a);
     }
