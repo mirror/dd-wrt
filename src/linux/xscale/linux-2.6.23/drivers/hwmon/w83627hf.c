@@ -391,6 +391,7 @@ static int __devexit w83627hf_remove(struct platform_device *pdev);
 
 static int w83627hf_read_value(struct w83627hf_data *data, u16 reg);
 static int w83627hf_write_value(struct w83627hf_data *data, u16 reg, u16 value);
+static void w83627hf_update_fan_div(struct w83627hf_data *data);
 static struct w83627hf_data *w83627hf_update_device(struct device *dev);
 static void w83627hf_init_device(struct platform_device *pdev);
 
@@ -1244,6 +1245,7 @@ static int __devinit w83627hf_probe(struct platform_device *pdev)
 	data->fan_min[0] = w83627hf_read_value(data, W83781D_REG_FAN_MIN(1));
 	data->fan_min[1] = w83627hf_read_value(data, W83781D_REG_FAN_MIN(2));
 	data->fan_min[2] = w83627hf_read_value(data, W83781D_REG_FAN_MIN(3));
+	w83627hf_update_fan_div(data);
 
 	/* Register common device attributes */
 	if ((err = sysfs_create_group(&dev->kobj, &w83627hf_group)))
@@ -1333,6 +1335,24 @@ static int __devexit w83627hf_remove(struct platform_device *pdev)
 }
 
 
+/* Registers 0x50-0x5f are banked */
+static inline void w83627hf_set_bank(struct w83627hf_data *data, u16 reg)
+{
+	if ((reg & 0x00f0) == 0x50) {
+		outb_p(W83781D_REG_BANK, data->addr + W83781D_ADDR_REG_OFFSET);
+		outb_p(reg >> 8, data->addr + W83781D_DATA_REG_OFFSET);
+	}
+}
+
+/* Not strictly necessary, but play it safe for now */
+static inline void w83627hf_reset_bank(struct w83627hf_data *data, u16 reg)
+{
+	if (reg & 0xff00) {
+		outb_p(W83781D_REG_BANK, data->addr + W83781D_ADDR_REG_OFFSET);
+		outb_p(0, data->addr + W83781D_DATA_REG_OFFSET);
+	}
+}
+
 static int w83627hf_read_value(struct w83627hf_data *data, u16 reg)
 {
 	int res, word_sized;
@@ -1343,12 +1363,7 @@ static int w83627hf_read_value(struct w83627hf_data *data, u16 reg)
 		  && (((reg & 0x00ff) == 0x50)
 		   || ((reg & 0x00ff) == 0x53)
 		   || ((reg & 0x00ff) == 0x55));
-	if (reg & 0xff00) {
-		outb_p(W83781D_REG_BANK,
-		       data->addr + W83781D_ADDR_REG_OFFSET);
-		outb_p(reg >> 8,
-		       data->addr + W83781D_DATA_REG_OFFSET);
-	}
+	w83627hf_set_bank(data, reg);
 	outb_p(reg & 0xff, data->addr + W83781D_ADDR_REG_OFFSET);
 	res = inb_p(data->addr + W83781D_DATA_REG_OFFSET);
 	if (word_sized) {
@@ -1358,11 +1373,7 @@ static int w83627hf_read_value(struct w83627hf_data *data, u16 reg)
 		    (res << 8) + inb_p(data->addr +
 				       W83781D_DATA_REG_OFFSET);
 	}
-	if (reg & 0xff00) {
-		outb_p(W83781D_REG_BANK,
-		       data->addr + W83781D_ADDR_REG_OFFSET);
-		outb_p(0, data->addr + W83781D_DATA_REG_OFFSET);
-	}
+	w83627hf_reset_bank(data, reg);
 	mutex_unlock(&data->lock);
 	return res;
 }
@@ -1433,12 +1444,7 @@ static int w83627hf_write_value(struct w83627hf_data *data, u16 reg, u16 value)
 		   || ((reg & 0xff00) == 0x200))
 		  && (((reg & 0x00ff) == 0x53)
 		   || ((reg & 0x00ff) == 0x55));
-	if (reg & 0xff00) {
-		outb_p(W83781D_REG_BANK,
-		       data->addr + W83781D_ADDR_REG_OFFSET);
-		outb_p(reg >> 8,
-		       data->addr + W83781D_DATA_REG_OFFSET);
-	}
+	w83627hf_set_bank(data, reg);
 	outb_p(reg & 0xff, data->addr + W83781D_ADDR_REG_OFFSET);
 	if (word_sized) {
 		outb_p(value >> 8,
@@ -1448,11 +1454,7 @@ static int w83627hf_write_value(struct w83627hf_data *data, u16 reg, u16 value)
 	}
 	outb_p(value & 0xff,
 	       data->addr + W83781D_DATA_REG_OFFSET);
-	if (reg & 0xff00) {
-		outb_p(W83781D_REG_BANK,
-		       data->addr + W83781D_ADDR_REG_OFFSET);
-		outb_p(0, data->addr + W83781D_DATA_REG_OFFSET);
-	}
+	w83627hf_reset_bank(data, reg);
 	mutex_unlock(&data->lock);
 	return 0;
 }
@@ -1556,6 +1558,24 @@ static void __devinit w83627hf_init_device(struct platform_device *pdev)
 			    | 0x01);
 }
 
+static void w83627hf_update_fan_div(struct w83627hf_data *data)
+{
+	int reg;
+
+	reg = w83627hf_read_value(data, W83781D_REG_VID_FANDIV);
+	data->fan_div[0] = (reg >> 4) & 0x03;
+	data->fan_div[1] = (reg >> 6) & 0x03;
+	if (data->type != w83697hf) {
+		data->fan_div[2] = (w83627hf_read_value(data,
+				       W83781D_REG_PIN) >> 6) & 0x03;
+	}
+	reg = w83627hf_read_value(data, W83781D_REG_VBAT);
+	data->fan_div[0] |= (reg >> 3) & 0x04;
+	data->fan_div[1] |= (reg >> 4) & 0x04;
+	if (data->type != w83697hf)
+		data->fan_div[2] |= (reg >> 5) & 0x04;
+}
+
 static struct w83627hf_data *w83627hf_update_device(struct device *dev)
 {
 	struct w83627hf_data *data = dev_get_drvdata(dev);
@@ -1633,18 +1653,8 @@ static struct w83627hf_data *w83627hf_update_device(struct device *dev)
 			  w83627hf_read_value(data, W83781D_REG_TEMP_HYST(3));
 		}
 
-		i = w83627hf_read_value(data, W83781D_REG_VID_FANDIV);
-		data->fan_div[0] = (i >> 4) & 0x03;
-		data->fan_div[1] = (i >> 6) & 0x03;
-		if (data->type != w83697hf) {
-			data->fan_div[2] = (w83627hf_read_value(data,
-					       W83781D_REG_PIN) >> 6) & 0x03;
-		}
-		i = w83627hf_read_value(data, W83781D_REG_VBAT);
-		data->fan_div[0] |= (i >> 3) & 0x04;
-		data->fan_div[1] |= (i >> 4) & 0x04;
-		if (data->type != w83697hf)
-			data->fan_div[2] |= (i >> 5) & 0x04;
+		w83627hf_update_fan_div(data);
+
 		data->alarms =
 		    w83627hf_read_value(data, W83781D_REG_ALARM1) |
 		    (w83627hf_read_value(data, W83781D_REG_ALARM2) << 8) |
