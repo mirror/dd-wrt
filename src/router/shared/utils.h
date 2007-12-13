@@ -280,9 +280,9 @@ extern void encode (char *buf, int len);
 extern void decode (char *buf, int len);
 extern char * zencrypt (char *passwd);
 
-extern char *getLANMac (void);
-extern char *getWirelessMac (void);
-extern char *getWANMac (void);
+extern void getLANMac (char *newmac);
+extern void getWirelessMac (char *newmac);
+extern void getWANMac (char *newmac);
 
 extern int led_control (int type, int act);
 enum
