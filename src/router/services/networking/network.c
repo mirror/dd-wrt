@@ -1238,7 +1238,7 @@ start_lan (void)
     }
   else
     {
-     strcpy (mac, getWirelessMac());
+     getWirelessMac (mac);
 
 
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
@@ -1265,7 +1265,7 @@ start_lan (void)
   if (nvram_match ("wl_mode", "sta"))
     {
       unsigned char mac[20];
-	strcpy (mac, getWANMac());
+	  getWANMac (mac);
 
       nvram_set ("wan_hwaddr", mac);
     }
@@ -1359,7 +1359,7 @@ start_lan (void)
 	      }
 	    else
 	      {
-	     strcpy (mac, getWirelessMac());
+	     getWirelessMac (mac);
 
 
 		ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
@@ -1390,7 +1390,7 @@ start_lan (void)
 		strncpy (ifr.ifr_name, wl_face, IFNAMSIZ);
 
 		if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
-		  perror ("Write wireless mac fail : ");
+		  perror ("Write wireless mac fail : \n");
 		else
 		  cprintf ("Write wireless mac successfully\n");
 	      }
@@ -2271,11 +2271,11 @@ start_wan (int status)
      }  
      if (wlifname && !strcmp (wan_ifname, wlifname))  //sta mode
      {
-     	strcpy (mac, getWirelessMac());
+     	getWirelessMac (mac);
      }
      else
      {
-	 	strcpy (mac, getWANMac());
+	 	getWANMac (mac);
      }
      
      ether_atoe (mac, ifr.ifr_hwaddr.sa_data);     
@@ -2287,7 +2287,7 @@ start_wan (int status)
       cprintf ("Write WAN mac successfully\n");
     }
   else
-      perror ("Write WAN mac fail : ");
+      perror ("Write WAN mac fail : \n");
 
     }
 
