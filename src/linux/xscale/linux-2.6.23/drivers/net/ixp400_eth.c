@@ -129,9 +129,9 @@
 /*
  * Module version information
  */
-MODULE_DESCRIPTION("IXP400 NPE Ethernet driver");
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Intel Corporation");
+MODULE_DESCRIPTION ("IXP400 NPE Ethernet driver");
+MODULE_LICENSE ("GPL");
+MODULE_AUTHOR ("Intel Corporation");
 #define MODULE_NAME "ixp400_eth"
 #define MOD_VERSION "1.6"
 
@@ -139,7 +139,7 @@ MODULE_AUTHOR("Intel Corporation");
  * Non-user configurable private variable 
  */
 
-#ifdef CONFIG_CPU_IXP46X
+#if defined(CONFIG_CPU_IXP46X) || defined (CONFIG_CPU_IXP43X)
 /* NPE-A enabled flag for parity error detection configuration */
 static IxParityENAccConfigOption parity_npeA_enabled = IX_PARITYENACC_DISABLE;
 /* NPE-B enabled flag for parity error detection configuration */
@@ -153,31 +153,30 @@ static u32 npe_error_handler_initialized = 0;
 /* 
  * Module parameters 
  */
-static int npe_learning = 0;      /* default : NPE learning & filtering enable */
-static int log_level = 0;         /* default : no log */
-static int no_ixp400_sw_init = 0; /* default : init core components of the IXP400 Software */
-static int no_phy_scan = 0;       /* default : do phy discovery */
-static int phy_reset = 0;         /* default : no phy reset */
-static int npe_error_handler = 0; /* default : no npe error handler */
-static int hss_coexist = 0;	  /* default : HSS coexist disabled */
+static int npe_learning = 0;	/* default : NPE learning & filtering enable */
+static int log_level = 0;	/* default : no log */
+static int no_ixp400_sw_init = 0;	/* default : init core components of the IXP400 Software */
+static int no_phy_scan = 0;	/* default : do phy discovery */
+static int phy_reset = 0;	/* default : no phy reset */
+static int npe_error_handler = 0;	/* default : no npe error handler */
+static int hss_coexist = 0;	/* default : HSS coexist disabled */
 
 /* 
  * maximum number of ports supported by this driver ixp0, ixp1 ....
  * The default is to configure all ports defined in EthAcc component
  */
 #ifdef CONFIG_IXP400_ETH_NPEC_ONLY
-static int dev_max_count = 1; /* only NPEC is used */
+static int dev_max_count = 1;	/* only NPEC is used */
 #elif defined (CONFIG_IXP400_ETH_NPEB_ONLY)
-static int dev_max_count = 1; /* only NPEB is used */
+static int dev_max_count = 1;	/* only NPEB is used */
 #elif defined (CONFIG_ARCH_IXDP425) || defined(CONFIG_ARCH_IXDPG425)\
-      || defined (CONFIG_ARCH_ADI_COYOTE) || defined (CONFIG_ARCH_AVILA) 
-
-static int dev_max_count = 2; /* only NPEB and NPEC */
+      || defined (CONFIG_ARCH_ADI_COYOTE) || defined (CONFIG_ARCH_AVILA) || defined (CONFIG_MACH_KIXRP435)
+static int dev_max_count = 2;	/* only NPEB and NPEC */
 #elif defined (CONFIG_ARCH_IXDP465) || defined(CONFIG_MACH_IXDP465)
-static int dev_max_count = 3; /* all NPEs are used */
+static int dev_max_count = 3;	/* all NPEs are used */
 #endif
 
-static int datapath_poll = 1;     /* default : rx/tx polling, not interrupt driven*/
+static int datapath_poll = 1;	/* default : rx/tx polling, not interrupt driven */
 
 #ifndef CONFIG_IXP400_NAPI
 /* 
@@ -188,27 +187,34 @@ static int datapath_poll = 1;     /* default : rx/tx polling, not interrupt driv
  */
 static int netdev_max_backlog = 290;
 
-module_param(netdev_max_backlog, int, 0);
-MODULE_PARM_DESC(netdev_max_backlog, "Should be set to the value of /proc/sys/net/core/netdev_max_backlog (perf affecting)");
+module_param (netdev_max_backlog, int, 0);
+MODULE_PARM_DESC (netdev_max_backlog,
+		  "Should be set to the value of /proc/sys/net/core/netdev_max_backlog (perf affecting)");
 #endif /* CONFIG_IXP400_NAPI */
-module_param(datapath_poll, int, 0);
-MODULE_PARM_DESC(datapath_poll, "If non-zero, use polling method for datapath instead of interrupts");
-module_param(npe_learning, int, 0);
-MODULE_PARM_DESC(npe_learning, "If non-zero, NPE MAC Address Learning & Filtering feature will be enabled");
-module_param(log_level, int, 0);
-MODULE_PARM_DESC(log_level, "Set log level: 0 - None, 1 - Verbose, 2 - Debug");
-module_param(no_ixp400_sw_init, int, 0);
-MODULE_PARM_DESC(no_ixp400_sw_init, "If non-zero, do not initialise Intel IXP400 Software Release core components");
-module_param(no_phy_scan, int, 0);
-MODULE_PARM_DESC(no_phy_scan, "If non-zero, use hard-coded phy addresses");
-module_param(phy_reset, int, 0);
-MODULE_PARM_DESC(phy_reset, "If non-zero, reset the phys");
-module_param(dev_max_count, int, 0);
-MODULE_PARM_DESC(dev_max_count, "Number of devices to initialize");
-module_param(npe_error_handler, int, 0);
-MODULE_PARM_DESC(npe_error_handler, "If non-zero, NPE error handling feature will be enabled");
-module_param(hss_coexist, int, 0);
-MODULE_PARM_DESC(hss_coexist, "If non-zero, HSS-Ethernet coexist feature will be enabled");
+module_param (datapath_poll, int, 0);
+MODULE_PARM_DESC (datapath_poll,
+		  "If non-zero, use polling method for datapath instead of interrupts");
+module_param (npe_learning, int, 0);
+MODULE_PARM_DESC (npe_learning,
+		  "If non-zero, NPE MAC Address Learning & Filtering feature will be enabled");
+module_param (log_level, int, 0);
+MODULE_PARM_DESC (log_level,
+		  "Set log level: 0 - None, 1 - Verbose, 2 - Debug");
+module_param (no_ixp400_sw_init, int, 0);
+MODULE_PARM_DESC (no_ixp400_sw_init,
+		  "If non-zero, do not initialise Intel IXP400 Software Release core components");
+module_param (no_phy_scan, int, 0);
+MODULE_PARM_DESC (no_phy_scan, "If non-zero, use hard-coded phy addresses");
+module_param (phy_reset, int, 0);
+MODULE_PARM_DESC (phy_reset, "If non-zero, reset the phys");
+module_param (dev_max_count, int, 0);
+MODULE_PARM_DESC (dev_max_count, "Number of devices to initialize");
+module_param (npe_error_handler, int, 0);
+MODULE_PARM_DESC (npe_error_handler,
+		  "If non-zero, NPE error handling feature will be enabled");
+module_param (hss_coexist, int, 0);
+MODULE_PARM_DESC (hss_coexist,
+		  "If non-zero, HSS-Ethernet coexist feature will be enabled");
 /* devices will be called ixp0 and ixp1 */
 #define DEVICE_NAME "ixp"
 
@@ -253,7 +259,7 @@ MODULE_PARM_DESC(hss_coexist, "If non-zero, HSS-Ethernet coexist feature will be
  */
 #define QUEUE_DISPATCH_TIMER_TO_INT_CYCLE_CONVERT \
 		(NPEMH_MS_POLL_FREQ * 1000) / \
-		(USEC_PER_SEC / QUEUE_DISPATCH_TIMER_RATE)  
+		(USEC_PER_SEC / QUEUE_DISPATCH_TIMER_RATE)
 
 #ifdef CONFIG_IXP400_NAPI
 
@@ -302,8 +308,8 @@ MODULE_PARM_DESC(hss_coexist, "If non-zero, HSS-Ethernet coexist feature will be
 #endif
 
 /* Number of mbufs in sw queue */
-#define MB_QSIZE  (256) /* must be a power of 2 and > TX_MBUF_POOL_SIZE */
-#define SKB_QSIZE (256) /* must be a power of 2 and > RX_MBUF_POOL_SIZE */
+#define MB_QSIZE  (256)		/* must be a power of 2 and > TX_MBUF_POOL_SIZE */
+#define SKB_QSIZE (256)		/* must be a power of 2 and > RX_MBUF_POOL_SIZE */
 
 /* Maximum number of addresses the EthAcc multicast filter can hold */
 #define IX_ETH_ACC_MAX_MULTICAST_ADDRESSES (256)
@@ -394,7 +400,7 @@ MODULE_PARM_DESC(hss_coexist, "If non-zero, HSS-Ethernet coexist feature will be
     	printk("%s: %s(): line %d\n", MODULE_NAME, __FUNCTION__, __LINE__)
 #else
 /* no trace */
-#define TRACE 
+#define TRACE
 #endif
 
 /* extern Linux kernel data */
@@ -403,177 +409,186 @@ MODULE_PARM_DESC(hss_coexist, "If non-zero, HSS-Ethernet coexist feature will be
 extern struct softnet_data softnet_data[];
 #endif
 
-extern unsigned long loops_per_jiffy; /* used to calculate CPU clock speed */
+extern unsigned long loops_per_jiffy;	/* used to calculate CPU clock speed */
 
 /* 
  * prototypes for locally defined pmu_timer functions
  */
-static int dev_pmu_timer_setup(void);
-static void dev_pmu_timer_unload(void);
-static void dev_pmu_timer_disable(void);
-static void dev_pmu_timer_restart(void);
-static int dev_pmu_timer_init(void);
-static int datapath_poll_activatable_check(void);
+static int dev_pmu_timer_setup (void);
+static void dev_pmu_timer_unload (void);
+static void dev_pmu_timer_disable (void);
+static void dev_pmu_timer_restart (void);
+static int dev_pmu_timer_init (void);
+static int datapath_poll_activatable_check (void);
 
 /*
  * Prototype for message handler polling function
  */
-static inline int npemh_poll(void *data);
+static inline int npemh_poll (void *data);
 
 /*
  * Prototype for parity error detection and handler
  */
 
-#ifdef CONFIG_CPU_IXP46X
-static int __init parity_npe_error_handler_init(void);
-static void parity_npe_error_handler_uninit(void);
-static void parity_npe_recovery_done_cb(IxErrHdlAccErrorEventType event_type);
-static void parity_error_cb(void);
+#if defined(CONFIG_CPU_IXP46X) || defined (CONFIG_CPU_IXP43X)
+static int __init parity_npe_error_handler_init (void);
+static void parity_npe_error_handler_uninit (void);
+static void parity_npe_recovery_done_cb (IxErrHdlAccErrorEventType
+					 event_type);
+static void parity_error_cb (void);
 #else
-static int __init parity_npe_error_handler_init(void){ return 0; }
-static void parity_npe_error_handler_uninit(void){}
+static int __init
+parity_npe_error_handler_init (void)
+{
+  return 0;
+}
+static void
+parity_npe_error_handler_uninit (void)
+{
+}
 #endif
 
 /* internal Access layer entry point */
-extern void 
-ixEthTxFrameDoneQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId);
+extern void
+ixEthTxFrameDoneQMCallback (IxQMgrQId qId, IxQMgrCallbackId callbackId);
 
 /* Private device data */
-typedef struct {
-    spinlock_t lock;  /* multicast management lock */
-    
-    unsigned int msdu_size;
-    unsigned int replenish_size;
-    unsigned int pkt_size;
-    unsigned int alloc_size;
+typedef struct
+{
+  spinlock_t lock;		/* multicast management lock */
 
-    struct net_device_stats stats; /* device statistics */
+  unsigned int msdu_size;
+  unsigned int replenish_size;
+  unsigned int pkt_size;
+  unsigned int alloc_size;
 
-    IxEthAccPortId port_id; /* EthAcc port_id */
+  struct net_device_stats stats;	/* device statistics */
+
+  IxEthAccPortId port_id;	/* EthAcc port_id */
 
 #ifdef CONFIG_IXP400_ETH_QDISC_ENABLED
-    /* private scheduling discipline */
-    struct Qdisc *qdisc;
+  /* private scheduling discipline */
+  struct Qdisc *qdisc;
 #endif
 
-    /* Implements a software queue for mbufs 
-     * This queue is written in the tx done process and 
-     * read during tx. Because there is 
-     * 1 reader and 1 writer, there is no need for
-     * a locking algorithm.
-     */
+  /* Implements a software queue for mbufs 
+   * This queue is written in the tx done process and 
+   * read during tx. Because there is 
+   * 1 reader and 1 writer, there is no need for
+   * a locking algorithm.
+   */
 
-    /* mbuf Tx queue indexes */
-    unsigned int mbTxQueueHead;
-    unsigned int mbTxQueueTail;
+  /* mbuf Tx queue indexes */
+  unsigned int mbTxQueueHead;
+  unsigned int mbTxQueueTail;
 
-    /* mbuf Rx queue indexes */
-    unsigned int mbRxQueueHead;
-    unsigned int mbRxQueueTail;
+  /* mbuf Rx queue indexes */
+  unsigned int mbRxQueueHead;
+  unsigned int mbRxQueueTail;
 
-    /* software queue containers */
-    IX_OSAL_MBUF *mbTxQueue[MB_QSIZE];
-    IX_OSAL_MBUF *mbRxQueue[MB_QSIZE];
+  /* software queue containers */
+  IX_OSAL_MBUF *mbTxQueue[MB_QSIZE];
+  IX_OSAL_MBUF *mbRxQueue[MB_QSIZE];
 
-    /* RX MBUF pool */
-    IX_OSAL_MBUF_POOL *rx_pool;
+  /* RX MBUF pool */
+  IX_OSAL_MBUF_POOL *rx_pool;
 
-    /* TX MBUF pool */
-    IX_OSAL_MBUF_POOL *tx_pool;
+  /* TX MBUF pool */
+  IX_OSAL_MBUF_POOL *tx_pool;
 
-    /* id of thread for the link duplex monitoring */
-    int maintenanceCheckThreadId;
+  /* id of thread for the link duplex monitoring */
+  int maintenanceCheckThreadId;
 
-    /* mutex locked by thread, until the thread exits */
-    struct semaphore *maintenanceCheckThreadComplete;
+  /* mutex locked by thread, until the thread exits */
+  struct semaphore *maintenanceCheckThreadComplete;
 
-    /* Used to stop the kernel thread for link monitoring. */
-    volatile BOOL maintenanceCheckStopped;
+  /* Used to stop the kernel thread for link monitoring. */
+  volatile BOOL maintenanceCheckStopped;
 
-    /* workqueue used for tx timeout */
+  /* workqueue used for tx timeout */
 #if IS_KERNEL26
-    struct workqueue_struct *timeout_workq;
-    struct work_struct timeout_work;
+  struct workqueue_struct *timeout_workq;
+  struct work_struct timeout_work;
 #else
-    struct tq_struct taskqueue_timeout;
+  struct tq_struct taskqueue_timeout;
 #endif
 
 
-    /* used to control the message output */
-    UINT32 devFlags;
-    struct net_device *ndev;
+  /* used to control the message output */
+  UINT32 devFlags;
+  struct net_device *ndev;
 } priv_data_t;
 
 /* Collection of boolean PHY configuration parameters */
-typedef struct {
-    BOOL speed100;
-    BOOL duplexFull;
-    BOOL autoNegEnabled;
-    BOOL linkMonitor;
+typedef struct
+{
+  BOOL speed100;
+  BOOL duplexFull;
+  BOOL autoNegEnabled;
+  BOOL linkMonitor;
 } phy_cfg_t;
 
 /* Structure to associate NPE image ID with NPE port ID */
-typedef struct {
-    UINT32 npeImageId;
-    IxNpeDlNpeId npeId;
+typedef struct
+{
+  UINT32 npeImageId;
+  IxNpeDlNpeId npeId;
 } npe_info_t;
 
 
 #if IS_KERNEL26
-static int __devinit dev_eth_probe(struct device *dev);
-static int __devexit dev_eth_remove(struct device *dev);
-static void dev_eth_release(struct device *dev);
+static int __devinit dev_eth_probe (struct device *dev);
+static int __devexit dev_eth_remove (struct device *dev);
+static void dev_eth_release (struct device *dev);
 
 static struct device_driver ixp400_eth_driver = {
-    .name	= MODULE_NAME,
-    .bus	= &platform_bus_type,
-    .probe	= dev_eth_probe,
-    .remove 	= dev_eth_remove,
+  .name = MODULE_NAME,
+  .bus = &platform_bus_type,
+  .probe = dev_eth_probe,
+  .remove = dev_eth_remove,
 };
 
 static struct platform_device ixp400_eth_devices[IX_ETH_ACC_NUMBER_OF_PORTS] = {
-    {
+  {
 #if IX_ETH_ACC_NUMBER_OF_PORTS > 0
-	.name 	= MODULE_NAME,
-#if CONFIG_IXP400_ETH_NPEC_ONLY
-	.id   	= IX_ETH_PORT_2,
+   .name = MODULE_NAME,
+#if defined (CONFIG_IXP400_ETH_NPEC_ONLY) || defined (CONFIG_MACH_KIXRP435)
+   .id = IX_ETH_PORT_2,
 #else
-	.id   	= IX_ETH_PORT_1,
+   .id = IX_ETH_PORT_1,
 #endif
-	.dev	= 
-	    {
-		.release	= dev_eth_release,
-	    },
+   .dev = {
+	   .release = dev_eth_release,
+	   },
 #if IX_ETH_ACC_NUMBER_OF_PORTS > 1
-    },
-    {
-	.name 	= MODULE_NAME,
-#if CONFIG_IXP400_ETH_NPEC_ONLY
-	.id   	= IX_ETH_PORT_1,
+   },
+  {
+   .name = MODULE_NAME,
+#ifdef CONFIG_MACH_KIXRP435
+   .id = IX_ETH_PORT_3,
 #else
-	.id   	= IX_ETH_PORT_2,
+   .id = IX_ETH_PORT_2,
 #endif
-	.dev	= 
-	    {
-		.release	= dev_eth_release,
-	    },
-#if IX_ETH_ACC_NUMBER_OF_PORTS > 2
-    },
-    {
-	.name 	= MODULE_NAME,
-	.id   	= IX_ETH_PORT_3,
-	.dev	= 
-	    {
-		.release	= dev_eth_release,
-	    },
+   .dev = {
+	   .release = dev_eth_release,
+	   },
+#if IX_ETH_ACC_NUMBER_OF_PORTS > 2 && !defined (CONFIG_MACH_KIXRP435)
+   },
+  {
+   .name = MODULE_NAME,
+   .id = IX_ETH_PORT_3,
+   .dev = {
+	   .release = dev_eth_release,
+	   },
 #endif /* IX_ETH_ACC_NUMBER_OF_PORTS > 2 */
 #endif /* IX_ETH_ACC_NUMBER_OF_PORTS > 1 */
 #endif /* IX_ETH_ACC_NUMBER_OF_PORTS > 0 */
-    }
+   }
 };
 
 /* Platform device is statically allocated, nothing to be released */
-static void dev_eth_release(struct device *dev)
+static void
+dev_eth_release (struct device *dev)
 {
 }
 #else
@@ -592,7 +607,7 @@ static struct net_device ixp400_eth_devices[IX_ETH_ACC_NUMBER_OF_PORTS];
 /* values used inside the irq */
 static unsigned long timer_countup_ticks;
 static IxQMgrDispatcherFuncPtr dispatcherFunc;
-static struct timeval  irq_stamp;  /* time of interrupt */
+static struct timeval irq_stamp;	/* time of interrupt */
 
 /* Implements a software queue for skbufs 
  * This queue is written in the tx done process and 
@@ -630,8 +645,7 @@ static struct sk_buff *skQueue[SKB_QSIZE];
  * the IXDP425 and Coyote (IXP4XX RG) Development platforms.
  * However, they may differ on other platforms.
  */
-static int phyAddresses[IXP425_ETH_ACC_MII_MAX_ADDR] =
-{
+static int phyAddresses[IXP425_ETH_ACC_MII_MAX_ADDR] = {
 /*#if defined(CONFIG_ARCH_AVILA)
     5, 
     4, 
@@ -641,40 +655,71 @@ static int phyAddresses[IXP425_ETH_ACC_MII_MAX_ADDR] =
     3
 #el*/
 #if defined(CONFIG_ARCH_IXDP425)
-    /* 1 PHY per NPE port */
-    0, /* Port 1 (IX_ETH_PORT_1 / NPE B) */
-    1  /* Port 2 (IX_ETH_PORT_2 / NPE C) */
-
+  /* 1 PHY per NPE port */
+  0,				/* Port 1 (IX_ETH_PORT_1 / NPE B) */
+  1				/* Port 2 (IX_ETH_PORT_2 / NPE C) */
 #elif defined(CONFIG_ARCH_IXDP465) || defined(CONFIG_MACH_IXDP465)
-    /* 1 PHY per NPE port */
-    0, /* Port 1 (IX_ETH_PORT_1 / NPE B) */
-    1, /* Port 2 (IX_ETH_PORT_2 / NPE C) */
-    2  /* Port 3 (IX_ETH_PORT_2 / NPE A) */
-
+  /* 1 PHY per NPE port */
+  0,				/* Port 1 (IX_ETH_PORT_1 / NPE B) */
+  1,				/* Port 2 (IX_ETH_PORT_2 / NPE C) */
+  2				/* Port 3 (IX_ETH_PORT_2 / NPE A) */
 #elif defined(CONFIG_ARCH_ADI_COYOTE)
-    4, /* Port 1 (IX_ETH_PORT_1) - Connected to PHYs 1-4      */
-    5, /* Port 2 (IX_ETH_PORT_2) - Only connected to PHY 5    */
+  4,				/* Port 1 (IX_ETH_PORT_1) - Connected to PHYs 1-4      */
+  5,				/* Port 2 (IX_ETH_PORT_2) - Only connected to PHY 5    */
 
-    3,  /******************************************************/
-    2,  /* PHY addresses on Coyote platform (physical layout) */
-    1   /* (4 LAN ports, switch)  (1 WAN port)                */
-        /*       ixp0              ixp1                       */
-        /*  ________________       ____                       */
-        /* /_______________/|     /___/|                      */
-	/* | 1 | 2 | 3 | 4 |      | 5 |                       */
-        /* ----------------------------------------           */
+  3,	/******************************************************/
+  2,				/* PHY addresses on Coyote platform (physical layout) */
+  1				/* (4 LAN ports, switch)  (1 WAN port)                */
+    /*       ixp0              ixp1                       */
+    /*  ________________       ____                       */
+    /* /_______________/|     /___/|                      */
+    /* | 1 | 2 | 3 | 4 |      | 5 |                       */
+    /* ----------------------------------------           */
 #elif defined(CONFIG_ARCH_IXDPG425)
-    5, /* Port 1 (ixp0) - Connected to switch via PHY 5 */
-    4, /* Port 2 (ixp1) - Only connected to PHY 4       */
-    0, /* 4 port switch - PHY 0..3                      */
-    1,
-    2,
-    3
-#else
-    /* other platforms : suppose 1 PHY per NPE port */
-    0, /* PHY address for EthAcc Port 1 (IX_ETH_PORT_1 / NPE B) */
-    1  /* PHY address for EthAcc Port 2 (IX_ETH_PORT_2 / NPE C) */
+  5,				/* Port 1 (ixp0) - Connected to switch via PHY 5 */
+  4,				/* Port 2 (ixp1) - Only connected to PHY 4       */
+  0,				/* 4 port switch - PHY 0..3                      */
+  1,
+  2,
+  3
+#elif defined(CONFIG_MACH_KIXRP435)
+  1,				/* Port 1 (IX_ETH_PORT_2) - Connected to PHYs 1-4      */
+  5,				/* Port 2 (IX_ETH_PORT_3) - Only connected to PHY 5    */
 
+  2,	/*********************************************************/
+  3,				/* PHY addresses on KIXRP435 platform (physical layout)  */
+  4				/* (4 LAN ports, switch)  (1 WAN port)                   */
+    /*       ixp1              ixp2                          */
+    /*  ________________       ____                          */
+    /* /_______________/|     /___/|                         */
+    /* | 1 | 2 | 3 | 4 |      | 5 |                          */
+    /* ----------------------------------------              */
+#else
+  /* other platforms : suppose 1 PHY per NPE port */
+  0,				/* PHY address for EthAcc Port 1 (IX_ETH_PORT_1 / NPE B) */
+  1				/* PHY address for EthAcc Port 2 (IX_ETH_PORT_2 / NPE C) */
+#endif
+};
+
+/* 
+ * Port ID to A default_phy_cfg and phyAddresses index loopkup mapping table
+ */
+static long portIdPhyIndexMap[] = {
+#if defined(CONFIG_CPU_IXP46X)
+  0,				/* NPE-B */
+  1,				/* NPE-C */
+  2				/* NPE-A */
+#elif defined(CONFIG_CPU_IXP43X)
+  -1,				/* Invalid */
+  0,				/* NPE-C */
+  1				/* NPE-A */
+#else
+/* 
+ * CONFIG_CPU_IXP42X is not define by the kernel. Hence we assume IXP42X if
+ * flags above is not match
+ */
+  0,				/* NPE-B */
+  1				/* NPE-C */
 #endif
 };
 
@@ -688,8 +733,7 @@ static int phyAddresses[IXP425_ETH_ACC_MII_MAX_ADDR] =
  *
  * See also function phy_init() in this file
  */
-static phy_cfg_t default_phy_cfg[] =
-{
+static phy_cfg_t default_phy_cfg[] = {
 /*#if defined(CONFIG_ARCH_AVILA)
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE},
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}, 
@@ -701,32 +745,38 @@ static phy_cfg_t default_phy_cfg[] =
 
 #el*/
 #if defined(CONFIG_ARCH_IXDP425)
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE},/* Port 0: monitor the phy */
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE} /* Port 1: monitor the link */
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, TRUE},	/* Port 0: monitor the phy */
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, TRUE}	/* Port 1: monitor the link */
 
 #elif defined(CONFIG_ARCH_IXDP465) || defined(CONFIG_MACH_IXDP465)
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE},/* Port 0: monitor the phy */
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE},/* Port 1: monitor the link */
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE} /* Port 2: ignore the link */
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, TRUE},	/* Port 0: monitor the phy */
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, TRUE},	/* Port 1: monitor the link */
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE}	/* Port 2: ignore the link */
 
 #elif defined(CONFIG_ARCH_ADI_COYOTE)
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},/* Port 0: NO link */
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE},/* Port 1: monitor the link */
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE},	/* Port 0: NO link */
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, TRUE},	/* Port 1: monitor the link */
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE},
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE},
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE}
 
 #elif defined(CONFIG_ARCH_IXDPG425)
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},/* Port 1: NO link */
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}, /* Port 2: monitor the link */
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE},	/* Port 1: NO link */
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, TRUE},	/* Port 2: monitor the link */
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE},
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE},
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE},
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE}
+#elif defined(CONFIG_MACH_KIXRP435)
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE},	/* Port 1: NO link */
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, TRUE},	/* Port 2: monitor the link */
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE},
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE},
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE}
 
 #else
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE},/* Port 0: monitor the link*/
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE} /* Port 1: monitor the link*/
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, TRUE},	/* Port 0: monitor the link */
+  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, TRUE}	/* Port 1: monitor the link */
 
 #endif
 };
@@ -737,12 +787,12 @@ static phy_cfg_t default_phy_cfg[] =
  *   IX_ETH_PORT_2 -> MAC 00:02:b3:02:02:02
  *   IX_ETH_PORT_3 -> MAC 00:02:b3:03:03:03
 */
-static IxEthAccMacAddr default_mac_addr[] =
-{
-    {{0x00, 0x02, 0xB3, 0x01, 0x01, 0x01}}  /* EthAcc Port 0 */
-    ,{{0x00, 0x02, 0xB3, 0x02, 0x02, 0x02}} /* EthAcc Port 1 */
-#if defined (CONFIG_ARCH_IXDP465) || defined(CONFIG_MACH_IXDP465)
-    ,{{0x00, 0x02, 0xB3, 0x03, 0x03, 0x03}} /* EthAcc Port 2 */
+static IxEthAccMacAddr default_mac_addr[] = {
+  {{0x00, 0x02, 0xB3, 0x01, 0x01, 0x01}}	/* EthAcc Port 0 */
+  , {{0x00, 0x02, 0xB3, 0x02, 0x02, 0x02}}	/* EthAcc Port 1 */
+#if defined (CONFIG_ARCH_IXDP465) || defined(CONFIG_MACH_IXDP465) ||\
+    defined (CONFIG_MACH_KIXRP435)
+  , {{0x00, 0x02, 0xB3, 0x03, 0x03, 0x03}}	/* EthAcc Port 2 */
 #endif
 };
 
@@ -755,12 +805,12 @@ static IxEthAccMacAddr default_mac_addr[] =
  * This mapping cannot be changed.
  * 
  */
-static npe_info_t default_npeImageId[]=
-{
-    {IX_ETH_NPE_B_IMAGE_ID, IX_NPEDL_NPEID_NPEB}, /* Npe firmware for EthAcc Port 0  */
-    {IX_ETH_NPE_C_IMAGE_ID, IX_NPEDL_NPEID_NPEC}, /* Npe firmware for EthAcc Port 1  */
-#if defined (CONFIG_ARCH_IXDP465) || defined(CONFIG_MACH_IXDP465)
-    {IX_ETH_NPE_A_IMAGE_ID, IX_NPEDL_NPEID_NPEA}  /* Npe firmware for EthAcc Port 2  */
+static npe_info_t default_npeImageId[] = {
+  {IX_ETH_NPE_B_IMAGE_ID, IX_NPEDL_NPEID_NPEB},	/* Npe firmware for EthAcc Port 0  */
+  {IX_ETH_NPE_C_IMAGE_ID, IX_NPEDL_NPEID_NPEC},	/* Npe firmware for EthAcc Port 1  */
+#if defined (CONFIG_ARCH_IXDP465) || defined(CONFIG_MACH_IXDP465) || \
+    defined (CONFIG_MACH_KIXRP435)
+  {IX_ETH_NPE_A_IMAGE_ID, IX_NPEDL_NPEID_NPEA}	/* Npe firmware for EthAcc Port 2  */
 #endif
 };
 
@@ -778,25 +828,28 @@ static npe_info_t default_npeImageId[]=
  *      no_phy_scan=1 will bypass the default mapping set by phy_init
  *
 */
-static IxEthAccPortId default_portId[] =
-{
+static IxEthAccPortId default_portId[] = {
 #ifdef CONFIG_IXP400_ETH_NPEC_ONLY
-    /* configure port for NPE C first */
-    IX_ETH_PORT_2, /* EthAcc Port 2 for ixp0 */
-    IX_ETH_PORT_1
+  /* configure port for NPE C first */
+  IX_ETH_PORT_2,		/* EthAcc Port 2 for ixp0 */
+  IX_ETH_PORT_1
 #elif defined (CONFIG_IXP400_ETH_NPEB_ONLY)
-    /* configure port for NPE B first */
-    IX_ETH_PORT_1, /* EthAcc Port 1 for ixp0 */
-    IX_ETH_PORT_2
+  /* configure port for NPE B first */
+  IX_ETH_PORT_1,		/* EthAcc Port 1 for ixp0 */
+  IX_ETH_PORT_2
 #elif defined (CONFIG_ARCH_IXDP465) || defined (CONFIG_MACH_IXDP465)
-    /* configure port for NPE B first */
-    IX_ETH_PORT_1, /* EthAcc Port 1 for ixp0 */
-    IX_ETH_PORT_2, /* EthAcc Port 2 for ixp1 */
-    IX_ETH_PORT_3  /* EthAcc Port 3 for ixp2 */
+  /* configure port for NPE B first */
+  IX_ETH_PORT_1,		/* EthAcc Port 1 for ixp0 */
+  IX_ETH_PORT_2,		/* EthAcc Port 2 for ixp1 */
+  IX_ETH_PORT_3			/* EthAcc Port 3 for ixp2 */
+#elif defined (CONFIG_MACH_KIXRP435)
+  /* configure port for NPE C first */
+  IX_ETH_PORT_2,		/* EthAcc Port 2 for ixp1 */
+  IX_ETH_PORT_3			/* EthAcc Port 3 for ixp2 */
 #else
-    /* configure and use both ports */
-    IX_ETH_PORT_1, /* EthAcc Port 1 for ixp0 */
-    IX_ETH_PORT_2  /* EthAcc Port 2 for ixp1 */
+  /* configure and use both ports */
+  IX_ETH_PORT_1,		/* EthAcc Port 1 for ixp0 */
+  IX_ETH_PORT_2			/* EthAcc Port 2 for ixp1 */
 #endif
 };
 
@@ -837,19 +890,29 @@ static struct workqueue_struct *maintenance_workq = NULL;
  */
 
 /* Convert IxEthAcc return codes to suitable Linux return codes */
-static int convert_error_ethAcc (IxEthAccStatus error)
+static int
+convert_error_ethAcc (IxEthAccStatus error)
 {
-    switch (error)
+  switch (error)
     {
-	case IX_ETH_ACC_SUCCESS:            return  0;
-	case IX_ETH_ACC_FAIL:               return -1;
-	case IX_ETH_ACC_INVALID_PORT:       return -ENODEV;
-	case IX_ETH_ACC_PORT_UNINITIALIZED: return -EPERM;
-	case IX_ETH_ACC_MAC_UNINITIALIZED:  return -EPERM;
-	case IX_ETH_ACC_INVALID_ARG:        return -EINVAL;
-	case IX_ETH_TX_Q_FULL:              return -EAGAIN;
-	case IX_ETH_ACC_NO_SUCH_ADDR:       return -EFAULT;
-	default:                            return -1;
+    case IX_ETH_ACC_SUCCESS:
+      return 0;
+    case IX_ETH_ACC_FAIL:
+      return -1;
+    case IX_ETH_ACC_INVALID_PORT:
+      return -ENODEV;
+    case IX_ETH_ACC_PORT_UNINITIALIZED:
+      return -EPERM;
+    case IX_ETH_ACC_MAC_UNINITIALIZED:
+      return -EPERM;
+    case IX_ETH_ACC_INVALID_ARG:
+      return -EINVAL;
+    case IX_ETH_TX_Q_FULL:
+      return -EAGAIN;
+    case IX_ETH_ACC_NO_SUCH_ADDR:
+      return -EFAULT;
+    default:
+      return -1;
     };
 }
 
@@ -858,41 +921,45 @@ static int convert_error_ethAcc (IxEthAccStatus error)
  */
 #ifdef DEBUG_DUMP
 
-static void hex_dump(void *buf, int len)
+static void
+hex_dump (void *buf, int len)
 {
-    int i;
+  int i;
 
-    for (i = 0 ; i < len; i++)
+  for (i = 0; i < len; i++)
     {
-	printk("%02x", ((u8*)buf)[i]);
-	if (i%2)
-	    printk(" ");
-	if (15 == i%16)
-	    printk("\n");
+      printk ("%02x", ((u8 *) buf)[i]);
+      if (i % 2)
+	printk (" ");
+      if (15 == i % 16)
+	printk ("\n");
     }
-    printk("\n");
+  printk ("\n");
 }
 
-static void mbuf_dump(char *name, IX_OSAL_MBUF *mbuf)
+static void
+mbuf_dump (char *name, IX_OSAL_MBUF * mbuf)
 {
-    printk("+++++++++++++++++++++++++++\n"
-	"%s MBUF dump mbuf=%p, m_data=%p, m_len=%d, len=%d\n",
-	name, mbuf, IX_OSAL_MBUF_MDATA(mbuf), IX_OSAL_MBUF_MLEN(mbuf), IX_OSAL_MBUF_PKT_LEN(mbuf));
-    printk(">> mbuf:\n");
-    hex_dump(mbuf, sizeof(*mbuf));
-    printk(">> m_data:\n");
-    hex_dump(__va(IX_OSAL_MBUF_MDATA(mbuf)), IX_OSAL_MBUF_MLEN(mbuf));
-    printk("\n-------------------------\n");
+  printk ("+++++++++++++++++++++++++++\n"
+	  "%s MBUF dump mbuf=%p, m_data=%p, m_len=%d, len=%d\n",
+	  name, mbuf, IX_OSAL_MBUF_MDATA (mbuf), IX_OSAL_MBUF_MLEN (mbuf),
+	  IX_OSAL_MBUF_PKT_LEN (mbuf));
+  printk (">> mbuf:\n");
+  hex_dump (mbuf, sizeof (*mbuf));
+  printk (">> m_data:\n");
+  hex_dump (__va (IX_OSAL_MBUF_MDATA (mbuf)), IX_OSAL_MBUF_MLEN (mbuf));
+  printk ("\n-------------------------\n");
 }
 
-static void skb_dump(char *name, struct sk_buff *skb)
+static void
+skb_dump (char *name, struct sk_buff *skb)
 {
-    printk("+++++++++++++++++++++++++++\n"
-	"%s SKB dump skb=%p, data=%p, tail=%p, len=%d\n",
-	name, skb, skb->data, skb->tail, skb->len);
-    printk(">> data:\n");
-    hex_dump(skb->data, skb->len);
-    printk("\n-------------------------\n");
+  printk ("+++++++++++++++++++++++++++\n"
+	  "%s SKB dump skb=%p, data=%p, tail=%p, len=%d\n",
+	  name, skb, skb->data, skb->tail, skb->len);
+  printk (">> data:\n");
+  hex_dump (skb->data, skb->len);
+  printk ("\n-------------------------\n");
 }
 #endif
 
@@ -901,18 +968,20 @@ static void skb_dump(char *name, struct sk_buff *skb)
  */
 
 /* XScale specific : preload a cache line to memeory */
-static inline void dev_preload(void *virtualPtr) 
+static inline void
+dev_preload (void *virtualPtr)
 {
-   __asm__ (" pld [%0]\n" : : "r" (virtualPtr));
+__asm__ (" pld [%0]\n": :"r" (virtualPtr));
 }
 
-static inline void dev_skb_preload(struct sk_buff *skb)
+static inline void
+dev_skb_preload (struct sk_buff *skb)
 {
-    /* from include/linux/skbuff.h, skb->len field and skb->data filed 
-     * don't share the same cache line (more than 32 bytes between the fields)
-     */
-    dev_preload(&skb->len);
-    dev_preload(&skb->data);
+  /* from include/linux/skbuff.h, skb->len field and skb->data filed 
+   * don't share the same cache line (more than 32 bytes between the fields)
+   */
+  dev_preload (&skb->len);
+  dev_preload (&skb->data);
 }
 
 /*
@@ -931,19 +1000,20 @@ static inline void dev_skb_preload(struct sk_buff *skb)
 /**
  * mbuf_swap_skb : links/unlinks mbuf to skb
  */
-static inline struct sk_buff *mbuf_swap_skb(IX_OSAL_MBUF *mbuf, struct sk_buff *skb)
+static inline struct sk_buff *
+mbuf_swap_skb (IX_OSAL_MBUF * mbuf, struct sk_buff *skb)
 {
-    struct sk_buff *res = IX_OSAL_MBUF_PRIV(mbuf);
+  struct sk_buff *res = IX_OSAL_MBUF_PRIV (mbuf);
 
-    IX_OSAL_MBUF_PRIV(mbuf) = skb;
+  IX_OSAL_MBUF_PRIV (mbuf) = skb;
 
-    if (!skb)
-	return res;
-    
-    IX_OSAL_MBUF_MDATA(mbuf) = skb->data;
-    IX_OSAL_MBUF_MLEN(mbuf) = IX_OSAL_MBUF_PKT_LEN(mbuf) = skb->len;
-
+  if (!skb)
     return res;
+
+  IX_OSAL_MBUF_MDATA (mbuf) = skb->data;
+  IX_OSAL_MBUF_MLEN (mbuf) = IX_OSAL_MBUF_PKT_LEN (mbuf) = skb->len;
+
+  return res;
 }
 
 /*
@@ -951,375 +1021,389 @@ static inline struct sk_buff *mbuf_swap_skb(IX_OSAL_MBUF *mbuf, struct sk_buff *
  * This function is called during port_disable and has no constraint
  * of performances.
 */
-static inline void mbuf_free_skb(IX_OSAL_MBUF *mbuf)
+static inline void
+mbuf_free_skb (IX_OSAL_MBUF * mbuf)
 {
-    TRACE;
-    /* chained buffers can be received during port
-     * disable after a mtu size change.
-     */
-    do
+  TRACE;
+  /* chained buffers can be received during port
+   * disable after a mtu size change.
+   */
+  do
     {
-	/* unchain and free the buffers */
-	IX_OSAL_MBUF *next = IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR(mbuf);
-	IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR(mbuf) = NULL;
-	if (IX_OSAL_MBUF_PRIV(mbuf) != NULL)
+      /* unchain and free the buffers */
+      IX_OSAL_MBUF *next = IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR (mbuf);
+      IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR (mbuf) = NULL;
+      if (IX_OSAL_MBUF_PRIV (mbuf) != NULL)
 	{
-	    /* this buffer has an skb attached, free both of them */	    
-	    dev_kfree_skb_any(mbuf_swap_skb(mbuf, NULL));
-	    IX_OSAL_MBUF_POOL_PUT(mbuf);
+	  /* this buffer has an skb attached, free both of them */
+	  dev_kfree_skb_any (mbuf_swap_skb (mbuf, NULL));
+	  IX_OSAL_MBUF_POOL_PUT (mbuf);
 	}
-	else
+      else
 	{
-	    /* this buffer has no skb attached, just ignore it */
+	  /* this buffer has no skb attached, just ignore it */
 	}
-	mbuf = next;
+      mbuf = next;
     }
-    while (mbuf != NULL);
-    
-    TRACE;
+  while (mbuf != NULL);
+
+  TRACE;
 }
 
 
 /* dev_skb_dequeue: remove a skb from the skb queue */
-static inline struct sk_buff * dev_skb_dequeue(priv_data_t *priv)
+static inline struct sk_buff *
+dev_skb_dequeue (priv_data_t * priv)
 {
-    struct sk_buff *skb;
+  struct sk_buff *skb;
 
 #ifdef CONFIG_IXP400_ETH_SKB_RECYCLE
-    unsigned int repeat = 0;
+  unsigned int repeat = 0;
 
-    do {
-	if (skQueueHead != skQueueTail)
+  do
+    {
+      if (skQueueHead != skQueueTail)
 	{
-	    /* get from queue (fast) packet is ready for use 
-	     * because the fields are reset during the enqueue
-	     * operations
-	     */
-	    skb = skQueue[SKB_QINC(skQueueTail)];
-	    if (skQueueHead != skQueueTail)
+	  /* get from queue (fast) packet is ready for use 
+	   * because the fields are reset during the enqueue
+	   * operations
+	   */
+	  skb = skQueue[SKB_QINC (skQueueTail)];
+	  if (skQueueHead != skQueueTail)
 	    {
-		/* preload the next skbuf : this is an optimisation to 
-		 * avoid stall cycles when acessing memory.
-		 */
-		dev_skb_preload(skQueue[SKB_QFETCH(skQueueTail)]);
+	      /* preload the next skbuf : this is an optimisation to 
+	       * avoid stall cycles when acessing memory.
+	       */
+	      dev_skb_preload (skQueue[SKB_QFETCH (skQueueTail)]);
 	    }
-	    /* check the skb size fits the driver requirements 
-	     */
-	    if (skb->truesize >= priv->alloc_size)
+	  /* check the skb size fits the driver requirements 
+	   */
+	  if (skb->truesize >= priv->alloc_size)
 	    {
-		return skb;
+	      return skb;
 	    }
-	    /* the skbuf is too small : put it to pool (slow)
-	     * This may occur when the ports are configured
-	     * with a different mtu size.
-	     */
-	    dev_kfree_skb_any(skb);
+	  /* the skbuf is too small : put it to pool (slow)
+	   * This may occur when the ports are configured
+	   * with a different mtu size.
+	   */
+	  dev_kfree_skb_any (skb);
 	}
 
 
-	/*
-	 * Attempt to replenish the skb pool from txDone queue once before
-	 * trying allocating a new one
-	 */
-	if (!repeat++)
+      /*
+       * Attempt to replenish the skb pool from txDone queue once before
+       * trying allocating a new one
+       */
+      if (!repeat++)
 	{
-	    UINT32 key = ixOsalIrqLock();
-	    /*
-	     * Service the txDone queue to replenish the skb queue entries
-	     */
-	    ixEthTxFrameDoneQMCallback(0, 0);
+	  UINT32 key = ixOsalIrqLock ();
+	  /*
+	   * Service the txDone queue to replenish the skb queue entries
+	   */
+	  ixEthTxFrameDoneQMCallback (0, 0);
 
-	    ixOsalIrqUnlock(key);
+	  ixOsalIrqUnlock (key);
 	}
-    } while (repeat <= 1);
+    }
+  while (repeat <= 1);
 #endif
 
-    /* get a skbuf from pool (slow) */
+  /* get a skbuf from pool (slow) */
 #ifdef CONFIG_IXP400_NAPI
-    skb = __dev_alloc_skb(priv->pkt_size, GFP_ATOMIC|__GFP_NOWARN);
+  skb = __dev_alloc_skb (priv->pkt_size, GFP_ATOMIC | __GFP_NOWARN);
 #else
-    skb = dev_alloc_skb(priv->pkt_size);
+  skb = dev_alloc_skb (priv->pkt_size);
 #endif
 
-    if (skb != NULL)
+  if (skb != NULL)
     {
-	skb_reserve(skb, HDR_SIZE);
-	skb->len = priv->replenish_size;
-	IX_ACC_DATA_CACHE_INVALIDATE(skb->data, priv->replenish_size);
+      skb_reserve (skb, HDR_SIZE);
+      skb->len = priv->replenish_size;
+      IX_ACC_DATA_CACHE_INVALIDATE (skb->data, priv->replenish_size);
     }
-    else
+  else
     {
-	skbAllocFailErrorCount++;
+      skbAllocFailErrorCount++;
     }
-    
-    return skb;
+
+  return skb;
 }
 
 #ifdef CONFIG_IXP400_ETH_SKB_RECYCLE
 /* dev_skb_enqueue: add a skb to the skb queue */
-static inline void dev_skb_enqueue(priv_data_t *priv, struct sk_buff *skb)
+static inline void
+dev_skb_enqueue (priv_data_t * priv, struct sk_buff *skb)
 {
-    /* check for big-enough unshared skb, and check the queue 
-     * is not full If the queue is full or the complete ownership of the
-     * skb is not guaranteed, just free the skb.
-     * (atomic counters are read on the fly, there is no need for lock)
-     */
+  /* check for big-enough unshared skb, and check the queue 
+   * is not full If the queue is full or the complete ownership of the
+   * skb is not guaranteed, just free the skb.
+   * (atomic counters are read on the fly, there is no need for lock)
+   */
 
-    if ((skb->truesize >= priv->alloc_size) && 
-	(skb->users.counter == 1) && 
-	(skb->cloned == 0)  &&
-        (skb->destructor == NULL) && 
-	(skb_shinfo(skb)->dataref.counter == 1) &&
-        (skb_shinfo(skb)->nr_frags == 0) &&
-        (skb_shinfo(skb)->frag_list == NULL) &&
-	(skQueueHead - skQueueTail < SKB_QSIZE))
+  if ((skb->truesize >= priv->alloc_size) &&
+      (skb->users.counter == 1) &&
+      (skb->cloned == 0) &&
+      (skb->destructor == NULL) &&
+      (skb_shinfo (skb)->dataref.counter == 1) &&
+      (skb_shinfo (skb)->nr_frags == 0) &&
+      (skb_shinfo (skb)->frag_list == NULL) &&
+      (skQueueHead - skQueueTail < SKB_QSIZE))
     {
- 	/* put big unshared mbuf to queue (fast)
-	 *
-	 * The purpose of this part of code is to reset the skb fields
-	 * so they will be ready for reuse within the driver.
-	 * 
-	 * The following fields are reset during a skb_free and 
-	 * skb_alloc sequence (see dev/core/skbuf.c). We
-	 * should call the function skb_headerinit(). Unfortunately,
-	 * this function is static.
-	 *
-	 * This code resets the current skb fields to zero,
-	 * resets the data pointer to the beginning of the 
-	 * skb data area, then invalidates the all payload.
-	 */
+      /* put big unshared mbuf to queue (fast)
+       *
+       * The purpose of this part of code is to reset the skb fields
+       * so they will be ready for reuse within the driver.
+       * 
+       * The following fields are reset during a skb_free and 
+       * skb_alloc sequence (see dev/core/skbuf.c). We
+       * should call the function skb_headerinit(). Unfortunately,
+       * this function is static.
+       *
+       * This code resets the current skb fields to zero,
+       * resets the data pointer to the beginning of the 
+       * skb data area, then invalidates the all payload.
+       */
 
-	dst_release(skb->dst);
+      dst_release (skb->dst);
 
 #ifdef CONFIG_NETFILTER
-	/* Some packets may get incorrectly process by netfilter firewall 
-	 * software if CONFIG_NETFILTER is enabled and filtering is in use. 
-	 * The solution is to reset the following fields in the skbuff 
-	 * before re-using it on the Rx-path
-	 */
-        skb->nfmark = 0;
-	skb->nfcache = 0;
-        nf_conntrack_put(skb->nfct);
-        skb->nfct = NULL;
+      /* Some packets may get incorrectly process by netfilter firewall 
+       * software if CONFIG_NETFILTER is enabled and filtering is in use. 
+       * The solution is to reset the following fields in the skbuff 
+       * before re-using it on the Rx-path
+       */
+      skb->nfmark = 0;
+      skb->nfcache = 0;
+      nf_conntrack_put (skb->nfct);
+      skb->nfct = NULL;
 #ifdef CONFIG_NETFILTER_DEBUG
-        skb->nf_debug = 0;
+      skb->nf_debug = 0;
 #endif
 #endif /* CONFIG_NETFILTER */
 #ifdef CONFIG_NETFILTER
 #if defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE)
 /* We need to free the memory attached to the nf_bridge pointer to avoid a memory leak */
-	nf_bridge_put(skb->nf_bridge);
-	skb->nf_bridge = NULL;
+      nf_bridge_put (skb->nf_bridge);
+      skb->nf_bridge = NULL;
 #endif
 #endif /* CONFIG_NETFILTER */
-	skb->sk = NULL;
-        skb->dst = NULL;
-	skb->pkt_type = PACKET_HOST;    /* Default type */
-        skb->ip_summed = 0;
-        skb->priority = 0;
-        skb->security = 0;
+      skb->sk = NULL;
+      skb->dst = NULL;
+      skb->pkt_type = PACKET_HOST;	/* Default type */
+      skb->ip_summed = 0;
+      skb->priority = 0;
+      skb->security = 0;
 #ifdef CONFIG_NET_SCHED
-	skb->tc_index = 0;
+      skb->tc_index = 0;
 #endif
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-        skb->imq_flags = 0;
-        skb->nf_info = NULL;
+      skb->imq_flags = 0;
+      skb->nf_info = NULL;
 #endif
 
-	/* reset the data pointer (skb_reserve is not used for efficiency) */
-	skb->data = skb->head + SKB_RESERVED_HEADER_SIZE + HDR_SIZE;
-	skb->len = priv->replenish_size;
+      /* reset the data pointer (skb_reserve is not used for efficiency) */
+      skb->data = skb->head + SKB_RESERVED_HEADER_SIZE + HDR_SIZE;
+      skb->len = priv->replenish_size;
 
-	/* invalidate the payload
-	 * This buffer is now ready to be used for replenish.
-	 */
-	IX_ACC_DATA_CACHE_INVALIDATE(skb->data, skb->len);
+      /* invalidate the payload
+       * This buffer is now ready to be used for replenish.
+       */
+      IX_ACC_DATA_CACHE_INVALIDATE (skb->data, skb->len);
 
-	skQueue[SKB_QINC(skQueueHead)] = skb;
+      skQueue[SKB_QINC (skQueueHead)] = skb;
     }
-    else
+  else
     {
-	/* put to pool (slow) */
-	dev_kfree_skb_any(skb);
+      /* put to pool (slow) */
+      dev_kfree_skb_any (skb);
     }
 }
 #endif /* ifdef CONFIG_IXP400_ETH_SKB_RECYCLE */
 
 
 /* dev_skb_queue_drain: remove all entries from the skb queue */
-static void dev_skb_queue_drain(priv_data_t *priv)
+static void
+dev_skb_queue_drain (priv_data_t * priv)
 {
-    struct sk_buff *skb;
-    int key = ixOsalIrqLock();
+  struct sk_buff *skb;
+  int key = ixOsalIrqLock ();
 
-    /* check for skbuf, then get it and release it */
-    while (skQueueHead != skQueueTail)
+  /* check for skbuf, then get it and release it */
+  while (skQueueHead != skQueueTail)
     {
-	skb = dev_skb_dequeue(priv);
-	dev_kfree_skb_any(skb);
+      skb = dev_skb_dequeue (priv);
+      dev_kfree_skb_any (skb);
     }
 
-    ixOsalIrqUnlock(key);
+  ixOsalIrqUnlock (key);
 }
 
 /* dev_rx_mb_dequeue: return one mbuf from the rx mbuf queue */
-static inline IX_OSAL_MBUF * dev_rx_mb_dequeue(priv_data_t *priv)
+static inline IX_OSAL_MBUF *
+dev_rx_mb_dequeue (priv_data_t * priv)
 {
-    IX_OSAL_MBUF *mbuf;
-    if (priv->mbRxQueueHead != priv->mbRxQueueTail)
+  IX_OSAL_MBUF *mbuf;
+  if (priv->mbRxQueueHead != priv->mbRxQueueTail)
     {
-	/* get from queue (fast) */
-	mbuf = priv->mbRxQueue[MB_QINC(priv->mbRxQueueTail)];
+      /* get from queue (fast) */
+      mbuf = priv->mbRxQueue[MB_QINC (priv->mbRxQueueTail)];
     }
-    else
+  else
     {
-	/* get from pool (slow) */
-	mbuf = IX_OSAL_MBUF_POOL_GET(priv->rx_pool);
+      /* get from pool (slow) */
+      mbuf = IX_OSAL_MBUF_POOL_GET (priv->rx_pool);
     }
-    return mbuf;
+  return mbuf;
 }
 
 /* dev_rx_mb_enqueue: add one mbuf to the rx mbuf queue */
-static inline void dev_rx_mb_enqueue(priv_data_t *priv, IX_OSAL_MBUF *mbuf)
+static inline void
+dev_rx_mb_enqueue (priv_data_t * priv, IX_OSAL_MBUF * mbuf)
 {
-    /* check for queue not full */
-    if (priv->mbRxQueueHead - priv->mbRxQueueTail < MB_QSIZE)
+  /* check for queue not full */
+  if (priv->mbRxQueueHead - priv->mbRxQueueTail < MB_QSIZE)
     {
-	/* put to queue (fast) */
-	priv->mbRxQueue[MB_QINC(priv->mbRxQueueHead)] = mbuf;
+      /* put to queue (fast) */
+      priv->mbRxQueue[MB_QINC (priv->mbRxQueueHead)] = mbuf;
     }
-    else
+  else
     {
-	IX_OSAL_MBUF_POOL_PUT(mbuf);
+      IX_OSAL_MBUF_POOL_PUT (mbuf);
     }
 }
 
 /* dev_rx_mb_queue_drain: remove all mbufs from the rx mbuf queue */
-static void dev_rx_mb_queue_drain(priv_data_t *priv)
+static void
+dev_rx_mb_queue_drain (priv_data_t * priv)
 {
-    IX_OSAL_MBUF *mbuf;
-    int key = ixOsalIrqLock();
+  IX_OSAL_MBUF *mbuf;
+  int key = ixOsalIrqLock ();
 
-    /* free all queue entries */
-    while(priv->mbRxQueueHead != priv->mbRxQueueTail)
+  /* free all queue entries */
+  while (priv->mbRxQueueHead != priv->mbRxQueueTail)
     {
-	mbuf = dev_rx_mb_dequeue(priv);
-	IX_OSAL_MBUF_POOL_PUT(mbuf);
+      mbuf = dev_rx_mb_dequeue (priv);
+      IX_OSAL_MBUF_POOL_PUT (mbuf);
     }
 
-    ixOsalIrqUnlock(key); 
+  ixOsalIrqUnlock (key);
 }
 
 /* dev_tx_mb_dequeue: remove one mbuf from the tx mbuf queue */
-static inline IX_OSAL_MBUF * dev_tx_mb_dequeue(priv_data_t *priv)
+static inline IX_OSAL_MBUF *
+dev_tx_mb_dequeue (priv_data_t * priv)
 {
-    IX_OSAL_MBUF *mbuf;
-    if (priv->mbTxQueueHead != priv->mbTxQueueTail)
+  IX_OSAL_MBUF *mbuf;
+  if (priv->mbTxQueueHead != priv->mbTxQueueTail)
     {
-	/* get from queue (fast) */
-	mbuf = priv->mbTxQueue[MB_QINC(priv->mbTxQueueTail)];
+      /* get from queue (fast) */
+      mbuf = priv->mbTxQueue[MB_QINC (priv->mbTxQueueTail)];
     }
-    else
+  else
     {
-	/* get from pool (slow) */
-	mbuf = IX_OSAL_MBUF_POOL_GET(priv->tx_pool);
+      /* get from pool (slow) */
+      mbuf = IX_OSAL_MBUF_POOL_GET (priv->tx_pool);
     }
-    return mbuf;
+  return mbuf;
 }
 
 /* dev_tx_mb_enqueue: add one mbuf to the tx mbuf queue */
-static inline void dev_tx_mb_enqueue(priv_data_t *priv, IX_OSAL_MBUF *mbuf)
+static inline void
+dev_tx_mb_enqueue (priv_data_t * priv, IX_OSAL_MBUF * mbuf)
 {
-    /* check for queue not full */
-    if (priv->mbTxQueueHead - priv->mbTxQueueTail < MB_QSIZE)
+  /* check for queue not full */
+  if (priv->mbTxQueueHead - priv->mbTxQueueTail < MB_QSIZE)
     {
-	/* put to queue (fast) */
-	priv->mbTxQueue[MB_QINC(priv->mbTxQueueHead)] = mbuf;
+      /* put to queue (fast) */
+      priv->mbTxQueue[MB_QINC (priv->mbTxQueueHead)] = mbuf;
     }
-    else
+  else
     {
-	IX_OSAL_MBUF_POOL_PUT(mbuf);
+      IX_OSAL_MBUF_POOL_PUT (mbuf);
     }
 }
 
 /* dev_tx_mb_queue_drain: remove all mbufs from the tx mbuf queue */
-static void dev_tx_mb_queue_drain(priv_data_t *priv)
+static void
+dev_tx_mb_queue_drain (priv_data_t * priv)
 {
-    IX_OSAL_MBUF *mbuf;
-    int key = ixOsalIrqLock();
+  IX_OSAL_MBUF *mbuf;
+  int key = ixOsalIrqLock ();
 
-    /* free all queue entries */
-    while(priv->mbTxQueueHead != priv->mbTxQueueTail)
+  /* free all queue entries */
+  while (priv->mbTxQueueHead != priv->mbTxQueueTail)
     {
-	mbuf = dev_tx_mb_dequeue(priv);
-	IX_OSAL_MBUF_POOL_PUT(mbuf);
+      mbuf = dev_tx_mb_dequeue (priv);
+      IX_OSAL_MBUF_POOL_PUT (mbuf);
     }
 
-    ixOsalIrqUnlock(key);
+  ixOsalIrqUnlock (key);
 }
 
 /* provides mbuf+skb pair to the NPEs.
  * In the case of an error, free skb and return mbuf to the pool
  */
-static void dev_rx_buff_replenish(int port_id, IX_OSAL_MBUF *mbuf)
+static void
+dev_rx_buff_replenish (int port_id, IX_OSAL_MBUF * mbuf)
 {
-    IX_STATUS status;
+  IX_STATUS status;
 
-    /* send mbuf to the NPEs */
-    if ((status = ixEthAccPortRxFreeReplenish(port_id, mbuf)) != IX_SUCCESS)
+  /* send mbuf to the NPEs */
+  if ((status = ixEthAccPortRxFreeReplenish (port_id, mbuf)) != IX_SUCCESS)
     {
-	replenishErrorCount++;
+      replenishErrorCount++;
 
-	P_ERROR("ixEthAccPortRxFreeReplenish failed for port %d, res = %d",
-		port_id, status);
-	
-	/* detach the skb from the mbuf, free it, then free the mbuf */
-	dev_kfree_skb_any(mbuf_swap_skb(mbuf, NULL));
-	IX_OSAL_MBUF_POOL_PUT(mbuf);
+      P_ERROR ("ixEthAccPortRxFreeReplenish failed for port %d, res = %d",
+	       port_id, status);
+
+      /* detach the skb from the mbuf, free it, then free the mbuf */
+      dev_kfree_skb_any (mbuf_swap_skb (mbuf, NULL));
+      IX_OSAL_MBUF_POOL_PUT (mbuf);
     }
 }
 
 /* Allocate an skb for every mbuf in the rx_pool
  * and pass the pair to the NPEs
  */
-static int dev_rx_buff_prealloc(priv_data_t *priv)
+static int
+dev_rx_buff_prealloc (priv_data_t * priv)
 {
-    int res = 0;
-    IX_OSAL_MBUF *mbuf;
-    struct sk_buff *skb;
-    int key;
+  int res = 0;
+  IX_OSAL_MBUF *mbuf;
+  struct sk_buff *skb;
+  int key;
 
-    while (NULL != (mbuf = IX_OSAL_MBUF_POOL_GET(priv->rx_pool)))
+  while (NULL != (mbuf = IX_OSAL_MBUF_POOL_GET (priv->rx_pool)))
     {
-	/* because this function may be called during monitoring steps
-	 * interrupt are disabled so it won't conflict with the
-	 * QMgr context.
-	 */
-	key = ixOsalIrqLock();
-	/* get a skbuf (alloc from pool if necessary) */
-	skb = dev_skb_dequeue(priv);
+      /* because this function may be called during monitoring steps
+       * interrupt are disabled so it won't conflict with the
+       * QMgr context.
+       */
+      key = ixOsalIrqLock ();
+      /* get a skbuf (alloc from pool if necessary) */
+      skb = dev_skb_dequeue (priv);
 
-	if (skb == NULL)
+      if (skb == NULL)
 	{
-	    /* failed to alloc skb -> return mbuf to the pool, it'll be
-	     * picked up later by the monitoring task
-	     */
-	    IX_OSAL_MBUF_POOL_PUT(mbuf);
-	    res = -ENOMEM;
+	  /* failed to alloc skb -> return mbuf to the pool, it'll be
+	   * picked up later by the monitoring task
+	   */
+	  IX_OSAL_MBUF_POOL_PUT (mbuf);
+	  res = -ENOMEM;
 	}
-	else
+      else
 	{
-	    /* attach a skb to the mbuf */
-	    mbuf_swap_skb(mbuf, skb);
-	    dev_rx_buff_replenish(priv->port_id, mbuf);
+	  /* attach a skb to the mbuf */
+	  mbuf_swap_skb (mbuf, skb);
+	  dev_rx_buff_replenish (priv->port_id, mbuf);
 	}
-	ixOsalIrqUnlock(key);
+      ixOsalIrqUnlock (key);
 
-	if (res != 0)
-	    return res;
+      if (res != 0)
+	return res;
     }
 
-    return 0;
+  return 0;
 }
 
 
@@ -1328,40 +1412,41 @@ static int dev_rx_buff_prealloc(priv_data_t *priv)
  * This action should run at a low frequency, e.g during
  * the link maintenance.
  */
-static int dev_buff_maintenance(struct net_device *dev)
+static int
+dev_buff_maintenance (struct net_device *dev)
 {
-    struct sk_buff *skb;
-    int key;
+  struct sk_buff *skb;
+  int key;
 #if IS_KERNEL26
-    priv_data_t *priv = netdev_priv(dev);
+  priv_data_t *priv = netdev_priv (dev);
 #else
-    priv_data_t *priv = dev->priv;
+  priv_data_t *priv = dev->priv;
 #endif
-    
 
-    dev_rx_buff_prealloc(priv);
 
-    /* Drain slowly the skb queue and free the skbufs to the 
-     * system. This way, after a while, skbufs will be 
-     * reused by other components, instead of being
-     * parmanently held by this driver.
-     */
-    key = ixOsalIrqLock();
+  dev_rx_buff_prealloc (priv);
+
+  /* Drain slowly the skb queue and free the skbufs to the 
+   * system. This way, after a while, skbufs will be 
+   * reused by other components, instead of being
+   * parmanently held by this driver.
+   */
+  key = ixOsalIrqLock ();
 
 #ifdef CONFIG_IXP400_NAPI
-    /* service the tx done queue so as not to hold on to transmits */
-    ixEthTxFrameDoneQMCallback(0, 0);
+  /* service the tx done queue so as not to hold on to transmits */
+  ixEthTxFrameDoneQMCallback (0, 0);
 #endif
 
-    /* check for queue not empty, then get the skbuff and release it */
-    if (skQueueHead != skQueueTail)
+  /* check for queue not empty, then get the skbuff and release it */
+  if (skQueueHead != skQueueTail)
     {
-	skb = dev_skb_dequeue(priv);
-	dev_kfree_skb_any(skb);
+      skb = dev_skb_dequeue (priv);
+      dev_kfree_skb_any (skb);
     }
-    ixOsalIrqUnlock(key);
+  ixOsalIrqUnlock (key);
 
-    return 0;
+  return 0;
 }
 
 
@@ -1372,32 +1457,33 @@ static int dev_buff_maintenance(struct net_device *dev)
 /* flush the pending signals for a thread and 
  * check if a thread is killed  (e.g. system shutdown)
  */
-static BOOL dev_thread_signal_killed(void)
+static BOOL
+dev_thread_signal_killed (void)
 {
-    int killed = FALSE;
-    if (signal_pending (current))
+  int killed = FALSE;
+  if (signal_pending (current))
     {
 #if IS_KERNEL26
- 	spin_lock_irq(&current->sighand->siglock);
+      spin_lock_irq (&current->sighand->siglock);
 #else
-	spin_lock_irq(&current->sigmask_lock);
+      spin_lock_irq (&current->sigmask_lock);
 #endif
 
-	if (sigismember(&(current->pending.signal), SIGKILL)
-	    || sigismember(&(current->pending.signal), SIGTERM))
+      if (sigismember (&(current->pending.signal), SIGKILL)
+	  || sigismember (&(current->pending.signal), SIGTERM))
 	{
-	    /* someone kills this thread */
-	    killed = TRUE;
+	  /* someone kills this thread */
+	  killed = TRUE;
 	}
-	flush_signals(current);
+      flush_signals (current);
 
 #if IS_KERNEL26
-	spin_unlock_irq(&current->sighand->siglock);
+      spin_unlock_irq (&current->sighand->siglock);
 #else
-	spin_unlock_irq(&current->sigmask_lock);
+      spin_unlock_irq (&current->sigmask_lock);
 #endif
     }
-    return killed;
+  return killed;
 }
 
 /* This timer will check the PHY for the link duplex and
@@ -1407,226 +1493,234 @@ static BOOL dev_thread_signal_killed(void)
  *
  * This function loops and wake up every 3 seconds.
  */
-static int dev_media_check_thread (void* arg)
+static int
+dev_media_check_thread (void *arg)
 {
-    struct net_device *dev = (struct net_device *) arg;
+  struct net_device *dev = (struct net_device *) arg;
 #if IS_KERNEL26
-    priv_data_t *priv = netdev_priv(dev);
+  priv_data_t *priv = netdev_priv (dev);
 #else
-    priv_data_t *priv = dev->priv;
+  priv_data_t *priv = dev->priv;
 #endif
-    int linkUp;
-    int speed100;
-    int fullDuplex = -1; /* unknown duplex mode */
-    int newDuplex;
-    int autonegotiate;
-    unsigned phyNum = phyAddresses[priv->port_id];
-    u32 res;
+  int linkUp;
+  int speed100;
+  int fullDuplex = -1;		/* unknown duplex mode */
+  int newDuplex;
+  int autonegotiate;
+  unsigned phyNum = phyAddresses[portIdPhyIndexMap[priv->port_id]];
+  u32 res;
 
 
-    TRACE;
+  TRACE;
 
-    /* Lock the mutex for this thread.
-       This mutex can be used to wait until the thread exits
-    */
-    down (priv->maintenanceCheckThreadComplete);
+  /* Lock the mutex for this thread.
+     This mutex can be used to wait until the thread exits
+   */
+  down (priv->maintenanceCheckThreadComplete);
 
 #if IS_KERNEL26
-    daemonize("ixp400 MediaCheck"); 
-    spin_lock_irq(&current->sighand->siglock);
+  daemonize ("ixp400 MediaCheck");
+  spin_lock_irq (&current->sighand->siglock);
 #else
-    daemonize(); 
-    reparent_to_init();
-    spin_lock_irq(&current->sigmask_lock);
+  daemonize ();
+  reparent_to_init ();
+  spin_lock_irq (&current->sigmask_lock);
 #endif
 
-    sigemptyset(&current->blocked);
-   
+  sigemptyset (&current->blocked);
+
 #if IS_KERNEL26
-    recalc_sigpending();
-    spin_unlock_irq(&current->sighand->siglock);
+  recalc_sigpending ();
+  spin_unlock_irq (&current->sighand->siglock);
 #else
-    recalc_sigpending(current);
-    spin_unlock_irq(&current->sigmask_lock);
+  recalc_sigpending (current);
+  spin_unlock_irq (&current->sigmask_lock);
 #endif
-    
-    snprintf(current->comm, sizeof(current->comm), "ixp400 %s", dev->name);
 
-    TRACE;
-    
-    while (1)
+  snprintf (current->comm, sizeof (current->comm), "ixp400 %s", dev->name);
+
+  TRACE;
+
+  while (1)
     {
-	/* We may have been woken up by a signal. If so, we need to
-	 * flush it out and check for thread termination 
-	 */ 
-	if (dev_thread_signal_killed())
+      /* We may have been woken up by a signal. If so, we need to
+       * flush it out and check for thread termination 
+       */
+      if (dev_thread_signal_killed ())
 	{
-	    priv->maintenanceCheckStopped = TRUE;
+	  priv->maintenanceCheckStopped = TRUE;
 	}
 
-	/* If the interface is down, or the thread is killed,
-	 * or gracefully aborted, we need to exit this loop
-	 */
-	if (priv->maintenanceCheckStopped)
+      /* If the interface is down, or the thread is killed,
+       * or gracefully aborted, we need to exit this loop
+       */
+      if (priv->maintenanceCheckStopped)
 	{
-	    break;
+	  break;
 	}
 
-	/*
-	 * Determine the link status
-	 */
+      /*
+       * Determine the link status
+       */
 
-	TRACE;
+      TRACE;
 
-	if (default_phy_cfg[priv->port_id].linkMonitor)
+      if (default_phy_cfg[portIdPhyIndexMap[priv->port_id]].linkMonitor)
 	{
-	    /* lock the MII register access mutex */
-	    down(miiAccessMutex);
-	    
-	    res = ixEthMiiLinkStatus(phyNum,
-				     &linkUp,
-				     &speed100,
-				     &newDuplex, 
-				     &autonegotiate);
-	    /* release the MII register access mutex */
-	    up(miiAccessMutex);
+	  /* lock the MII register access mutex */
+	  down (miiAccessMutex);
 
-	    /* We may have been woken up by a signal. If so, we need to
-	     * flush it out and check for thread termination 
-	     */ 
-	    if (dev_thread_signal_killed())
+	  res = ixEthMiiLinkStatus (phyNum,
+				    &linkUp,
+				    &speed100, &newDuplex, &autonegotiate);
+	  /* release the MII register access mutex */
+	  up (miiAccessMutex);
+
+	  /* We may have been woken up by a signal. If so, we need to
+	   * flush it out and check for thread termination 
+	   */
+	  if (dev_thread_signal_killed ())
 	    {
-		priv->maintenanceCheckStopped = TRUE;
+	      priv->maintenanceCheckStopped = TRUE;
 	    }
-	    
-	    /* If the interface is down, or the thread is killed,
-	     * or gracefully aborted, we need to exit this loop
-	     */
-	    if (priv->maintenanceCheckStopped)
+
+	  /* If the interface is down, or the thread is killed,
+	   * or gracefully aborted, we need to exit this loop
+	   */
+	  if (priv->maintenanceCheckStopped)
 	    {
-		break;
+	      break;
 	    }
-	
-	    if (res != IX_SUCCESS)
+
+	  if (res != IX_SUCCESS)
 	    {
-		P_WARN("ixEthMiiLinkStatus failed on PHY%d.\n"
-		       "\tCan't determine\nthe auto negotiated parameters. "
-		       "Using default values.\n",
-		       phyNum); 
-		/* something is bad, gracefully stops the loop */
-		priv->maintenanceCheckStopped = TRUE;
-		break;
+	      P_WARN ("ixEthMiiLinkStatus failed on PHY%d.\n"
+		      "\tCan't determine\nthe auto negotiated parameters. "
+		      "Using default values.\n", phyNum);
+	      /* something is bad, gracefully stops the loop */
+	      priv->maintenanceCheckStopped = TRUE;
+	      break;
 	    }
-	    
-	    if (linkUp)
+
+	  if (linkUp)
 	    {
-		if (! netif_carrier_ok(dev))
+	      if (!netif_carrier_ok (dev))
 		{
-		    /* inform the kernel of a change in link state */
-		    P_ERROR("\nixp400_eth: %s PHY:%d link down->up ",dev->name,phyNum);
-		    netif_carrier_on(dev);
+		  /* inform the kernel of a change in link state */
+		  P_ERROR ("\nixp400_eth: %s PHY:%d link down->up ",
+			   dev->name, phyNum);
+		  netif_carrier_on (dev);
 		}
 
-		/*
-		 * Update the MAC mode to match the PHY mode if 
-		 * there is a phy mode change.
-		 */
-		if (newDuplex != fullDuplex)
+	      /*
+	       * Update the MAC mode to match the PHY mode if 
+	       * there is a phy mode change.
+	       */
+	      if (newDuplex != fullDuplex)
 		{
-		    fullDuplex = newDuplex;
-		    if (fullDuplex)
+		  fullDuplex = newDuplex;
+		  if (fullDuplex)
 		    {
-			ixEthAccPortDuplexModeSet (priv->port_id, IX_ETH_ACC_FULL_DUPLEX);
+		      ixEthAccPortDuplexModeSet (priv->port_id,
+						 IX_ETH_ACC_FULL_DUPLEX);
 		    }
-		    else
+		  else
 		    {
-			ixEthAccPortDuplexModeSet (priv->port_id, IX_ETH_ACC_HALF_DUPLEX);
+		      ixEthAccPortDuplexModeSet (priv->port_id,
+						 IX_ETH_ACC_HALF_DUPLEX);
 		    }
 		}
 	    }
-	    else
+	  else
 	    {
-		fullDuplex = -1;
-		if (netif_carrier_ok(dev))
+	      fullDuplex = -1;
+	      if (netif_carrier_ok (dev))
 		{
-		    /* inform the kernel of a change in link state */
-		    P_ERROR("\nixp400_eth: %s PHY:%d link up->down ",dev->name,phyNum);
-		    netif_carrier_off(dev);
+		  /* inform the kernel of a change in link state */
+		  P_ERROR ("\nixp400_eth: %s PHY:%d link up->down ",
+			   dev->name, phyNum);
+		  netif_carrier_off (dev);
 		}
 	    }
 	}
-	else
+      else
 	{
-	    /* if no link monitoring is set (because the PHY do not
-	     * require (or support) a link-monitoring follow-up, then assume 
-	     * the link is up 
-	     */
-	    if (!netif_carrier_ok(dev))
+	  /* if no link monitoring is set (because the PHY do not
+	   * require (or support) a link-monitoring follow-up, then assume 
+	   * the link is up 
+	   */
+	  if (!netif_carrier_ok (dev))
 	    {
-		    P_ERROR("\nixp400_eth: %s PHY:%d link not monitored up ",dev->name,phyNum);
-		netif_carrier_on(dev);
+	      P_ERROR ("\nixp400_eth: %s PHY:%d link not monitored up ",
+		       dev->name, phyNum);
+	      netif_carrier_on (dev);
 	    }
 	}
-    
-	TRACE;
-    
-	/* this is to prevent the rx pool from emptying when
-	 * there's not enough memory for a long time
-	 * It prevents also from holding the memory for too
-	 * long
-	 */
-	dev_buff_maintenance(dev);
 
-	/* Now sleep for 3 seconds */
-	current->state = TASK_INTERRUPTIBLE;
-	schedule_timeout(MEDIA_CHECK_INTERVAL);
-    } /* while (1) ... */
+      TRACE;
 
-    /* free the mutex for this thread. */
-    up (priv->maintenanceCheckThreadComplete);
+      /* this is to prevent the rx pool from emptying when
+       * there's not enough memory for a long time
+       * It prevents also from holding the memory for too
+       * long
+       */
+      dev_buff_maintenance (dev);
 
-    return 0;
+      /* Now sleep for 3 seconds */
+      current->state = TASK_INTERRUPTIBLE;
+      schedule_timeout (MEDIA_CHECK_INTERVAL);
+    }				/* while (1) ... */
+
+  /* free the mutex for this thread. */
+  up (priv->maintenanceCheckThreadComplete);
+
+  return 0;
 }
 
 /*
  * NPE message polling function
  */
-static inline int npemh_poll(void *data)
+static inline int
+npemh_poll (void *data)
 {
 
-    /* Polling for NPE-A */
+  /* Polling for NPE-A */
 #if !defined (CONFIG_IXP400_ETH_NPEB_ONLY) &&\
     !defined (CONFIG_IXP400_ETH_NPEC_ONLY)
-     
-    /* Only ixp465 has NPE-A */
-    if (machine_is_ixdp465())
-    {
-	if (unlikely(IX_SUCCESS != ixNpeMhMessagesReceive(IX_NPEMH_NPEID_NPEA)))
-	{
-	    P_ERROR("NPE-A npeMh read failure!\n");
-	}
-    }
+
+  /* Only ixp465 has NPE-A */
+#if defined (CONFIG_CPU_IXP46X) || defined (CONFIG_CPU_IXP43X)
+//    if (machine_is_ixdp465())
+  {
+    if (unlikely (IX_SUCCESS != ixNpeMhMessagesReceive (IX_NPEMH_NPEID_NPEA)))
+      {
+	P_ERROR ("NPE-A npeMh read failure!\n");
+      }
+  }
+#endif
 #endif
 
-    /* Polling for NPE-B */
+  /* Polling for NPE-B */
+#if !defined (CONFIG_CPU_IXP43X)
 #if defined (CONFIG_IXP400_ETH_NPEB_ONLY) || defined (CONFIG_IXP400_ETH_ALL)
-    if (unlikely(IX_SUCCESS != ixNpeMhMessagesReceive(IX_NPEMH_NPEID_NPEB)))
+  if (unlikely (IX_SUCCESS != ixNpeMhMessagesReceive (IX_NPEMH_NPEID_NPEB)))
     {
-	P_ERROR("NPE-B npeMh read failure!\n");
+      P_ERROR ("NPE-B npeMh read failure!\n");
     }
-#endif 
+#endif
+#endif
 
-    /* Polling for NPE-C */
+  /* Polling for NPE-C */
 #if defined (CONFIG_IXP400_ETH_NPEC_ONLY) || defined (CONFIG_IXP400_ETH_ALL)
-    if (unlikely(IX_SUCCESS != ixNpeMhMessagesReceive(IX_NPEMH_NPEID_NPEC)))
+  if (unlikely (IX_SUCCESS != ixNpeMhMessagesReceive (IX_NPEMH_NPEID_NPEC)))
     {
-	P_ERROR("NPE-C npeMh read failure!\n");
+      P_ERROR ("NPE-C npeMh read failure!\n");
     }
 #endif
 
-    return 0;
+  return 0;
 }
-	    
+
 
 
 /*
@@ -1647,238 +1741,243 @@ static inline int npemh_poll(void *data)
  * irqs are disabled. Missing the everflow event and the timer 
  * will trigger only after a wrap-around.
 */
-static void dev_pmu_timer_restart(void)
+static void
+dev_pmu_timer_restart (void)
 {
-    unsigned long flags;
+  unsigned long flags;
 
 #if IS_KERNEL26
-    local_irq_save(flags);
+  local_irq_save (flags);
 #else
-    save_flags_cli(flags);
+  save_flags_cli (flags);
 #endif
 
-     __asm__(" mcr p14,0,%0,c1,c1,0\n"  /* write current counter */
-            : : "r" (timer_countup_ticks));
+  __asm__ (" mcr p14,0,%0,c1,c1,0\n"	/* write current counter */
+: :	   "r" (timer_countup_ticks));
 
-    __asm__(" mrc p14,0,r1,c4,c1,0; "  /* get int enable register */
-            " orr r1,r1,#1; "
-            " mcr p14,0,r1,c5,c1,0; "  /* clear overflow */
-            " mcr p14,0,r1,c4,c1,0\n"  /* enable interrupts */
-            : : : "r1");
+  __asm__ (" mrc p14,0,r1,c4,c1,0; "	/* get int enable register */
+	   " orr r1,r1,#1; " " mcr p14,0,r1,c5,c1,0; "	/* clear overflow */
+	   " mcr p14,0,r1,c4,c1,0\n"	/* enable interrupts */
+: : :	   "r1");
 
-#if IS_KERNEL26    
-    local_irq_restore(flags);
+#if IS_KERNEL26
+  local_irq_restore (flags);
 #else
-    restore_flags(flags);
+  restore_flags (flags);
 #endif
 }
 
 #if IS_KERNEL26
-static irqreturn_t dev_pmu_timer_npemhpoll_os_isr(int irg, void *dev_id)
+static irqreturn_t
+dev_pmu_timer_npemhpoll_os_isr (int irg, void *dev_id)
 #else
-static void dev_pmu_timer_npemhpoll_os_isr(int irg, void *dev_id, 
-					   struct pt_regs *regs)
+static void
+dev_pmu_timer_npemhpoll_os_isr (int irg, void *dev_id, struct pt_regs *regs)
 #endif
 {
-    dev_pmu_timer_restart(); /* set up the timer for the next interrupt */
+  dev_pmu_timer_restart ();	/* set up the timer for the next interrupt */
 
-    npemh_poll(NULL);
+  npemh_poll (NULL);
 
 #if IS_KERNEL26
-    return IRQ_HANDLED;
+  return IRQ_HANDLED;
 #endif
 }
 
 #if IS_KERNEL26
-static irqreturn_t dev_pmu_timer_datapathpoll_os_isr(int irg, void *dev_id)
+static irqreturn_t
+dev_pmu_timer_datapathpoll_os_isr (int irg, void *dev_id)
 #else
-static void dev_pmu_timer_datapathpoll_os_isr(int irg, void *dev_id, 
-					      struct pt_regs *regs)
+static void
+dev_pmu_timer_datapathpoll_os_isr (int irg, void *dev_id,
+				   struct pt_regs *regs)
 #endif
 {
-    dev_pmu_timer_restart(); /* set up the timer for the next interrupt */
+  dev_pmu_timer_restart ();	/* set up the timer for the next interrupt */
 
-    /* 
-     * get the time of this interrupt : all buffers received during this
-     * interrupt will be assigned the same time
-     */
-    do_gettimeofday(&irq_stamp);
+  /* 
+   * get the time of this interrupt : all buffers received during this
+   * interrupt will be assigned the same time
+   */
+  do_gettimeofday (&irq_stamp);
 
-    ixEthRxPriorityPoll(0, 128);
-    ixEthTxFrameDoneQMCallback(0, 0);
+  ixEthRxPriorityPoll (0, 128);
+  ixEthTxFrameDoneQMCallback (0, 0);
 
 #if IS_KERNEL26
-    return IRQ_HANDLED;
+  return IRQ_HANDLED;
 #endif
 }
 
 /* initialize the PMU timer */
-static int dev_pmu_timer_init(void)
+static int
+dev_pmu_timer_init (void)
 {
-    UINT32 controlRegisterMask =
-        BIT(0) | /* enable counters */
-        BIT(2);  /* reset clock counter; */
+  UINT32 controlRegisterMask = BIT (0) |	/* enable counters */
+    BIT (2);			/* reset clock counter; */
 
-    /* 
-    *   Compute the number of xscale cycles needed between each 
-    *   PMU IRQ. This is done from the result of an OS calibration loop.
-    *
-    *   For 533MHz CPU, 533000000 tick/s / 4000 times/sec = 138250
-    *   4000 times/sec = 37 mbufs/interrupt at line rate 
-    *   The pmu timer is reset to -138250 = 0xfffde3f6, to trigger an IRQ
-    *   when this up counter overflows.
-    *
-    *   The multiplication gives a number of instructions per second.
-    *   which is close to the processor frequency, and then close to the
-    *   PMU clock rate.
-    *
-    *      HZ : jiffies/second (global OS constant)
-    *      loops/jiffy : global OS value cumputed at boot time
-    *      2 is the number of instructions per loop
-    *
-    */
-    UINT32 timer_countdown_ticks = (loops_per_jiffy * HZ * 2) /
-        QUEUE_DISPATCH_TIMER_RATE;
+  /* 
+   *   Compute the number of xscale cycles needed between each 
+   *   PMU IRQ. This is done from the result of an OS calibration loop.
+   *
+   *   For 533MHz CPU, 533000000 tick/s / 4000 times/sec = 138250
+   *   4000 times/sec = 37 mbufs/interrupt at line rate 
+   *   The pmu timer is reset to -138250 = 0xfffde3f6, to trigger an IRQ
+   *   when this up counter overflows.
+   *
+   *   The multiplication gives a number of instructions per second.
+   *   which is close to the processor frequency, and then close to the
+   *   PMU clock rate.
+   *
+   *      HZ : jiffies/second (global OS constant)
+   *      loops/jiffy : global OS value cumputed at boot time
+   *      2 is the number of instructions per loop
+   *
+   */
+  UINT32 timer_countdown_ticks = (loops_per_jiffy * HZ * 2) /
+    QUEUE_DISPATCH_TIMER_RATE;
 
-    if (npe_error_handler)
+  if (npe_error_handler)
     {
-    	/*
-	 * NPE error handling require slower polling (default 5ms), so we
-	 * adjust the ticks count according to our polling frequency relatively
-	 * to QUEUE_DISPATCH_TIMER_RATE
-	 */
-    	timer_countdown_ticks *= QUEUE_DISPATCH_TIMER_TO_INT_CYCLE_CONVERT;
+      /*
+       * NPE error handling require slower polling (default 5ms), so we
+       * adjust the ticks count according to our polling frequency relatively
+       * to QUEUE_DISPATCH_TIMER_RATE
+       */
+      timer_countdown_ticks *= QUEUE_DISPATCH_TIMER_TO_INT_CYCLE_CONVERT;
     }
 
-    timer_countup_ticks = -timer_countdown_ticks;
+  timer_countup_ticks = -timer_countdown_ticks;
 
-    /* enable the CCNT (clock count) timer from the PMU */
-    __asm__(" mcr p14,0,%0,c0,c1,0\n"  /* write control register */
-            : : "r" (controlRegisterMask));
+  /* enable the CCNT (clock count) timer from the PMU */
+  __asm__ (" mcr p14,0,%0,c0,c1,0\n"	/* write control register */
+: :	   "r" (controlRegisterMask));
 
-    return 0;
+  return 0;
 }
 
 /* stops the timer when the module terminates 
  *
  * This is protected from re-entrancy while the timeer is being restarted.
 */
-static void dev_pmu_timer_disable(void)
+static void
+dev_pmu_timer_disable (void)
 {
-    unsigned long flags;
+  unsigned long flags;
 
 #if IS_KERNEL26
-    local_irq_save(flags);
+  local_irq_save (flags);
 #else
-    save_flags_cli(flags);
+  save_flags_cli (flags);
 #endif
 
-    __asm__(" mrc p14,0,r1,c4,c1,0; "  /* get int enable register */
-            " and r1,r1,#0x1e; "
-            " mcr p14,0,r1,c4,c1,0\n"  /* disable interrupts */
-            : : : "r1");
-#if IS_KERNEL26    
-    local_irq_restore(flags);
+  __asm__ (" mrc p14,0,r1,c4,c1,0; "	/* get int enable register */
+	   " and r1,r1,#0x1e; " " mcr p14,0,r1,c4,c1,0\n"	/* disable interrupts */
+: : :	   "r1");
+#if IS_KERNEL26
+  local_irq_restore (flags);
 #else
-    restore_flags(flags);
+  restore_flags (flags);
 #endif
 }
 
-static int dev_pmu_timer_setup(void)
+static int
+dev_pmu_timer_setup (void)
 {
-    /* poll the datapath from a timer IRQ */
-    if (npe_error_handler)
+  /* poll the datapath from a timer IRQ */
+  if (npe_error_handler)
     {
-    	TRACE;
+      TRACE;
 
-    	/*
-	 * Setting up NPE error handler NPE message handler polling
-	 */
-	if (request_irq(IX_OSAL_IXP400_XSCALE_PMU_IRQ_LVL,
-			dev_pmu_timer_npemhpoll_os_isr,
-			IRQF_SHARED,
-			"ixp400_eth PMU timer",
-			(void *)IRQ_ANY_PARAMETER))
+      /*
+       * Setting up NPE error handler NPE message handler polling
+       */
+      if (request_irq (IX_OSAL_IXP400_XSCALE_PMU_IRQ_LVL,
+		       dev_pmu_timer_npemhpoll_os_isr,
+		       IRQF_SHARED,
+		       "ixp400_eth PMU timer", (void *) IRQ_ANY_PARAMETER))
 	{
-	    P_ERROR("Failed to reassign irq to PMU timer interrupt!\n");
-	    return -1;
+	  P_ERROR ("Failed to reassign irq to PMU timer interrupt!\n");
+	  return -1;
 	}
     }
-    else
+  else
     {
-    	TRACE;
+      TRACE;
 
-    	/*
-	 * Setting up datapath polling
-	 */
-	if (request_irq(IX_OSAL_IXP400_XSCALE_PMU_IRQ_LVL,
-			dev_pmu_timer_datapathpoll_os_isr,
-			IRQF_SHARED,
-			"ixp400_eth PMU timer",
-			(void *)IRQ_ANY_PARAMETER))
+      /*
+       * Setting up datapath polling
+       */
+      if (request_irq (IX_OSAL_IXP400_XSCALE_PMU_IRQ_LVL,
+		       dev_pmu_timer_datapathpoll_os_isr,
+		       IRQF_SHARED,
+		       "ixp400_eth PMU timer", (void *) IRQ_ANY_PARAMETER))
 	{
-	    P_ERROR("Failed to reassign irq to PMU timer interrupt!\n");
-	    return -1;
+	  P_ERROR ("Failed to reassign irq to PMU timer interrupt!\n");
+	  return -1;
 	}
     }
 
-    TRACE;
+  TRACE;
 
-    if (dev_pmu_timer_init())
+  if (dev_pmu_timer_init ())
     {
-        P_ERROR("Error initializing IXP400 PMU timer!\n");
-        return -1;
+      P_ERROR ("Error initializing IXP400 PMU timer!\n");
+      return -1;
     }
 
-    TRACE;
+  TRACE;
 
-    dev_pmu_timer_restart(); /* set up the timer for the next interrupt */
+  dev_pmu_timer_restart ();	/* set up the timer for the next interrupt */
 
-    return 0;
+  return 0;
 }
 
-static void dev_pmu_timer_unload(void)
+static void
+dev_pmu_timer_unload (void)
 {
-        dev_pmu_timer_disable(); /* stop the timer */
-        free_irq(IX_OSAL_IXP400_XSCALE_PMU_IRQ_LVL,(void *)IRQ_ANY_PARAMETER);
+  dev_pmu_timer_disable ();	/* stop the timer */
+  free_irq (IX_OSAL_IXP400_XSCALE_PMU_IRQ_LVL, (void *) IRQ_ANY_PARAMETER);
 }
 
 /* Internal ISR : run a few thousand times per second and calls 
  * the queue manager dispatcher entry point.
  */
 #if IS_KERNEL26
-static irqreturn_t dev_qmgr_os_isr( int irg, void *dev_id)
+static irqreturn_t
+dev_qmgr_os_isr (int irg, void *dev_id)
 #else
-static void dev_qmgr_os_isr(int irg, void *dev_id, struct pt_regs *regs)
+static void
+dev_qmgr_os_isr (int irg, void *dev_id, struct pt_regs *regs)
 #endif
 {
 #ifdef CONFIG_IXP400_NAPI
 
-    /* Note: there are 2 possible race conditions where the normal
-     * EthAcc QMgr receive callback will be invoked by dispatcherFunc()
-     * to drain the rx queues rather than polling them via dev_rx_poll:
-     * 1. interrupt occurs while dev_rx_poll is being closed and
-     *    netif_rx_schedule_prep() fails because the device is no 
-     *    longer open.
-     * 2. traffic is received after dev_rx_poll enables interrupts,
-     *    but before it de-schedules itself.
-     */ 
-    if(netif_rx_schedule_prep(rx_poll_dev))
+  /* Note: there are 2 possible race conditions where the normal
+   * EthAcc QMgr receive callback will be invoked by dispatcherFunc()
+   * to drain the rx queues rather than polling them via dev_rx_poll:
+   * 1. interrupt occurs while dev_rx_poll is being closed and
+   *    netif_rx_schedule_prep() fails because the device is no 
+   *    longer open.
+   * 2. traffic is received after dev_rx_poll enables interrupts,
+   *    but before it de-schedules itself.
+   */
+  if (netif_rx_schedule_prep (rx_poll_dev))
     {
-        ixEthAccQMgrRxNotificationDisable();
-        __netif_rx_schedule(rx_poll_dev);
+      ixEthAccQMgrRxNotificationDisable ();
+      __netif_rx_schedule (rx_poll_dev);
     }
 #endif /* CONFIG_IXP400_NAPI */
 
-    /* get the time of this interrupt : all buffers received during this
-     * interrupt will be assigned the same time */
-    do_gettimeofday(&irq_stamp);
+  /* get the time of this interrupt : all buffers received during this
+   * interrupt will be assigned the same time */
+  do_gettimeofday (&irq_stamp);
 
-    /* call the queue manager entry point */
-    dispatcherFunc(IX_QMGR_QUELOW_GROUP);
+  /* call the queue manager entry point */
+  dispatcherFunc (IX_QMGR_QUELOW_GROUP);
 
 #if IS_KERNEL26
-    return IRQ_HANDLED;
+  return IRQ_HANDLED;
 #endif
 }
 
@@ -1886,37 +1985,39 @@ static void dev_qmgr_os_isr(int irg, void *dev_id, struct pt_regs *regs)
  * the ethernet entry point.
  */
 #ifdef CONFIG_IXP400_NAPI
-static int dev_rx_poll(struct net_device *netdev, int *budget)
+static int
+dev_rx_poll (struct net_device *netdev, int *budget)
 {
-    UINT32 entries_to_process = min(*budget, netdev->quota);
-    UINT32 entries_processed = 0;
-    UINT32 queue_entries = 0;
+  UINT32 entries_to_process = min (*budget, netdev->quota);
+  UINT32 entries_processed = 0;
+  UINT32 queue_entries = 0;
 
 restart_poll:
 
-    /* get the time of this interrupt : all buffers received during this
-     * interrupt will be assigned the same time */
-    do_gettimeofday(&irq_stamp);
+  /* get the time of this interrupt : all buffers received during this
+   * interrupt will be assigned the same time */
+  do_gettimeofday (&irq_stamp);
 
-    entries_processed = ixEthRxPriorityPoll(0, entries_to_process);
+  entries_processed = ixEthRxPriorityPoll (0, entries_to_process);
 
-    *budget -= entries_processed;
-    netdev->quota -= entries_processed;
+  *budget -= entries_processed;
+  netdev->quota -= entries_processed;
 
-    /* if not enough entries processed */
-    if(entries_processed < entries_to_process)
+  /* if not enough entries processed */
+  if (entries_processed < entries_to_process)
     {
-        ixEthAccQMgrRxNotificationEnable();
-        netif_rx_complete(netdev);
-        ixEthAccQMgrRxQEntryGet(&queue_entries);
-        if(queue_entries > 0 && netif_rx_reschedule(netdev,entries_processed))
-        {
-            ixEthAccQMgrRxNotificationDisable();
-            goto restart_poll;
-        }
-        return 0;
+      ixEthAccQMgrRxNotificationEnable ();
+      netif_rx_complete (netdev);
+      ixEthAccQMgrRxQEntryGet (&queue_entries);
+      if (queue_entries > 0
+	  && netif_rx_reschedule (netdev, entries_processed))
+	{
+	  ixEthAccQMgrRxNotificationDisable ();
+	  goto restart_poll;
+	}
+      return 0;
     }
-    return 1;
+  return 1;
 }
 #endif
 
@@ -1925,60 +2026,64 @@ restart_poll:
  * IX_ETH_DB_MAINTENANCE_TIME jiffies
  */
 
-static void maintenance_timer_task(struct work_struct *data);
+static void maintenance_timer_task (struct work_struct *data);
 
 /* task spawned by timer interrupt for EthDB maintenance */
 #if IS_KERNEL26
-static DECLARE_DELAYED_WORK(ethdb_maintenance_work, maintenance_timer_task);	
+static DECLARE_DELAYED_WORK (ethdb_maintenance_work, maintenance_timer_task);
 #else
 static struct tq_struct taskqueue_maintenance = {
-        routine:maintenance_timer_task
+routine:maintenance_timer_task
 };
 
-static void maintenance_timer_cb(unsigned long data);
+static void maintenance_timer_cb (unsigned long data);
 
 static struct timer_list maintenance_timer = {
-    function:&maintenance_timer_cb
+function:&maintenance_timer_cb
 };
 #endif
 
-static void maintenance_timer_set(void)
+static void
+maintenance_timer_set (void)
 {
 #if IS_KERNEL26
-    queue_delayed_work(maintenance_workq, &ethdb_maintenance_work,
-	DB_MAINTENANCE_TIME);
+  queue_delayed_work (maintenance_workq, &ethdb_maintenance_work,
+		      DB_MAINTENANCE_TIME);
 #else
-    maintenance_timer.expires = jiffies + DB_MAINTENANCE_TIME;
-    add_timer(&maintenance_timer);
+  maintenance_timer.expires = jiffies + DB_MAINTENANCE_TIME;
+  add_timer (&maintenance_timer);
 #endif
 }
 
-static void maintenance_timer_clear(void)
+static void
+maintenance_timer_clear (void)
 {
 #if IS_KERNEL26
-    cancel_delayed_work(&ethdb_maintenance_work);
-    flush_workqueue(maintenance_workq);
+  cancel_delayed_work (&ethdb_maintenance_work);
+  flush_workqueue (maintenance_workq);
 #else
-    del_timer_sync(&maintenance_timer);
+  del_timer_sync (&maintenance_timer);
 #endif
 }
 
-static void maintenance_timer_task(struct work_struct *data)
+static void
+maintenance_timer_task (struct work_struct *data)
 {
-    down(maintenance_mutex);
-    ixEthDBDatabaseMaintenance();
-    up(maintenance_mutex);
+  down (maintenance_mutex);
+  ixEthDBDatabaseMaintenance ();
+  up (maintenance_mutex);
 #if IS_KERNEL26
-    maintenance_timer_set();
+  maintenance_timer_set ();
 #endif
 }
 
 #if !(IS_KERNEL26)
-static void maintenance_timer_cb(unsigned long data)
+static void
+maintenance_timer_cb (unsigned long data)
 {
-    schedule_work(&taskqueue_maintenance);
+  schedule_work (&taskqueue_maintenance);
 
-    maintenance_timer_set();
+  maintenance_timer_set ();
 }
 #endif
 
@@ -1991,24 +2096,25 @@ static void maintenance_timer_cb(unsigned long data)
  * a portDisable is running. The action is to free the buffers
  * to the pools.
  */
-static void tx_done_disable_cb(UINT32 callbackTag, IX_OSAL_MBUF *mbuf)
+static void
+tx_done_disable_cb (UINT32 callbackTag, IX_OSAL_MBUF * mbuf)
 {
-    struct net_device *dev = (struct net_device *)callbackTag;
+  struct net_device *dev = (struct net_device *) callbackTag;
 #if IS_KERNEL26
-    priv_data_t *priv = netdev_priv(dev);
+  priv_data_t *priv = netdev_priv (dev);
 #else
-    priv_data_t *priv = dev->priv;
+  priv_data_t *priv = dev->priv;
 #endif
 
-    TRACE;
+  TRACE;
 
-    priv->stats.tx_packets++; /* total packets transmitted */
-    priv->stats.tx_bytes += IX_OSAL_MBUF_MLEN(mbuf); /* total bytes transmitted */
+  priv->stats.tx_packets++;	/* total packets transmitted */
+  priv->stats.tx_bytes += IX_OSAL_MBUF_MLEN (mbuf);	/* total bytes transmitted */
 
-    /* extract skb from the mbuf, free skb and return the mbuf to the pool */
-    mbuf_free_skb(mbuf);
+  /* extract skb from the mbuf, free skb and return the mbuf to the pool */
+  mbuf_free_skb (mbuf);
 
-    TRACE;
+  TRACE;
 }
 
 
@@ -2016,28 +2122,29 @@ static void tx_done_disable_cb(UINT32 callbackTag, IX_OSAL_MBUF *mbuf)
  * IxEthAcc does not need the buffer anymore. The buffers will be returned to
  * the software queues.
  */
-static void tx_done_cb(UINT32 callbackTag, IX_OSAL_MBUF *mbuf)
+static void
+tx_done_cb (UINT32 callbackTag, IX_OSAL_MBUF * mbuf)
 {
-    struct net_device *dev = (struct net_device *)callbackTag;
+  struct net_device *dev = (struct net_device *) callbackTag;
 #if IS_KERNEL26
-    priv_data_t *priv = netdev_priv(dev);
+  priv_data_t *priv = netdev_priv (dev);
 #else
-    priv_data_t *priv = dev->priv;
+  priv_data_t *priv = dev->priv;
 #endif
 
-    TRACE;
-    priv->stats.tx_packets++; /* total packets transmitted */
-    priv->stats.tx_bytes += IX_OSAL_MBUF_MLEN(mbuf);/* total bytes transmitted*/
-    /* extract skb from the mbuf, free skb */
+  TRACE;
+  priv->stats.tx_packets++;	/* total packets transmitted */
+  priv->stats.tx_bytes += IX_OSAL_MBUF_MLEN (mbuf);	/* total bytes transmitted */
+  /* extract skb from the mbuf, free skb */
 #ifdef CONFIG_IXP400_ETH_SKB_RECYCLE
-    /* recycle skb for later use in rx (fast) */
-    dev_skb_enqueue(priv, mbuf_swap_skb(mbuf, NULL));
+  /* recycle skb for later use in rx (fast) */
+  dev_skb_enqueue (priv, mbuf_swap_skb (mbuf, NULL));
 #else
-    /* put to kernel pool (slow) */
-    dev_kfree_skb_any(mbuf_swap_skb(mbuf, NULL));
+  /* put to kernel pool (slow) */
+  dev_kfree_skb_any (mbuf_swap_skb (mbuf, NULL));
 #endif
-    /* return the mbuf to the queue */
-    dev_tx_mb_enqueue(priv, mbuf);
+  /* return the mbuf to the queue */
+  dev_tx_mb_enqueue (priv, mbuf);
 }
 
 /* This callback is called when transmission of the packed is done, and
@@ -2046,25 +2153,25 @@ static void tx_done_cb(UINT32 callbackTag, IX_OSAL_MBUF *mbuf)
  * stopped (due to buffer starvation) and it restarts it because it now knows
  * that there is at least 1 mbuf available for Tx.
  */
-static void tx_done_queue_stopped_cb(UINT32 callbackTag, IX_OSAL_MBUF *mbuf)
+static void
+tx_done_queue_stopped_cb (UINT32 callbackTag, IX_OSAL_MBUF * mbuf)
 {
-    struct net_device *dev = (struct net_device *)callbackTag;
+  struct net_device *dev = (struct net_device *) callbackTag;
 #if IS_KERNEL26
-    priv_data_t *priv = netdev_priv(dev);
+  priv_data_t *priv = netdev_priv (dev);
 #else
-    priv_data_t *priv = dev->priv;
+  priv_data_t *priv = dev->priv;
 #endif
 
-    TRACE;
+  TRACE;
 
-    tx_done_cb(callbackTag, mbuf);
+  tx_done_cb (callbackTag, mbuf);
 
-    if (netif_queue_stopped(dev))
+  if (netif_queue_stopped (dev))
     {
-        ixEthAccPortTxDoneCallbackRegister(priv->port_id, 
-                                           tx_done_cb,
-                                           (UINT32)dev);
-        netif_wake_queue(dev);
+      ixEthAccPortTxDoneCallbackRegister (priv->port_id,
+					  tx_done_cb, (UINT32) dev);
+      netif_wake_queue (dev);
     }
 }
 
@@ -2073,119 +2180,119 @@ static void tx_done_queue_stopped_cb(UINT32 callbackTag, IX_OSAL_MBUF *mbuf)
  * the flags returned by the NPE, so a payload lookup is not needed
  * in most of the cases.
  */
-static inline void dev_eth_type_trans(unsigned int mflags, 
-				      struct sk_buff *skb, 
-				      struct net_device *dev)
+static inline void
+dev_eth_type_trans (unsigned int mflags,
+		    struct sk_buff *skb, struct net_device *dev)
 {
-    unsigned header_len = dev->hard_header_len;
-    skb_reset_mac_header(skb);
+  unsigned header_len = dev->hard_header_len;
+  skb_reset_mac_header (skb);
 //    skb->mac.raw=skb->data;
-    /* skip the mac header : there is no need for length comparison since
-     * the skb during a receive is always greater than the header size and 
-     * runt frames are not enabled.
-     */
-    skb->data += header_len;
-    skb->len -= header_len;
-   
-    /* fill the pkt arrival time (set at the irq callback entry) */
+  /* skip the mac header : there is no need for length comparison since
+   * the skb during a receive is always greater than the header size and 
+   * runt frames are not enabled.
+   */
+  skb->data += header_len;
+  skb->len -= header_len;
+
+  /* fill the pkt arrival time (set at the irq callback entry) */
 #if IS_KERNEL26
-    skb->tstamp = timeval_to_ktime(irq_stamp);
+  skb->tstamp = timeval_to_ktime (irq_stamp);
 #else
-    skb->stamp = irq_stamp;
-#endif
- 
-    /* fill the input device field */
-    skb->dev = dev;
-    
-    /* set the protocol from the bits filled by the NPE */
-    if (mflags & IX_ETHACC_NE_IPMASK)
-    { 
-	/* the type_length field is 0x0800 */
-	skb->protocol = htons(ETH_P_IP); 
-    } 
-    else if (mflags & IX_ETHACC_NE_IPV6MASK)
-    {
-	/* the type_length field is 0x86DD */
-	skb->protocol = htons(ETH_P_IPV6); 
-    }
-    else
-    {
-	/* use linux algorithm to find the protocol 
-	 * from the type-length field. This costs a
-	 * a lookup inside the packet payload. The algorithm
-	 * and its constants are taken from the eth_type_trans()
-	 * function.
-	 */
-#if IS_KERNEL26
-	struct ethhdr *eth = eth_hdr(skb);
-#else
-	struct ethhdr *eth = skb->mac.ethernet;
+  skb->stamp = irq_stamp;
 #endif
 
-	unsigned short hproto = ntohs(eth->h_proto);
-	
-	if (hproto >= 1536)
+  /* fill the input device field */
+  skb->dev = dev;
+
+  /* set the protocol from the bits filled by the NPE */
+  if (mflags & IX_ETHACC_NE_IPMASK)
+    {
+      /* the type_length field is 0x0800 */
+      skb->protocol = htons (ETH_P_IP);
+    }
+  else if (mflags & IX_ETHACC_NE_IPV6MASK)
+    {
+      /* the type_length field is 0x86DD */
+      skb->protocol = htons (ETH_P_IPV6);
+    }
+  else
+    {
+      /* use linux algorithm to find the protocol 
+       * from the type-length field. This costs a
+       * a lookup inside the packet payload. The algorithm
+       * and its constants are taken from the eth_type_trans()
+       * function.
+       */
+#if IS_KERNEL26
+      struct ethhdr *eth = eth_hdr (skb);
+#else
+      struct ethhdr *eth = skb->mac.ethernet;
+#endif
+
+      unsigned short hproto = ntohs (eth->h_proto);
+
+      if (hproto >= 1536)
 	{
-	    skb->protocol = eth->h_proto;
+	  skb->protocol = eth->h_proto;
 	}
-	else
+      else
 	{
-	    unsigned short rawp = *(unsigned short *)skb->data;
-	    if (rawp == 0xFFFF)
-		skb->protocol = htons(ETH_P_802_3);
-	    else
-		skb->protocol = htons(ETH_P_802_2);
+	  unsigned short rawp = *(unsigned short *) skb->data;
+	  if (rawp == 0xFFFF)
+	    skb->protocol = htons (ETH_P_802_3);
+	  else
+	    skb->protocol = htons (ETH_P_802_2);
 	}
     }
 
-    /* set the packet type 
-     * check mcast and bcast bits as filled by the NPE 
-     */
-    if (mflags & (IX_ETHACC_NE_MCASTMASK | IX_ETHACC_NE_BCASTMASK))
+  /* set the packet type 
+   * check mcast and bcast bits as filled by the NPE 
+   */
+  if (mflags & (IX_ETHACC_NE_MCASTMASK | IX_ETHACC_NE_BCASTMASK))
     {
-	if (mflags & IX_ETHACC_NE_BCASTMASK)
+      if (mflags & IX_ETHACC_NE_BCASTMASK)
 	{
-	    /* the packet is a broadcast one */
-	    skb->pkt_type=PACKET_BROADCAST;
+	  /* the packet is a broadcast one */
+	  skb->pkt_type = PACKET_BROADCAST;
 	}
-	else
+      else
 	{
-	    /* the packet is a multicast one */
-	    skb->pkt_type=PACKET_MULTICAST;
-	    ((priv_data_t *)(dev->priv))->stats.multicast++;
+	  /* the packet is a multicast one */
+	  skb->pkt_type = PACKET_MULTICAST;
+	  ((priv_data_t *) (dev->priv))->stats.multicast++;
 	}
     }
-    else
+  else
     {
-	if (dev->flags & IFF_PROMISC)
+      if (dev->flags & IFF_PROMISC)
 	{
-	    /* check dest mac address only if promiscuous
-	     * mode is set This costs
-	     * a lookup inside the packet payload.
-	     */
+	  /* check dest mac address only if promiscuous
+	   * mode is set This costs
+	   * a lookup inside the packet payload.
+	   */
 #if IS_KERNEL26
-	    struct ethhdr *eth = eth_hdr(skb);
+	  struct ethhdr *eth = eth_hdr (skb);
 #else
-	    struct ethhdr *eth = skb->mac.ethernet;
+	  struct ethhdr *eth = skb->mac.ethernet;
 #endif
-	    unsigned char *hdest = eth->h_dest;
-	    
-	    if (memcmp(hdest, dev->dev_addr, ETH_ALEN)!=0)
+	  unsigned char *hdest = eth->h_dest;
+
+	  if (memcmp (hdest, dev->dev_addr, ETH_ALEN) != 0)
 	    {
-		skb->pkt_type = PACKET_OTHERHOST;
+	      skb->pkt_type = PACKET_OTHERHOST;
 	    }
 	}
-	else
+      else
 	{
-	    /* promiscuous mode is not set, All packets are filtered
-	     * by the NPE and the destination MAC address matches
-	     * the driver setup. There is no need for a lookup in the 
-	     * payload and skb->pkt_type is already set to PACKET_LOCALHOST;
-	     */
+	  /* promiscuous mode is not set, All packets are filtered
+	   * by the NPE and the destination MAC address matches
+	   * the driver setup. There is no need for a lookup in the 
+	   * payload and skb->pkt_type is already set to PACKET_LOCALHOST;
+	   */
 	}
     }
 
-    return;
+  return;
 }
 
 /* This callback is called when new packet received from MAC
@@ -2193,16 +2300,17 @@ static inline void dev_eth_type_trans(unsigned int mflags,
  * is in progress or device is down)
  *
  */
-static void rx_disable_cb(UINT32 callbackTag, IX_OSAL_MBUF *mbuf, IxEthAccPortId portId)
+static void
+rx_disable_cb (UINT32 callbackTag, IX_OSAL_MBUF * mbuf, IxEthAccPortId portId)
 {
-    TRACE;
+  TRACE;
 
-    /* this is a buffer returned by NPEs during a call to PortDisable: 
-     * free the skb & return the mbuf to the pool 
-     */
-    mbuf_free_skb(mbuf);
+  /* this is a buffer returned by NPEs during a call to PortDisable: 
+   * free the skb & return the mbuf to the pool 
+   */
+  mbuf_free_skb (mbuf);
 
-    TRACE;
+  TRACE;
 }
 
 
@@ -2213,131 +2321,133 @@ static void rx_disable_cb(UINT32 callbackTag, IX_OSAL_MBUF *mbuf, IxEthAccPortId
  * with the one in mbuf, which is pushed upstack.
  *
  */
-static void rx_cb(UINT32 callbackTag, IX_OSAL_MBUF *mbuf, IxEthAccPortId portId)
+static void
+rx_cb (UINT32 callbackTag, IX_OSAL_MBUF * mbuf, IxEthAccPortId portId)
 {
-    struct net_device *dev;
-    priv_data_t *priv;
-    struct sk_buff *skb;
-    int len;
-    unsigned int mcastFlags;
+  struct net_device *dev;
+  priv_data_t *priv;
+  struct sk_buff *skb;
+  int len;
+  unsigned int mcastFlags;
 #ifndef CONFIG_IXP400_NAPI
-    unsigned int qlevel;
+  unsigned int qlevel;
 #endif
 //    u8 *vlanh;
-    TRACE;
-    dev = (struct net_device *)callbackTag;
-    priv = dev->priv;
+  TRACE;
+  dev = (struct net_device *) callbackTag;
+  priv = dev->priv;
 
 #ifndef CONFIG_IXP400_NAPI
 
 #if IS_KERNEL26
-    qlevel = __get_cpu_var(softnet_data).input_pkt_queue.qlen;
+  qlevel = __get_cpu_var (softnet_data).input_pkt_queue.qlen;
 #else
-    qlevel = softnet_data[0].input_pkt_queue.qlen;
+  qlevel = softnet_data[0].input_pkt_queue.qlen;
 #endif
-    /* check if the system accepts more traffic and
-     * against chained mbufs 
-     */
-    if ((qlevel < netdev_max_backlog)
-        && (IX_OSAL_MBUF_NEXT_PKT_IN_CHAIN_PTR(mbuf) == NULL))
+  /* check if the system accepts more traffic and
+   * against chained mbufs 
+   */
+  if ((qlevel < netdev_max_backlog)
+      && (IX_OSAL_MBUF_NEXT_PKT_IN_CHAIN_PTR (mbuf) == NULL))
 #else
-    /* check against chained mbufs
-     */
-    if (IX_OSAL_MBUF_NEXT_PKT_IN_CHAIN_PTR(mbuf) == NULL)
+  /* check against chained mbufs
+   */
+  if (IX_OSAL_MBUF_NEXT_PKT_IN_CHAIN_PTR (mbuf) == NULL)
 #endif
-    {      
-	/* the netif_rx queue is not overloaded */
-	TRACE;
-  
-	len = IX_OSAL_MBUF_MLEN(mbuf);
-	mcastFlags = IX_ETHACC_NE_FLAGS(mbuf);
-
-	/* allocate new skb and "swap" it with the skb that is tied to the
-	 * mbuf. then return the mbuf + new skb to the NPEs.
-	 */
-	skb = dev_skb_dequeue(priv);
-	
-	/* extract skb from mbuf and replace it with the new skbuf */
-	skb = mbuf_swap_skb(mbuf, skb);
-
-	if (IX_OSAL_MBUF_PRIV(mbuf))
-	{
-	    TRACE;
-
-	    /* a skb is attached to the mbuf */
-	    dev_rx_buff_replenish(priv->port_id, mbuf);
-	}
-	else
-	{
-	    /* failed to alloc skb -> return mbuf to the pool, it'll be
-	     * picked up later by the monitoring task when skb will
-	     * be available again
-	     */
-	    TRACE;
-
-	    IX_OSAL_MBUF_POOL_PUT(mbuf);
-	}
-
-	/* set the length of the received skb from the mbuf length  */
-	skb->tail = skb->data + len;
-	skb->len = len;
-//	vlanh=(u8 *)skb->data;
-//	if (*(vlanh+12)==0x81) 
-//	    *(vlanh+13)=0;
-#ifdef DEBUG_DUMP
-	skb_dump("rx", skb);
-#endif
-	/* Set the skb protocol and set mcast/bcast flags */
-	dev_eth_type_trans(mcastFlags, skb, dev);
-
-	/* update the stats */
-	priv->stats.rx_packets++; /* total packets received */
-	priv->stats.rx_bytes += len; /* total bytes received */
-   
-	TRACE;
-	
-	/* push upstack */
-#ifdef CONFIG_IXP400_NAPI
-        netif_receive_skb(skb);
-#else
-        netif_rx(skb);
-#endif
-    }
-    else
     {
-	/* netif_rx queue threshold reached, stop hammering the system
-	 * or we received an unexpected unsupported chained mbuf
-	 */
-	TRACE;
+      /* the netif_rx queue is not overloaded */
+      TRACE;
 
-	/* update the stats */
-	priv->stats.rx_dropped++; 
+      len = IX_OSAL_MBUF_MLEN (mbuf);
+      mcastFlags = IX_ETHACC_NE_FLAGS (mbuf);
 
-	/* replenish with unchained mbufs */
-	do
+      /* allocate new skb and "swap" it with the skb that is tied to the
+       * mbuf. then return the mbuf + new skb to the NPEs.
+       */
+      skb = dev_skb_dequeue (priv);
+
+      /* extract skb from mbuf and replace it with the new skbuf */
+      skb = mbuf_swap_skb (mbuf, skb);
+
+      if (IX_OSAL_MBUF_PRIV (mbuf))
 	{
-	    IX_OSAL_MBUF *next = IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR(mbuf);
-	    IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR(mbuf) = NULL;
-	    IX_OSAL_MBUF_MLEN(mbuf) = priv->replenish_size;
-	    dev_rx_buff_replenish(priv->port_id, mbuf);
-	    mbuf = next;
+	  TRACE;
+
+	  /* a skb is attached to the mbuf */
+	  dev_rx_buff_replenish (priv->port_id, mbuf);
 	}
-	while (mbuf != NULL);
+      else
+	{
+	  /* failed to alloc skb -> return mbuf to the pool, it'll be
+	   * picked up later by the monitoring task when skb will
+	   * be available again
+	   */
+	  TRACE;
+
+	  IX_OSAL_MBUF_POOL_PUT (mbuf);
+	}
+
+      /* set the length of the received skb from the mbuf length  */
+      skb->tail = skb->data + len;
+      skb->len = len;
+//      vlanh=(u8 *)skb->data;
+//      if (*(vlanh+12)==0x81) 
+//          *(vlanh+13)=0;
+#ifdef DEBUG_DUMP
+      skb_dump ("rx", skb);
+#endif
+      /* Set the skb protocol and set mcast/bcast flags */
+      dev_eth_type_trans (mcastFlags, skb, dev);
+
+      /* update the stats */
+      priv->stats.rx_packets++;	/* total packets received */
+      priv->stats.rx_bytes += len;	/* total bytes received */
+
+      TRACE;
+
+      /* push upstack */
+#ifdef CONFIG_IXP400_NAPI
+      netif_receive_skb (skb);
+#else
+      netif_rx (skb);
+#endif
     }
-    
-    TRACE;
+  else
+    {
+      /* netif_rx queue threshold reached, stop hammering the system
+       * or we received an unexpected unsupported chained mbuf
+       */
+      TRACE;
+
+      /* update the stats */
+      priv->stats.rx_dropped++;
+
+      /* replenish with unchained mbufs */
+      do
+	{
+	  IX_OSAL_MBUF *next = IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR (mbuf);
+	  IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR (mbuf) = NULL;
+	  IX_OSAL_MBUF_MLEN (mbuf) = priv->replenish_size;
+	  dev_rx_buff_replenish (priv->port_id, mbuf);
+	  mbuf = next;
+	}
+      while (mbuf != NULL);
+    }
+
+  TRACE;
 }
 
 /* Set promiscuous/multicast mode for the MAC */
-static void ixp400_dev_set_multicast_list(struct net_device *dev)
+static void
+ixp400_dev_set_multicast_list (struct net_device *dev)
 {
-    int res;
+  int res;
 #if IS_KERNEL26
-    priv_data_t *priv = netdev_priv(dev);
+  priv_data_t *priv = netdev_priv (dev);
 #else
-    priv_data_t *priv = dev->priv;
+  priv_data_t *priv = dev->priv;
 #endif
-    IxEthAccMacAddr addr1 = {};
+  IxEthAccMacAddr addr1 = { };
 
 /* 4 possible scenarios here
  *
@@ -2348,1069 +2458,1075 @@ static void ixp400_dev_set_multicast_list(struct net_device *dev)
  * #4 - promiscuous mode OFF, accept LIST of multicast addresses 
  */
 
-    TRACE;
+  TRACE;
 
-    /* 
-     * WR19880: We removed IRQ lock from this API in order to allow NPE message
-     * send with response API to work. Hence, ixp400_dev_set_multicast_list is
-     * now not callable from IRQ!
-     *
-     * if called from irq handler, lock already acquired
-     * if (!in_irq())
-     *     spin_lock_irq(&priv->lock);
-     */
+  /* 
+   * WR19880: We removed IRQ lock from this API in order to allow NPE message
+   * send with response API to work. Hence, ixp400_dev_set_multicast_list is
+   * now not callable from IRQ!
+   *
+   * if called from irq handler, lock already acquired
+   * if (!in_irq())
+   *     spin_lock_irq(&priv->lock);
+   */
 
 
-    /* clear multicast addresses that were set the last time (if exist) */
-    ixEthAccPortMulticastAddressLeaveAll (priv->port_id);
+  /* clear multicast addresses that were set the last time (if exist) */
+  ixEthAccPortMulticastAddressLeaveAll (priv->port_id);
 
-    TRACE;
+  TRACE;
 
 /**** SCENARIO #1 ****/
-    /* Set promiscuous mode */
-    if (dev->flags & IFF_PROMISC)
+  /* Set promiscuous mode */
+  if (dev->flags & IFF_PROMISC)
     {
-	if ((res = ixEthAccPortPromiscuousModeSet(priv->port_id)))
+      if ((res = ixEthAccPortPromiscuousModeSet (priv->port_id)))
 	{
-	    P_ERROR("%s: ixEthAccPortPromiscuousModeSet failed on port %d\n",
-		    dev->name, priv->port_id);
+	  P_ERROR ("%s: ixEthAccPortPromiscuousModeSet failed on port %d\n",
+		   dev->name, priv->port_id);
 	}
-	else
+      else
 	{
-	    /* avoid redundant messages */
-	    if (!(priv->devFlags & IFF_PROMISC))
+	  /* avoid redundant messages */
+	  if (!(priv->devFlags & IFF_PROMISC))
 	    {
-		P_VERBOSE("%s: Entering promiscuous mode\n", dev->name);
+	      P_VERBOSE ("%s: Entering promiscuous mode\n", dev->name);
 	    }
-	    priv->devFlags = dev->flags;
+	  priv->devFlags = dev->flags;
 	}
 
-	goto Exit;
+      goto Exit;
     }
 
-    TRACE;
+  TRACE;
 
 
 /**** SCENARIO #2 ****/
 
-    /* Clear promiscuous mode */
-    if ((res = ixEthAccPortPromiscuousModeClear(priv->port_id)))
+  /* Clear promiscuous mode */
+  if ((res = ixEthAccPortPromiscuousModeClear (priv->port_id)))
     {
-	/* should not get here */
-	P_ERROR("%s: ixEthAccPortPromiscuousModeClear failed for port %d\n",
-		dev->name, priv->port_id);
+      /* should not get here */
+      P_ERROR ("%s: ixEthAccPortPromiscuousModeClear failed for port %d\n",
+	       dev->name, priv->port_id);
     }
-    else
+  else
     {
-	/* avoid redundant messages */
-	if (priv->devFlags & IFF_PROMISC)
+      /* avoid redundant messages */
+      if (priv->devFlags & IFF_PROMISC)
 	{
-	    P_VERBOSE("%s: Leaving promiscuous mode\n", dev->name);
+	  P_VERBOSE ("%s: Leaving promiscuous mode\n", dev->name);
 	}
-	priv->devFlags = dev->flags;
+      priv->devFlags = dev->flags;
     }
 
-    TRACE;
+  TRACE;
 
 
 /**** SCENARIO #3 ****/
-    /* If there's more addresses than we can handle, get all multicast
-     * packets and sort the out in software
-     */
-    /* Set multicast mode */
-    if ((dev->flags & IFF_ALLMULTI) || 
-	(dev->mc_count > IX_ETH_ACC_MAX_MULTICAST_ADDRESSES))
+  /* If there's more addresses than we can handle, get all multicast
+   * packets and sort the out in software
+   */
+  /* Set multicast mode */
+  if ((dev->flags & IFF_ALLMULTI) ||
+      (dev->mc_count > IX_ETH_ACC_MAX_MULTICAST_ADDRESSES))
     {
-	/* ALL MULTICAST addresses will be accepted */
-        ixEthAccPortMulticastAddressJoinAll(priv->port_id);
+      /* ALL MULTICAST addresses will be accepted */
+      ixEthAccPortMulticastAddressJoinAll (priv->port_id);
 
-	P_VERBOSE("%s: Accepting ALL multicast packets\n", dev->name);
-	goto Exit;
+      P_VERBOSE ("%s: Accepting ALL multicast packets\n", dev->name);
+      goto Exit;
     }
 
-    TRACE;
+  TRACE;
 
 /**** SCENARIO #4 ****/
-    /* Store all of the multicast addresses in the hardware filter */
-    if ((dev->mc_count))
+  /* Store all of the multicast addresses in the hardware filter */
+  if ((dev->mc_count))
     {
-	/* now join the current address list */
-	/* Get only multicasts from the list */
-	struct dev_mc_list *mc_ptr;
+      /* now join the current address list */
+      /* Get only multicasts from the list */
+      struct dev_mc_list *mc_ptr;
 
-	/* Rewrite each multicast address */
-	for (mc_ptr = dev->mc_list; mc_ptr; mc_ptr = mc_ptr->next)
+      /* Rewrite each multicast address */
+      for (mc_ptr = dev->mc_list; mc_ptr; mc_ptr = mc_ptr->next)
 	{
-	    memcpy (&addr1.macAddress[0], &mc_ptr->dmi_addr[0],
-		    IX_IEEE803_MAC_ADDRESS_SIZE);
-	    ixEthAccPortMulticastAddressJoin (priv->port_id, &addr1);
+	  memcpy (&addr1.macAddress[0], &mc_ptr->dmi_addr[0],
+		  IX_IEEE803_MAC_ADDRESS_SIZE);
+	  ixEthAccPortMulticastAddressJoin (priv->port_id, &addr1);
 	}
     }
 
 Exit:
 
-    TRACE;
+  TRACE;
 
-    /*
-     * WR19880: IRQ is not lock
-     *
-     * if (!in_irq())
-     *     spin_unlock_irq(&priv->lock);
-     */
+  /*
+   * WR19880: IRQ is not lock
+   *
+   * if (!in_irq())
+   *     spin_unlock_irq(&priv->lock);
+   */
 }
 
 
 /* Enable the MAC port.
  * Called on do_dev_open, dev_tx_timeout and mtu size changes
  */
-static int port_enable(struct net_device *dev)
+static int
+port_enable (struct net_device *dev)
 {
-    int res;
-    IxEthAccMacAddr npeMacAddr;
+  int res;
+  IxEthAccMacAddr npeMacAddr;
 #if IS_KERNEL26
-    priv_data_t *priv = netdev_priv(dev);
+  priv_data_t *priv = netdev_priv (dev);
 #else
-    priv_data_t *priv = dev->priv;
+  priv_data_t *priv = dev->priv;
 #endif
 
-    P_DEBUG("port_enable(%s)\n", dev->name);
+  P_DEBUG ("port_enable(%s)\n", dev->name);
 
-    /* Set MAC addr in h/w (ethAcc checks for MAC address to be valid) */
-    memcpy(&npeMacAddr.macAddress,
-	   dev->dev_addr,
-	   IX_IEEE803_MAC_ADDRESS_SIZE);
-    if ((res = ixEthAccPortUnicastMacAddressSet(priv->port_id, &npeMacAddr)))
+  /* Set MAC addr in h/w (ethAcc checks for MAC address to be valid) */
+  memcpy (&npeMacAddr.macAddress, dev->dev_addr, IX_IEEE803_MAC_ADDRESS_SIZE);
+  if ((res = ixEthAccPortUnicastMacAddressSet (priv->port_id, &npeMacAddr)))
     {
-        P_VERBOSE("Failed to set MAC address %2.2x:%2.2x:%2.2x:%2.2x:%2.2x:%2.2x for port %d\n",
-	       (unsigned)npeMacAddr.macAddress[0],
-	       (unsigned)npeMacAddr.macAddress[1],
-	       (unsigned)npeMacAddr.macAddress[2],
-	       (unsigned)npeMacAddr.macAddress[3],
-	       (unsigned)npeMacAddr.macAddress[4],
-	       (unsigned)npeMacAddr.macAddress[5],
-	       priv->port_id);
-	return convert_error_ethAcc(res);	
+      P_VERBOSE
+	("Failed to set MAC address %2.2x:%2.2x:%2.2x:%2.2x:%2.2x:%2.2x for port %d\n",
+	 (unsigned) npeMacAddr.macAddress[0],
+	 (unsigned) npeMacAddr.macAddress[1],
+	 (unsigned) npeMacAddr.macAddress[2],
+	 (unsigned) npeMacAddr.macAddress[3],
+	 (unsigned) npeMacAddr.macAddress[4],
+	 (unsigned) npeMacAddr.macAddress[5], priv->port_id);
+      return convert_error_ethAcc (res);
     }
 
-    /* restart the link-monitoring thread if necessary */
-    if (priv->maintenanceCheckStopped)
+  /* restart the link-monitoring thread if necessary */
+  if (priv->maintenanceCheckStopped)
     {
-	/* Starts the driver monitoring thread, if configured */
-	priv->maintenanceCheckStopped = FALSE;
-	
-	priv->maintenanceCheckThreadId = 
-	    kernel_thread(dev_media_check_thread,
-			  (void *) dev,
-			  CLONE_FS | CLONE_FILES);
-	if (priv->maintenanceCheckThreadId < 0)
+      /* Starts the driver monitoring thread, if configured */
+      priv->maintenanceCheckStopped = FALSE;
+
+      priv->maintenanceCheckThreadId =
+	kernel_thread (dev_media_check_thread,
+		       (void *) dev, CLONE_FS | CLONE_FILES);
+      if (priv->maintenanceCheckThreadId < 0)
 	{
-	    P_ERROR("%s: Failed to start thread for media checks\n", dev->name);
-	    priv->maintenanceCheckStopped = TRUE;
+	  P_ERROR ("%s: Failed to start thread for media checks\n",
+		   dev->name);
+	  priv->maintenanceCheckStopped = TRUE;
 	}
     }
 
-    /* force replenish if necessary */
-    dev_rx_buff_prealloc(priv);
+  /* force replenish if necessary */
+  dev_rx_buff_prealloc (priv);
 
-    /* set the callback supporting the traffic */
-    ixEthAccPortTxDoneCallbackRegister(priv->port_id, 
-				       tx_done_cb,
-				       (UINT32)dev);
-    ixEthAccPortRxCallbackRegister(priv->port_id, 
-				   rx_cb, 
-				   (UINT32)dev);
-    
+  /* set the callback supporting the traffic */
+  ixEthAccPortTxDoneCallbackRegister (priv->port_id,
+				      tx_done_cb, (UINT32) dev);
+  ixEthAccPortRxCallbackRegister (priv->port_id, rx_cb, (UINT32) dev);
 
-    if ((res = ixEthAccPortEnable(priv->port_id)))
+
+  if ((res = ixEthAccPortEnable (priv->port_id)))
     {
-	P_ERROR("%s: ixEthAccPortEnable failed for port %d, res = %d\n",
-		dev->name, priv->port_id, res);
-	return convert_error_ethAcc(res);
+      P_ERROR ("%s: ixEthAccPortEnable failed for port %d, res = %d\n",
+	       dev->name, priv->port_id, res);
+      return convert_error_ethAcc (res);
     }
 
-    /* Do not enable aging unless learning is enabled (nothing to age otherwise) */
-    if (npe_learning)
+  /* Do not enable aging unless learning is enabled (nothing to age otherwise) */
+  if (npe_learning)
     {
-        if ((res = ixEthDBPortAgingEnable(priv->port_id)))
-        {
-            P_ERROR("%s: ixEthDBPortAgingEnable failed for port %d, res = %d\n",
-                    dev->name, priv->port_id, res);
-            return -1;
-        }
+      if ((res = ixEthDBPortAgingEnable (priv->port_id)))
+	{
+	  P_ERROR
+	    ("%s: ixEthDBPortAgingEnable failed for port %d, res = %d\n",
+	     dev->name, priv->port_id, res);
+	  return -1;
+	}
     }
 
-    TRACE;
+  TRACE;
 
-    /* reset the current time for the watchdog timer */
-    dev->trans_start = jiffies;
+  /* reset the current time for the watchdog timer */
+  dev->trans_start = jiffies;
 
-    netif_start_queue(dev);
+  netif_start_queue (dev);
 
-    TRACE;
+  TRACE;
 
 #ifdef CONFIG_IXP400_ETH_QDISC_ENABLED
-    /* restore the driver's own TX queueing discipline */
-    dev->qdisc_sleeping = priv->qdisc;
-    dev->qdisc = priv->qdisc;
+  /* restore the driver's own TX queueing discipline */
+  dev->qdisc_sleeping = priv->qdisc;
+  dev->qdisc = priv->qdisc;
 #endif
 
-    TRACE;
+  TRACE;
 
-    return 0;
+  return 0;
 }
 
 /* Disable the MAC port.
  * Called on do_dev_stop and dev_tx_timeout
  */
-static void port_disable(struct net_device *dev)
+static void
+port_disable (struct net_device *dev)
 {
 #if IS_KERNEL26
-    priv_data_t *priv = netdev_priv(dev);
+  priv_data_t *priv = netdev_priv (dev);
 #else
-    priv_data_t *priv = dev->priv;
+  priv_data_t *priv = dev->priv;
 #endif
-    int res;
-    IX_STATUS status;
+  int res;
+  IX_STATUS status;
 #ifdef CONFIG_IXP400_NAPI
-    unsigned long flags;
+  unsigned long flags;
 #endif
 
-    P_DEBUG("port_disable(%s)\n", dev->name);
+  P_DEBUG ("port_disable(%s)\n", dev->name);
 
-    if (!netif_queue_stopped(dev))
+  if (!netif_queue_stopped (dev))
     {
-        dev->trans_start = jiffies;
-        netif_stop_queue(dev);
+      dev->trans_start = jiffies;
+      netif_stop_queue (dev);
     }
 
-    if (priv->maintenanceCheckStopped)
+  if (priv->maintenanceCheckStopped)
     {
-	/* thread is not running */
+      /* thread is not running */
     }
-    else
+  else
     {
-	/* thread is running */
-	priv->maintenanceCheckStopped = TRUE;
-	/* Wake up the media-check thread with a signal.
-	   It will check the 'running' flag and exit */
-	if ((res = kill_proc (priv->maintenanceCheckThreadId, SIGKILL, 1)))
+      /* thread is running */
+      priv->maintenanceCheckStopped = TRUE;
+      /* Wake up the media-check thread with a signal.
+         It will check the 'running' flag and exit */
+      if ((res = kill_proc (priv->maintenanceCheckThreadId, SIGKILL, 1)))
 	{
-	    P_ERROR("%s: unable to signal thread\n", dev->name);
+	  P_ERROR ("%s: unable to signal thread\n", dev->name);
 	}
-	else
+      else
 	{
-	    /* wait for the thread to exit. */
-	    down (priv->maintenanceCheckThreadComplete);
-	    up (priv->maintenanceCheckThreadComplete);
+	  /* wait for the thread to exit. */
+	  down (priv->maintenanceCheckThreadComplete);
+	  up (priv->maintenanceCheckThreadComplete);
 	}
     }
 
-    /* Set callbacks when port is disabled */
-    ixEthAccPortTxDoneCallbackRegister(priv->port_id, 
-				       tx_done_disable_cb,
-				       (UINT32)dev);
-    ixEthAccPortRxCallbackRegister(priv->port_id, 
-				   rx_disable_cb, 
-				   (UINT32)dev);
+  /* Set callbacks when port is disabled */
+  ixEthAccPortTxDoneCallbackRegister (priv->port_id,
+				      tx_done_disable_cb, (UINT32) dev);
+  ixEthAccPortRxCallbackRegister (priv->port_id, rx_disable_cb, (UINT32) dev);
 
 #ifdef CONFIG_IXP400_NAPI
-    /* For NAPI we are using the "nearly full" queue entry condition
-     * for the Tx Done Q in order to limit unecessary interrupts, but
-     * EthAcc expects the "not empty" condition to be set when flushing
-     * buffers during port disable. So we must temporarily set it back 
-     */
+  /* For NAPI we are using the "nearly full" queue entry condition
+   * for the Tx Done Q in order to limit unecessary interrupts, but
+   * EthAcc expects the "not empty" condition to be set when flushing
+   * buffers during port disable. So we must temporarily set it back 
+   */
 
-    /* set queue interrrupt condition for TxDone back to "not empty" */
-    ixQMgrNotificationEnable(IX_QMGR_QUEUE_31,IX_QMGR_Q_SOURCE_ID_NOT_E);
+  /* set queue interrrupt condition for TxDone back to "not empty" */
+  ixQMgrNotificationEnable (IX_QMGR_QUEUE_31, IX_QMGR_Q_SOURCE_ID_NOT_E);
 
-    /* disable interrupts briefly while calling the TxDone callback */
+  /* disable interrupts briefly while calling the TxDone callback */
 #if IS_KERNEL26
-    local_irq_save(flags);
+  local_irq_save (flags);
 #else
-    save_flags_cli(flags);
+  save_flags_cli (flags);
 #endif /* IS_KERNEL26 */
-    /* now service the queue to satisfy the "empty" condition */
-    ixEthTxFrameDoneQMCallback(0, 0);
+  /* now service the queue to satisfy the "empty" condition */
+  ixEthTxFrameDoneQMCallback (0, 0);
 
-#if IS_KERNEL26    
-    local_irq_restore(flags);
+#if IS_KERNEL26
+  local_irq_restore (flags);
 #else
-    restore_flags(flags);
+  restore_flags (flags);
 #endif /* IS_KERNEL26 */
 
 #endif /* CONFIG_IXP400_NAPI */
 
-    if ((status = ixEthAccPortDisable(priv->port_id)) != IX_SUCCESS)
+  if ((status = ixEthAccPortDisable (priv->port_id)) != IX_SUCCESS)
     {
-	/* should not get here */
-	P_ERROR("%s: ixEthAccPortDisable(%d) failed\n",
-		dev->name, priv->port_id);
+      /* should not get here */
+      P_ERROR ("%s: ixEthAccPortDisable(%d) failed\n",
+	       dev->name, priv->port_id);
     }
 
 #ifdef CONFIG_IXP400_NAPI
-    /* finished with port disable, continue using "nearly full" now */
-    ixQMgrNotificationEnable(IX_QMGR_QUEUE_31,IX_QMGR_Q_SOURCE_ID_NF);
+  /* finished with port disable, continue using "nearly full" now */
+  ixQMgrNotificationEnable (IX_QMGR_QUEUE_31, IX_QMGR_Q_SOURCE_ID_NF);
 #endif
 
-    /* remove all entries from the sw queues */
-    dev_skb_queue_drain(priv);
-    dev_tx_mb_queue_drain(priv);
-    dev_rx_mb_queue_drain(priv);
+  /* remove all entries from the sw queues */
+  dev_skb_queue_drain (priv);
+  dev_tx_mb_queue_drain (priv);
+  dev_rx_mb_queue_drain (priv);
 
-    TRACE;
+  TRACE;
 }
 
 /* this function is called by the kernel to transmit packet 
  * It is expected to run in the context of the ksoftirq thread.
 */
-int dev_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
+int
+dev_hard_start_xmit (struct sk_buff *skb, struct net_device *dev)
 {
-    int res;
-    IX_OSAL_MBUF *mbuf;
+  int res;
+  IX_OSAL_MBUF *mbuf;
 #if IS_KERNEL26
-    priv_data_t *priv = netdev_priv(dev);
+  priv_data_t *priv = netdev_priv (dev);
 #else
-    priv_data_t *priv = dev->priv;
+  priv_data_t *priv = dev->priv;
 #endif
 
-    TRACE;
+  TRACE;
 
-    /* get mbuf struct from tx software queue */
-    mbuf = dev_tx_mb_dequeue(priv);
+  /* get mbuf struct from tx software queue */
+  mbuf = dev_tx_mb_dequeue (priv);
 
-    if (mbuf == NULL)
+  if (mbuf == NULL)
     {
-	/* No mbuf available, free the skbuf */
-	dev_kfree_skb_any(skb);
-	priv->stats.tx_dropped++;
+      /* No mbuf available, free the skbuf */
+      dev_kfree_skb_any (skb);
+      priv->stats.tx_dropped++;
 
-        if (!netif_queue_stopped(dev))
-        {
-            ixEthAccPortTxDoneCallbackRegister(priv->port_id, 
-                                               tx_done_queue_stopped_cb,
-                                               (UINT32)dev);
-            dev->trans_start = jiffies;
-            netif_stop_queue (dev);
-        }
-	return 0;
+      if (!netif_queue_stopped (dev))
+	{
+	  ixEthAccPortTxDoneCallbackRegister (priv->port_id,
+					      tx_done_queue_stopped_cb,
+					      (UINT32) dev);
+	  dev->trans_start = jiffies;
+	  netif_stop_queue (dev);
+	}
+      return 0;
     }
 
 #ifdef DEBUG_DUMP
-    skb_dump("tx", skb);
+  skb_dump ("tx", skb);
 #endif
 
-    mbuf_swap_skb(mbuf, skb); /* this should return NULL, as mbufs in the pool
-    			       * have no skb attached
-			       */
+  mbuf_swap_skb (mbuf, skb);	/* this should return NULL, as mbufs in the pool
+				 * have no skb attached
+				 */
 
-    /* set ethernet flags to zero */
-    IX_ETHACC_NE_FLAGS(mbuf) = 0;
+  /* set ethernet flags to zero */
+  IX_ETHACC_NE_FLAGS (mbuf) = 0;
 
-    /* flush the mbuf data from the cache */
-    IX_OSAL_CACHE_FLUSH(IX_OSAL_MBUF_MDATA(mbuf), IX_OSAL_MBUF_MLEN(mbuf));
+  /* flush the mbuf data from the cache */
+  IX_OSAL_CACHE_FLUSH (IX_OSAL_MBUF_MDATA (mbuf), IX_OSAL_MBUF_MLEN (mbuf));
 
-    if ((res = ixEthAccPortTxFrameSubmit(priv->port_id, mbuf,
-	IX_ETH_ACC_TX_DEFAULT_PRIORITY)))
+  if ((res = ixEthAccPortTxFrameSubmit (priv->port_id, mbuf,
+					IX_ETH_ACC_TX_DEFAULT_PRIORITY)))
     {
 #ifdef CONFIG_IXP400_ETH_SKB_RECYCLE
-	/* recycle skb for later use in rx (fast) */
-	dev_skb_enqueue(priv, mbuf_swap_skb(mbuf, NULL));
+      /* recycle skb for later use in rx (fast) */
+      dev_skb_enqueue (priv, mbuf_swap_skb (mbuf, NULL));
 #else
-	/* put to kernel pool (slow) */
-	dev_kfree_skb_any(mbuf_swap_skb(mbuf, NULL)); 
+      /* put to kernel pool (slow) */
+      dev_kfree_skb_any (mbuf_swap_skb (mbuf, NULL));
 #endif
-	/* return the mbuf to the queue */
-	dev_tx_mb_enqueue(priv, mbuf);
+      /* return the mbuf to the queue */
+      dev_tx_mb_enqueue (priv, mbuf);
 
-	priv->stats.tx_dropped++;
-	P_ERROR("%s: ixEthAccPortTxFrameSubmit failed for port %d, res = %d\n",
-		dev->name, priv->port_id, res);
+      priv->stats.tx_dropped++;
+      P_ERROR ("%s: ixEthAccPortTxFrameSubmit failed for port %d, res = %d\n",
+	       dev->name, priv->port_id, res);
     }
 
-    TRACE;
+  TRACE;
 
-    return 0;
+  return 0;
 }
 
 /* Open the device.
  * Request resources and start interrupts
  */
-static int do_dev_open(struct net_device *dev)
+static int
+do_dev_open (struct net_device *dev)
 {
-    int res;
+  int res;
 
 #ifdef CONFIG_IXP400_NAPI
-    /* if the current rx_poll_dev isn't running, set it to this one */
-    if(!netif_running(rx_poll_dev))
+  /* if the current rx_poll_dev isn't running, set it to this one */
+  if (!netif_running (rx_poll_dev))
     {
-        rx_poll_dev = dev;
+      rx_poll_dev = dev;
     }
 #endif
 
-    /* prevent the maintenance task from running while bringing up port */
-    down(maintenance_mutex);
+  /* prevent the maintenance task from running while bringing up port */
+  down (maintenance_mutex);
 
-    /* bring up the port */
-    res = port_enable(dev);
+  /* bring up the port */
+  res = port_enable (dev);
 
-    up(maintenance_mutex);
+  up (maintenance_mutex);
 
-    if (res == 0)
+  if (res == 0)
     {
 #if IS_KERNEL26
-	try_module_get(THIS_MODULE);
+      try_module_get (THIS_MODULE);
 #else
-	MOD_INC_USE_COUNT;
+      MOD_INC_USE_COUNT;
 #endif
     }
 
-    return res;
+  return res;
 }
 
 /* Close the device.
  * Free resources acquired in dev_start
  */
-static int do_dev_stop(struct net_device *dev)
+static int
+do_dev_stop (struct net_device *dev)
 {
 #ifdef CONFIG_IXP400_NAPI
-    int dev_idx = 0;
-    struct net_device *tmp_dev;
+  int dev_idx = 0;
+  struct net_device *tmp_dev;
 
-    TRACE;
-    if(dev == rx_poll_dev)
+  TRACE;
+  if (dev == rx_poll_dev)
     {
-        /* closing the current poll device, change to an open one. 
-         * if none are open, do nothing.
-         */
-        for(dev_idx = 0; dev_idx < dev_max_count; dev_idx++)
-        {
+      /* closing the current poll device, change to an open one. 
+       * if none are open, do nothing.
+       */
+      for (dev_idx = 0; dev_idx < dev_max_count; dev_idx++)
+	{
 #if IS_KERNEL26
-	    tmp_dev = dev_get_drvdata(&ixp400_eth_devices[dev_idx].dev);
+	  tmp_dev = dev_get_drvdata (&ixp400_eth_devices[dev_idx].dev);
 #else
-            tmp_dev = &ixp400_eth_devices[dev_idx];
+	  tmp_dev = &ixp400_eth_devices[dev_idx];
 #endif
 
-            if(netif_running(tmp_dev))
-            {
-                rx_poll_dev = tmp_dev;
-                break;
-            }
-        }
+	  if (netif_running (tmp_dev))
+	    {
+	      rx_poll_dev = tmp_dev;
+	      break;
+	    }
+	}
     }
 #endif
 
-    TRACE;
+  TRACE;
 
-    /* prevent the maintenance task from running while bringing up port */
-    down(maintenance_mutex);
+  /* prevent the maintenance task from running while bringing up port */
+  down (maintenance_mutex);
 
-    /* bring the port down */
-    port_disable(dev);
+  /* bring the port down */
+  port_disable (dev);
 
-    up(maintenance_mutex);
+  up (maintenance_mutex);
 
 #if IS_KERNEL26
-    module_put(THIS_MODULE);
+  module_put (THIS_MODULE);
 #else
-    MOD_DEC_USE_COUNT;
+  MOD_DEC_USE_COUNT;
 #endif
 
-    return 0;
+  return 0;
 }
 
 static void
-dev_tx_timeout_task(struct work_struct *work)
+dev_tx_timeout_task (struct work_struct *work)
 {
-    priv_data_t *priv = container_of(work, priv_data_t, timeout_work);
-    struct net_device *dev = priv->ndev;
+  priv_data_t *priv = container_of (work, priv_data_t, timeout_work);
+  struct net_device *dev = priv->ndev;
 
-    P_WARN("%s: Tx Timeout for port %d\n", dev->name, priv->port_id);
+  P_WARN ("%s: Tx Timeout for port %d\n", dev->name, priv->port_id);
 
-    down(maintenance_mutex);
-    port_disable(dev);
+  down (maintenance_mutex);
+  port_disable (dev);
 
-    /* Note to user: Consider performing other reset operations here
-     * (such as PHY reset), if it is known to help the Tx Flow to 
-     * become "unstuck". This scenario is application/board-specific.
-     * 
-     * e.g.
-     *
-     *  if (netif_carrier_ok(dev))
-     *  {
-     *	down(miiAccessMutex);
-     *	ixEthMiiPhyReset(phyAddresses[priv->port_id]);
-     *	up(miiAccessMutex);
-     *  }
-     */
-    
-    /* enable traffic again if the port is up */
-    if (dev->flags & IFF_UP)
+  /* Note to user: Consider performing other reset operations here
+   * (such as PHY reset), if it is known to help the Tx Flow to 
+   * become "unstuck". This scenario is application/board-specific.
+   * 
+   * e.g.
+   *
+   *  if (netif_carrier_ok(dev))
+   *  {
+   *  down(miiAccessMutex);
+   *  ixEthMiiPhyReset(phyAddresses[priv->port_id]);
+   *  up(miiAccessMutex);
+   *  }
+   */
+
+  /* enable traffic again if the port is up */
+  if (dev->flags & IFF_UP)
     {
-	port_enable(dev);
+      port_enable (dev);
     }
 
-    up(maintenance_mutex);
+  up (maintenance_mutex);
 }
 
 
 /* This function is called when kernel thinks that TX is stuck */
-static void dev_tx_timeout(struct net_device *dev)
+static void
+dev_tx_timeout (struct net_device *dev)
 {
 #if IS_KERNEL26
-    priv_data_t *priv = netdev_priv(dev);
+  priv_data_t *priv = netdev_priv (dev);
 #else
-    priv_data_t *priv = dev->priv;
+  priv_data_t *priv = dev->priv;
 #endif
 
-    TRACE;
+  TRACE;
 #if IS_KERNEL26
-    queue_work(priv->timeout_workq, &priv->timeout_work);
+  queue_work (priv->timeout_workq, &priv->timeout_work);
 #else
-    schedule_work(&priv->taskqueue_timeout);
+  schedule_work (&priv->taskqueue_timeout);
 #endif
 }
 
 /* update the maximum msdu value for this device */
-static void dev_change_msdu(struct net_device *dev, int new_msdu_size)
+static void
+dev_change_msdu (struct net_device *dev, int new_msdu_size)
 {
 #if IS_KERNEL26
-    priv_data_t *priv = netdev_priv(dev);
+  priv_data_t *priv = netdev_priv (dev);
 #else
-    priv_data_t *priv = dev->priv;
+  priv_data_t *priv = dev->priv;
 #endif
-    unsigned int new_size = new_msdu_size;
+  unsigned int new_size = new_msdu_size;
 
-    priv->msdu_size = new_size;
+  priv->msdu_size = new_size;
 
-    /* ensure buffers are large enough (do not use too small buffers
-     * even if it is possible to configure so. 
-     */
-    if (new_size < IX_ETHNPE_ACC_FRAME_LENGTH_DEFAULT)
+  /* ensure buffers are large enough (do not use too small buffers
+   * even if it is possible to configure so. 
+   */
+  if (new_size < IX_ETHNPE_ACC_FRAME_LENGTH_DEFAULT)
     {
-	new_size = IX_ETHNPE_ACC_FRAME_LENGTH_DEFAULT;
+      new_size = IX_ETHNPE_ACC_FRAME_LENGTH_DEFAULT;
     }
 
-    /* the NPE needs 64 bytes boundaries : round-up to the next
-    * frame boundary. This size is used to invalidate and replenish.
-    */
-    new_size = IX_ETHNPE_ACC_RXFREE_BUFFER_ROUND_UP(new_size);
-    priv->replenish_size = new_size;
-    
-    /* Xscale MMU needs a cache line boundary : round-up to the next
-     * cache line boundary. This will be the size used to allocate
-     * skbufs from the kernel.
-     */
-    new_size = HDR_SIZE + new_size;
-    new_size = L1_CACHE_ALIGN(new_size);
-    priv->pkt_size = new_size;
+  /* the NPE needs 64 bytes boundaries : round-up to the next
+   * frame boundary. This size is used to invalidate and replenish.
+   */
+  new_size = IX_ETHNPE_ACC_RXFREE_BUFFER_ROUND_UP (new_size);
+  priv->replenish_size = new_size;
 
-    /* Linux stack uses a reserved header.
-     * skb contain shared info about fragment lists 
-     * this will be the value stored in skb->truesize
-     */
-    priv->alloc_size = SKB_DATA_ALIGN(SKB_RESERVED_HEADER_SIZE + new_size) + 
-    	SKB_RESERVED_TRAILER_SIZE;
+  /* Xscale MMU needs a cache line boundary : round-up to the next
+   * cache line boundary. This will be the size used to allocate
+   * skbufs from the kernel.
+   */
+  new_size = HDR_SIZE + new_size;
+  new_size = L1_CACHE_ALIGN (new_size);
+  priv->pkt_size = new_size;
+
+  /* Linux stack uses a reserved header.
+   * skb contain shared info about fragment lists 
+   * this will be the value stored in skb->truesize
+   */
+  priv->alloc_size = SKB_DATA_ALIGN (SKB_RESERVED_HEADER_SIZE + new_size) +
+    SKB_RESERVED_TRAILER_SIZE;
 }
 
-static int dev_change_mtu(struct net_device *dev, int new_mtu_size)
+static int
+dev_change_mtu (struct net_device *dev, int new_mtu_size)
 {
 #if IS_KERNEL26
-    priv_data_t *priv = netdev_priv(dev);
+  priv_data_t *priv = netdev_priv (dev);
 #else
-    priv_data_t *priv = dev->priv;
+  priv_data_t *priv = dev->priv;
 #endif
-    /* the msdu size includes the ethernet header plus the 
-     * mtu (IP payload), but does not include the FCS which is 
-     * stripped out by the access layer.
-     */
-    unsigned int new_msdu_size = new_mtu_size + dev->hard_header_len + VLAN_HDR;
+  /* the msdu size includes the ethernet header plus the 
+   * mtu (IP payload), but does not include the FCS which is 
+   * stripped out by the access layer.
+   */
+  unsigned int new_msdu_size = new_mtu_size + dev->hard_header_len + VLAN_HDR;
 
-    if (new_msdu_size > IX_ETHNPE_ACC_FRAME_LENGTH_MAX)
+  if (new_msdu_size > IX_ETHNPE_ACC_FRAME_LENGTH_MAX)
     {
-	/* Unsupported msdu size */
-	return -EINVAL;
+      /* Unsupported msdu size */
+      return -EINVAL;
     }
 
-    /* safer to stop maintenance task while bringing port down and up */
-    down(maintenance_mutex);
+  /* safer to stop maintenance task while bringing port down and up */
+  down (maintenance_mutex);
 
-    if (ixEthDBFilteringPortMaximumFrameSizeSet(priv->port_id, 
-						new_msdu_size))
+  if (ixEthDBFilteringPortMaximumFrameSizeSet (priv->port_id, new_msdu_size))
     {
-	P_ERROR("%s: ixEthDBFilteringPortMaximumFrameSizeSet failed for port %d\n",
-		dev->name, priv->port_id);
-	up(maintenance_mutex);
+      P_ERROR
+	("%s: ixEthDBFilteringPortMaximumFrameSizeSet failed for port %d\n",
+	 dev->name, priv->port_id);
+      up (maintenance_mutex);
 
-	return -1;
+      return -1;
     }
 
-    /* update the packet sizes needed */
-    dev_change_msdu(dev, new_msdu_size);
-    /* update the driver mtu value */
-    dev->mtu = new_mtu_size;
+  /* update the packet sizes needed */
+  dev_change_msdu (dev, new_msdu_size);
+  /* update the driver mtu value */
+  dev->mtu = new_mtu_size;
 
-    up(maintenance_mutex);
+  up (maintenance_mutex);
 
-    return 0;
+  return 0;
 }
 
-static int do_dev_ioctl(struct net_device *dev, struct ifreq *req, int cmd)
+static int
+do_dev_ioctl (struct net_device *dev, struct ifreq *req, int cmd)
 {
 #if IS_KERNEL26
-    priv_data_t *priv = netdev_priv(dev);
+  priv_data_t *priv = netdev_priv (dev);
 #else
-    priv_data_t *priv = dev->priv;
+  priv_data_t *priv = dev->priv;
 #endif
-    struct mii_ioctl_data *data = (struct mii_ioctl_data *) & req->ifr_data;
-    int phy = phyAddresses[priv->port_id];
-    int res = 0;
+  struct mii_ioctl_data *data = (struct mii_ioctl_data *) &req->ifr_data;
+  int phy = phyAddresses[portIdPhyIndexMap[priv->port_id]];
+  int res = 0;
 
-    TRACE;
+  TRACE;
 
-    switch (cmd)
+  switch (cmd)
     {
-	/*
-	 * IOCTL's for mii-tool support
-	 */
+      /*
+       * IOCTL's for mii-tool support
+       */
 
-	/* Get address of MII PHY in use */
-	case SIOCGMIIPHY:
-	case SIOCDEVPRIVATE:
-	    data->phy_id = phy;
-	    return 0;
+      /* Get address of MII PHY in use */
+    case SIOCGMIIPHY:
+    case SIOCDEVPRIVATE:
+      data->phy_id = phy;
+      return 0;
 
-        /* Read MII PHY register */
-	case SIOCGMIIREG:		
-	case SIOCDEVPRIVATE+1:
-	    down (miiAccessMutex);     /* lock the MII register access mutex */
-	    if ((res = ixEthAccMiiReadRtn (data->phy_id, data->reg_num, &data->val_out)))
-	    {
-		P_ERROR("Error reading MII reg %d on phy %d\n",
-		       data->reg_num, data->phy_id);
-		res = -1;
-	    }
-	    up (miiAccessMutex);	/* release the MII register access mutex */
-	    return res;
+      /* Read MII PHY register */
+    case SIOCGMIIREG:
+    case SIOCDEVPRIVATE + 1:
+      down (miiAccessMutex);	/* lock the MII register access mutex */
+      if ((res =
+	   ixEthAccMiiReadRtn (data->phy_id, data->reg_num, &data->val_out)))
+	{
+	  P_ERROR ("Error reading MII reg %d on phy %d\n",
+		   data->reg_num, data->phy_id);
+	  res = -1;
+	}
+      up (miiAccessMutex);	/* release the MII register access mutex */
+      return res;
 
-	/* Write MII PHY register */
-	case SIOCSMIIREG:
-	case SIOCDEVPRIVATE+2:
-	    down (miiAccessMutex);     /* lock the MII register access mutex */
-	    if ((res = ixEthAccMiiWriteRtn (data->phy_id, data->reg_num, data->val_in)))
-	    {
-		P_ERROR("Error writing MII reg %d on phy %d\n",
-                        data->reg_num, data->phy_id);
-		res = -1;
-	    }
-	    up (miiAccessMutex);	/* release the MII register access mutex */
-	    return res;
+      /* Write MII PHY register */
+    case SIOCSMIIREG:
+    case SIOCDEVPRIVATE + 2:
+      down (miiAccessMutex);	/* lock the MII register access mutex */
+      if ((res =
+	   ixEthAccMiiWriteRtn (data->phy_id, data->reg_num, data->val_in)))
+	{
+	  P_ERROR ("Error writing MII reg %d on phy %d\n",
+		   data->reg_num, data->phy_id);
+	  res = -1;
+	}
+      up (miiAccessMutex);	/* release the MII register access mutex */
+      return res;
 
-	/* set the MTU size */
-	case SIOCSIFMTU:
-	    return dev_change_mtu(dev, req->ifr_mtu);
+      /* set the MTU size */
+    case SIOCSIFMTU:
+      return dev_change_mtu (dev, req->ifr_mtu);
 
-	default:
-	    return -EOPNOTSUPP;
+    default:
+      return -EOPNOTSUPP;
     }
 
-    return -EOPNOTSUPP;
+  return -EOPNOTSUPP;
 }
 
-static struct net_device_stats *dev_get_stats(struct net_device *dev)
+static struct net_device_stats *
+dev_get_stats (struct net_device *dev)
 {
-    int res;
-    /* "stats" should be cache-safe.
-     * we alligne "stats" and "priv" by 32 bytes, so that the cache
-     * operations will not affect "res" and "priv"
-     */
-    IxEthEthObjStats ethStats __attribute__ ((aligned(32))) = {};
+  int res;
+  /* "stats" should be cache-safe.
+   * we alligne "stats" and "priv" by 32 bytes, so that the cache
+   * operations will not affect "res" and "priv"
+   */
+  IxEthEthObjStats ethStats __attribute__ ((aligned (32))) =
+  {
+  };
 #if IS_KERNEL26
-    priv_data_t *priv = netdev_priv(dev);
+  priv_data_t *priv = netdev_priv (dev);
 #else
-    priv_data_t *priv = dev->priv;
+  priv_data_t *priv = dev->priv;
 #endif
 
-    TRACE;
+  TRACE;
 
-    priv = dev->priv;
+  priv = dev->priv;
 
-    /* Get HW stats and translate to the net_device_stats */
-    if (!netif_running(dev))
+  /* Get HW stats and translate to the net_device_stats */
+  if (!netif_running (dev))
     {
-	TRACE;
-	return &priv->stats;
+      TRACE;
+      return &priv->stats;
     }
 
-    TRACE;
+  TRACE;
 
-    IX_OSAL_CACHE_INVALIDATE(&ethStats, sizeof(ethStats));
+  IX_OSAL_CACHE_INVALIDATE (&ethStats, sizeof (ethStats));
 
-    if ((res = ixEthAccMibIIStatsGetClear(priv->port_id, &ethStats)))
+  if ((res = ixEthAccMibIIStatsGetClear (priv->port_id, &ethStats)))
     {
-	P_ERROR("%s: ixEthAccMibIIStatsGet failed for port %d, res = %d\n",
-		dev->name, priv->port_id, res);
-	return &priv->stats;
+      P_ERROR ("%s: ixEthAccMibIIStatsGet failed for port %d, res = %d\n",
+	       dev->name, priv->port_id, res);
+      return &priv->stats;
     }
 
-    TRACE;
+  TRACE;
 
-    /* bad packets received */
-    priv->stats.rx_errors += 
-        ethStats.dot3StatsAlignmentErrors +
-        ethStats.dot3StatsFCSErrors +
-        ethStats.dot3StatsInternalMacReceiveErrors;
+  /* bad packets received */
+  priv->stats.rx_errors +=
+    ethStats.dot3StatsAlignmentErrors +
+    ethStats.dot3StatsFCSErrors + ethStats.dot3StatsInternalMacReceiveErrors;
 
-    /* packet transmit problems */
-    priv->stats.tx_errors += 
-        ethStats.dot3StatsLateCollisions +
-        ethStats.dot3StatsExcessiveCollsions +
-        ethStats.dot3StatsInternalMacTransmitErrors +
-        ethStats.dot3StatsCarrierSenseErrors;
+  /* packet transmit problems */
+  priv->stats.tx_errors +=
+    ethStats.dot3StatsLateCollisions +
+    ethStats.dot3StatsExcessiveCollsions +
+    ethStats.dot3StatsInternalMacTransmitErrors +
+    ethStats.dot3StatsCarrierSenseErrors;
 
-    priv->stats.collisions +=
-        ethStats.dot3StatsSingleCollisionFrames +
-        ethStats.dot3StatsMultipleCollisionFrames;
+  priv->stats.collisions +=
+    ethStats.dot3StatsSingleCollisionFrames +
+    ethStats.dot3StatsMultipleCollisionFrames;
 
-    /* recved pkt with crc error */
-    priv->stats.rx_crc_errors +=
-        ethStats.dot3StatsFCSErrors;
+  /* recved pkt with crc error */
+  priv->stats.rx_crc_errors += ethStats.dot3StatsFCSErrors;
 
-    /* recv'd frame alignment error */
-    priv->stats.rx_frame_errors += 
-        ethStats.dot3StatsAlignmentErrors;
+  /* recv'd frame alignment error */
+  priv->stats.rx_frame_errors += ethStats.dot3StatsAlignmentErrors;
 
-    /* detailed tx_errors */
-    priv->stats.tx_carrier_errors +=
-        ethStats.dot3StatsCarrierSenseErrors;
+  /* detailed tx_errors */
+  priv->stats.tx_carrier_errors += ethStats.dot3StatsCarrierSenseErrors;
 
-    /* Rx traffic dropped at the NPE level */
-    priv->stats.rx_dropped +=
-        ethStats.RxOverrunDiscards +
-        ethStats.RxLearnedEntryDiscards +
-        ethStats.RxLargeFramesDiscards +
-        ethStats.RxSTPBlockedDiscards +
-        ethStats.RxVLANTypeFilterDiscards +
-        ethStats.RxVLANIdFilterDiscards +
-        ethStats.RxInvalidSourceDiscards +
-        ethStats.RxBlackListDiscards +
-        ethStats.RxWhiteListDiscards +
-        ethStats.RxUnderflowEntryDiscards;
+  /* Rx traffic dropped at the NPE level */
+  priv->stats.rx_dropped +=
+    ethStats.RxOverrunDiscards +
+    ethStats.RxLearnedEntryDiscards +
+    ethStats.RxLargeFramesDiscards +
+    ethStats.RxSTPBlockedDiscards +
+    ethStats.RxVLANTypeFilterDiscards +
+    ethStats.RxVLANIdFilterDiscards +
+    ethStats.RxInvalidSourceDiscards +
+    ethStats.RxBlackListDiscards +
+    ethStats.RxWhiteListDiscards + ethStats.RxUnderflowEntryDiscards;
 
-    /* Tx traffic dropped at the NPE level */
-    priv->stats.tx_dropped += 
-        ethStats.TxLargeFrameDiscards +
-        ethStats.TxVLANIdFilterDiscards;
+  /* Tx traffic dropped at the NPE level */
+  priv->stats.tx_dropped +=
+    ethStats.TxLargeFrameDiscards + ethStats.TxVLANIdFilterDiscards;
 
-    return &priv->stats;
+  return &priv->stats;
 }
 
 
 /* Initialize QMgr and bind it's interrupts */
-static int qmgr_init(void)
+static int
+qmgr_init (void)
 {
-    int res;
+  int res;
 
-    /*
-     * Enable live lock and disable polling mode if HSS co-exist is enabled
-     */
-    if (hss_coexist)
+  /*
+   * Enable live lock and disable polling mode if HSS co-exist is enabled
+   */
+  if (hss_coexist)
     {
-	ixFeatureCtrlSwConfigurationWrite (IX_FEATURECTRL_ORIGB0_DISPATCHER,
-	    IX_FEATURE_CTRL_SWCONFIG_DISABLED);
+      ixFeatureCtrlSwConfigurationWrite (IX_FEATURECTRL_ORIGB0_DISPATCHER,
+					 IX_FEATURE_CTRL_SWCONFIG_DISABLED);
 
-	if (!npe_error_handler)
-	    datapath_poll = 0;
+      if (!npe_error_handler)
+	datapath_poll = 0;
     }
 
-    /* Initialise Queue Manager */
-    P_VERBOSE("Initialising Queue Manager...\n");
-    if ((res = ixQMgrInit()))
+  /* Initialise Queue Manager */
+  P_VERBOSE ("Initialising Queue Manager...\n");
+  if ((res = ixQMgrInit ()))
     {
-	P_ERROR("Error initialising queue manager!\n");
-	return -1;
+      P_ERROR ("Error initialising queue manager!\n");
+      return -1;
     }
 
-    TRACE;
+  TRACE;
 
-    /* Get the dispatcher entrypoint */
-    ixQMgrDispatcherLoopGet (&dispatcherFunc);
+  /* Get the dispatcher entrypoint */
+  ixQMgrDispatcherLoopGet (&dispatcherFunc);
 
-    TRACE;
+  TRACE;
 
-    if (request_irq(IX_OSAL_IXP400_QM1_IRQ_LVL,
-                    dev_qmgr_os_isr,
-                    IRQF_SHARED,
-                    "ixp400_eth QM1",
-                    (void *)IRQ_ANY_PARAMETER))
+  if (request_irq (IX_OSAL_IXP400_QM1_IRQ_LVL,
+		   dev_qmgr_os_isr,
+		   IRQF_SHARED, "ixp400_eth QM1", (void *) IRQ_ANY_PARAMETER))
     {
-        P_ERROR("Failed to request_irq to Queue Manager interrupt!\n");
-        return -1;
+      P_ERROR ("Failed to request_irq to Queue Manager interrupt!\n");
+      return -1;
     }
 
-    ixQMgrDispatcherInterruptModeSet(TRUE);
+  ixQMgrDispatcherInterruptModeSet (TRUE);
 
-    TRACE;
-    return 0;
+  TRACE;
+  return 0;
 }
 
-static int ethacc_uninit(void)
-{ 
-    int res;
+static int
+ethacc_uninit (void)
+{
+  int res;
 
-    TRACE;
+  TRACE;
 
-    /* we should uninitialize the components here */
-    if ((res=ixEthDBUnload()))
+  /* we should uninitialize the components here */
+  if ((res = ixEthDBUnload ()))
     {
-        P_ERROR("ixEthDBUnload Failed!\n");
+      P_ERROR ("ixEthDBUnload Failed!\n");
     }
-    TRACE;
+  TRACE;
 
-    ixEthAccUnload();
+  ixEthAccUnload ();
 
-    /* best effort, always succeed and return 0 */
-    return 0;
+  /* best effort, always succeed and return 0 */
+  return 0;
 }
 
-static int ethacc_init(void)
+static int
+ethacc_init (void)
 {
-    int res = 0;
-    IxEthAccPortId portId;
-    int dev_count;
-    UINT8 imageId;
+  int res = 0;
+  IxEthAccPortId portId;
+  int dev_count;
+  UINT8 imageId;
 
-    /* start all NPEs before starting the access layer */
-    TRACE;
-    for (dev_count = 0; 
-	 dev_count < dev_max_count;  /* module parameter */
-	 dev_count++)
+  /* start all NPEs before starting the access layer */
+  TRACE;
+  for (dev_count = 0; dev_count < dev_max_count;	/* module parameter */
+       dev_count++)
     {
-    	u32 npe_active = 0;
+      u32 npe_active = 0;
 
-	portId = default_portId[dev_count];
+      portId = default_portId[dev_count];
 
-        TRACE;
+      TRACE;
 
-	if (IX_SUCCESS == ixNpeDlLoadedImageFunctionalityGet(
-		default_npeImageId[portId].npeId, &imageId))
+      if (IX_SUCCESS ==
+	  ixNpeDlLoadedImageFunctionalityGet (default_npeImageId[portId].
+					      npeId, &imageId))
 	{
-	    npe_active = 1;
+	  npe_active = 1;
 	}
 
-	/*
-	 * Check if the NPE is being initialized with other NPE image. Do not
-	 * download NPE image when the NPE containing other image
-	 */
-	if (0 == npe_active)
+      /*
+       * Check if the NPE is being initialized with other NPE image. Do not
+       * download NPE image when the NPE containing other image
+       */
+      if (0 == npe_active)
 	{
-	    /* Initialise and Start NPE */
-	    if (IX_SUCCESS !=
-		ixNpeDlNpeInitAndStart(default_npeImageId[portId].npeImageId))
+	  /* Initialise and Start NPE */
+	  if (IX_SUCCESS !=
+	      ixNpeDlNpeInitAndStart (default_npeImageId[portId].npeImageId))
 	    {
-		P_ERROR("Error starting NPE for Ethernet port %d!\n", portId);
-		return -1;
+	      P_ERROR ("Error starting NPE for Ethernet port %d!\n", portId);
+	      return -1;
 	    }
 
-	    /* 
-	     * We reach here when the NPE image downloaded and the NPE engine
-	     * started. So we mark the NPE engine started
-	     */
-	    npe_active = 1;
+	  /* 
+	   * We reach here when the NPE image downloaded and the NPE engine
+	   * started. So we mark the NPE engine started
+	   */
+	  npe_active = 1;
 	}
 
-	if (npe_error_handler && npe_active)
+      if (npe_error_handler && npe_active)
 	{
-	    /*
-	     * Determine which NPE is to be enabled for parity error detection
-	     * based on the NPE image ID that is successfully downloaded
-	     */
-#ifdef CONFIG_CPU_IXP46X
-	    switch (default_npeImageId[portId].npeId)
+	  /*
+	   * Determine which NPE is to be enabled for parity error detection
+	   * based on the NPE image ID that is successfully downloaded
+	   */
+#if defined (CONFIG_CPU_IXP46X) || defined (CONFIG_CPU_IXP43X)
+	  switch (default_npeImageId[portId].npeId)
 	    {
-	    	case IX_NPEDL_NPEID_NPEA:
-			parity_npeA_enabled = IX_PARITYENACC_ENABLE;
-			break;
-	    	case IX_NPEDL_NPEID_NPEB:
-			parity_npeB_enabled = IX_PARITYENACC_ENABLE;
-			break;
-	    	case IX_NPEDL_NPEID_NPEC:
-			parity_npeC_enabled = IX_PARITYENACC_ENABLE;
-			break;
+	    case IX_NPEDL_NPEID_NPEA:
+	      parity_npeA_enabled = IX_PARITYENACC_ENABLE;
+	      break;
+	    case IX_NPEDL_NPEID_NPEB:
+	      parity_npeB_enabled = IX_PARITYENACC_ENABLE;
+	      break;
+	    case IX_NPEDL_NPEID_NPEC:
+	      parity_npeC_enabled = IX_PARITYENACC_ENABLE;
+	      break;
 
-		default:
-			P_ERROR("Unknown NPE image ID\n");
+	    default:
+	      P_ERROR ("Unknown NPE image ID\n");
 	    }
 #endif
 	}
     }
 
-    /* initialize the Ethernet Access layer */
-    TRACE;
-    if ((res = ixEthAccInit()))
+  /* initialize the Ethernet Access layer */
+  TRACE;
+  if ((res = ixEthAccInit ()))
     {
-	P_ERROR("ixEthAccInit failed with res=%d\n", res);
-	return convert_error_ethAcc(res);
+      P_ERROR ("ixEthAccInit failed with res=%d\n", res);
+      return convert_error_ethAcc (res);
     }
 
 
-    TRACE;
+  TRACE;
 
-    return 0;
+  return 0;
 }
 
-static int phy_init(void)
+static int
+phy_init (void)
 {
-    int res;
-    BOOL physcan[IXP425_ETH_ACC_MII_MAX_ADDR];
-    int i, phy_found, num_phys_to_set, dev_count;
+  int res;
+  BOOL physcan[IXP425_ETH_ACC_MII_MAX_ADDR];
+  int i, phy_found, num_phys_to_set, dev_count;
 
-    /* initialise the MII register access mutex */
-    miiAccessMutex = (struct semaphore *) kmalloc(sizeof(struct semaphore), GFP_KERNEL);
-    if (!miiAccessMutex)
-	return -ENOMEM;
+  /* initialise the MII register access mutex */
+  miiAccessMutex =
+    (struct semaphore *) kmalloc (sizeof (struct semaphore), GFP_KERNEL);
+  if (!miiAccessMutex)
+    return -ENOMEM;
 
-    init_MUTEX(miiAccessMutex);
+  init_MUTEX (miiAccessMutex);
 
-    TRACE;
-    /* detect the PHYs (ethMii requires the PHYs to be detected) 
-     * and provides a maximum number of PHYs to search for.
-     */
-    res = ixEthMiiPhyScan(physcan, 
-			  sizeof(default_phy_cfg) / sizeof(phy_cfg_t));
-    if (res != IX_SUCCESS)
+  TRACE;
+  /* detect the PHYs (ethMii requires the PHYs to be detected) 
+   * and provides a maximum number of PHYs to search for.
+   */
+  res = ixEthMiiPhyScan (physcan,
+			 sizeof (default_phy_cfg) / sizeof (phy_cfg_t));
+  if (res != IX_SUCCESS)
     {
-	P_ERROR("PHY scan failed\n");
-	return convert_error_ethAcc(res);
+      P_ERROR ("PHY scan failed\n");
+      return convert_error_ethAcc (res);
     }
 
-    /* Module parameter */
-    if (no_phy_scan) 
-    { 
-	/* Use hardcoded phy addresses */
-	num_phys_to_set = (sizeof(default_phy_cfg) / sizeof(phy_cfg_t));
-    }
-    else
+  /* Module parameter */
+  if (no_phy_scan)
     {
-	/* Update the hardcoded values with discovered parameters 
-	 *
-	 * This set the following mapping
-	 *  ixp0 --> first PHY discovered  (lowest address)
-	 *  ixp1 --> second PHY discovered (next address)
-	 *  .... and so on
-	 *
-	 * If the Phy address and the wiring on the board do not
-	 * match this mapping, then hardcode the values in the
-	 * phyAddresses array and use no_phy_scan=1 parameter on 
-	 * the command line.
-	 */
-	for (i=0, phy_found=0; i < IXP425_ETH_ACC_MII_MAX_ADDR; i++)
+      /* Use hardcoded phy addresses */
+      num_phys_to_set = (sizeof (default_phy_cfg) / sizeof (phy_cfg_t));
+    }
+  else
+    {
+      /* Update the hardcoded values with discovered parameters 
+       *
+       * This set the following mapping
+       *  ixp0 --> first PHY discovered  (lowest address)
+       *  ixp1 --> second PHY discovered (next address)
+       *  .... and so on
+       *
+       * If the Phy address and the wiring on the board do not
+       * match this mapping, then hardcode the values in the
+       * phyAddresses array and use no_phy_scan=1 parameter on 
+       * the command line.
+       */
+      for (i = 0, phy_found = 0; i < IXP425_ETH_ACC_MII_MAX_ADDR; i++)
 	{
-	    if (physcan[i])
+	  if (physcan[i])
 	    {
-		P_INFO("Found PHY %d at address %d\n", phy_found, i);
-                if (phy_found < dev_max_count)
-                {
-                    phyAddresses[default_portId[phy_found]] = i;
-                }
-                else
-                {
-                    phyAddresses[phy_found] = i;
-                }
-		
-		if (++phy_found == IXP425_ETH_ACC_MII_MAX_ADDR)
-		    break;
+	      P_INFO ("Found PHY %d at address %d\n", phy_found, i);
+	      if (phy_found < dev_max_count)
+		{
+		  phyAddresses[portIdPhyIndexMap[default_portId[phy_found]]] =
+		    i;
+		}
+	      else
+		{
+		  phyAddresses[phy_found] = i;
+		}
+
+	      if (++phy_found == IXP425_ETH_ACC_MII_MAX_ADDR)
+		break;
 	    }
 	}
 
-	num_phys_to_set = phy_found;
+      num_phys_to_set = phy_found;
     }
 
-    /* Reset and Set each phy properties */
-    for (i=0; i < num_phys_to_set; i++) 
+  /* Reset and Set each phy properties */
+  for (i = 0; i < num_phys_to_set; i++)
     {
-	P_VERBOSE("Configuring PHY %d\n", i);
-	P_VERBOSE("\tSpeed %s\tDuplex %s\tAutonegotiation %s\n",
-		  (default_phy_cfg[i].speed100) ? "100" : "10",   
-		  (default_phy_cfg[i].duplexFull) ? "FULL" : "HALF",  
-		  (default_phy_cfg[i].autoNegEnabled) ? "ON" : "OFF");
+      P_VERBOSE ("Configuring PHY %d\n", i);
+      P_VERBOSE ("\tSpeed %s\tDuplex %s\tAutonegotiation %s\n",
+		 (default_phy_cfg[i].speed100) ? "100" : "10",
+		 (default_phy_cfg[i].duplexFull) ? "FULL" : "HALF",
+		 (default_phy_cfg[i].autoNegEnabled) ? "ON" : "OFF");
 
-	if (phy_reset) /* module parameter */
+      if (phy_reset)		/* module parameter */
 	{
-	    ixEthMiiPhyReset(phyAddresses[i]);
+	  ixEthMiiPhyReset (phyAddresses[i]);
 	}
 
-	ixEthMiiPhyConfig(phyAddresses[i],
-	    default_phy_cfg[i].speed100,   
-	    default_phy_cfg[i].duplexFull,  
-	    default_phy_cfg[i].autoNegEnabled);
+      ixEthMiiPhyConfig (phyAddresses[i],
+			 default_phy_cfg[i].speed100,
+			 default_phy_cfg[i].duplexFull,
+			 default_phy_cfg[i].autoNegEnabled);
     }
 
-    /* for each device, display the mapping between the ixp device,
-     * the IxEthAcc port, the NPE and the PHY address on MII bus. 
-     * Also set the duplex mode of the MAC core depending
-     * on the default configuration.
-     */
-    for (dev_count = 0; 
-	 dev_count < dev_max_count  /* module parameter */
-	     && dev_count <  num_phys_to_set;
-	 dev_count++)
+  /* for each device, display the mapping between the ixp device,
+   * the IxEthAcc port, the NPE and the PHY address on MII bus. 
+   * Also set the duplex mode of the MAC core depending
+   * on the default configuration.
+   */
+  for (dev_count = 0; dev_count < dev_max_count	/* module parameter */
+       && dev_count < num_phys_to_set; dev_count++)
     {
-	IxEthAccPortId port_id = default_portId[dev_count];
-	char *npe_id = "?";
+      IxEthAccPortId port_id = default_portId[dev_count];
+      char *npe_id = "?";
 
-	if (port_id == IX_ETH_PORT_1) npe_id = "B";
-	if (port_id == IX_ETH_PORT_2) npe_id = "C";
-	if (port_id == IX_ETH_PORT_3) npe_id = "A";
+      if (port_id == IX_ETH_PORT_1)
+	npe_id = "B";
+      if (port_id == IX_ETH_PORT_2)
+	npe_id = "C";
+      if (port_id == IX_ETH_PORT_3)
+	npe_id = "A";
 
-	P_INFO("%s%d is using NPE%s and the PHY at address %d\n",
-	       DEVICE_NAME, port_id, npe_id, phyAddresses[port_id]);
+      P_INFO ("%s%d is using NPE%s and the PHY at address %d\n",
+	      DEVICE_NAME, port_id, npe_id,
+	      phyAddresses[portIdPhyIndexMap[port_id]]);
 
-	/* Set the MAC to the same duplex mode as the phy */
-	ixEthAccPortDuplexModeSet(port_id,
-            (default_phy_cfg[port_id].duplexFull) ?
-                 IX_ETH_ACC_FULL_DUPLEX : IX_ETH_ACC_HALF_DUPLEX);
+      /* Set the MAC to the same duplex mode as the phy */
+      ixEthAccPortDuplexModeSet (port_id,
+				 (default_phy_cfg[portIdPhyIndexMap[port_id]].
+				  duplexFull) ? IX_ETH_ACC_FULL_DUPLEX :
+				 IX_ETH_ACC_HALF_DUPLEX);
     }
 
-    return 0;
+  return 0;
 }
 
 /* set port MAC addr and update the dev struct if successfull */
-int ixp400_dev_set_mac_address(struct net_device *dev, void *addr)
+int
+ixp400_dev_set_mac_address (struct net_device *dev, void *addr)
 {
-    int res;
-    IxEthAccMacAddr npeMacAddr;
-    struct sockaddr *saddr = (struct sockaddr *)addr;
+  int res;
+  IxEthAccMacAddr npeMacAddr;
+  struct sockaddr *saddr = (struct sockaddr *) addr;
 #if IS_KERNEL26
-    priv_data_t *priv = netdev_priv(dev);
+  priv_data_t *priv = netdev_priv (dev);
 #else
-    priv_data_t *priv = dev->priv;
+  priv_data_t *priv = dev->priv;
 #endif
 
-    /* Get MAC addr from parameter */
-    memcpy(&npeMacAddr.macAddress,
-	   &saddr->sa_data[0],
-	   IX_IEEE803_MAC_ADDRESS_SIZE);
+  /* Get MAC addr from parameter */
+  memcpy (&npeMacAddr.macAddress,
+	  &saddr->sa_data[0], IX_IEEE803_MAC_ADDRESS_SIZE);
 
-    /* Set MAC addr in h/w (ethAcc checks for MAC address to be valid) */
-    if ((res = ixEthAccPortUnicastMacAddressSet(priv->port_id, &npeMacAddr)))
+  /* Set MAC addr in h/w (ethAcc checks for MAC address to be valid) */
+  if ((res = ixEthAccPortUnicastMacAddressSet (priv->port_id, &npeMacAddr)))
     {
-        P_VERBOSE("Failed to set MAC address %2.2x:%2.2x:%2.2x:%2.2x:%2.2x:%2.2x for port %d\n",
-	       (unsigned)npeMacAddr.macAddress[0],
-	       (unsigned)npeMacAddr.macAddress[1],
-	       (unsigned)npeMacAddr.macAddress[2],
-	       (unsigned)npeMacAddr.macAddress[3],
-	       (unsigned)npeMacAddr.macAddress[4],
-	       (unsigned)npeMacAddr.macAddress[5],
-	       priv->port_id);
-        return convert_error_ethAcc(res);
+      P_VERBOSE
+	("Failed to set MAC address %2.2x:%2.2x:%2.2x:%2.2x:%2.2x:%2.2x for port %d\n",
+	 (unsigned) npeMacAddr.macAddress[0],
+	 (unsigned) npeMacAddr.macAddress[1],
+	 (unsigned) npeMacAddr.macAddress[2],
+	 (unsigned) npeMacAddr.macAddress[3],
+	 (unsigned) npeMacAddr.macAddress[4],
+	 (unsigned) npeMacAddr.macAddress[5], priv->port_id);
+      return convert_error_ethAcc (res);
     }
 
-    /* update dev struct */
-    memcpy(dev->dev_addr, 
-	   &saddr->sa_data[0],
-	   IX_IEEE803_MAC_ADDRESS_SIZE);
+  /* update dev struct */
+  memcpy (dev->dev_addr, &saddr->sa_data[0], IX_IEEE803_MAC_ADDRESS_SIZE);
 
-    return 0;
+  return 0;
 }
 
 
@@ -3432,92 +3548,89 @@ int ixp400_dev_set_mac_address(struct net_device *dev, void *addr)
  * This tx queueing scheduling mechanism can be enabled
  * by defining CONFIG_IXP400_ETH_QDISC_ENABLED at compile time
  */
-static int dev_qdisc_no_enqueue(struct sk_buff *skb, struct Qdisc * qdisc)
+static int
+dev_qdisc_no_enqueue (struct sk_buff *skb, struct Qdisc *qdisc)
 {
-        return dev_hard_start_xmit(skb, qdisc->dev);     
+  return dev_hard_start_xmit (skb, qdisc->dev);
 }
 
-static struct sk_buff *dev_qdisc_no_dequeue(struct Qdisc * qdisc)
+static struct sk_buff *
+dev_qdisc_no_dequeue (struct Qdisc *qdisc)
 {
-	return NULL;
+  return NULL;
 }
 
 #if IS_KERNEL26
-static struct Qdisc_ops dev_qdisc_ops =
-{
-	.id		= "ixp400_eth", 
-	.priv_size	= 0,
-	.enqueue	= dev_qdisc_no_enqueue, 
-	.dequeue	= dev_qdisc_no_dequeue,
-	.requeue	= dev_qdisc_no_enqueue, 
-	.owner		= THIS_MODULE,
+static struct Qdisc_ops dev_qdisc_ops = {
+  .id = "ixp400_eth",
+  .priv_size = 0,
+  .enqueue = dev_qdisc_no_enqueue,
+  .dequeue = dev_qdisc_no_dequeue,
+  .requeue = dev_qdisc_no_enqueue,
+  .owner = THIS_MODULE,
 };
 #else
-static struct Qdisc_ops dev_qdisc_ops =
-{
-	NULL, NULL, "ixp400_eth", 0,
-	dev_qdisc_no_enqueue, 
-	dev_qdisc_no_dequeue,
-	dev_qdisc_no_enqueue, 
-	NULL, 
-	NULL, NULL, NULL, NULL, NULL
+static struct Qdisc_ops dev_qdisc_ops = {
+  NULL, NULL, "ixp400_eth", 0,
+  dev_qdisc_no_enqueue,
+  dev_qdisc_no_dequeue,
+  dev_qdisc_no_enqueue,
+  NULL,
+  NULL, NULL, NULL, NULL, NULL
 };
 #endif
 
 #endif
 
-static int dev_rxtxcallback_register(IxEthAccPortId portId, UINT32 dev)
+static int
+dev_rxtxcallback_register (IxEthAccPortId portId, UINT32 dev)
 {
-    int res;
+  int res;
 
-    /* register "safe" callbacks. This ensure that no traffic will be 
-     * sent to the stack until the port is brought up (ifconfig up)
-     */
-    if ((res = ixEthAccPortTxDoneCallbackRegister(portId, 
-						  tx_done_disable_cb,
-						  dev)))
+  /* register "safe" callbacks. This ensure that no traffic will be 
+   * sent to the stack until the port is brought up (ifconfig up)
+   */
+  if ((res = ixEthAccPortTxDoneCallbackRegister (portId,
+						 tx_done_disable_cb, dev)))
 
     {
-	TRACE;
-	P_ERROR("Failed to register tx done callback register\n");
+      TRACE;
+      P_ERROR ("Failed to register tx done callback register\n");
 
-	return convert_error_ethAcc(res);
+      return convert_error_ethAcc (res);
     }
-    if ((res = ixEthAccPortRxCallbackRegister(portId, 
-					      rx_disable_cb, 
-					      dev)))
+  if ((res = ixEthAccPortRxCallbackRegister (portId, rx_disable_cb, dev)))
     {
-	TRACE;
-	P_ERROR("Failed to register tx callback register\n");
+      TRACE;
+      P_ERROR ("Failed to register tx callback register\n");
 
-	return convert_error_ethAcc(res);
+      return convert_error_ethAcc (res);
     }
 
-    /* set tx scheduling discipline */
-    if ((res = ixEthAccTxSchedulingDisciplineSet(portId,
-                                                 FIFO_NO_PRIORITY)))
+  /* set tx scheduling discipline */
+  if ((res = ixEthAccTxSchedulingDisciplineSet (portId, FIFO_NO_PRIORITY)))
     {
-        TRACE;
-        return convert_error_ethAcc(res);
+      TRACE;
+      return convert_error_ethAcc (res);
     }
-    /* enable tx frame FCS append */
-    if ((res = ixEthAccPortTxFrameAppendFCSEnable(portId)))
+  /* enable tx frame FCS append */
+  if ((res = ixEthAccPortTxFrameAppendFCSEnable (portId)))
     {
-        TRACE;
-        return convert_error_ethAcc(res);
+      TRACE;
+      return convert_error_ethAcc (res);
     }
-    /* disable rx frame FCS append */
-    if ((res = ixEthAccPortRxFrameAppendFCSDisable(portId)))
+  /* disable rx frame FCS append */
+  if ((res = ixEthAccPortRxFrameAppendFCSDisable (portId)))
     {
-        TRACE;
-        return convert_error_ethAcc(res);
+      TRACE;
+      return convert_error_ethAcc (res);
     }
 
-    return 0;
+  return 0;
 }
 
 
-#ifdef CONFIG_CPU_IXP46X
+#if defined (CONFIG_CPU_IXP46X) || defined (CONFIG_CPU_IXP43X)
 /**************************************************************
  *      PARITY ERROR DETECTION & NPE SOFT RESET FUNCTIONS     *
  **************************************************************/
@@ -3525,1310 +3638,1309 @@ static int dev_rxtxcallback_register(IxEthAccPortId portId, UINT32 dev)
 /*
  * Parity error callback which will be called upon parity error detected
  */
-static void parity_error_cb(void)
+static void
+parity_error_cb (void)
 {
-    IxParityENAccParityErrorContextMessage	error_context;
-    UINT32					irqlock;
+  IxParityENAccParityErrorContextMessage error_context;
+  UINT32 irqlock;
 
-    irqlock = ixOsalIrqLock();
+  irqlock = ixOsalIrqLock ();
 
-    /*
-     * Initialize the error context structure
-     */
-    memset (&error_context, 0xFF, 
-	    sizeof (IxParityENAccParityErrorContextMessage));
+  /*
+   * Initialize the error context structure
+   */
+  memset (&error_context, 0xFF,
+	  sizeof (IxParityENAccParityErrorContextMessage));
 
-    /*
-     * Collect the source of error. Silently ignore if the error context get did
-     * not return success. This is because it might due to data abort is not
-     * caused by parity error
-     */
-    if (likely(IX_PARITYENACC_SUCCESS == 
-    	ixParityENAccParityErrorContextGet (&error_context)))
+  /*
+   * Collect the source of error. Silently ignore if the error context get did
+   * not return success. This is because it might due to data abort is not
+   * caused by parity error
+   */
+  if (likely (IX_PARITYENACC_SUCCESS ==
+	      ixParityENAccParityErrorContextGet (&error_context)))
     {
-    	IxErrHdlAccFuncHandler func = NULL;
+      IxErrHdlAccFuncHandler func = NULL;
 
-	/*
-	 * Now find out the source of the error and retrive respective handling
-	 * function
-	 */
-	switch (error_context.pecParitySource)
+      /*
+       * Now find out the source of the error and retrive respective handling
+       * function
+       */
+      switch (error_context.pecParitySource)
 	{
-	    case IX_PARITYENACC_NPE_A_IMEM:
-	    case IX_PARITYENACC_NPE_A_DMEM:
-	    case IX_PARITYENACC_NPE_A_EXT:
-		ixErrHdlAccErrorHandlerGet(IX_ERRHDLACC_NPEA_ERROR, &func);
-		break;
+	case IX_PARITYENACC_NPE_A_IMEM:
+	case IX_PARITYENACC_NPE_A_DMEM:
+	case IX_PARITYENACC_NPE_A_EXT:
+	  ixErrHdlAccErrorHandlerGet (IX_ERRHDLACC_NPEA_ERROR, &func);
+	  break;
 
-	    case IX_PARITYENACC_NPE_B_IMEM:
-	    case IX_PARITYENACC_NPE_B_DMEM:
-	    case IX_PARITYENACC_NPE_B_EXT:
-		ixErrHdlAccErrorHandlerGet(IX_ERRHDLACC_NPEB_ERROR, &func);
-		break;
+	case IX_PARITYENACC_NPE_B_IMEM:
+	case IX_PARITYENACC_NPE_B_DMEM:
+	case IX_PARITYENACC_NPE_B_EXT:
+	  ixErrHdlAccErrorHandlerGet (IX_ERRHDLACC_NPEB_ERROR, &func);
+	  break;
 
-	    case IX_PARITYENACC_NPE_C_IMEM:
-	    case IX_PARITYENACC_NPE_C_DMEM:
-	    case IX_PARITYENACC_NPE_C_EXT:
-		ixErrHdlAccErrorHandlerGet(IX_ERRHDLACC_NPEC_ERROR, &func);
-		break;
+	case IX_PARITYENACC_NPE_C_IMEM:
+	case IX_PARITYENACC_NPE_C_DMEM:
+	case IX_PARITYENACC_NPE_C_EXT:
+	  ixErrHdlAccErrorHandlerGet (IX_ERRHDLACC_NPEC_ERROR, &func);
+	  break;
 
-	    default:
-	    	P_ERROR("Unknown error source\n");
+	default:
+	  P_ERROR ("Unknown error source\n");
 	}
 
-	/* 
-	 * Call the handling function if the function pointer is not null
-	 */
-	if (likely(func))
+      /* 
+       * Call the handling function if the function pointer is not null
+       */
+      if (likely (func))
 	{
-	    /*
-  	     * NPE error handler and recovery needs to run without interference
-     	     * from NPE poll and queue manager
-     	     */
-     	    disable_irq(IX_OSAL_IXP400_XSCALE_PMU_IRQ_LVL);
-    	    disable_irq(IX_OSAL_IXP400_QM1_IRQ_LVL);
+	  /*
+	   * NPE error handler and recovery needs to run without interference
+	   * from NPE poll and queue manager
+	   */
+	  disable_irq (IX_OSAL_IXP400_XSCALE_PMU_IRQ_LVL);
+	  disable_irq (IX_OSAL_IXP400_QM1_IRQ_LVL);
 
-	    (*func)();
+	  (*func) ();
 	}
     }
 
-    ixOsalIrqUnlock(irqlock);
+  ixOsalIrqUnlock (irqlock);
 }
 
 /*
  * NPE recovery done callback. This callback is to notify of any recovery
  * failure.
  */
-void parity_npe_recovery_done_cb(IxErrHdlAccErrorEventType event_type)
+void
+parity_npe_recovery_done_cb (IxErrHdlAccErrorEventType event_type)
 {
-    UINT32 status;
+  UINT32 status;
 
-    /* 
-     * Requires a 10ms delay or so , This is to allow the other Interrupt error
-     * e.g NPE B and NPE C to trigger. This is required if you have NPE A, NPE B
-     * and NPE C parity error triggered at the same time. If you don't have
-     * to de-schedule code here, the interrupt ISR of NPE B and NPE C will not
-     * be allow to execute and the right status will not be read. Why? Because
-     * the thread/task in ixErrHdlAcc priority is higher (which where this
-     * call-back is called) than the ISR priority level here.
-     */
-     ixOsalSleep(10);
+  /* 
+   * Requires a 10ms delay or so , This is to allow the other Interrupt error
+   * e.g NPE B and NPE C to trigger. This is required if you have NPE A, NPE B
+   * and NPE C parity error triggered at the same time. If you don't have
+   * to de-schedule code here, the interrupt ISR of NPE B and NPE C will not
+   * be allow to execute and the right status will not be read. Why? Because
+   * the thread/task in ixErrHdlAcc priority is higher (which where this
+   * call-back is called) than the ISR priority level here.
+   */
+  ixOsalSleep (10);
 
-    /*
-     * Collect the status from the handler to detect any possibility failure on
-     * recovery
-     */
-    ixErrHdlAccStatusGet(&status);
+  /*
+   * Collect the status from the handler to detect any possibility failure on
+   * recovery
+   */
+  ixErrHdlAccStatusGet (&status);
 
-    switch (event_type)
+  switch (event_type)
     {
-    	case IX_ERRHDLACC_NPEA_ERROR:
-	    if (unlikely(IX_ERRHDLACC_NPEA_ERROR_MASK_BIT & status))
-	    {
-		P_ERROR("NPE-A recovery failed\n");
-	    }
+    case IX_ERRHDLACC_NPEA_ERROR:
+      if (unlikely (IX_ERRHDLACC_NPEA_ERROR_MASK_BIT & status))
+	{
+	  P_ERROR ("NPE-A recovery failed\n");
+	}
 
-	    break;
+      break;
 
-    	case IX_ERRHDLACC_NPEB_ERROR:
-	    if (unlikely(IX_ERRHDLACC_NPEB_ERROR_MASK_BIT & status))
-	    {
-		P_ERROR("NPE-B recovery failed\n");
-	    }
+    case IX_ERRHDLACC_NPEB_ERROR:
+      if (unlikely (IX_ERRHDLACC_NPEB_ERROR_MASK_BIT & status))
+	{
+	  P_ERROR ("NPE-B recovery failed\n");
+	}
 
-	    break;
+      break;
 
-    	case IX_ERRHDLACC_NPEC_ERROR:
-	    if (unlikely(IX_ERRHDLACC_NPEC_ERROR_MASK_BIT & status))
-	    {
-		P_ERROR("NPE-C recovery failed\n");
-	    }
+    case IX_ERRHDLACC_NPEC_ERROR:
+      if (unlikely (IX_ERRHDLACC_NPEC_ERROR_MASK_BIT & status))
+	{
+	  P_ERROR ("NPE-C recovery failed\n");
+	}
 
-	    break;
+      break;
 
-	default:
-		P_ERROR("Unknown NPE recovery error\n");
+    default:
+      P_ERROR ("Unknown NPE recovery error\n");
     }
 
-    /*
-     * Enable PMU and queue manager interrupt that being disabled in parity
-     * error callback handler
-     */
-     enable_irq(IX_OSAL_IXP400_XSCALE_PMU_IRQ_LVL);
-     enable_irq(IX_OSAL_IXP400_QM1_IRQ_LVL);
+  /*
+   * Enable PMU and queue manager interrupt that being disabled in parity
+   * error callback handler
+   */
+  enable_irq (IX_OSAL_IXP400_XSCALE_PMU_IRQ_LVL);
+  enable_irq (IX_OSAL_IXP400_QM1_IRQ_LVL);
 }
 
 /*
  *  Parity detection and NPE recovery initialization
  */
-static int __init parity_npe_error_handler_init()
+static int __init
+parity_npe_error_handler_init ()
 {
-    /*
-     * Parity detection hardware configuration parameter. The configured
-     * fields are well explained by the self-explanatory data member name
-     */
-    IxParityENAccHWParityConfig parity_config =
+  /*
+   * Parity detection hardware configuration parameter. The configured
+   * fields are well explained by the self-explanatory data member name
+   */
+  IxParityENAccHWParityConfig parity_config = {
+    .npeAConfig = {
+		   .ideEnabled = parity_npeA_enabled,
+		   .parityOddEven = IX_PARITYENACC_EVEN_PARITY,
+		   },
+
+    .npeBConfig = {
+		   .ideEnabled = parity_npeB_enabled,
+		   .parityOddEven = IX_PARITYENACC_EVEN_PARITY,
+		   },
+
+    .npeCConfig = {
+		   .ideEnabled = parity_npeC_enabled,
+		   .parityOddEven = IX_PARITYENACC_EVEN_PARITY,
+		   },
+
+    .mcuConfig = {
+		  .singlebitDetectEnabled = IX_PARITYENACC_DISABLE,
+		  .singlebitCorrectionEnabled = IX_PARITYENACC_DISABLE,
+		  .multibitDetectionEnabled = IX_PARITYENACC_DISABLE,
+		  },
+
+    .swcpEnabled = IX_PARITYENACC_DISABLE,
+
+    .aqmEnabled = IX_PARITYENACC_DISABLE,
+
+    .pbcConfig = {
+		  .pbcInitiatorEnabled = IX_PARITYENACC_DISABLE,
+		  .pbcTargetEnabled = IX_PARITYENACC_DISABLE,
+		  },
+
+    .ebcConfig = {
+		  .ebcCs0Enabled = IX_PARITYENACC_DISABLE,
+		  .ebcCs1Enabled = IX_PARITYENACC_DISABLE,
+		  .ebcCs2Enabled = IX_PARITYENACC_DISABLE,
+		  .ebcCs3Enabled = IX_PARITYENACC_DISABLE,
+		  .ebcCs4Enabled = IX_PARITYENACC_DISABLE,
+		  .ebcCs5Enabled = IX_PARITYENACC_DISABLE,
+		  .ebcCs6Enabled = IX_PARITYENACC_DISABLE,
+		  .ebcCs7Enabled = IX_PARITYENACC_DISABLE,
+		  .ebcExtMstEnabled = IX_PARITYENACC_DISABLE,
+		  .parityOddEven = IX_PARITYENACC_EVEN_PARITY,
+		  },
+  };
+  IxParityENAccHWParityConfig parity_config_check;
+  UINT32 error_handler_config = 0;
+
+  if (npe_error_handler_initialized)
     {
-    	.npeAConfig = 
-	    {
-	    	.ideEnabled 			= parity_npeA_enabled,
-		.parityOddEven			= IX_PARITYENACC_EVEN_PARITY,
-	    },
-
-	.npeBConfig =
-	    {
-	    	.ideEnabled			= parity_npeB_enabled,
-		.parityOddEven			= IX_PARITYENACC_EVEN_PARITY,
-	    },
-
-	.npeCConfig =
-	    {
-	    	.ideEnabled			= parity_npeC_enabled,
-		.parityOddEven			= IX_PARITYENACC_EVEN_PARITY,
-	    },
-
-	.mcuConfig =
-	    {
-	    	.singlebitDetectEnabled 	= IX_PARITYENACC_DISABLE,
-	    	.singlebitCorrectionEnabled 	= IX_PARITYENACC_DISABLE,
-	    	.multibitDetectionEnabled 	= IX_PARITYENACC_DISABLE,
-	    },
-
-	.swcpEnabled				= IX_PARITYENACC_DISABLE,
-
-	.aqmEnabled				= IX_PARITYENACC_DISABLE,
-
-	.pbcConfig =
-	    {
-	    	.pbcInitiatorEnabled		= IX_PARITYENACC_DISABLE,
-		.pbcTargetEnabled		= IX_PARITYENACC_DISABLE,
-	    },
-
-	.ebcConfig =
-	    {
-	    	.ebcCs0Enabled			= IX_PARITYENACC_DISABLE,
-	    	.ebcCs1Enabled 			= IX_PARITYENACC_DISABLE,
-	    	.ebcCs2Enabled			= IX_PARITYENACC_DISABLE,
-	    	.ebcCs3Enabled			= IX_PARITYENACC_DISABLE,
-	    	.ebcCs4Enabled			= IX_PARITYENACC_DISABLE,
-	    	.ebcCs5Enabled			= IX_PARITYENACC_DISABLE,
-	    	.ebcCs6Enabled			= IX_PARITYENACC_DISABLE,
-	    	.ebcCs7Enabled			= IX_PARITYENACC_DISABLE,
-		.ebcExtMstEnabled		= IX_PARITYENACC_DISABLE,
-		.parityOddEven			= IX_PARITYENACC_EVEN_PARITY,
-	    },
-    };
-    IxParityENAccHWParityConfig parity_config_check;
-    UINT32 error_handler_config = 0;
-
-    if (npe_error_handler_initialized)
-    {
-    	return 0;
+      return 0;
     }
 
-    /*
-     * We must set the initialized flag here so that un-initialization will pick
-     * it up and uninitialize regardless of which phase in the initialization is
-     * failed
-     */
-    npe_error_handler_initialized = 1;
+  /*
+   * We must set the initialized flag here so that un-initialization will pick
+   * it up and uninitialize regardless of which phase in the initialization is
+   * failed
+   */
+  npe_error_handler_initialized = 1;
 
-    /*
-     * Error recovery handler initialization 
-     */
-    if (IX_SUCCESS != ixErrHdlAccInit())
+  /*
+   * Error recovery handler initialization 
+   */
+  if (IX_SUCCESS != ixErrHdlAccInit ())
     {
-    	P_ERROR("NPE error recovery initialization failed\n");
+      P_ERROR ("NPE error recovery initialization failed\n");
 
-	return -EBUSY;
+      return -EBUSY;
     }
 
-    /* 
-     * Error handler recovery done callback registration
-     */
-    if (IX_SUCCESS != ixErrHdlAccCallbackRegister(parity_npe_recovery_done_cb))
+  /* 
+   * Error handler recovery done callback registration
+   */
+  if (IX_SUCCESS != ixErrHdlAccCallbackRegister (parity_npe_recovery_done_cb))
     {
-    	P_ERROR("NPE error recovery callback registration failed\n");
+      P_ERROR ("NPE error recovery callback registration failed\n");
 
-	return -EBUSY;
+      return -EBUSY;
     }
 
-    /*
-     * Configuring the events and hardware errors that the error recovery 
-     * handler needs to pay attention on
-     */
-    if (IX_PARITYENACC_ENABLE == parity_npeA_enabled)
+  /*
+   * Configuring the events and hardware errors that the error recovery 
+   * handler needs to pay attention on
+   */
+  if (IX_PARITYENACC_ENABLE == parity_npeA_enabled)
     {
-    	error_handler_config |= IX_ERRHDLACC_NPEA_ERROR_MASK_BIT;
+      error_handler_config |= IX_ERRHDLACC_NPEA_ERROR_MASK_BIT;
     }
 
-    if (IX_PARITYENACC_ENABLE == parity_npeB_enabled)
+  if (IX_PARITYENACC_ENABLE == parity_npeB_enabled)
     {
-    	error_handler_config |= IX_ERRHDLACC_NPEB_ERROR_MASK_BIT;
+      error_handler_config |= IX_ERRHDLACC_NPEB_ERROR_MASK_BIT;
     }
 
-    if (IX_PARITYENACC_ENABLE == parity_npeC_enabled)
+  if (IX_PARITYENACC_ENABLE == parity_npeC_enabled)
     {
-    	error_handler_config |= IX_ERRHDLACC_NPEC_ERROR_MASK_BIT;
+      error_handler_config |= IX_ERRHDLACC_NPEC_ERROR_MASK_BIT;
     }
 
-    if (IX_SUCCESS != ixErrHdlAccEnableConfigSet(error_handler_config))
+  if (IX_SUCCESS != ixErrHdlAccEnableConfigSet (error_handler_config))
     {
-    	P_ERROR("NPE error recovery configuration failed\n");
+      P_ERROR ("NPE error recovery configuration failed\n");
 
-	return -EBUSY;
+      return -EBUSY;
     }
 
-    /*
-     * Parity access layer initialization
-     */
-    if (unlikely(IX_PARITYENACC_SUCCESS != ixParityENAccInit()))
+  /*
+   * Parity access layer initialization
+   */
+  if (unlikely (IX_PARITYENACC_SUCCESS != ixParityENAccInit ()))
     {
-	P_ERROR("Parity initialization failed\n");
+      P_ERROR ("Parity initialization failed\n");
 
-	return -EBUSY;
+      return -EBUSY;
     }
 
-    /*
-     * Registering parity error handling callback
-     */
-    if (unlikely(IX_PARITYENACC_SUCCESS != 
-    	ixParityENAccCallbackRegister(parity_error_cb)))
+  /*
+   * Registering parity error handling callback
+   */
+  if (unlikely (IX_PARITYENACC_SUCCESS !=
+		ixParityENAccCallbackRegister (parity_error_cb)))
     {
-	P_ERROR("Parity callback registration failed\n");
+      P_ERROR ("Parity callback registration failed\n");
 
-	return -EBUSY;
+      return -EBUSY;
     }
 
-    /*
-     * Configure parity error events that we are interested in
-     */
-    if (unlikely(IX_PARITYENACC_SUCCESS !=
-	ixParityENAccParityDetectionConfigure(&parity_config)))
+  /*
+   * Configure parity error events that we are interested in
+   */
+  if (unlikely (IX_PARITYENACC_SUCCESS !=
+		ixParityENAccParityDetectionConfigure (&parity_config)))
     {
-	P_ERROR("Parity detection configuration failed\n");
+      P_ERROR ("Parity detection configuration failed\n");
 
-	return -EBUSY;
-    }
-   	
-
-    /*
-     * Read back the configured value to detect possible inconsistency setup
-     * errors
-     */
-    if (unlikely(IX_PARITYENACC_SUCCESS !=
-	ixParityENAccParityDetectionQuery(&parity_config_check)))
-    {
-	P_ERROR("Parity detection query failed\n");
-
-	return -EBUSY;
+      return -EBUSY;
     }
 
-    /*
-     * Now we compare the value we read with the value we set. Report the error
-     * if the data is inconsistent
-     */
-    if (unlikely(0 != memcmp((void*)&parity_config, (void*)&parity_config_check,
-	sizeof(IxParityENAccHWParityConfig))))
-    {
-	P_ERROR("Parity configuration failed\n");
 
-	return -EINVAL;
+  /*
+   * Read back the configured value to detect possible inconsistency setup
+   * errors
+   */
+  if (unlikely (IX_PARITYENACC_SUCCESS !=
+		ixParityENAccParityDetectionQuery (&parity_config_check)))
+    {
+      P_ERROR ("Parity detection query failed\n");
+
+      return -EBUSY;
     }
 
-    /* Initialization successful */
-    P_INFO("NPE Error Handler Initialization Successful\n");
+  /*
+   * Now we compare the value we read with the value we set. Report the error
+   * if the data is inconsistent
+   */
+  if (unlikely
+      (0 !=
+       memcmp ((void *) &parity_config, (void *) &parity_config_check,
+	       sizeof (IxParityENAccHWParityConfig))))
+    {
+      P_ERROR ("Parity configuration failed\n");
 
-    return 0;
+      return -EINVAL;
+    }
+
+  /* Initialization successful */
+  P_INFO ("NPE Error Handler Initialization Successful\n");
+
+  return 0;
 }
 
 /*
  * Parity recovery and NPE error handling un-initialization
  */
-static void parity_npe_error_handler_uninit(void)
+static void
+parity_npe_error_handler_uninit (void)
 {
-    /*
-     * We need to have ugly event disabling parameter here to disable the parity
-     * access component due to lack of unload function
-     */
-    IxParityENAccHWParityConfig parity_config =
+  /*
+   * We need to have ugly event disabling parameter here to disable the parity
+   * access component due to lack of unload function
+   */
+  IxParityENAccHWParityConfig parity_config = {
+    .npeAConfig = {
+		   .ideEnabled = IX_PARITYENACC_DISABLE,
+		   .parityOddEven = IX_PARITYENACC_EVEN_PARITY,
+		   },
+
+    .npeBConfig = {
+		   .ideEnabled = IX_PARITYENACC_DISABLE,
+		   .parityOddEven = IX_PARITYENACC_EVEN_PARITY,
+		   },
+
+    .npeCConfig = {
+		   .ideEnabled = IX_PARITYENACC_DISABLE,
+		   .parityOddEven = IX_PARITYENACC_EVEN_PARITY,
+		   },
+
+    .mcuConfig = {
+		  .singlebitDetectEnabled = IX_PARITYENACC_DISABLE,
+		  .singlebitCorrectionEnabled = IX_PARITYENACC_DISABLE,
+		  .multibitDetectionEnabled = IX_PARITYENACC_DISABLE,
+		  },
+
+    .swcpEnabled = IX_PARITYENACC_DISABLE,
+
+    .aqmEnabled = IX_PARITYENACC_DISABLE,
+
+    .pbcConfig = {
+		  .pbcInitiatorEnabled = IX_PARITYENACC_DISABLE,
+		  .pbcTargetEnabled = IX_PARITYENACC_DISABLE,
+		  },
+
+    .ebcConfig = {
+		  .ebcCs0Enabled = IX_PARITYENACC_DISABLE,
+		  .ebcCs1Enabled = IX_PARITYENACC_DISABLE,
+		  .ebcCs2Enabled = IX_PARITYENACC_DISABLE,
+		  .ebcCs3Enabled = IX_PARITYENACC_DISABLE,
+		  .ebcCs4Enabled = IX_PARITYENACC_DISABLE,
+		  .ebcCs5Enabled = IX_PARITYENACC_DISABLE,
+		  .ebcCs6Enabled = IX_PARITYENACC_DISABLE,
+		  .ebcCs7Enabled = IX_PARITYENACC_DISABLE,
+		  .ebcExtMstEnabled = IX_PARITYENACC_DISABLE,
+		  .parityOddEven = IX_PARITYENACC_EVEN_PARITY,
+		  },
+  };
+  UINT32 irqlock;
+
+  if (!npe_error_handler_initialized)
     {
-    	.npeAConfig = 
-	    {
-	    	.ideEnabled 			= IX_PARITYENACC_DISABLE,
-		.parityOddEven			= IX_PARITYENACC_EVEN_PARITY,
-	    },
-
-	.npeBConfig =
-	    {
-	    	.ideEnabled			= IX_PARITYENACC_DISABLE,
-		.parityOddEven			= IX_PARITYENACC_EVEN_PARITY,
-	    },
-
-	.npeCConfig =
-	    {
-	    	.ideEnabled			= IX_PARITYENACC_DISABLE,
-		.parityOddEven			= IX_PARITYENACC_EVEN_PARITY,
-	    },
-
-	.mcuConfig =
-	    {
-	    	.singlebitDetectEnabled 	= IX_PARITYENACC_DISABLE,
-	    	.singlebitCorrectionEnabled 	= IX_PARITYENACC_DISABLE,
-	    	.multibitDetectionEnabled 	= IX_PARITYENACC_DISABLE,
-	    },
-
-	.swcpEnabled				= IX_PARITYENACC_DISABLE,
-
-	.aqmEnabled				= IX_PARITYENACC_DISABLE,
-
-	.pbcConfig =
-	    {
-	    	.pbcInitiatorEnabled		= IX_PARITYENACC_DISABLE,
-		.pbcTargetEnabled		= IX_PARITYENACC_DISABLE,
-	    },
-
-	.ebcConfig =
-	    {
-	    	.ebcCs0Enabled			= IX_PARITYENACC_DISABLE,
-	    	.ebcCs1Enabled 			= IX_PARITYENACC_DISABLE,
-	    	.ebcCs2Enabled			= IX_PARITYENACC_DISABLE,
-	    	.ebcCs3Enabled			= IX_PARITYENACC_DISABLE,
-	    	.ebcCs4Enabled			= IX_PARITYENACC_DISABLE,
-	    	.ebcCs5Enabled			= IX_PARITYENACC_DISABLE,
-	    	.ebcCs6Enabled			= IX_PARITYENACC_DISABLE,
-	    	.ebcCs7Enabled			= IX_PARITYENACC_DISABLE,
-		.ebcExtMstEnabled		= IX_PARITYENACC_DISABLE,
-		.parityOddEven			= IX_PARITYENACC_EVEN_PARITY,
-	    },
-    };
-    UINT32 irqlock;
-
-    if (!npe_error_handler_initialized)
-    {
-	return;
+      return;
     }
 
-    /*
-     * Disable the interrupts before changing the parity configuration
-     */
-    irqlock = ixOsalIrqLock();
-    	
-    /*
-     * Disable all listening events
-     */
-    ixParityENAccParityDetectionConfigure(&parity_config);
+  /*
+   * Disable the interrupts before changing the parity configuration
+   */
+  irqlock = ixOsalIrqLock ();
 
-    /*
-     * Unregister the parity callback function by passing in NULL pointer
-     */
-    ixParityENAccCallbackRegister(NULL);
+  /*
+   * Disable all listening events
+   */
+  ixParityENAccParityDetectionConfigure (&parity_config);
 
-    /*
-     * Unbind the IRQs bound by the parity access layer. This is ugly because it
-     * is supposed to be unbind by the access layer that is having better
-     * visibility on whether it is used...
-     */
-    ixOsalIrqUnbind(IX_OSAL_IXP400_NPEA_IRQ_LVL);
-    ixOsalIrqUnbind(IX_OSAL_IXP400_NPEB_IRQ_LVL);
-    ixOsalIrqUnbind(IX_OSAL_IXP400_NPEC_IRQ_LVL);
-    ixOsalIrqUnbind(IX_OSAL_IXP400_PCI_INT_IRQ_LVL);
-    ixOsalIrqUnbind(IX_OSAL_IXP400_SWCP_IRQ_LVL);
-    ixOsalIrqUnbind(IX_OSAL_IXP400_AQM_IRQ_LVL);
-    ixOsalIrqUnbind(IX_OSAL_IXP400_MCU_IRQ_LVL);
-    ixOsalIrqUnbind(IX_OSAL_IXP400_EBC_IRQ_LVL);
+  /*
+   * Unregister the parity callback function by passing in NULL pointer
+   */
+  ixParityENAccCallbackRegister (NULL);
 
-    /*
-     * Parity uninitialization completed. Enable the interrupt here, error
-     * handler unload function is sleepable
-     */
-    ixOsalIrqUnlock(irqlock); 
+  /*
+   * Unbind the IRQs bound by the parity access layer. This is ugly because it
+   * is supposed to be unbind by the access layer that is having better
+   * visibility on whether it is used...
+   */
+  ixOsalIrqUnbind (IX_OSAL_IXP400_NPEA_IRQ_LVL);
+  ixOsalIrqUnbind (IX_OSAL_IXP400_NPEB_IRQ_LVL);
+  ixOsalIrqUnbind (IX_OSAL_IXP400_NPEC_IRQ_LVL);
+  ixOsalIrqUnbind (IX_OSAL_IXP400_PCI_INT_IRQ_LVL);
+  ixOsalIrqUnbind (IX_OSAL_IXP400_SWCP_IRQ_LVL);
+  ixOsalIrqUnbind (IX_OSAL_IXP400_AQM_IRQ_LVL);
+  ixOsalIrqUnbind (IX_OSAL_IXP400_MCU_IRQ_LVL);
+  ixOsalIrqUnbind (IX_OSAL_IXP400_EBC_IRQ_LVL);
 
-    /*
-     * Finally we unload the error handler
-     */
-    ixErrHdlAccUnload();
+  /*
+   * Parity uninitialization completed. Enable the interrupt here, error
+   * handler unload function is sleepable
+   */
+  ixOsalIrqUnlock (irqlock);
 
-    npe_error_handler_initialized = 0;
+  /*
+   * Finally we unload the error handler
+   */
+  ixErrHdlAccUnload ();
 
-    P_INFO("Parity NPE Error Handler Uninitialized\n");
+  npe_error_handler_initialized = 0;
+
+  P_INFO ("Parity NPE Error Handler Uninitialized\n");
 }
 #endif
 
-    
+
 /* Initialize device structs.
  * Resource allocation is deffered until do_dev_open
  */
 #if IS_KERNEL26
-static int __devinit dev_eth_probe(struct device *dev)
+static int __devinit
+dev_eth_probe (struct device *dev)
 #else
-static int __devinit dev_eth_probe(struct net_device *ndev)
+static int __devinit
+dev_eth_probe (struct net_device *ndev)
 #endif
 {
-    priv_data_t *priv = NULL;
+  priv_data_t *priv = NULL;
 #if IS_KERNEL26
-    struct net_device *ndev = NULL;
-    IxEthAccPortId portId = to_platform_device(dev)->id;
-    TRACE;
+  struct net_device *ndev = NULL;
+  IxEthAccPortId portId = to_platform_device (dev)->id;
+  TRACE;
 
-    BUG_ON(!(ndev = alloc_etherdev(sizeof(priv_data_t))));
+  BUG_ON (!(ndev = alloc_etherdev (sizeof (priv_data_t))));
 
-    SET_MODULE_OWNER(ndev);
-    SET_NETDEV_DEV(ndev, dev);
-    dev_set_drvdata(dev, ndev);
-    priv = netdev_priv(ndev);
+  SET_MODULE_OWNER (ndev);
+  SET_NETDEV_DEV (ndev, dev);
+  dev_set_drvdata (dev, ndev);
+  priv = netdev_priv (ndev);
 
-    TRACE;
+  TRACE;
 #else
-    static int found_devices = 0;
-	IxEthAccPortId portId = default_portId[found_devices];
+  static int found_devices = 0;
+  IxEthAccPortId portId = default_portId[found_devices];
 
-    TRACE;
+  TRACE;
 
-    /* there is a limited number of devices */
-    if (found_devices >= dev_max_count) /* module parameter */
-	return -ENODEV;
+  /* there is a limited number of devices */
+  if (found_devices >= dev_max_count)	/* module parameter */
+    return -ENODEV;
 
-    SET_MODULE_OWNER(ndev);
+  SET_MODULE_OWNER (ndev);
 
-    /* allocate and initialize priv struct */
-    priv = ndev->priv = kmalloc(sizeof(priv_data_t), GFP_KERNEL);
-    if (ndev->priv == NULL)
-	return -ENOMEM;
+  /* allocate and initialize priv struct */
+  priv = ndev->priv = kmalloc (sizeof (priv_data_t), GFP_KERNEL);
+  if (ndev->priv == NULL)
+    return -ENOMEM;
 
-    memset(ndev->priv, 0, sizeof(priv_data_t));
+  memset (ndev->priv, 0, sizeof (priv_data_t));
 
-    TRACE;
+  TRACE;
 
 #endif
-    /* Initialize the ethAcc port */
-    if (ixEthAccPortInit(portId))
+  /* Initialize the ethAcc port */
+  if (ixEthAccPortInit (portId))
     {
-    	printk(KERN_ERR "portId %i: No such device\n", portId);
-        return -ENODEV;
+      printk (KERN_ERR "portId %i: No such device\n", portId);
+      return -ENODEV;
     }
 
-    if (hss_coexist)
+  if (hss_coexist)
     {
-    	IX_STATUS status;
+      IX_STATUS status;
 
-	TRACE;
+      TRACE;
 
-	/*
-	 * Queue policy and priority setup for RX queue
-	 */
-	status  = ixQMgrCallbackTypeSet(4, IX_QMGR_TYPE_REALTIME_SPORADIC);
-	status |= ixQMgrDispatcherPrioritySet (4,IX_QMGR_Q_PRIORITY_1);
+      /*
+       * Queue policy and priority setup for RX queue
+       */
+      status = ixQMgrCallbackTypeSet (4, IX_QMGR_TYPE_REALTIME_SPORADIC);
+      status |= ixQMgrDispatcherPrioritySet (4, IX_QMGR_Q_PRIORITY_1);
 
-	if (IX_ETH_PORT_3 == portId)
+      if (IX_ETH_PORT_3 == portId)
 	{
-	    /*
-	     * Queue policy and priority setup for NPE-A TX queue
-	     */
-	    status |= ixQMgrCallbackTypeSet(IX_ETH_ACC_TX_NPEA_Q, 
-			    IX_QMGR_TYPE_REALTIME_SPORADIC);
-	    status |= ixQMgrDispatcherPrioritySet (IX_ETH_ACC_TX_NPEA_Q,
-			    IX_QMGR_Q_PRIORITY_1);
+	  /*
+	   * Queue policy and priority setup for NPE-A TX queue
+	   */
+	  status |= ixQMgrCallbackTypeSet (IX_ETH_ACC_TX_NPEA_Q,
+					   IX_QMGR_TYPE_REALTIME_SPORADIC);
+	  status |= ixQMgrDispatcherPrioritySet (IX_ETH_ACC_TX_NPEA_Q,
+						 IX_QMGR_Q_PRIORITY_1);
 
-	    /*
-	     * Queue policy and priority setup for NPE-A RX free queue
-	     */
-	    status |= ixQMgrCallbackTypeSet(IX_ETH_ACC_RX_FREE_NPEA_Q,
-			    IX_QMGR_TYPE_REALTIME_SPORADIC);
-	    status |= ixQMgrDispatcherPrioritySet (IX_ETH_ACC_RX_FREE_NPEA_Q,
-			    IX_QMGR_Q_PRIORITY_1);
+	  /*
+	   * Queue policy and priority setup for NPE-A RX free queue
+	   */
+	  status |= ixQMgrCallbackTypeSet (IX_ETH_ACC_RX_FREE_NPEA_Q,
+					   IX_QMGR_TYPE_REALTIME_SPORADIC);
+	  status |= ixQMgrDispatcherPrioritySet (IX_ETH_ACC_RX_FREE_NPEA_Q,
+						 IX_QMGR_Q_PRIORITY_1);
 	}
 
-	if (IX_ETH_PORT_1 == portId)
+      if (IX_ETH_PORT_1 == portId)
 	{
-	    /*
-	     * Queue policy and priority setup for NPE-B TX queue
-	     */
-	    status |= ixQMgrCallbackTypeSet(IX_ETH_ACC_TX_NPEB_Q, 
-			    IX_QMGR_TYPE_REALTIME_SPORADIC);
-	    status |= ixQMgrDispatcherPrioritySet (IX_ETH_ACC_TX_NPEB_Q,
-			    IX_QMGR_Q_PRIORITY_1);
+	  /*
+	   * Queue policy and priority setup for NPE-B TX queue
+	   */
+	  status |= ixQMgrCallbackTypeSet (IX_ETH_ACC_TX_NPEB_Q,
+					   IX_QMGR_TYPE_REALTIME_SPORADIC);
+	  status |= ixQMgrDispatcherPrioritySet (IX_ETH_ACC_TX_NPEB_Q,
+						 IX_QMGR_Q_PRIORITY_1);
 
-	    /*
-	     * Queue policy and priority setup for NPE-B RX free queue
-	     */
-	    status |= ixQMgrCallbackTypeSet(IX_ETH_ACC_RX_FREE_NPEB_Q,
-			    IX_QMGR_TYPE_REALTIME_SPORADIC);
-	    status |= ixQMgrDispatcherPrioritySet (IX_ETH_ACC_RX_FREE_NPEB_Q,
-			    IX_QMGR_Q_PRIORITY_1);
+	  /*
+	   * Queue policy and priority setup for NPE-B RX free queue
+	   */
+	  status |= ixQMgrCallbackTypeSet (IX_ETH_ACC_RX_FREE_NPEB_Q,
+					   IX_QMGR_TYPE_REALTIME_SPORADIC);
+	  status |= ixQMgrDispatcherPrioritySet (IX_ETH_ACC_RX_FREE_NPEB_Q,
+						 IX_QMGR_Q_PRIORITY_1);
 	}
 
-	if (IX_ETH_PORT_2 == portId)
+      if (IX_ETH_PORT_2 == portId)
 	{
-	    /*
-	     * Queue policy and priority setup for NPE-C TX queue
-	     */
-	    status |= ixQMgrCallbackTypeSet(IX_ETH_ACC_TX_NPEC_Q, 
-			    IX_QMGR_TYPE_REALTIME_SPORADIC);
-	    status |= ixQMgrDispatcherPrioritySet (IX_ETH_ACC_TX_NPEC_Q,
-			    IX_QMGR_Q_PRIORITY_1);
+	  /*
+	   * Queue policy and priority setup for NPE-C TX queue
+	   */
+	  status |= ixQMgrCallbackTypeSet (IX_ETH_ACC_TX_NPEC_Q,
+					   IX_QMGR_TYPE_REALTIME_SPORADIC);
+	  status |= ixQMgrDispatcherPrioritySet (IX_ETH_ACC_TX_NPEC_Q,
+						 IX_QMGR_Q_PRIORITY_1);
 
 
-	    /*
-	     * Queue policy and priority setup for NPE-C RX free queue
-	     */
-	    status |= ixQMgrCallbackTypeSet(IX_ETH_ACC_RX_FREE_NPEC_Q,
-			    IX_QMGR_TYPE_REALTIME_SPORADIC);
-	    status |= ixQMgrDispatcherPrioritySet (IX_ETH_ACC_RX_FREE_NPEC_Q,
-			    IX_QMGR_Q_PRIORITY_1);
+	  /*
+	   * Queue policy and priority setup for NPE-C RX free queue
+	   */
+	  status |= ixQMgrCallbackTypeSet (IX_ETH_ACC_RX_FREE_NPEC_Q,
+					   IX_QMGR_TYPE_REALTIME_SPORADIC);
+	  status |= ixQMgrDispatcherPrioritySet (IX_ETH_ACC_RX_FREE_NPEC_Q,
+						 IX_QMGR_Q_PRIORITY_1);
 	}
 
-	/*
-	 * Queue policy and priority setup for TxDone queue
-	 */
-	status |= ixQMgrCallbackTypeSet(IX_ETH_ACC_TX_DONE_Q,
-			IX_QMGR_TYPE_REALTIME_SPORADIC);
-	status |= ixQMgrDispatcherPrioritySet (IX_ETH_ACC_TX_DONE_Q,
-			IX_QMGR_Q_PRIORITY_1);
+      /*
+       * Queue policy and priority setup for TxDone queue
+       */
+      status |= ixQMgrCallbackTypeSet (IX_ETH_ACC_TX_DONE_Q,
+				       IX_QMGR_TYPE_REALTIME_SPORADIC);
+      status |= ixQMgrDispatcherPrioritySet (IX_ETH_ACC_TX_DONE_Q,
+					     IX_QMGR_Q_PRIORITY_1);
 
 
-	if (IX_SUCCESS != status)
+      if (IX_SUCCESS != status)
 	{
-	    P_ERROR("Failed to set queue policy for HSS-Ethernet co-exist\n");
+	  P_ERROR ("Failed to set queue policy for HSS-Ethernet co-exist\n");
 	}
 
-	TRACE;
+      TRACE;
     }
-    /* set the private port ID */
-    priv->port_id  = portId;
+  /* set the private port ID */
+  priv->port_id = portId;
 
-    /* set device name */
-    sprintf(ndev->name, DEVICE_NAME"%d", priv->port_id);
+  /* set device name */
+  sprintf (ndev->name, DEVICE_NAME "%d", priv->port_id);
 
-    TRACE;
+  TRACE;
 
-    /* initialize RX pool */
-    priv->rx_pool = IX_OSAL_MBUF_POOL_INIT(RX_MBUF_POOL_SIZE, 0,
-				           "IXP400 Ethernet driver Rx Pool");
-    if(priv->rx_pool == NULL)
+  /* initialize RX pool */
+  priv->rx_pool = IX_OSAL_MBUF_POOL_INIT (RX_MBUF_POOL_SIZE, 0,
+					  "IXP400 Ethernet driver Rx Pool");
+  if (priv->rx_pool == NULL)
     {
-	P_ERROR("%s: Buffer RX Pool init failed on port %d\n",
-		ndev->name, priv->port_id);
-	goto error;
+      P_ERROR ("%s: Buffer RX Pool init failed on port %d\n",
+	       ndev->name, priv->port_id);
+      goto error;
     }
 
-    TRACE;
+  TRACE;
 
-    /* initialize TX pool */
-    priv->tx_pool = IX_OSAL_MBUF_POOL_INIT(TX_MBUF_POOL_SIZE, 0, 
-				           "IXP400 Ethernet driver Tx Pool");
-    if(priv->tx_pool == NULL)
+  /* initialize TX pool */
+  priv->tx_pool = IX_OSAL_MBUF_POOL_INIT (TX_MBUF_POOL_SIZE, 0,
+					  "IXP400 Ethernet driver Tx Pool");
+  if (priv->tx_pool == NULL)
     {
-	P_ERROR("%s: Buffer TX Pool init failed on port %d\n",
-		ndev->name, priv->port_id);
-	goto error;
+      P_ERROR ("%s: Buffer TX Pool init failed on port %d\n",
+	       ndev->name, priv->port_id);
+      goto error;
     }
 
-     TRACE;
+  TRACE;
 
-   /* initialise the MII register access mutex */
-    priv->maintenanceCheckThreadComplete = (struct semaphore *)
-	kmalloc(sizeof(struct semaphore), GFP_KERNEL);
-    if (!priv->maintenanceCheckThreadComplete)
+  /* initialise the MII register access mutex */
+  priv->maintenanceCheckThreadComplete = (struct semaphore *)
+    kmalloc (sizeof (struct semaphore), GFP_KERNEL);
+  if (!priv->maintenanceCheckThreadComplete)
     {
-	goto error;
+      goto error;
     }
-    priv->lock = SPIN_LOCK_UNLOCKED;
-    init_MUTEX(priv->maintenanceCheckThreadComplete);
-    priv->maintenanceCheckStopped = TRUE;
+  priv->lock = SPIN_LOCK_UNLOCKED;
+  init_MUTEX (priv->maintenanceCheckThreadComplete);
+  priv->maintenanceCheckStopped = TRUE;
 
-    /* initialize ethernet device (default handlers) */
-    ether_setup(ndev);
+  /* initialize ethernet device (default handlers) */
+  ether_setup (ndev);
 
-    TRACE;
+  TRACE;
 
-     /* fill in dev struct callbacks with customized handlers */
-    ndev->open = do_dev_open;
-    ndev->stop = do_dev_stop;
+  /* fill in dev struct callbacks with customized handlers */
+  ndev->open = do_dev_open;
+  ndev->stop = do_dev_stop;
 
-    ndev->hard_start_xmit = dev_hard_start_xmit;
+  ndev->hard_start_xmit = dev_hard_start_xmit;
 
-    ndev->watchdog_timeo = DEV_WATCHDOG_TIMEO;
-    ndev->tx_timeout = dev_tx_timeout;
-    ndev->change_mtu = dev_change_mtu;
-    ndev->do_ioctl = do_dev_ioctl;
-    ndev->get_stats = dev_get_stats;
-    ndev->set_multicast_list = ixp400_dev_set_multicast_list;
-    ndev->flags |= IFF_MULTICAST;
+  ndev->watchdog_timeo = DEV_WATCHDOG_TIMEO;
+  ndev->tx_timeout = dev_tx_timeout;
+  ndev->change_mtu = dev_change_mtu;
+  ndev->do_ioctl = do_dev_ioctl;
+  ndev->get_stats = dev_get_stats;
+  ndev->set_multicast_list = ixp400_dev_set_multicast_list;
+  ndev->flags |= IFF_MULTICAST;
 
-    ndev->set_mac_address = ixp400_dev_set_mac_address;
+  ndev->set_mac_address = ixp400_dev_set_mac_address;
 
 #ifdef CONFIG_IXP400_NAPI
-    ndev->poll = &dev_rx_poll;
-    ndev->weight = IXP400_NAPI_WEIGHT;
+  ndev->poll = &dev_rx_poll;
+  ndev->weight = IXP400_NAPI_WEIGHT;
 
-    /* initialize the rx_poll_dev device */
-    if(NULL == rx_poll_dev)
-        rx_poll_dev = ndev;
+  /* initialize the rx_poll_dev device */
+  if (NULL == rx_poll_dev)
+    rx_poll_dev = ndev;
 #endif
 
-    TRACE;
+  TRACE;
 
-    /* Defines the unicast MAC address
-     *
-     * Here is a good place to read a board-specific MAC address
-     * from a non-volatile memory, e.g. an external eeprom.
-     * 
-     * This memcpy uses a default MAC address from this
-     * source code.
-     *
-     * This can be overriden later by the (optional) command
-     *
-     *     ifconfig ixp0 ether 0002b3010101
-     *
-     */
+  /* Defines the unicast MAC address
+   *
+   * Here is a good place to read a board-specific MAC address
+   * from a non-volatile memory, e.g. an external eeprom.
+   * 
+   * This memcpy uses a default MAC address from this
+   * source code.
+   *
+   * This can be overriden later by the (optional) command
+   *
+   *     ifconfig ixp0 ether 0002b3010101
+   *
+   */
 
-    memcpy(ndev->dev_addr, 
-	   &default_mac_addr[priv->port_id].macAddress,
-	   IX_IEEE803_MAC_ADDRESS_SIZE);
+  memcpy (ndev->dev_addr,
+	  &default_mac_addr[priv->port_id].macAddress,
+	  IX_IEEE803_MAC_ADDRESS_SIZE);
 
-    /* possibly remove this test and the message when a valid MAC address 
-     * is not hardcoded in the driver source code. 
-     */
-    if (is_valid_ether_addr(ndev->dev_addr))
+  /* possibly remove this test and the message when a valid MAC address 
+   * is not hardcoded in the driver source code. 
+   */
+  if (is_valid_ether_addr (ndev->dev_addr))
     {
-	P_WARN("Use default MAC address %2.2x:%2.2x:%2.2x:%2.2x:%2.2x:%2.2x for port %d\n",
-	       (unsigned)ndev->dev_addr[0],
-	       (unsigned)ndev->dev_addr[1],
-	       (unsigned)ndev->dev_addr[2],
-	       (unsigned)ndev->dev_addr[3],
-	       (unsigned)ndev->dev_addr[4],
-	       (unsigned)ndev->dev_addr[5],
-	       priv->port_id);
+      P_WARN
+	("Use default MAC address %2.2x:%2.2x:%2.2x:%2.2x:%2.2x:%2.2x for port %d\n",
+	 (unsigned) ndev->dev_addr[0], (unsigned) ndev->dev_addr[1],
+	 (unsigned) ndev->dev_addr[2], (unsigned) ndev->dev_addr[3],
+	 (unsigned) ndev->dev_addr[4], (unsigned) ndev->dev_addr[5],
+	 priv->port_id);
     }
-    
-    /* Set/update the internal packet size 
-     * This can be overriden later by the command
-     *                      ifconfig ixp0 mtu 1504
-     */
-    TRACE;
 
-    dev_change_msdu(ndev, ndev->mtu + ndev->hard_header_len + VLAN_HDR);
+  /* Set/update the internal packet size 
+   * This can be overriden later by the command
+   *                      ifconfig ixp0 mtu 1504
+   */
+  TRACE;
+
+  dev_change_msdu (ndev, ndev->mtu + ndev->hard_header_len + VLAN_HDR);
 
 #if IS_KERNEL26
-    /* create timeout queue to handle transmission timeout */
-    priv->timeout_workq = create_singlethread_workqueue(MODULE_NAME);
-    BUG_ON(!priv->timeout_workq);
-    priv->ndev=ndev;
-    INIT_WORK(&priv->timeout_work, dev_tx_timeout_task);
+  /* create timeout queue to handle transmission timeout */
+  priv->timeout_workq = create_singlethread_workqueue (MODULE_NAME);
+  BUG_ON (!priv->timeout_workq);
+  priv->ndev = ndev;
+  INIT_WORK (&priv->timeout_work, dev_tx_timeout_task);
 #else
-    /* create timeout queue to handle transmission timeout */
-    priv->taskqueue_timeout.routine = dev_tx_timeout_task;
-    priv->taskqueue_timeout.data = (void *)ndev;
+  /* create timeout queue to handle transmission timeout */
+  priv->taskqueue_timeout.routine = dev_tx_timeout_task;
+  priv->taskqueue_timeout.data = (void *) ndev;
 #endif
 
-    /* set the internal maximum queueing capabilities */
-    ndev->tx_queue_len = TX_MBUF_POOL_SIZE;
+  /* set the internal maximum queueing capabilities */
+  ndev->tx_queue_len = TX_MBUF_POOL_SIZE;
 
-    if (!netif_queue_stopped(ndev))
+  if (!netif_queue_stopped (ndev))
     {
-	TRACE;
+      TRACE;
 
-        ndev->trans_start = jiffies;
-        netif_stop_queue(ndev);
+      ndev->trans_start = jiffies;
+      netif_stop_queue (ndev);
     }
 
-    TRACE;
+  TRACE;
 
 #if IS_KERNEL26
-    if (register_netdev(ndev))
-    	goto error;
+  if (register_netdev (ndev))
+    goto error;
 #else
-    found_devices++;
+  found_devices++;
 #endif /* IS_KERNEL26 */
 
-    TRACE;
+  TRACE;
 
-    /* register EthAcc callbacks for this port */
-    if (dev_rxtxcallback_register(portId, (UINT32)ndev))
+  /* register EthAcc callbacks for this port */
+  if (dev_rxtxcallback_register (portId, (UINT32) ndev))
     {
-    	goto error;
+      goto error;
     }
 
 #ifdef CONFIG_IXP400_ETH_QDISC_ENABLED
-    /* configure and enable a fast TX queuing discipline */
-    TRACE;
+  /* configure and enable a fast TX queuing discipline */
+  TRACE;
 
-    priv->qdisc = qdisc_create_dflt(ndev, &dev_qdisc_ops);
-    ndev->qdisc_sleeping = priv->qdisc;
-    ndev->qdisc = priv->qdisc;
-    
-    if (!ndev->qdisc_sleeping)
+  priv->qdisc = qdisc_create_dflt (ndev, &dev_qdisc_ops);
+  ndev->qdisc_sleeping = priv->qdisc;
+  ndev->qdisc = priv->qdisc;
+
+  if (!ndev->qdisc_sleeping)
     {
-	P_ERROR("%s: qdisc_create_dflt failed on port %d\n",
-		ndev->name, priv->port_id);
-	goto error;
+      P_ERROR ("%s: qdisc_create_dflt failed on port %d\n",
+	       ndev->name, priv->port_id);
+      goto error;
     }
 #endif /* CONFIG_IXP400_ETH_QDISC_ENABLED */
 
-    goto done;
+  goto done;
 
 /* Error handling: enter here whenever error detected */
 error:
-    TRACE;
+  TRACE;
 
 #ifdef CONFIG_IXP400_ETH_QDISC_ENABLED
-    if (ndev->qdisc)
-    	qdisc_destroy(ndev->qdisc);
+  if (ndev->qdisc)
+    qdisc_destroy (ndev->qdisc);
 #endif
 
 #if IS_KERNEL26
-    /* Step 1: Destoying workqueue */
-    if (priv && priv->timeout_workq)
+  /* Step 1: Destoying workqueue */
+  if (priv && priv->timeout_workq)
     {
-    	flush_workqueue(priv->timeout_workq);
-	destroy_workqueue(priv->timeout_workq);
-	priv->timeout_workq = NULL;
+      flush_workqueue (priv->timeout_workq);
+      destroy_workqueue (priv->timeout_workq);
+      priv->timeout_workq = NULL;
     }
 
-    /* Step 2: detaching ndev from dev */
-    dev_set_drvdata(dev, NULL);
+  /* Step 2: detaching ndev from dev */
+  dev_set_drvdata (dev, NULL);
 
-    /* Step 3: Unregister and free ndev */
-    if (ndev)
+  /* Step 3: Unregister and free ndev */
+  if (ndev)
     {
-    	if (ndev->reg_state == NETREG_REGISTERED)
-	    unregister_netdev(ndev);
+      if (ndev->reg_state == NETREG_REGISTERED)
+	unregister_netdev (ndev);
 
-	free_netdev(ndev);
+      free_netdev (ndev);
     }
 #else
-    if (ndev)
-    	kfree(ndev);
+  if (ndev)
+    kfree (ndev);
 
-    if (priv)
-    	kfree(priv);
+  if (priv)
+    kfree (priv);
 #endif /* IS_KERNEL26 */
 
-    TRACE;
+  TRACE;
 
-    return -ENOMEM;
+  return -ENOMEM;
 
 /* Escape from the routine if no error */
 done:
-    return 0;
+  return 0;
 }
 
 #if IS_KERNEL26
-static int __devexit dev_eth_remove(struct device *dev)
+static int __devexit
+dev_eth_remove (struct device *dev)
 #else
-static int __devexit dev_eth_remove(int dev_count)
+static int __devexit
+dev_eth_remove (int dev_count)
 #endif
 {
 #if IS_KERNEL26
-    struct net_device *ndev = dev_get_drvdata(dev);
-    priv_data_t *priv = netdev_priv(ndev);
+  struct net_device *ndev = dev_get_drvdata (dev);
+  priv_data_t *priv = netdev_priv (ndev);
 #else
-    struct net_device *ndev = &ixp400_eth_devices[dev_count];
-    priv_data_t *priv = ndev->priv;
+  struct net_device *ndev = &ixp400_eth_devices[dev_count];
+  priv_data_t *priv = ndev->priv;
 #endif
 
-    TRACE;
+  TRACE;
 
-    if (priv != NULL)
+  if (priv != NULL)
     {
 #if IS_KERNEL26
-	IxEthAccPortId portId = to_platform_device(dev)->id;
+      IxEthAccPortId portId = to_platform_device (dev)->id;
 #else
-	IxEthAccPortId portId = priv->port_id;
+      IxEthAccPortId portId = priv->port_id;
 #endif
 
-	if (IX_SUCCESS != 
-	    ixNpeDlNpeStopAndReset(default_npeImageId[portId].npeId))
+      if (IX_SUCCESS !=
+	  ixNpeDlNpeStopAndReset (default_npeImageId[portId].npeId))
 	{
-	    P_NOTICE("Error Halting NPE for Ethernet port %d!\n", portId);
+	  P_NOTICE ("Error Halting NPE for Ethernet port %d!\n", portId);
 	}
 
-	TRACE;
+      TRACE;
 
 #if IS_KERNEL26
-	if (priv->timeout_workq)
+      if (priv->timeout_workq)
 	{
-	    flush_workqueue(priv->timeout_workq);
-	    destroy_workqueue(priv->timeout_workq);
-	    priv->timeout_workq = NULL;
+	  flush_workqueue (priv->timeout_workq);
+	  destroy_workqueue (priv->timeout_workq);
+	  priv->timeout_workq = NULL;
 	}
 #endif
 
 #ifdef CONFIG_IXP400_ETH_QDISC_ENABLED
-	if (ndev->qdisc)
+      if (ndev->qdisc)
 	{
-	    qdisc_destroy(ndev->qdisc);
+	  qdisc_destroy (ndev->qdisc);
 	}
 #endif
-	unregister_netdev(ndev);
+      unregister_netdev (ndev);
 
 #if IS_KERNEL26
-	free_netdev(ndev);
-	dev_set_drvdata(dev,NULL);
+      free_netdev (ndev);
+      dev_set_drvdata (dev, NULL);
 #else
-	kfree(ndev->priv);
-	ndev->priv = NULL;
+      kfree (ndev->priv);
+      ndev->priv = NULL;
 #endif
     }
 
-    return 0;
+  return 0;
 }
 
-static int datapath_poll_activatable_check(void)
+static int
+datapath_poll_activatable_check (void)
 {
 
-    TRACE;
+  TRACE;
 
-    /*
-     * If feature control indicates that the livelock dispatcher is
-     * used, it is not valid to also use datapath polling
-     */
-    if ((IX_FEATURE_CTRL_SWCONFIG_DISABLED ==
-         ixFeatureCtrlSwConfigurationCheck(IX_FEATURECTRL_ORIGB0_DISPATCHER)) &&
-         (datapath_poll == 1))
+  /*
+   * If feature control indicates that the livelock dispatcher is
+   * used, it is not valid to also use datapath polling
+   */
+  if ((IX_FEATURE_CTRL_SWCONFIG_DISABLED ==
+       ixFeatureCtrlSwConfigurationCheck (IX_FEATURECTRL_ORIGB0_DISPATCHER))
+      && (datapath_poll == 1))
     {
-        datapath_poll = 0;
-        printk(KERN_NOTICE "\nInvalid to have datapath_poll=1 when the\n");
-        printk(KERN_NOTICE "livelock dispatcher is being used.\n");
-        printk(KERN_NOTICE "Datapath polling turned off.\n\n");
+      datapath_poll = 0;
+      printk (KERN_NOTICE "\nInvalid to have datapath_poll=1 when the\n");
+      printk (KERN_NOTICE "livelock dispatcher is being used.\n");
+      printk (KERN_NOTICE "Datapath polling turned off.\n\n");
 
-	return -1;
+      return -1;
     }
 
-    return 0;
+  return 0;
 }
 
 
 #if IS_KERNEL26 || defined MODULE
-static int __init ixp400_eth_init(void)
+static int __init
+ixp400_eth_init (void)
 {
-    int res, dev_count;
+  int res, dev_count;
 
 #if !IS_KERNEL26
-    struct net_device *dev;
+  struct net_device *dev;
 #endif
 
-    TRACE;
+  TRACE;
 
-    P_INFO("Initializing IXP400 NPE Ethernet driver software v. " MOD_VERSION " \n");
+  P_INFO ("Initializing IXP400 NPE Ethernet driver software v. " MOD_VERSION
+	  " \n");
 
-    TRACE;
+  TRACE;
 
-    /* check module parameter range */
-    if (dev_max_count == 0 || dev_max_count > IX_ETH_ACC_NUMBER_OF_PORTS)
+  /* check module parameter range */
+  if (dev_max_count == 0 || dev_max_count > IX_ETH_ACC_NUMBER_OF_PORTS)
     {
-	P_ERROR("Number of ports supported is dev_max_count <= %d\n", IX_ETH_ACC_NUMBER_OF_PORTS);
-	return -1;
+      P_ERROR ("Number of ports supported is dev_max_count <= %d\n",
+	       IX_ETH_ACC_NUMBER_OF_PORTS);
+      return -1;
     }
 
-    TRACE;
+  TRACE;
 
 #ifndef DEBUG
-    /* check module parameter range */
-    if (log_level >= 2)  /* module parameter */
+  /* check module parameter range */
+  if (log_level >= 2)		/* module parameter */
     {
-	printk("Warning : log_level == %d and TRACE is disabled\n", log_level);
+      printk ("Warning : log_level == %d and TRACE is disabled\n", log_level);
     }
 #endif
 
-    TRACE;
+  TRACE;
 
-    /* display an approximate CPU clock information */
-    P_INFO("CPU clock speed (approx) = %lu MHz\n",
-	   loops_per_jiffy * 2 * HZ / 1000000);
+  /* display an approximate CPU clock information */
+  P_INFO ("CPU clock speed (approx) = %lu MHz\n",
+	  loops_per_jiffy * 2 * HZ / 1000000);
 
-    TRACE;
+  TRACE;
 
-    /* Handle ixdp465 platform specific stuff here */
-    if (machine_is_ixdp465())
-    {
-         UINT32 expbusCtrlReg;
+  /* Handle ixdp465 platform specific stuff here */
+#if defined (CONFIG_CPU_IXP46X) || defined (CONFIG_CPU_IXP43X)
+  {
+    UINT32 expbusCtrlReg;
 
-	/* Set the expansion bus fuse register to enable MUX for NPEA MII */
-        expbusCtrlReg = ixFeatureCtrlRead ();
-        expbusCtrlReg |= ((unsigned long)1<<8);
-	ixFeatureCtrlWrite (expbusCtrlReg);
+    /* Set the expansion bus fuse register to enable MUX for NPEA MII */
+    expbusCtrlReg = ixFeatureCtrlRead ();
+    expbusCtrlReg |= ((unsigned long) 1 << 8);
+    ixFeatureCtrlWrite (expbusCtrlReg);
 
-	/*
-	 * HSS coexist NPE enabler
-	 */
-	if (hss_coexist)
-	{
-	    int i;
-	    IxEthAccPortId portId;
-
-	    for (i = 0; i < dev_max_count; i++)
-	    {
-		portId = default_portId[i];
-	   	
-		if (IX_NPEDL_NPEID_NPEA == default_npeImageId[portId].npeId)
-		{
-		    /*
-		     * Prepare to download the HSS-Ethernet coexist image into 
-		     * NPE-A
-		     */
-		    default_npeImageId[portId].npeImageId = 
-		    	IX_HSS_ETH_NPE_A_IMAGE_ID;
-		}
-	    }
-	}
-    }
-    else
-    {
-    	if (npe_error_handler)
-	{
-	    P_ERROR("NPE error handling is not supported on this platform\n");
-	    npe_error_handler = 0;
-	}
-
-	if (hss_coexist)
-	{
-	    P_ERROR("HSS-Ethernet co-exist is not supported on this "
-	    	"platform\n");
-	    hss_coexist = 0;
-	}
-    }
-
-    TRACE;
-
-    /* Enable/disable the EthDB MAC Learning & Filtering feature.
-     * This is a half-bridge feature, and should be disabled if this interface 
-     * is used on a bridge with other non-NPE ethernet interfaces.
-     * This is because the NPE's are not aware of the other interfaces and thus
-     * may incorrectly filter (drop) incoming traffic correctly bound for another
-     * interface on the bridge.
+    /*
+     * HSS coexist NPE enabler
      */
-    if (npe_learning) /* module parameter */
+    if (hss_coexist)
+      {
+	int i;
+	IxEthAccPortId portId;
+
+	for (i = 0; i < dev_max_count; i++)
+	  {
+	    portId = default_portId[i];
+
+	    if (IX_NPEDL_NPEID_NPEA == default_npeImageId[portId].npeId)
+	      {
+		/*
+		 * Prepare to download the HSS-Ethernet coexist image into 
+		 * NPE-A
+		 */
+		default_npeImageId[portId].npeImageId =
+		  IX_HSS_ETH_NPE_A_IMAGE_ID;
+	      }
+	  }
+      }
+  }
+#else
+  {
+    if (npe_error_handler)
+      {
+	P_ERROR ("NPE error handling is not supported on this platform\n");
+	npe_error_handler = 0;
+      }
+
+    if (hss_coexist)
+      {
+	P_ERROR ("HSS-Ethernet co-exist is not supported on this "
+		 "platform\n");
+	hss_coexist = 0;
+      }
+  }
+#endif
+  TRACE;
+
+  /* Enable/disable the EthDB MAC Learning & Filtering feature.
+   * This is a half-bridge feature, and should be disabled if this interface 
+   * is used on a bridge with other non-NPE ethernet interfaces.
+   * This is because the NPE's are not aware of the other interfaces and thus
+   * may incorrectly filter (drop) incoming traffic correctly bound for another
+   * interface on the bridge.
+   */
+  if (npe_learning)		/* module parameter */
     {
-        ixFeatureCtrlSwConfigurationWrite (IX_FEATURECTRL_ETH_LEARNING, TRUE);
+      ixFeatureCtrlSwConfigurationWrite (IX_FEATURECTRL_ETH_LEARNING, TRUE);
     }
-    else
+  else
     {
-        ixFeatureCtrlSwConfigurationWrite (IX_FEATURECTRL_ETH_LEARNING, FALSE);
+      ixFeatureCtrlSwConfigurationWrite (IX_FEATURECTRL_ETH_LEARNING, FALSE);
     }
 
-    TRACE;
+  TRACE;
 
 
-    /* Do not initialise core components if no_ixp400_sw_init is set */
-    if (no_ixp400_sw_init) /* module parameter */
+  /* Do not initialise core components if no_ixp400_sw_init is set */
+  if (no_ixp400_sw_init)	/* module parameter */
     {
-	P_WARN("no_ixp400_sw_init != 0, no IXP400 SW core component initialisation performed\n");
+      P_WARN
+	("no_ixp400_sw_init != 0, no IXP400 SW core component initialisation performed\n");
     }
-    else
+  else
     {
-	/* initialize the required components for this driver */
-	if ((res = qmgr_init()))
+      /* initialize the required components for this driver */
+      if ((res = qmgr_init ()))
+	return res;
+      TRACE;
+
+      /*
+       * NPE error handling is enabled, initializae the message handler with
+       * polling mode and setup the PMU timer to poll for NPE messages
+       */
+      if (npe_error_handler)
+	{
+
+	  TRACE;
+
+	  /*
+	   * NPE error handling requires datapath poll to poll for NPE
+	   * messages
+	   */
+	  datapath_poll = 1;
+
+	  if (IX_SUCCESS !=
+	      (res = ixNpeMhInitialize (IX_NPEMH_NPEINTERRUPTS_NO)))
+	    return -1;
+
+	  /* 
+	   * Setting up PMU timer to poll for NPE messages
+	   */
+	  if ((res = dev_pmu_timer_setup ()))
 	    return res;
-        TRACE;
-
-	/*
-	 * NPE error handling is enabled, initializae the message handler with
-	 * polling mode and setup the PMU timer to poll for NPE messages
-	 */
-	if (npe_error_handler)
-	{
-
-	    TRACE;
-
-	    /*
-	     * NPE error handling requires datapath poll to poll for NPE
-	     * messages
-	     */
-	    datapath_poll = 1;
-
-	    if (IX_SUCCESS != 
-		(res = ixNpeMhInitialize(IX_NPEMH_NPEINTERRUPTS_NO)))
-		return -1;
-
-	    /* 
-	     * Setting up PMU timer to poll for NPE messages
-	     */
-	    if ((res = dev_pmu_timer_setup()))
-		return res;
 	}
-	else
+      else
 	{
-	    TRACE;
+	  TRACE;
 
-	    if (IX_SUCCESS != 
-	    	(res = ixNpeMhInitialize(IX_NPEMH_NPEINTERRUPTS_YES)))
-		return -1;
+	  if (IX_SUCCESS !=
+	      (res = ixNpeMhInitialize (IX_NPEMH_NPEINTERRUPTS_YES)))
+	    return -1;
 	}
     }
 
 
-    /* Initialise the NPEs and access layer */
-    TRACE;
+  /* Initialise the NPEs and access layer */
+  TRACE;
 
-    if ((res = ethacc_init()))
-	return res;
+  if ((res = ethacc_init ()))
+    return res;
 
-    TRACE;
+  TRACE;
 
-    /* Initialise the PHYs */
-    if ((res = phy_init()))
-	return res;
+  /* Initialise the PHYs */
+  if ((res = phy_init ()))
+    return res;
 
-    TRACE;
+  TRACE;
 
 #if IS_KERNEL26
-    if ((res = driver_register(&ixp400_eth_driver)))
-    	return res;
+  if ((res = driver_register (&ixp400_eth_driver)))
+    return res;
 #endif
 
-    TRACE;
+  TRACE;
 
-    /* Initialise the driver structure */
-    for (dev_count = 0; 
-	 dev_count < dev_max_count;  /* module parameter */
-	 dev_count++)
+  /* Initialise the driver structure */
+  for (dev_count = 0; dev_count < dev_max_count;	/* module parameter */
+       dev_count++)
 #if IS_KERNEL26
     {
-        if ((res = platform_device_register(&ixp400_eth_devices[dev_count])))
-        {
-            P_ERROR("failure in registering device %d. res = %d\n", 
-                    dev_count, res);
-            return res;
-        }
+      if ((res = platform_device_register (&ixp400_eth_devices[dev_count])))
+	{
+	  P_ERROR ("failure in registering device %d. res = %d\n",
+		   dev_count, res);
+	  return res;
+	}
 
-        TRACE;
+      TRACE;
     }
 #else
     {
-        dev = &ixp400_eth_devices[dev_count];
+      dev = &ixp400_eth_devices[dev_count];
 
-        dev->init = dev_eth_probe;
+      dev->init = dev_eth_probe;
 
-        TRACE;
+      TRACE;
 
-        if ((res = register_netdev(dev)))
-        {
-            TRACE;
+      if ((res = register_netdev (dev)))
+	{
+	  TRACE;
 
-            P_ERROR("Failed to register netdev. res = %d\n", res);
-            return res;
-        }
+	  P_ERROR ("Failed to register netdev. res = %d\n", res);
+	  return res;
+	}
 
-        TRACE;
+      TRACE;
     }
 #endif
 
-    TRACE;
+  TRACE;
 
 #if IS_KERNEL26
-    /* Create the workqueue for the maintenance task */
-    maintenance_workq = create_singlethread_workqueue("ethDB wq");
-    BUG_ON(!maintenance_workq);
+  /* Create the workqueue for the maintenance task */
+  maintenance_workq = create_singlethread_workqueue ("ethDB wq");
+  BUG_ON (!maintenance_workq);
 #endif
 
-    TRACE;
+  TRACE;
 
 #ifdef CONFIG_IXP400_NAPI
-    /* Set the queue interrrupt condition for TxDone to "nearly full"
-     * This will reduce unecessary interrupts and improve performance
-     */
-    ixQMgrNotificationEnable(IX_QMGR_QUEUE_31,IX_QMGR_Q_SOURCE_ID_NF);
+  /* Set the queue interrrupt condition for TxDone to "nearly full"
+   * This will reduce unecessary interrupts and improve performance
+   */
+  ixQMgrNotificationEnable (IX_QMGR_QUEUE_31, IX_QMGR_Q_SOURCE_ID_NF);
 
-    /*
-     * We disable datapath polling here because this feature is conflicting
-     * with NAPI polling implementation.
-     *
-     * 1. If NAPI is ENABLED, NPE error handler is DISABLED ==>
-     *    PMU timer will not be set up
-     * 2. If NAPI is ENABLED, NPE error handler is ENABLED ==>
-     *	  PMU timer will be setup for NPE message handler messages polling only
-     */
-    datapath_poll = 0;
+  /*
+   * We disable datapath polling here because this feature is conflicting
+   * with NAPI polling implementation.
+   *
+   * 1. If NAPI is ENABLED, NPE error handler is DISABLED ==>
+   *    PMU timer will not be set up
+   * 2. If NAPI is ENABLED, NPE error handler is ENABLED ==>
+   *    PMU timer will be setup for NPE message handler messages polling only
+   */
+  datapath_poll = 0;
 #endif
 
-    /*
-     * We are about to check and activate the datapath polling, so we verify if
-     * datapath poll can be enabled. The checking function will disable
-     * datapath_poll if it's not supported.
-     */
-    datapath_poll_activatable_check();
+  /*
+   * We are about to check and activate the datapath polling, so we verify if
+   * datapath poll can be enabled. The checking function will disable
+   * datapath_poll if it's not supported.
+   */
+  datapath_poll_activatable_check ();
 
-    TRACE;
+  TRACE;
 
-    /*
-     * Activate datapath polling only if:
-     * 1. no_ixp400_sw_init is zero (initializing QMgr and npeMh in this
-     *    driver)
-     * 2. datapath_poll value is non-zero (we WANT datapath poll and it's SAFE
-     *    to use datapath polling
-     * 3. npe_error_handler value is zero (we DO NOT want to enable NPE soft
-     *    reset feature)
-     */
-    if ((no_ixp400_sw_init == 0) && (datapath_poll != 0) && 
-    	(npe_error_handler == 0))
+  /*
+   * Activate datapath polling only if:
+   * 1. no_ixp400_sw_init is zero (initializing QMgr and npeMh in this
+   *    driver)
+   * 2. datapath_poll value is non-zero (we WANT datapath poll and it's SAFE
+   *    to use datapath polling
+   * 3. npe_error_handler value is zero (we DO NOT want to enable NPE soft
+   *    reset feature)
+   */
+  if ((no_ixp400_sw_init == 0) && (datapath_poll != 0) &&
+      (npe_error_handler == 0))
     {
-    	TRACE; 
+      TRACE;
 
-        /* The QMgr dispatch entry point is called from the 
-         * IX_OSAL_IXP400_QM1_IRQ_LVL irq (which will trigger
-         * an interrupt for every packet)
-         * This function setup the datapath in polling mode
-         * for better performances.
-         */
-        /* remove txdone queue and rx queues from qmgr dispatcher */
-	ixQMgrNotificationDisable(IX_QMGR_QUEUE_31);
-	ixEthAccQMgrRxNotificationDisable();
+      /* The QMgr dispatch entry point is called from the 
+       * IX_OSAL_IXP400_QM1_IRQ_LVL irq (which will trigger
+       * an interrupt for every packet)
+       * This function setup the datapath in polling mode
+       * for better performances.
+       */
+      /* remove txdone queue and rx queues from qmgr dispatcher */
+      ixQMgrNotificationDisable (IX_QMGR_QUEUE_31);
+      ixEthAccQMgrRxNotificationDisable ();
 
-	/*
-	 * The PMU timer is setting up for txDone queue and rx queue datapath
-	 * polling
-	 */
-        if ((res = dev_pmu_timer_setup()))
-        {
-            TRACE;
-            return res;
-        }
-    }
-
-    TRACE;
-
-    /*
-     * Initialize parity detection and NPE error handler
-     */
-    if (npe_error_handler)
-    {
-	if (parity_npe_error_handler_init())
+      /*
+       * The PMU timer is setting up for txDone queue and rx queue datapath
+       * polling
+       */
+      if ((res = dev_pmu_timer_setup ()))
 	{
-	    P_ERROR("NPE error handler initialization failed\n");
-	    parity_npe_error_handler_uninit();
+	  TRACE;
+	  return res;
 	}
     }
 
-    TRACE;
+  TRACE;
 
-    /* initialise the DB Maintenance task mutex */
-    maintenance_mutex = (struct semaphore *) kmalloc(sizeof(struct semaphore), GFP_KERNEL);
-    if (!maintenance_mutex)
-	return -ENOMEM;
-
-    init_MUTEX(maintenance_mutex);
-
-    TRACE;
-
-    /* Do not start the EthDB maintenance thread if learning & filtering feature is disabled */
-    if (npe_learning) /* module parameter */
+  /*
+   * Initialize parity detection and NPE error handler
+   */
+  if (npe_error_handler)
     {
-        maintenance_timer_set();
+      if (parity_npe_error_handler_init ())
+	{
+	  P_ERROR ("NPE error handler initialization failed\n");
+	  parity_npe_error_handler_uninit ();
+	}
     }
 
-    TRACE;
+  TRACE;
+
+  /* initialise the DB Maintenance task mutex */
+  maintenance_mutex =
+    (struct semaphore *) kmalloc (sizeof (struct semaphore), GFP_KERNEL);
+  if (!maintenance_mutex)
+    return -ENOMEM;
+
+  init_MUTEX (maintenance_mutex);
+
+  TRACE;
+
+  /* Do not start the EthDB maintenance thread if learning & filtering feature is disabled */
+  if (npe_learning)		/* module parameter */
+    {
+      maintenance_timer_set ();
+    }
+
+  TRACE;
 #ifndef CONFIG_IXP400_NAPI
-    /* set the softirq rx queue thresholds 
-     * (These numbers are based on tuning experiments)
-     * maxbacklog =  (netdev_max_backlog * 10) / 63;
-     */
-    if (netdev_max_backlog == 0)
+  /* set the softirq rx queue thresholds 
+   * (These numbers are based on tuning experiments)
+   * maxbacklog =  (netdev_max_backlog * 10) / 63;
+   */
+  if (netdev_max_backlog == 0)
     {
-	netdev_max_backlog = 290; /* system default */
+      netdev_max_backlog = 290;	/* system default */
     }
-    netdev_max_backlog /= BACKLOG_TUNE;
+  netdev_max_backlog /= BACKLOG_TUNE;
 
-    TRACE;
+  TRACE;
 #endif
 
-    return 0;
+  return 0;
 }
 #endif /* IS_KERNEL26 || defined MODULE */
 
 #if IS_KERNEL26 || defined (MODULE)
-void __exit ixp400_eth_exit(void)
+void __exit
+ixp400_eth_exit (void)
 {
-    int dev_count;
+  int dev_count;
 
-    TRACE;
+  TRACE;
 
-    /* We can only get here when the module use count is 0,
-     * so there's no need to stop devices.
-     */
+  /* We can only get here when the module use count is 0,
+   * so there's no need to stop devices.
+   */
 
-    if (no_ixp400_sw_init == 0) /* module parameter */
+  if (no_ixp400_sw_init == 0)	/* module parameter */
     {
-        if(datapath_poll)
-            dev_pmu_timer_unload();
+      if (datapath_poll)
+	dev_pmu_timer_unload ();
 
-        free_irq(IX_OSAL_IXP400_QM1_IRQ_LVL,(void *)IRQ_ANY_PARAMETER);
+      free_irq (IX_OSAL_IXP400_QM1_IRQ_LVL, (void *) IRQ_ANY_PARAMETER);
     }
 
-    TRACE;
+  TRACE;
 
-    /* stop the maintenance timer */
-    maintenance_timer_clear();
+  /* stop the maintenance timer */
+  maintenance_timer_clear ();
 
-    TRACE;
+  TRACE;
 
-    /* Wait for maintenance task to complete (if started) */
-    if (npe_learning) /* module parameter */
+  /* Wait for maintenance task to complete (if started) */
+  if (npe_learning)		/* module parameter */
     {
-	TRACE;
+      TRACE;
 
-	down(maintenance_mutex);
-	up(maintenance_mutex);
+      down (maintenance_mutex);
+      up (maintenance_mutex);
     }
 
-    TRACE;
+  TRACE;
 
-    /* uninitialize the access layers */
-    ethacc_uninit();
+  /* uninitialize the access layers */
+  ethacc_uninit ();
 
-    TRACE;
+  TRACE;
 
-    for (dev_count = 0; 
-	 dev_count < dev_max_count;  /* module parameter */
-	 dev_count++)
+  for (dev_count = 0; dev_count < dev_max_count;	/* module parameter */
+       dev_count++)
 #if IS_KERNEL26
     {
-	platform_device_unregister(&ixp400_eth_devices[dev_count]);
+      platform_device_unregister (&ixp400_eth_devices[dev_count]);
     }
 #else
     {
-    	dev_eth_remove(dev_count);
+      dev_eth_remove (dev_count);
     }
 #endif
 
-    TRACE;
+  TRACE;
 
 #if IS_KERNEL26
-    driver_unregister(&ixp400_eth_driver);
+  driver_unregister (&ixp400_eth_driver);
 
-    TRACE;
+  TRACE;
 
-    if (maintenance_workq)
+  if (maintenance_workq)
     {
-	destroy_workqueue(maintenance_workq);
-	maintenance_workq = NULL;
+      destroy_workqueue (maintenance_workq);
+      maintenance_workq = NULL;
     }
 #endif
 
-    TRACE;
+  TRACE;
 
-    /*
-     * Uninitialize parity detection and NPE error handler
-     */
-    if (npe_error_handler)
+  /*
+   * Uninitialize parity detection and NPE error handler
+   */
+  if (npe_error_handler)
     {
-	parity_npe_error_handler_uninit();
+      parity_npe_error_handler_uninit ();
     }
 
-    if (hss_coexist)
+  if (hss_coexist)
     {
-	/*
-	 * Disable live lock (default setting)
-	 */
-	ixFeatureCtrlSwConfigurationWrite (IX_FEATURECTRL_ORIGB0_DISPATCHER,
-	    IX_FEATURE_CTRL_SWCONFIG_ENABLED);
+      /*
+       * Disable live lock (default setting)
+       */
+      ixFeatureCtrlSwConfigurationWrite (IX_FEATURECTRL_ORIGB0_DISPATCHER,
+					 IX_FEATURE_CTRL_SWCONFIG_ENABLED);
     }
 
-    P_VERBOSE("IXP400 NPE Ethernet driver software uninstalled\n");
+  P_VERBOSE ("IXP400 NPE Ethernet driver software uninstalled\n");
 }
 
 #endif /* IS_KERNEL26 || defined MODULE */
 
-module_init(ixp400_eth_init);
-module_exit(ixp400_eth_exit);
+module_init (ixp400_eth_init);
+module_exit (ixp400_eth_exit);
