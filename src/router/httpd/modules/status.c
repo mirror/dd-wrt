@@ -41,7 +41,10 @@ ej_localtime (webs_t wp, int argc, char_t ** argv)
   time (&tm);
 
   if (time (0) > (unsigned long) 31536000)	//60 * 60 * 24 * 365
-    websWrite (wp, rfctime (&tm));
+  {
+   char t[64];
+    websWrite (wp, rfctime(&tm,t));
+  }
   else
     websWrite (wp, "%s", live_translate ("status_router.notavail"));
   //    websWrite (wp, "<script type=\"text/javascript\">Capture(status_router.notavail)</script>\n");
