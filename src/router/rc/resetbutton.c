@@ -18,7 +18,7 @@
 
 #define	SES_LED_CHECK_TIMES	"9999"	/* How many times to check? */
 #define	SES_LED_CHECK_INTERVAL	"1"	/* Wait interval seconds */
-#define RESET_WAIT		1	/* seconds */
+#define RESET_WAIT		3	/* seconds */
 #define RESET_WAIT_COUNT	RESET_WAIT * 10	/* 10 times a second */
 
 #define NORMAL_INTERVAL		1	/* second */
@@ -413,6 +413,10 @@ period_check (int sig)
 #else
 		nvram_set ("sv_restore_defaults", "1");
 		nvram_commit ();
+		eval ("killall", "ledtool"); //stop blinking on nvram_commit
+#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5)
+		led_control (LED_DIAG, LED_ON);  //turn diag led on, so we know reset was pressed and we're restoring defaults.
+#endif
 		eval ("erase", "nvram");
 #endif
 
