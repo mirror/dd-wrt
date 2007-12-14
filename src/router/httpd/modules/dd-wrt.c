@@ -5782,6 +5782,10 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
 	  mac[9] = 'x';
 	  mac[10] = 'x';
 	}
+      if (si->isi_noise==0)
+        {
+	si->isi_noise = -95;
+	}
       if (si->isi_rates)
 	{
 	  websWrite (wp, "'%s','%s','%3dM','%d','%d','%d'",
