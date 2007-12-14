@@ -35,6 +35,13 @@
 #include "site_typedefs.h"
 
 #else
+#if defined(__GNUC__) && defined(BCMROMOFFLOAD)
+#define BCMROMDATA(_data)	__attribute__ ((__section__ (".datarom." #_data))) _data
+#define BCMROMFN(_fn)		__attribute__ ((__section__ (".textrom." #_fn))) _fn
+#else
+#define BCMROMDATA(_data)	_data
+#define BCMROMFN(_fn)		_fn
+#endif
 
 /*******************************************************************************
  * Inferred Typedefs

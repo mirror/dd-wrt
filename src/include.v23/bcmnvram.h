@@ -156,5 +156,7 @@ extern int nvram2file(char *varname, char *filename);
 #else
 #define NVRAM_SPACE		0x8000
 #endif
+#define NVRAM_MAX_VALUE_LEN 255
+#define NVRAM_MAX_PARAM_LEN 64
 
 #endif /* _bcmnvram_h_ */
