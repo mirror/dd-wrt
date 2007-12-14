@@ -20,6 +20,8 @@
 
 #include <typedefs.h>
 #include <proto/ethernet.h>
+#include <proto/bcmeth.h>
+#include <proto/bcmevent.h>
 #include <proto/802.11.h>
 
 #if defined(__GNUC__)
@@ -335,6 +337,7 @@ typedef struct {
 #define TKIP_ENABLED		2
 #define AES_ENABLED		4
 #define WSEC_SWFLAG		8
+#define SES_OW_ENABLED		0x0040	/* to go into transition mode without setting wep */
 
 #define WSEC_SW(wsec)		((wsec) & WSEC_SWFLAG)
 #define WSEC_HW(wsec)		(!WSEC_SW(wsec))
@@ -342,6 +345,16 @@ typedef struct {
 #define WSEC_TKIP_ENABLED(wsec)	((wsec) & TKIP_ENABLED)
 #define WSEC_AES_ENABLED(wsec)	((wsec) & AES_ENABLED)
 #define WSEC_ENABLED(wsec)	((wsec) & (WEP_ENABLED | TKIP_ENABLED | AES_ENABLED))
+
+#define WPA_AUTH_DISABLED	0x0000	/* Legacy (i.e., non-WPA) */
+#define WPA_AUTH_NONE		0x0001	/* none (IBSS) */
+#define WPA_AUTH_UNSPECIFIED	0x0002	/* over 802.1x */
+#define WPA_AUTH_PSK		0x0004	/* Pre-shared key */
+/* #define WPA_AUTH_8021X 0x0020 */	/* 802.1x, reserved */
+#ifdef BCMWPA2
+#define WPA2_AUTH_UNSPECIFIED	0x0040	/* over 802.1x */
+#define WPA2_AUTH_PSK		0x0080	/* Pre-shared key */
+#endif	/* BCMWPA2 */
 
 
 /* wireless authentication bit vector */
@@ -353,9 +366,12 @@ typedef struct {
 #define WAUTH_ENABLED(wauth)		((wauth) & (WPA_ENABLED | PSK_ENABLED))
 
 /* group/mcast cipher */
-#define WPA_MCAST_CIPHER(wsec)	(((wsec) & TKIP_ENABLED) ? WPA_CIPHER_TKIP : \
-				((wsec) & AES_ENABLED) ? WPA_CIPHER_AES_CCM : \
-				WPA_CIPHER_NONE)
+#define WPA_MCAST_CIPHER(wsec, algo)	(WSEC_WEP_ENABLED(wsec) ? \
+		((algo) == CRYPTO_ALGO_WEP128 ? WPA_CIPHER_WEP_104 : WPA_CIPHER_WEP_40) : \
+			WSEC_TKIP_ENABLED(wsec) ? WPA_CIPHER_TKIP : \
+			WSEC_AES_ENABLED(wsec) ? WPA_CIPHER_AES_CCM : \
+			WPA_CIPHER_NONE)
+
 
 
 typedef struct wl_led_info {
@@ -534,27 +550,6 @@ typedef struct {
 #define WL_STA_AUTHO	0x20 
 
 /* Event messages */
-#define WLC_E_SET_SSID		1
-#define WLC_E_JOIN		2
-#define WLC_E_START		3
-#define WLC_E_AUTH		4
-#define WLC_E_AUTH_IND		5
-#define WLC_E_DEAUTH		6
-#define WLC_E_DEAUTH_IND	7
-#define WLC_E_ASSOC		8
-#define WLC_E_ASSOC_IND		9
-#define WLC_E_REASSOC		10
-#define WLC_E_REASSOC_IND	11
-#define WLC_E_DISASSOC		12
-#define WLC_E_DISASSOC_IND	13
-#define WLC_E_QUIET_START	14	/* 802.11h Quiet period started */
-#define WLC_E_QUIET_END		15	/* 802.11h Quiet period ended */
-#define WLC_E_GOT_BEACONS	16	
-#define WLC_E_LINK		17	/* Link indication */
-#define WLC_E_MIC_ERROR		18	/* TKIP MIC error occurred */
-#define WLC_E_NDIS_LINK		19	/* NDIS style link indication */
-#define WLC_E_ROAM		20
-#define WLC_E_LAST		21
 
 /* Event status codes */
 #define WLC_E_STATUS_SUCCESS		0
@@ -1081,6 +1076,9 @@ typedef struct wlc_rev_info {
 #define WL_WDS_WPA_ROLE_AUTH	0	/* authenticator */
 #define WL_WDS_WPA_ROLE_SUP	1	/* supplicant */
 #define WL_WDS_WPA_ROLE_AUTO	255	/* auto, based on mac addr value */
+
+
+#define WL_EVENTING_MASK_LEN	16
 
 /* afterburner_override */
 #define	ABO_AUTO		-1	/* auto - no override */
