@@ -266,12 +266,16 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
 		   boardflags);
 	  char ab[16];
 	  sprintf (ab, "0x%04X", boardflags);
+	  char *oldvalue = nvram_get("boardflags"); // use the string for restoring since the Buffalo WZR-RS-G54 does await a 0x10 in the bootloader, otherwise the nvram gets deleted
 	  nvram_set ("boardflags", ab);	//set boardflags with AfterBurner bit on
 	  eval ("insmod", "wl");	//load module
-	  nvram_set ("boardflags", bf);	//set back to original
+	  nvram_set ("boardflags", oldvalue);	//set back to original
 	}
 
     }
+#ifdef HAVE_MADWIFI
+eval("insmod","ath_pci");
+#endif
   return;
 }
 
