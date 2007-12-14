@@ -691,7 +691,6 @@ start_sysinit (void)
 		  
 	    case ROUTER_WRT54G1X:
 	    case ROUTER_WRT54G:
-	      modules = "diag";
 	      eval ("insmod", "switch-core");
 	      if (eval ("insmod", "switch-robo"))
 		eval ("insmod", "switch-adm");
@@ -800,6 +799,9 @@ start_sysinit (void)
 	cprintf ("done\n");
 #endif
       }
+      
+	if (check_hw_type () == BCM4702_CHIP)
+    	eval ("insmod", "diag"); 
 
       loadWlModule ();
 
