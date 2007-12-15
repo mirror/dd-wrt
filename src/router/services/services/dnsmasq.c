@@ -73,7 +73,7 @@ getmdhcp (int count, int index)
     if (count == 2)
       return start;
     if (count == 3)
-      return ((start+max)>254)?254:(start+max);
+      return max;
     if (count == 4)
       return leasetime;
   }
@@ -200,7 +200,7 @@ start_dnsmasq (void)
 	  {
 	    if (strlen(nvram_nget("%s_ipaddr",getmdhcp (0, i)))==0 || strlen(nvram_nget("%s_netmask",getmdhcp (0, i)))==0)
 		continue;
-	    dhcp_max += atoi (getmdhcp (3, i)) - atoi (getmdhcp (2, i));
+	    dhcp_max += getmdhcp (3, i);
 	  }
 	fprintf (fp, "dhcp-lease-max=%d\n", dhcp_max);
 	fprintf (fp, "dhcp-option=lan,3,%s\n", nvram_safe_get ("lan_ipaddr"));
@@ -289,7 +289,9 @@ start_dnsmasq (void)
 				    1),
 		     get_single_ip (nvram_nget ("%s_ipaddr", getmdhcp (0, i)),
 				    2));
-	    fprintf (fp, "%s,", getmdhcp (3, i));
+	    int end=atoi(getmdhcp (2, i));
+	    end +=atoi(getmdhcp(3,i));
+	    fprintf (fp, "%d,", end);
 	    fprintf (fp, "%s,", nvram_nget ("%s_netmask", getmdhcp (0, i)));
 	    fprintf (fp, "%sm\n", getmdhcp (4, i));
 	  }
