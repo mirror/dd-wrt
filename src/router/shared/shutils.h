@@ -155,14 +155,12 @@ strcat_r (const char *s1, const char *s2, char *buf)
 
 
 #define HAVE_SILENCE 1
-
 /* Print directly to the console */
 #ifndef HAVE_SILENCE
 
 #define cprintf(fmt, args...) do { \
 		fprintf(stderr, fmt, ## args); \
 		fflush(stderr); \
-		sleep(2); \
 } while (0)
 #else
 #define cprintf(fmt, args...)
