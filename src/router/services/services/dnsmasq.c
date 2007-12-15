@@ -73,7 +73,7 @@ getmdhcp (int count, int index)
     if (count == 2)
       return start;
     if (count == 3)
-      return max;
+      return ((start+max)>254)?254:(start+max);
     if (count == 4)
       return leasetime;
   }
