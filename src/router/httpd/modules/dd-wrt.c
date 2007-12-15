@@ -2968,7 +2968,7 @@ ej_show_mdhcp (webs_t wp, int argc, char_t ** argv)
 	       "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n",
 	       vlan_name, max);
     sprintf (vlan_name, "mdhcpleasetime%d", count);
-    websWrite (wp, "&nbsp;Max&nbsp;");
+    websWrite (wp, "&nbsp;Leasetime&nbsp;");
     websWrite (wp,
 	       "<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n",
 	       vlan_name, leasetime);
