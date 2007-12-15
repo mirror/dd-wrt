@@ -1466,7 +1466,8 @@ start_lan (void)
 	    if (nvram_match (wl_name, "ap"))
 	      {
 
-		br_add_interface (getBridge (name), name);	//eval ("brctl", "addif", lan_ifname, name);
+		do_portsetup (lan_ifname, name);
+		//br_add_interface (getBridge (name), name);	//eval ("brctl", "addif", lan_ifname, name);
 #ifdef HAVE_MSSID
 		do_mssid (lan_ifname,name);
 #endif
