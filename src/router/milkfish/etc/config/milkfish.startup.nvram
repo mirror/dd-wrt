@@ -2,7 +2,7 @@
 # The Milkfish Environment SIP Control
 # Author: budrus@users.berlios.de
 # Website: milkfish.berlios.de
-# License: GPL
+# License: GPLv3
 
 ## set some nvram variables - mostly went into /services/defaults.c
 #if [ -z "$(nvram get openser_cfg)" ] ; then
@@ -31,7 +31,7 @@
 #fi
 if [ -z "$(nvram get milkfish_routerid)" ] ; then
     nvram get et0macaddr > /tmp/routerid.txt
-    nvram set milkfish_routerid=$(md5sum /tmp/routerid.txt | awk '{print $1}')
+    nvram set milkfish_routerid=$(md5sum /tmp/routerid.txt | awk '{print $1}' | cut -c1-32 )
     nvram set need_commit=1
 fi
 #if [ -z "$(nvram get milkfish_ppptime)" ] ; then
