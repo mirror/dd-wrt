@@ -927,6 +927,8 @@ networking.legend4="Current Bridging Table";
 networking.brname="Bridge Name";
 networking.stp="STP enabled";
 networking.iface="Interfaces";
+networking.h5="DHCPD";
+networking.legend5="Multiple DHCP Server";
 
 
 // ** QoS.asp **//

@@ -2946,8 +2946,7 @@ ej_show_mdhcp (webs_t wp, int argc, char_t ** argv)
     char *netmask = nvram_nget("%s_netmask",interface);
     if (strlen(ipaddr)>0 && strlen(netmask)>0)
 	{
-	websWrite (wp, "<div class=\"setting\">\n");
-        websWrite (wp, "<div class=\"label\">Interface %s: IP %s/%s</div></div>\n", interface,ipaddr,netmask);
+	websWrite (wp, "Interface %s: IP %s/%s\n", interface,ipaddr,netmask);
 	}
     websWrite (wp, "<div class=\"setting\">\n");
     websWrite (wp, "<div class=\"label\">DHCP %d</div>\n", count);
