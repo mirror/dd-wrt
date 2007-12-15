@@ -26,14 +26,18 @@ watchdog (void)
 
 /* software wlan led control */
 #ifdef HAVE_MADWIFI
-      //????;  no idea how to check this
+      radiostate = get_radiostate ("ath0");
 #else
       wl_ioctl (get_wdev (), WLC_GET_RADIO, &radiostate, sizeof (int));
 #endif
 
       if (radiostate != oldstate)
 	{
+#ifdef HAVE_MADWIFI
+	  if (radiostate == 1)
+#else
 	  if (radiostate == 0)
+#endif
 	    led_control (LED_WLAN, LED_ON);
 	  else
 	    {
