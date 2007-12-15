@@ -4861,8 +4861,14 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "</div>\n");
 // end ACK timing
 #endif
-
+#ifdef HAVE_MADWIFI
   showbridgesettings (wp, prefix);
+#else
+  if (!strcmp(var,"wl0"))
+  showbridgesettings (wp, get_wl_instance_name(0));
+  if (!strcmp(var,"wl1"))
+  showbridgesettings (wp, get_wl_instance_name(1));
+#endif
   websWrite (wp, "</fieldset>\n");
   websWrite (wp, "<br />\n");
   show_virtualssid (wp, prefix);
