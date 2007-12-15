@@ -823,13 +823,11 @@ validate_wl_hwaddrs (webs_t wp, char *value, struct variable *v)
       snprintf (filter_mac, sizeof (filter_mac), "%s%s%d", ifname, "_mac", i);
 
       mac = websGetVar (wp, filter_mac, NULL);
-//      fprintf(stderr, "mactable %s_mac%d returns %s\n",ifname,i,mac);
 
       if (!mac || !strcmp (mac, "0") || !strcmp (mac, ""))
 	{
 	  continue;
 	}
-      //strip_space(mac);
 
       if (strlen (mac) == 12)
 	{
@@ -2179,7 +2177,6 @@ convert_wl_gmode (char *value)
 	}
 }else*/
   {
-//  fprintf(stderr,"gmode = %s\n",value);
 #ifndef HAVE_MSSID
     if (nvram_match ("wl_net_mode", value))
       {
