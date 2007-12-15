@@ -7,6 +7,11 @@ function vlan_add_submit(F) {
 	F.submit_type.value = "add_vlan";
 	F.submit();
 }
+function mdhcp_add_submit(F) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "add_mdhcp";
+	F.submit();
+}
 function bridge_add_submit(F) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "add_bridge";
@@ -26,6 +31,12 @@ function bond_add_submit(F) {
 function vlan_del_submit(F,I) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "del_vlan";
+	F.del_value.value=I;
+	F.submit();
+}
+function mdhcp_del_submit(F,I) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "del_mdhcp";
 	F.del_value.value=I;
 	F.submit();
 }
@@ -149,6 +160,7 @@ addEvent(window, "unload", function() {
 							<br />
 							<% show_bondings(); %>
 							<% portsetup(); %>
+							<% show_mdhcp(); %>
 		
 							<div class="submitFooter">
 								<script type="text/javascript">
