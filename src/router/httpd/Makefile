@@ -189,6 +189,9 @@ endif
 ifeq ($(CONFIG_VLANTAGGING),y)
 CFLAGS += -DHAVE_VLANTAGGING
 endif
+ifeq ($(CONFIG_MDHCP),y)
+CFLAGS += -DHAVE_MDHCP
+endif
 ifeq ($(CONFIG_DDLAN),y)
 CFLAGS += -DHAVE_DDLAN
 endif
