@@ -1341,11 +1341,11 @@ start_lan (void)
 #ifndef HAVE_MADWIFI
 	if (wlconf_up (name))
 	  {
-#ifdef HAVE_PORTSETUP
+//#ifdef HAVE_PORTSETUP
 	    do_portsetup (lan_ifname, name);
-#else
-	    br_add_interface (getBridge (name), name);
-#endif
+//#else
+//	    br_add_interface (getBridge (name), name);
+//#endif
 	  }
 	else
 	  {
