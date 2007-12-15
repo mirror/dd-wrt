@@ -4243,6 +4243,24 @@ save_prefix (webs_t wp, char *prefix)
 #endif
   sprintf (n, "%s_closed", prefix);
   copytonv (wp, n);
+
+#ifndef HAVE_MADWIFI
+char *ifname = "wl0";
+if (!strcmp(prefix,"wl0"))ifname = get_wl_instance_name(0); 
+if (!strcmp(prefix,"wl1"))ifname = get_wl_instance_name(1); 
+
+  sprintf (n, "%s_bridged", ifname);
+  copytonv (wp, n);
+
+  char addr[32];
+  sprintf (n, "%s_ipaddr", ifname);
+  if (get_merge_ipaddr (wp, n, addr))
+    nvram_set (n, addr);
+
+  sprintf (n, "%s_netmask", ifname);
+  if (get_merge_ipaddr (wp, n, addr))
+    nvram_set (n, addr);
+#else
   sprintf (n, "%s_bridged", prefix);
   copytonv (wp, n);
 
@@ -4255,7 +4273,7 @@ save_prefix (webs_t wp, char *prefix)
   if (get_merge_ipaddr (wp, n, addr))
     nvram_set (n, addr);
 
-  copytonv (wp, n);
+#endif
   sprintf (n, "%s_ap_isolate", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_mode", prefix);
