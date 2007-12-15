@@ -2362,6 +2362,7 @@ save_networking (webs_t wp)
   int vlancount = atoi (nvram_safe_get ("vlan_tagcount"));
   int bridgescount = atoi (nvram_safe_get ("bridges_count"));
   int bridgesifcount = atoi (nvram_safe_get ("bridgesif_count"));
+  int mdhcpd_count = atoi (nvram_safe_get ("mdhcpd_count"));
 #ifdef HAVE_BONDING
   int bondcount = atoi (nvram_safe_get ("bonding_count"));
 #endif
@@ -2493,6 +2494,54 @@ save_networking (webs_t wp)
 	strcat (buffer, " ");
     }
   nvram_set ("bridgesif", buffer);
+#ifdef HAVE_MDHCP
+// save multipe dhcp-servers
+  memset (buffer, 0, 1024);
+    // if (!interface || !start || !dhcpon || !max || !leasetime)
+  for (i = 0; i < mdhcpd_count; i++)
+    {
+      char *mdhcpinterface, *mdhcpon, *mdhcpstart, *mdhcpmax, *mdhcpleasetime;
+      char var[32];
+
+      sprintf (var, "mdhcpifname%d", i);
+      mdhcpinterface = websGetVar (wp, var, NULL);
+      if (!mdhcpinterface)
+	return;
+
+      sprintf (var, "mdhcpon%d", i);
+      mdhcpon = websGetVar (wp, var, NULL);
+      if (!mdhcpon)
+	return;
+
+      sprintf (var, "mdhcpstart%d", i);
+      mdhcpstart = websGetVar (wp, var, NULL);
+      if (!mdhcpstart)
+	return;
+
+      sprintf (var, "mdhcpmax%d", i);
+      mdhcpmax = websGetVar (wp, var, NULL);
+      if (!mdhcpmax)
+	return;
+
+      sprintf (var, "mdhcpleasetime%d", i);
+      mdhcpleasetime = websGetVar (wp, var, NULL);
+      if (!mdhcpleasetime)
+	return;
+
+      strcat (buffer, mdhcpinterface);
+      strcat (buffer, ">");
+      strcat (buffer, mdhcpon);
+      strcat (buffer, ">");
+      strcat (buffer, mdhcpstart);
+      strcat (buffer, ">");
+      strcat (buffer, mdhcpmax);
+      strcat (buffer, ">");
+      strcat (buffer, mdhcpleasetime);
+      if (i < mdhcpd_count - 1)
+	strcat (buffer, " ");
+    }
+  nvram_set ("mdhcpd", buffer);
+#endif
 #ifdef HAVE_PORTSETUP
   validate_portsetup (wp, NULL, NULL);
 #endif
@@ -2563,6 +2612,67 @@ del_vlan (webs_t wp)
 
   return;
 }
+
+#ifdef HAVE_MDHCP
+void
+add_mdhcp (webs_t wp)
+{
+  static char word[256];
+  char *next, *wordlist;
+  int count = 0;
+  int realcount = atoi (nvram_safe_get ("mdhcpd_count"));
+  if (realcount == 0)
+    {
+      wordlist = nvram_safe_get ("mdhcpd");
+      foreach (word, wordlist, next)
+      {
+	count++;
+      }
+      realcount = count;
+    }
+  realcount++;
+  char var[32];
+  sprintf (var, "%d", realcount);
+  nvram_set ("mdhcpd_count", var);
+  nvram_commit ();
+  return;
+}
+
+void
+del_mdhcp (webs_t wp)
+{
+  static char word[256];
+  int realcount = 0;
+  char *next, *wordlist, *newwordlist;
+  char *val = websGetVar (wp, "del_value", NULL);
+  if (val == NULL)
+    return;
+  int todel = atoi (val);
+  wordlist = nvram_safe_get ("mdhcpd");
+  newwordlist = (char *) malloc (strlen (wordlist));
+  memset (newwordlist, 0, strlen (wordlist));
+  int count = 0;
+  foreach (word, wordlist, next)
+  {
+    if (count != todel)
+      {
+	strcat (newwordlist, word);
+	strcat (newwordlist, " ");
+      }
+    count++;
+  }
+
+  char var[32];
+  realcount = atoi (nvram_safe_get ("mdhcpd_count")) - 1;
+  sprintf (var, "%d", realcount);
+  nvram_set ("mdhcpd_count", var);
+  nvram_set ("mdhcpd", newwordlist);
+  nvram_commit ();
+  free (newwordlist);
+
+  return;
+}
+#endif
 
 #ifdef HAVE_BONDING
 void
@@ -2797,6 +2907,125 @@ ej_show_vlantagging (webs_t wp, int argc, char_t ** argv)
   websWrite (wp,
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 }
+
+#ifdef HAVE_MDHCP
+void
+ej_show_mdhcp (webs_t wp, int argc, char_t ** argv)
+{
+  char buffer[256];
+  int count = 0;
+  static char word[256];
+  char *next, *wordlist;
+  websWrite(wp,"<h2>%s</h2>\n<fieldset>\n",live_translate("networking.h5"));
+  websWrite(wp,"<legend>%s</legend>\n",live_translate("networking.legend5"));
+
+
+
+  memset (buffer, 0, 256);
+  getIfList (buffer, NULL);
+  int totalcount = 0;
+  int realcount = atoi (nvram_default_get ("mdhcpd_count", "0"));
+  wordlist = nvram_safe_get ("mdhcpd");
+  foreach (word, wordlist, next)
+  {
+    char *interface = word;
+    char *dhcpon = interface;
+    interface = strsep (&dhcpon, ">");
+    char *start = dhcpon;
+    dhcpon = strsep (&start, ">");
+    char *max = start;
+    start = strsep (&max, ">");
+    char *leasetime = max;
+    max = strsep (&leasetime, ">");
+    if (!interface || !start || !dhcpon || !max || !leasetime)
+      break;
+    char vlan_name[32];
+
+// interface
+    char *ipaddr = nvram_nget("%s_ipaddr",interface);
+    char *netmask = nvram_nget("%s_netmask",interface);
+    if (strlen(ipaddr)>0 && strlen(netmask)>0)
+	{
+	websWrite (wp, "<div class=\"setting\">\n");
+        websWrite (wp, "<div class=\"label\">Interface %s: IP %s/%s</div></div>\n", interface,ipaddr,netmask);
+	}
+    websWrite (wp, "<div class=\"setting\">\n");
+    websWrite (wp, "<div class=\"label\">DHCP %d</div>\n", count);
+    sprintf (vlan_name, "mdhcpifname%d", count);
+    showOptions (wp, vlan_name, buffer, interface);
+// on off
+    sprintf (vlan_name, "mdhcpon%d", count);
+    showOptions (wp, vlan_name, "On Off", dhcpon);
+// start
+    sprintf (vlan_name, "mdhcpstart%d", count);
+    websWrite (wp, "&nbsp;Start&nbsp;");
+    websWrite (wp,
+	       "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n",
+	       vlan_name, start);
+// max
+    sprintf (vlan_name, "mdhcpmax%d", count);
+    websWrite (wp, "&nbsp;Max&nbsp;");
+    websWrite (wp,
+	       "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n",
+	       vlan_name, max);
+    sprintf (vlan_name, "mdhcpleasetime%d", count);
+    websWrite (wp, "&nbsp;Max&nbsp;");
+    websWrite (wp,
+	       "<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n",
+	       vlan_name, leasetime);
+//
+    websWrite (wp,
+	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"mdhcp_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+	       count);
+    websWrite (wp, "</div>\n");
+    count++;
+  }
+  totalcount = count;
+  int i;
+  for (i = count; i < realcount; i++)
+    {
+      char vlan_name[32];
+//    sprintf (mdhcp_name, "%s.%s", tag, port);
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp, "<div class=\"label\">DHCP %d</div>\n", count);
+// interface
+      sprintf (vlan_name, "mdhcpifname%d", count);
+      showOptions (wp, vlan_name, buffer, "");
+// on off
+      sprintf (vlan_name, "mdhcpon%d", count);
+      showOptions (wp, vlan_name, "On Off", "");
+// start
+      sprintf (vlan_name, "mdhcpstart%d", count);
+      websWrite (wp, "&nbsp;Start&nbsp;");
+      websWrite (wp,
+	       "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n",
+	       vlan_name, "100");
+// max
+    sprintf (vlan_name, "mdhcpmax%d", count);
+    websWrite (wp, "&nbsp;Max&nbsp;");
+    websWrite (wp,
+	       "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n",
+	       vlan_name, "50");
+    sprintf (vlan_name, "mdhcpleasetime%d", count);
+    websWrite (wp, "&nbsp;Max&nbsp;");
+    websWrite (wp,
+	       "<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n",
+	       vlan_name, "3600");
+      websWrite (wp,
+		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"mdhcp_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+		 i);
+      websWrite (wp, "</div>\n");
+      totalcount++;
+    }
+  char var[32];
+  sprintf (var, "%d", totalcount);
+  nvram_set ("mdhcpd_count", var);
+  websWrite (wp,
+	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"mdhcp_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+  websWrite (wp,"</fieldset><br />\n");
+
+}
+#endif
 
 void
 del_bridge (webs_t wp)
@@ -5825,31 +6054,24 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
   int t;
   for (i = 0; i < c; i++)
     {
-//fprintf(stderr,"try to assign new ifname for %d\n",i);
       sprintf (devs, "ath%d", i);
-//fprintf(stderr,"show ifname %s\n",devs);
       sprintf (turbo, "%s_turbo", devs);
       if (nvram_match (turbo, "1"))
 	t = 2;
       else
 	t = 1;
       cnt = ej_active_wireless_if (wp, argc, argv, devs, cnt, t);
-//    fprintf(stderr,"returned with %d\n",cnt);
       char vif[32];
       sprintf (vif, "%s_vifs", devs);
       char var[80], *next;
       char *vifs = nvram_get (vif);
-//    fprintf(stderr,"wifs are %s\n",vifs);
       if (vifs != NULL)
 	foreach (var, vifs, next)
 	{
-//    fprintf(stderr,"show ifname %s\n",var);
 	  cnt = ej_active_wireless_if (wp, argc, argv, var, cnt, t);
-//    fprintf(stderr,"returned with %d, c=%d, i=%d\n",cnt,i,c);
 	}
     }
 
-//fprintf(stderr,"show wds links\n");
 //show wds links
   for (i = 0; i < c; i++)
     {
@@ -5863,13 +6085,9 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 	  char *dev;
 	  char *hwaddr;
 	  char var[80];
-//fprintf(stderr,"assign var\n");
 	  sprintf (wdsvarname, "ath%d_wds%d_enable", i, s);
-//fprintf(stderr,"assign dev\n");
 	  sprintf (wdsdevname, "ath%d_wds%d_if", i, s);
-//fprintf(stderr,"assign mac\n");
 	  sprintf (wdsmacname, "ath%d_wds%d_hwaddr", i, s);
-//fprintf(stderr,"get nv\n");
 	  sprintf (turbo, "ath%d_turbo", i);
 	  if (nvram_match (turbo, "1"))
 	    t = 2;
@@ -5877,13 +6095,11 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 	    t = 1;
 
 	  dev = nvram_safe_get (wdsdevname);
-	  //fprintf(stderr,"devname %s\n",dev);
 	  if (dev == NULL || strlen (dev) == 0)
 	    continue;
 	  if (nvram_match (wdsvarname, "0"))
 	    continue;
 	  sprintf (var, "wdsath%d.%d", i, s);
-	  //fprintf(stderr,"var %s\n",var);
 	  cnt = ej_active_wireless_if (wp, argc, argv, var, cnt, t);
 	}
     }
@@ -6134,6 +6350,7 @@ for (i=0;i<c;i++)
 #endif
 
 #define WDS_RSSI_TMP	"/tmp/.rssi"
+void ej_active_wds_instance (webs_t wp, int argc, char_t ** argv,int instance);
 void
 ej_active_wds(webs_t wp, int argc, char_t ** argv)
 {
@@ -6326,7 +6543,6 @@ save_wds (webs_t wp)
 
   sprintf (wds_enable_var, "%s_br1_nat", interface);
   wds_enable_val = websGetVar (wp, wds_enable_var, NULL);
-fprintf(stderr,"setting %s to %s\n",wds_enable_var,wds_enable_val);
   nvram_set (wds_enable_var, wds_enable_val);
 
   return;
