@@ -5728,6 +5728,7 @@ struct ej_handler ej_handlers[] = {
   {"exec_milkfish_phonebook", ej_exec_milkfish_phonebook},
   {"exec_show_subscribers", ej_show_subscribers},
   {"exec_show_aliases", ej_show_aliases},
+  {"exec_show_registrations", ej_show_registrations},
 #endif
 #ifdef HAVE_CHILLI
   {"show_chilliif", ej_show_chilliif},
