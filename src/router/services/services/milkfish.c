@@ -87,15 +87,7 @@ start_milkfish_boot (void)
   eval ("/usr/sbin/milkfish_services", "sipdb", "restorenv");
   eval ("/usr/sbin/milkfish_services", "sipdb", "restorenvdd");
 
-// firewall configuration
-  char *wan = get_wan_face ();
-if (wan)
-{
-  eval ("iptables", "-t", "nat", "-A", "prerouting_rule", "-i", wan, "-p",
-	"udp", "--dport", "5060", "-j", "ACCEPT");
-  eval ("iptables", "-t", "nat", "-A", "input_rule", "-i", wan, "-p", "udp",
-	"--dport", "5060", "-j", "ACCEPT");
-}
+// firewall configuration in networking/firewall.c
   return;
 }
 #endif
