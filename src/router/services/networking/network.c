@@ -1514,16 +1514,20 @@ start_lan (void)
 		wl_ioctl (wl_name, WLC_SCAN, svbuf, sizeof (svbuf));
 		wlconf_up (name);
 #endif
-		eval ("wl", "infra", "0");
-		eval ("wl", "ssid", nvram_safe_get ("wl0_ssid"));
+//		eval ("wl", "infra", "0");
+		eval ("wl", "-i", getSTA(), "infra", "0");		
+//		eval ("wl", "ssid", nvram_safe_get ("wl0_ssid"));
+		eval("wl","-i", getSTA(), "ssid", nvram_nget("wl%d_ssid", get_wl_instance(getSTA())) );
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);
 	      }
 
 	    if (nvram_match (wl_name, "sta"))
 	      {
 #ifndef HAVE_MADWIFI
-		eval ("wl", "ap", "0");
-		eval ("wl", "infra", "1");
+//		eval ("wl", "ap", "0");
+		eval ("wl", "-i", getSTA(), "ap", "0");		
+//		eval ("wl", "infra", "1");
+		eval ("wl", "-i", getSTA(), "infra", "1");
 		wlconf_up (name);
 		wl_ioctl (name, WLC_SCAN, svbuf, sizeof (svbuf));
 #endif
