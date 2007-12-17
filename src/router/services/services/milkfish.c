@@ -65,10 +65,10 @@ start_milkfish_boot (void)
       MD5Init (&MD);
       MD5Update (&MD, et0, 17);
       MD5Final ((unsigned char *) hash, &MD);
-      char request[128] = { 0 };
+      char request[32];
       int i;
       for (i = 0; i < 16; i++)
-        sprintf (request, "%s%02x", request, hash[i]);
+        sprintf (&request[2*i], "%02x", hash[i]);
       nvram_set ("milkfish_routerid", request);
       nvram_set ("need_commit", "1");
     }
