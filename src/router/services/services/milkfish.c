@@ -60,7 +60,7 @@ start_milkfish_boot (void)
 
   if (strlen(nvram_safe_get ("milkfish_routerid")) != 32)
     {
-      char hash[32];
+      unsigned char hash[32];
       char *et0 = nvram_safe_get ("et0macaddr");
       MD5Init (&MD);
       MD5Update (&MD, et0, 17);
