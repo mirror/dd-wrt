@@ -178,6 +178,8 @@ addEvent(window, "unload", function() {
 <br />
 	<fieldset>
             <div class="center"><br />
+		<b>Problems, Questions, Suggestions? - Find answers in the <a href="http://forum.milkfish.org" target="_blank">Milkfish-dd User Forum</a></b><br />
+		<br />
     		<b>donations@milkfish.org</b>&nbsp;&nbsp;<br />
                 <!-- Begin moneybookers button code --> <a target="_blank" href="http://www.moneybookers.com/?rid=3255388"><img border="0" style="border-color: #8b8583; border-width: 1px" src="images/88_en_interpayments.gif" /></a> <!-- End of moneybookers button code -->
                 <br>
