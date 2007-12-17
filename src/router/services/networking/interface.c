@@ -86,7 +86,7 @@ ifconfig (char *name, int flags, char *addr, char *netmask)
       if (ioctl (s, SIOCSIFADDR, &ifr) < 0)
 	goto err;
     }
-  cprintf ("ifconfi() ip configured\n");
+  cprintf ("ifconfig() ip configured\n");
 
   /* Set IP netmask and broadcast */
   if (addr && netmask)
@@ -104,7 +104,7 @@ ifconfig (char *name, int flags, char *addr, char *netmask)
       if (ioctl (s, SIOCSIFBRDADDR, &ifr) < 0)
 	goto err;
     }
-  cprintf ("ifconfi() mask configured\n");
+  cprintf ("ifconfig() mask configured\n");
 
   close (s);
   cprintf ("ifconfig() done()\n");
