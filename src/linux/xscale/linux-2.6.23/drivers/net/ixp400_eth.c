@@ -139,7 +139,7 @@ MODULE_AUTHOR ("Intel Corporation");
  * Non-user configurable private variable 
  */
 
-#if defined(CONFIG_CPU_IXP46X) || defined (CONFIG_CPU_IXP43X)
+#ifdef CONFIG_CPU_IXP46X
 /* NPE-A enabled flag for parity error detection configuration */
 static IxParityENAccConfigOption parity_npeA_enabled = IX_PARITYENACC_DISABLE;
 /* NPE-B enabled flag for parity error detection configuration */
@@ -170,7 +170,8 @@ static int dev_max_count = 1;	/* only NPEC is used */
 #elif defined (CONFIG_IXP400_ETH_NPEB_ONLY)
 static int dev_max_count = 1;	/* only NPEB is used */
 #elif defined (CONFIG_ARCH_IXDP425) || defined(CONFIG_ARCH_IXDPG425)\
-      || defined (CONFIG_ARCH_ADI_COYOTE) || defined (CONFIG_ARCH_AVILA) || defined (CONFIG_MACH_KIXRP435)
+      || defined (CONFIG_ARCH_ADI_COYOTE) || defined (CONFIG_ARCH_AVILA)
+
 static int dev_max_count = 2;	/* only NPEB and NPEC */
 #elif defined (CONFIG_ARCH_IXDP465) || defined(CONFIG_MACH_IXDP465)
 static int dev_max_count = 3;	/* all NPEs are used */
@@ -430,7 +431,7 @@ static inline int npemh_poll (void *data);
  * Prototype for parity error detection and handler
  */
 
-#if defined(CONFIG_CPU_IXP46X) || defined (CONFIG_CPU_IXP43X)
+#ifdef CONFIG_CPU_IXP46X
 static int __init parity_npe_error_handler_init (void);
 static void parity_npe_error_handler_uninit (void);
 static void parity_npe_recovery_done_cb (IxErrHdlAccErrorEventType
@@ -552,7 +553,7 @@ static struct platform_device ixp400_eth_devices[IX_ETH_ACC_NUMBER_OF_PORTS] = {
   {
 #if IX_ETH_ACC_NUMBER_OF_PORTS > 0
    .name = MODULE_NAME,
-#if defined (CONFIG_IXP400_ETH_NPEC_ONLY) || defined (CONFIG_MACH_KIXRP435)
+#if CONFIG_IXP400_ETH_NPEC_ONLY
    .id = IX_ETH_PORT_2,
 #else
    .id = IX_ETH_PORT_1,
@@ -564,15 +565,15 @@ static struct platform_device ixp400_eth_devices[IX_ETH_ACC_NUMBER_OF_PORTS] = {
    },
   {
    .name = MODULE_NAME,
-#ifdef CONFIG_MACH_KIXRP435
-   .id = IX_ETH_PORT_3,
+#if CONFIG_IXP400_ETH_NPEC_ONLY
+   .id = IX_ETH_PORT_1,
 #else
    .id = IX_ETH_PORT_2,
 #endif
    .dev = {
 	   .release = dev_eth_release,
 	   },
-#if IX_ETH_ACC_NUMBER_OF_PORTS > 2 && !defined (CONFIG_MACH_KIXRP435)
+#if IX_ETH_ACC_NUMBER_OF_PORTS > 2
    },
   {
    .name = MODULE_NAME,
@@ -682,44 +683,10 @@ static int phyAddresses[IXP425_ETH_ACC_MII_MAX_ADDR] = {
   1,
   2,
   3
-#elif defined(CONFIG_MACH_KIXRP435)
-  1,				/* Port 1 (IX_ETH_PORT_2) - Connected to PHYs 1-4      */
-  5,				/* Port 2 (IX_ETH_PORT_3) - Only connected to PHY 5    */
-
-  2,	/*********************************************************/
-  3,				/* PHY addresses on KIXRP435 platform (physical layout)  */
-  4				/* (4 LAN ports, switch)  (1 WAN port)                   */
-    /*       ixp1              ixp2                          */
-    /*  ________________       ____                          */
-    /* /_______________/|     /___/|                         */
-    /* | 1 | 2 | 3 | 4 |      | 5 |                          */
-    /* ----------------------------------------              */
 #else
   /* other platforms : suppose 1 PHY per NPE port */
   0,				/* PHY address for EthAcc Port 1 (IX_ETH_PORT_1 / NPE B) */
   1				/* PHY address for EthAcc Port 2 (IX_ETH_PORT_2 / NPE C) */
-#endif
-};
-
-/* 
- * Port ID to A default_phy_cfg and phyAddresses index loopkup mapping table
- */
-static long portIdPhyIndexMap[] = {
-#if defined(CONFIG_CPU_IXP46X)
-  0,				/* NPE-B */
-  1,				/* NPE-C */
-  2				/* NPE-A */
-#elif defined(CONFIG_CPU_IXP43X)
-  -1,				/* Invalid */
-  0,				/* NPE-C */
-  1				/* NPE-A */
-#else
-/* 
- * CONFIG_CPU_IXP42X is not define by the kernel. Hence we assume IXP42X if
- * flags above is not match
- */
-  0,				/* NPE-B */
-  1				/* NPE-C */
 #endif
 };
 
@@ -767,12 +734,6 @@ static phy_cfg_t default_phy_cfg[] = {
   {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE},
   {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE},
   {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE}
-#elif defined(CONFIG_MACH_KIXRP435)
-  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE},	/* Port 1: NO link */
-  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, TRUE},	/* Port 2: monitor the link */
-  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE},
-  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE},
-  {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, FALSE}
 
 #else
   {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON, TRUE},	/* Port 0: monitor the link */
@@ -790,8 +751,7 @@ static phy_cfg_t default_phy_cfg[] = {
 static IxEthAccMacAddr default_mac_addr[] = {
   {{0x00, 0x02, 0xB3, 0x01, 0x01, 0x01}}	/* EthAcc Port 0 */
   , {{0x00, 0x02, 0xB3, 0x02, 0x02, 0x02}}	/* EthAcc Port 1 */
-#if defined (CONFIG_ARCH_IXDP465) || defined(CONFIG_MACH_IXDP465) ||\
-    defined (CONFIG_MACH_KIXRP435)
+#if defined (CONFIG_ARCH_IXDP465) || defined(CONFIG_MACH_IXDP465)
   , {{0x00, 0x02, 0xB3, 0x03, 0x03, 0x03}}	/* EthAcc Port 2 */
 #endif
 };
@@ -808,8 +768,7 @@ static IxEthAccMacAddr default_mac_addr[] = {
 static npe_info_t default_npeImageId[] = {
   {IX_ETH_NPE_B_IMAGE_ID, IX_NPEDL_NPEID_NPEB},	/* Npe firmware for EthAcc Port 0  */
   {IX_ETH_NPE_C_IMAGE_ID, IX_NPEDL_NPEID_NPEC},	/* Npe firmware for EthAcc Port 1  */
-#if defined (CONFIG_ARCH_IXDP465) || defined(CONFIG_MACH_IXDP465) || \
-    defined (CONFIG_MACH_KIXRP435)
+#if defined (CONFIG_ARCH_IXDP465) || defined(CONFIG_MACH_IXDP465)
   {IX_ETH_NPE_A_IMAGE_ID, IX_NPEDL_NPEID_NPEA}	/* Npe firmware for EthAcc Port 2  */
 #endif
 };
@@ -840,10 +799,6 @@ static IxEthAccPortId default_portId[] = {
 #elif defined (CONFIG_ARCH_IXDP465) || defined (CONFIG_MACH_IXDP465)
   /* configure port for NPE B first */
   IX_ETH_PORT_1,		/* EthAcc Port 1 for ixp0 */
-  IX_ETH_PORT_2,		/* EthAcc Port 2 for ixp1 */
-  IX_ETH_PORT_3			/* EthAcc Port 3 for ixp2 */
-#elif defined (CONFIG_MACH_KIXRP435)
-  /* configure port for NPE C first */
   IX_ETH_PORT_2,		/* EthAcc Port 2 for ixp1 */
   IX_ETH_PORT_3			/* EthAcc Port 3 for ixp2 */
 #else
@@ -1507,7 +1462,7 @@ dev_media_check_thread (void *arg)
   int fullDuplex = -1;		/* unknown duplex mode */
   int newDuplex;
   int autonegotiate;
-  unsigned phyNum = phyAddresses[portIdPhyIndexMap[priv->port_id]];
+  unsigned phyNum = phyAddresses[priv->port_id];
   u32 res;
 
 
@@ -1565,7 +1520,7 @@ dev_media_check_thread (void *arg)
 
       TRACE;
 
-      if (default_phy_cfg[portIdPhyIndexMap[priv->port_id]].linkMonitor)
+      if (default_phy_cfg[priv->port_id].linkMonitor)
 	{
 	  /* lock the MII register access mutex */
 	  down (miiAccessMutex);
@@ -1689,25 +1644,22 @@ npemh_poll (void *data)
     !defined (CONFIG_IXP400_ETH_NPEC_ONLY)
 
   /* Only ixp465 has NPE-A */
-#if defined (CONFIG_CPU_IXP46X) || defined (CONFIG_CPU_IXP43X)
-//    if (machine_is_ixdp465())
-  {
-    if (unlikely (IX_SUCCESS != ixNpeMhMessagesReceive (IX_NPEMH_NPEID_NPEA)))
-      {
-	P_ERROR ("NPE-A npeMh read failure!\n");
-      }
-  }
-#endif
+  if (machine_is_ixdp465 ())
+    {
+      if (unlikely
+	  (IX_SUCCESS != ixNpeMhMessagesReceive (IX_NPEMH_NPEID_NPEA)))
+	{
+	  P_ERROR ("NPE-A npeMh read failure!\n");
+	}
+    }
 #endif
 
   /* Polling for NPE-B */
-#if !defined (CONFIG_CPU_IXP43X)
 #if defined (CONFIG_IXP400_ETH_NPEB_ONLY) || defined (CONFIG_IXP400_ETH_ALL)
   if (unlikely (IX_SUCCESS != ixNpeMhMessagesReceive (IX_NPEMH_NPEID_NPEB)))
     {
       P_ERROR ("NPE-B npeMh read failure!\n");
     }
-#endif
 #endif
 
   /* Polling for NPE-C */
@@ -3074,7 +3026,7 @@ do_dev_ioctl (struct net_device *dev, struct ifreq *req, int cmd)
   priv_data_t *priv = dev->priv;
 #endif
   struct mii_ioctl_data *data = (struct mii_ioctl_data *) &req->ifr_data;
-  int phy = phyAddresses[portIdPhyIndexMap[priv->port_id]];
+  int phy = phyAddresses[priv->port_id];
   int res = 0;
 
   TRACE;
@@ -3336,7 +3288,7 @@ ethacc_init (void)
 	   * Determine which NPE is to be enabled for parity error detection
 	   * based on the NPE image ID that is successfully downloaded
 	   */
-#if defined (CONFIG_CPU_IXP46X) || defined (CONFIG_CPU_IXP43X)
+#ifdef CONFIG_CPU_IXP46X
 	  switch (default_npeImageId[portId].npeId)
 	    {
 	    case IX_NPEDL_NPEID_NPEA:
@@ -3424,8 +3376,7 @@ phy_init (void)
 	      P_INFO ("Found PHY %d at address %d\n", phy_found, i);
 	      if (phy_found < dev_max_count)
 		{
-		  phyAddresses[portIdPhyIndexMap[default_portId[phy_found]]] =
-		    i;
+		  phyAddresses[default_portId[phy_found]] = i;
 		}
 	      else
 		{
@@ -3479,13 +3430,12 @@ phy_init (void)
 	npe_id = "A";
 
       P_INFO ("%s%d is using NPE%s and the PHY at address %d\n",
-	      DEVICE_NAME, port_id, npe_id,
-	      phyAddresses[portIdPhyIndexMap[port_id]]);
+	      DEVICE_NAME, port_id, npe_id, phyAddresses[port_id]);
 
       /* Set the MAC to the same duplex mode as the phy */
       ixEthAccPortDuplexModeSet (port_id,
-				 (default_phy_cfg[portIdPhyIndexMap[port_id]].
-				  duplexFull) ? IX_ETH_ACC_FULL_DUPLEX :
+				 (default_phy_cfg[port_id].duplexFull) ?
+				 IX_ETH_ACC_FULL_DUPLEX :
 				 IX_ETH_ACC_HALF_DUPLEX);
     }
 
@@ -3630,7 +3580,7 @@ dev_rxtxcallback_register (IxEthAccPortId portId, UINT32 dev)
 }
 
 
-#if defined (CONFIG_CPU_IXP46X) || defined (CONFIG_CPU_IXP43X)
+#ifdef CONFIG_CPU_IXP46X
 /**************************************************************
  *      PARITY ERROR DETECTION & NPE SOFT RESET FUNCTIONS     *
  **************************************************************/
@@ -4552,55 +4502,55 @@ ixp400_eth_init (void)
   TRACE;
 
   /* Handle ixdp465 platform specific stuff here */
-#if defined (CONFIG_CPU_IXP46X) || defined (CONFIG_CPU_IXP43X)
-  {
-    UINT32 expbusCtrlReg;
+  if (machine_is_ixdp465 ())
+    {
+      UINT32 expbusCtrlReg;
 
-    /* Set the expansion bus fuse register to enable MUX for NPEA MII */
-    expbusCtrlReg = ixFeatureCtrlRead ();
-    expbusCtrlReg |= ((unsigned long) 1 << 8);
-    ixFeatureCtrlWrite (expbusCtrlReg);
+      /* Set the expansion bus fuse register to enable MUX for NPEA MII */
+      expbusCtrlReg = ixFeatureCtrlRead ();
+      expbusCtrlReg |= ((unsigned long) 1 << 8);
+      ixFeatureCtrlWrite (expbusCtrlReg);
 
-    /*
-     * HSS coexist NPE enabler
-     */
-    if (hss_coexist)
-      {
-	int i;
-	IxEthAccPortId portId;
+      /*
+       * HSS coexist NPE enabler
+       */
+      if (hss_coexist)
+	{
+	  int i;
+	  IxEthAccPortId portId;
 
-	for (i = 0; i < dev_max_count; i++)
-	  {
-	    portId = default_portId[i];
+	  for (i = 0; i < dev_max_count; i++)
+	    {
+	      portId = default_portId[i];
 
-	    if (IX_NPEDL_NPEID_NPEA == default_npeImageId[portId].npeId)
-	      {
-		/*
-		 * Prepare to download the HSS-Ethernet coexist image into 
-		 * NPE-A
-		 */
-		default_npeImageId[portId].npeImageId =
-		  IX_HSS_ETH_NPE_A_IMAGE_ID;
-	      }
-	  }
-      }
-  }
-#else
-  {
-    if (npe_error_handler)
-      {
-	P_ERROR ("NPE error handling is not supported on this platform\n");
-	npe_error_handler = 0;
-      }
+	      if (IX_NPEDL_NPEID_NPEA == default_npeImageId[portId].npeId)
+		{
+		  /*
+		   * Prepare to download the HSS-Ethernet coexist image into 
+		   * NPE-A
+		   */
+		  default_npeImageId[portId].npeImageId =
+		    IX_HSS_ETH_NPE_A_IMAGE_ID;
+		}
+	    }
+	}
+    }
+  else
+    {
+      if (npe_error_handler)
+	{
+	  P_ERROR ("NPE error handling is not supported on this platform\n");
+	  npe_error_handler = 0;
+	}
 
-    if (hss_coexist)
-      {
-	P_ERROR ("HSS-Ethernet co-exist is not supported on this "
-		 "platform\n");
-	hss_coexist = 0;
-      }
-  }
-#endif
+      if (hss_coexist)
+	{
+	  P_ERROR ("HSS-Ethernet co-exist is not supported on this "
+		   "platform\n");
+	  hss_coexist = 0;
+	}
+    }
+
   TRACE;
 
   /* Enable/disable the EthDB MAC Learning & Filtering feature.

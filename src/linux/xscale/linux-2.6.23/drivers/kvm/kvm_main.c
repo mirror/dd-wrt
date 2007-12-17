@@ -273,6 +273,11 @@ void kvm_flush_remote_tlbs(struct kvm *kvm)
 			}
 	}
 
+	/* Uniprocessor kernel does not respect cpus in first_cpu. So
+	 * do not go there if we have nothing to do. */
+	if (cpus_empty(cpus))
+		return;
+
 	/*
 	 * We really want smp_call_function_mask() here.  But that's not
 	 * available, so ipi all cpus in parallel and wait for them
@@ -1158,10 +1163,7 @@ int emulate_invlpg(struct kvm_vcpu *vcpu, gva_t address)
 
 int emulate_clts(struct kvm_vcpu *vcpu)
 {
-	unsigned long cr0;
-
-	cr0 = vcpu->cr0 & ~CR0_TS_MASK;
-	kvm_arch_ops->set_cr0(vcpu, cr0);
+	kvm_arch_ops->set_cr0(vcpu, vcpu->cr0 & ~X86_CR0_TS);
 	return X86EMUL_CONTINUE;
 }
 
@@ -1755,8 +1757,6 @@ static int complete_pio(struct kvm_vcpu *vcpu)
 	io->count -= io->cur_count;
 	io->cur_count = 0;
 
-	if (!io->count)
-		kvm_arch_ops->skip_emulated_instruction(vcpu);
 	return 0;
 }
 
@@ -1802,6 +1802,7 @@ int kvm_setup_pio(struct kvm_vcpu *vcpu, struct kvm_run *run, int in,
 
 	pio_dev = vcpu_find_pio_dev(vcpu, port);
 	if (!string) {
+		kvm_arch_ops->skip_emulated_instruction(vcpu);
 		kvm_arch_ops->cache_regs(vcpu);
 		memcpy(vcpu->pio_data, &vcpu->regs[VCPU_REGS_RAX], 4);
 		kvm_arch_ops->decache_regs(vcpu);
@@ -1847,6 +1848,9 @@ int kvm_setup_pio(struct kvm_vcpu *vcpu, struct kvm_run *run, int in,
 	}
 	vcpu->run->io.count = now;
 	vcpu->pio.cur_count = now;
+
+	if (now == count)
+		kvm_arch_ops->skip_emulated_instruction(vcpu);
 
 	for (i = 0; i < nr_pages; ++i) {
 		spin_lock(&vcpu->kvm->lock);

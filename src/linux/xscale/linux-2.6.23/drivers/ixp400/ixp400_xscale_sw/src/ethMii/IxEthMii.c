@@ -10,12 +10,12 @@
  *
  * 
  * @par
- * IXP400 SW Release version 2.4
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2007, Intel Corporation.
+ * Copyright (c) 2001-2005, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -70,12 +70,11 @@ PRIVATE UINT32 ixEthMiiPhyId[IXP400_ETH_ACC_MII_MAX_ADDR];
  * corresponding entry in the array is set to TRUE.
  *
  */
+
 PUBLIC UINT32 *ixEthMiiGetPhyIDs(void)
 {
     return &ixEthMiiPhyId[0];
 }
-
-
 
 PUBLIC IX_STATUS
 ixEthMiiPhyScan(BOOL phyPresent[], UINT32 maxPhyCount)
@@ -96,8 +95,7 @@ ixEthMiiPhyScan(BOOL phyPresent[], UINT32 maxPhyCount)
                          NPEA and NPEB respectively. This Code does not actually assign them as such, only tells
                          the calling function that PHY 1 and PHY 5 are available for use
                 */
-#ifndef CONFIG_CPU_IXP43X                
-		ixEthAccMiiReadRtn(1,  IX_ETH_MII_PHY_ID1_REG, &regvalId1);
+                ixEthAccMiiReadRtn(1,  IX_ETH_MII_PHY_ID1_REG, &regvalId1);
                 ixEthAccMiiReadRtn(1,  IX_ETH_MII_PHY_ID1_REG, &regvalId1);
                 ixEthAccMiiReadRtn(1,  IX_ETH_MII_PHY_ID2_REG, &regvalId2);
                 if (((regvalId1 << IX_ETH_MII_REG_SHL) | regvalId2) == IX_ETH_MII_KS8995_PHY_ID)
@@ -111,20 +109,6 @@ ixEthMiiPhyScan(BOOL phyPresent[], UINT32 maxPhyCount)
                         phyPresent[5] = TRUE;
             return IX_SUCCESS;
                 }
-#else
-		ixEthAccMiiReadRtn(1,  IX_ETH_MII_PHY_ID1_REG, &regvalId1);
-                ixEthAccMiiReadRtn(1,  IX_ETH_MII_PHY_ID1_REG, &regvalId1);
-                ixEthAccMiiReadRtn(1,  IX_ETH_MII_PHY_ID2_REG, &regvalId2);
-                if (((regvalId1 << IX_ETH_MII_REG_SHL) | regvalId2) == IX_ETH_MII_KS8995_PHY_ID)
-                {
-                        for (i=0; i <= IXP425_ETH_ACC_MII_MAX_ADDR; i++){
-                                phyPresent[i] = FALSE;
-                        }
-        		ixEthMiiPhyId[1] = (regvalId1 << IX_ETH_MII_REG_SHL) | regvalId2;
-                        phyPresent[1] = TRUE;
-                        return IX_SUCCESS;
-                }
-#endif
                 /* End Gateworks Addition */
 
     /* fill the array */
@@ -160,7 +144,6 @@ ixEthMiiPhyScan(BOOL phyPresent[], UINT32 maxPhyCount)
 		    || (ixEthMiiPhyId[i] == IX_ETH_MII_LXT973_PHY_ID)
 		    || (ixEthMiiPhyId[i] == IX_ETH_MII_LXT973A3_PHY_ID)
 		    || (ixEthMiiPhyId[i] == IX_ETH_MII_LXT9785_PHY_ID)
-		    || (ixEthMiiPhyId[i] == IX_ETH_MII_DP83848_PHY_ID)
 		    )
 		{
 		    /* supported phy */
@@ -453,7 +436,6 @@ ixEthMiiLinkStatus(UINT32 phyAddr,
 	    
 	    *linkUp = ((statRegval & IX_ETH_MII_SR_LINK_STATUS) != 0);
                         /* Gateworks added link Status indicator for KS8898 Switch */
-#ifndef CONFIG_CPU_IXP43X                
                         if ((ixEthMiiPhyId[phyAddr] == IX_ETH_MII_KS8995_PHY_ID) && (phyAddr == 1))
                         {
                                 ixEthAccMiiReadRtn(1, IX_ETH_MII_STAT_REG, &K1);
@@ -473,27 +455,6 @@ ixEthMiiLinkStatus(UINT32 phyAddr,
                                 }
                         }
                         /* End Gateworks Addition */	
-#else
-                        if ((ixEthMiiPhyId[phyAddr] == IX_ETH_MII_KS8995_PHY_ID) && (phyAddr == 1))
-                        {
-                                ixEthAccMiiReadRtn(1, IX_ETH_MII_STAT_REG, &K1);
-                                ixEthAccMiiReadRtn(2, IX_ETH_MII_STAT_REG, &K2);
-                                ixEthAccMiiReadRtn(3, IX_ETH_MII_STAT_REG, &K3);
-                                ixEthAccMiiReadRtn(4, IX_ETH_MII_STAT_REG, &K4);
-                                if (((K1 & IX_ETH_MII_SR_LINK_STATUS) != 0) ||
-                                        ((K2 & IX_ETH_MII_SR_LINK_STATUS) != 0) ||
-                                        ((K3 & IX_ETH_MII_SR_LINK_STATUS) != 0) ||
-                                        ((K4 & IX_ETH_MII_SR_LINK_STATUS) != 0))
-                                {
-                                        *linkUp = 1;
-                                }
-                                else
-                                {
-                                        *linkUp = 0;
-                                }
-                        }
-                        /* End Gateworks Addition */	
-#endif
 
 	    if (*linkUp)
 	    {
