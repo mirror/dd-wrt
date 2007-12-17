@@ -41,7 +41,7 @@ static int __init br_init(void)
 	if (err)
 	{
 	printk(KERN_ERR "bridge: fdp_init failed\n");
-		goto err_out1;
+		goto err_out;
 	}
 
 //	err = br_netfilter_init();
@@ -72,6 +72,8 @@ err_out3:
 err_out2:
 //	br_netfilter_fini();
 err_out1:
+	br_fdb_fini();
+err_out:
 	llc_sap_put(br_stp_sap);
 	return err;
 }
