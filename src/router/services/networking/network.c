@@ -2281,13 +2281,15 @@ start_wan (int status)
      if (wlifname && !strcmp (wan_ifname, wlifname))  //sta mode
      {
      	getWirelessMac (mac);
+     	ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
      }
      else
      {
-	getWANMac (mac);
+		getWANMac (mac);
+		ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
      }
+    }
      
-     ether_atoe (mac, ifr.ifr_hwaddr.sa_data);     
  	 
   if (memcmp (ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN))
     {
@@ -2306,7 +2308,6 @@ if (wlifname && !strcmp (wan_ifname, wlifname))
   else
       perror ("Write WAN mac fail : \n");
 
-    }
 
 
 #endif
