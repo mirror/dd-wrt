@@ -2613,7 +2613,6 @@ del_vlan (webs_t wp)
   return;
 }
 
-#ifdef HAVE_MDHCP
 void
 add_mdhcp (webs_t wp)
 {
@@ -2672,7 +2671,6 @@ del_mdhcp (webs_t wp)
 
   return;
 }
-#endif
 
 #ifdef HAVE_BONDING
 void
@@ -2908,7 +2906,6 @@ ej_show_vlantagging (webs_t wp, int argc, char_t ** argv)
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 }
 
-#ifdef HAVE_MDHCP
 void
 ej_show_mdhcp (webs_t wp, int argc, char_t ** argv)
 {
@@ -3024,8 +3021,6 @@ ej_show_mdhcp (webs_t wp, int argc, char_t ** argv)
   websWrite (wp,"</fieldset><br />\n");
 
 }
-#endif
-
 void
 del_bridge (webs_t wp)
 {

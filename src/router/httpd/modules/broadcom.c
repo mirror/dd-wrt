@@ -2801,8 +2801,6 @@ static struct gozila_action gozila_actions[] = {
   {"Networking", "del_bridge", "", 0, REFRESH, del_bridge},
   {"Networking", "del_bridgeif", "", 0, REFRESH, del_bridgeif},
   {"Networking", "save_networking", "", 0, REFRESH, save_networking},
-#endif
-#ifdef HAVE_MDHCP
   {"Networking", "add_mdhcp", "", 0, REFRESH, add_mdhcp},
   {"Networking", "del_mdhcp", "", 0, REFRESH, del_mdhcp},
 #endif
@@ -5706,8 +5704,6 @@ struct ej_handler ej_handlers[] = {
   {"show_bridgenames", ej_show_bridgenames},
   {"show_bridgeifnames", ej_show_bridgeifnames},
   {"show_bridgetable", ej_show_bridgetable},
-#endif
-#ifdef HAVE_MDHCP
   {"show_mdhcp", ej_show_mdhcp},
 #endif
 #ifdef HAVE_BONDING
