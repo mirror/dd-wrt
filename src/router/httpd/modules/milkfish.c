@@ -185,7 +185,7 @@ ej_show_subscribers (webs_t wp, int argc, char_t ** argv)
 {
   int i;
   char *count;
-  int c;
+  int c = 0;
 
   count = nvram_safe_get ("milkfish_ddsubscribersnum");
   if (count == NULL || strlen (count) == 0 || (c=atoi(count))<=0)
@@ -325,7 +325,7 @@ ej_show_aliases (webs_t wp, int argc, char_t ** argv)
 {
   int i;
   char *count;
-  int c;
+  int c = 0;
   count = nvram_safe_get ("milkfish_ddaliasesnum");
   if (count == NULL || strlen (count) == 0 || (c=atoi(count))<=0)
   {
@@ -426,7 +426,7 @@ ej_show_registrations (webs_t wp, int argc, char_t ** argv)
 {
   int i;
   char *count;
-  int c;
+  int c = 0;
   count = nvram_safe_get ("milkfish_ddactivenum");
   if (count == NULL || strlen (count) == 0 || (c=atoi(count))<=0)
   {
