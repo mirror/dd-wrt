@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.23
-# Fri Oct 19 06:02:01 2007
+# Wed Nov  7 20:51:05 2007
 #
 CONFIG_MMU=y
 CONFIG_GENERIC_HARDIRQS=y
@@ -381,7 +381,7 @@ CONFIG_IP_NF_TARGET_TRIGGER=y
 #
 # Bridge: Netfilter Configuration
 #
-CONFIG_BRIDGE_NF_EBTABLES=y
+CONFIG_BRIDGE_NF_EBTABLES=m
 CONFIG_BRIDGE_EBT_BROUTE=m
 CONFIG_BRIDGE_EBT_T_FILTER=m
 CONFIG_BRIDGE_EBT_T_NAT=m
