@@ -762,7 +762,7 @@ start_lan (void)
   strncpy (ifr.ifr_name, "eth1", IFNAMSIZ);
   ioctl (s, SIOCSIFHWADDR, &ifr);
 #endif
-#ifdef HAVE_FONERA && !defined(HAVE_DIR300) && !defined(HAVE_MR3202A)
+#if defined(HAVE_FONERA) && !defined(HAVE_DIR300) && !defined(HAVE_MR3202A)
   if (getRouterBrand () == ROUTER_BOARD_FONERA2200)
     {
       if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
@@ -2261,6 +2261,11 @@ start_wan (int status)
 #endif
 
 //fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
+  char *wlifname = getSTA();
+  if (!wlifname)
+  {
+     wlifname = getWET();
+  }
 
   if (nvram_match ("mac_clone_enable", "1") &&
       nvram_invmatch ("def_hwaddr", "00:00:00:00:00:00") &&
@@ -2272,12 +2277,7 @@ start_wan (int status)
   else
     {
      unsigned char mac[20];
-     char *wlifname = getSTA();
      
-     if (!wlifname)
-     {
-        wlifname = getWET();
-     }  
      if (wlifname && !strcmp (wan_ifname, wlifname))  //sta mode
      {
      	getWirelessMac (mac);
