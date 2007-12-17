@@ -337,7 +337,7 @@ start_cron (void)
       mkdir ("/var/spool/cron", 0700);
     }
   mkdir ("/tmp/cron.d", 0700);
-
+  
   buf_to_file ("/tmp/cron.d/check_ps", "*/2 * * * * root /sbin/check_ps\n");
   if (nvram_match ("reconnect_enable", "1"))	//pppoe reconnect
     {
@@ -383,6 +383,11 @@ start_cron (void)
 
       fclose (fp);
     }
+    
+  /* Custom cron files */  
+  eval ("cp", "-af", "/tmp/mycron.d/*", "/tmp/cron.d/");
+  eval ("cp", "-af", "/jffs/mycron.d/*", "/tmp/cron.d/");
+  eval ("cp", "-af", "/mmc/mycron.d/*", "/tmp/cron.d/");
 
   cprintf ("starting cron\n");
   ret = eval ("/usr/sbin/cron");
