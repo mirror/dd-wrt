@@ -65,7 +65,7 @@ do_mssid (char *lan_ifname,char *wlifname)
 //	  ether_atoe (nvram_safe_get ("wan_hwaddr"), ifr.ifr_hwaddr.sa_data);
 //	else
 //#endif
-	  ether_atoe (nvram_nget ("wl%d_hwaddr",instance), ifr.ifr_hwaddr.sa_data);
+	ether_atoe (nvram_nget ("%s_hwaddr",var), ifr.ifr_hwaddr.sa_data);
 
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 	strncpy (ifr.ifr_name, var, IFNAMSIZ);
