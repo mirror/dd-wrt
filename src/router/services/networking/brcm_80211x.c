@@ -203,6 +203,9 @@ setupSupplicant (char *prefix)
       if (!strcmp (prefix, "wl0"))
 	sprintf (psk, "-i%s", nvram_safe_get ("wl0_ifname"));
       else
+      if (!strcmp (prefix, "wl1"))
+	sprintf (psk, "-i%s", nvram_safe_get ("wl1_ifname"));
+      else
 	sprintf (psk, "-i%s", prefix);
 
       char bvar[32];
