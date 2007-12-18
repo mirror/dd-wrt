@@ -10,12 +10,12 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release version 2.4
  * 
  * -- Copyright Notice --
  * 
  * @par
- * Copyright (c) 2001-2005, Intel Corporation.
+ * Copyright (c) 2001-2007, Intel Corporation.
  * All rights reserved.
  * 
  * @par
@@ -71,11 +71,6 @@ PRIVATE UINT32 ixEthMiiPhyId[IXP400_ETH_ACC_MII_MAX_ADDR];
  *
  */
 
-PUBLIC UINT32 *ixEthMiiGetPhyIDs(void)
-{
-    return &ixEthMiiPhyId[0];
-}
-
 PUBLIC IX_STATUS
 ixEthMiiPhyScan(BOOL phyPresent[], UINT32 maxPhyCount)
 {
@@ -107,8 +102,20 @@ ixEthMiiPhyScan(BOOL phyPresent[], UINT32 maxPhyCount)
                         ixEthMiiPhyId[5] = (regvalId1 << IX_ETH_MII_REG_SHL) | regvalId2;
                         phyPresent[1] = TRUE;
                         phyPresent[5] = TRUE;
-            return IX_SUCCESS;
+
+                  ixEthAccMiiReadRtn(16,  IX_ETH_MII_PHY_ID1_REG, &regvalId1);
+                  ixEthAccMiiReadRtn(16,  IX_ETH_MII_PHY_ID1_REG, &regvalId1);
+                  ixEthAccMiiReadRtn(16,  IX_ETH_MII_PHY_ID2_REG, &regvalId2);
+                  if (((regvalId1 << IX_ETH_MII_REG_SHL) | regvalId2) == IX_ETH_MII_DP83848_PHY_ID)
+                  {
+                        ixEthMiiPhyId[5] = FALSE;
+                        ixEthMiiPhyId[16] = (regvalId1 << IX_ETH_MII_REG_SHL) | regvalId2;
+                        phyPresent[16] = TRUE;
+                        phyPresent[5] = FALSE;
+                  }
+                  return IX_SUCCESS;
                 }
+
                 /* End Gateworks Addition */
 
     /* fill the array */
@@ -144,6 +151,7 @@ ixEthMiiPhyScan(BOOL phyPresent[], UINT32 maxPhyCount)
 		    || (ixEthMiiPhyId[i] == IX_ETH_MII_LXT973_PHY_ID)
 		    || (ixEthMiiPhyId[i] == IX_ETH_MII_LXT973A3_PHY_ID)
 		    || (ixEthMiiPhyId[i] == IX_ETH_MII_LXT9785_PHY_ID)
+		    || (ixEthMiiPhyId[i] == IX_ETH_MII_DP83848_PHY_ID)
 		    )
 		{
 		    /* supported phy */
