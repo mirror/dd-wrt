@@ -47,6 +47,23 @@ static struct platform_device avila_flash = {
 	.resource	= &avila_flash_resource,
 };
 
+static struct ixp4xx_spi_pins ixdp425_spi_gpio_pins = {
+	.spis_pin       = IXDP425_KSSPI_SELECT,
+	.spic_pin       = IXDP425_KSSPI_CLOCK,
+	.spid_pin       = IXDP425_KSSPI_TXD,
+	.spiq_pin       = IXDP425_KSSPI_RXD
+};
+
+static struct platform_device ixdp425_spi_controller = {
+    .name               = "IXP4XX-SPI",
+	.id                 = 0,
+	.dev                = {
+		.platform_data  = &ixdp425_spi_gpio_pins,
+	},
+	.num_resources      = 0
+};
+
+
 static struct ixp4xx_i2c_pins avila_i2c_gpio_pins = {
 	.sda_pin	= AVILA_SDA_PIN,
 	.scl_pin	= AVILA_SCL_PIN,
@@ -135,7 +152,8 @@ static struct platform_device avila_pata = {
 static struct platform_device *avila_devices[] __initdata = {
 	&avila_i2c_controller,
 	&avila_flash,
-	&avila_uart
+	&avila_uart,
+	&ixdp425_spi_controller
 };
 
 static void __init avila_init(void)
