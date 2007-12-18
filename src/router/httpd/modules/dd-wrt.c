@@ -3544,7 +3544,7 @@ if (!strcmp(prefix,"wl1"))instance=1;
 
 #ifdef HAVE_MADWIFI
 static char *ag_rates[] = { "6", "9", "12", "18", "24", "36", "48", "54" };
-static char *turbo_rates[] = { "12", "24", "36", "48", "72", "96", "108" };
+static char *turbo_rates[] = { "12", "18", "24", "36", "48", "72", "96", "108" };
 static char *b_rates[] = { "1", "2", "5.5", "11" };
 static char *bg_rates[] =
   { "1", "2", "5.5", "6", "9", "11", "12", "18", "24", "36", "48", "54" };
@@ -3605,7 +3605,9 @@ show_rates (webs_t wp, char *prefix, int maxrate)
       rate = ag_rates;
       len = sizeof (ag_rates) / sizeof (char *);
       if (nvram_match (turbo, "1"))
+        {
 	showrates = turbo_rates;
+	}
       if (nvram_match (bw, "10"))
 	{
 	  rate = half_rates;
@@ -3622,7 +3624,9 @@ show_rates (webs_t wp, char *prefix, int maxrate)
       rate = ag_rates;
       len = sizeof (ag_rates) / sizeof (char *);
       if (nvram_match (turbo, "1"))
+        {
 	showrates = turbo_rates;
+	}
       if (nvram_match (bw, "10"))
 	{
 	  rate = half_rates;
