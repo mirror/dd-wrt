@@ -131,7 +131,7 @@ setupSupplicant (char *prefix)
       fprintf (fp, "ap_scan=2\n");
 #endif
       fprintf (fp, "fast_reauth=1\n");
-      fprintf (fp, "eapol_version=1\n");
+      fprintf (fp, "eapol_version=2\n");
       fprintf (fp, "ctrl_interface_group=0\n");
       fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
       fprintf (fp, "network={\n");
@@ -229,5 +229,5 @@ setupSupplicant (char *prefix)
 void
 start_supplicant (void)		//for testing only
 {
-  setupSupplicant ("wl0");
+  setupSupplicant ("wl1");
 }
