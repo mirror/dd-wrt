@@ -2414,17 +2414,24 @@ if (wlifname && !strcmp (wan_ifname, wlifname))
 	fprintf (fp, " rp_pppoe_service %s",
 		 nvram_safe_get ("pppoe_service"));
       fprintf (fp, "\n");
+      char vlannic[32];
+      sprintf (vlannic, "%s.0007", pppoe_wan_ifname);
       if (nvram_match ("wan_vdsl", "1"))	// Deutsche Telekom VDSL2 Vlan 7 Tag
 	{
+	if (!ifexists(vlannic))
+	  {
 	  eval ("vconfig", "set_name_type", "DEV_PLUS_VID");
 	  eval ("vconfig", "add", pppoe_wan_ifname, "7");
-	  char nic[32];
-	  sprintf (nic, "%s.0007", pppoe_wan_ifname);
-	  eval ("ifconfig", nic, "up");
-	  fprintf (fp, "nic-%s\n", nic);
+	  eval ("ifconfig", vlannic, "up");
+	  }
+	  fprintf (fp, "nic-%s\n", vlannic);
 	}
       else
+      {
+      if (ifexists(vlannic))
+        eval("vconfig","rem",vlannic);
 	fprintf (fp, "nic-%s\n", pppoe_wan_ifname);
+      }
 
       // Those are default options we use + user/passwd
       // By using user/password options we dont have to deal with chap/pap secrets files.
