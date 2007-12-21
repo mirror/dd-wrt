@@ -20,7 +20,7 @@
 #                                                                    #
 # The Milkfish Router Services - Shell Function Library              #
 #                                                                    #
-# Built/Version:  20071104                                           #
+# Built/Version:  20071221                                           #
 # Author/Contact: Franz Streibl <fronce@sipwerk.com>                 #
 # Copyright (C) 2007 by sipwerk - All rights reserved.               #
 #                                                                    #
@@ -202,7 +202,7 @@ mf_echotest_wget () {
 
 
 mf_dynsip_update () {
-   CURRENTIP=$(wget -O - http://checkip.dyndns.org|sed s/[^0-9.]//g)
+   CURRENTIP=$(wget -O - http://checkip.milkfish.org|sed s/[^0-9.]//g)
    case $1 in
     verbose)
       [ "$CURRENTIP" != "$DYNSIPIP" ] && {                           
@@ -355,7 +355,7 @@ _$(nvram get milkfish_routerid)$(md5sum $0 | awk '{print $1}')
 
 mf_ddns_wget () {
   #Credits: Based on a script by mbm of openwrt.org
-  DDNSACACHE=$(wget -O - http://checkip.dyndns.org|sed s/[^0-9.]//g)
+  DDNSACACHE=$(wget -O - http://checkip.milkfish.org|sed s/[^0-9.]//g)
    [ "$DDNSDCACHE" != "$DDNSACACHE" ] && {                           
       wget -O /dev/null http://$DDNSUSERNM:$DDNSPASSWD@$DDNSSERVER/nic/update?hostname=$DDNSHOSTNM &&
       DDNSDCACHE=$DDNSACACHE
