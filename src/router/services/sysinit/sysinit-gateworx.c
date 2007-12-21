@@ -78,7 +78,7 @@ checkupdate (void)
         in = popen ("/bin/cat /dev/mtdblock/0|/bin/grep \"2\\.04\"|wc -l", "rb");
         fscanf (in, "%d", &res2);
         pclose (in);
-	if (res2==1)
+	if (res2==1 || res2==7) //7 is the result for debug info enabled reboot builds
 	    {
     	    fprintf (stderr, "updating avila type 2 redboot\n");
 	    eval ("tar", "-xaf", "/usr/lib/firmware/redboot.tg7", "-C", "/tmp");
@@ -205,14 +205,14 @@ start_sysinit (void)
   eval ("insmod", "ixp400_eth");
   eval ("ifconfig", "ixp0", "0.0.0.0", "up");
   eval ("ifconfig", "ixp1", "0.0.0.0", "up");
-  if (getRouterBrand () == ROUTER_BOARD_GATEWORX_GW2345)	//lets load the spi drivers for this switch
+ /* if (getRouterBrand () == ROUTER_BOARD_GATEWORX_GW2345)	//lets load the spi drivers for this switch
     {
       eval ("insmod", "spi-algo-bit");
       eval ("insmod", "spi-ixp4xx");
       eval ("insmod", "ks8995m");
       sleep (1);
       system ("echo R01=01 > /proc/driver/KS8995M");	// enable switch 
-    }
+    }*/
   eval ("insmod", "ocf");
   eval ("insmod", "cryptodev");
 //  eval ("insmod", "ixp4xx", "init_crypto=0");
@@ -272,14 +272,14 @@ Configure mac addresses by reading data from eeprom
   
   fclose (file);
 
-/*  if (getRouterBrand()==ROUTER_BOARD_GATEWORX_GW2345) //lets load the spi drivers for this switch
+  if (getRouterBrand()==ROUTER_BOARD_GATEWORX_GW2345) //lets load the spi drivers for this switch
   {
     eval("insmod","spi-algo-bit");
     eval("insmod","spi-ixp4xx");
     eval("insmod","ks8995m");
     sleep(1);
     system("echo R01=01 > /proc/driver/KS8995M"); // enable switch 
-  }*/
+  }
 
 
   /* Set a sane date */
