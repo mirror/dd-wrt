@@ -61,7 +61,7 @@ static void rsn_preauth_receive(void *ctx, const u8 *src_addr,
 	ethhdr = (struct l2_ethhdr *) buf;
 	hdr = (struct ieee802_1x_hdr *) (ethhdr + 1);
 
-	if (memcmp(ethhdr->h_dest, hapd->own_addr, ETH_ALEN) != 0) {
+	if (os_memcmp(ethhdr->h_dest, hapd->own_addr, ETH_ALEN) != 0) {
 		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "RSN: pre-auth for "
 			      "foreign address " MACSTR "\n",
 			      MAC2STR(ethhdr->h_dest));
@@ -111,7 +111,7 @@ static int rsn_preauth_iface_add(struct hostapd_data *hapd, const char *ifname)
 		return -1;
 	piface->hapd = hapd;
 
-	piface->ifname = strdup(ifname);
+	piface->ifname = os_strdup(ifname);
 	if (piface->ifname == NULL) {
 		goto fail1;
 	}
@@ -129,9 +129,9 @@ static int rsn_preauth_iface_add(struct hostapd_data *hapd, const char *ifname)
 	return 0;
 
 fail2:
-	free(piface->ifname);
+	os_free(piface->ifname);
 fail1:
-	free(piface);
+	os_free(piface);
 	return -1;
 }
 
@@ -146,8 +146,8 @@ void rsn_preauth_iface_deinit(struct hostapd_data *hapd)
 		prev = piface;
 		piface = piface->next;
 		l2_packet_deinit(prev->l2);
-		free(prev->ifname);
-		free(prev);
+		os_free(prev->ifname);
+		os_free(prev);
 	}
 }
 
@@ -159,7 +159,7 @@ int rsn_preauth_iface_init(struct hostapd_data *hapd)
 	if (hapd->conf->rsn_preauth_interfaces == NULL)
 		return 0;
 
-	tmp = strdup(hapd->conf->rsn_preauth_interfaces);
+	tmp = os_strdup(hapd->conf->rsn_preauth_interfaces);
 	if (tmp == NULL)
 		return -1;
 	start = tmp;
@@ -168,7 +168,7 @@ int rsn_preauth_iface_init(struct hostapd_data *hapd)
 			start++;
 		if (*start == '\0')
 			break;
-		end = strchr(start, ' ');
+		end = os_strchr(start, ' ');
 		if (end)
 			*end = '\0';
 
@@ -182,7 +182,7 @@ int rsn_preauth_iface_init(struct hostapd_data *hapd)
 		else
 			break;
 	}
-	free(tmp);
+	os_free(tmp);
 	return 0;
 }
 
@@ -200,13 +200,15 @@ static void rsn_preauth_finished_cb(void *eloop_ctx, void *timeout_ctx)
 void rsn_preauth_finished(struct hostapd_data *hapd, struct sta_info *sta,
 			  int success)
 {
-	u8 *key;
+	const u8 *key;
 	size_t len;
 	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_WPA,
 		       HOSTAPD_LEVEL_INFO, "pre-authentication %s",
 		       success ? "succeeded" : "failed");
 
-	key = ieee802_1x_get_key_crypt(sta->eapol_sm, &len);
+	key = ieee802_1x_get_key(sta->eapol_sm, &len);
+	if (len > PMK_LEN)
+		len = PMK_LEN;
 	if (success && key) {
 		if (wpa_auth_pmksa_add_preauth(hapd->wpa_auth, key, len,
 					       sta->addr,
@@ -251,20 +253,20 @@ void rsn_preauth_send(struct hostapd_data *hapd, struct sta_info *sta,
 		return;
 	}
 
-	ethhdr = malloc(sizeof(*ethhdr) + len);
+	ethhdr = os_malloc(sizeof(*ethhdr) + len);
 	if (ethhdr == NULL)
 		return;
 
-	memcpy(ethhdr->h_dest, sta->addr, ETH_ALEN);
-	memcpy(ethhdr->h_source, hapd->own_addr, ETH_ALEN);
+	os_memcpy(ethhdr->h_dest, sta->addr, ETH_ALEN);
+	os_memcpy(ethhdr->h_source, hapd->own_addr, ETH_ALEN);
 	ethhdr->h_proto = htons(ETH_P_PREAUTH);
-	memcpy(ethhdr + 1, buf, len);
+	os_memcpy(ethhdr + 1, buf, len);
 
 	if (l2_packet_send(piface->l2, sta->addr, ETH_P_PREAUTH, (u8 *) ethhdr,
 			   sizeof(*ethhdr) + len) < 0) {
 		printf("Failed to send preauth packet using l2_packet_send\n");
 	}
-	free(ethhdr);
+	os_free(ethhdr);
 }
 
 

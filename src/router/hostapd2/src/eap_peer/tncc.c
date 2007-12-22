@@ -85,6 +85,12 @@ typedef TNC_Result (*TNC_TNCC_BindFunctionPointer)(
 #define TNC_VENDORID_ANY ((TNC_VendorID) 0xffffff)
 #define TNC_SUBTYPE_ANY ((TNC_MessageSubtype) 0xff)
 
+/* TNCC-TNCS Message Types */
+#define TNC_TNCCS_RECOMMENDATION		0x00000001
+#define TNC_TNCCS_ERROR				0x00000002
+#define TNC_TNCCS_PREFERREDLANGUAGE		0x00000003
+#define TNC_TNCCS_REASONSTRINGS			0x00000004
+
 
 struct tnc_if_imc {
 	struct tnc_if_imc *next;
@@ -611,16 +617,125 @@ char * tncc_if_tnccs_end(void)
 }
 
 
-int tncc_process_if_tnccs(struct tncc_data *tncc, const u8 *msg, size_t len)
+static void tncc_notify_recommendation(struct tncc_data *tncc,
+				       enum tncc_process_res res)
 {
-	char *buf, *start, *end, *pos, *pos2;
+	TNC_ConnectionState state;
+	struct tnc_if_imc *imc;
+
+	switch (res) {
+	case TNCCS_RECOMMENDATION_ALLOW:
+		state = TNC_CONNECTION_STATE_ACCESS_ALLOWED;
+		break;
+	case TNCCS_RECOMMENDATION_NONE:
+		state = TNC_CONNECTION_STATE_ACCESS_NONE;
+		break;
+	case TNCCS_RECOMMENDATION_ISOLATE:
+		state = TNC_CONNECTION_STATE_ACCESS_ISOLATED;
+		break;
+	default:
+		state = TNC_CONNECTION_STATE_ACCESS_NONE;
+		break;
+	}
+
+	for (imc = tncc->imc; imc; imc = imc->next)
+		tncc_imc_notify_connection_change(imc, state);
+}
+
+
+static int tncc_get_type(char *start, unsigned int *type)
+{
+	char *pos = os_strstr(start, "<Type>");
+	if (pos == NULL)
+		return -1;
+	pos += 6;
+	*type = strtoul(pos, NULL, 16);
+	return 0;
+}
+
+
+static unsigned char * tncc_get_base64(char *start, size_t *decoded_len)
+{
+	char *pos, *pos2;
+	unsigned char *decoded;
+
+	pos = os_strstr(start, "<Base64>");
+	if (pos == NULL)
+		return NULL;
+
+	pos += 8;
+	pos2 = os_strstr(pos, "</Base64>");
+	if (pos2 == NULL)
+		return NULL;
+	*pos2 = '\0';
+
+	decoded = base64_decode((unsigned char *) pos, os_strlen(pos),
+				decoded_len);
+	*pos2 = '<';
+	if (decoded == NULL) {
+		wpa_printf(MSG_DEBUG, "TNC: Failed to decode Base64 data");
+	}
+
+	return decoded;
+}
+
+
+static enum tncc_process_res tncc_get_recommendation(char *start)
+{
+	char *pos, *pos2, saved;
+	int recom;
+
+	pos = os_strstr(start, "<TNCCS-Recommendation ");
+	if (pos == NULL)
+		return TNCCS_RECOMMENDATION_ERROR;
+
+	pos += 21;
+	pos = os_strstr(pos, " type=");
+	if (pos == NULL)
+		return TNCCS_RECOMMENDATION_ERROR;
+	pos += 6;
+
+	if (*pos == '"')
+		pos++;
+
+	pos2 = pos;
+	while (*pos2 != '\0' && *pos2 != '"' && *pos2 != '>')
+		pos2++;
+
+	if (*pos2 == '\0')
+		return TNCCS_RECOMMENDATION_ERROR;
+
+	saved = *pos2;
+	*pos2 = '\0';
+	wpa_printf(MSG_DEBUG, "TNC: TNCCS-Recommendation: '%s'", pos);
+
+	recom = TNCCS_RECOMMENDATION_ERROR;
+	if (os_strcmp(pos, "allow") == 0)
+		recom = TNCCS_RECOMMENDATION_ALLOW;
+	else if (os_strcmp(pos, "none") == 0)
+		recom = TNCCS_RECOMMENDATION_NONE;
+	else if (os_strcmp(pos, "isolate") == 0)
+		recom = TNCCS_RECOMMENDATION_ISOLATE;
+
+	*pos2 = saved;
+
+	return recom;
+}
+
+
+enum tncc_process_res tncc_process_if_tnccs(struct tncc_data *tncc,
+					    const u8 *msg, size_t len)
+{
+	char *buf, *start, *end, *pos, *pos2, *payload;
 	unsigned int batch_id;
 	unsigned char *decoded;
 	size_t decoded_len;
+	enum tncc_process_res res = TNCCS_PROCESS_OK_NO_RECOMMENDATION;
+	int recommendation_msg = 0;
 
 	buf = os_malloc(len + 1);
 	if (buf == NULL)
-		return -1;
+		return TNCCS_PROCESS_ERROR;
 
 	os_memcpy(buf, msg, len);
 	buf[len] = '\0';
@@ -628,7 +743,7 @@ int tncc_process_if_tnccs(struct tncc_data *tncc, const u8 *msg, size_t len)
 	end = os_strstr(buf, "</TNCCS-Batch>");
 	if (start == NULL || end == NULL || start > end) {
 		os_free(buf);
-		return -1;
+		return TNCCS_PROCESS_ERROR;
 	}
 
 	start += 13;
@@ -639,7 +754,7 @@ int tncc_process_if_tnccs(struct tncc_data *tncc, const u8 *msg, size_t len)
 	pos = os_strstr(start, "BatchId=");
 	if (pos == NULL) {
 		os_free(buf);
-		return -1;
+		return TNCCS_PROCESS_ERROR;
 	}
 
 	pos += 8;
@@ -653,9 +768,18 @@ int tncc_process_if_tnccs(struct tncc_data *tncc, const u8 *msg, size_t len)
 			   "%u (expected %u)",
 			   batch_id, tncc->last_batchid + 1);
 		os_free(buf);
-		return -1;
+		return TNCCS_PROCESS_ERROR;
 	}
 	tncc->last_batchid = batch_id;
+
+	while (*pos != '\0' && *pos != '>')
+		pos++;
+	if (*pos == '\0') {
+		os_free(buf);
+		return TNCCS_PROCESS_ERROR;
+	}
+	pos++;
+	payload = start;
 
 	/*
 	 * <IMC-IMV-Message>
@@ -665,6 +789,7 @@ int tncc_process_if_tnccs(struct tncc_data *tncc, const u8 *msg, size_t len)
 	 */
 
 	while (*start) {
+		char *endpos;
 		unsigned int type;
 
 		pos = os_strstr(start, "<IMC-IMV-Message>");
@@ -675,37 +800,19 @@ int tncc_process_if_tnccs(struct tncc_data *tncc, const u8 *msg, size_t len)
 		if (end == NULL)
 			break;
 		*end = '\0';
+		endpos = end;
 		end += 18;
 
-		pos = os_strstr(start, "<Type>");
-		if (pos == NULL) {
+		if (tncc_get_type(start, &type) < 0) {
+			*endpos = '<';
 			start = end;
 			continue;
 		}
-
-		pos += 6;
-		type = strtoul(pos, NULL, 16);
 		wpa_printf(MSG_DEBUG, "TNC: IMC-IMV-Message Type 0x%x", type);
 
-		pos = os_strstr(start, "<Base64>");
-		if (pos == NULL) {
-			start = end;
-			continue;
-		}
-		pos += 8;
-
-		pos2 = os_strstr(pos, "</Base64>");
-		if (pos2 == NULL) {
-			start = end;
-			continue;
-		}
-		*pos2 = '\0';
-
-		decoded = base64_decode((unsigned char *) pos, os_strlen(pos),
-					&decoded_len);
+		decoded = tncc_get_base64(start, &decoded_len);
 		if (decoded == NULL) {
-			wpa_printf(MSG_DEBUG, "TNC: Failed to decode "
-				   "IMC-IMV-Message Base64 data");
+			*endpos = '<';
 			start = end;
 			continue;
 		}
@@ -717,9 +824,96 @@ int tncc_process_if_tnccs(struct tncc_data *tncc, const u8 *msg, size_t len)
 		start = end;
 	}
 
+	/*
+	 * <TNCC-TNCS-Message>
+	 * <Type>01234567</Type>
+	 * <XML><TNCCS-Foo type="foo"></TNCCS-Foo></XML>
+	 * <Base64>foo==</Base64>
+	 * </TNCC-TNCS-Message>
+	 */
+
+	start = payload;
+	while (*start) {
+		unsigned int type;
+		char *xml, *xmlend, *endpos;
+
+		pos = os_strstr(start, "<TNCC-TNCS-Message>");
+		if (pos == NULL)
+			break;
+		start = pos + 19;
+		end = os_strstr(start, "</TNCC-TNCS-Message>");
+		if (end == NULL)
+			break;
+		*end = '\0';
+		endpos = end;
+		end += 20;
+
+		if (tncc_get_type(start, &type) < 0) {
+			*endpos = '<';
+			start = end;
+			continue;
+		}
+		wpa_printf(MSG_DEBUG, "TNC: TNCC-TNCS-Message Type 0x%x",
+			   type);
+
+		/* Base64 OR XML */
+		decoded = NULL;
+		xml = NULL;
+		xmlend = NULL;
+		pos = os_strstr(start, "<XML>");
+		if (pos) {
+			pos += 5;
+			pos2 = os_strstr(pos, "</XML>");
+			if (pos2 == NULL) {
+				*endpos = '<';
+				start = end;
+				continue;
+			}
+			xmlend = pos2;
+			xml = pos;
+		} else {
+			decoded = tncc_get_base64(start, &decoded_len);
+			if (decoded == NULL) {
+				*endpos = '<';
+				start = end;
+				continue;
+			}
+		}
+
+		if (decoded) {
+			wpa_hexdump_ascii(MSG_MSGDUMP,
+					  "TNC: TNCC-TNCS-Message Base64",
+					  decoded, decoded_len);
+			os_free(decoded);
+		}
+
+		if (xml) {
+			wpa_hexdump_ascii(MSG_MSGDUMP,
+					  "TNC: TNCC-TNCS-Message XML",
+					  (unsigned char *) xml,
+					  xmlend - xml);
+		}
+
+		if (type == TNC_TNCCS_RECOMMENDATION && xml) {
+			/*
+			 * <TNCCS-Recommendation type="allow">
+			 * </TNCCS-Recommendation>
+			 */
+			*xmlend = '\0';
+			res = tncc_get_recommendation(xml);
+			*xmlend = '<';
+			recommendation_msg = 1;
+		}
+
+		start = end;
+	}
+
 	os_free(buf);
 
-	return 0;
+	if (recommendation_msg)
+		tncc_notify_recommendation(tncc, res);
+
+	return res;
 }
 
 

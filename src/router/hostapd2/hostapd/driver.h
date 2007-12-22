@@ -23,6 +23,7 @@ struct wpa_driver_ops {
 	const char *name;		/* as appears in the config file */
 
 	void * (*init)(struct hostapd_data *hapd);
+	void * (*init_bssid)(struct hostapd_data *hapd, const u8 *bssid);
 	void (*deinit)(void *priv);
 
 	int (*wireless_event_init)(void *priv);
@@ -92,7 +93,7 @@ struct wpa_driver_ops {
 	int (*get_retry)(void *priv, int *short_retry, int *long_retry);
 
 	int (*sta_set_flags)(void *priv, const u8 *addr,
-			     int flags_or, int flags_and);
+			     int total_flags, int flags_or, int flags_and);
 	int (*set_rate_sets)(void *priv, int *supp_rates, int *basic_rates,
 			     int mode);
 	int (*set_channel_flag)(void *priv, int mode, int chan, int flag,
@@ -166,6 +167,14 @@ hostapd_driver_init(struct hostapd_data *hapd)
 	if (hapd->driver == NULL || hapd->driver->init == NULL)
 		return NULL;
 	return hapd->driver->init(hapd);
+}
+
+static inline void *
+hostapd_driver_init_bssid(struct hostapd_data *hapd, const u8 *bssid)
+{
+	if (hapd->driver == NULL || hapd->driver->init_bssid == NULL)
+		return NULL;
+	return hapd->driver->init_bssid(hapd, bssid);
 }
 
 static inline void
@@ -427,12 +436,12 @@ hostapd_get_retry(struct hostapd_data *hapd, int *short_retry, int *long_retry)
 
 static inline int
 hostapd_sta_set_flags(struct hostapd_data *hapd, u8 *addr,
-		      int flags_or, int flags_and)
+		      int total_flags, int flags_or, int flags_and)
 {
 	if (hapd->driver == NULL || hapd->driver->sta_set_flags == NULL)
 		return 0;
-	return hapd->driver->sta_set_flags(hapd->drv_priv, addr, flags_or,
-					   flags_and);
+	return hapd->driver->sta_set_flags(hapd->drv_priv, addr, total_flags,
+					   flags_or, flags_and);
 }
 
 static inline int

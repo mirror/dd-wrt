@@ -1,5 +1,5 @@
 /*
- * hostapd / IEEE 802.1X Authenticator
+ * hostapd / IEEE 802.1X-2004 Authenticator
  * Copyright (c) 2002-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -21,7 +21,7 @@ struct eapol_state_machine;
 struct hostapd_config;
 struct hostapd_bss_config;
 
-/* draft-congdon-radius-8021x-20.txt */
+/* RFC 3580, 4. RC4 EAPOL-Key Frame */
 
 struct ieee802_1x_eapol_key {
 	u8 type;
@@ -51,8 +51,6 @@ void ieee802_1x_receive(struct hostapd_data *hapd, const u8 *sa, const u8 *buf,
 void ieee802_1x_new_station(struct hostapd_data *hapd, struct sta_info *sta);
 void ieee802_1x_free_station(struct sta_info *sta);
 
-void ieee802_1x_request_identity(struct hostapd_data *hapd,
-				 struct sta_info *sta);
 void ieee802_1x_tx_key(struct hostapd_data *hapd, struct sta_info *sta);
 void ieee802_1x_abort_auth(struct hostapd_data *hapd, struct sta_info *sta);
 void ieee802_1x_set_sta_authorized(struct hostapd_data *hapd,
@@ -68,8 +66,7 @@ int ieee802_1x_tx_status(struct hostapd_data *hapd, struct sta_info *sta,
 u8 * ieee802_1x_get_identity(struct eapol_state_machine *sm, size_t *len);
 u8 * ieee802_1x_get_radius_class(struct eapol_state_machine *sm, size_t *len,
 				 int idx);
-u8 * ieee802_1x_get_key_crypt(struct eapol_state_machine *sm, size_t *len);
-u8 * ieee802_1x_get_key_sign(struct eapol_state_machine *sm, size_t *len);
+const u8 * ieee802_1x_get_key(struct eapol_state_machine *sm, size_t *len);
 void ieee802_1x_notify_port_enabled(struct eapol_state_machine *sm,
 				    int enabled);
 void ieee802_1x_notify_port_valid(struct eapol_state_machine *sm,
@@ -79,8 +76,6 @@ int ieee802_1x_get_mib(struct hostapd_data *hapd, char *buf, size_t buflen);
 int ieee802_1x_get_mib_sta(struct hostapd_data *hapd, struct sta_info *sta,
 			   char *buf, size_t buflen);
 void hostapd_get_ntp_timestamp(u8 *buf);
-void ieee802_1x_finished(struct hostapd_data *hapd, struct sta_info *sta,
-			 int success);
 char *eap_type_text(u8 type);
 
 struct radius_class_data;

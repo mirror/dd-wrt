@@ -17,7 +17,7 @@
 #include "common.h"
 #include "eloop.h"
 #include "config.h"
-#include "eapol_sm.h"
+#include "eapol_supp/eapol_supp_sm.h"
 #include "wpa_supplicant_i.h"
 #include "ctrl_iface.h"
 #include "wpa_ctrl.h"

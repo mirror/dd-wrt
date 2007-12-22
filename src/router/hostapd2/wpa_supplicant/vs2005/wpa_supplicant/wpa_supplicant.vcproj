@@ -191,6 +191,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\blacklist.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\utils\common.c"
 				>
 			</File>
@@ -283,7 +287,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\eapol_sm.c"
+				RelativePath="..\..\..\src\eapol_supp\eapol_supp_sm.c"
 				>
 			</File>
 			<File
@@ -343,6 +347,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\scan.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\crypto\sha1.c"
 				>
 			</File>
@@ -372,6 +380,14 @@
 			</File>
 			<File
 				RelativePath="..\..\wpa_supplicant.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\utils\wpabuf.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\wpas_glue.c"
 				>
 			</File>
 		</Filter>

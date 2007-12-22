@@ -185,6 +185,7 @@ static struct wpa_ssid * wpa_config_read_network(FILE *f, int *line, int id)
 }
 
 
+#ifndef CONFIG_NO_CONFIG_BLOBS
 static struct wpa_config_blob * wpa_config_read_blob(FILE *f, int *line,
 						     const char *name)
 {
@@ -264,6 +265,7 @@ static int wpa_config_process_blob(struct wpa_config *config, FILE *f,
 	wpa_config_set_blob(config, blob);
 	return 0;
 }
+#endif /* CONFIG_NO_CONFIG_BLOBS */
 
 
 #ifdef CONFIG_CTRL_IFACE
@@ -319,6 +321,8 @@ static int wpa_config_process_fast_reauth(struct wpa_config *config, char *pos)
 }
 
 
+#ifdef EAP_TLS_OPENSSL
+
 static int wpa_config_process_opensc_engine_path(struct wpa_config *config,
 						 char *pos)
 {
@@ -350,6 +354,8 @@ static int wpa_config_process_pkcs11_module_path(struct wpa_config *config,
 		   config->pkcs11_module_path);
 	return 0;
 }
+
+#endif /* EAP_TLS_OPENSSL */
 
 
 static int wpa_config_process_driver_param(struct wpa_config *config,
@@ -391,6 +397,7 @@ static int wpa_config_process_sa_timeout(struct wpa_config *config, char *pos)
 }
 
 
+#ifndef CONFIG_NO_CONFIG_WRITE
 static int wpa_config_process_update_config(struct wpa_config *config,
 					    char *pos)
 {
@@ -398,6 +405,7 @@ static int wpa_config_process_update_config(struct wpa_config *config,
 	wpa_printf(MSG_DEBUG, "update_config=%d", config->update_config);
 	return 0;
 }
+#endif /* CONFIG_NO_CONFIG_WRITE */
 
 
 static int wpa_config_process_load_dynamic_eap(int line, char *so)
@@ -440,6 +448,7 @@ static int wpa_config_process_global(struct wpa_config *config, char *pos,
 	if (os_strncmp(pos, "fast_reauth=", 12) == 0)
 		return wpa_config_process_fast_reauth(config, pos + 12);
 
+#ifdef EAP_TLS_OPENSSL
 	if (os_strncmp(pos, "opensc_engine_path=", 19) == 0)
 		return wpa_config_process_opensc_engine_path(config, pos + 19);
 
@@ -448,6 +457,7 @@ static int wpa_config_process_global(struct wpa_config *config, char *pos,
 
 	if (os_strncmp(pos, "pkcs11_module_path=", 19) == 0)
 		return wpa_config_process_pkcs11_module_path(config, pos + 19);
+#endif /* EAP_TLS_OPENSSL */
 
 	if (os_strncmp(pos, "driver_param=", 13) == 0)
 		return wpa_config_process_driver_param(config, pos + 13);
@@ -462,8 +472,10 @@ static int wpa_config_process_global(struct wpa_config *config, char *pos,
 	if (os_strncmp(pos, "dot11RSNAConfigSATimeout=", 25) == 0)
 		return wpa_config_process_sa_timeout(config, pos + 25);
 
+#ifndef CONFIG_NO_CONFIG_WRITE
 	if (os_strncmp(pos, "update_config=", 14) == 0)
 		return wpa_config_process_update_config(config, pos + 14);
+#endif /* CONFIG_NO_CONFIG_WRITE */
 
 	if (os_strncmp(pos, "load_dynamic_eap=", 17) == 0)
 		return wpa_config_process_load_dynamic_eap(line, pos + 17);
@@ -513,12 +525,14 @@ struct wpa_config * wpa_config_read(const char *name)
 				errors++;
 				continue;
 			}
+#ifndef CONFIG_NO_CONFIG_BLOBS
 		} else if (os_strncmp(pos, "blob-base64-", 12) == 0) {
 			if (wpa_config_process_blob(config, f, &line, pos + 12)
 			    < 0) {
 				errors++;
 				continue;
 			}
+#endif /* CONFIG_NO_CONFIG_BLOBS */
 		} else if (wpa_config_process_global(config, pos, line) < 0) {
 			wpa_printf(MSG_ERROR, "Line %d: Invalid configuration "
 				   "line '%s'.", line, pos);
@@ -541,6 +555,8 @@ struct wpa_config * wpa_config_read(const char *name)
 	return config;
 }
 
+
+#ifndef CONFIG_NO_CONFIG_WRITE
 
 static void write_str(FILE *f, const char *field, struct wpa_ssid *ssid)
 {
@@ -765,6 +781,7 @@ static void wpa_config_write_network(FILE *f, struct wpa_ssid *ssid)
 }
 
 
+#ifndef CONFIG_NO_CONFIG_BLOBS
 static int wpa_config_write_blob(FILE *f, struct wpa_config_blob *blob)
 {
 	unsigned char *encoded;
@@ -777,6 +794,7 @@ static int wpa_config_write_blob(FILE *f, struct wpa_config_blob *blob)
 	os_free(encoded);
 	return 0;
 }
+#endif /* CONFIG_NO_CONFIG_BLOBS */
 
 
 static void wpa_config_write_global(FILE *f, struct wpa_config *config)
@@ -794,6 +812,7 @@ static void wpa_config_write_global(FILE *f, struct wpa_config *config)
 		fprintf(f, "ap_scan=%d\n", config->ap_scan);
 	if (config->fast_reauth != DEFAULT_FAST_REAUTH)
 		fprintf(f, "fast_reauth=%d\n", config->fast_reauth);
+#ifdef EAP_TLS_OPENSSL
 	if (config->opensc_engine_path)
 		fprintf(f, "opensc_engine_path=%s\n",
 			config->opensc_engine_path);
@@ -803,6 +822,7 @@ static void wpa_config_write_global(FILE *f, struct wpa_config *config)
 	if (config->pkcs11_module_path)
 		fprintf(f, "pkcs11_module_path=%s\n",
 			config->pkcs11_module_path);
+#endif /* EAP_TLS_OPENSSL */
 	if (config->driver_param)
 		fprintf(f, "driver_param=%s\n", config->driver_param);
 	if (config->dot11RSNAConfigPMKLifetime)
@@ -818,12 +838,17 @@ static void wpa_config_write_global(FILE *f, struct wpa_config *config)
 		fprintf(f, "update_config=%d\n", config->update_config);
 }
 
+#endif /* CONFIG_NO_CONFIG_WRITE */
+
 
 int wpa_config_write(const char *name, struct wpa_config *config)
 {
+#ifndef CONFIG_NO_CONFIG_WRITE
 	FILE *f;
 	struct wpa_ssid *ssid;
+#ifndef CONFIG_NO_CONFIG_BLOBS
 	struct wpa_config_blob *blob;
+#endif /* CONFIG_NO_CONFIG_BLOBS */
 	int ret = 0;
 
 	wpa_printf(MSG_DEBUG, "Writing configuration file '%s'", name);
@@ -842,15 +867,20 @@ int wpa_config_write(const char *name, struct wpa_config *config)
 		fprintf(f, "}\n");
 	}
 
+#ifndef CONFIG_NO_CONFIG_BLOBS
 	for (blob = config->blobs; blob; blob = blob->next) {
 		ret = wpa_config_write_blob(f, blob);
 		if (ret)
 			break;
 	}
+#endif /* CONFIG_NO_CONFIG_BLOBS */
 
 	fclose(f);
 
 	wpa_printf(MSG_DEBUG, "Configuration file '%s' written %ssuccessfully",
 		   name, ret ? "un" : "");
 	return ret;
+#else /* CONFIG_NO_CONFIG_WRITE */
+	return -1;
+#endif /* CONFIG_NO_CONFIG_WRITE */
 }

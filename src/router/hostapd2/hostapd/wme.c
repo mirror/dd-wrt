@@ -91,7 +91,7 @@ int hostapd_eid_wme_valid(struct hostapd_data *hapd, u8 *eid, size_t len)
 		      "version %d\n",
 		      wme->oui[0], wme->oui[1], wme->oui[2], wme->oui_type,
 		      wme->oui_subtype, wme->version);
-	if (memcmp(wme->oui, wme_oui, sizeof(wme_oui)) != 0 ||
+	if (os_memcmp(wme->oui, wme_oui, sizeof(wme_oui)) != 0 ||
 	    wme->oui_type != WME_OUI_TYPE ||
 	    wme->oui_subtype != WME_OUI_SUBTYPE_INFORMATION_ELEMENT ||
 	    wme->version != WME_VERSION) {
@@ -110,9 +110,11 @@ int hostapd_wme_sta_config(struct hostapd_data *hapd, struct sta_info *sta)
 {
 	/* update kernel STA data for WME related items (WLAN_STA_WPA flag) */
 	if (sta->flags & WLAN_STA_WME)
-		hostapd_sta_set_flags(hapd, sta->addr, WLAN_STA_WME, ~0);
+		hostapd_sta_set_flags(hapd, sta->addr, sta->flags,
+				      WLAN_STA_WME, ~0);
 	else
-		hostapd_sta_set_flags(hapd, sta->addr, 0, ~WLAN_STA_WME);
+		hostapd_sta_set_flags(hapd, sta->addr, sta->flags,
+				      0, ~WLAN_STA_WME);
 
 	return 0;
 }
@@ -132,17 +134,17 @@ static void wme_send_action(struct hostapd_data *hapd, const u8 *addr,
 	hostapd_logger(hapd, addr, HOSTAPD_MODULE_IEEE80211,
 		       HOSTAPD_LEVEL_DEBUG,
 		       "action response - reason %d", status_code);
-	memset(buf, 0, sizeof(buf));
+	os_memset(buf, 0, sizeof(buf));
 	m->frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
 					WLAN_FC_STYPE_ACTION);
-	memcpy(m->da, addr, ETH_ALEN);
-	memcpy(m->sa, hapd->own_addr, ETH_ALEN);
-	memcpy(m->bssid, hapd->own_addr, ETH_ALEN);
+	os_memcpy(m->da, addr, ETH_ALEN);
+	os_memcpy(m->sa, hapd->own_addr, ETH_ALEN);
+	os_memcpy(m->bssid, hapd->own_addr, ETH_ALEN);
 	m->u.action.category = WME_ACTION_CATEGORY;
 	m->u.action.u.wme_action.action_code = action_code;
 	m->u.action.u.wme_action.dialog_token = dialogue_token;
 	m->u.action.u.wme_action.status_code = status_code;
-	memcpy(t, tspec, sizeof(struct wme_tspec_info_element));
+	os_memcpy(t, tspec, sizeof(struct wme_tspec_info_element));
 	len = ((u8 *) (t + 1)) - buf;
 
 	if (hostapd_send_mgmt_frame(hapd, m, len, 0) < 0)

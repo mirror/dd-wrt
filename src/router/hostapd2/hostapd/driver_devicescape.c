@@ -74,10 +74,11 @@ struct i802_driver_data {
 #define HAPD_DECL	struct hostapd_data *hapd = iface->bss[0]
 
 static int i802_sta_set_flags(void *priv, const u8 *addr,
-			      int flags_or, int flags_and);
+			      int total_flags, int flags_or, int flags_and);
 
 
-static int hostapd_set_iface_flags(struct i802_driver_data *drv, int dev_up)
+static int hostapd_set_iface_flags(struct i802_driver_data *drv,
+				   const char *ifname, int dev_up)
 {
 	struct ifreq ifr;
 
@@ -85,7 +86,7 @@ static int hostapd_set_iface_flags(struct i802_driver_data *drv, int dev_up)
 		return -1;
 
 	memset(&ifr, 0, sizeof(ifr));
-	os_strlcpy(ifr.ifr_name, drv->iface, IFNAMSIZ);
+	os_strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
 
 	if (ioctl(drv->ioctl_sock, SIOCGIFFLAGS, &ifr) != 0) {
 		perror("ioctl[SIOCGIFFLAGS]");
@@ -666,7 +667,7 @@ static int i802_sta_remove(void *priv, const u8 *addr)
 	struct i802_driver_data *drv = priv;
 	struct prism2_hostapd_param param;
 
-	i802_sta_set_flags(drv, addr, 0, ~WLAN_STA_AUTHORIZED);
+	i802_sta_set_flags(drv, addr, 0, 0, ~WLAN_STA_AUTHORIZED);
 
 	memset(&param, 0, sizeof(param));
 	param.cmd = PRISM2_HOSTAPD_REMOVE_STA;
@@ -678,7 +679,7 @@ static int i802_sta_remove(void *priv, const u8 *addr)
 
 
 static int i802_sta_set_flags(void *priv, const u8 *addr,
-			      int flags_or, int flags_and)
+			      int total_flags, int flags_or, int flags_and)
 {
 	struct i802_driver_data *drv = priv;
 	struct prism2_hostapd_param param;
@@ -854,8 +855,15 @@ static int nl80211_create_iface(struct i802_driver_data *drv,
 
 static int i802_bss_add(void *priv, const char *ifname, const u8 *bssid)
 {
-	if (nl80211_create_iface(priv, ifname, NL80211_IFTYPE_AP, bssid) < 0)
+	int ifidx;
+
+	ifidx = nl80211_create_iface(priv, ifname, NL80211_IFTYPE_AP, bssid);
+	if (ifidx < 0)
 		return -1;
+	if (hostapd_set_iface_flags(priv, ifname, 1)) {
+		nl80211_remove_iface(priv, ifidx);
+		return -1;
+	}
 	return 0;
 }
 
@@ -926,10 +934,18 @@ static int i802_set_ieee8021x(const char *ifname, void *priv, int enabled)
 static int i802_set_privacy(const char *ifname, void *priv, int enabled)
 {
 	struct i802_driver_data *drv = priv;
+	struct iwreq iwr;
 
-	return hostap_ioctl_prism2param_iface(ifname, drv,
-					      PRISM2_PARAM_PRIVACY_INVOKED,
-					      enabled);
+	memset(&iwr, 0, sizeof(iwr));
+
+	os_strlcpy(iwr.ifr_name, ifname, IFNAMSIZ);
+	iwr.u.param.flags = IW_AUTH_PRIVACY_INVOKED;
+	iwr.u.param.value = enabled;
+
+	ioctl(drv->ioctl_sock, SIOCSIWAUTH, &iwr);
+
+	/* ignore errors, the kernel/driver might not care */
+	return 0;
 }
 
 
@@ -1483,7 +1499,7 @@ static void handle_read(int sock, void *eloop_ctx, void *sock_ctx)
 }
 
 
-static int i802_init_sockets(struct i802_driver_data *drv)
+static int i802_init_sockets(struct i802_driver_data *drv, const u8 *bssid)
 {
 	struct hostapd_data *hapd = drv->hapd;
 	struct hostapd_iface *iface = hapd->iface;
@@ -1497,6 +1513,20 @@ static int i802_init_sockets(struct i802_driver_data *drv)
 	if (drv->ioctl_sock < 0) {
 		perror("socket[PF_INET,SOCK_DGRAM]");
 		return -1;
+	}
+
+	if (hostapd_set_iface_flags(drv, drv->iface, 0))
+		return -1;
+
+	if (bssid) {
+		os_strlcpy(ifr.ifr_name, drv->iface, IFNAMSIZ);
+		memcpy(ifr.ifr_hwaddr.sa_data, bssid, ETH_ALEN);
+		ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+
+		if (ioctl(drv->ioctl_sock, SIOCSIFHWADDR, &ifr)) {
+			perror("ioctl(SIOCSIFHWADDR)");
+			return -1;
+		}
 	}
 
 	/*
@@ -1552,9 +1582,10 @@ static int i802_init_sockets(struct i802_driver_data *drv)
 
 	if (ioctl(drv->ioctl_sock, SIOCSIWMODE, &iwr) < 0) {
 		perror("ioctl[SIOCSIWMODE]");
+		return -1;
 	}
 
-	if (hostapd_set_iface_flags(drv, 1))
+	if (hostapd_set_iface_flags(drv, drv->iface, 1))
 		return -1;
 
 	memset(&addr, 0, sizeof(addr));
@@ -1912,7 +1943,7 @@ static int i802_sta_disassoc(void *priv, const u8 *addr, int reason)
 }
 
 
-static void * i802_init(struct hostapd_data *hapd)
+static void *i802_init_bssid(struct hostapd_data *hapd, const u8 *bssid)
 {
 	struct i802_driver_data *drv;
 
@@ -1925,7 +1956,7 @@ static void * i802_init(struct hostapd_data *hapd)
 	drv->hapd = hapd;
 	memcpy(drv->iface, hapd->conf->iface, sizeof(drv->iface));
 
-	if (i802_init_sockets(drv))
+	if (i802_init_sockets(drv, bssid))
 		goto failed;
 
 	return drv;
@@ -1936,6 +1967,12 @@ failed:
 }
 
 
+static void *i802_init(struct hostapd_data *hapd)
+{
+	return i802_init_bssid(hapd, NULL);
+}
+
+
 static void i802_deinit(void *priv)
 {
 	struct i802_driver_data *drv = priv;
@@ -1943,7 +1980,7 @@ static void i802_deinit(void *priv)
 	/* Disable management interface */
 	(void) hostap_ioctl_prism2param(drv, PRISM2_PARAM_MGMT_IF, 0);
 
-	(void) hostapd_set_iface_flags(drv, 0);
+	(void) hostapd_set_iface_flags(drv, drv->iface, 0);
 
 	if (drv->sock >= 0) {
 		eloop_unregister_read_sock(drv->sock);
@@ -1963,6 +2000,7 @@ static void i802_deinit(void *priv)
 const struct wpa_driver_ops wpa_driver_devicescape_ops = {
 	.name = "devicescape",
 	.init = i802_init,
+	.init_bssid = i802_init_bssid,
 	.deinit = i802_deinit,
 	.wireless_event_init = i802_wireless_event_init,
 	.wireless_event_deinit = i802_wireless_event_deinit,

@@ -18,7 +18,7 @@
 #include "eloop.h"
 #include "wpa.h"
 #include "config.h"
-#include "eapol_sm.h"
+#include "eapol_supp/eapol_supp_sm.h"
 #include "wpa_supplicant_i.h"
 #include "ctrl_iface.h"
 #include "l2_packet/l2_packet.h"
@@ -828,6 +828,7 @@ static int wpa_supplicant_ctrl_iface_get_network(
 }
 
 
+#ifndef CONFIG_NO_CONFIG_WRITE
 static int wpa_supplicant_ctrl_iface_save_config(struct wpa_supplicant *wpa_s)
 {
 	int ret;
@@ -849,6 +850,7 @@ static int wpa_supplicant_ctrl_iface_save_config(struct wpa_supplicant *wpa_s)
 
 	return ret;
 }
+#endif /* CONFIG_NO_CONFIG_WRITE */
 
 
 static int ctrl_iface_get_capability_pairwise(int res, char *strict,
@@ -1293,9 +1295,11 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 	} else if (os_strncmp(buf, "GET_NETWORK ", 12) == 0) {
 		reply_len = wpa_supplicant_ctrl_iface_get_network(
 			wpa_s, buf + 12, reply, reply_size);
+#ifndef CONFIG_NO_CONFIG_WRITE
 	} else if (os_strcmp(buf, "SAVE_CONFIG") == 0) {
 		if (wpa_supplicant_ctrl_iface_save_config(wpa_s))
 			reply_len = -1;
+#endif /* CONFIG_NO_CONFIG_WRITE */
 	} else if (os_strncmp(buf, "GET_CAPABILITY ", 15) == 0) {
 		reply_len = wpa_supplicant_ctrl_iface_get_capability(
 			wpa_s, buf + 15, reply, reply_size);

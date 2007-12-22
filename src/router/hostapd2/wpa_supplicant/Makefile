@@ -2,17 +2,17 @@ ifndef CC
 CC=gcc
 endif
 
-ifndef CFLAGS
 CFLAGS = -MMD $(COPTS) -Wall 
-endif
 CFLAGS += -I. -ffunction-sections -fdata-sections -Wl,--gc-sections
+
+CFLAGS += -I.
 CFLAGS += -I../src
 CFLAGS += -I../src/crypto
 CFLAGS += -I../src/utils
 CFLAGS += -I../src/common
 CFLAGS += -I../src/rsn_supp
-LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
-ALL=wpa_supplicant wpa_passphrase wpa_cli
+
+ALL=wpa_supplicant
 
 all: verify_config $(ALL) dynamic_eap_methods
 
@@ -34,13 +34,14 @@ mkconfig:
 	echo CONFIG_DRIVER_WEXT=y >> .config
 	echo CONFIG_WIRELESS_EXTENSION=y >> .config
 
-install:
+install: all
 	mkdir -p $(DESTDIR)/usr/local/sbin/
 	for i in $(ALL); do cp $$i $(DESTDIR)/usr/local/sbin/$$i; done
 
 OBJS = config.o
 OBJS += ../src/utils/common.o
 OBJS += ../src/utils/wpa_debug.o
+OBJS += ../src/utils/wpabuf.o
 OBJS += ../src/crypto/md5.o
 OBJS += ../src/crypto/rc4.o
 OBJS += ../src/crypto/md4.o
@@ -89,7 +90,9 @@ endif
 
 ifeq ($(CONFIG_BACKEND), file)
 OBJS += config_file.o
+ifndef CONFIG_NO_CONFIG_BLOBS
 NEED_BASE64=y
+endif
 CFLAGS += -DCONFIG_BACKEND_FILE
 endif
 
@@ -99,6 +102,18 @@ endif
 
 ifeq ($(CONFIG_BACKEND), none)
 OBJS += config_none.o
+endif
+
+ifdef CONFIG_NO_CONFIG_WRITE
+CFLAGS += -DCONFIG_NO_CONFIG_WRITE
+endif
+
+ifdef CONFIG_NO_CONFIG_BLOBS
+CFLAGS += -DCONFIG_NO_CONFIG_BLOBS
+endif
+
+ifdef CONFIG_NO_SCAN_PROCESSING
+CFLAGS += -DCONFIG_NO_SCAN_PROCESSING
 endif
 
 ifdef CONFIG_DRIVER_HOSTAP
@@ -186,6 +201,20 @@ endif
 ifdef CONFIG_DRIVER_TEST
 CFLAGS += -DCONFIG_DRIVER_TEST
 OBJS_d += ../src/drivers/driver_test.o
+endif
+
+ifdef CONFIG_DRIVER_OSX
+CFLAGS += -DCONFIG_DRIVER_OSX
+OBJS_d += ../src/drivers/driver_osx.o
+LDFLAGS += -framework CoreFoundation
+LDFLAGS += -F/System/Library/PrivateFrameworks -framework Apple80211
+endif
+
+ifdef CONFIG_DRIVER_IPHONE
+CFLAGS += -DCONFIG_DRIVER_IPHONE
+OBJS_d += ../src/drivers/driver_iphone.o
+OBJS_d += ../src/drivers/MobileApple80211.o
+LIBS += -framework CoreFoundation
 endif
 
 ifndef CONFIG_L2_PACKET
@@ -375,6 +404,7 @@ ifdef CONFIG_EAP_SIM_COMMON
 OBJS += ../src/eap_common/eap_sim_common.o
 OBJS_h += ../src/eap_server/eap_sim_db.o
 NEED_AES=y
+NEED_FIPS186_2_PRF=y
 endif
 
 ifdef CONFIG_EAP_TLV
@@ -395,6 +425,7 @@ OBJS += ../src/eap_peer/eap_fast.o ../src/eap_peer/eap_fast_pac.o
 OBJS_h += ../src/eap_server/eap_fast.o
 endif
 TLS_FUNCS=y
+NEED_T_PRF=y
 endif
 
 ifdef CONFIG_EAP_PAX
@@ -440,6 +471,19 @@ endif
 NEED_SHA256=y
 endif
 
+ifdef CONFIG_EAP_WSC
+# EAP-WSC
+ifeq ($(CONFIG_EAP_WSC), dyn)
+CFLAGS += -DEAP_WSC_DYNAMIC
+EAPDYN += ../src/eap_peer/eap_wsc.so
+else
+CFLAGS += -DEAP_WSC
+OBJS += ../src/eap_peer/eap_wsc.o ../src/eap_common/eap_wsc_common.o
+OBJS_h += ../src/eap_server/eap_wsc.o
+endif
+CONFIG_IEEE8021X_EAPOL=y
+endif
+
 ifdef CONFIG_EAP_VENDOR_TEST
 ifeq ($(CONFIG_EAP_VENDOR_TEST), dyn)
 CFLAGS += -DEAP_VENDOR_TEST_DYNAMIC
@@ -463,7 +507,7 @@ endif
 ifdef CONFIG_IEEE8021X_EAPOL
 # IEEE 802.1X/EAPOL state machines (e.g., for RADIUS authentication)
 CFLAGS += -DIEEE8021X_EAPOL
-OBJS += eapol_sm.o ../src/eap_peer/eap.o ../src/eap_common/eap_common.o ../src/eap_peer/eap_methods.o
+OBJS += ../src/eapol_supp/eapol_supp_sm.o ../src/eap_peer/eap.o ../src/eap_common/eap_common.o ../src/eap_peer/eap_methods.o
 ifdef CONFIG_DYNAMIC_EAP_METHODS
 CFLAGS += -DCONFIG_DYNAMIC_EAP_METHODS
 LIBS += -ldl -rdynamic
@@ -535,6 +579,7 @@ ifdef TLS_FUNCS
 CFLAGS += -DEAP_TLS_FUNCS
 OBJS += ../src/eap_peer/eap_tls_common.o
 OBJS_h += ../src/eap_server/eap_tls_common.o
+NEED_TLS_PRF=y
 ifeq ($(CONFIG_TLS), openssl)
 CFLAGS += -DEAP_TLS_OPENSSL
 OBJS += ../src/crypto/tls_openssl.o
@@ -562,6 +607,7 @@ OBJS += ../src/tls/asn1.o ../src/tls/x509v3.o
 OBJS_p += ../src/tls/asn1.o
 OBJS_p += ../src/crypto/rc4.o ../src/crypto/aes_wrap.o ../src/crypto/aes.o
 NEED_BASE64=y
+NEED_TLS_PRF=y
 CFLAGS += -DCONFIG_TLS_INTERNAL
 CFLAGS += -DCONFIG_TLS_INTERNAL_CLIENT
 ifeq ($(CONFIG_CRYPTO), internal)
@@ -742,6 +788,17 @@ LIBS += $(DBUS_LIBS)
 ifndef DBUS_INCLUDE
 DBUS_INCLUDE := $(shell pkg-config --cflags dbus-1)
 endif
+dbus_version=$(subst ., ,$(shell pkg-config --modversion dbus-1))
+DBUS_VERSION_MAJOR=$(word 1,$(dbus_version))
+DBUS_VERSION_MINOR=$(word 2,$(dbus_version))
+ifeq ($(DBUS_VERSION_MAJOR),)
+DBUS_VERSION_MAJOR=0
+endif
+ifeq ($(DBUS_VERSION_MINOR),)
+DBUS_VERSION_MINOR=0
+endif
+DBUS_INCLUDE += -DDBUS_VERSION_MAJOR=$(DBUS_VERSION_MAJOR)
+DBUS_INCLUDE += -DDBUS_VERSION_MINOR=$(DBUS_VERSION_MINOR)
 CFLAGS += $(DBUS_INCLUDE)
 endif
 
@@ -802,14 +859,32 @@ ifdef CONFIG_NO_WPA2
 CFLAGS += -DCONFIG_NO_WPA2
 endif
 
+ifdef CONFIG_NO_WPA_PASSPHRASE
+CFLAGS += -DCONFIG_NO_PBKDF2
+endif
+
 ifdef CONFIG_NO_AES_EXTRAS
 CFLAGS += -DCONFIG_NO_AES_WRAP
 CFLAGS += -DCONFIG_NO_AES_CTR -DCONFIG_NO_AES_OMAC1
 CFLAGS += -DCONFIG_NO_AES_EAX -DCONFIG_NO_AES_CBC
+CFLAGS += -DCONFIG_NO_AES_ENCRYPT
+CFLAGS += -DCONFIG_NO_AES_ENCRYPT_BLOCK
 endif
 
 ifdef NEED_AES
 OBJS += ../src/crypto/aes_wrap.o ../src/crypto/aes.o
+endif
+
+ifndef NEED_FIPS186_2_PRF
+CFLAGS += -DCONFIG_NO_FIPS186_2_PRF
+endif
+
+ifndef NEED_T_PRF
+CFLAGS += -DCONFIG_NO_T_PRF
+endif
+
+ifndef NEED_TLS_PRF
+CFLAGS += -DCONFIG_NO_TLS_PRF
 endif
 
 ifdef NEED_BASE64
@@ -825,12 +900,16 @@ ifndef CONFIG_MAIN
 CONFIG_MAIN=main
 endif
 
+ifdef CONFIG_DEBUG_FILE
+CFLAGS += -DCONFIG_DEBUG_FILE
+endif
+
 OBJS_wpa_rm := ctrl_iface.o mlme.o ctrl_iface_unix.o
 OBJS_wpa := $(filter-out $(OBJS_wpa_rm),$(OBJS)) $(OBJS_h) tests/test_wpa.o
 ifdef CONFIG_AUTHENTICATOR
 OBJS_wpa += tests/link_test.o
 endif
-OBJS += wpa_supplicant.o events.o
+OBJS += wpa_supplicant.o events.o blacklist.o wpas_glue.o scan.o
 OBJS_t := $(OBJS) eapol_test.o ../src/radius/radius.o ../src/radius/radius_client.o
 OBJS_t += ../src/utils/ip_addr.o
 OBJS_t2 := $(OBJS) preauth_test.o
@@ -904,6 +983,10 @@ eap_pax.so: ../src/eap_peer/eap_pax.c ../src/eap_common/eap_pax_common.c
 eap_sake.so: ../src/eap_peer/eap_sake.c ../src/eap_common/eap_sake_common.c
 	$(CC) -o $@ $(CFLAGS) -shared -rdynamic -fPIC $^ \
 		-Deap_peer_sake_register=eap_peer_method_dynamic_init
+
+eap_wsc.so: ../src/eap_peer/eap_wsc.c ../src/eap_common/eap_wsc_common.c
+	$(CC) -o $@ $(CFLAGS) -shared -rdynamic -fPIC $^ \
+		-Deap_peer_wsc_register=eap_peer_method_dynamic_init
 
 %.so: %.c
 	$(CC) -o $@ $(CFLAGS) -shared -rdynamic -fPIC $< \
@@ -994,7 +1077,7 @@ clean:
 docs-pics: doc/wpa_supplicant.png doc/wpa_supplicant.eps
 
 docs: docs-pics
-	doxygen doc/doxygen.full
+	(cd ..; doxygen wpa_supplicant/doc/doxygen.full; cd wpa_supplicant)
 	$(MAKE) -C doc/latex
 	cp doc/latex/refman.pdf wpa_supplicant-devel.pdf
 

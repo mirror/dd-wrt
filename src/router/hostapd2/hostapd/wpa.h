@@ -15,6 +15,7 @@
 #ifndef WPA_AUTH_H
 #define WPA_AUTH_H
 
+#include "eapol_common.h"
 #include "wpa_common.h"
 
 #ifdef _MSC_VER

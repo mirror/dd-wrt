@@ -69,7 +69,8 @@ typedef enum {
 
 /* SMI Network Management Private Enterprise Code for vendor specific types */
 enum {
-	EAP_VENDOR_IETF = 0
+	EAP_VENDOR_IETF = 0,
+	EAP_VENDOR_WFA = 0x00372A /* Wi-Fi Alliance */
 };
 
 #define EAP_MSK_LEN 64

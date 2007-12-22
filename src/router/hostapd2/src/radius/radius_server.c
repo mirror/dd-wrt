@@ -50,10 +50,7 @@ struct radius_session {
 	struct radius_server_data *server;
 	unsigned int sess_id;
 	struct eap_sm *eap;
-	u8 *eapKeyData, *eapReqData;
-	size_t eapKeyDataLen, eapReqDataLen;
-	Boolean eapSuccess, eapRestart, eapFail, eapResp, eapReq, eapNoReq;
-	Boolean portEnabled, eapTimeout;
+	struct eap_eapol_interface *eap_if;
 
 	struct radius_msg *last_msg;
 	char *last_from_addr;
@@ -89,6 +86,7 @@ struct radius_server_data {
 	void *ssl_ctx;
 	u8 *pac_opaque_encr_key;
 	char *eap_fast_a_id;
+	int eap_sim_aka_result_ind;
 	int ipv6;
 	struct os_time start_time;
 	struct radius_server_counters counters;
@@ -172,19 +170,17 @@ static void radius_server_session_free(struct radius_server_data *data,
 				       struct radius_session *sess)
 {
 	eloop_cancel_timeout(radius_server_session_timeout, data, sess);
-	free(sess->eapKeyData);
-	free(sess->eapReqData);
 	eap_server_sm_deinit(sess->eap);
 	if (sess->last_msg) {
 		radius_msg_free(sess->last_msg);
-		free(sess->last_msg);
+		os_free(sess->last_msg);
 	}
-	free(sess->last_from_addr);
+	os_free(sess->last_from_addr);
 	if (sess->last_reply) {
 		radius_msg_free(sess->last_reply);
-		free(sess->last_reply);
+		os_free(sess->last_reply);
 	}
-	free(sess);
+	os_free(sess);
 	data->num_sess--;
 }
 
@@ -279,21 +275,21 @@ radius_server_get_new_session(struct radius_server_data *data,
 
 	RADIUS_DEBUG("Creating a new session");
 
-	user = malloc(256);
+	user = os_malloc(256);
 	if (user == NULL) {
 		return NULL;
 	}
 	res = radius_msg_get_attr(msg, RADIUS_ATTR_USER_NAME, user, 256);
 	if (res < 0 || res > 256) {
 		RADIUS_DEBUG("Could not get User-Name");
-		free(user);
+		os_free(user);
 		return NULL;
 	}
 	user_len = res;
 	RADIUS_DUMP_ASCII("User-Name", user, user_len);
 
 	res = data->get_eap_user(data->conf_ctx, user, user_len, 0, NULL);
-	free(user);
+	os_free(user);
 
 	if (res == 0) {
 		RADIUS_DEBUG("Matching user entry found");
@@ -307,12 +303,14 @@ radius_server_get_new_session(struct radius_server_data *data,
 		return NULL;
 	}
 
-	memset(&eap_conf, 0, sizeof(eap_conf));
+	os_memset(&eap_conf, 0, sizeof(eap_conf));
 	eap_conf.ssl_ctx = data->ssl_ctx;
 	eap_conf.eap_sim_db_priv = data->eap_sim_db_priv;
 	eap_conf.backend_auth = TRUE;
+	eap_conf.eap_server = 1;
 	eap_conf.pac_opaque_encr_key = data->pac_opaque_encr_key;
 	eap_conf.eap_fast_a_id = data->eap_fast_a_id;
+	eap_conf.eap_sim_aka_result_ind = data->eap_sim_aka_result_ind;
 	sess->eap = eap_server_sm_init(sess, &radius_server_eapol_cb,
 				       &eap_conf);
 	if (sess->eap == NULL) {
@@ -321,8 +319,9 @@ radius_server_get_new_session(struct radius_server_data *data,
 		radius_server_session_free(data, sess);
 		return NULL;
 	}
-	sess->eapRestart = TRUE;
-	sess->portEnabled = TRUE;
+	sess->eap_if = eap_get_interface(sess->eap);
+	sess->eap_if->eapRestart = TRUE;
+	sess->eap_if->portEnabled = TRUE;
 
 	RADIUS_DEBUG("New session 0x%x initialized", sess->sess_id);
 
@@ -340,11 +339,14 @@ radius_server_encapsulate_eap(struct radius_server_data *data,
 	int code;
 	unsigned int sess_id;
 
-	if (sess->eapFail) {
+	if (sess->eap_if->eapFail) {
+		sess->eap_if->eapFail = FALSE;
 		code = RADIUS_CODE_ACCESS_REJECT;
-	} else if (sess->eapSuccess) {
+	} else if (sess->eap_if->eapSuccess) {
+		sess->eap_if->eapSuccess = FALSE;
 		code = RADIUS_CODE_ACCESS_ACCEPT;
 	} else {
+		sess->eap_if->eapReq = FALSE;
 		code = RADIUS_CODE_ACCESS_CHALLENGE;
 	}
 
@@ -361,23 +363,25 @@ radius_server_encapsulate_eap(struct radius_server_data *data,
 		RADIUS_DEBUG("Failed to add State attribute");
 	}
 
-	if (sess->eapReqData &&
-	    !radius_msg_add_eap(msg, sess->eapReqData, sess->eapReqDataLen)) {
+	if (sess->eap_if->eapReqData &&
+	    !radius_msg_add_eap(msg, wpabuf_head(sess->eap_if->eapReqData),
+				wpabuf_len(sess->eap_if->eapReqData))) {
 		RADIUS_DEBUG("Failed to add EAP-Message attribute");
 	}
 
-	if (code == RADIUS_CODE_ACCESS_ACCEPT && sess->eapKeyData) {
+	if (code == RADIUS_CODE_ACCESS_ACCEPT && sess->eap_if->eapKeyData) {
 		int len;
-		if (sess->eapKeyDataLen > 64) {
+		if (sess->eap_if->eapKeyDataLen > 64) {
 			len = 32;
 		} else {
-			len = sess->eapKeyDataLen / 2;
+			len = sess->eap_if->eapKeyDataLen / 2;
 		}
 		if (!radius_msg_add_mppe_keys(msg, request->hdr->authenticator,
 					      (u8 *) client->shared_secret,
 					      client->shared_secret_len,
-					      sess->eapKeyData + len, len,
-					      sess->eapKeyData, len)) {
+					      sess->eap_if->eapKeyData + len,
+					      len, sess->eap_if->eapKeyData,
+					      len)) {
 			RADIUS_DEBUG("Failed to add MPPE key attributes");
 		}
 	}
@@ -411,7 +415,7 @@ static int radius_server_reject(struct radius_server_data *data,
 		return -1;
 	}
 
-	memset(&eapfail, 0, sizeof(eapfail));
+	os_memset(&eapfail, 0, sizeof(eapfail));
 	eapfail.code = EAP_CODE_FAILURE;
 	eapfail.identifier = 0;
 	eapfail.length = host_to_be16(sizeof(eapfail));
@@ -440,7 +444,7 @@ static int radius_server_reject(struct radius_server_data *data,
 	}
 
 	radius_msg_free(msg);
-	free(msg);
+	os_free(msg);
 
 	return ret;
 }
@@ -456,11 +460,10 @@ static int radius_server_request(struct radius_server_data *data,
 	u8 *eap = NULL;
 	size_t eap_len;
 	int res, state_included = 0;
-	u8 statebuf[4], resp_id;
+	u8 statebuf[4];
 	unsigned int state;
 	struct radius_session *sess;
 	struct radius_msg *reply;
-	struct eap_hdr *hdr;
 
 	if (force_sess)
 		sess = force_sess;
@@ -526,12 +529,6 @@ static int radius_server_request(struct radius_server_data *data,
 	}
 
 	RADIUS_DUMP("Received EAP data", eap, eap_len);
-	if (eap_len >= sizeof(*hdr)) {
-		hdr = (struct eap_hdr *) eap;
-		resp_id = hdr->identifier;
-	} else {
-		resp_id = 0;
-	}
 
 	/* FIX: if Code is Request, Success, or Failure, send Access-Reject;
 	 * RFC3579 Sect. 2.6.2.
@@ -540,36 +537,33 @@ static int radius_server_request(struct radius_server_data *data,
 	 * If code is not 1-4, discard the packet silently.
 	 * Or is this already done by the EAP state machine? */
 
-	eap_set_eapRespData(sess->eap, eap, eap_len);
-	free(eap);
+	wpabuf_free(sess->eap_if->eapRespData);
+	sess->eap_if->eapRespData = wpabuf_alloc_ext_data(eap, eap_len);
+	if (sess->eap_if->eapRespData == NULL)
+		os_free(eap);
 	eap = NULL;
-	sess->eapResp = TRUE;
+	sess->eap_if->eapResp = TRUE;
 	eap_server_sm_step(sess->eap);
 
-	if (sess->eapReqData) {
+	if ((sess->eap_if->eapReq || sess->eap_if->eapSuccess ||
+	     sess->eap_if->eapFail) && sess->eap_if->eapReqData) {
 		RADIUS_DUMP("EAP data from the state machine",
-			    sess->eapReqData, sess->eapReqDataLen);
-	} else if (sess->eapFail) {
+			    wpabuf_head(sess->eap_if->eapReqData),
+			    wpabuf_len(sess->eap_if->eapReqData));
+	} else if (sess->eap_if->eapFail) {
 		RADIUS_DEBUG("No EAP data from the state machine, but eapFail "
-			     "set - generate EAP-Failure");
-		hdr = os_zalloc(sizeof(*hdr));
-		if (hdr) {
-			hdr->identifier = resp_id;
-			hdr->length = host_to_be16(sizeof(*hdr));
-			sess->eapReqData = (u8 *) hdr;
-			sess->eapReqDataLen = sizeof(*hdr);
-		}
+			     "set");
 	} else if (eap_sm_method_pending(sess->eap)) {
 		if (sess->last_msg) {
 			radius_msg_free(sess->last_msg);
-			free(sess->last_msg);
+			os_free(sess->last_msg);
 		}
 		sess->last_msg = msg;
 		sess->last_from_port = from_port;
-		free(sess->last_from_addr);
-		sess->last_from_addr = strdup(from_addr);
+		os_free(sess->last_from_addr);
+		sess->last_from_addr = os_strdup(from_addr);
 		sess->last_fromlen = fromlen;
-		memcpy(&sess->last_from, from, fromlen);
+		os_memcpy(&sess->last_from, from, fromlen);
 		return -2;
 	} else {
 		RADIUS_DEBUG("No EAP data from the state machine - ignore this"
@@ -581,10 +575,6 @@ static int radius_server_request(struct radius_server_data *data,
 	}
 
 	reply = radius_server_encapsulate_eap(data, client, sess, msg);
-
-	free(sess->eapReqData);
-	sess->eapReqData = NULL;
-	sess->eapReqDataLen = 0;
 
 	if (reply) {
 		RADIUS_DEBUG("Reply to %s:%d", from_addr, from_port);
@@ -613,7 +603,7 @@ static int radius_server_request(struct radius_server_data *data,
 		}
 		if (sess->last_reply) {
 			radius_msg_free(sess->last_reply);
-			free(sess->last_reply);
+			os_free(sess->last_reply);
 		}
 		sess->last_reply = reply;
 		sess->last_from_port = from_port;
@@ -625,7 +615,7 @@ static int radius_server_request(struct radius_server_data *data,
 		client->counters.packets_dropped++;
 	}
 
-	if (sess->eapSuccess || sess->eapFail) {
+	if (sess->eap_if->eapSuccess || sess->eap_if->eapFail) {
 		RADIUS_DEBUG("Removing completed session 0x%x after timeout",
 			     sess->sess_id);
 		eloop_cancel_timeout(radius_server_session_remove_timeout,
@@ -652,7 +642,7 @@ static void radius_server_receive_auth(int sock, void *eloop_ctx,
 	char abuf[50];
 	int from_port = 0;
 
-	buf = malloc(RADIUS_MAX_MSG_LEN);
+	buf = os_malloc(RADIUS_MAX_MSG_LEN);
 	if (buf == NULL) {
 		goto fail;
 	}
@@ -707,7 +697,7 @@ static void radius_server_receive_auth(int sock, void *eloop_ctx,
 		goto fail;
 	}
 
-	free(buf);
+	os_free(buf);
 	buf = NULL;
 
 	if (wpa_debug_level <= MSG_MSGDUMP) {
@@ -740,9 +730,9 @@ static void radius_server_receive_auth(int sock, void *eloop_ctx,
 fail:
 	if (msg) {
 		radius_msg_free(msg);
-		free(msg);
+		os_free(msg);
 	}
-	free(buf);
+	os_free(buf);
 }
 
 
@@ -757,7 +747,7 @@ static int radius_server_open_socket(int port)
 		return -1;
 	}
 
-	memset(&addr, 0, sizeof(addr));
+	os_memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
 	if (bind(s, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
@@ -782,9 +772,9 @@ static int radius_server_open_socket6(int port)
 		return -1;
 	}
 
-	memset(&addr, 0, sizeof(addr));
+	os_memset(&addr, 0, sizeof(addr));
 	addr.sin6_family = AF_INET6;
-	memcpy(&addr.sin6_addr, &in6addr_any, sizeof(in6addr_any));
+	os_memcpy(&addr.sin6_addr, &in6addr_any, sizeof(in6addr_any));
 	addr.sin6_port = htons(port);
 	if (bind(s, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
 		perror("bind");
@@ -822,8 +812,8 @@ static void radius_server_free_clients(struct radius_server_data *data,
 		client = client->next;
 
 		radius_server_free_sessions(data, prev->sessions);
-		free(prev->shared_secret);
-		free(prev);
+		os_free(prev->shared_secret);
+		os_free(prev);
 	}
 }
 
@@ -848,7 +838,7 @@ radius_server_read_clients(const char *client_file, int ipv6)
 		return NULL;
 	}
 
-	buf = malloc(buf_size);
+	buf = os_malloc(buf_size);
 	if (buf == NULL) {
 		fclose(f);
 		return NULL;
@@ -911,10 +901,11 @@ radius_server_read_clients(const char *client_file, int ipv6)
 			/* Convert IPv4 address to IPv6 */
 			if (mask <= 32)
 				mask += (128 - 32);
-			memset(addr6.s6_addr, 0, 10);
+			os_memset(addr6.s6_addr, 0, 10);
 			addr6.s6_addr[10] = 0xff;
 			addr6.s6_addr[11] = 0xff;
-			memcpy(addr6.s6_addr + 12, (char *) &addr.s_addr, 4);
+			os_memcpy(addr6.s6_addr + 12, (char *) &addr.s_addr,
+				  4);
 		}
 #endif /* CONFIG_IPV6 */
 
@@ -932,13 +923,13 @@ radius_server_read_clients(const char *client_file, int ipv6)
 			failed = 1;
 			break;
 		}
-		entry->shared_secret = strdup(pos);
+		entry->shared_secret = os_strdup(pos);
 		if (entry->shared_secret == NULL) {
 			failed = 1;
-			free(entry);
+			os_free(entry);
 			break;
 		}
-		entry->shared_secret_len = strlen(entry->shared_secret);
+		entry->shared_secret_len = os_strlen(entry->shared_secret);
 		entry->addr.s_addr = addr.s_addr;
 		if (!ipv6) {
 			val = 0;
@@ -950,8 +941,8 @@ radius_server_read_clients(const char *client_file, int ipv6)
 		if (ipv6) {
 			int offset = mask / 8;
 
-			memcpy(entry->addr6.s6_addr, addr6.s6_addr, 16);
-			memset(entry->mask6.s6_addr, 0xff, offset);
+			os_memcpy(entry->addr6.s6_addr, addr6.s6_addr, 16);
+			os_memset(entry->mask6.s6_addr, 0xff, offset);
 			val = 0;
 			for (i = 0; i < (mask % 8); i++)
 				val |= 1 << (7 - i);
@@ -974,7 +965,7 @@ radius_server_read_clients(const char *client_file, int ipv6)
 		clients = NULL;
 	}
 
-	free(buf);
+	os_free(buf);
 	fclose(f);
 
 	return clients;
@@ -1011,6 +1002,7 @@ radius_server_init(struct radius_server_conf *conf)
 	if (conf->eap_fast_a_id)
 		data->eap_fast_a_id = os_strdup(conf->eap_fast_a_id);
 	data->get_eap_user = conf->get_eap_user;
+	data->eap_sim_aka_result_ind = conf->eap_sim_aka_result_ind;
 
 	data->clients = radius_server_read_clients(conf->client_file,
 						   conf->ipv6);
@@ -1055,7 +1047,9 @@ void radius_server_deinit(struct radius_server_data *data)
 
 	radius_server_free_clients(data, data->clients);
 
-	free(data);
+	os_free(data->pac_opaque_encr_key);
+	os_free(data->eap_fast_a_id);
+	os_free(data);
 }
 
 
@@ -1079,40 +1073,40 @@ int radius_server_get_mib(struct radius_server_data *data, char *buf,
 	os_get_time(&now);
 	uptime = (now.sec - data->start_time.sec) * 100 +
 		((now.usec - data->start_time.usec) / 10000) % 100;
-	ret = snprintf(pos, end - pos,
-		       "RADIUS-AUTH-SERVER-MIB\n"
-		       "radiusAuthServIdent=hostapd\n"
-		       "radiusAuthServUpTime=%d\n"
-		       "radiusAuthServResetTime=0\n"
-		       "radiusAuthServConfigReset=4\n",
-		       uptime);
+	ret = os_snprintf(pos, end - pos,
+			  "RADIUS-AUTH-SERVER-MIB\n"
+			  "radiusAuthServIdent=hostapd\n"
+			  "radiusAuthServUpTime=%d\n"
+			  "radiusAuthServResetTime=0\n"
+			  "radiusAuthServConfigReset=4\n",
+			  uptime);
 	if (ret < 0 || ret >= end - pos) {
 		*pos = '\0';
 		return pos - buf;
 	}
 	pos += ret;
 
-	ret = snprintf(pos, end - pos,
-		       "radiusAuthServTotalAccessRequests=%u\n"
-		       "radiusAuthServTotalInvalidRequests=%u\n"
-		       "radiusAuthServTotalDupAccessRequests=%u\n"
-		       "radiusAuthServTotalAccessAccepts=%u\n"
-		       "radiusAuthServTotalAccessRejects=%u\n"
-		       "radiusAuthServTotalAccessChallenges=%u\n"
-		       "radiusAuthServTotalMalformedAccessRequests=%u\n"
-		       "radiusAuthServTotalBadAuthenticators=%u\n"
-		       "radiusAuthServTotalPacketsDropped=%u\n"
-		       "radiusAuthServTotalUnknownTypes=%u\n",
-		       data->counters.access_requests,
-		       data->counters.invalid_requests,
-		       data->counters.dup_access_requests,
-		       data->counters.access_accepts,
-		       data->counters.access_rejects,
-		       data->counters.access_challenges,
-		       data->counters.malformed_access_requests,
-		       data->counters.bad_authenticators,
-		       data->counters.packets_dropped,
-		       data->counters.unknown_types);
+	ret = os_snprintf(pos, end - pos,
+			  "radiusAuthServTotalAccessRequests=%u\n"
+			  "radiusAuthServTotalInvalidRequests=%u\n"
+			  "radiusAuthServTotalDupAccessRequests=%u\n"
+			  "radiusAuthServTotalAccessAccepts=%u\n"
+			  "radiusAuthServTotalAccessRejects=%u\n"
+			  "radiusAuthServTotalAccessChallenges=%u\n"
+			  "radiusAuthServTotalMalformedAccessRequests=%u\n"
+			  "radiusAuthServTotalBadAuthenticators=%u\n"
+			  "radiusAuthServTotalPacketsDropped=%u\n"
+			  "radiusAuthServTotalUnknownTypes=%u\n",
+			  data->counters.access_requests,
+			  data->counters.invalid_requests,
+			  data->counters.dup_access_requests,
+			  data->counters.access_accepts,
+			  data->counters.access_rejects,
+			  data->counters.access_challenges,
+			  data->counters.malformed_access_requests,
+			  data->counters.bad_authenticators,
+			  data->counters.packets_dropped,
+			  data->counters.unknown_types);
 	if (ret < 0 || ret >= end - pos) {
 		*pos = '\0';
 		return pos - buf;
@@ -1136,29 +1130,29 @@ int radius_server_get_mib(struct radius_server_data *data, char *buf,
 			os_strlcpy(mbuf, inet_ntoa(cli->mask), sizeof(mbuf));
 		}
 
-		ret = snprintf(pos, end - pos,
-			       "radiusAuthClientIndex=%u\n"
-			       "radiusAuthClientAddress=%s/%s\n"
-			       "radiusAuthServAccessRequests=%u\n"
-			       "radiusAuthServDupAccessRequests=%u\n"
-			       "radiusAuthServAccessAccepts=%u\n"
-			       "radiusAuthServAccessRejects=%u\n"
-			       "radiusAuthServAccessChallenges=%u\n"
-			       "radiusAuthServMalformedAccessRequests=%u\n"
-			       "radiusAuthServBadAuthenticators=%u\n"
-			       "radiusAuthServPacketsDropped=%u\n"
-			       "radiusAuthServUnknownTypes=%u\n",
-			       idx,
-			       abuf, mbuf,
-			       cli->counters.access_requests,
-			       cli->counters.dup_access_requests,
-			       cli->counters.access_accepts,
-			       cli->counters.access_rejects,
-			       cli->counters.access_challenges,
-			       cli->counters.malformed_access_requests,
-			       cli->counters.bad_authenticators,
-			       cli->counters.packets_dropped,
-			       cli->counters.unknown_types);
+		ret = os_snprintf(pos, end - pos,
+				  "radiusAuthClientIndex=%u\n"
+				  "radiusAuthClientAddress=%s/%s\n"
+				  "radiusAuthServAccessRequests=%u\n"
+				  "radiusAuthServDupAccessRequests=%u\n"
+				  "radiusAuthServAccessAccepts=%u\n"
+				  "radiusAuthServAccessRejects=%u\n"
+				  "radiusAuthServAccessChallenges=%u\n"
+				  "radiusAuthServMalformedAccessRequests=%u\n"
+				  "radiusAuthServBadAuthenticators=%u\n"
+				  "radiusAuthServPacketsDropped=%u\n"
+				  "radiusAuthServUnknownTypes=%u\n",
+				  idx,
+				  abuf, mbuf,
+				  cli->counters.access_requests,
+				  cli->counters.dup_access_requests,
+				  cli->counters.access_accepts,
+				  cli->counters.access_rejects,
+				  cli->counters.access_challenges,
+				  cli->counters.malformed_access_requests,
+				  cli->counters.bad_authenticators,
+				  cli->counters.packets_dropped,
+				  cli->counters.unknown_types);
 		if (ret < 0 || ret >= end - pos) {
 			*pos = '\0';
 			return pos - buf;
@@ -1167,110 +1161,6 @@ int radius_server_get_mib(struct radius_server_data *data, char *buf,
 	}
 
 	return pos - buf;
-}
-
-
-static Boolean radius_server_get_bool(void *ctx, enum eapol_bool_var variable)
-{
-	struct radius_session *sess = ctx;
-	if (sess == NULL)
-		return FALSE;
-	switch (variable) {
-	case EAPOL_eapSuccess:
-		return sess->eapSuccess;
-	case EAPOL_eapRestart:
-		return sess->eapRestart;
-	case EAPOL_eapFail:
-		return sess->eapFail;
-	case EAPOL_eapResp:
-		return sess->eapResp;
-	case EAPOL_eapReq:
-		return sess->eapReq;
-	case EAPOL_eapNoReq:
-		return sess->eapNoReq;
-	case EAPOL_portEnabled:
-		return sess->portEnabled;
-	case EAPOL_eapTimeout:
-		return sess->eapTimeout;
-	}
-	return FALSE;
-}
-
-
-static void radius_server_set_bool(void *ctx, enum eapol_bool_var variable,
-			      Boolean value)
-{
-	struct radius_session *sess = ctx;
-	if (sess == NULL)
-		return;
-	switch (variable) {
-	case EAPOL_eapSuccess:
-		sess->eapSuccess = value;
-		break;
-	case EAPOL_eapRestart:
-		sess->eapRestart = value;
-		break;
-	case EAPOL_eapFail:
-		sess->eapFail = value;
-		break;
-	case EAPOL_eapResp:
-		sess->eapResp = value;
-		break;
-	case EAPOL_eapReq:
-		sess->eapReq = value;
-		break;
-	case EAPOL_eapNoReq:
-		sess->eapNoReq = value;
-		break;
-	case EAPOL_portEnabled:
-		sess->portEnabled = value;
-		break;
-	case EAPOL_eapTimeout:
-		sess->eapTimeout = value;
-		break;
-	}
-}
-
-
-static void radius_server_set_eapReqData(void *ctx, const u8 *eapReqData,
-				    size_t eapReqDataLen)
-{
-	struct radius_session *sess = ctx;
-	if (sess == NULL)
-		return;
-
-	free(sess->eapReqData);
-	sess->eapReqData = malloc(eapReqDataLen);
-	if (sess->eapReqData) {
-		memcpy(sess->eapReqData, eapReqData, eapReqDataLen);
-		sess->eapReqDataLen = eapReqDataLen;
-	} else {
-		sess->eapReqDataLen = 0;
-	}
-}
-
-
-static void radius_server_set_eapKeyData(void *ctx, const u8 *eapKeyData,
-				    size_t eapKeyDataLen)
-{
-	struct radius_session *sess = ctx;
-
-	if (sess == NULL)
-		return;
-
-	free(sess->eapKeyData);
-	if (eapKeyData) {
-		sess->eapKeyData = malloc(eapKeyDataLen);
-		if (sess->eapKeyData) {
-			memcpy(sess->eapKeyData, eapKeyData, eapKeyDataLen);
-			sess->eapKeyDataLen = eapKeyDataLen;
-		} else {
-			sess->eapKeyDataLen = 0;
-		}
-	} else {
-		sess->eapKeyData = NULL;
-		sess->eapKeyDataLen = 0;
-	}
 }
 
 
@@ -1288,10 +1178,6 @@ static int radius_server_get_eap_user(void *ctx, const u8 *identity,
 
 static struct eapol_callbacks radius_server_eapol_cb =
 {
-	.get_bool = radius_server_get_bool,
-	.set_bool = radius_server_set_bool,
-	.set_eapReqData = radius_server_set_eapReqData,
-	.set_eapKeyData = radius_server_set_eapKeyData,
 	.get_eap_user = radius_server_get_eap_user,
 };
 
@@ -1334,5 +1220,5 @@ void radius_server_eap_pending_cb(struct radius_server_data *data, void *ctx)
 		return; /* msg was stored with the session */
 
 	radius_msg_free(msg);
-	free(msg);
+	os_free(msg);
 }

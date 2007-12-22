@@ -122,45 +122,41 @@ static void eap_sake_deinit(struct eap_sm *sm, void *priv)
 }
 
 
-static u8 * eap_sake_build_msg(struct eap_sake_data *data, u8 **payload,
-			       int id, size_t *length, u8 subtype)
+static struct wpabuf * eap_sake_build_msg(struct eap_sake_data *data,
+					  int id, size_t length, u8 subtype)
 {
-	struct eap_sake_hdr *req;
-	u8 *msg;
+	struct eap_sake_hdr *sake;
+	struct wpabuf *msg;
+	size_t plen;
 
-	*length += sizeof(struct eap_sake_hdr);
+	plen = length + sizeof(struct eap_sake_hdr);
 
-	msg = os_zalloc(*length);
+	msg = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_SAKE, plen,
+			    EAP_CODE_RESPONSE, id);
 	if (msg == NULL) {
 		wpa_printf(MSG_ERROR, "EAP-SAKE: Failed to allocate memory "
 			   "request");
 		return NULL;
 	}
 
-	req = (struct eap_sake_hdr *) msg;
-	req->code = EAP_CODE_RESPONSE;
-	req->identifier = id;
-	req->length = host_to_be16((u16) *length);
-	req->type = EAP_TYPE_SAKE;
-	req->version = EAP_SAKE_VERSION;
-	req->session_id = data->session_id;
-	req->subtype = subtype;
-	*payload = (u8 *) (req + 1);
+	sake = wpabuf_put(msg, sizeof(*sake));
+	sake->version = EAP_SAKE_VERSION;
+	sake->session_id = data->session_id;
+	sake->subtype = subtype;
 
 	return msg;
 }
 
 
-static u8 * eap_sake_process_identity(struct eap_sm *sm,
-				      struct eap_sake_data *data,
-				      struct eap_method_ret *ret,
-				      const u8 *reqData, size_t reqDataLen,
-				      const u8 *payload, size_t payload_len,
-				      size_t *respDataLen)
+static struct wpabuf * eap_sake_process_identity(struct eap_sm *sm,
+						 struct eap_sake_data *data,
+						 struct eap_method_ret *ret,
+						 const struct wpabuf *reqData,
+						 const u8 *payload,
+						 size_t payload_len)
 {
 	struct eap_sake_parse_attr attr;
-	u8 *resp, *rpos;
-	const struct eap_hdr *hdr = (const struct eap_hdr *) reqData;
+	struct wpabuf *resp;
 
 	if (data->state != IDENTITY) {
 		ret->ignore = TRUE;
@@ -180,17 +176,15 @@ static u8 * eap_sake_process_identity(struct eap_sm *sm,
 
 	wpa_printf(MSG_DEBUG, "EAP-SAKE: Sending Response/Identity");
 
-	*respDataLen = 2 + data->peerid_len;
-	resp = eap_sake_build_msg(data, &rpos, hdr->identifier, respDataLen,
+	resp = eap_sake_build_msg(data, eap_get_id(reqData),
+				  2 + data->peerid_len,
 				  EAP_SAKE_SUBTYPE_IDENTITY);
 	if (resp == NULL)
 		return NULL;
 
 	wpa_printf(MSG_DEBUG, "EAP-SAKE: * AT_PEERID");
-	*rpos++ = EAP_SAKE_AT_PEERID;
-	*rpos++ = 2 + data->peerid_len;
-	if (data->peerid)
-		os_memcpy(rpos, data->peerid, data->peerid_len);
+	eap_sake_add_attr(resp, EAP_SAKE_AT_PEERID,
+			  data->peerid, data->peerid_len);
 
 	eap_sake_state(data, CHALLENGE);
 
@@ -198,16 +192,17 @@ static u8 * eap_sake_process_identity(struct eap_sm *sm,
 }
 
 
-static u8 * eap_sake_process_challenge(struct eap_sm *sm,
-				       struct eap_sake_data *data,
-				       struct eap_method_ret *ret,
-				       const u8 *reqData, size_t reqDataLen,
-				       const u8 *payload, size_t payload_len,
-				       size_t *respDataLen)
+static struct wpabuf * eap_sake_process_challenge(struct eap_sm *sm,
+						  struct eap_sake_data *data,
+						  struct eap_method_ret *ret,
+						  const struct wpabuf *reqData,
+						  const u8 *payload,
+						  size_t payload_len)
 {
 	struct eap_sake_parse_attr attr;
-	u8 *resp, *rpos;
-	const struct eap_hdr *hdr = (const struct eap_hdr *) reqData;
+	struct wpabuf *resp;
+	u8 *rpos;
+	size_t rlen;
 
 	if (data->state != IDENTITY && data->state != CHALLENGE) {
 		wpa_printf(MSG_DEBUG, "EAP-SAKE: Request/Challenge received "
@@ -233,7 +228,7 @@ static u8 * eap_sake_process_challenge(struct eap_sm *sm,
 	wpa_hexdump(MSG_MSGDUMP, "EAP-SAKE: RAND_S (server rand)",
 		    data->rand_s, EAP_SAKE_RAND_LEN);
 
-	if (hostapd_get_rand(data->rand_p, EAP_SAKE_RAND_LEN)) {
+	if (os_get_random(data->rand_p, EAP_SAKE_RAND_LEN)) {
 		wpa_printf(MSG_ERROR, "EAP-SAKE: Failed to get random data");
 		return NULL;
 	}
@@ -259,37 +254,35 @@ static u8 * eap_sake_process_challenge(struct eap_sm *sm,
 
 	wpa_printf(MSG_DEBUG, "EAP-SAKE: Sending Response/Challenge");
 
-	*respDataLen = 2 + EAP_SAKE_RAND_LEN + 2 + EAP_SAKE_MIC_LEN;
+	rlen = 2 + EAP_SAKE_RAND_LEN + 2 + EAP_SAKE_MIC_LEN;
 	if (data->peerid)
-		*respDataLen += 2 + data->peerid_len;
-	resp = eap_sake_build_msg(data, &rpos, hdr->identifier, respDataLen,
+		rlen += 2 + data->peerid_len;
+	resp = eap_sake_build_msg(data, eap_get_id(reqData), rlen,
 				  EAP_SAKE_SUBTYPE_CHALLENGE);
 	if (resp == NULL)
 		return NULL;
 
 	wpa_printf(MSG_DEBUG, "EAP-SAKE: * AT_RAND_P");
-	*rpos++ = EAP_SAKE_AT_RAND_P;
-	*rpos++ = 2 + EAP_SAKE_RAND_LEN;
-	os_memcpy(rpos, data->rand_p, EAP_SAKE_RAND_LEN);
-	rpos += EAP_SAKE_RAND_LEN;
+	eap_sake_add_attr(resp, EAP_SAKE_AT_RAND_P,
+			  data->rand_p, EAP_SAKE_RAND_LEN);
 
 	if (data->peerid) {
 		wpa_printf(MSG_DEBUG, "EAP-SAKE: * AT_PEERID");
-		*rpos++ = EAP_SAKE_AT_PEERID;
-		*rpos++ = 2 + data->peerid_len;
-		os_memcpy(rpos, data->peerid, data->peerid_len);
-		rpos += data->peerid_len;
+		eap_sake_add_attr(resp, EAP_SAKE_AT_PEERID,
+				  data->peerid, data->peerid_len);
 	}
 
 	wpa_printf(MSG_DEBUG, "EAP-SAKE: * AT_MIC_P");
-	*rpos++ = EAP_SAKE_AT_MIC_P;
-	*rpos++ = 2 + EAP_SAKE_MIC_LEN;
+	wpabuf_put_u8(resp, EAP_SAKE_AT_MIC_P);
+	wpabuf_put_u8(resp, 2 + EAP_SAKE_MIC_LEN);
+	rpos = wpabuf_put(resp, EAP_SAKE_MIC_LEN);
 	if (eap_sake_compute_mic(data->tek.auth, data->rand_s, data->rand_p,
 				 data->serverid, data->serverid_len,
 				 data->peerid, data->peerid_len, 1,
-				 resp, *respDataLen, rpos, rpos)) {
+				 wpabuf_head(resp), wpabuf_len(resp), rpos,
+				 rpos)) {
 		wpa_printf(MSG_INFO, "EAP-SAKE: Failed to compute MIC");
-		os_free(resp);
+		wpabuf_free(resp);
 		return NULL;
 	}
 
@@ -299,17 +292,17 @@ static u8 * eap_sake_process_challenge(struct eap_sm *sm,
 }
 
 
-static u8 * eap_sake_process_confirm(struct eap_sm *sm,
-				     struct eap_sake_data *data,
-				     struct eap_method_ret *ret,
-				     const u8 *reqData, size_t reqDataLen,
-				     const u8 *payload, size_t payload_len,
-				     size_t *respDataLen)
+static struct wpabuf * eap_sake_process_confirm(struct eap_sm *sm,
+						struct eap_sake_data *data,
+						struct eap_method_ret *ret,
+						const struct wpabuf *reqData,
+						const u8 *payload,
+						size_t payload_len)
 {
 	struct eap_sake_parse_attr attr;
 	u8 mic_s[EAP_SAKE_MIC_LEN];
-	u8 *resp, *rpos;
-	const struct eap_hdr *hdr = (const struct eap_hdr *) reqData;
+	struct wpabuf *resp;
+	u8 *rpos;
 
 	if (data->state != CONFIRM) {
 		ret->ignore = TRUE;
@@ -330,38 +323,39 @@ static u8 * eap_sake_process_confirm(struct eap_sm *sm,
 	eap_sake_compute_mic(data->tek.auth, data->rand_s, data->rand_p,
 			     data->serverid, data->serverid_len,
 			     data->peerid, data->peerid_len, 0,
-			     reqData, reqDataLen, attr.mic_s, mic_s);
+			     wpabuf_head(reqData), wpabuf_len(reqData),
+			     attr.mic_s, mic_s);
 	if (os_memcmp(attr.mic_s, mic_s, EAP_SAKE_MIC_LEN) != 0) {
 		wpa_printf(MSG_INFO, "EAP-SAKE: Incorrect AT_MIC_S");
 		eap_sake_state(data, FAILURE);
 		ret->methodState = METHOD_DONE;
 		ret->decision = DECISION_FAIL;
 		ret->allowNotifications = FALSE;
-		*respDataLen = 0;
 		wpa_printf(MSG_DEBUG, "EAP-SAKE: Sending "
 			   "Response/Auth-Reject");
-		return eap_sake_build_msg(data, &rpos, hdr->identifier,
-					  respDataLen,
+		return eap_sake_build_msg(data, eap_get_id(reqData), 0,
 					  EAP_SAKE_SUBTYPE_AUTH_REJECT);
 	}
 
 	wpa_printf(MSG_DEBUG, "EAP-SAKE: Sending Response/Confirm");
 
-	*respDataLen = 2 + EAP_SAKE_MIC_LEN;
-	resp = eap_sake_build_msg(data, &rpos, hdr->identifier, respDataLen,
+	resp = eap_sake_build_msg(data, eap_get_id(reqData),
+				  2 + EAP_SAKE_MIC_LEN,
 				  EAP_SAKE_SUBTYPE_CONFIRM);
 	if (resp == NULL)
 		return NULL;
 
 	wpa_printf(MSG_DEBUG, "EAP-SAKE: * AT_MIC_P");
-	*rpos++ = EAP_SAKE_AT_MIC_P;
-	*rpos++ = 2 + EAP_SAKE_MIC_LEN;
+	wpabuf_put_u8(resp, EAP_SAKE_AT_MIC_P);
+	wpabuf_put_u8(resp, 2 + EAP_SAKE_MIC_LEN);
+	rpos = wpabuf_put(resp, EAP_SAKE_MIC_LEN);
 	if (eap_sake_compute_mic(data->tek.auth, data->rand_s, data->rand_p,
 				 data->serverid, data->serverid_len,
 				 data->peerid, data->peerid_len, 1,
-				 resp, *respDataLen, rpos, rpos)) {
+				 wpabuf_head(resp), wpabuf_len(resp), rpos,
+				 rpos)) {
 		wpa_printf(MSG_INFO, "EAP-SAKE: Failed to compute MIC");
-		os_free(resp);
+		wpabuf_free(resp);
 		return NULL;
 	}
 
@@ -374,30 +368,28 @@ static u8 * eap_sake_process_confirm(struct eap_sm *sm,
 }
 
 
-static u8 * eap_sake_process(struct eap_sm *sm, void *priv,
-			    struct eap_method_ret *ret,
-			    const u8 *reqData, size_t reqDataLen,
-			    size_t *respDataLen)
+static struct wpabuf * eap_sake_process(struct eap_sm *sm, void *priv,
+					struct eap_method_ret *ret,
+					const struct wpabuf *reqData)
 {
 	struct eap_sake_data *data = priv;
 	const struct eap_sake_hdr *req;
-	u8 *resp;
+	struct wpabuf *resp;
 	const u8 *pos, *end;
 	size_t len;
 	u8 subtype, session_id;
 
-	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_SAKE,
-			       reqData, reqDataLen, &len);
-	if (pos == NULL || len < 3) {
+	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_SAKE, reqData, &len);
+	if (pos == NULL || len < sizeof(struct eap_sake_hdr)) {
 		ret->ignore = TRUE;
 		return NULL;
 	}
 
-	req = (const struct eap_sake_hdr *) reqData;
+	req = (const struct eap_sake_hdr *) pos;
+	end = pos + len;
 	subtype = req->subtype;
 	session_id = req->session_id;
 	pos = (const u8 *) (req + 1);
-	end = reqData + be_to_host16(req->length);
 
 	wpa_printf(MSG_DEBUG, "EAP-SAKE: Received frame: subtype %d "
 		   "session_id %d", subtype, session_id);
@@ -421,18 +413,15 @@ static u8 * eap_sake_process(struct eap_sm *sm, void *priv,
 	switch (subtype) {
 	case EAP_SAKE_SUBTYPE_IDENTITY:
 		resp = eap_sake_process_identity(sm, data, ret, reqData,
-						 reqDataLen, pos, end - pos,
-						 respDataLen);
+						 pos, end - pos);
 		break;
 	case EAP_SAKE_SUBTYPE_CHALLENGE:
 		resp = eap_sake_process_challenge(sm, data, ret, reqData,
-						  reqDataLen, pos, end - pos,
-						  respDataLen);
+						  pos, end - pos);
 		break;
 	case EAP_SAKE_SUBTYPE_CONFIRM:
 		resp = eap_sake_process_confirm(sm, data, ret, reqData,
-						reqDataLen, pos, end - pos,
-						respDataLen);
+						pos, end - pos);
 		break;
 	default:
 		wpa_printf(MSG_DEBUG, "EAP-SAKE: Ignoring message with "

@@ -54,18 +54,17 @@ static void eap_tls_reset(struct eap_sm *sm, void *priv)
 	if (data == NULL)
 		return;
 	eap_server_tls_ssl_deinit(sm, &data->ssl);
-	free(data);
+	os_free(data);
 }
 
 
-static u8 * eap_tls_build_start(struct eap_sm *sm, struct eap_tls_data *data,
-				int id, size_t *reqDataLen)
+static struct wpabuf * eap_tls_build_start(struct eap_sm *sm,
+					   struct eap_tls_data *data, u8 id)
 {
-	struct eap_hdr *req;
-	u8 *pos;
+	struct wpabuf *req;
 
-	*reqDataLen = sizeof(*req) + 2;
-	req = malloc(*reqDataLen);
+	req = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_TLS, 1, EAP_CODE_REQUEST,
+			    id);
 	if (req == NULL) {
 		wpa_printf(MSG_ERROR, "EAP-TLS: Failed to allocate memory for "
 			   "request");
@@ -73,27 +72,22 @@ static u8 * eap_tls_build_start(struct eap_sm *sm, struct eap_tls_data *data,
 		return NULL;
 	}
 
-	req->code = EAP_CODE_REQUEST;
-	req->identifier = id;
-	req->length = host_to_be16(*reqDataLen);
-	pos = (u8 *) (req + 1);
-	*pos++ = EAP_TYPE_TLS;
-	*pos = EAP_TLS_FLAGS_START;
+	wpabuf_put_u8(req, EAP_TLS_FLAGS_START);
 
 	data->state = CONTINUE;
 
-	return (u8 *) req;
+	return req;
 }
 
 
-static u8 * eap_tls_build_req(struct eap_sm *sm, struct eap_tls_data *data,
-			      int id, size_t *reqDataLen)
+static struct wpabuf * eap_tls_build_req(struct eap_sm *sm,
+					 struct eap_tls_data *data, u8 id)
 {
 	int res;
-	u8 *req;
+	struct wpabuf *req;
 
 	res = eap_server_tls_buildReq_helper(sm, &data->ssl, EAP_TYPE_TLS, 0,
-					     id, &req, reqDataLen);
+					     id, &req);
 
 	if (tls_connection_established(sm->ssl_ctx, data->ssl.conn)) {
 		wpa_printf(MSG_DEBUG, "EAP-TLS: Done");
@@ -101,22 +95,20 @@ static u8 * eap_tls_build_req(struct eap_sm *sm, struct eap_tls_data *data,
 	}
 
 	if (res == 1)
-		return eap_server_tls_build_ack(reqDataLen, id, EAP_TYPE_TLS,
-						0);
+		return eap_server_tls_build_ack(id, EAP_TYPE_TLS, 0);
 	return req;
 }
 
 
-static u8 * eap_tls_buildReq(struct eap_sm *sm, void *priv, int id,
-			     size_t *reqDataLen)
+static struct wpabuf * eap_tls_buildReq(struct eap_sm *sm, void *priv, u8 id)
 {
 	struct eap_tls_data *data = priv;
 
 	switch (data->state) {
 	case START:
-		return eap_tls_build_start(sm, data, id, reqDataLen);
+		return eap_tls_build_start(sm, data, id);
 	case CONTINUE:
-		return eap_tls_build_req(sm, data, id, reqDataLen);
+		return eap_tls_build_req(sm, data, id);
 	default:
 		wpa_printf(MSG_DEBUG, "EAP-TLS: %s - unexpected state %d",
 			   __func__, data->state);
@@ -126,15 +118,13 @@ static u8 * eap_tls_buildReq(struct eap_sm *sm, void *priv, int id,
 
 
 static Boolean eap_tls_check(struct eap_sm *sm, void *priv,
-			     u8 *respData, size_t respDataLen)
+			     struct wpabuf *respData)
 {
-	struct eap_hdr *resp;
-	u8 *pos;
+	const u8 *pos;
+	size_t len;
 
-	resp = (struct eap_hdr *) respData;
-	pos = (u8 *) (resp + 1);
-	if (respDataLen < sizeof(*resp) + 2 || *pos != EAP_TYPE_TLS ||
-	    (be_to_host16(resp->length)) > respDataLen) {
+	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_TLS, respData, &len);
+	if (pos == NULL || len < 1) {
 		wpa_printf(MSG_INFO, "EAP-TLS: Invalid frame");
 		return TRUE;
 	}
@@ -144,21 +134,23 @@ static Boolean eap_tls_check(struct eap_sm *sm, void *priv,
 
 
 static void eap_tls_process(struct eap_sm *sm, void *priv,
-			    u8 *respData, size_t respDataLen)
+			    struct wpabuf *respData)
 {
 	struct eap_tls_data *data = priv;
-	struct eap_hdr *resp;
-	u8 *pos, flags;
-	int left;
+	const u8 *pos;
+	u8 flags;
+	size_t left;
 	unsigned int tls_msg_len;
 
-	resp = (struct eap_hdr *) respData;
-	pos = (u8 *) (resp + 1);
-	pos++;
+	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_TLS, respData, &left);
+	if (pos == NULL || left < 1)
+		return; /* Should not happen - frame already validated */
+
 	flags = *pos++;
-	left = be_to_host16(resp->length) - sizeof(struct eap_hdr) - 2;
+	left--;
 	wpa_printf(MSG_DEBUG, "EAP-TLS: Received packet(len=%lu) - "
-		   "Flags 0x%02x", (unsigned long) respDataLen, flags);
+		   "Flags 0x%02x", (unsigned long) wpabuf_len(respData),
+		   flags);
 	if (flags & EAP_TLS_FLAGS_LENGTH_INCLUDED) {
 		if (left < 4) {
 			wpa_printf(MSG_INFO, "EAP-TLS: Short frame with TLS "
@@ -172,7 +164,7 @@ static void eap_tls_process(struct eap_sm *sm, void *priv,
 		if (data->ssl.tls_in_left == 0) {
 			data->ssl.tls_in_total = tls_msg_len;
 			data->ssl.tls_in_left = tls_msg_len;
-			free(data->ssl.tls_in);
+			os_free(data->ssl.tls_in);
 			data->ssl.tls_in = NULL;
 			data->ssl.tls_in_len = 0;
 		}
@@ -237,11 +229,11 @@ static u8 * eap_tls_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
 					       "client EAP encryption",
 					       EAP_TLS_KEY_LEN + EAP_EMSK_LEN);
 	if (eapKeyData) {
-		emsk = malloc(EAP_EMSK_LEN);
+		emsk = os_malloc(EAP_EMSK_LEN);
 		if (emsk)
-			memcpy(emsk, eapKeyData + EAP_TLS_KEY_LEN,
-			       EAP_EMSK_LEN);
-		free(eapKeyData);
+			os_memcpy(emsk, eapKeyData + EAP_TLS_KEY_LEN,
+				  EAP_EMSK_LEN);
+		os_free(eapKeyData);
 	} else
 		emsk = NULL;
 

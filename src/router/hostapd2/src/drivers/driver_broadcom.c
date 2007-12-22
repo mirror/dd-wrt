@@ -407,6 +407,7 @@ static int wpa_driver_broadcom_scan(void *priv, const u8 *ssid,
 	if (broadcom_ioctl(drv, WLC_SCAN, &wst, sizeof(wst)) < 0)
 		return -1;
 
+	eloop_cancel_timeout(wpa_driver_broadcom_scan_timeout, drv, drv->ctx);
 	eloop_register_timeout(3, 0, wpa_driver_broadcom_scan_timeout, drv,
 			       drv->ctx);
 	return 0;

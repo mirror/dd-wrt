@@ -15,6 +15,8 @@
 #ifndef WPA_DEBUG_H
 #define WPA_DEBUG_H
 
+#include "wpabuf.h"
+
 /* Debugging function - conditional printf and hex dump. Driver wrappers can
  * use these for debugging purposes. */
 
@@ -25,7 +27,9 @@ enum { MSG_MSGDUMP, MSG_DEBUG, MSG_INFO, MSG_WARNING, MSG_ERROR };
 #define wpa_debug_print_timestamp() do { } while (0)
 #define wpa_printf(args...) do { } while (0)
 #define wpa_hexdump(l,t,b,le) do { } while (0)
+#define wpa_hexdump_buf(l,t,b) do { } while (0)
 #define wpa_hexdump_key(l,t,b,le) do { } while (0)
+#define wpa_hexdump_buf_key(l,t,b) do { } while (0)
 #define wpa_hexdump_ascii(l,t,b,le) do { } while (0)
 #define wpa_hexdump_ascii_key(l,t,b,le) do { } while (0)
 #define wpa_debug_open_file() do { } while (0)
@@ -72,6 +76,12 @@ PRINTF_FORMAT(2, 3);
  */
 void wpa_hexdump(int level, const char *title, const u8 *buf, size_t len);
 
+static inline void wpa_hexdump_buf(int level, const char *title,
+				   const struct wpabuf *buf)
+{
+	wpa_hexdump(level, title, wpabuf_head(buf), wpabuf_len(buf));
+}
+
 /**
  * wpa_hexdump_key - conditional hex dump, hide keys
  * @level: priority level (MSG_*) of the message
@@ -86,6 +96,12 @@ void wpa_hexdump(int level, const char *title, const u8 *buf, size_t len);
  * etc.) in debug output.
  */
 void wpa_hexdump_key(int level, const char *title, const u8 *buf, size_t len);
+
+static inline void wpa_hexdump_buf_key(int level, const char *title,
+				       const struct wpabuf *buf)
+{
+	wpa_hexdump_key(level, title, wpabuf_head(buf), wpabuf_len(buf));
+}
 
 /**
  * wpa_hexdump_ascii - conditional hex dump

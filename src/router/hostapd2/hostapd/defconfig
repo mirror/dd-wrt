@@ -104,6 +104,9 @@ CONFIG_EAP_TTLS=y
 # to add the needed functions.
 #CONFIG_EAP_FAST=y
 
+# EAP-WSC for Wi-Fi Protected Setup
+#CONFIG_EAP_WSC=y
+
 # PKCS#12 (PFX) support (used to read private key and certificate file from
 # a file that usually has extension .p12 or .pfx)
 CONFIG_PKCS12=y

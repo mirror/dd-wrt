@@ -482,7 +482,7 @@ Command line options
 --------------------
 
 usage:
-  wpa_supplicant [-BddhKLqqtuvwW] [-P<pid file>] [-g<global ctrl>] \
+  wpa_supplicant [-BddfhKLqqtuvwW] [-P<pid file>] [-g<global ctrl>] \
         -i<ifname> -c<config file> [-C<ctrl>] [-D<driver>] [-p<driver_param>] \
         [-b<br_ifname> [-N -i<ifname> -c<conf> [-C<ctrl>] [-D<driver>] \
         [-p<driver_param>] [-b<br_ifname>] ...]
@@ -495,6 +495,7 @@ options:
   -i = interface name
   -d = increase debugging verbosity (-dd even more)
   -D = driver name
+  -f = Log output to default log location (normally /tmp)
   -g = global ctrl_interface
   -K = include keys (passwords, etc.) in debug output
   -t = include timestamp in debug messages

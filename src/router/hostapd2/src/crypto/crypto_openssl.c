@@ -90,6 +90,7 @@ void sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 }
 
 
+#ifndef CONFIG_NO_FIPS186_2_PRF
 static void sha1_transform(u8 *state, const u8 data[64])
 {
 	SHA_CTX context;
@@ -152,6 +153,7 @@ int fips186_2_prf(const u8 *seed, size_t seed_len, u8 *x, size_t xlen)
 
 	return 0;
 }
+#endif /* CONFIG_NO_FIPS186_2_PRF */
 
 
 void * aes_encrypt_init(const u8 *key, size_t len)

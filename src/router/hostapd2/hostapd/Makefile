@@ -14,6 +14,7 @@ CFLAGS += -I../src/utils
 CFLAGS += -I../src/common
 
 LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
+
 # Uncomment following line and set the path to your kernel tree include
 # directory if your C library does not include all header files.
 # CFLAGS += -DUSE_KERNEL_HEADERS -I/usr/src/linux/include
@@ -26,10 +27,6 @@ CONFIG_OS=win32
 else
 CONFIG_OS=unix
 endif
-endif
-
-ifdef CONFIG_NO_STDOUT_DEBUG
-CFLAGS += -DCONFIG_NO_STDOUT_DEBUG
 endif
 
 ifeq ($(CONFIG_OS), internal)
@@ -51,6 +48,7 @@ OBJS =	hostapd.o ieee802_1x.o eapol_sm.o \
 OBJS += ../src/utils/eloop.o
 OBJS += ../src/utils/common.o
 OBJS += ../src/utils/wpa_debug.o
+OBJS += ../src/utils/wpabuf.o
 OBJS += ../src/utils/os_$(CONFIG_OS).o
 OBJS += ../src/utils/ip_addr.o
 
@@ -121,6 +119,7 @@ endif
 ifdef CONFIG_DRIVER_DEVICESCAPE
 CFLAGS += -DCONFIG_DRIVER_DEVICESCAPE
 OBJS += driver_devicescape.o
+LIBS += -lnl
 endif
 
 ifdef CONFIG_DRIVER_BSD
@@ -205,6 +204,7 @@ OBJS += ../src/eap_common/eap_sim_common.o
 # replaced with another file implementating the interface specified in
 # eap_sim_db.h.
 OBJS += ../src/eap_server/eap_sim_db.o
+NEED_FIPS186_2_PRF=y
 endif
 
 ifdef CONFIG_EAP_PAX
@@ -245,11 +245,22 @@ ifdef CONFIG_EAP_FAST
 CFLAGS += -DEAP_FAST
 OBJS += ../src/eap_server/eap_fast.o
 TLS_FUNCS=y
+NEED_T_PRF=y
 endif
+
+ifdef CONFIG_EAP_WSC
+CFLAGS += -DEAP_WSC
+OBJS += ../src/eap_server/eap_wsc.o ../src/eap_common/eap_wsc_common.o
+endif
+
+# Basic EAP functionality is needed for EAPOL
+OBJS += ../src/eap_server/eap.o
+OBJS += ../src/eap_common/eap_common.o
+OBJS += ../src/eap_server/eap_methods.o
+OBJS += ../src/eap_server/eap_identity.o
 
 ifdef CONFIG_EAP
 CFLAGS += -DEAP_SERVER
-OBJS += ../src/eap_server/eap.o ../src/eap_common/eap_common.o ../src/eap_server/eap_methods.o ../src/eap_server/eap_identity.o
 endif
 
 ifndef CONFIG_TLS
@@ -406,6 +417,14 @@ ifdef NEED_SHA256
 OBJS += ../src/crypto/sha256.o
 endif
 
+ifndef NEED_FIPS186_2_PRF
+CFLAGS += -DCONFIG_NO_FIPS186_2_PRF
+endif
+
+ifndef NEED_T_PRF
+CFLAGS += -DCONFIG_NO_T_PRF
+endif
+
 ifdef CONFIG_RADIUS_SERVER
 CFLAGS += -DRADIUS_SERVER
 OBJS += ../src/radius/radius_server.o
@@ -425,7 +444,7 @@ ifdef NEED_BASE64
 OBJS += ../src/utils/base64.o
 endif
 
-ALL=hostapd
+ALL=hostapd hostapd_cli
 
 all: verify_config $(ALL)
 
@@ -438,9 +457,8 @@ verify_config:
 		exit 1; \
 	fi
 
-install: 
-	mkdir -p $(INSTALLDIR)/hostapd2/usr/sbin
-	for i in $(ALL); do cp $$i $(INSTALLDIR)/hostapd2/usr/sbin/$$i; done
+install: all
+	for i in $(ALL); do cp $$i /usr/local/bin/$$i; done
 
 hostapd: $(OBJS)
 	$(CC) -o hostapd $(OBJS) $(LIBS)

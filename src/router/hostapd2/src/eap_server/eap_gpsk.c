@@ -1,5 +1,5 @@
 /*
- * hostapd / EAP-GPSK (draft-ietf-emu-eap-gpsk-06.txt) server
+ * hostapd / EAP-GPSK (draft-ietf-emu-eap-gpsk-08.txt) server
  * Copyright (c) 2006-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -77,9 +77,9 @@ static void * eap_gpsk_init(struct eap_sm *sm)
 	data->state = GPSK_1;
 
 	/* TODO: add support for configuring ID_Server */
-	data->id_server = (u8 *) strdup("hostapd");
+	data->id_server = (u8 *) os_strdup("hostapd");
 	if (data->id_server)
-		data->id_server_len = strlen((char *) data->id_server);
+		data->id_server_len = os_strlen((char *) data->id_server);
 
 	data->csuite_count = 0;
 	if (eap_gpsk_supported_ciphersuite(EAP_GPSK_VENDOR_IETF,
@@ -106,23 +106,21 @@ static void * eap_gpsk_init(struct eap_sm *sm)
 static void eap_gpsk_reset(struct eap_sm *sm, void *priv)
 {
 	struct eap_gpsk_data *data = priv;
-	free(data->id_server);
-	free(data->id_peer);
-	free(data);
+	os_free(data->id_server);
+	os_free(data->id_peer);
+	os_free(data);
 }
 
 
-static u8 * eap_gpsk_build_gpsk_1(struct eap_sm *sm,
-				  struct eap_gpsk_data *data,
-				  int id, size_t *reqDataLen)
+static struct wpabuf * eap_gpsk_build_gpsk_1(struct eap_sm *sm,
+					     struct eap_gpsk_data *data, u8 id)
 {
-	u8 *pos;
 	size_t len;
-	struct eap_hdr *req;
+	struct wpabuf *req;
 
 	wpa_printf(MSG_DEBUG, "EAP-GPSK: Request/GPSK-1");
 
-	if (hostapd_get_rand(data->rand_server, EAP_GPSK_RAND_LEN)) {
+	if (os_get_random(data->rand_server, EAP_GPSK_RAND_LEN)) {
 		wpa_printf(MSG_ERROR, "EAP-GPSK: Failed to get random data");
 		eap_gpsk_state(data, FAILURE);
 		return NULL;
@@ -132,8 +130,8 @@ static u8 * eap_gpsk_build_gpsk_1(struct eap_sm *sm,
 
 	len = 1 + 2 + data->id_server_len + EAP_GPSK_RAND_LEN + 2 +
 		data->csuite_count * sizeof(struct eap_gpsk_csuite);
-	req = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_GPSK, reqDataLen,
-			    len, EAP_CODE_REQUEST, id, &pos);
+	req = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_GPSK, len,
+			    EAP_CODE_REQUEST, id);
 	if (req == NULL) {
 		wpa_printf(MSG_ERROR, "EAP-GPSK: Failed to allocate memory "
 			   "for request/GPSK-1");
@@ -141,42 +139,34 @@ static u8 * eap_gpsk_build_gpsk_1(struct eap_sm *sm,
 		return NULL;
 	}
 
-	*pos++ = EAP_GPSK_OPCODE_GPSK_1;
+	wpabuf_put_u8(req, EAP_GPSK_OPCODE_GPSK_1);
+	wpabuf_put_be16(req, data->id_server_len);
+	wpabuf_put_data(req, data->id_server, data->id_server_len);
+	wpabuf_put_data(req, data->rand_server, EAP_GPSK_RAND_LEN);
+	wpabuf_put_be16(req,
+			data->csuite_count * sizeof(struct eap_gpsk_csuite));
+	wpabuf_put_data(req, data->csuite_list,
+			data->csuite_count * sizeof(struct eap_gpsk_csuite));
 
-	WPA_PUT_BE16(pos, data->id_server_len);
-	pos += 2;
-	if (data->id_server)
-		memcpy(pos, data->id_server, data->id_server_len);
-	pos += data->id_server_len;
-
-	memcpy(pos, data->rand_server, EAP_GPSK_RAND_LEN);
-	pos += EAP_GPSK_RAND_LEN;
-
-	WPA_PUT_BE16(pos, data->csuite_count * sizeof(struct eap_gpsk_csuite));
-	pos += 2;
-	memcpy(pos, data->csuite_list,
-	       data->csuite_count * sizeof(struct eap_gpsk_csuite));
-
-	return (u8 *) req;
+	return req;
 }
 
 
-static u8 * eap_gpsk_build_gpsk_3(struct eap_sm *sm,
-				  struct eap_gpsk_data *data,
-				  int id, size_t *reqDataLen)
+static struct wpabuf * eap_gpsk_build_gpsk_3(struct eap_sm *sm,
+					     struct eap_gpsk_data *data, u8 id)
 {
 	u8 *pos, *start;
 	size_t len, miclen;
 	struct eap_gpsk_csuite *csuite;
-	struct eap_hdr *req;
+	struct wpabuf *req;
 
 	wpa_printf(MSG_DEBUG, "EAP-GPSK: Request/GPSK-3");
 
 	miclen = eap_gpsk_mic_len(data->vendor, data->specifier);
-	len = 1 + 2 * EAP_GPSK_RAND_LEN + sizeof(struct eap_gpsk_csuite) + 2 +
-		miclen;
-	req = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_GPSK, reqDataLen,
-			    len, EAP_CODE_REQUEST, id, &pos);
+	len = 1 + 2 * EAP_GPSK_RAND_LEN + 2 + data->id_server_len +
+		sizeof(struct eap_gpsk_csuite) + 2 + miclen;
+	req = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_GPSK, len,
+			    EAP_CODE_REQUEST, id);
 	if (req == NULL) {
 		wpa_printf(MSG_ERROR, "EAP-GPSK: Failed to allocate memory "
 			   "for request/GPSK-3");
@@ -184,44 +174,42 @@ static u8 * eap_gpsk_build_gpsk_3(struct eap_sm *sm,
 		return NULL;
 	}
 
-	*pos++ = EAP_GPSK_OPCODE_GPSK_3;
-	start = pos;
+	wpabuf_put_u8(req, EAP_GPSK_OPCODE_GPSK_3);
+	start = wpabuf_put(req, 0);
 
-	memcpy(pos, data->rand_peer, EAP_GPSK_RAND_LEN);
-	pos += EAP_GPSK_RAND_LEN;
-	memcpy(pos, data->rand_server, EAP_GPSK_RAND_LEN);
-	pos += EAP_GPSK_RAND_LEN;
-	csuite = (struct eap_gpsk_csuite *) pos;
+	wpabuf_put_data(req, data->rand_peer, EAP_GPSK_RAND_LEN);
+	wpabuf_put_data(req, data->rand_server, EAP_GPSK_RAND_LEN);
+	wpabuf_put_be16(req, data->id_server_len);
+	wpabuf_put_data(req, data->id_server, data->id_server_len);
+	csuite = wpabuf_put(req, sizeof(*csuite));
 	WPA_PUT_BE32(csuite->vendor, data->vendor);
 	WPA_PUT_BE16(csuite->specifier, data->specifier);
-	pos += sizeof(*csuite);
 
 	/* no PD_Payload_2 */
-	WPA_PUT_BE16(pos, 0);
-	pos += 2;
+	wpabuf_put_be16(req, 0);
 
+	pos = wpabuf_put(req, miclen);
 	if (eap_gpsk_compute_mic(data->sk, data->sk_len, data->vendor,
 				 data->specifier, start, pos - start, pos) < 0)
 	{
-		free(req);
+		os_free(req);
 		eap_gpsk_state(data, FAILURE);
 		return NULL;
 	}
 
-	return (u8 *) req;
+	return req;
 }
 
 
-static u8 * eap_gpsk_buildReq(struct eap_sm *sm, void *priv, int id,
-			      size_t *reqDataLen)
+static struct wpabuf * eap_gpsk_buildReq(struct eap_sm *sm, void *priv, u8 id)
 {
 	struct eap_gpsk_data *data = priv;
 
 	switch (data->state) {
 	case GPSK_1:
-		return eap_gpsk_build_gpsk_1(sm, data, id, reqDataLen);
+		return eap_gpsk_build_gpsk_1(sm, data, id);
 	case GPSK_3:
-		return eap_gpsk_build_gpsk_3(sm, data, id, reqDataLen);
+		return eap_gpsk_build_gpsk_3(sm, data, id);
 	default:
 		wpa_printf(MSG_DEBUG, "EAP-GPSK: Unknown state %d in buildReq",
 			   data->state);
@@ -232,14 +220,13 @@ static u8 * eap_gpsk_buildReq(struct eap_sm *sm, void *priv, int id,
 
 
 static Boolean eap_gpsk_check(struct eap_sm *sm, void *priv,
-			      u8 *respData, size_t respDataLen)
+			      struct wpabuf *respData)
 {
 	struct eap_gpsk_data *data = priv;
 	const u8 *pos;
 	size_t len;
 
-	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_GPSK,
-			       respData, respDataLen, &len);
+	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_GPSK, respData, &len);
 	if (pos == NULL || len < 1) {
 		wpa_printf(MSG_INFO, "EAP-GPSK: Invalid frame");
 		return TRUE;
@@ -262,7 +249,6 @@ static Boolean eap_gpsk_check(struct eap_sm *sm, void *priv,
 
 static void eap_gpsk_process_gpsk_2(struct eap_sm *sm,
 				    struct eap_gpsk_data *data,
-				    u8 *respData, size_t respDataLen,
 				    const u8 *payload, size_t payloadlen)
 {
 	const u8 *pos, *end;
@@ -293,14 +279,14 @@ static void eap_gpsk_process_gpsk_2(struct eap_sm *sm,
 		eap_gpsk_state(data, FAILURE);
 		return;
 	}
-	free(data->id_peer);
-	data->id_peer = malloc(alen);
+	os_free(data->id_peer);
+	data->id_peer = os_malloc(alen);
 	if (data->id_peer == NULL) {
 		wpa_printf(MSG_DEBUG, "EAP-GPSK: Not enough memory to store "
 			   "%d-octet ID_Peer", alen);
 		return;
 	}
-	memcpy(data->id_peer, pos, alen);
+	os_memcpy(data->id_peer, pos, alen);
 	data->id_peer_len = alen;
 	wpa_hexdump_ascii(MSG_DEBUG, "EAP-GPSK: ID_Peer",
 			  data->id_peer, data->id_peer_len);
@@ -321,7 +307,7 @@ static void eap_gpsk_process_gpsk_2(struct eap_sm *sm,
 		return;
 	}
 	if (alen != data->id_server_len ||
-	    memcmp(pos, data->id_server, alen) != 0) {
+	    os_memcmp(pos, data->id_server, alen) != 0) {
 		wpa_printf(MSG_DEBUG, "EAP-GPSK: ID_Server in GPSK-1 and "
 			   "GPSK-2 did not match");
 		eap_gpsk_state(data, FAILURE);
@@ -335,7 +321,7 @@ static void eap_gpsk_process_gpsk_2(struct eap_sm *sm,
 		eap_gpsk_state(data, FAILURE);
 		return;
 	}
-	memcpy(data->rand_peer, pos, EAP_GPSK_RAND_LEN);
+	os_memcpy(data->rand_peer, pos, EAP_GPSK_RAND_LEN);
 	wpa_hexdump(MSG_DEBUG, "EAP-GPSK: RAND_Peer",
 		    data->rand_peer, EAP_GPSK_RAND_LEN);
 	pos += EAP_GPSK_RAND_LEN;
@@ -346,7 +332,7 @@ static void eap_gpsk_process_gpsk_2(struct eap_sm *sm,
 		eap_gpsk_state(data, FAILURE);
 		return;
 	}
-	if (memcmp(data->rand_server, pos, EAP_GPSK_RAND_LEN) != 0) {
+	if (os_memcmp(data->rand_server, pos, EAP_GPSK_RAND_LEN) != 0) {
 		wpa_printf(MSG_DEBUG, "EAP-GPSK: RAND_Server in GPSK-1 and "
 			   "GPSK-2 did not match");
 		wpa_hexdump(MSG_DEBUG, "EAP-GPSK: RAND_Server in GPSK-1",
@@ -373,7 +359,7 @@ static void eap_gpsk_process_gpsk_2(struct eap_sm *sm,
 		return;
 	}
 	if (alen != data->csuite_count * sizeof(struct eap_gpsk_csuite) ||
-	    memcmp(pos, data->csuite_list, alen) != 0) {
+	    os_memcmp(pos, data->csuite_list, alen) != 0) {
 		wpa_printf(MSG_DEBUG, "EAP-GPSK: CSuite_List in GPSK-1 and "
 			   "GPSK-2 did not match");
 		eap_gpsk_state(data, FAILURE);
@@ -389,8 +375,8 @@ static void eap_gpsk_process_gpsk_2(struct eap_sm *sm,
 	}
 	csuite = (const struct eap_gpsk_csuite *) pos;
 	for (i = 0; i < data->csuite_count; i++) {
-		if (memcmp(csuite, &data->csuite_list[i], sizeof(*csuite)) ==
-		    0)
+		if (os_memcmp(csuite, &data->csuite_list[i], sizeof(*csuite))
+		    == 0)
 			break;
 	}
 	if (i == data->csuite_count) {
@@ -458,7 +444,7 @@ static void eap_gpsk_process_gpsk_2(struct eap_sm *sm,
 		eap_gpsk_state(data, FAILURE);
 		return;
 	}
-	if (memcmp(mic, pos, miclen) != 0) {
+	if (os_memcmp(mic, pos, miclen) != 0) {
 		wpa_printf(MSG_INFO, "EAP-GPSK: Incorrect MIC in GPSK-2");
 		wpa_hexdump(MSG_DEBUG, "EAP-GPSK: Received MIC", pos, miclen);
 		wpa_hexdump(MSG_DEBUG, "EAP-GPSK: Computed MIC", mic, miclen);
@@ -478,7 +464,6 @@ static void eap_gpsk_process_gpsk_2(struct eap_sm *sm,
 
 static void eap_gpsk_process_gpsk_4(struct eap_sm *sm,
 				    struct eap_gpsk_data *data,
-				    u8 *respData, size_t respDataLen,
 				    const u8 *payload, size_t payloadlen)
 {
 	const u8 *pos, *end;
@@ -525,7 +510,7 @@ static void eap_gpsk_process_gpsk_4(struct eap_sm *sm,
 		eap_gpsk_state(data, FAILURE);
 		return;
 	}
-	if (memcmp(mic, pos, miclen) != 0) {
+	if (os_memcmp(mic, pos, miclen) != 0) {
 		wpa_printf(MSG_INFO, "EAP-GPSK: Incorrect MIC in GPSK-4");
 		wpa_hexdump(MSG_DEBUG, "EAP-GPSK: Received MIC", pos, miclen);
 		wpa_hexdump(MSG_DEBUG, "EAP-GPSK: Computed MIC", mic, miclen);
@@ -544,25 +529,22 @@ static void eap_gpsk_process_gpsk_4(struct eap_sm *sm,
 
 
 static void eap_gpsk_process(struct eap_sm *sm, void *priv,
-			     u8 *respData, size_t respDataLen)
+			     struct wpabuf *respData)
 {
 	struct eap_gpsk_data *data = priv;
 	const u8 *pos;
 	size_t len;
 
-	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_GPSK,
-			       respData, respDataLen, &len);
+	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_GPSK, respData, &len);
 	if (pos == NULL || len < 1)
 		return;
 
 	switch (*pos) {
 	case EAP_GPSK_OPCODE_GPSK_2:
-		eap_gpsk_process_gpsk_2(sm, data, respData, respDataLen,
-					pos + 1, len - 1);
+		eap_gpsk_process_gpsk_2(sm, data, pos + 1, len - 1);
 		break;
 	case EAP_GPSK_OPCODE_GPSK_4:
-		eap_gpsk_process_gpsk_4(sm, data, respData, respDataLen,
-					pos + 1, len - 1);
+		eap_gpsk_process_gpsk_4(sm, data, pos + 1, len - 1);
 		break;
 	}
 }
@@ -583,10 +565,10 @@ static u8 * eap_gpsk_getKey(struct eap_sm *sm, void *priv, size_t *len)
 	if (data->state != SUCCESS)
 		return NULL;
 
-	key = malloc(EAP_MSK_LEN);
+	key = os_malloc(EAP_MSK_LEN);
 	if (key == NULL)
 		return NULL;
-	memcpy(key, data->msk, EAP_MSK_LEN);
+	os_memcpy(key, data->msk, EAP_MSK_LEN);
 	*len = EAP_MSK_LEN;
 
 	return key;
@@ -601,10 +583,10 @@ static u8 * eap_gpsk_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
 	if (data->state != SUCCESS)
 		return NULL;
 
-	key = malloc(EAP_EMSK_LEN);
+	key = os_malloc(EAP_EMSK_LEN);
 	if (key == NULL)
 		return NULL;
-	memcpy(key, data->emsk, EAP_EMSK_LEN);
+	os_memcpy(key, data->emsk, EAP_EMSK_LEN);
 	*len = EAP_EMSK_LEN;
 
 	return key;

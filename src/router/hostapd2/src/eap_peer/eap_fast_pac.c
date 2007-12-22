@@ -15,7 +15,8 @@
 #include "includes.h"
 
 #include "common.h"
-#include "config.h"
+#include "config_blob.h"
+#include "config_ssid.h"
 #include "eap_i.h"
 #include "eap_fast_pac.h"
 
@@ -280,7 +281,7 @@ static int eap_fast_init_pac_data(struct eap_sm *sm, const char *pac_file,
 		rc->pos = (char *) blob->data;
 		rc->end = (char *) blob->data + blob->len;
 	} else {
-		rc->f = fopen(pac_file, "r");
+		rc->f = fopen(pac_file, "rb");
 		if (rc->f == NULL) {
 			wpa_printf(MSG_INFO, "EAP-FAST: No PAC file '%s' - "
 				   "assume no PAC entries have been "
@@ -549,7 +550,7 @@ static int eap_fast_write_pac(struct eap_sm *sm, const char *pac_file,
 		eap_set_config_blob(sm, blob);
 	} else {
 		FILE *f;
-		f = fopen(pac_file, "w");
+		f = fopen(pac_file, "wb");
 		if (f == NULL) {
 			wpa_printf(MSG_INFO, "EAP-FAST: Failed to open PAC "
 				   "file '%s' for writing", pac_file);

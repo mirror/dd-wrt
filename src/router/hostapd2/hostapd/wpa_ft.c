@@ -301,7 +301,7 @@ static int wpa_ft_pull_pmk_r1(struct wpa_authenticator *wpa_auth,
 
 	/* aes_wrap() does not support inplace encryption, so use a temporary
 	 * buffer for the data. */
-	if (hostapd_get_rand(f.nonce, sizeof(f.nonce))) {
+	if (os_get_random(f.nonce, sizeof(f.nonce))) {
 		wpa_printf(MSG_DEBUG, "FT: Failed to get random data for "
 			   "nonce");
 		return -1;
@@ -554,7 +554,7 @@ static int wpa_ft_parse_ies(const u8 *ies, size_t ies_len,
 	struct wpa_ie_data data;
 	int ret;
 
-	memset(parse, 0, sizeof(*parse));
+	os_memset(parse, 0, sizeof(*parse));
 	if (ies == NULL)
 		return 0;
 
@@ -677,7 +677,7 @@ static u16 wpa_ft_process_auth_req(struct wpa_state_machine *sm,
 		return WLAN_STATUS_INVALID_FTIE;
 	}
 
-	memcpy(sm->SNonce, ftie->snonce, WPA_NONCE_LEN);
+	os_memcpy(sm->SNonce, ftie->snonce, WPA_NONCE_LEN);
 
 	if (parse.r0kh_id == NULL) {
 		wpa_printf(MSG_DEBUG, "FT: Invalid FTIE - no R0KH-ID");
@@ -686,7 +686,7 @@ static u16 wpa_ft_process_auth_req(struct wpa_state_machine *sm,
 
 	wpa_hexdump(MSG_DEBUG, "FT: STA R0KH-ID",
 		    parse.r0kh_id, parse.r0kh_id_len);
-	memcpy(sm->r0kh_id, parse.r0kh_id, parse.r0kh_id_len);
+	os_memcpy(sm->r0kh_id, parse.r0kh_id, parse.r0kh_id_len);
 	sm->r0kh_id_len = parse.r0kh_id_len;
 
 	if (parse.rsn_pmkid == NULL) {
@@ -723,7 +723,7 @@ static u16 wpa_ft_process_auth_req(struct wpa_state_machine *sm,
 	sm->pmk_r1_name_valid = 1;
 	os_memcpy(sm->pmk_r1_name, pmk_r1_name, WPA_PMK_NAME_LEN);
 
-	if (hostapd_get_rand(sm->ANonce, WPA_NONCE_LEN)) {
+	if (os_get_random(sm->ANonce, WPA_NONCE_LEN)) {
 		wpa_printf(MSG_DEBUG, "FT: Failed to get random data for "
 			   "ANonce");
 		return WLAN_STATUS_UNSPECIFIED_FAILURE;

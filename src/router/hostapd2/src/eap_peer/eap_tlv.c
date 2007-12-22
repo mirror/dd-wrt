@@ -23,36 +23,27 @@
  * eap_tlv_build_nak - Build EAP-TLV NAK message
  * @id: EAP identifier for the header
  * @nak_type: TLV type (EAP_TLV_*)
- * @resp_len: Buffer for returning the response length
  * Returns: Buffer to the allocated EAP-TLV NAK message or %NULL on failure
  *
  * This funtion builds an EAP-TLV NAK message. The caller is responsible for
  * freeing the returned buffer.
  */
-u8 * eap_tlv_build_nak(int id, u16 nak_type, size_t *resp_len)
+struct wpabuf * eap_tlv_build_nak(int id, u16 nak_type)
 {
-	struct eap_hdr *hdr;
-	u8 *pos;
+	struct wpabuf *msg;
 
-	hdr = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_TLV, resp_len,
-			    10, EAP_CODE_RESPONSE, id, &pos);
-	if (hdr == NULL)
+	msg = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_TLV, 10,
+			    EAP_CODE_RESPONSE, id);
+	if (msg == NULL)
 		return NULL;
 
-	*pos++ = 0x80; /* Mandatory */
-	*pos++ = EAP_TLV_NAK_TLV;
-	/* Length */
-	*pos++ = 0;
-	*pos++ = 6;
-	/* Vendor-Id */
-	*pos++ = 0;
-	*pos++ = 0;
-	*pos++ = 0;
-	*pos++ = 0;
-	/* NAK-Type */
-	WPA_PUT_BE16(pos, nak_type);
+	wpabuf_put_u8(msg, 0x80); /* Mandatory */
+	wpabuf_put_u8(msg, EAP_TLV_NAK_TLV);
+	wpabuf_put_be16(msg, 6); /* Length */
+	wpabuf_put_be32(msg, 0); /* Vendor-Id */
+	wpabuf_put_be16(msg, nak_type); /* NAK-Type */
 
-	return (u8 *) hdr;
+	return msg;
 }
 
 
@@ -60,31 +51,26 @@ u8 * eap_tlv_build_nak(int id, u16 nak_type, size_t *resp_len)
  * eap_tlv_build_result - Build EAP-TLV Result message
  * @id: EAP identifier for the header
  * @status: Status (EAP_TLV_RESULT_SUCCESS or EAP_TLV_RESULT_FAILURE)
- * @resp_len: Buffer for returning the response length
  * Returns: Buffer to the allocated EAP-TLV Result message or %NULL on failure
  *
  * This funtion builds an EAP-TLV Result message. The caller is responsible for
  * freeing the returned buffer.
  */
-u8 * eap_tlv_build_result(int id, u16 status, size_t *resp_len)
+struct wpabuf * eap_tlv_build_result(int id, u16 status)
 {
-	struct eap_hdr *hdr;
-	u8 *pos;
+	struct wpabuf *msg;
 
-	hdr = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_TLV, resp_len,
-			    6, EAP_CODE_RESPONSE, id, &pos);
-	if (hdr == NULL)
+	msg = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_TLV, 6,
+			    EAP_CODE_RESPONSE, id);
+	if (msg == NULL)
 		return NULL;
 
-	*pos++ = 0x80; /* Mandatory */
-	*pos++ = EAP_TLV_RESULT_TLV;
-	/* Length */
-	*pos++ = 0;
-	*pos++ = 2;
-	/* Status */
-	WPA_PUT_BE16(pos, status);
+	wpabuf_put_u8(msg, 0x80); /* Mandatory */
+	wpabuf_put_u8(msg, EAP_TLV_RESULT_TLV);
+	wpabuf_put_be16(msg, 2); /* Length */
+	wpabuf_put_be16(msg, status); /* Status */
 
-	return (u8 *) hdr;
+	return msg;
 }
 
 
@@ -92,18 +78,17 @@ u8 * eap_tlv_build_result(int id, u16 status, size_t *resp_len)
  * eap_tlv_process - Process a received EAP-TLV message and generate a response
  * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
  * @ret: Return values from EAP request validation and processing
- * @hdr: EAP-TLV request to be processed. The caller must have validated that
+ * @req: EAP-TLV request to be processed. The caller must have validated that
  * the buffer is large enough to contain full request (hdr->length bytes) and
  * that the EAP type is EAP_TYPE_TLV.
  * @resp: Buffer to return a pointer to the allocated response message. This
  * field should be initialized to %NULL before the call. The value will be
  * updated if a response message is generated. The caller is responsible for
  * freeing the allocated message.
- * @resp_len: Buffer for returning the response length
  * Returns: 0 on success, -1 on failure
  */
 int eap_tlv_process(struct eap_sm *sm, struct eap_method_ret *ret,
-		    const struct eap_hdr *hdr, u8 **resp, size_t *resp_len)
+		    const struct wpabuf *req, struct wpabuf **resp)
 {
 	size_t left, tlv_len;
 	const u8 *pos;
@@ -112,9 +97,9 @@ int eap_tlv_process(struct eap_sm *sm, struct eap_method_ret *ret,
 	int tlv_type, mandatory;
 
 	/* Parse TLVs */
-	left = be_to_host16(hdr->length) - sizeof(struct eap_hdr) - 1;
-	pos = (const u8 *) (hdr + 1);
-	pos++;
+	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_TLV, req, &left);
+	if (pos == NULL)
+		return -1;
 	wpa_hexdump(MSG_DEBUG, "EAP-TLV: Received TLVs", pos, left);
 	while (left >= 4) {
 		mandatory = !!(pos[0] & 0x80);
@@ -142,8 +127,8 @@ int eap_tlv_process(struct eap_sm *sm, struct eap_method_ret *ret,
 			if (mandatory) {
 				/* NAK TLV and ignore all TLVs in this packet.
 				 */
-				*resp = eap_tlv_build_nak(hdr->identifier,
-							  tlv_type, resp_len);
+				*resp = eap_tlv_build_nak(eap_get_id(req),
+							  tlv_type);
 				return *resp == NULL ? -1 : 0;
 			}
 			/* Ignore this TLV, but process other TLVs */
@@ -188,8 +173,7 @@ int eap_tlv_process(struct eap_sm *sm, struct eap_method_ret *ret,
 		}
 		ret->methodState = METHOD_DONE;
 
-		*resp = eap_tlv_build_result(hdr->identifier, resp_status,
-					     resp_len);
+		*resp = eap_tlv_build_result(eap_get_id(req), resp_status);
 	}
 
 	return 0;

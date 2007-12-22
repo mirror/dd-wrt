@@ -1,5 +1,5 @@
 /*
- * hostapd / EAP Standalone Authenticator state machine (RFC 4137)
+ * hostapd / EAP Full Authenticator state machine (RFC 4137)
  * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -18,6 +18,7 @@
 #include "defs.h"
 #include "eap_common/eap_defs.h"
 #include "eap_server/eap_methods.h"
+#include "wpabuf.h"
 
 struct eap_sm;
 
@@ -35,19 +36,46 @@ struct eap_user {
 	int force_version;
 };
 
-enum eapol_bool_var {
-	EAPOL_eapSuccess, EAPOL_eapRestart, EAPOL_eapFail, EAPOL_eapResp,
-	EAPOL_eapReq, EAPOL_eapNoReq, EAPOL_portEnabled, EAPOL_eapTimeout
+struct eap_eapol_interface {
+	/* Lower layer to full authenticator variables */
+	Boolean eapResp; /* shared with EAPOL Backend Authentication */
+	struct wpabuf *eapRespData;
+	Boolean portEnabled;
+	int retransWhile;
+	Boolean eapRestart; /* shared with EAPOL Authenticator PAE */
+	int eapSRTT;
+	int eapRTTVAR;
+
+	/* Full authenticator to lower layer variables */
+	Boolean eapReq; /* shared with EAPOL Backend Authentication */
+	Boolean eapNoReq; /* shared with EAPOL Backend Authentication */
+	Boolean eapSuccess;
+	Boolean eapFail;
+	Boolean eapTimeout;
+	struct wpabuf *eapReqData;
+	u8 *eapKeyData;
+	size_t eapKeyDataLen;
+	Boolean eapKeyAvailable; /* called keyAvailable in IEEE 802.1X-2004 */
+
+	/* AAA interface to full authenticator variables */
+	Boolean aaaEapReq;
+	Boolean aaaEapNoReq;
+	Boolean aaaSuccess;
+	Boolean aaaFail;
+	struct wpabuf *aaaEapReqData;
+	u8 *aaaEapKeyData;
+	size_t aaaEapKeyDataLen;
+	Boolean aaaEapKeyAvailable;
+	int aaaMethodTimeout;
+
+	/* Full authenticator to AAA interface variables */
+	Boolean aaaEapResp;
+	struct wpabuf *aaaEapRespData;
+	/* aaaIdentity -> eap_get_identity() */
+	Boolean aaaTimeout;
 };
 
 struct eapol_callbacks {
-	Boolean (*get_bool)(void *ctx, enum eapol_bool_var variable);
-	void (*set_bool)(void *ctx, enum eapol_bool_var variable,
-			 Boolean value);
-	void (*set_eapReqData)(void *ctx, const u8 *eapReqData,
-			       size_t eapReqDataLen);
-	void (*set_eapKeyData)(void *ctx, const u8 *eapKeyData,
-			       size_t eapKeyDataLen);
 	int (*get_eap_user)(void *ctx, const u8 *identity, size_t identity_len,
 			    int phase2, struct eap_user *user);
 	const char * (*get_eap_req_id_text)(void *ctx, size_t *len);
@@ -57,63 +85,22 @@ struct eap_config {
 	void *ssl_ctx;
 	void *eap_sim_db_priv;
 	Boolean backend_auth;
+	int eap_server;
 	u8 *pac_opaque_encr_key;
 	char *eap_fast_a_id;
+	int eap_sim_aka_result_ind;
 };
 
-
-#ifdef EAP_SERVER
 
 struct eap_sm * eap_server_sm_init(void *eapol_ctx,
 				   struct eapol_callbacks *eapol_cb,
 				   struct eap_config *eap_conf);
 void eap_server_sm_deinit(struct eap_sm *sm);
 int eap_server_sm_step(struct eap_sm *sm);
-void eap_set_eapRespData(struct eap_sm *sm, const u8 *eapRespData,
-			 size_t eapRespDataLen);
 void eap_sm_notify_cached(struct eap_sm *sm);
 void eap_sm_pending_cb(struct eap_sm *sm);
 int eap_sm_method_pending(struct eap_sm *sm);
-
-#else /* EAP_SERVER */
-
-static inline struct eap_sm *
-eap_server_sm_init(void *eapol_ctx,
-		   struct eapol_callbacks *eapol_cb,
-		   struct eap_config *eap_conf)
-{
-	return NULL;
-}
-
-static inline void eap_server_sm_deinit(struct eap_sm *sm)
-{
-}
-
-static inline int eap_server_sm_step(struct eap_sm *sm)
-{
-	return 0;
-}
-
-
-static inline void eap_set_eapRespData(struct eap_sm *sm,
-				       const u8 *eapRespData,
-				       size_t eapRespDataLen)
-{
-}
-
-static inline void eap_sm_notify_cached(struct eap_sm *sm)
-{
-}
-
-static inline void eap_sm_pending_cb(struct eap_sm *sm)
-{
-}
-
-static inline int eap_sm_method_pending(struct eap_sm *sm)
-{
-	return 0;
-}
-
-#endif /* EAP_SERVER */
+const u8 * eap_get_identity(struct eap_sm *sm, size_t *len);
+struct eap_eapol_interface * eap_get_interface(struct eap_sm *sm);
 
 #endif /* EAP_H */

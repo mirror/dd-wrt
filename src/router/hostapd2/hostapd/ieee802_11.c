@@ -240,7 +240,7 @@ ParseRes ieee802_11_parse_elems(struct hostapd_data *hapd, u8 *start,
 	u8 *pos = start;
 	int unknown = 0;
 
-	memset(elems, 0, sizeof(*elems));
+	os_memset(elems, 0, sizeof(*elems));
 
 	while (left >= 2) {
 		u8 id, elen;
@@ -370,13 +370,13 @@ void ieee802_11_send_deauth(struct hostapd_data *hapd, u8 *addr, u16 reason)
 	hostapd_logger(hapd, addr, HOSTAPD_MODULE_IEEE80211,
 		       HOSTAPD_LEVEL_DEBUG,
 		       "deauthenticate - reason %d", reason);
-	snprintf(buf, sizeof(buf), "SEND-DEAUTHENTICATE %d", reason);
-	memset(&mgmt, 0, sizeof(mgmt));
+	os_snprintf(buf, sizeof(buf), "SEND-DEAUTHENTICATE %d", reason);
+	os_memset(&mgmt, 0, sizeof(mgmt));
 	mgmt.frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
 					  WLAN_FC_STYPE_DEAUTH);
-	memcpy(mgmt.da, addr, ETH_ALEN);
-	memcpy(mgmt.sa, hapd->own_addr, ETH_ALEN);
-	memcpy(mgmt.bssid, hapd->own_addr, ETH_ALEN);
+	os_memcpy(mgmt.da, addr, ETH_ALEN);
+	os_memcpy(mgmt.sa, hapd->own_addr, ETH_ALEN);
+	os_memcpy(mgmt.bssid, hapd->own_addr, ETH_ALEN);
 	mgmt.u.deauth.reason_code = host_to_le16(reason);
 	if (hostapd_send_mgmt_frame(hapd, &mgmt, IEEE80211_HDRLEN +
 				    sizeof(mgmt.u.deauth), 0) < 0)
@@ -400,14 +400,14 @@ static void ieee802_11_sta_authenticate(void *eloop_ctx, void *timeout_ctx)
 			      hapd->assoc_ap_ssid_len);
 	printf(" (as station)\n");
 
-	memset(&mgmt, 0, sizeof(mgmt));
+	os_memset(&mgmt, 0, sizeof(mgmt));
 	mgmt.frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
 					  WLAN_FC_STYPE_AUTH);
 	/* Request TX callback */
 	mgmt.frame_control |= host_to_le16(BIT(1));
-	memcpy(mgmt.da, hapd->conf->assoc_ap_addr, ETH_ALEN);
-	memcpy(mgmt.sa, hapd->own_addr, ETH_ALEN);
-	memcpy(mgmt.bssid, hapd->conf->assoc_ap_addr, ETH_ALEN);
+	os_memcpy(mgmt.da, hapd->conf->assoc_ap_addr, ETH_ALEN);
+	os_memcpy(mgmt.sa, hapd->own_addr, ETH_ALEN);
+	os_memcpy(mgmt.bssid, hapd->conf->assoc_ap_addr, ETH_ALEN);
 	mgmt.u.auth.auth_alg = host_to_le16(WLAN_AUTH_OPEN);
 	mgmt.u.auth.auth_transaction = host_to_le16(1);
 	mgmt.u.auth.status_code = host_to_le16(0);
@@ -438,21 +438,21 @@ static void ieee802_11_sta_associate(void *eloop_ctx, void *timeout_ctx)
 			      hapd->assoc_ap_ssid_len);
 	printf(" (as station)\n");
 
-	memset(mgmt, 0, sizeof(*mgmt));
+	os_memset(mgmt, 0, sizeof(*mgmt));
 	mgmt->frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
 					  WLAN_FC_STYPE_ASSOC_REQ);
 	/* Request TX callback */
 	mgmt->frame_control |= host_to_le16(BIT(1));
-	memcpy(mgmt->da, hapd->conf->assoc_ap_addr, ETH_ALEN);
-	memcpy(mgmt->sa, hapd->own_addr, ETH_ALEN);
-	memcpy(mgmt->bssid, hapd->conf->assoc_ap_addr, ETH_ALEN);
+	os_memcpy(mgmt->da, hapd->conf->assoc_ap_addr, ETH_ALEN);
+	os_memcpy(mgmt->sa, hapd->own_addr, ETH_ALEN);
+	os_memcpy(mgmt->bssid, hapd->conf->assoc_ap_addr, ETH_ALEN);
 	mgmt->u.assoc_req.capab_info = host_to_le16(0);
 	mgmt->u.assoc_req.listen_interval = host_to_le16(1);
 	p = &mgmt->u.assoc_req.variable[0];
 
 	*p++ = WLAN_EID_SSID;
 	*p++ = hapd->assoc_ap_ssid_len;
-	memcpy(p, hapd->assoc_ap_ssid, hapd->assoc_ap_ssid_len);
+	os_memcpy(p, hapd->assoc_ap_ssid, hapd->assoc_ap_ssid_len);
 	p += hapd->assoc_ap_ssid_len;
 
 	p = hostapd_eid_supp_rates(hapd, p);
@@ -486,8 +486,8 @@ static u16 auth_shared_key(struct hostapd_data *hapd, struct sta_info *sta,
 
 			now = time(NULL);
 			r = random();
-			memcpy(key, &now, 4);
-			memcpy(key + 4, &r, 4);
+			os_memcpy(key, &now, 4);
+			os_memcpy(key + 4, &r, 4);
 			rc4(sta->challenge, WLAN_AUTH_CHALLENGE_LEN,
 			    key, sizeof(key));
 		}
@@ -499,7 +499,7 @@ static u16 auth_shared_key(struct hostapd_data *hapd, struct sta_info *sta,
 
 	/* Transaction 3 */
 	if (!iswep || !sta->challenge || !challenge ||
-	    memcmp(sta->challenge, challenge, WLAN_AUTH_CHALLENGE_LEN)) {
+	    os_memcmp(sta->challenge, challenge, WLAN_AUTH_CHALLENGE_LEN)) {
 		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
 			       HOSTAPD_LEVEL_INFO,
 			       "shared key authentication - invalid "
@@ -517,7 +517,7 @@ static u16 auth_shared_key(struct hostapd_data *hapd, struct sta_info *sta,
 	sta->flags |= WLAN_STA_AUTH;
 	wpa_auth_sm_event(sta->wpa_sm, WPA_AUTH);
 #endif
-	free(sta->challenge);
+	os_free(sta->challenge);
 	sta->challenge = NULL;
 
 	return 0;
@@ -543,16 +543,16 @@ static void send_auth_reply(struct hostapd_data *hapd,
 					    WLAN_FC_STYPE_AUTH);
 	/* Request TX callback */
 	reply->frame_control |= host_to_le16(BIT(1));
-	memcpy(reply->da, dst, ETH_ALEN);
-	memcpy(reply->sa, hapd->own_addr, ETH_ALEN);
-	memcpy(reply->bssid, bssid, ETH_ALEN);
+	os_memcpy(reply->da, dst, ETH_ALEN);
+	os_memcpy(reply->sa, hapd->own_addr, ETH_ALEN);
+	os_memcpy(reply->bssid, bssid, ETH_ALEN);
 
 	reply->u.auth.auth_alg = host_to_le16(auth_alg);
 	reply->u.auth.auth_transaction = host_to_le16(auth_transaction);
 	reply->u.auth.status_code = host_to_le16(resp);
 
 	if (ies && ies_len)
-		memcpy(reply->u.auth.variable, ies, ies_len);
+		os_memcpy(reply->u.auth.variable, ies, ies_len);
 
 	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
 		      "authentication reply: STA=" MACSTR " auth_alg=%d "
@@ -631,8 +631,8 @@ static void handle_auth(struct hostapd_data *hapd, struct ieee80211_mgmt *mgmt,
 		      challenge ? " challenge" : "");
 
 	if (hapd->assoc_ap_state == AUTHENTICATE && auth_transaction == 2 &&
-	    memcmp(mgmt->sa, hapd->conf->assoc_ap_addr, ETH_ALEN) == 0 &&
-	    memcmp(mgmt->bssid, hapd->conf->assoc_ap_addr, ETH_ALEN) == 0) {
+	    os_memcmp(mgmt->sa, hapd->conf->assoc_ap_addr, ETH_ALEN) == 0 &&
+	    os_memcmp(mgmt->bssid, hapd->conf->assoc_ap_addr, ETH_ALEN) == 0) {
 		if (status_code != 0) {
 			printf("Authentication (as station) with AP "
 			       MACSTR " failed (status_code=%d)\n",
@@ -675,7 +675,7 @@ static void handle_auth(struct hostapd_data *hapd, struct ieee80211_mgmt *mgmt,
 		goto fail;
 	}
 
-	if (memcmp(mgmt->sa, hapd->own_addr, ETH_ALEN) == 0) {
+	if (os_memcmp(mgmt->sa, hapd->own_addr, ETH_ALEN) == 0) {
 		printf("Station " MACSTR " not allowed to authenticate.\n",
 		       MAC2STR(mgmt->sa));
 		resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
@@ -756,8 +756,8 @@ static void handle_auth(struct hostapd_data *hapd, struct ieee80211_mgmt *mgmt,
 		if (sta->challenge && auth_transaction == 1) {
 			resp_ies[0] = WLAN_EID_CHALLENGE;
 			resp_ies[1] = WLAN_AUTH_CHALLENGE_LEN;
-			memcpy(resp_ies + 2, sta->challenge,
-			       WLAN_AUTH_CHALLENGE_LEN);
+			os_memcpy(resp_ies + 2, sta->challenge,
+				  WLAN_AUTH_CHALLENGE_LEN);
 			resp_ies_len = 2 + WLAN_AUTH_CHALLENGE_LEN;
 		}
 		break;
@@ -860,8 +860,8 @@ static void handle_assoc(struct hostapd_data *hapd,
 	}
 
 	if (reassoc) {
-		memcpy(sta->previous_ap, mgmt->u.reassoc_req.current_ap,
-		       ETH_ALEN);
+		os_memcpy(sta->previous_ap, mgmt->u.reassoc_req.current_ap,
+			  ETH_ALEN);
 	}
 
 	sta->capability = capab_info;
@@ -876,7 +876,8 @@ static void handle_assoc(struct hostapd_data *hapd,
 	}
 
 	if (elems.ssid_len != hapd->conf->ssid.ssid_len ||
-	    memcmp(elems.ssid, hapd->conf->ssid.ssid, elems.ssid_len) != 0) {
+	    os_memcmp(elems.ssid, hapd->conf->ssid.ssid, elems.ssid_len) != 0)
+	{
 		printf("Station " MACSTR " tried to associate with "
 		       "unknown SSID '", MAC2STR(sta->addr));
 		ieee802_11_print_ssid(elems.ssid, elems.ssid_len);
@@ -914,8 +915,9 @@ static void handle_assoc(struct hostapd_data *hapd,
 		goto fail;
 	}
 
-	memset(sta->supported_rates, 0, sizeof(sta->supported_rates));
-	memcpy(sta->supported_rates, elems.supp_rates, elems.supp_rates_len);
+	os_memset(sta->supported_rates, 0, sizeof(sta->supported_rates));
+	os_memcpy(sta->supported_rates, elems.supp_rates,
+		  elems.supp_rates_len);
 	sta->supported_rates_len = elems.supp_rates_len;
 
 	if (elems.ext_supp_rates) {
@@ -931,8 +933,8 @@ static void handle_assoc(struct hostapd_data *hapd,
 			goto fail;
 		}
 
-		memcpy(sta->supported_rates + elems.supp_rates_len,
-		       elems.ext_supp_rates, elems.ext_supp_rates_len);
+		os_memcpy(sta->supported_rates + elems.supp_rates_len,
+			  elems.ext_supp_rates, elems.ext_supp_rates_len);
 		sta->supported_rates_len += elems.ext_supp_rates_len;
 	}
 
@@ -1088,26 +1090,26 @@ static void handle_assoc(struct hostapd_data *hapd,
 	 */
 
 	if (sta->last_assoc_req)
-		free(sta->last_assoc_req);
-	sta->last_assoc_req = (struct ieee80211_mgmt *) malloc(len);
+		os_free(sta->last_assoc_req);
+	sta->last_assoc_req = os_malloc(len);
 	if (sta->last_assoc_req)
-		memcpy(sta->last_assoc_req, mgmt, len);
+		os_memcpy(sta->last_assoc_req, mgmt, len);
 
 	/* Make sure that the previously registered inactivity timer will not
 	 * remove the STA immediately. */
 	sta->timeout_next = STA_NULLFUNC;
 
  fail:
-	memset(buf, 0, sizeof(buf));
+	os_memset(buf, 0, sizeof(buf));
 	reply = (struct ieee80211_mgmt *) buf;
 	reply->frame_control =
 		IEEE80211_FC(WLAN_FC_TYPE_MGMT,
 			     (send_deauth ? WLAN_FC_STYPE_DEAUTH :
 			      (reassoc ? WLAN_FC_STYPE_REASSOC_RESP :
 			       WLAN_FC_STYPE_ASSOC_RESP)));
-	memcpy(reply->da, mgmt->sa, ETH_ALEN);
-	memcpy(reply->sa, hapd->own_addr, ETH_ALEN);
-	memcpy(reply->bssid, mgmt->bssid, ETH_ALEN);
+	os_memcpy(reply->da, mgmt->sa, ETH_ALEN);
+	os_memcpy(reply->sa, hapd->own_addr, ETH_ALEN);
+	os_memcpy(reply->bssid, mgmt->bssid, ETH_ALEN);
 
 	send_len = IEEE80211_HDRLEN;
 	if (send_deauth) {
@@ -1166,8 +1168,8 @@ static void handle_assoc_resp(struct hostapd_data *hapd,
 		return;
 	}
 
-	if (memcmp(mgmt->sa, hapd->conf->assoc_ap_addr, ETH_ALEN) != 0 ||
-	    memcmp(mgmt->bssid, hapd->conf->assoc_ap_addr, ETH_ALEN) != 0) {
+	if (os_memcmp(mgmt->sa, hapd->conf->assoc_ap_addr, ETH_ALEN) != 0 ||
+	    os_memcmp(mgmt->bssid, hapd->conf->assoc_ap_addr, ETH_ALEN) != 0) {
 		printf("Received association response from unexpected address "
 		       "(SA=" MACSTR " BSSID=" MACSTR "\n",
 		       MAC2STR(mgmt->sa), MAC2STR(mgmt->bssid));
@@ -1217,7 +1219,7 @@ static void handle_disassoc(struct hostapd_data *hapd,
 		      le_to_host16(mgmt->u.disassoc.reason_code));
 
 	if (hapd->assoc_ap_state != DO_NOT_ASSOC &&
-	    memcmp(mgmt->sa, hapd->conf->assoc_ap_addr, ETH_ALEN) == 0) {
+	    os_memcmp(mgmt->sa, hapd->conf->assoc_ap_addr, ETH_ALEN) == 0) {
 		printf("Assoc AP " MACSTR " sent disassociation "
 		       "(reason_code=%d) - try to authenticate\n",
 		       MAC2STR(hapd->conf->assoc_ap_addr),
@@ -1278,7 +1280,7 @@ static void handle_deauth(struct hostapd_data *hapd,
 		      le_to_host16(mgmt->u.deauth.reason_code));
 
 	if (hapd->assoc_ap_state != DO_NOT_ASSOC &&
-	    memcmp(mgmt->sa, hapd->conf->assoc_ap_addr, ETH_ALEN) == 0) {
+	    os_memcmp(mgmt->sa, hapd->conf->assoc_ap_addr, ETH_ALEN) == 0) {
 		printf("Assoc AP " MACSTR " sent deauthentication "
 		       "(reason_code=%d) - try to authenticate\n",
 		       MAC2STR(hapd->conf->assoc_ap_addr),
@@ -1326,10 +1328,10 @@ static void handle_beacon(struct hostapd_data *hapd,
 				      0);
 
 	if (hapd->assoc_ap_state == WAIT_BEACON &&
-	    memcmp(mgmt->sa, hapd->conf->assoc_ap_addr, ETH_ALEN) == 0) {
+	    os_memcmp(mgmt->sa, hapd->conf->assoc_ap_addr, ETH_ALEN) == 0) {
 		if (elems.ssid && elems.ssid_len <= 32) {
-			memcpy(hapd->assoc_ap_ssid, elems.ssid,
-			       elems.ssid_len);
+			os_memcpy(hapd->assoc_ap_ssid, elems.ssid,
+				  elems.ssid_len);
 			hapd->assoc_ap_ssid[elems.ssid_len] = '\0';
 			hapd->assoc_ap_ssid_len = elems.ssid_len;
 		}
@@ -1446,9 +1448,11 @@ void ieee802_11_mgmt(struct hostapd_data *hapd, u8 *buf, size_t len, u16 stype,
 		mgmt->bssid[2] == 0xff && mgmt->bssid[3] == 0xff &&
 		mgmt->bssid[4] == 0xff && mgmt->bssid[5] == 0xff;
 
-	if (!broadcast && memcmp(mgmt->bssid, hapd->own_addr, ETH_ALEN) != 0 &&
+	if (!broadcast &&
+	    os_memcmp(mgmt->bssid, hapd->own_addr, ETH_ALEN) != 0 &&
 	    (hapd->assoc_ap_state == DO_NOT_ASSOC ||
-	     memcmp(mgmt->bssid, hapd->conf->assoc_ap_addr, ETH_ALEN) != 0)) {
+	     os_memcmp(mgmt->bssid, hapd->conf->assoc_ap_addr, ETH_ALEN) != 0))
+	{
 		printf("MGMT: BSSID=" MACSTR " not our address\n",
 		       MAC2STR(mgmt->bssid));
 		return;
@@ -1461,7 +1465,7 @@ void ieee802_11_mgmt(struct hostapd_data *hapd, u8 *buf, size_t len, u16 stype,
 		return;
 	}
 
-	if (memcmp(mgmt->da, hapd->own_addr, ETH_ALEN) != 0) {
+	if (os_memcmp(mgmt->da, hapd->own_addr, ETH_ALEN) != 0) {
 		hostapd_logger(hapd, mgmt->sa, HOSTAPD_MODULE_IEEE80211,
 			       HOSTAPD_LEVEL_DEBUG,
 			       "MGMT: DA=" MACSTR " not our address",
@@ -1625,10 +1629,10 @@ static void handle_assoc_cb(struct hostapd_data *hapd,
 		ap_sta_bind_vlan(hapd, sta, 0);
 	}
 	if (sta->flags & WLAN_STA_SHORT_PREAMBLE) {
-		hostapd_sta_set_flags(hapd, sta->addr,
+		hostapd_sta_set_flags(hapd, sta->addr, sta->flags,
 				      WLAN_STA_SHORT_PREAMBLE, ~0);
 	} else {
-		hostapd_sta_set_flags(hapd, sta->addr,
+		hostapd_sta_set_flags(hapd, sta->addr, sta->flags,
 				      0, ~WLAN_STA_SHORT_PREAMBLE);
 	}
 
@@ -1643,7 +1647,7 @@ static void handle_assoc_cb(struct hostapd_data *hapd,
  fail:
 	/* Copy of the association request is not needed anymore */
 	if (sta->last_assoc_req) {
-		free(sta->last_assoc_req);
+		os_free(sta->last_assoc_req);
 		sta->last_assoc_req = NULL;
 	}
 }

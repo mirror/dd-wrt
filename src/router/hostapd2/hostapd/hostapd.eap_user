@@ -63,6 +63,10 @@
 "4"*		AKA,TTLS,TLS,PEAP,SIM
 "5"*		SIM,TTLS,TLS,PEAP,AKA
 
+# Wi-Fi Protected Setup
+"WFA-SimpleConfig-Registrar-1-0"	WSC
+"WFA-SimpleConfig-Enrollee-1-0"		WSC
+
 # Wildcard for all other identities
 *		PEAP,TTLS,TLS,SIM,AKA
 
