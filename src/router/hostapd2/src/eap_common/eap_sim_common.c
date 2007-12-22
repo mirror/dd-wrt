@@ -1,5 +1,5 @@
 /*
- * EAP peer: EAP-SIM/AKA shared routines
+ * EAP peer/server: EAP-SIM/AKA shared routines
  * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
 #include "sha1.h"
 #include "crypto.h"
 #include "aes_wrap.h"
+#include "wpabuf.h"
 #include "eap_common/eap_sim_common.h"
 
 
@@ -160,7 +161,7 @@ int eap_sim_derive_keys_reauth(u16 _counter,
 }
 
 
-int eap_sim_verify_mac(const u8 *k_aut, const u8 *req, size_t req_len,
+int eap_sim_verify_mac(const u8 *k_aut, const struct wpabuf *req,
 		       const u8 *mac, const u8 *extra, size_t extra_len)
 {
 	unsigned char hmac[SHA1_MAC_LEN];
@@ -168,23 +169,25 @@ int eap_sim_verify_mac(const u8 *k_aut, const u8 *req, size_t req_len,
 	size_t len[2];
 	u8 *tmp;
 
-	if (mac == NULL || req_len < EAP_SIM_MAC_LEN || mac < req ||
-	    mac > req + req_len - EAP_SIM_MAC_LEN)
+	if (mac == NULL || wpabuf_len(req) < EAP_SIM_MAC_LEN ||
+	    mac < wpabuf_head_u8(req) ||
+	    mac > wpabuf_head_u8(req) + wpabuf_len(req) - EAP_SIM_MAC_LEN)
 		return -1;
 
-	tmp = os_malloc(req_len);
+	tmp = os_malloc(wpabuf_len(req));
 	if (tmp == NULL)
 		return -1;
 
 	addr[0] = tmp;
-	len[0] = req_len;
+	len[0] = wpabuf_len(req);
 	addr[1] = extra;
 	len[1] = extra_len;
 
 	/* HMAC-SHA1-128 */
-	os_memcpy(tmp, req, req_len);
-	os_memset(tmp + (mac - req), 0, EAP_SIM_MAC_LEN);
-	wpa_hexdump(MSG_MSGDUMP, "EAP-SIM: Verify MAC - msg", tmp, req_len);
+	os_memcpy(tmp, wpabuf_head(req), wpabuf_len(req));
+	os_memset(tmp + (mac - wpabuf_head_u8(req)), 0, EAP_SIM_MAC_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "EAP-SIM: Verify MAC - msg",
+		    tmp, wpabuf_len(req));
 	wpa_hexdump(MSG_MSGDUMP, "EAP-SIM: Verify MAC - extra data",
 		    extra, extra_len);
 	wpa_hexdump_key(MSG_MSGDUMP, "EAP-SIM: Verify MAC - K_aut",
@@ -198,7 +201,7 @@ int eap_sim_verify_mac(const u8 *k_aut, const u8 *req, size_t req_len,
 }
 
 
-void eap_sim_add_mac(const u8 *k_aut, u8 *msg, size_t msg_len, u8 *mac,
+void eap_sim_add_mac(const u8 *k_aut, const u8 *msg, size_t msg_len, u8 *mac,
 		     const u8 *extra, size_t extra_len)
 {
 	unsigned char hmac[SHA1_MAC_LEN];
@@ -248,6 +251,10 @@ int eap_sim_parse_attr(const u8 *start, const u8 *end,
 			wpa_printf(MSG_INFO, "EAP-SIM: Attribute overflow "
 				   "(pos=%p len=%d end=%p)",
 				   pos, pos[1] * 4, end);
+			return -1;
+		}
+		if (pos[1] == 0) {
+			wpa_printf(MSG_INFO, "EAP-SIM: Attribute underflow");
 			return -1;
 		}
 		apos = pos + 2;
@@ -532,6 +539,39 @@ int eap_sim_parse_attr(const u8 *start, const u8 *end,
 			}
 			attr->auts = apos;
 			break;
+		case EAP_SIM_AT_CHECKCODE:
+			wpa_printf(MSG_DEBUG, "EAP-AKA: AT_CHECKCODE");
+			if (!aka) {
+				wpa_printf(MSG_DEBUG, "EAP-SIM: "
+					   "Unexpected AT_CHECKCODE");
+				return -1;
+			}
+			apos += 2;
+			alen -= 2;
+			if (alen != 0 && alen != EAP_AKA_CHECKCODE_LEN) {
+				wpa_printf(MSG_INFO, "EAP-AKA: Invalid "
+					   "AT_CHECKCODE (len %lu)",
+					   (unsigned long) alen);
+				return -1;
+			}
+			attr->checkcode = apos;
+			attr->checkcode_len = alen;
+			break;
+		case EAP_SIM_AT_RESULT_IND:
+			if (encr) {
+				wpa_printf(MSG_ERROR, "EAP-SIM: Encrypted "
+					   "AT_RESULT_IND");
+				return -1;
+			}
+			if (alen != 2) {
+				wpa_printf(MSG_INFO, "EAP-SIM: Invalid "
+					   "AT_RESULT_IND (alen=%lu)",
+					   (unsigned long) alen);
+				return -1;
+			}
+			wpa_printf(MSG_DEBUG, "EAP-SIM: AT_RESULT_IND");
+			attr->result_ind = 1;
+			break;
 		default:
 			if (pos[0] < 128) {
 				wpa_printf(MSG_INFO, "EAP-SIM: Unrecognized "
@@ -590,8 +630,7 @@ u8 * eap_sim_parse_encr(const u8 *k_encr, const u8 *encr_data,
 #define EAP_SIM_INIT_LEN 128
 
 struct eap_sim_msg {
-	u8 *buf;
-	size_t buf_len, used;
+	struct wpabuf *buf;
 	size_t mac, iv, encr; /* index from buf */
 };
 
@@ -606,46 +645,44 @@ struct eap_sim_msg * eap_sim_msg_init(int code, int id, int type, int subtype)
 	if (msg == NULL)
 		return NULL;
 
-	msg->buf = os_zalloc(EAP_SIM_INIT_LEN);
+	msg->buf = wpabuf_alloc(EAP_SIM_INIT_LEN);
 	if (msg->buf == NULL) {
 		os_free(msg);
 		return NULL;
 	}
-	msg->buf_len = EAP_SIM_INIT_LEN;
-	eap = (struct eap_hdr *) msg->buf;
+	eap = wpabuf_put(msg->buf, sizeof(*eap));
 	eap->code = code;
 	eap->identifier = id;
-	msg->used = sizeof(*eap);
 
-	pos = (u8 *) (eap + 1);
+	pos = wpabuf_put(msg->buf, 4);
 	*pos++ = type;
 	*pos++ = subtype;
 	*pos++ = 0; /* Reserved */
 	*pos++ = 0; /* Reserved */
-	msg->used += 4;
 
 	return msg;
 }
 
 
-u8 * eap_sim_msg_finish(struct eap_sim_msg *msg, size_t *len, const u8 *k_aut,
-			const u8 *extra, size_t extra_len)
+struct wpabuf * eap_sim_msg_finish(struct eap_sim_msg *msg, const u8 *k_aut,
+				   const u8 *extra, size_t extra_len)
 {
 	struct eap_hdr *eap;
-	u8 *buf;
+	struct wpabuf *buf;
 
 	if (msg == NULL)
 		return NULL;
 
-	eap = (struct eap_hdr *) msg->buf;
-	eap->length = host_to_be16(msg->used);
+	eap = wpabuf_mhead(msg->buf);
+	eap->length = host_to_be16(wpabuf_len(msg->buf));
 
 	if (k_aut && msg->mac) {
-		eap_sim_add_mac(k_aut, msg->buf, msg->used,
-				msg->buf + msg->mac, extra, extra_len);
+		eap_sim_add_mac(k_aut, (u8 *) wpabuf_head(msg->buf),
+				wpabuf_len(msg->buf),
+				(u8 *) wpabuf_mhead(msg->buf) + msg->mac,
+				extra, extra_len);
 	}
 
-	*len = msg->used;
 	buf = msg->buf;
 	os_free(msg);
 	return buf;
@@ -655,22 +692,9 @@ u8 * eap_sim_msg_finish(struct eap_sim_msg *msg, size_t *len, const u8 *k_aut,
 void eap_sim_msg_free(struct eap_sim_msg *msg)
 {
 	if (msg) {
-		os_free(msg->buf);
+		wpabuf_free(msg->buf);
 		os_free(msg);
 	}
-}
-
-
-static int eap_sim_msg_resize(struct eap_sim_msg *msg, size_t add_len)
-{
-	if (msg->used + add_len > msg->buf_len) {
-		u8 *nbuf = os_realloc(msg->buf, msg->used + add_len);
-		if (nbuf == NULL)
-			return -1;
-		msg->buf = nbuf;
-		msg->buf_len = msg->used + add_len;
-	}
-	return 0;
 }
 
 
@@ -679,24 +703,21 @@ u8 * eap_sim_msg_add_full(struct eap_sim_msg *msg, u8 attr,
 {
 	int attr_len = 2 + len;
 	int pad_len;
-	u8 *start, *pos;
+	u8 *start;
 
 	if (msg == NULL)
 		return NULL;
 
 	pad_len = (4 - attr_len % 4) % 4;
 	attr_len += pad_len;
-	if (eap_sim_msg_resize(msg, attr_len))
+	if (wpabuf_resize(&msg->buf, attr_len))
 		return NULL;
-	start = pos = msg->buf + msg->used;
-	*pos++ = attr;
-	*pos++ = attr_len / 4;
-	os_memcpy(pos, data, len);
-	if (pad_len) {
-		pos += len;
-		os_memset(pos, 0, pad_len);
-	}
-	msg->used += attr_len;
+	start = wpabuf_put(msg->buf, 0);
+	wpabuf_put_u8(msg->buf, attr);
+	wpabuf_put_u8(msg->buf, attr_len / 4);
+	wpabuf_put_data(msg->buf, data, len);
+	if (pad_len)
+		os_memset(wpabuf_put(msg->buf, pad_len), 0, pad_len);
 	return start;
 }
 
@@ -706,27 +727,25 @@ u8 * eap_sim_msg_add(struct eap_sim_msg *msg, u8 attr, u16 value,
 {
 	int attr_len = 4 + len;
 	int pad_len;
-	u8 *start, *pos;
+	u8 *start;
 
 	if (msg == NULL)
 		return NULL;
 
 	pad_len = (4 - attr_len % 4) % 4;
 	attr_len += pad_len;
-	if (eap_sim_msg_resize(msg, attr_len))
+	if (wpabuf_resize(&msg->buf, attr_len))
 		return NULL;
-	start = pos = msg->buf + msg->used;
-	*pos++ = attr;
-	*pos++ = attr_len / 4;
-	WPA_PUT_BE16(pos, value);
-	pos += 2;
+	start = wpabuf_put(msg->buf, 0);
+	wpabuf_put_u8(msg->buf, attr);
+	wpabuf_put_u8(msg->buf, attr_len / 4);
+	wpabuf_put_be16(msg->buf, value);
 	if (data)
-		os_memcpy(pos, data, len);
-	if (pad_len) {
-		pos += len;
-		os_memset(pos, 0, pad_len);
-	}
-	msg->used += attr_len;
+		wpabuf_put_data(msg->buf, data, len);
+	else
+		wpabuf_put(msg->buf, len);
+	if (pad_len)
+		os_memset(wpabuf_put(msg->buf, pad_len), 0, pad_len);
 	return start;
 }
 
@@ -735,7 +754,7 @@ u8 * eap_sim_msg_add_mac(struct eap_sim_msg *msg, u8 attr)
 {
 	u8 *pos = eap_sim_msg_add(msg, attr, 0, NULL, EAP_SIM_MAC_LEN);
 	if (pos)
-		msg->mac = (pos - msg->buf) + 4;
+		msg->mac = (pos - wpabuf_head_u8(msg->buf)) + 4;
 	return pos;
 }
 
@@ -746,8 +765,9 @@ int eap_sim_msg_add_encr_start(struct eap_sim_msg *msg, u8 attr_iv,
 	u8 *pos = eap_sim_msg_add(msg, attr_iv, 0, NULL, EAP_SIM_IV_LEN);
 	if (pos == NULL)
 		return -1;
-	msg->iv = (pos - msg->buf) + 4;
-	if (hostapd_get_rand(msg->buf + msg->iv, EAP_SIM_IV_LEN)) {
+	msg->iv = (pos - wpabuf_head_u8(msg->buf)) + 4;
+	if (os_get_random(wpabuf_mhead_u8(msg->buf) + msg->iv,
+			  EAP_SIM_IV_LEN)) {
 		msg->iv = 0;
 		return -1;
 	}
@@ -757,7 +777,7 @@ int eap_sim_msg_add_encr_start(struct eap_sim_msg *msg, u8 attr_iv,
 		msg->iv = 0;
 		return -1;
 	}
-	msg->encr = pos - msg->buf;
+	msg->encr = pos - wpabuf_head_u8(msg->buf);
 
 	return 0;
 }
@@ -770,7 +790,7 @@ int eap_sim_msg_add_encr_end(struct eap_sim_msg *msg, u8 *k_encr, int attr_pad)
 	if (msg == NULL || k_encr == NULL || msg->iv == 0 || msg->encr == 0)
 		return -1;
 
-	encr_len = msg->used - msg->encr - 4;
+	encr_len = wpabuf_len(msg->buf) - msg->encr - 4;
 	if (encr_len % 16) {
 		u8 *pos;
 		int pad_len = 16 - (encr_len % 16);
@@ -789,9 +809,10 @@ int eap_sim_msg_add_encr_end(struct eap_sim_msg *msg, u8 *k_encr, int attr_pad)
 	}
 	wpa_printf(MSG_DEBUG, "   (AT_ENCR_DATA data len %lu)",
 		   (unsigned long) encr_len);
-	msg->buf[msg->encr + 1] = encr_len / 4 + 1;
-	aes_128_cbc_encrypt(k_encr, msg->buf + msg->iv,
-			    msg->buf + msg->encr + 4, encr_len);
+	wpabuf_mhead_u8(msg->buf)[msg->encr + 1] = encr_len / 4 + 1;
+	aes_128_cbc_encrypt(k_encr, wpabuf_head_u8(msg->buf) + msg->iv,
+			    wpabuf_mhead_u8(msg->buf) + msg->encr + 4,
+			    encr_len);
 
 	return 0;
 }

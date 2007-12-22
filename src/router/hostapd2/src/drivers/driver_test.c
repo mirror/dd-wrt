@@ -127,6 +127,7 @@ static int wpa_driver_test_scan(void *priv, const u8 *ssid, size_t ssid_len)
 		perror("sendto(test_socket)");
 	}
 
+	eloop_cancel_timeout(wpa_driver_test_scan_timeout, drv, drv->ctx);
 	eloop_register_timeout(1, 0, wpa_driver_test_scan_timeout, drv,
 			       drv->ctx);
 	return 0;

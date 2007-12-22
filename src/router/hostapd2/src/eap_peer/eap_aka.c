@@ -18,6 +18,9 @@
 #include "eap_peer/eap_i.h"
 #include "pcsc_funcs.h"
 #include "eap_common/eap_sim_common.h"
+#include "sha1.h"
+#include "crypto.h"
+#include "config_ssid.h"
 
 
 struct eap_aka_data {
@@ -41,18 +44,60 @@ struct eap_aka_data {
 	unsigned int counter, counter_too_small;
 	u8 *last_eap_identity;
 	size_t last_eap_identity_len;
-	enum { CONTINUE, SUCCESS, FAILURE } state;
+	enum {
+		CONTINUE, RESULT_SUCCESS, RESULT_FAILURE, SUCCESS, FAILURE
+	} state;
+
+	struct wpabuf *id_msgs;
+	int prev_id;
+	int result_ind, use_result_ind;
 };
+
+
+#ifndef CONFIG_NO_STDOUT_DEBUG
+static const char * eap_aka_state_txt(int state)
+{
+	switch (state) {
+	case CONTINUE:
+		return "CONTINUE";
+	case RESULT_SUCCESS:
+		return "RESULT_SUCCESS";
+	case RESULT_FAILURE:
+		return "RESULT_FAILURE";
+	case SUCCESS:
+		return "SUCCESS";
+	case FAILURE:
+		return "FAILURE";
+	default:
+		return "?";
+	}
+}
+#endif /* CONFIG_NO_STDOUT_DEBUG */
+
+
+static void eap_aka_state(struct eap_aka_data *data, int state)
+{
+	wpa_printf(MSG_DEBUG, "EAP-AKA: %s -> %s",
+		   eap_aka_state_txt(data->state),
+		   eap_aka_state_txt(state));
+	data->state = state;
+}
 
 
 static void * eap_aka_init(struct eap_sm *sm)
 {
 	struct eap_aka_data *data;
+	struct wpa_ssid *config = eap_get_config(sm);
+
 	data = os_zalloc(sizeof(*data));
 	if (data == NULL)
 		return NULL;
 
-	data->state = CONTINUE;
+	eap_aka_state(data, CONTINUE);
+	data->prev_id = -1;
+
+	data->result_ind = config && config->phase1 &&
+			    os_strstr(config->phase1, "result_ind=1") != NULL;
 
 	return data;
 }
@@ -65,6 +110,7 @@ static void eap_aka_deinit(struct eap_sm *sm, void *priv)
 		os_free(data->pseudonym);
 		os_free(data->reauth_id);
 		os_free(data->last_eap_identity);
+		wpabuf_free(data->id_msgs);
 		os_free(data);
 	}
 }
@@ -177,45 +223,130 @@ static int eap_aka_learn_ids(struct eap_aka_data *data,
 }
 
 
-static u8 * eap_aka_client_error(struct eap_aka_data *data,
-				 const struct eap_hdr *req,
-				 size_t *respDataLen, int err)
+static int eap_aka_add_id_msg(struct eap_aka_data *data,
+			      const struct wpabuf *msg)
 {
-	struct eap_sim_msg *msg;
+	if (msg == NULL)
+		return -1;
 
-	data->state = FAILURE;
-	data->num_id_req = 0;
-	data->num_notification = 0;
+	if (data->id_msgs == NULL) {
+		data->id_msgs = wpabuf_dup(msg);
+		return data->id_msgs == NULL ? -1 : 0;
+	}
 
-	msg = eap_sim_msg_init(EAP_CODE_RESPONSE, req->identifier,
-			       EAP_TYPE_AKA, EAP_AKA_SUBTYPE_CLIENT_ERROR);
-	eap_sim_msg_add(msg, EAP_SIM_AT_CLIENT_ERROR_CODE, err, NULL, 0);
-	return eap_sim_msg_finish(msg, respDataLen, NULL, NULL, 0);
+	if (wpabuf_resize(&data->id_msgs, wpabuf_len(msg)) < 0)
+		return -1;
+	wpabuf_put_buf(data->id_msgs, msg);
+
+	return 0;
 }
 
 
-static u8 * eap_aka_authentication_reject(struct eap_aka_data *data,
-					  const struct eap_hdr *req,
-					  size_t *respDataLen)
+static void eap_aka_add_checkcode(struct eap_aka_data *data,
+				  struct eap_sim_msg *msg)
+{
+	const u8 *addr;
+	size_t len;
+	u8 hash[SHA1_MAC_LEN];
+
+	wpa_printf(MSG_DEBUG, "   AT_CHECKCODE");
+
+	if (data->id_msgs == NULL) {
+		/*
+		 * No EAP-AKA/Identity packets were exchanged - send empty
+		 * checkcode.
+		 */
+		eap_sim_msg_add(msg, EAP_SIM_AT_CHECKCODE, 0, NULL, 0);
+		return;
+	}
+
+	/* Checkcode is SHA1 hash over all EAP-AKA/Identity packets. */
+	addr = wpabuf_head(data->id_msgs);
+	len = wpabuf_len(data->id_msgs);
+	wpa_hexdump(MSG_MSGDUMP, "EAP-AKA: AT_CHECKCODE data", addr, len);
+	sha1_vector(1, &addr, &len, hash);
+
+	eap_sim_msg_add(msg, EAP_SIM_AT_CHECKCODE, 0, hash,
+			EAP_AKA_CHECKCODE_LEN);
+}
+
+
+static int eap_aka_verify_checkcode(struct eap_aka_data *data,
+				    const u8 *checkcode, size_t checkcode_len)
+{
+	const u8 *addr;
+	size_t len;
+	u8 hash[SHA1_MAC_LEN];
+
+	if (checkcode == NULL)
+		return -1;
+
+	if (data->id_msgs == NULL) {
+		if (checkcode_len != 0) {
+			wpa_printf(MSG_DEBUG, "EAP-AKA: Checkcode from server "
+				   "indicates that AKA/Identity messages were "
+				   "used, but they were not");
+			return -1;
+		}
+		return 0;
+	}
+
+	if (checkcode_len != EAP_AKA_CHECKCODE_LEN) {
+		wpa_printf(MSG_DEBUG, "EAP-AKA: Checkcode from server "
+			   "indicates that AKA/Identity message were not "
+			   "used, but they were");
+		return -1;
+	}
+
+	/* Checkcode is SHA1 hash over all EAP-AKA/Identity packets. */
+	addr = wpabuf_head(data->id_msgs);
+	len = wpabuf_len(data->id_msgs);
+	sha1_vector(1, &addr, &len, hash);
+
+	if (os_memcmp(hash, checkcode, EAP_AKA_CHECKCODE_LEN) != 0) {
+		wpa_printf(MSG_DEBUG, "EAP-AKA: Mismatch in AT_CHECKCODE");
+		return -1;
+	}
+
+	return 0;
+}
+
+
+static struct wpabuf * eap_aka_client_error(struct eap_aka_data *data, u8 id,
+					    int err)
 {
 	struct eap_sim_msg *msg;
 
-	data->state = FAILURE;
+	eap_aka_state(data, FAILURE);
+	data->num_id_req = 0;
+	data->num_notification = 0;
+
+	msg = eap_sim_msg_init(EAP_CODE_RESPONSE, id, EAP_TYPE_AKA,
+			       EAP_AKA_SUBTYPE_CLIENT_ERROR);
+	eap_sim_msg_add(msg, EAP_SIM_AT_CLIENT_ERROR_CODE, err, NULL, 0);
+	return eap_sim_msg_finish(msg, NULL, NULL, 0);
+}
+
+
+static struct wpabuf * eap_aka_authentication_reject(struct eap_aka_data *data,
+						     u8 id)
+{
+	struct eap_sim_msg *msg;
+
+	eap_aka_state(data, FAILURE);
 	data->num_id_req = 0;
 	data->num_notification = 0;
 
 	wpa_printf(MSG_DEBUG, "Generating EAP-AKA Authentication-Reject "
-		   "(id=%d)", req->identifier);
-	msg = eap_sim_msg_init(EAP_CODE_RESPONSE, req->identifier,
-			       EAP_TYPE_AKA,
+		   "(id=%d)", id);
+	msg = eap_sim_msg_init(EAP_CODE_RESPONSE, id, EAP_TYPE_AKA,
 			       EAP_AKA_SUBTYPE_AUTHENTICATION_REJECT);
-	return eap_sim_msg_finish(msg, respDataLen, NULL, NULL, 0);
+	return eap_sim_msg_finish(msg, NULL, NULL, 0);
 }
 
 
-static u8 * eap_aka_synchronization_failure(struct eap_aka_data *data,
-					    const struct eap_hdr *req,
-					    size_t *respDataLen)
+static struct wpabuf * eap_aka_synchronization_failure(
+	struct eap_aka_data *data, u8 id)
 {
 	struct eap_sim_msg *msg;
 
@@ -223,22 +354,20 @@ static u8 * eap_aka_synchronization_failure(struct eap_aka_data *data,
 	data->num_notification = 0;
 
 	wpa_printf(MSG_DEBUG, "Generating EAP-AKA Synchronization-Failure "
-		   "(id=%d)", req->identifier);
-	msg = eap_sim_msg_init(EAP_CODE_RESPONSE, req->identifier,
-			       EAP_TYPE_AKA,
+		   "(id=%d)", id);
+	msg = eap_sim_msg_init(EAP_CODE_RESPONSE, id, EAP_TYPE_AKA,
 			       EAP_AKA_SUBTYPE_SYNCHRONIZATION_FAILURE);
 	wpa_printf(MSG_DEBUG, "   AT_AUTS");
 	eap_sim_msg_add_full(msg, EAP_SIM_AT_AUTS, data->auts,
 			     EAP_AKA_AUTS_LEN);
-	return eap_sim_msg_finish(msg, respDataLen, NULL, NULL, 0);
+	return eap_sim_msg_finish(msg, NULL, NULL, 0);
 }
 
 
-static u8 * eap_aka_response_identity(struct eap_sm *sm,
-				      struct eap_aka_data *data,
-				      const struct eap_hdr *req,
-				      size_t *respDataLen,
-				      enum eap_sim_id_req id_req)
+static struct wpabuf * eap_aka_response_identity(struct eap_sm *sm,
+						 struct eap_aka_data *data,
+						 u8 id,
+						 enum eap_sim_id_req id_req)
 {
 	const u8 *identity = NULL;
 	size_t identity_len = 0;
@@ -264,10 +393,9 @@ static u8 * eap_aka_response_identity(struct eap_sm *sm,
 	if (id_req != NO_ID_REQ)
 		eap_aka_clear_identities(data, CLEAR_EAP_ID);
 
-	wpa_printf(MSG_DEBUG, "Generating EAP-AKA Identity (id=%d)",
-		   req->identifier);
-	msg = eap_sim_msg_init(EAP_CODE_RESPONSE, req->identifier,
-			       EAP_TYPE_AKA, EAP_AKA_SUBTYPE_IDENTITY);
+	wpa_printf(MSG_DEBUG, "Generating EAP-AKA Identity (id=%d)", id);
+	msg = eap_sim_msg_init(EAP_CODE_RESPONSE, id, EAP_TYPE_AKA,
+			       EAP_AKA_SUBTYPE_IDENTITY);
 
 	if (identity) {
 		wpa_hexdump_ascii(MSG_DEBUG, "   AT_IDENTITY",
@@ -276,41 +404,42 @@ static u8 * eap_aka_response_identity(struct eap_sm *sm,
 				identity, identity_len);
 	}
 
-	return eap_sim_msg_finish(msg, respDataLen, NULL, NULL, 0);
+	return eap_sim_msg_finish(msg, NULL, NULL, 0);
 }
 
 
-static u8 * eap_aka_response_challenge(struct eap_aka_data *data,
-				       const struct eap_hdr *req,
-				       size_t *respDataLen)
+static struct wpabuf * eap_aka_response_challenge(struct eap_aka_data *data,
+						  u8 id)
 {
 	struct eap_sim_msg *msg;
 
-	wpa_printf(MSG_DEBUG, "Generating EAP-AKA Challenge (id=%d)",
-		   req->identifier);
-	msg = eap_sim_msg_init(EAP_CODE_RESPONSE, req->identifier,
-			       EAP_TYPE_AKA, EAP_AKA_SUBTYPE_CHALLENGE);
+	wpa_printf(MSG_DEBUG, "Generating EAP-AKA Challenge (id=%d)", id);
+	msg = eap_sim_msg_init(EAP_CODE_RESPONSE, id, EAP_TYPE_AKA,
+			       EAP_AKA_SUBTYPE_CHALLENGE);
 	wpa_printf(MSG_DEBUG, "   AT_RES");
 	eap_sim_msg_add(msg, EAP_SIM_AT_RES, data->res_len,
 			data->res, data->res_len);
+	eap_aka_add_checkcode(data, msg);
+	if (data->use_result_ind) {
+		wpa_printf(MSG_DEBUG, "   AT_RESULT_IND");
+		eap_sim_msg_add(msg, EAP_SIM_AT_RESULT_IND, 0, NULL, 0);
+	}
 	wpa_printf(MSG_DEBUG, "   AT_MAC");
 	eap_sim_msg_add_mac(msg, EAP_SIM_AT_MAC);
-	return eap_sim_msg_finish(msg, respDataLen, data->k_aut, (u8 *) "", 0);
+	return eap_sim_msg_finish(msg, data->k_aut, (u8 *) "", 0);
 }
 
 
-static u8 * eap_aka_response_reauth(struct eap_aka_data *data,
-				    const struct eap_hdr *req,
-				    size_t *respDataLen, int counter_too_small,
-				    const u8 *nonce_s)
+static struct wpabuf * eap_aka_response_reauth(struct eap_aka_data *data,
+					       u8 id, int counter_too_small,
+					       const u8 *nonce_s)
 {
 	struct eap_sim_msg *msg;
 	unsigned int counter;
 
 	wpa_printf(MSG_DEBUG, "Generating EAP-AKA Reauthentication (id=%d)",
-		   req->identifier);
-	msg = eap_sim_msg_init(EAP_CODE_RESPONSE, req->identifier,
-			       EAP_TYPE_AKA,
+		   id);
+	msg = eap_sim_msg_init(EAP_CODE_RESPONSE, id, EAP_TYPE_AKA,
 			       EAP_AKA_SUBTYPE_REAUTHENTICATION);
 	wpa_printf(MSG_DEBUG, "   AT_IV");
 	wpa_printf(MSG_DEBUG, "   AT_ENCR_DATA");
@@ -332,25 +461,27 @@ static u8 * eap_aka_response_reauth(struct eap_aka_data *data,
 		eap_sim_msg_free(msg);
 		return NULL;
 	}
+	eap_aka_add_checkcode(data, msg);
+	if (data->use_result_ind) {
+		wpa_printf(MSG_DEBUG, "   AT_RESULT_IND");
+		eap_sim_msg_add(msg, EAP_SIM_AT_RESULT_IND, 0, NULL, 0);
+	}
 	wpa_printf(MSG_DEBUG, "   AT_MAC");
 	eap_sim_msg_add_mac(msg, EAP_SIM_AT_MAC);
-	return eap_sim_msg_finish(msg, respDataLen, data->k_aut, nonce_s,
+	return eap_sim_msg_finish(msg, data->k_aut, nonce_s,
 				  EAP_SIM_NONCE_S_LEN);
 }
 
 
-static u8 * eap_aka_response_notification(struct eap_aka_data *data,
-					  const struct eap_hdr *req,
-					  size_t *respDataLen,
-					  u16 notification)
+static struct wpabuf * eap_aka_response_notification(struct eap_aka_data *data,
+						     u8 id, u16 notification)
 {
 	struct eap_sim_msg *msg;
 	u8 *k_aut = (notification & 0x4000) == 0 ? data->k_aut : NULL;
 
-	wpa_printf(MSG_DEBUG, "Generating EAP-AKA Notification (id=%d)",
-		   req->identifier);
-	msg = eap_sim_msg_init(EAP_CODE_RESPONSE, req->identifier,
-			       EAP_TYPE_AKA, EAP_AKA_SUBTYPE_NOTIFICATION);
+	wpa_printf(MSG_DEBUG, "Generating EAP-AKA Notification (id=%d)", id);
+	msg = eap_sim_msg_init(EAP_CODE_RESPONSE, id, EAP_TYPE_AKA,
+			       EAP_AKA_SUBTYPE_NOTIFICATION);
 	if (k_aut && data->reauth) {
 		wpa_printf(MSG_DEBUG, "   AT_IV");
 		wpa_printf(MSG_DEBUG, "   AT_ENCR_DATA");
@@ -371,17 +502,18 @@ static u8 * eap_aka_response_notification(struct eap_aka_data *data,
 		wpa_printf(MSG_DEBUG, "   AT_MAC");
 		eap_sim_msg_add_mac(msg, EAP_SIM_AT_MAC);
 	}
-	return eap_sim_msg_finish(msg, respDataLen, k_aut, (u8 *) "", 0);
+	return eap_sim_msg_finish(msg, k_aut, (u8 *) "", 0);
 }
 
 
-static u8 * eap_aka_process_identity(struct eap_sm *sm,
-				     struct eap_aka_data *data,
-				     const struct eap_hdr *req,
-				     size_t *respDataLen,
-				     struct eap_sim_attrs *attr)
+static struct wpabuf * eap_aka_process_identity(struct eap_sm *sm,
+						struct eap_aka_data *data,
+						u8 id,
+						const struct wpabuf *reqData,
+						struct eap_sim_attrs *attr)
 {
 	int id_error;
+	struct wpabuf *buf;
 
 	wpa_printf(MSG_DEBUG, "EAP-AKA: subtype Identity");
 
@@ -408,21 +540,27 @@ static u8 * eap_aka_process_identity(struct eap_sm *sm,
 	if (id_error) {
 		wpa_printf(MSG_INFO, "EAP-AKA: Too many ID requests "
 			   "used within one authentication");
-		return eap_aka_client_error(data, req, respDataLen,
+		return eap_aka_client_error(data, id,
 					    EAP_AKA_UNABLE_TO_PROCESS_PACKET);
 	}
 
-	return eap_aka_response_identity(sm, data, req, respDataLen,
-					 attr->id_req);
+	buf = eap_aka_response_identity(sm, data, id, attr->id_req);
+
+	if (data->prev_id != id) {
+		eap_aka_add_id_msg(data, reqData);
+		eap_aka_add_id_msg(data, buf);
+		data->prev_id = id;
+	}
+
+	return buf;
 }
 
 
-static u8 * eap_aka_process_challenge(struct eap_sm *sm,
-				      struct eap_aka_data *data,
-				      const struct eap_hdr *req,
-				      size_t reqDataLen,
-				      size_t *respDataLen,
-				      struct eap_sim_attrs *attr)
+static struct wpabuf * eap_aka_process_challenge(struct eap_sm *sm,
+						 struct eap_aka_data *data,
+						 u8 id,
+						 const struct wpabuf *reqData,
+						 struct eap_sim_attrs *attr)
 {
 	const u8 *identity;
 	size_t identity_len;
@@ -430,6 +568,16 @@ static u8 * eap_aka_process_challenge(struct eap_sm *sm,
 	struct eap_sim_attrs eattr;
 
 	wpa_printf(MSG_DEBUG, "EAP-AKA: subtype Challenge");
+
+	if (attr->checkcode &&
+	    eap_aka_verify_checkcode(data, attr->checkcode,
+				     attr->checkcode_len)) {
+		wpa_printf(MSG_WARNING, "EAP-AKA: Invalid AT_CHECKCODE in the "
+			   "message");
+		return eap_aka_client_error(data, id,
+					    EAP_AKA_UNABLE_TO_PROCESS_PACKET);
+	}
+
 	data->reauth = 0;
 	if (!attr->mac || !attr->rand || !attr->autn) {
 		wpa_printf(MSG_WARNING, "EAP-AKA: Challenge message "
@@ -437,7 +585,7 @@ static u8 * eap_aka_process_challenge(struct eap_sm *sm,
 			   !attr->mac ? " AT_MAC" : "",
 			   !attr->rand ? " AT_RAND" : "",
 			   !attr->autn ? " AT_AUTN" : "");
-		return eap_aka_client_error(data, req, respDataLen,
+		return eap_aka_client_error(data, id,
 					    EAP_AKA_UNABLE_TO_PROCESS_PACKET);
 	}
 	os_memcpy(data->rand, attr->rand, EAP_AKA_RAND_LEN);
@@ -447,14 +595,14 @@ static u8 * eap_aka_process_challenge(struct eap_sm *sm,
 	if (res == -1) {
 		wpa_printf(MSG_WARNING, "EAP-AKA: UMTS authentication "
 			   "failed (AUTN)");
-		return eap_aka_authentication_reject(data, req, respDataLen);
+		return eap_aka_authentication_reject(data, id);
 	} else if (res == -2) {
 		wpa_printf(MSG_WARNING, "EAP-AKA: UMTS authentication "
 			   "failed (AUTN seq# -> AUTS)");
-		return eap_aka_synchronization_failure(data, req, respDataLen);
+		return eap_aka_synchronization_failure(data, id);
 	} else if (res) {
 		wpa_printf(MSG_WARNING, "EAP-AKA: UMTS authentication failed");
-		return eap_aka_client_error(data, req, respDataLen,
+		return eap_aka_client_error(data, id,
 					    EAP_AKA_UNABLE_TO_PROCESS_PACKET);
 	}
 	if (data->last_eap_identity) {
@@ -471,11 +619,11 @@ static u8 * eap_aka_process_challenge(struct eap_sm *sm,
 			  data->mk);
 	eap_sim_derive_keys(data->mk, data->k_encr, data->k_aut, data->msk,
 			    data->emsk);
-	if (eap_sim_verify_mac(data->k_aut, (const u8 *) req, reqDataLen,
-			       attr->mac, (u8 *) "", 0)) {
+	if (eap_sim_verify_mac(data->k_aut, reqData, attr->mac, (u8 *) "", 0))
+	{
 		wpa_printf(MSG_WARNING, "EAP-AKA: Challenge message "
 			   "used invalid AT_MAC");
-		return eap_aka_client_error(data, req, respDataLen,
+		return eap_aka_client_error(data, id,
 					    EAP_AKA_UNABLE_TO_PROCESS_PACKET);
 	}
 
@@ -492,15 +640,19 @@ static u8 * eap_aka_process_challenge(struct eap_sm *sm,
 					       &eattr, 0);
 		if (decrypted == NULL) {
 			return eap_aka_client_error(
-				data, req, respDataLen,
-				EAP_AKA_UNABLE_TO_PROCESS_PACKET);
+				data, id, EAP_AKA_UNABLE_TO_PROCESS_PACKET);
 		}
 		eap_aka_learn_ids(data, &eattr);
 		os_free(decrypted);
 	}
 
-	if (data->state != FAILURE)
-		data->state = SUCCESS;
+	if (data->result_ind && attr->result_ind)
+		data->use_result_ind = 1;
+
+	if (data->state != FAILURE && data->state != RESULT_FAILURE) {
+		eap_aka_state(data, data->use_result_ind ?
+			      RESULT_SUCCESS : SUCCESS);
+	}
 
 	data->num_id_req = 0;
 	data->num_notification = 0;
@@ -508,7 +660,7 @@ static u8 * eap_aka_process_challenge(struct eap_sm *sm,
 	 * fullauth, but initializing it to zero makes it easier to implement
 	 * reauth verification. */
 	data->counter = 0;
-	return eap_aka_response_challenge(data, req, respDataLen);
+	return eap_aka_response_challenge(data, id);
 }
 
 
@@ -547,8 +699,7 @@ static int eap_aka_process_notification_reauth(struct eap_aka_data *data,
 
 
 static int eap_aka_process_notification_auth(struct eap_aka_data *data,
-					     const struct eap_hdr *req,
-					     size_t reqDataLen,
+					     const struct wpabuf *reqData,
 					     struct eap_sim_attrs *attr)
 {
 	if (attr->mac == NULL) {
@@ -557,8 +708,8 @@ static int eap_aka_process_notification_auth(struct eap_aka_data *data,
 		return -1;
 	}
 
-	if (eap_sim_verify_mac(data->k_aut, (const u8 *) req, reqDataLen,
-			       attr->mac, (u8 *) "", 0)) {
+	if (eap_sim_verify_mac(data->k_aut, reqData, attr->mac, (u8 *) "", 0))
+	{
 		wpa_printf(MSG_WARNING, "EAP-AKA: Notification message "
 			   "used invalid AT_MAC");
 		return -1;
@@ -575,75 +726,79 @@ static int eap_aka_process_notification_auth(struct eap_aka_data *data,
 }
 
 
-static u8 * eap_aka_process_notification(struct eap_sm *sm,
-					 struct eap_aka_data *data,
-					 const struct eap_hdr *req,
-					 size_t reqDataLen,
-					 size_t *respDataLen,
-					 struct eap_sim_attrs *attr)
+static struct wpabuf * eap_aka_process_notification(
+	struct eap_sm *sm, struct eap_aka_data *data, u8 id,
+	const struct wpabuf *reqData, struct eap_sim_attrs *attr)
 {
 	wpa_printf(MSG_DEBUG, "EAP-AKA: subtype Notification");
 	if (data->num_notification > 0) {
 		wpa_printf(MSG_INFO, "EAP-AKA: too many notification "
 			   "rounds (only one allowed)");
-		return eap_aka_client_error(data, req, respDataLen,
+		return eap_aka_client_error(data, id,
 					    EAP_AKA_UNABLE_TO_PROCESS_PACKET);
 	}
 	data->num_notification++;
 	if (attr->notification == -1) {
 		wpa_printf(MSG_INFO, "EAP-AKA: no AT_NOTIFICATION in "
 			   "Notification message");
-		return eap_aka_client_error(data, req, respDataLen,
+		return eap_aka_client_error(data, id,
 					    EAP_AKA_UNABLE_TO_PROCESS_PACKET);
 	}
 
 	if ((attr->notification & 0x4000) == 0 &&
-	    eap_aka_process_notification_auth(data, req, reqDataLen, attr)) {
-		return eap_aka_client_error(data, req, respDataLen,
+	    eap_aka_process_notification_auth(data, reqData, attr)) {
+		return eap_aka_client_error(data, id,
 					    EAP_AKA_UNABLE_TO_PROCESS_PACKET);
 	}
 
 	eap_sim_report_notification(sm->msg_ctx, attr->notification, 1);
 	if (attr->notification >= 0 && attr->notification < 32768) {
-		data->state = FAILURE;
-	}
-	return eap_aka_response_notification(data, req, respDataLen,
-					     attr->notification);
+		eap_aka_state(data, FAILURE);
+	} else if (attr->notification == EAP_SIM_SUCCESS &&
+		   data->state == RESULT_SUCCESS)
+		eap_aka_state(data, SUCCESS);
+	return eap_aka_response_notification(data, id, attr->notification);
 }
 
 
-static u8 * eap_aka_process_reauthentication(struct eap_sm *sm,
-					     struct eap_aka_data *data,
-					     const struct eap_hdr *req,
-					     size_t reqDataLen,
-					     size_t *respDataLen,
-					     struct eap_sim_attrs *attr)
+static struct wpabuf * eap_aka_process_reauthentication(
+	struct eap_sm *sm, struct eap_aka_data *data, u8 id,
+	const struct wpabuf *reqData, struct eap_sim_attrs *attr)
 {
 	struct eap_sim_attrs eattr;
 	u8 *decrypted;
 
 	wpa_printf(MSG_DEBUG, "EAP-AKA: subtype Reauthentication");
 
+	if (attr->checkcode &&
+	    eap_aka_verify_checkcode(data, attr->checkcode,
+				     attr->checkcode_len)) {
+		wpa_printf(MSG_WARNING, "EAP-AKA: Invalid AT_CHECKCODE in the "
+			   "message");
+		return eap_aka_client_error(data, id,
+					    EAP_AKA_UNABLE_TO_PROCESS_PACKET);
+	}
+
 	if (data->reauth_id == NULL) {
 		wpa_printf(MSG_WARNING, "EAP-AKA: Server is trying "
 			   "reauthentication, but no reauth_id available");
-		return eap_aka_client_error(data, req, respDataLen,
+		return eap_aka_client_error(data, id,
 					    EAP_AKA_UNABLE_TO_PROCESS_PACKET);
 	}
 
 	data->reauth = 1;
-	if (eap_sim_verify_mac(data->k_aut, (const u8 *) req, reqDataLen,
-			       attr->mac, (u8 *) "", 0)) {
+	if (eap_sim_verify_mac(data->k_aut, reqData, attr->mac, (u8 *) "", 0))
+	{
 		wpa_printf(MSG_WARNING, "EAP-AKA: Reauthentication "
 			   "did not have valid AT_MAC");
-		return eap_aka_client_error(data, req, respDataLen,
+		return eap_aka_client_error(data, id,
 					    EAP_AKA_UNABLE_TO_PROCESS_PACKET);
 	}
 
 	if (attr->encr_data == NULL || attr->iv == NULL) {
 		wpa_printf(MSG_WARNING, "EAP-AKA: Reauthentication "
 			   "message did not include encrypted data");
-		return eap_aka_client_error(data, req, respDataLen,
+		return eap_aka_client_error(data, id,
 					    EAP_AKA_UNABLE_TO_PROCESS_PACKET);
 	}
 
@@ -653,7 +808,7 @@ static u8 * eap_aka_process_reauthentication(struct eap_sm *sm,
 	if (decrypted == NULL) {
 		wpa_printf(MSG_WARNING, "EAP-AKA: Failed to parse encrypted "
 			   "data from reauthentication message");
-		return eap_aka_client_error(data, req, respDataLen,
+		return eap_aka_client_error(data, id,
 					    EAP_AKA_UNABLE_TO_PROCESS_PACKET);
 	}
 
@@ -662,12 +817,12 @@ static u8 * eap_aka_process_reauthentication(struct eap_sm *sm,
 			   !eattr.nonce_s ? " AT_NONCE_S" : "",
 			   eattr.counter < 0 ? " AT_COUNTER" : "");
 		os_free(decrypted);
-		return eap_aka_client_error(data, req, respDataLen,
+		return eap_aka_client_error(data, id,
 					    EAP_AKA_UNABLE_TO_PROCESS_PACKET);
 	}
 
 	if (eattr.counter < 0 || (size_t) eattr.counter <= data->counter) {
-		u8 *res;
+		struct wpabuf *res;
 		wpa_printf(MSG_INFO, "EAP-AKA: (encr) Invalid counter "
 			   "(%d <= %d)", eattr.counter, data->counter);
 		data->counter_too_small = eattr.counter;
@@ -687,8 +842,7 @@ static u8 * eap_aka_process_reauthentication(struct eap_sm *sm,
 		data->reauth_id = NULL;
 		data->reauth_id_len = 0;
 
-		res = eap_aka_response_reauth(data, req, respDataLen, 1,
-					      eattr.nonce_s);
+		res = eap_aka_response_reauth(data, id, 1, eattr.nonce_s);
 		os_free(decrypted);
 
 		return res;
@@ -706,8 +860,13 @@ static u8 * eap_aka_process_reauthentication(struct eap_sm *sm,
 	eap_aka_clear_identities(data, CLEAR_REAUTH_ID | CLEAR_EAP_ID);
 	eap_aka_learn_ids(data, &eattr);
 
-	if (data->state != FAILURE)
-		data->state = SUCCESS;
+	if (data->result_ind && attr->result_ind)
+		data->use_result_ind = 1;
+
+	if (data->state != FAILURE && data->state != RESULT_FAILURE) {
+		eap_aka_state(data, data->use_result_ind ?
+			      RESULT_SUCCESS : SUCCESS);
+	}
 
 	data->num_id_req = 0;
 	data->num_notification = 0;
@@ -717,24 +876,23 @@ static u8 * eap_aka_process_reauthentication(struct eap_sm *sm,
 		eap_aka_clear_identities(data, CLEAR_REAUTH_ID | CLEAR_EAP_ID);
 	}
 	os_free(decrypted);
-	return eap_aka_response_reauth(data, req, respDataLen, 0,
-				       data->nonce_s);
+	return eap_aka_response_reauth(data, id, 0, data->nonce_s);
 }
 
 
-static u8 * eap_aka_process(struct eap_sm *sm, void *priv,
-			    struct eap_method_ret *ret,
-			    const u8 *reqData, size_t reqDataLen,
-			    size_t *respDataLen)
+static struct wpabuf * eap_aka_process(struct eap_sm *sm, void *priv,
+				       struct eap_method_ret *ret,
+				       const struct wpabuf *reqData)
 {
 	struct eap_aka_data *data = priv;
 	const struct eap_hdr *req;
-	u8 subtype, *res;
+	u8 subtype, id;
+	struct wpabuf *res;
 	const u8 *pos;
 	struct eap_sim_attrs attr;
 	size_t len;
 
-	wpa_hexdump(MSG_DEBUG, "EAP-AKA: EAP data", reqData, reqDataLen);
+	wpa_hexdump_buf(MSG_DEBUG, "EAP-AKA: EAP data", reqData);
 	if (eap_get_config_identity(sm, &len) == NULL) {
 		wpa_printf(MSG_INFO, "EAP-AKA: Identity not configured");
 		eap_sm_request_identity(sm);
@@ -742,13 +900,13 @@ static u8 * eap_aka_process(struct eap_sm *sm, void *priv,
 		return NULL;
 	}
 
-	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_AKA,
-			       reqData, reqDataLen, &len);
+	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_AKA, reqData, &len);
 	if (pos == NULL || len < 1) {
 		ret->ignore = TRUE;
 		return NULL;
 	}
-	req = (const struct eap_hdr *) reqData;
+	req = wpabuf_head(reqData);
+	id = req->identifier;
 	len = be_to_host16(req->length);
 
 	ret->ignore = FALSE;
@@ -760,37 +918,36 @@ static u8 * eap_aka_process(struct eap_sm *sm, void *priv,
 	wpa_printf(MSG_DEBUG, "EAP-AKA: Subtype=%d", subtype);
 	pos += 2; /* Reserved */
 
-	if (eap_sim_parse_attr(pos, reqData + len, &attr, 1, 0)) {
-		res = eap_aka_client_error(data, req, respDataLen,
+	if (eap_sim_parse_attr(pos, wpabuf_head_u8(reqData) + len, &attr, 1,
+			       0)) {
+		res = eap_aka_client_error(data, id,
 					   EAP_AKA_UNABLE_TO_PROCESS_PACKET);
 		goto done;
 	}
 
 	switch (subtype) {
 	case EAP_AKA_SUBTYPE_IDENTITY:
-		res = eap_aka_process_identity(sm, data, req,
-					       respDataLen, &attr);
+		res = eap_aka_process_identity(sm, data, id, reqData, &attr);
 		break;
 	case EAP_AKA_SUBTYPE_CHALLENGE:
-		res = eap_aka_process_challenge(sm, data, req, len,
-						respDataLen, &attr);
+		res = eap_aka_process_challenge(sm, data, id, reqData, &attr);
 		break;
 	case EAP_AKA_SUBTYPE_NOTIFICATION:
-		res = eap_aka_process_notification(sm, data, req, len,
-						   respDataLen, &attr);
+		res = eap_aka_process_notification(sm, data, id, reqData,
+						   &attr);
 		break;
 	case EAP_AKA_SUBTYPE_REAUTHENTICATION:
-		res = eap_aka_process_reauthentication(sm, data, req, len,
-						       respDataLen, &attr);
+		res = eap_aka_process_reauthentication(sm, data, id, reqData,
+						       &attr);
 		break;
 	case EAP_AKA_SUBTYPE_CLIENT_ERROR:
 		wpa_printf(MSG_DEBUG, "EAP-AKA: subtype Client-Error");
-		res = eap_aka_client_error(data, req, respDataLen,
+		res = eap_aka_client_error(data, id,
 					   EAP_AKA_UNABLE_TO_PROCESS_PACKET);
 		break;
 	default:
 		wpa_printf(MSG_DEBUG, "EAP-AKA: Unknown subtype=%d", subtype);
-		res = eap_aka_client_error(data, req, respDataLen,
+		res = eap_aka_client_error(data, id,
 					   EAP_AKA_UNABLE_TO_PROCESS_PACKET);
 		break;
 	}
@@ -800,14 +957,19 @@ done:
 		ret->decision = DECISION_FAIL;
 		ret->methodState = METHOD_DONE;
 	} else if (data->state == SUCCESS) {
-		ret->decision = DECISION_COND_SUCC;
+		ret->decision = data->use_result_ind ?
+			DECISION_UNCOND_SUCC : DECISION_COND_SUCC;
 		/*
 		 * It is possible for the server to reply with AKA
 		 * Notification, so we must allow the method to continue and
 		 * not only accept EAP-Success at this point.
 		 */
-		ret->methodState = METHOD_MAY_CONT;
-	}
+		ret->methodState = data->use_result_ind ?
+			METHOD_DONE : METHOD_MAY_CONT;
+	} else if (data->state == RESULT_FAILURE)
+		ret->methodState = METHOD_CONT;
+	else if (data->state == RESULT_SUCCESS)
+		ret->methodState = METHOD_CONT;
 
 	if (ret->methodState == METHOD_DONE) {
 		ret->allowNotifications = FALSE;
@@ -828,6 +990,10 @@ static void eap_aka_deinit_for_reauth(struct eap_sm *sm, void *priv)
 {
 	struct eap_aka_data *data = priv;
 	eap_aka_clear_identities(data, CLEAR_EAP_ID);
+	data->prev_id = -1;
+	wpabuf_free(data->id_msgs);
+	data->id_msgs = NULL;
+	data->use_result_ind = 0;
 }
 
 
@@ -836,7 +1002,7 @@ static void * eap_aka_init_for_reauth(struct eap_sm *sm, void *priv)
 	struct eap_aka_data *data = priv;
 	data->num_id_req = 0;
 	data->num_notification = 0;
-	data->state = CONTINUE;
+	eap_aka_state(data, CONTINUE);
 	return priv;
 }
 

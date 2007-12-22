@@ -53,7 +53,7 @@ static int ifconfig_helper(const char *if_name, int up)
 		return -1;
 	}
 
-	memset(&ifr, 0, sizeof(ifr));
+	os_memset(&ifr, 0, sizeof(ifr));
 	os_strlcpy(ifr.ifr_name, if_name, IFNAMSIZ);
 
 	if (ioctl(fd, SIOCGIFFLAGS, &ifr) != 0) {
@@ -274,7 +274,7 @@ static int br_getnumports(const char *br_name)
 	arg[2] = MAX_BR_PORTS;
 	arg[3] = 0;
 
-	memset(ifindices, 0, sizeof(ifindices));
+	os_memset(ifindices, 0, sizeof(ifindices));
 	os_strlcpy(ifr.ifr_name, br_name, sizeof(ifr.ifr_name));
 	ifr.ifr_data = (__caddr_t) arg;
 
@@ -300,7 +300,7 @@ static int vlan_rem(const char *if_name)
 	int fd;
 	struct vlan_ioctl_args if_request;
 
-	if ((strlen(if_name) + 1) > sizeof(if_request.device1)) {
+	if ((os_strlen(if_name) + 1) > sizeof(if_request.device1)) {
 		fprintf(stderr, "Interface name to long.\n");
 		return -1;
 	}
@@ -310,9 +310,9 @@ static int vlan_rem(const char *if_name)
 		return -1;
 	}
 
-	memset(&if_request, 0, sizeof(if_request));
+	os_memset(&if_request, 0, sizeof(if_request));
 
-	strcpy(if_request.device1, if_name);
+	os_strlcpy(if_request.device1, if_name, sizeof(if_request.device1));
 	if_request.cmd = DEL_VLAN_CMD;
 
 	if (ioctl(fd, SIOCSIFVLAN, &if_request) < 0) {
@@ -341,7 +341,7 @@ static int vlan_add(const char *if_name, int vid)
 
 	ifconfig_up(if_name);
 
-	if ((strlen(if_name) + 1) > sizeof(if_request.device1)) {
+	if ((os_strlen(if_name) + 1) > sizeof(if_request.device1)) {
 		fprintf(stderr, "Interface name to long.\n");
 		return -1;
 	}
@@ -351,12 +351,12 @@ static int vlan_add(const char *if_name, int vid)
 		return -1;
 	}
 
-	memset(&if_request, 0, sizeof(if_request));
+	os_memset(&if_request, 0, sizeof(if_request));
 
 	/* Determine if a suitable vlan device already exists. */
 
-	snprintf(if_request.device1, sizeof(if_request.device1), "vlan%d",
-		 vid);
+	os_snprintf(if_request.device1, sizeof(if_request.device1), "vlan%d",
+		    vid);
 
 	if_request.cmd = _GET_VLAN_VID_CMD;
 
@@ -365,8 +365,8 @@ static int vlan_add(const char *if_name, int vid)
 		if (if_request.u.VID == vid) {
 			if_request.cmd = _GET_VLAN_REALDEV_NAME_CMD;
 
-			if (ioctl(fd, SIOCSIFVLAN, &if_request) == 0
-			    && strncmp(if_request.u.device2, if_name,
+			if (ioctl(fd, SIOCSIFVLAN, &if_request) == 0 &&
+			    os_strncmp(if_request.u.device2, if_name,
 				       sizeof(if_request.u.device2)) == 0) {
 				close(fd);
 				return 1;
@@ -376,8 +376,8 @@ static int vlan_add(const char *if_name, int vid)
 
 	/* A suitable vlan device does not already exist, add one. */
 
-	memset(&if_request, 0, sizeof(if_request));
-	strcpy(if_request.device1, if_name);
+	os_memset(&if_request, 0, sizeof(if_request));
+	os_strlcpy(if_request.device1, if_name, sizeof(if_request.device1));
 	if_request.u.VID = vid;
 	if_request.cmd = ADD_VLAN_CMD;
 
@@ -402,7 +402,7 @@ static int vlan_set_name_type(unsigned int name_type)
 		return -1;
 	}
 
-	memset(&if_request, 0, sizeof(if_request));
+	os_memset(&if_request, 0, sizeof(if_request));
 
 	if_request.u.name_type = name_type;
 	if_request.cmd = SET_VLAN_NAME_TYPE_CMD;
@@ -425,10 +425,10 @@ static void vlan_newlink(char *ifname, struct hostapd_data *hapd)
 	char *tagged_interface = hapd->conf->ssid.vlan_tagged_interface;
 
 	while (vlan) {
-		if (strcmp(ifname, vlan->ifname) == 0) {
+		if (os_strcmp(ifname, vlan->ifname) == 0) {
 
-			snprintf(br_name, sizeof(br_name), "brvlan%d",
-				 vlan->vlan_id);
+			os_snprintf(br_name, sizeof(br_name), "brvlan%d",
+				    vlan->vlan_id);
 
 			if (!br_addbr(br_name))
 				vlan->clean |= DVLAN_CLEAN_BR;
@@ -440,8 +440,8 @@ static void vlan_newlink(char *ifname, struct hostapd_data *hapd)
 				if (!vlan_add(tagged_interface, vlan->vlan_id))
 					vlan->clean |= DVLAN_CLEAN_VLAN;
 
-				snprintf(vlan_ifname, sizeof(vlan_ifname),
-					 "vlan%d", vlan->vlan_id);
+				os_snprintf(vlan_ifname, sizeof(vlan_ifname),
+					    "vlan%d", vlan->vlan_id);
 
 				if (!br_addif(br_name, vlan_ifname))
 					vlan->clean |= DVLAN_CLEAN_VLAN_PORT;
@@ -472,13 +472,13 @@ static void vlan_dellink(char *ifname, struct hostapd_data *hapd)
 	first = prev = vlan;
 
 	while (vlan) {
-		if (strcmp(ifname, vlan->ifname) == 0) {
-			snprintf(br_name, sizeof(br_name), "brvlan%d",
-				 vlan->vlan_id);
+		if (os_strcmp(ifname, vlan->ifname) == 0) {
+			os_snprintf(br_name, sizeof(br_name), "brvlan%d",
+				    vlan->vlan_id);
 
 			if (tagged_interface) {
-				snprintf(vlan_ifname, sizeof(vlan_ifname),
-					 "vlan%d", vlan->vlan_id);
+				os_snprintf(vlan_ifname, sizeof(vlan_ifname),
+					    "vlan%d", vlan->vlan_id);
 
 				numports = br_getnumports(br_name);
 				if (numports == 1) {
@@ -496,7 +496,7 @@ static void vlan_dellink(char *ifname, struct hostapd_data *hapd)
 			} else {
 				prev->next = vlan->next;
 			}
-			free(vlan);
+			os_free(vlan);
 
 			break;
 		}
@@ -536,11 +536,11 @@ vlan_read_ifnames(struct nlmsghdr *h, size_t len, int del,
 			if (n < 0)
 				break;
 
-			memset(ifname, 0, sizeof(ifname));
+			os_memset(ifname, 0, sizeof(ifname));
 
 			if ((size_t) n > sizeof(ifname))
 				n = sizeof(ifname);
-			memcpy(ifname, ((char *) attr) + rta_len, n);
+			os_memcpy(ifname, ((char *) attr) + rta_len, n);
 
 			if (del)
 				vlan_dellink(ifname, hapd);
@@ -610,36 +610,33 @@ full_dynamic_vlan_init(struct hostapd_data *hapd)
 	struct sockaddr_nl local;
 	struct full_dynamic_vlan *priv;
 
-	priv = malloc(sizeof(*priv));
-
+	priv = os_zalloc(sizeof(*priv));
 	if (priv == NULL)
 		return NULL;
-
-	memset(priv, 0, sizeof(*priv));
 
 	vlan_set_name_type(VLAN_NAME_TYPE_PLUS_VID_NO_PAD);
 
 	priv->s = socket(PF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
 	if (priv->s < 0) {
 		perror("socket(PF_NETLINK,SOCK_RAW,NETLINK_ROUTE)");
-		free(priv);
+		os_free(priv);
 		return NULL;
 	}
 
-	memset(&local, 0, sizeof(local));
+	os_memset(&local, 0, sizeof(local));
 	local.nl_family = AF_NETLINK;
 	local.nl_groups = RTMGRP_LINK;
 	if (bind(priv->s, (struct sockaddr *) &local, sizeof(local)) < 0) {
 		perror("bind(netlink)");
 		close(priv->s);
-		free(priv);
+		os_free(priv);
 		return NULL;
 	}
 
 	if (eloop_register_read_sock(priv->s, vlan_event_receive, hapd, NULL))
 	{
 		close(priv->s);
-		free(priv);
+		os_free(priv);
 		return NULL;
 	}
 
@@ -653,7 +650,7 @@ static void full_dynamic_vlan_deinit(struct full_dynamic_vlan *priv)
 		return;
 	eloop_unregister_read_sock(priv->s);
 	close(priv->s);
-	free(priv);
+	os_free(priv);
 }
 #endif /* CONFIG_FULL_DYNAMIC_VLAN */
 
@@ -774,31 +771,31 @@ struct hostapd_vlan * vlan_add_dynamic(struct hostapd_data *hapd,
 	    vlan->vlan_id != VLAN_ID_WILDCARD)
 		return NULL;
 
-	ifname = strdup(vlan->ifname);
+	ifname = os_strdup(vlan->ifname);
 	if (ifname == NULL)
 		return NULL;
-	pos = strchr(ifname, '#');
+	pos = os_strchr(ifname, '#');
 	if (pos == NULL) {
-		free(ifname);
+		os_free(ifname);
 		return NULL;
 	}
 	*pos++ = '\0';
 
-	n = malloc(sizeof(*n));
+	n = os_zalloc(sizeof(*n));
 	if (n == NULL) {
-		free(ifname);
+		os_free(ifname);
 		return NULL;
 	}
 
-	memset(n, 0, sizeof(*n));
 	n->vlan_id = vlan_id;
 	n->dynamic_vlan = 1;
 
-	snprintf(n->ifname, sizeof(n->ifname), "%s%d%s", ifname, vlan_id, pos);
-	free(ifname);
+	os_snprintf(n->ifname, sizeof(n->ifname), "%s%d%s", ifname, vlan_id,
+		    pos);
+	os_free(ifname);
 
 	if (hostapd_if_add(hapd, HOSTAPD_IF_VLAN, n->ifname, NULL)) {
-		free(n);
+		os_free(n);
 		return NULL;
 	}
 

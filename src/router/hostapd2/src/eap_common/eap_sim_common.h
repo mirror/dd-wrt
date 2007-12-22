@@ -1,6 +1,6 @@
 /*
- * EAP peer: EAP-SIM/AKA shared routines
- * Copyright (c) 2004-2006, Jouni Malinen <j@w1.fi>
+ * EAP peer/server: EAP-SIM/AKA shared routines
+ * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -69,6 +69,9 @@
 #define EAP_AKA_MAX_FAST_REAUTHS 1000
 #define EAP_AKA_MIN_RES_LEN 4
 #define EAP_AKA_MAX_RES_LEN 16
+#define EAP_AKA_CHECKCODE_LEN 20
+
+struct wpabuf;
 
 void eap_sim_derive_mk(const u8 *identity, size_t identity_len,
 		       const u8 *nonce_mt, u16 selected_version,
@@ -82,9 +85,9 @@ int eap_sim_derive_keys_reauth(u16 _counter,
 			       const u8 *identity, size_t identity_len,
 			       const u8 *nonce_s, const u8 *mk, u8 *msk,
 			       u8 *emsk);
-int eap_sim_verify_mac(const u8 *k_aut, const u8 *req, size_t req_len,
+int eap_sim_verify_mac(const u8 *k_aut, const struct wpabuf *req,
 		       const u8 *mac, const u8 *extra, size_t extra_len);
-void eap_sim_add_mac(const u8 *k_aut, u8 *msg, size_t msg_len, u8 *mac,
+void eap_sim_add_mac(const u8 *k_aut, const u8 *msg, size_t msg_len, u8 *mac,
 		     const u8 *extra, size_t extra_len);
 
 
@@ -131,11 +134,14 @@ struct eap_sim_attrs {
 	const u8 *rand, *autn, *mac, *iv, *encr_data, *version_list, *nonce_s;
 	const u8 *next_pseudonym, *next_reauth_id;
 	const u8 *nonce_mt, *identity, *res, *auts;
+	const u8 *checkcode;
 	size_t num_chal, version_list_len, encr_data_len;
 	size_t next_pseudonym_len, next_reauth_id_len, identity_len, res_len;
+	size_t checkcode_len;
 	enum eap_sim_id_req id_req;
 	int notification, counter, selected_version, client_error_code;
 	int counter_too_small;
+	int result_ind;
 };
 
 int eap_sim_parse_attr(const u8 *start, const u8 *end,
@@ -148,8 +154,8 @@ u8 * eap_sim_parse_encr(const u8 *k_encr, const u8 *encr_data,
 struct eap_sim_msg;
 
 struct eap_sim_msg * eap_sim_msg_init(int code, int id, int type, int subtype);
-u8 * eap_sim_msg_finish(struct eap_sim_msg *msg, size_t *len, const u8 *k_aut,
-			const u8 *extra, size_t extra_len);
+struct wpabuf * eap_sim_msg_finish(struct eap_sim_msg *msg, const u8 *k_aut,
+				   const u8 *extra, size_t extra_len);
 void eap_sim_msg_free(struct eap_sim_msg *msg);
 u8 * eap_sim_msg_add_full(struct eap_sim_msg *msg, u8 attr,
 			  const u8 *data, size_t len);

@@ -295,9 +295,10 @@ static int auth_init_group(struct wpa *wpa)
 
 	os_memset(&conf, 0, sizeof(conf));
 	conf.wpa = 2;
-	conf.wpa_key_mgmt = 2; /* PSK */
-	conf.wpa_pairwise = 16; /* CCMP */
-	conf.wpa_group = 16; /* CCMP */
+	conf.wpa_key_mgmt = WPA_KEY_MGMT_PSK;
+	conf.wpa_pairwise = WPA_CIPHER_CCMP;
+	conf.rsn_pairwise = WPA_CIPHER_CCMP;
+	conf.wpa_group = WPA_CIPHER_CCMP;
 	conf.eapol_version = 2;
 
 	os_memset(&cb, 0, sizeof(cb));

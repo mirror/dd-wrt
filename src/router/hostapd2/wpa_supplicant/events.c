@@ -15,7 +15,7 @@
 #include "includes.h"
 
 #include "common.h"
-#include "eapol_sm.h"
+#include "eapol_supp/eapol_supp_sm.h"
 #include "wpa.h"
 #include "eloop.h"
 #include "drivers/driver.h"
@@ -29,6 +29,7 @@
 #include "eap_peer/eap.h"
 #include "ctrl_iface_dbus.h"
 #include "ieee802_11_defs.h"
+#include "blacklist.h"
 
 
 static int wpa_supplicant_select_config(struct wpa_supplicant *wpa_s)
@@ -236,6 +237,7 @@ int wpa_supplicant_scard_init(struct wpa_supplicant *wpa_s,
 }
 
 
+#ifndef CONFIG_NO_SCAN_PROCESSING
 static int wpa_supplicant_match_privacy(struct wpa_scan_result *bss,
 					struct wpa_ssid *ssid)
 {
@@ -470,8 +472,8 @@ wpa_supplicant_select_bss(struct wpa_supplicant *wpa_s, struct wpa_ssid *group,
 			}
 
 			if ((ssid->key_mgmt & 
-			     (WPA_KEY_MGMT_IEEE8021X | WPA_KEY_MGMT_PSK)) ||
-			    bss->wpa_ie_len != 0 || bss->rsn_ie_len != 0) {
+			     (WPA_KEY_MGMT_IEEE8021X | WPA_KEY_MGMT_PSK)) &&
+			    (bss->wpa_ie_len != 0 || bss->rsn_ie_len != 0)) {
 				wpa_printf(MSG_DEBUG, "   skip - "
 					   "WPA network");
 				continue;
@@ -583,6 +585,7 @@ req_scan:
 	}
 	wpa_supplicant_req_scan(wpa_s, timeout, 0);
 }
+#endif /* CONFIG_NO_SCAN_PROCESSING */
 
 
 static void wpa_supplicant_event_associnfo(struct wpa_supplicant *wpa_s,
@@ -900,9 +903,11 @@ void wpa_supplicant_event(void *ctx, wpa_event_type event,
 	case EVENT_MICHAEL_MIC_FAILURE:
 		wpa_supplicant_event_michael_mic_failure(wpa_s, data);
 		break;
+#ifndef CONFIG_NO_SCAN_PROCESSING
 	case EVENT_SCAN_RESULTS:
 		wpa_supplicant_event_scan_results(wpa_s);
 		break;
+#endif /* CONFIG_NO_SCAN_PROCESSING */
 	case EVENT_ASSOCINFO:
 		wpa_supplicant_event_associnfo(wpa_s, data);
 		break;

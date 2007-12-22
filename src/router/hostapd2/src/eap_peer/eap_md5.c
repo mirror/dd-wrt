@@ -33,15 +33,13 @@ static void eap_md5_deinit(struct eap_sm *sm, void *priv)
 }
 
 
-static u8 * eap_md5_process(struct eap_sm *sm, void *priv,
-			    struct eap_method_ret *ret,
-			    const u8 *reqData, size_t reqDataLen,
-			    size_t *respDataLen)
+static struct wpabuf * eap_md5_process(struct eap_sm *sm, void *priv,
+				       struct eap_method_ret *ret,
+				       const struct wpabuf *reqData)
 {
-	const struct eap_hdr *req;
-	struct eap_hdr *resp;
+	struct wpabuf *resp;
 	const u8 *pos, *challenge, *password;
-	u8 *rpos;
+	u8 *rpos, id;
 	size_t len, challenge_len, password_len;
 	const u8 *addr[3];
 	size_t elen[3];
@@ -54,8 +52,7 @@ static u8 * eap_md5_process(struct eap_sm *sm, void *priv,
 		return NULL;
 	}
 
-	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_MD5,
-			       reqData, reqDataLen, &len);
+	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_MD5, reqData, &len);
 	if (pos == NULL || len == 0) {
 		wpa_printf(MSG_INFO, "EAP-MD5: Invalid frame (pos=%p len=%lu)",
 			   pos, (unsigned long) len);
@@ -67,7 +64,6 @@ static u8 * eap_md5_process(struct eap_sm *sm, void *priv,
 	 * CHAP Challenge:
 	 * Value-Size (1 octet) | Value(Challenge) | Name(optional)
 	 */
-	req = (const struct eap_hdr *) reqData;
 	challenge_len = *pos++;
 	if (challenge_len == 0 || challenge_len > len - 1) {
 		wpa_printf(MSG_INFO, "EAP-MD5: Invalid challenge "
@@ -86,9 +82,8 @@ static u8 * eap_md5_process(struct eap_sm *sm, void *priv,
 	ret->decision = DECISION_UNCOND_SUCC;
 	ret->allowNotifications = TRUE;
 
-	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_MD5, respDataLen,
-			     1 + MD5_MAC_LEN, EAP_CODE_RESPONSE,
-			     req->identifier, &rpos);
+	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_MD5, 1 + MD5_MAC_LEN,
+			     EAP_CODE_RESPONSE, eap_get_id(reqData));
 	if (resp == NULL)
 		return NULL;
 
@@ -96,18 +91,20 @@ static u8 * eap_md5_process(struct eap_sm *sm, void *priv,
 	 * CHAP Response:
 	 * Value-Size (1 octet) | Value(Response) | Name(optional)
 	 */
-	*rpos++ = MD5_MAC_LEN;
+	wpabuf_put_u8(resp, MD5_MAC_LEN);
 
-	addr[0] = &resp->identifier;
+	id = eap_get_id(resp);
+	addr[0] = &id;
 	elen[0] = 1;
 	addr[1] = password;
 	elen[1] = password_len;
 	addr[2] = challenge;
 	elen[2] = challenge_len;
+	rpos = wpabuf_put(resp, MD5_MAC_LEN);
 	md5_vector(3, addr, elen, rpos);
 	wpa_hexdump(MSG_MSGDUMP, "EAP-MD5: Response", rpos, MD5_MAC_LEN);
 
-	return (u8 *) resp;
+	return resp;
 }
 
 

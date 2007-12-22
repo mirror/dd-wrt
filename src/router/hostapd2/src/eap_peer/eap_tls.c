@@ -78,9 +78,10 @@ static void eap_tls_deinit(struct eap_sm *sm, void *priv)
 }
 
 
-static u8 * eap_tls_failure(struct eap_sm *sm, struct eap_tls_data *data,
-			    struct eap_method_ret *ret, int res, u8 *resp,
-			    u8 id, size_t *respDataLen)
+static struct wpabuf * eap_tls_failure(struct eap_sm *sm,
+				       struct eap_tls_data *data,
+				       struct eap_method_ret *ret, int res,
+				       struct wpabuf *resp, u8 id)
 {
 	wpa_printf(MSG_DEBUG, "EAP-TLS: TLS processing failed");
 
@@ -109,8 +110,7 @@ static u8 * eap_tls_failure(struct eap_sm *sm, struct eap_tls_data *data,
 		return resp;
 	}
 
-	return eap_peer_tls_build_ack(&data->ssl, respDataLen, id,
-				      EAP_TYPE_TLS, 0);
+	return eap_peer_tls_build_ack(id, EAP_TYPE_TLS, 0);
 }
 
 
@@ -139,24 +139,22 @@ static void eap_tls_success(struct eap_sm *sm, struct eap_tls_data *data,
 }
 
 
-static u8 * eap_tls_process(struct eap_sm *sm, void *priv,
-			    struct eap_method_ret *ret,
-			    const u8 *reqData, size_t reqDataLen,
-			    size_t *respDataLen)
+static struct wpabuf * eap_tls_process(struct eap_sm *sm, void *priv,
+				       struct eap_method_ret *ret,
+				       const struct wpabuf *reqData)
 {
-	const struct eap_hdr *req;
 	size_t left;
 	int res;
-	u8 flags, *resp, id;
+	struct wpabuf *resp;
+	u8 flags, id;
 	const u8 *pos;
 	struct eap_tls_data *data = priv;
 
 	pos = eap_peer_tls_process_init(sm, &data->ssl, EAP_TYPE_TLS, ret,
-					reqData, reqDataLen, &left, &flags);
+					reqData, &left, &flags);
 	if (pos == NULL)
 		return NULL;
-	req = (const struct eap_hdr *) reqData;
-	id = req->identifier;
+	id = eap_get_id(reqData);
 
 	if (flags & EAP_TLS_FLAGS_START) {
 		wpa_printf(MSG_DEBUG, "EAP-TLS: Start");
@@ -166,20 +164,18 @@ static u8 * eap_tls_process(struct eap_sm *sm, void *priv,
 
 	resp = NULL;
 	res = eap_peer_tls_process_helper(sm, &data->ssl, EAP_TYPE_TLS, 0, id,
-					  pos, left, &resp, respDataLen);
+					  pos, left, &resp);
 
 	if (res < 0) {
-		return eap_tls_failure(sm, data, ret, res, resp, id,
-				       respDataLen);
+		return eap_tls_failure(sm, data, ret, res, resp, id);
 	}
 
 	if (tls_connection_established(sm->ssl_ctx, data->ssl.conn))
 		eap_tls_success(sm, data, ret);
 
 	if (res == 1) {
-		os_free(resp);
-		return eap_peer_tls_build_ack(&data->ssl, respDataLen, id,
-					      EAP_TYPE_TLS, 0);
+		wpabuf_free(resp);
+		return eap_peer_tls_build_ack(id, EAP_TYPE_TLS, 0);
 	}
 
 	return resp;

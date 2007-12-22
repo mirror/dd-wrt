@@ -374,7 +374,7 @@ static int hostap_send_eapol(void *priv, const u8 *addr, const u8 *data,
 
 
 static int hostap_sta_set_flags(void *priv, const u8 *addr,
-				int flags_or, int flags_and)
+				int total_flags, int flags_or, int flags_and)
 {
 	struct hostap_driver_data *drv = priv;
 	struct prism2_hostapd_param param;
@@ -694,7 +694,7 @@ static int hostap_sta_remove(void *priv, const u8 *addr)
 	struct hostap_driver_data *drv = priv;
 	struct prism2_hostapd_param param;
 
-	hostap_sta_set_flags(drv, addr, 0, ~WLAN_STA_AUTHORIZED);
+	hostap_sta_set_flags(drv, addr, 0, 0, ~WLAN_STA_AUTHORIZED);
 
 	memset(&param, 0, sizeof(param));
 	param.cmd = PRISM2_HOSTAPD_REMOVE_STA;

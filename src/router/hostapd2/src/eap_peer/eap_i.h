@@ -15,6 +15,7 @@
 #ifndef EAP_I_H
 #define EAP_I_H
 
+#include "wpabuf.h"
 #include "eap_peer/eap.h"
 #include "eap_common/eap_common.h"
 
@@ -108,8 +109,6 @@ struct eap_method {
 	 * @priv: Pointer to private EAP method data from eap_method::init()
 	 * @ret: Return values from EAP request validation and processing
 	 * @reqData: EAP request to be processed (eapReqData)
-	 * @reqDataLen: Length of the EAP request
-	 * @respDataLen: Length of the returned EAP response
 	 * Returns: Pointer to allocated EAP response packet (eapRespData)
 	 *
 	 * This function is a combination of m.check(), m.process(), and
@@ -119,10 +118,9 @@ struct eap_method {
 	 * are returned through struct eap_method_ret *ret variable. Caller is
 	 * responsible for freeing the returned EAP response packet.
 	 */
-	u8 * (*process)(struct eap_sm *sm, void *priv,
-			struct eap_method_ret *ret,
-			const u8 *reqData, size_t reqDataLen,
-			size_t *respDataLen);
+	struct wpabuf * (*process)(struct eap_sm *sm, void *priv,
+				   struct eap_method_ret *ret,
+				   const struct wpabuf *reqData);
 
 	/**
 	 * isKeyAvailable - Find out whether EAP method has keying material
@@ -286,8 +284,7 @@ struct eap_sm {
 	EapType selectedMethod;
 	EapMethodState methodState;
 	int lastId;
-	u8 *lastRespData;
-	size_t lastRespDataLen;
+	struct wpabuf *lastRespData;
 	EapDecision decision;
 	/* Short-term local variables */
 	Boolean rxReq;
@@ -303,8 +300,7 @@ struct eap_sm {
 
 	/* Miscellaneous variables */
 	Boolean allowNotifications; /* peer state machine <-> methods */
-	u8 *eapRespData; /* peer to lower layer */
-	size_t eapRespDataLen; /* peer to lower layer */
+	struct wpabuf *eapRespData; /* peer to lower layer */
 	Boolean eapKeyAvailable; /* peer to lower layer */
 	u8 *eapKeyData; /* peer to lower layer */
 	size_t eapKeyDataLen; /* peer to lower layer */

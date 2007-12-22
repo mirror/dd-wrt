@@ -410,7 +410,6 @@ typedef u32 __bitwise __le32;
 typedef u64 __bitwise __le64;
 
 
-#define hostapd_get_rand os_get_random
 int hwaddr_aton(const char *txt, u8 *addr);
 int hexstr2bin(const char *hex, u8 *buf, size_t len);
 void inc_byte_array(u8 *counter, size_t len);

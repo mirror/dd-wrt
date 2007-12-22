@@ -20,11 +20,11 @@
 
 #include <include/compat.h>
 #include <net80211/ieee80211.h>
-//#ifdef WME_NUM_AC
+#ifdef WME_NUM_AC
 /* Assume this is built against BSD branch of madwifi driver. */
-//#define MADWIFI_BSD
-//#include <net80211/_ieee80211.h>
-//#endif /* WME_NUM_AC */
+#define MADWIFI_BSD
+#include <net80211/_ieee80211.h>
+#endif /* WME_NUM_AC */
 #include <net80211/ieee80211_crypto.h>
 #include <net80211/ieee80211_ioctl.h>
 
@@ -410,7 +410,8 @@ madwifi_set_sta_authorized(void *priv, const u8 *addr, int authorized)
 }
 
 static int
-madwifi_sta_set_flags(void *priv, const u8 *addr, int flags_or, int flags_and)
+madwifi_sta_set_flags(void *priv, const u8 *addr, int total_flags,
+		      int flags_or, int flags_and)
 {
 	/* For now, only support setting Authorized flag */
 	if (flags_or & WLAN_STA_AUTHORIZED)
@@ -442,8 +443,9 @@ madwifi_del_key(void *priv, const u8 *addr, int key_idx)
 
 	ret = set80211priv(priv, IEEE80211_IOCTL_DELKEY, &wk, sizeof(wk));
 	if (ret < 0) {
-		wpa_printf(MSG_DEBUG, "%s: Failed to delete key (addr " MACSTR
-			   " key_idx %d)", __func__, MAC2STR(addr), key_idx);
+		wpa_printf(MSG_DEBUG, "%s: Failed to delete key (addr %s"
+			   " key_idx %d)", __func__, ether_sprintf(addr),
+			   key_idx);
 	}
 
 	return ret;
@@ -501,10 +503,10 @@ madwifi_set_key(const char *ifname, void *priv, const char *alg,
 
 	ret = set80211priv(priv, IEEE80211_IOCTL_SETKEY, &wk, sizeof(wk));
 	if (ret < 0) {
-		wpa_printf(MSG_DEBUG, "%s: Failed to set key (addr " MACSTR
+		wpa_printf(MSG_DEBUG, "%s: Failed to set key (addr %s"
 			   " key_idx %d alg '%s' key_len %lu txkey %d)",
-			   __func__, MAC2STR(wk.ik_macaddr), key_idx, alg,
-			   (unsigned long) key_len, txkey);
+			   __func__, ether_sprintf(wk.ik_macaddr), key_idx,
+			   alg, (unsigned long) key_len, txkey);
 	}
 
 	return ret;

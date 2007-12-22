@@ -16,6 +16,7 @@
 #define WPA_H
 
 #include "defs.h"
+#include "eapol_common.h"
 #include "wpa_common.h"
 
 #ifndef ETH_P_EAPOL

@@ -142,7 +142,8 @@ static void radius_client_handle_send_error(struct radius_client_data *radius,
 #ifndef CONFIG_NATIVE_WINDOWS
 	int _errno = errno;
 	perror("send[RADIUS]");
-	if (_errno == ENOTCONN || _errno == EDESTADDRREQ || _errno == EINVAL) {
+	if (_errno == ENOTCONN || _errno == EDESTADDRREQ || _errno == EINVAL ||
+	    _errno == EBADF) {
 		hostapd_logger(radius->ctx, NULL, HOSTAPD_MODULE_RADIUS,
 			       HOSTAPD_LEVEL_INFO,
 			       "Send failed - maybe interface status changed -"
@@ -1169,8 +1170,8 @@ static int radius_servers_diff(struct hostapd_radius_server *nserv,
 		if (hostapd_ip_diff(&nserv[i].addr, &oserv[i].addr) ||
 		    nserv[i].port != oserv[i].port ||
 		    nserv[i].shared_secret_len != oserv[i].shared_secret_len ||
-		    memcmp(nserv[i].shared_secret, oserv[i].shared_secret,
-			   nserv[i].shared_secret_len) != 0)
+		    os_memcmp(nserv[i].shared_secret, oserv[i].shared_secret,
+			      nserv[i].shared_secret_len) != 0)
 			return 1;
 	}
 

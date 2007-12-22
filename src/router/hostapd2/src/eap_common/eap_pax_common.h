@@ -20,10 +20,6 @@
 #endif /* _MSC_VER */
 
 struct eap_pax_hdr {
-	u8 code;
-	u8 identifier;
-	be16 length; /* including code, identifier, and length */
-	u8 type; /* EAP_TYPE_PAX */
 	u8 op_code;
 	u8 flags;
 	u8 mac_id;

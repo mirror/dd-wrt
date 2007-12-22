@@ -257,6 +257,7 @@ int omac1_aes_128(const u8 *key, const u8 *data, size_t data_len, u8 *mac)
 #endif /* CONFIG_NO_AES_OMAC1 */
 
 
+#ifndef CONFIG_NO_AES_ENCRYPT_BLOCK
 /**
  * aes_128_encrypt_block - Perform one AES 128-bit block operation
  * @key: Key for AES
@@ -274,6 +275,7 @@ int aes_128_encrypt_block(const u8 *key, const u8 *in, u8 *out)
 	aes_encrypt_deinit(ctx);
 	return 0;
 }
+#endif /* CONFIG_NO_AES_ENCRYPT_BLOCK */
 
 
 #ifndef CONFIG_NO_AES_CTR

@@ -22,29 +22,8 @@ struct eap_method * eap_server_method_alloc(int version, int vendor,
 void eap_server_method_free(struct eap_method *method);
 int eap_server_method_register(struct eap_method *method);
 
-#ifdef EAP_SERVER
-
 EapType eap_server_get_type(const char *name, int *vendor);
 int eap_server_register_methods(void);
 void eap_server_unregister_methods(void);
-
-#else /* EAP_SERVER */
-
-static inline EapType eap_server_get_type(const char *name, int *vendor)
-{
-	*vendor = EAP_VENDOR_IETF;
-	return EAP_TYPE_NONE;
-}
-
-static inline int eap_server_register_methods(void)
-{
-	return 0;
-}
-
-static inline void eap_server_unregister_methods(void)
-{
-}
-
-#endif /* EAP_SERVER */
 
 #endif /* EAP_METHODS_H */

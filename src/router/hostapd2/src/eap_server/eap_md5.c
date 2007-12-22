@@ -1,6 +1,6 @@
 /*
  * hostapd / EAP-MD5 server
- * Copyright (c) 2004-2006, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -44,25 +44,23 @@ static void * eap_md5_init(struct eap_sm *sm)
 static void eap_md5_reset(struct eap_sm *sm, void *priv)
 {
 	struct eap_md5_data *data = priv;
-	free(data);
+	os_free(data);
 }
 
 
-static u8 * eap_md5_buildReq(struct eap_sm *sm, void *priv, int id,
-			     size_t *reqDataLen)
+static struct wpabuf * eap_md5_buildReq(struct eap_sm *sm, void *priv, u8 id)
 {
 	struct eap_md5_data *data = priv;
-	struct eap_hdr *req;
-	u8 *pos;
+	struct wpabuf *req;
 
-	if (hostapd_get_rand(data->challenge, CHALLENGE_LEN)) {
+	if (os_get_random(data->challenge, CHALLENGE_LEN)) {
 		wpa_printf(MSG_ERROR, "EAP-MD5: Failed to get random data");
 		data->state = FAILURE;
 		return NULL;
 	}
 
-	req = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_MD5, reqDataLen,
-			    1 + CHALLENGE_LEN, EAP_CODE_REQUEST, id, &pos);
+	req = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_MD5, 1 + CHALLENGE_LEN,
+			    EAP_CODE_REQUEST, id);
 	if (req == NULL) {
 		wpa_printf(MSG_ERROR, "EAP-MD5: Failed to allocate memory for "
 			   "request");
@@ -70,24 +68,24 @@ static u8 * eap_md5_buildReq(struct eap_sm *sm, void *priv, int id,
 		return NULL;
 	}
 
-	*pos++ = CHALLENGE_LEN;
-	memcpy(pos, data->challenge, CHALLENGE_LEN);
-	wpa_hexdump(MSG_MSGDUMP, "EAP-MD5: Challenge", pos, CHALLENGE_LEN);
+	wpabuf_put_u8(req, CHALLENGE_LEN);
+	wpabuf_put_data(req, data->challenge, CHALLENGE_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "EAP-MD5: Challenge", data->challenge,
+		    CHALLENGE_LEN);
 
 	data->state = CONTINUE;
 
-	return (u8 *) req;
+	return req;
 }
 
 
 static Boolean eap_md5_check(struct eap_sm *sm, void *priv,
-			     u8 *respData, size_t respDataLen)
+			     struct wpabuf *respData)
 {
 	const u8 *pos;
 	size_t len;
 
-	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_MD5,
-			       respData, respDataLen, &len);
+	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_MD5, respData, &len);
 	if (pos == NULL || len < 1) {
 		wpa_printf(MSG_INFO, "EAP-MD5: Invalid frame");
 		return TRUE;
@@ -104,14 +102,13 @@ static Boolean eap_md5_check(struct eap_sm *sm, void *priv,
 
 
 static void eap_md5_process(struct eap_sm *sm, void *priv,
-			    u8 *respData, size_t respDataLen)
+			    struct wpabuf *respData)
 {
 	struct eap_md5_data *data = priv;
-	struct eap_hdr *resp;
 	const u8 *pos;
 	const u8 *addr[3];
 	size_t len[3], plen;
-	u8 hash[MD5_MAC_LEN];
+	u8 hash[MD5_MAC_LEN], id;
 
 	if (sm->user == NULL || sm->user->password == NULL ||
 	    sm->user->password_hash) {
@@ -121,16 +118,15 @@ static void eap_md5_process(struct eap_sm *sm, void *priv,
 		return;
 	}
 
-	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_MD5,
-			       respData, respDataLen, &plen);
+	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_MD5, respData, &plen);
 	if (pos == NULL || *pos != MD5_MAC_LEN || plen < 1 + MD5_MAC_LEN)
 		return; /* Should not happen - frame already validated */
 
 	pos++; /* Skip response len */
 	wpa_hexdump(MSG_MSGDUMP, "EAP-MD5: Response", pos, MD5_MAC_LEN);
 
-	resp = (struct eap_hdr *) respData;
-	addr[0] = &resp->identifier;
+	id = eap_get_id(respData);
+	addr[0] = &id;
 	len[0] = 1;
 	addr[1] = sm->user->password;
 	len[1] = sm->user->password_len;
@@ -138,7 +134,7 @@ static void eap_md5_process(struct eap_sm *sm, void *priv,
 	len[2] = CHALLENGE_LEN;
 	md5_vector(3, addr, len, hash);
 
-	if (memcmp(hash, pos, MD5_MAC_LEN) == 0) {
+	if (os_memcmp(hash, pos, MD5_MAC_LEN) == 0) {
 		wpa_printf(MSG_DEBUG, "EAP-MD5: Done - Success");
 		data->state = SUCCESS;
 	} else {

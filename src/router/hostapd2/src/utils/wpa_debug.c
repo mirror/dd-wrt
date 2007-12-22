@@ -242,6 +242,10 @@ int wpa_debug_open_file(void)
 		    count++);
 #endif /* _WIN32 */
 	out_file = fopen(fname, "w");
+#ifndef _WIN32
+	if (out_file)
+		setvbuf(out_file, NULL, _IOLBF, 0);
+#endif /* _WIN32 */
 	return out_file == NULL ? -1 : 0;
 #else /* CONFIG_DEBUG_FILE */
 	return 0;

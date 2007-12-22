@@ -322,7 +322,8 @@ bsd_set_sta_authorized(void *priv, const u8 *addr, int authorized)
 }
 
 static int
-bsd_sta_set_flags(void *priv, const u8 *addr, int flags_or, int flags_and)
+bsd_sta_set_flags(void *priv, const u8 *addr, int total_flags, int flags_or,
+		  int flags_and)
 {
 	/* For now, only support setting Authorized flag */
 	if (flags_or & WLAN_STA_AUTHORIZED)

@@ -1,5 +1,5 @@
 /*
- * WPA Supplicant / EAPOL state machines
+ * EAPOL supplicant state machines
  * Copyright (c) 2004-2005, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -12,8 +12,8 @@
  * See README and COPYING for more details.
  */
 
-#ifndef EAPOL_SM_H
-#define EAPOL_SM_H
+#ifndef EAPOL_SUPP_SM_H
+#define EAPOL_SUPP_SM_H
 
 #include "defs.h"
 
@@ -173,6 +173,7 @@ struct eapol_ctx {
 	 */
 	void (*aborted_cached)(void *ctx);
 
+#ifdef EAP_TLS_OPENSSL
 	/**
 	 * opensc_engine_path - Path to the OpenSSL engine for opensc
 	 *
@@ -197,6 +198,7 @@ struct eapol_ctx {
 	 * module is not loaded.
 	 */
 	const char *pkcs11_module_path;
+#endif /* EAP_TLS_OPENSSL */
 };
 
 
@@ -319,4 +321,4 @@ static inline void eapol_sm_invalidate_cached_session(struct eapol_sm *sm)
 }
 #endif /* IEEE8021X_EAPOL */
 
-#endif /* EAPOL_SM_H */
+#endif /* EAPOL_SUPP_SM_H */

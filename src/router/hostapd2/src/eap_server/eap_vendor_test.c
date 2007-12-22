@@ -70,85 +70,56 @@ static void * eap_vendor_test_init(struct eap_sm *sm)
 static void eap_vendor_test_reset(struct eap_sm *sm, void *priv)
 {
 	struct eap_vendor_test_data *data = priv;
-	free(data);
+	os_free(data);
 }
 
 
-static u8 * eap_vendor_test_buildReq(struct eap_sm *sm, void *priv, int id,
-				     size_t *reqDataLen)
+static struct wpabuf * eap_vendor_test_buildReq(struct eap_sm *sm, void *priv,
+						u8 id)
 {
 	struct eap_vendor_test_data *data = priv;
-	struct eap_hdr *req;
-	u8 *pos;
+	struct wpabuf *req;
 
-	*reqDataLen = sizeof(*req) + 8 + 1;
-	req = malloc(*reqDataLen);
+	req = eap_msg_alloc(EAP_VENDOR_ID, EAP_VENDOR_TYPE, 1,
+			    EAP_CODE_REQUEST, id);
 	if (req == NULL) {
 		wpa_printf(MSG_ERROR, "EAP-VENDOR-TEST: Failed to allocate "
 			   "memory for request");
 		return NULL;
 	}
 
-	req->code = EAP_CODE_REQUEST;
-	req->identifier = id;
-	req->length = host_to_be16(*reqDataLen);
-	pos = (u8 *) (req + 1);
-	*pos++ = EAP_TYPE_EXPANDED;
-	WPA_PUT_BE24(pos, EAP_VENDOR_ID);
-	pos += 3;
-	WPA_PUT_BE32(pos, EAP_VENDOR_TYPE);
-	pos += 4;
-	*pos = data->state == INIT ? 1 : 3;
+	wpabuf_put_u8(req, data->state == INIT ? 1 : 3);
 
-	return (u8 *) req;
+	return req;
 }
 
 
 static Boolean eap_vendor_test_check(struct eap_sm *sm, void *priv,
-				     u8 *respData, size_t respDataLen)
+				     struct wpabuf *respData)
 {
-	struct eap_hdr *resp;
-	u8 *pos;
+	const u8 *pos;
 	size_t len;
-	int vendor;
-	u32 method;
 
-	resp = (struct eap_hdr *) respData;
-	pos = (u8 *) (resp + 1);
-	if (respDataLen < sizeof(*resp))
-		return TRUE;
-	len = be_to_host16(resp->length);
-	if (len > respDataLen)
-		return TRUE;
-
-	if (len < sizeof(*resp) + 8 || *pos != EAP_TYPE_EXPANDED) {
+	pos = eap_hdr_validate(EAP_VENDOR_ID, EAP_VENDOR_TYPE, respData, &len);
+	if (pos == NULL || len < 1) {
 		wpa_printf(MSG_INFO, "EAP-VENDOR-TEST: Invalid frame");
 		return TRUE;
 	}
-	pos++;
-
-	vendor = WPA_GET_BE24(pos);
-	pos += 3;
-	method = WPA_GET_BE32(pos);
-	pos++;
-
-	if (vendor != EAP_VENDOR_ID || method != EAP_VENDOR_TYPE)
-		return TRUE;
 
 	return FALSE;
 }
 
 
 static void eap_vendor_test_process(struct eap_sm *sm, void *priv,
-				    u8 *respData, size_t respDataLen)
+				    struct wpabuf *respData)
 {
 	struct eap_vendor_test_data *data = priv;
-	struct eap_hdr *resp;
-	u8 *pos;
+	const u8 *pos;
+	size_t len;
 
-	resp = (struct eap_hdr *) respData;
-	pos = (u8 *) (resp + 1);
-	pos += 8; /* Skip expanded header */
+	pos = eap_hdr_validate(EAP_VENDOR_ID, EAP_VENDOR_TYPE, respData, &len);
+	if (pos == NULL || len < 1)
+		return;
 
 	if (data->state == INIT) {
 		if (*pos == 2)
@@ -181,12 +152,12 @@ static u8 * eap_vendor_test_getKey(struct eap_sm *sm, void *priv, size_t *len)
 	if (data->state != SUCCESS)
 		return NULL;
 
-	key = malloc(key_len);
+	key = os_malloc(key_len);
 	if (key == NULL)
 		return NULL;
 
-	memset(key, 0x11, key_len / 2);
-	memset(key + key_len / 2, 0x22, key_len / 2);
+	os_memset(key, 0x11, key_len / 2);
+	os_memset(key + key_len / 2, 0x22, key_len / 2);
 	*len = key_len;
 
 	return key;

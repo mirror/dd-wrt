@@ -12,7 +12,7 @@
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>wpa_supplicant</command>
-      <arg>-BddhKLqqtuvwW</arg>
+      <arg>-BddfhKLqqtuvwW</arg>
       <arg>-i<replaceable>ifname</replaceable></arg>
       <arg>-c<replaceable>config file</replaceable></arg>
       <arg>-D<replaceable>driver</replaceable></arg>
@@ -372,6 +372,13 @@
 	<term>-D driver</term>
 	<listitem>
 	  <para>Driver to use.  See the available options below.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>-f</term>
+	<listitem>
+	  <para>Log output to default log location (normally /tmp).</para>
 	</listitem>
       </varlistentry>
 

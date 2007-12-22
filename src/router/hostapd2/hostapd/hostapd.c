@@ -68,7 +68,7 @@ static void hostapd_logger_cb(void *ctx, const u8 *addr, unsigned int module,
 	unsigned int conf_syslog, conf_stdout;
 
 	maxlen = len + 100;
-	format = malloc(maxlen);
+	format = os_malloc(maxlen);
 	if (!format)
 		return;
 
@@ -110,20 +110,20 @@ static void hostapd_logger_cb(void *ctx, const u8 *addr, unsigned int module,
 	}
 
 	if (hapd && hapd->conf && addr)
-		snprintf(format, maxlen, "%s: STA " MACSTR "%s%s: %s",
-			 hapd->conf->iface, MAC2STR(addr),
-			 module_str ? " " : "", module_str, txt);
+		os_snprintf(format, maxlen, "%s: STA " MACSTR "%s%s: %s",
+			    hapd->conf->iface, MAC2STR(addr),
+			    module_str ? " " : "", module_str, txt);
 	else if (hapd && hapd->conf)
-		snprintf(format, maxlen, "%s:%s%s %s",
-			 hapd->conf->iface, module_str ? " " : "",
-			 module_str, txt);
+		os_snprintf(format, maxlen, "%s:%s%s %s",
+			    hapd->conf->iface, module_str ? " " : "",
+			    module_str, txt);
 	else if (addr)
-		snprintf(format, maxlen, "STA " MACSTR "%s%s: %s",
-			 MAC2STR(addr), module_str ? " " : "",
-			 module_str, txt);
+		os_snprintf(format, maxlen, "STA " MACSTR "%s%s: %s",
+			    MAC2STR(addr), module_str ? " " : "",
+			    module_str, txt);
 	else
-		snprintf(format, maxlen, "%s%s%s",
-			 module_str, module_str ? ": " : "", txt);
+		os_snprintf(format, maxlen, "%s%s%s",
+			    module_str, module_str ? ": " : "", txt);
 
 	if ((conf_stdout & module) && level >= conf_stdout_level) {
 		wpa_debug_print_timestamp();
@@ -155,7 +155,7 @@ static void hostapd_logger_cb(void *ctx, const u8 *addr, unsigned int module,
 	}
 #endif /* CONFIG_NATIVE_WINDOWS */
 
-	free(format);
+	os_free(format);
 }
 
 
@@ -164,7 +164,7 @@ static void hostapd_deauth_all_stas(struct hostapd_data *hapd)
 #if 0
 	u8 addr[ETH_ALEN];
 
-	memset(addr, 0xff, ETH_ALEN);
+	os_memset(addr, 0xff, ETH_ALEN);
 	hostapd_sta_deauth(hapd, addr, WLAN_REASON_PREV_AUTH_NOT_VALID);
 #else
 	/* New Prism2.5/3 STA firmware versions seem to have issues with this
@@ -299,16 +299,16 @@ static void hostapd_wpa_auth_conf(struct hostapd_bss_config *conf,
 	wconf->ssid_len = conf->ssid.ssid_len;
 	if (wconf->ssid_len > SSID_LEN)
 		wconf->ssid_len = SSID_LEN;
-	memcpy(wconf->ssid, conf->ssid.ssid, wconf->ssid_len);
-	memcpy(wconf->mobility_domain, conf->mobility_domain,
-	       MOBILITY_DOMAIN_ID_LEN);
+	os_memcpy(wconf->ssid, conf->ssid.ssid, wconf->ssid_len);
+	os_memcpy(wconf->mobility_domain, conf->mobility_domain,
+		  MOBILITY_DOMAIN_ID_LEN);
 	if (conf->nas_identifier &&
 	    os_strlen(conf->nas_identifier) <= FT_R0KH_ID_MAX_LEN) {
 		wconf->r0_key_holder_len = os_strlen(conf->nas_identifier);
-		memcpy(wconf->r0_key_holder, conf->nas_identifier,
-		       wconf->r0_key_holder_len);
+		os_memcpy(wconf->r0_key_holder, conf->nas_identifier,
+			  wconf->r0_key_holder_len);
 	}
-	memcpy(wconf->r1_key_holder, conf->r1_key_holder, FT_R1KH_ID_LEN);
+	os_memcpy(wconf->r1_key_holder, conf->r1_key_holder, FT_R1KH_ID_LEN);
 	wconf->r0_key_lifetime = conf->r0_key_lifetime;
 	wconf->reassociation_deadline = conf->reassociation_deadline;
 	wconf->r0kh_list = conf->r0kh_list;
@@ -426,7 +426,7 @@ static void hostapd_dump_state(struct hostapd_data *hapd)
 		ieee802_1x_dump_state(f, "  ", sta);
 	}
 
-	buf = malloc(4096);
+	buf = os_malloc(4096);
 	if (buf) {
 		int count = radius_client_get_mib(hapd->radius, buf, 4096);
 		if (count < 0)
@@ -443,7 +443,7 @@ static void hostapd_dump_state(struct hostapd_data *hapd)
 			count = 4095;
 		buf[count] = '\0';
 		fprintf(f, "%s", buf);
-		free(buf);
+		os_free(buf);
 	}
 	fclose(f);
 }
@@ -544,7 +544,7 @@ static void hostapd_cleanup(struct hostapd_data *hapd)
 {
 	hostapd_ctrl_iface_deinit(hapd);
 
-	free(hapd->default_wep_key);
+	os_free(hapd->default_wep_key);
 	hapd->default_wep_key = NULL;
 	iapp_deinit(hapd->iapp);
 	hapd->iapp = NULL;
@@ -625,15 +625,15 @@ static void hostapd_cleanup_iface(struct hostapd_iface *iface)
 {
 	hostapd_free_hw_features(iface->hw_features, iface->num_hw_features);
 	iface->hw_features = NULL;
-	free(iface->current_rates);
+	os_free(iface->current_rates);
 	iface->current_rates = NULL;
 	ap_list_deinit(iface);
 	hostapd_config_free(iface->conf);
 	iface->conf = NULL;
 
-	free(iface->config_fname);
-	free(iface->bss);
-	free(iface);
+	os_free(iface->config_fname);
+	os_free(iface->bss);
+	os_free(iface);
 }
 
 
@@ -758,7 +758,8 @@ static void hostapd_wpa_auth_set_eapol(void *ctx, const u8 *addr,
 		break;
 	case WPA_EAPOL_keyAvailable:
 		if (sta->eapol_sm)
-			sta->eapol_sm->keyAvailable = value ? TRUE : FALSE;
+			sta->eapol_sm->eap_if->eapKeyAvailable =
+				value ? TRUE : FALSE;
 		break;
 	case WPA_EAPOL_keyDone:
 		if (sta->eapol_sm)
@@ -783,7 +784,7 @@ static int hostapd_wpa_auth_get_eapol(void *ctx, const u8 *addr,
 	case WPA_EAPOL_keyRun:
 		return sta->eapol_sm->keyRun;
 	case WPA_EAPOL_keyAvailable:
-		return sta->eapol_sm->keyAvailable;
+		return sta->eapol_sm->eap_if->eapKeyAvailable;
 	default:
 		return -1;
 	}
@@ -802,37 +803,22 @@ static int hostapd_wpa_auth_get_msk(void *ctx, const u8 *addr, u8 *msk,
 				    size_t *len)
 {
 	struct hostapd_data *hapd = ctx;
-	u8 *key;
-	size_t keylen, total;
+	const u8 *key;
+	size_t keylen;
 	struct sta_info *sta;
 
 	sta = ap_get_sta(hapd, addr);
 	if (sta == NULL)
 		return -1;
 
-	key = ieee802_1x_get_key_crypt(sta->eapol_sm, &keylen);
+	key = ieee802_1x_get_key(sta->eapol_sm, &keylen);
 	if (key == NULL)
 		return -1;
 
 	if (keylen > *len)
 		keylen = *len;
-	memcpy(msk, key, keylen);
-	total = keylen;
-
-	if (total < *len) {
-		key = ieee802_1x_get_key_sign(sta->eapol_sm, &keylen);
-		if (key == NULL) {
-			*len = total;
-			return 0;
-		}
-
-		if (total + keylen > *len)
-			keylen = *len - total;
-		memcpy(msk + total, key, keylen);
-		total += keylen;
-	}
-
-	*len = total;
+	os_memcpy(msk, key, keylen);
+	*len = keylen;
 
 	return 0;
 }
@@ -1028,7 +1014,7 @@ static int hostapd_validate_bssid_configuration(struct hostapd_iface *iface)
 	if (bits > 40)
 		return -1;
 
-	memset(mask, 0xff, ETH_ALEN);
+	os_memset(mask, 0xff, ETH_ALEN);
 	j = bits / 8;
 	for (i = 5; i > 5 - j; i--)
 		mask[i] = 0;
@@ -1105,7 +1091,7 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 			} while (mac_in_conf(hapd->iconf, hapd->own_addr));
 		} else {
 			/* Allocate the configured BSSID. */
-			memcpy(hapd->own_addr, hapd->conf->bssid, ETH_ALEN);
+			os_memcpy(hapd->own_addr, hapd->conf->bssid, ETH_ALEN);
 
 			if (hostapd_mac_comp(hapd->own_addr,
 					     hapd->iface->bss[0]->own_addr) ==
@@ -1143,7 +1129,7 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 		 * new SSID.
 		 */
 		set_ssid = (conf->ssid.ssid_len != (size_t) ssid_len ||
-			    memcmp(conf->ssid.ssid, ssid, ssid_len) != 0);
+			    os_memcmp(conf->ssid.ssid, ssid, ssid_len) != 0);
 	} else {
 		/*
 		 * No SSID in the config file; just use the one we got
@@ -1151,7 +1137,7 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 		 */
 		set_ssid = 0;
 		conf->ssid.ssid_len = ssid_len;
-		memcpy(conf->ssid.ssid, ssid, conf->ssid.ssid_len);
+		os_memcpy(conf->ssid.ssid, ssid, conf->ssid.ssid_len);
 		conf->ssid.ssid[conf->ssid.ssid_len] = '\0';
 	}
 
@@ -1209,7 +1195,7 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 		size_t wpa_ie_len;
 
 		hostapd_wpa_auth_conf(hapd->conf, &_conf);
-		memset(&cb, 0, sizeof(cb));
+		os_memset(&cb, 0, sizeof(cb));
 		cb.ctx = hapd;
 		cb.logger = hostapd_wpa_auth_logger;
 		cb.disconnect = hostapd_wpa_auth_disconnect;
@@ -1347,7 +1333,7 @@ static int setup_interface2(struct hostapd_iface *iface)
 	for (j = 0; j < iface->num_bss; j++) {
 		hapd = iface->bss[j];
 		if (j)
-			memcpy(hapd->own_addr, prev_addr, ETH_ALEN);
+			os_memcpy(hapd->own_addr, prev_addr, ETH_ALEN);
 		if (hostapd_setup_bss(hapd, j == 0))
 			return -1;
 		if (hostapd_mac_comp_empty(hapd->conf->bssid) == 0)
@@ -1442,7 +1428,7 @@ static int hostapd_radius_get_eap_user(void *ctx, const u8 *identity,
 	if (user == NULL)
 		return 0;
 
-	memset(user, 0, sizeof(*user));
+	os_memset(user, 0, sizeof(*user));
 	count = EAP_USER_MAX_METHODS;
 	if (count > EAP_MAX_METHODS)
 		count = EAP_MAX_METHODS;
@@ -1452,11 +1438,11 @@ static int hostapd_radius_get_eap_user(void *ctx, const u8 *identity,
 	}
 
 	if (eap_user->password) {
-		user->password = malloc(eap_user->password_len);
+		user->password = os_malloc(eap_user->password_len);
 		if (user->password == NULL)
 			return -1;
-		memcpy(user->password, eap_user->password,
-		       eap_user->password_len);
+		os_memcpy(user->password, eap_user->password,
+			  eap_user->password_len);
 		user->password_len = eap_user->password_len;
 		user->password_hash = eap_user->password_hash;
 	}
@@ -1482,25 +1468,33 @@ static int setup_interface1(struct hostapd_iface *iface)
 	struct hostapd_bss_config *conf = hapd->conf;
 	size_t i;
 	char country[4];
+	u8 *b = conf->bssid;
 
 	/*
 	 * Initialize the driver interface and make sure that all BSSes get
 	 * configured with a pointer to this driver interface.
 	 */
-	hapd->drv_priv = hostapd_driver_init(hapd);
+	if (b[0] | b[1] | b[2] | b[3] | b[4] | b[5]) {
+		hapd->drv_priv = hostapd_driver_init_bssid(hapd, b);
+	} else {
+		hapd->drv_priv = hostapd_driver_init(hapd);
+	}
+
 	if (hapd->drv_priv == NULL) {
 		printf("%s driver initialization failed.\n",
 			hapd->driver ? hapd->driver->name : "Unknown");
 		hapd->driver = NULL;
 		return -1;
 	}
-	for (i = 0; i < iface->num_bss; i++)
+	for (i = 0; i < iface->num_bss; i++) {
 		iface->bss[i]->driver = hapd->driver;
+		iface->bss[i]->drv_priv = hapd->drv_priv;
+	}
 
 	if (hostapd_validate_bssid_configuration(iface))
 		return -1;
 
-	memcpy(country, hapd->iconf->country, 3);
+	os_memcpy(country, hapd->iconf->country, 3);
 	country[3] = '\0';
 	if (hostapd_set_country(hapd, country) < 0) {
 		printf("Failed to set country code\n");
@@ -1523,7 +1517,7 @@ static int setup_interface1(struct hostapd_iface *iface)
 
 	if (conf->radius_server_clients) {
 		struct radius_server_conf srv;
-		memset(&srv, 0, sizeof(srv));
+		os_memset(&srv, 0, sizeof(srv));
 		srv.client_file = conf->radius_server_clients;
 		srv.auth_port = conf->radius_server_auth_port;
 		srv.conf_ctx = conf;
@@ -1531,6 +1525,7 @@ static int setup_interface1(struct hostapd_iface *iface)
 		srv.ssl_ctx = hapd->ssl_ctx;
 		srv.pac_opaque_encr_key = conf->pac_opaque_encr_key;
 		srv.eap_fast_a_id = conf->eap_fast_a_id;
+		srv.eap_sim_aka_result_ind = conf->eap_sim_aka_result_ind;
 		srv.ipv6 = conf->radius_server_ipv6;
 		srv.get_eap_user = hostapd_radius_get_eap_user;
 		hapd->radius_srv = radius_server_init(&srv);
@@ -1694,7 +1689,7 @@ hostapd_alloc_bss_data(struct hostapd_iface *hapd_iface,
 			goto fail;
 		}
 
-		memset(&params, 0, sizeof(params));
+		os_memset(&params, 0, sizeof(params));
 		params.ca_cert = hapd->conf->ca_cert;
 		params.client_cert = hapd->conf->server_cert;
 		params.private_key = hapd->conf->private_key;
@@ -1738,7 +1733,7 @@ hostapd_alloc_bss_data(struct hostapd_iface *hapd_iface,
 fail:
 #endif
 	/* TODO: cleanup allocated resources(?) */
-	free(hapd);
+	os_free(hapd);
 	return NULL;
 }
 
@@ -1763,7 +1758,7 @@ static struct hostapd_iface * hostapd_init(const char *config_file)
 	if (hapd_iface == NULL)
 		goto fail;
 
-	hapd_iface->config_fname = strdup(config_file);
+	hapd_iface->config_fname = os_strdup(config_file);
 	if (hapd_iface->config_fname == NULL)
 		goto fail;
 
@@ -1798,9 +1793,9 @@ fail:
 				tls_deinit(hapd->ssl_ctx);
 		}
 
-		free(hapd_iface->config_fname);
-		free(hapd_iface->bss);
-		free(hapd_iface);
+		os_free(hapd_iface->config_fname);
+		os_free(hapd_iface->bss);
+		os_free(hapd_iface);
 	}
 	return NULL;
 }
@@ -1888,11 +1883,11 @@ int main(int argc, char *argv[])
 
 	interfaces.count = argc - optind;
 
-	interfaces.iface = malloc(interfaces.count *
-				  sizeof(struct hostapd_iface *));
+	interfaces.iface = os_malloc(interfaces.count *
+				     sizeof(struct hostapd_iface *));
 	if (interfaces.iface == NULL) {
-		printf("malloc failed\n");
-		exit(1);
+		wpa_printf(MSG_ERROR, "malloc failed\n");
+		return -1;
 	}
 
 	if (eloop_init(&interfaces)) {
@@ -1965,10 +1960,10 @@ int main(int argc, char *argv[])
 				hostapd_driver_deinit(hapd);
 		}
 		for (j = 0; j < interfaces.iface[i]->num_bss; j++)
-			free(interfaces.iface[i]->bss[j]);
+			os_free(interfaces.iface[i]->bss[j]);
 		hostapd_cleanup_iface(interfaces.iface[i]);
 	}
-	free(interfaces.iface);
+	os_free(interfaces.iface);
 
 	eloop_destroy();
 
