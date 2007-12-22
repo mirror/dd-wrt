@@ -571,6 +571,7 @@ static int tls_process_client_key_exchange_rsa(
 static int tls_process_client_key_exchange_dh_anon(
 	struct tlsv1_server *conn, const u8 *pos, const u8 *end)
 {
+#ifdef EAP_FAST
 	const u8 *dh_yc;
 	u16 dh_yc_len;
 	u8 *shared;
@@ -662,6 +663,9 @@ static int tls_process_client_key_exchange_dh_anon(
 	}
 
 	return 0;
+#else /* EAP_FAST */
+	return -1;
+#endif /* EAP_FAST */
 }
 
 

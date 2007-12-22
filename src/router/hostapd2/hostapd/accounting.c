@@ -53,10 +53,10 @@ static struct radius_msg * accounting_msg(struct hostapd_data *hapd,
 	if (sta) {
 		radius_msg_make_authenticator(msg, (u8 *) sta, sizeof(*sta));
 
-		snprintf(buf, sizeof(buf), "%08X-%08X",
-			 sta->acct_session_id_hi, sta->acct_session_id_lo);
+		os_snprintf(buf, sizeof(buf), "%08X-%08X",
+			    sta->acct_session_id_hi, sta->acct_session_id_lo);
 		if (!radius_msg_add_attr(msg, RADIUS_ATTR_ACCT_SESSION_ID,
-					 (u8 *) buf, strlen(buf))) {
+					 (u8 *) buf, os_strlen(buf))) {
 			printf("Could not add Acct-Session-Id\n");
 			goto fail;
 		}
@@ -81,10 +81,10 @@ static struct radius_msg * accounting_msg(struct hostapd_data *hapd,
 	if (sta) {
 		val = ieee802_1x_get_identity(sta->eapol_sm, &len);
 		if (!val) {
-			snprintf(buf, sizeof(buf), RADIUS_ADDR_FORMAT,
-				 MAC2STR(sta->addr));
+			os_snprintf(buf, sizeof(buf), RADIUS_ADDR_FORMAT,
+				    MAC2STR(sta->addr));
 			val = (u8 *) buf;
-			len = strlen(buf);
+			len = os_strlen(buf);
 		}
 
 		if (!radius_msg_add_attr(msg, RADIUS_ATTR_USER_NAME, val,
@@ -113,7 +113,7 @@ static struct radius_msg * accounting_msg(struct hostapd_data *hapd,
 	if (hapd->conf->nas_identifier &&
 	    !radius_msg_add_attr(msg, RADIUS_ATTR_NAS_IDENTIFIER,
 				 (u8 *) hapd->conf->nas_identifier,
-				 strlen(hapd->conf->nas_identifier))) {
+				 os_strlen(hapd->conf->nas_identifier))) {
 		printf("Could not add NAS-Identifier\n");
 		goto fail;
 	}
@@ -124,19 +124,19 @@ static struct radius_msg * accounting_msg(struct hostapd_data *hapd,
 		goto fail;
 	}
 
-	snprintf(buf, sizeof(buf), RADIUS_802_1X_ADDR_FORMAT ":%s",
-		 MAC2STR(hapd->own_addr), hapd->conf->ssid.ssid);
+	os_snprintf(buf, sizeof(buf), RADIUS_802_1X_ADDR_FORMAT ":%s",
+		    MAC2STR(hapd->own_addr), hapd->conf->ssid.ssid);
 	if (!radius_msg_add_attr(msg, RADIUS_ATTR_CALLED_STATION_ID,
-				 (u8 *) buf, strlen(buf))) {
+				 (u8 *) buf, os_strlen(buf))) {
 		printf("Could not add Called-Station-Id\n");
 		goto fail;
 	}
 
 	if (sta) {
-		snprintf(buf, sizeof(buf), RADIUS_802_1X_ADDR_FORMAT,
-			 MAC2STR(sta->addr));
+		os_snprintf(buf, sizeof(buf), RADIUS_802_1X_ADDR_FORMAT,
+			    MAC2STR(sta->addr));
 		if (!radius_msg_add_attr(msg, RADIUS_ATTR_CALLING_STATION_ID,
-					 (u8 *) buf, strlen(buf))) {
+					 (u8 *) buf, os_strlen(buf))) {
 			printf("Could not add Calling-Station-Id\n");
 			goto fail;
 		}
@@ -148,12 +148,12 @@ static struct radius_msg * accounting_msg(struct hostapd_data *hapd,
 			goto fail;
 		}
 
-		snprintf(buf, sizeof(buf), "CONNECT %d%sMbps %s",
-			 radius_sta_rate(hapd, sta) / 2,
-			 (radius_sta_rate(hapd, sta) & 1) ? ".5" : "",
-			 radius_mode_txt(hapd));
+		os_snprintf(buf, sizeof(buf), "CONNECT %d%sMbps %s",
+			    radius_sta_rate(hapd, sta) / 2,
+			    (radius_sta_rate(hapd, sta) & 1) ? ".5" : "",
+			    radius_mode_txt(hapd));
 		if (!radius_msg_add_attr(msg, RADIUS_ATTR_CONNECT_INFO,
-					 (u8 *) buf, strlen(buf))) {
+					 (u8 *) buf, os_strlen(buf))) {
 			printf("Could not add Connect-Info\n");
 			goto fail;
 		}
@@ -176,7 +176,7 @@ static struct radius_msg * accounting_msg(struct hostapd_data *hapd,
 
  fail:
 	radius_msg_free(msg);
-	free(msg);
+	os_free(msg);
 	return NULL;
 }
 
@@ -354,7 +354,7 @@ void accounting_sta_report(struct hostapd_data *hapd, struct sta_info *sta,
 
  fail:
 	radius_msg_free(msg);
-	free(msg);
+	os_free(msg);
 }
 
 
@@ -425,7 +425,7 @@ static void accounting_report_state(struct hostapd_data *hapd, int on)
 	{
 		printf("Could not add Acct-Terminate-Cause\n");
 		radius_msg_free(msg);
-		free(msg);
+		os_free(msg);
 		return;
 	}
 

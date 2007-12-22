@@ -20,7 +20,7 @@
 
 #include "common.h"
 #include "config.h"
-#include "eapol_sm.h"
+#include "eapol_supp/eapol_supp_sm.h"
 #include "eloop.h"
 #include "wpa.h"
 #include "eap_peer/eap.h"

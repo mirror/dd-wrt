@@ -155,6 +155,7 @@ void sha1_prf(const u8 *key, size_t key_len, const char *label,
 }
 
 
+#ifndef CONFIG_NO_T_PRF
 /**
  * sha1_t_prf - EAP-FAST Pseudo-Random Function (T-PRF)
  * @key: Key for PRF
@@ -207,8 +208,10 @@ void sha1_t_prf(const u8 *key, size_t key_len, const char *label,
 		len[0] = SHA1_MAC_LEN;
 	}
 }
+#endif /* CONFIG_NO_T_PRF */
 
 
+#ifndef CONFIG_NO_TLS_PRF
 /**
  * tls_prf - Pseudo-Random Function for TLS (TLS-PRF, RFC 2246)
  * @secret: Key for PRF
@@ -289,7 +292,10 @@ int tls_prf(const u8 *secret, size_t secret_len, const char *label,
 
 	return 0;
 }
+#endif /* CONFIG_NO_TLS_PRF */
 
+
+#ifndef CONFIG_NO_PBKDF2
 
 static void pbkdf2_sha1_f(const char *passphrase, const char *ssid,
 			  size_t ssid_len, int iterations, unsigned int count,
@@ -362,6 +368,8 @@ void pbkdf2_sha1(const char *passphrase, const char *ssid, size_t ssid_len,
 	}
 }
 
+#endif /* CONFIG_NO_PBKDF2 */
+
 
 #ifdef INTERNAL_SHA1
 
@@ -401,6 +409,7 @@ void sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len,
 }
 
 
+#ifndef CONFIG_NO_FIPS186_2_PRF
 int fips186_2_prf(const u8 *seed, size_t seed_len, u8 *x, size_t xlen)
 {
 	u8 xkey[64];
@@ -453,6 +462,7 @@ int fips186_2_prf(const u8 *seed, size_t seed_len, u8 *x, size_t xlen)
 
 	return 0;
 }
+#endif /* CONFIG_NO_FIPS186_2_PRF */
 
 
 /* ===== start - public domain SHA1 implementation ===== */

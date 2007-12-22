@@ -504,6 +504,9 @@ struct wpa_ssid {
 	 * sim_min_num_chal=3 can be used to configure EAP-SIM to require three
 	 * challenges (by default, it accepts 2 or 3).
 	 *
+	 * result_ind=1 can be used to enable EAP-SIM and EAP-AKA to use
+	 * protected result indication.
+	 *
 	 * fast_provisioning option can be used to enable in-line provisioning
 	 * of EAP-FAST credentials (PAC):
 	 * 0 = disabled,
@@ -869,8 +872,5 @@ struct wpa_ssid {
 	 */
 	u32 flags;
 };
-
-int wpa_config_allowed_eap_method(struct wpa_ssid *ssid, int vendor,
-				  u32 method);
 
 #endif /* CONFIG_SSID_H */

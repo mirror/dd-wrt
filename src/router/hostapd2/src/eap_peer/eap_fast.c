@@ -70,8 +70,7 @@ struct eap_fast_data {
 	u8 simck[EAP_FAST_SIMCK_LEN];
 	int simck_idx;
 
-	u8 *pending_phase2_req;
-	size_t pending_phase2_req_len;
+	struct wpabuf *pending_phase2_req;
 };
 
 
@@ -259,7 +258,7 @@ static void eap_fast_deinit(struct eap_sm *sm, void *priv)
 		pac = pac->next;
 		eap_fast_free_pac(prev);
 	}
-	os_free(data->pending_phase2_req);
+	wpabuf_free(data->pending_phase2_req);
 	os_free(data);
 }
 
@@ -465,12 +464,13 @@ static int eap_fast_phase2_request(struct eap_sm *sm,
 				   struct eap_fast_data *data,
 				   struct eap_method_ret *ret,
 				   struct eap_hdr *hdr,
-				   u8 **resp, size_t *resp_len)
+				   struct wpabuf **resp)
 {
 	size_t len = be_to_host16(hdr->length);
 	u8 *pos;
 	struct eap_method_ret iret;
 	struct wpa_ssid *config = eap_get_config(sm);
+	struct wpabuf *msg;
 
 	if (len <= sizeof(struct eap_hdr)) {
 		wpa_printf(MSG_INFO, "EAP-FAST: too short "
@@ -480,7 +480,7 @@ static int eap_fast_phase2_request(struct eap_sm *sm,
 	pos = (u8 *) (hdr + 1);
 	wpa_printf(MSG_DEBUG, "EAP-FAST: Phase 2 Request: type=%d", *pos);
 	if (*pos == EAP_TYPE_IDENTITY) {
-		*resp = eap_sm_buildIdentity(sm, hdr->identifier, resp_len, 1);
+		*resp = eap_sm_buildIdentity(sm, hdr->identifier, 1);
 		return 0;
 	}
 
@@ -489,7 +489,7 @@ static int eap_fast_phase2_request(struct eap_sm *sm,
 	    eap_fast_select_phase2_method(data, *pos) < 0) {
 		if (eap_peer_tls_phase2_nak(data->phase2_types,
 					    data->num_phase2_types,
-					    hdr, resp, resp_len))
+					    hdr, resp))
 			return -1;
 		return 0;
 	}
@@ -504,8 +504,12 @@ static int eap_fast_phase2_request(struct eap_sm *sm,
 	}
 
 	os_memset(&iret, 0, sizeof(iret));
+	msg = wpabuf_alloc_ext_data_no_free((u8 *) hdr, len);
+	if (msg == NULL)
+		return -1;
 	*resp = data->phase2_method->process(sm, data->phase2_priv, &iret,
-					     (u8 *) hdr, len, resp_len);
+					     msg);
+	wpabuf_free(msg);
 	if (*resp == NULL ||
 	    (iret.methodState == METHOD_DONE &&
 	     iret.decision == DECISION_FAIL)) {
@@ -521,12 +525,8 @@ static int eap_fast_phase2_request(struct eap_sm *sm,
 	if (*resp == NULL && config &&
 	    (config->pending_req_identity || config->pending_req_password ||
 	     config->pending_req_otp || config->pending_req_new_password)) {
-		os_free(data->pending_phase2_req);
-		data->pending_phase2_req = os_malloc(len);
-		if (data->pending_phase2_req) {
-			os_memcpy(data->pending_phase2_req, hdr, len);
-			data->pending_phase2_req_len = len;
-		}
+		wpabuf_free(data->pending_phase2_req);
+		data->pending_phase2_req = wpabuf_alloc_copy(hdr, len);
 	} else if (*resp == NULL)
 		return -1;
 
@@ -534,54 +534,57 @@ static int eap_fast_phase2_request(struct eap_sm *sm,
 }
 
 
-static u8 * eap_fast_tlv_nak(int vendor_id, int tlv_type, size_t *len)
+static struct wpabuf * eap_fast_tlv_nak(int vendor_id, int tlv_type)
 {
+	struct wpabuf *buf;
 	struct eap_tlv_nak_tlv *nak;
-	*len = sizeof(*nak);
-	nak = os_malloc(*len);
-	if (nak == NULL)
+	buf = wpabuf_alloc(sizeof(*nak));
+	if (buf == NULL)
 		return NULL;
+	nak = wpabuf_put(buf, sizeof(*nak));
 	nak->tlv_type = host_to_be16(EAP_TLV_TYPE_MANDATORY | EAP_TLV_NAK_TLV);
 	nak->length = host_to_be16(6);
 	nak->vendor_id = host_to_be32(vendor_id);
 	nak->nak_type = host_to_be16(tlv_type);
-	return (u8 *) nak;
+	return buf;
 }
 
 
-static u8 * eap_fast_tlv_result(int status, int intermediate, size_t *len)
+static struct wpabuf * eap_fast_tlv_result(int status, int intermediate)
 {
+	struct wpabuf *buf;
 	struct eap_tlv_intermediate_result_tlv *result;
-	*len = sizeof(*result);
-	result = os_malloc(*len);
-	if (result == NULL)
+	buf = wpabuf_alloc(sizeof(*result));
+	if (buf == NULL)
 		return NULL;
+	result = wpabuf_put(buf, sizeof(*result));
 	result->tlv_type = host_to_be16(EAP_TLV_TYPE_MANDATORY |
 					(intermediate ?
 					 EAP_TLV_INTERMEDIATE_RESULT_TLV :
 					 EAP_TLV_RESULT_TLV));
 	result->length = host_to_be16(2);
 	result->status = host_to_be16(status);
-	return (u8 *) result;
+	return buf;
 }
 
 
-static u8 * eap_fast_tlv_pac_ack(size_t *len)
+static struct wpabuf * eap_fast_tlv_pac_ack(void)
 {
+	struct wpabuf *buf;
 	struct eap_tlv_result_tlv *res;
 	struct eap_tlv_pac_ack_tlv *ack;
 
-	*len = sizeof(*res) + sizeof(*ack);
-	res = os_zalloc(*len);
-	if (res == NULL)
+	buf = wpabuf_alloc(sizeof(*res) + sizeof(*ack));
+	if (buf == NULL)
 		return NULL;
 
+	res = wpabuf_put(buf, sizeof(*res));
 	res->tlv_type = host_to_be16(EAP_TLV_RESULT_TLV |
 				     EAP_TLV_TYPE_MANDATORY);
 	res->length = host_to_be16(sizeof(*res) - sizeof(struct eap_tlv_hdr));
 	res->status = host_to_be16(EAP_TLV_RESULT_SUCCESS);
 
-	ack = (struct eap_tlv_pac_ack_tlv *) (res + 1);
+	ack = wpabuf_put(buf, sizeof(*ack));
 	ack->tlv_type = host_to_be16(EAP_TLV_PAC_TLV |
 				     EAP_TLV_TYPE_MANDATORY);
 	ack->length = host_to_be16(sizeof(*ack) - sizeof(struct eap_tlv_hdr));
@@ -589,43 +592,43 @@ static u8 * eap_fast_tlv_pac_ack(size_t *len)
 	ack->pac_len = host_to_be16(2);
 	ack->result = host_to_be16(EAP_TLV_RESULT_SUCCESS);
 
-	return (u8 *) res;
+	return buf;
 }
 
 
-static u8 * eap_fast_tlv_eap_payload(u8 *buf, size_t *len)
+static struct wpabuf * eap_fast_tlv_eap_payload(struct wpabuf *buf)
 {
+	struct wpabuf *msg;
 	struct eap_tlv_hdr *tlv;
 
 	if (buf == NULL)
 		return NULL;
 
 	/* Encapsulate EAP packet in EAP Payload TLV */
-	tlv = os_malloc(sizeof(*tlv) + *len);
-	if (tlv == NULL) {
-		wpa_printf(MSG_DEBUG, "EAP-FAST: Failed to "
-			   "allocate memory for TLV "
-			   "encapsulation");
-		os_free(buf);
+	msg = wpabuf_alloc(sizeof(*tlv) + wpabuf_len(buf));
+	if (msg == NULL) {
+		wpa_printf(MSG_DEBUG, "EAP-FAST: Failed to allocate memory "
+			   "for TLV encapsulation");
+		wpabuf_free(buf);
 		return NULL;
 	}
+	tlv = wpabuf_put(msg, sizeof(*tlv));
 	tlv->tlv_type = host_to_be16(EAP_TLV_TYPE_MANDATORY |
 				     EAP_TLV_EAP_PAYLOAD_TLV);
-	tlv->length = host_to_be16(*len);
-	os_memcpy(tlv + 1, buf, *len);
-	os_free(buf);
-	*len += sizeof(*tlv);
-	return (u8 *) tlv;
+	tlv->length = host_to_be16(wpabuf_len(buf));
+	wpabuf_put_buf(msg, buf);
+	wpabuf_free(buf);
+	return msg;
 }
 
 
-static u8 * eap_fast_process_eap_payload_tlv(
+static struct wpabuf * eap_fast_process_eap_payload_tlv(
 	struct eap_sm *sm, struct eap_fast_data *data,
 	struct eap_method_ret *ret, const struct eap_hdr *req,
-	u8 *eap_payload_tlv, size_t eap_payload_tlv_len, size_t *resp_len)
+	u8 *eap_payload_tlv, size_t eap_payload_tlv_len)
 {
 	struct eap_hdr *hdr;
-	u8 *resp = NULL;
+	struct wpabuf *resp = NULL;
 
 	if (eap_payload_tlv_len < sizeof(*hdr)) {
 		wpa_printf(MSG_DEBUG, "EAP-FAST: too short EAP "
@@ -647,13 +650,13 @@ static u8 * eap_fast_process_eap_payload_tlv(
 		return NULL;
 	}
 
-	if (eap_fast_phase2_request(sm, data, ret, hdr, &resp, resp_len)) {
+	if (eap_fast_phase2_request(sm, data, ret, hdr, &resp)) {
 		wpa_printf(MSG_INFO, "EAP-FAST: Phase2 Request processing "
 			   "failed");
 		return NULL;
 	}
 
-	return eap_fast_tlv_eap_payload(resp, resp_len);
+	return eap_fast_tlv_eap_payload(resp);
 }
 
 
@@ -801,21 +804,20 @@ static u8 * eap_fast_write_pac_request(u8 *pos, u16 pac_type)
 }
 
 
-static u8 * eap_fast_process_crypto_binding(
+static struct wpabuf * eap_fast_process_crypto_binding(
 	struct eap_sm *sm, struct eap_fast_data *data,
 	struct eap_method_ret *ret,
-	struct eap_tlv_crypto_binding__tlv *_bind, size_t bind_len,
-	size_t *resp_len, int final)
+	struct eap_tlv_crypto_binding__tlv *_bind, size_t bind_len, int final)
 {
-	u8 *resp, *pos;
+	struct wpabuf *resp;
+	u8 *pos;
 	struct eap_tlv_intermediate_result_tlv *rresult;
 	u8 cmk[20], cmac[20];
 	int res, req_tunnel_pac = 0;
+	size_t len;
 
-	if (eap_fast_validate_crypto_binding(_bind) < 0) {
-		return eap_fast_tlv_result(EAP_TLV_RESULT_FAILURE, 1,
-					   resp_len);
-	}
+	if (eap_fast_validate_crypto_binding(_bind) < 0)
+		return eap_fast_tlv_result(EAP_TLV_RESULT_FAILURE, 1);
 
 	if (eap_fast_get_cmk(sm, data, cmk) < 0)
 		return NULL;
@@ -833,8 +835,7 @@ static u8 * eap_fast_process_crypto_binding(
 		    _bind->compound_mac, sizeof(cmac));
 	if (res != 0) {
 		wpa_printf(MSG_INFO, "EAP-FAST: Compound MAC did not match");
-		resp = eap_fast_tlv_result(EAP_TLV_RESULT_FAILURE, 1,
-					   resp_len);
+		resp = eap_fast_tlv_result(EAP_TLV_RESULT_FAILURE, 1);
 		os_memcpy(_bind->compound_mac, cmac, sizeof(cmac));
 		return resp;
 	}
@@ -854,13 +855,12 @@ static u8 * eap_fast_process_crypto_binding(
 		req_tunnel_pac = 1;
 	}
 
-	*resp_len = sizeof(*rresult) +
-		sizeof(struct eap_tlv_crypto_binding__tlv);
+	len = sizeof(*rresult) + sizeof(struct eap_tlv_crypto_binding__tlv);
 	if (req_tunnel_pac)
-		*resp_len += sizeof(struct eap_tlv_hdr) +
+		len += sizeof(struct eap_tlv_hdr) +
 			sizeof(struct eap_tlv_request_action_tlv) +
 			sizeof(struct eap_tlv_pac_type_tlv);
-	resp = os_zalloc(*resp_len);
+	resp = wpabuf_alloc(len);
 	if (resp == NULL)
 		return NULL;
 
@@ -868,7 +868,7 @@ static u8 * eap_fast_process_crypto_binding(
 	 * Both intermediate and final Result TLVs are identical, so ok to use
 	 * the same structure definition for them.
 	 */
-	rresult = (struct eap_tlv_intermediate_result_tlv *) resp;
+	rresult = wpabuf_put(resp, sizeof(*rresult));
 	rresult->tlv_type = host_to_be16(EAP_TLV_TYPE_MANDATORY |
 					 (final ? EAP_TLV_RESULT_TLV :
 					  EAP_TLV_INTERMEDIATE_RESULT_TLV));
@@ -884,13 +884,16 @@ static u8 * eap_fast_process_crypto_binding(
 		data->phase2_success = 0;
 	}
 
-	pos = (u8 *) (rresult + 1);
+	pos = wpabuf_put(resp, sizeof(struct eap_tlv_crypto_binding__tlv));
 	eap_fast_write_crypto_binding((struct eap_tlv_crypto_binding__tlv *)
 				      pos, _bind, cmk);
-	pos += sizeof(struct eap_tlv_crypto_binding__tlv);
 
-	if (req_tunnel_pac)
-		eap_fast_write_pac_request(pos, PAC_TYPE_TUNNEL_PAC);
+	if (req_tunnel_pac) {
+		u8 *pos2;
+		pos = wpabuf_put(resp, 0);
+		pos2 = eap_fast_write_pac_request(pos, PAC_TYPE_TUNNEL_PAC);
+		wpabuf_put(resp, pos2 - pos);
+	}
 
 	if (final && data->phase2_success) {
 		if (data->anon_provisioning) {
@@ -1114,9 +1117,10 @@ static int eap_fast_process_pac_info(struct eap_fast_pac *entry)
 }
 
 
-static u8 * eap_fast_process_pac(struct eap_sm *sm, struct eap_fast_data *data,
-				 struct eap_method_ret *ret,
-				 u8 *pac, size_t pac_len, size_t *resp_len)
+static struct wpabuf * eap_fast_process_pac(struct eap_sm *sm,
+					    struct eap_fast_data *data,
+					    struct eap_method_ret *ret,
+					    u8 *pac, size_t pac_len)
 {
 	struct wpa_ssid *config = eap_get_config(sm);
 	struct eap_fast_pac entry;
@@ -1124,8 +1128,7 @@ static u8 * eap_fast_process_pac(struct eap_sm *sm, struct eap_fast_data *data,
 	os_memset(&entry, 0, sizeof(entry));
 	if (eap_fast_process_pac_tlv(&entry, pac, pac_len) ||
 	    eap_fast_process_pac_info(&entry))
-		return eap_fast_tlv_result(EAP_TLV_RESULT_FAILURE, 0,
-					   resp_len);
+		return eap_fast_tlv_result(EAP_TLV_RESULT_FAILURE, 0);
 
 	eap_fast_add_pac(&data->pac, &data->current_pac, &entry);
 	eap_fast_pac_list_truncate(data->pac, data->max_pac_list_len);
@@ -1162,7 +1165,7 @@ static u8 * eap_fast_process_pac(struct eap_sm *sm, struct eap_fast_data *data,
 		ret->decision = DECISION_UNCOND_SUCC;
 	}
 	ret->methodState = METHOD_DONE;
-	return eap_fast_tlv_pac_ack(resp_len);
+	return eap_fast_tlv_pac_ack();
 }
 
 
@@ -1254,9 +1257,9 @@ static int eap_fast_parse_tlv(struct eap_fast_tlv_parse *tlv,
 }
 
 
-static int eap_fast_parse_decrypted(u8 *decrypted, size_t decrypted_len,
+static int eap_fast_parse_decrypted(struct wpabuf *decrypted,
 				    struct eap_fast_tlv_parse *tlv,
-				    u8 **resp, size_t *resp_len)
+				    struct wpabuf **resp)
 {
 	int mandatory, tlv_type, len, res;
 	u8 *pos, *end;
@@ -1264,8 +1267,8 @@ static int eap_fast_parse_decrypted(u8 *decrypted, size_t decrypted_len,
 	os_memset(tlv, 0, sizeof(*tlv));
 
 	/* Parse TLVs from the decrypted Phase 2 data */
-	pos = decrypted;
-	end = decrypted + decrypted_len;
+	pos = wpabuf_mhead(decrypted);
+	end = pos + wpabuf_len(decrypted);
 	while (pos + 4 < end) {
 		mandatory = pos[0] & 0x80;
 		tlv_type = WPA_GET_BE16(pos) & 0x3fff;
@@ -1287,8 +1290,7 @@ static int eap_fast_parse_decrypted(u8 *decrypted, size_t decrypted_len,
 			if (mandatory) {
 				wpa_printf(MSG_DEBUG, "EAP-FAST: Nak unknown "
 					   "mandatory TLV type %d", tlv_type);
-				*resp = eap_fast_tlv_nak(0, tlv_type,
-							 resp_len);
+				*resp = eap_fast_tlv_nak(0, tlv_type);
 				break;
 			} else {
 				wpa_printf(MSG_DEBUG, "EAP-FAST: ignored "
@@ -1306,22 +1308,21 @@ static int eap_fast_parse_decrypted(u8 *decrypted, size_t decrypted_len,
 
 static int eap_fast_encrypt_response(struct eap_sm *sm,
 				     struct eap_fast_data *data,
-				     u8 *resp, size_t resp_len,
-				     u8 identifier,
-				     u8 **out_data, size_t *out_len)
+				     struct wpabuf *resp,
+				     u8 identifier, struct wpabuf **out_data)
 {
 	if (resp == NULL)
 		return 0;
 
-	wpa_hexdump(MSG_DEBUG, "EAP-FAST: Encrypting Phase 2 data",
-		    resp, resp_len);
+	wpa_hexdump_buf(MSG_DEBUG, "EAP-FAST: Encrypting Phase 2 data",
+			resp);
 	if (eap_peer_tls_encrypt(sm, &data->ssl, EAP_TYPE_FAST,
 				 data->fast_version, identifier,
-				 resp, resp_len, out_data, out_len)) {
+				 resp, out_data)) {
 		wpa_printf(MSG_INFO, "EAP-FAST: Failed to encrypt a Phase 2 "
 			   "frame");
 	}
-	os_free(resp);
+	wpabuf_free(resp);
 
 	return 0;
 }
@@ -1331,44 +1332,36 @@ static int eap_fast_process_decrypted(struct eap_sm *sm,
 				      struct eap_fast_data *data,
 				      struct eap_method_ret *ret,
 				      const struct eap_hdr *req,
-				      u8 *decrypted, size_t decrypted_len,
-				      u8 **out_data, size_t *out_len)
+				      struct wpabuf *decrypted,
+				      struct wpabuf **out_data)
 {
-	u8 *resp = NULL;
-	size_t resp_len;
+	struct wpabuf *resp = NULL;
 	struct eap_fast_tlv_parse tlv;
 
-	if (eap_fast_parse_decrypted(decrypted, decrypted_len, &tlv,
-				     &resp, &resp_len) < 0)
+	if (eap_fast_parse_decrypted(decrypted, &tlv, &resp) < 0)
 		return 0;
 	if (resp)
-		return eap_fast_encrypt_response(sm, data, resp, resp_len,
-						 req->identifier,
-						 out_data, out_len);
+		return eap_fast_encrypt_response(sm, data, resp,
+						 req->identifier, out_data);
 
 	if (tlv.result == EAP_TLV_RESULT_FAILURE) {
-		resp = eap_fast_tlv_result(EAP_TLV_RESULT_FAILURE, 0,
-					   &resp_len);
-		return eap_fast_encrypt_response(sm, data, resp, resp_len,
-						 req->identifier,
-						 out_data, out_len);
+		resp = eap_fast_tlv_result(EAP_TLV_RESULT_FAILURE, 0);
+		return eap_fast_encrypt_response(sm, data, resp,
+						 req->identifier, out_data);
 	}
 
 	if (tlv.iresult == EAP_TLV_RESULT_FAILURE) {
-		resp = eap_fast_tlv_result(EAP_TLV_RESULT_FAILURE, 1,
-					   &resp_len);
-		return eap_fast_encrypt_response(sm, data, resp, resp_len,
-						 req->identifier,
-						 out_data, out_len);
+		resp = eap_fast_tlv_result(EAP_TLV_RESULT_FAILURE, 1);
+		return eap_fast_encrypt_response(sm, data, resp,
+						 req->identifier, out_data);
 	}
 
 	if (tlv.eap_payload_tlv) {
 		resp = eap_fast_process_eap_payload_tlv(
 			sm, data, ret, req, tlv.eap_payload_tlv,
-			tlv.eap_payload_tlv_len, &resp_len);
-		return eap_fast_encrypt_response(sm, data, resp, resp_len,
-						 req->identifier,
-						 out_data, out_len);
+			tlv.eap_payload_tlv_len);
+		return eap_fast_encrypt_response(sm, data, resp,
+						 req->identifier, out_data);
 	}
 
 	if (tlv.crypto_binding) {
@@ -1376,91 +1369,83 @@ static int eap_fast_process_decrypted(struct eap_sm *sm,
 		resp = eap_fast_process_crypto_binding(sm, data, ret,
 						       tlv.crypto_binding,
 						       tlv.crypto_binding_len,
-						       &resp_len, final);
-		return eap_fast_encrypt_response(sm, data, resp, resp_len,
-						 req->identifier,
-						 out_data, out_len);
+						       final);
+		return eap_fast_encrypt_response(sm, data, resp,
+						 req->identifier, out_data);
 	}
 
 	if (tlv.pac && tlv.result != EAP_TLV_RESULT_SUCCESS) {
 		wpa_printf(MSG_DEBUG, "EAP-FAST: PAC TLV without Result TLV "
 			   "acknowledging success");
-		resp = eap_fast_tlv_result(EAP_TLV_RESULT_FAILURE, 0,
-					   &resp_len);
-		return eap_fast_encrypt_response(sm, data, resp, resp_len,
-						 req->identifier,
-						 out_data, out_len);
+		resp = eap_fast_tlv_result(EAP_TLV_RESULT_FAILURE, 0);
+		return eap_fast_encrypt_response(sm, data, resp,
+						 req->identifier, out_data);
 	}
 
 	if (tlv.pac && tlv.result == EAP_TLV_RESULT_SUCCESS) {
 		resp = eap_fast_process_pac(sm, data, ret, tlv.pac,
-					    tlv.pac_len, &resp_len);
-		return eap_fast_encrypt_response(sm, data, resp, resp_len,
-						 req->identifier,
-						 out_data, out_len);
+					    tlv.pac_len);
+		return eap_fast_encrypt_response(sm, data, resp,
+						 req->identifier, out_data);
 	}
 
 	wpa_printf(MSG_DEBUG, "EAP-FAST: No recognized TLVs - send "
 		   "empty response packet");
-	return eap_fast_encrypt_response(sm, data, os_malloc(1), 0,
-					 req->identifier,
-					 out_data, out_len);
+	return eap_fast_encrypt_response(sm, data, wpabuf_alloc(1),
+					 req->identifier, out_data);
 }
 
 
 static int eap_fast_decrypt(struct eap_sm *sm, struct eap_fast_data *data,
 			    struct eap_method_ret *ret,
 			    const struct eap_hdr *req,
-			    const u8 *in_data, size_t in_len,
-			    u8 **out_data, size_t *out_len)
+			    const struct wpabuf *in_data,
+			    struct wpabuf **out_data)
 {
-	u8 *in_decrypted;
-	size_t len_decrypted;
+	struct wpabuf *in_decrypted;
 	int res;
 
 	wpa_printf(MSG_DEBUG, "EAP-FAST: Received %lu bytes encrypted data for"
-		   " Phase 2", (unsigned long) in_len);
+		   " Phase 2", (unsigned long) wpabuf_len(in_data));
 
 	if (data->pending_phase2_req) {
 		wpa_printf(MSG_DEBUG, "EAP-FAST: Pending Phase 2 request - "
 			   "skip decryption and use old data");
 		/* Clear TLS reassembly state. */
 		eap_peer_tls_reset_input(&data->ssl);
+
 		in_decrypted = data->pending_phase2_req;
 		data->pending_phase2_req = NULL;
-		len_decrypted = data->pending_phase2_req_len;
 		goto continue_req;
 	}
 
-	if (in_len == 0) {
+	if (wpabuf_len(in_data) == 0) {
 		/* Received TLS ACK - requesting more fragments */
 		return eap_peer_tls_encrypt(sm, &data->ssl, EAP_TYPE_FAST,
 					    data->fast_version,
-					    req->identifier, NULL, 0,
-					    out_data, out_len);
+					    req->identifier, NULL, out_data);
 	}
 
-	res = eap_peer_tls_decrypt(sm, &data->ssl, in_data, in_len,
-				   &in_decrypted, &len_decrypted);
+	res = eap_peer_tls_decrypt(sm, &data->ssl, in_data, &in_decrypted);
 	if (res)
 		return res;
 
 continue_req:
-	wpa_hexdump(MSG_MSGDUMP, "EAP-FAST: Decrypted Phase 2 TLV(s)",
-		    in_decrypted, len_decrypted);
+	wpa_hexdump_buf(MSG_MSGDUMP, "EAP-FAST: Decrypted Phase 2 TLV(s)",
+			in_decrypted);
 
-	if (len_decrypted < 4) {
-		os_free(in_decrypted);
+	if (wpabuf_len(in_decrypted) < 4) {
+		wpabuf_free(in_decrypted);
 		wpa_printf(MSG_INFO, "EAP-FAST: Too short Phase 2 "
-			   "TLV frame (len=%d)", len_decrypted);
+			   "TLV frame (len=%lu)",
+			   (unsigned long) wpabuf_len(in_decrypted));
 		return -1;
 	}
 
 	res = eap_fast_process_decrypted(sm, data, ret, req,
-					 in_decrypted, len_decrypted,
-					 out_data, out_len);
+					 in_decrypted, out_data);
 
-	os_free(in_decrypted);
+	wpabuf_free(in_decrypted);
 
 	return res;
 }
@@ -1647,24 +1632,24 @@ static int eap_fast_process_start(struct eap_sm *sm,
 }
 
 
-static u8 * eap_fast_process(struct eap_sm *sm, void *priv,
-			     struct eap_method_ret *ret,
-			     const u8 *reqData, size_t reqDataLen,
-			     size_t *respDataLen)
+static struct wpabuf * eap_fast_process(struct eap_sm *sm, void *priv,
+					struct eap_method_ret *ret,
+					const struct wpabuf *reqData)
 {
 	const struct eap_hdr *req;
 	size_t left;
 	int res;
-	u8 flags, *resp, id;
+	u8 flags, id;
+	struct wpabuf *resp;
 	const u8 *pos;
 	struct eap_fast_data *data = priv;
 
 	pos = eap_peer_tls_process_init(sm, &data->ssl, EAP_TYPE_FAST, ret,
-					reqData, reqDataLen, &left, &flags);
+					reqData, &left, &flags);
 	if (pos == NULL)
 		return NULL;
 
-	req = (const struct eap_hdr *) reqData;
+	req = wpabuf_head(reqData);
 	id = req->identifier;
 
 	if (flags & EAP_TLS_FLAGS_START) {
@@ -1678,8 +1663,12 @@ static u8 * eap_fast_process(struct eap_sm *sm, void *priv,
 	if (tls_connection_established(sm->ssl_ctx, data->ssl.conn) &&
 	    !data->resuming) {
 		/* Process tunneled (encrypted) phase 2 data. */
-		res = eap_fast_decrypt(sm, data, ret, req, pos, left,
-				       &resp, respDataLen);
+		struct wpabuf *msg = wpabuf_alloc_ext_data_no_free(pos, left);
+		if (msg) {
+			res = eap_fast_decrypt(sm, data, ret, req, msg, &resp);
+			wpabuf_free(msg);
+		} else
+			res = -1;
 		if (res < 0) {
 			ret->methodState = METHOD_DONE;
 			ret->decision = DECISION_FAIL;
@@ -1694,7 +1683,7 @@ static u8 * eap_fast_process(struct eap_sm *sm, void *priv,
 		res = eap_peer_tls_process_helper(sm, &data->ssl,
 						  EAP_TYPE_FAST,
 						  data->fast_version, id, pos,
-						  left, &resp, respDataLen);
+						  left, &resp);
 
 		if (tls_connection_established(sm->ssl_ctx, data->ssl.conn)) {
 			char cipher[80];
@@ -1718,23 +1707,26 @@ static u8 * eap_fast_process(struct eap_sm *sm, void *priv,
 		}
 
 		if (res == 2) {
+			struct wpabuf *msg;
 			/*
 			 * Application data included in the handshake message.
 			 */
-			os_free(data->pending_phase2_req);
+			wpabuf_free(data->pending_phase2_req);
 			data->pending_phase2_req = resp;
-			data->pending_phase2_req_len = *respDataLen;
 			resp = NULL;
-			*respDataLen = 0;
-			res = eap_fast_decrypt(sm, data, ret, req, pos, left,
-					       &resp, respDataLen);
+			msg = wpabuf_alloc_ext_data_no_free(pos, left);
+			if (msg) {
+				res = eap_fast_decrypt(sm, data, ret, req, msg,
+						       &resp);
+				wpabuf_free(msg);
+			} else
+				res = -1;
 		}
 	}
 
 	if (res == 1) {
-		os_free(resp);
-		return eap_peer_tls_build_ack(&data->ssl, respDataLen, id,
-					      EAP_TYPE_FAST,
+		wpabuf_free(resp);
+		return eap_peer_tls_build_ack(id, EAP_TYPE_FAST,
 					      data->fast_version);
 	}
 
@@ -1755,7 +1747,7 @@ static void eap_fast_deinit_for_reauth(struct eap_sm *sm, void *priv)
 	struct eap_fast_data *data = priv;
 	os_free(data->key_block_p);
 	data->key_block_p = NULL;
-	os_free(data->pending_phase2_req);
+	wpabuf_free(data->pending_phase2_req);
 	data->pending_phase2_req = NULL;
 }
 

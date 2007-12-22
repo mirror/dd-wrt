@@ -39,7 +39,7 @@ static void usage(void)
 	int i;
 	printf("%s\n\n%s\n"
 	       "usage:\n"
-	       "  wpa_supplicant [-BddhKLqqtuvwW] [-P<pid file>] "
+	       "  wpa_supplicant [-BddfhKLqqtuvwW] [-P<pid file>] "
 	       "[-g<global ctrl>] \\\n"
 	       "        -i<ifname> -c<config file> [-C<ctrl>] [-D<driver>] "
 	       "[-p<driver_param>] \\\n"
@@ -65,6 +65,9 @@ static void usage(void)
 	       "  -i = interface name\n"
 	       "  -d = increase debugging verbosity (-dd even more)\n"
 	       "  -D = driver name\n"
+#ifdef CONFIG_DEBUG_FILE
+	       "  -f = Log output to default log location (normally /tmp)\n"
+#endif /* CONFIG_DEBUG_FILE */
 	       "  -g = global ctrl_interface\n"
 	       "  -K = include keys (passwords, etc.) in debug output\n"
 	       "  -t = include timestamp in debug messages\n"
@@ -143,7 +146,7 @@ int main(int argc, char *argv[])
 	wpa_supplicant_fd_workaround();
 
 	for (;;) {
-		c = getopt(argc, argv, "b:Bc:C:D:dg:hi:KLNp:P:qtuvwW");
+		c = getopt(argc, argv, "b:Bc:C:D:dfg:hi:KLNp:P:qtuvwW");
 		if (c < 0)
 			break;
 		switch (c) {
@@ -172,6 +175,11 @@ int main(int argc, char *argv[])
 			params.wpa_debug_level--;
 			break;
 #endif /* CONFIG_NO_STDOUT_DEBUG */
+#ifdef CONFIG_DEBUG_FILE
+		case 'f':
+			params.wpa_debug_use_file = 1;
+			break;
+#endif /* CONFIG_DEBUG_FILE */
 		case 'g':
 			params.ctrl_interface = optarg;
 			break;
@@ -237,7 +245,7 @@ int main(int argc, char *argv[])
 	exitcode = 0;
 	global = wpa_supplicant_init(&params);
 	if (global == NULL) {
-		printf("Failed to initialize wpa_supplicant\n");
+		wpa_printf(MSG_ERROR, "Failed to initialize wpa_supplicant");
 		exitcode = -1;
 		goto out;
 	}

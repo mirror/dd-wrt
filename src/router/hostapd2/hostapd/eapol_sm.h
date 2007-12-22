@@ -1,5 +1,5 @@
 /*
- * hostapd / IEEE 802.1X Authenticator - EAPOL state machine
+ * hostapd / IEEE 802.1X-2004 Authenticator - EAPOL state machine
  * Copyright (c) 2002-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -49,6 +49,7 @@ struct eapol_auth_config {
 	size_t eap_req_id_text_len;
 	u8 *pac_opaque_encr_key;
 	char *eap_fast_a_id;
+	int eap_sim_aka_result_ind;
 
 	/*
 	 * Pointer to hostapd data. This is a temporary workaround for
@@ -58,11 +59,26 @@ struct eapol_auth_config {
 	struct hostapd_data *hapd;
 };
 
+struct eap_user;
+
+typedef enum {
+	EAPOL_LOGGER_DEBUG, EAPOL_LOGGER_INFO, EAPOL_LOGGER_WARNING
+} eapol_logger_level;
+
 struct eapol_auth_cb {
 	void (*eapol_send)(void *ctx, void *sta_ctx, u8 type, const u8 *data,
 			   size_t datalen);
 	void (*aaa_send)(void *ctx, void *sta_ctx, const u8 *data,
 			 size_t datalen);
+	void (*finished)(void *ctx, void *sta_ctx, int success, int preauth);
+	int (*get_eap_user)(void *ctx, const u8 *identity, size_t identity_len,
+			    int phase2, struct eap_user *user);
+	int (*sta_entry_alive)(void *ctx, const u8 *addr);
+	void (*logger)(void *ctx, const u8 *addr, eapol_logger_level level,
+		       const char *txt);
+	void (*set_port_authorized)(void *ctx, void *sta_ctx, int authorized);
+	void (*abort_auth)(void *ctx, void *sta_ctx);
+	void (*tx_key)(void *ctx, void *sta_ctx);
 };
 
 /**
@@ -90,17 +106,12 @@ struct eapol_state_machine {
 	Boolean authStart;
 	Boolean authTimeout;
 	Boolean authSuccess;
-	Boolean eapFail;
 	Boolean eapolEap;
-	Boolean eapSuccess;
-	Boolean eapTimeout;
 	Boolean initialize;
-	Boolean keyAvailable;
 	Boolean keyDone;
 	Boolean keyRun;
 	Boolean keyTxEnabled;
 	PortTypes portControl;
-	Boolean portEnabled;
 	Boolean portValid;
 	Boolean reAuthenticate;
 
@@ -115,7 +126,6 @@ struct eapol_state_machine {
 	/* variables */
 	Boolean eapolLogoff;
 	Boolean eapolStart;
-	Boolean eapRestart;
 	PortTypes portMode;
 	unsigned int reAuthCount;
 	/* constants */
@@ -141,10 +151,6 @@ struct eapol_state_machine {
 	       BE_AUTH_FAIL, BE_AUTH_TIMEOUT, BE_AUTH_IDLE, BE_AUTH_INITIALIZE,
 	       BE_AUTH_IGNORE
 	} be_auth_state;
-	/* variables */
-	Boolean eapNoReq;
-	Boolean eapReq;
-	Boolean eapResp;
 	/* constants */
 	unsigned int serverTimeout; /* default 30; 1..X */
 #define BE_AUTH_DEFAULT_serverTimeout 30
@@ -196,14 +202,13 @@ struct eapol_state_machine {
 #define EAPOL_SM_PREAUTH BIT(0)
 	int flags; /* EAPOL_SM_* */
 
+	/* EAPOL/AAA <-> EAP full authenticator interface */
+	struct eap_eapol_interface *eap_if;
+
 	int radius_identifier;
 	/* TODO: check when the last messages can be released */
 	struct radius_msg *last_recv_radius;
-	u8 *last_eap_supp; /* last received EAP Response from Supplicant */
-	size_t last_eap_supp_len;
-	u8 *last_eap_radius; /* last received EAP Response from Authentication
-			      * Server */
-	size_t last_eap_radius_len;
+	u8 last_eap_id; /* last used EAP Identifier */
 	u8 *identity;
 	size_t identity_len;
 	u8 eap_type_authsrv; /* EAP type of the last EAP packet from
@@ -217,16 +222,7 @@ struct eapol_state_machine {
 	u8 *eapol_key_crypt;
 	size_t eapol_key_crypt_len;
 
-	Boolean rx_identity; /* set to TRUE on reception of
-			      * EAP-Response/Identity */
-
 	struct eap_sm *eap;
-
-	/* currentId was removed in IEEE 802.1X-REV, but it is needed to filter
-	 * out EAP-Responses to old packets (e.g., to two EAP-Request/Identity
-	 * packets that are often sent in the beginning of the authentication).
-	 */
-	u8 currentId;
 
 	Boolean initializing; /* in process of initializing state machines */
 	Boolean changed;

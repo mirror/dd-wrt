@@ -15,8 +15,6 @@ To do:
   authentication has been completed (cache scard data based on serial#(?)
   and try to optimize next connection if the same card is present for next
   auth)
-- EAP-AKA: AT_CHECKCODE
-- EAP-SIM/AKA: AT_RESULT_IND
 - on disconnect event, could try to associate with another AP if one is
   present in scan results; would need to update scan results periodically..
 - if driver/hw is not WPA2 capable, must remove WPA_PROTO_RSN flag from
@@ -50,16 +48,6 @@ To do:
 - possibility to link in WPA Authenticator state machine to wpa_supplicant
   (new STAKey handshake, WPA2 IBSS)
 - consider merging hostapd and wpa_supplicant PMKSA cache implementations
-- consider adding generic buffer functionality that could be used in number
-  of places
-  * allocate buffer (with default max size), allow reserving head room to
-    make it possible to add a header without having to reallocate buffer
-  * reallocate buffer (add head and/or tail room)
-  * ref count and free when count=0 ?
-  * add data (to tail): re-alloc more tailroom if needed and copy new data
-  * error flag so that caller can do multiple add()s and only in the end
-    check whether something has failed; this should make error handling
-    simpler
 - consider redesigning pending EAP requests (identity/password/otp from
   ctrl_iface) by moving the retrying of the previous request into EAP
   state machine so that EAPOL state machine is not needed for this
@@ -108,8 +96,6 @@ To do:
 - change TLS/crypto library interface to use a structure of function
   pointers and helper inline functions (like driver_ops) instead of
   requiring every TLS wrapper to implement all functions
-- make it clearer that EAP server/peer can be used as a separate library
-  for other programs
 - add support for encrypted configuration fields (e.g., password, psk,
   passphrase, pin)
 - wpa_gui: add support for setting and showing priority, id_str, auth_alg

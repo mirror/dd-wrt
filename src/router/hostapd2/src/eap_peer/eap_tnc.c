@@ -62,23 +62,21 @@ static void eap_tnc_deinit(struct eap_sm *sm, void *priv)
 }
 
 
-static u8 * eap_tnc_process(struct eap_sm *sm, void *priv,
-			    struct eap_method_ret *ret,
-			    const u8 *reqData, size_t reqDataLen,
-			    size_t *respDataLen)
+static struct wpabuf * eap_tnc_process(struct eap_sm *sm, void *priv,
+				       struct eap_method_ret *ret,
+				       const struct wpabuf *reqData)
 {
 	struct eap_tnc_data *data = priv;
-	const struct eap_hdr *req;
-	struct eap_hdr *resp;
+	struct wpabuf *resp;
 	const u8 *pos;
-	u8 *rpos, *start;
+	u8 *rpos, *rpos1, *start;
 	size_t len, rlen;
 	size_t imc_len;
 	char *start_buf, *end_buf;
 	size_t start_len, end_len;
+	int tncs_done = 0;
 
-	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_TNC,
-			       reqData, reqDataLen, &len);
+	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_TNC, reqData, &len);
 	if (pos == NULL || len == 0) {
 		wpa_printf(MSG_INFO, "EAP-TNC: Invalid frame (pos=%p len=%lu)",
 			   pos, (unsigned long) len);
@@ -86,8 +84,6 @@ static u8 * eap_tnc_process(struct eap_sm *sm, void *priv,
 		return NULL;
 	}
 
-	req = (const struct eap_hdr *) reqData;
-	wpa_hexdump(MSG_MSGDUMP, "EAP-TNC: Received payload", pos, len);
 	wpa_hexdump_ascii(MSG_MSGDUMP, "EAP-TNC: Received payload", pos, len);
 
 	if ((*pos & EAP_TNC_VERSION_MASK) != EAP_TNC_VERSION) {
@@ -109,6 +105,8 @@ static u8 * eap_tnc_process(struct eap_sm *sm, void *priv,
 
 		data->state = METHOD_MAY_CONT;
 	} else {
+		enum tncc_process_res res;
+
 		if (*pos & EAP_TNC_FLAGS_START) {
 			wpa_printf(MSG_DEBUG, "EAP-TNC: Server used start "
 				   "flag again");
@@ -116,9 +114,31 @@ static u8 * eap_tnc_process(struct eap_sm *sm, void *priv,
 			return NULL;
 		}
 
-		if (tncc_process_if_tnccs(data->tncc, pos + 1, len - 1)) {
+		res = tncc_process_if_tnccs(data->tncc, pos + 1, len - 1);
+		switch (res) {
+		case TNCCS_PROCESS_ERROR:
 			ret->ignore = TRUE;
 			return NULL;
+		case TNCCS_PROCESS_OK_NO_RECOMMENDATION:
+		case TNCCS_RECOMMENDATION_ERROR:
+			wpa_printf(MSG_DEBUG, "EAP-TNC: No "
+				   "TNCCS-Recommendation received");
+			break;
+		case TNCCS_RECOMMENDATION_ALLOW:
+			wpa_msg(sm->msg_ctx, MSG_INFO,
+				"TNC: Recommendation = allow");
+			tncs_done = 1;
+			break;
+		case TNCCS_RECOMMENDATION_NONE:
+			wpa_msg(sm->msg_ctx, MSG_INFO,
+				"TNC: Recommendation = none");
+			tncs_done = 1;
+			break;
+		case TNCCS_RECOMMENDATION_ISOLATE:
+			wpa_msg(sm->msg_ctx, MSG_INFO,
+				"TNC: Recommendation = isolate");
+			tncs_done = 1;
+			break;
 		}
 	}
 
@@ -126,6 +146,18 @@ static u8 * eap_tnc_process(struct eap_sm *sm, void *priv,
 	ret->methodState = data->state;
 	ret->decision = DECISION_UNCOND_SUCC;
 	ret->allowNotifications = TRUE;
+
+	if (tncs_done) {
+		resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_TNC, 1,
+				     EAP_CODE_RESPONSE, eap_get_id(reqData));
+		if (resp == NULL)
+			return NULL;
+
+		wpabuf_put_u8(resp, EAP_TNC_VERSION);
+		wpa_printf(MSG_DEBUG, "EAP-TNC: TNCS done - reply with an "
+			   "empty ACK message");
+		return resp;
+	}
 
 	imc_len = tncc_total_send_len(data->tncc);
 
@@ -141,29 +173,29 @@ static u8 * eap_tnc_process(struct eap_sm *sm, void *priv,
 	end_len = os_strlen(end_buf);
 
 	rlen = 1 + start_len + imc_len + end_len;
-	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_TNC, respDataLen,
-			     rlen, EAP_CODE_RESPONSE,
-			     req->identifier, &rpos);
+	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_TNC, rlen,
+			     EAP_CODE_RESPONSE, eap_get_id(reqData));
 	if (resp == NULL) {
 		os_free(start_buf);
 		os_free(end_buf);
 		return NULL;
 	}
 
-	start = rpos;
-	*rpos++ = EAP_TNC_VERSION;
-	os_memcpy(rpos, start_buf, start_len);
+	start = wpabuf_put(resp, 0);
+	wpabuf_put_u8(resp, EAP_TNC_VERSION);
+	wpabuf_put_data(resp, start_buf, start_len);
 	os_free(start_buf);
-	rpos += start_len;
 
-	rpos = tncc_copy_send_buf(data->tncc, rpos);
+	rpos1 = wpabuf_put(resp, 0);
+	rpos = tncc_copy_send_buf(data->tncc, rpos1);
+	wpabuf_put(resp, rpos - rpos1);
 
-	os_memcpy(rpos, end_buf, end_len);
+	wpabuf_put_data(resp, end_buf, end_len);
 	os_free(end_buf);
 
 	wpa_hexdump_ascii(MSG_MSGDUMP, "EAP-TNC: Response", start, rlen);
 
-	return (u8 *) resp;
+	return resp;
 }
 
 

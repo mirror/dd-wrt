@@ -893,6 +893,7 @@ void rijndaelKeySetupEnc(u32 rk[/*44*/], const u8 cipherKey[])
 	}
 }
 
+#ifndef CONFIG_NO_AES_DECRYPT
 /**
  * Expand the cipher key into the decryption key schedule.
  *
@@ -924,7 +925,9 @@ void rijndaelKeySetupDec(u32 rk[/*44*/], const u8 cipherKey[])
 		}
 	}
 }
+#endif /* CONFIG_NO_AES_DECRYPT */
 
+#ifndef CONFIG_NO_AES_ENCRYPT
 void rijndaelEncrypt(const u32 rk[/*44*/], const u8 pt[16], u8 ct[16])
 {
 	u32 s0, s1, s2, s3, t0, t1, t2, t3;
@@ -991,6 +994,7 @@ d##3 = TE0(s##3) ^ TE1(s##0) ^ TE2(s##1) ^ TE3(s##2) ^ rk[4 * i + 3]
 	s3 = TE41(t3) ^ TE42(t0) ^ TE43(t1) ^ TE44(t2) ^ rk[3];
 	PUTU32(ct + 12, s3);
 }
+#endif /* CONFIG_NO_AES_ENCRYPT */
 
 void rijndaelDecrypt(const u32 rk[/*44*/], const u8 ct[16], u8 pt[16])
 {
@@ -1065,6 +1069,7 @@ d##3 = TD0(s##3) ^ TD1(s##2) ^ TD2(s##1) ^ TD3(s##0) ^ rk[4 * i + 3]
 
 #define AES_PRIV_SIZE (4 * 44)
 
+#ifndef CONFIG_NO_AES_ENCRYPT
 void * aes_encrypt_init(const u8 *key, size_t len)
 {
 	u32 *rk;
@@ -1089,8 +1094,10 @@ void aes_encrypt_deinit(void *ctx)
 	os_memset(ctx, 0, AES_PRIV_SIZE);
 	os_free(ctx);
 }
+#endif /* CONFIG_NO_AES_ENCRYPT */
 
 
+#ifndef CONFIG_NO_AES_DECRYPT
 void * aes_decrypt_init(const u8 *key, size_t len)
 {
 	u32 *rk;
@@ -1115,5 +1122,6 @@ void aes_decrypt_deinit(void *ctx)
 	os_memset(ctx, 0, AES_PRIV_SIZE);
 	os_free(ctx);
 }
+#endif /* CONFIG_NO_AES_DECRYPT */
 
 #endif /* INTERNAL_AES */

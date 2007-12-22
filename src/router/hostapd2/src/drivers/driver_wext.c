@@ -1106,6 +1106,7 @@ int wpa_driver_wext_scan(void *priv, const u8 *ssid, size_t ssid_len)
 
 	/* Not all drivers generate "scan completed" wireless event, so try to
 	 * read results after a timeout. */
+	eloop_cancel_timeout(wpa_driver_wext_scan_timeout, drv, drv->ctx);
 	eloop_register_timeout(3, 0, wpa_driver_wext_scan_timeout, drv,
 			       drv->ctx);
 

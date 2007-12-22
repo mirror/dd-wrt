@@ -102,8 +102,7 @@ struct eap_mschapv2_data {
 	int master_key_valid;
 	int success;
 
-	u8 *prev_challenge;
-	size_t prev_challenge_len;
+	struct wpabuf *prev_challenge;
 };
 
 
@@ -151,7 +150,7 @@ static void eap_mschapv2_deinit(struct eap_sm *sm, void *priv)
 	struct eap_mschapv2_data *data = priv;
 	os_free(data->peer_challenge);
 	os_free(data->auth_challenge);
-	os_free(data->prev_challenge);
+	wpabuf_free(data->prev_challenge);
 	os_free(data);
 }
 
@@ -236,15 +235,13 @@ static void eap_mschapv2_derive_response(
 }
 
 
-static u8 * eap_mschapv2_challenge_reply(struct eap_sm *sm,
-					 struct eap_mschapv2_data *data, u8 id,
-					 u8 mschapv2_id,
-					 const u8 *auth_challenge,
-					 size_t *respDataLen)
+static struct wpabuf * eap_mschapv2_challenge_reply(
+	struct eap_sm *sm, struct eap_mschapv2_data *data, u8 id,
+	u8 mschapv2_id, const u8 *auth_challenge)
 {
-	struct eap_hdr *resp;
+	struct wpabuf *resp;
 	struct eap_mschapv2_hdr *ms;
-	u8 *rpos, *peer_challenge;
+	u8 *peer_challenge;
 	int ms_len;
 	struct ms_response *r;
 	size_t username_len, identity_len, password_len;
@@ -262,12 +259,12 @@ static u8 * eap_mschapv2_challenge_reply(struct eap_sm *sm,
 	username = eap_mschapv2_remove_domain(identity, &username_len);
 
 	ms_len = sizeof(*ms) + 1 + sizeof(*r) + identity_len;
-	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_MSCHAPV2, respDataLen,
-			     ms_len, EAP_CODE_RESPONSE, id, &rpos);
+	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_MSCHAPV2, ms_len,
+			     EAP_CODE_RESPONSE, id);
 	if (resp == NULL)
 		return NULL;
 
-	ms = (struct eap_mschapv2_hdr *) rpos;
+	ms = wpabuf_put(resp, sizeof(*ms));
 	ms->op_code = MSCHAPV2_OP_RESPONSE;
 	ms->mschapv2_id = mschapv2_id;
 	if (data->prev_error) {
@@ -280,11 +277,11 @@ static u8 * eap_mschapv2_challenge_reply(struct eap_sm *sm,
 		ms->mschapv2_id++;
 	}
 	WPA_PUT_BE16(ms->ms_length, ms_len);
-	rpos = (u8 *) (ms + 1);
-	*rpos++ = sizeof(*r); /* Value-Size */
+
+	wpabuf_put_u8(resp, sizeof(*r)); /* Value-Size */
 
 	/* Response */
-	r = (struct ms_response *) rpos;
+	r = wpabuf_put(resp, sizeof(*r));
 	peer_challenge = r->peer_challenge;
 	if (data->peer_challenge) {
 		wpa_printf(MSG_DEBUG, "EAP-MSCHAPV2: peer_challenge generated "
@@ -292,7 +289,7 @@ static u8 * eap_mschapv2_challenge_reply(struct eap_sm *sm,
 		peer_challenge = data->peer_challenge;
 		os_memset(r->peer_challenge, 0, MSCHAPV2_CHAL_LEN);
 	} else if (os_get_random(peer_challenge, MSCHAPV2_CHAL_LEN)) {
-		os_free(resp);
+		wpabuf_free(resp);
 		return NULL;
 	}
 	os_memset(r->reserved, 0, 8);
@@ -308,10 +305,10 @@ static u8 * eap_mschapv2_challenge_reply(struct eap_sm *sm,
 
 	r->flags = 0; /* reserved, must be zero */
 
-	os_memcpy((u8 *) (r + 1), identity, identity_len);
+	wpabuf_put_data(resp, identity, identity_len);
 	wpa_printf(MSG_DEBUG, "EAP-MSCHAPV2: TX identifier %d mschapv2_id %d "
-		   "(response)", resp->identifier, ms->mschapv2_id);
-	return (u8 *) resp;
+		   "(response)", id, ms->mschapv2_id);
+	return resp;
 }
 
 
@@ -322,16 +319,14 @@ static u8 * eap_mschapv2_challenge_reply(struct eap_sm *sm,
  * @ret: Return values from EAP request validation and processing
  * @req: Pointer to EAP-MSCHAPv2 header from the request
  * @req_len: Length of the EAP-MSCHAPv2 data
- * @id: EAP identifier used in th erequest
- * @respDataLen: Length of the returned EAP response
+ * @id: EAP identifier used in the request
  * Returns: Pointer to allocated EAP response packet (eapRespData) or %NULL if
  * no reply available
  */
-static u8 * eap_mschapv2_challenge(struct eap_sm *sm,
-				   struct eap_mschapv2_data *data,
-				   struct eap_method_ret *ret,
-				   const struct eap_mschapv2_hdr *req,
-				   size_t req_len, u8 id, size_t *respDataLen)
+static struct wpabuf * eap_mschapv2_challenge(
+	struct eap_sm *sm, struct eap_mschapv2_data *data,
+	struct eap_method_ret *ret, const struct eap_mschapv2_hdr *req,
+	size_t req_len, u8 id)
 {
 	size_t len, challenge_len;
 	const u8 *pos, *challenge;
@@ -382,7 +377,7 @@ static u8 * eap_mschapv2_challenge(struct eap_sm *sm,
 	ret->allowNotifications = TRUE;
 
 	return eap_mschapv2_challenge_reply(sm, data, id, req->mschapv2_id,
-					    challenge, respDataLen);
+					    challenge);
 }
 
 
@@ -423,22 +418,19 @@ static void eap_mschapv2_password_changed(struct eap_sm *sm,
  * @req: Pointer to EAP-MSCHAPv2 header from the request
  * @req_len: Length of the EAP-MSCHAPv2 data
  * @id: EAP identifier used in th erequest
- * @respDataLen: Length of the returned EAP response
  * Returns: Pointer to allocated EAP response packet (eapRespData) or %NULL if
  * no reply available
  */
-static u8 * eap_mschapv2_success(struct eap_sm *sm,
-				 struct eap_mschapv2_data *data,
-				 struct eap_method_ret *ret,
-				 const struct eap_mschapv2_hdr *req,
-				 size_t req_len, u8 id, size_t *respDataLen)
+static struct wpabuf * eap_mschapv2_success(struct eap_sm *sm,
+					    struct eap_mschapv2_data *data,
+					    struct eap_method_ret *ret,
+					    const struct eap_mschapv2_hdr *req,
+					    size_t req_len, u8 id)
 {
-	struct eap_hdr *resp;
-	struct eap_mschapv2_hdr *ms;
+	struct wpabuf *resp;
 	const u8 *pos;
 	u8 recv_response[20];
 	size_t len;
-	u8 *rpos;
 
 	wpa_printf(MSG_DEBUG, "EAP-MSCHAPV2: Received success");
 	len = req_len - sizeof(*req);
@@ -465,8 +457,8 @@ static u8 * eap_mschapv2_success(struct eap_sm *sm,
 
 	/* Note: Only op_code of the EAP-MSCHAPV2 header is included in success
 	 * message. */
-	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_MSCHAPV2, respDataLen,
-			     1, EAP_CODE_RESPONSE, id, &rpos);
+	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_MSCHAPV2, 1,
+			     EAP_CODE_RESPONSE, id);
 	if (resp == NULL) {
 		wpa_printf(MSG_DEBUG, "EAP-MSCHAPV2: Failed to allocate "
 			   "buffer for success response");
@@ -474,8 +466,7 @@ static u8 * eap_mschapv2_success(struct eap_sm *sm,
 		return NULL;
 	}
 
-	ms = (struct eap_mschapv2_hdr *) rpos;
-	ms->op_code = MSCHAPV2_OP_SUCCESS;
+	wpabuf_put_u8(resp, MSCHAPV2_OP_SUCCESS); /* op_code */
 
 	ret->methodState = METHOD_DONE;
 	ret->decision = DECISION_UNCOND_SUCC;
@@ -485,7 +476,7 @@ static u8 * eap_mschapv2_success(struct eap_sm *sm,
 	if (data->prev_error == ERROR_PASSWD_EXPIRED)
 		eap_mschapv2_password_changed(sm, data);
 
-	return (u8 *) resp;
+	return resp;
 }
 
 
@@ -592,16 +583,13 @@ static int eap_mschapv2_failure_txt(struct eap_sm *sm,
 }
 
 
-static u8 * eap_mschapv2_change_password(struct eap_sm *sm,
-					 struct eap_mschapv2_data *data,
-					 struct eap_method_ret *ret,
-					 const struct eap_mschapv2_hdr *req,
-					 u8 id, size_t *respDataLen)
+static struct wpabuf * eap_mschapv2_change_password(
+	struct eap_sm *sm, struct eap_mschapv2_data *data,
+	struct eap_method_ret *ret, const struct eap_mschapv2_hdr *req, u8 id)
 {
-	struct eap_hdr *resp;
+	struct wpabuf *resp;
 	int ms_len;
 	const u8 *username, *password, *new_password;
-	u8 *pos;
 	size_t username_len, password_len, new_password_len;
 	struct eap_mschapv2_hdr *ms;
 	struct ms_change_password *cp;
@@ -622,16 +610,16 @@ static u8 * eap_mschapv2_change_password(struct eap_sm *sm,
 	ret->allowNotifications = TRUE;
 
 	ms_len = sizeof(*ms) + sizeof(*cp);
-	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_MSCHAPV2, respDataLen,
-			     ms_len, EAP_CODE_RESPONSE, id, &pos);
+	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_MSCHAPV2, ms_len,
+			     EAP_CODE_RESPONSE, id);
 	if (resp == NULL)
 		return NULL;
 
-	ms = (struct eap_mschapv2_hdr *) pos;
+	ms = wpabuf_put(resp, sizeof(*ms));
 	ms->op_code = MSCHAPV2_OP_CHANGE_PASSWORD;
 	ms->mschapv2_id = req->mschapv2_id + 1;
 	WPA_PUT_BE16(ms->ms_length, ms_len);
-	cp = (struct ms_change_password *) (ms + 1);
+	cp = wpabuf_put(resp, sizeof(*cp));
 
 	/* Encrypted-Password */
 	if (pwhash) {
@@ -660,7 +648,7 @@ static u8 * eap_mschapv2_change_password(struct eap_sm *sm,
 
 	/* Peer-Challenge */
 	if (os_get_random(cp->peer_challenge, MSCHAPV2_CHAL_LEN)) {
-		os_free(resp);
+		wpabuf_free(resp);
 		return NULL;
 	}
 
@@ -703,9 +691,9 @@ static u8 * eap_mschapv2_change_password(struct eap_sm *sm,
 	os_memset(cp->flags, 0, 2);
 
 	wpa_printf(MSG_DEBUG, "EAP-MSCHAPV2: TX identifier %d mschapv2_id %d "
-		   "(change pw)", resp->identifier, ms->mschapv2_id);
+		   "(change pw)", id, ms->mschapv2_id);
 
-	return (u8 *) resp;
+	return resp;
 }
 
 
@@ -717,23 +705,20 @@ static u8 * eap_mschapv2_change_password(struct eap_sm *sm,
  * @req: Pointer to EAP-MSCHAPv2 header from the request
  * @req_len: Length of the EAP-MSCHAPv2 data
  * @id: EAP identifier used in th erequest
- * @respDataLen: Length of the returned EAP response
  * Returns: Pointer to allocated EAP response packet (eapRespData) or %NULL if
  * no reply available
  */
-static u8 * eap_mschapv2_failure(struct eap_sm *sm,
-				 struct eap_mschapv2_data *data,
-				 struct eap_method_ret *ret,
-				 const struct eap_mschapv2_hdr *req,
-				 size_t req_len, u8 id, size_t *respDataLen)
+static struct wpabuf * eap_mschapv2_failure(struct eap_sm *sm,
+					    struct eap_mschapv2_data *data,
+					    struct eap_method_ret *ret,
+					    const struct eap_mschapv2_hdr *req,
+					    size_t req_len, u8 id)
 {
-	struct eap_hdr *resp;
+	struct wpabuf *resp;
 	const u8 *msdata = (const u8 *) (req + 1);
 	char *buf;
 	size_t len = req_len - sizeof(*req);
 	int retry = 0;
-	struct eap_mschapv2_hdr *ms;
-	u8 *pos;
 
 	wpa_printf(MSG_DEBUG, "EAP-MSCHAPV2: Received failure");
 	wpa_hexdump_ascii(MSG_DEBUG, "EAP-MSCHAPV2: Failure data",
@@ -761,7 +746,7 @@ static u8 * eap_mschapv2_failure(struct eap_sm *sm,
 		struct wpa_ssid *config = eap_get_config(sm);
 		if (config && config->new_password)
 			return eap_mschapv2_change_password(sm, data, ret, req,
-							    id, respDataLen);
+							    id);
 		if (config && config->pending_req_new_password)
 			return NULL;
 	} else if (retry && data->prev_error == ERROR_AUTHENTICATION_FAILURE) {
@@ -773,15 +758,14 @@ static u8 * eap_mschapv2_failure(struct eap_sm *sm,
 
 	/* Note: Only op_code of the EAP-MSCHAPV2 header is included in failure
 	 * message. */
-	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_MSCHAPV2, respDataLen,
-			     1, EAP_CODE_RESPONSE, id, &pos);
+	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_MSCHAPV2, 1,
+			     EAP_CODE_RESPONSE, id);
 	if (resp == NULL)
 		return NULL;
 
-	ms = (struct eap_mschapv2_hdr *) pos;
-	ms->op_code = MSCHAPV2_OP_FAILURE;
+	wpabuf_put_u8(resp, MSCHAPV2_OP_FAILURE); /* op_code */
 
-	return (u8 *) resp;
+	return resp;
 }
 
 
@@ -830,18 +814,14 @@ static int eap_mschapv2_check_mslen(struct eap_sm *sm, size_t len,
 
 
 static void eap_mschapv2_copy_challenge(struct eap_mschapv2_data *data,
-					const u8 *reqData, size_t reqDataLen)
+					const struct wpabuf *reqData)
 {
 	/*
 	 * Store a copy of the challenge message, so that it can be processed
 	 * again in case retry is allowed after a possible failure.
 	 */
-	os_free(data->prev_challenge);
-	data->prev_challenge = os_malloc(reqDataLen);
-	if (data->prev_challenge) {
-		data->prev_challenge_len = reqDataLen;
-		os_memcpy(data->prev_challenge, reqData, reqDataLen);
-	}
+	wpabuf_free(data->prev_challenge);
+	data->prev_challenge = wpabuf_dup(reqData);
 }
 
 
@@ -851,23 +831,20 @@ static void eap_mschapv2_copy_challenge(struct eap_mschapv2_data *data,
  * @priv: Pointer to private EAP method data from eap_mschapv2_init()
  * @ret: Return values from EAP request validation and processing
  * @reqData: EAP request to be processed (eapReqData)
- * @reqDataLen: Length of the EAP request
- * @respDataLen: Length of the returned EAP response
  * Returns: Pointer to allocated EAP response packet (eapRespData) or %NULL if
  * no reply available
  */
-static u8 * eap_mschapv2_process(struct eap_sm *sm, void *priv,
-				 struct eap_method_ret *ret,
-				 const u8 *reqData, size_t reqDataLen,
-				 size_t *respDataLen)
+static struct wpabuf * eap_mschapv2_process(struct eap_sm *sm, void *priv,
+					    struct eap_method_ret *ret,
+					    const struct wpabuf *reqData)
 {
 	struct eap_mschapv2_data *data = priv;
 	struct wpa_ssid *config = eap_get_config(sm);
-	const struct eap_hdr *req;
 	const struct eap_mschapv2_hdr *ms;
 	int using_prev_challenge = 0;
 	const u8 *pos;
 	size_t len;
+	u8 id;
 
 	if (eap_mschapv2_check_config(sm)) {
 		ret->ignore = TRUE;
@@ -880,13 +857,12 @@ static u8 * eap_mschapv2_process(struct eap_sm *sm, void *priv,
 			   "with the previous challenge");
 
 		reqData = data->prev_challenge;
-		reqDataLen = data->prev_challenge_len;
 		using_prev_challenge = 1;
 		config->mschapv2_retry = 0;
 	}
 
-	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_MSCHAPV2,
-			       reqData, reqDataLen, &len);
+	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_MSCHAPV2, reqData,
+			       &len);
 	if (pos == NULL || len < sizeof(*ms) + 1) {
 		ret->ignore = TRUE;
 		return NULL;
@@ -898,22 +874,19 @@ static u8 * eap_mschapv2_process(struct eap_sm *sm, void *priv,
 		return NULL;
 	}
 
-	req = (const struct eap_hdr *) reqData;
+	id = eap_get_id(reqData);
 	wpa_printf(MSG_DEBUG, "EAP-MSCHAPV2: RX identifier %d mschapv2_id %d",
-		   req->identifier, ms->mschapv2_id);
+		   id, ms->mschapv2_id);
 
 	switch (ms->op_code) {
 	case MSCHAPV2_OP_CHALLENGE:
 		if (!using_prev_challenge)
-			eap_mschapv2_copy_challenge(data, reqData, reqDataLen);
-		return eap_mschapv2_challenge(sm, data, ret, ms, len,
-					      req->identifier, respDataLen);
+			eap_mschapv2_copy_challenge(data, reqData);
+		return eap_mschapv2_challenge(sm, data, ret, ms, len, id);
 	case MSCHAPV2_OP_SUCCESS:
-		return eap_mschapv2_success(sm, data, ret, ms, len,
-					    req->identifier, respDataLen);
+		return eap_mschapv2_success(sm, data, ret, ms, len, id);
 	case MSCHAPV2_OP_FAILURE:
-		return eap_mschapv2_failure(sm, data, ret, ms, len,
-					    req->identifier, respDataLen);
+		return eap_mschapv2_failure(sm, data, ret, ms, len, id);
 	default:
 		wpa_printf(MSG_INFO, "EAP-MSCHAPV2: Unknown op %d - ignored",
 			   ms->op_code);

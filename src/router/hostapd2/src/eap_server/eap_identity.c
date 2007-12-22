@@ -51,16 +51,15 @@ static void * eap_identity_initPickUp(struct eap_sm *sm)
 static void eap_identity_reset(struct eap_sm *sm, void *priv)
 {
 	struct eap_identity_data *data = priv;
-	free(data);
+	os_free(data);
 }
 
 
-static u8 * eap_identity_buildReq(struct eap_sm *sm, void *priv, int id,
-				  size_t *reqDataLen)
+static struct wpabuf * eap_identity_buildReq(struct eap_sm *sm, void *priv,
+					     u8 id)
 {
 	struct eap_identity_data *data = priv;
-	struct eap_hdr *req;
-	u8 *pos;
+	struct wpabuf *req;
 	const char *req_data;
 	size_t req_data_len;
 
@@ -71,8 +70,8 @@ static u8 * eap_identity_buildReq(struct eap_sm *sm, void *priv, int id,
 		req_data = NULL;
 		req_data_len = 0;
 	}
-	req = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_IDENTITY, reqDataLen,
-			    req_data_len, EAP_CODE_REQUEST, id, &pos);
+	req = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_IDENTITY, req_data_len,
+			    EAP_CODE_REQUEST, id);
 	if (req == NULL) {
 		wpa_printf(MSG_ERROR, "EAP-Identity: Failed to allocate "
 			   "memory for request");
@@ -80,21 +79,20 @@ static u8 * eap_identity_buildReq(struct eap_sm *sm, void *priv, int id,
 		return NULL;
 	}
 
-	if (req_data)
-		memcpy(pos, req_data, req_data_len);
+	wpabuf_put_data(req, req_data, req_data_len);
 
-	return (u8 *) req;
+	return req;
 }
 
 
 static Boolean eap_identity_check(struct eap_sm *sm, void *priv,
-			     u8 *respData, size_t respDataLen)
+				  struct wpabuf *respData)
 {
 	const u8 *pos;
 	size_t len;
 
 	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_IDENTITY,
-			       respData, respDataLen, &len);
+			       respData, &len);
 	if (pos == NULL) {
 		wpa_printf(MSG_INFO, "EAP-Identity: Invalid frame");
 		return TRUE;
@@ -105,14 +103,14 @@ static Boolean eap_identity_check(struct eap_sm *sm, void *priv,
 
 
 static void eap_identity_process(struct eap_sm *sm, void *priv,
-			    u8 *respData, size_t respDataLen)
+				 struct wpabuf *respData)
 {
 	struct eap_identity_data *data = priv;
 	const u8 *pos;
 	size_t len;
 
 	if (data->pick_up) {
-		if (eap_identity_check(sm, data, respData, respDataLen)) {
+		if (eap_identity_check(sm, data, respData)) {
 			wpa_printf(MSG_DEBUG, "EAP-Identity: failed to pick "
 				   "up already started negotiation");
 			data->state = FAILURE;
@@ -122,17 +120,17 @@ static void eap_identity_process(struct eap_sm *sm, void *priv,
 	}
 
 	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_IDENTITY,
-			       respData, respDataLen, &len);
+			       respData, &len);
 	if (pos == NULL)
 		return; /* Should not happen - frame already validated */
 
 	wpa_hexdump_ascii(MSG_DEBUG, "EAP-Identity: Peer identity", pos, len);
-	free(sm->identity);
-	sm->identity = malloc(len);
+	os_free(sm->identity);
+	sm->identity = os_malloc(len ? len : 1);
 	if (sm->identity == NULL) {
 		data->state = FAILURE;
 	} else {
-		memcpy(sm->identity, pos, len);
+		os_memcpy(sm->identity, pos, len);
 		sm->identity_len = len;
 		data->state = SUCCESS;
 	}

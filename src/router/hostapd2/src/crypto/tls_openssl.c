@@ -1101,6 +1101,18 @@ static int tls_connection_ca_cert(void *_ssl_ctx, struct tls_connection *conn,
 {
 	SSL_CTX *ssl_ctx = _ssl_ctx;
 
+	/*
+	 * Remove previously configured trusted CA certificates before adding
+	 * new ones.
+	 */
+	X509_STORE_free(ssl_ctx->cert_store);
+	ssl_ctx->cert_store = X509_STORE_new();
+	if (ssl_ctx->cert_store == NULL) {
+		wpa_printf(MSG_DEBUG, "OpenSSL: %s - failed to allocate new "
+			   "certificate store", __func__);
+		return -1;
+	}
+
 	if (ca_cert_blob) {
 		X509 *cert = d2i_X509(NULL, (OPENSSL_d2i_TYPE) &ca_cert_blob,
 				      ca_cert_blob_len);

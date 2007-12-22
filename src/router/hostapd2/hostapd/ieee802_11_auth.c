@@ -54,7 +54,7 @@ static void hostapd_acl_cache_free(struct hostapd_cached_radius_acl *acl_cache)
 	while (acl_cache) {
 		prev = acl_cache;
 		acl_cache = acl_cache->next;
-		free(prev);
+		os_free(prev);
 	}
 }
 
@@ -70,7 +70,7 @@ static int hostapd_acl_cache_get(struct hostapd_data *hapd, const u8 *addr,
 	entry = hapd->acl_cache;
 
 	while (entry) {
-		if (memcmp(entry->addr, addr, ETH_ALEN) == 0) {
+		if (os_memcmp(entry->addr, addr, ETH_ALEN) == 0) {
 			if (now - entry->timestamp > RADIUS_ACL_TIMEOUT)
 				return -1; /* entry has expired */
 			if (entry->accepted == HOSTAPD_ACL_ACCEPT_TIMEOUT)
@@ -92,8 +92,8 @@ static void hostapd_acl_query_free(struct hostapd_acl_query_data *query)
 {
 	if (query == NULL)
 		return;
-	free(query->auth_msg);
-	free(query);
+	os_free(query->auth_msg);
+	os_free(query);
 }
 
 
@@ -110,25 +110,25 @@ static int hostapd_radius_acl_query(struct hostapd_data *hapd, const u8 *addr,
 
 	radius_msg_make_authenticator(msg, addr, ETH_ALEN);
 
-	snprintf(buf, sizeof(buf), RADIUS_ADDR_FORMAT, MAC2STR(addr));
+	os_snprintf(buf, sizeof(buf), RADIUS_ADDR_FORMAT, MAC2STR(addr));
 	if (!radius_msg_add_attr(msg, RADIUS_ATTR_USER_NAME, (u8 *) buf,
-				 strlen(buf))) {
-		printf("Could not add User-Name\n");
+				 os_strlen(buf))) {
+		wpa_printf(MSG_DEBUG, "Could not add User-Name");
 		goto fail;
 	}
 
 	if (!radius_msg_add_attr_user_password(
-		    msg, (u8 *) buf, strlen(buf),
+		    msg, (u8 *) buf, os_strlen(buf),
 		    hapd->conf->radius->auth_server->shared_secret,
 		    hapd->conf->radius->auth_server->shared_secret_len)) {
-		printf("Could not add User-Password\n");
+		wpa_printf(MSG_DEBUG, "Could not add User-Password");
 		goto fail;
 	}
 
 	if (hapd->conf->own_ip_addr.af == AF_INET &&
 	    !radius_msg_add_attr(msg, RADIUS_ATTR_NAS_IP_ADDRESS,
 				 (u8 *) &hapd->conf->own_ip_addr.u.v4, 4)) {
-		printf("Could not add NAS-IP-Address\n");
+		wpa_printf(MSG_DEBUG, "Could not add NAS-IP-Address");
 		goto fail;
 	}
 
@@ -136,7 +136,7 @@ static int hostapd_radius_acl_query(struct hostapd_data *hapd, const u8 *addr,
 	if (hapd->conf->own_ip_addr.af == AF_INET6 &&
 	    !radius_msg_add_attr(msg, RADIUS_ATTR_NAS_IPV6_ADDRESS,
 				 (u8 *) &hapd->conf->own_ip_addr.u.v6, 16)) {
-		printf("Could not add NAS-IPv6-Address\n");
+		wpa_printf(MSG_DEBUG, "Could not add NAS-IPv6-Address");
 		goto fail;
 	}
 #endif /* CONFIG_IPV6 */
@@ -144,37 +144,37 @@ static int hostapd_radius_acl_query(struct hostapd_data *hapd, const u8 *addr,
 	if (hapd->conf->nas_identifier &&
 	    !radius_msg_add_attr(msg, RADIUS_ATTR_NAS_IDENTIFIER,
 				 (u8 *) hapd->conf->nas_identifier,
-				 strlen(hapd->conf->nas_identifier))) {
-		printf("Could not add NAS-Identifier\n");
+				 os_strlen(hapd->conf->nas_identifier))) {
+		wpa_printf(MSG_DEBUG, "Could not add NAS-Identifier");
 		goto fail;
 	}
 
-	snprintf(buf, sizeof(buf), RADIUS_802_1X_ADDR_FORMAT ":%s",
-		 MAC2STR(hapd->own_addr), hapd->conf->ssid.ssid);
+	os_snprintf(buf, sizeof(buf), RADIUS_802_1X_ADDR_FORMAT ":%s",
+		    MAC2STR(hapd->own_addr), hapd->conf->ssid.ssid);
 	if (!radius_msg_add_attr(msg, RADIUS_ATTR_CALLED_STATION_ID,
-				 (u8 *) buf, strlen(buf))) {
-		printf("Could not add Called-Station-Id\n");
+				 (u8 *) buf, os_strlen(buf))) {
+		wpa_printf(MSG_DEBUG, "Could not add Called-Station-Id");
 		goto fail;
 	}
 
-	snprintf(buf, sizeof(buf), RADIUS_802_1X_ADDR_FORMAT,
-		 MAC2STR(addr));
+	os_snprintf(buf, sizeof(buf), RADIUS_802_1X_ADDR_FORMAT,
+		    MAC2STR(addr));
 	if (!radius_msg_add_attr(msg, RADIUS_ATTR_CALLING_STATION_ID,
-				 (u8 *) buf, strlen(buf))) {
-		printf("Could not add Calling-Station-Id\n");
+				 (u8 *) buf, os_strlen(buf))) {
+		wpa_printf(MSG_DEBUG, "Could not add Calling-Station-Id");
 		goto fail;
 	}
 
 	if (!radius_msg_add_attr_int32(msg, RADIUS_ATTR_NAS_PORT_TYPE,
 				       RADIUS_NAS_PORT_TYPE_IEEE_802_11)) {
-		printf("Could not add NAS-Port-Type\n");
+		wpa_printf(MSG_DEBUG, "Could not add NAS-Port-Type");
 		goto fail;
 	}
 
-	snprintf(buf, sizeof(buf), "CONNECT 11Mbps 802.11b");
+	os_snprintf(buf, sizeof(buf), "CONNECT 11Mbps 802.11b");
 	if (!radius_msg_add_attr(msg, RADIUS_ATTR_CONNECT_INFO,
-				 (u8 *) buf, strlen(buf))) {
-		printf("Could not add Connect-Info\n");
+				 (u8 *) buf, os_strlen(buf))) {
+		wpa_printf(MSG_DEBUG, "Could not add Connect-Info");
 		goto fail;
 	}
 
@@ -183,7 +183,7 @@ static int hostapd_radius_acl_query(struct hostapd_data *hapd, const u8 *addr,
 
  fail:
 	radius_msg_free(msg);
-	free(msg);
+	os_free(msg);
 	return -1;
 }
 
@@ -225,7 +225,7 @@ int hostapd_allowed_address(struct hostapd_data *hapd, const u8 *addr,
 
 		query = hapd->acl_queries;
 		while (query) {
-			if (memcmp(query->addr, addr, ETH_ALEN) == 0) {
+			if (os_memcmp(query->addr, addr, ETH_ALEN) == 0) {
 				/* pending query in RADIUS retransmit queue;
 				 * do not generate a new one */
 				return HOSTAPD_ACL_PENDING;
@@ -239,25 +239,26 @@ int hostapd_allowed_address(struct hostapd_data *hapd, const u8 *addr,
 		/* No entry in the cache - query external RADIUS server */
 		query = os_zalloc(sizeof(*query));
 		if (query == NULL) {
-			printf("malloc for query data failed\n");
+			wpa_printf(MSG_ERROR, "malloc for query data failed");
 			return HOSTAPD_ACL_REJECT;
 		}
 		time(&query->timestamp);
-		memcpy(query->addr, addr, ETH_ALEN);
+		os_memcpy(query->addr, addr, ETH_ALEN);
 		if (hostapd_radius_acl_query(hapd, addr, query)) {
-			printf("Failed to send Access-Request for ACL "
-			       "query.\n");
+			wpa_printf(MSG_DEBUG, "Failed to send Access-Request "
+				   "for ACL query.");
 			hostapd_acl_query_free(query);
 			return HOSTAPD_ACL_REJECT;
 		}
 
-		query->auth_msg = malloc(len);
+		query->auth_msg = os_malloc(len);
 		if (query->auth_msg == NULL) {
-			printf("Failed to allocate memory for auth frame.\n");
+			wpa_printf(MSG_ERROR, "Failed to allocate memory for "
+				   "auth frame.");
 			hostapd_acl_query_free(query);
 			return HOSTAPD_ACL_REJECT;
 		}
-		memcpy(query->auth_msg, msg, len);
+		os_memcpy(query->auth_msg, msg, len);
 		query->auth_msg_len = len;
 		query->next = hapd->acl_queries;
 		hapd->acl_queries = query;
@@ -290,7 +291,7 @@ static void hostapd_acl_expire_cache(struct hostapd_data *hapd, time_t now)
 
 			tmp = entry;
 			entry = entry->next;
-			free(tmp);
+			os_free(tmp);
 			continue;
 		}
 
@@ -368,26 +369,26 @@ hostapd_acl_recv_radius(struct radius_msg *msg, struct radius_msg *req,
 		      "for RADIUS message (id=%d)\n", query->radius_id);
 
 	if (radius_msg_verify(msg, shared_secret, shared_secret_len, req, 0)) {
-		printf("Incoming RADIUS packet did not have correct "
-		       "authenticator - dropped\n");
+		wpa_printf(MSG_INFO, "Incoming RADIUS packet did not have "
+			   "correct authenticator - dropped\n");
 		return RADIUS_RX_INVALID_AUTHENTICATOR;
 	}
 
 	if (msg->hdr->code != RADIUS_CODE_ACCESS_ACCEPT &&
 	    msg->hdr->code != RADIUS_CODE_ACCESS_REJECT) {
-		printf("Unknown RADIUS message code %d to ACL query\n",
-		       msg->hdr->code);
+		wpa_printf(MSG_DEBUG, "Unknown RADIUS message code %d to ACL "
+			   "query", msg->hdr->code);
 		return RADIUS_RX_UNKNOWN;
 	}
 
 	/* Insert Accept/Reject info into ACL cache */
 	cache = os_zalloc(sizeof(*cache));
 	if (cache == NULL) {
-		printf("Failed to add ACL cache entry\n");
+		wpa_printf(MSG_DEBUG, "Failed to add ACL cache entry");
 		goto done;
 	}
 	time(&cache->timestamp);
-	memcpy(cache->addr, query->addr, sizeof(cache->addr));
+	os_memcpy(cache->addr, query->addr, sizeof(cache->addr));
 	if (msg->hdr->code == RADIUS_CODE_ACCESS_ACCEPT) {
 		if (radius_msg_get_attr_int32(msg, RADIUS_ATTR_SESSION_TIMEOUT,
 					      &cache->session_timeout) == 0)

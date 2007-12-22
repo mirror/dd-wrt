@@ -4,6 +4,7 @@
 [ \ref wpa_supplicant_core "wpa_supplicant core functionality" |
 \ref generic_helper_func "Generic helper functions" |
 \ref crypto_func "Cryptographic functions" |
+\ref tls_func "TLS library" |
 \ref configuration "Configuration" |
 \ref ctrl_iface "Control interface" |
 \ref wpa_code "WPA supplicant" |
@@ -103,6 +104,9 @@ sha1.c and sha1.h
 	T-PRF (for EAP-FAST)
 	TLS-PRF (RFC 2246)
 
+sha256.c and sha256.h
+	SHA-256 (replaced with a crypto library if TLS support is included)
+
 aes_wrap.c, aes_wrap.h, aes.c
 	AES (replaced with a crypto library if TLS support is included),
 	AES Key Wrap Algorithm with 128-bit KEK, RFC3394 (broadcast/default
@@ -115,8 +119,11 @@ aes_wrap.c, aes_wrap.h, aes.c
 crypto.h
 	Definition of crypto library wrapper
 
-crypto.c
+crypto_openssl.c
 	Wrapper functions for libcrypto (OpenSSL)
+
+crypto_internal.c
+	Wrapper functions for internal crypto implementation
 
 crypto_gnutls.c
 	Wrapper functions for libgcrypt (used by GnuTLS)
@@ -134,8 +141,47 @@ tls_none.c
 tls_openssl.c
 	TLS library wrapper for openssl
 
+tls_internal.c
+	TLS library for internal TLS implementation
+
 tls_gnutls.c
 	TLS library wrapper for GnuTLS
+
+
+\section crypto_func Cryptographic functions
+
+asn1.c and asn1.h
+	ASN.1 DER parsing
+
+bignum.c and bignum.h
+	Big number math
+
+rsa.c and rsa.h
+	RSA
+
+x509v3.c and x509v3.h
+	X.509v3 certificate parsing and processing
+
+tlsv1_client.c, tlsv1_client.h
+	TLSv1 client (RFC 2246)
+
+tlsv1_client_i.h
+	Internal structures for TLSv1 client
+
+tlsv1_client_read.c
+	TLSv1 client: read handshake messages
+
+tlsv1_client_write.c
+	TLSv1 client: write handshake messages
+
+tlsv1_common.c and tlsv1_common.h
+	Common TLSv1 routines and definitions
+
+tlsv1_cred.c and tlsv1_cred.h
+	TLSv1 credentials
+
+tlsv1_record.c and tlsv1_record.h
+	TLSv1 record protocol
 
 
 \section configuration Configuration
@@ -152,6 +198,9 @@ config.c
 config_file.c
 	Configuration backend for text files (e.g., wpa_supplicant.conf)
 
+config_winreg.c
+	Configuration backend for Windows registry
+
 
 \section ctrl_iface Control interface
 
@@ -163,6 +212,15 @@ are included in the %wpa_supplicant distribution.
 
 ctrl_iface.c and ctrl_iface.h
 	%wpa_supplicant-side of the control interface
+
+ctrl_iface_unix.c
+	UNIX domain sockets -based control interface backend
+
+ctrl_iface_udp.c
+	UDP sockets -based control interface backend
+
+ctrl_iface_named_pipe.c
+	Windows named pipes -based control interface backend
 
 wpa_ctrl.c and wpa_ctrl.h
 	Library functions for external programs to provide access to the
@@ -229,15 +287,15 @@ eap_otp.c, eap_peap.c, eap_sim.c, eap_tls.c
 
 \section eapol_supp EAPOL supplicant
 
-eapol_sm.c and eapol_sm.h
+eapol_supp_sm.c and eapol_supp_sm.h
 	EAPOL supplicant state machine and IEEE 802.1X processing
 
 
 \section win_port Windows port
 
-ndis_events.cpp
-	External program for receiving NdisMIndicateStatus() events and
-	delivering them to %wpa_supplicant in more easier to use form
+ndis_events.c
+	Code for receiving NdisMIndicateStatus() events and delivering them to
+	%wpa_supplicant driver_ndis.c in more easier to use form
 
 win_if_list.c
 	External program for listing current network interface
@@ -250,9 +308,6 @@ radius_client.c and radius_client.h
 
 radius.c and radius.h
 	RADIUS message processing for eapol_test
-
-config_types.h and hostapd.h
-	Minimal version of hostapd header files for eapol_test
 
 eapol_test.c
 	Standalone EAP testing tool with integrated RADIUS authentication

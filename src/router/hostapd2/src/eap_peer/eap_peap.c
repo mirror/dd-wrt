@@ -57,8 +57,7 @@ struct eap_peap_data {
 	int resuming; /* starting a resumed session */
 	u8 *key_data;
 
-	u8 *pending_phase2_req;
-	size_t pending_phase2_req_len;
+	struct wpabuf *pending_phase2_req;
 };
 
 
@@ -148,7 +147,7 @@ static void eap_peap_deinit(struct eap_sm *sm, void *priv)
 	os_free(data->phase2_types);
 	eap_peer_tls_ssl_deinit(sm, &data->ssl);
 	os_free(data->key_data);
-	os_free(data->pending_phase2_req);
+	wpabuf_free(data->pending_phase2_req);
 	os_free(data);
 }
 
@@ -156,9 +155,10 @@ static void eap_peap_deinit(struct eap_sm *sm, void *priv)
 static int eap_peap_phase2_request(struct eap_sm *sm,
 				   struct eap_peap_data *data,
 				   struct eap_method_ret *ret,
-				   struct eap_hdr *hdr,
-				   u8 **resp, size_t *resp_len)
+				   struct wpabuf *req,
+				   struct wpabuf **resp)
 {
+	struct eap_hdr *hdr = wpabuf_mhead(req);
 	size_t len = be_to_host16(hdr->length);
 	u8 *pos;
 	struct eap_method_ret iret;
@@ -173,11 +173,11 @@ static int eap_peap_phase2_request(struct eap_sm *sm,
 	wpa_printf(MSG_DEBUG, "EAP-PEAP: Phase 2 Request: type=%d", *pos);
 	switch (*pos) {
 	case EAP_TYPE_IDENTITY:
-		*resp = eap_sm_buildIdentity(sm, hdr->identifier, resp_len, 1);
+		*resp = eap_sm_buildIdentity(sm, hdr->identifier, 1);
 		break;
 	case EAP_TYPE_TLV:
 		os_memset(&iret, 0, sizeof(iret));
-		if (eap_tlv_process(sm, &iret, hdr, resp, resp_len)) {
+		if (eap_tlv_process(sm, &iret, req, resp)) {
 			ret->methodState = METHOD_DONE;
 			ret->decision = DECISION_FAIL;
 			return -1;
@@ -214,7 +214,7 @@ static int eap_peap_phase2_request(struct eap_sm *sm,
 		    *pos == EAP_TYPE_NONE) {
 			if (eap_peer_tls_phase2_nak(data->phase2_types,
 						    data->num_phase2_types,
-						    hdr, resp, resp_len))
+						    hdr, resp))
 				return -1;
 			return 0;
 		}
@@ -239,8 +239,7 @@ static int eap_peap_phase2_request(struct eap_sm *sm,
 		}
 		os_memset(&iret, 0, sizeof(iret));
 		*resp = data->phase2_method->process(sm, data->phase2_priv,
-						     &iret, (u8 *) hdr, len,
-						     resp_len);
+						     &iret, req);
 		if ((iret.methodState == METHOD_DONE ||
 		     iret.methodState == METHOD_MAY_CONT) &&
 		    (iret.decision == DECISION_UNCOND_SUCC ||
@@ -253,12 +252,8 @@ static int eap_peap_phase2_request(struct eap_sm *sm,
 	if (*resp == NULL &&
 	    (config->pending_req_identity || config->pending_req_password ||
 	     config->pending_req_otp || config->pending_req_new_password)) {
-		os_free(data->pending_phase2_req);
-		data->pending_phase2_req = os_malloc(len);
-		if (data->pending_phase2_req) {
-			os_memcpy(data->pending_phase2_req, hdr, len);
-			data->pending_phase2_req_len = len;
-		}
+		wpabuf_free(data->pending_phase2_req);
+		data->pending_phase2_req = wpabuf_alloc_copy(hdr, len);
 	}
 
 	return 0;
@@ -268,17 +263,17 @@ static int eap_peap_phase2_request(struct eap_sm *sm,
 static int eap_peap_decrypt(struct eap_sm *sm, struct eap_peap_data *data,
 			    struct eap_method_ret *ret,
 			    const struct eap_hdr *req,
-			    const u8 *in_data, size_t in_len,
-			    u8 **out_data, size_t *out_len)
+			    const struct wpabuf *in_data,
+			    struct wpabuf **out_data)
 {
-	u8 *in_decrypted;
+	struct wpabuf *in_decrypted = NULL;
 	int res, skip_change = 0;
 	struct eap_hdr *hdr, *rhdr;
-	u8 *resp = NULL;
-	size_t resp_len, len_decrypted, len;
+	struct wpabuf *resp = NULL;
+	size_t len;
 
 	wpa_printf(MSG_DEBUG, "EAP-PEAP: received %lu bytes encrypted data for"
-		   " Phase 2", (unsigned long) in_len);
+		   " Phase 2", (unsigned long) wpabuf_len(in_data));
 
 	if (data->pending_phase2_req) {
 		wpa_printf(MSG_DEBUG, "EAP-PEAP: Pending Phase 2 request - "
@@ -287,12 +282,12 @@ static int eap_peap_decrypt(struct eap_sm *sm, struct eap_peap_data *data,
 		eap_peer_tls_reset_input(&data->ssl);
 		in_decrypted = data->pending_phase2_req;
 		data->pending_phase2_req = NULL;
-		len_decrypted = data->pending_phase2_req_len;
 		skip_change = 1;
 		goto continue_req;
 	}
 
-	if (in_len == 0 && sm->workaround && data->phase2_success) {
+	if (wpabuf_len(in_data) == 0 && sm->workaround &&
+	    data->phase2_success) {
 		/*
 		 * Cisco ACS seems to be using TLS ACK to terminate
 		 * EAP-PEAPv0/GTC. Try to reply with TLS ACK.
@@ -303,76 +298,78 @@ static int eap_peap_decrypt(struct eap_sm *sm, struct eap_peap_data *data,
 		ret->decision = DECISION_COND_SUCC;
 		ret->methodState = METHOD_DONE;
 		return 1;
-	} else if (in_len == 0) {
+	} else if (wpabuf_len(in_data) == 0) {
 		/* Received TLS ACK - requesting more fragments */
 		return eap_peer_tls_encrypt(sm, &data->ssl, EAP_TYPE_PEAP,
 					    data->peap_version,
-					    req->identifier, NULL, 0,
-					    out_data, out_len);
+					    req->identifier, NULL, out_data);
 	}
 
-	res = eap_peer_tls_decrypt(sm, &data->ssl, in_data, in_len,
-				   &in_decrypted, &len_decrypted);
+	res = eap_peer_tls_decrypt(sm, &data->ssl, in_data, &in_decrypted);
 	if (res)
 		return res;
 
 continue_req:
-	wpa_hexdump(MSG_DEBUG, "EAP-PEAP: Decrypted Phase 2 EAP", in_decrypted,
-		    len_decrypted);
+	wpa_hexdump_buf(MSG_DEBUG, "EAP-PEAP: Decrypted Phase 2 EAP",
+			in_decrypted);
 
-	hdr = (struct eap_hdr *) in_decrypted;
-	if (len_decrypted == 5 && hdr->code == EAP_CODE_REQUEST &&
+	hdr = wpabuf_mhead(in_decrypted);
+	if (wpabuf_len(in_decrypted) == 5 && hdr->code == EAP_CODE_REQUEST &&
 	    be_to_host16(hdr->length) == 5 &&
-	    in_decrypted[4] == EAP_TYPE_IDENTITY) {
+	    eap_get_type(in_decrypted) == EAP_TYPE_IDENTITY) {
 		/* At least FreeRADIUS seems to send full EAP header with
 		 * EAP Request Identity */
 		skip_change = 1;
 	}
-	if (len_decrypted >= 5 && hdr->code == EAP_CODE_REQUEST &&
-	    in_decrypted[4] == EAP_TYPE_TLV) {
+	if (wpabuf_len(in_decrypted) >= 5 && hdr->code == EAP_CODE_REQUEST &&
+	    eap_get_type(in_decrypted) == EAP_TYPE_TLV) {
 		skip_change = 1;
 	}
 
 	if (data->peap_version == 0 && !skip_change) {
-		struct eap_hdr *nhdr = os_malloc(sizeof(struct eap_hdr) +
-						 len_decrypted);
-		if (nhdr == NULL) {
-			os_free(in_decrypted);
+		struct eap_hdr *nhdr;
+		struct wpabuf *nmsg = wpabuf_alloc(sizeof(struct eap_hdr) +
+						   wpabuf_len(in_decrypted));
+		if (nmsg == NULL) {
+			wpabuf_free(in_decrypted);
 			return 0;
 		}
-		os_memcpy((u8 *) (nhdr + 1), in_decrypted, len_decrypted);
-		os_free(in_decrypted);
+		nhdr = wpabuf_put(nmsg, sizeof(*nhdr));
+		wpabuf_put_buf(nmsg, in_decrypted);
 		nhdr->code = req->code;
 		nhdr->identifier = req->identifier;
 		nhdr->length = host_to_be16(sizeof(struct eap_hdr) +
-					    len_decrypted);
+					    wpabuf_len(in_decrypted));
 
-		len_decrypted += sizeof(struct eap_hdr);
-		in_decrypted = (u8 *) nhdr;
+		wpabuf_free(in_decrypted);
+		in_decrypted = nmsg;
 	}
-	hdr = (struct eap_hdr *) in_decrypted;
-	if (len_decrypted < sizeof(*hdr)) {
-		os_free(in_decrypted);
+	hdr = wpabuf_mhead(in_decrypted);
+	if (wpabuf_len(in_decrypted) < sizeof(*hdr)) {
 		wpa_printf(MSG_INFO, "EAP-PEAP: Too short Phase 2 "
 			   "EAP frame (len=%lu)",
-			   (unsigned long) len_decrypted);
+			   (unsigned long) wpabuf_len(in_decrypted));
+		wpabuf_free(in_decrypted);
 		return 0;
 	}
 	len = be_to_host16(hdr->length);
-	if (len > len_decrypted) {
-		os_free(in_decrypted);
+	if (len > wpabuf_len(in_decrypted)) {
 		wpa_printf(MSG_INFO, "EAP-PEAP: Length mismatch in "
 			   "Phase 2 EAP frame (len=%lu hdr->length=%lu)",
-			   (unsigned long) len_decrypted, (unsigned long) len);
+			   (unsigned long) wpabuf_len(in_decrypted),
+			   (unsigned long) len);
+		wpabuf_free(in_decrypted);
 		return 0;
 	}
-	if (len < len_decrypted) {
+	if (len < wpabuf_len(in_decrypted)) {
 		wpa_printf(MSG_INFO, "EAP-PEAP: Odd.. Phase 2 EAP header has "
 			   "shorter length than full decrypted data "
 			   "(%lu < %lu)",
-			   (unsigned long) len, (unsigned long) len_decrypted);
-		if (sm->workaround && len == 4 && len_decrypted == 5 &&
-		    in_decrypted[4] == EAP_TYPE_IDENTITY) {
+			   (unsigned long) len,
+			   (unsigned long) wpabuf_len(in_decrypted));
+		if (sm->workaround && len == 4 &&
+		    wpabuf_len(in_decrypted) == 5 &&
+		    eap_get_type(in_decrypted) == EAP_TYPE_IDENTITY) {
 			/* Radiator 3.9 seems to set Phase 2 EAP header to use
 			 * incorrect length for the EAP-Request Identity
 			 * packet, so fix the inner header to interoperate..
@@ -382,8 +379,8 @@ continue_req:
 				   "Phase 2 EAP header len (%lu) with real "
 				   "decrypted len (%lu)",
 				   (unsigned long) len,
-				   (unsigned long) len_decrypted);
-			len = len_decrypted;
+				   (unsigned long) wpabuf_len(in_decrypted));
+			len = wpabuf_len(in_decrypted);
 			hdr->length = host_to_be16(len);
 		}
 	}
@@ -392,9 +389,9 @@ continue_req:
 		   (unsigned long) len);
 	switch (hdr->code) {
 	case EAP_CODE_REQUEST:
-		if (eap_peap_phase2_request(sm, data, ret, hdr,
-					    &resp, &resp_len)) {
-			os_free(in_decrypted);
+		if (eap_peap_phase2_request(sm, data, ret, in_decrypted,
+					    &resp)) {
+			wpabuf_free(in_decrypted);
 			wpa_printf(MSG_INFO, "EAP-PEAP: Phase2 Request "
 				   "processing failed");
 			return 0;
@@ -413,20 +410,20 @@ continue_req:
 			ret->methodState = METHOD_DONE;
 			data->phase2_success = 1;
 			if (data->peap_outer_success == 2) {
-				os_free(in_decrypted);
+				wpabuf_free(in_decrypted);
 				wpa_printf(MSG_DEBUG, "EAP-PEAP: Use TLS ACK "
 					   "to finish authentication");
 				return 1;
 			} else if (data->peap_outer_success == 1) {
 				/* Reply with EAP-Success within the TLS
 				 * channel to complete the authentication. */
-				resp_len = sizeof(struct eap_hdr);
-				resp = os_zalloc(resp_len);
+				resp = wpabuf_alloc(sizeof(struct eap_hdr));
 				if (resp) {
-					rhdr = (struct eap_hdr *) resp;
+					rhdr = wpabuf_put(resp, sizeof(*rhdr));
 					rhdr->code = EAP_CODE_SUCCESS;
 					rhdr->identifier = hdr->identifier;
-					rhdr->length = host_to_be16(resp_len);
+					rhdr->length =
+						host_to_be16(sizeof(*rhdr));
 				}
 			} else {
 				/* No EAP-Success expected for Phase 1 (outer,
@@ -445,13 +442,12 @@ continue_req:
 		ret->allowNotifications = FALSE;
 		/* Reply with EAP-Failure within the TLS channel to complete
 		 * failure reporting. */
-		resp_len = sizeof(struct eap_hdr);
-		resp = os_zalloc(resp_len);
+		resp = wpabuf_alloc(sizeof(struct eap_hdr));
 		if (resp) {
-			rhdr = (struct eap_hdr *) resp;
+			rhdr = wpabuf_put(resp, sizeof(*rhdr));
 			rhdr->code = EAP_CODE_FAILURE;
 			rhdr->identifier = hdr->identifier;
-			rhdr->length = host_to_be16(resp_len);
+			rhdr->length = host_to_be16(sizeof(*rhdr));
 		}
 		break;
 	default:
@@ -460,58 +456,62 @@ continue_req:
 		break;
 	}
 
-	os_free(in_decrypted);
+	wpabuf_free(in_decrypted);
 
 	if (resp) {
-		u8 *resp_pos;
-		size_t resp_send_len;
 		int skip_change2 = 0;
+		struct wpabuf *rmsg;
 
-		wpa_hexdump_key(MSG_DEBUG, "EAP-PEAP: Encrypting Phase 2 data",
-				resp, resp_len);
+		wpa_hexdump_buf_key(MSG_DEBUG,
+				    "EAP-PEAP: Encrypting Phase 2 data", resp);
 		/* PEAP version changes */
-		if (resp_len >= 5 && resp[0] == EAP_CODE_RESPONSE &&
-		    resp[4] == EAP_TYPE_TLV)
+		if (wpabuf_len(resp) >= 5 &&
+		    wpabuf_head_u8(resp)[0] == EAP_CODE_RESPONSE &&
+		    eap_get_type(resp) == EAP_TYPE_TLV)
 			skip_change2 = 1;
+		rmsg = resp;
 		if (data->peap_version == 0 && !skip_change2) {
-			resp_pos = resp + sizeof(struct eap_hdr);
-			resp_send_len = resp_len - sizeof(struct eap_hdr);
-		} else {
-			resp_pos = resp;
-			resp_send_len = resp_len;
+			rmsg = wpabuf_alloc_ext_data_no_free(
+				wpabuf_head_u8(resp) + sizeof(struct eap_hdr),
+				wpabuf_len(resp) - sizeof(struct eap_hdr));
+			if (rmsg == NULL) {
+				wpabuf_free(resp);
+				return -1;
+			}
 		}
 
 		if (eap_peer_tls_encrypt(sm, &data->ssl, EAP_TYPE_PEAP,
 					 data->peap_version, req->identifier,
-					 resp_pos, resp_send_len,
-					 out_data, out_len)) {
+					 rmsg, out_data)) {
 			wpa_printf(MSG_INFO, "EAP-PEAP: Failed to encrypt "
 				   "a Phase 2 frame");
 		}
-		os_free(resp);
+		if (rmsg != resp)
+			wpabuf_free(rmsg);
+		wpabuf_free(resp);
 	}
 
 	return 0;
 }
 
 
-static u8 * eap_peap_process(struct eap_sm *sm, void *priv,
-			     struct eap_method_ret *ret,
-			     const u8 *reqData, size_t reqDataLen,
-			     size_t *respDataLen)
+static struct wpabuf * eap_peap_process(struct eap_sm *sm, void *priv,
+					struct eap_method_ret *ret,
+					const struct wpabuf *reqData)
 {
 	const struct eap_hdr *req;
 	size_t left;
 	int res;
-	u8 flags, *resp, id;
+	u8 flags, id;
+	struct wpabuf *resp;
 	const u8 *pos;
 	struct eap_peap_data *data = priv;
 
 	pos = eap_peer_tls_process_init(sm, &data->ssl, EAP_TYPE_PEAP, ret,
-					reqData, reqDataLen, &left, &flags);
+					reqData, &left, &flags);
 	if (pos == NULL)
 		return NULL;
-	req = (const struct eap_hdr *) reqData;
+	req = wpabuf_head(reqData);
 	id = req->identifier;
 
 	if (flags & EAP_TLS_FLAGS_START) {
@@ -539,13 +539,16 @@ static u8 * eap_peap_process(struct eap_sm *sm, void *priv,
 	resp = NULL;
 	if (tls_connection_established(sm->ssl_ctx, data->ssl.conn) &&
 	    !data->resuming) {
-		res = eap_peap_decrypt(sm, data, ret, req, pos, left,
-				       &resp, respDataLen);
+		struct wpabuf *msg = wpabuf_alloc_ext_data_no_free(pos, left);
+		if (msg)
+			res = eap_peap_decrypt(sm, data, ret, req, msg, &resp);
+		else
+			res = -1;
 	} else {
 		res = eap_peer_tls_process_helper(sm, &data->ssl,
 						  EAP_TYPE_PEAP,
 						  data->peap_version, id, pos,
-						  left, &resp, respDataLen);
+						  left, &resp);
 
 		if (tls_connection_established(sm->ssl_ctx, data->ssl.conn)) {
 			char *label;
@@ -600,16 +603,20 @@ static u8 * eap_peap_process(struct eap_sm *sm, void *priv,
 		}
 
 		if (res == 2) {
+			struct wpabuf *msg;
 			/*
 			 * Application data included in the handshake message.
 			 */
-			os_free(data->pending_phase2_req);
+			wpabuf_free(data->pending_phase2_req);
 			data->pending_phase2_req = resp;
-			data->pending_phase2_req_len = *respDataLen;
 			resp = NULL;
-			*respDataLen = 0;
-			res = eap_peap_decrypt(sm, data, ret, req, pos, left,
-					       &resp, respDataLen);
+			msg = wpabuf_alloc_ext_data_no_free(pos, left);
+			if (msg) {
+				res = eap_peap_decrypt(sm, data, ret, req, msg,
+						       &resp);
+				wpabuf_free(msg);
+			} else
+				res = -1;
 		}
 	}
 
@@ -618,9 +625,8 @@ static u8 * eap_peap_process(struct eap_sm *sm, void *priv,
 	}
 
 	if (res == 1) {
-		os_free(resp);
-		return eap_peer_tls_build_ack(&data->ssl, respDataLen, id,
-					      EAP_TYPE_PEAP,
+		wpabuf_free(resp);
+		return eap_peer_tls_build_ack(id, EAP_TYPE_PEAP,
 					      data->peap_version);
 	}
 
@@ -639,7 +645,7 @@ static Boolean eap_peap_has_reauth_data(struct eap_sm *sm, void *priv)
 static void eap_peap_deinit_for_reauth(struct eap_sm *sm, void *priv)
 {
 	struct eap_peap_data *data = priv;
-	os_free(data->pending_phase2_req);
+	wpabuf_free(data->pending_phase2_req);
 	data->pending_phase2_req = NULL;
 }
 

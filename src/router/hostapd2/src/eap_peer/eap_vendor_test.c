@@ -67,20 +67,16 @@ static void eap_vendor_ready(void *eloop_ctx, void *timeout_ctx)
 #endif /* TEST_PENDING_REQUEST */
 
 
-static u8 * eap_vendor_test_process(struct eap_sm *sm, void *priv,
-				    struct eap_method_ret *ret,
-				    const u8 *reqData, size_t reqDataLen,
-				    size_t *respDataLen)
+static struct wpabuf * eap_vendor_test_process(struct eap_sm *sm, void *priv,
+					       struct eap_method_ret *ret,
+					       const struct wpabuf *reqData)
 {
 	struct eap_vendor_test_data *data = priv;
-	const struct eap_hdr *req;
-	struct eap_hdr *resp;
+	struct wpabuf *resp;
 	const u8 *pos;
-	u8 *rpos;
 	size_t len;
 
-	pos = eap_hdr_validate(EAP_VENDOR_ID, EAP_VENDOR_TYPE,
-			       reqData, reqDataLen, &len);
+	pos = eap_hdr_validate(EAP_VENDOR_ID, EAP_VENDOR_TYPE, reqData, &len);
 	if (pos == NULL || len < 1) {
 		ret->ignore = TRUE;
 		return NULL;
@@ -122,29 +118,28 @@ static u8 * eap_vendor_test_process(struct eap_sm *sm, void *priv,
 	}
 
 	ret->ignore = FALSE;
-	req = (const struct eap_hdr *) reqData;
 
 	wpa_printf(MSG_DEBUG, "EAP-VENDOR-TEST: Generating Response");
 	ret->allowNotifications = TRUE;
 
-	resp = eap_msg_alloc(EAP_VENDOR_ID, EAP_VENDOR_TYPE, respDataLen, 1,
-			     EAP_CODE_RESPONSE, req->identifier, &rpos);
+	resp = eap_msg_alloc(EAP_VENDOR_ID, EAP_VENDOR_TYPE, 1,
+			     EAP_CODE_RESPONSE, eap_get_id(reqData));
 	if (resp == NULL)
 		return NULL;
 
 	if (data->state == INIT) {
-		*rpos = 2;
+		wpabuf_put_u8(resp, 2);
 		data->state = CONFIRM;
 		ret->methodState = METHOD_CONT;
 		ret->decision = DECISION_FAIL;
 	} else {
-		*rpos = 4;
+		wpabuf_put_u8(resp, 4);
 		data->state = SUCCESS;
 		ret->methodState = METHOD_DONE;
 		ret->decision = DECISION_UNCOND_SUCC;
 	}
 
-	return (u8 *) resp;
+	return resp;
 }
 
 

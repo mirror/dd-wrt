@@ -120,7 +120,7 @@ static int eap_gpsk_derive_keys_helper(u32 csuite_specifier,
 				       u8 *sk, size_t sk_len,
 				       u8 *pk, size_t pk_len)
 {
-	u8 zero[32], mk[32], *pos, *data;
+	u8 mk[32], *pos, *data;
 	size_t data_len, mk_len;
 	int (*gkdf)(const u8 *psk, const u8 *data, size_t data_len,
 		    u8 *buf, size_t len);
@@ -141,7 +141,8 @@ static int eap_gpsk_derive_keys_helper(u32 csuite_specifier,
 		return -1;
 	}
 
-	os_memset(zero, 0, sizeof(zero));
+	if (psk_len < mk_len)
+		return -1;
 
 	data_len = 2 + psk_len + 6 + seed_len;
 	data = os_malloc(data_len);
@@ -160,7 +161,7 @@ static int eap_gpsk_derive_keys_helper(u32 csuite_specifier,
 	wpa_hexdump_key(MSG_DEBUG, "EAP-GPSK: Data to MK derivation",
 			data, data_len);
 
-	if (gkdf(zero, data, data_len, mk, mk_len) < 0) {
+	if (gkdf(psk, data, data_len, mk, mk_len) < 0) {
 		os_free(data);
 		return -1;
 	}
@@ -206,12 +207,12 @@ static int eap_gpsk_derive_keys_aes(const u8 *psk, size_t psk_len,
 	 * inputString = RAND_Peer || ID_Peer || RAND_Server || ID_Server
 	 *            (= seed)
 	 * KS = 16, PL = psk_len, CSuite_Sel = 0x00000000 0x0001
-	 * zero = 0x00 || 0x00 || ... || 0x00 (16 times)
-	 * MK = GKDF-16 (zero, PL || PSK || CSuite_Sel || inputString)
+	 * MK = GKDF-16 (PSK[0..15], PL || PSK || CSuite_Sel || inputString)
 	 * MSK = GKDF-160 (MK, inputString)[0..63]
 	 * EMSK = GKDF-160 (MK, inputString)[64..127]
 	 * SK = GKDF-160 (MK, inputString)[128..143]
 	 * PK = GKDF-160 (MK, inputString)[144..159]
+	 * zero = 0x00 || 0x00 || ... || 0x00 (16 times)
 	 * Method-ID = GKDF-16 (zero, "Method ID" || EAP_Method_Type ||
 	 *                      CSuite_Sel || inputString)
 	 */
@@ -242,11 +243,11 @@ static int eap_gpsk_derive_keys_sha256(const u8 *psk, size_t psk_len,
 	 * inputString = RAND_Peer || ID_Peer || RAND_Server || ID_Server
 	 *            (= seed)
 	 * KS = 32, PL = psk_len, CSuite_Sel = 0x00000000 0x0002
-	 * zero = 0x00 || 0x00 || ... || 0x00 (32 times)
-	 * MK = GKDF-32 (zero, PL || PSK || CSuite_Sel || inputString)
+	 * MK = GKDF-32 (PSK[0..31], PL || PSK || CSuite_Sel || inputString)
 	 * MSK = GKDF-160 (MK, inputString)[0..63]
 	 * EMSK = GKDF-160 (MK, inputString)[64..127]
 	 * SK = GKDF-160 (MK, inputString)[128..159]
+	 * zero = 0x00 || 0x00 || ... || 0x00 (32 times)
 	 * Method-ID = GKDF-16 (zero, "Method ID" || EAP_Method_Type ||
 	 *                      CSuite_Sel || inputString)
 	 */

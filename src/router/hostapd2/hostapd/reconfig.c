@@ -69,8 +69,8 @@ static int hostapd_config_reload_sta(struct hostapd_data *hapd,
 		sta->ssid = &newbss->ssid;
 
 		if (newbss->ssid.ssid_len != oldbss->ssid.ssid_len ||
-		    memcmp(newbss->ssid.ssid, oldbss->ssid.ssid,
-			   newbss->ssid.ssid_len) != 0) {
+		    os_memcmp(newbss->ssid.ssid, oldbss->ssid.ssid,
+			      newbss->ssid.ssid_len) != 0) {
 			/* main SSID was changed - kick STA out */
 			deauth++;
 		}
@@ -211,12 +211,13 @@ static int hostapd_acl_diff(struct hostapd_bss_config *a,
 		return 1;
 
 	for (i = 0; i < a->num_accept_mac; i++) {
-		if (memcmp(a->accept_mac[i], b->accept_mac[i], ETH_ALEN) != 0)
+		if (os_memcmp(a->accept_mac[i], b->accept_mac[i], ETH_ALEN) !=
+		    0)
 			return 1;
 	}
 
 	for (i = 0; i < a->num_deny_mac; i++) {
-		if (memcmp(a->deny_mac[i], b->deny_mac[i], ETH_ALEN) != 0)
+		if (os_memcmp(a->deny_mac[i], b->deny_mac[i], ETH_ALEN) != 0)
 			return 1;
 	}
 
@@ -407,8 +408,8 @@ static void hostapd_reconfig_bss(struct hostapd_data *hapd,
 		printf("Could not set DTIM period for kernel driver\n");
 
 	if (newbss->ssid.ssid_len != oldbss->ssid.ssid_len ||
-	    memcmp(newbss->ssid.ssid, oldbss->ssid.ssid,
-		   newbss->ssid.ssid_len) != 0) {
+	    os_memcmp(newbss->ssid.ssid, oldbss->ssid.ssid,
+		      newbss->ssid.ssid_len) != 0) {
 		if (hostapd_set_ssid(hapd, (u8 *) newbss->ssid.ssid,
 				     newbss->ssid.ssid_len))
 			printf("Could not set SSID for kernel driver\n");
@@ -477,7 +478,7 @@ static void config_reload2(struct hostapd_iface *hapd_iface, int status)
 	u8 *prev_addr;
 	hostapd_iface_cb cb;
 
-	free(change);
+	os_free(change);
 	hapd_iface->change = NULL;
 
 	if (status) {
@@ -492,7 +493,7 @@ static void config_reload2(struct hostapd_iface *hapd_iface, int status)
 		hapd_iface->conf = hapd->iconf = oldconf;
 		hapd->conf = &oldconf->bss[0];
 		hostapd_config_free(newconf);
-		free(new_hapd);
+		os_free(new_hapd);
 
 		cb(hapd_iface, -2);
 
@@ -509,9 +510,9 @@ static void config_reload2(struct hostapd_iface *hapd_iface, int status)
 		max_bss = newconf->num_bss;
 
 	for (i = 0; i < max_bss; i++) {
-		if (strcmp(oldconf->bss[i].iface, newconf->bss[i].iface) != 0
-		    || hostapd_mac_comp(oldconf->bss[i].bssid,
-					newconf->bss[i].bssid) != 0)
+		if (os_strcmp(oldconf->bss[i].iface, newconf->bss[i].iface) !=
+		    0 || hostapd_mac_comp(oldconf->bss[i].bssid,
+					  newconf->bss[i].bssid) != 0)
 			break;
 	}
 	same_bssid = i;
@@ -520,8 +521,8 @@ static void config_reload2(struct hostapd_iface *hapd_iface, int status)
 		oldbss = &oldconf->bss[i];
 		newbss = NULL;
 		for (j = 0; j < newconf->num_bss; j++) {
-			if (strcmp(oldbss->iface, newconf->bss[j].iface) == 0)
-			{
+			if (os_strcmp(oldbss->iface, newconf->bss[j].iface) ==
+			    0) {
 				newbss = &newconf->bss[j];
 				break;
 			}
@@ -549,7 +550,7 @@ static void config_reload2(struct hostapd_iface *hapd_iface, int status)
 			hostapd_cleanup(hapd);
 #endif
 
-			free(hapd);
+			os_free(hapd);
 		}
 	}
 
@@ -583,7 +584,7 @@ static void config_reload2(struct hostapd_iface *hapd_iface, int status)
 		hapd->iconf = newconf;
 		hapd->conf = newbss;
 
-		memcpy(hapd->own_addr, prev_addr, ETH_ALEN);
+		os_memcpy(hapd->own_addr, prev_addr, ETH_ALEN);
 		if (hostapd_mac_comp_empty(hapd->conf->bssid) == 0)
 			prev_addr = hapd->own_addr;
 
@@ -597,7 +598,7 @@ static void config_reload2(struct hostapd_iface *hapd_iface, int status)
 
 	}
 
-	free(old_hapd);
+	os_free(old_hapd);
 	hostapd_config_free(oldconf);
 
 	cb = hapd_iface->config_reload_cb;
@@ -644,7 +645,7 @@ int hostapd_config_reload_start(struct hostapd_iface *hapd_iface,
 		return -1;
 	}
 
-	if (strcmp(newconf->bss[0].iface, hapd_iface->conf->bss[0].iface) !=
+	if (os_strcmp(newconf->bss[0].iface, hapd_iface->conf->bss[0].iface) !=
 	    0) {
 		printf("Interface name changing is not allowed in "
 		       "configuration reloading (%s -> %s).\n",
@@ -697,7 +698,7 @@ int hostapd_config_reload_start(struct hostapd_iface *hapd_iface,
 		printf("Failed to start setup of new interface config\n");
 
 		hapd_iface->config_reload_cb = NULL;
-		free(change);
+		os_free(change);
 		hapd_iface->change = NULL;
 
 		/* Invalid configuration - cleanup and terminate hostapd */
@@ -706,7 +707,7 @@ int hostapd_config_reload_start(struct hostapd_iface *hapd_iface,
 		hapd_iface->conf = hapd->iconf = oldconf;
 		hapd->conf = &oldconf->bss[0];
 		hostapd_config_free(newconf);
-		free(new_hapd);
+		os_free(new_hapd);
 		return -2;
 	}
 

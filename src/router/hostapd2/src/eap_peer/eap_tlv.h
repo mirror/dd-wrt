@@ -17,9 +17,9 @@
 
 #include "eap_common/eap_tlv_common.h"
 
-u8 * eap_tlv_build_nak(int id, u16 nak_type, size_t *resp_len);
-u8 * eap_tlv_build_result(int id, u16 status, size_t *resp_len);
+struct wpabuf * eap_tlv_build_nak(int id, u16 nak_type);
+struct wpabuf * eap_tlv_build_result(int id, u16 status);
 int eap_tlv_process(struct eap_sm *sm, struct eap_method_ret *ret,
-		    const struct eap_hdr *hdr, u8 **resp, size_t *resp_len);
+		    const struct wpabuf *req, struct wpabuf **resp);
 
 #endif /* EAP_TLV_H */

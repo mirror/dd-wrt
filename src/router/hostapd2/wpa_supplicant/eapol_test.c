@@ -20,7 +20,7 @@
 
 #include "common.h"
 #include "config.h"
-#include "eapol_sm.h"
+#include "eapol_supp/eapol_supp_sm.h"
 #include "eap_peer/eap.h"
 #include "eloop.h"
 #include "wpa.h"
@@ -312,9 +312,11 @@ static int test_eapol(struct eapol_test_data *e, struct wpa_supplicant *wpa_s,
 	ctx->eapol_send = eapol_test_eapol_send;
 	ctx->set_config_blob = eapol_test_set_config_blob;
 	ctx->get_config_blob = eapol_test_get_config_blob;
+#ifdef EAP_TLS_OPENSSL
 	ctx->opensc_engine_path = wpa_s->conf->opensc_engine_path;
 	ctx->pkcs11_engine_path = wpa_s->conf->pkcs11_engine_path;
 	ctx->pkcs11_module_path = wpa_s->conf->pkcs11_module_path;
+#endif /* EAP_TLS_OPENSSL */
 
 	wpa_s->eapol = eapol_sm_init(ctx);
 	if (wpa_s->eapol == NULL) {

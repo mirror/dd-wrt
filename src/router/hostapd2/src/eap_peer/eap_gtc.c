@@ -47,26 +47,23 @@ static void eap_gtc_deinit(struct eap_sm *sm, void *priv)
 }
 
 
-static u8 * eap_gtc_process(struct eap_sm *sm, void *priv,
-			    struct eap_method_ret *ret,
-			    const u8 *reqData, size_t reqDataLen,
-			    size_t *respDataLen)
+static struct wpabuf * eap_gtc_process(struct eap_sm *sm, void *priv,
+				       struct eap_method_ret *ret,
+				       const struct wpabuf *reqData)
 {
 	struct eap_gtc_data *data = priv;
-	const struct eap_hdr *req;
-	struct eap_hdr *resp;
+	struct wpabuf *resp;
 	const u8 *pos, *password, *identity;
-	u8 *rpos;
 	size_t password_len, identity_len, len, plen;
 	int otp;
+	u8 id;
 
-	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_GTC,
-			       reqData, reqDataLen, &len);
+	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_GTC, reqData, &len);
 	if (pos == NULL) {
 		ret->ignore = TRUE;
 		return NULL;
 	}
-	req = (const struct eap_hdr *) reqData;
+	id = eap_get_id(reqData);
 
 	wpa_hexdump_ascii(MSG_MSGDUMP, "EAP-GTC: Request message", pos, len);
 	if (data->prefix &&
@@ -79,9 +76,8 @@ static u8 * eap_gtc_process(struct eap_sm *sm, void *priv,
 		 * error case which seems to use EAP-MSCHAPv2 like error
 		 * reporting with EAP-GTC inside EAP-FAST tunnel. */
 		resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_GTC,
-				     respDataLen, 0, EAP_CODE_RESPONSE,
-				     req->identifier, NULL);
-		return (u8 *) resp;
+				     0, EAP_CODE_RESPONSE, id);
+		return resp;
 	}
 
 	password = eap_get_config_otp(sm, &password_len);
@@ -111,27 +107,26 @@ static u8 * eap_gtc_process(struct eap_sm *sm, void *priv,
 		return NULL;
 	if (data->prefix)
 		plen += 9 + identity_len + 1;
-	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_GTC, respDataLen,
-			     plen, EAP_CODE_RESPONSE, req->identifier, &rpos);
+	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_GTC, plen,
+			     EAP_CODE_RESPONSE, id);
 	if (resp == NULL)
 		return NULL;
 	if (data->prefix) {
-		os_memcpy(rpos, "RESPONSE=", 9);
-		rpos += 9;
-		os_memcpy(rpos, identity, identity_len);
-		rpos += identity_len;
-		*rpos++ = '\0';
+		wpabuf_put_data(resp, "RESPONSE=", 9);
+		wpabuf_put_data(resp, identity, identity_len);
+		wpabuf_put_u8(resp, '\0');
 	}
-	os_memcpy(rpos, password, password_len);
+	wpabuf_put_data(resp, password, password_len);
 	wpa_hexdump_ascii_key(MSG_MSGDUMP, "EAP-GTC: Response",
-			      (u8 *) (resp + 1) + 1, plen);
+			      wpabuf_head_u8(resp) + sizeof(struct eap_hdr) +
+			      1, plen);
 
 	if (otp) {
 		wpa_printf(MSG_DEBUG, "EAP-GTC: Forgetting used password");
 		eap_clear_config_otp(sm);
 	}
 
-	return (u8 *) resp;
+	return resp;
 }
 
 

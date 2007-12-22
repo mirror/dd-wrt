@@ -20,11 +20,13 @@
 #include "eloop.h"
 #include "config_ssid.h"
 #include "l2_packet/l2_packet.h"
-#include "eapol_sm.h"
+#include "eapol_supp/eapol_supp_sm.h"
 #include "preauth.h"
 #include "pmksa_cache.h"
 #include "wpa_i.h"
 
+
+#if defined(IEEE8021X_EAPOL) && !defined(CONFIG_NO_WPA2)
 
 #define PMKID_CANDIDATE_PRIO_SCAN 1000
 
@@ -56,8 +58,6 @@ void pmksa_candidate_free(struct wpa_sm *sm)
 	}
 }
 
-
-#if defined(IEEE8021X_EAPOL) && !defined(CONFIG_NO_WPA2)
 
 static void rsn_preauth_receive(void *ctx, const u8 *src_addr,
 				const u8 *buf, size_t len)

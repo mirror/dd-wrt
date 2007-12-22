@@ -16,39 +16,15 @@
 #define CONFIG_H
 
 #define DEFAULT_EAPOL_VERSION 1
+#ifdef CONFIG_NO_SCAN_PROCESSING
+#define DEFAULT_AP_SCAN 2
+#else /* CONFIG_NO_SCAN_PROCESSING */
 #define DEFAULT_AP_SCAN 1
+#endif /* CONFIG_NO_SCAN_PROCESSING */
 #define DEFAULT_FAST_REAUTH 1
 
 #include "config_ssid.h"
-
-/**
- * struct wpa_config_blob - Named configuration blob
- *
- * This data structure is used to provide storage for binary objects to store
- * abstract information like certificates and private keys inlined with the
- * configuration data.
- */
-struct wpa_config_blob {
-	/**
-	 * name - Blob name
-	 */
-	char *name;
-
-	/**
-	 * data - Pointer to binary data
-	 */
-	u8 *data;
-
-	/**
-	 * len - Length of binary data
-	 */
-	size_t len;
-
-	/**
-	 * next - Pointer to next blob in the configuration
-	 */
-	struct wpa_config_blob *next;
-};
+#include "config_blob.h"
 
 
 /**
@@ -194,6 +170,7 @@ struct wpa_config {
 	 */
 	int fast_reauth;
 
+#ifdef EAP_TLS_OPENSSL
 	/**
 	 * opensc_engine_path - Path to the OpenSSL engine for opensc
 	 *
@@ -218,6 +195,7 @@ struct wpa_config {
 	 * module is not loaded.
 	 */
 	char *pkcs11_module_path;
+#endif /* EAP_TLS_OPENSSL */
 
 	/**
 	 * driver_param - Driver interface parameters
@@ -289,12 +267,6 @@ void wpa_config_update_psk(struct wpa_ssid *ssid);
 int wpa_config_add_prio_network(struct wpa_config *config,
 				struct wpa_ssid *ssid);
 
-const struct wpa_config_blob * wpa_config_get_blob(struct wpa_config *config,
-						   const char *name);
-void wpa_config_set_blob(struct wpa_config *config,
-			 struct wpa_config_blob *blob);
-void wpa_config_free_blob(struct wpa_config_blob *blob);
-int wpa_config_remove_blob(struct wpa_config *config, const char *name);
 struct wpa_config * wpa_config_alloc_empty(const char *ctrl_interface,
 					   const char *driver_param);
 #ifndef CONFIG_NO_STDOUT_DEBUG

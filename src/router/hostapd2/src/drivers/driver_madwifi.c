@@ -439,6 +439,8 @@ wpa_driver_madwifi_scan(void *priv, const u8 *ssid, size_t ssid_len)
 	 * will only be used if the event is not delivered (event handler will
 	 * cancel the timeout).
 	 */
+	eloop_cancel_timeout(wpa_driver_wext_scan_timeout, drv->wext,
+			     drv->ctx);
 	eloop_register_timeout(30, 0, wpa_driver_wext_scan_timeout, drv->wext,
 			       drv->ctx);
 

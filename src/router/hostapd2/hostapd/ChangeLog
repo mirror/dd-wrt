@@ -1,6 +1,18 @@
 ChangeLog for hostapd
 
-????-??-?? - v0.6.1
+????-??-?? - v0.6.2
+	* fixed EAP-SIM and EAP-AKA message parser to validate attribute
+	  lengths properly to avoid potential crash caused by invalid messages
+	* added data structure for storing allocated buffers (struct wpabuf);
+	  this does not affect hostapd usage, but many of the APIs changed
+	  and various interfaces (e.g., EAP) is not compatible with old
+	  versions
+	* added support for protecting EAP-AKA/Identity messages with
+	  AT_CHECKCODE (optional feature in RFC 4187)
+	* added support for protected result indication with AT_RESULT_IND for
+	  EAP-SIM and EAP-AKA (eap_sim_aka_result_ind=1)
+
+2007-11-24 - v0.6.1
 	* added experimental, integrated TLSv1 server implementation with the
 	  needed X.509/ASN.1/RSA/bignum processing (this can be enabled by
 	  setting CONFIG_TLS=internal and CONFIG_INTERNAL_LIBTOMMATH=y in
@@ -9,7 +21,7 @@ ChangeLog for hostapd
 	* added support for EAP-FAST server method to the integrated EAP
 	  server
 	* updated EAP Generalized Pre-Shared Key (EAP-GPSK) to use the latest
-	  draft (draft-ietf-emu-eap-gpsk-06.txt)
+	  draft (draft-ietf-emu-eap-gpsk-07.txt)
 	* added a new configuration parameter, rsn_pairwise, to allow different
 	  pairwise cipher suites to be enabled for WPA and RSN/WPA2
 	  (note: if wpa_pairwise differs from rsn_pairwise, the driver will

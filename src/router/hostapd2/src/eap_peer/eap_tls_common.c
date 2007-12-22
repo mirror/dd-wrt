@@ -17,10 +17,10 @@
 #include "common.h"
 #include "eap_i.h"
 #include "eap_tls_common.h"
+#include "config_blob.h"
 #include "config_ssid.h"
 #include "sha1.h"
 #include "tls.h"
-#include "config.h"
 
 
 static int eap_tls_check_blob(struct eap_sm *sm, const char **name,
@@ -400,13 +400,12 @@ const u8 * eap_peer_tls_data_reassemble(
  * @in_data: Message received from the server
  * @in_len: Length of in_data
  * @out_data: Buffer for returning a pointer to application data (if available)
- * @out_len: Buffer for returning the length of the application data
  * Returns: 0 on success, 1 if more input data is needed, 2 if application data
  * is available, -1 on failure
  */
 static int eap_tls_process_input(struct eap_sm *sm, struct eap_ssl_data *data,
 				 const u8 *in_data, size_t in_len,
-				 u8 **out_data, size_t *out_len)
+				 struct wpabuf **out_data)
 {
 	const u8 *msg;
 	size_t msg_len;
@@ -440,8 +439,11 @@ static int eap_tls_process_input(struct eap_sm *sm, struct eap_ssl_data *data,
 	    !tls_connection_get_failed(sm->ssl_ctx, data->conn)) {
 		wpa_hexdump_key(MSG_MSGDUMP, "SSL: Application data",
 				appl_data, appl_data_len);
-		*out_data = appl_data;
-		*out_len = appl_data_len;
+		*out_data = wpabuf_alloc_ext_data(appl_data, appl_data_len);
+		if (*out_data == NULL) {
+			os_free(appl_data);
+			return -1;
+		}
 		return 2;
 	}
 
@@ -459,15 +461,14 @@ static int eap_tls_process_input(struct eap_sm *sm, struct eap_ssl_data *data,
  * @id: EAP identifier for the response
  * @ret: Return value to use on success
  * @out_data: Buffer for returning the allocated output buffer
- * @out_len: Buffer for returning the length of the output buffer
  * Returns: ret (0 or 1) on success, -1 on failure
  */
 static int eap_tls_process_output(struct eap_ssl_data *data, EapType eap_type,
 				  int peap_version, u8 id, int ret,
-				  u8 **out_data, size_t *out_len)
+				  struct wpabuf **out_data)
 {
 	size_t len;
-	u8 *pos, *flags;
+	u8 *flags;
 	int more_fragments, length_included;
 	
 	len = data->tls_out_len - data->tls_out_pos;
@@ -491,24 +492,22 @@ static int eap_tls_process_output(struct eap_ssl_data *data, EapType eap_type,
 		(data->tls_out_len > data->tls_out_limit ||
 		 data->include_tls_length);
 
-	*out_data = (u8 *)
-		eap_msg_alloc(EAP_VENDOR_IETF, eap_type, out_len,
-			      1 + length_included * 4 + len, EAP_CODE_RESPONSE,
-			      id, &pos);
+	*out_data = eap_msg_alloc(EAP_VENDOR_IETF, eap_type,
+				  1 + length_included * 4 + len,
+				  EAP_CODE_RESPONSE, id);
 	if (*out_data == NULL)
 		return -1;
 
-	flags = pos++;
+	flags = wpabuf_put(*out_data, 1);
 	*flags = peap_version;
 	if (more_fragments)
 		*flags |= EAP_TLS_FLAGS_MORE_FRAGMENTS;
 	if (length_included) {
 		*flags |= EAP_TLS_FLAGS_LENGTH_INCLUDED;
-		WPA_PUT_BE32(pos, data->tls_out_len);
-		pos += 4;
+		wpabuf_put_be32(*out_data, data->tls_out_len);
 	}
 
-	os_memcpy(pos, &data->tls_out[data->tls_out_pos], len);
+	wpabuf_put_data(*out_data, &data->tls_out[data->tls_out_pos], len);
 	data->tls_out_pos += len;
 
 	if (!more_fragments)
@@ -528,7 +527,6 @@ static int eap_tls_process_output(struct eap_ssl_data *data, EapType eap_type,
  * @in_data: Message received from the server
  * @in_len: Length of in_data
  * @out_data: Buffer for returning a pointer to the response message
- * @out_len: Buffer for returning the length of the response message
  * Returns: 0 on success, 1 if more input data is needed, 2 if application data
  * is available, or -1 on failure
  *
@@ -551,11 +549,10 @@ static int eap_tls_process_output(struct eap_ssl_data *data, EapType eap_type,
 int eap_peer_tls_process_helper(struct eap_sm *sm, struct eap_ssl_data *data,
 				EapType eap_type, int peap_version,
 				u8 id, const u8 *in_data, size_t in_len,
-				u8 **out_data, size_t *out_len)
+				struct wpabuf **out_data)
 {
 	int ret = 0;
 
-	*out_len = 0;
 	*out_data = NULL;
 
 	if (data->tls_out_len > 0 && in_len > 0) {
@@ -570,7 +567,7 @@ int eap_peer_tls_process_helper(struct eap_sm *sm, struct eap_ssl_data *data,
 		 * the AS.
 		 */
 		int res = eap_tls_process_input(sm, data, in_data, in_len,
-						out_data, out_len);
+						out_data);
 		if (res) {
 			/*
 			 * Input processing failed (res = -1) or more data is
@@ -617,33 +614,30 @@ int eap_peer_tls_process_helper(struct eap_sm *sm, struct eap_ssl_data *data,
 
 	/* Send the pending message (in fragments, if needed). */
 	return eap_tls_process_output(data, eap_type, peap_version, id, ret,
-				      out_data, out_len);
+				      out_data);
 }
 
 
 /**
  * eap_peer_tls_build_ack - Build a TLS ACK frame
- * @data: Data for TLS processing
- * @respDataLen: Buffer for returning the length of the response message
  * @id: EAP identifier for the response
  * @eap_type: EAP type (EAP_TYPE_TLS, EAP_TYPE_PEAP, ...)
  * @peap_version: Version number for EAP-PEAP/TTLS
  * Returns: Pointer to the allocated ACK frame or %NULL on failure
  */
-u8 * eap_peer_tls_build_ack(struct eap_ssl_data *data, size_t *respDataLen,
-			    u8 id, EapType eap_type, int peap_version)
+struct wpabuf * eap_peer_tls_build_ack(u8 id, EapType eap_type,
+				       int peap_version)
 {
-	struct eap_hdr *resp;
-	u8 *pos;
+	struct wpabuf *resp;
 
-	resp = eap_msg_alloc(EAP_VENDOR_IETF, eap_type, respDataLen,
-			     1, EAP_CODE_RESPONSE, id, &pos);
+	resp = eap_msg_alloc(EAP_VENDOR_IETF, eap_type, 1, EAP_CODE_RESPONSE,
+			     id);
 	if (resp == NULL)
 		return NULL;
 	wpa_printf(MSG_DEBUG, "SSL: Building ACK (type=%d id=%d ver=%d)",
 		   (int) eap_type, id, peap_version);
-	*pos = peap_version; /* Flags */
-	return (u8 *) resp;
+	wpabuf_put_u8(resp, peap_version); /* Flags */
+	return resp;
 }
 
 
@@ -695,10 +689,9 @@ int eap_peer_tls_status(struct eap_sm *sm, struct eap_ssl_data *data,
  * @eap_type: EAP type (EAP_TYPE_TLS, EAP_TYPE_PEAP, ...)
  * @ret: Return values from EAP request validation and processing
  * @reqData: EAP request to be processed (eapReqData)
- * @reqDataLen: Length of the EAP request
  * @len: Buffer for returning length of the remaining payload
  * @flags: Buffer for returning TLS flags
- * Returns: Buffer to payload after TLS flags and length or %NULL on failure
+ * Returns: Pointer to payload after TLS flags and length or %NULL on failure
  *
  * This function validates the EAP header and processes the optional TLS
  * Message Length field. If this is the first fragment of a TLS message, the
@@ -717,7 +710,7 @@ const u8 * eap_peer_tls_process_init(struct eap_sm *sm,
 				     struct eap_ssl_data *data,
 				     EapType eap_type,
 				     struct eap_method_ret *ret,
-				     const u8 *reqData, size_t reqDataLen,
+				     const struct wpabuf *reqData,
 				     size_t *len, u8 *flags)
 {
 	const u8 *pos;
@@ -730,8 +723,7 @@ const u8 * eap_peer_tls_process_init(struct eap_sm *sm,
 		return NULL;
 	}
 
-	pos = eap_hdr_validate(EAP_VENDOR_IETF, eap_type, reqData, reqDataLen,
-			       &left);
+	pos = eap_hdr_validate(EAP_VENDOR_IETF, eap_type, reqData, &left);
 	if (pos == NULL) {
 		ret->ignore = TRUE;
 		return NULL;
@@ -739,7 +731,8 @@ const u8 * eap_peer_tls_process_init(struct eap_sm *sm,
 	*flags = *pos++;
 	left--;
 	wpa_printf(MSG_DEBUG, "SSL: Received packet(len=%lu) - "
-		   "Flags 0x%02x", (unsigned long) reqDataLen, *flags);
+		   "Flags 0x%02x", (unsigned long) wpabuf_len(reqData),
+		   *flags);
 	if (*flags & EAP_TLS_FLAGS_LENGTH_INCLUDED) {
 		if (left < 4) {
 			wpa_printf(MSG_INFO, "SSL: Short frame with TLS "
@@ -807,29 +800,28 @@ void eap_peer_tls_reset_output(struct eap_ssl_data *data)
  * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
  * @data: Data for TLS processing
  * @in_data: Message received from the server
- * @in_len: Length of in_data
  * @in_decrypted: Buffer for returning a pointer to the decrypted message
- * @len_decrypted: Buffer for returning the length of the decrypted message
  * Returns: 0 on success, 1 if more input data is needed, or -1 on failure
  */
 int eap_peer_tls_decrypt(struct eap_sm *sm, struct eap_ssl_data *data,
-			 const u8 *in_data, size_t in_len,
-			 u8 **in_decrypted, size_t *len_decrypted)
+			 const struct wpabuf *in_data,
+			 struct wpabuf **in_decrypted)
 {
 	int res;
 	const u8 *msg;
 	size_t msg_len, buf_len;
 	int need_more_input;
 
-	msg = eap_peer_tls_data_reassemble(data, in_data, in_len, &msg_len,
+	msg = eap_peer_tls_data_reassemble(data, wpabuf_head(in_data),
+					   wpabuf_len(in_data), &msg_len,
 					   &need_more_input);
 	if (msg == NULL)
 		return need_more_input ? 1 : -1;
 
-	buf_len = in_len;
+	buf_len = wpabuf_len(in_data);
 	if (data->tls_in_total > buf_len)
 		buf_len = data->tls_in_total;
-	*in_decrypted = os_malloc(buf_len ? buf_len : 1);
+	*in_decrypted = wpabuf_alloc(buf_len ? buf_len : 1);
 	if (*in_decrypted == NULL) {
 		eap_peer_tls_reset_input(data);
 		wpa_printf(MSG_WARNING, "SSL: Failed to allocate memory for "
@@ -838,13 +830,13 @@ int eap_peer_tls_decrypt(struct eap_sm *sm, struct eap_ssl_data *data,
 	}
 
 	res = tls_connection_decrypt(sm->ssl_ctx, data->conn, msg, msg_len,
-				     *in_decrypted, buf_len);
+				     wpabuf_mhead(*in_decrypted), buf_len);
 	eap_peer_tls_reset_input(data);
 	if (res < 0) {
 		wpa_printf(MSG_INFO, "SSL: Failed to decrypt Phase 2 data");
 		return -1;
 	}
-	*len_decrypted = res;
+	wpabuf_put(*in_decrypted, res);
 	return 0;
 }
 
@@ -857,32 +849,32 @@ int eap_peer_tls_decrypt(struct eap_sm *sm, struct eap_ssl_data *data,
  * @peap_version: Version number for EAP-PEAP/TTLS
  * @id: EAP identifier for the response
  * @in_data: Plaintext phase 2 data to encrypt or %NULL to continue fragments
- * @in_len: Length of in_data
  * @out_data: Buffer for returning a pointer to the encrypted response message
- * @out_len: Buffer for returning the length of the encrypted response message
  * Returns: 0 on success, -1 on failure
  */
 int eap_peer_tls_encrypt(struct eap_sm *sm, struct eap_ssl_data *data,
 			 EapType eap_type, int peap_version, u8 id,
-			 const u8 *in_data, size_t in_len,
-			 u8 **out_data, size_t *out_len)
+			 const struct wpabuf *in_data,
+			 struct wpabuf **out_data)
 {
 	int res;
 	size_t len;
 
 	if (in_data) {
 		eap_peer_tls_reset_output(data);
-		len = in_len + 100;
+		len = wpabuf_len(in_data) + 100;
 		data->tls_out = os_malloc(len);
 		if (data->tls_out == NULL)
 			return -1;
 
-		res = tls_connection_encrypt(sm->ssl_ctx, data->conn, in_data,
-					     in_len, data->tls_out, len);
+		res = tls_connection_encrypt(sm->ssl_ctx, data->conn,
+					     wpabuf_head(in_data),
+					     wpabuf_len(in_data),
+					     data->tls_out, len);
 		if (res < 0) {
 			wpa_printf(MSG_INFO, "SSL: Failed to encrypt Phase 2 "
 				   "data (in_len=%lu)",
-				   (unsigned long) in_len);
+				   (unsigned long) wpabuf_len(in_data));
 			eap_peer_tls_reset_output(data);
 			return -1;
 		}
@@ -891,7 +883,7 @@ int eap_peer_tls_encrypt(struct eap_sm *sm, struct eap_ssl_data *data,
 	}
 
 	return eap_tls_process_output(data, eap_type, peap_version, id, 0,
-				      out_data, out_len);
+				      out_data);
 }
 
 
@@ -986,13 +978,11 @@ get_defaults:
  * @num_types: Buffer for returning number of allocated EAP methods
  * @hdr: EAP-Request header (and the following EAP type octet)
  * @resp: Buffer for returning the EAP-Nak message
- * @resp_len: Buffer for returning the length of the EAP-Nak message
  * Returns: 0 on success, -1 on failure
  */
 int eap_peer_tls_phase2_nak(struct eap_method_type *types, size_t num_types,
-			    struct eap_hdr *hdr, u8 **resp, size_t *resp_len)
+			    struct eap_hdr *hdr, struct wpabuf **resp)
 {
-	struct eap_hdr *resp_hdr;
 	u8 *pos = (u8 *) (hdr + 1);
 	size_t i;
 
@@ -1000,24 +990,18 @@ int eap_peer_tls_phase2_nak(struct eap_method_type *types, size_t num_types,
 	wpa_printf(MSG_DEBUG, "TLS: Phase 2 Request: Nak type=%d", *pos);
 	wpa_hexdump(MSG_DEBUG, "TLS: Allowed Phase2 EAP types",
 		    (u8 *) types, num_types * sizeof(struct eap_method_type));
-	*resp_len = sizeof(struct eap_hdr) + 1;
-	*resp = os_malloc(*resp_len + num_types);
+	*resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_NAK, num_types,
+			      EAP_CODE_RESPONSE, hdr->identifier);
 	if (*resp == NULL)
 		return -1;
 
-	resp_hdr = (struct eap_hdr *) (*resp);
-	resp_hdr->code = EAP_CODE_RESPONSE;
-	resp_hdr->identifier = hdr->identifier;
-	pos = (u8 *) (resp_hdr + 1);
-	*pos++ = EAP_TYPE_NAK;
 	for (i = 0; i < num_types; i++) {
 		if (types[i].vendor == EAP_VENDOR_IETF &&
-		    types[i].method < 256) {
-			(*resp_len)++;
-			*pos++ = types[i].method;
-		}
+		    types[i].method < 256)
+			wpabuf_put_u8(*resp, types[i].method);
 	}
-	resp_hdr->length = host_to_be16(*resp_len);
+
+	eap_update_len(*resp);
 
 	return 0;
 }

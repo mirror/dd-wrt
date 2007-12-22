@@ -26,6 +26,8 @@
 #include "priv_netlink.h"
 #include "driver_ralink.h"
 
+static void wpa_driver_ralink_scan_timeout(void *eloop_ctx, void *timeout_ctx);
+
 #define MAX_SSID_LEN 32
 
 struct wpa_driver_ralink_data {
@@ -992,6 +994,7 @@ static void wpa_driver_ralink_deinit(void *priv)
 		ralink_set_iface_flags(drv, 0);
 	}
 
+	eloop_cancel_timeout(wpa_driver_ralink_scan_timeout, drv, drv->ctx);
 	eloop_unregister_read_sock(drv->event_sock);
 	close(drv->event_sock);
 	close(drv->ioctl_sock);
@@ -1040,6 +1043,7 @@ static int wpa_driver_ralink_scan(void *priv, const u8 *ssid, size_t ssid_len)
 
 	/* Not all drivers generate "scan completed" wireless event, so try to
 	 * read results after a timeout. */
+	eloop_cancel_timeout(wpa_driver_ralink_scan_timeout, drv, drv->ctx);
 	eloop_register_timeout(4, 0, wpa_driver_ralink_scan_timeout, drv,
 			       drv->ctx);
 

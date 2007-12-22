@@ -20,7 +20,7 @@
 #include "wpa.h"
 #include "eloop.h"
 #include "config_ssid.h"
-#include "eapol_sm.h"
+#include "eapol_supp/eapol_supp_sm.h"
 #include "preauth.h"
 #include "pmksa_cache.h"
 #include "wpa_i.h"
@@ -411,7 +411,7 @@ static void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
 		return;
 
 	if (sm->renew_snonce) {
-		if (hostapd_get_rand(sm->snonce, WPA_NONCE_LEN)) {
+		if (os_get_random(sm->snonce, WPA_NONCE_LEN)) {
 			wpa_msg(sm->ctx->ctx, MSG_WARNING,
 				"WPA: Failed to get random data for SNonce");
 			return;

@@ -202,9 +202,22 @@ struct wpa_driver_associate_params {
 	 * passphrase - RSN passphrase for PSK
 	 *
 	 * This value is made available only for WPA/WPA2-Personal (PSK) and
-	 * only for drivers that set WPA_DRIVER_FLAGS_4WAY_HANDSHAKE.
+	 * only for drivers that set WPA_DRIVER_FLAGS_4WAY_HANDSHAKE. This is
+	 * the 8..63 character ASCII passphrase, if available. Please note that
+	 * this can be %NULL if passphrase was not used to generate the PSK. In
+	 * that case, the psk field must be used to fetch the PSK.
 	 */
 	const char *passphrase;
+
+	/**
+	 * psk - RSN PSK (alternative for passphrase for PSK)
+	 *
+	 * This value is made available only for WPA/WPA2-Personal (PSK) and
+	 * only for drivers that set WPA_DRIVER_FLAGS_4WAY_HANDSHAKE. This is
+	 * the 32-octet (256-bit) PSK, if available. The driver wrapper should
+	 * be prepared to handle %NULL value as an error.
+	 */
+	const u8 *psk;
 };
 
 /**

@@ -31,11 +31,11 @@ void hostapd_free_hw_features(struct hostapd_hw_modes *hw_features,
 		return;
 
 	for (i = 0; i < num_hw_features; i++) {
-		free(hw_features[i].channels);
-		free(hw_features[i].rates);
+		os_free(hw_features[i].channels);
+		os_free(hw_features[i].rates);
 	}
 
-	free(hw_features);
+	os_free(hw_features);
 }
 
 
@@ -123,11 +123,11 @@ static int hostapd_prepare_rates(struct hostapd_data *hapd,
 		printf("Failed to update rate sets in kernel module\n");
 	}
 
-	free(hapd->iface->current_rates);
+	os_free(hapd->iface->current_rates);
 	hapd->iface->num_rates = 0;
 
 	hapd->iface->current_rates =
-		malloc(mode->num_rates * sizeof(struct hostapd_rate_data));
+		os_malloc(mode->num_rates * sizeof(struct hostapd_rate_data));
 	if (!hapd->iface->current_rates) {
 		printf("Failed to allocate memory for rate table.\n");
 		return -1;
@@ -142,8 +142,8 @@ static int hostapd_prepare_rates(struct hostapd_data *hapd,
 			continue;
 
 		rate = &hapd->iface->current_rates[hapd->iface->num_rates];
-		memcpy(rate, &mode->rates[i],
-		       sizeof(struct hostapd_rate_data));
+		os_memcpy(rate, &mode->rates[i],
+			  sizeof(struct hostapd_rate_data));
 		if (hostapd_rate_found(basic_rates, rate->rate)) {
 			rate->flags |= HOSTAPD_RATE_BASIC;
 			num_basic_rates++;
