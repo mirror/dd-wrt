@@ -63,7 +63,7 @@ void rsn_pmkid(const u8 *pmk, size_t pmk_len, const u8 *aa, const u8 *spa,
 	addr[2] = spa;
 
 	hmac_sha1_vector(pmk, pmk_len, 3, addr, len, hash);
-	memcpy(pmkid, hash, PMKID_LEN);
+	os_memcpy(pmkid, hash, PMKID_LEN);
 }
 
 
@@ -74,9 +74,9 @@ static void _pmksa_cache_free_entry(struct rsn_pmksa_cache_entry *entry)
 {
 	if (entry == NULL)
 		return;
-	free(entry->identity);
+	os_free(entry->identity);
 	ieee802_1x_free_radius_class(&entry->radius_class);
-	free(entry);
+	os_free(entry);
 }
 
 
@@ -161,11 +161,11 @@ static void pmksa_cache_from_eapol_data(struct rsn_pmksa_cache_entry *entry,
 		return;
 
 	if (eapol->identity) {
-		entry->identity = malloc(eapol->identity_len);
+		entry->identity = os_malloc(eapol->identity_len);
 		if (entry->identity) {
 			entry->identity_len = eapol->identity_len;
-			memcpy(entry->identity, eapol->identity,
-			       eapol->identity_len);
+			os_memcpy(entry->identity, eapol->identity,
+				  eapol->identity_len);
 		}
 	}
 
@@ -184,12 +184,12 @@ void pmksa_cache_to_eapol_data(struct rsn_pmksa_cache_entry *entry,
 		return;
 
 	if (entry->identity) {
-		free(eapol->identity);
-		eapol->identity = malloc(entry->identity_len);
+		os_free(eapol->identity);
+		eapol->identity = os_malloc(entry->identity_len);
 		if (eapol->identity) {
 			eapol->identity_len = entry->identity_len;
-			memcpy(eapol->identity, entry->identity,
-			       entry->identity_len);
+			os_memcpy(eapol->identity, entry->identity,
+				  entry->identity_len);
 		}
 		wpa_hexdump_ascii(MSG_DEBUG, "STA identity from PMKSA",
 				  eapol->identity, eapol->identity_len);
@@ -238,7 +238,7 @@ pmksa_cache_add(struct rsn_pmksa_cache *pmksa, const u8 *pmk, size_t pmk_len,
 	entry = os_zalloc(sizeof(*entry));
 	if (entry == NULL)
 		return NULL;
-	memcpy(entry->pmk, pmk, pmk_len);
+	os_memcpy(entry->pmk, pmk, pmk_len);
 	entry->pmk_len = pmk_len;
 	rsn_pmkid(pmk, pmk_len, aa, spa, entry->pmkid);
 	os_get_time(&now);
@@ -248,7 +248,7 @@ pmksa_cache_add(struct rsn_pmksa_cache *pmksa, const u8 *pmk, size_t pmk_len,
 	else
 		entry->expiration += dot11RSNAConfigPMKLifetime;
 	entry->akmp = WPA_KEY_MGMT_IEEE8021X;
-	memcpy(entry->spa, spa, ETH_ALEN);
+	os_memcpy(entry->spa, spa, ETH_ALEN);
 	pmksa_cache_from_eapol_data(entry, eapol);
 
 	/* Replace an old entry for the same STA (if found) with the new entry
@@ -314,7 +314,7 @@ void pmksa_cache_deinit(struct rsn_pmksa_cache *pmksa)
 	eloop_cancel_timeout(pmksa_cache_expire, pmksa, NULL);
 	for (i = 0; i < PMKID_HASH_SIZE; i++)
 		pmksa->pmkid[i] = NULL;
-	free(pmksa);
+	os_free(pmksa);
 }
 
 
@@ -335,9 +335,10 @@ struct rsn_pmksa_cache_entry * pmksa_cache_get(struct rsn_pmksa_cache *pmksa,
 	else
 		entry = pmksa->pmksa;
 	while (entry) {
-		if ((spa == NULL || memcmp(entry->spa, spa, ETH_ALEN) == 0) &&
+		if ((spa == NULL ||
+		     os_memcmp(entry->spa, spa, ETH_ALEN) == 0) &&
 		    (pmkid == NULL ||
-		     memcmp(entry->pmkid, pmkid, PMKID_LEN) == 0))
+		     os_memcmp(entry->pmkid, pmkid, PMKID_LEN) == 0))
 			return entry;
 		entry = pmkid ? entry->hnext : entry->next;
 	}

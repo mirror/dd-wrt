@@ -40,15 +40,13 @@ static void * eap_tlv_init(struct eap_sm *sm)
 static void eap_tlv_reset(struct eap_sm *sm, void *priv)
 {
 	struct eap_tlv_data *data = priv;
-	free(data);
+	os_free(data);
 }
 
 
-static u8 * eap_tlv_buildReq(struct eap_sm *sm, void *priv, int id,
-			     size_t *reqDataLen)
+static struct wpabuf * eap_tlv_buildReq(struct eap_sm *sm, void *priv, u8 id)
 {
-	struct eap_hdr *req;
-	u8 *pos;
+	struct wpabuf *req;
 	u16 status;
 
 	if (sm->tlv_request == TLV_REQ_SUCCESS) {
@@ -57,38 +55,30 @@ static u8 * eap_tlv_buildReq(struct eap_sm *sm, void *priv, int id,
 		status = EAP_TLV_RESULT_FAILURE;
 	}
 
-	*reqDataLen = sizeof(struct eap_hdr) + 1 + 6;
-	req = malloc(*reqDataLen);
+	req = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_TLV, 6,
+			    EAP_CODE_REQUEST, id);
 	if (req == NULL)
 		return NULL;
 
-	req->code = EAP_CODE_REQUEST;
-	req->identifier = id;
-	req->length = host_to_be16(*reqDataLen);
-	pos = (u8 *) (req + 1);
-	*pos++ = EAP_TYPE_TLV;
-	*pos++ = 0x80; /* Mandatory */
-	*pos++ = EAP_TLV_RESULT_TLV;
+	wpabuf_put_u8(req, 0x80); /* Mandatory */
+	wpabuf_put_u8(req, EAP_TLV_RESULT_TLV);
 	/* Length */
-	*pos++ = 0;
-	*pos++ = 2;
+	wpabuf_put_be16(req, 2);
 	/* Status */
-	WPA_PUT_BE16(pos, status);
+	wpabuf_put_be16(req, status);
 
-	return (u8 *) req;
+	return req;
 }
 
 
 static Boolean eap_tlv_check(struct eap_sm *sm, void *priv,
-			     u8 *respData, size_t respDataLen)
+			     struct wpabuf *respData)
 {
-	struct eap_hdr *resp;
-	u8 *pos;
+	const u8 *pos;
+	size_t len;
 
-	resp = (struct eap_hdr *) respData;
-	pos = (u8 *) (resp + 1);
-	if (respDataLen < sizeof(*resp) + 1 || *pos != EAP_TYPE_TLV ||
-	    (be_to_host16(resp->length)) > respDataLen) {
+	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_TLV, respData, &len);
+	if (pos == NULL) {
 		wpa_printf(MSG_INFO, "EAP-TLV: Invalid frame");
 		return TRUE;
 	}
@@ -98,23 +88,20 @@ static Boolean eap_tlv_check(struct eap_sm *sm, void *priv,
 
 
 static void eap_tlv_process(struct eap_sm *sm, void *priv,
-			    u8 *respData, size_t respDataLen)
+			    struct wpabuf *respData)
 {
 	struct eap_tlv_data *data = priv;
-	struct eap_hdr *resp;
-	u8 *pos;
+	const u8 *pos;
 	size_t left;
-	u8 *result_tlv = NULL;
+	const u8 *result_tlv = NULL;
 	size_t result_tlv_len = 0;
 	int tlv_type, mandatory, tlv_len;
 
-	resp = (struct eap_hdr *) respData;
-	pos = (u8 *) (resp + 1);
+	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_TLV, respData, &left);
+	if (pos == NULL)
+		return;
 
 	/* Parse TLVs */
-	left = be_to_host16(resp->length) - sizeof(struct eap_hdr) - 1;
-	pos = (u8 *) (resp + 1);
-	pos++;
 	wpa_hexdump(MSG_DEBUG, "EAP-TLV: Received TLVs", pos, left);
 	while (left >= 4) {
 		mandatory = !!(pos[0] & 0x80);

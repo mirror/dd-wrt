@@ -178,7 +178,8 @@ int l2_packet_get_ip_addr(struct l2_packet_data *l2, char *buf, size_t len)
 	os_memset(&ifr, 0, sizeof(ifr));
 	os_strlcpy(ifr.ifr_name, l2->ifname, sizeof(ifr.ifr_name));
 	if (ioctl(s, SIOCGIFADDR, &ifr) < 0) {
-		perror("ioctl[SIOCGIFADDR]");
+		if (errno != EADDRNOTAVAIL)
+			perror("ioctl[SIOCGIFADDR]");
 		close(s);
 		return -1;
 	}

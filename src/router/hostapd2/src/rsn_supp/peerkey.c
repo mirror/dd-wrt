@@ -251,7 +251,7 @@ static int wpa_supplicant_process_smk_m2(
 	peerkey->rsnie_i_len = kde.rsn_ie_len;
 	peerkey->cipher = cipher;
 
-	if (hostapd_get_rand(peerkey->pnonce, WPA_NONCE_LEN)) {
+	if (os_get_random(peerkey->pnonce, WPA_NONCE_LEN)) {
 		wpa_msg(sm->ctx->ctx, MSG_WARNING,
 			"WPA: Failed to get random data for PNonce");
 		wpa_supplicant_peerkey_free(sm, peerkey);
@@ -360,7 +360,7 @@ static void wpa_supplicant_send_stk_1_of_4(struct wpa_sm *sm,
 	wpa_add_kde((u8 *) (msg + 1), RSN_KEY_DATA_PMKID,
 		    peerkey->smkid, PMKID_LEN);
 
-	if (hostapd_get_rand(peerkey->inonce, WPA_NONCE_LEN)) {
+	if (os_get_random(peerkey->inonce, WPA_NONCE_LEN)) {
 		wpa_msg(sm->ctx->ctx, MSG_WARNING,
 			"RSN: Failed to get random data for INonce (STK)");
 		os_free(mbuf);
@@ -686,7 +686,7 @@ static void wpa_supplicant_process_stk_1_of_4(struct wpa_sm *sm,
 		return;
 	}
 
-	if (hostapd_get_rand(peerkey->pnonce, WPA_NONCE_LEN)) {
+	if (os_get_random(peerkey->pnonce, WPA_NONCE_LEN)) {
 		wpa_msg(sm->ctx->ctx, MSG_WARNING,
 			"RSN: Failed to get random data for PNonce");
 		return;
@@ -1083,7 +1083,7 @@ int wpa_sm_stkstart(struct wpa_sm *sm, const u8 *peer)
 		  WPA_REPLAY_COUNTER_LEN);
 	inc_byte_array(sm->request_counter, WPA_REPLAY_COUNTER_LEN);
 
-	if (hostapd_get_rand(peerkey->inonce, WPA_NONCE_LEN)) {
+	if (os_get_random(peerkey->inonce, WPA_NONCE_LEN)) {
 		wpa_msg(sm->ctx->ctx, MSG_WARNING,
 			"WPA: Failed to get random data for INonce");
 		os_free(rbuf);

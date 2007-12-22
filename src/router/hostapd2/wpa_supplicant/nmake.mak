@@ -49,7 +49,7 @@ CFLAGS = $(CFLAGS) /DCONFIG_CTRL_IFACE
 CFLAGS = $(CFLAGS) /DCONFIG_CTRL_IFACE_NAMED_PIPE
 CFLAGS = $(CFLAGS) /DCONFIG_DRIVER_NDIS
 CFLAGS = $(CFLAGS) /I..\src /I..\src\utils /I..\src\common /I..\src\crypto
-CFLAGS = $(CFLAGS) /I..\src\rsn_supp /I.
+CFLAGS = $(CFLAGS) /I..\src\rsn_supp /I..\src\eapol_supp /I.
 CFLAGS = $(CFLAGS) /DWIN32
 CFLAGS = $(CFLAGS) /Fo$(OBJDIR)\\ /c
 CFLAGS = $(CFLAGS) /W3
@@ -69,13 +69,14 @@ OBJS = \
 	$(OBJDIR)\aes_wrap.obj \
 	$(OBJDIR)\common.obj \
 	$(OBJDIR)\wpa_debug.obj \
+	$(OBJDIR)\wpabuf.obj \
 	$(OBJDIR)\wpa_supplicant.obj \
 	$(OBJDIR)\wpa.obj \
 	$(OBJDIR)\wpa_common.obj \
 	$(OBJDIR)\wpa_ie.obj \
 	$(OBJDIR)\preauth.obj \
 	$(OBJDIR)\pmksa_cache.obj \
-	$(OBJDIR)\eapol_sm.obj \
+	$(OBJDIR)\eapol_supp_sm.obj \
 	$(OBJDIR)\eap.obj \
 	$(OBJDIR)\eap_common.obj \
 	$(OBJDIR)\eap_methods.obj \
@@ -104,6 +105,9 @@ OBJS = \
 	$(OBJDIR)\driver_ndis.obj \
 	$(OBJDIR)\driver_ndis_.obj \
 	$(OBJDIR)\events.obj \
+	$(OBJDIR)\blacklist.obj \
+	$(OBJDIR)\scan.obj \
+	$(OBJDIR)\wpas_glue.obj \
 	$(OBJDIR)\config.obj \
 	$(OBJDIR)\l2_packet_winpcap.obj \
 	$(OBJDIR)\tls_openssl.obj \
@@ -125,7 +129,7 @@ OBJS_t2 = $(OBJS) \
 	$(OBJDIR)\config_file.obj $(OBJDIR)\base64.obj
 
 OBJS2 = $(OBJDIR)\drivers.obj \
-	$(OBJDIR)\config_file.obj $(OBJDIR)\base64.obj \
+	$(OBJDIR)\config_file.obj \
 	$(OBJS2) $(OBJDIR)\main.obj
 
 OBJS3 = $(OBJDIR)\drivers.obj \
@@ -188,6 +192,9 @@ win_if_list.exe: $(OBJDIR) $(OBJDIR)\win_if_list.obj
 	$(CC) $(CFLAGS) $<
 
 {..\src\rsn_supp}.c{$(OBJDIR)}.obj::
+	$(CC) $(CFLAGS) $<
+
+{..\src\eapol_supp}.c{$(OBJDIR)}.obj::
 	$(CC) $(CFLAGS) $<
 
 {..\src\crypto}.c{$(OBJDIR)}.obj::

@@ -1,6 +1,6 @@
 /*
  * EAP common peer/server definitions
- * Copyright (c) 2004-2006, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -23,7 +23,6 @@
  * @vendor: Expected EAP Vendor-Id (0 = IETF)
  * @eap_type: Expected EAP type number
  * @msg: EAP frame (starting with EAP header)
- * @msglen: Length of msg
  * @plen: Pointer to variable to contain the returned payload length
  * Returns: Pointer to EAP payload (after type field), or %NULL on failure
  *
@@ -36,21 +35,21 @@
  * not.
  */
 const u8 * eap_hdr_validate(int vendor, EapType eap_type,
-			    const u8 *msg, size_t msglen, size_t *plen)
+			    const struct wpabuf *msg, size_t *plen)
 {
 	const struct eap_hdr *hdr;
 	const u8 *pos;
 	size_t len;
 
-	hdr = (const struct eap_hdr *) msg;
+	hdr = wpabuf_head(msg);
 
-	if (msglen < sizeof(*hdr)) {
+	if (wpabuf_len(msg) < sizeof(*hdr)) {
 		wpa_printf(MSG_INFO, "EAP: Too short EAP frame");
 		return NULL;
 	}
 
 	len = be_to_host16(hdr->length);
-	if (len < sizeof(*hdr) + 1 || len > msglen) {
+	if (len < sizeof(*hdr) + 1 || len > wpabuf_len(msg)) {
 		wpa_printf(MSG_INFO, "EAP: Invalid EAP length");
 		return NULL;
 	}
@@ -93,47 +92,93 @@ const u8 * eap_hdr_validate(int vendor, EapType eap_type,
  * eap_msg_alloc - Allocate a buffer for an EAP message
  * @vendor: Vendor-Id (0 = IETF)
  * @type: EAP type
- * @len: Buffer for returning message length
  * @payload_len: Payload length in bytes (data after Type)
  * @code: Message Code (EAP_CODE_*)
  * @identifier: Identifier
- * @payload: Pointer to payload pointer that will be set to point to the
- * beginning of the payload or %NULL if payload pointer is not needed
  * Returns: Pointer to the allocated message buffer or %NULL on error
  *
  * This function can be used to allocate a buffer for an EAP message and fill
  * in the EAP header. This function is automatically using expanded EAP header
  * if the selected Vendor-Id is not IETF. In other words, most EAP methods do
  * not need to separately select which header type to use when using this
- * function to allocate the message buffers.
+ * function to allocate the message buffers. The returned buffer has room for
+ * payload_len bytes and has the EAP header and Type field already filled in.
  */
-struct eap_hdr * eap_msg_alloc(int vendor, EapType type, size_t *len,
-			       size_t payload_len, u8 code, u8 identifier,
-			       u8 **payload)
+struct wpabuf * eap_msg_alloc(int vendor, EapType type, size_t payload_len,
+			      u8 code, u8 identifier)
 {
+	struct wpabuf *buf;
 	struct eap_hdr *hdr;
-	u8 *pos;
+	size_t len;
 
-	*len = sizeof(struct eap_hdr) + (vendor == EAP_VENDOR_IETF ? 1 : 8) +
+	len = sizeof(struct eap_hdr) + (vendor == EAP_VENDOR_IETF ? 1 : 8) +
 		payload_len;
-	hdr = os_malloc(*len);
-	if (hdr) {
-		hdr->code = code;
-		hdr->identifier = identifier;
-		hdr->length = host_to_be16(*len);
-		pos = (u8 *) (hdr + 1);
-		if (vendor == EAP_VENDOR_IETF) {
-			*pos++ = type;
-		} else {
-			*pos++ = EAP_TYPE_EXPANDED;
-			WPA_PUT_BE24(pos, vendor);
-			pos += 3;
-			WPA_PUT_BE32(pos, type);
-			pos += 4;
-		}
-		if (payload)
-			*payload = pos;
+	buf = wpabuf_alloc(len);
+	if (buf == NULL)
+		return NULL;
+
+	hdr = wpabuf_put(buf, sizeof(*hdr));
+	hdr->code = code;
+	hdr->identifier = identifier;
+	hdr->length = host_to_be16(len);
+
+	if (vendor == EAP_VENDOR_IETF) {
+		wpabuf_put_u8(buf, type);
+	} else {
+		wpabuf_put_u8(buf, EAP_TYPE_EXPANDED);
+		wpabuf_put_be24(buf, vendor);
+		wpabuf_put_be32(buf, type);
 	}
 
-	return hdr;
+	return buf;
+}
+
+
+/**
+ * eap_update_len - Update EAP header length
+ * @msg: EAP message from eap_msg_alloc
+ *
+ * This function updates the length field in the EAP header to match with the
+ * current length for the buffer. This allows eap_msg_alloc() to be used to
+ * allocate a larger buffer than the exact message length (e.g., if exact
+ * message length is not yet known).
+ */
+void eap_update_len(struct wpabuf *msg)
+{
+	struct eap_hdr *hdr;
+	hdr = wpabuf_mhead(msg);
+	if (wpabuf_len(msg) < sizeof(*hdr))
+		return;
+	hdr->length = host_to_be16(wpabuf_len(msg));
+}
+
+
+/**
+ * eap_get_id - Get EAP Identifier from wpabuf
+ * @msg: Buffer starting with an EAP header
+ * Returns: The Identifier field from the EAP header
+ */
+u8 eap_get_id(const struct wpabuf *msg)
+{
+	const struct eap_hdr *eap;
+
+	if (wpabuf_len(msg) < sizeof(*eap))
+		return 0;
+
+	eap = wpabuf_head(msg);
+	return eap->identifier;
+}
+
+
+/**
+ * eap_get_id - Get EAP Type from wpabuf
+ * @msg: Buffer starting with an EAP header
+ * Returns: The EAP Type after the EAP header
+ */
+EapType eap_get_type(const struct wpabuf *msg)
+{
+	if (wpabuf_len(msg) < sizeof(struct eap_hdr) + 1)
+		return EAP_TYPE_NONE;
+
+	return ((const u8 *) wpabuf_head(msg))[sizeof(struct eap_hdr)];
 }

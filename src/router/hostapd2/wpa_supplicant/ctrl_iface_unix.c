@@ -20,7 +20,7 @@
 #include "common.h"
 #include "eloop.h"
 #include "config.h"
-#include "eapol_sm.h"
+#include "eapol_supp/eapol_supp_sm.h"
 #include "wpa_supplicant_i.h"
 #include "ctrl_iface.h"
 
@@ -532,9 +532,42 @@ static void wpa_supplicant_ctrl_iface_send(struct ctrl_iface_priv *priv,
 
 void wpa_supplicant_ctrl_iface_wait(struct ctrl_iface_priv *priv)
 {
-	wpa_printf(MSG_DEBUG, "CTRL_IFACE - %s - wait for monitor",
-		   priv->wpa_s->ifname);
-	eloop_wait_for_read_sock(priv->sock);
+	char buf[256];
+	int res;
+	struct sockaddr_un from;
+	socklen_t fromlen = sizeof(from);
+
+	for (;;) {
+		wpa_printf(MSG_DEBUG, "CTRL_IFACE - %s - wait for monitor to "
+			   "attach", priv->wpa_s->ifname);
+		eloop_wait_for_read_sock(priv->sock);
+
+		res = recvfrom(priv->sock, buf, sizeof(buf) - 1, 0,
+			       (struct sockaddr *) &from, &fromlen);
+		if (res < 0) {
+			perror("recvfrom(ctrl_iface)");
+			continue;
+		}
+		buf[res] = '\0';
+
+		if (os_strcmp(buf, "ATTACH") == 0) {
+			/* handle ATTACH signal of first monitor interface */
+			if (!wpa_supplicant_ctrl_iface_attach(priv, &from,
+							      fromlen)) {
+				sendto(priv->sock, "OK\n", 3, 0,
+				       (struct sockaddr *) &from, fromlen);
+				/* OK to continue */
+				return;
+			} else {
+				sendto(priv->sock, "FAIL\n", 5, 0,
+				       (struct sockaddr *) &from, fromlen);
+			}
+		} else {
+			/* return FAIL for all other signals */
+			sendto(priv->sock, "FAIL\n", 5, 0,
+			       (struct sockaddr *) &from, fromlen);
+		}
+	}
 }
 
 

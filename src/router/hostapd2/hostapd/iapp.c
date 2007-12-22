@@ -197,11 +197,11 @@ static void iapp_send_add(struct iapp_data *iapp, u8 *mac_addr, u16 seq_num)
 	add = (struct iapp_add_notify *) (hdr + 1);
 	add->addr_len = ETH_ALEN;
 	add->reserved = 0;
-	memcpy(add->mac_addr, mac_addr, ETH_ALEN);
+	os_memcpy(add->mac_addr, mac_addr, ETH_ALEN);
 
 	add->seq_num = host_to_be16(seq_num);
 	
-	memset(&addr, 0, sizeof(addr));
+	os_memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = iapp->multicast.s_addr;
 	addr.sin_port = htons(IAPP_UDP_PORT);
@@ -221,8 +221,8 @@ static void iapp_send_layer2_update(struct iapp_data *iapp, u8 *addr)
 	/* 802.2 Type 1 Logical Link Control (LLC) Exchange Identifier (XID)
 	 * Update response frame; IEEE Std 802.2-1998, 5.4.1.2.1 */
 
-	memset(msg.da, 0xff, ETH_ALEN);
-	memcpy(msg.sa, addr, ETH_ALEN);
+	os_memset(msg.da, 0xff, ETH_ALEN);
+	os_memcpy(msg.sa, addr, ETH_ALEN);
 	msg.len = host_to_be16(6);
 	msg.dsap = 0; /* NULL DSAP address */
 	msg.ssap = 0x01; /* NULL SSAP address, CR Bit: Response */
@@ -403,7 +403,7 @@ struct iapp_data * iapp_init(struct hostapd_data *hapd, const char *iface)
 		return NULL;
 	}
 
-	memset(&ifr, 0, sizeof(ifr));
+	os_memset(&ifr, 0, sizeof(ifr));
 	os_strlcpy(ifr.ifr_name, iface, sizeof(ifr.ifr_name));
 	if (ioctl(iapp->udp_sock, SIOCGIFINDEX, &ifr) != 0) {
 		perror("ioctl(SIOCGIFINDEX)");
@@ -440,7 +440,7 @@ struct iapp_data * iapp_init(struct hostapd_data *hapd, const char *iface)
 	}
 	inet_aton(IAPP_MULTICAST, &iapp->multicast);
 
-	memset(&uaddr, 0, sizeof(uaddr));
+	os_memset(&uaddr, 0, sizeof(uaddr));
 	uaddr.sin_family = AF_INET;
 	uaddr.sin_port = htons(IAPP_UDP_PORT);
 	if (bind(iapp->udp_sock, (struct sockaddr *) &uaddr,
@@ -450,7 +450,7 @@ struct iapp_data * iapp_init(struct hostapd_data *hapd, const char *iface)
 		return NULL;
 	}
 
-	memset(&mreq, 0, sizeof(mreq));
+	os_memset(&mreq, 0, sizeof(mreq));
 	mreq.imr_multiaddr = iapp->multicast;
 	mreq.imr_address.s_addr = INADDR_ANY;
 	mreq.imr_ifindex = 0;
@@ -468,7 +468,7 @@ struct iapp_data * iapp_init(struct hostapd_data *hapd, const char *iface)
 		return NULL;
 	}
 
-	memset(&addr, 0, sizeof(addr));
+	os_memset(&addr, 0, sizeof(addr));
 	addr.sll_family = AF_PACKET;
 	addr.sll_ifindex = ifindex;
 	if (bind(iapp->packet_sock, (struct sockaddr *) &addr,
@@ -504,7 +504,7 @@ void iapp_deinit(struct iapp_data *iapp)
 		return;
 
 	if (iapp->udp_sock >= 0) {
-		memset(&mreq, 0, sizeof(mreq));
+		os_memset(&mreq, 0, sizeof(mreq));
 		mreq.imr_multiaddr = iapp->multicast;
 		mreq.imr_address.s_addr = INADDR_ANY;
 		mreq.imr_ifindex = 0;
@@ -520,21 +520,19 @@ void iapp_deinit(struct iapp_data *iapp)
 		eloop_unregister_read_sock(iapp->packet_sock);
 		close(iapp->packet_sock);
 	}
-	free(iapp);
+	os_free(iapp);
 }
 
 int iapp_reconfig(struct hostapd_data *hapd, struct hostapd_config *oldconf,
 		  struct hostapd_bss_config *oldbss)
 {
 	if (hapd->conf->ieee802_11f != oldbss->ieee802_11f ||
-	    strcmp(hapd->conf->iapp_iface, oldbss->iapp_iface) != 0) {
-
+	    os_strcmp(hapd->conf->iapp_iface, oldbss->iapp_iface) != 0) {
 		iapp_deinit(hapd->iapp);
 		hapd->iapp = NULL;
 
 		if (hapd->conf->ieee802_11f) {
 			hapd->iapp = iapp_init(hapd, hapd->conf->iapp_iface);
-
 			if (hapd->iapp == NULL)
 				return -1;
 		}

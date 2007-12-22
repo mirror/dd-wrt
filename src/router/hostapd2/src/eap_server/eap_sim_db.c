@@ -83,7 +83,7 @@ eap_sim_db_get_pending(struct eap_sim_db_data *data, const u8 *imsi,
 	entry = data->pending;
 	while (entry) {
 		if (entry->aka == aka && entry->imsi_len == imsi_len &&
-		    memcmp(entry->imsi, imsi, imsi_len) == 0) {
+		    os_memcmp(entry->imsi, imsi, imsi_len) == 0) {
 			if (prev)
 				prev->next = entry->next;
 			else
@@ -118,7 +118,7 @@ static void eap_sim_db_sim_resp_auth(struct eap_sim_db_data *data,
 	 * (IMSI = ASCII string, Kc/SRES/RAND = hex string)
 	 */
 
-	entry = eap_sim_db_get_pending(data, (u8 *) imsi, strlen(imsi), 0);
+	entry = eap_sim_db_get_pending(data, (u8 *) imsi, os_strlen(imsi), 0);
 	if (entry == NULL) {
 		wpa_printf(MSG_DEBUG, "EAP-SIM DB: No pending entry for the "
 			   "received message found");
@@ -126,7 +126,7 @@ static void eap_sim_db_sim_resp_auth(struct eap_sim_db_data *data,
 	}
 
 	start = buf;
-	if (strncmp(start, "FAILURE", 7) == 0) {
+	if (os_strncmp(start, "FAILURE", 7) == 0) {
 		wpa_printf(MSG_DEBUG, "EAP-SIM DB: External server reported "
 			   "failure");
 		entry->state = FAILURE;
@@ -137,11 +137,11 @@ static void eap_sim_db_sim_resp_auth(struct eap_sim_db_data *data,
 
 	num_chal = 0;
 	while (num_chal < EAP_SIM_MAX_CHAL) {
-		end = strchr(start, ' ');
+		end = os_strchr(start, ' ');
 		if (end)
 			*end = '\0';
 
-		pos = strchr(start, ':');
+		pos = os_strchr(start, ':');
 		if (pos == NULL)
 			goto parse_fail;
 		*pos = '\0';
@@ -150,7 +150,7 @@ static void eap_sim_db_sim_resp_auth(struct eap_sim_db_data *data,
 			goto parse_fail;
 
 		start = pos + 1;
-		pos = strchr(start, ':');
+		pos = os_strchr(start, ':');
 		if (pos == NULL)
 			goto parse_fail;
 		*pos = '\0';
@@ -180,7 +180,7 @@ static void eap_sim_db_sim_resp_auth(struct eap_sim_db_data *data,
 
 parse_fail:
 	wpa_printf(MSG_DEBUG, "EAP-SIM DB: Failed to parse response string");
-	free(entry);
+	os_free(entry);
 }
 
 
@@ -196,7 +196,7 @@ static void eap_sim_db_aka_resp_auth(struct eap_sim_db_data *data,
 	 * (IMSI = ASCII string, RAND/AUTN/IK/CK/RES = hex string)
 	 */
 
-	entry = eap_sim_db_get_pending(data, (u8 *) imsi, strlen(imsi), 1);
+	entry = eap_sim_db_get_pending(data, (u8 *) imsi, os_strlen(imsi), 1);
 	if (entry == NULL) {
 		wpa_printf(MSG_DEBUG, "EAP-SIM DB: No pending entry for the "
 			   "received message found");
@@ -204,7 +204,7 @@ static void eap_sim_db_aka_resp_auth(struct eap_sim_db_data *data,
 	}
 
 	start = buf;
-	if (strncmp(start, "FAILURE", 7) == 0) {
+	if (os_strncmp(start, "FAILURE", 7) == 0) {
 		wpa_printf(MSG_DEBUG, "EAP-SIM DB: External server reported "
 			   "failure");
 		entry->state = FAILURE;
@@ -213,7 +213,7 @@ static void eap_sim_db_aka_resp_auth(struct eap_sim_db_data *data,
 		return;
 	}
 
-	end = strchr(start, ' ');
+	end = os_strchr(start, ' ');
 	if (end == NULL)
 		goto parse_fail;
 	*end = '\0';
@@ -221,7 +221,7 @@ static void eap_sim_db_aka_resp_auth(struct eap_sim_db_data *data,
 		goto parse_fail;
 
 	start = end + 1;
-	end = strchr(start, ' ');
+	end = os_strchr(start, ' ');
 	if (end == NULL)
 		goto parse_fail;
 	*end = '\0';
@@ -229,7 +229,7 @@ static void eap_sim_db_aka_resp_auth(struct eap_sim_db_data *data,
 		goto parse_fail;
 
 	start = end + 1;
-	end = strchr(start, ' ');
+	end = os_strchr(start, ' ');
 	if (end == NULL)
 		goto parse_fail;
 	*end = '\0';
@@ -237,7 +237,7 @@ static void eap_sim_db_aka_resp_auth(struct eap_sim_db_data *data,
 		goto parse_fail;
 
 	start = end + 1;
-	end = strchr(start, ' ');
+	end = os_strchr(start, ' ');
 	if (end == NULL)
 		goto parse_fail;
 	*end = '\0';
@@ -245,7 +245,7 @@ static void eap_sim_db_aka_resp_auth(struct eap_sim_db_data *data,
 		goto parse_fail;
 
 	start = end + 1;
-	end = strchr(start, ' ');
+	end = os_strchr(start, ' ');
 	if (end)
 		*end = '\0';
 	else {
@@ -271,7 +271,7 @@ static void eap_sim_db_aka_resp_auth(struct eap_sim_db_data *data,
 
 parse_fail:
 	wpa_printf(MSG_DEBUG, "EAP-SIM DB: Failed to parse response string");
-	free(entry);
+	os_free(entry);
 }
 
 
@@ -301,21 +301,21 @@ static void eap_sim_db_receive(int sock, void *eloop_ctx, void *sock_ctx)
 	/* <cmd> <IMSI> ... */
 
 	cmd = buf;
-	pos = strchr(cmd, ' ');
+	pos = os_strchr(cmd, ' ');
 	if (pos == NULL)
 		goto parse_fail;
 	*pos = '\0';
 	imsi = pos + 1;
-	pos = strchr(imsi, ' ');
+	pos = os_strchr(imsi, ' ');
 	if (pos == NULL)
 		goto parse_fail;
 	*pos = '\0';
 	wpa_printf(MSG_DEBUG, "EAP-SIM DB: External response=%s for IMSI %s",
 		   cmd, imsi);
 
-	if (strcmp(cmd, "SIM-RESP-AUTH") == 0)
+	if (os_strcmp(cmd, "SIM-RESP-AUTH") == 0)
 		eap_sim_db_sim_resp_auth(data, imsi, pos + 1);
-	else if (strcmp(cmd, "AKA-RESP-AUTH") == 0)
+	else if (os_strcmp(cmd, "AKA-RESP-AUTH") == 0)
 		eap_sim_db_aka_resp_auth(data, imsi, pos + 1);
 	else
 		wpa_printf(MSG_INFO, "EAP-SIM DB: Unknown external response "
@@ -332,7 +332,7 @@ static int eap_sim_db_open_socket(struct eap_sim_db_data *data)
 	struct sockaddr_un addr;
 	static int counter = 0;
 
-	if (strncmp(data->fname, "unix:", 5) != 0)
+	if (os_strncmp(data->fname, "unix:", 5) != 0)
 		return -1;
 
 	data->sock = socket(PF_UNIX, SOCK_DGRAM, 0);
@@ -341,11 +341,11 @@ static int eap_sim_db_open_socket(struct eap_sim_db_data *data)
 		return -1;
 	}
 
-	memset(&addr, 0, sizeof(addr));
+	os_memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
-	snprintf(addr.sun_path, sizeof(addr.sun_path),
-		 "/tmp/eap_sim_db_%d-%d", getpid(), counter++);
-	data->local_sock = strdup(addr.sun_path);
+	os_snprintf(addr.sun_path, sizeof(addr.sun_path),
+		    "/tmp/eap_sim_db_%d-%d", getpid(), counter++);
+	data->local_sock = os_strdup(addr.sun_path);
 	if (bind(data->sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
 		perror("bind(eap_sim_db)");
 		close(data->sock);
@@ -353,13 +353,14 @@ static int eap_sim_db_open_socket(struct eap_sim_db_data *data)
 		return -1;
 	}
 
-	memset(&addr, 0, sizeof(addr));
+	os_memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
 	os_strlcpy(addr.sun_path, data->fname + 5, sizeof(addr.sun_path));
 	if (connect(data->sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
 		perror("connect(eap_sim_db)");
 		wpa_hexdump_ascii(MSG_INFO, "HLR/AuC GW socket",
-				  (u8 *) addr.sun_path, strlen(addr.sun_path));
+				  (u8 *) addr.sun_path,
+				  os_strlen(addr.sun_path));
 		close(data->sock);
 		data->sock = -1;
 		return -1;
@@ -380,7 +381,7 @@ static void eap_sim_db_close_socket(struct eap_sim_db_data *data)
 	}
 	if (data->local_sock) {
 		unlink(data->local_sock);
-		free(data->local_sock);
+		os_free(data->local_sock);
 		data->local_sock = NULL;
 	}
 }
@@ -406,11 +407,11 @@ void * eap_sim_db_init(const char *config,
 	data->sock = -1;
 	data->get_complete_cb = get_complete_cb;
 	data->ctx = ctx;
-	data->fname = strdup(config);
+	data->fname = os_strdup(config);
 	if (data->fname == NULL)
 		goto fail;
 
-	if (strncmp(data->fname, "unix:", 5) == 0) {
+	if (os_strncmp(data->fname, "unix:", 5) == 0) {
 		if (eap_sim_db_open_socket(data))
 			goto fail;
 	}
@@ -419,25 +420,25 @@ void * eap_sim_db_init(const char *config,
 
 fail:
 	eap_sim_db_close_socket(data);
-	free(data->fname);
-	free(data);
+	os_free(data->fname);
+	os_free(data);
 	return NULL;
 }
 
 
 static void eap_sim_db_free_pseudonym(struct eap_sim_pseudonym *p)
 {
-	free(p->identity);
-	free(p->pseudonym);
-	free(p);
+	os_free(p->identity);
+	os_free(p->pseudonym);
+	os_free(p);
 }
 
 
 static void eap_sim_db_free_reauth(struct eap_sim_reauth *r)
 {
-	free(r->identity);
-	free(r->reauth_id);
-	free(r);
+	os_free(r->identity);
+	os_free(r->reauth_id);
+	os_free(r);
 }
 
 
@@ -453,7 +454,7 @@ void eap_sim_db_deinit(void *priv)
 	struct eap_sim_db_pending *pending, *prev_pending;
 
 	eap_sim_db_close_socket(data);
-	free(data->fname);
+	os_free(data->fname);
 
 	p = data->pseudonyms;
 	while (p) {
@@ -473,10 +474,10 @@ void eap_sim_db_deinit(void *priv)
 	while (pending) {
 		prev_pending = pending;
 		pending = pending->next;
-		free(prev_pending);
+		os_free(prev_pending);
 	}
 
-	free(data);
+	os_free(data);
 }
 
 
@@ -577,7 +578,7 @@ int eap_sim_db_get_gsm_triplets(void *priv, const u8 *identity,
 		if (entry->state == FAILURE) {
 			wpa_printf(MSG_DEBUG, "EAP-SIM DB: Pending entry -> "
 				   "failure");
-			free(entry);
+			os_free(entry);
 			return EAP_SIM_DB_FAILURE;
 		}
 
@@ -593,10 +594,11 @@ int eap_sim_db_get_gsm_triplets(void *priv, const u8 *identity,
 		num_chal = entry->u.sim.num_chal;
 		if (num_chal > max_chal)
 			num_chal = max_chal;
-		memcpy(_rand, entry->u.sim.rand, num_chal * GSM_RAND_LEN);
-		memcpy(sres, entry->u.sim.sres, num_chal * EAP_SIM_SRES_LEN);
-		memcpy(kc, entry->u.sim.kc, num_chal * EAP_SIM_KC_LEN);
-		free(entry);
+		os_memcpy(_rand, entry->u.sim.rand, num_chal * GSM_RAND_LEN);
+		os_memcpy(sres, entry->u.sim.sres,
+			  num_chal * EAP_SIM_SRES_LEN);
+		os_memcpy(kc, entry->u.sim.kc, num_chal * EAP_SIM_KC_LEN);
+		os_free(entry);
 		return num_chal;
 	}
 
@@ -605,12 +607,12 @@ int eap_sim_db_get_gsm_triplets(void *priv, const u8 *identity,
 			return EAP_SIM_DB_FAILURE;
 	}
 
-	len = snprintf(msg, sizeof(msg), "SIM-REQ-AUTH ");
+	len = os_snprintf(msg, sizeof(msg), "SIM-REQ-AUTH ");
 	if (len < 0 || len + identity_len >= sizeof(msg))
 		return EAP_SIM_DB_FAILURE;
-	memcpy(msg + len, identity, identity_len);
+	os_memcpy(msg + len, identity, identity_len);
 	len += identity_len;
-	ret = snprintf(msg + len, sizeof(msg) - len, " %d", max_chal);
+	ret = os_snprintf(msg + len, sizeof(msg) - len, " %d", max_chal);
 	if (ret < 0 || (size_t) ret >= sizeof(msg) - len)
 		return EAP_SIM_DB_FAILURE;
 	len += ret;
@@ -625,7 +627,7 @@ int eap_sim_db_get_gsm_triplets(void *priv, const u8 *identity,
 		return EAP_SIM_DB_FAILURE;
 
 	os_get_time(&entry->timestamp);
-	memcpy(entry->imsi, identity, identity_len);
+	os_memcpy(entry->imsi, identity, identity_len);
 	entry->imsi_len = identity_len;
 	entry->cb_session_ctx = cb_session_ctx;
 	entry->state = PENDING;
@@ -657,20 +659,20 @@ eap_sim_db_get_pseudonym(struct eap_sim_db_data *data, const u8 *identity,
 		len++;
 	}
 
-	pseudonym = malloc(len + 1);
+	pseudonym = os_malloc(len + 1);
 	if (pseudonym == NULL)
 		return NULL;
-	memcpy(pseudonym, identity, len);
+	os_memcpy(pseudonym, identity, len);
 	pseudonym[len] = '\0';
 
 	p = data->pseudonyms;
 	while (p) {
-		if (strcmp(p->pseudonym, pseudonym) == 0)
+		if (os_strcmp(p->pseudonym, pseudonym) == 0)
 			break;
 		p = p->next;
 	}
 
-	free(pseudonym);
+	os_free(pseudonym);
 
 	return p;
 }
@@ -690,7 +692,7 @@ eap_sim_db_get_pseudonym_id(struct eap_sim_db_data *data, const u8 *identity,
 	p = data->pseudonyms;
 	while (p) {
 		if (identity_len == p->identity_len &&
-		    memcmp(p->identity, identity, identity_len) == 0)
+		    os_memcmp(p->identity, identity, identity_len) == 0)
 			break;
 		p = p->next;
 	}
@@ -720,20 +722,20 @@ eap_sim_db_get_reauth(struct eap_sim_db_data *data, const u8 *identity,
 		len++;
 	}
 
-	reauth_id = malloc(len + 1);
+	reauth_id = os_malloc(len + 1);
 	if (reauth_id == NULL)
 		return NULL;
-	memcpy(reauth_id, identity, len);
+	os_memcpy(reauth_id, identity, len);
 	reauth_id[len] = '\0';
 
 	r = data->reauths;
 	while (r) {
-		if (strcmp(r->reauth_id, reauth_id) == 0)
+		if (os_strcmp(r->reauth_id, reauth_id) == 0)
 			break;
 		r = r->next;
 	}
 
-	free(reauth_id);
+	os_free(reauth_id);
 
 	return r;
 }
@@ -760,7 +762,7 @@ eap_sim_db_get_reauth_id(struct eap_sim_db_data *data, const u8 *identity,
 	r = data->reauths;
 	while (r) {
 		if (identity_len == r->identity_len &&
-		    memcmp(r->identity, identity, identity_len) == 0)
+		    os_memcmp(r->identity, identity, identity_len) == 0)
 			break;
 		r = r->next;
 	}
@@ -824,9 +826,9 @@ static char * eap_sim_db_get_next(struct eap_sim_db_data *data, char prefix)
 	char *id, *pos, *end;
 	u8 buf[10];
 
-	if (hostapd_get_rand(buf, sizeof(buf)))
+	if (os_get_random(buf, sizeof(buf)))
 		return NULL;
-	id = malloc(sizeof(buf) * 2 + 2);
+	id = os_malloc(sizeof(buf) * 2 + 2);
 	if (id == NULL)
 		return NULL;
 
@@ -908,25 +910,25 @@ int eap_sim_db_add_pseudonym(void *priv, const u8 *identity,
 	if (p) {
 		wpa_printf(MSG_DEBUG, "EAP-SIM DB: Replacing previous "
 			   "pseudonym: %s", p->pseudonym);
-		free(p->pseudonym);
+		os_free(p->pseudonym);
 		p->pseudonym = pseudonym;
 		return 0;
 	}
 
 	p = os_zalloc(sizeof(*p));
 	if (p == NULL) {
-		free(pseudonym);
+		os_free(pseudonym);
 		return -1;
 	}
 
 	p->next = data->pseudonyms;
-	p->identity = malloc(identity_len);
+	p->identity = os_malloc(identity_len);
 	if (p->identity == NULL) {
-		free(p);
-		free(pseudonym);
+		os_free(p);
+		os_free(pseudonym);
 		return -1;
 	}
-	memcpy(p->identity, identity, identity_len);
+	os_memcpy(p->identity, identity, identity_len);
 	p->identity_len = identity_len;
 	p->pseudonym = pseudonym;
 	data->pseudonyms = p;
@@ -968,23 +970,23 @@ int eap_sim_db_add_reauth(void *priv, const u8 *identity,
 	if (r) {
 		wpa_printf(MSG_DEBUG, "EAP-SIM DB: Replacing previous "
 			   "reauth_id: %s", r->reauth_id);
-		free(r->reauth_id);
+		os_free(r->reauth_id);
 		r->reauth_id = reauth_id;
 	} else {
 		r = os_zalloc(sizeof(*r));
 		if (r == NULL) {
-			free(reauth_id);
+			os_free(reauth_id);
 			return -1;
 		}
 
 		r->next = data->reauths;
-		r->identity = malloc(identity_len);
+		r->identity = os_malloc(identity_len);
 		if (r->identity == NULL) {
-			free(r);
-			free(reauth_id);
+			os_free(r);
+			os_free(reauth_id);
 			return -1;
 		}
-		memcpy(r->identity, identity, identity_len);
+		os_memcpy(r->identity, identity, identity_len);
 		r->identity_len = identity_len;
 		r->reauth_id = reauth_id;
 		data->reauths = r;
@@ -992,7 +994,7 @@ int eap_sim_db_add_reauth(void *priv, const u8 *identity,
 	}
 
 	r->counter = counter;
-	memcpy(r->mk, mk, EAP_SIM_MK_LEN);
+	os_memcpy(r->mk, mk, EAP_SIM_MK_LEN);
 
 	return 0;
 }
@@ -1137,7 +1139,7 @@ int eap_sim_db_get_aka_auth(void *priv, const u8 *identity,
 	entry = eap_sim_db_get_pending(data, identity, identity_len, 1);
 	if (entry) {
 		if (entry->state == FAILURE) {
-			free(entry);
+			os_free(entry);
 			wpa_printf(MSG_DEBUG, "EAP-SIM DB: Failure");
 			return EAP_SIM_DB_FAILURE;
 		}
@@ -1150,13 +1152,13 @@ int eap_sim_db_get_aka_auth(void *priv, const u8 *identity,
 
 		wpa_printf(MSG_DEBUG, "EAP-SIM DB: Returning successfully "
 			   "received authentication data");
-		memcpy(_rand, entry->u.aka.rand, EAP_AKA_RAND_LEN);
-		memcpy(autn, entry->u.aka.autn, EAP_AKA_AUTN_LEN);
-		memcpy(ik, entry->u.aka.ik, EAP_AKA_IK_LEN);
-		memcpy(ck, entry->u.aka.ck, EAP_AKA_CK_LEN);
-		memcpy(res, entry->u.aka.res, EAP_AKA_RES_MAX_LEN);
+		os_memcpy(_rand, entry->u.aka.rand, EAP_AKA_RAND_LEN);
+		os_memcpy(autn, entry->u.aka.autn, EAP_AKA_AUTN_LEN);
+		os_memcpy(ik, entry->u.aka.ik, EAP_AKA_IK_LEN);
+		os_memcpy(ck, entry->u.aka.ck, EAP_AKA_CK_LEN);
+		os_memcpy(res, entry->u.aka.res, EAP_AKA_RES_MAX_LEN);
 		*res_len = entry->u.aka.res_len;
-		free(entry);
+		os_free(entry);
 		return 0;
 	}
 
@@ -1165,10 +1167,10 @@ int eap_sim_db_get_aka_auth(void *priv, const u8 *identity,
 			return EAP_SIM_DB_FAILURE;
 	}
 
-	len = snprintf(msg, sizeof(msg), "AKA-REQ-AUTH ");
+	len = os_snprintf(msg, sizeof(msg), "AKA-REQ-AUTH ");
 	if (len < 0 || len + identity_len >= sizeof(msg))
 		return EAP_SIM_DB_FAILURE;
-	memcpy(msg + len, identity, identity_len);
+	os_memcpy(msg + len, identity, identity_len);
 	len += identity_len;
 
 	wpa_hexdump(MSG_DEBUG, "EAP-SIM DB: requesting AKA authentication "
@@ -1182,7 +1184,7 @@ int eap_sim_db_get_aka_auth(void *priv, const u8 *identity,
 
 	os_get_time(&entry->timestamp);
 	entry->aka = 1;
-	memcpy(entry->imsi, identity, identity_len);
+	os_memcpy(entry->imsi, identity, identity_len);
 	entry->imsi_len = identity_len;
 	entry->cb_session_ctx = cb_session_ctx;
 	entry->state = PENDING;
@@ -1225,19 +1227,19 @@ int eap_sim_db_resynchronize(void *priv, const u8 *identity,
 		char msg[100];
 		int len, ret;
 
-		len = snprintf(msg, sizeof(msg), "AKA-AUTS ");
+		len = os_snprintf(msg, sizeof(msg), "AKA-AUTS ");
 		if (len < 0 || len + identity_len - 1 >= sizeof(msg))
 			return -1;
-		memcpy(msg + len, identity + 1, identity_len - 1);
+		os_memcpy(msg + len, identity + 1, identity_len - 1);
 		len += identity_len - 1;
 
-		ret = snprintf(msg + len, sizeof(msg) - len, " ");
+		ret = os_snprintf(msg + len, sizeof(msg) - len, " ");
 		if (ret < 0 || (size_t) ret >= sizeof(msg) - len)
 			return -1;
 		len += ret;
 		len += wpa_snprintf_hex(msg + len, sizeof(msg) - len,
 					auts, EAP_AKA_AUTS_LEN);
-		ret = snprintf(msg + len, sizeof(msg) - len, " ");
+		ret = os_snprintf(msg + len, sizeof(msg) - len, " ");
 		if (ret < 0 || (size_t) ret >= sizeof(msg) - len)
 			return -1;
 		len += ret;

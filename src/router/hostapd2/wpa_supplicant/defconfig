@@ -164,6 +164,9 @@ CONFIG_EAP_LEAP=y
 # EAP-TNC and related Trusted Network Connect support (experimental)
 #CONFIG_EAP_TNC=y
 
+# EAP-WSC for Wi-Fi Protected Setup
+#CONFIG_EAP_WSC=y
+
 # PKCS#12 (PFX) support (used to read private key and certificate file from
 # a file that usually has extension .p12 or .pfx)
 CONFIG_PKCS12=y
@@ -209,15 +212,38 @@ CONFIG_CTRL_IFACE=y
 # or 6 kB if building for WPA-Enterprise.
 #CONFIG_NO_WPA2=y
 
+# Remove IEEE 802.11i/WPA-Personal ASCII passphrase support
+# This option can be used to reduce code size by removing support for
+# converting ASCII passphrases into PSK. If this functionality is removed, the
+# PSK can only be configured as the 64-octet hexstring (e.g., from
+# wpa_passphrase). This saves about 0.5 kB in code size.
+#CONFIG_NO_WPA_PASSPHRASE=y
+
 # Remove AES extra functions. This can be used to reduce code size by about
 # 1.5 kB by removing extra AES modes that are not needed for commonly used
 # client configurations (they are needed for some EAP types).
 #CONFIG_NO_AES_EXTRAS=y
 
+# Disable scan result processing (ap_mode=1) to save code size by about 1 kB.
+# This can be used if ap_scan=1 mode is never enabled.
+#CONFIG_NO_SCAN_PROCESSING=y
+
 # Select configuration backend:
-# file = text file (e.g., wpa_supplicant.conf)
+# file = text file (e.g., wpa_supplicant.conf; note: the configuration file
+#	path is given on command line, not here; this option is just used to
+#	select the backend that allows configuration files to be used)
 # winreg = Windows registry (see win_example.reg for an example)
 CONFIG_BACKEND=file
+
+# Remove configuration write functionality (i.e., to allow the configuration
+# file to be updated based on runtime configuration changes). The runtime
+# configuration can still be changed, the changes are just not going to be
+# persistent over restarts. This option can be used to reduce code size by
+# about 3.5 kB.
+#CONFIG_NO_CONFIG_WRITE=y
+
+# Remove support for configuration blobs to reduce code size by about 1.5 kB.
+#CONFIG_NO_CONFIG_BLOBS=y
 
 # Select program entry point implementation:
 # main = UNIX/POSIX like main() function (default)
@@ -328,3 +354,6 @@ CONFIG_PEERKEY=y
 # IEEE 802.11r. This draft is still subject to change, so it should be noted
 # that this version may not comply with the final standard.
 #CONFIG_IEEE80211R=y
+
+# Add support for writing debug log to a file (/tmp/wpa_supplicant-log-#.txt)
+#CONFIG_DEBUG_FILE=y

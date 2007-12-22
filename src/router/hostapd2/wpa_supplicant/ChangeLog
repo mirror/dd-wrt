@@ -1,13 +1,27 @@
 ChangeLog for wpa_supplicant
 
-????-??-?? - v0.6.1
+????-??-?? - v0.6.2
+	* added support for Makefile builds to include debug-log-to-a-file
+	  functionality (CONFIG_DEBUG_FILE=y and -f on command line)
+	* fixed EAP-SIM and EAP-AKA message parser to validate attribute
+	  lengths properly to avoid potential crash caused by invalid messages
+	* added data structure for storing allocated buffers (struct wpabuf);
+	  this does not affect wpa_supplicant usage, but many of the APIs
+	  changed and various interfaces (e.g., EAP) is not compatible with old
+	  versions
+	* added support for protecting EAP-AKA/Identity messages with
+	  AT_CHECKCODE (optional feature in RFC 4187)
+	* added support for protected result indication with AT_RESULT_IND for
+	  EAP-SIM and EAP-AKA (phase1="result_ind=1")
+
+2007-11-24 - v0.6.1
 	* added support for configuring password as NtPasswordHash
 	  (16-byte MD4 hash of password) in hash:<32 hex digits> format
 	* added support for fallback from abbreviated TLS handshake to
 	  full handshake when using EAP-FAST (e.g., due to an expired
 	  PAC-Opaque)
 	* updated EAP Generalized Pre-Shared Key (EAP-GPSK) to use the latest
-	  draft (draft-ietf-emu-eap-gpsk-06.txt)
+	  draft (draft-ietf-emu-eap-gpsk-07.txt)
 	* added support for drivers that take care of RSN 4-way handshake
 	  internally (WPA_DRIVER_FLAGS_4WAY_HANDSHAKE in get_capa flags and
 	  WPA_ALG_PMK in set_key)
@@ -21,6 +35,11 @@ ChangeLog for wpa_supplicant
 	* fixed an integer overflow issue in the ASN.1 parser used by the
 	  (experimental) internal TLS implementation to avoid a potential
 	  buffer read overflow
+	* fixed a race condition with -W option (wait for a control interface
+	  monitor before starting) that could have caused the first messages to
+	  be lost
+	* added support for processing TNCC-TNCS-Messages to report
+	  recommendation (allow/none/isolate) when using TNC [Bug 243]
 
 2007-05-28 - v0.6.0
 	* added network configuration parameter 'frequency' for setting

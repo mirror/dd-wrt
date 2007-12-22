@@ -234,8 +234,9 @@ static void radius_msg_dump_attr(struct radius_attr_hdr *hdr)
 
 	case RADIUS_ATTR_IP:
 		if (len == 4) {
-			struct in_addr *addr = (struct in_addr *) pos;
-			printf("      Value: %s\n", inet_ntoa(*addr));
+			struct in_addr addr;
+			os_memcpy(&addr, pos, 4);
+			printf("      Value: %s\n", inet_ntoa(addr));
 		} else
 			printf("      Invalid IP address length %d\n", len);
 		break;

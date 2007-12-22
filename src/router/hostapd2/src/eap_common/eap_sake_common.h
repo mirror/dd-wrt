@@ -51,10 +51,6 @@
 #endif /* _MSC_VER */
 
 struct eap_sake_hdr {
-	u8 code;
-	u8 identifier;
-	be16 length;
-	u8 type; /* EAP_TYPE_SAKE */
 	u8 version; /* EAP_SAKE_VERSION */
 	u8 session_id;
 	u8 subtype;
@@ -100,5 +96,7 @@ int eap_sake_compute_mic(const u8 *tek_auth,
 			 const u8 *peerid, size_t peerid_len,
 			 int peer, const u8 *eap, size_t eap_len,
 			 const u8 *mic_pos, u8 *mic);
+void eap_sake_add_attr(struct wpabuf *buf, u8 type, const u8 *data,
+		       size_t len);
 
 #endif /* EAP_SAKE_COMMON_H */

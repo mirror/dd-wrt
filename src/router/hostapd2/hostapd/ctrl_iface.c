@@ -49,7 +49,7 @@ static int hostapd_ctrl_iface_attach(struct hostapd_data *hapd,
 	dst = os_zalloc(sizeof(*dst));
 	if (dst == NULL)
 		return -1;
-	memcpy(&dst->addr, from, sizeof(struct sockaddr_un));
+	os_memcpy(&dst->addr, from, sizeof(struct sockaddr_un));
 	dst->addrlen = fromlen;
 	dst->debug_level = MSG_INFO;
 	dst->next = hapd->ctrl_dst;
@@ -69,12 +69,13 @@ static int hostapd_ctrl_iface_detach(struct hostapd_data *hapd,
 	dst = hapd->ctrl_dst;
 	while (dst) {
 		if (fromlen == dst->addrlen &&
-		    memcmp(from->sun_path, dst->addr.sun_path, fromlen) == 0) {
+		    os_memcmp(from->sun_path, dst->addr.sun_path, fromlen) ==
+		    0) {
 			if (prev == NULL)
 				hapd->ctrl_dst = dst->next;
 			else
 				prev->next = dst->next;
-			free(dst);
+			os_free(dst);
 			wpa_hexdump(MSG_DEBUG, "CTRL_IFACE monitor detached",
 				    (u8 *) from->sun_path, fromlen);
 			return 0;
@@ -98,7 +99,8 @@ static int hostapd_ctrl_iface_level(struct hostapd_data *hapd,
 	dst = hapd->ctrl_dst;
 	while (dst) {
 		if (fromlen == dst->addrlen &&
-		    memcmp(from->sun_path, dst->addr.sun_path, fromlen) == 0) {
+		    os_memcmp(from->sun_path, dst->addr.sun_path, fromlen) ==
+		    0) {
 			wpa_hexdump(MSG_DEBUG, "CTRL_IFACE changed monitor "
 				    "level", (u8 *) from->sun_path, fromlen);
 			dst->debug_level = atoi(level);
@@ -118,15 +120,15 @@ static int hostapd_ctrl_iface_sta_mib(struct hostapd_data *hapd,
 	int len, res, ret;
 
 	if (sta == NULL) {
-		ret = snprintf(buf, buflen, "FAIL\n");
+		ret = os_snprintf(buf, buflen, "FAIL\n");
 		if (ret < 0 || (size_t) ret >= buflen)
 			return 0;
 		return ret;
 	}
 
 	len = 0;
-	ret = snprintf(buf + len, buflen - len, MACSTR "\n",
-		       MAC2STR(sta->addr));
+	ret = os_snprintf(buf + len, buflen - len, MACSTR "\n",
+			  MAC2STR(sta->addr));
 	if (ret < 0 || (size_t) ret >= buflen - len)
 		return len;
 	len += ret;
@@ -160,7 +162,7 @@ static int hostapd_ctrl_iface_sta(struct hostapd_data *hapd,
 	int ret;
 
 	if (hwaddr_aton(txtaddr, addr)) {
-		ret = snprintf(buf, buflen, "FAIL\n");
+		ret = os_snprintf(buf, buflen, "FAIL\n");
 		if (ret < 0 || (size_t) ret >= buflen)
 			return 0;
 		return ret;
@@ -180,7 +182,7 @@ static int hostapd_ctrl_iface_sta_next(struct hostapd_data *hapd,
 
 	if (hwaddr_aton(txtaddr, addr) ||
 	    (sta = ap_get_sta(hapd, addr)) == NULL) {
-		ret = snprintf(buf, buflen, "FAIL\n");
+		ret = os_snprintf(buf, buflen, "FAIL\n");
 		if (ret < 0 || (size_t) ret >= buflen)
 			return 0;
 		return ret;
@@ -237,20 +239,20 @@ static void hostapd_ctrl_iface_receive(int sock, void *eloop_ctx,
 	buf[res] = '\0';
 	wpa_hexdump_ascii(MSG_DEBUG, "RX ctrl_iface", (u8 *) buf, res);
 
-	reply = malloc(reply_size);
+	reply = os_malloc(reply_size);
 	if (reply == NULL) {
 		sendto(sock, "FAIL\n", 5, 0, (struct sockaddr *) &from,
 		       fromlen);
 		return;
 	}
 
-	memcpy(reply, "OK\n", 3);
+	os_memcpy(reply, "OK\n", 3);
 	reply_len = 3;
 
-	if (strcmp(buf, "PING") == 0) {
-		memcpy(reply, "PONG\n", 5);
+	if (os_strcmp(buf, "PING") == 0) {
+		os_memcpy(reply, "PONG\n", 5);
 		reply_len = 5;
-	} else if (strcmp(buf, "MIB") == 0) {
+	} else if (os_strcmp(buf, "MIB") == 0) {
 		reply_len = ieee802_11_get_mib(hapd, reply, reply_size);
 		if (reply_len >= 0) {
 			res = wpa_get_mib(hapd->wpa_auth, reply + reply_len,
@@ -277,39 +279,39 @@ static void hostapd_ctrl_iface_receive(int sock, void *eloop_ctx,
 			else
 				reply_len += res;
 		}
-	} else if (strcmp(buf, "STA-FIRST") == 0) {
+	} else if (os_strcmp(buf, "STA-FIRST") == 0) {
 		reply_len = hostapd_ctrl_iface_sta_first(hapd, reply,
 							 reply_size);
-	} else if (strncmp(buf, "STA ", 4) == 0) {
+	} else if (os_strncmp(buf, "STA ", 4) == 0) {
 		reply_len = hostapd_ctrl_iface_sta(hapd, buf + 4, reply,
 						   reply_size);
-	} else if (strncmp(buf, "STA-NEXT ", 9) == 0) {
+	} else if (os_strncmp(buf, "STA-NEXT ", 9) == 0) {
 		reply_len = hostapd_ctrl_iface_sta_next(hapd, buf + 9, reply,
 							reply_size);
-	} else if (strcmp(buf, "ATTACH") == 0) {
+	} else if (os_strcmp(buf, "ATTACH") == 0) {
 		if (hostapd_ctrl_iface_attach(hapd, &from, fromlen))
 			reply_len = -1;
-	} else if (strcmp(buf, "DETACH") == 0) {
+	} else if (os_strcmp(buf, "DETACH") == 0) {
 		if (hostapd_ctrl_iface_detach(hapd, &from, fromlen))
 			reply_len = -1;
-	} else if (strncmp(buf, "LEVEL ", 6) == 0) {
+	} else if (os_strncmp(buf, "LEVEL ", 6) == 0) {
 		if (hostapd_ctrl_iface_level(hapd, &from, fromlen,
 						    buf + 6))
 			reply_len = -1;
-	} else if (strncmp(buf, "NEW_STA ", 8) == 0) {
+	} else if (os_strncmp(buf, "NEW_STA ", 8) == 0) {
 		if (hostapd_ctrl_iface_new_sta(hapd, buf + 8))
 			reply_len = -1;
 	} else {
-		memcpy(reply, "UNKNOWN COMMAND\n", 16);
+		os_memcpy(reply, "UNKNOWN COMMAND\n", 16);
 		reply_len = 16;
 	}
 
 	if (reply_len < 0) {
-		memcpy(reply, "FAIL\n", 5);
+		os_memcpy(reply, "FAIL\n", 5);
 		reply_len = 5;
 	}
 	sendto(sock, reply, reply_len, 0, (struct sockaddr *) &from, fromlen);
-	free(reply);
+	os_free(reply);
 }
 
 
@@ -321,14 +323,14 @@ static char * hostapd_ctrl_iface_path(struct hostapd_data *hapd)
 	if (hapd->conf->ctrl_interface == NULL)
 		return NULL;
 
-	len = strlen(hapd->conf->ctrl_interface) + strlen(hapd->conf->iface) +
-		2;
-	buf = malloc(len);
+	len = os_strlen(hapd->conf->ctrl_interface) +
+		os_strlen(hapd->conf->iface) + 2;
+	buf = os_malloc(len);
 	if (buf == NULL)
 		return NULL;
 
-	snprintf(buf, len, "%s/%s",
-		 hapd->conf->ctrl_interface, hapd->conf->iface);
+	os_snprintf(buf, len, "%s/%s",
+		    hapd->conf->ctrl_interface, hapd->conf->iface);
 	buf[len - 1] = '\0';
 	return buf;
 }
@@ -362,8 +364,8 @@ int hostapd_ctrl_iface_init(struct hostapd_data *hapd)
 		return -1;
 	}
 
-	if (strlen(hapd->conf->ctrl_interface) + 1 + strlen(hapd->conf->iface)
-	    >= sizeof(addr.sun_path))
+	if (os_strlen(hapd->conf->ctrl_interface) + 1 +
+	    os_strlen(hapd->conf->iface) >= sizeof(addr.sun_path))
 		goto fail;
 
 	s = socket(PF_UNIX, SOCK_DGRAM, 0);
@@ -372,7 +374,7 @@ int hostapd_ctrl_iface_init(struct hostapd_data *hapd)
 		goto fail;
 	}
 
-	memset(&addr, 0, sizeof(addr));
+	os_memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
 	fname = hostapd_ctrl_iface_path(hapd);
 	if (fname == NULL)
@@ -393,7 +395,7 @@ int hostapd_ctrl_iface_init(struct hostapd_data *hapd)
 		perror("chmod[ctrl_interface/ifname]");
 		goto fail;
 	}
-	free(fname);
+	os_free(fname);
 
 	hapd->ctrl_sock = s;
 	eloop_register_read_sock(s, hostapd_ctrl_iface_receive, hapd,
@@ -406,7 +408,7 @@ fail:
 		close(s);
 	if (fname) {
 		unlink(fname);
-		free(fname);
+		os_free(fname);
 	}
 	return -1;
 }
@@ -424,7 +426,7 @@ void hostapd_ctrl_iface_deinit(struct hostapd_data *hapd)
 		fname = hostapd_ctrl_iface_path(hapd);
 		if (fname)
 			unlink(fname);
-		free(fname);
+		os_free(fname);
 
 		if (hapd->conf->ctrl_interface &&
 		    rmdir(hapd->conf->ctrl_interface) < 0) {
@@ -442,7 +444,7 @@ void hostapd_ctrl_iface_deinit(struct hostapd_data *hapd)
 	while (dst) {
 		prev = dst;
 		dst = dst->next;
-		free(prev);
+		os_free(prev);
 	}
 }
 
@@ -460,12 +462,12 @@ void hostapd_ctrl_iface_send(struct hostapd_data *hapd, int level,
 	if (hapd->ctrl_sock < 0 || dst == NULL)
 		return;
 
-	snprintf(levelstr, sizeof(levelstr), "<%d>", level);
+	os_snprintf(levelstr, sizeof(levelstr), "<%d>", level);
 	io[0].iov_base = levelstr;
-	io[0].iov_len = strlen(levelstr);
+	io[0].iov_len = os_strlen(levelstr);
 	io[1].iov_base = buf;
 	io[1].iov_len = len;
-	memset(&msg, 0, sizeof(msg));
+	os_memset(&msg, 0, sizeof(msg));
 	msg.msg_iov = io;
 	msg.msg_iovlen = 2;
 

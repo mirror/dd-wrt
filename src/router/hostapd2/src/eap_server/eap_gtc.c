@@ -49,24 +49,22 @@ static void * eap_gtc_init(struct eap_sm *sm)
 static void eap_gtc_reset(struct eap_sm *sm, void *priv)
 {
 	struct eap_gtc_data *data = priv;
-	free(data);
+	os_free(data);
 }
 
 
-static u8 * eap_gtc_buildReq(struct eap_sm *sm, void *priv, int id,
-			     size_t *reqDataLen)
+static struct wpabuf * eap_gtc_buildReq(struct eap_sm *sm, void *priv, u8 id)
 {
 	struct eap_gtc_data *data = priv;
-	struct eap_hdr *req;
-	u8 *pos;
+	struct wpabuf *req;
 	char *msg;
 	size_t msg_len;
 
 	msg = data->prefix ? "CHALLENGE=Password" : "Password";
 
-	msg_len = strlen(msg);
-	req = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_GTC, reqDataLen,
-			    msg_len, EAP_CODE_REQUEST, id, &pos);
+	msg_len = os_strlen(msg);
+	req = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_GTC, msg_len,
+			    EAP_CODE_REQUEST, id);
 	if (req == NULL) {
 		wpa_printf(MSG_ERROR, "EAP-GTC: Failed to allocate memory for "
 			   "request");
@@ -74,22 +72,21 @@ static u8 * eap_gtc_buildReq(struct eap_sm *sm, void *priv, int id,
 		return NULL;
 	}
 
-	memcpy(pos, msg, msg_len);
+	wpabuf_put_data(req, msg, msg_len);
 
 	data->state = CONTINUE;
 
-	return (u8 *) req;
+	return req;
 }
 
 
 static Boolean eap_gtc_check(struct eap_sm *sm, void *priv,
-			     u8 *respData, size_t respDataLen)
+			     struct wpabuf *respData)
 {
 	const u8 *pos;
 	size_t len;
 
-	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_GTC,
-			       respData, respDataLen, &len);
+	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_GTC, respData, &len);
 	if (pos == NULL || len < 1) {
 		wpa_printf(MSG_INFO, "EAP-GTC: Invalid frame");
 		return TRUE;
@@ -100,14 +97,13 @@ static Boolean eap_gtc_check(struct eap_sm *sm, void *priv,
 
 
 static void eap_gtc_process(struct eap_sm *sm, void *priv,
-			    u8 *respData, size_t respDataLen)
+			    struct wpabuf *respData)
 {
 	struct eap_gtc_data *data = priv;
 	const u8 *pos;
 	size_t rlen;
 
-	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_GTC,
-			       respData, respDataLen, &rlen);
+	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_GTC, respData, &rlen);
 	if (pos == NULL || rlen < 1)
 		return; /* Should not happen - frame already validated */
 
@@ -173,7 +169,7 @@ static void eap_gtc_process(struct eap_sm *sm, void *priv,
 	}
 
 	if (rlen != sm->user->password_len ||
-	    memcmp(pos, sm->user->password, rlen) != 0) {
+	    os_memcmp(pos, sm->user->password, rlen) != 0) {
 		wpa_printf(MSG_DEBUG, "EAP-GTC: Done - Failure");
 		data->state = FAILURE;
 	} else {

@@ -22,6 +22,7 @@
 struct eap_sm;
 struct wpa_ssid;
 struct wpa_config_blob;
+struct wpabuf;
 
 struct eap_method_type {
 	int vendor;
@@ -180,7 +181,7 @@ struct eapol_callbacks {
 	 * Returns: Reference to eapReqData (EAP state machine will not free
 	 * this) or %NULL if eapReqData not available.
 	 */
-	u8 * (*get_eapReqData)(void *ctx, size_t *len);
+	struct wpabuf * (*get_eapReqData)(void *ctx);
 
 	/**
 	 * set_config_blob - Set named configuration blob
@@ -246,8 +247,7 @@ int eap_peer_sm_step(struct eap_sm *sm);
 void eap_sm_abort(struct eap_sm *sm);
 int eap_sm_get_status(struct eap_sm *sm, char *buf, size_t buflen,
 		      int verbose);
-u8 * eap_sm_buildIdentity(struct eap_sm *sm, int id, size_t *len,
-			  int encrypted);
+struct wpabuf * eap_sm_buildIdentity(struct eap_sm *sm, int id, int encrypted);
 void eap_sm_request_identity(struct eap_sm *sm);
 void eap_sm_request_password(struct eap_sm *sm);
 void eap_sm_request_new_password(struct eap_sm *sm);
@@ -265,7 +265,7 @@ int eap_key_available(struct eap_sm *sm);
 void eap_notify_success(struct eap_sm *sm);
 void eap_notify_lower_layer_success(struct eap_sm *sm);
 const u8 * eap_get_eapKeyData(struct eap_sm *sm, size_t *len);
-u8 * eap_get_eapRespData(struct eap_sm *sm, size_t *len);
+struct wpabuf * eap_get_eapRespData(struct eap_sm *sm);
 void eap_register_scard_ctx(struct eap_sm *sm, void *ctx);
 void eap_invalidate_cached_session(struct eap_sm *sm);
 

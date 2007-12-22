@@ -40,11 +40,12 @@
 
 static Boolean eap_sm_allowMethod(struct eap_sm *sm, int vendor,
 				  EapType method);
-static u8 * eap_sm_buildNak(struct eap_sm *sm, int id, size_t *len);
-static void eap_sm_processIdentity(struct eap_sm *sm, const u8 *req);
-static void eap_sm_processNotify(struct eap_sm *sm, const u8 *req);
-static u8 * eap_sm_buildNotify(int id, size_t *len);
-static void eap_sm_parseEapReq(struct eap_sm *sm, const u8 *req, size_t len);
+static struct wpabuf * eap_sm_buildNak(struct eap_sm *sm, int id);
+static void eap_sm_processIdentity(struct eap_sm *sm,
+				   const struct wpabuf *req);
+static void eap_sm_processNotify(struct eap_sm *sm, const struct wpabuf *req);
+static struct wpabuf * eap_sm_buildNotify(int id);
+static void eap_sm_parseEapReq(struct eap_sm *sm, const struct wpabuf *req);
 #if defined(CONFIG_CTRL_IFACE) || !defined(CONFIG_NO_STDOUT_DEBUG)
 static const char * eap_sm_method_state_txt(EapMethodState state);
 static const char * eap_sm_decision_txt(EapDecision decision);
@@ -78,9 +79,9 @@ static void eapol_set_int(struct eap_sm *sm, enum eapol_int_var var,
 }
 
 
-static u8 * eapol_get_eapReqData(struct eap_sm *sm, size_t *len)
+static struct wpabuf * eapol_get_eapReqData(struct eap_sm *sm)
 {
-	return sm->eapol_cb->get_eapReqData(sm->eapol_ctx, len);
+	return sm->eapol_cb->get_eapReqData(sm->eapol_ctx);
 }
 
 
@@ -94,6 +95,32 @@ static void eap_deinit_prev_method(struct eap_sm *sm, const char *txt)
 	sm->m->deinit(sm, sm->eap_method_priv);
 	sm->eap_method_priv = NULL;
 	sm->m = NULL;
+}
+
+
+/**
+ * eap_allowed_method - Check whether EAP method is allowed
+ * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
+ * @vendor: Vendor-Id for expanded types or 0 = IETF for legacy types
+ * @method: EAP type
+ * Returns: 1 = allowed EAP method, 0 = not allowed
+ */
+static int eap_allowed_method(struct eap_sm *sm, int vendor, u32 method)
+{
+	struct wpa_ssid *config = eap_get_config(sm);
+	int i;
+	struct eap_method_type *m;
+
+	if (config == NULL || config->eap_methods == NULL)
+		return 1;
+
+	m = config->eap_methods;
+	for (i = 0; m[i].vendor != EAP_VENDOR_IETF ||
+		     m[i].method != EAP_TYPE_NONE; i++) {
+		if (m[i].vendor == vendor && m[i].method == method)
+			return 1;
+	}
+	return 0;
 }
 
 
@@ -169,13 +196,12 @@ SM_STATE(EAP, IDLE)
  */
 SM_STATE(EAP, RECEIVED)
 {
-	const u8 *eapReqData;
-	size_t eapReqDataLen;
+	const struct wpabuf *eapReqData;
 
 	SM_ENTRY(EAP, RECEIVED);
-	eapReqData = eapol_get_eapReqData(sm, &eapReqDataLen);
+	eapReqData = eapol_get_eapReqData(sm);
 	/* parse rxReq, rxSuccess, rxFailure, reqId, reqMethod */
-	eap_sm_parseEapReq(sm, eapReqData, eapReqDataLen);
+	eap_sm_parseEapReq(sm, eapReqData);
 	sm->num_rounds++;
 }
 
@@ -274,9 +300,9 @@ SM_STATE(EAP, GET_METHOD)
 	return;
 
 nak:
-	os_free(sm->eapRespData);
+	wpabuf_free(sm->eapRespData);
 	sm->eapRespData = NULL;
-	sm->eapRespData = eap_sm_buildNak(sm, sm->reqId, &sm->eapRespDataLen);
+	sm->eapRespData = eap_sm_buildNak(sm, sm->reqId);
 }
 
 
@@ -286,8 +312,7 @@ nak:
  */
 SM_STATE(EAP, METHOD)
 {
-	u8 *eapReqData;
-	size_t eapReqDataLen;
+	struct wpabuf *eapReqData;
 	struct eap_method_ret ret;
 
 	SM_ENTRY(EAP, METHOD);
@@ -296,7 +321,7 @@ SM_STATE(EAP, METHOD)
 		return;
 	}
 
-	eapReqData = eapol_get_eapReqData(sm, &eapReqDataLen);
+	eapReqData = eapol_get_eapReqData(sm);
 
 	/*
 	 * Get ignore, methodState, decision, allowNotifications, and
@@ -317,11 +342,10 @@ SM_STATE(EAP, METHOD)
 	ret.methodState = sm->methodState;
 	ret.decision = sm->decision;
 	ret.allowNotifications = sm->allowNotifications;
-	os_free(sm->eapRespData);
+	wpabuf_free(sm->eapRespData);
 	sm->eapRespData = NULL;
 	sm->eapRespData = sm->m->process(sm, sm->eap_method_priv, &ret,
-					 eapReqData, eapReqDataLen,
-					 &sm->eapRespDataLen);
+					 eapReqData);
 	wpa_printf(MSG_DEBUG, "EAP: method process -> ignore=%s "
 		   "methodState=%s decision=%s",
 		   ret.ignore ? "TRUE" : "FALSE",
@@ -351,17 +375,12 @@ SM_STATE(EAP, METHOD)
 SM_STATE(EAP, SEND_RESPONSE)
 {
 	SM_ENTRY(EAP, SEND_RESPONSE);
-	os_free(sm->lastRespData);
+	wpabuf_free(sm->lastRespData);
 	if (sm->eapRespData) {
 		if (sm->workaround)
 			os_memcpy(sm->last_md5, sm->req_md5, 16);
 		sm->lastId = sm->reqId;
-		sm->lastRespData = os_malloc(sm->eapRespDataLen);
-		if (sm->lastRespData) {
-			os_memcpy(sm->lastRespData, sm->eapRespData,
-				  sm->eapRespDataLen);
-			sm->lastRespDataLen = sm->eapRespDataLen;
-		}
+		sm->lastRespData = wpabuf_dup(sm->eapRespData);
 		eapol_set_bool(sm, EAPOL_eapResp, TRUE);
 	} else
 		sm->lastRespData = NULL;
@@ -387,16 +406,14 @@ SM_STATE(EAP, DISCARD)
  */
 SM_STATE(EAP, IDENTITY)
 {
-	const u8 *eapReqData;
-	size_t eapReqDataLen;
+	const struct wpabuf *eapReqData;
 
 	SM_ENTRY(EAP, IDENTITY);
-	eapReqData = eapol_get_eapReqData(sm, &eapReqDataLen);
+	eapReqData = eapol_get_eapReqData(sm);
 	eap_sm_processIdentity(sm, eapReqData);
-	os_free(sm->eapRespData);
+	wpabuf_free(sm->eapRespData);
 	sm->eapRespData = NULL;
-	sm->eapRespData = eap_sm_buildIdentity(sm, sm->reqId,
-					       &sm->eapRespDataLen, 0);
+	sm->eapRespData = eap_sm_buildIdentity(sm, sm->reqId, 0);
 }
 
 
@@ -405,15 +422,14 @@ SM_STATE(EAP, IDENTITY)
  */
 SM_STATE(EAP, NOTIFICATION)
 {
-	const u8 *eapReqData;
-	size_t eapReqDataLen;
+	const struct wpabuf *eapReqData;
 
 	SM_ENTRY(EAP, NOTIFICATION);
-	eapReqData = eapol_get_eapReqData(sm, &eapReqDataLen);
+	eapReqData = eapol_get_eapReqData(sm);
 	eap_sm_processNotify(sm, eapReqData);
-	os_free(sm->eapRespData);
+	wpabuf_free(sm->eapRespData);
 	sm->eapRespData = NULL;
-	sm->eapRespData = eap_sm_buildNotify(sm->reqId, &sm->eapRespDataLen);
+	sm->eapRespData = eap_sm_buildNotify(sm->reqId);
 }
 
 
@@ -423,15 +439,10 @@ SM_STATE(EAP, NOTIFICATION)
 SM_STATE(EAP, RETRANSMIT)
 {
 	SM_ENTRY(EAP, RETRANSMIT);
-	os_free(sm->eapRespData);
-	if (sm->lastRespData) {
-		sm->eapRespData = os_malloc(sm->lastRespDataLen);
-		if (sm->eapRespData) {
-			os_memcpy(sm->eapRespData, sm->lastRespData,
-				  sm->lastRespDataLen);
-			sm->eapRespDataLen = sm->lastRespDataLen;
-		}
-	} else
+	wpabuf_free(sm->eapRespData);
+	if (sm->lastRespData)
+		sm->eapRespData = wpabuf_dup(sm->lastRespData);
+	else
 		sm->eapRespData = NULL;
 }
 
@@ -719,9 +730,7 @@ SM_STEP(EAP)
 static Boolean eap_sm_allowMethod(struct eap_sm *sm, int vendor,
 				  EapType method)
 {
-	struct wpa_ssid *config = eap_get_config(sm);
-
-	if (!wpa_config_allowed_eap_method(config, vendor, method)) {
+	if (!eap_allowed_method(sm, vendor, method)) {
 		wpa_printf(MSG_DEBUG, "EAP: configuration does not allow: "
 			   "vendor %u method %u", vendor, method);
 		return FALSE;
@@ -734,74 +743,57 @@ static Boolean eap_sm_allowMethod(struct eap_sm *sm, int vendor,
 }
 
 
-static u8 * eap_sm_build_expanded_nak(struct eap_sm *sm, int id, size_t *len,
-				      const struct eap_method *methods,
-				      size_t count)
+static struct wpabuf * eap_sm_build_expanded_nak(
+	struct eap_sm *sm, int id, const struct eap_method *methods,
+	size_t count)
 {
-	struct wpa_ssid *config = eap_get_config(sm);
-	struct eap_hdr *resp;
-	u8 *pos;
+	struct wpabuf *resp;
 	int found = 0;
 	const struct eap_method *m;
 
 	wpa_printf(MSG_DEBUG, "EAP: Building expanded EAP-Nak");
 
 	/* RFC 3748 - 5.3.2: Expanded Nak */
-	*len = sizeof(struct eap_hdr) + 8;
-	resp = os_malloc(*len + 8 * (count + 1));
+	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_EXPANDED,
+			     8 + 8 * (count + 1), EAP_CODE_RESPONSE, id);
 	if (resp == NULL)
 		return NULL;
 
-	resp->code = EAP_CODE_RESPONSE;
-	resp->identifier = id;
-	pos = (u8 *) (resp + 1);
-	*pos++ = EAP_TYPE_EXPANDED;
-	WPA_PUT_BE24(pos, EAP_VENDOR_IETF);
-	pos += 3;
-	WPA_PUT_BE32(pos, EAP_TYPE_NAK);
-	pos += 4;
+	wpabuf_put_be24(resp, EAP_VENDOR_IETF);
+	wpabuf_put_be32(resp, EAP_TYPE_NAK);
 
 	for (m = methods; m; m = m->next) {
 		if (sm->reqVendor == m->vendor &&
 		    sm->reqVendorMethod == m->method)
 			continue; /* do not allow the current method again */
-		if (wpa_config_allowed_eap_method(config, m->vendor,
-						  m->method)) {
+		if (eap_allowed_method(sm, m->vendor, m->method)) {
 			wpa_printf(MSG_DEBUG, "EAP: allowed type: "
 				   "vendor=%u method=%u",
 				   m->vendor, m->method);
-			*pos++ = EAP_TYPE_EXPANDED;
-			WPA_PUT_BE24(pos, m->vendor);
-			pos += 3;
-			WPA_PUT_BE32(pos, m->method);
-			pos += 4;
+			wpabuf_put_u8(resp, EAP_TYPE_EXPANDED);
+			wpabuf_put_be24(resp, m->vendor);
+			wpabuf_put_be32(resp, m->method);
 
-			(*len) += 8;
 			found++;
 		}
 	}
 	if (!found) {
 		wpa_printf(MSG_DEBUG, "EAP: no more allowed methods");
-		*pos++ = EAP_TYPE_EXPANDED;
-		WPA_PUT_BE24(pos, EAP_VENDOR_IETF);
-		pos += 3;
-		WPA_PUT_BE32(pos, EAP_TYPE_NONE);
-		pos += 4;
-
-		(*len) += 8;
+		wpabuf_put_u8(resp, EAP_TYPE_EXPANDED);
+		wpabuf_put_be24(resp, EAP_VENDOR_IETF);
+		wpabuf_put_be32(resp, EAP_TYPE_NONE);
 	}
 
-	resp->length = host_to_be16(*len);
+	eap_update_len(resp);
 
-	return (u8 *) resp;
+	return resp;
 }
 
 
-static u8 * eap_sm_buildNak(struct eap_sm *sm, int id, size_t *len)
+static struct wpabuf * eap_sm_buildNak(struct eap_sm *sm, int id)
 {
-	struct wpa_ssid *config = eap_get_config(sm);
-	struct eap_hdr *resp;
-	u8 *pos;
+	struct wpabuf *resp;
+	u8 *start;
 	int found = 0, expanded_found = 0;
 	size_t count;
 	const struct eap_method *methods, *m;
@@ -813,51 +805,43 @@ static u8 * eap_sm_buildNak(struct eap_sm *sm, int id, size_t *len)
 	if (methods == NULL)
 		return NULL;
 	if (sm->reqMethod == EAP_TYPE_EXPANDED)
-		return eap_sm_build_expanded_nak(sm, id, len, methods, count);
+		return eap_sm_build_expanded_nak(sm, id, methods, count);
 
 	/* RFC 3748 - 5.3.1: Legacy Nak */
-	*len = sizeof(struct eap_hdr) + 1;
-	resp = os_malloc(*len + count + 1);
+	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_NAK,
+			     sizeof(struct eap_hdr) + 1 + count + 1,
+			     EAP_CODE_RESPONSE, id);
 	if (resp == NULL)
 		return NULL;
 
-	resp->code = EAP_CODE_RESPONSE;
-	resp->identifier = id;
-	pos = (u8 *) (resp + 1);
-	*pos++ = EAP_TYPE_NAK;
-
+	start = wpabuf_put(resp, 0);
 	for (m = methods; m; m = m->next) {
 		if (m->vendor == EAP_VENDOR_IETF && m->method == sm->reqMethod)
 			continue; /* do not allow the current method again */
-		if (wpa_config_allowed_eap_method(config, m->vendor,
-						  m->method)) {
+		if (eap_allowed_method(sm, m->vendor, m->method)) {
 			if (m->vendor != EAP_VENDOR_IETF) {
 				if (expanded_found)
 					continue;
 				expanded_found = 1;
-				*pos++ = EAP_TYPE_EXPANDED;
+				wpabuf_put_u8(resp, EAP_TYPE_EXPANDED);
 			} else
-				*pos++ = m->method;
-			(*len)++;
+				wpabuf_put_u8(resp, m->method);
 			found++;
 		}
 	}
-	if (!found) {
-		*pos = EAP_TYPE_NONE;
-		(*len)++;
-	}
-	wpa_hexdump(MSG_DEBUG, "EAP: allowed methods",
-		    ((u8 *) (resp + 1)) + 1, found);
+	if (!found)
+		wpabuf_put_u8(resp, EAP_TYPE_NONE);
+	wpa_hexdump(MSG_DEBUG, "EAP: allowed methods", start, found);
 
-	resp->length = host_to_be16(*len);
+	eap_update_len(resp);
 
-	return (u8 *) resp;
+	return resp;
 }
 
 
-static void eap_sm_processIdentity(struct eap_sm *sm, const u8 *req)
+static void eap_sm_processIdentity(struct eap_sm *sm, const struct wpabuf *req)
 {
-	const struct eap_hdr *hdr = (const struct eap_hdr *) req;
+	const struct eap_hdr *hdr = wpabuf_head(req);
 	const u8 *pos = (const u8 *) (hdr + 1);
 	pos++;
 
@@ -948,7 +932,6 @@ static int eap_sm_get_scard_identity(struct eap_sm *sm, struct wpa_ssid *ssid)
  * eap_sm_buildIdentity - Build EAP-Identity/Response for the current network
  * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
  * @id: EAP identifier for the packet
- * @len: Pointer to a variable that will be set to the length of the response
  * @encrypted: Whether the packet is for encrypted tunnel (EAP phase 2)
  * Returns: Pointer to the allocated EAP-Identity/Response packet or %NULL on
  * failure
@@ -956,12 +939,10 @@ static int eap_sm_get_scard_identity(struct eap_sm *sm, struct wpa_ssid *ssid)
  * This function allocates and builds an EAP-Identity/Response packet for the
  * current network. The caller is responsible for freeing the returned data.
  */
-u8 * eap_sm_buildIdentity(struct eap_sm *sm, int id, size_t *len,
-			  int encrypted)
+struct wpabuf * eap_sm_buildIdentity(struct eap_sm *sm, int id, int encrypted)
 {
 	struct wpa_ssid *config = eap_get_config(sm);
-	struct eap_hdr *resp;
-	u8 *pos;
+	struct wpabuf *resp;
 	const u8 *identity;
 	size_t identity_len;
 
@@ -1004,36 +985,27 @@ u8 * eap_sm_buildIdentity(struct eap_sm *sm, int id, size_t *len,
 		}
 	}
 
-	*len = sizeof(struct eap_hdr) + 1 + identity_len;
-	resp = os_malloc(*len);
+	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_IDENTITY, identity_len,
+			     EAP_CODE_RESPONSE, id);
 	if (resp == NULL)
 		return NULL;
 
-	resp->code = EAP_CODE_RESPONSE;
-	resp->identifier = id;
-	resp->length = host_to_be16(*len);
-	pos = (u8 *) (resp + 1);
-	*pos++ = EAP_TYPE_IDENTITY;
-	os_memcpy(pos, identity, identity_len);
+	wpabuf_put_data(resp, identity, identity_len);
 
-	return (u8 *) resp;
+	return resp;
 }
 
 
-static void eap_sm_processNotify(struct eap_sm *sm, const u8 *req)
+static void eap_sm_processNotify(struct eap_sm *sm, const struct wpabuf *req)
 {
-	const struct eap_hdr *hdr = (const struct eap_hdr *) req;
 	const u8 *pos;
 	char *msg;
 	size_t i, msg_len;
 
-	pos = (const u8 *) (hdr + 1);
-	pos++;
-
-	msg_len = be_to_host16(hdr->length);
-	if (msg_len < 5)
+	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_NOTIFICATION, req,
+			       &msg_len);
+	if (pos == NULL)
 		return;
-	msg_len -= 5;
 	wpa_hexdump_ascii(MSG_DEBUG, "EAP: EAP-Request Notification data",
 			  pos, msg_len);
 
@@ -1049,28 +1021,21 @@ static void eap_sm_processNotify(struct eap_sm *sm, const u8 *req)
 }
 
 
-static u8 * eap_sm_buildNotify(int id, size_t *len)
+static struct wpabuf * eap_sm_buildNotify(int id)
 {
-	struct eap_hdr *resp;
-	u8 *pos;
+	struct wpabuf *resp;
 
 	wpa_printf(MSG_DEBUG, "EAP: Generating EAP-Response Notification");
-	*len = sizeof(struct eap_hdr) + 1;
-	resp = os_malloc(*len);
+	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_NOTIFICATION, 0,
+			     EAP_CODE_RESPONSE, id);
 	if (resp == NULL)
 		return NULL;
 
-	resp->code = EAP_CODE_RESPONSE;
-	resp->identifier = id;
-	resp->length = host_to_be16(*len);
-	pos = (u8 *) (resp + 1);
-	*pos = EAP_TYPE_NOTIFICATION;
-
-	return (u8 *) resp;
+	return resp;
 }
 
 
-static void eap_sm_parseEapReq(struct eap_sm *sm, const u8 *req, size_t len)
+static void eap_sm_parseEapReq(struct eap_sm *sm, const struct wpabuf *req)
 {
 	const struct eap_hdr *hdr;
 	size_t plen;
@@ -1082,22 +1047,25 @@ static void eap_sm_parseEapReq(struct eap_sm *sm, const u8 *req, size_t len)
 	sm->reqVendor = EAP_VENDOR_IETF;
 	sm->reqVendorMethod = EAP_TYPE_NONE;
 
-	if (req == NULL || len < sizeof(*hdr))
+	if (req == NULL || wpabuf_len(req) < sizeof(*hdr))
 		return;
 
-	hdr = (const struct eap_hdr *) req;
+	hdr = wpabuf_head(req);
 	plen = be_to_host16(hdr->length);
-	if (plen > len) {
+	if (plen > wpabuf_len(req)) {
 		wpa_printf(MSG_DEBUG, "EAP: Ignored truncated EAP-Packet "
 			   "(len=%lu plen=%lu)",
-			   (unsigned long) len, (unsigned long) plen);
+			   (unsigned long) wpabuf_len(req),
+			   (unsigned long) plen);
 		return;
 	}
 
 	sm->reqId = hdr->identifier;
 
 	if (sm->workaround) {
-		md5_vector(1, (const u8 **) &req, &plen, sm->req_md5);
+		const u8 *addr[1];
+		addr[0] = wpabuf_head(req);
+		md5_vector(1, addr, &plen, sm->req_md5);
 	}
 
 	switch (hdr->code) {
@@ -1258,9 +1226,9 @@ int eap_peer_sm_step(struct eap_sm *sm)
  */
 void eap_sm_abort(struct eap_sm *sm)
 {
-	os_free(sm->lastRespData);
+	wpabuf_free(sm->lastRespData);
 	sm->lastRespData = NULL;
-	os_free(sm->eapRespData);
+	wpabuf_free(sm->eapRespData);
 	sm->eapRespData = NULL;
 	os_free(sm->eapKeyData);
 	sm->eapKeyData = NULL;
@@ -1942,7 +1910,6 @@ const u8 * eap_get_eapKeyData(struct eap_sm *sm, size_t *len)
 /**
  * eap_get_eapKeyData - Get EAP response data
  * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
- * @len: Pointer to variable that will be set to the length of the response
  * Returns: Pointer to the EAP response (eapRespData) or %NULL on failure
  *
  * Fetch EAP response (eapRespData) from the EAP state machine. This data is
@@ -1950,19 +1917,15 @@ const u8 * eap_get_eapKeyData(struct eap_sm *sm, size_t *len)
  * EAP state machine does not maintain a reference to the response after this
  * function is called and the caller is responsible for freeing the data.
  */
-u8 * eap_get_eapRespData(struct eap_sm *sm, size_t *len)
+struct wpabuf * eap_get_eapRespData(struct eap_sm *sm)
 {
-	u8 *resp;
+	struct wpabuf *resp;
 
-	if (sm == NULL || sm->eapRespData == NULL) {
-		*len = 0;
+	if (sm == NULL || sm->eapRespData == NULL)
 		return NULL;
-	}
 
 	resp = sm->eapRespData;
-	*len = sm->eapRespDataLen;
 	sm->eapRespData = NULL;
-	sm->eapRespDataLen = 0;
 
 	return resp;
 }
@@ -1993,7 +1956,9 @@ void eap_register_scard_ctx(struct eap_sm *sm, void *ctx)
  */
 void eap_set_config_blob(struct eap_sm *sm, struct wpa_config_blob *blob)
 {
+#ifndef CONFIG_NO_CONFIG_BLOBS
 	sm->eapol_cb->set_config_blob(sm->eapol_ctx, blob);
+#endif /* CONFIG_NO_CONFIG_BLOBS */
 }
 
 
@@ -2006,7 +1971,11 @@ void eap_set_config_blob(struct eap_sm *sm, struct wpa_config_blob *blob)
 const struct wpa_config_blob * eap_get_config_blob(struct eap_sm *sm,
 						   const char *name)
 {
+#ifndef CONFIG_NO_CONFIG_BLOBS
 	return sm->eapol_cb->get_config_blob(sm->eapol_ctx, name);
+#else /* CONFIG_NO_CONFIG_BLOBS */
+	return NULL;
+#endif /* CONFIG_NO_CONFIG_BLOBS */
 }
 
 

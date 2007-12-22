@@ -112,7 +112,7 @@ struct ap_info * ap_get_ap(struct hostapd_iface *iface, u8 *ap)
 	struct ap_info *s;
 
 	s = iface->ap_hash[STA_HASH(ap)];
-	while (s != NULL && memcmp(s->addr, ap, ETH_ALEN) != 0)
+	while (s != NULL && os_memcmp(s->addr, ap, ETH_ALEN) != 0)
 		s = s->hnext;
 	return s;
 }
@@ -185,13 +185,13 @@ static void ap_ap_hash_del(struct hostapd_iface *iface, struct ap_info *ap)
 
 	s = iface->ap_hash[STA_HASH(ap->addr)];
 	if (s == NULL) return;
-	if (memcmp(s->addr, ap->addr, ETH_ALEN) == 0) {
+	if (os_memcmp(s->addr, ap->addr, ETH_ALEN) == 0) {
 		iface->ap_hash[STA_HASH(ap->addr)] = s->hnext;
 		return;
 	}
 
 	while (s->hnext != NULL &&
-	       memcmp(s->hnext->addr, ap->addr, ETH_ALEN) != 0)
+	       os_memcmp(s->hnext->addr, ap->addr, ETH_ALEN) != 0)
 		s = s->hnext;
 	if (s->hnext != NULL)
 		s->hnext = s->hnext->hnext;
@@ -208,7 +208,7 @@ static void ap_free_ap(struct hostapd_iface *iface, struct ap_info *ap)
 	ap_ap_iter_list_del(iface, ap);
 
 	iface->num_ap--;
-	free(ap);
+	os_free(ap);
 }
 
 
@@ -256,7 +256,7 @@ static struct ap_info * ap_ap_add(struct hostapd_iface *iface, u8 *addr)
 		return NULL;
 
 	/* initialize AP info data */
-	memcpy(ap->addr, addr, ETH_ALEN);
+	os_memcpy(ap->addr, addr, ETH_ALEN);
 	ap_ap_list_add(iface, ap);
 	iface->num_ap++;
 	ap_ap_hash_add(iface, ap);
@@ -303,18 +303,18 @@ void ap_list_process_beacon(struct hostapd_iface *iface,
 		len = elems->ssid_len;
 		if (len >= sizeof(ap->ssid))
 			len = sizeof(ap->ssid) - 1;
-		memcpy(ap->ssid, elems->ssid, len);
+		os_memcpy(ap->ssid, elems->ssid, len);
 		ap->ssid[len] = '\0';
 		ap->ssid_len = len;
 	}
 
-	memset(ap->supported_rates, 0, WLAN_SUPP_RATES_MAX);
+	os_memset(ap->supported_rates, 0, WLAN_SUPP_RATES_MAX);
 	len = 0;
 	if (elems->supp_rates) {
 		len = elems->supp_rates_len;
 		if (len > WLAN_SUPP_RATES_MAX)
 			len = WLAN_SUPP_RATES_MAX;
-		memcpy(ap->supported_rates, elems->supp_rates, len);
+		os_memcpy(ap->supported_rates, elems->supp_rates, len);
 	}
 	if (elems->ext_supp_rates) {
 		int len2;
@@ -322,7 +322,8 @@ void ap_list_process_beacon(struct hostapd_iface *iface,
 			len2 = WLAN_SUPP_RATES_MAX - len;
 		else
 			len2 = elems->ext_supp_rates_len;
-		memcpy(ap->supported_rates + len, elems->ext_supp_rates, len2);
+		os_memcpy(ap->supported_rates + len, elems->ext_supp_rates,
+			  len2);
 	}
 
 	ap->wpa = elems->wpa_ie != NULL;

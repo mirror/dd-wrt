@@ -52,7 +52,7 @@ EapType eap_server_get_type(const char *name, int *vendor)
 {
 	struct eap_method *m;
 	for (m = eap_methods; m; m = m->next) {
-		if (strcmp(m->name, name) == 0) {
+		if (os_strcmp(m->name, name) == 0) {
 			*vendor = m->vendor;
 			return m->method;
 		}
@@ -95,7 +95,7 @@ struct eap_method * eap_server_method_alloc(int version, int vendor,
  */
 void eap_server_method_free(struct eap_method *method)
 {
-	free(method);
+	os_free(method);
 }
 
 
@@ -119,7 +119,7 @@ int eap_server_method_register(struct eap_method *method)
 	for (m = eap_methods; m; m = m->next) {
 		if ((m->vendor == method->vendor &&
 		     m->method == method->method) ||
-		    strcmp(m->name, method->name) == 0)
+		    os_strcmp(m->name, method->name) == 0)
 			return -2;
 		last = m;
 	}
@@ -253,6 +253,13 @@ int eap_server_register_methods(void)
 		ret = eap_server_fast_register();
 	}
 #endif /* EAP_FAST */
+
+#ifdef EAP_WSC
+	if (ret == 0) {
+		int eap_server_wsc_register(void);
+		ret = eap_server_wsc_register();
+	}
+#endif /* EAP_WSC */
 
 	return ret;
 }

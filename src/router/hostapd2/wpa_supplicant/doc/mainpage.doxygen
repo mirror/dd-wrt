@@ -1,5 +1,5 @@
 /**
-\mainpage Developers' documentation for %wpa_supplicant
+\mainpage Developers' documentation for wpa_supplicant
 
 %wpa_supplicant is a WPA Supplicant for Linux, BSD and Windows with
 support for WPA and WPA2 (IEEE 802.11i / RSN). Supplicant is the IEEE
@@ -19,11 +19,11 @@ same address. Please note that %wpa_supplicant is licensed under dual
 license, GPLv2 or BSD at user's choice. All contributions to
 %wpa_supplicant are expected to use compatible licensing terms.
 
-The source code and read-only access to %wpa_supplicant CVS repository
+The source code and read-only access to %wpa_supplicant Git repository
 is available from the project home page at
-http://hostap.epitest.fi/wpa_supplicant/. This developers' documentation
+http://w1.fi/wpa_supplicant/. This developers' documentation
 is also available as a PDF file from
-http://hostap.epitest.fi/wpa_supplicant/wpa_supplicant-devel.pdf .
+http://w1.fi/wpa_supplicant/wpa_supplicant-devel.pdf .
 
 The design goal for %wpa_supplicant was to use hardware, driver, and
 OS independent, portable C code for all WPA functionality. The source

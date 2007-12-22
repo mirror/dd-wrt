@@ -1,5 +1,5 @@
 /*
- * WPA Supplicant / EAPOL state machines
+ * EAPOL supplicant state machines
  * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -15,13 +15,14 @@
 #include "includes.h"
 
 #include "common.h"
-#include "eapol_sm.h"
+#include "eapol_supp_sm.h"
 #include "eap_peer/eap.h"
 #include "eloop.h"
-#include "wpa.h"
+#include "eapol_common.h"
 #include "md5.h"
 #include "rc4.h"
 #include "state_machine.h"
+#include "wpabuf.h"
 
 #define STATE_MACHINE_DATA struct eapol_sm
 #define STATE_MACHINE_DEBUG_PREFIX "EAPOL"
@@ -128,8 +129,7 @@ struct eapol_sm {
 	Boolean initial_req;
 	u8 *last_rx_key;
 	size_t last_rx_key_len;
-	u8 *eapReqData; /* for EAP */
-	size_t eapReqDataLen; /* for EAP */
+	struct wpabuf *eapReqData; /* for EAP */
 	Boolean altAccept; /* for EAP */
 	Boolean altReject; /* for EAP */
 	Boolean replay_counter_valid;
@@ -791,11 +791,10 @@ static void eapol_sm_getSuppRsp(struct eapol_sm *sm)
 
 static void eapol_sm_txSuppRsp(struct eapol_sm *sm)
 {
-	u8 *resp;
-	size_t resp_len;
+	struct wpabuf *resp;
 
 	wpa_printf(MSG_DEBUG, "EAPOL: txSuppRsp");
-	resp = eap_get_eapRespData(sm->eap, &resp_len);
+	resp = eap_get_eapRespData(sm->eap);
 	if (resp == NULL) {
 		wpa_printf(MSG_WARNING, "EAPOL: txSuppRsp - EAP response data "
 			   "not available");
@@ -804,10 +803,11 @@ static void eapol_sm_txSuppRsp(struct eapol_sm *sm)
 
 	/* Send EAP-Packet from the EAP layer to the Authenticator */
 	sm->ctx->eapol_send(sm->ctx->eapol_send_ctx,
-			    IEEE802_1X_TYPE_EAP_PACKET, resp, resp_len);
+			    IEEE802_1X_TYPE_EAP_PACKET, wpabuf_head(resp),
+			    wpabuf_len(resp));
 
 	/* eapRespData is not used anymore, so free it here */
-	os_free(resp);
+	wpabuf_free(resp);
 
 	if (sm->initial_req)
 		sm->dot1xSuppEapolReqIdFramesRx++;
@@ -824,7 +824,7 @@ static void eapol_sm_abortSupp(struct eapol_sm *sm)
 	 * authentication session */
 	os_free(sm->last_rx_key);
 	sm->last_rx_key = NULL;
-	os_free(sm->eapReqData);
+	wpabuf_free(sm->eapReqData);
 	sm->eapReqData = NULL;
 	eap_sm_abort(sm->eap);
 }
@@ -1155,14 +1155,11 @@ int eapol_sm_rx_eapol(struct eapol_sm *sm, const u8 *src, const u8 *buf,
 			 */
 			eapol_sm_abort_cached(sm);
 		}
-		os_free(sm->eapReqData);
-		sm->eapReqDataLen = plen;
-		sm->eapReqData = os_malloc(sm->eapReqDataLen);
+		wpabuf_free(sm->eapReqData);
+		sm->eapReqData = wpabuf_alloc_copy(hdr + 1, plen);
 		if (sm->eapReqData) {
 			wpa_printf(MSG_DEBUG, "EAPOL: Received EAP-Packet "
 				   "frame");
-			os_memcpy(sm->eapReqData, (u8 *) (hdr + 1),
-				  sm->eapReqDataLen);
 			sm->eapolEap = TRUE;
 			eapol_sm_step(sm);
 		}
@@ -1264,7 +1261,7 @@ void eapol_sm_notify_portValid(struct eapol_sm *sm, Boolean valid)
  * @sm: Pointer to EAPOL state machine allocated with eapol_sm_init()
  * @success: %TRUE = set success, %FALSE = clear success
  *
- * Notify EAPOL station machine that external event has forced EAP state to
+ * Notify the EAPOL state machine that external event has forced EAP state to
  * success (success = %TRUE). This can be cleared by setting success = %FALSE.
  *
  * This function is called to update EAP state when WPA-PSK key handshake has
@@ -1560,15 +1557,12 @@ static struct wpa_ssid * eapol_sm_get_config(void *ctx)
 }
 
 
-static u8 * eapol_sm_get_eapReqData(void *ctx, size_t *len)
+static struct wpabuf * eapol_sm_get_eapReqData(void *ctx)
 {
 	struct eapol_sm *sm = ctx;
-	if (sm == NULL || sm->eapReqData == NULL) {
-		*len = 0;
+	if (sm == NULL || sm->eapReqData == NULL)
 		return NULL;
-	}
 
-	*len = sm->eapReqDataLen;
 	return sm->eapReqData;
 }
 
@@ -1669,20 +1663,26 @@ static void eapol_sm_set_int(void *ctx, enum eapol_int_var variable,
 
 static void eapol_sm_set_config_blob(void *ctx, struct wpa_config_blob *blob)
 {
+#ifndef CONFIG_NO_CONFIG_BLOBS
 	struct eapol_sm *sm = ctx;
 	if (sm && sm->ctx && sm->ctx->set_config_blob)
 		sm->ctx->set_config_blob(sm->ctx->ctx, blob);
+#endif /* CONFIG_NO_CONFIG_BLOBS */
 }
 
 
 static const struct wpa_config_blob *
 eapol_sm_get_config_blob(void *ctx, const char *name)
 {
+#ifndef CONFIG_NO_CONFIG_BLOBS
 	struct eapol_sm *sm = ctx;
 	if (sm && sm->ctx && sm->ctx->get_config_blob)
 		return sm->ctx->get_config_blob(sm->ctx->ctx, name);
 	else
 		return NULL;
+#else /* CONFIG_NO_CONFIG_BLOBS */
+	return NULL;
+#endif /* CONFIG_NO_CONFIG_BLOBS */
 }
 
 
@@ -1743,9 +1743,11 @@ struct eapol_sm *eapol_sm_init(struct eapol_ctx *ctx)
 	sm->authPeriod = 30;
 
 	os_memset(&conf, 0, sizeof(conf));
+#ifdef EAP_TLS_OPENSSL
 	conf.opensc_engine_path = ctx->opensc_engine_path;
 	conf.pkcs11_engine_path = ctx->pkcs11_engine_path;
 	conf.pkcs11_module_path = ctx->pkcs11_module_path;
+#endif /* EAP_TLS_OPENSSL */
 
 	sm->eap = eap_peer_sm_init(sm, &eapol_cb, sm->ctx->msg_ctx, &conf);
 	if (sm->eap == NULL) {
@@ -1779,7 +1781,7 @@ void eapol_sm_deinit(struct eapol_sm *sm)
 	eloop_cancel_timeout(eapol_port_timers_tick, NULL, sm);
 	eap_peer_sm_deinit(sm->eap);
 	os_free(sm->last_rx_key);
-	os_free(sm->eapReqData);
+	wpabuf_free(sm->eapReqData);
 	os_free(sm->ctx);
 	os_free(sm);
 }

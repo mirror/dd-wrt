@@ -20,7 +20,7 @@
 #include "config_ssid.h"
 #include "sha1.h"
 #include "wpa_i.h"
-#include "eapol_sm.h"
+#include "eapol_supp/eapol_supp_sm.h"
 #include "pmksa_cache.h"
 
 #if defined(IEEE8021X_EAPOL) && !defined(CONFIG_NO_WPA2)

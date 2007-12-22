@@ -17,13 +17,6 @@
 
 #include "drivers/driver.h"
 
-struct wpa_blacklist {
-	struct wpa_blacklist *next;
-	u8 bssid[ETH_ALEN];
-	int count;
-};
-
-
 struct wpa_scan_result;
 struct wpa_sm;
 struct wpa_supplicant;
@@ -354,17 +347,11 @@ struct wpa_supplicant {
 
 
 /* wpa_supplicant.c */
-void wpa_supplicant_cancel_scan(struct wpa_supplicant *wpa_s);
-
 int wpa_supplicant_reload_configuration(struct wpa_supplicant *wpa_s);
 
 const char * wpa_supplicant_state_txt(int state);
 int wpa_supplicant_driver_init(struct wpa_supplicant *wpa_s,
 			       int wait_for_interface);
-struct wpa_blacklist * wpa_blacklist_get(struct wpa_supplicant *wpa_s,
-					 const u8 *bssid);
-int wpa_blacklist_add(struct wpa_supplicant *wpa_s, const u8 *bssid);
-void wpa_blacklist_clear(struct wpa_supplicant *wpa_s);
 int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 			      struct wpa_scan_result *bss,
 			      struct wpa_ssid *ssid,
@@ -386,7 +373,6 @@ void wpa_supplicant_deauthenticate(struct wpa_supplicant *wpa_s,
 				   int reason_code);
 void wpa_supplicant_disassociate(struct wpa_supplicant *wpa_s,
 				 int reason_code);
-void wpa_supplicant_req_scan(struct wpa_supplicant *wpa_s, int sec, int usec);
 
 void wpa_show_license(void);
 
@@ -402,6 +388,10 @@ void wpa_supplicant_deinit(struct wpa_global *global);
 
 int wpa_supplicant_scard_init(struct wpa_supplicant *wpa_s,
 			      struct wpa_ssid *ssid);
+
+/* scan.c */
+void wpa_supplicant_req_scan(struct wpa_supplicant *wpa_s, int sec, int usec);
+void wpa_supplicant_cancel_scan(struct wpa_supplicant *wpa_s);
 
 /* events.c */
 void wpa_supplicant_mark_disassoc(struct wpa_supplicant *wpa_s);

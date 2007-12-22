@@ -1,6 +1,6 @@
 /*
  * EAP server/peer: EAP-SAKE shared routines
- * Copyright (c) 2006, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2006-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -16,6 +16,7 @@
 
 #include "common.h"
 #include "sha1.h"
+#include "wpabuf.h"
 #include "eap_defs.h"
 #include "eap_sake_common.h"
 
@@ -377,4 +378,16 @@ int eap_sake_compute_mic(const u8 *tek_auth,
 	os_free(tmp);
 
 	return 0;
+}
+
+
+void eap_sake_add_attr(struct wpabuf *buf, u8 type, const u8 *data,
+		       size_t len)
+{
+	wpabuf_put_u8(buf, type);
+	wpabuf_put_u8(buf, 2 + len); /* Length; including attr header */
+	if (data)
+		wpabuf_put_data(buf, data, len);
+	else
+		os_memset(wpabuf_put(buf, len), 0, len);
 }

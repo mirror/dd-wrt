@@ -35,21 +35,8 @@
 #pragma pack(push, 1)
 #endif /* _MSC_VER */
 
-/* Shared prefix for all EAP-PSK frames */
-struct eap_psk_hdr {
-	u8 code;
-	u8 identifier;
-	u16 length; /* including code, identifier, and length */
-	u8 type; /* EAP_TYPE_PSK */
-	u8 flags;
-} STRUCT_PACKED;
-
 /* EAP-PSK First Message (AS -> Supplicant) */
 struct eap_psk_hdr_1 {
-	u8 code;
-	u8 identifier;
-	be16 length; /* including code, identifier, and length */
-	u8 type; /* EAP_TYPE_PSK */
 	u8 flags;
 	u8 rand_s[EAP_PSK_RAND_LEN];
 	/* Followed by variable length ID_S */
@@ -57,10 +44,6 @@ struct eap_psk_hdr_1 {
 
 /* EAP-PSK Second Message (Supplicant -> AS) */
 struct eap_psk_hdr_2 {
-	u8 code;
-	u8 identifier;
-	be16 length; /* including code, identifier, and length */
-	u8 type; /* EAP_TYPE_PSK */
 	u8 flags;
 	u8 rand_s[EAP_PSK_RAND_LEN];
 	u8 rand_p[EAP_PSK_RAND_LEN];
@@ -70,10 +53,6 @@ struct eap_psk_hdr_2 {
 
 /* EAP-PSK Third Message (AS -> Supplicant) */
 struct eap_psk_hdr_3 {
-	u8 code;
-	u8 identifier;
-	be16 length; /* including code, identifier, and length */
-	u8 type; /* EAP_TYPE_PSK */
 	u8 flags;
 	u8 rand_s[EAP_PSK_RAND_LEN];
 	u8 mac_s[EAP_PSK_MAC_LEN];
@@ -82,10 +61,6 @@ struct eap_psk_hdr_3 {
 
 /* EAP-PSK Fourth Message (Supplicant -> AS) */
 struct eap_psk_hdr_4 {
-	u8 code;
-	u8 identifier;
-	be16 length; /* including code, identifier, and length */
-	u8 type; /* EAP_TYPE_PSK */
 	u8 flags;
 	u8 rand_s[EAP_PSK_RAND_LEN];
 	/* Followed by variable length PCHANNEL */

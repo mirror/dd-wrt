@@ -55,7 +55,7 @@ struct sta_info * ap_get_sta(struct hostapd_data *hapd, const u8 *sta)
 	struct sta_info *s;
 
 	s = hapd->sta_hash[STA_HASH(sta)];
-	while (s != NULL && memcmp(s->addr, sta, 6) != 0)
+	while (s != NULL && os_memcmp(s->addr, sta, 6) != 0)
 		s = s->hnext;
 	return s;
 }
@@ -74,8 +74,8 @@ static void ap_sta_list_del(struct hostapd_data *hapd, struct sta_info *sta)
 	while (tmp != NULL && tmp->next != sta)
 		tmp = tmp->next;
 	if (tmp == NULL) {
-		printf("Could not remove STA " MACSTR " from list.\n",
-		       MAC2STR(sta->addr));
+		wpa_printf(MSG_DEBUG, "Could not remove STA " MACSTR " from "
+			   "list.", MAC2STR(sta->addr));
 	} else
 		tmp->next = sta->next;
 }
@@ -94,18 +94,19 @@ static void ap_sta_hash_del(struct hostapd_data *hapd, struct sta_info *sta)
 
 	s = hapd->sta_hash[STA_HASH(sta->addr)];
 	if (s == NULL) return;
-	if (memcmp(s->addr, sta->addr, 6) == 0) {
+	if (os_memcmp(s->addr, sta->addr, 6) == 0) {
 		hapd->sta_hash[STA_HASH(sta->addr)] = s->hnext;
 		return;
 	}
 
-	while (s->hnext != NULL && memcmp(s->hnext->addr, sta->addr, 6) != 0)
+	while (s->hnext != NULL &&
+	       os_memcmp(s->hnext->addr, sta->addr, ETH_ALEN) != 0)
 		s = s->hnext;
 	if (s->hnext != NULL)
 		s->hnext = s->hnext->hnext;
 	else
-		printf("AP: could not remove STA " MACSTR " from hash table\n",
-		       MAC2STR(sta->addr));
+		wpa_printf(MSG_DEBUG, "AP: could not remove STA " MACSTR
+			   " from hash table", MAC2STR(sta->addr));
 }
 
 
@@ -160,12 +161,9 @@ void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta)
 	rsn_preauth_free_station(hapd, sta);
 	radius_client_flush_auth(hapd->radius, sta->addr);
 
-	if (sta->last_assoc_req)
-		free(sta->last_assoc_req);
-
-	free(sta->challenge);
-
-	free(sta);
+	os_free(sta->last_assoc_req);
+	os_free(sta->challenge);
+	os_free(sta);
 }
 
 
@@ -182,7 +180,8 @@ void hostapd_free_stas(struct hostapd_data *hapd)
 				hapd, sta, WLAN_REASON_UNSPECIFIED);
 		}
 		sta = sta->next;
-		printf("Removing station " MACSTR "\n", MAC2STR(prev->addr));
+		wpa_printf(MSG_DEBUG, "Removing station " MACSTR,
+			   MAC2STR(prev->addr));
 		ap_free_sta(hapd, prev);
 	}
 }
@@ -211,9 +210,9 @@ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 			      MAC2STR(sta->addr));
 		inactive_sec = hostapd_get_inact_sec(hapd, sta->addr);
 		if (inactive_sec == -1) {
-			printf("  Could not get station info from kernel "
-			       "driver for " MACSTR ".\n",
-			       MAC2STR(sta->addr));
+			wpa_printf(MSG_DEBUG, "Could not get station info "
+				   "from kernel driver for " MACSTR ".",
+				   MAC2STR(sta->addr));
 		} else if (inactive_sec < hapd->conf->ap_max_inactivity &&
 			   sta->flags & WLAN_STA_ASSOC) {
 			/* station activity detected; reset timeout state */
@@ -256,14 +255,15 @@ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 		/* FIX: WLAN_FC_STYPE_NULLFUNC would be more appropriate, but
 		 * it is apparently not retried so TX Exc events are not
 		 * received for it */
-		memset(&hdr, 0, sizeof(hdr));
+		os_memset(&hdr, 0, sizeof(hdr));
 		hdr.frame_control =
 			IEEE80211_FC(WLAN_FC_TYPE_DATA, WLAN_FC_STYPE_DATA);
 		hdr.frame_control |= host_to_le16(BIT(1));
 		hdr.frame_control |= host_to_le16(WLAN_FC_FROMDS);
-		memcpy(hdr.IEEE80211_DA_FROMDS, sta->addr, ETH_ALEN);
-		memcpy(hdr.IEEE80211_BSSID_FROMDS, hapd->own_addr, ETH_ALEN);
-		memcpy(hdr.IEEE80211_SA_FROMDS, hapd->own_addr, ETH_ALEN);
+		os_memcpy(hdr.IEEE80211_DA_FROMDS, sta->addr, ETH_ALEN);
+		os_memcpy(hdr.IEEE80211_BSSID_FROMDS, hapd->own_addr,
+			  ETH_ALEN);
+		os_memcpy(hdr.IEEE80211_SA_FROMDS, hapd->own_addr, ETH_ALEN);
 
 		if (hostapd_send_mgmt_frame(hapd, &hdr, sizeof(hdr), 0) < 0)
 			perror("ap_handle_timer: send");
@@ -271,9 +271,9 @@ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 	} else if (sta->timeout_next != STA_REMOVE) {
 		int deauth = sta->timeout_next == STA_DEAUTH;
 
-		printf("  Sending %s info to STA " MACSTR "\n",
-		       deauth ? "deauthentication" : "disassociation",
-		       MAC2STR(sta->addr));
+		wpa_printf(MSG_DEBUG, "Sending %s info to STA " MACSTR,
+			   deauth ? "deauthentication" : "disassociation",
+			   MAC2STR(sta->addr));
 
 		if (deauth) {
 			hostapd_sta_deauth(hapd, sta->addr,
@@ -341,7 +341,7 @@ static void ap_handle_session_timer(void *eloop_ctx, void *timeout_ctx)
 		       "session timeout");
 	sta->acct_terminate_cause =
 		RADIUS_ACCT_TERMINATE_CAUSE_SESSION_TIMEOUT;
-	memcpy(addr, sta->addr, ETH_ALEN);
+	os_memcpy(addr, sta->addr, ETH_ALEN);
 	ap_free_sta(hapd, sta);
 	hostapd_sta_deauth(hapd, addr, WLAN_REASON_PREV_AUTH_NOT_VALID);
 }
@@ -376,14 +376,14 @@ struct sta_info * ap_sta_add(struct hostapd_data *hapd, const u8 *addr)
 	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "  New STA\n");
 	if (hapd->num_sta >= hapd->conf->max_num_sta) {
 		/* FIX: might try to remove some old STAs first? */
-		printf("  no more room for new STAs (%d/%d)\n",
-		       hapd->num_sta, hapd->conf->max_num_sta);
+		wpa_printf(MSG_DEBUG, "no more room for new STAs (%d/%d)",
+			   hapd->num_sta, hapd->conf->max_num_sta);
 		return NULL;
 	}
 
 	sta = os_zalloc(sizeof(struct sta_info));
 	if (sta == NULL) {
-		printf("  malloc failed\n");
+		wpa_printf(MSG_ERROR, "malloc failed");
 		return NULL;
 	}
 	sta->acct_interim_interval = hapd->conf->radius->acct_interim_interval;
@@ -391,7 +391,7 @@ struct sta_info * ap_sta_add(struct hostapd_data *hapd, const u8 *addr)
 	/* initialize STA info data */
 	eloop_register_timeout(hapd->conf->ap_max_inactivity, 0,
 			       ap_handle_timer, hapd, sta);
-	memcpy(sta->addr, addr, ETH_ALEN);
+	os_memcpy(sta->addr, addr, ETH_ALEN);
 	sta->next = hapd->sta_list;
 	hapd->sta_list = sta;
 	hapd->num_sta++;
@@ -410,8 +410,8 @@ static int ap_sta_remove(struct hostapd_data *hapd, struct sta_info *sta)
 		      " from kernel driver\n", MAC2STR(sta->addr));
 	if (hostapd_sta_remove(hapd, sta->addr) &&
 	    sta->flags & WLAN_STA_ASSOC) {
-		printf("Could not remove station " MACSTR " from kernel "
-		       "driver.\n", MAC2STR(sta->addr));
+		wpa_printf(MSG_DEBUG, "Could not remove station " MACSTR
+			   " from kernel driver.", MAC2STR(sta->addr));
 		return -1;
 	}
 	return 0;
