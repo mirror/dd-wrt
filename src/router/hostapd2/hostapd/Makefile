@@ -444,7 +444,7 @@ ifdef NEED_BASE64
 OBJS += ../src/utils/base64.o
 endif
 
-ALL=hostapd hostapd_cli
+ALL=hostapd
 
 all: verify_config $(ALL)
 
@@ -458,7 +458,7 @@ verify_config:
 	fi
 
 install: all
-	for i in $(ALL); do cp $$i /usr/local/bin/$$i; done
+	for i in $(ALL); do cp $$i $(INSTALLDIR)/hostapd2/usr/sbin/$$i; done
 
 hostapd: $(OBJS)
 	$(CC) -o hostapd $(OBJS) $(LIBS)
