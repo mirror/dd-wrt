@@ -28,6 +28,9 @@ else
 CONFIG_OS=unix
 endif
 endif
+ifdef CONFIG_NO_STDOUT_DEBUG
+CFLAGS += -DCONFIG_NO_STDOUT_DEBUG
+endif
 
 ifeq ($(CONFIG_OS), internal)
 CFLAGS += -DOS_NO_C_LIB_DEFINES
