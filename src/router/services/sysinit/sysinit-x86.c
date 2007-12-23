@@ -320,6 +320,15 @@ eval("insmod","crypto_null");
   eval ("ifconfig", "eth2", "0.0.0.0", "up");
   eval ("ifconfig", "eth3", "0.0.0.0", "up");
 
+  struct ifreq ifr;
+  int s;
+  if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)))
+    {
+    strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
+    ioctl (s, SIOCGIFHWADDR, &ifr);
+    nvram_set ("et0macaddr_safe", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+    close(s);
+    }
 #ifndef HAVE_NOWIFI
   eval ("insmod", "ath_pci");
 #ifdef HAVE_MADWIFI_MIMO
