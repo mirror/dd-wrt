@@ -46,6 +46,12 @@
 #include <shutils.h>
 #include <utils.h>
 
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <linux/if.h>
+#include <linux/sockios.h>
+#include <linux/mii.h>
+
 
 static int
 detect (char *devicename)
@@ -93,7 +99,6 @@ int
 start_sysinit (void)
 {
   struct utsname name;
-  struct stat tmp_stat;
   time_t tm = 0;
   unlink ("/etc/nvram/.lock");
   cprintf ("sysinit() proc\n");
@@ -166,8 +171,7 @@ start_sysinit (void)
   klogctl (8, NULL, atoi (nvram_safe_get ("console_loglevel")));
   cprintf ("sysinit() get router\n");
 
-  int brand = getRouterBrand ();
-
+ 
   /* Modules */
   uname (&name);
 
@@ -324,9 +328,10 @@ eval("insmod","crypto_null");
   int s;
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)))
     {
+    char eabuf[32];
     strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
     ioctl (s, SIOCGIFHWADDR, &ifr);
-    nvram_set ("et0macaddr_safe", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+    nvram_set ("et0macaddr_safe", ether_etoa ((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
     close(s);
     }
 #ifndef HAVE_NOWIFI
