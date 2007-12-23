@@ -498,6 +498,9 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_BUFFALO
   {"wl0_ssid", "BUFFALO", 0},	/* Service set ID (network name) */
   {"ath0_ssid", "BUFFALO", 0},	/* Service set ID (network name) */
+#elif defined(HAVE_TRIMAX)
+  {"wl0_ssid", "trimax", 0},	/* Service set ID (network name) */
+  {"ath0_ssid", "trimax", 0},	/* Service set ID (network name) */
 #else
   {"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
   {"ath0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
@@ -933,6 +936,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"router_name", "MiuraBasic", 0},
 #elif  HAVE_MAKSAT
   {"router_name", "MAKSAT", 0},
+#elif  HAVE_TRIMAX
+  {"router_name", "TRIMAX", 0},
 #else
   {"router_name", MODEL_NAME, 0},	/* Router name string */
 #endif
@@ -1613,6 +1618,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"snmpd_syscontact", "root", 0},
 #ifdef CONFIG_BRANDING
   {"snmpd_sysname", "anonymous", 0},
+#elif defined(HAVE_TRIMAX)
+  {"snmpd_sysname", "trimax", 0},
 #else
   {"snmpd_sysname", "dd-wrt", 0},
 #endif
