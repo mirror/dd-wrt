@@ -460,7 +460,7 @@ verify_config:
 		exit 1; \
 	fi
 
-install: all
+install:
 	for i in $(ALL); do cp $$i $(INSTALLDIR)/hostapd2/usr/sbin/$$i; done
 
 hostapd: $(OBJS)
