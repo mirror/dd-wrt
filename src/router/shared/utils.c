@@ -215,6 +215,36 @@ internal_getRouterBrand ()
   setRouter ("SuperGerry");
   return ROUTER_SUPERGERRY;
 #elif HAVE_GATEWORX
+  char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom";	/* bank2=0x100 */
+  FILE *file = fopen (filename, "r");
+  if (file) //new detection scheme
+    {
+    fseek(file,32,SEEK_SET);
+    char gwid[7];
+    gwid[6]=0;
+    int ret = fread(gwid,6,1,file);
+    if (ret<1){
+	fclose(file);
+	goto old_way;
+	}
+    fclose(file);
+    if (!strcmp(gwid,"GW2347"))
+	{
+        setRouter ("Avila GW2347");
+        return ROUTER_BOARD_GATEWORX_SWAP;
+	}
+    if (!strcmp(gwid,"GW2348"))
+	{
+        setRouter ("Avila GW2348-4/2");
+        return ROUTER_BOARD_GATEWORX;
+	}
+    if (!strcmp(gwid,"GW2345"))
+	{
+        setRouter ("Avila GW2347");
+        return ROUTER_BOARD_GATEWORX_GW2345;
+	}
+    }
+  old_way:;
   struct mii_ioctl_data *data;
   struct ifreq iwr;
   int s = socket (AF_INET, SOCK_DGRAM, 0);
@@ -224,7 +254,7 @@ internal_getRouterBrand ()
       setRouter ("Avila Gateworks");
       return ROUTER_BOARD_GATEWORX;
     }
-  (void) strncpy (iwr.ifr_name, "ixp1", sizeof ("ixp1"));
+  (void) strncpy (iwr.ifr_name, "ixp0", sizeof ("ixp0"));
   data = (struct mii_ioctl_data *) &iwr.ifr_data;
   data->phy_id = 1;
 #define IX_ETH_ACC_MII_PHY_ID1_REG  0x2	/* PHY identifier 1 Register */
