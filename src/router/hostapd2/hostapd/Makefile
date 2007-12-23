@@ -461,6 +461,7 @@ verify_config:
 	fi
 
 install:
+	mkdir -p $(INSTALLDIR)/hostapd2/usr/sbin
 	for i in $(ALL); do cp $$i $(INSTALLDIR)/hostapd2/usr/sbin/$$i; done
 
 hostapd: $(OBJS)
