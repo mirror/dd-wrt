@@ -672,7 +672,7 @@ handle_upgrade (void)
 
 }
 
-#ifdef HAVE_MIKLFISH
+#ifdef HAVE_MILKFISH
 static void
 handle_milkfish (void)
 {
@@ -876,7 +876,7 @@ static struct SERVICES services_def[] = {
   {"ddns", handle_ddns},
 //  {"start_ping", handle_ping},
   {"http_upgrade", handle_upgrade},
-#ifdef HAVE_MIKLFISH
+#ifdef HAVE_MILKFISH
   {"milkfish", handle_milkfish},
 #endif
   {"wireless", handle_wireless},
