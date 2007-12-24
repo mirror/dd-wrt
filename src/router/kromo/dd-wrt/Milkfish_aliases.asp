@@ -39,7 +39,7 @@ function milkfish_alias_remove_submit(F) {
 					<h2><% tran("service.milkfish_database"); %></h2>
 					<br />
         <fieldset>
-                <legend><% tran("service.database_aliases"); %></legend>
+                <legend><% tran("service.milkfish_aliases"); %></legend>
                         <table class="table center" summary="chap secrets table">
                         <tr>
                                 <th width="30%"><% tran("service.milkfish_alias"); %></th>
