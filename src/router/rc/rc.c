@@ -576,7 +576,9 @@ unlink("/tmp/.rstp_server");
 	  start_service ("wifidog");
 #endif
 	  cprintf ("start syslog\n");
+#ifndef HAVE_WRK54G
 	  startstop ("syslog");
+#endif
 #ifdef HAVE_RSTP
 //just experimental for playing
   eval("brctl","stp","br0","off");
