@@ -1320,6 +1320,12 @@ led_control (int type, int act)
       ses_gpio = 0x01;
       break;
 #endif
+#ifdef HAVE_WRK54G
+    case ROUTER_BOARD_FONERA:
+      diag_gpio = 0x17;
+      dmz_gpio = 0x05;
+      break;
+#endif
     case ROUTER_BOARD_TW6600:
       diag_gpio = 0x17;
       bridge_gpio = 0x14;
