@@ -103,6 +103,10 @@ start_sysinit (void)
 /* network drivers */
   eval ("insmod", "ar2313");
   eval ("insmod", "ath_ahb");
+#ifdef HAVE_WRK54G
+  system ("echo 2 >/proc/sys/dev/wifi0/ledpin");
+  system ("echo 1 >/proc/sys/dev/wifi0/softled");
+#endif
   eval ("ifconfig", "wifi0", "up");
   eval ("ifconfig", "eth0", "up");
   vlan_init (5); // 1 lan + 1 wan
