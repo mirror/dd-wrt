@@ -7,6 +7,7 @@ udhcpd: shared nvram
 	make -C udhcpd
 
 udhcpd-install:
+ifneq ($(CONFIG_UDHCPD),y)
 	install -D udhcpd/udhcpd $(INSTALLDIR)/udhcpd/usr/sbin/udhcpd
 	install -D udhcpd/dumpleases $(INSTALLDIR)/udhcpd/usr/sbin/dumpleases
 ifeq ($(CONFIG_BUFFALO),y)
@@ -17,5 +18,6 @@ endif
 	install -D udhcpd/config/dhcpd.startup $(INSTALLDIR)/udhcpd/etc/config/dhcpd.startup
 	$(STRIP) $(INSTALLDIR)/udhcpd/usr/sbin/udhcpd
 	$(STRIP) $(INSTALLDIR)/udhcpd/usr/sbin/dumpleases
+endif
 	install -D udhcpc/udhcpc $(INSTALLDIR)/udhcpd/usr/sbin/udhcpc
 

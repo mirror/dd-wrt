@@ -1126,8 +1126,10 @@ configure_single (int count)
   int s;
 
   char *m;
-  char *first = NULL;
   int vif = 0;
+
+
+
   char *vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
     foreach (var, vifs, next)
@@ -1147,8 +1149,6 @@ configure_single (int count)
 	  else
 	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
 		  "adhoc");
-	  if (!first)
-	    first = var;
 	  vif = 1;
 	  strcat (iflist, " ");
 	  strcat (iflist, var);
@@ -1164,9 +1164,7 @@ configure_single (int count)
 
 //create original primary interface
   m = default_get (wl, "ap");
-  cprintf ("mode %s\n", m);
-  if (!first)
-    first = dev;
+
   if (!strcmp (m, "wet") || !strcmp (m, "wdssta") || !strcmp (m, "sta"))
     {
       if (vif)
@@ -1321,6 +1319,8 @@ configure_single (int count)
 //      eval ("iwpriv", var, "bgscan", "0");
 #ifdef HAVE_MAKSAT
       eval ("iwconfig", var, "essid", default_get (ssid, "maksat_vap"));
+#elif defined(HAVE_TRIMAX)
+      eval ("iwconfig", var, "essid", default_get (ssid, "trimax_vap"));
 #else
       eval ("iwconfig", var, "essid", default_get (ssid, "dd-wrt_vap"));
 #endif
@@ -1367,6 +1367,8 @@ configure_single (int count)
   cprintf ("set ssid\n");
 #ifdef HAVE_MAKSAT
   eval ("iwconfig", dev, "essid", default_get (ssid, "maksat"));
+#elif defined(HAVE_TRIMAX)
+  eval ("iwconfig", dev, "essid", default_get (ssid, "trimax"));
 #else
   eval ("iwconfig", dev, "essid", default_get (ssid, "dd-wrt"));
 #endif
@@ -1391,6 +1393,8 @@ configure_single (int count)
       cprintf ("set ssid\n");
 #ifdef HAVE_MAKSAT
       eval ("iwconfig", dev, "essid", default_get (ssid, "maksat"));
+#elif defined(HAVE_TRIMAX)
+      eval ("iwconfig", dev, "essid", default_get (ssid, "trimax"));
 #else
       eval ("iwconfig", dev, "essid", default_get (ssid, "dd-wrt"));
 #endif
@@ -1466,6 +1470,7 @@ configure_single (int count)
       foreach (var, vifs, next)
       {
 	setMacFilter (var);
+        eval ("iwpriv", var, "scandisable", "1");
 
 	sprintf (mode, "%s_mode", var);
 	char *m2 = default_get (mode, "ap");
@@ -1745,6 +1750,7 @@ if (ifexists(wif))
       nvram_commit ();
       need_commit = 0;
     }
+eval("killall","-9","roaming_daemon");
 if (getSTA() || getWET())
     eval("roaming_daemon");
 }

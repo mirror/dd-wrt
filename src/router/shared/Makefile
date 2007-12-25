@@ -101,6 +101,9 @@ ifeq ($(CONFIG_MR3202A),y)
   CFLAGS += -DHAVE_MR3202A
   CFLAGS += -DHAVE_FONERA
 endif
+ifeq ($(CONFIG_WRK54G),y)
+  CFLAGS += -DHAVE_WRK54G
+endif
 ifeq ($(CONFIG_AR430W),y)
   CFLAGS += -DHAVE_AR430W
 endif
@@ -110,6 +113,9 @@ ifeq ($(CONFIG_DIR300),y)
 endif
 ifeq ($(CONFIG_FONERA),y)
   CFLAGS += -DHAVE_FONERA
+endif
+ifeq ($(CONFIG_TRIMAX),y)
+  CFLAGS += -DHAVE_TRIMAX
 endif
 ifeq ($(CONFIG_MERAKI),y)
   CFLAGS += -DHAVE_MERAKI

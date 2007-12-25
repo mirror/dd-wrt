@@ -35,6 +35,7 @@ obj-$(CONFIG_PPP) += ppp
 # AhMan March 19 2005
 obj-$(CONFIG_PPPOE) += pppoe
 obj-$(CONFIG_UDHCPD) += udhcpd
+obj-$(CONFIG_UDHCPC) += udhcpd
 obj-$(CONFIG_UPNP) += upnp
 obj-$(CONFIG_MADWIFI) += madwifi
 obj-$(CONFIG_MADWIFI_MIMO) += madwifi_mimo
