@@ -1256,6 +1256,9 @@ configure_single (int count)
       set_scanlist (dev, wif);
     }
 
+  if (useif)
+    set_netmode (wif, dev, useif);
+  set_netmode (wif, dev, dev);
 
 
   char macaddr[32];
@@ -1422,6 +1425,9 @@ configure_single (int count)
   setMacFilter (dev);
 
   set_rate (dev);
+  if (useif)
+    set_netmode (wif, dev, useif);
+  set_netmode (wif, dev, dev);
 
   if (strcmp (m, "sta"))
     {
