@@ -568,7 +568,11 @@ start_sysinit (void)
       nvram_set ("reset_gpio", "7");
       break;
 
-    case ROUTER_ASUS_WL520G:          
+    case ROUTER_ASUS_WL520G:
+      if (nvram_match ("vlan1ports", "4 5u"))
+         nvram_set ("vlan1ports", "4 5");
+      break;
+                    
     case ROUTER_ASUS_WL520GUGC:      
       if (nvram_match ("vlan1ports", "0 5u"))
          nvram_set ("vlan1ports", "0 5");
