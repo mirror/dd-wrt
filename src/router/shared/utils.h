@@ -225,14 +225,17 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Linksys WAP54G v3, WAP54G v3.1 (5352E cpu, fccid: Linksys Q87-WAP54GV3, Q87-WAP54GV31)
 #define ROUTER_WAP54G_V3 0x4210
 
+// Asus WL-520G (5350 cpu, fccid: Asus MSQWL520G)
+#define ROUTER_ASUS_WL520G 0x430f
+
 // Asus WL-520GU / WL-520GC (5354 cpu, fccid: Asus MSQWL520GUGC)
-#define ROUTER_ASUS_WL520GUGC 0x4312
+#define ROUTER_ASUS_WL520GUGC 0x4412
 
 // Netgear WG602 v3 (5350 cpu, fccid: Netgear PY3WG602V3)
-#define ROUTER_NETGEAR_WG602_V3 0x4411
+#define ROUTER_NETGEAR_WG602_V3 0x4511
 
 // Linksys WRT600N (4704 cpu, Gigabit switch, dual radio 2.4 and 5 GHz Broadcom, fccid: Linksys Q87-WRT600NV1, Q87-WRT600NV11)
-#define ROUTER_WRT600N 0x4517
+#define ROUTER_WRT600N 0x4617
 
 #define NVROUTER "DD_BOARD"
 

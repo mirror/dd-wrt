@@ -917,6 +917,14 @@ internal_getRouterBrand ()
     }
 
   if (boardnum == 45 &&
+      nvram_match ("boardtype", "0x456"))
+    {
+      cprintf ("router is Asus WL-520G\n");
+      setRouter ("Asus WL-520G");
+      return ROUTER_ASUS_WL520G;
+    }    
+    
+  if (boardnum == 45 &&
       nvram_match ("boardtype", "0x48E") && nvram_match ("boardrev", "0x10"))
     {
       cprintf ("router is Asus WL-520GU/GC\n");
