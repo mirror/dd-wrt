@@ -649,10 +649,15 @@ int read_write(int fd, unsigned char *packet, int size, int rw);
 
 /* log.c */
 void die(char *message, char *arg1, int exit_code);
+#ifndef NO_LOG
 void log_start(struct passwd *ent_pw);
 int log_reopen(char *log_file);
+#endif
+#ifdef NEED_PRINTF
+void my_syslog(int priority, const char *format, ...);
+#else
 #define my_syslog(prio,fmt,...) { }
-//void my_syslog(int priority, const char *format, ...);
+#endif
 void set_log_writer(fd_set *set, int *maxfdp);
 void check_log_writer(fd_set *set);
 void flush_log(void);

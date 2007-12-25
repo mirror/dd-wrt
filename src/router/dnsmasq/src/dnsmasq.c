@@ -272,8 +272,9 @@ int main (int argc, char **argv)
   ent_pw = daemon->username ? getpwnam(daemon->username) : NULL;
 
   /* before here, we should only call die(), after here, only call syslog() */
+#ifndef NO_LOG
   log_start(ent_pw); 
-
+#endif
   if (!(daemon->options & OPT_DEBUG))   
     {
       /* UID changing, etc */
@@ -683,8 +684,10 @@ static void async_event(int pipe, time_t now)
 	/* Note: this may leave TCP-handling processes with the old file still open.
 	   Since any such process will die in CHILD_LIFETIME or probably much sooner,
 	   we leave them logging to the old file. */
+#ifndef NO_LOG
 	if (daemon->log_file != NULL)
 	  log_reopen(daemon->log_file);
+#endif
 	break;
 	
       case EVENT_TERM:
@@ -711,7 +714,9 @@ static void async_event(int pipe, time_t now)
 	  fclose(daemon->lease_stream);
 	
 	my_syslog(LOG_INFO, _("exiting on receipt of SIGTERM"));
+#ifndef NO_LOG
 	flush_log();
+#endif
 	exit(EC_GOOD);
       }
 }
@@ -957,7 +962,9 @@ static void check_dns_listeners(fd_set *set, time_t now)
 #ifndef NO_FORK		   
 	      if (!(daemon->options & OPT_DEBUG))
 		{
+#ifndef NO_LOG
 		  flush_log();
+#endif
 		  _exit(0);
 		}
 #endif

@@ -55,6 +55,9 @@ endif
 ifeq ($(CONFIG_IPV6),y)
 CFLAGS += -DHAVE_IPV6
 endif
+ifeq ($(CONFIG_TRIMAX),y)
+CFLAGS += -DHAVE_TRIMAX
+endif
 ifeq ($(CONFIG_ACK),y)
 CFLAGS += -DHAVE_ACK
 endif
@@ -117,6 +120,9 @@ endif
 
 ifeq ($(CONFIG_USB),y)
 CFLAGS += -DHAVE_USB
+endif
+ifeq ($(CONFIG_WRK54G),y)
+CFLAGS += -DHAVE_WRK54G
 endif
 ifeq ($(CONFIG_RSTP),y)
 CFLAGS += -DHAVE_RSTP

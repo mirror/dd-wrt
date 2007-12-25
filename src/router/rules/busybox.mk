@@ -38,7 +38,11 @@ else
 endif
 else
 ifeq ($(ARCHITECTURE),mr3202a)
+ifeq ($(CONFIG_DIST),"micro")
+	cp busybox/.config_micro_atheros busybox/.config
+else
 	cp busybox/.config_fonera busybox/.config
+endif
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 else
 ifeq ($(ARCHITECTURE),dir300)
