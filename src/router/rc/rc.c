@@ -127,15 +127,15 @@ main_loop (void)
   //setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin", 1);
   //system("/etc/nvram/nvram");
   /* Basic initialization */
+  cprintf ("first message\n");
+  lcdmessage ("System Start");
+  cprintf ("start service\n");
+  start_service ("sysinit");
   cprintf ("console init\n");
   if (console_init ())
     noconsole = 1;
   cprintf ("init lcd\n");
   initlcd ();
-  cprintf ("first message\n");
-  lcdmessage ("System Start");
-  cprintf ("start service\n");
-  start_service ("sysinit");
   cprintf ("setup signals\n");
   /* Setup signal handlers */
   signal_init ();
@@ -740,7 +740,7 @@ int minute = 0;
 	  fprintf (stderr, "usage: write [path] [device]\n");
 	  return EINVAL;
 	}
-    }
+    }	
 #else
   else if (strstr (base, "erase"))
     {
@@ -779,25 +779,6 @@ int minute = 0;
 	  return EINVAL;
 	}
     }
-  /* rc [stop|start|restart ] */
-  else if (strstr (base, "rc"))
-    {
-      if (argv[1])
-	{
-	  if (strncmp (argv[1], "start", 5) == 0)
-	    return kill (1, SIGUSR2);
-	  else if (strncmp (argv[1], "stop", 4) == 0)
-	    return kill (1, SIGINT);
-	  else if (strncmp (argv[1], "restart", 7) == 0)
-	    return kill (1, SIGHUP);
-	}
-      else
-	{
-	  fprintf (stderr, "usage: rc [start|stop|restart]\n");
-	  return EINVAL;
-	}
-    }
-
   //////////////////////////////////////////////////////
   //
   else if (strstr (base, "filtersync"))
@@ -920,6 +901,25 @@ int minute = 0;
   else if (strstr (base, "regshell"))
     return reg_main (argc, argv);
 #endif
+  /* rc [stop|start|restart ] */
+  else if (strstr (base, "rc"))
+    {
+      if (argv[1])
+	{
+	  if (strncmp (argv[1], "start", 5) == 0)
+	    return kill (1, SIGUSR2);
+	  else if (strncmp (argv[1], "stop", 4) == 0)
+	    return kill (1, SIGINT);
+	  else if (strncmp (argv[1], "restart", 7) == 0)
+	    return kill (1, SIGHUP);
+	}
+      else
+	{
+	  fprintf (stderr, "usage: rc [start|stop|restart]\n");
+	  return EINVAL;
+	}
+    }
+
 //  else if (strstr (base, "reboot"))
 //    shutdown_system();
   return 1;

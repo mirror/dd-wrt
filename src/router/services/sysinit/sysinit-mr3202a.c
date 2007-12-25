@@ -68,7 +68,7 @@ start_sysinit (void)
   eval ("mkdir", "/tmp/www");
   eval ("mknod", "/dev/nvram", "c", "229", "0");
   eval ("mknod", "/dev/ppp", "c", "108", "0");
-
+  
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
   eval ("/bin/tar", "-xzf", "/dev/mtdblock/3", "-C", "/");
@@ -89,7 +89,7 @@ start_sysinit (void)
   mkdir ("/var/run", 0777);
   mkdir ("/var/tmp", 0777);
   cprintf ("sysinit() setup console\n");
-  eval ("/sbin/watchdog");
+//  eval ("/sbin/watchdog");
   /* Setup console */
 
   cprintf ("sysinit() klogctl\n");

@@ -4050,6 +4050,8 @@ add_vifs_single (char *prefix, int device)
   sprintf (v2, "%s_ssid", v);
 #ifdef HAVE_MAKSAT
   nvram_set (v2, "maksat_vap");
+#elif defined(HAVE_TRIMAX)
+  nvram_set (v2, "trimax_vap");
 #else
   nvram_set (v2, "dd-wrt_vap");
 #endif
@@ -4476,7 +4478,9 @@ getMaxPower (char *ifname)
 #ifndef HAVE_SUPERCHANNEL
 int inline issuperchannel(void)
 {
-#ifdef HAVE_MAKSAT
+#ifdef HAVE_MR3202A
+return 0;
+#elif HAVE_MAKSAT
 return 1;
 #else
 return 0;

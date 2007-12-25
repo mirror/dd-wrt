@@ -1,4 +1,4 @@
-CFLAGS = $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS = $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF
 LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 PKG_CONFIG ?= pkg-config
 
