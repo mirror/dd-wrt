@@ -144,7 +144,7 @@
 #define ADM_SW_PORT_VLAN_ID_2   0x0800
 #define ADM_SW_AUTO_MDIX_EN     0x8000
                                        /*PORT: 5 4 3 x 2 x 1 x 0  */
-#define ADM_SW_LAN_MAP_TAB      0x0180 /*      1 1 0 0 0 0 0 0 0  */
+#define ADM_SW_LAN_MAP_TAB      0x01d4 /*      1 1 1 0 1 0 1 0 0  */
 #define ADM_SW_WAN_MAP_TAB      0x0101 /*      1 0 0 0 0 0 0 0 1  */
 #define ADM_SW_ALLPORT_MAP_TAB  0x01D5 /*      1 1 1 0 1 0 1 0 1  */
 
@@ -183,7 +183,7 @@
  * The phy switch settings in the mvPhyInfo table are set accordingly.
  */
 #define ADM_WAN_PORT          0
-#define ADM_IS_LAN_PORT(port) ((port) == 4)
+#define ADM_IS_LAN_PORT(port) ((port) > 0 && (port)<5)
 #define ADM_IS_WAN_PORT(port) ((port) == ADM_WAN_PORT)
 
 
@@ -403,7 +403,7 @@ adm_verifyReady(int ethUnit)
         fprintf(stderr,"Found ADM6996FC! PHYID1 is 0x%x, PHYID2 is 0x%x\n", phyID1, phyID2);
     }
     else {
-        fprintf(stderr,"Couldn't Found ADM6996FC!\n, PHYID1 is 0x%x, PHYID2 is 0x%x\n", phyID1, phyID2);
+        fprintf(stderr,"Couldn't find ADM6996FC!\n, PHYID1 is 0x%x, PHYID2 is 0x%x\n", phyID1, phyID2);
     }
 }
 

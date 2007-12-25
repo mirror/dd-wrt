@@ -279,6 +279,12 @@ period_check (int sig)
 
 #if defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5)
   val = getbuttonstate ();
+#ifdef HAVE_WRK54G
+  if (val)
+    val=0;
+  else
+    val=1;
+#endif
 #else
   if ((fp = fopen (GPIO_FILE, "r")))
     {

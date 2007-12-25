@@ -45,7 +45,7 @@ struct log_entry {
 static struct log_entry *entries = NULL;
 static struct log_entry *free_entries = NULL;
 
-
+#ifndef NO_LOG
 void log_start(struct passwd *ent_pw)
 {
   log_stderr = !!(daemon->options & OPT_DEBUG);
@@ -108,7 +108,7 @@ int log_reopen(char *log_file)
       
   return 1;
 }
-
+#endif
 static void free_entry(void)
 {
   struct log_entry *tmp = entries;
@@ -116,7 +116,7 @@ static void free_entry(void)
   tmp->next = free_entries;
   free_entries = tmp;
 }      
-
+#ifndef NO_LOG
 static void log_write(void)
 {
   ssize_t rc;
@@ -224,7 +224,7 @@ static void log_write(void)
       return;
     }
 }
-
+#endif
 #ifdef NEED_PRINTF
 void my_syslog(int priority, const char *format, ...)
 {
@@ -350,7 +350,7 @@ void check_log_writer(fd_set *set)
   if (log_fd != -1 && (!set || FD_ISSET(log_fd, set)))
     log_write();
 }
-
+#ifndef NO_LOG
 void flush_log(void)
 {
   /* block until queue empty */
@@ -363,7 +363,7 @@ void flush_log(void)
       close(log_fd);
     }
 }
-
+#endif
 void die(char *message, char *arg1, int exit_code)
 {
   char *errmess = strerror(errno);
@@ -377,7 +377,9 @@ void die(char *message, char *arg1, int exit_code)
   
   log_stderr = 0;
   my_syslog(LOG_CRIT, _("FAILED to start up"));
+#ifndef NO_LOG
   flush_log();
+#endif
   
   exit(exit_code);
 }

@@ -209,8 +209,13 @@ ifeq ($(ARCHITECTURE),mr3202a)
 madwifi:
 #	make -C madwifi.dev/madwifi.dev/diag TARGET=xscale-$(MADFLAG)be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin 
 ifeq ($(CONFIG_BOESE),y)
+ifeq ($(CONFIG_WRK54G),y)
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=ap61-lite-boese-be-elf  BUS=AHB   TOOLPATH=$(LINUXDIR)
+	make -C madwifi.dev/madwifi.dev/tools CFLAGS="-DBOESE=1 $(COPTS)" TARGET=ap61-lite-boese-be-elf BUS=AHB  BINDIR=$(INSTALLDIR)/madwifi/usr/sbin  TOOLPATH=$(LINUXDIR)
+else
 	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=ap61-boese-be-elf  BUS=AHB   TOOLPATH=$(LINUXDIR)
 	make -C madwifi.dev/madwifi.dev/tools CFLAGS="-DBOESE=1 $(COPTS)" TARGET=ap61-boese-be-elf BUS=AHB  BINDIR=$(INSTALLDIR)/madwifi/usr/sbin  TOOLPATH=$(LINUXDIR)
+endif
 else
 	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=ap61  BUS=AHB   TOOLPATH=$(LINUXDIR)
 	make -C madwifi.dev/madwifi.dev/tools CFLAGS="$(CONFIG_MADWIFIFLAGS) $(COPTS) -DNEED_PRINTF" TARGET=ap61  TOOLPATH=$(LINUXDIR) BUS=AHB BINDIR=$(INSTALLDIR)/madwifi/usr/sbin 
@@ -219,7 +224,11 @@ endif
 madwifi-clean:
 #	make -C madwifi.dev/madwifi.dev/diag TARGET=xscale-$(MADFLAG)be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
 ifeq ($(CONFIG_BOESE),y)
+ifeq ($(CONFIG_WRK54G),y)
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=ap61-lite-boese-be-elf  BUS=AHB  TOOLPATH=$(LINUXDIR)
+else
 	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=ap61-boese-be-elf  BUS=AHB  TOOLPATH=$(LINUXDIR)
+endif
 else
 	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=ap61 BUS=AHB  TOOLPATH=$(LINUXDIR)
 endif
@@ -230,7 +239,11 @@ madwifi-install:
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
 #	make -C madwifi.dev/madwifi.dev/diag TARGET=xscale-$(MADFLAG)be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
 ifeq ($(CONFIG_BOESE),y)
+ifeq ($(CONFIG_WRK54G),y)
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR)  DESTDIR=$(INSTALLDIR)/madwifi TARGET=ap61-lite-boese-be-elf install
+else
 	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR)  DESTDIR=$(INSTALLDIR)/madwifi TARGET=ap61-boese-be-elf install
+endif
 else
 	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR)  DESTDIR=$(INSTALLDIR)/madwifi TARGET=ap61 install
 endif

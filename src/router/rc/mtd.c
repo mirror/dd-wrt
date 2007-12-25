@@ -238,12 +238,17 @@ mtd_write (const char *path, const char *mtd)
       perror (mtd);
       goto fail;
     }
+  if (STORE32_LE (trx.flag_version) & TRX_NO_HEADER)
+    trx.len -= sizeof (struct trx_header);
+
+//#ifndef HAVE_WRK54G
   if (mtd_info.size < trx.len)
     {
       fprintf (stderr, "Image too big for partition: %s\n", mtd);
       close (mtd_fd);
       return 0;
     }
+//#endif
 
 
 
@@ -282,8 +287,6 @@ mtd_write (const char *path, const char *mtd)
 						      flag_version),
 	       CRC32_INIT_VALUE);
 
-  if (STORE32_LE (trx.flag_version) & TRX_NO_HEADER)
-    trx.len -= sizeof (struct trx_header);
 
   /* Write file or URL to MTD device */
   for (erase_info.start = 0; erase_info.start < trx.len;
