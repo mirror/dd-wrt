@@ -91,14 +91,17 @@ start_services (void)
 #ifdef HAVE_TELNET
   handle = start_service_nofree ("telnetd", handle);
 #endif
+#ifndef HAVE_WRK54G
   handle = start_service_nofree ("syslog", handle);
+#endif
 #ifdef HAVE_TFTP
   handle = start_service_nofree ("tftpd", handle);
 #endif
   handle = start_service_nofree ("httpd", handle);
   handle = start_service_nofree ("udhcpd", handle);
+#ifdef HAVE_DNSMASQ
   handle = start_service_nofree ("dnsmasq", handle);
-
+#endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
   handle = start_service_nofree ("zebra", handle);
 #endif
@@ -195,7 +198,9 @@ stop_services (void)
 #ifdef HAVE_TFTP
   handle = stop_service_nofree ("tftpd", handle);
 #endif
+#ifndef HAVE_WRK54G
   handle = stop_service_nofree ("syslog", handle);
+#endif
 #ifdef HAVE_OLSRD
   handle = stop_service_nofree ("olsrd", handle);
 #endif
@@ -305,7 +310,9 @@ handle_index (void)
   handle = start_service_nofree ("stabridge", handle);
 #endif
   handle = startstop_nofree ("udhcpd", handle);
+#ifdef HAVE_DNSMASQ
   handle = startstop_nofree ("dnsmasq", handle);
+#endif
 #ifndef HAVE_MADWIFI
   handle = start_service_nofree ("nas", handle);
 #ifdef HAVE_MSSID
@@ -374,7 +381,9 @@ handle_services (void)
   handle = startstop_nofree ("pppoerelay", handle);
 #endif
   handle = startstop_nofree ("udhcpd", handle);
+#ifndef HAVE_WRK54G
   handle = startstop_nofree ("syslog", handle);
+#endif
 #ifdef HAVE_RSTATS
   handle = startstop_nofree ("rstats", handle);
 #endif
@@ -385,7 +394,9 @@ handle_services (void)
   handle = startstop_nofree ("firewall", handle);
   handle = startstop_nofree ("pppoeserver", handle);
 #endif
+#ifdef HAVE_DNSMASQ
   handle = startstop_nofree ("dnsmasq", handle);
+#endif
   handle = startstop_nofree ("udhcpd", handle);
 #ifdef HAVE_CPUTEMP
   handle = start_service_nofree ("hwmon", handle);
@@ -418,7 +429,9 @@ handle_services (void)
     handle = startstop_nofree ("sshd", handle);
 #endif
   handle = startstop_nofree ("firewall", handle);
+#ifndef HAVE_WRK54G
   handle = startstop_nofree ("syslog", handle);
+#endif
 #ifdef HAVE_NEWMEDIA
   handle = startstop_nofree ("openvpnserversys", handle);
 #endif
@@ -533,7 +546,9 @@ handle_filters (void)
   void *handle = NULL;
   handle = stop_service_nofree ("cron", handle);
   handle = startstop_nofree ("firewall", handle);
+#ifndef HAVE_WRK54G
   handle = startstop_nofree ("syslog", handle);
+#endif
   handle = startstop_nofree ("wshaper", handle);
   handle = start_service_nofree ("cron", handle);
 #ifdef HAVE_MULTICAST
