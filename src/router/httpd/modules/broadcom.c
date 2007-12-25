@@ -3534,8 +3534,10 @@ footer:
     }
   else
     {
+#ifndef HAVE_WRK54G
       do_ej ("Reboot.asp", wp, NULL);
       websDone (wp, 200);
+#endif
 //      sleep (5);
       sys_reboot ();
       return 1;
