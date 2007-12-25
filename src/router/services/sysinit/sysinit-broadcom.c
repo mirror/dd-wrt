@@ -567,7 +567,8 @@ start_sysinit (void)
     case ROUTER_WRT54G_V8:
       nvram_set ("reset_gpio", "7");
       break;
-      
+
+    case ROUTER_ASUS_WL520G:          
     case ROUTER_ASUS_WL520GUGC:      
       if (nvram_match ("vlan1ports", "0 5u"))
          nvram_set ("vlan1ports", "0 5");
@@ -682,6 +683,7 @@ start_sysinit (void)
 	      break;
 	      
 	    case ROUTER_WRT54G_V8:
+	    case ROUTER_ASUS_WL520G:
 	    case ROUTER_ASUS_WL520GUGC:
 	      modules =
 		nvram_invmatch ("ct_modules",
