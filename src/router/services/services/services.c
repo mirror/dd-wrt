@@ -410,7 +410,7 @@ stop_cron (void)
   return ret;
 }
 
-
+#ifndef HAVE_WRK54G
 int
 start_syslog (void)
 {
@@ -445,7 +445,7 @@ stop_syslog (void)
   cprintf ("done\n");
   return ret;
 }
-
+#endif
 
 int
 start_redial (void)

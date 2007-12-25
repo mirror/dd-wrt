@@ -1188,6 +1188,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"boot_wait", "on", 0},
 #ifdef HAVE_SKYTEL
   {"cron_enable", "0", 0},
+#elif HAVE_WRK54G
+  {"cron_enable", "0", 0},
 #else
   {"cron_enable", "1", 0},
 #endif
@@ -1855,6 +1857,8 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_WTS
   {"dhcp_dnsmasq", "1", 0},
   {"enable_game", "0", 0},
+#elif HAVE_WRK54G
+  {"dhcp_dnsmasq", "0", 0},
 #else
   {"dhcp_dnsmasq", "1", 0},
   {"enable_game", "0", 0},
