@@ -493,8 +493,8 @@ mf_sipdb_restorenvdd () {
     [ -d /var/openser/dbtext ] &&\
     mf_feedback "Restoring SIP ddsubscriber database from NVRAM..."
     if [ ! -z "$(nvram get milkfish_ddsubscribers)" ]; then 
-	nvram get milkfish_ddsubscribers | tr ' ' '\n' | awk -F : '{print "dbtextctl add " $1 " " $2 " " "$(nvram get milkfish_fromdomain)"}'
-	nvram get milkfish_ddsubscribers | tr ' ' '\n' | awk -F : '{print "dbtextctl add " $1 " " $2 " " "$(nvram get milkfish_fromdomain)"}' > /tmp/restorenvdd.sh
+	nvram get milkfish_ddsubscribers | tr ' ' '\n' | awk -F : '{print "dbtextctl add " $1 " " $2 " " "nomail"}'
+	nvram get milkfish_ddsubscribers | tr ' ' '\n' | awk -F : '{print "dbtextctl add " $1 " " $2 " " "nomail"}' > /tmp/restorenvdd.sh
 	[ -e /tmp/restorenvdd.sh ] && chmod +x /tmp/restorenvdd.sh && /tmp/restorenvdd.sh && rm /tmp/restorenvdd.sh
 	echo "Done."
     else
