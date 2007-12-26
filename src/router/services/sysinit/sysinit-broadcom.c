@@ -125,8 +125,17 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
   nvram_set ("pa0maxpwr", "251");	//force pa0maxpwr to be 251
 #endif
 
+  if (check_hw_type() == BCM4702_CHIP)
+    nvram_unset ("wl0_abenable");
+  else
+    nvram_set ("wl0_abenable", "1");
+    
+
   switch (brand)
     {
+	case ROUTER_BUFFALO_WZRRSG54:
+	  nvram_unset ("wl0_abenable");
+	  break;
     case ROUTER_ASUS_WL500G_PRE:
     case ROUTER_ASUS_WL500W:
     case ROUTER_WRT54G:
