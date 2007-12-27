@@ -1,6 +1,6 @@
  "milkfish_enabled" "enable Milkfish" "CHOICE" "2" "0" "1"  "FALSE" "0"
- "milkfish_username" "username"  "NAME"  "255"  "TRUE" "3"
- "milkfish_password" "passw"  "NAME"  "255"  "TRUE" "3"
+ "milkfish_username" "milkfish username"  "NAME"  "255"  "TRUE" "3"
+ "milkfish_password" "milkfish passw"  "NAME"  "255"  "TRUE" "3"
  "milkfish_ppptime" "always off on ddwrt"   "CHOICE" "1" "off"  "FALSE" "0"
  "milkfish_fromswitch" "fromsw"   "CHOICE" "2" "off" "on"  "FALSE" "0"
  "milkfish_fromdomain" "from domain"  "NAME"  "255"  "TRUE" "3"
@@ -15,3 +15,6 @@
  "milkfish_ddaliases" "" "MFALIASES" "FALSE" "0"
  "milkfish_ddactivenum"  "number active registrations"  "RANGE"  "0"  "10" "TRUE" "0"
  "milkfish_ddactive" "active registrations" "NAME" "FALSE" "0"
+ "milkfish_dsusername" "dynsip username"  "NAME"  "255"  "TRUE" "3"
+ "milkfish_dspassword" "dynsip passw"  "NAME"  "255"  "TRUE" "3"
+
