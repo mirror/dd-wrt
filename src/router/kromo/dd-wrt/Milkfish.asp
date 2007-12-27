@@ -14,6 +14,12 @@ function to_apply(F) {
 	F.save_button.value = sbutton.saving;
 	applytake(F);
 }
+function to_reboot(F) {
+        F.change_action.value = "";
+        F.submit_type.value = "";
+        F.action.value = "Reboot";
+        apply(F);
+}
 
 var update;
 
