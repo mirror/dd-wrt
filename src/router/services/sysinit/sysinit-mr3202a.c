@@ -70,6 +70,7 @@ start_sysinit (void)
   eval ("mknod", "/dev/ppp", "c", "108", "0");
   
   unlink ("/tmp/nvram/.lock");
+#ifndef HAVE_WRK54G
   eval ("mkdir", "/tmp/nvram");
   eval ("/bin/tar", "-xzf", "/dev/mtdblock/3", "-C", "/");
   FILE *in = fopen ("/tmp/nvram/nvram.db", "rb");
@@ -80,6 +81,7 @@ start_sysinit (void)
       eval ("/usr/sbin/mtd", "erase", "nvram");
       nvram_commit ();
     }
+#endif
   cprintf ("sysinit() var\n");
 
   /* /var */
