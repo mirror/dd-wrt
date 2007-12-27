@@ -47,7 +47,7 @@ function to_apply(F) {
 					    </div>
 					    <div class="setting">
 						<div class="label"><% tran("service.milkfish_dspassword"); %></div>
-					        <input size="27" name="milkfish_dspassword" value="<% nvram_get("milkfish_dspassword"); %>" />
+					        <input type="password" size="27" name="milkfish_dspassword" value="<% nvram_get("milkfish_dspassword"); %>" />
 					    </div>
 					
 					<br />
