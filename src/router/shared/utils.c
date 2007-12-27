@@ -3428,7 +3428,6 @@ killall (const char *name, int sig)
     }
   return -2;
 }
-
 int
 isGrep (char *string, char *cmp)
 {
