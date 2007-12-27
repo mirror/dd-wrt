@@ -20,7 +20,7 @@
 #                                                                    #
 # The Milkfish Router Services - Shell Function Library              #
 #                                                                    #
-# Built/Version:  20071221                                           #
+# Built/Version:  20071227                                           #
 # Author/Contact: Franz Streibl <fronce@sipwerk.com>                 #
 # Copyright (C) 2007 by sipwerk - All rights reserved.               #
 #                                                                    #
@@ -130,16 +130,18 @@ mf_router_status () {
     echo "$(ps | grep 'rtpproxy -l' | grep -v 'grep' | cut -f2 -d'l' | awk 'sub(" ","") {print $1 "  " $2}'; )"
     echo ""
     echo "IP addresses:"
-    echo "$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print "LAN: " $1}';)"
+    echo "$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print "Configured LAN: " $1}';)"
 
     if [ $(nvram get wan_proto) = pppoe ] ; then
 	if [ "'ifconfig | grep ppp0'" ]; then
-	    echo $(ifconfig ppp0 | awk 'sub("inet addr:","") {print "WAN: " $1}')
+	    echo $(ifconfig ppp0 | awk 'sub("inet addr:","") {print "Configured WAN: " $1}')
 	else echo "ppp0 interface not up"
         fi
     else
-    	echo $(ifconfig $(nvram get wan_ifname)|awk 'sub("inet addr:","") {print "WAN: " $1}')
+    	echo $(ifconfig $(nvram get wan_ifname)|awk 'sub("inet addr:","") {print "Configured WAN: " $1}')
     fi
+#    echo "Effective WAN: $(wget -O - http://checkip.sipwerk.com|sed s/[^0-9.]//g)"
+
     echo ""
     echo "SER Uptime:"
     echo "$(openserctl fifo uptime)"
@@ -202,7 +204,18 @@ mf_echotest_wget () {
 
 
 mf_dynsip_update () {
+   
+   if [ $(nvram get wan_proto) = pppoe ] ; then
+	if [ "'ifconfig | grep ppp0'" ]; then
+	    CURRENTIP=$(ifconfig ppp0 | awk 'sub("inet addr:","") {print $1}')
+	else CURRENTIP=$DYNSIPIP #echo "ppp0 interface not up"
+        fi
+   else
+    	CURRENTIP=$(ifconfig $(nvram get wan_ifname)|awk 'sub("inet addr:","") {print $1}')
+   fi
+
    CURRENTIP=$(wget -O - http://checkip.sipwerk.com|sed s/[^0-9.]//g)
+
    case $1 in
     verbose)
       [ "$CURRENTIP" != "$DYNSIPIP" ] && {                           
