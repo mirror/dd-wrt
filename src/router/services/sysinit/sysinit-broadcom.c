@@ -904,11 +904,11 @@ check_cfe_nv (void)
     case ROUTER_WRT54G:
     case ROUTER_WRT54G_V8: 
       ret += check_nv ("aa0", "3");
-      if (check_hw_type () == BCM5352E_CHIP
+/*      if (check_hw_type () == BCM5352E_CHIP
 	  || check_hw_type () == BCM5354G_CHIP)
 	ret += check_nv ("ag0", "0x02");
       else
-	ret += check_nv ("ag0", "255");
+	ret += check_nv ("ag0", "255");*/
       if (check_hw_type () == BCM5325E_CHIP)
 	{
 	  /* Lower the DDR ram drive strength , the value will be stable for all boards

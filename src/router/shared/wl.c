@@ -842,6 +842,7 @@ if (get_wl_instance("eth0")==instance)
     return "eth0";
 if (get_wl_instance("eth3")==instance)
     return "eth3";
+fprintf(stderr,"get_wl_instance doesnt return the right value %d\n",instance);
 return "eth1"; // dirty for debugging
 } 
 
@@ -879,7 +880,7 @@ if (!strcmp(name,"eth2") && !wl_probe("eth2"))
     }
 return -1;*/
 }
-/* return wireless interface */
+    /* return wireless interface */
 char *
 get_wdev (void)
 {
