@@ -140,7 +140,7 @@ mf_router_status () {
     else
     	echo $(ifconfig $(nvram get wan_ifname)|awk 'sub("inet addr:","") {print "Configured WAN: " $1}')
     fi
-#    echo "Effective WAN: $(wget -O - http://checkip.sipwerk.com|sed s/[^0-9.]//g)"
+    echo "Effective WAN: $(wget -O - http://checkip.sipwerk.com|sed s/[^0-9.]//g)"
 
     echo ""
     echo "SER Uptime:"
