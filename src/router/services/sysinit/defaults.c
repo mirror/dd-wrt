@@ -1201,6 +1201,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"dnsmasq_enable", "0", 0},
 #elif HAVE_FON
   {"dnsmasq_enable", "0", 0},
+#elif HAVE_WRK54G
+  {"dnsmasq_enable", "0", 0},
 #else
   {"dnsmasq_enable", "1", 0},
 #endif

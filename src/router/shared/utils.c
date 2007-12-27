@@ -300,6 +300,9 @@ internal_getRouterBrand ()
 #elif HAVE_MAGICBOX
   setRouter ("MagicBox");
   return ROUTER_BOARD_MAGICBOX;
+#elif HAVE_WRT54GV7
+  setRouter ("Linksys WRT54G v7");
+  return ROUTER_BOARD_FONERA;
 #elif HAVE_WRK54G
   setRouter ("Linksys WRK54G v3");
   return ROUTER_BOARD_FONERA;
