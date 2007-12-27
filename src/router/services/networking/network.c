@@ -1473,7 +1473,7 @@ start_lan (void)
 #endif
 	      }
 #ifdef HAVE_MSSID
-	    if (nvram_match (wl_name, "apsta"))
+	    if (getSTA() && nvram_match (wl_name, "apsta"))
 	      {
 #ifndef HAVE_MADWIFI
 //		eval ("wl", "ap", "0");
@@ -1504,7 +1504,7 @@ start_lan (void)
 #endif
 
 	    /* if client/wet mode, turn off ap mode et al */
-	    if (nvram_match (wl_name, "infra"))
+	    if (getSTA() && nvram_match (wl_name, "infra"))
 	      {
 #ifndef HAVE_MADWIFI
 //		eval ("wl", "ap", "0");
@@ -1521,7 +1521,7 @@ start_lan (void)
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);
 	      }
 
-	    if (nvram_match (wl_name, "sta"))
+	    if (getSTA() && nvram_match (wl_name, "sta"))
 	      {
 #ifndef HAVE_MADWIFI
 //		eval ("wl", "ap", "0");
