@@ -164,8 +164,6 @@ addEvent(window, "unload", function() {
 	
 <br />
 
-<div id="idmilkfish_dynsip">
-<div id="idmilkfish">
 	<fieldset>
 		<legend><% tran("service.milkfish_dynsip"); %></legend>
 				<script type="text/javascript">
@@ -174,7 +172,6 @@ addEvent(window, "unload", function() {
 				//]]>
 				</script>
 	</fieldset>
-</div>
 
 <br />
 	<fieldset>
