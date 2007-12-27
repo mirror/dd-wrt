@@ -433,6 +433,7 @@ do_madwifi_check (void)
 
 		  if (count == 0 || count == -1)
 		    {
+//		      fprintf(stderr,"get assoclist returns %d, restart ifnames\n",count);
 		      char *next;
 		      char var[80];
 		      char *vifs;

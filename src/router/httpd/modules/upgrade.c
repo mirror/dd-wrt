@@ -356,10 +356,12 @@ do_upgrade_post (char *url, webs_t stream, int len, char *boundary)	//jimmy, htt
     {
       eval ("erase", "nvram");
     }
-
+//#ifdef HAVE_WRK54G
+//    sys_reboot();
+//#endif
   /* Slurp anything remaining in the request */
 
-  while (len--)
+  while ((len--)>0)
     {
 #ifdef HAVE_HTTPS
       if (do_ssl)
