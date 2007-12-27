@@ -3059,9 +3059,12 @@ getSTA ()
   int i;
   for (i = 0; i < c; i++)
     {
-      if ((nvram_nmatch ("sta","wl%d_mode", i) || nvram_nmatch ("apsta","wl%d_mode", i)) && !nvram_nmatch ("disabled","wl%d_net_mode",i))
+      if (nvram_nmatch ("sta","wl%d_mode", i) || nvram_nmatch ("apsta","wl%d_mode", i))
 	{
+	 if (!nvram_nmatch ("disabled","wl%d_net_mode",i))
 	  return get_wl_instance_name(i);
+	 else
+	  return nvram_safe_get ("wl0_ifname");
 	}
 
     }
@@ -3075,14 +3078,19 @@ getWET ()
   int i;
   for (i = 0; i < c; i++)
     {
-      if ((nvram_nmatch ("wet","wl%d_mode", i) ||nvram_nmatch ("apstawet","wl%d_mode", i)) && !nvram_nmatch ("disabled","wl%d_net_mode",i))
+      if (nvram_nmatch ("wet","wl%d_mode", i) ||nvram_nmatch ("apstawet","wl%d_mode", i))
 	{
+	 if (!nvram_nmatch ("disabled","wl%d_net_mode",i))
 	  return get_wl_instance_name(i);
+	 else
+	  return nvram_safe_get ("wl0_ifname");
+
 	}
 
     }
   return NULL;
 }
+
 
 #endif
 
