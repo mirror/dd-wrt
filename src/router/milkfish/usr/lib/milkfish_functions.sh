@@ -214,7 +214,7 @@ mf_dynsip_update () {
     	CURRENTIP=$(ifconfig $(nvram get wan_ifname)|awk 'sub("inet addr:","") {print $1}')
    fi
 
-   CURRENTIP=$(wget -O - http://checkip.sipwerk.com|sed s/[^0-9.]//g)
+   #CURRENTIP=$(wget -O - http://checkip.sipwerk.com|sed s/[^0-9.]//g)
 
    case $1 in
     verbose)
