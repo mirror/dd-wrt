@@ -3064,7 +3064,7 @@ getSTA ()
 	 if (!nvram_nmatch ("disabled","wl%d_net_mode",i))
 	  return get_wl_instance_name(i);
 	 else
-	  return nvram_safe_get ("wl0_ifname");
+	  return nvram_nget ("wl%d_ifname", i);
 	}
 
     }
@@ -3083,7 +3083,7 @@ getWET ()
 	 if (!nvram_nmatch ("disabled","wl%d_net_mode",i))
 	  return get_wl_instance_name(i);
 	 else
-	  return nvram_safe_get ("wl0_ifname");
+	  return nvram_nget ("wl%d_ifname", i);
 
 	}
 
