@@ -1190,8 +1190,8 @@ start_nvram (void)
 #ifndef HAVE_BUFFALO
   if (check_hw_type () == BCM5352E_CHIP)
     {
-      nvram_set ("opo", "0x0008"); // OFDM power reducement in quarter dbm (2 dbm in this case)
-      nvram_set ("ag0", "0x02");  // Antenna Gain definition in dbm
+      nvram_set ("opo", "0"); // OFDM power reducement in quarter dbm (2 dbm in this case)
+      nvram_set ("ag0", "0");  // Antenna Gain definition in dbm
     }
 #endif
 

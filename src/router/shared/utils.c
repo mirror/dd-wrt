@@ -2456,9 +2456,7 @@ get_wl_assoc_mac (int *c)
 
 #ifdef HAVE_MSSID
   char assoccmd[4][32] =
-    { "wl assoclist", "wl -i wl0.1 assoclist", "wl -i wl0.2 assoclist",
-    "wl -i wl0.3 assoclist"
-  };
+    { "wl assoclist", "wl -i wl0.1 assoclist", "wl -i wl0.2 assoclist", "wl -i wl0.3 assoclist" };
   int ifcnt = 4;
 #else
   char assoccmd[1][16] = { "wl assoclist" };
@@ -2470,6 +2468,13 @@ get_wl_assoc_mac (int *c)
 
   for (i = 0; i < ifcnt; i++)
     {
+      if (i)
+        {
+	char checkif[12];
+	sprintf(checkif,"wl0.%d",i);
+	if (!ifexists(checkif))
+	    break;
+	}
       if ((fp = popen (assoccmd[i], "r")))
 	{
 	  gotit = 1;
@@ -3487,11 +3492,11 @@ void getLANMac (char *newmac)
 
 void getWirelessMac (char *newmac)
 {
-	if (strlen(nvram_safe_get ("il0macaddr")) != 0)
-		{
-		strcpy (newmac, nvram_safe_get ("il0macaddr"));
-		}
-	else
+//	if (strlen(nvram_safe_get ("il0macaddr")) != 0)
+//		{
+//		strcpy (newmac, nvram_safe_get ("il0macaddr"));
+//		}
+//	else
 		{
 		if (nvram_match ("port_swap", "1"))
   			{
