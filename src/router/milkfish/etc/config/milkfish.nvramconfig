@@ -14,7 +14,7 @@
  "milkfish_ddaliasesnum"  "number aliases"  "RANGE"  "0"  "10" "TRUE" "0"
  "milkfish_ddaliases" "" "MFALIASES" "FALSE" "0"
  "milkfish_ddactivenum"  "number active registrations"  "RANGE"  "0"  "10" "TRUE" "0"
- "milkfish_ddactive" "active registrations" "NAME" "FALSE" "0"
+ "milkfish_ddactive" "active registrations" "NAME" "255" "FALSE" "0"
  "milkfish_dsusername" "dynsip username"  "NAME"  "255"  "TRUE" "3"
  "milkfish_dspassword" "dynsip passw"  "NAME"  "255"  "TRUE" "3"
 
