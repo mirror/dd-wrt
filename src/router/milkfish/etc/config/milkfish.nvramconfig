@@ -17,4 +17,3 @@
  "milkfish_ddactive" "active registrations" "NAME" "255" "FALSE" "0"
  "milkfish_dsusername" "dynsip username"  "NAME"  "255"  "TRUE" "3"
  "milkfish_dspassword" "dynsip passw"  "NAME"  "255"  "TRUE" "3"
-
