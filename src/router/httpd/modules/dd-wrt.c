@@ -7059,32 +7059,44 @@ ej_get_clone_wmac (webs_t wp, int argc, char_t ** argv)
 
   if (nvram_match ("def_whwaddr", "00:00:00:00:00:00"))
     {
-	     if (strlen (nvram_safe_get ("il0macaddr")) == 0)
-	     {
-	      if (nvram_match ("port_swap", "1"))
-	         c = strdup (nvram_safe_get ("et1macaddr"));
-	      else
-	         c = strdup (nvram_safe_get ("et0macaddr"));
-	     MAC_ADD (c);
-         }
-         else
-         {
-           c = strdup (nvram_safe_get ("il0macaddr"));
-         }   
-         dofree = 1;
-#if 0
-    c = strdup (nvram_safe_get ("il0macaddr"));
-//      if (nvram_match ("port_swap", "1"))
-//	c = strdup (nvram_safe_get ("et1macaddr"));
-//      else
-//	c = strdup (nvram_safe_get ("et0macaddr"));
+//	     if (strlen (nvram_safe_get ("il0macaddr")) == 0)
+//	     {
+//	      if (nvram_match ("port_swap", "1"))
+//	         c = strdup (nvram_safe_get ("et1macaddr"));
+//	      else
+//	         c = strdup (nvram_safe_get ("et0macaddr"));
+//	     MAC_ADD (c);
+//         }
+//         else
+//         {
+//           c = strdup (nvram_safe_get ("il0macaddr"));
+//         }   
+//         dofree = 1;
+
+	if (nvram_match ("port_swap", "1"))
+		{
+		if (strlen(nvram_safe_get ("et1macaddr")) != 0) //safe: maybe et1macaddr not there?
+			{
+			c = strdup (nvram_safe_get ("et1macaddr"));
+			}
+		else
+			{
+			c = strdup (nvram_safe_get ("et0macaddr"));
+			MAC_ADD (c);  //et0macaddr +3
+			}
+		}
+	else
+		{
+		c = strdup (nvram_safe_get ("et0macaddr"));
+		}
+
       dofree = 1;
-//      if (c)
-//	{
-//	  MAC_ADD (c);
-//	  MAC_ADD (c);
-//	}
-#endif
+      if (c)
+	{
+	  MAC_ADD (c);
+	  MAC_ADD (c);
+	}
+
     }
   else
     c = nvram_safe_get ("def_whwaddr");
