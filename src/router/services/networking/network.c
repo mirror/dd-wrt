@@ -1254,23 +1254,23 @@ start_lan (void)
   ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
   strncpy (ifr.ifr_name, wl_face, IFNAMSIZ);
 
-//  eval("wl","-i",wl_face,"down");
-//  if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
-//    perror ("Write wireless mac fail : ");
-//  else
-//    cprintf ("Write wireless mac successfully\n");
-//  eval("wl","-i",wl_face,"up");
+  eval("wl","-i",wl_face,"down");
+  if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
+    perror ("Write wireless mac fail : ");
+  else
+    cprintf ("Write wireless mac successfully\n");
+  eval("wl","-i",wl_face,"up");
 #ifdef HAVE_MSSID
   set_vifsmac (mac);
 #endif
 #endif
-/*  if (nvram_match ("wl_mode", "sta"))
+  if (nvram_match ("wl_mode", "sta"))
     {
       unsigned char mac[20];
 	  getWANMac (mac);
 
       nvram_set ("wan_hwaddr", mac);
-    }*/
+    }
 
   cprintf ("wl_face up %s\n",wl_face);
   ifconfig (wl_face, IFUP, 0, 0);
