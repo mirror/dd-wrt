@@ -345,7 +345,7 @@ endif
 ifneq ($(CONFIG_VLANTAGGING),y)
 	rm -f $(INSTALLDIR)/www/Networking.asp
 	rm -f $(INSTALLDIR)/www/Networking.live.asp
-	rm -f $(INSTALLDIR)/www/help/HNetworking.asp	
+	rm -f $(INSTALLDIR)/www/help/HNetworking.asp
 endif
 
 ifneq ($(BACKUP_RESTORE_SUPPORT),1)
@@ -384,9 +384,13 @@ ifneq ($(CONFIG_PPPOESERVER),y)
 endif
 ifneq ($(CONFIG_MILKFISH),y)
 	rm -f $(INSTALLDIR)/www/Milkfish.asp
-	rm -f $(INSTALLDIR)/www/Milkfish_phonebook.asp
+	rm -f $(INSTALLDIR)/www/Milkfish_aliases.asp
 	rm -f $(INSTALLDIR)/www/Milkfish_database.asp
+	rm -f $(INSTALLDIR)/www/Milkfish_dynsip.asp
 	rm -f $(INSTALLDIR)/www/Milkfish_messaging.asp
+	rm -f $(INSTALLDIR)/www/Milkfish_phonebook.asp
+	rm -f $(INSTALLDIR)/www/Milkfish_siptrace.asp
+	rm -f $(INSTALLDIR)/www/Milkfish_status.asp
 	rm -f $(INSTALLDIR)/www/help/HMilkfish.asp
 	rm -f $(INSTALLDIR)/www/images/sipwerk.png
 endif
@@ -398,7 +402,7 @@ ifneq ($(CONFIG_VPND),y)
 endif
 ifneq ($(CONFIG_SPUTNIK_APD),y)
 	rm -f $(INSTALLDIR)/www/Status_SputnikAPD.asp
-	rm -f $(INSTALLDIR)/www/Status_SputnikAPD.live.asp	
+	rm -f $(INSTALLDIR)/www/Status_SputnikAPD.live.asp
 endif
 ifneq ($(CONFIG_CTORRENT),y)
 	rm -f $(INSTALLDIR)/www/P2P.asp
