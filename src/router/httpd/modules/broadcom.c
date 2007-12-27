@@ -4024,7 +4024,8 @@ live_translate (char *tran)
 {
 
   FILE *fp;
-  char temp[256], temp1[256], *temp2;
+  static char temp[256], temp1[256];
+  char *temp2;
   char *lang = getLanguageName ();
   char buf[64];
   sprintf (buf, "%s", lang);
