@@ -50,6 +50,9 @@ endif
 ifeq ($(CONFIG_DIST),"micro-special")
 CFLAGS += -DHAVE_MICRO
 endif
+ifeq ($(CONFIG_DNSMASQ),y)
+CFLAGS += -DHAVE_DNSMASQ
+endif
 ifeq ($(CONFIG_RSTATS),y)
 CFLAGS += -DHAVE_RSTATS
 endif
