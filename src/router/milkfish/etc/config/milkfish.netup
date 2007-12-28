@@ -20,7 +20,7 @@
 #                                                                    #
 # The Milkfish Environment - /etc/config/milkfish.netup              #
 #                                                                    #
-# Built/Version:  20070505                                           #
+# Built/Version:  20071228                                           #
 # Author/Contact: Michael Poehnl <budrus@sipwerk.com>                #
 # Copyright (C) 2007 by sipwerk - All rights reserved.               #
 #                                                                    #
@@ -80,4 +80,5 @@ rm /var/openser/milkfish_openser.cfg.tmp2
 sleep 3
 # start openser
 /usr/sbin/openserctl start
-
+# double check services
+[ -e /var/run/mf_services.lock ] && [ -z $(ps | grep "milkfish_services start" | grep -v "grep milkfish_services start") ] && milkfish_services stop ; milkfish_services start
