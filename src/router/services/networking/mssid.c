@@ -97,10 +97,12 @@ set_vifsmac (char *mac)
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
+      eval ("ifconfig", var, "down");
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
       ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
       strncpy (ifr.ifr_name, var, IFNAMSIZ);
       ioctl (s, SIOCSIFHWADDR, &ifr);
+      eval ("ifconfig", var, "up");
     }
   close (s);
 }
