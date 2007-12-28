@@ -86,7 +86,6 @@ start_milkfish_boot (void)
   eval ("cp", "/etc/openser/dbtext/grp", "/var/openser/dbtext/");
 
 // restore dbtext parts which may have been saved into nvram
-  eval ("/usr/sbin/milkfish_services", "sipdb", "restorenv");
   eval ("/usr/sbin/milkfish_services", "sipdb", "restorenvdd");
 
 // firewall configuration in networking/firewall.c
