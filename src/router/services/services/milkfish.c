@@ -39,6 +39,8 @@ stop_milkfish (void)
 
   killall ("rtpproxy", SIGTERM);
   killall ("openser", SIGTERM);
+// Stop the milkfish services
+  eval ("/usr/sbin/milkfish_services", "stop");
 }
 
 void
