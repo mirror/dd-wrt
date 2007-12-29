@@ -322,6 +322,8 @@ int cnt = get_wl_instances();
 int c;
 for (c=0;c<cnt;c++)
 {
+  if (nvram_nmatch ("disabled","wl%d_net_mode", c))
+    continue;
 char wlname[32];
 sprintf(wlname,"wl%d",c);
   if (nvram_nmatch ("sta","wl%d_mode", c)
@@ -366,7 +368,8 @@ start_nas_single (char *type, char *prefix)
   0}, *mode =
   {
   0};
-
+  if (nvram_nmatch("disabled","%s_net_mode",prefix))
+    return 0;
 if (!strcmp(prefix,"wl0"))
   convert_wds (0);
 else
