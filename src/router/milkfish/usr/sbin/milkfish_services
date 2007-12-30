@@ -417,6 +417,8 @@ case $1 in
         exit 0
 	;;
     start)
+	mf_settings_check milkfish_username $USERNAME
+	mf_settings_check milkfish_password $PASSWORD
 	if [ -e "$RUNDIR/mf_services.lock" ]; then
 	  mf_feedback "NOTE: Lockfile found - Services seem to be running already. Aborting."
 	  exit 1
@@ -446,9 +448,9 @@ case $1 in
 	;;
 esac
 
-mf_settings_check milkfish_username $USERNAME
-mf_settings_check milkfish_password $PASSWORD
-#mf_settings_check milkfish_ $USERNAME
+#mf_settings_check milkfish_username $USERNAME
+#mf_settings_check milkfish_password $PASSWORD
+##mf_settings_check milkfish_ $USERNAME
 
 
 #exit
