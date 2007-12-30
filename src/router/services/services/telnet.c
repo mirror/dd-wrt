@@ -35,7 +35,8 @@ start_telnetd (void)
 
   char *telnetd_argv[] = { "/usr/sbin/telnetd", NULL };
 #ifdef HAVE_REGISTER
-  char *telnetd_argv_reg[] = { "/usr/sbin/telnetd", "-l","/sbin/regshell",NULL };
+  char *telnetd_argv_reg[] =
+    { "/usr/sbin/telnetd", "-l", "/sbin/regshell", NULL };
 #endif
   stop_telnetd ();
 
@@ -43,12 +44,12 @@ start_telnetd (void)
     return 0;
 
 #ifdef HAVE_REGISTER
-    if (isregistered())
+  if (isregistered ())
 #endif
-	ret = _evalpid (telnetd_argv, NULL, 0, &pid);
+    ret = _evalpid (telnetd_argv, NULL, 0, &pid);
 #ifdef HAVE_REGISTER
-    else
-	ret = _evalpid (telnetd_argv_reg, NULL, 0, &pid);
+  else
+    ret = _evalpid (telnetd_argv_reg, NULL, 0, &pid);
 #endif
   syslog (LOG_INFO, "telnetd : telnet daemon successfully started\n");
 

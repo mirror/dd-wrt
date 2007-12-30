@@ -90,7 +90,7 @@ do_ap_watchdog (void)
       wl_ioctl (get_wdev (), WLC_UP, NULL, 0);
 
       eval ("/usr/sbin/wlconf", get_wdev (), "down");
-      eval("startservice","wlconf");
+      eval ("startservice", "wlconf");
 //      wlconf_up (get_wdev ());
 
     }
@@ -295,16 +295,15 @@ checkbssid (void)
   struct ether_addr bssid;
   wl_bss_info_t *bi;
   char buf[WLC_IOCTL_MAXLEN];
-  char *ifname = getSTA();
-  if (ifname==NULL)
-    ifname=getWET();
-  if (ifname==NULL)
+  char *ifname = getSTA ();
+  if (ifname == NULL)
+    ifname = getWET ();
+  if (ifname == NULL)
     return;
   if ((WL_IOCTL (ifname, WLC_GET_BSSID, &bssid, ETHER_ADDR_LEN)) == 0)
     {
       *(uint32 *) buf = WLC_IOCTL_MAXLEN;
-      if ((WL_IOCTL (ifname, WLC_GET_BSS_INFO, buf, WLC_IOCTL_MAXLEN)) <
-	  0)
+      if ((WL_IOCTL (ifname, WLC_GET_BSS_INFO, buf, WLC_IOCTL_MAXLEN)) < 0)
 	return 0;
       bi = (wl_bss_info_t *) (buf + 4);
       int i;
@@ -349,12 +348,14 @@ do_client_check (void)
 #ifndef HAVE_MSSID
       eval ("wl", "join", nvram_safe_get ("wl_ssid"));
 #else
-if (nvram_match("roaming_enable","1"))
-    {
-      eval ("wl", "join", nvram_safe_get ("roaming_ssid"));
-    }else{
-      eval ("wl", "join", nvram_safe_get ("wl0_ssid"));
-    }
+      if (nvram_match ("roaming_enable", "1"))
+	{
+	  eval ("wl", "join", nvram_safe_get ("roaming_ssid"));
+	}
+      else
+	{
+	  eval ("wl", "join", nvram_safe_get ("wl0_ssid"));
+	}
 #endif
 //      join(nvram_get("wl_ssid"));
       fclose (fp);
@@ -433,7 +434,7 @@ do_madwifi_check (void)
 
 		  if (count == 0 || count == -1)
 		    {
-//		      fprintf(stderr,"get assoclist returns %d, restart ifnames\n",count);
+//                    fprintf(stderr,"get assoclist returns %d, restart ifnames\n",count);
 		      char *next;
 		      char var[80];
 		      char *vifs;

@@ -384,7 +384,7 @@ getMaxPower (char *ifname)
 MADWIFI Encryption Setup
 */
 void
-setupSupplicant (char *prefix,char *ssidoverride)
+setupSupplicant (char *prefix, char *ssidoverride)
 {
   char akm[16];
   char bridged[32];
@@ -430,12 +430,13 @@ setupSupplicant (char *prefix,char *ssidoverride)
 #endif
       fprintf (fp, "fast_reauth=1\n");
       fprintf (fp, "eapol_version=1\n");
-    //  fprintf (fp, "ctrl_interface_group=0\n");
-    //  fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
+      //  fprintf (fp, "ctrl_interface_group=0\n");
+      //  fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 
       fprintf (fp, "network={\n");
       sprintf (psk, "%s_ssid", prefix);
-      if (!ssidoverride)ssidoverride = nvram_safe_get (psk);
+      if (!ssidoverride)
+	ssidoverride = nvram_safe_get (psk);
       fprintf (fp, "\tssid=\"%s\"\n", ssidoverride);
 //      fprintf (fp, "\tmode=0\n");
       fprintf (fp, "\tscan_ssid=1\n");
@@ -494,7 +495,8 @@ setupSupplicant (char *prefix,char *ssidoverride)
 //      fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
       fprintf (fp, "network={\n");
       sprintf (psk, "%s_ssid", prefix);
-      if (!ssidoverride)ssidoverride = nvram_safe_get (psk);
+      if (!ssidoverride)
+	ssidoverride = nvram_safe_get (psk);
       fprintf (fp, "\tssid=\"%s\"\n", ssidoverride);
       fprintf (fp, "\tscan_ssid=1\n");
       if (nvram_prefix_match ("8021xtype", prefix, "tls"))
@@ -575,9 +577,10 @@ setupSupplicant (char *prefix,char *ssidoverride)
 
 
 }
-void supplicant_main(int argc,char *argv[])
+void
+supplicant_main (int argc, char *argv[])
 {
-setupSupplicant (argv[1],argv[2]);
+  setupSupplicant (argv[1], argv[2]);
 }
 
 
@@ -1269,12 +1272,12 @@ configure_single (int count)
 
   int distance = atoi (default_get (sens, "2000"));	//to meter
   if (distance > 0)
-  {
-  setsysctrl(wif,"dynack_count",0);
-    setdistance (wif, distance);	//sets the receiver sensitivity
-  }
+    {
+      setsysctrl (wif, "dynack_count", 0);
+      setdistance (wif, distance);	//sets the receiver sensitivity
+    }
   else
-  setsysctrl(wif,"dynack_count",1);
+    setsysctrl (wif, "dynack_count", 1);
   int rx = atoi (default_get (rxantenna, "1"));
   int tx = atoi (default_get (txantenna, "1"));
   int diva = atoi (default_get (diversity, "0"));
@@ -1468,7 +1471,7 @@ configure_single (int count)
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
     setupHostAP (dev, 0);
   else
-    setupSupplicant (dev,NULL);
+    setupSupplicant (dev, NULL);
 // vif netconfig
   vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL && strlen (vifs) > 0)
@@ -1476,7 +1479,7 @@ configure_single (int count)
       foreach (var, vifs, next)
       {
 	setMacFilter (var);
-        eval ("iwpriv", var, "scandisable", "1");
+	eval ("iwpriv", var, "scandisable", "1");
 
 	sprintf (mode, "%s_mode", var);
 	char *m2 = default_get (mode, "ap");
@@ -1542,7 +1545,7 @@ configure_single (int count)
       if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
 	setupHostAP (var, 0);
       else
-	setupSupplicant (var,NULL);
+	setupSupplicant (var, NULL);
     }
 /*  set_rate (dev);*/
 
@@ -1756,9 +1759,9 @@ if (ifexists(wif))
       nvram_commit ();
       need_commit = 0;
     }
-eval("killall","-9","roaming_daemon");
-if (getSTA() || getWET())
-    eval("roaming_daemon");
+  eval ("killall", "-9", "roaming_daemon");
+  if (getSTA () || getWET ())
+    eval ("roaming_daemon");
 }
 
 

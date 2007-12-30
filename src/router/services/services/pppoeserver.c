@@ -60,17 +60,17 @@ del_pppoe_natrule (void)
     }
 }
 
-static void makeipup(void)
+static void
+makeipup (void)
 {
-int mss;
+  int mss;
   if (nvram_match ("mtu_enable", "1"))
     mss = atoi (nvram_safe_get ("wan_mtu")) - 40 - 108;
   else
     mss = 1500 - 40 - 108;
 
   FILE *fp = fopen ("/tmp/pppoeserver/ip-up", "w");
-  fprintf (fp, "#!/bin/sh\n"
-	   "/sbin/startservice set_routes\n"  // reinitialize routing, just in case that a target route exists
+  fprintf (fp, "#!/bin/sh\n" "/sbin/startservice set_routes\n"	// reinitialize routing, just in case that a target route exists
 	   "/usr/sbin/iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS --set-mss %d\n"
 	   "/usr/sbin/iptables -I INPUT -i $1 -j ACCEPT\n"
 	   "/usr/sbin/iptables -I FORWARD -i $1 -j ACCEPT\n", mss + 1, mss);
@@ -85,6 +85,7 @@ int mss;
   chmod ("/tmp/pppoeserver/ip-down", 0744);
 
 }
+
 void
 start_pppoeserver (void)
 {
@@ -217,7 +218,7 @@ start_pppoeserver (void)
 
 	  }
 	  fclose (fp);
-	  makeipup();
+	  makeipup ();
 //end parsing
 	  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"), "-R", nvram_safe_get ("pppoeserver_remoteaddr"));	//todo, make interface and base address configurable, see networking page options
 	}
@@ -343,7 +344,7 @@ start_pppoeserver (void)
 	  fp = fopen ("/tmp/pppoeserver/radius/servers", "wb");
 	  fprintf (fp, "%s %s\n", nvram_safe_get ("pppoeserver_authserverip"), nvram_safe_get ("pppoeserver_sharedkey"));	//todo, shared secret for radius server, see above for server name, must be identical
 	  fclose (fp);
-	  makeipup();
+	  makeipup ();
 	  eval ("pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get ("lan_ipaddr"), "-R", nvram_safe_get ("pppoeserver_remoteaddr"));	//todo, make interface and base address configurable, remote addr as well, see networking page options
 	}
       syslog (LOG_INFO, "rp-pppoe : pppoe server successfully started\n");

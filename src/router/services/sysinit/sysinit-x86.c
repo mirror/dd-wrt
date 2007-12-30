@@ -56,15 +56,17 @@
 static int
 detect (char *devicename)
 {
-FILE *tmp=fopen("/tmp/devices","rb");
-if (tmp==NULL)
+  FILE *tmp = fopen ("/tmp/devices", "rb");
+  if (tmp == NULL)
     {
-    system("/sbin/lspci>/tmp/devices");
-    }else
-fclose(tmp);
+      system ("/sbin/lspci>/tmp/devices");
+    }
+  else
+    fclose (tmp);
   char devcall[128];
   int res;
-  sprintf (devcall, "cat /tmp/devices|/bin/grep \"%s\"|/bin/wc -l", devicename);
+  sprintf (devcall, "cat /tmp/devices|/bin/grep \"%s\"|/bin/wc -l",
+	   devicename);
 //system(devcall);
   FILE *in = popen (devcall, "rb");
   fscanf (in, "%d", &res);
@@ -171,7 +173,7 @@ start_sysinit (void)
   klogctl (8, NULL, atoi (nvram_safe_get ("console_loglevel")));
   cprintf ("sysinit() get router\n");
 
- 
+
   /* Modules */
   uname (&name);
 
@@ -328,11 +330,13 @@ eval("insmod","crypto_null");
   int s;
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)))
     {
-    char eabuf[32];
-    strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
-    ioctl (s, SIOCGIFHWADDR, &ifr);
-    nvram_set ("et0macaddr_safe", ether_etoa ((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
-    close(s);
+      char eabuf[32];
+      strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
+      ioctl (s, SIOCGIFHWADDR, &ifr);
+      nvram_set ("et0macaddr_safe",
+		 ether_etoa ((unsigned char *) ifr.ifr_hwaddr.sa_data,
+			     eabuf));
+      close (s);
     }
 #ifndef HAVE_NOWIFI
   eval ("insmod", "ath_pci");

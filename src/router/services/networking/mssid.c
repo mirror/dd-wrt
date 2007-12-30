@@ -40,15 +40,15 @@
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 void
-do_mssid (char *lan_ifname,char *wlifname)
+do_mssid (char *lan_ifname, char *wlifname)
 {
   //bridge the virtual interfaces too
   struct ifreq ifr;
   int s;
   char *next;
   char var[80];
-  char *vifs = nvram_nget ("wl%d_vifs",get_wl_instance(wlifname));
-  int instance = get_wl_instance(wlifname);
+  char *vifs = nvram_nget ("wl%d_vifs", get_wl_instance (wlifname));
+  int instance = get_wl_instance (wlifname);
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
   if (vifs != NULL)
@@ -61,11 +61,11 @@ do_mssid (char *lan_ifname,char *wlifname)
 //      if (nvram_match (bss, "1"))
       {
 //#ifndef HAVE_BUFFALO
-//	if (nvram_match ("wl0_mode", "apsta"))
-//	  ether_atoe (nvram_safe_get ("wan_hwaddr"), ifr.ifr_hwaddr.sa_data);
-//	else
+//      if (nvram_match ("wl0_mode", "apsta"))
+//        ether_atoe (nvram_safe_get ("wan_hwaddr"), ifr.ifr_hwaddr.sa_data);
+//      else
 //#endif
-	ether_atoe (nvram_nget ("%s_hwaddr",var), ifr.ifr_hwaddr.sa_data);
+	ether_atoe (nvram_nget ("%s_hwaddr", var), ifr.ifr_hwaddr.sa_data);
 
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 	strncpy (ifr.ifr_name, var, IFNAMSIZ);
@@ -78,7 +78,8 @@ do_mssid (char *lan_ifname,char *wlifname)
 	}
       else
 	{
-	  ifconfig (var, IFUP, nvram_nget ("%s_ipaddr",var), nvram_nget ("%s_netmask",var));
+	  ifconfig (var, IFUP, nvram_nget ("%s_ipaddr", var),
+		    nvram_nget ("%s_netmask", var));
 	}
     }
   close (s);

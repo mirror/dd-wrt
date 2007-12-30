@@ -193,7 +193,7 @@ write_nvram (char *name, char *nv)
 {
   if (nvram_invmatch (nv, ""))
     {
-      writenvram(nv,name);
+      writenvram (nv, name);
     }
   else
     return -1;
@@ -337,7 +337,7 @@ start_cron (void)
       mkdir ("/var/spool/cron", 0700);
     }
   mkdir ("/tmp/cron.d", 0700);
-  
+
   buf_to_file ("/tmp/cron.d/check_ps", "*/2 * * * * root /sbin/check_ps\n");
   if (nvram_match ("reconnect_enable", "1"))	//pppoe reconnect
     {
@@ -383,8 +383,8 @@ start_cron (void)
 
       fclose (fp);
     }
-    
-  /* Custom cron files */  
+
+  /* Custom cron files */
   eval ("cp", "-af", "/tmp/mycron.d/*", "/tmp/cron.d/");
   eval ("cp", "-af", "/jffs/mycron.d/*", "/tmp/cron.d/");
   eval ("cp", "-af", "/mmc/mycron.d/*", "/tmp/cron.d/");
@@ -1393,16 +1393,18 @@ stop_process_monitor (void)
 int
 start_radio_timer (void)
 {
-  if (nvram_match ("radio0_timer_enable", "0") && nvram_match ("radio1_timer_enable", "0"))
+  if (nvram_match ("radio0_timer_enable", "0")
+      && nvram_match ("radio1_timer_enable", "0"))
     return 0;
 #ifdef HAVE_MADWIFI
-      if (nvram_match ("ath0_net_mode", "disabled"))
+  if (nvram_match ("ath0_net_mode", "disabled"))
 #elif HAVE_MSSID
-      if (nvram_match ("wl0_net_mode", "disabled") && nvram_match ("wl1_net_mode", "disabled"))
+  if (nvram_match ("wl0_net_mode", "disabled")
+      && nvram_match ("wl1_net_mode", "disabled"))
 #else
-      if (nvram_match ("wl_net_mode", "disabled"))
-#endif 
-	return 0;   
+  if (nvram_match ("wl_net_mode", "disabled"))
+#endif
+    return 0;
 
   pid_t pid;
 
