@@ -352,7 +352,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"filter_dport_grp10", "", 0},	/* Blocked Services */
 
   /* Services List */
-  {"filter_services", "", 0},  /* only user defined filters */
+  {"filter_services", "", 0},	/* only user defined filters */
   {"filter_services_1", "", 0},
 
   /* Port forwards */
@@ -820,7 +820,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl0_radius_port", "1812", 0},	/* RADIUS server UDP port */
   {"wl0_radius_ipaddr", "", 0},	/* RADIUS server IP address */
   {"wl0_radius_key", "", 0},	/* RADIUS shared secret */
-  {"wl0_security_mode", "disabled", 0},  /* WPA mode */
+  {"wl0_security_mode", "disabled", 0},	/* WPA mode */
 
   {"wl0.1_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
   {"wl0.1_akm", "disabled", 0},
@@ -2229,14 +2229,14 @@ struct nvram_tuple srouter_defaults[] = {
   {"milkfish_audit", "off", 0},	/* MILKFISH SETTING */
   {"milkfish_dynsip", "off", 0},	/* MILKFISH SETTING */
   {"milkfish_siptrace", "off", 0},	/* MILKFISH SETTING */
-  {"milkfish_ddsubscribers", "", 0},      /* MILKFISH SETTING */
-  {"milkfish_ddsubscribersnum", "0", 0},      /* MILKFISH SETTING */
-  {"milkfish_ddaliases", "", 0},      /* MILKFISH SETTING */
-  {"milkfish_ddaliasesnum", "0", 0},      /* MILKFISH SETTING */
-  {"milkfish_ddactive", "", 0},      /* MILKFISH SETTING */
-  {"milkfish_ddactivenum", "0", 0},      /* MILKFISH SETTING */
-  {"milkfish_dsusername", "", 0}, /* MILKFISH SETTING */
-  {"milkfish_dspassword", "", 0}, /* MILKFISH SETTING */
+  {"milkfish_ddsubscribers", "", 0},	/* MILKFISH SETTING */
+  {"milkfish_ddsubscribersnum", "0", 0},	/* MILKFISH SETTING */
+  {"milkfish_ddaliases", "", 0},	/* MILKFISH SETTING */
+  {"milkfish_ddaliasesnum", "0", 0},	/* MILKFISH SETTING */
+  {"milkfish_ddactive", "", 0},	/* MILKFISH SETTING */
+  {"milkfish_ddactivenum", "0", 0},	/* MILKFISH SETTING */
+  {"milkfish_dsusername", "", 0},	/* MILKFISH SETTING */
+  {"milkfish_dspassword", "", 0},	/* MILKFISH SETTING */
 #endif
 #ifdef HAVE_OLSRD
   {"olsrd_pollsize", "0.1", 0},

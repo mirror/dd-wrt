@@ -48,7 +48,7 @@ start_milkfish (void)
 {
   if (nvram_match ("milkfish_enabled", "1"))
     {
-      start_milkfish_boot();
+      start_milkfish_boot ();
       eval ("/etc/config/milkfish.netup");	//start rtpproxy and openserctl
 
       syslog (LOG_INFO, "Milkfish service successfully started\n");
@@ -60,7 +60,7 @@ start_milkfish_boot (void)
 {
   MD5_CTX MD;
 
-  if (strlen(nvram_safe_get ("milkfish_routerid")) != 32)
+  if (strlen (nvram_safe_get ("milkfish_routerid")) != 32)
     {
       unsigned char hash[32];
       char *et0 = nvram_safe_get ("et0macaddr");
@@ -70,7 +70,7 @@ start_milkfish_boot (void)
       char request[32];
       int i;
       for (i = 0; i < 16; i++)
-        sprintf (&request[2*i], "%02x", hash[i]);
+	sprintf (&request[2 * i], "%02x", hash[i]);
       nvram_set ("milkfish_routerid", request);
       nvram_set ("need_commit", "1");
     }

@@ -50,7 +50,7 @@
 #include <shutils.h>
 #include <utils.h>
 
-extern void vlan_init(int num);
+extern void vlan_init (int num);
 
 
 int
@@ -134,7 +134,7 @@ start_sysinit (void)
   eval ("ifconfig", "eth0", "up");	// wan
   system ("echo 2 >/proc/sys/dev/wifi0/ledpin");
   system ("echo 1 >/proc/sys/dev/wifi0/softled");
-  vlan_init (5); // 4 lan + 1 wan
+  vlan_init (5);		// 4 lan + 1 wan
 //  eval ("insmod", "ipv6");
 
   /* Set a sane date */

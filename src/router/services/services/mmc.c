@@ -32,24 +32,21 @@ start_mmc (void)
 {
   if (nvram_match ("mmc_enable", "1"))
     {
-    
+
 #ifdef HAVE_FONERA
-    int res = eval("insmod","mmc");
+      int res = eval ("insmod", "mmc");
       if (!res)
 	{
 	  //device detected
 	  eval ("insmod", "ext2");
-	  if (mount
-	      ("/dev/mmc", "/mmc", "ext2", MS_MGC_VAL, NULL))
+	  if (mount ("/dev/mmc", "/mmc", "ext2", MS_MGC_VAL, NULL))
 	    {
 	      //device not formated
-	      eval ("/sbin/mke2fs", "-F", "-b", "1024",
-		    "/dev/mmc");
-	      mount ("/dev/mmc", "/mmc", "ext2", MS_MGC_VAL,
-		     NULL);
+	      eval ("/sbin/mke2fs", "-F", "-b", "1024", "/dev/mmc");
+	      mount ("/dev/mmc", "/mmc", "ext2", MS_MGC_VAL, NULL);
 	    }
 	}
-#else    
+#else
       int res = 1;
       int mmc_di = 0, mmc_do = 0, mmc_clk = 0, mmc_cs = 0;
       char dddi[16], dddo[16], ddclk[16], ddcs[16];

@@ -149,7 +149,8 @@ start_dnsmasq (void)
 	  mdhcpcount = atoi (nvram_safe_get ("mdhcpd_count"));
 	  for (i = 0; i < mdhcpcount; i++)
 	    {
-	    if (strlen(nvram_nget("%s_ipaddr",getmdhcp (0, i)))==0 || strlen(nvram_nget("%s_netmask",getmdhcp (0, i)))==0)
+	      if (strlen (nvram_nget ("%s_ipaddr", getmdhcp (0, i))) == 0
+		  || strlen (nvram_nget ("%s_netmask", getmdhcp (0, i))) == 0)
 		continue;
 	      fprintf (fp, ",%s", getmdhcp (0, i));
 	    }
@@ -198,16 +199,18 @@ start_dnsmasq (void)
 	  atoi (nvram_safe_get ("static_leasenum"));
 	for (i = 0; i < mdhcpcount; i++)
 	  {
-	    if (strlen(nvram_nget("%s_ipaddr",getmdhcp (0, i)))==0 || strlen(nvram_nget("%s_netmask",getmdhcp (0, i)))==0)
-		continue;
+	    if (strlen (nvram_nget ("%s_ipaddr", getmdhcp (0, i))) == 0
+		|| strlen (nvram_nget ("%s_netmask", getmdhcp (0, i))) == 0)
+	      continue;
 	    dhcp_max += getmdhcp (3, i);
 	  }
 	fprintf (fp, "dhcp-lease-max=%d\n", dhcp_max);
 	fprintf (fp, "dhcp-option=lan,3,%s\n", nvram_safe_get ("lan_ipaddr"));
 	for (i = 0; i < mdhcpcount; i++)
 	  {
-	    if (strlen(nvram_nget("%s_ipaddr",getmdhcp (0, i)))==0 || strlen(nvram_nget("%s_netmask",getmdhcp (0, i)))==0)
-		continue;
+	    if (strlen (nvram_nget ("%s_ipaddr", getmdhcp (0, i))) == 0
+		|| strlen (nvram_nget ("%s_netmask", getmdhcp (0, i))) == 0)
+	      continue;
 	    fprintf (fp, "dhcp-option=%s,3,", getmdhcp (0, i));
 	    fprintf (fp, "%s\n", nvram_nget ("%s_ipaddr", getmdhcp (0, i)));
 	  }
@@ -271,8 +274,9 @@ start_dnsmasq (void)
 	  {
 	    if (strcmp (getmdhcp (1, i), "On"))
 	      continue;
-	    if (strlen(nvram_nget("%s_ipaddr",getmdhcp (0, i)))==0 || strlen(nvram_nget("%s_netmask",getmdhcp (0, i)))==0)
-		continue;
+	    if (strlen (nvram_nget ("%s_ipaddr", getmdhcp (0, i))) == 0
+		|| strlen (nvram_nget ("%s_netmask", getmdhcp (0, i))) == 0)
+	      continue;
 	    fprintf (fp, "dhcp-range=%s,", getmdhcp (0, i));
 	    fprintf (fp, "%d.%d.%d.",
 		     get_single_ip (nvram_nget ("%s_ipaddr", getmdhcp (0, i)),
@@ -289,8 +293,8 @@ start_dnsmasq (void)
 				    1),
 		     get_single_ip (nvram_nget ("%s_ipaddr", getmdhcp (0, i)),
 				    2));
-	    int end=atoi(getmdhcp (2, i));
-	    end +=atoi(getmdhcp(3,i));
+	    int end = atoi (getmdhcp (2, i));
+	    end += atoi (getmdhcp (3, i));
 	    fprintf (fp, "%d,", end);
 	    fprintf (fp, "%s,", nvram_nget ("%s_netmask", getmdhcp (0, i)));
 	    fprintf (fp, "%sm\n", getmdhcp (4, i));
