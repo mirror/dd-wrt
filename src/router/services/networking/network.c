@@ -1457,6 +1457,7 @@ start_lan (void)
 		br_add_interface (getBridge (name), name);
 		led_control (LED_BRIDGE, LED_ON);
 #ifdef HAVE_MSSID
+		wl_iovar_set(name, "wet_host_mac", ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
 		enable_dhcprelay (lan_ifname);
 		do_mssid (lan_ifname,name);
 #endif
