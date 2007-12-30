@@ -465,12 +465,25 @@ else
       if (!strcmp (mode, "-S"))
 	{
 #ifndef HAVE_NASCONF
-	  char *argv[] =
+	  char **argv;
+	  
+	  if (nvram_nmatch("wet","%s_mode",prefix) || nvram_nmatch("apstawet","%s_mode",prefix))
+	  {
+	  argv = (char*[]){ "nas", "-P", pidfile, "-H", "34954", "-l",nvram_safe_get("lan_ifname"),"-i", iface, mode, "-m",
+	    auth_mode, "-k", key, "-s", nvram_safe_get (ssid), "-w",
+	    sec_mode, "-g",
+	    nvram_safe_get (rekey), NULL
+	  };
+	  }else
+	  {
+	  argv =(char*[])
 	    { "nas", "-P", pidfile, "-H", "34954", "-i", iface, mode, "-m",
 	    auth_mode, "-k", key, "-s", nvram_safe_get (ssid), "-w",
 	    sec_mode, "-g",
 	    nvram_safe_get (rekey), NULL
 	  };
+	  
+	  }
 	  _evalpid (argv, NULL, 0, &pid);
 #else
 	  conf = fopen (conffile, "w");
