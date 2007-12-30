@@ -34,23 +34,24 @@
 #include <wlutils.h>
 
 
-void start_radius(char *prefix)
+void
+start_radius (char *prefix)
 {
-      char psk[64];
-      //  wrt-radauth $IFNAME $server $port $share $override $mackey $maxun &
-      char ifname[32];
-      strcpy(ifname,prefix);
-      if (!strcmp(ifname,"wl0"))
-        strcpy(ifname,nvram_safe_get("wl0_ifname"));
-      if (!strcmp(ifname,"wl1"))
-        strcpy(ifname,nvram_safe_get("wl1_ifname"));
-      char ap[32];
-      
-      char radauth[32];
-      sprintf(radauth,"%s_radauth",prefix);
-      sprintf(ap,"%s_mode",prefix);
-      if (nvram_match(radauth,"1") && nvram_match(ap,"ap"))
-      {	       
+  char psk[64];
+  //  wrt-radauth $IFNAME $server $port $share $override $mackey $maxun &
+  char ifname[32];
+  strcpy (ifname, prefix);
+  if (!strcmp (ifname, "wl0"))
+    strcpy (ifname, nvram_safe_get ("wl0_ifname"));
+  if (!strcmp (ifname, "wl1"))
+    strcpy (ifname, nvram_safe_get ("wl1_ifname"));
+  char ap[32];
+
+  char radauth[32];
+  sprintf (radauth, "%s_radauth", prefix);
+  sprintf (ap, "%s_mode", prefix);
+  if (nvram_match (radauth, "1") && nvram_match (ap, "ap"))
+    {
       sprintf (psk, "%s_radius_ipaddr", prefix);
       char *server = nvram_safe_get (psk);
       sprintf (psk, "%s_radius_port", prefix);
@@ -73,7 +74,7 @@ void start_radius(char *prefix)
       sprintf (exec, "wrt-radauth %s %s %s %s %s 1 1 0 &", pragma, ifname,
 	       server, port, share);
       system2 (exec);
-      }
+    }
 
 
 }
@@ -88,10 +89,10 @@ convert_wds (int instance)
   char wds_mac[254];
   char buf[254];
 
-  if (nvram_nmatch ("","wl%d_wds", instance))	// For Router, accept all WDS link
+  if (nvram_nmatch ("", "wl%d_wds", instance))	// For Router, accept all WDS link
     strcpy (wds_mac, "*");
   else				// For AP, assign remote WDS MAC
-    strcpy (wds_mac, nvram_nget ("wl%d_wds",instance));
+    strcpy (wds_mac, nvram_nget ("wl%d_wds", instance));
 
   /* For WPA-PSK mode, we want to convert wl_wds_mac to wl0_wds0 ... wl0_wds255 */
   if (nvram_match ("security_mode", "psk")
@@ -105,7 +106,7 @@ convert_wds (int instance)
 
       foreach (mac, wds_mac, next)
       {
-	snprintf (wl_wds, sizeof (wl_wds), "wl%d_wds%d",instance, i);
+	snprintf (wl_wds, sizeof (wl_wds), "wl%d_wds%d", instance, i);
 	snprintf (buf, sizeof (buf), "%s,auto,%s,%s,%s,%s",
 		  mac,
 		  nvram_safe_get ("wl_crypto"),
@@ -113,7 +114,8 @@ convert_wds (int instance)
 #ifndef HAVE_MSSID
 		  nvram_safe_get ("wl_ssid"), nvram_safe_get ("wl_wpa_psk"));
 #else
-		  nvram_nget ("wl%d_ssid",instance), nvram_safe_get ("wl_wpa_psk"));
+		  nvram_nget ("wl%d_ssid", instance),
+		  nvram_safe_get ("wl_wpa_psk"));
 #endif
 	nvram_set (wl_wds, buf);
 	i++;
@@ -259,15 +261,15 @@ static void start_nas_ap(char *prefix,char *type)
 void
 start_nas_lan (int c)
 {
-char wlname[32];
-sprintf(wlname,"wl%d",c);
-  start_radius(wlname); // quick fix, should be vif capable in future
+  char wlname[32];
+  sprintf (wlname, "wl%d", c);
+  start_radius (wlname);	// quick fix, should be vif capable in future
   start_nas_single ("lan", wlname);
 
 #ifdef HAVE_MSSID
   char *next;
   char var[80];
-  char *vifs = nvram_nget ("wl%d_vifs",c);
+  char *vifs = nvram_nget ("wl%d_vifs", c);
   if (strlen (vifs))
     foreach (var, vifs, next)
     {
@@ -281,15 +283,15 @@ sprintf(wlname,"wl%d",c);
 void
 start_nas_wan (int c)
 {
-char wlname[32];
-sprintf(wlname,"wl%d",c);
+  char wlname[32];
+  sprintf (wlname, "wl%d", c);
   start_nas_single ("wan", wlname);
 
 #ifdef HAVE_MSSID
   char *next;
   char var[80];
   char vif[16];
-  char *vifs = nvram_nget ("wl%d_vifs",c);
+  char *vifs = nvram_nget ("wl%d_vifs", c);
   if (strlen (vifs))
     foreach (var, vifs, next)
     {
@@ -317,35 +319,36 @@ start_nas (void)
 #ifdef HAVE_MSSID
   unlink ("/tmp/.nas");
 #endif
-int cnt = get_wl_instances();
+  int cnt = get_wl_instances ();
 
-int c;
-for (c=0;c<cnt;c++)
-{
-  if (nvram_nmatch ("disabled","wl%d_net_mode", c))
-    continue;
-char wlname[32];
-sprintf(wlname,"wl%d",c);
-  if (nvram_nmatch ("sta","wl%d_mode", c)
-      || nvram_nmatch ("wet","wl%d_mode", c)
-      || nvram_nmatch ("apsta","wl%d_mode", c)
-      || nvram_nmatch ("apstawet","wl%d_mode", c))
+  int c;
+  for (c = 0; c < cnt; c++)
     {
-      cprintf ("start nas wan\n");
+      if (nvram_nmatch ("disabled", "wl%d_net_mode", c))
+	continue;
+      char wlname[32];
+      sprintf (wlname, "wl%d", c);
+      if (nvram_nmatch ("sta", "wl%d_mode", c)
+	  || nvram_nmatch ("wet", "wl%d_mode", c)
+	  || nvram_nmatch ("apsta", "wl%d_mode", c)
+	  || nvram_nmatch ("apstawet", "wl%d_mode", c))
+	{
+	  cprintf ("start nas wan\n");
 #ifdef HAVE_WPA_SUPPLICANT
-      if (nvram_nmatch ("8021X","wl%d_akm", c) && nvram_nmatch ("sta","wl%d_mode", c))
-	setupSupplicant (wlname);
-      else
+	  if (nvram_nmatch ("8021X", "wl%d_akm", c)
+	      && nvram_nmatch ("sta", "wl%d_mode", c))
+	    setupSupplicant (wlname);
+	  else
 #endif
-	start_nas_wan (c);
+	    start_nas_wan (c);
 
+	}
+      else
+	{
+	  cprintf ("start nas lan\n");
+	  start_nas_lan (c);
+	}
     }
-  else
-    {
-      cprintf ("start nas lan\n");
-      start_nas_lan (c);
-    }
-}
   return 1;
 }
 
@@ -368,12 +371,12 @@ start_nas_single (char *type, char *prefix)
   0}, *mode =
   {
   0};
-  if (nvram_nmatch("disabled","%s_net_mode",prefix))
+  if (nvram_nmatch ("disabled", "%s_net_mode", prefix))
     return 0;
-if (!strcmp(prefix,"wl0"))
-  convert_wds (0);
-else
-  convert_wds (1);
+  if (!strcmp (prefix, "wl0"))
+    convert_wds (0);
+  else
+    convert_wds (1);
   {
 
     snprintf (pidfile, sizeof (pidfile), "/tmp/nas.%s%s.pid", prefix, type);
@@ -403,12 +406,12 @@ else
 
 	if (!strcmp (prefix, "wl0"))
 	  {
-	    iface = get_wl_instance_name(0);
-	  }else
-	if (!strcmp (prefix, "wl1"))
+	    iface = get_wl_instance_name (0);
+	  }
+	else if (!strcmp (prefix, "wl1"))
 	  {
-	    iface = get_wl_instance_name(1);
-	  }	  
+	    iface = get_wl_instance_name (1);
+	  }
 	else
 	  {
 	    iface = prefix;
@@ -466,24 +469,26 @@ else
 	{
 #ifndef HAVE_NASCONF
 	  char **argv;
-	  
-	  if (nvram_nmatch("wet","%s_mode",prefix) || nvram_nmatch("apstawet","%s_mode",prefix))
-	  {
-	  argv = (char*[]){ "nas", "-P", pidfile, "-H", "34954", "-l",nvram_safe_get("lan_ifname"),"-i", iface, mode, "-m",
-	    auth_mode, "-k", key, "-s", nvram_safe_get (ssid), "-w",
-	    sec_mode, "-g",
-	    nvram_safe_get (rekey), NULL
-	  };
-	  }else
-	  {
-	  argv =(char*[])
-	    { "nas", "-P", pidfile, "-H", "34954", "-i", iface, mode, "-m",
-	    auth_mode, "-k", key, "-s", nvram_safe_get (ssid), "-w",
-	    sec_mode, "-g",
-	    nvram_safe_get (rekey), NULL
-	  };
-	  
-	  }
+
+	  if (nvram_nmatch ("wet", "%s_mode", prefix)
+	      || nvram_nmatch ("apstawet", "%s_mode", prefix))
+	    {
+	      argv = (char *[])
+	      {
+	      "nas", "-P", pidfile, "-H", "34954", "-l",
+		  nvram_safe_get ("lan_ifname"), "-i", iface, mode, "-m",
+		  auth_mode, "-k", key, "-s", nvram_safe_get (ssid), "-w",
+		  sec_mode, "-g", nvram_safe_get (rekey), NULL};
+	    }
+	  else
+	    {
+	      argv = (char *[])
+	      {
+	      "nas", "-P", pidfile, "-H", "34954", "-i", iface, mode, "-m",
+		  auth_mode, "-k", key, "-s", nvram_safe_get (ssid), "-w",
+		  sec_mode, "-g", nvram_safe_get (rekey), NULL};
+
+	    }
 	  _evalpid (argv, NULL, 0, &pid);
 #else
 	  conf = fopen (conffile, "w");
@@ -597,10 +602,10 @@ stop_nas (void)
     syslog (LOG_INFO, "NAS : NAS daemon successfully stopped\n");
 
   if (pidof ("wrt-radauth") > 0)
-  {
-    syslog (LOG_INFO, "RADAUTH : RADAUTH daemon successfully stopped\n");
-    killall("wrt-radauth",SIGKILL);
-  }
+    {
+      syslog (LOG_INFO, "RADAUTH : RADAUTH daemon successfully stopped\n");
+      killall ("wrt-radauth", SIGKILL);
+    }
 
   while (pidof ("nas") > 0)
     {

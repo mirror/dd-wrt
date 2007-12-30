@@ -44,7 +44,7 @@
 #include <utils.h>
 
 
-extern void vlan_init(int num);
+extern void vlan_init (int num);
 
 int
 start_sysinit (void)
@@ -67,11 +67,11 @@ start_sysinit (void)
   eval ("mkdir", "/tmp/www");
   eval ("mknod", "/dev/nvram", "c", "229", "0");
   eval ("mknod", "/dev/ppp", "c", "108", "0");
-  eval ("mknod", "-m","0660","/dev/mmc","b","126","0");
-  eval ("mknod", "-m","0660","/dev/mmc0","b","126","1");
-  eval ("mknod", "-m","0660","/dev/mmc1","b","126","2");
-  eval ("mknod", "-m","0660","/dev/mmc2","b","126","3");
-  eval ("mknod", "-m","0660","/dev/mmc3","b","126","4");
+  eval ("mknod", "-m", "0660", "/dev/mmc", "b", "126", "0");
+  eval ("mknod", "-m", "0660", "/dev/mmc0", "b", "126", "1");
+  eval ("mknod", "-m", "0660", "/dev/mmc1", "b", "126", "2");
+  eval ("mknod", "-m", "0660", "/dev/mmc2", "b", "126", "3");
+  eval ("mknod", "-m", "0660", "/dev/mmc3", "b", "126", "4");
 
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
@@ -110,7 +110,7 @@ start_sysinit (void)
   eval ("ifconfig", "wifi0", "up");
 #ifdef HAVE_LS2
   eval ("ifconfig", "eth0", "up");	// wan
-  vlan_init (5); // 4 lan + 1 wan, but only first one is used
+  vlan_init (5);		// 4 lan + 1 wan, but only first one is used
 #endif
 //  eval ("insmod", "ipv6");
 
