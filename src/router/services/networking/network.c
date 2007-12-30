@@ -3171,7 +3171,7 @@ start_set_routes (void)
   char *defgateway;
   if (nvram_match ("wan_proto", "pptp"))
     defgateway = nvram_safe_get ("pptp_get_ip");
-  else if (nvram_match ("wan_proto", "pptp"))
+  else if (nvram_match ("wan_proto", "l2tp"))
     defgateway = nvram_safe_get ("l2tp_get_ip");
   else 
     defgateway = nvram_safe_get ("wan_gateway");
