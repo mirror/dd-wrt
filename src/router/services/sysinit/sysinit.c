@@ -429,7 +429,7 @@ start_restore_defaults (void)
     {"wan_ifnames", "eth0", 0},
     {0, 0, 0}
   };
-  
+
   struct nvram_tuple generic_3[] = {
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "eth0 eth1", 0},
@@ -457,11 +457,11 @@ start_restore_defaults (void)
 //  if (getRouterBrand () == ROUTER_BUFFALO_WZRG144NH)
 //    {
 //      if (nvram_get ("il0macaddr") == NULL)
-//	{
-//	  strcpy (mac, et0mac);
-//	  MAC_ADD (mac);
-//	  nvram_set ("il0macaddr", mac);
-//	}
+//      {
+//        strcpy (mac, et0mac);
+//        MAC_ADD (mac);
+//        nvram_set ("il0macaddr", mac);
+//      }
 //    }
 
 #ifdef HAVE_RB500
@@ -607,12 +607,12 @@ start_restore_defaults (void)
     case ROUTER_MOTOROLA_WE800G:
     case ROUTER_WAP54G_V1:
     case ROUTER_SITECOM_WL105B:
-#endif    
+#endif
     case ROUTER_BUFFALO_WLI2_TX1_G54:
     case ROUTER_BUFFALO_WLAG54C:
       linux_overrides = generic_2;
       break;
-#ifndef HAVE_BUFFALO      
+#ifndef HAVE_BUFFALO
     case ROUTER_WAP54G_V2:
     case ROUTER_VIEWSONIC_WAPBR_100:
     case ROUTER_USR_5430:
@@ -620,10 +620,10 @@ start_restore_defaults (void)
     case ROUTER_NETGEAR_WG602_V3:
 #endif
     case ROUTER_BUFFALO_WLA2G54C:
-    case ROUTER_BUFFALO_WLI_TX4_G54HP:   
+    case ROUTER_BUFFALO_WLI_TX4_G54HP:
       linux_overrides = generic_3;
       break;
-#ifndef HAVE_BUFFALO    
+#ifndef HAVE_BUFFALO
     case ROUTER_RT480W:
     case ROUTER_RT210W:
 #endif
@@ -782,8 +782,8 @@ start_restore_defaults (void)
 	  nvram_set ("vlan1ports", "0 5");
 	}
       if (brand == ROUTER_WRT54G_V8
-       || nvram_match ("bootnv_ver", "4")
-       || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
+	  || nvram_match ("bootnv_ver", "4")
+	  || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
 	{
 	  nvram_set ("vlan0ports", "3 2 1 0 5*");
 	  nvram_set ("vlan1ports", "4 5");
@@ -892,8 +892,8 @@ start_restore_defaults (void)
 	      nvram_set ("vlan0ports", "0 1 2 3 5*");
 	      break;
 	    default:
-	      if (brand == ROUTER_WRT54G_V8 
-	      || nvram_match ("bootnv_ver", "4")
+	      if (brand == ROUTER_WRT54G_V8
+		  || nvram_match ("bootnv_ver", "4")
 		  || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
 		nvram_set ("vlan0ports", "3 2 1 0 5*");
 	      else
@@ -923,8 +923,8 @@ start_restore_defaults (void)
 		  break;
 		default:
 		  if (brand == ROUTER_WRT54G_V8
-		    ||nvram_match ("bootnv_ver", "4")
-		    || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
+		      || nvram_match ("bootnv_ver", "4")
+		      || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
 		    nvram_set ("vlan1ports", "4 5");
 		  else
 		    nvram_set ("vlan1ports", "0 5");
@@ -1005,10 +1005,10 @@ start_restore_defaults (void)
       nvram_commit ();
       cprintf ("done\n");
       for (i = 0; i < MAX_NVPARSE; i++)
-      {
-	del_wds_wsec (0, i);
-	del_wds_wsec (1, i);
-      }
+	{
+	  del_wds_wsec (0, i);
+	  del_wds_wsec (1, i);
+	}
     }
 }
 
@@ -1190,8 +1190,8 @@ start_nvram (void)
 #ifndef HAVE_BUFFALO
   if (check_hw_type () == BCM5352E_CHIP)
     {
-      nvram_set ("opo", "0"); // OFDM power reducement in quarter dbm (2 dbm in this case)
-      nvram_set ("ag0", "0");  // Antenna Gain definition in dbm
+      nvram_set ("opo", "0");	// OFDM power reducement in quarter dbm (2 dbm in this case)
+      nvram_set ("ag0", "0");	// Antenna Gain definition in dbm
     }
 #endif
 
@@ -1220,8 +1220,8 @@ start_nvram (void)
   nvram_unset ("filter_services4");
   nvram_unset ("filter_services5");
   nvram_unset ("filter_services6");
-  nvram_unset ("filter_services7");   
-    
+  nvram_unset ("filter_services7");
+
 #ifdef DIST
   nvram_set ("dist_type", DIST);
 #endif
@@ -1232,11 +1232,11 @@ start_nvram (void)
 #ifndef HAVE_TW6600
 #ifdef HAVE_MICRO
 //if dist_type micro, check styles, and force to elegant if needed
- char *style = nvram_safe_get ("router_style");
- if (!strstr ("blue cyan elegant green orange red yellow", style))
-    {
-      nvram_set ("router_style", "elegant");
-    }
+    char *style = nvram_safe_get ("router_style");
+    if (!strstr ("blue cyan elegant green orange red yellow", style))
+      {
+	nvram_set ("router_style", "elegant");
+      }
 #endif
 #endif
 #endif

@@ -463,16 +463,16 @@ wlconf_up (char *name)
       nvram_commit ();
     }
 #endif
-int instance = get_wl_instance(name);
-if (instance==-1)
-    return -1; //no wireless device
-  if (nvram_nmatch ("infra","wl%d_mode", instance))
+  int instance = get_wl_instance (name);
+  if (instance == -1)
+    return -1;			//no wireless device
+  if (nvram_nmatch ("infra", "wl%d_mode", instance))
     {
-      nvram_nset ("0","wl%d_infra", instance);
+      nvram_nset ("0", "wl%d_infra", instance);
     }
   else
     {
-      nvram_nset ("1","wl%d_infra", instance);
+      nvram_nset ("1", "wl%d_infra", instance);
     }
   ret = eval ("wlconf", name, "up");
 /*  eval("wl","radio","off");
@@ -481,7 +481,7 @@ if (instance==-1)
   eval("wl","srl","16");
   eval("wl","interference","0");
   eval("wl","radio","on");*/
-  gmode = atoi (nvram_nget ("wl%d_gmode",instance));
+  gmode = atoi (nvram_nget ("wl%d_gmode", instance));
 
   /* Get current phy type */
   WL_IOCTL (name, WLC_GET_PHYTYPE, &phytype, sizeof (phytype));
@@ -489,16 +489,16 @@ if (instance==-1)
   // set preamble type for b cards
   if (phytype == PHY_TYPE_B || gmode == 0)
     {
-      if (nvram_nmatch ("long","wl%d_plcphdr", instance))
+      if (nvram_nmatch ("long", "wl%d_plcphdr", instance))
 	val = WLC_PLCP_LONG;
-      else if (nvram_nmatch ("short","wl%d_plcphdr", instance))
+      else if (nvram_nmatch ("short", "wl%d_plcphdr", instance))
 	val = WLC_PLCP_SHORT;
       else
 	val = WLC_PLCP_AUTO;
       WL_IOCTL (name, WLC_SET_PLCPHDR, &val, sizeof (val));
     }
   // adjust txpwr and txant
-  val = atoi (nvram_nget ("wl%d_txpwr",instance));
+  val = atoi (nvram_nget ("wl%d_txpwr", instance));
   if (val < 0 || val > TXPWR_MAX)
     val = TXPWR_DEFAULT;
 #ifndef HAVE_MSSID
@@ -515,10 +515,10 @@ if (instance==-1)
   val |= WL_TXPWR_OVERRIDE;
   wl_iovar_setint (name, "qtxpower", val);
 */
-eval("wl","txpwr1","-m","-o",nvram_nget("wl%d_txpwr",instance));
+  eval ("wl", "txpwr1", "-m", "-o", nvram_nget ("wl%d_txpwr", instance));
 #endif
   /* Set txant */
-  val = atoi (nvram_nget ("wl%d_txant",instance));
+  val = atoi (nvram_nget ("wl%d_txant", instance));
   if (val < 0 || val > 3 || val == 2)
     val = 3;
   WL_IOCTL (name, WLC_SET_TXANT, &val, sizeof (val));
@@ -531,32 +531,32 @@ eval("wl","txpwr1","-m","-o",nvram_nget("wl%d_txpwr",instance));
 	val = 0;
     }
 */
-  val = atoi (nvram_nget ("wl%d_antdiv",instance));
+  val = atoi (nvram_nget ("wl%d_antdiv", instance));
   WL_IOCTL (name, WLC_SET_ANTDIV, &val, sizeof (val));
 
   /* search for "afterburner" string */
-  char *afterburner = nvram_nget ("wl%d_afterburner",instance);
+  char *afterburner = nvram_nget ("wl%d_afterburner", instance);
 
   if (!strcmp (afterburner, "on"))
-    eval ("wl", "-i",name,"afterburner_override", "1");
+    eval ("wl", "-i", name, "afterburner_override", "1");
   else if (!strcmp (afterburner, "off"))
-    eval ("wl","-i",name, "afterburner_override", "0");
+    eval ("wl", "-i", name, "afterburner_override", "0");
   else				//auto
-    eval ("wl","-i",name, "afterburner_override", "-1");
+    eval ("wl", "-i", name, "afterburner_override", "-1");
 
-  char *shortslot = nvram_nget ("wl%d_shortslot",instance);
+  char *shortslot = nvram_nget ("wl%d_shortslot", instance);
 
   if (!strcmp (shortslot, "long"))
-    eval ("wl","-i",name, "shortslot_override", "0");
+    eval ("wl", "-i", name, "shortslot_override", "0");
   else if (!strcmp (shortslot, "short"))
-    eval ("wl","-i",name, "shortslot_override", "1");
+    eval ("wl", "-i", name, "shortslot_override", "1");
   else				//auto
-    eval ("wl","-i",name, "shortslot_override", "-1");
+    eval ("wl", "-i", name, "shortslot_override", "-1");
 
 
   // Set ACK Timing. Thx to Nbd
   char *v;
-  if ((v = nvram_nget ("wl%d_distance",instance)))
+  if ((v = nvram_nget ("wl%d_distance", instance)))
     {
       rw_reg_t reg;
       uint32 shm;
@@ -571,7 +571,7 @@ eval("wl","txpwr1","-m","-o",nvram_nget("wl%d_txpwr",instance));
 	{
 #ifdef HAVE_MSSID
 #ifdef HAVE_ACK
-	  eval ("wl","-i",name, "noack", "1");
+	  eval ("wl", "-i", name, "noack", "1");
 #endif
 	  // wlc_noack (0);
 #else
@@ -589,7 +589,7 @@ eval("wl","txpwr1","-m","-o",nvram_nget("wl%d_txpwr",instance));
 	{
 #ifdef HAVE_MSSID
 #ifdef HAVE_ACK
-	  eval ("wl","-i",name, "noack", "0");
+	  eval ("wl", "-i", name, "noack", "0");
 #endif
 	  //  wlc_noack (1);
 #else
@@ -607,7 +607,7 @@ eval("wl","txpwr1","-m","-o",nvram_nget("wl%d_txpwr",instance));
 #ifdef HAVE_ACK
       char strv[32];
       sprintf (strv, "%d", val);
-      eval ("wl", "-i",name,"acktiming", strv);
+      eval ("wl", "-i", name, "acktiming", strv);
 #else
 /*      shm = 0x10;
       shm |= (val << 16);
@@ -645,14 +645,14 @@ eval("wl","txpwr1","-m","-o",nvram_nget("wl%d_txpwr",instance));
 		}
 */
 
-  if (nvram_nmatch ("infra","wl%d_mode", instance))
+  if (nvram_nmatch ("infra", "wl%d_mode", instance))
     {
-      eval ("wl","-i",name, "infra", "0");
-      eval ("wl","-i",name, "ssid", nvram_nget ("wl%d_ssid",instance));
+      eval ("wl", "-i", name, "infra", "0");
+      eval ("wl", "-i", name, "ssid", nvram_nget ("wl%d_ssid", instance));
     }
 #ifdef HAVE_MSSID
 #ifndef HAVE_MADWIFI
-  eval ("wl","-i",name, "vlan_mode", "0");
+  eval ("wl", "-i", name, "vlan_mode", "0");
 #endif
 #endif
   return ret;
@@ -692,7 +692,8 @@ do_portsetup (char *lan, char *ifname)
     }
   else
     {
-      ifconfig (ifname, IFUP, nvram_nget ("%s_ipaddr",ifname), nvram_nget ("%s_netmask",ifname));
+      ifconfig (ifname, IFUP, nvram_nget ("%s_ipaddr", ifname),
+		nvram_nget ("%s_netmask", ifname));
     }
 
 }
@@ -805,42 +806,42 @@ start_lan (void)
   strcpy (mac, nvram_safe_get ("et0macaddr"));
 #endif
 #ifdef HAVE_DIR300
-      if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
-	  || nvram_match ("wan_proto", "disabled"))
-	{
-	  nvram_set ("lan_ifname", "br0");
-	  nvram_set ("lan_ifnames", "vlan1 vlan2 ath0");
-	  nvram_set ("wan_ifname", "");
-	  nvram_set ("wan_ifnames", "");
-	}
-      else
-	{
-	  nvram_set ("lan_ifname", "br0");
-	  nvram_set ("lan_ifnames", "vlan1 ath0");
-	  nvram_set ("wan_ifname", "vlan2");
-	  nvram_set ("wan_ifnames", "vlan2");
-	}
+  if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
+      || nvram_match ("wan_proto", "disabled"))
+    {
+      nvram_set ("lan_ifname", "br0");
+      nvram_set ("lan_ifnames", "vlan1 vlan2 ath0");
+      nvram_set ("wan_ifname", "");
+      nvram_set ("wan_ifnames", "");
+    }
+  else
+    {
+      nvram_set ("lan_ifname", "br0");
+      nvram_set ("lan_ifnames", "vlan1 ath0");
+      nvram_set ("wan_ifname", "vlan2");
+      nvram_set ("wan_ifnames", "vlan2");
+    }
   strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
   ioctl (s, SIOCGIFHWADDR, &ifr);
   nvram_set ("et0macaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
   strcpy (mac, nvram_safe_get ("et0macaddr"));
 #endif
 #ifdef HAVE_MR3202A
-      if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
-	  || nvram_match ("wan_proto", "disabled"))
-	{
-	  nvram_set ("lan_ifname", "br0");
-	  nvram_set ("lan_ifnames", "vlan1 vlan2 ath0");
-	  nvram_set ("wan_ifname", "");
-	  nvram_set ("wan_ifnames", "");
-	}
-      else
-	{
-	  nvram_set ("lan_ifname", "br0");
-	  nvram_set ("lan_ifnames", "vlan1 ath0");
-	  nvram_set ("wan_ifname", "vlan2");
-	  nvram_set ("wan_ifnames", "vlan2");
-	}
+  if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
+      || nvram_match ("wan_proto", "disabled"))
+    {
+      nvram_set ("lan_ifname", "br0");
+      nvram_set ("lan_ifnames", "vlan1 vlan2 ath0");
+      nvram_set ("wan_ifname", "");
+      nvram_set ("wan_ifnames", "");
+    }
+  else
+    {
+      nvram_set ("lan_ifname", "br0");
+      nvram_set ("lan_ifnames", "vlan1 ath0");
+      nvram_set ("wan_ifname", "vlan2");
+      nvram_set ("wan_ifnames", "vlan2");
+    }
   strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
   ioctl (s, SIOCGIFHWADDR, &ifr);
   nvram_set ("et0macaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
@@ -1225,7 +1226,7 @@ start_lan (void)
 
 
   /* you gotta bring it down before you can set its MAC */
-  cprintf ("configure wl_face %s\n",wl_face);
+  cprintf ("configure wl_face %s\n", wl_face);
   ifconfig (wl_face, 0, 0, 0);
 #ifndef HAVE_MADWIFI
 
@@ -1238,7 +1239,7 @@ start_lan (void)
     }
   else
     {
-     getWirelessMac (mac);
+      getWirelessMac (mac);
 
 
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
@@ -1254,12 +1255,12 @@ start_lan (void)
   ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
   strncpy (ifr.ifr_name, wl_face, IFNAMSIZ);
 
-  eval("wl","-i",wl_face,"down");
+  eval ("wl", "-i", wl_face, "down");
   if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
     perror ("Write wireless mac fail : ");
   else
     cprintf ("Write wireless mac successfully\n");
-  eval("wl","-i",wl_face,"up");
+  eval ("wl", "-i", wl_face, "up");
 #ifdef HAVE_MSSID
   set_vifsmac (mac);
 #endif
@@ -1267,12 +1268,12 @@ start_lan (void)
   if (nvram_match ("wl_mode", "sta"))
     {
       unsigned char mac[20];
-	  getWANMac (mac);
+      getWANMac (mac);
 
       nvram_set ("wan_hwaddr", mac);
     }
 
-  cprintf ("wl_face up %s\n",wl_face);
+  cprintf ("wl_face up %s\n", wl_face);
   ifconfig (wl_face, IFUP, 0, 0);
 #ifdef HAVE_MICRO
   br_init ();
@@ -1344,7 +1345,7 @@ start_lan (void)
 //#ifdef HAVE_PORTSETUP
 	    do_portsetup (lan_ifname, name);
 //#else
-//	    br_add_interface (getBridge (name), name);
+//          br_add_interface (getBridge (name), name);
 //#endif
 	  }
 	else
@@ -1361,30 +1362,30 @@ start_lan (void)
 	      }
 	    else
 	      {
-	     getWirelessMac (mac);
+		getWirelessMac (mac);
 
 
 		ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
-		int instance = get_wl_instance(name);
-		if (instance==-1)
-		    continue; // no wireless device
-		if (nvram_nmatch ("","wl%d_hwaddr",instance )
-		    || !nvram_nget ("wl%d_hwaddr",instance))
+		int instance = get_wl_instance (name);
+		if (instance == -1)
+		  continue;	// no wireless device
+		if (nvram_nmatch ("", "wl%d_hwaddr", instance)
+		    || !nvram_nget ("wl%d_hwaddr", instance))
 		  {
-		    nvram_nset (mac,"wl%d_hwaddr", instance);
+		    nvram_nset (mac, "wl%d_hwaddr", instance);
 		    nvram_commit ();
-	    ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-	    strncpy (ifr.ifr_name, wl_face, IFNAMSIZ);
+		    ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+		    strncpy (ifr.ifr_name, wl_face, IFNAMSIZ);
 
 #ifndef HAVE_MADWIFI
-	    eval("wl","-i",name,"down");	    
+		    eval ("wl", "-i", name, "down");
 #endif
-	    if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
-	      perror ("Write wireless mac fail : ");
-	    else
-	      cprintf ("Write wireless mac successfully\n");
+		    if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
+		      perror ("Write wireless mac fail : ");
+		    else
+		      cprintf ("Write wireless mac successfully\n");
 #ifndef HAVE_MADWIFI
-	    eval("wl","-i",name,"up");	    
+		    eval ("wl", "-i", name, "up");
 #endif
 		  }
 	      }
@@ -1457,9 +1458,10 @@ start_lan (void)
 		br_add_interface (getBridge (name), name);
 		led_control (LED_BRIDGE, LED_ON);
 #ifdef HAVE_MSSID
-		wl_iovar_set(name, "wet_host_mac", ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
+		wl_iovar_set (name, "wet_host_mac", ifr.ifr_hwaddr.sa_data,
+			      ETHER_ADDR_LEN);
 		enable_dhcprelay (lan_ifname);
-		do_mssid (lan_ifname,name);
+		do_mssid (lan_ifname, name);
 #endif
 	      }
 
@@ -1468,18 +1470,18 @@ start_lan (void)
 	      {
 
 		do_portsetup (lan_ifname, name);
-		//br_add_interface (getBridge (name), name);	//eval ("brctl", "addif", lan_ifname, name);
+		//br_add_interface (getBridge (name), name);    //eval ("brctl", "addif", lan_ifname, name);
 #ifdef HAVE_MSSID
-		do_mssid (lan_ifname,name);
+		do_mssid (lan_ifname, name);
 #endif
 	      }
 #ifdef HAVE_MSSID
 	    if (nvram_match (wl_name, "apsta"))
 	      {
 #ifndef HAVE_MADWIFI
-//		eval ("wl", "ap", "0");
+//              eval ("wl", "ap", "0");
 		eval ("wl", "-i", name, "ap", "0");
-//		eval ("wl", "infra", "1");
+//              eval ("wl", "infra", "1");
 		eval ("wl", "-i", name, "infra", "1");
 		wl_ioctl (wl_name, WLC_SCAN, svbuf, sizeof (svbuf));
 		wlconf_up (name);
@@ -1487,19 +1489,20 @@ start_lan (void)
 		//eval("wlconf", name, "up");
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);
 #ifndef HAVE_MADWIFI
-//		eval ("wl", "ap", "0");
-		eval ("wl", "-i",  name, "ap", "0");
+//              eval ("wl", "ap", "0");
+		eval ("wl", "-i", name, "ap", "0");
 #ifndef HAVE_MSSID
 		eval ("wl", "ssid", nvram_get ("wl_ssid"));
 #else
-//		eval ("wl", "ssid", nvram_get ("wl0_ssid"));
-		eval("wl","-i",  name, "ssid", nvram_nget("wl%d_ssid", get_wl_instance( name)) );
+//              eval ("wl", "ssid", nvram_get ("wl0_ssid"));
+		eval ("wl", "-i", name, "ssid",
+		      nvram_nget ("wl%d_ssid", get_wl_instance (name)));
 #endif
 #endif
 //              eval ("brctl", "addif", lan_ifname, name);
 #ifndef HAVE_FON
 		if (nvram_match ("fon_enable", "0"))
-		  do_mssid (lan_ifname,name);
+		  do_mssid (lan_ifname, name);
 #endif
 	      }
 #endif
@@ -1508,26 +1511,27 @@ start_lan (void)
 	    if (nvram_match (wl_name, "infra"))
 	      {
 #ifndef HAVE_MADWIFI
-//		eval ("wl", "ap", "0");
-		eval ("wl", "-i",  name, "ap", "0");
-//		eval ("wl", "infra", "0");
-		eval ("wl", "-i",  name, "infra", "0");
+//              eval ("wl", "ap", "0");
+		eval ("wl", "-i", name, "ap", "0");
+//              eval ("wl", "infra", "0");
+		eval ("wl", "-i", name, "infra", "0");
 		wl_ioctl (wl_name, WLC_SCAN, svbuf, sizeof (svbuf));
 		wlconf_up (name);
 #endif
-//		eval ("wl", "infra", "0");
-		eval ("wl", "-i",  name, "infra", "0");		
-//		eval ("wl", "ssid", nvram_safe_get ("wl0_ssid"));
+//              eval ("wl", "infra", "0");
+		eval ("wl", "-i", name, "infra", "0");
+//              eval ("wl", "ssid", nvram_safe_get ("wl0_ssid"));
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);
-		eval("wl","-i",  name, "ssid", nvram_nget("wl%d_ssid", get_wl_instance( name)) );
+		eval ("wl", "-i", name, "ssid",
+		      nvram_nget ("wl%d_ssid", get_wl_instance (name)));
 	      }
 
 	    if (nvram_match (wl_name, "sta"))
 	      {
 #ifndef HAVE_MADWIFI
-//		eval ("wl", "ap", "0");
-		eval ("wl", "-i", name, "ap", "0");		
-//		eval ("wl", "infra", "1");
+//              eval ("wl", "ap", "0");
+		eval ("wl", "-i", name, "ap", "0");
+//              eval ("wl", "infra", "1");
 		eval ("wl", "-i", name, "infra", "1");
 		wlconf_up (name);
 		wl_ioctl (name, WLC_SCAN, svbuf, sizeof (svbuf));
@@ -1535,13 +1539,14 @@ start_lan (void)
 		//eval("wlconf", name, "up");
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);
 #ifndef HAVE_MADWIFI
-//		eval ("wl", "ap", "0");
+//              eval ("wl", "ap", "0");
 		eval ("wl", "-i", name, "ap", "0");
 #ifndef HAVE_MSSID
 		eval ("wl", "ssid", nvram_get ("wl_ssid"));
 #else
-//		eval ("wl", "ssid", nvram_get ("wl0_ssid"));
-		eval("wl","-i", name, "ssid", nvram_nget("wl%d_ssid", get_wl_instance(name)) );
+//              eval ("wl", "ssid", nvram_get ("wl0_ssid"));
+		eval ("wl", "-i", name, "ssid",
+		      nvram_nget ("wl%d_ssid", get_wl_instance (name)));
 #endif
 #endif
 	      }
@@ -1634,19 +1639,19 @@ start_lan (void)
   if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
     {
       nvram_set ("lan_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
-      if (getRouterBrand()==ROUTER_DLINK_DIR320)
-        {
-	if (strlen(nvram_safe_get("et0macaddr"))==12)
+      if (getRouterBrand () == ROUTER_DLINK_DIR320)
+	{
+	  if (strlen (nvram_safe_get ("et0macaddr")) == 12)
 	    {
-	    char wlmac[32];
-	    strcpy(wlmac,nvram_safe_get("wl0_hwaddr"));
-	    MAC_SUB(wlmac);
-	    nvram_set("et0macaddr",wlmac);
-	    nvram_unset("lan_hwaddr");
-	    nvram_unset("wan_hwaddr");
-	    //fis dlink quirk, by restarting system. utils.c will automaticly assign the et0macaddr then
-	    nvram_commit();
-	    eval("event","5","1","15");
+	      char wlmac[32];
+	      strcpy (wlmac, nvram_safe_get ("wl0_hwaddr"));
+	      MAC_SUB (wlmac);
+	      nvram_set ("et0macaddr", wlmac);
+	      nvram_unset ("lan_hwaddr");
+	      nvram_unset ("wan_hwaddr");
+	      //fis dlink quirk, by restarting system. utils.c will automaticly assign the et0macaddr then
+	      nvram_commit ();
+	      eval ("event", "5", "1", "15");
 	    }
 	}
 #ifdef HAVE_RB500
@@ -1779,7 +1784,7 @@ start_lan (void)
 #ifdef HAVE_MADWIFI
   int cnt = getifcount ("wifi");
 #else
-  int cnt = get_wl_instances();
+  int cnt = get_wl_instances ();
 #endif
   int c;
   for (c = 0; c < cnt; c++)
@@ -1883,8 +1888,8 @@ start_lan (void)
 	      snprintf (wdsip, 31, "ath%d_wds%d_ipaddr", c, s);
 	      snprintf (wdsnm, 31, "ath%d_wds%d_netmask", c, s);
 #else
-	      snprintf (wdsip, 31, "wl%d_wds%d_ipaddr",c, s);
-	      snprintf (wdsnm, 31, "wl%d_wds%d_netmask",c, s);
+	      snprintf (wdsip, 31, "wl%d_wds%d_ipaddr", c, s);
+	      snprintf (wdsnm, 31, "wl%d_wds%d_netmask", c, s);
 #endif
 
 	      snprintf (wdsbc, 31, "%s", nvram_safe_get (wdsip));
@@ -1974,7 +1979,7 @@ start_lan (void)
 	      ifr.ifr_data = ifrdata;
 	    }
 	}
-	close (s);
+      close (s);
     }
 
 #undef HAVE_RB500
@@ -2156,11 +2161,11 @@ start_wan (int status)
 //  if (getRouterBrand () == ROUTER_BOARD_FONERA2200)
 //    pppoe_wan_ifname =
 //      nvram_invmatch ("pppoe_wan_ifname",
-//		      "") ? nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
+//                    "") ? nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
 //  else
-    pppoe_wan_ifname =
-      nvram_invmatch ("pppoe_wan_ifname",
-		      "") ? nvram_safe_get ("pppoe_wan_ifname") : "eth0";
+  pppoe_wan_ifname =
+    nvram_invmatch ("pppoe_wan_ifname",
+		    "") ? nvram_safe_get ("pppoe_wan_ifname") : "eth0";
 #elif HAVE_LS2
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
@@ -2200,14 +2205,14 @@ start_wan (int status)
 
 #endif
 #ifndef HAVE_MADWIFI
-  if (getWET())
+  if (getWET ())
     {
       dns_to_resolv ();
       return;
     }
   if (isClient ())
     {
-      pppoe_wan_ifname = getSTA();
+      pppoe_wan_ifname = getSTA ();
     }
 
 #else
@@ -2266,11 +2271,11 @@ start_wan (int status)
 #endif
 
 //fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
-  char *wlifname = getSTA();
+  char *wlifname = getSTA ();
   if (!wlifname)
-  {
-     wlifname = getWET();
-  }
+    {
+      wlifname = getWET ();
+    }
 
   if (nvram_match ("mac_clone_enable", "1") &&
       nvram_invmatch ("def_hwaddr", "00:00:00:00:00:00") &&
@@ -2281,37 +2286,37 @@ start_wan (int status)
 #ifndef HAVE_MADWIFI
   else
     {
-     unsigned char mac[20];
-     
-     if (wlifname && !strcmp (wan_ifname, wlifname))  //sta mode
-     {
-     	getWirelessMac (mac);
-     	ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
-     }
-     else
-     {
-		getWANMac (mac);
-		ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
-     }
+      unsigned char mac[20];
+
+      if (wlifname && !strcmp (wan_ifname, wlifname))	//sta mode
+	{
+	  getWirelessMac (mac);
+	  ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
+	}
+      else
+	{
+	  getWANMac (mac);
+	  ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
+	}
     }
-     
- 	 
+
+
   if (memcmp (ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN))
     {
       ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 #ifndef HAVE_MADWIFI
-if (wlifname && !strcmp (wan_ifname, wlifname))      
-      eval("wl","-i",wan_ifname,"down");
+      if (wlifname && !strcmp (wan_ifname, wlifname))
+	eval ("wl", "-i", wan_ifname, "down");
 #endif
       ioctl (s, SIOCSIFHWADDR, &ifr);
 #ifndef HAVE_MADWIFI
-if (wlifname && !strcmp (wan_ifname, wlifname))      
-      eval("wl","-i",wan_ifname,"up");
+      if (wlifname && !strcmp (wan_ifname, wlifname))
+	eval ("wl", "-i", wan_ifname, "up");
 #endif
       cprintf ("Write WAN mac successfully\n");
     }
   else
-      perror ("Write WAN mac fail : \n");
+    perror ("Write WAN mac fail : \n");
 
 
 
@@ -2419,20 +2424,20 @@ if (wlifname && !strcmp (wan_ifname, wlifname))
       sprintf (vlannic, "%s.0007", pppoe_wan_ifname);
       if (nvram_match ("wan_vdsl", "1"))	// Deutsche Telekom VDSL2 Vlan 7 Tag
 	{
-	if (!ifexists(vlannic))
-	  {
-	  eval ("vconfig", "set_name_type", "DEV_PLUS_VID");
-	  eval ("vconfig", "add", pppoe_wan_ifname, "7");
-	  eval ("ifconfig", vlannic, "up");
-	  }
+	  if (!ifexists (vlannic))
+	    {
+	      eval ("vconfig", "set_name_type", "DEV_PLUS_VID");
+	      eval ("vconfig", "add", pppoe_wan_ifname, "7");
+	      eval ("ifconfig", vlannic, "up");
+	    }
 	  fprintf (fp, "nic-%s\n", vlannic);
 	}
       else
-      {
-      if (ifexists(vlannic))
-        eval("vconfig","rem",vlannic);
-	fprintf (fp, "nic-%s\n", pppoe_wan_ifname);
-      }
+	{
+	  if (ifexists (vlannic))
+	    eval ("vconfig", "rem", vlannic);
+	  fprintf (fp, "nic-%s\n", pppoe_wan_ifname);
+	}
 
       // Those are default options we use + user/passwd
       // By using user/password options we dont have to deal with chap/pap secrets files.
@@ -3164,22 +3169,23 @@ start_set_routes (void)
 {
   char word[80], *tmp;
   char *ipaddr, *netmask, *gateway, *metric, *ifname;
-  if (!nvram_match("lan_gateway", "0.0.0.0"))
+  if (!nvram_match ("lan_gateway", "0.0.0.0"))
     {
-    eval ("route", "del", "default");
-    eval("route", "add", "default", "gw", nvram_safe_get ("lan_gateway"));
+      eval ("route", "del", "default");
+      eval ("route", "add", "default", "gw", nvram_safe_get ("lan_gateway"));
     }
   char *defgateway;
   if (nvram_match ("wan_proto", "pptp"))
     defgateway = nvram_safe_get ("pptp_get_ip");
   else if (nvram_match ("wan_proto", "l2tp"))
     defgateway = nvram_safe_get ("l2tp_get_ip");
-  else 
+  else
     defgateway = nvram_safe_get ("wan_gateway");
-  if (strcmp (defgateway, "0.0.0.0") && !nvram_match ("wan_proto", "disabled"))
+  if (strcmp (defgateway, "0.0.0.0")
+      && !nvram_match ("wan_proto", "disabled"))
     {
-    eval ("route", "del", "default");
-    eval ("route", "add", "default", "gw", defgateway);
+      eval ("route", "del", "default");
+      eval ("route", "add", "default", "gw", defgateway);
     }
   foreach (word, nvram_safe_get ("static_route"), tmp)
   {
@@ -3206,12 +3212,12 @@ start_set_routes (void)
 	eval ("route", "del", "default");
 	eval ("route", "add", "default", "gw", gateway);
       }
+    else if (!strcmp (ifname, "any"))
+      {
+	eval ("route", "add", "-net", ipaddr, "netmask", netmask, "gw",
+	      gateway, "metric", metric);
+      }
     else
-    if (!strcmp (ifname, "any"))
-    {
-    eval("route","add","-net",ipaddr,"netmask",netmask,"gw",gateway,"metric",metric);
-    }
-    else    
       route_add (ifname, atoi (metric) + 1, ipaddr, gateway, netmask);
   }
 }
@@ -3537,79 +3543,80 @@ start_wds_check (void)
   /* logic - if separate ip defined bring it up */
   /*         else if flagged for br1 and br1 is enabled add to br1 */
   /*         else add it to the br0 bridge */
-int cnt = get_wl_instances();
-int c;
-for (c=0;c<cnt;c++)
-{
-  for (s = 1; s <= MAX_WDS_DEVS; s++)
+  int cnt = get_wl_instances ();
+  int c;
+  for (c = 0; c < cnt; c++)
     {
-      char wdsvarname[32] = { 0 };
-      char wdsdevname[32] = { 0 };
-      char *dev;
-      struct ifreq ifr;
-
-
-      sprintf (wdsvarname, "wl%d_wds%d_enable", c,s);
-      sprintf (wdsdevname, "wl%d_wds%d_if", c,s);
-      dev = nvram_safe_get (wdsdevname);
-
-      if (nvram_match (wdsvarname, "0"))	// wds_s disabled
-	continue;
-
-      memset (&ifr, 0, sizeof (struct ifreq));
-
-      snprintf (ifr.ifr_name, IFNAMSIZ, dev);
-      ioctl (sock, SIOCGIFFLAGS, &ifr);
-
-      if ((ifr.ifr_flags & (IFF_RUNNING | IFF_UP)) == (IFF_RUNNING | IFF_UP))
-	continue;
-
-      /* P2P WDS type */
-      if (nvram_match (wdsvarname, "1"))
+      for (s = 1; s <= MAX_WDS_DEVS; s++)
 	{
-	  char wdsip[32] = { 0 };
-	  char wdsbc[32] = { 0 };
-	  char wdsnm[32] = { 0 };
+	  char wdsvarname[32] = { 0 };
+	  char wdsdevname[32] = { 0 };
+	  char *dev;
+	  struct ifreq ifr;
 
-	  snprintf (wdsip, 31, "wl%d_wds%d_ipaddr",c, s);
-	  snprintf (wdsnm, 31, "wl%d_wds%d_netmask",c, s);
 
-	  snprintf (wdsbc, 31, "%s", nvram_safe_get (wdsip));
-	  get_broadcast (wdsbc, nvram_safe_get (wdsnm));
-	  eval ("ifconfig", dev, nvram_safe_get (wdsip), "broadcast", wdsbc,
-		"netmask", nvram_safe_get (wdsnm), "up");
-	}
-      /* Subnet WDS type */
-      else if (nvram_match (wdsvarname, "2")
-	       && nvram_nmatch ("1","wl%d_br1_enable", c))
-	{
-	  eval ("ifconfig", dev, "up");
+	  sprintf (wdsvarname, "wl%d_wds%d_enable", c, s);
+	  sprintf (wdsdevname, "wl%d_wds%d_if", c, s);
+	  dev = nvram_safe_get (wdsdevname);
+
+	  if (nvram_match (wdsvarname, "0"))	// wds_s disabled
+	    continue;
+
+	  memset (&ifr, 0, sizeof (struct ifreq));
+
+	  snprintf (ifr.ifr_name, IFNAMSIZ, dev);
+	  ioctl (sock, SIOCGIFFLAGS, &ifr);
+
+	  if ((ifr.ifr_flags & (IFF_RUNNING | IFF_UP)) ==
+	      (IFF_RUNNING | IFF_UP))
+	    continue;
+
+	  /* P2P WDS type */
+	  if (nvram_match (wdsvarname, "1"))
+	    {
+	      char wdsip[32] = { 0 };
+	      char wdsbc[32] = { 0 };
+	      char wdsnm[32] = { 0 };
+
+	      snprintf (wdsip, 31, "wl%d_wds%d_ipaddr", c, s);
+	      snprintf (wdsnm, 31, "wl%d_wds%d_netmask", c, s);
+
+	      snprintf (wdsbc, 31, "%s", nvram_safe_get (wdsip));
+	      get_broadcast (wdsbc, nvram_safe_get (wdsnm));
+	      eval ("ifconfig", dev, nvram_safe_get (wdsip), "broadcast",
+		    wdsbc, "netmask", nvram_safe_get (wdsnm), "up");
+	    }
+	  /* Subnet WDS type */
+	  else if (nvram_match (wdsvarname, "2")
+		   && nvram_nmatch ("1", "wl%d_br1_enable", c))
+	    {
+	      eval ("ifconfig", dev, "up");
 #ifdef HAVE_MICRO
-	  br_init ();
+	      br_init ();
 #endif
 
-	  br_add_interface ("br1", dev);
+	      br_add_interface ("br1", dev);
 #ifdef HAVE_MICRO
-	  br_shutdown ();
+	      br_shutdown ();
 #endif
-	}
-      /* LAN WDS type */
-      else if (nvram_match (wdsvarname, "3"))
-	{
-	  eval ("ifconfig", dev, "up");
+	    }
+	  /* LAN WDS type */
+	  else if (nvram_match (wdsvarname, "3"))
+	    {
+	      eval ("ifconfig", dev, "up");
 #ifdef HAVE_MICRO
-	  br_init ();
+	      br_init ();
 #endif
-	  br_add_interface ("br0", dev);
+	      br_add_interface ("br0", dev);
 #ifdef HAVE_MICRO
-	  br_shutdown ();
+	      br_shutdown ();
 #endif
 
 //        notify_nas ("lan", "br0", "up");
-	}
+	    }
 
+	}
     }
-}
   close (sock);
   if (nvram_match ("lan_stp", "0"))
     {

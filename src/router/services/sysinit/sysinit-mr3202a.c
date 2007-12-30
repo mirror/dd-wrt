@@ -45,7 +45,7 @@
 
 
 
-extern void vlan_init(int num);
+extern void vlan_init (int num);
 
 int
 start_sysinit (void)
@@ -68,7 +68,7 @@ start_sysinit (void)
   eval ("mkdir", "/tmp/www");
   eval ("mknod", "/dev/nvram", "c", "229", "0");
   eval ("mknod", "/dev/ppp", "c", "108", "0");
-  
+
   unlink ("/tmp/nvram/.lock");
 #ifndef HAVE_WRK54G
   eval ("mkdir", "/tmp/nvram");
@@ -111,7 +111,7 @@ start_sysinit (void)
 #endif
   eval ("ifconfig", "wifi0", "up");
   eval ("ifconfig", "eth0", "up");
-  vlan_init (5); // 1 lan + 1 wan
+  vlan_init (5);		// 1 lan + 1 wan
 
   /* Set a sane date */
   stime (&tm);

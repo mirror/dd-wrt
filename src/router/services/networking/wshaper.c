@@ -305,8 +305,8 @@ svqos_iptables (void)
   system2 (cmd);
 
   // enable IMQ device for ingress policing
-  eval("insmod","imq");
-  eval("insmod","ipt_IMQ");
+  eval ("insmod", "imq");
+  eval ("insmod", "ipt_IMQ");
   snprintf (cmd, 1023,
 	    "/usr/sbin/iptables -t mangle -D PREROUTING -i %s -j IMQ --todev 0",
 	    dev);
@@ -326,10 +326,10 @@ svqos_iptables (void)
 	    "/usr/sbin/iptables -t mangle -I POSTROUTING -o %s -j SVQOS_OUT",
 	    dev);
   system2 (cmd);
-eval("insmod","ipt_mark");
-eval("insmod","xt_mark");
-eval("insmod","ipt_CONNMARK");
-eval("insmod","xt_CONNMARK");
+  eval ("insmod", "ipt_mark");
+  eval ("insmod", "xt_mark");
+  eval ("insmod", "ipt_CONNMARK");
+  eval ("insmod", "xt_CONNMARK");
   system2
     ("/usr/sbin/iptables -t mangle -A SVQOS_OUT -j CONNMARK --restore-mark");
   system2
@@ -385,8 +385,8 @@ eval("insmod","xt_CONNMARK");
 	break;
       if (strcmp (dev, "br0"))
 	{
-          eval("insmod","ipt_mac");
-          eval("insmod","xt_mac");
+	  eval ("insmod", "ipt_mac");
+	  eval ("insmod", "xt_mac");
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t mangle -D PREROUTING -m mac --mac-source %s -j MARK --set-mark %s",
 		    data, level);
@@ -536,7 +536,7 @@ eval("insmod","xt_CONNMARK");
 
       if (strstr (type, "l7"))
 	{
-	  eval("insmod","ipt_layer7");
+	  eval ("insmod", "ipt_layer7");
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t mangle -A SVQOS_OUT -m layer7 --l7proto %s -m mark --mark 0 -j MARK --set-mark %s",
 		    name, level);
@@ -579,7 +579,7 @@ eval("insmod","xt_CONNMARK");
 	  else if (!strcasecmp (realname, "xdcc"))
 	    proto = "xdcc";
 
-	    eval("insmod","ipt_ipp2p");
+	  eval ("insmod", "ipt_ipp2p");
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t mangle -A SVQOS_OUT -p tcp -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
 		    proto, level);
@@ -760,6 +760,6 @@ stop_wshaper (void)
       eval ("rmmod", "ebtable_nat");
       eval ("rmmod", "ebtables");
     }
-  eval("rmmod","imq");
+  eval ("rmmod", "imq");
   return ret;
 }

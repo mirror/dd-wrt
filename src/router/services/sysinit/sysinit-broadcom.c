@@ -116,8 +116,8 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
 {
 
   int brand = getRouterBrand ();
-      char macbuf[32];
-      char eaddr[32];
+  char macbuf[32];
+  char eaddr[32];
 
 #ifdef HAVE_MSSID		//v24
 
@@ -125,17 +125,17 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
   nvram_set ("pa0maxpwr", "251");	//force pa0maxpwr to be 251
 #endif
 
-  if (check_hw_type() == BCM4702_CHIP)
+  if (check_hw_type () == BCM4702_CHIP)
     nvram_unset ("wl0_abenable");
   else
     nvram_set ("wl0_abenable", "1");
-    
+
 
   switch (brand)
     {
-	case ROUTER_BUFFALO_WZRRSG54:
-	  nvram_unset ("wl0_abenable");
-	  break;
+    case ROUTER_BUFFALO_WZRRSG54:
+      nvram_unset ("wl0_abenable");
+      break;
     case ROUTER_ASUS_WL500G_PRE:
     case ROUTER_ASUS_WL500W:
     case ROUTER_WRT54G:
@@ -154,7 +154,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       break;
     case ROUTER_ASUS_WL520GUGC:
       nvram_set ("wl0gpio0", "0");
-      nvram_set ("wl0gpio1", "136");      
+      nvram_set ("wl0gpio1", "136");
       nvram_set ("wl0gpio2", "0");
       nvram_set ("wl0gpio3", "0");
       break;
@@ -219,7 +219,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       break;
     case ROUTER_BELKIN_F5D7230_V2000:
       nvram_set ("wl0gpio3", "2");
-      break;    
+      break;
     }
 #endif
 
@@ -238,20 +238,20 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       break;
     case ROUTER_WRT600N:
       eval ("insmod", "wl");	//load module
-      wl_hwaddr("eth1",macbuf);
-      ether_etoa((uchar *)macbuf, eaddr);
-      nvram_set("wl0_hwaddr",eaddr);      
-      MAC_SUB(eaddr);
-      if (!nvram_match("et0macaddr",eaddr))
-        {
-        nvram_set("et0macaddr",eaddr);
-	nvram_commit();
-        kill (1, SIGTERM);
-        exit (0);
+      wl_hwaddr ("eth1", macbuf);
+      ether_etoa ((uchar *) macbuf, eaddr);
+      nvram_set ("wl0_hwaddr", eaddr);
+      MAC_SUB (eaddr);
+      if (!nvram_match ("et0macaddr", eaddr))
+	{
+	  nvram_set ("et0macaddr", eaddr);
+	  nvram_commit ();
+	  kill (1, SIGTERM);
+	  exit (0);
 	}
-      wl_hwaddr("eth2",macbuf);
-      ether_etoa((uchar *)macbuf, eaddr);
-      nvram_set("wl1_hwaddr",eaddr);      
+      wl_hwaddr ("eth2", macbuf);
+      ether_etoa ((uchar *) macbuf, eaddr);
+      nvram_set ("wl1_hwaddr", eaddr);
       break;
     default:
       boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
@@ -275,7 +275,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
 		   boardflags);
 	  char ab[16];
 	  sprintf (ab, "0x%04X", boardflags);
-	  char *oldvalue = nvram_get("boardflags"); // use the string for restoring since the Buffalo WZR-RS-G54 does await a 0x10 in the bootloader, otherwise the nvram gets deleted
+	  char *oldvalue = nvram_get ("boardflags");	// use the string for restoring since the Buffalo WZR-RS-G54 does await a 0x10 in the bootloader, otherwise the nvram gets deleted
 	  nvram_set ("boardflags", ab);	//set boardflags with AfterBurner bit on
 	  eval ("insmod", "wl");	//load module
 	  nvram_set ("boardflags", oldvalue);	//set back to original
@@ -283,7 +283,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
 
     }
 #ifdef HAVE_MADWIFI
-eval("insmod","ath_pci");
+  eval ("insmod", "ath_pci");
 #endif
   return;
 }
@@ -391,15 +391,15 @@ start_sysinit (void)
   fprintf (stderr, "Booting Device:%s\n", rname);
 
   nvram_unset ("port_swap");
-  
+
   int need_reboot = 0;
-  
+
   switch (brand)
     {
     case ROUTER_BUFFALO_WZRRSG54:
       check_brcm_cpu_type ();
       setup_4712 ();
-	  nvram_set ("lan_ifnames", "eth0 eth2");
+      nvram_set ("lan_ifnames", "eth0 eth2");
       nvram_set ("wan_ifname", "eth1");
       nvram_set ("wl0_ifname", "eth2");
       break;
@@ -419,9 +419,9 @@ start_sysinit (void)
       nvram_set ("wan_ifname", "vlan1");
       nvram_set ("wl0_ifname", "eth1");
       if (nvram_match ("vlan1ports", "0 5u"))
-         nvram_set ("vlan1ports", "0 5");
-      break;      
-     
+	nvram_set ("vlan1ports", "0 5");
+      break;
+
     case ROUTER_RT210W:
       setup_4712 ();
       nvram_set ("wan_ifname", "eth1");	// fix for Belkin f5d7230 v1000 WAN problem.
@@ -450,7 +450,7 @@ start_sysinit (void)
       break;
 
     case ROUTER_BUFFALO_WBR54G:	//for WLA-G54
-	  nvram_set ("lan_ifnames", "eth0 eth2");
+      nvram_set ("lan_ifnames", "eth0 eth2");
       nvram_set ("wan_ifname", "eth1");
       if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))	// = no lan
 	{
@@ -536,7 +536,7 @@ start_sysinit (void)
       nvram_set ("wl0_ifname", "eth2");
       nvram_set ("wan_ifname", "vlan1");	// fix for Asus WL500gPremium WAN problem.
       if (nvram_match ("vlan1ports", "0 5u"))
-         nvram_set ("vlan1ports", "0 5");
+	nvram_set ("vlan1ports", "0 5");
       break;
 
     case ROUTER_ASUS_WL500GD:
@@ -572,43 +572,43 @@ start_sysinit (void)
       nvram_set ("gpio5", "adm_rc");
       nvram_unset ("gpio6");
       break;
-      
+
     case ROUTER_WRT54G_V8:
       nvram_set ("reset_gpio", "7");
       break;
 
     case ROUTER_ASUS_WL520G:
       if (nvram_match ("vlan1ports", "4 5u"))
-         nvram_set ("vlan1ports", "4 5");
-      break;
-                    
-    case ROUTER_ASUS_WL520GUGC:      
-      if (nvram_match ("vlan1ports", "0 5u"))
-         nvram_set ("vlan1ports", "0 5");
-      break;
-            
-    case ROUTER_LINKSYS_WTR54GS:
-        eval ("gpio", "enable", "3");  //prevent reboot loop on reset
-        break;
-            
-    case ROUTER_WAP54G_V3:
-        eval ("gpio", "enable", "0");  //reset gpio 0 for reset button 
-//      nvram_set ("vlan0ports", "1 5*");
-//      nvram_set ("vlan1ports", "4 5");
-//      if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))	// = no lan
-//	{
-//	  nvram_set ("vlan0ports", "4 5*");
-//	  nvram_set ("vlan1ports", "1 5");
-//	}
+	nvram_set ("vlan1ports", "4 5");
       break;
 
-   }
-#if 0   
+    case ROUTER_ASUS_WL520GUGC:
+      if (nvram_match ("vlan1ports", "0 5u"))
+	nvram_set ("vlan1ports", "0 5");
+      break;
+
+    case ROUTER_LINKSYS_WTR54GS:
+      eval ("gpio", "enable", "3");	//prevent reboot loop on reset
+      break;
+
+    case ROUTER_WAP54G_V3:
+      eval ("gpio", "enable", "0");	//reset gpio 0 for reset button 
+//      nvram_set ("vlan0ports", "1 5*");
+//      nvram_set ("vlan1ports", "4 5");
+//      if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))      // = no lan
+//      {
+//        nvram_set ("vlan0ports", "4 5*");
+//        nvram_set ("vlan1ports", "1 5");
+//      }
+      break;
+
+    }
+#if 0
   /* fix il0macaddr to be lanmac+2 */
   if (nvram_get ("il0macaddr") == NULL)
     need_reboot = 1;
-  
-  unsigned char mac[20]; 
+
+  unsigned char mac[20];
   if (nvram_match ("port_swap", "1"))
     strcpy (mac, nvram_safe_get ("et1macaddr"));
   else
@@ -616,46 +616,49 @@ start_sysinit (void)
   MAC_ADD (mac);
   MAC_ADD (mac);
   nvram_set ("il0macaddr", mac);
-#endif   
+#endif
   /* ifnames */
   strcpy (wanifname, nvram_safe_get ("wan_ifname"));
   strcpy (wlifname, nvram_safe_get ("wl0_ifname"));
 
-  /* set wan_ifnames, pppoe_wan_ifname and pppoe_ifname*/
+  /* set wan_ifnames, pppoe_wan_ifname and pppoe_ifname */
   nvram_set ("wan_ifnames", wanifname);
   nvram_set ("pppoe_wan_ifname", wanifname);
   nvram_set ("pppoe_ifname", wanifname);
-  
+
   /* additional boardflags adjustment */
   switch (brand)
     {
-    case ROUTER_BELKIN_F5D7231:	    
-      if (nvram_match ("boardflags", "0x388") || nvram_match ("boardflags", "0x0388"))
-         nvram_set ("boardflags", "0x0f58");
+    case ROUTER_BELKIN_F5D7231:
+      if (nvram_match ("boardflags", "0x388")
+	  || nvram_match ("boardflags", "0x0388"))
+	nvram_set ("boardflags", "0x0f58");
       break;
-      
+
     case ROUTER_BUFFALO_WLI_TX4_G54HP:
       if (!nvram_match ("buffalo_hp", "1")
-       && (nvram_match ("boardflags", "0x1658") || nvram_match ("boardflags", "0x2658")))
-        {
-        nvram_set ("buffalo_hp", "1");
-#ifndef HAVE_BUFFALO  // if HAVE_BUFFALO not used to be FCC/CE valid   
-        nvram_set ("boardflags", "0x3658");  // enable high gain PA
-#endif 
-        }
-      break;
-      
-    case ROUTER_BUFFALO_WHRG54S:  //for HP only
-      if (!nvram_match ("buffalo_hp", "1") && nvram_match ("boardflags", "0x1758"))
-        {
-	    nvram_set ("buffalo_hp", "1");
-#ifndef HAVE_BUFFALO  // if HAVE_BUFFALO not used to be FCC/CE valid 
-        nvram_set ("boardflags", "0x3758");  // enable high gain PA
+	  && (nvram_match ("boardflags", "0x1658")
+	      || nvram_match ("boardflags", "0x2658")))
+	{
+	  nvram_set ("buffalo_hp", "1");
+#ifndef HAVE_BUFFALO		// if HAVE_BUFFALO not used to be FCC/CE valid
+	  nvram_set ("boardflags", "0x3658");	// enable high gain PA
 #endif
-        }
+	}
       break;
-    } 
-    
+
+    case ROUTER_BUFFALO_WHRG54S:	//for HP only
+      if (!nvram_match ("buffalo_hp", "1")
+	  && nvram_match ("boardflags", "0x1758"))
+	{
+	  nvram_set ("buffalo_hp", "1");
+#ifndef HAVE_BUFFALO		// if HAVE_BUFFALO not used to be FCC/CE valid
+	  nvram_set ("boardflags", "0x3758");	// enable high gain PA
+#endif
+	}
+      break;
+    }
+
   if (need_reboot)
     {
       cprintf ("Need reboot now to set some mac addresses\n");
@@ -694,7 +697,7 @@ start_sysinit (void)
 				"") ? nvram_safe_get ("ct_modules") :
 		"switch-core switch-adm";
 	      break;
-	      
+
 	    case ROUTER_WRT54G_V8:
 	    case ROUTER_ASUS_WL520G:
 	    case ROUTER_ASUS_WL520GUGC:
@@ -702,8 +705,8 @@ start_sysinit (void)
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
 		"switch-core switch-robo";
-		  break;
-		  
+	      break;
+
 	    case ROUTER_WRT54G1X:
 	    case ROUTER_WRT54G:
 	      eval ("insmod", "switch-core");
@@ -756,7 +759,7 @@ start_sysinit (void)
 	      break;
 	    case ROUTER_ASUS_WL500GD:
 	    case ROUTER_ASUS_WL550GE:
-          modules =
+	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
 		"switch-core switch-robo";
@@ -814,9 +817,9 @@ start_sysinit (void)
 	cprintf ("done\n");
 #endif
       }
-      
-	if (check_hw_type () == BCM4702_CHIP)
-    	eval ("insmod", "diag"); 
+
+      if (check_hw_type () == BCM4702_CHIP)
+	eval ("insmod", "diag");
 
       loadWlModule ();
 
@@ -902,7 +905,7 @@ check_cfe_nv (void)
 #ifndef HAVE_BUFFALO
 
     case ROUTER_WRT54G:
-    case ROUTER_WRT54G_V8: 
+    case ROUTER_WRT54G_V8:
       ret += check_nv ("aa0", "3");
 /*      if (check_hw_type () == BCM5352E_CHIP
 	  || check_hw_type () == BCM5354G_CHIP)
@@ -1001,11 +1004,11 @@ start_overclocking (void)
 {
 #ifdef HAVE_OVERCLOCKING
   cprintf ("Overclocking started\n");
-  
+
   int rev = cpu_plltype ();
   if (rev == 0)
     return;			//unsupported
-    
+
   char *ov = nvram_get ("overclocking");
   if (ov == NULL)
     return;
@@ -1023,7 +1026,8 @@ start_overclocking (void)
     if (dup[i] == ',')
       dup[i] = 0;
   int cclk = atoi (dup);
-  if ((cclk < 150 && rev == 3) || (cclk < 192 && rev == 4) || (cclk < 183 && rev == 7))
+  if ((cclk < 150 && rev == 3) || (cclk < 192 && rev == 4)
+      || (cclk < 183 && rev == 7))
     {
       cprintf ("clkfreq is %d (%s), this is unsupported\n", cclk, dup);
       return;			//unsupported
@@ -1045,7 +1049,7 @@ start_overclocking (void)
     case 150:
       clk2 = 75;
 //      nvram_set ("clkfreq", "150,75");
-      break;	    
+      break;
     case 183:
       clk2 = 92;
 //      nvram_set ("clkfreq", "183,92");
@@ -1128,4 +1132,3 @@ start_overclocking (void)
     }
 #endif
 }
-

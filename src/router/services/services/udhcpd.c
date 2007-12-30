@@ -303,7 +303,7 @@ start_udhcpd (void)
 
   if (nvram_invmatch ("dhcpd_options", ""))
     {
-      fwritenvram("dhcpd_options",fp);
+      fwritenvram ("dhcpd_options", fp);
     }
   fclose (fp);
 
