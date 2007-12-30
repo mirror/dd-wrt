@@ -368,7 +368,7 @@ if (fp==NULL)
       while (host_key[++i]);
 putc(0xa,fp);
 fclose(fp);
-  eval("milkfish_services","simple",dest);
+  eval("milkfish_services","simpledd",dest);
   return;
 }
 
