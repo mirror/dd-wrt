@@ -3168,7 +3168,13 @@ start_set_routes (void)
     eval ("route", "del", "default");
     eval("route", "add", "default", "gw", nvram_safe_get ("lan_gateway"));
     }
-  char *defgateway = nvram_match ("wan_proto", "pptp") ? nvram_safe_get ("pptp_get_ip") : nvram_safe_get ("wan_gateway");
+  char *defgateway;
+  if (nvram_match ("wan_proto", "pptp"))
+    defgateway = nvram_safe_get ("pptp_get_ip");
+  else if (nvram_match ("wan_proto", "pptp"))
+    defgateway = nvram_safe_get ("l2tp_get_ip");
+  else 
+    defgateway = nvram_safe_get ("wan_gateway");
   if (strcmp (defgateway, "0.0.0.0") && !nvram_match ("wan_proto", "disabled"))
     {
     eval ("route", "del", "default");
