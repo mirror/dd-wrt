@@ -424,10 +424,12 @@ do_madwifi_check (void)
 	  || nvram_match (mode, "wet"))
 	{
 	  int chan = wifi_getchannel (dev);
-	  if (lastchans[i] == 0 && chan < 1000)
+//          fprintf(stderr,"current channel %d\n",chan);
+	  if (lastchans[i] == -1 && chan < 1000)
 	    lastchans[i] = chan;
 	  else
 	    {
+//          fprintf(stderr,"current channel %d = %d\n",chan,lastchans[i]);
 	      if (chan == lastchans[i])
 		{
 		  int count = getassoclist (dev, &assoclist[0]);
@@ -456,7 +458,7 @@ do_madwifi_check (void)
 		      sleep (1);
 		      eval ("/sbin/ifconfig", dev, "up");
 		      eval ("startservice", "set_routes");
-		      lastchans[i] = 0;
+		      lastchans[i] = -1;
 		    }
 		  else if (!notstarted[i])
 		    {
@@ -615,7 +617,7 @@ wland_main (int argc, char **argv)
 #endif
   /* Most of time it goes to sleep */
 #ifdef HAVE_MADWIFI
-  memset (lastchans, 0, 256 * 4);
+  memset (lastchans, -1, 256 * 4);
   memset (notstarted, 0, 32 * 4);
 #endif
   while (1)
