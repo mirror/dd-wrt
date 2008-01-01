@@ -211,7 +211,7 @@ start_setup_vlans (void)
   int ports[21][6], i, j, ret = 0, tmp, workaround = 0, found;
   char *vlans, *next, vlan[4], buff[70], buff2[16];
   FILE *fp;
-
+  char portsettings[16][64];
   unsigned char mac[20];;
   struct ifreq ifr;
   int s;
@@ -229,183 +229,85 @@ start_setup_vlans (void)
   else
     workaround = 0;
 
-  for (i = 0; i < 21; i++)
-    for (j = 0; j < 6; j++)
-      ports[i][j] = 0;
-
+  memset (&portsettings[0][0], 0, 16 * 64);
   for (i = 0; i < 6; i++)
     {
       snprintf (buff, 31, "port%dvlans", i);
       vlans = nvram_safe_get (buff);
-
       if (vlans)
 	{
+	  int lastvlan = 0;
+	  int portmask = 3;
+	  int mask = 0;
+
 	  foreach (vlan, vlans, next)
 	  {
 	    tmp = atoi (vlan);
-	    ports[tmp][i] = 1;
-	  }
-	}
-    }
-
-  for (i = 0; i < 16; i++)
-    {
-      snprintf (buff, 69, "/proc/sys/dev/adm6996/vlan-groups/%d", i);
-
-      if ((fp = fopen (buff, "r+")))
-	{
-	  snprintf (buff, 69, "%d %d %d %d %d %d", ports[i][0], ports[i][1],
-		    ports[i][2], ports[i][3], ports[i][4], ports[i][5]);
-	  fputs (buff, fp);
-	  fclose (fp);
-	}
-      else
-	{
-	  perror (buff);
-	}
-
-      if (ports[i][5] == 1)
-	{
-	  snprintf (buff, 9, "%d", i);
-	  eval ("vconfig", "add", "eth0", buff);
-
-	  snprintf (buff, 9, "vlan%d", i);
-	  ifconfig (buff, 0, NULL, NULL);
-	  snprintf (buff, 9, "vlan%d", i);
-	  ifconfig (buff, 0, NULL, NULL);
-
-//                      if(i > 1)
-	  {
-	    snprintf (buff, 9, "vlan%d", i);
-	    strncpy (ifr.ifr_name, buff, IFNAMSIZ);
-
-	    ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
-	    ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-	    if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
+	    if (tmp < 16)
 	      {
-		if (errno == EBUSY)
+		lastvlan = tmp;
+		if (i == 5)
 		  {
-		    snprintf (buff, 69,
-			      "Write vlan%d MAC failed, already in use\n", i);
-		    cprintf (buff);
+		    snprintf (buff, 9, "%d", tmp);
+		    eval ("vconfig", "add", "eth0", buff);
 		  }
-		else
-		  {
-		    snprintf (buff, 69,
-			      "Write vlan%d MAC FAILED! (Error %d)\n", i,
-			      errno);
-		    perror (buff);
-		  }
+		sprintf ((char *) &portsettings[tmp][0], "%s %d",
+			 (char *) &portsettings[tmp][0], i);
 	      }
 	    else
 	      {
-		snprintf (buff, 69, "Wrote vlan%d MAC successfully\n", i);
-		cprintf (buff);
+		if (tmp == 16)
+		  strcat ((char *) &portsettings[lastvlan][0], "t");
+		if (tmp == 17)
+		  mask |= 4;
+		if (tmp == 18)
+		  mask |= 1;
+		if (tmp == 19)
+		  mask |= 2;
+
 	      }
 	  }
-	}
-#ifndef HAVE_BUFFALO
-//      MAC_ADD (mac);
-//      if (i == 1)
-//      MAC_ADD (mac);          // base MAC +2 is taken by wireless...
-#endif
-    }
+	  snprintf (buff, 69, "/proc/switch/eth0/port/%d/media", i);
+	  if ((fp = fopen (buff, "r+")))
+	    {
+	      if ((mask & 4) == 4)
+		{
+		  if ((mask & 3) == 0)
+		    {
+		      fprintf (stderr, "set port %d to 10HD\n", i);
+		      fputs ("100FD", fp);
+		    }
+		  if ((mask & 3) == 1)
+		    {
+		      fprintf (stderr, "set port %d to 100HD\n", i);
+		      fputs ("10FD", fp);
+		    }
+		  if ((mask & 3) == 2)
+		    {
+		      fprintf (stderr, "set port %d to 10FD\n", i);
+		      fputs ("100HD", fp);
+		    }
+		  if ((mask & 3) == 3)
+		    {
+		      fprintf (stderr, "set port %d to 100FD\n", i);
+		      fputs ("10HD", fp);
+		    }
+		}
+	      else
+		{
+		  fprintf (stderr, "set port %d to AUTO\n", i);
+		  fputs ("AUTO", fp);
+		}
+	      fclose (fp);
+	    }
 
-  for (i = 0; i < 5; i++)
+
+	}
+    }
+  for (i = 0; i < 16; i++)
     {
-      found = 0;
-      for (j = 0; j < 21; j++)
-	{
-	  if (ports[j][i] == 1 && j < 16 && !found)
-	    {
-	      snprintf (buff, 69,
-			"/proc/sys/dev/adm6996/port%d/vlan-group-mask", i);
-	      if ((fp = fopen (buff, "r+")))
-		{
-		  snprintf (buff, 16, "%d", j);
-		  fputs (buff, fp);
-		  fclose (fp);
-		}
-	      else
-		{
-		  perror (buff);
-		}
-	      if (workaround)
-		ports[20][i] = 1;
-	      found = 1;
-	    }
-
-	  tmp = 0;
-
-	  switch (j)
-	    {
-	    case 16:
-	      if (ports[16][i] == 1)
-		{
-		  snprintf (buff, 69, "/proc/sys/dev/adm6996/port%d/tagging",
-			    i);
-		  tmp = 1;
-		  strcpy (buff2, "1");
-		}
-	      break;
-	    case 17:
-	      if (ports[17][i] == 1)
-		{
-		  snprintf (buff, 69,
-			    "/proc/sys/dev/adm6996/port%d/auto-negotiating",
-			    i);
-		  tmp = 1;
-		  strcpy (buff2, "0");
-		}
-	      break;
-	    case 18:
-	      if (ports[18][i] == 1)
-		{
-		  snprintf (buff, 69, "/proc/sys/dev/adm6996/port%d/speed",
-			    i);
-		  tmp = 1;
-		  strcpy (buff2, "10");
-		}
-	      break;
-	    case 19:
-	      if (ports[19][i] == 1)
-		{
-		  snprintf (buff, 69, "/proc/sys/dev/adm6996/port%d/duplex",
-			    i);
-		  tmp = 1;
-		  strcpy (buff2, "0");
-		}
-	      break;
-	    case 20:
-	      if (ports[20][i] == 1)
-		{
-		  snprintf (buff, 69,
-			    "/proc/sys/dev/adm6996/port%d/crossover", i);
-		  tmp = 1;
-		  strcpy (buff2, "1");
-		}
-	      break;
-	    default:
-	      tmp = 0;
-	    }
-
-	  if (tmp)
-	    {
-	      if ((fp = fopen (buff, "r+")))
-		{
-		  fputs (buff2, fp);
-		  fclose (fp);
-		}
-	      else
-		{
-		  perror (buff);
-		}
-	      if (workaround)
-		ports[20][i] = 1;
-	    }
-	}
+      fprintf (stderr, "vlan setting %s\n", portsettings[i]);
     }
-
   return ret;
 #endif
 }
