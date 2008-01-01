@@ -327,30 +327,30 @@ main_loop (void)
 #ifdef DIST
   if (strlen (DIST) > 0)
     fprintf (fp,
-	     "DD-WRT v23 SP3 %s (c) 2007 NewMedia-NET GmbH\nRelease: "
+	     "DD-WRT v23 SP3 %s (c) 2008 NewMedia-NET GmbH\nRelease: "
 	     BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
   else
     fprintf (fp,
-	     "DD-WRT v23 SP3 custom (c) 2007 NewMedia-NET GmbH\nRelease: "
+	     "DD-WRT v23 SP3 custom (c) 2008 NewMedia-NET GmbH\nRelease: "
 	     BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
 #else
   fprintf (fp,
-	   "DD-WRT v23 SP3 custom (c) 2007 NewMedia-NET GmbH\nRelease: "
+	   "DD-WRT v23 SP3 custom (c) 2008 NewMedia-NET GmbH\nRelease: "
 	   BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
 #endif
 #else
 #ifdef DIST
   if (strlen (DIST) > 0)
     fprintf (fp,
-	     "DD-WRT v24 %s (c) 2007 NewMedia-NET GmbH\nRelease: " BUILD_DATE
+	     "DD-WRT v24 %s (c) 2008 NewMedia-NET GmbH\nRelease: " BUILD_DATE
 	     " (SVN revision: %s)\n", DIST, SVN_REVISION);
   else
     fprintf (fp,
-	     "DD-WRT v24 custom (c) 2007 NewMedia-NET GmbH\nRelease: "
+	     "DD-WRT v24 custom (c) 2008 NewMedia-NET GmbH\nRelease: "
 	     BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
 #else
   fprintf (fp,
-	   "DD-WRT v24 custom (c) 2007 NewMedia-NET GmbH\nRelease: "
+	   "DD-WRT v24 custom (c) 2008 NewMedia-NET GmbH\nRelease: "
 	   BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
 #endif
 #endif
