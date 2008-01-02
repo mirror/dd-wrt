@@ -193,11 +193,9 @@ get_interface_list(short af, short flags, short unflags)
 	int type = UPSTREAM;
 	if (upstream_interface_lookup(p) == 0 && strncmp(p, "br", 2) != 0)
 	  {
-	    char bridged[32];
-	    sprintf(bridged,"%s_bridged",p);
-	    if (nvram_get(bridged)==NULL)
+	    if (nvram_nmatch("1","%s_bridged",p))
 		continue;
-	    if (nvram_match(bridged,"1"))
+	    if (nvram_nmatch("0","%s_multicast",p))
 		continue;
 	    type = DOWNSTREAM;
           }
