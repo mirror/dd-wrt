@@ -3830,6 +3830,11 @@ show_netmode (webs_t wp, char *prefix)
 void
 showbridgesettings (webs_t wp, char *var)
 {
+  char mcast[32];
+  sprintf (mcast, "%s_multicast", var);
+  nvram_default_get(mcast,"0");
+  showOption (wp, "wl_basic.multicast", mcast);
+  
   websWrite (wp,
 	     "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script></div>\n");
   char ssid[32];
