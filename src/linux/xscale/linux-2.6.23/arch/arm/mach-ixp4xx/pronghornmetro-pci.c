@@ -32,9 +32,11 @@ void __init pronghornmetro_pci_preinit(void)
 {
 	set_irq_type(IRQ_PCI_SLOT0, IRQT_LOW);
 	set_irq_type(IRQ_PCI_SLOT1, IRQT_LOW);
+	if (machine_is_pronghorn_metro())
+	{
 	set_irq_type(IRQ_PCI_SLOT2, IRQT_LOW);
 	set_irq_type(IRQ_PCI_SLOT3, IRQT_LOW);
-
+	}
 	ixp4xx_pci_preinit();
 }
 
@@ -62,7 +64,7 @@ struct hw_pci pronghornmetro_pci __initdata = {
 
 int __init pronghornmetro_pci_init(void)
 {
-	if (machine_is_pronghorn_metro())
+	if (machine_is_pronghorn_metro() || machine_is_pronghorn())
 		pci_common_init(&pronghornmetro_pci);
 	return 0;
 }
