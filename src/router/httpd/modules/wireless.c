@@ -865,6 +865,7 @@ validate_wl_hwaddrs (webs_t wp, char *value, struct variable *v)
       nvram_set (v->name, buf);
       nvram_set (mlist, buf);
       nvram_set ("wl_active_mac", "");
+      nvram_set ("wl0_active_mac", "");     
     }
 }
 
@@ -991,6 +992,7 @@ add_active_mac (webs_t wp)
 		       wl_client_macs[atoi (index)].hwaddr);
     }
   nvram_set ("wl_active_mac", buf);
+  nvram_set ("wl0_active_mac", buf);
 }
 
 
