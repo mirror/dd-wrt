@@ -168,7 +168,9 @@ static int dev_max_count = 1; /* only NPEC is used */
 #elif defined (CONFIG_IXP400_ETH_NPEB_ONLY)
 static int dev_max_count = 1; /* only NPEB is used */
 #elif defined (CONFIG_ARCH_IXDP425) || defined(CONFIG_ARCH_IXDPG425)\
-      || defined (CONFIG_ARCH_ADI_COYOTE) || defined (CONFIG_MACH_AVILA) || defined (CONFIG_MACH_KIXRP435)
+      || defined (CONFIG_ARCH_ADI_COYOTE) || defined (CONFIG_MACH_AVILA) || defined (CONFIG_MACH_KIXRP435) \
+      || defined (CONFIG_MACH_PRONGHORNMETRO) \
+      || defined (CONFIG_MACH_PRONGHORN)
 
 static int dev_max_count = 2; /* only NPEB and NPEC */
 #elif defined (CONFIG_ARCH_IXDP465) || defined(CONFIG_MACH_IXDP465)
@@ -3762,6 +3764,62 @@ static void parity_npe_error_handler_uninit(void)
 }
 #endif
 
+
+static int get_otp_MACAddress(struct net_device *ndev, priv_data_t *priv)
+{
+	u32	faddr;
+	u32	flashbase;
+	u32	low_mac;
+	int	i;
+	
+// We only need 6 bytes but a page is probably the smallest that
+// gets mapped.
+#define	OTP_IOREMAP_SIZE	PAGE_SIZE
+
+//	flashbase = IXP425_EXP_BUS_CS0_BASE_PHYS;
+	flashbase = IXP4XX_EXP_BUS_BASE(0);
+	faddr = (u32)ioremap (flashbase, OTP_IOREMAP_SIZE);
+	if (!faddr)
+	{
+		release_mem_region (flashbase, OTP_IOREMAP_SIZE);
+		printk (KERN_ERR "%s: unable to ioremap flash\n", __FUNCTION__);
+		return -1;
+	}
+	// Send the query command to the flash.
+	writew (0x9090, faddr);
+	for (i = 0; i < 6; i++) {
+		ndev->dev_addr[i] = readb (faddr + 0x10a + i);
+	}
+	// Take flash out of query mode
+	writew (0xffff, faddr);
+	if (faddr) iounmap ((void *)faddr);
+
+	// Check for a valid OTP
+	if (ndev->dev_addr[0] != 0xFF)
+	{
+		// Valid OTP
+		// Concatenate the lower 3 bytes of the base MAC address
+		// to use to calculate the MAC address for the requested port
+		low_mac = ((0x000000FF & ndev->dev_addr[3]) << 16) + ((0x000000FF & ndev->dev_addr[4]) << 8) + ndev->dev_addr[5];
+		// There should never be an overflow here.  If there is,
+		// we would have to violate the OUI domain.  So, just
+		// take what we get (at least keep in the right domain)
+		low_mac = low_mac + priv->port_id;
+		ndev->dev_addr[3] = (unsigned char) ((low_mac & 0x00FF0000) >> 16);
+		ndev->dev_addr[4] = (unsigned char) ((low_mac & 0x0000FF00) >> 8);
+		ndev->dev_addr[5] = (unsigned char) (low_mac & 0x000000FF);
+	} else {
+		// Invalid OTP
+		// Do it the old fashioned way
+		memcpy(ndev->dev_addr,
+		   &default_mac_addr[priv->port_id].macAddress,
+		   IX_IEEE803_MAC_ADDRESS_SIZE);
+	}
+	return 0;
+}
+
+
+
 #define CLK_LO()    (*((unsigned long *) (IXP4XX_GPIO_GPOUTR))) &=  0x0ffbf
 #define CLK_HI()    (*((unsigned long *) (IXP4XX_GPIO_GPOUTR))) |= 0x040
 #define CLK_EN()    (*((unsigned long *) (IXP4XX_GPIO_GPOER))) &= 0x0ffbf
@@ -4113,7 +4171,10 @@ static int __devinit dev_eth_probe(struct device *dev)
 #endif
 
     TRACE;
-
+if (machine_is_pronghorn() || machine_is_pronghorn_metro())
+    {
+    get_otp_MACAddress(ndev, priv);
+    }else{
     eeprom_read((0x100 + (priv->port_id * 6)), eeprom_mac, 6);
 
     if ( is_valid_ether_addr(eeprom_mac) )
@@ -4129,7 +4190,7 @@ static int __devinit dev_eth_probe(struct device *dev)
     memcpy(ndev->dev_addr, 
 	   &default_mac_addr[priv->port_id].macAddress,
 	   IX_IEEE803_MAC_ADDRESS_SIZE);
-
+    }
     /* possibly remove this test and the message when a valid MAC address 
      * is not hardcoded in the driver source code. 
      */
