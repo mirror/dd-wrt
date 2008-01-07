@@ -318,11 +318,13 @@ period_check (int sig)
 
   R R R P N N N N   = 0xXX
   ----- - -------
-    |   | gpio num (1111 = f = disable SES (AOSS) button)
+    |   | gpio num
     |   |
     |   |--- SES - AOSS button polarity (0: normal, 1 inversed)
     |
     |-------- reserved for future use 
+    
+    0xff = button disabled / not available
 */
   int push;
   int sesgpio;
@@ -352,6 +354,9 @@ period_check (int sig)
     case ROUTER_ASUS_WL500G_PRE:
       sesgpio = 0x04;		//gpio 4, normal
       break;
+    case ROUTER_ASUS_WL550GE:
+      sesgpio = 0x0f;		//gpio 15, normal
+      break;
     case ROUTER_WRT350N:
       sesgpio = 0x18;		//gpio 8, inversed
       break;
@@ -366,7 +371,7 @@ period_check (int sig)
       break;
 #endif
     default:
-      sesgpio = 0x0f;		//gpio unknown, disabled
+      sesgpio = 0xff;		//gpio unknown, disabled
     }
 
   push = 1 << (sesgpio & 0x0f);	//calculate push value from ses gpio pin no.
@@ -439,7 +444,7 @@ period_check (int sig)
     }
 #if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5)
 
-  else if ((sesgpio != 0x0f)
+  else if ((sesgpio != 0xff)
 	   && (((sesgpio & 0x10) == 0 && (val & push))
 	       || ((sesgpio & 0x10) == 0x10 && !(val & push))))
     {
