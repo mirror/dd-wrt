@@ -136,6 +136,10 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_BUFFALO_WZRRSG54:
       nvram_unset ("wl0_abenable");
       break;
+    case ROUTER_ASUS_WL550GE:
+      nvram_set ("wl0gpio1", "0");
+      nvram_set ("wl0gpio2", "0");
+      break;          
     case ROUTER_ASUS_WL500G_PRE:
     case ROUTER_ASUS_WL500W:
     case ROUTER_WRT54G:
@@ -193,6 +197,10 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
 
   switch (brand)
     {
+    case ROUTER_ASUS_WL550GE:
+      nvram_set ("wl0gpio1", "0");
+      nvram_set ("wl0gpio2", "0");
+      break;
     case ROUTER_BUFFALO_WZRRSG54:
     case ROUTER_BUFFALO_WBR54G:
     case ROUTER_BUFFALO_WBR2G54S:
