@@ -1384,6 +1384,10 @@ led_control (int type, int act)
       power_gpio = 0x11;
       diag_gpio = 0x01;		//power led blink / off to indicate factory defaults
       break;
+    case ROUTER_ASUS_WL550GE:
+      power_gpio = 0x12;
+      diag_gpio = 0x02;		//power led blink / off to indicate factory defaults
+      break; 
     case ROUTER_WRT54G3G:
     case ROUTER_WRTSL54GS:
       power_gpio = 0x01;

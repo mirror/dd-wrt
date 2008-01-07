@@ -204,7 +204,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_ASUS_WL500W 0x3b06
 
 // Asus WL550gE (5352E cpu, fccid: Asus MSQWL550GE)
-#define ROUTER_ASUS_WL550GE 0x3c06
+#define ROUTER_ASUS_WL550GE 0x3c01
 
 // Sitecom WL-111 (4702 cpu, fccid: ?)
 #define ROUTER_SITECOM_WL111 0x3d10
