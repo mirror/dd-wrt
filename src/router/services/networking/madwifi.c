@@ -841,7 +841,15 @@ set_rate (char *dev)
   sprintf (turbo, "%s_turbo", dev);
   char *r = default_get (rate, "0");
   char *mr = default_get (maxrate, "0");
+#ifdef HAVE_WHRAG108
+  char *netmode;
+  if (!strcmp(dev,"ath0"))
+  netmode = default_get (net, "a-only");
+  else
+  netmode = default_get (net, "mixed");
+#else
   char *netmode = default_get (net, "mixed");
+#endif
 
   if (nvram_match (bw, "20") && nvram_match (xr, "0"))
     if (atof (r) == 27.0f || atof (r) == 1.5f || atof (r) == 2.0f
@@ -913,7 +921,15 @@ set_netmode (char *wif, char *dev, char *use)
   sprintf (xr, "%s_xr", dev);
   sprintf (comp, "%s_compression", dev);
   sprintf (ff, "%s_ff", dev);
+#ifdef HAVE_WHRAG108
+  char *netmode;
+  if (!strcmp(dev,"ath0"))
+  netmode = default_get (net, "a-only");
+  else
+  netmode = default_get (net, "mixed");
+#else
   char *netmode = default_get (net, "mixed");
+#endif
 //  fprintf (stderr, "set netmode of %s to %s\n", net, netmode);
   cprintf ("configure net mode %s\n", netmode);
 
