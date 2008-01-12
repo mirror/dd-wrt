@@ -711,7 +711,7 @@ int minute = 0;
   else if (strstr (base, "erase"))
     {
       int brand = getRouterBrand ();
-      if (brand == ROUTER_MOTOROLA || brand == ROUTER_MOTOROLA_V1 || brand == ROUTER_MOTOROLA_WE800G || brand == ROUTER_RT210W || brand == ROUTER_BUFFALO_WZRRSG54)	//these routers have problem erasing nvram, so we only software restore defaults
+      if (brand == ROUTER_MOTOROLA || brand == ROUTER_MOTOROLA_V1 || brand == ROUTER_MOTOROLA_WE800G || brand == ROUTER_RT210W)	//these routers have problem erasing nvram, so we only software restore defaults
 	{
 	  if (argv[1] && strcmp (argv[1], "nvram"))
 	    {
