@@ -289,7 +289,7 @@ extern char * zencrypt (char *passwd);
 extern void getLANMac (char *newmac);
 extern void getWirelessMac (char *newmac);
 extern void getWANMac (char *newmac);
-extern void EraseWriteNvram (int size);
+extern void EraseWriteNvram (void);
 
 extern int led_control (int type, int act);
 enum
