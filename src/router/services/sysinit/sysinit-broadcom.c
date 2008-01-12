@@ -707,6 +707,7 @@ start_sysinit (void)
 	      break;
 
 	    case ROUTER_WRT54G_V8:
+	    case ROUTER_LINKSYS_WRH54G:
 	    case ROUTER_ASUS_WL520G:
 	    case ROUTER_ASUS_WL520GUGC:
 	      modules =
