@@ -431,7 +431,7 @@ period_check (int sig)
 		eval ("erase", "nvram");
 		if (brand == ROUTER_BUFFALO_WZRRSG54)
 		{ 
-			EraseWriteNvram (0x20000);
+			EraseWriteNvram ();
 		}
 #endif
 
