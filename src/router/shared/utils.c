@@ -3568,6 +3568,26 @@ void getWANMac (char *newmac)
 	return;	
 }
 
+void 
+EraseWriteNvram (int size)  // make and write 'empty' file (all FF) to nvram
+{
+  FILE *fp = fopen ("/tmp/emptynvram.bin", "wb+");
+  int i;
+
+  for (i = 0; i < size; i++)
+   {
+  	fputc (0xFF, fp);
+   }
+  	
+  fclose (fp);
+  
+  eval ("write", "/tmp/emptynvram.bin", "nvram");
+  
+  unlink ("/tmp/emptynvram.bin");
+  return;
+  
+}
+
 #ifdef HAVE_AQOS
 
 static char *
