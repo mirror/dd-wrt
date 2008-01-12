@@ -3569,21 +3569,39 @@ void getWANMac (char *newmac)
 }
 
 void 
-EraseWriteNvram (int size)  // make and write 'empty' file (all FF) to nvram
+EraseWriteNvram (void)  // make and write 'empty' file (all FF) to nvram
 {
-  FILE *fp = fopen ("/tmp/emptynvram.bin", "wb+");
-  int i;
+  FILE *fp;
+  int i, size = 0;
+  char tmp[256];
+
+  if ((fp = fopen ("/proc/mtd", "r")) == NULL)
+	  return;
+
+      while (fgets (tmp, sizeof (tmp), fp))
+      {
+		if (strstr (tmp, "nvram"))
+        {
+	     if (sscanf (tmp, "%*s %x %*d %*s", &size) != 1)
+		   return;
+		}
+      }
+      
+  fclose (fp);	
+
+  FILE *fp = fopen ("/tmp/emptynvram.bin", "wb");
 
   for (i = 0; i < size; i++)
    {
   	fputc (0xFF, fp);
    }
-  	
+   
   fclose (fp);
-  
+
   eval ("write", "/tmp/emptynvram.bin", "nvram");
-  
+ 
   unlink ("/tmp/emptynvram.bin");
+
   return;
   
 }
