@@ -3589,7 +3589,7 @@ EraseWriteNvram (void)  // make and write 'empty' file (all FF) to nvram
       
   fclose (fp);	
 
-  FILE *fp = fopen ("/tmp/emptynvram.bin", "wb");
+  fp = fopen ("/tmp/emptynvram.bin", "wb");
 
   for (i = 0; i < size; i++)
    {
