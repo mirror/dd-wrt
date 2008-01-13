@@ -3611,7 +3611,7 @@ void
 nvram_unset_all (void)
 {
   FILE *fp;
-  char tmp[4096];
+  char tmp[65536];
   char *name;
 
     system2 ("nvram show > /tmp/nvramall.txt");
