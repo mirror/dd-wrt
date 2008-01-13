@@ -2302,7 +2302,7 @@ check_hw_type (void)
     return BCM5354G_CHIP;
   else if (btype == 0x042f && !(boardflags & BFL_ENETADM))
     return BCM4704_BCM5325F_CHIP;
-  else if (btype == 0x478) && nvram_match( "vlan0ports", "1 2 3 4 5*")) /* WRT300NV1.1 */
+  else if (btype == 0x478 && nvram_match ("vlan0ports", "1 2 3 4 5*")) /* WRT300NV1.1 */
 	return BCM4705L_BCM5325E_EWC_CHIP;
   else if ((btype == 0x478 && nvram_match ("vlan0ports", "1 2 3 4 8*")) || nvram_match("boot_hw_model", "WRT350N")) /* WRT350N */
 	return BCM4705_BCM5397_EWC_CHIP;
