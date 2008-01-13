@@ -3607,6 +3607,34 @@ void getWANMac (char *newmac)
 	return;	
 }
 
+void
+nvram_unset_all (void)
+{
+  FILE *fp;
+  char tmp[4096];
+  char *name;
+
+    system2 ("nvram show > /tmp/nvramall.txt");
+
+    if ((fp = fopen ("/tmp/nvramall.txt", "r")) == NULL)
+	  return;
+
+      while (fgets (tmp, sizeof (tmp), fp))
+	  {
+		if (strstr (tmp, "="))
+        {
+	     name = strtok (tmp, "=");
+		 nvram_unset (name);
+		}
+	  }
+	 nvram_commit();
+	 
+	 fclose (fp);
+	 unlink ("/tmp/nvramall.txt");
+}
+
+
+/*
 void 
 EraseWriteNvram (void)  // make and write 'empty' file (all FF) to nvram
 {
@@ -3644,6 +3672,7 @@ EraseWriteNvram (void)  // make and write 'empty' file (all FF) to nvram
   return;
   
 }
+*/
 
 #ifdef HAVE_AQOS
 
