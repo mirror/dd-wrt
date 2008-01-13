@@ -21,7 +21,7 @@
 /* #define COUNT_DOWNLINK_DROP 1 */
 /* #define COUNT_UPLINK_DROP 1 */
 
-#define APP_NUM_CONN 1024
+#define APP_NUM_CONN 128
 #define EAP_LEN 2048            /* TODO: Rather large */
 
 #define MACOK_MAX 16
