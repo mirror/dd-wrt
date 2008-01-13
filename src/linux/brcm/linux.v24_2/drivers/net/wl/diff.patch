@@ -1,0 +1,317 @@
+--- hnddma.c	2007-06-26 12:38:33.000000000 +0200
++++ hnddma.c.old	2007-07-19 16:43:31.000000000 +0200
+@@ -2,7 +2,7 @@
+  * Generic Broadcom Home Networking Division (HND) DMA module.
+  * This supports the following chips: BCM42xx, 44xx, 47xx .
+  *
+- * Copyright 2007, Broadcom Corporation
++ * Copyright 2006, Broadcom Corporation
+  * All Rights Reserved.
+  * 
+  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+@@ -10,7 +10,7 @@
+  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+  *
+- * $Id$
++ * $Id: hnddma.c,v 1.11 2006/04/08 07:12:42 honor Exp $
+  */
+ 
+ #include <typedefs.h>
+@@ -26,13 +26,8 @@
+ #include <hnddma.h>
+ 
+ /* debug/trace */
+-#ifdef BCMDBG
+-#define	DMA_ERROR(args) if (!(*di->msg_level & 1)); else printf args
+-#define	DMA_TRACE(args) if (!(*di->msg_level & 2)); else printf args
+-#else
+ #define	DMA_ERROR(args)
+ #define	DMA_TRACE(args)
+-#endif
+ 
+ /* default dma message level (if input msg_level pointer is null in dma_attach()) */
+ static uint dma_msg_level = 0;
+@@ -289,25 +284,6 @@
+ 
+ #endif /* BCMDMA64 */
+ 
+-#ifdef BCMDBG
+-static void dma32_dumpring (dma_info_t * di, struct bcmstrbuf *b,
+-			    dma32dd_t * ring, uint start, uint end,
+-			    uint max_num);
+-static void dma32_dump (dma_info_t * di, struct bcmstrbuf *b, bool dumpring);
+-static void dma32_dumptx (dma_info_t * di, struct bcmstrbuf *b,
+-			  bool dumpring);
+-static void dma32_dumprx (dma_info_t * di, struct bcmstrbuf *b,
+-			  bool dumpring);
+-
+-static void dma64_dumpring (dma_info_t * di, struct bcmstrbuf *b,
+-			    dma64dd_t * ring, uint start, uint end,
+-			    uint max_num);
+-static void dma64_dump (dma_info_t * di, struct bcmstrbuf *b, bool dumpring);
+-static void dma64_dumptx (dma_info_t * di, struct bcmstrbuf *b,
+-			  bool dumpring);
+-static void dma64_dumprx (dma_info_t * di, struct bcmstrbuf *b,
+-			  bool dumpring);
+-#endif
+ 
+ 
+ static di_fcn_t dma64proc = {
+@@ -344,15 +320,9 @@
+   (di_getvar_t) _dma_getvar,
+   (di_counterreset_t) _dma_counterreset,
+ 
+-#ifdef BCMDBG
+-  (di_dump_t) dma64_dump,
+-  (di_dumptx_t) dma64_dumptx,
+-  (di_dumprx_t) dma64_dumprx,
+-#else
+   NULL,
+   NULL,
+   NULL,
+-#endif
+   34
+ };
+ 
+@@ -390,15 +360,9 @@
+   (di_getvar_t) _dma_getvar,
+   (di_counterreset_t) _dma_counterreset,
+ 
+-#ifdef BCMDBG
+-  (di_dump_t) dma32_dump,
+-  (di_dumptx_t) dma32_dumptx,
+-  (di_dumprx_t) dma32_dumprx,
+-#else
+   NULL,
+   NULL,
+   NULL,
+-#endif
+   34
+ };
+ 
+@@ -413,10 +377,6 @@
+   /* allocate private info structure */
+   if ((di = MALLOC (osh, sizeof (dma_info_t))) == NULL)
+     {
+-#ifdef BCMDBG
+-      printf ("dma_attach: out of memory, malloced %d bytes\n",
+-	      MALLOCED (osh));
+-#endif
+       return (NULL);
+     }
+   bzero ((char *) di, sizeof (dma_info_t));
+@@ -436,7 +396,7 @@
+       goto fail;
+     }
+ #endif
+-
++//      printk(KERN_EMERG "attaching hnddma\n");
+   /* check arguments */
+   ASSERT (ISPOWEROF2 (ntxd));
+   ASSERT (ISPOWEROF2 (nrxd));
+@@ -469,7 +429,10 @@
+       di->d32rxregs = (dma32regs_t *) dmaregsrx;
+     }
+ 
+-  DMA_TRACE (("%s: dma_attach: %s osh %p ntxd %d nrxd %d rxbufsize %d nrxpost %d " "rxoffset %d dmaregstx %p dmaregsrx %p\n", name, (di->dma64 ? "DMA64" : "DMA32"), osh, ntxd, nrxd, rxbufsize, nrxpost, rxoffset, dmaregstx, dmaregsrx));
++//      printk(KERN_EMERG "%s: dma_attach: %s osh %p ntxd %d nrxd %d rxbufsize %d nrxpost %d "
++//                 "rxoffset %d dmaregstx %p dmaregsrx %p\n",
++//                 name, (di->dma64 ? "DMA64" : "DMA32"), osh, ntxd, nrxd, rxbufsize,
++//                 nrxpost, rxoffset, dmaregstx, dmaregsrx);
+ 
+   /* make a private copy of our callers name */
+   strncpy (di->name, name, MAXNAMEL);
+@@ -581,7 +544,9 @@
+       goto fail;
+     }
+ 
+-  DMA_TRACE (("ddoffsetlow 0x%x ddoffsethigh 0x%x dataoffsetlow 0x%x dataoffsethigh " "0x%x addrext %d\n", di->ddoffsetlow, di->ddoffsethigh, di->dataoffsetlow, di->dataoffsethigh, di->addrext));
++//      printk(KERN_EMERG "ddoffsetlow 0x%x ddoffsethigh 0x%x dataoffsetlow 0x%x dataoffsethigh "
++//                 "0x%x addrext %d\n", di->ddoffsetlow, di->ddoffsethigh, di->dataoffsetlow,
++//                 di->dataoffsethigh, di->addrext);
+ 
+   /* allocate tx packet pointer vector and DMA mapping vectors */
+   if (ntxd)
+@@ -610,10 +575,11 @@
+ 
+   /* initialize opsvec of function pointers */
+   di->hnddma.di_fn = DMA64_ENAB (di) ? dma64proc : dma32proc;
+-
++// printk(KERN_EMERG "Done\n"); 
+   return ((hnddma_t *) di);
+ 
+ fail:
++//printk(KERN_EMERG "Failed\n"); 
+   _dma_detach (di);
+   return (NULL);
+ }
+@@ -904,10 +870,11 @@
+ 
+   /* clear rx descriptor ring */
+   if (DMA64_ENAB (di))
+-    BZERO_SM ((void *) (uintptr) di->rxd64, (di->nrxd * sizeof (dma64dd_t)));
++      BZERO_SM ((void *) (uintptr) di->rxd64,
++		(di->nrxd * sizeof (dma64dd_t)));
+   else
+-    BZERO_SM ((void *) (uintptr) di->rxd32, (di->nrxd * sizeof (dma32dd_t)));
+-
++      BZERO_SM ((void *) (uintptr) di->rxd32,
++		(di->nrxd * sizeof (dma32dd_t)));
+   _dma_rxenable (di);
+   _dma_ddtable_init (di, DMA_RX, di->rxdpa);
+ }
+@@ -1020,7 +987,6 @@
+ 
+       pa = (uint32) DMA_MAP (di->osh, PKTDATA (di->osh, p),
+ 			     di->rxbufsize, DMA_RX, p, &di->rxp_dmah[rxout]);
+-
+       ASSERT (ISALIGNED (pa, 4));
+ 
+       /* save the free packet pointer */
+@@ -1165,137 +1131,6 @@
+   OR_REG (osh, &regs->control, XC_LE);
+ }
+ 
+-#ifdef BCMDBG
+-static void
+-dma32_dumpring (dma_info_t * di, struct bcmstrbuf *b, dma32dd_t * ring,
+-		uint start, uint end, uint max_num)
+-{
+-  uint i;
+-
+-  for (i = start; i != end; i = XXD ((i + 1), max_num))
+-    {
+-      /* in the format of high->low 8 bytes */
+-      bcm_bprintf (b, "ring index %d: 0x%x %x\n", i, ring[i].addr,
+-		   ring[i].ctrl);
+-    }
+-}
+-
+-static void
+-dma32_dumptx (dma_info_t * di, struct bcmstrbuf *b, bool dumpring)
+-{
+-  if (di->ntxd == 0)
+-    return;
+-
+-  bcm_bprintf (b, "DMA32: txd32 %p txdpa 0x%lx txp %p txin %d txout %d "
+-	       "txavail %d\n", di->txd32, di->txdpa, di->txp, di->txin,
+-	       di->txout, di->hnddma.txavail);
+-
+-  bcm_bprintf (b, "xmtcontrol 0x%x xmtaddr 0x%x xmtptr 0x%x xmtstatus 0x%x\n",
+-	       R_REG (di->osh, &di->d32txregs->control),
+-	       R_REG (di->osh, &di->d32txregs->addr),
+-	       R_REG (di->osh, &di->d32txregs->ptr),
+-	       R_REG (di->osh, &di->d32txregs->status));
+-
+-  if (dumpring && di->txd32)
+-    dma32_dumpring (di, b, di->txd32, di->txin, di->txout, di->ntxd);
+-}
+-
+-static void
+-dma32_dumprx (dma_info_t * di, struct bcmstrbuf *b, bool dumpring)
+-{
+-  if (di->nrxd == 0)
+-    return;
+-
+-  bcm_bprintf (b, "DMA32: rxd32 %p rxdpa 0x%lx rxp %p rxin %d rxout %d\n",
+-	       di->rxd32, di->rxdpa, di->rxp, di->rxin, di->rxout);
+-
+-  bcm_bprintf (b, "rcvcontrol 0x%x rcvaddr 0x%x rcvptr 0x%x rcvstatus 0x%x\n",
+-	       R_REG (di->osh, &di->d32rxregs->control),
+-	       R_REG (di->osh, &di->d32rxregs->addr),
+-	       R_REG (di->osh, &di->d32rxregs->ptr),
+-	       R_REG (di->osh, &di->d32rxregs->status));
+-  if (di->rxd32 && dumpring)
+-    dma32_dumpring (di, b, di->rxd32, di->rxin, di->rxout, di->nrxd);
+-}
+-
+-static void
+-dma32_dump (dma_info_t * di, struct bcmstrbuf *b, bool dumpring)
+-{
+-  dma32_dumptx (di, b, dumpring);
+-  dma32_dumprx (di, b, dumpring);
+-}
+-
+-static void
+-dma64_dumpring (dma_info_t * di, struct bcmstrbuf *b, dma64dd_t * ring,
+-		uint start, uint end, uint max_num)
+-{
+-  uint i;
+-
+-  for (i = start; i != end; i = XXD ((i + 1), max_num))
+-    {
+-      /* in the format of high->low 16 bytes */
+-      bcm_bprintf (b, "ring index %d: 0x%x %x %x %x\n",
+-		   i, ring[i].addrhigh, ring[i].addrlow, ring[i].ctrl2,
+-		   ring[i].ctrl1);
+-    }
+-}
+-
+-static void
+-dma64_dumptx (dma_info_t * di, struct bcmstrbuf *b, bool dumpring)
+-{
+-  if (di->ntxd == 0)
+-    return;
+-
+-  bcm_bprintf (b, "DMA64: txd64 %p txdpa 0x%lx txp %p txin %d txout %d "
+-	       "txavail %d\n", di->txd64, di->txdpa, di->txp, di->txin,
+-	       di->txout, di->hnddma.txavail);
+-
+-  bcm_bprintf (b, "xmtcontrol 0x%x xmtaddrlow 0x%x xmtaddrhigh 0x%x "
+-	       "xmtptr 0x%x xmtstatus0 0x%x xmtstatus1 0x%x\n",
+-	       R_REG (di->osh, &di->d64txregs->control),
+-	       R_REG (di->osh, &di->d64txregs->addrlow),
+-	       R_REG (di->osh, &di->d64txregs->addrhigh),
+-	       R_REG (di->osh, &di->d64txregs->ptr),
+-	       R_REG (di->osh, &di->d64txregs->status0),
+-	       R_REG (di->osh, &di->d64txregs->status1));
+-
+-  if (dumpring && di->txd64)
+-    {
+-      dma64_dumpring (di, b, di->txd64, di->txin, di->txout, di->ntxd);
+-    }
+-}
+-
+-static void
+-dma64_dumprx (dma_info_t * di, struct bcmstrbuf *b, bool dumpring)
+-{
+-  if (di->nrxd == 0)
+-    return;
+-
+-  bcm_bprintf (b, "DMA64: rxd64 %p rxdpa 0x%lx rxp %p rxin %d rxout %d\n",
+-	       di->rxd64, di->rxdpa, di->rxp, di->rxin, di->rxout);
+-
+-  bcm_bprintf (b, "rcvcontrol 0x%x rcvaddrlow 0x%x rcvaddrhigh 0x%x rcvptr "
+-	       "0x%x rcvstatus0 0x%x rcvstatus1 0x%x\n",
+-	       R_REG (di->osh, &di->d64rxregs->control),
+-	       R_REG (di->osh, &di->d64rxregs->addrlow),
+-	       R_REG (di->osh, &di->d64rxregs->addrhigh),
+-	       R_REG (di->osh, &di->d64rxregs->ptr),
+-	       R_REG (di->osh, &di->d64rxregs->status0),
+-	       R_REG (di->osh, &di->d64rxregs->status1));
+-  if (di->rxd64 && dumpring)
+-    {
+-      dma64_dumpring (di, b, di->rxd64, di->rxin, di->rxout, di->nrxd);
+-    }
+-}
+-
+-static void
+-dma64_dump (dma_info_t * di, struct bcmstrbuf *b, bool dumpring)
+-{
+-  dma64_dumptx (di, b, dumpring);
+-  dma64_dumprx (di, b, dumpring);
+-}
+-
+-#endif /* BCMDBG */
+ 
+ 
+ /* 32 bits DMA functions */
+@@ -2144,6 +1979,7 @@
+ 	     (BUS_SWAP32 (R_SM (&di->rxd64[i].addrlow)) - di->dataoffsetlow),
+ 	     di->rxbufsize, DMA_RX, rxp, &di->rxp_dmah[i]);
+ 
++
+   W_SM (&di->rxd64[i].addrlow, 0xdeadbeef);
+   W_SM (&di->rxd64[i].addrhigh, 0xdeadbeef);
+ 

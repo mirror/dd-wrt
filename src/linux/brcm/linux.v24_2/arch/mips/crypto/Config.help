@@ -1,0 +1,94 @@
+Cryptographic API
+CONFIG_CRYPTO
+  If you answer 'Y' to this option, the cryptographic kernel API
+  framework will be enabled, and you'll be presented with additional
+  questions about cryptographic algorithms and kernel components
+  making use of the cryptographic API.
+
+  See also <file:Documentation/crypto/cryptoapi.txt>
+
+  The latest version of this component can be found at
+  <http://www.kernel.org/pub/linux/crypto/>
+
+  If you don't need cryptographic extensions, say N.
+
+Crypto ciphers
+CONFIG_CIPHERS
+  Ciphers basically help us scramble data so that other people don't
+  get access to it. Useful applications for this include hiding hard
+  drive contents or network traffic from unauthorized eyes. Compare a
+  file encrypted with a cipher with very good safe: The document is in
+  it, you can carry the document with you (if the safe is not too
+  heavy), but others can steal it, too. However, they will not be able
+  to read the document if the safe is any good.
+
+  Mathematically speaking, a cipher is a parameter-dependant function
+  E(K, ) that takes a fixed-length block M (usually 64 or 128 bits)
+  and maps it onto another (usually equal-sized) block C=E(K,M) in such
+  a way that, without knowledge of the "key" K, it is hard to compute
+
+  1. M, if C and the function E are given,
+
+  2. C, if M is given and the function E is known.
+
+  M is called the 'plaintext' and C the 'ciphertext'. The above
+  properties are commonly described as "All the security of the cipher
+  lies in its key". However, there always exists the inverse function
+  D(K, ) of E(K, ) such that D(K,E(K,M))=M for any M.  The ideal
+  cipher is one where it is impossible to compute M if you have C, but
+  not K. In this case, the easiest way to break the cipher is to use
+  'brute-force', i.e. try all K in turn until you hit the right
+  one. With most ciphers in this library, K is a 128-bit number. Here,
+  brute-force attacks are infeasible since they require testing all
+  2^128 possible keys K, which would take far too long on any
+  conceivable computer (some big multiple of the age of the universe
+  for example).
+
+  Unfortunately, the ideal cipher has not been found yet, so most
+  ciphers in this library, or certain 'reduced-round' versions
+  thereof, can be broken faster than brute-force. A cipher is secure,
+  if it cannot be broken _much_ faster than brute-force and
+  brute-force is infeasible.
+
+  If you say 'Y', you are able to select a variety of
+  ciphers for the Cipher-API. Ciphers you select below can then be
+  used by cryptographic kernel modules. If you say 'N' here, those
+  modules will use their own implementations or even not work at all.
+
+  If unsure, say 'N'.
+
+Digest algorithms
+CONFIG_DIGESTS
+  A message digest (or 'one-way function' or 'hash') is a function H
+  that maps an arbitrary-length message M onto a 128-bit or 160-bit
+  number h=H(M) such that the following conditions are satisfied:
+
+  1. For a given M, it is easy to compute h=H(M).
+
+  2. For a given h, it is hard to find M such that h=H(M).
+
+  3. For a given M, it is hard to find another message M' such that
+     H(M')=H(M).
+
+  4. It is hard to find M, M' such that H(M)=H(M').
+
+  This makes the name 'one-way function' plausible. Hashes are widely
+  used by cryptographic programs. E.g. the Linux kernel uses a hash to
+  generate random numbers.
+
+# Marc Mutz <Marc@Mutz.com>: this will be the help text, once this
+# functionality is in place:
+#  If you say 'Y' here and select the SHA-1 message digest below,
+#  then the drivers for /dev/random and /dev/urandom will use the
+#  digest api instead of their own implementation. This will not work
+#  if you build as modules.
+#
+  If you say 'Y', cryptographic modules are able to use
+  the Digest-API if they need a hash function. If you say 'N' here,
+  they will use their own implementations (which will probably
+  increase the size of the compiled kernel if there are more than one
+  such modules).
+
+  If unsure, say 'N'.
+
+#EOF

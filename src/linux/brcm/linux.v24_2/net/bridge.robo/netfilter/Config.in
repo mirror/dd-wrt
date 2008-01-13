@@ -1,0 +1,23 @@
+#
+# Bridge netfilter configuration
+#
+dep_tristate '  Bridge: ebtables' CONFIG_BRIDGE_NF_EBTABLES $CONFIG_BRIDGE
+dep_tristate '    ebt: filter table support' CONFIG_BRIDGE_EBT_T_FILTER $CONFIG_BRIDGE_NF_EBTABLES
+dep_tristate '    ebt: nat table support' CONFIG_BRIDGE_EBT_T_NAT $CONFIG_BRIDGE_NF_EBTABLES
+dep_tristate '    ebt: broute table support' CONFIG_BRIDGE_EBT_BROUTE $CONFIG_BRIDGE_NF_EBTABLES
+dep_tristate '    ebt: log support' CONFIG_BRIDGE_EBT_LOG $CONFIG_BRIDGE_NF_EBTABLES
+dep_tristate '    ebt: ulog support' CONFIG_BRIDGE_EBT_LOG $CONFIG_BRIDGE_NF_EBTABLES
+dep_tristate '    ebt: IP filter support' CONFIG_BRIDGE_EBT_IPF $CONFIG_BRIDGE_NF_EBTABLES
+dep_tristate '    ebt: ARP filter support' CONFIG_BRIDGE_EBT_ARPF $CONFIG_BRIDGE_NF_EBTABLES
+dep_tristate '    ebt: among filter support' CONFIG_BRIDGE_EBT_AMONG $CONFIG_BRIDGE_NF_EBTABLES
+dep_tristate '    ebt: limit filter support' CONFIG_BRIDGE_EBT_LIMIT $CONFIG_BRIDGE_NF_EBTABLES
+dep_tristate '    ebt: 802.1Q VLAN filter support' CONFIG_BRIDGE_EBT_VLANF $CONFIG_BRIDGE_NF_EBTABLES
+dep_tristate '    ebt: 802.3 filter support' CONFIG_BRIDGE_EBT_802_3 $CONFIG_BRIDGE_NF_EBTABLES
+dep_tristate '    ebt: packet type filter support' CONFIG_BRIDGE_EBT_PKTTYPE $CONFIG_BRIDGE_NF_EBTABLES
+dep_tristate '    ebt: STP filter support' CONFIG_BRIDGE_EBT_STP $CONFIG_BRIDGE_NF_EBTABLES
+dep_tristate '    ebt: mark filter support' CONFIG_BRIDGE_EBT_MARKF $CONFIG_BRIDGE_NF_EBTABLES
+dep_tristate '    ebt: arp reply target support' CONFIG_BRIDGE_EBT_ARPREPLY $CONFIG_BRIDGE_NF_EBTABLES
+dep_tristate '    ebt: snat target support' CONFIG_BRIDGE_EBT_SNAT $CONFIG_BRIDGE_NF_EBTABLES
+dep_tristate '    ebt: dnat target support' CONFIG_BRIDGE_EBT_DNAT $CONFIG_BRIDGE_NF_EBTABLES
+dep_tristate '    ebt: redirect target support' CONFIG_BRIDGE_EBT_REDIRECT $CONFIG_BRIDGE_NF_EBTABLES
+dep_tristate '    ebt: mark target support' CONFIG_BRIDGE_EBT_MARK_T $CONFIG_BRIDGE_NF_EBTABLES

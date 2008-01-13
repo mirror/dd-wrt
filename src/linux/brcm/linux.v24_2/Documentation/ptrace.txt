@@ -1,0 +1,50 @@
+
+     -=* Known limitations of ptace-based security policy enforcement *=-
+
+Some programs such as Systrace[1] can make use of the ptrace mechanisms to
+control the parameters of every syscall used by a given process.
+
+This is possible due to the call to syscall_trace() just a few instructions
+before calling the syscall's function. syscall_trace() sets the traced task's
+state to TASK_STOPPED, makes it sleep and wakes the parent which will be able
+to analyze the call through ptrace().
+
+Now that the traced task is sleeping, what happens if it receives a signal ?
+Tavis Ormandy discovered that up to and including 2.4.35.4, if a traced task
+in a TASK_STOPPED state receives either a SIGCONT or SIGKILL signal, it resumes
+its execution and completes its syscall without the parent being able to act in
+any way.
+
+With SIGCONT, execution resumes normally, and confuses the parent which sees
+a running task where it would expect a stopped one. With SIGKILL, the task
+is really killed right after the syscall completion.
+
+In both cases, if the parent was responsible for checking the syscall
+parameters, its control can be bypassed using this trick. While the situation
+is easily fixable in the case of the SIGCONT signal (and will be fixed in
+version 2.4.36), it looks like it will not be fixed without a massive change
+in the way ptrace works on all architectures, which is clearly not an option
+at this stage of the stable 2.4 branch.
+
+It was demonstrated that although extremely difficult because of timing race
+and also because only one attempt is permitted, forking processes, creating
+files or directories, and other single-syscall actions may escape from the
+control of the parent. In all situations, the parent will notice that the
+traced process is running again and/or has a wrong syscall number.
+
+It is recommended that programs designed to monitor and/or control other
+process activities using ptrace report alerts when the monitored process
+gets suddenly killed or unexpectedly wakes up while its syscall parameters
+are being checked.
+
+
+References :
+------------
+[1] http://www.systrace.org/
+
+Status of this document :
+-------------------------
+Revision : 1.0
+Created  : 2007/12/09 - Willy Tarreau
+Updated  : 2007/12/09
+
