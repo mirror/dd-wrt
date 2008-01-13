@@ -788,20 +788,47 @@ internal_getRouterBrand ()
       return ROUTER_NETGEAR_WNR834B;
     }
 
+  if (boardnum == 42)  //Get Linksys N models
+  {
+	if(nvram_match ("boot_hw_model", "WRT300N") && nvram_match ("boot_hw_ver", "1.1"))
+	{ 
+		setRouter ("Linksys WRT300N v1.1");
+		return ROUTER_WRT300NV11;
+	}
+	else if(nvram_match ("boot_hw_model", "WRT150N") && nvram_match ("boot_hw_ver", "1"))
+	{ 
+		setRouter ("Linksys WRT150N v1");
+		return ROUTER_WRT150N;
+	}
+	else if(nvram_match ("boot_hw_model", "WRT150N") && nvram_match ("boot_hw_ver", "1.1"))
+	{ 
+		setRouter ("Linksys WRT150N v1.1");
+		return ROUTER_WRT150NV11;
+	}
+	else if(nvram_match ("boot_hw_model", "WRT150N") && nvram_match ("boot_hw_ver", "1.2"))
+	{ 
+		setRouter ("Linksys WRT150N v1.2");	
+		return ROUTER_WRT150NV12;
+	}
+	else if(nvram_match ("boot_hw_model", "WRT160N") && nvram_match ("boot_hw_ver", "1.0"))
+	{ 
+		setRouter ("Linksys WRT160N");
+		return ROUTER_WRT160N;
+	}
+	else if(nvram_match ("boot_hw_model", "WRT310N") && nvram_match ("boot_hw_ver", "1.0"))
+	{ 
+		setRouter ("Linksys WRT310N");
+		return ROUTER_WRT310N;
+	}
+  }
+
   if (boardnum == 42 &&
       nvram_match ("boardtype", "0x0472") && nvram_match ("cardbus", "1"))
     {
-      if (nvram_match ("boot_hw_model", "WRT150N"))
-	{
-	  setRouter ("Linksys WRT150N");
-	  return ROUTER_WRT150N;
-	}
-      else
-	{
 	  setRouter ("Linksys WRT300N v1");
 	  return ROUTER_WRT300N;
 	}
-    }
+
 
   if (boardnum == 42 &&
       nvram_match ("boardtype", "0x478") && nvram_match ("cardbus", "1"))
@@ -1223,8 +1250,8 @@ diag_led (int type, int act)
   else if (brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
     return diag_led_4702 (type, act);
   else
-    if ((brand == ROUTER_WRTSL54GS || brand == ROUTER_WRT350N
-	 || brand == ROUTER_BUFFALO_WZRG144NH) && type == DIAG)
+    if ((brand == ROUTER_WRTSL54GS || brand == ROUTER_WRT350N || brand == ROUTER_WRT310N
+	 || brand == ROUTER_WRT300NV11 || brand == ROUTER_BUFFALO_WZRG144NH) && type == DIAG)
     return diag_led_4704 (type, act);
   else
     {
@@ -2240,6 +2267,14 @@ show_hw_type (int type)
     cprintf ("BCM4712 + ADMtek\n");
   else if (type == BCM4704_BCM5325F_EWC_CHIP)
     cprintf ("BCM4704 + BCM5325F for EWC\n");
+  else if (type == BCM4705L_BCM5325E_EWC_CHIP)
+    cprintf ("BCM4705L + BCM5325E for EWC\n");
+  else if (type == BCM4705_BCM5397_EWC_CHIP)
+    cprintf ("BCM4705 + BCM5397 for EWC\n");
+  else if (type == BCM4705G_BCM5395S_EWC_CHIP)
+    cprintf ("BCM4705G + BCM5395S for EWC\n");
+  else if (type == BCM4704_BCM5325F_CHIP)
+    cprintf ("BCM4704 + BCM5325F\n");  
   else
     cprintf ("not defined\n");
 
@@ -2267,8 +2302,12 @@ check_hw_type (void)
     return BCM5354G_CHIP;
   else if (btype == 0x042f && !(boardflags & BFL_ENETADM))
     return BCM4704_BCM5325F_CHIP;
-  else if (btype == 0x478)
-    return BCM4705_BCM5397_EWC_CHIP;
+  else if (btype == 478) && nvram_match( "vlan0ports", "1 2 3 4 5*")) /* WRT300NV1.1 */
+	return BCM4705L_BCM5325E_EWC_CHIP;
+  else if ((btype == 478 && nvram_match ("vlan0ports", "1 2 3 4 8*")) || nvram_match("boot_hw_model", "WRT350N")) /* WRT350N */
+	return BCM4705_BCM5397_EWC_CHIP;
+  else if (btype == 0x489 || nvram_match ("boot_hw_model", "WRT310N")) /* WRT310N, temporal boardtype 0x478, wait for braodcom's txt file */
+	return BCM4705G_BCM5395S_EWC_CHIP;
   else if (btype == 0x0467)
     return BCM5352E_CHIP;
   else if (btype == 0x0101 || btype == 0x0446)	//0x446 is wap54g v2
