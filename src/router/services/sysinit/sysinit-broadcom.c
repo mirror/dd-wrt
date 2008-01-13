@@ -236,7 +236,11 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
   switch (brand)
     {
     case ROUTER_WRT150N:
+    case ROUTER_WRT150NV11:
+    case ROUTER_WRT160N:
+    case ROUTER_WRT310N
     case ROUTER_WRT300N:
+    case ROUTER_WRT300NV11:
     case ROUTER_WRT350N:
     case ROUTER_BUFFALO_WZRG144NH:
     case ROUTER_BUFFALO_WZRG300N:
@@ -690,6 +694,8 @@ start_sysinit (void)
 	{
 	  switch (brand)
 	    {
+		case ROUTER_WRT300NV11:
+		case ROUTER_WRT310N:    
 	    case ROUTER_WRT350N:
 	    case ROUTER_WRT600N:
 	    case ROUTER_BUFFALO_WZRG144NH:
