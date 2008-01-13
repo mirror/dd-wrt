@@ -305,8 +305,9 @@ extern char * zencrypt (char *passwd);
 extern void getLANMac (char *newmac);
 extern void getWirelessMac (char *newmac);
 extern void getWANMac (char *newmac);
-extern void EraseWriteNvram (void);
-
+//extern void EraseWriteNvram (void);
+extern void nvram_unset_all (void);
+ 
 extern int led_control (int type, int act);
 enum
 { LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN,
