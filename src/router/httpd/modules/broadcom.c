@@ -3463,7 +3463,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       eval ("erase", "nvram");
       if (getRouterBrand() == ROUTER_BUFFALO_WZRRSG54)
     	{ 
-			EraseWriteNvram ();
+			nvram_unset_all ();
 		}
 #endif
       action = REBOOT;
