@@ -414,6 +414,8 @@ start_sysinit (void)
       nvram_set ("lan_ifnames", "eth0 eth2");
       nvram_set ("wan_ifname", "eth1");
       nvram_set ("wl0_ifname", "eth2");
+      eval ("gpio", "init", "0"); //AOSS button
+      eval ("gpio", "init", "4"); //reset button
       break;
 
     case ROUTER_MOTOROLA:
