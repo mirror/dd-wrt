@@ -59,6 +59,14 @@ gpio_main (int argc, char **argv)
 	  old_gpio = gpio;
 	}
     }
+  else if (!strcmp (argv[1], "init"))
+    {
+      int gpioin = open ("/dev/gpio/in", O_RDWR);
+      read (gpioouten, &gpio, sizeof (gpio));
+      gpio &= ~pin;
+      write (gpioouten, &gpio, sizeof (gpio));
+	  read (gpioin, &gpio, sizeof (gpio));
+	}
   else if (!strcmp (argv[1], "enable") || !strcmp (argv[1], "disable"))
     {
       int gpioout = open ("/dev/gpio/out", O_RDWR);
