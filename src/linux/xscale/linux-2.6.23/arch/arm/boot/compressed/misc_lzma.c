@@ -26,6 +26,8 @@ unsigned int __machine_arch_type;
 
 static void putstr(const char *ptr);
 
+
+
 #include <linux/compiler.h>
 #include <asm/arch/uncompress.h>
 
@@ -68,6 +70,31 @@ static void icedcc_putc(int ch)
 #define putc(ch)	icedcc_putc(ch)
 #define flush()	do { } while (0)
 #endif
+
+
+#include "printf.h"
+#include "print.h"
+
+static void myoutput(void *arg, char *s, int l)
+{
+    int i;
+
+    // special termination call
+    if ((l==1) && (s[0] == '\0')) return;
+    
+    for (i=0; i< l; i++) {
+	putc(s[i]);
+	if (s[i] == '\n') putc('\r');
+    }
+}
+
+void printf(char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    lp_Print(myoutput, 0, fmt, ap);
+    va_end(ap);
+}
 
 static void putstr(const char *ptr)
 {
@@ -182,8 +209,8 @@ typedef unsigned long  ulg;
 static uch *inbuf;		/* input buffer */
 static uch window[WSIZE];	/* Sliding window buffer */
 
-static unsigned insize;		/* valid bytes in inbuf */
-static unsigned inptr;		/* index of next byte to be processed in inbuf */
+static unsigned insize=0;		/* valid bytes in inbuf */
+static unsigned inptr=0;		/* index of next byte to be processed in inbuf */
 static unsigned outcnt;		/* bytes in output buffer */
 
 /* gzip flag byte */
@@ -217,21 +244,13 @@ static unsigned outcnt;		/* bytes in output buffer */
 static int  fill_inbuf(void);
 static void flush_window(void);
 static void error(char *m);
-static void gzip_mark(void **);
-static void gzip_release(void **);
 
 extern char input_data[];
 extern char input_data_end[];
 
+static ulg output_ptr=0;
 static uch *output_data;
-static ulg output_ptr;
 static ulg bytes_out;
-
-static void *malloc(int size);
-static void free(void *where);
-static void error(char *m);
-static void gzip_mark(void **);
-static void gzip_release(void **);
 
 static void putstr(const char *);
 
@@ -239,57 +258,81 @@ extern int end;
 static ulg free_mem_ptr;
 static ulg free_mem_ptr_end;
 
-#define HEAP_SIZE 0x3000
+#define _LZMA_IN_CB
+#include "LzmaDecode.h"
+#include "LzmaDecode.c"
 
-#include "../../../../lib/inflate.c"
+static int read_byte(void *object, const unsigned char **buffer, SizeT *bufferSize);
 
-#ifndef STANDALONE_DEBUG
-static void *malloc(int size)
+
+/*
+ * Do the lzma decompression
+ */
+static int lzma_unzip(void)
 {
-	void *p;
 
-	if (size <0) error("Malloc error");
-	if (free_mem_ptr <= 0) error("Memory error");
+	unsigned int i;
+        CLzmaDecoderState state;
+	unsigned int uncompressedSize = 0;
+        
+        ILzmaInCallback callback;
+        callback.Read = read_byte;
 
-	free_mem_ptr = (free_mem_ptr + 3) & ~3;	/* Align */
-
-	p = (void *)free_mem_ptr;
-	free_mem_ptr += size;
-
-	if (free_mem_ptr >= free_mem_ptr_end)
-		error("Out of memory");
-	return p;
+	// lzma args
+	i = get_byte();
+	state.Properties.lc = i % 9, i = i / 9;
+        state.Properties.lp = i % 5, state.Properties.pb = i / 5;
+        
+        // skip dictionary size
+        for (i = 0; i < 4; i++) 
+        	get_byte();
+        // get uncompressed size
+	uncompressedSize = (get_byte()) +
+		(get_byte() << 8) +
+		(get_byte() << 16) +
+		(get_byte() << 24);
+            
+        // skip high order bytes
+        for (i = 0; i < 4; i++) 
+        	get_byte();
+        // point it beyond uncompresedSize
+        state.Probs = (CProb*) (output_data + uncompressedSize);
+	// decompress kernel
+	if (LzmaDecode( &state, &callback,
+	   (unsigned char*)output_data, uncompressedSize, &i) == LZMA_RESULT_OK)
+	{
+		if ( i != uncompressedSize )
+		   error( "kernel corrupted!\n");
+		//copy it back to low_buffer
+		bytes_out = i;
+		output_ptr = i;
+		return 0;
+	}
+	return 1;
 }
 
-static void free(void *where)
-{ /* gzip_mark & gzip_release do the free */
-}
 
-static void gzip_mark(void **ptr)
+static unsigned int icnt = 0;
+static int read_byte(void *object, const unsigned char **buffer, SizeT *bufferSize)
 {
-	arch_decomp_wdog();
-	*ptr = (void *) free_mem_ptr;
-}
+	static unsigned char val;
+	*bufferSize = 1;
+	val = get_byte();
+	*buffer = &val;
+        if ( icnt++ % ( 1024 * 10 ) == 0 )
+               printf(".");
+	return LZMA_RESULT_OK;
+}	
 
-static void gzip_release(void **ptr)
-{
-	arch_decomp_wdog();
-	free_mem_ptr = (long) *ptr;
-}
-#else
-static void gzip_mark(void **ptr)
-{
-}
 
-static void gzip_release(void **ptr)
-{
-}
-#endif
+
 
 /* ===========================================================================
  * Fill the input buffer. This is called only when the buffer is empty
  * and at least one byte is really needed.
  */
+ 
+
 int fill_inbuf(void)
 {
 	if (insize != 0)
@@ -306,24 +349,6 @@ int fill_inbuf(void)
  * Write the output window window[0..outcnt-1] and update crc and bytes_out.
  * (Used for the decompressed data only.)
  */
-void flush_window(void)
-{
-	ulg c = crc;
-	unsigned n;
-	uch *in, *out, ch;
-
-	in = window;
-	out = &output_data[output_ptr];
-	for (n = 0; n < outcnt; n++) {
-		ch = *out++ = *in++;
-		c = crc_32_tab[((int)c ^ ch) & 0xff] ^ (c >> 8);
-	}
-	crc = c;
-	bytes_out += (ulg)outcnt;
-	output_ptr += (ulg)outcnt;
-	outcnt = 0;
-	putstr(".");
-}
 
 #ifndef arch_error
 #define arch_error(x)
@@ -340,6 +365,11 @@ static void error(char *x)
 	while(1);	/* Halt */
 }
 
+void __div0(void)
+{
+	error("division by zero");
+}
+
 #ifndef STANDALONE_DEBUG
 
 unsigned char ID[]={"0123456789ABCDEF"};
@@ -352,17 +382,12 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p,
 	free_mem_ptr_end	= free_mem_ptr_end_p;
 	__machine_arch_type	= arch_id;
 
-//	putstr("setup...");
 	arch_decomp_setup();
 
 	
-	putstr("Arch ID 0x");
-	putc(ID[(arch_id&0xf00)>>8]);
-	putc(ID[(arch_id&0xf0)>>4]);
-	putc(ID[arch_id&0xf]);
-	makecrc();
-	putstr("\nUncompressing Linux...");
-	gunzip();
+	printf("Arch ID is %d",arch_id);
+	putstr("\nUncompressing Linux...\n");
+	lzma_unzip();
 	putstr(" done, booting the kernel.\n");
 	return output_ptr;
 }
@@ -373,10 +398,8 @@ char output_buffer[1500*1024];
 int main()
 {
 	output_data = output_buffer;
-	putstr("Make CRC...");
-	makecrc();
 	putstr("Uncompressing Linux...");
-	gunzip();
+	lzma_unzip();
 	putstr("done.\n");
 	return 0;
 }
