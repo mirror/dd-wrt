@@ -5,7 +5,7 @@
 #
 
 HEAD	= head.o
-OBJS	= misc.o
+OBJS	= misc_lzma.o print.o lib1funcs.o
 FONTC	= $(srctree)/drivers/video/console/font_acorn_8x8.c
 
 #
@@ -71,8 +71,8 @@ endif
 
 SEDFLAGS	= s/TEXT_START/$(ZTEXTADDR)/;s/BSS_START/$(ZBSSADDR)/
 
-targets       := vmlinux vmlinux.lds piggy.gz piggy.o font.o font.c \
-		 head.o misc.o $(OBJS)
+targets       := vmlinux vmlinux.lds piggy.lzma piggy.o font.o font.c \
+		 head.o misc_lzma.o print.o $(OBJS)
 EXTRA_CFLAGS  := -fpic -fno-builtin
 EXTRA_AFLAGS  :=
 
@@ -91,7 +91,7 @@ LDFLAGS_vmlinux += -p --no-undefined -X \
 
 # Don't allow any static data in misc.o, which
 # would otherwise mess up our GOT table
-CFLAGS_misc.o := -Dstatic=
+CFLAGS_misc_lzma.o := -Dstatic=
 
 $(obj)/vmlinux: $(obj)/vmlinux.lds $(obj)/$(HEAD) $(obj)/piggy.o \
 	 	$(addprefix $(obj)/, $(OBJS)) FORCE
@@ -101,7 +101,10 @@ $(obj)/vmlinux: $(obj)/vmlinux.lds $(obj)/$(HEAD) $(obj)/piggy.o \
 $(obj)/piggy.gz: $(obj)/../Image FORCE
 	$(call if_changed,gzip)
 
-$(obj)/piggy.o:  $(obj)/piggy.gz FORCE
+$(obj)/piggy.lzma: $(obj)/../Image FORCE
+	$(call if_changed,lzma)
+
+$(obj)/piggy.o:  $(obj)/piggy.lzma FORCE
 
 CFLAGS_font.o := -Dstatic=
 
@@ -111,5 +114,6 @@ $(obj)/font.c: $(FONTC)
 $(obj)/vmlinux.lds: $(obj)/vmlinux.lds.in arch/arm/boot/Makefile .config
 	@sed "$(SEDFLAGS)" < $< > $@
 
-$(obj)/misc.o: $(obj)/misc.c include/asm/arch/uncompress.h lib/inflate.c
+$(obj)/misc_lzma.o: $(obj)/misc_lzma.c
+
 
