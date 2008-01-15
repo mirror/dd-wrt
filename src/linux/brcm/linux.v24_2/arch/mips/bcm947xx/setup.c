@@ -163,7 +163,9 @@ do_serial_add(serial_port *port)
 
 #endif /* CONFIG_SERIAL */
 int iswrt350n=0;
+int iswrt300n11=0;
 EXPORT_SYMBOL (iswrt350n);
+EXPORT_SYMBOL (iswrt300n11);
 void __init
 brcm_setup(void)
 {
@@ -203,15 +205,13 @@ brcm_setup(void)
 	}
 #endif
 iswrt350n=1;
-//char *boardnum = nvram_get("boardnum");
+iswrt300n11=1;
 char *boardtype = nvram_get("boardtype");
-//char *cardbus = nvram_get("cardbus");
-//char *boardflags = nvram_get("boardflags");
-//if (boardnum==NULL || strcmp(boardnum,"42"))iswrt350n=0;
+char *boothwmodel = nvram_get("boot_hw_model");
+char *boothwver = nvram_get("boot_hw_ver");
 if (boardtype==NULL || strcmp(boardtype,"0x478"))iswrt350n=0;
-//if (cardbus==NULL || strcmp(cardbus,"1"))iswrt350n=0;
-
-
+if (boothwmodel==NULL || strcmp(boothwmodel,"WRT300N"))iswrt300n11=0;
+if (boothwver==NULL || strcmp(boothwver,"1.1"))iswrt300n11=0;
 #if defined(CONFIG_BLK_DEV_IDE) || defined(CONFIG_BLK_DEV_IDE_MODULE)
 	ide_ops = &std_ide_ops;
 #endif
