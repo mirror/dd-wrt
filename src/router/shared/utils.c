@@ -2287,6 +2287,8 @@ check_hw_type (void)
   char *boardtype = nvram_safe_get ("boardtype");
   uint boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
   uint btype = strtoul (boardtype, NULL, 0);
+  char *vlan0 = nvram_safe_get ("vlan0ports");
+  char *vlan1 = nvram_safe_get ("vlan1ports");
 
   if (!strncmp (boardtype, "bcm94710", 8))
     return BCM4702_CHIP;
@@ -2302,9 +2304,9 @@ check_hw_type (void)
     return BCM5354G_CHIP;
   else if (btype == 0x042f && !(boardflags & BFL_ENETADM))
     return BCM4704_BCM5325F_CHIP;
-  else if (btype == 0x478 && nvram_match ("vlan0ports", "1 2 3 4 5*")) /* WRT300NV1.1 */
+  else if (btype == 0x478 && strstr (vlan0, "5*")) /* WRT300NV1.1 */
 	return BCM4705L_BCM5325E_EWC_CHIP;
-  else if ((btype == 0x478 && nvram_match ("vlan0ports", "1 2 3 4 8*")) || nvram_match("boot_hw_model", "WRT350N")) /* WRT350N */
+  else if ((btype == 0x478 && (strstr (vlan0, "8*") || strstr (vlan1, "8*"))) || nvram_match ("boot_hw_model", "WRT350N")) /* WRT350N */
 	return BCM4705_BCM5397_EWC_CHIP;
   else if (btype == 0x489 || nvram_match ("boot_hw_model", "WRT310N")) /* WRT310N, temporal boardtype 0x478, wait for braodcom's txt file */
 	return BCM4705G_BCM5395S_EWC_CHIP;
