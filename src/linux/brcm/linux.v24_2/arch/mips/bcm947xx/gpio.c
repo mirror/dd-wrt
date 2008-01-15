@@ -146,6 +146,7 @@ static struct file_operations gpio_fops = {
 	write:		gpio_write,
 };
 extern int iswrt350n;
+extern int iswrt300n11;
 
 static int __init
 gpio_init(void)
@@ -182,15 +183,17 @@ if (iswrt350n)
 
 	//if (nvram_match("disabled_5397", "1")) {
 //		printk("5397 switch GPIO-Reset \n");
-		sb_gpioreserve(gpio_sbh, 0x4, GPIO_HI_PRIORITY);
-		sb_gpioouten(gpio_sbh, 0x4, 0x4, GPIO_HI_PRIORITY);
-		sb_gpioout(gpio_sbh, 0x4, 0x4, GPIO_HI_PRIORITY);
 	//}
 		
 	USB_SET_LED(USB_DISCONNECT); //2005-02-24 by kanki for USB LED
 
 }
-
+if (iswrt350n || iswrt300n11)
+{
+		sb_gpioreserve(gpio_sbh, 0x4, GPIO_HI_PRIORITY);
+		sb_gpioouten(gpio_sbh, 0x4, 0x4, GPIO_HI_PRIORITY);
+		sb_gpioout(gpio_sbh, 0x4, 0x4, GPIO_HI_PRIORITY);
+}
 	return 0;
 }
 
