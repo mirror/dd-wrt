@@ -181,8 +181,10 @@ CFLAGS += -DHAVE_CA8
 endif
 ifeq ($(CONFIG_GATEWORX),y)
 CFLAGS += -DHAVE_GATEWORX
+ifneq ($(CONFIG_WRT300NV2),y)
 CFLAGS += -DHAVE_CPUTEMP
 CFLAGS += -DHAVE_VOLT
+endif
 endif
 
 ifeq ($(REGDOMAIN_OVERRIDE),y)
@@ -294,6 +296,10 @@ endif
 
 ifeq ($(CONFIG_ZEROIP),y)
 CFLAGS += -DHAVE_ZEROIP
+endif
+
+ifeq ($(CONFIG_WRT300NV2),y)
+CFLAGS += -DHAVE_WRT300NV2
 endif
 ifeq ($(CONFIG_FON),y)
 CFLAGS += -DHAVE_FON

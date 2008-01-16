@@ -214,6 +214,12 @@ internal_getRouterBrand ()
 #elif HAVE_GEMTEK
   setRouter ("SuperGerry");
   return ROUTER_SUPERGERRY;
+#elif HAVE_TONZE
+  setRouter ("Tonze AP-425");
+  return ROUTER_BOARD_GATEWORX;
+#elif HAVE_WRT300NV2
+  setRouter ("Linksys WRT300N v2");
+  return ROUTER_BOARD_GATEWORX;
 #elif HAVE_GATEWORX
   char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom";	/* bank2=0x100 */
   FILE *file = fopen (filename, "r");
