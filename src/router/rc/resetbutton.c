@@ -429,10 +429,6 @@ period_check (int sig)
 		led_control (LED_DIAG, LED_ON);  //turn diag led on, so we know reset was pressed and we're restoring defaults.
 #endif
 		eval ("erase", "nvram");
-		if (brand == ROUTER_BUFFALO_WZRRSG54)
-		{ 
-			nvram_unset_all ();
-		}
 #endif
 
 
