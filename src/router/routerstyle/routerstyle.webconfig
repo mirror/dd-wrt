@@ -8,7 +8,8 @@ function previewStyle(val) {
 		if(t.getAttribute("href").indexOf("style/pwc/") != -1) continue;
 		if(t.getAttribute("href").indexOf("default") != -1) continue;
 		if(t.getAttribute("href").indexOf("/" + val + "/") != -1) return false;
-		var newStyle = t.getAttribute("href").replace(/style\/\w+\//, "style/" + val + "/");
+		var newStyle = t.getAttribute("href").replace(/\?[a-z]*/,"");
+		newStyle = newStyle.replace(/style\/\w+\//, "style/" + val + "/") + "?" + val;
 		t.removeAttribute("href");
 		t.setAttribute("href", newStyle);
 	}
@@ -26,12 +27,10 @@ document.forms[0].onreset = function() {
 		<select name="router_style">
 		    <% show_styles(); %>
 		</select>&nbsp;
-	<% ifdef("MICRO", "<!--"); %>
 		<script type="text/javascript">
 		//<![CDATA[
 		document.write("<input class=\"button\" type=\"button\" name=\"preview_button\" value=\"" + sbutton.preview + "\" onclick=\"previewStyle(this.form.router_style.value)\" />");
 		//]]>
 		</script>
-	<% ifdef("MICRO", "-->"); %>
 	</div>
 </fieldset><br />
