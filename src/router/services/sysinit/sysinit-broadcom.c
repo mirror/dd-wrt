@@ -140,7 +140,6 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       nvram_set ("wl0gpio1", "0");
       nvram_set ("wl0gpio2", "0");
       break;          
-    case ROUTER_ASUS_WL500G_PRE:
     case ROUTER_ASUS_WL500W:
     case ROUTER_WRT54G:
     case ROUTER_WRT54G_V8:
@@ -186,6 +185,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       nvram_set ("wl0gpio5", "136");
       break;
     case ROUTER_ASUS_WL500GD:
+    case ROUTER_ASUS_WL500G_PRE:
       nvram_unset ("wl0gpio0");
       break;
     case ROUTER_BELKIN_F5D7230_V2000:
