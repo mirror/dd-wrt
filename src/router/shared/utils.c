@@ -3615,72 +3615,7 @@ void getWANMac (char *newmac)
 	return;	
 }
 
-void
-nvram_unset_all (void)
-{
-  FILE *fp;
-  char tmp[65536];
-  char *name;
 
-    system2 ("nvram show > /tmp/nvramall.txt");
-
-    if ((fp = fopen ("/tmp/nvramall.txt", "r")) == NULL)
-	  return;
-
-      while (fgets (tmp, sizeof (tmp), fp))
-	  {
-		if (strstr (tmp, "="))
-        {
-	     name = strtok (tmp, "=");
-		 nvram_unset (name);
-		}
-	  }
-	 nvram_commit();
-	 
-	 fclose (fp);
-	 unlink ("/tmp/nvramall.txt");
-}
-
-
-/*
-void 
-EraseWriteNvram (void)  // make and write 'empty' file (all FF) to nvram
-{
-  FILE *fp;
-  int i, size = 0;
-  char tmp[256];
-
-  if ((fp = fopen ("/proc/mtd", "r")) == NULL)
-	  return;
-
-      while (fgets (tmp, sizeof (tmp), fp))
-      {
-		if (strstr (tmp, "nvram"))
-        {
-	     if (sscanf (tmp, "%*s %x %*d %*s", &size) != 1)
-		   return;
-		}
-      }
-      
-  fclose (fp);	
-
-  fp = fopen ("/tmp/emptynvram.bin", "wb");
-
-  for (i = 0; i < size; i++)
-   {
-  	fputc (0xFF, fp);
-   }
-   
-  fclose (fp);
-
-  eval ("write", "/tmp/emptynvram.bin", "nvram");
- 
-  unlink ("/tmp/emptynvram.bin");
-
-  return;
-  
-}
-*/
 
 #ifdef HAVE_AQOS
 
