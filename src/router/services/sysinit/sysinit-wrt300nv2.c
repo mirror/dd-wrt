@@ -45,88 +45,8 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
+#include <cymac.h>
 
-static int
-detect (char *devicename)
-{
-  char devcall[128];
-  int res;
-  sprintf (devcall, "/sbin/lspci|/bin/grep \"%s\"|/bin/wc -l", devicename);
-//system(devcall);
-  FILE *in = popen (devcall, "rb");
-  fscanf (in, "%d", &res);
-  pclose (in);
-  return res > 0 ? 1 : 0;
-}
-
-
-void
-checkupdate (void)
-{
-  int res, res2 = 0;
-  FILE *in =
-    popen ("/bin/cat /dev/mtdblock/0|/bin/grep NewMedia|wc -l", "rb");
-  fscanf (in, "%d", &res);
-  pclose (in);
-  if (res == 0)
-    {
-      in =
-	popen ("/bin/cat /dev/mtdblock/0|/bin/grep \"2\\.02\"|wc -l", "rb");
-      fscanf (in, "%d", &res2);
-      pclose (in);
-      if (res2 == 0)
-	{
-	  in =
-	    popen ("/bin/cat /dev/mtdblock/0|/bin/grep \"2\\.04\"|wc -l",
-		   "rb");
-	  fscanf (in, "%d", &res2);
-	  pclose (in);
-	  if (res2 == 1 || res2 == 7)	//7 is the result for debug info enabled reboot builds
-	    {
-	      fprintf (stderr, "updating avila type 2 redboot\n");
-	      eval ("tar", "-xaf", "/usr/lib/firmware/redboot.tg7", "-C",
-		    "/tmp");
-	      eval ("mtd", "-r", "-f", "write", "/tmp/avila-rb.bin",
-		    "RedBoot");
-	      return;
-	    }
-	}
-    }
-  if (res == 1)
-    {
-      in = popen ("/bin/cat /dev/mtdblock/0|/bin/grep \"2\\.03\"|wc -l", "rb");
-      fscanf (in, "%d", &res2);
-      pclose (in);
-    }
-  if (res2 == 1)		//redboot update is needed
-    {
-      in = popen ("/bin/dmesg|/bin/grep \"Memory: 64MB\"|wc -l", "rb");
-      fscanf (in, "%d", &res);
-      pclose (in);
-      if (res == 1)
-	res2 = 64;
-      in = popen ("/bin/dmesg|/bin/grep \"Memory: 32MB\"|wc -l", "rb");
-      fscanf (in, "%d", &res);
-      pclose (in);
-      if (res == 1)
-	res2 = 32;
-      in = popen ("/bin/dmesg|/bin/grep \"Memory: 128MB\"|wc -l", "rb");
-      fscanf (in, "%d", &res);
-      pclose (in);
-      if (res == 1)
-	res2 = 128;
-      in = popen ("/bin/dmesg|/bin/grep \"Memory: 256MB\"|wc -l", "rb");
-      fscanf (in, "%d", &res);
-      pclose (in);
-      if (res == 1)
-	res2 = 256;
-      fprintf (stderr, "updating redboot %d MB\n", res2);
-      char fname[64];
-      sprintf (fname, "/tmp/rb-%d.bin", res2);
-      eval ("tar", "-xaf", "/usr/lib/firmware/redboot.tg7", "-C", "/tmp");
-      eval ("mtd", "-r", "-f", "write", fname, "RedBoot");
-    }
-}
 
 
 int
@@ -190,15 +110,7 @@ start_sysinit (void)
 
   /* Modules */
   uname (&name);
-#ifndef HAVE_TONZE
- checkupdate ();
-#endif
   nvram_set ("intel_eth", "0");
-  if (detect ("82541"))		// Intel Gigabit
-    {
-      nvram_set ("intel_eth", "1");
-      eval ("insmod", "e1000");
-    }
 
 
 //system("/etc/kendin");
@@ -254,25 +166,26 @@ start_sysinit (void)
     eval ("ifconfig", "wifi5", "up");
 
 
-  //eval ("insmod", "ipv6");
-
-  eval ("insmod", "ad7418");	// temp / voltage sensor
 /*
 Configure mac addresses by reading data from eeprom
 */
 //  char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom";  /* bank2=0x100 */
-  char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom";	/* bank2=0x100 */
+  char *filename = "/dev/mtdblock/0";	/* bank2=0x100 */
   FILE *file = fopen (filename, "r");
   if (file)
   {
   unsigned char buf[16];
-  fread (&buf[0], 16, 1, file);
+  fseek (file,0x5ffa0,SEEK_SET); //point of mac address
+  fread (&buf[0], 6, 1, file);
   char mac[16];
   sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2],
 	   buf[3], buf[4], buf[5]);
+  fprintf(stderr,"configure primary mac %s\n",mac);
   eval ("ifconfig", "ixp0", "hw", "ether", mac);
-  sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[6], buf[7], buf[8],
-	   buf[9], buf[10], buf[11]);
+  eval ("ifconfig", "wifi0", "hw", "ether", mac);
+  nvram_set("et0macaddr",mac);
+  MAC_ADD(mac);
+  fprintf(stderr,"configure secondary mac %s\n",mac);
   eval ("ifconfig", "ixp1", "hw", "ether", mac);
 
 
@@ -280,32 +193,14 @@ Configure mac addresses by reading data from eeprom
   }
   eval ("ifconfig", "ixp0", "0.0.0.0", "up");
   eval ("ifconfig", "ixp1", "0.0.0.0", "up");
-  if (getRouterBrand () == ROUTER_BOARD_GATEWORX_GW2345)	//lets load the spi drivers for this switch
-    {
-      eval ("insmod", "spi-algo-bit");
-      eval ("insmod", "spi-ixp4xx");
-      eval ("insmod", "ks8995m");
-      sleep (1);
-      system ("echo R01=01 > /proc/driver/KS8995M");	// enable switch 
-    }
 
 
   /* Set a sane date */
   stime (&tm);
   nvram_set ("wl0_ifname", "ath0");
 
-  eval ("hwclock", "-s");
   nvram_set ("use_crypto", "0");
   cprintf ("done\n");
-  eval ("/bin/tar", "-xzf", "/dev/mtdblock/4", "-C", "/");
-  FILE *in = fopen ("/tmp/nvram/nvram.db", "rb");
-  if (in != NULL)
-    {
-      fclose (in);
-      eval ("/usr/sbin/convertnvram");
-      eval ("/usr/sbin/mtd", "erase", "nvram");
-      nvram_commit ();
-    }
   return 0;
 }
 
