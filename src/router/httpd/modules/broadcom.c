@@ -3461,10 +3461,6 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       eval ("erase", "nvram");
 #else
       eval ("erase", "nvram");
-      if (getRouterBrand() == ROUTER_BUFFALO_WZRRSG54)
-    	{ 
-			nvram_unset_all ();
-		}
 #endif
       action = REBOOT;
     }
@@ -3719,6 +3715,9 @@ static void
 do_stylecss (char *url, webs_t stream, char *query)
 {
   char *style = nvram_get ("router_style");
+  
+  if (query != NULL) style = query;
+
   long sdata[30];
 
   long blue[30] = { 0x36f, 0xfff, 0x68f, 0x24d, 0x24d, 0x68f, 0x57f, 0xccf, 0x78f, 0x35d, 0x35c, 0x78f,
