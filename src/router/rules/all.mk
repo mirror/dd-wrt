@@ -169,7 +169,7 @@ include rules/quagga.mk
 include rules/bmon.mk
 include rules/ethtool.mk
 include rules/openlldp.mk
-#include rules/tor.mk
+include rules/ipsec-tools.mk
 include rules/strace.mk
 
 # Generic rules
