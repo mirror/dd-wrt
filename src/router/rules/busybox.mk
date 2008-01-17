@@ -91,6 +91,9 @@ else
 	cp busybox/.config_xscale busybox/.config
 endif
 endif
+ifeq ($(ARCH),powerpc)
+	cp busybox/.config_powerpc busybox/.config
+endif
 	cd busybox && make oldconfig
 
 	
