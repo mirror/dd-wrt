@@ -1233,12 +1233,18 @@ configure_single (int count)
   char maxp[16];
 
   vifs = nvram_safe_get (wifivifs);
+  fprintf(stderr,"vifs %s\n",vifs);
   char *useif = NULL;
+  char copyvap[64];
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
+    fprintf(stderr,"vifs %s, %s\n",vifs, var);
       if (!useif)
-	useif = var;
+        {
+	strcpy(copyvap,var);
+	useif=copyvap;
+	}
     }
 
   //config net mode
@@ -1444,8 +1450,7 @@ configure_single (int count)
   setMacFilter (dev);
 
   set_rate (dev);
-  if (useif)
-    set_netmode (wif, dev, useif);
+
   set_netmode (wif, dev, dev);
 
   if (strcmp (m, "sta"))
@@ -1488,6 +1493,29 @@ configure_single (int count)
     setupHostAP (dev, 0);
   else
     setupSupplicant (dev, NULL);
+
+
+  //setup encryption
+
+  vifs = nvram_safe_get (wifivifs);
+  if (vifs != NULL)
+    foreach (var, vifs, next)
+    {
+      sprintf (mode, "%s_mode", var);
+      m = default_get (mode, "ap");
+      if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
+	setupHostAP (var, 0);
+      else
+	setupSupplicant (var, NULL);
+    }
+/*  set_rate (dev);*/
+
+
+
+
+
+
+
 // vif netconfig
   vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL && strlen (vifs) > 0)
@@ -1511,6 +1539,12 @@ configure_single (int count)
 		if (!strcmp (m, "sta") || !strcmp (m, "wdssta")
 		    || !strcmp (m, "wet"))
 		  eval ("ifconfig", var, "0.0.0.0", "down");
+		else
+		{
+		  eval ("ifconfig", var, "0.0.0.0", "down");
+		  sleep(1);
+		  eval ("ifconfig", var, "0.0.0.0", "up");		
+		}
 	      }
 	    else
 	      {
@@ -1524,6 +1558,12 @@ configure_single (int count)
 		if (!strcmp (m, "sta") || !strcmp (m, "wdssta")
 		    || !strcmp (m, "wet"))
 		  eval ("ifconfig", var, "down");
+		else
+		{
+		  eval ("ifconfig", var, "0.0.0.0", "down");
+		  sleep(1);
+		  eval ("ifconfig", var, "0.0.0.0", "up");		
+		}
 	      }
 	  }
       }
@@ -1550,20 +1590,6 @@ configure_single (int count)
 	  eval ("ifconfig", wdsdev, "0.0.0.0", "up");
 	}
     }
-  //setup encryption
-
-  vifs = nvram_safe_get (wifivifs);
-  if (vifs != NULL)
-    foreach (var, vifs, next)
-    {
-      sprintf (mode, "%s_mode", var);
-      m = default_get (mode, "ap");
-      if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
-	setupHostAP (var, 0);
-      else
-	setupSupplicant (var, NULL);
-    }
-/*  set_rate (dev);*/
 
   m = default_get (wl, "ap");
   eval ("iwpriv", dev, "scandisable", "0");
