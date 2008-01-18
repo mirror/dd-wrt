@@ -843,6 +843,11 @@ no_cache_id:
 1:		ldr	r3, [r1], r11		@ s/w flush D cache
 		teq	r1, r2
 		bne	1b
+#ifdef CONFIG_ARCH_MV88fxx81
+                /* 4 way cache, load of new cache lines won't be enough. */
+2:              mrc     p15, 0, r15, c7, c14, 3         @ test,clean,invalidate
+                bne     2b
+#endif
 
 		mcr	p15, 0, r1, c7, c5, 0	@ flush I cache
 		mcr	p15, 0, r1, c7, c6, 0	@ flush D cache

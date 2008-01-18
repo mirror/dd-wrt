@@ -18,58 +18,15 @@
 
 unsigned int __machine_arch_type;
 
-#include <linux/string.h>
 
 #ifdef STANDALONE_DEBUG
 #define putstr printf
 #else
 
-static void putstr(const char *ptr);
-
 
 
 #include <linux/compiler.h>
 #include <asm/arch/uncompress.h>
-
-#ifdef CONFIG_DEBUG_ICEDCC
-
-#ifdef CONFIG_CPU_V6
-
-static void icedcc_putc(int ch)
-{
-	int status, i = 0x4000000;
-
-	do {
-		if (--i < 0)
-			return;
-
-		asm volatile ("mrc p14, 0, %0, c0, c1, 0" : "=r" (status));
-	} while (status & (1 << 29));
-
-	asm("mcr p14, 0, %0, c0, c5, 0" : : "r" (ch));
-}
-
-#else
-
-static void icedcc_putc(int ch)
-{
-	int status, i = 0x4000000;
-
-	do {
-		if (--i < 0)
-			return;
-
-		asm volatile ("mrc p14, 0, %0, c0, c0, 0" : "=r" (status));
-	} while (status & 2);
-
-	asm("mcr p14, 0, %0, c1, c0, 0" : : "r" (ch));
-}
-
-#endif
-
-#define putc(ch)	icedcc_putc(ch)
-#define flush()	do { } while (0)
-#endif
 
 
 #include "printf.h"
@@ -96,102 +53,12 @@ void printf(char *fmt, ...)
     va_end(ap);
 }
 
-static void putstr(const char *ptr)
-{
-	char c;
-
-	while ((c = *ptr++) != '\0') {
-		if (c == '\n')
-			putc('\r');
-		putc(c);
-	}
-
-	flush();
-}
 
 #endif
 
 #define __ptr_t void *
 
-/*
- * Optimised C version of memzero for the ARM.
- */
-void __memzero (__ptr_t s, size_t n)
-{
-	union { void *vp; unsigned long *ulp; unsigned char *ucp; } u;
-	int i;
 
-	u.vp = s;
-
-	for (i = n >> 5; i > 0; i--) {
-		*u.ulp++ = 0;
-		*u.ulp++ = 0;
-		*u.ulp++ = 0;
-		*u.ulp++ = 0;
-		*u.ulp++ = 0;
-		*u.ulp++ = 0;
-		*u.ulp++ = 0;
-		*u.ulp++ = 0;
-	}
-
-	if (n & 1 << 4) {
-		*u.ulp++ = 0;
-		*u.ulp++ = 0;
-		*u.ulp++ = 0;
-		*u.ulp++ = 0;
-	}
-
-	if (n & 1 << 3) {
-		*u.ulp++ = 0;
-		*u.ulp++ = 0;
-	}
-
-	if (n & 1 << 2)
-		*u.ulp++ = 0;
-
-	if (n & 1 << 1) {
-		*u.ucp++ = 0;
-		*u.ucp++ = 0;
-	}
-
-	if (n & 1)
-		*u.ucp++ = 0;
-}
-
-static inline __ptr_t memcpy(__ptr_t __dest, __const __ptr_t __src,
-			    size_t __n)
-{
-	int i = 0;
-	unsigned char *d = (unsigned char *)__dest, *s = (unsigned char *)__src;
-
-	for (i = __n >> 3; i > 0; i--) {
-		*d++ = *s++;
-		*d++ = *s++;
-		*d++ = *s++;
-		*d++ = *s++;
-		*d++ = *s++;
-		*d++ = *s++;
-		*d++ = *s++;
-		*d++ = *s++;
-	}
-
-	if (__n & 1 << 2) {
-		*d++ = *s++;
-		*d++ = *s++;
-		*d++ = *s++;
-		*d++ = *s++;
-	}
-
-	if (__n & 1 << 1) {
-		*d++ = *s++;
-		*d++ = *s++;
-	}
-
-	if (__n & 1)
-		*d++ = *s++;
-
-	return __dest;
-}
 
 /*
  * gzip delarations
@@ -252,7 +119,6 @@ static ulg output_ptr=0;
 static uch *output_data;
 static ulg bytes_out;
 
-static void putstr(const char *);
 
 extern int end;
 static ulg free_mem_ptr;
@@ -358,9 +224,9 @@ static void error(char *x)
 {
 	arch_error(x);
 
-	putstr("\n\n");
-	putstr(x);
-	putstr("\n\n -- System halted");
+	printf("\n\n");
+	printf(x);
+	printf("\n\n -- System halted");
 
 	while(1);	/* Halt */
 }
@@ -372,7 +238,6 @@ void __div0(void)
 
 #ifndef STANDALONE_DEBUG
 
-unsigned char ID[]={"0123456789ABCDEF"};
 ulg
 decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p,
 		  int arch_id)
@@ -385,10 +250,10 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p,
 	arch_decomp_setup();
 
 	
-	printf("Arch ID is %d",arch_id);
-	putstr("\nUncompressing Linux...\n");
+	printf("DD-WRT LZMA Loader v1.0\nArch ID is %d\n",arch_id);
+	printf("Uncompressing Linux");
 	lzma_unzip();
-	putstr(" done, booting the kernel.\n");
+	printf("\ndone, booting the kernel.\n");
 	return output_ptr;
 }
 #else
@@ -398,9 +263,9 @@ char output_buffer[1500*1024];
 int main()
 {
 	output_data = output_buffer;
-	putstr("Uncompressing Linux...");
+	printf("Uncompressing Linux...");
 	lzma_unzip();
-	putstr("done.\n");
+	printf("done.\n");
 	return 0;
 }
 #endif
