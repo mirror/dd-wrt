@@ -5,7 +5,7 @@
 #
 
 HEAD	= head.o
-OBJS	= misc_lzma.o print.o lib1funcs.o
+OBJS	= misc_lzma.o print.o _umodsi3.o _udivsi3.o
 FONTC	= $(srctree)/drivers/video/console/font_acorn_8x8.c
 
 #
@@ -73,7 +73,7 @@ SEDFLAGS	= s/TEXT_START/$(ZTEXTADDR)/;s/BSS_START/$(ZBSSADDR)/
 
 targets       := vmlinux vmlinux.lds piggy.lzma piggy.o font.o font.c \
 		 head.o misc_lzma.o print.o $(OBJS)
-EXTRA_CFLAGS  := -fpic -fno-builtin
+EXTRA_CFLAGS  := -fpic -fno-builtin -Os
 EXTRA_AFLAGS  :=
 
 # Supply ZRELADDR, INITRD_PHYS and PARAMS_PHYS to the decompressor via
@@ -87,8 +87,7 @@ ifneq ($(PARAMS_PHYS),)
 LDFLAGS_vmlinux += --defsym params_phys=$(PARAMS_PHYS)
 endif
 LDFLAGS_vmlinux += -p --no-undefined -X \
-	$(shell $(CC) $(CFLAGS) --print-libgcc-file-name) -T
-
+	$(shell $(CC) $(CFLAGS) --print-libgcc-file-name) -T 
 # Don't allow any static data in misc.o, which
 # would otherwise mess up our GOT table
 CFLAGS_misc_lzma.o := -Dstatic=
