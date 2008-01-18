@@ -47,7 +47,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BUFFALO_WLA2G54C 0x0910
 
 // Buffalo WHR-G54S (fccid: Buffalo FDI-04600264-0) and WHR-HP-G54 (fccid: Buffalo FDI-09101577-0)
-// Buffalo WHR-G125, WHR-HP-G125 (5354 cpu, fccid: Buffalo FDI-09101584-0)
+// Buffalo WHR-G125, WHR-HP-G125 (5354 cpu, fccid: Buffalo FDI-09101584-0, FDI-09101588-0)
+// Buffalo WHR-HP-G125 new (5354 cpu, fccid: FDI-09101588-0)
 #define ROUTER_BUFFALO_WHRG54S 0x0a04
 
 // Buffalo WZR-RS-G54 (4704 cpu), WZR-G54, WZR-HP-G54 (4704 cpu, fccid: Buffalo FDI-09101457-0), 
@@ -161,7 +162,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Sitecom WL-105(b) (4702 cpu, no switch, fccid: Gemtek MXF-A910910AB - no A-band)
 #define ROUTER_SITECOM_WL105B 0x2d10
 
-// Linksys WRT150N (4704 cpu, BCM5325F switch, (fccid: Linksys Q87-WRT150N)
+// Linksys WRT150N (4704 cpu, BCM5325F switch, fccid: Linksys Q87-WRT150N)
 #define ROUTER_WRT150N 0x2e16
 
 // ?
@@ -240,7 +241,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Linksys WRH54G (5354 cpu, fccid: Q87-WRH54G)
 #define ROUTER_LINKSYS_WRH54G 0x470f
 
-// Linksys WRT150N v1.1 (4704 cpu, fccid: Linksys Q87-WRT150NV11)
+// Linksys WRT150N v1.1 (4704 cpu, BCM5325F switch, fccid: Linksys Q87-WRT150NV11)
 #define ROUTER_WRT150NV11 0x4816
 
 // Linksys WRT150N v1.2 (fccid: Linksys ?)
@@ -249,7 +250,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Linksys WRT160N v1 (4703 cpu, ?? switch, fccid: Linksys Q87-WRT160N)
 #define ROUTER_WRT160N 0x4a16
 
-// Linksys WRT300N v1.1 (4705 cpu, fccid: Linksys Q87-WRT300NV11)
+// Linksys WRT300N v1.1 (4705 cpu, 5325 switch, fccid: Linksys Q87-WRT300NV11)
 #define ROUTER_WRT300NV11 0x4b0f
 
 // Linksys WRT310N v1 (4705 cpu, fccid: Linksys Q87-WRT310N)
