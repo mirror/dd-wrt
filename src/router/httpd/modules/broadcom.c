@@ -4566,6 +4566,7 @@ struct mime_handler mime_handlers[] = {
   {"**.jpg", "image/jpeg", NULL, NULL, do_file, NULL},
   {"**.ico", "image/x-icon", NULL, NULL, do_file, NULL},
   {"**.js", "text/javascript", NULL, NULL, do_file, NULL},
+  {"**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL},  
 #ifdef HAVE_SKYTRON
   {"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
    do_auth2},
