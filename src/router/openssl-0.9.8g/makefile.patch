@@ -1,0 +1,78 @@
+--- Makefile-orig1 
++++ Makefile 
+@@ -12,9 +12,9 @@
+ SHLIB_MAJOR=0
+ SHLIB_MINOR=9.8
+ SHLIB_EXT=
+-PLATFORM=dist
+-OPTIONS= no-camellia no-gmp no-krb5 no-mdc2 no-rc5 no-rfc3779 no-seed no-shared no-tlsext no-zlib no-zlib-dynamic
+-CONFIGURE_ARGS=dist
++PLATFORM=linux-mipsel
++OPTIONS=no-camellia no-gmp no-krb5 no-mdc2 no-rc5 no-rfc3779 no-seed no-shared no-tlsext no-zlib no-zlib-dynamic
++CONFIGURE_ARGS=linux-mipsel
+ SHLIB_TARGET=
+ 
+ # HERE indicates where this Makefile lives.  This can be used to indicate
+@@ -59,16 +59,27 @@
+ # equal 4.
+ # PKCS1_CHECK - pkcs1 tests.
+ 
+-CC= cc
+-CFLAG= -O
++# mipsel-linux-uclibc-ld
++# mipsel-linux-uclibc-gcc
++# mipsel-linux-uclibc-ar
++# mipsel-linux-uclibc-ranlib
++
++export CROSS_COMPILE := mipsel-linux-uclibc-
++export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/.. && pwd -P)
++export CC := $(CROSS_COMPILE)gcc
++export AR := $(CROSS_COMPILE)ar r
++export AS := $(CROSS_COMPILE)as
++export LD := $(CROSS_COMPILE)ld
++export RANLIB := $(CROSS_COMPILE)ranlib
++
++CFLAG= -DL_ENDIAN -DTERMIO -O3 -fomit-frame-pointer -Wall
++
+ DEPFLAG= -DOPENSSL_NO_CAMELLIA -DOPENSSL_NO_GMP -DOPENSSL_NO_MDC2 -DOPENSSL_NO_RC5 -DOPENSSL_NO_RFC3779 -DOPENSSL_NO_SEED -DOPENSSL_NO_TLSEXT 
+ PEX_LIBS= 
+ EX_LIBS= 
+ EXE_EXT= 
+ ARFLAGS= 
+-AR=ar $(ARFLAGS) r
+-RANLIB= /usr/bin/ranlib
+-PERL= /usr/bin/perl
++PERL=perl
+ TAR= tar
+ TARFLAGS= --no-recursion
+ MAKEDEPPROG=makedepend
+@@ -106,7 +117,7 @@
+ ZLIB_INCLUDE=
+ LIBZLIB=
+ 
+-DIRS=   crypto ssl engines apps test tools
++DIRS=   crypto ssl #engines apps test tools
+ SHLIBDIRS= crypto ssl
+ 
+ # dirs in crypto to build
+@@ -152,7 +163,8 @@
+ EXHEADER=       e_os2.h
+ HEADER=         e_os.h
+ 
+-all: Makefile build_all openssl.pc libssl.pc libcrypto.pc
++all: sub_all openssl.pc #shared-library --- UN-Comment for shared libs  --
++# all: Makefile build_all openssl.pc libssl.pc libcrypto.pc
+ 
+ # as we stick to -e, CLEARENV ensures that local variables in lower
+ # Makefiles remain local and variable. $${VAR+VAR} is tribute to Korn
+@@ -362,6 +374,10 @@
+ makefile.one: files
+ 	$(PERL) util/mk1mf.pl >makefile.one; \
+ 	sh util/do_ms.sh
++
++shared-library:
++	$(CC) --shared -o libcrypto.so $(shell find crypto -iname "*.o")
++	$(CC) --shared -o libssl.so $(shell find ssl -iname "*.o")
+ 
+ files:
+ 	$(PERL) $(TOP)/util/files.pl Makefile > $(TOP)/MINFO
