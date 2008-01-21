@@ -120,10 +120,10 @@ getmask (char *nmask)
 void
 deviceID (char *output)
 {
-  char key[16];
+  unsigned char key[16];
   MD5_CTX MD;
   MD5Init (&MD);
-  fprintf (stderr, "generate hash\n");
+//  fprintf (stderr, "generate hash\n");
   doHash (&MD, "/dev/mtdblock/0");
   doHash (&MD, "/dev/mtdblock0");
   doHash (&MD,
@@ -132,9 +132,11 @@ deviceID (char *output)
   MD5Final ((unsigned char *) key, &MD);
   int i;
   for (i = 0; i < 16; i++)
-    sprintf (output, "%s%X", output, key[i]&0xff);
-
-  fprintf (stderr, "final hash = %s\n", output);
+    {
+    unsigned int k = key[i];
+    sprintf (output, "%s%X", output, k&0xff);
+    }
+//  fprintf (stderr, "final hash = %s\n", output);
 }
 unsigned char ctable[16] = { "0123456789ABCDEF" };
 void
