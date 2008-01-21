@@ -167,6 +167,7 @@ extern void dhcpfwd (webs_t wp);
 extern void set_wiviz (webs_t wp);
 extern void wan_proto (webs_t wp);
 extern void ej_show_wan_to_switch (webs_t wp, int argc, char_t ** argv);	/* Added by Botho 10.May.06 */
+extern void ej_show_countrylist (webs_t wp, int argc, char_t ** argv);
 
 
 /* for status */

@@ -1089,7 +1089,58 @@ service.rstats_path="Speichere Daten nach";
 service.rstats_time="Speicher Zyklus";
 service.rstats_usrdir="Nutzer Verzeichniss";
 
+//nstx.webservices
+service.nstx_legend="IP over DNS Tunneling";
+service.nstx_srv="nstx Daemon";
+service.nstx_ipenable="Bind to this IP only";
+service.nstx_log="Switch on debug messages";
 
+
+//milkfish.webservices
+service.milkfish_siprouter="Milkfish SIP Router";
+service.milkfish_database="Milkfish SIP Database";
+service.database_subscribers="Local Subscribers";
+service.database_aliases="Local Aliases";
+service.milkfish_alias="Alias";
+service.milkfish_uri="SIP URI";
+service.milkfish_mainswitch="Main Switch";
+service.milkfish_fromswitch="From-Substitution";
+service.milkfish_fromdomain="From-Domain";
+service.milkfish_username="Milkfish Username";
+service.milkfish_password="Milkfish Password";
+service.milkfish_audit="Milkfish Audit";
+service.milkfish_siptrace="SIP Trace";
+service.milkfish_subscribers="Local Subscribers";
+service.milkfish_aliases="Local Aliases";
+service.milkfish_dynsip="Dynamic SIP";
+service.milkfish_status="SIP Status";
+service.milkfish_database="SIP Database";
+service.milkfish_messaging="SIP Messaging";
+service.milkfish_phonebook="SIP Phonebook";
+service.milkfish_dynsipdomain="DynSIP Domain";
+service.milkfish_dynsipurl="DynSIP Update URL";
+service.milkfish_dsusername="DynSIP Username";
+service.milkfish_dspassword="DynSIP Password";
+service.milkfish_sipmessage="SIP Message";
+service.milkfish_destination="SIP Destination";
+service.milkfish_contact="Contact";
+service.milkfish_agent="User Agent";
+service.milkfish_registrations="Active Registrations";
+//service.milkfish_="";//
+service.hmilkfish_right2="Enables/Disables your Milkfish SIP Router.";
+service.hmilkfish_right4="Enables/Disables From:-Headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled, if you want to allow callees to call you back if your WAN IP has changed";
+service.hmilkfish_right6="Callee calls back this Domain (instead of your WAN IP) when you send it as your From:-Domain instead of your WAN IP. From-Substitution needs to be enabled for this setting to take effect";
+service.hmilkfish_right8="Here goes your Milkfish Community Forum Username - Registration allocates you yourname.homesip.net";
+service.hmilkfish_right10="Here goes your Milkfish Community Forum Password - Registration allocates you yourname.homesip.net";
+service.hmilkfish_right12="Enables/Disables basic SIP Tracing on your router";
+service.hmilkfish_right14="Local SIP Subscribers are locally managed SIP Accounts";
+service.hmilkfish_right16="Local SIP Aliases are SIP Forwards similar to Email Forwards. Can be used to forward alphanumeric to numeric phone user accounts or vice versa";
+service.hmilkfish_right18="Enables/Disables Dynamic SIP (i.e. Homesip.net Service) - Username and Password need to be set";
+service.hmilkfish_right20="not implemented yet - leave empty";
+service.hmilkfish_right22="not implemented yet - leave empty";
+service.hmilkfish_right24="not implemented yet - leave empty";
+service.hmilkfish_right26="not implemented yet - leave empty";
+//service.hmilkfish_="";//
 
 // ******************************************* eop-tunnel.asp *******************************************//
 
