@@ -227,7 +227,7 @@ start_anchorfree (void)
       char state[64];
       toURL (nvram_safe_get ("af_state"), state);
       char country[64];
-      toURL (nvram_safe_get ("af_country"), country);
+      strcpy(country,getIsoName(nvram_safe_get ("af_country")));
       char cat[64];
       toURL (nvram_safe_get ("af_category"), cat);
       sprintf (url,
