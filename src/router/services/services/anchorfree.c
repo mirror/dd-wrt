@@ -181,14 +181,38 @@ start_anchorfree (void)
       toURL (nvram_safe_get ("af_email"), email);
       char ssid[128];
       if (nvram_match ("af_ssid", "1"))
-	toURL (nvram_safe_get ("af_ssid_name"), ssid);
+      {
+	toURL (nvram_safe_get ("af_ssid_name"), ssid);      
+      }
       else
 	{
+	nvram_set("af_ssid_created","0");
 #ifndef HAVE_MADWIFI
 	  toURL (nvram_safe_get ("wl0_ssid"), ssid);
 #else
 	  toURL (nvram_safe_get ("ath0_ssid"), ssid);
 #endif
+	}
+	
+      if (nvram_match ("af_ssid", "1") && !nvram_match("af_ssid_created","1"))
+        {
+	nvram_set("af_ssid_created","1");
+#ifndef HAVE_MADWIFI
+	nvram_set("wl0_vifs","wl0.1");
+	nvram_set("wl0.1_ssid",nvram_safe_get("af_ssid_name"));
+	nvram_set("wl0.1_bridged","0");
+	nvram_set("wl0.1_ipaddr","172.45.0.1");
+	nvram_set("wl0.1_netmask","255.255.255.0");
+#else
+	nvram_set("ath0_vifs","wl0.1");
+	nvram_set("ath0.1_ssid",nvram_safe_get("af_ssid_name"));
+	nvram_set("ath0.1_bridged","0");
+	nvram_set("ath0.1_ipaddr","172.45.0.1");
+	nvram_set("ath0.1_netmask","255.255.255.0");
+
+#endif
+	stop_lan();
+	start_lan();
 	}
       char addr[256];
       toURL (nvram_safe_get ("af_address"), addr);
@@ -269,6 +293,9 @@ start_anchorfreednat (void)
       sprintf (dest, "%s:%s", host, nvram_safe_get ("af_dnatport"));
       sprintf (source, "%s/%d", nvram_safe_get ("lan_ipaddr"),
 	       getmask (nvram_safe_get ("lan_netmask")));
+      if (nvram_match ("af_ssid", "1"))
+      sprintf (source, "%s/%d", nvram_safe_get ("wl0.1_ipaddr"),
+	       getmask (nvram_safe_get ("wl0.1_netmask")));
       eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p",
 	    "tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DNAT", "--to",
 	    nvram_safe_get ("lan_ipaddr"));
@@ -297,11 +324,12 @@ stop_anchorfree (void)
       sprintf (dest, "%s:%s", host, nvram_safe_get ("af_dnatport"));
       sprintf (source, "%s/%d", nvram_safe_get ("lan_ipaddr"),
 	       getmask (nvram_safe_get ("lan_netmask")));
-      eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p",
-	    "tcp", "--dport", "80", "-j", "DNAT", "--to", dest);
-      eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p",
-	    "tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DNAT", "--to",
-	    nvram_safe_get ("lan_ipaddr"));
+      if (nvram_match ("af_ssid", "1"))
+      sprintf (source, "%s/%d", nvram_safe_get ("wl0.1_ipaddr"),
+	       getmask (nvram_safe_get ("wl0.1_netmask")));
+
+      eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p","tcp", "--dport", "80", "-j", "DNAT", "--to", dest);
+      eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p","tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DNAT", "--to",nvram_safe_get ("lan_ipaddr"));
       eval ("rm", "-f", "/tmp/.anchorfree");
       sprintf (url, "wget -q -O- \"http://afhrp.anchorfree.com/unregister.php?"
 	       "uid=%s&"
