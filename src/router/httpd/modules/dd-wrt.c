@@ -4506,6 +4506,19 @@ return 0;
 #endif
 
 void
+ej_show_countrylist (webs_t wp, int argc, char_t ** argv)
+{
+char *name;
+if (ejArgs (argc, argv, "%s", &name) < 1)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+char *list = getCountryList ();
+showOptions (wp, name, list, nvram_safe_get (name));
+}
+
+void
 ej_show_wireless_single (webs_t wp, char *prefix)
 {
   char wl_mode[16];

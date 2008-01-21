@@ -3082,6 +3082,9 @@ start_wan_done (char *wan_ifname)
   start_hostapdwan ();
 #endif
 #endif
+  start_anchorfree();
+  start_anchorfreednat();
+
 
 }
 
