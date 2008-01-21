@@ -186,8 +186,8 @@ endif
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI -I../services/networking -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
 OBJS += ../wireless-tools/libiw.so.29 
-OBJS += countrycode/countrycode_$(ARCH).o
 endif
+OBJS += countrycode/countrycode_$(ARCH).o
 
 ifeq ($(CONFIG_NEWMEDIA),y)
   CFLAGS += -DHAVE_NEWMEDIA
@@ -330,6 +330,7 @@ else
 endif
 
 clean:
+#	rm -f countrycode/countrycode_$(ARCH).o
 	rm -f *.o *.so
 	rm -f *.a
 	rm -f *.h~
