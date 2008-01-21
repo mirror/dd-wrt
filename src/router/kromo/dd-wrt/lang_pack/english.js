@@ -392,6 +392,7 @@ bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="PPTP";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Milkfish SIP Router";
+bmenu.servicesAnchorFree="Earn Hotspot Revenue";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
@@ -692,6 +693,25 @@ hotspot.wifidog_authsrvssl="AuthServer SSL Available";
 hotspot.wifidog_authsrvsslport="AuthServer SSL Port";
 hotspot.wifidog_authsrvhttpport="AuthServer HTTP Port";
 hotspot.wifidog_authsrvpath="AuthServer Path";
+
+var anchorfree = new Object();
+anchorfree.anchorfree="AnchorFree";
+anchorfree.title="Earn Hotspot Revenue";
+anchorfree.anchorfree_revenue="Earn revenue by creating ad-supported AnchorFree Hotspot";
+anchorfree.email="Email to receive revenue reports";
+anchorfree.ssid="Use different SSID";
+anchorfree.ssid_name="SSID";
+anchorfree.address_1="Street Address";
+anchorfree.address_2="Street Address 2";
+anchorfree.city="City";
+anchorfree.zip="Postal or Zip Code";
+anchorfree.state="County/State/Province";
+anchorfree.country="Country";
+anchorfree.category="Category";
+anchorfree.publish="Publish this hotspot on the free WiFi map";
+anchorfree.serviceid="Service ID";
+anchorfree.servicestatus="Service Status";
+
 
 
 // ** Info.htm **//

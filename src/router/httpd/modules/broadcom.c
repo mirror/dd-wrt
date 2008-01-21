@@ -2990,6 +2990,7 @@ struct apply_action apply_actions[] = {
   {"PPPoE_Server", "services", 0, SERVICE_RESTART, NULL},
   {"PPTP", "services", 0, SERVICE_RESTART, NULL},
   {"Hotspot", "hotspot", 0, SERVICE_RESTART, NULL},
+  {"AnchorFree", "anchorfree", 0, SERVICE_RESTART, NULL},
 
   /* APP & GAMING */
   {"Forward", "forward", 0, SERVICE_RESTART, NULL},
@@ -4123,7 +4124,7 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
    "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "",
    "", ""},
   {"Services.asp", "PPPoE_Server.asp", "PPTP.asp", "Hotspot.asp",
-   "Milkfish.asp", "eop-tunnel.asp", "", "", "", "", ""},
+   "Milkfish.asp", "eop-tunnel.asp", "AnchorFree.asp", "", "", "", ""},
   {"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", ""},
   {"Filters.asp", "", "", "", "", "", "", "", "", "", ""},
   {"ForwardSpec.asp", "Forward.asp", "Triggering.asp", "UPnP.asp", "DMZ.asp",
@@ -4142,7 +4143,7 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   {"wireless", "wirelessBasic","wirelessSuperchannel", "wirelessRadius", "wirelessSecurity",
    "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", ""},
   {"services", "servicesServices", "servicesPppoesrv", "servicesPptp",
-   "servicesHotspot", "servicesMilkfish", "setupeop", "", "", "", ""},
+   "servicesHotspot", "servicesMilkfish", "setupeop", "servicesAnchorFree", "", "", ""},
   {"security", "firwall", "vpn", "", "", "", "", "", "", "", ""},
   {"accrestriction", "webaccess", "", "", "", "", "", "", "", "", ""},
   {"applications", "applicationspforwarding", "applicationsprforwarding",
@@ -5742,6 +5743,7 @@ struct ej_handler ej_handlers[] = {
   {"startswith", ej_startswith},
   {"ifdef", ej_ifdef},
   {"ifndef", ej_ifndef},
+  {"show_countrylist", ej_show_countrylist},
   {NULL, NULL}
 };
 #endif /* !WEBS */

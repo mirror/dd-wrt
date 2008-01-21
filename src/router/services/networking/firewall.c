@@ -2576,7 +2576,6 @@ start_firewall (void)
   start_wanup ();
 
 
-
   /* Turn on the DMZ-LED, if enabled.(from service.c) */
   cprintf ("enable DMZ\n");
   if (dmzenable)
@@ -2738,6 +2737,7 @@ start_firewall (void)
 int
 stop_firewall (void)
 {
+  stop_anchorfree();
   /* Make sure the DMZ-LED is off (from service.c) */
   diag_led (DMZ, STOP_LED);
 

@@ -156,7 +156,7 @@ obj-$(CONFIG_TOR) += tor
 obj-$(CONFIG_RSTP) += rstp
 obj-$(CONFIG_STRACE) += strace
 obj-$(CONFIG_OPENLLDP) += openlldp
-
+obj-y+=anchorfree
 
 obj-configure := $(foreach obj,$(obj-y) $(obj-n),$(obj)-configure)
 
