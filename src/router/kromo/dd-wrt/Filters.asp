@@ -200,7 +200,7 @@ function Status(F,I) {
 	var end = '';
 	var total = F.elements.length;
 	for(var i=0 ; i < total ; i++){
-		if(F.elements[i].name == "blocked_service0")
+		if(F.elements[i].name == "_filter_p2p")
 			start = i;
 		if(F.elements[i].name == "url7")
 			end = i;
@@ -351,7 +351,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label">
-										<input class="spaceradio" type="radio" name="f_status2" value="allow" onclick="Status(this.form,'allow')" <% filter_policy_get("f_status","allow"); %> /><% tran("share.allow"); %>
+										<input class="spaceradio" type="radio" name="f_status2" value="allow" onclick="Status(this.form,'allow')" <% filter_policy_get("f_status","allow"); %> /><% tran("share.filter"); %>
 									</div>
 								</div>
 								<br />
