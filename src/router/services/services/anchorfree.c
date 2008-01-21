@@ -132,7 +132,7 @@ deviceID (char *output)
   MD5Final ((unsigned char *) key, &MD);
   int i;
   for (i = 0; i < 16; i++)
-    sprintf (output, "%s%X", output, key[i]);
+    sprintf (output, "%s%X", output, key[i]&0xff);
 
   fprintf (stderr, "final hash = %s\n", output);
 }
