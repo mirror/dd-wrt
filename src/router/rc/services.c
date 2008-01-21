@@ -346,6 +346,15 @@ handle_router (void)
   if (handle)
     dlclose (handle);
 }
+static void
+handle_anchorfree (void)
+{
+  void *handle = NULL;
+  handle = startstop_nofree ("anchorfree", handle);
+  handle = startstop_nofree ("anchorfreednat", handle);
+  if (handle)
+    dlclose (handle);
+}
 
 static void
 handle_hotspot (void)
@@ -863,6 +872,7 @@ static struct SERVICES services_def[] = {
   {"index", handle_index},
   {"router", handle_router},
   {"hotspot", handle_hotspot},
+  {"anchorfree", handle_anchorfree},
   {"services", handle_services},
   {"management", handle_management},
   {"start_pppoe", handle_pppoe},
