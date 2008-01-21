@@ -17,7 +17,7 @@
 						<li>Click the <i>Edit List of PCs</i> button.</li>
 						<li>On the <i>List of PCs</i> screen, specify PCs by IP address or MAC address. Enter the appropriate IP addresses into the <i>IP</i> fields. If you have a range of IP addresses to filter, complete the appropriate <i>IP Range</i> fields. Enter the appropriate MAC addresses into the <i>MAC</i> fields.</li>
 						<li>Click the <i>Apply</i> button to save your changes. Click the <i>Cancel</i> button to cancel your unsaved changes. Click the <i>Close</i> button to return to the Filters screen.</li>
-						<li>If you want to block the listed PCs from Internet access during the designated days and time, then keep the default setting, <i>Deny</i>. If you want the listed PCs to be able to access filtered Internet during the designated days and time, then click the radio button next to <i>Filter</i>.</li>
+						<li>If you want to block the listed PCs from Internet access during the designated days and time, then keep the default setting, <i>Deny</i>. If you want the listed PCs to have Internet filtered during the designated days and time, then click the radio button next to <i>Filter</i>.</li>
 						<li>Set the days when access will be filtered. Select <i>Everyday</i> or the appropriate days of the week.</li>
 						<li>Set the time when access will be filtered. Select <i>24 Hours</i>, or check the box next to <i>From</i> and use the drop-down boxes to designate a specific time period.</li>
 						<li>Click the <i>Add to Policy</i> button to save your changes and active it.</li>
