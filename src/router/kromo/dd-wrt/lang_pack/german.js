@@ -644,6 +644,23 @@ hotspot.wifidog_authsrvsslport="AuthServer SSL Port";
 hotspot.wifidog_authsrvhttpport="AuthServer HTTP Port";
 hotspot.wifidog_authsrvpath="AuthServer Path";
 
+var anchorfree = new Object();
+anchorfree.anchorfree="AnchorFree";
+anchorfree.title="Mit Hotspot Geld verdienen";
+anchorfree.anchorfree_revenue="Durch AnchorFree Hotspot mit Werbung, Geld verdienen";
+anchorfree.email="Email fuer Zahlungsberichte";
+anchorfree.ssid="Nutzer alternative SSID";
+anchorfree.ssid_name="SSID";
+anchorfree.address_1="Addresse";
+anchorfree.address_2="Addresse 2";
+anchorfree.city="Stadt";
+anchorfree.zip="Postleihzahl";
+anchorfree.state="Bundesland";
+anchorfree.country="Land";
+anchorfree.category="Kategorie";
+anchorfree.publish="Diesen Hotspot auf der WiFi Karte anzeigen";
+anchorfree.serviceid="Service ID";
+anchorfree.servicestatus="Service Status";
 
 
 // **************************************************************** index_heartbeat.asp *********************************************************//
