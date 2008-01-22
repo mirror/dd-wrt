@@ -1735,6 +1735,62 @@ filter_input (void)
   {
     save2file ("-A INPUT -i %s -m state --state NEW -j logaccept\n", buff);
   }
+#ifdef HAVE_MSSID
+
+#ifdef HAVE_MADWIFI
+  int i;
+
+  char dev[16];
+  char var[80];
+  char wifivifs[16];
+  int devcount = getdevicecount ();
+  for (i = 0; i < devcount; i++)
+    {
+      sprintf (wifivifs, "ath%d_vifs", i);
+      if (nvram_nmatch("0","ath%d_bridged",i))
+      {
+      save2file ("-A INPUT -i ath%d -j ACCEPT\n", i);
+      }
+      char *vifs = nvram_safe_get (wifivifs);
+      if (vifs != NULL)
+	foreach (var, vifs, next)
+	{
+        if (nvram_nmatch("0","%s_bridged",var))
+    	  {
+	  save2file ("-A INPUT -i %s -j ACCEPT\n", var);
+	  }
+	}
+    }
+#else
+  int i;
+  char dev[16];
+  char var[80];
+  char wifivifs[16];
+  int devcount = get_wl_instances ();
+  for (i = 0; i < devcount; i++)
+    {
+      sprintf (wifivifs, "wl%d_vifs", i);
+      char *iname = get_wl_instance_name (i);
+      if (nvram_nmatch("0","%s_bridged",iname))
+      {
+      save2file ("-A INPUT -i %s -j ACCEPT\n", iname);
+      }
+      char *vifs = nvram_safe_get (wifivifs);
+      if (vifs != NULL)
+	foreach (var, vifs, next)
+	{
+        if (nvram_nmatch("0","%s_bridged",var))
+    	  {
+	  save2file ("-A INPUT -i %s -j ACCEPT\n", var);
+	  }
+	}
+    }
+#endif
+
+
+#endif
+
+
   /* end lonewolf mods */
 
   /* Drop those packets we are NOT recognizable */
@@ -1780,7 +1836,6 @@ filter_forward (void)
       sprintf (wifivifs, "ath%d_vifs", i);
       if (nvram_nmatch("0","ath%d_bridged",i))
       {
-      save2file ("-A INPUT -i ath%d -j ACCEPT\n", i);
       save2file ("-A FORWARD -i ath%d -j ACCEPT\n", i);
       }
       char *vifs = nvram_safe_get (wifivifs);
@@ -1789,7 +1844,6 @@ filter_forward (void)
 	{
         if (nvram_nmatch("0","%s_bridged",var))
     	  {
-	  save2file ("-A INPUT -i %s -j ACCEPT\n", var);
 	  save2file ("-A FORWARD -i %s -j ACCEPT\n", var);
 	  }
 	}
@@ -1807,7 +1861,6 @@ filter_forward (void)
       char *iname = get_wl_instance_name (i);
       if (nvram_nmatch("0","%s_bridged",iname))
       {
-      save2file ("-A INPUT -i %s -j ACCEPT\n", iname);
       save2file ("-A FORWARD -i %s -j ACCEPT\n", iname);
       }
       char *vifs = nvram_safe_get (wifivifs);
@@ -1816,7 +1869,6 @@ filter_forward (void)
 	{
         if (nvram_nmatch("0","%s_bridged",var))
     	  {
-	  save2file ("-A INPUT -i %s -j ACCEPT\n", var);
 	  save2file ("-A FORWARD -i %s -j ACCEPT\n", var);
 	  }
 	}
