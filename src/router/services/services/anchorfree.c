@@ -184,7 +184,7 @@ start_anchorfree (void)
 	nvram_set("mdhcpd_count","1");
 	nvram_set("mdhcpd","wl0.1>On>100>50>3600");
 #else
-	nvram_set("ath0_vifs","wl0.1");
+	nvram_set("ath0_vifs","ath0.1");
 	nvram_set("ath0.1_ssid",nvram_safe_get("af_ssid_name"));
 	nvram_set("ath0.1_bridged","0");
 	nvram_set("ath0.1_ipaddr","172.45.0.1");
