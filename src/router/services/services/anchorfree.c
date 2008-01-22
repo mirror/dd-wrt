@@ -1,7 +1,7 @@
 /*
- * igmp.c
+ * AnchorFree.c
  *
- * Copyright (C) 2007 Sebastian Gottschall <gottschall@dd-wrt.com>
+ * Copyright (C) 2008 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -92,30 +92,6 @@ getIPFromName (char *name, char *ip)
     sprintf (ip, "0.0.0.0");
 }
 
-int
-getmask (char *nmask)
-{
-
-  int loopmask = 0;
-  int ip[4] = { 0, 0, 0, 0 };
-
-  sscanf (nmask, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
-
-  int n = 8;
-
-  for (--n; n >= 0; --n)	//test all 4 bytes in one pass
-    {
-      if (ip[0] & 1 << n)
-	loopmask++;
-      if (ip[1] & 1 << n)
-	loopmask++;
-      if (ip[2] & 1 << n)
-	loopmask++;
-      if (ip[3] & 1 << n)
-	loopmask++;
-    }
-  return loopmask;
-}
 
 void
 deviceID (char *output)
