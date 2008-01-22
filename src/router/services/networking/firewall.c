@@ -50,6 +50,7 @@
 #include <rc.h>
 #include <code_pattern.h>
 #include <utils.h>
+#include <wlutils.h>
 #include <cy_conf.h>
 #endif /* DEVELOPE_ENV */
 
@@ -632,30 +633,70 @@ nat_postrouting (void)
 	  int loopmask = 0;
 	  char *nmask = nvram_safe_get ("lan_netmask");	//assuming lan_netmask is valid
 
-	  int ip[4] = { 0, 0, 0, 0 };
+	  loopmask = getmask(nmask);
 
-	  sscanf (nmask, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
+	  save2file("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",lanface);
+	  save2file("-A POSTROUTING -o %s -s %s0/%d -d %s0/%d -j MASQUERADE\n",lanface, lan_cclass, loopmask, lan_cclass, loopmask);
+#ifdef HAVE_MSSID
 
-	  int n = 8;
+#ifdef HAVE_MADWIFI
+  int i;
 
-	  for (--n; n >= 0; --n)	//test all 4 bytes in one pass
-	    {
-	      if (ip[0] & 1 << n)
-		loopmask++;
-	      if (ip[1] & 1 << n)
-		loopmask++;
-	      if (ip[2] & 1 << n)
-		loopmask++;
-	      if (ip[3] & 1 << n)
-		loopmask++;
-	    }
+  char *next;
+  char dev[16];
+  char var[80];
+  char wifivifs[16];
+  int devcount = getdevicecount ();
+  for (i = 0; i < devcount; i++)
+    {
+      sprintf (wifivifs, "ath%d_vifs", i);
+      if (nvram_nmatch("0","ath%d_bridged",i))
+      {
+	  save2file("-A POSTROUTING -o ath%d -m pkttype --pkt-type broadcast -j RETURN\n",i);
+	  save2file("-A POSTROUTING -o ath%d -s %s/%d -d %s/%d -j MASQUERADE\n",i, nvram_nget("ath%d_ipaddr",i), getmask(nvram_nget("ath%d_netmask",i)), nvram_nget("ath%d_ipaddr",i), getmask(nvram_nget("ath%d_netmask",i)));
+      }
+      char *vifs = nvram_safe_get (wifivifs);
+      if (vifs != NULL)
+	foreach (var, vifs, next)
+	{
+        if (nvram_nmatch("0","%s_bridged",var))
+    	  {
+	  save2file("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",var);
+	  save2file("-A POSTROUTING -o %s -s %s/%d -d %s/%d -j MASQUERADE\n",var, nvram_nget("%s_ipaddr",var), getmask(nvram_nget("%s_netmask",var)), nvram_nget("%s_ipaddr",var), getmask(nvram_nget("%s_netmask",var)));
+	  }
+	}
+    }
+#else
+  int i;
+  char *next;
+  char dev[16];
+  char var[80];
+  char wifivifs[16];
+  int devcount = get_wl_instances ();
+  for (i = 0; i < devcount; i++)
+    {
+      sprintf (wifivifs, "wl%d_vifs", i);
+      char *iname = get_wl_instance_name (i);
+      if (nvram_nmatch("0","%s_bridged",iname))
+      {
+	  save2file("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",iname);
+	  save2file("-A POSTROUTING -o %s -s %s/%d -d %s/%d -j MASQUERADE\n",iname, nvram_nget("%s_ipaddr",iname), getmask(nvram_nget("%s_netmask",iname)), nvram_nget("%s_ipaddr",iname), getmask(nvram_nget("%s_netmask",iname)));
+      }
+      char *vifs = nvram_safe_get (wifivifs);
+      if (vifs != NULL)
+	foreach (var, vifs, next)
+	{
+        if (nvram_nmatch("0","%s_bridged",var))
+    	  {
+	  save2file("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",var);
+	  save2file("-A POSTROUTING -o %s -s %s/%d -d %s/%d -j MASQUERADE\n",var, nvram_nget("%s_ipaddr",var), getmask(nvram_nget("%s_netmask",var)), nvram_nget("%s_ipaddr",var), getmask(nvram_nget("%s_netmask",var)));
+	  }
+	}
+    }
+#endif
 
-	  save2file
-	    ("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
-	     lanface);
-	  save2file
-	    ("-A POSTROUTING -o %s -s %s0/%d -d %s0/%d -j MASQUERADE\n",
-	     lanface, lan_cclass, loopmask, lan_cclass, loopmask);
+
+#endif
 
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_FONERA
@@ -1737,14 +1778,20 @@ filter_forward (void)
   for (i = 0; i < devcount; i++)
     {
       sprintf (wifivifs, "ath%d_vifs", i);
+      if (nvram_nmatch("0","ath%d_bridged",i))
+      {
       save2file ("-A INPUT -i ath%d -j ACCEPT\n", i);
       save2file ("-A FORWARD -i ath%d -j ACCEPT\n", i);
+      }
       char *vifs = nvram_safe_get (wifivifs);
       if (vifs != NULL)
 	foreach (var, vifs, next)
 	{
+        if (nvram_nmatch("0","%s_bridged",var))
+    	  {
 	  save2file ("-A INPUT -i %s -j ACCEPT\n", var);
 	  save2file ("-A FORWARD -i %s -j ACCEPT\n", var);
+	  }
 	}
     }
 #else
@@ -1758,15 +1805,20 @@ filter_forward (void)
     {
       sprintf (wifivifs, "wl%d_vifs", i);
       char *iname = get_wl_instance_name (i);
+      if (nvram_nmatch("0","%s_bridged",iname))
+      {
       save2file ("-A INPUT -i %s -j ACCEPT\n", iname);
       save2file ("-A FORWARD -i %s -j ACCEPT\n", iname);
-
+      }
       char *vifs = nvram_safe_get (wifivifs);
       if (vifs != NULL)
 	foreach (var, vifs, next)
 	{
+        if (nvram_nmatch("0","%s_bridged",var))
+    	  {
 	  save2file ("-A INPUT -i %s -j ACCEPT\n", var);
 	  save2file ("-A FORWARD -i %s -j ACCEPT\n", var);
+	  }
 	}
     }
 #endif
