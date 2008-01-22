@@ -181,16 +181,21 @@ start_anchorfree (void)
 	nvram_set("wl0.1_bridged","0");
 	nvram_set("wl0.1_ipaddr","172.45.0.1");
 	nvram_set("wl0.1_netmask","255.255.255.0");
+	nvram_set("mdhcpd_count","1");
+	nvram_set("mdhcpd","wl0.1>On>100>50>3600");
 #else
 	nvram_set("ath0_vifs","wl0.1");
 	nvram_set("ath0.1_ssid",nvram_safe_get("af_ssid_name"));
 	nvram_set("ath0.1_bridged","0");
 	nvram_set("ath0.1_ipaddr","172.45.0.1");
 	nvram_set("ath0.1_netmask","255.255.255.0");
-
+	nvram_set("mdhcpd_count","1");
+	nvram_set("mdhcpd","ath0.1>On>100>50>3600");
 #endif
 	stop_lan();
 	start_lan();
+	stop_dnsmasq();
+	start_dnsmasq();
 	}
       char addr[256];
       toURL (nvram_safe_get ("af_address"), addr);
