@@ -230,7 +230,8 @@ start_anchorfree (void)
       FILE *response = fopen ("/tmp/.anchorfree", "rb");
       if (response == NULL)
 	{
-	  fprintf (stderr, "error while registration!\n");
+	  fprintf (stderr, "error while registration (cannot reach registration site)!\n");
+    	  nvram_set ("af_servicestatus", "cannot reach registration site!");
 	  return;
 	}
       char status[32];
@@ -238,6 +239,7 @@ start_anchorfree (void)
       if (r != 1)
 	{
 	  fprintf (stderr, "registration failed (bad status)\n");
+    	  nvram_set ("af_servicestatus", "registration failed (bad status)");
 	  fclose (response);
 	  return;
 	}
@@ -254,6 +256,7 @@ start_anchorfree (void)
       if (r != 1)
 	{
 	  fprintf (stderr, "registration failed (bad sid)\n");
+    	  nvram_set ("af_servicestatus", "registration failed (bad sid)");
 	  fclose (response);
 	  return;
 	}
@@ -289,8 +292,8 @@ start_anchorfreednat (void)
       sprintf (source, "%s/%d", nvram_safe_get ("lan_ipaddr"),
 	       getmask (nvram_safe_get ("lan_netmask")));
       if (nvram_match ("af_ssid", "1"))
-      sprintf (source, "%s/%d", nvram_safe_get (IFPREFIX "_ipaddr"),
-	       getmask (nvram_safe_get (IFPREFIX "_netmask")));
+      sprintf (source, "%s/%d", nvram_safe_get (IFPREFIX "0.1_ipaddr"),
+	       getmask (nvram_safe_get (IFPREFIX "0.1_netmask")));
 
       eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p",
 	    "tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DNAT", "--to",
@@ -321,8 +324,8 @@ stop_anchorfree (void)
       sprintf (source, "%s/%d", nvram_safe_get ("lan_ipaddr"),
 	       getmask (nvram_safe_get ("lan_netmask")));
       if (nvram_match ("af_ssid", "1"))
-      sprintf (source, "%s/%d", nvram_safe_get (IFPREFIX "_ipaddr"),
-	       getmask (nvram_safe_get (IFPREFIX "_netmask")));
+      sprintf (source, "%s/%d", nvram_safe_get (IFPREFIX "0.1_ipaddr"),
+	       getmask (nvram_safe_get (IFPREFIX "0.1_netmask")));
 
       eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p","tcp", "--dport", "80", "-j", "DNAT", "--to", dest);
       eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p","tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DNAT", "--to",nvram_safe_get ("lan_ipaddr"));
