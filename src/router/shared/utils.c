@@ -2320,7 +2320,9 @@ check_hw_type (void)
 	return BCM4705G_BCM5395S_EWC_CHIP;
   else if (btype == 0x0467)
     return BCM5352E_CHIP;
-  else if (btype == 0x0101 || btype == 0x0446)	//0x446 is wap54g v2
+  else if (btype == 0x0101 && !(boardflags & BFL_ENETADM))
+	return BCM4712_BCM5325E_CHIP;
+  else if ((btype == 0x0101 || btype == 0x0446) && (boardflags & BFL_ENETADM))	//0x446 is wap54g v2
     return BCM4712_CHIP;
   else if (btype == 0x0472 && !(boardflags & BFL_ENETADM))
     return BCM4704_BCM5325F_EWC_CHIP;
@@ -2411,8 +2413,11 @@ get_device_name (void)
     case BCM5350_CHIP:
     case BCM5365_CHIP:
     case BCM4704_BCM5325F_CHIP:
+	case BCM4704_BCM5325F_EWC_CHIP:
     case BCM5352E_CHIP:
     case BCM5354G_CHIP:
+	case BCM4712_BCM5325E_CHIP:
+	case BCM4705L_BCM5325E_EWC_CHIP:
       i = 0;
       break;
     case BCM4702_CHIP:

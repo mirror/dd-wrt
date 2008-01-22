@@ -47,7 +47,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BUFFALO_WLA2G54C 0x0910
 
 // Buffalo WHR-G54S (fccid: Buffalo FDI-04600264-0) and WHR-HP-G54 (fccid: Buffalo FDI-09101577-0)
-// Buffalo WHR-G125, WHR-HP-G125 (5354 cpu, fccid: Buffalo FDI-09101584-0, FDI-09101588-0)
+// Buffalo WHR-G125, WHR-HP-G125 (5354 cpu, fccid: Buffalo FDI-09101584-0)
 // Buffalo WHR-HP-G125 new (5354 cpu, fccid: FDI-09101588-0)
 #define ROUTER_BUFFALO_WHRG54S 0x0a04
 
@@ -210,7 +210,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Sitecom WL-111 (4702 cpu, fccid: ?)
 #define ROUTER_SITECOM_WL111 0x3d10
 
-// D-Link DIR-320 (5354 cpu, fccid: ?)
+// D-Link DIR-320 (5354 cpu, fccid: D Link KA2DIR320A1)
 #define ROUTER_DLINK_DIR320 0x3e17
 
 // Linksys WTR54GS travel router (5350 cpu, fccid: v1, v2: Q87-WTR54GS; v2.1 Q87-WTR54GSV21)
