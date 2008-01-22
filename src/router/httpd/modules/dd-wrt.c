@@ -5099,7 +5099,9 @@ show_80211X (webs_t wp, char *prefix)
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
 */
-
+  char type[32];
+  sprintf(type,"%s_8021xtype",prefix);
+  nvram_default_get(type,"peap");
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.xsuptype)</script></div>\n");
