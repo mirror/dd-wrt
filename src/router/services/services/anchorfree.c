@@ -36,6 +36,14 @@
 #include <netdb.h>
 
 #include "md5.h"
+
+
+#ifndef HAVE_MADWIFI
+#define IFPREFIX "wl"
+#else
+#define IFPREFIX "ath"
+#endif
+
 void
 doHash (MD5_CTX * MD, char *filename)
 {
@@ -263,6 +271,8 @@ start_anchorfree (void)
   return;
 }
 
+
+
 void
 start_anchorfreednat (void)
 {
@@ -272,13 +282,16 @@ start_anchorfreednat (void)
   if (nvram_match ("af_enable", "1") && !nvram_match ("af_dnathost", "0"))
     {
       char host[128];
+
+
       getIPFromName (nvram_safe_get ("af_dnathost"), host);
       sprintf (dest, "%s:%s", host, nvram_safe_get ("af_dnatport"));
       sprintf (source, "%s/%d", nvram_safe_get ("lan_ipaddr"),
 	       getmask (nvram_safe_get ("lan_netmask")));
       if (nvram_match ("af_ssid", "1"))
-      sprintf (source, "%s/%d", nvram_safe_get ("wl0.1_ipaddr"),
-	       getmask (nvram_safe_get ("wl0.1_netmask")));
+      sprintf (source, "%s/%d", nvram_safe_get (IFPREFIX "_ipaddr"),
+	       getmask (nvram_safe_get (IFPREFIX "_netmask")));
+
       eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p",
 	    "tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DNAT", "--to",
 	    nvram_safe_get ("lan_ipaddr"));
@@ -308,8 +321,8 @@ stop_anchorfree (void)
       sprintf (source, "%s/%d", nvram_safe_get ("lan_ipaddr"),
 	       getmask (nvram_safe_get ("lan_netmask")));
       if (nvram_match ("af_ssid", "1"))
-      sprintf (source, "%s/%d", nvram_safe_get ("wl0.1_ipaddr"),
-	       getmask (nvram_safe_get ("wl0.1_netmask")));
+      sprintf (source, "%s/%d", nvram_safe_get (IFPREFIX "_ipaddr"),
+	       getmask (nvram_safe_get (IFPREFIX "_netmask")));
 
       eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p","tcp", "--dport", "80", "-j", "DNAT", "--to", dest);
       eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p","tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DNAT", "--to",nvram_safe_get ("lan_ipaddr"));
