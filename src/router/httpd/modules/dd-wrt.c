@@ -3830,10 +3830,6 @@ show_netmode (webs_t wp, char *prefix)
 void
 showbridgesettings (webs_t wp, char *var)
 {
-  char mcast[32];
-  sprintf (mcast, "%s_multicast", var);
-  nvram_default_get(mcast,"0");
-  showOption (wp, "wl_basic.multicast", mcast);
   
   websWrite (wp,
 	     "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script></div>\n");
@@ -3855,6 +3851,10 @@ showbridgesettings (webs_t wp, char *var)
   websWrite (wp, "</div>\n");
 
   websWrite (wp, "<div id=\"%s_idnetvifs\">\n", vvar);
+  char mcast[32];
+  sprintf (mcast, "%s_multicast", var);
+  nvram_default_get(mcast,"0");
+  showOption (wp, "wl_basic.multicast", mcast);
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
