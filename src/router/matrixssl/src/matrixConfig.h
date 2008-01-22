@@ -89,7 +89,7 @@ extern "C" {
 	different threads.  The library will still be single threaded,
 	but will serialize access to the session cache with a mutex.
 */
-#define USE_MULTITHREADING
+//#define USE_MULTITHREADING
 
 /******************************************************************************/
 /*
