@@ -351,7 +351,7 @@ handle_anchorfree (void)
 {
   void *handle = NULL;
   handle = startstop_nofree ("anchorfree", handle);
-  handle = startstop_nofree ("anchorfreednat", handle);
+  handle = start_service_nofree ("anchorfreednat", handle);
   if (handle)
     dlclose (handle);
 }
