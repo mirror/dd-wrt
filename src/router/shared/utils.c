@@ -3936,3 +3936,27 @@ lcdmessaged (char *dual, char *message)
 #endif
 
 
+int
+getmask (char *nmask)
+{
+
+  int loopmask = 0;
+  int ip[4] = { 0, 0, 0, 0 };
+
+  sscanf (nmask, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
+
+  int n = 8;
+
+  for (--n; n >= 0; --n)	//test all 4 bytes in one pass
+    {
+      if (ip[0] & 1 << n)
+	loopmask++;
+      if (ip[1] & 1 << n)
+	loopmask++;
+      if (ip[2] & 1 << n)
+	loopmask++;
+      if (ip[3] & 1 << n)
+	loopmask++;
+    }
+  return loopmask;
+}

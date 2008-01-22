@@ -521,5 +521,6 @@ extern int count_processes (char *pidName);
 int isGrep (char *string, char *cmp);
 int softkill (char *name);
 
+int getmask(char *netmask);
 #define MAX_WDS_DEVS 10
 #endif
