@@ -149,6 +149,7 @@ start_anchorfree (void)
 
   if (nvram_match ("af_enable", "1") && !nvram_match ("af_registered", "1"))
     {
+      nvram_set ("af_registered", "1");
       syslog (LOG_INFO, "anchorfree : starting redirection\n");
       char url[1024];
       char devid[256];
@@ -232,6 +233,7 @@ start_anchorfree (void)
 	{
 	  fprintf (stderr, "error while registration (cannot reach registration site)!\n");
     	  nvram_set ("af_servicestatus", "cannot reach registration site!");
+    	  nvram_set ("af_registered", "0");
 	  return;
 	}
       char status[32];
@@ -241,6 +243,7 @@ start_anchorfree (void)
 	  fprintf (stderr, "registration failed (bad status)\n");
     	  nvram_set ("af_servicestatus", "registration failed (bad status)");
 	  fclose (response);
+    	  nvram_set ("af_registered", "0");
 	  return;
 	}
       nvram_set ("af_servicestatus", status);
@@ -249,6 +252,7 @@ start_anchorfree (void)
 	{
 	  fprintf (stderr, "registration failed\n");
 	  fclose (response);
+    	  nvram_set ("af_registered", "0");
 	  return;
 	}
       memset (status, 0, 32);
@@ -258,6 +262,7 @@ start_anchorfree (void)
 	  fprintf (stderr, "registration failed (bad sid)\n");
     	  nvram_set ("af_servicestatus", "registration failed (bad sid)");
 	  fclose (response);
+    	  nvram_set ("af_registered", "0");
 	  return;
 	}
       fprintf (stderr, "configuring service id %s\n", status);
@@ -268,7 +273,6 @@ start_anchorfree (void)
       memset (status, 0, 32);
       fscanf (response, "port: %s\n", status);
       nvram_set ("af_dnatport", status);
-      nvram_set ("af_registered", "1");
       fclose (response);
     }
   return;
@@ -314,6 +318,7 @@ stop_anchorfree (void)
   if (!nvram_match ("af_serviceid", "0")
       && nvram_match ("af_registered", "1"))
     {
+      nvram_set ("af_registered", "0");
       char dest[32];
       char source[32];
       char url[64];
@@ -335,7 +340,6 @@ stop_anchorfree (void)
 	       "sid=%s\"", nvram_safe_get ("af_hash"),
 	       nvram_safe_get ("af_serviceid"));
       system (url);
-      nvram_set ("af_registered", "0");
     }
   return;
 }
