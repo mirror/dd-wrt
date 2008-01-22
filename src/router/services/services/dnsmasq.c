@@ -202,7 +202,7 @@ start_dnsmasq (void)
 	    if (strlen (nvram_nget ("%s_ipaddr", getmdhcp (0, i))) == 0
 		|| strlen (nvram_nget ("%s_netmask", getmdhcp (0, i))) == 0)
 	      continue;
-	    dhcp_max += getmdhcp (3, i);
+	    dhcp_max += atoi(getmdhcp (3, i));
 	  }
 	fprintf (fp, "dhcp-lease-max=%d\n", dhcp_max);
 	fprintf (fp, "dhcp-option=lan,3,%s\n", nvram_safe_get ("lan_ipaddr"));
