@@ -1802,6 +1802,10 @@ _8021xprv
   copytonv (wp, n);
   sprintf (n, "%s_peap8021xca", prefix);
   copytonv (wp, n);
+  sprintf (n, "%s_leap8021xuser", prefix);
+  copytonv (wp, n);
+  sprintf (n, "%s_leap8021xpasswd", prefix);
+  copytonv (wp, n);
 
 
 #endif

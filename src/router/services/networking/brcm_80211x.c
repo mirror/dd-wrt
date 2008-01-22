@@ -188,9 +188,9 @@ setupSupplicant (char *prefix)
 	  fprintf (fp, "\tpairwise=CCMP TKIP\n");
 	  fprintf (fp, "\tgroup=CCMP TKIP\n");
 	  fprintf (fp, "\tidentity=\"%s\"\n",
-		   nvram_prefix_get ("peap8021xuser", prefix));
+		   nvram_prefix_get ("leap8021xuser", prefix));
 	  fprintf (fp, "\tpassword=\"%s\"\n",
-		   nvram_prefix_get ("peap8021xpasswd", prefix));
+		   nvram_prefix_get ("leap8021xpasswd", prefix));
 //        sprintf (psk, "/tmp/%s", prefix);
 //        mkdir (psk);
 //        sprintf (psk, "/tmp/%s/ca.pem", prefix);
@@ -228,5 +228,5 @@ setupSupplicant (char *prefix)
 void
 start_supplicant (void)		//for testing only
 {
-  setupSupplicant ("wl1");
+  setupSupplicant ("wl0");
 }

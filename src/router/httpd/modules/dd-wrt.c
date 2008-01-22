@@ -5159,14 +5159,14 @@ show_80211X (webs_t wp, char *prefix)
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(share.user)</script></div>\n");
   websWrite (wp,
-	     "<input name=\"%s_peap8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-	     prefix, nvram_prefix_get ("peap8021xuser", prefix));
+	     "<input name=\"%s_leap8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
+	     prefix, nvram_prefix_get ("leap8021xuser", prefix));
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(share.passwd)</script></div>\n");
   websWrite (wp,
-	     "<input name=\"%s_peap8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
-	     prefix, nvram_prefix_get ("peap8021xpasswd", prefix));
+	     "<input name=\"%s_leap8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
+	     prefix, nvram_prefix_get ("leap8021xpasswd", prefix));
   websWrite (wp, "</div>\n");
 
 
