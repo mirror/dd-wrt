@@ -5287,7 +5287,7 @@ show_wep (webs_t wp, char *prefix)
 	     "<input type=\"hidden\" name=\"%s_wep\" value=\"restricted\" />",
 	     prefix);
   sprintf (var, "%s_key", prefix);
-  nvram_default_get(var,"0");
+  nvram_default_get(var,"1");
   websWrite (wp,
 	     "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_key\" %s />1&nbsp;\n",
 	     prefix, selmatch (var, "1", "checked=\"checked\""));
