@@ -2253,7 +2253,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"af_enable","0",0},
   {"af_email","",0},
   {"af_ssid","0",0},
-  {"af_ssid_name","AnchorFree WifFi",0},
+  {"af_ssid_name","AnchorFree WiFi",0},
   {"af_address","",0},
   {"af_address_2","",0},
   {"af_city","",0},
