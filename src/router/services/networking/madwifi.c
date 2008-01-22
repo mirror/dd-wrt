@@ -1560,9 +1560,9 @@ configure_single (int count)
 		  eval ("ifconfig", var, "down");
 		else
 		{
-		  eval ("ifconfig", var, "0.0.0.0", "down");
+		  eval ("ifconfig", var, "down");
 		  sleep(1);
-		  eval ("ifconfig", var, "0.0.0.0", "up");		
+		  eval ("ifconfig", var, nvram_safe_get (ip),"netmask",nvram_safe_get (mask), "up");		
 		}
 	      }
 	  }
