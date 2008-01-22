@@ -3970,6 +3970,25 @@ ej_show_bandwidth (webs_t wp, int argc, char_t ** argv)
 	sprintf (name, "%s (%s)", live_translate ("share.wireless"), var);
 	show_bwif (wp, var, name);
       }
+    int s;
+  for (s = 1; s <= 10; s++)
+    {
+      char wdsvarname[32] = { 0 };
+      char wdsdevname[32] = { 0 };
+      char wdsmacname[32] = { 0 };
+      char *wdsdev;
+
+      sprintf (wdsvarname, "%s_wds%d_enable", dev, s);
+      sprintf (wdsdevname, "%s_wds%d_if", dev, s);
+      sprintf (wdsmacname, "%s_wds%d_hwaddr", dev, s);
+      wdsdev = nvram_safe_get (wdsdevname);
+      if (strlen (wdsdev) == 0)
+	continue;
+      if (nvram_match (wdsvarname, "0"))
+	continue;
+	sprintf (name, "%s (%s)", live_translate ("share.wireless"), wdsdev);
+	show_bwif (wp, wdsdev, name);
+    }
 
     }
 
@@ -4081,6 +4100,7 @@ live_translate (char *tran)
   return "Error";		//not found
 
 }
+extern int issuperchannel (void);
 
 
 void
@@ -4164,7 +4184,7 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
     {
       sprintf (&menu[1][a + 6][0], "Wireless_WDS-ath%d.asp", a);
       if (ifcount==1)
-      sprintf (&menuname[1][a + 7][0], "wirelessWds", a);
+      sprintf (&menuname[1][a + 7][0], "wirelessWds");
       else
       sprintf (&menuname[1][a + 7][0], "wirelessWds%d", a);
     }
