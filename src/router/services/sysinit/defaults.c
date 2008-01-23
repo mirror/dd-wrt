@@ -1288,6 +1288,7 @@ struct nvram_tuple srouter_defaults[] = {
 #else
   {"sshd_enable", "0", 0},
 #endif
+  {"sshd_forwarding", "0", 0},
   {"sshd_port", "22", 0},
   {"sshd_passwd_auth", "1", 0},
   {"sshd_rsa_host_key", "", 0},
