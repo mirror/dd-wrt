@@ -1,37 +1,28 @@
-# **************************************************************
-# Makefile for building the IGMP Proxy module.
-#	Build Targets 
-#		all 	- Builds the IGMP Proxy executable. IGMPProxy
-#		clean 	- Cleans all the object files. 
-# **************************************************************
 
-# Compiler. 
-#CC = mipsel-linux-uclibc-gcc
-CFLAGS = $(COPTS)
+#BINDIR=../bin
+BINDIR=/usr/local/bin
+ETCDIR=/etc
+MANDIR=/usr/share/man
 
-CFLAGS += -DIGMP_SEND_THE_SECOND_QUERY_PACKET=1 -DNEED_PRINTF
 
-CFLAGS += -DIGMP_BLOCK_SOME_SPEC_ADDRS=1 -DLinux -I$(TOP)/../include.v24 -I$(TOP)/shared -Iinclude -DHND_FIX -fomit-frame-pointer -fpic -ffunction-sections -fdata-sections -Wl,--gc-sections
+# CFLAGS=-g
+CFLAGS=$(COPTS)
 
-LDFLAGS = -L$(TOP)/netconf -ffunction-sections -fdata-sections -Wl,--gc-sections
+default : build.h igmpproxy
 
-all: igmp-proxy
+all	: igmpproxy
 
-# List of all object modules that make up the IGMPProxy.
-OBJECTS = igmprt.o proxy.o igmpv3.o util.o
+clean	:
+	rm -f *.o *.asm build.h igmpproxy  
 
-igmp-proxy: $(OBJECTS)
-	$(CC) $(CFLAGS) $(OBJECTS) -o igmprt -L$(TOP)/nvram -lnvram -lpthread
-
-igmp_proxy.o: igmp_proxy.c
-	$(CC) $(CFLAGS) -c igmp_proxy.c
-
-listlib.o: listlib.c
-	$(CC) $(CFLAGS) -c listlib.c
-
-clean:
-	rm -rf $(OBJECTS)
-	
-
+install : 
 install:
-	install -D igmprt $(INSTALLDIR)/usr/sbin/igmprt
+	install -D igmpproxy $(INSTALLDIR)/usr/sbin/igmprt
+
+igmpproxy : igmpproxy.o config.o confread.o request.o udpsock.o mcgroup.o rttable.o \
+			igmp.o ifvc.o callout.o kern.o syslog.o lib.o mroute-api.o
+
+build.h	:  
+	echo '#define BUILD "' `date +%y%m%d` '"' >build.h
+
+
