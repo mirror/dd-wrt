@@ -2088,6 +2088,26 @@ showOptions (webs_t wp, char *propname, char *names, char *select)
 }
 
 static void
+showOptionsChoose (webs_t wp, char *propname, char *names, char *select)
+{
+  char *next;
+  char var[80];
+  websWrite (wp, "<select name=\"%s\">\n", propname);
+  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+  websWrite (wp,
+	       "document.write(\"<option value=\\\"null\\\" %s >Please choose...</option>\");\n",
+	       var, !strcmp (var, select) ? "selected=\\\"selected\\\"" : "");
+  foreach (var, names, next)
+  {
+    websWrite (wp,
+	       "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n",
+	       var, !strcmp (var, select) ? "selected=\\\"selected\\\"" : "",
+	       var);
+  }
+  websWrite (wp, "//]]>\n</script>\n</select>\n");
+}
+
+static void
 showOptionsLabel (webs_t wp, char *labelname, char *propname, char *names,
 		  char *select)
 {
@@ -4515,7 +4535,7 @@ if (ejArgs (argc, argv, "%s", &name) < 1)
       return;
     }
 char *list = getCountryList ();
-showOptions (wp, name, list, nvram_safe_get (name));
+showOptionsChoose (wp, name, list, nvram_safe_get (name));
 }
 
 void
