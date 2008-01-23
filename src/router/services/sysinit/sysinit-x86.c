@@ -188,6 +188,8 @@ eval("insmod","crypto_null");
 */
 
 //system("/etc/kendin");
+  if (detect ("Rhine-"))	// VIA Rhine-I, Rhine-II, Rhine-III
+    eval ("insmod", "via-rhine");
   if (detect ("DP8381"))
     eval ("insmod", "natsemi");
   if (detect ("PCnet32"))	//vmware?
@@ -284,8 +286,6 @@ eval("insmod","crypto_null");
       eval ("insmod", "ne2k-pci");
     }
 
-  if (detect ("Rhine-"))	// VIA Rhine-I, Rhine-II, Rhine-III
-    eval ("insmod", "via-rhine");
 
   if (detect ("3c905"))		// 3Com
     eval ("insmod", "3c59x");
