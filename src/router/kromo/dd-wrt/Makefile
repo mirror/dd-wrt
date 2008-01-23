@@ -232,8 +232,11 @@ ifeq ($(CONFIG_MAKSAT_CORAL_ELEGANT),y)
 	cp maksat/style-coral.css $(INSTALLDIR)/www/style/maksat_coral_elegant/style.css
 	cp maksat/common-coral.css $(INSTALLDIR)/www/style
 endif
-
+ifeq ($(CONFIG_TRIMAX),y)
+	cp -f trimax/logo.png $(INSTALLDIR)/www/style/logo.png
+endif
 ifeq ($(CONFIG_MAKSAT),y)
+	cp -f maksat/SuperChannel.asp $(INSTALLDIR)/www
 	cp -f maksat/logo.png $(INSTALLDIR)/www/style/logo.png
 	cp -f maksat/logo.png $(INSTALLDIR)/www/images/logo.png
 	cp -f maksat/maksat_logo_help.png $(INSTALLDIR)/www/help/logo-help.png

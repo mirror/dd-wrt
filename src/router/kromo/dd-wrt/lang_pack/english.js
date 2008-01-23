@@ -1155,6 +1155,7 @@ service.ssh_legend="Secure Shell";
 service.ssh_srv="SSHd";
 service.ssh_password="Password Login";
 service.ssh_key="Authorized Keys";
+service.ssh_forwarding="SSH TCP Forwarding";
 
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP Button";
