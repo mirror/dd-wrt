@@ -1093,6 +1093,7 @@ service.ssh_legend="Secure Shell";
 service.ssh_srv="SSHd";
 service.ssh_password="Passwort-Login";
 service.ssh_key="Authorisierte Schlüssel";
+service.ssh_forwarding="SSH TCP Weiterleitung";
 
 //hwmon.webservices
 service.hwmon_legend="Hardware Überwachung";
