@@ -70,8 +70,8 @@ setupSupplicant (char *prefix)
 #endif
       fprintf (fp, "fast_reauth=1\n");
       fprintf (fp, "eapol_version=1\n");
-      fprintf (fp, "ctrl_interface_group=0\n");
-      fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
+     // fprintf (fp, "ctrl_interface_group=0\n");
+     // fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 
       fprintf (fp, "network={\n");
       sprintf (psk, "%s_ssid", prefix);
@@ -132,8 +132,8 @@ setupSupplicant (char *prefix)
 #endif
       fprintf (fp, "fast_reauth=1\n");
       fprintf (fp, "eapol_version=2\n");
-      fprintf (fp, "ctrl_interface_group=0\n");
-      fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
+      //fprintf (fp, "ctrl_interface_group=0\n");
+      //fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
       fprintf (fp, "network={\n");
       sprintf (psk, "%s_ssid", prefix);
       fprintf (fp, "\tssid=\"%s\"\n", nvram_safe_get (psk));
