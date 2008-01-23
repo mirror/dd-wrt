@@ -62,8 +62,7 @@ var update;
 addEvent(window, "load", function() {
 	show_layer_ext(document.setup.af_enable, 'idanchorfree', <% nvram_else_match("af_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.af_ssid, 'idanchorfreessid', <% nvram_else_match("af_ssid", "1", "1", "0"); %> == 1);
-	
-	update = new StatusbarUpdate();
+	update = new StatusUpdate("AnchorFree.live.asp", <% nvram_get("refresh_time"); %>);
 	update.start();
 	
 });
