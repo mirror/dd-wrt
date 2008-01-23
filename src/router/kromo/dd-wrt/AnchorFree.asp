@@ -28,6 +28,11 @@ if (F.af_enable)
 	alert("please select a advertising category for your hotspot");
 	return false;
 	}
+    if (F.af_country.value=="null")
+	{
+	alert("please select a country for your hotspot");
+	return false;
+	}
     }
 return true;
 }
@@ -194,11 +199,11 @@ addEvent(window, "unload", function() {
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("anchorfree.serviceid"); %></div>
-			<input class="text" maxLength="32" size="32" name="af_serviceid" value="<% nvram_get("af_serviceid"); %>" disabled="true" />
+			<span id="af_serviceid"><% nvram_get("af_serviceid"); %></span>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("anchorfree.servicestatus"); %></div>
-			<input class="text" maxLength="32" size="32" name="af_servicestatus" value="<% nvram_get("af_servicestatus"); %>" disabled="true" />
+			<span id="af_servicestatus"><% nvram_get("af_servicestatus"); %></span>
 		</div>
 	   </div>
 </fieldset><br />
