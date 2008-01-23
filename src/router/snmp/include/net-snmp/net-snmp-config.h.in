@@ -1163,7 +1163,7 @@
 
 /* got in_addr_t? */
 #undef HAVE_IN_ADDR_T
-
+/*
 #ifndef HAVE_STRCHR
 #ifdef HAVE_INDEX
 # define strchr index
@@ -1177,7 +1177,8 @@
 # define rindex strrchr
 #endif
 #endif
-
+*/
+/*
 #ifndef HAVE_MEMCPY
 #ifdef HAVE_BCOPY
 # define memcpy(d, s, n) bcopy ((s), (d), (n))
@@ -1199,7 +1200,7 @@
 # define bcmp memcmp
 #endif
 #endif
-
+*/
 /* If you have openssl 0.9.7 or above, you likely have AES support. */
 #undef USE_OPENSSL
 #if defined(USE_OPENSSL) && defined(HAVE_OPENSSL_AES_H) && defined(HAVE_AES_CFB128_ENCRYPT)
