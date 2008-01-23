@@ -28,13 +28,14 @@ SOFTWARE.
 
 #include <stdio.h>
 #include <errno.h>
-#if HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
+#include <stdio.h>
 #if HAVE_STRING_H
 #include <string.h>
 #else
 #include <strings.h>
+#endif
+#if HAVE_STDLIB_H
+#include <stdlib.h>
 #endif
 #if HAVE_UNISTD_H
 #include <unistd.h>
