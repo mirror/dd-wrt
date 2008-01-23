@@ -31,31 +31,41 @@ start_igmp_proxy (void)
 {
   int ret = 0;
   pid_t pid;
+  char name[80], *next, *svbuf;
+  char *argv[] = { "igmprt", NULL};
 
 
-  char *igmp_proxy_argv[] = { "igmprt",
-    "-i",
-    get_wan_face (),
-    NULL
-  };
-
-  char *igmp_proxybr_argv[] = { "igmprt",
-    "-i",
-    nvram_safe_get ("lan_ifname"),
-    NULL
-  };
 
   stop_igmp_proxy ();
 
+
+
   if (nvram_match ("block_multicast", "0"))
     {
-      if (nvram_match ("wan_proto", "disabled"))
-	{
-	  ret = _evalpid (igmp_proxybr_argv, NULL, 0, &pid);
-	  return ret;
-	}
-      else
-	ret = _evalpid (igmp_proxy_argv, NULL, 0, &pid);
+      FILE *fp = fopen ("/tmp/igmpproxy.conf", "wb");
+      fprintf (fp, "quickleave\n");
+      fprintf (fp, "phyint %s upstream  ratelimit 0  threshold 1\n",
+	       nvram_safe_get ("wan_iface"));
+      fprintf (fp, "phyint %s downstream  ratelimit 0  threshold 1\n",
+	       nvram_safe_get ("lan_ifname"));
+      foreach (name, nvram_safe_get ("lan_ifnames"), next)
+      {
+	if (nvram_nmatch ("0", "%s_bridged", name)
+	    && nvram_nmatch ("1", "%s_multicast", name))
+	  fprintf (fp, "phyint %s downstream  ratelimit 0  threshold 1\n",
+		   name);
+	else
+	  fprintf (fp, "phyint %s disabled\n", name);
+      }
+      fprintf (fp, "phyint lo disabled\n");
+      fclose (fp);
+//      if (nvram_match ("wan_proto", "disabled")) //todo: add upstream config
+//      {
+//        ret = _evalpid (igmp_proxybr_argv, NULL, 0, &pid);
+//        return ret;
+//      }
+//      else
+      ret = _evalpid(argv, NULL, 0, &pid);
       syslog (LOG_INFO, "igmprt : multicast daemon successfully started\n");
     }
 
