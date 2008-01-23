@@ -313,6 +313,18 @@ start_anchorfreednat (void)
 }
 
 void
+stop_anchorfree_unregister (void)
+{
+      char url[64];
+      sprintf (url, "wget -q -O- \"http://afhrp.anchorfree.com/unregister.php?"
+	       "uid=%s&"
+	       "sid=%s\"", nvram_safe_get ("af_hash"),
+	       nvram_safe_get ("af_serviceid"));
+      eval ("rm", "-f", "/tmp/.anchorfree");
+      system (url);
+}
+
+void
 stop_anchorfree (void)
 {
   if (!nvram_match ("af_serviceid", "0")
@@ -321,7 +333,6 @@ stop_anchorfree (void)
       nvram_set ("af_registered", "0");
       char dest[32];
       char source[32];
-      char url[64];
       syslog (LOG_INFO, "anchorfree : stopping redirection\n");
       char host[128];
       getIPFromName (nvram_safe_get ("af_dnathost"), host);
@@ -335,11 +346,9 @@ stop_anchorfree (void)
       eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p","tcp", "--dport", "80", "-j", "DNAT", "--to", dest);
       eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p","tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DNAT", "--to",nvram_safe_get ("lan_ipaddr"));
       eval ("rm", "-f", "/tmp/.anchorfree");
-      sprintf (url, "wget -q -O- \"http://afhrp.anchorfree.com/unregister.php?"
-	       "uid=%s&"
-	       "sid=%s\"", nvram_safe_get ("af_hash"),
-	       nvram_safe_get ("af_serviceid"));
-      system (url);
+      if (nvram_match("af_enable","0"))
+        stop_anchorfree_unregister();
     }
   return;
 }
+
