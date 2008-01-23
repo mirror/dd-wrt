@@ -2840,12 +2840,6 @@ start_wan_done (char *wan_ifname)
   cprintf ("start firewall\n");
   /* Start firewall */
   start_firewall ();
-  cprintf ("start igmp proxy\n");
-#ifdef HAVE_MULTICAST
-  stop_igmp_proxy ();
-  start_igmp_proxy ();
-#endif
-  cprintf ("ready\n");
 
 
   /* Set additional wan static routes if need */
@@ -3082,6 +3076,12 @@ start_wan_done (char *wan_ifname)
   start_hostapdwan ();
 #endif
 #endif
+  cprintf ("start igmp proxy\n");
+#ifdef HAVE_MULTICAST
+  stop_igmp_proxy ();
+  start_igmp_proxy ();
+#endif
+  cprintf ("ready\n");
   start_anchorfree();
   start_anchorfreednat();
 
