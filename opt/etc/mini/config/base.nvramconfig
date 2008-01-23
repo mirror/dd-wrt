@@ -88,6 +88,7 @@
  "resetbutton_enable"  "Resetbuttond"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "telnetd_enable"  "Telnetd"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "sshd_enable"  "SSHD"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
+ "sshd_forwarding"  "SSHD"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "sshd_port"  "SSHD"  "RANGE"  "1"  "65535"  "FALSE" "0"
  "sshd_passwd_auth"  "SSHD"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "sshd_rsa_host_key"  "SSHD"  "NULL"  "TRUE" "0"
