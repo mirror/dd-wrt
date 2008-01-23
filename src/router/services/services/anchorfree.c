@@ -293,8 +293,9 @@ start_anchorfreednat (void)
 
       getIPFromName (nvram_safe_get ("af_dnathost"), host);
       sprintf (dest, "%s:%s", host, nvram_safe_get ("af_dnatport"));
-      sprintf (source, "%s/%d", nvram_safe_get ("lan_ipaddr"),
-	       getmask (nvram_safe_get ("lan_netmask")));
+//      sprintf (source, "%d/%d", nvram_safe_get ("lan_ipaddr"),
+//	       getmask (nvram_safe_get ("lan_netmask")));
+      sprintf (source, "0.0.0.0/0");
       if (nvram_match ("af_ssid", "1"))
       sprintf (source, "%s/%d", nvram_safe_get (IFPREFIX "0.1_ipaddr"),
 	       getmask (nvram_safe_get (IFPREFIX "0.1_netmask")));
@@ -337,8 +338,9 @@ stop_anchorfree (void)
       char host[128];
       getIPFromName (nvram_safe_get ("af_dnathost"), host);
       sprintf (dest, "%s:%s", host, nvram_safe_get ("af_dnatport"));
-      sprintf (source, "%s/%d", nvram_safe_get ("lan_ipaddr"),
-	       getmask (nvram_safe_get ("lan_netmask")));
+//      sprintf (source, "%s/%d", nvram_safe_get ("lan_ipaddr"),
+//	       getmask (nvram_safe_get ("lan_netmask")));
+      sprintf (source, "0.0.0.0/0");
       if (nvram_match ("af_ssid", "1"))
       sprintf (source, "%s/%d", nvram_safe_get (IFPREFIX "0.1_ipaddr"),
 	       getmask (nvram_safe_get (IFPREFIX "0.1_netmask")));
