@@ -99,23 +99,14 @@ start_sshd (void)
   stop_sshd ();
   char *port = nvram_safe_get ("sshd_port");
   char *passwd_ok = nvram_match ("sshd_passwd_auth", "1") ? "" : "-s";
+  char *forwarding_ok = nvram_match ("sshd_forwarding", "1") ? "" : "-a";
 #ifdef HAVE_MAKSAT
   ret = eval ("dropbear", "-r", RSA_HOST_KEY_FILE, "-d",
 	      DSS_HOST_KEY_FILE, "-p", port, passwd_ok);
 #else
-  if (nvram_match ("sshd_forwarding", "1"))
-    {
       ret =
 	eval ("dropbear", "-b", "/tmp/loginprompt", "-r", RSA_HOST_KEY_FILE,
-	      "-d", DSS_HOST_KEY_FILE, "-p", port, passwd_ok, "-a");
-    }
-  else
-    {
-      ret =
-	eval ("dropbear", "-b", "/tmp/loginprompt", "-r", RSA_HOST_KEY_FILE,
-	      "-d", DSS_HOST_KEY_FILE, "-p", port, passwd_ok);
-    }
-}
+	      "-d", DSS_HOST_KEY_FILE, "-p", port, passwd_ok,forwarding_ok);
 #endif
 //  ret = _eval (sshd_argv, NULL, 0, &pid);
 
