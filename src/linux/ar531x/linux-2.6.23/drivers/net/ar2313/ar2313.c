@@ -5,6 +5,7 @@
  * Copyright (C) 2006 Imre Kaloz <kaloz@openwrt.org>
  * Copyright (C) 2006-2007 Felix Fietkau <nbd@openwrt.org>
  * Copyright (C) 2007 Tomas Dlabac <tomas@dlabac.net>
+ * Copyright (C) 2008 Sebastian Gottschall <s.gottschall@newmedia-net.de> (vlan and phy fixes)
  *
  * Thanks to Atheros for providing hardware and documentation
  * enabling me to write this driver.
@@ -136,7 +137,13 @@
 #define CRC_LEN                 4
 #define RX_OFFSET               2
 
-#define AR2313_BUFSIZE		(AR2313_MTU + ETH_HLEN + CRC_LEN + RX_OFFSET)
+#if defined(CONFIG_VLAN_8021Q) || defined(CONFIG_VLAN_8021Q_MODULE)
+#define VLAN_HDR			(4)
+#else
+#define VLAN_HDR			(0)
+#endif
+
+#define AR2313_BUFSIZE		(AR2313_MTU + ETH_HLEN + CRC_LEN + RX_OFFSET + VLAN_HDR)
 
 #ifdef MODULE
 MODULE_AUTHOR
