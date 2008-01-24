@@ -267,11 +267,14 @@ void sendIgmp(uint32 src, uint32 dst, int type, int code, uint32 group, int data
                MIN_IP_HEADER_LEN + IGMP_MINLEN + datalen, 0,
                (struct sockaddr *)&sdst, sizeof(sdst)) < 0) {
         if (errno == ENETDOWN)
+	    {
             log(LOG_ERR, errno, "Sender VIF was down.");
-        else
+	    }
+        else{
             log(LOG_INFO, errno,
                 "sendto to %s on %s",
                 inetFmt(dst, s1), inetFmt(src, s2));
+	    }
     }
 
     if(setigmpsource) {
