@@ -179,11 +179,16 @@ endif
 ifeq ($(CONFIG_CA8),y)
 CFLAGS += -DHAVE_CA8
 endif
+ifeq ($(CONFIG_NOP8670),y)
+CFLAGS += -DHAVE_GATEWORX
+else
+
 ifeq ($(CONFIG_GATEWORX),y)
 CFLAGS += -DHAVE_GATEWORX
 ifneq ($(CONFIG_WRT300NV2),y)
 CFLAGS += -DHAVE_CPUTEMP
 CFLAGS += -DHAVE_VOLT
+endif
 endif
 endif
 
