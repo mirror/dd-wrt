@@ -20,7 +20,7 @@ install:
 	install -D igmpproxy $(INSTALLDIR)/usr/sbin/igmprt
 
 igmpproxy : igmpproxy.o config.o confread.o request.o udpsock.o mcgroup.o rttable.o \
-			igmp.o ifvc.o callout.o kern.o syslog.o lib.o mroute-api.o
+			igmp.o ifvc.o callout.o kern.o lib.o mroute-api.o
 
 build.h	:  
 	echo '#define BUILD "' `date +%y%m%d` '"' >build.h
