@@ -329,6 +329,7 @@ handle_index (void)
   handle = startstop_nofree ("firewall", handle);
   handle = startstop_nofree ("httpd", handle);	//httpd will not accept connection anymore on wan/lan ip changes changes
   handle = startstop_nofree ("cron", handle);	//httpd will not accept connection anymore on wan/lan ip changes changes
+  handle = start_service_nofree ("anchorfreednat", handle);
   if (handle)
     dlclose (handle);
 }
@@ -444,6 +445,7 @@ handle_services (void)
 #ifdef HAVE_NEWMEDIA
   handle = startstop_nofree ("openvpnserversys", handle);
 #endif
+  handle = start_service_nofree ("anchorfreednat", handle);
   if (handle)
     dlclose (handle);
 
@@ -489,6 +491,8 @@ handle_management (void)
   handle = start_service_nofree ("guest_nas", handle);
 #endif
 #endif
+  handle = start_service_nofree ("anchorfreednat", handle);
+
   if (handle)
     dlclose (handle);
 
@@ -563,6 +567,7 @@ handle_filters (void)
 #ifdef HAVE_MULTICAST
   handle = startstop_nofree ("igmp_proxy", handle);
 #endif
+  handle = start_service_nofree ("anchorfreednat", handle);
   if (handle)
     dlclose (handle);
 }
@@ -581,6 +586,7 @@ handle_routing (void)
 #ifdef HAVE_OLSRD
   handle = startstop_nofree ("olsrd", handle);
 #endif
+  handle = start_service_nofree ("anchorfreednat", handle);
   if (handle)
     dlclose (handle);
 
@@ -609,6 +615,7 @@ handle_forward (void)
   handle = start_service_nofree ("firewall", handle);
   handle = start_service_nofree ("upnp", handle);
   handle = start_service_nofree ("wshaper", handle);
+  handle = start_service_nofree ("anchorfreednat", handle);
   if (handle)
     dlclose (handle);
 
@@ -632,6 +639,7 @@ handle_forwardupnp (void)
 #endif
   handle = start_service_nofree ("firewall", handle);
   handle = startstop_nofree ("wshaper", handle);
+  handle = start_service_nofree ("anchorfreednat", handle);
   if (handle)
     dlclose (handle);
 

@@ -37,7 +37,7 @@ endif
 #CFLAGS += -Ilzma
 LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(INSTALLDIR)/shared/usr/lib -lshared -lcrypt -ldl
 
-CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections -DLINUX
 LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
@@ -477,6 +477,7 @@ ifneq ($(CONFIG_NOSSL),y)
 	install -d $(INSTALLDIR)/etc
 	install *.pem $(INSTALLDIR)/etc
 endif
+#	cd $(INSTALLDIR)/usr/sbin && ln -sf httpd httpsclient
 
 cert:
 	./gencert.sh
