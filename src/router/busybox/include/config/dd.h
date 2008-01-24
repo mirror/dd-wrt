@@ -1,1 +1,1 @@
-#define CONFIG_DD 1
+#undef CONFIG_DD

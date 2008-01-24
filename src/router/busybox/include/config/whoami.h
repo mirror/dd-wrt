@@ -1,1 +1,1 @@
-#define CONFIG_WHOAMI 1
+#undef CONFIG_WHOAMI

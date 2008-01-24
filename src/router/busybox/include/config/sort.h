@@ -1,1 +1,1 @@
-#define CONFIG_SORT 1
+#undef CONFIG_SORT

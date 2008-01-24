@@ -1,1 +1,1 @@
-#define CONFIG_MORE 1
+#undef CONFIG_MORE
