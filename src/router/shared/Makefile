@@ -91,6 +91,9 @@ endif
 ifeq ($(CONFIG_GATEWORX),y)
   CFLAGS += -DHAVE_GATEWORX
 endif
+ifeq ($(CONFIG_NOP8670),y)
+  CFLAGS += -DHAVE_NOP8670
+endif
 ifeq ($(CONFIG_X86),y)
   CFLAGS += -DHAVE_X86
 endif
