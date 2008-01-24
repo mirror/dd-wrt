@@ -45,7 +45,7 @@
 static void e2fsck_pass1_dupblocks(e2fsck_t ctx, char *block_buf);
 
 /* pass1.c */
-static void e2fsck_use_inode_shortcuts(e2fsck_t ctx, int bool);
+static void e2fsck_use_inode_shortcuts(e2fsck_t ctx, int b);
 
 /* pass2.c */
 static int e2fsck_process_bad_inode(e2fsck_t ctx, ext2_ino_t dir,
@@ -4560,11 +4560,11 @@ static errcode_t pass1_check_directory(ext2_filsys fs, ext2_ino_t ino)
 	return 0;
 }
 
-void e2fsck_use_inode_shortcuts(e2fsck_t ctx, int bool)
+void e2fsck_use_inode_shortcuts(e2fsck_t ctx, int b)
 {
 	ext2_filsys fs = ctx->fs;
 
-	if (bool) {
+	if (b) {
 		fs->get_blocks = pass1_get_blocks;
 		fs->check_directory = pass1_check_directory;
 		fs->read_inode = pass1_read_inode;
