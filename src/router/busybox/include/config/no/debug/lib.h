@@ -1,1 +1,0 @@
-#define CONFIG_NO_DEBUG_LIB 1

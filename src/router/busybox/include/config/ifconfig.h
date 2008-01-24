@@ -1,1 +1,0 @@
-#define CONFIG_IFCONFIG 1
