@@ -1,0 +1,1 @@
+#define CONFIG_RUN_PARTS 1
