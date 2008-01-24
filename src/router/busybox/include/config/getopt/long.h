@@ -1,0 +1,1 @@
+#define CONFIG_GETOPT_LONG 1

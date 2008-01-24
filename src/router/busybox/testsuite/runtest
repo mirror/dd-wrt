@@ -1,0 +1,137 @@
+#!/bin/sh
+
+# Run one old-style test.
+# Tests are stored in applet/testcase shell scripts.
+# They are run using "sh -x -e applet/testcase".
+# Option -e will make testcase stop on the first failed command.
+run_applet_testcase()
+{
+	local applet=$1
+	local testcase=$2
+
+	local status
+	local uc_applet=$(echo $applet | tr a-z A-Z)
+	local testname=$(basename $testcase)
+
+	if grep -q "^# CONFIG_${uc_applet} is not set$" $bindir/.config; then
+		echo "UNTESTED: $testname"
+		return 0
+	fi
+
+	if grep -q "^# FEATURE: " $testcase; then
+		local feature=`sed -ne 's/^# FEATURE: //p' $testcase`
+
+		if grep -q "^# ${feature} is not set$" $bindir/.config; then
+			echo "UNTESTED: $testname"
+			return 0
+		fi
+	fi
+
+	rm -rf ".tmpdir.$applet"
+	mkdir -p ".tmpdir.$applet"
+	cd ".tmpdir.$applet" || return 1
+
+#	echo "Running testcase $testcase"
+	d="$tsdir" sh -x -e "$testcase" >"$testname.stdout.txt" 2>&1
+	status=$?
+	if [ $status != 0 ]; then
+		echo "FAIL: $testname"
+		if [ x"$VERBOSE" != x ]; then
+			cat "$testname.stdout.txt"
+		fi
+	else
+		echo "PASS: $testname"
+	fi
+
+	cd ..
+	rm -rf ".tmpdir.$applet"
+
+	return $status
+}
+
+# Run all old-style tests for given applet
+run_applet_tests()
+{
+	local applet=$1
+	local status=0
+	for testcase in $tsdir/$applet/*; do
+		if [ "$testcase" = "$tsdir/$applet/CVS" ]; then
+			continue
+		fi
+		run_applet_testcase $applet $testcase
+		test $? = 0 || status=1
+	done
+	return $status
+}
+
+
+
+[ -n "$tsdir" ] || tsdir=$(pwd)
+[ -n "$bindir" ] || bindir=$(dirname $(pwd))
+PATH="$bindir:$PATH"
+
+if [ x"$VERBOSE" = x ]; then
+	export VERBOSE=
+fi
+
+if [ x"$1" = x"-v" ]; then
+	export VERBOSE=1
+	shift
+fi
+
+implemented=$(
+	$bindir/busybox 2>&1 |
+	while read line; do
+		if [ x"$line" = x"Currently defined functions:" ]; then
+			xargs | sed 's/,//g'
+			break
+		fi
+	done
+	)
+
+applets="$implemented"
+if [ $# -ne 0 ]; then
+	applets="$@"
+fi
+
+# Populate a directory with links to all busybox applets
+
+LINKSDIR="$bindir/runtest-tempdir-links"
+rm -rf "$LINKSDIR" 2>/dev/null
+mkdir "$LINKSDIR"
+for i in $implemented; do
+	ln -s $bindir/busybox "$LINKSDIR"/$i
+done
+
+# Set up option flags so tests can be selective.
+export OPTIONFLAGS=:$(sed -nr 's/^CONFIG_//p' $bindir/.config | sed 's/=.*//' | xargs | sed 's/ /:/g')
+
+status=0
+for applet in $applets; do
+	if [ "$applet" = "links" ]; then continue; fi
+
+	# Any old-style tests for this applet?
+	if [ "$applet" != "CVS" -a -d "$tsdir/$applet" ]; then
+		run_applet_tests "$applet"
+		test $? = 0 || status=1
+	fi
+
+	# Is this a new-style test?
+	if [ -f "${applet}.tests" ]; then
+		if [ ! -h "$LINKSDIR/$applet" ] && [ "${applet:0:4}" != "all_" ]; then
+			echo "SKIPPED: $applet (not built)"
+			continue
+		fi
+#		echo "Running test ${tsdir:-.}/${applet}.tests"
+		PATH="$LINKSDIR:$tsdir:$bindir:$PATH" "${tsdir:-.}/${applet}.tests"
+		test $? = 0 || status=1
+	fi
+done
+
+# Leaving the dir makes it somewhat easier to run failed test by hand
+#rm -rf "$LINKSDIR"
+
+if [ $status != 0 -a x"$VERBOSE" = x ]; then
+	echo "Failures detected, running with -v (verbose) will give more info"
+fi
+exit $status
