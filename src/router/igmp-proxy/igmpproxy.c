@@ -55,7 +55,6 @@ static const char Usage[] =
 "\n" 
 "   -h   Display this help screen\n"
 "   -c   Specify a location for the config file (default is '/etc/igmpproxy.conf').\n"
-"   -d   Run in debug mode. Does not fork deamon, and output all logmessages on stderr.\n"
 "\n"
 ;
 
@@ -101,9 +100,9 @@ int main( int ArgCn, const char *ArgVc[] ) {
                 fputs( Usage, stderr );
                 exit( 0 );
 
+                /*
             case 'd':
                 Log2Stderr = LOG_DEBUG;
-                /*
             case 'v':
                 // Enable debug mode...
                 if (Log2Stderr < LOG_INFO) {
