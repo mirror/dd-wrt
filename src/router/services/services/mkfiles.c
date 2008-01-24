@@ -49,6 +49,7 @@ start_mkfiles (void)
 {
   FILE *fp;
   struct stat buf;
+cprintf("%s:%d",__func__,__LINE__);
 #ifdef HAVE_SKYTRON
   char *http_passwd = nvram_safe_get ("skyhttp_passwd");
 #elif HAVE_NEWMEDIA
@@ -58,11 +59,12 @@ start_mkfiles (void)
 #else
   char *http_passwd = nvram_safe_get ("http_passwd");
 #endif
-
+cprintf("%s:%d",__func__,__LINE__);
   if (stat (HOME_DIR, &buf) != 0)
     {
       mkdir (HOME_DIR, 0700);
     }
+cprintf("%s:%d",__func__,__LINE__);
 
 #ifdef HAVE_SSHD
   if (stat (SSH_DIR, &buf) != 0)
@@ -70,12 +72,14 @@ start_mkfiles (void)
       mkdir (SSH_DIR, 0700);
     }
 #endif
+cprintf("%s:%d",__func__,__LINE__);
 
   /* Create password's and group's database directory */
   if (stat (PASSWD_DIR, &buf) != 0)
     {
       mkdir (PASSWD_DIR, 0700);
     }
+cprintf("%s:%d",__func__,__LINE__);
 
   /* Write password file with username root and password */
   if (!(fp = fopen (PASSWD_FILE, "w")))
@@ -83,6 +87,7 @@ start_mkfiles (void)
       perror (PASSWD_FILE);
       return errno;
     }
+cprintf("%s:%d",__func__,__LINE__);
 #ifdef HAVE_REGISTER
   if (isregistered ())
 #endif
@@ -93,12 +98,14 @@ start_mkfiles (void)
 	       http_passwd);
       fclose (fp);
     }
+cprintf("%s:%d",__func__,__LINE__);
   /* Write group file with group 'root' */
   if (!(fp = fopen (GROUP_FILE, "w")))
     {
       perror (GROUP_FILE);
       return errno;
     }
+cprintf("%s:%d",__func__,__LINE__);
   fprintf (fp, "root:x:0:\n");
   fclose (fp);
 
@@ -113,13 +120,16 @@ start_mkfiles (void)
 
   system2 ("/bin/mkdir -p /var/log");
   system2 ("/bin/touch /var/log/messages");
+cprintf("%s:%d",__func__,__LINE__);
 
 #ifdef HAVE_SNMP
   system2 ("/bin/mkdir -p /var/snmp");
 #endif
   system2 ("/bin/chmod 0777 /tmp");
+cprintf("%s:%d",__func__,__LINE__);
 
   dns_to_resolv ();
+cprintf("%s:%d",__func__,__LINE__);
 
   return 0;
 }

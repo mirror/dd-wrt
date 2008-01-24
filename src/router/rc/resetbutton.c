@@ -581,13 +581,14 @@ resetbutton_main (int argc, char *argv[])
 {
 
   brand = getRouterBrand ();
-
+#ifndef HAVE_NOP8670
   if ((brand & 0x000f) == 0x000f)
-
+#endif
     {
       puts ("sorry, your unit does not support resetbutton feature\n");
       return 0;
     }
+#ifndef HAVE_NOP8670
 #ifdef HAVE_MAGICBOX
   init_gpio ();
 #endif
@@ -619,4 +620,5 @@ resetbutton_main (int argc, char *argv[])
     pause ();
 
   return 0;
+#endif
 }
