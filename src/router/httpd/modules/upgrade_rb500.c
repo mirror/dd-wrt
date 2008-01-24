@@ -274,11 +274,7 @@ do_upgrade_post (char *url, webs_t stream, int len, char *boundary)	//jimmy, htt
 #ifdef HAVE_HTTPS
       if (do_ssl)
 	{
-#ifdef HAVE_OPENSSL
-	  BIO_gets ((BIO *) stream, buf, 1);
-#elif defined(HAVE_MATRIXSSL)
-	  matrixssl_gets (stream, buf, 1);
-#endif
+	  wfgets(buf,1,stream);
 	}
       else
 	{

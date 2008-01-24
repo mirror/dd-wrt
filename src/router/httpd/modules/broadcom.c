@@ -2664,6 +2664,7 @@ validate_cgi (webs_t wp)
 	{
 	  if (variables[i]->validate)
 	    {
+//	      fprintf(stderr,"validating %s = %s\n",variables[i]->name,value);
 	      variables[i]->validate (wp, value, variables[i]);
 	    }
 	  else
@@ -3688,13 +3689,7 @@ do_apply_post (char *url, webs_t stream, int len, char *boundary)
       while (--len > 0)
 #ifdef HAVE_HTTPS
 	if (do_ssl)
-#ifdef HAVE_OPENSSL
-	  BIO_gets ((BIO *) stream, buf, 1);
-#elif defined(HAVE_MATRIXSSL)
-	  matrixssl_gets (stream, buf, 1);
-#else
-	  ;
-#endif
+	  wfgets(buf,1,stream);
 	else
 #endif
 	  (void) fgetc (stream);
