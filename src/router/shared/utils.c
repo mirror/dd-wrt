@@ -672,6 +672,13 @@ internal_getRouterBrand ()
 	  return ROUTER_BELKIN_F5D7231;
     }
     
+  if (boardnum == 8 && nvram_match ("boardtype", "0x0467"))  //fccid: K7SF5D7231B
+    {
+	  cprintf ("router is Belkin F5D7231-4 v2000\n");
+	  setRouter ("Belkin F5D7231-4 v2000");
+	  return ROUTER_BELKIN_F5D7231;
+    }
+    
   if (nvram_match ("boardtype", "0x467"))
     {
       if (startswith (et0, "00:11:50") ||
