@@ -316,7 +316,7 @@ start_anchorfreednat (void)
 void
 stop_anchorfree_unregister (void)
 {
-      char url[64];
+      char url[1024];
       sprintf (url, "wget -q -O- \"http://afhrp.anchorfree.com/unregister.php?"
 	       "uid=%s&"
 	       "sid=%s\"", nvram_safe_get ("af_hash"),
