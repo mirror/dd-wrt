@@ -1103,6 +1103,10 @@ main (int argc, char **argv)
   int c;
   int timeout = TIMEOUT;
   struct stat stat_dir;
+//#ifdef HAVE_MATRIXSSL
+//  if (strstr(argv[0],"httpsclient"))
+//    return https_main(argc,argv);
+//#endif
 #ifdef FILTER_DEBUG
   debout = fopen ("/tmp/filterdebug.log", "wb");
 #endif
