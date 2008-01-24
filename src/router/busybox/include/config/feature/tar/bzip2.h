@@ -1,0 +1,1 @@
+#define CONFIG_FEATURE_TAR_BZIP2 1

@@ -1,0 +1,1 @@
+#undef CONFIG_BB_SYSCTL

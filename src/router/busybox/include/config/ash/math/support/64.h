@@ -1,0 +1,1 @@
+#define CONFIG_ASH_MATH_SUPPORT_64 1
