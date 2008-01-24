@@ -1,0 +1,1 @@
+#define CONFIG_HOSTNAME 1

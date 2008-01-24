@@ -1,0 +1,266 @@
+#!/bin/sh
+
+debug=false
+
+# Linker flags used:
+#
+# Informational:
+# --warn-common
+# -Map $EXE.map
+# --verbose
+#
+# Optimizations:
+# --sort-common                 reduces padding
+# --sort-section alignment      reduces padding
+# --gc-sections                 throws out unused sections,
+#                               does not work for shared libs
+# -On                           Not used, maybe useful?
+#
+# List of files to link:
+# $l_list                       == --start-group -llib1 -llib2 --end-group
+# --start-group $O_FILES $A_FILES --end-group
+#
+# Shared library link:
+# -shared                       self-explanatory
+# -fPIC                         position-independent code
+# --enable-new-dtags            ?
+# -z,combreloc                  ?
+# -soname="libbusybox.so.$BB_VER"
+# --undefined=lbb_main          Seed name to start pulling from
+#                               (otherwise we'll need --whole-archive)
+# -static                       Not used, but may be useful! manpage:
+#                               "... This option can be used with -shared.
+#                               Doing so means that a shared library
+#                               is being created but that all of the library's
+#                               external references must be resolved by pulling
+#                               in entries from static libraries."
+
+
+try() {
+    printf "%s\n" "Output of:" >$EXE.out
+    printf "%s\n" "$*" >>$EXE.out
+    printf "%s\n" "==========" >>$EXE.out
+    $debug && echo "Trying: $*"
+    "$@" >>$EXE.out 2>&1
+    exitcode=$?
+    return $exitcode
+}
+
+check_cc() {
+    if $CC $1 -shared -o /dev/null -xc /dev/null > /dev/null 2>&1; then
+        echo "$1";
+    else
+        echo "$2";
+    fi
+}
+
+EXE="$1"
+CC="$2"
+LDFLAGS="$3"
+O_FILES="$4"
+A_FILES="$5"
+LDLIBS="$6"
+
+# The -Wl,--sort-section option is not supported by older versions of ld
+SORT_SECTION=`check_cc "-Wl,--sort-section -Wl,alignment" ""`
+
+# Sanitize lib list (dups, extra spaces etc)
+LDLIBS=`echo "$LDLIBS" | xargs -n1 | sort | uniq | xargs`
+
+# First link with all libs. If it fails, bail out
+echo "Trying libraries: $LDLIBS"
+# "lib1 lib2 lib3" -> "-llib1 -llib2 -llib3"
+l_list=`echo "$LDLIBS" | sed -e 's/ / -l/g' -e 's/^/-l/' -e 's/^-l$//'`
+test "x$l_list" != "x" && l_list="-Wl,--start-group $l_list -Wl,--end-group"
+try $CC $LDFLAGS \
+	-o $EXE \
+	-Wl,--sort-common \
+	$SORT_SECTION \
+	-Wl,--gc-sections \
+	-Wl,--start-group $O_FILES $A_FILES -Wl,--end-group \
+	$l_list \
+|| {
+    echo "Failed: $* $l_list"
+    cat $EXE.out
+    exit 1
+}
+
+# Now try to remove each lib and build without it.
+# Stop when no lib can be removed.
+while test "$LDLIBS"; do
+    $debug && echo "Trying libraries: $LDLIBS"
+    all_needed=true
+    for one in $LDLIBS; do
+	without_one=`echo " $LDLIBS " | sed "s/ $one / /g" | xargs`
+	# "lib1 lib2 lib3" -> "-llib1 -llib2 -llib3"
+	l_list=`echo "$without_one" | sed -e 's/ / -l/g' -e 's/^/-l/' -e 's/^-l$//'`
+	test "x$l_list" != "x" && l_list="-Wl,--start-group $l_list -Wl,--end-group"
+	$debug && echo "Trying -l options: '$l_list'"
+	try $CC $LDFLAGS \
+		-o $EXE \
+		-Wl,--sort-common \
+		$SORT_SECTION \
+		-Wl,--gc-sections \
+		-Wl,--start-group $O_FILES $A_FILES -Wl,--end-group \
+		$l_list
+	if test $? = 0; then
+	    echo " Library $one is not needed"
+	    LDLIBS="$without_one"
+	    all_needed=false
+	else
+	    echo " Library $one is needed"
+	fi
+    done
+    # All libs were needed, can't remove any
+    $all_needed && break
+    # If there is no space char, the list has just one lib.
+    # I'm not sure that in this case lib really is 100% needed.
+    # Let's try linking without it anyway... thus commented out.
+    #{ echo "$LDLIBS" | grep -q ' '; } || break
+done
+
+# Make the binary with final, minimal list of libs
+echo "Final link with: ${LDLIBS:-<none>}"
+l_list=`echo "$LDLIBS" | sed -e 's/ / -l/g' -e 's/^/-l/' -e 's/^-l$//'`
+test "x$l_list" != "x" && l_list="-Wl,--start-group $l_list -Wl,--end-group"
+# --verbose gives us gobs of info to stdout (e.g. linker script used)
+if ! test -f busybox_ldscript; then
+    try $CC $LDFLAGS \
+	    -o $EXE \
+	    -Wl,--sort-common \
+	    $SORT_SECTION \
+	    -Wl,--gc-sections \
+	    -Wl,--start-group $O_FILES $A_FILES -Wl,--end-group \
+	    $l_list \
+	    -Wl,--warn-common \
+	    -Wl,-Map -Wl,$EXE.map \
+	    -Wl,--verbose \
+    || {
+	cat $EXE.out
+	exit 1
+    }
+else
+    echo "Custom linker script 'busybox_ldscript' found, using it"
+    # Add SORT_BY_ALIGNMENT to linker script (found in $EXE.out):
+    #  .rodata         : { *(.rodata SORT_BY_ALIGNMENT(.rodata.*) .gnu.linkonce.r.*) }
+    #  *(.data SORT_BY_ALIGNMENT(.data.*) .gnu.linkonce.d.*)
+    #  *(.bss SORT_BY_ALIGNMENT(.bss.*) .gnu.linkonce.b.*)
+    # This will eliminate most of the padding (~3kb).
+    # Hmm, "ld --sort-section alignment" should do it too.
+    try $CC $LDFLAGS \
+	    -o $EXE \
+	    -Wl,--sort-common \
+	    $SORT_SECTION \
+	    -Wl,--gc-sections \
+	    -Wl,-T -Wl,busybox_ldscript \
+	    -Wl,--start-group $O_FILES $A_FILES -Wl,--end-group \
+	    $l_list \
+	    -Wl,--warn-common \
+	    -Wl,-Map -Wl,$EXE.map \
+	    -Wl,--verbose \
+    || {
+	cat $EXE.out
+	exit 1
+    }
+fi
+
+. ./.config
+
+sharedlib_dir="0_lib"
+
+if test "$CONFIG_BUILD_LIBBUSYBOX" = y; then
+    mkdir "$sharedlib_dir" 2>/dev/null
+    test -d "$sharedlib_dir" || {
+	echo "Cannot make directory $sharedlib_dir"
+	exit 1
+    }
+    ln -s "libbusybox.so.$BB_VER" "$sharedlib_dir"/libbusybox.so 2>/dev/null
+
+    EXE="$sharedlib_dir/libbusybox.so.${BB_VER}_unstripped"
+    try $CC $LDFLAGS \
+	    -o $EXE \
+	    -shared -fPIC \
+	    -Wl,--enable-new-dtags \
+	    -Wl,-z,combreloc \
+	    -Wl,-soname="libbusybox.so.$BB_VER" \
+	    -Wl,--undefined=lbb_main \
+	    -Wl,--sort-common \
+	    $SORT_SECTION \
+	    -Wl,--start-group $A_FILES -Wl,--end-group \
+	    $l_list \
+	    -Wl,--warn-common \
+	    -Wl,-Map -Wl,$EXE.map \
+	    -Wl,--verbose \
+    || {
+	echo "Linking $EXE failed"
+	cat $EXE.out
+	exit 1
+    }
+    $STRIP -s --remove-section=.note --remove-section=.comment $EXE -o "$sharedlib_dir/libbusybox.so.$BB_VER"
+    chmod a+x "$sharedlib_dir/libbusybox.so.$BB_VER"
+    echo "libbusybox: $sharedlib_dir/libbusybox.so.$BB_VER"
+fi
+
+if test "$CONFIG_FEATURE_SHARED_BUSYBOX" = y; then
+    EXE="$sharedlib_dir/busybox_unstripped"
+    try $CC $LDFLAGS \
+	    -o $EXE \
+	    -Wl,--sort-common \
+	    $SORT_SECTION \
+	    -Wl,--gc-sections \
+	    -Wl,--start-group $O_FILES -Wl,--end-group \
+	    -L"$sharedlib_dir" -lbusybox \
+	    -Wl,--warn-common \
+	    -Wl,-Map -Wl,$EXE.map \
+	    -Wl,--verbose \
+    || {
+	echo "Linking $EXE failed"
+	cat $EXE.out
+	exit 1
+    }
+    $STRIP -s --remove-section=.note --remove-section=.comment $EXE -o "$sharedlib_dir/busybox"
+    echo "busybox linked against libbusybox: $sharedlib_dir/busybox"
+fi
+
+if test "$CONFIG_FEATURE_INDIVIDUAL" = y; then
+    echo "Linking individual applets against libbusybox (see $sharedlib_dir/*)"
+    gcc -DNAME_MAIN_CNAME -E -include include/autoconf.h include/applets.h \
+    | grep -v "^#" \
+    | grep -v "^$" \
+    > applet_lst.tmp
+    while read name main junk; do
+
+	echo "\
+void lbb_prepare(const char *applet, char **argv);
+int $main(int argc, char **argv);
+
+int main(int argc, char **argv)
+{
+	lbb_prepare(\"$name\", argv);
+	return $main(argc, argv);
+}
+" >"$sharedlib_dir/applet.c"
+
+	EXE="$sharedlib_dir/$name"
+	try $CC $LDFLAGS "$sharedlib_dir/applet.c" \
+		-o $EXE \
+		-Wl,--sort-common \
+		$SORT_SECTION \
+		-Wl,--gc-sections \
+		-L"$sharedlib_dir" -lbusybox \
+		-Wl,--warn-common \
+	|| {
+	    echo "Linking $EXE failed"
+	    cat $EXE.out
+	    exit 1
+	}
+	rm -- "$sharedlib_dir/applet.c" $EXE.out
+	$STRIP -s --remove-section=.note --remove-section=.comment $EXE
+
+    done <applet_lst.tmp
+fi
+
+# libbusybox.so is needed only for -lbusybox at link time,
+# it is not needed at runtime. Deleting to reduce confusion.
+rm "$sharedlib_dir"/libbusybox.so 2>/dev/null
+exit 0 # or else we may confuse make
