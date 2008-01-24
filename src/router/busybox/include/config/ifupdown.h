@@ -1,1 +1,1 @@
-#define CONFIG_IFUPDOWN 1
+#undef CONFIG_IFUPDOWN

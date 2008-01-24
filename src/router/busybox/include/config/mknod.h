@@ -1,1 +1,1 @@
-#undef CONFIG_MKNOD
+#define CONFIG_MKNOD 1

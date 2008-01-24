@@ -1,1 +1,1 @@
-#define CONFIG_CLEAR 1
+#undef CONFIG_CLEAR
