@@ -217,6 +217,9 @@ internal_getRouterBrand ()
 #elif HAVE_TONZE
   setRouter ("Tonze AP-425");
   return ROUTER_BOARD_GATEWORX;
+#elif HAVE_NOP8670
+  setRouter ("Senao NOP-8670");
+  return ROUTER_BOARD_GATEWORX;
 #elif HAVE_WRT300NV2
   setRouter ("Linksys WRT300N v2");
   return ROUTER_BOARD_GATEWORX;
