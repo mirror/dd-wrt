@@ -59,12 +59,12 @@ start_igmp_proxy (void)
       }
       fprintf (fp, "phyint lo disabled\n");
       fclose (fp);
-//      if (nvram_match ("wan_proto", "disabled")) //todo: add upstream config
-//      {
+      if (nvram_match ("wan_proto", "disabled")) //todo: add upstream config
+      {
 //        ret = _evalpid (igmp_proxybr_argv, NULL, 0, &pid);
-//        return ret;
-//      }
-//      else
+        return ret;
+      }
+      else
       ret = _evalpid(argv, NULL, 0, &pid);
       syslog (LOG_INFO, "igmprt : multicast daemon successfully started\n");
     }

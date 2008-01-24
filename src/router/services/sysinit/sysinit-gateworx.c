@@ -59,6 +59,8 @@ detect (char *devicename)
   return res > 0 ? 1 : 0;
 }
 
+#ifndef HAVE_TONZE
+#ifndef HAVE_NOP8670
 
 void
 checkupdate (void)
@@ -128,7 +130,8 @@ checkupdate (void)
     }
 }
 
-
+#endif
+#endif
 int
 start_sysinit (void)
 {
@@ -191,7 +194,9 @@ start_sysinit (void)
   /* Modules */
   uname (&name);
 #ifndef HAVE_TONZE
+#ifndef HAVE_NOP8670
  checkupdate ();
+#endif
 #endif
   nvram_set ("intel_eth", "0");
   if (detect ("82541"))		// Intel Gigabit
@@ -261,6 +266,26 @@ start_sysinit (void)
 Configure mac addresses by reading data from eeprom
 */
 //  char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom";  /* bank2=0x100 */
+#ifdef HAVE_NOP8670
+  char *filename = "/dev/mtdblock/5";	/* bank2=0x100 */
+  FILE *file = fopen (filename, "r");
+  if (file)
+  {
+  unsigned char buf[16];
+  fseek(file,0x422,SEEK_SET);
+  fread (&buf[0], 6, 1, file);
+  char mac[16];
+  sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2],
+	   buf[3], buf[4], buf[5]);
+  eval ("ifconfig", "ixp0", "hw", "ether", mac);
+  fseek(file,0x43b,SEEK_SET);
+  fread (&buf[6], 6, 1, file);
+  sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[6], buf[7], buf[8],
+	   buf[9], buf[10], buf[11]);
+  eval ("ifconfig", "ixp1", "hw", "ether", mac);
+  fclose (file);
+  }
+#else
   char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom";	/* bank2=0x100 */
   FILE *file = fopen (filename, "r");
   if (file)
@@ -278,6 +303,9 @@ Configure mac addresses by reading data from eeprom
 
   fclose (file);
   }
+
+
+#endif
   eval ("ifconfig", "ixp0", "0.0.0.0", "up");
   eval ("ifconfig", "ixp1", "0.0.0.0", "up");
   if (getRouterBrand () == ROUTER_BOARD_GATEWORX_GW2345)	//lets load the spi drivers for this switch
