@@ -31,28 +31,6 @@
 extern BIO *bio_err;
 #endif
 
-//   typedef  BIO * webs_t;
-//   #define wfgets(buf,len,fp)     BIO_gets(fp,buf,len)
-//   #define wfputc(c,fp)           BIO_printf(fp,"%c",c)
-//   #define wfputs(buf,fp)         BIO_puts(fp,buf)
-//   #define wfprintf(fp, args...)  BIO_printf(fp, ## args)
-//   #define wfwrite(buf,size,n,fp) BIO_write(fp,buf,n * size)
-//   #define wfread(buf,size,n,fp)  BIO_read(fp,buf,n * size)
-//   #define wfflush(fp)            BIO_flush(fp)
-//   #define wfclose(fp)            BIO_free_all(fp)
-//#else
-//   typedef FILE * webs_t;
-//   #define wfgets(buf,len,fp)     fgets(buf,len,fp)
-//   #define wfputc(c,fp)           fputc(c,fp)
-//   #define wfputs(buf,fp)         fputs(buf,fp)
-//   #define wfprintf(fp, args...)  fprintf(fp, ## args)
-//   #define wfwrite(buf,size,n,fp) fwrite(buf,size,n,fp)
-//   #define wfread(buf,size,n,fp)  fread(buf,size,n,fp)
-//   #define wfflush(fp)            fflush(fp)
-//   #define wfclose(fp)            fclose(fp)
-//#endif
-
-//#define FILTER_DEBUG 1
 
 typedef FILE * webs_t;
 extern char * wfgets(char *buf, int len, FILE *fp);

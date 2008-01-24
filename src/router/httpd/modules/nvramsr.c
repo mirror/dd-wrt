@@ -84,6 +84,7 @@ static char *filter[] = { "lan_ifnames",
   "wl0gpio3",
   "wl0gpio4",
   "reset_gpio",
+  "af_hash",
   NULL
 };
 static int
@@ -214,13 +215,7 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 #ifdef HAVE_HTTPS
       if (do_ssl)
 	{
-#ifdef HAVE_OPENSSL
-	  BIO_gets ((BIO *) wp, buf, 1);
-#elif defined(HAVE_MATRIXSSL)
-	  matrixssl_gets (wp, buf, 1);
-#else
-
-#endif
+	wfgets(buf,1,wp);
 	}
       else
 #endif
