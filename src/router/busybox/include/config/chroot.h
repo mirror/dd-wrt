@@ -1,1 +1,1 @@
-#define CONFIG_CHROOT 1
+#undef CONFIG_CHROOT

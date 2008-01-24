@@ -1,1 +1,1 @@
-#define CONFIG_NETSTAT 1
+#undef CONFIG_NETSTAT
