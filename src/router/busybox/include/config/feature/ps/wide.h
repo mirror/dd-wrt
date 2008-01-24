@@ -1,1 +1,0 @@
-#define CONFIG_FEATURE_PS_WIDE 1

@@ -1,1 +1,0 @@
-#undef CONFIG_PIVOT_ROOT

@@ -1,1 +1,0 @@
-#undef CONFIG_FEATURE_DF_INODE
