@@ -1,1 +1,1 @@
-#define CONFIG_CHOWN 1
+#undef CONFIG_CHOWN

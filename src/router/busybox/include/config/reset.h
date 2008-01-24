@@ -1,1 +1,1 @@
-#define CONFIG_RESET 1
+#undef CONFIG_RESET

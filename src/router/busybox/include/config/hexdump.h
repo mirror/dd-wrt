@@ -1,1 +1,1 @@
-#define CONFIG_HEXDUMP 1
+#undef CONFIG_HEXDUMP

@@ -1,1 +1,1 @@
-#define CONFIG_NC_SERVER 1
+#undef CONFIG_NC_SERVER

@@ -1,1 +1,1 @@
-#define CONFIG_IFUPDOWN_IFSTATE_PATH "/var/run/ifstate"
+#define CONFIG_IFUPDOWN_IFSTATE_PATH ""
