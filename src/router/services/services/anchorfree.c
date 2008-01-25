@@ -92,6 +92,9 @@ getIPFromName (char *name, char *ip)
   memset (&hint, 0, sizeof (hint));
   hint.ai_socktype = SOCK_STREAM;
   rc = getaddrinfo (name, NULL, &hint, &result);
+  if (!result) //give it a second try
+  rc = getaddrinfo (name, NULL, &hint, &result);
+  
   if (result)
     {
       sockaddr_to_dotted (result->ai_addr, ip);
