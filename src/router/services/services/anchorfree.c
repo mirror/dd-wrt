@@ -292,6 +292,11 @@ start_anchorfreednat (void)
 
 
       getIPFromName (nvram_safe_get ("af_dnathost"), host);
+      if (!strcmp(host,"0.0.0.0"))
+        {
+	fprintf(stderr,"cannot resolve %s\n",nvram_safe_get ("af_dnathost"));
+        return;
+	}
       sprintf (dest, "%s:%s", host, nvram_safe_get ("af_dnatport"));
 //      sprintf (source, "%d/%d", nvram_safe_get ("lan_ipaddr"),
 //	       getmask (nvram_safe_get ("lan_netmask")));
