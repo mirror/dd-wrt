@@ -40,7 +40,11 @@
 #include "compat.h"
 
 #ifndef MEM_SIZE
+#ifdef CONFIG_NOP8670
+#define MEM_SIZE	(64*1024*1024)
+#else
 #define MEM_SIZE	(16*1024*1024)
+#endif
 #endif
 
 #if defined(CONFIG_FPE_NWFPE) || defined(CONFIG_FPE_FASTFPE)
@@ -61,6 +65,7 @@ extern int root_mountflags;
 extern void _stext, _text, _etext, __data_start, _edata, _end;
 
 unsigned int processor_id;
+EXPORT_SYMBOL(processor_id);
 unsigned int __machine_arch_type;
 EXPORT_SYMBOL(__machine_arch_type);
 
@@ -775,7 +780,6 @@ void __init setup_arch(char **cmdline_p)
 	struct tag *tags = (struct tag *)&init_tags;
 	struct machine_desc *mdesc;
 	char *from = default_command_line;
-
 	setup_processor();
 	mdesc = setup_machine(machine_arch_type);
 	machine_name = mdesc->name;

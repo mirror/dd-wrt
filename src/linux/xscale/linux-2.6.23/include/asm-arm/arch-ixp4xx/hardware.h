@@ -46,5 +46,6 @@
 #include "nslu2.h"
 #include "nas100d.h"
 #include "dsmg600.h"
+#include "ap71.h"
 
 #endif  /* _ASM_ARCH_HARDWARE_H */

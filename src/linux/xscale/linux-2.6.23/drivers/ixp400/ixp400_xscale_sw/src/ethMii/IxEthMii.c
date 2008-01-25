@@ -157,6 +157,8 @@ ixEthMiiPhyScan(BOOL phyPresent[], UINT32 maxPhyCount)
 		    || (ixEthMiiPhyId[i] == IX_ETH_MII_BCM5241_PHY_ID)
 		    || (ixEthMiiPhyId[i] == IX_ETH_MII_BCM5241B_PHY_ID)
 		    || (ixEthMiiPhyId[i] == IX_ETH_MII_BCM5327_PHY_ID)
+		    || (ixEthMiiPhyId[i] == IX_ETH_MII_RTL8021_PHY_ID)
+		    || (ixEthMiiPhyId[i] == IX_ETH_MII_MARVELL_PHY_ID)
 		    )
 		{
 		    /* supported phy */
@@ -320,8 +322,10 @@ ixEthMiiPhyReset(UINT32 phyAddr)
 	if ((ixEthMiiPhyId[phyAddr] == IX_ETH_MII_LXT971_PHY_ID)	||
 	    (ixEthMiiPhyId[phyAddr] == IX_ETH_MII_LXT972_PHY_ID)	||
 	    (ixEthMiiPhyId[phyAddr] == IX_ETH_MII_LXT973_PHY_ID)	||
+	    (ixEthMiiPhyId[phyAddr] == IX_ETH_MII_RTL8021_PHY_ID)	||
 	    (ixEthMiiPhyId[phyAddr] == IX_ETH_MII_LXT973A3_PHY_ID)	||
-		(ixEthMiiPhyId[phyAddr] == IX_ETH_MII_LXT9785_PHY_ID)
+		(ixEthMiiPhyId[phyAddr] == IX_ETH_MII_LXT9785_PHY_ID)   || 
+		(ixEthMiiPhyId[phyAddr] == IX_ETH_MII_MARVELL_PHY_ID)
 	    )
 	{
 	    /* use the control register to reset the phy */
@@ -416,7 +420,9 @@ ixEthMiiLinkStatus(UINT32 phyAddr,
     {
 	if ((ixEthMiiPhyId[phyAddr] == IX_ETH_MII_LXT971_PHY_ID)	||
 	    (ixEthMiiPhyId[phyAddr] == IX_ETH_MII_LXT972_PHY_ID)	||
-	    (ixEthMiiPhyId[phyAddr] == IX_ETH_MII_LXT9785_PHY_ID)
+//            (ixEthMiiPhyId[phyAddr] == IX_ETH_MII_RTL8021_PHY_ID)	||      
+	    (ixEthMiiPhyId[phyAddr] == IX_ETH_MII_LXT9785_PHY_ID)       ||
+		(ixEthMiiPhyId[phyAddr] == IX_ETH_MII_MARVELL_PHY_ID)
 		)
 	{
 	    /* --------------------------------------------------*/

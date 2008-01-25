@@ -247,6 +247,11 @@ config ARCH_IMX
 	help
 	  Support for Motorola's i.MX family of processors (MX1, MXL).
 
+config ARCH_MV88fxx81
+        bool "mv88fxx81"
+	select PCI
+
+
 config ARCH_IOP13XX
 	bool "IOP13xx-based"
 	depends on MMU
@@ -407,6 +412,15 @@ config ARCH_OMAP
 	  Support for TI's OMAP platform (OMAP1 and OMAP2).
 
 endchoice
+
+
+source "arch/arm/mach-mv88fxx81/LSP/Kconfig"
+
+config SCM_SUPPORT
+        bool "SerComm Support"
+        help
+          Say Y here for sercomm feature support.
+
 
 source "arch/arm/mach-clps711x/Kconfig"
 
