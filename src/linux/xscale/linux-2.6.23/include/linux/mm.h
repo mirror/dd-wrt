@@ -1170,6 +1170,8 @@ int vm_insert_pfn(struct vm_area_struct *vma, unsigned long addr,
 
 struct page *follow_page(struct vm_area_struct *, unsigned long address,
 			unsigned int foll_flags);
+struct page *__follow_page(struct mm_struct *, unsigned long address,
+			unsigned int foll_flags);
 #define FOLL_WRITE	0x01	/* check pte is writable */
 #define FOLL_TOUCH	0x02	/* mark page accessed */
 #define FOLL_GET	0x04	/* do get_page on page */

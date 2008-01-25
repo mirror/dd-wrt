@@ -653,7 +653,9 @@ static int do_ip_setsockopt(struct sock *sk, int level,
 		struct ip_msfilter *msf;
 
 		if (optlen < IP_MSFILTER_SIZE(0))
+		    {
 			goto e_inval;
+		    }
 		if (optlen > sysctl_optmem_max) {
 			err = -ENOBUFS;
 			break;

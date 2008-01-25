@@ -13,6 +13,7 @@
 #define PC110PAD_MINOR 9
 /*#define ADB_MOUSE_MINOR 10	FIXME OBSOLETE */
 #define CRYPTODEV_MINOR		70	/* OCF async crypto */
+#define CESADEV_MINOR		71	/* marvell CESA     */
 #define WATCHDOG_MINOR		130	/* Watchdog timer     */
 #define TEMP_MINOR		131	/* Temperature Sensor */
 #define RTC_MINOR 135

@@ -163,6 +163,15 @@ struct pci_sys_data;
 extern int ixp4xx_setup(int nr, struct pci_sys_data *sys);
 extern struct pci_bus *ixp4xx_scan_bus(int nr, struct pci_sys_data *sys);
 
+/* 
+ * GPIO interrupt types.
+ */
+#define IXP4XX_GPIO_ACTIVE_HIGH		0x4 /* Default */
+#define IXP4XX_GPIO_ACTIVE_LOW		0x8
+#define IXP4XX_GPIO_RISING_EDGE		0x10
+#define IXP4XX_GPIO_FALLING_EDGE 	0x20
+#define IXP4XX_GPIO_TRANSITIONAL 	0x40
+
 /*
  * GPIO-functions
  */

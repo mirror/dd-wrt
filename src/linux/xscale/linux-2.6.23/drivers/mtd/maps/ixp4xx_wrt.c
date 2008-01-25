@@ -1,5 +1,5 @@
 /*
- * $Id: ixp4xx.c,v 1.13 2005/11/16 16:23:21 dvrabel Exp $
+ * $Id: ixp4xx.c,v 1.5 2007/01/29 02:44:09 pacino_cao Exp $
  *
  * drivers/mtd/maps/ixp4xx.c
  *
@@ -30,59 +30,15 @@
 #include <linux/mtd/partitions.h>
 
 #include <asm/io.h>
+#include <asm/mach-types.h>
 #include <asm/mach/flash.h>
 
 #include <linux/reboot.h>
 
-/*
- * Read/write a 16 bit word from flash address 'addr'.
- *
- * When the cpu is in little-endian mode it swizzles the address lines
- * ('address coherency') so we need to undo the swizzling to ensure commands
- * and the like end up on the correct flash address.
- *
- * To further complicate matters, due to the way the expansion bus controller
- * handles 32 bit reads, the byte stream ABCD is stored on the flash as:
- *     D15    D0
- *     +---+---+
- *     | A | B | 0
- *     +---+---+
- *     | C | D | 2
- *     +---+---+
- * This means that on LE systems each 16 bit word must be swapped. Note that
- * this requires CONFIG_MTD_CFI_BE_BYTE_SWAP to be enabled to 'unswap' the CFI
- * data and other flash commands which are always in D7-D0.
- */
 #ifndef __ARMEB__
-#ifndef CONFIG_MTD_CFI_BE_BYTE_SWAP
-#  error CONFIG_MTD_CFI_BE_BYTE_SWAP required
-#endif
-
-static inline u16 flash_read16(void __iomem *addr)
-{
-	return be16_to_cpu(__raw_readw((void __iomem *)((unsigned long)addr ^ 0x2)));
-}
-
-static inline void flash_write16(u16 d, void __iomem *addr)
-{
-	__raw_writew(cpu_to_be16(d), (void __iomem *)((unsigned long)addr ^ 0x2));
-}
-
 #define	BYTE0(h)	((h) & 0xFF)
 #define	BYTE1(h)	(((h) >> 8) & 0xFF)
-
 #else
-
-static inline u16 flash_read16(const void __iomem *addr)
-{
-	return __raw_readw(addr);
-}
-
-static inline void flash_write16(u16 d, void __iomem *addr)
-{
-	__raw_writew(d, addr);
-}
-
 #define	BYTE0(h)	(((h) >> 8) & 0xFF)
 #define	BYTE1(h)	((h) & 0xFF)
 #endif
@@ -90,7 +46,7 @@ static inline void flash_write16(u16 d, void __iomem *addr)
 static map_word ixp4xx_read16(struct map_info *map, unsigned long ofs)
 {
 	map_word val;
-	val.x[0] = flash_read16(map->virt + ofs);
+	val.x[0] = *(__u16 *) (map->map_priv_1 + ofs);
 	return val;
 }
 
@@ -102,46 +58,37 @@ static map_word ixp4xx_read16(struct map_info *map, unsigned long ofs)
 static void ixp4xx_copy_from(struct map_info *map, void *to,
 			     unsigned long from, ssize_t len)
 {
+	int i;
 	u8 *dest = (u8 *) to;
-	void __iomem *src = map->virt + from;
+	u16 *src = (u16 *) (map->map_priv_1 + from);
+	u16 data;
 
-	if (len <= 0)
-		return;
-
-	if (from & 1) {
-		*dest++ = BYTE1(flash_read16(src));
-                src++;
-		--len;
+	for (i = 0; i < (len / 2); i++) {
+		data = src[i];
+		dest[i * 2] = BYTE0(data);
+		dest[i * 2 + 1] = BYTE1(data);
 	}
 
-	while (len >= 2) {
-		u16 data = flash_read16(src);
-		*dest++ = BYTE0(data);
-		*dest++ = BYTE1(data);
-		src += 2;
-		len -= 2;
-        }
-
-	if (len > 0)
-		*dest++ = BYTE0(flash_read16(src));
+	if (len & 1)
+		dest[len - 1] = BYTE0(src[i]);
 }
 
-/*
+/* 
  * Unaligned writes are ignored, causing the 8-bit
  * probe to fail and proceed to the 16-bit probe (which succeeds).
  */
 static void ixp4xx_probe_write16(struct map_info *map, map_word d, unsigned long adr)
 {
 	if (!(adr & 1))
-		flash_write16(d.x[0], map->virt + adr);
+	       *(__u16 *) (map->map_priv_1 + adr) = d.x[0];
 }
 
-/*
+/* 
  * Fast write16 function without the probing check above
  */
 static void ixp4xx_write16(struct map_info *map, map_word d, unsigned long adr)
 {
-	flash_write16(d.x[0], map->virt + adr);
+       *(__u16 *) (map->map_priv_1 + adr) = d.x[0];
 }
 
 struct ixp4xx_flash_info {
@@ -156,21 +103,29 @@ static const char *probes[] = { "RedBoot", "cmdlinepart", NULL };
 static int ixp4xx_flash_remove(struct platform_device *dev)
 {
 	struct flash_platform_data *plat = dev->dev.platform_data;
-	struct ixp4xx_flash_info *info = platform_get_drvdata(dev);
+	struct ixp4xx_flash_info *info = dev_get_drvdata(&dev->dev);
+	map_word d;
 
-	platform_set_drvdata(dev, NULL);
+	dev_set_drvdata(&dev->dev, NULL);
 
 	if(!info)
 		return 0;
+
+	/*
+	 * This is required for a soft reboot to work.
+	 */
+	d.x[0] = 0xff;
+	ixp4xx_write16(&info->map, d, 0x55 * 0x2);
 
 	if (info->mtd) {
 		del_mtd_partitions(info->mtd);
 		map_destroy(info->mtd);
 	}
-	if (info->map.virt)
-		iounmap(info->map.virt);
+	if (info->map.map_priv_1)
+		iounmap((void *) info->map.map_priv_1);
 
-	kfree(info->partitions);
+	if (info->partitions)
+		kfree(info->partitions);
 
 	if (info->res) {
 		release_resource(info->res);
@@ -180,22 +135,43 @@ static int ixp4xx_flash_remove(struct platform_device *dev)
 	if (plat->exit)
 		plat->exit();
 
+	/* Disable flash write */
+	*IXP4XX_EXP_CS0 &= ~IXP4XX_FLASH_WRITABLE;
+
 	return 0;
 }
-
+#ifdef FLASH_8M
 static struct mtd_partition ap71_parts[] = {
-        { name: "RedBoot", offset: 0, size: 0x40000, },//, mask_flags: MTD_WRITEABLE, },
-        { name: "linux", offset: 0x80000, size: 0xd20000, },
-        { name: "ramdisk", offset: 0x280000, size: 0xd00000,},
-        { name: "mampf", offset: 0xf80000, size: 0x20000, },
-        { name: "nvram", offset: 0xfa0000, size: 0x20000, },
-        { name: "RedBoot config", offset: 0xfc0000, size: 0x01000, },
-        { name: "FIS directory", offset: 0xfe0000, size: 0x20000, },
+        { name: "boot", offset: 0, size: 0x60000, },//, mask_flags: MTD_WRITEABLE, },
+        { name: "linux", offset: 0x60000, size: 0x350000, },
+        { name: "rootfs", offset: 0x1a0000, size: 0x210000,},
+        { name: "nvram", offset: 0x7f0000, size: 0x10000, },
+        { name: "lang", offset: 0x7b0000, size:0x40000, },
+        { name: "extfs", offset: 0x400000, size:0x3b0000, },
+        { name: "nvram_4M", offset: 0x3f0000, size: 0x10000, },
+        { name: "lang_4M", offset: 0x3b0000, size:0x40000, },
+        { name: NULL, },
+};
+#define AP71_MTDP_NUM 8
+#else
+/*static struct mtd_partition ap71_parts[] = {
+        { name: "boot", offset: 0, size: 0x60000, },//, mask_flags: MTD_WRITEABLE, },
+        { name: "linux", offset: 0x60000, size: 0x350000, },
+        { name: "rootfs", offset: 0x190000, size: 0x270000,},
+        { name: "nvram", offset: 0x3f0000, size: 0x10000, },
+        { name: NULL, },
+};*/
+static struct mtd_partition ap71_parts[] = {
+        { name: "boot", offset: 0, size: 0x60000, },//, mask_flags: MTD_WRITEABLE, },
+        { name: "linux", offset: 0x60000, size: 0x390000, },
+        { name: "rootfs", offset: 0x140000, size: 0x2b0000,},
+        { name: "nvram", offset: 0x3f0000, size: 0x10000, },
         { name: NULL, },
 };
 
-#define AP71_MTDP_NUM 7
+#define AP71_MTDP_NUM 4
 
+#endif
 
 static int ixp4xx_flash_probe(struct platform_device *dev)
 {
@@ -216,10 +192,16 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 	if(!info) {
 		err = -ENOMEM;
 		goto Error;
-	}
+	}	
 	memzero(info, sizeof(struct ixp4xx_flash_info));
 
-	platform_set_drvdata(dev, info);
+	dev_set_drvdata(&dev->dev, info);
+
+	/* 
+	 * Enable flash write 
+	 * TODO: Move this out to board specific code
+	 */
+	*IXP4XX_EXP_CS0 |= IXP4XX_FLASH_WRITABLE;
 
 	/*
 	 * Tell the MTD layer we're not 1:1 mapped so that it does
@@ -239,8 +221,8 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 	info->map.write = ixp4xx_probe_write16,
 	info->map.copy_from = ixp4xx_copy_from,
 
-	info->res = request_mem_region(dev->resource->start,
-			dev->resource->end - dev->resource->start + 1,
+	info->res = request_mem_region(dev->resource->start, 
+			dev->resource->end - dev->resource->start + 1, 
 			"IXP4XXFlash");
 	if (!info->res) {
 		printk(KERN_ERR "IXP4XXFlash: Could not reserve memory region\n");
@@ -248,9 +230,9 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 		goto Error;
 	}
 
-	info->map.virt = ioremap(dev->resource->start,
-				 dev->resource->end - dev->resource->start + 1);
-	if (!info->map.virt) {
+	info->map.map_priv_1 = ioremap(dev->resource->start,
+			    dev->resource->end - dev->resource->start + 1);
+	if (!info->map.map_priv_1) {
 		printk(KERN_ERR "IXP4XXFlash: Failed to ioremap region\n");
 		err = -EIO;
 		goto Error;
@@ -263,16 +245,16 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 		goto Error;
 	}
 	info->mtd->owner = THIS_MODULE;
-
+	
 	/* Use the fast version */
 	info->map.write = ixp4xx_write16,
 
-#ifndef CONFIG_NOP8670
-	err = parse_mtd_partitions(info->mtd, probes, &info->partitions, dev->resource->start);
-#else
+	/*
+	 *   add mtd partition by hand
+	 * */
+	//err = parse_mtd_partitions(info->mtd, probes, &info->partitions, 0);
 	info->partitions=ap71_parts;
 	err=AP71_MTDP_NUM;    
-#endif
 	if (err > 0) {
 		err = add_mtd_partitions(info->mtd, info->partitions, err);
 		if(err)
@@ -288,6 +270,7 @@ Error:
 	ixp4xx_flash_remove(dev);
 	return err;
 }
+
 
 static struct platform_driver ixp4xx_flash_driver = {
 	.probe		= ixp4xx_flash_probe,
@@ -312,5 +295,6 @@ module_init(ixp4xx_flash_init);
 module_exit(ixp4xx_flash_exit);
 
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("MTD map driver for Intel IXP4xx systems");
+MODULE_DESCRIPTION("MTD map driver for Intel IXP4xx systems")
 MODULE_AUTHOR("Deepak Saxena");
+

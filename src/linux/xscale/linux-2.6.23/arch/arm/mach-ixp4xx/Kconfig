@@ -113,6 +113,14 @@ config ARCH_IXDP425
 	  IXDP425 Development Platform (Also known as Richfield).  
 	  For more information on this platform, see <file:Documentation/arm/IXP4xx>.
 
+config TONZE
+	bool "TONZE IXP425"
+	depends on ARCH_IXDP425
+
+config NOP8670
+	bool "NOP8670 (quirks)"
+	depends on ARCH_IXDP425
+
 config MACH_IXDPG425
 	bool "IXDPG425"
 	help
