@@ -66,11 +66,15 @@
 # endif
 #endif
 
-#ifdef CONFIG_CPU_COPY_V4WB
-# ifdef _USER
-#  define MULTI_USER 1
-# else
-#  define _USER v4wb
+#ifdef CONFIG_ARCH_MV88fxx81
+# define MULTI_USER 1
+#else
+# ifdef CONFIG_CPU_COPY_V4WB
+#  ifdef _USER
+#   define MULTI_USER 1
+#  else
+#   define _USER v4wb
+#  endif
 # endif
 #endif
 

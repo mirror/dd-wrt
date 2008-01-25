@@ -63,28 +63,30 @@ static int parse_redboot_partitions(struct mtd_info *master,
 
 	if (!buf)
 		return -ENOMEM;
-
+	directory*=4;
+restart:
 	if ( directory < 0 )
-		offset = master->size + directory*master->erasesize;
+		offset = master->size + directory*(master->erasesize/4);
 	else
-		offset = directory*master->erasesize;
+		offset = directory*(master->erasesize/4);
 
-	printk(KERN_NOTICE "Searching for RedBoot partition table in %s at offset 0x%lx\n",
-	       master->name, offset);
+	printk(KERN_NOTICE "Searching for RedBoot partition table in %s at offset 0x%lx (erasesize %X)\n",
+	       master->name, offset,master->erasesize);
 
-	ret = master->read(master, offset,
-			   master->erasesize, &retlen, (void *)buf);
+	ret = master->read(master, offset,master->erasesize/4, &retlen, (void *)buf);
 
+//	printk(KERN_NOTICE "read mtd done (%d, %d)\n",ret,retlen);
 	if (ret)
 		goto out;
 
-	if (retlen != master->erasesize) {
+	if (retlen != master->erasesize/4) {
 		ret = -EIO;
 		goto out;
 	}
 
-	numslots = (master->erasesize / sizeof(struct fis_image_desc));
+	numslots = ((master->erasesize/4) / sizeof(struct fis_image_desc));
 	for (i = 0; i < numslots; i++) {
+//	printk(KERN_NOTICE "checking slot %s of %d %s\n",i,numslots,buf[i].name);
 		if (!memcmp(buf[i].name, "FIS directory", 14)) {
 			/* This is apparently the FIS directory entry for the
 			 * FIS directory itself.  The FIS directory size is
@@ -101,9 +103,9 @@ static int parse_redboot_partitions(struct mtd_info *master,
 			   'size' matches the eraseblock size precisely,
 			   or if the swapped size actually fits in an
 			   eraseblock while the unswapped size doesn't. */
-			if (swab32(buf[i].size) == master->erasesize ||
-			    (buf[i].size > master->erasesize
-			     && swab32(buf[i].size) < master->erasesize)) {
+			if (swab32(buf[i].size) == master->erasesize/4 ||
+			    (buf[i].size > master->erasesize/4
+			     && swab32(buf[i].size) < master->erasesize/4)) {
 				int j;
 				/* Update numslots based on actual FIS directory size */
 				numslots = swab32(buf[i].size) / sizeof (struct fis_image_desc);
@@ -131,7 +133,7 @@ static int parse_redboot_partitions(struct mtd_info *master,
 					swab32s(&buf[j].desc_cksum);
 					swab32s(&buf[j].file_cksum);
 				}
-			} else if (buf[i].size < master->erasesize) {
+			} else if (buf[i].size < master->erasesize/4) {
 				/* Update numslots based on actual FIS directory size */
 				numslots = buf[i].size / sizeof(struct fis_image_desc);
 			}
@@ -140,25 +142,36 @@ static int parse_redboot_partitions(struct mtd_info *master,
 	}
 	if (i == numslots) {
 		/* Didn't find it */
+		if (offset + master->erasesize/4 < master->size) {
+			/* not at the end of the flash yet, maybe next block :) */
+			directory++;
+//		printk(KERN_NOTICE "Searching next dir on %d\n",directory);
+			goto restart;
+		}
 		printk(KERN_NOTICE "No RedBoot partition table detected in %s\n",
 		       master->name);
 		ret = 0;
 		goto out;
 	}
+//	printk(KERN_NOTICE "found in %d\n",i);
 
 	for (i = 0; i < numslots; i++) {
 		struct fis_list *new_fl, **prev;
 
 		if (buf[i].name[0] == 0xff) {
 			if (buf[i].name[1] == 0xff) {
+			//printk(KERN_NOTICE "name zero\n");
+
 				break;
 			} else {
 				continue;
 			}
 		}
 		if (!redboot_checksum(&buf[i]))
+		{
+		//printk(KERN_NOTICE "checksum failed\n");
 			break;
-
+		}
 		new_fl = kmalloc(sizeof(struct fis_list), GFP_KERNEL);
 		namelen += strlen(buf[i].name)+1;
 		if (!new_fl) {
@@ -183,6 +196,7 @@ static int parse_redboot_partitions(struct mtd_info *master,
 
 		nrparts++;
 	}
+//	printk(KERN_NOTICE "step 3\n");
 #ifdef CONFIG_MTD_REDBOOT_PARTS_UNALLOCATED
 	if (fl->img->flash_base) {
 		nrparts++;
@@ -196,6 +210,7 @@ static int parse_redboot_partitions(struct mtd_info *master,
 		}
 	}
 #endif
+//	printk(KERN_NOTICE "step 4 %d\n",nrparts);
 	parts = kzalloc(sizeof(*parts)*nrparts + nulllen + namelen, GFP_KERNEL);
 
 	if (!parts) {
@@ -209,6 +224,7 @@ static int parse_redboot_partitions(struct mtd_info *master,
 		strcpy(nullname, nullstring);
 	}
 #endif
+//	printk(KERN_NOTICE "step 5\n");
 	names = nullname + nulllen;
 
 	i=0;
@@ -221,6 +237,7 @@ static int parse_redboot_partitions(struct mtd_info *master,
 		i++;
 	}
 #endif
+//	printk(KERN_NOTICE "step 6\n");
 	for ( ; i<nrparts; i++) {
 		parts[i].size = fl->img->size;
 		parts[i].offset = fl->img->flash_base;
@@ -248,16 +265,20 @@ static int parse_redboot_partitions(struct mtd_info *master,
 		fl = fl->next;
 		kfree(tmp_fl);
 	}
+//	printk(KERN_NOTICE "step 7\n");
 //BrainSlayer: extend zImage partition to include both, kernel and filesystem in one image
 	parts[1].size+=parts[2].size;
+//	printk(KERN_NOTICE "step 8\n",i);
 	ret = nrparts;
 	*pparts = parts;
  out:
 	while (fl) {
 		struct fis_list *old = fl;
 		fl = fl->next;
+//	printk(KERN_NOTICE "step 8 free %X\n",old);
 		kfree(old);
 	}
+//	printk(KERN_NOTICE "step 9\n");
 	vfree(buf);
 	return ret;
 }

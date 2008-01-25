@@ -18,15 +18,15 @@
  */
 
 #include <linux/kernel.h>
+#include <linux/autoconf.h>
 #include <linux/pci.h>
 #include <linux/init.h>
-#include <linux/irq.h>
-
-#include <asm/mach-types.h>
-#include <asm/hardware.h>
-#include <asm/irq.h>
+#include <linux/delay.h>
 
 #include <asm/mach/pci.h>
+#include <asm/irq.h>
+#include <asm/hardware.h>
+#include <asm/mach-types.h>
 
 extern void ixp4xx_pci_preinit(void);
 extern int ixp4xx_setup(int nr, struct pci_sys_data *sys);
@@ -34,16 +34,51 @@ extern struct pci_bus *ixp4xx_scan_bus(int nr, struct pci_sys_data *sys);
 
 void __init wrt300nv2_pci_preinit(void)
 {
-	set_irq_type(IRQ_IXP4XX_GPIO8, IRQT_LOW);
+	gpio_line_config(AP71_PCI_INTA_PIN,
+				IXP4XX_GPIO_IN | IXP4XX_GPIO_ACTIVE_LOW);
+	gpio_line_config(AP71_PCI_INTB_PIN,
+				IXP4XX_GPIO_IN | IXP4XX_GPIO_ACTIVE_LOW);
+	gpio_line_config(AP71_PCI_INTC_PIN,
+				IXP4XX_GPIO_IN | IXP4XX_GPIO_ACTIVE_LOW);
+
+	gpio_line_isr_clear(AP71_PCI_INTA_PIN);
+	gpio_line_isr_clear(AP71_PCI_INTA_PIN);
+	gpio_line_isr_clear(AP71_PCI_INTA_PIN);
+
+    /*
+     * our redboot doesnt need PCI. so it doesnt reset the bus either. Do it
+     * here.
+     * 1. Assert the reset
+     * 2. wait for 1 ms
+     * 3. configure and enable clock (nothing to do...?)
+     * 4. wait for 100 ms
+     * 5. de-assert the reset
+     */
+    gpio_line_set(AP71_PCI_RESET_LINE, IXP4XX_GPIO_OUT | IXP4XX_GPIO_LOW);
+    mdelay(250);
+    gpio_line_set(AP71_PCI_RESET_LINE, IXP4XX_GPIO_HIGH);
 
 	ixp4xx_pci_preinit();
 }
 
 static int __init wrt300nv2_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 {
-	if (slot == 1)
-		return IRQ_IXP4XX_GPIO8;
-	else return -1;
+	static int pci_irq_table[AP71_PCI_MAX_DEV][AP71_PCI_IRQ_LINES] = {
+        {AP71_PCI_INTA_IRQ, AP71_PCI_INTC_IRQ},
+        {AP71_PCI_INTB_IRQ,     -1}
+	};
+
+	int irq = -1;
+
+	if (slot >= 1 && slot <= AP71_PCI_MAX_DEV && 
+		pin >= 1 && pin <= AP71_PCI_IRQ_LINES) {
+		irq = pci_irq_table[slot - 1][pin - 1];
+	}
+    else {
+        printk("bad interrupt map req for slot %d pin %d\n", slot, pin);
+    }
+
+	return irq;
 }
 
 struct hw_pci wrt300nv2_pci __initdata = {

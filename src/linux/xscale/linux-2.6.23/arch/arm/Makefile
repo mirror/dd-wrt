@@ -71,7 +71,11 @@ tune-$(CONFIG_CPU_ARM946T)	:=$(call cc-option,-mtune=arm9e,-mtune=arm9tdmi)
 tune-$(CONFIG_CPU_ARM920T)	:=-mtune=arm9tdmi
 tune-$(CONFIG_CPU_ARM922T)	:=-mtune=arm9tdmi
 tune-$(CONFIG_CPU_ARM925T)	:=-mtune=arm9tdmi
+ifeq ($(CONFIG_ARCH_MV88fxx81),y)
+tune-$(CONFIG_CPU_ARM926T)	:=-mtune=xscale
+else
 tune-$(CONFIG_CPU_ARM926T)	:=-mtune=arm9tdmi
+endif
 tune-$(CONFIG_CPU_SA110)	:=-mtune=strongarm110
 tune-$(CONFIG_CPU_SA1100)	:=-mtune=strongarm1100
 tune-$(CONFIG_CPU_XSCALE)	:=$(call cc-option,-mtune=xscale,-mtune=strongarm110) -Wa,-mcpu=xscale
@@ -139,6 +143,9 @@ endif
  machine-$(CONFIG_ARCH_KS8695)     := ks8695
   incdir-$(CONFIG_ARCH_MXC)	   := mxc
  machine-$(CONFIG_ARCH_MX3)	   := mx3
+ machine-$(CONFIG_ARCH_MV88f1181)  := mv88fxx81/mv88f1181
+ machine-$(CONFIG_ARCH_MV88f5181)  := mv88fxx81/mv88f5181
+  incdir-$(CONFIG_ARCH_MV88fxx81)  := mv88fxx81
 
 ifeq ($(CONFIG_ARCH_EBSA110),y)
 # This is what happens if you forget the IOCS16 line.

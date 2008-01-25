@@ -23,6 +23,10 @@
 
 #include "entry-header.S"
 
+#ifdef CONFIG_ARCH_MV88fxx81
+#include <asm/arch/orion_ver_macro.h>
+#endif
+
 /*
  * Interrupt handling.  Preserves r7, r8, r9
  */

@@ -617,18 +617,7 @@ static struct sk_buff *skQueue[SKB_QSIZE];
  */
 static int phyAddresses[IXP400_ETH_ACC_MII_MAX_ADDR] =
 {
-#if defined(CONFIG_ARCH_IXDP425)
-    /* 1 PHY per NPE port */
-    0, /* Port 1 (IX_ETH_PORT_1 / NPE B) */
-    1  /* Port 2 (IX_ETH_PORT_2 / NPE C) */
-
-#elif defined(CONFIG_ARCH_IXDP465) || defined(CONFIG_MACH_IXDP465)
-    /* 1 PHY per NPE port */
-    0, /* Port 1 (IX_ETH_PORT_1 / NPE B) */
-    1, /* Port 2 (IX_ETH_PORT_2 / NPE C) */
-    2  /* Port 3 (IX_ETH_PORT_3 / NPE A) */
-
-#elif defined(CONFIG_ARCH_ADI_COYOTE)
+#if defined(CONFIG_ARCH_ADI_COYOTE)
     4, /* Port 1 (IX_ETH_PORT_1) - Connected to PHYs 1-4      */
     5, /* Port 2 (IX_ETH_PORT_2) - Only connected to PHY 5    */
 
@@ -640,6 +629,17 @@ static int phyAddresses[IXP400_ETH_ACC_MII_MAX_ADDR] =
         /* /_______________/|     /___/|                      */
 	/* | 1 | 2 | 3 | 4 |      | 5 |                       */
         /* ----------------------------------------           */
+#elif defined(CONFIG_ARCH_IXDP425)
+    /* 1 PHY per NPE port */
+    0, /* Port 1 (IX_ETH_PORT_1 / NPE B) */
+    1  /* Port 2 (IX_ETH_PORT_2 / NPE C) */
+
+#elif defined(CONFIG_ARCH_IXDP465) || defined(CONFIG_MACH_IXDP465)
+    /* 1 PHY per NPE port */
+    0, /* Port 1 (IX_ETH_PORT_1 / NPE B) */
+    1, /* Port 2 (IX_ETH_PORT_2 / NPE C) */
+    2  /* Port 3 (IX_ETH_PORT_3 / NPE A) */
+
 #elif defined(CONFIG_MACH_IXDPG425)
     5, /* Port 1 (ixp0) - Connected to switch via PHY 5 */
     4, /* Port 2 (ixp1) - Only connected to PHY 4       */
@@ -702,7 +702,13 @@ static long portIdPhyIndexMap[] =
  */
 static phy_cfg_t default_phy_cfg[] =
 {
-#if defined(CONFIG_ARCH_IXDP425)
+#if defined(CONFIG_ARCH_ADI_COYOTE)
+    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE},/* Port 0: NO link */
+    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}, /* Port 1: monitor the link */
+    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},
+    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},
+    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}
+#elif defined(CONFIG_ARCH_IXDP425)
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}, /* Port 0: monitor the phy */
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}  /* Port 1: monitor the link */
 
@@ -711,12 +717,6 @@ static phy_cfg_t default_phy_cfg[] =
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}, /* Port 1: monitor the link */
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE} /* Port 2: ignore the link */
 
-#elif defined(CONFIG_ARCH_ADI_COYOTE)
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},/* Port 0: NO link */
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}, /* Port 1: monitor the link */
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}
 
 #elif defined(CONFIG_MACH_IXDPG425)
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}, /* Port 0: NO link */
@@ -4175,7 +4175,8 @@ if (machine_is_pronghorn() || machine_is_pronghorn_metro())
     {
     get_otp_MACAddress(ndev, priv);
     }else{
-    eeprom_read((0x100 + (priv->port_id * 6)), eeprom_mac, 6);
+//printk(KERN_EMERG "read eeprom mac\n");
+/*    eeprom_read((0x100 + (priv->port_id * 6)), eeprom_mac, 6);
 
     if ( is_valid_ether_addr(eeprom_mac) )
     {
@@ -4185,7 +4186,7 @@ if (machine_is_pronghorn() || machine_is_pronghorn_metro())
        default_mac_addr[priv->port_id].macAddress[3] = eeprom_mac[3];
        default_mac_addr[priv->port_id].macAddress[4] = eeprom_mac[4];
        default_mac_addr[priv->port_id].macAddress[5] = eeprom_mac[5];
-    }
+    }*/
 
     memcpy(ndev->dev_addr, 
 	   &default_mac_addr[priv->port_id].macAddress,

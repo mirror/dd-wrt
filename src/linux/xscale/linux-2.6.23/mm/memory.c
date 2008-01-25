@@ -895,9 +895,6 @@ unsigned long zap_page_range(struct vm_area_struct *vma, unsigned long address,
 	return end;
 }
 
-/*
- * Do a quick page-table lookup for a single page.
- */
 struct page *follow_page(struct vm_area_struct *vma, unsigned long address,
 			unsigned int flags)
 {
@@ -972,6 +969,8 @@ no_page_table:
 		BUG_ON(flags & FOLL_WRITE);
 	}
 	return page;
+
+
 }
 
 int get_user_pages(struct task_struct *tsk, struct mm_struct *mm,

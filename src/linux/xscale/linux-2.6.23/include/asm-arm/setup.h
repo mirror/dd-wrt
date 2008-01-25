@@ -143,6 +143,19 @@ struct tag_memclk {
 	__u32 fmemclk;
 };
 
+/* Marvell uboot parameters */
+#define ATAG_MV_UBOOT	0x41000403
+
+struct tag_mv_uboot {
+	u32 uboot_version;
+	u32 tclk;
+	u32 sysclk;
+	u32 isUsbHost;
+	u32 overEthAddr;
+};
+
+
+
 struct tag {
 	struct tag_header hdr;
 	union {
@@ -165,6 +178,11 @@ struct tag {
 		 * DC21285 specific
 		 */
 		struct tag_memclk	memclk;
+
+		/*
+		 * Marvell specific
+		 */
+		struct tag_mv_uboot 	mv_uboot;
 	} u;
 };
 
@@ -206,8 +224,11 @@ struct membank {
 
 struct meminfo {
 	int nr_banks;
+	unsigned long end;
 	struct membank bank[NR_BANKS];
 };
+
+//extern struct meminfo meminfo;
 
 /*
  * Early command line parameters.
