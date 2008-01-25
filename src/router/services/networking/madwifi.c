@@ -1233,13 +1233,13 @@ configure_single (int count)
   char maxp[16];
 
   vifs = nvram_safe_get (wifivifs);
-  fprintf(stderr,"vifs %s\n",vifs);
+  //fprintf(stderr,"vifs %s\n",vifs);
   char *useif = NULL;
   char copyvap[64];
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
-    fprintf(stderr,"vifs %s, %s\n",vifs, var);
+    //fprintf(stderr,"vifs %s, %s\n",vifs, var);
       if (!useif)
         {
 	strcpy(copyvap,var);
