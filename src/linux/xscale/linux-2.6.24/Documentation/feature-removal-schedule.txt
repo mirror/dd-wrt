@@ -1,0 +1,335 @@
+The following is a list of files and features that are going to be
+removed in the kernel source tree.  Every entry should contain what
+exactly is going away, why it is happening, and who is going to be doing
+the work.  When the feature is removed from the kernel, it should also
+be removed from this file.
+
+---------------------------
+
+What:	MXSER
+When:	December 2007
+Why:	Old mxser driver is obsoleted by the mxser_new. Give it some time yet
+	and remove it.
+Who:	Jiri Slaby <jirislaby@gmail.com>
+
+---------------------------
+
+What:	dev->power.power_state
+When:	July 2007
+Why:	Broken design for runtime control over driver power states, confusing
+	driver-internal runtime power management with:  mechanisms to support
+	system-wide sleep state transitions; event codes that distinguish
+	different phases of swsusp "sleep" transitions; and userspace policy
+	inputs.  This framework was never widely used, and most attempts to
+	use it were broken.  Drivers should instead be exposing domain-specific
+	interfaces either to kernel or to userspace.
+Who:	Pavel Machek <pavel@suse.cz>
+
+---------------------------
+
+What:	old NCR53C9x driver
+When:	October 2007
+Why:	Replaced by the much better esp_scsi driver.  Actual low-level
+	driver can be ported over almost trivially.
+Who:	David Miller <davem@davemloft.net>
+	Christoph Hellwig <hch@lst.de>
+
+---------------------------
+
+What:	Video4Linux API 1 ioctls and video_decoder.h from Video devices.
+When:	December 2008
+Files:	include/linux/video_decoder.h include/linux/videodev.h
+Check:	include/linux/video_decoder.h include/linux/videodev.h
+Why:	V4L1 AP1 was replaced by V4L2 API during migration from 2.4 to 2.6
+	series. The old API have lots of drawbacks and don't provide enough
+	means to work with all video and audio standards. The newer API is
+	already available on the main drivers and should be used instead.
+	Newer drivers should use v4l_compat_translate_ioctl function to handle
+	old calls, replacing to newer ones.
+	Decoder iocts are using internally to allow video drivers to
+	communicate with video decoders. This should also be improved to allow
+	V4L2 calls being translated into compatible internal ioctls.
+	Compatibility ioctls will be provided, for a while, via 
+	v4l1-compat module. 
+Who:	Mauro Carvalho Chehab <mchehab@infradead.org>
+
+---------------------------
+
+What:	PCMCIA control ioctl (needed for pcmcia-cs [cardmgr, cardctl])
+When:	November 2005
+Files:	drivers/pcmcia/: pcmcia_ioctl.c
+Why:	With the 16-bit PCMCIA subsystem now behaving (almost) like a
+	normal hotpluggable bus, and with it using the default kernel
+	infrastructure (hotplug, driver core, sysfs) keeping the PCMCIA
+	control ioctl needed by cardmgr and cardctl from pcmcia-cs is
+	unnecessary, and makes further cleanups and integration of the
+	PCMCIA subsystem into the Linux kernel device driver model more
+	difficult. The features provided by cardmgr and cardctl are either
+	handled by the kernel itself now or are available in the new
+	pcmciautils package available at
+	http://kernel.org/pub/linux/utils/kernel/pcmcia/
+Who:	Dominik Brodowski <linux@brodo.de>
+
+---------------------------
+
+What:	sys_sysctl
+When:	September 2010
+Option: CONFIG_SYSCTL_SYSCALL
+Why:	The same information is available in a more convenient from
+	/proc/sys, and none of the sysctl variables appear to be
+	important performance wise.
+
+	Binary sysctls are a long standing source of subtle kernel
+	bugs and security issues.
+
+	When I looked several months ago all I could find after
+	searching several distributions were 5 user space programs and
+	glibc (which falls back to /proc/sys) using this syscall.
+
+	The man page for sysctl(2) documents it as unusable for user
+	space programs.
+
+	sysctl(2) is not generally ABI compatible to a 32bit user
+	space application on a 64bit and a 32bit kernel.
+
+	For the last several months the policy has been no new binary
+	sysctls and no one has put forward an argument to use them.
+
+	Binary sysctls issues seem to keep happening appearing so
+	properly deprecating them (with a warning to user space) and a
+	2 year grace warning period will mean eventually we can kill
+	them and end the pain.
+
+	In the mean time individual binary sysctls can be dealt with
+	in a piecewise fashion.
+
+Who:	Eric Biederman <ebiederm@xmission.com>
+
+---------------------------
+
+What:  a.out interpreter support for ELF executables
+When:  2.6.25
+Files: fs/binfmt_elf.c
+Why:   Using a.out interpreters for ELF executables was a feature for
+       transition from a.out to ELF. But now it is unlikely to be still
+       needed anymore and removing it would simplify the hairy ELF
+       loader code.
+Who:   Andi Kleen <ak@suse.de>
+
+---------------------------
+
+What:	remove EXPORT_SYMBOL(kernel_thread)
+When:	August 2006
+Files:	arch/*/kernel/*_ksyms.c
+Check:	kernel_thread
+Why:	kernel_thread is a low-level implementation detail.  Drivers should
+        use the <linux/kthread.h> API instead which shields them from
+	implementation details and provides a higherlevel interface that
+	prevents bugs and code duplication
+Who:	Christoph Hellwig <hch@lst.de>
+
+---------------------------
+
+What:	CONFIG_FORCED_INLINING
+When:	June 2006
+Why:	Config option is there to see if gcc is good enough. (in january
+        2006). If it is, the behavior should just be the default. If it's not,
+	the option should just go away entirely.
+Who:    Arjan van de Ven
+
+---------------------------
+
+What:   eepro100 network driver
+When:   January 2007
+Why:    replaced by the e100 driver
+Who:    Adrian Bunk <bunk@stusta.de>
+
+---------------------------
+
+What:	Unused EXPORT_SYMBOL/EXPORT_SYMBOL_GPL exports
+	(temporary transition config option provided until then)
+	The transition config option will also be removed at the same time.
+When:	before 2.6.19
+Why:	Unused symbols are both increasing the size of the kernel binary
+	and are often a sign of "wrong API"
+Who:	Arjan van de Ven <arjan@linux.intel.com>
+
+---------------------------
+
+What:	USB driver API moves to EXPORT_SYMBOL_GPL
+When:	February 2008
+Files:	include/linux/usb.h, drivers/usb/core/driver.c
+Why:	The USB subsystem has changed a lot over time, and it has been
+	possible to create userspace USB drivers using usbfs/libusb/gadgetfs
+	that operate as fast as the USB bus allows.  Because of this, the USB
+	subsystem will not be allowing closed source kernel drivers to
+	register with it, after this grace period is over.  If anyone needs
+	any help in converting their closed source drivers over to use the
+	userspace filesystems, please contact the
+	linux-usb-devel@lists.sourceforge.net mailing list, and the developers
+	there will be glad to help you out.
+Who:	Greg Kroah-Hartman <gregkh@suse.de>
+
+---------------------------
+
+What:	vm_ops.nopage
+When:	Soon, provided in-kernel callers have been converted
+Why:	This interface is replaced by vm_ops.fault, but it has been around
+	forever, is used by a lot of drivers, and doesn't cost much to
+	maintain.
+Who:	Nick Piggin <npiggin@suse.de>
+
+---------------------------
+
+What:	PHYSDEVPATH, PHYSDEVBUS, PHYSDEVDRIVER in the uevent environment
+When:	October 2008
+Why:	The stacking of class devices makes these values misleading and
+	inconsistent.
+	Class devices should not carry any of these properties, and bus
+	devices have SUBSYTEM and DRIVER as a replacement.
+Who:	Kay Sievers <kay.sievers@suse.de>
+
+---------------------------
+
+What:	i2c_adapter.list
+When:	July 2007
+Why:	Superfluous, this list duplicates the one maintained by the driver
+	core.
+Who:	Jean Delvare <khali@linux-fr.org>,
+	David Brownell <dbrownell@users.sourceforge.net>
+
+---------------------------
+
+What:	ACPI procfs interface
+When:	July 2008
+Why:	ACPI sysfs conversion should be finished by January 2008.
+	ACPI procfs interface will be removed in July 2008 so that
+	there is enough time for the user space to catch up.
+Who:	Zhang Rui <rui.zhang@intel.com>
+
+---------------------------
+
+What:	/proc/acpi/button
+When:	August 2007
+Why:	/proc/acpi/button has been replaced by events to the input layer
+	since 2.6.20.
+Who:	Len Brown <len.brown@intel.com>
+
+---------------------------
+
+What:	/proc/acpi/event
+When:	February 2008
+Why:	/proc/acpi/event has been replaced by events via the input layer
+	and netlink since 2.6.23.
+Who:	Len Brown <len.brown@intel.com>
+
+---------------------------
+
+What:	i2c-ixp2000, i2c-ixp4xx and scx200_i2c drivers
+When:	September 2007
+Why:	Obsolete. The new i2c-gpio driver replaces all hardware-specific
+	I2C-over-GPIO drivers.
+Who:	Jean Delvare <khali@linux-fr.org>
+
+---------------------------
+
+What:	'time' kernel boot parameter
+When:	January 2008
+Why:	replaced by 'printk.time=<value>' so that printk timestamps can be
+	enabled or disabled as needed
+Who:	Randy Dunlap <randy.dunlap@oracle.com>
+
+---------------------------
+
+What:  drivers depending on OSS_OBSOLETE
+When:  options in 2.6.23, code in 2.6.25
+Why:   obsolete OSS drivers
+Who:   Adrian Bunk <bunk@stusta.de>
+
+---------------------------
+
+What: libata spindown skipping and warning
+When: Dec 2008
+Why:  Some halt(8) implementations synchronize caches for and spin
+      down libata disks because libata didn't use to spin down disk on
+      system halt (only synchronized caches).
+      Spin down on system halt is now implemented.  sysfs node
+      /sys/class/scsi_disk/h:c:i:l/manage_start_stop is present if
+      spin down support is available.
+      Because issuing spin down command to an already spun down disk
+      makes some disks spin up just to spin down again, libata tracks
+      device spindown status to skip the extra spindown command and
+      warn about it.
+      This is to give userspace tools the time to get updated and will
+      be removed after userspace is reasonably updated.
+Who:  Tejun Heo <htejun@gmail.com>
+
+---------------------------
+
+What:	Legacy RTC drivers (under drivers/i2c/chips)
+When:	November 2007
+Why:	Obsolete. We have a RTC subsystem with better drivers.
+Who:	Jean Delvare <khali@linux-fr.org>
+
+---------------------------
+
+What:	iptables SAME target
+When:	1.1. 2008
+Files:	net/ipv4/netfilter/ipt_SAME.c, include/linux/netfilter_ipv4/ipt_SAME.h
+Why:	Obsolete for multiple years now, NAT core provides the same behaviour.
+	Unfixable broken wrt. 32/64 bit cleanness.
+Who:	Patrick McHardy <kaber@trash.net>
+
+---------------------------
+
+What: The arch/ppc and include/asm-ppc directories
+When: Jun 2008
+Why:  The arch/powerpc tree is the merged architecture for ppc32 and ppc64
+      platforms.  Currently there are efforts underway to port the remaining
+      arch/ppc platforms to the merged tree.  New submissions to the arch/ppc
+      tree have been frozen with the 2.6.22 kernel release and that tree will
+      remain in bug-fix only mode until its scheduled removal.  Platforms
+      that are not ported by June 2008 will be removed due to the lack of an
+      interested maintainer.
+Who:  linuxppc-dev@ozlabs.org
+
+---------------------------
+
+What:	mthca driver's MSI support
+When:	January 2008
+Files:	drivers/infiniband/hw/mthca/*.[ch]
+Why:	All mthca hardware also supports MSI-X, which provides
+	strictly more functionality than MSI.  So there is no point in
+	having both MSI-X and MSI support in the driver.
+Who:	Roland Dreier <rolandd@cisco.com>
+
+---------------------------
+
+What:   sk98lin network driver
+When:   Feburary 2008
+Why:    In kernel tree version of driver is unmaintained. Sk98lin driver
+	replaced by the skge driver. 
+Who:    Stephen Hemminger <shemminger@linux-foundation.org>
+
+---------------------------
+
+What:	i386/x86_64 bzImage symlinks
+When:	April 2008
+
+Why:	The i386/x86_64 merge provides a symlink to the old bzImage
+	location so not yet updated user space tools, e.g. package
+	scripts, do not break.
+Who:	Thomas Gleixner <tglx@linutronix.de>
+
+---------------------------
+
+What:	shaper network driver
+When:	January 2008
+Files:	drivers/net/shaper.c, include/linux/if_shaper.h
+Why:	This driver has been marked obsolete for many years.
+	It was only designed to work on lower speed links and has design
+	flaws that lead to machine crashes. The qdisc infrastructure in
+	2.4 or later kernels, provides richer features and is more robust.
+Who:	Stephen Hemminger <shemminger@linux-foundation.org>
+
+---------------------------
