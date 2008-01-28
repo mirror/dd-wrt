@@ -208,7 +208,7 @@ __STATIC int arpnat_get_info(char *buffer, char **start, off_t offset, int lengt
 #endif
 
 
-__STATIC int ebt_target_arpnat(struct sk_buff **pskb, unsigned int hooknr,
+__STATIC int ebt_target_arpnat(struct sk_buff *pskb, unsigned int hooknr,
    const struct net_device *in, const struct net_device *out,
    const void *data, unsigned int datalen)
 {
@@ -216,8 +216,8 @@ __STATIC int ebt_target_arpnat(struct sk_buff **pskb, unsigned int hooknr,
     struct arphdr _arph;
     //used for target only
     struct ebt_nat_info *info = (struct ebt_nat_info *) data;
-    uint8_t* eth_smac = eth_hdr(*pskb)->h_source;
-    uint8_t* eth_dmac = eth_hdr(*pskb)->h_dest;
+    uint8_t* eth_smac = eth_hdr(pskb)->h_source;
+    uint8_t* eth_dmac = eth_hdr(pskb)->h_dest;
     uint32_t* arp_sip = NULL;
     uint8_t* arp_smac = NULL;
     uint32_t* arp_dip = NULL;
@@ -225,17 +225,17 @@ __STATIC int ebt_target_arpnat(struct sk_buff **pskb, unsigned int hooknr,
     struct mac2ip* entry = NULL;
     unsigned long flags;
 
-    if (eth_hdr(*pskb)->h_proto == __constant_htons(ETH_P_ARP))
+    if (eth_hdr(pskb)->h_proto == __constant_htons(ETH_P_ARP))
     {
-	ah = skb_header_pointer(*pskb, 0, sizeof(_arph), &_arph);
+	ah = skb_header_pointer(pskb, 0, sizeof(_arph), &_arph);
 	if (ah->ar_hln == ETH_ALEN && ah->ar_pro == htons(ETH_P_IP) &&
 	    ah->ar_pln == 4)
 	{
-	    unsigned char *raw = skb_network_header(*pskb);
-	    arp_sip = (uint32_t*)(raw + sizeof(struct arphdr) + (arp_hdr(*pskb)->ar_hln));
+	    unsigned char *raw = skb_network_header(pskb);
+	    arp_sip = (uint32_t*)(raw + sizeof(struct arphdr) + (arp_hdr(pskb)->ar_hln));
 	    arp_smac = raw + sizeof(struct arphdr);
-	    arp_dip = (uint32_t*)(raw + sizeof(struct arphdr) + (2*(arp_hdr(*pskb)->ar_hln)) + arp_hdr(*pskb)->ar_pln);
-	    arp_dmac = raw + sizeof(struct arphdr) + arp_hdr(*pskb)->ar_hln + arp_hdr(*pskb)->ar_pln;
+	    arp_dip = (uint32_t*)(raw + sizeof(struct arphdr) + (2*(arp_hdr(pskb)->ar_hln)) + arp_hdr(pskb)->ar_pln);
+	    arp_dmac = raw + sizeof(struct arphdr) + arp_hdr(pskb)->ar_hln + arp_hdr(pskb)->ar_pln;
 	}
 	else
 	{
@@ -262,7 +262,7 @@ __STATIC int ebt_target_arpnat(struct sk_buff **pskb, unsigned int hooknr,
 			    printk("IN ARPNAT: "STRMAC" -> "STRMAC"\n", MAC2STR(eth_dmac), MAC2STR(entry->data.mac));
 			memcpy(arp_dmac, entry->data.mac, ETH_ALEN);
 			memcpy(eth_dmac, entry->data.mac, ETH_ALEN);
-			(*pskb)->pkt_type = (dip != sip) ? PACKET_OTHERHOST : (*pskb)->pkt_type;
+			(pskb)->pkt_type = (dip != sip) ? PACKET_OTHERHOST : (pskb)->pkt_type;
 		    }
 		    spin_unlock_irqrestore(&arpnat_lock, flags);
 		    /*if (dip != sip)
@@ -277,9 +277,9 @@ __STATIC int ebt_target_arpnat(struct sk_buff **pskb, unsigned int hooknr,
 	    }
             spin_unlock_irqrestore(&arpnat_lock, flags);
 	}                                                                     
-	else if (eth_hdr(*pskb)->h_proto == __constant_htons(ETH_P_IP))
+	else if (eth_hdr(pskb)->h_proto == __constant_htons(ETH_P_IP))
 	{
-	    struct iphdr *iph = ip_hdr(*pskb);
+	    struct iphdr *iph = ip_hdr(pskb);
 	    struct udphdr *uh = NULL;
 	    if (bootpnat && iph->protocol == htons(IPPROTO_UDP) && !(iph->frag_off & htons(IP_OFFSET)))
 	    {
@@ -290,7 +290,7 @@ __STATIC int ebt_target_arpnat(struct sk_buff **pskb, unsigned int hooknr,
 		    uint32_t* giaddrp = (uint32_t*)(((uint8_t*)uh) + sizeof(*uh) + GIADDR_OFFSET);
 		    uint8_t* mac = (uint8_t*)(giaddrp + 1);
 		    uint32_t ihl = iph->ihl << 2;
-		    uint32_t size = (*pskb)->len - ihl;
+		    uint32_t size = (pskb)->len - ihl;
                     uint32_t orig_daddr = iph->daddr;
 
 		    spin_lock_irqsave(&arpnat_lock, flags);
@@ -309,10 +309,10 @@ __STATIC int ebt_target_arpnat(struct sk_buff **pskb, unsigned int hooknr,
                     iph->check = 0;
 		    uh->check = 0;
                     iph->check = ip_fast_csum((uint8_t*)iph, iph->ihl);
-		    (*pskb)->csum = csum_partial((uint8_t*)iph + ihl, size, 0);
+		    (pskb)->csum = csum_partial((uint8_t*)iph + ihl, size, 0);
 		    uh->check = csum_tcpudp_magic(iph->saddr, iph->daddr,
 						  size, iph->protocol,
-						  (*pskb)->csum);
+						  (pskb)->csum);
 		    if (uh->check == 0)
 			uh->check = 0xFFFF;
 		    return info->target;
@@ -332,16 +332,16 @@ __STATIC int ebt_target_arpnat(struct sk_buff **pskb, unsigned int hooknr,
 		    {
 			if (debug)
 			    printk("IP PKT TO ME: "STRMAC"["STRIP"] -> "STRMAC"[type: %d]\n",
-				   MAC2STR(eth_dmac), IP2STR(iph->daddr), MAC2STR(in->br_port->br->dev->dev_addr), (*pskb)->pkt_type);
+				   MAC2STR(eth_dmac), IP2STR(iph->daddr), MAC2STR(in->br_port->br->dev->dev_addr), (pskb)->pkt_type);
 			memcpy(eth_dmac, in->br_port->br->dev->dev_addr, ETH_ALEN);
 		    }
 		    else
 		    {
 			if (debug)
 			    printk("IP PKT TO OTHER: "STRMAC"["STRIP"] -> "STRMAC"[type: %d]\n",
-				   MAC2STR(eth_dmac), IP2STR(iph->daddr), MAC2STR(entry->data.mac), (*pskb)->pkt_type);
+				   MAC2STR(eth_dmac), IP2STR(iph->daddr), MAC2STR(entry->data.mac), (pskb)->pkt_type);
 			memcpy(eth_dmac, entry->data.mac, ETH_ALEN);
-			(*pskb)->pkt_type = PACKET_OTHERHOST;
+			(pskb)->pkt_type = PACKET_OTHERHOST;
 		    }
 		    spin_unlock_irqrestore(&arpnat_lock, flags);
 		    return info->target;
@@ -379,9 +379,9 @@ __STATIC int ebt_target_arpnat(struct sk_buff **pskb, unsigned int hooknr,
 		{
                     return info->target;
 		}
-                *pskb = skb_unshare(*pskb, GFP_ATOMIC);
-		eth_smac = eth_hdr(*pskb)->h_source;
-		arp_smac = skb_network_header(*pskb) + sizeof(struct arphdr);
+                pskb = skb_unshare(pskb, GFP_ATOMIC);
+		eth_smac = eth_hdr(pskb)->h_source;
+		arp_smac = skb_network_header(pskb) + sizeof(struct arphdr);
                 if (debug)
 		    printk("OUT ARPNAT: "STRMAC" -> "STRMAC"\n", MAC2STR(eth_smac), MAC2STR(out->dev_addr));
 		memcpy(arp_smac, out->dev_addr, ETH_ALEN);
@@ -390,10 +390,10 @@ __STATIC int ebt_target_arpnat(struct sk_buff **pskb, unsigned int hooknr,
 		break;
 	    }
 	}
-	else if (bootpnat && eth_hdr(*pskb)->h_proto == __constant_htons(ETH_P_IP) &&
+	else if (bootpnat && eth_hdr(pskb)->h_proto == __constant_htons(ETH_P_IP) &&
 		memcmp(out->br_port->br->dev->dev_addr, eth_smac, ETH_ALEN))
 	{
-	    struct iphdr *iph = ip_hdr(*pskb);
+	    struct iphdr *iph = ip_hdr(pskb);
 	    struct udphdr *uh = NULL;
 	    if (iph->protocol == htons(IPPROTO_UDP) && !(iph->frag_off & htons(IP_OFFSET)))
 	    {
@@ -404,16 +404,16 @@ __STATIC int ebt_target_arpnat(struct sk_buff **pskb, unsigned int hooknr,
 		    uint32_t giaddr = inet_select_addr(out->br_port->br->dev, iph->daddr, RT_SCOPE_LINK);
 		    uint32_t* giaddrp = (uint32_t*)(((uint8_t*)uh) + sizeof(*uh) + GIADDR_OFFSET);
 		    uint32_t ihl = iph->ihl << 2;
-		    uint32_t size = (*pskb)->len - ihl;
+		    uint32_t size = (pskb)->len - ihl;
                     if (debug)
 			printk("OUT BOOTPRELAY: "STRIP" -> "STRIP"\n",
 			       IP2STR(*giaddrp), IP2STR(giaddr));
 		    *giaddrp = giaddr;
 		    uh->check = 0;
-		    (*pskb)->csum = csum_partial((uint8_t*)iph + ihl, size, 0);
+		    (pskb)->csum = csum_partial((uint8_t*)iph + ihl, size, 0);
 		    uh->check = csum_tcpudp_magic(iph->saddr, iph->daddr,
 						    size, iph->protocol,
-						    (*pskb)->csum);
+						    (pskb)->csum);
 		    if (uh->check == 0)
 			uh->check = 0xFFFF;
 		}
