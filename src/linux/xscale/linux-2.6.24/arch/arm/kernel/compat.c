@@ -97,8 +97,11 @@ static void __init build_tag_list(struct param_struct *params, void *taglist)
 	struct tag *tag = taglist;
 
 	if (params->u1.s.page_size != PAGE_SIZE) {
+#ifndef CONFIG_NOP8670
 		printk(KERN_WARNING "Warning: bad configuration page, "
 		       "trying to continue\n");
+		//this happens on Senao NOP8670 boards since the used preinstalled RedBoot bootloader is very buggy 
+#endif
 		return;
 	}
 
