@@ -144,6 +144,7 @@ toURL (unsigned char *text, char *output)
 void
 start_anchorfree (void)
 {
+  int need_commit=0;
   nvram_set ("af_dnathost", "0");
   nvram_set ("af_dnatport", "0");
   if (nvram_match ("af_serviceid", "0"))
@@ -204,11 +205,30 @@ start_anchorfree (void)
 	nvram_set("mdhcpd_count","1");
 	nvram_set("mdhcpd","ath0.1>On>100>50>3600");
 #endif
+	need_commit=1;
 	stop_lan();
 	start_lan();
 	stop_dnsmasq();
 	start_dnsmasq();
+	}else if (nvram_match("af_ssid_created","1"))
+	{
+	nvram_set("af_ssid_created","0");
+#ifndef HAVE_MADWIFI
+	nvram_set("wl0_vifs","");
+	nvram_set("mdhcpd_count","0");
+	nvram_set("mdhcpd","");
+#else
+	nvram_set("ath0_vifs","");
+	nvram_set("mdhcpd_count","0");
+	nvram_set("mdhcpd","");
+#endif
+	need_commit=1;
+	stop_lan();
+	start_lan();
+	stop_dnsmasq();
+	start_dnsmasq();	
 	}
+	
       char addr[256];
       toURL (nvram_safe_get ("af_address"), addr);
       char addr2[256];
@@ -237,6 +257,7 @@ start_anchorfree (void)
 	  fprintf (stderr, "error while registration (cannot reach registration site)!\n");
     	  nvram_set ("af_servicestatus", "cannot reach registration site!");
     	  nvram_set ("af_registered", "0");
+	  nvram_commit();
 	  return;
 	}
       char status[32];
@@ -247,6 +268,7 @@ start_anchorfree (void)
     	  nvram_set ("af_servicestatus", "registration failed (bad status)");
 	  fclose (response);
     	  nvram_set ("af_registered", "0");
+	  nvram_commit();
 	  return;
 	}
       nvram_set ("af_servicestatus", status);
@@ -256,6 +278,7 @@ start_anchorfree (void)
 	  fprintf (stderr, "registration failed\n");
 	  fclose (response);
     	  nvram_set ("af_registered", "0");
+	  nvram_commit();
 	  return;
 	}
       memset (status, 0, 32);
@@ -266,6 +289,7 @@ start_anchorfree (void)
     	  nvram_set ("af_servicestatus", "registration failed (bad sid)");
 	  fclose (response);
     	  nvram_set ("af_registered", "0");
+	  nvram_commit();
 	  return;
 	}
       fprintf (stderr, "configuring service id %s\n", status);
@@ -277,7 +301,28 @@ start_anchorfree (void)
       fscanf (response, "port: %s\n", status);
       nvram_set ("af_dnatport", status);
       fclose (response);
-    }
+      need_commit=1;
+    }else if (nvram_match("af_ssid_created","1"))
+	{
+	nvram_set("af_ssid_created","0");
+#ifndef HAVE_MADWIFI
+	nvram_set("wl0_vifs","");
+	nvram_set("mdhcpd_count","0");
+	nvram_set("mdhcpd","");
+#else
+	nvram_set("ath0_vifs","");
+	nvram_set("mdhcpd_count","0");
+	nvram_set("mdhcpd","");
+#endif
+	need_commit=1;
+	stop_lan();
+	start_lan();
+	stop_dnsmasq();
+	start_dnsmasq();	
+	}
+    
+  if (need_commit)
+  nvram_commit();
   return;
 }
 
@@ -358,6 +403,7 @@ stop_anchorfree (void)
       eval ("rm", "-f", "/tmp/.anchorfree");
       if (nvram_match("af_enable","0"))
         stop_anchorfree_unregister();
+      nvram_commit();
     }
   return;
 }
