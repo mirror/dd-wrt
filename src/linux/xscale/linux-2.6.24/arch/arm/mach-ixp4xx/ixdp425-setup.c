@@ -152,7 +152,7 @@ static struct platform_device ixdp425_i2c_controller = {
 };
 
 static struct resource ixdp425_uart_resources[] = {
-#if defined(CONFIG_TONZE) || defined(CONFIG_NOP8670)
+#if !defined(CONFIG_TONZE) && !defined(CONFIG_NOP8670)
 	{
 		.start		= IXP4XX_UART1_BASE_PHYS,
 		.end		= IXP4XX_UART1_BASE_PHYS + 0x0fff,
@@ -167,7 +167,7 @@ static struct resource ixdp425_uart_resources[] = {
 };
 
 static struct plat_serial8250_port ixdp425_uart_data[] = {
-#if defined(CONFIG_TONZE) || defined(CONFIG_NOP8670)
+#if !defined(CONFIG_TONZE) && !defined(CONFIG_NOP8670)
 	{
 		.mapbase	= IXP4XX_UART1_BASE_PHYS,
 		.membase	= (char *)IXP4XX_UART1_BASE_VIRT + REG_OFFSET,
@@ -194,7 +194,7 @@ static struct platform_device ixdp425_uart = {
 	.name			= "serial8250",
 	.id			= PLAT8250_DEV_PLATFORM,
 	.dev.platform_data	= ixdp425_uart_data,
-#if defined(CONFIG_TONZE) || defined(CONFIG_NOP8670)
+#if !defined(CONFIG_TONZE) && !defined(CONFIG_NOP8670)
 	.num_resources		= 2,
 #else
 	.num_resources		= 1,
