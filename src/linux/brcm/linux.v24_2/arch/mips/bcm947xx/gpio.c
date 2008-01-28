@@ -188,11 +188,21 @@ if (iswrt350n)
 	USB_SET_LED(USB_DISCONNECT); //2005-02-24 by kanki for USB LED
 
 }
-if (iswrt350n || iswrt300n11)
+if (iswrt350n)
 {
+		
 		sb_gpioreserve(gpio_sbh, 0x4, GPIO_HI_PRIORITY);
 		sb_gpioouten(gpio_sbh, 0x4, 0x4, GPIO_HI_PRIORITY);
 		sb_gpioout(gpio_sbh, 0x4, 0x4, GPIO_HI_PRIORITY);
+}
+if (iswrt300n11)
+{
+		int reset = 1 << 8;
+		sb_gpioout(gpio_sbh, reset, 0, GPIO_DRV_PRIORITY);
+		sb_gpioouten(gpio_sbh, reset, reset, GPIO_DRV_PRIORITY);
+		bcm_mdelay(50);
+		sb_gpioout(gpio_sbh, reset, reset, GPIO_DRV_PRIORITY);
+		bcm_mdelay(20);	
 }
 	return 0;
 }
