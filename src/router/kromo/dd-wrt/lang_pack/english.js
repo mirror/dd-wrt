@@ -993,7 +993,7 @@ hqos.right12="You may control your data rate according to which physical LAN por
 var routetbl = new Object();
 routetbl.titl="Routing Table";
 routetbl.h2="Routing Table Entry List";
-routetbl.th1="Destination LAN IP";
+routetbl.th1="Destination LAN NET";
 
 
 // ** Routing.asp **//
@@ -1027,7 +1027,7 @@ route.gateway_legend="Dynamic Routing";
 route.static_legend="Static Routing";
 route.static_setno="Select set number";
 route.static_name="Route Name";
-route.static_ip="Destination LAN IP";
+route.static_ip="Destination LAN NET";
 
 //help container
 var hroute = new Object();
