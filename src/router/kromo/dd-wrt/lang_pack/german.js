@@ -942,7 +942,7 @@ hqos.right12="Hier können Sie die Datenrate der physischen LAN-Ports an Ihrem Ro
 
 routetbl.titl="Routen-Tabelle";
 routetbl.h2="Routen-Tabelle";
-routetbl.th1="Ziel-LAN-IP";
+routetbl.th1="Ziel-LAN-Netz";
 
 
 
@@ -961,7 +961,7 @@ route.gateway_legend="Dynamisches Routing";
 route.static_legend="Statisches Routing";
 route.static_setno="Wähle Set-Nummer";
 route.static_name="Routen-Name";
-route.static_ip="Ziel-LAN-IP";
+route.static_ip="Ziel-LAN-Netz";
 
 //help container
 
