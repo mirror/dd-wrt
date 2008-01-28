@@ -148,7 +148,7 @@ static inline int trigger_out_matched(const struct ipt_trigger *i,
 }
 
 static unsigned int
-trigger_out(struct sk_buff **pskb,
+trigger_out(struct sk_buff *pskb,
 		unsigned int hooknum,
 		const struct net_device *in,
 		const struct net_device *out,
@@ -156,7 +156,7 @@ trigger_out(struct sk_buff **pskb,
 {
     const struct ipt_trigger_info *info = targinfo;
     struct ipt_trigger trig, *found;
-    const struct iphdr *iph = ip_hdr(*pskb);
+    const struct iphdr *iph = ip_hdr(pskb);
     struct tcphdr *tcph = (void *)iph + iph->ihl*4;	/* Might be TCP, UDP */
 
     DEBUGP("############# %s ############\n", __FUNCTION__);
@@ -201,14 +201,14 @@ static inline int trigger_in_matched(const struct ipt_trigger *i,
 }
 
 static unsigned int
-trigger_in(struct sk_buff **pskb,
+trigger_in(struct sk_buff *pskb,
 		unsigned int hooknum,
 		const struct net_device *in,
 		const struct net_device *out,
 		const void *targinfo)
 {
     struct ipt_trigger *found;
-    const struct iphdr *iph = ip_hdr(*pskb);
+    const struct iphdr *iph = ip_hdr(pskb);
     struct tcphdr *tcph = (void *)iph + iph->ihl*4;	/* Might be TCP, UDP */
     /* Check if the trigger-ed range has already existed in 'trigger_list'. */
     found = LIST_FIND(&trigger_list, trigger_in_matched,
@@ -225,14 +225,14 @@ trigger_in(struct sk_buff **pskb,
 }
 
 static unsigned int
-trigger_dnat(struct sk_buff **pskb,
+trigger_dnat(struct sk_buff *pskb,
 		unsigned int hooknum,
 		const struct net_device *in,
 		const struct net_device *out,
 		const void *targinfo)
 {
     struct ipt_trigger *found;
-    const struct iphdr *iph = ip_hdr(*pskb);
+    const struct iphdr *iph = ip_hdr(pskb);
     struct tcphdr *tcph = (void *)iph + iph->ihl*4;	/* Might be TCP, UDP */
     struct nf_conn *ct;
     enum ip_conntrack_info ctinfo;
@@ -248,7 +248,7 @@ trigger_dnat(struct sk_buff **pskb,
 
     DEBUGP("############# %s ############\n", __FUNCTION__);
     found->reply = 1;	/* Confirm there has been a reply connection. */
-    ct = nf_ct_get(*pskb, &ctinfo);
+    ct = nf_ct_get(pskb, &ctinfo);
     NF_CT_ASSERT(ct && (ctinfo == IP_CT_NEW));
 
     DEBUGP("%s: got ", __FUNCTION__);
@@ -266,7 +266,7 @@ trigger_dnat(struct sk_buff **pskb,
 }
 
 static unsigned int
-trigger_target(struct sk_buff **pskb,
+trigger_target(struct sk_buff *pskb,
 		const struct net_device *in,
 		const struct net_device *out,
 		unsigned int hooknum,
@@ -274,7 +274,7 @@ trigger_target(struct sk_buff **pskb,
 		const void *targinfo)
 {
     const struct ipt_trigger_info *info = targinfo;
-    const struct iphdr *iph = ip_hdr(*pskb);
+    const struct iphdr *iph = ip_hdr(pskb);
 
     /* DEBUGP("%s: type = %s\n", __FUNCTION__, 
 	    (info->type == IPT_TRIGGER_DNAT) ? "dnat" :
