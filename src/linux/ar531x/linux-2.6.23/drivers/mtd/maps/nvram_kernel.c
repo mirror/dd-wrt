@@ -116,14 +116,13 @@ _nvram_read(char *buf)
 	if (!nvram_mtd || nvram_mtd->read(nvram_mtd, nvram_mtd->size - NVRAM_SPACE, NVRAM_SPACE, &len, buf) ||
 	    len != NVRAM_SPACE ||
 	    header->magic != NVRAM_MAGIC) {
-	//        printk(KERN_EMERG "Broken NVRAM found, recovering it (Magic %X)\n",header->magic);
+	        //printk(KERN_EMERG "Broken NVRAM found, recovering it (Magic %X on %X)\n",header->magic,header);
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
 		memset(buf,0,NVRAM_SPACE);
 		header->magic = NVRAM_MAGIC;
 		header->len = 0;
-		
-
+		nvram_commit();
 	}
 
 	return 0;
@@ -227,11 +226,10 @@ erase_callback(struct erase_info *done)
 	wait_queue_head_t *wait_q = (wait_queue_head_t *) done->priv;
 	wake_up(wait_q);
 }
-
+static char *global_buf = NULL; 
 int
 nvram_commit(void)
 {
-	char *buf;
 	size_t erasesize, len;
 	unsigned int i;
 	int ret;
@@ -241,7 +239,6 @@ nvram_commit(void)
 	DECLARE_WAITQUEUE(wait, current);
 	wait_queue_head_t wait_q;
 	struct erase_info erase;
-//	printk(KERN_EMERG "commit\n");
 
 	if (!nvram_mtd) {
 		printk("nvram_commit: NVRAM not found\n");
@@ -255,26 +252,26 @@ nvram_commit(void)
 
 	/* Backup sector blocks to be erased */
 	erasesize = ROUNDUP(NVRAM_SPACE, nvram_mtd->erasesize);
-	if (!(buf = kmalloc(erasesize, GFP_KERNEL))) {
+	if (!global_buf)
+	if (!(global_buf = kmalloc(erasesize, GFP_KERNEL))) {
 		printk("nvram_commit: out of memory\n");
 		return -ENOMEM;
 	}
-
 	down(&nvram_sem);
 
 	if ((i = erasesize - NVRAM_SPACE) > 0) {
 		offset = nvram_mtd->size - erasesize;
 		len = 0;
-		ret = nvram_mtd->read(nvram_mtd, offset, i, &len, buf);
+		ret = nvram_mtd->read(nvram_mtd, offset, i, &len, global_buf);
 		if (ret || len != i) {
 			printk("nvram_commit: read error ret = %d, len = %d/%d\n", ret, len, i);
 			ret = -EIO;
 			goto done;
 		}
-		header = (struct nvram_header *)(buf + i);
+		header = (struct nvram_header *)(global_buf + i);
 	} else {
 		offset = nvram_mtd->size - NVRAM_SPACE;
-		header = (struct nvram_header *)buf;
+		header = (struct nvram_header *)global_buf;
 	}
 
 	/* Regenerate NVRAM */
@@ -315,7 +312,7 @@ nvram_commit(void)
 	/* Write partition up to end of data area */
 	offset = nvram_mtd->size - erasesize;
 	i = erasesize - NVRAM_SPACE + header->len;
-	ret = nvram_mtd->write(nvram_mtd, offset, i, &len, buf);
+	ret = nvram_mtd->write(nvram_mtd, offset, i, &len, global_buf);
 	if (ret || len != i) {
 		printk("nvram_commit: write error\n");
 		ret = -EIO;
@@ -323,11 +320,10 @@ nvram_commit(void)
 	}
 
 	offset = nvram_mtd->size - erasesize;
-	ret = nvram_mtd->read(nvram_mtd, offset, 4, &len, buf);
+	ret = nvram_mtd->read(nvram_mtd, offset, 4, &len, global_buf);
 
  done:
 	up(&nvram_sem);
-	kfree(buf);
 	return ret;
 }
 
@@ -440,7 +436,7 @@ dev_nvram_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsign
 {
 	if (cmd != NVRAM_MAGIC)
 	{
-//	    printk(KERN_EMERG "Invalid nvram magic %X %X\n",cmd,NVRAM_MAGIC);
+	    printk(KERN_EMERG "Invalid nvram magic %X %X\n",cmd,NVRAM_MAGIC);
 		return -EINVAL;
 	}
 	return nvram_commit();
