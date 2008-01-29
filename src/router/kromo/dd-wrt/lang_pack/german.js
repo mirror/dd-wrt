@@ -644,6 +644,8 @@ hotspot.wifidog_authsrvsslport="AuthServer SSL Port";
 hotspot.wifidog_authsrvhttpport="AuthServer HTTP Port";
 hotspot.wifidog_authsrvpath="AuthServer Path";
 
+// **************************************************************** AnchorFree.asp *********************************************************//
+
 var anchorfree = new Object();
 anchorfree.anchorfree="AnchorFree";
 anchorfree.title="Mit Hotspot Geld verdienen";
@@ -662,6 +664,15 @@ anchorfree.publish="Diesen Hotspot auf der WiFi Karte anzeigen";
 anchorfree.serviceid="Service ID";
 anchorfree.servicestatus="Service Status";
 
+hanchorfree.right1="Tritt dem AnchorFree Werbenetzwerk bei";
+hanchorfree.right2="AnchorFree betreibt ein Hotspot Werbenetzwerk welches DD-WRT Nutzern wachsende Gewinnmöglichkeiten bietet";
+hanchorfree.right3="Generiere wachsende Gewinne durch die Nutzung von AnchorFree";
+hanchorfree.right4="Durch das Einschalten von AnchorFree und durch das erstellen des dazugehörigen Nutzerkontos (kostenlos und einfach), wird ein permantenter Werbebereich in die Aufgerufenen Webseiten eingefügt, welches zu einer Monatlichen Gewinnausschüttung führt.  Beginnend von einem Monatlichen Minimum von 25$, wird ihnen ihr Guthaben automatisch von AnchorFree überwiesen.";
+hanchorfree.right5="Für weitere Informationen besuchen sie bitte http://www.anchorfree.com";
+hanchorfree.right6="Das Einschalten ist Einfach";
+hanchorfree.right7="Einmal eingeschaltet, wird ihnen von AnchorFRee automatisch eine Email an Ihre registrierte email Addresse geschickt, welche einfache Anweisungen über die Optimierung ihres Hotspots, FAQs und andere wichtige Informationen über das Geld verdienen mit ihrem Router enthält. Durch dieses Konfigurationsmenü wird von AnchorFree ein kleines, nicht zu aufdringliches Werbebanner in die aufgerufenen Webseiten eingefügt.";
+hanchorfree.right8="Kunden unterstützung";
+hanchorfree.right9="Haben Sie Fragen? Kontaktieren Sie uns durch boxhelp@anchorfree.com";
 
 // **************************************************************** index_heartbeat.asp *********************************************************//
 

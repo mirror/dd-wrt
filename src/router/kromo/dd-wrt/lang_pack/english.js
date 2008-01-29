@@ -714,7 +714,7 @@ anchorfree.servicestatus="Service Status";
 
 var hanchorfree = new Object();
 hanchorfree.right1="Join AnchorFree's advertising network";
-hanchorfree.right2="AnchorFree operates a hotspot advertising network allowing dd-wrt customers to generate incremental revenues.";
+hanchorfree.right2="AnchorFree operates a hotspot advertising network allowing DD-WRT customers to generate incremental revenues.";
 hanchorfree.right3="Generate incremental revenue with advertising from AnchorFree";
 hanchorfree.right4="By activating this feature and creating an account with AnchorFree (it's free and easy), a persistent advertising frame is inserted directly into users web browsers, which will earn you a payment every month.  Earn a minimum monthly threshold of $25 and AnchorFree will automatically credit your account with funds.";
 hanchorfree.right5="For more information please visit http://www.anchorfree.com";
