@@ -664,7 +664,7 @@ anchorfree.publish="Diesen Hotspot auf der WiFi Karte anzeigen";
 anchorfree.serviceid="Service ID";
 anchorfree.servicestatus="Service Status";
 
-hanchorfree.right1="Tritt dem AnchorFree Werbenetzwerk bei";
+hanchorfree.right1="Tritt dem AnchorFree Hotspot Werbenetzwerk bei";
 hanchorfree.right2="AnchorFree betreibt ein Hotspot Werbenetzwerk welches DD-WRT Nutzern wachsende Gewinnmöglichkeiten bietet";
 hanchorfree.right3="Generiere wachsende Gewinne durch die Nutzung von AnchorFree";
 hanchorfree.right4="Durch das Einschalten von AnchorFree und durch das erstellen des dazugehörigen Nutzerkontos (kostenlos und einfach), wird ein permantenter Werbebereich in die Aufgerufenen Webseiten eingefügt, welches zu einer Monatlichen Gewinnausschüttung führt.  Beginnend von einem Monatlichen Minimum von 25$, wird ihnen ihr Guthaben automatisch von AnchorFree überwiesen.";
