@@ -712,6 +712,16 @@ anchorfree.publish="Publish this hotspot on the free WiFi map";
 anchorfree.serviceid="Service ID";
 anchorfree.servicestatus="Service Status";
 
+var hanchorfree = new Object();
+hanchorfree.right1="Join AnchorFree's advertising network";
+hanchorfree.right2="AnchorFree operates a hotspot advertising network allowing dd-wrt customers to generate incremental revenues.";
+hanchorfree.right3="Generate incremental revenue with advertising from AnchorFree";
+hanchorfree.right4="By activating this feature and creating an account with AnchorFree (it's free and easy), a persistent advertising frame is inserted directly into users web browsers, which will earn you a payment every month.  Earn a minimum monthly threshold of $25 and AnchorFree will automatically credit your account with funds.";
+hanchorfree.right5="For more information please visit http://www.anchorfree.com";
+hanchorfree.right6="Activation is easy";
+hanchorfree.right7="Once you have activated, AnchorFree will send an email to the registered account owner with simple instructions on optimizing your hotspot, FAQs, and other pertinent information on earning money from your router. Through this configuration screen, AnchorFree inserts a thin, non-intrusive advertising frame directly into web browsers accessing the internet from this router.";
+hanchorfree.right8="Customer support";
+hanchorfree.right9="Have questions? Contact us at boxhelp@anchorfree.com";
 
 
 // ** Info.htm **//

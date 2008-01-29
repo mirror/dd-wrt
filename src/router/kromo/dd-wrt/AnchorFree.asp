@@ -220,6 +220,17 @@ addEvent(window, "unload", function() {
 				<div id="helpContainer">
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div><br/>
+						<dl>
+							<dt class="term"><% tran("hanchorfree.right1"); %></dt>
+							<dd class="definition"><% tran("hanchorfree.right2"); %></dd>
+							<dt class="term"><% tran("hanchorfree.right3"); %></dt>
+							<dd class="definition"><% tran("hanchorfree.right4"); %></dd>
+							<dd class="definition"><% tran("hanchorfree.right5"); %></dd>
+							<dt class="term"><% tran("hanchorfree.right6"); %></dt>
+							<dd class="definition"><% tran("hanchorfree.right7"); %></dd>
+							<dt class="term"><% tran("hanchorfree.right8"); %></dt>
+							<dd class="definition"><% tran("hanchorfree.right9"); %></dd>
+						</dl><br />
 						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HAnchorFree.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
