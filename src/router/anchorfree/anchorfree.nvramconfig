@@ -11,3 +11,4 @@
  "af_category"  "Anchorfree category"  "NAME"  "128"  "TRUE" "0"  
  "af_publish"  "Anchorfree wifi map"  "CHOICE" "2" "0" "1" "FALSE" "0"  
  "af_category"  "Anchorfree category"  "NAME"  "128"  "TRUE" "0"  
+ "af_agree"  "Anchorfree terms"  "CHOICE" "2" "0" "1" "FALSE" "0"
