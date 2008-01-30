@@ -285,6 +285,7 @@ bmenu.adminUpgrade="Aktualizacja Firmware";
 bmenu.adminBackup="Kopia Ustawien";
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
+bmenu.statuInet="Internet";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Wireless";

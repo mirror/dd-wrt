@@ -335,6 +335,7 @@ bmenu.adminBackup="备份";
 
 bmenu.statu="状态";
 bmenu.statuRouter="路由器";
+bmenu.statuInet="Internet";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Sputnik代理";
 bmenu.statuWLAN="无线";
