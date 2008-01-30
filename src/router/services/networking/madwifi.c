@@ -1219,7 +1219,7 @@ configure_single (int count)
       if (hwaddr != NULL)
 	{
 	  eval ("wlanconfig", wdsdev, "create", "wlandev", wif, "wlanmode",
-		"wds");
+		"wds", "nobssid");
 //        eval ("ifconfig",wdsdev,"0.0.0.0","up");d
 	  eval ("iwpriv", wdsdev, "wds_add", hwaddr);
 	  eval ("iwpriv", wdsdev, "wds", "1");
