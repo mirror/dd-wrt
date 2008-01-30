@@ -2263,6 +2263,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"af_country","",0},
   {"af_category","0",0},
   {"af_publish","1",0},
+  {"af_agree","0",0},
   {0, 0, 0}
 };
 
