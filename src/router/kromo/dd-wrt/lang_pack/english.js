@@ -711,6 +711,8 @@ anchorfree.category="Category";
 anchorfree.publish="Publish this hotspot on the free WiFi map";
 anchorfree.serviceid="Service ID";
 anchorfree.servicestatus="Service Status";
+anchorfree.agreement="Terms and Conditions";
+anchorfree.agree="I ACCEPT AND AGREE";
 
 var hanchorfree = new Object();
 hanchorfree.right1="Join AnchorFree's hotspot advertising network";
