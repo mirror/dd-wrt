@@ -205,7 +205,7 @@ start_anchorfree (void)
 	nvram_set("mdhcpd_count","1");
 	nvram_set("mdhcpd","ath0.1>On>100>50>3600");
 #endif
-	need_commit=1;
+	nvram_commit();
 	stop_lan();
 	start_lan();
 	stop_dnsmasq();
@@ -222,7 +222,7 @@ start_anchorfree (void)
 	nvram_set("mdhcpd_count","0");
 	nvram_set("mdhcpd","");
 #endif
-	need_commit=1;
+	nvram_commit();
 	stop_lan();
 	start_lan();
 	stop_dnsmasq();
