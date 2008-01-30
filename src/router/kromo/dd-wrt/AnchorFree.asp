@@ -4,13 +4,13 @@
 
 function validate_anchorfree(F)
 {
-if (F.af_enable.value == "1")
+if (F.af_enable.value == 1)
     {
     if (valid_email(F.af_email.value,1,1)==false)
       {
 	    return false;
       }
-    if (F.af_publish.value == "1")
+    if (F.af_publish.value == 1)
 	{
 	if (F.af_address.value.length==0)
 	    {
@@ -23,7 +23,7 @@ if (F.af_enable.value == "1")
 	    return false;
 	    }
 	}
-    if (F.af_category.value == "0")
+    if (F.af_category.value == 0)
 	{
 	alert("please select a advertising category for your hotspot");
 	return false;
