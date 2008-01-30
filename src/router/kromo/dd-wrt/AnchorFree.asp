@@ -4,13 +4,13 @@
 
 function validate_anchorfree(F)
 {
-if (F.af_enable.value == true)
+if (F.af_enable.value == "1")
     {
     if (valid_email(F.af_email.value,1,1)==false)
       {
 	    return false;
       }
-    if (F.af_publish.value=="1")
+    if (F.af_publish.value == "1")
 	{
 	if (F.af_address.value.length==0)
 	    {
@@ -23,12 +23,12 @@ if (F.af_enable.value == true)
 	    return false;
 	    }
 	}
-    if (F.af_category.value=="0")
+    if (F.af_category.value == "0")
 	{
 	alert("please select a advertising category for your hotspot");
 	return false;
 	}
-    if (F.af_country.value=="null")
+    if (F.af_country.value == "null")
 	{
 	alert("please select a country for your hotspot");
 	return false;
