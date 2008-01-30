@@ -396,6 +396,7 @@ bmenu.servicesAnchorFree="Earn Hotspot Revenue";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
+bmenu.statuInet="Internet";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Wireless";
