@@ -346,6 +346,7 @@ bmenu.adminBackup="Backup";
 
 bmenu.statu="Státusz";
 bmenu.statuRouter="Router";
+bmenu.statuInet="Internet";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Sputnik-Agent";
 bmenu.statuWLAN="WLAN";
