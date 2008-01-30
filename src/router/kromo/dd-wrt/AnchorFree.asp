@@ -4,7 +4,7 @@
 
 function validate_anchorfree(F)
 {
-if (F.af_enable == true)
+if (F.af_enable.value == true)
     {
     if (valid_email(F.af_email.value,1,1)==false)
       {
@@ -41,6 +41,9 @@ if (F.af_enable == true)
 	{
 	F.af_agree.value = 1;
 	}
+    }else{
+	F.af_agree.value = 0;
+    
     }
 return true;
 }
