@@ -321,8 +321,9 @@ Configure mac addresses by reading data from eeprom
   /* Set a sane date */
   stime (&tm);
   nvram_set ("wl0_ifname", "ath0");
-
+#ifndef HAVE_NOP8670
   eval ("hwclock", "-s");
+#endif
   nvram_set ("use_crypto", "0");
   cprintf ("done\n");
   eval ("/bin/tar", "-xzf", "/dev/mtdblock/4", "-C", "/");
