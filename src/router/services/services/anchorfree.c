@@ -210,7 +210,7 @@ start_anchorfree (void)
 	start_lan();
 	stop_dnsmasq();
 	start_dnsmasq();
-	}else if (nvram_match("af_ssid_created","1"))
+	}else if (nvram_match ("af_ssid", "0") && nvram_match("af_ssid_created","1"))
 	{
 	nvram_set("af_ssid_created","0");
 #ifndef HAVE_MADWIFI
