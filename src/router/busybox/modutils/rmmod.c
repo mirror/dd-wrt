@@ -62,7 +62,7 @@ int rmmod_main(int argc, char **argv)
 			if (syscall(__NR_delete_module, NULL, flags) != 0) {
 				if (errno == EFAULT)
 					return ret;
-				bb_perror_msg_and_die("rmmod");
+				exit(0);
 			}
 			pnmod = nmod;
 			// the 1 here is QM_MODULES.
