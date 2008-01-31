@@ -190,6 +190,7 @@ start_anchorfree (void)
 	nvram_set("af_ssid_created","1");
 #ifndef HAVE_MADWIFI
 	nvram_set("wl0_vifs","wl0.1");
+	nvram_set("wl_vifs","wl0.1");
 	nvram_set("wl0.1_ssid",nvram_safe_get("af_ssid_name"));
 	nvram_set("wl0.1_bridged","0");
 	nvram_set("wl0.1_ipaddr","172.45.0.1");
@@ -215,6 +216,7 @@ start_anchorfree (void)
 	nvram_set("af_ssid_created","0");
 #ifndef HAVE_MADWIFI
 	nvram_set("wl0_vifs","");
+	nvram_set("wl_vifs","");
 	nvram_set("mdhcpd_count","0");
 	nvram_set("mdhcpd","");
 #else
@@ -307,6 +309,7 @@ start_anchorfree (void)
 	nvram_set("af_ssid_created","0");
 #ifndef HAVE_MADWIFI
 	nvram_set("wl0_vifs","");
+	nvram_set("wl_vifs","");
 	nvram_set("mdhcpd_count","0");
 	nvram_set("mdhcpd","");
 #else
