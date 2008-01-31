@@ -134,7 +134,7 @@ start_dnsmasq (void)
       if (nvram_match ("chilli_enable", "1"))
 	fprintf (fp, "interface=%s", nvram_safe_get ("wl0_ifname"));
       else if (nvram_match ("pptpd_enable", "1"))
-	fprintf (fp, "listen-address=%s,%s\n", "127.0.0.1",
+	fprintf (fp, "listen-address=%s,%s", "127.0.0.1",
 		 nvram_safe_get ("lan_ipaddr"));
       else
 	fprintf (fp, "interface=%s", nvram_safe_get ("lan_ifname"));
@@ -152,6 +152,9 @@ start_dnsmasq (void)
 	      if (strlen (nvram_nget ("%s_ipaddr", getmdhcp (0, i))) == 0
 		  || strlen (nvram_nget ("%s_netmask", getmdhcp (0, i))) == 0)
 		continue;
+	    if (nvram_match ("pptpd_enable", "1")	
+	      fprintf (fp, ",%s", nvram_nget("%s_ipaddr",getmdhcp (0, i)));
+	    else
 	      fprintf (fp, ",%s", getmdhcp (0, i));
 	    }
 	}
