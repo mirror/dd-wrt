@@ -177,7 +177,6 @@ start_anchorfree (void)
       }
       else
 	{
-	nvram_set("af_ssid_created","0");
 #ifndef HAVE_MADWIFI
 	  toURL (nvram_safe_get ("wl0_ssid"), ssid);
 #else
