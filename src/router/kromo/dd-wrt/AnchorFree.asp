@@ -4,13 +4,13 @@
 
 function validate_anchorfree(F)
 {
-if (F.af_enable.value == 1)
+if (F.af_enable.item(0).checked == true)
     {
     if (valid_email(F.af_email.value,1,1)==false)
       {
 	    return false;
       }
-    if (F.af_publish.value == 1)
+    if (F.af_publish.item(0).checked == true)
 	{
 	if (F.af_address.value.length==0)
 	    {
