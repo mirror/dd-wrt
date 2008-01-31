@@ -152,7 +152,7 @@ start_dnsmasq (void)
 	      if (strlen (nvram_nget ("%s_ipaddr", getmdhcp (0, i))) == 0
 		  || strlen (nvram_nget ("%s_netmask", getmdhcp (0, i))) == 0)
 		continue;
-	    if (nvram_match ("pptpd_enable", "1")	
+	    if (nvram_match ("pptpd_enable", "1"))
 	      fprintf (fp, ",%s", nvram_nget("%s_ipaddr",getmdhcp (0, i)));
 	    else
 	      fprintf (fp, ",%s", getmdhcp (0, i));
