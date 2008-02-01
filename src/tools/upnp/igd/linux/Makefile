@@ -49,7 +49,7 @@ else
 CFLAGS += $(COPTS) -DNDEBUG
 endif
 CFLAGS += -I$(subst :, -I,$(VPATH.h))
-CFLAGS += -Wall -Wunused 
+CFLAGS += -Wall -Wunused -ffunction-sections -fdata-sections
 #CFLAGS += --trace-includes
 OBJDIR=obj
 
@@ -71,7 +71,7 @@ SOURCES.OBJ := $(patsubst %.c,$(OBJDIR)/%.o,$(SOURCES.OBJ))
 
 TARGET = upnp
 LIBS = -L../../upnp/linux -L$(SRCBASE)/router/netconf \
-	-L$(SRCBASE)/router/nvram -L$(SRCBASE)/router/shared -lupnp -lnetconf -lnvram -lshared -ffunction-sections -fdata-sections -Wl,--gc-sections
+	-L$(SRCBASE)/router/nvram -L$(SRCBASE)/router/shared -lupnp -lnetconf -lnvram -lshared -L../zlib -Wl,--gc-sections
 
 all : $(OBJDIR) $(TARGET)
 
