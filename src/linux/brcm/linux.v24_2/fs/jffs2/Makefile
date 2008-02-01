@@ -31,6 +31,7 @@ JFFS2_OBJS	:= dir.o file.o ioctl.o nodelist.o malloc.o \
 	symlink.o build.o erase.o background.o
 
 O_TARGET := jffs2.o
+EXTRA_CFLAGS := -DCONFIG_NOPRINTK
 
 obj-y := $(COMPR_OBJS) $(JFFS2_OBJS)
 obj-m := $(O_TARGET)

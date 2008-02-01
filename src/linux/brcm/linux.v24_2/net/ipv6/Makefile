@@ -16,6 +16,7 @@ obj-y :=	af_inet6.o anycast.o ip6_output.o ip6_input.o addrconf.o sit.o \
 		ip6_flowlabel.o ipv6_syms.o
 
 export-objs := ipv6_syms.o
+EXTRA_CFLAGS := -DCONFIG_NOPRINTK
 
 obj-m  := $(O_TARGET)
 
