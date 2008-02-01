@@ -4146,9 +4146,9 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
    "QoS.asp", "P2P.asp", "", "", "", ""},
   {"Management.asp", "Alive.asp", "Diagnostics.asp", "Wol.asp",
    "Factory_Defaults.asp", "Upgrade.asp", "config.asp", "", "", "", ""},
-  {"Status_Router.asp", "Status_Lan.asp", "Status_Wireless.asp",
+  {"Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp", "Status_Wireless.asp",
    "Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp",
-   "Info.htm", "", "", "", ""}
+   "Info.htm", "", "", ""}
   };
 
 /* real name is bmenu.menuname[i][j] */
@@ -4167,8 +4167,8 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   {"admin", "adminManagement", "adminAlive",
    "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup",
    "", "", ""},
-  {"statu", "statuRouter", "statuLAN", "statuWLAN", "statuSputnik",
-   "statuVPN", "statuBand", "statuSysInfo", "", "", ""}
+  {"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN", "statuSputnik",
+   "statuVPN", "statuBand", "statuSysInfo", "", ""}
   };
 
 #ifdef HAVE_MADWIFI
