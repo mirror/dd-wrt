@@ -1330,11 +1330,6 @@ status_router.mem_hidden="Hidden"; // do not translate this line, this is bogus 
 status_router.legend4="Network";
 status_router.net_maxports="IP Filter Maximum Ports";
 status_router.net_conntrack="Active IP Connections";
-status_router.h22="Internet";
-status_router.legend5="Configuration Type";
-status_router.www_loginstatus="Login Status";
-status_router.wanuptime="Connection Uptime";
-status_router.leasetime="Remaining Lease Time";
 status_router.notavail="Not available";
 status_router.legend6="Space Usage";
 status_router.inpvolt="Board Input Voltage";
@@ -1348,7 +1343,23 @@ hstatus_router.right6="This is the router's current firmware.";
 hstatus_router.right8="This is time received from the ntp server set on the <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em> tab.";
 hstatus_router.right10="This is a measure of the time the router has been \"up\" and running.";
 hstatus_router.right12="This is given as three numbers that represent the system load during the last one, five, and fifteen minute periods.";
-hstatus_router.right14="This shows the information required by your ISP for connection to the Internet. This information was entered on the Setup Tab. You can <em>Connect</em> or <em>Disconnect</em> your connection here by clicking on that button.";
+
+// ** Status_Internet.asp **//
+var status_inet = new Object();
+status_inet.titl="Internet Status";
+status_inet.h11="Internet";
+status_inet.conft="Configuration Type";
+status_inet.www_loginstatus="Login Status";
+status_inet.wanuptime="Connection Uptime";
+status_inet.leasetime="Remaining Lease Time";
+status_inet.traff="Traffic";
+status_inet.ttraffin="Total Incoming Traffic (MBytes)";
+status_inet.ttraffout="Total Outgoing Traffic (MBytes)";
+
+//help container
+var hstatus_inet = new Object();
+hstatus_inet.right2="This shows the information required by your ISP for connection to the Internet. This information was entered on the Setup Tab. You can <em>Connect</em> or <em>Disconnect</em> your connection here by clicking on that button.";
+hstatus_inet.right4="This shows your router's Internet traffic.";
 
 
 // ** Status_Conntrack.asp **//

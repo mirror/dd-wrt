@@ -1282,11 +1282,6 @@ status_router.mem_hidden="Hidden"; // do not translate this line, this is bogus 
 status_router.legend4="ネットワーク";
 status_router.net_maxports="IP Filter 最大数";
 status_router.net_conntrack="利用中のセッション数";
-status_router.h22="インターネット";
-status_router.legend5="インターネット接続方法";
-status_router.www_loginstatus="セッション状態";
-status_router.wanuptime="接続時間";
-status_router.leasetime="残りリース時間";
 status_router.notavail="利用できません";
 status_router.legend6="空きスペース";
 status_router.inpvolt="入力電圧";
@@ -1300,8 +1295,23 @@ hstatus_router.right6="この機器に適用されているファームウェア
 hstatus_router.right8="<em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em> ページで設定されたNTPサーバから取得した現在時刻を表示します。";
 hstatus_router.right10="機器が起動してからの時間です。";
 hstatus_router.right12="CPUの利用率を表示します。それぞれ1分、5分、15分それぞれの間の、CPU平均稼働率が表示されます";
-hstatus_router.right14="ISP(インターネット)との接続方法を表示しています。これらの情報は「基本」ページで設定する個とができます。<em>Connect</em>、<em>Disconnect</em>ボタンをクリックすることにより、接続の開始・切断ができます";
 
+// ** Status_Internet.asp **//
+
+status_inet.titl="WAN Status";
+status_inet.h11="インターネット";
+status_inet.conft="インターネット接続方法";
+status_inet.www_loginstatus="セッション状態";
+status_inet.wanuptime="接続時間";
+status_inet.leasetime="残りリース時間";
+status_inet.traff="Traffic";
+status_inet.ttraffin="Total Incoming Traffic (MBytes)";
+status_inet.ttraffout="Total Outgoing Traffic (MBytes)";
+
+//help container
+
+hstatus_inet.right2="ISP(インターネット)との接続方法を表示しています。これらの情報は「基本」ページで設定する個とができます。<em>Connect</em>、<em>Disconnect</em>ボタンをクリックすることにより、接続の開始・切断ができます";
+hstatus_inet.right4="This shows your router's Internet traffic.";
 
 // ** Status_Conntrack.asp **//
 

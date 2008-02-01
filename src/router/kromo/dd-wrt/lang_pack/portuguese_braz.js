@@ -1013,11 +1013,6 @@ status_router.mem_inactive="Inativo";
 status_router.legend4="Rede";
 status_router.net_maxports="Número Máximo de Portas do Filtro IP";
 status_router.net_conntrack="Conexões IPs Ativas";
-status_router.h22="Internet";
-status_router.legend5="Tipo de Configuração";
-status_router.www_loginstatus="Status do Login";
-status_router.wanuptime="Connection Uptime";
-status_router.leasetime="Remaining Lease Time";
 status_router.notavail="Not available";
 
 hstatus_router.right2="Este é o nome específico do roteador, que pode ser configurado na aba <i>Configurações</i>.";
@@ -1026,9 +1021,24 @@ hstatus_router.right6="Este é o firmware atual do roteador.";
 hstatus_router.right8="Este é o horário, configurado na aba de <i>Configurações</i>.";
 hstatus_router.right10="Esta é a medida de tempo que o roteador está \"ligado\" e operacional.";
 hstatus_router.right12="É dado por três números que representam a carga do sistema durante o último minuto, os cinco, e quinze minutos passados respectivamente.";
-hstatus_router.right14="Exibe todas as informações necessárias pelo seu ISP para conexão com a Internet. \
-				Estas informações são fornecidas através da aba de <i>Configuração</i>. Você pode <em>Conectar</em> ou <em>Desconectar</em> sua conexão aqui, clicando no botão.";
 
+// ** Status_Internet.asp **//
+
+status_inet.titl="WAN Status";
+status_inet.h11="WAN";
+status_inet.conft="Tipo de Configuração";
+status_inet.www_loginstatus="Status do Login";
+status_inet.wanuptime="Connection Uptime";
+status_inet.leasetime="Remaining Lease Time";
+status_inet.traff="Traffic";
+status_inet.ttraffin="Total Incoming Traffic (MBytes)";
+status_inet.ttraffout="Total Outgoing Traffic (MBytes)";
+
+//help container
+
+hstatus_inet.right2="Exibe todas as informações necessárias pelo seu ISP para conexão com a Internet. \
+				Estas informações são fornecidas através da aba de <i>Configuração</i>. Você pode <em>Conectar</em> ou <em>Desconectar</em> sua conexão aqui, clicando no botão.";
+hstatus_inet.right4="This shows your router's Internet traffic.";
 
 // ******************************************* Status_SputnikAPD.asp *******************************************//
 
