@@ -1106,11 +1106,6 @@ status_router.mem_inactive="不活动";
 status_router.legend4="网络";
 status_router.net_maxports="IP过滤器最大端口数";
 status_router.net_conntrack="活动的IP连接数";
-status_router.h22="Internet";
-status_router.legend5="配置类型";
-status_router.www_loginstatus="登录状态";
-status_router.wanuptime="Connection Uptime";
-status_router.leasetime="Remaining Lease Time";
 status_router.notavail="Not available";
 
 //help container
@@ -1121,10 +1116,23 @@ hstatus_router.right6="这是路由器当前的固件。";
 hstatus_router.right8="这是您在设置标签中设置得到时间。";
 hstatus_router.right10="这个数值表示路由器\"启动\"并且运行的时间。";
 hstatus_router.right12="这里给出的三个数字表示系统在过去1、5、15分钟时间内的系统负载。";
-hstatus_router.right14="这里显示您的ISP所需要将您连接到Internet的信息。 \
+
+// ** Status_Internet.asp **//
+
+status_inet.titl="WAN Status";
+status_inet.h11="WAN";
+status_inet.conft="配置类型";
+status_inet.www_loginstatus="登录状态";
+status_inet.wanuptime="Connection Uptime";
+status_inet.leasetime="Remaining Lease Time";
+status_inet.traff="Traffic";
+status_inet.ttraffin="Total Incoming Traffic (MBytes)";
+status_inet.ttraffout="Total Outgoing Traffic (MBytes)";
+
+//help container
+hstatus_inet.right2="这里显示您的ISP所需要将您连接到Internet的信息。 \
 				这些信息被输入在设置标签中。通过按这里的按钮，您可以 <em>连接</em> 或者 <em>断开</em> 您的连接。";
-
-
+hstatus_inet.right4="This shows your router's Internet traffic.";
 
 // ******************************************* Status_SputnikAPD.asp *******************************************//
 

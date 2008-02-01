@@ -1255,11 +1255,6 @@ status_router.mem_inactive="Inaktiv";
 status_router.legend4="Netzwerk";
 status_router.net_maxports="IP-Filter maximale Ports";
 status_router.net_conntrack="Aktive IP-Verbindungen";
-status_router.h22="WAN";
-status_router.legend5="Konfigurationstyp";
-status_router.www_loginstatus="Login-Status";
-status_router.wanuptime="Connection Uptime";
-status_router.leasetime="Verbleibende Lease Zeit";
 status_router.notavail="Nicht verf&#252;gbar";
 status_router.inpvolt="Board Input Voltage";
 status_router.cputemp="CPU Temperature";
@@ -1272,9 +1267,24 @@ hstatus_router.right6="Dies ist die aktuelle Firmware des Routers.";
 hstatus_router.right8="Dies ist die Zeit wie sie unter <i>Setup</i> gesetzt wurde.";
 hstatus_router.right10="Dies ist die seit dem Start des Routers gemessene Zeit.";
 hstatus_router.right12="Diese wird anhand von 3 Werten dargestellt, welche die Systemauslastung während der letzten ein, fünf, und fünfzehn Minuten angeben.";
-hstatus_router.right14="Dies zeigt die Informationen an, welche von Ihrem Anbieter zum Verbinden ins Internet benötigt werden. \
-				Diese Informationen wurden auf dem Setup-Tab eingegeben. Sie können hier auch Ihre Verbindung <em>aufbauen</em> oder <em>trennen</em> indem Sie den entsprechenden Button anklicken.";
 
+// ** Status_Internet.asp **//
+
+status_inet.titl="WAN Status";
+status_inet.h11="WAN";
+status_inet.conft="Konfigurationstyp";
+status_inet.www_loginstatus="Login-Status";
+status_inet.wanuptime="Connection Uptime";
+status_inet.leasetime="Verbleibende Lease Zeit";
+status_inet.traff="Traffic";
+status_inet.ttraffin="Total Incoming Traffic (MBytes)";
+status_inet.ttraffout="Total Outgoing Traffic (MBytes)";
+
+//help container
+
+hstatus_inet.right2="Dies zeigt die Informationen an, welche von Ihrem Anbieter zum Verbinden ins Internet benötigt werden. \
+				Diese Informationen wurden auf dem Setup-Tab eingegeben. Sie können hier auch Ihre Verbindung <em>aufbauen</em> oder <em>trennen</em> indem Sie den entsprechenden Button anklicken.";
+hstatus_inet.right4="This shows your router's Internet traffic.";
 
 // **************************************************************** Status_SputnikAPD.asp **********************************************************************//
 

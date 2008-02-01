@@ -34,25 +34,11 @@ function setIpconntrackValues(val) {
 	setMeterBar("ip_count", val / <% nvram_get("ip_conntrack_max"); %> * 100, val);
 }
 
-function DHCPAction(F,I) {
-	F.change_action.value="gozila_cgi";
-	F.submit_type.value = I;
-	apply(F);
-}
-
-function connect(F,I) {
-	F.change_action.value="gozila_cgi";
-	F.submit_type.value = I;
-	apply(F);
-}
 
 addEvent(window, "load", function() {
 	setMemoryValues("<% dumpmeminfo(); %>");
 	setUptimeValues("<% get_uptime(); %>");
 	setIpconntrackValues("<% dumpip_conntrack(); %>");
-	setElementVisible("wan_info", "<% nvram_get("wan_proto"); %>" != "disabled");
-	setElementVisible("wan_dhcp", "<% nvram_get("wan_proto"); %>" == "dhcp");
-	setElementVisible("wan_connection", "<% nvram_get("wan_proto"); %>" != "dhcp" && "<% nvram_get("wan_proto"); %>" != "static");
 
 	update = new StatusUpdate("Status_Router.live.asp", <% nvram_get("refresh_time"); %>);
 	update.onUpdate("mem_info", function(u) {
@@ -64,11 +50,7 @@ addEvent(window, "load", function() {
 	update.onUpdate("ip_conntrack", function(u) {
 		setIpconntrackValues(u.ip_conntrack);
 	});
-	update.onUpdate("wan_shortproto", function(u) {
-		setElementVisible("wan_info", u.wan_shortproto != "disabled");
-		setElementVisible("wan_dhcp", u.wan_shortproto == "dhcp");
-		setElementVisible("wan_connection", u.wan_shortproto != "dhcp" && u.wan_shortproto != "static");
-	});
+
 	update.start();
 });
 
@@ -254,67 +236,6 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 							
-				<% nvram_match("wl0_mode", "wet", "<!--"); %>
-				<% nvram_match("wl0_mode", "apstawet", "<!--"); %>
-							<h2><% tran("status_router.h22"); %></h2>
-							<fieldset>
-								<legend><% tran("status_router.legend5"); %></legend>
-								<div class="setting">
-									<div class="label"><% tran("idx.conn_type"); %></div>
-									<% nvram_match("wan_proto", "dhcp", "<script type="text/javascript">Capture(idx.dhcp)</script>"); %><% nvram_match("wan_proto", "static", "<script type="text/javascript">Capture(share.sttic)</script>"); %><% nvram_match("wan_proto", "pppoe", "PPPoE"); %><% nvram_match("wan_proto", "pptp", "PPTP"); %><% nvram_match("wan_proto", "l2tp", "L2TP"); %><% nvram_match("wan_proto", "heartbeat", "HeartBeatSignal"); %><% nvram_match("wan_proto", "disabled", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
-								</div>
-								<div id="wan_info" style="display:none">
-									<div class="setting" id="wan_connection">
-										<div class="label"><% tran("status_router.www_loginstatus"); %></div>
-										<span id="wan_status"><% nvram_status_get("status2"); %>&nbsp;<input type="button" value="<% nvram_status_get("button1"); %>" onclick="connect(this.form, '<% nvram_status_get("button1"); %>_<% nvram_get("wan_proto"); %>');" /></span>
-									</div>
-									 <div class="setting">
-										<div class="label"><% tran("status_router.wanuptime"); %></div>
-										<span id="wan_uptime"><% get_wan_uptime(); %></span>&nbsp;
-									</div>
-									<div class="setting">
-										<div class="label"><% tran("share.ip"); %></div>
-										<span id="wan_ipaddr"><% nvram_status_get("wan_ipaddr"); %></span>&nbsp;
-									</div>
-									<div class="setting">
-										<div class="label"><% tran("share.subnet"); %></div>
-										<span id="wan_netmask"><% nvram_status_get("wan_netmask"); %></span>&nbsp;
-									</div>
-									<div class="setting">
-										<div class="label"><% tran("share.gateway"); %></div>
-										<span id="wan_gateway"><% nvram_status_get("wan_gateway"); %></span>&nbsp;
-									</div>
-									<div class="setting">
-										<div class="label">DNS 1</div>
-										<span id="wan_dns0"><% nvram_status_get("wan_dns0"); %></span>&nbsp;
-									</div>
-									<div class="setting">
-										<div class="label">DNS 2</div>
-										<span id="wan_dns1"><% nvram_status_get("wan_dns1"); %></span>&nbsp;
-									</div>
-									<div class="setting">
-										<div class="label">DNS 3</div>
-										<span id="wan_dns2"><% nvram_status_get("wan_dns2"); %></span>&nbsp;
-									</div>
-									<div id="wan_dhcp">
-										<div class="setting">
-											<div class="label"><% tran("status_router.leasetime"); %></div>
-											<span id="dhcp_remaining"><% dhcp_remaining_time(); %></span>&nbsp;
-										</div>
-										<div class="center">
-											<script type="text/javascript">
-											//<![CDATA[
-											document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.dhcprel + "\" onclick=\"DHCPAction(this.form,'release');\">");
-											document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.dhcpren + "\" onclick=\"DHCPAction(this.form,'renew');\">");
-											//]]>
-											</script>
-										</div>
-									</div>
-								</div>
-							</fieldset><br />
-				<% nvram_match("wl_mode", "wet", "-->"); %>
-				<% nvram_match("wl_mode", "apstawet", "-->"); %>
-							
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
@@ -342,8 +263,6 @@ addEvent(window, "unload", function() {
 							<dd class="definition"><% tran("hstatus_router.right10"); %></dd>
 							<dt class="term"><% tran("status_router.sys_load"); %>: </dt>
 							<dd class="definition"><% tran("hstatus_router.right12"); %></dd>
-							<dt class="term"><% tran("status_router.legend5"); %>: </dt>
-							<dd class="definition"><% tran("hstatus_router.right14"); %></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HStatus.asp');"><% tran("share.more"); %></a>
 					</div>

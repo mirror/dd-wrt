@@ -1173,11 +1173,6 @@ status_router.mem_inactive="Inaktív";
 status_router.legend4="Hálózat";
 status_router.net_maxports="IP-szûrõ maximális portjai";
 status_router.net_conntrack="Aktíve IP kapcsolatok";
-status_router.h22="WAN";
-status_router.legend5="Konfiguráció típusa";
-status_router.www_loginstatus="Bejelentkezési-állapot";
-status_router.wanuptime="Kapcsolat ideje";
-status_router.leasetime="Hátralévõ lease idõ";
 status_router.notavail="Nem elérhetõ";
 status_router.inpvolt="Alaplapi bemenõ feszültség";
 status_router.cputemp="CPU hõmérséklete";
@@ -1190,9 +1185,23 @@ hstatus_router.right6="Ez az aktuális firmware.";
 hstatus_router.right8="Ez a pontos idõ, amit a <i>Beállítások</i>-ban beállított.";
 hstatus_router.right10="Ez az az idõtartam, amióta a router-t bekapcsolták.";
 hstatus_router.right12="Ez itt 3 szám, amelyek a rendszer terheltségét jelzik az elmúlt 1,5,15 perces idõszakokban.";
-hstatus_router.right14="Ezek azok az adatok, amelyek szükségesek az internet szolgáltatónak, hogy csatlakozhasson az internethez. Ezeket az adatokat a <em>Beállítások</em> fülön adta meg. Itt lehetõsége van csatlakozni a <em>Csatlakozás</em> vagy lecsatlakozni a <em>Disconnect</em> gombokkal.";
 
+// ** Status_Internet.asp **//
 
+status_inet.titl="WAN Status";
+status_inet.h11="WAN";
+status_inet.conft="Konfiguráció típusa";
+status_inet.www_loginstatus="Bejelentkezési-állapot";
+status_inet.wanuptime="Kapcsolat ideje";
+status_inet.leasetime="Hátralévõ lease idõ";
+status_inet.traff="Traffic";
+status_inet.ttraffin="Total Incoming Traffic (MBytes)";
+status_inet.ttraffout="Total Outgoing Traffic (MBytes)";
+
+//help container
+
+hstatus_inet.right2="Ezek azok az adatok, amelyek szükségesek az internet szolgáltatónak, hogy csatlakozhasson az internethez. Ezeket az adatokat a <em>Beállítások</em> fülön adta meg. Itt lehetõsége van csatlakozni a <em>Csatlakozás</em> vagy lecsatlakozni a <em>Disconnect</em> gombokkal.";
+hstatus_inet.right4="This shows your router's Internet traffic.";
 
 // **************************************************************** Status_SputnikAPD.asp **********************************************************************//
 //    

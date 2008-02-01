@@ -1295,11 +1295,6 @@ status_router.mem_hidden="Hidden";
 status_router.legend4="Mre¾a";
 status_router.net_maxports="IP filter: najveèje ¹tevilo vrat";
 status_router.net_conntrack="Aktivne IP povezave";
-status_router.h22="WAN";
-status_router.legend5="Naèin povezave";
-status_router.www_loginstatus="Status prijave";
-status_router.wanuptime=" Trajanje povezave";
-status_router.leasetime="Preostali èas zakupa";
 status_router.notavail="Ni na voljo";
 status_router.legend6="Uporaba prostora";
 status_router.inpvolt="Napajalna napetost";
@@ -1313,8 +1308,23 @@ hstatus_router.right6="To je usmerjalnikova trenutna verzija strojne programske 
 hstatus_router.right8="To je trenutni èas.";
 hstatus_router.right10="To je èas neprekinjenega delovanja.";
 hstatus_router.right12="To so povpreène obremenitve v zadnji 1, 5 in 15 minutah.";
-hstatus_router.right14="To ka¾e podatke, potrebne za prikljuèitev v internet. Te podatke ste vnesli v zavihku <em>Namestitev</em>. Tu lahko s klikom na <em>Pove¾i</em> ali <em>Prekini</em> pove¾ete ali prekinete va¹o povezavo.";
 
+// ** Status_Internet.asp **//
+
+status_inet.titl="WAN status";
+status_inet.h11="WAN";
+status_inet.conft="Naèin povezave";
+status_inet.www_loginstatus="Status prijave";
+status_inet.wanuptime="Trajanje povezave";
+status_inet.leasetime="Preostali èas zakupa";
+status_inet.traff="Promet";
+status_inet.ttraffin="Skupni vhodni promet (MBytes)";
+status_inet.ttraffout="Skupni izhodni promet (MBytes)";
+
+//help container
+
+hstatus_inet.right2="To ka¾e podatke, potrebne za prikljuèitev v internet. Te podatke ste vnesli v zavihku <em>Namestitev</em>. Tu lahko s klikom na <em>Pove¾i</em> ali <em>Prekini</em> pove¾ete ali prekinete va¹o povezavo.";
+hstatus_inet.right4="To ka¾e kolièino prene¹enih podatkov.";
 
 // ** Status_Conntrack.asp **//
 
