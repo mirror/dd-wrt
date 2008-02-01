@@ -771,11 +771,6 @@ status_router.mem_inactive="Inattiva";
 status_router.legend4="Rete";
 status_router.net_maxports="Porte Max Del Filtro IP";
 status_router.net_conntrack="Connessioni IP Attive";
-status_router.h22="Internet";
-status_router.legend5="Tipo Di Configurazione";
-status_router.www_loginstatus="Stato Login";
-status_router.wanuptime="Uptime Della Connessione";
-status_router.leasetime="Lease Time Residuo";
 status_router.notavail="Non disponibile";
 hstatus_router.right2="E' il nome del router inserito nella finestra <i>Setup</i>.";
 hstatus_router.right4="E' l'indirizzo MAC del router, come è visto dal tuo ISP.";
@@ -783,7 +778,24 @@ hstatus_router.right6="E' il firmware corrente del router.";
 hstatus_router.right8="E' l'ora ricevutadal server NTP specificato nella finestra <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em>.";
 hstatus_router.right10="Misura da quanto tempo il router è stato avviato.";
 hstatus_router.right12="Composto da tre numeri che rappresentano il carico del sistema durante l'ultimo minuto, ultimi 5 min e ultimi 15 min.";
-hstatus_router.right14="Mostra le informazioni richieste dal tuo ISP per la connessione a internet. Le informazioni sono state inserite dalla finestra di Setup. Puoi <em>Connettere</em> o <em>Disconnettere</em> cliccando sul pulsante.";
+
+// ** Status_Internet.asp **//
+
+status_inet.titl="Stato WAN";
+status_inet.h11="WAN";
+status_inet.conft="Tipo Di Configurazione";
+status_inet.www_loginstatus="Stato Login";
+status_inet.wanuptime="Uptime Della Connessione";
+status_inet.leasetime="Lease Time Residuo";
+status_inet.traff="Traffic";
+status_inet.ttraffin="Total Incoming Traffic (MBytes)";
+status_inet.ttraffout="Total Outgoing Traffic (MBytes)";
+
+//help container
+
+hstatus_inet.right2="Mostra le informazioni richieste dal tuo ISP per la connessione a internet. Le informazioni sono state inserite dalla finestra di Setup. Puoi <em>Connettere</em> o <em>Disconnettere</em> cliccando sul pulsante.";
+hstatus_inet.right4="This shows your router's Internet traffic.";
+
 status_sputnik.titl="Stato Dello Sputnik Agent";
 status_sputnik.h2="Sputnik&reg; Agent&trade;";
 status_sputnik.manage="Gestito Da";

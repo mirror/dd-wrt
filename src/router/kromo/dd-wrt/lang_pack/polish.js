@@ -780,11 +780,6 @@ status_router.mem_inactive="Nie aktywna";
 status_router.legend4="Siec";
 status_router.net_maxports="Maksymalna ilosc otwartych portow";
 status_router.net_conntrack="Ilosc aktywnych polaczen IP";
-status_router.h22="Internet";
-status_router.legend5="Typ konfiguracji";
-status_router.www_loginstatus="Login status";
-status_router.wanuptime="Czas polaczenia";
-status_router.leasetime="Pozostaly czas dzierzawy";
 status_router.notavail="Niedostepny";
 hstatus_router.right2="Tutaj podana jest nazwa routera, ktora mozna zdefiniowac w zakladce 'Ustawienia'.";
 hstatus_router.right4="To jest MAC adres widziany przez Twojego ISP.";
@@ -792,7 +787,24 @@ hstatus_router.right6="Tutaj widzisz jaka masz wersje firmware.";
 hstatus_router.right8="Tutaj pokazany jest czas, ktory zostal pobrany z twojego serwera ntp";
 hstatus_router.right10="Tutaj widac od jakiego czasu pracuje router.";
 hstatus_router.right12="Tutaj pokazane jest procentowe obciazenie routera.";
-hstatus_router.right14="Tutaj pokazane sa informacje o typie twojego polaczenia z internetem. Te parametry ustawiasz w zakladce 'Ustawien'.";
+
+// ** Status_Internet.asp **//
+
+status_inet.titl="WAN Status";
+status_inet.h11="WAN";
+status_inet.conft="Typ konfiguracji";
+status_inet.www_loginstatus="Login status";
+status_inet.wanuptime="Czas polaczenia";
+status_inet.leasetime="Pozostaly czas dzierzawy";
+status_inet.traff="Traffic";
+status_inet.ttraffin="Total Incoming Traffic (MBytes)";
+status_inet.ttraffout="Total Outgoing Traffic (MBytes)";
+
+//help container
+
+hstatus_inet.right2="Tutaj pokazane sa informacje o typie twojego polaczenia z internetem. Te parametry ustawiasz w zakladce 'Ustawien'.";
+hstatus_inet.right4="This shows your router's Internet traffic.";
+
 status_sputnik.titl="Sputnik agent status";
 status_sputnik.h2="Sputnik&reg; Agent&trade;";
 status_sputnik.manage="Zarzadzany przez";

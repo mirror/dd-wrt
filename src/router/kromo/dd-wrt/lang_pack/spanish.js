@@ -1102,11 +1102,6 @@ status_router.mem_inactive="Inactivo";
 status_router.legend4="RED";
 status_router.net_maxports="Max Puertos Filtro IP";
 status_router.net_conntrack="Conexiones IP Activas";
-status_router.h22="Internet";
-status_router.legend5="Tipo de Configuración";
-status_router.www_loginstatus="Estado de Login";
-status_router.wanuptime="Connection Uptime";
-status_router.leasetime="Remaining Lease Time";
 status_router.notavail="Not available";
 
 //help container
@@ -1117,10 +1112,24 @@ hstatus_router.right6="Este es el firmware actual de tu router.";
 hstatus_router.right8="Esta es la hora, que puedes establecer en la pestaña <em>Setup</em>.";
 hstatus_router.right10="Aquí podemos ver el tiempo que el router lleva encendido \"up\" y funcionando.";
 hstatus_router.right12="Esto viene a ser 3 números que representan la carga de sistema durante los últimos períodos de 1, 5 ó 15 minutos.";
-hstatus_router.right14="Esto muestra la información requerida por tu ISP para la conexión a internet. \
+
+// ** Status_Internet.asp **//
+
+status_inet.titl="WAN Status";
+status_inet.h11="WAN";
+status_inet.conft="Tipo de Configuración";
+status_inet.www_loginstatus="Estado de Login";
+status_inet.wanuptime="Connection Uptime";
+status_inet.leasetime="Remaining Lease Time";
+status_inet.traff="Traffic";
+status_inet.ttraffin="Total Incoming Traffic (MBytes)";
+status_inet.ttraffout="Total Outgoing Traffic (MBytes)";
+
+//help container
+
+hstatus_inet.right2=hstatus_router.right14="Esto muestra la información requerida por tu ISP para la conexión a internet. \
 			Esta información fue introducida en la Pestaña Setup. Puedes <em>Conectar</em> ó <em>desconectar</em> tu conexión aquí haciendo click en ese botón.";
-
-
+hstatus_inet.right4="This shows your router's Internet traffic.";
 
 // ******************************************* Status_SputnikAPD.asp *******************************************//
 
