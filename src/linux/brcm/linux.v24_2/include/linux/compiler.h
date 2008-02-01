@@ -41,7 +41,7 @@
 #endif
 #endif
 
-#if __GNUC__ > 4 || __GNUC__ == 4 && __GNUC_MINOR__ >= 2
+#if __GNUC__ > 5 || __GNUC__ == 5 && __GNUC_MINOR__ >= 2
 #error "GCC >= 4.2 miscompiles kernel 2.4, do not use it!"
 #error "While the resulting kernel may boot, you will encounter random bugs"
 #error "at runtime. Only versions 2.95.3 to 4.1 are known to work reliably."
