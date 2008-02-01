@@ -7,4 +7,5 @@ obj-y := cifsfs.o cifssmb.o cifs_debug.o connect.o dir.o file.o inode.o link.o m
 
 obj-m := $(O_TARGET)
 
+EXTRA_CFLAGS := -DCONFIG_NOPRINTK
 include $(TOPDIR)/Rules.make
