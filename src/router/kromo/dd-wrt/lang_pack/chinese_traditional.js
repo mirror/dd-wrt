@@ -1299,11 +1299,6 @@ status_router.mem_hidden="Hidden"; // do not translate this line, this is bogus 
 status_router.legend4="網路";
 status_router.net_maxports="NAT sessions";
 status_router.net_conntrack="連線中";
-status_router.h22="網際網路";
-status_router.legend5="配置類型";
-status_router.www_loginstatus="登錄狀態";
-status_router.wanuptime="連接運行時間";
-status_router.leasetime="剩餘租約時間";
 status_router.notavail="伺服器未連線";
 status_router.legend6="空間使用";
 status_router.inpvolt="板輸入電壓";
@@ -1320,6 +1315,22 @@ hstatus_router.right10="這個數值表示路由器\"啟動\"並且運行的時�
 hstatus_router.right12="這裏給的三個數位表示系統在過去1、5、15分鐘時間內的系統負載.";
 hstatus_router.right14="這裏顯示您的ISP所需要將您連接到Internet的資訊. 這些資訊被輸入在設定標籤中.通過按這裏的按鈕,您可以 <em>連接</em> 或者 <em>關閉</em> 您的連接.";
 
+// ** Status_Internet.asp **//
+
+status_inet.titl="WAN Status";
+status_inet.h11="網際網路";
+status_inet.conft="配置類型";
+status_inet.www_loginstatus="登錄狀態";
+status_inet.wanuptime="連接運行時間";
+status_inet.leasetime="剩餘租約時間";
+status_inet.traff="Traffic";
+status_inet.ttraffin="Total Incoming Traffic (MBytes)";
+status_inet.ttraffout="Total Outgoing Traffic (MBytes)";
+
+//help container
+
+hstatus_inet.right2="這裏顯示您的ISP所需要將您連接到Internet的資訊. 這些資訊被輸入在設定標籤中.通過按這裏的按鈕,您可以 <em>連接</em> 或者 <em>關閉</em> 您的連接.";
+hstatus_inet.right4="This shows your router's Internet traffic.";
 
 // ** Status_Conntrack.asp **//
 

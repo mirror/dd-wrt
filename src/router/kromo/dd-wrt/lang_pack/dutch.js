@@ -1294,11 +1294,6 @@ status_router.mem_inactive="Niet Actief";
 status_router.legend4="Netwerk";
 status_router.net_maxports="IP Filter Maximum Poorten";
 status_router.net_conntrack="Actieve IP Connecties";
-status_router.h22="Internet";
-status_router.legend5="Configuratie Type";
-status_router.www_loginstatus="Login Status";
-status_router.wanuptime="Connectie Uptime";
-status_router.leasetime="Resterende Lease Tijd";
 status_router.notavail="Niet beschikbaar";
 status_router.legend6="Ruimte Gebruik";
 status_router.inpvolt="Bord Invoer Voltage";
@@ -1312,8 +1307,23 @@ hstatus_router.right6="Dit is de huidige firmware van de router.";
 hstatus_router.right8="Dit is de tijd verkregen van de ntp server ingesteld op de <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em> tab.";
 hstatus_router.right10="Dit is een berekening van de tijd dat de router \"up and running\" was.";
 hstatus_router.right12="Dit is een gegeven van drie nummers dat de belasting van het systeem voorstelt gedurende de laatste één, vijf of vijftien minuten.";
-hstatus_router.right14="Dit geeft de informatie die vereist is door uw ISP weer. Deze informatie werd ingegeven op de Setup Tab. U kan uw connectie <em>Verbinden</em> of <em>Verbreken</em> door op de knop te klikken.";
 
+// ** Status_Internet.asp **//
+
+status_inet.titl="WAN Status";
+status_inet.h11="WAN";
+status_inet.conft="Configuratie Type";
+status_inet.www_loginstatus="Login Status";
+status_inet.wanuptime="Connectie Uptime";
+status_inet.leasetime="Resterende Lease Tijd";
+status_inet.traff="Traffic";
+status_inet.ttraffin="Total Incoming Traffic (MBytes)";
+status_inet.ttraffout="Total Outgoing Traffic (MBytes)";
+
+//help container
+
+hstatus_inet.right2="Dit geeft de informatie die vereist is door uw ISP weer. Deze informatie werd ingegeven op de Setup Tab. U kan uw connectie <em>Verbinden</em> of <em>Verbreken</em> door op de knop te klikken.";
+hstatus_inet.right4="This shows your router's Internet traffic.";
 
 // ******************************************* Status_Conntrack.asp *******************************************//
 

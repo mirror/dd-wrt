@@ -1175,11 +1175,6 @@ status_router.mem_inactive="Inactive";
 status_router.legend4="Réseau";
 status_router.net_maxports="Nb de connexions maximun";
 status_router.net_conntrack="Nb de connexions actives";
-status_router.h22="WAN";
-status_router.legend5="Type de configuration";
-status_router.www_loginstatus="Statut de la connexion";
-status_router.wanuptime="Connexion démarrée depuis";
-status_router.leasetime="Renouvellement du bail dans";
 status_router.notavail="Indisponible";
 status_router.legend6="Partitions Disponibles";
 status_router.inpvolt="Tension";
@@ -1192,7 +1187,23 @@ hstatus_router.right6="Firmware utilisé sur votre routeur";
 hstatus_router.right8="Ceci est la date reçue depuis le serveur ntp configurable dans l'onglet <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em>.";
 hstatus_router.right10="Temps écoulé depuis le dernier arrêt/relance du routeur.";
 hstatus_router.right12="Ce sont 3 nombres qui mesurent la charge de votre routeur sur une période de 1, 5 et 15 minutes.";
-hstatus_router.right14="Ce sont les informations requises par votre FAI afin de vous connecter à Internet et qui sont configurées dans l'onglet <em>Setup</em>. Vous pouvez connecter votre routeur à Internet en cliquant sur <em>Connect</em> ou le déconnecter en cliquant sur <em>Disconnect</em>.";
+
+// ** Status_Internet.asp **//
+
+status_inet.titl="WAN Status";
+status_inet.h11="WAN";
+status_inet.conft="Type de configuration";
+status_inet.www_loginstatus="Statut de la connexion";;
+status_inet.wanuptime="Connexion démarrée depuis";
+status_inet.leasetime="Renouvellement du bail dans";
+status_inet.traff="Traffic";
+status_inet.ttraffin="Total Incoming Traffic (MBytes)";
+status_inet.ttraffout="Total Outgoing Traffic (MBytes)";
+
+//help container
+
+hstatus_inet.right2="Ce sont les informations requises par votre FAI afin de vous connecter à Internet et qui sont configurées dans l'onglet <em>Setup</em>. Vous pouvez connecter votre routeur à Internet en cliquant sur <em>Connect</em> ou le déconnecter en cliquant sur <em>Disconnect</em>.";
+hstatus_inet.right4="This shows your router's Internet traffic.";
 
 // ** Status_Conntrack.asp **//
 status_conn.titl="Active IP Connections Table";
