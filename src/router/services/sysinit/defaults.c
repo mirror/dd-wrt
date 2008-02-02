@@ -209,7 +209,11 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_TW6600
   {"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_XSCALE
+#ifdef HAVE_GW700
+  {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
+#else
   {"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
+#endif
 #elif HAVE_DIR300
   {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_FONERA
@@ -1944,7 +1948,11 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_SPUTNIK
   {"sputnik_mjid_type", "0", 0},
   {"sputnik_mjid", "sputnik@wifi.sputnik.com", 0},
+#if defined(HAVE_XSCALE) || defined(HAVE_X86)
+  {"sputnik_mode", "pro", 0},
+#else
   {"sputnik_mode", "standard", 0},
+#endif
   {"sputnik_done", "0", 0},
   {"sputnik_rereg", "1", 0},
   {"apd_enable", "1", 0},
