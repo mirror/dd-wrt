@@ -50,7 +50,7 @@ I2C_CLIENT_INSMOD_1(ad7418);
 /* Each client has this additional data */
 struct ad7418_data {
 	struct i2c_client	client;
-	struct class_device *class_dev;
+	struct device *class_dev;
 	struct semaphore	update_lock;
 	char			valid;		/* !=0 if following fields are valid */
 	unsigned long		last_updated;	/* In jiffies */
