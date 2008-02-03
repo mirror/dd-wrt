@@ -379,7 +379,7 @@ __STATIC int ebt_target_arpnat(struct sk_buff *pskb, unsigned int hooknr,
 		{
                     return info->target;
 		}
-                pskb = skb_unshare(pskb, GFP_ATOMIC);
+                //pskb = skb_unshare(pskb, GFP_ATOMIC);
 		eth_smac = eth_hdr(pskb)->h_source;
 		arp_smac = skb_network_header(pskb) + sizeof(struct arphdr);
                 if (debug)

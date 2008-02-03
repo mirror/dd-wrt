@@ -492,6 +492,9 @@ typedef struct {
     /* used to control the message output */
     UINT32 devFlags;
     struct net_device *ndev;
+#ifdef CONFIG_IXP400_NAPI
+    struct napi_struct napi;
+#endif
 } priv_data_t;
 
 /* Collection of boolean PHY configuration parameters */
@@ -1809,6 +1812,8 @@ static void dev_pmu_timer_unload(void)
  */
 static irqreturn_t dev_qmgr_os_isr( int irg, void *dev_id)
 {
+priv_data_t *priv = netdev_priv(rx_poll_dev);
+
 #ifdef CONFIG_IXP400_NAPI
 
     /* Note: there are 2 possible race conditions where the normal
@@ -1820,10 +1825,10 @@ static irqreturn_t dev_qmgr_os_isr( int irg, void *dev_id)
      * 2. traffic is received after dev_rx_poll enables interrupts,
      *    but before it de-schedules itself.
      */ 
-    if(netif_rx_schedule_prep(rx_poll_dev))
+    if(netif_rx_schedule_prep(rx_poll_dev,&priv->napi))
     {
         ixEthAccQMgrRxNotificationDisable();
-        __netif_rx_schedule(rx_poll_dev);
+        __netif_rx_schedule(rx_poll_dev,&priv->napi);
     }
 #endif /* CONFIG_IXP400_NAPI */
 
@@ -1841,9 +1846,11 @@ static irqreturn_t dev_qmgr_os_isr( int irg, void *dev_id)
  * the ethernet entry point.
  */
 #ifdef CONFIG_IXP400_NAPI
-static int dev_rx_poll(struct net_device *netdev, int *budget)
+static int dev_rx_poll(struct napi_struct *napi, int budget)
 {
-    UINT32 entries_to_process = min(*budget, netdev->quota);
+    priv_data_t *priv = container_of(napi,priv_data_t, napi);
+    struct net_device *netdev = priv->ndev; 
+    UINT32 entries_to_process = budget;
     UINT32 entries_processed = 0;
     UINT32 queue_entries = 0;
 
@@ -1855,23 +1862,20 @@ restart_poll:
 
     entries_processed = ixEthRxPriorityPoll(0, entries_to_process);
 
-    *budget -= entries_processed;
-    netdev->quota -= entries_processed;
 
     /* if not enough entries processed */
     if(entries_processed < entries_to_process)
     {
         ixEthAccQMgrRxNotificationEnable();
-        netif_rx_complete(netdev);
+        netif_rx_complete(netdev,napi);
         ixEthAccQMgrRxQEntryGet(&queue_entries);
-        if(queue_entries > 0 && netif_rx_reschedule(netdev,entries_processed))
+        if(queue_entries > 0 && netif_rx_reschedule(netdev,napi))
         {
             ixEthAccQMgrRxNotificationDisable();
             goto restart_poll;
         }
-        return 0;
     }
-    return 1;
+    return entries_processed;
 }
 #endif
 
@@ -2612,11 +2616,13 @@ static int do_dev_open(struct net_device *dev)
     int res;
 
 #ifdef CONFIG_IXP400_NAPI
+    priv_data_t *priv = netdev_priv(dev);
     /* if the current rx_poll_dev isn't running, set it to this one */
     if(!netif_running(rx_poll_dev))
     {
         rx_poll_dev = dev;
     }
+    napi_enable(&priv->napi);
 #endif
 
     /* prevent the maintenance task from running while bringing up port */
@@ -2643,6 +2649,8 @@ static int do_dev_stop(struct net_device *dev)
 #ifdef CONFIG_IXP400_NAPI
     int dev_idx = 0;
     struct net_device *tmp_dev;
+    priv_data_t *priv = netdev_priv(dev);
+    napi_disable(&priv->napi);
 
     TRACE;
     if(dev == rx_poll_dev)
@@ -4161,8 +4169,7 @@ static int __devinit dev_eth_probe(struct device *dev)
     ndev->set_mac_address = ixp400_dev_set_mac_address;
 
 #ifdef CONFIG_IXP400_NAPI
-    ndev->poll = &dev_rx_poll;
-    ndev->weight = IXP400_NAPI_WEIGHT;
+    netif_napi_add(ndev, &priv->napi, dev_rx_poll, IXP400_NAPI_WEIGHT);
 
     /* initialize the rx_poll_dev device */
     if(NULL == rx_poll_dev)
