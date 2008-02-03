@@ -51,7 +51,7 @@ I2C_CLIENT_INSMOD;
 
 struct ad741x_data {
 	struct i2c_client	client;
-	struct class_device	*class_dev;
+	struct device	*class_dev;
 	struct mutex		lock;
 	char			valid;		/* !=0 if following fields are valid */
 	unsigned long		last_updated;	/* In jiffies */
