@@ -6,7 +6,7 @@ CFLAGS = -MMD $(COPTS) -Wall -ffunction-sections -fdata-sections -Wl,--gc-sectio
 
 # define HOSTAPD_DUMP_STATE to include SIGUSR1 handler for dumping state to
 # a file (undefine it, if you want to save in binary size)
-CFLAGS += -DHOSTAPD_DUMP_STATE
+#CFLAGS += -DHOSTAPD_DUMP_STATE
 
 CFLAGS += -I../src
 CFLAGS += -I../src/crypto
@@ -19,6 +19,7 @@ LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 # directory if your C library does not include all header files.
 # CFLAGS += -DUSE_KERNEL_HEADERS -I/usr/src/linux/include
 
+-include ../../.config
 -include .config
 
 ifndef CONFIG_OS
@@ -282,9 +283,9 @@ ifdef CONFIG_EAP
 CFLAGS += -DEAP_SERVER
 endif
 
-ifndef CONFIG_TLS
-CONFIG_TLS=openssl
-endif
+#ifndef CONFIG_TLS
+#CONFIG_TLS=openssl
+#endif
 
 ifeq ($(CONFIG_TLS), internal)
 ifndef CONFIG_CRYPTO
@@ -489,7 +490,7 @@ install:
 	for i in $(ALL); do cp $$i $(INSTALLDIR)/hostapd2/usr/sbin/$$i; done
 
 hostapd: $(OBJS)
-	$(CC) -o hostapd $(OBJS) $(LIBS)
+	$(CC) $(LDFLAGS) -o hostapd $(OBJS) $(LIBS)
 
 OBJS_c = hostapd_cli.o ../src/common/wpa_ctrl.o ../src/utils/os_$(CONFIG_OS).o
 hostapd_cli: $(OBJS_c)
