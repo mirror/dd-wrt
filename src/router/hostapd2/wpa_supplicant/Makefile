@@ -2,10 +2,8 @@ ifndef CC
 CC=gcc
 endif
 
-
-CFLAGS = -MMD $(COPTS) -Wall 
-CFLAGS += -I. -ffunction-sections -fdata-sections -Wl,--gc-sections
-
+LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS += -I.
 CFLAGS += -I../src
 CFLAGS += -I../src/crypto
 CFLAGS += -I../src/utils
@@ -34,7 +32,7 @@ mkconfig:
 	echo CONFIG_DRIVER_WEXT=y >> .config
 	echo CONFIG_WIRELESS_EXTENSION=y >> .config
 
-install: all
+install:
 	mkdir -p $(DESTDIR)/usr/local/sbin/
 	for i in $(ALL); do cp $$i $(DESTDIR)/usr/local/sbin/$$i; done
 
@@ -56,6 +54,7 @@ OBJS_p += ../src/crypto/sha1.o
 OBJS_p += ../src/crypto/des.o
 OBJS_c = wpa_cli.o ../src/common/wpa_ctrl.o
 
+-include ../../.config
 -include .config
 
 ifndef CONFIG_OS
