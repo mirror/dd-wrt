@@ -9,7 +9,7 @@
             <x>0</x>
             <y>0</y>
             <width>380</width>
-            <height>413</height>
+            <height>430</height>
         </rect>
     </property>
     <property name="caption">
@@ -43,7 +43,7 @@
                 </property>
                 <widget class="QLabel" row="0" column="0">
                     <property name="name">
-                        <cstring>textLabel1</cstring>
+                        <cstring>textLabel0</cstring>
                     </property>
                     <property name="text">
                         <string>SSID</string>
@@ -62,13 +62,32 @@
                 </widget>
                 <widget class="QLabel" row="1" column="0">
                     <property name="name">
+                        <cstring>textLabel1</cstring>
+                    </property>
+                    <property name="text">
+                        <string>Network ID</string>
+                    </property>
+                </widget>
+                <widget class="QLineEdit" row="1" column="1">
+                    <property name="name">
+                        <cstring>idstrEdit</cstring>
+                    </property>
+                    <property name="text">
+                        <string></string>
+                    </property>
+                    <property name="toolTip" stdset="0">
+                        <string>Network Identification String</string>
+                    </property>
+                </widget>
+                <widget class="QLabel" row="2" column="0">
+                    <property name="name">
                         <cstring>textLabel2</cstring>
                     </property>
                     <property name="text">
                         <string>Authentication</string>
                     </property>
                 </widget>
-                <widget class="QComboBox" row="1" column="1">
+                <widget class="QComboBox" row="2" column="1">
                     <item>
                         <property name="text">
                             <string>Plaintext or static WEP</string>
@@ -103,7 +122,7 @@
                         <cstring>authSelect</cstring>
                     </property>
                 </widget>
-                <widget class="QLabel" row="2" column="0">
+                <widget class="QLabel" row="3" column="0">
                     <property name="name">
                         <cstring>textLabel3</cstring>
                     </property>
@@ -111,7 +130,7 @@
                         <string>Encryption</string>
                     </property>
                 </widget>
-                <widget class="QComboBox" row="2" column="1">
+                <widget class="QComboBox" row="3" column="1">
                     <item>
                         <property name="text">
                             <string>None</string>
@@ -136,7 +155,7 @@
                         <cstring>encrSelect</cstring>
                     </property>
                 </widget>
-                <widget class="QLabel" row="3" column="0">
+                <widget class="QLabel" row="4" column="0">
                     <property name="name">
                         <cstring>textLabel4</cstring>
                     </property>
@@ -144,7 +163,7 @@
                         <string>PSK</string>
                     </property>
                 </widget>
-                <widget class="QLineEdit" row="3" column="1">
+                <widget class="QLineEdit" row="4" column="1">
                     <property name="name">
                         <cstring>pskEdit</cstring>
                     </property>
@@ -161,7 +180,7 @@
                         <string></string>
                     </property>
                 </widget>
-                <widget class="QLabel" row="4" column="0">
+                <widget class="QLabel" row="5" column="0">
                     <property name="name">
                         <cstring>textLabel5</cstring>
                     </property>
@@ -169,7 +188,7 @@
                         <string>EAP method</string>
                     </property>
                 </widget>
-                <widget class="QComboBox" row="4" column="1">
+                <widget class="QComboBox" row="5" column="1">
                     <property name="name">
                         <cstring>eapSelect</cstring>
                     </property>
@@ -177,7 +196,7 @@
                         <bool>false</bool>
                     </property>
                 </widget>
-                <widget class="QLabel" row="5" column="0">
+                <widget class="QLabel" row="6" column="0">
                     <property name="name">
                         <cstring>textLabel6</cstring>
                     </property>
@@ -185,7 +204,7 @@
                         <string>Identity</string>
                     </property>
                 </widget>
-                <widget class="QLineEdit" row="5" column="1">
+                <widget class="QLineEdit" row="6" column="1">
                     <property name="name">
                         <cstring>identityEdit</cstring>
                     </property>
@@ -196,7 +215,7 @@
                         <string>Username/Identity for EAP methods</string>
                     </property>
                 </widget>
-                <widget class="QLabel" row="6" column="0">
+                <widget class="QLabel" row="7" column="0">
                     <property name="name">
                         <cstring>textLabel7</cstring>
                     </property>
@@ -204,7 +223,7 @@
                         <string>Password</string>
                     </property>
                 </widget>
-                <widget class="QLineEdit" row="6" column="1">
+                <widget class="QLineEdit" row="7" column="1">
                     <property name="name">
                         <cstring>passwordEdit</cstring>
                     </property>
@@ -218,7 +237,7 @@
                         <string>Password for EAP methods</string>
                     </property>
                 </widget>
-                <widget class="QLabel" row="7" column="0">
+                <widget class="QLabel" row="8" column="0">
                     <property name="name">
                         <cstring>textLabel1_2</cstring>
                     </property>
@@ -226,7 +245,7 @@
                         <string>CA certificate</string>
                     </property>
                 </widget>
-                <widget class="QLineEdit" row="7" column="1">
+                <widget class="QLineEdit" row="8" column="1">
                     <property name="name">
                         <cstring>cacertEdit</cstring>
                     </property>
@@ -234,7 +253,7 @@
                         <bool>false</bool>
                     </property>
                 </widget>
-                <widget class="QButtonGroup" row="8" column="0" rowspan="1" colspan="2">
+                <widget class="QButtonGroup" row="9" column="0" rowspan="1" colspan="2">
                     <property name="name">
                         <cstring>buttonGroup1</cstring>
                     </property>
@@ -400,6 +419,7 @@
 </connections>
 <tabstops>
     <tabstop>ssidEdit</tabstop>
+    <tabstop>idstrEdit</tabstop>
     <tabstop>authSelect</tabstop>
     <tabstop>encrSelect</tabstop>
     <tabstop>pskEdit</tabstop>

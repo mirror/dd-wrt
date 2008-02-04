@@ -32,9 +32,108 @@
 
 #ifdef CONFIG_CLIENT_MLME
 #include <netpacket/packet.h>
-#include <hostapd_ioctl.h>
-#include <ieee80211_common.h>
-/* from net/mac80211.h */
+/* old definitions from net/mac80211 */
+
+typedef u32 __bitwise __be32;
+typedef u64 __bitwise __be64;
+
+#define PRISM2_IOCTL_PRISM2_PARAM (SIOCIWFIRSTPRIV + 0)
+#define PRISM2_IOCTL_GET_PRISM2_PARAM (SIOCIWFIRSTPRIV + 1)
+#define PRISM2_IOCTL_HOSTAPD (SIOCIWFIRSTPRIV + 3)
+
+#define PRISM2_PARAM_USER_SPACE_MLME 1045
+#define PRISM2_PARAM_MGMT_IF		1046
+#define PRISM2_HOSTAPD_ADD_STA 2
+#define PRISM2_HOSTAPD_REMOVE_STA 3
+#define PRISM2_HOSTAPD_GET_HW_FEATURES	1002
+#define PRISM2_HOSTAPD_MAX_BUF_SIZE	2048
+
+#ifndef ALIGNED
+#define ALIGNED __attribute__ ((aligned))
+#endif
+
+struct prism2_hostapd_param {
+	u32 cmd;
+	u8 sta_addr[ETH_ALEN];
+	u8 pad[2];
+	union {
+		struct {
+			u16 aid;
+			u16 capability;
+			u8 supp_rates[32];
+			u8 wds_flags;
+#define IEEE80211_STA_DYNAMIC_ENC BIT(0)
+			u8 enc_flags;
+			u16 listen_interval;
+		} add_sta;
+		struct {
+			u16 num_modes;
+			u16 flags;
+			u8 data[0] ALIGNED; /* num_modes * feature data */
+		} hw_features;
+		struct {
+			u16 mode; /* MODE_* */
+			u16 num_supported_rates;
+			u16 num_basic_rates;
+			u8 data[0] ALIGNED; /* num_supported_rates * u16 +
+					     * num_basic_rates * u16 */
+		} set_rate_sets;
+		struct {
+			u16 mode; /* MODE_* */
+			u16 chan;
+			u32 flag;
+			u8 power_level; /* regulatory limit in dBm */
+			u8 antenna_max;
+		} set_channel_flag;
+		struct {
+			u32 rd;
+		} set_regulatory_domain;
+		struct {
+			u32 queue;
+			s32 aifs;
+			u32 cw_min;
+			u32 cw_max;
+			u32 burst_time; /* maximum burst time in 0.1 ms, i.e.,
+					 * 10 = 1 ms */
+		} tx_queue_params;
+	} u;
+};
+
+struct hostapd_ioctl_hw_modes_hdr {
+	int mode;
+	int num_channels;
+	int num_rates;
+};
+
+/*
+ * frame format for the management interface that is slated
+ * to be replaced by "cooked monitor" with radiotap
+ */
+#define IEEE80211_FI_VERSION 0x80211001
+struct ieee80211_frame_info {
+	__be32 version;
+	__be32 length;
+	__be64 mactime;
+	__be64 hosttime;
+	__be32 phytype;
+	__be32 channel;
+	__be32 datarate;
+	__be32 antenna;
+	__be32 priority;
+	__be32 ssi_type;
+	__be32 ssi_signal;
+	__be32 ssi_noise;
+	__be32 preamble;
+	__be32 encoding;
+
+	/* Note: this structure is otherwise identical to capture format used
+	 * in linux-wlan-ng, but this additional field is used to provide meta
+	 * data about the frame to hostapd. This was the easiest method for
+	 * providing this information, but this might change in the future. */
+	__be32 msg_type;
+} __attribute__ ((packed));
+
+/* old mode definitions */
 enum {
 	MODE_IEEE80211A = 0 /* IEEE 802.11a */,
 	MODE_IEEE80211B = 1 /* IEEE 802.11b only */,
@@ -43,8 +142,6 @@ enum {
 	MODE_ATHEROS_TURBOG = 4 /* Atheros Turbo mode (2x.11g at 2.4 GHz) */,
 	NUM_IEEE80211_MODES = 5
 };
-
-#include "mlme.h"
 
 #ifndef ETH_P_ALL
 #define ETH_P_ALL 0x0003
@@ -75,6 +172,8 @@ struct wpa_driver_wext_data {
 	int operstate;
 
 	char mlmedev[IFNAMSIZ + 1];
+
+	int scan_complete_events;
 };
 
 
@@ -568,7 +667,6 @@ static void wpa_driver_wext_event_wireless(struct wpa_driver_wext_data *drv,
 				drv->assoc_resp_ies = NULL;
 				wpa_supplicant_event(ctx, EVENT_DISASSOC,
 						     NULL);
-				break;
 			
 			} else {
 				wpa_driver_wext_event_assoc_ies(drv);
@@ -591,6 +689,7 @@ static void wpa_driver_wext_event_wireless(struct wpa_driver_wext_data *drv,
 			os_free(buf);
 			break;
 		case SIOCGIWSCAN:
+			drv->scan_complete_events = 1;
 			eloop_cancel_timeout(wpa_driver_wext_scan_timeout,
 					     drv, ctx);
 			wpa_supplicant_event(ctx, EVENT_SCAN_RESULTS, NULL);
@@ -1077,7 +1176,7 @@ int wpa_driver_wext_scan(void *priv, const u8 *ssid, size_t ssid_len)
 {
 	struct wpa_driver_wext_data *drv = priv;
 	struct iwreq iwr;
-	int ret = 0;
+	int ret = 0, timeout;
 	struct iw_scan_req req;
 
 	if (ssid_len > IW_ESSID_MAX_SIZE) {
@@ -1107,49 +1206,22 @@ int wpa_driver_wext_scan(void *priv, const u8 *ssid, size_t ssid_len)
 
 	/* Not all drivers generate "scan completed" wireless event, so try to
 	 * read results after a timeout. */
+	timeout = 5;
+	if (drv->scan_complete_events) {
+		/*
+		 * The driver seems to deliver SIOCGIWSCAN events to notify
+		 * when scan is complete, so use longer timeout to avoid race
+		 * conditions with scanning and following association request.
+		 */
+		timeout = 30;
+	}
+	wpa_printf(MSG_DEBUG, "Scan requested (ret=%d) - scan timeout %d "
+		   "seconds", ret, timeout);
 	eloop_cancel_timeout(wpa_driver_wext_scan_timeout, drv, drv->ctx);
-	eloop_register_timeout(3, 0, wpa_driver_wext_scan_timeout, drv,
+	eloop_register_timeout(timeout, 0, wpa_driver_wext_scan_timeout, drv,
 			       drv->ctx);
 
 	return ret;
-}
-
-
-/* Compare function for sorting scan results. Return >0 if @b is considered
- * better. */
-static int wpa_scan_result_compar(const void *a, const void *b)
-{
-	const struct wpa_scan_result *wa = a;
-	const struct wpa_scan_result *wb = b;
-
-	/* WPA/WPA2 support preferred */
-	if ((wb->wpa_ie_len || wb->rsn_ie_len) &&
-	    !(wa->wpa_ie_len || wa->rsn_ie_len))
-		return 1;
-	if (!(wb->wpa_ie_len || wb->rsn_ie_len) &&
-	    (wa->wpa_ie_len || wa->rsn_ie_len))
-		return -1;
-
-	/* privacy support preferred */
-	if ((wa->caps & IEEE80211_CAP_PRIVACY) == 0 &&
-	    (wb->caps & IEEE80211_CAP_PRIVACY))
-		return 1;
-	if ((wa->caps & IEEE80211_CAP_PRIVACY) &&
-	    (wb->caps & IEEE80211_CAP_PRIVACY) == 0)
-		return -1;
-
-	/* best/max rate preferred if signal level close enough XXX */
-	if (wa->maxrate != wb->maxrate && abs(wb->level - wa->level) < 5)
-		return wb->maxrate - wa->maxrate;
-
-	/* use freq for channel preference */
-
-	/* all things being equal, use signal level; if signal levels are
-	 * identical, use quality values since some drivers may only report
-	 * that value and leave the signal level zero */
-	if (wb->level == wa->level)
-		return wb->qual - wa->qual;
-	return wb->level - wa->level;
 }
 
 
@@ -1197,18 +1269,32 @@ static u8 * wpa_driver_wext_giwscan(struct wpa_driver_wext_data *drv,
 }
 
 
+/*
+ * Data structure for collecting WEXT scan results. This is needed to allow
+ * the various methods of reporting IEs to be combined into a single IE buffer.
+ */
+struct wext_scan_data {
+	struct wpa_scan_res res;
+	u8 *ie;
+	size_t ie_len;
+	u8 ssid[32];
+	size_t ssid_len;
+	int maxrate;
+};
+
+
 static void wext_get_scan_mode(struct iw_event *iwe,
-			       struct wpa_scan_result *res)
+			       struct wext_scan_data *res)
 {
 	if (iwe->u.mode == IW_MODE_ADHOC)
-		res->caps |= IEEE80211_CAP_IBSS;
+		res->res.caps |= IEEE80211_CAP_IBSS;
 	else if (iwe->u.mode == IW_MODE_MASTER || iwe->u.mode == IW_MODE_INFRA)
-		res->caps |= IEEE80211_CAP_ESS;
+		res->res.caps |= IEEE80211_CAP_ESS;
 }
 
 
 static void wext_get_scan_ssid(struct iw_event *iwe,
-			       struct wpa_scan_result *res, char *custom,
+			       struct wext_scan_data *res, char *custom,
 			       char *end)
 {
 	int ssid_len = iwe->u.essid.length;
@@ -1224,7 +1310,7 @@ static void wext_get_scan_ssid(struct iw_event *iwe,
 
 
 static void wext_get_scan_freq(struct iw_event *iwe,
-			       struct wpa_scan_result *res)
+			       struct wext_scan_data *res)
 {
 	int divi = 1000000, i;
 
@@ -1235,10 +1321,10 @@ static void wext_get_scan_freq(struct iw_event *iwe,
 		 * IEEE 802.11b/g.
 		 */
 		if (iwe->u.freq.m >= 1 && iwe->u.freq.m <= 13) {
-			res->freq = 2407 + 5 * iwe->u.freq.m;
+			res->res.freq = 2407 + 5 * iwe->u.freq.m;
 			return;
 		} else if (iwe->u.freq.m == 14) {
-			res->freq = 2484;
+			res->res.freq = 2484;
 			return;
 		}
 	}
@@ -1246,35 +1332,36 @@ static void wext_get_scan_freq(struct iw_event *iwe,
 	if (iwe->u.freq.e > 6) {
 		wpa_printf(MSG_DEBUG, "Invalid freq in scan results (BSSID="
 			   MACSTR " m=%d e=%d)",
-			   MAC2STR(res->bssid), iwe->u.freq.m, iwe->u.freq.e);
+			   MAC2STR(res->res.bssid), iwe->u.freq.m,
+			   iwe->u.freq.e);
 		return;
 	}
 
 	for (i = 0; i < iwe->u.freq.e; i++)
 		divi /= 10;
-	res->freq = iwe->u.freq.m / divi;
+	res->res.freq = iwe->u.freq.m / divi;
 }
 
 
 static void wext_get_scan_qual(struct iw_event *iwe,
-			       struct wpa_scan_result *res)
+			       struct wext_scan_data *res)
 {
-	res->qual = iwe->u.qual.qual;
-	res->noise = iwe->u.qual.noise;
-	res->level = iwe->u.qual.level;
+	res->res.qual = iwe->u.qual.qual;
+	res->res.noise = iwe->u.qual.noise;
+	res->res.level = iwe->u.qual.level;
 }
 
 
 static void wext_get_scan_encode(struct iw_event *iwe,
-				 struct wpa_scan_result *res)
+				 struct wext_scan_data *res)
 {
 	if (!(iwe->u.data.flags & IW_ENCODE_DISABLED))
-		res->caps |= IEEE80211_CAP_PRIVACY;
+		res->res.caps |= IEEE80211_CAP_PRIVACY;
 }
 
 
 static void wext_get_scan_rate(struct iw_event *iwe,
-			       struct wpa_scan_result *res, char *pos,
+			       struct wext_scan_data *res, char *pos,
 			       char *end)
 {
 	int maxrate;
@@ -1299,10 +1386,11 @@ static void wext_get_scan_rate(struct iw_event *iwe,
 
 
 static void wext_get_scan_iwevgenie(struct iw_event *iwe,
-				    struct wpa_scan_result *res, char *custom,
+				    struct wext_scan_data *res, char *custom,
 				    char *end)
 {
 	char *genie, *gpos, *gend;
+	u8 *tmp;
 
 	gpos = genie = custom;
 	gend = genie + iwe->u.data.length;
@@ -1311,34 +1399,21 @@ static void wext_get_scan_iwevgenie(struct iw_event *iwe,
 		return;
 	}
 
-	while (gpos + 1 < gend && gpos + 2 + (u8) gpos[1] <= gend) {
-		u8 ie = gpos[0], ielen = gpos[1] + 2;
-		switch (ie) {
-		case WLAN_EID_VENDOR_SPECIFIC:
-			if (ielen < 2 + 4 ||
-			    ielen > SSID_MAX_WPA_IE_LEN ||
-			    os_memcmp(&gpos[2], "\x00\x50\xf2\x01", 4) != 0)
-				break;
-			os_memcpy(res->wpa_ie, gpos, ielen);
-			res->wpa_ie_len = ielen;
-			break;
-		case WLAN_EID_RSN:
-			if (ielen > SSID_MAX_WPA_IE_LEN)
-				break;
-			os_memcpy(res->rsn_ie, gpos, ielen);
-			res->rsn_ie_len = ielen;
-			break;
-		}
-		gpos += ielen;
-	}
+	tmp = os_realloc(res->ie, res->ie_len + gend - gpos);
+	if (tmp == NULL)
+		return;
+	os_memcpy(tmp + res->ie_len, gpos, gend - gpos);
+	res->ie = tmp;
+	res->ie_len += gend - gpos;
 }
 
 
 static void wext_get_scan_custom(struct iw_event *iwe,
-				 struct wpa_scan_result *res, char *custom,
+				 struct wext_scan_data *res, char *custom,
 				 char *end)
 {
 	size_t clen;
+	u8 *tmp;
 
 	clen = iwe->u.data.length;
 	if (custom + clen > end)
@@ -1352,12 +1427,12 @@ static void wext_get_scan_custom(struct iw_event *iwe,
 		if (bytes & 1)
 			return;
 		bytes /= 2;
-		if (bytes > SSID_MAX_WPA_IE_LEN) {
-			wpa_printf(MSG_INFO, "Too long WPA IE (%d)", bytes);
+		tmp = os_realloc(res->ie, res->ie_len + bytes);
+		if (tmp == NULL)
 			return;
-		}
-		hexstr2bin(spos, res->wpa_ie, bytes);
-		res->wpa_ie_len = bytes;
+		hexstr2bin(spos, tmp + res->ie_len, bytes);
+		res->ie = tmp;
+		res->ie_len += bytes;
 	} else if (clen > 7 && os_strncmp(custom, "rsn_ie=", 7) == 0) {
 		char *spos;
 		int bytes;
@@ -1366,12 +1441,12 @@ static void wext_get_scan_custom(struct iw_event *iwe,
 		if (bytes & 1)
 			return;
 		bytes /= 2;
-		if (bytes > SSID_MAX_WPA_IE_LEN) {
-			wpa_printf(MSG_INFO, "Too long RSN IE (%d)", bytes);
+		tmp = os_realloc(res->ie, res->ie_len + bytes);
+		if (tmp == NULL)
 			return;
-		}
-		hexstr2bin(spos, res->rsn_ie, bytes);
-		res->rsn_ie_len = bytes;
+		hexstr2bin(spos, tmp + res->ie_len, bytes);
+		res->ie = tmp;
+		res->ie_len += bytes;
 	} else if (clen > 4 && os_strncmp(custom, "tsf=", 4) == 0) {
 		char *spos;
 		int bytes;
@@ -1384,7 +1459,7 @@ static void wext_get_scan_custom(struct iw_event *iwe,
 		}
 		bytes /= 2;
 		hexstr2bin(spos, bin, bytes);
-		res->tsf += WPA_GET_BE64(bin);
+		res->res.tsf += WPA_GET_BE64(bin);
 	}
 }
 
@@ -1397,21 +1472,80 @@ static int wext_19_iw_point(struct wpa_driver_wext_data *drv, u16 cmd)
 }
 
 
+static void wpa_driver_wext_add_scan_entry(struct wpa_scan_results *res,
+					   struct wext_scan_data *data)
+{
+	struct wpa_scan_res **tmp;
+	struct wpa_scan_res *r;
+	size_t extra_len;
+	u8 *pos, *end, *ssid_ie = NULL, *rate_ie = NULL;
+
+	/* Figure out whether we need to fake any IEs */
+	pos = data->ie;
+	end = pos + data->ie_len;
+	while (pos && pos + 1 < end) {
+		if (pos + 2 + pos[1] > end)
+			break;
+		if (pos[0] == WLAN_EID_SSID)
+			ssid_ie = pos;
+		else if (pos[0] == WLAN_EID_SUPP_RATES)
+			rate_ie = pos;
+		else if (pos[0] == WLAN_EID_EXT_SUPP_RATES)
+			rate_ie = pos;
+		pos += 2 + pos[1];
+	}
+
+	extra_len = 0;
+	if (ssid_ie == NULL)
+		extra_len += 2 + data->ssid_len;
+	if (rate_ie == NULL && data->maxrate)
+		extra_len += 3;
+
+	r = os_zalloc(sizeof(*r) + extra_len + data->ie_len);
+	if (r == NULL)
+		return;
+	os_memcpy(r, &data->res, sizeof(*r));
+	r->ie_len = extra_len + data->ie_len;
+	pos = (u8 *) (r + 1);
+	if (ssid_ie == NULL) {
+		/*
+		 * Generate a fake SSID IE since the driver did not report
+		 * a full IE list.
+		 */
+		*pos++ = WLAN_EID_SSID;
+		*pos++ = data->ssid_len;
+		os_memcpy(pos, data->ssid, data->ssid_len);
+		pos += data->ssid_len;
+	}
+	if (rate_ie == NULL && data->maxrate) {
+		/*
+		 * Generate a fake Supported Rates IE since the driver did not
+		 * report a full IE list.
+		 */
+		*pos++ = WLAN_EID_SUPP_RATES;
+		*pos++ = 1;
+		*pos++ = data->maxrate;
+	}
+	if (data->ie)
+		os_memcpy(pos, data->ie, data->ie_len);
+
+	tmp = os_realloc(res->res,
+			 (res->num + 1) * sizeof(struct wpa_scan_res *));
+	if (tmp == NULL) {
+		os_free(r);
+		return;
+	}
+	tmp[res->num++] = r;
+	res->res = tmp;
+}
+				      
+
 /**
  * wpa_driver_wext_get_scan_results - Fetch the latest scan results
  * @priv: Pointer to private wext data from wpa_driver_wext_init()
- * @results: Pointer to buffer for scan results
- * @max_size: Maximum number of entries (buffer size)
- * Returns: Number of scan result entries used on success, -1 on
- * failure
- *
- * If scan results include more than max_size BSSes, max_size will be
- * returned and the remaining entries will not be included in the
- * buffer.
+ * Returns: Scan results on success, -1 on failure
  */
-int wpa_driver_wext_get_scan_results(void *priv,
-				     struct wpa_scan_result *results,
-				     size_t max_size)
+struct wpa_scan_results * wpa_driver_wext_get_scan_results(void *priv)
 {
 	struct wpa_driver_wext_data *drv = priv;
 	size_t ap_num = 0, len;
@@ -1419,20 +1553,27 @@ int wpa_driver_wext_get_scan_results(void *priv,
 	u8 *res_buf;
 	struct iw_event iwe_buf, *iwe = &iwe_buf;
 	char *pos, *end, *custom;
-
-	os_memset(results, 0, max_size * sizeof(struct wpa_scan_result));
+	struct wpa_scan_results *res;
+	struct wext_scan_data data;
 
 	res_buf = wpa_driver_wext_giwscan(drv, &len);
 	if (res_buf == NULL)
-		return -1;
+		return NULL;
 
 	ap_num = 0;
 	first = 1;
 
+	res = os_zalloc(sizeof(*res));
+	if (res == NULL) {
+		os_free(res_buf);
+		return NULL;
+	}
+
 	pos = (char *) res_buf;
 	end = (char *) res_buf + len;
+	os_memset(&data, 0, sizeof(data));
 
-	while (ap_num < max_size && pos + IW_EV_LCP_LEN <= end) {
+	while (pos + IW_EV_LCP_LEN <= end) {
 		/* Event data may be unaligned, so make a local, aligned copy
 		 * before processing. */
 		os_memcpy(&iwe_buf, pos, IW_EV_LCP_LEN);
@@ -1454,38 +1595,36 @@ int wpa_driver_wext_get_scan_results(void *priv,
 		switch (iwe->cmd) {
 		case SIOCGIWAP:
 			if (!first)
-				ap_num++;
+				wpa_driver_wext_add_scan_entry(res, &data);
 			first = 0;
-			if (ap_num < max_size) {
-				os_memcpy(results[ap_num].bssid,
-					  iwe->u.ap_addr.sa_data, ETH_ALEN);
-			}
+			os_free(data.ie);
+			os_memset(&data, 0, sizeof(data));
+			os_memcpy(data.res.bssid,
+				  iwe->u.ap_addr.sa_data, ETH_ALEN);
 			break;
 		case SIOCGIWMODE:
-			wext_get_scan_mode(iwe, &results[ap_num]);
+			wext_get_scan_mode(iwe, &data);
 			break;
 		case SIOCGIWESSID:
-			wext_get_scan_ssid(iwe, &results[ap_num], custom, end);
+			wext_get_scan_ssid(iwe, &data, custom, end);
 			break;
 		case SIOCGIWFREQ:
-			wext_get_scan_freq(iwe, &results[ap_num]);
+			wext_get_scan_freq(iwe, &data);
 			break;
 		case IWEVQUAL:
-			wext_get_scan_qual(iwe, &results[ap_num]);
+			wext_get_scan_qual(iwe, &data);
 			break;
 		case SIOCGIWENCODE:
-			wext_get_scan_encode(iwe, &results[ap_num]);
+			wext_get_scan_encode(iwe, &data);
 			break;
 		case SIOCGIWRATE:
-			wext_get_scan_rate(iwe, &results[ap_num], pos, end);
+			wext_get_scan_rate(iwe, &data, pos, end);
 			break;
 		case IWEVGENIE:
-			wext_get_scan_iwevgenie(iwe, &results[ap_num],
-						custom, end);
+			wext_get_scan_iwevgenie(iwe, &data, custom, end);
 			break;
 		case IWEVCUSTOM:
-			wext_get_scan_custom(iwe, &results[ap_num],
-					     custom, end);
+			wext_get_scan_custom(iwe, &data, custom, end);
 			break;
 		}
 
@@ -1494,21 +1633,13 @@ int wpa_driver_wext_get_scan_results(void *priv,
 	os_free(res_buf);
 	res_buf = NULL;
 	if (!first)
-		ap_num++;
-	if (ap_num > max_size) {
-		wpa_printf(MSG_DEBUG, "Too small scan result buffer - "
-			   "%lu BSSes but room only for %lu",
-			   (unsigned long) ap_num,
-			   (unsigned long) max_size);
-		ap_num = max_size;
-	}
-	qsort(results, ap_num, sizeof(struct wpa_scan_result),
-	      wpa_scan_result_compar);
+		wpa_driver_wext_add_scan_entry(res, &data);
+	os_free(data.ie);
 
 	wpa_printf(MSG_DEBUG, "Received %lu bytes of scan results (%lu BSSes)",
-		   (unsigned long) len, (unsigned long) ap_num);
+		   (unsigned long) len, (unsigned long) res->num);
 
-	return ap_num;
+	return res;
 }
 
 
@@ -1744,7 +1875,7 @@ int wpa_driver_wext_set_key(void *priv, wpa_alg alg,
 		os_memset(&iwr, 0, sizeof(iwr));
 		os_strlcpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 		iwr.u.encoding.flags = key_idx + 1;
-		iwr.u.encoding.pointer = (caddr_t) key;
+		iwr.u.encoding.pointer = (caddr_t) NULL;
 		iwr.u.encoding.length = 0;
 		if (ioctl(drv->ioctl_sock, SIOCSIWENCODE, &iwr) < 0) {
 			perror("ioctl[SIOCSIWENCODE] (set_tx)");
@@ -2227,7 +2358,7 @@ wpa_driver_wext_get_hw_feature_data(void *priv, u16 *num_modes, u16 *flags)
 		default:
 			wpa_printf(MSG_ERROR, "Unknown hw_mode=%d in "
 				   "get_hw_features data", hdr->mode);
-			ieee80211_sta_free_hw_features(modes, *num_modes);
+			wpa_supplicant_sta_free_hw_features(modes, *num_modes);
 			modes = NULL;
 			break;
 		}
@@ -2238,7 +2369,7 @@ wpa_driver_wext_get_hw_feature_data(void *priv, u16 *num_modes, u16 *flags)
 		feature->rates = os_malloc(rlen);
 		if (!feature->channels || !feature->rates ||
 		    pos + clen + rlen > end) {
-			ieee80211_sta_free_hw_features(modes, *num_modes);
+			wpa_supplicant_sta_free_hw_features(modes, *num_modes);
 			modes = NULL;
 			break;
 		}
@@ -2294,9 +2425,10 @@ static void wpa_driver_wext_mlme_read(int sock, void *eloop_ctx,
 	rx_status.ssi = ntohl(fi->ssi_signal);
 	rx_status.channel = ntohl(fi->channel);
 
-	ieee80211_sta_rx(drv->ctx, buf + sizeof(struct ieee80211_frame_info),
-			 len - sizeof(struct ieee80211_frame_info),
-			 &rx_status);
+	wpa_supplicant_sta_rx(drv->ctx,
+			      buf + sizeof(struct ieee80211_frame_info),
+			      len - sizeof(struct ieee80211_frame_info),
+			      &rx_status);
 }
 
 
@@ -2460,7 +2592,7 @@ const struct wpa_driver_ops wpa_driver_wext_ops = {
 	.set_countermeasures = wpa_driver_wext_set_countermeasures,
 	.set_drop_unencrypted = wpa_driver_wext_set_drop_unencrypted,
 	.scan = wpa_driver_wext_scan,
-	.get_scan_results = wpa_driver_wext_get_scan_results,
+	.get_scan_results2 = wpa_driver_wext_get_scan_results,
 	.deauthenticate = wpa_driver_wext_deauthenticate,
 	.disassociate = wpa_driver_wext_disassociate,
 	.associate = wpa_driver_wext_associate,

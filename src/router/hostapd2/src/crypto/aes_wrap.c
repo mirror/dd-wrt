@@ -345,7 +345,7 @@ int aes_128_eax_encrypt(const u8 *key, const u8 *nonce, size_t nonce_len,
 	u8 *buf;
 	size_t buf_len;
 	u8 nonce_mac[BLOCK_SIZE], hdr_mac[BLOCK_SIZE], data_mac[BLOCK_SIZE];
-	int i;
+	int i, ret = -1;
 
 	if (nonce_len > data_len)
 		buf_len = nonce_len;
@@ -363,23 +363,29 @@ int aes_128_eax_encrypt(const u8 *key, const u8 *nonce, size_t nonce_len,
 
 	buf[15] = 0;
 	os_memcpy(buf + 16, nonce, nonce_len);
-	omac1_aes_128(key, buf, 16 + nonce_len, nonce_mac);
+	if (omac1_aes_128(key, buf, 16 + nonce_len, nonce_mac))
+		goto fail;
 
 	buf[15] = 1;
 	os_memcpy(buf + 16, hdr, hdr_len);
-	omac1_aes_128(key, buf, 16 + hdr_len, hdr_mac);
+	if (omac1_aes_128(key, buf, 16 + hdr_len, hdr_mac))
+		goto fail;
 
-	aes_128_ctr_encrypt(key, nonce_mac, data, data_len);
+	if (aes_128_ctr_encrypt(key, nonce_mac, data, data_len))
+		goto fail;
 	buf[15] = 2;
 	os_memcpy(buf + 16, data, data_len);
-	omac1_aes_128(key, buf, 16 + data_len, data_mac);
-
-	os_free(buf);
+	if (omac1_aes_128(key, buf, 16 + data_len, data_mac))
+		goto fail;
 
 	for (i = 0; i < BLOCK_SIZE; i++)
 		tag[i] = nonce_mac[i] ^ data_mac[i] ^ hdr_mac[i];
 
-	return 0;
+	ret = 0;
+fail:
+	os_free(buf);
+
+	return ret;
 }
 
 
@@ -420,15 +426,24 @@ int aes_128_eax_decrypt(const u8 *key, const u8 *nonce, size_t nonce_len,
 
 	buf[15] = 0;
 	os_memcpy(buf + 16, nonce, nonce_len);
-	omac1_aes_128(key, buf, 16 + nonce_len, nonce_mac);
+	if (omac1_aes_128(key, buf, 16 + nonce_len, nonce_mac)) {
+		os_free(buf);
+		return -1;
+	}
 
 	buf[15] = 1;
 	os_memcpy(buf + 16, hdr, hdr_len);
-	omac1_aes_128(key, buf, 16 + hdr_len, hdr_mac);
+	if (omac1_aes_128(key, buf, 16 + hdr_len, hdr_mac)) {
+		os_free(buf);
+		return -1;
+	}
 
 	buf[15] = 2;
 	os_memcpy(buf + 16, data, data_len);
-	omac1_aes_128(key, buf, 16 + data_len, data_mac);
+	if (omac1_aes_128(key, buf, 16 + data_len, data_mac)) {
+		os_free(buf);
+		return -1;
+	}
 
 	os_free(buf);
 
@@ -437,9 +452,7 @@ int aes_128_eax_decrypt(const u8 *key, const u8 *nonce, size_t nonce_len,
 			return -2;
 	}
 
-	aes_128_ctr_encrypt(key, nonce_mac, data, data_len);
-
-	return 0;
+	return aes_128_ctr_encrypt(key, nonce_mac, data, data_len);
 }
 
 #endif /* CONFIG_NO_AES_EAX */

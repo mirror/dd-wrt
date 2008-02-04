@@ -164,8 +164,8 @@ CONFIG_EAP_LEAP=y
 # EAP-TNC and related Trusted Network Connect support (experimental)
 #CONFIG_EAP_TNC=y
 
-# EAP-WSC for Wi-Fi Protected Setup
-#CONFIG_EAP_WSC=y
+# EAP-IKEv2
+#CONFIG_EAP_IKEV2=y
 
 # PKCS#12 (PFX) support (used to read private key and certificate file from
 # a file that usually has extension .p12 or .pfx)
@@ -357,3 +357,6 @@ CONFIG_PEERKEY=y
 
 # Add support for writing debug log to a file (/tmp/wpa_supplicant-log-#.txt)
 #CONFIG_DEBUG_FILE=y
+
+# Enable privilege separation (see README 'Privilege separation' for details)
+#CONFIG_PRIVSEP=y

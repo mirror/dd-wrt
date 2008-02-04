@@ -46,8 +46,7 @@
 
 <blockquote><programlisting>
 # allow frontend (e.g., wpa_cli) to be used by all users in 'wheel' group
-ctrl_interface=/var/run/wpa_supplicant
-ctrl_interface_group=wheel
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=wheel
 #
 # home network; allow all valid ciphers
 network={
@@ -80,8 +79,7 @@ network={
         Aegis, Interlink RAD-Series)</para>
 
 <blockquote><programlisting>
-ctrl_interface=/var/run/wpa_supplicant
-ctrl_interface_group=wheel
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=wheel
 network={
 	ssid="example"
 	scan_ssid=1
@@ -103,8 +101,7 @@ network={
 
 
 <blockquote><programlisting>
-ctrl_interface=/var/run/wpa_supplicant
-ctrl_interface_group=wheel
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=wheel
 network={
 	ssid="example"
 	scan_ssid=1
@@ -126,8 +123,7 @@ network={
         authentication</para>
 
 <blockquote><programlisting>
-ctrl_interface=/var/run/wpa_supplicant
-ctrl_interface_group=wheel
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=wheel
 network={
 	ssid="1x-test"
 	scan_ssid=1
@@ -152,8 +148,7 @@ network={
         use.</para>
 
 <blockquote><programlisting>
-ctrl_interface=/var/run/wpa_supplicant
-ctrl_interface_group=wheel
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=wheel
 network={
 	ssid="example"
 	scan_ssid=1
@@ -182,8 +177,7 @@ network={
        'wired' interface (-Dwired on command line).</para>
 
 <blockquote><programlisting>
-ctrl_interface=/var/run/wpa_supplicant
-ctrl_interface_group=wheel
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=wheel
 ap_scan=0
 network={
 	key_mgmt=IEEE8021X

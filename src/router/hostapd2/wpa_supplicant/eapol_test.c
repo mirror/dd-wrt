@@ -331,7 +331,7 @@ static int test_eapol(struct eapol_test_data *e, struct wpa_supplicant *wpa_s,
 	eapol_conf.required_keys = 0;
 	eapol_conf.fast_reauth = wpa_s->conf->fast_reauth;
 	eapol_conf.workaround = ssid->eap_workaround;
-	eapol_sm_notify_config(wpa_s->eapol, ssid, &eapol_conf);
+	eapol_sm_notify_config(wpa_s->eapol, &ssid->eap, &eapol_conf);
 	eapol_sm_register_scard_ctx(wpa_s->eapol, wpa_s->scard);
 
 
@@ -1007,6 +1007,9 @@ int main(int argc, char *argv[])
 	eloop_register_signal_terminate(eapol_test_terminate, NULL);
 	eloop_register_signal_reconfig(eapol_test_terminate, NULL);
 	eloop_run();
+
+	eloop_cancel_timeout(eapol_test_timeout, &eapol_test, NULL);
+	eloop_cancel_timeout(eapol_sm_reauth, &eapol_test, NULL);
 
 	if (eapol_test_compare_pmk(&eapol_test) == 0 ||
 	    eapol_test.no_mppe_keys)

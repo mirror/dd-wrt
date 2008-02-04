@@ -38,6 +38,10 @@ enum { EAP_CODE_REQUEST = 1, EAP_CODE_RESPONSE = 2, EAP_CODE_SUCCESS = 3,
 /* EAP Request and Response data begins with one octet Type. Success and
  * Failure do not have additional data. */
 
+/*
+ * EAP Method Types as allocated by IANA:
+ * http://www.iana.org/assignments/eap-numbers
+ */
 typedef enum {
 	EAP_TYPE_NONE = 0,
 	EAP_TYPE_IDENTITY = 1 /* RFC 3748 */,
@@ -61,6 +65,7 @@ typedef enum {
 	EAP_TYPE_PAX = 46 /* RFC 4746 */,
 	EAP_TYPE_PSK = 47 /* RFC 4764 */,
 	EAP_TYPE_SAKE = 48 /* RFC 4763 */,
+	EAP_TYPE_IKEV2 = 49 /* draft-tschofenig-eap-ikev2-15.txt */,
 	EAP_TYPE_EXPANDED = 254 /* RFC 3748 */,
 	EAP_TYPE_GPSK = 255 /* EXPERIMENTAL - type not yet allocated
 			     * draft-ietf-emu-eap-gpsk-01.txt */

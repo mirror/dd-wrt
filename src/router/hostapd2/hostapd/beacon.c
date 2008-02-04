@@ -2,6 +2,7 @@
  * hostapd / IEEE 802.11 Management: Beacon and Probe Request/Response
  * Copyright (c) 2002-2004, Instant802 Networks, Inc.
  * Copyright (c) 2005-2006, Devicescape Software, Inc.
+ * Copyright (c) 2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -26,6 +27,7 @@
 #include "driver.h"
 #include "sta_info.h"
 #include "ieee802_11h.h"
+#include "wps_hostapd.h"
 
 
 static u8 ieee802_11_erp_info(struct hostapd_data *hapd)
@@ -177,21 +179,22 @@ void handle_probe_req(struct hostapd_data *hapd, struct ieee80211_mgmt *mgmt,
 	struct ieee80211_mgmt *resp;
 	struct ieee802_11_elems elems;
 	char *ssid;
-	u8 *pos, *epos;
-	size_t ssid_len;
+	u8 *pos, *epos, *ie;
+	size_t ssid_len, ie_len;
 	struct sta_info *sta = NULL;
+
+	ie = mgmt->u.probe_req.variable;
+	ie_len = len - (IEEE80211_HDRLEN + sizeof(mgmt->u.probe_req));
+
+	hostapd_wps_probe_req_rx(hapd, mgmt->sa, ie, ie_len);
 
 	if (!hapd->iconf->send_probe_response)
 		return;
 
-	if (ieee802_11_parse_elems(hapd, mgmt->u.probe_req.variable,
-				   len - (IEEE80211_HDRLEN +
-					  sizeof(mgmt->u.probe_req)), &elems,
-				   0)
-	    == ParseFailed) {
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-			      "Could not parse ProbeReq from " MACSTR "\n",
-			      MAC2STR(mgmt->sa));
+	if (ieee802_11_parse_elems(hapd, ie, ie_len, &elems, 0) == ParseFailed)
+	{
+		wpa_printf(MSG_DEBUG, "Could not parse ProbeReq from " MACSTR,
+			   MAC2STR(mgmt->sa));
 		return;
 	}
 
@@ -199,15 +202,15 @@ void handle_probe_req(struct hostapd_data *hapd, struct ieee80211_mgmt *mgmt,
 	ssid_len = 0;
 
 	if ((!elems.ssid || !elems.supp_rates)) {
-		printf("STA " MACSTR " sent probe request without SSID or "
-		       "supported rates element\n", MAC2STR(mgmt->sa));
+		wpa_printf(MSG_DEBUG, "STA " MACSTR " sent probe request "
+			   "without SSID or supported rates element",
+			   MAC2STR(mgmt->sa));
 		return;
 	}
 
 	if (hapd->conf->ignore_broadcast_ssid && elems.ssid_len == 0) {
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MSGDUMPS,
-			      "Probe Request from " MACSTR " for broadcast "
-			      "SSID ignored\n", MAC2STR(mgmt->sa));
+		wpa_printf(MSG_MSGDUMP, "Probe Request from " MACSTR " for "
+			   "broadcast SSID ignored", MAC2STR(mgmt->sa));
 		return;
 	}
 
@@ -224,18 +227,20 @@ void handle_probe_req(struct hostapd_data *hapd, struct ieee80211_mgmt *mgmt,
 	}
 
 	if (!ssid) {
-		if (HOSTAPD_DEBUG_COND(HOSTAPD_DEBUG_MSGDUMPS)) {
-			printf("Probe Request from " MACSTR " for foreign "
-			       "SSID '", MAC2STR(mgmt->sa));
-			ieee802_11_print_ssid(elems.ssid, elems.ssid_len);
-			printf("'\n");
+		if (!(mgmt->da[0] & 0x01)) {
+			char ssid_txt[33];
+			ieee802_11_print_ssid(ssid_txt, elems.ssid,
+					      elems.ssid_len);
+			wpa_printf(MSG_MSGDUMP, "Probe Request from " MACSTR
+				   " for foreign SSID '%s'",
+				   MAC2STR(mgmt->sa), ssid_txt);
 		}
 		return;
 	}
 
 	/* TODO: verify that supp_rates contains at least one matching rate
 	 * with AP configuration */
-#define MAX_PROBERESP_LEN 512
+#define MAX_PROBERESP_LEN 768
 	resp = os_zalloc(MAX_PROBERESP_LEN);
 	if (resp == NULL)
 		return;
@@ -283,15 +288,22 @@ void handle_probe_req(struct hostapd_data *hapd, struct ieee80211_mgmt *mgmt,
 	if (hapd->conf->wme_enabled)
 		pos = hostapd_eid_wme(hapd, pos);
 
+#ifdef CONFIG_WPS
+	if (hapd->conf->wps_state && hapd->wps_probe_resp_ie) {
+		os_memcpy(pos, hapd->wps_probe_resp_ie,
+			  hapd->wps_probe_resp_ie_len);
+		pos += hapd->wps_probe_resp_ie_len;
+	}
+#endif /* CONFIG_WPS */
+
 	if (hostapd_send_mgmt_frame(hapd, resp, pos - (u8 *) resp, 0) < 0)
 		perror("handle_probe_req: send");
 
 	os_free(resp);
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MSGDUMPS, "STA " MACSTR
-		      " sent probe request for %s SSID\n",
-		      MAC2STR(mgmt->sa), elems.ssid_len == 0 ? "broadcast" :
-		      "our");
+	wpa_printf(MSG_MSGDUMP, "STA " MACSTR " sent probe request for %s "
+		   "SSID", MAC2STR(mgmt->sa),
+		   elems.ssid_len == 0 ? "broadcast" : "our");
 }
 
 
@@ -306,11 +318,11 @@ void ieee802_11_set_beacon(struct hostapd_data *hapd)
 			      ERP_INFO_USE_PROTECTION) ? 1 : 0);
 
 #define BEACON_HEAD_BUF_SIZE 256
-#define BEACON_TAIL_BUF_SIZE 256
+#define BEACON_TAIL_BUF_SIZE 512
 	head = os_zalloc(BEACON_HEAD_BUF_SIZE);
 	tailpos = tail = os_malloc(BEACON_TAIL_BUF_SIZE);
 	if (head == NULL || tail == NULL) {
-		printf("Failed to set beacon data\n");
+		wpa_printf(MSG_ERROR, "Failed to set beacon data");
 		os_free(head);
 		os_free(tail);
 		return;
@@ -375,25 +387,34 @@ void ieee802_11_set_beacon(struct hostapd_data *hapd)
 	if (hapd->conf->wme_enabled)
 		tailpos = hostapd_eid_wme(hapd, tailpos);
 
+#ifdef CONFIG_WPS
+	if (hapd->conf->wps_state && hapd->wps_beacon_ie) {
+		os_memcpy(tailpos, hapd->wps_beacon_ie,
+			  hapd->wps_beacon_ie_len);
+		tailpos += hapd->wps_beacon_ie_len;
+	}
+#endif /* CONFIG_WPS */
+
 	tail_len = tailpos > tail ? tailpos - tail : 0;
 
 	if (hostapd_set_beacon(hapd->conf->iface, hapd, (u8 *) head, head_len,
 			       tail, tail_len))
-		printf("Failed to set beacon head/tail\n");
+		wpa_printf(MSG_ERROR, "Failed to set beacon head/tail");
 
 	os_free(tail);
 	os_free(head);
 
 	if (hostapd_set_cts_protect(hapd, cts_protection))
-		printf("Failed to set CTS protect in kernel driver\n");
+		wpa_printf(MSG_ERROR, "Failed to set CTS protect in kernel "
+			   "driver");
 
 	if (hapd->iface->current_mode &&
 	    hapd->iface->current_mode->mode == HOSTAPD_MODE_IEEE80211G &&
 	    hostapd_set_short_slot_time(hapd,
 					hapd->iface->num_sta_no_short_slot_time
 					> 0 ? 0 : 1))
-		printf("Failed to set Short Slot Time option in kernel "
-		       "driver\n");
+		wpa_printf(MSG_ERROR, "Failed to set Short Slot Time option "
+			   "in kernel driver");
 
 	if (hapd->iface->num_sta_no_short_preamble == 0 &&
 	    hapd->iconf->preamble == SHORT_PREAMBLE)
@@ -401,7 +422,8 @@ void ieee802_11_set_beacon(struct hostapd_data *hapd)
 	else
 		preamble = LONG_PREAMBLE;
 	if (hostapd_set_preamble(hapd, preamble))
-		printf("Could not set preamble for kernel driver\n");
+		wpa_printf(MSG_ERROR, "Could not set preamble for kernel "
+			   "driver");
 }
 
 

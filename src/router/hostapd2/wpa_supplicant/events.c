@@ -30,6 +30,7 @@
 #include "ctrl_iface_dbus.h"
 #include "ieee802_11_defs.h"
 #include "blacklist.h"
+#include "wpas_glue.h"
 
 
 static int wpa_supplicant_select_config(struct wpa_supplicant *wpa_s)
@@ -68,7 +69,7 @@ static int wpa_supplicant_select_config(struct wpa_supplicant *wpa_s)
 	if (wpa_s->current_ssid && wpa_s->current_ssid != ssid)
 		eapol_sm_invalidate_cached_session(wpa_s->eapol);
 	wpa_s->current_ssid = ssid;
-	wpa_sm_set_config(wpa_s->wpa, wpa_s->current_ssid);
+	wpa_supplicant_rsn_supp_set_config(wpa_s, wpa_s->current_ssid);
 	wpa_supplicant_initiate_eapol(wpa_s);
 
 	return 0;
@@ -183,14 +184,14 @@ int wpa_supplicant_scard_init(struct wpa_supplicant *wpa_s,
 #ifdef IEEE8021X_EAPOL
 	int aka = 0, sim = 0, type;
 
-	if (ssid->pcsc == NULL || wpa_s->scard != NULL)
+	if (ssid->eap.pcsc == NULL || wpa_s->scard != NULL)
 		return 0;
 
-	if (ssid->eap_methods == NULL) {
+	if (ssid->eap.eap_methods == NULL) {
 		sim = 1;
 		aka = 1;
 	} else {
-		struct eap_method_type *eap = ssid->eap_methods;
+		struct eap_method_type *eap = ssid->eap.eap_methods;
 		while (eap->vendor != EAP_VENDOR_IETF ||
 		       eap->method != EAP_TYPE_NONE) {
 			if (eap->vendor == EAP_VENDOR_IETF) {
@@ -238,7 +239,7 @@ int wpa_supplicant_scard_init(struct wpa_supplicant *wpa_s,
 
 
 #ifndef CONFIG_NO_SCAN_PROCESSING
-static int wpa_supplicant_match_privacy(struct wpa_scan_result *bss,
+static int wpa_supplicant_match_privacy(struct wpa_scan_res *bss,
 					struct wpa_ssid *ssid)
 {
 	int i, privacy = 0;
@@ -266,15 +267,17 @@ static int wpa_supplicant_match_privacy(struct wpa_scan_result *bss,
 
 
 static int wpa_supplicant_ssid_bss_match(struct wpa_ssid *ssid,
-					 struct wpa_scan_result *bss)
+					 struct wpa_scan_res *bss)
 {
 	struct wpa_ie_data ie;
 	int proto_match = 0;
+	const u8 *rsn_ie, *wpa_ie;
 
-	while ((ssid->proto & WPA_PROTO_RSN) && bss->rsn_ie_len > 0) {
+	rsn_ie = wpa_scan_get_ie(bss, WLAN_EID_RSN);
+	while ((ssid->proto & WPA_PROTO_RSN) && rsn_ie) {
 		proto_match++;
 
-		if (wpa_parse_wpa_ie(bss->rsn_ie, bss->rsn_ie_len, &ie)) {
+		if (wpa_parse_wpa_ie(rsn_ie, 2 + rsn_ie[1], &ie)) {
 			wpa_printf(MSG_DEBUG, "   skip RSN IE - parse failed");
 			break;
 		}
@@ -315,10 +318,11 @@ static int wpa_supplicant_ssid_bss_match(struct wpa_ssid *ssid,
 		return 1;
 	}
 
-	while ((ssid->proto & WPA_PROTO_WPA) && bss->wpa_ie_len > 0) {
+	wpa_ie = wpa_scan_get_vendor_ie(bss, WPA_IE_VENDOR_TYPE);
+	while ((ssid->proto & WPA_PROTO_WPA) && wpa_ie) {
 		proto_match++;
 
-		if (wpa_parse_wpa_ie(bss->wpa_ie, bss->wpa_ie_len, &ie)) {
+		if (wpa_parse_wpa_ie(wpa_ie, 2 + wpa_ie[1], &ie)) {
 			wpa_printf(MSG_DEBUG, "   skip WPA IE - parse failed");
 			break;
 		}
@@ -357,15 +361,15 @@ static int wpa_supplicant_ssid_bss_match(struct wpa_ssid *ssid,
 }
 
 
-static struct wpa_scan_result *
+static struct wpa_scan_res *
 wpa_supplicant_select_bss(struct wpa_supplicant *wpa_s, struct wpa_ssid *group,
-			  struct wpa_scan_result *results, int num,
 			  struct wpa_ssid **selected_ssid)
 {
 	struct wpa_ssid *ssid;
-	struct wpa_scan_result *bss, *selected = NULL;
-	int i;
+	struct wpa_scan_res *bss, *selected = NULL;
+	size_t i;
 	struct wpa_blacklist *e;
+	const u8 *ie;
 
 	wpa_printf(MSG_DEBUG, "Selecting BSS from priority group %d",
 		   group->priority);
@@ -374,21 +378,33 @@ wpa_supplicant_select_bss(struct wpa_supplicant *wpa_s, struct wpa_ssid *group,
 	ssid = NULL;
 	/* First, try to find WPA-enabled AP */
 	wpa_printf(MSG_DEBUG, "Try to find WPA-enabled AP");
-	for (i = 0; i < num && !selected; i++) {
-		bss = &results[i];
+	for (i = 0; i < wpa_s->scan_res->num && !selected; i++) {
+		const u8 *ssid_;
+		u8 wpa_ie_len, rsn_ie_len, ssid_len;
+		bss = wpa_s->scan_res->res[i];
+
+		ie = wpa_scan_get_ie(bss, WLAN_EID_SSID);
+		ssid_ = ie ? ie + 2 : (u8 *) "";
+		ssid_len = ie ? ie[1] : 0;
+
+		ie = wpa_scan_get_vendor_ie(bss, WPA_IE_VENDOR_TYPE);
+		wpa_ie_len = ie ? ie[1] : 0;
+
+		ie = wpa_scan_get_ie(bss, WLAN_EID_RSN);
+		rsn_ie_len = ie ? ie[1] : 0;
+
 		wpa_printf(MSG_DEBUG, "%d: " MACSTR " ssid='%s' "
-			   "wpa_ie_len=%lu rsn_ie_len=%lu caps=0x%x",
-			   i, MAC2STR(bss->bssid),
-			   wpa_ssid_txt(bss->ssid, bss->ssid_len),
-			   (unsigned long) bss->wpa_ie_len,
-			   (unsigned long) bss->rsn_ie_len, bss->caps);
+			   "wpa_ie_len=%u rsn_ie_len=%u caps=0x%x",
+			   (int) i, MAC2STR(bss->bssid),
+			   wpa_ssid_txt(ssid_, ssid_len),
+			   wpa_ie_len, rsn_ie_len, bss->caps);
 		e = wpa_blacklist_get(wpa_s, bss->bssid);
 		if (e && e->count > 1) {
 			wpa_printf(MSG_DEBUG, "   skip - blacklisted");
 			continue;
 		}
 
-		if (bss->wpa_ie_len == 0 && bss->rsn_ie_len == 0) {
+		if (wpa_ie_len == 0 && rsn_ie_len == 0) {
 			wpa_printf(MSG_DEBUG, "   skip - no WPA/RSN IE");
 			continue;
 		}
@@ -398,9 +414,8 @@ wpa_supplicant_select_bss(struct wpa_supplicant *wpa_s, struct wpa_ssid *group,
 				wpa_printf(MSG_DEBUG, "   skip - disabled");
 				continue;
 			}
-			if (bss->ssid_len != ssid->ssid_len ||
-			    os_memcmp(bss->ssid, ssid->ssid,
-				      bss->ssid_len) != 0) {
+			if (ssid_len != ssid->ssid_len ||
+			    os_memcmp(ssid_, ssid->ssid, ssid_len) != 0) {
 				wpa_printf(MSG_DEBUG, "   skip - "
 					   "SSID mismatch");
 				continue;
@@ -418,8 +433,7 @@ wpa_supplicant_select_bss(struct wpa_supplicant *wpa_s, struct wpa_ssid *group,
 				wpa_printf(MSG_DEBUG, "   selected WPA AP "
 					   MACSTR " ssid='%s'",
 					   MAC2STR(bss->bssid),
-					   wpa_ssid_txt(bss->ssid,
-							bss->ssid_len));
+					   wpa_ssid_txt(ssid_, ssid_len));
 				break;
 			}
 		}
@@ -428,14 +442,26 @@ wpa_supplicant_select_bss(struct wpa_supplicant *wpa_s, struct wpa_ssid *group,
 	/* If no WPA-enabled AP found, try to find non-WPA AP, if configuration
 	 * allows this. */
 	wpa_printf(MSG_DEBUG, "Try to find non-WPA AP");
-	for (i = 0; i < num && !selected; i++) {
-		bss = &results[i];
+	for (i = 0; i < wpa_s->scan_res->num && !selected; i++) {
+		const u8 *ssid_;
+		u8 wpa_ie_len, rsn_ie_len, ssid_len;
+		bss = wpa_s->scan_res->res[i];
+
+		ie = wpa_scan_get_ie(bss, WLAN_EID_SSID);
+		ssid_ = ie ? ie + 2 : (u8 *) "";
+		ssid_len = ie ? ie[1] : 0;
+
+		ie = wpa_scan_get_vendor_ie(bss, WPA_IE_VENDOR_TYPE);
+		wpa_ie_len = ie ? ie[1] : 0;
+
+		ie = wpa_scan_get_ie(bss, WLAN_EID_RSN);
+		rsn_ie_len = ie ? ie[1] : 0;
+
 		wpa_printf(MSG_DEBUG, "%d: " MACSTR " ssid='%s' "
-			   "wpa_ie_len=%lu rsn_ie_len=%lu caps=0x%x",
-			   i, MAC2STR(bss->bssid),
-			   wpa_ssid_txt(bss->ssid, bss->ssid_len),
-			   (unsigned long) bss->wpa_ie_len,
-			   (unsigned long) bss->rsn_ie_len, bss->caps);
+			   "wpa_ie_len=%u rsn_ie_len=%u caps=0x%x",
+			   (int) i, MAC2STR(bss->bssid),
+			   wpa_ssid_txt(ssid_, ssid_len),
+			   wpa_ie_len, rsn_ie_len, bss->caps);
 		e = wpa_blacklist_get(wpa_s, bss->bssid);
 		if (e && e->count > 1) {
 			wpa_printf(MSG_DEBUG, "   skip - blacklisted");
@@ -447,9 +473,8 @@ wpa_supplicant_select_bss(struct wpa_supplicant *wpa_s, struct wpa_ssid *group,
 				continue;
 			}
 			if (ssid->ssid_len != 0 &&
-			    (bss->ssid_len != ssid->ssid_len ||
-			     os_memcmp(bss->ssid, ssid->ssid,
-				       bss->ssid_len) != 0)) {
+			    (ssid_len != ssid->ssid_len ||
+			     os_memcmp(ssid_, ssid->ssid, ssid_len) != 0)) {
 				wpa_printf(MSG_DEBUG, "   skip - "
 					   "SSID mismatch");
 				continue;
@@ -473,7 +498,7 @@ wpa_supplicant_select_bss(struct wpa_supplicant *wpa_s, struct wpa_ssid *group,
 
 			if ((ssid->key_mgmt & 
 			     (WPA_KEY_MGMT_IEEE8021X | WPA_KEY_MGMT_PSK)) &&
-			    (bss->wpa_ie_len != 0 || bss->rsn_ie_len != 0)) {
+			    (wpa_ie_len != 0 || rsn_ie_len != 0)) {
 				wpa_printf(MSG_DEBUG, "   skip - "
 					   "WPA network");
 				continue;
@@ -496,7 +521,7 @@ wpa_supplicant_select_bss(struct wpa_supplicant *wpa_s, struct wpa_ssid *group,
 			wpa_printf(MSG_DEBUG, "   selected non-WPA AP "
 				   MACSTR " ssid='%s'",
 				   MAC2STR(bss->bssid),
-				   wpa_ssid_txt(bss->ssid, bss->ssid_len));
+				   wpa_ssid_txt(ssid_, ssid_len));
 			break;
 		}
 	}
@@ -507,10 +532,9 @@ wpa_supplicant_select_bss(struct wpa_supplicant *wpa_s, struct wpa_ssid *group,
 
 static void wpa_supplicant_event_scan_results(struct wpa_supplicant *wpa_s)
 {
-	int num, prio, timeout;
-	struct wpa_scan_result *selected = NULL;
+	int prio, timeout;
+	struct wpa_scan_res *selected = NULL;
 	struct wpa_ssid *ssid = NULL;
-	struct wpa_scan_result *results;
 
 	if (wpa_supplicant_get_scan_results(wpa_s) < 0) {
 		if (wpa_s->conf->ap_scan == 2)
@@ -521,18 +545,17 @@ static void wpa_supplicant_event_scan_results(struct wpa_supplicant *wpa_s)
 		goto req_scan;
 	}
 
+	wpa_msg(wpa_s, MSG_INFO, WPA_EVENT_SCAN_RESULTS);
+
 	wpa_supplicant_dbus_notify_scan_results(wpa_s);
 
 	if (wpa_s->conf->ap_scan == 2 || wpa_s->disconnected)
 		return;
-	results = wpa_s->scan_results;
-	num = wpa_s->num_scan_results;
 
 	while (selected == NULL) {
 		for (prio = 0; prio < wpa_s->conf->num_prio; prio++) {
 			selected = wpa_supplicant_select_bss(
-				wpa_s, wpa_s->conf->pssid[prio], results, num,
-				&ssid);
+				wpa_s, wpa_s->conf->pssid[prio], &ssid);
 			if (selected)
 				break;
 		}
@@ -565,7 +588,7 @@ static void wpa_supplicant_event_scan_results(struct wpa_supplicant *wpa_s)
 			wpa_printf(MSG_DEBUG, "Already associated with the "
 				   "selected AP.");
 		}
-		rsn_preauth_scan_results(wpa_s->wpa, results, num);
+		rsn_preauth_scan_results(wpa_s->wpa, wpa_s->scan_res);
 	} else {
 		wpa_printf(MSG_DEBUG, "No suitable AP found.");
 		timeout = 5;
@@ -842,7 +865,7 @@ wpa_supplicant_event_interface_status(struct wpa_supplicant *wpa_s,
 			break;
 		wpa_s->interface_removed = 0;
 		wpa_printf(MSG_DEBUG, "Configured interface was added.");
-		if (wpa_supplicant_driver_init(wpa_s, 1) < 0) {
+		if (wpa_supplicant_driver_init(wpa_s) < 0) {
 			wpa_printf(MSG_INFO, "Failed to initialize the driver "
 				   "after interface was added.");
 		}

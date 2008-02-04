@@ -1,8 +1,30 @@
 ChangeLog for wpa_supplicant
 
-????-??-?? - v0.6.2
+????-??-?? - v0.6.3
+	* removed 'nai' and 'eappsk' network configuration variables that were
+	  previously used for configuring user identity and key for EAP-PSK,
+	  EAP-PAX, EAP-SAKE, and EAP-GPSK. 'identity' field is now used as the
+	  replacement for 'nai' (if old configuration used a separate
+	  'identity' value, that would now be configured as
+	  'anonymous_identity'). 'password' field is now used as the
+	  replacement for 'eappsk' (it can also be set using hexstring to
+	  present random binary data)
+	* removed '-w' command line parameter (wait for interface to be added,
+	  if needed); cleaner way of handling this functionality is to use an
+	  external mechanism (e.g., hotplug scripts) that start wpa_supplicant
+	  when an interface is added
+	* updated FT support to use the latest draft, IEEE 802.11r/D9.0
+	* added ctrl_iface monitor event (CTRL-EVENT-SCAN-RESULTS) for
+	  indicating when new scan results become available
+	* added new ctrl_iface command, BSS, to allow scan results to be
+	  fetched without hitting the message size limits (this command
+	  can be used to iterate through the scan results one BSS at the time)
+	* fixed EAP-SIM not to include AT_NONCE_MT and AT_SELECTED_VERSION
+	  attributes in EAP-SIM Start/Response when using fast reauthentication
+
+2008-01-01 - v0.6.2
 	* added support for Makefile builds to include debug-log-to-a-file
-	  functionality (CONFIG_DEBUG_FILE=y and -f on command line)
+	  functionality (CONFIG_DEBUG_FILE=y and -f<path> on command line)
 	* fixed EAP-SIM and EAP-AKA message parser to validate attribute
 	  lengths properly to avoid potential crash caused by invalid messages
 	* added data structure for storing allocated buffers (struct wpabuf);
@@ -13,6 +35,36 @@ ChangeLog for wpa_supplicant
 	  AT_CHECKCODE (optional feature in RFC 4187)
 	* added support for protected result indication with AT_RESULT_IND for
 	  EAP-SIM and EAP-AKA (phase1="result_ind=1")
+	* added driver_wext workaround for race condition between scanning and
+	  association with drivers that take very long time to scan all
+	  channels (e.g., madwifi with dual-band cards); wpa_supplicant is now
+	  using a longer hardcoded timeout for the scan if the driver supports
+	  notifications for scan completion (SIOCGIWSCAN event); this helps,
+	  e.g., in cases where wpa_supplicant and madwifi driver ended up in
+	  loop where the driver did not even try to associate
+	* stop EAPOL timer tick when no timers are in use in order to reduce
+	  power consumption (no need to wake up the process once per second)
+	  [Bug 237]
+	* added support for privilege separation (run only minimal part of
+	  wpa_supplicant functionality as root and rest as unprivileged,
+	  non-root process); see 'Privilege separation' in README for details;
+	  this is disabled by default and can be enabled with CONFIG_PRIVSEP=y
+	  in .config
+	* changed scan results data structure to include all information
+	  elements to make it easier to support new IEs; old get_scan_result()
+	  driver_ops is still supported for backwards compatibility (results
+	  are converted internally to the new format), but all drivers should
+	  start using the new get_scan_results2() to make them more likely to
+	  work with new features
+	* Qt4 version of wpa_gui (wpa_gui-qt4 subdirectory) is now native Qt4
+	  application, i.e., it does not require Qt3Support anymore; Windows
+	  binary of wpa_gui.exe is now from this directory and only requires
+	  QtCore4.dll and QtGui4.dll libraries
+	* updated Windows binary build to use Qt 4.3.3 and made Qt DLLs
+	  available as a separate package to make wpa_gui installation easier:
+	  http://w1.fi/wpa_supplicant/qt4/wpa_gui-qt433-windows-dll.zip
+	* added support for EAP-IKEv2 (draft-tschofenig-eap-ikev2-15.txt);
+	  only shared key/password authentication is supported in this version
 
 2007-11-24 - v0.6.1
 	* added support for configuring password as NtPasswordHash

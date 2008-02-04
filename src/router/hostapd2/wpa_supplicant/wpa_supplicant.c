@@ -1,6 +1,6 @@
 /*
  * WPA Supplicant
- * Copyright (c) 2003-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2003-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -41,7 +41,7 @@
 
 const char *wpa_supplicant_version =
 "wpa_supplicant v" VERSION_STR "\n"
-"Copyright (c) 2003-2007, Jouni Malinen <j@w1.fi> and contributors";
+"Copyright (c) 2003-2008, Jouni Malinen <j@w1.fi> and contributors";
 
 const char *wpa_supplicant_license =
 "This program is free software. You can distribute it and/or modify it\n"
@@ -109,7 +109,6 @@ const char *wpa_supplicant_full_license5 =
 
 extern struct wpa_driver_ops *wpa_supplicant_drivers[];
 
-extern int wpa_debug_use_file;
 extern int wpa_debug_level;
 extern int wpa_debug_show_keys;
 extern int wpa_debug_timestamp;
@@ -286,7 +285,7 @@ void wpa_supplicant_initiate_eapol(struct wpa_supplicant *wpa_s)
 	eapol_conf.eap_disabled = wpa_s->key_mgmt != WPA_KEY_MGMT_IEEE8021X &&
 		wpa_s->key_mgmt != WPA_KEY_MGMT_FT_IEEE8021X &&
 		wpa_s->key_mgmt != WPA_KEY_MGMT_IEEE8021X_NO_WPA;
-	eapol_sm_notify_config(wpa_s->eapol, ssid, &eapol_conf);
+	eapol_sm_notify_config(wpa_s->eapol, &ssid->eap, &eapol_conf);
 #endif /* IEEE8021X_EAPOL */
 }
 
@@ -378,9 +377,8 @@ static void wpa_supplicant_cleanup(struct wpa_supplicant *wpa_s)
 	wpa_s->wpa = NULL;
 	wpa_blacklist_clear(wpa_s);
 
-	os_free(wpa_s->scan_results);
-	wpa_s->scan_results = NULL;
-	wpa_s->num_scan_results = 0;
+	wpa_scan_results_free(wpa_s->scan_res);
+	wpa_s->scan_res = NULL;
 
 	wpa_supplicant_cancel_scan(wpa_s);
 	wpa_supplicant_cancel_auth_timeout(wpa_s);
@@ -706,22 +704,29 @@ static int wpa_supplicant_suites_from_ai(struct wpa_supplicant *wpa_s,
  * available).
  */
 int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
-			      struct wpa_scan_result *bss,
+			      struct wpa_scan_res *bss,
 			      struct wpa_ssid *ssid,
 			      u8 *wpa_ie, size_t *wpa_ie_len)
 {
 	struct wpa_ie_data ie;
 	int sel, proto;
+	const u8 *bss_wpa, *bss_rsn;
 
-	if (bss && bss->rsn_ie_len && (ssid->proto & WPA_PROTO_RSN) &&
-	    wpa_parse_wpa_ie(bss->rsn_ie, bss->rsn_ie_len, &ie) == 0 &&
+	if (bss) {
+		bss_wpa = wpa_scan_get_vendor_ie(bss, WPA_IE_VENDOR_TYPE);
+		bss_rsn = wpa_scan_get_ie(bss, WLAN_EID_RSN);
+	} else
+		bss_wpa = bss_rsn = NULL;
+
+	if (bss_rsn && (ssid->proto & WPA_PROTO_RSN) &&
+	    wpa_parse_wpa_ie(bss_rsn, 2 + bss_rsn[1], &ie) == 0 &&
 	    (ie.group_cipher & ssid->group_cipher) &&
 	    (ie.pairwise_cipher & ssid->pairwise_cipher) &&
 	    (ie.key_mgmt & ssid->key_mgmt)) {
 		wpa_msg(wpa_s, MSG_DEBUG, "RSN: using IEEE 802.11i/D9.0");
 		proto = WPA_PROTO_RSN;
-	} else if (bss && bss->wpa_ie_len && (ssid->proto & WPA_PROTO_WPA) &&
-		   wpa_parse_wpa_ie(bss->wpa_ie, bss->wpa_ie_len, &ie) == 0 &&
+	} else if (bss_wpa && (ssid->proto & WPA_PROTO_WPA) &&
+		   wpa_parse_wpa_ie(bss_wpa, 2 +bss_wpa[1], &ie) == 0 &&
 		   (ie.group_cipher & ssid->group_cipher) &&
 		   (ie.pairwise_cipher & ssid->pairwise_cipher) &&
 		   (ie.key_mgmt & ssid->key_mgmt)) {
@@ -765,10 +770,10 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 	wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_RSN_ENABLED,
 			 !!(ssid->proto & WPA_PROTO_RSN));
 
-	if (wpa_sm_set_ap_wpa_ie(wpa_s->wpa, bss ? bss->wpa_ie : NULL,
-				 bss ? bss->wpa_ie_len : 0) ||
-	    wpa_sm_set_ap_rsn_ie(wpa_s->wpa, bss ? bss->rsn_ie : NULL,
-				 bss ? bss->rsn_ie_len : 0))
+	if (wpa_sm_set_ap_wpa_ie(wpa_s->wpa, bss_wpa,
+				 bss_wpa ? 2 + bss_wpa[1] : 0) ||
+	    wpa_sm_set_ap_rsn_ie(wpa_s->wpa, bss_rsn,
+				 bss_rsn ? 2 + bss_rsn[1] : 0))
 		return -1;
 
 	sel = ie.group_cipher & ssid->group_cipher;
@@ -875,8 +880,7 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
  * This function is used to request %wpa_supplicant to associate with a BSS.
  */
 void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
-			      struct wpa_scan_result *bss,
-			      struct wpa_ssid *ssid)
+			      struct wpa_scan_res *bss, struct wpa_ssid *ssid)
 {
 	u8 wpa_ie[80];
 	size_t wpa_ie_len;
@@ -893,15 +897,16 @@ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
 #ifdef CONFIG_IEEE80211R
 		const u8 *md = NULL;
 #endif /* CONFIG_IEEE80211R */
+		const u8 *ie = wpa_scan_get_ie(bss, WLAN_EID_SSID);
 		wpa_msg(wpa_s, MSG_INFO, "Trying to associate with " MACSTR
 			" (SSID='%s' freq=%d MHz)", MAC2STR(bss->bssid),
-			wpa_ssid_txt(bss->ssid, bss->ssid_len), bss->freq);
+			ie ? wpa_ssid_txt(ie + 2, ie[1]) : "", bss->freq);
 		os_memset(wpa_s->bssid, 0, ETH_ALEN);
 		os_memcpy(wpa_s->pending_bssid, bss->bssid, ETH_ALEN);
 #ifdef CONFIG_IEEE80211R
-		if (bss->mdie_present &&
-		    bss->mdie[1] >= MOBILITY_DOMAIN_ID_LEN)
-			md = bss->mdie + 2;
+		ie = wpa_scan_get_ie(bss, WLAN_EID_MOBILITY_DOMAIN);
+		if (ie && ie[1] >= MOBILITY_DOMAIN_ID_LEN)
+			md = ie + 2;
 		wpa_sm_set_ft_params(wpa_s->wpa, md, NULL, 0, NULL);
 #endif /* CONFIG_IEEE80211R */
 	} else {
@@ -939,7 +944,8 @@ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
 	}
 	wpa_drv_set_auth_alg(wpa_s, algs);
 
-	if (bss && (bss->wpa_ie_len || bss->rsn_ie_len) &&
+	if (bss && (wpa_scan_get_vendor_ie(bss, WPA_IE_VENDOR_TYPE) ||
+		    wpa_scan_get_ie(bss, WLAN_EID_RSN)) &&
 	    (ssid->key_mgmt & (WPA_KEY_MGMT_IEEE8021X | WPA_KEY_MGMT_PSK |
 			       WPA_KEY_MGMT_FT_IEEE8021X |
 			       WPA_KEY_MGMT_FT_PSK))) {
@@ -1013,9 +1019,10 @@ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
 	wpa_supplicant_set_state(wpa_s, WPA_ASSOCIATING);
 	os_memset(&params, 0, sizeof(params));
 	if (bss) {
+		const u8 *ie = wpa_scan_get_ie(bss, WLAN_EID_SSID);
 		params.bssid = bss->bssid;
-		params.ssid = bss->ssid;
-		params.ssid_len = bss->ssid_len;
+		params.ssid = ie ? ie + 2 : (u8 *) "";
+		params.ssid_len = ie ? ie[1] : 0;
 		params.freq = bss->freq;
 	} else {
 		params.ssid = ssid->ssid;
@@ -1105,7 +1112,7 @@ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
 		eapol_sm_invalidate_cached_session(wpa_s->eapol);
 	}
 	wpa_s->current_ssid = ssid;
-	wpa_sm_set_config(wpa_s->wpa, wpa_s->current_ssid);
+	wpa_supplicant_rsn_supp_set_config(wpa_s, wpa_s->current_ssid);
 	wpa_supplicant_initiate_eapol(wpa_s);
 }
 
@@ -1169,19 +1176,12 @@ void wpa_supplicant_deauthenticate(struct wpa_supplicant *wpa_s,
 }
 
 
-/**
- * wpa_supplicant_get_scan_results - Get scan results
- * @wpa_s: Pointer to wpa_supplicant data
- * Returns: 0 on success, -1 on failure
- *
- * This function is request the current scan results from the driver and stores
- * a local copy of the results in wpa_s->scan_results.
- */
-int wpa_supplicant_get_scan_results(struct wpa_supplicant *wpa_s)
+static int wpa_supplicant_get_scan_results_old(struct wpa_supplicant *wpa_s)
 {
 #define SCAN_AP_LIMIT 128
-	struct wpa_scan_result *results, *tmp;
-	int num;
+	struct wpa_scan_result *results;
+	int num, i;
+	struct wpa_scan_results *res;
 
 	results = os_malloc(SCAN_AP_LIMIT * sizeof(struct wpa_scan_result));
 	if (results == NULL) {
@@ -1190,11 +1190,7 @@ int wpa_supplicant_get_scan_results(struct wpa_supplicant *wpa_s)
 		return -1;
 	}
 
-	if (wpa_s->use_client_mlme) {
-		num = ieee80211_sta_get_scan_results(wpa_s, results,
-						     SCAN_AP_LIMIT);
-	} else
-		num = wpa_drv_get_scan_results(wpa_s, results, SCAN_AP_LIMIT);
+	num = wpa_drv_get_scan_results(wpa_s, results, SCAN_AP_LIMIT);
 	wpa_printf(MSG_DEBUG, "Scan results: %d", num);
 	if (num < 0) {
 		wpa_printf(MSG_DEBUG, "Failed to get scan results");
@@ -1207,17 +1203,123 @@ int wpa_supplicant_get_scan_results(struct wpa_supplicant *wpa_s)
 		num = SCAN_AP_LIMIT;
 	}
 
-	/* Free unneeded memory for unused scan result entries */
-	tmp = os_realloc(results, num * sizeof(struct wpa_scan_result));
-	if (tmp || num == 0) {
-		results = tmp;
+	wpa_scan_results_free(wpa_s->scan_res);
+	wpa_s->scan_res = NULL;
+
+	/* Convert old scan result data structure to the new one */
+	res = os_zalloc(sizeof(*res));
+	if (res == NULL) {
+		os_free(results);
+		return -1;
+	}
+	res->res = os_zalloc(num * sizeof(struct wpa_scan_res *));
+	if (res->res == NULL) {
+		os_free(results);
+		os_free(res);
+		return -1;
 	}
 
-	os_free(wpa_s->scan_results);
-	wpa_s->scan_results = results;
-	wpa_s->num_scan_results = num;
+	for (i = 0; i < num; i++) {
+		struct wpa_scan_result *bss = &results[i];
+		struct wpa_scan_res *r;
+		size_t ie_len;
+		u8 *pos;
+
+		ie_len = 2 + bss->ssid_len + bss->rsn_ie_len + bss->wpa_ie_len;
+		if (bss->maxrate)
+			ie_len += 3;
+		if (bss->mdie_present)
+			ie_len += 5;
+
+		r = os_zalloc(sizeof(*r) + ie_len);
+		if (r == NULL)
+			break;
+
+		os_memcpy(r->bssid, bss->bssid, ETH_ALEN);
+		r->freq = bss->freq;
+		r->caps = bss->caps;
+		r->qual = bss->qual;
+		r->noise = bss->noise;
+		r->level = bss->level;
+		r->tsf = bss->tsf;
+		r->ie_len = ie_len;
+
+		pos = (u8 *) (r + 1);
+
+		/* SSID IE */
+		*pos++ = WLAN_EID_SSID;
+		*pos++ = bss->ssid_len;
+		os_memcpy(pos, bss->ssid, bss->ssid_len);
+		pos += bss->ssid_len;
+
+		if (bss->maxrate) {
+			/* Fake Supported Rate IE to include max rate */
+			*pos++ = WLAN_EID_SUPP_RATES;
+			*pos++ = 1;
+			*pos++ = bss->maxrate;
+		}
+
+		if (bss->rsn_ie_len) {
+			os_memcpy(pos, bss->rsn_ie, bss->rsn_ie_len);
+			pos += bss->rsn_ie_len;
+		}
+
+		if (bss->mdie_present) {
+			os_memcpy(pos, bss->mdie, 5);
+			pos += 5;
+		}
+
+		if (bss->wpa_ie_len) {
+			os_memcpy(pos, bss->wpa_ie, bss->wpa_ie_len);
+			pos += bss->wpa_ie_len;
+		}
+
+		res->res[res->num++] = r;
+	}
+
+	os_free(results);
+	wpa_s->scan_res = res;
 
 	return 0;
+}
+
+
+/**
+ * wpa_supplicant_get_scan_results - Get scan results
+ * @wpa_s: Pointer to wpa_supplicant data
+ * Returns: 0 on success, -1 on failure
+ *
+ * This function is request the current scan results from the driver and stores
+ * a local copy of the results in wpa_s->scan_res.
+ */
+int wpa_supplicant_get_scan_results(struct wpa_supplicant *wpa_s)
+{
+	int ret;
+
+	if (wpa_s->use_client_mlme) {
+		wpa_scan_results_free(wpa_s->scan_res);
+		wpa_s->scan_res = ieee80211_sta_get_scan_results(wpa_s);
+		if (wpa_s->scan_res == NULL) {
+			wpa_printf(MSG_DEBUG, "Failed to get scan results");
+			ret = -1;
+		} else
+			ret = 0;
+	} else if (wpa_s->driver->get_scan_results2 == NULL)
+		ret = wpa_supplicant_get_scan_results_old(wpa_s);
+	else {
+		wpa_scan_results_free(wpa_s->scan_res);
+		wpa_s->scan_res = wpa_drv_get_scan_results2(wpa_s);
+		if (wpa_s->scan_res == NULL) {
+			wpa_printf(MSG_DEBUG, "Failed to get scan results");
+			ret = -1;
+		} else
+			ret = 0;
+	}
+
+	if (wpa_s->scan_res)
+		wpa_scan_sort_results(wpa_s->scan_res);
+
+	return ret;
 }
 
 
@@ -1370,39 +1472,45 @@ void wpa_supplicant_rx_eapol(void *ctx, const u8 *src_addr,
 }
 
 
+void wpa_supplicant_sta_free_hw_features(struct wpa_hw_modes *hw_features,
+					 size_t num_hw_features)
+{
+	ieee80211_sta_free_hw_features(hw_features, num_hw_features);
+}
+
+
+void wpa_supplicant_sta_rx(void *ctx, const u8 *buf, size_t len,
+			   struct ieee80211_rx_status *rx_status)
+{
+	struct wpa_supplicant *wpa_s = ctx;
+	ieee80211_sta_rx(wpa_s, buf, len, rx_status);
+}
+
+
 /**
  * wpa_supplicant_driver_init - Initialize driver interface parameters
  * @wpa_s: Pointer to wpa_supplicant data
- * @wait_for_interface: 0 = do not wait for the interface (reports a failure if
- * the interface is not present), 1 = wait until the interface is available
  * Returns: 0 on success, -1 on failure
  *
  * This function is called to initialize driver interface parameters.
  * wpa_drv_init() must have been called before this function to initialize the
  * driver interface.
  */
-int wpa_supplicant_driver_init(struct wpa_supplicant *wpa_s,
-			       int wait_for_interface)
+int wpa_supplicant_driver_init(struct wpa_supplicant *wpa_s)
 {
 	static int interface_count = 0;
 
-	for (;;) {
-		if (wpa_s->driver->send_eapol) {
-			const u8 *addr = wpa_drv_get_mac_addr(wpa_s);
-			if (addr)
-				os_memcpy(wpa_s->own_addr, addr, ETH_ALEN);
-			break;
-		}
+	if (wpa_s->driver->send_eapol) {
+		const u8 *addr = wpa_drv_get_mac_addr(wpa_s);
+		if (addr)
+			os_memcpy(wpa_s->own_addr, addr, ETH_ALEN);
+	} else {
 		wpa_s->l2 = l2_packet_init(wpa_s->ifname,
 					   wpa_drv_get_mac_addr(wpa_s),
 					   ETH_P_EAPOL,
 					   wpa_supplicant_rx_eapol, wpa_s, 0);
-		if (wpa_s->l2)
-			break;
-		else if (!wait_for_interface)
+		if (wpa_s->l2 == NULL)
 			return -1;
-		wpa_printf(MSG_DEBUG, "Waiting for interface..");
-		os_sleep(5, 0);
 	}
 
 	if (wpa_s->l2 && l2_packet_get_own_addr(wpa_s->l2, wpa_s->own_addr)) {
@@ -1570,17 +1678,13 @@ static int wpa_supplicant_init_iface(struct wpa_supplicant *wpa_s,
 }
 
 
-static int wpa_supplicant_init_iface2(struct wpa_supplicant *wpa_s,
-				      int wait_for_interface)
+static int wpa_supplicant_init_iface2(struct wpa_supplicant *wpa_s)
 {
 	const char *ifname;
 	struct wpa_driver_capa capa;
 
 	wpa_printf(MSG_DEBUG, "Initializing interface (2) '%s'",
 		   wpa_s->ifname);
-
-	if (wpa_supplicant_init_eapol(wpa_s) < 0)
-		return -1;
 
 	/* RSNA Supplicant Key Management - INITIALIZE */
 	eapol_sm_notify_portEnabled(wpa_s->eapol, FALSE);
@@ -1615,7 +1719,6 @@ static int wpa_supplicant_init_iface2(struct wpa_supplicant *wpa_s,
 			  wpa_s->bridge_ifname[0] ? wpa_s->bridge_ifname :
 			  NULL);
 	wpa_sm_set_fast_reauth(wpa_s->wpa, wpa_s->conf->fast_reauth);
-	wpa_sm_set_eapol(wpa_s->wpa, wpa_s->eapol);
 
 	if (wpa_s->conf->dot11RSNAConfigPMKLifetime &&
 	    wpa_sm_set_param(wpa_s->wpa, RSNA_PMK_LIFETIME,
@@ -1641,10 +1744,14 @@ static int wpa_supplicant_init_iface2(struct wpa_supplicant *wpa_s,
 		return -1;
 	}
 
-	if (wpa_supplicant_driver_init(wpa_s, wait_for_interface) < 0) {
+	if (wpa_supplicant_driver_init(wpa_s) < 0)
 		return -1;
-	}
+
 	wpa_sm_set_own_addr(wpa_s->wpa, wpa_s->own_addr);
+
+	if (wpa_supplicant_init_eapol(wpa_s) < 0)
+		return -1;
+	wpa_sm_set_eapol(wpa_s->wpa, wpa_s->eapol);
 
 	wpa_s->ctrl_iface = wpa_supplicant_ctrl_iface_init(wpa_s);
 	if (wpa_s->ctrl_iface == NULL) {
@@ -1727,8 +1834,7 @@ struct wpa_supplicant * wpa_supplicant_add_iface(struct wpa_global *global,
 		return NULL;
 
 	if (wpa_supplicant_init_iface(wpa_s, iface) ||
-	    wpa_supplicant_init_iface2(wpa_s,
-				       global->params.wait_for_interface)) {
+	    wpa_supplicant_init_iface2(wpa_s)) {
 		wpa_printf(MSG_DEBUG, "Failed to add interface %s",
 			   iface->ifname);
 		wpa_supplicant_deinit_iface(wpa_s);
@@ -1827,8 +1933,7 @@ struct wpa_global * wpa_supplicant_init(struct wpa_params *params)
 	if (params == NULL)
 		return NULL;
 
-	wpa_debug_use_file = params->wpa_debug_use_file;
-	wpa_debug_open_file();
+	wpa_debug_open_file(params->wpa_debug_file_path);
 
 	ret = eap_peer_register_methods();
 	if (ret) {
@@ -1843,7 +1948,6 @@ struct wpa_global * wpa_supplicant_init(struct wpa_params *params)
 	if (global == NULL)
 		return NULL;
 	global->params.daemonize = params->daemonize;
-	global->params.wait_for_interface = params->wait_for_interface;
 	global->params.wait_for_monitor = params->wait_for_monitor;
 	global->params.dbus_ctrl_interface = params->dbus_ctrl_interface;
 	if (params->pid_file)
@@ -1857,8 +1961,6 @@ struct wpa_global * wpa_supplicant_init(struct wpa_params *params)
 		params->wpa_debug_show_keys;
 	wpa_debug_timestamp = global->params.wpa_debug_timestamp =
 		params->wpa_debug_timestamp;
-	wpa_debug_use_file = global->params.wpa_debug_use_file =
-		params->wpa_debug_use_file;
 
 	if (eloop_init(global)) {
 		wpa_printf(MSG_ERROR, "Failed to initialize event loop");
@@ -1881,12 +1983,6 @@ struct wpa_global * wpa_supplicant_init(struct wpa_params *params)
 		}
 	}
 
-	if (global->params.wait_for_interface && global->params.daemonize &&
-	    wpa_supplicant_daemon(global->params.pid_file)) {
-		wpa_supplicant_deinit(global);
-		return NULL;
-	}
-
 	return global;
 }
 
@@ -1904,7 +2000,7 @@ int wpa_supplicant_run(struct wpa_global *global)
 {
 	struct wpa_supplicant *wpa_s;
 
-	if (!global->params.wait_for_interface && global->params.daemonize &&
+	if (global->params.daemonize &&
 	    wpa_supplicant_daemon(global->params.pid_file))
 		return -1;
 

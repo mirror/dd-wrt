@@ -312,10 +312,10 @@ DBusMessage * wpas_dbus_iface_scan_results(DBusMessage *message,
 	DBusMessage *reply = NULL;
 	DBusMessageIter iter;
 	DBusMessageIter sub_iter;
-	int i;
+	size_t i;
 
 	/* Ensure we've actually got scan results to return */
-	if (wpa_s->scan_results == NULL &&
+	if (wpa_s->scan_res == NULL &&
 	    wpa_supplicant_get_scan_results(wpa_s) < 0) {
 		reply = dbus_message_new_error(message, WPAS_ERROR_SCAN_ERROR,
 					       "An error ocurred getting scan "
@@ -331,8 +331,8 @@ DBusMessage * wpas_dbus_iface_scan_results(DBusMessage *message,
 					 &sub_iter);
 
 	/* Loop through scan results and append each result's object path */
-	for (i = 0; i < wpa_s->num_scan_results; i++) {
-		struct wpa_scan_result *res = &wpa_s->scan_results[i];
+	for (i = 0; i < wpa_s->scan_res->num; i++) {
+		struct wpa_scan_res *res = wpa_s->scan_res->res[i];
 		char *path;
 
 		path = os_zalloc(WPAS_DBUS_OBJECT_PATH_MAX);
@@ -376,19 +376,18 @@ out:
  */
 DBusMessage * wpas_dbus_bssid_properties(DBusMessage *message,
 					 struct wpa_supplicant *wpa_s,
-					 struct wpa_scan_result *res)
+					 struct wpa_scan_res *res)
 {
 	DBusMessage *reply = NULL;
-	char *bssid_data, *ssid_data, *wpa_ie_data, *rsn_ie_data;
+	char *bssid_data;
 	DBusMessageIter iter, iter_dict;
+	const u8 *ie;
+	size_t len;
 
 	/* dbus needs the address of a pointer to the actual value
 	 * for array types, not the address of the value itself.
 	 */
 	bssid_data = (char *) &res->bssid;
-	ssid_data = (char *) &res->ssid;
-	wpa_ie_data = (char *) &res->wpa_ie;
-	rsn_ie_data = (char *) &res->rsn_ie;
 
 	/* Dump the properties into a dbus message */
 	reply = dbus_message_new_method_return(message);
@@ -400,23 +399,38 @@ DBusMessage * wpas_dbus_bssid_properties(DBusMessage *message,
 	if (!wpa_dbus_dict_append_byte_array(&iter_dict, "bssid",
 					     bssid_data, ETH_ALEN))
 		goto error;
-	if (!wpa_dbus_dict_append_byte_array(&iter_dict, "ssid",
-					     ssid_data, res->ssid_len))
+
+	ie = wpa_scan_get_ie(res, WLAN_EID_SSID);
+	if (ie) {
+		const char *ssid_data;
+		len = ie[1];
+		ie += 2;
+		ssid_data = (const char *) &ie;
+		if (!wpa_dbus_dict_append_byte_array(&iter_dict, "ssid",
+						     ssid_data, len))
 		goto error;
-	if (res->wpa_ie_len) {
+	}
+
+	ie = wpa_scan_get_vendor_ie(res, WPA_IE_VENDOR_TYPE);
+	if (ie) {
+		const char *wpa_ie_data;
+		len = 2 + ie[1];
+		wpa_ie_data = (const char *) &ie;
 		if (!wpa_dbus_dict_append_byte_array(&iter_dict, "wpaie",
-						     wpa_ie_data,
-						     res->wpa_ie_len)) {
+						     wpa_ie_data, len))
 			goto error;
-		}
 	}
-	if (res->rsn_ie_len) {
+
+	ie = wpa_scan_get_ie(res, WLAN_EID_RSN);
+	if (ie) {
+		const char *rsn_ie_data;
+		len = 2 + ie[1];
+		rsn_ie_data = (const char *) &ie;
 		if (!wpa_dbus_dict_append_byte_array(&iter_dict, "rsnie",
-						     rsn_ie_data,
-						     res->rsn_ie_len)) {
+						     rsn_ie_data, len))
 			goto error;
-		}
 	}
+
 	if (res->freq) {
 		if (!wpa_dbus_dict_append_int32(&iter_dict, "frequency",
 						res->freq))
@@ -431,7 +445,8 @@ DBusMessage * wpas_dbus_bssid_properties(DBusMessage *message,
 		goto error;
 	if (!wpa_dbus_dict_append_int32(&iter_dict, "level", res->level))
 		goto error;
-	if (!wpa_dbus_dict_append_int32(&iter_dict, "maxrate", res->maxrate))
+	if (!wpa_dbus_dict_append_int32(&iter_dict, "maxrate",
+					wpa_scan_get_max_rate(res)))
 		goto error;
 
 	if (!wpa_dbus_dict_close_write(&iter, &iter_dict))
@@ -1199,4 +1214,130 @@ DBusMessage * wpas_dbus_iface_get_state(DBusMessage *message,
 	}
 
 	return reply;
+}
+
+
+/**
+ * wpas_dbus_iface_set_blobs - Store named binary blobs (ie, for certificates)
+ * @message: Pointer to incoming dbus message
+ * @global: %wpa_supplicant global data structure
+ * Returns: A dbus message containing a UINT32 indicating success (1) or
+ *          failure (0)
+ *
+ * Asks wpa_supplicant to internally store a one or more binary blobs.
+ */
+DBusMessage * wpas_dbus_iface_set_blobs(DBusMessage *message,
+					struct wpa_supplicant *wpa_s)
+{
+	DBusMessage *reply = NULL;
+	struct wpa_dbus_dict_entry entry = { .type = DBUS_TYPE_STRING };
+	DBusMessageIter	iter, iter_dict;
+
+	dbus_message_iter_init(message, &iter);
+
+	if (!wpa_dbus_dict_open_read(&iter, &iter_dict))
+		return wpas_dbus_new_invalid_opts_error(message, NULL);
+
+	while (wpa_dbus_dict_has_dict_entry(&iter_dict)) {
+		struct wpa_config_blob *blob;
+
+		if (!wpa_dbus_dict_get_entry(&iter_dict, &entry)) {
+			reply = wpas_dbus_new_invalid_opts_error(message,
+								 NULL);
+			break;
+		}
+
+		if (entry.type != DBUS_TYPE_ARRAY ||
+		    entry.array_type != DBUS_TYPE_BYTE) {
+			reply = wpas_dbus_new_invalid_opts_error(
+				message, "Byte array expected.");
+			break;
+		}
+
+		if ((entry.array_len <= 0) || (entry.array_len > 65536) ||
+		    !strlen(entry.key)) {
+			reply = wpas_dbus_new_invalid_opts_error(
+				message, "Invalid array size.");
+			break;
+		}
+
+		blob = os_zalloc(sizeof(*blob));
+		if (blob == NULL) {
+			reply = dbus_message_new_error(
+				message, WPAS_ERROR_ADD_ERROR,
+				"Not enough memory to add blob.");
+			break;
+		}
+		blob->data = os_zalloc(entry.array_len);
+		if (blob->data == NULL) {
+			reply = dbus_message_new_error(
+				message, WPAS_ERROR_ADD_ERROR,
+				"Not enough memory to add blob data.");
+			os_free(blob);
+			break;
+		}
+
+		blob->name = os_strdup(entry.key);
+		blob->len = entry.array_len;
+		os_memcpy(blob->data, (u8 *) entry.bytearray_value,
+				entry.array_len);
+		if (blob->name == NULL || blob->data == NULL) {
+			wpa_config_free_blob(blob);
+			reply = dbus_message_new_error(
+				message, WPAS_ERROR_ADD_ERROR,
+				"Error adding blob.");
+			break;
+		}
+
+		/* Success */
+		wpa_config_remove_blob(wpa_s->conf, blob->name);
+		wpa_config_set_blob(wpa_s->conf, blob);
+		wpa_dbus_dict_entry_clear(&entry);
+	}
+	wpa_dbus_dict_entry_clear(&entry);
+
+	return reply ? reply : wpas_dbus_new_success_reply(message);
+}
+
+
+/**
+ * wpas_dbus_iface_remove_blob - Remove named binary blobs
+ * @message: Pointer to incoming dbus message
+ * @global: %wpa_supplicant global data structure
+ * Returns: A dbus message containing a UINT32 indicating success (1) or
+ *          failure (0)
+ *
+ * Asks wpa_supplicant to remove one or more previously stored binary blobs.
+ */
+DBusMessage * wpas_dbus_iface_remove_blobs(DBusMessage *message,
+					  struct wpa_supplicant *wpa_s)
+{
+	DBusMessageIter iter, array;
+	char *err_msg = NULL;
+
+	dbus_message_iter_init(message, &iter);
+
+	if ((dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_ARRAY) ||
+	    (dbus_message_iter_get_element_type (&iter) != DBUS_TYPE_STRING))
+		return wpas_dbus_new_invalid_opts_error(message, NULL);
+
+	dbus_message_iter_recurse(&iter, &array);
+	while (dbus_message_iter_get_arg_type(&array) == DBUS_TYPE_STRING) {
+		const char *name;
+
+		dbus_message_iter_get_basic(&array, &name);
+		if (!strlen(name))
+			err_msg = "Invalid blob name.";
+
+		if (wpa_config_remove_blob(wpa_s->conf, name) != 0)
+			err_msg = "Error removing blob.";
+		dbus_message_iter_next(&array);
+	}
+
+	if (err_msg) {
+		return dbus_message_new_error(message, WPAS_ERROR_REMOVE_ERROR,
+					      err_msg);
+	}
+
+	return wpas_dbus_new_success_reply(message);
 }

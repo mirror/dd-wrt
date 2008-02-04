@@ -17,15 +17,6 @@
 
 #define EAP_VENDOR_TYPE_WSC 1
 
-enum wsc_op_code {
-	WSC_Start = 0x01,
-	WSC_ACK = 0x02,
-	WSC_NACK = 0x03,
-	WSC_MSG = 0x04,
-	WSC_Done = 0x05,
-	WSC_FRAG_ACK = 0x06
-};
-
 #define WSC_FLAGS_MF 0x01
 #define WSC_FLAGS_LF 0x02
 

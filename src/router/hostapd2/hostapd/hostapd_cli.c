@@ -1,6 +1,6 @@
 /*
  * hostapd - command line interface for hostapd daemon
- * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -22,7 +22,7 @@
 
 static const char *hostapd_cli_version =
 "hostapd_cli v" VERSION_STR "\n"
-"Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi> and contributors";
+"Copyright (c) 2004-2008, Jouni Malinen <j@w1.fi> and contributors";
 
 
 static const char *hostapd_cli_license =
@@ -83,6 +83,10 @@ static const char *commands_help =
 "   sta <addr>           get MIB variables for one station\n"
 "   all_sta              get MIB variables for all stations\n"
 "   new_sta <addr>       add a new station\n"
+#ifdef CONFIG_WPS
+"   wps_pin <uuid> <pin> add WPS Enrollee PIN (Device Password)\n"
+"   wps_pbc              indicate button pushed to initiate PBC\n"
+#endif /* CONFIG_WPS */
 "   help                 show this usage help\n"
 "   interface [ifname]   show interfaces/select interface\n"
 "   level <debug level>  change debug level\n"
@@ -228,6 +232,29 @@ static int hostapd_cli_cmd_new_sta(struct wpa_ctrl *ctrl, int argc,
 	snprintf(buf, sizeof(buf), "NEW_STA %s", argv[0]);
 	return wpa_ctrl_command(ctrl, buf);
 }
+
+
+#ifdef CONFIG_WPS
+static int hostapd_cli_cmd_wps_pin(struct wpa_ctrl *ctrl, int argc,
+				   char *argv[])
+{
+	char buf[64];
+	if (argc != 2) {
+		printf("Invalid 'wps_pin' command - exactly two arguments, "
+		       "UUID and PIN, are required.\n");
+		return -1;
+	}
+	snprintf(buf, sizeof(buf), "WPS_PIN %s %s", argv[0], argv[1]);
+	return wpa_ctrl_command(ctrl, buf);
+}
+
+
+static int hostapd_cli_cmd_wps_pbc(struct wpa_ctrl *ctrl, int argc,
+				   char *argv[])
+{
+	return wpa_ctrl_command(ctrl, "WPS_PBC");
+}
+#endif /* CONFIG_WPS */
 
 
 static int wpa_ctrl_command_sta(struct wpa_ctrl *ctrl, char *cmd,
@@ -378,6 +405,10 @@ static struct hostapd_cli_cmd hostapd_cli_commands[] = {
 	{ "sta", hostapd_cli_cmd_sta },
 	{ "all_sta", hostapd_cli_cmd_all_sta },
 	{ "new_sta", hostapd_cli_cmd_new_sta },
+#ifdef CONFIG_WPS
+	{ "wps_pin", hostapd_cli_cmd_wps_pin },
+	{ "wps_pbc", hostapd_cli_cmd_wps_pbc },
+#endif /* CONFIG_WPS */
 	{ "help", hostapd_cli_cmd_help },
 	{ "interface", hostapd_cli_cmd_interface },
 	{ "level", hostapd_cli_cmd_level },

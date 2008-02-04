@@ -66,7 +66,8 @@ static int eap_gpsk_gkdf_cmac(const u8 *psk /* Y */,
 	n = (len + hashlen - 1) / hashlen;
 	for (i = 1; i <= n; i++) {
 		WPA_PUT_BE16(ibuf, i);
-		omac1_aes_128_vector(psk, 2, addr, vlen, hash);
+		if (omac1_aes_128_vector(psk, 2, addr, vlen, hash))
+			return -1;
 		clen = left > hashlen ? hashlen : left;
 		os_memcpy(opos, hash, clen);
 		opos += clen;

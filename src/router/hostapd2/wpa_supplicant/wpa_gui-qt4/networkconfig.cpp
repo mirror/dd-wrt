@@ -58,39 +58,41 @@ void NetworkConfig::languageChange()
 }
 
 
-void NetworkConfig::paramsFromScanResults(Q3ListViewItem *sel)
+void NetworkConfig::paramsFromScanResults(QTreeWidgetItem *sel)
 {
 	new_network = true;
 
 	/* SSID BSSID frequency signal flags */
-	setCaption(sel->text(0));
+	setWindowTitle(sel->text(0));
 	ssidEdit->setText(sel->text(0));
 
 	QString flags = sel->text(4);
 	int auth, encr = 0;
-	if (flags.find("[WPA2-EAP") >= 0)
+	if (flags.indexOf("[WPA2-EAP") >= 0)
 		auth = AUTH_WPA2_EAP;
-	else if (flags.find("[WPA-EAP") >= 0)
+	else if (flags.indexOf("[WPA-EAP") >= 0)
 		auth = AUTH_WPA_EAP;
-	else if (flags.find("[WPA2-PSK") >= 0)
+	else if (flags.indexOf("[WPA2-PSK") >= 0)
 		auth = AUTH_WPA2_PSK;
-	else if (flags.find("[WPA-PSK") >= 0)
+	else if (flags.indexOf("[WPA-PSK") >= 0)
 		auth = AUTH_WPA_PSK;
 	else
 		auth = AUTH_NONE;
 
-	if (flags.find("-CCMP") >= 0)
+	if (flags.indexOf("-CCMP") >= 0)
 		encr = 1;
-	else if (flags.find("-TKIP") >= 0)
+	else if (flags.indexOf("-TKIP") >= 0)
 		encr = 0;
-	else if (flags.find("WEP") >= 0)
+	else if (flags.indexOf("WEP") >= 0)
 		encr = 1;
 	else
 		encr = 0;
 
-	authSelect->setCurrentItem(auth);
+	authSelect->setCurrentIndex(auth);
 	authChanged(auth);
-	encrSelect->setCurrentItem(encr);
+	encrSelect->setCurrentIndex(encr);
+
+	wepEnabled(auth == AUTH_NONE && encr == 1);
 
 	getEapCapa();
 }
@@ -110,14 +112,14 @@ void NetworkConfig::authChanged(int sel)
 		encrSelect->removeItem(0);
 
 	if (sel == AUTH_NONE || sel == AUTH_IEEE8021X) {
-		encrSelect->insertItem("None");
-		encrSelect->insertItem("WEP");
-		encrSelect->setCurrentItem(sel == AUTH_NONE ? 0 : 1);
+		encrSelect->addItem("None");
+		encrSelect->addItem("WEP");
+		encrSelect->setCurrentIndex(sel == AUTH_NONE ? 0 : 1);
 	} else {
-		encrSelect->insertItem("TKIP");
-		encrSelect->insertItem("CCMP");
-		encrSelect->setCurrentItem((sel == AUTH_WPA2_PSK ||
-					    sel == AUTH_WPA2_EAP) ? 1 : 0);
+		encrSelect->addItem("TKIP");
+		encrSelect->addItem("CCMP");
+		encrSelect->setCurrentIndex((sel == AUTH_WPA2_PSK ||
+					     sel == AUTH_WPA2_EAP) ? 1 : 0);
 	}
 
 	wepEnabled(sel == AUTH_IEEE8021X);
@@ -130,14 +132,30 @@ void NetworkConfig::addNetwork()
 	size_t reply_len;
 	int id;
 	int psklen = pskEdit->text().length();
-	int auth = authSelect->currentItem();
+	int auth = authSelect->currentIndex();
 
 	if (auth == AUTH_WPA_PSK || auth == AUTH_WPA2_PSK) {
 		if (psklen < 8 || psklen > 64) {
-			QMessageBox::warning(this, "wpa_gui",
+			QMessageBox::warning(this, "WPA Pre-Shared Key Error",
 					     "WPA-PSK requires a passphrase "
 					     "of 8 to 63 characters\n"
 					     "or 64 hex digit PSK");
+			pskEdit->setFocus();
+			return;
+		}
+	}
+
+	if (idstrEdit->isEnabled() && !idstrEdit->text().isEmpty()) {
+		QRegExp rx("^(\\w|-)+$");
+		if (rx.indexIn(idstrEdit->text()) < 0) {
+			QMessageBox::warning(this, "Network ID Error",
+					     "Network ID String contains "
+					     "non-word characters.\n"
+					     "It must be a simple string, "
+					     "without spaces, containing\n"
+					     "only characters in this range: "
+					     "[A-Za-z0-9_-]\n");
+			idstrEdit->setFocus();
 			return;
 		}
 	}
@@ -160,9 +178,10 @@ void NetworkConfig::addNetwork()
 	} else
 		id = edit_network_id;
 
-	setNetworkParam(id, "ssid", ssidEdit->text().ascii(), true);
+	setNetworkParam(id, "ssid", ssidEdit->text().toAscii().constData(),
+			true);
 
-	char *key_mgmt = NULL, *proto = NULL, *pairwise = NULL;
+	const char *key_mgmt = NULL, *proto = NULL, *pairwise = NULL;
 	switch (auth) {
 	case AUTH_NONE:
 		key_mgmt = "NONE";
@@ -190,7 +209,7 @@ void NetworkConfig::addNetwork()
 
 	if (auth == AUTH_WPA_PSK || auth == AUTH_WPA_EAP ||
 	    auth == AUTH_WPA2_PSK || auth == AUTH_WPA2_EAP) {
-		int encr = encrSelect->currentItem();
+		int encr = encrSelect->currentIndex();
 		if (encr == 0)
 			pairwise = "TKIP";
 		else
@@ -206,21 +225,28 @@ void NetworkConfig::addNetwork()
 		setNetworkParam(id, "group", "TKIP CCMP WEP104 WEP40", false);
 	}
 	if (pskEdit->isEnabled() &&
-	    strcmp(passwordEdit->text().ascii(), WPA_GUI_KEY_DATA) != 0)
-		setNetworkParam(id, "psk", pskEdit->text().ascii(),
+	    strcmp(passwordEdit->text().toAscii().constData(),
+		   WPA_GUI_KEY_DATA) != 0)
+		setNetworkParam(id, "psk",
+				pskEdit->text().toAscii().constData(),
 				psklen != 64);
 	if (eapSelect->isEnabled())
-		setNetworkParam(id, "eap", eapSelect->currentText().ascii(),
+		setNetworkParam(id, "eap",
+				eapSelect->currentText().toAscii().constData(),
 				false);
 	if (identityEdit->isEnabled())
-		setNetworkParam(id, "identity", identityEdit->text().ascii(),
+		setNetworkParam(id, "identity",
+				identityEdit->text().toAscii().constData(),
 				true);
 	if (passwordEdit->isEnabled() &&
-	    strcmp(passwordEdit->text().ascii(), WPA_GUI_KEY_DATA) != 0)
-		setNetworkParam(id, "password", passwordEdit->text().ascii(),
+	    strcmp(passwordEdit->text().toAscii().constData(),
+		   WPA_GUI_KEY_DATA) != 0)
+		setNetworkParam(id, "password",
+				passwordEdit->text().toAscii().constData(),
 				true);
 	if (cacertEdit->isEnabled())
-		setNetworkParam(id, "ca_cert", cacertEdit->text().ascii(),
+		setNetworkParam(id, "ca_cert",
+				cacertEdit->text().toAscii().constData(),
 				true);
 	writeWepKey(id, wep0Edit, 0);
 	writeWepKey(id, wep1Edit, 1);
@@ -235,6 +261,18 @@ void NetworkConfig::addNetwork()
 		setNetworkParam(id, "wep_tx_keyidx", "2", false);
 	else if (wep3Radio->isEnabled() && wep3Radio->isChecked())
 		setNetworkParam(id, "wep_tx_keyidx", "3", false);
+
+	if (idstrEdit->isEnabled())
+		setNetworkParam(id, "id_str",
+				idstrEdit->text().toAscii().constData(),
+				true);
+
+	if (prioritySpinBox->isEnabled()) {
+		QString prio;
+		prio = prio.setNum(prioritySpinBox->value());
+		setNetworkParam(id, "priority", prio.toAscii().constData(),
+				false);
+	}
 
 	snprintf(cmd, sizeof(cmd), "ENABLE_NETWORK %d", id);
 	reply_len = sizeof(reply);
@@ -273,7 +311,7 @@ int NetworkConfig::setNetworkParam(int id, const char *field,
 
 void NetworkConfig::encrChanged(const QString &sel)
 {
-	wepEnabled(sel.find("WEP") == 0);
+	wepEnabled(sel.indexOf("WEP") == 0);
 }
 
 
@@ -304,7 +342,7 @@ void NetworkConfig::writeWepKey(int network_id, QLineEdit *edit, int id)
 	 * Assume hex key if only hex characters are present and length matches
 	 * with 40, 104, or 128-bit key
 	 */
-	txt = edit->text().ascii();
+	txt = edit->text().toAscii().constData();
 	if (strcmp(txt, WPA_GUI_KEY_DATA) == 0)
 		return;
 	len = strlen(txt);
@@ -385,7 +423,7 @@ void NetworkConfig::paramsFromConfig(int network_id)
 	reply_len = sizeof(reply) - 1;
 	if (wpagui->ctrlRequest(cmd, reply, &reply_len) >= 0) {
 		reply[reply_len] = '\0';
-		if (strstr(reply, "CCMP"))
+		if (strstr(reply, "CCMP") && auth != AUTH_NONE)
 			encr = 1;
 		else if (strstr(reply, "TKIP"))
 			encr = 0;
@@ -449,8 +487,8 @@ void NetworkConfig::paramsFromConfig(int network_id)
 	    reply_len >= 1) {
 		reply[reply_len] = '\0';
 		for (i = 0; i < eapSelect->count(); i++) {
-			if (eapSelect->text(i).compare(reply) == 0) {
-				eapSelect->setCurrentItem(i);
+			if (eapSelect->itemText(i).compare(reply) == 0) {
+				eapSelect->setCurrentIndex(i);
 				break;
 			}
 		}
@@ -514,9 +552,28 @@ void NetworkConfig::paramsFromConfig(int network_id)
 		}
 	}
 
-	authSelect->setCurrentItem(auth);
+	snprintf(cmd, sizeof(cmd), "GET_NETWORK %d id_str", network_id);
+	reply_len = sizeof(reply) - 1;
+	if (wpagui->ctrlRequest(cmd, reply, &reply_len) >= 0 &&
+	    reply_len >= 2 && reply[0] == '"') {
+		reply[reply_len] = '\0';
+		pos = strchr(reply + 1, '"');
+		if (pos)
+			*pos = '\0';
+		idstrEdit->setText(reply + 1);
+	}
+
+	snprintf(cmd, sizeof(cmd), "GET_NETWORK %d priority", network_id);
+	reply_len = sizeof(reply) - 1;
+	if (wpagui->ctrlRequest(cmd, reply, &reply_len) >= 0 && reply_len >= 1)
+	{
+		reply[reply_len] = '\0';
+		prioritySpinBox->setValue(atoi(reply));
+	}
+
+	authSelect->setCurrentIndex(auth);
 	authChanged(auth);
-	encrSelect->setCurrentItem(encr);
+	encrSelect->setCurrentIndex(encr);
 	if (auth == AUTH_NONE || auth == AUTH_IEEE8021X)
 		wepEnabled(encr == 1);
 
@@ -577,6 +634,6 @@ void NetworkConfig::getEapCapa()
 	reply[reply_len] = '\0';
 
 	QString res(reply);
-	QStringList types = QStringList::split(QChar(' '), res);
-	eapSelect->insertStringList(types);
+	QStringList types = res.split(QChar(' '));
+	eapSelect->insertItems(-1, types);
 }

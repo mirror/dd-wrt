@@ -1,6 +1,6 @@
 /*
  * EAP-FAST server (RFC 4851)
- * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -70,6 +70,7 @@ struct eap_fast_data {
 
 	int anon_provisioning;
 	int send_new_pac; /* server triggered re-keying of Tunnel PAC */
+	struct wpabuf *pending_phase2_resp;
 };
 
 
@@ -515,6 +516,7 @@ static void eap_fast_reset(struct eap_sm *sm, void *priv)
 	eap_server_tls_ssl_deinit(sm, &data->ssl);
 	os_free(data->srv_id);
 	os_free(data->key_block_p);
+	wpabuf_free(data->pending_phase2_resp);
 	os_free(data);
 }
 
@@ -665,6 +667,11 @@ static struct wpabuf * eap_fast_build_phase2_req(struct eap_sm *sm,
 {
 	struct wpabuf *req;
 
+	if (data->phase2_priv == NULL) {
+		wpa_printf(MSG_DEBUG, "EAP-FAST: Phase 2 method not "
+			   "initialized");
+		return NULL;
+	}
 	req = data->phase2_method->buildReq(sm, data->phase2_priv, id);
 	if (req == NULL)
 		return NULL;
@@ -947,7 +954,7 @@ static void eap_fast_process_phase2_response(struct eap_sm *sm,
 	struct eap_hdr *hdr;
 	u8 *pos;
 	size_t left;
-	struct wpabuf *buf;
+	struct wpabuf buf;
 	const struct eap_method *m = data->phase2_method;
 	void *priv = data->phase2_priv;
 
@@ -979,20 +986,16 @@ static void eap_fast_process_phase2_response(struct eap_sm *sm,
 		return;
 	}
 
-	buf = wpabuf_alloc_ext_data_no_free(in_data, in_len);
-	if (buf == NULL)
-		return;
+	wpabuf_set(&buf, in_data, in_len);
 
-	if (m->check(sm, priv, buf)) {
+	if (m->check(sm, priv, &buf)) {
 		wpa_printf(MSG_DEBUG, "EAP-FAST: Phase2 check() asked to "
 			   "ignore the packet");
 		next_type = eap_fast_req_failure(sm, data);
-		wpabuf_free(buf);
 		return;
 	}
 
-	m->process(sm, priv, buf);
-	wpabuf_free(buf);
+	m->process(sm, priv, &buf);
 
 	if (!m->isDone(sm, priv))
 		return;
@@ -1345,7 +1348,7 @@ static void eap_fast_process_phase2_tlvs(struct eap_sm *sm,
 	int check_crypto_binding = data->state == CRYPTO_BINDING;
 
 	if (eap_fast_parse_tlvs(in_data, in_len, &tlv) < 0) {
-		wpa_printf(MSG_DEBUG, "EAP-FAST: Failed to parse receivede "
+		wpa_printf(MSG_DEBUG, "EAP-FAST: Failed to parse received "
 			   "Phase 2 TLVs");
 		return;
 	}
@@ -1451,6 +1454,17 @@ static void eap_fast_process_phase2(struct eap_sm *sm,
 	wpa_printf(MSG_DEBUG, "EAP-FAST: Received %lu bytes encrypted data for"
 		   " Phase 2", (unsigned long) in_len);
 
+	if (data->pending_phase2_resp) {
+		wpa_printf(MSG_DEBUG, "EAP-PEAP: Pending Phase 2 response - "
+			   "skip decryption and use old data");
+		eap_fast_process_phase2_tlvs(
+			sm, data, wpabuf_mhead(data->pending_phase2_resp),
+			wpabuf_len(data->pending_phase2_resp));
+		wpabuf_free(data->pending_phase2_resp);
+		data->pending_phase2_resp = NULL;
+		return;
+	}
+
 	/* FIX: get rid of const -> non-const typecast */
 	res = eap_server_tls_data_reassemble(sm, &data->ssl, (u8 **) &in_data,
 					     &in_len);
@@ -1488,6 +1502,14 @@ static void eap_fast_process_phase2(struct eap_sm *sm,
 			in_decrypted, len_decrypted);
 
 	eap_fast_process_phase2_tlvs(sm, data, in_decrypted, len_decrypted);
+
+	if (sm->method_pending == METHOD_PENDING_WAIT) {
+		wpa_printf(MSG_DEBUG, "EAP-FAST: Phase2 method is in "
+			   "pending wait state - save decrypted response");
+		wpabuf_free(data->pending_phase2_resp);
+		data->pending_phase2_resp = wpabuf_alloc_copy(in_decrypted,
+							      len_decrypted);
+	}
 
 	os_free(in_decrypted);
 }

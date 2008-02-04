@@ -38,7 +38,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 	os_memset(&params, 0, sizeof(params));
 	params.wpa_debug_level = MSG_MSGDUMP;
-	params.wpa_debug_use_file = 1;
+	params.wpa_debug_file_path = "\\Temp\\wpa_supplicant-log.txt";
 	params.wpa_debug_show_keys = 1;
 
 	iface = ifaces = os_zalloc(sizeof(struct wpa_interface));

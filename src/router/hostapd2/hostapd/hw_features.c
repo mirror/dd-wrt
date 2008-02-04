@@ -120,7 +120,8 @@ static int hostapd_prepare_rates(struct hostapd_data *hapd,
 
 	if (hostapd_set_rate_sets(hapd, hapd->iconf->supported_rates,
 				  basic_rates, mode->mode)) {
-		printf("Failed to update rate sets in kernel module\n");
+		wpa_printf(MSG_ERROR, "Failed to update rate sets in kernel "
+			   "module");
 	}
 
 	os_free(hapd->iface->current_rates);
@@ -129,7 +130,8 @@ static int hostapd_prepare_rates(struct hostapd_data *hapd,
 	hapd->iface->current_rates =
 		os_malloc(mode->num_rates * sizeof(struct hostapd_rate_data));
 	if (!hapd->iface->current_rates) {
-		printf("Failed to allocate memory for rate table.\n");
+		wpa_printf(MSG_ERROR, "Failed to allocate memory for rate "
+			   "table.");
 		return -1;
 	}
 
@@ -149,15 +151,15 @@ static int hostapd_prepare_rates(struct hostapd_data *hapd,
 			num_basic_rates++;
 		} else
 			rate->flags &= ~HOSTAPD_RATE_BASIC;
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-			      "RATE[%d] rate=%d flags=0x%x\n",
-			      hapd->iface->num_rates, rate->rate, rate->flags);
+		wpa_printf(MSG_DEBUG, "RATE[%d] rate=%d flags=0x%x",
+			   hapd->iface->num_rates, rate->rate, rate->flags);
 		hapd->iface->num_rates++;
 	}
 
 	if (hapd->iface->num_rates == 0 || num_basic_rates == 0) {
-		printf("No rates remaining in supported/basic rate sets "
-		       "(%d,%d).\n", hapd->iface->num_rates, num_basic_rates);
+		wpa_printf(MSG_ERROR, "No rates remaining in supported/basic "
+			   "rate sets (%d,%d).",
+			   hapd->iface->num_rates, num_basic_rates);
 		return -1;
 	}
 
@@ -216,7 +218,7 @@ static void select_hw_mode2(struct hostapd_iface *iface, int status)
 	}
 
 	if (hostapd_prepare_rates(iface->bss[0], iface->current_mode)) {
-		printf("Failed to prepare rates table.\n");
+		wpa_printf(MSG_ERROR, "Failed to prepare rates table.");
 		hostapd_logger(iface->bss[0], NULL, HOSTAPD_MODULE_IEEE80211,
 					   HOSTAPD_LEVEL_WARNING,
 					   "Failed to prepare rates table.");
@@ -230,7 +232,8 @@ static void select_hw_mode2(struct hostapd_iface *iface, int status)
 				   iface->conf->passive_scan_listen,
 				   NULL, NULL);
 	if (ret) {
-		printf("Could not set passive scanning: %s\n", strerror(ret));
+		wpa_printf(MSG_ERROR, "Could not set passive scanning: %s",
+			   strerror(ret));
 		ret = 0;
 	}
 
@@ -278,7 +281,8 @@ static int select_hw_mode1(struct hostapd_iface *iface)
 	}
 
 	if (iface->current_mode == NULL) {
-		printf("Hardware does not support configured mode\n");
+		wpa_printf(MSG_ERROR, "Hardware does not support configured "
+			   "mode");
 		hostapd_logger(iface->bss[0], NULL, HOSTAPD_MODULE_IEEE80211,
 			       HOSTAPD_LEVEL_WARNING,
 			       "Hardware does not support configured mode "

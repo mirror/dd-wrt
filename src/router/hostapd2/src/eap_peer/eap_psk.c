@@ -1,6 +1,6 @@
 /*
  * EAP peer method: EAP-PSK (RFC 4764)
- * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -19,7 +19,6 @@
 
 #include "common.h"
 #include "eap_peer/eap_i.h"
-#include "config_ssid.h"
 #include "aes_wrap.h"
 #include "eap_common/eap_psk_common.h"
 
@@ -37,27 +36,34 @@ struct eap_psk_data {
 
 static void * eap_psk_init(struct eap_sm *sm)
 {
-	struct wpa_ssid *config = eap_get_config(sm);
 	struct eap_psk_data *data;
+	const u8 *identity, *password;
+	size_t identity_len, password_len;
 
-	if (config == NULL || !config->eappsk) {
-		wpa_printf(MSG_INFO, "EAP-PSK: pre-shared key not configured");
+	password = eap_get_config_password(sm, &password_len);
+	if (!password || password_len != 16) {
+		wpa_printf(MSG_INFO, "EAP-PSK: 16-octet pre-shared key not "
+			   "configured");
 		return NULL;
 	}
 
 	data = os_zalloc(sizeof(*data));
 	if (data == NULL)
 		return NULL;
-	eap_psk_key_setup(config->eappsk, data->ak, data->kdk);
+	if (eap_psk_key_setup(password, data->ak, data->kdk)) {
+		os_free(data);
+		return NULL;
+	}
 	wpa_hexdump_key(MSG_DEBUG, "EAP-PSK: AK", data->ak, EAP_PSK_AK_LEN);
 	wpa_hexdump_key(MSG_DEBUG, "EAP-PSK: KDK", data->kdk, EAP_PSK_KDK_LEN);
 	data->state = PSK_INIT;
 
-	if (config->nai) {
-		data->id_p = os_malloc(config->nai_len);
+	identity = eap_get_config_identity(sm, &identity_len);
+	if (identity) {
+		data->id_p = os_malloc(identity_len);
 		if (data->id_p)
-			os_memcpy(data->id_p, config->nai, config->nai_len);
-		data->id_p_len = config->nai_len;
+			os_memcpy(data->id_p, identity, identity_len);
+		data->id_p_len = identity_len;
 	}
 	if (data->id_p == NULL) {
 		wpa_printf(MSG_INFO, "EAP-PSK: could not get own identity");
@@ -154,7 +160,11 @@ static struct wpabuf * eap_psk_process_1(struct eap_psk_data *data,
 	os_memcpy(pos, hdr1->rand_s, EAP_PSK_RAND_LEN);
 	pos += EAP_PSK_RAND_LEN;
 	os_memcpy(pos, data->rand_p, EAP_PSK_RAND_LEN);
-	omac1_aes_128(data->ak, buf, buflen, hdr2->mac_p);
+	if (omac1_aes_128(data->ak, buf, buflen, hdr2->mac_p)) {
+		os_free(buf);
+		wpabuf_free(resp);
+		return NULL;
+	}
 	os_free(buf);
 	wpa_hexdump(MSG_DEBUG, "EAP-PSK: RAND_P", hdr2->rand_p,
 		    EAP_PSK_RAND_LEN);
@@ -225,7 +235,10 @@ static struct wpabuf * eap_psk_process_3(struct eap_psk_data *data,
 		return NULL;
 	os_memcpy(buf, data->id_s, data->id_s_len);
 	os_memcpy(buf + data->id_s_len, data->rand_p, EAP_PSK_RAND_LEN);
-	omac1_aes_128(data->ak, buf, buflen, mac);
+	if (omac1_aes_128(data->ak, buf, buflen, mac)) {
+		os_free(buf);
+		return NULL;
+	}
 	os_free(buf);
 	if (os_memcmp(mac, hdr3->mac_s, EAP_PSK_MAC_LEN) != 0) {
 		wpa_printf(MSG_WARNING, "EAP-PSK: Invalid MAC_S in third "
@@ -236,8 +249,12 @@ static struct wpabuf * eap_psk_process_3(struct eap_psk_data *data,
 	}
 	wpa_printf(MSG_DEBUG, "EAP-PSK: MAC_S verified successfully");
 
-	eap_psk_derive_keys(data->kdk, data->rand_p, data->tek,
-			    data->msk, data->emsk);
+	if (eap_psk_derive_keys(data->kdk, data->rand_p, data->tek,
+				data->msk, data->emsk)) {
+		ret->methodState = METHOD_DONE;
+		ret->decision = DECISION_FAIL;
+		return NULL;
+	}
 	wpa_hexdump_key(MSG_DEBUG, "EAP-PSK: TEK", data->tek, EAP_PSK_TEK_LEN);
 	wpa_hexdump_key(MSG_DEBUG, "EAP-PSK: MSK", data->msk, EAP_MSK_LEN);
 	wpa_hexdump_key(MSG_DEBUG, "EAP-PSK: EMSK", data->emsk, EAP_EMSK_LEN);
@@ -331,9 +348,14 @@ static struct wpabuf * eap_psk_process_3(struct eap_psk_data *data,
 
 	wpa_hexdump(MSG_DEBUG, "EAP-PSK: reply message (plaintext)",
 		    rpchannel + 4 + 16, data_len);
-	aes_128_eax_encrypt(data->tek, nonce, sizeof(nonce), wpabuf_head(resp),
-			    sizeof(struct eap_hdr) + 1 + sizeof(*hdr4),
-			    rpchannel + 4 + 16, data_len, rpchannel + 4);
+	if (aes_128_eax_encrypt(data->tek, nonce, sizeof(nonce),
+				wpabuf_head(resp),
+				sizeof(struct eap_hdr) + 1 + sizeof(*hdr4),
+				rpchannel + 4 + 16, data_len, rpchannel + 4)) {
+		os_free(decrypted);
+		wpabuf_free(resp);
+		return NULL;
+	}
 	wpa_hexdump(MSG_DEBUG, "EAP-PSK: reply message (PCHANNEL)",
 		    rpchannel, 4 + 16 + data_len);
 

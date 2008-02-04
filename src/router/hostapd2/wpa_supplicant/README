@@ -1,7 +1,7 @@
 WPA Supplicant
 ==============
 
-Copyright (c) 2003-2007, Jouni Malinen <j@w1.fi> and contributors
+Copyright (c) 2003-2008, Jouni Malinen <j@w1.fi> and contributors
 All Rights Reserved.
 
 This program is dual-licensed under both the GPL version 2 and BSD
@@ -90,6 +90,7 @@ Supported WPA/IEEE 802.11i features:
   * EAP-PSK
   * EAP-PAX
   * EAP-SAKE
+  * EAP-IKEv2
   * EAP-GPSK
   * LEAP (note: requires special support from the driver for IEEE 802.11
 	  authentication)
@@ -383,6 +384,7 @@ CONFIG_EAP_SAKE=y
 CONFIG_EAP_GPSK=y
 CONFIG_EAP_PAX=y
 CONFIG_EAP_LEAP=y
+CONFIG_EAP_IKEV2=y
 
 Following option can be used to include GSM SIM/USIM interface for GSM/UMTS
 authentication algorithm (for EAP-SIM/EAP-AKA). This requires pcsc-lite
@@ -437,6 +439,7 @@ CONFIG_EAP_SAKE=y
 CONFIG_EAP_GPSK=y
 CONFIG_EAP_PAX=y
 CONFIG_EAP_LEAP=y
+CONFIG_EAP_IKEV2=y
 CONFIG_PCSC=y
 
 EAP-PEAP and EAP-TTLS will automatically include configured EAP
@@ -527,10 +530,9 @@ drivers:
 
 In most common cases, wpa_supplicant is started with
 
-wpa_supplicant -Bw -c/etc/wpa_supplicant.conf -iwlan0
+wpa_supplicant -B -c/etc/wpa_supplicant.conf -iwlan0
 
-This makes the process fork into background and wait for the wlan0
-interface if it is not available at startup time.
+This makes the process fork into background.
 
 The easiest way to debug problems, and to get debug log for bug
 reports, is to start wpa_supplicant on foreground with debugging
@@ -904,10 +906,6 @@ pcmcia-cs/cardmgr scripts (when using PC Cards). WPA handshake must be
 completed before data frames can be exchanged, so wpa_supplicant
 should be started before DHCP client.
 
-Command line option '-w' can be used if wpa_supplicant is started
-before the wireless LAN interface is present (e.g., before inserting
-the PC Card) or is not yet up.
-
 For example, following small changes to pcmcia-cs scripts can be used
 to enable WPA support:
 
@@ -918,7 +916,7 @@ Add the following block to the end of 'start' action handler in
 /etc/pcmcia/wireless:
 
     if [ "$WPA" = "y" -a -x /usr/local/bin/wpa_supplicant ]; then
-	/usr/local/bin/wpa_supplicant -Bw -c/etc/wpa_supplicant.conf \
+	/usr/local/bin/wpa_supplicant -B -c/etc/wpa_supplicant.conf \
 		-i$DEVICE
     fi
 
@@ -930,9 +928,7 @@ to be separated from other actions) in /etc/pcmcia/wireless:
     fi
 
 This will make cardmgr start wpa_supplicant when the card is plugged
-in. wpa_supplicant will wait until the interface is set up--either
-when a static IP address is configured or when DHCP client is
-started--and will then negotiate keys with the AP.
+in.
 
 
 
@@ -971,3 +967,58 @@ wpa_cli -iwlan0 enable_network 0
 
 # Remove network interface
 wpa_cli -g/var/run/wpa_supplicant-global interface_remove wlan0
+
+
+Privilege separation
+--------------------
+
+To minimize the size of code that needs to be run with root privileges
+(e.g., to control wireless interface operation), wpa_supplicant
+supports optional privilege separation. If enabled, this separates the
+privileged operations into a separate process (wpa_priv) while leaving
+rest of the code (e.g., EAP authentication and WPA handshakes) into an
+unprivileged process (wpa_supplicant) that can be run as non-root
+user. Privilege separation restricts the effects of potential software
+errors by containing the majority of the code in an unprivileged
+process to avoid full system compromise.
+
+Privilege separation is not enabled by default and it can be enabled
+by adding CONFIG_PRIVSEP=y to the build configuration (.config). When
+enabled, the privileged operations (driver wrapper and l2_packet) are
+linked into a separate daemon program, wpa_priv. The unprivileged
+program, wpa_supplicant, will be built with a special driver/l2_packet
+wrappers that communicate with the privileged wpa_priv process to
+perform the needed operations. wpa_priv can control what privileged
+are allowed.
+
+wpa_priv needs to be run with network admin privileges (usually, root
+user). It opens a UNIX domain socket for each interface that is
+included on the command line; any other interface will be off limits
+for wpa_supplicant in this kind of configuration. After this,
+wpa_supplicant can be run as a non-root user (e.g., all standard users
+on a laptop or as a special non-privileged user account created just
+for this purpose to limit access to user files even further).
+
+
+Example configuration:
+- create user group for users that are allowed to use wpa_supplicant
+  ('wpapriv' in this example) and assign users that should be able to
+  use wpa_supplicant into that group
+- create /var/run/wpa_priv directory for UNIX domain sockets and control
+  user access by setting it accessible only for the wpapriv group:
+  mkdir /var/run/wpa_priv
+  chown root:wpapriv /var/run/wpa_priv
+  chmod 0750 /var/run/wpa_priv
+- start wpa_priv as root (e.g., from system startup scripts) with the
+  enabled interfaces configured on the command line:
+  wpa_priv -B -P /var/run/wpa_priv.pid wext:ath0
+- run wpa_supplicant as non-root with a user that is in wpapriv group:
+  wpa_supplicant -i ath0 -c wpa_supplicant.conf
+
+wpa_priv does not use the network interface before wpa_supplicant is
+started, so it is fine to include network interfaces that are not
+available at the time wpa_priv is started. As an alternative, wpa_priv
+can be started when an interface is added (hotplug/udev/etc. scripts).
+wpa_priv can control multiple interface with one process, but it is
+also possible to run multiple wpa_priv processes at the same time, if
+desired.

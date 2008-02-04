@@ -28,9 +28,6 @@ else
 CONFIG_OS=unix
 endif
 endif
-ifdef CONFIG_NO_STDOUT_DEBUG
-CFLAGS += -DCONFIG_NO_STDOUT_DEBUG
-endif
 
 ifeq ($(CONFIG_OS), internal)
 CFLAGS += -DOS_NO_C_LIB_DEFINES
@@ -119,9 +116,9 @@ CFLAGS += -DCONFIG_DRIVER_PRISM54
 OBJS += driver_prism54.o
 endif
 
-ifdef CONFIG_DRIVER_DEVICESCAPE
-CFLAGS += -DCONFIG_DRIVER_DEVICESCAPE
-OBJS += driver_devicescape.o
+ifdef CONFIG_DRIVER_NL80211
+CFLAGS += -DCONFIG_DRIVER_NL80211
+OBJS += driver_nl80211.o
 LIBS += -lnl
 endif
 
@@ -156,6 +153,7 @@ endif
 ifdef CONFIG_EAP_MD5
 CFLAGS += -DEAP_MD5
 OBJS += ../src/eap_server/eap_md5.o
+CHAP=y
 endif
 
 ifdef CONFIG_EAP_TLS
@@ -176,6 +174,7 @@ ifdef CONFIG_EAP_TTLS
 CFLAGS += -DEAP_TTLS
 OBJS += ../src/eap_server/eap_ttls.o
 TLS_FUNCS=y
+CHAP=y
 endif
 
 ifdef CONFIG_EAP_MSCHAPV2
@@ -251,9 +250,26 @@ TLS_FUNCS=y
 NEED_T_PRF=y
 endif
 
-ifdef CONFIG_EAP_WSC
-CFLAGS += -DEAP_WSC
+ifdef CONFIG_WPS
+CFLAGS += -DCONFIG_WPS -DEAP_WSC
+OBJS += ../src/utils/uuid.o
+OBJS += wps_hostapd.o
 OBJS += ../src/eap_server/eap_wsc.o ../src/eap_common/eap_wsc_common.o
+OBJS += ../src/wps/wps.o
+OBJS += ../src/wps/wps_common.o
+OBJS += ../src/wps/wps_dev_attr.o
+OBJS += ../src/wps/wps_enrollee.o
+OBJS += ../src/wps/wps_registrar.o
+NEED_DH_GROUPS=y
+NEED_SHA256=y
+NEED_CRYPTO=y
+endif
+
+ifdef CONFIG_EAP_IKEV2
+CFLAGS += -DEAP_IKEV2
+OBJS += ../src/eap_server/eap_ikev2.o ../src/eap_server/ikev2.o
+OBJS += ../src/eap_common/eap_ikev2_common.o ../src/eap_common/ikev2_common.o
+NEED_DH_GROUPS=y
 endif
 
 # Basic EAP functionality is needed for EAPOL
@@ -337,8 +353,12 @@ CFLAGS += -DPKCS12_FUNCS
 endif
 
 ifdef MS_FUNCS
-OBJS += ../src/crypto//ms_funcs.o
+OBJS += ../src/crypto/ms_funcs.o
 NEED_CRYPTO=y
+endif
+
+ifdef CHAP
+OBJS += ../src/eap_common/chap.o
 endif
 
 ifdef NEED_CRYPTO
@@ -418,6 +438,10 @@ endif
 
 ifdef NEED_SHA256
 OBJS += ../src/crypto/sha256.o
+endif
+
+ifdef NEED_DH_GROUPS
+OBJS += ../src/crypto/dh_groups.o
 endif
 
 ifndef NEED_FIPS186_2_PRF

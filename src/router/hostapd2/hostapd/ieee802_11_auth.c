@@ -281,9 +281,8 @@ static void hostapd_acl_expire_cache(struct hostapd_data *hapd, time_t now)
 
 	while (entry) {
 		if (now - entry->timestamp > RADIUS_ACL_TIMEOUT) {
-			HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-				      "Cached ACL entry for " MACSTR
-				      " has expired.\n", MAC2STR(entry->addr));
+			wpa_printf(MSG_DEBUG, "Cached ACL entry for " MACSTR
+				   " has expired.", MAC2STR(entry->addr));
 			if (prev)
 				prev->next = entry->next;
 			else
@@ -310,9 +309,8 @@ static void hostapd_acl_expire_queries(struct hostapd_data *hapd, time_t now)
 
 	while (entry) {
 		if (now - entry->timestamp > RADIUS_ACL_TIMEOUT) {
-			HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-				      "ACL query for " MACSTR
-				      " has expired.\n", MAC2STR(entry->addr));
+			wpa_printf(MSG_DEBUG, "ACL query for " MACSTR
+				   " has expired.", MAC2STR(entry->addr));
 			if (prev)
 				prev->next = entry->next;
 			else
@@ -365,8 +363,8 @@ hostapd_acl_recv_radius(struct radius_msg *msg, struct radius_msg *req,
 	if (query == NULL)
 		return RADIUS_RX_UNKNOWN;
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "Found matching Access-Request "
-		      "for RADIUS message (id=%d)\n", query->radius_id);
+	wpa_printf(MSG_DEBUG, "Found matching Access-Request for RADIUS "
+		   "message (id=%d)", query->radius_id);
 
 	if (radius_msg_verify(msg, shared_secret, shared_secret_len, req, 0)) {
 		wpa_printf(MSG_INFO, "Incoming RADIUS packet did not have "
@@ -400,11 +398,10 @@ hostapd_acl_recv_radius(struct radius_msg *msg, struct radius_msg *req,
 			    msg, RADIUS_ATTR_ACCT_INTERIM_INTERVAL,
 			    &cache->acct_interim_interval) == 0 &&
 		    cache->acct_interim_interval < 60) {
-			HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "Ignored too "
-				      "small Acct-Interim-Interval %d for "
-				      "STA " MACSTR "\n",
-				      cache->acct_interim_interval,
-				      MAC2STR(query->addr));
+			wpa_printf(MSG_DEBUG, "Ignored too small "
+				   "Acct-Interim-Interval %d for STA " MACSTR,
+				   cache->acct_interim_interval,
+				   MAC2STR(query->addr));
 			cache->acct_interim_interval = 0;
 		}
 
@@ -415,8 +412,8 @@ hostapd_acl_recv_radius(struct radius_msg *msg, struct radius_msg *req,
 	hapd->acl_cache = cache;
 
 	/* Re-send original authentication frame for 802.11 processing */
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "Re-sending authentication frame "
-		      "after successful RADIUS ACL query\n");
+	wpa_printf(MSG_DEBUG, "Re-sending authentication frame after "
+		   "successful RADIUS ACL query");
 	ieee802_11_mgmt(hapd, query->auth_msg, query->auth_msg_len,
 			WLAN_FC_STYPE_AUTH, NULL);
 
