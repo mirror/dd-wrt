@@ -79,6 +79,7 @@ OBJS = \
 	$(OBJDIR)\eapol_supp_sm.obj \
 	$(OBJDIR)\eap.obj \
 	$(OBJDIR)\eap_common.obj \
+	$(OBJDIR)\chap.obj \
 	$(OBJDIR)\eap_methods.obj \
 	$(OBJDIR)\eap_tlv.obj \
 	$(OBJDIR)\eap_md5.obj \
@@ -104,6 +105,7 @@ OBJS = \
 	$(OBJDIR)\ctrl_iface_named_pipe.obj \
 	$(OBJDIR)\driver_ndis.obj \
 	$(OBJDIR)\driver_ndis_.obj \
+	$(OBJDIR)\scan_helpers.obj \
 	$(OBJDIR)\events.obj \
 	$(OBJDIR)\blacklist.obj \
 	$(OBJDIR)\scan.obj \

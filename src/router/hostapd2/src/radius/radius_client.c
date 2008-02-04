@@ -452,6 +452,13 @@ int radius_client_send(struct radius_client_data *radius,
 	}
 
 	if (msg_type == RADIUS_ACCT || msg_type == RADIUS_ACCT_INTERIM) {
+		if (conf->acct_server == NULL) {
+			hostapd_logger(radius->ctx, NULL,
+				       HOSTAPD_MODULE_RADIUS,
+				       HOSTAPD_LEVEL_INFO,
+				       "No accounting server configured");
+			return -1;
+		}
 		shared_secret = conf->acct_server->shared_secret;
 		shared_secret_len = conf->acct_server->shared_secret_len;
 		radius_msg_finish_acct(msg, shared_secret, shared_secret_len);
@@ -459,6 +466,13 @@ int radius_client_send(struct radius_client_data *radius,
 		s = radius->acct_sock;
 		conf->acct_server->requests++;
 	} else {
+		if (conf->auth_server == NULL) {
+			hostapd_logger(radius->ctx, NULL,
+				       HOSTAPD_MODULE_RADIUS,
+				       HOSTAPD_LEVEL_INFO,
+				       "No authentication server configured");
+			return -1;
+		}
 		shared_secret = conf->auth_server->shared_secret;
 		shared_secret_len = conf->auth_server->shared_secret_len;
 		radius_msg_finish(msg, shared_secret, shared_secret_len);

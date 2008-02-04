@@ -23,7 +23,6 @@
 #include "eloop.h"
 #include "sha1.h"
 #include "ieee802_11_defs.h"
-#include "mlme.h"
 
 
 struct wpa_driver_test_data {
@@ -38,7 +37,7 @@ struct wpa_driver_test_data {
 	u8 ssid[32];
 	size_t ssid_len;
 #define MAX_SCAN_RESULTS 30
-	struct wpa_scan_result scanres[MAX_SCAN_RESULTS];
+	struct wpa_scan_res *scanres[MAX_SCAN_RESULTS];
 	size_t num_scanres;
 	int use_associnfo;
 	u8 assoc_wpa_ie[80];
@@ -134,17 +133,35 @@ static int wpa_driver_test_scan(void *priv, const u8 *ssid, size_t ssid_len)
 }
 
 
-static int wpa_driver_test_get_scan_results(void *priv,
-					    struct wpa_scan_result *results,
-					    size_t max_size)
+static struct wpa_scan_results * wpa_driver_test_get_scan_results2(void *priv)
 {
 	struct wpa_driver_test_data *drv = priv;
-	size_t num = drv->num_scanres;
-	if (num > max_size)
-		num = max_size;
-	os_memcpy(results, &drv->scanres,
-		  num * sizeof(struct wpa_scan_result));
-	return num;
+	struct wpa_scan_results *res;
+	size_t i;
+
+	res = os_zalloc(sizeof(*res));
+	if (res == NULL)
+		return NULL;
+
+	res->res = os_zalloc(drv->num_scanres * sizeof(struct wpa_scan_res *));
+	if (res->res == NULL) {
+		os_free(res);
+		return NULL;
+	}
+
+	for (i = 0; i < drv->num_scanres; i++) {
+		struct wpa_scan_res *r;
+		if (drv->scanres[i] == NULL)
+			continue;
+		r = os_malloc(sizeof(*r) + drv->scanres[i]->ie_len);
+		if (r == NULL)
+			break;
+		os_memcpy(r, drv->scanres[i],
+			  sizeof(*r) + drv->scanres[i]->ie_len);
+		res->res[res->num++] = r;
+	}
+
+	return res;
 }
 
 
@@ -301,10 +318,11 @@ static void wpa_driver_test_scanresp(struct wpa_driver_test_data *drv,
 				     socklen_t fromlen,
 				     const char *data)
 {
-	struct wpa_scan_result *res;
+	struct wpa_scan_res *res;
 	const char *pos, *pos2;
 	size_t len;
-	u8 ie[200], *ipos, *end;
+	u8 *ie_pos, *ie_start, *ie_end;
+#define MAX_IE_LEN 1000
 
 	wpa_printf(MSG_DEBUG, "test_driver: SCANRESP %s", data);
 	if (drv->num_scanres >= MAX_SCAN_RESULTS) {
@@ -314,11 +332,16 @@ static void wpa_driver_test_scanresp(struct wpa_driver_test_data *drv,
 	}
 
 	/* SCANRESP BSSID SSID IEs */
-	res = &drv->scanres[drv->num_scanres];
 
-	os_memset(res, 0, sizeof(*res));
+	res = os_zalloc(sizeof(*res) + MAX_IE_LEN);
+	if (res == NULL)
+		return;
+	ie_start = ie_pos = (u8 *) (res + 1);
+	ie_end = ie_pos + MAX_IE_LEN;
+
 	if (hwaddr_aton(data, res->bssid)) {
 		wpa_printf(MSG_DEBUG, "test_driver: invalid BSSID in scanres");
+		os_free(res);
 		return;
 	}
 
@@ -329,16 +352,24 @@ static void wpa_driver_test_scanresp(struct wpa_driver_test_data *drv,
 	if (pos2 == NULL) {
 		wpa_printf(MSG_DEBUG, "test_driver: invalid SSID termination "
 			   "in scanres");
+		os_free(res);
 		return;
 	}
 	len = (pos2 - pos) / 2;
-	if (len > sizeof(res->ssid))
-		len = sizeof(res->ssid);
-	if (hexstr2bin(pos, res->ssid, len) < 0) {
+	if (len > 32)
+		len = 32;
+	/*
+	 * Generate SSID IE from the SSID field since this IE is not included
+	 * in the main IE field.
+	 */
+	*ie_pos++ = WLAN_EID_SSID;
+	*ie_pos++ = len;
+	if (hexstr2bin(pos, ie_pos, len) < 0) {
 		wpa_printf(MSG_DEBUG, "test_driver: invalid SSID in scanres");
+		os_free(res);
 		return;
 	}
-	res->ssid_len = len;
+	ie_pos += len;
 
 	pos = pos2 + 1;
 	pos2 = os_strchr(pos, ' ');
@@ -346,29 +377,15 @@ static void wpa_driver_test_scanresp(struct wpa_driver_test_data *drv,
 		len = os_strlen(pos) / 2;
 	else
 		len = (pos2 - pos) / 2;
-	if (len > sizeof(ie))
-		len = sizeof(ie);
-	if (hexstr2bin(pos, ie, len) < 0) {
+	if ((int) len > ie_end - ie_pos)
+		len = ie_end - ie_pos;
+	if (hexstr2bin(pos, ie_pos, len) < 0) {
 		wpa_printf(MSG_DEBUG, "test_driver: invalid IEs in scanres");
+		os_free(res);
 		return;
 	}
-
-	ipos = ie;
-	end = ipos + len;
-	while (ipos + 1 < end && ipos + 2 + ipos[1] <= end) {
-		len = 2 + ipos[1];
-		if (len > SSID_MAX_WPA_IE_LEN)
-			len = SSID_MAX_WPA_IE_LEN;
-		if (ipos[0] == WLAN_EID_RSN) {
-			os_memcpy(res->rsn_ie, ipos, len);
-			res->rsn_ie_len = len;
-		} else if (ipos[0] == WLAN_EID_VENDOR_SPECIFIC) {
-			os_memcpy(res->wpa_ie, ipos, len);
-			res->wpa_ie_len = len;
-		}
-
-		ipos += 2 + ipos[1];
-	}
+	ie_pos += len;
+	res->ie_len = ie_pos - ie_start;
 
 	if (pos2) {
 		pos = pos2 + 1;
@@ -378,7 +395,8 @@ static void wpa_driver_test_scanresp(struct wpa_driver_test_data *drv,
 			res->caps |= IEEE80211_CAP_PRIVACY;
 	}
 
-	drv->num_scanres++;
+	os_free(drv->scanres[drv->num_scanres]);
+	drv->scanres[drv->num_scanres++] = res;
 }
 
 
@@ -437,7 +455,7 @@ static void wpa_driver_test_mlme(struct wpa_driver_test_data *drv,
 {
 	struct ieee80211_rx_status rx_status;
 	os_memset(&rx_status, 0, sizeof(rx_status));
-	ieee80211_sta_rx(drv->ctx, data, data_len, &rx_status);
+	wpa_supplicant_sta_rx(drv->ctx, data, data_len, &rx_status);
 }
 
 
@@ -537,10 +555,13 @@ static void wpa_driver_test_close_test_socket(struct wpa_driver_test_data *drv)
 static void wpa_driver_test_deinit(void *priv)
 {
 	struct wpa_driver_test_data *drv = priv;
+	int i;
 	wpa_driver_test_close_test_socket(drv);
 	eloop_cancel_timeout(wpa_driver_test_scan_timeout, drv, drv->ctx);
 	eloop_cancel_timeout(wpa_driver_test_poll, drv, NULL);
 	os_free(drv->test_dir);
+	for (i = 0; i < MAX_SCAN_RESULTS; i++)
+		os_free(drv->scanres[i]);
 	os_free(drv);
 }
 
@@ -774,7 +795,7 @@ wpa_driver_test_get_hw_feature_data(void *priv, u16 *num_modes, u16 *flags)
 	modes[0].channels = os_zalloc(sizeof(struct wpa_channel_data));
 	modes[0].rates = os_zalloc(sizeof(struct wpa_rate_data));
 	if (modes[0].channels == NULL || modes[0].rates == NULL) {
-		ieee80211_sta_free_hw_features(modes, *num_modes);
+		wpa_supplicant_sta_free_hw_features(modes, *num_modes);
 		return NULL;
 	}
 	modes[0].channels[0].chan = 1;
@@ -926,7 +947,7 @@ const struct wpa_driver_ops wpa_driver_test_ops = {
 	NULL /* set_countermeasures */,
 	NULL /* set_drop_unencrypted */,
 	wpa_driver_test_scan,
-	wpa_driver_test_get_scan_results,
+	NULL /* get_scan_results */,
 	wpa_driver_test_deauthenticate,
 	wpa_driver_test_disassociate,
 	wpa_driver_test_associate,
@@ -959,5 +980,7 @@ const struct wpa_driver_ops wpa_driver_test_ops = {
 	NULL /* mlme_remove_sta */,
 #endif /* CONFIG_CLIENT_MLME */
 	NULL /* update_ft_ies */,
-	NULL /* send_ft_action */
+	NULL /* send_ft_action */,
+	wpa_driver_test_get_scan_results2,
+	NULL /* set_probe_req_ie */
 };

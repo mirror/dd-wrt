@@ -360,9 +360,8 @@ void ap_list_process_beacon(struct hostapd_iface *iface,
 	    ap_list_beacon_olbc(iface, ap)) {
 		struct hostapd_data *hapd = iface->bss[0];
 		iface->olbc = 1;
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-			      "OLBC AP detected: " MACSTR " - enable "
-			      "protection\n", MAC2STR(ap->addr));
+		wpa_printf(MSG_DEBUG, "OLBC AP detected: " MACSTR " - enable "
+			   "protection", MAC2STR(ap->addr));
 		ieee802_11_set_beacons(hapd->iface);
 	}
 }
@@ -408,8 +407,7 @@ static void ap_list_timer(void *eloop_ctx, void *timeout_ctx)
 		}
 		if (!olbc) {
 			struct hostapd_data *hapd = iface->bss[0];
-			HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-				      "OLBC not detected anymore\n");
+			wpa_printf(MSG_DEBUG, "OLBC not detected anymore");
 			iface->olbc = 0;
 			ieee802_11_set_beacons(hapd->iface);
 		}

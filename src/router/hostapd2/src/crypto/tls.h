@@ -189,8 +189,9 @@ enum {
  * TLS_SET_PARAMS_ENGINE_PRV_VERIFY_FAILED (-3) on failure to verify the
  * PKCS#11 engine private key.
  */
-int tls_connection_set_params(void *tls_ctx, struct tls_connection *conn,
-			      const struct tls_connection_params *params);
+int __must_check
+tls_connection_set_params(void *tls_ctx, struct tls_connection *conn,
+			  const struct tls_connection_params *params);
 
 /**
  * tls_global_set_params - Set TLS parameters for all TLS connection
@@ -202,8 +203,8 @@ int tls_connection_set_params(void *tls_ctx, struct tls_connection *conn,
  * TLS_SET_PARAMS_ENGINE_PRV_VERIFY_FAILED (-3) on failure to verify the
  * PKCS#11 engine private key.
  */
-int tls_global_set_params(void *tls_ctx,
-			  const struct tls_connection_params *params);
+int __must_check tls_global_set_params(
+	void *tls_ctx, const struct tls_connection_params *params);
 
 /**
  * tls_global_set_verify - Set global certificate verification options
@@ -212,7 +213,7 @@ int tls_global_set_params(void *tls_ctx,
  * 2 = verify CRL for all certificates
  * Returns: 0 on success, -1 on failure
  */
-int tls_global_set_verify(void *tls_ctx, int check_crl);
+int __must_check tls_global_set_verify(void *tls_ctx, int check_crl);
 
 /**
  * tls_connection_set_verify - Set certificate verification options
@@ -221,8 +222,9 @@ int tls_global_set_verify(void *tls_ctx, int check_crl);
  * @verify_peer: 1 = verify peer certificate
  * Returns: 0 on success, -1 on failure
  */
-int tls_connection_set_verify(void *tls_ctx, struct tls_connection *conn,
-			      int verify_peer);
+int __must_check tls_connection_set_verify(void *tls_ctx,
+					   struct tls_connection *conn,
+					   int verify_peer);
 
 /**
  * tls_connection_set_ia - Set TLS/IA parameters
@@ -234,8 +236,9 @@ int tls_connection_set_verify(void *tls_ctx, struct tls_connection *conn,
  * This function is used to configure TLS/IA in server mode where
  * tls_connection_set_params() is not used.
  */
-int tls_connection_set_ia(void *tls_ctx, struct tls_connection *conn,
-			  int tls_ia);
+int __must_check tls_connection_set_ia(void *tls_ctx,
+				       struct tls_connection *conn,
+				       int tls_ia);
 
 /**
  * tls_connection_get_keys - Get master key and random data from TLS connection
@@ -244,8 +247,9 @@ int tls_connection_set_ia(void *tls_ctx, struct tls_connection *conn,
  * @keys: Structure of key/random data (filled on success)
  * Returns: 0 on success, -1 on failure
  */
-int tls_connection_get_keys(void *tls_ctx, struct tls_connection *conn,
-			    struct tls_keys *keys);
+int __must_check tls_connection_get_keys(void *tls_ctx,
+					 struct tls_connection *conn,
+					 struct tls_keys *keys);
 
 /**
  * tls_connection_prf - Use TLS-PRF to derive keying material
@@ -267,9 +271,11 @@ int tls_connection_get_keys(void *tls_ctx, struct tls_connection *conn,
  * when it is called with seed set to client_random|server_random (or
  * server_random|client_random).
  */
-int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
-		       const char *label, int server_random_first,
-		       u8 *out, size_t out_len);
+int __must_check  tls_connection_prf(void *tls_ctx,
+				     struct tls_connection *conn,
+				     const char *label,
+				     int server_random_first,
+				     u8 *out, size_t out_len);
 
 /**
  * tls_connection_handshake - Process TLS handshake (client side)
@@ -335,9 +341,10 @@ u8 * tls_connection_server_handshake(void *tls_ctx,
  * This function is used after TLS handshake has been completed successfully to
  * send data in the encrypted tunnel.
  */
-int tls_connection_encrypt(void *tls_ctx, struct tls_connection *conn,
-			   const u8 *in_data, size_t in_len,
-			   u8 *out_data, size_t out_len);
+int __must_check tls_connection_encrypt(void *tls_ctx,
+					struct tls_connection *conn,
+					const u8 *in_data, size_t in_len,
+					u8 *out_data, size_t out_len);
 
 /**
  * tls_connection_decrypt - Decrypt data from TLS tunnel
@@ -352,9 +359,10 @@ int tls_connection_encrypt(void *tls_ctx, struct tls_connection *conn,
  * This function is used after TLS handshake has been completed successfully to
  * receive data from the encrypted tunnel.
  */
-int tls_connection_decrypt(void *tls_ctx, struct tls_connection *conn,
-			   const u8 *in_data, size_t in_len,
-			   u8 *out_data, size_t out_len);
+int __must_check tls_connection_decrypt(void *tls_ctx,
+					struct tls_connection *conn,
+					const u8 *in_data, size_t in_len,
+					u8 *out_data, size_t out_len);
 
 /**
  * tls_connection_resumed - Was session resumption used
@@ -380,8 +388,9 @@ enum {
  * (TLS_CIPHER_*).
  * Returns: 0 on success, -1 on failure
  */
-int tls_connection_set_cipher_list(void *tls_ctx, struct tls_connection *conn,
-				   u8 *ciphers);
+int __must_check tls_connection_set_cipher_list(void *tls_ctx,
+						struct tls_connection *conn,
+						u8 *ciphers);
 
 /**
  * tls_get_cipher - Get current cipher name
@@ -393,8 +402,8 @@ int tls_connection_set_cipher_list(void *tls_ctx, struct tls_connection *conn,
  *
  * Get the name of the currently used cipher.
  */
-int tls_get_cipher(void *tls_ctx, struct tls_connection *conn,
-		   char *buf, size_t buflen);
+int __must_check tls_get_cipher(void *tls_ctx, struct tls_connection *conn,
+				char *buf, size_t buflen);
 
 /**
  * tls_connection_enable_workaround - Enable TLS workaround options
@@ -405,8 +414,8 @@ int tls_get_cipher(void *tls_ctx, struct tls_connection *conn,
  * This function is used to enable connection-specific workaround options for
  * buffer SSL/TLS implementations.
  */
-int tls_connection_enable_workaround(void *tls_ctx,
-				     struct tls_connection *conn);
+int __must_check tls_connection_enable_workaround(void *tls_ctx,
+						  struct tls_connection *conn);
 
 /**
  * tls_connection_client_hello_ext - Set TLS extension for ClientHello
@@ -417,9 +426,10 @@ int tls_connection_enable_workaround(void *tls_ctx,
  * @data_len: Extension payload length
  * Returns: 0 on success, -1 on failure
  */
-int tls_connection_client_hello_ext(void *tls_ctx, struct tls_connection *conn,
-				    int ext_type, const u8 *data,
-				    size_t data_len);
+int __must_check tls_connection_client_hello_ext(void *tls_ctx,
+						 struct tls_connection *conn,
+						 int ext_type, const u8 *data,
+						 size_t data_len);
 
 /**
  * tls_connection_get_failed - Get connection failure status
@@ -479,10 +489,9 @@ unsigned int tls_capabilities(void *tls_ctx);
  * This function is used to send the TLS/IA end phase message, e.g., when the
  * EAP server completes EAP-TTLSv1.
  */
-int tls_connection_ia_send_phase_finished(void *tls_ctx,
-					  struct tls_connection *conn,
-					  int final,
-					  u8 *out_data, size_t out_len);
+int __must_check tls_connection_ia_send_phase_finished(
+	void *tls_ctx, struct tls_connection *conn, int final,
+	u8 *out_data, size_t out_len);
 
 /**
  * tls_connection_ia_final_phase_finished - Has final phase been completed
@@ -491,8 +500,8 @@ int tls_connection_ia_send_phase_finished(void *tls_ctx,
  * Returns: 1 if valid FinalPhaseFinished has been received, 0 if not, or -1
  * on failure
  */
-int tls_connection_ia_final_phase_finished(void *tls_ctx,
-					   struct tls_connection *conn);
+int __must_check tls_connection_ia_final_phase_finished(
+	void *tls_ctx, struct tls_connection *conn);
 
 /**
  * tls_connection_ia_permute_inner_secret - Permute TLS/IA inner secret
@@ -503,17 +512,16 @@ int tls_connection_ia_final_phase_finished(void *tls_ctx,
  * @key_len: Length of session key material
  * Returns: 0 on success, -1 on failure
  */
-int tls_connection_ia_permute_inner_secret(void *tls_ctx,
-					   struct tls_connection *conn,
-					   const u8 *key, size_t key_len);
+int __must_check tls_connection_ia_permute_inner_secret(
+	void *tls_ctx, struct tls_connection *conn,
+	const u8 *key, size_t key_len);
 
 typedef int (*tls_session_ticket_cb)
 (void *ctx, const u8 *ticket, size_t len, const u8 *client_random,
  const u8 *server_random, u8 *master_secret);
 
-int tls_connection_set_session_ticket_cb(void *tls_ctx,
-					 struct tls_connection *conn,
-					 tls_session_ticket_cb cb,
-					 void *ctx);
+int __must_check  tls_connection_set_session_ticket_cb(
+	void *tls_ctx, struct tls_connection *conn,
+	tls_session_ticket_cb cb, void *ctx);
 
 #endif /* TLS_H */

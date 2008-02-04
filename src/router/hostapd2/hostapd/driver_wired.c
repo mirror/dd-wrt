@@ -80,15 +80,15 @@ static void wired_possible_new_sta(struct hostapd_data *hapd, u8 *addr)
 	if (sta)
 		return;
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "Data frame from unknown STA "
-		      MACSTR " - adding a new STA\n", MAC2STR(addr));
+	wpa_printf(MSG_DEBUG, "Data frame from unknown STA " MACSTR
+		   " - adding a new STA", MAC2STR(addr));
 	sta = ap_sta_add(hapd, addr);
 	if (sta) {
 		hostapd_new_assoc_sta(hapd, sta, 0);
 		accounting_sta_get_id(hapd, sta);
 	} else {
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "Failed to add STA entry "
-			      "for " MACSTR "\n", MAC2STR(addr));
+		wpa_printf(MSG_DEBUG, "Failed to add STA entry for " MACSTR,
+			   MAC2STR(addr));
 	}
 }
 
@@ -103,8 +103,8 @@ static void handle_data(struct hostapd_data *hapd, unsigned char *buf,
 	/* must contain at least ieee8023_hdr 6 byte source, 6 byte dest,
 	 * 2 byte ethertype */
 	if (len < 14) {
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_VERBOSE, "handle_data: too short "
-			      "(%lu)\n", (unsigned long) len);
+		wpa_printf(MSG_MSGDUMP, "handle_data: too short (%lu)",
+			   (unsigned long) len);
 		return;
 	}
 
@@ -112,8 +112,7 @@ static void handle_data(struct hostapd_data *hapd, unsigned char *buf,
 
 	switch (ntohs(hdr->ethertype)) {
 		case ETH_P_PAE:
-			HOSTAPD_DEBUG(HOSTAPD_DEBUG_VERBOSE,
-				      "Received EAPOL packet\n");
+			wpa_printf(MSG_MSGDUMP, "Received EAPOL packet");
 			sa = hdr->src;
 			wired_possible_new_sta(hapd, sa);
 
@@ -124,9 +123,8 @@ static void handle_data(struct hostapd_data *hapd, unsigned char *buf,
 		break;
 
 	default:
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-			      "Unknown ethertype 0x%04x in data frame\n",
-			      ntohs(hdr->ethertype));
+		wpa_printf(MSG_DEBUG, "Unknown ethertype 0x%04x in data frame",
+			   ntohs(hdr->ethertype));
 		break;
 	}
 }
@@ -164,17 +162,15 @@ static void handle_dhcp(int sock, void *eloop_ctx, void *sock_ctx)
 
 	/* must contain at least dhcp_message->chaddr */
 	if (len < 44) {
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_VERBOSE, "handle_dhcp: too short "
-			      "(%d)\n", len);
+		wpa_printf(MSG_MSGDUMP, "handle_dhcp: too short (%d)", len);
 		return;
 	}
 	
 	msg = (struct dhcp_message *) buf;
 	mac_address = (u8 *) &(msg->chaddr);
 	
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_VERBOSE,
-		      "Got DHCP broadcast packet from " MACSTR "\n",
-		      MAC2STR(mac_address));
+	wpa_printf(MSG_MSGDUMP, "Got DHCP broadcast packet from " MACSTR,
+		   MAC2STR(mac_address));
 
 	wired_possible_new_sta(hapd, mac_address);
 }
@@ -212,9 +208,8 @@ static int wired_init_sockets(struct wired_driver_data *drv)
 	memset(&addr, 0, sizeof(addr));
 	addr.sll_family = AF_PACKET;
 	addr.sll_ifindex = ifr.ifr_ifindex;
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		      "Opening raw packet socket for ifindex %d\n",
-		      addr.sll_ifindex);
+	wpa_printf(MSG_DEBUG, "Opening raw packet socket for ifindex %d",
+		   addr.sll_ifindex);
 
 	if (bind(drv->sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
 		perror("bind");

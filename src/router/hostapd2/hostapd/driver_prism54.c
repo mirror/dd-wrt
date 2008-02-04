@@ -923,8 +923,7 @@ static void handle_802_3(int sock, void *eloop_ctx, void *sock_ctx)
 		return;
 	}
         if (len < 14) {
-                HOSTAPD_DEBUG(HOSTAPD_DEBUG_VERBOSE, "handle_802_3: too short "
-                                "(%d)\n", len);
+                wpa_printf(MSG_MSGDUMP, "handle_802_3: too short (%d)", len);
 		free(hdr);
                 return;
         }
@@ -971,9 +970,8 @@ static int prism54_init_sockets(struct prism54_driver_data *drv)
 	addr.sll_family = AF_PACKET;
 	addr.sll_ifindex = ifr.ifr_ifindex;
 	addr.sll_protocol = htons(ETH_P_PAE);
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		      "Opening raw packet socket for ifindex %d\n",
-		      addr.sll_ifindex);
+	wpa_printf(MSG_DEBUG, "Opening raw packet socket for ifindex %d",
+		   addr.sll_ifindex);
 
 	if (bind(drv->sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
 		perror("bind");
@@ -1016,9 +1014,8 @@ static int prism54_init_sockets(struct prism54_driver_data *drv)
 	addr.sll_family = AF_PACKET;
 	addr.sll_ifindex = ifr.ifr_ifindex;
 	addr.sll_protocol = htons(ETH_P_ALL);
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		      "Opening raw packet socket for ifindex %d\n",
-		      addr.sll_ifindex);
+	wpa_printf(MSG_DEBUG, "Opening raw packet socket for ifindex %d",
+		   addr.sll_ifindex);
 
 	if (bind(drv->pim_sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
 		perror("bind");

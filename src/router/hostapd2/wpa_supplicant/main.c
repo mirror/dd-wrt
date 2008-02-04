@@ -39,11 +39,12 @@ static void usage(void)
 	int i;
 	printf("%s\n\n%s\n"
 	       "usage:\n"
-	       "  wpa_supplicant [-BddfhKLqqtuvwW] [-P<pid file>] "
+	       "  wpa_supplicant [-BddhKLqqtuvwW] [-P<pid file>] "
 	       "[-g<global ctrl>] \\\n"
 	       "        -i<ifname> -c<config file> [-C<ctrl>] [-D<driver>] "
 	       "[-p<driver_param>] \\\n"
-	       "        [-b<br_ifname> [-N -i<ifname> -c<conf> [-C<ctrl>] "
+	       "        [-b<br_ifname>] [-f<debug file>] \\\n"
+	       "        [-N -i<ifname> -c<conf> [-C<ctrl>] "
 	       "[-D<driver>] \\\n"
 	       "        [-p<driver_param>] [-b<br_ifname>] ...]\n"
 	       "\n"
@@ -66,7 +67,7 @@ static void usage(void)
 	       "  -d = increase debugging verbosity (-dd even more)\n"
 	       "  -D = driver name\n"
 #ifdef CONFIG_DEBUG_FILE
-	       "  -f = Log output to default log location (normally /tmp)\n"
+	       "  -f = log output to debug file instead of stdout\n"
 #endif /* CONFIG_DEBUG_FILE */
 	       "  -g = global ctrl_interface\n"
 	       "  -K = include keys (passwords, etc.) in debug output\n"
@@ -80,7 +81,6 @@ static void usage(void)
 	       "  -u = enable DBus control interface\n"
 #endif /* CONFIG_CTRL_IFACE_DBUS */
 	       "  -v = show version\n"
-	       "  -w = wait for interface to be added, if needed\n"
 	       "  -W = wait for a control interface monitor before starting\n"
 	       "  -N = start describing new interface\n");
 
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 	wpa_supplicant_fd_workaround();
 
 	for (;;) {
-		c = getopt(argc, argv, "b:Bc:C:D:dfg:hi:KLNp:P:qtuvwW");
+		c = getopt(argc, argv, "b:Bc:C:D:df:g:hi:KLNp:P:qtuvW");
 		if (c < 0)
 			break;
 		switch (c) {
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
 #endif /* CONFIG_NO_STDOUT_DEBUG */
 #ifdef CONFIG_DEBUG_FILE
 		case 'f':
-			params.wpa_debug_use_file = 1;
+			params.wpa_debug_file_path = optarg;
 			break;
 #endif /* CONFIG_DEBUG_FILE */
 		case 'g':
@@ -219,9 +219,6 @@ int main(int argc, char *argv[])
 			printf("%s\n", wpa_supplicant_version);
 			exitcode = 0;
 			goto out;
-		case 'w':
-			params.wait_for_interface++;
-			break;
 		case 'W':
 			params.wait_for_monitor++;
 			break;

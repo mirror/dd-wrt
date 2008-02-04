@@ -205,9 +205,8 @@ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 	    (sta->timeout_next == STA_NULLFUNC ||
 	     sta->timeout_next == STA_DISASSOC)) {
 		int inactive_sec;
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-			      "Checking STA " MACSTR " inactivity:\n",
-			      MAC2STR(sta->addr));
+		wpa_printf(MSG_DEBUG, "Checking STA " MACSTR " inactivity:",
+			   MAC2STR(sta->addr));
 		inactive_sec = hostapd_get_inact_sec(hapd, sta->addr);
 		if (inactive_sec == -1) {
 			wpa_printf(MSG_DEBUG, "Could not get station info "
@@ -216,8 +215,7 @@ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 		} else if (inactive_sec < hapd->conf->ap_max_inactivity &&
 			   sta->flags & WLAN_STA_ASSOC) {
 			/* station activity detected; reset timeout state */
-			HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-				      "  Station has been active\n");
+			wpa_printf(MSG_DEBUG, "  Station has been active");
 			sta->timeout_next = STA_NULLFUNC;
 			next_time = hapd->conf->ap_max_inactivity -
 				inactive_sec;
@@ -227,8 +225,7 @@ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 	if ((sta->flags & WLAN_STA_ASSOC) &&
 	    sta->timeout_next == STA_DISASSOC &&
 	    !(sta->flags & WLAN_STA_PENDING_POLL)) {
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-			      "  Station has ACKed data poll\n");
+		wpa_printf(MSG_DEBUG, "  Station has ACKed data poll");
 		/* data nullfunc frame poll did not produce TX errors; assume
 		 * station ACKed it */
 		sta->timeout_next = STA_NULLFUNC;
@@ -247,8 +244,7 @@ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 		 * is ACKed */
 		struct ieee80211_hdr hdr;
 
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-			      "  Polling STA with data frame\n");
+		wpa_printf(MSG_DEBUG, "  Polling STA with data frame");
 		sta->flags |= WLAN_STA_PENDING_POLL;
 
 #ifndef CONFIG_NATIVE_WINDOWS
@@ -373,7 +369,7 @@ struct sta_info * ap_sta_add(struct hostapd_data *hapd, const u8 *addr)
 	if (sta)
 		return sta;
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "  New STA\n");
+	wpa_printf(MSG_DEBUG, "  New STA");
 	if (hapd->num_sta >= hapd->conf->max_num_sta) {
 		/* FIX: might try to remove some old STAs first? */
 		wpa_printf(MSG_DEBUG, "no more room for new STAs (%d/%d)",
@@ -406,8 +402,8 @@ static int ap_sta_remove(struct hostapd_data *hapd, struct sta_info *sta)
 {
 	ieee802_1x_notify_port_enabled(sta->eapol_sm, 0);
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "Removing STA " MACSTR
-		      " from kernel driver\n", MAC2STR(sta->addr));
+	wpa_printf(MSG_DEBUG, "Removing STA " MACSTR " from kernel driver",
+		   MAC2STR(sta->addr));
 	if (hostapd_sta_remove(hapd, sta->addr) &&
 	    sta->flags & WLAN_STA_ASSOC) {
 		wpa_printf(MSG_DEBUG, "Could not remove station " MACSTR
@@ -445,8 +441,8 @@ static int ap_sta_in_other_bss(struct hostapd_data *hapd,
 void ap_sta_disassociate(struct hostapd_data *hapd, struct sta_info *sta,
 			 u16 reason)
 {
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "%s: disassociate STA " MACSTR
-		      "\n", hapd->conf->iface, MAC2STR(sta->addr));
+	wpa_printf(MSG_DEBUG, "%s: disassociate STA " MACSTR,
+		   hapd->conf->iface, MAC2STR(sta->addr));
 	sta->flags &= ~WLAN_STA_ASSOC;
 	if (!ap_sta_in_other_bss(hapd, sta, WLAN_STA_ASSOC))
 		ap_sta_remove(hapd, sta);
@@ -464,8 +460,8 @@ void ap_sta_disassociate(struct hostapd_data *hapd, struct sta_info *sta,
 void ap_sta_deauthenticate(struct hostapd_data *hapd, struct sta_info *sta,
 			   u16 reason)
 {
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "%s: deauthenticate STA " MACSTR
-		      "\n", hapd->conf->iface, MAC2STR(sta->addr));
+	wpa_printf(MSG_DEBUG, "%s: deauthenticate STA " MACSTR,
+		   hapd->conf->iface, MAC2STR(sta->addr));
 	sta->flags &= ~(WLAN_STA_AUTH | WLAN_STA_ASSOC);
 	if (!ap_sta_in_other_bss(hapd, sta, WLAN_STA_ASSOC))
 		ap_sta_remove(hapd, sta);

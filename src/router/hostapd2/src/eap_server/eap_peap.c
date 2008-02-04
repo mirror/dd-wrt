@@ -1,6 +1,6 @@
 /*
  * hostapd / EAP-PEAP (draft-josefsson-pppext-eap-tls-eap-07.txt)
- * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -42,6 +42,7 @@ struct eap_peap_data {
 	const struct eap_method *phase2_method;
 	void *phase2_priv;
 	int force_version;
+	struct wpabuf *pending_phase2_resp;
 };
 
 
@@ -159,6 +160,7 @@ static void eap_peap_reset(struct eap_sm *sm, void *priv)
 	if (data->phase2_priv && data->phase2_method)
 		data->phase2_method->reset(sm, data->phase2_priv);
 	eap_server_tls_ssl_deinit(sm, &data->ssl);
+	wpabuf_free(data->pending_phase2_resp);
 	os_free(data);
 }
 
@@ -405,9 +407,15 @@ static void eap_peap_process_phase2_response(struct eap_sm *sm,
 
 	data->phase2_method->process(sm, data->phase2_priv, in_data);
 
+	if (sm->method_pending == METHOD_PENDING_WAIT) {
+		wpa_printf(MSG_DEBUG, "EAP-PEAP: Phase2 method is in "
+			   "pending wait state - save decrypted response");
+		wpabuf_free(data->pending_phase2_resp);
+		data->pending_phase2_resp = wpabuf_dup(in_data);
+	}
+
 	if (!data->phase2_method->isDone(sm, data->phase2_priv))
 		return;
-
 
 	if (!data->phase2_method->isSuccess(sm, data->phase2_priv)) {
 		wpa_printf(MSG_DEBUG, "EAP-PEAP: Phase2 method failed");
@@ -467,6 +475,16 @@ static void eap_peap_process_phase2(struct eap_sm *sm,
 
 	wpa_printf(MSG_DEBUG, "EAP-PEAP: received %lu bytes encrypted data for"
 		   " Phase 2", (unsigned long) in_len);
+
+	if (data->pending_phase2_resp) {
+		wpa_printf(MSG_DEBUG, "EAP-PEAP: Pending Phase 2 response - "
+			   "skip decryption and use old data");
+		eap_peap_process_phase2_response(sm, data,
+						 data->pending_phase2_resp);
+		wpabuf_free(data->pending_phase2_resp);
+		data->pending_phase2_resp = NULL;
+		return;
+	}
 
 	/* FIX: get rid of const -> non-const typecast */
 	res = eap_server_tls_data_reassemble(sm, &data->ssl, (u8 **) &in_data,
@@ -532,23 +550,26 @@ static void eap_peap_process_phase2(struct eap_sm *sm,
 	}
 	hdr = wpabuf_head(in_decrypted);
 	if (wpabuf_len(in_decrypted) < (int) sizeof(*hdr)) {
-		wpabuf_free(in_decrypted);
 		wpa_printf(MSG_INFO, "EAP-PEAP: Too short Phase 2 "
-			   "EAP frame (len=%d)", wpabuf_len(in_decrypted));
+			   "EAP frame (len=%lu)",
+			   (unsigned long) wpabuf_len(in_decrypted));
+		wpabuf_free(in_decrypted);
 		eap_peap_req_failure(sm, data);
 		return;
 	}
 	len = be_to_host16(hdr->length);
 	if (len > wpabuf_len(in_decrypted)) {
-		wpabuf_free(in_decrypted);
 		wpa_printf(MSG_INFO, "EAP-PEAP: Length mismatch in "
-			   "Phase 2 EAP frame (len=%d hdr->length=%d)",
-			   wpabuf_len(in_decrypted), len);
+			   "Phase 2 EAP frame (len=%lu hdr->length=%lu)",
+			   (unsigned long) wpabuf_len(in_decrypted),
+			   (unsigned long) len);
+		wpabuf_free(in_decrypted);
 		eap_peap_req_failure(sm, data);
 		return;
 	}
 	wpa_printf(MSG_DEBUG, "EAP-PEAP: received Phase 2: code=%d "
-		   "identifier=%d length=%d", hdr->code, hdr->identifier, len);
+		   "identifier=%d length=%lu", hdr->code, hdr->identifier,
+		   (unsigned long) len);
 	switch (hdr->code) {
 	case EAP_CODE_RESPONSE:
 		eap_peap_process_phase2_response(sm, data, in_decrypted);

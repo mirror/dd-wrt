@@ -50,11 +50,11 @@ static void rsn_preauth_receive(void *ctx, const u8 *src_addr,
 	struct sta_info *sta;
 	struct l2_ethhdr *ethhdr;
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "RSN: receive pre-auth packet "
-		      "from interface '%s'\n", piface->ifname);
+	wpa_printf(MSG_DEBUG, "RSN: receive pre-auth packet "
+		   "from interface '%s'", piface->ifname);
 	if (len < sizeof(*ethhdr) + sizeof(*hdr)) {
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "RSN: too short pre-auth "
-			      "packet (len=%lu)\n", (unsigned long) len);
+		wpa_printf(MSG_DEBUG, "RSN: too short pre-auth packet "
+			   "(len=%lu)", (unsigned long) len);
 		return;
 	}
 
@@ -62,17 +62,15 @@ static void rsn_preauth_receive(void *ctx, const u8 *src_addr,
 	hdr = (struct ieee802_1x_hdr *) (ethhdr + 1);
 
 	if (os_memcmp(ethhdr->h_dest, hapd->own_addr, ETH_ALEN) != 0) {
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "RSN: pre-auth for "
-			      "foreign address " MACSTR "\n",
-			      MAC2STR(ethhdr->h_dest));
+		wpa_printf(MSG_DEBUG, "RSN: pre-auth for foreign address "
+			   MACSTR, MAC2STR(ethhdr->h_dest));
 		return;
 	}
 
 	sta = ap_get_sta(hapd, ethhdr->h_source);
 	if (sta && (sta->flags & WLAN_STA_ASSOC)) {
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "RSN: pre-auth for "
-			      "already association STA " MACSTR "\n",
-			      MAC2STR(sta->addr));
+		wpa_printf(MSG_DEBUG, "RSN: pre-auth for already association "
+			   "STA " MACSTR, MAC2STR(sta->addr));
 		return;
 	}
 	if (!sta && hdr->type == IEEE802_1X_TYPE_EAPOL_START) {
@@ -103,8 +101,7 @@ static int rsn_preauth_iface_add(struct hostapd_data *hapd, const char *ifname)
 {
 	struct rsn_preauth_interface *piface;
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "RSN pre-auth interface '%s'\n",
-		      ifname);
+	wpa_printf(MSG_DEBUG, "RSN pre-auth interface '%s'", ifname);
 
 	piface = os_zalloc(sizeof(*piface));
 	if (piface == NULL)
@@ -119,8 +116,8 @@ static int rsn_preauth_iface_add(struct hostapd_data *hapd, const char *ifname)
 	piface->l2 = l2_packet_init(piface->ifname, NULL, ETH_P_PREAUTH,
 				    rsn_preauth_receive, piface, 1);
 	if (piface->l2 == NULL) {
-		printf("Failed to open register layer 2 access to "
-		       "ETH_P_PREAUTH\n");
+		wpa_printf(MSG_ERROR, "Failed to open register layer 2 access "
+			   "to ETH_P_PREAUTH");
 		goto fail2;
 	}
 
@@ -247,9 +244,8 @@ void rsn_preauth_send(struct hostapd_data *hapd, struct sta_info *sta,
 	}
 
 	if (piface == NULL) {
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "RSN: Could not find "
-			      "pre-authentication interface for " MACSTR "\n",
-			      MAC2STR(sta->addr));
+		wpa_printf(MSG_DEBUG, "RSN: Could not find pre-authentication "
+			   "interface for " MACSTR, MAC2STR(sta->addr));
 		return;
 	}
 
@@ -264,7 +260,8 @@ void rsn_preauth_send(struct hostapd_data *hapd, struct sta_info *sta,
 
 	if (l2_packet_send(piface->l2, sta->addr, ETH_P_PREAUTH, (u8 *) ethhdr,
 			   sizeof(*ethhdr) + len) < 0) {
-		printf("Failed to send preauth packet using l2_packet_send\n");
+		wpa_printf(MSG_ERROR, "Failed to send preauth packet using "
+			   "l2_packet_send\n");
 	}
 	os_free(ethhdr);
 }

@@ -24,6 +24,8 @@
 #include "radius/radius_client.h"
 #include "wpa_common.h"
 #include "wpa.h"
+#include "uuid.h"
+#include "eap_common/eap_wsc_common.h"
 
 
 #define MAX_STA_COUNT 2007
@@ -444,8 +446,6 @@ int hostapd_setup_wpa_psk(struct hostapd_bss_config *conf)
 		if (hostapd_config_read_wpa_psk(ssid->wpa_psk_file,
 						&conf->ssid))
 			return -1;
-		os_free(ssid->wpa_psk_file);
-		ssid->wpa_psk_file = NULL;
 	}
 
 	return 0;
@@ -562,6 +562,24 @@ static int hostapd_config_read_eap_user(const char *fname,
 			    EAP_VENDOR_IETF &&
 			    user->methods[num_methods].method == EAP_TYPE_NONE)
 			{
+				if (os_strcmp(start, "TTLS-PAP") == 0) {
+					user->ttls_auth |= EAP_TTLS_AUTH_PAP;
+					goto skip_eap;
+				}
+				if (os_strcmp(start, "TTLS-CHAP") == 0) {
+					user->ttls_auth |= EAP_TTLS_AUTH_CHAP;
+					goto skip_eap;
+				}
+				if (os_strcmp(start, "TTLS-MSCHAP") == 0) {
+					user->ttls_auth |=
+						EAP_TTLS_AUTH_MSCHAP;
+					goto skip_eap;
+				}
+				if (os_strcmp(start, "TTLS-MSCHAPV2") == 0) {
+					user->ttls_auth |=
+						EAP_TTLS_AUTH_MSCHAPV2;
+					goto skip_eap;
+				}
 				printf("Unsupported EAP type '%s' on line %d "
 				       "in '%s'\n", start, line, fname);
 				goto failed;
@@ -570,11 +588,12 @@ static int hostapd_config_read_eap_user(const char *fname,
 			num_methods++;
 			if (num_methods >= EAP_USER_MAX_METHODS)
 				break;
+		skip_eap:
 			if (pos3 == NULL)
 				break;
 			start = pos3;
 		}
-		if (num_methods == 0) {
+		if (num_methods == 0 && user->ttls_auth == 0) {
 			printf("No EAP types configured on line %d in '%s'\n",
 			       line, fname);
 			goto failed;
@@ -1320,7 +1339,9 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 				errors++;
 			}
 		} else if (os_strcmp(buf, "debug") == 0) {
-			bss->debug = atoi(pos);
+			wpa_printf(MSG_DEBUG, "Line %d: DEPRECATED: 'debug' "
+				   "configuration variable is not used "
+				   "anymore", line);
 		} else if (os_strcmp(buf, "logger_syslog_level") == 0) {
 			bss->logger_syslog_level = atoi(pos);
 		} else if (os_strcmp(buf, "logger_stdout_level") == 0) {
@@ -1907,6 +1928,44 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 		} else if (os_strcmp(buf, "ieee80211w") == 0) {
 			bss->ieee80211w = atoi(pos);
 #endif /* CONFIG_IEEE80211W */
+#ifdef CONFIG_WPS
+		} else if (os_strcmp(buf, "wps_state") == 0) {
+			bss->wps_state = atoi(pos);
+			if (bss->wps_state < 0 || bss->wps_state > 2) {
+				printf("Line %d: invalid wps_state\n", line);
+				errors++;
+			}
+		} else if (os_strcmp(buf, "ap_setup_locked") == 0) {
+			bss->ap_setup_locked = atoi(pos);
+		} else if (os_strcmp(buf, "uuid") == 0) {
+			if (uuid_str2bin(pos, bss->uuid)) {
+				printf("Line %d: invalid UUID\n", line);
+				errors++;
+			}
+		} else if (os_strcmp(buf, "wps_pin_requests") == 0) {
+			bss->wps_pin_requests = os_strdup(pos);
+		} else if (os_strcmp(buf, "device_name") == 0) {
+			bss->device_name = os_strdup(pos);
+		} else if (os_strcmp(buf, "manufacturer") == 0) {
+			bss->manufacturer = os_strdup(pos);
+		} else if (os_strcmp(buf, "model_name") == 0) {
+			bss->model_name = os_strdup(pos);
+		} else if (os_strcmp(buf, "model_number") == 0) {
+			bss->model_number = os_strdup(pos);
+		} else if (os_strcmp(buf, "serial_number") == 0) {
+			bss->serial_number = os_strdup(pos);
+		} else if (os_strcmp(buf, "device_type") == 0) {
+			bss->device_type = os_strdup(pos);
+		} else if (os_strcmp(buf, "config_methods") == 0) {
+			bss->config_methods = os_strdup(pos);
+		} else if (os_strcmp(buf, "os_version") == 0) {
+			if (hexstr2bin(pos, bss->os_version, 4)) {
+				printf("Line %d: invalid os_version\n", line);
+				errors++;
+			}
+		} else if (os_strcmp(buf, "ap_pin") == 0) {
+			bss->ap_pin = os_strdup(pos);
+#endif /* CONFIG_WPS */
 		} else {
 			printf("Line %d: unknown configuration item '%s'\n",
 			       line, buf);
@@ -2099,6 +2158,18 @@ static void hostapd_config_free_bss(struct hostapd_bss_config *conf)
 		}
 	}
 #endif /* CONFIG_IEEE80211R */
+
+#ifdef CONFIG_WPS
+	os_free(conf->wps_pin_requests);
+	os_free(conf->device_name);
+	os_free(conf->manufacturer);
+	os_free(conf->model_name);
+	os_free(conf->model_number);
+	os_free(conf->serial_number);
+	os_free(conf->device_type);
+	os_free(conf->config_methods);
+	os_free(conf->ap_pin);
+#endif /* CONFIG_WPS */
 }
 
 
@@ -2193,13 +2264,36 @@ hostapd_get_eap_user(const struct hostapd_bss_config *conf, const u8 *identity,
 {
 	struct hostapd_eap_user *user = conf->eap_user;
 
+#ifdef CONFIG_WPS
+	if (conf->wps_state && identity_len == WSC_ID_ENROLLEE_LEN &&
+	    os_memcmp(identity, WSC_ID_ENROLLEE, WSC_ID_ENROLLEE_LEN) == 0) {
+		static struct hostapd_eap_user wsc_enrollee;
+		os_memset(&wsc_enrollee, 0, sizeof(wsc_enrollee));
+		wsc_enrollee.methods[0].method = eap_server_get_type(
+			"WSC", &wsc_enrollee.methods[0].vendor);
+		return &wsc_enrollee;
+	}
+
+	if (conf->wps_state && conf->ap_pin &&
+	    identity_len == WSC_ID_REGISTRAR_LEN &&
+	    os_memcmp(identity, WSC_ID_REGISTRAR, WSC_ID_REGISTRAR_LEN) == 0) {
+		static struct hostapd_eap_user wsc_registrar;
+		os_memset(&wsc_registrar, 0, sizeof(wsc_registrar));
+		wsc_registrar.methods[0].method = eap_server_get_type(
+			"WSC", &wsc_registrar.methods[0].vendor);
+		wsc_registrar.password = (u8 *) conf->ap_pin;
+		wsc_registrar.password_len = os_strlen(conf->ap_pin);
+		return &wsc_registrar;
+	}
+#endif /* CONFIG_WPS */
+
 	while (user) {
 		if (!phase2 && user->identity == NULL) {
 			/* Wildcard match */
 			break;
 		}
 
-		if (!phase2 && user->wildcard_prefix &&
+		if (user->phase2 == !!phase2 && user->wildcard_prefix &&
 		    identity_len >= user->identity_len &&
 		    os_memcmp(user->identity, identity, user->identity_len) ==
 		    0) {

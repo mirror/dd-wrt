@@ -115,9 +115,9 @@ static int hostapd_config_reload_sta(struct hostapd_data *hapd,
 	}
 
 	if (deauth) {
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "STA " MACSTR
-			      " deauthenticated during config reloading "
-			      "(reason=%d)\n", MAC2STR(sta->addr), reason);
+		wpa_printf(MSG_DEBUG, "STA " MACSTR " deauthenticated during "
+			   "config reloading (reason=%d)",
+			   MAC2STR(sta->addr), reason);
 		ieee802_11_send_deauth(hapd, sta->addr, reason);
 		ap_sta_deauthenticate(hapd, sta, reason);
 		change->num_sta_remove--;
@@ -318,10 +318,9 @@ static void reload_hw_mode_done(struct hostapd_iface *hapd_iface, int status)
 	}
 
 	freq = hostapd_hw_get_freq(hapd, newconf->channel);
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		      "Mode: %s  Channel: %d  Frequency: %d MHz\n",
-		      hostapd_hw_mode_txt(newconf->hw_mode),
-		      newconf->channel, freq);
+	wpa_printf(MSG_DEBUG, "Mode: %s  Channel: %d  Frequency: %d MHz",
+		   hostapd_hw_mode_txt(newconf->hw_mode),
+		   newconf->channel, freq);
 
 	if (hostapd_set_freq(hapd, newconf->hw_mode, freq)) {
 		printf("Could not set channel %d (%d MHz) for kernel "
@@ -427,8 +426,7 @@ static void hostapd_reconfig_bss(struct hostapd_data *hapd,
 	vlan_reconfig(hapd, oldconf, oldbss);
 
 	if (beacon_changed) {
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "Updating beacon frame "
-			      "information\n");
+		wpa_printf(MSG_DEBUG, "Updating beacon frame information");
 		ieee802_11_set_beacon(hapd);
 	}
 
@@ -536,9 +534,8 @@ static void config_reload2(struct hostapd_iface *hapd_iface, int status)
 					     beacon_changed);
 		} else {
 			hapd = old_hapd[i];
-			HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-				      "Removing BSS (ifname %s)\n",
-				      hapd->conf->iface);
+			wpa_printf(MSG_DEBUG, "Removing BSS (ifname %s)",
+				   hapd->conf->iface);
 			hostapd_free_stas(hapd);
 			/* Send broadcast deauthentication for this BSS, but do
 			 * not clear all STAs from the driver since other BSSes
@@ -565,8 +562,8 @@ static void config_reload2(struct hostapd_iface *hapd_iface, int status)
 
 		newbss = &newconf->bss[j];
 
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "Reconfiguration: adding "
-			      "new BSS (ifname=%s)\n", newbss->iface);
+		wpa_printf(MSG_DEBUG, "Reconfiguration: adding new BSS "
+			   "(ifname=%s)", newbss->iface);
 
 #if 0
 		hapd = hapd_iface->bss[j] =

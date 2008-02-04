@@ -1,6 +1,6 @@
 /*
  * EAP peer method: EAP-PEAP (draft-josefsson-pppext-eap-tls-eap-07.txt)
- * Copyright (c) 2004-2006, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -17,7 +17,7 @@
 #include "common.h"
 #include "eap_i.h"
 #include "eap_tls_common.h"
-#include "config_ssid.h"
+#include "eap_config.h"
 #include "tls.h"
 #include "eap_tlv.h"
 
@@ -101,7 +101,7 @@ static int eap_peap_parse_phase1(struct eap_peap_data *data,
 static void * eap_peap_init(struct eap_sm *sm)
 {
 	struct eap_peap_data *data;
-	struct wpa_ssid *config = eap_get_config(sm);
+	struct eap_peer_config *config = eap_get_config(sm);
 
 	data = os_zalloc(sizeof(*data));
 	if (data == NULL)
@@ -162,7 +162,7 @@ static int eap_peap_phase2_request(struct eap_sm *sm,
 	size_t len = be_to_host16(hdr->length);
 	u8 *pos;
 	struct eap_method_ret iret;
-	struct wpa_ssid *config = eap_get_config(sm);
+	struct eap_peer_config *config = eap_get_config(sm);
 
 	if (len <= sizeof(struct eap_hdr)) {
 		wpa_printf(MSG_INFO, "EAP-PEAP: too short "
@@ -367,22 +367,6 @@ continue_req:
 			   "(%lu < %lu)",
 			   (unsigned long) len,
 			   (unsigned long) wpabuf_len(in_decrypted));
-		if (sm->workaround && len == 4 &&
-		    wpabuf_len(in_decrypted) == 5 &&
-		    eap_get_type(in_decrypted) == EAP_TYPE_IDENTITY) {
-			/* Radiator 3.9 seems to set Phase 2 EAP header to use
-			 * incorrect length for the EAP-Request Identity
-			 * packet, so fix the inner header to interoperate..
-			 * This was fixed in 2004-06-23 patch for Radiator and
-			 * this workaround can be removed at some point. */
-			wpa_printf(MSG_INFO, "EAP-PEAP: workaround -> replace "
-				   "Phase 2 EAP header len (%lu) with real "
-				   "decrypted len (%lu)",
-				   (unsigned long) len,
-				   (unsigned long) wpabuf_len(in_decrypted));
-			len = wpabuf_len(in_decrypted);
-			hdr->length = host_to_be16(len);
-		}
 	}
 	wpa_printf(MSG_DEBUG, "EAP-PEAP: received Phase 2: code=%d "
 		   "identifier=%d length=%lu", hdr->code, hdr->identifier,
@@ -460,7 +444,7 @@ continue_req:
 
 	if (resp) {
 		int skip_change2 = 0;
-		struct wpabuf *rmsg;
+		struct wpabuf *rmsg, buf;
 
 		wpa_hexdump_buf_key(MSG_DEBUG,
 				    "EAP-PEAP: Encrypting Phase 2 data", resp);
@@ -471,13 +455,10 @@ continue_req:
 			skip_change2 = 1;
 		rmsg = resp;
 		if (data->peap_version == 0 && !skip_change2) {
-			rmsg = wpabuf_alloc_ext_data_no_free(
-				wpabuf_head_u8(resp) + sizeof(struct eap_hdr),
-				wpabuf_len(resp) - sizeof(struct eap_hdr));
-			if (rmsg == NULL) {
-				wpabuf_free(resp);
-				return -1;
-			}
+			wpabuf_set(&buf, wpabuf_head_u8(resp) +
+				   sizeof(struct eap_hdr),
+				   wpabuf_len(resp) - sizeof(struct eap_hdr));
+			rmsg = &buf;
 		}
 
 		if (eap_peer_tls_encrypt(sm, &data->ssl, EAP_TYPE_PEAP,
@@ -486,8 +467,6 @@ continue_req:
 			wpa_printf(MSG_INFO, "EAP-PEAP: Failed to encrypt "
 				   "a Phase 2 frame");
 		}
-		if (rmsg != resp)
-			wpabuf_free(rmsg);
 		wpabuf_free(resp);
 	}
 
@@ -539,11 +518,9 @@ static struct wpabuf * eap_peap_process(struct eap_sm *sm, void *priv,
 	resp = NULL;
 	if (tls_connection_established(sm->ssl_ctx, data->ssl.conn) &&
 	    !data->resuming) {
-		struct wpabuf *msg = wpabuf_alloc_ext_data_no_free(pos, left);
-		if (msg)
-			res = eap_peap_decrypt(sm, data, ret, req, msg, &resp);
-		else
-			res = -1;
+		struct wpabuf msg;
+		wpabuf_set(&msg, pos, left);
+		res = eap_peap_decrypt(sm, data, ret, req, &msg, &resp);
 	} else {
 		res = eap_peer_tls_process_helper(sm, &data->ssl,
 						  EAP_TYPE_PEAP,
@@ -603,20 +580,16 @@ static struct wpabuf * eap_peap_process(struct eap_sm *sm, void *priv,
 		}
 
 		if (res == 2) {
-			struct wpabuf *msg;
+			struct wpabuf msg;
 			/*
 			 * Application data included in the handshake message.
 			 */
 			wpabuf_free(data->pending_phase2_req);
 			data->pending_phase2_req = resp;
 			resp = NULL;
-			msg = wpabuf_alloc_ext_data_no_free(pos, left);
-			if (msg) {
-				res = eap_peap_decrypt(sm, data, ret, req, msg,
-						       &resp);
-				wpabuf_free(msg);
-			} else
-				res = -1;
+			wpabuf_set(&msg, pos, left);
+			res = eap_peap_decrypt(sm, data, ret, req, &msg,
+					       &resp);
 		}
 	}
 

@@ -290,8 +290,7 @@ void wpa_pmk_to_ptk(const u8 *pmk, size_t pmk_len, const char *label,
 		    u8 *ptk, size_t ptk_len);
 
 #ifdef CONFIG_IEEE80211R
-int wpa_ft_mic(const u8 *kck, int use_aes_cmac,
-	       const u8 *sta_addr, const u8 *ap_addr,
+int wpa_ft_mic(const u8 *kck, const u8 *sta_addr, const u8 *ap_addr,
 	       u8 transaction_seqnum, const u8 *mdie, size_t mdie_len,
 	       const u8 *ftie, size_t ftie_len,
 	       const u8 *rsnie, size_t rsnie_len,

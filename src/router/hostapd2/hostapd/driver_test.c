@@ -1,6 +1,6 @@
 /*
  * hostapd / Driver interface for development testing
- * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -44,6 +44,10 @@ struct test_driver_bss {
 	u8 bssid[ETH_ALEN];
 	u8 *ie;
 	size_t ielen;
+	u8 *wps_beacon_ie;
+	size_t wps_beacon_ie_len;
+	u8 *wps_probe_resp_ie;
+	size_t wps_probe_resp_ie_len;
 	u8 ssid[32];
 	size_t ssid_len;
 	int privacy;
@@ -62,6 +66,8 @@ struct test_driver_data {
 static void test_driver_free_bss(struct test_driver_bss *bss)
 {
 	free(bss->ie);
+	free(bss->wps_beacon_ie);
+	free(bss->wps_probe_resp_ie);
 	free(bss);
 }
 
@@ -346,6 +352,8 @@ static void test_driver_scan(struct test_driver_data *drv,
 			return;
 		pos += ret;
 		pos += wpa_snprintf_hex(pos, end - pos, bss->ie, bss->ielen);
+		pos += wpa_snprintf_hex(pos, end - pos, bss->wps_probe_resp_ie,
+					bss->wps_probe_resp_ie_len);
 
 		if (bss->privacy) {
 			ret = snprintf(pos, end - pos, " PRIVACY");
@@ -675,36 +683,106 @@ static void test_driver_receive_unix(int sock, void *eloop_ctx, void *sock_ctx)
 }
 
 
+static struct test_driver_bss *
+test_driver_get_bss(struct test_driver_data *drv, const char *ifname)
+{
+	struct test_driver_bss *bss;
+
+	for (bss = drv->bss; bss; bss = bss->next) {
+		if (strcmp(bss->ifname, ifname) == 0)
+			return bss;
+	}
+	return NULL;
+}
+
+
 static int test_driver_set_generic_elem(const char *ifname, void *priv,
 					const u8 *elem, size_t elem_len)
 {
 	struct test_driver_data *drv = priv;
 	struct test_driver_bss *bss;
 
-	for (bss = drv->bss; bss; bss = bss->next) {
-		if (strcmp(bss->ifname, ifname) != 0)
-			continue;
+	bss = test_driver_get_bss(drv, ifname);
+	if (bss == NULL)
+		return -1;
 
-		free(bss->ie);
+	free(bss->ie);
 
-		if (elem == NULL) {
-			bss->ie = NULL;
-			bss->ielen = 0;
-			return 0;
-		}
-
-		bss->ie = malloc(elem_len);
-		if (bss->ie) {
-			memcpy(bss->ie, elem, elem_len);
-			bss->ielen = elem_len;
-			return 0;
-		} else {
-			bss->ielen = 0;
-			return -1;
-		}
+	if (elem == NULL) {
+		bss->ie = NULL;
+		bss->ielen = 0;
+		return 0;
 	}
 
-	return -1;
+	bss->ie = malloc(elem_len);
+	if (bss->ie == NULL) {
+		bss->ielen = 0;
+		return -1;
+	}
+
+	memcpy(bss->ie, elem, elem_len);
+	bss->ielen = elem_len;
+	return 0;
+}
+
+
+static int test_driver_set_wps_beacon_ie(const char *ifname, void *priv,
+					 const u8 *ie, size_t len)
+{
+	struct test_driver_data *drv = priv;
+	struct test_driver_bss *bss;
+
+	bss = test_driver_get_bss(drv, ifname);
+	if (bss == NULL)
+		return -1;
+
+	free(bss->wps_beacon_ie);
+
+	if (ie == NULL) {
+		bss->wps_beacon_ie = NULL;
+		bss->wps_beacon_ie_len = 0;
+		return 0;
+	}
+
+	bss->wps_beacon_ie = malloc(len);
+	if (bss->wps_beacon_ie == NULL) {
+		bss->wps_beacon_ie_len = 0;
+		return -1;
+	}
+
+	memcpy(bss->wps_beacon_ie, ie, len);
+	bss->wps_beacon_ie_len = len;
+	return 0;
+}
+
+
+static int test_driver_set_wps_probe_resp_ie(const char *ifname, void *priv,
+					     const u8 *ie, size_t len)
+{
+	struct test_driver_data *drv = priv;
+	struct test_driver_bss *bss;
+
+	bss = test_driver_get_bss(drv, ifname);
+	if (bss == NULL)
+		return -1;
+
+	free(bss->wps_probe_resp_ie);
+
+	if (ie == NULL) {
+		bss->wps_probe_resp_ie = NULL;
+		bss->wps_probe_resp_ie_len = 0;
+		return 0;
+	}
+
+	bss->wps_probe_resp_ie = malloc(len);
+	if (bss->wps_probe_resp_ie == NULL) {
+		bss->wps_probe_resp_ie_len = 0;
+		return -1;
+	}
+
+	memcpy(bss->wps_probe_resp_ie, ie, len);
+	bss->wps_probe_resp_ie_len = len;
+	return 0;
 }
 
 
@@ -1154,4 +1232,6 @@ const struct wpa_driver_ops wpa_driver_test_ops = {
 	.set_sta_vlan = test_driver_set_sta_vlan,
 	.sta_add = test_driver_sta_add,
 	.send_ether = test_driver_send_ether,
+	.set_wps_beacon_ie = test_driver_set_wps_beacon_ie,
+	.set_wps_probe_resp_ie = test_driver_set_wps_probe_resp_ie,
 };

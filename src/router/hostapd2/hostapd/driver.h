@@ -159,6 +159,11 @@ struct wpa_driver_ops {
 
 	int (*send_ether)(void *priv, const u8 *dst, const u8 *src, u16 proto,
 			  const u8 *data, size_t data_len);
+
+	int (*set_wps_beacon_ie)(const char *ifname, void *priv,
+				 const u8 *ie, size_t len);
+	int (*set_wps_probe_resp_ie)(const char *ifname, void *priv,
+				     const u8 *ie, size_t len);
 };
 
 static inline void *
@@ -676,6 +681,26 @@ hostapd_driver_commit(struct hostapd_data *hapd)
 	if (hapd->driver == NULL || hapd->driver->commit == NULL)
 		return 0;
 	return hapd->driver->commit(hapd->drv_priv);
+}
+
+static inline int
+hostapd_set_wps_beacon_ie(struct hostapd_data *hapd, const u8 *ie, size_t len)
+{
+	if (hapd->driver == NULL || hapd->driver->set_wps_beacon_ie == NULL)
+		return 0;
+	return hapd->driver->set_wps_beacon_ie(hapd->conf->iface,
+					       hapd->drv_priv, ie, len);
+}
+
+static inline int
+hostapd_set_wps_probe_resp_ie(struct hostapd_data *hapd, const u8 *ie,
+			      size_t len)
+{
+	if (hapd->driver == NULL ||
+	    hapd->driver->set_wps_probe_resp_ie == NULL)
+		return 0;
+	return hapd->driver->set_wps_probe_resp_ie(hapd->conf->iface,
+						   hapd->drv_priv, ie, len);
 }
 
 #endif /* DRIVER_H */

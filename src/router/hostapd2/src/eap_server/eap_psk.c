@@ -119,18 +119,18 @@ static struct wpabuf * eap_psk_build_3(struct eap_sm *sm,
 	/* MAC_S = OMAC1-AES-128(AK, ID_S||RAND_P) */
 	buflen = data->id_s_len + EAP_PSK_RAND_LEN;
 	buf = os_malloc(buflen);
-	if (buf == NULL) {
-		wpabuf_free(req);
-		data->state = FAILURE;
-		return NULL;
-	}
+	if (buf == NULL)
+		goto fail;
+
 	os_memcpy(buf, data->id_s, data->id_s_len);
 	os_memcpy(buf + data->id_s_len, data->rand_p, EAP_PSK_RAND_LEN);
-	omac1_aes_128(data->ak, buf, buflen, psk->mac_s);
+	if (omac1_aes_128(data->ak, buf, buflen, psk->mac_s))
+		goto fail;
 	os_free(buf);
 
-	eap_psk_derive_keys(data->kdk, data->rand_p, data->tek, data->msk,
-			    data->emsk);
+	if (eap_psk_derive_keys(data->kdk, data->rand_p, data->tek, data->msk,
+				data->emsk))
+		goto fail;
 	wpa_hexdump_key(MSG_DEBUG, "EAP-PSK: TEK", data->tek, EAP_PSK_TEK_LEN);
 	wpa_hexdump_key(MSG_DEBUG, "EAP-PSK: MSK", data->msk, EAP_MSK_LEN);
 	wpa_hexdump_key(MSG_DEBUG, "EAP-PSK: EMSK", data->emsk, EAP_EMSK_LEN);
@@ -142,13 +142,19 @@ static struct wpabuf * eap_psk_build_3(struct eap_sm *sm,
 	pchannel[4 + 16] = EAP_PSK_R_FLAG_DONE_SUCCESS << 6;
 	wpa_hexdump(MSG_DEBUG, "EAP-PSK: PCHANNEL (plaintext)",
 		    pchannel, 4 + 16 + 1);
-	aes_128_eax_encrypt(data->tek, nonce, sizeof(nonce),
-			    wpabuf_head(req), 22,
-			    pchannel + 4 + 16, 1, pchannel + 4);
+	if (aes_128_eax_encrypt(data->tek, nonce, sizeof(nonce),
+				wpabuf_head(req), 22,
+				pchannel + 4 + 16, 1, pchannel + 4))
+		goto fail;
 	wpa_hexdump(MSG_DEBUG, "EAP-PSK: PCHANNEL (encrypted)",
 		    pchannel, 4 + 16 + 1);
 
 	return req;
+
+fail:
+	wpabuf_free(req);
+	data->state = FAILURE;
+	return NULL;
 }
 
 
@@ -281,7 +287,10 @@ static void eap_psk_process_2(struct eap_sm *sm,
 		data->state = FAILURE;
 		return;
 	}
-	eap_psk_key_setup(sm->user->password, data->ak, data->kdk);
+	if (eap_psk_key_setup(sm->user->password, data->ak, data->kdk)) {
+		data->state = FAILURE;
+		return;
+	}
 	wpa_hexdump_key(MSG_DEBUG, "EAP-PSK: AK", data->ak, EAP_PSK_AK_LEN);
 	wpa_hexdump_key(MSG_DEBUG, "EAP-PSK: KDK", data->kdk, EAP_PSK_KDK_LEN);
 
@@ -303,7 +312,11 @@ static void eap_psk_process_2(struct eap_sm *sm,
 	os_memcpy(pos, data->rand_s, EAP_PSK_RAND_LEN);
 	pos += EAP_PSK_RAND_LEN;
 	os_memcpy(pos, data->rand_p, EAP_PSK_RAND_LEN);
-	omac1_aes_128(data->ak, buf, buflen, mac);
+	if (omac1_aes_128(data->ak, buf, buflen, mac)) {
+		os_free(buf);
+		data->state = FAILURE;
+		return;
+	}
 	os_free(buf);
 	wpa_hexdump(MSG_DEBUG, "EAP-PSK: MAC_P", resp->mac_p, EAP_PSK_MAC_LEN);
 	if (os_memcmp(mac, resp->mac_p, EAP_PSK_MAC_LEN) != 0) {

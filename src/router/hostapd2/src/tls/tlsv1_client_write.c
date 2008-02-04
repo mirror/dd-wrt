@@ -254,10 +254,16 @@ static int tlsv1_key_x_anon_dh(struct tlsv1_client *conn, u8 **pos, u8 *end)
 		os_free(csecret);
 		return -1;
 	}
-	crypto_mod_exp(conn->dh_g, conn->dh_g_len,
-		       csecret_start, csecret_len,
-		       conn->dh_p, conn->dh_p_len,
-		       dh_yc, &dh_yc_len);
+	if (crypto_mod_exp(conn->dh_g, conn->dh_g_len,
+			   csecret_start, csecret_len,
+			   conn->dh_p, conn->dh_p_len,
+			   dh_yc, &dh_yc_len)) {
+		tls_alert(conn, TLS_ALERT_LEVEL_FATAL,
+			  TLS_ALERT_INTERNAL_ERROR);
+		os_free(csecret);
+		os_free(dh_yc);
+		return -1;
+	}
 
 	wpa_hexdump(MSG_DEBUG, "TLSv1: DH Yc (client's public value)",
 		    dh_yc, dh_yc_len);
@@ -289,10 +295,16 @@ static int tlsv1_key_x_anon_dh(struct tlsv1_client *conn, u8 **pos, u8 *end)
 	}
 
 	/* shared = Ys^csecret mod p */
-	crypto_mod_exp(conn->dh_ys, conn->dh_ys_len,
-		       csecret_start, csecret_len,
-		       conn->dh_p, conn->dh_p_len,
-		       shared, &shared_len);
+	if (crypto_mod_exp(conn->dh_ys, conn->dh_ys_len,
+			   csecret_start, csecret_len,
+			   conn->dh_p, conn->dh_p_len,
+			   shared, &shared_len)) {
+		tls_alert(conn, TLS_ALERT_LEVEL_FATAL,
+			  TLS_ALERT_INTERNAL_ERROR);
+		os_free(csecret);
+		os_free(shared);
+		return -1;
+	}
 	wpa_hexdump_key(MSG_DEBUG, "TLSv1: Shared secret from DH key exchange",
 			shared, shared_len);
 

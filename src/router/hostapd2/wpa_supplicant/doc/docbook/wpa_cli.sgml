@@ -44,7 +44,7 @@
     response.</para>
 
     <para>The control interface of wpa_supplicant can be configured to
-    allow non-root user access (ctrl_interface_group in the
+    allow non-root user access (ctrl_interface GROUP= parameter in the
     configuration file). This makes it possible to run wpa_cli with a
     normal user account.</para>
 

@@ -1,6 +1,6 @@
 /*
  * WPA Supplicant - driver interface definition
- * Copyright (c) 2003-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2003-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -32,7 +32,7 @@
 
 #define SSID_MAX_WPA_IE_LEN 40
 /**
- * struct wpa_scan_result - Scan results
+ * struct wpa_scan_result - Scan results (old structure)
  * @bssid: BSSID
  * @ssid: SSID
  * @ssid_len: length of the ssid
@@ -54,6 +54,12 @@
  * This structure is used as a generic format for scan results from the
  * driver. Each driver interface implementation is responsible for converting
  * the driver or OS specific scan results into this format.
+ *
+ * This structure is the old data structure used for scan results. It is
+ * obsoleted by the new struct wpa_scan_res structure and the old version is
+ * only included for backwards compatibility with existing driver wrapper
+ * implementations. New implementations are encouraged to implement for struct
+ * wpa_scan_res. The old structure will be removed at some point.
  */
 struct wpa_scan_result {
 	u8 bssid[ETH_ALEN];
@@ -72,6 +78,51 @@ struct wpa_scan_result {
 	int mdie_present;
 	u8 mdie[5];
 	u64 tsf;
+};
+
+
+/**
+ * struct wpa_scan_res - Scan result for an BSS/IBSS
+ * @bssid: BSSID
+ * @freq: frequency of the channel in MHz (e.g., 2412 = channel 1)
+ * @beacon_int: beacon interval in TUs (host byte order)
+ * @caps: capability information field in host byte order
+ * @qual: signal quality
+ * @noise: noise level
+ * @level: signal level
+ * @tsf: Timestamp
+ * @ie_len: length of the following IE field in octets
+ *
+ * This structure is used as a generic format for scan results from the
+ * driver. Each driver interface implementation is responsible for converting
+ * the driver or OS specific scan results into this format.
+ *
+ * If the driver does not support reporting all IEs, the IE data structure is
+ * constructed of the IEs that are available. This field will also need to
+ * include SSID in IE format. All drivers are encouraged to be extended to
+ * report all IEs to make it easier to support future additions.
+ */
+struct wpa_scan_res {
+	u8 bssid[ETH_ALEN];
+	int freq;
+	u16 beacon_int;
+	u16 caps;
+	int qual;
+	int noise;
+	int level;
+	u64 tsf;
+	size_t ie_len;
+	/* followed by ie_len octets of IEs */
+};
+
+/**
+ * struct wpa_scan_results - Scan results
+ * @res: Array of pointers to allocated variable length scan result entries
+ * @num: Number of entries in the scan result array
+ */
+struct wpa_scan_results {
+	struct wpa_scan_res **res;
+	size_t num;
 };
 
 /**
@@ -371,8 +422,7 @@ struct wpa_driver_ops {
 	 * set_key - Configure encryption key
 	 * @priv: private driver interface data
 	 * @alg: encryption algorithm (%WPA_ALG_NONE, %WPA_ALG_WEP,
-	 *	%WPA_ALG_TKIP, %WPA_ALG_CCMP, %WPA_ALG_IGTK, %WPA_ALG_DHV,
-	 *	%WPA_ALG_PMK);
+	 *	%WPA_ALG_TKIP, %WPA_ALG_CCMP, %WPA_ALG_IGTK, %WPA_ALG_PMK);
 	 *	%WPA_ALG_NONE clears the key.
 	 * @addr: address of the peer STA or ff:ff:ff:ff:ff:ff for
 	 *	broadcast/default keys
@@ -389,7 +439,7 @@ struct wpa_driver_ops {
 	 * @key: key buffer; TKIP: 16-byte temporal key, 8-byte Tx Mic key,
 	 *	8-byte Rx Mic Key
 	 * @key_len: length of the key buffer in octets (WEP: 5 or 13,
-	 *	TKIP: 32, CCMP: 16, IGTK: 16, DHV: 16)
+	 *	TKIP: 32, CCMP: 16, IGTK: 16)
 	 *
 	 * Returns: 0 on success, -1 on failure
 	 *
@@ -503,7 +553,7 @@ struct wpa_driver_ops {
 	int (*scan)(void *priv, const u8 *ssid, size_t ssid_len);
 
 	/**
-	 * get_scan_results - Fetch the latest scan results
+	 * get_scan_results - Fetch the latest scan results (old version)
 	 * @priv: private driver interface data
 	 * @results: pointer to buffer for scan results
 	 * @max_size: maximum number of entries (buffer size)
@@ -514,6 +564,9 @@ struct wpa_driver_ops {
 	 * If scan results include more than max_size BSSes, max_size will be
 	 * returned and the remaining entries will not be included in the
 	 * buffer.
+	 *
+	 * This function is depracated. New driver wrapper implementations
+	 * should implement support for get_scan_results2().
 	 */
 	int (*get_scan_results)(void *priv,
 				struct wpa_scan_result *results,
@@ -858,6 +911,24 @@ struct wpa_driver_ops {
 	 */
 	int (*send_ft_action)(void *priv, u8 action, const u8 *target_ap,
 			      const u8 *ies, size_t ies_len);
+
+	/**
+	 * get_scan_results2 - Fetch the latest scan results
+	 * @priv: private driver interface data
+	 *
+	 * Returns: Allocated buffer of scan results (caller is responsible for
+	 * freeing the data structure) on success, NULL on failure
+	 */
+	 struct wpa_scan_results * (*get_scan_results2)(void *priv);
+
+	/**
+	 * * set_probe_req_ie - Set information element(s) for Probe Request
+	 * @priv: private driver interface data
+	 * @ies: Information elements to append or %NULL to remove extra IEs
+	 * @ies_len: Length of the IE buffer in octets
+	 * Returns: 0 on success, -1 on failure
+	 */
+	int (*set_probe_req_ie)(void *, const u8 *ies, size_t ies_len);
 };
 
 /**
@@ -870,7 +941,7 @@ typedef enum wpa_event_type {
 	 * This event needs to be delivered when the driver completes IEEE
 	 * 802.11 association or reassociation successfully.
 	 * wpa_driver_ops::get_bssid() is expected to provide the current BSSID
-	 * after this even has been generated. In addition, optional
+	 * after this event has been generated. In addition, optional
 	 * EVENT_ASSOCINFO may be generated just before EVENT_ASSOC to provide
 	 * more information about the association. If the driver interface gets
 	 * both of these events at the same time, it can also include the
@@ -1139,5 +1210,18 @@ void wpa_supplicant_event(void *ctx, wpa_event_type event,
  */
 void wpa_supplicant_rx_eapol(void *ctx, const u8 *src_addr,
 			     const u8 *buf, size_t len);
+
+void wpa_supplicant_sta_rx(void *ctx, const u8 *buf, size_t len,
+			   struct ieee80211_rx_status *rx_status);
+void wpa_supplicant_sta_free_hw_features(struct wpa_hw_modes *hw_features,
+					 size_t num_hw_features);
+
+const u8 * wpa_scan_get_ie(const struct wpa_scan_res *res, u8 ie);
+#define WPA_IE_VENDOR_TYPE 0x0050f201
+const u8 * wpa_scan_get_vendor_ie(const struct wpa_scan_res *res,
+				  u32 vendor_type);
+int wpa_scan_get_max_rate(const struct wpa_scan_res *res);
+void wpa_scan_results_free(struct wpa_scan_results *res);
+void wpa_scan_sort_results(struct wpa_scan_results *res);
 
 #endif /* DRIVER_H */

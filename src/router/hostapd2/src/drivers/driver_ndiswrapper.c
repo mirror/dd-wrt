@@ -277,12 +277,10 @@ static int wpa_ndiswrapper_scan(void *priv, const u8 *ssid, size_t ssid_len)
 }
 
 
-static int wpa_ndiswrapper_get_scan_results(void *priv,
-					    struct wpa_scan_result *results,
-					    size_t max_size)
+static struct wpa_scan_results * wpa_ndiswrapper_get_scan_results(void *priv)
 {
 	struct wpa_driver_ndiswrapper_data *drv = priv;
-	return wpa_driver_wext_get_scan_results(drv->wext, results, max_size);
+	return wpa_driver_wext_get_scan_results(drv->wext);
 }
 
 
@@ -360,7 +358,7 @@ const struct wpa_driver_ops wpa_driver_ndiswrapper_ops = {
 	.get_bssid = wpa_ndiswrapper_get_bssid,
 	.get_ssid = wpa_ndiswrapper_get_ssid,
 	.scan = wpa_ndiswrapper_scan,
-	.get_scan_results = wpa_ndiswrapper_get_scan_results,
+	.get_scan_results2 = wpa_ndiswrapper_get_scan_results,
 	.init = wpa_ndiswrapper_init,
 	.deinit = wpa_ndiswrapper_deinit,
 	.get_capa = wpa_ndiswrapper_get_capa,

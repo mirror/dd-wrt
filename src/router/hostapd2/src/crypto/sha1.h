@@ -25,8 +25,9 @@ void sha1_prf(const u8 *key, size_t key_len, const char *label,
 	      const u8 *data, size_t data_len, u8 *buf, size_t buf_len);
 void sha1_t_prf(const u8 *key, size_t key_len, const char *label,
 		const u8 *seed, size_t seed_len, u8 *buf, size_t buf_len);
-int tls_prf(const u8 *secret, size_t secret_len, const char *label,
-	    const u8 *seed, size_t seed_len, u8 *out, size_t outlen);
+int __must_check tls_prf(const u8 *secret, size_t secret_len,
+			 const char *label, const u8 *seed, size_t seed_len,
+			 u8 *out, size_t outlen);
 void pbkdf2_sha1(const char *passphrase, const char *ssid, size_t ssid_len,
 		 int iterations, u8 *buf, size_t buflen);
 

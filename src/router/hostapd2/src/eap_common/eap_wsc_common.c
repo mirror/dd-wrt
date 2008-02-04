@@ -17,6 +17,7 @@
 #include "common.h"
 #include "eap_defs.h"
 #include "eap_common.h"
+#include "wps/wps.h"
 #include "eap_wsc_common.h"
 
 struct wpabuf * eap_wsc_build_frag_ack(u8 id, u8 code)

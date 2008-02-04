@@ -36,7 +36,7 @@ DBusMessage * wpas_dbus_iface_scan_results(DBusMessage *message,
 
 DBusMessage * wpas_dbus_bssid_properties(DBusMessage *message,
 					 struct wpa_supplicant *wpa_s,
-					 struct wpa_scan_result *res);
+					 struct wpa_scan_res *res);
 
 DBusMessage * wpas_dbus_iface_capabilities(DBusMessage *message,
 					   struct wpa_supplicant *wpa_s);
@@ -70,6 +70,12 @@ DBusMessage * wpas_dbus_iface_set_ap_scan(DBusMessage *message,
 
 DBusMessage * wpas_dbus_iface_get_state(DBusMessage *message,
 					struct wpa_supplicant *wpa_s);
+
+DBusMessage * wpas_dbus_iface_set_blobs(DBusMessage *message,
+				        struct wpa_supplicant *wpa_s);
+
+DBusMessage * wpas_dbus_iface_remove_blobs(DBusMessage *message,
+					   struct wpa_supplicant *wpa_s);
 
 #endif /* CONFIG_CTRL_IFACE_DBUS */
 
