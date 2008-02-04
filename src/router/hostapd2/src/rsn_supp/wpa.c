@@ -1,6 +1,6 @@
 /*
  * WPA Supplicant - WPA state machine and EAPOL-Key processing
- * Copyright (c) 2003-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2003-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -19,7 +19,6 @@
 #include "aes_wrap.h"
 #include "wpa.h"
 #include "eloop.h"
-#include "config_ssid.h"
 #include "eapol_supp/eapol_supp_sm.h"
 #include "preauth.h"
 #include "pmksa_cache.h"
@@ -142,14 +141,12 @@ void wpa_sm_key_request(struct wpa_sm *sm, int error, int pairwise)
 	int key_info, ver;
 	u8 bssid[ETH_ALEN], *rbuf;
 
-	if (sm->pairwise_cipher == WPA_CIPHER_CCMP) {
+	if (sm->key_mgmt == WPA_KEY_MGMT_FT_IEEE8021X ||
+	    sm->key_mgmt == WPA_KEY_MGMT_FT_PSK)
+		ver = WPA_KEY_INFO_TYPE_AES_128_CMAC;
+	else if (sm->pairwise_cipher == WPA_CIPHER_CCMP)
 		ver = WPA_KEY_INFO_TYPE_HMAC_SHA1_AES;
-#ifdef CONFIG_IEEE80211R
-		if (sm->key_mgmt == WPA_KEY_MGMT_FT_IEEE8021X ||
-		    sm->key_mgmt == WPA_KEY_MGMT_FT_PSK)
-			ver = WPA_KEY_INFO_TYPE_AES_128_CMAC;
-#endif /* CONFIG_IEEE80211R */
-	} else
+	else
 		ver = WPA_KEY_INFO_TYPE_HMAC_MD5_RC4;
 
 	if (wpa_sm_get_bssid(sm, bssid) < 0) {
@@ -248,7 +245,7 @@ static int wpa_supplicant_get_pmk(struct wpa_sm *sm,
 					"machines", sm->pmk, pmk_len);
 			sm->pmk_len = pmk_len;
 			pmksa_cache_add(sm->pmksa, sm->pmk, pmk_len, src_addr,
-					sm->own_addr, sm->cur_ssid);
+					sm->own_addr, sm->network_ctx);
 			if (!sm->cur_pmksa && pmkid &&
 			    pmksa_cache_get(sm->pmksa, src_addr, pmkid)) {
 				wpa_printf(MSG_DEBUG, "RSN: the new PMK "
@@ -381,7 +378,7 @@ static void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
 	struct wpa_ptk *ptk;
 	u8 buf[8];
 
-	if (wpa_sm_get_ssid(sm) == NULL) {
+	if (wpa_sm_get_network_ctx(sm) == NULL) {
 		wpa_printf(MSG_WARNING, "WPA: No SSID info found (msg 1 of "
 			   "4).");
 		return;
@@ -1469,11 +1466,9 @@ int wpa_sm_rx_eapol(struct wpa_sm *sm, const u8 *src_addr,
 	}
 
 #ifdef CONFIG_IEEE80211R
-	if (sm->pairwise_cipher == WPA_CIPHER_CCMP &&
-	    (sm->key_mgmt == WPA_KEY_MGMT_FT_IEEE8021X ||
-	     sm->key_mgmt == WPA_KEY_MGMT_FT_PSK)) {
-		/* IEEE 802.11r introduces special rules for using a new
-		 * key_info type (AES-128-CMAC). */
+	if (sm->key_mgmt == WPA_KEY_MGMT_FT_IEEE8021X ||
+	    sm->key_mgmt == WPA_KEY_MGMT_FT_PSK) {
+		/* IEEE 802.11r uses a new key_info type (AES-128-CMAC). */
 		if (ver != WPA_KEY_INFO_TYPE_AES_128_CMAC) {
 			wpa_printf(MSG_INFO, "FT: AP did not use "
 				   "AES-128-CMAC.");
@@ -1985,12 +1980,32 @@ void wpa_sm_set_scard_ctx(struct wpa_sm *sm, void *scard_ctx)
  * stored as a backpointer to network configuration. This can be %NULL to clear
  * the stored pointed.
  */
-void wpa_sm_set_config(struct wpa_sm *sm, struct wpa_ssid *config)
+void wpa_sm_set_config(struct wpa_sm *sm, struct rsn_supp_config *config)
 {
-	if (sm) {
-		sm->cur_ssid = config;
-		pmksa_cache_notify_reconfig(sm->pmksa);
+	if (!sm)
+		return;
+
+	sm->network_ctx = config;
+	if (config) {
+		sm->peerkey_enabled = config->peerkey_enabled;
+		sm->allowed_pairwise_cipher = config->allowed_pairwise_cipher;
+		sm->proactive_key_caching = config->proactive_key_caching;
+		sm->eap_workaround = config->eap_workaround;
+		sm->eap_conf_ctx = config->eap_conf_ctx;
+		if (config->ssid) {
+			os_memcpy(sm->ssid, config->ssid, config->ssid_len);
+			sm->ssid_len = config->ssid_len;
+		} else
+			sm->ssid_len = 0;
+	} else {
+		sm->peerkey_enabled = 0;
+		sm->allowed_pairwise_cipher = 0;
+		sm->proactive_key_caching = 0;
+		sm->eap_workaround = 0;
+		sm->eap_conf_ctx = NULL;
+		sm->ssid_len = 0;
 	}
+	pmksa_cache_notify_reconfig(sm->pmksa);
 }
 
 

@@ -286,7 +286,7 @@ static struct wpabuf * eap_leap_process(struct eap_sm *sm, void *priv,
 	 * LEAP needs to be able to handle EAP-Success frame which does not
 	 * include Type field. Consequently, eap_hdr_validate() cannot be used
 	 * here. This validation will be done separately for EAP-Request and
-	 * EAP-Repsonse frames.
+	 * EAP-Response frames.
 	 */
 	eap = wpabuf_head(reqData);
 	if (wpabuf_len(reqData) < sizeof(*eap) ||

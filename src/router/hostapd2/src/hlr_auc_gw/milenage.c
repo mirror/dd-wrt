@@ -1,6 +1,6 @@
 /*
  * 3GPP AKA - Milenage algorithm (3GPP TS 35.205, .206, .207, .208)
- * Copyright (c) 2006 <j@w1.fi>
+ * Copyright (c) 2006-2007 <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -37,9 +37,10 @@
  * @amf: AMF = 16-bit authentication management field
  * @mac_a: Buffer for MAC-A = 64-bit network authentication code, or %NULL
  * @mac_s: Buffer for MAC-S = 64-bit resync authentication code, or %NULL
+ * Returns: 0 on success, -1 on failure
  */
-static void milenage_f1(const u8 *opc, const u8 *k, const u8 *_rand,
-			const u8 *sqn, const u8 *amf, u8 *mac_a, u8 *mac_s)
+static int milenage_f1(const u8 *opc, const u8 *k, const u8 *_rand,
+		       const u8 *sqn, const u8 *amf, u8 *mac_a, u8 *mac_s)
 {
 	u8 tmp1[16], tmp2[16], tmp3[16];
 	int i;
@@ -47,7 +48,8 @@ static void milenage_f1(const u8 *opc, const u8 *k, const u8 *_rand,
 	/* tmp1 = TEMP = E_K(RAND XOR OP_C) */
 	for (i = 0; i < 16; i++)
 		tmp1[i] = _rand[i] ^ opc[i];
-	aes_128_encrypt_block(k, tmp1, tmp1);
+	if (aes_128_encrypt_block(k, tmp1, tmp1))
+		return -1;
 
 	/* tmp2 = IN1 = SQN || AMF || SQN || AMF */
 	memcpy(tmp2, sqn, 6);
@@ -65,13 +67,15 @@ static void milenage_f1(const u8 *opc, const u8 *k, const u8 *_rand,
 	/* XOR with c1 (= ..00, i.e., NOP) */
 
 	/* f1 || f1* = E_K(tmp3) XOR OP_c */
-	aes_128_encrypt_block(k, tmp3, tmp1);
+	if (aes_128_encrypt_block(k, tmp3, tmp1))
+		return -1;
 	for (i = 0; i < 16; i++)
 		tmp1[i] ^= opc[i];
 	if (mac_a)
 		memcpy(mac_a, tmp1, 8); /* f1 */
 	if (mac_s)
 		memcpy(mac_s, tmp1 + 8, 8); /* f1* */
+	return 0;
 }
 
 
@@ -85,9 +89,10 @@ static void milenage_f1(const u8 *opc, const u8 *k, const u8 *_rand,
  * @ik: Buffer for IK = 128-bit integrity key (f4), or %NULL
  * @ak: Buffer for AK = 48-bit anonymity key (f5), or %NULL
  * @akstar: Buffer for AK = 48-bit anonymity key (f5*), or %NULL
+ * Returns: 0 on success, -1 on failure
  */
-static void milenage_f2345(const u8 *opc, const u8 *k, const u8 *_rand,
-			   u8 *res, u8 *ck, u8 *ik, u8 *ak, u8 *akstar)
+static int milenage_f2345(const u8 *opc, const u8 *k, const u8 *_rand,
+			  u8 *res, u8 *ck, u8 *ik, u8 *ak, u8 *akstar)
 {
 	u8 tmp1[16], tmp2[16], tmp3[16];
 	int i;
@@ -95,7 +100,8 @@ static void milenage_f2345(const u8 *opc, const u8 *k, const u8 *_rand,
 	/* tmp2 = TEMP = E_K(RAND XOR OP_C) */
 	for (i = 0; i < 16; i++)
 		tmp1[i] = _rand[i] ^ opc[i];
-	aes_128_encrypt_block(k, tmp1, tmp2);
+	if (aes_128_encrypt_block(k, tmp1, tmp2))
+		return -1;
 
 	/* OUT2 = E_K(rot(TEMP XOR OP_C, r2) XOR c2) XOR OP_C */
 	/* OUT3 = E_K(rot(TEMP XOR OP_C, r3) XOR c3) XOR OP_C */
@@ -108,7 +114,8 @@ static void milenage_f2345(const u8 *opc, const u8 *k, const u8 *_rand,
 		tmp1[i] = tmp2[i] ^ opc[i];
 	tmp1[15] ^= 1; /* XOR c2 (= ..01) */
 	/* f5 || f2 = E_K(tmp1) XOR OP_c */
-	aes_128_encrypt_block(k, tmp1, tmp3);
+	if (aes_128_encrypt_block(k, tmp1, tmp3))
+		return -1;
 	for (i = 0; i < 16; i++)
 		tmp3[i] ^= opc[i];
 	if (res)
@@ -122,7 +129,8 @@ static void milenage_f2345(const u8 *opc, const u8 *k, const u8 *_rand,
 		for (i = 0; i < 16; i++)
 			tmp1[(i + 12) % 16] = tmp2[i] ^ opc[i];
 		tmp1[15] ^= 2; /* XOR c3 (= ..02) */
-		aes_128_encrypt_block(k, tmp1, ck);
+		if (aes_128_encrypt_block(k, tmp1, ck))
+			return -1;
 		for (i = 0; i < 16; i++)
 			ck[i] ^= opc[i];
 	}
@@ -133,7 +141,8 @@ static void milenage_f2345(const u8 *opc, const u8 *k, const u8 *_rand,
 		for (i = 0; i < 16; i++)
 			tmp1[(i + 8) % 16] = tmp2[i] ^ opc[i];
 		tmp1[15] ^= 4; /* XOR c4 (= ..04) */
-		aes_128_encrypt_block(k, tmp1, ik);
+		if (aes_128_encrypt_block(k, tmp1, ik))
+			return -1;
 		for (i = 0; i < 16; i++)
 			ik[i] ^= opc[i];
 	}
@@ -144,10 +153,13 @@ static void milenage_f2345(const u8 *opc, const u8 *k, const u8 *_rand,
 		for (i = 0; i < 16; i++)
 			tmp1[(i + 4) % 16] = tmp2[i] ^ opc[i];
 		tmp1[15] ^= 8; /* XOR c5 (= ..08) */
-		aes_128_encrypt_block(k, tmp1, tmp1);
+		if (aes_128_encrypt_block(k, tmp1, tmp1))
+			return -1;
 		for (i = 0; i < 6; i++)
 			akstar[i] = tmp1[i] ^ opc[i];
 	}
+
+	return 0;
 }
 
 
@@ -175,9 +187,12 @@ void milenage_generate(const u8 *opc, const u8 *amf, const u8 *k,
 		*res_len = 0;
 		return;
 	}
+	if (milenage_f1(opc, k, _rand, sqn, amf, mac_a, NULL) ||
+	    milenage_f2345(opc, k, _rand, res, ck, ik, ak, NULL)) {
+		*res_len = 0;
+		return;
+	}
 	*res_len = 8;
-	milenage_f1(opc, k, _rand, sqn, amf, mac_a, NULL);
-	milenage_f2345(opc, k, _rand, res, ck, ik, ak, NULL);
 
 	/* AUTN = (SQN ^ AK) || AMF || MAC */
 	for (i = 0; i < 6; i++)
@@ -203,11 +218,12 @@ int milenage_auts(const u8 *opc, const u8 *k, const u8 *_rand, const u8 *auts,
 	u8 ak[6], mac_s[8];
 	int i;
 
-	milenage_f2345(opc, k, _rand, NULL, NULL, NULL, NULL, ak);
+	if (milenage_f2345(opc, k, _rand, NULL, NULL, NULL, NULL, ak))
+		return -1;
 	for (i = 0; i < 6; i++)
 		sqn[i] = auts[i] ^ ak[i];
-	milenage_f1(opc, k, _rand, sqn, amf, NULL, mac_s);
-	if (memcmp(mac_s, auts + 6, 8) != 0)
+	if (milenage_f1(opc, k, _rand, sqn, amf, NULL, mac_s) ||
+	    memcmp(mac_s, auts + 6, 8) != 0)
 		return -1;
 	return 0;
 }
@@ -220,14 +236,15 @@ int milenage_auts(const u8 *opc, const u8 *k, const u8 *_rand, const u8 *auts,
  * @_rand: RAND = 128-bit random challenge
  * @sres: Buffer for SRES = 32-bit SRES
  * @kc: Buffer for Kc = 64-bit Kc
+ * Returns: 0 on success, -1 on failure
  */
-void gsm_milenage(const u8 *opc, const u8 *k, const u8 *_rand, u8 *sres,
-		  u8 *kc)
+int gsm_milenage(const u8 *opc, const u8 *k, const u8 *_rand, u8 *sres, u8 *kc)
 {
 	u8 res[8], ck[16], ik[16];
 	int i;
 
-	milenage_f2345(opc, k, _rand, res, ck, ik, NULL, NULL);
+	if (milenage_f2345(opc, k, _rand, res, ck, ik, NULL, NULL))
+		return -1;
 
 	for (i = 0; i < 8; i++)
 		kc[i] = ck[i] ^ ck[i + 8] ^ ik[i] ^ ik[i + 8];
@@ -238,6 +255,7 @@ void gsm_milenage(const u8 *opc, const u8 *k, const u8 *_rand, u8 *sres,
 	for (i = 0; i < 4; i++)
 		sres[i] = res[i] ^ res[i + 4];
 #endif /* GSM_MILENAGE_ALT_SRES */
+	return 0;
 }
 
 
@@ -953,8 +971,8 @@ int main(int argc, char *argv[])
 			ret++;
 		}
 
-		milenage_f1(opc, t->k, t->rand, t->sqn, t->amf, buf, buf2);
-		if (memcmp(buf, t->f1, 8) != 0) {
+		if (milenage_f1(opc, t->k, t->rand, t->sqn, t->amf, buf, buf2)
+		    ||  memcmp(buf, t->f1, 8) != 0) {
 			printf("- milenage_f1 failed\n");
 			ret++;
 		}
@@ -963,9 +981,9 @@ int main(int argc, char *argv[])
 			ret++;
 		}
 
-		milenage_f2345(opc, t->k, t->rand, buf, buf2, buf3, buf4,
-			       buf5);
-		if (memcmp(buf, t->f2, 8) != 0) {
+		if (milenage_f2345(opc, t->k, t->rand, buf, buf2, buf3, buf4,
+				   buf5) ||
+		    memcmp(buf, t->f2, 8) != 0) {
 			printf("- milenage_f2 failed\n");
 			ret++;
 		}

@@ -81,21 +81,22 @@ int hostapd_eid_wme_valid(struct hostapd_data *hapd, u8 *eid, size_t len)
 	wpa_hexdump(MSG_MSGDUMP, "WME IE", eid, len);
 
 	if (len < sizeof(struct wme_information_element)) {
-		printf("Too short WME IE (len=%lu)\n", (unsigned long) len);
+		wpa_printf(MSG_DEBUG, "Too short WME IE (len=%lu)",
+			   (unsigned long) len);
 		return -1;
 	}
 
 	wme = (struct wme_information_element *) eid;
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "Validating WME IE: OUI "
-		      "%02x:%02x:%02x  OUI type %d  OUI sub-type %d  "
-		      "version %d\n",
-		      wme->oui[0], wme->oui[1], wme->oui[2], wme->oui_type,
-		      wme->oui_subtype, wme->version);
+	wpa_printf(MSG_DEBUG, "Validating WME IE: OUI %02x:%02x:%02x  "
+		   "OUI type %d  OUI sub-type %d  version %d",
+		   wme->oui[0], wme->oui[1], wme->oui[2], wme->oui_type,
+		   wme->oui_subtype, wme->version);
 	if (os_memcmp(wme->oui, wme_oui, sizeof(wme_oui)) != 0 ||
 	    wme->oui_type != WME_OUI_TYPE ||
 	    wme->oui_subtype != WME_OUI_SUBTYPE_INFORMATION_ELEMENT ||
 	    wme->version != WME_VERSION) {
-		printf("Unsupported WME IE OUI/Type/Subtype/Version\n");
+		wpa_printf(MSG_DEBUG, "Unsupported WME IE OUI/Type/Subtype/"
+			   "Version");
 		return -1;
 	}
 

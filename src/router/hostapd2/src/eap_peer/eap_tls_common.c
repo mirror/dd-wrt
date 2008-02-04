@@ -1,6 +1,6 @@
 /*
  * EAP peer: EAP-TLS/PEAP/TTLS/FAST common functions
- * Copyright (c) 2004-2006, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -17,8 +17,7 @@
 #include "common.h"
 #include "eap_i.h"
 #include "eap_tls_common.h"
-#include "config_blob.h"
-#include "config_ssid.h"
+#include "eap_config.h"
 #include "sha1.h"
 #include "tls.h"
 
@@ -47,7 +46,7 @@ static int eap_tls_check_blob(struct eap_sm *sm, const char **name,
 
 
 static void eap_tls_params_from_conf1(struct tls_connection_params *params,
-				      struct wpa_ssid *config)
+				      struct eap_peer_config *config)
 {
 	params->ca_cert = (char *) config->ca_cert;
 	params->ca_path = (char *) config->ca_path;
@@ -64,7 +63,7 @@ static void eap_tls_params_from_conf1(struct tls_connection_params *params,
 
 
 static void eap_tls_params_from_conf2(struct tls_connection_params *params,
-				      struct wpa_ssid *config)
+				      struct eap_peer_config *config)
 {
 	params->ca_cert = (char *) config->ca_cert2;
 	params->ca_path = (char *) config->ca_path2;
@@ -80,7 +79,7 @@ static void eap_tls_params_from_conf2(struct tls_connection_params *params,
 static int eap_tls_params_from_conf(struct eap_sm *sm,
 				    struct eap_ssl_data *data,
 				    struct tls_connection_params *params,
-				    struct wpa_ssid *config, int phase2)
+				    struct eap_peer_config *config, int phase2)
 {
 	os_memset(params, 0, sizeof(*params));
 	params->engine = config->engine;
@@ -114,7 +113,7 @@ static int eap_tls_params_from_conf(struct eap_sm *sm,
 
 static int eap_tls_init_connection(struct eap_sm *sm,
 				   struct eap_ssl_data *data,
-				   struct wpa_ssid *config,
+				   struct eap_peer_config *config,
 				   struct tls_connection_params *params)
 {
 	int res;
@@ -167,7 +166,7 @@ static int eap_tls_init_connection(struct eap_sm *sm,
  * EAP-PEAP, EAP-TTLS, and EAP-FAST.
  */
 int eap_peer_tls_ssl_init(struct eap_sm *sm, struct eap_ssl_data *data,
-			  struct wpa_ssid *config)
+			  struct eap_peer_config *config)
 {
 	struct tls_connection_params params;
 
@@ -898,7 +897,8 @@ int eap_peer_tls_encrypt(struct eap_sm *sm, struct eap_ssl_data *data,
  * This function is used to parse EAP method list and select allowed methods
  * for Phase2 authentication.
  */
-int eap_peer_select_phase2_methods(struct wpa_ssid *config, const char *prefix,
+int eap_peer_select_phase2_methods(struct eap_peer_config *config,
+				   const char *prefix,
 				   struct eap_method_type **types,
 				   size_t *num_types)
 {

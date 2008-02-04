@@ -729,90 +729,49 @@ static int wpa_driver_ndis_scan(void *priv, const u8 *ssid, size_t ssid_len)
 }
 
 
-static void wpa_driver_ndis_get_ies(struct wpa_scan_result *res, u8 *ie,
-				    size_t ie_len)
-{
-	u8 *pos = ie;
-	u8 *end = ie + ie_len;
-	NDIS_802_11_FIXED_IEs *fixed;
-
-	if (ie_len < sizeof(NDIS_802_11_FIXED_IEs))
-		return;
-
-	fixed = (NDIS_802_11_FIXED_IEs *) pos;
-	res->tsf = WPA_GET_LE64(fixed->Timestamp);
-	pos += sizeof(NDIS_802_11_FIXED_IEs);
-	/* wpa_hexdump(MSG_MSGDUMP, "IEs", pos, end - pos); */
-	while (pos + 1 < end && pos + 2 + pos[1] <= end) {
-		u8 ielen = 2 + pos[1];
-		if (pos[0] == WLAN_EID_VENDOR_SPECIFIC && pos[1] >= 4 &&
-		    os_memcmp(pos + 2, "\x00\x50\xf2\x01", 4) == 0) {
-			if (ielen > SSID_MAX_WPA_IE_LEN) {
-				pos += ielen;
-				continue;
-			}
-			os_memcpy(res->wpa_ie, pos, ielen);
-			res->wpa_ie_len = ielen;
-		} else if (pos[0] == WLAN_EID_RSN) {
-			if (ielen > SSID_MAX_WPA_IE_LEN) {
-				pos += ielen;
-				continue;
-			}
-			os_memcpy(res->rsn_ie, pos, ielen);
-			res->rsn_ie_len = ielen;
-		}
-		pos += ielen;
-	}
-}
-
-
-static int wpa_driver_ndis_get_scan_results(void *priv,
-					    struct wpa_scan_result *results,
-					    size_t max_size)
+static struct wpa_scan_results * wpa_driver_ndis_get_scan_results(void *priv)
 {
 	struct wpa_driver_ndis_data *drv = priv;
 	NDIS_802_11_BSSID_LIST_EX *b;
 	size_t blen, count, i;
-	int len, j;
+	int len;
 	char *pos;
+	struct wpa_scan_results *results;
+	struct wpa_scan_res *r;
 
 	blen = 65535;
 	b = os_zalloc(blen);
 	if (b == NULL)
-		return -1;
+		return NULL;
 	len = ndis_get_oid(drv, OID_802_11_BSSID_LIST, (char *) b, blen);
 	if (len < 0) {
 		wpa_printf(MSG_DEBUG, "NDIS: failed to get scan results");
 		os_free(b);
-		return -1;
+		return NULL;
 	}
 	count = b->NumberOfItems;
 
-	if (count > max_size)
-		count = max_size;
+	results = os_zalloc(sizeof(*results));
+	if (results == NULL) {
+		os_free(b);
+		return NULL;
+	}
+	results->res = os_zalloc(count * sizeof(struct wpa_scan_res *));
+	if (results->res == NULL) {
+		os_free(results);
+		os_free(b);
+		return NULL;
+	}
 
-	os_memset(results, 0, max_size * sizeof(struct wpa_scan_result));
 	pos = (char *) &b->Bssid[0];
 	for (i = 0; i < count; i++) {
 		NDIS_WLAN_BSSID_EX *bss = (NDIS_WLAN_BSSID_EX *) pos;
-		os_memcpy(results[i].bssid, bss->MacAddress, ETH_ALEN);
-		os_memcpy(results[i].ssid, bss->Ssid.Ssid,
-			  bss->Ssid.SsidLength);
-		results[i].ssid_len = bss->Ssid.SsidLength;
-		if (bss->Privacy)
-			results[i].caps |= IEEE80211_CAP_PRIVACY;
-		if (bss->InfrastructureMode == Ndis802_11IBSS)
-			results[i].caps |= IEEE80211_CAP_IBSS;
-		else if (bss->InfrastructureMode == Ndis802_11Infrastructure)
-			results[i].caps |= IEEE80211_CAP_ESS;
-		results[i].level = (int) bss->Rssi;
-		results[i].freq = bss->Configuration.DSConfig / 1000;
-		for (j = 0; j < sizeof(bss->SupportedRates); j++) {
-			if ((bss->SupportedRates[j] & 0x7f) >
-			    results[i].maxrate) {
-				results[i].maxrate =
-					bss->SupportedRates[j] & 0x7f;
-			}
+		NDIS_802_11_FIXED_IEs *fixed;
+
+		if (bss->IELength < sizeof(NDIS_802_11_FIXED_IEs)) {
+			wpa_printf(MSG_DEBUG, "NDIS: too small IELength=%d",
+				   (int) bss->IELength);
+			break;
 		}
 		if (((char *) bss->IEs) + bss->IELength  > (char *) b + blen) {
 			/*
@@ -823,18 +782,37 @@ static int wpa_driver_ndis_get_scan_results(void *priv,
 			 */
 			wpa_printf(MSG_DEBUG, "NDIS: skipped invalid scan "
 				   "result IE (BSSID=" MACSTR ") IELength=%d",
-				   MAC2STR(results[i].bssid),
+				   MAC2STR(bss->MacAddress),
 				   (int) bss->IELength);
 			break;
 		}
-		wpa_driver_ndis_get_ies(&results[i], bss->IEs, bss->IELength);
+
+		r = os_zalloc(sizeof(*r) + bss->IELength -
+			      sizeof(NDIS_802_11_FIXED_IEs));
+		if (r == NULL)
+			break;
+
+		os_memcpy(r->bssid, bss->MacAddress, ETH_ALEN);
+		r->level = (int) bss->Rssi;
+		r->freq = bss->Configuration.DSConfig / 1000;
+		fixed = (NDIS_802_11_FIXED_IEs *) bss->IEs;
+		r->beacon_int = WPA_GET_LE16((u8 *) &fixed->BeaconInterval);
+		r->caps = WPA_GET_LE16((u8 *) &fixed->Capabilities);
+		r->tsf = WPA_GET_LE64(fixed->Timestamp);
+		os_memcpy(r + 1, bss->IEs + sizeof(NDIS_802_11_FIXED_IEs),
+			  bss->IELength - sizeof(NDIS_802_11_FIXED_IEs));
+		r->ie_len = bss->IELength - sizeof(NDIS_802_11_FIXED_IEs);
+
+		results->res[results->num++] = r;
+
 		pos += bss->Length;
 		if (pos > (char *) b + blen)
 			break;
 	}
 
 	os_free(b);
-	return (int) count;
+
+	return results;
 }
 
 
@@ -2826,7 +2804,7 @@ const struct wpa_driver_ops wpa_driver_ndis_ops = {
 	NULL /* set_countermeasures */,
 	NULL /* set_drop_unencrypted */,
 	wpa_driver_ndis_scan,
-	wpa_driver_ndis_get_scan_results,
+	NULL /* get_scan_results */,
 	wpa_driver_ndis_deauthenticate,
 	wpa_driver_ndis_disassociate,
 	wpa_driver_ndis_associate,
@@ -2849,5 +2827,6 @@ const struct wpa_driver_ops wpa_driver_ndis_ops = {
 	NULL /* mlme_add_sta */,
 	NULL /* mlme_remove_sta */,
 	NULL /* update_ft_ies */,
-	NULL /* send_ft_action */
+	NULL /* send_ft_action */,
+	wpa_driver_ndis_get_scan_results
 };

@@ -131,7 +131,10 @@ void NetworkConfig::addNetwork()
 
     setNetworkParam(id, "ssid", ssidEdit->text().ascii(), true);
     
-    char *key_mgmt = NULL, *proto = NULL, *pairwise = NULL;
+    if (idstrEdit->isEnabled())
+	setNetworkParam(id, "id_str", idstrEdit->text().ascii(), true);
+
+    const char *key_mgmt = NULL, *proto = NULL, *pairwise = NULL;
     switch (auth) {
     case AUTH_NONE:
 	key_mgmt = "NONE";
@@ -315,6 +318,17 @@ void NetworkConfig::paramsFromConfig( int network_id )
 	    *pos = '\0';
 	ssidEdit->setText(reply + 1);
     }
+
+    snprintf(cmd, sizeof(cmd), "GET_NETWORK %d id_str", network_id);
+    reply_len = sizeof(reply) - 1;
+    if (wpagui->ctrlRequest(cmd, reply, &reply_len) >= 0 && reply_len >= 2 &&
+	reply[0] == '"') {
+	reply[reply_len] = '\0';
+	pos = strchr(reply + 1, '"');
+	if (pos)
+	    *pos = '\0';
+	idstrEdit->setText(reply + 1);
+    }
     
     snprintf(cmd, sizeof(cmd), "GET_NETWORK %d proto", network_id);
     reply_len = sizeof(reply) - 1;
@@ -346,7 +360,7 @@ void NetworkConfig::paramsFromConfig( int network_id )
     reply_len = sizeof(reply) - 1;
     if (wpagui->ctrlRequest(cmd, reply, &reply_len) >= 0) {
 	reply[reply_len] = '\0';
-	if (strstr(reply, "CCMP"))
+	if (strstr(reply, "CCMP") && auth != AUTH_NONE)
 	    encr = 1;
 	else if (strstr(reply, "TKIP"))
 	    encr = 0;

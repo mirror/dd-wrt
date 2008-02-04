@@ -34,14 +34,13 @@ public slots:
 	virtual void updateResults();
 	virtual void scanRequest();
 	virtual void getResults();
-	virtual void bssSelected(Q3ListViewItem *sel);
+	virtual void bssSelected(QTreeWidgetItem *sel);
 
 protected slots:
 	virtual void languageChange();
 
 private:
 	WpaGui *wpagui;
-	QTimer *timer;
 };
 
 #endif /* SCANRESULTS_H */

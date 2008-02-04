@@ -1,6 +1,6 @@
 /*
  * EAP peer/server: EAP-SIM/AKA shared routines
- * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -119,6 +119,11 @@ int eap_sim_derive_keys_reauth(u16 _counter,
 	const u8 *addr[4];
 	size_t len[4];
 
+	while (identity_len > 0 && identity[identity_len - 1] == 0) {
+		wpa_printf(MSG_DEBUG, "EAP-SIM: Workaround - drop null "
+			   "character from the end of identity");
+		identity_len--;
+	}
 	addr[0] = identity;
 	len[0] = identity_len;
 	addr[1] = counter;
@@ -611,7 +616,10 @@ u8 * eap_sim_parse_encr(const u8 *k_encr, const u8 *encr_data,
 		return NULL;
 	os_memcpy(decrypted, encr_data, encr_data_len);
 
-	aes_128_cbc_decrypt(k_encr, iv, decrypted, encr_data_len);
+	if (aes_128_cbc_decrypt(k_encr, iv, decrypted, encr_data_len)) {
+		os_free(decrypted);
+		return NULL;
+	}
 	wpa_hexdump(MSG_MSGDUMP, "EAP-SIM: Decrypted AT_ENCR_DATA",
 		    decrypted, encr_data_len);
 
@@ -810,11 +818,9 @@ int eap_sim_msg_add_encr_end(struct eap_sim_msg *msg, u8 *k_encr, int attr_pad)
 	wpa_printf(MSG_DEBUG, "   (AT_ENCR_DATA data len %lu)",
 		   (unsigned long) encr_len);
 	wpabuf_mhead_u8(msg->buf)[msg->encr + 1] = encr_len / 4 + 1;
-	aes_128_cbc_encrypt(k_encr, wpabuf_head_u8(msg->buf) + msg->iv,
-			    wpabuf_mhead_u8(msg->buf) + msg->encr + 4,
-			    encr_len);
-
-	return 0;
+	return aes_128_cbc_encrypt(k_encr, wpabuf_head_u8(msg->buf) + msg->iv,
+				   wpabuf_mhead_u8(msg->buf) + msg->encr + 4,
+				   encr_len);
 }
 
 

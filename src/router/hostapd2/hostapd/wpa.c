@@ -874,11 +874,11 @@ void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
 
 	if (force_version)
 		version = force_version;
-	else if (sm->pairwise == WPA_CIPHER_CCMP) {
+	else if (wpa_use_aes_cmac(sm))
+		version = WPA_KEY_INFO_TYPE_AES_128_CMAC;
+	else if (sm->pairwise == WPA_CIPHER_CCMP)
 		version = WPA_KEY_INFO_TYPE_HMAC_SHA1_AES;
-		if (wpa_use_aes_cmac(sm))
-			version = WPA_KEY_INFO_TYPE_AES_128_CMAC;
-	} else
+	else
 		version = WPA_KEY_INFO_TYPE_HMAC_MD5_RC4;
 
 	pairwise = key_info & WPA_KEY_INFO_KEY_TYPE;
@@ -972,8 +972,12 @@ void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
 				buf, key_data_len);
 		if (version == WPA_KEY_INFO_TYPE_HMAC_SHA1_AES ||
 		    version == WPA_KEY_INFO_TYPE_AES_128_CMAC) {
-			aes_wrap(sm->PTK.kek, (key_data_len - 8) / 8, buf,
-				 (u8 *) (key + 1));
+			if (aes_wrap(sm->PTK.kek, (key_data_len - 8) / 8, buf,
+				     (u8 *) (key + 1))) {
+				os_free(hdr);
+				os_free(buf);
+				return;
+			}
 			WPA_PUT_BE16(key->key_data_length, key_data_len);
 		} else {
 			u8 ek[32];

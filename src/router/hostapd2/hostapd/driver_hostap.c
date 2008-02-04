@@ -47,6 +47,11 @@ struct hostap_driver_data {
 	int wext_sock; /* socket for wireless events */
 
 	int we_version;
+
+	u8 *generic_ie;
+	size_t generic_ie_len;
+	u8 *wps_ie;
+	size_t wps_ie_len;
 };
 
 
@@ -140,23 +145,23 @@ static void handle_tx_callback(struct hostapd_data *hapd, u8 *buf, size_t len,
 
 	switch (type) {
 	case WLAN_FC_TYPE_MGMT:
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-			      "MGMT (TX callback) %s\n", ok ? "ACK" : "fail");
+		wpa_printf(MSG_DEBUG, "MGMT (TX callback) %s",
+			   ok ? "ACK" : "fail");
 		ieee802_11_mgmt_cb(hapd, buf, len, stype, ok);
 		break;
 	case WLAN_FC_TYPE_CTRL:
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-			      "CTRL (TX callback) %s\n", ok ? "ACK" : "fail");
+		wpa_printf(MSG_DEBUG, "CTRL (TX callback) %s",
+			   ok ? "ACK" : "fail");
 		break;
 	case WLAN_FC_TYPE_DATA:
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-			      "DATA (TX callback) %s\n", ok ? "ACK" : "fail");
+		wpa_printf(MSG_DEBUG, "DATA (TX callback) %s",
+			   ok ? "ACK" : "fail");
 		sta = ap_get_sta(hapd, hdr->addr1);
 		if (sta && sta->flags & WLAN_STA_PENDING_POLL) {
-			HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "STA " MACSTR
-				      " %s pending activity poll\n",
-				      MAC2STR(sta->addr),
-				      ok ? "ACKed" : "did not ACK");
+			wpa_printf(MSG_DEBUG, "STA " MACSTR
+				   " %s pending activity poll",
+				   MAC2STR(sta->addr),
+				   ok ? "ACKed" : "did not ACK");
 			if (ok)
 				sta->flags &= ~WLAN_STA_PENDING_POLL;
 		}
@@ -181,8 +186,8 @@ static void handle_frame(struct hostapd_data *hapd, u8 *buf, size_t len)
 	/* PSPOLL is only 16 bytes, but driver does not (at least yet) pass
 	 * these to user space */
 	if (len < 24) {
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_VERBOSE, "handle_frame: too short "
-			      "(%lu)\n", (unsigned long) len);
+		wpa_printf(MSG_MSGDUMP, "handle_frame: too short (%lu)",
+			   (unsigned long) len);
 		return;
 	}
 
@@ -191,9 +196,8 @@ static void handle_frame(struct hostapd_data *hapd, u8 *buf, size_t len)
 	type = WLAN_FC_GET_TYPE(fc);
 	stype = WLAN_FC_GET_STYPE(fc);
 
-	if (type != WLAN_FC_TYPE_MGMT || stype != WLAN_FC_STYPE_BEACON ||
-	    hapd->conf->debug >= HOSTAPD_DEBUG_EXCESSIVE) {
-		wpa_hexdump(MSG_MSGDUMP, "Received management frrame",
+	if (type != WLAN_FC_TYPE_MGMT || stype != WLAN_FC_STYPE_BEACON) {
+		wpa_hexdump(MSG_MSGDUMP, "Received management frame",
 			    buf, len);
 	}
 
@@ -222,20 +226,19 @@ static void handle_frame(struct hostapd_data *hapd, u8 *buf, size_t len)
 
 	switch (type) {
 	case WLAN_FC_TYPE_MGMT:
-		HOSTAPD_DEBUG(stype == WLAN_FC_STYPE_BEACON ?
-			      HOSTAPD_DEBUG_EXCESSIVE : HOSTAPD_DEBUG_VERBOSE,
-			      "MGMT\n");
+		if (stype != WLAN_FC_STYPE_BEACON)
+			wpa_printf(MSG_MSGDUMP, "MGMT");
 		ieee802_11_mgmt(hapd, buf, data_len, stype, NULL);
 		break;
 	case WLAN_FC_TYPE_CTRL:
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "CTRL\n");
+		wpa_printf(MSG_DEBUG, "CTRL");
 		break;
 	case WLAN_FC_TYPE_DATA:
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "DATA\n");
+		wpa_printf(MSG_DEBUG, "DATA");
 		handle_data(hapd, buf, data_len, stype);
 		break;
 	default:
-		printf("unknown frame type %d\n", type);
+		wpa_printf(MSG_DEBUG, "unknown frame type %d", type);
 		break;
 	}
 }
@@ -259,7 +262,6 @@ static void handle_read(int sock, void *eloop_ctx, void *sock_ctx)
 
 static int hostap_init_sockets(struct hostap_driver_data *drv)
 {
-	struct hostapd_data *hapd = drv->hapd;
 	struct ifreq ifr;
 	struct sockaddr_ll addr;
 
@@ -289,9 +291,8 @@ static int hostap_init_sockets(struct hostap_driver_data *drv)
 	memset(&addr, 0, sizeof(addr));
 	addr.sll_family = AF_PACKET;
 	addr.sll_ifindex = ifr.ifr_ifindex;
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		      "Opening raw packet socket for ifindex %d\n",
-		      addr.sll_ifindex);
+	wpa_printf(MSG_DEBUG, "Opening raw packet socket for ifindex %d",
+		   addr.sll_ifindex);
 
 	if (bind(drv->sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
 		perror("bind");
@@ -754,13 +755,14 @@ static int hostap_set_assoc_ap(void *priv, const u8 *addr)
 }
 
 
-static int hostap_set_generic_elem(const char *ifname, void *priv,
-				   const u8 *elem, size_t elem_len)
+static int hostapd_ioctl_set_generic_elem(struct hostap_driver_data *drv)
 {
-	struct hostap_driver_data *drv = priv;
 	struct prism2_hostapd_param *param;
 	int res;
-	size_t blen = PRISM2_HOSTAPD_GENERIC_ELEMENT_HDR_LEN + elem_len;
+	size_t blen, elem_len;
+
+	elem_len = drv->generic_ie_len + drv->wps_ie_len;
+	blen = PRISM2_HOSTAPD_GENERIC_ELEMENT_HDR_LEN + elem_len;
 	if (blen < sizeof(*param))
 		blen = sizeof(*param);
 
@@ -770,12 +772,71 @@ static int hostap_set_generic_elem(const char *ifname, void *priv,
 
 	param->cmd = PRISM2_HOSTAPD_SET_GENERIC_ELEMENT;
 	param->u.generic_elem.len = elem_len;
-	memcpy(param->u.generic_elem.data, elem, elem_len);
+	if (drv->generic_ie) {
+		os_memcpy(param->u.generic_elem.data, drv->generic_ie,
+			  drv->generic_ie_len);
+	}
+	if (drv->wps_ie) {
+		os_memcpy(&param->u.generic_elem.data[drv->generic_ie_len],
+			  drv->wps_ie, drv->wps_ie_len);
+	}
+	wpa_hexdump(MSG_DEBUG, "hostap: Set generic IE",
+		    param->u.generic_elem.data, elem_len);
 	res = hostapd_ioctl(drv, param, blen);
 
-	free(param);
+	os_free(param);
 
 	return res;
+}
+
+
+static int hostap_set_generic_elem(const char *ifname, void *priv,
+				   const u8 *elem, size_t elem_len)
+{
+	struct hostap_driver_data *drv = priv;
+
+	os_free(drv->generic_ie);
+	drv->generic_ie = NULL;
+	drv->generic_ie_len = 0;
+	if (elem) {
+		drv->generic_ie = os_malloc(elem_len);
+		if (drv->generic_ie == NULL)
+			return -1;
+		os_memcpy(drv->generic_ie, elem, elem_len);
+		drv->generic_ie_len = elem_len;
+	}
+
+	return hostapd_ioctl_set_generic_elem(drv);
+}
+
+
+static int hostap_set_wps_beacon_ie(const char *ifname, void *priv,
+				    const u8 *ie, size_t len)
+{
+	/* Host AP driver supports only one set of extra IEs, so we need to
+	 * use the ProbeResp IEs also for Beacon frames since they include more
+	 * information. */
+	return 0;
+}
+
+
+static int hostap_set_wps_probe_resp_ie(const char *ifname, void *priv,
+					const u8 *ie, size_t len)
+{
+	struct hostap_driver_data *drv = priv;
+
+	os_free(drv->wps_ie);
+	drv->wps_ie = NULL;
+	drv->wps_ie_len = 0;
+	if (ie) {
+		drv->wps_ie = os_malloc(len);
+		if (drv->wps_ie == NULL)
+			return -1;
+		os_memcpy(drv->wps_ie, ie, len);
+		drv->wps_ie_len = len;
+	}
+
+	return hostapd_ioctl_set_generic_elem(drv);
 }
 
 
@@ -783,28 +844,25 @@ static void
 hostapd_wireless_event_wireless_custom(struct hostap_driver_data *drv,
 				       char *custom)
 {
-	struct hostapd_data *hapd = drv->hapd;
-
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "Custom wireless event: '%s'\n",
-		      custom);
+	wpa_printf(MSG_DEBUG, "Custom wireless event: '%s'", custom);
 
 	if (strncmp(custom, "MLME-MICHAELMICFAILURE.indication", 33) == 0) {
 		char *pos;
 		u8 addr[ETH_ALEN];
 		pos = strstr(custom, "addr=");
 		if (pos == NULL) {
-			HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-				      "MLME-MICHAELMICFAILURE.indication "
-				      "without sender address ignored\n");
+			wpa_printf(MSG_DEBUG,
+				   "MLME-MICHAELMICFAILURE.indication "
+				   "without sender address ignored");
 			return;
 		}
 		pos += 5;
 		if (hwaddr_aton(pos, addr) == 0) {
 			ieee80211_michael_mic_failure(drv->hapd, addr, 1);
 		} else {
-			HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-				      "MLME-MICHAELMICFAILURE.indication "
-				      "with invalid MAC address");
+			wpa_printf(MSG_DEBUG,
+				   "MLME-MICHAELMICFAILURE.indication "
+				   "with invalid MAC address");
 		}
 	}
 }
@@ -813,7 +871,6 @@ hostapd_wireless_event_wireless_custom(struct hostap_driver_data *drv,
 static void hostapd_wireless_event_wireless(struct hostap_driver_data *drv,
 					    char *data, int len)
 {
-	struct hostapd_data *hapd = drv->hapd;
 	struct iw_event iwe_buf, *iwe = &iwe_buf;
 	char *pos, *end, *custom, *buf;
 
@@ -824,8 +881,8 @@ static void hostapd_wireless_event_wireless(struct hostap_driver_data *drv,
 		/* Event data may be unaligned, so make a local, aligned copy
 		 * before processing. */
 		memcpy(&iwe_buf, pos, IW_EV_LCP_LEN);
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_VERBOSE, "Wireless event: "
-			      "cmd=0x%x len=%d\n", iwe->cmd, iwe->len);
+		wpa_printf(MSG_DEBUG, "Wireless event: cmd=0x%x len=%d",
+			   iwe->cmd, iwe->len);
 		if (iwe->len <= IW_EV_LCP_LEN)
 			return;
 
@@ -1095,7 +1152,10 @@ static void hostap_driver_deinit(void *priv)
 
 	if (drv->sock >= 0)
 		close(drv->sock);
-	
+
+	os_free(drv->generic_ie);
+	os_free(drv->wps_ie);
+
 	free(drv);
 }
 
@@ -1209,4 +1269,6 @@ const struct wpa_driver_ops wpa_driver_hostap_ops = {
 	.get_inact_sec = hostap_get_inact_sec,
 	.sta_clear_stats = hostap_sta_clear_stats,
 	.get_hw_feature_data = hostap_get_hw_feature_data,
+	.set_wps_beacon_ie = hostap_set_wps_beacon_ie,
+	.set_wps_probe_resp_ie = hostap_set_wps_probe_resp_ie,
 };

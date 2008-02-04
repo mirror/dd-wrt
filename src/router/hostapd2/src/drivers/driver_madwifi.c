@@ -461,12 +461,11 @@ static int wpa_driver_madwifi_get_ssid(void *priv, u8 *ssid)
 }
 
 
-static int wpa_driver_madwifi_get_scan_results(void *priv,
-					    struct wpa_scan_result *results,
-					    size_t max_size)
+static struct wpa_scan_results *
+wpa_driver_madwifi_get_scan_results(void *priv)
 {
 	struct wpa_driver_madwifi_data *drv = priv;
-	return wpa_driver_wext_get_scan_results(drv->wext, results, max_size);
+	return wpa_driver_wext_get_scan_results(drv->wext);
 }
 
 
@@ -557,7 +556,7 @@ const struct wpa_driver_ops wpa_driver_madwifi_ops = {
 	.set_countermeasures	= wpa_driver_madwifi_set_countermeasures,
 	.set_drop_unencrypted	= wpa_driver_madwifi_set_drop_unencrypted,
 	.scan			= wpa_driver_madwifi_scan,
-	.get_scan_results	= wpa_driver_madwifi_get_scan_results,
+	.get_scan_results2	= wpa_driver_madwifi_get_scan_results,
 	.deauthenticate		= wpa_driver_madwifi_deauthenticate,
 	.disassociate		= wpa_driver_madwifi_disassociate,
 	.associate		= wpa_driver_madwifi_associate,

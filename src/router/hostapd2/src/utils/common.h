@@ -402,13 +402,13 @@ typedef u32 __bitwise le32;
 typedef u64 __bitwise be64;
 typedef u64 __bitwise le64;
 
-typedef u16 __bitwise __be16;
-typedef u32 __bitwise __be32;
-typedef u64 __bitwise __be64;
-typedef u16 __bitwise __le16;
-typedef u32 __bitwise __le32;
-typedef u64 __bitwise __le64;
-
+#ifndef __must_check
+#if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
+#define __must_check __attribute__((__warn_unused_result__))
+#else
+#define __must_check
+#endif /* __GNUC__ */
+#endif /* __must_check */
 
 int hwaddr_aton(const char *txt, u8 *addr);
 int hexstr2bin(const char *hex, u8 *buf, size_t len);
@@ -426,7 +426,7 @@ TCHAR * wpa_strdup_tchar(const char *str);
 #define wpa_strdup_tchar(s) strdup((s))
 #endif /* CONFIG_NATIVE_WINDOWS */
 
-const char * wpa_ssid_txt(u8 *ssid, size_t ssid_len);
+const char * wpa_ssid_txt(const u8 *ssid, size_t ssid_len);
 
 
 #include "wpa_debug.h"

@@ -18,10 +18,9 @@
 #ifdef CONFIG_DRIVER_HOSTAP
 extern struct wpa_driver_ops wpa_driver_hostap_ops; /* driver_hostap.c */
 #endif /* CONFIG_DRIVER_HOSTAP */
-#ifdef CONFIG_DRIVER_DEVICESCAPE
-/* driver_devicescape.c */
-extern struct wpa_driver_ops wpa_driver_devicescape_ops;
-#endif /* CONFIG_DRIVER_DEVICESCAPE */
+#ifdef CONFIG_DRIVER_NL80211
+extern struct wpa_driver_ops wpa_driver_nl80211_ops; /* driver_nl80211.c */
+#endif /* CONFIG_DRIVER_NL80211 */
 #ifdef CONFIG_DRIVER_PRISM54
 extern struct wpa_driver_ops wpa_driver_prism54_ops; /* driver_prism54.c */
 #endif /* CONFIG_DRIVER_PRISM54 */
@@ -44,9 +43,9 @@ struct wpa_driver_ops *hostapd_drivers[] =
 #ifdef CONFIG_DRIVER_HOSTAP
 	&wpa_driver_hostap_ops,
 #endif /* CONFIG_DRIVER_HOSTAP */
-#ifdef CONFIG_DRIVER_DEVICESCAPE
-	&wpa_driver_devicescape_ops,
-#endif /* CONFIG_DRIVER_DEVICESCAPE */
+#ifdef CONFIG_DRIVER_NL80211
+	&wpa_driver_nl80211_ops,
+#endif /* CONFIG_DRIVER_NL80211 */
 #ifdef CONFIG_DRIVER_PRISM54
 	&wpa_driver_prism54_ops,
 #endif /* CONFIG_DRIVER_PRISM54 */

@@ -1,6 +1,6 @@
 /*
  * EAP peer method: EAP-FAST (RFC 4851)
- * Copyright (c) 2004-2006, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -17,7 +17,7 @@
 #include "common.h"
 #include "eap_i.h"
 #include "eap_tls_common.h"
-#include "config_ssid.h"
+#include "eap_config.h"
 #include "tls.h"
 #include "eap_tlv.h"
 #include "sha1.h"
@@ -168,7 +168,7 @@ static int eap_fast_parse_phase1(struct eap_fast_data *data,
 static void * eap_fast_init(struct eap_sm *sm)
 {
 	struct eap_fast_data *data;
-	struct wpa_ssid *config = eap_get_config(sm);
+	struct eap_peer_config *config = eap_get_config(sm);
 
 	data = os_zalloc(sizeof(*data));
 	if (data == NULL)
@@ -212,7 +212,10 @@ static void * eap_fast_init(struct eap_sm *sm)
 	 * fragments before data, so disable that workaround for CBC.
 	 * TODO: consider making this configurable
 	 */
-	tls_connection_enable_workaround(sm->ssl_ctx, data->ssl.conn);
+	if (tls_connection_enable_workaround(sm->ssl_ctx, data->ssl.conn)) {
+		wpa_printf(MSG_DEBUG, "EAP-FAST: Failed to enable TLS "
+			   "workarounds");
+	}
 
 	if (data->use_pac_binary_format &&
 	    eap_fast_load_pac_bin(sm, &data->pac, config->pac_file) < 0) {
@@ -469,8 +472,8 @@ static int eap_fast_phase2_request(struct eap_sm *sm,
 	size_t len = be_to_host16(hdr->length);
 	u8 *pos;
 	struct eap_method_ret iret;
-	struct wpa_ssid *config = eap_get_config(sm);
-	struct wpabuf *msg;
+	struct eap_peer_config *config = eap_get_config(sm);
+	struct wpabuf msg;
 
 	if (len <= sizeof(struct eap_hdr)) {
 		wpa_printf(MSG_INFO, "EAP-FAST: too short "
@@ -504,12 +507,9 @@ static int eap_fast_phase2_request(struct eap_sm *sm,
 	}
 
 	os_memset(&iret, 0, sizeof(iret));
-	msg = wpabuf_alloc_ext_data_no_free((u8 *) hdr, len);
-	if (msg == NULL)
-		return -1;
+	wpabuf_set(&msg, hdr, len);
 	*resp = data->phase2_method->process(sm, data->phase2_priv, &iret,
-					     msg);
-	wpabuf_free(msg);
+					     &msg);
 	if (*resp == NULL ||
 	    (iret.methodState == METHOD_DONE &&
 	     iret.decision == DECISION_FAIL)) {
@@ -1122,7 +1122,7 @@ static struct wpabuf * eap_fast_process_pac(struct eap_sm *sm,
 					    struct eap_method_ret *ret,
 					    u8 *pac, size_t pac_len)
 {
-	struct wpa_ssid *config = eap_get_config(sm);
+	struct eap_peer_config *config = eap_get_config(sm);
 	struct eap_fast_pac entry;
 
 	os_memset(&entry, 0, sizeof(entry));
@@ -1435,10 +1435,10 @@ continue_req:
 			in_decrypted);
 
 	if (wpabuf_len(in_decrypted) < 4) {
-		wpabuf_free(in_decrypted);
 		wpa_printf(MSG_INFO, "EAP-FAST: Too short Phase 2 "
 			   "TLV frame (len=%lu)",
 			   (unsigned long) wpabuf_len(in_decrypted));
+		wpabuf_free(in_decrypted);
 		return -1;
 	}
 
@@ -1663,12 +1663,9 @@ static struct wpabuf * eap_fast_process(struct eap_sm *sm, void *priv,
 	if (tls_connection_established(sm->ssl_ctx, data->ssl.conn) &&
 	    !data->resuming) {
 		/* Process tunneled (encrypted) phase 2 data. */
-		struct wpabuf *msg = wpabuf_alloc_ext_data_no_free(pos, left);
-		if (msg) {
-			res = eap_fast_decrypt(sm, data, ret, req, msg, &resp);
-			wpabuf_free(msg);
-		} else
-			res = -1;
+		struct wpabuf msg;
+		wpabuf_set(&msg, pos, left);
+		res = eap_fast_decrypt(sm, data, ret, req, &msg, &resp);
 		if (res < 0) {
 			ret->methodState = METHOD_DONE;
 			ret->decision = DECISION_FAIL;
@@ -1707,20 +1704,16 @@ static struct wpabuf * eap_fast_process(struct eap_sm *sm, void *priv,
 		}
 
 		if (res == 2) {
-			struct wpabuf *msg;
+			struct wpabuf msg;
 			/*
 			 * Application data included in the handshake message.
 			 */
 			wpabuf_free(data->pending_phase2_req);
 			data->pending_phase2_req = resp;
 			resp = NULL;
-			msg = wpabuf_alloc_ext_data_no_free(pos, left);
-			if (msg) {
-				res = eap_fast_decrypt(sm, data, ret, req, msg,
-						       &resp);
-				wpabuf_free(msg);
-			} else
-				res = -1;
+			wpabuf_set(&msg, pos, left);
+			res = eap_fast_decrypt(sm, data, ret, req, &msg,
+					       &resp);
 		}
 	}
 

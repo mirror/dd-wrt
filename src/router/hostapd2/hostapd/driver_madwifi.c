@@ -20,13 +20,23 @@
 
 #include <include/compat.h>
 #include <net80211/ieee80211.h>
-//#ifdef WME_NUM_AC
+#ifdef WME_NUM_AC
 /* Assume this is built against BSD branch of madwifi driver. */
-//#define MADWIFI_BSD
-//#include <net80211/_ieee80211.h>
-//#endif /* WME_NUM_AC */
+#define MADWIFI_BSD
+#include <net80211/_ieee80211.h>
+#endif /* WME_NUM_AC */
 #include <net80211/ieee80211_crypto.h>
 #include <net80211/ieee80211_ioctl.h>
+
+#ifdef CONFIG_WPS
+#ifdef IEEE80211_IOCTL_FILTERFRAME
+#include <netpacket/packet.h>
+
+#ifndef ETH_P_80211_RAW
+#define ETH_P_80211_RAW 0x0019
+#endif
+#endif /* IEEE80211_IOCTL_FILTERFRAME */
+#endif /* CONFIG_WPS */
 
 /*
  * Avoid conflicts with hostapd definitions by undefining couple of defines
@@ -57,6 +67,7 @@
 #include "ieee802_11.h"
 #include "accounting.h"
 #include "common.h"
+#include "wps_hostapd.h"
 
 
 struct madwifi_driver_data {
@@ -71,6 +82,8 @@ struct madwifi_driver_data {
 	int	we_version;
 	u8	acct_mac[ETH_ALEN];
 	struct hostap_sta_driver_data acct_data;
+
+	struct l2_packet_data *sock_raw; /* raw 802.11 management frames */
 };
 
 static int madwifi_sta_deauth(void *priv, const u8 *addr, int reason_code);
@@ -79,10 +92,16 @@ static int
 set80211priv(struct madwifi_driver_data *drv, int op, void *data, int len)
 {
 	struct iwreq iwr;
+	int do_inline = len < IFNAMSIZ;
 
 	memset(&iwr, 0, sizeof(iwr));
 	os_strlcpy(iwr.ifr_name, drv->iface, IFNAMSIZ);
-	if (len < IFNAMSIZ) {
+#ifdef IEEE80211_IOCTL_FILTERFRAME
+	/* FILTERFRAME must be NOT inline, regardless of size. */
+	if (op == IEEE80211_IOCTL_FILTERFRAME)
+		do_inline = 0;
+#endif /* IEEE80211_IOCTL_FILTERFRAME */
+	if (do_inline) {
 		/*
 		 * Argument data fits inline; put it there.
 		 */
@@ -100,7 +119,6 @@ set80211priv(struct madwifi_driver_data *drv, int op, void *data, int len)
 	if (ioctl(drv->ioctl_sock, op, &iwr) < 0) {
 #ifdef MADWIFI_NG
 		int first = IEEE80211_IOCTL_SETPARAM;
-		int last = IEEE80211_IOCTL_KICKMAC;
 		static const char *opnames[] = {
 			"ioctl[IEEE80211_IOCTL_SETPARAM]",
 			"ioctl[IEEE80211_IOCTL_GETPARAM]",
@@ -111,10 +129,10 @@ set80211priv(struct madwifi_driver_data *drv, int op, void *data, int len)
 			"ioctl[IEEE80211_IOCTL_SETCHANLIST]",
 			"ioctl[IEEE80211_IOCTL_GETCHANLIST]",
 			"ioctl[IEEE80211_IOCTL_CHANSWITCH]",
-			NULL,
-			NULL,
+			"ioctl[IEEE80211_IOCTL_GET_APPIEBUF]",
+			"ioctl[IEEE80211_IOCTL_SET_APPIEBUF]",
 			"ioctl[IEEE80211_IOCTL_GETSCANRESULTS]",
-			NULL,
+			"ioctl[IEEE80211_IOCTL_FILTERFRAME]",
 			"ioctl[IEEE80211_IOCTL_GETCHANINFO]",
 			"ioctl[IEEE80211_IOCTL_SETOPTIE]",
 			"ioctl[IEEE80211_IOCTL_GETOPTIE]",
@@ -132,11 +150,10 @@ set80211priv(struct madwifi_driver_data *drv, int op, void *data, int len)
 			NULL,
 			"ioctl[IEEE80211_IOCTL_WDSDELMAC]",
 			NULL,
-			"ioctl[IEEE80211_IOCTL_KICMAC]",
+			"ioctl[IEEE80211_IOCTL_KICKMAC]",
 		};
 #else /* MADWIFI_NG */
 		int first = IEEE80211_IOCTL_SETPARAM;
-		int last = IEEE80211_IOCTL_CHANLIST;
 		static const char *opnames[] = {
 			"ioctl[IEEE80211_IOCTL_SETPARAM]",
 			"ioctl[IEEE80211_IOCTL_GETPARAM]",
@@ -160,7 +177,7 @@ set80211priv(struct madwifi_driver_data *drv, int op, void *data, int len)
 		};
 #endif /* MADWIFI_NG */
 		int idx = op - first;
-		if (first <= op && op <= last &&
+		if (first <= op &&
 		    idx < (int) (sizeof(opnames) / sizeof(opnames[0])) &&
 		    opnames[idx])
 			perror(opnames[idx]);
@@ -229,12 +246,11 @@ madwifi_configure_wpa(struct madwifi_driver_data *drv)
 		v = IEEE80211_CIPHER_NONE;
 		break;
 	default:
-		printf("Unknown group key cipher %u\n",
-			conf->wpa_group);
+		wpa_printf(MSG_ERROR, "Unknown group key cipher %u",
+			   conf->wpa_group);
 		return -1;
 	}
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		"%s: group key cipher=%d\n", __func__, v);
+	wpa_printf(MSG_DEBUG, "%s: group key cipher=%d", __func__, v);
 	if (set80211param(drv, IEEE80211_PARAM_MCASTCIPHER, v)) {
 		printf("Unable to set group key cipher to %u\n", v);
 		return -1;
@@ -255,16 +271,14 @@ madwifi_configure_wpa(struct madwifi_driver_data *drv)
 		v |= 1<<IEEE80211_CIPHER_TKIP;
 	if (conf->wpa_pairwise & WPA_CIPHER_NONE)
 		v |= 1<<IEEE80211_CIPHER_NONE;
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		"%s: pairwise key ciphers=0x%x\n", __func__, v);
+	wpa_printf(MSG_DEBUG, "%s: pairwise key ciphers=0x%x", __func__, v);
 	if (set80211param(drv, IEEE80211_PARAM_UCASTCIPHERS, v)) {
 		printf("Unable to set pairwise key ciphers to 0x%x\n", v);
 		return -1;
 	}
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		"%s: key management algorithms=0x%x\n",
-		__func__, conf->wpa_key_mgmt);
+	wpa_printf(MSG_DEBUG, "%s: key management algorithms=0x%x",
+		   __func__, conf->wpa_key_mgmt);
 	if (set80211param(drv, IEEE80211_PARAM_KEYMGTALGS, conf->wpa_key_mgmt)) {
 		printf("Unable to set key management algorithms to 0x%x\n",
 			conf->wpa_key_mgmt);
@@ -274,15 +288,14 @@ madwifi_configure_wpa(struct madwifi_driver_data *drv)
 	v = 0;
 	if (conf->rsn_preauth)
 		v |= BIT(0);
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		"%s: rsn capabilities=0x%x\n", __func__, conf->rsn_preauth);
+	wpa_printf(MSG_DEBUG, "%s: rsn capabilities=0x%x",
+		   __func__, conf->rsn_preauth);
 	if (set80211param(drv, IEEE80211_PARAM_RSNCAPS, v)) {
 		printf("Unable to set RSN capabilities to 0x%x\n", v);
 		return -1;
 	}
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		"%s: enable WPA=0x%x\n", __func__, conf->wpa);
+	wpa_printf(MSG_DEBUG, "%s: enable WPA=0x%x", __func__, conf->wpa);
 	if (set80211param(drv, IEEE80211_PARAM_WPA, conf->wpa)) {
 		printf("Unable to set WPA to %u\n", conf->wpa);
 		return -1;
@@ -341,8 +354,7 @@ madwifi_set_ieee8021x(const char *ifname, void *priv, int enabled)
 	struct hostapd_data *hapd = drv->hapd;
 	struct hostapd_bss_config *conf = hapd->conf;
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_VERBOSE,
-		"%s: enabled=%d\n", __func__, enabled);
+	wpa_printf(MSG_DEBUG, "%s: enabled=%d", __func__, enabled);
 
 	if (!enabled) {
 		/* XXX restore state */
@@ -373,25 +385,21 @@ static int
 madwifi_set_privacy(const char *ifname, void *priv, int enabled)
 {
 	struct madwifi_driver_data *drv = priv;
-	struct hostapd_data *hapd = drv->hapd;
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		"%s: enabled=%d\n", __func__, enabled);
+	wpa_printf(MSG_DEBUG, "%s: enabled=%d", __func__, enabled);
 
-	return set80211param(priv, IEEE80211_PARAM_PRIVACY, enabled);
+	return set80211param(drv, IEEE80211_PARAM_PRIVACY, enabled);
 }
 
 static int
 madwifi_set_sta_authorized(void *priv, const u8 *addr, int authorized)
 {
 	struct madwifi_driver_data *drv = priv;
-	struct hostapd_data *hapd = drv->hapd;
 	struct ieee80211req_mlme mlme;
 	int ret;
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_VERBOSE,
-		"%s: addr=%s authorized=%d\n",
-		__func__, ether_sprintf(addr), authorized);
+	wpa_printf(MSG_DEBUG, "%s: addr=%s authorized=%d",
+		   __func__, ether_sprintf(addr), authorized);
 
 	if (authorized)
 		mlme.im_op = IEEE80211_MLME_AUTHORIZE;
@@ -399,8 +407,7 @@ madwifi_set_sta_authorized(void *priv, const u8 *addr, int authorized)
 		mlme.im_op = IEEE80211_MLME_UNAUTHORIZE;
 	mlme.im_reason = 0;
 	memcpy(mlme.im_macaddr, addr, IEEE80211_ADDR_LEN);
-	ret = set80211priv(priv, IEEE80211_IOCTL_SETMLME, &mlme,
-			   sizeof(mlme));
+	ret = set80211priv(drv, IEEE80211_IOCTL_SETMLME, &mlme, sizeof(mlme));
 	if (ret < 0) {
 		wpa_printf(MSG_DEBUG, "%s: Failed to %sauthorize STA " MACSTR,
 			   __func__, authorized ? "" : "un", MAC2STR(addr));
@@ -425,13 +432,11 @@ static int
 madwifi_del_key(void *priv, const u8 *addr, int key_idx)
 {
 	struct madwifi_driver_data *drv = priv;
-	struct hostapd_data *hapd = drv->hapd;
 	struct ieee80211req_del_key wk;
 	int ret;
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		"%s: addr=%s key_idx=%d\n",
-		__func__, ether_sprintf(addr), key_idx);
+	wpa_printf(MSG_DEBUG, "%s: addr=%s key_idx=%d",
+		   __func__, ether_sprintf(addr), key_idx);
 
 	memset(&wk, 0, sizeof(wk));
 	if (addr != NULL) {
@@ -441,7 +446,7 @@ madwifi_del_key(void *priv, const u8 *addr, int key_idx)
 		wk.idk_keyix = key_idx;
 	}
 
-	ret = set80211priv(priv, IEEE80211_IOCTL_DELKEY, &wk, sizeof(wk));
+	ret = set80211priv(drv, IEEE80211_IOCTL_DELKEY, &wk, sizeof(wk));
 	if (ret < 0) {
 		wpa_printf(MSG_DEBUG, "%s: Failed to delete key (addr %s"
 			   " key_idx %d)", __func__, ether_sprintf(addr),
@@ -457,17 +462,15 @@ madwifi_set_key(const char *ifname, void *priv, const char *alg,
 		const u8 *key, size_t key_len, int txkey)
 {
 	struct madwifi_driver_data *drv = priv;
-	struct hostapd_data *hapd = drv->hapd;
 	struct ieee80211req_key wk;
 	u_int8_t cipher;
 	int ret;
 
 	if (strcmp(alg, "none") == 0)
-		return madwifi_del_key(priv, addr, key_idx);
+		return madwifi_del_key(drv, addr, key_idx);
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		"%s: alg=%s addr=%s key_idx=%d\n",
-		__func__, alg, ether_sprintf(addr), key_idx);
+	wpa_printf(MSG_DEBUG, "%s: alg=%s addr=%s key_idx=%d",
+		   __func__, alg, ether_sprintf(addr), key_idx);
 
 	if (strcmp(alg, "WEP") == 0)
 		cipher = IEEE80211_CIPHER_WEP;
@@ -501,7 +504,7 @@ madwifi_set_key(const char *ifname, void *priv, const char *alg,
 	wk.ik_keylen = key_len;
 	memcpy(wk.ik_keydata, key, key_len);
 
-	ret = set80211priv(priv, IEEE80211_IOCTL_SETKEY, &wk, sizeof(wk));
+	ret = set80211priv(drv, IEEE80211_IOCTL_SETKEY, &wk, sizeof(wk));
 	if (ret < 0) {
 		wpa_printf(MSG_DEBUG, "%s: Failed to set key (addr %s"
 			   " key_idx %d alg '%s' key_len %lu txkey %d)",
@@ -518,11 +521,10 @@ madwifi_get_seqnum(const char *ifname, void *priv, const u8 *addr, int idx,
 		   u8 *seq)
 {
 	struct madwifi_driver_data *drv = priv;
-	struct hostapd_data *hapd = drv->hapd;
 	struct ieee80211req_key wk;
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		"%s: addr=%s idx=%d\n", __func__, ether_sprintf(addr), idx);
+	wpa_printf(MSG_DEBUG, "%s: addr=%s idx=%d",
+		   __func__, ether_sprintf(addr), idx);
 
 	memset(&wk, 0, sizeof(wk));
 	if (addr == NULL)
@@ -531,7 +533,7 @@ madwifi_get_seqnum(const char *ifname, void *priv, const u8 *addr, int idx,
 		memcpy(wk.ik_macaddr, addr, IEEE80211_ADDR_LEN);
 	wk.ik_keyix = idx;
 
-	if (set80211priv(priv, IEEE80211_IOCTL_GETKEY, &wk, sizeof(wk))) {
+	if (set80211priv(drv, IEEE80211_IOCTL_GETKEY, &wk, sizeof(wk))) {
 		wpa_printf(MSG_DEBUG, "%s: Failed to get encryption data "
 			   "(addr " MACSTR " key_idx %d)",
 			   __func__, MAC2STR(wk.ik_macaddr), idx);
@@ -660,16 +662,14 @@ madwifi_sta_clear_stats(void *priv, const u8 *addr)
 {
 #if defined(MADWIFI_BSD) && defined(IEEE80211_MLME_CLEAR_STATS)
 	struct madwifi_driver_data *drv = priv;
-	struct hostapd_data *hapd = drv->hapd;
 	struct ieee80211req_mlme mlme;
 	int ret;
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "%s: addr=%s\n",
-		      __func__, ether_sprintf(addr));
+	wpa_printf(MSG_DEBUG, "%s: addr=%s", __func__, ether_sprintf(addr));
 
 	mlme.im_op = IEEE80211_MLME_CLEAR_STATS;
 	memcpy(mlme.im_macaddr, addr, IEEE80211_ADDR_LEN);
-	ret = set80211priv(priv, IEEE80211_IOCTL_SETMLME, &mlme,
+	ret = set80211priv(drv, IEEE80211_IOCTL_SETMLME, &mlme,
 			   sizeof(mlme));
 	if (ret < 0) {
 		wpa_printf(MSG_DEBUG, "%s: Failed to clear STA stats (addr "
@@ -697,18 +697,16 @@ static int
 madwifi_sta_deauth(void *priv, const u8 *addr, int reason_code)
 {
 	struct madwifi_driver_data *drv = priv;
-	struct hostapd_data *hapd = drv->hapd;
 	struct ieee80211req_mlme mlme;
 	int ret;
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		"%s: addr=%s reason_code=%d\n",
-		__func__, ether_sprintf(addr), reason_code);
+	wpa_printf(MSG_DEBUG, "%s: addr=%s reason_code=%d",
+		   __func__, ether_sprintf(addr), reason_code);
 
 	mlme.im_op = IEEE80211_MLME_DEAUTH;
 	mlme.im_reason = reason_code;
 	memcpy(mlme.im_macaddr, addr, IEEE80211_ADDR_LEN);
-	ret = set80211priv(priv, IEEE80211_IOCTL_SETMLME, &mlme, sizeof(mlme));
+	ret = set80211priv(drv, IEEE80211_IOCTL_SETMLME, &mlme, sizeof(mlme));
 	if (ret < 0) {
 		wpa_printf(MSG_DEBUG, "%s: Failed to deauth STA (addr " MACSTR
 			   " reason %d)",
@@ -722,24 +720,77 @@ static int
 madwifi_sta_disassoc(void *priv, const u8 *addr, int reason_code)
 {
 	struct madwifi_driver_data *drv = priv;
-	struct hostapd_data *hapd = drv->hapd;
 	struct ieee80211req_mlme mlme;
 	int ret;
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		"%s: addr=%s reason_code=%d\n",
-		__func__, ether_sprintf(addr), reason_code);
+	wpa_printf(MSG_DEBUG, "%s: addr=%s reason_code=%d",
+		   __func__, ether_sprintf(addr), reason_code);
 
 	mlme.im_op = IEEE80211_MLME_DISASSOC;
 	mlme.im_reason = reason_code;
 	memcpy(mlme.im_macaddr, addr, IEEE80211_ADDR_LEN);
-	ret = set80211priv(priv, IEEE80211_IOCTL_SETMLME, &mlme, sizeof(mlme));
+	ret = set80211priv(drv, IEEE80211_IOCTL_SETMLME, &mlme, sizeof(mlme));
 	if (ret < 0) {
 		wpa_printf(MSG_DEBUG, "%s: Failed to disassoc STA (addr "
 			   MACSTR " reason %d)",
 			   __func__, MAC2STR(addr), reason_code);
 	}
 
+	return ret;
+}
+
+#ifdef CONFIG_WPS
+#ifdef IEEE80211_IOCTL_FILTERFRAME
+static void madwifi_raw_receive(void *ctx, const u8 *src_addr, const u8 *buf,
+				size_t len)
+{
+	struct madwifi_driver_data *drv = ctx;
+	const struct ieee80211_mgmt *mgmt;
+	const u8 *end, *ie;
+	u16 fc;
+	size_t ie_len;
+
+	/* Send Probe Request information to WPS processing */
+
+	if (len < IEEE80211_HDRLEN + sizeof(mgmt->u.probe_req))
+		return;
+	mgmt = (const struct ieee80211_mgmt *) buf;
+
+	fc = le_to_host16(mgmt->frame_control);
+	if (WLAN_FC_GET_TYPE(fc) != WLAN_FC_TYPE_MGMT ||
+	    WLAN_FC_GET_STYPE(fc) != WLAN_FC_STYPE_PROBE_REQ)
+		return;
+
+	end = buf + len;
+	ie = mgmt->u.probe_req.variable;
+	ie_len = len - (IEEE80211_HDRLEN + sizeof(mgmt->u.probe_req));
+
+	hostapd_wps_probe_req_rx(drv->hapd, mgmt->sa, ie, ie_len);
+}
+#endif /* IEEE80211_IOCTL_FILTERFRAME */
+#endif /* CONFIG_WPS */
+
+static int madwifi_receive_probe_req(struct madwifi_driver_data *drv)
+{
+	int ret = 0;
+#ifdef CONFIG_WPS
+#ifdef IEEE80211_IOCTL_FILTERFRAME
+	struct ieee80211req_set_filter filt;
+
+	wpa_printf(MSG_DEBUG, "%s Enter", __func__);
+	filt.app_filterype = IEEE80211_FILTER_TYPE_PROBE_REQ;
+
+	ret = set80211priv(drv, IEEE80211_IOCTL_FILTERFRAME, &filt,
+			   sizeof(struct ieee80211req_set_filter));
+	if (ret)
+		return ret;
+
+	drv->sock_raw = l2_packet_init(drv->iface, NULL, ETH_P_80211_RAW,
+				       madwifi_raw_receive, drv, 1);
+	if (drv->sock_raw == NULL)
+		return -1;
+#endif /* IEEE80211_IOCTL_FILTERFRAME */
+#endif /* CONFIG_WPS */
 	return ret;
 }
 
@@ -763,6 +814,46 @@ madwifi_del_sta(struct madwifi_driver_data *drv, u8 addr[IEEE80211_ADDR_LEN])
 	return 0;
 }
 
+#ifdef CONFIG_WPS
+static int
+madwifi_set_wps_ie(void *priv, const u8 *ie, size_t len, u32 frametype)
+{
+	struct madwifi_driver_data *drv = priv;
+	u8 buf[256];
+	struct ieee80211req_getset_appiebuf *beac_ie;
+
+	wpa_printf(MSG_DEBUG, "%s buflen = %lu", __func__,
+		   (unsigned long) len);
+
+	beac_ie = (struct ieee80211req_getset_appiebuf *) buf;
+	beac_ie->app_frmtype = frametype;
+	beac_ie->app_buflen = len;
+	memcpy(&(beac_ie->app_buf[0]), ie, len);
+	
+	return set80211priv(drv, IEEE80211_IOCTL_SET_APPIEBUF, beac_ie,
+			    sizeof(struct ieee80211req_getset_appiebuf) + len);
+	return 0;
+}
+
+static int
+madwifi_set_wps_beacon_ie(const char *ifname, void *priv, const u8 *ie,
+			  size_t len)
+{
+	return madwifi_set_wps_ie(priv, ie, len, IEEE80211_APPIE_FRAME_BEACON);
+}
+
+static int
+madwifi_set_wps_probe_resp_ie(const char *ifname, void *priv, const u8 *ie,
+			      size_t len)
+{
+	return madwifi_set_wps_ie(priv, ie, len,
+				  IEEE80211_APPIE_FRAME_PROBE_RESP);
+}
+#else /* CONFIG_WPS */
+#define madwifi_set_wps_beacon_ie NULL
+#define madwifi_set_wps_probe_resp_ie NULL
+#endif /* CONFIG_WPS */
+
 static int
 madwifi_process_wpa_ie(struct madwifi_driver_data *drv, struct sta_info *sta)
 {
@@ -782,16 +873,35 @@ madwifi_process_wpa_ie(struct madwifi_driver_data *drv, struct sta_info *sta)
 		printf("Failed to get WPA/RSN information element.\n");
 		return -1;		/* XXX not right */
 	}
+	wpa_hexdump(MSG_MSGDUMP, "madwifi req WPA IE",
+		    ie.wpa_ie, IEEE80211_MAX_OPT_IE);
+	wpa_hexdump(MSG_MSGDUMP, "madwifi req RSN IE",
+		    ie.rsn_ie, IEEE80211_MAX_OPT_IE);
 	iebuf = ie.wpa_ie;
+	/* madwifi seems to return some random data if WPA/RSN IE is not set.
+	 * Assume the IE was not included if the IE type is unknown. */
+	if (iebuf[0] != WLAN_EID_VENDOR_SPECIFIC)
+		iebuf[1] = 0;
 #ifdef MADWIFI_NG
 	if (iebuf[1] == 0 && ie.rsn_ie[1] > 0) {
 		/* madwifi-ng svn #1453 added rsn_ie. Use it, if wpa_ie was not
 		 * set. This is needed for WPA2. */
 		iebuf = ie.rsn_ie;
+		if (iebuf[0] != WLAN_EID_RSN)
+			iebuf[1] = 0;
 	}
 #endif /* MADWIFI_NG */
 	ielen = iebuf[1];
 	if (ielen == 0) {
+#ifdef CONFIG_WPS
+		if (hapd->conf->wps_state) {
+			wpa_printf(MSG_DEBUG, "STA did not include WPA/RSN IE "
+				   "in (Re)Association Request - possible WPS "
+				   "use");
+			sta->flags |= WLAN_STA_MAYBE_WPS;
+			return 0;
+		}
+#endif /* CONFIG_WPS */
 		printf("No WPA/RSN information element for station!?\n");
 		return -1;		/* XXX not right */
 	}
@@ -858,28 +968,25 @@ static void
 madwifi_wireless_event_wireless_custom(struct madwifi_driver_data *drv,
 				       char *custom)
 {
-	struct hostapd_data *hapd = drv->hapd;
-
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "Custom wireless event: '%s'\n",
-		      custom);
+	wpa_printf(MSG_DEBUG, "Custom wireless event: '%s'", custom);
 
 	if (strncmp(custom, "MLME-MICHAELMICFAILURE.indication", 33) == 0) {
 		char *pos;
 		u8 addr[ETH_ALEN];
 		pos = strstr(custom, "addr=");
 		if (pos == NULL) {
-			HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-				      "MLME-MICHAELMICFAILURE.indication "
-				      "without sender address ignored\n");
+			wpa_printf(MSG_DEBUG,
+				   "MLME-MICHAELMICFAILURE.indication "
+				   "without sender address ignored");
 			return;
 		}
 		pos += 5;
 		if (hwaddr_aton(pos, addr) == 0) {
 			ieee80211_michael_mic_failure(drv->hapd, addr, 1);
 		} else {
-			HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-				      "MLME-MICHAELMICFAILURE.indication "
-				      "with invalid MAC address");
+			wpa_printf(MSG_DEBUG,
+				   "MLME-MICHAELMICFAILURE.indication "
+				   "with invalid MAC address");
 		}
 	} else if (strncmp(custom, "STA-TRAFFIC-STAT", 16) == 0) {
 		char *key, *value;
@@ -911,7 +1018,6 @@ static void
 madwifi_wireless_event_wireless(struct madwifi_driver_data *drv,
 					    char *data, int len)
 {
-	struct hostapd_data *hapd = drv->hapd;
 	struct iw_event iwe_buf, *iwe = &iwe_buf;
 	char *pos, *end, *custom, *buf;
 
@@ -922,8 +1028,8 @@ madwifi_wireless_event_wireless(struct madwifi_driver_data *drv,
 		/* Event data may be unaligned, so make a local, aligned copy
 		 * before processing. */
 		memcpy(&iwe_buf, pos, IW_EV_LCP_LEN);
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_VERBOSE, "Wireless event: "
-			      "cmd=0x%x len=%d\n", iwe->cmd, iwe->len);
+		wpa_printf(MSG_MSGDUMP, "Wireless event: cmd=0x%x len=%d",
+			   iwe->cmd, iwe->len);
 		if (iwe->len <= IW_EV_LCP_LEN)
 			return;
 
@@ -1239,9 +1345,8 @@ madwifi_init(struct hostapd_data *hapd)
 	if (l2_packet_get_own_addr(drv->sock_xmit, hapd->own_addr))
 		goto bad;
 	if (hapd->conf->bridge[0] != '\0') {
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-			"Configure bridge %s for EAPOL traffic.\n",
-			hapd->conf->bridge);
+		wpa_printf(MSG_DEBUG, "Configure bridge %s for EAPOL traffic.",
+			   hapd->conf->bridge);
 		drv->sock_recv = l2_packet_init(hapd->conf->bridge, NULL,
 						ETH_P_EAPOL, handle_read, drv,
 						1);
@@ -1263,6 +1368,8 @@ madwifi_init(struct hostapd_data *hapd)
 
 	madwifi_set_iface_flags(drv, 0);	/* mark down during setup */
 	madwifi_set_privacy(drv->iface, drv, 0); /* default to no privacy */
+
+	madwifi_receive_probe_req(drv);
 
 	return drv;
 bad:
@@ -1288,6 +1395,8 @@ madwifi_deinit(void *priv)
 		l2_packet_deinit(drv->sock_recv);
 	if (drv->sock_xmit != NULL)
 		l2_packet_deinit(drv->sock_xmit);
+	if (drv->sock_raw)
+		l2_packet_deinit(drv->sock_raw);
 	free(drv);
 }
 
@@ -1368,4 +1477,6 @@ const struct wpa_driver_ops wpa_driver_madwifi_ops = {
 	.set_countermeasures	= madwifi_set_countermeasures,
 	.sta_clear_stats        = madwifi_sta_clear_stats,
 	.commit			= madwifi_commit,
+	.set_wps_beacon_ie	= madwifi_set_wps_beacon_ie,
+	.set_wps_probe_resp_ie	= madwifi_set_wps_probe_resp_ie,
 };

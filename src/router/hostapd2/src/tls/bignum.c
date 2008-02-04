@@ -227,4 +227,4 @@ int bignum_exptmod(const struct bignum *a, const struct bignum *b,
 		return -1;
 	}
 	return 0;
-}   
+}

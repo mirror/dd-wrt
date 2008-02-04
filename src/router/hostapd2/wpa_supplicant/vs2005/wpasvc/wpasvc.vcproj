@@ -195,6 +195,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\eap_common\chap.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\utils\common.c"
 				>
 			</File>
@@ -348,6 +352,10 @@
 			</File>
 			<File
 				RelativePath="..\..\scan.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\drivers\scan_helpers.c"
 				>
 			</File>
 			<File

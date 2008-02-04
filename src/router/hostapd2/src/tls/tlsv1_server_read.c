@@ -639,9 +639,15 @@ static int tls_process_client_key_exchange_dh_anon(
 	}
 
 	/* shared = Yc^secret mod p */
-	crypto_mod_exp(dh_yc, dh_yc_len, conn->dh_secret, conn->dh_secret_len,
-		       conn->cred->dh_p, conn->cred->dh_p_len,
-		       shared, &shared_len);
+	if (crypto_mod_exp(dh_yc, dh_yc_len, conn->dh_secret,
+			   conn->dh_secret_len,
+			   conn->cred->dh_p, conn->cred->dh_p_len,
+			   shared, &shared_len)) {
+		os_free(shared);
+		tlsv1_server_alert(conn, TLS_ALERT_LEVEL_FATAL,
+				   TLS_ALERT_INTERNAL_ERROR);
+		return -1;
+	}
 	wpa_hexdump_key(MSG_DEBUG, "TLSv1: Shared secret from DH key exchange",
 			shared, shared_len);
 

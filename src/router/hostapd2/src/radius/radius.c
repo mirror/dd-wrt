@@ -1,6 +1,6 @@
 /*
  * hostapd / RADIUS message processing
- * Copyright (c) 2002-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2002-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -142,6 +142,7 @@ static struct radius_attr_type radius_attrs[] =
 	{ RADIUS_ATTR_CALLING_STATION_ID, "Calling-Station-Id",
 	  RADIUS_ATTR_TEXT },
 	{ RADIUS_ATTR_NAS_IDENTIFIER, "NAS-Identifier", RADIUS_ATTR_TEXT },
+	{ RADIUS_ATTR_PROXY_STATE, "Proxy-State", RADIUS_ATTR_UNDIST },
 	{ RADIUS_ATTR_ACCT_STATUS_TYPE, "Acct-Status-Type",
 	  RADIUS_ATTR_INT32 },
 	{ RADIUS_ATTR_ACCT_DELAY_TIME, "Acct-Delay-Time", RADIUS_ATTR_INT32 },
@@ -667,25 +668,21 @@ int radius_msg_verify(struct radius_msg *msg, const u8 *secret,
 int radius_msg_copy_attr(struct radius_msg *dst, struct radius_msg *src,
 			 u8 type)
 {
-	struct radius_attr_hdr *attr = NULL, *tmp;
+	struct radius_attr_hdr *attr;
 	size_t i;
+	int count = 0;
 
 	for (i = 0; i < src->attr_used; i++) {
-		tmp = radius_get_attr_hdr(src, i);
-		if (tmp->type == type) {
-			attr = tmp;
-			break;
+		attr = radius_get_attr_hdr(src, i);
+		if (attr->type == type) {
+			if (!radius_msg_add_attr(dst, type, (u8 *) (attr + 1),
+						 attr->length - sizeof(*attr)))
+				return -1;
+			count++;
 		}
 	}
 
-	if (attr == NULL)
-		return 0;
-
-	if (!radius_msg_add_attr(dst, type, (u8 *) (attr + 1),
-				 attr->length - sizeof(*attr)))
-		return -1;
-
-	return 1;
+	return count;
 }
 
 

@@ -172,6 +172,7 @@ struct eap_sm {
 	u8 *pac_opaque_encr_key;
 	char *eap_fast_a_id;
 	int eap_sim_aka_result_ind;
+	struct wps_context *wps;
 };
 
 int eap_user_get(struct eap_sm *sm, const u8 *identity, size_t identity_len,

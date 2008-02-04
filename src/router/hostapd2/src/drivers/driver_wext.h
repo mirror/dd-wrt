@@ -30,9 +30,7 @@ int wpa_driver_wext_set_key(void *priv, wpa_alg alg,
 			    int set_tx, const u8 *seq, size_t seq_len,
 			    const u8 *key, size_t key_len);
 int wpa_driver_wext_scan(void *priv, const u8 *ssid, size_t ssid_len);
-int wpa_driver_wext_get_scan_results(void *priv,
-				     struct wpa_scan_result *results,
-				     size_t max_size);
+struct wpa_scan_results * wpa_driver_wext_get_scan_results(void *priv);
 
 void wpa_driver_wext_scan_timeout(void *eloop_ctx, void *timeout_ctx);
 

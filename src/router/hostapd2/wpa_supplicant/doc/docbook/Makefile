@@ -2,7 +2,9 @@ all: man html pdf
 
 FILES += wpa_background
 FILES += wpa_cli
+FILES += wpa_gui
 FILES += wpa_passphrase
+FILES += wpa_priv
 FILES += wpa_supplicant.conf
 FILES += wpa_supplicant
 
@@ -18,7 +20,7 @@ pdf:
 
 
 clean:
-	rm -f wpa_background.8 wpa_cli.8 wpa_passphrase.8 wpa_supplicant.8
+	rm -f wpa_background.8 wpa_cli.8 wpa_gui.8 wpa_passphrase.8 wpa_priv.8 wpa_supplicant.8
 	rm -f wpa_supplicant.conf.5
 	rm -f manpage.links manpage.refs
 	rm -f $(FILES:%=%.pdf)

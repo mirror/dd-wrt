@@ -16,8 +16,7 @@
 
 #include "common.h"
 #include "eap_i.h"
-#include "md5.h"
-#include "crypto.h"
+#include "eap_common/chap.h"
 
 
 static void * eap_md5_init(struct eap_sm *sm)
@@ -41,8 +40,6 @@ static struct wpabuf * eap_md5_process(struct eap_sm *sm, void *priv,
 	const u8 *pos, *challenge, *password;
 	u8 *rpos, id;
 	size_t len, challenge_len, password_len;
-	const u8 *addr[3];
-	size_t elen[3];
 
 	password = eap_get_config_password(sm, &password_len);
 	if (password == NULL) {
@@ -82,7 +79,7 @@ static struct wpabuf * eap_md5_process(struct eap_sm *sm, void *priv,
 	ret->decision = DECISION_UNCOND_SUCC;
 	ret->allowNotifications = TRUE;
 
-	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_MD5, 1 + MD5_MAC_LEN,
+	resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_MD5, 1 + CHAP_MD5_LEN,
 			     EAP_CODE_RESPONSE, eap_get_id(reqData));
 	if (resp == NULL)
 		return NULL;
@@ -91,18 +88,12 @@ static struct wpabuf * eap_md5_process(struct eap_sm *sm, void *priv,
 	 * CHAP Response:
 	 * Value-Size (1 octet) | Value(Response) | Name(optional)
 	 */
-	wpabuf_put_u8(resp, MD5_MAC_LEN);
+	wpabuf_put_u8(resp, CHAP_MD5_LEN);
 
 	id = eap_get_id(resp);
-	addr[0] = &id;
-	elen[0] = 1;
-	addr[1] = password;
-	elen[1] = password_len;
-	addr[2] = challenge;
-	elen[2] = challenge_len;
-	rpos = wpabuf_put(resp, MD5_MAC_LEN);
-	md5_vector(3, addr, elen, rpos);
-	wpa_hexdump(MSG_MSGDUMP, "EAP-MD5: Response", rpos, MD5_MAC_LEN);
+	rpos = wpabuf_put(resp, CHAP_MD5_LEN);
+	chap_md5(id, password, password_len, challenge, challenge_len, rpos);
+	wpa_hexdump(MSG_MSGDUMP, "EAP-MD5: Response", rpos, CHAP_MD5_LEN);
 
 	return resp;
 }

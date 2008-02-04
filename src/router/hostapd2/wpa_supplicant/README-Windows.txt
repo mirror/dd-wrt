@@ -1,7 +1,7 @@
 wpa_supplicant for Windows
 ==========================
 
-Copyright (c) 2003-2007, Jouni Malinen <j@w1.fi> and
+Copyright (c) 2003-2008, Jouni Malinen <j@w1.fi> and
 contributors
 All Rights Reserved.
 
@@ -38,8 +38,14 @@ Binary version
 --------------
 
 Compiled binary version of the wpa_supplicant and additional tools is
-available from http://hostap.epitest.fi/wpa_supplicant/. These
-binaries can be used after installing WinPcap.
+available from http://w1.fi/wpa_supplicant/. These binaries can be
+used after installing WinPcap.
+
+wpa_gui uses Qt 4 framework and may need additional dynamic libraries
+(DLLs). These libraries are available from
+http://w1.fi/wpa_supplicant/qt4/wpa_gui-qt433-windows-dll.zip
+You can copy the DLL files from this ZIP package into the same directory
+with wpa_gui.exe to allow wpa_gui to be started.
 
 
 Building wpa_supplicant with mingw
@@ -135,8 +141,8 @@ make
 Using wpa_supplicant for Windows
 --------------------------------
 
-wpa_supplicant and wpa_cli behave more or less identically to Linux
-version, so instructions in README and example wpa_supplicant.conf
+wpa_supplicant, wpa_cli, and wpa_gui behave more or less identically to
+Linux version, so instructions in README and example wpa_supplicant.conf
 should be applicable for most parts. In addition, there is another
 version of wpa_supplicant, wpasvc.exe, which can be used as a Windows
 service and which reads its configuration from registry instead of
@@ -429,3 +435,14 @@ License information for third party software used in this product:
  * copied and put under another distribution licence
  * [including the GNU Public Licence.]
  */
+
+
+
+   Qt Open Source Edition
+   ----------------------
+
+The Qt GUI Toolkit is Copyright (C) 1994-2007 Trolltech ASA.
+Qt Open Source Edition is licensed under GPL version 2.
+
+Source code for the library is available at
+http://w1.fi/wpa_supplicant/qt4/qt-win-opensource-src-4.3.3.zip

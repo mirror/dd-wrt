@@ -424,19 +424,19 @@ static DBusMessage * wpas_dispatch_bssid_method(DBusMessage *message,
 {
 	DBusMessage *reply = NULL;
 	const char *method = dbus_message_get_member(message);
-	struct wpa_scan_result * res = NULL;
-	int i;
+	struct wpa_scan_res *res = NULL;
+	size_t i;
 
 	/* Ensure we actually have scan data */
-	if (wpa_s->scan_results == NULL &&
+	if (wpa_s->scan_res == NULL &&
 	    wpa_supplicant_get_scan_results(wpa_s) < 0) {
 		reply = wpas_dbus_new_invalid_bssid_error(message);
 		goto out;
 	}
 
 	/* Find the bssid's scan data */
-	for (i = 0; i < wpa_s->num_scan_results; i++) {
-		struct wpa_scan_result * search_res = &wpa_s->scan_results[i];
+	for (i = 0; i < wpa_s->scan_res->num; i++) {
+		struct wpa_scan_res *search_res = wpa_s->scan_res->res[i];
 		char mac_str[18];
 
 		memset(mac_str, 0, sizeof(mac_str));
@@ -444,6 +444,7 @@ static DBusMessage * wpas_dispatch_bssid_method(DBusMessage *message,
 			 MAC2STR(search_res->bssid));
 		if (!strcmp(bssid, mac_str)) {
 			res = search_res;
+			break;
 		}
 	}
 
@@ -535,6 +536,10 @@ static DBusHandlerResult wpas_iface_message_handler(DBusConnection *connection,
 			reply = wpas_dbus_iface_set_ap_scan(message, wpa_s);
 		else if (!strcmp(method, "state"))
 			reply = wpas_dbus_iface_get_state(message, wpa_s);
+		else if (!strcmp(method, "setBlobs"))
+			reply = wpas_dbus_iface_set_blobs(message, wpa_s);
+		else if (!strcmp(method, "removeBlobs"))
+			reply = wpas_dbus_iface_remove_blobs(message, wpa_s);
 	}
 
 	/* If the message was handled, send back the reply */

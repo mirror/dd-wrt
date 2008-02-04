@@ -29,7 +29,7 @@ public:
 		      bool modal = false, Qt::WFlags fl = 0);
 	~NetworkConfig();
 
-	virtual void paramsFromScanResults(Q3ListViewItem *sel);
+	virtual void paramsFromScanResults(QTreeWidgetItem *sel);
 	virtual void setWpaGui(WpaGui *_wpagui);
 	virtual int setNetworkParam(int id, const char *field,
 				    const char *value, bool quote);

@@ -397,23 +397,16 @@ static void eap_mschapv2_process_response(struct eap_sm *sm,
 		 * not be saved. */
 		if (sm->user->password_hash) {
 			pw_hash = sm->user->password;
-			generate_authenticator_response_pwhash(
-				sm->user->password, peer_challenge,
-				data->auth_challenge, username, username_len,
-				nt_response, data->auth_response);
 		} else {
 			nt_password_hash(sm->user->password,
 					 sm->user->password_len,
 					 pw_hash_buf);
 			pw_hash = pw_hash_buf;
-			generate_authenticator_response(sm->user->password,
-							sm->user->password_len,
-							peer_challenge,
-							data->auth_challenge,
-							username, username_len,
-							nt_response,
-							data->auth_response);
 		}
+		generate_authenticator_response_pwhash(
+			pw_hash, peer_challenge, data->auth_challenge,
+			username, username_len, nt_response,
+			data->auth_response);
 
 		hash_nt_password_hash(pw_hash, pw_hash_hash);
 		get_master_key(pw_hash_hash, nt_response, data->master_key);

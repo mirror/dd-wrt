@@ -1,6 +1,6 @@
 /*
  * hostapd / IEEE 802.11 Management
- * Copyright (c) 2002-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2002-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -164,9 +164,9 @@ static int ieee802_11_parse_vendor_specific(struct hostapd_data *hapd,
 	 * sub-type. */
 	if (elen < 4) {
 		if (show_errors) {
-			HOSTAPD_DEBUG(HOSTAPD_DEBUG_MSGDUMPS, "short vendor "
-				      "specific information element ignored "
-				      "(len=%lu)\n", (unsigned long) elen);
+			wpa_printf(MSG_MSGDUMP, "short vendor specific "
+				   "information element ignored (len=%lu)",
+				   (unsigned long) elen);
 		}
 		return -1;
 	}
@@ -185,10 +185,10 @@ static int ieee802_11_parse_vendor_specific(struct hostapd_data *hapd,
 			break;
 		case WME_OUI_TYPE: /* this is a Wi-Fi WME info. element */
 			if (elen < 5) {
-				HOSTAPD_DEBUG(HOSTAPD_DEBUG_MSGDUMPS,
-					      "short WME information element "
-					      "ignored (len=%lu)\n",
-					      (unsigned long) elen);
+				wpa_printf(MSG_MSGDUMP, "short WME "
+					   "information element ignored "
+					   "(len=%lu)",
+					   (unsigned long) elen);
 				return -1;
 			}
 			switch (pos[4]) {
@@ -202,28 +202,32 @@ static int ieee802_11_parse_vendor_specific(struct hostapd_data *hapd,
 				elems->wme_tspec_len = elen;
 				break;
 			default:
-				HOSTAPD_DEBUG(HOSTAPD_DEBUG_MSGDUMPS,
-					      "unknown WME information element"
-					      " ignored (subtype=%d "
-					      "len=%lu)\n",
-					      pos[4], (unsigned long) elen);
+				wpa_printf(MSG_MSGDUMP, "unknown WME "
+					   "information element ignored "
+					   "(subtype=%d len=%lu)",
+					   pos[4], (unsigned long) elen);
 				return -1;
 			}
 			break;
+		case 4:
+			/* Wi-Fi Protected Setup (WPS) IE */
+			elems->wps_ie = pos;
+			elems->wps_ie_len = elen;
+			break;
 		default:
-			HOSTAPD_DEBUG(HOSTAPD_DEBUG_MSGDUMPS,
-				      "Unknown Microsoft information element "
-				      "ignored (type=%d len=%lu)\n",
-				      pos[3], (unsigned long) elen);
+			wpa_printf(MSG_MSGDUMP, "Unknown Microsoft "
+				   "information element ignored "
+				   "(type=%d len=%lu)\n",
+				   pos[3], (unsigned long) elen);
 			return -1;
 		}
 		break;
 
 	default:
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MSGDUMPS,
-			      "unknown vendor specific information element "
-			      "ignored (vendor OUI %02x:%02x:%02x len=%lu)\n",
-			      pos[0], pos[1], pos[2], (unsigned long) elen);
+		wpa_printf(MSG_MSGDUMP, "unknown vendor specific information "
+			   "element ignored (vendor OUI %02x:%02x:%02x "
+			   "len=%lu)",
+			   pos[0], pos[1], pos[2], (unsigned long) elen);
 		return -1;
 	}
 
@@ -251,11 +255,10 @@ ParseRes ieee802_11_parse_elems(struct hostapd_data *hapd, u8 *start,
 
 		if (elen > left) {
 			if (show_errors) {
-				HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-					      "IEEE 802.11 element parse "
-					      "failed (id=%d elen=%d "
-					      "left=%lu)\n",
-					      id, elen, (unsigned long) left);
+				wpa_printf(MSG_DEBUG, "IEEE 802.11 element "
+					   "parse failed (id=%d elen=%d "
+					   "left=%lu)",
+					   id, elen, (unsigned long) left);
 				wpa_hexdump(MSG_MSGDUMP, "IEs", start, len);
 			}
 			return ParseFailed;
@@ -332,10 +335,9 @@ ParseRes ieee802_11_parse_elems(struct hostapd_data *hapd, u8 *start,
 			unknown++;
 			if (!show_errors)
 				break;
-			HOSTAPD_DEBUG(HOSTAPD_DEBUG_EXCESSIVE,
-				      "IEEE 802.11 element parse ignored "
-				      "unknown element (id=%d elen=%d)\n",
-				      id, elen);
+			wpa_printf(MSG_MSGDUMP, "IEEE 802.11 element parse "
+				   "ignored unknown element (id=%d elen=%d)",
+				   id, elen);
 			break;
 		}
 
@@ -350,15 +352,18 @@ ParseRes ieee802_11_parse_elems(struct hostapd_data *hapd, u8 *start,
 }
 
 
-void ieee802_11_print_ssid(const u8 *ssid, u8 len)
+void ieee802_11_print_ssid(char *buf, const u8 *ssid, u8 len)
 {
 	int i;
+	if (len > HOSTAPD_MAX_SSID_LEN)
+		len = HOSTAPD_MAX_SSID_LEN;
 	for (i = 0; i < len; i++) {
 		if (ssid[i] >= 32 && ssid[i] < 127)
-			printf("%c", ssid[i]);
+			buf[i] = ssid[i];
 		else
-			printf("<%02x>", ssid[i]);
+			buf[i] = '.';
 	}
+	buf[len] = '\0';
 }
 
 
@@ -388,17 +393,17 @@ static void ieee802_11_sta_authenticate(void *eloop_ctx, void *timeout_ctx)
 {
 	struct hostapd_data *hapd = eloop_ctx;
 	struct ieee80211_mgmt mgmt;
+	char ssid_txt[33];
 
 	if (hapd->assoc_ap_state == WAIT_BEACON)
 		hapd->assoc_ap_state = AUTHENTICATE;
 	if (hapd->assoc_ap_state != AUTHENTICATE)
 		return;
 
-	printf("Authenticate with AP " MACSTR " SSID=",
-	       MAC2STR(hapd->conf->assoc_ap_addr));
-	ieee802_11_print_ssid((u8 *) hapd->assoc_ap_ssid,
+	ieee802_11_print_ssid(ssid_txt, (u8 *) hapd->assoc_ap_ssid,
 			      hapd->assoc_ap_ssid_len);
-	printf(" (as station)\n");
+	printf("Authenticate with AP " MACSTR " SSID=%s (as station)\n",
+	       MAC2STR(hapd->conf->assoc_ap_addr), ssid_txt);
 
 	os_memset(&mgmt, 0, sizeof(mgmt));
 	mgmt.frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
@@ -426,17 +431,17 @@ static void ieee802_11_sta_associate(void *eloop_ctx, void *timeout_ctx)
 	u8 buf[256];
 	struct ieee80211_mgmt *mgmt = (struct ieee80211_mgmt *) buf;
 	u8 *p;
+	char ssid_txt[33];
 
 	if (hapd->assoc_ap_state == AUTHENTICATE)
 		hapd->assoc_ap_state = ASSOCIATE;
 	if (hapd->assoc_ap_state != ASSOCIATE)
 		return;
 
-	printf("Associate with AP " MACSTR " SSID=",
-	       MAC2STR(hapd->conf->assoc_ap_addr));
-	ieee802_11_print_ssid((u8 *) hapd->assoc_ap_ssid,
+	ieee802_11_print_ssid(ssid_txt, (u8 *) hapd->assoc_ap_ssid,
 			      hapd->assoc_ap_ssid_len);
-	printf(" (as station)\n");
+	printf("Associate with AP " MACSTR " SSID=%s (as station)\n",
+	       MAC2STR(hapd->conf->assoc_ap_addr), ssid_txt);
 
 	os_memset(mgmt, 0, sizeof(*mgmt));
 	mgmt->frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
@@ -554,11 +559,10 @@ static void send_auth_reply(struct hostapd_data *hapd,
 	if (ies && ies_len)
 		os_memcpy(reply->u.auth.variable, ies, ies_len);
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		      "authentication reply: STA=" MACSTR " auth_alg=%d "
-		      "auth_transaction=%d resp=%d (IE len=%lu)\n",
-		      MAC2STR(dst), auth_alg, auth_transaction,
-		      resp, (unsigned long) ies_len);
+	wpa_printf(MSG_DEBUG, "authentication reply: STA=" MACSTR
+		   " auth_alg=%d auth_transaction=%d resp=%d (IE len=%lu)",
+		   MAC2STR(dst), auth_alg, auth_transaction,
+		   resp, (unsigned long) ies_len);
 	if (hostapd_send_mgmt_frame(hapd, reply, rlen, 0) < 0)
 		perror("send_auth_reply: send");
 
@@ -623,12 +627,11 @@ static void handle_auth(struct hostapd_data *hapd, struct ieee80211_mgmt *mgmt,
 	    mgmt->u.auth.variable[1] == WLAN_AUTH_CHALLENGE_LEN)
 		challenge = &mgmt->u.auth.variable[2];
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		      "authentication: STA=" MACSTR " auth_alg=%d "
-		      "auth_transaction=%d status_code=%d wep=%d%s\n",
-		      MAC2STR(mgmt->sa), auth_alg, auth_transaction,
-		      status_code, !!(fc & WLAN_FC_ISWEP),
-		      challenge ? " challenge" : "");
+	wpa_printf(MSG_DEBUG, "authentication: STA=" MACSTR " auth_alg=%d "
+		   "auth_transaction=%d status_code=%d wep=%d%s",
+		   MAC2STR(mgmt->sa), auth_alg, auth_transaction,
+		   status_code, !!(fc & WLAN_FC_ISWEP),
+		   challenge ? " challenge" : "");
 
 	if (hapd->assoc_ap_state == AUTHENTICATE && auth_transaction == 2 &&
 	    os_memcmp(mgmt->sa, hapd->conf->assoc_ap_addr, ETH_ALEN) == 0 &&
@@ -692,9 +695,9 @@ static void handle_auth(struct hostapd_data *hapd, struct ieee80211_mgmt *mgmt,
 		goto fail;
 	}
 	if (res == HOSTAPD_ACL_PENDING) {
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "Authentication frame "
-			      "from " MACSTR " waiting for an external "
-			      "authentication\n", MAC2STR(mgmt->sa));
+		wpa_printf(MSG_DEBUG, "Authentication frame from " MACSTR
+			   " waiting for an external authentication",
+			   MAC2STR(mgmt->sa));
 		/* Authentication code will re-send the authentication frame
 		 * after it has received (and cached) information from the
 		 * external source. */
@@ -813,22 +816,20 @@ static void handle_assoc(struct hostapd_data *hapd,
 		capab_info = le_to_host16(mgmt->u.reassoc_req.capab_info);
 		listen_interval = le_to_host16(
 			mgmt->u.reassoc_req.listen_interval);
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-			      "reassociation request: STA=" MACSTR
-			      " capab_info=0x%02x "
-			      "listen_interval=%d current_ap=" MACSTR "\n",
-			      MAC2STR(mgmt->sa), capab_info, listen_interval,
-			      MAC2STR(mgmt->u.reassoc_req.current_ap));
+		wpa_printf(MSG_DEBUG, "reassociation request: STA=" MACSTR
+			   " capab_info=0x%02x listen_interval=%d current_ap="
+			   MACSTR,
+			   MAC2STR(mgmt->sa), capab_info, listen_interval,
+			   MAC2STR(mgmt->u.reassoc_req.current_ap));
 		left = len - (IEEE80211_HDRLEN + sizeof(mgmt->u.reassoc_req));
 		pos = mgmt->u.reassoc_req.variable;
 	} else {
 		capab_info = le_to_host16(mgmt->u.assoc_req.capab_info);
 		listen_interval = le_to_host16(
 			mgmt->u.assoc_req.listen_interval);
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-			      "association request: STA=" MACSTR
-			      " capab_info=0x%02x listen_interval=%d\n",
-			      MAC2STR(mgmt->sa), capab_info, listen_interval);
+		wpa_printf(MSG_DEBUG, "association request: STA=" MACSTR
+			   " capab_info=0x%02x listen_interval=%d",
+			   MAC2STR(mgmt->sa), capab_info, listen_interval);
 		left = len - (IEEE80211_HDRLEN + sizeof(mgmt->u.assoc_req));
 		pos = mgmt->u.assoc_req.variable;
 	}
@@ -878,10 +879,10 @@ static void handle_assoc(struct hostapd_data *hapd,
 	if (elems.ssid_len != hapd->conf->ssid.ssid_len ||
 	    os_memcmp(elems.ssid, hapd->conf->ssid.ssid, elems.ssid_len) != 0)
 	{
+		char ssid_txt[33];
+		ieee802_11_print_ssid(ssid_txt, elems.ssid, elems.ssid_len);
 		printf("Station " MACSTR " tried to associate with "
-		       "unknown SSID '", MAC2STR(sta->addr));
-		ieee802_11_print_ssid(elems.ssid, elems.ssid_len);
-		printf("'\n");
+		       "unknown SSID '%s'\n", MAC2STR(sta->addr), ssid_txt);
 		resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
 		goto fail;
 	}
@@ -949,6 +950,21 @@ static void handle_assoc(struct hostapd_data *hapd,
 		wpa_ie = NULL;
 		wpa_ie_len = 0;
 	}
+#ifdef CONFIG_WPS
+	if (hapd->conf->wps_state && wpa_ie == NULL) {
+		if (elems.wps_ie) {
+			wpa_printf(MSG_DEBUG, "STA included WPS IE in "
+				   "(Re)Association Request - assume WPS is "
+				   "used");
+			sta->flags |= WLAN_STA_WPS;
+		} else {
+			wpa_printf(MSG_DEBUG, "STA did not include WPA/RSN IE "
+				   "in (Re)Association Request - possible WPS "
+				   "use");
+			sta->flags |= WLAN_STA_MAYBE_WPS;
+		}
+	} else
+#endif /* CONFIG_WPS */
 	if (hapd->conf->wpa && wpa_ie == NULL) {
 		printf("STA " MACSTR ": No WPA/RSN IE in association "
 		       "request\n", MAC2STR(sta->addr));
@@ -956,7 +972,7 @@ static void handle_assoc(struct hostapd_data *hapd,
 		goto fail;
 	}
 
-	if (hapd->conf->wpa) {
+	if (hapd->conf->wpa && wpa_ie) {
 		int res;
 		wpa_ie -= 2;
 		wpa_ie_len += 2;
@@ -1065,8 +1081,7 @@ static void handle_assoc(struct hostapd_data *hapd,
 
 	/* get a unique AID */
 	if (sta->aid > 0) {
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-			      "  old AID %d\n", sta->aid);
+		wpa_printf(MSG_DEBUG, "  old AID %d", sta->aid);
 	} else {
 		for (sta->aid = 1; sta->aid <= MAX_AID_TABLE_SIZE; sta->aid++)
 			if (hapd->sta_aid[sta->aid - 1] == NULL)
@@ -1074,12 +1089,11 @@ static void handle_assoc(struct hostapd_data *hapd,
 		if (sta->aid > MAX_AID_TABLE_SIZE) {
 			sta->aid = 0;
 			resp = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
-			printf("  no room for more AIDs\n");
+			wpa_printf(MSG_ERROR, "  no room for more AIDs");
 			goto fail;
 		} else {
 			hapd->sta_aid[sta->aid - 1] = sta;
-			HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-				      "  new AID %d\n", sta->aid);
+			wpa_printf(MSG_DEBUG, "  new AID %d", sta->aid);
 		}
 	}
 
@@ -1213,10 +1227,9 @@ static void handle_disassoc(struct hostapd_data *hapd,
 		return;
 	}
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		      "disassocation: STA=" MACSTR " reason_code=%d\n",
-		      MAC2STR(mgmt->sa),
-		      le_to_host16(mgmt->u.disassoc.reason_code));
+	wpa_printf(MSG_DEBUG, "disassocation: STA=" MACSTR " reason_code=%d",
+		   MAC2STR(mgmt->sa),
+		   le_to_host16(mgmt->u.disassoc.reason_code));
 
 	if (hapd->assoc_ap_state != DO_NOT_ASSOC &&
 	    os_memcmp(mgmt->sa, hapd->conf->assoc_ap_addr, ETH_ALEN) == 0) {
@@ -1274,10 +1287,10 @@ static void handle_deauth(struct hostapd_data *hapd,
 		return;
 	}
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-		      "deauthentication: STA=" MACSTR " reason_code=%d\n",
-		      MAC2STR(mgmt->sa),
-		      le_to_host16(mgmt->u.deauth.reason_code));
+	wpa_printf(MSG_DEBUG, "deauthentication: STA=" MACSTR
+		   " reason_code=%d",
+		   MAC2STR(mgmt->sa),
+		   le_to_host16(mgmt->u.deauth.reason_code));
 
 	if (hapd->assoc_ap_state != DO_NOT_ASSOC &&
 	    os_memcmp(mgmt->sa, hapd->conf->assoc_ap_addr, ETH_ALEN) == 0) {
@@ -1339,19 +1352,6 @@ static void handle_beacon(struct hostapd_data *hapd,
 	}
 
 	ap_list_process_beacon(hapd->iface, mgmt, &elems, fi);
-
-	if (!HOSTAPD_DEBUG_COND(HOSTAPD_DEBUG_EXCESSIVE))
-		return;
-
-	printf("Beacon from " MACSTR, MAC2STR(mgmt->sa));
-	if (elems.ssid) {
-		printf(" SSID='");
-		ieee802_11_print_ssid(elems.ssid, elems.ssid_len);
-		printf("'");
-	}
-	if (elems.ds_params && elems.ds_params_len == 1)
-		printf(" CHAN=%d", elems.ds_params[0]);
-	printf("\n");
 }
 
 
@@ -1436,7 +1436,6 @@ void ieee802_11_mgmt(struct hostapd_data *hapd, u8 *buf, size_t len, u16 stype,
 	int broadcast;
 
 	if (stype == WLAN_FC_STYPE_BEACON) {
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_EXCESSIVE, "mgmt::beacon\n");
 		handle_beacon(hapd, mgmt, len, fi);
 		return;
 	}
@@ -1460,7 +1459,6 @@ void ieee802_11_mgmt(struct hostapd_data *hapd, u8 *buf, size_t len, u16 stype,
 
 
 	if (stype == WLAN_FC_STYPE_PROBE_REQ) {
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MSGDUMPS, "mgmt::probe_req\n");
 		handle_probe_req(hapd, mgmt, len);
 		return;
 	}
@@ -1475,31 +1473,31 @@ void ieee802_11_mgmt(struct hostapd_data *hapd, u8 *buf, size_t len, u16 stype,
 
 	switch (stype) {
 	case WLAN_FC_STYPE_AUTH:
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "mgmt::auth\n");
+		wpa_printf(MSG_DEBUG, "mgmt::auth");
 		handle_auth(hapd, mgmt, len);
 		break;
 	case WLAN_FC_STYPE_ASSOC_REQ:
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "mgmt::assoc_req\n");
+		wpa_printf(MSG_DEBUG, "mgmt::assoc_req");
 		handle_assoc(hapd, mgmt, len, 0);
 		break;
 	case WLAN_FC_STYPE_ASSOC_RESP:
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "mgmt::assoc_resp\n");
+		wpa_printf(MSG_DEBUG, "mgmt::assoc_resp");
 		handle_assoc_resp(hapd, mgmt, len);
 		break;
 	case WLAN_FC_STYPE_REASSOC_REQ:
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "mgmt::reassoc_req\n");
+		wpa_printf(MSG_DEBUG, "mgmt::reassoc_req");
 		handle_assoc(hapd, mgmt, len, 1);
 		break;
 	case WLAN_FC_STYPE_DISASSOC:
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "mgmt::disassoc\n");
+		wpa_printf(MSG_DEBUG, "mgmt::disassoc");
 		handle_disassoc(hapd, mgmt, len);
 		break;
 	case WLAN_FC_STYPE_DEAUTH:
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "mgmt::deauth\n");
+		wpa_printf(MSG_DEBUG, "mgmt::deauth");
 		handle_deauth(hapd, mgmt, len);
 		break;
 	case WLAN_FC_STYPE_ACTION:
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "mgmt::action\n");
+		wpa_printf(MSG_DEBUG, "mgmt::action");
 		handle_action(hapd, mgmt, len);
 		break;
 	default:
@@ -1567,8 +1565,8 @@ static void handle_assoc_cb(struct hostapd_data *hapd,
 		return;
 	}
 
-	if (len < IEEE80211_HDRLEN + (reassoc ? sizeof(mgmt->u.reassoc_req) :
-				      sizeof(mgmt->u.assoc_req))) {
+	if (len < IEEE80211_HDRLEN + (reassoc ? sizeof(mgmt->u.reassoc_resp) :
+				      sizeof(mgmt->u.assoc_resp))) {
 		printf("handle_assoc_cb(reassoc=%d) - too short payload "
 		       "(len=%lu)\n", reassoc, (unsigned long) len);
 		return;
@@ -1660,21 +1658,19 @@ void ieee802_11_mgmt_cb(struct hostapd_data *hapd, u8 *buf, size_t len,
 
 	switch (stype) {
 	case WLAN_FC_STYPE_AUTH:
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "mgmt::auth cb\n");
+		wpa_printf(MSG_DEBUG, "mgmt::auth cb");
 		handle_auth_cb(hapd, mgmt, len, ok);
 		break;
 	case WLAN_FC_STYPE_ASSOC_RESP:
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-			      "mgmt::assoc_resp cb\n");
+		wpa_printf(MSG_DEBUG, "mgmt::assoc_resp cb");
 		handle_assoc_cb(hapd, mgmt, len, 0, ok);
 		break;
 	case WLAN_FC_STYPE_REASSOC_RESP:
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-			      "mgmt::reassoc_resp cb\n");
+		wpa_printf(MSG_DEBUG, "mgmt::reassoc_resp cb");
 		handle_assoc_cb(hapd, mgmt, len, 1, ok);
 		break;
 	case WLAN_FC_STYPE_PROBE_RESP:
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "mgmt::proberesp cb\n");
+		wpa_printf(MSG_DEBUG, "mgmt::proberesp cb");
 		break;
 	default:
 		printf("unknown mgmt cb frame subtype %d\n", stype);
@@ -1733,10 +1729,10 @@ void ieee80211_michael_mic_failure(struct hostapd_data *hapd, const u8 *addr,
 				       "received frame");
 			mlme_michaelmicfailure_indication(hapd, addr);
 		} else {
-			HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-				      "MLME-MICHAELMICFAILURE.indication "
-				      "for not associated STA (" MACSTR
-				      ") ignored\n", MAC2STR(addr));
+			wpa_printf(MSG_DEBUG,
+				   "MLME-MICHAELMICFAILURE.indication "
+				   "for not associated STA (" MACSTR
+				   ") ignored", MAC2STR(addr));
 			return;
 		}
 	}
