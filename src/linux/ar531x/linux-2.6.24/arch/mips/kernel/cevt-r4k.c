@@ -172,6 +172,7 @@ static void mips_event_handler(struct clock_event_device *dev)
 /*
  * FIXME: This doesn't hold for the relocated E9000 compare interrupt.
  */
+#ifndef CONFIG_ATHEROS
 static int c0_compare_int_pending(void)
 {
 	return (read_c0_cause() >> cp0_compare_irq) & 0x100;
@@ -218,7 +219,7 @@ static int c0_compare_int_usable(void)
 	 */
 	return 1;
 }
-
+#endif
 int __cpuinit mips_clockevent_init(void)
 {
 	uint64_t mips_freq = mips_hpt_frequency;
@@ -240,8 +241,10 @@ int __cpuinit mips_clockevent_init(void)
 		return 0;
 #endif
 
+#ifndef CONFIG_ATHEROS
 	if (!c0_compare_int_usable())
 		return -ENXIO;
+#endif
 	/*
 	 * With vectored interrupts things are getting platform specific.
 	 * get_c0_compare_int is a hook to allow a platform to return the
@@ -250,7 +253,7 @@ int __cpuinit mips_clockevent_init(void)
 	irq = MIPS_CPU_IRQ_BASE + cp0_compare_irq;
 	if (get_c0_compare_int)
 		irq = get_c0_compare_int();
-
+	
 	cd = &per_cpu(mips_clockevent_device, cpu);
 
 	cd->name		= "MIPS";
