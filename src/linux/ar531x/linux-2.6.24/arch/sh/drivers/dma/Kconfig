@@ -1,0 +1,49 @@
+menu "DMA support"
+
+config SH_DMA_API
+	bool
+
+config SH_DMA
+	bool "SuperH on-chip DMA controller (DMAC) support"
+	depends on CPU_SH3 || CPU_SH4
+	select SH_DMA_API
+	default n
+
+config NR_ONCHIP_DMA_CHANNELS
+	int
+	depends on SH_DMA
+	default "6" if CPU_SUBTYPE_SH7720
+	default "8" if CPU_SUBTYPE_SH7750R || CPU_SUBTYPE_SH7751R
+	default "12" if CPU_SUBTYPE_SH7780
+	default "4"
+	help
+	  This allows you to specify the number of channels that the on-chip
+	  DMAC supports. This will be 4 for SH7750/SH7751 and 8 for the
+	  SH7750R/SH7751R.
+
+config NR_DMA_CHANNELS_BOOL
+	depends on SH_DMA
+	bool "Override default number of maximum DMA channels"
+	help
+	  This allows you to forcibly update the maximum number of supported
+	  DMA channels for a given board. If this is unset, this will default
+	  to the number of channels that the on-chip DMAC has.
+
+config NR_DMA_CHANNELS
+	int "Maximum number of DMA channels"
+	depends on SH_DMA && NR_DMA_CHANNELS_BOOL
+	default NR_ONCHIP_DMA_CHANNELS
+	help
+	  This allows you to specify the maximum number of DMA channels to
+	  support. Setting this to a higher value allows for cascading DMACs
+	  with additional channels.
+
+config SH_DMABRG
+	bool "SH7760 DMABRG support"
+	depends on CPU_SUBTYPE_SH7760
+	help
+	  The DMABRG does data transfers from main memory to Audio/USB units
+	  of the SH7760.
+	  Say Y if you want to use Audio/USB DMA on your SH7760 board.
+
+endmenu
