@@ -1,0 +1,70 @@
+#
+# HID driver configuration
+#
+menuconfig HID_SUPPORT
+	bool "HID Devices"
+	depends on INPUT
+	default y
+	---help---
+	  Say Y here to get to see options for various computer-human interface
+	  device drivers. This option alone does not add any kernel code.
+
+	  If you say N, all options in this submenu will be skipped and disabled.
+
+if HID_SUPPORT
+
+config HID
+	tristate "Generic HID support"
+	depends on INPUT
+	default y
+	---help---
+	  A human interface device (HID) is a type of computer device that
+	  interacts directly with and takes input from humans. The term "HID"
+	  most commonly used to refer to the USB-HID specification, but other
+	  devices (such as, but not strictly limited to, Bluetooth) are
+	  designed using HID specification (this involves certain keyboards,
+	  mice, tablets, etc). This option compiles into kernel the generic
+	  HID layer code (parser, usages, etc.), which can then be used by
+	  transport-specific HID implementation (like USB or Bluetooth).
+
+	  For docs and specs, see http://www.usb.org/developers/hidpage/
+
+	  If unsure, say Y
+
+config HID_DEBUG
+	bool "HID debugging support"
+	default y if !EMBEDDED
+	depends on HID
+	---help---
+	This option lets the HID layer output diagnostics about its internal
+	state, resolve HID usages, dump HID fields, etc. Individual HID drivers
+	use this debugging facility to output information about individual HID
+	devices, etc.
+
+	This feature is useful for those who are either debugging the HID parser
+	or any HID hardware device.
+
+	If unsure, say N
+
+config HIDRAW
+	bool "/dev/hidraw raw HID device support"
+	depends on HID
+	---help---
+	Say Y here if you want to support HID devices (from the USB
+	specification standpoint) that aren't strictly user interface
+	devices, like monitor controls and Uninterruptable Power Supplies.
+
+	This module supports these devices separately using a separate
+	event interface on /dev/hidraw.
+
+	There is also a /dev/hiddev configuration option in the USB HID
+	configuration menu. In comparison to hiddev, this device does not process
+	the hid events at all (no parsing, no lookups). This lets applications
+	to work on raw hid events when they want to, and avoid using transport-specific
+	userspace libhid/libusb libraries.
+
+	If unsure, say Y.
+
+source "drivers/hid/usbhid/Kconfig"
+
+endif # HID_SUPPORT
