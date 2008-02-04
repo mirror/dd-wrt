@@ -23,8 +23,7 @@ int hostapd_check_power_cap(struct hostapd_data *hapd, u8 *power, u8 len)
 	unsigned int max_pwr;
 
 	if (len < 2) {
-		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
-			      "Too short power capability IE\n");
+		wpa_printf(MSG_DEBUG, "Too short power capability IE");
 		return -1;
 	}
 	max_pwr = power[1];

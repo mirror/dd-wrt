@@ -4,13 +4,6 @@ To do:
   Firmware did not notice the current AP disappearing..
 - add support for WPA with ap_scan=0 (update selected cipher etc. based on
   AssocInfo; make sure these match with configuration)
-- optional security separation (build time option): run EAPOL state machines
-  as non-root (need to add something like socketpair between privileged root
-  process and non-root handler; send EAPOL packets between processes
-  and send keying data from non-root -> privileged)
-  EAPOL-Key processing (WPA & WEP keys) could be in privileged part
-  at least in the beginning; some parts might end up being moved to
-  non-root part eventually
 - consider closing smart card / PCSC connection when EAP-SIM/EAP-AKA
   authentication has been completed (cache scard data based on serial#(?)
   and try to optimize next connection if the same card is present for next
@@ -39,14 +32,11 @@ To do:
 - use doc/docbook/*.sgml and docbook2{txt,html,pdf} to replace README and
   web pages including the same information.. i.e., have this information only
   in one page; how to build a PDF file with all the SGML included?
-- test wait-for-interface and daemonize combinations with number of driver
-  interfaces
-  * 'test' worked with WPA-PSK
-- EAP-POTP/RSA SecurID profile (draft-nystrom-eap-potp-03.txt)
+- EAP-POTP/RSA SecurID profile (RFC 4793)
 - document wpa_gui build and consider adding it to 'make install'
 - test madwifi with pairwise=TKIP group=WEP104
 - possibility to link in WPA Authenticator state machine to wpa_supplicant
-  (new STAKey handshake, WPA2 IBSS)
+  (new PeerKey handshake, WPA2/IEEE 802.11 (RSN) IBSS)
 - consider merging hostapd and wpa_supplicant PMKSA cache implementations
 - consider redesigning pending EAP requests (identity/password/otp from
   ctrl_iface) by moving the retrying of the previous request into EAP
@@ -67,12 +57,6 @@ To do:
   now IMSI is read only after receiving EAP-Identity/Request, but since it is
   really needed for all cases, reading IMSI and generating Identity string
   could very well be done before EAP has been started
-- test all allowed EAP Phase 2 methods (i.e., anything else than PEAP, TTLS,
-  FAST): SIM AKA PAX PSK LEAP; if these work, include in eap_testing.txt; if
-  not, either fix or make eap_allowed_phase2_type reject
-  (EAP-TTLS/EAP-AKA and EAP-TTLS/EAP-SIM worked fine in wpa_supplicant, but
-  hostapd did not support this due to pending data from hlr_auth_gw
-  triggering a TLS error)
 - try to work around race in receiving association event and first EAPOL
   message
 - helper function to do memcmp(addr, "\x00\x00\x00\x00\x00\x00", ETH_ALEN)
@@ -98,7 +82,7 @@ To do:
   requiring every TLS wrapper to implement all functions
 - add support for encrypted configuration fields (e.g., password, psk,
   passphrase, pin)
-- wpa_gui: add support for setting and showing priority, id_str, auth_alg
+- wpa_gui: add support for setting and showing priority, auth_alg
   (open/shared for static WEP)
 
 - cleanup TLS/PEAP/TTLS/FAST fragmentation: both the handshake and Appl. Data

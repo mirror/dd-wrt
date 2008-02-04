@@ -96,17 +96,6 @@ struct wpa_params {
 	int daemonize;
 
 	/**
-	 * wait_for_interface - Wait for the network interface to appear
-	 *
-	 * If set, %wpa_supplicant will wait until all the configured network
-	 * interfaces are available before starting processing. Please note
-	 * that in many cases, a better alternative would be to start
-	 * %wpa_supplicant without network interfaces and add the interfaces
-	 * dynamically whenever they become available.
-	 */
-	int wait_for_interface;
-
-	/**
 	 * wait_for_monitor - Wait for a monitor program before starting
 	 */
 	int wait_for_monitor;
@@ -151,9 +140,9 @@ struct wpa_params {
 	int dbus_ctrl_interface;
 
 	/**
-	 * wpa_debug_use_file - Write debug to a file (instead of stdout)
+	 * wpa_debug_file_path - Path of debug file or %NULL to use stdout
 	 */
-	int wpa_debug_use_file;
+	const char *wpa_debug_file_path;
 };
 
 /**
@@ -184,6 +173,8 @@ struct wpa_client_mlme {
 	u16 ap_capab, capab;
 	u8 *extra_ie; /* to be added to the end of AssocReq */
 	size_t extra_ie_len;
+	u8 *extra_probe_ie; /* to be added to the end of ProbeReq */
+	size_t extra_probe_ie_len;
 	wpa_key_mgmt key_mgmt;
 
 	/* The last AssocReq/Resp IEs */
@@ -307,8 +298,7 @@ struct wpa_supplicant {
 					  */
 #define BROADCAST_SSID_SCAN ((struct wpa_ssid *) 1)
 
-	struct wpa_scan_result *scan_results;
-	int num_scan_results;
+	struct wpa_scan_results *scan_res;
 
 	struct wpa_driver_ops *driver;
 	int interface_removed; /* whether the network interface has been
@@ -350,14 +340,13 @@ struct wpa_supplicant {
 int wpa_supplicant_reload_configuration(struct wpa_supplicant *wpa_s);
 
 const char * wpa_supplicant_state_txt(int state);
-int wpa_supplicant_driver_init(struct wpa_supplicant *wpa_s,
-			       int wait_for_interface);
+int wpa_supplicant_driver_init(struct wpa_supplicant *wpa_s);
 int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
-			      struct wpa_scan_result *bss,
+			      struct wpa_scan_res *bss,
 			      struct wpa_ssid *ssid,
 			      u8 *wpa_ie, size_t *wpa_ie_len);
 void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
-			      struct wpa_scan_result *bss,
+			      struct wpa_scan_res *bss,
 			      struct wpa_ssid *ssid);
 void wpa_supplicant_set_non_wpa_policy(struct wpa_supplicant *wpa_s,
 				       struct wpa_ssid *ssid);
@@ -485,6 +474,14 @@ static inline int wpa_drv_get_scan_results(struct wpa_supplicant *wpa_s,
 						       results, max_size);
 	}
 	return -1;
+}
+
+static inline struct wpa_scan_results * wpa_drv_get_scan_results2(
+	struct wpa_supplicant *wpa_s)
+{
+	if (wpa_s->driver->get_scan_results2)
+		return wpa_s->driver->get_scan_results2(wpa_s->drv_priv);
+	return NULL;
 }
 
 static inline int wpa_drv_get_bssid(struct wpa_supplicant *wpa_s, u8 *bssid)
@@ -708,6 +705,15 @@ static inline int wpa_drv_send_ft_action(struct wpa_supplicant *wpa_s,
 	if (wpa_s->driver->send_ft_action)
 		return wpa_s->driver->send_ft_action(wpa_s->drv_priv, action,
 						     target_ap, ies, ies_len);
+	return -1;
+}
+
+static inline int wpa_drv_set_probe_req_ie(struct wpa_supplicant *wpa_s,
+					   const u8 *ies, size_t ies_len)
+{
+	if (wpa_s->driver->set_probe_req_ie)
+		return wpa_s->driver->set_probe_req_ie(wpa_s->drv_priv, ies,
+						       ies_len);
 	return -1;
 }
 

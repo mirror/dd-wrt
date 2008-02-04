@@ -15,16 +15,16 @@
 #ifndef PREAUTH_H
 #define PREAUTH_H
 
-struct wpa_scan_result;
+struct wpa_scan_results;
 
 #if defined(IEEE8021X_EAPOL) && !defined(CONFIG_NO_WPA2)
 
 void pmksa_candidate_free(struct wpa_sm *sm);
 int rsn_preauth_init(struct wpa_sm *sm, const u8 *dst,
-		     struct wpa_ssid *config);
+		     struct eap_peer_config *eap_conf);
 void rsn_preauth_deinit(struct wpa_sm *sm);
 void rsn_preauth_scan_results(struct wpa_sm *sm,
-			      struct wpa_scan_result *results, int count);
+			      struct wpa_scan_results *results);
 void pmksa_candidate_add(struct wpa_sm *sm, const u8 *bssid,
 			 int prio, int preauth);
 void rsn_preauth_candidate_process(struct wpa_sm *sm);
@@ -43,7 +43,7 @@ static inline void rsn_preauth_candidate_process(struct wpa_sm *sm)
 }
 
 static inline int rsn_preauth_init(struct wpa_sm *sm, const u8 *dst,
-				   struct wpa_ssid *config)
+				   struct eap_peer_config *eap_conf)
 {
 	return -1;
 }
@@ -52,8 +52,7 @@ static inline void rsn_preauth_deinit(struct wpa_sm *sm)
 {
 }
 static inline void rsn_preauth_scan_results(struct wpa_sm *sm,
-					    struct wpa_scan_result *results,
-					    int count)
+					    struct wpa_scan_results *results)
 {
 }
 

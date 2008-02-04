@@ -310,7 +310,7 @@ TCHAR * wpa_strdup_tchar(const char *str)
  * time, i.e., this is not re-entrant and the returned buffer must be used
  * before calling this again.
  */
-const char * wpa_ssid_txt(u8 *ssid, size_t ssid_len)
+const char * wpa_ssid_txt(const u8 *ssid, size_t ssid_len)
 {
 	static char ssid_txt[33];
 	char *pos;

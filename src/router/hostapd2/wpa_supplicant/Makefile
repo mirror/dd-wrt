@@ -2,17 +2,17 @@ ifndef CC
 CC=gcc
 endif
 
+
 CFLAGS = -MMD $(COPTS) -Wall 
 CFLAGS += -I. -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-CFLAGS += -I.
 CFLAGS += -I../src
 CFLAGS += -I../src/crypto
 CFLAGS += -I../src/utils
 CFLAGS += -I../src/common
 CFLAGS += -I../src/rsn_supp
 
-ALL=wpa_supplicant
+ALL=wpa_supplicant wpa_passphrase wpa_cli
 
 all: verify_config $(ALL) dynamic_eap_methods
 
@@ -221,7 +221,7 @@ ifndef CONFIG_L2_PACKET
 CONFIG_L2_PACKET=linux
 endif
 
-OBJS += ../src/l2_packet/l2_packet_$(CONFIG_L2_PACKET).o
+OBJS_l2 += ../src/l2_packet/l2_packet_$(CONFIG_L2_PACKET).o
 
 ifeq ($(CONFIG_L2_PACKET), pcap)
 ifdef CONFIG_WINPCAP
@@ -283,6 +283,7 @@ OBJS_h += ../src/eap_server/eap_ttls.o
 endif
 MS_FUNCS=y
 TLS_FUNCS=y
+CHAP=y
 CONFIG_IEEE8021X_EAPOL=y
 endif
 
@@ -296,6 +297,7 @@ CFLAGS += -DEAP_MD5
 OBJS += ../src/eap_peer/eap_md5.o
 OBJS_h += ../src/eap_server/eap_md5.o
 endif
+CHAP=y
 CONFIG_IEEE8021X_EAPOL=y
 endif
 
@@ -311,9 +313,11 @@ ifdef CONFIG_EAP_MSCHAPV2
 ifeq ($(CONFIG_EAP_MSCHAPV2), dyn)
 CFLAGS += -DEAP_MSCHAPv2_DYNAMIC
 EAPDYN += ../src/eap_peer/eap_mschapv2.so
+EAPDYN += ../src/eap_peer/mschapv2.so
 else
 CFLAGS += -DEAP_MSCHAPv2
 OBJS += ../src/eap_peer/eap_mschapv2.o
+OBJS += ../src/eap_peer/mschapv2.o
 OBJS_h += ../src/eap_server/eap_mschapv2.o
 endif
 MS_FUNCS=y
@@ -471,17 +475,21 @@ endif
 NEED_SHA256=y
 endif
 
-ifdef CONFIG_EAP_WSC
-# EAP-WSC
-ifeq ($(CONFIG_EAP_WSC), dyn)
-CFLAGS += -DEAP_WSC_DYNAMIC
-EAPDYN += ../src/eap_peer/eap_wsc.so
+ifdef CONFIG_EAP_IKEV2
+# EAP-IKEv2
+ifeq ($(CONFIG_EAP_IKEV2), dyn)
+CFLAGS += -DEAP_IKEV2_DYNAMIC
+EAPDYN += ../src/eap_peer/eap_ikev2.so ../src/eap_peer/ikev2.o
+EAPDYN += ../src/eap_common/eap_ikev2_common.o ../src/eap_common/ikev2_common.o
 else
-CFLAGS += -DEAP_WSC
-OBJS += ../src/eap_peer/eap_wsc.o ../src/eap_common/eap_wsc_common.o
-OBJS_h += ../src/eap_server/eap_wsc.o
+CFLAGS += -DEAP_IKEV2
+OBJS += ../src/eap_peer/eap_ikev2.o ../src/eap_peer/ikev2.o
+OBJS += ../src/eap_common/eap_ikev2_common.o ../src/eap_common/ikev2_common.o
+OBJS_h += ../src/eap_server/eap_ikev2.o
+OBJS_h += ../src/eap_server/ikev2.o
 endif
 CONFIG_IEEE8021X_EAPOL=y
+NEED_DH_GROUPS=y
 endif
 
 ifdef CONFIG_EAP_VENDOR_TEST
@@ -654,6 +662,10 @@ endif
 ifdef MS_FUNCS
 OBJS += ../src/crypto/ms_funcs.o
 NEED_CRYPTO=y
+endif
+
+ifdef CHAP
+OBJS += ../src/eap_common/chap.o
 endif
 
 ifdef NEED_CRYPTO
@@ -875,6 +887,10 @@ ifdef NEED_AES
 OBJS += ../src/crypto/aes_wrap.o ../src/crypto/aes.o
 endif
 
+ifdef NEED_DH_GROUPS
+OBJS += ../src/crypto/dh_groups.o
+endif
+
 ifndef NEED_FIPS186_2_PRF
 CFLAGS += -DCONFIG_NO_FIPS186_2_PRF
 endif
@@ -904,16 +920,52 @@ ifdef CONFIG_DEBUG_FILE
 CFLAGS += -DCONFIG_DEBUG_FILE
 endif
 
+OBJS += ../src/drivers/scan_helpers.o
+
 OBJS_wpa_rm := ctrl_iface.o mlme.o ctrl_iface_unix.o
 OBJS_wpa := $(filter-out $(OBJS_wpa_rm),$(OBJS)) $(OBJS_h) tests/test_wpa.o
 ifdef CONFIG_AUTHENTICATOR
 OBJS_wpa += tests/link_test.o
 endif
+OBJS_wpa += $(OBJS_l2)
 OBJS += wpa_supplicant.o events.o blacklist.o wpas_glue.o scan.o
-OBJS_t := $(OBJS) eapol_test.o ../src/radius/radius.o ../src/radius/radius_client.o
+OBJS_t := $(OBJS) $(OBJS_l2) eapol_test.o ../src/radius/radius.o ../src/radius/radius_client.o
 OBJS_t += ../src/utils/ip_addr.o
-OBJS_t2 := $(OBJS) preauth_test.o
-OBJS += $(CONFIG_MAIN).o ../src/drivers/drivers.o $(OBJS_d)
+OBJS_t2 := $(OBJS) $(OBJS_l2) preauth_test.o
+OBJS += $(CONFIG_MAIN).o
+
+ifdef CONFIG_PRIVSEP
+OBJS_priv += $(OBJS_d) ../src/drivers/drivers.o ../src/drivers/scan_helpers.o
+OBJS_priv += $(OBJS_l2)
+OBJS_priv += ../src/utils/os_$(CONFIG_OS).o
+OBJS_priv += ../src/utils/$(CONFIG_ELOOP).o
+OBJS_priv += ../src/utils/common.o
+OBJS_priv += ../src/utils/wpa_debug.o
+OBJS_priv += wpa_priv.o
+ifdef CONFIG_DRIVER_TEST
+OBJS_priv += ../src/crypto/sha1.o
+OBJS_priv += ../src/crypto/md5.o
+ifeq ($(CONFIG_TLS), openssl)
+OBJS_priv += ../src/crypto/crypto_openssl.o
+endif
+ifeq ($(CONFIG_TLS), gnutls)
+OBJS_priv += ../src/crypto/crypto_gnutls.o
+endif
+ifeq ($(CONFIG_TLS), internal)
+ifeq ($(CONFIG_CRYPTO), libtomcrypt)
+OBJS_priv += ../src/crypto/crypto_libtomcrypt.o
+else
+OBJS_priv += ../src/crypto/crypto_internal.o
+endif
+endif
+endif # CONFIG_DRIVER_TEST
+OBJS += ../src/l2_packet/l2_packet_privsep.o
+OBJS += ../src/drivers/driver_privsep.o
+EXTRA_progs += wpa_priv
+else
+OBJS += $(OBJS_d) ../src/drivers/drivers.o
+OBJS += $(OBJS_l2)
+endif
 
 ifdef CONFIG_NDIS_EVENTS_INTEGRATED
 CFLAGS += -DCONFIG_NDIS_EVENTS_INTEGRATED
@@ -932,7 +984,10 @@ endif
 
 dynamic_eap_methods: $(EAPDYN)
 
-wpa_supplicant: .config $(OBJS)
+wpa_priv: $(OBJS_priv)
+	$(LDO) $(LDFLAGS) -o wpa_priv $(OBJS_priv) $(LIBS)
+
+wpa_supplicant: .config $(OBJS) $(EXTRA_progs)
 	$(LDO) $(LDFLAGS) -o wpa_supplicant $(OBJS) $(LIBS) $(EXTRALIBS)
 
 eapol_test: .config $(OBJS_t)
@@ -984,9 +1039,9 @@ eap_sake.so: ../src/eap_peer/eap_sake.c ../src/eap_common/eap_sake_common.c
 	$(CC) -o $@ $(CFLAGS) -shared -rdynamic -fPIC $^ \
 		-Deap_peer_sake_register=eap_peer_method_dynamic_init
 
-eap_wsc.so: ../src/eap_peer/eap_wsc.c ../src/eap_common/eap_wsc_common.c
+eap_ikev2.so: ../src/eap_peer/eap_ikev2.c ../src/eap_peer/ikev2.c ../src/eap_common/eap_ikev2_common.o ../src/eap_common/ikev2_common.c
 	$(CC) -o $@ $(CFLAGS) -shared -rdynamic -fPIC $^ \
-		-Deap_peer_wsc_register=eap_peer_method_dynamic_init
+		-Deap_peer_ikev2_register=eap_peer_method_dynamic_init
 
 %.so: %.c
 	$(CC) -o $@ $(CFLAGS) -shared -rdynamic -fPIC $< \
@@ -1014,6 +1069,12 @@ wpa_gui/Makefile:
 
 wpa_gui: wpa_gui/Makefile
 	$(MAKE) -C wpa_gui
+
+wpa_gui-qt4/Makefile:
+	qmake -o wpa_gui-qt4/Makefile wpa_gui-qt4/wpa_gui.pro 
+
+wpa_gui-qt4: wpa_gui-qt4/Makefile
+	$(MAKE) -C wpa_gui-qt4
 
 TEST_MS_FUNCS_OBJS = ../src/crypto/crypto_openssl.o ../src/crypto/sha1.o ../src/crypto/md5.o \
 	../src/utils/os_unix.o ../src/crypto/rc4.o tests/test_ms_funcs.o

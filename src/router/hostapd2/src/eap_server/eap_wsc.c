@@ -17,137 +17,16 @@
 #include "common.h"
 #include "eap_i.h"
 #include "eap_common/eap_wsc_common.h"
-
-
-struct wps_data {
-	int registrar;
-	int msg_num;
-};
-
-
-static struct wps_data * wps_init(int registrar)
-{
-	struct wps_data *data = os_zalloc(sizeof(*data));
-	if (data == NULL)
-		return NULL;
-	data->registrar = registrar;
-	data->msg_num = 1;
-	return data;
-}
-
-
-static void wps_deinit(struct wps_data *data)
-{
-	os_free(data);
-}
-
-
-enum wps_process_res {
-	WPS_DONE, WPS_CONTINUE, WPS_FAILURE, WPS_PENDING
-};
-
-static enum wps_process_res wps_process_msg(struct wps_data *wps, u8 op_code,
-					    const u8 *msg, size_t msg_len)
-{
-	/* TODO: proper processing and/or sending to an external process */
-
-	wpa_hexdump(MSG_MSGDUMP, "WPS: Received message", msg, msg_len);
-	if ((wps->registrar && (wps->msg_num & 1) == 0) ||
-	    (!wps->registrar && (wps->msg_num & 1) == 1)) {
-		wpa_printf(MSG_DEBUG, "WPS: Unexpected message number %d",
-			   wps->msg_num);
-		return WPS_FAILURE;
-	}
-
-	if (wps->msg_num <= 8 && op_code == WSC_MSG) {
-		wpa_printf(MSG_DEBUG, "WPS: Process M%d", wps->msg_num);
-	} else if (wps->registrar && wps->msg_num == 3 &&
-		   op_code == WSC_ACK) {
-		wpa_printf(MSG_DEBUG, "WPS: Process ACK to M2/M2D");
-		/* could send out next M2/M2D */
-		return WPS_DONE;
-	} else if (wps->registrar && wps->msg_num == 3 &&
-		   op_code == WSC_Done) {
-		wpa_printf(MSG_DEBUG, "WPS: Process Done to M2/M2D");
-		return WPS_DONE;
-	} else if (wps->msg_num <= 8 && op_code == WSC_Done) {
-		wpa_printf(MSG_DEBUG, "WPS: Process Done prior to completion");
-		return WPS_DONE;
-	} else if (wps->msg_num <= 8 && op_code == WSC_ACK) {
-		wpa_printf(MSG_DEBUG, "WPS: Process ACK prior to completion");
-		return WPS_DONE;
-	} else if (wps->msg_num <= 8 && op_code == WSC_NACK) {
-		wpa_printf(MSG_DEBUG, "WPS: Process NACK prior to completion");
-		return WPS_DONE;
-	} else if (wps->registrar && wps->msg_num == 9 &&
-		   op_code == WSC_Done) {
-		wpa_printf(MSG_DEBUG, "WPS: Process Done");
-		return WPS_DONE;
-	} else if (!wps->registrar && wps->msg_num == 10 &&
-		   op_code == WSC_ACK) {
-		wpa_printf(MSG_DEBUG, "WPS: Process ACK");
-		return WPS_DONE;
-	} else {
-		wpa_printf(MSG_DEBUG, "WPS: Unexpected Op-Code %d "
-			   "(msg_num=%d)", op_code, wps->msg_num);
-		return WPS_FAILURE;
-	}
-
-	wps->msg_num++;
-	return WPS_CONTINUE;
-}
-
-
-static u8 * wps_get_msg(struct wps_data *wps, size_t *msg_len, u8 *op_code)
-{
-	u8 *msg;
-
-	/* TODO: proper processing and/or query from an external process */
-
-	if ((wps->registrar && (wps->msg_num & 1) == 1) ||
-	    (!wps->registrar && (wps->msg_num & 1) == 0)) {
-		wpa_printf(MSG_DEBUG, "WPS: Unexpected request for message "
-			   "number %d", wps->msg_num);
-		return NULL;
-	}
-
-	if (wps->msg_num == 7 || wps->msg_num == 8) {
-		msg = os_zalloc(2000);
-		if (msg == NULL)
-			return NULL;
-		*msg_len = 2000;
-		*op_code = WSC_MSG;
-		*msg = WSC_MSG;
-		wpa_printf(MSG_DEBUG, "WPS: Send M%d", wps->msg_num);
-	} else if (wps->msg_num <= 6) {
-		msg = os_zalloc(1);
-		if (msg == NULL)
-			return NULL;
-		*msg_len = 1;
-		*op_code = WSC_MSG;
-		*msg = WSC_MSG;
-		wpa_printf(MSG_DEBUG, "WPS: Send M%d", wps->msg_num);
-	} else if (!wps->registrar && wps->msg_num == 9) {
-		msg = os_zalloc(1);
-		if (msg == NULL)
-			return NULL;
-		*msg_len = 1;
-		*op_code = WSC_Done;
-		*msg = WSC_Done;
-		wpa_printf(MSG_DEBUG, "WPS: Send Done");
-	} else
-		return NULL;
-
-	wps->msg_num++;
-	return msg;
-}
+#include "wps/wps.h"
 
 
 struct eap_wsc_data {
 	enum { START, MSG, FRAG_ACK, WAIT_FRAG_ACK, DONE, FAIL } state;
 	int registrar;
-	u8 *in_buf, *out_buf, in_op_code, out_op_code;
-	size_t in_len, in_used, out_len, out_used;
+	struct wpabuf *in_buf;
+	struct wpabuf *out_buf;
+	u8 in_op_code, out_op_code;
+	size_t out_used;
 	size_t fragment_size;
 	struct wps_data *wps;
 };
@@ -187,6 +66,7 @@ static void * eap_wsc_init(struct eap_sm *sm)
 {
 	struct eap_wsc_data *data;
 	int registrar;
+	struct wps_config cfg;
 
 	if (sm->identity && sm->identity_len == WSC_ID_REGISTRAR_LEN &&
 	    os_memcmp(sm->identity, WSC_ID_REGISTRAR, WSC_ID_REGISTRAR_LEN) ==
@@ -207,7 +87,29 @@ static void * eap_wsc_init(struct eap_sm *sm)
 		return NULL;
 	data->state = registrar ? START : MSG;
 	data->registrar = registrar;
-	data->wps = wps_init(registrar);
+
+	os_memset(&cfg, 0, sizeof(cfg));
+	cfg.authenticator = 1;
+	cfg.wps = sm->wps;
+	if (registrar) {
+		if (sm->wps == NULL || sm->wps->registrar == NULL) {
+			wpa_printf(MSG_INFO, "EAP-WSC: WPS Registrar not "
+				   "initialized");
+			os_free(data);
+			return NULL;
+		}
+		cfg.registrar = sm->wps->registrar;
+	} else {
+		if (sm->user == NULL || sm->user->password == NULL) {
+			wpa_printf(MSG_INFO, "EAP-WSC: No AP PIN (password) "
+				   "configured for Enrollee functionality");
+			os_free(data);
+			return NULL;
+		}
+		cfg.pin = sm->user->password;
+		cfg.pin_len = sm->user->password_len;
+	}
+	data->wps = wps_init(&cfg);
 	if (data->wps == NULL) {
 		os_free(data);
 		return NULL;
@@ -221,8 +123,8 @@ static void * eap_wsc_init(struct eap_sm *sm)
 static void eap_wsc_reset(struct eap_sm *sm, void *priv)
 {
 	struct eap_wsc_data *data = priv;
-	os_free(data->in_buf);
-	os_free(data->out_buf);
+	wpabuf_free(data->in_buf);
+	wpabuf_free(data->out_buf);
 	wps_deinit(data->wps);
 	os_free(data);
 }
@@ -249,25 +151,14 @@ static struct wpabuf * eap_wsc_build_start(struct eap_sm *sm,
 }
 
 
-static struct wpabuf * eap_wsc_build_msg(struct eap_sm *sm,
-					 struct eap_wsc_data *data, u8 id)
+static struct wpabuf * eap_wsc_build_msg(struct eap_wsc_data *data, u8 id)
 {
 	struct wpabuf *req;
 	u8 flags;
 	size_t send_len, plen;
 
-	if (data->out_buf == NULL) {
-		data->out_buf = wps_get_msg(data->wps, &data->out_len,
-					    &data->out_op_code);
-		if (data->out_buf == NULL) {
-			wpa_printf(MSG_DEBUG, "EAP-WSC: Failed to receive "
-				   "message from WPS");
-			return NULL;
-		}
-	}
-
 	flags = 0;
-	send_len = data->out_len - data->out_used;
+	send_len = wpabuf_len(data->out_buf) - data->out_used;
 	if (2 + send_len > data->fragment_size) {
 		send_len = data->fragment_size - 2;
 		flags |= WSC_FLAGS_MF;
@@ -290,22 +181,25 @@ static struct wpabuf * eap_wsc_build_msg(struct eap_sm *sm,
 	wpabuf_put_u8(req, data->out_op_code); /* Op-Code */
 	wpabuf_put_u8(req, flags); /* Flags */
 	if (flags & WSC_FLAGS_LF)
-		wpabuf_put_be16(req, data->out_len);
+		wpabuf_put_be16(req, wpabuf_len(data->out_buf));
 
-	wpabuf_put_data(req, data->out_buf + data->out_used, send_len);
+	wpabuf_put_data(req, wpabuf_head_u8(data->out_buf) + data->out_used,
+			send_len);
 	data->out_used += send_len;
 
-	if (data->out_used == data->out_len) {
-		wpa_printf(MSG_DEBUG, "EAP-WSC: Sending out %u bytes "
-			   "(message sent completely)", send_len);
-		os_free(data->out_buf);
+	if (data->out_used == wpabuf_len(data->out_buf)) {
+		wpa_printf(MSG_DEBUG, "EAP-WSC: Sending out %lu bytes "
+			   "(message sent completely)",
+			   (unsigned long) send_len);
+		wpabuf_free(data->out_buf);
 		data->out_buf = NULL;
-		data->out_len = data->out_used = 0;
+		data->out_used = 0;
 		eap_wsc_state(data, MSG);
 	} else {
-		wpa_printf(MSG_DEBUG, "EAP-WSC: Sending out %u bytes "
-			   "(%u more to send)", send_len,
-			   data->out_len - data->out_used);
+		wpa_printf(MSG_DEBUG, "EAP-WSC: Sending out %lu bytes "
+			   "(%lu more to send)", (unsigned long) send_len,
+			   (unsigned long) wpabuf_len(data->out_buf) -
+			   data->out_used);
 		eap_wsc_state(data, WAIT_FRAG_ACK);
 	}
 
@@ -320,10 +214,22 @@ static struct wpabuf * eap_wsc_buildReq(struct eap_sm *sm, void *priv, u8 id)
 	switch (data->state) {
 	case START:
 		return eap_wsc_build_start(sm, data, id);
+	case MSG:
+		if (data->out_buf == NULL) {
+			data->out_buf = wps_get_msg(data->wps,
+						    &data->out_op_code);
+			if (data->out_buf == NULL) {
+				wpa_printf(MSG_DEBUG, "EAP-WSC: Failed to "
+					   "receive message from WPS");
+				return NULL;
+			}
+			data->out_used = 0;
+		}
+		/* pass through */
+	case WAIT_FRAG_ACK:
+		return eap_wsc_build_msg(data, id);
 	case FRAG_ACK:
 		return eap_wsc_build_frag_ack(id, EAP_CODE_REQUEST);
-	case MSG:
-		return eap_wsc_build_msg(sm, data, id);
 	default:
 		wpa_printf(MSG_DEBUG, "EAP-WSC: Unexpected state %d in "
 			   "buildReq", data->state);
@@ -349,6 +255,64 @@ static Boolean eap_wsc_check(struct eap_sm *sm, void *priv,
 }
 
 
+static int eap_wsc_process_cont(struct eap_wsc_data *data,
+				const u8 *buf, size_t len, u8 op_code)
+{
+	/* Process continuation of a pending message */
+	if (op_code != data->in_op_code) {
+		wpa_printf(MSG_DEBUG, "EAP-WSC: Unexpected Op-Code %d in "
+			   "fragment (expected %d)",
+			   op_code, data->in_op_code);
+		eap_wsc_state(data, FAIL);
+		return -1;
+	}
+
+	if (len > wpabuf_tailroom(data->in_buf)) {
+		wpa_printf(MSG_DEBUG, "EAP-WSC: Fragment overflow");
+		eap_wsc_state(data, FAIL);
+		return -1;
+	}
+
+	wpabuf_put_data(data->in_buf, buf, len);
+	wpa_printf(MSG_DEBUG, "EAP-WSC: Received %lu bytes, waiting for %lu "
+		   "bytes more", (unsigned long) len,
+		   (unsigned long) wpabuf_tailroom(data->in_buf));
+
+	return 0;
+}
+
+
+static int eap_wsc_process_fragment(struct eap_wsc_data *data,
+				    u8 flags, u8 op_code, u16 message_length,
+				    const u8 *buf, size_t len)
+{
+	/* Process a fragment that is not the last one of the message */
+	if (data->in_buf == NULL && !(flags & WSC_FLAGS_LF)) {
+		wpa_printf(MSG_DEBUG, "EAP-WSC: No Message Length "
+			   "field in a fragmented packet");
+		return -1;
+	}
+
+	if (data->in_buf == NULL) {
+		/* First fragment of the message */
+		data->in_buf = wpabuf_alloc(message_length);
+		if (data->in_buf == NULL) {
+			wpa_printf(MSG_DEBUG, "EAP-WSC: No memory for "
+				   "message");
+			return -1;
+		}
+		data->in_op_code = op_code;
+		wpabuf_put_data(data->in_buf, buf, len);
+		wpa_printf(MSG_DEBUG, "EAP-WSC: Received %lu bytes in "
+			   "first fragment, waiting for %lu bytes more",
+			   (unsigned long) len,
+			   (unsigned long) wpabuf_tailroom(data->in_buf));
+	}
+
+	return 0;
+}
+
+
 static void eap_wsc_process(struct eap_sm *sm, void *priv,
 			    struct wpabuf *respData)
 {
@@ -357,9 +321,8 @@ static void eap_wsc_process(struct eap_sm *sm, void *priv,
 	size_t len;
 	u8 op_code, flags;
 	u16 message_length = 0;
-	const u8 *msg;
-	size_t msg_len;
 	enum wps_process_res res;
+	struct wpabuf tmpbuf;
 
 	pos = eap_hdr_validate(EAP_VENDOR_WFA, EAP_VENDOR_TYPE_WSC,
 			       respData, &len);
@@ -410,67 +373,29 @@ static void eap_wsc_process(struct eap_sm *sm, void *priv,
 		return;
 	}
 
-	if (data->in_buf) {
-		/* Process continuation of a pending message */
-		if (op_code != data->in_op_code) {
-			wpa_printf(MSG_DEBUG, "EAP-WSC: Unexpected Op-Code %d "
-				   "in fragment (expected %d)",
-				   op_code, data->in_op_code);
-			eap_wsc_state(data, FAIL);
-			return;
-		}
-
-		if (data->in_used + (end - pos) > data->in_len) {
-			wpa_printf(MSG_DEBUG, "EAP-WSC: Fragment overflow");
-			eap_wsc_state(data, FAIL);
-			return;
-		}
-
-		os_memcpy(data->in_buf + data->in_used, pos, end - pos);
-		data->in_used += end - pos;
-		wpa_printf(MSG_DEBUG, "EAP-WSC: Received %u bytes, waiting "
-			   "for %u bytes more", end - pos,
-			   data->in_len - data->in_used);
-	}
-
-	if (flags & WSC_FLAGS_MF) {
-		if (data->in_buf == NULL && !(flags & WSC_FLAGS_LF)) {
-			wpa_printf(MSG_DEBUG, "EAP-WSC: No Message Length "
-				   "field in a fragmented packet");
-			return;
-		}
-
-		if (data->in_buf == NULL) {
-			/* First fragment of the message */
-			data->in_buf = os_malloc(message_length);
-			if (data->in_buf == NULL) {
-				wpa_printf(MSG_DEBUG, "EAP-WSC: No memory for "
-					   "message");
-				return;
-			}
-			data->in_len = message_length;
-			data->in_used = end - pos;
-			data->in_op_code = op_code;
-			os_memcpy(data->in_buf, pos, data->in_used);
-			wpa_printf(MSG_DEBUG, "EAP-WSC: Received %u bytes in "
-				   "first fragment, waiting for %u bytes more",
-				   data->in_used,
-				   data->in_len - data->in_used);
-		}
-
-		eap_wsc_state(data, FRAG_ACK);
+	if (data->in_buf &&
+	    eap_wsc_process_cont(data, pos, end - pos, op_code) < 0) {
+		eap_wsc_state(data, FAIL);
 		return;
 	}
 
-	if (data->in_buf) {
-		msg = data->in_buf;
-		msg_len = data->in_len;
-	} else {
-		msg = pos;
-		msg_len = end - pos;
+	if (flags & WSC_FLAGS_MF) {
+		if (eap_wsc_process_fragment(data, flags, op_code,
+					     message_length, pos, end - pos) <
+		    0)
+			eap_wsc_state(data, FAIL);
+		else
+			eap_wsc_state(data, FRAG_ACK);
+		return;
 	}
 
-	res = wps_process_msg(data->wps, op_code, msg, msg_len);
+	if (data->in_buf == NULL) {
+		/* Wrap unfragmented messages as wpabuf without extra copy */
+		wpabuf_set(&tmpbuf, pos, end - pos);
+		data->in_buf = &tmpbuf;
+	}
+
+	res = wps_process_msg(data->wps, op_code, data->in_buf);
 	switch (res) {
 	case WPS_DONE:
 		wpa_printf(MSG_DEBUG, "EAP-WSC: WPS processing completed "
@@ -490,9 +415,9 @@ static void eap_wsc_process(struct eap_sm *sm, void *priv,
 		break;
 	}
 
-	os_free(data->in_buf);
+	if (data->in_buf != &tmpbuf)
+		wpabuf_free(data->in_buf);
 	data->in_buf = NULL;
-	data->in_len = data->in_used = 0;
 }
 
 

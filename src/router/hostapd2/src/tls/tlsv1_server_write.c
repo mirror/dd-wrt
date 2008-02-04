@@ -325,10 +325,15 @@ static int tls_write_server_key_exchange(struct tlsv1_server *conn,
 				   TLS_ALERT_INTERNAL_ERROR);
 		return -1;
 	}
-	crypto_mod_exp(conn->cred->dh_g, conn->cred->dh_g_len,
-		       conn->dh_secret, conn->dh_secret_len,
-		       conn->cred->dh_p, conn->cred->dh_p_len,
-		       dh_ys, &dh_ys_len);
+	if (crypto_mod_exp(conn->cred->dh_g, conn->cred->dh_g_len,
+			   conn->dh_secret, conn->dh_secret_len,
+			   conn->cred->dh_p, conn->cred->dh_p_len,
+			   dh_ys, &dh_ys_len)) {
+		tlsv1_server_alert(conn, TLS_ALERT_LEVEL_FATAL,
+				   TLS_ALERT_INTERNAL_ERROR);
+		os_free(dh_ys);
+		return -1;
+	}
 
 	wpa_hexdump(MSG_DEBUG, "TLSv1: DH Ys (server's public value)",
 		    dh_ys, dh_ys_len);

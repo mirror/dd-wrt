@@ -1,6 +1,6 @@
 /*
  * hostapd / Initialization and configuration
- * Copyright (c) 2002-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2002-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -43,7 +43,12 @@
 #include "eap_server/eap.h"
 #include "version.h"
 #include "l2_packet/l2_packet.h"
+#include "wps_hostapd.h"
 
+
+static int hostapd_radius_get_eap_user(void *ctx, const u8 *identity,
+				       size_t identity_len, int phase2,
+				       struct eap_user *user);
 
 struct hapd_interfaces {
 	size_t count;
@@ -392,7 +397,7 @@ static void hostapd_dump_state(struct hostapd_data *hapd)
 		fprintf(f, "\nSTA=" MACSTR "\n", MAC2STR(sta->addr));
 
 		fprintf(f,
-			"  AID=%d flags=0x%x %s%s%s%s%s%s%s%s%s%s\n"
+			"  AID=%d flags=0x%x %s%s%s%s%s%s%s%s%s%s%s%s\n"
 			"  capability=0x%x listen_interval=%d\n",
 			sta->aid,
 			sta->flags,
@@ -408,6 +413,8 @@ static void hostapd_dump_state(struct hostapd_data *hapd)
 			(sta->flags & WLAN_STA_SHORT_PREAMBLE ?
 			 "[SHORT_PREAMBLE]" : ""),
 			(sta->flags & WLAN_STA_PREAUTH ? "[PREAUTH]" : ""),
+			(sta->flags & WLAN_STA_WPS ? "[WPS]" : ""),
+			(sta->flags & WLAN_STA_MAYBE_WPS ? "[MAYBE_WPS]" : ""),
 			(sta->flags & WLAN_STA_NONERP ? "[NonERP]" : ""),
 			sta->capability,
 			sta->listen_interval);
@@ -577,6 +584,8 @@ static void hostapd_cleanup(struct hostapd_data *hapd)
 #ifdef CONFIG_IEEE80211R
 	l2_packet_deinit(hapd->l2);
 #endif /* CONFIG_IEEE80211R */
+
+	hostapd_deinit_wps(hapd);
 
 	hostapd_wireless_event_deinit(hapd);
 
@@ -1022,10 +1031,8 @@ static int hostapd_validate_bssid_configuration(struct hostapd_iface *iface)
 	while (j--)
 		mask[i] <<= 1;
 
-	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "BSS count %lu, BSSID mask "
-		      MACSTR " (%d bits)\n",
-		      (unsigned long) iface->conf->num_bss, MAC2STR(mask),
-		      bits);
+	wpa_printf(MSG_DEBUG, "BSS count %lu, BSSID mask " MACSTR " (%d bits)",
+		   (unsigned long) iface->conf->num_bss, MAC2STR(mask), bits);
 
 	res = hostapd_valid_bss_mask(hapd, hapd->own_addr, mask);
 	if (res == 0)
@@ -1061,6 +1068,90 @@ static int mac_in_conf(struct hostapd_config *conf, const void *a)
 		if (hostapd_mac_comp(conf->bss[i].bssid, a) == 0) {
 			return 1;
 		}
+	}
+
+	return 0;
+}
+
+
+static int hostapd_setup_wpa(struct hostapd_data *hapd)
+{
+	struct wpa_auth_config _conf;
+	struct wpa_auth_callbacks cb;
+	const u8 *wpa_ie;
+	size_t wpa_ie_len;
+
+	hostapd_wpa_auth_conf(hapd->conf, &_conf);
+	os_memset(&cb, 0, sizeof(cb));
+	cb.ctx = hapd;
+	cb.logger = hostapd_wpa_auth_logger;
+	cb.disconnect = hostapd_wpa_auth_disconnect;
+	cb.mic_failure_report = hostapd_wpa_auth_mic_failure_report;
+	cb.set_eapol = hostapd_wpa_auth_set_eapol;
+	cb.get_eapol = hostapd_wpa_auth_get_eapol;
+	cb.get_psk = hostapd_wpa_auth_get_psk;
+	cb.get_msk = hostapd_wpa_auth_get_msk;
+	cb.set_key = hostapd_wpa_auth_set_key;
+	cb.get_seqnum = hostapd_wpa_auth_get_seqnum;
+	cb.get_seqnum_igtk = hostapd_wpa_auth_get_seqnum_igtk;
+	cb.send_eapol = hostapd_wpa_auth_send_eapol;
+	cb.for_each_sta = hostapd_wpa_auth_for_each_sta;
+	cb.send_ether = hostapd_wpa_auth_send_ether;
+#ifdef CONFIG_IEEE80211R
+	cb.send_ft_action = hostapd_wpa_auth_send_ft_action;
+	cb.add_sta = hostapd_wpa_auth_add_sta;
+#endif /* CONFIG_IEEE80211R */
+	hapd->wpa_auth = wpa_init(hapd->own_addr, &_conf, &cb);
+	if (hapd->wpa_auth == NULL) {
+		printf("WPA initialization failed.\n");
+		return -1;
+	}
+
+	if (hostapd_set_privacy(hapd, 1)) {
+		wpa_printf(MSG_ERROR, "Could not set PrivacyInvoked "
+			   "for interface %s", hapd->conf->iface);
+		return -1;
+	}
+
+	wpa_ie = wpa_auth_get_wpa_ie(hapd->wpa_auth, &wpa_ie_len);
+	if (hostapd_set_generic_elem(hapd, wpa_ie, wpa_ie_len)) {
+		wpa_printf(MSG_ERROR, "Failed to configure WPA IE for "
+			   "the kernel driver.");
+		return -1;
+	}
+
+	if (rsn_preauth_iface_init(hapd)) {
+		printf("Initialization of RSN pre-authentication "
+		       "failed.\n");
+		return -1;
+	}
+
+	return 0;
+
+}
+
+
+static int hostapd_setup_radius_srv(struct hostapd_data *hapd,
+				    struct hostapd_bss_config *conf)
+{
+	struct radius_server_conf srv;
+	os_memset(&srv, 0, sizeof(srv));
+	srv.client_file = conf->radius_server_clients;
+	srv.auth_port = conf->radius_server_auth_port;
+	srv.conf_ctx = conf;
+	srv.eap_sim_db_priv = hapd->eap_sim_db_priv;
+	srv.ssl_ctx = hapd->ssl_ctx;
+	srv.pac_opaque_encr_key = conf->pac_opaque_encr_key;
+	srv.eap_fast_a_id = conf->eap_fast_a_id;
+	srv.eap_sim_aka_result_ind = conf->eap_sim_aka_result_ind;
+	srv.wps = hapd->wps;
+	srv.ipv6 = conf->radius_server_ipv6;
+	srv.get_eap_user = hostapd_radius_get_eap_user;
+
+	hapd->radius_srv = radius_server_init(&srv);
+	if (hapd->radius_srv == NULL) {
+		printf("RADIUS server initialization failed.\n");
+		return -1;
 	}
 
 	return 0;
@@ -1171,7 +1262,7 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 		return -1;
 	}
 
-	if (HOSTAPD_DEBUG_COND(HOSTAPD_DEBUG_MSGDUMPS))
+	if (wpa_debug_level == MSG_MSGDUMP)
 		conf->radius->msg_dumps = 1;
 	hapd->radius = radius_client_init(hapd, conf->radius);
 	if (hapd->radius == NULL) {
@@ -1183,62 +1274,16 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 		printf("ACL initialization failed.\n");
 		return -1;
 	}
+	if (hostapd_init_wps(hapd, conf))
+		return -1;
+
 	if (ieee802_1x_init(hapd)) {
 		printf("IEEE 802.1X initialization failed.\n");
 		return -1;
 	}
 
-	if (hapd->conf->wpa) {
-		struct wpa_auth_config _conf;
-		struct wpa_auth_callbacks cb;
-		const u8 *wpa_ie;
-		size_t wpa_ie_len;
-
-		hostapd_wpa_auth_conf(hapd->conf, &_conf);
-		os_memset(&cb, 0, sizeof(cb));
-		cb.ctx = hapd;
-		cb.logger = hostapd_wpa_auth_logger;
-		cb.disconnect = hostapd_wpa_auth_disconnect;
-		cb.mic_failure_report = hostapd_wpa_auth_mic_failure_report;
-		cb.set_eapol = hostapd_wpa_auth_set_eapol;
-		cb.get_eapol = hostapd_wpa_auth_get_eapol;
-		cb.get_psk = hostapd_wpa_auth_get_psk;
-		cb.get_msk = hostapd_wpa_auth_get_msk;
-		cb.set_key = hostapd_wpa_auth_set_key;
-		cb.get_seqnum = hostapd_wpa_auth_get_seqnum;
-		cb.get_seqnum_igtk = hostapd_wpa_auth_get_seqnum_igtk;
-		cb.send_eapol = hostapd_wpa_auth_send_eapol;
-		cb.for_each_sta = hostapd_wpa_auth_for_each_sta;
-		cb.send_ether = hostapd_wpa_auth_send_ether;
-#ifdef CONFIG_IEEE80211R
-		cb.send_ft_action = hostapd_wpa_auth_send_ft_action;
-		cb.add_sta = hostapd_wpa_auth_add_sta;
-#endif /* CONFIG_IEEE80211R */
-		hapd->wpa_auth = wpa_init(hapd->own_addr, &_conf, &cb);
-		if (hapd->wpa_auth == NULL) {
-			printf("WPA initialization failed.\n");
-			return -1;
-		}
-
-		if (hostapd_set_privacy(hapd, 1)) {
-			wpa_printf(MSG_ERROR, "Could not set PrivacyInvoked "
-				   "for interface %s", hapd->conf->iface);
-			return -1;
-		}
-
-		wpa_ie = wpa_auth_get_wpa_ie(hapd->wpa_auth, &wpa_ie_len);
-		if (hostapd_set_generic_elem(hapd, wpa_ie, wpa_ie_len)) {
-			wpa_printf(MSG_ERROR, "Failed to configure WPA IE for "
-				   "the kernel driver.");
-			return -1;
-		}
-
-		if (rsn_preauth_iface_init(hapd)) {
-			printf("Initialization of RSN pre-authentication "
-			       "failed.\n");
-			return -1;
-		}
-	}
+	if (hapd->conf->wpa && hostapd_setup_wpa(hapd))
+		return -1;
 
 	if (accounting_init(hapd)) {
 		printf("Accounting initialization failed.\n");
@@ -1256,8 +1301,6 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 		return -1;
 	}
 
-	ieee802_11_set_beacon(hapd);
-
 	if (vlan_init(hapd)) {
 		printf("VLAN initialization failed.\n");
 		return -1;
@@ -1272,6 +1315,12 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 		return -1;
 	}
 #endif /* CONFIG_IEEE80211R */
+
+	ieee802_11_set_beacon(hapd);
+
+	if (conf->radius_server_clients &&
+	    hostapd_setup_radius_srv(hapd, conf))
+		return -1;
 
 	return 0;
 }
@@ -1447,6 +1496,7 @@ static int hostapd_radius_get_eap_user(void *ctx, const u8 *identity,
 		user->password_hash = eap_user->password_hash;
 	}
 	user->force_version = eap_user->force_version;
+	user->ttls_auth = eap_user->ttls_auth;
 
 	return 0;
 }
@@ -1513,26 +1563,6 @@ static int setup_interface1(struct hostapd_iface *iface)
 	    hostapd_set_internal_bridge(hapd, hapd->iconf->bridge_packets)) {
 		printf("Failed to set bridge_packets for kernel driver\n");
 		return -1;
-	}
-
-	if (conf->radius_server_clients) {
-		struct radius_server_conf srv;
-		os_memset(&srv, 0, sizeof(srv));
-		srv.client_file = conf->radius_server_clients;
-		srv.auth_port = conf->radius_server_auth_port;
-		srv.conf_ctx = conf;
-		srv.eap_sim_db_priv = hapd->eap_sim_db_priv;
-		srv.ssl_ctx = hapd->ssl_ctx;
-		srv.pac_opaque_encr_key = conf->pac_opaque_encr_key;
-		srv.eap_fast_a_id = conf->eap_fast_a_id;
-		srv.eap_sim_aka_result_ind = conf->eap_sim_aka_result_ind;
-		srv.ipv6 = conf->radius_server_ipv6;
-		srv.get_eap_user = hostapd_radius_get_eap_user;
-		hapd->radius_srv = radius_server_init(&srv);
-		if (hapd->radius_srv == NULL) {
-			printf("RADIUS server initialization failed.\n");
-			return -1;
-		}
 	}
 
 	/* TODO: merge with hostapd_driver_init() ? */
@@ -1620,7 +1650,7 @@ static void show_version(void)
 		"hostapd v" VERSION_STR "\n"
 		"User space daemon for IEEE 802.11 AP management,\n"
 		"IEEE 802.1X/WPA/WPA2/EAP/RADIUS Authenticator\n"
-		"Copyright (c) 2002-2007, Jouni Malinen <j@w1.fi> "
+		"Copyright (c) 2002-2008, Jouni Malinen <j@w1.fi> "
 		"and contributors\n");
 }
 
@@ -1912,7 +1942,6 @@ int main(int argc, char *argv[])
 			    logger_stdout_level > 0)
 				interfaces.iface[i]->bss[0]->conf->
 					logger_stdout_level--;
-			interfaces.iface[i]->bss[0]->conf->debug++;
 		}
 
 		ret = hostapd_setup_interface_start(interfaces.iface[i],

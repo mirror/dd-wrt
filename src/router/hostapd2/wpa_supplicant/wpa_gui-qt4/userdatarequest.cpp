@@ -95,6 +95,6 @@ void UserDataRequest::sendReply()
 	QString cmd = QString(WPA_CTRL_RSP) + field + '-' +
 		QString::number(networkid) + ':' +
 		queryEdit->text();
-	wpagui->ctrlRequest(cmd.ascii(), reply, &reply_len);
+	wpagui->ctrlRequest(cmd.toAscii().constData(), reply, &reply_len);
 	accept();
 }

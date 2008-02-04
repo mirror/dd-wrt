@@ -23,6 +23,12 @@
 struct eap_sm;
 
 #define EAP_MAX_METHODS 8
+
+#define EAP_TTLS_AUTH_PAP 1
+#define EAP_TTLS_AUTH_CHAP 2
+#define EAP_TTLS_AUTH_MSCHAP 4
+#define EAP_TTLS_AUTH_MSCHAPV2 8
+
 struct eap_user {
 	struct {
 		int vendor;
@@ -34,6 +40,8 @@ struct eap_user {
 			    * nt_password_hash() */
 	int phase2;
 	int force_version;
+	int ttls_auth; /* bitfield of
+			* EAP_TTLS_AUTH_{PAP,CHAP,MSCHAP,MSCHAPV2} */
 };
 
 struct eap_eapol_interface {
@@ -89,6 +97,7 @@ struct eap_config {
 	u8 *pac_opaque_encr_key;
 	char *eap_fast_a_id;
 	int eap_sim_aka_result_ind;
+	struct wps_context *wps;
 };
 
 

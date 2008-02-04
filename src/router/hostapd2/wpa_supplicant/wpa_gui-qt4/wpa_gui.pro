@@ -48,6 +48,3 @@ unix {
   MOC_DIR = .moc
   OBJECTS_DIR = .obj
 }
-
-# TODO: remove need for Qt3 support code
-QT += qt3support

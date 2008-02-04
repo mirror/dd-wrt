@@ -47,6 +47,8 @@ struct ieee802_11_elems {
 	u8 wme_len;
 	u8 *wme_tspec;
 	u8 wme_tspec_len;
+	u8 *wps_ie;
+	u8 wps_ie_len;
 	u8 *power_cap;
 	u8 power_cap_len;
 	u8 *supp_channels;
@@ -81,7 +83,7 @@ ParseRes ieee802_11_parse_elems(struct hostapd_data *hapd, u8 *start,
 				size_t len,
 				struct ieee802_11_elems *elems,
 				int show_errors);
-void ieee802_11_print_ssid(const u8 *ssid, u8 len);
+void ieee802_11_print_ssid(char *buf, const u8 *ssid, u8 len);
 void ieee80211_michael_mic_failure(struct hostapd_data *hapd, const u8 *addr,
 				   int local);
 int ieee802_11_get_mib(struct hostapd_data *hapd, char *buf, size_t buflen);

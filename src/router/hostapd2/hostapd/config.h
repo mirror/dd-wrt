@@ -115,6 +115,7 @@ struct hostapd_eap_user {
 	unsigned int wildcard_prefix:1;
 	unsigned int password_hash:1; /* whether password is hashed with
 				       * nt_password_hash() */
+	int ttls_auth; /* EAP_TTLS_AUTH_* bitfield */
 };
 
 
@@ -149,10 +150,6 @@ struct hostapd_bss_config {
 	unsigned int logger_syslog; /* module bitfield */
 	unsigned int logger_stdout; /* module bitfield */
 
-	enum { HOSTAPD_DEBUG_NO = 0, HOSTAPD_DEBUG_MINIMAL = 1,
-	       HOSTAPD_DEBUG_VERBOSE = 2,
-	       HOSTAPD_DEBUG_MSGDUMPS = 3,
-	       HOSTAPD_DEBUG_EXCESSIVE = 4 } debug; /* debug verbosity level */
 	char *dump_log_name; /* file name for state dump (SIGUSR1) */
 
 	int max_num_sta; /* maximum number of STAs in station table */
@@ -265,6 +262,22 @@ struct hostapd_bss_config {
 	struct hostapd_vlan *vlan, *vlan_tail;
 
 	macaddr bssid;
+
+	int wps_state;
+#ifdef CONFIG_WPS
+	int ap_setup_locked;
+	u8 uuid[16];
+	char *wps_pin_requests;
+	char *device_name;
+	char *manufacturer;
+	char *model_name;
+	char *model_number;
+	char *serial_number;
+	char *device_type;
+	char *config_methods;
+	u8 os_version[4];
+	char *ap_pin;
+#endif /* CONFIG_WPS */
 };
 
 

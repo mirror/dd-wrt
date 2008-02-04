@@ -164,8 +164,8 @@ static int wpa_supplicant_thread(void)
 	buflen = sizeof(val);
 	ret = RegQueryValueEx(hk, TEXT("debug_use_file"), NULL, NULL,
 			      (LPBYTE) &val, &buflen);
-	if (ret == ERROR_SUCCESS && buflen == sizeof(val)) {
-		params.wpa_debug_use_file = val;
+	if (ret == ERROR_SUCCESS && buflen == sizeof(val) && val) {
+		params.wpa_debug_file_path = "\\Temp\\wpa_supplicant-log.txt";
 	}
 
 	exitcode = 0;

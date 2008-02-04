@@ -168,6 +168,14 @@ struct hostapd_data {
 #endif /* CONFIG_FULL_DYNAMIC_VLAN */
 
 	struct l2_packet_data *l2;
+	struct wps_context *wps;
+
+#ifdef CONFIG_WPS
+	u8 *wps_beacon_ie;
+	size_t wps_beacon_ie_len;
+	u8 *wps_probe_resp_ie;
+	size_t wps_probe_resp_ie_len;
+#endif /* CONFIG_WPS */
 };
 
 
@@ -235,15 +243,5 @@ struct hostapd_iface {
 
 void hostapd_new_assoc_sta(struct hostapd_data *hapd, struct sta_info *sta,
 			   int reassoc);
-
-#ifndef _MSC_VER
-#define HOSTAPD_DEBUG(level, args...) \
-do { \
-	if (hapd->conf == NULL || hapd->conf->debug >= (level)) \
-		printf(args); \
-} while (0)
-#endif /* _MSC_VER */
-
-#define HOSTAPD_DEBUG_COND(level) (hapd->conf->debug >= (level))
 
 #endif /* HOSTAPD_H */

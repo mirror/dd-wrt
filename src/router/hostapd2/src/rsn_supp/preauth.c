@@ -18,12 +18,12 @@
 #include "wpa.h"
 #include "drivers/driver.h"
 #include "eloop.h"
-#include "config_ssid.h"
 #include "l2_packet/l2_packet.h"
 #include "eapol_supp/eapol_supp_sm.h"
 #include "preauth.h"
 #include "pmksa_cache.h"
 #include "wpa_i.h"
+#include "ieee802_11_defs.h"
 
 
 #if defined(IEEE8021X_EAPOL) && !defined(CONFIG_NO_WPA2)
@@ -105,7 +105,7 @@ static void rsn_preauth_eapol_cb(struct eapol_sm *eapol, int success,
 			sm->pmk_len = pmk_len;
 			pmksa_cache_add(sm->pmksa, pmk, pmk_len,
 					sm->preauth_bssid, sm->own_addr,
-					sm->cur_ssid);
+					sm->network_ctx);
 		} else {
 			wpa_msg(sm->ctx->ctx, MSG_INFO, "RSN: failed to get "
 				"master session key from pre-auth EAPOL state "
@@ -164,7 +164,7 @@ static int rsn_preauth_eapol_send(void *ctx, int type, const u8 *buf,
  * rsn_preauth_init - Start new RSN pre-authentication
  * @sm: Pointer to WPA state machine data from wpa_sm_init()
  * @dst: Authenticator address (BSSID) with which to preauthenticate
- * @config: Current network configuration
+ * @eap_conf: Current EAP configuration
  * Returns: 0 on success, -1 on another pre-authentication is in progress,
  * -2 on layer 2 packet initialization failure, -3 on EAPOL state machine
  * initialization failure, -4 on memory allocation failure
@@ -174,7 +174,8 @@ static int rsn_preauth_eapol_send(void *ctx, int type, const u8 *buf,
  * or from driver reports. In addition, ctrl_iface PREAUTH command can trigger
  * pre-authentication.
  */
-int rsn_preauth_init(struct wpa_sm *sm, const u8 *dst, struct wpa_ssid *config)
+int rsn_preauth_init(struct wpa_sm *sm, const u8 *dst,
+		     struct eap_peer_config *eap_conf)
 {
 	struct eapol_config eapol_conf;
 	struct eapol_ctx *ctx;
@@ -234,9 +235,8 @@ int rsn_preauth_init(struct wpa_sm *sm, const u8 *dst, struct wpa_ssid *config)
 	eapol_conf.accept_802_1x_keys = 0;
 	eapol_conf.required_keys = 0;
 	eapol_conf.fast_reauth = sm->fast_reauth;
-	if (config)
-		eapol_conf.workaround = config->eap_workaround;
-	eapol_sm_notify_config(sm->preauth_eapol, config, &eapol_conf);
+	eapol_conf.workaround = sm->eap_workaround;
+	eapol_sm_notify_config(sm->preauth_eapol, eap_conf, &eapol_conf);
 	/*
 	 * Use a shorter startPeriod with preauthentication since the first
 	 * preauth EAPOL-Start frame may end up being dropped due to race
@@ -322,7 +322,8 @@ void rsn_preauth_candidate_process(struct wpa_sm *sm)
 				" selected for pre-authentication",
 				MAC2STR(candidate->bssid));
 			sm->pmksa_candidates = candidate->next;
-			rsn_preauth_init(sm, candidate->bssid, sm->cur_ssid);
+			rsn_preauth_init(sm, candidate->bssid,
+					 sm->eap_conf_ctx);
 			os_free(candidate);
 			return;
 		}
@@ -359,8 +360,9 @@ void pmksa_candidate_add(struct wpa_sm *sm, const u8 *bssid,
 {
 	struct rsn_pmksa_candidate *cand, *prev, *pos;
 
-	if (sm->cur_ssid && sm->cur_ssid->proactive_key_caching)
-		pmksa_cache_get_opportunistic(sm->pmksa, sm->cur_ssid, bssid);
+	if (sm->network_ctx && sm->proactive_key_caching)
+		pmksa_cache_get_opportunistic(sm->pmksa, sm->network_ctx,
+					      bssid);
 
 	if (!preauth) {
 		wpa_printf(MSG_DEBUG, "RSN: Ignored PMKID candidate without "
@@ -423,20 +425,19 @@ void pmksa_candidate_add(struct wpa_sm *sm, const u8 *bssid,
  * rsn_preauth_scan_results - Process scan results to find PMKSA candidates
  * @sm: Pointer to WPA state machine data from wpa_sm_init()
  * @results: Scan results
- * @count: Number of BSSes in scan results
  *
  * This functions goes through the scan results and adds all suitable APs
  * (Authenticators) into PMKSA candidate list.
  */
 void rsn_preauth_scan_results(struct wpa_sm *sm,
-			      struct wpa_scan_result *results, int count)
+			      struct wpa_scan_results *results)
 {
-	struct wpa_scan_result *r;
+	struct wpa_scan_res *r;
 	struct wpa_ie_data ie;
 	int i;
 	struct rsn_pmksa_cache_entry *pmksa;
 
-	if (sm->cur_ssid == NULL)
+	if (sm->ssid_len == 0)
 		return;
 
 	/*
@@ -445,18 +446,21 @@ void rsn_preauth_scan_results(struct wpa_sm *sm,
 	 */
 	pmksa_candidate_free(sm);
 
-	for (i = count - 1; i >= 0; i--) {
-		r = &results[i];
-		if (r->ssid_len != sm->cur_ssid->ssid_len ||
-		    os_memcmp(r->ssid, sm->cur_ssid->ssid,
-			      r->ssid_len) != 0)
+	for (i = results->num - 1; i >= 0; i--) {
+		const u8 *ssid, *rsn;
+
+		r = results->res[i];
+
+		ssid = wpa_scan_get_ie(r, WLAN_EID_SSID);
+		if (ssid == NULL || ssid[1] != sm->ssid_len ||
+		    os_memcmp(ssid + 2, sm->ssid, ssid[1]) != 0)
 			continue;
 
 		if (os_memcmp(r->bssid, sm->bssid, ETH_ALEN) == 0)
 			continue;
 
-		if (r->rsn_ie_len == 0 ||
-		    wpa_parse_wpa_ie(r->rsn_ie, r->rsn_ie_len, &ie))
+		rsn = wpa_scan_get_ie(r, WLAN_EID_RSN);
+		if (rsn == NULL || wpa_parse_wpa_ie(rsn, 2 + rsn[1], &ie))
 			continue;
 
 		pmksa = pmksa_cache_get(sm->pmksa, r->bssid, NULL);

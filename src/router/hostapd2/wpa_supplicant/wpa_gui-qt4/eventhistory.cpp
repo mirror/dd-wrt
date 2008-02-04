@@ -85,6 +85,8 @@ EventHistory::EventHistory(QWidget *parent, const char *, bool, Qt::WFlags)
 
 	connect(closeButton, SIGNAL(clicked()), this, SLOT(close()));
 
+	eventListView->setItemsExpandable(FALSE);
+	eventListView->setRootIsDecorated(FALSE);
 	elm = new EventListModel(parent);
 	eventListView->setModel(elm);
 }
@@ -115,8 +117,4 @@ void EventHistory::addEvent(WpaMsg msg)
 {
 	elm->addEvent(msg.getTimestamp().toString("yyyy-MM-dd hh:mm:ss.zzz"),
 		      msg.getMsg());
-#if QT_VERSION >= 0x040100
-	eventListView->resizeColumnsToContents();
-	eventListView->resizeRowsToContents();
-#endif
 }

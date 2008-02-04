@@ -1,6 +1,6 @@
 /*
  * WPA Supplicant - Scanning
- * Copyright (c) 2003-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2003-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -19,6 +19,7 @@
 #include "config.h"
 #include "wpa_supplicant_i.h"
 #include "mlme.h"
+#include "uuid.h"
 
 
 static void wpa_supplicant_gen_assoc_event(struct wpa_supplicant *wpa_s)
@@ -45,8 +46,10 @@ static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
 	struct wpa_supplicant *wpa_s = eloop_ctx;
 	struct wpa_ssid *ssid;
 	int enabled, scan_req = 0, ret;
+	const u8 *extra_ie = NULL;
+	size_t extra_ie_len = 0;
 
-	if (wpa_s->disconnected)
+	if (wpa_s->disconnected && !wpa_s->scan_req)
 		return;
 
 	enabled = 0;
@@ -142,12 +145,15 @@ static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
 	}
 
 	if (wpa_s->use_client_mlme) {
+		ieee80211_sta_set_probe_req_ie(wpa_s, extra_ie, extra_ie_len);
 		ret = ieee80211_sta_req_scan(wpa_s, ssid ? ssid->ssid : NULL,
 					     ssid ? ssid->ssid_len : 0);
 	} else {
+		wpa_drv_set_probe_req_ie(wpa_s, extra_ie, extra_ie_len);
 		ret = wpa_drv_scan(wpa_s, ssid ? ssid->ssid : NULL,
 				   ssid ? ssid->ssid_len : 0);
 	}
+
 	if (ret) {
 		wpa_printf(MSG_WARNING, "Failed to initiate AP scan.");
 		wpa_supplicant_req_scan(wpa_s, 10, 0);

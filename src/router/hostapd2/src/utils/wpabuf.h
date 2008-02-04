@@ -15,8 +15,6 @@
 #ifndef WPABUF_H
 #define WPABUF_H
 
-#define WPABUF_DO_NOT_FREE_EXT_DATA 0x00000001
-
 /*
  * Internal data structure for wpabuf. Please do not touch this directly from
  * elsewhere. This is only defined in header file to allow inline functions
@@ -25,22 +23,19 @@
 struct wpabuf {
 	size_t size; /* total size of the allocated buffer */
 	size_t used; /* length of data in the buffer */
-	size_t refcount; /* number of users referencing this buffer */
-	unsigned int flags; /* WPABUF_* */
 	u8 *ext_data; /* pointer to external data; NULL if data follows
 		       * struct wpabuf */
 	/* optionally followed by the allocated buffer */
 };
 
 
-void wpabuf_overflow(const struct wpabuf *buf, size_t len);
 int wpabuf_resize(struct wpabuf **buf, size_t add_len);
 struct wpabuf * wpabuf_alloc(size_t len);
 struct wpabuf * wpabuf_alloc_ext_data(u8 *data, size_t len);
-struct wpabuf * wpabuf_alloc_ext_data_no_free(const u8 *data, size_t len);
 struct wpabuf * wpabuf_alloc_copy(const void *data, size_t len);
 struct wpabuf * wpabuf_dup(const struct wpabuf *src);
 void wpabuf_free(struct wpabuf *buf);
+void * wpabuf_put(struct wpabuf *buf, size_t len);
 
 
 /**
@@ -61,6 +56,16 @@ static inline size_t wpabuf_size(const struct wpabuf *buf)
 static inline size_t wpabuf_len(const struct wpabuf *buf)
 {
 	return buf->used;
+}
+
+/**
+ * wpabuf_tailroom - Get size of available tail room in the end of the buffer
+ * @buf: wpabuf buffer
+ * Returns: Tail room (in bytes) of available space in the end of the buffer
+ */
+static inline size_t wpabuf_tailroom(const struct wpabuf *buf)
+{
+	return buf->size - buf->used;
 }
 
 /**
@@ -95,21 +100,6 @@ static inline void * wpabuf_mhead(struct wpabuf *buf)
 static inline u8 * wpabuf_mhead_u8(struct wpabuf *buf)
 {
 	return wpabuf_mhead(buf);
-}
-
-static inline struct wpabuf * wpabuf_ref(struct wpabuf *buf)
-{
-	buf->refcount++;
-	return buf;
-}
-
-static inline void * wpabuf_put(struct wpabuf *buf, size_t len)
-{
-	void *tmp = wpabuf_mhead_u8(buf) + wpabuf_len(buf);
-	buf->used += len;
-	if (buf->used > buf->size)
-		wpabuf_overflow(buf, len);
-	return tmp;
 }
 
 static inline void wpabuf_put_u8(struct wpabuf *buf, u8 data)
@@ -147,6 +137,12 @@ static inline void wpabuf_put_buf(struct wpabuf *dst,
 				  const struct wpabuf *src)
 {
 	wpabuf_put_data(dst, wpabuf_head(src), wpabuf_len(src));
+}
+
+static inline void wpabuf_set(struct wpabuf *buf, const void *data, size_t len)
+{
+	buf->ext_data = (u8 *) data;
+	buf->size = buf->used = len;
 }
 
 #endif /* WPABUF_H */

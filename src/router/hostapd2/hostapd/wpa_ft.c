@@ -416,7 +416,10 @@ static u8 * wpa_ft_gtk_subelem(struct wpa_state_machine *sm, size_t *len)
 	subelem[2] = gsm->GN & 0x03; /* Key ID in B0-B1 of Key Info */
 	subelem[3] = gsm->GTK_len;
 	wpa_auth_get_seqnum(sm->wpa_auth, NULL, gsm->GN, subelem + 4);
-	aes_wrap(sm->PTK.kek, key_len / 8, key, subelem + 12);
+	if (aes_wrap(sm->PTK.kek, key_len / 8, key, subelem + 12)) {
+		os_free(subelem);
+		return NULL;
+	}
 
 	*len = subelem_len;
 	return subelem;
@@ -479,8 +482,8 @@ u8 * wpa_sm_write_assoc_resp_ies(struct wpa_state_machine *sm, u8 *pos,
 
 	_ftie = (struct rsn_ftie *) (ftie + 2);
 	_ftie->mic_control[1] = 3; /* Information element count */
-	if (wpa_ft_mic(sm->PTK.kck, sm->pairwise == WPA_CIPHER_CCMP, sm->addr,
-		       sm->wpa_auth->addr, 6, mdie, mdie_len, ftie, ftie_len,
+	if (wpa_ft_mic(sm->PTK.kck, sm->addr, sm->wpa_auth->addr, 6,
+		       mdie, mdie_len, ftie, ftie_len,
 		       rsnie, rsnie_len, NULL, 0, _ftie->mic) < 0)
 		wpa_printf(MSG_DEBUG, "FT: Failed to calculate MIC");
 
@@ -877,8 +880,7 @@ u16 wpa_ft_validate_reassoc(struct wpa_state_machine *sm, const u8 *ies,
 		return WLAN_STATUS_INVALID_FTIE;
 	}
 
-	if (wpa_ft_mic(sm->PTK.kck, sm->pairwise == WPA_CIPHER_CCMP, sm->addr,
-		       sm->wpa_auth->addr, 5,
+	if (wpa_ft_mic(sm->PTK.kck, sm->addr, sm->wpa_auth->addr, 5,
 		       parse.mdie - 2, parse.mdie_len + 2,
 		       parse.ftie - 2, parse.ftie_len + 2,
 		       parse.rsn - 2, parse.rsn_len + 2, NULL, 0,

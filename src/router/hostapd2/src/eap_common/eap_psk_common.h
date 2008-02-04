@@ -71,8 +71,8 @@ struct eap_psk_hdr_4 {
 #endif /* _MSC_VER */
 
 
-void eap_psk_key_setup(const u8 *psk, u8 *ak, u8 *kdk);
-void eap_psk_derive_keys(const u8 *kdk, const u8 *rand_p, u8 *tek, u8 *msk,
-			 u8 *emsk);
+int __must_check eap_psk_key_setup(const u8 *psk, u8 *ak, u8 *kdk);
+int __must_check eap_psk_derive_keys(const u8 *kdk, const u8 *rand_p, u8 *tek,
+				     u8 *msk, u8 *emsk);
 
 #endif /* EAP_PSK_COMMON_H */

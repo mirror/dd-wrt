@@ -62,7 +62,7 @@ void nt_password_hash(const u8 *password, size_t password_len,
 	size_t i, len;
 
 	if (password_len > 256)
-		return;
+		password_len = 256;
 
 	/* Convert password into unicode */
 	for (i = 0; i < password_len; i++) {
@@ -391,8 +391,9 @@ int encrypt_pw_block_with_password_hash(
  * @old_password: 0-to-256-unicode-char OldPassword (IN; ASCII)
  * @old_password_len: Length of old_password
  * @encrypted_pw_block: 516-octet EncryptedPwBlock (OUT)
+ * Returns: 0 on success, -1 on failure
  */
-void new_password_encrypted_with_old_nt_password_hash(
+int new_password_encrypted_with_old_nt_password_hash(
 	const u8 *new_password, size_t new_password_len,
 	const u8 *old_password, size_t old_password_len,
 	u8 *encrypted_pw_block)
@@ -400,8 +401,11 @@ void new_password_encrypted_with_old_nt_password_hash(
 	u8 password_hash[16];
 
 	nt_password_hash(old_password, old_password_len, password_hash);
-	encrypt_pw_block_with_password_hash(new_password, new_password_len,
-					    password_hash, encrypted_pw_block);
+	if (encrypt_pw_block_with_password_hash(new_password, new_password_len,
+						password_hash,
+						encrypted_pw_block))
+		return -1;
+	return 0;
 }
 
 

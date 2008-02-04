@@ -1,6 +1,36 @@
 ChangeLog for hostapd
 
-????-??-?? - v0.6.2
+????-??-?? - v0.6.3
+	* fixed Reassociation Response callback processing when using internal
+	  MLME (driver_{hostap,nl80211,test}.c)
+	* added support for Wi-Fi Protected Setup (WPS)
+	  (hostapd can now be configured to act as an integrated WPS Registrar
+	  and provision credentials for WPS Enrollees using PIN and PBC
+	  methods; external WPS Registrars are not supported); WPS support can
+	  be enabled by adding CONFIG_WPS=y into .config and setting the
+	  runtime configuration variables in hostapd.conf (see WPS section in
+	  the example configuration file); new hostapd_cli commands wps_pin and
+	  wps_pbc are used to configuration WPS negotiation; see README-WPS for
+	  more details
+	* updated FT support to use the latest draft, IEEE 802.11r/D9.0
+	* copy optional Proxy-State attributes into RADIUS response when acting
+	  as a RADIUS authentication server
+	* fixed EAPOL state machine to handle a case in which no response is
+	  received from the RADIUS authentication server; previous version
+	  could have triggered a crash in some cases after a timeout
+	* fixed EAP-SIM/AKA realm processing to allow decorated usernames to
+	  be used
+	* added a workaround for EAP-SIM/AKA peers that include incorrect null
+	  termination in the username
+	* fixed EAP-SIM/AKA protected result indication to include AT_COUNTER
+	  attribute in notification messages only when using fast
+	  reauthentication
+	* fixed EAP-SIM Start response processing for fast reauthentication
+	  case
+	* added support for pending EAP processing in EAP-{PEAP,TTLS,FAST}
+	  phase 2 to allow EAP-SIM and EAP-AKA to be used as the Phase 2 method
+
+2008-01-01 - v0.6.2
 	* fixed EAP-SIM and EAP-AKA message parser to validate attribute
 	  lengths properly to avoid potential crash caused by invalid messages
 	* added data structure for storing allocated buffers (struct wpabuf);
@@ -11,6 +41,16 @@ ChangeLog for hostapd
 	  AT_CHECKCODE (optional feature in RFC 4187)
 	* added support for protected result indication with AT_RESULT_IND for
 	  EAP-SIM and EAP-AKA (eap_sim_aka_result_ind=1)
+	* added support for configuring EAP-TTLS phase 2 non-EAP methods in
+	  EAP server configuration; previously all four were enabled for every
+	  phase 2 user, now all four are disabled by default and need to be
+	  enabled with new method names TTLS-PAP, TTLS-CHAP, TTLS-MSCHAP,
+	  TTLS-MSCHAPV2
+	* removed old debug printing mechanism and the related 'debug'
+	  parameter in the configuration file; debug verbosity is now set with
+	  -d (or -dd) command line arguments
+	* added support for EAP-IKEv2 (draft-tschofenig-eap-ikev2-15.txt);
+	  only shared key/password authentication is supported in this version
 
 2007-11-24 - v0.6.1
 	* added experimental, integrated TLSv1 server implementation with the

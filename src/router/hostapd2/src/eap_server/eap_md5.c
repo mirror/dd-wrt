@@ -16,8 +16,7 @@
 
 #include "common.h"
 #include "eap_i.h"
-#include "md5.h"
-#include "crypto.h"
+#include "eap_common/chap.h"
 
 
 #define CHALLENGE_LEN 16
@@ -90,7 +89,7 @@ static Boolean eap_md5_check(struct eap_sm *sm, void *priv,
 		wpa_printf(MSG_INFO, "EAP-MD5: Invalid frame");
 		return TRUE;
 	}
-	if (*pos != MD5_MAC_LEN || 1 + MD5_MAC_LEN > len) {
+	if (*pos != CHAP_MD5_LEN || 1 + CHAP_MD5_LEN > len) {
 		wpa_printf(MSG_INFO, "EAP-MD5: Invalid response "
 			   "(response_len=%d payload_len=%lu",
 			   *pos, (unsigned long) len);
@@ -106,9 +105,8 @@ static void eap_md5_process(struct eap_sm *sm, void *priv,
 {
 	struct eap_md5_data *data = priv;
 	const u8 *pos;
-	const u8 *addr[3];
-	size_t len[3], plen;
-	u8 hash[MD5_MAC_LEN], id;
+	size_t plen;
+	u8 hash[CHAP_MD5_LEN], id;
 
 	if (sm->user == NULL || sm->user->password == NULL ||
 	    sm->user->password_hash) {
@@ -119,22 +117,17 @@ static void eap_md5_process(struct eap_sm *sm, void *priv,
 	}
 
 	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_MD5, respData, &plen);
-	if (pos == NULL || *pos != MD5_MAC_LEN || plen < 1 + MD5_MAC_LEN)
+	if (pos == NULL || *pos != CHAP_MD5_LEN || plen < 1 + CHAP_MD5_LEN)
 		return; /* Should not happen - frame already validated */
 
 	pos++; /* Skip response len */
-	wpa_hexdump(MSG_MSGDUMP, "EAP-MD5: Response", pos, MD5_MAC_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "EAP-MD5: Response", pos, CHAP_MD5_LEN);
 
 	id = eap_get_id(respData);
-	addr[0] = &id;
-	len[0] = 1;
-	addr[1] = sm->user->password;
-	len[1] = sm->user->password_len;
-	addr[2] = data->challenge;
-	len[2] = CHALLENGE_LEN;
-	md5_vector(3, addr, len, hash);
+	chap_md5(id, sm->user->password, sm->user->password_len,
+		 data->challenge, CHALLENGE_LEN, hash);
 
-	if (os_memcmp(hash, pos, MD5_MAC_LEN) == 0) {
+	if (os_memcmp(hash, pos, CHAP_MD5_LEN) == 0) {
 		wpa_printf(MSG_DEBUG, "EAP-MD5: Done - Success");
 		data->state = SUCCESS;
 	} else {

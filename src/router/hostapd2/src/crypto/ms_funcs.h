@@ -47,10 +47,10 @@ void get_master_key(const u8 *password_hash_hash, const u8 *nt_response,
 void get_asymetric_start_key(const u8 *master_key, u8 *session_key,
 			     size_t session_key_len, int is_send,
 			     int is_server);
-int encrypt_pw_block_with_password_hash(
+int __must_check encrypt_pw_block_with_password_hash(
 	const u8 *password, size_t password_len,
 	const u8 *password_hash, u8 *pw_block);
-void new_password_encrypted_with_old_nt_password_hash(
+int __must_check new_password_encrypted_with_old_nt_password_hash(
 	const u8 *new_password, size_t new_password_len,
 	const u8 *old_password, size_t old_password_len,
 	u8 *encrypted_pw_block);

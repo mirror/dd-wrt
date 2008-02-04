@@ -684,7 +684,7 @@ int crypto_mod_exp(const u8 *base, size_t base_len,
 		   u8 *result, size_t *result_len)
 {
 	struct bignum *bn_base, *bn_exp, *bn_modulus, *bn_result;
-	int ret = 0;
+	int ret = -1;
 
 	bn_base = bignum_init();
 	bn_exp = bignum_init();

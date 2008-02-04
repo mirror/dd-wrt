@@ -1,6 +1,6 @@
 /*
  * WPA Supplicant / wrapper functions for crypto libraries
- * Copyright (c) 2004-2005, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -67,7 +67,8 @@ void sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len,
  * Publication 186-2 for EAP-SIM. This PRF uses a function that is similar to
  * SHA-1, but has different message padding.
  */
-int fips186_2_prf(const u8 *seed, size_t seed_len, u8 *x, size_t xlen);
+int __must_check fips186_2_prf(const u8 *seed, size_t seed_len, u8 *x,
+			       size_t xlen);
 
 /**
  * sha256_vector - SHA256 hash for data vector
@@ -222,8 +223,8 @@ struct crypto_cipher * crypto_cipher_init(enum crypto_cipher_alg alg,
  * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
  * to implement this.
  */
-int crypto_cipher_encrypt(struct crypto_cipher *ctx, const u8 *plain,
-			  u8 *crypt, size_t len);
+int __must_check crypto_cipher_encrypt(struct crypto_cipher *ctx,
+				       const u8 *plain, u8 *crypt, size_t len);
 
 /**
  * crypto_cipher_decrypt - Cipher decrypt
@@ -237,8 +238,8 @@ int crypto_cipher_encrypt(struct crypto_cipher *ctx, const u8 *plain,
  * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
  * to implement this.
  */
-int crypto_cipher_decrypt(struct crypto_cipher *ctx, const u8 *crypt,
-			  u8 *plain, size_t len);
+int __must_check crypto_cipher_decrypt(struct crypto_cipher *ctx,
+				       const u8 *crypt, u8 *plain, size_t len);
 
 /**
  * crypto_cipher_decrypt - Free cipher context
@@ -313,9 +314,9 @@ struct crypto_public_key * crypto_public_key_from_cert(const u8 *buf,
  * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
  * to implement this.
  */
-int crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
-					const u8 *in, size_t inlen,
-					u8 *out, size_t *outlen);
+int __must_check crypto_public_key_encrypt_pkcs1_v15(
+	struct crypto_public_key *key, const u8 *in, size_t inlen,
+	u8 *out, size_t *outlen);
 
 /**
  * crypto_private_key_decrypt_pkcs1_v15 - Private key decryption (PKCS #1 v1.5)
@@ -330,9 +331,9 @@ int crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
  * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
  * to implement this.
  */
-int crypto_private_key_decrypt_pkcs1_v15(struct crypto_private_key *key,
-					 const u8 *in, size_t inlen,
-					 u8 *out, size_t *outlen);
+int __must_check crypto_private_key_decrypt_pkcs1_v15(
+	struct crypto_private_key *key, const u8 *in, size_t inlen,
+	u8 *out, size_t *outlen);
 
 /**
  * crypto_private_key_sign_pkcs1 - Sign with private key (PKCS #1)
@@ -347,9 +348,9 @@ int crypto_private_key_decrypt_pkcs1_v15(struct crypto_private_key *key,
  * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
  * to implement this.
  */
-int crypto_private_key_sign_pkcs1(struct crypto_private_key *key,
-				  const u8 *in, size_t inlen,
-				  u8 *out, size_t *outlen);
+int __must_check crypto_private_key_sign_pkcs1(struct crypto_private_key *key,
+					       const u8 *in, size_t inlen,
+					       u8 *out, size_t *outlen);
 
 /**
  * crypto_public_key_free - Free public key
@@ -380,9 +381,9 @@ void crypto_private_key_free(struct crypto_private_key *key);
  * @plain_len: Plaintext length (max buffer size on input, real len on output);
  * Returns: 0 on success, -1 on failure
  */
-int crypto_public_key_decrypt_pkcs1(struct crypto_public_key *key,
-				    const u8 *crypt, size_t crypt_len,
-				    u8 *plain, size_t *plain_len);
+int __must_check crypto_public_key_decrypt_pkcs1(
+	struct crypto_public_key *key, const u8 *crypt, size_t crypt_len,
+	u8 *plain, size_t *plain_len);
 
 /**
  * crypto_global_init - Initialize crypto wrapper
@@ -391,7 +392,7 @@ int crypto_public_key_decrypt_pkcs1(struct crypto_public_key *key,
  * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
  * to implement this.
  */
-int crypto_global_init(void);
+int __must_check crypto_global_init(void);
 
 /**
  * crypto_global_deinit - Deinitialize crypto wrapper
@@ -422,9 +423,9 @@ void crypto_global_deinit(void);
  * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
  * to implement this.
  */
-int crypto_mod_exp(const u8 *base, size_t base_len,
-		   const u8 *power, size_t power_len,
-		   const u8 *modulus, size_t modulus_len,
-		   u8 *result, size_t *result_len);
+int __must_check crypto_mod_exp(const u8 *base, size_t base_len,
+				const u8 *power, size_t power_len,
+				const u8 *modulus, size_t modulus_len,
+				u8 *result, size_t *result_len);
 
 #endif /* CRYPTO_H */

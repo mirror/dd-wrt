@@ -17,7 +17,7 @@
 #include "common.h"
 #include "wpabuf.h"
 
-void wpabuf_overflow(const struct wpabuf *buf, size_t len)
+static void wpabuf_overflow(const struct wpabuf *buf, size_t len)
 {
 	wpa_printf(MSG_ERROR, "wpabuf %p (size=%lu used=%lu) overflow len=%lu",
 		   buf, (unsigned long) buf->size, (unsigned long) buf->used,
@@ -65,7 +65,6 @@ struct wpabuf * wpabuf_alloc(size_t len)
 	if (buf == NULL)
 		return NULL;
 	buf->size = len;
-	buf->refcount = 1;
 	return buf;
 }
 
@@ -78,18 +77,8 @@ struct wpabuf * wpabuf_alloc_ext_data(u8 *data, size_t len)
 
 	buf->size = len;
 	buf->used = len;
-	buf->refcount = 1;
 	buf->ext_data = data;
 
-	return buf;
-}
-
-
-struct wpabuf * wpabuf_alloc_ext_data_no_free(const u8 *data, size_t len)
-{
-	struct wpabuf *buf = wpabuf_alloc_ext_data((u8 *) data, len);
-	if (buf)
-		buf->flags |= WPABUF_DO_NOT_FREE_EXT_DATA;
 	return buf;
 }
 
@@ -120,10 +109,17 @@ void wpabuf_free(struct wpabuf *buf)
 {
 	if (buf == NULL)
 		return;
-	buf->refcount--;
-	if (buf->refcount > 0)
-		return;
-	if (!(buf->flags & WPABUF_DO_NOT_FREE_EXT_DATA))
-		os_free(buf->ext_data);
+	os_free(buf->ext_data);
 	os_free(buf);
+}
+
+
+void * wpabuf_put(struct wpabuf *buf, size_t len)
+{
+	void *tmp = wpabuf_mhead_u8(buf) + wpabuf_len(buf);
+	buf->used += len;
+	if (buf->used > buf->size) {
+		wpabuf_overflow(buf, len);
+	}
+	return tmp;
 }

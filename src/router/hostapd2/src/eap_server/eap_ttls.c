@@ -1,6 +1,6 @@
 /*
  * hostapd / EAP-TTLS (draft-ietf-pppext-eap-ttls-05.txt)
- * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -18,9 +18,8 @@
 #include "eap_server/eap_i.h"
 #include "eap_server/eap_tls_common.h"
 #include "ms_funcs.h"
-#include "md5.h"
 #include "sha1.h"
-#include "crypto.h"
+#include "eap_common/chap.h"
 #include "tls.h"
 #include "eap_common/eap_ttls.h"
 
@@ -55,6 +54,7 @@ struct eap_ttls_data {
 	u8 mschapv2_auth_response[20];
 	u8 mschapv2_ident;
 	int tls_ia_configured;
+	struct wpabuf *pending_phase2_eap_resp;
 };
 
 
@@ -417,6 +417,7 @@ static void eap_ttls_reset(struct eap_sm *sm, void *priv)
 	if (data->phase2_priv && data->phase2_method)
 		data->phase2_method->reset(sm, data->phase2_priv);
 	eap_server_tls_ssl_deinit(sm, &data->ssl);
+	wpabuf_free(data->pending_phase2_eap_resp);
 	os_free(data);
 }
 
@@ -680,9 +681,8 @@ static void eap_ttls_process_phase2_pap(struct eap_sm *sm,
 					const u8 *user_password,
 					size_t user_password_len)
 {
-	/* TODO: add support for verifying that the user entry accepts
-	 * EAP-TTLS/PAP. */
-	if (!sm->user || !sm->user->password || sm->user->password_hash) {
+	if (!sm->user || !sm->user->password || sm->user->password_hash ||
+	    !(sm->user->ttls_auth & EAP_TTLS_AUTH_PAP)) {
 		wpa_printf(MSG_DEBUG, "EAP-TTLS/PAP: No plaintext user "
 			   "password configured");
 		eap_ttls_state(data, FAILURE);
@@ -710,9 +710,7 @@ static void eap_ttls_process_phase2_chap(struct eap_sm *sm,
 					 const u8 *password,
 					 size_t password_len)
 {
-	u8 *chal, hash[MD5_MAC_LEN];
-	const u8 *addr[3];
-	size_t len[3];
+	u8 *chal, hash[CHAP_MD5_LEN];
 
 	if (challenge == NULL || password == NULL ||
 	    challenge_len != EAP_TTLS_CHAP_CHALLENGE_LEN ||
@@ -725,9 +723,8 @@ static void eap_ttls_process_phase2_chap(struct eap_sm *sm,
 		return;
 	}
 
-	/* TODO: add support for verifying that the user entry accepts
-	 * EAP-TTLS/CHAP. */
-	if (!sm->user || !sm->user->password || sm->user->password_hash) {
+	if (!sm->user || !sm->user->password || sm->user->password_hash ||
+	    !(sm->user->ttls_auth & EAP_TTLS_AUTH_CHAP)) {
 		wpa_printf(MSG_DEBUG, "EAP-TTLS/CHAP: No plaintext user "
 			   "password configured");
 		eap_ttls_state(data, FAILURE);
@@ -753,13 +750,8 @@ static void eap_ttls_process_phase2_chap(struct eap_sm *sm,
 	os_free(chal);
 
 	/* MD5(Ident + Password + Challenge) */
-	addr[0] = password;
-	len[0] = 1;
-	addr[1] = sm->user->password;
-	len[1] = sm->user->password_len;
-	addr[2] = challenge;
-	len[2] = challenge_len;
-	md5_vector(3, addr, len, hash);
+	chap_md5(password[0], sm->user->password, sm->user->password_len,
+		 challenge, challenge_len, hash);
 
 	if (os_memcmp(hash, password + 1, EAP_TTLS_CHAP_PASSWORD_LEN) == 0) {
 		wpa_printf(MSG_DEBUG, "EAP-TTLS/CHAP: Correct user password");
@@ -790,9 +782,8 @@ static void eap_ttls_process_phase2_mschap(struct eap_sm *sm,
 		return;
 	}
 
-	/* TODO: add support for verifying that the user entry accepts
-	 * EAP-TTLS/MSCHAP. */
-	if (!sm->user || !sm->user->password) {
+	if (!sm->user || !sm->user->password ||
+	    !(sm->user->ttls_auth & EAP_TTLS_AUTH_MSCHAP)) {
 		wpa_printf(MSG_DEBUG, "EAP-TTLS/MSCHAP: No user password "
 			   "configured");
 		eap_ttls_state(data, FAILURE);
@@ -859,9 +850,8 @@ static void eap_ttls_process_phase2_mschapv2(struct eap_sm *sm,
 		return;
 	}
 
-	/* TODO: add support for verifying that the user entry accepts
-	 * EAP-TTLS/MSCHAPV2. */
-	if (!sm->user || !sm->user->password) {
+	if (!sm->user || !sm->user->password ||
+	    !(sm->user->ttls_auth & EAP_TTLS_AUTH_MSCHAPV2)) {
 		wpa_printf(MSG_DEBUG, "EAP-TTLS/MSCHAPV2: No user password "
 			   "configured");
 		eap_ttls_state(data, FAILURE);
@@ -1008,7 +998,7 @@ static void eap_ttls_process_phase2_eap_response(struct eap_sm *sm,
 	struct eap_hdr *hdr;
 	u8 *pos;
 	size_t left;
-	struct wpabuf *buf;
+	struct wpabuf buf;
 	const struct eap_method *m = data->phase2_method;
 	void *priv = data->phase2_priv;
 
@@ -1040,19 +1030,22 @@ static void eap_ttls_process_phase2_eap_response(struct eap_sm *sm,
 		return;
 	}
 
-	buf = wpabuf_alloc_ext_data_no_free(in_data, in_len);
-	if (buf == NULL)
-		return;
+	wpabuf_set(&buf, in_data, in_len);
 
-	if (m->check(sm, priv, buf)) {
+	if (m->check(sm, priv, &buf)) {
 		wpa_printf(MSG_DEBUG, "EAP-TTLS/EAP: Phase2 check() asked to "
 			   "ignore the packet");
-		wpabuf_free(buf);
 		return;
 	}
 
-	m->process(sm, priv, buf);
-	wpabuf_free(buf);
+	m->process(sm, priv, &buf);
+
+	if (sm->method_pending == METHOD_PENDING_WAIT) {
+		wpa_printf(MSG_DEBUG, "EAP-TTLS/EAP: Phase2 method is in "
+			   "pending wait state - save decrypted response");
+		wpabuf_free(data->pending_phase2_eap_resp);
+		data->pending_phase2_eap_resp = wpabuf_dup(&buf);
+	}
 
 	if (!m->isDone(sm, priv))
 		return;
@@ -1163,6 +1156,17 @@ static void eap_ttls_process_phase2(struct eap_sm *sm,
 
 	wpa_printf(MSG_DEBUG, "EAP-TTLS: received %lu bytes encrypted data for"
 		   " Phase 2", (unsigned long) in_len);
+
+	if (data->pending_phase2_eap_resp) {
+		wpa_printf(MSG_DEBUG, "EAP-TTLS: Pending Phase 2 EAP response "
+			   "- skip decryption and use old data");
+		eap_ttls_process_phase2_eap(
+			sm, data, wpabuf_head(data->pending_phase2_eap_resp),
+			wpabuf_len(data->pending_phase2_eap_resp));
+		wpabuf_free(data->pending_phase2_eap_resp);
+		data->pending_phase2_eap_resp = NULL;
+		return;
+	}
 
 	res = eap_server_tls_data_reassemble(sm, &data->ssl, &in_data,
 					     &in_len);
@@ -1357,8 +1361,9 @@ static void eap_ttls_process(struct eap_sm *sm, void *priv,
 			eap_ttls_state(data, FAILURE);
 		} else {
 			wpa_printf(MSG_DEBUG, "EAP-TTLS/MSCHAPV2: Unexpected "
-				   "frame from peer (payload len %d, expected "
-				   "empty frame)", left);
+				   "frame from peer (payload len %lu, "
+				   "expected empty frame)",
+				   (unsigned long) left);
 			eap_ttls_state(data, FAILURE);
 		}
 		break;

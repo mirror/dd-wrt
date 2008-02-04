@@ -1,6 +1,6 @@
 /*
  * EAPOL supplicant state machines
- * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -39,6 +39,7 @@ struct eapol_sm {
 	unsigned int heldWhile;
 	unsigned int startWhen;
 	unsigned int idleWhile; /* for EAP state machine */
+	int timer_tick_enabled;
 
 	/* Global variables */
 	Boolean eapFail;
@@ -125,7 +126,7 @@ struct eapol_sm {
 	/* Miscellaneous variables (not defined in IEEE 802.1X-2004) */
 	Boolean changed;
 	struct eap_sm *eap;
-	struct wpa_ssid *config;
+	struct eap_peer_config *config;
 	Boolean initial_req;
 	u8 *last_rx_key;
 	size_t last_rx_key_len;
@@ -221,8 +222,25 @@ static void eapol_port_timers_tick(void *eloop_ctx, void *timeout_ctx)
 			wpa_printf(MSG_DEBUG, "EAPOL: idleWhile --> 0");
 	}
 
-	eloop_register_timeout(1, 0, eapol_port_timers_tick, eloop_ctx, sm);
+	if (sm->authWhile | sm->heldWhile | sm->startWhen | sm->idleWhile) {
+		eloop_register_timeout(1, 0, eapol_port_timers_tick, eloop_ctx,
+				       sm);
+	} else {
+		wpa_printf(MSG_DEBUG, "EAPOL: disable timer tick");
+		sm->timer_tick_enabled = 0;
+	}
 	eapol_sm_step(sm);
+}
+
+
+static void eapol_enable_timer_tick(struct eapol_sm *sm)
+{
+	if (sm->timer_tick_enabled)
+		return;
+	wpa_printf(MSG_DEBUG, "EAPOL: enable timer tick");
+	sm->timer_tick_enabled = 1;
+	eloop_cancel_timeout(eapol_port_timers_tick, NULL, sm);
+	eloop_register_timeout(1, 0, eapol_port_timers_tick, NULL, sm);
 }
 
 
@@ -266,6 +284,7 @@ SM_STATE(SUPP_PAE, CONNECTING)
 		 */
 		sm->startWhen = 3;
 	}
+	eapol_enable_timer_tick(sm);
 	sm->eapolEap = FALSE;
 	if (send_start)
 		eapol_sm_txStart(sm);
@@ -289,6 +308,7 @@ SM_STATE(SUPP_PAE, HELD)
 {
 	SM_ENTRY(SUPP_PAE, HELD);
 	sm->heldWhile = sm->heldPeriod;
+	eapol_enable_timer_tick(sm);
 	sm->suppPortStatus = Unauthorized;
 	sm->cb_status = EAPOL_CB_FAILURE;
 }
@@ -509,6 +529,7 @@ SM_STATE(SUPP_BE, RECEIVE)
 {
 	SM_ENTRY(SUPP_BE, RECEIVE);
 	sm->authWhile = sm->authPeriod;
+	eapol_enable_timer_tick(sm);
 	sm->eapolEap = FALSE;
 	sm->eapNoResp = FALSE;
 	sm->initial_req = FALSE;
@@ -1210,7 +1231,7 @@ int eapol_sm_rx_eapol(struct eapol_sm *sm, const u8 *src, const u8 *buf,
  * eapol_sm_notify_tx_eapol_key - Notification about transmitted EAPOL packet
  * @sm: Pointer to EAPOL state machine allocated with eapol_sm_init()
  *
- * Notify EAPOL station machine about transmitted EAPOL packet from an external
+ * Notify EAPOL state machine about transmitted EAPOL packet from an external
  * component, e.g., WPA. This will update the statistics.
  */
 void eapol_sm_notify_tx_eapol_key(struct eapol_sm *sm)
@@ -1225,7 +1246,7 @@ void eapol_sm_notify_tx_eapol_key(struct eapol_sm *sm)
  * @sm: Pointer to EAPOL state machine allocated with eapol_sm_init()
  * @enabled: New portEnabled value
  *
- * Notify EAPOL station machine about new portEnabled value.
+ * Notify EAPOL state machine about new portEnabled value.
  */
 void eapol_sm_notify_portEnabled(struct eapol_sm *sm, Boolean enabled)
 {
@@ -1243,7 +1264,7 @@ void eapol_sm_notify_portEnabled(struct eapol_sm *sm, Boolean enabled)
  * @sm: Pointer to EAPOL state machine allocated with eapol_sm_init()
  * @valid: New portValid value
  *
- * Notify EAPOL station machine about new portValid value.
+ * Notify EAPOL state machine about new portValid value.
  */
 void eapol_sm_notify_portValid(struct eapol_sm *sm, Boolean valid)
 {
@@ -1286,7 +1307,7 @@ void eapol_sm_notify_eap_success(struct eapol_sm *sm, Boolean success)
  * @sm: Pointer to EAPOL state machine allocated with eapol_sm_init()
  * @fail: %TRUE = set failure, %FALSE = clear failure
  *
- * Notify EAPOL station machine that external event has forced EAP state to
+ * Notify EAPOL state machine that external event has forced EAP state to
  * failure (fail = %TRUE). This can be cleared by setting fail = %FALSE.
  */
 void eapol_sm_notify_eap_fail(struct eapol_sm *sm, Boolean fail)
@@ -1304,16 +1325,17 @@ void eapol_sm_notify_eap_fail(struct eapol_sm *sm, Boolean fail)
 /**
  * eapol_sm_notify_config - Notification of EAPOL configuration change
  * @sm: Pointer to EAPOL state machine allocated with eapol_sm_init()
- * @config: Pointer to current network configuration
+ * @config: Pointer to current network EAP configuration
  * @conf: Pointer to EAPOL configuration data
  *
- * Notify EAPOL station machine that configuration has changed. config will be
+ * Notify EAPOL state machine that configuration has changed. config will be
  * stored as a backpointer to network configuration. This can be %NULL to clear
  * the stored pointed. conf will be copied to local EAPOL/EAP configuration
  * data. If conf is %NULL, this part of the configuration change will be
  * skipped.
  */
-void eapol_sm_notify_config(struct eapol_sm *sm, struct wpa_ssid *config,
+void eapol_sm_notify_config(struct eapol_sm *sm,
+			    struct eap_peer_config *config,
 			    const struct eapol_config *conf)
 {
 	if (sm == NULL)
@@ -1351,14 +1373,24 @@ int eapol_sm_get_key(struct eapol_sm *sm, u8 *key, size_t len)
 	const u8 *eap_key;
 	size_t eap_len;
 
-	if (sm == NULL || !eap_key_available(sm->eap))
+	if (sm == NULL || !eap_key_available(sm->eap)) {
+		wpa_printf(MSG_DEBUG, "EAPOL: EAP key not available");
 		return -1;
+	}
 	eap_key = eap_get_eapKeyData(sm->eap, &eap_len);
-	if (eap_key == NULL)
+	if (eap_key == NULL) {
+		wpa_printf(MSG_DEBUG, "EAPOL: Failed to get eapKeyData");
 		return -1;
-	if (len > eap_len)
+	}
+	if (len > eap_len) {
+		wpa_printf(MSG_DEBUG, "EAPOL: Requested key length (%lu) not "
+			   "available (len=%lu)",
+			   (unsigned long) len, (unsigned long) eap_len);
 		return eap_len;
+	}
 	os_memcpy(key, eap_key, len);
+	wpa_printf(MSG_DEBUG, "EAPOL: Successfully fetched key (len=%lu)",
+		   (unsigned long) len);
 	return 0;
 }
 
@@ -1393,6 +1425,7 @@ void eapol_sm_notify_cached(struct eapol_sm *sm)
 	sm->SUPP_PAE_state = SUPP_PAE_AUTHENTICATED;
 	sm->suppPortStatus = Authorized;
 	eap_notify_success(sm->eap);
+	eapol_sm_step(sm);
 }
 
 
@@ -1430,6 +1463,7 @@ static void eapol_sm_abort_cached(struct eapol_sm *sm)
 	/* Make sure we do not start sending EAPOL-Start frames first, but
 	 * instead move to RESTART state to start EAPOL authentication. */
 	sm->startWhen = 3;
+	eapol_enable_timer_tick(sm);
 
 	if (sm->ctx->aborted_cached)
 		sm->ctx->aborted_cached(sm->ctx->ctx);
@@ -1536,6 +1570,7 @@ void eapol_sm_notify_lower_layer_success(struct eapol_sm *sm)
 	if (sm == NULL)
 		return;
 	eap_notify_lower_layer_success(sm->eap);
+	eapol_sm_step(sm);
 }
 
 
@@ -1550,7 +1585,7 @@ void eapol_sm_invalidate_cached_session(struct eapol_sm *sm)
 }
 
 
-static struct wpa_ssid * eapol_sm_get_config(void *ctx)
+static struct eap_peer_config * eapol_sm_get_config(void *ctx)
 {
 	struct eapol_sm *sm = ctx;
 	return sm ? sm->config : NULL;
@@ -1656,6 +1691,7 @@ static void eapol_sm_set_int(void *ctx, enum eapol_int_var variable,
 	switch (variable) {
 	case EAPOL_idleWhile:
 		sm->idleWhile = value;
+		eapol_enable_timer_tick(sm);
 		break;
 	}
 }
@@ -1701,6 +1737,20 @@ static void eapol_sm_notify_pending(void *ctx)
 }
 
 
+#if defined(CONFIG_CTRL_IFACE) || !defined(CONFIG_NO_STDOUT_DEBUG)
+static void eapol_sm_eap_param_needed(void *ctx, const char *field,
+				      const char *txt)
+{
+	struct eapol_sm *sm = ctx;
+	wpa_printf(MSG_DEBUG, "EAPOL: EAP parameter needed");
+	if (sm->ctx->eap_param_needed)
+		sm->ctx->eap_param_needed(sm->ctx->ctx, field, txt);
+}
+#else /* CONFIG_CTRL_IFACE || !CONFIG_NO_STDOUT_DEBUG */
+#define eapol_sm_eap_param_needed NULL
+#endif /* CONFIG_CTRL_IFACE || !CONFIG_NO_STDOUT_DEBUG */
+
+
 static struct eapol_callbacks eapol_cb =
 {
 	eapol_sm_get_config,
@@ -1711,7 +1761,8 @@ static struct eapol_callbacks eapol_cb =
 	eapol_sm_get_eapReqData,
 	eapol_sm_set_config_blob,
 	eapol_sm_get_config_blob,
-	eapol_sm_notify_pending
+	eapol_sm_notify_pending,
+	eapol_sm_eap_param_needed
 };
 
 
@@ -1761,6 +1812,7 @@ struct eapol_sm *eapol_sm_init(struct eapol_ctx *ctx)
 	sm->initialize = FALSE;
 	eapol_sm_step(sm);
 
+	sm->timer_tick_enabled = 1;
 	eloop_register_timeout(1, 0, eapol_port_timers_tick, NULL, sm);
 
 	return sm;
