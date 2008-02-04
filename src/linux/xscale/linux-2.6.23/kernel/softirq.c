@@ -203,7 +203,11 @@ EXPORT_SYMBOL(local_bh_enable_ip);
  * we want to handle softirqs as soon as possible, but they
  * should not be able to lock up the box.
  */
+#ifdef CONFIG_MV_GTW_QOS
+int MAX_SOFTIRQ_RESTART = 10;
+#else
 #define MAX_SOFTIRQ_RESTART 10
+#endif
 
 asmlinkage void __do_softirq(void)
 {
