@@ -18,7 +18,7 @@ LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 # Uncomment following line and set the path to your kernel tree include
 # directory if your C library does not include all header files.
 # CFLAGS += -DUSE_KERNEL_HEADERS -I/usr/src/linux/include
-
+-include ../../.config
 -include ../../.config
 -include .config
 
