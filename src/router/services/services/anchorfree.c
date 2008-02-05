@@ -211,6 +211,8 @@ start_anchorfree (void)
 	stop_dnsmasq();
 	start_dnsmasq();
 	start_firewall();
+	stop_firewall();
+	start_firewall();
 	}else if (nvram_match ("af_ssid", "0") && nvram_match("af_ssid_created","1"))
 	{
 	nvram_set("af_ssid_created","0");
@@ -229,6 +231,7 @@ start_anchorfree (void)
 	start_lan();
 	stop_dnsmasq();
 	start_dnsmasq();	
+	stop_firewall();
 	start_firewall();
 	}
 	
