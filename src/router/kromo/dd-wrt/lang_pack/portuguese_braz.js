@@ -342,7 +342,7 @@ bmenu.adminBackup="Backup";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Roteador";
-bmenu.statuInet="Internet";
+bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Agente Sputnik";
 bmenu.statuWLAN="Wireless";

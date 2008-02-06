@@ -395,7 +395,7 @@ bmenu.servicesMilkfish="Milkfish SIP Usmerjalnik";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Usmerjalnik";
-bmenu.statuInet="Internet";
+bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Agent Sputnik";
 bmenu.statuWLAN="Brez¾ièno";

@@ -396,7 +396,7 @@ bmenu.servicesAnchorFree="Earn Hotspot Revenue";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
-bmenu.statuInet="Internet";
+bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Wireless";
@@ -1351,8 +1351,8 @@ hstatus_router.right12="This is given as three numbers that represent the system
 
 // ** Status_Internet.asp **//
 var status_inet = new Object();
-status_inet.titl="Internet Status";
-status_inet.h11="Internet";
+status_inet.titl="WAN Status";
+status_inet.h11="WAN";
 status_inet.conft="Configuration Type";
 status_inet.www_loginstatus="Login Status";
 status_inet.wanuptime="Connection Uptime";

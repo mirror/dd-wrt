@@ -390,7 +390,7 @@ bmenu.servicesMilkfish="Milkfish SIP Router";
 
 bmenu.statu="機器診断";
 bmenu.statuRouter="機器情報";
-bmenu.statuInet="Internet";
+bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Sputnik エージェント";
 bmenu.statuWLAN="無線 LAN";

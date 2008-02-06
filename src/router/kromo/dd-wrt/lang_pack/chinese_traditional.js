@@ -383,7 +383,7 @@ bmenu.servicesMilkfish="Milkfish";
 
 bmenu.statu="機器狀態";
 bmenu.statuRouter="路由器";
-bmenu.statuInet="Internet";
+bmenu.statuInet="WAN";
 bmenu.statuLAN="區域網路";
 bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="無線網路";

@@ -388,7 +388,7 @@ bmenu.servicesMilkfish="Milkfish SIP Router";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
-bmenu.statuInet="Internet";
+bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Draadloos";
