@@ -178,6 +178,13 @@ substring (int start, int stop, const char *src, char *dst)
    return dst;
 }
 
+/*  This function returns the number of days for the given month in the given year    */
+unsigned int 
+daysformonth (unsigned int month, unsigned int year)
+{
+    return (30 + (((month & 9) == 8) || ((month & 9) == 1)) - (month == 2) - (!(((year % 4) == 0) && (((year % 100) != 0) || ((year % 400) == 0))) && (month == 2)));
+}
+
 void
 setRouter (char *name)
 {
