@@ -2095,8 +2095,7 @@ showOptionsChoose (webs_t wp, char *propname, char *names, char *select)
   websWrite (wp, "<select name=\"%s\">\n", propname);
   websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
   websWrite (wp,
-	       "document.write(\"<option value=\\\"null\\\" %s >Please choose...</option>\");\n",
-	       var, !strcmp (var, select) ? "selected=\\\"selected\\\"" : "");
+	       "document.write(\"<option value=\\\"null\\\" >Please choose...</option>\");\n");
   foreach (var, names, next)
   {
     websWrite (wp,
