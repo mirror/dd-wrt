@@ -379,7 +379,7 @@ bmenu.servicesMilkfish="Serveur SIP Milkfish";
 
 bmenu.statu="Statut";
 bmenu.statuRouter="Routeur";
-bmenu.statuInet="Internet";
+bmenu.statuInet="WAN;
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Agent Sputnik";
 bmenu.statuWLAN="Sans fil";
