@@ -3882,6 +3882,163 @@ do_fetchif (char *url, webs_t stream, char *query)
   websWrite (stream, "%s", buffer);
 }
 
+static void
+ej_get_totaltraff (webs_t wp, int argc, char_t ** argv)
+{
+char *type;
+char *wanifname = nvram_safe_get ("wan_ifname");
+
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s", &type);
+#else
+  if (ejArgs (argc, argv, "%s", &type) < 1)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+#endif
+	
+  char line[256];
+  unsigned long rcvd, sent;
+
+
+  FILE *in = fopen ("/proc/net/dev", "rb");
+  if (in == NULL)
+    return;
+
+  while (fgets (line, sizeof (line), in) != NULL)
+  {
+  int ifl = 0;
+  if (!strchr (line, ':'))
+    continue;
+  while (line[ifl] != ':')
+    ifl++;
+  line[ifl] = 0;	/* interface */
+  if (strstr (line, wanifname))
+   { 
+	 sscanf (line + ifl + 1,
+		      "%lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld %lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld",
+		      &rcvd,  &sent);
+	 
+   }
+  }
+
+  fclose (in);
+
+  if (!strcmp (type, "in"))
+    {
+      websWrite (wp, "%lu", rcvd / (1024 * 1024));  //output in MBytes
+    }
+  else if (!strcmp (type, "out"))
+    {
+      websWrite (wp, "%lu", sent / (1024 * 1024));
+    }
+return;
+}
+
+static void
+do_ttgraph (char *url, webs_t stream, char *query)
+{
+
+char *next;
+char var[80];
+	
+unsigned int days;
+unsigned int month; 
+unsigned int year;
+int i = 0;
+unsigned long rcvd[31] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+unsigned long sent[31] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+unsigned long max = 5, smax = 5;
+
+  if (sscanf (query, "%u-%u", &month, &year) != 2)
+	    return;
+	    
+  days = daysformonth (month, year);
+  
+  char tq[32];
+  sprintf (tq, "traff-%02u-%u", month, year);
+  char *tdata = nvram_safe_get (tq);
+  if (tdata == NULL || strlen(tdata) == 0)
+    return;
+  
+  foreach (var, tdata, next)
+  {
+   sscanf (var, "%lu:%lu", &rcvd[i], &sent[i]);
+
+    if (rcvd[i] > max) max = rcvd[i];
+    if (sent[i] > max) max = sent[i];
+    i++;
+  }
+
+  if (max > 5) smax = 10;
+  if (max > 10) smax = 50;
+  if (max > 50) smax = 100;
+  if (max > 100) smax = 500;  
+  if (max > 500) smax = 1000;
+  if (max > 1000) smax = 5000;
+  if (max > 5000) smax = 10000;
+  if (max > 10000) smax = 50000;
+  if (max > 50000) smax = 100000;
+  if (max > 100000) smax = 500000;
+  if (max > 500000) smax = 1000000;
+
+  
+  websWrite (stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
+  websWrite (stream, "<html>\n");
+  websWrite (stream, "<head>\n"); 
+  websWrite (stream, "<title>dd-wrt traffic graph</title>\n");
+  websWrite (stream, "<style type=\"text/css\">\n\n");
+  websWrite (stream, "#t-graph {position: relative; width: 500px; height: 300px;\n");
+  websWrite (stream, "  margin: 1.1em 0 3.5em; padding: 0;\n");
+  websWrite (stream, "  border: 1px solid gray; list-style: none;\n");
+  websWrite (stream, "  font: 9px Tahoma, Arial, sans-serif;}\n");
+  websWrite (stream, "#t-graph ul {margin: 0; padding: 0; list-style: none;}\n");
+  websWrite (stream, "#t-graph li {position: absolute; bottom: 0; width: 16px; z-index: 2;\n");
+  websWrite (stream, "  margin: 0; padding: 0;\n");
+  websWrite (stream, "  text-align: center; list-style: none;}\n");
+  websWrite (stream, "#t-graph li.day {height: 298px; padding-top: 2px;\n");
+  websWrite (stream, "  border-right: 1px dotted #C4C4C4; color: #AAA;}\n");
+  websWrite (stream, "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n");
+  websWrite (stream, "#t-graph li.rcvd {left: 3px; background: #228B22;}\n");  //set rcvd bar colour here (green)
+  websWrite (stream, "#t-graph li.sent {left: 8px; background: #CD0000;}\n");  //set sent bar colour here (red)
+
+  for (i = 0; i < days; i++)
+  {   
+  websWrite (stream, "#t-graph #d%d {left: %dpx;}\n", i + 1, i * 16);
+  }
+  
+  websWrite (stream, "#t-graph #ticks {width: 500px; height: 300px; z-index: 1;}\n");
+  websWrite (stream, "#t-graph #ticks .tick {position: relative; border-bottom: 1px solid #BBB; width: 500px;}\n");
+  websWrite (stream, "#t-graph #ticks .tick p {position: absolute; left: 100%%; top: -0.67em; margin: 0 0 0 0.5em;}\n");
+  websWrite (stream, "</style>\n");
+  websWrite (stream, "</head>\n\n");
+  websWrite (stream, "<body>\n");
+  websWrite (stream, "<ul id=\"t-graph\">\n");
+  
+  for (i = 0; i < days; i++)
+  {
+  websWrite (stream, "<li class=\"day\" id=\"d%d\">%d\n", i + 1 , i + 1); 
+  websWrite (stream, "<ul>\n");
+  websWrite (stream, "<li class=\"rcvd bar\" style=\"height: %lupx;\"></li>\n", rcvd[i] * 300 / smax);
+  websWrite (stream, "<li class=\"sent bar\" style=\"height: %lupx;\"></li>\n", sent[i] * 300 / smax);
+  websWrite (stream, "</ul>\n");
+  websWrite (stream, "</li>\n");
+  }
+
+  websWrite (stream, "<li id=\"ticks\">\n");  
+  for (i = 5; i ; i--)  //scale
+  {  
+  websWrite (stream, "<div class=\"tick\" style=\"height: 59px;\"><p>%d MB</p></div>\n", smax * i / 5);
+  }
+  websWrite (stream, "</li>\n\n");
+    
+  websWrite (stream, "</ul>\n\n");
+  websWrite (stream, "</body>\n");
+  websWrite (stream, "</html>\n");
+
+  
+}
 
 static void
 do_apply_cgi (char *url, webs_t stream, char *q)
@@ -4634,6 +4791,7 @@ struct mime_handler mime_handlers[] = {
 #if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)
   {"backup/cfe.bin", "application/octet-stream", no_cache, NULL, do_cfebackup, do_auth},
 #endif
+  {"ttgraph.cgi*", "text/html", no_cache, NULL, do_ttgraph, do_auth},
 //for ddm
   {NULL, NULL, NULL, NULL, NULL, NULL}
 };
@@ -5717,6 +5875,7 @@ struct ej_handler ej_handlers[] = {
   {"bandwidth", ej_bandwidth},
 #endif
   {"show_bandwidth", ej_show_bandwidth},
+  {"get_totaltraff", ej_get_totaltraff},
 #ifdef HAVE_PORTSETUP
   {"portsetup", ej_portsetup},
 #endif
