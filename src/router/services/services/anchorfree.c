@@ -92,9 +92,9 @@ getIPFromName (char *name, char *ip)
   memset (&hint, 0, sizeof (hint));
   hint.ai_socktype = SOCK_STREAM;
   rc = getaddrinfo (name, NULL, &hint, &result);
-  if (!result) //give it a second try
-  rc = getaddrinfo (name, NULL, &hint, &result);
-  
+  if (!result)			//give it a second try
+    rc = getaddrinfo (name, NULL, &hint, &result);
+
   if (result)
     {
       sockaddr_to_dotted (result->ai_addr, ip);
@@ -120,19 +120,20 @@ deviceID (char *output)
   int i;
   for (i = 0; i < 16; i++)
     {
-    unsigned int k = key[i];
-    sprintf (output, "%s%X", output, k&0xff);
+      unsigned int k = key[i];
+      sprintf (output, "%s%X", output, k & 0xff);
     }
 //  fprintf (stderr, "final hash = %s\n", output);
 }
 unsigned char ctable[16] = { "0123456789ABCDEF" };
 void
-toURL (unsigned char *text, char *output)
+toURL (char *t, char *output)
 {
+  unsigned char *text = (unsigned char *) t;
   char *p = output;
   int i;
   int n = 0;
-  for (i = 0; i < strlen (text); i++)
+  for (i = 0; i < strlen (t); i++)
     {
       p[n++] = '%';
       p[n++] = ctable[text[i] / 16];
@@ -144,7 +145,7 @@ toURL (unsigned char *text, char *output)
 void
 start_anchorfree (void)
 {
-  int need_commit=0;
+  int need_commit = 0;
   nvram_set ("af_dnathost", "0");
   nvram_set ("af_dnatport", "0");
   if (nvram_match ("af_serviceid", "0"))
@@ -172,9 +173,9 @@ start_anchorfree (void)
       toURL (nvram_safe_get ("af_email"), email);
       char ssid[128];
       if (nvram_match ("af_ssid", "1"))
-      {
-	toURL (nvram_safe_get ("af_ssid_name"), ssid);      
-      }
+	{
+	  toURL (nvram_safe_get ("af_ssid_name"), ssid);
+	}
       else
 	{
 #ifndef HAVE_MADWIFI
@@ -183,58 +184,79 @@ start_anchorfree (void)
 	  toURL (nvram_safe_get ("ath0_ssid"), ssid);
 #endif
 	}
-	
-      if (nvram_match ("af_ssid", "1") && !nvram_match("af_ssid_created","1"))
-        {
-	nvram_set("af_ssid_created","1");
-#ifndef HAVE_MADWIFI
-	nvram_set("wl0_vifs","wl0.1");
-	nvram_set("wl_vifs","wl0.1");
-	nvram_set("wl0.1_ssid",nvram_safe_get("af_ssid_name"));
-	nvram_set("wl0.1_bridged","0");
-	nvram_set("wl0.1_ipaddr","172.45.0.1");
-	nvram_set("wl0.1_netmask","255.255.255.0");
-	nvram_set("mdhcpd_count","1");
-	nvram_set("mdhcpd","wl0.1>On>100>50>3600");
-#else
-	nvram_set("ath0_vifs","ath0.1");
-	nvram_set("ath0.1_ssid",nvram_safe_get("af_ssid_name"));
-	nvram_set("ath0.1_bridged","0");
-	nvram_set("ath0.1_ipaddr","172.45.0.1");
-	nvram_set("ath0.1_netmask","255.255.255.0");
-	nvram_set("mdhcpd_count","1");
-	nvram_set("mdhcpd","ath0.1>On>100>50>3600");
-#endif
-	nvram_commit();
-	stop_lan();
-	start_lan();
-	stop_dnsmasq();
-	start_dnsmasq();
-	start_firewall();
-	stop_firewall();
-	start_firewall();
-	}else if (nvram_match ("af_ssid", "0") && nvram_match("af_ssid_created","1"))
+
+      if (nvram_match ("af_ssid", "1")
+	  && !nvram_match ("af_ssid_created", "1"))
 	{
-	nvram_set("af_ssid_created","0");
+	  nvram_set ("af_ssid_created", "1");
 #ifndef HAVE_MADWIFI
-	nvram_set("wl0_vifs","");
-	nvram_set("wl_vifs","");
-	nvram_set("mdhcpd_count","0");
-	nvram_set("mdhcpd","");
+	  nvram_set ("wl0_vifs", "wl0.1");
+	  nvram_set ("wl_vifs", "wl0.1");
+	  nvram_set ("wl0.1_ssid", nvram_safe_get ("af_ssid_name"));
+	  nvram_set ("wl0.1_bridged", "0");
+	  nvram_set ("wl0.1_ipaddr", "172.45.0.1");
+	  nvram_set ("wl0.1_netmask", "255.255.255.0");
+	  nvram_set ("mdhcpd_count", "1");
+	  nvram_set ("mdhcpd", "wl0.1>On>100>50>3600");
 #else
-	nvram_set("ath0_vifs","");
-	nvram_set("mdhcpd_count","0");
-	nvram_set("mdhcpd","");
+	  nvram_set ("ath0_vifs", "ath0.1");
+	  nvram_set ("ath0.1_ssid", nvram_safe_get ("af_ssid_name"));
+	  nvram_set ("ath0.1_bridged", "0");
+	  nvram_set ("ath0.1_ipaddr", "172.45.0.1");
+	  nvram_set ("ath0.1_netmask", "255.255.255.0");
+	  nvram_set ("mdhcpd_count", "1");
+	  nvram_set ("mdhcpd", "ath0.1>On>100>50>3600");
 #endif
-	nvram_commit();
-	stop_lan();
-	start_lan();
-	stop_dnsmasq();
-	start_dnsmasq();	
-	stop_firewall();
-	start_firewall();
+	  need_commit = 1;
+	  stop_lan ();
+	  start_lan ();
+	  stop_dnsmasq ();
+	  start_dnsmasq ();
+	  start_firewall ();
+	  stop_firewall ();
+	  start_firewall ();
 	}
-	
+      else if (nvram_match ("af_ssid", "0")
+	       && nvram_match ("af_ssid_created", "1"))
+	{
+	  nvram_set ("af_ssid_created", "0");
+#ifndef HAVE_MADWIFI
+	  nvram_set ("wl0_vifs", "");
+	  nvram_set ("wl_vifs", "");
+	  nvram_set ("mdhcpd_count", "0");
+	  nvram_set ("mdhcpd", "");
+#else
+	  nvram_set ("ath0_vifs", "");
+	  nvram_set ("mdhcpd_count", "0");
+	  nvram_set ("mdhcpd", "");
+#endif
+	  need_commit = 1;
+	  stop_lan ();
+	  start_lan ();
+	  stop_dnsmasq ();
+	  start_dnsmasq ();
+	  stop_firewall ();
+	  start_firewall ();
+	}
+      else if (nvram_match ("af_ssid_created", "1"))
+	{
+#ifndef HAVE_MADWIFI
+	  if (!nvram_match ("af_ssid_name", nvram_safe_get ("wl0.1_ssid")))
+#else
+	  if (!nvram_match ("af_ssid_name", nvram_safe_get ("wl0.1_ssid")))
+#endif
+	    nvram_set ("wl0.1_ssid", nvram_safe_get ("wl0.1_ssid"));
+	  need_commit = 1;
+	  stop_lan ();
+	  start_lan ();
+	  stop_dnsmasq ();
+	  start_dnsmasq ();
+	  stop_firewall ();
+	  start_firewall ();
+
+	}
+
+
       char addr[256];
       toURL (nvram_safe_get ("af_address"), addr);
       char addr2[256];
@@ -246,7 +268,7 @@ start_anchorfree (void)
       char state[64];
       toURL (nvram_safe_get ("af_state"), state);
       char country[64];
-      strcpy(country,getIsoName(nvram_safe_get ("af_country")));
+      strcpy (country, getIsoName (nvram_safe_get ("af_country")));
       char cat[64];
       toURL (nvram_safe_get ("af_category"), cat);
       sprintf (url,
@@ -260,10 +282,11 @@ start_anchorfree (void)
       FILE *response = fopen ("/tmp/.anchorfree", "rb");
       if (response == NULL)
 	{
-	  fprintf (stderr, "error while registration (cannot reach registration site)!\n");
-    	  nvram_set ("af_servicestatus", "cannot reach registration site!");
-    	  nvram_set ("af_registered", "0");
-	  nvram_commit();
+	  fprintf (stderr,
+		   "error while registration (cannot reach registration site)!\n");
+	  nvram_set ("af_servicestatus", "cannot reach registration site!");
+	  nvram_set ("af_registered", "0");
+	  nvram_commit ();
 	  return;
 	}
       char status[32];
@@ -271,10 +294,10 @@ start_anchorfree (void)
       if (r != 1)
 	{
 	  fprintf (stderr, "registration failed (bad status)\n");
-    	  nvram_set ("af_servicestatus", "registration failed (bad status)");
+	  nvram_set ("af_servicestatus", "registration failed (bad status)");
 	  fclose (response);
-    	  nvram_set ("af_registered", "0");
-	  nvram_commit();
+	  nvram_set ("af_registered", "0");
+	  nvram_commit ();
 	  return;
 	}
       nvram_set ("af_servicestatus", status);
@@ -283,8 +306,8 @@ start_anchorfree (void)
 	{
 	  fprintf (stderr, "registration failed\n");
 	  fclose (response);
-    	  nvram_set ("af_registered", "0");
-	  nvram_commit();
+	  nvram_set ("af_registered", "0");
+	  nvram_commit ();
 	  return;
 	}
       memset (status, 0, 32);
@@ -292,10 +315,10 @@ start_anchorfree (void)
       if (r != 1)
 	{
 	  fprintf (stderr, "registration failed (bad sid)\n");
-    	  nvram_set ("af_servicestatus", "registration failed (bad sid)");
+	  nvram_set ("af_servicestatus", "registration failed (bad sid)");
 	  fclose (response);
-    	  nvram_set ("af_registered", "0");
-	  nvram_commit();
+	  nvram_set ("af_registered", "0");
+	  nvram_commit ();
 	  return;
 	}
       fprintf (stderr, "configuring service id %s\n", status);
@@ -307,29 +330,30 @@ start_anchorfree (void)
       fscanf (response, "port: %s\n", status);
       nvram_set ("af_dnatport", status);
       fclose (response);
-      need_commit=1;
-    }else if (nvram_match("af_ssid_created","1"))
-	{
-	nvram_set("af_ssid_created","0");
+      need_commit = 1;
+    }
+  else if (nvram_match ("af_ssid_created", "1"))
+    {
+      nvram_set ("af_ssid_created", "0");
 #ifndef HAVE_MADWIFI
-	nvram_set("wl0_vifs","");
-	nvram_set("wl_vifs","");
-	nvram_set("mdhcpd_count","0");
-	nvram_set("mdhcpd","");
+      nvram_set ("wl0_vifs", "");
+      nvram_set ("wl_vifs", "");
+      nvram_set ("mdhcpd_count", "0");
+      nvram_set ("mdhcpd", "");
 #else
-	nvram_set("ath0_vifs","");
-	nvram_set("mdhcpd_count","0");
-	nvram_set("mdhcpd","");
+      nvram_set ("ath0_vifs", "");
+      nvram_set ("mdhcpd_count", "0");
+      nvram_set ("mdhcpd", "");
 #endif
-	need_commit=1;
-	stop_lan();
-	start_lan();
-	stop_dnsmasq();
-	start_dnsmasq();	
-	}
-    
+      need_commit = 1;
+      stop_lan ();
+      start_lan ();
+      stop_dnsmasq ();
+      start_dnsmasq ();
+    }
+
   if (need_commit)
-  nvram_commit();
+    nvram_commit ();
   return;
 }
 
@@ -347,18 +371,19 @@ start_anchorfreednat (void)
 
 
       getIPFromName (nvram_safe_get ("af_dnathost"), host);
-      if (!strcmp(host,"0.0.0.0"))
-        {
-	fprintf(stderr,"cannot resolve %s\n",nvram_safe_get ("af_dnathost"));
-        return;
+      if (!strcmp (host, "0.0.0.0"))
+	{
+	  fprintf (stderr, "cannot resolve %s\n",
+		   nvram_safe_get ("af_dnathost"));
+	  return;
 	}
       sprintf (dest, "%s:%s", host, nvram_safe_get ("af_dnatport"));
 //      sprintf (source, "%d/%d", nvram_safe_get ("lan_ipaddr"),
-//	       getmask (nvram_safe_get ("lan_netmask")));
+//             getmask (nvram_safe_get ("lan_netmask")));
       sprintf (source, "0.0.0.0/0");
       if (nvram_match ("af_ssid", "1"))
-      sprintf (source, "%s/%d", nvram_safe_get (IFPREFIX "0.1_ipaddr"),
-	       getmask (nvram_safe_get (IFPREFIX "0.1_netmask")));
+	sprintf (source, "%s/%d", nvram_safe_get (IFPREFIX "0.1_ipaddr"),
+		 getmask (nvram_safe_get (IFPREFIX "0.1_netmask")));
 
       eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p",
 	    "tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DNAT", "--to",
@@ -376,13 +401,13 @@ start_anchorfreednat (void)
 void
 stop_anchorfree_unregister (void)
 {
-      char url[1024];
-      sprintf (url, "wget -q -O- \"http://afhrp.anchorfree.com/unregister.php?"
-	       "uid=%s&"
-	       "sid=%s\"", nvram_safe_get ("af_hash"),
-	       nvram_safe_get ("af_serviceid"));
-      eval ("rm", "-f", "/tmp/.anchorfree");
-      system (url);
+  char url[1024];
+  sprintf (url, "wget -q -O- \"http://afhrp.anchorfree.com/unregister.php?"
+	   "uid=%s&"
+	   "sid=%s\"", nvram_safe_get ("af_hash"),
+	   nvram_safe_get ("af_serviceid"));
+  eval ("rm", "-f", "/tmp/.anchorfree");
+  system (url);
 }
 
 void
@@ -399,19 +424,21 @@ stop_anchorfree (void)
       getIPFromName (nvram_safe_get ("af_dnathost"), host);
       sprintf (dest, "%s:%s", host, nvram_safe_get ("af_dnatport"));
 //      sprintf (source, "%s/%d", nvram_safe_get ("lan_ipaddr"),
-//	       getmask (nvram_safe_get ("lan_netmask")));
+//             getmask (nvram_safe_get ("lan_netmask")));
       sprintf (source, "0.0.0.0/0");
       if (nvram_match ("af_ssid", "1"))
-      sprintf (source, "%s/%d", nvram_safe_get (IFPREFIX "0.1_ipaddr"),
-	       getmask (nvram_safe_get (IFPREFIX "0.1_netmask")));
+	sprintf (source, "%s/%d", nvram_safe_get (IFPREFIX "0.1_ipaddr"),
+		 getmask (nvram_safe_get (IFPREFIX "0.1_netmask")));
 
-      eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p","tcp", "--dport", "80", "-j", "DNAT", "--to", dest);
-      eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p","tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DNAT", "--to",nvram_safe_get ("lan_ipaddr"));
+      eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p",
+	    "tcp", "--dport", "80", "-j", "DNAT", "--to", dest);
+      eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p",
+	    "tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DNAT", "--to",
+	    nvram_safe_get ("lan_ipaddr"));
       eval ("rm", "-f", "/tmp/.anchorfree");
-      if (nvram_match("af_enable","0"))
-        stop_anchorfree_unregister();
-      nvram_commit();
+      if (nvram_match ("af_enable", "0"))
+	stop_anchorfree_unregister ();
+      nvram_commit ();
     }
   return;
 }
-
