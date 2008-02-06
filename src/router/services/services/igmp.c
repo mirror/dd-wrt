@@ -78,7 +78,7 @@ stop_igmp_proxy (void)
 {
   if (pidof ("igmprt") > 0)
     syslog (LOG_INFO, "igmprt : multicast daemon successfully stopped\n");
-  int ret = killall ("igmprt", SIGTERM);
+  int ret = killall ("igmprt", SIGKILL);
 
   cprintf ("done\n");
   return ret;
