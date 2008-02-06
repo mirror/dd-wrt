@@ -242,18 +242,22 @@ start_anchorfree (void)
 	{
 #ifndef HAVE_MADWIFI
 	  if (!nvram_match ("af_ssid_name", nvram_safe_get ("wl0.1_ssid")))
+	    {
+	      nvram_set ("wl0.1_ssid", nvram_safe_get ("af_ssid_name"));
 #else
-	  if (!nvram_match ("af_ssid_name", nvram_safe_get ("wl0.1_ssid")))
-#endif
-	    nvram_set ("wl0.1_ssid", nvram_safe_get ("wl0.1_ssid"));
-	  need_commit = 1;
-	  stop_lan ();
-	  start_lan ();
-	  stop_dnsmasq ();
-	  start_dnsmasq ();
-	  stop_firewall ();
-	  start_firewall ();
+	  if (!nvram_match ("af_ssid_name", nvram_safe_get ("ath0.1_ssid")))
+	    {
+	      nvram_set ("ath0.1_ssid", nvram_safe_get ("af_ssid_name"));
 
+#endif
+	      need_commit = 1;
+	      stop_lan ();
+	      start_lan ();
+	      stop_dnsmasq ();
+	      start_dnsmasq ();
+	      stop_firewall ();
+	      start_firewall ();
+	    }
 	}
 
 
