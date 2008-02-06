@@ -8299,6 +8299,10 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
     websWrite (wp, "</div>\n");
 
     websWrite (wp, "<div id=\"%s_idnet\">\n", var);
+    char mcast[32];
+    sprintf (mcast, "%s_multicast", var);
+    nvram_default_get(mcast,"0");
+    showOption (wp, "wl_basic.multicast", mcast);
     show_ipnetmask (wp, var);
     websWrite (wp, "</div>\n");
     websWrite (wp, "<script>\n//<![CDATA[\n ");
