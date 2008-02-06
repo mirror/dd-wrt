@@ -657,13 +657,22 @@ anchorfree.ssid_name="SSID";
 anchorfree.address_1="Addresse";
 anchorfree.address_2="Addresse 2";
 anchorfree.city="Stadt";
-anchorfree.zip="Postleihzahl";
+anchorfree.zip="Postleitzahl";
 anchorfree.state="Bundesland";
 anchorfree.country="Land";
 anchorfree.category="Kategorie";
 anchorfree.publish="Diesen Hotspot auf der WiFi Karte anzeigen";
 anchorfree.serviceid="Service ID";
 anchorfree.servicestatus="Service Status";
+anchorfree.agreement="Nutzungsbestimmungen";
+anchorfree.agree="Einverstanden";
+anchorfree.validaddr="Um den Hotspot korrekt auf der Karte anzeigen zu können, muß eine gültige Addresse angegeben werden!";
+anchorfree.validcity="Um den Hotspot korrekt auf der Karte anzeigen zu können, muß eine gültige Stadt oder Postleitzahl angegeben werden!";
+anchorfree.validcat="Bitte wählen Sie eine Kategorie für ihren Hotspot aus!";
+anchorfree.validcountry="Bitte geben Sie ihr Land an";
+anchorfree.validterms="Sie müssen den Nutzungsbestimmungen zustimmen!";
+
+
 
 hanchorfree.right1="Tritt dem AnchorFree Hotspot Werbenetzwerk bei";
 hanchorfree.right2="AnchorFree betreibt ein Hotspot Werbenetzwerk welches DD-WRT Nutzern wachsende Gewinnmöglichkeiten bietet";
