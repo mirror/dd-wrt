@@ -3977,3 +3977,23 @@ getmask (char *nmask)
     }
   return loopmask;
 }
+int doMultiCast(void)
+{
+ char name[80], *next;
+ int ifcount;
+  if (nvram_match ("wan_proto", "disabled"))
+    return 0;
+  if (nvram_match ("block_multicast", "0"))
+    {
+      ifcount++;
+    }
+  foreach (name, nvram_safe_get ("lan_ifnames"), next)
+  {
+    if (nvram_nmatch ("0", "%s_bridged", name)
+	&& nvram_nmatch ("1", "%s_multicast", name))
+      {
+	ifcount++;
+      }
+  }
+ return ifcount;
+}
