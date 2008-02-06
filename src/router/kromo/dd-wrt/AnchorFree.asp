@@ -14,28 +14,28 @@ if (F.af_enable.item(0).checked == true)
 	{
 	if (F.af_address.value.length==0)
 	    {
-	    alert("a valid address field must be provided if this hotspot should be published on the wifi hotspot map!");
+	    alert(anchorfree.validaddr);
 	    return false;
 	    }
 	if (F.af_city.value.length == 0 && F.af_zip.value.length == 0)
 	    {
-	    alert("a valid city or zip/postal code must be provided if this hotspot should be published on the wifi hotspot map!");
+	    alert(anchorfree.validcity);
 	    return false;
 	    }
 	}
     if (F.af_category.value == 0)
 	{
-	alert("please select a advertising category for your hotspot");
+	alert(anchorfree.validcat);
 	return false;
 	}
     if (F.af_country.value == "null")
 	{
-	alert("please select a country for your hotspot");
+	alert(anchorfree.validcountry);
 	return false;
 	}
     if (F._af_agree.checked == false)
 	{
-	alert("You must agree to the terms & conditions!");
+	alert(anchorfree.validterms);
 	return false;	
 	}else
 	{

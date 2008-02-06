@@ -714,6 +714,11 @@ anchorfree.serviceid="Service ID";
 anchorfree.servicestatus="Service Status";
 anchorfree.agreement="Terms and Conditions";
 anchorfree.agree="I ACCEPT AND AGREE";
+anchorfree.validaddr="a valid address field must be provided if this hotspot should be published on the wifi hotspot map!";
+anchorfree.validcity="a valid city or zip/postal code must be provided if this hotspot should be published on the wifi hotspot map!";
+anchorfree.validcat="please select a advertising category for your hotspot";
+anchorfree.validcountry="please select a country for your hotspot";
+anchorfree.validterms="You must agree to the terms & conditions!";
 
 var hanchorfree = new Object();
 hanchorfree.right1="Join AnchorFree's hotspot advertising network";
