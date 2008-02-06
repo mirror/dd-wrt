@@ -168,6 +168,12 @@ validate_portsetup (webs_t wp, char *value, struct variable *v)
     char *bridged = websGetVar (wp, val, NULL);
     if (bridged)
       nvram_set (val, bridged);
+
+    sprintf (val, "%s_multicast", var);
+    char *multicast = websGetVar (wp, val, NULL);
+    if (multicast)
+      nvram_set (val, multicast);
+
     if (bridged && strcmp (bridged, "0") == 0)
       {
 	sprintf (val, "%s_ipaddr", var);
