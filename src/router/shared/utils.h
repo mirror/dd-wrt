@@ -523,5 +523,7 @@ int isGrep (char *string, char *cmp);
 int softkill (char *name);
 
 int getmask(char *netmask);
+int doMultiCast(void);
+
 #define MAX_WDS_DEVS 10
 #endif
