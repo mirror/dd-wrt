@@ -137,7 +137,7 @@
 #define CRC_LEN                 4
 #define RX_OFFSET               2
 
-#if defined(CONFIG_VLAN_8021Q) || defined(CONFIG_VLAN_8021Q_MODULE)
+#if defined(CONFIG_AR2313_VLAN)
 #define VLAN_HDR			(4)
 #else
 #define VLAN_HDR			(0)
@@ -860,7 +860,8 @@ ar2313_check_link (struct net_device *dev)
   static u16 phyData;
   u16 reg;
   u16 duplex = 4;
-  static u16 laststate = -1;
+  static u16 laststateeth0 = -1;
+  static u16 laststateeth1 = -1;
   switch (sp->eth_phy)
     {
 
@@ -926,9 +927,35 @@ ar2313_check_link (struct net_device *dev)
     }
 
 //      printk(KERN_EMERG "check admtek %d\n",duplex);
-  if (laststate != duplex)
+if (!strcmp(dev->name,"eth0"))
+  if (laststateeth0 != duplex)
     {
-      laststate = duplex;
+      laststateeth0 = duplex;
+      switch (duplex)
+	{
+	case 1:
+	  /* FULL DUPLEX */
+	  printk ("%s: Full duplex\n", dev->name);
+	  sp->eth_regs->mac_control =
+	    ((sp->eth_regs->mac_control | MAC_CONTROL_F) & ~MAC_CONTROL_DRO);
+	  break;
+	case 2:
+	  /* HALF DUPLEX */
+	  printk ("%s: Half duplex\n", dev->name);
+	  sp->eth_regs->mac_control =
+	    ((sp->eth_regs->mac_control | MAC_CONTROL_DRO) & ~MAC_CONTROL_F);
+	  break;
+	case 0:
+	  /* no link */
+	  printk ("%s: No link\n", dev->name);
+	  sp->link = 0;
+	  break;
+	}
+    }
+if (!strcmp(dev->name,"eth1"))
+  if (laststateeth1 != duplex)
+    {
+      laststateeth1 = duplex;
       switch (duplex)
 	{
 	case 1:
