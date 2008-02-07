@@ -150,11 +150,13 @@ dev_t name_to_dev_t(char *name)
 		goto out;
 #endif
 
+printk(KERN_EMERG "decode %s\n",name);
 	if (strncmp(name, "/dev/", 5) != 0) {
 		unsigned maj, min;
 
 		if (sscanf(name, "%u:%u", &maj, &min) == 2) {
 			res = MKDEV(maj, min);
+			printk(KERN_EMERG "maj %d, min %d %X\n",maj,min,res);
 			if (maj != MAJOR(res) || min != MINOR(res))
 				goto fail;
 		} else {
