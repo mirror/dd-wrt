@@ -452,6 +452,12 @@ config AR2313
 	help
 	  Support for the AR231x/531x ethernet controller
 
+config AR2313_VLAN
+	bool "AR2313 Ethernet support"
+	depends on AR2313
+	help
+	  Support for the AR231x/531x ethernet controller
+
 
 config MACE
 	tristate "MACE (Power Mac ethernet) support"

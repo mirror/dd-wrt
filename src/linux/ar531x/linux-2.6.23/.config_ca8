@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux kernel version: 2.6.23.8
-# Tue Nov 27 18:01:56 2007
+# Linux kernel version: 2.6.23.12
+# Tue Jan 29 17:45:26 2008
 #
 CONFIG_MIPS=y
 
@@ -168,7 +168,6 @@ CONFIG_SYSCTL=y
 CONFIG_EMBEDDED=y
 # CONFIG_SYSCTL_SYSCALL is not set
 # CONFIG_KALLSYMS is not set
-# CONFIG_KALLSYMS_EXTRA_PASS is not set
 # CONFIG_HOTPLUG is not set
 CONFIG_PRINTK=y
 # CONFIG_BUG is not set
@@ -659,6 +658,7 @@ CONFIG_NET_ETHERNET=y
 CONFIG_MII=y
 # CONFIG_AX88796 is not set
 CONFIG_AR2313=m
+CONFIG_AR2313_VLAN=y
 # CONFIG_DM9000 is not set
 # CONFIG_NETDEV_1000 is not set
 # CONFIG_NETDEV_10000 is not set
@@ -668,6 +668,7 @@ CONFIG_AR2313=m
 #
 # CONFIG_WLAN_PRE80211 is not set
 # CONFIG_WLAN_80211 is not set
+# CONFIG_MADWIFI is not set
 # CONFIG_WAN is not set
 CONFIG_PPP=y
 CONFIG_PPP_MULTILINK=y
@@ -730,7 +731,8 @@ CONFIG_WATCHDOG=y
 #
 # Watchdog Device Drivers
 #
-CONFIG_SOFT_WATCHDOG=y
+# CONFIG_SOFT_WATCHDOG is not set
+CONFIG_AR2315_WDT=y
 # CONFIG_HW_RANDOM is not set
 # CONFIG_RTC is not set
 # CONFIG_R3964 is not set
