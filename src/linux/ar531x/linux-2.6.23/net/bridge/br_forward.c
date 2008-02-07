@@ -35,6 +35,7 @@ static inline unsigned packet_length(const struct sk_buff *skb)
  * When forwarding bridge frames, we save a copy of the original
  * header before processing.
  */
+#ifdef CONFIG_BRIDGE_NETFILTER
 int nf_bridge_copy_header(struct sk_buff *skb)
 {
 	int err;
@@ -49,7 +50,7 @@ int nf_bridge_copy_header(struct sk_buff *skb)
 	__skb_push(skb, nf_bridge_encap_header_len(skb));
 	return 0;
 }
-
+#endif
 int br_dev_queue_push_xmit(struct sk_buff *skb)
 {
 	/* drop mtu oversized packets except gso */

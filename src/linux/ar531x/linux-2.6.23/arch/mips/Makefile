@@ -274,6 +274,7 @@ load-$(CONFIG_MIPS_XXS1500)	+= 0xffffffff80100000
 core-$(CONFIG_ATHEROS)		+= arch/mips/atheros/
 cflags-$(CONFIG_ATHEROS)	+= -Iinclude/asm-mips/mach-atheros
 load-$(CONFIG_ATHEROS)		+= 0xffffffff80041000
+#load-$(CONFIG_ATHEROS)		+= 0xffffffff80000000
 #
 # Cobalt Server
 #

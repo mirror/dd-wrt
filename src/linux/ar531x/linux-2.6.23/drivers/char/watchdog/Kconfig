@@ -582,6 +582,13 @@ config SBC_EPX_C3_WATCHDOG
 # M68KNOMMU Architecture
 
 # MIPS Architecture
+config AR2315_WDT
+	tristate "AR2315 watch dog timer"
+	depends on WATCHDOG && ATHEROS
+	help
+	  An atheros watchdog timer for the ar2315 soc.
+	  Most people will say N
+
 
 config INDYDOG
 	tristate "Indy/I2 Hardware Watchdog"

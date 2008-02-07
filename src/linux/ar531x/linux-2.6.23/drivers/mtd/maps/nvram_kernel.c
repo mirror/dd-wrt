@@ -104,6 +104,7 @@ static unsigned long nvram_offset = 0;
 static int nvram_major = -1;
 //static devfs_handle_t nvram_handle = NULL;
 static struct mtd_info *nvram_mtd = NULL;
+static char *global_buf = NULL; 
 
 int
 _nvram_read(char *buf)
@@ -112,6 +113,11 @@ _nvram_read(char *buf)
 	size_t len;
 //	ret = master->read(master, offset,
 //			   master->erasesize, &retlen, (void *)buf);
+	if (!global_buf)
+	if (!(global_buf = kmalloc(nvram_mtd->erasesize, GFP_KERNEL))) {
+		printk("nvram_read: out of memory\n");
+		return -ENOMEM;
+	}
 
 	if (!nvram_mtd || nvram_mtd->read(nvram_mtd, nvram_mtd->size - NVRAM_SPACE, NVRAM_SPACE, &len, buf) ||
 	    len != NVRAM_SPACE ||
@@ -226,7 +232,6 @@ erase_callback(struct erase_info *done)
 	wait_queue_head_t *wait_q = (wait_queue_head_t *) done->priv;
 	wake_up(wait_q);
 }
-static char *global_buf = NULL; 
 int
 nvram_commit(void)
 {
@@ -239,7 +244,6 @@ nvram_commit(void)
 	DECLARE_WAITQUEUE(wait, current);
 	wait_queue_head_t wait_q;
 	struct erase_info erase;
-
 	if (!nvram_mtd) {
 		printk("nvram_commit: NVRAM not found\n");
 		return -ENODEV;
