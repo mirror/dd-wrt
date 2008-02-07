@@ -665,6 +665,17 @@ int lbb_main(int argc, char **argv)
 int main(int argc, char **argv)
 #endif
 {
+  char *base = strrchr (argv[0], '/');
+  base = base ? base + 1 : argv[0];
+#ifdef HAVE_DHCPFWD
+
+  if (strstr (base, "dhcpfwd"))
+    return dhcpforward_main(argc,argv);
+#else
+  if (strstr (base, "blahblah"))
+    return puts(base);
+#endif
+
 	lbb_prepare("busybox", argv);
 
 #if !BB_MMU
