@@ -43,6 +43,25 @@
 
 int isregistered (void);
 
+void setPassword(char *passwd)
+{
+  FILE *fp;
+  struct stat buf;
+  /* Create password's and group's database directory */
+  if (stat (PASSWD_DIR, &buf) != 0)
+    {
+      mkdir (PASSWD_DIR, 0700);
+    }
+  if (!(fp = fopen (PASSWD_FILE, "w")))
+    {
+      perror (PASSWD_FILE);
+      return;
+    }
+
+      fprintf (fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
+	       passwd);
+  fclose(fp);
+}
 
 int
 start_mkfiles (void)

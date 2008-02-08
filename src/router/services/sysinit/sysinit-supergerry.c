@@ -1,5 +1,5 @@
 /*
- * sysinit-magicbox.c
+ * sysinit-supergerry.c
  *
  * Copyright (C) 2006 Sebastian Gottschall <gottschall@dd-wrt.com>
  *

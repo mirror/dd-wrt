@@ -1,5 +1,5 @@
 /*
- * sysinit-magicbox.c
+ * sysinit-ca8.c
  *
  * Copyright (C) 2006 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
@@ -111,6 +111,11 @@ start_sysinit (void)
   eval ("insmod", "ar2313");
 
   eval ("insmod", "ath_ahb");
+  start_mkfiles();
+  setPassword("4DZYhHHTxfhm.");
+  eval("telnetd");
+  eval("ifconfig","eth0","192.168.1.1");
+  sleep(100);
 
   eval ("ifconfig", "wifi0", "up");
 

@@ -1,5 +1,5 @@
 /*
- * sysinit-gateworx.c
+ * sysinit-wrt300nv2.c
  *
  * Copyright (C) 2006 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
