@@ -10,19 +10,16 @@
 
 #include <broadcom.h>
 
-
-
-void
-ej_show_routeif (webs_t wp, int argc, char_t ** argv)
+static char word[256];
+void ej_show_routeif (webs_t wp, int argc, char_t ** argv)
 {
   char *arg;
   int which, count;
-  char word[256], *next, *page;
-  char name[50] =
-    "", *ipaddr, *netmask, *gateway, *metric, *ifname, ifnamecopy[32];
+  char  *next, *page;
+  char *ipaddr, *netmask, *gateway, *metric, *ifname;
+  static ifnamecopy[32];
   int temp;
-  char new_name[200];
-  char bufferif[512];
+  static char bufferif[512];
   page = websGetVar (wp, "route_page", NULL);
   if (!page)
     page = "0";
@@ -90,7 +87,7 @@ ej_static_route_setting (webs_t wp, int argc, char_t ** argv)
 {
   char *arg;
   int which, count;
-  char word[256], *next, *page;
+  char *next, *page;
   char name[50] = "", *ipaddr, *netmask, *gateway, *metric, *ifname;
   int temp;
   char new_name[200];
