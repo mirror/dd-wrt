@@ -52,9 +52,9 @@ export PLATFORM := $(PLATFORM)-uclibc
 endif
 
 #export LINUXDIR := $(SRCBASE)/linux/linux.v24
-ifeq ($(ARCH),mips)
-export LINUXDIR := $(SRCBASE)/linux/ar531x/linux-2.6.20
-endif
+#ifeq ($(ARCH),mips)
+#export LINUXDIR := $(SRCBASE)/linux/ar531x/linux-2.6.22
+#endif
 ifeq ($(ARCH),armeb)
 export LINUXDIR := $(SRCBASE)/linux/xscale/linux-2.6.17
 endif
@@ -99,7 +99,11 @@ ifeq ($(ARCH),armeb)
 export COPTS:=$(BASEOPT) -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb -funit-at-a-time 
 endif
 ifeq ($(ARCH),mips)
+ifeq ($(ARCHITECTURE),pb42)
 export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
+else
+export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
+endif
 endif
 ifeq ($(ARCH),powerpc)
 export COPTS:=$(BASEOPT) -pipe -funit-at-a-time -mcpu=405fp -mtune=405fp -mmultiple -mstring -mno-bit-align 
@@ -152,6 +156,8 @@ all: build_date clean_target $(obj-y) $(obj-m) $(LINUXDIR)/.config kernel
 build_date:
 	echo "#define BUILD_DATE \"$(shell date +%D)\"" > ../../opt/build.h 
 
+drop-sections	= .reginfo .mdebug .comment .note .pdr .options .MIPS.options
+strip-flags	= $(addprefix --remove-section=,$(drop-sections))
 
 kernel:
         # Also build kernel
@@ -159,7 +165,23 @@ kernel:
 ifeq ($(CONFIG_CA8),y)
 	cp $(LINUXDIR)/.config_ca8 $(LINUXDIR)/.config
 else
+ifeq ($(CONFIG_LS5),y)
+	cp $(LINUXDIR)/.config_ca8 $(LINUXDIR)/.config
+else
+ifeq ($(CONFIG_TW6600_INITRD),y)
+	cp $(LINUXDIR)/.config_initrd $(LINUXDIR)/.config
+else
+ifeq ($(CONFIG_TW6600),y)
+###das ist ne config mit PRINTK=Y args (ja und. ich debugge manchmal gerne)
+	cp $(LINUXDIR)/.config_tw6660 $(LINUXDIR)/.config
+else
 	cp $(LINUXDIR)/.config_generic $(LINUXDIR)/.config
+endif
+endif
+endif
+endif
+ifeq ($(CONFIG_WRK54G),y)
+	cp $(LINUXDIR)/.config_micro_tw6660 $(LINUXDIR)/.config
 endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
@@ -170,10 +192,29 @@ endif
 	fi
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
 	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/whrag108/vmlinux.lzma
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/aw6600/vmlinux.lzma
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/ls5/vmlinux.lzma
 	make -C lzma-loader/whrag108 clean
 	make -C lzma-loader/whrag108 
+	make -C lzma-loader/aw6600 clean
+	make -C lzma-loader/aw6600 
+	make -C lzma-loader/ls5 clean
+	make -C lzma-loader/ls5 
 	cp lzma-loader/whrag108/lzma.elf $(ARCH)-uclibc/lzma_vmlinux
-	$(ARCH)-linux-objcopy -O binary $(ARCH)-uclibc/lzma_vmlinux $(ARCH)-uclibc/lzma_vmlinus 
+	$(ARCH)-linux-objcopy -O binary $(strip-flags) $(ARCH)-uclibc/lzma_vmlinux $(ARCH)-uclibc/lzma_vmlinus 
+	cp lzma-loader/aw6600/lzma.elf $(ARCH)-uclibc/lzma_vmlinuxaw
+	$(ARCH)-linux-objcopy -O binary $(strip-flags) $(ARCH)-uclibc/lzma_vmlinuxaw $(ARCH)-uclibc/lzma_vmlinusaw 
+	cp lzma-loader/aw6600/lzma.elf $(ARCH)-uclibc/lzma_vmlinuxls5
+	$(ARCH)-linux-objcopy -O binary $(strip-flags) $(ARCH)-uclibc/lzma_vmlinuxls5 $(ARCH)-uclibc/lzma_vmlinusls5 
+	# make overtake image
+	$(ARCH)-linux-objcopy -O binary $(strip-flags) lzma-loader/vmlinux $(ARCH)-uclibc/vmlinus_initrd 
+	cat $(ARCH)-uclibc/vmlinus_initrd | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/aw6600/vmlinux.lzma
+	make -C lzma-loader/aw6600 clean
+	make -C lzma-loader/aw6600 
+	cp lzma-loader/aw6600/lzma.elf $(ARCH)-uclibc/lzma_vmlinuxaw_initrd
+	$(ARCH)-linux-objcopy -O binary $(strip-flags) $(ARCH)-uclibc/lzma_vmlinuxaw_initrd $(ARCH)-uclibc/lzma_vmlinusaw_initrd 
+
+
 
 	
 clean: $(obj-clean)
@@ -202,11 +243,15 @@ distclean mrproper: $(obj-distclean) clean_target
 
 optimize-lib:
 #	../../tools/optimize_lib.sh netconf/ libnetconf.so libnetconf.a libnetconf_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libnetconf.so
+ifeq ($(CONFIG_SHARED),y)
 	../../tools/optimize_lib.sh shared/ libshared.so libshared.a libshared_min.so $(TARGETDIR) $(TARGETDIR)/lib/libshared.so
+endif
 #	../../tools/optimize_lib.sh openssl/ libssl.so.0.9.8 libssl.a libssl_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libssl.so.0.9.8
 #	../../tools/optimize_lib.sh openssl/ libcrypto.so.0.9.8 libcrypto.a libcrypto_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libcrypto.so.0.9.8
 #	../../tools/optimize_lib.sh lib/ libm.so libm.a libm_min.so $(TARGETDIR) $(TARGETDIR)/lib/libm.so.0
+ifeq ($(CONFIG_LIBPTHREAD),y)
 	../../tools/optimize_lib.sh lib.$(ARCH)/ libpthread.so libpthread.a libphread_min.so $(TARGETDIR) $(TARGETDIR)/lib/libpthread.so.0
+endif
 #	../../tools/optimize_lib.sh services/ services.so services.a services_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/services.so
 #  ../../tools/optimize_lib.sh iptables/ libiptables.so libiptables.a libiptables_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libiptables.so
 
@@ -229,14 +274,20 @@ install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $
 	cp ./opt/etc/postinit $(ARCH)-uclibc/target/etc
 	cp ./opt/etc/ipkg.conf $(ARCH)-uclibc/target/etc
 	cp ./opt/etc/config/* $(ARCH)-uclibc/target/etc/config
+ifeq ($(CONFIG_HTTPD),y)
 	cp ./opt/usr/lib/smb.conf $(ARCH)-uclibc/target/usr/lib
 	ln -sf ../tmp/smbshare $(ARCH)-uclibc/target/www/smb
+endif
 
 	# optimize the crypto library by removing unneeded symbols
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	# Install (and possibly optimize) C library
+ifeq ($(CONFIG_WRK54G),y)
+	$(MAKE) -f Makefile.ar531x lib.$(ARCH)_micro-install
+else
 	$(MAKE) -f Makefile.ar531x lib.$(ARCH)-install
+endif
 	# optimize the others library by removing unneeded symbols
 	$(MAKE) -f Makefile.ar531x optimize-lib
 	# Install modules into filesystem
@@ -279,6 +330,12 @@ endif
 ifneq ($(CONFIG_SAMBA),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
 endif
+ifneq ($(CONFIG_JFFS2),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jffs2
+endif
+ifneq ($(CONFIG_MMC),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext2
+endif
 
 
 #ifeq ($(CONFIG_MSSID),y)
@@ -318,40 +375,72 @@ endif
 ifeq ($(CONFIG_KAID),y)
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
+ifeq ($(CONFIG_RC),y)
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
+endif
 	./strip_libs.sh $(ARCH)
-
+ifeq ($(CONFIG_WRK54G),y)
+	misc/makeDevs $(ARCH)-uclibc/target	
+endif
+	@true
 	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -be
 	mkfs.jffs2 --pad --big-endian --squash -e 0x10000 -o $(ARCH)-uclibc/dd-wrt.jffs2 -d $(ARCH)-uclibc/target
 	
-
 	cp $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinux
 
 	cp $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bak 
-	mips-linux-uclibc-objcopy -O binary -g $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bin
+	mips-linux-uclibc-objcopy -O binary $(strip-flags) -g $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	lzma e -lc1 -lp2 -pb2 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
 #	gzip -9 $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.gz
+ifeq ($(CONFIG_TW6600),y)
+	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.bin.l7 bs=65536 conv=sync
+else
 	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.bin.l7 bs=131072 conv=sync
+endif
+ifeq ($(CONFIG_WRK54G),y)
+	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.bin.l7 bs=65536 conv=sync
+	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/rootfs.wrk54g bs=1179648 conv=sync
+endif
+
 #	dd if=$(ARCH)-uclibc/vmlinux.gz of=$(ARCH)-uclibc/vmlinux.bin.gz bs=65536 conv=sync
 ifeq ($(CONFIG_GLAUCO),y)
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.aligned bs=2818048 conv=sync
 else
+ifeq ($(CONFIG_PB42),y)
+	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.aligned bs=6750208 conv=sync
+else
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.aligned bs=2883584 conv=sync
 endif
-
+endif
 ifeq ($(CONFIG_WHRAG108),y)
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.whr bs=2752512 conv=sync
 	./tools/trx_n -o $(ARCH)-uclibc/whrag108-firmware.bin $(ARCH)-uclibc/root.whr $(ARCH)-uclibc/lzma_vmlinus
 endif
+ifeq ($(CONFIG_TW6600),y)
+	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.whr bs=2752512 conv=sync
+	./tools/trx_n -o $(ARCH)-uclibc/whrag108-firmware.bin $(ARCH)-uclibc/root.whr $(ARCH)-uclibc/lzma_vmlinusaw
+endif
 ifeq ($(CONFIG_CA8),y)
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.ca8 bs=2752512 conv=sync
-	./tools/trx_n -o $(ARCH)-uclibc/ca8-firmware.bin $(ARCH)-uclibc/root.ca8 $(ARCH)-uclibc/lzma_vmlinus
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/ca8-firmware.bin $(ARCH)-uclibc/root.ca8 $(ARCH)-uclibc/lzma_vmlinus
+endif
+ifeq ($(CONFIG_USR5453),y)
+	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.usr bs=6815744 conv=sync
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/usr5453-firmware.bin $(ARCH)-uclibc/root.usr $(ARCH)-uclibc/lzma_vmlinus
+endif
+ifeq ($(CONFIG_LS5),y)
+	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.ls5 bs=2883584 conv=sync
+	./tools/trx_n -o $(ARCH)-uclibc/ls5-firmware.bin $(ARCH)-uclibc/root.ls5 $(ARCH)-uclibc/vmlinux.lzma
+endif
+ifeq ($(CONFIG_WRK54G),y)
+	./tools/trx_n -o $(ARCH)-uclibc/wrk54g-firmware.bin $(ARCH)-uclibc/rootfs.wrk54g $(ARCH)-uclibc/vmlinux.bin.l7
 endif
 ifeq ($(CONFIG_MERAKI),y)
 	./tools/trx_n -o $(ARCH)-uclibc/meraki-firmware.bin $(ARCH)-uclibc/root.aligned $(ARCH)-uclibc/lzma_vmlinus
 endif
-	./tools/trx_n -o $(ARCH)-uclibc/fonera-firmware.bin $(ARCH)-uclibc/root.aligned $(ARCH)-uclibc/vmlinux.bin.l7 
-
+	./tools/trx_n -o $(ARCH)-uclibc/fonera-firmware.bin -m 100000000 $(ARCH)-uclibc/root.aligned $(ARCH)-uclibc/vmlinux.lzma 
+	tools/ubnt/src/mkfwimage -v LS2.ar2316.DD-WRT -o mips-uclibc/LS2.dd-wrt.bin -i tools/ubnt/ls2-ddwrt.txt
+	tools/ubnt/src/mkfwimage -v LS5.ar2313.DD-WRT -o mips-uclibc/LS5.dd-wrt.bin -i tools/ubnt/ls5-ddwrt.txt
 include rules/all.mk
 
 .PHONY: all clean distclean mrproper install package
