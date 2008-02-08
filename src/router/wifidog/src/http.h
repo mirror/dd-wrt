@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: http.h 1104 2006-10-09 00:58:46Z acv $ */
+/* $Id: http.h 1243 2007-06-28 01:48:01Z benoitg $ */
 /** @file http.h
     @brief HTTP IO functions
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
@@ -45,4 +45,8 @@ void http_wifidog_header(request *r, char *title);
 /** @brief Sends HTML footer to web browser */
 void http_wifidog_footer(request *r);
 
+/** @brief Sends a redirect to the web browser */
+void http_send_redirect(request *r, char *url, char *text);
+/** @brief Convenience function to redirect the web browser to the authe server */
+void http_send_redirect_to_auth(request *r, char *urlFragment, char *text);
 #endif /* _HTTP_H_ */
