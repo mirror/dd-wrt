@@ -147,6 +147,9 @@ endif
 ifeq ($(CONFIG_CA8),y)
   CFLAGS += -DHAVE_CA8
 endif
+ifeq ($(CONFIG_USR5453),y)
+  CFLAGS += -DHAVE_USR5453
+endif
 
 ifeq ($(CONFIG_CHILLILOCAL),y)
   CFLAGS += -DHAVE_CHILLILOCAL
