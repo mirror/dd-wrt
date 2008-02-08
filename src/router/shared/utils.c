@@ -3252,7 +3252,7 @@ getIfList (char *buffer, const char *ifprefix)
 	}
       if (c == 0x20)
 	continue;
-      if (c == ':')
+      if (c == ':' || ifcount==30)
 	{
 	  ifname[ifcount++] = 0;
 	  int skip = 0;
@@ -3294,6 +3294,7 @@ getIfList (char *buffer, const char *ifprefix)
 	  skipline (in);
 	  continue;
 	}
+      if (ifcount<30)
       ifname[ifcount++] = c;
     }
 }
