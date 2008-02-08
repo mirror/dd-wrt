@@ -1265,7 +1265,7 @@ start_lan (void)
   set_vifsmac (mac);
 #endif
 #endif
-  if (nvram_match ("wl_mode", "sta"))
+  if (nvram_match ("wl_mode", "sta") || nvram_match ("wl_mode", "apsta"))
     {
       unsigned char mac[20];
       getWANMac (mac);
@@ -2115,7 +2115,7 @@ wan_valid (char *ifname)
     if (ifname && !strcmp (ifname, name))
     return 1;
 
-  if (nvram_match ("wl_mode", "sta"))
+  if (nvram_match ("wl_mode", "sta") || nvram_match ("wl_mode", "apsta"))
     {
       return nvram_match ("wl0_ifname", ifname);
     }
@@ -2277,6 +2277,7 @@ start_wan (int status)
       wlifname = getWET ();
     }
 
+      unsigned char mac[20];
   if (nvram_match ("mac_clone_enable", "1") &&
       nvram_invmatch ("def_hwaddr", "00:00:00:00:00:00") &&
       nvram_invmatch ("def_hwaddr", ""))
@@ -2286,7 +2287,6 @@ start_wan (int status)
 #ifndef HAVE_MADWIFI
   else
     {
-      unsigned char mac[20];
 
       if (wlifname && !strcmp (wan_ifname, wlifname))	//sta mode
 	{
