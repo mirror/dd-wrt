@@ -215,6 +215,12 @@ start_anchorfree (void)
 	  start_firewall ();
 	  stop_firewall ();
 	  start_firewall ();
+	  if (getSTA ())
+	    {
+	      stop_wan ();
+	      start_wan ();
+	      return;
+	    }
 	}
       else if (nvram_match ("af_ssid", "0")
 	       && nvram_match ("af_ssid_created", "1"))
@@ -237,6 +243,12 @@ start_anchorfree (void)
 	  start_dnsmasq ();
 	  stop_firewall ();
 	  start_firewall ();
+	  if (getSTA ())
+	    {
+	      stop_wan ();
+	      start_wan ();
+	      return;
+	    }
 	}
       else if (nvram_match ("af_ssid_created", "1"))
 	{
@@ -257,6 +269,12 @@ start_anchorfree (void)
 	      start_dnsmasq ();
 	      stop_firewall ();
 	      start_firewall ();
+	      if (getSTA ())
+		{
+		  stop_wan ();
+		  start_wan ();
+		  return;
+		}
 	    }
 	}
 

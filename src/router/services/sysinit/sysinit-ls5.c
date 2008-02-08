@@ -1,5 +1,5 @@
 /*
- * sysinit-magicbox.c
+ * sysinit-ls5.c
  *
  * Copyright (C) 2006 Sebastian Gottschall <gottschall@dd-wrt.com>
  *

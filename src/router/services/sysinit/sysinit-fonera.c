@@ -1,5 +1,5 @@
 /*
- * sysinit-magicbox.c
+ * sysinit-fonera.c
  *
  * Copyright (C) 2006 Sebastian Gottschall <gottschall@dd-wrt.com>
  *

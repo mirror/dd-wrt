@@ -1,5 +1,5 @@
 /*
- * sysinit-magicbox.c
+ * sysinit-mr3202a.c
  *
  * Copyright (C) 2006 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
