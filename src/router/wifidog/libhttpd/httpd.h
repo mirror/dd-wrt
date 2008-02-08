@@ -14,7 +14,7 @@
 ** connection with the use or performance of this software.
 **
 **
-** $Id: httpd.h 274 2004-11-17 23:54:25Z alexcv $
+** $Id: httpd.h 1239 2007-05-30 19:21:21Z david $
 **
 */
 
@@ -98,14 +98,17 @@ typedef	struct {
 		contentLength,
 		authLength;
 	char	path[HTTP_MAX_URL],
-		host[HTTP_MAX_URL], /* acv@acv.ca/wifidog: Added decoding
+		query[HTTP_MAX_URL],
+	        host[HTTP_MAX_URL], /* acv@acv.ca/wifidog: Added decoding
 				       of host: header if present. */
+	        ifModified[HTTP_MAX_URL];
+#if(0)
 		userAgent[HTTP_MAX_URL],
 		referer[HTTP_MAX_URL],
-		ifModified[HTTP_MAX_URL],
 		contentType[HTTP_MAX_URL],
 		authUser[HTTP_MAX_AUTH],
 		authPassword[HTTP_MAX_AUTH];
+#endif
 } httpReq;
 
 

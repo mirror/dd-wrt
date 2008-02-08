@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: firewall.h 935 2006-02-01 03:22:04Z benoitg $ */
+/* $Id: firewall.h 1241 2007-06-24 04:13:13Z benoitg $ */
 /** @file firewall.h
     @brief Firewall update functions
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
@@ -26,6 +26,8 @@
 
 #ifndef _FIREWALL_H_
 #define _FIREWALL_H_
+
+int icmp_fd;
 
 /** Used by fw_iptables.c */
 typedef enum _t_fw_marks {

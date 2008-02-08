@@ -14,7 +14,7 @@
 ** connection with the use or performance of this software.
 **
 **
-** $Id: api.c 290 2004-11-22 21:45:58Z alexcv $
+** $Id: api.c 1239 2007-05-30 19:21:21Z david $
 **
 */
 
@@ -571,10 +571,14 @@ int httpdReadRequest(httpd *server, request *r)
 		}
 	}
 
+
+#if 0
+	/* XXX: For WifiDog, we only process the query string parameters
+	   but keep the GET variables in the request.query!
+	*/
 	/*
 	** Process and POST data
 	*/
-#if 0
 	if (r->request.contentLength > 0)
 	{
 		bzero(buf, HTTP_MAX_LEN);
@@ -583,17 +587,18 @@ int httpdReadRequest(httpd *server, request *r)
 		
 	}
 #endif
-	
+
 	/*
 	** Process any URL data
 	*/
 	cp = index(r->request.path,'?');
 	if (cp != NULL)
 	{
-		*cp = 0;
-		cp++;
+		*cp++ = 0;
+		strncpy(r->request.query, cp, sizeof(r->request.query));
 		_httpd_storeData(r, cp);
 	}
+
 	return(0);
 }
 

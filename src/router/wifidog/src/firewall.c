@@ -19,7 +19,7 @@
  \********************************************************************/
 
 /*
- * $Id: firewall.c 1162 2007-01-06 23:51:02Z benoitg $
+ * $Id: firewall.c 1243 2007-06-28 01:48:01Z benoitg $
  */
 /** @internal
   @file firewall.c
@@ -72,7 +72,7 @@ extern pthread_mutex_t client_list_mutex;
 /* from commandline.c */
 extern pid_t restart_orig_pid;
 
-int icmp_fd = 0;
+
 
 /**
  * Allow a client access through the firewall by adding a rule in the firewall to MARK the user's packets with the proper
@@ -253,11 +253,14 @@ fw_sync_with_authserver(void)
         if (!(p1 = client_list_find(ip, mac))) {
             debug(LOG_ERR, "Node %s was freed while being re-validated!", ip);
         } else {
+        	time_t	current_time=time(NULL);
+        	debug(LOG_INFO, "Checking client %s for timeout:  Last updated %ld (%ld seconds ago), timeout delay %ld seconds, current time %ld, ",
+                        p1->ip, p1->counters.last_updated, current_time-p1->counters.last_updated, config->checkinterval * config->clienttimeout, current_time);
             if (p1->counters.last_updated +
 				(config->checkinterval * config->clienttimeout)
-				<= time(NULL)) {
+				<= current_time) {
                 /* Timing out user */
-                debug(LOG_INFO, "%s - Inactive for %ld seconds, removing client and denying in firewall",
+                debug(LOG_INFO, "%s - Inactive for more than %ld seconds, removing client and denying in firewall",
                         p1->ip, config->checkinterval * config->clienttimeout);
                 fw_deny(p1->ip, p1->mac, p1->fw_connection_state);
                 client_list_delete(p1);
@@ -295,9 +298,17 @@ fw_sync_with_authserver(void)
                         case AUTH_ALLOWED:
                             if (p1->fw_connection_state != FW_MARK_KNOWN) {
                                 debug(LOG_INFO, "%s - Access has changed to allowed, refreshing firewall and clearing counters", p1->ip);
-                                fw_deny(p1->ip, p1->mac, p1->fw_connection_state);
+                                //WHY did we deny, then allow!?!? benoitg 2007-06-21
+                                //fw_deny(p1->ip, p1->mac, p1->fw_connection_state);
+
+                                if (p1->fw_connection_state != FW_MARK_PROBATION) {
+     p1->counters.incoming = p1->counters.outgoing = 0;
+                                }
+                                else {
+                                	//We don't want to clear counters if the user was in validation, it probably already transmitted data..
+                                    debug(LOG_INFO, "%s - Skipped clearing counters after all, the user was previously in validation", p1->ip);
+                                }
                                 p1->fw_connection_state = FW_MARK_KNOWN;
-                                p1->counters.incoming = p1->counters.outgoing = 0;
                                 fw_allow(p1->ip, p1->mac, p1->fw_connection_state);
                             }
                             break;
@@ -316,7 +327,7 @@ fw_sync_with_authserver(void)
                                     break;
 
                         default:
-                            debug(LOG_DEBUG, "I do not know about authentication code %d", authresponse.authcode);
+                            debug(LOG_ERR, "I do not know about authentication code %d", authresponse.authcode);
                             break;
                     }
                 }

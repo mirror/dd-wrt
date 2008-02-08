@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: ping_thread.c 1162 2007-01-06 23:51:02Z benoitg $ */
+/* $Id: ping_thread.c 1243 2007-06-28 01:48:01Z benoitg $ */
 /** @file ping_thread.c
     @brief Periodically checks in with the central auth server so the auth
     server knows the gateway is still up.  Note that this is NOT how the gateway
@@ -102,8 +102,9 @@ ping(void)
 	unsigned long int sys_uptime  = 0;
 	unsigned int      sys_memfree = 0;
 	float             sys_load    = 0;
-
-
+	t_auth_serv	*auth_server = NULL;
+	auth_server = get_auth_server();
+	
 	debug(LOG_DEBUG, "Entering ping()");
 	
 	/*
@@ -148,18 +149,19 @@ ping(void)
 	 * Prep & send request
 	 */
 	snprintf(request, sizeof(request) - 1,
-			"GET %sping/?gw_id=%s&sys_uptime=%lu&sys_memfree=%u&sys_load=%.2f&wifidog_uptime=%lu HTTP/1.0\r\n"
+			"GET %s%sgw_id=%s&sys_uptime=%lu&sys_memfree=%u&sys_load=%.2f&wifidog_uptime=%lu HTTP/1.0\r\n"
 			"User-Agent: WiFiDog %s\r\n"
 			"Host: %s\r\n"
 			"\r\n",
-			config_get_config()->auth_servers->authserv_path,
+			auth_server->authserv_path,
+			auth_server->authserv_ping_script_path_fragment,
 			config_get_config()->gw_id,
 			sys_uptime,
 			sys_memfree,
 			sys_load,
 			(long unsigned int)((long unsigned int)time(NULL) - (long unsigned int)started_time),
 			VERSION,
-			config_get_config()->auth_servers->authserv_hostname);
+			auth_server->authserv_hostname);
 
 	debug(LOG_DEBUG, "HTTP Request to Server: [%s]", request);
 	
