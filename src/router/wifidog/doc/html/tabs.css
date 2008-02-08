@@ -82,13 +82,13 @@ DIV.tabs A:hover SPAN
    background-position: 0% -150px;
 }
 
-DIV.tabs LI#current A
+DIV.tabs LI.current A
 {
    background-position: 100% -150px;
    border-width     : 0px;
 }
 
-DIV.tabs LI#current SPAN
+DIV.tabs LI.current SPAN
 {
    background-position: 0% -150px;
    padding-bottom   : 6px;

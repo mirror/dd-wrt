@@ -18,7 +18,7 @@
  *                                                                  *
  \********************************************************************/
 
-/* $Id: fw_iptables.c 1162 2007-01-06 23:51:02Z benoitg $ */
+/* $Id: fw_iptables.c 1302 2007-10-16 03:12:51Z papril $ */
 /** @internal
   @file fw_iptables.c
   @brief Firewall iptables functions
@@ -59,7 +59,8 @@ extern pthread_mutex_t	config_mutex;
 Used to supress the error output of the firewall during destruction */ 
 static int fw_quiet = 0;
 
-/** @internal */
+/** @internal 
+ * */
 static int
 iptables_do_command(char *format, ...)
 {
@@ -218,7 +219,7 @@ iptables_fw_init(void)
 
 			/* Assign links and rules to these new chains */
 			iptables_do_command("-t mangle -I PREROUTING 1 -i %s -j " TABLE_WIFIDOG_OUTGOING, gw_interface);
-			iptables_do_command("-t mangle -I PREROUTING 1 -i %s -j " TABLE_WIFIDOG_TRUSTED, gw_interface);
+			iptables_do_command("-t mangle -I PREROUTING 1 -i %s -j " TABLE_WIFIDOG_TRUSTED, gw_interface);//this rule will be inserted before the prior one
 			iptables_do_command("-t mangle -I POSTROUTING 1 -o %s -j " TABLE_WIFIDOG_INCOMING, gw_interface);
 
             for (p = config->trustedmaclist; p != NULL; p = p->next)
@@ -274,17 +275,18 @@ iptables_fw_init(void)
             /* Insert at the beginning */
 			iptables_do_command("-t filter -I FORWARD -i %s -j " TABLE_WIFIDOG_WIFI_TO_INTERNET, gw_interface);
 
-            /* TCPMSS rule for PPPoE */
+
 			iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -m state --state INVALID -j DROP");
-			iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -m state --state RELATED,ESTABLISHED -j ACCEPT");
-            if (ext_interface != NULL) {
-			    iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -i %s -m state --state NEW,INVALID -j DROP", ext_interface);
-			    iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu", ext_interface);
-            } else {
-                /* Will this work even if we don't specify an external interface? */
-			    iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -m state --state NEW,INVALID -j DROP");
-			    iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu");
-            }
+
+			/* XXX: Why this? it means that connections setup after authentication
+			   stay open even after the connection is done... 
+			   iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -m state --state RELATED,ESTABLISHED -j ACCEPT");*/
+
+			//Won't this rule NEVER match anyway?!?!? benoitg, 2007-06-23
+			//iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -i %s -m state --state NEW -j DROP", ext_interface);
+            
+            /* TCPMSS rule for PPPoE */
+   			iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu", ext_interface);
 
 			iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -j " TABLE_WIFIDOG_AUTHSERVERS);
 			iptables_fw_set_authservers();
@@ -500,13 +502,13 @@ iptables_fw_counters_update(void)
 				  debug(LOG_WARNING, "I was supposed to read an IP address but instead got [%s] - ignoring it", ip);
 				  continue;
 			  }
-            debug(LOG_DEBUG, "Outgoing %s Bytes=%llu", ip, counter);
+            debug(LOG_DEBUG, "Read outgoing traffic for %s: Bytes=%llu", ip, counter);
 	    LOCK_CLIENT_LIST();
             if ((p1 = client_list_find_by_ip(ip))) {
                 if ((p1->counters.outgoing - p1->counters.outgoing_history) < counter) {
                     p1->counters.outgoing = p1->counters.outgoing_history + counter;
                     p1->counters.last_updated = time(NULL);
-                    debug(LOG_DEBUG, "%s - Updated counter.outgoing to %llu bytes", ip, counter);
+                    debug(LOG_DEBUG, "%s - Updated counter.outgoing to %llu bytes.  Updated last_updated to %d", ip, counter, p1->counters.last_updated);
                 }
             } else {
                 debug(LOG_ERR, "Could not find %s in client list", ip);
@@ -538,7 +540,7 @@ iptables_fw_counters_update(void)
 				  debug(LOG_WARNING, "I was supposed to read an IP address but instead got [%s] - ignoring it", ip);
 				  continue;
 			  }
-            debug(LOG_DEBUG, "Incoming %s Bytes=%llu", ip, counter);
+            debug(LOG_DEBUG, "Read incoming traffic for %s: Bytes=%llu", ip, counter);
 	    LOCK_CLIENT_LIST();
             if ((p1 = client_list_find_by_ip(ip))) {
                 if ((p1->counters.incoming - p1->counters.incoming_history) < counter) {

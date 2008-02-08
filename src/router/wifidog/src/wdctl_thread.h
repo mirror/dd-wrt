@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: wdctl_thread.h 901 2006-01-17 18:58:13Z mina $ */
+/* $Id: wdctl_thread.h 1241 2007-06-24 04:13:13Z benoitg $ */
 /** @file wdctl_thread.h
     @brief WiFiDog monitoring thread
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@acv.ca>
@@ -28,6 +28,8 @@
 #define _WDCTL_THREAD_H_
 
 #define DEFAULT_WDCTL_SOCK	"/tmp/wdctl.sock"
+
+int wdctl_socket_server;
 
 /** @brief Listen for WiFiDog control messages on a unix domain socket */
 void thread_wdctl(void *arg);

@@ -19,7 +19,7 @@
  \********************************************************************/
 
 /*
- * $Id: util.c 1162 2007-01-06 23:51:02Z benoitg $
+ * $Id: util.c 1243 2007-06-28 01:48:01Z benoitg $
  */
 /**
   @file util.c
@@ -173,6 +173,7 @@ char *get_iface_ip(char *ifname) {
     in.s_addr = ip;
 
     ip_str = (char *)inet_ntoa(in);
+    close(sockd);
     return safe_strdup(ip_str);
 #else
     return safe_strdup("0.0.0.0");
@@ -221,14 +222,15 @@ char *get_ext_iface (void) {
 #ifdef __linux__
     FILE *input;
     char *device, *gw;
-    int i;
+    int i = 1;
+    int keep_detecting = 1;
     pthread_cond_t		cond = PTHREAD_COND_INITIALIZER;
     pthread_mutex_t		cond_mutex = PTHREAD_MUTEX_INITIALIZER;
     struct	timespec	timeout;
     device = (char *)malloc(16);
     gw = (char *)malloc(16);
     debug(LOG_DEBUG, "get_ext_iface(): Autodectecting the external interface from routing table");
-    for (i=1; i<=NUM_EXT_INTERFACE_DETECT_RETRY; i++) {
+    while(keep_detecting) {
         input = fopen("/proc/net/route", "r");
         while (!feof(input)) {
             fscanf(input, "%s %s %*s %*s %*s %*s %*s %*s %*s %*s %*s\n", device, gw);
@@ -239,7 +241,7 @@ char *get_ext_iface (void) {
             }
         }
         fclose(input);
-        debug(LOG_ERR, "get_ext_iface(): Failed to detect the external interface after try %d of %d (maybe the interface is not up yet?)", i, NUM_EXT_INTERFACE_DETECT_RETRY);
+        debug(LOG_ERR, "get_ext_iface(): Failed to detect the external interface after try %d (maybe the interface is not up yet?).  Retry limit: %d", i, NUM_EXT_INTERFACE_DETECT_RETRY);
 	/* Sleep for EXT_INTERFACE_DETECT_RETRY_INTERVAL seconds */
 	timeout.tv_sec = time(NULL) + EXT_INTERFACE_DETECT_RETRY_INTERVAL;
 	timeout.tv_nsec = 0;
@@ -249,8 +251,13 @@ char *get_ext_iface (void) {
 	pthread_cond_timedwait(&cond, &cond_mutex, &timeout);
 	/* No longer needs to be locked */
 	pthread_mutex_unlock(&cond_mutex);
+	    //for (i=1; i<=NUM_EXT_INTERFACE_DETECT_RETRY; i++) {
+	    if (NUM_EXT_INTERFACE_DETECT_RETRY != 0 && i>NUM_EXT_INTERFACE_DETECT_RETRY) {
+	    	keep_detecting = 0;
+	    }
+	    i++;
     }
-    debug(LOG_ERR, "get_ext_iface(): Failed to detect the external interface after %d tries, aborting", NUM_EXT_INTERFACE_DETECT_RETRY);
+    debug(LOG_ERR, "get_ext_iface(): Failed to detect the external interface after %d tries, aborting", i);
     exit(1);
     free(device);
     free(gw);
