@@ -33,7 +33,7 @@ BOARD_RTC_DIR      = $(BOARD_DIR)/rtc
 BOARD_TDM_DIR      = $(BOARD_DIR)/tdm-fpga
 BOARD_SLIC_DIR     = $(BOARD_DIR)/slic
 SATA_CORE_DIR      = $(BOARD_DIR)/SATA/CoreDriver/
-QD_DIR             = $(BOARD_DIR)/QD-DSDT_2.5/
+QD_DIR             = $(BOARD_DIR)/QD-DSDT_2.5b/
 
 
 # Controller components
