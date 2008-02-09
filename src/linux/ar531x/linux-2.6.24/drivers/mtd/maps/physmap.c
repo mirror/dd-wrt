@@ -76,6 +76,11 @@ static const char *rom_probe_types[] = { "cfi_probe", "jedec_probe", "map_rom", 
 #ifdef CONFIG_MTD_PARTITIONS
 static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", NULL };
 #endif
+static struct mtd_partition test_parts[] = {
+        { name: "rootfs", offset: 0x50000, size: 0x680000, },//, mask_flags: MTD_WRITEABLE, },
+        { name: "nvram", offset: 0x7b0000, size: 0x010000, },//, mask_flags: MTD_WRITEABLE, },
+        { name: NULL, },
+};
 
 static int physmap_flash_probe(struct platform_device *dev)
 {
@@ -133,6 +138,8 @@ static int physmap_flash_probe(struct platform_device *dev)
 		goto err_out;
 	}
 	info->mtd->owner = THIS_MODULE;
+
+	add_mtd_partitions(info->mtd, test_parts, 2);
 
 #ifdef CONFIG_MTD_PARTITIONS
 	err = parse_mtd_partitions(info->mtd, part_probe_types, &info->parts, 0);
