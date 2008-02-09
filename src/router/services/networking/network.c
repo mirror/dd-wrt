@@ -2047,7 +2047,6 @@ start_lan (void)
 #ifdef HAVE_MICRO
   br_shutdown ();
 #endif
-
 }
 
 void
