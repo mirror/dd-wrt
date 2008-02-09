@@ -653,13 +653,18 @@ static int do_ip_setsockopt(struct sock *sk, int level,
 		struct ip_msfilter *msf;
 
 		if (optlen < IP_MSFILTER_SIZE(0))
+		{
+		    printk(KERN_EMERG "optlen %d, but msfilter size = %d\n",optlen,IP_MSFILTER_SIZE(0));
 			goto e_inval;
+		}
 		if (optlen > sysctl_optmem_max) {
+		    printk(KERN_EMERG "optlen %d, but optmem size = %d\n",optlen,sysctl_optmem_max);
 			err = -ENOBUFS;
 			break;
 		}
 		msf = kmalloc(optlen, GFP_KERNEL);
 		if (msf == 0) {
+		    printk(KERN_EMERG "optlen %d, unable to allocate\n",optlen);
 			err = -ENOBUFS;
 			break;
 		}
@@ -672,11 +677,13 @@ static int do_ip_setsockopt(struct sock *sk, int level,
 		if (msf->imsf_numsrc >= 0x3ffffffcU ||
 		    msf->imsf_numsrc > sysctl_igmp_max_msf) {
 			kfree(msf);
+		    printk(KERN_EMERG "imsf overflow %d > %d\n",msf->imsf_numsrc,sysctl_igmp_max_msf);
 			err = -ENOBUFS;
 			break;
 		}
 		if (IP_MSFILTER_SIZE(msf->imsf_numsrc) > optlen) {
 			kfree(msf);
+			printk(KERN_EMERG "filter overflow %d>%d\n",IP_MSFILTER_SIZE(msf->imsf_numsrc),optlen);
 			err = -EINVAL;
 			break;
 		}
