@@ -35,9 +35,62 @@
 #include <arpa/inet.h>
 #include <net/if_arp.h>
 #include <linux/sockios.h>
+#include <wlutils.h>
 
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
+
+
+void
+fix_macs (char *lan_ifname, int idx)
+{
+  struct ether_addr bssid;
+  struct ifreq ifr;
+  char buf[32];
+  char buf2[32];
+  int s;
+  int changed = 0;
+  char *next;
+  char var[80];
+  char *vifs = nvram_nget ("wl%d_vifs", idx);
+  if (vifs != NULL)
+    {
+      if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+	return;
+      foreach (var, vifs, next)
+      {
+	if (wl_ioctl (var, WLC_GET_BSSID, &bssid, ETHER_ADDR_LEN) == 0)
+	  {
+	    {
+	      strncpy (ifr.ifr_name, var, IFNAMSIZ);
+	      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	      ioctl (s, SIOCGIFHWADDR, &ifr);
+	      char *cmp1 = ether_etoa (ifr.ifr_hwaddr.sa_data, buf2);
+	      char *cmp2 = ether_etoa ((unsigned char *) &bssid, buf);
+	      if (strcmp (cmp1, cmp2))
+		{
+		  eval ("killall", "-9", "nas");
+		  fprintf (stderr, "fix mac %s with %s\n", var,
+			   ether_etoa ((unsigned char *) &bssid, buf));
+		  changed = 1;
+		  memcpy (ifr.ifr_hwaddr.sa_data, &bssid, 6);
+		  eval ("ifconfig", var, "down");
+		  ioctl (s, SIOCSIFHWADDR, &ifr);
+		  eval ("ifconfig", var, "up");
+		  nvram_nset (ether_etoa ((unsigned char *) &bssid, buf),
+			      "%s_hwaddr", var);
+		  nvram_commit ();
+		}
+	    }
+	  }
+      }
+      close (s);
+    }
+  if (changed)
+    {
+      start_nas ();
+    }
+}
 
 void
 do_mssid (char *lan_ifname, char *wlifname)
@@ -48,7 +101,6 @@ do_mssid (char *lan_ifname, char *wlifname)
   char *next;
   char var[80];
   char *vifs = nvram_nget ("wl%d_vifs", get_wl_instance (wlifname));
-  int instance = get_wl_instance (wlifname);
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
   if (vifs != NULL)
@@ -66,10 +118,11 @@ do_mssid (char *lan_ifname, char *wlifname)
 //      else
 //#endif
 	ether_atoe (nvram_nget ("%s_hwaddr", var), ifr.ifr_hwaddr.sa_data);
-
-	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 	strncpy (ifr.ifr_name, var, IFNAMSIZ);
+	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	eval ("ifconfig", var, "down");
 	ioctl (s, SIOCSIFHWADDR, &ifr);
+	eval ("ifconfig", var, "up");
       }
       if (nvram_match (bridged, "1"))
 	{
@@ -83,6 +136,13 @@ do_mssid (char *lan_ifname, char *wlifname)
 	}
     }
   close (s);
+}
+
+void
+start_mssid (void)
+{
+  fix_macs ("br0", 0);
+  fix_macs ("br0", 1);
 }
 
 void
