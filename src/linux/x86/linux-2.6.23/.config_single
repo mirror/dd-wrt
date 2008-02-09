@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux kernel version: 2.6.23
-# Tue Oct 16 14:14:01 2007
+# Linux kernel version: 2.6.23.12
+# Sun Dec 30 18:10:50 2007
 #
 CONFIG_X86_32=y
 CONFIG_GENERIC_TIME=y
@@ -64,8 +64,8 @@ CONFIG_EVENTFD=y
 CONFIG_SHMEM=y
 # CONFIG_VM_EVENT_COUNTERS is not set
 # CONFIG_SLUB_DEBUG is not set
-# CONFIG_SLAB is not set
-CONFIG_SLUB=y
+CONFIG_SLAB=y
+# CONFIG_SLUB is not set
 # CONFIG_SLOB is not set
 CONFIG_RT_MUTEXES=y
 # CONFIG_TINY_SHMEM is not set
@@ -1100,7 +1100,7 @@ CONFIG_SUNDANCE=m
 CONFIG_SUNDANCE_MMIO=y
 CONFIG_TLAN=m
 CONFIG_VIA_RHINE=m
-CONFIG_VIA_RHINE_MMIO=y
+# CONFIG_VIA_RHINE_MMIO is not set
 CONFIG_VIA_RHINE_NAPI=y
 CONFIG_SC92031=m
 CONFIG_NETDEV_1000=y

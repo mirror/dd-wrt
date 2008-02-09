@@ -32,4 +32,9 @@
 
 obj-$(CONFIG_E1000) += e1000.o
 
-e1000-objs := e1000_main.o e1000_hw.o e1000_ethtool.o e1000_param.o
+FAMILYC = e1000_82540.o e1000_82542.o e1000_82571.o e1000_82541.o \
+	  e1000_82543.o e1000_ich8lan.o e1000_80003es2lan.o
+
+# core driver files
+e1000-objs := e1000_main.o $(FAMILYC) e1000_mac.o e1000_nvm.o e1000_phy.o \
+	 e1000_manage.o e1000_param.o e1000_ethtool.o kcompat.o e1000_api.o
