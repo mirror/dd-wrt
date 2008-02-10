@@ -17,6 +17,34 @@ function connect(F,I) {
 	apply(F);
 }
 
+var d = new Date();
+var count = d.getFullYear() * 12 + d.getMonth();
+
+function get_month(count) {
+	return count % 12 + 1;
+}
+
+function get_year(count) {
+	return parseInt (count / 12);
+}
+
+function load_file(count) {
+	return "/ttgraph.cgi?" + get_month(count) + "-" + get_year(count);
+}
+
+function do_show_prev() {
+	count--;
+	var f = document.getElementById('graph');
+	f.src = load_file(count);
+}
+
+function do_show_next() {
+	count++;
+	var f = document.getElementById('graph');
+	f.src = load_file(count);
+}
+
+
 addEvent(window, "load", function() {
 	setElementVisible("wan_show", "<% nvram_get("wl0_mode"); %>" != "wet" && "<% nvram_get("wl0_mode"); %>" != "apstawet");
 	setElementVisible("wan_showtraff", "<% nvram_get("wl0_mode"); %>" != "wet" && "<% nvram_get("wl0_mode"); %>" != "apstawet" && "<% nvram_get("wan_proto"); %>" != "disabled");	
@@ -121,7 +149,9 @@ addEvent(window, "unload", function() {
 									</div>
 								</div>
 							</fieldset><br />
+							
 							<div id="wan_showtraff" style="display:none">
+							<h2><% tran("status_inet.traff"); %></h2>
 								<fieldset>
 									<legend><% tran("status_inet.traff"); %></legend>
 										 <div class="setting">
@@ -133,15 +163,27 @@ addEvent(window, "unload", function() {
 											<span id="ttraff_out"><% get_totaltraff("out"); %></span>&nbsp;
 										</div>
 								</fieldset><br />
-							</div>
-							
-							<h2>Traffic Graph - February 2008</h2>
+
 								<fieldset>
-									<iframe src="/ttgraph.cgi?02-2008" width="555" height="350" frameborder="0" type="text/html">
+									<script type="text/javascript">
+									//<![CDATA[
+									document.write("<iframe id=\"graph\" src=\"" + load_file(count) + "\" width=\"555\" height=\"350\" frameborder=\"0\" type=\"text/html\">");
+									//]]>
+									</script>
+
 									</iframe>
+										<div class="center">
+											<script type="text/javascript">
+											//<![CDATA[
+											document.write("<input class=\"button\" type=\"button\" value=\"" + status_inet.previous + "\" onclick=\"do_show_prev();\">");
+											document.write("<input class=\"button\" type=\"button\" value=\"" + status_inet.next + "\" onclick=\"do_show_next();\">");
+											//]]>
+											</script>
+										</div>
+
 								</fieldset>
 								<br />
-
+							</div>
 
 							<div class="submitFooter">
 								<script type="text/javascript">
