@@ -670,6 +670,7 @@ cprintf("wl probe\n");
 cprintf("get wl addr\n");
 	/* Get MAC address */
 	(void) wl_hwaddr(name, (uchar *)buf);
+	memcpy(vif_addr, buf, ETHER_ADDR_LEN);
 	/* Get instance */
 cprintf("get instance\n");
 	WL_IOCTL(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
@@ -726,7 +727,17 @@ cprintf("disable bss %s\n",name);
 #endif
 		nvram_set(strcat_r(bsscfg->prefix, "ifname", tmp), var);
 	}
-	if (!strcmp(nvram_safe_get("ure_disable"), "0")) { /* URE is enabled */
+
+	/* wlX_mode settings: AP, STA, WET, BSS/IBSS, APSTA */
+	str = nvram_default_get(strcat_r(prefix, "mode", tmp),"dd-wrt");
+	ap = (!strcmp(str, "") || !strcmp(str, "ap") || !strcmp(str, "mssid"));
+	apsta = (!strcmp(str, "apsta") || !strcmp(str, "apstawet") || ((!strcmp(str, "sta") || !strcmp(str, "wet")) && bclist->count > 1));
+	sta = (!strcmp(str, "sta") && bclist->count == 1);
+	wds = !strcmp(str, "wds");
+	wet = !strcmp(str, "wet") || !strcmp(str, "apstawet");
+	mac_spoof = !strcmp(str, "mac_spoof");
+
+	if (wet && apsta) { /* URE is enabled */
 		ure_enab = TRUE;
 	}
 cprintf("set mssid flags %s\n",name);
@@ -755,18 +766,18 @@ cprintf("set local addr %s\n",name);
 	if (!ure_enab) {
 		/* set local bit for our MBSS vif base */
 		ETHER_SET_LOCALADDR(vif_addr);
-
+		vif_addr[5] +=1;
 		/* construct and set other wlX.Y_hwaddr */
 		for (i = 1; i < max_no_vifs; i++) {
 			snprintf(tmp, sizeof(tmp), "wl%d.%d_hwaddr", unit, i);
 			addr = nvram_safe_get(tmp);
-			if (!strcmp(addr, "")) {
+			//if (!strcmp(addr, "")) {
 				vif_addr[5] = (vif_addr[5] & ~(max_no_vifs-1))
 				        | ((max_no_vifs-1) & (vif_addr[5]+1));
 
 				nvram_set(tmp, ether_etoa((uchar *)vif_addr,
 				                          eaddr));
-			}
+			//}
 		}
 		/* The addresses are available in NVRAM, so set them */
 		for (i = 1; i < max_no_vifs; i++) {
@@ -788,14 +799,6 @@ cprintf("set local addr %s\n",name);
 		nvram_set(tmp, ether_etoa((uchar *)vif_addr, eaddr));
 	}
 
-	/* wlX_mode settings: AP, STA, WET, BSS/IBSS, APSTA */
-	str = nvram_default_get(strcat_r(prefix, "mode", tmp),"dd-wrt");
-	ap = (!strcmp(str, "") || !strcmp(str, "ap") || !strcmp(str, "mssid"));
-	apsta = (!strcmp(str, "apsta") || !strcmp(str, "apstawet") || ((!strcmp(str, "sta") || !strcmp(str, "wet")) && bclist->count > 1));
-	sta = (!strcmp(str, "sta") && bclist->count == 1);
-	wds = !strcmp(str, "wds");
-	wet = !strcmp(str, "wet") || !strcmp(str, "apstawet");
-	mac_spoof = !strcmp(str, "mac_spoof");
 
 	/* Set AP mode */
 	val = (ap || apsta || wds) ? 1 : 0;
@@ -827,7 +830,7 @@ cprintf("set sta retry time %s\n",name);
 	}
 
 	/* Retain remaining WET effects only if not APSTA */
-	wet &= !apsta;
+//	wet &= !apsta;
 
 	/* Set infra: BSS/IBSS (IBSS only for WET or STA modes) */
 	val = 1;
