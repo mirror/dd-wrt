@@ -1198,8 +1198,8 @@ status_inet.leasetime="Renouvellement du bail dans";
 status_inet.traff="Trafic";
 status_inet.ttraffin="Total Incoming Trafic (MBytes)";
 status_inet.ttraffout="Total Outgoing Trafic (MBytes)";
-status_inet.previous="Previous Month";
-status_inet.next="Next Month";
+status_inet.previous="Mois précédent";
+status_inet.next="Mois suivant";
 
 //help container
 
