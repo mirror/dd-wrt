@@ -743,9 +743,12 @@ cprintf("disable bss %s\n",name);
 cprintf("set mssid flags %s\n",name);
 	if (wl_ap_build) {
 		/* Enable MSSID mode if appropriate */
-		if (!ure_enab) {
 		WL_IOVAR_SETINT(name, "mssid", (bclist->count > 1));
+		if (!ure_enab) {
 		WL_IOVAR_SETINT(name, "mbss", (bclist->count > 1)); //compatiblitiy with newer drivers
+		}else{
+		WL_IOVAR_SETINT(name, "mbss", 0); //compatiblitiy with newer drivers
+		
 		}
 		/*
 		 * Set SSID for each BSS Config
@@ -763,21 +766,19 @@ cprintf("set mssid flags %s\n",name);
 		}
 	}
 cprintf("set local addr %s\n",name);
-	if (nvram_get("il0macaddr")!=NULL)
-	    {
-	    ether_atoe(nvram_safe_get("il0macaddr"),vif_addr);
-	    }
 	if (!ure_enab) {
+//	if (nvram_get("il0macaddr")!=NULL)
+//	    {
+//	    ether_atoe(nvram_safe_get("il0macaddr"),vif_addr);
+//	    }
 		/* set local bit for our MBSS vif base */
 		ETHER_SET_LOCALADDR(vif_addr);
-		vif_addr[5] +=1;
 		/* construct and set other wlX.Y_hwaddr */
 		for (i = 1; i < max_no_vifs; i++) {
 			snprintf(tmp, sizeof(tmp), "wl%d.%d_hwaddr", unit, i);
 			addr = nvram_safe_get(tmp);
 			//if (!strcmp(addr, "")) {
-				vif_addr[5] = (vif_addr[5] & ~(max_no_vifs-1))
-				        | ((max_no_vifs-1) & (vif_addr[5]+1));
+				vif_addr[5]++;
 
 				nvram_set(tmp, ether_etoa((uchar *)vif_addr,
 				                          eaddr));
