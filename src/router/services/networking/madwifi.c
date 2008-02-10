@@ -53,7 +53,6 @@
 #include <shutils.h>
 #include <utils.h>
 #include <unistd.h>
-#include <wlutils.h>
 
 #include "wireless.h"
 #include "net80211/ieee80211.h"
