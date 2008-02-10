@@ -222,8 +222,7 @@ wifi_getrate (char *ifname)
 #else
 #define OFFSET 0
 #endif
-static u_int
-ieee80211_mhz2ieee (u_int freq)
+u_int ieee80211_mhz2ieee (u_int freq)
 {
   if (freq == 2484 + OFFSET)
     return 14;
