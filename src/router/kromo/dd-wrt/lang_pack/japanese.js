@@ -1307,6 +1307,8 @@ status_inet.leasetime="残りリース時間";
 status_inet.traff="Traffic";
 status_inet.ttraffin="Total Incoming Traffic (MBytes)";
 status_inet.ttraffout="Total Outgoing Traffic (MBytes)";
+status_inet.previous="Previous Month";
+status_inet.next="Next Month";
 
 //help container
 
