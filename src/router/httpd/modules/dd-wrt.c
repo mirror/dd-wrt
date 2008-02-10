@@ -8275,7 +8275,7 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
 	       nvram_match ("wan_ifname", var) ? "selected=\"selected\"" : "",
 	       var);
   }
-  websWrite (wp, "</select>\n");
+  websWrite (wp, "</select></div>\n");
 
   foreach (var, eths, next)
   {
