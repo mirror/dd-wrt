@@ -53,6 +53,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <unistd.h>
+#include <wlutils.h>
 
 #include "wireless.h"
 #include "net80211/ieee80211.h"
@@ -313,23 +314,6 @@ deconfigure_wifi (void)
     deconfigure_single (i);
 }
 
-
-/*
- * Convert MHz frequency to IEEE channel number.
- */
-u_int
-ieee80211_mhz2ieee (u_int freq)
-{
-  if (freq == 2484)
-    return 14;
-  if (freq < 2484)
-    return (freq - 2407) / 5;
-  if (freq < 4990 && freq > 4940)
-    return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
-  if (freq < 5000)
-    return 15 + ((freq - 2512) / 20);
-  return (freq - 5000) / 5;
-}
 
 
 
