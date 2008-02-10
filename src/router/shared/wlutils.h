@@ -71,7 +71,7 @@ int isAssociated (char *ifname);
 unsigned int getRegDomain (const char *country);
 unsigned int getCountry (const char *country);
 char *getCountryList (void);
-int ieee80211_mhz2ieee(int freq);
+u_int ieee80211_mhz2ieee(u_int freq);
 
 #endif
 /*
