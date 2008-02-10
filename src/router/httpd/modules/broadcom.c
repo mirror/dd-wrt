@@ -3952,6 +3952,8 @@ char months[12][16] = {"January", "February", "March", "April", "May", "June", "
 unsigned long rcvd[31] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 unsigned long sent[31] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 unsigned long max = 5, smax = 5;
+unsigned long totin = 0;
+unsigned long totout = 0;
 
   if (sscanf (query, "%u-%u", &month, &year) != 2)
 	    return;
@@ -3966,7 +3968,8 @@ unsigned long max = 5, smax = 5;
     foreach (var, tdata, next)
     {
      sscanf (var, "%lu:%lu", &rcvd[i], &sent[i]);
-
+	 totin += rcvd[i];
+	 totout += sent[i];
      if (rcvd[i] > max) max = rcvd[i];
      if (sent[i] > max) max = sent[i];
      i++;
@@ -4038,7 +4041,7 @@ unsigned long max = 5, smax = 5;
   websWrite (stream, "</li>\n\n");
 
   websWrite (stream, "<li id=\"label\">\n");
-  websWrite (stream, "%s %d\n", months[month - 1], year);
+  websWrite (stream, "%s %d (in: %lu MB / out: %lu MB)\n", months[month - 1], year, totin, totout);
   websWrite (stream, "</li>\n");
     
   websWrite (stream, "</ul>\n\n");
