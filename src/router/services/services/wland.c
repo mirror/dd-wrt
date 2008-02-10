@@ -277,13 +277,10 @@ do_aqos_check (void)
 }
 #endif
 #ifndef HAVE_MADWIFI
-extern void fix_macs(char *lan_ifname, int idx);
 
 static void
 do_ap_check (void)
 {
-  fix_macs(nvram_safe_get("lan_ifname"),0);
-  fix_macs(nvram_safe_get("lan_ifname"),1);
 
 //  if (nvram_match ("apwatchdog_enable", "1"))
 //    do_ap_watchdog ();
@@ -323,11 +320,6 @@ checkbssid (void)
 static void
 do_client_check (void)
 {
-if (getSTA())
-{
-  fix_macs(nvram_safe_get("lan_ifname"),0);
-  fix_macs(nvram_safe_get("lan_ifname"),1);
-} 
    FILE *fp = NULL;
   char buf[1024];
 //  char mac[512];
