@@ -799,6 +799,8 @@ status_inet.leasetime="Pozostaly czas dzierzawy";
 status_inet.traff="Traffic";
 status_inet.ttraffin="Total Incoming Traffic (MBytes)";
 status_inet.ttraffout="Total Outgoing Traffic (MBytes)";
+status_inet.previous="Previous Month";
+status_inet.next="Next Month";
 
 //help container
 

@@ -1320,6 +1320,8 @@ status_inet.leasetime="Preostali èas zakupa";
 status_inet.traff="Promet";
 status_inet.ttraffin="Skupni vhodni promet (MBytes)";
 status_inet.ttraffout="Skupni izhodni promet (MBytes)";
+status_inet.previous="Prej¹nji mesec";
+status_inet.next="Naslednji mesec";
 
 //help container
 
