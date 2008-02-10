@@ -3948,6 +3948,7 @@ unsigned int days;
 unsigned int month; 
 unsigned int year;
 int i = 0;
+char months[12][16] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"}; 
 unsigned long rcvd[31] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 unsigned long sent[31] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 unsigned long max = 5, smax = 5;
@@ -4013,6 +4014,7 @@ unsigned long max = 5, smax = 5;
   websWrite (stream, "#t-graph #ticks {width: %upx; height: 300px; z-index: 1;}\n", days * COL_WIDTH);
   websWrite (stream, "#t-graph #ticks .tick {position: relative; border-bottom: 1px solid #BBB; width: %upx;}\n", days * COL_WIDTH);
   websWrite (stream, "#t-graph #ticks .tick p {position: absolute; left: 100%%; top: -0.67em; margin: 0 0 0 0.5em;}\n");
+  websWrite (stream, "#t-graph #label {width: 500px; height: 0px; bottom: -0.67em; z-index: 1; font: 12px Tahoma, Arial, sans-serif; font-weight: bold;}\n");
   websWrite (stream, "</style>\n");
   websWrite (stream, "</head>\n\n");
   websWrite (stream, "<body>\n");
@@ -4034,6 +4036,10 @@ unsigned long max = 5, smax = 5;
   websWrite (stream, "<div class=\"tick\" style=\"height: 59px;\"><p>%d&nbsp;MB</p></div>\n", smax * i / 5);
   }
   websWrite (stream, "</li>\n\n");
+
+  websWrite (stream, "<li id=\"label\">\n");
+  websWrite (stream, "%s %d\n", months[month - 1], year);
+  websWrite (stream, "</li>\n");
     
   websWrite (stream, "</ul>\n\n");
   websWrite (stream, "</body>\n");
