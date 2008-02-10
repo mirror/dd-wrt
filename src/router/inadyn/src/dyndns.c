@@ -464,6 +464,7 @@ BOOL is_tzo_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string
 static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 {
 	int i;
+	int shutdown = 0;
 	RC_TYPE rc = RC_OK;
 	FILE *fp;
 	
@@ -537,6 +538,7 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 					else
 					{
 						DBG_PRINTF((LOG_WARNING,"W:" MODULE_TAG "Error validating DYNDNS svr answer. Check usr,pass,hostname!\n", http_tr.p_rsp));
+						shutdown++;
 					}
 					if (p_self->dbg.level > 2)
 					{							
@@ -553,7 +555,7 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 					rc = rc2;
 				}			
 			}
-			if (rc != RC_OK)
+			if (rc != RC_OK || shutdown>2)
 			{
 				break;
 			}
