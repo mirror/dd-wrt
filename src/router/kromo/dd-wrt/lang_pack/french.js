@@ -108,7 +108,7 @@ share.router="Routeur";
 share.static_lease="Réservation d'adresse";
 share.srvip="IP Serveur";
 share.srvipname="IP Serveur";
-share.localdns="DNS Local";
+share.localdns="DNS local";
 share.minutes="minutes";
 share.oui="Recherche OUI";
 share.sttic="Statique";
@@ -675,7 +675,7 @@ idx_pptp.gateway="Passerelle";
 idx_pptp.encrypt="Cryptage PPTP";
 
 // ** index_static.asp **//
-idx_static.dns="DNS Statique";
+idx_static.dns="DNS statique";
 
 // ** index.asp **//
 idx.titl="Configuration";
@@ -880,8 +880,8 @@ hqos.right3="Débit descendant:";
 hqos.right4="Doit être entre 80% et 100% du débit descendant maximum de la connexion.";
 hqos.right6="Vous pouvez contrôler la priorité de plusieurs types d'applications pour optimiser la bande passante.";
 hqos.right8="Vous pouvez contrôler la priorité du trafic pour les adresses IP spécifiées ou une plage d'adresses.";
-hqos.right10="Vous pouvez contrôler la priorité du traffic en fonction de l'adresse MAC des clients.";
-hqos.right12="Vous pouvez contrôler la priorité du traffic en fonction du port ethernet auquel sont connectés les clients.";
+hqos.right10="Vous pouvez contrôler la priorité du trafic en fonction de l'adresse MAC des clients.";
+hqos.right12="Vous pouvez contrôler la priorité du trafic en fonction du port ethernet auquel sont connectés les clients.";
 
 
 // ** RouteTable.asp **//
@@ -916,7 +916,7 @@ route.ospf_mod="Routage OSPF";
 route.gateway_legend="Routage Dynamique";
 route.static_legend="Routage Statique";
 route.static_setno="Choisir l'itinéraire";
-route.static_name="Nom de la Route";
+route.static_name="Nom de la route";
 route.static_ip="IP de Destination sur le LAN";
 
 //help container
@@ -968,7 +968,7 @@ service.pptp_chap="CHAP-Secrets";
 //syslog.webservices
 service.syslog_legend="System Log";
 service.syslog_srv="Syslogd";
-service.syslog_ip="Serveur Distant";
+service.syslog_ip="Serveur distant";
 
 //telnet.webservices
 service.telnet_legend="Telnet";
@@ -1006,7 +1006,7 @@ service.pppoesrv_lcpei="LCP Echo Interval";
 service.pppoesrv_lcpef="LCP Echo Failure";
 service.pppoesrv_idlet="Idle Time";
 service.pppoesrv_auth="Authentification";
-service.pppoesrv_radip="IP Serveur Radius";
+service.pppoesrv_radip="IP serveur Radius";
 service.pppoesrv_radauthport="Port Authentification Radius";
 service.pppoesrv_radaccport="Radius Accounting Port";
 service.pppoesrv_radkey="Clé Partagée Radius";
@@ -1038,8 +1038,8 @@ service.vpn_clikey="Private Client Key";
 //sshd.webservices
 service.ssh_legend="Secure Shell";
 service.ssh_srv="SSHd";
-service.ssh_password="Password Login";
-service.ssh_key="Authorized Keys";
+service.ssh_password="Mot de passe";
+service.ssh_key="Clé autorisée";
 
 //radiooff.webservices
 service.radiooff_legend="Fonction du Bouton SES / AOSS / EZ-SETUP";
@@ -1120,7 +1120,7 @@ sipath.status_titl="Statut";
 
 // ** Status_Lan.asp **//
 status_lan.titl="Statut LAN";
-status_lan.h2="Réseau Local";
+status_lan.h2="Réseau local";
 status_lan.legend="Statut LAN";
 status_lan.h22="Dynamic Host Configuration Protocol (DHCP)";
 status_lan.legend2="Statut DHCP";
@@ -1189,37 +1189,36 @@ hstatus_router.right10="Temps écoulé depuis le dernier arrêt/relance du routeur.
 hstatus_router.right12="Ce sont 3 nombres qui mesurent la charge de votre routeur sur une période de 1, 5 et 15 minutes.";
 
 // ** Status_Internet.asp **//
-
-status_inet.titl="WAN Status";
+status_inet.titl="Statut WAN";
 status_inet.h11="WAN";
 status_inet.conft="Type de configuration";
 status_inet.www_loginstatus="Statut de la connexion";
 status_inet.wanuptime="Connexion démarrée depuis";
 status_inet.leasetime="Renouvellement du bail dans";
-status_inet.traff="Traffic";
-status_inet.ttraffin="Total Incoming Traffic (MBytes)";
-status_inet.ttraffout="Total Outgoing Traffic (MBytes)";
+status_inet.traff="Trafic";
+status_inet.ttraffin="Total Incoming Trafic (MBytes)";
+status_inet.ttraffout="Total Outgoing Trafic (MBytes)";
 
 //help container
 
 hstatus_inet.right2="Ce sont les informations requises par votre FAI afin de vous connecter à Internet et qui sont configurées dans l'onglet <em>Setup</em>. Vous pouvez connecter votre routeur à Internet en cliquant sur <em>Connect</em> ou le déconnecter en cliquant sur <em>Disconnect</em>.";
-hstatus_inet.right4="This shows your router's Internet traffic.";
+hstatus_inet.right4="This shows your router's Internet trafic.";
 
 // ** Status_Conntrack.asp **//
-status_conn.titl="Active IP Connections Table";
-status_conn.h2="Active IP Connections";
+status_conn.titl="Table des connections";
+status_conn.h2="Connections IP actives";
 
 // ** Status_SputnikAPD.asp **//
-status_sputnik.titl="Statut de l'Agent Sputnik";
+status_sputnik.titl="Statut de l'agent Sputnik";
 status_sputnik.h2="Agent&trade; Sputnik&reg;";
 status_sputnik.manage="Managed By";
 status_sputnik.license="No. de License SCC";
 
 //help container
-hstatus_sputnik.right1="Statut de l'Agent Sputnik";
+hstatus_sputnik.right1="Statut de l'agent Sputnik";
 hstatus_sputnik.right2="Cette partie affiche l'état du processus de l'Agent Sputnik.";
 hstatus_sputnik.right4="Le centre de contrôle Sputnik auquel ce point d'accès est connecté.";
-hstatus_sputnik.right6="Statut actuel de l'Agent Sputnik";
+hstatus_sputnik.right6="Statut actuel de l'agent Sputnik";
 hstatus_sputnik.right8="Le numéro de licence de votre centre de contrôle Sputnik.";
 
 // ** Status_Wireless.asp **//
@@ -1440,6 +1439,7 @@ wl_adv.label17="Accès à la console par WIFI";
 wl_adv.label18="Support de WMM";
 wl_adv.label19="No-Acknowledgement";
 wl_adv.label20="Mode Shortslot";
+wl_adv.label22="Mode de coexistence Bluetooth";
 wl_adv.table1="Paramètres EDCA AP (AP vers Client)";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
@@ -1498,7 +1498,7 @@ wl_basic.AntGain="Gain Antenne";
 wl_basic.diversity="Diversity";
 wl_basic.primary="Primaire";
 wl_basic.secondary="Secondaire";
-wl_basic.network="Configuration Réseau";
+wl_basic.network="Configuration réseau";
 wl_basic.unbridged="Unbridged";
 wl_basic.bridged="Bridged";
 wl_basic.turbo="Mode Turbo";
@@ -1514,6 +1514,7 @@ wl_basic.specialmode="2.3 Ghz Mode";
 wl_basic.wifi_bonding="Wifi Bonding";
 wl_basic.sifstime="OFDM SIFS Time";
 wl_basic.preambletime="OFDM Preamble Time";
+wl_basic.multicast="Multicast forwarding";
 
 //help container
 hwl_basic.right2="Si vous disposez à la fois des périphériques 802.11g et 802.11b sur votre réseau, conservez le paramètre par défaut <em>Mixte</em>. Si vous utilisez uniquement des périphériques 802.11g, sélectionnez <em>G-uniquement</em>. Si vous travaillez uniquement avec des périphériques 802.11b, sélectionnez <em>B-uniquement</em>. Si votre réseau n'est muni d'aucun périphérique sans fil, sélectionnez l'option <em>Désactiver</em>.<br/><b>Remarque :</b> quand vous changez de mode, certains paramètres avancés sont succeptibles d'être modifiés (\""+wl_adv.label16+"\", \""+wl_adv.label2+"\" ou \""+wl_adv.label5+"\").";
