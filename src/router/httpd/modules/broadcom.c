@@ -3886,7 +3886,9 @@ static void
 ej_get_totaltraff (webs_t wp, int argc, char_t ** argv)
 {
 char *type;
-char *wanifname = nvram_safe_get ("wan_ifname");
+static char wanface[32];
+char line[256];
+unsigned long rcvd, sent;
 
 #ifdef FASTWEB
   ejArgs (argc, argv, "%s", &type);
@@ -3898,9 +3900,7 @@ char *wanifname = nvram_safe_get ("wan_ifname");
     }
 #endif
 	
-  char line[256];
-  unsigned long rcvd, sent;
-
+  strncpy (wanface, get_wan_face (), sizeof (wanface));
 
   FILE *in = fopen ("/proc/net/dev", "rb");
   if (in == NULL)
@@ -3914,7 +3914,7 @@ char *wanifname = nvram_safe_get ("wan_ifname");
   while (line[ifl] != ':')
     ifl++;
   line[ifl] = 0;	/* interface */
-  if (strstr (line, wanifname))
+  if (strstr (line, wanface))
    { 
 	 sscanf (line + ifl + 1,
 		      "%lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld %lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld",
@@ -3939,6 +3939,7 @@ return;
 static void
 do_ttgraph (char *url, webs_t stream, char *query)
 {
+#define COL_WIDTH 16	/* single column width */
 
 char *next;
 char var[80];
@@ -3959,18 +3960,18 @@ unsigned long max = 5, smax = 5;
   char tq[32];
   sprintf (tq, "traff-%02u-%u", month, year);
   char *tdata = nvram_safe_get (tq);
-  if (tdata == NULL || strlen(tdata) == 0)
-    return;
-  
-  foreach (var, tdata, next)
-  {
-   sscanf (var, "%lu:%lu", &rcvd[i], &sent[i]);
+  if (tdata != NULL || strlen(tdata))
+   {
+    foreach (var, tdata, next)
+    {
+     sscanf (var, "%lu:%lu", &rcvd[i], &sent[i]);
 
-    if (rcvd[i] > max) max = rcvd[i];
-    if (sent[i] > max) max = sent[i];
-    i++;
-  }
-
+     if (rcvd[i] > max) max = rcvd[i];
+     if (sent[i] > max) max = sent[i];
+     i++;
+    }
+   }
+   
   if (max > 5) smax = 10;
   if (max > 10) smax = 50;
   if (max > 50) smax = 100;
@@ -3989,12 +3990,12 @@ unsigned long max = 5, smax = 5;
   websWrite (stream, "<head>\n"); 
   websWrite (stream, "<title>dd-wrt traffic graph</title>\n");
   websWrite (stream, "<style type=\"text/css\">\n\n");
-  websWrite (stream, "#t-graph {position: relative; width: 500px; height: 300px;\n");
+  websWrite (stream, "#t-graph {position: relative; width: %upx; height: 300px;\n", days * COL_WIDTH);
   websWrite (stream, "  margin: 1.1em 0 3.5em; padding: 0;\n");
   websWrite (stream, "  border: 1px solid gray; list-style: none;\n");
   websWrite (stream, "  font: 9px Tahoma, Arial, sans-serif;}\n");
   websWrite (stream, "#t-graph ul {margin: 0; padding: 0; list-style: none;}\n");
-  websWrite (stream, "#t-graph li {position: absolute; bottom: 0; width: 16px; z-index: 2;\n");
+  websWrite (stream, "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n", COL_WIDTH);
   websWrite (stream, "  margin: 0; padding: 0;\n");
   websWrite (stream, "  text-align: center; list-style: none;}\n");
   websWrite (stream, "#t-graph li.day {height: 298px; padding-top: 2px;\n");
@@ -4003,13 +4004,14 @@ unsigned long max = 5, smax = 5;
   websWrite (stream, "#t-graph li.rcvd {left: 3px; background: #228B22;}\n");  //set rcvd bar colour here (green)
   websWrite (stream, "#t-graph li.sent {left: 8px; background: #CD0000;}\n");  //set sent bar colour here (red)
 
-  for (i = 0; i < days; i++)
+  for (i = 0; i < days - 1; i++)
   {   
-  websWrite (stream, "#t-graph #d%d {left: %dpx;}\n", i + 1, i * 16);
+  websWrite (stream, "#t-graph #d%d {left: %dpx;}\n", i + 1, i * COL_WIDTH);
   }
+  websWrite (stream, "#t-graph #d%u {left: %upx; border-right: none;}\n", days, (days - 1) * COL_WIDTH);
   
-  websWrite (stream, "#t-graph #ticks {width: 500px; height: 300px; z-index: 1;}\n");
-  websWrite (stream, "#t-graph #ticks .tick {position: relative; border-bottom: 1px solid #BBB; width: 500px;}\n");
+  websWrite (stream, "#t-graph #ticks {width: %upx; height: 300px; z-index: 1;}\n", days * COL_WIDTH);
+  websWrite (stream, "#t-graph #ticks .tick {position: relative; border-bottom: 1px solid #BBB; width: %upx;}\n", days * COL_WIDTH);
   websWrite (stream, "#t-graph #ticks .tick p {position: absolute; left: 100%%; top: -0.67em; margin: 0 0 0 0.5em;}\n");
   websWrite (stream, "</style>\n");
   websWrite (stream, "</head>\n\n");
@@ -4029,7 +4031,7 @@ unsigned long max = 5, smax = 5;
   websWrite (stream, "<li id=\"ticks\">\n");  
   for (i = 5; i ; i--)  //scale
   {  
-  websWrite (stream, "<div class=\"tick\" style=\"height: 59px;\"><p>%d MB</p></div>\n", smax * i / 5);
+  websWrite (stream, "<div class=\"tick\" style=\"height: 59px;\"><p>%d&nbsp;MB</p></div>\n", smax * i / 5);
   }
   websWrite (stream, "</li>\n\n");
     
@@ -4037,7 +4039,7 @@ unsigned long max = 5, smax = 5;
   websWrite (stream, "</body>\n");
   websWrite (stream, "</html>\n");
 
-  
+ 
 }
 
 static void
