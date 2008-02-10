@@ -763,6 +763,10 @@ cprintf("set mssid flags %s\n",name);
 		}
 	}
 cprintf("set local addr %s\n",name);
+	if (nvram_get("il0macaddr")!=NULL)
+	    {
+	    ether_atoe(nvram_safe_get("il0macaddr"),vif_addr);
+	    }
 	if (!ure_enab) {
 		/* set local bit for our MBSS vif base */
 		ETHER_SET_LOCALADDR(vif_addr);
