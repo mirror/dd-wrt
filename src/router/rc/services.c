@@ -293,6 +293,7 @@ handle_index (void)
 #ifdef HAVE_VLANTAGGING
   handle = stop_service_nofree ("bridging", handle);
 #endif
+  handle = stop_service_nofree ("ttraff", handle);
   handle = stop_service_nofree ("wan", handle);
 #ifdef HAVE_VLANTAGGING
   handle = start_service_nofree ("bridging", handle);
@@ -306,6 +307,7 @@ handle_index (void)
   handle = start_service_nofree ("bridgesif", handle);
 #endif
   handle = start_service_nofree ("wan_boot", handle);
+  handle = start_service_nofree ("ttraff", handle);
 #ifdef HAVE_MADWIFI
   handle = start_service_nofree ("stabridge", handle);
 #endif
@@ -521,6 +523,7 @@ handle_pppoe (void)
 #ifdef HAVE_VLANTAGGING
   handle = stop_service_nofree ("bridging", handle);
 #endif
+  handle = stop_service_nofree ("ttraff", handle);
   handle = stop_service_nofree ("wan", handle);
 #ifdef HAVE_VLANTAGGING
   handle = start_service_nofree ("bridging", handle);
@@ -534,6 +537,7 @@ handle_pppoe (void)
   handle = start_service_nofree ("bridgesif", handle);
 #endif
   handle = start_service_nofree ("wan_boot", handle);
+  handle = start_service_nofree ("ttraff", handle);
 #ifdef HAVE_MADWIFI
   handle = start_service_nofree ("stabridge", handle);
 #endif
@@ -551,6 +555,7 @@ handle_pppoe (void)
 static void
 handle_spppoe (void)
 {
+  stop_service ("ttraff");
   stop_service ("wan");
 }
 static void
@@ -688,6 +693,7 @@ static void
 handle_upgrade (void)
 {
   void *handle = NULL;
+  handle = stop_service_nofree ("ttraff", handle);
   handle = stop_service_nofree ("wan", handle);
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
   handle = stop_service_nofree ("zebra", handle);
@@ -727,6 +733,7 @@ handle_wireless (void)
 #ifdef HAVE_MADWIFI
   handle = stop_service_nofree ("stabridge", handle);
 #endif
+  handle = stop_service_nofree ("ttraff", handle);
   handle = stop_service_nofree ("wan", handle);
 #ifdef HAVE_VLANTAGGING
   handle = stop_service_nofree ("bridgesif", handle);
@@ -763,6 +770,7 @@ handle_wireless (void)
   handle = start_service_nofree ("bridgesif", handle);
 #endif
   handle = start_service_nofree ("wan", handle);
+  handle = start_service_nofree ("ttraff", handle);
 #ifdef HAVE_MADWIFI
   handle = start_service_nofree ("stabridge", handle);
 #endif
@@ -796,7 +804,10 @@ handle_wireless_2 (void)
   if (nvram_match ("wl0_mode", "sta")
       || nvram_match ("wl0_mode", "apsta")
       || nvram_match ("wl0_mode", "apstawet"))
+      {
+	handle = stop_service_nofree ("ttraff", handle);
     handle = stop_service_nofree ("wan", handle);
+      }
 #ifdef HAVE_VLANTAGGING
   handle = stop_service_nofree ("bridgesif", handle);
   handle = stop_service_nofree ("vlantagging", handle);
@@ -834,7 +845,10 @@ handle_wireless_2 (void)
   if (nvram_match ("wl0_mode", "sta")
       || nvram_match ("wl0_mode", "apsta")
       || nvram_match ("wl0_mode", "apstawet"))
+      {
     handle = start_service_nofree ("wan", handle);
+    handle = start_service_nofree ("ttraff", handle);
+      }
 #ifdef HAVE_MADWIFI
   handle = start_service_nofree ("stabridge", handle);
 #endif
