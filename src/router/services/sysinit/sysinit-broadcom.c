@@ -696,8 +696,8 @@ start_sysinit (void)
 	{
 	  switch (brand)
 	    {
-		case ROUTER_WRT300NV11:
-		case ROUTER_WRT310N:    
+	    case ROUTER_WRT300NV11:
+	    case ROUTER_WRT310N:    
 	    case ROUTER_WRT350N:
 	    case ROUTER_WRT600N:
 	    case ROUTER_BUFFALO_WZRG144NH:

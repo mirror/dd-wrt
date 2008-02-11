@@ -969,6 +969,32 @@ internal_getRouterBrand ()
       }
       return ROUTER_DLINK_DIR320;
     }
+  if (nvram_match ("model_name", "DIR-330") &&
+      nvram_match ("boardrev", "0x10"))
+    {
+      cprintf ("router is D-Link DIR-330\n");
+      setRouter ("D-Link DIR-330");
+      nvram_set("wan_ifnames","eth0"); // quirk
+      nvram_set("wan_ifname","eth0");
+      fprintf(stderr,"mac is %s\n",nvram_safe_get("et0macaddr"));
+      if (nvram_match("et0macaddr","00:90:4c:4e:00:0c"))
+        {
+	FILE *in=fopen("/dev/mtdblock/1","rb");
+	fseek(in,0x7a0022,SEEK_SET);
+	char mac[32];
+	fread(in,32,1,mac);
+	fclose(in);
+	mac[17]=0;
+	nvram_set("et0macaddr",mac);
+	fprintf(stderr,"restore D-Link MAC\n");
+	}
+/*      if (nvram_get("vlan2ports")!=NULL)
+      {
+        nvram_unset("vlan2ports");
+        nvram_unset("vlan2hwname");
+      }*/
+      return ROUTER_DLINK_DIR330;
+    }
   if (boardnum == 42 &&
       nvram_match ("boardtype", "0x048e") && nvram_match ("boardrev", "0x10"))
     {
@@ -1355,6 +1381,10 @@ led_control (int type, int act)
       connected_gpio = 0x13;
       break;
 #endif
+    case ROUTER_DLINK_DIR330:
+      diag_gpio = 0x16;
+      connected_gpio = 0x14;
+      break;
     case ROUTER_BUFFALO_WBR54G:
       diag_gpio = 0x17;
       break;
