@@ -19,6 +19,7 @@
 
 unsigned long get_todays_rcvd (int day, int month, int year)
 {
+//fprintf (stderr, "entering get_todays_rcvd\n");
 char *next;
 char var[80];
 char tq[32];
@@ -36,11 +37,13 @@ unsigned long rcvd = 0;
 	 i++;
     }
    }
+//fprintf (stderr, "leaving get_todays_rcvd: rcvd=%lu\n", rcvd);
   return rcvd;
 }
 
 unsigned long get_todays_sent (int day, int month, int year)
 {
+//fprintf (stderr, "entering get_todays_sent\n");
 char *next;
 char var[80];
 char tq[32];
@@ -58,16 +61,18 @@ unsigned long sent = 0;
 	 i++;
     }
    }
+//fprintf (stderr, "leaving get_todays_sent: sent=%lu\n", sent);
   return sent;
 }
 
 int write_to_nvram (int day, int month, int year, unsigned long rcvd, unsigned long sent)
 {
+//fprintf (stderr, "entering write_to_nvram\n");
 char *next;
 char var[80];
 char tq[32];
-char temp[65];
-char buffer[2048];
+char temp[64] = "";
+char buffer[2048] = "";
 int i;
 int days = daysformonth (month, year);
 
@@ -75,20 +80,20 @@ int days = daysformonth (month, year);
 
   for (i = 1; i <= days; i++)
   {
-   if (i = day)	  
+   if (i == day)	  
    { 
 	sprintf (temp, "%lu:%lu", rcvd, sent);
    }
    else
    {
-	sprintf (temp, "%lu:%lu", get_todays_rcvd (day, month, year) , get_todays_sent (day, month, year));
+	sprintf (temp, "%lu:%lu", get_todays_rcvd (i, month, year) , get_todays_sent (i, month, year));
    }
    strcat (buffer, temp);
    if (i < days) strcat (buffer, " ");
   }
   
   nvram_set (tq, buffer);
-  
+  	fprintf (stderr, "leaving write_to_nvram\n");
   return 1;
 }
 
@@ -183,6 +188,8 @@ ttraff_main (void)
    in_diff = (in_dev - in_dev_last) / (1024 * 1024);  //MBytes
    out_diff = (out_dev - out_dev_last) / (1024 * 1024);  //MBytes
    
+//fprintf (stderr, "in_diff=%lu, out_diff=%lu\n", in_diff, out_diff);
+  
    if (in_diff || out_diff)
    { 
     write_to_nvram (day, month, year, get_todays_rcvd (day, month, year) + in_diff, get_todays_sent (day, month, year) + out_diff);
