@@ -1121,9 +1121,10 @@ status_inet.conft="Tipo de Configuración";
 status_inet.www_loginstatus="Estado de Login";
 status_inet.wanuptime="Connection Uptime";
 status_inet.leasetime="Remaining Lease Time";
-status_inet.traff="Traffic";
-status_inet.ttraffin="Total Incoming Traffic (MBytes)";
-status_inet.ttraffout="Total Outgoing Traffic (MBytes)";
+status_inet.traff_tot="Total Traffic";
+status_inet.traff_mon="Traffic by Month";
+status_inet.traffin="Incoming";
+status_inet.traffout="Outgoing";
 status_inet.previous="Previous Month";
 status_inet.next="Next Month";
 

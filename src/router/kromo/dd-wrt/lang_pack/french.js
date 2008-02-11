@@ -1196,8 +1196,10 @@ status_inet.www_loginstatus="Statut de la connexion";
 status_inet.wanuptime="Connexion démarrée depuis";
 status_inet.leasetime="Renouvellement du bail dans";
 status_inet.traff="Trafic";
-status_inet.ttraffin="Total Incoming Trafic (MBytes)";
-status_inet.ttraffout="Total Outgoing Trafic (MBytes)";
+status_inet.traff_tot="Total Traffic";
+status_inet.traff_mon="Traffic by Month";
+status_inet.traffin="Incoming";
+status_inet.traffout="Outgoing";
 status_inet.previous="Mois précédent";
 status_inet.next="Mois suivant";
 
