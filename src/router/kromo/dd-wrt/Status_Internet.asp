@@ -34,14 +34,17 @@ function load_file(count) {
 
 function do_show_prev() {
 	count--;
+	do_refresh()
+}
+
+function do_refresh() {
 	var f = document.getElementById('graph');
 	f.src = load_file(count);
 }
 
 function do_show_next() {
 	count++;
-	var f = document.getElementById('graph');
-	f.src = load_file(count);
+	do_refresh()
 }
 
 
@@ -155,11 +158,11 @@ addEvent(window, "unload", function() {
 								<fieldset>
 									<legend><% tran("status_inet.traff"); %></legend>
 										 <div class="setting">
-											<div class="label"><% tran("status_inet.ttraffin"); %></div>
+											<div class="label"><% tran("status_inet.traffin"); %></div>
 											<span id="ttraff_in"><% get_totaltraff("in"); %></span>&nbsp;
 										</div>
 										<div class="setting">
-											<div class="label"><% tran("status_inet.ttraffout"); %></div>
+											<div class="label"><% tran("status_inet.traffout"); %></div>
 											<span id="ttraff_out"><% get_totaltraff("out"); %></span>&nbsp;
 										</div>
 								</fieldset><br />
@@ -176,6 +179,7 @@ addEvent(window, "unload", function() {
 											<script type="text/javascript">
 											//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" value=\"" + status_inet.previous + "\" onclick=\"do_show_prev();\">");
+											document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.refres + "\" onclick=\"do_refresh();\">");											
 											document.write("<input class=\"button\" type=\"button\" value=\"" + status_inet.next + "\" onclick=\"do_show_next();\">");
 											//]]>
 											</script>
