@@ -267,6 +267,10 @@ endif
 
 ifeq ($(CONFIG_MATRIXSSL),y)
 CFLAGS += -DHAVE_HTTPS
+CFLAGS += -I$(TOP)/matrixssl
+CFLAGS += -DHAVE_MATRIXSSL
+
+
 endif
 
 ifeq ($(CONFIG_WTS),y)
