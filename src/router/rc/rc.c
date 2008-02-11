@@ -436,6 +436,7 @@ main_loop (void)
 	  stop_service ("nas");
 #endif
 	  cprintf ("STOP WAN\n");
+	  stop_service ("ttraff");	  
 	  stop_service ("wan");
 	  cprintf ("STOP LAN\n");
 #ifdef HAVE_MADWIFI
@@ -521,7 +522,8 @@ unlink("/tmp/.rstp_server");
 
 	  cprintf ("start wan boot\n");
 	  start_service ("wan_boot");
-
+	  start_service ("ttraff");
+	  
 	  cprintf ("diag STOP LED\n");
 	  diag_led (DIAG, STOP_LED);
 	  cprintf ("set led release wan control\n");
