@@ -317,6 +317,7 @@ extern int listen_main (int argc, char **argv);
 extern int ddns_success_main (int argc, char **argv);
 extern int process_monitor_main (void);
 extern int radio_timer_main (void);
+extern int ttraff_main (void);
 extern int wol_main (int argc, char **argv);
 extern int sendudp_main (int argc, char *argv[]);
 extern int autokill_wiviz_main (void);
