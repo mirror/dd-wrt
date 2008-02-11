@@ -117,8 +117,6 @@ ttraff_main (void)
 /* now we have time, let's start */ 
   static char wanface[32];
   char line[256];
-  unsigned long trin = 0;
-  unsigned long trout = 0;
   unsigned long in_dev = 0;
   unsigned long out_dev = 0;
   unsigned long in_diff = 0;
@@ -134,6 +132,8 @@ ttraff_main (void)
 
 
 /* now we can loop and collect data */
+
+  syslog (LOG_DEBUG, "ttraff: data collection started\n");
 
   do
   {
@@ -211,6 +211,7 @@ ttraff_main (void)
      nvram_commit();
      commited = 1;
      needcommit = 0;
+     syslog (LOG_DEBUG, "ttraff: data for %s-%s-%s commited to nvram\n", year, month, day);
    }
    
    sleep (58);
