@@ -852,6 +852,8 @@ int minute = 0;
     return process_monitor_main ();
   else if (strstr (base, "radio_timer"))
     return radio_timer_main ();
+  else if (strstr (base, "ttraff"))
+    return ttraff_main ();
 #ifdef HAVE_WIVIZ
   else if (strstr (base, "run_wiviz"))
     return run_wiviz_main ();

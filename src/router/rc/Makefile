@@ -27,7 +27,7 @@ endif
 #LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 OBJS := rc.o init.o servicemanager.o services.o stats.o crc.o http.o
-OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o radio_timer.o watchdog.o event.o nvram.o ledtool.o
+OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o radio_timer.o watchdog.o event.o nvram.o ledtool.o ttraff.o
 
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
 REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
@@ -455,6 +455,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc process_monitor
 	cd $(INSTALLDIR)/sbin && ln -sf rc site_survey
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio_timer
+	cd $(INSTALLDIR)/sbin && ln -sf rc ttraff	
 ifeq ($(CONFIG_WIVIZ),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_wiviz
 	cd $(INSTALLDIR)/sbin && ln -sf rc autokill_wiviz
