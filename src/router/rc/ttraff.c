@@ -185,16 +185,16 @@ ttraff_main (void)
    }
    
 	   
-   in_diff = (in_dev - in_dev_last) / (1024 * 1024);  //MBytes
-   out_diff = (out_dev - out_dev_last) / (1024 * 1024);  //MBytes
+   in_diff = (in_dev - in_dev_last) >> 20;  //MBytes
+   out_diff = (out_dev - out_dev_last) >> 20;  //MBytes
    
 //fprintf (stderr, "in_diff=%lu, out_diff=%lu\n", in_diff, out_diff);
   
    if (in_diff || out_diff)
    { 
     write_to_nvram (day, month, year, get_todays_rcvd (day, month, year) + in_diff, get_todays_sent (day, month, year) + out_diff);
-    in_dev_last = in_dev_last + in_diff * 1024 * 1024;
-    out_dev_last = out_dev_last + out_diff * 1024 * 1024;    
+    in_dev_last = in_dev_last + (in_diff << 20);
+    out_dev_last = out_dev_last + (out_diff << 20);    
    }
    
    if (currtime->tm_hour == 23 && currtime->tm_min == 59 && commited == 0)
