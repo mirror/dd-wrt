@@ -81,7 +81,7 @@ int days = daysformonth (month, year);
    }
    else
    {
-	sprintf (temp, "%lu:%lu", get_todays_rcvd (day, month) , get_todays_sent (day, month));
+	sprintf (temp, "%lu:%lu", get_todays_rcvd (day, month, year) , get_todays_sent (day, month, year));
    }
    strcat (buffer, temp);
    if (i < days) strcat (buffer, " ");
