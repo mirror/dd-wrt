@@ -190,11 +190,15 @@ ttraff_main (void)
    
 //fprintf (stderr, "in_diff=%lu, out_diff=%lu\n", in_diff, out_diff);
   
-   if (in_diff || out_diff)
+   if (in_diff)
    { 
-    write_to_nvram (day, month, year, get_todays_rcvd (day, month, year) + in_diff, get_todays_sent (day, month, year) + out_diff);
-
+    write_to_nvram (day, month, year, get_todays_rcvd (day, month, year) + in_diff, get_todays_sent (day, month, year));
     in_dev_last = in_dev;
+   }
+   
+   if (out_diff)
+   { 
+    write_to_nvram (day, month, year, get_todays_rcvd (day, month, year), get_todays_sent (day, month, year) + out_diff);
     out_dev_last = out_dev;
    }
 
