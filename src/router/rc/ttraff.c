@@ -168,15 +168,15 @@ ttraff_main (void)
     in_dev_last = in_dev;
     out_dev_last = out_dev;
     needbase = 0;
-    pause (2);
-    break;
+    sleep (2);
+    continue;
    }
    
    if (in_dev_last > in_dev || out_dev_last > out_dev)  // forget this data and get new base
    {
 	 needbase = 1;
-	 pause (2);
-	 break;
+	 sleep (2);
+	 continue;
    }
    
 	   
