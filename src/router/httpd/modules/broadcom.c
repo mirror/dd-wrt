@@ -3927,11 +3927,11 @@ unsigned long rcvd, sent;
 
   if (!strcmp (type, "in"))
     {
-      websWrite (wp, "%lu", rcvd / (1024 * 1024));  //output in MBytes
+      websWrite (wp, "%lu", rcvd >> 20);  //output in MBytes
     }
   else if (!strcmp (type, "out"))
     {
-      websWrite (wp, "%lu", sent / (1024 * 1024));
+      websWrite (wp, "%lu", sent >> 20);
     }
 return;
 }
