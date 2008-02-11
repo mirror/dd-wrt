@@ -797,8 +797,10 @@ status_inet.www_loginstatus="Login status";
 status_inet.wanuptime="Czas polaczenia";
 status_inet.leasetime="Pozostaly czas dzierzawy";
 status_inet.traff="Traffic";
-status_inet.ttraffin="Total Incoming Traffic (MBytes)";
-status_inet.ttraffout="Total Outgoing Traffic (MBytes)";
+status_inet.traff_tot="Total Traffic";
+status_inet.traff_mon="Traffic by Month";
+status_inet.traffin="Incoming";
+status_inet.traffout="Outgoing";
 status_inet.previous="Previous Month";
 status_inet.next="Next Month";
 

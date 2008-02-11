@@ -1305,8 +1305,10 @@ status_inet.www_loginstatus="セッション状態";
 status_inet.wanuptime="接続時間";
 status_inet.leasetime="残りリース時間";
 status_inet.traff="Traffic";
-status_inet.ttraffin="Total Incoming Traffic (MBytes)";
-status_inet.ttraffout="Total Outgoing Traffic (MBytes)";
+status_inet.traff_tot="Total Traffic";
+status_inet.traff_mon="Traffic by Month";
+status_inet.traffin="Incoming";
+status_inet.traffout="Outgoing";
 status_inet.previous="Previous Month";
 status_inet.next="Next Month";
 
