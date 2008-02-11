@@ -193,10 +193,10 @@ ttraff_main (void)
    if (in_diff || out_diff)
    { 
     write_to_nvram (day, month, year, get_todays_rcvd (day, month, year) + in_diff, get_todays_sent (day, month, year) + out_diff);
+
+    in_dev_last = in_dev;
+    out_dev_last = out_dev;
    }
-   
-   in_dev_last = in_dev;
-   out_dev_last = out_dev;
 
    if (currtime->tm_hour == 23 && currtime->tm_min == 59 && commited == 0)
    {
