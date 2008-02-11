@@ -37,6 +37,7 @@
 //#include <linux/mii.h>
 #include <linux/sockios.h>
 #include <cymac.h>
+#include <broadcom.h>
 
 #define SIOCGMIIREG	0x8948	/* Read MII PHY register.       */
 #define SIOCSMIIREG	0x8949	/* Write MII PHY register.      */
@@ -976,7 +977,6 @@ internal_getRouterBrand ()
       setRouter ("D-Link DIR-330");
       nvram_set("wan_ifnames","eth0"); // quirk
       nvram_set("wan_ifname","eth0");
-      fprintf(stderr,"mac is %s\n",nvram_safe_get("et0macaddr"));
       if (nvram_match("et0macaddr","00:90:4c:4e:00:0c"))
         {
 	FILE *in=fopen("/dev/mtdblock/1","rb");
@@ -987,6 +987,8 @@ internal_getRouterBrand ()
 	mac[17]=0;
 	nvram_set("et0macaddr",mac);
 	fprintf(stderr,"restore D-Link MAC\n");
+	nvram_commit();
+	sys_reboot();
 	}
 /*      if (nvram_get("vlan2ports")!=NULL)
       {
