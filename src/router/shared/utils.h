@@ -256,6 +256,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Linksys WRT310N v1 (4705 cpu, fccid: Linksys Q87-WRT310N)
 #define ROUTER_WRT310N 0x4c16
 
+#define ROUTER_DLINK_DIR330 0x4d13
 
 #define NVROUTER "DD_BOARD"
 
