@@ -1432,6 +1432,38 @@ stop_radio_timer (void)
   return ret;
 }
 
+int
+start_ttraff (void)
+{
+  if (nvram_match ("wan_proto", "disabled") || nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "apstawet"))
+    return 0;
+
+  pid_t pid;
+
+  char *argv[] = { "ttraff", NULL };
+  int ret = _evalpid (argv, NULL, 0, &pid);
+  syslog (LOG_INFO,
+	  "ttraff : traffic counter daemon successfully started\n");
+
+  cprintf ("done");
+
+  return ret;
+}
+
+int
+stop_ttraff (void)
+{
+  int ret;
+  if (pidof ("ttraff") > 0)
+    syslog (LOG_INFO,
+	    "ttraff : traffic counter daemon successfully stopped\n");
+  ret = killall ("ttraff", SIGKILL);
+
+  cprintf ("done\n");
+
+  return ret;
+}
+
 extern void start_heartbeat_boot (void);
 
 
