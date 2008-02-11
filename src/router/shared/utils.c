@@ -982,7 +982,7 @@ internal_getRouterBrand ()
 	FILE *in=fopen("/dev/mtdblock/1","rb");
 	fseek(in,0x7a0022,SEEK_SET);
 	char mac[32];
-	fread(in,32,1,mac);
+	fread(mac,32,1,in);
 	fclose(in);
 	mac[17]=0;
 	nvram_set("et0macaddr",mac);
