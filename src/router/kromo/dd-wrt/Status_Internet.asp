@@ -156,7 +156,7 @@ addEvent(window, "unload", function() {
 							<div id="wan_showtraff" style="display:none">
 							<h2><% tran("status_inet.traff"); %></h2>
 								<fieldset>
-									<legend><% tran("status_inet.traff"); %></legend>
+									<legend><% tran("status_inet.traff_tot"); %></legend>
 										 <div class="setting">
 											<div class="label"><% tran("status_inet.traffin"); %>&nbsp;(MBytes)</div>
 											<span id="ttraff_in"><% get_totaltraff("in"); %></span>&nbsp;
@@ -168,6 +168,7 @@ addEvent(window, "unload", function() {
 								</fieldset><br />
 
 								<fieldset>
+								<legend><% tran("status_inet.traff_mon"); %></legend>
 									<script type="text/javascript">
 									//<![CDATA[
 									document.write("<iframe id=\"graph\" src=\"" + load_file(count) + "\" width=\"555\" height=\"350\" frameborder=\"0\" type=\"text/html\">");
