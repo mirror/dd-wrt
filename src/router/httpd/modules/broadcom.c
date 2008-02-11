@@ -4041,7 +4041,7 @@ unsigned long totout = 0;
   websWrite (stream, "</li>\n\n");
 
   websWrite (stream, "<li id=\"label\">\n");
-  websWrite (stream, "%s %d (in: %lu MB / out: %lu MB)\n", months[month - 1], year, totin, totout);
+  websWrite (stream, "%s %d (<script type=\"text/javascript\">Capture(status_inet.traffin)</script>: %lu MB / <script type=\"text/javascript\">Capture(status_inet.traffout)</script>: %lu MB)\n", months[month - 1], year, totin, totout);
   websWrite (stream, "</li>\n");
     
   websWrite (stream, "</ul>\n\n");
