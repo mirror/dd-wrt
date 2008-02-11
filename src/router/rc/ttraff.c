@@ -93,7 +93,7 @@ int days = daysformonth (month, year);
   }
   
   nvram_set (tq, buffer);
-  	fprintf (stderr, "leaving write_to_nvram\n");
+//fprintf (stderr, "leaving write_to_nvram\n");
   return 1;
 }
 
