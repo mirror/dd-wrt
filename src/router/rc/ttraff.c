@@ -211,7 +211,7 @@ ttraff_main (void)
      nvram_commit();
      commited = 1;
      needcommit = 0;
-     syslog (LOG_DEBUG, "ttraff: data for %s-%s-%s commited to nvram\n", year, month, day);
+     syslog (LOG_DEBUG, "ttraff: data for %d-%d-%d commited to nvram\n", year, month, day);
    }
    
    sleep (58);
