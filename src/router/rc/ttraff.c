@@ -1,4 +1,4 @@
-/* ttraff.c by Eko: 11.feb.2008
+/* ttraff.c by Eko: 12.feb.2008
   
   used for collecting and storing WAN traffic info to nvram
   
@@ -14,88 +14,58 @@
 #include <shutils.h>
 #include <syslog.h>
 #include <utils.h>
-#include <wlutils.h>
 
 
-unsigned long get_todays_rcvd (int day, int month, int year)
+
+void 
+write_to_nvram (int day, int month, int year, unsigned long rcvd, unsigned long sent)
 {
-//fprintf (stderr, "entering get_todays_rcvd\n");
-char *next;
-char var[80];
-char tq[32];
-int i = 1;
-unsigned long rcvd = 0;
-
-  sprintf (tq, "traff-%02u-%u", month, year);
-  char *tdata = nvram_safe_get (tq);
-  if (tdata != NULL || strlen(tdata))
-   {
-    foreach (var, tdata, next)
-    {
-     if (i == day)
-	    sscanf (var, "%lu:%*lu", &rcvd);
-	 i++;
-    }
-   }
-//fprintf (stderr, "leaving get_todays_rcvd: rcvd=%lu\n", rcvd);
-  return rcvd;
-}
-
-unsigned long get_todays_sent (int day, int month, int year)
-{
-//fprintf (stderr, "entering get_todays_sent\n");
-char *next;
-char var[80];
-char tq[32];
-int i = 1;
-unsigned long sent = 0;
-
-  sprintf (tq, "traff-%02u-%u", month, year);
-  char *tdata = nvram_safe_get (tq);
-  if (tdata != NULL || strlen(tdata))
-   {
-    foreach (var, tdata, next)
-    {
-     if (i == day)
-	    sscanf (var, "%*lu:%lu", &sent);
-	 i++;
-    }
-   }
-//fprintf (stderr, "leaving get_todays_sent: sent=%lu\n", sent);
-  return sent;
-}
-
-int write_to_nvram (int day, int month, int year, unsigned long rcvd, unsigned long sent)
-{
-//fprintf (stderr, "entering write_to_nvram\n");
 char *next;
 char var[80];
 char tq[32];
 char temp[64] = "";
+char sbuff[256] = "";
 char buffer[2048] = "";
-int i;
-int days = daysformonth (month, year);
+int i = 1, d = 1;
+unsigned int days = daysformonth (month, year);
+unsigned long old_rcvd;
+unsigned long old_sent;
+char *tdata;
 
   sprintf (tq, "traff-%02u-%u", month, year);
-
-  for (i = 1; i <= days; i++)
-  {
-   if (i == day)	  
-   { 
-	sprintf (temp, "%lu:%lu", rcvd, sent);
-   }
-   else
-   {
-	sprintf (temp, "%lu:%lu", get_todays_rcvd (i, month, year) , get_todays_sent (i, month, year));
-   }
-   strcat (buffer, temp);
-   if (i < days) strcat (buffer, " ");
-  }
+  tdata = nvram_safe_get (tq);
   
-  nvram_set (tq, buffer);
-//fprintf (stderr, "leaving write_to_nvram\n");
-  return 1;
+  if (tdata == NULL || strlen (tdata) == 0)
+  {
+   for (d = 0; d < days; d++)
+   {
+    strcat (sbuff, "0:0 ");
+   }
+   nvram_set (tq, sbuff);
+   tdata = nvram_safe_get (tq);
+  }
+
+    foreach (var, tdata, next)
+    {
+     if (i == day)
+     {
+	  sscanf (var, "%lu:%lu", &old_rcvd, &old_sent);
+	  sprintf (temp, "%lu:%lu ", old_rcvd + rcvd, old_sent + sent);	    
+	  strcat (buffer, temp);
+     }
+     else
+     {
+	  strcat (buffer, var);
+	  strcat (buffer, " ");
+      }    
+	 i++;
+    }	  
+
+    nvram_set (tq, buffer);
+
+  return;
 }
+
 
 int
 ttraff_main (void)
@@ -173,14 +143,12 @@ ttraff_main (void)
     in_dev_last = in_dev;
     out_dev_last = out_dev;
     needbase = 0;
-    sleep (2);
     continue;
    }
    
    if (in_dev_last > in_dev || out_dev_last > out_dev)  // forget this data and get new base
    {
 	 needbase = 1;
-	 sleep (2);
 	 continue;
    }
    
@@ -191,8 +159,9 @@ ttraff_main (void)
 //fprintf (stderr, "in_diff=%lu, out_diff=%lu\n", in_diff, out_diff);
   
    if (in_diff || out_diff)
-   { 
-    write_to_nvram (day, month, year, get_todays_rcvd (day, month, year) + in_diff, get_todays_sent (day, month, year) + out_diff);
+   {
+    write_to_nvram (day, month, year, in_diff, out_diff);
+    
     in_dev_last = in_dev_last + (in_diff << 20);
     out_dev_last = out_dev_last + (out_diff << 20);    
    }
@@ -211,7 +180,7 @@ ttraff_main (void)
      nvram_commit();
      commited = 1;
      needcommit = 0;
-     syslog (LOG_DEBUG, "ttraff: data for %d-%d-%d commited to nvram\n", year, month, day);
+     syslog (LOG_DEBUG, "ttraff: data for %d-%d-%d commited to nvram\n", day, month, year);
    }
    
    sleep (58);
