@@ -228,6 +228,8 @@ eval("insmod","crypto_null");
     eval ("insmod", "e1000");
 
 
+  if (detect ("RTL-8110"))	// Realtek 8169 Adapter (various notebooks) 
+    eval ("insmod", "r8169");
   if (detect ("RTL-8169"))	// Realtek 8169 Adapter (various notebooks) 
     eval ("insmod", "r8169");
   if (detect ("8139"))		// Realtek 8139 Adapter (various notebooks) 
