@@ -161,8 +161,6 @@ addEvent(window, "unload", function() {
 							<% show_bondings(); %>
 							<% portsetup(); %>
 							<% show_mdhcp(); %>
-							</div>
-		
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
