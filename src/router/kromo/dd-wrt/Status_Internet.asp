@@ -47,6 +47,11 @@ function do_show_next() {
 	do_refresh()
 }
 
+function reloadIt() {
+	do_refresh();
+	setTimeout("reloadIt()", 30000);
+}
+
 
 addEvent(window, "load", function() {
 	setElementVisible("wan_show", "<% nvram_get("wl0_mode"); %>" != "wet" && "<% nvram_get("wl0_mode"); %>" != "apstawet");
@@ -74,7 +79,7 @@ addEvent(window, "unload", function() {
 		</script>
 	</head>
 
-	<body class="gui">
+	<body class="gui" onload="reloadIt()">
 		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
@@ -180,7 +185,6 @@ addEvent(window, "unload", function() {
 											<script type="text/javascript">
 											//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" value=\"" + status_inet.previous + "\" onclick=\"do_show_prev();\">");
-											document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.refres + "\" onclick=\"do_refresh();\">");											
 											document.write("<input class=\"button\" type=\"button\" value=\"" + status_inet.next + "\" onclick=\"do_show_next();\">");
 											//]]>
 											</script>
