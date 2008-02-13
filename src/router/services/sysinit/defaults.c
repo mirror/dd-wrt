@@ -1,4 +1,4 @@
-/*
+/*	
  * defaults.c
  *
  * Copyright (C) 2007 Sebastian Gottschall <gottschall@dd-wrt.com>
@@ -910,7 +910,9 @@ struct nvram_tuple srouter_defaults[] = {
   {"ath4_8021xtype", "peap", 0},
   {"ath5_8021xtype", "peap", 0},
 #endif
-  {"radius_override", "1", 0},	//overrides radius if server is unavailable
+  {"wl0_radius_override", "1", 0},	//overrides radius if server is unavailable
+  {"wl0_max_unauth_users", "0", 0},	//overrides radius if server is unavailable
+  {"wl0_radmacpassword", "0", 0},	//overrides radius if server is unavailable
 #ifdef HAVE_SKYTEL
   {"wl_afterburner", "auto", 0},	/* Afterburner/Speedbooster */
 #else
