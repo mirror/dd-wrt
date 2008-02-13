@@ -57,6 +57,9 @@
 #define SUPPORT_4712_CHIP      0x0001
 #define SUPPORT_INTEL_FLASH    0x0002
 #define SUPPORT_5325E_SWITCH   0x0004
+#define SUPPORT_4704_CHIP	0x0008
+#define SUPPORT_5352E_CHIP	0x0010
+#define SUPPORT_5354G_CHIP	0x0020
 
 struct code_header {			/* from cyutils.h */
 	char magic[4];
@@ -129,6 +132,9 @@ int main(int argc, char **argv)
 				hdr->flags |= SUPPORT_4712_CHIP;
 				hdr->flags |= SUPPORT_INTEL_FLASH;
 				hdr->flags |= SUPPORT_5325E_SWITCH;
+				hdr->flags |= SUPPORT_4704_CHIP;
+				hdr->flags |= SUPPORT_5352E_CHIP;
+				hdr->flags |= SUPPORT_5354G_CHIP;
 				break;
 			case '4':
 				/* V4 firmware sets the flags to 0x1f */
