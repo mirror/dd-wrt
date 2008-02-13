@@ -4,9 +4,9 @@
 
 function to_submit(F) {
 	if (F._radius_override.checked == false){
-	    F.radius_override.value = 0;
+	    F.wl0_radius_override.value = 0;
 	}else{
-	    F.radius_override.value = 1;
+	    F.wl0_radius_override.value = 1;
 	}
 
 	F.save_button.value = sbutton.saving;
@@ -14,9 +14,9 @@ function to_submit(F) {
 }
 function to_apply(F) {
 	if (F._radius_override.checked == false){
-	    F.radius_override.value = 0;
+	    F.wl0_radius_override.value = 0;
 	}else{
-	    F.radius_override.value = 1;
+	    F.wl0_radius_override.value = 1;
 	}
 
 	F.save_button.value = sbutton.saving;
@@ -66,7 +66,7 @@ addEvent(window, "unload", function() {
 				<input type="hidden" name="submit_type" />
 				<input type="hidden" name="commit" value="1" />
 				
-				<input type="hidden" name="radius_override" />
+				<input type="hidden" name="wl0_radius_override" />
 				
 				<h2><% tran("radius.h2"); %></h2>
 				
@@ -98,12 +98,12 @@ addEvent(window, "unload", function() {
 					</div>
 					<div class="setting">
 						<div class="label"><% tran("radius.label5"); %></div>
-						<input class="num" size="5" maxlength="5" name="max_unauth_users" value="<% nvram_get("max_unauth_users"); %>" />
+						<input class="num" size="5" maxlength="5" name="wl0_max_unauth_users" value="<% nvram_get("wl0_max_unauth_users"); %>" />
 					</div>
 					<div class="setting">
 						<div class="label"><% tran("radius.label6"); %></div>
-						<input class="spaceradio" type="radio" name="wl_radmacpassword" value="1" <% nvram_checked("wl_radmacpassword","1"); %> /><% tran("share.share_key"); %>&nbsp;
-						<input class="spaceradio" type="radio" name="wl_radmacpassword" value="0" <% nvram_checked("wl_radmacpassword","0"); %> /><% tran("share.mac"); %>
+						<input class="spaceradio" type="radio" name="wl0_radmacpassword" value="1" <% nvram_checked("wl0_radmacpassword","1"); %> /><% tran("share.share_key"); %>&nbsp;
+						<input class="spaceradio" type="radio" name="wl0_radmacpassword" value="0" <% nvram_checked("wl0_radmacpassword","0"); %> /><% tran("share.mac"); %>
 					</div>
 					<div class="setting">
 						<div class="label"><% tran("radius.label7"); %></div>
@@ -112,7 +112,7 @@ addEvent(window, "unload", function() {
 					</div>
 					<div class="setting">
 						<div class="label"><% tran("radius.label8"); %></div>
-						<input type="checkbox" name="_radius_override" value="1" <% nvram_checked("radius_override", "1"); %> />
+						<input type="checkbox" name="_radius_override" value="1" <% nvram_checked("wl0_radius_override", "1"); %> />
 					</div>
 					</div>
 				</fieldset><br/>
