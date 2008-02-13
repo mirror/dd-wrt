@@ -1,0 +1,37 @@
+#
+# LINUX SPECIFIC CONFIGURATION
+#
+
+ARCH := $(shell uname -m)
+DESTDIR ?=
+LIBDIR =	$(DESTDIR)$(shell if [ "$(ARCH)" = "x86_64" -a -d "/usr/lib64" ]; then echo "/usr/lib64"; else echo "/usr/lib"; fi)
+
+SRCS += 	$(wildcard src/linux/*.c src/unix/*.c)
+HDRS +=		$(wildcard src/linux/*.h src/unix/*.h)
+
+CPPFLAGS += 	-Dlinux
+LIBS +=		
+
+PLUGIN_FULLNAME ?= $(PLUGIN_NAME).so.$(PLUGIN_VER)
+INSTALL_LIB =	install -D -m 755 $(PLUGIN_FULLNAME) $(LIBDIR)/$(PLUGIN_FULLNAME); \
+		/sbin/ldconfig -n $(LIBDIR)
+
+ifdef OLSRD_PLUGIN
+GENERATE_PIC = true
+endif
+ifeq ($(filter-out alpha x86_64 parisc64 ia64, $(ARCH)),)
+GENERATE_PIC = true
+endif
+
+ifdef GENERATE_PIC
+CFLAGS +=	-fPIC
+LDFLAGS +=	-fPIC
+endif
+
+OS_LIB_PTHREAD = -lpthread
+OS_CFLAG_PTHREAD = -pthread
+OS_LIB_DYNLOAD = -ldl
+
+# Local Variables:
+# mode: makefile
+# End:

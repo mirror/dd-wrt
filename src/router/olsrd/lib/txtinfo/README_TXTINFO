@@ -1,0 +1,16 @@
+LoadPlugin "olsrd_txtinfo.so.0.1"
+{
+        PlParam "accept" "10.247.200.4"
+}
+
+ABOUT
+
+telnet 127.0.0.1 2006
+or
+wget localhost:2006 -qO -
+
+installation:
+make
+make install
+
+- Lorenz Schori

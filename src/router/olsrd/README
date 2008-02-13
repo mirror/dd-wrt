@@ -1,0 +1,474 @@
+
++====================================================================+
+| README - olsr.org OLSR daemon 0.5.4, 21.10.2007                    |
++====================================================================+
+
+Authors:
+Andreas Tonnesen(andreto@olsr.org)
+Thomas Lopatic  (thomas@lopatic.de)
+Aaron Kaplan (aaron@lo-res.org)
+
+
+http://www.olsr.org
+
+
+CONTENTS:
+
+I.   - GENERAL INFORMATION
+     * ABOUT
+     * GETTING HOLD OF OLSRD
+     * RELEASE NOTES
+     * RFC COMPLIANCE
+     * PLUGINS
+     * LINK QUALITY ROUTING
+     * KNOWN PROBLEMS
+     * FUTURE WORK
+
+II.  - BUILDING AND RUNNING OLSRD
+     * GENERAL INFORMATION
+     * PLUGINS
+     * GUI FRONTENDS
+
+     * LINUX
+     * WINDOWS
+     * FREEBSD
+     * OSX
+  
+
+
+----------------------------------------------------------------------
+ I.   - GENERAL INFORMATION
+----------------------------------------------------------------------
+
+=========
+ * ABOUT
+=========
+
+The olsr.org OLSR daemon is an implementation of the Optimized Link State
+routing protocol. The protocol is documented in RFC3626. The website
+of olsrd is http://www.olsr.org
+
+Olsrd is designed to be a modular an extensible implementation. It features
+a plugin interface, allowing for developers to extend OLSR operation without
+interfering with the core code. It also features a experimental link quality
+routing scheme.
+
+To ask questions or make comments, join up with the mailing lists:
+olsr-dev@olsr.org   - development discussion
+olsr-users@olsr.org - usage discussion
+
+A bug tracker is also available at the sourceforge project site
+http://sourceforge.net/projects/olsrd/
+
+Olsrd source or binaries can be downloaded from olsr.org. CVS is available
+for the cutting edge features ;-)
+
+The current Olsrd work is done via http://olsr.funkfeuer.at/ in the OLSR-NG
+project.
+
+
+=================
+ * RELEASE NOTES
+=================
+
+
+
+==================
+ * RFC COMPLIANCE
+==================
+
+If olsrd is ran without using link-quality routing/MPR selection it is RFC3626
+compliant in that it will inter-operate with other RFC3626 implementations.
+Internally there are a few things that are solved differently that proposed 
+in the RFC. Check out the "Conclusions" section of the "Implementing And
+Extending The Optimized Link State routing Protocol" thesis available at
+olsr.org.
+
+
+===========
+ * PLUGINS
+===========
+
+Olsrd supports dynamic loading of plugins (dynamically loaded libraries) for 
+functions like generation and processing of private package types, setting
+olsrd configurations in run-time and much more. This design is chosen for
+amongst others, the following reasons:
+
+ * No need to change any code in the olsr daemon to add custom packages or 
+   functionality.
+ * Users are free to implement olsrd plugins and license them under whatever 
+   terms they like.
+ * The plugins can be written in any language that can be compiled as 
+   a dynamic library. Linux even allows scripts!
+ * No need for people with extended OLSR versions to rely on heavy patching 
+   to maintain functionality when new olsrd versions are released.
+
+OLSR provides a default forwarding algorithm that allows for forwarding of OLSR 
+messages of unknown types. This is really neat - because it means that even if 
+only a subset of the nodes in the network actually known how to interpret 
+a certain message type - all nodes will forward them according to the MPR 
+pragma. A user may want to use the optimized flooding technique in OLSR to 
+broadcast certain information, routing related or not, to all nodes that knows 
+how to handle this message. Services that needs to broadcast/multicast data can 
+encapsulate data in a private OLSR message type using a olsrd plugin. 
+
+The design of the various entities of OLSR allows one to easily add special 
+functionality into most aspects of OLSR. One can both register functions and 
+unregister them with the socket parser, packet parser, scheduler and HNA set etc. 
+This opens up for possibilities like intercepting current operation and replacing 
+it with custom actions.
+
+  Plugins that are part of this release(can be found in the lib/ directory):
+
+  - Tiny Application Server (TAS).
+
+  - HttpInfo. This plugin implements a simple HTTP server that serves dynamic
+    pages with lots of information about the running olsrd process.
+
+  - TxtInfo. This delivers output similar to the above. However, it is intended
+    for external tools to use the output.
+
+  - Mini.
+
+  - Nameservice.
+
+  - Dynamic Internet gateway. A plugin that dynamically adds and removes Internet
+    HNA transmissions based on if there exists a default gateway to Internet
+    with hop count = 0(non OLSR gateway). It has been extended to be able to
+    ping Internet nodes to check for connectivity as well.
+
+  - Dot draw. A plugin that produces output in the dot format representing
+    the network topology.
+
+  - Secure OLSR plugin. This plugin adds a signature to all messages
+    to ensure data integrity. This way only nodes with access to the
+    shared key can participate in the routing.
+    You need to have the OpenSSL libs installed to use this plugin.
+
+
+
+========================
+ * LINK QUALITY ROUTING
+========================
+
+Release 0.4.8 is the first version of olsrd that implements the ETX
+link quality metric. This enables olsrd to prefer routes that have a
+superior overall quality to routes that are worse but consist of less
+hops. Have a look at the README-Link-Quality.html file for details.
+
+==================
+ * KNOWN PROBLEMS
+==================
+
+There is no synchronization concept (and thus - and for Gods sake -  no
+code). Some plugins use threads for concurrency so this should be solved.
+ATM the bmf plugin is the only one using threads.
+
+===============
+ * FUTURE WORK
+===============
+
+Future work concentrates on reduction of ressource (ab)use and to make
+it more scalable. Of course additional useful plugins are always
+appreciated.
+
+The current track of development is documented in the OLSR-NG 
+project: http://olsr.funkfeuer.at
+
+
+----------------------------------------------------------------------
+ II.  - BUILDING AND RUNNING OLSRD
+----------------------------------------------------------------------
+
+=======================
+ * GENERAL INFORMATION
+=======================
+
+Olsrd is implemented in pure C with very few dependencies. Olsrd is 
+known to run on various hardware like:
+ * x86    - your regular PC
+ * PPC    - Macintosh hardware
+ * MIPSEL - Embedded systems like the LinkSys WRT54g
+ * ARM    - Embedded systems like Compaq/HP iPaq
+A binary tarball featuring x86, MIPSEL and ARM binaries is available
+for download at olsr.org
+
+Ports exist for all major operating systems:
+- Linux
+- Mac OS X
+- NetBSD/OpenBSD/FreeBSD: ATM the main development occurs on Linux with
+         GNU tools so occasionally it needs some minor tweaks to compile
+         it on *BSD. Please send patches if you fix problems there.
+- Win32: You need (the relevant parts of) cygwin to compile the daemon
+         as such. The installer and GUI needs VisualC++ though.
+         Win32 is the least supported port. Feel free to send patches!
+
+Packages for the operating systems and various distributions are available
+at olsr.org. Feel free to package it and announce it on the mailing lists.
+
+
+===========
+ * PLUGINS
+===========
+
+All the available plugins are also implemented in C and requires gcc/libc
+to build. the dot_draw plugin compiles for Windows and GNU/Linux. the rest
+of the plugins will only compile for GNU/Linux.
+Building the plugins are just a matter of executing:
+make
+while installing requires(as root):
+make install
+in the plugins top directory (i.e. "lib/$plugin/").
+To use the plugins add them to the olsrd configuration file.
+
+=====================
+ * OS SUPPORT STATUS
+=====================
+
+COMPONENT/OS	Linux	Win32	FreeBSD	NetBSD	OpenBSD	OSX
+------------------------------------------------------------
+olsrd		+/+	+/+	+/+	+/+	+/+	?
+olsr_switch	+/+	+/+	+/+	+/+	+/+	?
+------------------------------------------------------------
+PLUGINS
+bmf		+/+	+/?	+/+	+/+	+/+	-
+dot_draw	+/+	+/?	+/+	+/+	+/+	+/+
+dyn_gw		+/+	+/?	+/-	+/-	+/-	+/+
+dyn_gw_plain	+/+	+/?	+/-	+/-	+/-	+/+
+httpinfo	+/+	+/+	+/+	+/+	+/+	+/+
+mini		+/+	+/?	+/+	+/+	+/+	+/+
+nameservice	+/+	+/?	+/+	+/+	+/+	+/+
+pgraph		+/+	+/+	+/+	+/+	+/+	+/+
+quagga		+/+	-/-	+/+	+/+	+/+	?
+secure		+/+	+/+	+/+	+/+	+/+	+/+
+tas		+/+	-	-	-	-	?
+txtinfo		+/+	+/+	+/+	+/+	+/+	+/+
+------------------------------------------------------------
+
+LEGEND:   +/+ = compiles/runs
+          +/- = compiles/does not work
+          -   = does not compile
+          ?   = unknown
+
+=================
+ * GUI FRONTENDS
+=================
+
+A GUI front end for GNU/Linux using GTK is available in the gui/ 
+directory. This implementation is no longer supported, and might
+not work any more. It will be completly removed in a future release.
+
+There currently is, however, a native MFC-based Windows GUI. Unlike
+olsrd the GUI has to be compiled with Visual C++ 6. It can be found in
+the gui/win32/ directory. Simply open the "Frontend.dsw" workspace in
+the Visual C++ 6 IDE. Then compile "Frontend" and "Shim", which
+creates "Switch.exe" and "Shim.exe".
+
+To run the Windows GUI simply make sure that "Switch.exe", "Shim.exe",
+"olsrd.exe", "olsrd_cfgparser.dll", and "Default.olsr" are located in
+the same directory and run "Switch.exe". "Shim.exe" is just an
+auxiliary console application that is required by "Switch.exe".
+
+The GUI is pretty self-explanatory. The three buttons on the lower
+right of the GUI window start the OLSR server, stop the OLSR server,
+and exit the GUI.
+
+Use the "Settings" tab to specify the options that the GUI uses to run
+the OLSR server "olsrd.exe". When you click "Start" the GUI generates
+a temporary configuration file from the information given by the
+"Settings" tab. This temporary configuration file is passed to the
+OLSR server via its "-f" option.
+
+"Offer Internet connection" is only available if you have an Internet
+connection, i.e. if you have a default route configured. If you tick
+this option an HNA entry for the default route is added to the
+temporary configuration file, allowing other nodes in the OLSR network
+to use your Internet connection.
+
+IP version 6 cannot currently be selected, as support for IPv6 is not
+yet complete in the Windows version.
+
+"Enable ETX link quality" tells the OLSR server to detect the quality
+of its links to its neighbors using a variant of the ETX
+metric. "Window size" specifies the number of most recent packets to
+be used when calculating the packet loss. If, for example, this
+parameter is set to 10, then the OLSR server will calculate the packet
+loss among the most recent 10 OLSR packets received from each
+neighbor. If "For MPR selection only" is active, the link quality
+information is only used to select MPRs that offer the best paths to
+your two-hop neighbors. If "For MPR selection and routing" is active,
+the link quality is additionally used to create the routing table.
+
+WARNING - Enabling ETX breaks compliance with the OLSR
+standard. ETX-enabled nodes do not inter-operate with nodes that have
+ETX switched off. DO NOT USE NODES WITH DIFFERENT ETX SETTINGS IN A
+SINGLE NETWORK!
+
+The three buttons on the lower right of the "Settings" tab open
+previously saved settings, save the current settings to a
+configuration file, and reset the current settings to default values.
+
+If you start the GUI with the path to a configuration file as the only
+command line argument, the GUI opens the given configuration file and
+runs the OLSR server with this configuration. So, saving a
+configuration file with a ".olsr" extension, for example, and making
+"Switch.exe" the handler for ".olsr" files enables you to run the OLSR
+server with a simple double click on the configuration file.
+
+The "Output" tab shows the output of the currently running OLSR
+server. The output is limited to 1000 lines. The 1001st line will make
+the first line disappear and so on. When you click "Start" The GUI
+simply invokes the OLSR server "olsrd.exe" and intercepts its console
+output. Use the four buttons on the upper right of the tab to freeze
+the output, resume frozen output, save the output to a file, or clear
+the output.
+
+The "Nodes" tab contains information about the nodes that the OLSR
+server currently knows about. If you click on the address of a node in
+the "Node list" list box, the GUI populates the three "Node
+information" list boxes on the right with the multi-point relays of
+the selected node (MPR), the interfaces of the selected node (MID),
+and the non-OLSR networks accessible via the selected node (HNA).
+
+The "Routes" tab shows the routes that the currently running OLSR
+server has added.
+
+The default settings for the "Settings" tab are taken from the
+"Default.olsr" file. The configuration of the last interface in this
+file is used to populate the per-interface settings (HELLO interval,
+etc.) in the "Settings" tab. If you do not want to specify any
+interface in "Default.olsr", the problem arises that you do not have
+such a last interface. In this case simply create an interface with
+the special name of "GUI". This tells the GUI to use the configuration
+of the interface for the per-interface settings and to forget about
+this interface afterward. See the comments in the "Default.olsr" file
+for details.
+
+
+=========
+ * LINUX
+=========
+
+To build olsrd you need to have all the regular development tools 
+installed. This includes gcc, make, glibc, makedep etc.
+To install to a directory different from /(/etc, /usr/bin) use 
+DESTDIR=targetdir. To use other compilers set CC=yourcompiler.
+
+To build:
+ make
+To install(as root):
+ make install
+To delete object files run:
+ make clean
+Optionally, to clean all generated files:
+ make uberclean
+
+Before running olsrd you must edit the default configuration file 
+/etc/olsrd.conf adding at least what interfaces olsrd is to run on. 
+Options in the config file can also be overridden by command line 
+options. See the manual pages olsrd(8) and olsrd.conf(5) for details.
+The binary is named 'olsrd' and is installed in (PREFIX)/usr/sbin. 
+You must have root privileges to run olsrd!
+To run olsrd just type:
+olsrd
+
+If debug level is set to 0 olsrd will detach and run in the background, 
+if not it will keep running in your shell.
+
+===========
+ * WINDOWS
+===========
+
+*** COMPILING
+
+To compile the Windows version of the OLSR server or the dot_draw
+plugin you need a Cygwin installation with a current version of GCC
+and Mingw32. Simply use
+
+  make
+
+to build the olsrd executable. Building the dot_draw plugin works
+slightly different, we do not yet have a unified makefile for all
+architectures here. Switch to the dot_draw directory lib/dot_draw/ and
+generate the Windows makefile by saying
+
+  ./mkmf.sh
+
+This will generate "Makefile.win32" by adding dependencies to
+"Makefile.win32.in". Then just say
+
+  make -f Makefile.win32
+
+to build the dot_draw plugin. However, make sure that you have build
+olsrd before that, as the dot_draw plugin requires some object files
+that are only generated when olsrd is built.
+
+*** INTERFACE NAMING
+
+On Linux network interfaces have nice names like "eth0". In contrast,
+Windows internally identifies network interfaces by pretty awkward
+names, for example:
+
+  "{EECD2AB6-C2FC-4826-B92E-CAA53B29D67C}"
+
+Hence, the Windows version implements its own naming scheme that maps
+each internal name to a made-up name like "if03", which is easier to
+memorize. Simply invoke the OLSR server as follows to obtain its view
+of your interfaces:
+
+  olsrd.exe -int
+
+This lists the made-up interface names along with their current IP
+addresses to enable you to find out which made-up interface name
+corresponds to which of your physical interfaces.
+
+"+" in front of the IP addresses means that the OLSR server has
+identified the interface as a WLAN interface. "-" indicates that the
+OLSR server considers this interface to be a wired interface. "?"
+means "no idea". Detection currently only works on NT, 2000, and
+XP. Windows 9x and ME will always display "?".
+
+For techies: The made-up names consist of the string "if" followed by
+a two-digit hex representation of the least significant byte of the
+Windows-internal interface index, which should be different for each
+interface and thus make each made-up name unique. Again, this is
+undocumented and this assumption may be wrong in certain cases. So, if
+the "-int" option reports two interfaces that have the same name,
+please do let me know.
+
+*** CONFIGURATION FILE
+
+If you do not specify a configuration file, the OLSR server
+("olsrd.exe") by default attempts to use "olsrd.conf" in your Windows
+directory, e.g. "C:\WINDOWS\olsrd.conf".
+
+
+=========================
+ * FREEBSD/NETBSD/OPENBSD
+=========================
+
+The FreeBSD port should be relativley stable at this point.
+The OpenBSD and NetBSD versions are pretty much untested. They have 
+not been extensively tested beyond "doesn't core dump and it looks 
+like it adds routes". In order to build it, you need GNU make. Then 
+use:
+
+  gmake
+
+to build the olsrd executable. Then do:
+
+  gmake install
+
+to install the executable, the default configuration file, and the
+manual pages. So, basically it's the same as on Linux. Have a look at
+the Linux section for details.
+
+=======
+ * OSX
+=======
+
+The OS X port is a direct descendant of the FreeBSD port. So, the same
+limitations with respect to testing and maturity apply. Building and
+installing works in the same was as on FreeBSD.
+
+
