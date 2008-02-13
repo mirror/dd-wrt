@@ -3887,8 +3887,9 @@ ej_get_totaltraff (webs_t wp, int argc, char_t ** argv)
 {
 char *type;
 static char wanface[32];
-char line[256];
-unsigned long rcvd, sent;
+char line[2048];
+unsigned long rcvd, sent, gigcount = 0;
+FILE *in;
 
 #ifdef FASTWEB
   ejArgs (argc, argv, "%s", &type);
@@ -3902,7 +3903,7 @@ unsigned long rcvd, sent;
 	
   strncpy (wanface, get_wan_face (), sizeof (wanface));
 
-  FILE *in = fopen ("/proc/net/dev", "rb");
+  in = fopen ("/proc/net/dev", "rb");
   if (in == NULL)
     return;
 
@@ -3924,14 +3925,36 @@ unsigned long rcvd, sent;
   }
 
   fclose (in);
+  
+  rcvd = rcvd >> 20;  //output in MBytes
+  sent = sent >> 20;
+  
+
+  if ((in = fopen ("/tmp/.gigci", "r")) != NULL)
+  {
+	fgets (line, sizeof (line), in);  
+    sscanf (line, "%lu", &gigcount);
+    rcvd = rcvd + (gigcount << 10);
+    fclose (in);
+  }
+  
+  if ((in = fopen ("/tmp/.gigco", "r")) != NULL)
+  {
+	fgets (line, sizeof (line), in);
+    sscanf (line, "%lu", &gigcount);
+    sent = sent + (gigcount << 10);
+    fclose (in);
+  }
+
+  
 
   if (!strcmp (type, "in"))
     {
-      websWrite (wp, "%lu", rcvd >> 20);  //output in MBytes
+      websWrite (wp, "%lu", rcvd);  //output in MBytes
     }
   else if (!strcmp (type, "out"))
     {
-      websWrite (wp, "%lu", sent >> 20);
+      websWrite (wp, "%lu", sent);
     }
 return;
 }
@@ -3977,16 +4000,22 @@ unsigned long totout = 0;
    }
    
   if (max > 5) smax = 10;
-  if (max > 10) smax = 50;
+  if (max > 10) smax = 25;
+  if (max > 25) smax = 50;  
   if (max > 50) smax = 100;
-  if (max > 100) smax = 500;  
+  if (max > 100) smax = 250;  
+  if (max > 250) smax = 500;  
   if (max > 500) smax = 1000;
-  if (max > 1000) smax = 5000;
+  if (max > 1000) smax = 2500;
+  if (max > 2500) smax = 5000;
   if (max > 5000) smax = 10000;
-  if (max > 10000) smax = 50000;
+  if (max > 10000) smax = 25000;
+  if (max > 25000) smax = 50000;
   if (max > 50000) smax = 100000;
-  if (max > 100000) smax = 500000;
-  if (max > 500000) smax = 1000000;
+  if (max > 100000) smax = 250000;
+  if (max > 250000) smax = 500000;
+  if (max > 500000) smax = 1000000; // = 1TB = 1000 GB
+  if (max > 1000000) smax = 100000000;  // = 100 TB
 
   
   websWrite (stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
