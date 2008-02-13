@@ -70,6 +70,7 @@ export TARGETDIR=../src/router/mipsel-uclibc/target
 #./make_kernel.v24.sh
 ../tools/trx -o dd-wrt.v23.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
 ../tools/trx_gs -o dd-wrt.v23_gs.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
+../tools/trx_wrh -o dd-wrt.v23_wrh.trx ./loader-0.02/loader ../src/router/mipsel-uclibc/vmlinuz target.squashfs
 #./asus/asustrx -p WL500gx -v 1.9.2.7 -o dd-wrt.v23_asus.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
 #add pattern
 #./tools/addpattern -4 -p W54U -v v4.20.6 -i dd-wrt.v23.trx -o dd-wrt.v23_wrtsl54gs.bin -g
@@ -79,6 +80,7 @@ export TARGETDIR=../src/router/mipsel-uclibc/target
 #./tools/addpattern -4 -p W54S -v v4.70.6 -i dd-wrt.v23.trx -o dd-wrt.v23_wrt54gs.bin -g
 #./tools/addpattern -4 -p W54s -v v1.05.0 -i dd-wrt.v23.trx -o dd-wrt.v23_wrt54gsv4.bin -g
 #./tools/addpattern -4 -p W3GS -v v3.00.0 -i dd-wrt.v23.trx -o dd-wrt.v23_wrt54g3g.bin -g
+../tools/addpattern_wrh -i dd-wrt.v23_wrh.trx -o dd-wrt.v23_wrh54g.bin -g
 
 #./tools/addpattern -i dd-wrt.v23.trx -o dd-wrt.v23_wrt54gs.bin -2 -g
 #sed -e  1s,^W54S,W54G, < dd-wrt.v23_wrt54gs.bin > dd-wrt.v23_wrt54g.bin 
@@ -92,6 +94,7 @@ export TARGETDIR=../src/router/mipsel-uclibc/target
 
 #cp dd-wrt.v23_wrt54gsv4.bin ~/GruppenLW/dd-wrt.v24_wrt54gsv4.bin
 cp dd-wrt.v23.trx /GruppenLW/dd-wrt.v24_micro_wrt54gv8.bin
+cp dd-wrt.v23_wrh54g.bin /GruppenLW/dd-wrt.v24_micro_wrh54g.bin
 
 
 #cp dd-wrt.v23.prefinal5_asus.trx ~/GruppenLW
