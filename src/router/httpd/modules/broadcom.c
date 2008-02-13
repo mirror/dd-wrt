@@ -3887,7 +3887,7 @@ ej_get_totaltraff (webs_t wp, int argc, char_t ** argv)
 {
 char *type;
 static char wanface[32];
-char line[2048];
+char line[256];
 unsigned long rcvd, sent, gigcount = 0;
 FILE *in;
 
@@ -3974,7 +3974,7 @@ int i = 0;
 char months[12][16] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"}; 
 unsigned long rcvd[31] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 unsigned long sent[31] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-unsigned long max = 5, smax = 5;
+unsigned long max = 5, smax = 5, f = 1;
 unsigned long totin = 0;
 unsigned long totout = 0;
 
@@ -3998,24 +3998,15 @@ unsigned long totout = 0;
      i++;
     }
    }
+
    
-  if (max > 5) smax = 10;
-  if (max > 10) smax = 25;
-  if (max > 25) smax = 50;  
-  if (max > 50) smax = 100;
-  if (max > 100) smax = 250;  
-  if (max > 250) smax = 500;  
-  if (max > 500) smax = 1000;
-  if (max > 1000) smax = 2500;
-  if (max > 2500) smax = 5000;
-  if (max > 5000) smax = 10000;
-  if (max > 10000) smax = 25000;
-  if (max > 25000) smax = 50000;
-  if (max > 50000) smax = 100000;
-  if (max > 100000) smax = 250000;
-  if (max > 250000) smax = 500000;
-  if (max > 500000) smax = 1000000; // = 1TB = 1000 GB
-  if (max > 1000000) smax = 100000000;  // = 100 TB
+  while (max > smax)
+  {    
+   if (max > 5) smax = f * 10;
+   if (max > 10) smax = f * 25;
+   if (max > 25) smax = f * 50;
+   f = f * 10;
+  }  
 
   
   websWrite (stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
