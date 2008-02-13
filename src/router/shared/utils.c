@@ -1357,6 +1357,9 @@ led_control (int type, int act)
   switch (getRouterBrand ())	//gpio definitions here: 0xYZ, Y=0:normal, Y=1:inverted, Z:gpio number (f=disabled)
     {
 #ifndef HAVE_BUFFALO
+	case ROUTER_LINKSYS_WRH54G:
+      diag_gpio = 0x11;  //power led blink / off to indicate factory defaults
+      break;	
     case ROUTER_WRT54G:
     case ROUTER_WRT54G_V8:
       power_gpio = 0x01;
