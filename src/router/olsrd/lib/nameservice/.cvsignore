@@ -1,0 +1,3 @@
+*.d
+olsrd_nameservice.so.*
+olsrd_nameservice.dll

@@ -1,0 +1,3 @@
+*.d
+olsrd_secure.so.*
+olsrd_secure.dll

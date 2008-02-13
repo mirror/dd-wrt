@@ -1,0 +1,191 @@
+#
+# Default configuration for the GUI
+#
+
+# Debug level(0-9)
+# If set to 0 the daemon runs in the background
+
+DebugLevel	0
+
+# IP version to use (4 or 6)
+
+IpVersion	4
+
+# FIBMetric ("flat" or "correct")
+
+FIBMetric	"flat"
+
+# HNA IPv4 routes
+# syntax: netaddr/prefix
+
+Hna4 {
+}
+
+# Should olsrd keep on running even if there are
+# no interfaces available? This is a good idea
+# for a PCMCIA/USB hotswap environment.
+# "yes" OR "no"
+
+AllowNoInt	yes
+
+# TOS(type of service) to use. Default is 16
+
+TosValue	16
+
+# Policy Routing Table to use. Default is 254
+
+RtTable		254
+
+# The fixed willingness to use(0-7)
+# If not set willingness will be calculated
+# dynammically based on battery/power status
+
+#Willingness	4
+
+# Allow processes like the GUI front-end
+# to connect to the daemon.
+
+IpcConnect {
+    MaxConnections	0
+}
+
+# Hysteresis adds more robustness to the
+# link sensing.
+# Used by default. 'yes' or 'no'
+
+UseHysteresis	no
+
+# Hysteresis parameters
+# Do not alter these unless you know 
+# what you are doing!
+# Set to auto by default. Allowed
+# values are floating point values
+# in the interval 0,1
+# THR_LOW must always be lower than
+# THR_HIGH!!
+
+#HystScaling	0.50
+#HystThrHigh	0.80
+#HystThrLow	0.30
+
+# Polling rate in seconds(float).
+# Auto uses default value 0.05 sec
+
+Pollrate	0.10
+# Interval to poll network interfaces for configuration
+# changes. Defaults to 2.5 seconds
+NicChgsPollInt	2.50
+# TC redundancy
+# Specifies how much neighbor info should
+# be sent in TC messages
+# Possible values are:
+# 0 - only send MPR selectors
+# 1 - send MPR selectors and MPRs
+# 2 - send all neighbors
+#
+# defaults to 0
+
+TcRedundancy	0
+
+# MPR coverage
+# Specifies how many MPRs a node should
+# try select to reach every 2 hop neighbor
+# Can be set to any integer >0
+# defaults to 1
+
+MprCoverage	1
+
+# Link quality level
+# 0 = do not use link quality
+# 1 = use link quality for MPR selection
+# 2 = use link quality for MPR selection and routing
+
+LinkQualityLevel	0
+
+# Fish Eye algorithm
+# 0 = do not use fish eye
+# 1 = use fish eye
+
+LinkQualityFishEye	0
+
+# Link quality window size
+
+LinkQualityWinSize	12
+
+# Clear screen when printing debug output?
+
+ClearScreen	no
+
+# Olsrd plugins to load
+# This must be the absolute path to the file
+# or the loader will use the following scheme:
+# - Try the paths in the LD_LIBRARY_PATH 
+#   environment variable.
+# - The list of libraries cached in /etc/ld.so.cache
+# - /lib, followed by /usr/lib
+
+LoadPlugin "olsrd_httpinfo.dll" {
+    PlParam "Net"	"0.0.0.0 0.0.0.0"
+}
+
+# Interfaces
+# Multiple interfaces with the same configuration
+# can shar the same config block. Just list the
+# interfaces(e.g. Interface "eth0" "eth2"
+
+Interface "GUI" {
+
+    # IPv4 broadcast address to use. The
+    # one usefull example would be 255.255.255.255
+    # If not defined the broadcastaddress
+    # every card is configured with is used
+
+    #Ip4Broadcast	255.255.255.255
+
+    # IPv6 address scope to use.
+    # Must be 'site-local' or 'global'
+
+    Ip6AddrType 	global
+
+    # IPv6 multicast address to use when
+    # using site-local addresses.
+    # If not defined, ff05::15 is used
+    Ip6MulticastSite	ff05::15
+
+    # IPv6 multicast address to use when
+    # using global addresses
+    # If not defined, ff0e::1 is used
+    Ip6MulticastGlobal	ff0e::1
+
+    # Olsrd can autodetect changes in
+    # interface configurations. Enabled by default
+    # turn off to save CPU.
+    AutoDetectChanges: yes
+    # Emission and validity intervals.
+    # If not defined, RFC proposed values will
+    # in most cases be used.
+
+    #HelloInterval	2.00
+    #HelloValidityTime	6.00
+    #TcInterval		5.00
+    #TcValidityTime	15.00
+    #MidInterval	5.00
+    #MidValidityTime	15.00
+    #HnaInterval	5.00
+    #HnaValidityTime	15.00
+    #LinkQualityMult	default 1.0
+    # When multiple links exist between hosts
+    # the weight of interface is used to determine
+    # the link to use. Normally the weight is
+    # automatically calculated by olsrd based
+    # on the characteristics of the interface,
+    # but here you can specify a fixed value.
+    # Olsrd will choose links with the lowest value.
+    # Note:
+    # Interface weight is used only when LinkQualityLevel is 0.
+    # For any other value of LinkQualityLevel, the interface ETX
+    # value is used instead.
+
+    #Weight	 0
+
+}

@@ -1,0 +1,1572 @@
+This file states changes as of version 0.2.4:
+
+0.5.5 ---------------------------------------------------------------------
+
+BUGFIX from Andreas Jacobs <andjac@kawo1.rwth-aachen.de>:
+- calculate correct sleeptime
+
+BUGFIX from Dario Borriello <dario_bodj@hotmail.com>:
+- do not update LQ if not configured
+
+BUGFIX from Jo-Philipp Wich <freifunk@wwsnet.net:
+- fix olsr_ip_to_string() buffer quirk
+- fix txtinfo format quirks in HNA table
+- name-service plugin - write MID entries to hosts file
+- avoid infinite loop in the message parser
+
+PATCH by John Hay <jhay@meraka.org.za>:
+- compile clean on FreeBSD
+- bugfix: do not account for IP headers when building MID6 messages
+
+PATCHES from Henning Rogge <rogge@fgan.de>:
+- join LQ and non-LQ Hello execution paths
+
+PATCHES from otti <otti@wirdorange.org>:
+- rttable-default: configures a new policy routing table for the default route
+
+BUGFIXES and PATCHES by Sven-Ola Tuecke <mail2news@commando.de>:
+- Windows Vista: add interface metric to SPF computed metric
+- lqtc-seqno: Optimize check for old seqno numbers in LQTC messages
+- lqnatthresh: maintain an advantage for the current (NAT) inet gw
+- fisheye-startup: Changed to MAX_TTL for the first 32 LQTCs
+- Added and removed files necessary for win32 compile
+- Fix for hg: do not remove anything in .hg with 'make uberclean'
+- 104-olsrd-verysmallfix
+- 105-fix-lq-buffer-quirks
+- 106-fix-seqnocheck
+- 110-bmf-v152
+- 121-olsrd-fib-metric-approx
+- 133-fix-lqneigh
+- 136-optimize-invalidip-check
+- 138-optimize-message-generation
+
+BUGFIX from Lorenz Shori <lorenz.schori@gmx.ch>:
+- Mac OSX compile fixes
+
+BUGFIXES and PATCHES by Hannes Gredler <hannes@gredler.at>
+- fix not deleted tc entry.
+- avoid setting routes with an invalid/impossible netmask.
+- refactoring of TC parsing to kill another pile of malloc()/free()s
+  saving (again) code and especially run.time performance.
+- RIB Refactoring, Part 2:
+  - avoid the periodical rib-tree insertion
+  - add a FOR_ALL_HNA_RT_ENTRIES() macro for the snmp folks
+    (or any parties who want to walk HNA entries).
+  - add an olsr_cnf option 'flat_fib_metrics' which defaults to TRUE.
+- fix broken prefix insertion (regression of the RIB refactoring)
+- squelsh compiler warnings on Mac OSX
+
+PATCH by John Hay <jhay@meraka.org.za>:
+- also printout our own HNAs in the dotdraw plugin.
+
+PATCH by Patrick McCarty <mccartyp@gmail.com>:
+- fixed compile errors in the BSD port
+
+PATCHES by Sven-Ola Tuecke <mail2news@commando.de>:
+- 102-olsrd-cvs-fixes.patch: use different buffers in the same printf()
+- 103-olsrd-rt-exportroute-cleanup.patch: avoid a malloc()ed list of functions
+- 132-save-the-fish.patch: really save the fish and avoid to forward invalid
+  messages from older olsrd versions
+- 135-georss-map-for-nameservice.patch: fixes and extensions for the namesaervice plugin
+- 138-olsrd-fixdotdraw.patch: fix the dot_draw plugin
+(all to be found on http://download-master.berlin.freifunk.net/sven-ola/nylon/packages/olsrd/files/)
+- Replaced "which" with a /bin/sh script snippet
+
+PATCHES and CLEANUPS by Bernd Petrovitsch <bernd@firmix.at>
+- Jens Nachtigall <nachtigall@web.de> suggested (and reminded) to use
+  olsrd.conf.default.lq as the default installed one.
+  It makes much more sense as - to the best of my(bernd's) knowledge - all
+  larger networks uses the LQ extensions. And new customers should better
+  be pushed in that direction.
+- with the help of Patrick McCarty <mccartyp@gmail.com>, we got olsr to build
+  on OpenBSD again:
+  * OpenBSD'd `sed` is pretty conservative and doesn't understand 's|re|sub|'.
+    So we fall back to the old 's/re/sub/' and quote all '/' and '.' correctly
+    (which was the main reason to use '|').
+    And while I'm at it: Remove the useless $(CCACHE) from the $(CC) for
+    dependency generation and beautify (read: "$(strip)") $(CPPFLAGS).
+  * OpenBSD needs an explicit "#include <sys/types.h>" before
+    "#include <netinet/in.h>".
+- fixed lib/secure/src/md5.h: This was broken as it had
+  "typedef unsigned long int UINT4;". "unsigned long int" is 8 bytes on x86_64.
+  We are using now the standardized types from <inttypes.h>.
+- fixed warnings and improved lib/secure/src/md5.c:
+  * we are using memcpy() and memset() instead of the open-coded loops as
+    suggested 
+  * const'ified
+  * added function prototypes for static functions
+  * moved static functions to the top so that their declaration is before
+    their use to allow gcc to inline if only used once.
+  It remains ugly - God knows why there are that so many useless
+  type-casts.
+- Some minor and trivial cleanup: Added two functions to calculate the ETX
+  value from a struct tc_edge_entry and a struct link_entry, respectively.
+  And use them everywhere.
+- added http://meshcube.org/nylon/utils/olsr-topology-view.pl into
+  lib/httpinfo/misc as suggested by Jens Nachtigall <nachtigall@web.de>
+- Killed "struct olsrd_config *cnf" in src/cfgparser/olsrd_conf.h and replaced
+  it's usage with "olsr_cnf" from src/defs.h.
+  Serious cleanup: olsrd_get_default_cnf() does no longer initialize the global
+  "cnf" variable" but uses a local one which is returned as before. And
+  olsrd_parse_cnf() does no longer return the global variable it is working on.
+- Merged "struct hna4_entry" and "struct hna6_entry" into
+  "struct local_hna_entry" (as "struct hna_entry" is a different thing)
+  Both have almost the same data (IP address + netmask/prefix) so we use
+  the quite new "struct olsr_ip_prefix" to store it.
+  Also merged the "hna4" and "hna6" pointer in "struct olsr_config" -
+  look at the global "olsr_cnf->ip_version".
+- added a olsr_ip_prefix_to_string() function
+- .h file cleanup: def.h does not longer include net_olsr.h because it 
+  doesn't needs it.
+- more type safety: the macros COPY_IP() and COMP_IP are gone and replaced
+  with "=" or similar "normal" C operations. There are also now the inline
+  functions ip4cmp() and ip4equal() to work on "struct in_addr", ip6cmp()
+  and ip6equal() to work on "struct in6_addr" and ipcmp() and ip6equal()
+  to work on "union olsr_ip_addr".
+  Most (or even more precise: almost all) uses of COPY_IP() and COMP_IP()
+  are in "if (olsr_cnf->ip_version) { ... } else { ... }" anyway to
+  there is no reson to copy an IPv4 address effectively with
+  "memcpy(&dst, &src, 4)" or compare with memcmp(&a, &b, 4)" wher the
+  always "4" is stored in a variable inhibiting compiler optimization.
+  There is also the deprecated function genipcopy() mimicking the old
+  typeless COPY_IP() macro for the last few places where a cleanup is
+  needed anyways.
+  There also lots of old macros left over (commented out of course) until
+  we are confident that everything works. And then I will kill them too.
+- Fixed the misleading definition of "v4" in "struct olsr_ip_addr" fom
+  "olsr_u32_t" (in network-byteorder!) to "struct in_addr". Lots of
+  temporary variables to call inet_ntoa()/inet_ptoa() vanished .....
+- We have now ip4_to_string(), ip6_to_string() and olsr_ip_to_string()
+  to print a "struct in_addr", "struct in6_addr" and "union olsr_ip_addr"
+  into a string buffer.
+- cleanup: olsr_ip_to_string() and similar non-reentrant functions now must
+  get a target buffer. To ease that, there is the "struct ipaddr_str"
+  which is large enough for all of them (read: for an IPv6 address). This
+  also removes the cyclic buffer there.
+  All of these function return a "const char *" which can be directly used
+  for printf(3) and friends.
+- const'ified more functions
+- converted the source to UTF-8.
+- "struct sig_msg" uses an olsr_u8_t for a byte array (and not "char")
+- force the few inline function to always be inlined.
+- #ifdef the body of the olsr_print_hna_set() and olsr_print_neighbor_table()
+  if nothing is done
+- declare "int_addr", "int_netmask" and "int_broadaddr" in "struct interface"
+  as "struct sockaddr_in" since it is that what we actually want there (and
+  it is similar to the IPv6 code).
+- updated the olsrd.conf.default.lq-fisheye to the Debian-deliverd version
+  after recent discussions olsr-dev@olsr.org
+- use "inline_avl_comp_ipv4()" in "avl_comp_ipv4()"
+- clean up the routes on more signals. Basically we want to do this on all
+  signals which terminate the program.
+- killed a superflous global buffer in src/main.c
+- made inline functions from avl_walk_{first,last,next,prev} and created
+  "const" versions of it. inline_avl_comp_ipv4() is now also an inline function
+  (and not a macro)
+- created a typedef's for various function pointers - much easier to read.
+- cleanup: compare tree->comp (adn other pointers)) to NULL (and not 0)
+- killed superflous "return"s at the end of void functions
+- const'ified more parameters in many more functions in the .h and
+  .c files
+- init-functions with constant or ignored return values are "void"
+- created a typedef fro the callback in "struct export_route_entry"
+  and using it!
+- moved the initialization of the {add,chg,del}_kernel_list variables
+  into process_routes.c. So they are now "static" there.
+- olsr_export_{add,del}_route{,6} are now static in process_routes.c
+  since they are not used elsewhere.
+- olsr_addroute_add_function() and olsr_deldroute_add_function() were
+  almost identical - made one function out of it.
+  Same for olsr_addroute_del_function() and olsr_deldroute_del_function().
+- fixed the sort order in avl_comp_ipv4_prefix(): We compare now the IPv4
+  values in host byte order (and not network byte order). So the route
+  list in the e.g. httpinfo plugin is now nicely sorted.
+- fixed and improved the `gcc-warnings` script:
+  * support older gcc's (as on Debian/Sarge) as they have slightly different
+    error messages
+  * removed superflous lines
+  * replaced the call of `sed` with shell built-in features fixing syntax
+    errors on Debian/Sarge
+  * set all locale-relevant variables to "C" (just to be sure)
+- consolidated ip{4,6,}{cmp,equal}: all are nwo inline functions using only
+  the minimal necessary operations. Thanks to Hannes Gredler
+  <hannes@gedler.at> and Sven-Ola Tuecke <mail2news@commando.de> for pointing
+  that out and suggesting the `inline`, respectively.
+  use ip{4,}cmp in lq_avl.[ch] to resue the code. inline_avl_comp_ipv4
+  is superflous now (and replaced by ip4cmp) and use the global MIN and MAX
+  macro instead of AVLMIN and AVLMAX
+- killed netmasks from the IPv4 part of the code and use the prefixlen there
+  (similar to thte IPv6 part). Manymore details on
+  http://lists.olsr.org/pipermail/olsr-dev/2007-November/001464.html
+- removed the superflous "open_ipc" field from the "struct olsrd_config" as
+  it contains only the equivalent of "olsr_cnf->debug_level > 1".
+- inspired by Sven-Ola Tuecke: avoid a bash'ism (i.e. "OPTS="${OPTS//$opt}") in
+  gcc-warnings and ld-warnings. But we do not replace it with `sed` (since it
+  costs a fork(2) and an exec(3)) but also with shell code which doesn't use
+  any external program.
+- added configuration file support for "flat fib metrics".
+
+0.5.4 ---------------------------------------------------------------------
+
+QUAGGA by Immo 'FaUl' Wehrenberg <immo.olsr@do.bundessicherheitsministerium.de>
+- updated to svn version 33
+
+BMF PLUGIN  by Erik Tromp <erik_tromp@hotmail.com>
+- updated to 1.5.1
+- updated to latest plugin interfaces changes and killed warnings (by Bernd
+  Petrovitsch <bernd@firmix.at>)
+
+PATCH by Hannes Gredler <hannes@gredler.at> which rewrites the route handling.
+To quote him:
+----  snip  ----
+change list:
+- get rid of separate routing tables for HNA and per-node routes, everything is
+  now unified in an AVL routing tree (&routingtree)
+
+- introduce walking macros (OLSR_FOR_ALL_RT_ENTRIES()) that hide the internal
+  structure of the RIB for making life of the plugin authors easier.
+
+- get rid of different SPF implementations for LQ and non-LQ code paths. a
+  non-LQ edge is simply substituted with a cost of 1.0
+
+- get rid of host masks - a new data type olsr_prefix is introduced which is
+  basically an ip address plus a prefix length.
+
+  do not install the metric in the kernel FIB - for the kernel its pointless
+  if the route gets installed with a metric of N or M.
+
+  we do not need to update the kernel FIB if we have hop count only changes
+  (for example if there is a reroute action further downstream)
+
+  the only things which triggers a kernel FIB route update is a next hop
+  change (a next hop is neighboring gateway router plus an interface).
+
+  all OLSR routes are installed with a metric of 2
+
+- separate between rt_entry and rt_path - the former is a route installed in the
+  kernel with an next hop. the latter is a candidate for best path selection
+  after SPF calculation has been done. in the rt_entry we keep a pointer to the
+  best_path and also to the next hop that was installed in the kernel FIB.
+
+  we always keep all originator of a route, if a route originator goes away we
+  can easy recompute the best path for the route.
+
+  the next hop in the rt_entry gets only updated upon a successful route_add
+  call - that way we always remember what next hop to delete.
+
+  stray routes should be history now.
+
+- tweak the linked list toolkit to operate on circular lists.
+
+- get rid of malloc calls for building the kernel update list. the list node is
+  now embedded in the rt_entry.
+
+- introduce three queues (add/chg/del) for kernel updates.
+
+- for neighbor route dependency tracking the neighbor routes are queued first or
+  last (depending on which queue you work on)
+
+- rework all the plugins which directly manipulate rt entries.
+
+- rework the plugins that read from the routing table (most notably nameserver,
+  httpinfo and quagga plugin)
+
+- lots of comments that explains the intentions and purpose of this code-piece.
+
+non RT related stuff:
+- use a list rather than a tree for storing the post-SPF results, which further
+  improves the raw-SPF runtime.
+
+- add display of SPF runtime (masked behind #ifdef SPF_PROFILING)
+
+- http://gredler.at/download/olsrd/neighbor_routes3.diff: This updates the own
+  IP address (read: the main address) after changes (e.g. on
+  `ifup wlan0; sleep 1; ifdown wlan0`) and kills the
+  olsr_fill_routing_table_with_neighbors() function.
+----  snip  ----
+And Sven-Ola Tuecke <mail2news@commando.de> fixed an instability issue on interface
+up/down operations (see 102-olsrd-rt-refactoring-fixes.patch below) and a missing
+initialization.
+
+PATCH by Hannes Gredler <hannes@gredler.at> which "consolidates
+the link-state database and the spf-calculation in order
+to calculate routes more efficiently".
+To quote him (more):
+----  snip  ----
+- use the link-state (tc) database for SPF calculations rather than
+  replicating the notion of vertices and edges for a SPF run.
+  this heavily reduces malloc() calls and shrinks the total CPU
+  load of the route calculation path between 60%-80%.
+----  snip  ----
+
+PATCHES by Sven-Ola Tuecke <mail2news@commando.de> to be found on from
+http://download-master.berlin.freifunk.net/sven-ola/nylon/packages/olsrd/files/
+- 102-olsrd-rt-refactoring-fixes.patch
+  Because you changed a lot of basics: It's time to handle a general
+  flaw in the routing system. Plase take a look at chk_if_changed(). This
+  will free() any "struct interface" pointer without warning at any time.
+  This is why it's possile to SEGV olsrd with a simple "ifdown xxx".
+  The patch replaces the (maybe) invalid pointer with an index reference
+  "iif_index". You can always ask the OS for a name. Please note, that I do
+  not have a working BSD toolchain, so I've placed an #error in the IPv6
+  BSD-part where the author/porter has started to hack something funny.
+
+- 110-olsrd-double-wlancard-neigh-hack.patch:
+  This is a hack for Nodes having to wifi cards with the same channel,
+  bssid, IP-Range etc. If two nodes can see each other by means of two
+  possible links (here: two wifi cards with equal config), a bug is  triggered
+  with the Neigh-is-SYM detections. This small little hack prevents this.
+
+- 112-olsrd-nameservice-fixemptyname.patch:
+  This is an addon to my lat/lon stuff which will prevent olsrd from
+  running (oops?) if no hostname is given and the nameservice plugin
+  is loaded.
+
+- 113-olsrd-dyngwplain-pluginvers5.patch:
+  This updates the dyngwplain plugin to the new Plugin Iface
+
+- 140-olsrd-arprefreshed.patch:
+  This is a new one. Opens a packet socket and listen to UDP(698), extract
+  the sender MAC and refreshes the ARP cache whith that. Should speedup
+  especially in cases, if you initially try to use a longer routing path which
+  normally triggers a "ARP-Lookup-Chain".
+- 106-olsrd-nameserviceparams.patch:
+  This patch converts more plugins to the new interface version.
+- 104-olsrd-policy-routing.patch
+  Reworked this one to discard GPL helper functions. Also checked IPv6 and
+  re-included the IPC hookup. The patch adds a "RtTable [number]" for
+  /etc/olsrd.conf which is simply the Linux
+  policy routing table to use. Defaults to 254 (== main).
+  This patch was modified/clenaed up by <bernd@firmix.at> to use "#if"
+  instead of "#ifdef" as it's more robust against typos.
+- 110-olsrd-fixpacketprint.patch, 112-olsrd-nameservice-fixemptyname.patch,
+  113-olsrd-txtinfo-fixhttpget.patch, 114-olsrd-timeoutlimit.patch,
+  115-olsrd-nameserviceparamfix.patch and
+  116-olsrd-fix-pluginparam-addons.patch fixing the compilation warning
+  on 64bit and lots of other improvements.
+- "Save the fish" patch: Avoid forwarding of packets with too low TTL. This
+  kills lots of packet forwarding storms.
+  NB: The oneliner was applied by hand by BP and formatted to look (in BPs O)
+  more readable.
+
+PATCH by Arnd Hannemann <hannemann@i4.informatik.rwth-aachen.de>
+olsr_makefile_make_use_of_exename.patch
+- This patch makes sure that the EXENAME variable of Makefile.inc is used
+  in Makefile.
+
+PATCHES by John Hay <jhay@meraka.org.za>
+- update to new FreeBSD WLAN API
+- do not require /bin/bash, use /bin/sh
+- Fixed alignment so that olsrd runs on FreeBSD/arm
+- allow more interface in an IPv6 subnet on FreeBSD
+- use PREFIX and DESTDIR as all the other Makefile.$OS also for FreeBSD
+- make txtinfo plugin work with IPv6
+
+PATCH by Andreas Jacobs <jacobs@i4.informatik.rwth-aachen.de>
+- fix the loss link quality calculation for "windows size % 4 != 0"
+
+PATCH by Acinonyx <acinonyxs@yahoo.gr>
+- Bug fix: include $(TOPDIR)/Makefile.inc at the begin in the Quagga plugin
+
+PATCH by David Cornejo <dcornejo@gmail.com>
+- fixed an "+=" of an uninitialized variable (detected with/by the
+  scan.coverty.com).
+
+BUG reported by Aaron Kaplan <aaron@lo-res.org>
+- BSD-xargs doesn't know "-r".
+
+PATCHES and CLEANUPS by Bernd Petrovitsch <bernd@firmix.at>
+- Made a function from the ME_TO_DOUBLE() macro (in src/mantissa.h).
+  This saves code throughout the code even on i386 and will even more
+  on architectures without floating point units and "-msoft-float".
+- And the mathemathics in src/mantissa.h is reformulated to minimize
+  floating point operations to save CPU power - especially on embedded
+  devices.
+- I rewrote the half of src/lq_packet.[ch] which deals with incoming
+  packets. This was triggered with performance output of gcc produced
+  by Sven-Ola Tuecke at CCCamp07.
+  This kills *lots* of (more than) superflous malloc()s and the same
+  number of (free()s). And it also kills some code and copying around of
+  data.
+- Make it compile without warning with flex-2.5.33 (to be found on Fedora 7
+  and Gentoo in Sep-2007) again.
+
+- converted the dyn_gw plugin to plugin interface version 5 (which leaves
+  the quagga plugion as the last with the old one).
+- paving the way to activate -Wshadow, much more to do
+- const-ify parameters here and there
+- use NULL for pointers (and not "0")
+- Killed "extern" declarations in (not generated) .c files
+
+- Based on a patch by Gianni Costanzi <gianni.costanzi@gmail.com> (so credits
+  and thanks have to go there):
+  added OS_CFLAG_PTHREAD Makefile variable since gcc (on Linux) requests this
+  in the manual page.
+  Changes/additions:
+  - I added definitions to all OS-specific Makefile.$OS with the value similar
+    to the value in OS_LIB_PTHREAD (either empty or "-pthread").
+  - The variable is added to CPPFLAGS (and not CFLAGS) since CPPFLAGS is used
+    for all cpp and gcc calls (and gcc's man page indicates that it sets
+    variables for both of them).
+
+0.5.3 ---------------------------------------------------------------------
+
+URGENT BUG FIX
+Ignacio García Pérez <iggarpe@terra.es> found a serious bug in the dot-draw
+plugin and identified it's source.
+
+BUG FIX
+The bmf plugin wanted to kill a not-started thread and this causes a segmentation
+violation. This happens if the old plugin interface support is not compiled in
+and one uses - or more asccurate: wants to use - the bmf plugin which uses that
+ATM. Thanks to Cedric Krier <ced@ced.homedns.org> for reporting this.
+
+DEPENDENCIES FIXED
+The dependencies (*.d files) are now properly generated and used. And they also
+dependen on the Makefile in the current directory and the Makefile.inc so that
+changes there also lead to new compilation.
+Remember: We support "ccache" so install it to save lot of meaningless recompiles
+if nothing (as seen by the real C compiler, i.e. after the C preprocessor) has
+changed.
+
+BUILD FIX
+Linux/IA64 and Linux/HPPA also need "-fPIC".
+
+CLEANUPS
+- olsr_switch does no longer generate warnings
+- olsr_switch is also built with "build_all" and cleaned with "uberclean"
+- More "const" all over the place.
+- More "static" for local functions and variables.
+- Killed an unnecessary "static" variable.
+
+0.5.2 ---------------------------------------------------------------------
+
+URGENT BUG FIX
+Sven-Ola Tuecke found a serious bug of the class "show stopper" and sent a patch.
+
+PLUGIN CLEANUP
+Plugins handle parameters quite individually (case-sensitive vs case-insensitive,
+different parsing functions for the same values, etc.). Plugin Interface version 5
+now exports a table of { parameter-name, parsing-function, addr-of-storage } and
+it's size. Common functions should be shared.
+
+0.5.1 ---------------------------------------------------------------------
+
+MISC
+Upgrade to olsr-bmf 1.5 from Erik Tromp <erik_tromp@hotmail.com>
+
+latitude/longitude support is now in the nameservice plugin done by
+Sven-Ola Tuecke <mail2news@commando.de>
+
+added the spf refactoring patch from  Hannes Gredler <hannes@gredler.at> which
+saves a noteworthy amount of CPU time. To quote him:
+----  snip  ----
+1. use of an AVL tree as a min-heap implementation
+
+   as a means for efficient sorting.
+   (the etx metric is used as the key in the candidate tree)
+
+2. next-hop propagation
+
+   rather than tracking the previous node in olsr_relax()
+   i have changed that model and pre-populate all one-hop neighbors
+   with their own IP adress as 'next-hop' and pull that
+   pointer up once new paths are explored.
+
+   as a result no walker for counting hops and extracting next-hops
+   is required - it turns out at this is slighly more efficient
+   than the existing behaviour (even with the cache applied).
+----  snip  ----
+
+CLEANUPS
+* moved a only locally needed hack from "union olsr_ip_addr" into the only place
+  where it is needed in hashing.c
+
+0.5.0 ---------------------------------------------------------------------
+
+APPLIED PATCHES FROM FREIFUNK-FIRMWARE
+libsmake, dyngwplain, nameservices+services, tzxtinfo, quagga, quagga-routehandler,
+optimize, fixes from Eric Tromp and Sven-Ola Tuecke, CPU-optimize, secure key, HNA-IP
+
+CLEANUPS
+removed hardcoded limit on the number of interfaces (at least in the Unix part)
+made Makefile targets much more consistent
+
+MISC
+put Bmf-1.3 plugin into it
+
+FreeBSD IPv6 SUPPORT
+
+Patch from John Hay applied.
+
+BUGFIXES
+
+0.4.10 --------------------------------------------------------------------
+
+OLSR NETWORK SIMULATOR
+
+An application called olsr_switch(sorry for the nameclash with the win32
+GUI) has been added. If olsrd is ran using the -hint option it can now
+connect to olsr_switch and be part of a virtual network. This means
+that multiple instances can be ran at the same host! The olsr_switch
+application allows the user to define link variables on all viritual
+links in the network, creating all possible topologies. Read more in
+the readme file.
+
+EXPERIMENTAL FISH EYE ALGORITHM
+
+An experimental algorithm for TTL settings on TC messages has
+been added. Read more in the corresponding README file.
+
+OPENBSD SUPPORT
+
+olsrd now also compiles on OpenBSD systems. Thanks a lot to Holger
+Mauermann for the patches!
+
+BUILDSYSTEM REWRITE
+
+Bruno has rewritten the make system. OS detection is now done
+automagically and the general design is much improved.
+
+IP ADDRESS VALIDATION
+
+Olsrd now maintains a set of IP addresses that is considered
+invalid. Checks against this set is done on all received
+OLSR packets announced originator addresses. The dataset can
+be updated dynamically.
+
+PLUGIN INTERFACE
+
+Updated interface version to 3 and added more noticeable warning
+for version missmatch.
+
+MATH LIB DEPENDENCY
+
+The dependency on the math lib came from the use of pow(3) in the
+mantissa/exponent calculation. The calls to pow in this long forgotten
+code, was very unnessecarry. The pow calls are replaced with bitwise
+shifts and -lm is no longer needed.
+
+ICMP REDIRECTS ON LINUX
+
+On Linux systems "0" is now also written to the all/send_redirects
+procfile and not only the pr. interface ones. Hopefully this resolves
+problems reported with systems still sending ICMP redirects.
+
+BUGFIXES
+
+- Fixed init of IPv6 addrtype variable. It used to be uninitialized,
+  causing it to default to site-local and have some weird side-effects.
+- Fixed crash when changing IPv6 address at run-time
+- Fixed a bug that prevented setting willingness 0 in the configfile
+- Fixed bad handling of missing command line arguments
+- Did various updates to prevent assertion when a neighbor
+  has changed IP and sends HELLO before its olsrd precess has detected
+  the change.
+- Fixed return value check on times(2) calls in the scheduler
+- Fixed bug(s) that could cause crash when an interface was brought
+  down while olsrd was running.
+- Removed the silent (read: unchecked) hard limit of 16 interfaces.
+- Compiles now cleanly on 64bit (e.g. x86_64).
+
+0.4.9 ---------------------------------------------------------------------
+
+OPTIMIZATIONS
+
+The MID database is now also indexed by alias addresses. this makes
+look-ups of main addresses based on alias addresses _much_ faster.
+The mid_lookup_main_addr function alone has gone from >30% of the
+total CPU time used by olsrd to <1%.
+PLUGIN DEVELOPERS: datatypes for MID entries has been changed.
+
+Routing table calculation in the LQ case now uses balanced binary
+trees instead of linked lists, which makes look-ups much faster.
+
+The debug output function olsr_printf() is not used by olsrd
+internals any more. Instead the macro OLSR_PRINTF is to be used.
+This macro does debug level testing _before_ doing any function
+calls(both printf itself and parameters to printf). This is a much
+more optimized way of doing debug output. In addition olsrd can
+be built without any debug output code if doing 'make NODEBUG=1'.
+
+TIMEOUT OF DATASETS
+
+Validity times for dataset entries are now set using the clock_t type
+(used to be struct timeval). This data is now fetched from the times(2)
+function instead of gettimeofday(2). This prevents possible problems
+if the system time is changed.
+PLUGIN DEVELOPERS: Note that datatypes for close to all dataset entries
+(link, neighbor, mid, hna, tc etc.) has been changed!!
+
+CONFIGURATION FILE
+
+Multiple interfaces can now use the same interface configuration block.
+Example:
+Interface "if0" "if1" "if2"
+{
+	.....
+}
+
+Interface configurations now also support the "Weight" directive. When
+olsrd finds multiple links to a neighbor it will choose the link
+going via the interface with the lowest weight. Olsrd normally
+sets this weight dynamically based on interface characteristics,
+but if the user wishes to set a fixed weight in a interface(or
+a group of interfaces), this directive is now available.
+
+Moreover, interface configurations now support the "LinkQualityMult"
+directive. It takes an IP address and a multiplier as arguments.
+
+Example:
+
+Interface "if0"
+{
+  [...]
+
+  LinkQualityMult 192.168.0.1 0.7
+  LinkQualityMult default 0.5
+
+  [...]
+}
+
+The idea is to make certain links via the configured interface
+artificially worse or better than they really are. The first parameter
+specifies the IP address of a neighbour interface. The second
+parameter is the multiplier to be applied to the link to the specified
+neighbour interface.
+
+After we have derived the link quality from the packet loss among the
+packets received from the specified neighbour interface, we multiply
+the link quality by the given multiplier. So, the multiplier changes
+the LQ value that we use when determining the ETX, which is 1 / (LQ *
+NLQ).
+
+If "default" is given as the IP address then the multiplier applies to
+all links via the configured interface. Note, however, that olsrd only
+assigns one multiplier to each link. It does so in the following way.
+
+* If there is a "LinkQualityMult" line that matches the IP address of
+  the link's neighbour interface, then use the multiplier in this
+  line.
+
+* If there isn't any matching line, then look for a "default" line. If
+  there is a "default" line, then use the multiplier in this "default"
+  line.
+
+* Otherwise use 1.0, i.e. do not modify the LQ value at all.
+
+Hence, a line with an IP address has priority over a "default" line.
+
+In the above example, the LQ value of the link between the local
+interface if0 and the neighbour interface 192.168.0.1 would be
+multiplied by 0.7. All other links between the local interface if0 and
+a neighbour interface would be multiplied by 0.5.
+
+IPV6 SOCKETS
+
+The socket option IPV6_V6ONLY is now set on IPv6 sockets in linux.
+This means that olsrd will no longer receive IPv4 traffic when
+running in IPv6 mode.
+This should enable users to actually run one olsrd instance using
+IPv6 and one using IPv4 at the same time :)
+
+PLUGINS
+
+The httpinfo, dyn_gw and dot_draw plugins now all include olsrd
+headerfiles directly. A plugin should define OLSR_PLUGIN before
+including olsrd headers. Doing things this way removed the
+redundant datatype definitions that has so often caused trouble
+when things has been updated in olsrd.
+
+NETBSD SUPPORT
+
+olsrd now also compiles on NetBSD systems. Use 'make OS=nbsd' to
+build. This port is not very well tested and feedback is greatly
+appreciated.
+
+EXPERIMENTAL MULTI-INTERFACE CODE FOR FREEBSD
+
+Experimental code using libnet can be compiled in allowing multiple
+interfaces to be used in FreeBSD.  You enable this by compiling using
+OS=fbsd-ll.  You must have libnet-devel installed for this to work
+(/usr/ports/net/libnet-devel).
+
+OTHER UPDATES
+
+- WLAN devices are now detected in FreeBSD
+- First specified interfaces IP is used as main address.
+- Broadcastflag is not checked on interface if fixed broadcast is
+  set in config.
+- Removed Linux link layer code as this was not really in use.
+- Added -nofork command line option
+
+BUGFIXES
+
+- Link sensing now works according to announced vtime from
+  neighbors. Previously links going symmetric->asymmetric
+  were not necessarily detected until the holding time expired.
+- A bug in route addition/removal that could lead to routes
+  using GWs being added before the actual route to the GW
+  was set up, has been fixed.
+- A bug in the interface selection in route calculation has been
+  fixed. New routes are no longer added prior to deleting old ones,
+  since this caused trouble.
+- A bug in the IPv6 multicast address configuration has been fixed.
+  This caused olsrd not to work with global IPv6 addresses.
+- A bug in the IPv6 prefix-from IPaddr function has been fixed. This
+  bug caused HNA prefixes to always be calculated to 0.
+- If a 2-hop neighbor is also a 1-hop neighbor, a bug made olsrd
+  prefer a bad direct link to a better link via an MPR.
+- If a link or interface lookup failed, olsrd crashed.
+- Fixed a crash in the LQ packet generation code based on a
+  signed/unsigned integer comparison.
+
+
+0.4.8 ---------------------------------------------------------------------
+
+LICENSE CHANGE
+
+Olsrd is now distributed under a BSD style license. We believe olsrd will
+be better off using this license as it opens up for commercial players
+to use olsrd freely in their products. In the end this will lead to
+this kind of users doing serious testing and bug fixing of olsrd.
+
+ETX-LIKE LINK QUALITY DETECTION
+
+We can now determine the packet loss on a link by looking at the serial
+numbers of the OLSR messages received from a neighbor. This tells us how
+many packets get through from our neighbor to us. We use a new extended
+kind of HELLO messages (LQ_HELLO messages, LQ = link quality) to broadcast
+the link quality that we have determined on our end of the link to our
+neighbors. So do our neighbors, and we as well as they end up with an
+idea of how good the link is in both directions. From the LQ_HELLOs we
+also learn the link quality between our neighbors and our two-hop neigh-
+bors. In this way we can select those neighbors as MPRs that have the
+best links to our two-hop neighbors. To distribute the link quality
+throughout the network, we use a new extended version of TC messages
+(LQ_TC messages). They contain the qualities at both ends of each of our
+links. Nodes can then run Dijkstra's algorithm to find a path between
+themselves and other nodes that minimizes the packet loss.
+
+If the newly introduced "LinkQualityLevel" is set to zero in the
+configuration file, link quality is not used and the daemon behaves as
+before, i.e. as specified by the OLSR RFC. If this parameter is set
+to 1, LQ_HELLOs and LQ_TCs are used instead of HELLOs and TCs, link
+quality is measured and MPRs are selected based on the link qualities.
+If this parameter is set to 2, the routing table is additionally
+calculated based on the link qualities.
+
+Setting "LinkQualityLevel" to a non-zero value BREAKS COMPATIBILITY. You
+will then not be able to participate in RFC-conformant OLSR networks
+any longer. This is because we use LQ_HELLOs and LQ_TCs instead of HELLOs
+and TCs in this case.
+
+It's best practice to set "LinkQualityLevel" to the same value on all
+nodes in a network.
+
+When determining the quality of a link olsrd only considers a given
+number of most recent OLSR packets received from its neighbors. By
+default, olsrd looks at the 10 most recent OLSR packets. This can be
+changed via the "LinkQualityWinSize" configuration option. Values
+between 3 and 128 are legal.
+
+NEW CONFIGFILE PARSER/FORMAT/SCHEME
+
+A whole new config file syntax and parser is introduced with this
+release. The parser is generated using flex and bison and it is
+designed to be very modular. The parser can be compiled as either
+a standalone binary, a shared library or as part of olsrd. This way
+other applications can parse and generate olsrd configuration files
+only by linking to the dynamic library.
+In the new configfile options can be set pr. interface, plugin
+parameters can be set, more IPC options can be set...and more.
+The syntax is documented in the olsrd.conf(5) manual page found
+in the files/ directory.
+Olsrd internals now uses a single struct, as returned by the config
+parser, for all configuration in runtime. this means that updating
+values in this struct will dynamically update olsrd operation. It
+also means that all configuration is now kept in one place instead
+of spread all across the place.
+
+FREEBSD AND MAC OSX PORT
+
+This version offers an initial port of olsrd to FreeBSD and Mac OS
+X. Like the Windows port it currently does not support IPv6. As this
+is a very first try at supporting FreeBSD and Mac OS X, this port is
+probably not as reliable as the Linux version. We'd greatly appreciate
+feedback and bug reports. To compile you need GNU make. Then simply
+run "gmake OS=fbsd" to build the executable.
+
+NEW MAKEFILE(S)
+
+The makefiles used to build olsrd have been rewritten and now includes
+dependency file generation using makedep.
+
+DEBUG OUTPUT
+
+Tables are now only printed if changes occur, so there are no longer
+any periodical output when using a debuglevel >0. A "heartbeat" is
+now printed to STDOUT(if it is a terminal) in the form of a rotating
+line to show that olsrd is actually operating.
+Adding "ClearScreen yes" to the configuration file clears the screen
+each time before the debug output shows updated information. This
+makes the debug output easier to read in many cases. "ClearScreen no"
+is the default, if no "ClearScreen" directive is given in the
+configuration file.
+
+PLUGIN INTERFACE
+
+There are some changes in the plugin interface. It is now at
+version 2. Plugin specific parameters from the configfile
+using the PlParam option, will now be passed on to plugins.
+To receive such parameters a plugin must implement a function:
+int
+register_olsr_param(char *key, char *value)
+to which parameter pairs will be passed.
+
+NO MORE THREADS
+
+Olsrd no longer uses any thread library on its operation. Everything
+now happens in the main thread allowing for use of olsrd on platforms
+with no thread library.
+
+ACPI SUPPORT IN WILLINGNESS CALCULATION(LINUX)
+
+The willingness calculation for Linux, now also supports the more
+modern ACPI proc interface in addition to APM. This is not well
+tested and feedback is appreciated!
+
+IPC OPTIONS
+
+Various options regarding IPC connections can now be set in the
+configfile. The options are max connections, allowed unicast
+hosts and allowed net-ranges.
+
+CODE REWRITES
+
+Much of the message generation and net output code is rewritten.
+Sending of partial messages should now work 100%. Also TC, MID
+and HNA messages are now cached for a random amount of time
+before transmitted - this often leads to the situation where these
+messages are sent together with an HELLO message, which is highly
+desirable since it saves network resources.
+PLUGIN DEVELOPERS must note that the buffers and size variables
+used in net output is no longer directly accessible!
+
+NET OUTPUT CODE REWRITTEN
+
+Every interface now has one outputbuffer registered. This allows
+messages to be "cached" as explained above, so that multiple
+messages are stacked together.
+Also the outputbuffer and size are no longer accessible directly,
+an API is available to plugins(and olsr code).
+
+OS DEPENDENT NETWORK INTERFACE
+
+The OS dependent network functions are now defined in net_os.h
+instead of being mixed up with internal network functions
+in net.h.
+
+BUGFIXES
+
+A bug that caused the announced ANSN sequence number to never stop
+being increased when a change in the MPR selector set was detected
+has been fixed. Another TC related bug that caused timed out TC
+entries not to be deleted from the routing table in certain cases
+has also been fixed. These bugs could cause unstable routes.
+A bug that in many cases caused the wrong routes to be deleted
+when using IPv6 has been fixed.
+
+
+0.4.7 ---------------------------------------------------------------------
+
+NATIVE WINDOWS GUI AND INSTALLER
+
+We now have a native Windows GUI. The GTK+ version is no longer
+supported on Windows. The new native GUI is pretty compact as it does
+not require the GTK+ runtime DLLs. In addition to monitoring olsrds
+state the GUI offers an easy way for novice users to configure
+olsrd. It's pretty self-explanatory. Have a look at README-WIN32.txt
+for details. The Windows version now also comes with an installer
+based on the freely available Nullsoft Scriptable Install System
+(NSIS). Looks like the Windows port is becoming more and more
+Windows-ish. :-)
+
+WIRELESS INTERFACE DETECTION ON WINDOWS
+
+Like the Linux version the Windows port is now able to tell WLAN
+interfaces from wired interfaces. We can now, for example, set
+different HELLO intervals for WLAN interfaces and wired interfaces,
+respectively.
+
+ROUTE UPDATES
+
+The order of updates of calculated routes is swapped. Now new routes
+are added prior to deleting old ones. This could fix issues where
+in some very very few cases one could experiment loss of routes.
+
+BUGFIXES
+
+There were quite some bugs in IPv6 operation in 0.4.6. These are
+the bugs that were fixed:
+- HNA message parsing did not work.
+- Some IPv6 addresses were printed as IPv4 addresses in the
+  debug output.
+- The '-dispin' option now works again.
+- A filedescriptor leak in the IPv6 interface detection caused
+  olsrd to crash.
+
+
+0.4.6 ---------------------------------------------------------------------
+
+WINDOWS PORT!
+
+Read the README-WIN32.txt file!
+
+DYNAMIC NETWORK INTERFACE UPDATES
+
+Network interfaces can now be updated and removed/added at
+runtime. Olsrd will check all interfaces specified in the config
+file or on the command-line, every 5 seconds. If updates
+occur, olsrd will register this and update the necessary data.
+If interfaces are removed or added, olsrd will detect this
+and configure the interfaces. If an interface is removed
+olsrd will continue to check the interface, so if say, a PCMCIA
+card is removed and later on reinserted(and given the same name),
+olsrd will detect this and start running on it again.
+
+Note that olsrd will now run even if no interfaces are detected.
+
+ROUTE CALCULATION UPDATE
+
+All 1 hop neighbor addresses that are not directly reachable trough
+a symmetric link in the link set will now be added with a GW in the
+routing table. this GW will be an interface address from a registered
+symmetric link to the neighbor.
+
+MID UPDATE
+
+Alias addresses are now registered in the link set processing
+if available. This is not to pretty(since the vtime has to
+be a mere guess) but it gives faster initial route updates.
+If a HELLO is received(at initial registration) from an IP
+that is not the same as the one set as main address in the
+received HELLO header, then the IP from which the HELLO was
+received will be registered as an alias of the main address
+set in the HELLO header. The default vtime is set to 15 secs.
+
+CODE RESTRUCTURING
+
+All OS dependent interface configuration code is now located in
+OS/ifnet.c(that would be linux/ifnet.c if using GNU/Linux).
+The functions are available trough the headerfile src/ifnet.h
+
+CODE CLEANUPS
+
+- Some timer issues fixed
+- Got rid of the global socket descriptors
+- Updated indexing of network interfaces
+- Introduced a global socket to use for ioctl calls(ioctl_s)
+- Removed upper limit for interfaces to use
+- Point-to-point interfaces are now allowed
+- The main select(2) loop now uses a timeout
+- A small bugfix in the select fd-set update code
+- Some bugfixes in the configuration file parsing
+- stdout/stderr are now set to not be buffered
+- A bugfix in the MID generation regarding seq. numbering
+
+PLUGIN INTERFCAE
+
+A new set of functions that are called whenever a change in the
+interface configuration(update, addition, removal) is made is
+introduced.
+These functions are added and removed very much like the ptf
+functions. Available trough the functions add_ifchgf and del_ifchgf.
+
+OBS OBS OBS!!! PLUGIN DEVELOPERS READ THIS!!!!
+
+The interface struct(declared in interfaces.h) has changed.
+Plugin developers must update plugins that uses the interface
+struct!
+
+The headerfile olsr_plugin_io.h which contains the plugin interface
+commands now contains a revision list where all changes are
+stated.
+
+
+0.4.5 ---------------------------------------------------------------------
+
+PLUGIN: SECURE OLSR
+
+A plugin that generates and checks message signatures is added.
+Check lib/secure
+
+PLUGIN: TOPOLOGY GRAPH
+
+A plugin that generates output of the topology in the dot format
+is added. See lib/dot_draw
+
+OPTIMIZATIONS
+
+Some optimizations done that should cause fewer route recalculations.
+
+BUGFIXES
+
+Some bugs reported by Takafumi Tanaka fixed.
+
+RESTORATION OF NETWORK SETTINGS
+
+Network settings like disabling of ICMP redirects and spoof filter, are
+now restored at exit by olsrd.
+
+RFC COMPLIANCE FIX
+
+Nodes would in certain scenarios retransmit messages originating for
+themselves. This was a RFC incompliance. Reported by Ingmar Baumgart.
+
+NON-WLAN TIMERS
+
+No longer setting the HELLO interval of non-wlan interfaces as a multiplier
+of the wlan interval. The interval is set seperatly now.
+Due to this there are some updates in the configfile imperatives.
+
+CODE CLEANUPS
+
+Some new macros introduced for table insertion and removal and IP
+copying and comparison.
+
+FRONT END BUGFIXES
+
+IPv6 bugfixes in the GUI.
+
+
+0.4.4 ---------------------------------------------------------------------
+
+ROUTE CALCULATION
+
+Routes are no longer added via neighbors declaring a willingness
+of WILL_NEVER.
+
+LINK SENSING AND ROUTE CALCULATION
+
+Link sensing and route calculation has been updated to handle
+multiple links between hosts in a sane way.
+
+IP SPOOF FILTERING
+
+IP spoof filtering is disabled on the interfaces which olsrd runs.
+These settings are not restored!
+
+ICMP REDIRECTS
+
+ICMP redirect message generation is disabled on the interfaces
+which olsrd runs.
+These settings are not restored!
+
+CONFIGFILE OPTIONS FOR MID AND HNA ADDED
+
+Options to set the MID and HNA emission intervals and
+validity time in the configfile added.
+
+IPv6 ADDRESS SCOPE
+
+Option to set what IPv6 address type(scope) to use in the
+configfile added. It can be set to either global or site-local.
+
+IPv6 MULTICAST
+
+Options to set site-local and global multicast addresses
+in the configfile added.
+
+EMISSION INTERVAL FUNCTION
+
+Functions to set emission intervals at runtime added.
+
+LINK LAYER NOTIFICATIONS
+
+If started with the -llinfo switch olsrd will collect and display
+link-layer information on neighbors. This is no longer limited to
+one interface. But no action is taken based on this info - and
+there is a upper limit of 8 neighbors from which this info can
+be collected pr. interface. This limitation is inherited from the
+WLAN drivers and is not something imposed by the olsrd code!
+
+IPv6 HNA MESSAGE FORMAT
+
+IPv6 HNA messages now contains 128-bit netmask instead of prefix.
+
+PLUGIN FUNCTIONS
+
+Added "packet transform functions" which allow plugins to alter all
+outgoing OLSR traffic.
+
+RESTRUCTURING
+
+Moved most headers out of OS dependent directories. The tunneling
+and link-layer notification interface is not yet separated from
+the /linux directory.
+
+MANUALPAGE
+
+A manpage(olsrd(8)) describing olsrd has been created. It is installed
+when using 'make install'.
+
+
+0.4.3 ---------------------------------------------------------------------
+
+PLUGIN SUPPORT
+
+Olsrd now supports runtime-loadable plugins! A couple of example plugins
+are located in the lib/ directory. Read the README files in the various
+plugin directories for more info. A directive to load plugins have been
+added to the configfile as well.
+Documentation of the plugin interface can be fount at http://www.olsr.org.
+
+The plugin interface is designed to be extendable. But it should _always_
+be backwards compatible with the interface used in this release!
+
+LINK-LAYER NOTIFICATION
+
+Some preliminary link-layer notification code has been added. Link quality
+can be written to stdout if olsrd is started with the -llinfo switch.
+No action is currently taken based on this info. And info will only
+be retrieved from the interface named "eth1".
+This code is not usable for users as of yet!
+
+MPR UPDATES
+
+Neighbors with willingness set to WILL_ALWAYS is now always added. The
+MPR selection is optimized as described in RFC3626 section 8.3.1
+point 5.
+
+MPR BUGS
+
+There was a couple of bugs in the MPR selection code. All fixed.
+
+LINUX 2.6 BUG
+
+Users could not run olsrd on multiple interfaces using the Linux 2.6 kernel
+series. This is now fixed.
+
+MINOR BUGS
+
+One small bug in link hysteresis initialization and one in HNA route
+deletion.
+
+MESSAGE-SEQUENCENUMBER INCOMPLIANCE
+
+Message-seqnos was implemented on a pr. messagetype and pr. interface
+basis. This is not RFC3626 compliant and has been updates. All messages
+and interfaces now uses a global seuencenumber.
+
+RANDOM SEQUENCENUMBERS
+
+Sequencenumbers are now initialized using a random value.
+
+DAEMON MODE
+
+Fixes for running olsrd in daemon mode(debug 0).
+
+OPTIMIZATIONS
+
+Optimizations based on profiling implemented.
+
+SANITATION
+
+Message size is checked for every message before passing it to the
+appropriate message parsing function. If the size is bigger than the
+remaining size of the olsr packet then the message is discarded.
+
+GUI FRONT-END
+
+Some minor modifications done to the gui.
+
+INTERNAL CHANGES
+
+Lots of changes in handling of registration and unregistration of
+scheduler, socketparser, parser and local hna set.
+Some restructuring and movement of functions.
+
+
+0.4.2 ---------------------------------------------------------------------
+
+No public release
+
+0.4.1 ---------------------------------------------------------------------
+
+No public release
+
+0.4.0 ---------------------------------------------------------------------
+
+LINK HYSTERESIS
+
+Link hysteresis as described in the RFC added.
+
+TC REDUNDANCY
+
+TC redundancy as described in the RFC added
+
+MPR REDUNDANCY
+
+MPR redundancy as described in the RFC added
+
+SCHEDULER REWRITE
+
+The scheduler has been rewritten to register scheduled
+events(function pointers) dynamically.
+
+PARSER REWRITE
+
+The parser has been rewritten to register parse functions
+on a pr. messagetype dynamically
+
+MALLOC WRAPPER
+
+A wrapper for the malloc(3) syscal has been introduced.
+olsr_malloc(size_t, const char *) should ALWAYS be used.
+
+CODE RESTRUCTURING
+
+Lots of restructuring in headerfiles.
+Linux spesific code moved to subdirectory linux/
+FreeBSD code to be put in freebsd/
+LOTS of code restructured due to the rexrite of the scheduler
+and parser.
+
+MPR CALCULATION
+
+Optimizing the MPR set as suggested in the RFC section
+8.3.1 point 5 added.
+
+BUGFIXES
+
+Some bugs in MPR selection fixed.
+
+
+0.3.8 ---------------------------------------------------------------------
+
+CODE REWRITES
+
+HNA code completely rewritten!
+The old code was really bad! Now it is much cleaner implemented and
+should work fine.
+One- and two-hop neighbor list structures rewritten. They now use
+the same hashed double-linked lists as the rest of the information
+sets use.
+
+CODE RESTRUCTURING
+
+Some code restructuring which resulted in the new files: timer.h,
+mantissa.c, mantissa.h, hashing.c, hashing.h, linux/net.c
+linux/net.h, linux/kernel_routes.c, linux/kernel_routes.h and some
+renamed files
+
+BUG FIXES
+
+The bug causing errormessages on exit is fixed.
+The bug that caused initial HNA routes in the GUI to display a hopcount
+of 0 fixed.
+IPv6 HNA netmasks were all added as /128. It's fixed now.
+
+IPv6
+
+Turns out sitelocal address had to be preferred to avoid IPv6 header
+messing up link-sensing. Bug fixed
+
+
+0.3.7 ---------------------------------------------------------------------
+
+CODE REWRITES
+
+The entire TC set and MPR selector set code rewritten. Hashing and
+double linked lists added to the MID code.
+Lots of HNA code has been rewritten as well.
+
+HNA bugfix
+
+When a node lost connectivity to a HNA GW all HNA entries to that gw
+was deleted. This has been fixed - and HNA entries only gets deleted
+on timeout now.
+Other HNA bugs have been fixed as well. But the whole HNA implementation
+needs a rewrite!
+
+Holdingtime BUGfix
+
+There was a bug that caused holdingtime not to be properly recalculated
+when using non-default emission intervals.
+
+Forwarding and symmetric neighbors
+
+Seems I had misread the RFC on what a 1-hop symmetric neighbor is.
+Now the link-set is checked when a check for a symmetric neighbor
+is done. Not the 1 hop neighbor set as it used to be. This way
+the hack when receiving MID messages could be removed.
+
+IPv6
+
+Global addresses are now preferred. Sitelocal addresses are only used
+if no global addresses are found. There have been problems where
+the address set in the IP header of IPv6 packets do not match the
+address chosen by OLSR.
+
+GUI - 0.2.5
+
+The GUI is finally updated! It can now handle piggybacked messages
+and link sensing HELLO message format.
+
+
+0.3.6 ---------------------------------------------------------------------
+
+HNA support using IPv6
+
+HNA now works using IPv6 as well! Just add the network address and
+prefix in the HNA6 section in the configfile. The IPv6 HNA packets differ
+some from the IPv4 as they don't send the netmask but the prefix.
+
+
+NEW FILENAME FOR THE BINARY AND CONFIG FILE
+
+They are now called olsrd and olsrd.conf. I figured I'd use the olsrd
+name before somebody else started using it ;-)
+
+
+Config file
+
+New options: DEBUG, HNA6 and IPC-CONNECT added to config file.
+
+
+Output
+
+A printf-wrapper has been introduced - debug level output handling
+is much more uniform now.
+The daemon should run fine in detached mode now(DEBUG 0)
+
+GUI front-end
+
+The GUI front-end can now connect and disconnect at any time while the
+daemon is running, if started using the -ipc switch or with IPC set to
+'yes' in the configfile.
+
+
+BUGS
+
+A small HNA bug fixed.
+
+
+0.3.5 ---------------------------------------------------------------------
+
+Forwarding jitter
+
+Forwarding jitter added. Messages are piggybacked if they arrive(and are to
+be forwarded) while there is data to be forwarded buffered.
+Added some bugfixes to support parsing of piggybacked messages as well.
+
+Route calculation
+
+Fixed route calculation so that 2 hop neighbors are added. This smooths
+changes from 1 hop to 2 hop neighbor out. The old way one had to wait for
+a TC before the 2 hop neighbors were added.
+
+2 hop neighbor set
+
+All neighbors received in HELLO messages are added to the two hop
+neighborhood. This helps smoothing out the 1-to-2 hop transition as well.
+
+MID calculation
+
+MID calculation had to be updated due to the registering of two hop neighbors
+that are already one hop neighbors. They should not be considered when calculating
+two hop coverage.
+
+Optimizations
+
+Deletion of possible one hop neighbors registered on non main-addresses when
+first registering MID info from a node removed. This can not occur due
+to the fact that registering of neighbor nodes are done on main addresses
+from link-sensing
+Option to not forward messages on wired links on which they arrived removed.
+This is no longer usable to any degree when adding support for piggybacking
+of forwarded messages is to be implemented.
+
+Cleanups
+
+Some unused parameters and commandline options were removed.
+
+
+
+0.3.3 ---------------------------------------------------------------------
+
+TC MESSAGEING
+
+Added sending of empty TC messages if all MPR selectors are removed. Empty
+TC messages are sent for a TC_HOLD_TIME period as described in section
+9.3 in the RFC.
+
+HNA
+
+Fixed HNA route calculations for IPv6. I forgot to upgrade this in 0.3.2
+
+OPTIONS
+
+-hnaint and -midint command line optionas added to set the interval
+of HNA and MID generation.
+
+FORWARDING
+
+As an optimization messages have not been forwarded on the received interface
+if this is registered as a non-WLAN interface. This causes problems for
+people using Ethernet-to-WLAN adapters. This optimization is now turned
+off by default. It can be activated using the -nofwlan option.
+
+BUGS
+
+THERE ARE SOME NASTY BUGS IN 0.3.2!
+Fixed a bug that caused 2 hop neighbors not to time out.
+Fixed a bug that caused a 1 hop neighbor timeout not to recalculate
+the routing table.
+Fixed a small memleak in the MID set
+Fixed some smaller bugs.
+
+IPv6 functioning is not well tested in this release.
+
+0.3.2 ---------------------------------------------------------------------
+
+HNA
+
+Updated HNA to be RFC compliant. This means that all received HNA tuples
+are registered and only the subset of unique entries(net/netmask) with
+the smallest hopcount is inserted into the routing table.
+
+Config file
+
+User can specify configfile name using the -f switch.
+
+Bugs
+
+Fixed a link-sensing bug that caused problems when using MID nodes.
+
+0.3.1 ---------------------------------------------------------------------
+
+MPR calculation
+
+MPR calculation is now based on the willingness announced by nodes.
+
+Neighbor set
+
+The neighbor set does not have timeouts on entries any more. Creation
+and deletion of neighbor entries is done from the link-set as suggested
+in the RFC.
+
+Cleanups
+
+Gotten rid of a lot of code that became more or less obsolete due to
+all the changes introduced in 0.3.0.
+
+Bugs
+
+Fixed a nasty bug concerning the sequence numbering of TC packets.
+Fixed some bugs regarding MPR calculation - and probably introduced
+a whole new species when implementing the willingness-based calculation ;-)
+
+
+0.3.0 ---------------------------------------------------------------------
+
+Due to the extensive amount of updates this release is versioned 0.3.0
+
+Duplicate table and forwarding
+
+The duplicate table functionality is totally rewritten in 100% RFC
+compliance. The forward algorithm specified in the RFC is implemented
+this meant rewriting much of the packet processing code. The daemon
+also forwards unknown packettypes now.
+
+Link sensing and neighbor processing
+
+Link sensing and neighbor processing was done in the same operation in the
+old code. Link sensing is now a mechanism of its own which is 100% RFC
+compliant. Neighbor processing and HELLO generation has been partly
+rewritten to be RFC compliant. Neighbors are now registered as either
+SYN or NOT_SYM. The NOT_NEIGH, SYM_NEIGH and MPR_NEIGH values are only
+used when building HELLO messages. Links are in one of the following states:
+UNSPEC_LINK, ASYM_LINK or SYM_LINK.
+HELLO messages now advertise link status of neighbors on the interface
+the message is transmitted.
+
+Willingness
+
+A node now dynamically calculates willingness based on powersource and
+possibly battery power. If the node is AC powered it announces a willingness
+of 6. If batterypowered the willingness is calculated as:
+P / 26
+Where P is percentage of power left.
+
+Configuration file
+
+The daemon now tries to read its configuration from the file /etc/uolsrd.conf
+A "standard" configuration file is installed when doing 'make install'.
+This file should be edited to fit your needs.
+Command-line options can still be used to override the configuration form
+the file(ore if no config file is present).
+The -f switch can also be used to specify a configuration file.
+
+Willingness
+
+If AdvancedPowerManagemant(APM) is supported on your system the willingness
+of the node is dynamically calculated based upon the powerstatus of the node.
+MPR calculation based upon willingness is not done as of yet.
+
+TC ANSN
+
+A bugs in the TC processing fixed.
+
+HNA
+
+Some serious HNA bugs fixed. These bugs caused a node to always choos the
+gateway with the larges hopcout :) More seriously - a bug caused looping
+of HNA messages in certain scenarios.
+
+Package sequence numbers
+
+These were added. Not much use as of now - but they're there(as specified
+in the RFC).
+
+Broadcast address
+
+Users can now specify the broadcast address to use. Useful if one wishes to
+use the 255.255.255.255 broadcast.
+
+
+
+0.2.5 ---------------------------------------------------------------------
+
+Htime and Vtime
+
+Htime and Vtime processing and handling added. Holding times used to be
+a static value for all nodes. Now every node can signal its vlidity time
+to others.
+To achieve this mantissa/exponent calculation functionality was added.
+Messages now include Vtime(and Htime in HELLO) values in mantissa/exponent
+format instead of just zero. These values are as stated above, used as holding
+time for nodes.
+the GUI should be upgraded as well...
+
+Jitter
+
+The use of jitter in message generation intervals vere fixed.
+
+
+0.2.4 ---------------------------------------------------------------------
+
+Seqno bugs
+
+Some bugs concerning sequence numbers in HELLO and MID message handling
+was fixed. Newly registered nodes in the neighbor and MID sets were
+initialized with a seqno of 0. When using a "wraparound" sequencenumber
+check(as defined in olsr_protocol.h) this can produce errors if a new
+node joins a network where existing nodes has seqnos >0x00FF.
+
+IPv6 related bugs
+
+Some checks and copying of node addresses where done using sizeof(u_olsr32_t)
+which is 32 bits. This caused only the 32 firs bits of IPv6 addresses to
+be copied and checked.

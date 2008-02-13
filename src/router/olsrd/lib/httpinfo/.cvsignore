@@ -1,0 +1,3 @@
+*.d
+olsrd_httpinfo.so.*
+olsrd_httpinfo.dll

@@ -1,0 +1,55 @@
+#!/bin/sh
+#
+# We expect warning options for gcc as arguments and return the ones which are
+# accepted by the given gcc.
+#
+
+set -ue
+#set -vx
+
+# make sure we do not use some locale ....
+export LANG=C LC_ALL=C LC_COLLATE=C LC_CTYPE=C LC_MESSAGES=C LC_NUMERIC=C
+
+OPTS=""
+for param; do
+    case "$param" in
+    -[fWm]?*) OPTS="$OPTS $param";;
+    *)        echo "Ignoring $param" >&2
+    esac
+done
+
+testcompile() {
+    $CC $OPTS -x c -o /dev/null - 2>&1 <<- EOF
+       int main(void) {
+           return 0;
+       }
+EOF
+}
+
+parsetest() {
+    while read error; do 
+        case "$error" in
+        *ld:\ unrecognized\ *option\ \'*)
+            opt="${error#*\'}"
+            opt="${opt%\'*}"
+            ;;
+        *) continue
+            ;;
+       esac
+       # if we come here, we have in $opt the option to remove. and
+       # we remove all instances. And we save agoinst leading "-"
+       NEW_OPTS=""
+       for o in $OPTS; do
+           case "$o" in
+               -Wl,$opt) : echo "Removed $o" >&2;;
+               *)        NEW_OPTS="$NEW_OPTS $o";;
+           esac
+       done
+       OPTS="$NEW_OPTS"
+    done
+    echo $OPTS
+}
+
+testcompile | parsetest
+
+exit 0

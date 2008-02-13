@@ -1,0 +1,22 @@
+
+TODO..
+
+The configparser can be built in three ways.
+
+1. As part of olsrd. This is done when building olsrd.
+
+2. As a binary executable. Just do 'make' in the current
+   directory(src/cfgparser). The binary will be called
+   olsrd_cfgparser
+
+3. As a shared library. Do 'make MAKELIB=1' in the current
+   directory(src/cfgparser).
+
+
+the parser can both parse configfiles and write such files
+based on provided data.
+
+More to come.
+
+
+- Andreas

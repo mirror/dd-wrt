@@ -1,0 +1,3 @@
+*.d
+olsrd_dyn_gw_plain.so.*
+olsrd_dyn_gw_plain.dll
