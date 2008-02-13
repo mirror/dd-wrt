@@ -924,7 +924,7 @@ function getTimeOut(clk, rest_default, flags) {
 	var scroll_count = (wait_time / 5) - 3;
 	var coef = 1.0;
 
-    if (clk == 125) {
+    if (clk == 125  || clk == 240) {
 		coef = 1.2;
 	}	
 	
