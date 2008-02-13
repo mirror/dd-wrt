@@ -44,6 +44,8 @@
 #define SUPPORT_INTEL_FLASH	0x0002
 #define SUPPORT_5325E_SWITCH	0x0004
 #define SUPPORT_4704_CHIP	0x0008
+#define SUPPORT_5352E_CHIP	0x0010
+#define SUPPORT_5354G_CHIP	0x0020
 
 struct code_header {
 	char magic[4];
