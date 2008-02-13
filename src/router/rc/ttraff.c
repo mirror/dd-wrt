@@ -93,10 +93,11 @@ ttraff_main (void)
   unsigned long out_diff = 0;  
   unsigned long in_dev_last = 0;
   unsigned long out_dev_last = 0;
+  unsigned long gigcount;
   int needcommit = 0;
   int commited = 0;
-  int needbase = 1;
   int day, month, year;
+  FILE *in;
   
   strncpy (wanface, get_wan_face (), sizeof (wanface));
 
@@ -115,9 +116,7 @@ ttraff_main (void)
    year = currtime->tm_year + 1900;
    
   
-   FILE *in = fopen ("/proc/net/dev", "rb");
-
-    if (in != NULL)
+    if ((in = fopen ("/proc/net/dev", "rb")) != NULL)
     {
      while (fgets (line, sizeof (line), in) != NULL)
      {
@@ -138,17 +137,38 @@ ttraff_main (void)
   fclose (in);
     }
     
-   if (needbase)
-   { 
-    in_dev_last = in_dev;
-    out_dev_last = out_dev;
-    needbase = 0;
-    continue;
+   
+   if (in_dev_last > in_dev)  // forget this data and get new base, counter reached 4GB (4,294,967,295) limit
+   {
+	 in_dev_last = in_dev;
+	 gigcount = 0;
+	 if ((in = fopen ("/tmp/.gigci", "r")) != NULL)
+	 {
+	  fgets (line, sizeof (line), in);
+      sscanf (line, "%lu", &gigcount);
+      fclose (in);
+     }
+     in = fopen ("/tmp/.gigci", "w"); 
+	 sprintf (line, "%lu", gigcount + 4);	    
+	 fputs (line, in);
+	 fclose (in);
+	 continue;
    }
    
-   if (in_dev_last > in_dev || out_dev_last > out_dev)  // forget this data and get new base
+   if (out_dev_last > out_dev)  // forget this data and get new base, counter reached 4GB (4,294,967,295) limit
    {
-	 needbase = 1;
+     out_dev_last = out_dev;	 
+	 gigcount = 0;
+	 if ((in = fopen ("/tmp/.gigco", "r")) != NULL)
+	 {
+	  fgets (line, sizeof (line), in);
+      sscanf (line, "%lu", &gigcount);
+      fclose (in);
+     } 
+     in = fopen ("/tmp/.gigco", "w");
+	 sprintf (line, "%lu", gigcount + 4);	    
+	 fputs (line, in);
+	 fclose (in);
 	 continue;
    }
    
