@@ -1,0 +1,12 @@
+EXPORTS
+	olsrd_parse_cnf
+	olsrd_sanity_check_cnf
+	olsrd_free_cnf
+	olsrd_print_cnf
+	olsrd_write_cnf
+	olsrd_write_cnf_buf
+	get_default_if_config
+	olsrd_get_default_cnf
+	win32_stdio_hack
+	win32_olsrd_malloc
+	win32_olsrd_free
