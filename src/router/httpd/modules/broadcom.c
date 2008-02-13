@@ -4002,9 +4002,9 @@ unsigned long totout = 0;
    
   while (max > smax)
   {    
-   if (max > 5) smax = f * 10;
-   if (max > 10) smax = f * 25;
-   if (max > 25) smax = f * 50;
+   if (max > (f * 5)) smax = f * 10;
+   if (max > (f * 10)) smax = f * 25;
+   if (max > (f * 25)) smax = f * 50;
    f = f * 10;
   }  
 
