@@ -1,0 +1,3 @@
+*.d
+olsrd_dot_draw.so.*
+olsrd_dot_draw.dll

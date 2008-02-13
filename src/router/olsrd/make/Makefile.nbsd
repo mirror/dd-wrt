@@ -1,0 +1,29 @@
+#
+# NETBSD SPECIFIC CONFIGURATION
+#
+
+DESTDIR ?=
+LIBDIR =	$(DESTDIR)/usr/lib
+
+SRCS +=		$(wildcard src/bsd/*.c src/unix/*.c)
+HDRS +=		$(wildcard src/bsd/*.h src/unix/*.h)
+
+CPPFLAGS +=	-D__NetBSD__
+LIBS +=		
+
+PLUGIN_FULLNAME ?= $(PLUGIN_NAME).so.$(PLUGIN_VER)
+INSTALL_LIB =	install -m 755 $(PLUGIN_FULLNAME) $(LIBDIR)/$(PLUGIN_FULLNAME); \
+		/sbin/ldconfig
+
+ifdef OLSRD_PLUGIN
+CFLAGS +=	-fPIC
+LDFLAGS +=	-fPIC
+endif
+
+OS_LIB_PTHREAD = 
+OS_CFLAG_PTHREAD =
+OS_LIB_DYNLOAD =
+
+# Local Variables:
+# mode: makefile
+# End:
