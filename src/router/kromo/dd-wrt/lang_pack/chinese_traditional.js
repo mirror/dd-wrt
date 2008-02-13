@@ -1323,10 +1323,13 @@ status_inet.www_loginstatus="登錄狀態";
 status_inet.wanuptime="已連線時間";
 status_inet.leasetime="租約剩餘時間";
 status_inet.traff="傳輸流量";
-status_inet.ttraffin="下載總和 (MBytes)";
-status_inet.ttraffout="上傳總合 (MBytes)";
+status_inet.traff_tot="Total Traffic";
+status_inet.traff_mon="Traffic by Month";
+status_inet.traffin="Incoming";
+status_inet.traffout="Outgoing";
 status_inet.previous="上個月";
 status_inet.next="下個月";
+
 
 //help container
 
