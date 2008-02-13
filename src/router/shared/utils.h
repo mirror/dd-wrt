@@ -239,7 +239,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_WRT600N 0x4617
 
 // Linksys WRH54G (5354 cpu, fccid: Q87-WRH54G)
-#define ROUTER_LINKSYS_WRH54G 0x470f
+#define ROUTER_LINKSYS_WRH54G 0x4716
 
 // Linksys WRT150N v1.1 (4704 cpu, BCM5325F switch, fccid: Linksys Q87-WRT150NV11)
 #define ROUTER_WRT150NV11 0x4816
