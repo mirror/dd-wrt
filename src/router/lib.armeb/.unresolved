@@ -1,108 +1,934 @@
 
+         U AES_cbc_encrypt
+         U AES_options
+         U AES_set_encrypt_key
+         U ASN1_ENUMERATED_free
+         U ASN1_ENUMERATED_new
+         U ASN1_ENUMERATED_set
+         U ASN1_GENERALIZEDTIME_free
+         U ASN1_GENERALIZEDTIME_new
+         U ASN1_GENERALIZEDTIME_print
+         U ASN1_GENERALIZEDTIME_set_string
+         U ASN1_HEADER_free
+         U ASN1_INTEGER_cmp
+         U ASN1_INTEGER_free
+         U ASN1_INTEGER_get
+         U ASN1_INTEGER_new
+         U ASN1_INTEGER_set
+         U ASN1_INTEGER_to_BN
+         U ASN1_OBJECT_free
+         U ASN1_PRINTABLE_type
+         U ASN1_STRING_cmp
+         U ASN1_STRING_set
+         U ASN1_STRING_set_default_mask_asc
+         U ASN1_TIME_free
+         U ASN1_TIME_new
+         U ASN1_TIME_print
+         U ASN1_TYPE_free
+         U ASN1_TYPE_get
+         U ASN1_UNIVERSALSTRING_to_string
+         U ASN1_UTCTIME_check
+         U ASN1_UTCTIME_free
+         U ASN1_UTCTIME_new
+         U ASN1_UTCTIME_print
+         U ASN1_UTCTIME_set_string
+         U ASN1_const_check_infinite_end
+         U ASN1_d2i_bio
+         U ASN1_dup
+         U ASN1_generate_nconf
+         U ASN1_get_object
+         U ASN1_i2d_bio
+         U ASN1_object_size
+         U ASN1_parse_dump
+         U ASN1_put_object
+         U BF_cbc_encrypt
+         U BF_options
+         U BF_set_key
+         U BIO_callback_ctrl
+         U BIO_copy_next_retry
+         U BIO_ctrl
+         U BIO_debug_callback
+         U BIO_dump
+         U BIO_f_base64
+         U BIO_f_buffer
+         U BIO_f_cipher
+         U BIO_f_md
+         U BIO_f_nbio_test
+         U BIO_f_ssl
+         U BIO_find_type
+         U BIO_free
+         U BIO_free_all
+         U BIO_get_retry_reason
+         U BIO_gets
+         U BIO_int_ctrl
+         U BIO_new
+         U BIO_new_accept
+         U BIO_new_connect
+         U BIO_new_dgram
+         U BIO_new_fd
+         U BIO_new_file
+         U BIO_new_fp
+         U BIO_new_socket
+         U BIO_new_ssl
+         U BIO_number_read
+         U BIO_number_written
+         U BIO_pop
+         U BIO_printf
+         U BIO_push
+         U BIO_puts
+         U BIO_read
+         U BIO_s_connect
+         U BIO_s_file
+         U BIO_s_mem
+         U BIO_s_null
+         U BIO_s_socket
+         U BIO_snprintf
+         U BIO_sock_should_retry
+         U BIO_socket_ioctl
+         U BIO_write
+         U BN_add_word
+         U BN_bin2bn
+         U BN_bn2bin
+         U BN_bn2hex
+         U BN_clear_free
+         U BN_dec2bn
+         U BN_dup
+         U BN_free
+         U BN_hex2bn
+         U BN_is_prime_ex
+         U BN_new
+         U BN_num_bits
+         U BN_options
+         U BN_print
+         U BN_pseudo_rand
+         U BN_set_word
+         U BN_to_ASN1_INTEGER
+         U BUF_MEM_free
+         U BUF_MEM_grow
+         U BUF_MEM_grow_clean
+         U BUF_MEM_new
+         U BUF_strdup
+         U BUF_strlcat
+         U BUF_strlcpy
+         U CAST_cbc_encrypt
+         U CAST_set_key
+         U COMP_CTX_free
+         U COMP_CTX_new
+         U COMP_compress_block
+         U COMP_expand_block
+         U COMP_zlib
+         U CONF_free
+         U CONF_get_section
+         U CONF_load
+         U CONF_modules_load
+         U CONF_modules_unload
+         U CRYPTO_add_lock
+         U CRYPTO_cleanup_all_ex_data
+         U CRYPTO_dbg_free
+         U CRYPTO_dbg_get_options
+         U CRYPTO_dbg_malloc
+         U CRYPTO_dbg_realloc
+         U CRYPTO_dbg_set_options
+         U CRYPTO_dup_ex_data
+         U CRYPTO_free
+         U CRYPTO_free_ex_data
+         U CRYPTO_get_ex_data
+         U CRYPTO_get_ex_new_index
+         U CRYPTO_lock
+         U CRYPTO_malloc
+         U CRYPTO_mem_ctrl
+         U CRYPTO_mem_leaks
+         U CRYPTO_new_ex_data
+         U CRYPTO_realloc
+         U CRYPTO_set_ex_data
+         U CRYPTO_set_locking_callback
+         U CRYPTO_set_mem_debug_functions
+         U CRYPTO_set_mem_debug_options
          U C_led
+         U DES_check_key_parity
+         U DES_crypt
+         U DES_ecb_encrypt
+         U DES_ede3_cbc_encrypt
+         U DES_is_weak_key
+         U DES_ncbc_encrypt
+         U DES_options
+         U DES_set_key_unchecked
+         U DES_set_odd_parity
+         U DH_check
+         U DH_compute_key
+         U DH_free
+         U DH_generate_key
+         U DH_generate_parameters_ex
+         U DH_new
+         U DH_size
+         U DHparams_print
+         U DSA_dup_DH
+         U DSA_free
+         U DSA_generate_key
+         U DSA_generate_parameters_ex
+         U DSA_new
+         U DSA_print
+         U DSA_sign
+         U DSA_verify
+         U DSAparams_print
+         U DTLSv1_client_method
+         U DTLSv1_server_method
+         U ENGINE_by_id
+         U ENGINE_cleanup
+         U ENGINE_ctrl
+         U ENGINE_ctrl_cmd
+         U ENGINE_ctrl_cmd_string
+         U ENGINE_finish
+         U ENGINE_free
+         U ENGINE_get_DH
+         U ENGINE_get_DSA
+         U ENGINE_get_RAND
+         U ENGINE_get_RSA
+         U ENGINE_get_ciphers
+         U ENGINE_get_digests
+         U ENGINE_get_first
+         U ENGINE_get_id
+         U ENGINE_get_name
+         U ENGINE_get_next
+         U ENGINE_init
+         U ENGINE_load_builtin_engines
+         U ENGINE_load_private_key
+         U ENGINE_load_public_key
+         U ENGINE_register_all_complete
+         U ENGINE_set_default
+         U ERR_add_error_data
+         U ERR_clear_error
+         U ERR_error_string
+         U ERR_error_string_n
+         U ERR_free_strings
+         U ERR_get_error
+         U ERR_get_string_table
+         U ERR_load_crypto_strings
+         U ERR_peek_error
+         U ERR_peek_last_error
+         U ERR_print_errors
+         U ERR_print_errors_fp
+         U ERR_put_error
+         U ERR_reason_error_string
+         U ERR_remove_state
+         U EVP_BytesToKey
+         U EVP_CIPHER_CTX_cleanup
+         U EVP_CIPHER_CTX_init
+         U EVP_CIPHER_CTX_set_key_length
+         U EVP_CIPHER_CTX_set_padding
+         U EVP_CipherFinal
+         U EVP_CipherInit
+         U EVP_CipherInit_ex
+         U EVP_CipherUpdate
+         U EVP_DecryptFinal_ex
+         U EVP_DecryptInit_ex
+         U EVP_DecryptUpdate
+         U EVP_Digest
+         U EVP_DigestFinal
+         U EVP_DigestFinal_ex
+         U EVP_DigestInit
+         U EVP_DigestInit_ex
+         U EVP_DigestUpdate
+         U EVP_EncryptFinal_ex
+         U EVP_EncryptInit_ex
+         U EVP_EncryptUpdate
+         U EVP_MD_CTX_cleanup
+         U EVP_MD_CTX_copy_ex
+         U EVP_MD_CTX_init
+         U EVP_PKCS82PKEY
+         U EVP_PKEY2PKCS8_broken
+         U EVP_PKEY_add1_attr_by_NID
+         U EVP_PKEY_assign
+         U EVP_PKEY_bits
+         U EVP_PKEY_copy_parameters
+         U EVP_PKEY_free
+         U EVP_PKEY_get1_RSA
+         U EVP_PKEY_missing_parameters
+         U EVP_PKEY_new
+         U EVP_PKEY_save_parameters
+         U EVP_PKEY_set1_RSA
+         U EVP_PKEY_size
+         U EVP_PKEY_type
+         U EVP_SignFinal
+         U EVP_VerifyFinal
+         U EVP_add_cipher
+         U EVP_add_digest
+         U EVP_aes_128_cbc
+         U EVP_aes_192_cbc
+         U EVP_aes_256_cbc
+         U EVP_cleanup
+         U EVP_des_cbc
+         U EVP_des_ede3_cbc
+         U EVP_dss1
+         U EVP_enc_null
+         U EVP_get_cipherbyname
+         U EVP_get_digestbyname
+         U EVP_md4
+         U EVP_md5
+         U EVP_rc2_40_cbc
+         U EVP_rc2_64_cbc
+         U EVP_rc2_cbc
+         U EVP_rc4
+         U EVP_read_pw_string
+         U EVP_ripemd160
+         U EVP_sha1
          U EventTcp_CreateAcceptor
          U EventTcp_ReadBuf
          U EventTcp_WriteBuf
          U Event_AddHandler
          U Event_DelHandler
          U Event_HandleChildExit
+         U HMAC_CTX_cleanup
+         U HMAC_CTX_init
+         U HMAC_Final
+         U HMAC_Init_ex
+         U HMAC_Update
+         U MD4_Final
+         U MD4_Init
+         U MD4_Update
+         U MD5
          U MD5Final
          U MD5Init
          U MD5Update
+         U MD5_Final
+         U MD5_Init
+         U MD5_Update
+         U MDStringArray
+         U NCONF_free
+         U NCONF_get_number_e
+         U NCONF_get_section
+         U NCONF_get_string
+         U NCONF_load
+         U NCONF_load_bio
+         U NCONF_new
+         U NETSCAPE_CERT_SEQUENCE_free
+         U NETSCAPE_CERT_SEQUENCE_new
+         U NETSCAPE_SPKI_b64_decode
+         U NETSCAPE_SPKI_b64_encode
+         U NETSCAPE_SPKI_free
+         U NETSCAPE_SPKI_get_pubkey
+         U NETSCAPE_SPKI_new
+         U NETSCAPE_SPKI_print
+         U NETSCAPE_SPKI_set_pubkey
+         U NETSCAPE_SPKI_sign
+         U NETSCAPE_SPKI_verify
+         U OBJ_NAME_add
+         U OBJ_NAME_do_all_sorted
+         U OBJ_bsearch
+         U OBJ_cleanup
+         U OBJ_create
+         U OBJ_create_objects
+         U OBJ_nid2ln
+         U OBJ_nid2obj
+         U OBJ_nid2sn
+         U OBJ_obj2nid
+         U OBJ_txt2nid
+         U OBJ_txt2obj
+         U OCSP_BASICRESP_free
+         U OCSP_BASICRESP_new
+         U OCSP_CERTID_free
+         U OCSP_REQUEST_free
+         U OCSP_REQUEST_new
+         U OCSP_REQUEST_print
+         U OCSP_RESPONSE_free
+         U OCSP_RESPONSE_new
+         U OCSP_RESPONSE_print
+         U OCSP_SINGLERESP_add1_ext_i2d
+         U OCSP_basic_add1_status
+         U OCSP_basic_sign
+         U OCSP_basic_verify
+         U OCSP_cert_id_new
+         U OCSP_cert_status_str
+         U OCSP_cert_to_id
+         U OCSP_check_nonce
+         U OCSP_check_validity
+         U OCSP_copy_nonce
+         U OCSP_crl_reason_str
+         U OCSP_id_get0_info
+         U OCSP_id_issuer_cmp
+         U OCSP_onereq_get0_id
+         U OCSP_parse_url
+         U OCSP_request_add0_id
+         U OCSP_request_add1_nonce
+         U OCSP_request_onereq_count
+         U OCSP_request_onereq_get0
+         U OCSP_request_sign
+         U OCSP_resp_find_status
+         U OCSP_response_create
+         U OCSP_response_get1_basic
+         U OCSP_response_status
+         U OCSP_response_status_str
+         U OCSP_sendreq_bio
+         U OPENSSL_DIR_end
+         U OPENSSL_DIR_read
+         U OPENSSL_add_all_algorithms_noconf
+         U OPENSSL_cleanse
+         U OPENSSL_load_builtin_modules
+         U OpenSSLDie
+         U PBEPARAM_free
+         U PEM_ASN1_read_bio
+         U PEM_ASN1_write_bio
+         U PEM_X509_INFO_read_bio
+         U PEM_read_bio_DHparams
+         U PEM_read_bio_DSAPrivateKey
+         U PEM_read_bio_DSA_PUBKEY
+         U PEM_read_bio_DSAparams
+         U PEM_read_bio_NETSCAPE_CERT_SEQUENCE
+         U PEM_read_bio_PKCS7
+         U PEM_read_bio_PKCS8
+         U PEM_read_bio_PKCS8_PRIV_KEY_INFO
+         U PEM_read_bio_PUBKEY
+         U PEM_read_bio_PrivateKey
+         U PEM_read_bio_RSAPrivateKey
+         U PEM_read_bio_X509
+         U PEM_read_bio_X509_AUX
+         U PEM_read_bio_X509_CRL
+         U PEM_read_bio_X509_REQ
+         U PEM_write_bio_DHparams
+         U PEM_write_bio_DSAPrivateKey
+         U PEM_write_bio_DSA_PUBKEY
+         U PEM_write_bio_DSAparams
+         U PEM_write_bio_NETSCAPE_CERT_SEQUENCE
+         U PEM_write_bio_PKCS7
+         U PEM_write_bio_PKCS8
+         U PEM_write_bio_PKCS8_PRIV_KEY_INFO
+         U PEM_write_bio_PUBKEY
+         U PEM_write_bio_PrivateKey
+         U PEM_write_bio_RSAPrivateKey
+         U PEM_write_bio_RSA_PUBKEY
+         U PEM_write_bio_X509
+         U PEM_write_bio_X509_AUX
+         U PEM_write_bio_X509_CRL
+         U PEM_write_bio_X509_REQ
+         U PEM_write_bio_X509_REQ_NEW
+         U PKCS12_SAFEBAG_free
+         U PKCS12_certbag2x509
+         U PKCS12_create
+         U PKCS12_decrypt_skey
+         U PKCS12_free
+         U PKCS12_get_attr_gen
+         U PKCS12_parse
+         U PKCS12_set_mac
+         U PKCS12_unpack_authsafes
+         U PKCS12_unpack_p7data
+         U PKCS12_unpack_p7encdata
+         U PKCS12_verify_mac
+         U PKCS7_SIGNED_new
+         U PKCS7_decrypt
+         U PKCS7_encrypt
+         U PKCS7_free
+         U PKCS7_get0_signers
+         U PKCS7_new
+         U PKCS7_sign
+         U PKCS7_verify
+         U PKCS8_PRIV_KEY_INFO_free
+         U PKCS8_decrypt
+         U PKCS8_encrypt
+         U RAND_add
+         U RAND_bytes
+         U RAND_cleanup
+         U RAND_egd
+         U RAND_file_name
+         U RAND_load_file
+         U RAND_pseudo_bytes
+         U RAND_seed
+         U RAND_status
+         U RAND_write_file
+         U RC2_cbc_encrypt
+         U RC2_set_key
+         U RC4
+         U RC4_options
+         U RC4_set_key
+         U RSAPrivateKey_dup
+         U RSA_PKCS1_SSLeay
+         U RSA_check_key
+         U RSA_flags
+         U RSA_free
+         U RSA_generate_key
+         U RSA_generate_key_ex
+         U RSA_new
+         U RSA_print
+         U RSA_private_decrypt
+         U RSA_private_encrypt
+         U RSA_public_decrypt
+         U RSA_public_encrypt
+         U RSA_set_default_method
+         U RSA_sign
+         U RSA_size
+         U RSA_up_ref
+         U RSA_verify
+         U SHA1_Final
+         U SHA1_Init
+         U SHA1_Update
+         U SHA256
+         U SHA512
+         U SMIME_read_PKCS7
+         U SMIME_write_PKCS7
+         U SSL_CIPHER_description
+         U SSL_CIPHER_get_name
+         U SSL_CIPHER_get_version
+         U SSL_COMP_get_name
+         U SSL_CTX_add_client_CA
+         U SSL_CTX_check_private_key
+         U SSL_CTX_ctrl
+         U SSL_CTX_free
+         U SSL_CTX_get_cert_store
+         U SSL_CTX_load_verify_locations
+         U SSL_CTX_new
+         U SSL_CTX_set_cipher_list
+         U SSL_CTX_set_client_CA_list
+         U SSL_CTX_set_default_passwd_cb
+         U SSL_CTX_set_default_verify_paths
+         U SSL_CTX_set_generate_session_id
+         U SSL_CTX_set_quiet_shutdown
+         U SSL_CTX_set_session_id_context
+         U SSL_CTX_set_tmp_rsa_callback
+         U SSL_CTX_set_verify
+         U SSL_CTX_use_PrivateKey
+         U SSL_CTX_use_PrivateKey_file
+         U SSL_CTX_use_certificate
+         U SSL_CTX_use_certificate_chain_file
+         U SSL_CTX_use_certificate_file
+         U SSL_SESSION_free
+         U SSL_SESSION_new
+         U SSL_SESSION_print
+         U SSL_accept
+         U SSL_alert_desc_string_long
+         U SSL_alert_type_string_long
+         U SSL_clear
+         U SSL_connect
+         U SSL_ctrl
+         U SSL_do_handshake
+         U SSL_free
+         U SSL_get_SSL_CTX
+         U SSL_get_cipher_list
+         U SSL_get_ciphers
+         U SSL_get_client_CA_list
+         U SSL_get_current_cipher
+         U SSL_get_current_compression
+         U SSL_get_current_expansion
+         U SSL_get_error
+         U SSL_get_ex_data
+         U SSL_get_ex_data_X509_STORE_CTX_idx
+         U SSL_get_ex_new_index
+         U SSL_get_fd
+         U SSL_get_peer_cert_chain
+         U SSL_get_peer_certificate
+         U SSL_get_rbio
+         U SSL_get_session
+         U SSL_get_shared_ciphers
+         U SSL_get_verify_result
+         U SSL_get_version
+         U SSL_get_wbio
+         U SSL_has_matching_session_id
+         U SSL_library_init
+         U SSL_load_client_CA_file
+         U SSL_load_error_strings
+         U SSL_new
+         U SSL_pending
+         U SSL_read
+         U SSL_renegotiate
+         U SSL_set_accept_state
+         U SSL_set_bio
+         U SSL_set_connect_state
+         U SSL_set_ex_data
+         U SSL_set_msg_callback
+         U SSL_set_session_id_context
+         U SSL_set_shutdown
+         U SSL_set_verify
+         U SSL_shutdown
+         U SSL_state
+         U SSL_state_string_long
+         U SSL_version
+         U SSL_write
+         U SSLeay
+         U SSLeay_version
+         U SSLv23_client_method
+         U SSLv23_server_method
+         U SSLv2_client_method
+         U SSLv2_server_method
+         U SSLv3_client_method
+         U SSLv3_server_method
+         U TLSv1_client_method
+         U TLSv1_method
+         U TLSv1_server_method
+         U TXT_DB_create_index
+         U TXT_DB_free
+         U TXT_DB_get_by_index
+         U TXT_DB_insert
+         U TXT_DB_read
+         U TXT_DB_write
+         U UI_OpenSSL
+         U UI_add_input_string
+         U UI_add_verify_string
+         U UI_construct_prompt
+         U UI_create_method
+         U UI_ctrl
+         U UI_destroy_method
+         U UI_free
+         U UI_get0_user_data
+         U UI_get_input_flags
+         U UI_get_string_type
+         U UI_method_get_closer
+         U UI_method_get_opener
+         U UI_method_get_reader
+         U UI_method_get_writer
+         U UI_method_set_closer
+         U UI_method_set_opener
+         U UI_method_set_reader
+         U UI_method_set_writer
+         U UI_new_method
+         U UI_process
+         U UI_set_result
+         U X509V3_EXT_CRL_add_nconf
+         U X509V3_EXT_REQ_add_nconf
+         U X509V3_EXT_add_nconf
+         U X509V3_conf_free
+         U X509V3_parse_list
+         U X509V3_set_ctx
+         U X509V3_set_nconf
+         U X509_CRL_add0_revoked
+         U X509_CRL_add1_ext_i2d
+         U X509_CRL_digest
+         U X509_CRL_free
+         U X509_CRL_new
+         U X509_CRL_print
+         U X509_CRL_set_issuer_name
+         U X509_CRL_set_lastUpdate
+         U X509_CRL_set_nextUpdate
+         U X509_CRL_set_version
+         U X509_CRL_sign
+         U X509_CRL_sort
+         U X509_CRL_verify
+         U X509_EXTENSION_free
+         U X509_EXTENSION_get_object
+         U X509_INFO_free
+         U X509_LOOKUP_ctrl
+         U X509_LOOKUP_file
+         U X509_LOOKUP_hash_dir
+         U X509_NAME_ENTRY_create_by_NID
+         U X509_NAME_ENTRY_free
+         U X509_NAME_ENTRY_get_data
+         U X509_NAME_ENTRY_get_object
+         U X509_NAME_add_entry
+         U X509_NAME_add_entry_by_NID
+         U X509_NAME_add_entry_by_txt
+         U X509_NAME_cmp
+         U X509_NAME_delete_entry
+         U X509_NAME_dup
+         U X509_NAME_entry_count
+         U X509_NAME_free
+         U X509_NAME_get_entry
+         U X509_NAME_get_index_by_NID
+         U X509_NAME_get_index_by_OBJ
+         U X509_NAME_hash
+         U X509_NAME_new
+         U X509_NAME_oneline
+         U X509_NAME_print_ex
+         U X509_OBJECT_free_contents
+         U X509_POLICY_NODE_print
+         U X509_PURPOSE_get0
+         U X509_PURPOSE_get0_name
+         U X509_PURPOSE_get0_sname
+         U X509_PURPOSE_get_by_sname
+         U X509_PURPOSE_get_count
+         U X509_PURPOSE_get_id
+         U X509_REQ_add1_attr_by_NID
+         U X509_REQ_add1_attr_by_txt
+         U X509_REQ_check_private_key
+         U X509_REQ_free
+         U X509_REQ_get_extensions
+         U X509_REQ_get_pubkey
+         U X509_REQ_new
+         U X509_REQ_print
+         U X509_REQ_print_ex
+         U X509_REQ_set_pubkey
+         U X509_REQ_set_subject_name
+         U X509_REQ_set_version
+         U X509_REQ_sign
+         U X509_REQ_verify
+         U X509_REVOKED_add1_ext_i2d
+         U X509_REVOKED_new
+         U X509_REVOKED_set_revocationDate
+         U X509_REVOKED_set_serialNumber
+         U X509_SIG_free
+         U X509_STORE_CTX_cleanup
+         U X509_STORE_CTX_free
+         U X509_STORE_CTX_get0_param
+         U X509_STORE_CTX_get0_policy_tree
+         U X509_STORE_CTX_get1_chain
+         U X509_STORE_CTX_get_current_cert
+         U X509_STORE_CTX_get_error
+         U X509_STORE_CTX_get_error_depth
+         U X509_STORE_CTX_get_ex_data
+         U X509_STORE_CTX_get_ex_new_index
+         U X509_STORE_CTX_get_explicit_policy
+         U X509_STORE_CTX_init
+         U X509_STORE_CTX_new
+         U X509_STORE_CTX_set_cert
+         U X509_STORE_CTX_set_default
+         U X509_STORE_CTX_set_ex_data
+         U X509_STORE_CTX_set_purpose
+         U X509_STORE_CTX_set_verify_cb
+         U X509_STORE_CTX_trusted_stack
+         U X509_STORE_add_cert
+         U X509_STORE_add_lookup
+         U X509_STORE_free
+         U X509_STORE_get_by_subject
+         U X509_STORE_load_locations
+         U X509_STORE_new
+         U X509_STORE_set1_param
+         U X509_STORE_set_default_paths
+         U X509_STORE_set_flags
+         U X509_VERIFY_PARAM_add0_policy
+         U X509_VERIFY_PARAM_free
+         U X509_VERIFY_PARAM_get_depth
+         U X509_VERIFY_PARAM_inherit
+         U X509_VERIFY_PARAM_new
+         U X509_VERIFY_PARAM_set_depth
+         U X509_VERIFY_PARAM_set_flags
+         U X509_VERIFY_PARAM_set_purpose
+         U X509_VERIFY_PARAM_set_trust
+         U X509_add1_reject_object
+         U X509_add1_trust_object
+         U X509_add_ext
+         U X509_alias_get0
+         U X509_alias_set1
+         U X509_asn1_meth
+         U X509_certificate_type
+         U X509_check_private_key
+         U X509_check_purpose
+         U X509_cmp_time
+         U X509_delete_ext
+         U X509_digest
+         U X509_email_free
+         U X509_free
+         U X509_get0_pubkey_bitstr
+         U X509_get1_email
+         U X509_get_default_cert_area
+         U X509_get_ext
+         U X509_get_ext_by_OBJ
+         U X509_get_ext_count
+         U X509_get_issuer_name
+         U X509_get_pubkey
+         U X509_get_serialNumber
+         U X509_get_subject_name
+         U X509_gmtime_adj
+         U X509_issuer_name_hash
+         U X509_keyid_set1
+         U X509_new
+         U X509_ocspid_print
+         U X509_policy_tree_get0_policies
+         U X509_policy_tree_get0_user_policies
+         U X509_print
+         U X509_print_ex
+         U X509_reject_clear
+         U X509_set_issuer_name
+         U X509_set_pubkey
+         U X509_set_serialNumber
+         U X509_set_subject_name
+         U X509_set_version
+         U X509_sign
+         U X509_subject_name_hash
+         U X509_to_X509_REQ
+         U X509_trust_clear
+         U X509_verify
+         U X509_verify_cert
+         U X509_verify_cert_error_string
+         U _Unwind_SjLj_Register
+         U _Unwind_SjLj_Resume
+         U _Unwind_SjLj_Unregister
+         U _ZdaPv
+         U _ZdlPv
+         U _Znaj
+         U _Znwj
+         U __adddf3
+         U __ashldi3
          U __assert
          U __cmsg_nxthdr
          U __ctype_b
          U __ctype_tolower
          U __ctype_toupper
+         U __cxa_pure_virtual
+         U __divdf3
+         U __divsf3
+         U __divsi3
+         U __dn_expand
          U __environ
          U __errno_location
+         U __extendsfdf2
          U __fgetc_unlocked
+         U __fixdfsi
+         U __fixunsdfdi
+         U __floatdidf
+         U __floatsidf
+         U __floatunsidf
+         U __floatunsisf
          U __fputc_unlocked
+         U __gedf2
+         U __gtdf2
+         U __gxx_personality_sj0
          U __h_errno_location
-         U __in6addr_any
+         U __ltdf2
+         U __modsi3
+         U __muldf3
+         U __nedf2
          U __res_init
-         U __sigaddset
-         U __sigdelset
+         U __res_search
          U __sigsetjmp
-         U __stdin
-         U __stdout
+         U __subdf3
          U __sysv_signal
          U __uClibc_main
-         U __uClibc_start_main
+         U __udivsi3
+         U __umodsi3
          U __xpg_basename
-         U _errno
          U _eval
+         U _evalpid
          U _exit
-         U _res
          U _setjmp
-         U _sigintr
+         U _shm_resize
+         U a2i_ASN1_INTEGER
          U abort
          U accept
          U access
+         U action_flags
+         U add_avp
+         U add_local_hna4_entry
+         U add_lump_rpl
+         U add_notifier
+         U add_olsr_socket
+         U add_options
+         U add_userip
+         U add_usermac
          U addmntent
          U adjtimex
-         U aes_unwrap
-         U aes_wrap
+         U adjust_regulatory
          U alarm
+         U allowed_address_hook
          U alphasort
+         U anchor_lump
+         U append_branch
          U asctime
+         U asn1_GetSequence
+         U asn1_add_error
+         U asn1_const_Finish
          U asprintf
          U atexit
          U atof
          U atoi
          U atol
          U atoll
+         U avl_walk_first
+         U avl_walk_next
+         U bad_ip_adrs
          U basename
-         U bcm_timer_change_expirytime
-         U bcm_timer_connect
-         U bcm_timer_create
-         U bcm_timer_delete
-         U bcm_timer_module_cleanup
-         U bcm_timer_module_enable
-         U bcm_timer_module_init
-         U bcm_timer_settime
-         U bcmp
-         U bcopy
          U bind
+         U bind_address
+         U bind_dbmod
+         U branch_builder
+         U branch_rlist
          U bsearch
          U buf_to_file
-         U bzero
+         U build_date
+         U build_host
+         U build_req_buf_from_sip_req
+         U build_res_buf_from_sip_req
+         U build_res_buf_from_sip_res
          U calloc
          U capset
+         U ccp_allowoptions
+         U ccp_wantoptions
          U ceil
+         U cfgetispeed
          U cfgetospeed
          U cfmakeraw
          U cfsetispeed
          U cfsetospeed
+         U chap_check_hook
+         U chap_verify_hook
          U chdir
          U check_action
+         U check_dig_cred
          U check_flash
          U check_hw_type
+         U check_neighbor_link
          U check_now_boot
+         U check_self
+         U check_transaction_quadruple
          U check_vlan_support
          U check_wan_link
+         U children_no
          U chmod
          U chown
          U chroot
+         U clean_hdr_field
+         U clear_branches
          U clearenv
          U clearerr
          U close
          U closedir
          U closelog
          U connect
+         U contact_iterator
+         U contains
          U convert_ver
+         U count_occurences
          U count_processes
+         U cpu_plltype
+         U crcitt_string_array
          U creat
          U create_module
          U crypt
          U ct_openlog
          U ct_syslog
          U ctime
+         U ctime_r
+         U d2i_ASN1_HEADER
+         U d2i_ASN1_INTEGER
+         U d2i_ASN1_OCTET_STRING
+         U d2i_ASN1_TYPE
+         U d2i_DHparams
+         U d2i_DSAPrivateKey_bio
+         U d2i_DSA_PUBKEY_bio
+         U d2i_DSAparams
+         U d2i_OCSP_REQUEST
+         U d2i_OCSP_RESPONSE
+         U d2i_PBEPARAM
+         U d2i_PKCS12_bio
+         U d2i_PKCS12_fp
+         U d2i_PKCS7_bio
+         U d2i_PKCS8_PRIV_KEY_INFO_bio
+         U d2i_PKCS8_bio
+         U d2i_PUBKEY_bio
+         U d2i_PrivateKey
+         U d2i_PrivateKey_bio
+         U d2i_RSAPrivateKey
+         U d2i_RSAPrivateKey_bio
+         U d2i_RSA_NET
+         U d2i_SSL_SESSION
+         U d2i_X509
+         U d2i_X509_CRL_bio
+         U d2i_X509_NAME
+         U d2i_X509_REQ_bio
+         U d2i_X509_bio
          U daemon
+         U daysformonth
+         U debug
+         U debug_handle
+         U default_global_address
+         U default_global_port
+         U del_flaged_lumps
          U del_forward_port
+         U del_lump
+         U del_nonshm_lump_rpl
+         U del_notflaged_lumps
          U del_wds_wsec
          U delete_module
+         U destroy_avp_list
+         U destroy_avp_list_unsafe
+         U devnam
          U diag_led
+         U die
          U difftime
          U dirname
          U div
@@ -111,23 +937,35 @@
          U dlopen
          U dlsym
          U dns_to_resolv
+         U doMultiCast
+         U do_action
+         U dont_fork
+         U double_to_me
+         U dprint
          U dprintf
          U drand48
          U dup
          U dup2
+         U eat_line
          U encrypt
          U endgrent
          U endmntent
-         U endprotoent
          U endpwent
-         U endservent
          U endusershell
          U endutent
          U environ
-         U errno
+         U epoll_create
+         U epoll_ctl
+         U epoll_wait
+         U err
+         U err2reason_phrase
+         U error_count
+         U error_text
+         U errx
          U ether_atoe
          U ether_aton
          U ether_etoa
+         U ether_ntoa
          U execl
          U execle
          U execlp
@@ -135,11 +973,13 @@
          U execve
          U execvp
          U exit
-         U fPRF
+         U exitnotify
+         U failure_rlist
          U fchmod
          U fchown
          U fclose
          U fcntl
+         U fcntl64
          U fdopen
          U feof
          U ferror
@@ -147,63 +987,102 @@
          U fflush_unlocked
          U fgetc
          U fgets
+         U fifo
+         U fifo_reply
          U file2str
          U file_to_buf
          U fileno
+         U find_export
          U find_pid_by_ps
          U flock
+         U fm_free
+         U fm_malloc
+         U fm_realloc
          U fnmatch
          U fopen
+         U fopen64
          U fork
+         U forward_request
          U fprintf
          U fputc
          U fputs
          U fread
          U free
+         U free_hdr_field_lst
+         U free_lump
+         U free_lump_rpl
+         U free_params
+         U free_proxy
          U freeaddrinfo
          U freopen
          U fscanf
          U fseek
          U fstat
+         U fstat64
          U fsync
          U ftell
+         U ftello
+         U ftime
          U ftruncate
+         U ftruncate64
          U fwrite
+         U fwritenvram
          U gai_strerror
+         U generic_disestablish_ppp
+         U generic_establish_ppp
+         U getCountryList
+         U getHostName
+         U getIfList
+         U getIsoName
+         U getNoise
          U getRouterBrand
+         U getRssi
+         U getSTA
+         U getWANMac
+         U getWET
+         U get_authorized_cred
+         U get_branch
          U get_broadcast
          U get_dns_list
          U get_forward_port
-         U get_ifname_unit
          U get_int_len
          U get_mac_from_ip
+         U get_msg_seqno
          U get_mtu
+         U get_radiostate
+         U get_reply_status
+         U get_send_socket
          U get_single_ip
+         U get_ticks
          U get_wan_face
          U get_wdev
-         U get_wds_wsec
          U get_wl_assoc_mac
+         U get_wl_instance
+         U get_wl_instance_name
+         U get_wl_instances
          U getaddrinfo
          U getassoclist
-         U getcpurev
          U getcwd
          U getdelim
+         U getdevicecount
          U getdomainname
          U getdtablesize
          U getegid
          U getenv
          U geteuid
          U getgid
-         U getgrent
          U getgrgid
          U getgrnam
          U getgroups
          U gethostbyaddr
          U gethostbyname
+         U gethostbyname2
          U gethostname
-         U getitimer
+         U getifcount
+         U getinterfacelist
          U getline
          U getlogin
+         U getmask
          U getmntent
          U getmntent_r
          U getnameinfo
@@ -215,42 +1094,87 @@
          U getpagesize
          U getpass
          U getpeername
+         U getpgid
          U getpgrp
          U getpid
          U getppid
+         U getpriority
          U getprotobyname
          U getprotobynumber
-         U getprotoent
          U getpwnam
          U getpwuid
          U getpwuid_r
          U getrlimit
          U getrpcbyname
          U getrpcbynumber
+         U getrusage
          U getservbyname
          U getservbyport
-         U getservent
          U getsockname
          U getsockopt
-         U getspnam
          U gettimeofday
          U getuid
          U getusershell
          U getutent
-         U getwdslist
-         U getwlif
          U gmtime
          U grantpt
+         U grep_sock_info
+         U has_mimo
          U hash_num_entries
          U hasmntopt
+         U haswifi
          U hcreate_r
          U hdestroy_r
-         U herror
-         U hmac_md5
-         U hmac_sha1
+         U hostname
          U hsearch_r
+         U hstrerror
+         U httpdAddC404Content
+         U httpdAddCContent
+         U httpdAddHeader
+         U httpdCreate
+         U httpdEndRequest
+         U httpdGetConnection
+         U httpdGetVariableByName
+         U httpdOutput
+         U httpdPrintf
+         U httpdProcessRequest
+         U httpdReadRequest
+         U httpdSetResponse
+         U httpdUrlEncode
+         U i2a_ASN1_INTEGER
+         U i2a_ASN1_OBJECT
+         U i2d_ASN1_HEADER
+         U i2d_ASN1_INTEGER
+         U i2d_ASN1_OCTET_STRING
+         U i2d_ASN1_TYPE
+         U i2d_DHparams
+         U i2d_DSAPrivateKey_bio
+         U i2d_DSA_PUBKEY_bio
+         U i2d_DSAparams
+         U i2d_OCSP_REQUEST
+         U i2d_OCSP_RESPONSE
+         U i2d_PKCS12_bio
+         U i2d_PKCS7_bio
+         U i2d_PKCS8_PRIV_KEY_INFO_bio
+         U i2d_PKCS8_bio
+         U i2d_PrivateKey_bio
+         U i2d_RSAPrivateKey_bio
+         U i2d_RSA_NET
+         U i2d_RSA_PUBKEY_bio
+         U i2d_SSL_SESSION
+         U i2d_X509
+         U i2d_X509_CRL_bio
+         U i2d_X509_NAME
+         U i2d_X509_PUBKEY
+         U i2d_X509_REQ_bio
+         U i2d_X509_bio
+         U ieee80211_mhz2ieee
+         U if_ifwithindex_name
          U if_indextoname
          U if_nametoindex
+         U ifexists
+         U ifname
+         U ifnet
          U iks_cdata
          U iks_cdata_size
          U iks_child
@@ -292,26 +1216,76 @@
          U iks_stream_new
          U iks_string
          U iks_type
-         U in6addr_any
-         U index
+         U indexof
          U inet_addr
          U inet_aton
-         U inet_netof
          U inet_ntoa
          U inet_ntop
          U inet_pton
          U init_event_queue
+         U init_lump_flags
          U init_module
          U initgroups
+         U insert_cond_lump_after
+         U insert_cond_lump_before
+         U insert_new_lump_after
+         U insert_new_lump_before
+         U insert_subst_lump_after
          U ioctl
+         U ip_choose_hook
+         U ip_down_notifier
+         U ip_up_notifier
+         U ipcp_allowoptions
+         U ipcp_hisoptions
+         U ipcp_wantoptions
+         U ipparam
          U is_exist
+         U is_main
+         U isalnum
+         U isalpha
          U isatty
-         U isdigit
+         U isblank
+         U isgraph
          U islower
          U isprint
+         U ispunct
+         U isregistered
          U isspace
-         U isxdigit
+         U isupper
+         U iw_channel_to_freq
+         U iw_check_mac_addr_type
+         U iw_dbm2mwatt
+         U iw_enum_devices
+         U iw_ether_ntop
+         U iw_extract_event_stream
+         U iw_float2freq
+         U iw_freq2float
+         U iw_freq_to_channel
+         U iw_get_basic_config
+         U iw_get_kernel_we_version
+         U iw_get_priv_info
+         U iw_get_priv_size
+         U iw_get_range_info
+         U iw_get_stats
+         U iw_in_addr
+         U iw_in_key_full
+         U iw_init_event_stream
+         U iw_mwatt2dbm
+         U iw_print_bitrate
+         U iw_print_freq
+         U iw_print_freq_value
+         U iw_print_key
+         U iw_print_pm_mode
+         U iw_print_pm_value
+         U iw_print_retry_value
+         U iw_print_stats
+         U iw_print_txpower
+         U iw_print_version_info
+         U iw_sawap_ntop
+         U iw_sockets_open
+         U kick_mac
          U kill
+         U killall
          U killpg
          U klogctl
          U l2tp_chomp_word
@@ -337,126 +1311,267 @@
          U l2tp_tunnel_state_name
          U l2tp_tunnel_stop_all
          U lchown
+         U lcp_allowoptions
+         U lcp_wantoptions
+         U led_control
+         U lh_delete
+         U lh_doall_arg
+         U lh_free
+         U lh_insert
+         U lh_new
+         U lh_node_stats_bio
+         U lh_node_usage_stats_bio
+         U lh_retrieve
+         U lh_stats_bio
+         U lh_strhash
          U link
+         U link_connect_time
+         U link_set
+         U link_stats
+         U link_stats_valid
+         U list_channels
          U listen
          U localtime
          U lockf
          U log
+         U log_facility
+         U log_stderr
          U longjmp
          U lseek
+         U lseek64
          U lstat
+         U lstat64
+         U magic
          U malloc
+         U mark_authorized_cred
+         U maxconnect
+         U maxoctets
+         U maxoctets_dir
+         U me_to_double
+         U mem_block
+         U mem_lock
          U memchr
          U memcmp
          U memcpy
          U memmove
-         U mempcpy
+         U memrchr
          U memset
+         U mhomed
+         U mid_set
+         U mk_proxy
          U mkdir
          U mkfifo
          U mknod
          U mkstemp
          U mktemp
          U mktime
+         U mlock
+         U mlockall
          U mmap
+         U modem
          U mount
+         U mppe_keys_set
+         U mppe_recv_key
+         U mppe_send_key
+         U mppe_set_keys
          U mrand48
          U msgctl
          U msgget
          U msgrcv
          U msgsnd
+         U munlock
          U munmap
          U nanosleep
+         U neighbortable
+         U net_outbuffer_push
+         U net_output
          U netconf_add_filter
          U netconf_add_nat
          U netconf_del_filter
          U netconf_del_nat
          U netconf_get_nat
-         U nvifname_to_osifname
+         U new_hash2
+         U new_style_driver
+         U nice
+         U novm
+         U now
          U nvram2file
+         U nvram_close
          U nvram_commit
+         U nvram_default_get
+         U nvram_default_match
          U nvram_get
          U nvram_get_collection
          U nvram_getall
+         U nvram_immed_set
          U nvram_invmatch
          U nvram_match
+         U nvram_nget
+         U nvram_nmatch
+         U nvram_open
+         U nvram_prefix_get
+         U nvram_prefix_match
          U nvram_safe_get
          U nvram_safe_set
          U nvram_safe_unset
          U nvram_set
          U nvram_store_collection
          U nvram_unset
+         U olsr_check_dup_table_proc
+         U olsr_cmp_rt
+         U olsr_cnf
+         U olsr_forward_message
+         U olsr_hashing
+         U olsr_ip_to_string
+         U olsr_lookup_mprs_set
+         U olsr_lookup_routing_table
+         U olsr_malloc
+         U olsr_parser_add_function
+         U olsr_prefix_to_netmask
+         U olsr_printf
+         U olsr_register_scheduler_event
+         U olsr_register_timeout_function
+         U olsrd_version
+         U onreply_rlist
          U open
+         U open64
+         U open_reply_pipe
          U opendir
          U openlog
          U openpty
          U optarg
-         U opterr
          U optind
-         U optopt
-         U osifname_to_nvifname
-         U passhash
+         U options_from_file
+         U pap_auth_hook
+         U pap_check_hook
+         U parse_avp_spec
+         U parse_contact
+         U parse_credentials
+         U parse_expires
+         U parse_from_header
+         U parse_headers
+         U parse_hname2
+         U parse_methods
+         U parse_nameaddr
+         U parse_params
+         U parse_rr
+         U parse_sip_msg_uri
+         U parse_uri
+         U pathconf
          U pause
          U pclose
          U perror
+         U pidof
          U pipe
+         U pitem_free
+         U pitem_new
          U pivot_root
          U poll
          U popen
+         U pos_nthoccurence
          U pow
+         U ppp_available
+         U ppp_devnam
+         U ppp_session_number
+         U pqueue_find
+         U pqueue_free
+         U pqueue_insert
+         U pqueue_iterator
+         U pqueue_new
+         U pqueue_next
+         U pqueue_peek
+         U pqueue_pop
          U prctl
-         U prepare_key
+         U pread
+         U prev_ser_error
+         U print_dset
+         U print_rr
          U printf
+         U process_no
+         U pt
          U pthread_attr_init
          U pthread_attr_setdetachstate
          U pthread_cancel
+         U pthread_cond_broadcast
+         U pthread_cond_destroy
+         U pthread_cond_init
+         U pthread_cond_signal
+         U pthread_cond_timedwait
+         U pthread_cond_wait
          U pthread_create
+         U pthread_detach
+         U pthread_exit
          U pthread_join
          U pthread_kill
          U pthread_mutex_destroy
          U pthread_mutex_init
          U pthread_mutex_lock
+         U pthread_mutex_trylock
          U pthread_mutex_unlock
-         U pthread_mutexattr_destroy
-         U pthread_mutexattr_init
-         U pthread_mutexattr_settype
+         U pthread_self
          U pthread_setcancelstate
          U ptsname
          U putchar
          U putenv
          U puts
          U pututline
+         U pwrite
          U qsort
          U query_module
+         U radius_attributes_hook
+         U radius_pre_auth_hook
          U raise
          U rand
          U random
-         U rc4
+         U rc_avpair_tostr
          U read
+         U read_body
+         U read_line
+         U read_line_set
          U readdir
+         U readdir64
          U readlink
+         U readv
          U realloc
          U realpath
          U reboot
+         U received_test
          U recv
          U recvfrom
          U recvmsg
+         U reg_main
          U regcomp
          U regerror
          U regexec
          U regfree
+         U register_fifo_cmd
+         U register_script_cb
+         U register_timer
+         U remote_number
          U remove
+         U remove_local_hna4_entry
          U rename
+         U replace_lst_free
+         U reply_to_via
+         U reset_avps
          U rewind
-         U rindex
+         U rewrite_uri
          U rint
          U rmdir
+         U route_add
          U route_del
-         U router_defaults
+         U route_type
+         U routingtree
+         U run_actions
+         U s2i_ASN1_INTEGER
          U safe_fread
          U safe_fwrite
          U scandir
+         U scanf
          U sched_yield
+         U search_first_avp
+         U security_deny
+         U security_disable
          U select
          U semctl
          U semget
@@ -465,20 +1580,30 @@
          U sendfile
          U sendmsg
          U sendto
+         U ser_error
+         U server_signature
+         U set_avp_list
+         U set_dst_uri
          U set_forward_port
          U set_host_domain_name
          U set_ip_forward
+         U set_maclist
+         U set_mppe_enc_types
+         U set_plugin_boolean
+         U set_plugin_int
+         U set_plugin_port
+         U set_plugin_string
+         U set_ruri_q
          U setbuf
-         U setdomainname
          U setegid
          U setenv
          U seteuid
          U setgid
-         U setgrent
          U setgroups
          U sethostent
          U sethostname
          U setitimer
+         U setjmp
          U setkey
          U setlinebuf
          U setlocale
@@ -486,11 +1611,11 @@
          U setmntent
          U setpgid
          U setpgrp
-         U setprotoent
+         U setpriority
          U setpwent
          U setreuid
          U setrlimit
-         U setservent
+         U setrlimit64
          U setsid
          U setsockopt
          U settimeofday
@@ -498,6 +1623,9 @@
          U setusershell
          U setutent
          U setvbuf
+         U shm_block
+         U shm_duplicate_rr
+         U shm_free_rr
          U shmat
          U shmctl
          U shmdt
@@ -509,28 +1637,53 @@
          U sigdelset
          U sigemptyset
          U sigfillset
+         U siginterrupt
          U siglongjmp
          U signal
          U sigprocmask
          U sigsetmask
          U sigsuspend
+         U sip_resolvehost
+         U sk_delete
+         U sk_dup
+         U sk_find
+         U sk_free
+         U sk_new
+         U sk_new_null
+         U sk_num
+         U sk_pop_free
+         U sk_push
+         U sk_set
+         U sk_set_cmp_func
+         U sk_shift
+         U sk_value
+         U sk_zero
          U sleep
+         U slprintf
          U snprintf
+         U sockaddr_to_string
          U socket
          U socketpair
+         U softkill
          U sprintf
          U srand
          U srand48
          U srandom
          U sscanf
+         U start_service
+         U startstop
+         U startswith
          U stat
+         U stat64
          U statfs
+         U status
          U statvfs
          U stderr
          U stdin
          U stdout
          U stime
-         U stpcpy
+         U stop_service
+         U str2q
          U strcasecmp
          U strcat
          U strchr
@@ -548,6 +1701,7 @@
          U strncat
          U strncmp
          U strncpy
+         U strndup
          U strnlen
          U strpbrk
          U strptime
@@ -563,121 +1717,215 @@
          U strtoll
          U strtoul
          U strtoull
+         U subst_parser
+         U subst_run
+         U subst_str
+         U substring
          U sv_valid_ipaddr
          U sv_valid_range
          U sv_valid_statics
+         U swab
          U symlink
+         U syn_branch
          U sync
+         U sync_serial
          U syscall
          U sysconf
-         U sysctl
          U sysinfo
          U syslog
          U system
+         U system2
+         U table_version
+         U tc_tree
          U tcflush
          U tcgetattr
          U tcgetpgrp
+         U tcp_children_no
+         U tcp_disable
+         U tcp_send
          U tcsetattr
          U tcsetpgrp
+         U the_channel
          U time
+         U timeout
          U timer_cancel
          U timer_connect
          U timer_create
          U timer_delete
          U timer_settime
          U times
-         U timezone
          U tolower
          U toupper
+         U tsend_dgram_ev
          U ttyname
          U tzset
+         U udp_send
          U umask
          U umount
          U umount2
          U uname
          U ungetc
+         U uni2asc
+         U unixsock_children
+         U unixsock_name
+         U unixsock_read_body
+         U unixsock_read_line
+         U unixsock_read_lineset
+         U unixsock_register_cmd
+         U unixsock_reply_asciiz
+         U unixsock_reply_printf
+         U unixsock_reply_reset
+         U unixsock_reply_send
+         U unixsock_reply_sendto
+         U unixsock_sender_addr
          U unlink
+         U unlink_lump_rpl
          U unlockpt
          U unsetenv
+         U update_link_stats
+         U update_sock_struct_from_via
          U updwtmp
+         U using_pty
          U usleep
          U utime
          U utimes
          U utmpname
-         U vdprintf
+         U vasprintf
          U vfork
          U vfprintf
+         U via_builder
          U vprintf
          U vsnprintf
          U vsprintf
          U vsyslog
          U wait
          U wait3
-         U wait4
          U waitfor
          U waitpid
-         U wl_bssiovar_get
-         U wl_bssiovar_set
-         U wl_bssiovar_setint
+         U warn
+         U wifi_getchannel
+         U wifi_getrate
          U wl_hwaddr
          U wl_ioctl
-         U wl_iovar_get
          U wl_iovar_getint
          U wl_iovar_set
          U wl_iovar_setint
          U wl_probe
          U write
+         U writenvram
          U writev
+         U xl_get_spec_value
+         U xl_parse_spec
+         U zencrypt
          w _Jv_RegisterClasses
          w __cxa_finalize
          w __deregister_frame_info
          w __register_frame_info
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/bin/busybox:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/sbin/radvd:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/sbin/radvdump:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/sbin/rc:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/lib/l2tp/cmd.so:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/lib/l2tp/sync-pppd.so:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/lib/libbcmcrypto.so:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/lib/libiksemel.so:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/lib/libnetconf.so:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/lib/libnvram.so:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/lib/libshared.so:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/lib/services.so:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/bcrelay:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/bpalogin:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/chilli:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/cron:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/dumpleases:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/ebtables:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/httpd:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/igmprt:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/inadyn:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/ip:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/iptables:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/l2tp-control:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/l2tpd:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/macupd:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/mtd:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/nas:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/ntpclient:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/nvram:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/pppd:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/pppoe:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/pppoecd:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/pptp:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/pptpctrl:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/pptpd:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/smbmnt:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/smbmount:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/snmpd:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/splashd:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/sputnik:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/tc:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/udhcpc:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/udhcpd:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/upnp:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/wl:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/wlconf:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/wol:
-/home/dd-wrt/DEV/src/router/mipsel-uclibc/target/usr/sbin/wrt-radauth:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/bin/busybox:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/bin/mount.cifs:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/sbin/lspci:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/sbin/rc:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/sbin/setpci:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/bin/aircrack-ng:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/bin/aircrack-ptw:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/bin/airdecap-ng:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/bin/attacksim:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/bin/ivstools:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/bin/kstats:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/bin/makeivs:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/bin/packetforge-ng:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/bin/rtpproxy:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/l2tp/cmd.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/l2tp/sync-pppd.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/libcrypto.so.0.9.8:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/libhttpd.so.0:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/libiksemel.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/libnetconf.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/libpcap.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/libssl.so.0.9.8:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/olsrd_dyn_gw.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/olsrd_dyn_gw_plain.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/olsrd_httpinfo.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/olsrd_nameservice.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/openser/modules/auth.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/openser/modules/auth_db.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/openser/modules/dbtext.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/openser/modules/exec.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/openser/modules/maxfwd.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/openser/modules/milkfish_nathelper.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/openser/modules/registrar.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/openser/modules/rr.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/openser/modules/sl.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/openser/modules/textops.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/openser/modules/tm.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/openser/modules/usrloc.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/radattr.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/radius.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/radrealms.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/rp-pppoe.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/lib/services.so:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/aireplay-ng:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/airodump-ng:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/bcrelay:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/bird:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/bpalogin:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/brctl:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/chilli:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/convertnvram:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/cron:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/dhcp_lease_time:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/dhcp_release:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/dnsmasq:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/dropbearmulti:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/dumpleases:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/ebtables:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/epi_ttcp:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/fischecksum:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/gpio:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/hostapd:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/httpd:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/ifenslave:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/igmprt:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/inadyn:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/ip:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/iperf:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/iptables:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/iwconfig:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/iwlist:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/iwpriv:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/l2tp-control:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/l2tpd:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/macupd:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/madwifi_multi:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/mtd:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/nstxcd:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/nstxd:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/ntpclient:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/olsrd:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/openser:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/openser_gen_ha1:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/openssl:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/openvpn:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/pppd:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/pppoe-multi:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/pptp:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/pptpctrl:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/pptpd:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/radius-client:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/rflow:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/shatc:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/shatd:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/showmac:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/snmpd:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/splashd:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/sputnik:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/tc:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/udhcpc:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/udhcpd:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/upnp:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/wdctl:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/wifidog:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/wl_atheros:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/wol:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/wpa_supplicant:
+/home/seg/DEV/xscale/src/router/armeb-uclibc/target/usr/sbin/wrt-radauth:
