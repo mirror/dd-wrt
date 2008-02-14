@@ -264,7 +264,7 @@ restart:
 	parts[nrparts].size = master->erasesize;
 	parts[nrparts++].name = "board_config";
 	parts[nrparts].offset = parts[0].offset;
-	parts[nrparts].size = master->size;
+	parts[nrparts].size = parts[nrparts-1].offset;
 	parts[nrparts++].name = "fullflash";
 
 

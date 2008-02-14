@@ -120,6 +120,7 @@ int __init ar531x_find_config(char *flash_limit)
 		return -ENODEV;
 
 	radio_config = board_config + 0x100 + ((rcfg - bcfg) & 0xfff);
+	printk("Found board config at 0x%x\n",bcfg);
 	printk("Radio config found at offset 0x%x(0x%x)\n", rcfg - bcfg, radio_config - board_config);
 	rcfg_size = BOARD_CONFIG_BUFSZ - ((rcfg - bcfg) & (BOARD_CONFIG_BUFSZ - 1));
 	memcpy(radio_config, rcfg, rcfg_size);
@@ -146,6 +147,8 @@ void __init serial_setup(unsigned long mapbase, unsigned int uartclk)
 
 void __init plat_mem_setup(void)
 {
+printk(KERN_EMERG "mem setup\n");
+
 	DO_AR5312(ar5312_plat_setup();)
 	DO_AR5315(ar5315_plat_setup();)
 
@@ -257,14 +260,13 @@ void __init arch_init_irq(void)
 {
 	clear_c0_status(ST0_IM);
 	mips_cpu_irq_init();
-
 	/* Initialize interrupt controllers */
 	DO_AR5312(ar5312_misc_intr_init(AR531X_MISC_IRQ_BASE);)
 	DO_AR5315(ar5315_misc_intr_init(AR531X_MISC_IRQ_BASE);)
 
 	/* Default "spurious interrupt" handlers */
-	setup_irq(AR531X_IRQ_NONE, &spurious_irq);
-	setup_irq(AR531X_MISC_IRQ_NONE, &spurious_misc);
+//	setup_irq(AR531X_IRQ_NONE, &spurious_irq);
+//	setup_irq(AR531X_MISC_IRQ_NONE, &spurious_misc);
 
 }
 

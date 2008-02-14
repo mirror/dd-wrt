@@ -10,6 +10,16 @@
 #
 # Some DECstations need all possible sections of an ECOFF executable
 #
+USE_STANDARD_AS_RULE := true
+
+OBJCOPYFLAGS := -O binary -R .note -R .comment -S
+
+SYSTEM = $(VMLINUX)
+
+
+export SYSTEM ZTEXTADDR ZBSSADDR ZRELADDR 
+
+
 ifdef CONFIG_MACH_DECSTATION
   E2EFLAGS = -a
 else
@@ -38,6 +48,12 @@ vmlinux.bin: $(VMLINUX)
 
 vmlinux.srec: $(VMLINUX)
 	$(OBJCOPY) -S -O srec $(strip-flags) $(VMLINUX) $(obj)/vmlinux.srec
+
+zImage: $(obj)/compressed/vmlinuz
+	$(OBJCOPY) $(strip-flags) $< $@
+
+$(obj)/compressed/vmlinuz: $(VMLINUX)
+	$(Q)$(MAKE) $(build)=$(obj)/compressed vmlinuz
 
 $(obj)/addinitrd: $(obj)/addinitrd.c
 	$(HOSTCC) -o $@ $^
