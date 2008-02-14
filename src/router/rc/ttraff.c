@@ -79,7 +79,7 @@ ttraff_main (void)
   
   while (currtime->tm_year < 100) //loop until ntp time is set (year >= 2000)
   {
-   sleep (60);
+   sleep (15);
    time (&tloc);
    currtime = localtime (&tloc);
   }
@@ -93,7 +93,9 @@ ttraff_main (void)
   unsigned long out_diff = 0;  
   unsigned long in_dev_last = 0;
   unsigned long out_dev_last = 0;
-  unsigned long gigcount;
+  unsigned long gigcounti, gigcounto;
+  int gigi = 0;
+  int gigo = 0;
   int needcommit = 0;
   int commited = 0;
   int day, month, year;
@@ -137,55 +139,57 @@ ttraff_main (void)
   fclose (in);
     }
     
-   
-   if (in_dev_last > in_dev)  // forget this data and get new base, counter reached 4GB (4,294,967,295) limit
+   if (in_dev_last > in_dev)  //4GB limit was reached
    {
-	 in_dev_last = in_dev;
-	 gigcount = 0;
-	 if ((in = fopen ("/tmp/.gigci", "r")) != NULL)
-	 {
-	  fgets (line, sizeof (line), in);
-      sscanf (line, "%lu", &gigcount);
-      fclose (in);
-     }
-     in = fopen ("/tmp/.gigci", "w"); 
-	 sprintf (line, "%lu", gigcount + 4);	    
-	 fputs (line, in);
-	 fclose (in);
-	 continue;
+	 gigi = 4;
+	 in_diff = (4294967295 - in_dev_last + in_dev) >> 20;
+	 in_dev_last = in_dev;  //we loose < 1 MB here, but we don't care	 
    }
-   
-   if (out_dev_last > out_dev)  // forget this data and get new base, counter reached 4GB (4,294,967,295) limit
+   else
    {
-     out_dev_last = out_dev;	 
-	 gigcount = 0;
-	 if ((in = fopen ("/tmp/.gigco", "r")) != NULL)
-	 {
-	  fgets (line, sizeof (line), in);
-      sscanf (line, "%lu", &gigcount);
-      fclose (in);
-     } 
-     in = fopen ("/tmp/.gigco", "w");
-	 sprintf (line, "%lu", gigcount + 4);	    
-	 fputs (line, in);
-	 fclose (in);
-	 continue;
-   }
+	 in_diff = (in_dev - in_dev_last) >> 20;  //MB
+	 in_dev_last += (in_diff << 20);
+   }	   
+
    
-	   
-   in_diff = (in_dev - in_dev_last) >> 20;  //MBytes
-   out_diff = (out_dev - out_dev_last) >> 20;  //MBytes
+   if (out_dev_last > out_dev)  //4GB limit was reached
+   {
+	 gigo = 4;
+	 out_diff = (4294967295 - out_dev_last + out_dev) >> 20;
+	 out_dev_last = out_dev;  //we loose < 1 MB here, but we don't care
+   }
+   else
+   {
+	 out_diff = (out_dev - out_dev_last) >> 20;  //MB
+	 out_dev_last += (out_diff << 20);
+   }
+	 
    
 //fprintf (stderr, "in_diff=%lu, out_diff=%lu\n", in_diff, out_diff);
   
    if (in_diff || out_diff)
    {
     write_to_nvram (day, month, year, in_diff, out_diff);
-    
-    in_dev_last = in_dev_last + (in_diff << 20);
-    out_dev_last = out_dev_last + (out_diff << 20);    
    }
-   
+
+   if (gigi || gigo)  // leave trace in /tmp/.gigc
+   {
+	 gigcounti = 0;
+	 gigcounto = 0;
+	 if ((in = fopen ("/tmp/.gigc", "r")) != NULL)
+	 {
+	  fgets (line, sizeof (line), in);
+      sscanf (line, "%lu:%lu", &gigcounti, &gigcounto);
+      fclose (in);
+     }
+     in = fopen ("/tmp/.gigc", "w"); 
+	 sprintf (line, "%lu:%lu", gigcounti + gigi, gigcounto + gigo);	    
+	 fputs (line, in);
+	 fclose (in);
+	 gigi = 0;
+	 gigo = 0;
+   }
+      
    if (currtime->tm_hour == 23 && currtime->tm_min == 59 && commited == 0)
    {
     needcommit = 1;
