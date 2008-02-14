@@ -232,7 +232,3 @@ tar: Makefile packaging/pcap.spec
 depend:	$(GENSRC) $(GENHDR) bpf_filter.c
 	./mkdep -c $(CC) $(DEFS) $(INCLS) $(SRC)
 
-Makefile: Makefile.in config.status
-	./config.status
-	@echo your Makefile was out of date, now run $(MAKE) again
-	exit 1
