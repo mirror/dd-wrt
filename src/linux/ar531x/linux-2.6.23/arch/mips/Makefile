@@ -649,6 +649,10 @@ vmlinux.ecoff: $(vmlinux-32)
 vmlinux.srec: $(vmlinux-32)
 	+@$(call makeboot,$@)
 
+zImage: $(vmlinux-32)
+	+@$(call makeboot,zImage)
+
+
 CLEAN_FILES += vmlinux.ecoff \
 	       vmlinux.srec
 
