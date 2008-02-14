@@ -166,12 +166,13 @@ struct ar2313_private {
 
 	struct timer_list link_timer;
 	unsigned short phy;			/* merlot phy = 1, samsung phy = 0x1f */
-	unsigned short eth_phy;		/* typ eth phy  ICPLUS, MARWELL etc... */
+	unsigned short eth_phy;		/* typ eth phy  ICPLUS, MARVELL etc... */
 	unsigned short mac;
 	unsigned short link;		/* 0 - link down, 1 - link up */
 	u16 phyData;
 	struct tasklet_struct rx_tasklet;
 	int unloading;
+	struct vlan_group *vlgrp;
 };
 
 
