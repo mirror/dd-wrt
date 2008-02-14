@@ -2,7 +2,7 @@
  * ar2313.c: Linux driver for the Atheros AR231x Ethernet device.
  *
  * Copyright (C) 2004 by Sameer Dekate <sdekate@arubanetworks.com>
- * Copyright (C) 2006 Imre Kaloz <kaloz@openwrt.org>
+ * Copyright (C) 2006-2007 Imre Kaloz <kaloz@openwrt.org>
  * Copyright (C) 2006-2007 Felix Fietkau <nbd@openwrt.org>
  * Copyright (C) 2007 Tomas Dlabac <tomas@dlabac.net>
  * Copyright (C) 2008 Sebastian Gottschall <s.gottschall@newmedia-net.de> (vlan and phy fixes)
@@ -41,6 +41,7 @@
 #include <linux/ethtool.h>
 #include <linux/ctype.h>
 #include <linux/platform_device.h>
+#include <linux/if_vlan.h>
 
 #include <net/sock.h>
 #include <net/ip.h>
@@ -137,11 +138,14 @@
 #define CRC_LEN                 4
 #define RX_OFFSET               2
 
+
 #if defined(CONFIG_AR2313_VLAN)
+#define DO_VLAN 1
 #define VLAN_HDR			(4)
 #else
 #define VLAN_HDR			(0)
 #endif
+
 
 #define AR2313_BUFSIZE		(AR2313_MTU + ETH_HLEN + CRC_LEN + RX_OFFSET + VLAN_HDR)
 
@@ -168,6 +172,113 @@ static void ar2313_multicast_list (struct net_device *dev);
 
 #ifndef ERR
 #define ERR(fmt, args...) printk("%s: " fmt, __func__, ##args)
+#endif
+
+
+#ifdef DO_VLAN
+/*
+ * Marvell switches are too braindead to do real VLAN,
+ * so we have to deal with their custom crap here...
+ */
+
+static int marvell_find_vlan(struct ar2313_private *sp,
+							 struct sk_buff *skb)
+{
+	unsigned char *buf = skb->data + skb->len - 4;
+	int ret = -1;
+
+	/* Is this a Marvell trailer? */
+	if (*buf != 0x80)
+		return 0;
+
+	/* FIXME: ugly, ugly hack! */
+	switch (buf[1]) {
+	case 4:					/* Packet came from the WAN port */
+		ret = 1;
+		break;
+	default:					/* Packet probably came from LAN */
+		ret = 0;
+		break;
+	}
+
+	return ret;
+}
+
+static struct sk_buff *marvell_add_vlan(struct ar2313_private *sp,
+										struct sk_buff *skb)
+{
+	u8 *buf = NULL;
+	struct sk_buff *newskb;
+	u8 vid;
+
+	if (unlikely(skb->len < 16))
+		return skb;
+
+	vid = skb->data[15];
+
+	/* XXX: clean up this garbage! */
+	if (skb->len <= 64) {
+		newskb = skb_copy_expand(skb, skb_headroom(skb), 68, GFP_ATOMIC);
+		if (!newskb) {
+			if (net_ratelimit())
+				printk("%s: failed to expand skb!\n", sp->dev->name);
+			goto done;
+		}
+		dev_kfree_skb(skb);
+		skb = newskb;
+		buf = skb->data + 64;
+		skb->len = 68;
+		goto tag_move;
+	}
+	
+	if (unlikely(skb_tailroom(skb) < 4)) {
+		/* not enough tailroom:
+		 * remove the vlan tag by closing the gap between the ethernet header
+		 * and the rest of the packet */
+		memmove(skb->data + 12, skb->data + 16, skb->len - 16);
+		skb_set_network_header(skb,-4);
+		buf = skb->data + skb->len - 4;
+		goto tag_append;
+	}
+
+tag_move:
+	/* move the ethernet header 4 bytes forward, overwriting the vlan tag */
+	memmove(skb->data + 4, skb->data, 12);
+	skb_set_mac_header(skb,4);
+//	skb->mac.raw += 4;
+	skb->data += 4;
+	skb->len -= 4;
+	
+tag_append:
+	buf = (buf ?: skb_put(skb, 4));
+	if (!buf)
+		return skb;
+
+	*((u32 *) buf) = vid ? cpu_to_be32(
+		(0x80 << 24) |
+		(0x10 << 16)
+	) : 0; 
+
+done:
+	return skb;
+}
+
+static void ar2313_vlan_rx_register(struct net_device *dev,
+									struct vlan_group *grp)
+{
+	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
+
+	sp->vlgrp = grp;
+}
+
+static void ar2313_vlan_rx_kill_vid(struct net_device *dev,
+									unsigned short vid)
+{
+	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
+
+	if (sp->vlgrp)
+	        vlan_group_set_device(sp->vlgrp, vid, NULL);
+}
 #endif
 
 
@@ -287,6 +398,17 @@ ar2313_probe (struct platform_device *pdev)
       return -ENODEV;
     }
 
+    printk("PHY ID: %04x:%04x\n", (u16) armiiread(dev, 0x1f, 1),
+		   (u16) armiiread(dev, 0x1f, 2));
+
+#if DO_VLAN
+	if (sp->eth_phy == AR2313_EPHY_MARVELL) {
+		dev->features |= NETIF_F_HW_VLAN_RX;
+		dev->vlan_rx_register = ar2313_vlan_rx_register;
+		dev->vlan_rx_kill_vid = ar2313_vlan_rx_kill_vid;
+	}
+#endif
+
   if (register_netdev (dev))
     {
       printk ("%s: register_netdev failed\n", __func__);
@@ -297,6 +419,51 @@ ar2313_probe (struct platform_device *pdev)
 	  dev->name, sp->name,
 	  dev->dev_addr[0], dev->dev_addr[1], dev->dev_addr[2],
 	  dev->dev_addr[3], dev->dev_addr[4], dev->dev_addr[5], dev->irq);
+
+	if (sp->eth_phy == AR2313_EPHY_MARVELL){
+		int i;
+
+		printk("Initialising Marvell switch... ");
+
+		/* reset chip */
+		armiiwrite(dev, 0x1f, 0xa, 0xa130);
+		int cnt=0;
+		do {
+			udelay(1000);
+			i = armiiread(dev, sp->phy, 0xa);
+		cnt++;
+		} while (i & 0x8000 && cnt<2);
+
+		/* configure MAC address */
+		armiiwrite(dev, sp->phy, 0x1,
+				   dev->dev_addr[0] << 8 | dev->dev_addr[1]);
+		armiiwrite(dev, sp->phy, 0x2,
+				   dev->dev_addr[2] << 8 | dev->dev_addr[3]);
+		armiiwrite(dev, sp->phy, 0x3,
+				   dev->dev_addr[4] << 8 | dev->dev_addr[5]);
+
+		/* set ports to forwarding */
+		armiiwrite(dev, 0x18, 0x4, 0x3);	/* port 0 */
+		armiiwrite(dev, 0x19, 0x4, 0x3);	/* port 1 */
+		armiiwrite(dev, 0x1a, 0x4, 0x3);	/* port 2 */
+		armiiwrite(dev, 0x1b, 0x4, 0x3);	/* port 3 */
+		armiiwrite(dev, 0x1c, 0x4, 0x3);	/* port 4 - WAN */
+		armiiwrite(dev, 0x1d, 0x4, 0x4103);	/* port 5 - connected to CPU */
+
+		/* put ports into vlans */
+		armiiwrite(dev, 0x18, 0x6, 0x2e);	/* port 0 */
+		armiiwrite(dev, 0x19, 0x6, 0x2d);	/* port 1 */
+		armiiwrite(dev, 0x1a, 0x6, 0x2b);	/* port 2 */
+		armiiwrite(dev, 0x1b, 0x6, 0x27);	/* port 3 */
+		armiiwrite(dev, 0x1c, 0x6, 0x1020);	/* port 4 - WAN */
+		armiiwrite(dev, 0x1d, 0x6, 0x0f);	/* port 5 - connected to CPU */
+
+		/* hmz */
+		for (i = 0; i <= 5; i++)
+			armiiwrite(dev, 0x18 + i, 11, 1 << i);
+
+		printk("done.\n");
+	}
 
   /* start link poll timer */
   ar2313_setup_timer (dev);
@@ -1070,14 +1237,12 @@ ar2313_reset_reg (struct net_device *dev)
       break;
     case AR2313_EPHY_MARVELL:
       /* Initialize global switch settings */
-      atuControl = MV_ATUCTRL_AGE_TIME_DEFAULT << MV_ATUCTRL_AGE_TIME_SHIFT;
+      /*atuControl = MV_ATUCTRL_AGE_TIME_DEFAULT << MV_ATUCTRL_AGE_TIME_SHIFT;
       atuControl |= MV_ATUCTRL_ATU_SIZE_DEFAULT << MV_ATUCTRL_ATU_SIZE_SHIFT;
       armiiwrite (dev, MV_SWITCH_GLOBAL_ADDR, MV_ATU_CONTROL, atuControl);
-      /* Reset PHYs and start autonegoation on each. */
       for (phyAddr = 0x10; phyAddr < 0x16; phyAddr++)
 	armiiwrite (dev, phyAddr, MV_PHY_CONTROL,
 		    MV_CTRL_SOFTWARE_RESET | MV_CTRL_AUTONEGOTIATION_ENABLE);
-      /*enable whichever PHY ports are supposed  to be enabled according to administrative configuration. */
       portAssociationVector = 1;
       for (switchPortAddr = 0x18; switchPortAddr < 0x1e; switchPortAddr++)
 	{
@@ -1087,7 +1252,7 @@ ar2313_reset_reg (struct net_device *dev)
 		      portAssociationVector);
 	  flags = armiiread (dev, switchPortAddr, MV_PORT_BASED_VLAN_MAP);
 	  portAssociationVector <<= 1;
-	}
+	}*/
 
       //mv_phySetup(dev);
       break;
@@ -1327,6 +1492,9 @@ ar2313_rx_int (struct net_device *dev)
   u32 idx;
   int pkts = 0;
   int rval;
+#if DO_VLAN
+	int vlan_id;
+#endif
 
   idx = sp->cur_rx;
 
@@ -1394,6 +1562,12 @@ ar2313_rx_int (struct net_device *dev)
 	      sp->stats.rx_bytes += skb->len;
 	      skb->protocol = eth_type_trans (skb, dev);
 	      /* pass the packet to upper layers */
+#if DO_VLAN
+				if ((sp->eth_phy == AR2313_EPHY_MARVELL) && sp->vlgrp) {
+					vlan_id = marvell_find_vlan(sp, skb);
+					vlan_hwaccel_rx(skb, sp->vlgrp, vlan_id);
+				} else
+#endif
 	      netif_rx (skb);
 
 	      skb_new->dev = dev;
@@ -1668,6 +1842,11 @@ ar2313_start_xmit (struct sk_buff *skb, struct net_device *dev)
   struct ar2313_private *sp = dev->priv;
   ar2313_descr_t *td;
   u32 idx;
+
+#if DO_VLAN
+	if (sp->eth_phy == AR2313_EPHY_MARVELL)
+		skb = marvell_add_vlan(sp, skb);
+#endif
 
   idx = sp->tx_prd;
   td = &sp->tx_ring[idx];
