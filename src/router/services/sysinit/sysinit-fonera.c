@@ -112,6 +112,13 @@ start_sysinit (void)
   eval ("ifconfig", "eth0", "up");	// wan
   vlan_init (5);		// 4 lan + 1 wan, but only first one is used
 #endif
+  if (getRouterBrand () == ROUTER_BOARD_FONERA2200)
+    {
+  eval ("ifconfig", "eth0", "up");	// required for vlan config
+  eval ("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+  eval ("/sbin/vconfig", "add", "eth0", "0");
+  eval ("/sbin/vconfig", "add", "eth0", "1");
+    }
 //  eval ("insmod", "ipv6");
 
   /* Set a sane date */

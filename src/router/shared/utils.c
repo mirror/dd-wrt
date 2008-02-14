@@ -1,4 +1,4 @@
-//#define CDEBUG 1
+//#define CDEBUG 
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -344,20 +344,33 @@ internal_getRouterBrand ()
     }
   (void) strncpy (iwr.ifr_name, "eth0", sizeof ("eth0"));
   data = (struct mii_ioctl_data *) &iwr.ifr_data;
-  data->phy_id = 0x1f;
-  data->reg_num = 0x1;
+  data->phy_id = 0x10;
+  data->reg_num = 0x2;
+  ioctl (s, SIOCGMIIREG, &iwr);
+  data->phy_id = 0x10;
+  data->reg_num = 0x2;
+  ioctl (s, SIOCGMIIREG, &iwr);
+  if (data->val_out == 0x0141)
+  {
+  data->phy_id = 0x10;
+  data->reg_num = 0x3;
   ioctl (s, SIOCGMIIREG, &iwr);
   close (s);
-  if (data->val_out & 0xffff != 0xffff)	// marvell phy
-    {
-      setRouter ("Fonera+");
-      return ROUTER_BOARD_FONERA2200;
-    }
-  else
+  if ((data->val_out & 0xfc00) != 0x0c00)	// marvell phy
     {
       setRouter ("Fonera 2100/2200");
       return ROUTER_BOARD_FONERA;
     }
+  else
+    {
+      setRouter ("Fonera 2201");
+      return ROUTER_BOARD_FONERA2200;
+    }
+  }else
+  {
+      setRouter ("Fonera 2100/2200");
+      return ROUTER_BOARD_FONERA;  
+  }
 #elif HAVE_MERAKI
   setRouter ("Meraki Mini");
   return ROUTER_BOARD_MERAKI;
@@ -374,7 +387,7 @@ internal_getRouterBrand ()
   setRouter ("Atheros PB42");
   return ROUTER_BOARD_PB42;
 #elif HAVE_TW6600
-  setRouter ("TW6600");
+  setRouter ("AW-6600");
   return ROUTER_BOARD_TW6600;
 #elif HAVE_USR5453
   setRouter ("US Robotics USR5453");
