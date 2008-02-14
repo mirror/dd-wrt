@@ -78,7 +78,7 @@ static int heartbeat = 20;
 static int started = 0;
 extern const char *get_arch_type (void);
 
-static int ar2315_wdt_print_info(void)
+static void ar2315_wdt_print_info(void)
 {
 	printk("watchdog hb: %d", heartbeat);
   if (!strcmp (get_arch_type (), "Atheros AR5315"))
