@@ -8304,7 +8304,7 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
     showOption (wp, "wl_basic.multicast", mcast);
     show_ipnetmask (wp, var);
     websWrite (wp, "</div>\n");
-    websWrite (wp, "<script>\n//<![CDATA[\n ");
+    websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n ");
     websWrite (wp,
 	       "show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnet\", %s);\n",
 	       var, var, nvram_match (ssid, "0") ? "true" : "false");
