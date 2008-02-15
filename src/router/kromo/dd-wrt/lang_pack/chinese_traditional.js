@@ -545,7 +545,7 @@ filter.mess3="結束時間必須大於開始時間.";
 //help container
 
 hfilter.right2="最多可以定義10條連線計畫.按 <em>" + sbutton.del + "</em> 按鈕刪除一條計畫,或者按 <em>" + sbutton.summary + "</em> 按鈕察看所有的計畫.";
-hfilter.right4="啟用或關閉一條計畫.";
+hfilter.right4="啟用或關閉一條計畫.使用 封鎖Web網頁 必需啟用 連線計畫. ";
 hfilter.right6="為 計畫 指定一個名稱.";
 hfilter.right8="請選擇您的計畫開啟日期.";
 hfilter.right10="請輸入您的計畫開啟時間.";
@@ -1323,18 +1323,18 @@ status_inet.www_loginstatus="登錄狀態";
 status_inet.wanuptime="已連線時間";
 status_inet.leasetime="租約剩餘時間";
 status_inet.traff="傳輸流量";
-status_inet.traff_tot="Total Traffic";
-status_inet.traff_mon="Traffic by Month";
-status_inet.traffin="Incoming";
-status_inet.traffout="Outgoing";
-status_inet.previous="上個月";
-status_inet.next="下個月";
+status_inet.traff_tot="傳輸流量";
+status_inet.traff_mon="每月傳輸流量";
+status_inet.traffin="下載";
+status_inet.traffout="上傳";
+status_inet.previous="上一個月";
+status_inet.next="下一個月";
 
 
 //help container
 
 hstatus_inet.right2="這裏顯示您的ISP所需要將您連接到Internet的資訊. 這些資訊被輸入在設定標籤中.通過按這裏的按鈕,您可以 <em>連接</em> 或者 <em>關閉</em> 您的連接.";
-hstatus_inet.right4="網際網路的上傳下載流量總和.";
+hstatus_inet.right4="網際網路上傳下載的傳輸流量.";
 
 // ** Status_Conntrack.asp **//
 
@@ -1618,14 +1618,14 @@ wl_adv.label2="基本速率";
 wl_adv.label3="傳輸速率";
 wl_adv.label4="CTS保護模式";
 wl_adv.label5="Frame Burst";
-wl_adv.label6="SSID'廣播間隙";
-wl_adv.label7="DTIM 間隙";
+wl_adv.label6="SSID 廣播間隔";
+wl_adv.label7="DTIM 間隔";
 wl_adv.label8="Fragmentation Threshold";
 wl_adv.label9="RTS值";
 wl_adv.label10="最大關聯的用戶端數";
 wl_adv.label11="AP獨立";
-wl_adv.label12="傳送天線";
-wl_adv.label13="接受天線";
+wl_adv.label12="發射天線";
+wl_adv.label13="接收天線";
 wl_adv.label14="Preamble";
 wl_adv.reference="雜訊參照";
 wl_adv.label16="Afterburner";
