@@ -3999,11 +3999,24 @@ unsigned long totout = 0;
    f = f * 10;
   }  
 
+  char incom[32];
+  sprintf (incom, "%s", live_translate ("status_inet.traffin"));
+  char outcom[32];
+  sprintf (outcom, "%s", live_translate ("status_inet.traffout"));
   
   websWrite (stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
   websWrite (stream, "<html>\n");
   websWrite (stream, "<head>\n"); 
   websWrite (stream, "<title>dd-wrt traffic graph</title>\n");
+
+  websWrite (stream, "<script type=\"text/javascript\">\n");
+  websWrite (stream, "//<![CDATA[\n");
+  websWrite (stream, "function Show(label) {\n");
+  websWrite (stream, "document.getElementById(\"label\").innerHTML = label;\n");
+  websWrite (stream, "}\n");
+  websWrite (stream, "//]]>\n");
+  websWrite (stream, "</script>\n");
+  
   websWrite (stream, "<style type=\"text/css\">\n\n");
   websWrite (stream, "#t-graph {position: relative; width: %upx; height: 300px;\n", days * COL_WIDTH);
   websWrite (stream, "  margin: 1.1em 0 3.5em; padding: 0;\n");
@@ -4036,7 +4049,10 @@ unsigned long totout = 0;
   
   for (i = 0; i < days; i++)
   {
-  websWrite (stream, "<li class=\"day\" id=\"d%d\">%d\n", i + 1 , i + 1); 
+  websWrite (stream, "<li class=\"day\" id=\"d%d\" ", i + 1);
+  websWrite (stream, "onmouseover=\"Show(\'%s %d, %d (%s: %lu MB / %s: %lu MB)\')\" ", months[month - 1], i + 1, year, incom, rcvd[i], outcom, sent[i]);
+  websWrite (stream, "onmouseout=\"Show(\'%s %d (%s: %lu MB / %s: %lu MB)\')\"", months[month - 1], year, incom, totin, outcom, totout);
+  websWrite (stream, ">%d\n",  i + 1);
   websWrite (stream, "<ul>\n");
   websWrite (stream, "<li class=\"rcvd bar\" style=\"height: %lupx;\"></li>\n", rcvd[i] * 300 / smax);
   websWrite (stream, "<li class=\"sent bar\" style=\"height: %lupx;\"></li>\n", sent[i] * 300 / smax);
@@ -4047,13 +4063,12 @@ unsigned long totout = 0;
   websWrite (stream, "<li id=\"ticks\">\n");  
   for (i = 5; i ; i--)  //scale
   {  
-  websWrite (stream, "<div class=\"tick\" style=\"height: 59px;\"><p>%d&nbsp;MB</p></div>\n", smax * i / 5);
+  websWrite (stream, "<div class=\"tick\" style=\"height: 59px;\"><p>%d%sMB</p></div>\n", smax * i / 5, (smax > 10000) ? " " : "&nbsp;");
   }
   websWrite (stream, "</li>\n\n");
 
   websWrite (stream, "<li id=\"label\">\n");
-  websWrite (stream, "%s %d (%s: %lu MB / ", months[month - 1], year, live_translate("status_inet.traffin"), totin);
-  websWrite (stream, "%s: %lu MB)\n", live_translate("status_inet.traffout"), totout);
+  websWrite (stream, "%s %d (%s: %lu MB / %s: %lu MB)\n", months[month - 1], year, incom, totin, outcom, totout);
   websWrite (stream, "</li>\n");
     
   websWrite (stream, "</ul>\n\n");
