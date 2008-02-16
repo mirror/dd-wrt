@@ -608,6 +608,7 @@ wlconf(char *name)
 	int wlunit = -1;
 	int wlsubunit = -1;
 	int max_no_vifs = 0;
+	int mbsscap = 0;
 	int wl_ap_build = 0; /* wl compiled with AP capabilities */
 	char cap[WLC_IOCTL_SMLEN];
 	char caps[WLC_IOCTL_SMLEN];
@@ -657,9 +658,15 @@ cprintf("get caps\n");
 			wl_ap_build = 1;
 		}
 		else if (!strcmp(cap, "mbss16"))
+		{
 			max_no_vifs = 16;
+			mbsscap = 1;
+		}
 		else if (!strcmp(cap, "mbss4"))
+		{
 			max_no_vifs = 4;
+			mbsscap = 1;
+		}
 	}
 
 cprintf("wl probe\n");
@@ -767,34 +774,26 @@ cprintf("set mssid flags %s\n",name);
 	}
 cprintf("set local addr %s\n",name);
 	if (!ure_enab) {
-//	if (nvram_get("il0macaddr")!=NULL)
-//	    {
-//	    ether_atoe(nvram_safe_get("il0macaddr"),vif_addr);
-//	    }
 		/* set local bit for our MBSS vif base */
-		ETHER_SET_LOCALADDR(vif_addr);
+		if (mbsscap)
+		    ETHER_SET_LOCALADDR(vif_addr);
 		/* construct and set other wlX.Y_hwaddr */
-		for (i = 1; i < max_no_vifs; i++) {
+		for (i = 1; i < 4; i++) {
 			snprintf(tmp, sizeof(tmp), "wl%d.%d_hwaddr", unit, i);
 			addr = nvram_safe_get(tmp);
-			//if (!strcmp(addr, "")) {
-				vif_addr[5]++;
+				if (mbsscap)
+				    vif_addr[5]++;
 
 				nvram_set(tmp, ether_etoa((uchar *)vif_addr,
 				                          eaddr));
-			//}
 		}
 		/* The addresses are available in NVRAM, so set them */
-		for (i = 1; i < max_no_vifs; i++) {
-//			snprintf(tmp, sizeof(tmp), "wl%d.%d_bss_enabled",
-//			         unit, i);
-//			if (!strcmp(nvram_safe_get(tmp), "1")) {
+		for (i = 1; i < 4; i++) {
 				snprintf(tmp, sizeof(tmp), "wl%d.%d_hwaddr",
 				         unit, i);
 				ether_atoe(nvram_safe_get(tmp), eaddr);
 				WL_BSSIOVAR_SET(name, "cur_etheraddr", i,
 				                eaddr, ETHER_ADDR_LEN);
-//			}
 		}
 	} else { /* URE is enabled */
 		/* URE is on, so set wlX.1 hwaddr is same as that of primary interface */
