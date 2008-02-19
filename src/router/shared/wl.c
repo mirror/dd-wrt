@@ -189,6 +189,8 @@ struct iw_statistics *wlcompat_get_wireless_stats(struct net_device *dev)
 
 
 #include "wireless.h"
+#undef WPA_OUI
+#undef WME_OUI
 #include "net80211/ieee80211.h"
 #include "net80211/ieee80211_crypto.h"
 #include "net80211/ieee80211_ioctl.h"
@@ -326,7 +328,7 @@ do80211priv (struct iwreq *iwr, const char *ifname, int op, void *data,
 	IOCTL_ERR (IEEE80211_IOCTL_ADDMAC),
 	IOCTL_ERR (IEEE80211_IOCTL_DELMAC),
 	IOCTL_ERR (IEEE80211_IOCTL_WDSADDMAC),
-	IOCTL_ERR (IEEE80211_IOCTL_WDSDELMAC),
+	IOCTL_ERR (IEEE80211_IOCTL_WDSSETMAC),
       };
       op -= SIOCIWFIRSTPRIV;
       if (0 <= op && op < N (opnames))
@@ -495,6 +497,7 @@ list_channelsext (const char *ifname, int allchans)
 	      && nvram_invmatch (wl_mode, "mixed"))
 	    continue;
 	}
+#ifdef GIBTSNICHT
       if (IEEE80211_IS_CHAN_11NA (&achans.ic_chans[i]))
 	{
 	  if (nvram_invmatch (wl_mode, "na-only")
@@ -507,6 +510,7 @@ list_channelsext (const char *ifname, int allchans)
 	      && nvram_invmatch (wl_mode, "mixed"))
 	    continue;
 	}
+#endif
       //filter out B/G channels if mode isnt g-only, b-only or mixed
       if (IEEE80211_IS_CHAN_ANYG (&achans.ic_chans[i])
 	  || IEEE80211_IS_CHAN_B (&achans.ic_chans[i]))
