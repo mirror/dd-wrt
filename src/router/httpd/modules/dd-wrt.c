@@ -5394,7 +5394,9 @@ if (!strcmp(bit,"128"))
 void
 validate_wds (webs_t wp, char *value, struct variable *v)
 {
-#ifdef HAVE_MSSID
+#ifdef HAVE_MADWIFI
+  int h, i, devcount = 0;	//changed from 2 to 3
+#elif HAVE_MSSID
   int h, i, devcount = 1;	//changed from 2 to 3
 #else
   int h, i, devcount = 3;	//changed from 2 to 3
@@ -5596,7 +5598,7 @@ validate_wds (webs_t wp, char *value, struct variable *v)
       if (!nvram_match (enabled_var, "0"))
 	{
 #ifdef HAVE_MADWIFI
-	  snprintf (wds_if, 31, "wds%s.%d", interface, (devcount++));
+	  snprintf (wds_if, 31, "%s.wds%d", interface, (devcount++));
 #else
 //quick and dirty
 if (!strcmp(interface,"wl0"))
@@ -6176,7 +6178,7 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 	    continue;
 	  if (nvram_match (wdsvarname, "0"))
 	    continue;
-	  sprintf (var, "wdsath%d.%d", i, s);
+	  sprintf (var, "ath%d.wds%d", i, s);
 	  cnt = ej_active_wireless_if (wp, argc, argv, var, cnt, t);
 	}
     }

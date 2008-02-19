@@ -126,7 +126,7 @@ set80211priv (struct iwreq *iwr, const char *ifname, int op, void *data,
 	IOCTL_ERR (IEEE80211_IOCTL_ADDMAC),
 	IOCTL_ERR (IEEE80211_IOCTL_DELMAC),
 	IOCTL_ERR (IEEE80211_IOCTL_WDSADDMAC),
-	IOCTL_ERR (IEEE80211_IOCTL_WDSDELMAC),
+	IOCTL_ERR (IEEE80211_IOCTL_WDSSETMAC),
       };
       op -= SIOCIWFIRSTPRIV;
       if (0 <= op && op < N (opnames))
@@ -1201,11 +1201,11 @@ configure_single (int count)
       hwaddr = nvram_get (wdsmacname);
       if (hwaddr != NULL)
 	{
-	  eval ("wlanconfig", wdsdev, "create", "wlandev", wif, "wlanmode",
-		"wds", "nobssid");
+	 // eval ("wlanconfig", wdsdev, "create", "wlandev", wif, "wlanmode",
+	//	"wds", "nobssid");
 //        eval ("ifconfig",wdsdev,"0.0.0.0","up");d
-	  eval ("iwpriv", wdsdev, "wds_add", hwaddr);
-	  eval ("iwpriv", wdsdev, "wds", "1");
+	  eval ("iwpriv", dev, "wds_add", hwaddr);
+	  eval ("iwpriv", dev, "wds", "1");
 	}
     }
 
