@@ -6178,8 +6178,7 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 	    continue;
 	  if (nvram_match (wdsvarname, "0"))
 	    continue;
-	  sprintf (var, "ath%d.wds%d", i, s);
-	  cnt = ej_active_wireless_if (wp, argc, argv, var, cnt, t);
+	  cnt = ej_active_wireless_if (wp, argc, argv, wdsdevname, cnt, t);
 	}
     }
 }
