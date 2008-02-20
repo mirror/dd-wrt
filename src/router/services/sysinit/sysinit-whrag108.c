@@ -202,6 +202,7 @@ start_sysinit (void)
 /* network drivers */
   eval ("insmod", "ar2313");
 
+  eval ("insmod", "ath_hal");
   eval ("insmod", "ath_ahb");
 
 
