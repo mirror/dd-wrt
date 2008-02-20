@@ -4031,7 +4031,8 @@ unsigned long totout = 0;
   websWrite (stream, "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n");
   websWrite (stream, "#t-graph li.rcvd {left: 3px; background: #228B22;}\n");  //set rcvd bar colour here (green)
   websWrite (stream, "#t-graph li.sent {left: 8px; background: #CD0000;}\n");  //set sent bar colour here (red)
-
+  websWrite (stream, "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n");
+  
   for (i = 0; i < days - 1; i++)
   {   
   websWrite (stream, "#t-graph #d%d {left: %dpx;}\n", i + 1, i * COL_WIDTH);
@@ -4041,7 +4042,7 @@ unsigned long totout = 0;
   websWrite (stream, "#t-graph #ticks {width: %upx; height: 300px; z-index: 1;}\n", days * COL_WIDTH);
   websWrite (stream, "#t-graph #ticks .tick {position: relative; border-bottom: 1px solid #BBB; width: %upx;}\n", days * COL_WIDTH);
   websWrite (stream, "#t-graph #ticks .tick p {position: absolute; left: 100%%; top: -0.67em; margin: 0 0 0 0.5em;}\n");
-  websWrite (stream, "#t-graph #label {width: 500px; height: 0px; bottom: -0.67em; z-index: 1; font: 12px Tahoma, Arial, sans-serif; font-weight: bold;}\n");
+  websWrite (stream, "#t-graph #label {width: 500px; bottom: -20px;  z-index: 1; font: 12px Tahoma, Arial, sans-serif; font-weight: bold;}\n");
   websWrite (stream, "</style>\n");
   websWrite (stream, "</head>\n\n");
   websWrite (stream, "<body>\n");
@@ -4054,8 +4055,8 @@ unsigned long totout = 0;
   websWrite (stream, "onmouseout=\"Show(\'%s %d (%s: %lu MB / %s: %lu MB)\')\"", months[month - 1], year, incom, totin, outcom, totout);
   websWrite (stream, ">%d\n",  i + 1);
   websWrite (stream, "<ul>\n");
-  websWrite (stream, "<li class=\"rcvd bar\" style=\"height: %lupx;\"></li>\n", rcvd[i] * 300 / smax);
-  websWrite (stream, "<li class=\"sent bar\" style=\"height: %lupx;\"></li>\n", sent[i] * 300 / smax);
+  websWrite (stream, "<li class=\"rcvd bar\" style=\"height: %lupx;\"><p></p></li>\n", rcvd[i] * 300 / smax);
+  websWrite (stream, "<li class=\"sent bar\" style=\"height: %lupx;\"><p></p></li>\n", sent[i] * 300 / smax);
   websWrite (stream, "</ul>\n");
   websWrite (stream, "</li>\n");
   }
