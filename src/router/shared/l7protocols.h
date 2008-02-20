@@ -72,7 +72,7 @@ l7filters filters_list[] = {
 	{ "liveforspeed",		"l7" },		// Live For Speed - A racing game.
 	{ "lpd",				"l7" },		// LPD - Line Printer Daemon Protocol (old-style UNIX printing) - RFC 1179
 	{ "mohaa",				"l7" },		// Medal of Honor Allied Assault - an Electronic Arts game
-	{ "MP3",				"L7" },		// MP3 - Moving Picture Experts Group Audio Layer III
+	{ "mp3",				"L7" },		// MP3 - Moving Picture Experts Group Audio Layer III
 	{ "msn-filetransfer",	"l7" },		// MSN (Micosoft Network) Messenger file transfers (MSNFTP and MSNSLP)
 	{ "msnmessenger",		"l7" },		// MSN Messenger - Microsoft Network chat client
 	{ "mute",				"p2p" },	// MUTE - P2P filesharing - http://mute-net.sourceforge.net
