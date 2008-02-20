@@ -116,6 +116,10 @@ alloc_safe_buffer(struct dmabounce_device_info *device_info, void *ptr,
 	} else if (size <= device_info->large.size) {
 		pool = &device_info->large;
 	} else {
+#ifdef CONFIG_DMABOUNCE_DEBUG
+		printk(KERN_INFO "A dma bounce buffer outside the pool size was requested. Requested size was 0x%08X\nThe calling code was :\n", size);
+		dump_stack();
+#endif
 		pool = NULL;
 	}
 

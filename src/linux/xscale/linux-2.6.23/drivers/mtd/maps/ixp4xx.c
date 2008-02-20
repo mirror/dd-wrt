@@ -153,6 +153,15 @@ struct ixp4xx_flash_info {
 
 static const char *probes[] = { "RedBoot", "cmdlinepart", NULL };
 
+static struct mtd_partition ixp_parts[] = {
+        { name: "boot", offset: 0, size: 0x80000, },//, mask_flags: MTD_WRITEABLE, },
+        { name: "linux", offset: 0x80000, size: 0x390000, },
+        { name: "rootfs", offset: 0x140000, size: 0x2b0000,},
+        { name: "mampf", offset: 0x140000, size: 0x20000,},
+        { name: "nvram", offset: 0x3f0000, size: 0x20000, },
+        { name: NULL, },
+};
+
 static int ixp4xx_flash_remove(struct platform_device *dev)
 {
 	struct flash_platform_data *plat = dev->dev.platform_data;
@@ -184,7 +193,7 @@ static int ixp4xx_flash_remove(struct platform_device *dev)
 }
 
 static struct mtd_partition ap71_parts[] = {
-        { name: "RedBoot", offset: 0, size: 0x40000, },//, mask_flags: MTD_WRITEABLE, },
+        { name: "RedBoot", offset: 0, size: 0x80000, },//, mask_flags: MTD_WRITEABLE, },
         { name: "linux", offset: 0x80000, size: 0xd20000, },
         { name: "ramdisk", offset: 0x280000, size: 0xd00000,},
         { name: "mampf", offset: 0xf80000, size: 0x20000, },
