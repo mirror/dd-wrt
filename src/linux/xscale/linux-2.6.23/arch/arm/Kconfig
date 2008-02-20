@@ -942,17 +942,35 @@ config FPE_NWFPE_XP
 
 config FPE_FASTFPE
 	bool "FastFPE math emulation (EXPERIMENTAL)"
-	depends on (!AEABI || OABI_COMPAT) && !CPU_32v3 && EXPERIMENTAL
+	depends on (!AEABI || OABI_COMPAT) && EXPERIMENTAL
 	---help---
 	  Say Y here to include the FAST floating point emulator in the kernel.
-	  This is an experimental much faster emulator which now also has full
-	  precision for the mantissa.  It does not support any exceptions.
-	  It is very simple, and approximately 3-6 times faster than NWFPE.
+	  This is an experimental much faster emulator which is written
+	  completely in ARM assembly. All instructions that are not marked as
+	  deprecated in the ARM7500FE data sheet are implemented. It supports
+	  single, double and double extended precision. It does support
+	  exception flags, but not raising exceptions. It gives an average
+	  5 times speed increase over NWFPE for FP only code.
 
-	  It should be sufficient for most programs.  It may be not suitable
-	  for scientific calculations, but you have to check this for yourself.
-	  If you do not feel you need a faster FP emulation you should better
-	  choose NWFPE.
+	  FastFPE does not require long multiply instruction anymore and is
+	  now suitable for all ARM cpus. The presence of the long multiply
+	  instruction is detected during initialisation and used to speedup
+	  multiply and divide.
+
+	  Compliance to IEEE Std 754-1985 was verified using the testfloat
+	  program of the SoftFloat package version 2a by John Hauser. All
+	  operations except square root were reported to be compliant. However,
+	  this is not a proof, and especially does not verify the instruction
+	  parser.
+
+	  You can compile both emulators into the kernel and choose one
+	  of them at boot time by passing "fpe=fastfpe" or "fpe=nwfpe" as
+	  kernel parameter.
+
+	  It is also possible to say M to build the emulator as a module
+	  (fastfpe.o). This was never tested. Only do it if you know what
+	  you are doing!
+
 
 config VFP
 	bool "VFP-format floating point maths"
