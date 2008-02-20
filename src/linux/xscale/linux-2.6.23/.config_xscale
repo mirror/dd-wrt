@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux kernel version: 2.6.23.14
-# Fri Jan 25 00:11:02 2008
+# Linux kernel version: 2.6.23.15
+# Wed Feb 20 11:11:21 2008
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -52,6 +52,7 @@ CONFIG_EMBEDDED=y
 CONFIG_UID16=y
 # CONFIG_SYSCTL_SYSCALL is not set
 CONFIG_KALLSYMS=y
+# CONFIG_KALLSYMS_ALL is not set
 # CONFIG_KALLSYMS_EXTRA_PASS is not set
 CONFIG_HOTPLUG=y
 CONFIG_PRINTK=y
@@ -169,6 +170,7 @@ CONFIG_ARCH_IXDP4XX=y
 # IXP4xx Options
 #
 CONFIG_DMABOUNCE=y
+CONFIG_DMABOUNCE_DEBUG=y
 # CONFIG_IXP4XX_INDIRECT_PCI is not set
 CONFIG_IXP400_LIB=m
 
@@ -208,6 +210,7 @@ CONFIG_XSCALE_PMU=y
 CONFIG_PCI=y
 CONFIG_PCI_SYSCALL=y
 # CONFIG_ARCH_SUPPORTS_MSI is not set
+# CONFIG_PCI_DEBUG is not set
 
 #
 # PCCARD (PCMCIA/CardBus) support
@@ -222,8 +225,7 @@ CONFIG_NO_HZ=y
 CONFIG_HIGH_RES_TIMERS=y
 # CONFIG_PREEMPT is not set
 CONFIG_HZ=100
-CONFIG_AEABI=y
-# CONFIG_OABI_COMPAT is not set
+# CONFIG_AEABI is not set
 # CONFIG_ARCH_DISCONTIGMEM_ENABLE is not set
 CONFIG_SELECT_MEMORY_MODEL=y
 CONFIG_FLATMEM_MANUAL=y
@@ -244,7 +246,7 @@ CONFIG_ALIGNMENT_TRAP=y
 #
 CONFIG_ZBOOT_ROM_TEXT=0x0
 CONFIG_ZBOOT_ROM_BSS=0x0
-CONFIG_CMDLINE="console=ttyS0,115200 panic=10 root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd"
+CONFIG_CMDLINE="console=ttyS0,115200 panic=10 root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd user_debug=8"
 # CONFIG_XIP_KERNEL is not set
 # CONFIG_KEXEC is not set
 
@@ -255,6 +257,9 @@ CONFIG_CMDLINE="console=ttyS0,115200 panic=10 root=/dev/mtdblock2 rootfstype=squ
 #
 # At least one emulation must be selected
 #
+CONFIG_FPE_NWFPE=y
+# CONFIG_FPE_NWFPE_XP is not set
+CONFIG_FPE_FASTFPE=y
 
 #
 # Userspace binary formats
@@ -262,6 +267,7 @@ CONFIG_CMDLINE="console=ttyS0,115200 panic=10 root=/dev/mtdblock2 rootfstype=squ
 CONFIG_BINFMT_ELF=y
 # CONFIG_BINFMT_AOUT is not set
 # CONFIG_BINFMT_MISC is not set
+# CONFIG_ARTHUR is not set
 
 #
 # Power management options
@@ -592,6 +598,8 @@ CONFIG_WIRELESS_EXT=y
 # CONFIG_STANDALONE is not set
 # CONFIG_PREVENT_FIRMWARE_BUILD is not set
 # CONFIG_FW_LOADER is not set
+# CONFIG_DEBUG_DRIVER is not set
+# CONFIG_DEBUG_DEVRES is not set
 # CONFIG_SYS_HYPERVISOR is not set
 # CONFIG_CONNECTOR is not set
 CONFIG_MTD=y
@@ -1406,10 +1414,35 @@ CONFIG_NLS_DEFAULT="iso8859-1"
 # CONFIG_UNUSED_SYMBOLS is not set
 # CONFIG_DEBUG_FS is not set
 # CONFIG_HEADERS_CHECK is not set
-# CONFIG_DEBUG_KERNEL is not set
-# CONFIG_DEBUG_BUGVERBOSE is not set
+CONFIG_DEBUG_KERNEL=y
+# CONFIG_DEBUG_SHIRQ is not set
+CONFIG_DETECT_SOFTLOCKUP=y
+CONFIG_SCHED_DEBUG=y
+# CONFIG_SCHEDSTATS is not set
+# CONFIG_TIMER_STATS is not set
+CONFIG_DEBUG_SLAB=y
+CONFIG_DEBUG_SLAB_LEAK=y
+# CONFIG_DEBUG_RT_MUTEXES is not set
+# CONFIG_RT_MUTEX_TESTER is not set
+# CONFIG_DEBUG_SPINLOCK is not set
+# CONFIG_DEBUG_MUTEXES is not set
+# CONFIG_DEBUG_LOCK_ALLOC is not set
+# CONFIG_PROVE_LOCKING is not set
+# CONFIG_LOCK_STAT is not set
+# CONFIG_DEBUG_SPINLOCK_SLEEP is not set
+# CONFIG_DEBUG_LOCKING_API_SELFTESTS is not set
+# CONFIG_DEBUG_KOBJECT is not set
+CONFIG_DEBUG_BUGVERBOSE=y
+# CONFIG_DEBUG_INFO is not set
+# CONFIG_DEBUG_VM is not set
+# CONFIG_DEBUG_LIST is not set
 CONFIG_FRAME_POINTER=y
-# CONFIG_DEBUG_USER is not set
+CONFIG_FORCED_INLINING=y
+# CONFIG_RCU_TORTURE_TEST is not set
+# CONFIG_FAULT_INJECTION is not set
+CONFIG_DEBUG_USER=y
+CONFIG_DEBUG_ERRORS=y
+# CONFIG_DEBUG_LL is not set
 
 #
 # Security options
