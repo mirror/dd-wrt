@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux kernel version: 2.6.23.14
-# Sat Feb  2 18:46:52 2008
+# Linux kernel version: 2.6.23.15
+# Sat Feb 16 08:21:29 2008
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -222,8 +222,7 @@ CONFIG_NO_HZ=y
 CONFIG_HIGH_RES_TIMERS=y
 # CONFIG_PREEMPT is not set
 CONFIG_HZ=100
-CONFIG_AEABI=y
-# CONFIG_OABI_COMPAT is not set
+# CONFIG_AEABI is not set
 # CONFIG_ARCH_DISCONTIGMEM_ENABLE is not set
 CONFIG_SELECT_MEMORY_MODEL=y
 CONFIG_FLATMEM_MANUAL=y
@@ -255,6 +254,9 @@ CONFIG_CMDLINE="console=ttyS0,115200 panic=10 root=/dev/mtdblock2 rootfstype=squ
 #
 # At least one emulation must be selected
 #
+CONFIG_FPE_NWFPE=y
+# CONFIG_FPE_NWFPE_XP is not set
+CONFIG_FPE_FASTFPE=y
 
 #
 # Userspace binary formats
@@ -262,6 +264,7 @@ CONFIG_CMDLINE="console=ttyS0,115200 panic=10 root=/dev/mtdblock2 rootfstype=squ
 CONFIG_BINFMT_ELF=y
 # CONFIG_BINFMT_AOUT is not set
 # CONFIG_BINFMT_MISC is not set
+# CONFIG_ARTHUR is not set
 
 #
 # Power management options
