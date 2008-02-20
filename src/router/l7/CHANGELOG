@@ -1,3 +1,16 @@
+2008 02 20
+Added png.
+
+2008 02 10
+Added rtp (see comments in rtp.pat).
+
+2008 01 16
+Fixed and updated flash.  Added mp3.  Added possibly useful comments to kugoo.
+
+2008 01 09
+Fixed typo in skypeout.  This should slightly improve detection and prevent
+a warning message.
+
 2007 11 22
 Added battlefield2142.
 
