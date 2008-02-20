@@ -72,6 +72,7 @@ l7filters filters_list[] = {
 	{ "liveforspeed",		"l7" },		// Live For Speed - A racing game.
 	{ "lpd",				"l7" },		// LPD - Line Printer Daemon Protocol (old-style UNIX printing) - RFC 1179
 	{ "mohaa",				"l7" },		// Medal of Honor Allied Assault - an Electronic Arts game
+	{ "MP3",				"L7" },		// MP3 - Moving Picture Experts Group Audio Layer III
 	{ "msn-filetransfer",	"l7" },		// MSN (Micosoft Network) Messenger file transfers (MSNFTP and MSNSLP)
 	{ "msnmessenger",		"l7" },		// MSN Messenger - Microsoft Network chat client
 	{ "mute",				"p2p" },	// MUTE - P2P filesharing - http://mute-net.sourceforge.net
@@ -89,6 +90,7 @@ l7filters filters_list[] = {
 	{ "perl",				"l7" }, 	// Perl - A scripting language by Larry Wall.
 	{ "poco",				"p2p" },	// POCO and PP365 - Chinese P2P filesharing - http://pp365.com http://poco.cn
 	{ "qq",					"l7" },		// Tencent QQ Protocol - Chinese instant messenger protocol - http://www.qq.com
+	{ "png",				"l7" },		// PNG - Portable Network Graphics, a popular image format
 	{ "pop3",				"l7" },		// POP3 - Post Office Protocol version 3 (popular e-mail protocol) - RFC 1939
 	{ "qq",					"l7" },		// Tencent QQ Protocol - Chinese instant messenger protocol - http://www.qq.com
 	{ "postscript",			"l7" },		// Postscript - Printing Language
@@ -101,6 +103,7 @@ l7filters filters_list[] = {
 	{ "rdp",				"l7" },		// RDP - Remote Desktop Protocol (used in Windows Terminal Services)
 	{ "replaytv-ivs",		"l7" },		// ReplayTV Internet Video Sharing - Digital Video Recorder - http://replaytv.com
 	{ "rlogin",				"l7" },		// rlogin - remote login - RFC 1282
+	{ "rtp",				"l7" },		// RTP - Real-time Transport Protocol - RFC 3550
 	{ "rpm",				"l7" },		// RPM - Redhat Package Management packages
 	{ "rtf",				"l7" },		// RTF - Rich Text Format - an open document format
 	{ "rtsp",				"l7" },		// RTSP - Real Time Streaming Protocol - http://www.rtsp.org - RFC 2326
