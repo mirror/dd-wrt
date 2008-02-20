@@ -230,6 +230,11 @@ config DMABOUNCE
 	default y
 	depends on PCI
 
+config DMABOUNCE_DEBUG
+	bool "Enable DMABounce debuging"
+	default n
+	depends on DMABOUNCE
+
 config IXP4XX_INDIRECT_PCI
 	bool "Use indirect PCI memory access"
 	depends on PCI
