@@ -106,6 +106,7 @@ start_sysinit (void)
   uname (&name);
 /* network drivers */
   eval ("insmod", "ar2313");
+  eval ("insmod", "ath_hal");
   eval ("insmod", "ath_ahb");
   eval ("ifconfig", "wifi0", "up");
 #ifdef HAVE_LS2
