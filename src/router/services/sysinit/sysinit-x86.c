@@ -341,6 +341,7 @@ eval("insmod","crypto_null");
       close (s);
     }
 #ifndef HAVE_NOWIFI
+  eval ("insmod", "ath_hal");
   eval ("insmod", "ath_pci");
 #ifdef HAVE_MADWIFI_MIMO
   eval ("insmod", "ath_mimo_pci");

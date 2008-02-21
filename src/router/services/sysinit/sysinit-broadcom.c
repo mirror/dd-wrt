@@ -298,6 +298,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
 
     }
 #ifdef HAVE_MADWIFI
+  eval ("insmod", "ath_hal");
   eval ("insmod", "ath_pci");
 #endif
   return;

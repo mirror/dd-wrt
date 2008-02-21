@@ -122,6 +122,7 @@ start_sysinit (void)
 //  eval ("insmod", "ath_hal");
 //  eval ("insmod", "wlan");
 //  eval ("insmod", "ath_rate_sample");
+  eval ("insmod", "ath_hal");
   eval ("insmod", "ath_pci");
 
 
