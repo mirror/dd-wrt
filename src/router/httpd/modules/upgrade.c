@@ -82,18 +82,22 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
   {
     write_argv[0] = "write";
     write_argv[1] = upload_fifo;
-#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_MERAKI) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5)
+#ifdef HAVE_DIR400
+    write_argv[2] = "linux";
+#elif defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_MERAKI) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) 
     write_argv[2] = "rootfs";
 #else
     write_argv[2] = "linux";
 #endif
     write_argv[3] = NULL;
   }
-#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_MERAKI) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5)
+#ifdef HAVE_DIR400
+  if (url)
+    return eval ("write", url, "linux");
+#elif defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_MERAKI) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) && !defined(HAVE_DIR400)
   eval ("fischecksum");
   if (url)
     return eval ("write", url, "rootfs");
-
 #else
 #ifdef HAVE_NOP8670
   eval ("fischecksum");
