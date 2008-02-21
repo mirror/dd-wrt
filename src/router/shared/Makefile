@@ -116,9 +116,14 @@ endif
 ifeq ($(CONFIG_WRT300NV2),y)
   CFLAGS += -DHAVE_WRT300NV2
 endif
+ifeq ($(CONFIG_DIR400),y)
+  CFLAGS += -DHAVE_DIR400
+  CFLAGS += -DHAVE_FONERA
+else
 ifeq ($(CONFIG_DIR300),y)
   CFLAGS += -DHAVE_DIR300
   CFLAGS += -DHAVE_FONERA
+endif
 endif
 ifeq ($(CONFIG_FONERA),y)
   CFLAGS += -DHAVE_FONERA

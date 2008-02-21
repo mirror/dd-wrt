@@ -2157,11 +2157,11 @@ start_wan (int status)
     nvram_safe_get ("pppoe_wan_ifname") : "vlan2";
 #elif HAVE_FONERA
   char *pppoe_wan_ifname = NULL;
-//  if (getRouterBrand () == ROUTER_BOARD_FONERA2200)
-//    pppoe_wan_ifname =
-//      nvram_invmatch ("pppoe_wan_ifname",
-//                    "") ? nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
-//  else
+  if (getRouterBrand () == ROUTER_BOARD_FONERA2200)
+    pppoe_wan_ifname =
+      nvram_invmatch ("pppoe_wan_ifname",
+                    "") ? nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
+  else
   pppoe_wan_ifname =
     nvram_invmatch ("pppoe_wan_ifname",
 		    "") ? nvram_safe_get ("pppoe_wan_ifname") : "eth0";

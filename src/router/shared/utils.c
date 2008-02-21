@@ -329,6 +329,9 @@ internal_getRouterBrand ()
 #elif HAVE_AR430W
   setRouter ("Airlink-101 AR430W");
   return ROUTER_BOARD_FONERA;
+#elif HAVE_DIR400
+  setRouter ("D-Link DIR-400");
+  return ROUTER_BOARD_FONERA2200;
 #elif HAVE_DIR300
   setRouter ("D-Link DIR-300");
   return ROUTER_BOARD_FONERA;
@@ -1341,7 +1344,7 @@ led_control (int type, int act)
 /* type: LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN, LED_SES, LED_SES2, LED_WLAN
  * act: LED_ON, LED_OFF, LED_FLASH */
 {
-#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_LS5)  && !defined(HAVE_DIR300)
+#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_LS5)  && !defined(HAVE_DIR300) && !defined(HAVE_DIR400)
   return 0;
 #else
 
@@ -1429,6 +1432,13 @@ led_control (int type, int act)
       break;
 #ifdef HAVE_DIR300
     case ROUTER_BOARD_FONERA:
+      diag_gpio = 0x03;
+      bridge_gpio = 0x04;
+      ses_gpio = 0x01;
+      break;
+#endif
+#ifdef HAVE_DIR400
+    case ROUTER_BOARD_FONERA2200:
       diag_gpio = 0x03;
       bridge_gpio = 0x04;
       ses_gpio = 0x01;
