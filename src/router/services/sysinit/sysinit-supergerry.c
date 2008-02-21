@@ -112,6 +112,7 @@ start_sysinit (void)
   /* Modules */
   uname (&name);
 /* network drivers */
+  eval ("insmod", "ath_hal");
   eval ("insmod", "ath_pci");
 
   eval ("ifconfig", "wifi0", "up");
