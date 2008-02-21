@@ -1750,7 +1750,7 @@ filter_input (void)
 
   /* IGMP query from WAN interface */
   save2file ("-A INPUT -p igmp -j %s\n",
-	     doMultiCast()==0 ? log_drop : TARG_PASS);
+	     doMultiCast () == 0 ? log_drop : TARG_PASS);
 
 #ifdef HAVE_TFTP
   /* Remote Upgrade */
@@ -2058,7 +2058,7 @@ filter_forward (void)
 	}
     }
   /* ACCEPT packets for Multicast pass through */
-  if (doMultiCast()>0)
+  if (doMultiCast () > 0)
     save2file ("-A FORWARD -i %s -p udp -m udp --destination %s -j %s\n",
 	       wanface, IP_MULTICAST, log_accept);
 
