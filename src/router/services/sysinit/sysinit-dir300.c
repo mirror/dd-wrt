@@ -77,15 +77,6 @@ start_sysinit (void)
 
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
-  eval ("/bin/tar", "-xzf", "/dev/mtdblock/3", "-C", "/");
-  FILE *in = fopen ("/tmp/nvram/nvram.db", "rb");
-  if (in != NULL)
-    {
-      fclose (in);
-      eval ("/usr/sbin/convertnvram");
-      eval ("/usr/sbin/mtd", "erase", "nvram");
-      nvram_commit ();
-    }
   cprintf ("sysinit() var\n");
 
   /* /var */
@@ -101,7 +92,10 @@ start_sysinit (void)
   cprintf ("sysinit() klogctl\n");
   klogctl (8, NULL, atoi (nvram_safe_get ("console_loglevel")));
   cprintf ("sysinit() get router\n");
+
   FILE *fp = fopen ("/dev/mtdblock/6", "rb");
+  if (fp)
+  {
   fseek (fp, 0x1000, SEEK_SET);
   unsigned int test;
   fread (&test, 4, 1, fp);
@@ -122,7 +116,7 @@ start_sysinit (void)
       eval ("event", "5", "1", "15");
     }
   fclose (fp);
-
+  }
 
 
   /* Modules */
@@ -135,7 +129,16 @@ start_sysinit (void)
   eval ("ifconfig", "eth0", "up");	// wan
   system ("echo 2 >/proc/sys/dev/wifi0/ledpin");
   system ("echo 1 >/proc/sys/dev/wifi0/softled");
+  if (getRouterBrand () == ROUTER_BOARD_FONERA2200)
+    {
+  eval ("ifconfig", "eth0", "up");	// required for vlan config
+  eval ("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+  eval ("/sbin/vconfig", "add", "eth0", "0");
+  eval ("/sbin/vconfig", "add", "eth0", "1");
+    }else
+    {
   vlan_init (5);		// 4 lan + 1 wan
+  }
 //  eval ("insmod", "ipv6");
 
   /* Set a sane date */

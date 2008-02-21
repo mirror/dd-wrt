@@ -156,7 +156,7 @@ all: build_date clean_target $(obj-y) $(obj-m) $(LINUXDIR)/.config kernel
 build_date:
 	echo "#define BUILD_DATE \"$(shell date +%D)\"" > ../../opt/build.h 
 
-drop-sections	= .reginfo .mdebug .comment .note .pdr .options .MIPS.options
+drop-sections	= .comment
 strip-flags	= $(addprefix --remove-section=,$(drop-sections))
 
 kernel:
@@ -182,6 +182,12 @@ endif
 endif
 ifeq ($(CONFIG_WRK54G),y)
 	cp $(LINUXDIR)/.config_micro_tw6660 $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_FONERA2200),y)
+	cp $(LINUXDIR)/.config_generic_vlan $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_DIR400),y)
+	cp $(LINUXDIR)/.config_dir400 $(LINUXDIR)/.config
 endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
@@ -412,6 +418,10 @@ else
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.aligned bs=2883584 conv=sync
 endif
 endif
+ifeq ($(CONFIG_DIR400),y)
+	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.dir400 bs=65536 conv=sync
+	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.dir400
+endif
 ifeq ($(CONFIG_WHRAG108),y)
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.whr bs=2752512 conv=sync
 	./tools/trx_n -o $(ARCH)-uclibc/whrag108-firmware.bin $(ARCH)-uclibc/root.whr $(ARCH)-uclibc/lzma_vmlinus
@@ -437,6 +447,9 @@ ifeq ($(CONFIG_WRK54G),y)
 endif
 ifeq ($(CONFIG_MERAKI),y)
 	./tools/trx_n -o $(ARCH)-uclibc/meraki-firmware.bin $(ARCH)-uclibc/root.aligned $(ARCH)-uclibc/lzma_vmlinus
+endif
+ifeq ($(CONFIG_DIR400),y)
+	./tools/trx_n -o $(ARCH)-uclibc/dir400-firmware.bin $(ARCH)-uclibc/vmlinux.dir400
 endif
 	./tools/trx_n -o $(ARCH)-uclibc/fonera-firmware.bin -m 100000000 $(ARCH)-uclibc/root.aligned $(ARCH)-uclibc/vmlinux.lzma 
 	tools/ubnt/src/mkfwimage -v LS2.ar2316.DD-WRT -o mips-uclibc/LS2.dd-wrt.bin -i tools/ubnt/ls2-ddwrt.txt
