@@ -130,6 +130,7 @@ eval("insmod","crypto_null");
 //  eval ("insmod", "ath_hal");
 //  eval ("insmod", "wlan");
 //  eval ("insmod", "ath_rate_sample");
+  eval ("insmod", "ath_hal");
   eval ("insmod", "ath_pci");
 
 /*  eval ("insmod", "wlan_acl");

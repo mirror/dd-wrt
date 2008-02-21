@@ -145,6 +145,7 @@ start_sysinit (void)
 
 
 
+  eval ("insmod", "ath_hal");
   eval ("insmod", "ath_pci");
 
 #ifdef HAVE_MADWIFI_MIMO
