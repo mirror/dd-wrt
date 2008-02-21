@@ -139,7 +139,7 @@ start_modules (void)
 #ifdef HAVE_RADIOOFF
   if (nvram_match ("radiooff_button", "1")
       && nvram_match ("radiooff_boot_off", "1"))
-    eval ("wl", "radio", "off");
+    eval ("wl", "-i", get_wl_instance_name(0), "radio", "off");
 #endif
 #endif
 #ifdef HAVE_RB500
