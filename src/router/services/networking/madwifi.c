@@ -826,10 +826,10 @@ set_rate (char *dev)
   char *mr = default_get (maxrate, "0");
 #ifdef HAVE_WHRAG108
   char *netmode;
-  if (!strcmp(dev,"ath0"))
-  netmode = default_get (net, "a-only");
+  if (!strcmp (dev, "ath0"))
+    netmode = default_get (net, "a-only");
   else
-  netmode = default_get (net, "mixed");
+    netmode = default_get (net, "mixed");
 #else
   char *netmode = default_get (net, "mixed");
 #endif
@@ -863,22 +863,21 @@ set_rate (char *dev)
 	nvram_set (rate, "0");
 	r = "0";
       }
-      if (!strcmp (netmode, "b-only"))
-	eval ("iwconfig", dev, "rate", "11M", "auto");
-      else
-	{
+  if (!strcmp (netmode, "b-only"))
+    eval ("iwconfig", dev, "rate", "11M", "auto");
+  else
+    {
 /*	  if (nvram_match (bw, "5"))
 	    eval ("iwconfig", dev, "rate", "13500", "auto");
 	  else if (nvram_match (bw, "10"))
 	    eval ("iwconfig", dev, "rate", "27000", "auto");
 	  else*/
-	    eval ("iwconfig", dev, "rate", "54M", "auto");
-	}
-      int maxrate = atoi (mr);
-      if (maxrate > 0)
-	eval ("iwpriv", dev, "maxrate", mr);
-      if (atoi(mr)>0)
-        eval ("iwpriv", dev, "minrate",r);
+      eval ("iwconfig", dev, "rate", "54M", "auto");
+    }
+  if (aoit (mr) > 0)
+    eval ("iwpriv", dev, "maxrate", mr);
+  if (atoi (mr) > 0)
+    eval ("iwpriv", dev, "minrate", r);
 }
 static void
 set_netmode (char *wif, char *dev, char *use)
@@ -897,10 +896,10 @@ set_netmode (char *wif, char *dev, char *use)
   sprintf (ff, "%s_ff", dev);
 #ifdef HAVE_WHRAG108
   char *netmode;
-  if (!strcmp(dev,"ath0"))
-  netmode = default_get (net, "a-only");
+  if (!strcmp (dev, "ath0"))
+    netmode = default_get (net, "a-only");
   else
-  netmode = default_get (net, "mixed");
+    netmode = default_get (net, "mixed");
 #else
   char *netmode = default_get (net, "mixed");
 #endif
@@ -1192,8 +1191,8 @@ configure_single (int count)
       hwaddr = nvram_get (wdsmacname);
       if (hwaddr != NULL)
 	{
-	 // eval ("wlanconfig", wdsdev, "create", "wlandev", wif, "wlanmode",
-	//	"wds", "nobssid");
+	  // eval ("wlanconfig", wdsdev, "create", "wlandev", wif, "wlanmode",
+	  //      "wds", "nobssid");
 //        eval ("ifconfig",wdsdev,"0.0.0.0","up");d
 	  eval ("iwpriv", dev, "wds_add", hwaddr);
 	  eval ("iwpriv", dev, "wds", "1");
@@ -1213,11 +1212,11 @@ configure_single (int count)
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
-    //fprintf(stderr,"vifs %s, %s\n",vifs, var);
+      //fprintf(stderr,"vifs %s, %s\n",vifs, var);
       if (!useif)
-        {
-	strcpy(copyvap,var);
-	useif=copyvap;
+	{
+	  strcpy (copyvap, var);
+	  useif = copyvap;
 	}
     }
 
@@ -1315,7 +1314,7 @@ configure_single (int count)
 	}
       else
 	{
-//	  set_scanlist (dev, wif);
+//        set_scanlist (dev, wif);
 	}
 
 //      eval ("iwpriv", var, "bgscan", "0");
@@ -1514,11 +1513,11 @@ configure_single (int count)
 		    || !strcmp (m, "wet"))
 		  eval ("ifconfig", var, "0.0.0.0", "down");
 		else
-		{
-		  eval ("ifconfig", var, "0.0.0.0", "down");
-		  sleep(1);
-		  eval ("ifconfig", var, "0.0.0.0", "up");		
-		}
+		  {
+		    eval ("ifconfig", var, "0.0.0.0", "down");
+		    sleep (1);
+		    eval ("ifconfig", var, "0.0.0.0", "up");
+		  }
 	      }
 	    else
 	      {
@@ -1533,11 +1532,12 @@ configure_single (int count)
 		    || !strcmp (m, "wet"))
 		  eval ("ifconfig", var, "down");
 		else
-		{
-		  eval ("ifconfig", var, "down");
-		  sleep(1);
-		  eval ("ifconfig", var, nvram_safe_get (ip),"netmask",nvram_safe_get (mask), "up");		
-		}
+		  {
+		    eval ("ifconfig", var, "down");
+		    sleep (1);
+		    eval ("ifconfig", var, nvram_safe_get (ip), "netmask",
+			  nvram_safe_get (mask), "up");
+		  }
 	      }
 	  }
       }

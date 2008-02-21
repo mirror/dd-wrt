@@ -2160,11 +2160,11 @@ start_wan (int status)
   if (getRouterBrand () == ROUTER_BOARD_FONERA2200)
     pppoe_wan_ifname =
       nvram_invmatch ("pppoe_wan_ifname",
-                    "") ? nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
+		      "") ? nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
   else
-  pppoe_wan_ifname =
-    nvram_invmatch ("pppoe_wan_ifname",
-		    "") ? nvram_safe_get ("pppoe_wan_ifname") : "eth0";
+    pppoe_wan_ifname =
+      nvram_invmatch ("pppoe_wan_ifname",
+		      "") ? nvram_safe_get ("pppoe_wan_ifname") : "eth0";
 #elif HAVE_LS2
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
@@ -2276,7 +2276,7 @@ start_wan (int status)
       wlifname = getWET ();
     }
 
-      unsigned char mac[20];
+  unsigned char mac[20];
   if (nvram_match ("mac_clone_enable", "1") &&
       nvram_invmatch ("def_hwaddr", "00:00:00:00:00:00") &&
       nvram_invmatch ("def_hwaddr", ""))
@@ -3081,8 +3081,8 @@ start_wan_done (char *wan_ifname)
   start_igmp_proxy ();
 #endif
   cprintf ("ready\n");
-  start_anchorfree();
-  start_anchorfreednat();
+  start_anchorfree ();
+  start_anchorfreednat ();
 
 
 }
