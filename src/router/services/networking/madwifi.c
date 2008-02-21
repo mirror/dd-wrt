@@ -818,7 +818,7 @@ set_rate (char *dev)
 
   sprintf (bw, "%s_channelbw", dev);
   sprintf (net, "%s_net_mode", dev);
-  sprintf (rate, "%s_rate", dev);
+  sprintf (rate, "%s_minrate", dev);
   sprintf (maxrate, "%s_maxrate", dev);
   sprintf (xr, "%s_xr", dev);
   sprintf (turbo, "%s_turbo", dev);
@@ -863,31 +863,22 @@ set_rate (char *dev)
 	nvram_set (rate, "0");
 	r = "0";
       }
-  if (!strcmp (r, "0") || strcmp (mr, "0"))
-    {
       if (!strcmp (netmode, "b-only"))
-	eval ("iwconfig", dev, "rate", "11000", "auto");
+	eval ("iwconfig", dev, "rate", "11M", "auto");
       else
 	{
-	  if (nvram_match (bw, "5"))
+/*	  if (nvram_match (bw, "5"))
 	    eval ("iwconfig", dev, "rate", "13500", "auto");
 	  else if (nvram_match (bw, "10"))
 	    eval ("iwconfig", dev, "rate", "27000", "auto");
-	  else
-	    eval ("iwconfig", dev, "rate", "54000", "auto");
+	  else*/
+	    eval ("iwconfig", dev, "rate", "54M", "auto");
 	}
       int maxrate = atoi (mr);
       if (maxrate > 0)
 	eval ("iwpriv", dev, "maxrate", mr);
-    }
-  else
-    {
-      float ratef = atof (r) * 1000.0;
-      int integerrate = (int) ratef;
-      char set[32];
-      sprintf (set, "%d", integerrate);
-      eval ("iwconfig", dev, "rate", set, "fixed");
-    }
+      if (atoi(mr)>0)
+        eval ("iwpriv", dev, "minrate",r);
 }
 static void
 set_netmode (char *wif, char *dev, char *use)
@@ -1261,7 +1252,7 @@ configure_single (int count)
     }
   else
     {
-      set_scanlist (dev, wif);
+//      set_scanlist (dev, wif);
     }
 
   if (useif)
@@ -1324,7 +1315,7 @@ configure_single (int count)
 	}
       else
 	{
-	  set_scanlist (dev, wif);
+//	  set_scanlist (dev, wif);
 	}
 
 //      eval ("iwpriv", var, "bgscan", "0");
