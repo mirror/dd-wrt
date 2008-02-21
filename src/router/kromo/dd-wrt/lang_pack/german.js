@@ -1586,6 +1586,7 @@ wl_adv.label17="WLAN-GUI-Zugriff";
 wl_adv.label18="WMM-Unterstützung";
 wl_adv.label19="No-Acknowledgement";
 wl_adv.label21="Übertragungsrate (Max)";
+wl_adv.label23="Übertragungsrate (Min)";
 wl_adv.table1="EDCA AP Parameter (AP nach Client)";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";

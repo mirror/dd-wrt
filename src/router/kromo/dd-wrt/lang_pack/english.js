@@ -1653,6 +1653,7 @@ wl_adv.label18="WMM Support";
 wl_adv.label19="No-Acknowledgement";
 wl_adv.label20="Shortslot Override";
 wl_adv.label21="Transmission Maximum Rate";
+wl_adv.label23="Transmission Minimum Rate";
 wl_adv.label22="Bluetooth Coexistence Mode";
 wl_adv.table1="EDCA AP Parameters (AP to Client)";
 wl_adv.col1="CWmin";
