@@ -3591,12 +3591,12 @@ show_rates (webs_t wp, char *prefix, int maxrate)
     {
       websWrite (wp,
 		 "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label3)</script></div>\n");
-      websWrite (wp, "<select name=\"%s_rate\">\n", prefix);
+      websWrite (wp, "<select name=\"%s_minrate\">\n", prefix);
     }
   websWrite (wp, "<script type=\"text/javascript\">\n");
   websWrite (wp, "//<![CDATA[\n");
   char srate[32];
-  sprintf (srate, "%s_rate", prefix);
+  sprintf (srate, "%s_minrate", prefix);
   char mxrate[32];
   sprintf (mxrate, "%s_maxrate", prefix);
   websWrite (wp,
@@ -3699,7 +3699,6 @@ show_rates (webs_t wp, char *prefix, int maxrate)
       if (maxrate)
 	{
 	  int offset = 0;
-//      if (nvram_match(mode,"a-only") && nvram_match (bw, "20"))offset=0;
 	  if (nvram_match (mode, "g-only") && nvram_match (bw, "20"))
 	    offset = 4;
 	  char comp[32];
@@ -3717,15 +3716,20 @@ show_rates (webs_t wp, char *prefix, int maxrate)
 	}
       else
 	{
+	  int offset = 0;
+	  if (nvram_match (mode, "g-only") && nvram_match (bw, "20"))
+	    offset = 4;
+	  char comp[32];
+	  sprintf (comp, "%d", i + 1 + offset);
 	  if (showrates)
-	    websWrite (wp, "<option value=\"%s\" %s >%s Mbps</option>\n",
-		       rate[i], nvram_match (srate,
-					     rate[i]) ? "selected" : "",
+	    websWrite (wp, "<option value=\"%d\" %s >%s Mbps</option>\n",
+		       i + 1 + offset, nvram_match (srate,
+						    comp) ? "selected" : "",
 		       showrates[i]);
 	  else
-	    websWrite (wp, "<option value=\"%s\" %s >%s Mbps</option>\n",
-		       rate[i], nvram_match (srate,
-					     rate[i]) ? "selected" : "",
+	    websWrite (wp, "<option value=\"%d\" %s >%s Mbps</option>\n",
+		       i + 1 + offset, nvram_match (srate,
+						    comp) ? "selected" : "",
 		       rate[i]);
 
 	}
@@ -4220,7 +4224,7 @@ save_prefix (webs_t wp, char *prefix)
   if (tw)
     nvram_set (turbo, tw);
 
-  sprintf (n, "%s_rate", prefix);
+  sprintf (n, "%s_minrate", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_maxrate", prefix);
   copytonv (wp, n);
