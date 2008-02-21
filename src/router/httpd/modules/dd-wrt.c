@@ -3590,7 +3590,7 @@ show_rates (webs_t wp, char *prefix, int maxrate)
   else
     {
       websWrite (wp,
-		 "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label3)</script></div>\n");
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label23)</script></div>\n");
       websWrite (wp, "<select name=\"%s_minrate\">\n", prefix);
     }
   websWrite (wp, "<script type=\"text/javascript\">\n");
