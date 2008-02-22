@@ -874,7 +874,7 @@ set_rate (char *dev)
 	  else*/
       eval ("iwconfig", dev, "rate", "54M", "auto");
     }
-  if (aoit (mr) > 0)
+  if (atol (mr) > 0)
     eval ("iwpriv", dev, "maxrate", mr);
   if (atoi (mr) > 0)
     eval ("iwpriv", dev, "minrate", r);
