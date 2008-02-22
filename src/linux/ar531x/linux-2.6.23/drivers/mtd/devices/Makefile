@@ -19,3 +19,4 @@ obj-$(CONFIG_MTD_DATAFLASH)	+= mtd_dataflash.o
 obj-$(CONFIG_MTD_DATAFLASH26)	+= at91_dataflash26.o
 obj-$(CONFIG_MTD_M25P80)	+= m25p80.o
 obj-$(CONFIG_MTD_SPIFLASH)	+= spiflash.o
+obj-$(CONFIG_MTD_SPIFLASH_SELFMAP)	+= spiflash_selfmap.o

@@ -41,6 +41,8 @@
 #include <linux/sched.h>
 #include <linux/squashfs_fs.h>
 #include <linux/root_dev.h>
+#include <linux/vmalloc.h>
+#include <linux/squashfs_fs.h>
 #include <linux/delay.h>
 #include <asm/delay.h>
 #include <asm/io.h>
@@ -146,6 +148,18 @@ enum {
 	FL_ERASING,
 	FL_WRITING
 };
+
+static struct mtd_partition dir_parts[] = {
+        { name: "boot", offset: 0, size: 0x30000, },//, mask_flags: MTD_WRITEABLE, },
+        { name: "linux", offset: 0x40000, size: 0x390000, },
+        { name: "rootfs", offset: 0x0, size: 0x2b0000,}, //must be detected
+        { name: "nvram", offset: 0x3d0000, size: 0x10000, },
+        { name: "FIS Directory", offset: 0x3e0000, size: 0x10000, },
+        { name: "board_config", offset: 0x3f0000, size: 0x10000, },
+        { name: NULL, },
+};
+
+
 
 static struct spiflash_data *spidata;
 
@@ -289,33 +303,43 @@ static int
 spiflash_erase (struct mtd_info *mtd,struct erase_info *instr)
 {
 	struct opcodes *ptr_opcode;
-	u32 temp, reg;
+	__u32 temp, reg;
+	int finished = 0;
+
+#ifdef SPIFLASH_DEBUG
+   	printk (KERN_DEBUG "%s(addr = 0x%.8x, len = %d)\n",__FUNCTION__,instr->addr,instr->len);
+#endif
 
    	/* sanity checks */
    	if (instr->addr + instr->len > mtd->size) return (-EINVAL);
 
-	if (!spiflash_wait_ready(FL_ERASING))
-		return -EINTR;
-
-	spiflash_sendcmd(SPI_WRITE_ENABLE, 0);
-	busy_wait((reg = spiflash_regread32(SPI_FLASH_CTL)) & SPI_CTL_BUSY, 0);
-	reg = spiflash_regread32(SPI_FLASH_CTL);
-
 	ptr_opcode = &stm_opcodes[SPI_SECTOR_ERASE];
+
 	temp = ((__u32)instr->addr << 8) | (__u32)(ptr_opcode->code);
+	spiflash_sendcmd(SPI_WRITE_ENABLE,0);
+	do {
+		reg = spiflash_regread32(SPI_FLASH_CTL);
+	} while (reg & SPI_CTL_BUSY);
+
 	spiflash_regwrite32(SPI_FLASH_OPCODE, temp);
 
 	reg = (reg & ~SPI_CTL_TX_RX_CNT_MASK) | ptr_opcode->tx_cnt | SPI_CTL_START;
 	spiflash_regwrite32(SPI_FLASH_CTL, reg);
 
-	
-	busy_wait(spiflash_sendcmd(SPI_RD_STATUS, 0) & SPI_STATUS_WIP, 20);
-	spiflash_done();
+	do {
+		reg = spiflash_sendcmd(SPI_RD_STATUS,0);
+		if (!(reg & SPI_STATUS_WIP)) {
+			finished = 1;
+		}
+	} while (!finished);
 
    	instr->state = MTD_ERASE_DONE;
    	if (instr->callback) instr->callback (instr);
 
-   	return 0;
+#ifdef SPIFLASH_DEBUG
+   	printk (KERN_DEBUG "%s return\n",__FUNCTION__);
+#endif
+   	return (0);
 }
 
 static int 
@@ -427,10 +451,12 @@ static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", NULL };
 
 static int spiflash_probe(struct platform_device *pdev)
 {
+	int offset=0;
+	int ret,retlen;
    	int result = -1;
    	int index, num_parts;
 	struct mtd_info *mtd;
-
+	char *buf;
 	spidata->mmraddr = ioremap_nocache(SPI_FLASH_MMR, SPI_FLASH_MMR_SIZE);
 	spin_lock_init(&spidata->mutex);
 	init_waitqueue_head(&spidata->wq);
@@ -471,18 +497,36 @@ static int spiflash_probe(struct platform_device *pdev)
    	mtd->read = spiflash_read;
    	mtd->write = spiflash_write;
 	mtd->owner = THIS_MODULE;
-
-   	/* parse redboot partitions */
-	num_parts = parse_mtd_partitions(mtd, part_probe_types, &spidata->parsed_parts, 0);
-	if (!num_parts)
+	printk(KERN_EMERG "scanning for root partition\n");
+	
+	offset = 0;
+	buf = vmalloc(mtd->erasesize);
+	while((offset+mtd->erasesize)<mtd->size)
+	    {
+	    printk(KERN_EMERG "scan at offset %X\n",offset);
+	    ret = mtd->read(mtd, offset,mtd->erasesize, &retlen, (void *)buf);
+	    if (ret)
+		{
+		printk(KERN_EMERG "error while scanning\n");
 		goto error;
-
-	result = add_mtd_partitions(mtd, spidata->parsed_parts, num_parts);
+		}
+	    if (*((__u32 *) buf) == SQUASHFS_MAGIC) 
+		{
+		printk(KERN_EMERG "found squashfs at %X\n",offset);
+		dir_parts[2].offset = offset;
+		dir_parts[2].size = 0x3d0000-offset;
+		break;
+		}
+	    offset+=mtd->erasesize;
+	    }
+	
+	result = add_mtd_partitions(mtd, dir_parts, 6);
 	spidata->mtd = mtd;
 	
    	return (result);
 	
 error:
+	vfree(buf);
 	kfree(mtd);
 	kfree(spidata);
 	return -ENXIO;
