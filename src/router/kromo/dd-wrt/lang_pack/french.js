@@ -1444,6 +1444,7 @@ wl_adv.label18="Support de WMM";
 wl_adv.label19="No-Acknowledgement";
 wl_adv.label20="Mode Shortslot";
 wl_adv.label22="Mode de coexistence Bluetooth";
+wl_adv.label23="Vitesse minimun de transmissione";
 wl_adv.table1="Paramètres EDCA AP (AP vers Client)";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
