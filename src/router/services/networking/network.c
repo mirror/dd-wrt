@@ -2131,6 +2131,7 @@ start_wan (int status)
   char *wan_proto = nvram_safe_get ("wan_proto");
   int s;
   struct ifreq ifr;
+eval("ifconfig",nvram_safe_get("wan_ifname"),"allmulti","promisc");
 
 #ifdef HAVE_PPPOE
 #ifdef HAVE_RB500
