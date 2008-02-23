@@ -70,13 +70,13 @@ do_mssid (char *lan_ifname, char *wlifname)
 	ether_atoe (nvram_nget ("%s_hwaddr", var), ifr.ifr_hwaddr.sa_data);
 	strncpy (ifr.ifr_name, var, IFNAMSIZ);
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-	eval ("ifconfig", var, "down");
-	ioctl (s, SIOCSIFHWADDR, &ifr);
-	eval ("ifconfig", var, "up");
       }
       if (nvram_match (bridged, "1"))
 	{
 	  ifconfig (var, IFUP, NULL, NULL);
+//	eval ("ifconfig", var, "down");
+//	ioctl (s, SIOCSIFHWADDR, &ifr);
+//	eval ("ifconfig", var, "up");
 	  br_add_interface (lan_ifname, var);
 	}
       else

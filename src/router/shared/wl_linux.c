@@ -86,6 +86,17 @@ wl_hwaddr (char *name, unsigned char *hwaddr)
 }
 
 int
+wl_bssid (char *name, unsigned char *hwaddr)
+{
+  struct ifreq ifr;
+  int ret = 0;
+  int s;
+
+  wl_ioctl(name,WLC_GET_BSSID,hwaddr,ETHER_ADDR_LEN);
+  return ret;
+}
+
+int
 wl_get_dev_type (char *name, void *buf, int len)
 {
   int s;
