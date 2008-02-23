@@ -74,9 +74,9 @@ do_mssid (char *lan_ifname, char *wlifname)
       if (nvram_match (bridged, "1"))
 	{
 	  ifconfig (var, IFUP, NULL, NULL);
-//	eval ("ifconfig", var, "down");
-//	ioctl (s, SIOCSIFHWADDR, &ifr);
-//	eval ("ifconfig", var, "up");
+	eval ("ifconfig", var, "down");
+	ioctl (s, SIOCSIFHWADDR, &ifr);
+	eval ("ifconfig", var, "up");
 	  br_add_interface (lan_ifname, var);
 	}
       else
