@@ -1261,6 +1261,7 @@ start_lan (void)
   else
     cprintf ("Write wireless mac successfully\n");
   eval ("wl", "-i", wl_face, "up");
+  start_config_macs(wl_face);
 #ifdef HAVE_MSSID
   set_vifsmac (mac);
 #endif
@@ -1386,6 +1387,7 @@ start_lan (void)
 		      cprintf ("Write wireless mac successfully\n");
 #ifndef HAVE_MADWIFI
 		    eval ("wl", "-i", name, "up");
+		    start_config_macs(name);
 #endif
 		  }
 	      }
@@ -1402,6 +1404,7 @@ start_lan (void)
 		  perror ("Write wireless mac fail : \n");
 		else
 		  cprintf ("Write wireless mac successfully\n");
+		  start_config_macs(wl_face);
 	      }
 #endif
 #ifdef HAVE_MSSID
@@ -1575,6 +1578,7 @@ start_lan (void)
 	perror ("Write wireless mac fail : ");
       else
 	cprintf ("Write wireless mac successfully\n");
+	start_config_macs(wl_face);
     }
 
 #endif
@@ -2311,7 +2315,10 @@ eval("ifconfig",nvram_safe_get("wan_ifname"),"allmulti","promisc");
       ioctl (s, SIOCSIFHWADDR, &ifr);
 #ifndef HAVE_MADWIFI
       if (wlifname && !strcmp (wan_ifname, wlifname))
+        {
 	eval ("wl", "-i", wan_ifname, "up");
+	start_config_macs(wan_ifname);
+	}
 #endif
       cprintf ("Write WAN mac successfully\n");
     }
