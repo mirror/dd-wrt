@@ -43,9 +43,13 @@
 
 void start_config_macs(char *wlifname) //reconfigure macs which should fix the corerev 5 and 7 problem
 {
-  char *vifs = nvram_nget ("wl%d_vifs", get_wl_instance (wlifname));
+  int unit = get_wl_instance (wlifname);
+  char *vifs = nvram_nget ("wl%d_vifs", unit );
+  char *mbss = nvram_nget ("wl%d_mbss", unit);
   char *next;
   char var[80];
+  if (!strcmp(mbss,"0"))
+  {
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
@@ -53,6 +57,7 @@ void start_config_macs(char *wlifname) //reconfigure macs which should fix the c
       eval ("wl","-i",var,"cur_etheraddr",nvram_nget ("%s_hwaddr", var));
       eval ("wl","-i",var,"up");
     }
+  }
 }
 void
 do_mssid (char *lan_ifname, char *wlifname)
@@ -76,9 +81,6 @@ do_mssid (char *lan_ifname, char *wlifname)
       if (!nvram_match (bridged, "0"))
 	{
 	//  ifconfig (var, IFUP, NULL, NULL);
-	eval ("wl","-i",var,"down");
-	eval ("wl","-i",var,"cur_etheraddr",nvram_nget ("%s_hwaddr", var));
-	eval ("wl","-i",var,"up");
 	eval ("ifconfig", var, "down");
 	ioctl (s, SIOCSIFHWADDR, &ifr);
 	eval ("ifconfig", var, "up");
@@ -86,9 +88,6 @@ do_mssid (char *lan_ifname, char *wlifname)
 	}
       else
 	{
-	eval ("wl","-i",var,"down");
-	eval ("wl","-i",var,"cur_etheraddr",nvram_nget ("%s_hwaddr", var));
-	eval ("wl","-i",var,"up");
 	  ifconfig (var, IFUP, nvram_nget ("%s_ipaddr", var),
 		    nvram_nget ("%s_netmask", var));
 	}
