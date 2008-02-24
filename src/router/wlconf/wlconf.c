@@ -668,7 +668,6 @@ cprintf("get caps\n");
 			mbsscap = 1;
 		}
 	}
-
 cprintf("wl probe\n");
 	/* Check interface (fail silently for non-wl interfaces) */
 	if ((ret = wl_probe(name)))
@@ -681,6 +680,17 @@ cprintf("get wl addr\n");
 	/* Get instance */
 cprintf("get instance\n");
 	WL_IOCTL(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
+    	sprintf(tmp, "wl%d_mbss", unit);
+	if (mbsscap)
+	    {
+	    nvram_set(tmp,"1");
+	    }else
+	    {
+	    nvram_set(tmp,"0");
+	    }
+	/* clean up tmp */
+	memset(tmp, 0, sizeof(tmp));
+
 	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 
 	/* Restore defaults if per-interface parameters do not exist */
@@ -751,7 +761,7 @@ cprintf("set mssid flags %s\n",name);
 	if (wl_ap_build) {
 		/* Enable MSSID mode if appropriate */
 		WL_IOVAR_SETINT(name, "mssid", (bclist->count > 1));
-		if (!ure_enab) {
+		if (!ure_enab && mbsscap) {
 		WL_IOVAR_SETINT(name, "mbss", (bclist->count > 1)); //compatiblitiy with newer drivers
 		}else{
 		WL_IOVAR_SETINT(name, "mbss", 0); //compatiblitiy with newer drivers
@@ -792,7 +802,9 @@ cprintf("set local addr %s\n",name);
 				snprintf(tmp, sizeof(tmp), "wl%d.%d_hwaddr",
 				         unit, i);
 				ether_atoe(nvram_safe_get(tmp), eaddr);
-				WL_BSSIOVAR_SET(name, "cur_etheraddr", i,
+				snprintf(tmp, sizeof(tmp), "wl%d.%d",
+				         unit, i);
+				WL_BSSIOVAR_SET(tmp, "cur_etheraddr", i,
 				                eaddr, ETHER_ADDR_LEN);
 		}
 	} else { /* URE is enabled */
@@ -800,7 +812,6 @@ cprintf("set local addr %s\n",name);
 		snprintf(tmp, sizeof(tmp), "wl%d.1_hwaddr", unit);
 		WL_BSSIOVAR_SET(name, "cur_etheraddr", 1, vif_addr,
 		                ETHER_ADDR_LEN);
-		nvram_set(tmp, ether_etoa((uchar *)vif_addr, eaddr));
 	}
 
 
