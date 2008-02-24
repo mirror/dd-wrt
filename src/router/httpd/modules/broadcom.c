@@ -3962,7 +3962,8 @@ unsigned int days;
 unsigned int month; 
 unsigned int year;
 int i = 0;
-char months[12][16] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"}; 
+char months[12][12] = {"share.jan", "share.feb", "share.mar", "share.apr", "share.may", "share.jun",
+					   "share.jul", "share.aug", "share.sep", "share.oct", "share.nov", "share.dec"};
 unsigned long rcvd[31] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 unsigned long sent[31] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 unsigned long max = 5, smax = 5, f = 1;
@@ -4003,6 +4004,8 @@ unsigned long totout = 0;
   sprintf (incom, "%s", live_translate ("status_inet.traffin"));
   char outcom[32];
   sprintf (outcom, "%s", live_translate ("status_inet.traffout"));
+  char monthname[32];
+  sprintf (monthname, "%s", live_translate (months[month - 1]));
   
   websWrite (stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
   websWrite (stream, "<html>\n");
@@ -4029,9 +4032,9 @@ unsigned long totout = 0;
   websWrite (stream, "#t-graph li.day {height: 298px; padding-top: 2px;\n");
   websWrite (stream, "  border-right: 1px dotted #C4C4C4; color: #AAA;}\n");
   websWrite (stream, "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n");
+  websWrite (stream, "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n");
   websWrite (stream, "#t-graph li.rcvd {left: 3px; background: #228B22;}\n");  //set rcvd bar colour here (green)
   websWrite (stream, "#t-graph li.sent {left: 8px; background: #CD0000;}\n");  //set sent bar colour here (red)
-  websWrite (stream, "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n");
   
   for (i = 0; i < days - 1; i++)
   {   
@@ -4051,8 +4054,8 @@ unsigned long totout = 0;
   for (i = 0; i < days; i++)
   {
   websWrite (stream, "<li class=\"day\" id=\"d%d\" ", i + 1);
-  websWrite (stream, "onmouseover=\"Show(\'%s %d, %d (%s: %lu MB / %s: %lu MB)\')\" ", months[month - 1], i + 1, year, incom, rcvd[i], outcom, sent[i]);
-  websWrite (stream, "onmouseout=\"Show(\'%s %d (%s: %lu MB / %s: %lu MB)\')\"", months[month - 1], year, incom, totin, outcom, totout);
+  websWrite (stream, "onmouseover=\"Show(\'%s %d, %d (%s: %lu MB / %s: %lu MB)\')\" ", monthname, i + 1, year, incom, rcvd[i], outcom, sent[i]);
+  websWrite (stream, "onmouseout=\"Show(\'%s %d (%s: %lu MB / %s: %lu MB)\')\"", monthname, year, incom, totin, outcom, totout);
   websWrite (stream, ">%d\n",  i + 1);
   websWrite (stream, "<ul>\n");
   websWrite (stream, "<li class=\"rcvd bar\" style=\"height: %lupx;\"><p></p></li>\n", rcvd[i] * 300 / smax);
@@ -4069,7 +4072,7 @@ unsigned long totout = 0;
   websWrite (stream, "</li>\n\n");
 
   websWrite (stream, "<li id=\"label\">\n");
-  websWrite (stream, "%s %d (%s: %lu MB / %s: %lu MB)\n", months[month - 1], year, incom, totin, outcom, totout);
+  websWrite (stream, "%s %d (%s: %lu MB / %s: %lu MB)\n", monthname, year, incom, totin, outcom, totout);
   websWrite (stream, "</li>\n");
     
   websWrite (stream, "</ul>\n\n");
