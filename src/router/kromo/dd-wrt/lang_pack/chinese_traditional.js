@@ -60,6 +60,18 @@ share.fri_s1="五";
 share.sat="星期六";
 share.sat_s="週六";
 share.sat_s1="六";
+share.jan="一月";
+share.feb="二月";
+share.mar="三月";
+share.apr="四月";
+share.may="五月";
+share.jun="六月";
+share.jul="七月";
+share.aug="八月";
+share.sep="九月";
+share.oct="十月";
+share.nov="十一月";
+share.dec="十二月";
 share.expires="過期";
 share.yes="是";
 share.no="否";
@@ -1335,6 +1347,7 @@ status_inet.next="下一個月";
 
 hstatus_inet.right2="這裏顯示您的ISP所需要將您連接到Internet的資訊. 這些資訊被輸入在設定標籤中.通過按這裏的按鈕,您可以 <em>連接</em> 或者 <em>關閉</em> 您的連接.";
 hstatus_inet.right4="網際網路上傳下載的傳輸流量.";
+hstatus_inet.right6="顯示每個月網際網路上傳下載的傳輸流量. 圖形上移動鼠標,看看每天的數據.數據存儲於 nvram .";
 
 // ** Status_Conntrack.asp **//
 
@@ -1634,6 +1647,7 @@ wl_adv.label18="支援無線多媒體";
 wl_adv.label19="No-Acknowledgement";
 wl_adv.label20="Shortslot Override";
 wl_adv.label21="Transmission Maximum Rate";
+wl_adv.label23="Transmission Minimum Rate";
 wl_adv.table1="EDCA AP 參數（AP到用戶端）";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
