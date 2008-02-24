@@ -61,6 +61,18 @@ share.fri_s1="F";
 share.sat="Saturday";
 share.sat_s="Sat";
 share.sat_s1="S";
+share.jan="January";
+share.feb="February";
+share.mar="March";
+share.apr="April";
+share.may="May";
+share.jun="June";
+share.jul="July";
+share.aug="August";
+share.sep="September";
+share.oct="October";
+share.nov="November";
+share.dec="December"; 
 share.expires="Expires";
 share.yes="Yes";
 share.no="No";
@@ -1369,7 +1381,8 @@ status_inet.next="Next Month";
 //help container
 var hstatus_inet = new Object();
 hstatus_inet.right2="This shows the information required by your ISP for connection to the Internet. This information was entered on the Setup Tab. You can <em>Connect</em> or <em>Disconnect</em> your connection here by clicking on that button.";
-hstatus_inet.right4="This shows your router's Internet traffic.";
+hstatus_inet.right4="This shows your router's Internet traffic since last reboot.";
+hstatus_inet.right6="This shows your router's Internet traffic by month. Drag the mouse over graph to see daily data. Data is stored in nvram.";
 
 
 // ** Status_Conntrack.asp **//

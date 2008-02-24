@@ -211,8 +211,10 @@ addEvent(window, "unload", function() {
 						<dl>
 							<dt class="term"><% tran("status_inet.conft"); %>: </dt>
 							<dd class="definition"><% tran("hstatus_inet.right2"); %></dd>
-							<dt class="term"><% tran("status_inet.traff"); %>: </dt>
+							<dt class="term"><% tran("status_inet.traff_tot"); %>: </dt>
 							<dd class="definition"><% tran("hstatus_inet.right4"); %></dd>
+							<dt class="term"><% tran("status_inet.traff_mon"); %>: </dt>
+							<dd class="definition"><% tran("hstatus_inet.right6"); %></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HStatus.asp');"><% tran("share.more"); %></a>
 					</div>
