@@ -186,6 +186,51 @@ daysformonth (unsigned int month, unsigned int year)
     return (30 + (((month & 9) == 8) || ((month & 9) == 1)) - (month == 2) - (!(((year % 4) == 0) && (((year % 100) != 0) || ((year % 400) == 0))) && (month == 2)));
 }
 
+/* given month, day, year, returns day of week, eg. Monday = 0 etc.    */
+int
+weekday(int month, int day, int year)
+{
+  int ix, tx, vx;
+
+  switch (month)
+   {
+	case 2:
+	case 6:
+	  vx = 0;
+	  break;
+	case 8:
+	  vx = 4;
+	  break;
+	case 10:
+	  vx = 8;
+	  break;
+	case 9:
+	case 12:
+	  vx = 12;
+	  break;
+	case 3:
+	case 11:
+	  vx = 16;
+	  break;
+	case 1:
+	case 5:
+	  vx = 20;
+	  break;
+	case 4:
+	case 7:
+	  vx = 24;
+	  break;
+   }
+
+  if (year > 1900) // 1900 was not a leap year
+	year -= 1900;
+  ix = ((year - 21) % 28) + vx + (month > 2); // take care of February
+  tx = (ix + (ix / 4)) % 7 + day; // take care of leap year
+
+return (tx % 7);
+
+}
+
 void
 setRouter (char *name)
 {
