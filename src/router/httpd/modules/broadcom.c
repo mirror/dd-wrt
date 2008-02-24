@@ -3961,6 +3961,7 @@ char var[80];
 unsigned int days;
 unsigned int month; 
 unsigned int year;
+int wd;
 int i = 0;
 char months[12][12] = {"share.jan", "share.feb", "share.mar", "share.apr", "share.may", "share.jun",
 					   "share.jul", "share.aug", "share.sep", "share.oct", "share.nov", "share.dec"};
@@ -3974,6 +3975,7 @@ unsigned long totout = 0;
 	    return;
 	    
   days = daysformonth (month, year);
+  wd = weekday (month, 1, year);   //first day in month (mon=0, tue=1, ..., sun=6)
   
   char tq[32];
   sprintf (tq, "traff-%02u-%u", month, year);
@@ -4029,8 +4031,8 @@ unsigned long totout = 0;
   websWrite (stream, "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n", COL_WIDTH);
   websWrite (stream, "  margin: 0; padding: 0;\n");
   websWrite (stream, "  text-align: center; list-style: none;}\n");
-  websWrite (stream, "#t-graph li.day {height: 298px; padding-top: 2px;\n");
-  websWrite (stream, "  border-right: 1px dotted #C4C4C4; color: #AAA;}\n");
+  websWrite (stream, "#t-graph li.day {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #AAA;}\n");
+  websWrite (stream, "#t-graph li.day_sun {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #E00;}\n");
   websWrite (stream, "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n");
   websWrite (stream, "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n");
   websWrite (stream, "#t-graph li.rcvd {left: 3px; background: #228B22;}\n");  //set rcvd bar colour here (green)
@@ -4053,7 +4055,8 @@ unsigned long totout = 0;
   
   for (i = 0; i < days; i++)
   {
-  websWrite (stream, "<li class=\"day\" id=\"d%d\" ", i + 1);
+  websWrite (stream, "<li class=\"day%s\" id=\"d%d\" ", (wd % 7) == 6 ? "_sun" : "", i + 1);
+  wd++;
   websWrite (stream, "onmouseover=\"Show(\'%s %d, %d (%s: %lu MB / %s: %lu MB)\')\" ", monthname, i + 1, year, incom, rcvd[i], outcom, sent[i]);
   websWrite (stream, "onmouseout=\"Show(\'%s %d (%s: %lu MB / %s: %lu MB)\')\"", monthname, year, incom, totin, outcom, totout);
   websWrite (stream, ">%d\n",  i + 1);
