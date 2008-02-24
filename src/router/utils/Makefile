@@ -18,13 +18,15 @@ endif
 include $(TOP)/.config
 
 #LIBS := libbb.so libbcm.so libbcmcrypto.so
-UTILS := mtd
 ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
+UTILS := mtd
 UTILS += epi_ttcp
 endif
+endif
 
-CFLAGS += -s $(COPTS) -I../shared -I$(SRCBASE)/include.v23 -I$(SRCBASE)/wl/exe -I$(LINUXDIR)
-LDFLAGS += -L../nvram -L../shared -lshared -lnvram
+CFLAGS += -s $(COPTS) -I../shared -I$(SRCBASE)/include.v23 -I$(SRCBASE)/wl/exe -I$(LINUXDIR) -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS += -L../nvram -L../shared -lshared -lnvram -ffunction-sections -fdata-sections -Wl,--gc-sections
 vpath %.c $(SRCBASE)/tools/misc
 
 
@@ -59,7 +61,7 @@ all:
 else
 all: $(UTILS)
 ifeq ($(CONFIG_BUFFALO),y)
-	make -C full
+	make -C src
 else
 	if test -e "src/Makefile"; then make -C src; fi
 endif
@@ -67,7 +69,7 @@ endif
 
 clean:
 ifeq ($(CONFIG_BUFFALO),y)
-	make -C full clean
+	make -C src clean
 else
 	if test -e "src/Makefile"; then make -C src clean; fi
 endif
@@ -76,7 +78,11 @@ endif
 install: all
 	install -d $(INSTALLDIR)/usr/sbin
 #	install -d $(INSTALLDIR)/usr/lib
+ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
 	install $(UTILS) $(INSTALLDIR)/usr/sbin
+endif
+endif
 	#install $(LIBS) $(INSTALLDIR)/usr/lib
 #	$(STRIP) $(foreach file,$(UTILS),$(INSTALLDIR)/usr/sbin/$(file))
 ifeq ($(ARCH),armeb)
@@ -87,10 +93,15 @@ else
 ifneq ($(CONFIG_MADWIFI),y)
 
 ifeq ($(CONFIG_MSSID),y)
+ifeq ($(CONFIG_BUFFALO),y)
+	install -D wl.bcm $(INSTALLDIR)/usr/sbin/wl
+else
+
 ifneq ($(CONFIG_BCM5354),y)
 	install -D wl $(INSTALLDIR)/usr/sbin/wl
 else
 	install -D wl $(INSTALLDIR)/usr/sbin/wl
+endif
 endif
 else
 	install -D wl.v23 $(INSTALLDIR)/usr/sbin/wl
