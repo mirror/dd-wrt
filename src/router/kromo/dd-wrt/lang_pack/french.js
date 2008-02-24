@@ -1218,8 +1218,8 @@ status_inet.next="Mois suivant";
 //help container
 
 hstatus_inet.right2="Ce sont les informations requises par votre FAI afin de vous connecter à Internet et qui sont configurées dans l'onglet <em>Setup</em>. Vous pouvez connecter votre routeur à Internet en cliquant sur <em>Connect</em> ou le déconnecter en cliquant sur <em>Disconnect</em>.";
-hstatus_inet.right4="Informations sur le trafic Internet depuis le dernier reset du routeur (les données sont stockée dans la mémoire flash du routeur).";
-hstatus_inet.right6="Trafic Internet ventilé par mois. Par défaut, le mois courant est affiché. Déplacez la souris sur le graph pour afficher les données des autres mois.";
+hstatus_inet.right4="Informations sur le trafic Internet depuis le dernier démarrage du routeur.";
+hstatus_inet.right6="Trafic Internet ventilé par mois. Par défaut, le mois courant est affiché. Déplacez la souris sur le graph pour afficher les données des autres mois (les données sont stockées dans la mémoire flash du routeur).";
 
 
 // ** Status_Conntrack.asp **//
