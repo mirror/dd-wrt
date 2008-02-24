@@ -30,6 +30,8 @@
 				<dd>The Internet IP Address, Subnet Mask, and Default Gateway IP Address of the router, as seen by external users on the Internet, are displayed here.</dd>
 				<dt>DNS</dt>
 				<dd>The DNS (Domain Name System) IP Addresses currently used by the router are shown here. Multiple DNS IP settings are common. In most cases, the first available DNS entry is used.</dd>
+				<dt>Traffic</dt>
+				<dd>This shows your router's Internet traffic (total since last reboot or by month).</dd>
 			</dl>
 		</div>
 		<div class="also">
