@@ -1372,8 +1372,8 @@ status_inet.leasetime="Preostali èas zakupa";
 status_inet.traff="Promet";
 status_inet.traff_tot="Skupni romet";
 status_inet.traff_mon="Meseèni promet";
-status_inet.ttraffin="Vhodni promet";
-status_inet.ttraffout="Izhodni promet";
+status_inet.traffin="Vhodni promet";
+status_inet.traffout="Izhodni promet";
 status_inet.previous="Prej¹nji mesec";
 status_inet.next="Naslednji mesec";
 
