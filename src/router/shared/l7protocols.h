@@ -103,9 +103,9 @@ l7filters filters_list[] = {
 	{ "rdp",				"l7" },		// RDP - Remote Desktop Protocol (used in Windows Terminal Services)
 	{ "replaytv-ivs",		"l7" },		// ReplayTV Internet Video Sharing - Digital Video Recorder - http://replaytv.com
 	{ "rlogin",				"l7" },		// rlogin - remote login - RFC 1282
-	{ "rtp",				"l7" },		// RTP - Real-time Transport Protocol - RFC 3550
 	{ "rpm",				"l7" },		// RPM - Redhat Package Management packages
 	{ "rtf",				"l7" },		// RTF - Rich Text Format - an open document format
+	{ "rtp",				"l7" },		// RTP - Real-time Transport Protocol - RFC 3550
 	{ "rtsp",				"l7" },		// RTSP - Real Time Streaming Protocol - http://www.rtsp.org - RFC 2326
 	{ "shoutcast",			"l7" },		// Shoutcast and Icecast - streaming audio
 	{ "sip",				"l7" },		// SIP - Session Initiation Protocol - Internet telephony - RFC 3261
