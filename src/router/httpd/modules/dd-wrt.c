@@ -7932,7 +7932,7 @@ ej_ip_conntrack_table (webs_t wp, int argc, char_t ** argv)
   FILE *fp;
   int ip_count = 1;
   char line[512];
-  char protocol[5] = "";
+  char protocol[16] = "";
   int timeout = 0;
   char srcip[16] = "";
   char dstip[16] = "";
