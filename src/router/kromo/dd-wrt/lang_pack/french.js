@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				French translation DD-WRT V23 SP1 by Botho 09/09/2007						//
+//				French translation DD-WRT by Botho 24/02/2008 version - svn 9102			//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -1218,7 +1218,9 @@ status_inet.next="Mois suivant";
 //help container
 
 hstatus_inet.right2="Ce sont les informations requises par votre FAI afin de vous connecter à Internet et qui sont configurées dans l'onglet <em>Setup</em>. Vous pouvez connecter votre routeur à Internet en cliquant sur <em>Connect</em> ou le déconnecter en cliquant sur <em>Disconnect</em>.";
-hstatus_inet.right4="This shows your router's Internet trafic.";
+hstatus_inet.right4="Informations sur le trafic Internet depuis le dernier reset du routeur (les données sont stockée dans la mémoire flash du routeur).";
+hstatus_inet.right6="Trafic Internet ventilé par mois. Par défaut, le mois courant est affiché. Déplacez la souris sur le graph pour afficher les données des autres mois.";
+
 
 // ** Status_Conntrack.asp **//
 status_conn.titl="Table des connections";
