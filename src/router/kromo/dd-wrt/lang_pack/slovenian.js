@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 05.oct.2007, svn 8115	//
+//				Slovenian translation DD-WRT by Eko, last revision: 24.feb.2008, svn 9100	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 // IMPORTANT: for live values use UTF-8 Unicode Character Set
 
@@ -61,6 +61,18 @@ share.fri_s1="P";
 share.sat="Sobota";
 share.sat_s="Sob";
 share.sat_s1="S";
+share.jan="Januar";
+share.feb="Februar";
+share.mar="Marec";
+share.apr="April";
+share.may="Maj";
+share.jun="Junij";
+share.jul="Julij";
+share.aug="Avgust";
+share.sep="September";
+share.oct="Oktober";
+share.nov="November";
+share.dec="December";
 share.expires="Poteèe";
 share.yes="Da";
 share.no="Ne";
@@ -392,6 +404,7 @@ bmenu.servicesPppoesrv="PPPoE stre¾nik";
 bmenu.servicesPptp="PPTP";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Milkfish SIP Usmerjalnik";
+bmenu.servicesAnchorFree="Zaslu¾i s Hotspotom";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Usmerjalnik";
@@ -694,6 +707,42 @@ hotspot.wifidog_authsrvsslport="AuthServer SSL vrata";
 hotspot.wifidog_authsrvhttpport="AuthServer HTTP vrata";
 hotspot.wifidog_authsrvpath="AuthServer pot";
 
+var anchorfree = new Object();
+anchorfree.anchorfree="AnchorFree";
+anchorfree.title="Earn Hotspot Revenue";
+anchorfree.anchorfree_revenue="Earn revenue by creating ad-supported AnchorFree Hotspot";
+anchorfree.email="Email to receive revenue reports";
+anchorfree.ssid="Use different SSID";
+anchorfree.ssid_name="SSID";
+anchorfree.address_1="Street Address";
+anchorfree.address_2="Street Address 2";
+anchorfree.city="City";
+anchorfree.zip="Postal or Zip Code";
+anchorfree.state="County/State/Province";
+anchorfree.country="Country";
+anchorfree.category="Category";
+anchorfree.publish="Publish this hotspot on the free WiFi map";
+anchorfree.serviceid="Service ID";
+anchorfree.servicestatus="Service Status";
+anchorfree.agreement="Terms and Conditions";
+anchorfree.agree="I ACCEPT AND AGREE";
+anchorfree.validaddr="a valid address field must be provided if this hotspot should be published on the wifi hotspot map!";
+anchorfree.validcity="a valid city or zip/postal code must be provided if this hotspot should be published on the wifi hotspot map!";
+anchorfree.validcat="please select a advertising category for your hotspot";
+anchorfree.validcountry="please select a country for your hotspot";
+anchorfree.validterms="You must agree to the terms & conditions!";
+
+var hanchorfree = new Object();
+hanchorfree.right1="Join AnchorFree's hotspot advertising network";
+hanchorfree.right2="AnchorFree operates a hotspot advertising network allowing DD-WRT customers to generate incremental revenues.";
+hanchorfree.right3="Generate incremental revenue with advertising from AnchorFree";
+hanchorfree.right4="By activating this feature and creating an account with AnchorFree (it's free and easy), a persistent advertising frame is inserted directly into users web browsers, which will earn you a payment every month.  Earn a minimum monthly threshold of $25 and AnchorFree will automatically credit your account with funds.";
+hanchorfree.right5="For more information please visit www.anchorfree.com";
+hanchorfree.right6="Activation is easy";
+hanchorfree.right7="Once you have activated, AnchorFree will send an email to the registered account owner with simple instructions on optimizing your hotspot, FAQs, and other pertinent information on earning money from your router. Through this configuration screen, AnchorFree inserts a thin, non-intrusive advertising frame directly into web browsers accessing the internet from this router.";
+hanchorfree.right8="Customer support";
+hanchorfree.right9="Have questions? Contact us at boxhelp@anchorfree.com";
+
 
 // ** Info.htm **//
 
@@ -928,6 +977,8 @@ networking.legend4="Trenutna tabela mostov";
 networking.brname="Ime mosta";
 networking.stp="STP omogoèen";
 networking.iface="Vmesniki";
+networking.h5="DHCPD";
+networking.legend5="Mnogokraten DHCP stre¾nik";
 
 
 // ** QoS.asp **//
@@ -1134,6 +1185,7 @@ service.ssh_legend="Varna ukazna lupina";
 service.ssh_srv="SSHd";
 service.ssh_password="Prijava z geslom";
 service.ssh_key="Poobla¹èeni kljuèi";
+service.ssh_forwarding="SSH TCP posredovanje";
 
 //radiooff.webservices
 service.radiooff_legend="SES / AOSS / EZ-SETUP gumb";
@@ -1165,10 +1217,7 @@ service.nstx_ipenable="Ve¾i samo na ta IP";
 service.nstx_log="Sporoèila za razhro¹èevanje";
 
 //milkfish.webservices
-service.milkfish_siprouter="Milkfish SIP router";
-service.milkfish_database="Milkfish SIP Database";
-service.database_subscribers="Lokalni naroèniki";
-service.database_aliases="Local Aliases";
+service.milkfish_siprouter="Milkfish SIP Router";
 service.milkfish_alias="Alias";
 service.milkfish_uri="SIP URI";
 service.milkfish_mainswitch="Main Switch";
@@ -1191,6 +1240,9 @@ service.milkfish_dsusername="DynSIP Username";
 service.milkfish_dspassword="DynSIP Password";
 service.milkfish_sipmessage="SIP Message";
 service.milkfish_destination="SIP Destination";
+service.milkfish_contact="Contact";
+service.milkfish_agent="User Agent";
+service.milkfish_registrations="Active Registrations";
 //service.milkfish_="";//
 service.hmilkfish_right2="Enables/Disables your Milkfish SIP Router.";
 service.hmilkfish_right4="Enables/Disables From:-Headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled, if you want to allow callees to call you back if your WAN IP has changed";
@@ -1325,10 +1377,13 @@ status_inet.ttraffout="Izhodni promet";
 status_inet.previous="Prej¹nji mesec";
 status_inet.next="Naslednji mesec";
 
+
 //help container
 
 hstatus_inet.right2="To ka¾e podatke, potrebne za prikljuèitev v internet. Te podatke ste vnesli v zavihku <em>Namestitev</em>. Tu lahko s klikom na <em>Pove¾i</em> ali <em>Prekini</em> pove¾ete ali prekinete va¹o povezavo.";
-hstatus_inet.right4="To ka¾e kolièino prene¹enih podatkov.";
+hstatus_inet.right4="To ka¾e kolièino prene¹enih podatkov od zadnjega zagona usmerjalnika.";
+hstatus_inet.right6="To ka¾e kolièino prene¹enih podatkov po mesecih. Za prikaz dnevnih podatkov se zapeljite z mi¹ko po grafu. Podatki so spravljeni v nvramu.";
+
 
 // ** Status_Conntrack.asp **//
 
@@ -1611,6 +1666,7 @@ wl_adv.label18="WMM podpora";
 wl_adv.label19="Brez potrditve";
 wl_adv.label20="Razveljavi Shortslot";
 wl_adv.label21="Najveèja hitrost oddajanja";
+wl_adv.label23="Najmanj¹a hitrost oddajanja";
 wl_adv.label22="Naèin koeksistenca z Bluetoothom";
 wl_adv.table1="EDCA AP parameteri (AP do odjemalca)";
 wl_adv.col1="CWmin";
@@ -1687,6 +1743,7 @@ wl_basic.specialmode="2.3 Ghz naèin";
 wl_basic.wifi_bonding="Wifi vezanje";
 wl_basic.sifstime="OFDM SIFS èas";
 wl_basic.preambletime="OFDM Preamble èas";
+wl_basic.multicast="Posredovanje multicast paketov";
 //help container
 
 hwl_basic.right2="Èe ¾elite prepovedati vstop odjemalcem G, izberite <em>Samo-B</em> naèin. Èe ¾elite izkljuèiti brez¾ièno omre¾je, izberite <em>Onemogoèie</em>.";
