@@ -214,6 +214,8 @@ struct nvram_tuple srouter_defaults[] = {
 #else
   {"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #endif
+#elif HAVE_DIR400
+  {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_DIR300
   {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_FONERA
@@ -957,7 +959,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"block_java", "0", 0},	/* Block Java [1|0] */
   {"block_activex", "0", 0},	/* Block ActiveX [1|0] */
   {"block_cookie", "0", 0},	/* Block Cookie [1|0] */
-  {"block_multicast", "0", 0},	/* Multicast Pass Through [1|0] */
+  {"block_multicast", "1", 0},	/* Multicast Pass Through [1|0] */
   {"block_loopback", "0", 0},	/* Block NAT loopback [1|0] */
   {"ipsec_pass", "1", 0},	/* IPSec Pass Through [1|0] */
   {"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
@@ -971,7 +973,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"block_java", "0", 0},	/* Block Java [1|0] */
   {"block_activex", "0", 0},	/* Block ActiveX [1|0] */
   {"block_cookie", "0", 0},	/* Block Cookie [1|0] */
-  {"block_multicast", "0", 0},	/* Multicast Pass Through [1|0] */
+  {"block_multicast", "1", 0},	/* Multicast Pass Through [1|0] */
   {"block_loopback", "0", 0},	/* Block NAT loopback [1|0] */
   {"ipsec_pass", "1", 0},	/* IPSec Pass Through [1|0] */
   {"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
@@ -985,7 +987,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"block_java", "0", 0},	/* Block Java [1|0] */
   {"block_activex", "0", 0},	/* Block ActiveX [1|0] */
   {"block_cookie", "0", 0},	/* Block Cookie [1|0] */
-  {"block_multicast", "0", 0},	/* Multicast Pass Through [1|0] */
+  {"block_multicast", "1", 0},	/* Multicast Pass Through [1|0] */
   {"block_loopback", "0", 0},	/* Block NAT loopback [1|0] */
   {"ipsec_pass", "1", 0},	/* IPSec Pass Through [1|0] */
   {"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
@@ -998,7 +1000,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"block_java", "0", 0},	/* Block Java [1|0] */
   {"block_activex", "0", 0},	/* Block ActiveX [1|0] */
   {"block_cookie", "0", 0},	/* Block Cookie [1|0] */
-  {"block_multicast", "0", 0},	/* Multicast Pass Through [1|0] */
+  {"block_multicast", "1", 0},	/* Multicast Pass Through [1|0] */
   {"block_loopback", "0", 0},	/* Block NAT loopback [1|0] */
   {"ipsec_pass", "1", 0},	/* IPSec Pass Through [1|0] */
   {"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
