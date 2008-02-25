@@ -1158,77 +1158,46 @@ start_overclocking (void)
 void
 enable_dtag_vlan (int enable)
 {
-  char *vlan1ports = NULL;
-  char *vlan2ports = NULL;
   char *vlan7ports = NULL;
-  switch (getRouterBrand ())
+  vlan7ports="4t 5";
+  if (nvram_match("vlan1ports","4 5"))
     {
-    case ROUTER_MOTOROLA:
-    case ROUTER_ASUS_WL520G:
-    case ROUTER_WRT54G_V8:
-      vlan1ports = "4 5";
-      vlan7ports = "4t 5";
-      break;
-    case ROUTER_LINKSYS_WTR54GS:
-      vlan1ports = "1 5";
-      vlan7ports = "1t 5";
-      break;
-    case ROUTER_ASUS_WL550GE:
-    case ROUTER_LINKSYS_WRH54G:
-      vlan1ports = "0 5";
-      vlan7ports = "0t 5";
-      break;
-    case ROUTER_WRT600N:
-      vlan2ports = "0 8";
-      vlan7ports = "0t 8";
-      break;
-    case ROUTER_WRT350N:
-    case ROUTER_BUFFALO_WZRG144NH:
-      vlan1ports = "4 8";
-      vlan7ports = "4t 8";
-      break;
-    default:
-      vlan1ports = "0 5";
-      vlan7ports = "0t 5";
-      break;
+    vlan7ports="4t 5";
+    }
+  if (nvram_match("vlan1ports","0 5"))
+    {
+    vlan7ports="0t 5";
     }
   system2 ("echo 1 > /proc/switch/eth0/reset");
   system2 ("echo 1 > /proc/switch/eth1/reset");
   char tmp[200];
   if (enable)
     {
+      sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/1/ports","");
+      system2 (tmp);
+      sprintf (tmp, "echo %s > /proc/switch/eth1/vlan/1/ports","");
+      system2 (tmp);
+      sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/0/ports",nvram_safe_get ("vlan0ports"));
+      system2 (tmp);
+      sprintf (tmp, "echo %s > /proc/switch/eth1/vlan/0/ports",nvram_safe_get ("vlan0ports"));
+      system2 (tmp);
       sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/7/ports", vlan7ports);
       system2 (tmp);
       sprintf (tmp, "echo %s > /proc/switch/eth1/vlan/7/ports", vlan7ports);
-      system2 (tmp);
-      if (vlan1ports)
-	{
-	  sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/1/ports",
-		   vlan1ports);
-	  system2 (tmp);
-	  sprintf (tmp, "echo %s > /proc/switch/eth1/vlan/1/ports",
-		   vlan1ports);
-	  system2 (tmp);
-	}
-      if (vlan2ports)
-	{
-	  sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/2/ports",
-		   vlan2ports);
-	  system2 (tmp);
-	  sprintf (tmp, "echo %s > /proc/switch/eth1/vlan/2/ports",
-		   vlan2ports);
-	  system2 (tmp);
-	}
-      sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/0/ports",
-	       nvram_safe_get ("vlan0ports"));
-      system2 (tmp);
-      sprintf (tmp, "echo %s > /proc/switch/eth1/vlan/0/ports",
-	       nvram_safe_get ("vlan0ports"));
       system2 (tmp);
     }
   else
     {
       int i;
+      for (i = 0; i < 16; i++)
+	{
+	  sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/%d/ports",
+		   "", i);
+	  system2 (tmp);
+	  sprintf (tmp, "echo %s > /proc/switch/eth1/vlan/%d/ports",
+		   "", i);
+	  system2 (tmp);
+	}
       for (i = 0; i < 16; i++)
 	{
 	  char vlanb[16];
@@ -1244,4 +1213,8 @@ enable_dtag_vlan (int enable)
 	}
     }
 
+}
+start_dtag(void)
+{
+enable_dtag_vlan(1);
 }

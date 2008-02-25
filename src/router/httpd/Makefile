@@ -101,7 +101,11 @@ OBJS += upgrade_rb500.o
 else
 ifneq ($(CONFIG_X86),y)
 ifeq ($(CONFIG_BUFFALO),y)
+ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),JP)
 OBJS += upgrade_buffalo.o
+else
+OBJS += upgrade.o
+endif
 else
 OBJS += upgrade.o
 endif
