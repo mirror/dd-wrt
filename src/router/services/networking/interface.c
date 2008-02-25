@@ -135,8 +135,6 @@ start_config_vlan (void)
   char tmp[200];
 
 // configure ports
-if (nvram_invmatch("wan_vdsl","1"))
-{
   system2 ("echo 1 > /proc/switch/eth0/reset");
   system2 ("echo 1 > /proc/switch/eth1/reset");
   for (i = 0; i < 16; i++)
@@ -152,7 +150,6 @@ if (nvram_invmatch("wan_vdsl","1"))
 	       nvram_safe_get (vlanb), i);
       system2 (tmp);
     }
-}
 
   /* set vlan i/f name to style "vlan<ID>" */
 
