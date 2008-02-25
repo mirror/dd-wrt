@@ -104,6 +104,7 @@ struct site_survey_list
   short phy_noise;		/* noise (in dBm) */
   unsigned short beacon_period;	/* units are Kusec */
   unsigned short capability;	/* Capability information */
+//  unsigned char athcaps;
   unsigned char ENCINFO[32];	/* encryption info */
   int rate_count;		/* # rates in this set */
   unsigned char dtim_period;	/* DTIM period */
@@ -164,6 +165,7 @@ site_survey_main (int argc, char *argv[])
       site_survey_lists[i].RSSI =
 	(int) site_survey_lists[i].phy_noise + (int) sr->isr_rssi;
       site_survey_lists[i].capability = sr->isr_capinfo;
+//      site_survey_lists[i].athcaps = sr->isr_athflags;
       site_survey_lists[i].rate_count = sr->isr_nrates;
       cp += sr->isr_len, len -= sr->isr_len;
       i++;

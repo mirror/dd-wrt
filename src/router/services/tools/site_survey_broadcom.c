@@ -49,6 +49,7 @@ struct site_survey_list
   int16 phy_noise;		/* noise (in dBm) */
   uint16 beacon_period;		/* units are Kusec */
   uint16 capability;		/* Capability information */
+//  unsigned char athcaps;
   unsigned char ENCINFO[32];	/* encryption info */
   uint rate_count;		/* # rates in this set */
   uint8 dtim_period;		/* DTIM period */
