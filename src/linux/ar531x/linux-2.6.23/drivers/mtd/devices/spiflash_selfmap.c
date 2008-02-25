@@ -150,12 +150,13 @@ enum {
 };
 
 static struct mtd_partition dir_parts[] = {
-        { name: "boot", offset: 0, size: 0x30000, },//, mask_flags: MTD_WRITEABLE, },
-        { name: "linux", offset: 0x40000, size: 0x390000, },
+        { name: "RedBoot", offset: 0, size: 0x30000, },//, mask_flags: MTD_WRITEABLE, },
+        { name: "linux", offset: 0x30000, size: 0x390000, },
         { name: "rootfs", offset: 0x0, size: 0x2b0000,}, //must be detected
         { name: "nvram", offset: 0x3d0000, size: 0x10000, },
         { name: "FIS Directory", offset: 0x3e0000, size: 0x10000, },
         { name: "board_config", offset: 0x3f0000, size: 0x10000, },
+        { name: "fullflash", offset: 0x3f0000, size: 0x10000, },
         { name: NULL, },
 };
 
@@ -447,6 +448,17 @@ spiflash_write (struct mtd_info *mtd,loff_t to,size_t len,size_t *retlen,const u
 #ifdef CONFIG_MTD_PARTITIONS
 static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", NULL };
 #endif
+struct fis_image_desc {
+    unsigned char name[16];      // Null terminated name
+    unsigned long flash_base;    // Address within FLASH of image
+    unsigned long mem_base;      // Address in memory where it executes
+    unsigned long size;          // Length of image
+    unsigned long entry_point;   // Execution entry point
+    unsigned long data_length;   // Length of actual data
+    unsigned char _pad[256-(16+7*sizeof(unsigned long))];
+    unsigned long desc_cksum;    // Checksum over image descriptor
+    unsigned long file_cksum;    // Checksum over image data
+};
 
 
 static int spiflash_probe(struct platform_device *pdev)
@@ -457,6 +469,8 @@ static int spiflash_probe(struct platform_device *pdev)
    	int index, num_parts;
 	struct mtd_info *mtd;
 	char *buf;
+	struct fis_image_desc *fis;  
+	unsigned char *p;
 	spidata->mmraddr = ioremap_nocache(SPI_FLASH_MMR, SPI_FLASH_MMR_SIZE);
 	spin_lock_init(&spidata->mutex);
 	init_waitqueue_head(&spidata->wq);
@@ -500,33 +514,58 @@ static int spiflash_probe(struct platform_device *pdev)
 	printk(KERN_EMERG "scanning for root partition\n");
 	
 	offset = 0;
-	buf = vmalloc(mtd->erasesize);
+	buf = 0xa8000000;
 	while((offset+mtd->erasesize)<mtd->size)
 	    {
-	    printk(KERN_EMERG "scan at offset %X\n",offset);
-	    ret = mtd->read(mtd, offset,mtd->erasesize, &retlen, (void *)buf);
-	    if (ret)
-		{
-		printk(KERN_EMERG "error while scanning\n");
-		goto error;
-		}
+	    printk(KERN_EMERG "[0x%08X]\n",offset);
 	    if (*((__u32 *) buf) == SQUASHFS_MAGIC) 
 		{
-		printk(KERN_EMERG "found squashfs at %X\n",offset);
+		printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
 		dir_parts[2].offset = offset;
-		dir_parts[2].size = 0x3d0000-offset;
+		dir_parts[5].offset = mtd->size-mtd->erasesize; // board config
+		dir_parts[5].size = mtd->erasesize;
+		dir_parts[4].offset = dir_parts[5].offset-mtd->erasesize; //fis config
+		dir_parts[4].size = mtd->erasesize;
+		dir_parts[3].offset = dir_parts[4].offset-mtd->erasesize; //nvram
+		dir_parts[3].size = mtd->erasesize;
+		dir_parts[2].size = dir_parts[3].offset-offset; //size of rootfs aligned to nvram offset
+		//now scan for linux offset
+		p=(unsigned char*)(0xa8000000+dir_parts[4].offset);
+		fis = (struct fis_image_desc*)p;
+		while(1)
+		{
+		if (fis->name[0]==0xff)
+		    {
+		    goto def;
+		    }
+		if (!strcmp(fis->name,"RedBoot"))
+		    {
+		    printk(KERN_EMERG "found RedBoot partition at [0x%08lX]\n",fis->flash_base);
+		    dir_parts[0].size=fis->size;
+		    dir_parts[6].offset=dir_parts[0].size;
+		    }
+		if (!strcmp(fis->name,"linux") || !strncmp(fis->name,"vmlinux",7) || !strcmp(fis->name,"kernel"))
+		    {
+		    printk(KERN_EMERG "found linux partition at [0x%08lX]\n",fis->flash_base);
+		    dir_parts[1].offset=fis->flash_base&(mtd->size-1);
+		    dir_parts[1].size=dir_parts[2].offset-dir_parts[1].offset+dir_parts[2].size;
+		    dir_parts[6].size=dir_parts[1].size+dir_parts[3].size; // linux + nvram = phy size
+		    }
+		p+=sizeof(struct fis_image_desc);
+		fis = (struct fis_image_desc*)p;
+		}
 		break;
 		}
 	    offset+=mtd->erasesize;
+	    buf+=mtd->erasesize;
 	    }
-	
-	result = add_mtd_partitions(mtd, dir_parts, 6);
+	def:;
+	result = add_mtd_partitions(mtd, dir_parts, 7);
 	spidata->mtd = mtd;
 	
    	return (result);
 	
 error:
-	vfree(buf);
 	kfree(mtd);
 	kfree(spidata);
 	return -ENXIO;
