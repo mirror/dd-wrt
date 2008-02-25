@@ -1261,7 +1261,7 @@ start_lan (void)
   else
     cprintf ("Write wireless mac successfully\n");
   eval ("wl", "-i", wl_face, "up");
-  start_config_macs(wl_face);
+  start_config_macs (wl_face);
 #ifdef HAVE_MSSID
   set_vifsmac (mac);
 #endif
@@ -1387,7 +1387,7 @@ start_lan (void)
 		      cprintf ("Write wireless mac successfully\n");
 #ifndef HAVE_MADWIFI
 		    eval ("wl", "-i", name, "up");
-		    start_config_macs(name);
+		    start_config_macs (name);
 #endif
 		  }
 	      }
@@ -1404,7 +1404,7 @@ start_lan (void)
 		  perror ("Write wireless mac fail : \n");
 		else
 		  cprintf ("Write wireless mac successfully\n");
-		  start_config_macs(wl_face);
+		start_config_macs (wl_face);
 	      }
 #endif
 #ifdef HAVE_MSSID
@@ -1578,7 +1578,7 @@ start_lan (void)
 	perror ("Write wireless mac fail : ");
       else
 	cprintf ("Write wireless mac successfully\n");
-	start_config_macs(wl_face);
+      start_config_macs (wl_face);
     }
 
 #endif
@@ -2135,7 +2135,7 @@ start_wan (int status)
   char *wan_proto = nvram_safe_get ("wan_proto");
   int s;
   struct ifreq ifr;
-eval("ifconfig",nvram_safe_get("wan_ifname"),"allmulti","promisc");
+  eval ("ifconfig", nvram_safe_get ("wan_ifname"), "allmulti", "promisc");
 
 #ifdef HAVE_PPPOE
 #ifdef HAVE_RB500
@@ -2315,9 +2315,9 @@ eval("ifconfig",nvram_safe_get("wan_ifname"),"allmulti","promisc");
       ioctl (s, SIOCSIFHWADDR, &ifr);
 #ifndef HAVE_MADWIFI
       if (wlifname && !strcmp (wan_ifname, wlifname))
-        {
-	eval ("wl", "-i", wan_ifname, "up");
-	start_config_macs(wan_ifname);
+	{
+	  eval ("wl", "-i", wan_ifname, "up");
+	  start_config_macs (wan_ifname);
 	}
 #endif
       cprintf ("Write WAN mac successfully\n");
@@ -2428,22 +2428,49 @@ eval("ifconfig",nvram_safe_get("wan_ifname"),"allmulti","promisc");
 		 nvram_safe_get ("pppoe_service"));
       fprintf (fp, "\n");
       char vlannic[32];
-      sprintf (vlannic, "%s.0007", pppoe_wan_ifname);
-      if (nvram_match ("wan_vdsl", "1"))	// Deutsche Telekom VDSL2 Vlan 7 Tag
+      if (!strncmp (pppoe_wan_ifname, "vlan", 4))
 	{
-	  if (!ifexists (vlannic))
+	  sprintf (vlannic, "eth0.0007", pppoe_wan_ifname);
+	  if (nvram_match ("wan_vdsl", "1"))
 	    {
-	      eval ("vconfig", "set_name_type", "DEV_PLUS_VID");
-	      eval ("vconfig", "add", pppoe_wan_ifname, "7");
-	      eval ("ifconfig", vlannic, "up");
+	      enable_dtag_vlan (1);
+	      if (!ifexists (vlannic))
+		{
+		  eval ("vconfig", "set_name_type", "DEV_PLUS_VID");
+		  eval ("vconfig", "add", "eth0", "7");
+		  eval ("ifconfig", vlannic, "up");
+		}
+	      fprintf (fp, "nic-%s\n", vlannic);
 	    }
-	  fprintf (fp, "nic-%s\n", vlannic);
+	  else
+	    {
+	      enable_dtag_vlan (0);
+	      if (ifexists (vlannic))
+		eval ("vconfig", "rem", vlannic);
+	      fprintf (fp, "nic-%s\n", pppoe_wan_ifname);
+	    }
+
+
 	}
       else
 	{
-	  if (ifexists (vlannic))
-	    eval ("vconfig", "rem", vlannic);
-	  fprintf (fp, "nic-%s\n", pppoe_wan_ifname);
+	  sprintf (vlannic, "%s.0007", pppoe_wan_ifname);
+	  if (nvram_match ("wan_vdsl", "1"))	// Deutsche Telekom VDSL2 Vlan 7 Tag
+	    {
+	      if (!ifexists (vlannic))
+		{
+		  eval ("vconfig", "set_name_type", "DEV_PLUS_VID");
+		  eval ("vconfig", "add", pppoe_wan_ifname, "7");
+		  eval ("ifconfig", vlannic, "up");
+		}
+	      fprintf (fp, "nic-%s\n", vlannic);
+	    }
+	  else
+	    {
+	      if (ifexists (vlannic))
+		eval ("vconfig", "rem", vlannic);
+	      fprintf (fp, "nic-%s\n", pppoe_wan_ifname);
+	    }
 	}
 
       // Those are default options we use + user/passwd
