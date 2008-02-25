@@ -135,14 +135,14 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     {
     case ROUTER_LINKSYS_WRH54G:
       nvram_set ("wl0gpio0", "135");
-      break; 
+      break;
     case ROUTER_BUFFALO_WZRRSG54:
       nvram_unset ("wl0_abenable");
       break;
     case ROUTER_ASUS_WL550GE:
       nvram_set ("wl0gpio1", "0");
       nvram_set ("wl0gpio2", "0");
-      break;          
+      break;
     case ROUTER_ASUS_WL500W:
     case ROUTER_WRT54G:
     case ROUTER_WRT54G_V8:
@@ -418,8 +418,8 @@ start_sysinit (void)
       nvram_set ("lan_ifnames", "eth0 eth2");
       nvram_set ("wan_ifname", "eth1");
       nvram_set ("wl0_ifname", "eth2");
-      eval ("gpio", "init", "0"); //AOSS button
-      eval ("gpio", "init", "4"); //reset button
+      eval ("gpio", "init", "0");	//AOSS button
+      eval ("gpio", "init", "4");	//reset button
       break;
 
     case ROUTER_MOTOROLA:
@@ -701,7 +701,7 @@ start_sysinit (void)
 	  switch (brand)
 	    {
 	    case ROUTER_WRT300NV11:
-	    case ROUTER_WRT310N:    
+	    case ROUTER_WRT310N:
 	    case ROUTER_WRT350N:
 	    case ROUTER_WRT600N:
 	    case ROUTER_BUFFALO_WZRG144NH:
@@ -1152,4 +1152,96 @@ start_overclocking (void)
       exit (0);
     }
 #endif
+}
+
+
+void
+enable_dtag_vlan (int enable)
+{
+  char *vlan1ports = NULL;
+  char *vlan2ports = NULL;
+  char *vlan7ports = NULL;
+  switch (getRouterBrand ())
+    {
+    case ROUTER_MOTOROLA:
+    case ROUTER_ASUS_WL520G:
+    case ROUTER_WRT54G_V8:
+      vlan1ports = "4 5";
+      vlan7ports = "4t 5";
+      break;
+    case ROUTER_LINKSYS_WTR54GS:
+      vlan1ports = "1 5";
+      vlan7ports = "1t 5";
+      break;
+    case ROUTER_ASUS_WL550GE:
+    case ROUTER_LINKSYS_WRH54G:
+      vlan1ports = "0 5";
+      vlan7ports = "0t 5";
+      break;
+    case ROUTER_WRT600N:
+      vlan2ports = "0 8";
+      vlan7ports = "0t 8";
+      break;
+    case ROUTER_WRT350N:
+    case ROUTER_BUFFALO_WZRG144NH:
+      vlan1ports = "4 8";
+      vlan7ports = "4t 8";
+      break;
+    default:
+      vlan1ports = "0 5";
+      vlan7ports = "0t 5";
+      break;
+    }
+  system2 ("echo 1 > /proc/switch/eth0/reset");
+  system2 ("echo 1 > /proc/switch/eth1/reset");
+  char tmp[200];
+  if (enable)
+    {
+      sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/7/ports", vlan7ports);
+      system2 (tmp);
+      sprintf (tmp, "echo %s > /proc/switch/eth1/vlan/7/ports", vlan7ports);
+      system2 (tmp);
+      if (vlan1ports)
+	{
+	  sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/1/ports",
+		   vlan1ports);
+	  system2 (tmp);
+	  sprintf (tmp, "echo %s > /proc/switch/eth1/vlan/1/ports",
+		   vlan1ports);
+	  system2 (tmp);
+	}
+      if (vlan2ports)
+	{
+	  sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/2/ports",
+		   vlan2ports);
+	  system2 (tmp);
+	  sprintf (tmp, "echo %s > /proc/switch/eth1/vlan/2/ports",
+		   vlan2ports);
+	  system2 (tmp);
+	}
+      sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/0/ports",
+	       nvram_safe_get ("vlan0ports"));
+      system2 (tmp);
+      sprintf (tmp, "echo %s > /proc/switch/eth1/vlan/0/ports",
+	       nvram_safe_get ("vlan0ports"));
+      system2 (tmp);
+    }
+  else
+    {
+      int i;
+      for (i = 0; i < 16; i++)
+	{
+	  char vlanb[16];
+	  sprintf (vlanb, "vlan%dports", i);
+	  if (nvram_get (vlanb) == NULL || nvram_match (vlanb, ""))
+	    continue;
+	  sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/%d/ports",
+		   nvram_safe_get (vlanb), i);
+	  system2 (tmp);
+	  sprintf (tmp, "echo %s > /proc/switch/eth1/vlan/%d/ports",
+		   nvram_safe_get (vlanb), i);
+	  system2 (tmp);
+	}
+    }
+
 }
