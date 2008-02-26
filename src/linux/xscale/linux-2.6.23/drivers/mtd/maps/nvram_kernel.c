@@ -109,6 +109,7 @@ int
 _nvram_read(char *buf)
 {
 	struct nvram_header *header = (struct nvram_header *) buf;
+	struct nvram_header *header2 = (struct nvram_header *) buf+0x10000;
 	size_t len;
 //	ret = master->read(master, offset,
 //			   master->erasesize, &retlen, (void *)buf);
@@ -116,13 +117,18 @@ _nvram_read(char *buf)
 	if (!nvram_mtd || nvram_mtd->read(nvram_mtd, nvram_mtd->size - NVRAM_SPACE, NVRAM_SPACE, &len, buf) ||
 	    len != NVRAM_SPACE ||
 	    header->magic != NVRAM_MAGIC) {
-	//        printk(KERN_EMERG "Broken NVRAM found, recovering it (Magic %X)\n",header->magic);
+	    if (header2->magic==NVRAM_MAGIC)
+		{
+	        printk(KERN_EMERG "Found old NVRAM, converting\n");
+		memcpy(buf, header2, 0x10000); // move down
+		}else{
+	        printk(KERN_EMERG "Broken NVRAM found, recovering it (Magic %X)\n",header->magic);
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
 		memset(buf,0,NVRAM_SPACE);
 		header->magic = NVRAM_MAGIC;
 		header->len = 0;
-		
+		}
 
 	}
 

@@ -41,7 +41,6 @@ struct proc_info_list {
 	struct cpu_user_fns	*user;
 	struct cpu_cache_fns	*cache;
 };
-
 #else	/* __KERNEL__ */
 #include <asm/elf.h>
 #warning "Please include asm/elf.h instead"
