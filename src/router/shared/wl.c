@@ -328,7 +328,11 @@ do80211priv (struct iwreq *iwr, const char *ifname, int op, void *data,
 	IOCTL_ERR (IEEE80211_IOCTL_ADDMAC),
 	IOCTL_ERR (IEEE80211_IOCTL_DELMAC),
 	IOCTL_ERR (IEEE80211_IOCTL_WDSADDMAC),
+#ifdef OLD_MADWIFI
+	IOCTL_ERR (IEEE80211_IOCTL_WDSDELMAC),
+#else
 	IOCTL_ERR (IEEE80211_IOCTL_WDSSETMAC),
+#endif
       };
       op -= SIOCIWFIRSTPRIV;
       if (0 <= op && op < N (opnames))
@@ -448,7 +452,7 @@ list_channelsext (const char *ifname, int allchans)
     }
   if (!allchans)
     {
-      uint8_t active[32];
+      uint8_t active[64];
 
       if (get80211priv
 	  (ifname, IEEE80211_IOCTL_GETCHANLIST, &active, sizeof (active)) < 0)

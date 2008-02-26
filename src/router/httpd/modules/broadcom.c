@@ -1053,6 +1053,9 @@ ej_ifndef (webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_JFFS2
   if (!strcmp(name, "JFFS2")) return;
 #endif
+#ifdef HAVE_GPSI
+  if (!strcmp(name, "GPSI")) return;
+#endif
 #ifdef HAVE_MMC
   if (!strcmp(name, "MMC")) return;
 #endif
