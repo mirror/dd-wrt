@@ -113,7 +113,7 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
   else
 #endif
     ACTION ("ACT_WEB_UPGRADE");
-
+int uploadcount=0;
   /* Feed write from a temporary FIFO */
   if (!mktemp (upload_fifo) ||
       mkfifo (upload_fifo, S_IRWXU) < 0 ||
@@ -255,7 +255,8 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
       *total -= count;
       safe_fwrite (buf, 1, count, fifo);
       //safe_fwrite(buf, 1, size, fifo);
-      fprintf (stderr, ".");
+      uploadcount+=count;
+      fprintf (stderr, "uploading [%d]\r",uploadcount);
       i++;
     }
   fclose (fifo);
@@ -263,6 +264,7 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
 
   /* Wait for write to terminate */
   waitpid (pid, &ret, 0);
+  fprintf (stderr, "uploading [%d]\n",uploadcount);
   cprintf ("done\n");
 #ifdef HAVE_HTTPS
   if (!do_ssl)

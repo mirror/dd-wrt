@@ -128,6 +128,9 @@ endif
 ifeq ($(CONFIG_MAKSAT),y)
 CFLAGS += -DHAVE_MAKSAT
 endif
+ifeq ($(CONFIG_GPSI),y)
+CFLAGS += -DHAVE_GPSI
+endif
 ifeq ($(CONFIG_TRIMAX),y)
 CFLAGS += -DHAVE_TRIMAX
 endif

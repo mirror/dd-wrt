@@ -126,7 +126,11 @@ set80211priv (struct iwreq *iwr, const char *ifname, int op, void *data,
 	IOCTL_ERR (IEEE80211_IOCTL_ADDMAC),
 	IOCTL_ERR (IEEE80211_IOCTL_DELMAC),
 	IOCTL_ERR (IEEE80211_IOCTL_WDSADDMAC),
+#ifdef OLD_MADWIFI
+	IOCTL_ERR (IEEE80211_IOCTL_WDSDELMAC),
+#else
 	IOCTL_ERR (IEEE80211_IOCTL_WDSSETMAC),
+#endif
       };
       op -= SIOCIWFIRSTPRIV;
       if (0 <= op && op < N (opnames))
@@ -933,12 +937,11 @@ set_netmode (char *wif, char *dev, char *use)
 	if (!strcmp (netmode, "g-only"))
 	  {
 	    eval ("iwpriv", use, "mode", "3");
-	    eval ("iwpriv", use, "protmode", "0");
+	    eval ("iwpriv", use, "pureg","1");
 	  }
 	if (!strcmp (netmode, "ng-only"))
 	  {
 	    eval ("iwpriv", use, "mode", "7");
-	    eval ("iwpriv", use, "protmode", "0");
 	  }
 	if (!strcmp (netmode, "na-only"))
 	  {
@@ -947,7 +950,6 @@ set_netmode (char *wif, char *dev, char *use)
 	if (!strcmp (netmode, "bg-mixed"))
 	  {
 	    eval ("iwpriv", use, "mode", "3");
-	    eval ("iwpriv", use, "protmode", "1");
 	  }
 
 	if (!strcmp (netmode, "a-only"))
@@ -1191,11 +1193,14 @@ configure_single (int count)
       hwaddr = nvram_get (wdsmacname);
       if (hwaddr != NULL)
 	{
-	  // eval ("wlanconfig", wdsdev, "create", "wlandev", wif, "wlanmode",
-	  //      "wds", "nobssid");
-//        eval ("ifconfig",wdsdev,"0.0.0.0","up");d
+#ifdef OLD_MADWIFI
+	  eval ("wlanconfig", wdsdev, "create", "wlandev", wif, "wlanmode",
+	        "wds", "nobssid");
+        eval ("ifconfig",wdsdev,"0.0.0.0","up");
+#else
 	  eval ("iwpriv", dev, "wds_add", hwaddr);
 	  eval ("iwpriv", dev, "wds", "1");
+#endif
 	}
     }
 
