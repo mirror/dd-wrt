@@ -48,7 +48,8 @@ WEXT_HEADER = wireless.$(WE_VERSION).h
 # Targets to build
 STATIC=libiw.a
 DYNAMIC=libiw.so.$(WT_VERSION)
-PROGS= iwconfig iwlist iwpriv
+PROGS= iwconfig iwlist iwpriv 
+#iwevent
 MANPAGES8=iwconfig.8 iwlist.8 iwpriv.8 iwspy.8 iwgetid.8 iwevent.8 ifrename.8
 MANPAGES7=wireless.7
 MANPAGES5=iftab.5

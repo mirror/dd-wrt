@@ -85,7 +85,7 @@
  * (there is some stuff that will be added in the future...)
  * I just plan to increment with each new version.
  */
-#define WIRELESS_EXT	22
+#define WIRELESS_EXT	21
 
 /*
  * Changes :
