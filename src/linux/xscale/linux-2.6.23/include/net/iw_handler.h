@@ -1,10 +1,10 @@
 /*
  * This file define the new driver API for Wireless Extensions
  *
- * Version :	8	16.3.07
+ * Version :	7	18.3.05
  *
  * Authors :	Jean Tourrilhes - HPL - <jt@hpl.hp.com>
- * Copyright (c) 2001-2007 Jean Tourrilhes, All Rights Reserved.
+ * Copyright (c) 2001-2006 Jean Tourrilhes, All Rights Reserved.
  */
 
 #ifndef _IW_HANDLER_H
@@ -207,7 +207,7 @@
  * will be needed...
  * I just plan to increment with each new version.
  */
-#define IW_HANDLER_VERSION	8
+#define IW_HANDLER_VERSION	7
 
 /*
  * Changes :
@@ -239,10 +239,6 @@
  *	- Remove (struct iw_point *)->pointer from events and streams
  *	- Remove spy_offset from struct iw_handler_def
  *	- Add "check" version of event macros for ieee802.11 stack
- *
- * V7 to V8
- * ----------
- *	- Prevent leaking of kernel space in stream on 64 bits.
  */
 
 /**************************** CONSTANTS ****************************/
@@ -431,7 +427,26 @@ struct iw_public_data {
  * Those may be called only within the kernel.
  */
 
-/* functions that may be called by driver modules */
+/* First : function strictly used inside the kernel */
+
+/* Handle /proc/net/wireless, called in net/code/dev.c */
+extern int dev_get_wireless_info(char * buffer, char **start, off_t offset,
+				 int length);
+
+/* Handle IOCTLs, called in net/core/dev.c */
+extern int wireless_process_ioctl(struct ifreq *ifr, unsigned int cmd);
+
+/* Handle RtNetlink requests, called in net/core/rtnetlink.c */
+extern int wireless_rtnetlink_set(struct net_device *	dev,
+				  char *		data,
+				  int			len);
+extern int wireless_rtnetlink_get(struct net_device *	dev,
+				  char *		data,
+				  int			len,
+				  char **		p_buf,
+				  int *			p_len);
+
+/* Second : functions that may be called by driver modules */
 
 /* Send a single event to user space */
 extern void wireless_send_event(struct net_device *	dev,
@@ -485,11 +500,7 @@ iwe_stream_add_event(char *	stream,		/* Stream of events */
 	/* Check if it's possible */
 	if(likely((stream + event_len) < ends)) {
 		iwe->len = event_len;
-		/* Beware of alignement issues on 64 bits */
-		memcpy(stream, (char *) iwe, IW_EV_LCP_PK_LEN);
-		memcpy(stream + IW_EV_LCP_LEN,
-		       ((char *) iwe) + IW_EV_LCP_LEN,
-		       event_len - IW_EV_LCP_LEN);
+		memcpy(stream, (char *) iwe, event_len);
 		stream += event_len;
 	}
 	return stream;
@@ -510,10 +521,10 @@ iwe_stream_add_point(char *	stream,		/* Stream of events */
 	/* Check if it's possible */
 	if(likely((stream + event_len) < ends)) {
 		iwe->len = event_len;
-		memcpy(stream, (char *) iwe, IW_EV_LCP_PK_LEN);
+		memcpy(stream, (char *) iwe, IW_EV_LCP_LEN);
 		memcpy(stream + IW_EV_LCP_LEN,
 		       ((char *) iwe) + IW_EV_LCP_LEN + IW_EV_POINT_OFF,
-		       IW_EV_POINT_PK_LEN - IW_EV_LCP_PK_LEN);
+		       IW_EV_POINT_LEN - IW_EV_LCP_LEN);
 		memcpy(stream + IW_EV_POINT_LEN, extra, iwe->u.data.length);
 		stream += event_len;
 	}
@@ -563,11 +574,7 @@ iwe_stream_check_add_event(char *	stream,		/* Stream of events */
 	/* Check if it's possible, set error if not */
 	if(likely((stream + event_len) < ends)) {
 		iwe->len = event_len;
-		/* Beware of alignement issues on 64 bits */
-		memcpy(stream, (char *) iwe, IW_EV_LCP_PK_LEN);
-		memcpy(stream + IW_EV_LCP_LEN,
-		       ((char *) iwe) + IW_EV_LCP_LEN,
-		       event_len - IW_EV_LCP_LEN);
+		memcpy(stream, (char *) iwe, event_len);
 		stream += event_len;
 	} else
 		*perr = -E2BIG;
@@ -591,10 +598,10 @@ iwe_stream_check_add_point(char *	stream,		/* Stream of events */
 	/* Check if it's possible */
 	if(likely((stream + event_len) < ends)) {
 		iwe->len = event_len;
-		memcpy(stream, (char *) iwe, IW_EV_LCP_PK_LEN);
+		memcpy(stream, (char *) iwe, IW_EV_LCP_LEN);
 		memcpy(stream + IW_EV_LCP_LEN,
 		       ((char *) iwe) + IW_EV_LCP_LEN + IW_EV_POINT_OFF,
-		       IW_EV_POINT_PK_LEN - IW_EV_LCP_PK_LEN);
+		       IW_EV_POINT_LEN - IW_EV_LCP_LEN);
 		memcpy(stream + IW_EV_POINT_LEN, extra, iwe->u.data.length);
 		stream += event_len;
 	} else

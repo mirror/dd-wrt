@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.23.15
-# Sat Feb 16 08:21:29 2008
+# Thu Feb 21 00:59:37 2008
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -169,6 +169,7 @@ CONFIG_ARCH_IXDP4XX=y
 # IXP4xx Options
 #
 CONFIG_DMABOUNCE=y
+# CONFIG_DMABOUNCE_DEBUG is not set
 # CONFIG_IXP4XX_INDIRECT_PCI is not set
 CONFIG_IXP400_LIB=m
 
@@ -254,8 +255,7 @@ CONFIG_CMDLINE="console=ttyS0,115200 panic=10 root=/dev/mtdblock2 rootfstype=squ
 #
 # At least one emulation must be selected
 #
-CONFIG_FPE_NWFPE=y
-# CONFIG_FPE_NWFPE_XP is not set
+# CONFIG_FPE_NWFPE is not set
 CONFIG_FPE_FASTFPE=y
 
 #
