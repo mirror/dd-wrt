@@ -279,7 +279,9 @@ deconfigure_single (int count)
       }
   }
   sprintf (dev, "ath%d", count);
+#ifdef OLD_MADWIFI
   destroy_wds (dev);
+#endif
 
   if (ifexists (dev))
     eval ("wlanconfig", dev, "destroy");
@@ -1197,6 +1199,8 @@ configure_single (int count)
 	  eval ("wlanconfig", wdsdev, "create", "wlandev", wif, "wlanmode",
 	        "wds", "nobssid");
         eval ("ifconfig",wdsdev,"0.0.0.0","up");
+	eval ("iwpriv", wdsdev, "wds_add", hwaddr);
+	eval ("iwpriv", wdsdev, "wds", "1");
 #else
 	  eval ("iwpriv", dev, "wds_add", hwaddr);
 	  eval ("iwpriv", dev, "wds", "1");
