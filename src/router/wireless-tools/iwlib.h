@@ -119,9 +119,9 @@ extern "C" {
 
 /* Various versions information */
 /* Recommended Wireless Extension version */
-#define WE_VERSION	21
+#define WE_VERSION	22
 /* Maximum forward compatibility built in this version of WT */
-#define WE_MAX_VERSION	21
+#define WE_MAX_VERSION	22
 /* Version of Wireless Tools */
 #define WT_VERSION	29
 
