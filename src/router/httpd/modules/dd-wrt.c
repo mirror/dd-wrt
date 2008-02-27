@@ -5964,11 +5964,16 @@ ej_get_curchannel (webs_t wp, int argc, char_t ** argv)
 {
   channel_info_t ci;
 
-  ci.target_channel = 0;
+  memset(&ci, 0, sizeof(ci));
   wl_ioctl (get_wdev (), WLC_GET_CHANNEL, &ci, sizeof (ci));
-  if (ci.target_channel > 0)
+  if (ci.scan_channel > 0)
     {
-      websWrite (wp, "%d", ci.target_channel);
+      websWrite (wp, "%d (scanning)", ci.scan_channel);
+    }
+  else
+  if (ci.hw_channel > 0)
+    {
+      websWrite (wp, "%d", ci.hw_channel);
     }
   else
     //websWrite (wp, "unknown");
