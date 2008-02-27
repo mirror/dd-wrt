@@ -260,7 +260,7 @@ start_setup_vlans (void)
 		    eval ("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		    eval ("vconfig", "add", "eth0", buff);
 		    snprintf (buff, 9, "vlan%d", i);
-		    ifconfig (buff, 0, NULL, NULL);
+		    eval ("ifconfig",buff,"0.0.0.0","up");
 		  }
 		 int use = i;
 		 if (i==0 && vlanswap==1)use = 4;
@@ -283,9 +283,18 @@ start_setup_vlans (void)
 		  mask |= 1;
 		if (tmp == 19)
 		  mask |= 2;
+		if (tmp == 20)
+		  mask |= 8;
 
 	      }
 	  }
+	  if (mask&8)
+	    {
+	    system2("echo 0 > /proc/switch/eth0/port/%d/enable");
+	    }else
+	    {
+	    system2("echo 1 > /proc/switch/eth0/port/%d/enable");	    
+	    }
 	  snprintf (buff, 69, "/proc/switch/eth0/port/%d/media", i);
 	  if ((fp = fopen (buff, "r+")))
 	    {

@@ -7193,10 +7193,10 @@ ej_port_vlan_table (webs_t wp, int argc, char_t ** argv)
      y 5 it the bridge device (x 16 dosn't apply)
    */
 
-  int i, j, vlans[20][6], tmp, wl_br;
+  int i, j, vlans[21][6], tmp, wl_br;
   char *c, *next, buff[32], portvlan[32];
 
-  for (i = 0; i < 20; i++)
+  for (i = 0; i < 21; i++)
     for (j = 0; j < 6; j++)
       vlans[i][j] = -1;
 
@@ -7250,7 +7250,7 @@ ej_port_vlan_table (webs_t wp, int argc, char_t ** argv)
 	}
     }
 
-  for (i = 0; i < 20; i++)
+  for (i = 0; i < 21; i++)
     {
       websWrite (wp, "              <tr>\n");
       websWrite (wp, "<td>");
@@ -7270,6 +7270,9 @@ ej_port_vlan_table (webs_t wp, int argc, char_t ** argv)
 	  break;
 	case 19:
 	  websWrite (wp, "Full-Duplex");
+	  break;
+	case 20:
+	  websWrite (wp, "Enabled");
 	  break;
 	default:
 	  snprintf (buff, 31, "%d", i);
@@ -7292,7 +7295,7 @@ ej_port_vlan_table (webs_t wp, int argc, char_t ** argv)
 		     " height=\"20\"><div align=\"center\"><input type=\"checkbox\" value=\"on\" name=");
 	  websWrite (wp, buff);
 
-	  if (i < 17 || i > 19)
+	  if (i < 17 || i > 20)
 	    {
 	      if (vlans[i][j] == 1)
 		websWrite (wp, " checked=\"checked\"");
@@ -7342,7 +7345,7 @@ ej_port_vlan_table (webs_t wp, int argc, char_t ** argv)
 
       websWrite (wp, "</tr>\n");
 
-      if (i == 16 || i == 19)
+      if (i == 16 || i == 20)
 	{
 	  websWrite (wp, "<tr><td>&nbsp;</td></tr>\n");
 	}
@@ -7391,25 +7394,25 @@ ej_port_vlan_table (webs_t wp, int argc, char_t ** argv)
 void
 port_vlan_table_save (webs_t wp)
 {
-  int port = 0, vlan = 0, vlans[20], i;
+  int port = 0, vlan = 0, vlans[21], i;
   char portid[32], portvlan[64], *portval, buff[32], *c, *next, br0vlans[64],
     br1vlans[64], br2vlans[64];
 
   strcpy (portvlan, "");
 
-  for (vlan = 0; vlan < 20; vlan++)
+  for (vlan = 0; vlan < 21; vlan++)
     vlans[vlan] = 0;
 
   vlans[16] = 1;
 
   for (port = 0; port < 5; port++)
     {
-      for (vlan = 0; vlan < 20; vlan++)
+      for (vlan = 0; vlan < 21; vlan++)
 	{
 	  snprintf (portid, 31, "port%dvlan%d", port, vlan);
 	  portval = websGetVar (wp, portid, "");
 
-	  if (vlan < 17 || vlan > 19)
+	  if (vlan < 17 || vlan > 20)
 	    i = (strcmp (portval, "on") == 0);
 	  else
 	    i = (strcmp (portval, "on") != 0);
