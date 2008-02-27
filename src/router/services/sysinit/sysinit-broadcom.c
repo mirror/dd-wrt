@@ -1178,7 +1178,7 @@ enable_dtag_vlan (int enable)
     {
       vlan7ports = "0t 5";
     }
-  if (nvram_match ("vlan2ports", "0 8") || nvram_match ("vlan2ports", "0 8*") || nvram_match ("vlan2ports", "0 8*"))	// special condition for Broadcom Gigabit Phy routers 
+  if (nvram_match ("vlan2ports", "0 8") || nvram_match ("vlan2ports", "0 8*") || nvram_match ("vlan2ports", "0 8t"))	// special condition for Broadcom Gigabit Phy routers 
     {
       char *eth = "eth1";
       vlan7ports = "0t 8";
