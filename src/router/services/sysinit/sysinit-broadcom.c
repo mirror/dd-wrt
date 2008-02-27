@@ -1163,6 +1163,10 @@ enable_dtag_vlan (int enable)
     donothing = 1;
   if (nvram_match ("vdsl_state", "0") && !enable)
     donothing = 1;
+  if (enable)
+    nvram_set ("vdsl_state", "1");
+  else
+    nvram_set ("vdsl_state", "0");
 
   char *vlan7ports = NULL;
   vlan7ports = "4t 5";
