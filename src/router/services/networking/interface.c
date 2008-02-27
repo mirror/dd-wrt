@@ -324,19 +324,20 @@ start_setup_vlans (void)
 	}
     }
     
+char exec[64];
   for (i = 0; i < 16; i++)
     {
     fprintf(stderr,"echo %s > /proc/switch/eth0/vlan/%d/ports\n",portsettings[i], i);
     }
   for (i = 0; i < 16; i++)
     {
-      sprintf (tmp, "echo "" > /proc/switch/eth0/vlan/%d/ports",i);
-      system2 (tmp);
+      sprintf (exec, "echo "" > /proc/switch/eth0/vlan/%d/ports",i);
+      system2 (exec);
     }
   for (i = 0; i < 16; i++)
     {
-      sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/%d/ports",portsettings[i], i);
-      system2 (tmp);
+      sprintf (exec, "echo %s > /proc/switch/eth0/vlan/%d/ports",portsettings[i], i);
+      system2 (exec);
     }
   return ret;
 #endif
