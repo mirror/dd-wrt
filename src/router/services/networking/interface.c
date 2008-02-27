@@ -326,6 +326,10 @@ start_setup_vlans (void)
     
   for (i = 0; i < 16; i++)
     {
+    fprintf(stderr,"echo %s > /proc/switch/eth0/vlan/%d/ports\n",portsettings[i], i);
+    }
+  for (i = 0; i < 16; i++)
+    {
       sprintf (tmp, "echo "" > /proc/switch/eth0/vlan/%d/ports",i);
       system2 (tmp);
     }
@@ -334,10 +338,6 @@ start_setup_vlans (void)
       sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/%d/ports",portsettings[i], i);
       system2 (tmp);
     }
-/*  for (i = 0; i < 16; i++)
-    {
-    fprintf(stderr,"echo %s > /proc/switch/eth0/vlan/%d/ports\n",portsettings[i], i);
-    }*/
   return ret;
 #endif
 }
