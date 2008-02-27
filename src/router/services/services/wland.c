@@ -33,7 +33,7 @@
 #define WL_IOCTL(name, cmd, buf, len) (wl_ioctl((name), (cmd), (buf), (len)))
 
 #define TXPWR_MAX 251
-#define TXPWR_DEFAULT 28
+#define TXPWR_DEFAULT 70
 
 #ifdef HAVE_MADWIFI
 #define WLAND_INTERVAL 60

@@ -1168,7 +1168,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_SAGAR
   {"wl0_txpwr", "100", 0},
 #else
-  {"wl0_txpwr", "28", 0},
+  {"wl0_txpwr", "70", 0},
 #endif
 
 #endif
