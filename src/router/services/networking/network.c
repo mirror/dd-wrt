@@ -2432,7 +2432,7 @@ start_wan (int status)
 	{
 	  if (nvram_match ("wan_vdsl", "1"))
 	    {
-	      char *ifn=enable_dtag_vlan (1);
+	      char *ifn = enable_dtag_vlan (1);
 	      sprintf (vlannic, "%s.0007", ifn);
 	      if (!ifexists (vlannic))
 		{
@@ -2444,7 +2444,7 @@ start_wan (int status)
 	    }
 	  else
 	    {
-	      char *ifn=enable_dtag_vlan (0);
+	      char *ifn = enable_dtag_vlan (0);
 	      sprintf (vlannic, "%s.0007", ifn);
 	      if (ifexists (vlannic))
 		eval ("vconfig", "rem", vlannic);

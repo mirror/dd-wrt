@@ -7313,7 +7313,7 @@ ej_port_vlan_table (webs_t wp, int argc, char_t ** argv)
 			"\"SelVLAN(this.form,'port%d')\"", j);
 	      websWrite (wp, buff);
 	    }
-	  else if (i == 17)
+	  else if (i == 17 || i == 20)
 	    {
 	      websWrite (wp, " onclick=");
 	      snprintf (buff, sizeof (buff),
