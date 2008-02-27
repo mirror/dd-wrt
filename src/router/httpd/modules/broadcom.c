@@ -3203,6 +3203,19 @@ ej_show_triggering (webs_t wp, int argc, char_t ** argv)
       websWrite (wp,"<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",i);
       port_trigger_table(wp,"i_to",i);
       websWrite (wp,"\" /></td>\n");
+      websWrite (wp, "<td><select size=\"1\" name=\"pro%d\">\n", i);
+      websWrite (wp, "<option value=\"tcp\" ");
+      port_trigger_table (wp, "sel_tcp", i);
+      websWrite (wp, ">TCP</option>\n");
+      websWrite (wp, "<option value=\"udp\" ");
+      port_trigger_table (wp, "sel_udp", i);
+      websWrite (wp, ">UDP</option>\n");
+      websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n\
+		 		document.write(\"<option value=\\\"both\\\" ");
+      port_trigger_table (wp, "sel_both", i);
+      websWrite (wp, " >\" + share.both + \"</option>\");\n\
+      		\n//]]>\n</script>\n");
+      websWrite (wp, "</select></td>\n");
       websWrite (wp,"<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",i);
       port_trigger_table(wp,"o_from",i);
       websWrite (wp,"\" /></td>\n");
