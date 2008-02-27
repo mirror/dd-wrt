@@ -96,7 +96,8 @@ checkupdate (void)
     }
   if (res == 1)
     {
-      in = popen ("/bin/cat /dev/mtdblock/0|/bin/grep \"2\\.03\"|wc -l", "rb");
+      in =
+	popen ("/bin/cat /dev/mtdblock/0|/bin/grep \"2\\.03\"|wc -l", "rb");
       fscanf (in, "%d", &res2);
       pclose (in);
     }
@@ -195,7 +196,7 @@ start_sysinit (void)
   uname (&name);
 #ifndef HAVE_TONZE
 #ifndef HAVE_NOP8670
- checkupdate ();
+  checkupdate ();
 #endif
 #endif
   nvram_set ("intel_eth", "0");
@@ -271,39 +272,39 @@ Configure mac addresses by reading data from eeprom
   char *filename = "/dev/mtdblock/5";	/* bank2=0x100 */
   FILE *file = fopen (filename, "r");
   if (file)
-  {
-  unsigned char buf[16];
-  fseek(file,0x422,SEEK_SET);
-  fread (&buf[0], 6, 1, file);
-  char mac[16];
-  sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2],
-	   buf[3], buf[4], buf[5]);
-  eval ("ifconfig", "ixp0", "hw", "ether", mac);
-  fseek(file,0x43b,SEEK_SET);
-  fread (&buf[6], 6, 1, file);
-  sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[6], buf[7], buf[8],
-	   buf[9], buf[10], buf[11]);
-  eval ("ifconfig", "ixp1", "hw", "ether", mac);
-  fclose (file);
-  }
+    {
+      unsigned char buf[16];
+      fseek (file, 0x422, SEEK_SET);
+      fread (&buf[0], 6, 1, file);
+      char mac[16];
+      sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2],
+	       buf[3], buf[4], buf[5]);
+      eval ("ifconfig", "ixp0", "hw", "ether", mac);
+      fseek (file, 0x43b, SEEK_SET);
+      fread (&buf[6], 6, 1, file);
+      sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[6], buf[7], buf[8],
+	       buf[9], buf[10], buf[11]);
+      eval ("ifconfig", "ixp1", "hw", "ether", mac);
+      fclose (file);
+    }
 #else
   char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom";	/* bank2=0x100 */
   FILE *file = fopen (filename, "r");
   if (file)
-  {
-  unsigned char buf[16];
-  fread (&buf[0], 16, 1, file);
-  char mac[16];
-  sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2],
-	   buf[3], buf[4], buf[5]);
-  eval ("ifconfig", "ixp0", "hw", "ether", mac);
-  sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[6], buf[7], buf[8],
-	   buf[9], buf[10], buf[11]);
-  eval ("ifconfig", "ixp1", "hw", "ether", mac);
+    {
+      unsigned char buf[16];
+      fread (&buf[0], 16, 1, file);
+      char mac[16];
+      sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2],
+	       buf[3], buf[4], buf[5]);
+      eval ("ifconfig", "ixp0", "hw", "ether", mac);
+      sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[6], buf[7], buf[8],
+	       buf[9], buf[10], buf[11]);
+      eval ("ifconfig", "ixp1", "hw", "ether", mac);
 
 
-  fclose (file);
-  }
+      fclose (file);
+    }
 
 
 #endif
@@ -356,7 +357,8 @@ void
 start_overclocking (void)
 {
 }
-void enable_dtag_vlan(int enable)
+void
+enable_dtag_vlan (int enable)
 {
 
 }
