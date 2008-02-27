@@ -2437,7 +2437,7 @@ start_wan (int status)
 	      if (!ifexists (vlannic))
 		{
 		  eval ("vconfig", "set_name_type", "DEV_PLUS_VID");
-		  eval ("vconfig", "add", if, "7");
+		  eval ("vconfig", "add", ifn, "7");
 		  eval ("ifconfig", vlannic, "up");
 		}
 	      fprintf (fp, "nic-%s\n", vlannic);
