@@ -12,22 +12,15 @@ function to_apply(F) {
 }
 
 function SelSpeed(F,I) {
-	if(eval("F."+I+"vlan20").checked) {
+	if(eval("F."+I+"vlan20").checked==false) {
 		for(i=0;i<20;i++) {
-			if(!(eval("F."+I+"vlan"+i).checked)) {
-				choose_disable(eval("F."+I+"vlan"+i));
-			} else {
-				break;
-			}
+			choose_disable(eval("F."+I+"vlan"+i));
 		}
 	} else {
 		for(i=0;i<20;i++) {
-			if(!(eval("F."+I+"vlan"+i).checked)) {
-				choose_enable(eval("F."+I+"vlan"+i));
-			} else {
-				break;
-			}
+			choose_enable(eval("F."+I+"vlan"+i));
 		}
+	    SelVLAN(F,I);
 	    if(eval("F."+I+"vlan17").checked) {
 	    	    eval("F."+I+"vlan18").checked=true;
 		    eval("F."+I+"vlan19").checked=true;
@@ -42,7 +35,7 @@ function SelSpeed(F,I) {
 
 function SelVLAN(F,I) {
 	var i,j=0;
-	if(eval("F."+I+"vlan20").checked) {
+	if(eval("F."+I+"vlan20").checked == true) {
 	if(eval("F."+I+"vlan16").checked == true) {
 		for(i=0;i<16;i++)
 			choose_enable(eval("F."+I+"vlan"+i));
