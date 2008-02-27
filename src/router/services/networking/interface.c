@@ -225,7 +225,7 @@ start_setup_vlans (void)
   int ast=0;
   if (nvram_match("vlan1ports","4 5"))
     vlanswap=1;
-  if (nvram_natch("vlan0ports","0 1 2 3 5*"))
+  if (nvram_match("vlan0ports","0 1 2 3 5*"))
      ast=1;
 //  if (nvram_match ("trunking", "1"))
 //    system ("echo 1 > /proc/sys/dev/adm6996/trunk");
