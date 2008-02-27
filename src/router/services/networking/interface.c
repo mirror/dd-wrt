@@ -221,7 +221,12 @@ start_setup_vlans (void)
 
   s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW);
   strcpy (mac, nvram_safe_get ("et0macaddr"));
-
+  int vlanswap=0;
+  int ast=0;
+  if (nvram_match("vlan1ports","4 5"))
+    vlanswap=1;
+  if (nvram_natch("vlan0ports","0 1 2 3 5*"))
+     ast=1;
 //  if (nvram_match ("trunking", "1"))
 //    system ("echo 1 > /proc/sys/dev/adm6996/trunk");
 //  else
@@ -252,14 +257,25 @@ start_setup_vlans (void)
 		if (i == 5)
 		  {
 		    snprintf (buff, 9, "%d", tmp);
+		    eval ("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		    eval ("vconfig", "add", "eth0", buff);
+		    snprintf (buff, 9, "vlan%d", i);
+		    ifconfig (buff, 0, NULL, NULL);
 		  }
-		sprintf ((char *) &portsettings[tmp][0], "%s %d",
-			 (char *) &portsettings[tmp][0], i);
+		 int use = i;
+		 if (i==0 && vlanswap==1)use = 4;
+		 else
+		 if (i==4 && vlanswap==1)use = 0;
+		    
+		  
+		 sprintf ((char *) &portsettings[tmp][0], "%s %d",
+			 (char *) &portsettings[tmp][0], use);
 	      }
 	    else
 	      {
-		if (tmp == 16)
+		if (tmp == 16 && ast)		
+		  strcat ((char *) &portsettings[lastvlan][0], "*");
+		if (tmp == 16 && !ast)		
 		  strcat ((char *) &portsettings[lastvlan][0], "t");
 		if (tmp == 17)
 		  mask |= 4;
@@ -307,9 +323,20 @@ start_setup_vlans (void)
 
 	}
     }
+    /*
   for (i = 0; i < 16; i++)
     {
-      fprintf (stderr, "vlan setting %s\n", portsettings[i]);
+      sprintf (tmp, "echo "" > /proc/switch/eth0/vlan/%d/ports",i);
+      system2 (tmp);
+    }
+  for (i = 0; i < 16; i++)
+    {
+      sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/%d/ports",portsettings[i], i);
+      system2 (tmp);
+    }*/
+  for (i = 0; i < 16; i++)
+    {
+    fprintf(stderr,"echo %s > /proc/switch/eth0/vlan/%d/ports\n",portsettings[i], i);
     }
   return ret;
 #endif
