@@ -76,6 +76,7 @@ addEvent(window, "unload", function() {
 										<th><% tran("trforward.app"); %></th>
 										<th><% tran("share.start"); %></th>
 										<th><% tran("share.end"); %></th>
+										<th><% tran("share.proto"); %></th>
 										<th><% tran("share.start"); %></th>
 										<th><% tran("share.end"); %></th>
 										<th><% tran("share.enable"); %></th>
