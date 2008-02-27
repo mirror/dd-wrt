@@ -192,10 +192,10 @@ svqos_set_ports (void)
 	    snprintf (cmd, 254,
 		      "echo %s > /proc/switch/eth0/port/%d/bandwidth 2>&1 > /dev/null",
 		      nvram_safe_get (nvram_var), loop);
-	//  else
-	//    snprintf (cmd, 254, "echo 0 > /proc/switch/eth0/port/%d/enable",
-	//	      loop);
-	//  system2 (cmd);
+	  //  else
+	  //    snprintf (cmd, 254, "echo 0 > /proc/switch/eth0/port/%d/enable",
+	  //            loop);
+	  //  system2 (cmd);
 
 	  snprintf (cmd, 254,
 		    "echo 1 > /proc/switch/eth0/port/%d/prio-enable 2>&1 > /dev/null",

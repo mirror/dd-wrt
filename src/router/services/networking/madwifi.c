@@ -939,7 +939,7 @@ set_netmode (char *wif, char *dev, char *use)
 	if (!strcmp (netmode, "g-only"))
 	  {
 	    eval ("iwpriv", use, "mode", "3");
-	    eval ("iwpriv", use, "pureg","1");
+	    eval ("iwpriv", use, "pureg", "1");
 	  }
 	if (!strcmp (netmode, "ng-only"))
 	  {
@@ -1197,10 +1197,10 @@ configure_single (int count)
 	{
 #ifdef OLD_MADWIFI
 	  eval ("wlanconfig", wdsdev, "create", "wlandev", wif, "wlanmode",
-	        "wds", "nobssid");
-        eval ("ifconfig",wdsdev,"0.0.0.0","up");
-	eval ("iwpriv", wdsdev, "wds_add", hwaddr);
-	eval ("iwpriv", wdsdev, "wds", "1");
+		"wds", "nobssid");
+	  eval ("ifconfig", wdsdev, "0.0.0.0", "up");
+	  eval ("iwpriv", wdsdev, "wds_add", hwaddr);
+	  eval ("iwpriv", wdsdev, "wds", "1");
 #else
 	  eval ("iwpriv", dev, "wds_add", hwaddr);
 	  eval ("iwpriv", dev, "wds", "1");

@@ -221,17 +221,19 @@ start_setup_vlans (void)
 
   s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW);
   strcpy (mac, nvram_safe_get ("et0macaddr"));
-  int vlanswap=0;
-  int ast=0;
-  if (nvram_match("vlan1ports","4 5"))
-    vlanswap=1;
-  if (nvram_match("vlan0ports","0 1 2 3 5*"))
-     ast=1;
+  int vlanswap = 0;
+  int ast = 0;
+  if (nvram_match ("vlan1ports", "4 5"))
+    vlanswap = 1;
+  if (nvram_match ("vlan0ports", "0 1 2 3 5*"))
+    ast = 1;
 //  if (nvram_match ("trunking", "1"))
 //    system ("echo 1 > /proc/sys/dev/adm6996/trunk");
 //  else
 //    system ("echo 0 > /proc/sys/dev/adm6996/trunk");
 
+
+  char exec[64];
   if (nvram_match ("boardtype", "bcm94710dev") || nvram_match ("xover", "1"))
     workaround = 1;
   else
@@ -242,6 +244,11 @@ start_setup_vlans (void)
     {
       snprintf (buff, 31, "port%dvlans", i);
       vlans = nvram_safe_get (buff);
+      int use = i;
+      if (i == 0 && vlanswap == 1)
+	use = 4;
+      else if (i == 4 && vlanswap == 1)
+	use = 0;
       if (vlans)
 	{
 	  int lastvlan = 0;
@@ -260,22 +267,18 @@ start_setup_vlans (void)
 		    eval ("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		    eval ("vconfig", "add", "eth0", buff);
 		    snprintf (buff, 9, "vlan%d", i);
-		    eval ("ifconfig",buff,"0.0.0.0","up");
+		    eval ("ifconfig", buff, "0.0.0.0", "up");
 		  }
-		 int use = i;
-		 if (i==0 && vlanswap==1)use = 4;
-		 else
-		 if (i==4 && vlanswap==1)use = 0;
-		    
-		  
-		 sprintf ((char *) &portsettings[tmp][0], "%s %d",
+
+
+		sprintf ((char *) &portsettings[tmp][0], "%s %d",
 			 (char *) &portsettings[tmp][0], use);
 	      }
 	    else
 	      {
-		if (tmp == 16 && ast)		
+		if (tmp == 16 && ast)
 		  strcat ((char *) &portsettings[lastvlan][0], "*");
-		if (tmp == 16 && !ast)		
+		if (tmp == 16 && !ast)
 		  strcat ((char *) &portsettings[lastvlan][0], "t");
 		if (tmp == 17)
 		  mask |= 4;
@@ -288,42 +291,49 @@ start_setup_vlans (void)
 
 	      }
 	  }
-	  if (mask&8)
+	  if (mask & 8 && use < 5)
 	    {
-	    system2("echo 0 > /proc/switch/eth0/port/%d/enable");
-	    }else
-	    {
-	    system2("echo 1 > /proc/switch/eth0/port/%d/enable");	    
+	      sprintf (exec, "echo 0 > /proc/switch/eth0/port/%d/enable",
+		       use);
+//          fprintf(stderr,exec);
+	      system2 (exec);
 	    }
-	  snprintf (buff, 69, "/proc/switch/eth0/port/%d/media", i);
+	  else
+	    {
+	      sprintf (exec, "echo 1 > /proc/switch/eth0/port/%d/enable",
+		       use);
+//          fprintf(stderr,exec);
+	      system2 (exec);
+	    }
+	  snprintf (buff, 69, "/proc/switch/eth0/port/%d/media", use);
 	  if ((fp = fopen (buff, "r+")))
 	    {
 	      if ((mask & 4) == 4)
 		{
 		  if ((mask & 3) == 0)
 		    {
-		      fprintf (stderr, "set port %d to 10HD\n", i);
+		      fprintf (stderr, "set port %d to 10HD\n", use);
 		      fputs ("100FD", fp);
 		    }
 		  if ((mask & 3) == 1)
 		    {
-		      fprintf (stderr, "set port %d to 100HD\n", i);
+		      fprintf (stderr, "set port %d to 100HD\n", use);
 		      fputs ("10FD", fp);
 		    }
 		  if ((mask & 3) == 2)
 		    {
-		      fprintf (stderr, "set port %d to 10FD\n", i);
+		      fprintf (stderr, "set port %d to 10FD\n", use);
 		      fputs ("100HD", fp);
 		    }
 		  if ((mask & 3) == 3)
 		    {
-		      fprintf (stderr, "set port %d to 100FD\n", i);
+		      fprintf (stderr, "set port %d to 100FD\n", use);
 		      fputs ("10HD", fp);
 		    }
 		}
 	      else
 		{
-		  fprintf (stderr, "set port %d to AUTO\n", i);
+		  fprintf (stderr, "set port %d to AUTO\n", use);
 		  fputs ("AUTO", fp);
 		}
 	      fclose (fp);
@@ -332,20 +342,19 @@ start_setup_vlans (void)
 
 	}
     }
-    
-char exec[64];
+//  for (i = 0; i < 16; i++)
+//    {
+//    fprintf(stderr,"echo %s > /proc/switch/eth0/vlan/%d/ports\n",portsettings[i], i);
+//    }
   for (i = 0; i < 16; i++)
     {
-    fprintf(stderr,"echo %s > /proc/switch/eth0/vlan/%d/ports\n",portsettings[i], i);
-    }
-  for (i = 0; i < 16; i++)
-    {
-      sprintf (exec, "echo "" > /proc/switch/eth0/vlan/%d/ports",i);
+      sprintf (exec, "echo " " > /proc/switch/eth0/vlan/%d/ports", i);
       system2 (exec);
     }
   for (i = 0; i < 16; i++)
     {
-      sprintf (exec, "echo %s > /proc/switch/eth0/vlan/%d/ports",portsettings[i], i);
+      sprintf (exec, "echo %s > /proc/switch/eth0/vlan/%d/ports",
+	       portsettings[i], i);
       system2 (exec);
     }
   return ret;
