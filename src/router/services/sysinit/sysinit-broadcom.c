@@ -1178,7 +1178,7 @@ enable_dtag_vlan (int enable)
     {
       vlan7ports = "0t 5";
     }
-  if (nvram_match ("vlan2ports", "0 8") || nvram_match ("vlan2ports", "0 8*"))
+  if (nvram_match ("vlan2ports", "0 8") || nvram_match ("vlan2ports", "0 8*") || nvram_match ("vlan2ports", "0 8*"))	// special condition for Broadcom Gigabit Phy routers 
     {
       char *eth = "eth1";
       vlan7ports = "0t 8";
@@ -1209,25 +1209,25 @@ enable_dtag_vlan (int enable)
   system2 ("echo 1 > /proc/switch/eth0/reset");
   system2 ("echo 1 > /proc/switch/eth1/reset");
   char tmp[200];
+  char *eth = "eth0";
+  FILE *in = fopen ("/proc/switch/eth1/reset", "rb");	// this condition fails almost. just one router (DLINK DIR-330) requires it
+  if (in)
+    {
+      return "eth1";
+      fclose (in);
+    }
+
   if (!donothing)
     {
       if (enable)
 	{
-	  sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/1/ports", "");
+	  sprintf (tmp, "echo %s > /proc/switch/%s/vlan/1/ports", "", eth);
 	  system2 (tmp);
-	  sprintf (tmp, "echo %s > /proc/switch/eth1/vlan/1/ports", "");
+	  sprintf (tmp, "echo %s > /proc/switch/%s/vlan/0/ports",
+		   nvram_safe_get ("vlan0ports"), eth);
 	  system2 (tmp);
-	  sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/0/ports",
-		   nvram_safe_get ("vlan0ports"));
-	  system2 (tmp);
-	  sprintf (tmp, "echo %s > /proc/switch/eth1/vlan/0/ports",
-		   nvram_safe_get ("vlan0ports"));
-	  system2 (tmp);
-	  sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/7/ports",
-		   vlan7ports);
-	  system2 (tmp);
-	  sprintf (tmp, "echo %s > /proc/switch/eth1/vlan/7/ports",
-		   vlan7ports);
+	  sprintf (tmp, "echo %s > /proc/switch/%s/vlan/7/ports", vlan7ports,
+		   eth);
 	  system2 (tmp);
 	}
       else
@@ -1235,11 +1235,8 @@ enable_dtag_vlan (int enable)
 	  int i;
 	  for (i = 0; i < 16; i++)
 	    {
-	      sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/%d/ports", "",
-		       i);
-	      system2 (tmp);
-	      sprintf (tmp, "echo %s > /proc/switch/eth1/vlan/%d/ports", "",
-		       i);
+	      sprintf (tmp, "echo %s > /proc/switch/%s/vlan/%d/ports", "",
+		       eth, i);
 	      system2 (tmp);
 	    }
 	  for (i = 0; i < 16; i++)
@@ -1248,20 +1245,13 @@ enable_dtag_vlan (int enable)
 	      sprintf (vlanb, "vlan%dports", i);
 	      if (nvram_get (vlanb) == NULL || nvram_match (vlanb, ""))
 		continue;
-	      sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/%d/ports",
-		       nvram_safe_get (vlanb), i);
-	      system2 (tmp);
-	      sprintf (tmp, "echo %s > /proc/switch/eth1/vlan/%d/ports",
-		       nvram_safe_get (vlanb), i);
+	      sprintf (tmp, "echo %s > /proc/switch/%s/vlan/%d/ports",
+		       nvram_safe_get (vlanb), eth, i);
 	      system2 (tmp);
 	    }
 	}
     }
-  FILE *in = fopen ("/proc/switch/eth0/reset", "rb");
-  if (in == NULL)
-    return "eth1";
-  fclose (in);
-  return "eth0";
+  return eth;
 }
 
 start_dtag (void)
