@@ -174,24 +174,24 @@ Configure mac addresses by reading data from eeprom
   char *filename = "/dev/mtdblock/0";	/* bank2=0x100 */
   FILE *file = fopen (filename, "r");
   if (file)
-  {
-  unsigned char buf[16];
-  fseek (file,0x5ffa0,SEEK_SET); //point of mac address
-  fread (&buf[0], 6, 1, file);
-  char mac[16];
-  sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2],
-	   buf[3], buf[4], buf[5]);
-  fprintf(stderr,"configure primary mac %s\n",mac);
-  eval ("ifconfig", "ixp0", "hw", "ether", mac);
-  eval ("ifconfig", "wifi0", "hw", "ether", mac);
-  nvram_set("et0macaddr",mac);
-  MAC_ADD(mac);
-  fprintf(stderr,"configure secondary mac %s\n",mac);
-  eval ("ifconfig", "ixp1", "hw", "ether", mac);
+    {
+      unsigned char buf[16];
+      fseek (file, 0x5ffa0, SEEK_SET);	//point of mac address
+      fread (&buf[0], 6, 1, file);
+      char mac[16];
+      sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2],
+	       buf[3], buf[4], buf[5]);
+      fprintf (stderr, "configure primary mac %s\n", mac);
+      eval ("ifconfig", "ixp0", "hw", "ether", mac);
+      eval ("ifconfig", "wifi0", "hw", "ether", mac);
+      nvram_set ("et0macaddr", mac);
+      MAC_ADD (mac);
+      fprintf (stderr, "configure secondary mac %s\n", mac);
+      eval ("ifconfig", "ixp1", "hw", "ether", mac);
 
 
-  fclose (file);
-  }
+      fclose (file);
+    }
   eval ("ifconfig", "ixp0", "0.0.0.0", "up");
   eval ("ifconfig", "ixp1", "0.0.0.0", "up");
 
@@ -222,7 +222,8 @@ void
 start_overclocking (void)
 {
 }
-void enable_dtag_vlan(int enable)
+void
+enable_dtag_vlan (int enable)
 {
 
 }

@@ -2430,21 +2430,22 @@ start_wan (int status)
       char vlannic[32];
       if (!strncmp (pppoe_wan_ifname, "vlan", 4))
 	{
-	  sprintf (vlannic, "eth0.0007", pppoe_wan_ifname);
 	  if (nvram_match ("wan_vdsl", "1"))
 	    {
-	      enable_dtag_vlan (1);
+	      char *ifn=enable_dtag_vlan (1);
+	      sprintf (vlannic, "%s.0007", ifn);
 	      if (!ifexists (vlannic))
 		{
 		  eval ("vconfig", "set_name_type", "DEV_PLUS_VID");
-		  eval ("vconfig", "add", "eth0", "7");
+		  eval ("vconfig", "add", if, "7");
 		  eval ("ifconfig", vlannic, "up");
 		}
 	      fprintf (fp, "nic-%s\n", vlannic);
 	    }
 	  else
 	    {
-	      enable_dtag_vlan (0);
+	      char *ifn=enable_dtag_vlan (0);
+	      sprintf (vlannic, "%s.0007", ifn);
 	      if (ifexists (vlannic))
 		eval ("vconfig", "rem", vlannic);
 	      fprintf (fp, "nic-%s\n", pppoe_wan_ifname);

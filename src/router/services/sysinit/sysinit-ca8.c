@@ -142,7 +142,8 @@ start_overclocking (void)
 {
 }
 
-void enable_dtag_vlan(int enable)
+void
+enable_dtag_vlan (int enable)
 {
 
 }
