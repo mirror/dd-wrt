@@ -41,23 +41,25 @@
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 
-void start_config_macs(char *wlifname) //reconfigure macs which should fix the corerev 5 and 7 problem
+void
+start_config_macs (char *wlifname)	//reconfigure macs which should fix the corerev 5 and 7 problem
 {
   int unit = get_wl_instance (wlifname);
-  char *vifs = nvram_nget ("wl%d_vifs", unit );
+  char *vifs = nvram_nget ("wl%d_vifs", unit);
   char *mbss = nvram_nget ("wl%d_mbss", unit);
   char *next;
   char var[80];
-  if (!strcmp(mbss,"0"))
-  {
-  if (vifs != NULL)
-    foreach (var, vifs, next)
+  if (!strcmp (mbss, "0"))
     {
-      eval ("wl","-i",var,"down");
-      eval ("wl","-i",var,"cur_etheraddr",nvram_nget ("%s_hwaddr", var));
-      eval ("wl","-i",var,"up");
+      if (vifs != NULL)
+	foreach (var, vifs, next)
+	{
+	  eval ("wl", "-i", var, "down");
+	  eval ("wl", "-i", var, "cur_etheraddr",
+		nvram_nget ("%s_hwaddr", var));
+	  eval ("wl", "-i", var, "up");
+	}
     }
-  }
 }
 void
 do_mssid (char *lan_ifname, char *wlifname)
@@ -75,15 +77,15 @@ do_mssid (char *lan_ifname, char *wlifname)
     {
       char bridged[32];
       sprintf (bridged, "%s_bridged", var);
-	ether_atoe (nvram_nget ("%s_hwaddr", var), ifr.ifr_hwaddr.sa_data);
-	strncpy (ifr.ifr_name, var, IFNAMSIZ);
-	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+      ether_atoe (nvram_nget ("%s_hwaddr", var), ifr.ifr_hwaddr.sa_data);
+      strncpy (ifr.ifr_name, var, IFNAMSIZ);
+      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
       if (!nvram_match (bridged, "0"))
 	{
-	//  ifconfig (var, IFUP, NULL, NULL);
-	eval ("ifconfig", var, "down");
-	ioctl (s, SIOCSIFHWADDR, &ifr);
-	eval ("ifconfig", var, "up");
+	  //  ifconfig (var, IFUP, NULL, NULL);
+	  eval ("ifconfig", var, "down");
+	  ioctl (s, SIOCSIFHWADDR, &ifr);
+	  eval ("ifconfig", var, "up");
 	  br_add_interface (lan_ifname, var);
 	}
       else
