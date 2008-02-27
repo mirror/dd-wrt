@@ -488,28 +488,28 @@ port_forward_spec (webs_t wp, char *type, int which)
 	  websWrite (wp, "%s", to);
 	else if (!strcmp (type, "tcp"))
 	  {			// use checkbox
-	    if (!strcmp (proto, "udp"))
+	    if (!strcmp (proto, "udp") || !strcmp (proto, "both"))
 	      websWrite (wp, "");
 	    else
 	      websWrite (wp, "checked=\"checked\"");
 	  }
 	else if (!strcmp (type, "udp"))
 	  {			//use checkbox
-	    if (!strcmp (proto, "tcp"))
+	    if (!strcmp (proto, "tcp") || !strcmp (proto, "both"))
 	      websWrite (wp, "");
 	    else
 	      websWrite (wp, "checked=\"checked\"");
 	  }
 	else if (!strcmp (type, "sel_tcp"))
 	  {			// use select
-	    if (!strcmp (proto, "udp"))
+	    if (!strcmp (proto, "udp") || !strcmp (proto, "both"))
 	      websWrite (wp, "");
 	    else
 	      websWrite (wp, "selected=\"selected\"");
 	  }
 	else if (!strcmp (type, "sel_udp"))
 	  {			//use select
-	    if (!strcmp (proto, "tcp"))
+	    if (!strcmp (proto, "tcp") || !strcmp (proto, "both"))
 	      websWrite (wp, "");
 	    else
 	      websWrite (wp, "selected=\"selected\"");
@@ -580,8 +580,9 @@ validate_port_trigger (webs_t wp, char *value, struct variable *v)
       char trigger_i_to[] = "i_toXXX";
       char trigger_o_from[] = "o_fromXXX";
       char trigger_o_to[] = "o_toXXX";
+      char trigger_proto[] = "proXXX";
       char *name = "", *enable, new_name[200] = "", *i_from = "", *i_to =
-	"", *o_from = "", *o_to = "";
+	"", *o_from = "", *o_to = "", *proto="both";
 
       snprintf (trigger_name, sizeof (trigger_name), "name%d", i);
       snprintf (trigger_enable, sizeof (trigger_enable), "enable%d", i);
@@ -589,6 +590,7 @@ validate_port_trigger (webs_t wp, char *value, struct variable *v)
       snprintf (trigger_i_to, sizeof (trigger_i_to), "i_to%d", i);
       snprintf (trigger_o_from, sizeof (trigger_o_from), "o_from%d", i);
       snprintf (trigger_o_to, sizeof (trigger_o_to), "o_to%d", i);
+      snprintf (trigger_proto, sizeof (trigger_proto), "pro%d", i);
 
       name = websGetVar (wp, trigger_name, "");
       enable = websGetVar (wp, trigger_enable, "off");
@@ -596,7 +598,7 @@ validate_port_trigger (webs_t wp, char *value, struct variable *v)
       i_to = websGetVar (wp, trigger_i_to, NULL);
       o_from = websGetVar (wp, trigger_o_from, NULL);
       o_to = websGetVar (wp, trigger_o_to, NULL);
-
+      proto = websGetVar (wp, trigger_proto, "both");
       which = &trigger_variables[0];
 
       if (!i_from || !i_to || !o_from || !o_to)
@@ -646,8 +648,8 @@ validate_port_trigger (webs_t wp, char *value, struct variable *v)
 	  continue;
 	}
 
-      cur += snprintf (cur, buf + sof - cur, "%s%s:%s:both:%s-%s>%s-%s",
-		       cur == buf ? "" : " ", new_name, enable, i_from, i_to,
+      cur += snprintf (cur, buf + sof - cur, "%s%s:%s:%s:%s-%s>%s-%s",
+		       cur == buf ? "" : " ", new_name, enable,proto, i_from, i_to,
 		       o_from, o_to);
 
     }
@@ -720,14 +722,14 @@ void port_trigger_table (webs_t wp, char *type, int which)
 	  }
 	else if (!strcmp (type, "sel_tcp"))
 	  {			// use select
-	    if (!strcmp (proto, "udp"))
+	    if (!strcmp (proto, "udp") || !strcmp (proto, "both"))
 	      websWrite (wp, "");
 	    else
 	      websWrite (wp, "selected=\"selected\"");
 	  }
 	else if (!strcmp (type, "sel_udp"))
 	  {			//use select
-	    if (!strcmp (proto, "tcp"))
+	    if (!strcmp (proto, "tcp") || !strcmp (proto, "both"))
 	      websWrite (wp, "");
 	    else
 	      websWrite (wp, "selected=\"selected\"");
@@ -735,7 +737,7 @@ void port_trigger_table (webs_t wp, char *type, int which)
 	else if (!strcmp (type, "sel_both"))
 	  {			//use select
 	    if (!strcmp (proto, "both"))
-	      websWrite (wp, "selected=\"selected\"");
+	      websWrite (wp, "selected=\\\"selected\\\"");
 	    else
 	      websWrite (wp, "");
 	  }
