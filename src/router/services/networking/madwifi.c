@@ -1260,7 +1260,9 @@ configure_single (int count)
     }
   else
     {
-//      set_scanlist (dev, wif);
+#ifdef OLD_MADWIFI
+      set_scanlist (dev, wif);
+#endif
     }
 
   if (useif)
@@ -1323,7 +1325,9 @@ configure_single (int count)
 	}
       else
 	{
-//        set_scanlist (dev, wif);
+#ifdef OLD_MADWIFI
+        set_scanlist (dev, wif);
+#endif
 	}
 
 //      eval ("iwpriv", var, "bgscan", "0");
