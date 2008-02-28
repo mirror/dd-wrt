@@ -53,7 +53,6 @@ do
 		else
 			shaper=""
 		fi
-	
 	/usr/sbin/openvpn --mode p2p \
 		--daemon \
 		${pt} \
@@ -65,7 +64,7 @@ do
 		--ping 5 \
 		--persist-tun \
 		--remote $($nv get oet${i}_rem) \
-		--port 3500${id} \
+		--port $((35000+$id)) \
 		${comp} \
 		${shaper} \
 	 	--dev tap10${i} \
