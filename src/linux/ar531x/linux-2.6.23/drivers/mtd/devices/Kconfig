@@ -84,6 +84,15 @@ config MTD_SPIFLASH_SELFMAP
 	tristate "Atheros AR2315/6/7 SPI Flash support (dd-wrt selfmap)"
 	depends on MTD && ATHEROS
 
+config MTD_SPIFLASH_PP
+	bool	"Page Programming mode support"
+	
+config MTD_SPIFLASH_PP_GPIO
+	depends on MTD_SPIFLASH_PP
+	int	"Chip Select GPIO for Page Programming mode support"
+	default "0"
+
+
 config MTD_SLRAM
 	tristate "Uncached system RAM"
 	help
