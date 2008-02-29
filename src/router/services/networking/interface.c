@@ -225,8 +225,11 @@ start_setup_vlans (void)
   int ast = 0;
   if (nvram_match ("vlan1ports", "4 5"))
     vlanswap = 1;
-  if (nvram_match ("vlan0ports", "0 1 2 3 5*"))
+    
+  char *asttemp = nvram_safe_get ("vlan0ports");  
+  if (strstr (asttemp, "5*") || strstr (asttemp, "8*"))
     ast = 1;
+    
 //  if (nvram_match ("trunking", "1"))
 //    system ("echo 1 > /proc/sys/dev/adm6996/trunk");
 //  else
@@ -234,10 +237,10 @@ start_setup_vlans (void)
 
 
   char exec[64];
-  if (nvram_match ("boardtype", "bcm94710dev") || nvram_match ("xover", "1"))
-    workaround = 1;
-  else
-    workaround = 0;
+//  if (nvram_match ("boardtype", "bcm94710dev") || nvram_match ("xover", "1"))
+//    workaround = 1;
+//  else
+//    workaround = 0;
 
   memset (&portsettings[0][0], 0, 16 * 64);
   for (i = 0; i < 6; i++)
