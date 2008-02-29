@@ -105,7 +105,7 @@ start_sysinit (void)
 //eval ("insmod", "ath_pci", "autocreate=none");
   eval ("insmod", "ath_mimo_pci");
 
-  eval ("ifconfig", "wifi0", "up");
+//  eval ("ifconfig", "wifi0", "up");
 
 
 

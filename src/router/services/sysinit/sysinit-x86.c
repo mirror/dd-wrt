@@ -347,12 +347,12 @@ eval("insmod","crypto_null");
   eval ("insmod", "ath_mimo_pci");
 #endif
 
-  eval ("ifconfig", "wifi0", "up");
+/*  eval ("ifconfig", "wifi0", "up");
   eval ("ifconfig", "wifi1", "up");
   eval ("ifconfig", "wifi2", "up");
   eval ("ifconfig", "wifi3", "up");
   eval ("ifconfig", "wifi4", "up");
-  eval ("ifconfig", "wifi5", "up");
+  eval ("ifconfig", "wifi5", "up");*/
 #endif
 
   eval ("insmod", "ipv6");
