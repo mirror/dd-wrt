@@ -1203,7 +1203,7 @@ configure_single (int count)
 	  eval ("iwpriv", wdsdev, "wds", "1");
 #else
 	  eval ("iwpriv", dev, "wds_add", hwaddr);
-	  eval ("iwpriv", dev, "wds", "1");
+//	  eval ("iwpriv", dev, "wds", "1");
 #endif
 	}
     }
@@ -1500,7 +1500,7 @@ configure_single (int count)
 
 
 
-
+x
 
 // vif netconfig
   vifs = nvram_safe_get (wifivifs);
