@@ -772,25 +772,25 @@ start_restore_defaults (void)
     {
 	  switch (brand)
 	  {
-	    case ROUTER_ASUS_WL520G:
+		case ROUTER_ASUS_WL520G:
 		  nvram_set ("vlan0ports", "0 1 2 3 5*");
 		  nvram_set ("vlan1ports", "4 5");
 		  break;
-        case ROUTER_LINKSYS_WTR54GS:
+		case ROUTER_LINKSYS_WTR54GS:
 		  nvram_set ("vlan0ports", "0 5*");
 		  nvram_set ("vlan1ports", "1 5");
 		  break;
-        case ROUTER_ASUS_WL550GE:
+		case ROUTER_ASUS_WL550GE:
 		  nvram_set ("vlan0ports", "1 2 3 4 5*");
 		  nvram_set ("vlan1ports", "0 5");
 		  break;
-	    case ROUTER_MOTOROLA:
-        case ROUTER_WRT54G_V8:
+		case ROUTER_MOTOROLA:
+		case ROUTER_WRT54G_V8:
 		  nvram_set ("vlan0ports", "3 2 1 0 5*");
 		  nvram_set ("vlan1ports", "4 5");
 		  break;
-      	case ROUTER_LINKSYS_WRH54G:
-		case ROUTER_ASUS_WL500G:
+		case ROUTER_LINKSYS_WRH54G:
+		case ROUTER_ASUS_WL500GD:
 		  nvram_set ("vlan0ports", "4 3 2 1 5*");
 		  nvram_set ("vlan1ports", "0 5");
 		  break;
@@ -908,7 +908,7 @@ start_restore_defaults (void)
 	      nvram_set ("vlan0ports", "0 1 2 3 5*");
 	      break;
 	    case ROUTER_LINKSYS_WRH54G:
-		case ROUTER_ASUS_WL500G:
+		case ROUTER_ASUS_WL500GD:
 	      nvram_set ("vlan0ports", "4 3 2 1 5*");
 	      break;
 	    default:
