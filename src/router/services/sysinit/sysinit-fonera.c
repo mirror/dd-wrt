@@ -108,7 +108,7 @@ start_sysinit (void)
   eval ("insmod", "ar2313");
   eval ("insmod", "ath_hal");
   eval ("insmod", "ath_ahb");
-  eval ("ifconfig", "wifi0", "up");
+//  eval ("ifconfig", "wifi0", "up");
 #ifdef HAVE_LS2
   eval ("ifconfig", "eth0", "up");	// wan
   vlan_init (5);		// 4 lan + 1 wan, but only first one is used

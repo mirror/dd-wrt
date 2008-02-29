@@ -125,7 +125,7 @@ start_sysinit (void)
   eval ("insmod", "ar2313");
   eval ("insmod", "ath_hal");
   eval ("insmod", "ath_ahb");
-  eval ("ifconfig", "wifi0", "up");
+//  eval ("ifconfig", "wifi0", "up");
   eval ("ifconfig", "eth0", "up");	// wan
   system ("echo 2 >/proc/sys/dev/wifi0/ledpin");
   system ("echo 1 >/proc/sys/dev/wifi0/softled");

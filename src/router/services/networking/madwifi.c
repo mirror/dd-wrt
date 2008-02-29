@@ -1497,11 +1497,6 @@ configure_single (int count)
 /*  set_rate (dev);*/
 
 
-
-
-
-x
-
 // vif netconfig
   vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL && strlen (vifs) > 0)
@@ -1555,28 +1550,6 @@ x
 	  }
       }
     }
-  for (s = 1; s <= 10; s++)
-    {
-      char wdsvarname[32] = { 0 };
-      char wdsdevname[32] = { 0 };
-      char wdsmacname[32] = { 0 };
-      char *wdsdev;
-      char *hwaddr;
-
-      sprintf (wdsvarname, "%s_wds%d_enable", dev, (11 - s));
-      sprintf (wdsdevname, "%s_wds%d_if", dev, (11 - s));
-      sprintf (wdsmacname, "%s_wds%d_hwaddr", dev, (11 - s));
-      wdsdev = nvram_safe_get (wdsdevname);
-      if (strlen (wdsdev) == 0)
-	continue;
-      if (nvram_match (wdsvarname, "0"))
-	continue;
-      hwaddr = nvram_get (wdsmacname);
-      if (hwaddr != NULL)
-	{
-	  eval ("ifconfig", wdsdev, "0.0.0.0", "up");
-	}
-    }
 
   m = default_get (wl, "ap");
   eval ("iwpriv", dev, "scandisable", "0");
@@ -1600,6 +1573,31 @@ x
 	  eval ("ifconfig", dev, "up");
 	}
     }
+
+  for (s = 1; s <= 10; s++)
+    {
+      char wdsvarname[32] = { 0 };
+      char wdsdevname[32] = { 0 };
+      char wdsmacname[32] = { 0 };
+      char *wdsdev;
+      char *hwaddr;
+
+      sprintf (wdsvarname, "%s_wds%d_enable", dev, (11 - s));
+      sprintf (wdsdevname, "%s_wds%d_if", dev, (11 - s));
+      sprintf (wdsmacname, "%s_wds%d_hwaddr", dev, (11 - s));
+      wdsdev = nvram_safe_get (wdsdevname);
+      if (strlen (wdsdev) == 0)
+	continue;
+      if (nvram_match (wdsvarname, "0"))
+	continue;
+      hwaddr = nvram_get (wdsmacname);
+      if (hwaddr != NULL)
+	{
+	  eval ("ifconfig", wdsdev, "0.0.0.0", "up");
+	}
+    }
+
+
 }
 
 void
