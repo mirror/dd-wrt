@@ -221,11 +221,14 @@ start_setup_vlans (void)
 
   s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW);
   strcpy (mac, nvram_safe_get ("et0macaddr"));
+
   int vlanswap = 0;
-  int ast = 0;
   if (nvram_match ("vlan1ports", "4 5"))
+    vlanswap = 4;
+  if (nvram_match ("vlan1ports", "1 5"))  //Linksys WTR54GS
     vlanswap = 1;
-    
+
+  int ast = 0;    
   char *asttemp = nvram_safe_get ("vlan0ports");  
   if (strstr (asttemp, "5*") || strstr (asttemp, "8*"))
     ast = 1;
@@ -248,10 +251,15 @@ start_setup_vlans (void)
       snprintf (buff, 31, "port%dvlans", i);
       vlans = nvram_safe_get (buff);
       int use = i;
-      if (i == 0 && vlanswap == 1)
+      if (i == 0 && vlanswap == 4)
 	use = 4;
-      else if (i == 4 && vlanswap == 1)
+      else if (i == 4 && vlanswap == 4)
 	use = 0;
+      else if (i == 0 && vlanswap == 1)
+	use = 1;
+      else if (i == 1 && vlanswap == 1)
+	use = 0;
+	
       if (vlans)
 	{
 	  int lastvlan = 0;
