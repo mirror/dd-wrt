@@ -6046,10 +6046,16 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
   int s, len;
   struct iwreq iwr;
   if (!ifexists (ifname))
+    {
+    printf(stderr,"IOCTL_STA_INFO ifresolv %s failed!\n",ifname);
     return cnt;
+    }
   int state = get_radiostate (ifname);
   if (state == 0 || state == -1)
+    {
+    printf(stderr,"IOCTL_STA_INFO radio %s not enabled!\n",ifname);
     return cnt;
+    }
   s = socket (AF_INET, SOCK_DGRAM, 0);
   if (s < 0)
     {
@@ -6063,6 +6069,7 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
   iwr.u.data.length = 24 * 1024;
   if (ioctl (s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
     {
+      fprintf(stderr,"IOCTL_STA_INFO for %s failed!\n",ifname);
       close (s);
       free (buf);
       return cnt;
@@ -6070,6 +6077,7 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
   len = iwr.u.data.length;
   if (len < sizeof (struct ieee80211req_sta_info))
     {
+      fprintf(stderr,"IOCTL_STA_INFO len<struct %s failed!\n",ifname);
       close (s);
       free (buf);
       return cnt;
