@@ -222,12 +222,51 @@ start_setup_vlans (void)
   s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW);
   strcpy (mac, nvram_safe_get ("et0macaddr"));
 
-  int vlanswap = 0;
-  if (nvram_match ("vlan1ports", "4 5"))
-    vlanswap = 4;
-  if (nvram_match ("vlan1ports", "1 5"))  //Linksys WTR54GS
-    vlanswap = 1;
+  int vlanmap[6] = {0, 1, 2, 3, 4, 5};  // 0=wan; 1,2,3,4=lan; 5=internal 
 
+  if (nvram_match ("vlan1ports", "0 5"))
+  {
+   vlanmap[0] = 0;
+   vlanmap[5] = 5;	 
+   if (nvram_match ("vlan0ports", "4 3 2 1 5*"))
+   {
+	   vlanmap[1] = 4;
+	   vlanmap[2] = 3;	   
+	   vlanmap[3] = 2;
+	   vlanmap[4] = 1;
+   }
+   else  // nvram_match ("vlan0ports", "1 2 3 4 5*") nothing to do
+   {
+   }
+  }
+  else if (nvram_match ("vlan1ports", "4 5"))
+  {
+   vlanmap[0] = 4;
+   vlanmap[5] = 5;	   
+   if (nvram_match ("vlan0ports", "0 1 2 3 5*"))
+   {
+	   vlanmap[1] = 0;
+	   vlanmap[2] = 1;	   
+	   vlanmap[3] = 2;
+	   vlanmap[4] = 3;
+   }
+   else  // nvram_match ("vlan0ports", "3 2 1 0 5*")
+   {
+	   vlanmap[1] = 3;
+	   vlanmap[2] = 2;	   
+	   vlanmap[3] = 1;
+	   vlanmap[4] = 0;
+   }  
+  }
+  else if (nvram_match ("vlan1ports", "1 5"))    //Linksys WTR54GS
+  {
+   vlanmap[5] = 5;
+   vlanmap[0] = 1;
+   vlanmap[1] = 0;
+  }
+//  else if .... feel free to extend for giga routers
+   
+   
   int ast = 0;    
   char *asttemp = nvram_safe_get ("vlan0ports");  
   if (strstr (asttemp, "5*") || strstr (asttemp, "8*"))
@@ -250,15 +289,7 @@ start_setup_vlans (void)
     {
       snprintf (buff, 31, "port%dvlans", i);
       vlans = nvram_safe_get (buff);
-      int use = i;
-      if (i == 0 && vlanswap == 4)
-	use = 4;
-      else if (i == 4 && vlanswap == 4)
-	use = 0;
-      else if (i == 0 && vlanswap == 1)
-	use = 1;
-      else if (i == 1 && vlanswap == 1)
-	use = 0;
+      int use = vlanmap[i];
 	
       if (vlans)
 	{
