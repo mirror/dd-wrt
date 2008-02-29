@@ -211,8 +211,8 @@ start_sysinit (void)
   system ("echo 3 >/proc/sys/dev/wifi1/ledpin");
   system ("echo 1 >/proc/sys/dev/wifi1/softled");
 
-  eval ("ifconfig", "wifi0", "up");
-  eval ("ifconfig", "wifi1", "up");
+//  eval ("ifconfig", "wifi0", "up");
+//  eval ("ifconfig", "wifi1", "up");
 
 
 

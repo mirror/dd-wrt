@@ -110,7 +110,7 @@ start_sysinit (void)
   system ("echo 2 >/proc/sys/dev/wifi0/ledpin");
   system ("echo 1 >/proc/sys/dev/wifi0/softled");
 #endif
-  eval ("ifconfig", "wifi0", "up");
+//  eval ("ifconfig", "wifi0", "up");
   eval ("ifconfig", "eth0", "up");
   vlan_init (5);		// 1 lan + 1 wan
 
