@@ -565,7 +565,11 @@ start_restore_defaults (void)
 
   if (restore_defaults)
     cprintf ("Restoring defaults...");
-  nvram_unset ("wan_to_lan");	//important for some AP
+
+/* these unsets are important for routers where we can't erase nvram and only software restore defaults */        
+  nvram_unset ("wan_to_lan");
+  nvram_unset ("wl_vifs");
+  nvram_unset ("wl0_vifs");
 
 //    }
 
