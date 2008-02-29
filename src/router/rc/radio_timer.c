@@ -97,7 +97,9 @@ radio_timer_main (void)
 #ifdef HAVE_MADWIFI
 		  eval ("ifconfig", "ath0", "up");
 #elif HAVE_MSSID
+		  stop_service ("nas");
 		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "on");
+		  start_service ("nas");
 #else
 		  eval ("wl", "radio", "on");
 #endif
@@ -108,6 +110,7 @@ radio_timer_main (void)
 #ifdef HAVE_MADWIFI
 		  eval ("ifconfig", "ath0", "down");
 #elif HAVE_MSSID
+		  stop_service ("nas");
 		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "off");
 #else
 		  eval ("wl", "radio", "off");
