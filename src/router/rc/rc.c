@@ -547,6 +547,15 @@ unlink("/tmp/.rstp_server");
 	  start_service ("guest_nas");
 #endif
 #endif
+
+#ifndef HAVE_MADWIFI
+#ifdef HAVE_RADIOOFF
+  if (nvram_match ("radiooff_button", "1")
+      && nvram_match ("radiooff_boot_off", "1"))
+    eval ("wl", "-i", get_wl_instance_name (0), "radio", "off");
+#endif
+#endif
+
 	  start_service ("radio_timer");
 
 
