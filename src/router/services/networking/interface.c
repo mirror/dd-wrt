@@ -312,22 +312,22 @@ start_setup_vlans (void)
 		{
 		  if ((mask & 3) == 0)
 		    {
-		      fprintf (stderr, "set port %d to 10HD\n", use);
+		      fprintf (stderr, "set port %d to 100FD\n", use);
 		      fputs ("100FD", fp);
 		    }
 		  if ((mask & 3) == 1)
 		    {
-		      fprintf (stderr, "set port %d to 100HD\n", use);
+		      fprintf (stderr, "set port %d to 10FD\n", use);
 		      fputs ("10FD", fp);
 		    }
 		  if ((mask & 3) == 2)
 		    {
-		      fprintf (stderr, "set port %d to 10FD\n", use);
+		      fprintf (stderr, "set port %d to 100HD\n", use);
 		      fputs ("100HD", fp);
 		    }
 		  if ((mask & 3) == 3)
 		    {
-		      fprintf (stderr, "set port %d to 100FD\n", use);
+		      fprintf (stderr, "set port %d to 10HD\n", use);
 		      fputs ("10HD", fp);
 		    }
 		}
