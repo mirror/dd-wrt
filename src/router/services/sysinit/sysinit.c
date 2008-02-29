@@ -770,33 +770,37 @@ start_restore_defaults (void)
 #ifndef HAVE_FON
   if (restore_defaults)
     {
-      if (brand == ROUTER_MOTOROLA || brand == ROUTER_ASUS_WL520G)
-	{
-	  nvram_set ("vlan0ports", "0 1 2 3 5*");
-	  nvram_set ("vlan1ports", "4 5");
-	}
-      if (brand == ROUTER_LINKSYS_WTR54GS)
-	{
-	  nvram_set ("vlan0ports", "0 5*");
-	  nvram_set ("vlan1ports", "1 5");
-	}
-      if (brand == ROUTER_ASUS_WL550GE)
-	{
-	  nvram_set ("vlan0ports", "1 2 3 4 5*");
-	  nvram_set ("vlan1ports", "0 5");
-	}
-      if (brand == ROUTER_WRT54G_V8
-	  || nvram_match ("bootnv_ver", "4")
+	  switch (brand)
+	  {
+	    case ROUTER_ASUS_WL520G:
+		  nvram_set ("vlan0ports", "0 1 2 3 5*");
+		  nvram_set ("vlan1ports", "4 5");
+		  break;
+        case ROUTER_LINKSYS_WTR54GS:
+		  nvram_set ("vlan0ports", "0 5*");
+		  nvram_set ("vlan1ports", "1 5");
+		  break;
+        case ROUTER_ASUS_WL550GE:
+		  nvram_set ("vlan0ports", "1 2 3 4 5*");
+		  nvram_set ("vlan1ports", "0 5");
+		  break;
+	    case ROUTER_MOTOROLA:
+        case ROUTER_WRT54G_V8:
+		  nvram_set ("vlan0ports", "3 2 1 0 5*");
+		  nvram_set ("vlan1ports", "4 5");
+		  break;
+      	case ROUTER_LINKSYS_WRH54G:
+		case ROUTER_ASUS_WL500G:
+		  nvram_set ("vlan0ports", "4 3 2 1 5*");
+		  nvram_set ("vlan1ports", "0 5");
+		  break;
+	  }
+	if (nvram_match ("bootnv_ver", "4")
 	  || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
 	{
 	  nvram_set ("vlan0ports", "3 2 1 0 5*");
 	  nvram_set ("vlan1ports", "4 5");
-	}
-      if (brand == ROUTER_LINKSYS_WRH54G)
-	{
-	  nvram_set ("vlan0ports", "4 3 2 1 5*");
-	  nvram_set ("vlan1ports", "0 5");
-	}
+    }
 #ifdef HAVE_SPUTNIK
       nvram_set ("lan_ipaddr", "192.168.180.1");
 #elif HAVE_BUFFALO
@@ -894,6 +898,9 @@ start_restore_defaults (void)
 	      nvram_set ("vlan0ports", "1 2 3 4 5*");
 	      break;
 	    case ROUTER_MOTOROLA:
+	    case ROUTER_WRT54G_V8:
+	      nvram_set ("vlan0ports", "3 2 1 0 5*");
+	      break;
 	    case ROUTER_LINKSYS_WRT55AG:
 	    case ROUTER_RT480W:
 	    case ROUTER_DELL_TRUEMOBILE_2300_V2:
@@ -901,11 +908,11 @@ start_restore_defaults (void)
 	      nvram_set ("vlan0ports", "0 1 2 3 5*");
 	      break;
 	    case ROUTER_LINKSYS_WRH54G:
+		case ROUTER_ASUS_WL500G:
 	      nvram_set ("vlan0ports", "4 3 2 1 5*");
 	      break;
 	    default:
-	      if (brand == ROUTER_WRT54G_V8
-		  || nvram_match ("bootnv_ver", "4")
+	      if (nvram_match ("bootnv_ver", "4")
 		  || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
 		nvram_set ("vlan0ports", "3 2 1 0 5*");
 	      else
@@ -928,6 +935,7 @@ start_restore_defaults (void)
 		  nvram_set ("vlan1ports", "0 5");
 		  break;
 		case ROUTER_MOTOROLA:
+		case ROUTER_WRT54G_V8:
 		case ROUTER_LINKSYS_WRT55AG:
 		case ROUTER_RT480W:
 		case ROUTER_DELL_TRUEMOBILE_2300_V2:
@@ -935,8 +943,7 @@ start_restore_defaults (void)
 		  nvram_set ("vlan1ports", "4 5");
 		  break;
 		default:
-		  if (brand == ROUTER_WRT54G_V8
-		      || nvram_match ("bootnv_ver", "4")
+		  if (nvram_match ("bootnv_ver", "4")
 		      || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
 		    nvram_set ("vlan1ports", "4 5");
 		  else
