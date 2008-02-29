@@ -81,6 +81,10 @@ config MTD_SPIFLASH
 	tristate "Atheros AR2315/6/7 SPI Flash support"
 	depends on MTD && ATHEROS
 
+config MTD_SPIFLASH_SELFMAP
+	tristate "Atheros AR2315/6/7 SPI Flash support (dd-wrt selfmap)"
+	depends on MTD && ATHEROS
+
 config MTD_SLRAM
 	tristate "Uncached system RAM"
 	help
