@@ -112,7 +112,7 @@ start_sysinit (void)
 
   eval ("insmod", "ath_hal");
   eval ("insmod", "ath_ahb");
-  eval ("ifconfig", "wifi0", "up");
+//  eval ("ifconfig", "wifi0", "up");
 
   eval ("insmod", "ipv6");
 
