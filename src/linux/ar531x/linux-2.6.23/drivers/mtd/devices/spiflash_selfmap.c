@@ -154,7 +154,7 @@ static struct mtd_partition dir_parts[] = {
         { name: "linux", offset: 0x30000, size: 0x390000, },
         { name: "rootfs", offset: 0x0, size: 0x2b0000,}, //must be detected
         { name: "nvram", offset: 0x3d0000, size: 0x10000, },
-        { name: "FIS Directory", offset: 0x3e0000, size: 0x10000, },
+        { name: "FIS directory", offset: 0x3e0000, size: 0x10000, },
         { name: "board_config", offset: 0x3f0000, size: 0x10000, },
         { name: "fullflash", offset: 0x3f0000, size: 0x10000, },
         { name: NULL, },
