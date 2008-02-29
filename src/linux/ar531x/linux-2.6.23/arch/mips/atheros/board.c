@@ -26,6 +26,7 @@
 #include <asm/irq_cpu.h>
 #include <asm/io.h>
 #include "ar531x.h"
+//#include "board3.h"
 
 char *board_config, *radio_config;
 
@@ -49,6 +50,7 @@ static u8 *find_board_config(char *flash_limit)
 
 	if (!found) {
 		printk("WARNING: No board configuration data found!\n");
+//		addr=&bdata;
 		addr = NULL;
 	}
 	
