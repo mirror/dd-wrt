@@ -466,7 +466,9 @@ period_check (int sig)
 #ifdef HAVE_RADIOOFF
 	  if (nvram_match ("radiooff_button", "1"))
 	    {
-	      eval ("wl", "radio", "on");
+		  stop_service ("nas");
+		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "on");
+		  start_service ("nas");
 #ifndef HAVE_BUFFALO
 	      syslog (LOG_DEBUG,
 		      "SES /AOSS /EZ-setup button: turning radio on\n");
@@ -496,7 +498,8 @@ period_check (int sig)
 #ifdef HAVE_RADIOOFF
 	  if (nvram_match ("radiooff_button", "1"))
 	    {
-	      eval ("wl", "radio", "off");
+		  stop_service ("nas");
+		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "off");
 #ifndef HAVE_BUFFALO
 	      syslog (LOG_DEBUG,
 		      "SES /AOSS /EZ-setup button: turning radio off\n");
