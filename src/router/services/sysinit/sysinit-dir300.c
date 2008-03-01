@@ -93,7 +93,8 @@ start_sysinit (void)
   klogctl (8, NULL, atoi (nvram_safe_get ("console_loglevel")));
   cprintf ("sysinit() get router\n");
 
-  FILE *fp = fopen ("/dev/mtdblock/6", "rb");
+#ifndef HAVE_DIR400
+  FILE *fp = fopen (getMTD("board_config"), "rb");
   if (fp)
     {
       fseek (fp, 0x1000, SEEK_SET);
@@ -117,7 +118,7 @@ start_sysinit (void)
 	}
       fclose (fp);
     }
-
+#endif
 
   /* Modules */
   uname (&name);
