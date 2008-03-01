@@ -8066,8 +8066,6 @@ ej_gethostnamebyip (webs_t wp, int argc, char_t ** argv)
 void
 ej_show_wan_to_switch (webs_t wp, int argc, char_t ** argv)
 {
-  if (!check_vlan_support ())
-    return;
 
   if (nvram_match ("wan_proto", "disabled") || !nvram_match ("wl_mode", "ap"))	//WAN disabled OR Wirelles is not AP
     {
