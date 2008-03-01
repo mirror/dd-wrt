@@ -824,13 +824,11 @@ start_restore_defaults (void)
 	{
 	  nvram_set ("vlan0ports", "1 2 3 4 8*");
 	}
-      if (nvram_invmatch ("fullswitch", "1"))
-	{
 	  if (!nvram_get ("vlan2ports") || nvram_match ("vlan2ports", ""))
-	    {
-	      nvram_set ("vlan2ports", "0 8");
-	    }
-	}
+    {
+      nvram_set ("vlan2ports", "0 8");
+    }
+    
     }
   else if (brand == ROUTER_WRT350N)
     {
@@ -839,13 +837,11 @@ start_restore_defaults (void)
 	{
 	  nvram_set ("vlan1ports", "1 2 3 4 8*");
 	}
-      if (nvram_invmatch ("fullswitch", "1"))
-	{
 	  if (!nvram_get ("vlan2ports") || nvram_match ("vlan2ports", ""))
-	    {
-	      nvram_set ("vlan2ports", "0 8");
-	    }
-	}
+    {
+      nvram_set ("vlan2ports", "0 8");
+    }
+    
     }
   else if (brand == ROUTER_BUFFALO_WZRG144NH)
 
@@ -854,13 +850,10 @@ start_restore_defaults (void)
 	{
 	  nvram_set ("vlan1ports", "4 8");
 	}
-      if (nvram_invmatch ("fullswitch", "1"))
-	{
 	  if (!nvram_get ("vlan2ports") || nvram_match ("vlan2ports", ""))
-	    {
-	      nvram_set ("vlan2ports", "0 1 2 3 8");
-	    }
-	}
+    {
+      nvram_set ("vlan2ports", "0 1 2 3 8");
+    }
 
     }
   else
@@ -917,8 +910,6 @@ start_restore_defaults (void)
 	    }
 	}
 
-      if (nvram_invmatch ("fullswitch", "1"))
-	{
 	  if (!nvram_get ("vlan1ports") || nvram_match ("vlan1ports", ""))
 	    {
 	      switch (brand)
@@ -947,7 +938,7 @@ start_restore_defaults (void)
 		  break;
 		}
 	    }
-	}
+
     }
 
   if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X
