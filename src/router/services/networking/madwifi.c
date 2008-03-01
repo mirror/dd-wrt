@@ -210,6 +210,7 @@ setdistance (char *device, int distance)
       int ctstimeout = slottime * 2 + 3;
 
 //              printf("Setting distance on interface %s to %i meters\n", device, distance);
+      if (distance>2000)
       setsysctrl (device, "slottime", slottime);
       setsysctrl (device, "acktimeout", acktimeout);
       setsysctrl (device, "ctstimeout", ctstimeout);
