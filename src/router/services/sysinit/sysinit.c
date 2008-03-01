@@ -564,6 +564,7 @@ start_restore_defaults (void)
     nvram_unset ("wan_to_lan");
     nvram_unset ("wl_vifs");
     nvram_unset ("wl0_vifs");
+    nvram_unset ("fullswitch_set");
   }
 
 //    }
