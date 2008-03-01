@@ -269,6 +269,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Linksys WRT54Gv8.1 (BCM5354 cpu, fccid: Linksys Q87-WRT54GV81)
 #define ROUTER_WRT54G_V81 0x500f
 
+// Netgear WGR614L (BCM5354 cpu, fccid: Netgear ??)
+#define ROUTER_NETGEAR_WGR614L 0x510f
+
 #define NVROUTER "DD_BOARD"
 
 extern char *getBridge (char *ifname);
