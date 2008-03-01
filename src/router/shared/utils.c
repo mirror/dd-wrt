@@ -1088,7 +1088,15 @@ internal_getRouterBrand ()
       cprintf ("router is Asus WL-520GU/GC\n");
       setRouter ("Asus WL-520GU/GC");
       return ROUTER_ASUS_WL520GUGC;
-    }        
+    }   
+    
+  if (boardnum == 83258 &&
+      nvram_match ("boardtype", "0x48E") && nvram_match ("boardrev", "0x10"))
+    {
+      cprintf ("router is Netgear WGR614L\n");
+      setRouter ("Netgear WGR614L");
+      return ROUTER_NETGEAR_WGR614L;
+    }      
 
   if (boardnum == 56 &&
       nvram_match ("boardtype", "0x456") && nvram_match ("boardrev", "0x10"))
