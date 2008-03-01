@@ -601,6 +601,7 @@ start_sysinit (void)
       break;
 
     case ROUTER_ASUS_WL520GUGC:
+    case ROUTER_NETGEAR_WGR614L:
       if (nvram_match ("vlan1ports", "0 5u"))
 	nvram_set ("vlan1ports", "0 5");
       break;
