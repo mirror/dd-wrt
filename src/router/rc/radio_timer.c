@@ -100,6 +100,7 @@ radio_timer_main (void)
 		  stop_service ("nas");
 		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "on");
 		  start_service ("nas");
+	      start_service ("guest_nas");
 #else
 		  eval ("wl", "radio", "on");
 #endif

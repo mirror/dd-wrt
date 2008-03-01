@@ -460,6 +460,7 @@ unlink("/tmp/.rstp_server");
   if (nvram_match ("radiooff_button", "1")
       && nvram_match ("radiooff_boot_off", "1"))
       {
+	sleep (2);
 	stop_service ("nas"); 
     eval ("wl", "-i", get_wl_instance_name (0), "radio", "off");
       }

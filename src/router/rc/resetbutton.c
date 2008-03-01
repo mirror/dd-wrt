@@ -463,54 +463,44 @@ period_check (int sig)
 
       if (ses_mode == 1)
 	{
+	  led_control (LED_SES, LED_FLASH);	//when pressed, blink white SES (AOSS) led
 #ifdef HAVE_RADIOOFF
 	  if (nvram_match ("radiooff_button", "1"))
 	    {
-		  stop_service ("nas");
-		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "on");
-		  start_service ("nas");
 #ifndef HAVE_BUFFALO
 	      syslog (LOG_DEBUG,
-		      "SES /AOSS /EZ-setup button: turning radio on\n");
+		      "SES / AOSS / EZ-setup button: turning radio on\n");
 #else
 	      syslog (LOG_DEBUG, "AOSS button: turning radio on\n");
+#endif
+		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "on");
+		  start_service ("nas");
+#ifdef HAVE_MSSID
+	      start_service ("guest_nas");
 #endif
 	    }
 #endif
 
-//              led_control (LED_SES, LED_OFF);         
-//              led_control (LED_SES2, LED_ON);         //enable orange led
-	  led_control (LED_SES, LED_FLASH);	//when pressed, blink white SES (AOSS) led
 
-//      switch (brand)
-//              {
-//              case ROUTER_WRT54G:
-//              case ROUTER_WRTSL54GS: 
-//                      ses_mode = 2;
-//              break;
-//              default:
 	  ses_mode = 0;
-//              }
 
 	}
       else if (ses_mode == 0)
 	{
+	  led_control (LED_SES, LED_FLASH);	//when pressed, blink SES (AOSS) led
 #ifdef HAVE_RADIOOFF
 	  if (nvram_match ("radiooff_button", "1"))
 	    {
-		  stop_service ("nas");
-		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "off");
 #ifndef HAVE_BUFFALO
 	      syslog (LOG_DEBUG,
-		      "SES /AOSS /EZ-setup button: turning radio off\n");
+		      "SES / AOSS / EZ-setup button: turning radio off\n");
 #else
 	      syslog (LOG_DEBUG, "AOSS button: turning radio off\n");
 #endif
+		  stop_service ("nas");
+		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "off");
 	    }
 #endif
-//              led_control (LED_SES, LED_ON);          //enable white led
-//              led_control (LED_SES2, LED_OFF);
-	  led_control (LED_SES, LED_FLASH);	//when pressed, blink white SES (AOSS) led
 
 	  ses_mode = 1;
 
