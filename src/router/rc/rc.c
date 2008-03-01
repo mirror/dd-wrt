@@ -164,104 +164,11 @@ main_loop (void)
   nvram_set ("vlan0ports", "0 1 2 3 4 5*");
   nvram_set ("vlan1ports", "");
 #else
-#ifndef HAVE_BUFFALO
+
   if (brand == ROUTER_WRT600N)
     {
       nvram_set("vlan2hwname","et0");
-      if (nvram_match ("fullswitch", "1")
-	  && (nvram_invmatch ("wl0_mode", "ap")
-	      || nvram_match ("wan_proto", "disabled")))
-	{
-	  nvram_set ("vlan0ports", "0 1 2 3 4 8*");
-	  nvram_set ("vlan2ports", "");
-	}
-      else
-	{
-	  if (nvram_match ("vlan0ports", "0 1 2 3 4 8*"))
-	    {
-	      nvram_set ("vlan0ports", "");
-	      nvram_set ("vlan2ports", "");
-	    }
-	}
     }
-  else if (brand == ROUTER_WRT350N)
-    {
-      if (nvram_match ("fullswitch", "1")
-	  && (nvram_invmatch ("wl0_mode", "ap")
-	      || nvram_match ("wan_proto", "disabled")))
-	{
-	  nvram_set ("vlan1ports", "0 1 2 3 4 8*");
-	  nvram_set ("vlan2ports", "");
-	}
-      else
-	{
-	  if (nvram_match ("vlan1ports", "0 1 2 3 4 8*"))
-	    {
-	      nvram_set ("vlan1ports", "");
-	      nvram_set ("vlan2ports", "");
-	    }
-	}
-    }
-  else if (brand == ROUTER_LINKSYS_WTR54GS)  //it has 1 LAN + 1 WAN port
-    {
-      if (nvram_match ("fullswitch", "1")
-	  && (nvram_invmatch ("wl0_mode", "ap")
-	      || nvram_match ("wan_proto", "disabled")))
-	{
-	  nvram_set ("vlan0ports", "0 1 5*");
-	  nvram_set ("vlan1ports", "");
-	}
-      else
-	{
-	  if (nvram_match ("vlan0ports", "0 1 5*"))
-	    {
-	      nvram_set ("vlan0ports", "");
-	      nvram_set ("vlan1ports", "");
-	    }
-	}
-    }
-  else
-#endif
-  if (brand == ROUTER_BUFFALO_WZRG144NH)
-    {
-      if (nvram_match ("fullswitch", "1")
-	  && (nvram_invmatch ("wl0_mode", "ap")
-	      || nvram_match ("wan_proto", "disabled")))
-	{
-	  nvram_set ("vlan1ports", "");
-	  nvram_set ("vlan2ports", "0 1 2 3 4 8*");
-	}
-      else
-	{
-	  if (nvram_match ("vlan2ports", "0 1 2 3 4 8*"))
-	    {
-	      nvram_set ("vlan1ports", "");
-	      nvram_set ("vlan2ports", "");
-	    }
-	}
-    }
-  else
-    {
-      if (nvram_match ("fullswitch", "1")
-	  && (nvram_invmatch ("wl0_mode", "ap")
-	      || nvram_match ("wan_proto", "disabled")))
-	{
-	  nvram_set ("vlan0ports", "0 1 2 3 4 5*");
-	  nvram_set ("vlan1ports", "");
-	}
-      else
-	{
-	  if (nvram_match ("vlan0ports", "0 1 2 3 4 5*"))
-	    {
-	      nvram_set ("vlan0ports", "");
-	      nvram_set ("vlan1ports", "");
-	    }
-	}
-    }
-
-
-
-
 
 
 #endif
