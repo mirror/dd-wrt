@@ -646,7 +646,11 @@ int
 stop_nas (void)
 {
   int ret = 0;
-
+  
+#ifdef HAVE_MSSID
+  unlink ("/tmp/.nas");
+#endif
+  
   if (pidof ("nas") > 0)
     syslog (LOG_INFO, "NAS : NAS daemon successfully stopped\n");
 
@@ -669,9 +673,6 @@ stop_nas (void)
   killall ("wpa_supplicant", SIGKILL);
 #endif
 // clean
-#ifdef HAVE_MSSID
-  unlink ("/tmp/.nas");
-#endif
   unlink ("/tmp/nas.wl0wan.pid");
   unlink ("/tmp/nas.wl0lan.pid");
   unlink ("/tmp/nas.wl1wan.pid");
