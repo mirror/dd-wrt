@@ -473,6 +473,7 @@ period_check (int sig)
 #else
 	      syslog (LOG_DEBUG, "AOSS button: turning radio on\n");
 #endif
+		  stop_service ("nas");
 		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "on");
 		  start_service ("nas");
 #ifdef HAVE_MSSID
