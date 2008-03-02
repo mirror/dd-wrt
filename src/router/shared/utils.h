@@ -151,7 +151,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // swapped phy definition 
 #define ROUTER_BOARD_GATEWORX_SWAP 0x290f
 
-// Netgear WNR834B (BCM4704 cpu, BCM5325 switch, cardbus radio,  fccid: Netgear PY306100032)
+// Netgear WNR834Bv1 (BCM4704 cpu, BCM5325 switch, cardbus radio,  fccid: Netgear PY306100032)
 #define ROUTER_NETGEAR_WNR834B 0x2a17
 
 // swapped phy definition and Kendin switch
@@ -271,6 +271,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 // Netgear WGR614L (BCM5354 cpu, fccid: Netgear ??)
 #define ROUTER_NETGEAR_WGR614L 0x510f
+
+// Netgear WNR834Bv2 (BCM4704 cpu, BCM5325 switch, fccid: Netgear PY307100061)
+#define ROUTER_NETGEAR_WNR834BV2 0x520f
 
 #define NVROUTER "DD_BOARD"
 
