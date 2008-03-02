@@ -341,7 +341,40 @@ wlc_noack (int value)
 
 #endif
 
+void
+getLanIfnames (char *lanifnames)
+{
+	char *lanifnsdef = nvram_safe_get ("lan_ifnames");
+	char *wanifndef = nvram_safe_get ("wan_ifname");
+	
+	strcpy (lanifnames, lanifnsdef);
+	
+  if (nvram_match ("fullswitch", "1")
+   && (nvram_invmatch ("wl0_mode", "ap")
+   || nvram_match ("wan_proto", "disabled")))
+   {
+	  sprintf (lanifnames, "%s %s", lanifnsdef, wanifndef);	
+   }
+	
+	return;	
+}
 
+void
+getWanIfname (char *wanifname)
+{
+  if (nvram_match ("fullswitch", "1")
+   && (nvram_invmatch ("wl0_mode", "ap")
+   || nvram_match ("wan_proto", "disabled")))
+   {
+	  strcpy (wanifname, "");	
+   }
+   else
+   {
+	  strcpy (wanifname, nvram_safe_get ("wan_ifname"));
+   }
+	
+	return;	
+}
 
 #ifndef HAVE_MADWIFI
 static int notify_nas (char *type, char *ifname, char *action);
@@ -405,13 +438,15 @@ static int
 enable_dhcprelay (char *ifname)
 {
   char name[80], *next;
+  char lan_ifnames[256];
+  getLanIfnames (lan_ifnames);
 
   dprintf ("%s\n", ifname);
 
   /* WET interface is meaningful only in bridged environment */
   if (strncmp (ifname, "br", 2) == 0)
     {
-      foreach (name, nvram_safe_get ("lan_ifnames"), next)
+      foreach (name, lan_ifnames, next)
       {
 
 	char mode[] = "wlXXXXXXXXXX_mode";
@@ -1181,16 +1216,24 @@ start_lan (void)
      strncpy (ifr.ifr_name, "eth1", IFNAMSIZ);
      ioctl (s, SIOCSIFHWADDR, &ifr); */
 #endif
-  char *lan_ifname = strdup (nvram_safe_get ("lan_ifname"));
-  char *wan_ifname = strdup (nvram_safe_get ("wan_ifname"));
-  char *lan_ifnames = strdup (nvram_safe_get ("lan_ifnames"));
+//  char *lan_ifname = strdup (nvram_safe_get ("lan_ifname"));
+//  char *wan_ifname = strdup (nvram_safe_get ("wan_ifname"));
+//  char *lan_ifnames = strdup (nvram_safe_get ("lan_ifnames"));
   char name[80], *next, *svbuf;
   char realname[80];
   char wl_face[10];
 
-  strcpy (lan_ifname, nvram_safe_get ("lan_ifname"));
-  strcpy (wan_ifname, nvram_safe_get ("wan_ifname"));
-  strcpy (lan_ifnames, nvram_safe_get ("lan_ifnames"));
+//  strcpy (lan_ifname, nvram_safe_get ("lan_ifname"));
+//  strcpy (wan_ifname, nvram_safe_get ("wan_ifname"));
+//  strcpy (lan_ifnames, nvram_safe_get ("lan_ifnames"));
+
+ char *lan_ifname = nvram_safe_get ("lan_ifname");
+
+  char wan_ifname[32];
+  getWanIfname (wan_ifname);
+  
+  char lan_ifnames[256];
+  getLanIfnames (lan_ifnames);
 
 // Motorola doesnt like this
 //      if(nvram_match("wl0_gmode", "-1"))
@@ -1297,7 +1340,7 @@ start_lan (void)
 
       foreach (name, lan_ifnames, next)
       {
-	if (nvram_match ("wan_ifname", name))
+	if (!strcpm (wan_ifname, name))
 	  continue;
 	if (!ifexists (name))
 	  continue;
@@ -1559,9 +1602,9 @@ start_lan (void)
       }
     }
 
-  free (lan_ifname);
-  free (wan_ifname);
-  free (lan_ifnames);
+//  free (lan_ifname);
+//  free (wan_ifname);
+//  free (lan_ifnames);
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_NOWIFI
   configure_wifi ();
@@ -1583,8 +1626,8 @@ start_lan (void)
 
 #endif
 #endif
-  lan_ifname = strdup (nvram_safe_get ("lan_ifname"));
-  lan_ifnames = strdup (nvram_safe_get ("lan_ifnames"));
+//  lan_ifname = strdup (nvram_safe_get ("lan_ifname"));
+//  lan_ifnames = strdup (nvram_safe_get ("lan_ifnames"));
 
   /* specific non-bridged lan i/f */
   if (strcmp (lan_ifname, ""))
@@ -2040,8 +2083,8 @@ start_lan (void)
     br_set_stp_state ("br0", 1);
 
 
-  free (lan_ifnames);
-  free (lan_ifname);
+//  free (lan_ifnames);
+//  free (lan_ifname);
   eval ("rm", "/tmp/hosts");
   addHost ("localhost", "127.0.0.1");
   if (strlen (nvram_safe_get ("wan_hostname")) > 0)
@@ -2058,6 +2101,12 @@ stop_lan (void)
 {
   char *lan_ifname = nvram_safe_get ("lan_ifname");
   char name[80], *next;
+  
+  char wan_ifname[32];
+  getWanIfname (wan_ifname);
+  
+  char lan_ifnames[256];
+  getLanIfnames (lan_ifnames); 
 
   cprintf ("%s\n", lan_ifname);
   /* Bring down LAN interface */
@@ -2081,9 +2130,9 @@ stop_lan (void)
   /* Bring down bridged interfaces */
   if (strncmp (lan_ifname, "br", 2) == 0)
     {
-      foreach (name, nvram_safe_get ("lan_ifnames"), next)
+      foreach (name, lan_ifnames, next)
       {
-	if (nvram_match ("wan_ifname", name))
+	if (!strcmp (wan_ifname, name))
 	  continue;
 	if (!ifexists (name))
 	  continue;
