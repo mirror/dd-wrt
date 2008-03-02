@@ -869,11 +869,18 @@ internal_getRouterBrand ()
     }
 #ifndef HAVE_BUFFALO
 
-  if (boardnum == 8 &&
+  if (boardnum == 8 && 
       nvram_match ("boardtype", "0x0472") && nvram_match ("cardbus", "1"))
     {
       setRouter ("Netgear WNR834B");
       return ROUTER_NETGEAR_WNR834B;
+    }
+    
+  if (boardnum == 1 &&
+      nvram_match ("boardtype", "0x0472") && nvram_match ("cardbus", "1"))
+    {
+      setRouter ("Netgear WNR834B v2");
+      return ROUTER_NETGEAR_WNR834BV2;
     }
 
   if (boardnum == 42)  //Get Linksys N models
