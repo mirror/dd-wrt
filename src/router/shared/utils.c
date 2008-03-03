@@ -1429,6 +1429,7 @@ led_control (int type, int act)
   int ses_gpio = 0x0f;		//use for SES1 (Linksys), AOSS (Buffalo) ....
   int ses2_gpio = 0x0f;
   int wlan_gpio = 0x0f;		//use this only if wlan led is not controlled by hardware!
+  int led_usb = 0x0f;
   int v1func = 0;
   switch (getRouterBrand ())	//gpio definitions here: 0xYZ, Y=0:normal, Y=1:inverted, Z:gpio number (f=disabled)
     {
@@ -1451,7 +1452,8 @@ led_control (int type, int act)
     case ROUTER_WRT350N:
       connected_gpio = 0x13;
       power_gpio = 0x01;
-      ses2_gpio = 0x13;		//ses orange                    
+      ses2_gpio = 0x13;		//ses orange
+      led_usb = 0x04;                    
       break;
     case ROUTER_WRT600N:
       connected_gpio = 0x13;
@@ -1661,6 +1663,9 @@ led_control (int type, int act)
       break;
     case LED_WLAN:
       use_gpio = wlan_gpio;
+      break;
+    case LED_USB:
+      use_gpio = usb_gpio;
       break;
     }
 #ifndef HAVE_XSCALE
