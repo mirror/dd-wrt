@@ -330,7 +330,7 @@ extern void getWANMac (char *newmac);
 extern int led_control (int type, int act);
 enum
 { LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN,
-  LED_SES, LED_SES2, LED_WLAN
+  LED_SES, LED_SES2, LED_WLAN, LED_USB
 };
 enum
 { LED_ON, LED_OFF, LED_FLASH };
