@@ -5979,6 +5979,10 @@ struct ej_handler ej_handlers[] = {
   {"ifdef", ej_ifdef},
   {"ifndef", ej_ifndef},
   {"show_countrylist", ej_show_countrylist},
+#ifdef HAVE_MADWIFI
+  {"show_acktiming", ej_show_acktiming},
+  {"update_acktiming", ej_update_acktiming},
+#endif
   {NULL, NULL}
 };
 #endif /* !WEBS */

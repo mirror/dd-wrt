@@ -15,3 +15,8 @@
 {dhcp_leases::<% dumpleases(1); %>}
 {uptime::<% get_uptime(); %>}
 {ipinfo::<% show_wanipinfo(); %>}
+{gps_text::<% nvram_get("gps_status_text"); %>}
+{gps_lat::<% nvram_get("gps_lat_text"); %>}
+{gps_lon::<% nvram_get("gps_lon_text"); %>}
+{gps_alt::<% nvram_get("gps_alt"); %>}
+{gps_sat::<% nvram_get("gps_sat"); %>}
