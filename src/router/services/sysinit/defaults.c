@@ -2207,6 +2207,18 @@ struct nvram_tuple srouter_defaults[] = {
 #else
   {"wifi_display", "wl0", 0},
 #endif
+#ifdef HAVE_USB
+  {"usb_enable", "0", 0},
+  {"usb_uhci", "0", 0},
+  {"usb_ohci", "0", 0},
+  {"usb_usb2", "0", 0},
+  {"usb_storage", "0", 0},
+  {"usb_printer", "0", 0},
+  {"usb_fs_ex2", "0", 0},
+  {"usb_fs_ext3", "0", 0},
+  {"usb_fs_fat", "0", 0},
+  {"usb_fs_xfs", "0", 0},
+#endif
 #ifdef HAVE_PPPOESERVER
   {"pppoeserver_enabled", "0", 0},
   {"pppoeradius_enabled", "0", 0},
