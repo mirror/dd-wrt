@@ -916,7 +916,9 @@ start_sysinit (void)
          if (nvram_match ("usb_fs_fat", "1"))
          {
          	cprintf ("loading usb_fs_fat\n");
-         	eval ("insmod", "usb_fs_fat");
+         	eval ("insmod", "fat");
+         	cprintf ("loading usb_fs_vfat\n");
+         	eval ("insmod", "vfat");
      	 }
      	 
          if (nvram_match ("usb_fs_xfs", "1"))
