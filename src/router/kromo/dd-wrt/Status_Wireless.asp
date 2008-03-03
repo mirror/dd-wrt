@@ -169,7 +169,8 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("share.rates"); %></div>
 									<span id="wl_rate"><% get_currate(); %></span>&nbsp;
 								</div>
-								    <% getencryptionstatus(); %>
+								<% show_acktiming(); %>
+								<% getencryptionstatus(); %>
 								<div class="setting">
 									<div class="label"><% tran("status_wireless.pptp"); %></div>
 									<% nvram_else_match("pptpd_connected", "1", "<script type="text/javascript">Capture(share.connected)</script>", "<script type="text/javascript">Capture(share.disconnected)</script>"); %>&nbsp;

@@ -157,6 +157,8 @@ extern void ej_get_wl_domain (webs_t wp, int argc, char_t ** argv);
 extern void ej_get_clone_mac (webs_t wp, int argc, char_t ** argv);
 extern void ej_show_wan_domain (webs_t wp, int argc, char_t ** argv);
 extern void ej_show_wl_mac (webs_t wp, int argc, char_t ** argv);
+extern void ej_show_acktiming (webs_t wp, int argc, char_t ** argv);
+extern void ej_update_acktiming (webs_t wp, int argc, char_t ** argv);
 extern void validate_ntp (webs_t wp, char *value, struct variable *v);
 extern void validate_catchall (webs_t wp, char *value, struct variable *v);
 extern void validate_lan_ipaddr (webs_t wp, char *value, struct variable *v);
