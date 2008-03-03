@@ -850,7 +850,7 @@ start_sysinit (void)
 	eval ("insmod", "diag");
 
       loadWlModule ();
-
+/*
 #ifdef HAVE_USB
 //load usb driver. we will add samba server, ftp server and ctorrent support in future
       modules =
@@ -860,6 +860,80 @@ start_sysinit (void)
 	cprintf ("loading %s\n", module);
 	eval ("insmod", module);
       }
+#endif
+*/
+
+#ifdef HAVE_USB
+
+   if(nvram_match ("usb_enable", "1"))
+   {
+      led_control (LED_SES, LED_ON);
+
+      cprintf ("loading usbcore\n");
+      eval ("insmod", "usbcore");
+
+      if (nvram_match ("usb_uhci", "1"))
+      {
+         cprintf ("loading usb-uhci\n");
+         eval ("insmod", "usb-uhci");
+      }
+
+      if (nvram_match ("usb_ohci", "1"))
+      {
+         cprintf ("loading usb-ohci\n");
+         eval ("insmod", "usb-ohci");
+      }
+
+      if (nvram_match ("usb_usb2", "1"))
+      {
+         cprintf ("loading usb2\n");
+         eval ("insmod", "usb2");
+      }
+
+      if (nvram_match ("usb_storage", "1"))
+      {
+         cprintf ("loading scsi_mod\n");
+         eval ("insmod", "scsi_mod");
+         cprintf ("loading sd_mod\n");
+         eval ("insmod", "sd_mod");
+         cprintf ("loading usb-storage\n");
+         eval ("insmod", "usb-storage");
+         
+         if (nvram_match ("usb_fs_ext2", "1"))
+         {
+         	cprintf ("loading usb_fs_ext2\n");
+         	eval ("insmod", "usb_fs_ext2");
+     	 }
+     	 
+         if (nvram_match ("usb_fs_ext3", "1"))
+         {
+         	cprintf ("loading usb_fs_ext3\n");
+         	eval ("insmod", "usb_fs_ext3");
+     	 }
+     	  
+         if (nvram_match ("usb_fs_fat", "1"))
+         {
+         	cprintf ("loading usb_fs_fat\n");
+         	eval ("insmod", "usb_fs_fat");
+     	 }
+     	 
+         if (nvram_match ("usb_fs_xfs", "1"))
+         {
+         	cprintf ("loading usb_fs_xfs\n");
+         	eval ("insmod", "usb_fs_xfs");
+     	 }    	 
+      }
+      
+      if (nvram_match ("usb_printer", "1"))
+      {
+         cprintf ("loading printer\n");
+         eval ("insmod", "printer");
+      }
+   }
+   else
+   {
+	 led_control (LED_USB, LED_OFF);	   
+   } 
 #endif
 
     }
