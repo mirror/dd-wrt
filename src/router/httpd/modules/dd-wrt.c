@@ -5857,6 +5857,42 @@ ej_get_currate (webs_t wp, int argc, char_t ** argv)
 
 }
 #else
+
+int get_acktiming(void)
+{
+char path[64];
+int ifcount,ack=0;
+strcpy(path,nvram_safe_get("wifi_display"));
+sscanf(path,"ath%d",&ifcount);
+sprintf(path,"/proc/sys/dev/wifi%d/acktimeout",ifcount);
+FILE *in=fopen(path,"rb");
+if (in!=NULL)
+{
+fscanf(in,"%d",&ack);
+fclose(in);
+}
+return ack;
+}
+
+void ej_show_acktiming (webs_t wp, int argc, char_t ** argv)
+{
+websWrite(wp,"<div class=\"setting\">\n");
+websWrite(wp,"<div class=\"label\">%s</div>\n",live_translate ("share.acktiming"));
+int ack=get_acktiming();
+int distance = ((ack-3)/2)*300;
+websWrite(wp,"<span id=\"wl_ack\">%dns (%dm)</span> &nbsp;\n",ack,distance);
+websWrite(wp,"</div>\n");
+}
+
+void ej_update_acktiming (webs_t wp, int argc, char_t ** argv)
+{
+int ack=get_acktiming();
+int distance = ((ack-3)/2)*300;
+websWrite(wp,"%dns (%dm)",ack,distance);
+}
+
+
+
 extern float wifi_getrate (char *ifname);
 #define KILO	1e3
 #define MEGA	1e6

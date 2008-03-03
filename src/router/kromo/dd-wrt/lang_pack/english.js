@@ -179,6 +179,8 @@ share.kbytes="KB";
 share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="Preemption";
+share.acktiming="ACK Timing";
+
 
 var sbutton = new Object();
 sbutton.save="Save";
@@ -1421,6 +1423,15 @@ status_wireless.h22="Wireless Nodes";
 status_wireless.legend3="Clients";
 status_wireless.signal_qual="Signal Quality";
 status_wireless.wds="WDS Nodes";
+
+// ** GPS info **//
+var status_gpsi = new Object();
+status_gpsi.legend="GPS Info";
+status_gpsi.status="Status";
+status_gpsi.lon="Longitude";
+status_gpsi.lat="Latitude";
+status_gpsi.alt="Altitude";
+status_gpsi.sat="Visible Satelites";
 
 //help container
 var hstatus_wireless = new Object();
