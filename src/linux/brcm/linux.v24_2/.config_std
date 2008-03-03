@@ -1022,10 +1022,10 @@ CONFIG_SOFT_WATCHDOG=y
 CONFIG_EXT3_FS=m
 CONFIG_JBD=m
 # CONFIG_JBD_DEBUG is not set
-# CONFIG_FAT_FS is not set
+CONFIG_FAT_FS=m
 # CONFIG_MSDOS_FS is not set
 # CONFIG_UMSDOS_FS is not set
-# CONFIG_VFAT_FS is not set
+CONFIG_VFAT_FS=m
 # CONFIG_EFS_FS is not set
 # CONFIG_JFFS_FS is not set
 CONFIG_JFFS2_FS=m
@@ -1067,7 +1067,7 @@ CONFIG_EXT2_FS=m
 # CONFIG_UDF_RW is not set
 # CONFIG_UFS_FS is not set
 # CONFIG_UFS_FS_WRITE is not set
-# CONFIG_XFS_FS is not set
+CONFIG_XFS_FS=m
 # CONFIG_XFS_QUOTA is not set
 # CONFIG_XFS_RT is not set
 # CONFIG_XFS_TRACE is not set
