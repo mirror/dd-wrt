@@ -886,8 +886,8 @@ start_sysinit (void)
 
       if (nvram_match ("usb_usb2", "1"))
       {
-         cprintf ("loading usb2\n");
-         eval ("insmod", "usb2");
+         cprintf ("loading usb2 module\n");
+         eval ("insmod", "ehci-hcd");
       }
 
       if (nvram_match ("usb_storage", "1"))
@@ -901,14 +901,14 @@ start_sysinit (void)
          
          if (nvram_match ("usb_fs_ext2", "1"))
          {
-         	cprintf ("loading usb_fs_ext2\n");
-         	eval ("insmod", "usb_fs_ext2");
+         	cprintf ("loading ext2\n");
+         	eval ("insmod", "ext2");
      	 }
      	 
          if (nvram_match ("usb_fs_ext3", "1"))
          {
-         	cprintf ("loading usb_fs_ext3\n");
-         	eval ("insmod", "usb_fs_ext3");
+         	cprintf ("loading ext3\n");
+         	eval ("insmod", "ext3");
      	 }
      	  
          if (nvram_match ("usb_fs_fat", "1"))
