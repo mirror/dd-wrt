@@ -115,7 +115,7 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.setup.oet1_en, 'idoet', <% nvram_else_match("oet1_en", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.radiooff_button, 'idradiooff', <% nvram_else_match("radiooff_button", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.usb_enable, 'idusb', <% nvram_else_match("usb_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.usb_storage, 'idusbstor', <% nvram_else_match("esb_storage", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.usb_storage, 'idusbstor', <% nvram_else_match("usb_storage", "1", "1", "0"); %> == 1);
 		
 		if(document.setup.rstats_enable) {
 			rstats_select = '*user';
