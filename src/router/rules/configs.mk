@@ -157,6 +157,7 @@ obj-$(CONFIG_RSTP) += rstp
 obj-$(CONFIG_STRACE) += strace
 obj-$(CONFIG_OPENLLDP) += openlldp
 obj-$(CONFIG_WGETS) += wgets
+obj-$(CONFIG_USB) += usb
 obj-y+=anchorfree
 
 
