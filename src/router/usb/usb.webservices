@@ -13,8 +13,8 @@
 		</div>
 		<div class="setting">
 			<div class="label">USB 1.1 Support (OHCI)</div>
-			<input class="spaceradio" type="radio" value="1" name="usb_uhci" <% nvram_checked("usb_ohci","1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="usb_uhci" <% nvram_checked("usb_ohci","0"); %> /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" value="1" name="usb_ohci" <% nvram_checked("usb_ohci","1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="usb_ohci" <% nvram_checked("usb_ohci","0"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
 			<div class="label">USB 2.0 Support</div>
@@ -23,8 +23,8 @@
 		</div>
 		<div class="setting">
 			<div class="label">USB Storage Support</div>
-			<input class="spaceradio" type="radio" value="1" name="usb_storage" <% nvram_checked("usb_storage","1"); %> onclick="show_layer_ext(this, 'idustor', true)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="usb_storage" <% nvram_checked("usb_storage","0"); %> onclick="show_layer_ext(this, 'idustor', false)" /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" value="1" name="usb_storage" <% nvram_checked("usb_storage","1"); %> onclick="show_layer_ext(this, 'idusbstor', true)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="usb_storage" <% nvram_checked("usb_storage","0"); %> onclick="show_layer_ext(this, 'idusbstor', false)" /><% tran("share.disable"); %>
 		</div>
 			<div id="idusbstor">
 				<div class="setting">
