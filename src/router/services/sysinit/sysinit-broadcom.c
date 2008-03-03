@@ -867,7 +867,7 @@ start_sysinit (void)
 
    if(nvram_match ("usb_enable", "1"))
    {
-      led_control (LED_SES, LED_ON);
+      led_control (LED_USB, LED_ON);
 
       cprintf ("loading usbcore\n");
       eval ("insmod", "usbcore");
