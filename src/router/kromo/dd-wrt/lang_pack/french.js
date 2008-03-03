@@ -1253,6 +1253,14 @@ status_wireless.legend3="Clients Sans fil";
 status_wireless.signal_qual="Qualité du Signal";
 status_wireless.wds="Noeuds WDS";
 
+// ** GPS info **//
+status_gpsi.legend="Informations GPS";
+status_gpsi.status="Statut";
+status_gpsi.lon="Longitude";
+status_gpsi.lat="Latitude";
+status_gpsi.alt="Altitude";
+status_gpsi.sat="Satellites visibles";
+
 //help container
 hstatus_wireless.right2="Ceci est l'adresse mac de votre routeur vue depuis votre réseau local (filaire et sans-fil)";
 hstatus_wireless.right4="Comme configuré dans l'onglet Wireless, ce sont les normes de connexions acceptées pour votre réseau sans-fil (Mixed, G-Only, or Disabled).";
