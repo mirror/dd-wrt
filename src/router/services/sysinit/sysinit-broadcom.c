@@ -924,7 +924,7 @@ start_sysinit (void)
          if (nvram_match ("usb_fs_xfs", "1"))
          {
          	cprintf ("loading usb_fs_xfs\n");
-         	eval ("insmod", "usb_fs_xfs");
+         	eval ("insmod", "xfs");
      	 }    	 
       }
       
