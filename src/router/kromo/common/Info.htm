@@ -410,6 +410,31 @@ apply();
 								</div>
 				<% ifndef("MMC", "-->"); %>
 							</fieldset><br />
+				<% ifndef("GPSI", "<!--"); %>
+							<fieldset>
+								<legend><% tran("status_gpsi.legend"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("status_gpsi.status"); %></div>
+									<span id="gps_text"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("status_gpsi.lon"); %></div>
+									<span id="gps_lon"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("status_gpsi.lat"); %></div>
+									<span id="gps_lat"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("status_gpsi.alt"); %></div>
+									<span id="gps_alt"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("status_gpsi.sat"); %></div>
+									<span id="gps_sat"></span>&nbsp;
+								</div>
+							</fieldset><br />
+				<% ifndef("GPSI", "-->"); %>
 							
 						</div><br clear="all" />
 <% ifndef("HASWIFI", "<!--"); %>
