@@ -1067,7 +1067,7 @@ CONFIG_EXT2_FS=m
 # CONFIG_UDF_RW is not set
 # CONFIG_UFS_FS is not set
 # CONFIG_UFS_FS_WRITE is not set
-CONFIG_XFS_FS=m
+# CONFIG_XFS_FS is not set
 # CONFIG_XFS_QUOTA is not set
 # CONFIG_XFS_RT is not set
 # CONFIG_XFS_TRACE is not set
