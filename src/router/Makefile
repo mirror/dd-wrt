@@ -297,10 +297,10 @@ ifeq ($(CONFIG_USB),y)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/fat/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/vfat/* $(TARGETDIR)/lib/modules/$(LINUXVER)
-	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/xfs/* $(TARGETDIR)/lib/modules/$(LINUXVER)
-	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/cdrom/* $(TARGETDIR)/lib/modules/$(LINUXVER)
-	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/ide/pci/* $(TARGETDIR)/lib/modules/$(LINUXVER)
-	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/ide/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/xfs/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/cdrom/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/ide/pci/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/ide/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/scsi/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/host/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/storage/* $(TARGETDIR)/lib/modules/$(LINUXVER)
@@ -308,6 +308,8 @@ ifeq ($(CONFIG_USB),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/host
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/pci
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/storage
+	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/sr_mod.o
+	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/ide-scsi.o 
 endif
 endif
 ifeq ($(CONFIG_PCMCIA),y)
