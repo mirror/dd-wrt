@@ -42,11 +42,6 @@
 					<input class="spaceradio" type="radio" value="1" name="usb_fs_fat" <% nvram_checked("usb_fs_fat","1"); %> /><% tran("share.enable"); %>&nbsp;
 					<input class="spaceradio" type="radio" value="0" name="usb_fs_fat" <% nvram_checked("usb_fs_fat","0"); %> /><% tran("share.disable"); %>
 				</div>
-				<div class="setting">					
-					<div class="label">Extended File System Support</div>
-					<input class="spaceradio" type="radio" value="1" name="usb_fs_xfs" <% nvram_checked("usb_fs_xfs","1"); %> /><% tran("share.enable"); %>&nbsp;
-					<input class="spaceradio" type="radio" value="0" name="usb_fs_xfs" <% nvram_checked("usb_fs_xfs","0"); %> /><% tran("share.disable"); %>
-				</div>
 			</div>
 		<div class="setting">
 			<div class="label">USB Printer Support</div>
