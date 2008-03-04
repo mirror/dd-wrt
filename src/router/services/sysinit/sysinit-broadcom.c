@@ -707,7 +707,6 @@ start_sysinit (void)
 	{
 	  switch (brand)
 	    {
-	    case ROUTER_WRT300NV11:
 	    case ROUTER_WRT310N:
 	    case ROUTER_WRT350N:
 	    case ROUTER_WRT600N:
@@ -921,11 +920,11 @@ start_sysinit (void)
          	eval ("insmod", "vfat");
      	 }
      	 
-         if (nvram_match ("usb_fs_xfs", "1"))
-         {
-         	cprintf ("loading usb_fs_xfs\n");
-         	eval ("insmod", "xfs");
-     	 }    	 
+//         if (nvram_match ("usb_fs_xfs", "1"))
+//         {
+//         	cprintf ("loading usb_fs_xfs\n");
+//         	eval ("insmod", "xfs");
+//     	   }    	 
       }
       
       if (nvram_match ("usb_printer", "1"))

@@ -2217,7 +2217,6 @@ struct nvram_tuple srouter_defaults[] = {
   {"usb_fs_ext2", "0", 0},
   {"usb_fs_ext3", "0", 0},
   {"usb_fs_fat", "0", 0},
-  {"usb_fs_xfs", "0", 0},
 #endif
 #ifdef HAVE_PPPOESERVER
   {"pppoeserver_enabled", "0", 0},
