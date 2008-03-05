@@ -347,6 +347,50 @@ wlc_noack (int value)
 static int notify_nas (char *type, char *ifname, char *action);
 #endif
 
+ /* add wan ifname to lan_ifnames if we use fullswitch */
+void
+set_fullswitch (void)
+{
+  char wanifname[8], lanifnames[128];	
+
+  strcpy (wanifname, nvram_safe_get ("wan_ifname"));
+  strcpy (lanifnames, nvram_safe_get ("lan_ifnames"));
+
+  
+  if (nvram_match ("fullswitch", "1")
+   && (nvram_invmatch ("wl0_mode", "ap")
+   || nvram_match ("wan_proto", "disabled")))
+   {
+	if (!nvram_match ("fullswitch_set", "1"))
+	{
+	nvram_set ("def_lan_ifnames", lanifnames);
+	sprintf (lanifnames, "%s %s", nvram_safe_get ("lan_ifnames"), wanifname);
+	nvram_set ("def_wan_ifname", wanifname);
+	strcpy (wanifname, "");
+	nvram_set ("fullswitch_set", "1");
+    }
+   }
+   else
+   {
+    if (nvram_match ("fullswitch_set", "1"))
+    {
+      strcpy (lanifnames, nvram_safe_get ("def_lan_ifnames"));
+      nvram_unset ("def_lan_ifnames");      
+      strcpy (wanifname, nvram_safe_get ("def_wan_ifname"));
+      nvram_unset ("def_wan_ifname");
+      nvram_unset ("fullswitch_set");    
+    }
+   }
+
+  nvram_set ("lan_ifnames", lanifnames);   
+  nvram_set ("wan_ifname", wanifname);
+  nvram_set ("wan_ifnames", wanifname);
+  nvram_set ("pppoe_wan_ifname", wanifname);
+  nvram_set ("pppoe_ifname", wanifname);
+
+  return;	
+}
+
 void
 start_dhcpc (char *wan_ifname)
 {
@@ -704,6 +748,8 @@ do_portsetup (char *lan, char *ifname)
 void
 start_lan (void)
 {
+  set_fullswitch ();	
+	
   struct ifreq ifr;
   unsigned char mac[20];
   int s;
