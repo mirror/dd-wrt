@@ -44,6 +44,7 @@
 #include <linux/vmalloc.h>
 #include <linux/squashfs_fs.h>
 #include <linux/delay.h>
+#include <linux/proc_fs.h>
 #include <asm/delay.h>
 #include <asm/io.h>
 #include "spiflash.h"
@@ -146,7 +147,8 @@ enum {
 	FL_READY,
 	FL_READING,
 	FL_ERASING,
-	FL_WRITING
+	FL_WRITING,
+	FL_SPI
 };
 
 static struct mtd_partition dir_parts[] = {
@@ -154,7 +156,7 @@ static struct mtd_partition dir_parts[] = {
         { name: "linux", offset: 0x30000, size: 0x390000, },
         { name: "rootfs", offset: 0x0, size: 0x2b0000,}, //must be detected
         { name: "nvram", offset: 0x3d0000, size: 0x10000, },
-        { name: "FIS directory", offset: 0x3e0000, size: 0x10000, },
+        { name: "FIS Directory", offset: 0x3e0000, size: 0x10000, },
         { name: "board_config", offset: 0x3f0000, size: 0x10000, },
         { name: "fullflash", offset: 0x3f0000, size: 0x10000, },
         { name: NULL, },
@@ -165,6 +167,73 @@ static struct mtd_partition dir_parts[] = {
 static struct spiflash_data *spidata;
 
 extern int parse_redboot_partitions(struct mtd_info *master, struct mtd_partition **pparts);
+
+#ifdef CONFIG_MTD_SPIFLASH_PP
+/*
+ * With AR2317, WRG-G19, we add the external circuit to implement page
+ * programming. The GPIO 0 is used to control the chip select of the SPI
+ * interface. The chip select is low active.
+ *
+ *								david_hsieh@alphanetworks.com
+ */
+
+/* The following part is cut from arch/mips/ar531x/ar531x.h */
+
+#include <asm/addrspace.h>
+
+#define AR5315_DSLBASE          0xB1000000      /* RESET CONTROL MMR */
+
+/* GPIO */
+#define AR5315_GPIO_DI          (AR5315_DSLBASE + 0x0088)
+#define AR5315_GPIO_DO          (AR5315_DSLBASE + 0x0090)
+#define AR5315_GPIO_CR          (AR5315_DSLBASE + 0x0098)
+#define AR5315_GPIO_INT         (AR5315_DSLBASE + 0x00a0)
+
+/* Chip Select GPIO for Page Programming */
+#ifndef CONFIG_MTD_SPIFLASH_PP_GPIO
+#define CONFIG_MTD_SPIFLASH_PP_GPIO 0
+#endif
+#define SPI_CS_BIT_MASK (1 << CONFIG_MTD_SPIFLASH_PP_GPIO)
+
+typedef unsigned int AR531X_REG;
+#define sysRegRead(phys)		(*(volatile AR531X_REG *)KSEG1ADDR(phys))
+#define sysRegWrite(phys, val)	((*(volatile AR531X_REG *)KSEG1ADDR(phys)) = (val))
+
+static atomic_t spiflash_cs = ATOMIC_INIT(0);
+
+static inline void chip_select(int value)
+{
+	__u32 reg;
+
+	/* Set GPIO 0 as output. */
+	reg = sysRegRead(AR5315_GPIO_CR);
+	reg |= SPI_CS_BIT_MASK;
+	sysRegWrite(AR5315_GPIO_CR, reg);
+
+	/* Set GPIO 0 data. */
+	reg = sysRegRead(AR5315_GPIO_DO);
+	if (value) reg |= SPI_CS_BIT_MASK;
+	else reg &= ~SPI_CS_BIT_MASK;
+	sysRegWrite(AR5315_GPIO_DO, reg);
+}
+
+#define SET_SPI_ACTIVITY()						\
+{												\
+}
+
+#define CLEAR_SPI_ACTIVITY()					\
+{												\
+	chip_select(1);								\
+}
+
+#else
+
+#define SET_SPI_ACTIVITY()
+#define CLEAR_SPI_ACTIVITY()
+
+#endif
+
+
 
 /***************************************************************************************************/
 
@@ -286,6 +355,7 @@ retry:
 		if(signal_pending(current))
 			return 0;
 
+	
 		goto retry;
 	}
 	spidata->state = state;
@@ -306,6 +376,7 @@ spiflash_erase (struct mtd_info *mtd,struct erase_info *instr)
 	struct opcodes *ptr_opcode;
 	__u32 temp, reg;
 	int finished = 0;
+	unsigned int addr = instr->addr;
 
 #ifdef SPIFLASH_DEBUG
    	printk (KERN_DEBUG "%s(addr = 0x%.8x, len = %d)\n",__FUNCTION__,instr->addr,instr->len);
@@ -313,30 +384,28 @@ spiflash_erase (struct mtd_info *mtd,struct erase_info *instr)
 
    	/* sanity checks */
    	if (instr->addr + instr->len > mtd->size) return (-EINVAL);
+	if (!spiflash_wait_ready(FL_ERASING))
+		return -EINTR;
+for (addr=instr->addr;addr<instr->addr+instr->len;addr+=mtd->erasesize)
+{
 
 	ptr_opcode = &stm_opcodes[SPI_SECTOR_ERASE];
 
-	temp = ((__u32)instr->addr << 8) | (__u32)(ptr_opcode->code);
+	temp = ((__u32)addr << 8) | (__u32)(ptr_opcode->code);
 	spiflash_sendcmd(SPI_WRITE_ENABLE,0);
-	do {
-		reg = spiflash_regread32(SPI_FLASH_CTL);
-	} while (reg & SPI_CTL_BUSY);
+	busy_wait((reg = spiflash_regread32(SPI_FLASH_CTL)) & SPI_CTL_BUSY, 0);
 
 	spiflash_regwrite32(SPI_FLASH_OPCODE, temp);
 
 	reg = (reg & ~SPI_CTL_TX_RX_CNT_MASK) | ptr_opcode->tx_cnt | SPI_CTL_START;
 	spiflash_regwrite32(SPI_FLASH_CTL, reg);
 
-	do {
-		reg = spiflash_sendcmd(SPI_RD_STATUS,0);
-		if (!(reg & SPI_STATUS_WIP)) {
-			finished = 1;
-		}
-	} while (!finished);
+	busy_wait(spiflash_sendcmd(SPI_RD_STATUS, 0) & SPI_STATUS_WIP, 20);
+}
+	spiflash_done();
 
    	instr->state = MTD_ERASE_DONE;
    	if (instr->callback) instr->callback (instr);
-
 #ifdef SPIFLASH_DEBUG
    	printk (KERN_DEBUG "%s return\n",__FUNCTION__);
 #endif
@@ -444,6 +513,263 @@ spiflash_write (struct mtd_info *mtd,loff_t to,size_t len,size_t *retlen,const u
    	return 0;
 }
 
+#ifdef CONFIG_MTD_SPIFLASH_PP
+
+static void page_write(loff_t to, const u_char * buf)
+{
+	__u32	reg, spi_data, opcode;
+	int		i;
+
+
+	/* We are going to write flash now, do write enable first. */
+	spiflash_sendcmd(SPI_WRITE_ENABLE, 0);
+
+	/* we are not really waiting for CPU spiflash activity, just need the value of the register. */
+	busy_wait((reg = spiflash_regread32(SPI_FLASH_CTL)) & SPI_CTL_BUSY, 0);
+
+	/* Prepare SPI opcode, data and control register values. */
+	opcode   = (stm_opcodes[SPI_PAGE_PROGRAM].code & SPI_OPCODE_MASK) | ((__u32)to << 8);
+	spi_data = (buf[3] << 24) | (buf[2] << 16) | (buf[1] << 8) | buf[0]; buf += 4;
+	reg      = (reg & ~SPI_CTL_TX_RX_CNT_MASK) | 0x8 | SPI_CTL_START;
+
+	/* wait and mark our activity */
+	if (!spiflash_wait_ready(FL_WRITING))
+		return -EINTR;
+	SET_SPI_ACTIVITY();
+	chip_select(0);
+
+	/* Send out the the first 4 bytes. */
+	spiflash_regwrite32(SPI_FLASH_DATA, spi_data);
+	spiflash_regwrite32(SPI_FLASH_OPCODE, opcode);
+	spiflash_regwrite32(SPI_FLASH_CTL, reg);
+
+	/* 31 loops, each loop send 8 bytes */
+	for (i=0; i<31; i++)
+	{
+		busy_wait((reg = spiflash_regread32(SPI_FLASH_CTL)) & SPI_CTL_BUSY, 0);
+
+		/*
+		 * The sample code from the application node is:
+		 *
+		 *	spi_data = (UINT32)*((UINT32 *)buf);
+		 *	spi_data = cpi2le32(spi_data);
+		 *	spi_data_swapped =
+		 *			(((spi_data>>8) & 0xff) << 24) |
+		 *			(((spi_data>>24)& 0xff) << 8) |
+		 *			(spi_data & 0x00ff00ff);
+		 */
+		opcode   = (buf[3] <<  8) | (buf[2] << 16) | (buf[1] << 24) | buf[0]; buf += 4;
+		spi_data = (buf[3] << 24) | (buf[2] << 16) | (buf[1] <<  8) | buf[0]; buf += 4;
+		reg      = (reg & ~SPI_CTL_TX_RX_CNT_MASK) | 0x8 | SPI_CTL_START;
+
+		spiflash_regwrite32(SPI_FLASH_DATA, spi_data);
+		spiflash_regwrite32(SPI_FLASH_OPCODE, opcode);
+		spiflash_regwrite32(SPI_FLASH_CTL, reg);
+	}
+
+	/* send out the last 4 bytes */
+	busy_wait((reg = spiflash_regread32(SPI_FLASH_CTL)) & SPI_CTL_BUSY, 0);
+
+	opcode   = (buf[3] <<  8) | (buf[2] << 16) | (buf[1] << 24) | buf[0]; buf += 4;
+	reg      = (reg & ~SPI_CTL_TX_RX_CNT_MASK) | 0x4 | SPI_CTL_START;
+
+	spiflash_regwrite32(SPI_FLASH_OPCODE, opcode);
+	spiflash_regwrite32(SPI_FLASH_CTL, reg);
+
+	busy_wait((reg = spiflash_regread32(SPI_FLASH_CTL)) & SPI_CTL_BUSY, 0);
+
+	/* Deactive chip select */
+	chip_select(1);
+	/* clean our activity */
+	CLEAR_SPI_ACTIVITY();
+	
+
+	busy_wait(spiflash_sendcmd(SPI_RD_STATUS, 0) & SPI_STATUS_WIP, 20);
+	spiflash_done();
+	return;
+}
+
+/* 
+ * Do page programming test.
+ * The 'block' should be erase already.
+ * We try to use page programming mode to write flash,
+ * and erase this block again before return.
+ */
+static int test_page_programming(struct mtd_info * mtd, loff_t block)
+{
+	unsigned char	buffer[256];
+	unsigned char *	flash;
+	struct opcodes *ptr_opcode;
+	__u32			opcode, reg;
+	int				i;
+
+
+	/* write the flash with known pattern */
+	for (i=0; i<256; i++) buffer[i] = (unsigned char)i;
+	page_write(block, buffer);
+	if (!spiflash_wait_ready(FL_WRITING))
+		return -EINTR;
+
+	/* wait and mark our activity */
+	SET_SPI_ACTIVITY();
+	
+	/* read it back and check pattern */
+	flash = (unsigned char *)(spidata->readaddr + block);
+	printk(KERN_EMERG "%s(): checking @ 0x%.8x ...\n",__FUNCTION__,(__u32)flash);
+	for (i = 0; i < 8; i++)
+	{
+		if (flash[i*4] != (unsigned char)(i*4))
+		{
+			printk(KERN_EMERG "unexpected value @ %d: 0x%02x !!\n", i*4, flash[i*4]);
+			break;
+		}
+	}
+
+	/* clean our activity */
+	CLEAR_SPI_ACTIVITY();
+	udelay(10);
+	
+	/* erase this block before return */
+	printk(KERN_EMERG "%s(): erasing block 0x%.8x ...\n",__FUNCTION__,(__u32)block);
+
+	/* we are going to erase sector, do write enable first */
+	spiflash_sendcmd(SPI_WRITE_ENABLE, 0);
+
+	/* wait and mark our activity */
+	SET_SPI_ACTIVITY();
+
+	/* we are not really waiting for CPU spiflash activity, just need the value of the register. */
+	busy_wait((reg = spiflash_regread32(SPI_FLASH_CTL)) & SPI_CTL_BUSY, 0);
+
+	/* send sector erase op. */
+	ptr_opcode = &stm_opcodes[SPI_SECTOR_ERASE];
+	opcode = ((__u32)ptr_opcode->code) | ((__u32)block << 8);
+	spiflash_regwrite32(SPI_FLASH_OPCODE, opcode);
+	reg = (reg & ~SPI_CTL_TX_RX_CNT_MASK) | ptr_opcode->tx_cnt | SPI_CTL_START;
+	spiflash_regwrite32(SPI_FLASH_CTL, reg);
+
+	/* wait for CPU spiflash activity */
+	busy_wait((reg = spiflash_regread32(SPI_FLASH_CTL)) & SPI_CTL_BUSY, 0);
+	/* clean our activity */
+	CLEAR_SPI_ACTIVITY();
+	udelay(10);
+
+	busy_wait(spiflash_sendcmd(SPI_RD_STATUS, 0) & SPI_STATUS_WIP, 20);
+	spiflash_done();
+	printk("SPI flash write test done (%d)!, page programming is %s!\n", i, i<8 ? "disabled":"enabled");
+	return (i<8 ? 1:0);
+}
+
+static int pp_mode = -1;
+static int pp_enable = 1;
+
+/* implementation for spiflash page programing. */
+static int spiflash_page_write(struct mtd_info * mtd,
+		loff_t to, size_t len, size_t * retlen, const u_char * buf)
+{
+	size_t bytes_left = len;
+	size_t xact_len;
+	size_t written;
+	size_t offset;
+
+
+	/* If we already test page programming and failed,
+	 * fall back to spiflash_write() directly. */
+	if (pp_mode > 0) return spiflash_write(mtd, to, len, retlen, buf);
+
+	*retlen = 0;
+	if (to + len > mtd->size) return (-EINVAL);
+
+	while (bytes_left > 0)
+	{
+		offset = to % STM_PAGE_SIZE;
+		xact_len = MIN(bytes_left, STM_PAGE_SIZE - offset);
+		if (offset > 0 || xact_len < STM_PAGE_SIZE)
+		{
+			spiflash_write(mtd, to, xact_len, &written, buf);
+		}
+		else
+		{
+			/* test page program mode, if we did not test it before. */
+			if (pp_mode < 0) pp_mode = test_page_programming(mtd, to);
+
+			if (pp_enable && (pp_mode == 0)) page_write(to, buf);
+			else spiflash_write(mtd, to, xact_len, &written, buf);
+		}
+		to += xact_len;
+		bytes_left -= xact_len;
+		buf += xact_len;
+		*retlen += xact_len;
+	}
+
+	return 0;
+}
+
+static int __my_atoi(const char * buf)
+{
+	int ret = 0;
+	while (*buf)
+	{
+		if (*buf >= '0' && *buf <= '9') ret += (int)(*buf - '0');
+		buf++;
+	}
+	return ret;
+}
+
+static int proc_read_pp_enable(char * buf, char ** start, off_t offset,
+		int len, int * eof, void * data)
+{
+	char * p = buf;
+	p += sprintf(p, "%d\n", pp_enable);
+	*eof = 1;
+	return p - buf;
+}
+
+static int proc_write_pp_enable(struct file * file, const char * buf,
+		unsigned long count, void * data)
+{
+	pp_enable = __my_atoi(buf);
+	printk("spiflash: %s page programming!\n", pp_enable ? "enable" : "disable");
+	if (pp_mode >= 0) printk("spiflash: H/W is %scapable of doing page programming!\n", pp_mode ? "not " : "");
+	return count;
+}
+
+static struct proc_dir_entry * root = NULL;
+static struct proc_dir_entry * pp_enable_entry = NULL;
+
+static int register_spi_proc(void)
+{
+	root = proc_mkdir("spiflash", NULL);
+	if (root == NULL)
+	{
+		printk("spiflash: fail to create /proc/spiflash !!\n");
+		return -1;
+	}
+	pp_enable_entry = create_proc_entry("pp_enable", 0644, root);
+	if (pp_enable_entry == NULL)
+	{
+		printk("spiflash: fail to create /proc/spiflash/pp_enable !!\n");
+		remove_proc_entry("spiflash", root);
+		root = NULL;
+		return -1;
+	}
+	pp_enable_entry->data = 0;
+	pp_enable_entry->read_proc = proc_read_pp_enable;
+	pp_enable_entry->write_proc = proc_write_pp_enable;
+	pp_enable_entry->owner = THIS_MODULE;
+	printk("spiflash: /proc/spiflash/pp_enable created !!\n");
+	return 0;
+}
+
+static void remove_spi_proc(void)
+{
+	if (pp_enable_entry) remove_proc_entry("pp_enable", root);
+	if (root) remove_proc_entry("spiflash", root);
+	pp_enable_entry = NULL;
+	root = NULL;
+}
+
+#endif
 
 #ifdef CONFIG_MTD_PARTITIONS
 static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", NULL };
@@ -509,7 +835,11 @@ static int spiflash_probe(struct platform_device *pdev)
    	mtd->eraseregions = NULL;
    	mtd->erase = spiflash_erase;
    	mtd->read = spiflash_read;
-   	mtd->write = spiflash_write;
+#ifdef CONFIG_MTD_SPIFLASH_PP
+	mtd->write = spiflash_page_write;
+#else
+	mtd->write = spiflash_write;
+#endif
 	mtd->owner = THIS_MODULE;
 	printk(KERN_EMERG "scanning for root partition\n");
 	
@@ -561,6 +891,9 @@ static int spiflash_probe(struct platform_device *pdev)
 	    }
 	def:;
 	result = add_mtd_partitions(mtd, dir_parts, 7);
+#ifdef CONFIG_MTD_SPIFLASH_PP
+		register_spi_proc();
+#endif
 	spidata->mtd = mtd;
 	
    	return (result);
@@ -601,6 +934,9 @@ void __exit
 spiflash_exit (void)
 {
 	kfree(spidata);
+#ifdef CONFIG_MTD_SPIFLASH_PP
+	remove_spi_proc();
+#endif
 }
 
 module_init (spiflash_init);
