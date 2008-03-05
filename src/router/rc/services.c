@@ -399,6 +399,7 @@ handle_services (void)
 #ifdef HAVE_RSTATS
   handle = startstop_nofree ("rstats", handle);
 #endif
+  handle = startstop_nofree ("ttraff", handle);
 #ifdef HAVE_NSTX
   handle = startstop_nofree ("nstxd", handle);
 #endif
