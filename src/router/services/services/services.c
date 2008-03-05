@@ -1435,6 +1435,9 @@ stop_radio_timer (void)
 int
 start_ttraff (void)
 {
+  if (!nvram_match ("ttraff_enable", "1"))
+    return 0;	
+	
   if (nvram_match ("wan_proto", "disabled") || nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "apstawet"))
     return 0;
 
