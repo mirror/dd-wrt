@@ -104,7 +104,8 @@ start_mmc (void)
       if (!res)
 	{
 	  //device detected
-#ifdef HAVE_USB	  
+#ifdef HAVE_USB
+	  eval ("insmod", "jbd");	  
 	  eval ("insmod", "ext3");
 #else
 	  eval ("insmod", "ext2");
