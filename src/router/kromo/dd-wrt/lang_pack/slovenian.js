@@ -1225,7 +1225,7 @@ service.usb_uhci="USB 1.1 podpora (UHCI)";
 service.usb_ohci="USB 1.1 podpora (OHCI)";
 service.usb_ehci="USB 2.0 podpora";
 service.usb_storage="USB podpora za shranjevanje datotek";
-service.usb_extfs="ext2 / ext3 datoteèni sistem;
+service.usb_extfs="ext2 / ext3 datoteèni sistem";
 service.usb_fatfs="FAT datoteèni sistem";
 service.usb_printer="USB printer";
 
@@ -1442,7 +1442,7 @@ status_gpsi.status="Status";
 status_gpsi.lon="Zemljepisna dol¾ina";
 status_gpsi.lat="Zemljepisna ¹irina";
 status_gpsi.alt="Nadmorska vi¹ina";
-status_gpsi.sat="Vidni satelitti";
+status_gpsi.sat="Vidni sateliti";
 
 //help container
 
