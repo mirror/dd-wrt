@@ -307,7 +307,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
 
 
 char wanifname[8], wlifname[8];
-char lanifnames[128];
+
 #define BCM4712_CPUTYPE "0x4712"
 
 static void
@@ -641,11 +641,9 @@ start_sysinit (void)
   /* ifnames */
   strcpy (wanifname, nvram_safe_get ("wan_ifname"));
   strcpy (wlifname, nvram_safe_get ("wl0_ifname"));
-//  strcpy (lanifnames, nvram_safe_get ("lan_ifnames"));
 
-      
-  /* set lan_ifnames, wan_ifnames, pppoe_wan_ifname and pppoe_ifname */
-//  nvram_set ("lan_ifnames", lanifnames);
+        
+  /* set wan_ifnames, pppoe_wan_ifname and pppoe_ifname */
   nvram_set ("wan_ifname", wanifname);
   nvram_set ("wan_ifnames", wanifname);
   nvram_set ("pppoe_wan_ifname", wanifname);
