@@ -203,20 +203,11 @@ static inline void chip_select(int value)
 
 #define SET_SPI_ACTIVITY()						\
 {												\
-	/*printk("SET_SPI @ %s, line %d\n",__FUNCTION__,__LINE__);*/		\
-	while (atomic_read(&spiflash_cs))			\
-	{											\
-		printk("Woops, shit happens @ %s, line %d !!!\n",__FUNCTION__,__LINE__);	\
-		udelay(1);								\
-	}											\
-	atomic_set(&spiflash_cs, 1);				\
 }
 
 #define CLEAR_SPI_ACTIVITY()					\
 {												\
-	/*printk("CLEAR_SPI @ %s, line %d\n",__FUNCTION__,__LINE__);*/		\
 	chip_select(1);								\
-	atomic_set(&spiflash_cs, 0);				\
 }
 
 #else
@@ -367,33 +358,42 @@ static int
 spiflash_erase (struct mtd_info *mtd,struct erase_info *instr)
 {
 	struct opcodes *ptr_opcode;
-	u32 temp, reg;
+	__u32 temp, reg;
+	int finished = 0;
+	unsigned int addr = instr->addr;
+
+#ifdef SPIFLASH_DEBUG
+   	printk (KERN_DEBUG "%s(addr = 0x%.8x, len = %d)\n",__FUNCTION__,instr->addr,instr->len);
+#endif
 
    	/* sanity checks */
    	if (instr->addr + instr->len > mtd->size) return (-EINVAL);
-
 	if (!spiflash_wait_ready(FL_ERASING))
 		return -EINTR;
-
-	spiflash_sendcmd(SPI_WRITE_ENABLE, 0);
-	busy_wait((reg = spiflash_regread32(SPI_FLASH_CTL)) & SPI_CTL_BUSY, 0);
-	reg = spiflash_regread32(SPI_FLASH_CTL);
+for (addr=instr->addr;addr<instr->addr+instr->len;addr+=mtd->erasesize)
+{
 
 	ptr_opcode = &stm_opcodes[SPI_SECTOR_ERASE];
-	temp = ((__u32)instr->addr << 8) | (__u32)(ptr_opcode->code);
+
+	temp = ((__u32)addr << 8) | (__u32)(ptr_opcode->code);
+	spiflash_sendcmd(SPI_WRITE_ENABLE,0);
+	busy_wait((reg = spiflash_regread32(SPI_FLASH_CTL)) & SPI_CTL_BUSY, 0);
+
 	spiflash_regwrite32(SPI_FLASH_OPCODE, temp);
 
 	reg = (reg & ~SPI_CTL_TX_RX_CNT_MASK) | ptr_opcode->tx_cnt | SPI_CTL_START;
 	spiflash_regwrite32(SPI_FLASH_CTL, reg);
 
-	
 	busy_wait(spiflash_sendcmd(SPI_RD_STATUS, 0) & SPI_STATUS_WIP, 20);
+}
 	spiflash_done();
 
    	instr->state = MTD_ERASE_DONE;
    	if (instr->callback) instr->callback (instr);
-
-   	return 0;
+#ifdef SPIFLASH_DEBUG
+   	printk (KERN_DEBUG "%s return\n",__FUNCTION__);
+#endif
+   	return (0);
 }
 
 static int 
@@ -517,6 +517,8 @@ static void page_write(loff_t to, const u_char * buf)
 	reg      = (reg & ~SPI_CTL_TX_RX_CNT_MASK) | 0x8 | SPI_CTL_START;
 
 	/* wait and mark our activity */
+	if (!spiflash_wait_ready(FL_WRITING))
+		return -EINTR;
 	SET_SPI_ACTIVITY();
 	chip_select(0);
 
@@ -564,17 +566,10 @@ static void page_write(loff_t to, const u_char * buf)
 	chip_select(1);
 	/* clean our activity */
 	CLEAR_SPI_ACTIVITY();
+	
 
-	for (;;)
-	{
-		udelay(1);
-		reg = spiflash_sendcmd(SPI_RD_STATUS, 0);
-		if (!(reg & SPI_STATUS_WIP))
-		{
-			break;
-		}
-	}
-
+	busy_wait(spiflash_sendcmd(SPI_RD_STATUS, 0) & SPI_STATUS_WIP, 20);
+	spiflash_done();
 	return;
 }
 
@@ -596,6 +591,8 @@ static int test_page_programming(struct mtd_info * mtd, loff_t block)
 	/* write the flash with known pattern */
 	for (i=0; i<256; i++) buffer[i] = (unsigned char)i;
 	page_write(block, buffer);
+	if (!spiflash_wait_ready(FL_WRITING))
+		return -EINTR;
 
 	/* wait and mark our activity */
 	SET_SPI_ACTIVITY();
@@ -641,19 +638,14 @@ static int test_page_programming(struct mtd_info * mtd, loff_t block)
 	CLEAR_SPI_ACTIVITY();
 	udelay(10);
 
-	for (;;)
-	{
-		udelay(1);
-		reg = spiflash_sendcmd(SPI_RD_STATUS, 0);
-		if (!(reg & SPI_STATUS_WIP)) break;
-	}
-	
+	busy_wait(spiflash_sendcmd(SPI_RD_STATUS, 0) & SPI_STATUS_WIP, 20);
+	spiflash_done();
 	printk("SPI flash write test done (%d)!, page programming is %s!\n", i, i<8 ? "disabled":"enabled");
 	return (i<8 ? 1:0);
 }
 
 static int pp_mode = -1;
-static int pp_enable = 0;
+static int pp_enable = 1;
 
 /* implementation for spiflash page programing. */
 static int spiflash_page_write(struct mtd_info * mtd,
