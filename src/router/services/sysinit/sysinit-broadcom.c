@@ -898,11 +898,6 @@ start_sysinit (void)
          cprintf ("loading usb-storage\n");
          eval ("insmod", "usb-storage");
          
-         if (nvram_match ("usb_fs_ext2", "1"))
-         {
-         	cprintf ("loading ext2\n");
-         	eval ("insmod", "ext2");
-     	 }
      	 
          if (nvram_match ("usb_fs_ext3", "1"))
          {
