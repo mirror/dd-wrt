@@ -1218,6 +1218,17 @@ service.nstx_srv="nstx Daemon";
 service.nstx_ipenable="Bind to this IP only";
 service.nstx_log="Switch on debug messages";
 
+//usb.webservices
+service.usb_legend="USB Support";
+service.usb_core="Core USB Support";
+service.usb_uhci="USB 1.1 Support (UHCI)";
+service.usb_ohci="USB 1.1 Support (OHCI)";
+service.usb_ehci="USB 2.0 Support";
+service.usb_storage="USB Storage Support";
+service.usb_extfs="ext2 / ext3 File System Support;
+service.usb_fatfs="FAT File System Support";
+service.usb_printer="USB Printer Support";
+
 //milkfish.webservices
 service.milkfish_siprouter="Milkfish SIP Router";
 service.milkfish_alias="Alias";
