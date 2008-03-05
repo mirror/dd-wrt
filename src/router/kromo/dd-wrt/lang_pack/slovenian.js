@@ -179,6 +179,8 @@ share.kbytes="KB";
 share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="Predkup";
+share.acktiming="ACK uèasenje";
+
 
 
 sbutton.save="Shrani nastavitve";
@@ -1216,6 +1218,17 @@ service.nstx_srv="nstx demon";
 service.nstx_ipenable="Ve¾i samo na ta IP";
 service.nstx_log="Sporoèila za razhro¹èevanje";
 
+//usb.webservices
+service.usb_legend="USB podpora";
+service.usb_core="Osnovna USB podpora";
+service.usb_uhci="USB 1.1 podpora (UHCI)";
+service.usb_ohci="USB 1.1 podpora (OHCI)";
+service.usb_ehci="USB 2.0 podpora";
+service.usb_storage="USB podpora za shranjevanje datotek";
+service.usb_extfs="ext2 / ext3 datoteèni sistem;
+service.usb_fatfs="FAT datoteèni sistem";
+service.usb_printer="USB printer";
+
 //milkfish.webservices
 service.milkfish_siprouter="Milkfish SIP Router";
 service.milkfish_alias="Alias";
@@ -1421,6 +1434,15 @@ status_wireless.h22="Brez¾ièna vozli¹èa";
 status_wireless.legend3="Brez¾ièni odjemalci";
 status_wireless.signal_qual="Kakovost signala";
 status_wireless.wds="WDS vozli¹èa";
+
+// ** GPS info **//
+
+status_gpsi.legend="GPS info";
+status_gpsi.status="Status";
+status_gpsi.lon="Zemljepisna dol¾ina";
+status_gpsi.lat="Zemljepisna ¹irina";
+status_gpsi.alt="Nadmorska vi¹ina";
+status_gpsi.sat="Vidni satelitti";
 
 //help container
 
