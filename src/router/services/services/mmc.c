@@ -39,6 +39,7 @@ start_mmc (void)
 	{
 	  //device detected
 	  eval ("insmod", "ext2");
+
 	  if (mount ("/dev/mmc", "/mmc", "ext2", MS_MGC_VAL, NULL))
 	    {
 	      //device not formated
@@ -103,7 +104,11 @@ start_mmc (void)
       if (!res)
 	{
 	  //device detected
+#ifdef HAVE_USB	  
+	  eval ("insmod", "ext3");
+#else
 	  eval ("insmod", "ext2");
+#endif
 	  if (mount
 	      ("/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL, NULL))
 	    {
