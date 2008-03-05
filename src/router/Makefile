@@ -262,7 +262,9 @@ ifneq ($(CONFIG_DIST),"micro-special")
 ifeq ($(CONFIG_SAMBA),y)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/cifs/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 endif
+ifneq ($(CONFIG_USB),y)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext2/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+endif
 endif
 endif
 ifeq ($(CONFIG_DIST),"mini")
