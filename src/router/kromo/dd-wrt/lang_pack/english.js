@@ -1229,6 +1229,10 @@ service.usb_extfs="ext2 / ext3 File System Support";
 service.usb_fatfs="FAT File System Support";
 service.usb_printer="USB Printer Support";
 
+//ttraff.webservices
+service.ttraff_legend="Graphic WAN Traffic Monitoring";
+service.ttraff_daemon="ttraff Daemon";
+
 //milkfish.webservices
 service.milkfish_siprouter="Milkfish SIP Router";
 service.milkfish_alias="Alias";

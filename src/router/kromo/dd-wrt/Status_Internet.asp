@@ -171,7 +171,7 @@ addEvent(window, "unload", function() {
 											<span id="ttraff_out"><% get_totaltraff("out"); %></span>&nbsp;
 										</div>
 								</fieldset><br />
-
+								<% nvram_invmatch("ttraff_enable","1","<!--"); %>
 								<fieldset>
 								<legend><% tran("status_inet.traff_mon"); %></legend>
 									<script type="text/javascript">
@@ -189,8 +189,8 @@ addEvent(window, "unload", function() {
 											//]]>
 											</script>
 										</div>
-
 								</fieldset>
+								<% nvram_invmatch("ttraff_enable","1","-->"); %>				
 								<br />
 							</div>
 
