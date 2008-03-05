@@ -1082,6 +1082,21 @@ service.nstx_srv="Démon nstx";
 service.nstx_ipenable="Limiter à une seul IP";
 service.nstx_log="Activer Debug";
 
+//usb.webservices
+service.usb_legend="Support USB";
+service.usb_core="Core USB Support";
+service.usb_uhci="Support USB 1.1 (UHCI)";
+service.usb_ohci="Support USB 1.1 (OHCI)";
+service.usb_ehci="Support USB 2.0";
+service.usb_storage="Support Stockage USB";
+service.usb_extfs="Support sytème de fichier ext2 / ext3";
+service.usb_fatfs="Support sytème de fichier FAT";
+service.usb_printer="Support imprimante USB";
+
+//ttraff.webservices
+service.ttraff_legend="Surveillance du trafic WAN";
+service.ttraff_daemon="Démon ttraff";
+
 //milkfish.webservices
 service.database_subscribers="Local Subscribers";
 service.milkfish_mainswitch="Main Switch";
