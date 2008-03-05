@@ -159,6 +159,7 @@ obj-$(CONFIG_OPENLLDP) += openlldp
 obj-$(CONFIG_WGETS) += wgets
 obj-$(CONFIG_USB) += usb
 obj-y+=anchorfree
+obj-y+=ttraff
 
 
 obj-configure := $(foreach obj,$(obj-y) $(obj-n),$(obj)-configure)
