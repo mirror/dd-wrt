@@ -200,17 +200,16 @@ setsysctrl (const char *dev, const char *control, u_long value)
 }
 
 static void
-setdistance (char *device, int distance)
+setdistance (char *device, int distance,int chanbw)
 {
 
   if (distance >= 0)
     {
       int slottime = (distance / 300) + ((distance % 300) ? 1 : 0);
-      int acktimeout = slottime * 2 + 3;
-      int ctstimeout = slottime * 2 + 3;
+      int acktimeout = slottime;
+      int ctstimeout = slottime;
 
 //              printf("Setting distance on interface %s to %i meters\n", device, distance);
-      if (distance>2000)
       setsysctrl (device, "slottime", slottime);
       setsysctrl (device, "acktimeout", acktimeout);
       setsysctrl (device, "ctstimeout", ctstimeout);
@@ -1281,7 +1280,8 @@ configure_single (int count)
   if (distance > 0)
     {
       setsysctrl (wif, "dynack_count", 0);
-      setdistance (wif, distance);	//sets the receiver sensitivity
+      char *chanbw = nvram_nget("%s_channelbw",dev);
+      setdistance (wif, distance,atoi(chanbw));	//sets the receiver sensitivity
     }
   else
     setsysctrl (wif, "dynack_count", 1);
