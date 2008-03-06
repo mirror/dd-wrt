@@ -275,6 +275,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Netgear WNR834Bv2 (BCM4704 cpu, BCM5325 switch, fccid: Netgear PY307100061)
 #define ROUTER_NETGEAR_WNR834BV2 0x520f
 
+// Asus WL-500gPremium v2 (BCM5354 cpu, fccid: Asus MSQWL500GPV2)
+#define ROUTER_ASUS_WL500G_PRE_V2 0x530f
+
 #define NVROUTER "DD_BOARD"
 
 extern char *getBridge (char *ifname);
