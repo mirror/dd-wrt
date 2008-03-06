@@ -1092,9 +1092,19 @@ internal_getRouterBrand ()
   if (boardnum == 45 &&
       nvram_match ("boardtype", "0x48E") && nvram_match ("boardrev", "0x10"))
     {
+	  char *hwver= nvram_safe_get ("hardware_version");
+	  if (startswith (hwver, "WL500GPV2"))
+	  {
+      cprintf ("router is Asus WL-500G Premium V2\n");
+      setRouter ("Asus WL-500G Premium V2");
+      return ROUTER_ASUS_WL500G_PRE_V2;		  
+	  }
+	  else
+	  {
       cprintf ("router is Asus WL-520GU/GC\n");
       setRouter ("Asus WL-520GU/GC");
       return ROUTER_ASUS_WL520GUGC;
+  	  }
     }   
     
   if (boardnum == 83258 &&
