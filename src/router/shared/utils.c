@@ -302,7 +302,7 @@ internal_getRouterBrand ()
 	}
     if (!strcmp(gwid,"GW2345"))
 	{
-        setRouter ("Avila GW2347");
+        setRouter ("Avila GW2345");
         return ROUTER_BOARD_GATEWORX_GW2345;
 	}
     }
