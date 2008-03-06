@@ -372,6 +372,7 @@ period_check (int sig)
       sesgpio = 0x07;       //gpio 7, normal
       break;
     case ROUTER_ASUS_WL520GUGC:
+    case ROUTER_ASUS_WL500G_PRE_V2:
       sesgpio = 0x13;       //gpio 3, inversed
       break;
     case ROUTER_WAP54G_V3:
