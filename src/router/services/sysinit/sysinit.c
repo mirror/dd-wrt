@@ -769,6 +769,7 @@ start_restore_defaults (void)
 	  switch (brand)
 	  {
 		case ROUTER_ASUS_WL520G:
+		case ROUTER_ASUS_WL500G_PRE_V2:
 		  nvram_set ("vlan0ports", "0 1 2 3 5*");
 		  nvram_set ("vlan1ports", "4 5");
 		  break;
@@ -894,6 +895,7 @@ start_restore_defaults (void)
 	    case ROUTER_RT480W:
 	    case ROUTER_DELL_TRUEMOBILE_2300_V2:
 	    case ROUTER_ASUS_WL520G:
+	    case ROUTER_ASUS_WL500G_PRE_V2:
 	      nvram_set ("vlan0ports", "0 1 2 3 5*");
 	      break;
 	    case ROUTER_LINKSYS_WRH54G:
@@ -927,6 +929,7 @@ start_restore_defaults (void)
 		case ROUTER_RT480W:
 		case ROUTER_DELL_TRUEMOBILE_2300_V2:
 		case ROUTER_ASUS_WL520G:
+		case ROUTER_ASUS_WL500G_PRE_V2:
 		  nvram_set ("vlan1ports", "4 5");
 		  break;
 		default:
