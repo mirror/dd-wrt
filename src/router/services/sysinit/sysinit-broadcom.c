@@ -598,6 +598,7 @@ start_sysinit (void)
       break;
 
     case ROUTER_ASUS_WL520G:
+    case ROUTER_ASUS_WL500G_PRE_V2:
       if (nvram_match ("vlan1ports", "4 5u"))
 	nvram_set ("vlan1ports", "4 5");
       break;
@@ -1254,6 +1255,10 @@ enable_dtag_vlan (int enable)
   if (nvram_match ("vlan1ports", "0 5"))
     {
       vlan7ports = "0t 5";
+    }
+  if (nvram_match ("vlan1ports", "1 5"))
+    {
+      vlan7ports = "1t 5";
     }
   if (nvram_match ("vlan2ports", "0 8") || nvram_match ("vlan2ports", "0 8*") || nvram_match ("vlan2ports", "0 8t"))	// special condition for Broadcom Gigabit Phy routers 
     {
