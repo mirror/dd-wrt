@@ -4904,8 +4904,8 @@ ej_show_wireless_single (webs_t wp, char *prefix)
       websWrite (wp, "</div>\n");
     }
 #ifdef HAVE_MADWIFI
-  if (nvram_match (wl_mode, "sta") || nvram_match (wl_mode, "wdssta")
-      || nvram_match (wl_mode, "wet"))
+//  if (nvram_match (wl_mode, "sta") || nvram_match (wl_mode, "wdssta")
+//      || nvram_match (wl_mode, "wet"))
     {
       char wl_scanlist[32];
       sprintf (wl_scanlist, "%s_scanlist", prefix);
