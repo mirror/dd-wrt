@@ -94,7 +94,7 @@ start_sysinit (void)
   cprintf ("sysinit() get router\n");
 
 #ifndef HAVE_DIR400
-  FILE *fp = fopen (getMTD("board_config"), "rb");
+  FILE *fp = fopen (getMTD ("board_config"), "rb");
   if (fp)
     {
       fseek (fp, 0x1000, SEEK_SET);
@@ -136,10 +136,28 @@ start_sysinit (void)
       eval ("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
       eval ("/sbin/vconfig", "add", "eth0", "0");
       eval ("/sbin/vconfig", "add", "eth0", "1");
+      struct ifreq ifr;
+      int s;
+      if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)))
+	{
+	  char eabuf[32];
+	  strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
+	  ioctl (s, SIOCGIFHWADDR, &ifr);
+	  char macaddr[32];
+	  strcpy (macaddr,
+		  ether_etoa ((unsigned char *) ifr.ifr_hwaddr.sa_data,
+			      eabuf));
+	  nvram_set ("et0macaddr", macaddr);
+	  MAC_ADD (macaddr);
+	  ether_atoe (macaddr, (unsigned char *) ifr.ifr_hwaddr.sa_data);
+	  strncpy (ifr.ifr_name, "vlan1", IFNAMSIZ);
+	  ioctl (s, SIOCSIFHWADDR, &ifr);
+	  close (s);
+	}
     }
   else
     {
-      vlan_init (5);		// 4 lan + 1 wan
+      vlan_init (0xff);		// 4 lan + 1 wan
     }
 //  eval ("insmod", "ipv6");
 

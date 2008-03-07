@@ -704,15 +704,15 @@ stop_wshaper (void)
   ret = eval (script_name, "stop", "XX", "eth0");
   ret = eval (script_name, "stop", "XX", "ath0");
 #elif HAVE_LS2
-  ret = eval (script_name, "stop", "XX", "vlan1");
+  ret = eval (script_name, "stop", "XX", "vlan0");
   ret = eval (script_name, "stop", "XX", "vlan2");
   ret = eval (script_name, "stop", "XX", "ath0");
 #elif HAVE_LS5
   ret = eval (script_name, "stop", "XX", "eth0");
   ret = eval (script_name, "stop", "XX", "ath0");
 #elif HAVE_DIR300
+  ret = eval (script_name, "stop", "XX", "vlan0");
   ret = eval (script_name, "stop", "XX", "vlan1");
-  ret = eval (script_name, "stop", "XX", "vlan2");
   ret = eval (script_name, "stop", "XX", "ath0");
 #elif HAVE_MR3202A
   ret = eval (script_name, "stop", "XX", "vlan1");

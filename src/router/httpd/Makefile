@@ -162,6 +162,9 @@ endif
 ifeq ($(CONFIG_FONERA),y)
 CFLAGS += -DHAVE_FONERA
 endif
+ifeq ($(CONFIG_FONERA2200),y)
+CFLAGS += -DHAVE_FONERA2200
+endif
 ifeq ($(CONFIG_DIR400),y)
 CFLAGS += -DHAVE_DIR400
 endif
