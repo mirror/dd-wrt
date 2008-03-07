@@ -1230,7 +1230,7 @@ service.usb_fatfs="FAT File System Support";
 service.usb_printer="USB Printer Support";
 
 //ttraff.webservices
-service.ttraff_legend="Graphic WAN Traffic Monitoring";
+service.ttraff_legend="WAN Traffic Counter";
 service.ttraff_daemon="ttraff Daemon";
 
 //milkfish.webservices
