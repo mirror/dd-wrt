@@ -363,12 +363,12 @@ set_fullswitch (void)
    {
 	if (!nvram_match ("fullswitch_set", "1"))
 	{
-	nvram_set ("def_lan_ifnames", lanifnames);
-	sprintf (lanifnames, "%s %s", nvram_safe_get ("lan_ifnames"), wanifname);
-	nvram_set ("def_wan_ifname", wanifname);
+	  nvram_set ("def_lan_ifnames", lanifnames);
+	  nvram_set ("def_wan_ifname", wanifname);	
+	  nvram_set ("fullswitch_set", "1");
+	}	
+	sprintf (lanifnames, "%s %s", nvram_safe_get ("def_lan_ifnames"), nvram_safe_get ("def_wan_ifname"));
 	strcpy (wanifname, "");
-	nvram_set ("fullswitch_set", "1");
-    }
    }
    else
    {
