@@ -55,7 +55,7 @@ function reloadIt() {
 
 addEvent(window, "load", function() {
 	setElementVisible("wan_show", "<% nvram_get("wl0_mode"); %>" != "wet" && "<% nvram_get("wl0_mode"); %>" != "apstawet");
-	setElementVisible("wan_showtraff", "<% nvram_get("wl0_mode"); %>" != "wet" && "<% nvram_get("wl0_mode"); %>" != "apstawet" && "<% nvram_get("wan_proto"); %>" != "disabled");	
+	setElementVisible("wan_showtraff", "<% nvram_get("wl0_mode"); %>" != "wet" && "<% nvram_get("wl0_mode"); %>" != "apstawet" && "<% nvram_get("wan_proto"); %>" != "disabled" && "<% nvram_get("ttraff_enable"); %>" == "1");	
 	setElementVisible("wan_showdisabled", "<% nvram_get("wl0_mode"); %>" == "wet" || "<% nvram_get("wl0_mode"); %>" == "apstawet");
 	setElementVisible("wan_info", "<% nvram_get("wan_proto"); %>" != "disabled");
 	setElementVisible("wan_dhcp", "<% nvram_get("wan_proto"); %>" == "dhcp");
@@ -171,7 +171,6 @@ addEvent(window, "unload", function() {
 											<span id="ttraff_out"><% get_totaltraff("out"); %></span>&nbsp;
 										</div>
 								</fieldset><br />
-								<% nvram_invmatch("ttraff_enable","1","<!--"); %>
 								<fieldset>
 								<legend><% tran("status_inet.traff_mon"); %></legend>
 									<script type="text/javascript">
@@ -189,9 +188,7 @@ addEvent(window, "unload", function() {
 											//]]>
 											</script>
 										</div>
-								</fieldset>
-								<% nvram_invmatch("ttraff_enable","1","-->"); %>				
-								<br />
+								</fieldset><br />
 							</div>
 
 							<div class="submitFooter">
