@@ -445,9 +445,14 @@ start_sysinit (void)
     case ROUTER_RT210W:
       setup_4712 ();
       nvram_set ("wan_ifname", "eth1");	// fix for Belkin f5d7230 v1000 WAN problem.
-      if (nvram_get ("et0macaddr") == NULL || nvram_get ("et0macaddr") == "")
+      if (strlen (nvram_safe_get ("et0macaddr") != 17)
 	{
 	  nvram_set ("et0macaddr", "00:16:E3:00:00:10");	//fix for missing cfe default = dead LAN ports.
+	  need_reboot = 1;
+	}
+      if (strlen (nvram_safe_get ("et1macaddr") != 17)
+	{
+	  nvram_set ("et1macaddr", "00:16:E3:00:00:11");
 	  need_reboot = 1;
 	}
       break;
@@ -455,11 +460,16 @@ start_sysinit (void)
     case ROUTER_BRCM4702_GENERIC:
     case ROUTER_ASUS_WL500G:
       setup_4712 ();
-      nvram_set ("wan_ifname", "eth1");	// fix for Belkin f5d7230 v1000 WAN problem.
+      nvram_set ("wan_ifname", "eth1");
 
-      if (nvram_get ("et0macaddr") == NULL || nvram_get ("et0macaddr") == "")
+      if (strlen (nvram_safe_get ("et0macaddr") != 17)
 	{
 	  nvram_set ("et0macaddr", "00:0C:6E:00:00:10");	//fix for missing cfe default = dead LAN ports.
+	  need_reboot = 1;
+	}
+      if (strlen (nvram_safe_get ("et1macaddr") != 17)
+	{
+	  nvram_set ("et1macaddr", "00:0C:6E:00:00:11");
 	  need_reboot = 1;
 	}
       break;
