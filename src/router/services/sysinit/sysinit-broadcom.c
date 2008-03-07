@@ -653,13 +653,13 @@ start_sysinit (void)
   strcpy (wanifname, nvram_safe_get ("wan_ifname"));
   strcpy (wlifname, nvram_safe_get ("wl0_ifname"));
 
-        
+
   /* set wan_ifnames, pppoe_wan_ifname and pppoe_ifname */
   nvram_set ("wan_ifname", wanifname);
   nvram_set ("wan_ifnames", wanifname);
   nvram_set ("pppoe_wan_ifname", wanifname);
   nvram_set ("pppoe_ifname", wanifname);
-  
+
   /* additional boardflags adjustment */
   switch (brand)
     {
@@ -873,30 +873,30 @@ start_sysinit (void)
 
 #ifdef HAVE_USB
 
-   if(nvram_match ("usb_enable", "1"))
-   {
-      led_control (LED_USB, LED_ON);
+      if (nvram_match ("usb_enable", "1"))
+	{
+	  led_control (LED_USB, LED_ON);
 
-      cprintf ("loading usbcore\n");
-      eval ("insmod", "usbcore");
+	  cprintf ("loading usbcore\n");
+	  eval ("insmod", "usbcore");
 
-      if (nvram_match ("usb_uhci", "1"))
-      {
-         cprintf ("loading usb-uhci\n");
-         eval ("insmod", "usb-uhci");
-      }
+	  if (nvram_match ("usb_uhci", "1"))
+	    {
+	      cprintf ("loading usb-uhci\n");
+	      eval ("insmod", "usb-uhci");
+	    }
 
-      if (nvram_match ("usb_ohci", "1"))
-      {
-         cprintf ("loading usb-ohci\n");
-         eval ("insmod", "usb-ohci");
-      }
+	  if (nvram_match ("usb_ohci", "1"))
+	    {
+	      cprintf ("loading usb-ohci\n");
+	      eval ("insmod", "usb-ohci");
+	    }
 
-      if (nvram_match ("usb_usb2", "1"))
-      {
-         cprintf ("loading usb2 module\n");
-         eval ("insmod", "ehci-hcd");
-      }
+	  if (nvram_match ("usb_usb2", "1"))
+	    {
+	      cprintf ("loading usb2 module\n");
+	      eval ("insmod", "ehci-hcd");
+	    }
 
       if (nvram_match ("usb_storage", "1"))
       {
@@ -928,21 +928,21 @@ start_sysinit (void)
      	 
 //         if (nvram_match ("usb_fs_xfs", "1"))
 //         {
-//         	cprintf ("loading usb_fs_xfs\n");
-//         	eval ("insmod", "xfs");
-//     	   }    	 
-      }
-      
-      if (nvram_match ("usb_printer", "1"))
-      {
-         cprintf ("loading printer\n");
-         eval ("insmod", "printer");
-      }
-   }
-   else
-   {
-	 led_control (LED_USB, LED_OFF);	   
-   } 
+//              cprintf ("loading usb_fs_xfs\n");
+//              eval ("insmod", "xfs");
+//         }             
+	    }
+
+	  if (nvram_match ("usb_printer", "1"))
+	    {
+	      cprintf ("loading printer\n");
+	      eval ("insmod", "printer");
+	    }
+	}
+      else
+	{
+	  led_control (LED_USB, LED_OFF);
+	}
 #endif
 
     }
