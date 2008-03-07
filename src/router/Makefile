@@ -293,7 +293,6 @@ endif
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/imq.o $(TARGETDIR)/lib/modules/$(LINUXVER)
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_USB),y)
-	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext2/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 #	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext3/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 #	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/fat/* $(TARGETDIR)/lib/modules/$(LINUXVER)
