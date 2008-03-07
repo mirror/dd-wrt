@@ -760,23 +760,23 @@ start_hostapdwan (void)
 }
 
 #define SIOCSSCANLIST  		(SIOCDEVPRIVATE+6)
-
+#ifdef MADWIFI_OLD
 static void
 set_scanlist (char *dev, char *wif)
 {
-  char var[32];
-  char *next;
-  struct iwreq iwr;
-  char scanlist[32];
+
+   char *next;
+   struct iwreq iwr;
+   char scanlist[32];
   unsigned short list[1024];
-  sprintf (scanlist, "%s_scanlist", dev);
-  char *sl = default_get (scanlist, "default");
+   sprintf (scanlist, "%s_scanlist", dev);
+   char *sl = default_get (scanlist, "default");
   memset (list, 0, 1024 * sizeof (unsigned short));
-  int c = 0;
-  if (strlen (sl) > 0 && strcmp (sl, "default"))
-    {
-      foreach (var, sl, next)
-      {
+   int c = 0;
+   if (strlen (sl) > 0 && strcmp (sl, "default"))
+     {
+       foreach (var, sl, next)
+       {
 	int ch = atoi (var);
 	if (ch < 1000 || ch > 7000)
 	  {
@@ -787,14 +787,14 @@ set_scanlist (char *dev, char *wif)
 
 //      fprintf(stderr,"scanlist %d\n",chan);
 	list[c++] = chan;
-      }
-    }
-  else
+       }
+     }
+   else
     c = 1;
 
-  memset (&iwr, 0, sizeof (struct iwreq));
-  strncpy (iwr.ifr_name, wif, IFNAMSIZ);
-  {
+   memset (&iwr, 0, sizeof (struct iwreq));
+   strncpy (iwr.ifr_name, wif, IFNAMSIZ);
+   {
     /*
      * Argument data too big for inline transfer; setup a
      * parameter block instead; the kernel will transfer
@@ -802,15 +802,41 @@ set_scanlist (char *dev, char *wif)
      */
     iwr.u.data.pointer = &list[0];
     iwr.u.data.length = 1024 * sizeof (unsigned short);
-  }
+   }
 
   int r = ioctl (getsocket (), SIOCSSCANLIST, &iwr);
   if (r < 0)
     {
       fprintf (stderr, "error while setting scanlist on %s, %d\n", wif, r);
     }
+ }
+#else
+static void
+set_scanlist (char *dev, char *wif)
+{
+  char var[32];
+  char *next;
+  struct iwreq iwr;
+  char scanlist[32];
+  unsigned short list[64];
+  sprintf (scanlist, "%s_scanlist", dev);
+  char *sl = default_get (scanlist, "default");
+  int c = 0;
+  eval("iwpriv",dev,"setscanlist","-ALL");
+  if (strlen (sl) > 0 && strcmp (sl, "default"))
+    {
+      foreach (var, sl, next)
+      {
+	sprintf(list,"+%s",var);
+        eval("iwpriv",dev,"setscanlist",list);
+      }
+    }
+  else
+  {
+        eval("iwpriv",dev,"setscanlist","+ALL");    
+  }
 }
-
+#endif
 
 static void
 set_rate (char *dev)
@@ -1260,9 +1286,7 @@ configure_single (int count)
     }
   else
     {
-#ifdef OLD_MADWIFI
       set_scanlist (dev, wif);
-#endif
     }
 
   if (useif)
@@ -1331,7 +1355,7 @@ configure_single (int count)
 #endif
 	}
 
-//      eval ("iwpriv", var, "bgscan", "0");
+      eval ("iwpriv", var, "bgscan", "0");
 #ifdef HAVE_MAKSAT
       eval ("iwconfig", var, "essid", default_get (ssid, "maksat_vap"));
 #elif defined(HAVE_TRIMAX)
@@ -1389,7 +1413,7 @@ configure_single (int count)
 #endif
   cprintf ("set broadcast flag\n");	//hide ssid
   eval ("iwpriv", dev, "hide_ssid", default_get (broadcast, "0"));
-//  eval ("iwpriv", dev, "bgscan", "0");
+  eval ("iwpriv", dev, "bgscan", "0");
   m = default_get (wl, "ap");
 
 

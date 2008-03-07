@@ -121,6 +121,7 @@ mtd_erase (const char *mtd)
        erase_info.start < mtd_info.size;
        erase_info.start += mtd_info.erasesize)
     {
+      fprintf (stderr, "erase[%ld]\r", erase_info.start);
       (void) ioctl (mtd_fd, MEMUNLOCK, &erase_info);
       if (ioctl (mtd_fd, MEMERASE, &erase_info) != 0)
 	{
@@ -131,6 +132,7 @@ mtd_erase (const char *mtd)
     }
 
   close (mtd_fd);
+      fprintf (stderr, "erase[%ld]\n", erase_info.start);
   /*nvram_set("et0macaddr",et0);
      nvram_set("et1macaddr",et1);
      nvram_commit();
@@ -186,17 +188,17 @@ mtd_write (const char *path, const char *mtd)
   trx.magic = STORE32_LE (trx.magic);
   trx.len = STORE32_LE (trx.len);
   trx.crc32 = STORE32_LE (trx.crc32);
-  info.freeram = 64;		//fix, must be flashed in erase blocks
+//  info.freeram = 64;		//fix, must be flashed in erase blocks
 #elif HAVE_MERAKI
   trx.magic = STORE32_LE (trx.magic);
   trx.len = STORE32_LE (trx.len);
   trx.crc32 = STORE32_LE (trx.crc32);
-  info.freeram = 64;		//fix, must be flashed in erase blocks
+//  info.freeram = 64;		//fix, must be flashed in erase blocks
 #elif HAVE_LS2
   trx.magic = STORE32_LE (trx.magic);
   trx.len = STORE32_LE (trx.len);
   trx.crc32 = STORE32_LE (trx.crc32);
-  info.freeram = 64;		//fix, must be flashed in erase blocks
+//  info.freeram = 64;		//fix, must be flashed in erase blocks
 #elif HAVE_LS5
   trx.magic = STORE32_LE (trx.magic);
   trx.len = STORE32_LE (trx.len);
@@ -209,7 +211,7 @@ mtd_write (const char *path, const char *mtd)
   trx.magic = STORE32_LE (trx.magic);
   trx.len = STORE32_LE (trx.len);
   trx.crc32 = STORE32_LE (trx.crc32);
-  info.freeram = 64;		//fix, must be flashed in erase blocks
+//  info.freeram = 64;		//fix, must be flashed in erase blocks
 #elif HAVE_TW6600
   trx.magic = STORE32_LE (trx.magic);
   trx.len = STORE32_LE (trx.len);
@@ -251,12 +253,10 @@ mtd_write (const char *path, const char *mtd)
 //#endif
 
 
-
-
   /* See if we have enough memory to store the whole file */
   fprintf (stderr, "freeram=[%ld] bufferram=[%ld]\n", info.freeram,
 	   info.bufferram);
-  if (info.freeram >= (trx.len + 1 * 1024 * 1024))
+  if ((info.freeram + info.bufferram) >= (trx.len + 1 * 1024 * 1024))
     {
       fprintf (stderr, "The free memory is enough, writing image once.\n");
       /* Begin to write image after all image be downloaded by web upgrade.
@@ -268,7 +268,7 @@ mtd_write (const char *path, const char *mtd)
     }
   else
     {
-      erase_info.length = mtd_info.erasesize;
+      erase_info.length = mtd_info.erasesize*4;
       fprintf (stderr,
 	       "The free memory is not enough, writing image per %d bytes.\n",
 	       erase_info.length);
@@ -286,8 +286,6 @@ mtd_write (const char *path, const char *mtd)
 	       sizeof (struct trx_header) - OFFSETOF (struct trx_header,
 						      flag_version),
 	       CRC32_INIT_VALUE);
-
-
   /* Write file or URL to MTD device */
   for (erase_info.start = 0; erase_info.start < trx.len;
        erase_info.start += count)
@@ -308,9 +306,9 @@ mtd_write (const char *path, const char *mtd)
 
       /* for debug */
       sum = sum + count;
-      fprintf (stderr, "sum=[%ld]\n", sum);
+      fprintf (stderr, "write=[%ld]         \n", sum);
 
-      if (count < len)
+      if (count < len && (len-off)>mtd_info.erasesize*4 || count == 0)
 	{
 	  fprintf (stderr, "%s: Truncated file (actual %ld expect %ld)\n",
 		   path, count - off, len - off);
@@ -333,6 +331,7 @@ mtd_write (const char *path, const char *mtd)
 		       "Writing image to flash, waiting a moment...\n");
 	    }
 	}
+      erase_info.length =ROUNDUP (count, mtd_info.erasesize);
       /* Do it */
       (void) ioctl (mtd_fd, MEMUNLOCK, &erase_info);
       if (ioctl (mtd_fd, MEMERASE, &erase_info) != 0 ||
