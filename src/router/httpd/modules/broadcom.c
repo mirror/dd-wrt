@@ -3916,6 +3916,9 @@ FILE *in;
       return;
     }
 #endif
+
+  if (!nvram_match ("ttraff_enable", "1"))
+    return;
 	
   strncpy (wanface, get_wan_face (), sizeof (wanface));
 
