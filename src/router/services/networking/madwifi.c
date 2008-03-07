@@ -1266,6 +1266,7 @@ configure_single (int count)
 //  eval ("iwpriv", dev, "uapsd","0");
   eval ("iwpriv", dev, "scandisable", "0");
   int disablescan = 0;
+#ifdef MADWIFI_OLD
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
     {
       cprintf ("set channel\n");
@@ -1288,6 +1289,24 @@ configure_single (int count)
     {
       set_scanlist (dev, wif);
     }
+#else
+    set_scanlist(dev,wif);
+  if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
+    {
+      char *ch = default_get (channel, "0");
+      if (strcmp (ch, "0") == 0)
+	{
+	  eval ("iwconfig", dev, "channel", "0");
+	}
+      else
+	{
+	  char freq[64];
+	  sprintf (freq, "%sM", ch);
+	  eval ("iwconfig", dev, "freq", freq);
+	}
+    }
+#endif    
+
 
   if (useif)
     set_netmode (wif, dev, useif);
@@ -1329,6 +1348,9 @@ configure_single (int count)
       sprintf (ssid, "%s_ssid", var);
       sprintf (mode, "%s_mode", var);
       m = default_get (mode, "ap");
+#ifndef OLD_MADWIFI
+        set_scanlist (dev, wif);
+#endif
 
       if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
 	{
@@ -1336,15 +1358,19 @@ configure_single (int count)
 	  char *ch = default_get (channel, "0");
 	  if (strcmp (ch, "0") == 0)
 	    {
+#ifdef OLD_MADWIFI
 	      eval ("iwpriv", var, "scandisable", "0");
+#endif
 	      eval ("iwconfig", var, "channel", "0");
 	    }
 	  else
 	    {
 	      char freq[64];
 	      sprintf (freq, "%sM", ch);
+#ifdef OLD_MADWIFI
 	      eval ("iwpriv", var, "scandisable", "1");
 	      disablescan = 1;
+#endif
 	      eval ("iwconfig", var, "freq", freq);
 	    }
 	}
@@ -1377,9 +1403,10 @@ configure_single (int count)
 	eval ("iwpriv", var, "wds", "1");
       if (!strcmp (m, "wdsap"))
 	eval ("iwpriv", var, "wdsvlan", "0");
+#ifdef OLD_MADWIFI
       if (disablescan)
 	eval ("iwpriv", var, "scandisable", "1");
-
+#endif
       cnt++;
     }
 
