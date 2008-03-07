@@ -1230,7 +1230,7 @@ service.usb_fatfs="FAT datoteèni sistem";
 service.usb_printer="USB printer";
 
 //ttraff.webservices
-service.ttraff_legend="Grafièni nadzor WAN prometa";
+service.ttraff_legend="©tevec WAN prometa";
 service.ttraff_daemon="ttraff demon";
 
 //milkfish.webservices
