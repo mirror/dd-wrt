@@ -910,10 +910,12 @@ start_sysinit (void)
      	 
          if (nvram_match ("usb_fs_ext3", "1"))
          {
-         	cprintf ("loading jbd\n");
-         	eval ("insmod", "jbd");
-         	cprintf ("loading ext3\n");
-         	eval ("insmod", "ext3");
+         	cprintf ("loading ext2\n");
+         	eval ("insmod", "ext2");	         
+//         	cprintf ("loading jbd\n");
+//         	eval ("insmod", "jbd");
+//         	cprintf ("loading ext3\n");
+//         	eval ("insmod", "ext3");
      	 }
      	  
          if (nvram_match ("usb_fs_fat", "1"))
