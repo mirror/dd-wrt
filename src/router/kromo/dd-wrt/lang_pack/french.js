@@ -1094,7 +1094,7 @@ service.usb_fatfs="Support sytème de fichier FAT";
 service.usb_printer="Support imprimante USB";
 
 //ttraff.webservices
-service.ttraff_legend="Comptage du trafic WAN";
+service.ttraff_legend="Suivi du trafic WAN";
 service.ttraff_daemon="Démon ttraff";
 
 //milkfish.webservices
