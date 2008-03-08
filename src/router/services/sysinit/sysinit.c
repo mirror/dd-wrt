@@ -788,6 +788,7 @@ start_restore_defaults (void)
 	  break;
 	case ROUTER_LINKSYS_WRH54G:
 	case ROUTER_ASUS_WL500GD:
+	case ROUTER_BUFFALO_WBR2G54S:
 	  nvram_set ("vlan0ports", "4 3 2 1 5*");
 	  nvram_set ("vlan1ports", "0 5");
 	  break;
@@ -900,6 +901,7 @@ start_restore_defaults (void)
 	      break;
 	    case ROUTER_LINKSYS_WRH54G:
 	    case ROUTER_ASUS_WL500GD:
+	    case ROUTER_BUFFALO_WBR2G54S:
 	      nvram_set ("vlan0ports", "4 3 2 1 5*");
 	      break;
 	    default:
