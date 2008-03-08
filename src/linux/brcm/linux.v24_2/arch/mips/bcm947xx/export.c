@@ -132,5 +132,6 @@ _export(srom_read)
 
 _export(hndcrc32)
 
+_export(bcm_mdelay)
 _export(sb_alp_clock)
 _export(sb_pmu_fast_pwrup_delay)

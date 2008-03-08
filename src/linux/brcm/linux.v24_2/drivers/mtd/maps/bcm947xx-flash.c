@@ -193,13 +193,13 @@ find_cfe_size(struct mtd_info *mtd, size_t size)
 		}
 	}
 
-	printk(KERN_NOTICE
+	printk(KERN_EMERG 
 	       "%s: Couldn't find bootloader size\n",
 	       mtd->name);
 	return -1;
 
  found:
-	printk(KERN_NOTICE "bootloader size: %d\n", off);
+	printk(KERN_EMERG  "bootloader size: %d\n", off);
 	return off;
 
 }
@@ -310,7 +310,7 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		}
 	}
 
-	printk(KERN_NOTICE
+	printk(KERN_EMERG 
 	       "%s: Couldn't find root filesystem\n",
 	       mtd->name);
 	return -1;
@@ -323,7 +323,7 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		return 0;
 
 	if (*((__u32 *) buf) == SQUASHFS_MAGIC) {
-		printk(KERN_INFO "%s: Filesystem type: squashfs, size=0x%x\n", mtd->name, (u32) sb->bytes_used);
+		printk(KERN_EMERG  "%s: Filesystem type: squashfs, size=0x%x\n", mtd->name, (u32) sb->bytes_used);
 
 		/* Update the squashfs partition size based on the superblock info */
 		part->size = sb->bytes_used;
@@ -332,12 +332,12 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		len &= ~(mtd->erasesize - 1);
 		part->size = len - part->offset;
 	} else if (*((__u16 *) buf) == JFFS2_MAGIC_BITMASK) {
-		printk(KERN_INFO "%s: Filesystem type: jffs2\n", mtd->name);
+		printk(KERN_EMERG  "%s: Filesystem type: jffs2\n", mtd->name);
 
 		/* Move the squashfs outside of the trx */
 		part->size = 0;
 	} else {
-		printk(KERN_INFO "%s: Filesystem type: unknown\n", mtd->name);
+		printk(KERN_EMERG  "%s: Filesystem type: unknown\n", mtd->name);
 		return 0;
 	}
 
@@ -356,13 +356,13 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		/* read first eraseblock from the trx */
 		trx2 = block = kmalloc(mtd->erasesize, GFP_KERNEL);
 		if (MTD_READ(mtd, off, mtd->erasesize, &len, block) || len != mtd->erasesize) {
-			printk("Error accessing the first trx eraseblock\n");
+			printk(KERN_EMERG "Error accessing the first trx eraseblock\n");
 			return 0;
 		}
 		
-		printk("Updating TRX offsets and length:\n");
-		printk("old trx = [0x%08x, 0x%08x, 0x%08x], len=0x%08x crc32=0x%08x\n", trx2->offsets[0], trx2->offsets[1], trx2->offsets[2], trx2->len, trx2->crc32);
-		printk("new trx = [0x%08x, 0x%08x, 0x%08x], len=0x%08x crc32=0x%08x\n",   trx.offsets[0],   trx.offsets[1],   trx.offsets[2],   trx.len, trx.crc32);
+		printk(KERN_EMERG "Updating TRX offsets and length:\n");
+		printk(KERN_EMERG "old trx = [0x%08x, 0x%08x, 0x%08x], len=0x%08x crc32=0x%08x\n", trx2->offsets[0], trx2->offsets[1], trx2->offsets[2], trx2->len, trx2->crc32);
+		printk(KERN_EMERG "new trx = [0x%08x, 0x%08x, 0x%08x], len=0x%08x crc32=0x%08x\n",   trx.offsets[0],   trx.offsets[1],   trx.offsets[2],   trx.len, trx.crc32);
 
 		/* Write updated trx header to the flash */
 		memcpy(block, &trx, sizeof(trx));
@@ -372,7 +372,7 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		if (mtd->sync)
 			mtd->sync(mtd);
 		kfree(block);
-		printk("Done\n");
+		printk(KERN_EMERG "Done\n");
 	}
 	
 	return part->size;
@@ -511,7 +511,7 @@ mod_init_t init_bcm947xx_map(void)
 
 	size = bcm947xx_mtd->size;
 
-	printk(KERN_NOTICE "Flash device: 0x%x at 0x%x\n", size, window_addr);
+	printk(KERN_EMERG "Flash device: 0x%x at 0x%x\n", size, window_addr);
 
 #ifdef CONFIG_MTD_PARTITIONS
 	parts = init_mtd_partitions(bcm947xx_mtd, size);
