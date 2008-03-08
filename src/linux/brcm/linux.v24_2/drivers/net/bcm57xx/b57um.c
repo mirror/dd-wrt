@@ -4202,13 +4202,13 @@ STATIC int bcm5700_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 		}
 
 		BCM5700_PHY_LOCK(pUmDevice, flags);
-		if (data[0] != 0xffff) {
-			savephyaddr = pDevice->PhyAddr;
-			pDevice->PhyAddr = data[0];
-		}
-		LM_ReadPhy(pDevice, data[1] & 0x1f, (LM_UINT32 *)&value);
-		if (data[0] != 0xffff)
-			pDevice->PhyAddr = savephyaddr;
+//		if (data[0] != 0xffff) {
+//			savephyaddr = pDevice->PhyAddr;
+//			pDevice->PhyAddr = data[0];
+//		}
+		__LM_ReadPhy(pDevice, data[0] & 0x1f, data[1] &0x1f, (LM_UINT32 *)&value);
+//		if (data[0] != 0xffff)
+//			pDevice->PhyAddr = savephyaddr;
 		BCM5700_PHY_UNLOCK(pUmDevice, flags);
 		data[3] = value & 0xffff;
 		return 0;
@@ -4263,13 +4263,13 @@ STATIC int bcm5700_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 			return -EOPNOTSUPP;
 
 		BCM5700_PHY_LOCK(pUmDevice, flags);
-		if (data[0] != 0xffff) {
+/*		if (data[0] != 0xffff) {
 			savephyaddr = pDevice->PhyAddr;
 			pDevice->PhyAddr = data[0];
-		}
-		LM_WritePhy(pDevice, data[1] & 0x1f, data[2]);
-		if (data[0] != 0xffff)
-			pDevice->PhyAddr = savephyaddr;
+		}*/
+		__LM_WritePhy(pDevice, data[0] & 0x1f, data[1] &0x1f, data[2]);
+//		if (data[0] != 0xffff)
+//			pDevice->PhyAddr = savephyaddr;
 		BCM5700_PHY_UNLOCK(pUmDevice, flags);
 		data[3] = 0;
 		return 0;

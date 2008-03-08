@@ -8459,11 +8459,7 @@ LM_PhyAdvertiseAll(LM_DEVICE_BLOCK *pDevice)
 /*                                                                            */
 /* Return:                                                                    */
 /******************************************************************************/
-LM_VOID
-LM_ReadPhy(
-PLM_DEVICE_BLOCK pDevice,
-LM_UINT32 PhyReg,
-PLM_UINT32 pData32) {
+LM_VOID __LM_ReadPhy(PLM_DEVICE_BLOCK pDevice,unsigned int phy_addr, LM_UINT32 PhyReg,PLM_UINT32 pData32) {
     LM_UINT32 Value32;
     LM_UINT32 j;
 
@@ -8475,7 +8471,7 @@ PLM_UINT32 pData32) {
         MM_Wait(40);
     }
 
-    Value32 = (pDevice->PhyAddr << MI_COM_FIRST_PHY_ADDR_BIT) |
+    Value32 = (phy_addr << MI_COM_FIRST_PHY_ADDR_BIT) |
         ((PhyReg & MI_COM_PHY_REG_ADDR_MASK) << MI_COM_FIRST_PHY_REG_ADDR_BIT) |
         MI_COM_CMD_READ | MI_COM_START;
 
@@ -8511,18 +8507,16 @@ PLM_UINT32 pData32) {
     }
 } /* LM_ReadPhy */
 
-
+LM_VOID LM_ReadPhy(PLM_DEVICE_BLOCK pDevice, LM_UINT32 PhyReg,PLM_UINT32 pData32) {
+__LM_ReadPhy(pDevice,pDevice->PhyAddr,PhyReg,pData32);
+}
 
 /******************************************************************************/
 /* Description:                                                               */
 /*                                                                            */
 /* Return:                                                                    */
 /******************************************************************************/
-LM_VOID
-LM_WritePhy(
-PLM_DEVICE_BLOCK pDevice,
-LM_UINT32 PhyReg,
-LM_UINT32 Data32) {
+LM_VOID __LM_WritePhy(PLM_DEVICE_BLOCK pDevice,unsigned int phy_addr,LM_UINT32 PhyReg,LM_UINT32 Data32) {
     LM_UINT32 Value32;
     LM_UINT32 j;
 
@@ -8534,7 +8528,7 @@ LM_UINT32 Data32) {
         MM_Wait(40);
     }
 
-    Value32 = (pDevice->PhyAddr << MI_COM_FIRST_PHY_ADDR_BIT) |
+    Value32 = (phy_addr << MI_COM_FIRST_PHY_ADDR_BIT) |
         ((PhyReg & MI_COM_PHY_REG_ADDR_MASK) << MI_COM_FIRST_PHY_REG_ADDR_BIT) |
         (Data32 & MI_COM_PHY_DATA_MASK) | MI_COM_CMD_WRITE | MI_COM_START;
 
@@ -8560,6 +8554,9 @@ LM_UINT32 Data32) {
         MM_Wait(40);
     }
 } /* LM_WritePhy */
+LM_VOID LM_WritePhy(PLM_DEVICE_BLOCK pDevice,LM_UINT32 PhyReg,LM_UINT32 Data32) {
+__LM_WritePhy(pDevice,pDevice->PhyAddr,PhyReg,Data32);
+}
 
 /* MII read/write functions to export to the robo support code */
 LM_UINT16
