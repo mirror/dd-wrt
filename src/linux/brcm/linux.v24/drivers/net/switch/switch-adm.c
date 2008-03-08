@@ -208,7 +208,7 @@ static __u32 adm_rreg(__u8 table, __u8 addr)
 	__u8 bits[6] = {
 		0xFF, 0xFF, 0xFF, 0xFF,
 		(0x06 << 4) | ((table & 0x01) << 3 | (addr&64)>>6),
-		((addr&62)<<2)
+		((addr&63)<<2)
 	};
 
 	__u8 rbits[4];
@@ -380,7 +380,11 @@ static int handle_port_media_write(void *driver, char *buf, int nr)
 	
 	reg &= ~((1 << 1) | (1 << 2) | (1 << 3));
 	if (media & SWITCH_MEDIA_AUTO)
+		{
 		reg |= 1 << 1;
+		reg |= 1 << 2;
+		reg |= 1 << 3;
+		}
 	if (media & SWITCH_MEDIA_100)
 		reg |= 1 << 2;
 	if (media & SWITCH_MEDIA_FD)
