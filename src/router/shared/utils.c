@@ -1629,12 +1629,16 @@ led_control (int type, int act)
       break;
     case ROUTER_WAP54G_V1:
       diag_gpio = 0x13;
-      wlan_gpio = 0x14;		// LINK led
+      wlan_gpio = 0x14;		//LINK led
       break;
     case ROUTER_WAP54G_V3:
       ses_gpio = 0x1c;
       connected_gpio = 0x06;
       break;
+    case ROUTER_NETGEAR_WNR834BV2:
+      diag_gpio = 0x03;		//power led amber   
+      connected_gpio = 0x07;//WAN led green  
+      break;    
 #endif
     }
   if (type == LED_DIAG && v1func == 1)
