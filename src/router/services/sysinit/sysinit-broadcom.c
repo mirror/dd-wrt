@@ -505,6 +505,7 @@ start_sysinit (void)
       break;
 
     case ROUTER_SITECOM_WL111:
+    case ROUTER_NETGEAR_WNR834BV2:
       nvram_set ("lan_ifnames", "eth0 eth2");
       nvram_set ("wl0_ifname", "eth2");
       nvram_set ("wan_ifname", "eth1");
