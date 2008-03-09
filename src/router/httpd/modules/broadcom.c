@@ -1059,6 +1059,12 @@ ej_ifndef (webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_MMC
   if (!strcmp(name, "MMC")) return;
 #endif
+#ifdef HAVE_SPUTNIK_APD
+  if (!strcmp(name, "SPUTNIK_APD")) return;
+#endif
+#ifdef HAVE_RFLOW
+  if (!strcmp(name, "RFLOW")) return;
+#endif
 // HAVE_AFTERBURNER
   if (!strcmp (name, "AFTERBURNER"))
     {
