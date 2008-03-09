@@ -121,6 +121,9 @@ endif
 ifeq ($(CONFIG_USB),y)
 CFLAGS += -DHAVE_USB
 endif
+ifeq ($(CONFIG_USB_ADVANCED),y)
+CFLAGS += -DHAVE_USB_ADVANCED
+endif
 ifeq ($(CONFIG_WRK54G),y)
 CFLAGS += -DHAVE_WRK54G
 endif
