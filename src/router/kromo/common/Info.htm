@@ -321,7 +321,7 @@ apply();
 									<div class="label">MAC-upd</div>
 									<% nvram_match("macupd_enable","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("macupd_enable","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 								</div>
-								<% ifdnef("RFLOW", "-->"); %>
+								<% ifndef("RFLOW", "-->"); %>
 								<% ifndef("SAMBA", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("management.samba_legend"); %></div>
