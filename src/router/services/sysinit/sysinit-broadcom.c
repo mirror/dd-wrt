@@ -911,11 +911,13 @@ start_sysinit (void)
          if (nvram_match ("usb_fs_ext3", "1"))
          {
          	cprintf ("loading ext2\n");
-         	eval ("insmod", "ext2");	         
-//         	cprintf ("loading jbd\n");
-//         	eval ("insmod", "jbd");
-//         	cprintf ("loading ext3\n");
-//         	eval ("insmod", "ext3");
+         	eval ("insmod", "ext2");
+#ifdef HAVE_USB_ADVANCED	         
+         	cprintf ("loading jbd\n");
+         	eval ("insmod", "jbd");
+        	cprintf ("loading ext3\n");
+         	eval ("insmod", "ext3");
+#endif
      	 }
      	  
          if (nvram_match ("usb_fs_fat", "1"))
