@@ -1065,6 +1065,9 @@ ej_ifndef (webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_RFLOW
   if (!strcmp(name, "RFLOW")) return;
 #endif
+#ifdef HAVE_USB
+  if (!strcmp(name, "USB")) return;
+#endif
 // HAVE_AFTERBURNER
   if (!strcmp (name, "AFTERBURNER"))
     {
