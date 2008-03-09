@@ -282,6 +282,9 @@ ifeq ($(CONFIG_SPUTNIK_APD),y)
 CFLAGS += -DHAVE_SPUTNIK_APD
 OBJS += sputnik.o
 endif
+ifeq ($(CONFIG_USB),y)
+CFLAGS += -DHAVE_USB
+endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
 OBJS += crc.o register.o
