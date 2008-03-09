@@ -45,6 +45,11 @@
 #include <linux/sockios.h>
 #include <net/if.h>
 
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <linux/sockios.h>
+#include <linux/mii.h>
+
 
 #include <bcmnvram.h>
 #include <shutils.h>
