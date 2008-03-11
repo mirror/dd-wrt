@@ -1083,6 +1083,15 @@ internal_getRouterBrand ()
       return ROUTER_WRT54G_V8;
     }
     
+
+  if (boardnum == 1 &&
+      nvram_match ("boardtype", "0x048e") && nvram_match ("boardrev", "0x35") && nvram_match("parefldovoltage","0x28"))
+    {
+      cprintf ("router is netcore nw618\n");
+      setRouter ("NetCore NW618");
+      return ROUTER_WRT54G;
+    }
+    
   if (boardnum == 42 &&
       nvram_match ("boardtype", "0x048E") && nvram_match ("boardrev", "0x10"))
     {
@@ -3718,6 +3727,7 @@ zencrypt (char *passwd)
 void getLANMac (char *newmac)
 {
 	strcpy (newmac, nvram_safe_get ("et0macaddr"));
+#ifndef HAVE_BUFFALO
   
   	if (nvram_match ("port_swap", "1"))
   		{
@@ -3730,12 +3740,15 @@ void getLANMac (char *newmac)
 			MAC_ADD(newmac);  //et0macaddr +1
 			}
 		}
-	
+#endif	
 	return;
 }
 
 void getWirelessMac (char *newmac)
 {
+#ifdef HAVE_BUFFALO
+		strcpy (newmac, nvram_safe_get ("il0macaddr"));
+#else
 //	if (strlen(nvram_safe_get ("il0macaddr")) != 0)
 //		{
 //		strcpy (newmac, nvram_safe_get ("il0macaddr"));
@@ -3765,13 +3778,14 @@ void getWirelessMac (char *newmac)
 			MAC_ADD (newmac);
 			}
 		}
-	
+#endif	
 	return;		
 }
 
 void getWANMac (char *newmac)
 {
 	strcpy (newmac, nvram_safe_get ("et0macaddr"));
+#ifndef HAVE_BUFFALO
 	MAC_ADD (newmac);  //et0macaddr +1
   
   	if (nvram_match ("port_swap", "1"))
@@ -3786,7 +3800,7 @@ void getWANMac (char *newmac)
 			MAC_ADD (newmac);  //et0macaddr +2
 			}
 		}
-	
+#endif	
 	return;	
 }
 
