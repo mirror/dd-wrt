@@ -2247,13 +2247,15 @@ count_processes (char *pidName)
 {
   FILE *fp;
   char line[254];
+  char zombie[64];
+  sprintf (zombie, "Z [%s]", pidName);  // do not count zombies
   int i = 0;
   printf ("Search for %s\n", pidName);
   if ((fp = popen ("ps", "r")))
     {
       while (fgets (line, sizeof (line), fp) != NULL)
 	{
-	  if (strstr (line, pidName))
+	  if (strstr (line, pidName) && !strstr (line, zombie)))
 	    {
 	      i++;
 	    }
