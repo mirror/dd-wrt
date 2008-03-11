@@ -2255,7 +2255,7 @@ count_processes (char *pidName)
     {
       while (fgets (line, sizeof (line), fp) != NULL)
 	{
-	  if (strstr (line, pidName) && !strstr (line, zombie)))
+	  if (strstr (line, pidName) && !strstr (line, zombie))
 	    {
 	      i++;
 	    }
