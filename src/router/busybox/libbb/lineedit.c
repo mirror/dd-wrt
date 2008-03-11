@@ -246,7 +246,15 @@ static void input_backward(unsigned num)
 	if (cmdedit_x >= num) {
 		cmdedit_x -= num;
 		if (num <= 4) {
-			printf("\b\b\b\b" + (4-num));
+			/* This is longer by 5 bytes on x86.
+			 * Also gets mysteriously
+			 * miscompiled for some ARM users.
+			 * printf(("\b\b\b\b" + 4) - num);
+			 * return;
+			 */
+			do {
+				bb_putchar('\b');
+			} while (--num);
 			return;
 		}
 		printf("\033[%uD", num);
@@ -1315,8 +1323,8 @@ static void win_changed(int nsig)
 #define CTRL(a) ((a) & ~0x40)
 
 /* Returns:
- * -1 on read errors or EOF, or on bare Ctrl-D.
- * 0  on ctrl-C,
+ * -1 on read errors or EOF, or on bare Ctrl-D,
+ * 0  on ctrl-C (the line entered is still returned in 'command'),
  * >0 length of input string, including terminating '\n'
  */
 int read_line_input(const char *prompt, char *command, int maxsize, line_input_t *st)
