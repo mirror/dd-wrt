@@ -216,6 +216,12 @@ sflash_mtd_init(void)
 	struct mtd_partition *parts;
 #endif
 
+  if (!nvram_match("boardnum","1") || !nvram_match ("boardtype", "0x048e") || !nvram_match ("boardrev", "0x35") || !nvram_match("parefldovoltage","0x28"))
+	{
+	    printk(KERN_ERR "sflash not supported on this router\n");
+	    return -ENODEV;
+	}
+
 	if (!(pdev = pci_find_device(VENDOR_BROADCOM, SB_CC, NULL))) {
 		printk(KERN_ERR "sflash: chipcommon not found\n");
 		return -ENODEV;
