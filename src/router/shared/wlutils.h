@@ -31,6 +31,10 @@ extern int get_wl_instance (char *ifname);
 extern int get_wl_instances (void);
 extern char * get_wl_instance_name (int instance);
 
+float wifi_getrate (char *ifname);
+int wifi_gettxpower (char *ifname);
+
+
 /*
  * Pass a wlioctl request to the specified interface.
  * @param	name	interface name
