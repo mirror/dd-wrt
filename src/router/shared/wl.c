@@ -219,6 +219,101 @@ wifi_getrate (char *ifname)
   return wrq.u.bitrate.value;
 }
 
+/* For doing log10/exp10 without libm */
+#define LOG10_MAGIC	1.25892541179
+
+int
+iw_mwatt2dbm(int	in)
+{
+  /* Version without libm : slower */
+  double	fin = (double) in;
+  int		res = 0;
+
+  /* Split integral and floating part to avoid accumulating rounding errors */
+  while(fin > 10.0)
+    {
+      res += 10;
+      fin /= 10.0;
+    }
+  while(fin > 1.000001)	/* Eliminate rounding errors, take ceil */
+    {
+      res += 1;
+      fin /= LOG10_MAGIC;
+    }
+  return(res);
+}
+
+
+
+int
+wifi_gettxpower (char *ifname)
+{
+int poweroffset = 0;
+int vendor;
+int devcount;
+char readid[64];
+strcpy(readid,ifname);
+fprintf(stderr,"readid %s\n",readid);
+sscanf(readid,"ath%d",&devcount);
+sprintf(readid,"/proc/sys/dev/wifi%d/vendor",devcount);
+fprintf(stderr,"path %s\n",readid);
+FILE *in = fopen(readid,"rb");
+vendor=0;
+if (in)
+    {
+    vendor = atoi(fgets(readid,sizeof(readid),in));
+    fclose(in);
+    }
+switch(vendor)
+    {
+    case 1: //ubnt xr5
+    case 2: //ubnt xr2
+    case 3: //ubnt sr2
+	poweroffset=10;
+    break;    
+    case 4: //ubnt sr9
+	poweroffset=12;
+    break;    
+    case 5: //ubnt sr5
+	poweroffset=7;
+    break;    
+    default:
+	poweroffset=0;
+    break;            
+    }
+
+fprintf(stderr,"poweroffset %d\n",poweroffset);
+  struct iwreq wrq;
+  strncpy (wrq.ifr_name, ifname, IFNAMSIZ);
+  ioctl (getsocket (), SIOCGIWTXPOW, &wrq);
+fprintf(stderr,"poweroffset2 %d\n",poweroffset);
+  struct iw_param *txpower = &wrq.u.txpower;
+fprintf(stderr,"poweroffset3 %d\n",poweroffset);
+    if(txpower->disabled)
+    {
+      return 0;
+    }
+  else
+    {
+      /* Check for relative values */
+      if(txpower->flags & IW_TXPOW_RELATIVE)
+	{
+	  return txpower->value + poweroffset;
+	}
+      else
+	{
+	  int dbm=0;
+	  /* Convert everything to dBm */
+	  if(txpower->flags & IW_TXPOW_MWATT)
+	    dbm = iw_mwatt2dbm(txpower->value);
+	  else
+	    dbm = txpower->value;
+	 return dbm + poweroffset;
+	}
+    }
+}
+
+
 #ifdef WILLAM
 #define OFFSET 0
 #else

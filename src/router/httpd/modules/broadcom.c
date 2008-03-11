@@ -5191,13 +5191,10 @@ ej_get_txpower (webs_t wp, int argc, char_t ** argv)
 #ifndef HAVE_MADWIFI
   websWrite (wp, "%s mW", nvram_safe_get ("wl0_txpwr"));
 #else
-  char mode[32];
   char m[32];
   strncpy (m, nvram_safe_get ("wifi_display"), 4);
   m[4] = 0;
-  sprintf (mode, "%s_txpwrdbm", m);
-
-  websWrite (wp, "%s dBm", nvram_safe_get (mode));
+  websWrite (wp, "%d dBm", wifi_gettxpower(m));
 #endif
 }
 
