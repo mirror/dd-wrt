@@ -652,15 +652,19 @@ stop_nas (void)
 #endif
   
   if (pidof ("nas") > 0)
+    {
     syslog (LOG_INFO, "NAS : NAS daemon successfully stopped\n");
+    sleep (2);
+	}
 
   if (pidof ("wrt-radauth") > 0)
     {
       syslog (LOG_INFO, "RADAUTH : RADAUTH daemon successfully stopped\n");
       killall ("wrt-radauth", SIGKILL);
     }
+
   int deadcount = 0;
-  while (pidof ("nas") > 0 && (deadcount++) < 3)
+  while (pidof ("nas") > 0 && (deadcount++) < 8)
     {
       /* NAS sometimes won't exit properly on a normal kill */
       //int ret = killps("nas",NULL);
