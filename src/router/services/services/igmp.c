@@ -51,6 +51,12 @@ start_igmp_proxy (void)
       fprintf (fp, "phyint %s downstream  ratelimit 0  threshold 1\n",
 	       nvram_safe_get ("lan_ifname"));
       ifcount++;
+    }else
+    {
+      fprintf (fp, "phyint %s disabled\n",
+	       nvram_safe_get ("lan_ifname"));    
+      fprintf (fp, "phyint %s:0 disabled\n",
+	       nvram_safe_get ("lan_ifname"));    
     }
   foreach (name, nvram_safe_get ("lan_ifnames"), next)
   {
