@@ -261,7 +261,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_DLINK_DIR330 0x4d13
 
 // Netgear WNDR3300 (BCM4704 cpu, BCM5325F switch, dual radio 2.4-N and 5 GHz Broadcom, fccid: Netgear PY307300072)
-#define ROUTER_NETGEAR_WNDR3300 0x4e0f
+#define ROUTER_NETGEAR_WNDR3300 0x4e16
 
 // Linksys WRT54G2 V1 (BCM5354 cpu, fccid: Linksys Q87-WRT54G2V1)
 #define ROUTER_WRT54G2V1 0x4f0f
