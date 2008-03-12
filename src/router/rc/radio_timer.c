@@ -97,7 +97,11 @@ radio_timer_main (void)
 #ifdef HAVE_MADWIFI
 		  eval ("ifconfig", "ath0", "up");
 #elif HAVE_MSSID
-		  stop_service ("nas");
+		  if (pidof ("nas") > 0 || pidof ("wrt-radauth") > 0)
+		  {
+		    stop_service ("nas");
+		    sleep (1);
+		  }
 		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "on");
 		  start_service ("nas");
 	      start_service ("guest_nas");
@@ -111,7 +115,11 @@ radio_timer_main (void)
 #ifdef HAVE_MADWIFI
 		  eval ("ifconfig", "ath0", "down");
 #elif HAVE_MSSID
-		  stop_service ("nas");
+		  if (pidof ("nas") > 0 || pidof ("wrt-radauth") > 0)
+		  {
+		    stop_service ("nas");
+		    sleep (1);
+		  }
 		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "off");
 #else
 		  eval ("wl", "radio", "off");
@@ -126,11 +134,23 @@ radio_timer_main (void)
 		  
 		case 1:	//01 - turn radio on
 		  syslog (LOG_DEBUG, "Turning radio 1 on\n");
+		  if (pidof ("nas") > 0 || pidof ("wrt-radauth") > 0)
+		  {
+		    stop_service ("nas");
+		    sleep (1);
+		  }
 		  eval ("wl", "-i", get_wl_instance_name(1), "radio", "on");
+		  start_service ("nas");
+	      start_service ("guest_nas");
 		  break;
 
 		case 2:	//10 - turn radio off
 		  syslog (LOG_DEBUG, "Turning radio 1 off\n");
+		  if (pidof ("nas") > 0 || pidof ("wrt-radauth") > 0)
+		  {
+		    stop_service ("nas");
+		    sleep (1);
+		  }
 		  eval ("wl", "-i", get_wl_instance_name(1), "radio", "off");
 		  break;
 		}

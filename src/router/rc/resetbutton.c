@@ -477,7 +477,11 @@ period_check (int sig)
 #else
 	      syslog (LOG_DEBUG, "AOSS button: turning radio on\n");
 #endif
-		  stop_service ("nas");
+		  if (pidof ("nas") > 0 || pidof ("wrt-radauth") > 0)
+		  {
+		    stop_service ("nas");
+		    sleep (1);
+		  }
 		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "on");
 		  start_service ("nas");
 #ifdef HAVE_MSSID
@@ -502,7 +506,11 @@ period_check (int sig)
 #else
 	      syslog (LOG_DEBUG, "AOSS button: turning radio off\n");
 #endif
-		  stop_service ("nas");
+		  if (pidof ("nas") > 0 || pidof ("wrt-radauth") > 0)
+		  {
+		    stop_service ("nas");
+		    sleep (1);
+		  }
 		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "off");
 	    }
 #endif
