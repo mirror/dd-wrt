@@ -445,24 +445,19 @@ unlink("/tmp/.rstp_server");
 	      cprintf ("ifconfig wl up\n");
 	      eval ("/sbin/ifconfig", get_wdev (), "up");
 	    }
-#ifdef HAVE_MADWIFI
-    	  start_service ("stabridge");
-#endif
-#ifndef HAVE_MADWIFI
-	  start_service ("nas");
-#ifdef HAVE_MSSID
-	  start_service ("guest_nas");
-#endif
-#endif
 
 #ifndef HAVE_MADWIFI
 #ifdef HAVE_RADIOOFF
-  if (nvram_match ("radiooff_button", "1")
-      && nvram_match ("radiooff_boot_off", "1"))
+	  if (nvram_match ("radiooff_button", "1")
+        && nvram_match ("radiooff_boot_off", "1"))
       {
-	stop_service ("nas"); 
-    eval ("wl", "-i", get_wl_instance_name (0), "radio", "off");
+		eval ("wl", "-i", get_wl_instance_name (0), "radio", "off");
       }
+      else
+#endif
+	  start_service ("nas");
+#ifdef HAVE_MSSID
+	  start_service ("guest_nas");
 #endif
 #endif
 
