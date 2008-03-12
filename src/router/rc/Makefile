@@ -27,7 +27,7 @@ endif
 #LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 OBJS := rc.o init.o servicemanager.o services.o stats.o crc.o http.o
-OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o radio_timer.o watchdog.o event.o nvram.o ledtool.o ttraff.o
+OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o radio_timer.o watchdog.o event.o nvram.o ledtool.o ttraff.o pptpd.o
 
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
 REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
