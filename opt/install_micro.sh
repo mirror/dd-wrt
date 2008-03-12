@@ -86,7 +86,7 @@ export TARGETDIR=../src/router/mipsel-uclibc/target
 
 
 ./make_kernel.sh
-../tools/trx -o dd-wrt.v23_micro.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
+../tools/trx -o dd-wrt.v23_micro.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz -a 1024 target.squashfs
 ../tools/trx -o dd-wrt.v23_jffs2_micro.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.jffs2
 
 
