@@ -652,10 +652,7 @@ stop_nas (void)
 #endif
   
   if (pidof ("nas") > 0)
-    {
     syslog (LOG_INFO, "NAS : NAS daemon successfully stopped\n");
-    sleep (2);
-	}
 
   if (pidof ("wrt-radauth") > 0)
     {
