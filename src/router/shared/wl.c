@@ -282,13 +282,10 @@ switch(vendor)
     break;            
     }
 
-fprintf(stderr,"poweroffset %d\n",poweroffset);
   struct iwreq wrq;
   strncpy (wrq.ifr_name, ifname, IFNAMSIZ);
   ioctl (getsocket (), SIOCGIWTXPOW, &wrq);
-fprintf(stderr,"poweroffset2 %d\n",poweroffset);
   struct iw_param *txpower = &wrq.u.txpower;
-fprintf(stderr,"poweroffset3 %d\n",poweroffset);
     if(txpower->disabled)
     {
       return 0;
