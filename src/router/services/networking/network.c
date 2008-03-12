@@ -3656,7 +3656,7 @@ start_wds_check (void)
 	    {
 	      char wdsbc[32] = { 0 };
 	      char *wdsip = nvram_nget ("wl%d_wds%d_ipaddr",c,s);
-	      char *wdsnm = nvram_nget ("wl%d_wds%d_netmask",c,s)
+	      char *wdsnm = nvram_nget ("wl%d_wds%d_netmask",c,s);
 	      snprintf (wdsbc, 31, "%s", wdsip);
 	      get_broadcast (wdsbc, wdsnm);
 	      eval ("ifconfig", dev, wdsip, "broadcast",
