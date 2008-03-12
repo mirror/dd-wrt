@@ -54,6 +54,7 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
+#include <cymac.h>
 
 extern void vlan_init (int num);
 
@@ -99,12 +100,16 @@ start_sysinit (void)
   cprintf ("sysinit() get router\n");
 
 #ifndef HAVE_DIR400
-  FILE *fp = fopen (getMTD ("board_config"), "rb");
+  int mtd = getMTD ("board_config");
+  char mtdpath[64];
+  sprintf(mtdpath,"/dev/mtdblock/%d",mtd);
+  FILE *fp = fopen (mtdpath, "rb");
   if (fp)
     {
       fseek (fp, 0x1000, SEEK_SET);
       unsigned int test;
       fread (&test, 4, 1, fp);
+      fprintf(stderr,"test pattern is %X\n",test);
       if (test != 0xffffffff)
 	{
 	  fprintf (stderr,
@@ -193,5 +198,40 @@ start_overclocking (void)
 void
 enable_dtag_vlan (int enable)
 {
+
+}
+
+void start_fixboard(void)
+{
+  int mtd = getMTD ("board_config");
+  char mtdpath[64];
+  sprintf(mtdpath,"/dev/mtdblock/%d",mtd);
+  fprintf(stderr,"board config path = %s\n",mtdpath);
+  FILE *fp = fopen (mtdpath, "rb");
+  if (fp)
+    {
+      fseek (fp, 0x1000, SEEK_SET);
+      unsigned int test;
+      fread (&test, 4, 1, fp);
+      fprintf(stderr,"test pattern is %X\n",test);
+      if (test != 0xffffffff)
+	{
+	  fprintf (stderr,
+		   "radio config fixup is required to clean bad stuff out of memory, otherwise the radio config cannot be detected\n");
+	  fseek (fp, 0, SEEK_SET);
+	  char *block = (char *) malloc (65536);
+	  fread (block, 65536, 1, fp);
+	  fclose (fp);
+	  int i;
+	  for (i = 0x1000; i < 65536; i++)
+	    block[i] = 0xff;
+	  fp = fopen ("/tmp/radio", "wb");
+	  fwrite (block, 65536, 1, fp);
+	  eval ("mtd", "-f", "write", "/tmp/radio", "board_config");	//writes back new config and reboots
+	  eval ("event", "5", "1", "15");
+	}
+      fclose (fp);
+    }
+
 
 }
