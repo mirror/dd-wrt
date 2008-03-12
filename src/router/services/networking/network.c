@@ -3633,17 +3633,13 @@ start_wds_check (void)
     {
       for (s = 1; s <= MAX_WDS_DEVS; s++)
 	{
-	  char wdsvarname[32] = { 0 };
-	  char wdsdevname[32] = { 0 };
 	  char *dev;
 	  struct ifreq ifr;
 
 
-	  sprintf (wdsvarname, "wl%d_wds%d_enable", c, s);
-	  sprintf (wdsdevname, "wl%d_wds%d_if", c, s);
-	  dev = nvram_safe_get (wdsdevname);
+	  dev = nvram_nget ("wl%d_wds%d_if", c, s);
 
-	  if (nvram_match (wdsvarname, "0"))	// wds_s disabled
+	  if (nvram_nmatch ("0","wl%d_wds%d_enable", c, s))	// wds_s disabled
 	    continue;
 
 	  memset (&ifr, 0, sizeof (struct ifreq));
@@ -3656,23 +3652,18 @@ start_wds_check (void)
 	    continue;
 
 	  /* P2P WDS type */
-	  if (nvram_match (wdsvarname, "1"))
+	  if (nvram_nmatch ("1","wl%d_wds%d_enable", c, s))	// wds_s disabled
 	    {
-	      char wdsip[32] = { 0 };
 	      char wdsbc[32] = { 0 };
-	      char wdsnm[32] = { 0 };
-
-	      snprintf (wdsip, 31, "wl%d_wds%d_ipaddr", c, s);
-	      snprintf (wdsnm, 31, "wl%d_wds%d_netmask", c, s);
-
-	      snprintf (wdsbc, 31, "%s", nvram_safe_get (wdsip));
-	      get_broadcast (wdsbc, nvram_safe_get (wdsnm));
-	      eval ("ifconfig", dev, nvram_safe_get (wdsip), "broadcast",
-		    wdsbc, "netmask", nvram_safe_get (wdsnm), "up");
+	      char *wdsip = nvram_nget ("wl%d_wds%d_ipaddr",c,s);
+	      char *wdsnm = nvram_nget ("wl%d_wds%d_netmask",c,s)
+	      snprintf (wdsbc, 31, "%s", wdsip);
+	      get_broadcast (wdsbc, wdsnm);
+	      eval ("ifconfig", dev, wdsip, "broadcast",
+		    wdsbc, "netmask", wdsnm, "up");
 	    }
 	  /* Subnet WDS type */
-	  else if (nvram_match (wdsvarname, "2")
-		   && nvram_nmatch ("1", "wl%d_br1_enable", c))
+	  else  if (nvram_nmatch ("2","wl%d_wds%d_enable", c, s) && nvram_nmatch ("1", "wl%d_br1_enable", c))
 	    {
 	      eval ("ifconfig", dev, "up");
 #ifdef HAVE_MICRO
@@ -3685,7 +3676,7 @@ start_wds_check (void)
 #endif
 	    }
 	  /* LAN WDS type */
-	  else if (nvram_match (wdsvarname, "3"))
+	  else if (nvram_nmatch ("3","wl%d_wds%d_enable", c, s))	// wds_s disabled
 	    {
 	      eval ("ifconfig", dev, "up");
 #ifdef HAVE_MICRO
