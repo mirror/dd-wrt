@@ -2215,7 +2215,7 @@ find_all_pid_by_ps (char *pidName)
   char line[254];
   int *pidList = NULL;
   int i = 0;
-  printf ("Search for %s\n", pidName);
+  cprintf ("Search for %s\n", pidName);
   if ((fp = popen ("ps", "r")))
     {
       while (fgets (line, sizeof (line), fp) != NULL)
@@ -2223,7 +2223,7 @@ find_all_pid_by_ps (char *pidName)
 	  if (strstr (line, pidName))
 	    {
 	      sscanf (line, "%d", &pid);
-	      printf ("%s pid is %d\n", pidName, pid);
+	      cprintf ("%s pid is %d\n", pidName, pid);
 	      pidList = realloc (pidList, sizeof (int) * (i + 2));
 	      pidList[i++] = pid;
 	    }
@@ -2237,7 +2237,7 @@ find_all_pid_by_ps (char *pidName)
       pidList = realloc (pidList, sizeof (int));
       pidList[0] = -1;
     }
-  printf ("Search done...\n");
+  cprintf ("Search done...\n");
 
   return pidList;
 }
@@ -2248,22 +2248,24 @@ count_processes (char *pidName)
 {
   FILE *fp;
   char line[254];
+  char safename[64];
+  sprintf (safename, " %s ", pidName);  
   char zombie[64];
-  sprintf (zombie, "Z [%s]", pidName);  // do not count zombies
+  sprintf (zombie, "Z   [%s]", pidName);  // do not count zombies
   int i = 0;
-  printf ("Search for %s\n", pidName);
+  cprintf ("Search for %s\n", pidName);
   if ((fp = popen ("ps", "r")))
     {
       while (fgets (line, sizeof (line), fp) != NULL)
 	{
-	  if (strstr (line, pidName) && !strstr (line, zombie))
+	  if (strstr (line, safename) && !strstr (line, zombie))
 	    {
 	      i++;
 	    }
 	}
       pclose (fp);
     }
-  printf ("Search done... %d\n", i);
+  cprintf ("Search done... %d\n", i);
 
   return i;
 }
