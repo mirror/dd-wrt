@@ -45,6 +45,11 @@
 #include <linux/sockios.h>
 #include <net/if.h>
 
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <linux/sockios.h>
+#include <linux/mii.h>
+
 #define SIOCGMIIREG	0x8948	/* Read MII PHY register.       */
 #define SIOCSMIIREG	0x8949	/* Write MII PHY register.      */
 
@@ -53,11 +58,6 @@
 #include <utils.h>
 #include <cymac.h>
 
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <linux/if.h>
-#include <linux/sockios.h>
-#include <linux/mii.h>
 
 
 
