@@ -424,7 +424,6 @@ endif
 ifeq ($(CONFIG_PPTPD),y)
 CFLAGS += -DHAVE_PPTPD
 OBJS += pptp.o
-OBJS += pptpd.o
 endif
 
 ifeq ($(CONFIG_BOOT_WAIT_ON),y)

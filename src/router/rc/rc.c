@@ -619,7 +619,7 @@ int minute = 0;
 #ifdef HAVE_PPTPD
   /* poptop [ stop start restart ]  */
   else if (strstr (base, "poptop"))
-    return start_main("pptpd",argc, argv);
+    return pptpd_main(argc,argv);
 #endif
 #ifndef HAVE_RB500
 #ifndef HAVE_X86
