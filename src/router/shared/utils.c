@@ -1655,6 +1655,7 @@ led_control (int type, int act)
       connected_gpio = 0x06;
       break;
     case ROUTER_NETGEAR_WNR834BV2:
+      power_gpio = 0x02;
       diag_gpio = 0x03;		//power led amber   
       connected_gpio = 0x07;//WAN led green  
       break;    
