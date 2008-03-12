@@ -6109,7 +6109,7 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
   len = iwr.u.data.length;
   if (len < sizeof (struct ieee80211req_sta_info))
     {
-      fprintf(stderr,"IOCTL_STA_INFO len<struct %s failed!\n",ifname);
+//      fprintf(stderr,"IOCTL_STA_INFO len<struct %s failed!\n",ifname);
       close (s);
       free (buf);
       return cnt;
