@@ -216,7 +216,19 @@ sflash_mtd_init(void)
 	struct mtd_partition *parts;
 #endif
 
-  if (!nvram_match("boardnum","1") || !nvram_match ("boardtype", "0x048e") || !nvram_match ("boardrev", "0x35") || !nvram_match("parefldovoltage","0x28"))
+  int do_support = 0;
+
+  if (nvram_match ("boardnum", "1") && nvram_match ("boardtype", "0x048e") && nvram_match ("boardrev", "0x35") && nvram_match ("parefldovoltage", "0x28"))
+	{
+	do_support = 1;  //Netcore NW618
+	}
+	
+  if (nvram_match ("boardnum", "83258") && nvram_match ("boardtype", "0x48E") && nvram_match ("boardrev", "0x10"))
+	{
+	do_support = 1;  //Netgear WGR614L
+	}
+	
+  if (!do_support)
 	{
 	    printk(KERN_ERR "sflash not supported on this router\n");
 	    return -ENODEV;
