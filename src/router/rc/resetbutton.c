@@ -479,11 +479,10 @@ period_check (int sig)
 #endif
 		  if (pidof ("nas") > 0 || pidof ("wrt-radauth") > 0)
 		  {
-		    stop_service ("nas");
-		    sleep (1);
+		  stop_service ("nas");
 		  }
 		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "on");
-		  start_service ("nas");
+	      eval ("startservice", "nas");
 #ifdef HAVE_MSSID
 	      start_service ("guest_nas");
 #endif
@@ -508,8 +507,7 @@ period_check (int sig)
 #endif
 		  if (pidof ("nas") > 0 || pidof ("wrt-radauth") > 0)
 		  {
-		    stop_service ("nas");
-		    sleep (1);
+		  stop_service ("nas");
 		  }
 		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "off");
 	    }
