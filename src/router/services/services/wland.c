@@ -284,7 +284,7 @@ do_ap_check (void)
 
 //  if (nvram_match ("apwatchdog_enable", "1"))
 //    do_ap_watchdog ();
-  start_service ("wds_check");
+  start_wds_check();
 //  do_wds_check ();
 
   return;
