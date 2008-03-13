@@ -253,10 +253,8 @@ int vendor;
 int devcount;
 char readid[64];
 strcpy(readid,ifname);
-fprintf(stderr,"readid %s\n",readid);
 sscanf(readid,"ath%d",&devcount);
 sprintf(readid,"/proc/sys/dev/wifi%d/vendor",devcount);
-fprintf(stderr,"path %s\n",readid);
 FILE *in = fopen(readid,"rb");
 vendor=0;
 if (in)
