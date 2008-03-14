@@ -168,6 +168,9 @@ endif
 ifeq ($(CONFIG_DIR400),y)
 CFLAGS += -DHAVE_DIR400
 endif
+ifeq ($(CONFIG_DIR300),y)
+CFLAGS += -DHAVE_DIR300
+endif
 ifeq ($(CONFIG_MR3202A),y)
 CFLAGS += -DHAVE_MR3202A
 endif
