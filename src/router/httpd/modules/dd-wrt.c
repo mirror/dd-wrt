@@ -6145,17 +6145,14 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
 	}
       if (si->isi_rates)
 	{
-	  websWrite (wp, "'%s','%s','%3dM','%d','%d','%d'",
+	  websWrite (wp, "'%s','%s','%3dM','%3dM','%d','%d','%d'",
 		     mac, ifname,
-		     ((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) /
-		      //2) * turbo, -95 + si->isi_rssi,-95,
-		      2) * turbo, si->isi_noise + si->isi_rssi, si->isi_noise,
+		     ((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) / 2) * turbo,((si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) / 2) * turbo, si->isi_noise + si->isi_rssi, si->isi_noise,
 		     si->isi_rssi);
 	}
       else
 	{
-	  websWrite (wp, "'%s','%s','N/A','%d','%d','%d'", mac, ifname,
-		     //-95 + si->isi_rssi, -95,
+	  websWrite (wp, "'%s','%s','N/A','N/A','%d','%d','%d'", mac, ifname,
 		     si->isi_noise + si->isi_rssi, si->isi_noise,
 		     si->isi_rssi);
 	}
@@ -6438,7 +6435,7 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
 	{
 	  noise = getNoise(iface,NULL); // null only for broadcom
 	}*/
-      websWrite (wp, "'%s','%s','N/A','%d','%d','%d'", mac, iface, rssi,
+      websWrite (wp, "'%s','%s','N/A','N/A','%d','%d','%d'", mac, iface, rssi,
 		 noise, rssi - noise);
     }
   unlink (RSSI_TMP);
