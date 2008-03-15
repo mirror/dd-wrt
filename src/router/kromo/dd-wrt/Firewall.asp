@@ -145,7 +145,7 @@ addEvent(window, "unload", function() {
 										</div>
 									</fieldset><br />
 								</div>
-								
+								<% ifdef("MICRO", "<!--"); %>								
 								<h2><% tran("log.h2"); %></h2>
 							
 							<fieldset>
@@ -217,6 +217,7 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script>
 								</div><br />
+								<% ifdef("MICRO", "-->"); %>
 							</div>
 								
 								<div class="submitFooter">
