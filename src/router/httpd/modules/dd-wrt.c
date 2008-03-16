@@ -6224,7 +6224,7 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 	    continue;
 	  if (nvram_match (wdsvarname, "0"))
 	    continue;
-	  cnt = ej_active_wireless_if (wp, argc, argv, wdsdevname, cnt, t);
+	  cnt = ej_active_wireless_if (wp, argc, argv, dev, cnt, t);
 	}
     }
 }
