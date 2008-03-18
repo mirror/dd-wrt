@@ -1191,10 +1191,6 @@ start_nvram (void)
     nvram_set ("boot_wait_web", "1");
 #endif
 
-#ifdef HAVE_SSHD
-  if (!nvram_match ("sshd_web", "0"))
-    nvram_set ("sshd_web", "1");
-#endif
 
 #ifndef HAVE_MSSID
   nvram_set ("wl0_country_code", "JP");
@@ -1256,6 +1252,14 @@ start_nvram (void)
 #endif
 #endif
   }
+  
+#ifdef HAVE_SSHD
+  nvram_unset ("remote_mgt_telnet");
+  nvram_unset ("telnet_wanport");
+#else
+  nvram_unset ("remote_mgt_ssh");
+  nvram_unset ("sshd_wanport");
+#endif
 
 #ifdef HAVE_WIVIZ
   if (!strlen (nvram_safe_get ("hopseq"))
