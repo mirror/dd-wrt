@@ -174,6 +174,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_BUFFALO_WBR54G:
     case ROUTER_BUFFALO_WBR2G54S:
     case ROUTER_WRT150N:
+    case ROUTER_WRT160N:
     case ROUTER_WRT300N:
     case ROUTER_WRT600N:
     case ROUTER_WRT350N:
@@ -532,6 +533,7 @@ start_sysinit (void)
     case ROUTER_BUFFALO_WZRG300N:
     case ROUTER_NETGEAR_WNR834B:
     case ROUTER_WRT150N:
+    case ROUTER_WRT160N:
     case ROUTER_WRT300N:
     case ROUTER_ASUS_WL500W:
     case ROUTER_BUFFALO_WLAH_G54:

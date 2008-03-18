@@ -576,6 +576,7 @@ start_restore_defaults (void)
 #ifndef HAVE_BUFFALO
     case ROUTER_WRTSL54GS:
     case ROUTER_WRT150N:
+    case ROUTER_WRT160N:
     case ROUTER_WRT300N:
     case ROUTER_NETGEAR_WNR834B:
     case ROUTER_NETGEAR_WNR834BV2:
