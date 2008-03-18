@@ -1013,6 +1013,13 @@ ej_ifdef (webs_t wp, int argc, char_t ** argv)
 	   return;
    }
 #endif
+#ifdef HAVE_SSHD
+  if (!strcmp(name, "SSHD"))
+   {
+	   websWrite (wp, output);
+	   return;
+   }
+#endif
 
   return;
 }
@@ -1067,6 +1074,9 @@ ej_ifndef (webs_t wp, int argc, char_t ** argv)
 #endif
 #ifdef HAVE_USB
   if (!strcmp(name, "USB")) return;
+#endif
+#ifdef HAVE_SSHD
+  if (!strcmp(name, "SSHD")) return;
 #endif
 // HAVE_AFTERBURNER
   if (!strcmp (name, "AFTERBURNER"))
