@@ -127,7 +127,11 @@ static unsigned int now_wday, now_hrmin;
 static int webfilter = 0;
 static int dmzenable = 0;
 static int remotemanage = 0;
+#ifdef HAVE_SSHD
 static int remotessh = 0;	/* Botho 03-05-2006 */
+#else
+static int remotetelnet = 0;
+#endif
 
 
 static void
@@ -559,12 +563,20 @@ nat_prerouting (void)
 	       nvram_safe_get ("http_wanport"), nvram_safe_get ("lan_ipaddr"),
 	       web_lanport);
 
+#ifdef HAVE_SSHD
   /* Enable remote ssh management : Botho 03-05-2006 */
   if (remotessh)
     save2file ("-A PREROUTING -p tcp -m tcp -d %s --dport %s "
 	       "-j DNAT --to-destination %s:%s\n", wanaddr,
 	       nvram_safe_get ("sshd_wanport"), nvram_safe_get ("lan_ipaddr"),
 	       nvram_safe_get ("sshd_port"));
+#else
+  /* Enable remote telnet management */
+  if (remotetelnet)
+    save2file ("-A PREROUTING -p tcp -m tcp -d %s --dport 23 "
+	       "-j DNAT --to-destination %s:%s\n", wanaddr,
+	       nvram_safe_get ("telnet_wanport"), nvram_safe_get ("lan_ipaddr"));
+#endif
 
   /* ICMP packets are always redirected to INPUT chains */
   save2file ("-A PREROUTING -p icmp -d %s -j DNAT --to-destination %s\n",
@@ -1741,7 +1753,14 @@ filter_input (void)
       save2file ("-A INPUT -p tcp -m tcp -d %s --dport %s -j logaccept\n",
 		 nvram_safe_get ("lan_ipaddr"), nvram_safe_get ("sshd_port"));
     }
+#else
+  if (remotetelnet)
+    {
+      save2file ("-A INPUT -p tcp -m tcp -d %s --dport 23 -j logaccept\n",
+		 nvram_safe_get ("lan_ipaddr"));
+    }
 #endif
+
 
   /* ICMP request from WAN interface */
   if (!nvram_match ("wan_proto", "disabled"))
@@ -2160,16 +2179,24 @@ filter_table (void)
 		     nvram_safe_get ("http_wanport"));
 	  save2file ("-A INPUT -p tcp -i %s --dport 80 -j DROP\n", wanface);
 	  save2file ("-A INPUT -p tcp -i %s --dport 443 -j DROP\n", wanface);
-	  save2file ("-A INPUT -p tcp -i %s --dport 23 -j DROP\n", wanface);
 	  save2file ("-A INPUT -p tcp -i %s --dport 69 -j DROP\n", wanface);
 	}
-      /* Make sure remote ssh ports is filtered if it is disabled : Botho 03-05-2006 */
+      /* Make sure remote ssh/telnet port is filtered if it is disabled : Botho 03-05-2006 */
 #ifdef HAVE_SSHD
       if (!remotessh)
 	{
 	  save2file ("-A INPUT -p tcp -i %s --dport %s -j DROP\n",
 		     wanface, nvram_safe_get ("sshd_wanport"));
 	  save2file ("-A INPUT -p tcp -i %s --dport 22 -j DROP\n", wanface);
+	  save2file ("-A INPUT -p tcp -i %s --dport 23 -j DROP\n", wanface);
+	}
+#else
+      if (!remotetelnet)
+	{
+	  save2file ("-A INPUT -p tcp -i %s --dport 22 -j DROP\n", wanface);
+	  save2file ("-A INPUT -p tcp -i %s --dport %s -j DROP\n",
+		     wanface, nvram_safe_get ("telnet_wanport"));
+	  save2file ("-A INPUT -p tcp -i %s --dport 23 -j DROP\n", wanface);
 	}
 #endif
 
@@ -2682,7 +2709,7 @@ start_firewall (void)
     remotemanage = 0;
 
 #ifdef HAVE_SSHD
-  /* Remote Web GUI management : Botho 03-05-2006 */
+  /* Remote ssh management : Botho 03-05-2006 */
   if (nvram_match ("remote_mgt_ssh", "1") &&
       nvram_invmatch ("sshd_wanport", "") &&
       nvram_invmatch ("sshd_wanport", "0") &&
@@ -2690,6 +2717,15 @@ start_firewall (void)
     remotessh = 1;
   else
     remotessh = 0;
+#else
+  /* Remote telnet management */
+  if (nvram_match ("remote_mgt_telnet", "1") &&
+      nvram_invmatch ("telnet_wanport", "") &&
+      nvram_invmatch ("telnet_wanport", "0") &&
+      nvram_match ("telnet_enable", "1"))
+    remotetelnet = 1;
+  else
+    remotetelnet = 0;
 #endif
 
 #ifdef HAVE_HTTPS
