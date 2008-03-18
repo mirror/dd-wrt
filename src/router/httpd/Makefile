@@ -288,6 +288,9 @@ endif
 ifeq ($(CONFIG_USB),y)
 CFLAGS += -DHAVE_USB
 endif
+ifeq ($(CONFIG_DROPBEAR_SSHD),y)
+CFLAGS += -DHAVE_SSHD
+endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
 OBJS += crc.o register.o
