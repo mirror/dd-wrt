@@ -573,8 +573,8 @@ nat_prerouting (void)
 #else
   /* Enable remote telnet management */
   if (remotetelnet)
-    save2file ("-A PREROUTING -p tcp -m tcp -d %s --dport 23 "
-	       "-j DNAT --to-destination %s:%s\n", wanaddr,
+    save2file ("-A PREROUTING -p tcp -m tcp -d %s --dport %s "
+	       "-j DNAT --to-destination %s:23\n", wanaddr,
 	       nvram_safe_get ("telnet_wanport"), nvram_safe_get ("lan_ipaddr"));
 #endif
 
