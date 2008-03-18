@@ -842,6 +842,8 @@ management.remote_https="Nutze HTTPS";
 management.remote_guiport="Web-GUI-Port";
 management.remote_ssh="SSH-Management";
 management.remote_sshport="SSH-Port";
+management.remote_telnet="Telnet-Management";
+management.remote_telnetport="Telnet-Port";
 
 management.web_legend="Web-Zugriff";
 management.web_refresh="Automatisches Auffrischen (in Sekunden)";
