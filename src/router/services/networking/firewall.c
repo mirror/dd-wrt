@@ -2722,7 +2722,7 @@ start_firewall (void)
   if (nvram_match ("remote_mgt_telnet", "1") &&
       nvram_invmatch ("telnet_wanport", "") &&
       nvram_invmatch ("telnet_wanport", "0") &&
-      nvram_match ("telnet_enable", "1"))
+      nvram_match ("telnetd_enable", "1"))
     remotetelnet = 1;
   else
     remotetelnet = 0;
