@@ -80,9 +80,9 @@ function selSSH(val, load) {
 
 function selTelnet(val, load) {
 	if (load == 1) {
-		sshd = document.getElementsByName('remote_mgt_ssh');
+		telnet = document.getElementsByName('remote_mgt_telnet');
 		setElementActive("remote_mgt_telnet", val == "1");
-		setElementActive("telnet_wanport", val == "1" && sshd[0].checked);
+		setElementActive("telnet_wanport", val == "1" && telnet[0].checked);
 	} else {
 		setElementActive("telnet_wanport", val == "1");
 	}
@@ -158,6 +158,8 @@ addEvent(window, "load", function() {
 	port_enable_disable(document.setup, "<% nvram_get("remote_management"); %>");
 	if (document.setup.remote_mgt_ssh)
 		selSSH("<% nvram_get("sshd_enable"); %>", 1);
+	if (document.setup.remote_mgt_telnet)
+		selTelnet("<% nvram_get("telnetd_enable"); %>", 1);
 
 	show_layer_ext(document.setup.ipv6_enable0,'idipv6', <% nvram_else_match("ipv6_enable0", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.remote_mgt_ssh, 'idssh', <% nvram_else_match("remote_mgt_ssh", "1", "1", "0"); %> == 1);
