@@ -82,6 +82,22 @@
 			</script></span>
 		</div>
 		<% ifndef("SSHD","-->"); %>
+		<% ifdef("SSHD", "<!--"); %>
+		<div class="setting">
+			<div class="label"><% tran("management.remote_telnet"); %></div>
+			<input class="spaceradio" type="radio" value="1" name="remote_mgt_telnet" onclick="show_layer_ext(this, 'idtelnet', true);selTelnet(this.value, 0)" <% nvram_checked("remote_mgt_telnet","1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="remote_mgt_telnet" onclick="show_layer_ext(this, 'idtelnet', false);selTelnet(this.value, 0)" <% nvram_checked("remote_mgt_telnet","0"); %> /><% tran("share.disable"); %>
+		</div>
+		<div class="setting" id="idtelnet">
+			<div class="label"><% tran("management.remote_telnetport"); %></div>
+			<input class="num" maxlength="5" size="5" name="telnet_wanport" onblur="valid_range(this,1,65535,management.remote_telnetport)" value="<% nvram_get("telnet_wanport"); %>" />
+			<span class="default"><script type="text/javascript">
+			//<![CDATA[
+			document.write("(" + share.deflt + ": 23, " + share.range + ": 1 - 65535)");
+			//]]>
+			</script></span>
+		</div>
+		<% ifdef("SSHD", "-->"); %>
 	</fieldset><br />
 	
 	<% nvram_match("boot_wait_web","0","<!--"); %>
