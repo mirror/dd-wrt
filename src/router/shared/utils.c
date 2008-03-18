@@ -1631,6 +1631,7 @@ led_control (int type, int act)
       wlan_gpio = 0x14;
       break;
     case ROUTER_WRT150N:
+    case ROUTER_WRT160N
     case ROUTER_WRT300N:
       power_gpio = 0x01;
       diag_gpio = 0x11;		//power led blink / off to indicate fac.def.
