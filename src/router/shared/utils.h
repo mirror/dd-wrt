@@ -267,9 +267,10 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_WRT54G2V1 0x4f0f
 
 // Linksys WRT54Gv8.1 (BCM5354 cpu, fccid: Linksys Q87-WRT54GV81)
-#define ROUTER_WRT54G_V81 0x500f
+#define ROUTER_WRT54G_V81 0x5017
 
-// Netgear WGR614L (BCM5354 cpu, fccid: Netgear ??)
+// Netgear WGR614L (BCM5354 cpu, serial flash, fccid: Netgear PY306400057)
+// NEtgear WGR614 v8, v9 
 #define ROUTER_NETGEAR_WGR614L 0x510f
 
 // Netgear WNR834Bv2 (BCM4704 cpu, BCM5325 switch, fccid: Netgear PY307100061)
@@ -277,6 +278,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 // Asus WL-500g Premium v2 (BCM5354 cpu, fccid: Asus MSQWL500GPV2)
 #define ROUTER_ASUS_WL500G_PRE_V2 0x5312
+
 
 #define NVROUTER "DD_BOARD"
 
