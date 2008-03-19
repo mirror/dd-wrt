@@ -612,6 +612,7 @@ start_sysinit (void)
 
     case ROUTER_ASUS_WL520G:
     case ROUTER_ASUS_WL500G_PRE_V2:
+	case ROUTER_WRT54G_V81:
       if (nvram_match ("vlan1ports", "4 5u"))
 	nvram_set ("vlan1ports", "4 5");
       break;
@@ -737,6 +738,7 @@ start_sysinit (void)
 	      break;
 
 	    case ROUTER_WRT54G_V8:
+	    case ROUTER_WRT54G_V81:
 	    case ROUTER_LINKSYS_WRH54G:
 	    case ROUTER_ASUS_WL520G:
 	    case ROUTER_ASUS_WL520GUGC:
@@ -1022,6 +1024,7 @@ check_cfe_nv (void)
 
     case ROUTER_WRT54G:
     case ROUTER_WRT54G_V8:
+    case ROUTER_WRT54G_V81:
       ret += check_nv ("aa0", "3");
 /*      if (check_hw_type () == BCM5352E_CHIP
 	  || check_hw_type () == BCM5354G_CHIP)

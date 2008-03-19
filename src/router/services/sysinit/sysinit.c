@@ -898,6 +898,7 @@ start_restore_defaults (void)
 	    case ROUTER_DELL_TRUEMOBILE_2300_V2:
 	    case ROUTER_ASUS_WL520G:
 	    case ROUTER_ASUS_WL500G_PRE_V2:
+	    case ROUTER_WRT54G_V81:
 	      nvram_set ("vlan0ports", "0 1 2 3 5*");
 	      break;
 	    case ROUTER_LINKSYS_WRH54G:
@@ -928,6 +929,7 @@ start_restore_defaults (void)
 	      break;
 	    case ROUTER_MOTOROLA:
 	    case ROUTER_WRT54G_V8:
+	    case ROUTER_WRT54G_V81:
 	    case ROUTER_LINKSYS_WRT55AG:
 	    case ROUTER_RT480W:
 	    case ROUTER_DELL_TRUEMOBILE_2300_V2:
