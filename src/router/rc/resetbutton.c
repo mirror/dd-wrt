@@ -381,6 +381,9 @@ period_check (int sig)
     case ROUTER_NETGEAR_WNDR3300:
       sesgpio = 0x11;		//gpio 1, inversed
       break;
+    case ROUTER_WRT54G_V81:
+      sesgpio = 0x16;		//gpio 6, inversed
+      break;
 #endif
     default:
       sesgpio = 0xff;		//gpio unknown, disabled
