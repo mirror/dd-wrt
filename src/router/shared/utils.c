@@ -1099,6 +1099,14 @@ internal_getRouterBrand ()
       setRouter ("Linksys WRH54G");
       return ROUTER_LINKSYS_WRH54G;
     }
+    
+  if (nvram_match ("boardnum","00") &&
+      nvram_match ("boardtype", "0x048E") && nvram_match ("boardrev", "0x10"))
+    {
+      cprintf ("router is Linksys WRT54G v8.1\n");
+      setRouter ("Linksys WRT54G v8.1");
+      return ROUTER_LINKSYS_WRT54G_V81;
+    }
 
   if (boardnum == 45 &&
       nvram_match ("boardtype", "0x456"))
@@ -1473,6 +1481,13 @@ led_control (int type, int act)
       connected_gpio = 0x13;	//ses orange
       ses_gpio = 0x12;		//ses white
       ses2_gpio = 0x13;		//ses orange
+      break;
+    case ROUTER_WRT54G_V81:
+      power_gpio = 0x11;
+      dmz_gpio = 0x12;
+      connected_gpio = 0x14;	//ses orange
+      ses_gpio = 0x13;		//ses white
+      ses2_gpio = 0x14;		//ses orange
       break;
     case ROUTER_WRT54G1X:
       connected_gpio = 0x13;
