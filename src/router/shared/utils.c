@@ -1105,7 +1105,7 @@ internal_getRouterBrand ()
     {
       cprintf ("router is Linksys WRT54G v8.1\n");
       setRouter ("Linksys WRT54G v8.1");
-      return ROUTER_LINKSYS_WRT54G_V81;
+      return ROUTER_WRT54G_V81;
     }
 
   if (boardnum == 45 &&
