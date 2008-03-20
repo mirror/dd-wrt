@@ -240,8 +240,15 @@ start_sysinit (void)
 
 
   eval ("insmod", "ath_hal");
-  eval ("insmod", "ath_pci");
-
+if (nvram_get("rate_control")!=NULL)
+ {
+  char rate[64];
+  sprintf(rate,"ratectl=%s",nvram_safe_get("rate_control"));
+  eval ("insmod", "ath_pci",rate);
+ }else
+ {
+  eval ("insmod", "ath_pci"); 
+ }
 #ifdef HAVE_MADWIFI_MIMO
   eval ("insmod", "ath_mimo_pci");
 #endif
