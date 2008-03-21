@@ -45,8 +45,9 @@ function to_apply(F)
 }
 
 function setFirewall(val) {
-	if (val != "on") document.firewall.log_enable[1].click();
-	setElementsActive("_block_proxy", "log_level", val == "on");
+<% ifdef("MICRO", "/"); %><% ifdef("MICRO", "/"); %>if (val != "on") document.firewall.log_enable[1].click();
+<% ifdef("MICRO", "/"); %><% ifdef("MICRO", "/"); %>setElementsActive("_block_proxy", "log_level", val == "on");
+<% ifndef("MICRO", "/"); %><% ifndef("MICRO", "/"); %>setElementsActive("_block_proxy", "_block_ident", val == "on");
 }
 
 var update;
@@ -151,7 +152,7 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("log.legend"); %></legend>
 								<div class="setting">
-									<div class="label">Log</div>
+									<div class="label"><% tran("log.legend"); %></div>
 									<input class="spaceradio" type="radio" value="1" name="log_enable" <% nvram_checked("log_enable", "1"); %> onclick="show_layer_ext(this, 'idlog1', true);show_layer_ext(this,'idlog2', true)" /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="0" name="log_enable" <% nvram_checked("log_enable", "0"); %> onclick="show_layer_ext(this, 'idlog1', false);show_layer_ext(this,'idlog2', false)" /><% tran("share.disable"); %>
 								</div>
@@ -217,9 +218,8 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script>
 								</div><br />
-								<% ifdef("MICRO", "-->"); %>
 							</div>
-								
+							<% ifdef("MICRO", "-->"); %>								
 								<div class="submitFooter">
 									<script type="text/javascript">
 									//<![CDATA[
