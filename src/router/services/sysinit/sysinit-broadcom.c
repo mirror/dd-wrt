@@ -1259,7 +1259,7 @@ enable_dtag_vlan (int enable)
   int donothing = 0;
   if (nvram_match ("vdsl_state", "1") && enable)
     donothing = 1;
-  if (nvram_match ("vdsl_state", "0") && !enable)
+  if ((nvram_match ("vdsl_state", "0") || nvram_match ("vdsl_state", "")) && !enable)
     donothing = 1;
   if (enable)
     nvram_set ("vdsl_state", "1");
@@ -1337,8 +1337,7 @@ enable_dtag_vlan (int enable)
 	  int i;
 	  for (i = 0; i < 16; i++)
 	    {
-	      sprintf (tmp, "echo %s > /proc/switch/%s/vlan/%d/ports", "",
-		       eth, i);
+	      sprintf (tmp, "echo %s > /proc/switch/%s/vlan/%d/ports", "",eth, i);
 	      system2 (tmp);
 	    }
 	  for (i = 0; i < 16; i++)
@@ -1347,8 +1346,7 @@ enable_dtag_vlan (int enable)
 	      sprintf (vlanb, "vlan%dports", i);
 	      if (nvram_get (vlanb) == NULL || nvram_match (vlanb, ""))
 		continue;
-	      sprintf (tmp, "echo %s > /proc/switch/%s/vlan/%d/ports",
-		       nvram_safe_get (vlanb), eth, i);
+	      sprintf (tmp, "echo %s > /proc/switch/%s/vlan/%d/ports",nvram_safe_get (vlanb), eth, i);
 	      system2 (tmp);
 	    }
 	}
