@@ -1334,21 +1334,12 @@ enable_dtag_vlan (int enable)
 	}
       else
 	{
-	  int i;
-	  for (i = 0; i < 16; i++)
-	    {
-	      sprintf (tmp, "echo %s > /proc/switch/%s/vlan/%d/ports", "",eth, i);
-	      system2 (tmp);
-	    }
-	  for (i = 0; i < 16; i++)
-	    {
-	      char vlanb[16];
-	      sprintf (vlanb, "vlan%dports", i);
-	      if (nvram_get (vlanb) == NULL || nvram_match (vlanb, ""))
-		continue;
-	      sprintf (tmp, "echo %s > /proc/switch/%s/vlan/%d/ports",nvram_safe_get (vlanb), eth, i);
-	      system2 (tmp);
-	    }
+	  sprintf (tmp, "echo %s > /proc/switch/%s/vlan/7/ports", "", eth);
+	  system2 (tmp);
+	  sprintf (tmp, "echo %s > /proc/switch/%s/vlan/0/ports",nvram_safe_get ("vlan0ports"), eth);
+	  system2 (tmp);
+	  sprintf (tmp, "echo %s > /proc/switch/%s/vlan/1/ports",nvram_safe_get ("vlan1ports"), eth);
+	  system2 (tmp);
 	}
     }
   return eth;
