@@ -121,7 +121,7 @@ mtd_erase (const char *mtd)
        erase_info.start < mtd_info.size;
        erase_info.start += mtd_info.erasesize)
     {
-      fprintf (stderr, "erase[%ld]\r", erase_info.start);
+      fprintf (stderr, "erase[%d]\r", erase_info.start);
       (void) ioctl (mtd_fd, MEMUNLOCK, &erase_info);
       if (ioctl (mtd_fd, MEMERASE, &erase_info) != 0)
 	{
@@ -132,7 +132,7 @@ mtd_erase (const char *mtd)
     }
 
   close (mtd_fd);
-  fprintf (stderr, "erase[%ld]\n", erase_info.start);
+  fprintf (stderr, "erase[%d]\n", erase_info.start);
   /*nvram_set("et0macaddr",et0);
      nvram_set("et1macaddr",et1);
      nvram_commit();
@@ -317,7 +317,7 @@ mtd_write (const char *path, const char *mtd)
       sum = sum + count;
       fprintf (stderr, "write=[%ld]         \n", sum);
 
-      if (count < len && (len - off) > mtd_info.erasesize * mul || count == 0)
+      if (((count < len) && (len - off) > (mtd_info.erasesize * mul)) || (count == 0))
 	{
 	  fprintf (stderr, "%s: Truncated file (actual %ld expect %ld)\n",
 		   path, count - off, len - off);
