@@ -1646,10 +1646,13 @@ led_control (int type, int act)
       wlan_gpio = 0x14;
       break;
     case ROUTER_WRT150N:
-    case ROUTER_WRT160N:
     case ROUTER_WRT300N:
       power_gpio = 0x01;
       diag_gpio = 0x11;		//power led blink / off to indicate fac.def.
+      break;
+    case ROUTER_WRT160N:
+      connected_gpio = 0x13;	//ses orange
+      ses_gpio = 0x15;			//ses blue
       break;
     case ROUTER_ASUS_WL500G:
       power_gpio = 0x10;
