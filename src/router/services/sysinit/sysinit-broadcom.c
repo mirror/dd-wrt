@@ -407,7 +407,7 @@ start_sysinit (void)
   int brand = getRouterBrand ();
   led_control (LED_DIAG, LED_ON);
   char *rname = getRouter ();
-  fprintf (stderr, "Booting Device:%s\n", rname);
+  fprintf (stderr, "Booting device: %s\n", rname);
 
   nvram_unset ("port_swap");
 
@@ -444,14 +444,16 @@ start_sysinit (void)
       break;
 
     case ROUTER_RT210W:
-      setup_4712 ();
+      nvram_set ("lan_ifnames", "eth0 eth2");
       nvram_set ("wan_ifname", "eth1");	// fix for Belkin f5d7230 v1000 WAN problem.
-      if (strlen (nvram_safe_get ("et0macaddr") != 17))
+      nvram_set ("wl0_ifname", "eth2");
+      
+      if (nvram_get ("et0macaddr") == NULL || nvram_get ("et0macaddr") == "")
 	{
 	  nvram_set ("et0macaddr", "00:16:E3:00:00:10");	//fix for missing cfe default = dead LAN ports.
 	  need_reboot = 1;
 	}
-      if (strlen (nvram_safe_get ("et1macaddr") != 17))
+      if (nvram_get ("et1macaddr") == NULL || nvram_get ("et1macaddr") == "")
 	{
 	  nvram_set ("et1macaddr", "00:16:E3:00:00:11");
 	  need_reboot = 1;
@@ -459,22 +461,39 @@ start_sysinit (void)
       break;
 
     case ROUTER_BRCM4702_GENERIC:
-    case ROUTER_ASUS_WL500G:
-      setup_4712 ();
+      nvram_set ("lan_ifnames", "eth0 eth2");
       nvram_set ("wan_ifname", "eth1");
+      nvram_set ("wl0_ifname", "eth2");
 
-      if (strlen (nvram_safe_get ("et0macaddr") != 17))
+      if (nvram_get ("et0macaddr") == NULL || nvram_get ("et0macaddr") == "")
+	{
+	  nvram_set ("et0macaddr", "00:11:22:00:00:10");	//fix for missing cfe default = dead LAN ports.
+	  need_reboot = 1;
+	}
+      if (nvram_get ("et1macaddr") == NULL || nvram_get ("et1macaddr") == "")
+	{
+	  nvram_set ("et1macaddr", "00:11:22:00:00:11");
+	  need_reboot = 1;
+	}
+      break;
+      
+    case ROUTER_ASUS_WL500G:
+      nvram_set ("lan_ifnames", "eth0 eth2");
+      nvram_set ("wan_ifname", "eth1");
+      nvram_set ("wl0_ifname", "eth2");
+
+      if (nvram_get ("et0macaddr") == NULL || nvram_get ("et0macaddr") == "")
 	{
 	  nvram_set ("et0macaddr", "00:0C:6E:00:00:10");	//fix for missing cfe default = dead LAN ports.
 	  need_reboot = 1;
 	}
-      if (strlen (nvram_safe_get ("et1macaddr") != 17))
+      if (nvram_get ("et1macaddr") == NULL || nvram_get ("et1macaddr") == "")
 	{
-	  nvram_set ("et1macaddr", "00:0C:6E:00:00:11");
+	  nvram_set ("et1macaddr", "00:0C:6E:00:00:10");
 	  need_reboot = 1;
 	}
       break;
-
+      
     case ROUTER_DELL_TRUEMOBILE_2300:
       setup_4712 ();
       nvram_set ("wan_ifname", "eth1");	// fix for WAN problem.
@@ -506,10 +525,69 @@ start_sysinit (void)
       break;
 
     case ROUTER_SITECOM_WL111:
+      nvram_set ("lan_ifnames", "eth0 eth2");
+      nvram_set ("wl0_ifname", "eth2");
+      nvram_set ("wan_ifname", "eth1");
+      break;
+      
     case ROUTER_NETGEAR_WNR834BV2:
       nvram_set ("lan_ifnames", "eth0 eth2");
       nvram_set ("wl0_ifname", "eth2");
       nvram_set ("wan_ifname", "eth1");
+      
+		if (nvram_get ("pci/1/1/macaddr") == NULL)
+			need_reboot = 1;
+		unsigned char et0mac[20];
+		strcpy (et0mac, nvram_safe_get ("et0macaddr"));
+		nvram_set ("pci/1/1/macaddr", et0mac);
+		
+		nvram_set ("pci/1/1/stbcpo", "0");
+		nvram_set ("pci/1/1/pa2gw1a0", "0");
+		nvram_set ("pci/1/1/pa2gw1a1", "0");
+		nvram_set ("pci/1/1/ag0", "2");
+		nvram_set ("pci/1/1/ag1", "2");
+		nvram_set ("pci/1/1/ag2", "2");
+		nvram_set ("pci/1/1/ccdpo", "0");
+		nvram_set ("pci/1/1/txpid2ga0", "71");
+		nvram_set ("pci/1/1/txpid2ga1", "79");
+		nvram_set ("pci/1/1/txpt2g", "0x38");
+		nvram_set ("pci/1/1/pa2gw0a0", "0");
+		nvram_set ("pci/1/1/pa2gw0a1", "0");
+		nvram_set ("pci/1/1/boardflags", "0x200");
+		nvram_set ("pci/1/1/boardvendor", "0x14e4");
+		nvram_set ("pci/1/1/bw40po", "0");
+		nvram_set ("pci/1/1/sromrev", "4");
+		nvram_set ("pci/1/1/venid", "0x14e4");
+		nvram_set ("pci/1/1/boardrev", "0x4b");
+		nvram_set ("pci/1/1/itt2ga0", "0");
+		nvram_set ("pci/1/1/itt2ga1", "0");
+		nvram_set ("pci/1/1/pa2gw3a0", "0");
+		nvram_set ("pci/1/1/pa2gw3a1", "0");
+		nvram_set ("pci/1/1/maxp2ga0", "0");
+		nvram_set ("pci/1/1/maxp2ga1", "0");
+		nvram_set ("pci/1/1/boardtype", "0x46d");
+		nvram_set ("pci/1/1/boardflags2", "0x0013");
+		nvram_set ("pci/1/1/ofdm2gpo", "0");
+		nvram_set ("pci/1/1/ledbh0", "0x82");
+		nvram_set ("pci/1/1/ledbh1", "-1");
+		nvram_set ("pci/1/1/ledbh2", "-1");
+		nvram_set ("pci/1/1/ledbh3", "-1");
+		nvram_set ("pci/1/1/mcs2gpo0", "0");
+		nvram_set ("pci/1/1/mcs2gpo1", "0");
+		nvram_set ("pci/1/1/mcs2gpo2", "0");
+		nvram_set ("pci/1/1/mcs2gpo3", "0");
+		nvram_set ("pci/1/1/mcs2gpo4", "0");
+		nvram_set ("pci/1/1/mcs2gpo5", "0");
+		nvram_set ("pci/1/1/mcs2gpo6", "0");
+		nvram_set ("pci/1/1/mcs2gpo7", "0");
+		nvram_set ("pci/1/1/bwduppo", "0");
+		nvram_set ("pci/1/1/aa2g", "7");
+		nvram_set ("pci/1/1/pa2gw2a0", "0");
+		nvram_set ("pci/1/1/pa2gw2a1", "0");
+		nvram_set ("pci/1/1/ccode", "all");
+		nvram_set ("pci/1/1/regrev", "0");
+		nvram_set ("pci/1/1/devid", "0x4329");
+		nvram_set ("pci/1/1/cck2gpo", "0");
       break;
 
     case ROUTER_MOTOROLA_WE800G:
