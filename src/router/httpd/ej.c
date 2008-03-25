@@ -7,6 +7,7 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include "httpd.h"
+#include <endian.h>
 
 
 //#define CDEBUG 1
@@ -23,6 +24,16 @@ static void call (char *func, webs_t stream);
 #define PATTERN_BUFFER 1000
 
 #define LOG(a)			//fprintf(stderr,"%s\n",a);
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define AUF (unsigned short)'%<'
+#define ZU (unsigned short)'>%'
+#elif __BYTE_ORDER == __BIG_ENDIAN
+#define AUF (unsigned short)'<%'
+#define ZU (unsigned short)'%>'
+#else
+#error "unknown endian type
+#endif
 
 
 char *
@@ -42,21 +53,18 @@ uqstrchr (char *buf, char find)
 
 /* Look for unquoted character within a string */
 static char *
-unqstrstr (char *haystack, char *needle)
+unqstrstr (char *haystack, unsigned short needle)
 {
   char *cur;
   int q;
-  int needlelen = strlen(needle);
+  int haylen = strlen(haystack);
   for (cur = haystack, q = 0;
-       cur < &haystack[strlen (haystack)] && !(!q
-					       && !strncmp (needle, cur,
-							    needlelen));
-       cur++)
+       cur < &haystack[haylen] && !(!q && *((unsigned short*)cur)==needle);cur++)
     {
       if (*cur == '"')
 	q ? q-- : q++;
     }
-  return (cur < &haystack[strlen (haystack)]) ? cur : NULL;
+  return (cur < &haystack[haylen]) ? cur : NULL;
 }
 
 static char *
@@ -262,18 +270,23 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 	      continue;
 	    }
 	}
-      if (!asp && !strncmp (pattern, "<%", len))
+      if (!asp)
 	{
-	  if (len == 2)
-	    asp = pattern + 2;
-	  continue;
+	  if (len==1 && pattern[0]=='<')
+		continue;
+	  if (pattern[1]=='%')
+	  {
+		asp = pattern + 2;
+		continue;
+	  }
 	}
+      
 
       /* Look for ... %> */
 //      LOG("look end");
       if (asp)
 	{
-	  if (unqstrstr (asp, "%>"))
+	  if (unqstrstr (asp, ZU))
 	    {
 	      for (func = asp; func < &pattern[len]; func = end)
 		{
