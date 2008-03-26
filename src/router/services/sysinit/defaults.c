@@ -43,7 +43,7 @@
 
 struct nvram_tuple srouter_defaults[] = {
   // {"default_init","1",0},
-  {"nvram_ver", "2", 0},
+  {"nvram_ver", "3", 0},
 #ifdef HAVE_FON
 
 #ifdef HAVE_MSSID
