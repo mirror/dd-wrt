@@ -447,7 +447,7 @@ start_sysinit (void)
       nvram_set ("lan_ifnames", "eth0 eth2");
       nvram_set ("wan_ifname", "eth1");	// fix for Belkin f5d7230 v1000 WAN problem.
       nvram_set ("wl0_ifname", "eth2");
-      
+
       if (nvram_get ("et0macaddr") == NULL || nvram_get ("et0macaddr") == "")
 	{
 	  nvram_set ("et0macaddr", "00:16:E3:00:00:10");	//fix for missing cfe default = dead LAN ports.
@@ -476,7 +476,7 @@ start_sysinit (void)
 	  need_reboot = 1;
 	}
       break;
-      
+
     case ROUTER_ASUS_WL500G:
       nvram_set ("lan_ifnames", "eth0 eth2");
       nvram_set ("wan_ifname", "eth1");
@@ -493,7 +493,7 @@ start_sysinit (void)
 	  need_reboot = 1;
 	}
       break;
-      
+
     case ROUTER_DELL_TRUEMOBILE_2300:
       setup_4712 ();
       nvram_set ("wan_ifname", "eth1");	// fix for WAN problem.
@@ -529,65 +529,65 @@ start_sysinit (void)
       nvram_set ("wl0_ifname", "eth2");
       nvram_set ("wan_ifname", "eth1");
       break;
-      
+
     case ROUTER_NETGEAR_WNR834BV2:
       nvram_set ("lan_ifnames", "eth0 eth2");
       nvram_set ("wl0_ifname", "eth2");
       nvram_set ("wan_ifname", "eth1");
-      
-		if (nvram_get ("pci/1/1/macaddr") == NULL)
-			need_reboot = 1;
-		unsigned char et0mac[20];
-		strcpy (et0mac, nvram_safe_get ("et0macaddr"));
-		nvram_set ("pci/1/1/macaddr", et0mac);
-		
-		nvram_set ("pci/1/1/stbcpo", "0");
-		nvram_set ("pci/1/1/pa2gw1a0", "0");
-		nvram_set ("pci/1/1/pa2gw1a1", "0");
-		nvram_set ("pci/1/1/ag0", "2");
-		nvram_set ("pci/1/1/ag1", "2");
-		nvram_set ("pci/1/1/ag2", "2");
-		nvram_set ("pci/1/1/ccdpo", "0");
-		nvram_set ("pci/1/1/txpid2ga0", "71");
-		nvram_set ("pci/1/1/txpid2ga1", "79");
-		nvram_set ("pci/1/1/txpt2g", "0x38");
-		nvram_set ("pci/1/1/pa2gw0a0", "0");
-		nvram_set ("pci/1/1/pa2gw0a1", "0");
-		nvram_set ("pci/1/1/boardflags", "0x200");
-		nvram_set ("pci/1/1/boardvendor", "0x14e4");
-		nvram_set ("pci/1/1/bw40po", "0");
-		nvram_set ("pci/1/1/sromrev", "4");
-		nvram_set ("pci/1/1/venid", "0x14e4");
-		nvram_set ("pci/1/1/boardrev", "0x4b");
-		nvram_set ("pci/1/1/itt2ga0", "0");
-		nvram_set ("pci/1/1/itt2ga1", "0");
-		nvram_set ("pci/1/1/pa2gw3a0", "0");
-		nvram_set ("pci/1/1/pa2gw3a1", "0");
-		nvram_set ("pci/1/1/maxp2ga0", "0");
-		nvram_set ("pci/1/1/maxp2ga1", "0");
-		nvram_set ("pci/1/1/boardtype", "0x46d");
-		nvram_set ("pci/1/1/boardflags2", "0x0013");
-		nvram_set ("pci/1/1/ofdm2gpo", "0");
-		nvram_set ("pci/1/1/ledbh0", "0x82");
-		nvram_set ("pci/1/1/ledbh1", "-1");
-		nvram_set ("pci/1/1/ledbh2", "-1");
-		nvram_set ("pci/1/1/ledbh3", "-1");
-		nvram_set ("pci/1/1/mcs2gpo0", "0");
-		nvram_set ("pci/1/1/mcs2gpo1", "0");
-		nvram_set ("pci/1/1/mcs2gpo2", "0");
-		nvram_set ("pci/1/1/mcs2gpo3", "0");
-		nvram_set ("pci/1/1/mcs2gpo4", "0");
-		nvram_set ("pci/1/1/mcs2gpo5", "0");
-		nvram_set ("pci/1/1/mcs2gpo6", "0");
-		nvram_set ("pci/1/1/mcs2gpo7", "0");
-		nvram_set ("pci/1/1/bwduppo", "0");
-		nvram_set ("pci/1/1/aa2g", "7");
-		nvram_set ("pci/1/1/pa2gw2a0", "0");
-		nvram_set ("pci/1/1/pa2gw2a1", "0");
-		nvram_set ("pci/1/1/ccode", "all");
-		nvram_set ("pci/1/1/regrev", "0");
-		nvram_set ("pci/1/1/devid", "0x4329");
-		nvram_set ("pci/1/1/cck2gpo", "0");
+
+      if (nvram_get ("pci/1/1/macaddr") == NULL)
+	need_reboot = 1;
+      unsigned char et0mac[20];
+      strcpy (et0mac, nvram_safe_get ("et0macaddr"));
+      nvram_set ("pci/1/1/macaddr", et0mac);
+
+      nvram_set ("pci/1/1/stbcpo", "0");
+      nvram_set ("pci/1/1/pa2gw1a0", "0");
+      nvram_set ("pci/1/1/pa2gw1a1", "0");
+      nvram_set ("pci/1/1/ag0", "2");
+      nvram_set ("pci/1/1/ag1", "2");
+      nvram_set ("pci/1/1/ag2", "2");
+      nvram_set ("pci/1/1/ccdpo", "0");
+      nvram_set ("pci/1/1/txpid2ga0", "71");
+      nvram_set ("pci/1/1/txpid2ga1", "79");
+      nvram_set ("pci/1/1/txpt2g", "0x38");
+      nvram_set ("pci/1/1/pa2gw0a0", "0");
+      nvram_set ("pci/1/1/pa2gw0a1", "0");
+      nvram_set ("pci/1/1/boardflags", "0x200");
+      nvram_set ("pci/1/1/boardvendor", "0x14e4");
+      nvram_set ("pci/1/1/bw40po", "0");
+      nvram_set ("pci/1/1/sromrev", "4");
+      nvram_set ("pci/1/1/venid", "0x14e4");
+      nvram_set ("pci/1/1/boardrev", "0x4b");
+      nvram_set ("pci/1/1/itt2ga0", "0");
+      nvram_set ("pci/1/1/itt2ga1", "0");
+      nvram_set ("pci/1/1/pa2gw3a0", "0");
+      nvram_set ("pci/1/1/pa2gw3a1", "0");
+      nvram_set ("pci/1/1/maxp2ga0", "0");
+      nvram_set ("pci/1/1/maxp2ga1", "0");
+      nvram_set ("pci/1/1/boardtype", "0x46d");
+      nvram_set ("pci/1/1/boardflags2", "0x0013");
+      nvram_set ("pci/1/1/ofdm2gpo", "0");
+      nvram_set ("pci/1/1/ledbh0", "0x82");
+      nvram_set ("pci/1/1/ledbh1", "-1");
+      nvram_set ("pci/1/1/ledbh2", "-1");
+      nvram_set ("pci/1/1/ledbh3", "-1");
+      nvram_set ("pci/1/1/mcs2gpo0", "0");
+      nvram_set ("pci/1/1/mcs2gpo1", "0");
+      nvram_set ("pci/1/1/mcs2gpo2", "0");
+      nvram_set ("pci/1/1/mcs2gpo3", "0");
+      nvram_set ("pci/1/1/mcs2gpo4", "0");
+      nvram_set ("pci/1/1/mcs2gpo5", "0");
+      nvram_set ("pci/1/1/mcs2gpo6", "0");
+      nvram_set ("pci/1/1/mcs2gpo7", "0");
+      nvram_set ("pci/1/1/bwduppo", "0");
+      nvram_set ("pci/1/1/aa2g", "7");
+      nvram_set ("pci/1/1/pa2gw2a0", "0");
+      nvram_set ("pci/1/1/pa2gw2a1", "0");
+      nvram_set ("pci/1/1/ccode", "all");
+      nvram_set ("pci/1/1/regrev", "0");
+      nvram_set ("pci/1/1/devid", "0x4329");
+      nvram_set ("pci/1/1/cck2gpo", "0");
       break;
 
     case ROUTER_MOTOROLA_WE800G:
@@ -690,7 +690,7 @@ start_sysinit (void)
 
     case ROUTER_ASUS_WL520G:
     case ROUTER_ASUS_WL500G_PRE_V2:
-	case ROUTER_WRT54G_V81:
+    case ROUTER_WRT54G_V81:
       if (nvram_match ("vlan1ports", "4 5u"))
 	nvram_set ("vlan1ports", "4 5");
       break;
@@ -981,36 +981,36 @@ start_sysinit (void)
 	      eval ("insmod", "ehci-hcd");
 	    }
 
-      if (nvram_match ("usb_storage", "1"))
-      {
-         cprintf ("loading scsi_mod\n");
-         eval ("insmod", "scsi_mod");
-         cprintf ("loading sd_mod\n");
-         eval ("insmod", "sd_mod");
-         cprintf ("loading usb-storage\n");
-         eval ("insmod", "usb-storage");
-         
-     	 
-         if (nvram_match ("usb_fs_ext3", "1"))
-         {
-         	cprintf ("loading ext2\n");
-         	eval ("insmod", "ext2");
-#ifdef HAVE_USB_ADVANCED	         
-         	cprintf ("loading jbd\n");
-         	eval ("insmod", "jbd");
-        	cprintf ("loading ext3\n");
-         	eval ("insmod", "ext3");
+	  if (nvram_match ("usb_storage", "1"))
+	    {
+	      cprintf ("loading scsi_mod\n");
+	      eval ("insmod", "scsi_mod");
+	      cprintf ("loading sd_mod\n");
+	      eval ("insmod", "sd_mod");
+	      cprintf ("loading usb-storage\n");
+	      eval ("insmod", "usb-storage");
+
+
+	      if (nvram_match ("usb_fs_ext3", "1"))
+		{
+		  cprintf ("loading ext2\n");
+		  eval ("insmod", "ext2");
+#ifdef HAVE_USB_ADVANCED
+		  cprintf ("loading jbd\n");
+		  eval ("insmod", "jbd");
+		  cprintf ("loading ext3\n");
+		  eval ("insmod", "ext3");
 #endif
-     	 }
-     	  
-         if (nvram_match ("usb_fs_fat", "1"))
-         {
-         	cprintf ("loading usb_fs_fat\n");
-         	eval ("insmod", "fat");
-         	cprintf ("loading usb_fs_vfat\n");
-         	eval ("insmod", "vfat");
-     	 }
-     	 
+		}
+
+	      if (nvram_match ("usb_fs_fat", "1"))
+		{
+		  cprintf ("loading usb_fs_fat\n");
+		  eval ("insmod", "fat");
+		  cprintf ("loading usb_fs_vfat\n");
+		  eval ("insmod", "vfat");
+		}
+
 //         if (nvram_match ("usb_fs_xfs", "1"))
 //         {
 //              cprintf ("loading usb_fs_xfs\n");
@@ -1337,7 +1337,8 @@ enable_dtag_vlan (int enable)
   int donothing = 0;
   if (nvram_match ("vdsl_state", "1") && enable)
     donothing = 1;
-  if ((nvram_match ("vdsl_state", "0") || nvram_match ("vdsl_state", "")) && !enable)
+  if ((nvram_match ("vdsl_state", "0") || nvram_match ("vdsl_state", ""))
+      && !enable)
     donothing = 1;
   if (enable)
     nvram_set ("vdsl_state", "1");
@@ -1386,37 +1387,45 @@ enable_dtag_vlan (int enable)
 	}
       return eth;
     }
-  system2 ("echo 1 > /proc/switch/eth0/reset");
-  system2 ("echo 1 > /proc/switch/eth1/reset");
   char tmp[200];
   char *eth = "eth0";
   FILE *in = fopen ("/proc/switch/eth1/reset", "rb");	// this condition fails almost. just one router (DLINK DIR-330) requires it
   if (in)
     {
-      return "eth1";
+      eth = "eth1";
       fclose (in);
     }
 
   if (!donothing)
     {
+      sprintf (tmp, "echo 1 > /proc/switch/%s/reset", eth);
+      system2 (tmp);
       if (enable)
 	{
-	  sprintf (tmp, "echo %s > /proc/switch/%s/vlan/1/ports", "", eth);
+	  fprintf (stderr, "enable vlan port mapping %s/%s\n",
+		   nvram_safe_get ("vlan0ports"), vlan7ports);
+	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/1/ports", "",
+		   eth);
 	  system2 (tmp);
-	  sprintf (tmp, "echo %s > /proc/switch/%s/vlan/0/ports",
+	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/0/ports",
 		   nvram_safe_get ("vlan0ports"), eth);
 	  system2 (tmp);
-	  sprintf (tmp, "echo %s > /proc/switch/%s/vlan/7/ports", vlan7ports,
-		   eth);
+	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/7/ports",
+		   vlan7ports, eth);
 	  system2 (tmp);
 	}
       else
 	{
-	  sprintf (tmp, "echo %s > /proc/switch/%s/vlan/7/ports", "", eth);
+	  fprintf (stderr, "disable vlan port mapping %s/%s\n",
+		   nvram_safe_get ("vlan0ports"), vlan7ports);
+	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/7/ports", "",
+		   eth);
 	  system2 (tmp);
-	  sprintf (tmp, "echo %s > /proc/switch/%s/vlan/0/ports",nvram_safe_get ("vlan0ports"), eth);
+	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/0/ports",
+		   nvram_safe_get ("vlan0ports"), eth);
 	  system2 (tmp);
-	  sprintf (tmp, "echo %s > /proc/switch/%s/vlan/1/ports",nvram_safe_get ("vlan1ports"), eth);
+	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/1/ports",
+		   nvram_safe_get ("vlan1ports"), eth);
 	  system2 (tmp);
 	}
     }
