@@ -119,7 +119,28 @@ err:
   return errno;
 }
 
-
+static char *getPhyDev()
+{
+FILE *in=fopen("/proc/switch/eth0/enable","rb");
+if (in)
+    {
+    fclose(in);
+    return "eth0";
+    }
+in=fopen("/proc/switch/eth1/enable","rb");
+if (in)
+    {
+    fclose(in);
+    return "eth1";
+    }
+in=fopen("/proc/switch/eth2/enable","rb");
+if (in)
+    {
+    fclose(in);
+    return "eth2";
+    }
+return "eth0";
+}
 
 #define MAX_VLAN_GROUPS	16
 #define MAX_DEV_IFINDEX	16
@@ -133,7 +154,7 @@ start_config_vlan (void)
   int i, j;
   char ea[ETHER_ADDR_LEN];
   char tmp[200];
-
+  char *phy = getPhyDev();
 // configure ports
   system2 ("echo 1 > /proc/switch/eth0/reset");
   system2 ("echo 1 > /proc/switch/eth1/reset");
@@ -143,11 +164,11 @@ start_config_vlan (void)
       sprintf (vlanb, "vlan%dports", i);
       if (nvram_get (vlanb) == NULL || nvram_match (vlanb, ""))
 	continue;
-      sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/%d/ports",
-	       nvram_safe_get (vlanb), i);
+      sprintf (tmp, "echo %s > /proc/switch/%s/vlan/%d/ports",
+	       nvram_safe_get (vlanb),phy, i);
       system2 (tmp);
-      sprintf (tmp, "echo %s > /proc/switch/eth1/vlan/%d/ports",
-	       nvram_safe_get (vlanb), i);
+      sprintf (tmp, "echo %s > /proc/switch/%s/vlan/%d/ports",
+	       nvram_safe_get (vlanb),phy, i);
       system2 (tmp);
     }
 
