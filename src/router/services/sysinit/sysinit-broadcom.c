@@ -1416,8 +1416,7 @@ enable_dtag_vlan (int enable)
 	}
       else
 	{
-	  fprintf (stderr, "disable vlan port mapping %s/%s\n",
-		   nvram_safe_get ("vlan0ports"), vlan7ports);
+	  fprintf (stderr, "disable vlan port mapping %s/%s\n",nvram_safe_get ("vlan0ports"), nvram_safe_get ("vlan1ports"));
 	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/7/ports", "",
 		   eth);
 	  system2 (tmp);
