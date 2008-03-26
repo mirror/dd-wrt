@@ -1005,6 +1005,11 @@ start_restore_defaults (void)
 #endif
 	}
     }
+   if (atoi(nvram_safe_get("nvram_ver"))<3)
+    {
+    nvram_set("nvram_ver","3");
+    nvram_set("block_multicast","1");
+    }
 
   cprintf ("check CFE nv\n");
   if (check_now_boot () == PMON_BOOT)
