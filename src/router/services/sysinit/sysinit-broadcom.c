@@ -537,10 +537,7 @@ start_sysinit (void)
 
       if (nvram_get ("pci/1/1/macaddr") == NULL)
 	need_reboot = 1;
-      unsigned char et0mac[20];
-      strcpy (et0mac, nvram_safe_get ("et0macaddr"));
-      nvram_set ("pci/1/1/macaddr", et0mac);
-
+      nvram_set ("pci/1/1/macaddr", nvram_safe_get ("et0macaddr"));
       nvram_set ("pci/1/1/stbcpo", "0");
       nvram_set ("pci/1/1/pa2gw1a0", "0");
       nvram_set ("pci/1/1/pa2gw1a1", "0");
