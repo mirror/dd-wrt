@@ -356,6 +356,7 @@ period_check (int sig)
     case ROUTER_WRT54G:
     case ROUTER_WRT54G_V8:
     case ROUTER_WRT150N:
+    case ROUTER_WRT160N:
     case ROUTER_WRT300N:
       sesgpio = 0x14;		//gpio 4, inversed
       break;
