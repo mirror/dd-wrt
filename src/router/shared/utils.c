@@ -440,6 +440,9 @@ internal_getRouterBrand ()
 #elif HAVE_USR5453
   setRouter ("US Robotics USR5453");
   return ROUTER_BOARD_CA8;
+#elif HAVE_CA8PRO
+  setRouter ("Wistron CA8-4 PRO");
+  return ROUTER_BOARD_CA8PRO;
 #elif HAVE_CA8
   setRouter ("Wistron CA8-4");
   return ROUTER_BOARD_CA8;
