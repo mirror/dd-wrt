@@ -582,7 +582,6 @@ start_restore_defaults (void)
     case ROUTER_NETGEAR_WNR834BV2:
     case ROUTER_ASUS_WL500G:
     case ROUTER_ASUS_WL500W:
-    case ROUTER_NETGEAR_WG602_V4:
 #endif
     case ROUTER_BUFFALO_WZRG300N:
     case ROUTER_BUFFALO_WLAH_G54:
@@ -620,6 +619,7 @@ start_restore_defaults (void)
     case ROUTER_USR_5430:
     case ROUTER_BELKIN_F5D7230_V2000:
     case ROUTER_NETGEAR_WG602_V3:
+    case ROUTER_NETGEAR_WG602_V4:
 #endif
     case ROUTER_BUFFALO_WLA2G54C:
     case ROUTER_BUFFALO_WLI_TX4_G54HP:
