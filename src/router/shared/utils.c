@@ -1082,7 +1082,14 @@ internal_getRouterBrand ()
       setRouter ("Linksys WRT54Gv8 / GSv7");
       return ROUTER_WRT54G_V8;
     }
-    
+
+  if (boardnum == 1 &&
+      nvram_match ("boardtype", "0x048e") && nvram_match ("boardrev", "0x11"))
+    {
+      cprintf ("router is Netgear WG602 v4\n");
+      setRouter ("Netgear WG602 v4");
+      return ROUTER_NETGEAR_WG602_V4;
+    }    
 
   if (boardnum == 1 &&
       nvram_match ("boardtype", "0x048e") && nvram_match ("boardrev", "0x35") && nvram_match("parefldovoltage","0x28"))
