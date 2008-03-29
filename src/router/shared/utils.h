@@ -237,7 +237,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_NETGEAR_WG602_V3 0x4511
 
 // Netgear WG602 v4 (BCM5354 cpu, fccid: Netgear PY3WG602V4)
-#define ROUTER_NETGEAR_WG602_V4 0x460f
+#define ROUTER_NETGEAR_WG602_V4 0x4617
 
 // Linksys WRT600N (BCM4704 cpu, Gigabit switch, dual radio 2.4 and 5 GHz Broadcom, fccid: Linksys Q87-WRT600NV1, Q87-WRT600NV11)
 #define ROUTER_WRT600N 0x4717
