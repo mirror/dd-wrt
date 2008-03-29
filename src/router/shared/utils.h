@@ -236,48 +236,51 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Netgear WG602 v3 (BCM5350 cpu, fccid: Netgear PY3WG602V3)
 #define ROUTER_NETGEAR_WG602_V3 0x4511
 
+// Netgear WG602 v4 (BCM5354 cpu, fccid: Netgear PY3WG602V4)
+#define ROUTER_NETGEAR_WG602_V4 0x460f
+
 // Linksys WRT600N (BCM4704 cpu, Gigabit switch, dual radio 2.4 and 5 GHz Broadcom, fccid: Linksys Q87-WRT600NV1, Q87-WRT600NV11)
-#define ROUTER_WRT600N 0x4617
+#define ROUTER_WRT600N 0x4717
 
 // Linksys WRH54G (BCM5354 cpu, fccid: Q87-WRH54G)
-#define ROUTER_LINKSYS_WRH54G 0x4716
+#define ROUTER_LINKSYS_WRH54G 0x4816
 
 // Linksys WRT150N v1.1 (BCM4704 cpu, BCM5325F switch, fccid: Linksys Q87-WRT150NV11)
-#define ROUTER_WRT150NV11 0x4816
+#define ROUTER_WRT150NV11 0x4916
 
 // Linksys WRT150N v1.2 (fccid: Linksys ?)
-#define ROUTER_WRT150NV12 0x4916
+#define ROUTER_WRT150NV12 0x4a16
 
 // Linksys WRT160N v1 (BCM4703 cpu, ?? switch, fccid: Linksys Q87-WRT160N)
-#define ROUTER_WRT160N 0x4a16
+#define ROUTER_WRT160N 0x4b16
 
 // Linksys WRT300N v1.1 (BCM4705 cpu, 5325 switch, fccid: Linksys Q87-WRT300NV11)
-#define ROUTER_WRT300NV11 0x4b0f
+#define ROUTER_WRT300NV11 0x4c0f
 
 // Linksys WRT310N v1 (BCM4705 cpu, fccid: Linksys Q87-WRT310N)
-#define ROUTER_WRT310N 0x4c16
+#define ROUTER_WRT310N 0x4d16
 
 // D-Link DIR330 (BCM5836 cpu, fccid: D Link KA2DIR330A1)
-#define ROUTER_DLINK_DIR330 0x4d13
+#define ROUTER_DLINK_DIR330 0x4e13
 
 // Netgear WNDR3300 (BCM4704 cpu, BCM5325F switch, dual radio 2.4-N and 5 GHz Broadcom, fccid: Netgear PY307300072)
-#define ROUTER_NETGEAR_WNDR3300 0x4e16
+#define ROUTER_NETGEAR_WNDR3300 0x4f16
 
 // Linksys WRT54G2 V1 (BCM5354 cpu, fccid: Linksys Q87-WRT54G2V1)
-#define ROUTER_WRT54G2V1 0x4f0f
+#define ROUTER_WRT54G2V1 0x500f
 
 // Linksys WRT54Gv8.1 (BCM5354 cpu, fccid: Linksys Q87-WRT54GV81)
-#define ROUTER_WRT54G_V81 0x5017
+#define ROUTER_WRT54G_V81 0x5117
 
 // Netgear WGR614L (BCM5354 cpu, serial flash, fccid: Netgear PY306400057)
 // NEtgear WGR614 v8 - same - 
-#define ROUTER_NETGEAR_WGR614L 0x5117
+#define ROUTER_NETGEAR_WGR614L 0x5217
 
 // Netgear WNR834Bv2 (BCM4704 cpu, BCM5325 switch, fccid: Netgear PY307100061)
-#define ROUTER_NETGEAR_WNR834BV2 0x5216
+#define ROUTER_NETGEAR_WNR834BV2 0x5316
 
 // Asus WL-500g Premium v2 (BCM5354 cpu, fccid: Asus MSQWL500GPV2)
-#define ROUTER_ASUS_WL500G_PRE_V2 0x5312
+#define ROUTER_ASUS_WL500G_PRE_V2 0x5412
 
 
 #define NVROUTER "DD_BOARD"
