@@ -151,6 +151,13 @@ extern int http_get (const char *server, char *buf, size_t count,
  * @param	mtd	path to or partition name of MTD device 
  * @return	0 on success and errno on failure
  */
+
+struct img_info {
+	uint32_t lenght;
+	uint32_t CRC;
+	};
+
+
 int
 mtd_write (const char *path, const char *mtd)
 {
@@ -161,13 +168,14 @@ mtd_write (const char *path, const char *mtd)
   struct sysinfo info;
   struct trx_header trx;
   unsigned long crc;
-
+  unsigned int crc_data;
+  unsigned int data_len=0;
   FILE *fp;
   char *buf = NULL;
   long count, len, off;
   long sum = 0;			// for debug
   int ret = -1;
-
+  int i;
 
   /* Examine TRX header */
   if ((fp = fopen (path, "r")))
@@ -295,6 +303,7 @@ mtd_write (const char *path, const char *mtd)
 	       sizeof (struct trx_header) - OFFSETOF (struct trx_header,
 						      flag_version),
 	       CRC32_INIT_VALUE);
+  crc_data = 0;
   /* Write file or URL to MTD device */
   for (erase_info.start = 0; erase_info.start < trx.len;
        erase_info.start += count)
@@ -325,6 +334,9 @@ mtd_write (const char *path, const char *mtd)
 	}
       /* Update CRC */
       crc = crc32 (&buf[off], count - off, crc);
+      for (i=0;i<(count-off);i++)
+        crc_data+=(unsigned char)buf[off+i];
+      data_len+=(count-off);
       /* Check CRC before writing if possible */
       if (count == trx.len)
 	{
@@ -365,7 +377,24 @@ fail:
     close (mtd_fd);
   if (fp)
     fclose (fp);
+#ifdef HAVE_CA8PRO
+buf = malloc(65536);
+FILE *in=fopen("/dev/mtdblock/2","rb");
+fread(buf,65536,1,in);
+fclose(in);
+struct img_info *image_info;
+image_info = buf+0x56;
+image_info->lenght = data_len;
+image_info->CRC = crc_data;
+in=fopen("/tmp/bdata","wb");
+fwrite(buf,65536,1,in);
+fclose(in);
+fprintf(stderr,"fixup CRC %X and LEN %X\n",crc_data,data_len);
+eval("mtd","-f","write","/tmp/bdata","bdata");
+#endif
 //    eval("fischecksum");
+
+
   return ret;
 }
 
