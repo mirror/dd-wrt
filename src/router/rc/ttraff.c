@@ -93,6 +93,7 @@ ttraff_main (void)
   unsigned long out_diff = 0;  
   unsigned long in_dev_last = 0;
   unsigned long out_dev_last = 0;
+  int gotbase = 0;
   unsigned long gigcounti, gigcounto;
   int gigi = 0;
   int gigo = 0;
@@ -138,6 +139,13 @@ ttraff_main (void)
     
   fclose (in);
     }
+    
+   if (gotbase == 0)
+   {
+	 in_dev_last = in_dev;
+	 out_dev_last = out_dev;
+	 gotbase = 1;
+   }	    
     
    if (in_dev_last > in_dev)  //4GB limit was reached
    {
