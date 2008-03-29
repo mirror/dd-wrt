@@ -525,7 +525,6 @@ start_sysinit (void)
       break;
 
     case ROUTER_SITECOM_WL111:
-    case ROUTER_NETGEAR_WG602_V4:
       nvram_set ("lan_ifnames", "eth0 eth2");
       nvram_set ("wl0_ifname", "eth2");
       nvram_set ("wan_ifname", "eth1");
@@ -660,6 +659,7 @@ start_sysinit (void)
     case ROUTER_BUFFALO_WLI_TX4_G54HP:
     case ROUTER_BELKIN_F5D7230_V2000:
     case ROUTER_NETGEAR_WG602_V3:
+    case ROUTER_NETGEAR_WG602_V4:
       nvram_set ("lan_ifnames", "eth0 eth1");
       nvram_set ("wl0_ifname", "eth1");
       nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
