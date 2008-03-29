@@ -1011,17 +1011,33 @@ start_lan (void)
   if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("wan_proto", "disabled"))
     {
+      if (getRouterBrand () == ROUTER_BOARD_CA8PRO)
+	{
+      nvram_set ("lan_ifname", "br0");
+      nvram_set ("lan_ifnames", "vlan0 vlan1 ath0");
+      nvram_set ("wan_ifname", "");
+      nvram_set ("wan_ifnames", "");
+      }else{
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth0 ath0");
       nvram_set ("wan_ifname", "");
-      nvram_set ("wan_ifnames", "");
+      nvram_set ("wan_ifnames", "");      
+      }
     }
   else
     {
+      if (getRouterBrand () == ROUTER_BOARD_CA8PRO)
+	{
+      nvram_set ("lan_ifname", "br0");
+      nvram_set ("lan_ifnames", "vlan0 ath0");
+      nvram_set ("wan_ifname", "vlan1");
+      nvram_set ("wan_ifnames", "vlan1");
+      }else{
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "ath0");
       nvram_set ("wan_ifname", "eth0");
       nvram_set ("wan_ifnames", "eth0");
+      }
     }
 
 
@@ -1664,7 +1680,7 @@ start_lan (void)
   char staticlan[32];
   sprintf (staticlan, "%s:0", lan_ifname);
 #if defined(HAVE_FONERA) || defined(HAVE_CA8) && !defined(HAVE_MR3202A)
-  if (getRouterBrand () != ROUTER_BOARD_FONERA2200)
+  if (getRouterBrand () != ROUTER_BOARD_FONERA2200 && getRouterBrand() != ROUTER_BOARD_CA8PRO)
     if (nvram_match ("ath0_mode", "sta")
 	|| nvram_match ("ath0_mode", "wdssta")
 	|| nvram_match ("ath0_mode", "wet")
@@ -2236,6 +2252,10 @@ start_wan (int status)
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
     nvram_safe_get ("pppoe_wan_ifname") : "eth0";
+#elif HAVE_CA8PRO
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
+					   "") ?
+    nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
 #elif HAVE_CA8
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
@@ -2302,7 +2322,7 @@ start_wan (int status)
 
   ifconfig (wan_ifname, 0, NULL, NULL);
 #if defined(HAVE_FONERA) || defined(HAVE_CA8) && !defined(HAVE_MR3202A)
-  if (getRouterBrand () != ROUTER_BOARD_FONERA2200)
+  if (getRouterBrand () != ROUTER_BOARD_FONERA2200 && getRouterBrand () != ROUTER_BOARD_CA8PRO)
     {
       char staticlan[32];
       sprintf (staticlan, "%s:0", wan_ifname);

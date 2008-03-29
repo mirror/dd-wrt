@@ -282,6 +282,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Asus WL-500g Premium v2 (BCM5354 cpu, fccid: Asus MSQWL500GPV2)
 #define ROUTER_ASUS_WL500G_PRE_V2 0x5412
 
+// Wistron CA8-PRO (RDAA-81)
+#define ROUTER_BOARD_CA8PRO 0x5406
+
 
 #define NVROUTER "DD_BOARD"
 
@@ -551,6 +554,7 @@ int softkill (char *name);
 
 int getmask(char *netmask);
 int doMultiCast(void);
+int getMTD (char *name);
 
 #define MAX_WDS_DEVS 10
 #endif

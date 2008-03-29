@@ -464,6 +464,9 @@ flush_interfaces (void)
 #elif HAVE_TW6600
   snprintf (all_ifnames, 255, "%s %s %s", "eth0",
 	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
+#elif HAVE_CA8PRO
+  snprintf (all_ifnames, 255, "%s %s %s", "vlan1",
+	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
 #elif HAVE_CA8
   snprintf (all_ifnames, 255, "%s %s %s", "eth0",
 	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
