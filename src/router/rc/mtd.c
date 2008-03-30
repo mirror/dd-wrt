@@ -157,6 +157,7 @@ struct img_info {
 	uint32_t CRC;
 	};
 
+#define SQUASHFS_MAGIC			0x74717368
 
 int
 mtd_write (const char *path, const char *mtd)
@@ -168,7 +169,8 @@ mtd_write (const char *path, const char *mtd)
   struct sysinfo info;
   struct trx_header trx;
   unsigned long crc;
-  unsigned int crc_data;
+  int squashfound=0;
+  unsigned int crc_data=0;
   unsigned int data_len=0;
   FILE *fp;
   char *buf = NULL;
@@ -334,9 +336,20 @@ mtd_write (const char *path, const char *mtd)
 	}
       /* Update CRC */
       crc = crc32 (&buf[off], count - off, crc);
+      if (!squashfound)
+      {
       for (i=0;i<(count-off);i++)
+        {
+	unsigned int *sq = (unsigned int *)&buf[off+i];
+	if (*sq == SQUASHFS_MAGIC)
+	    {
+	    squashfound=1;
+	    break;
+	    }
         crc_data+=(unsigned char)buf[off+i];
-      data_len+=(count-off);
+	}
+      data_len+=i;
+      }
       /* Check CRC before writing if possible */
       if (count == trx.len)
 	{
