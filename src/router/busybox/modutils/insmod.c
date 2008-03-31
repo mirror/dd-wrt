@@ -3011,7 +3011,9 @@ static void obj_check_undefineds(struct obj_file *f)
 					sym->value = 0;
 				} else {
 					if (!flag_quiet)
+						{
 						bb_error_msg_and_die("unresolved symbol %s", sym->name);
+						}
 				}
 			}
 	}
