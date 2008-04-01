@@ -709,11 +709,19 @@ internal_getRouterBrand ()
       return ROUTER_BRCM4702_GENERIC;
     }
 
-  if (nvram_match ("boardtype", "0x0100") && nvram_match ("boardnum", ""))
+  if (boardnum == 0 && nvram_match ("boardtype", "0x0100") && nvram_match ("boardrev", "0x10"))
     {
-      cprintf ("router is Askey board RT2206D\n");
-      setRouter ("Askey board RT2206D-D56");
-      return ROUTER_BRCM4702_GENERIC;
+      cprintf ("router is Askey board RT2205(6)D-D56\n");	    
+      if (startswith (et0, "00:11:50") ||
+	  startswith (et0, "00:30:BD") || startswith (et0, "00:30:bd"))
+	{
+      setRouter ("Askey board RT2205(6)D-D56");
+	}
+	  else
+	{
+      setRouter ("Belkin board F5D8230");
+    }
+      return ROUTER_ASKEY_RT220XD;
     }
 
   if (nvram_match ("boardtype", "0x0101"))
