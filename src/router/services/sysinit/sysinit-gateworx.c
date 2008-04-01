@@ -333,7 +333,39 @@ Configure mac addresses by reading data from eeprom
       sleep (1);
       system ("echo R01=01 > /proc/driver/KS8995M");	// enable switch 
     }
-
+  char filename2[64];
+  sprintf(filename2,"/dev/mtdblock/%d",getMTD("RedBoot"));
+  file = fopen (filename2, "r");
+  if (file)
+    {
+      fseek(file,0x1f800,SEEK_SET);
+      unsigned int signature;
+      fread(&signature,4,1,file);
+      if (signature==0x20021103)
+      {
+      fprintf(stderr,"Compex WP188 detected\n");
+      eval ("ifconfig", "ixp0", "0.0.0.0", "down");
+      eval ("ifconfig", "ixp1", "0.0.0.0", "down");
+      unsigned char buf[16];
+      fseek (file, 0x1f810, SEEK_SET);
+      fread (&buf[0], 6, 1, file);
+      char mac[16];
+      sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2],
+	       buf[3], buf[4], buf[5]);
+      fprintf(stderr,"configure IXP0 to %s\n",mac);
+      eval ("ifconfig", "ixp0", "hw", "ether", mac);
+      fseek (file, 0x1f818, SEEK_SET);
+      fread (&buf[6], 6, 1, file);
+      sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[6], buf[7], buf[8],
+	       buf[9], buf[10], buf[11]);
+      fprintf(stderr,"configure IXP1 to %s\n",mac);
+      eval ("ifconfig", "ixp1", "hw", "ether", mac);
+      eval ("ifconfig", "ixp0", "0.0.0.0", "up");
+      eval ("ifconfig", "ixp1", "0.0.0.0", "up");
+      }
+      fclose (file);
+    }
+    
 
   /* Set a sane date */
   stime (&tm);
