@@ -163,12 +163,41 @@ read_bit (int bit)
   close (file);
   return _bit.state;
 }
+int isCompex(void)
+{
+static int compex=-1;
+if (compex!=-1)
+    return compex;
+  char filename2[64];
+  sprintf(filename2,"/dev/mtdblock/%d",getMTD("RedBoot"));
+  FILE *file = fopen (filename2, "r");
+  if (file)
+    {
+      fseek(file,0x1f800,SEEK_SET);
+      unsigned int signature;
+      fread(&signature,4,1,file);
+      if (signature==0x20021103)
+      {
+       compex=1;
+      }else
+      {
+       compex=0;
+      }
+      fclose(file);
+    }
+return compex;
+}
+
 
 int
 getbuttonstate ()
 {
   FILE *in;
-  int ret = read_bit (4);
+  int ret;
+  if (isCompex())
+  ret = read_bit (0);
+  else
+  ret = read_bit (4);
   return ret == 0 ? 1 : 0;
 }
 #endif
