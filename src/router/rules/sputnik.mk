@@ -11,5 +11,6 @@ ifeq ($(CONFIG_SPUTNIK_PRO),y)
 else
 	cp -fpR sputnik/config/1sputnik.webhotspot $(INSTALLDIR)/sputnik/etc/config/1sputnik.webhotspot
 endif
+	cp -fpR sputnik/config/sputnik.nvramconfig $(INSTALLDIR)/sputnik/etc/config/sputnik.nvramconfig
 	install -D sputnik/$(ARCH)/sputnik $(INSTALLDIR)/sputnik/usr/sbin/sputnik
 	install -D sputnik/$(ARCH)/libiksemel.so $(INSTALLDIR)/sputnik/usr/lib/libiksemel.so
