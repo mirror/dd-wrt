@@ -32,15 +32,21 @@ char *board_config, *radio_config;
 
 extern int early_serial_setup(struct uart_port *port);
 
+struct ar531x_boarddata default_config;
+static int fake_config=0;
+
 static u8 *find_board_config(char *flash_limit)
 {
 	char *addr;
 	int found = 0;
-
+	char Name[]="Atheros AR5001 default                                            ";
+	int i;
+	u32 x;
+	u8 mac[6],wmac[6];
 	for (addr = (char *) (flash_limit - 0x1000);
 		addr >= (char *) (flash_limit - 0x30000);
 		addr -= 0x1000) {
-
+		printk("scanning for board data at %X (%X)\n",addr,*(int *)addr);
 		if ( *(int *)addr == 0x35333131) {
 			/* config magic found */
 			found = 1;
@@ -49,9 +55,51 @@ static u8 *find_board_config(char *flash_limit)
 	}
 
 	if (!found) {
-		printk("WARNING: No board configuration data found!\n");
-//		addr=&bdata;
 		addr = NULL;
+		if (strstr((char*)(0xbfc00010),"CA804.SOB")) {
+		
+ 		printk("WARNING: No board configuration data found, creating defaults in memory!\n");
+ 		
+ 		default_config.magic=AR531X_BD_MAGIC;
+ 		default_config.cksum=0x1d29;
+ 		default_config.rev=BD_REV;
+ 		default_config.major=0x1;
+ 		default_config.minor=0x0;
+ 		default_config.config=0 | BD_ENET1 | BD_UART0 | BD_RSTFACTORY | BD_SYSLED | BD_WLAN1 | BD_ISCASPER | BD_WLAN1_2G_EN | BD_WLAN1_5G_EN;
+ 		default_config.resetConfigGpio=0x06;
+ 		default_config.sysLedGpio=0x07;
+ 		default_config.cpuFreq=0x0aba9500;
+ 		default_config.sysFreq=0x02aea540;
+ 		default_config.cntFreq=0x055d4a80;
+ 		default_config.pciId=0x13;
+ 		default_config.memCap=0x800f;
+		memcpy(wmac,(char*)0xbfc00044,6);
+	x=0x100;
+	for (i=0; i<6; i++) {
+		if (x>0xff) x=1;
+		else x=0;
+		x=x+wmac[5-i];
+		mac[5-i]=x & 0xff;
+	}
+
+	printk ("Create Board Data\n");
+	printk ("WMAC %02X:%02X:%02X:%02X:%02X:%02X\n",wmac[0],wmac[1],wmac[2],wmac[3],wmac[4],wmac[5]);
+	printk (" MAC %02X:%02X:%02X:%02X:%02X:%02X\n",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);																										
+ 	for (i=0; i < 6; i++) {
+	        default_config.wlan0Mac[i]=wmac[i];
+	        default_config.enet0Mac[i]=wmac[i];
+	        default_config.enet1Mac[i]=mac[i];
+	        default_config.wlan1Mac[i]=wmac[i];
+	}
+	
+ 		
+ 		for (i=0; i<64 ; i++) {
+ 		    default_config.boardName[i] = Name[i];
+ 		}
+		fake_config=1;
+ 
+ 		addr = (char*) &default_config;
+		}
 	}
 	
 	return addr;
@@ -61,7 +109,8 @@ static u8 *find_radio_config(char *flash_limit, char *board_config)
 {
 	int dataFound;
 	u32 radio_config;
-	
+	if (fake_config)
+	    board_config = flash_limit-0x10000;
 	/* 
 	 * Now find the start of Radio Configuration data, using heuristics:
 	 * Search forward from Board Configuration data by 0x1000 bytes
@@ -91,6 +140,7 @@ static u8 *find_radio_config(char *flash_limit, char *board_config)
 #endif
 
 	if (!dataFound) {
+		radio_config=flash_limit-0x10000;
 		printk("Could not find Radio Configuration data\n");
 		radio_config = 0;
 	}
@@ -123,8 +173,10 @@ int __init ar531x_find_config(char *flash_limit)
 
 	radio_config = board_config + 0x100 + ((rcfg - bcfg) & 0xfff);
 	printk("Found board config at 0x%x\n",bcfg);
-	printk("Radio config found at offset 0x%x(0x%x)\n", rcfg - bcfg, radio_config - board_config);
+	printk("Radio config found at offset 0x%x(0x%x) (%p)\n", rcfg - bcfg, radio_config - board_config,rcfg);
 	rcfg_size = BOARD_CONFIG_BUFSZ - ((rcfg - bcfg) & (BOARD_CONFIG_BUFSZ - 1));
+	if (fake_config)
+	    rcfg_size = BOARD_CONFIG_BUFSZ - (0xc000 & (BOARD_CONFIG_BUFSZ - 1));
 	memcpy(radio_config, rcfg, rcfg_size);
 	
 	return 0;
