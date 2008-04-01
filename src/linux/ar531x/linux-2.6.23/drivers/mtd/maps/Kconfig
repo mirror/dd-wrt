@@ -614,5 +614,19 @@ config MTD_PLATRAM
 
 	  This selection automatically selects the map_ram driver.
 
+
+config MTD_AR531X
+        tristate "AR531X Flash device in physical memory map"
+        depends on MTD
+        help
+          Map driver for Atheros SoC AR531x
+
+config MTD_AR531X_SIZE
+        hex "Physical size"
+        depends on MTD_AR531X
+        default "0x400000"
+        help
+          Physical size flash
+
 endmenu
 
