@@ -348,6 +348,11 @@ internal_getRouterBrand ()
       setRouter ("Avila GW2345");
       return ROUTER_BOARD_GATEWORX_GW2345;
     }
+  else if (reg1 == 0x0 && reg2 == 0x8201)	//realtek 
+    {
+      setRouter ("Compex WP188");
+      return ROUTER_BOARD_GATEWORX;
+    }
   else
     {
       setRouter ("Unknown");
