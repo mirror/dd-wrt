@@ -445,6 +445,7 @@ start_sysinit (void)
       break;
 
     case ROUTER_RT210W:
+    case ROUTER_ASKEY_RT220XD:
       nvram_set ("lan_ifnames", "eth0 eth2");
       nvram_set ("wan_ifname", "eth1");	// fix for Belkin f5d7230 v1000 WAN problem.
       nvram_set ("wl0_ifname", "eth2");

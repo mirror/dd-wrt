@@ -587,6 +587,7 @@ start_restore_defaults (void)
     case ROUTER_BUFFALO_WLAH_G54:
     case ROUTER_BUFFALO_WAPM_HP_AM54G54:
     case ROUTER_BUFFALO_WZRRSG54:
+    case ROUTER_ASKEY_RT220XD:
       linux_overrides = generic;
       break;
 #ifndef HAVE_BUFFALO
