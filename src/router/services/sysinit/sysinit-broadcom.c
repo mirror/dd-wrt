@@ -1365,7 +1365,10 @@ enable_dtag_vlan (int enable)
       vlan7ports = "0t 8";
       int vlanswap=0;
       if (nvram_match("vlan1ports","4 8"))
+        {
         vlanswap=1;	
+        vlan7ports = "4t 8";
+	}
       char *save_ports2 = nvram_safe_get ("vlan2ports");
       if (vlanswap)
     	    save_ports2 = nvram_safe_get ("vlan1ports");
