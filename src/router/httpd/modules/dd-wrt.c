@@ -5878,7 +5878,7 @@ websWrite(wp,"<div class=\"setting\">\n");
 websWrite(wp,"<div class=\"label\">%s</div>\n",live_translate ("share.acktiming"));
 int ack=get_acktiming();
 int distance = ((ack-3)/2)*300;
-websWrite(wp,"<span id=\"wl_ack\">%dµs (%dm)</span> &nbsp;\n",ack,distance);
+websWrite(wp,"<span id=\"wl_ack\">%d&#181;s (%dm)</span> &nbsp;\n",ack,distance);
 websWrite(wp,"</div>\n");
 }
 
@@ -5886,7 +5886,7 @@ void ej_update_acktiming (webs_t wp, int argc, char_t ** argv)
 {
 int ack=get_acktiming();
 int distance = ((ack-3)/2)*300;
-websWrite(wp,"%dµs (%dm)",ack,distance);
+websWrite(wp,"%d&#181;s (%dm)",ack,distance);
 }
 
 
