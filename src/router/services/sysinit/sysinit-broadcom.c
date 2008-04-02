@@ -1359,17 +1359,25 @@ enable_dtag_vlan (int enable)
     {
       vlan7ports = "1t 5";
     }
-  if (nvram_match ("vlan2ports", "0 8") || nvram_match ("vlan2ports", "0 8*") || nvram_match ("vlan2ports", "0 8t"))	// special condition for Broadcom Gigabit Phy routers 
+  if (nvram_match ("vlan2ports", "0 8") || nvram_match ("vlan2ports", "0 8*") || nvram_match ("vlan2ports", "0 8t") || nvram_match ("vlan1ports", "4 8"))	// special condition for Broadcom Gigabit Phy routers 
     {
       char *eth = "eth1";
       vlan7ports = "0t 8";
+      int vlanswap=0;
+      if (nvram_match("vlan1ports","4 8"))
+        vlanswap=1;	
       char *save_ports2 = nvram_safe_get ("vlan2ports");
+      if (vlanswap)
+    	    save_ports2 = nvram_safe_get ("vlan1ports");
       if (getRouterBrand () == ROUTER_WRT600N)
 	eth = "eth2";
       if (donothing)
 	return eth;
       if (enable)
 	{
+        if (vlanswap)
+	  nvram_set ("vlan1ports", "");
+	else
 	  nvram_set ("vlan2ports", "");
 	  nvram_set ("vlan7ports", vlan7ports);
 	}
@@ -1382,6 +1390,9 @@ enable_dtag_vlan (int enable)
       start_lan ();
       if (enable)
 	{
+        if (vlanswap)
+	  nvram_set ("vlan1ports", save_ports2);
+	else
 	  nvram_set ("vlan2ports", save_ports2);
 	  nvram_set ("vlan7ports", "");
 	}
