@@ -1,13 +1,17 @@
-/* dnsmasq is Copyright (c) 2000-2006 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2007 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 dated June, 1991.
-
+   the Free Software Foundation; version 2 dated June, 1991, or
+   (at your option) version 3 dated 29 June, 2007.
+ 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
+     
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "dnsmasq.h"
@@ -244,7 +248,7 @@ void lease_update_dns(void)
 {
   struct dhcp_lease *lease;
   
-  if (dns_dirty)
+  if (daemon->port != 0 && dns_dirty)
     {
       cache_unhash_dhcp();
       
@@ -474,6 +478,15 @@ void lease_set_hostname(struct dhcp_lease *lease, char *name, char *suffix, int 
   file_dirty = 1;
   dns_dirty = 1; 
   lease->changed = 1; /* run script on change */
+}
+
+void lease_set_interface(struct dhcp_lease *lease, int interface)
+{
+  if (lease->last_interface == interface)
+    return;
+
+  lease->last_interface = interface;
+  lease->changed = 1;
 }
 
 void rerun_scripts(void)

@@ -2,12 +2,16 @@
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 dated June, 1991.
-
+   the Free Software Foundation; version 2 dated June, 1991, or
+   (at your option) version 3 dated 29 June, 2007.
+ 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
+     
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "dnsmasq.h"
@@ -68,13 +72,6 @@ void log_start(struct passwd *ent_pw)
   if (!log_reopen(daemon->log_file))
     die(_("cannot open %s: %s"), daemon->log_file ? daemon->log_file : "log", EC_FILE);
   
-  /* If we're running as root and going to change uid later,
-     change the ownership here so that the file is always owned by
-     the dnsmasq user. Then logrotate can just copy the owner.
-     Failure of the chown call is OK, (for instance when started as non-root) */
-  if (log_to_file && ent_pw && ent_pw->pw_uid != 0)
-    fchown(log_fd, ent_pw->pw_uid, -1);
- 
   /* if queuing is inhibited, make sure we allocate
      the one required buffer now. */
   if (max_logs == 0)
@@ -83,29 +80,47 @@ void log_start(struct passwd *ent_pw)
       free_entries->next = NULL;
       entries_alloced = 1;
     }
+
+  /* If we're running as root and going to change uid later,
+     change the ownership here so that the file is always owned by
+     the dnsmasq user. Then logrotate can just copy the owner.
+     Failure of the chown call is OK, (for instance when started as non-root) */
+  if (log_to_file && ent_pw && ent_pw->pw_uid != 0 && fchown(log_fd, ent_pw->pw_uid, -1) != 0)
+    my_syslog(LOG_WARNING, _("warning: failed to change owner of %s: %s"), daemon->log_file, strerror(errno));
 }
 
 int log_reopen(char *log_file)
 {
-  int flags;
-  
   if (log_fd != -1)
     close(log_fd);
 
   /* NOTE: umask is set to 022 by the time this gets called */
      
   if (log_file)
-    log_fd = open(log_file, O_WRONLY|O_CREAT|O_APPEND, S_IRUSR|S_IWUSR|S_IRGRP); 
+    {
+      log_fd = open(log_file, O_WRONLY|O_CREAT|O_APPEND, S_IRUSR|S_IWUSR|S_IRGRP);
+      return log_fd != -1;
+    }
   else
-    log_fd = socket(AF_UNIX, connection_type, 0);
-  
-  if (log_fd == -1)
-    return 0;
-  
-  /* if max_logs is zero, leave the socket blocking */
-  if (max_logs != 0 && (flags = fcntl(log_fd, F_GETFL)) != -1)
-    fcntl(log_fd, F_SETFL, flags | O_NONBLOCK);
+#ifdef HAVE_SOLARIS_NETWORK
+    /* Solaris logging is "different", /dev/log is not unix-domain socket.
+       Just leave log_fd == -1 and use the vsyslog call for everything.... */
+#   define _PATH_LOG ""  /* dummy */
+    log_fd = -1;
+#else
+    {
+       int flags;
+       log_fd = socket(AF_UNIX, connection_type, 0);
       
+      if (log_fd == -1)
+	return 0;
+      
+      /* if max_logs is zero, leave the socket blocking */
+      if (max_logs != 0 && (flags = fcntl(log_fd, F_GETFL)) != -1)
+	fcntl(log_fd, F_SETFL, flags | O_NONBLOCK);
+    }
+#endif
+
   return 1;
 }
 #endif
@@ -187,7 +202,7 @@ static void log_write(void)
 #ifdef HAVE_SOCKADDR_SA_LEN
 	      logaddr.sun_len = sizeof(logaddr) - sizeof(logaddr.sun_path) + strlen(_PATH_LOG) + 1; 
 #endif
-	      logaddr.sun_family = AF_LOCAL;
+	      logaddr.sun_family = AF_UNIX;
 	      strncpy(logaddr.sun_path, _PATH_LOG, sizeof(logaddr.sun_path));
 	      
 	      /* Got connection back? try again. */
@@ -235,15 +250,15 @@ void my_syslog(int priority, const char *format, ...)
   size_t len;
   pid_t pid = getpid();
 
-  va_start(ap, format); 
-  
   if (log_stderr) 
     {
       fprintf(stderr, "dnsmasq: ");
+      va_start(ap, format);
       vfprintf(stderr, format, ap);
+      va_end(ap);
       fputc('\n', stderr);
     }
-  
+
   if (log_fd == -1)
     {
       /* fall-back to syslog if we die during startup or fail during running. */
@@ -253,6 +268,7 @@ void my_syslog(int priority, const char *format, ...)
 	  openlog("dnsmasq", LOG_PID, log_fac);
 	  isopen = 1;
 	}
+      va_start(ap, format);  
       vsyslog(priority, format, ap);
       va_end(ap);
       return;
@@ -283,9 +299,11 @@ void my_syslog(int priority, const char *format, ...)
       if (!log_to_file)
 	p += sprintf(p, "<%d>", priority | log_fac);
       
-      p += sprintf(p, "%.15s dnsmasq[%d]: ", ctime(&time_now) + 4, pid);
+      p += sprintf(p, "%.15s dnsmasq[%d]: ", ctime(&time_now) + 4, (int)pid);
       len = p - entry->payload;
+      va_start(ap, format);  
       len += vsnprintf(p, MAX_MESSAGE - len, format, ap) + 1; /* include zero-terminator */
+      va_end(ap);
       entry->length = len > MAX_MESSAGE ? MAX_MESSAGE : len;
       entry->offset = 0;
       entry->pid = pid;
@@ -332,8 +350,6 @@ void my_syslog(int priority, const char *format, ...)
 	  log_write();
 	}
     } 
- 
-  va_end(ap);
 }
 #endif
 void set_log_writer(fd_set *set, int *maxfdp)

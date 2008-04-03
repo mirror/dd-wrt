@@ -1,13 +1,17 @@
-/* dnsmasq is Copyright (c) 2000-2006 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2007 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 dated June, 1991.
-
+   the Free Software Foundation; version 2 dated June, 1991, or
+   (at your option) version 3 dated 29 June, 2007.
+ 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
+     
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "dnsmasq.h"
@@ -26,12 +30,17 @@ void dhcp_init(void)
   int fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
   struct sockaddr_in saddr;
   int oneopt = 1;
-  struct dhcp_config *configs, *cp;
+#if defined(IP_MTU_DISCOVER) && defined(IP_PMTUDISC_DONT)
+  int mtu = IP_PMTUDISC_DONT;
+#endif
 
   if (fd == -1)
     die (_("cannot create DHCP socket : %s"), NULL, EC_BADNET);
   
-  if (!fix_fd(fd) || 
+  if (!fix_fd(fd) ||
+#if defined(IP_MTU_DISCOVER) && defined(IP_PMTUDISC_DONT)
+      setsockopt(fd, SOL_IP, IP_MTU_DISCOVER, &mtu, sizeof(mtu)) == -1 ||
+#endif
 #if defined(HAVE_LINUX_NETWORK)
       setsockopt(fd, SOL_IP, IP_PKTINFO, &oneopt, sizeof(oneopt)) == -1 ||
 #elif defined(IP_RECVIF)
@@ -73,7 +82,7 @@ void dhcp_init(void)
 
   daemon->dhcpfd = fd;
 
-#ifndef HAVE_LINUX_NETWORK
+#if defined(HAVE_BSD_NETWORK)
   /* When we're not using capabilities, we need to do this here before
      we drop root. Also, set buffer size small, to avoid wasting
      kernel buffers */
@@ -88,21 +97,8 @@ void dhcp_init(void)
   init_bpf();
 #endif
   
-  /* If the same IP appears in more than one host config, then DISCOVER
-     for one of the hosts will get the address, but REQUEST will be NAKed,
-     since the address is reserved by the other one -> protocol loop. 
-     Also check that FQDNs match the domain we are using. */
-  for (configs = daemon->dhcp_conf; configs; configs = configs->next)
-    {
-      char *domain;
-      for (cp = configs->next; cp; cp = cp->next)
-	if ((configs->flags & cp->flags & CONFIG_ADDR) && configs->addr.s_addr == cp->addr.s_addr)
-	  die(_("duplicate IP address %s in dhcp-config directive."), inet_ntoa(cp->addr), EC_BADCONF);
-      
-      if ((configs->flags & CONFIG_NAME) && (domain = strip_hostname(configs->hostname)))
-	die(_("illegal domain %s in dhcp-config directive."), domain, EC_BADCONF);
-    }
-  
+  check_dhcp_hosts(1);
+    
   daemon->dhcp_packet.iov_len = sizeof(struct dhcp_packet); 
   daemon->dhcp_packet.iov_base = safe_malloc(daemon->dhcp_packet.iov_len);
 }
@@ -124,9 +120,11 @@ void dhcp_packet(time_t now)
 
   union {
     struct cmsghdr align; /* this ensures alignment */
-#ifdef HAVE_LINUX_NETWORK
+#if defined(HAVE_LINUX_NETWORK)
     char control[CMSG_SPACE(sizeof(struct in_pktinfo))];
-#else
+#elif defined(HAVE_SOLARIS_NETWORK)
+    char control[CMSG_SPACE(sizeof(unsigned int))];
+#elif defined(IP_RECVIF) 
     char control[CMSG_SPACE(sizeof(struct sockaddr_dl))];
 #endif
   } control_u;
@@ -147,7 +145,7 @@ void dhcp_packet(time_t now)
 	 expand_buf(&daemon->dhcp_packet, daemon->dhcp_packet.iov_len + 100));
   
   /* expand_buf may have moved buffer */
-  mess = daemon->dhcp_packet.iov_base;
+  mess = (struct dhcp_packet *)daemon->dhcp_packet.iov_base;
   msg.msg_controllen = sizeof(control_u);
   msg.msg_control = control_u.control;
   msg.msg_flags = 0;
@@ -177,8 +175,12 @@ void dhcp_packet(time_t now)
   if (msg.msg_controllen >= sizeof(struct cmsghdr))
     for (cmptr = CMSG_FIRSTHDR(&msg); cmptr; cmptr = CMSG_NXTHDR(&msg, cmptr))
       if (cmptr->cmsg_level == IPPROTO_IP && cmptr->cmsg_type == IP_RECVIF)
-	iface_index = ((struct sockaddr_dl *)CMSG_DATA(cmptr))->sdl_index;
-  
+#ifdef HAVE_SOLARIS_NETWORK
+	iface_index = *((unsigned int *)CMSG_DATA(cmptr));
+#else
+        iface_index = ((struct sockaddr_dl *)CMSG_DATA(cmptr))->sdl_index;
+#endif
+	  
   if (!iface_index || !if_indextoname(iface_index, ifr.ifr_name))
     return;
   
@@ -198,7 +200,7 @@ void dhcp_packet(time_t now)
     iface_index = if_nametoindex(name->name);
   }
 #endif
-
+  
   ifr.ifr_addr.sa_family = AF_INET;
   if (ioctl(daemon->dhcpfd, SIOCGIFADDR, &ifr) != -1 )
     {
@@ -237,7 +239,7 @@ void dhcp_packet(time_t now)
   if (!iface_enumerate(&parm, complete_context, NULL))
     return;
   lease_prune(NULL, now); /* lose any expired leases */
-  iov.iov_len = dhcp_reply(parm.current, ifr.ifr_name, (size_t)sz, 
+  iov.iov_len = dhcp_reply(parm.current, ifr.ifr_name, iface_index, (size_t)sz, 
 			   now, unicast_dest, &is_inform);
   lease_update_file(now);
   lease_update_dns();
@@ -253,7 +255,7 @@ void dhcp_packet(time_t now)
   iov.iov_base = daemon->dhcp_packet.iov_base;
   
   /* packet buffer may have moved */
-  mess = daemon->dhcp_packet.iov_base;
+  mess = (struct dhcp_packet *)daemon->dhcp_packet.iov_base;
   
 #ifdef HAVE_SOCKADDR_SA_LEN
   dest.sin_len = sizeof(struct sockaddr_in);
@@ -278,7 +280,7 @@ void dhcp_packet(time_t now)
 	  dest.sin_addr = mess->ciaddr;
 	}
     } 
-#ifdef HAVE_LINUX_NETWORK
+#if defined(HAVE_LINUX_NETWORK)
   else if ((ntohs(mess->flags) & 0x8000) || mess->hlen == 0 ||
 	   mess->hlen > sizeof(ifr.ifr_addr.sa_data) || mess->htype == 0)
     {
@@ -287,14 +289,14 @@ void dhcp_packet(time_t now)
       msg.msg_control = control_u.control;
       msg.msg_controllen = sizeof(control_u);
       cmptr = CMSG_FIRSTHDR(&msg);
-      dest.sin_addr.s_addr = INADDR_BROADCAST;
-      dest.sin_port = htons(DHCP_CLIENT_PORT);
       pkt = (struct in_pktinfo *)CMSG_DATA(cmptr);
       pkt->ipi_ifindex = iface_index;
       pkt->ipi_spec_dst.s_addr = 0;
       msg.msg_controllen = cmptr->cmsg_len = CMSG_LEN(sizeof(struct in_pktinfo));
       cmptr->cmsg_level = SOL_IP;
-      cmptr->cmsg_type = IP_PKTINFO;
+      cmptr->cmsg_type = IP_PKTINFO;  
+      dest.sin_addr.s_addr = INADDR_BROADCAST;
+      dest.sin_port = htons(DHCP_CLIENT_PORT);
     }
   else
     {
@@ -310,7 +312,31 @@ void dhcp_packet(time_t now)
       req.arp_flags = ATF_COM;
       ioctl(daemon->dhcpfd, SIOCSARP, &req);
     }
-#else
+#elif defined(HAVE_SOLARIS_NETWORK)
+  else if ((ntohs(mess->flags) & 0x8000) || mess->hlen != ETHER_ADDR_LEN || mess->htype != ARPHRD_ETHER)
+    {
+      /* broadcast to 255.255.255.255 (or mac address invalid) */
+      dest.sin_addr.s_addr = INADDR_BROADCAST;
+      dest.sin_port = htons(DHCP_CLIENT_PORT);
+      /* note that we don't specify the interface here: that's done by the
+	 IP_XMIT_IF sockopt lower down. */
+    }
+  else
+    {
+      /* unicast to unconfigured client. Inject mac address direct into ARP cache. 
+	 Note that this only works for ethernet on solaris, because we use SIOCSARP
+	 and not SIOCSXARP, which would be perfect, except that it returns ENXIO 
+	 mysteriously. Bah. Fall back to broadcast for other net types. */
+      struct arpreq req;
+      dest.sin_addr = mess->yiaddr;
+      dest.sin_port = htons(DHCP_CLIENT_PORT);
+      *((struct sockaddr_in *)&req.arp_pa) = dest;
+      req.arp_ha.sa_family = AF_UNSPEC;
+      memcpy(req.arp_ha.sa_data, mess->chaddr, mess->hlen);
+      req.arp_flags = ATF_COM;
+      ioctl(daemon->dhcpfd, SIOCSARP, &req);
+    }
+#elif defined(HAVE_BSD_NETWORK)
   else 
     {
       send_via_bpf(mess, iov.iov_len, iface_addr, &ifr);
@@ -318,6 +344,10 @@ void dhcp_packet(time_t now)
     }
 #endif
    
+#ifdef HAVE_SOLARIS_NETWORK
+  setsockopt(daemon->dhcpfd, IPPROTO_IP, IP_XMIT_IF, &iface_index, sizeof(iface_index));
+#endif
+  
   while(sendmsg(daemon->dhcpfd, &msg, 0) == -1 && retry_send());
 }
  
@@ -392,7 +422,9 @@ static int complete_context(struct in_addr local, int if_index,
   return 1;
 }
 	  
-struct dhcp_context *address_available(struct dhcp_context *context, struct in_addr taddr)
+struct dhcp_context *address_available(struct dhcp_context *context, 
+				       struct in_addr taddr,
+				       struct dhcp_netid *netids)
 {
   /* Check is an address is OK for this network, check all
      possible ranges. Make sure that the address isn't in use
@@ -412,14 +444,17 @@ struct dhcp_context *address_available(struct dhcp_context *context, struct in_a
 
       if (!(tmp->flags & CONTEXT_STATIC) &&
 	  addr >= start &&
-	  addr <= end)
+	  addr <= end &&
+	  match_netid(tmp->filter, netids, 1))
 	return tmp;
     }
 
   return NULL;
 }
 
-struct dhcp_context *narrow_context(struct dhcp_context *context, struct in_addr taddr)
+struct dhcp_context *narrow_context(struct dhcp_context *context, 
+				    struct in_addr taddr,
+				    struct dhcp_netid *netids)
 {
   /* We start of with a set of possible contexts, all on the current physical interface.
      These are chained on ->current.
@@ -431,19 +466,24 @@ struct dhcp_context *narrow_context(struct dhcp_context *context, struct in_addr
   
   struct dhcp_context *tmp;
 
-  if ((tmp = address_available(context, taddr)))
-    return tmp;
+  if (!(tmp = address_available(context, taddr, netids)))
+    {
+      for (tmp = context; tmp; tmp = tmp->current)
+      if (is_same_net(taddr, tmp->start, tmp->netmask) && 
+	  (tmp->flags & CONTEXT_STATIC))
+	break;
+      
+      if (!tmp)
+	for (tmp = context; tmp; tmp = tmp->current)
+	  if (is_same_net(taddr, tmp->start, tmp->netmask))
+	    break;
+    }
   
-  for (tmp = context; tmp; tmp = tmp->current)
-    if (is_same_net(taddr, tmp->start, tmp->netmask) && 
-	(tmp->flags & CONTEXT_STATIC))
-      return tmp;
-
-  for (tmp = context; tmp; tmp = tmp->current)
-    if (is_same_net(taddr, tmp->start, tmp->netmask))
-      return tmp;
-
-  return NULL;
+  /* Only one context allowed now */
+  if (tmp)
+    tmp->current = NULL;
+  
+  return tmp;
 }
 
 struct dhcp_config *config_find_by_address(struct dhcp_config *configs, struct in_addr addr)
@@ -458,12 +498,12 @@ struct dhcp_config *config_find_by_address(struct dhcp_config *configs, struct i
 }
 
 /* Is every member of check matched by a member of pool? 
-   If negonly, match unless there's a negative tag which matches. */
-int match_netid(struct dhcp_netid *check, struct dhcp_netid *pool, int negonly)
+   If tagnotneeded, untagged is OK */
+int match_netid(struct dhcp_netid *check, struct dhcp_netid *pool, int tagnotneeded)
 {
   struct dhcp_netid *tmp1;
   
-  if (!check && !negonly)
+  if (!check && !tagnotneeded)
     return 0;
 
   for (; check; check = check->next)
@@ -473,7 +513,7 @@ int match_netid(struct dhcp_netid *check, struct dhcp_netid *pool, int negonly)
 	  for (tmp1 = pool; tmp1; tmp1 = tmp1->next)
 	    if (strcmp(check->net, tmp1->net) == 0)
 	      break;
-	  if (!tmp1 || negonly)
+	  if (!tmp1)
 	    return 0;
 	}
       else
@@ -690,14 +730,14 @@ void dhcp_read_ethers(void)
     {
       lineno++;
       
-      while (strlen(buff) > 0 && isspace(buff[strlen(buff)-1]))
+      while (strlen(buff) > 0 && isspace((int)buff[strlen(buff)-1]))
 	buff[strlen(buff)-1] = 0;
       
       if ((*buff == '#') || (*buff == '+'))
 	continue;
       
-      for (ip = buff; *ip && !isspace(*ip); ip++);
-      for(; *ip && isspace(*ip); ip++)
+      for (ip = buff; *ip && !isspace((int)*ip); ip++);
+      for(; *ip && isspace((int)*ip); ip++)
 	*ip = 0;
       if (!*ip || parse_hex(buff, hwaddr, ETHER_ADDR_LEN, NULL, NULL) != ETHER_ADDR_LEN)
 	{
@@ -785,59 +825,44 @@ void dhcp_read_ethers(void)
   my_syslog(LOG_INFO, _("read %s - %d addresses"), ETHERSFILE, count);
 }
 
-void dhcp_read_hosts(void)
+void check_dhcp_hosts(int fatal)
 {
-  struct dhcp_config *configs, *cp, **up;
-  int count;
-
-  /* remove existing... */
-  for (up = &daemon->dhcp_conf, configs = daemon->dhcp_conf; configs; configs = cp)
-    {
-      cp = configs->next;
-      
-      if (configs->flags & CONFIG_BANK)
-	{
-	  if (configs->flags & CONFIG_CLID)
-	    free(configs->clid);
-	  if (configs->flags & CONFIG_NETID)
-	    free(configs->netid.net);
-	  if (configs->flags & CONFIG_NAME)
-	    free(configs->hostname);
-
-	  *up = configs->next;
-	  free(configs);
-	}
-      else
-	up = &configs->next;
-    }
+  /* If the same IP appears in more than one host config, then DISCOVER
+     for one of the hosts will get the address, but REQUEST will be NAKed,
+     since the address is reserved by the other one -> protocol loop. 
+     Also check that FQDNs match the domain we are using. */
   
-  one_file(daemon->dhcp_hosts_file, 1, 1);
-
-  for (count = 0, configs = daemon->dhcp_conf; configs; configs = configs->next)
+  struct dhcp_config *configs, *cp;
+ 
+  for (configs = daemon->dhcp_conf; configs; configs = configs->next)
     {
-      if (configs->flags & CONFIG_BANK)
-	{
-	  char *domain;
-	  count++;
-	  
-	  for (cp = configs->next; cp; cp = cp->next)
-	    if ((configs->flags & cp->flags & CONFIG_ADDR) && configs->addr.s_addr == cp->addr.s_addr)
-	      {
-		my_syslog(LOG_ERR, _("duplicate IP address %s in %s."), inet_ntoa(cp->addr), daemon->dhcp_hosts_file);
-		configs->flags &= ~CONFIG_ADDR;
-	      }
-	  
-	  if ((configs->flags & CONFIG_NAME) && (domain = strip_hostname(configs->hostname)))
-	    {
-	      my_syslog(LOG_ERR, _("illegal domain %s in %s."), domain, daemon->dhcp_hosts_file);
-	      free(configs->hostname);
-	      configs->flags &= ~CONFIG_NAME;
-	    }
-	}
+      char *domain;
+
+      if ((configs->flags & DHOPT_BANK) || fatal)
+       {
+	 for (cp = configs->next; cp; cp = cp->next)
+	   if ((configs->flags & cp->flags & CONFIG_ADDR) && configs->addr.s_addr == cp->addr.s_addr)
+	     {
+	       if (fatal)
+		 die(_("duplicate IP address %s in dhcp-config directive."), 
+		     inet_ntoa(cp->addr), EC_BADCONF);
+	       else
+		 my_syslog(LOG_ERR, _("duplicate IP address %s in %s."), 
+			   inet_ntoa(cp->addr), daemon->dhcp_hosts_file);
+	       configs->flags &= ~CONFIG_ADDR;
+	     }
+	 
+	 if ((configs->flags & CONFIG_NAME) && (domain = strip_hostname(configs->hostname)))
+	   {
+	     if (fatal)
+	       die(_("illegal domain %s in dhcp-config directive."), domain, EC_BADCONF);
+	     else
+	       my_syslog(LOG_ERR, _("illegal domain %s in %s."), domain, daemon->dhcp_hosts_file);
+	     free(configs->hostname);
+	     configs->flags &= ~CONFIG_NAME;
+	   }
+       }
     }
-
-  my_syslog(LOG_INFO, _("read %s - %d hosts"), daemon->dhcp_hosts_file, count);
-
 }
 
 void dhcp_update_configs(struct dhcp_config *configs)
@@ -856,23 +881,35 @@ void dhcp_update_configs(struct dhcp_config *configs)
     if (config->flags & CONFIG_ADDR_HOSTS)
       config->flags &= ~(CONFIG_ADDR | CONFIG_ADDR_HOSTS);
   
-  for (config = configs; config; config = config->next)
-    if (!(config->flags & CONFIG_ADDR) &&
-	(config->flags & CONFIG_NAME) && 
-	(crec = cache_find_by_name(NULL, config->hostname, 0, F_IPV4)) &&
-	(crec->flags & F_HOSTS))
-      {
-	if (config_find_by_address(configs, crec->addr.addr.addr.addr4))
-	{
-	  my_syslog(LOG_WARNING, _("duplicate IP address %s (%s) in dhcp-config directive"), 
-		    inet_ntoa(crec->addr.addr.addr.addr4), config->hostname);
-	}
-	else
+   if (daemon->port != 0)
+     for (config = configs; config; config = config->next)
+       if (!(config->flags & CONFIG_ADDR) &&
+ 	  (config->flags & CONFIG_NAME) && 
+ 	  (crec = cache_find_by_name(NULL, config->hostname, 0, F_IPV4)) &&
+ 	  (crec->flags & F_HOSTS))
+ 	{
+ 	  if (cache_find_by_name(crec, config->hostname, 0, F_IPV4))
+ 	    {
+ 	      /* use primary (first) address */
+ 	      while (crec && !(crec->flags & F_REVERSE))
+ 		crec = cache_find_by_name(crec, config->hostname, 0, F_IPV4);
+ 	      if (!crec)
+ 		continue; /* should be never */
+ 	      my_syslog(LOG_WARNING, _("%s has more then one address in hostsfile, using %s for DHCP"), 
+ 			config->hostname, inet_ntoa(crec->addr.addr.addr.addr4));
+ 	    }
+ 
+ 	  if (config_find_by_address(configs, crec->addr.addr.addr.addr4))
 	  {
-	    config->addr = crec->addr.addr.addr.addr4;
-	    config->flags |= CONFIG_ADDR | CONFIG_ADDR_HOSTS;
+ 	    my_syslog(LOG_WARNING, _("duplicate IP address %s (%s) in dhcp-config directive"), 
+ 		      inet_ntoa(crec->addr.addr.addr.addr4), config->hostname);
 	  }
-      }
+ 	  else 
+ 	    {
+ 	      config->addr = crec->addr.addr.addr.addr4;
+ 	      config->flags |= CONFIG_ADDR | CONFIG_ADDR_HOSTS;
+ 	    }
+ 	}
 }
 
 /* If we've not found a hostname any other way, try and see if there's one in /etc/hosts
@@ -880,9 +917,13 @@ void dhcp_update_configs(struct dhcp_config *configs)
    it gets stripped. */
 char *host_from_dns(struct in_addr addr)
 {
-  struct crec *lookup = cache_find_by_addr(NULL, (struct all_addr *)&addr, 0, F_IPV4);
+  struct crec *lookup;
   char *hostname = NULL;
+
+  if (daemon->port == 0)
+    return NULL; /* DNS disabled. */
   
+  lookup = cache_find_by_addr(NULL, (struct all_addr *)&addr, 0, F_IPV4);
   if (lookup && (lookup->flags & F_HOSTS))
     {
       hostname = daemon->dhcp_buff;
