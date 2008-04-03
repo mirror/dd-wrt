@@ -1,3 +1,15 @@
+0.51 - Thu 27 March 2008
+
+- Make a copy of password fields rather erroneously relying on getwpnam()
+  to be safe to call multiple times
+
+- If $SSH_ASKPASS_ALWAYS environment variable is set (and $SSH_ASKPASS is
+  as well) always use that program, ignoring isatty() and $DISPLAY
+
+- Wait until a process exits before the server closes a connection, so
+  that an exit code can be sent. This fixes problems with exit codes not
+  being returned, which could cause scp to fail.
+
 0.50 - Wed 8 August 2007
 
 - Add DROPBEAR_PASSWORD environment variable to specify a dbclient password

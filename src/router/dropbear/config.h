@@ -95,7 +95,7 @@
 #define HAVE_GETNAMEINFO 1
 
 /* Define to 1 if you have the `getspnam' function. */
-#define HAVE_GETSPNAM 1
+/* #undef HAVE_GETSPNAM */
 
 /* Define to 1 if you have the `getusershell' function. */
 #define HAVE_GETUSERSHELL 1
@@ -203,7 +203,7 @@
 /* #undef HAVE_SETUTXENT */
 
 /* Define to 1 if you have the <shadow.h> header file. */
-#define HAVE_SHADOW_H 1
+/* #undef HAVE_SHADOW_H */
 
 /* Define to 1 if you have the `socket' function. */
 #define HAVE_SOCKET 1
