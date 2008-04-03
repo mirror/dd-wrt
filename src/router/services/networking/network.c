@@ -897,17 +897,31 @@ start_lan (void)
   if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("wan_proto", "disabled"))
     {
+#ifdef HAVE_NS2
+      nvram_set ("lan_ifname", "br0");
+      nvram_set ("lan_ifnames", "eth0 vlan2 ath0");
+      nvram_set ("wan_ifname", "");
+      nvram_set ("wan_ifnames", "");
+#else
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "vlan0 vlan2 ath0");
       nvram_set ("wan_ifname", "");
       nvram_set ("wan_ifnames", "");
+#endif
     }
   else
     {
+#ifdef HAVE_NS2
+      nvram_set ("lan_ifname", "br0");
+      nvram_set ("lan_ifnames", "ath0");
+      nvram_set ("wan_ifname", "eth0");
+      nvram_set ("wan_ifnames", "eth0");
+#else
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "vlan2 ath0");
       nvram_set ("wan_ifname", "vlan0");
       nvram_set ("wan_ifnames", "vlan0");
+#endif
     }
 
 
@@ -2232,6 +2246,10 @@ start_wan (int status)
     pppoe_wan_ifname =
       nvram_invmatch ("pppoe_wan_ifname",
 		      "") ? nvram_safe_get ("pppoe_wan_ifname") : "eth0";
+#elif HAVE_NS2
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
+					   "") ?
+    nvram_safe_get ("pppoe_wan_ifname") : "eth0";
 #elif HAVE_LS2
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?

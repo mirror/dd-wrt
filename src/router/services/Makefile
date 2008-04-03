@@ -310,10 +310,19 @@ ifeq ($(CONFIG_MERAKI),y)
 CFLAGS += -DHAVE_FONERA
 CFLAGS += -DHAVE_MERAKI
 endif
+ifeq ($(CONFIG_NS2),y)
+CFLAGS += -DHAVE_NS2
+CFLAGS += -DHAVE_LS2
+else
 ifeq ($(CONFIG_LS2),y)
 CFLAGS += -DHAVE_LS2
 OBJS += icplus.o
 endif
+endif
+ifeq ($(CONFIG_NS5),y)
+CFLAGS += -DHAVE_NS5
+endif
+
 ifeq ($(CONFIG_LS5),y)
 CFLAGS += -DHAVE_LS5
 endif
