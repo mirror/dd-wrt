@@ -1,19 +1,55 @@
-/* dnsmasq is Copyright (c) 2000 - 2007 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2007 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 dated June, 1991.
-
+   the Free Software Foundation; version 2 dated June, 1991, or
+   (at your option) version 3 dated 29 June, 2007.
+ 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
+     
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 /* define this to get facilitynames */
 #define SYSLOG_NAMES
-
 #include "dnsmasq.h"
+#include <setjmp.h>
+
+/* Solaris headers don't have facility names. */
+#ifdef HAVE_SOLARIS_NETWORK
+static const struct {
+  char *c_name;
+  unsigned int c_val;
+}  facilitynames[] = {
+  { "kern",   LOG_KERN },
+  { "user",   LOG_USER },
+  { "mail",   LOG_MAIL },
+  { "daemon", LOG_DAEMON },
+  { "auth",   LOG_AUTH },
+  { "syslog", LOG_SYSLOG },
+  { "lpr",    LOG_LPR },
+  { "news",   LOG_NEWS },
+  { "uucp",   LOG_UUCP },
+#ifdef LOG_AUDIT
+  /* Not Solaris < 10 */
+  { "audit",  LOG_AUDIT },
+#endif
+  { "cron",   LOG_CRON },
+  { "local0", LOG_LOCAL0 },
+  { "local1", LOG_LOCAL1 },
+  { "local2", LOG_LOCAL2 },
+  { "local3", LOG_LOCAL3 },
+  { "local4", LOG_LOCAL4 },
+  { "local5", LOG_LOCAL5 },
+  { "local6", LOG_LOCAL6 },
+  { "local7", LOG_LOCAL7 },
+  { NULL, 0 }
+};
+#endif
 
 #ifndef HAVE_GETOPT_LONG
 struct myoption {
@@ -46,7 +82,16 @@ struct myoption {
 #define LOPT_BANK      272
 #define LOPT_DHCP_HOST 273
 #define LOPT_APREF     274
-#define LOPT_BLOCKSIZE 275
+#define LOPT_OVERRIDE  275
+#define LOPT_TFTPPORTS 276
+#define LOPT_REBIND    277
+#define LOPT_NOLAST    278
+#define LOPT_OPTS      279
+#define LOPT_DHCP_OPTS 280
+#define LOPT_MATCH     281
+#define LOPT_BROADCAST 282
+#define LOPT_NEGTTL    283
+#define LOPT_BLOCKSIZE 284
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -144,6 +189,14 @@ static const struct myoption opts[] =
     {"dhcp-subscrid", 1, 0, LOPT_SUBSCR },
     {"interface-name", 1, 0, LOPT_INTNAME },
     {"dhcp-hostsfile", 1, 0, LOPT_DHCP_HOST },
+    {"dhcp-optsfile", 1, 0, LOPT_DHCP_OPTS },
+    {"dhcp-no-override", 0, 0, LOPT_OVERRIDE },
+    {"tftp-port-range", 1, 0, LOPT_TFTPPORTS },
+    {"stop-dns-rebind", 0, 0, LOPT_REBIND },
+    {"all-servers", 0, 0, LOPT_NOLAST}, 
+    {"dhcp-match", 1, 0, LOPT_MATCH }, 
+    {"dhcp-broadcast", 1, 0, LOPT_BROADCAST },
+    {"neg-ttl", 1, 0, LOPT_NEGTTL },
     { NULL, 0, 0, 0 }
   };
 
@@ -183,6 +236,9 @@ static const struct optflags optmap[] = {
   { LOPT_NOBLOCK,   OPT_TFTP_NOBLOCK },
   { LOPT_APREF,     OPT_TFTP_APREF },
 #endif
+  { LOPT_OVERRIDE,  OPT_NO_OVERRIDE },
+  { LOPT_REBIND,    OPT_NO_REBIND },
+  { LOPT_NOLAST,    OPT_ALL_SERVERS },
   { 'v',            0},
   { 'w',            0},
   { 0, 0 }
@@ -208,6 +264,7 @@ static const struct {
   { "-g, --group=groupname", gettext_noop("Change to this group after startup (defaults to %s)."), CHGRP },
   { "-G, --dhcp-host=<hostspec>", gettext_noop("Set address or hostname for a specified machine."), NULL },
   { "    --dhcp-hostsfile=<filename>", gettext_noop("Read DHCP host specs from file"), NULL },
+  { "    --dhcp-optsfile=<filename>", gettext_noop("Read DHCP option specs from file"), NULL },
   { "-h, --no-hosts", gettext_noop("Do NOT load %s file."), HOSTSFILE },
   { "-H, --addn-hosts=path", gettext_noop("Specify a hosts file to be read in addition to %s."), HOSTSFILE },
   { "-i, --interface=interface", gettext_noop("Specify interface(s) to listen on."), NULL },
@@ -217,6 +274,7 @@ static const struct {
   { "    --dhcp-remoteid=<tag>,<remote>", gettext_noop("Map RFC3046 remote-id to tag."), NULL },
   { "    --dhcp-subscrid=<tag>,<remote>", gettext_noop("Map RFC3993 subscriber-id to tag."), NULL },
   { "-J, --dhcp-ignore=<tag>", gettext_noop("Don't do DHCP for hosts with tag set."), NULL },
+  { "    --dhcp-broadcast=<tag>", gettext_noop("Force broadcast replies for hosts with tag set."), NULL }, 
   { "-k, --keep-in-foreground", gettext_noop("Do NOT fork into the background, do NOT run in debug mode."), NULL },
   { "-K, --dhcp-authoritative", gettext_noop("Assume we are the only DHCP server on the local network."), NULL },
   { "-l, --dhcp-leasefile=path", gettext_noop("Specify where to store DHCP leases (defaults to %s)."), LEASEFILE },
@@ -230,8 +288,8 @@ static const struct {
   { "    --dhcp-option-force=<optspec>", gettext_noop("DHCP option sent even if the client does not request it."), NULL},
   { "-p, --port=number", gettext_noop("Specify port to listen for DNS requests on (defaults to 53)."), NULL },
   { "-P, --edns-packet-max=<size>", gettext_noop("Maximum supported UDP packet size for EDNS.0 (defaults to %s)."), "*" },
-  { "-q, --log-queries", gettext_noop("Log queries."), NULL },
-  { "-Q, --query-port=number", gettext_noop("Force the originating port for upstream queries."), NULL },
+  { "-q, --log-queries", gettext_noop("Log DNS queries."), NULL },
+  { "-Q, --query-port=number", gettext_noop("Force the originating port for upstream DNS queries."), NULL },
   { "-R, --no-resolv", gettext_noop("Do NOT read resolv.conf."), NULL },
   { "-r, --resolv-file=path", gettext_noop("Specify path to resolv.conf (defaults to %s)."), RESOLVFILE }, 
   { "-S, --server=/domain/ipaddr", gettext_noop("Specify address(es) of upstream servers with optional domains."), NULL },
@@ -239,6 +297,7 @@ static const struct {
   { "-s, --domain=domain", gettext_noop("Specify the domain to be assigned in DHCP leases."), NULL },
   { "-t, --mx-target=host_name", gettext_noop("Specify default target in an MX record."), NULL },
   { "-T, --local-ttl=time", gettext_noop("Specify time-to-live in seconds for replies from /etc/hosts."), NULL },
+  { "    --neg-ttl=time", gettext_noop("Specify time-to-live in seconds for negative caching."), NULL },
   { "-u, --user=username", gettext_noop("Change to this user after startup. (defaults to %s)."), CHUSER }, 
   { "-U, --dhcp-vendorclass=<id>,<class>", gettext_noop("Map DHCP vendor class to tag."), NULL },
   { "-v, --version", gettext_noop("Display dnsmasq version and copyright information."), NULL },
@@ -268,6 +327,7 @@ static const struct {
   { "-0, --dns-forward-max=<queries>", gettext_noop("Maximum number of concurrent DNS queries. (defaults to %s)"), "!" }, 
   { "    --clear-on-reload", gettext_noop("Clear DNS cache when reloading %s."), RESOLVFILE },
   { "    --dhcp-ignore-names[=<id>]", gettext_noop("Ignore hostnames provided by DHCP clients."), NULL },
+  { "    --dhcp-no-override", gettext_noop("Do NOT reuse filename and server fields for extra DHCP options."), NULL },
 #ifdef HAVE_TFTP
   { "    --enable-tftp", gettext_noop("Enable integrated read-only TFTP server."), NULL },
   { "    --tftp-root=<directory>", gettext_noop("Export files by TFTP only from the specified subtree."), NULL },
@@ -276,9 +336,13 @@ static const struct {
   { "    --tftp-max=<connections>", gettext_noop("Maximum number of conncurrent TFTP transfers (defaults to %s)."), "#" },
   { "    --tftp-blocksize", gettext_noop("Configures the default TFTP blocksize"), NULL },
   { "    --tftp-no-blocksize", gettext_noop("Disable the TFTP blocksize extension."), NULL },
+  { "    --tftp-port-range=<start>,<end>", gettext_noop("Ephemeral port range for use by TFTP transfers."), NULL },
 #endif
   { "    --log-dhcp", gettext_noop("Extra logging for DHCP."), NULL },
   { "    --log-async[=<log lines>]", gettext_noop("Enable async. logging; optionally set queue length."), NULL },
+  { "    --stop-dns-rebind", gettext_noop("Stop DNS rebinding. Filter private IP ranges when resolving."), NULL },
+  { "    --all-servers", gettext_noop("Always perform DNS queries to all servers."), NULL },
+  { "    --dhcp-match=<netid>,<opt-no>", gettext_noop("Set tag if client includes option in request."), NULL },
   { NULL, NULL, NULL }
 }; 
 
@@ -360,6 +424,10 @@ static const struct {
   { NULL, 0, 0 }
 };
 
+static volatile int mem_recover = 0;
+static jmp_buf mem_jmp;
+static void one_file(char *file, int nest, int hard_opt);
+
 char *option_string(unsigned char opt)
 {
   int i;
@@ -375,7 +443,7 @@ char *option_string(unsigned char opt)
    character space. Note that the \0, \t \b \r \033 and \n characters are carefully placed in the
    following sequence so that they map to themselves: it is therefore possible to call
    unhide_metas repeatedly on string without breaking things.
-   The transformation gets undone by opt_canonicalise, atoi_check and safe_string_alloc, and a 
+   The transformation gets undone by opt_canonicalise, atoi_check and opt_string_alloc, and a 
    couple of other places. 
    Note that space is included here so that
    --dhcp-option=3, string
@@ -414,13 +482,29 @@ static void unhide_metas(char *cp)
       *cp = unhide_meta(*cp);
 }
 
-static char *safe_string_alloc(char *cp)
+static void *opt_malloc(size_t size)
+{
+  void *ret;
+
+  if (mem_recover)
+    {
+      ret = whine_malloc(size);
+      if (!ret)
+	longjmp(mem_jmp, 1);
+    }
+  else
+    ret = safe_malloc(size);
+  
+  return ret;
+}
+
+static char *opt_string_alloc(char *cp)
 {
   char *ret = NULL;
   
   if (cp && strlen(cp) != 0)
     {
-      ret = safe_malloc(strlen(cp)+1);
+      ret = opt_malloc(strlen(cp)+1);
       strcpy(ret, cp); 
       
       /* restore hidden metachars */
@@ -443,9 +527,9 @@ static char *split(char *s)
   p = comma;
   *comma = ' ';
   
-  for (; isspace(*comma); comma++);
+  for (; isspace((int)*comma); comma++);
  
-  for (; (p >= s) && isspace(*p); p--)
+  for (; (p >= s) && isspace((int)*p); p--)
     *p = 0;
     
   return comma;
@@ -480,13 +564,13 @@ static int atoi_check(char *a, int *res)
 static void add_txt(char *name, char *txt)
 {
   size_t len = strlen(txt);
-  struct txt_record *r = safe_malloc(sizeof(struct txt_record));
+  struct txt_record *r = opt_malloc(sizeof(struct txt_record));
   
-  r->name = safe_string_alloc(name);
+  r->name = opt_string_alloc(name);
   r->next = daemon->txt;
   daemon->txt = r;
   r->class = C_CHAOS;
-  r->txt = safe_malloc(len+1);
+  r->txt = opt_malloc(len+1);
   r->len = len+1;
   *(r->txt) = len;
   memcpy((r->txt)+1, txt, len);
@@ -542,9 +626,9 @@ static void display_opts(void)
 }
 
 /* This is too insanely large to keep in-line in the switch */
-static char *parse_dhcp_opt(char *arg, int forced)
+static char *parse_dhcp_opt(char *arg, int flags)
 {
-  struct dhcp_opt *new = safe_malloc(sizeof(struct dhcp_opt));
+  struct dhcp_opt *new = opt_malloc(sizeof(struct dhcp_opt));
   char lenchar = 0, *cp;
   int i, addrs, digs, is_addr, is_hex, is_dec, is_string, dots;
   char *comma = NULL, *problem = NULL;
@@ -552,7 +636,7 @@ static char *parse_dhcp_opt(char *arg, int forced)
   unsigned char opt_len = 0;
 
   new->len = 0;
-  new->flags = forced ? DHOPT_FORCE : 0;
+  new->flags = flags;
   new->netid = NULL;
   new->val = NULL;
   new->vendor_class = NULL;
@@ -588,17 +672,17 @@ static char *parse_dhcp_opt(char *arg, int forced)
 	}
       else if (strstr(arg, "vendor:") == arg)
 	{
-	  new->vendor_class = (unsigned char *)safe_string_alloc(arg+7);
+	  new->vendor_class = (unsigned char *)opt_string_alloc(arg+7);
 	  new->flags |= DHOPT_ENCAPSULATE;
 	}
       else
 	{
-	  new->netid = safe_malloc(sizeof (struct dhcp_netid));
+	  new->netid = opt_malloc(sizeof (struct dhcp_netid));
 	  /* allow optional "net:" for consistency */
 	  if (strstr(arg, "net:") == arg)
-	    new->netid->net = safe_string_alloc(arg+4);
+	    new->netid->net = opt_string_alloc(arg+4);
 	  else
-	    new->netid->net = safe_string_alloc(arg);
+	    new->netid->net = opt_string_alloc(arg);
 	  new->netid->next = np;
 	  np = new->netid;
 	}
@@ -669,7 +753,7 @@ static char *parse_dhcp_opt(char *arg, int forced)
       if (is_hex && digs > 1)
 	{
 	  new->len = digs;
-	  new->val = safe_malloc(new->len);
+	  new->val = opt_malloc(new->len);
 	  parse_hex(comma, new->val, digs, NULL, NULL);
 	}
       else if (is_dec)
@@ -694,7 +778,7 @@ static char *parse_dhcp_opt(char *arg, int forced)
 	  else if (lenchar == 'i')
 	    new->len = 4;
 	  
-	  new->val = safe_malloc(new->len);
+	  new->val = opt_malloc(new->len);
 	  for (i=0; i<new->len; i++)
 	    new->val[i] = val>>((new->len - i - 1)*8);
 	}
@@ -705,7 +789,7 @@ static char *parse_dhcp_opt(char *arg, int forced)
 	  char *slash;
 	  /* max length of address/subnet descriptor is five bytes,
 	     add one for the option 120 enc byte too */
-	  new->val = op = safe_malloc((5 * addrs) + 1);
+	  new->val = op = opt_malloc((5 * addrs) + 1);
 	  new->flags |= DHOPT_ADDR;
 
 	  if (!(new->flags & DHOPT_ENCAPSULATE) && new->opt == 120)
@@ -750,7 +834,7 @@ static char *parse_dhcp_opt(char *arg, int forced)
 	    {
 	      /* dns search, RFC 3397, or SIP, RFC 3361 */
 	      unsigned char *q, *r, *tail;
-	      unsigned char *p, *m = NULL;
+	      unsigned char *p, *m = NULL, *newp;
 	      size_t newlen, len = 0;
 	      int header_size = (new->opt == 119) ? 0 : 1;
 	      
@@ -765,8 +849,10 @@ static char *parse_dhcp_opt(char *arg, int forced)
 		      break;
 		    }
 		  
-		  if (!(m = realloc(m, len + strlen(arg) + 2 + header_size)))
-		    die(_("could not get memory"), NULL, EC_NOMEM);
+		  newp = opt_malloc(len + strlen(arg) + 2 + header_size);
+		  if (m)
+		    memcpy(newp, m, header_size + len);
+		  m = newp;
 		  p = m + header_size;
 		  q = p + len;
 		  
@@ -810,7 +896,7 @@ static char *parse_dhcp_opt(char *arg, int forced)
 	    {
 	      new->len = strlen(comma);
 	      /* keep terminating zero on string */
-	      new->val = (unsigned char *)safe_string_alloc(comma);
+	      new->val = (unsigned char *)opt_string_alloc(comma);
 	      new->flags |= DHOPT_STRING;
 	    }
 	}
@@ -819,20 +905,23 @@ static char *parse_dhcp_opt(char *arg, int forced)
   if (new->len > 255)
     problem = _("dhcp-option too long");
   
-  new->next = daemon->dhcp_opts;
-  daemon->dhcp_opts = new;
- 
+  if (!problem)
+    {
+      new->next = daemon->dhcp_opts;
+      daemon->dhcp_opts = new;
+    }
+
   return problem;
 }
 
 
-static char *one_opt(int option, char *arg, char *problem, int nest)
+static char *one_opt(int option, char *arg, char *gen_prob, int nest)
 {      
   int i;
-  char *comma;
+  char *comma, *problem = NULL;;
 
   if (option == '?')
-    return problem;
+    return gen_prob;
   
   for (i=0; optmap[i].c; i++)
     if (option == optmap[i].c)
@@ -845,7 +934,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
     { 
     case 'C': /* --conf-file */
       {
-	char *file = safe_string_alloc(arg);
+	char *file = opt_string_alloc(arg);
 	if (file)
 	  one_file(file, nest, 0);
 	break;
@@ -857,7 +946,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	struct dirent *ent;
 	char *directory, *path;
 	
-	if (!(directory = safe_string_alloc(arg)))
+	if (!(directory = opt_string_alloc(arg)))
 	  break;
 	
 	if (!(dir_stream = opendir(directory)))
@@ -875,7 +964,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 		(ent->d_name[0] == '#' && ent->d_name[len - 1] == '#') ||
 		ent->d_name[0] == '.')
 	      continue;
-	    path = safe_malloc(strlen(directory) + len + 2);
+	    path = opt_malloc(strlen(directory) + len + 2);
 	    strcpy(path, directory);
 	    strcat(path, "/");
 	    strcat(path, ent->d_name);
@@ -897,7 +986,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
     case '8': /* --log-facility */
       /* may be a filename */
       if (strchr(arg, '/'))
-	daemon->log_file = safe_string_alloc(arg);
+	daemon->log_file = opt_string_alloc(arg);
       else
 	{	  
 	  for (i = 0; facilitynames[i].c_name; i++)
@@ -907,29 +996,31 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	  if (facilitynames[i].c_name)
 	    daemon->log_fac = facilitynames[i].c_val;
 	  else
-	    {
-	      option = '?';
-	      problem = "bad log facility";
-	    }
+	    problem = "bad log facility";
 	}
       break;
       
     case 'x': /* --pid-file */
-      daemon->runfile = safe_string_alloc(arg);
+      daemon->runfile = opt_string_alloc(arg);
       break;
 
     case LOPT_DHCP_HOST: /* --dhcp-hostfile */
       if (daemon->dhcp_hosts_file)
-	{
-	  problem = _("only one dhcp-hostsfile allowed");
-	  option = '?';
-	}
-      daemon->dhcp_hosts_file = safe_string_alloc(arg);
+	problem = _("only one dhcp-hostsfile allowed");
+      else
+	daemon->dhcp_hosts_file = opt_string_alloc(arg);
       break;
+     
+    case LOPT_DHCP_OPTS: /* --dhcp-optsfile */
+      if (daemon->dhcp_opts_file)
+	problem = _("only one dhcp-optsfile allowed");
+      else
+	daemon->dhcp_opts_file = opt_string_alloc(arg);
+      break; 
       
     case 'r': /* --resolv-file */
       {
-	char *name = safe_string_alloc(arg);
+	char *name = opt_string_alloc(arg);
 	struct resolvc *new, *list = daemon->resolv_files;
 	
 	if (list && list->is_default)
@@ -945,7 +1036,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	  }
 	else if (name)
 	  {
-	    new = safe_malloc(sizeof(struct resolvc));
+	    new = opt_malloc(sizeof(struct resolvc));
 	    new->next = list;
 	    new->name = name;
 	    new->is_default = 0;
@@ -965,62 +1056,47 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	if ((comma = split(arg)))
 	  {
 	    char *prefstr;
-	    if ((prefstr=split(comma)))
-	      {
-		if (!atoi_check(prefstr, &pref))
-		  {
-		    option = '?';
-		    problem = _("bad MX preference");
-		    break;
-		  }
-	      }
+	    if ((prefstr=split(comma)) && !atoi_check(prefstr, &pref))
+	      problem = _("bad MX preference");
 	  }
 	
 	if (!canonicalise_opt(arg) || (comma && !canonicalise_opt(comma)))
-	  {
-	    option = '?';
-	    problem = _("bad MX name");
-	    break;
-	  }
-	
-	new = safe_malloc(sizeof(struct mx_srv_record));
+	  problem = _("bad MX name");
+	  	
+	new = opt_malloc(sizeof(struct mx_srv_record));
 	new->next = daemon->mxnames;
 	daemon->mxnames = new;
 	new->issrv = 0;
-	new->name = safe_string_alloc(arg);
-	new->target = safe_string_alloc(comma); /* may be NULL */
+	new->name = opt_string_alloc(arg);
+	new->target = opt_string_alloc(comma); /* may be NULL */
 	new->weight = pref;
 	break;
       }
       
     case 't': /*  --mx-target */
       if (!canonicalise_opt(arg))
-	{
-	  option = '?';
-	  problem = _("bad MX target");
-	}
+	problem = _("bad MX target");
       else
-	daemon->mxtarget = safe_string_alloc(arg);
+	daemon->mxtarget = opt_string_alloc(arg);
       break;
       
     case 'l':  /* --dhcp-leasefile */
-      daemon->lease_file = safe_string_alloc(arg);
+      daemon->lease_file = opt_string_alloc(arg);
       break;
       
     case '6': /* --dhcp-script */
 #ifdef NO_FORK
       problem = _("cannot run scripts under uClinux");
-      option = '?';
 #else
-      daemon->lease_change_command = safe_string_alloc(arg);
+      daemon->lease_change_command = opt_string_alloc(arg);
 #endif
       break;
       
     case 'H': /* --addn-hosts */
       {
-	struct hostsfile *new = safe_malloc(sizeof(struct hostsfile));
+	struct hostsfile *new = opt_malloc(sizeof(struct hostsfile));
 	static int hosts_index = 1;
-	new->fname = safe_string_alloc(arg);
+	new->fname = opt_string_alloc(arg);
 	new->index = hosts_index++;
 	new->next = daemon->addn_hosts;
 	daemon->addn_hosts = new;
@@ -1033,26 +1109,26 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
       else if (!canonicalise_opt(arg))
 	option = '?';
       else
-	daemon->domain_suffix = safe_string_alloc(arg);
+	daemon->domain_suffix = opt_string_alloc(arg);
       break;
       
     case 'u':  /* --user */
-      daemon->username = safe_string_alloc(arg);
+      daemon->username = opt_string_alloc(arg);
       break;
       
     case 'g':  /* --group */
-      daemon->groupname = safe_string_alloc(arg);
+      daemon->groupname = opt_string_alloc(arg);
       break;
       
     case 'i':  /* --interface */
       do {
-	struct iname *new = safe_malloc(sizeof(struct iname));
+	struct iname *new = opt_malloc(sizeof(struct iname));
 	comma = split(arg);
 	new->next = daemon->if_names;
 	daemon->if_names = new;
 	/* new->name may be NULL if someone does
 	   "interface=" to disable all interfaces except loop. */
-	new->name = safe_string_alloc(arg);
+	new->name = opt_string_alloc(arg);
 	new->isloop = new->used = 0;
 	arg = comma;
       } while (arg);
@@ -1061,9 +1137,9 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
     case 'I':  /* --except-interface */
     case '2':  /* --no-dhcp-interface */
       do {
-	struct iname *new = safe_malloc(sizeof(struct iname));
+	struct iname *new = opt_malloc(sizeof(struct iname));
 	comma = split(arg);
-	new->name = safe_string_alloc(arg);
+	new->name = opt_string_alloc(arg);
 	if (option == 'I')
 	  {
 	    new->next = daemon->if_except;
@@ -1084,7 +1160,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	unhide_metas(arg);
 	if (arg && (addr.s_addr = inet_addr(arg)) != (in_addr_t)-1)
 	  {
-	    struct bogus_addr *baddr = safe_malloc(sizeof(struct bogus_addr));
+	    struct bogus_addr *baddr = opt_malloc(sizeof(struct bogus_addr));
 	    baddr->next = daemon->bogus_addr;
 	    daemon->bogus_addr = baddr;
 	    baddr->addr = addr;
@@ -1096,7 +1172,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
       
     case 'a':  /* --listen-address */
       do {
-	struct iname *new = safe_malloc(sizeof(struct iname));
+	struct iname *new = opt_malloc(sizeof(struct iname));
 	comma = split(arg);
 	unhide_metas(arg);
 	new->next = daemon->if_addrs;
@@ -1150,15 +1226,13 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 		else if (!canonicalise_opt(arg) && strlen(arg) != 0)
 		  option = '?';
 		else
-		  domain = safe_string_alloc(arg); /* NULL if strlen is zero */
-		serv = safe_malloc(sizeof(struct server));
+		  domain = opt_string_alloc(arg); /* NULL if strlen is zero */
+		serv = opt_malloc(sizeof(struct server));
+		memset(serv, 0, sizeof(struct server));
 		serv->next = newlist;
 		newlist = serv;
-		serv->sfd = NULL;
 		serv->domain = domain;
 		serv->flags = domain ? SERV_HAS_DOMAIN : SERV_FOR_NODOTS;
-		memset(&serv->addr, 0, sizeof(serv->addr));
-		memset(&serv->source_addr, 0, sizeof(serv->source_addr));
 		arg = end+1;
 	      }
 	    if (!newlist)
@@ -1170,11 +1244,8 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	  }
 	else
 	  {
-	    newlist = safe_malloc(sizeof(struct server));
-	    newlist->next = NULL;
-	    newlist->flags = 0;
-	    newlist->sfd = NULL;
-	    newlist->domain = NULL;
+	    newlist = opt_malloc(sizeof(struct server));
+	    memset(newlist, 0, sizeof(struct server));
 	  }
 	
 	if (option == 'A')
@@ -1202,10 +1273,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 		  { 
 		    *portno = 0;
 		    if (!atoi_check(portno+1, &source_port))
-		      {
-			option = '?';
-			problem = _("bad port");
-		      }
+		      problem = _("bad port");
 		  }
 	      }
 	    
@@ -1213,10 +1281,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	      {
 		*portno = 0;
 		if (!atoi_check(portno+1, &serv_port))
-		  {
-		    option = '?';
-		    problem = _("bad port");
-		  }
+		  problem = _("bad port");
 	      }
 	    
 	    if ((newlist->addr.in.sin_addr.s_addr = inet_addr(arg)) != (in_addr_t) -1)
@@ -1229,10 +1294,16 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 #endif
 		if (source)
 		  {
-		    if ((newlist->source_addr.in.sin_addr.s_addr = inet_addr(source+1)) != (in_addr_t) -1)
-		      newlist->flags |= SERV_HAS_SOURCE;
-		    else
-		      option = '?'; /* error */
+		    newlist->flags |= SERV_HAS_SOURCE;
+		    if ((newlist->source_addr.in.sin_addr.s_addr = inet_addr(source+1)) == (in_addr_t) -1)
+		      {
+#if defined(SO_BINDTODEVICE)
+			newlist->source_addr.in.sin_addr.s_addr = INADDR_ANY;
+			strncpy(newlist->interface, source+1, IF_NAMESIZE);
+#else
+			problem = _("interface binding not supported");
+#endif
+		      }
 		  }
 		else
 		  newlist->source_addr.in.sin_addr.s_addr = INADDR_ANY;
@@ -1248,10 +1319,16 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 #endif
 		if (source)
 		  {
-		    if (inet_pton(AF_INET6, source+1, &newlist->source_addr.in6.sin6_addr) > 0)
-		      newlist->flags |= SERV_HAS_SOURCE;
-		    else
-		      option = '?'; /* error */
+		     newlist->flags |= SERV_HAS_SOURCE;
+		     if (inet_pton(AF_INET6, source+1, &newlist->source_addr.in6.sin6_addr) == 0)
+		      {
+#if defined(SO_BINDTODEVICE) || defined(HAVE_SOLARIS_NETWORK)
+			newlist->source_addr.in6.sin6_addr = in6addr_any; 
+			strncpy(newlist->interface, source+1, IF_NAMESIZE);
+#else
+			problem = _("interface binding not supported");
+#endif
+		      }
 		  }
 		else
 		  newlist->source_addr.in6.sin6_addr = in6addr_any; 
@@ -1327,11 +1404,14 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	option = '?';
       break;
       
-    case 'T':  /* --local-ttl */
+    case 'T':         /* --local-ttl */
+    case LOPT_NEGTTL: /* --neg-ttl */
       {
 	int ttl;
 	if (!atoi_check(arg, &ttl))
 	  option = '?';
+	else if (option == LOPT_NEGTTL)
+	  daemon->neg_ttl = (unsigned long)ttl;
 	else
 	  daemon->local_ttl = (unsigned long)ttl;
 	break;
@@ -1347,9 +1427,24 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
       if (!atoi_check(arg, &daemon->tftp_max))
 	option = '?';
       break;  
-    case  LOPT_PREFIX: /* --tftp-prefix */
-      daemon->tftp_prefix = safe_string_alloc(arg);
+    case LOPT_PREFIX: /* --tftp-prefix */
+        daemon->tftp_prefix = opt_string_alloc(arg);
       break;
+    case LOPT_TFTPPORTS: /* --tftp-port-range */
+       if (!(comma = split(arg)) || 
+ 	  !atoi_check(arg, &daemon->start_tftp_port) ||
+ 	  !atoi_check(comma, &daemon->end_tftp_port))
+ 	problem = _("bad port range");
+       
+       if (daemon->start_tftp_port > daemon->end_tftp_port)
+ 	{
+ 	  int tmp = daemon->start_tftp_port;
+ 	  daemon->start_tftp_port = daemon->end_tftp_port;
+ 	  daemon->end_tftp_port = tmp;
+ 	} 
+       
+       break;
+ 	      
     case  LOPT_BLOCKSIZE: /* --tftp-blocksize */
       daemon->tftp_blocksize = atoi(arg);
       break;
@@ -1358,11 +1453,10 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 #if defined(__FreeBSD__) || defined(__DragonFly__)
     case LOPT_BRIDGE:   /* --bridge-interface */
       {
-	struct dhcp_bridge *new = safe_malloc(sizeof(struct dhcp_bridge));
+ 	struct dhcp_bridge *new = opt_malloc(sizeof(struct dhcp_bridge));
 	if (!(comma = split(arg)))
 	  {
 	    problem = _("bad bridge-interface");
-	    option = '?';
 	    break;
 	  }
 	
@@ -1376,7 +1470,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	  comma = split(arg);
 	  if (strlen(arg) != 0)
 	    {
-	      struct dhcp_bridge *b = safe_malloc(sizeof(struct dhcp_bridge)); 
+	      struct dhcp_bridge *b = opt_malloc(sizeof(struct dhcp_bridge)); 
 	      b->next = new->alias;
 	      new->alias = b;
 	      strncpy(b->iface, arg, IF_NAMESIZE);
@@ -1391,7 +1485,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
       {
 	int k, leasepos = 2;
 	char *cp, *a[5] = { NULL, NULL, NULL, NULL, NULL };
-	struct dhcp_context *new = safe_malloc(sizeof(struct dhcp_context));
+	struct dhcp_context *new = opt_malloc(sizeof(struct dhcp_context));
 	
 	new->next = daemon->dhcp;
 	new->lease_time = DEFLEASE;
@@ -1403,7 +1497,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	new->filter = NULL;
 	new->flags = 0;
 	
-	problem = _("bad dhcp-range");
+	gen_prob = _("bad dhcp-range");
 	
 	if (!arg)
 	  {
@@ -1421,20 +1515,17 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	      {
 		if (strstr(arg, "net:") == arg)
 		  {
-		    struct dhcp_netid *tt = safe_malloc(sizeof (struct dhcp_netid));
-		    tt->net = safe_string_alloc(arg+4);
+		    struct dhcp_netid *tt = opt_malloc(sizeof (struct dhcp_netid));
+		    tt->net = opt_string_alloc(arg+4);
 		    tt->next = new->filter;
 		    new->filter = tt;
 		  }
 		else
 		  {
 		    if (new->netid.net)
-		      {
-			option = '?';
-			problem = _("only one netid tag allowed");
-		      }
+		      problem = _("only one netid tag allowed");
 		    else
-		      new->netid.net = safe_string_alloc(arg);
+		      new->netid.net = opt_string_alloc(arg);
 		  }
 		arg = comma;
 	      }
@@ -1472,10 +1563,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	    new->flags |= CONTEXT_NETMASK;
 	    leasepos = 3;
 	    if (!is_same_net(new->start, new->end, new->netmask))
-	      {
-		problem = _("inconsistent DHCP range");
-		option = '?';
-	      }
+	      problem = _("inconsistent DHCP range");
 	  }
 	daemon->dhcp = new;
 	
@@ -1525,8 +1613,6 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	break;
       }
 
-      /* Note, must not die() via safe_* if option is LOPT_BANK, since 
-	 when called with this we are re-loading the file. */
     case LOPT_BANK:
     case 'G':  /* --dhcp-host */
       {
@@ -1535,11 +1621,8 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	struct dhcp_config *new;
 	struct in_addr in;
 	
-	if (option != LOPT_BANK)
-	  new = safe_malloc(sizeof(struct dhcp_config));
-	else if (!(new = whine_malloc(sizeof(struct dhcp_config))))
-	  break;
-
+	new = opt_malloc(sizeof(struct dhcp_config));
+	
 	new->next = daemon->dhcp_conf;
 	new->flags = (option == LOPT_BANK) ? CONFIG_BANK : 0;		  
 	
@@ -1571,7 +1654,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 			  len = (int) strlen(arg);
 			}
 
-		      if ((new->clid = (option == LOPT_BANK) ? whine_malloc(len): safe_malloc(len)))
+		      if ((new->clid = opt_malloc(len)))
 			{
 			  new->flags |= CONFIG_CLID;
 			  new->clid_len = len;
@@ -1582,7 +1665,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	      else if (strstr(arg, "net:") == arg)
 		{
 		  int len = strlen(arg + 4) + 1;
-		  if ((new->netid.net = (option == LOPT_BANK) ? whine_malloc(len): safe_malloc(len)))
+		  if ((new->netid.net = opt_malloc(len)))
 		    {
 		      new->flags |= CONFIG_NETID;
 		      strcpy(new->netid.net, arg+4);
@@ -1630,7 +1713,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 		}
 	      
 	      for (cp = a[j]; *cp; cp++)
-		if (!isdigit(*cp) && *cp != ' ')
+		if (!isdigit((int)*cp) && *cp != ' ')
 		  break;
 	      
 	      if (*cp)
@@ -1648,11 +1731,8 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 		    {
 		      int len = strlen(a[j]) + 1;
 		      if (!canonicalise_opt(a[j]))
-			{
-			  problem = _("bad DHCP host name");
-			  option = '?';
-			}
-		      else if ((new->hostname = (option == LOPT_BANK) ? whine_malloc(len): safe_malloc(len)))
+			problem = _("bad DHCP host name");
+		      else if ((new->hostname = opt_malloc(len)))
 			{
 			  new->flags |= CONFIG_NAME;
 			  strcpy(new->hostname, a[j]);
@@ -1676,8 +1756,10 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
       
     case 'O':
     case LOPT_FORCE:
-      if ((problem = parse_dhcp_opt(arg, option == LOPT_FORCE)))
-	option = '?';
+    case LOPT_OPTS:
+      problem = parse_dhcp_opt(arg, 
+			       option == LOPT_FORCE ? DHOPT_FORCE : 
+			       (option == LOPT_OPTS ? DHOPT_BANK : 0));
       break;
       
     case 'M': /* --dhcp-boot */
@@ -1685,11 +1767,11 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	struct dhcp_netid *id = NULL;
 	while (arg && strstr(arg, "net:") == arg)
 	  {
-	    struct dhcp_netid *newid = safe_malloc(sizeof(struct dhcp_netid));
+	    struct dhcp_netid *newid = opt_malloc(sizeof(struct dhcp_netid));
 	    newid->next = id;
 	    id = newid;
 	    comma = split(arg);
-	    newid->net = safe_string_alloc(arg+4);
+	    newid->net = opt_string_alloc(arg+4);
 	    arg = comma;
 	  };
 	
@@ -1700,13 +1782,13 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	    char *dhcp_file, *dhcp_sname = NULL;
 	    struct in_addr dhcp_next_server;
 	    comma = split(arg);
-	    dhcp_file = safe_string_alloc(arg);
+	    dhcp_file = opt_string_alloc(arg);
 	    dhcp_next_server.s_addr = 0;
 	    if (comma)
 	      {
 		arg = comma;
 		comma = split(arg);
-		dhcp_sname = safe_string_alloc(arg);
+		dhcp_sname = opt_string_alloc(arg);
 		if (comma)
 		  {
 		    unhide_metas(comma);
@@ -1716,7 +1798,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	      }
 	    if (option != '?')
 	      {
-		struct dhcp_boot *new = safe_malloc(sizeof(struct dhcp_boot));
+		struct dhcp_boot *new = opt_malloc(sizeof(struct dhcp_boot));
 		new->file = dhcp_file;
 		new->sname = dhcp_sname;
 		new->next_server = dhcp_next_server;
@@ -1735,8 +1817,8 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	  option = '?';
 	else
 	  {
-	    struct dhcp_mac *new = safe_malloc(sizeof(struct dhcp_mac));
-	    new->netid.net = safe_string_alloc(arg);
+	    struct dhcp_mac *new = opt_malloc(sizeof(struct dhcp_mac));
+	    new->netid.net = opt_string_alloc(arg);
 	    unhide_metas(comma);
 	    new->hwaddr_len = parse_hex(comma, new->hwaddr, DHCP_CHADDR_MAX, &new->mask, &new->hwaddr_type);
 	    new->next = daemon->dhcp_macs;
@@ -1750,6 +1832,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
     case LOPT_CIRCUIT:  /* --dhcp-circuitid */
     case LOPT_REMOTE:   /* --dhcp-remoteid */
     case LOPT_SUBSCR:   /* --dhcp-subscrid */
+    case LOPT_MATCH:    /* --dhcp-match */
       {
 	if (!(comma = split(arg)))
 	  option = '?';
@@ -1757,22 +1840,31 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	  {
 	    char *p;
 	    int dig = 0;
-	    struct dhcp_vendor *new = safe_malloc(sizeof(struct dhcp_vendor));
-	    new->netid.net = safe_string_alloc(arg);
+	    struct dhcp_vendor *new = opt_malloc(sizeof(struct dhcp_vendor));
+	    new->netid.net = opt_string_alloc(arg);
 	    /* check for hex string - must digits may include : must not have nothing else, 
 	       only allowed for agent-options. */
 	    for (p = comma; *p; p++)
-	      if (isxdigit(*p))
+	      if (isxdigit((int)*p))
 		dig = 1;
 	      else if (*p != ':')
 		break;
 	    unhide_metas(comma);
-	    if (option == 'U' || option == 'j' || *p || !dig)
-	      new->len = strlen(comma);
+	    if (option == LOPT_MATCH) 
+	      new->option = atoi(comma);
+	    else if (option == 'U' || option == 'j' || *p || !dig)
+	      {
+		new->len = strlen(comma);  
+		new->data = opt_malloc(new->len);
+		memcpy(new->data, comma, new->len);
+	      }
 	    else
-	      new->len = parse_hex(comma, (unsigned char *)comma, strlen(comma), NULL, NULL);
-	    new->data = safe_malloc(new->len);
-	    memcpy(new->data, comma, new->len);
+	      {
+		new->len = parse_hex(comma, (unsigned char *)comma, strlen(comma), NULL, NULL);
+		new->data = opt_malloc(new->len);
+		memcpy(new->data, comma, new->len);
+	      }
+
 	    switch (option)
 	      {
 	      case 'j':
@@ -1790,6 +1882,8 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	      case LOPT_SUBSCR:
 		new->match_type = MATCH_SUBSCRIBER;
 		break;
+	      case LOPT_MATCH:
+		new->match_type = MATCH_OPTION;
 	      }
 	    new->next = daemon->dhcp_vendors;
 	    daemon->dhcp_vendors = new;
@@ -1797,15 +1891,21 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	break;
       }
       
-    case 'J':           /* --dhcp-ignore */
-    case LOPT_NO_NAMES: /* --dhcp-ignore-names */
+    case 'J':            /* --dhcp-ignore */
+    case LOPT_NO_NAMES:  /* --dhcp-ignore-names */
+    case LOPT_BROADCAST: /* --dhcp-broadcast */
       {
-	struct dhcp_netid_list *new = safe_malloc(sizeof(struct dhcp_netid_list));
+	struct dhcp_netid_list *new = opt_malloc(sizeof(struct dhcp_netid_list));
 	struct dhcp_netid *list = NULL;
 	if (option == 'J')
 	  {
 	    new->next = daemon->dhcp_ignore;
 	    daemon->dhcp_ignore = new;
+	  }
+	else if (option == LOPT_BROADCAST)
+	  {
+	    new->next = daemon->force_broadcast;
+	    daemon->force_broadcast = new;
 	  }
 	else
 	  {
@@ -1814,11 +1914,11 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	  }
 	
 	while (arg) {
-	  struct dhcp_netid *member = safe_malloc(sizeof(struct dhcp_netid));
+	  struct dhcp_netid *member = opt_malloc(sizeof(struct dhcp_netid));
 	  comma = split(arg);
 	  member->next = list;
 	  list = member;
-	  member->net = safe_string_alloc(arg);
+	  member->net = opt_string_alloc(arg);
 	  arg = comma;
 	}
 	
@@ -1854,7 +1954,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	if (k == 3)
 	  mask.s_addr = inet_addr(a[2]);
 	
-	new = safe_malloc(sizeof(struct doctor));
+	new = opt_malloc(sizeof(struct doctor));
 	new->in = in;
 	new->out = out;
 	new->mask = mask;
@@ -1871,20 +1971,16 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	comma = split(arg);
 	
 	if (!comma || !canonicalise_opt(arg))
-	  {
-	    option = '?';
-	    problem = _("bad interface name");
-	    break;
-	  }
-
-	new = safe_malloc(sizeof(struct interface_name));
+	  problem = _("bad interface name");
+	  
+	new = opt_malloc(sizeof(struct interface_name));
 	new->next = NULL;
 	/* Add to the end of the list, so that first name
 	   of an interface is used for PTR lookups. */
-	for(up = &daemon->int_names; *up; up = &((*up)->next));
+	for (up = &daemon->int_names; *up; up = &((*up)->next));
 	*up = new;
-	new->name = safe_string_alloc(arg);
-	new->intr = safe_string_alloc(comma);
+	new->name = opt_string_alloc(arg);
+	new->intr = opt_string_alloc(comma);
 	break;
       }
 
@@ -1895,19 +1991,15 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	comma = split(arg);
 	
 	if (!canonicalise_opt(arg))
-	  {
-	    option = '?';
-	    problem = _("bad PTR record");
-	    break;
-	  }
-
-	new = safe_malloc(sizeof(struct ptr_record));
+	  problem = _("bad PTR record");
+	  
+	new = opt_malloc(sizeof(struct ptr_record));
 	new->next = daemon->ptr;
 	daemon->ptr = new;
-	new->name = safe_string_alloc(arg);
+	new->name = opt_string_alloc(arg);
 	new->ptr = NULL;
 	if (comma)
-	  new->ptr = safe_string_alloc(comma);
+	  new->ptr = opt_string_alloc(comma);
 	break;
       }
 
@@ -1916,15 +2008,17 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	struct txt_record *new;
 	unsigned char *p, *q;
 	
-	comma = split(arg) - 1;
+	if ((comma = split(arg)))
+	  comma--;
+	
+	gen_prob = _("TXT record string too long");
 	
 	if (!canonicalise_opt(arg))
 	  {
-	    option = '?';
 	    problem = _("bad TXT record");
 	    break;
 	  }
-	
+
 	if ((q = (unsigned char *)comma))
 	  while (1)
 	    {
@@ -1932,10 +2026,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	      if ((p = (unsigned char *)strchr((char*)q+1, ',')))
 		{
 		  if ((len = p - q - 1) > 255)
-		    { 
-		      option = '?';
-		      break;
-		    }
+		    option = '?';
 		  *q = len;
 		  for (q = q+1; q < p; q++)
 		    *q = unhide_meta(*q);
@@ -1951,20 +2042,14 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 		}
 	    }
 	
-	if (option == '?')
-	  {
-	    problem = _("TXT record string too long");
-	    break;
-	  }
-	
-	new = safe_malloc(sizeof(struct txt_record));
+	new = opt_malloc(sizeof(struct txt_record));
 	new->next = daemon->txt;
 	daemon->txt = new;
 	new->class = C_IN;
 	if (comma)
 	  {
 	    new->len = q - ((unsigned char *)comma);
-	    new->txt = safe_malloc(new->len);
+	    new->txt = opt_malloc(new->len);
 	    memcpy(new->txt, comma, new->len);
 	  }
 	else
@@ -1977,7 +2062,7 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	/* ensure arg is terminated */
 	if (comma)
 	  *comma = 0;
-	new->name = safe_string_alloc(arg);
+	new->name = opt_string_alloc(arg);
 	break;
       }
       
@@ -1990,60 +2075,44 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
 	comma = split(arg);
 	
 	if (!canonicalise_opt(arg))
-	  {
-	    option = '?';
-	    problem = _("bad SRV record");
-	    break;
-	  }
-	name = safe_string_alloc(arg);
+	  problem = _("bad SRV record");
+	  
+	name = opt_string_alloc(arg);
 	
 	if (comma)
 	  {
 	    arg = comma;
 	    comma = split(arg);
 	    if (!canonicalise_opt(arg))
-	      {
-		option = '?';
-		problem = _("bad SRV target");
-		break;
-	      }
-	    target = safe_string_alloc(arg);
+	      problem = _("bad SRV target");
+		
+	    target = opt_string_alloc(arg);
 	    if (comma)
 	      {
 		arg = comma;
 		comma = split(arg);
 		if (!atoi_check(arg, &port))
-		  {
-		    option = '?';
-		    problem = _("invalid port number");
-		    break;
-		  }
+		  problem = _("invalid port number");
+		
 		if (comma)
 		  {
 		    arg = comma;
 		    comma = split(arg);
 		    if (!atoi_check(arg, &priority))
-		      {
-			option = '?';
-			problem = _("invalid priority");
-			break;
-		      }
+		      problem = _("invalid priority");
+			
 		    if (comma)
 		      {
 			arg = comma;
 			comma = split(arg);
 			if (!atoi_check(arg, &weight))
-			  {
-			    option = '?';
-			    problem = _("invalid weight");
-			    break;
-			  }
+			  problem = _("invalid weight");
 		      }
 		  }
 	      }
 	  }
 	
-	new = safe_malloc(sizeof(struct mx_srv_record));
+	new = opt_malloc(sizeof(struct mx_srv_record));
 	new->next = daemon->mxnames;
 	daemon->mxnames = new;
 	new->issrv = 1;
@@ -2056,12 +2125,19 @@ static char *one_opt(int option, char *arg, char *problem, int nest)
       }
     }
 
-  return option == '?' ? problem : NULL;
+  if (problem)
+    return problem;
+  
+  if (option == '?')
+    return gen_prob;
+
+  return NULL;
 }
 
-void one_file(char *file, int nest, int hosts)	
+static void one_file(char *file, int nest, int hard_opt)	
 {
-  int i, option, lineno = 0; 
+  volatile int lineno = 0;
+  int i, option; 
   FILE *f;
   char *p, *arg, *start, *buff = daemon->namebuff;
 
@@ -2075,7 +2151,7 @@ void one_file(char *file, int nest, int hosts)
       else
 	{
 	  char *str = _("cannot read %s: %s");
-	  if (hosts)
+	  if (hard_opt != 0)
 	    {
 	      my_syslog(LOG_ERR, str, file, strerror(errno));
 	      return;
@@ -2089,10 +2165,19 @@ void one_file(char *file, int nest, int hosts)
     {
       int white;
       unsigned int lastquote;
-      char *errmess = NULL;
+      char *errmess;
 
+      /* Memory allocation failure longjmps here if mem_recover == 1 */ 
+      if (hard_opt)
+	{
+	  if (setjmp(mem_jmp))
+	    continue;
+	  mem_recover = 1;
+	}
+      
       lineno++;
-            
+      errmess = NULL;
+      
       /* Implement quotes, inside quotes we allow \\ \" \n and \t 
 	 metacharacters get hidden also strip comments */
       
@@ -2136,34 +2221,34 @@ void one_file(char *file, int nest, int hosts)
 	      *p = 0;
 	      break;
 	    }
-	  white = isspace(unhide_meta(*p)); 
+	  white = isspace((int)unhide_meta(*p)); 
 	}
 
       /* fgets gets end of line char too. */
-      while (strlen(buff) > lastquote && isspace(unhide_meta(buff[strlen(buff)-1])))
+      while (strlen(buff) > lastquote && isspace((int)unhide_meta(buff[strlen(buff)-1])))
 	buff[strlen(buff)-1] = 0;
 
       if (*buff == 0)
 	continue; 
 
-      if (hosts)
+      if (hard_opt != 0)
 	arg = buff;
       else if ((p=strchr(buff, '=')))
 	{
 	  /* allow spaces around "=" */
 	  arg = p+1;
-	  for (; p >= buff && (isspace(*p) || *p == '='); p--)
+	  for (; p >= buff && (isspace((int)*p) || *p == '='); p--)
 	    *p = 0;
 	}
       else
 	arg = NULL;
 
-      if (hosts)
-	option = LOPT_BANK;
+      if (hard_opt != 0)
+	option = hard_opt;
       else
 	{
 	  /* skip leading space */
-	  for (start = buff; *start && isspace(*start); start++);
+	  for (start = buff; *start && isspace((int)*start); start++);
 	  
 	  for (option = 0, i = 0; opts[i].name; i++) 
 	    if (strcmp(opts[i].name, start) == 0)
@@ -2179,11 +2264,11 @@ void one_file(char *file, int nest, int hosts)
 	  else if (opts[i].has_arg == 1 && !arg)
 	    errmess = _("missing parameter");
 	}
-      
+	  
       if (!errmess)
 	{
 	  if (arg)
-	    for (; isspace(*arg); arg++);
+	    for (; isspace((int)*arg); arg++);
 	  
 	  errmess = one_opt(option, arg, _("error"), nest + 1);
 	}
@@ -2192,7 +2277,7 @@ void one_file(char *file, int nest, int hosts)
 	{
 	oops:
 	  sprintf(buff, _("%s at line %d of %%s"), errmess, lineno);
-	  if (hosts)
+ 	  if (hard_opt != 0)
 	   {
 	    my_syslog(LOG_ERR, buff, file);
 	   }
@@ -2200,19 +2285,83 @@ void one_file(char *file, int nest, int hosts)
 	    die(buff, file, EC_BADCONF);
 	}
     }
-
+    
+  mem_recover = 1;
   fclose(f);
 }
 
+ void reread_dhcp(void)
+ {
+   if (daemon->dhcp_hosts_file)
+     {
+       struct dhcp_config *configs, *cp, **up;
+       
+       /* remove existing... */
+       for (up = &daemon->dhcp_conf, configs = daemon->dhcp_conf; configs; configs = cp)
+ 	{
+ 	  cp = configs->next;
+ 	  
+ 	  if (configs->flags & CONFIG_BANK)
+ 	    {
+ 	      if (configs->flags & CONFIG_CLID)
+ 		free(configs->clid);
+ 	      if (configs->flags & CONFIG_NETID)
+ 		free(configs->netid.net);
+ 	      if (configs->flags & CONFIG_NAME)
+ 		free(configs->hostname);
+ 	      
+ 	      *up = configs->next;
+ 	      free(configs);
+ 	    }
+ 	  else
+ 	    up = &configs->next;
+ 	}
+       
+       one_file(daemon->dhcp_hosts_file, 1, LOPT_BANK);  
+       my_syslog(LOG_INFO, _("read %s"), daemon->dhcp_hosts_file);
+     }
+ 
+   if (daemon->dhcp_opts_file)
+     {
+       struct dhcp_opt *opts, *cp, **up;
+       struct dhcp_netid *id, *next;
+ 
+       for (up = &daemon->dhcp_opts, opts = daemon->dhcp_opts; opts; opts = cp)
+ 	{
+ 	  cp = opts->next;
+ 	  
+ 	  if (opts->flags & DHOPT_BANK)
+ 	    {
+ 	      free(opts->vendor_class);
+ 	      free(opts->val);
+ 	      for (id = opts->netid; id; id = next)
+ 		{
+ 		  next = id->next;
+ 		  free(id->net);
+ 		  free(id);
+ 		}
+ 	      *up = opts->next;
+ 	      free(opts);
+ 	    }
+ 	  else
+ 	    up = &opts->next;
+ 	}
+       
+       one_file(daemon->dhcp_opts_file, 1, LOPT_OPTS);  
+       my_syslog(LOG_INFO, _("read %s"), daemon->dhcp_opts_file);
+     }
+ }
+     
+
 void read_opts(int argc, char **argv, char *compile_opts)
 {
-  char *buff = safe_malloc(MAXDNAME);
+  char *buff = opt_malloc(MAXDNAME);
   int option, nest = 0;
   char *errmess, *arg, *conffile = CONFFILE;
       
   opterr = 0;
 
-  daemon = safe_malloc(sizeof(struct daemon));
+  daemon = opt_malloc(sizeof(struct daemon));
   memset(daemon, 0, sizeof(struct daemon));
   daemon->namebuff = buff;
 
@@ -2273,12 +2422,12 @@ void read_opts(int argc, char **argv, char *compile_opts)
 	  printf(_("Compile time options %s\n\n"), compile_opts); 
 	  printf(_("This software comes with ABSOLUTELY NO WARRANTY.\n"));
 	  printf(_("Dnsmasq is free software, and you are welcome to redistribute it\n"));
-	  printf(_("under the terms of the GNU General Public License, version 2.\n"));
+	  printf(_("under the terms of the GNU General Public License, version 2 or 3.\n"));
           exit(0);
         }
       else if (option == 'C')
 	{
-	  conffile = safe_string_alloc(arg);
+	  conffile = opt_string_alloc(arg);
 	  nest++;
 	}
       else
@@ -2338,16 +2487,16 @@ void read_opts(int argc, char **argv, char *compile_opts)
       
       if ((daemon->mxtarget || (daemon->options & OPT_LOCALMX)) && !mx)
 	{
-	  mx = safe_malloc(sizeof(struct mx_srv_record));
+	  mx = opt_malloc(sizeof(struct mx_srv_record));
 	  mx->next = daemon->mxnames;
 	  mx->issrv = 0;
 	  mx->target = NULL;
-	  mx->name = safe_string_alloc(buff);
+	  mx->name = opt_string_alloc(buff);
 	  daemon->mxnames = mx;
 	}
       
       if (!daemon->mxtarget)
-	daemon->mxtarget = safe_string_alloc(buff);
+	daemon->mxtarget = opt_string_alloc(buff);
 
       for (mx = daemon->mxnames; mx; mx = mx->next)
 	if (!mx->issrv && !mx->target)
@@ -2382,7 +2531,7 @@ void read_opts(int argc, char **argv, char *compile_opts)
 	  
 	  if ((token = strtok(NULL, " \t\n\r")) &&  
 	      canonicalise_opt(token) &&
-	      (daemon->domain_suffix = safe_string_alloc(token)))
+	      (daemon->domain_suffix = opt_string_alloc(token)))
 	    break;
 	}
 
@@ -2406,7 +2555,7 @@ void read_opts(int argc, char **argv, char *compile_opts)
 	    strcat(buff, ".");
 	    strcat(buff, daemon->domain_suffix);
 	    free(srv->name);
-	    srv->name = safe_string_alloc(buff);
+	    srv->name = opt_string_alloc(buff);
 	  }
     }
 }  

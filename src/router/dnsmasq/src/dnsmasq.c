@@ -1,13 +1,17 @@
-/* dnsmasq is Copyright (c) 2000-2006 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2007 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 dated June, 1991.
-
+   the Free Software Foundation; version 2 dated June, 1991, or
+   (at your option) version 3 dated 29 June, 2007.
+ 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
+     
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "dnsmasq.h"
@@ -37,7 +41,7 @@ static char *compile_opts =
 "no-"
 #endif
 "DBus "
-#ifdef NO_GETTEXT
+#ifndef LOCALEDIR
 "no-"
 #endif
 "I18N "
@@ -66,7 +70,7 @@ int main (int argc, char **argv)
   struct passwd *ent_pw;
   long i, max_fd = sysconf(_SC_OPEN_MAX);
 
-#ifndef NO_GETTEXT
+#ifdef LOCALEDIR
   setlocale(LC_ALL, "");
   bindtextdomain("dnsmasq", LOCALEDIR); 
   textdomain("dnsmasq");
@@ -128,6 +132,11 @@ int main (int argc, char **argv)
     die(_("TFTP server not available: set HAVE_TFTP in src/config.h"), NULL, EC_BADCONF);
 #endif
 
+#ifdef HAVE_SOLARIS_NETWORK
+  if (daemon->max_logs != 0)
+    die(_("asychronous logging is not available under Solaris"), NULL, EC_BADCONF);
+#endif
+  
   now = dnsmasq_time();
   
   if (daemon->dhcp)
@@ -166,10 +175,12 @@ int main (int argc, char **argv)
 	    die(_("no interface with address %s"), daemon->namebuff, EC_BADNET);
 	  }
     }
-  else if (!(daemon->listeners = create_wildcard_listeners()))
+  else if ((daemon->port != 0 || (daemon->options & OPT_TFTP)) &&
+	   !(daemon->listeners = create_wildcard_listeners()))
     die(_("failed to create listening socket: %s"), NULL, EC_BADNET);
   
-  cache_init();
+  if (daemon->port != 0)
+    cache_init();
 
   if (daemon->options & OPT_DBUS)
 #ifdef HAVE_DBUS
@@ -184,31 +195,8 @@ int main (int argc, char **argv)
   die(_("DBus not available: set HAVE_DBUS in src/config.h"), NULL, EC_BADCONF);
 #endif
   
-  /* If query_port is set then create a socket now, before dumping root
-     for use to access nameservers without more specific source addresses.
-     This allows query_port to be a low port */
-  if (daemon->query_port)
-    {
-      union  mysockaddr addr;
-      memset(&addr, 0, sizeof(addr));
-      addr.in.sin_family = AF_INET;
-      addr.in.sin_addr.s_addr = INADDR_ANY;
-      addr.in.sin_port = htons(daemon->query_port);
-#ifdef HAVE_SOCKADDR_SA_LEN
-      addr.in.sin_len = sizeof(struct sockaddr_in);
-#endif
-      allocate_sfd(&addr, &daemon->sfds);
-#ifdef HAVE_IPV6
-      memset(&addr, 0, sizeof(addr));
-      addr.in6.sin6_family = AF_INET6;
-      addr.in6.sin6_addr = in6addr_any;
-      addr.in6.sin6_port = htons(daemon->query_port);
-#ifdef HAVE_SOCKADDR_SA_LEN
-      addr.in6.sin6_len = sizeof(struct sockaddr_in6);
-#endif
-      allocate_sfd(&addr, &daemon->sfds);
-#endif
-    }
+  if (daemon->port != 0)
+    pre_allocate_sfds();
   
   /* Use a pipe to carry signals and other events back to the event loop 
      in a race-free manner */
@@ -247,8 +235,9 @@ int main (int argc, char **argv)
 	}
 #endif
       
-      chdir("/");
-            
+      if (chdir("/") != 0)
+	die(_("cannot chdir to filesystem root: %s"), NULL, EC_MISC);
+      
       /* write pidfile _after_ forking ! */
       if (daemon->runfile && (pidfile = fopen(daemon->runfile, "w")))
       	{
@@ -295,7 +284,7 @@ int main (int argc, char **argv)
       
       if (ent_pw && ent_pw->pw_uid != 0)
 	{     
-#ifdef HAVE_LINUX_NETWORK
+#if defined(HAVE_LINUX_NETWORK)
 	  /* On linux, we keep CAP_NETADMIN (for ARP-injection) and
 	     CAP_NET_RAW (for icmp) if we're doing dhcp */
 	  cap_user_header_t hdr = safe_malloc(sizeof(*hdr));
@@ -309,8 +298,33 @@ int main (int argc, char **argv)
 	  /* Tell kernel to not clear capabilities when dropping root */
 	  if (capset(hdr, data) == -1 || prctl(PR_SET_KEEPCAPS, 1) == -1)
 	    bad_capabilities = errno;
-	  else
-#endif
+
+#elif defined(HAVE_SOLARIS_PRIVS)
+	  /* http://developers.sun.com/solaris/articles/program_privileges.html */
+	  priv_set_t *priv_set;
+	  
+	  if (!(priv_set = priv_str_to_set("basic", ",", NULL)) ||
+	      priv_addset(priv_set, PRIV_NET_ICMPACCESS) == -1 ||
+	      priv_addset(priv_set, PRIV_SYS_NET_CONFIG) == -1)
+	    bad_capabilities = errno;
+
+	  if (priv_set && bad_capabilities == 0)
+	    {
+	      priv_inverse(priv_set);
+	  
+	      if (setppriv(PRIV_OFF, PRIV_LIMIT, priv_set) == -1)
+		bad_capabilities = errno;
+	    }
+
+	  if (priv_set)
+	    priv_freeset(priv_set);
+
+#elif defined(HAVE_SOLARIS_NETWORK)
+
+	  bad_capabilities = ENOTSUP;
+#endif    
+
+	  if (bad_capabilities == 0) 
 	    {
 	      /* finally drop root */
 	      setuid(ent_pw->pw_uid);
@@ -331,8 +345,11 @@ int main (int argc, char **argv)
   if (daemon->options & OPT_DEBUG) 
     prctl(PR_SET_DUMPABLE, 1);
 #endif
-
-  if (daemon->cachesize != 0)
+  if (daemon->port == 0)
+    {
+     my_syslog(LOG_INFO, _("started, version %s DNS disabled"), VERSION);
+  }
+   else if (daemon->cachesize != 0)
   {
     my_syslog(LOG_INFO, _("started, version %s cachesize %d"), VERSION, daemon->cachesize);
   }
@@ -361,7 +378,7 @@ int main (int argc, char **argv)
       if (if_tmp->name && !if_tmp->used)
 	my_syslog(LOG_WARNING, _("warning: interface %s does not currently exist"), if_tmp->name);
    
-  if (daemon->options & OPT_NO_RESOLV)
+  if (daemon->port != 0 && (daemon->options & OPT_NO_RESOLV))
     {
       if (daemon->resolv_files && !daemon->resolv_files->is_default)
 	my_syslog(LOG_WARNING, _("warning: ignoring resolv-file flag because no-resolv is set"));
@@ -415,6 +432,12 @@ int main (int argc, char **argv)
 	max_fd = max_fd/2;
       else
 	max_fd = max_fd - 20;
+      
+      /* if we have to use a limited range of ports, 
+	 that will limit the number of transfers */
+      if (daemon->start_tftp_port != 0 &&
+	  daemon->end_tftp_port - daemon->start_tftp_port + 1 < max_fd)
+	max_fd = daemon->end_tftp_port - daemon->start_tftp_port + 1;
 
       if (daemon->tftp_max > max_fd)
 	{
@@ -434,8 +457,9 @@ int main (int argc, char **argv)
       my_syslog(LOG_WARNING, _("running as root"));
     }
   
-  check_servers();
-
+  if (daemon->port != 0)
+    check_servers();
+  
   pid = getpid();
   
   while (1)
@@ -526,7 +550,7 @@ int main (int argc, char **argv)
 	    load_dhcp(now);
 #endif
 
-	  if (!(daemon->options & OPT_NO_POLL))
+	  if (daemon->port != 0 && !(daemon->options & OPT_NO_POLL))
 	    poll_resolv();
 	}
       
@@ -550,7 +574,7 @@ int main (int argc, char **argv)
 	}
       check_dbus_listeners(&rset, &wset, &eset);
 #endif
-
+      
       check_dns_listeners(&rset, now);
 
 #ifdef HAVE_TFTP
@@ -630,7 +654,7 @@ static void async_event(int pipe, time_t now)
       {
       case EVENT_RELOAD:
 	clear_cache_and_reload(now);
-	if (daemon->resolv_files && (daemon->options & OPT_NO_POLL))
+	if (daemon->port != 0 && daemon->resolv_files && (daemon->options & OPT_NO_POLL))
 	  {
 	    reload_servers(daemon->resolv_files->name);
 	    check_servers();
@@ -639,7 +663,8 @@ static void async_event(int pipe, time_t now)
 	break;
 	
       case EVENT_DUMP:
-	dump_cache(now);
+	if (daemon->port != 0)
+	  dump_cache(now);
 	break;
 	
       case EVENT_ALARM:
@@ -775,14 +800,16 @@ static void poll_resolv()
 
 void clear_cache_and_reload(time_t now)
 {
-  cache_reload(daemon->options, daemon->namebuff, daemon->domain_suffix, daemon->addn_hosts);
+  if (daemon->port != 0)
+    cache_reload(daemon->options, daemon->namebuff, daemon->domain_suffix, daemon->addn_hosts);
+  
   if (daemon->dhcp)
     {
       if (daemon->options & OPT_ETHERS)
 	dhcp_read_ethers();
-      if (daemon->dhcp_hosts_file)
-	dhcp_read_hosts();
+      reread_dhcp();
       dhcp_update_configs(daemon->dhcp_conf);
+      check_dhcp_hosts(0);
       lease_update_from_configs(); 
       lease_update_file(now); 
       lease_update_dns();
@@ -793,7 +820,7 @@ static int set_dns_listeners(time_t now, fd_set *set, int *maxfdp)
 {
   struct serverfd *serverfdp;
   struct listener *listener;
-  int wait, i;
+  int wait = 0, i;
   
 #ifdef HAVE_TFTP
   int  tftp = 0;
@@ -807,7 +834,8 @@ static int set_dns_listeners(time_t now, fd_set *set, int *maxfdp)
 #endif
   
   /* will we be able to get memory? */
-  get_new_frec(now, &wait);
+  if (daemon->port != 0)
+    get_new_frec(now, &wait);
   
   for (serverfdp = daemon->sfds; serverfdp; serverfdp = serverfdp->next)
     {
@@ -818,7 +846,7 @@ static int set_dns_listeners(time_t now, fd_set *set, int *maxfdp)
   for (listener = daemon->listeners; listener; listener = listener->next)
     {
       /* only listen for queries if we have resources */
-      if (wait == 0)
+      if (listener->fd != -1 && wait == 0)
 	{
 	  FD_SET(listener->fd, set);
 	  bump_maxfd(listener->fd, maxfdp);
@@ -826,13 +854,14 @@ static int set_dns_listeners(time_t now, fd_set *set, int *maxfdp)
 
       /* death of a child goes through the select loop, so
 	 we don't need to explicitly arrange to wake up here */
-      for (i = 0; i < MAX_PROCS; i++)
-	if (daemon->tcp_pids[i] == 0)
-	  {
-	    FD_SET(listener->tcpfd, set);
-	    bump_maxfd(listener->tcpfd, maxfdp);
-	    break;
-	  }
+      if  (listener->tcpfd != -1)
+	for (i = 0; i < MAX_PROCS; i++)
+	  if (daemon->tcp_pids[i] == 0)
+	    {
+	      FD_SET(listener->tcpfd, set);
+	      bump_maxfd(listener->tcpfd, maxfdp);
+	      break;
+	    }
 
 #ifdef HAVE_TFTP
       if (tftp <= daemon->tftp_max && listener->tftpfd != -1)
@@ -858,7 +887,7 @@ static void check_dns_listeners(fd_set *set, time_t now)
   
   for (listener = daemon->listeners; listener; listener = listener->next)
     {
-      if (FD_ISSET(listener->fd, set))
+      if (listener->fd != -1 && FD_ISSET(listener->fd, set))
 	receive_query(listener, now); 
  
 #ifdef HAVE_TFTP     
@@ -866,7 +895,7 @@ static void check_dns_listeners(fd_set *set, time_t now)
 	tftp_request(listener, now);
 #endif
 
-      if (FD_ISSET(listener->tcpfd, set))
+      if (listener->tcpfd != -1 && FD_ISSET(listener->tcpfd, set))
 	{
 	  int confd;
 	  struct irec *iface = NULL;
@@ -1012,7 +1041,7 @@ int icmp_ping(struct in_addr addr)
   int gotreply = 0;
   time_t start, now;
 
-#ifdef HAVE_LINUX_NETWORK
+#if defined(HAVE_LINUX_NETWORK) || defined (HAVE_SOLARIS_NETWORK)
   if ((fd = make_icmp_sock()) == -1)
     return 0;
 #else
@@ -1087,7 +1116,7 @@ int icmp_ping(struct in_addr addr)
 	}
     }
   
-#ifdef HAVE_LINUX_NETWORK
+#if defined(HAVE_LINUX_NETWORK) || defined(HAVE_SOLARIS_NETWORK)
   close(fd);
 #else
   opt = 1;

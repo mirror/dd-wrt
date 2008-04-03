@@ -1,13 +1,17 @@
-/* dnsmasq is Copyright (c) 2000 - 2005 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2007 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 dated June, 1991.
-
+   the Free Software Foundation; version 2 dated June, 1991, or
+   (at your option) version 3 dated 29 June, 2007.
+ 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
+     
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "dnsmasq.h"
@@ -21,7 +25,7 @@ static struct frec *lookup_frec_by_sender(unsigned short id,
 static unsigned short get_id(int force, unsigned short force_id, unsigned int crc);
 
 
-/* Send a UDP packet with it's source address set as "source" 
+/* Send a UDP packet with its source address set as "source" 
    unless nowild is true, when we just send it with the kernel default */
 static void send_from(int fd, int nowild, char *packet, size_t len, 
 		      union mysockaddr *to, struct all_addr *source,
@@ -140,7 +144,7 @@ static unsigned short search_servers(time_t now, struct all_addr **addrpp,
 		  *addrpp = (struct all_addr *)&serv->addr.in6.sin6_addr;
 #endif 
 	      }
-	    else if (!flags)
+	    else if (!flags || (flags & F_NXDOMAIN))
 	      flags = F_NOERR;
 	  } 
       }
@@ -161,9 +165,9 @@ static unsigned short search_servers(time_t now, struct all_addr **addrpp,
 	      flags = F_NXDOMAIN;
 	    else if (serv->flags & SERV_LITERAL_ADDRESS)
 	      {
-		if ((sflag | F_QUERY ) & qtype)
+		if (sflag & qtype)
 		  {
-		    flags = qtype & ~F_BIGNAME;
+		    flags = sflag;
 		    if (serv->addr.sa.sa_family == AF_INET) 
 		      *addrpp = (struct all_addr *)&serv->addr.in.sin_addr;
 #ifdef HAVE_IPV6
@@ -171,37 +175,36 @@ static unsigned short search_servers(time_t now, struct all_addr **addrpp,
 		      *addrpp = (struct all_addr *)&serv->addr.in6.sin6_addr;
 #endif
 		  }
-		else if (!flags)
+		else if (!flags || (flags & F_NXDOMAIN))
 		  flags = F_NOERR;
 	      }
 	  } 
       }
 
-  if (flags & ~(F_NOERR | F_NXDOMAIN)) /* flags set here means a literal found */
-    {
-      if (flags & F_QUERY)
-	log_query(F_CONFIG | F_FORWARD | F_NEG, qdomain, NULL, 0, NULL, 0);
-      else
-	log_query(F_CONFIG | F_FORWARD | flags, qdomain, *addrpp, 0, NULL, 0);
-    }
-  else if (qtype && !(qtype & F_BIGNAME) && 
-	   (daemon->options & OPT_NODOTS_LOCAL) && !strchr(qdomain, '.') && namelen != 0)
-    /* don't forward simple names, make exception from NS queries and empty name. */
+  if (flags == 0 && !(qtype & F_BIGNAME) && 
+      (daemon->options & OPT_NODOTS_LOCAL) && !strchr(qdomain, '.') && namelen != 0)
+    /* don't forward simple names, make exception for NS queries and empty name. */
     flags = F_NXDOMAIN;
     
   if (flags == F_NXDOMAIN && check_for_local_domain(qdomain, now))
     flags = F_NOERR;
 
-  if (flags == F_NXDOMAIN || flags == F_NOERR)
-    log_query(F_CONFIG | F_FORWARD | F_NEG | qtype | (flags & F_NXDOMAIN), qdomain, NULL, 0, NULL, 0);
+  if (flags)
+    {
+      int logflags = 0;
+      
+      if (flags == F_NXDOMAIN || flags == F_NOERR)
+	logflags = F_NEG | qtype;
+  
+      log_query(logflags | flags | F_CONFIG | F_FORWARD, qdomain, *addrpp, 0, NULL, 0);
+    }
 
   return  flags;
 }
 
-/* returns new last_server */	
-static void forward_query(int udpfd, union mysockaddr *udpaddr,
-			  struct all_addr *dst_addr, unsigned int dst_iface,
-			  HEADER *header, size_t plen, time_t now, struct frec *forward)
+static int forward_query(int udpfd, union mysockaddr *udpaddr,
+			 struct all_addr *dst_addr, unsigned int dst_iface,
+			 HEADER *header, size_t plen, time_t now, struct frec *forward)
 {
   char *domain = NULL;
   int type = 0;
@@ -218,6 +221,7 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
     {
       /* retry on existing query, send to all available servers  */
       domain = forward->sentto->domain;
+      forward->sentto->failed_queries++;
       if (!(daemon->options & OPT_ORDER))
 	{
 	  forward->forwardall = 1;
@@ -311,6 +315,7 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
 			      (struct all_addr *)&start->addr.in6.sin6_addr, 0,
 			      NULL, 0);
 #endif 
+		  start->queries++;
 		  forwarded = 1;
 		  forward->sentto = start;
 		  if (!forward->forwardall) 
@@ -327,7 +332,7 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
 	}
       
       if (forwarded)
-	  return;
+	return 1;
       
       /* could not send on, prepare to return */ 
       header->id = htons(forward->orig_id);
@@ -341,7 +346,7 @@ static void forward_query(int udpfd, union mysockaddr *udpaddr,
       send_from(udpfd, daemon->options & OPT_NOWILD, (char *)header, plen, udpaddr, dst_addr, dst_iface);
     }
 
-  return;
+  return 0;
 }
 
 static size_t process_reply(HEADER *header, time_t now, 
@@ -399,7 +404,11 @@ static size_t process_reply(HEADER *header, time_t now,
 	  header->rcode = NOERROR;
 	}
       
-      extract_addresses(header, n, daemon->namebuff, now);
+      if (extract_addresses(header, n, daemon->namebuff, now))
+	{
+	  my_syslog(LOG_WARNING, _("possible DNS-rebind attack detected"));
+	  munged = 1;
+	}
     }
   
   /* do this after extract_addresses. Ensure NODATA reply and remove
@@ -489,7 +498,8 @@ void reply_query(struct serverfd *sfd, time_t now)
 		    break;
 		  }
 	    } 
-	  daemon->last_server = server;
+	  if (!(daemon->options & OPT_ALL_SERVERS))
+	    daemon->last_server = server;
 	}
       
       /* If the answer is an error, keep the forward record in place in case
@@ -531,6 +541,9 @@ void receive_query(struct listener *listen, time_t now)
 #endif
 #if defined(HAVE_LINUX_NETWORK)
     char control[CMSG_SPACE(sizeof(struct in_pktinfo))];
+#elif defined(IP_RECVDSTADDR) && defined(HAVE_SOLARIS_NETWORK)
+    char control[CMSG_SPACE(sizeof(struct in_addr)) +
+		 CMSG_SPACE(sizeof(unsigned int))];
 #elif defined(IP_RECVDSTADDR)
     char control[CMSG_SPACE(sizeof(struct in_addr)) +
 		 CMSG_SPACE(sizeof(struct sockaddr_dl))];
@@ -598,7 +611,11 @@ void receive_query(struct listener *listen, time_t now)
 	    if (cmptr->cmsg_level == IPPROTO_IP && cmptr->cmsg_type == IP_RECVDSTADDR)
 	      dst_addr_4 = dst_addr.addr.addr4 = *((struct in_addr *)CMSG_DATA(cmptr));
 	    else if (cmptr->cmsg_level == IPPROTO_IP && cmptr->cmsg_type == IP_RECVIF)
+#ifdef HAVE_SOLARIS_NETWORK
+	      if_index = *((unsigned int *)CMSG_DATA(cmptr));
+#else
 	      if_index = ((struct sockaddr_dl *)CMSG_DATA(cmptr))->sdl_index;
+#endif
 	}
 #endif
       
@@ -654,10 +671,16 @@ void receive_query(struct listener *listen, time_t now)
   m = answer_request (header, ((char *) header) + PACKETSZ, (size_t)n, 
 		      dst_addr_4, netmask, now);
   if (m >= 1)
-    send_from(listen->fd, daemon->options & OPT_NOWILD, (char *)header, m, &source_addr, &dst_addr, if_index);
+    {
+      send_from(listen->fd, daemon->options & OPT_NOWILD, (char *)header, 
+		m, &source_addr, &dst_addr, if_index);
+      daemon->local_answer++;
+    }
+  else if (forward_query(listen->fd, &source_addr, &dst_addr, if_index,
+			 header, (size_t)n, now, NULL))
+    daemon->queries_forwarded++;
   else
-    forward_query(listen->fd, &source_addr, &dst_addr, if_index,
-		  header, (size_t)n, now, NULL);
+    daemon->local_answer++;
 }
 
 /* The daemon forks before calling this: it should deal with one connection,
@@ -757,7 +780,8 @@ unsigned char *tcp_request(int confd, time_t now,
 		  
 		  if ((last_server->tcpfd == -1) &&
 		      (last_server->tcpfd = socket(last_server->addr.sa.sa_family, SOCK_STREAM, 0)) != -1 &&
-		      connect(last_server->tcpfd, &last_server->addr.sa, sa_len(&last_server->addr)) == -1)
+		      (!local_bind(last_server->tcpfd,  &last_server->source_addr, last_server->interface, 1) ||
+		       connect(last_server->tcpfd, &last_server->addr.sa, sa_len(&last_server->addr)) == -1))
 		    {
 		      close(last_server->tcpfd);
 		      last_server->tcpfd = -1;
@@ -765,7 +789,7 @@ unsigned char *tcp_request(int confd, time_t now,
 		  
 		  if (last_server->tcpfd == -1)	
 		    continue;
-		  
+
 		  c1 = size >> 8;
 		  c2 = size;
 		  
@@ -779,7 +803,7 @@ unsigned char *tcp_request(int confd, time_t now,
 		      last_server->tcpfd = -1;
 		      continue;
 		    } 
-	      
+		  
 		  m = (c1 << 8) | c2;
 		  if (!read_write(last_server->tcpfd, packet, m, 1))
 		    return packet;

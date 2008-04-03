@@ -1,7 +1,7 @@
 Q: Why does dnsmasq open UDP ports >1024 as well as port 53.
    Is this a security problem/trojan/backdoor?
 
-A: The high ports that dnsmasq opens is for replies from the upstream
+A: The high ports that dnsmasq opens are for replies from the upstream
    nameserver(s). Queries from dnsmasq to upstream nameservers are sent
    from these ports and replies received to them. The reason for doing this is
    that most firewall setups block incoming packets _to_ port 53, in order
@@ -39,10 +39,9 @@ A: They are negative entries: that's what the N flag means. Dnsmasq asked
 
 Q: Will dnsmasq compile/run on non-Linux systems?
 
-A: Yes, there is explicit support for *BSD and MacOS X. There are
-   start-up scripts for MacOS X Tiger and Panther in /contrib. Earlier
-   dnsmasq releases ran under Solaris, but that capability has
-   rotted. Dnsmasq will link with uclibc to provide small
+A: Yes, there is explicit support for *BSD and MacOS X and Solaris. 
+   There are start-up scripts for MacOS X Tiger and Panther 
+   in /contrib. Dnsmasq will link with uclibc to provide small
    binaries suitable for use in embedded systems such as
    routers. (There's special code to support machines with flash
    filesystems and no battery-backed RTC.)
@@ -50,7 +49,7 @@ A: Yes, there is explicit support for *BSD and MacOS X. There are
    ports and building dnsmasq with "make MAKE=gmake" 
    For other systems, try altering the settings in config.h.
  
-Q: My companies' nameserver knows about some names which aren't in the
+Q: My company's nameserver knows about some names which aren't in the
    public DNS. Even though I put it first in /etc/resolv.conf, it
    dosen't work: dnsmasq seems not to use the nameservers in the order
    given. What am I doing wrong?
@@ -380,6 +379,14 @@ A: This a variant on the iptables problem. Explicit details on how to
    http://lists.thekelleys.org.uk/pipermail/dnsmasq-discuss/2005q3/000431.html
  
 
+Q: I'm using dnsmasq on a machine with the shorewall firewall, and
+   DHCP doesn't work. What's the problem?
+
+A: This a variant on the iptables problem. Explicit details on how to
+   proceed can be found at 
+   http://lists.thekelleys.org.uk/pipermail/dnsmasq-discuss/2007q4/001764.html
+
+
 Q: Dnsmasq logs "running as root because setting capabilities failed"
    when it starts up. Why did that happen and what can do to fix it?
 
@@ -428,9 +435,6 @@ A: In almost all cases: none. If you have the normal arrangement with
    then those queries will in turn generate two more log lines, and a 
    chain reaction runaway will occur. To avoid this, use syslog-ng
    and turn on syslog-ng's dns-cache function.
-
- 
-
 
 
 

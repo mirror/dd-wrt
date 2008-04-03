@@ -1,13 +1,17 @@
-/* dnsmasq is Copyright (c) 2000 - 2006 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2007 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 dated June, 1991.
-
+   the Free Software Foundation; version 2 dated June, 1991, or
+   (at your option) version 3 dated 29 June, 2007.
+ 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
+     
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "dnsmasq.h"
@@ -293,7 +297,7 @@ struct listener *create_wildcard_listeners(void)
   union mysockaddr addr;
   int opt = 1;
   struct listener *l, *l6 = NULL;
-  int tcpfd, fd, tftpfd = -1;
+  int tcpfd = -1, fd = -1, tftpfd = -1;
 
   memset(&addr, 0, sizeof(addr));
   addr.in.sin_family = AF_INET;
@@ -303,28 +307,32 @@ struct listener *create_wildcard_listeners(void)
   addr.in.sin_len = sizeof(struct sockaddr_in);
 #endif
 
-  if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1 ||
-      (tcpfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-    return NULL;
-  
-  if (setsockopt(tcpfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 ||
-      bind(tcpfd, (struct sockaddr *)&addr, sa_len(&addr)) == -1 ||
-      listen(tcpfd, 5) == -1 ||
-      !fix_fd(tcpfd) ||
+  if (daemon->port != 0)
+    {
+      
+      if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1 ||
+	  (tcpfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+	return NULL;
+      
+      if (setsockopt(tcpfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 ||
+	  bind(tcpfd, (struct sockaddr *)&addr, sa_len(&addr)) == -1 ||
+	  listen(tcpfd, 5) == -1 ||
+	  !fix_fd(tcpfd) ||
 #ifdef HAVE_IPV6
-      !create_ipv6_listener(&l6, daemon->port) ||
+	  !create_ipv6_listener(&l6, daemon->port) ||
 #endif
-      setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 ||
-      !fix_fd(fd) ||
+	  setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 ||
+	  !fix_fd(fd) ||
 #if defined(HAVE_LINUX_NETWORK) 
-      setsockopt(fd, SOL_IP, IP_PKTINFO, &opt, sizeof(opt)) == -1 ||
+	  setsockopt(fd, SOL_IP, IP_PKTINFO, &opt, sizeof(opt)) == -1 ||
 #elif defined(IP_RECVDSTADDR) && defined(IP_RECVIF)
-      setsockopt(fd, IPPROTO_IP, IP_RECVDSTADDR, &opt, sizeof(opt)) == -1 ||
-      setsockopt(fd, IPPROTO_IP, IP_RECVIF, &opt, sizeof(opt)) == -1 ||
+	  setsockopt(fd, IPPROTO_IP, IP_RECVDSTADDR, &opt, sizeof(opt)) == -1 ||
+	  setsockopt(fd, IPPROTO_IP, IP_RECVIF, &opt, sizeof(opt)) == -1 ||
 #endif 
-      bind(fd, (struct sockaddr *)&addr, sa_len(&addr)) == -1)
-    return NULL;
-
+	  bind(fd, (struct sockaddr *)&addr, sa_len(&addr)) == -1)
+	return NULL;
+    }
+  
 #ifdef HAVE_TFTP
   if (daemon->options & OPT_TFTP)
     {
@@ -367,48 +375,51 @@ struct listener *create_bound_listeners(void)
       new->iface = iface;
       new->next = listeners;
       new->tftpfd = -1;
-
-      if ((new->tcpfd = socket(iface->addr.sa.sa_family, SOCK_STREAM, 0)) == -1 ||
-	  (new->fd = socket(iface->addr.sa.sa_family, SOCK_DGRAM, 0)) == -1 ||
-	  setsockopt(new->fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 ||
-	  setsockopt(new->tcpfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 ||
-	  !fix_fd(new->tcpfd) ||
-	  !fix_fd(new->fd))
-	die(_("failed to create listening socket: %s"), NULL, EC_BADNET);
-      
+      new->tcpfd = -1;
+       new->fd = -1;
+  
+       if (daemon->port != 0)
+  	{
+ 	  if ((new->tcpfd = socket(iface->addr.sa.sa_family, SOCK_STREAM, 0)) == -1 ||
+ 	      (new->fd = socket(iface->addr.sa.sa_family, SOCK_DGRAM, 0)) == -1 ||
+ 	      setsockopt(new->fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 ||
+ 	      setsockopt(new->tcpfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 ||
+ 	      !fix_fd(new->tcpfd) ||
+ 	      !fix_fd(new->fd))
+ 	    die(_("failed to create listening socket: %s"), NULL, EC_BADNET);
+ 	  
 #ifdef HAVE_IPV6
-      if (iface->addr.sa.sa_family == AF_INET6)
-	{
-	  if (setsockopt(new->fd, IPV6_LEVEL, IPV6_V6ONLY, &opt, sizeof(opt)) == -1 ||
-	      setsockopt(new->tcpfd, IPV6_LEVEL, IPV6_V6ONLY, &opt, sizeof(opt)) == -1)
-	    die(_("failed to set IPV6 options on listening socket: %s"), NULL, EC_BADNET);
-	}
+ 	  if (iface->addr.sa.sa_family == AF_INET6)
+ 	    {
+ 	      if (setsockopt(new->fd, IPV6_LEVEL, IPV6_V6ONLY, &opt, sizeof(opt)) == -1 ||
+ 		  setsockopt(new->tcpfd, IPV6_LEVEL, IPV6_V6ONLY, &opt, sizeof(opt)) == -1)
+ 		die(_("failed to set IPV6 options on listening socket: %s"), NULL, EC_BADNET);
+  	    }
 #endif
-      
-      if (bind(new->tcpfd, &iface->addr.sa, sa_len(&iface->addr)) == -1 ||
-	  bind(new->fd, &iface->addr.sa, sa_len(&iface->addr)) == -1)
-	{
+ 	  
+ 	  if (bind(new->tcpfd, &iface->addr.sa, sa_len(&iface->addr)) == -1 ||
+ 	      bind(new->fd, &iface->addr.sa, sa_len(&iface->addr)) == -1)
+  	    {
 #ifdef HAVE_IPV6
-	  if (iface->addr.sa.sa_family == AF_INET6 && errno == ENODEV)
-	    {
-	      close(new->tcpfd);
-	      close(new->fd);
-	      free(new);
-	    }
-	  else
+	      if (iface->addr.sa.sa_family == AF_INET6 && (errno == ENODEV || errno == EADDRNOTAVAIL))
+ 		{
+ 		  close(new->tcpfd);
+ 		  close(new->fd);
+ 		  free(new);
+ 		  new = NULL;
+ 		}
+ 	      else
 #endif
-	    {
-	      prettyprint_addr(&iface->addr, daemon->namebuff);
-	      die(_("failed to bind listening socket for %s: %s"), 
-		  daemon->namebuff, EC_BADNET);
-	    }
-	}
-      else
-	 {
-	   listeners = new;     
-	   if (listen(new->tcpfd, 5) == -1)
-	     die(_("failed to listen on socket: %s"), NULL, EC_BADNET);
-	 }
+		{
+ 		  prettyprint_addr(&iface->addr, daemon->namebuff);
+ 		  die(_("failed to bind listening socket for %s: %s"), 
+ 		      daemon->namebuff, EC_BADNET);
+ 		}
+  	    }
+ 	  else if (listen(new->tcpfd, 5) == -1)
+ 	    die(_("failed to listen on socket: %s"), NULL, EC_BADNET);
+  	}
+  
 #ifdef HAVE_TFTP
       if ((daemon->options & OPT_TFTP) && iface->addr.sa.sa_family == AF_INET && iface->dhcp_ok)
 	{
@@ -427,16 +438,45 @@ struct listener *create_bound_listeners(void)
   return listeners;
 }
 
-struct serverfd *allocate_sfd(union mysockaddr *addr, struct serverfd **sfds)
+int local_bind(int fd, union mysockaddr *addr, char *intname, int is_tcp)
 {
-  struct serverfd *sfd;
+  union mysockaddr addr_copy = *addr;
 
-  /* may have a suitable one already */
-  for (sfd = *sfds; sfd; sfd = sfd->next )
-    if (sockaddr_isequal(&sfd->source_addr, addr))
-      return sfd;
+  /* cannot set source _port_ for TCP connections. */
+  if (is_tcp)
+ {
+   if (addr_copy.sa.sa_family == AF_INET)
+	addr_copy.in.sin_port = 0;
+#ifdef HAVE_IPV6
+   else
+	addr_copy.in6.sin6_port = 0;
+#endif
+ }
   
-  /* need to make a new one. */
+  if (bind(fd, (struct sockaddr *)&addr_copy, sa_len(&addr_copy)) == -1)
+ return 0;
+ 
+#if defined(SO_BINDTODEVICE)
+  if (strlen(intname) != 0 &&
+   setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, intname, sizeof(intname)) == -1)
+ return 0;
+#endif
+
+  return 1;
+}
+ 
+static struct serverfd *allocate_sfd(union mysockaddr *addr, char *intname)
+  {
+   struct serverfd *sfd;
+   int errsave;
+  
+    /* may have a suitable one already */
+  for (sfd = daemon->sfds; sfd; sfd = sfd->next )
+   if (sockaddr_isequal(&sfd->source_addr, addr) &&
+	strcmp(intname, sfd->interface) == 0)
+        return sfd;
+    
+    /* need to make a new one. */
   errno = ENOMEM; /* in case malloc fails. */
   if (!(sfd = whine_malloc(sizeof(struct serverfd))))
     return NULL;
@@ -447,22 +487,67 @@ struct serverfd *allocate_sfd(union mysockaddr *addr, struct serverfd **sfds)
       return NULL;
     }
   
-  if (bind(sfd->fd, (struct sockaddr *)addr, sa_len(addr)) == -1 ||
-      !fix_fd(sfd->fd))
-    {
-      int errsave = errno; /* save error from bind. */
+  if (!local_bind(sfd->fd, addr, intname, 0) || !fix_fd(sfd->fd))
+    { 
+      errsave = errno; /* save error from bind. */
       close(sfd->fd);
       free(sfd);
       errno = errsave;
       return NULL;
     }
-  
+    
+  strcpy(sfd->interface, intname); 
   sfd->source_addr = *addr;
-  sfd->next = *sfds;
-  *sfds = sfd;
-  
-  return sfd;
+  sfd->next = daemon->sfds;
+  daemon->sfds = sfd;
+  return sfd; 
 }
+
+/* create upstream sockets during startup, before root is dropped which may be needed
+   this allows query_port to be a low port and interface binding */
+void pre_allocate_sfds(void)
+{
+  struct server *srv;
+  
+  if (daemon->query_port != 0)
+    {
+      union  mysockaddr addr;
+      memset(&addr, 0, sizeof(addr));
+      addr.in.sin_family = AF_INET;
+      addr.in.sin_addr.s_addr = INADDR_ANY;
+      addr.in.sin_port = htons(daemon->query_port);
+#ifdef HAVE_SOCKADDR_SA_LEN
+      addr.in.sin_len = sizeof(struct sockaddr_in);
+#endif
+      allocate_sfd(&addr, "");
+#ifdef HAVE_IPV6
+      memset(&addr, 0, sizeof(addr));
+      addr.in6.sin6_family = AF_INET6;
+      addr.in6.sin6_addr = in6addr_any;
+      addr.in6.sin6_port = htons(daemon->query_port);
+#ifdef HAVE_SOCKADDR_SA_LEN
+      addr.in6.sin6_len = sizeof(struct sockaddr_in6);
+#endif
+      allocate_sfd(&addr, "");
+#endif
+    }
+  
+  for (srv = daemon->servers; srv; srv = srv->next)
+    if (!(srv->flags & (SERV_LITERAL_ADDRESS | SERV_NO_ADDR)) &&
+	!allocate_sfd(&srv->source_addr, srv->interface) &&
+	(daemon->options & OPT_NOWILD))
+      {
+	prettyprint_addr(&srv->addr, daemon->namebuff);
+	if (strlen(srv->interface) != 0)
+	  {
+	    strcat(daemon->namebuff, " ");
+	    strcat(daemon->namebuff, srv->interface);
+	  }
+	die(_("failed to bind server socket for %s: %s"),
+	    daemon->namebuff, EC_BADNET);
+      }  
+}
+
 
 void check_servers(void)
 {
@@ -497,7 +582,7 @@ void check_servers(void)
 	    }
 	  
 	  /* Do we need a socket set? */
-	  if (!new->sfd && !(new->sfd = allocate_sfd(&new->source_addr, &daemon->sfds)))
+	  if (!new->sfd && !(new->sfd = allocate_sfd(&new->source_addr, new->interface)))
 	    {
 	      my_syslog(LOG_WARNING, 
 			_("ignoring nameserver %s - cannot make/bind socket: %s"),
@@ -530,6 +615,10 @@ void check_servers(void)
 	    my_syslog(LOG_INFO, _("using nameserver %s#%d for %s %s"), daemon->namebuff, port, s1, s2);
 	  }
 	}
+      else if (strlen(new->interface) != 0)
+      {
+	my_syslog(LOG_INFO, _("using nameserver %s#%d(via %s)"), daemon->namebuff, port, new->interface); 
+      }
       else
       {
 	my_syslog(LOG_INFO, _("using nameserver %s#%d"), daemon->namebuff, port); 
@@ -633,9 +722,10 @@ int reload_servers(char *fname)
       serv->addr = addr;
       serv->source_addr = source_addr;
       serv->domain = NULL;
+      serv->interface[0] = 0;
       serv->sfd = NULL;
       serv->flags = SERV_FROM_RESOLV;
-
+      serv->queries = serv->failed_queries = 0;
       gotone = 1;
     }
   

@@ -52,6 +52,14 @@ time-to-live (in seconds) to be given for these replies. This will
 reduce the load on the server at the expense of clients using stale
 data under some circumstances.
 .TP
+.B --neg-ttl=<time>
+Negative replies from upstream servers normally contain time-to-live
+information in SOA records which dnsmasq uses for caching. If the
+replies from upstream servers omit this information, dnsmasq does not
+cache the reply. This option gives a default value for time-to-live
+(in seconds) which dnsmasq uses to cache negative replies even in 
+the absence of an SOA record. 
+.TP
 .B \-k, --keep-in-foreground
 Do not go into the background at startup but otherwise run as
 normal. This is intended for use when dnsmasq is run under daemontools
@@ -105,8 +113,8 @@ as. The defaults to "dip", if available, to facilitate access to
 Print the version number.
 .TP
 .B \-p, --port=<port>
-Listen on <port> instead of the standard DNS port (53). Useful mainly for
-debugging.
+Listen on <port> instead of the standard DNS port (53). Setting this
+to zero completely disables DNS function, leaving only DHCP and/or TFTP.
 .TP
 .B \-P, --edns-packet-max=<size>
 Specify the largest EDNS.0 UDP packet which is supported by the DNS
@@ -236,9 +244,20 @@ been built with DBus support.
 .TP 
 .B \-o, --strict-order
 By default, dnsmasq will send queries to any of the upstream servers
-it knows about and tries to favour servers to are known to
+it knows about and tries to favour servers that are known to
 be up. Setting this flag forces dnsmasq to try each query with each
 server strictly in the order they appear in /etc/resolv.conf
+.TP
+.B --all-servers
+By default, when dnsmasq has more than one upstream server available,
+it will send queries to just one server. Setting this flag forces
+dnsmasq to send all queries to all available servers. The reply from
+the server which answers first will be returned to the original requestor.
+.TP
+.B --stop-dns-rebind
+Reject (and log) addresses from upstream nameservers which are in the
+private IP ranges. This blocks an attack where a browser behind a
+firewall is used to probe machines on the local network.
 .TP
 .B \-n, --no-poll
 Don't poll /etc/resolv.conf for changes.
@@ -253,7 +272,7 @@ Tells dnsmasq to never forward queries for plain names, without dots
 or domain parts, to upstream nameservers. If the name is not known
 from /etc/hosts or DHCP then a "not found" answer is returned.
 .TP
-.B \-S, --local, --server=[/[<domain>]/[domain/]][<ipaddr>[#<port>][@<source>[#<port>]]]
+.B \-S, --local, --server=[/[<domain>]/[domain/]][<ipaddr>[#<port>][@<source-ip>|<interface>[#<port>]]
 Specify IP address of upstream servers directly. Setting this flag does
 not suppress reading of /etc/resolv.conf, use -R to do that. If one or
 more 
@@ -284,13 +303,18 @@ is a synonym for
 .B server
 to make configuration files clearer in this case.
 
-The optional second IP address after the @ character tells
-dnsmasq how to set the source address of the queries to this
-nameserver. It should be an address belonging to the machine on which
+The optional string after the @ character tells
+dnsmasq how to set the source of the queries to this
+nameserver. It should be an ip-address, which should belong to the machine on which
 dnsmasq is running otherwise this server line will be logged and then
-ignored. The query-port flag is ignored for any servers which have a
+ignored, or an interface name. If an interface name is given, then
+queries to the server will be forced via that interface; if an
+ip-address is given then the source address of the queries will be set
+to that address.
+The query-port flag is ignored for any servers which have a
 source address specified but the port may be specified directly as
-part of the source address.
+part of the source address. Forcing queries to an interface is not
+implemented on all platforms supported by dnsmasq.
 .TP
 .B \-A, --address=/<domain>/[domain/]<ipaddr>
 Specify an IP address to return for any host in the given domains.
@@ -381,7 +405,8 @@ in
 .B dhcp-host
 options. If the lease time is given, then leases
 will be given for that length of time. The lease time is in seconds,
-or minutes (eg 45m) or hours (eg 1h) or the literal "infinite". This
+or minutes (eg 45m) or hours (eg 1h) or the literal "infinite". The
+minimum lease time is two minutres. This
 option may be repeated, with different addresses, to enable DHCP
 service to more than one network. For directly connected networks (ie,
 networks on which the machine running dnsmasq has an interface) the
@@ -467,6 +492,11 @@ information about one host per line. The format of a line is the same
 as text to the right of '=' in --dhcp-host. The advantage of storing DHCP host information
 in this file is that it can be changed without re-starting dnsmasq:
 the file will be re-read when dnsmasq receives SIGHUP.
+.TP
+.B --dhcp-optsfile=<file>
+Read DHCP option information from the specified file. The advantage of 
+using this option is the same as for --dhcp-hostsfile: the
+dhcp-optsfile will be re-read when dnsmasq receives SIGHUP.
 .TP 
 .B \-Z, --read-ethers
 Read /etc/ethers for information about hosts for the DHCP server. The
@@ -547,6 +577,14 @@ except that the option will always be sent, even if the client does
 not ask for it in the parameter request list. This is sometimes
 needed, for example when sending options to PXELinux.
 .TP
+.B --dhcp-no-override
+Disable re-use of the DHCP servername and filename fields as extra
+option space. If it can, dnsmasq moves the boot server and filename
+information (from dhcp-boot) out of their dedicated fields into
+DHCP options. This make extra space available in the DHCP packet for
+options but can, rarely, confuse old or broken clients. This flag
+forces "simple and safe" behaviour to avoid problems in such a case.
+.TP
 .B \-U, --dhcp-vendorclass=<network-id>,<vendor-class>
 Map from a vendor-class string to a network id tag. Most DHCP clients provide a 
 "vendor class" which represents, in some sense, the type of host. This option 
@@ -582,7 +620,12 @@ simple string. If an exact match is achieved between the circuit or
 agent ID and one provided by a relay agent, the network-id tag is set.
 .TP
 .B --dhcp-subscrid=<network-id>,<subscriber-id>
-Map from RFC3993 subscriber-d relay agent options to network-id tags.
+Map from RFC3993 subscriber-id relay agent options to network-id tags.
+.TP
+.B --dhcp-match=<network-id>,<option number>
+Set the network-id tag if the client sends a DHCP option of the given
+number. This can be used to identify particular clients which send
+information using private option numbers.
 .TP
 .B \-J, --dhcp-ignore=<network-id>[,<network-id>]
 When all the given network-ids match the set of network-ids derived
@@ -597,6 +640,13 @@ to supply no netid tags, in which case DHCP-client supplied hostnames
 are always ignored, and DHCP hosts are added to the DNS using only
 dhcp-host configuration in dnsmasq and the contents of /etc/hosts and
 /etc/ethers.
+.TP
+.B --dhcp-broadcast=<network-id>[,<network-id>]
+When all the given network-ids match the set of network-ids derived
+from the net, host, vendor and user classes, always use broadcast to
+communicate with the host when it is unconfigured. Most DHCP clients which
+need broadcast replies set a flag in their requests so that this
+happens automatically, some old BOOTP clients do not.
 .TP
 .B \-M, --dhcp-boot=[net:<network-id>,]<filename>,[<servername>[,<server address>]]
 Set BOOTP options to be returned by the DHCP server. Server name and
@@ -677,7 +727,9 @@ always stored in DNSMASQ_TIME_REMAINING.
 If a lease used to have a hostname, which is
 removed, an "old" event is generated with the new state of the lease, 
 ie no name, and the former name is provided in the environment 
-variable DNSMASQ_OLD_HOSTNAME.
+variable DNSMASQ_OLD_HOSTNAME. DNSMASQ_INTERFACE stores the name of
+the interface on which the reuest arrived; this is not set for "old"
+actions when dnsmasq restarts.
 All file decriptors are
 closed except stdin, stdout and stderr which are open to /dev/null
 (except in debug mode).
@@ -768,12 +820,23 @@ one file descriptor for each concurrent TFTP connection and one
 file descriptor per unique file (plus a few others). So serving the
 same file simultaneously to n clients will use require about n + 10 file
 descriptors, serving different files simultaneously to n clients will
-require about (2*n) + 10 descriptors.
+require about (2*n) + 10 descriptors. If 
+.B --tftp-port-range
+is given, that can affect the number of concurrent connections.
 .TP
 .B --tftp-no-blocksize
 Stop the TFTP server from negotiating the "blocksize" option with a
 client. Some buggy clients request this option but then behave badly
 when it is granted.
+.TP
+.B --tftp-port-range=<start>,<end>
+A TFTP server listens on a well-known port (69) for connection initiation,
+but it also uses a dynamically-allocated port for each
+connection. Normally these are allocated by the OS, but this option
+specifies a range of ports for use by TFTP transfers. This can be
+useful when TFTP has to traverse a firewall. The start of the range
+cannot be lower than 1025 unless dnsmasq is running as root. The number
+of concurrent TFTP connections is limited by the size of the port range. 
 .TP  
 .B \-C, --conf-file=<file>
 Specify a different configuration file. The conf-file option is also allowed in
@@ -800,8 +863,8 @@ in the OPTIONS section but without the leading "--". Lines starting with # are c
 options which may only be specified once, the configuration file overrides 
 the command line.  Quoting is allowed in a config file:
 between " quotes the special meanings of ,:. and # are removed and the
-following escapes are allowed: \\\\ \\" \\t \\a \\b \\r and \\n. The later 
-corresponding to tab, bell, backspace, return and newline.
+following escapes are allowed: \\\\ \\" \\t \\e \\b \\r and \\n. The later 
+corresponding to tab, escape, backspace, return and newline.
 .SH NOTES
 When it receives a SIGHUP, 
 .B dnsmasq 
@@ -809,7 +872,7 @@ clears its cache and then re-loads
 .I /etc/hosts
 and 
 .I /etc/ethers 
-and any file given by --dhcp-hostsfile.
+and any file given by --dhcp-hostsfile, --dhcp-optsfile or --addn-hosts.
 The dhcp lease change script is called for all
 existing DHCP leases. If 
 .B
@@ -821,10 +884,12 @@ does NOT re-read the configuration file.
 .PP
 When it receives a SIGUSR1,
 .B dnsmasq 
-writes cache statistics to the system log. It writes the cache size,
+writes statistics to the system log. It writes the cache size,
 the number of names which have had to removed from the cache before
 they expired in order to make room for new names and the total number
-of names that have been inserted into the cache. In 
+of names that have been inserted into the cache. For each upstream
+server it gives the number of queries sent, and the number which
+resulted in an error. In 
 .B --no-daemon
 mode or when full logging is enabled (-q), a complete dump of the
 contents of the cache is made.
