@@ -2,15 +2,19 @@
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 dated June, 1991.
-
+   the Free Software Foundation; version 2 dated June, 1991, or
+   (at your option) version 3 dated 29 June, 2007.
+ 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
+     
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define VERSION "2.40"
+#define VERSION "2.41"
 
 #define FTABSIZ 150 /* max number of outstanding requests (default) */
 #define MAX_PROCS 20 /* max no children for TCP requests */
@@ -35,6 +39,8 @@
 #define RUNFILE "/var/run/dnsmasq.pid"
 #if defined(__FreeBSD__) || defined (__OpenBSD__) || defined(__DragonFly__)
 #   define LEASEFILE "/var/db/dnsmasq.leases"
+#elif defined(__sun__)
+#   define LEASEFILE "/var/cache/dnsmasq.leases"
 #else
 #   define LEASEFILE "/var/lib/misc/dnsmasq.leases"
 #endif
@@ -91,10 +97,12 @@
    May replace this with Autoconf one day. 
 
 HAVE_LINUX_NETWORK
-   define this to do networking the Linux way. When it's defined, the code will
-   use IP_PKTINFO, Linux capabilities and the RTnetlink system. If it's not defined,
-   a few facilities will be lost, namely support for multiple addresses on an interface,
-   DNS query retransmission, and (on some systems) wildcard interface binding.
+HAVE_BSD_NETWORK
+HAVE_SOLARIS_NETWORK
+   define exactly one of these to alter interaction with kernel networking.
+
+HAVE_SOLARIS_PRIVS
+   define for Solaris > 10 which can split privileges.
 
 HAVE_BROKEN_RTC
    define this on embedded systems which don't have an RTC
@@ -157,10 +165,9 @@ NOTES:
       HAVE_SOCKADDR_SA_LEN
 
    For *BSD systems you should define 
+     HAVE_BSD_NETWORK
      HAVE_SOCKADDR_SA_LEN
      HAVE_RANDOM
-   you should NOT define  
-     HAVE_LINUX_NETWORK 
    and you MAY define  
      HAVE_ARC4RANDOM - OpenBSD and FreeBSD and NetBSD version 2.0 or later
      HAVE_DEV_URANDOM - OpenBSD and FreeBSD and NetBSD
@@ -243,7 +250,7 @@ typedef unsigned long in_addr_t;
 #endif
 
 #elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
-#undef HAVE_LINUX_NETWORK
+#define HAVE_BSD_NETWORK
 /* Later verions of FreeBSD have getopt_long() */
 #if defined(optional_argument) && defined(required_argument)
 #   define HAVE_GETOPT_LONG
@@ -256,7 +263,7 @@ typedef unsigned long in_addr_t;
 #define HAVE_SOCKADDR_SA_LEN
 
 #elif defined(__APPLE__)
-#undef HAVE_LINUX_NETWORK
+#define HAVE_BSD_NETWORK
 #undef HAVE_GETOPT_LONG
 #define HAVE_ARC4RANDOM
 #define HAVE_RANDOM
@@ -268,15 +275,44 @@ typedef unsigned long in_addr_t;
 #define IN6ADDRSZ 16
  
 #elif defined(__NetBSD__)
-#undef HAVE_LINUX_NETWORK
+#define HAVE_BSD_NETWORK
 #define HAVE_GETOPT_LONG
 #undef HAVE_ARC4RANDOM
 #define HAVE_RANDOM
 #define HAVE_DEV_URANDOM
 #define HAVE_DEV_RANDOM
 #define HAVE_SOCKADDR_SA_LEN
- 
+
+#elif defined(__sun) || defined(__sun__)
+#define HAVE_SOLARIS_NETWORK
+/* only Solaris 10 does split privs. */
+#if (SUNOS_VER >= 10)
+#  define HAVE_SOLARIS_PRIVS
+#  define HAVE_GETOPT_LONG
 #endif
+/* some CMSG stuff missing on early solaris */
+#ifndef OSSH_ALIGNBYTES
+#  define OSSH_ALIGNBYTES (sizeof(int) - 1)
+#endif
+#ifndef __CMSG_ALIGN
+#  define __CMSG_ALIGN(p) (((u_int)(p) + OSSH_ALIGNBYTES) &~ OSSH_ALIGNBYTES)
+#endif
+#ifndef CMSG_LEN
+#  define CMSG_LEN(len)   (__CMSG_ALIGN(sizeof(struct cmsghdr)) + (len))
+#endif
+#ifndef CMSG_SPACE
+#  define CMSG_SPACE(len) (__CMSG_ALIGN(sizeof(struct cmsghdr)) + __CMSG_ALIGN(len))
+#endif
+#undef HAVE_ARC4RANDOM
+#define HAVE_RANDOM
+#undef HAVE_DEV_URANDOM
+#undef HAVE_DEV_RANDOM
+#undef HAVE_SOCKADDR_SA_LEN
+#define _XPG4_2
+#define __EXTENSIONS__
+#define ETHER_ADDR_LEN 6
+#endif
+
 /* Decide if we're going to support IPv6 */
 /* IPv6 can be forced off with "make COPTS=-DNO_IPV6" */
 /* We assume that systems which don't have IPv6

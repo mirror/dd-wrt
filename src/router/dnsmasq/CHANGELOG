@@ -45,7 +45,7 @@ release 0.95  Major rewrite: remove calls to gethostbyname() and talk
                   dnsmasq to serve names to the machine it is running
                   on (put nameserver 127.0.0.1 in /etc/resolv.conf and
                   give dnsmasq the option -r /etc/resolv.dnsmasq)
-              (6) Dnsmasq will re-read it's servers if the
+              (6) Dnsmasq will re-read its servers if the
                   modification time of resolv.conf changes. Along with
                   4 above this allows nameservers to be set
 		  automatically by ppp or dhcp.	 
@@ -1076,7 +1076,7 @@ release 2.10
 
 	    NAK attempts to renew a pool DHCP lease when a statically
 	    allocated address has become available, forcing a host to
-	    move to it's allocated address. Lots of people have
+	    move to its allocated address. Lots of people have
 	    suggested this change and been rebuffed (they know who
 	    they are) the straws that broke the camel's back were Tim
 	    Cutts and Jamie Lokier.
@@ -2343,5 +2343,126 @@ version 2.40
 	    inetd is also listening on the same port. Thanks to Erik
 	    Brown for spotting the problem.
 
+version 2.41
+            Remove deprecated calls when compiled against libdbus 1.1.
+	    
+	    Fix "strict-alias" warning in bpf.c
+
+	    Reduce dependency on Gnu-make in build system: dnsmasq now
+	    builds with system make under OpenBSD.
+
+	    Port to Solaris. Dnsmasq 1.x used to run under Solaris,
+	    and this release does so again, for Solaris 9 or better.
+
+	    Allow the DNS function to be completely disabled, by
+	    setting the port to zero "--port=0". The allows dnsmasq to
+	    be used as a simple DHCP server, simple TFTP server, or
+	    both, but without the DNS server getting in the way.
+
+	    Fix a bug where NXDOMAIN could be returned for a query
+	    even if the name's value was known for a different query
+	    type. This bug could be prodded with 
+            --local=/domain/ --address=/name.domain/1.2.3.4 
+	    An IPv6 query for name.domain would return NXDOMAIN, and
+	    not the correct NOERROR. Thanks to Lars Nooden for
+	    spotting the bug and Jima for diagnosis of the problem.
+
+	    Added per-server stats to the information logged when
+	    dnsmasq gets SIGUSR1.
+
+	    Added counts of queries forwarded and queries answered
+	    locally (from the cache, /etc/hosts or config).
+
+	    Fixed possible crash bug in DBus IPv6 code. Thanks to Matt
+	    Domsch and Jima.
+
+	    Tighten checks for clashes between hosts-file and
+	    DHCP-derived names. Multiple addresses associated with a
+	    name in hosts-file no longer confuses the check.
+
+	    Add --dhcp-no-override option to fix problems with some
+	    combinations of stage zero and stage one
+	    bootloaders. Thanks to Steve Alexander for the bug report.
+  
+	    Add --tftp-port-range option. Thanks to Daniel Mierswa for
+	    the suggestion.
+ 
+	    Add --stop-dns-rebind option. Thanks to Collin Mulliner
+	    for the patch.
+
+	    Added GPL version 3 as a license option.
+ 
+	    Added --all-servers option. Thanks to Peter Naulls for the
+	    patch.
+
+	    Extend source address mechanism so that the interface used
+	    to contact an upstream DNS server can be nailed
+	    down. Something like "--server=1.2.3.4@eth1" will force
+	    the use of eth1 for traffic to DNS-server 1.2.3.4. This
+	    facility is only available on Linux and Solaris. Thanks to
+	    Peter Naulls for prompting this.	     
+	
+	    Add --dhcp-optsfile option. Thanks to Carlos Carvalho for
+            the suggestion.
+
+	    Fixed failure to set source address for server connections
+	    when using TCP. Thanks to Simon Capper for finding this
+	    bug.
+
+	    Refuse to give a DHCP client the address it asks for if
+	    the address range in question is not available to that
+	    particular host. Thanks to Cedric Duval for the bug
+	    report. 
+
+	    Changed behavior of DHCP server to always return total length of
+	    a new lease in DHCPOFFER, even if an existing lease
+	    exists. (It used to return the time remaining on the lease
+	    whne one existed.) This fixes problems with the Sony Ericsson
+	    K610i phone. Thanks to Hakon Stordahl for finding and
+	    fixing this.
+
+	    Add DNSMASQ_INTERFACE to the environment of the
+	    lease-change script. Thanks to Nikos Mavrogiannopoulos for
+	    the patch.
+
+	    Fixed broken --alias functionality. Thanks to Michael
+	    Meelis for the bug report.
+
+	    Added French translation of the man page. Thank to Gildas
+	    Le Nadan for that.
+
+	    Add --dhcp-match flag, to check for arbitrary options in
+	    DHCP messages from clients. This enables use of dnsmasq
+	    with gPXE. Thanks to Rance Hall for the suggestion.
+
+	    Added --dhcp-broadcast, to force broadcast replies to DHCP
+	    clients which need them but are too dumb or too old to
+	    ask. Thanks to Bodo Bellut for the suggestion.
+
+	    Disable path-MTU discovery on DHCP and TFTP sockets. This
+	    is never needed, and the presence of DF flags in the IP
+	    header confuses some broken PXE ROMS. Thanks again to Bodo
+	    Bellut for spotting this.
+
+	    Fix problems with addresses which have multiple PTR
+	    records - all but one of these could get lost. 
+
+	    Fix bug with --address and ANY query type seeing REFUSED
+	    return code in replies. Thanks to Mike Wright for spotting
+	    the problem.
+
+	    Update Spanish translation. Thanks to Chris Chatham.
+
+	    Add --neg-ttl option.
+	    
+	    Add warnings about the bad effects of --filterwin2k on
+	    SIP, XMPP and Google-talk to the example config file.
+	    
+	    Fix va_list abuse in log.c. This fixes crashes on powerpc
+	    when debug mode is set. Thanks to cedric Duval for the
+	    patch. 
 
 
+ 
+
+	    

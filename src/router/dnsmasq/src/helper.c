@@ -1,13 +1,17 @@
-/* dnsmasq is Copyright (c) 2000-2006 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2007 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 dated June, 1991.
-
+   the Free Software Foundation; version 2 dated June, 1991, or
+   (at your option) version 3 dated 29 June, 2007.
+ 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
+     
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "dnsmasq.h"
@@ -26,6 +30,8 @@
 
 #ifndef NO_FORK
 
+static void my_setenv(const char *name, const char *value, int *error);
+ 
 struct script_data
 {
   unsigned char action, hwaddr_len, hwaddr_type;
@@ -38,6 +44,7 @@ struct script_data
   time_t expires;
 #endif
   unsigned char hwaddr[DHCP_CHADDR_MAX];
+  char interface[IF_NAMESIZE];
 };
 
 static struct script_data *buf = NULL;
@@ -87,6 +94,7 @@ int create_helper(int event_fd, long max_fd)
       struct script_data data;
       char *p, *action_str, *hostname = NULL;
       unsigned char *buf = (unsigned char *)daemon->namebuff;
+      int err = 0;
 
       /* we read zero bytes when pipe closed: this is our signal to exit */ 
       if (!read_write(pipefd[0], (unsigned char *)&data, sizeof(data), 1))
@@ -166,16 +174,15 @@ int create_helper(int event_fd, long max_fd)
 	}
       
       if (data.clid_len != 0)
-	setenv("DNSMASQ_CLIENT_ID", daemon->packet, 1);
-      else
-	unsetenv("DNSMASQ_CLIENT_ID");
-      
+	my_setenv("DNSMASQ_CLIENT_ID", daemon->packet, &err);
+
+      if (strlen(data.interface) != 0)
+	my_setenv("DNSMASQ_INTERFACE", data.interface, &err);
+            
 #ifdef HAVE_BROKEN_RTC
-      setenv("DNSMASQ_LEASE_LENGTH", daemon->dhcp_buff2, 1);
-      unsetenv("DNSMASQ_LEASE_EXPIRES");
+      my_setenv("DNSMASQ_LEASE_LENGTH", daemon->dhcp_buff2, &err);
 #else
-      setenv("DNSMASQ_LEASE_EXPIRES", daemon->dhcp_buff2, 1); 
-      unsetenv("DNSMASQ_LEASE_LENGTH");
+      my_setenv("DNSMASQ_LEASE_EXPIRES", daemon->dhcp_buff2, &err); 
 #endif
       
       if (data.vclass_len != 0)
@@ -184,11 +191,9 @@ int create_helper(int event_fd, long max_fd)
 	  /* cannot have = chars in env - truncate if found . */
 	  if ((p = strchr((char *)buf, '=')))
 	    *p = 0;
-	  setenv("DNSMASQ_VENDOR_CLASS", (char *)buf, 1);
+	  my_setenv("DNSMASQ_VENDOR_CLASS", (char *)buf, &err);
 	  buf += data.vclass_len;
 	}
-      else 
-	unsetenv("DNSMASQ_VENDOR_CLASS");
       
       if (data.uclass_len != 0)
 	{
@@ -203,14 +208,14 @@ int create_helper(int event_fd, long max_fd)
 	      if (strlen((char *)buf) != 0)
 		{
 		  sprintf(daemon->dhcp_buff2, "DNSMASQ_USER_CLASS%i", i++);
-		  setenv(daemon->dhcp_buff2, (char *)buf, 1);
+		  my_setenv(daemon->dhcp_buff2, (char *)buf, &err);
 		}
 	      buf += len;
 	    }
 	}
       
       sprintf(daemon->dhcp_buff2, "%u ", data.remaining_time);
-      setenv("DNSMASQ_TIME_REMAINING", daemon->dhcp_buff2, 1);
+      my_setenv("DNSMASQ_TIME_REMAINING", daemon->dhcp_buff2, &err);
       
       if (data.hostname_len != 0)
 	{
@@ -222,11 +227,9 @@ int create_helper(int event_fd, long max_fd)
       
       if (data.action == ACTION_OLD_HOSTNAME && hostname)
 	{
-	  setenv("DNSMASQ_OLD_HOSTNAME", hostname, 1);
+	  my_setenv("DNSMASQ_OLD_HOSTNAME", hostname, &err);
 	  hostname = NULL;
 	}
-      else
-	unsetenv("DNSMASQ_OLD_HOSTNAME");
 
       /* we need to have the event_fd around if exec fails */
       if ((i = fcntl(event_fd, F_GETFD)) != -1)
@@ -234,16 +237,45 @@ int create_helper(int event_fd, long max_fd)
       close(pipefd[0]);
 
       p =  strrchr(daemon->lease_change_command, '/');
-      execl(daemon->lease_change_command, 
-	    p ? p+1 : daemon->lease_change_command,
-	    action_str, daemon->dhcp_buff, inet_ntoa(data.addr), hostname, (char*)NULL);
-      
+      if (err == 0)
+	{
+	  execl(daemon->lease_change_command, 
+		p ? p+1 : daemon->lease_change_command,
+		action_str, daemon->dhcp_buff, inet_ntoa(data.addr), hostname, (char*)NULL);
+	  err = errno;
+	}
       /* failed, send event so the main process logs the problem */
-      send_event(event_fd, EVENT_EXEC_ERR, errno);
+      send_event(event_fd, EVENT_EXEC_ERR, err);
       _exit(0); 
     }
 }
 
+static void my_setenv(const char *name, const char *value, int *error)
+{
+  if (*error == 0)
+    {
+#if defined(HAVE_SOLARIS_NETWORK) && !defined(HAVE_SOLARIS_PRIVS)
+      /* old Solaris is missing setenv..... */
+      char *p;
+      
+      if (!(p = malloc(strlen(name) + strlen(value) + 2)))
+	*error = ENOMEM;
+      else
+	{
+	  strcpy(p, name);
+	  strcat(p, "=");
+	  strcat(p, value);
+	  
+	  if (putenv(p) != 0)
+	    *error = errno;
+	}
+#else
+      if (setenv(name, value, 1) != 0)
+	*error = errno;
+#endif
+    }
+}
+ 
 /* pack up lease data into a buffer */    
 void queue_script(int action, struct dhcp_lease *lease, char *hostname, time_t now)
 {
@@ -291,6 +323,20 @@ void queue_script(int action, struct dhcp_lease *lease, char *hostname, time_t n
   buf->hostname_len = hostname_len;
   buf->addr = lease->addr;
   memcpy(buf->hwaddr, lease->hwaddr, lease->hwaddr_len);
+  buf->interface[0] = 0;
+#ifdef HAVE_LINUX_NETWORK
+  if (lease->last_interface != 0)
+    {
+      struct ifreq ifr;
+      ifr.ifr_ifindex = lease->last_interface;
+      if (ioctl(daemon->dhcpfd, SIOCGIFNAME, &ifr) != -1)
+	strncpy(buf->interface, ifr.ifr_name, IF_NAMESIZE);
+    }
+#else
+  if (lease->last_interface != 0)
+    if_indextoname(lease->last_interface, buf->interface);
+#endif
+  
 #ifdef HAVE_BROKEN_RTC 
   buf->length = lease->length;
 #else
