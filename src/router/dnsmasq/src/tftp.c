@@ -2,12 +2,16 @@
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 dated June, 1991.
-
+   the Free Software Foundation; version 2 dated June, 1991, or
+   (at your option) version 3 dated 29 June, 2007.
+ 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
+     
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "dnsmasq.h"
@@ -47,11 +51,17 @@ void tftp_request(struct listener *listen, time_t now)
   int is_err = 1, if_index = 0;
   struct iname *tmp;
   struct tftp_transfer *transfer;
-
+  int port = daemon->start_tftp_port; /* may be zero to use ephemeral port */
+#if defined(IP_MTU_DISCOVER) && defined(IP_PMTUDISC_DONT)
+  int mtu = IP_PMTUDISC_DONT;
+#endif
+  
   union {
     struct cmsghdr align; /* this ensures alignment */
-#ifdef HAVE_LINUX_NETWORK
+#if defined(HAVE_LINUX_NETWORK)
     char control[CMSG_SPACE(sizeof(struct in_pktinfo))];
+#elif defined(HAVE_SOLARIS_NETWORK)
+    char control[CMSG_SPACE(sizeof(unsigned int))];
 #else
     char control[CMSG_SPACE(sizeof(struct sockaddr_dl))];
 #endif
@@ -96,7 +106,11 @@ void tftp_request(struct listener *listen, time_t now)
 	if (cmptr->cmsg_level == IPPROTO_IP && cmptr->cmsg_type == IP_RECVDSTADDR)
 	  addr.sin_addr = *((struct in_addr *)CMSG_DATA(cmptr));
 	else if (cmptr->cmsg_level == IPPROTO_IP && cmptr->cmsg_type == IP_RECVIF)
-	  if_index = ((struct sockaddr_dl *)CMSG_DATA(cmptr))->sdl_index;
+#ifdef HAVE_SOLARIS_NETWORK
+	  if_index = *((unsigned int *)CMSG_DATA(cmptr));
+#else
+          if_index = ((struct sockaddr_dl *)CMSG_DATA(cmptr))->sdl_index;
+#endif
       
       if (if_index == 0 || !if_indextoname(if_index, ifr.ifr_name))
 	return;
@@ -117,8 +131,7 @@ void tftp_request(struct listener *listen, time_t now)
       
     }
   
-  /* tell kernel to use ephemeral port */
-  addr.sin_port = 0;
+  addr.sin_port = htons(port);
   addr.sin_family = AF_INET;
 #ifdef HAVE_SOCKADDR_SA_LEN
   addr.sin_len = sizeof(addr);
@@ -141,13 +154,30 @@ void tftp_request(struct listener *listen, time_t now)
   transfer->file = NULL;
   transfer->opt_blocksize = transfer->opt_transize = 0;
 
-  if (bind(transfer->sockfd, (struct sockaddr *)&addr, sizeof(addr)) == -1 ||
-      !fix_fd(transfer->sockfd))
+  /* if we have a nailed-down range, iterate until we find a free one. */
+  while (1)
     {
-      free_transfer(transfer);
-      return;
+      if (bind(transfer->sockfd, (struct sockaddr *)&addr, sizeof(addr)) == -1 ||
+#if defined(IP_MTU_DISCOVER) && defined(IP_PMTUDISC_DONT)
+	  setsockopt(transfer->sockfd, SOL_IP, IP_MTU_DISCOVER, &mtu, sizeof(mtu)) == -1 ||
+#endif
+	  !fix_fd(transfer->sockfd))
+	{
+	  if (errno == EADDRINUSE && daemon->start_tftp_port != 0)
+	    {
+	      if (++port <= daemon->end_tftp_port)
+		{ 
+		  addr.sin_port = htons(port);
+		  continue;
+		}
+	      my_syslog(LOG_ERR, _("unable to get free port for TFTP"));
+	    }
+	  free_transfer(transfer);
+	  return;
+	}
+      break;
     }
-
+  
   p = packet + 2;
   end = packet + len;
 
@@ -362,7 +392,7 @@ void check_tftp_listeners(fd_set *rset, time_t now)
 		    {
 		      char *q, *r;
 		      for (q = r = err; *r; r++)
-			if (isprint(*r))
+			if (isprint((int)*r))
 			  *(q++) = *r;
 		      *q = 0;
 		    }

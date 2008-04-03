@@ -2,12 +2,16 @@
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 dated June, 1991.
-
+   the Free Software Foundation; version 2 dated June, 1991, or
+   (at your option) version 3 dated 29 June, 2007.
+ 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
+     
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "dnsmasq.h"
@@ -484,7 +488,8 @@ struct crec *cache_find_by_name(struct crec *crecp, char *name, time_t now, unsi
       /* first search, look for relevant entries and push to top of list
 	 also free anything which has expired */
       struct crec *next, **up, **insert = NULL, **chainp = &ans;
-         
+      int ins_flags = 0;
+      
       for (up = hash_bucket(name), crecp = *up; crecp; crecp = next)
 	{
 	  next = crecp->hash_next;
@@ -506,14 +511,18 @@ struct crec *cache_find_by_name(struct crec *crecp, char *name, time_t now, unsi
 		      cache_link(crecp);
 		    }
 	      	      
-		  /* move all but the first entry up the hash chain
-		     this implements round-robin */
+		  /* Move all but the first entry up the hash chain
+		     this implements round-robin. 
+		     Make sure that re-ordering doesn't break the hash-chain
+		     order invariants. 
+		  */
 		  if (!insert)
 		    {
-		      insert = up; 
+		      insert = up;
+		      ins_flags = crecp->flags & (F_REVERSE | F_IMMORTAL);
 		      up = &crecp->hash_next; 
 		    }
-		  else
+		  else if ((crecp->flags & (F_REVERSE | F_IMMORTAL)) == ins_flags)
 		    {
 		      *up = crecp->hash_next;
 		      crecp->hash_next = *insert;
@@ -827,14 +836,16 @@ void cache_unhash_dhcp(void)
 void cache_add_dhcp_entry(char *host_name, 
 			  struct in_addr *host_address, time_t ttd) 
 {
-  struct crec *crec;
+  struct crec *crec = NULL;
   unsigned short flags =  F_DHCP | F_FORWARD | F_IPV4 | F_REVERSE;
+  int in_hosts = 0;
 
   if (!host_name)
     return;
 
-  if ((crec = cache_find_by_name(NULL, host_name, 0, F_IPV4 | F_CNAME)))
+  while ((crec = cache_find_by_name(crec, host_name, 0, F_IPV4 | F_CNAME)))
     {
+      /* check all addresses associated with name */
       if (crec->flags & F_HOSTS)
 	{
 	  if (crec->addr.addr.addr.addr4.s_addr != host_address->s_addr)
@@ -845,23 +856,33 @@ void cache_add_dhcp_entry(char *host_name,
 			  "the name exists in %s with address %s"), 
 			host_name, inet_ntoa(*host_address),
 			record_source(daemon->addn_hosts, crec->uid), daemon->namebuff);
+	      return;
 	    }
-	  return;
+	  else
+	    /* if in hosts, don't need DHCP record */
+	    in_hosts = 1;
 	}
       else if (!(crec->flags & F_DHCP))
-	cache_scan_free(host_name, NULL, 0, crec->flags & (F_IPV4 | F_CNAME | F_FORWARD));
+	{
+	  cache_scan_free(host_name, NULL, 0, crec->flags & (F_IPV4 | F_CNAME | F_FORWARD));
+	  /* scan_free deletes all addresses associated with name */
+	  break;
+	}
     }
- 
-  if ((crec = cache_find_by_addr(NULL, (struct all_addr *)host_address, 0, F_IPV4)))
-    {
-      if (crec->flags & F_NEG)
-	cache_scan_free(NULL, (struct all_addr *)host_address, 0, F_IPV4 | F_REVERSE);
-      else
-	/* avoid multiple reverse mappings */
-	flags &= ~F_REVERSE;
-    }
+  
+   if (in_hosts)
+    return;
 
-  if ((crec = dhcp_spare))
+   if ((crec = cache_find_by_addr(NULL, (struct all_addr *)host_address, 0, F_IPV4)))
+     {
+       if (crec->flags & F_NEG)
+	 cache_scan_free(NULL, (struct all_addr *)host_address, 0, F_IPV4 | F_REVERSE);
+       else
+	 /* avoid multiple reverse mappings */
+	 flags &= ~F_REVERSE;
+     }
+   
+   if ((crec = dhcp_spare))
     dhcp_spare = dhcp_spare->next;
   else /* need new one */
     crec = whine_malloc(sizeof(struct crec));
@@ -881,11 +902,38 @@ void cache_add_dhcp_entry(char *host_name,
 
 void dump_cache(time_t now)
 {
-  my_syslog(LOG_INFO, _("time %lu, cache size %d, %d/%d cache insertions re-used unexpired cache entries."), 
-	    (unsigned long)now, daemon->cachesize, cache_live_freed, cache_inserted); 
+  struct server *serv, *serv1;
+
+  my_syslog(LOG_INFO, _("time %lu"), (unsigned long)now);
+  my_syslog(LOG_INFO, _("cache size %d, %d/%d cache insertions re-used unexpired cache entries."), 
+	    daemon->cachesize, cache_live_freed, cache_inserted);
+  my_syslog(LOG_INFO, _("queries forwarded %u, queries answered locally %u"), 
+	    daemon->queries_forwarded, daemon->local_answer);
+
+  if (!addrbuff && !(addrbuff = whine_malloc(ADDRSTRLEN)))
+    return;
+
+  /* sum counts from different records for same server */
+  for (serv = daemon->servers; serv; serv = serv->next)
+    serv->flags &= ~SERV_COUNTED;
   
-  if ((daemon->options & (OPT_DEBUG | OPT_LOG)) &&
-      (addrbuff || (addrbuff = whine_malloc(ADDRSTRLEN))))
+  for (serv = daemon->servers; serv; serv = serv->next)
+    if (!(serv->flags & (SERV_NO_ADDR | SERV_LITERAL_ADDRESS | SERV_COUNTED)))
+      {
+	int port;
+	unsigned int queries = 0, failed_queries = 0;
+	for (serv1 = serv; serv1; serv1 = serv1->next)
+	  if (!(serv1->flags & (SERV_NO_ADDR | SERV_LITERAL_ADDRESS | SERV_COUNTED)) && sockaddr_isequal(&serv->addr, &serv1->addr))
+	    {
+	      serv1->flags |= SERV_COUNTED;
+	      queries += serv1->queries;
+	      failed_queries += serv1->failed_queries;
+	    }
+	port = prettyprint_addr(&serv->addr, addrbuff);
+	my_syslog(LOG_INFO, _("server %s#%d: queries sent %u, retried or failed %u"), addrbuff, port, queries, failed_queries);
+      }
+  
+  if ((daemon->options & (OPT_DEBUG | OPT_LOG)))
     {
       struct crec *cache ;
       int i;
@@ -988,15 +1036,19 @@ void log_query(unsigned short flags, char *name, struct all_addr *addr,
 	{
 	  if (flags & F_IPV4)
 	    dest = "NXDOMAIN-IPv4";
-	  else 
-	    dest = "NXDOMAIN-IPv6"; 
+	  else if (flags & F_IPV6)
+	    dest = "NXDOMAIN-IPv6";
+	  else
+	    dest = "NXDOMAIN";
 	}
       else
 	{      
 	  if (flags & F_IPV4)
 	    dest = "NODATA-IPv4";
-	  else 
+	  else if (flags & F_IPV6)
 	    dest = "NODATA-IPv6";
+	  else
+	    dest = "NODATA";
 	}
     }
   else if (flags & F_CNAME)

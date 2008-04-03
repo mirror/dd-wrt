@@ -19,7 +19,7 @@
 # Uncomment this to filter useless windows-originated DNS requests
 # which can trigger dial-on-demand links needlessly.
 # Note that (amongst other things) this blocks all SRV requests,
-# so don't use it if you use eg Kerberos.
+# so don't use it if you use eg Kerberos, SIP, XMMP or Google-talk.
 # This option only affects forwarding, SRV records originating for
 # dnsmasq (via srv-host= lines) are not suppressed by it.
 #filterwin2k
@@ -60,6 +60,18 @@
 # The example below send any host in doubleclick.net to a local
 # webserver.
 #address=/doubleclick.net/127.0.0.1
+
+# --address (and --server) work with IPv6 addresses too.
+#address=/www.thekelleys.org.uk/fe80::20d:60ff:fe36:f83
+
+# You can control how dnsmasq talks to a server: this forces 
+# queries to 10.1.2.3 to be routed via eth1
+# --server=10.1.2.3@eth1
+
+# and this sets the source (ie local) address used to talk to
+# 10.1.2.3 to 192.168.1.1 port 55 (there must be a interface with that
+# IP on the machine, obviously).
+# --server=10.1.2.3@192.168.1.1#55
 
 # If you want dnsmasq to change uid and gid to something other
 # than the default, edit the following lines.
@@ -145,7 +157,7 @@
 # the name fred and IP address 192.168.0.60 and lease time 45 minutes
 #dhcp-host=11:22:33:44:55:66,fred,192.168.0.60,45m
 
-# Give the machine which says it's name is "bert" IP address
+# Give the machine which says its name is "bert" IP address
 # 192.168.0.70 and an infinite lease
 #dhcp-host=bert,192.168.0.70,infinite
 
@@ -309,6 +321,13 @@
 # external one. (See below for how to enable the TFTP server.)
 #dhcp-boot=pxelinux.0
 
+# Boot for Etherboot gPXE. The idea is to send two different
+# filenames, the first loads gPXE, and the second tells gPXE what to
+# load. The dhcp-match sets the gpxe tag for requests from gPXE.
+#dhcp-match=gpxe,175 # gPXE sends a 175 option.
+#dhcp-boot=net:#gpxe,undionly.kpxe
+#dhcp-boot=mybootimage
+ 
 # Enable dnsmasq's built-in TFTP server
 #enable-tftp
 

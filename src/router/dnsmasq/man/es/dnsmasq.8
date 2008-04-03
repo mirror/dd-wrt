@@ -55,6 +55,15 @@ cierto tiempo de vida (en segundos) para estas respuestas. Esto
 reduce la carga sobre el servidor al costo de que los clientes
 usaran datos añejos bajo algunas circunstancias.
 .TP
+.B --neg-ttl=<tiempo>
+Respuestas negativas desde servidores upstream normalmente contienen
+información time-to-live (tiempo de vida) en expedientes SOA que
+dnsmasq usa para hacer caché. Si las respuestas de servidores upstream
+omiten esta información, dnsmasq no mete la respuesta en el caché.
+Esta opción brinda un valor predeterminado para el time-to-live que
+dnsmasq usa para meter respuestas en el caché aún en la ausencia de
+un expediente SOA.
+.TP
 .B \-k, --keep-in-foreground
 No ir hacia el fondo al iniciar, pero aparte de eso ejecutar como
 normal. La intención de esto es para cuando dnsmasq es ejecutado
@@ -113,7 +122,8 @@ Mostrar el número de versión.
 .TP
 .B \-p, --port=<puerto>
 Escuchar en el puerto <puerto> en vez del puerto estándar DNS (53).
-Principalmente útil para debugging.
+Fijar esto a cero deshabilita completamente la función DNS, dejando
+solo DHCP y/o TFTP.
 .TP
 .B \-P, --edns-packet-max=<tamaño>
 Especificar el paquete UDP EDNS.0 más grande que es soportado por
@@ -263,6 +273,18 @@ cuales sabe que están activos. Fijar esta opción forza a dnsmasq a
 probar cada búsqueda con cada servidor estrictamente en el orden
 que aparecen en /etc/resolv.conf
 .TP
+.B --all-servers
+Por predeterminado, cuando dnsmasq tiene más de un servidor upstream
+disponible, enviará búsquedas a solo un servidor. Fijar esta opción
+forza a dnsmasq a enviar todas las búsquedas a todos los servidores
+disponibles. La respuesta del servidor que responda primero será
+devuelta al solicitante original.
+.TP
+.B --stop-dns-rebind
+Denegar (y bitacorear) direcciones de servidores upstream que están
+dentro de rangos IP privados. Esto bloquea un ataque donde un navegador
+detrás de un firewall es usado para analizar máquinas en la red local.
+.TP
 .B \-n, --no-poll
 No revisar periodicamente a /etc/resolv.conf en busca de cambios.
 .TP
@@ -277,7 +299,7 @@ sin puntos o partes de dominios, a servidores upstream. Si el nombre
 no se conoce desde /etc/hosts o desde DHCP entonces una respuesta
 "no encontrado" es devuelta.
 .TP
-.B \-S, --local, --server=[/[<dominio>]/[dominio/]][<dirección IP>[#<puerto>][@<remitente>[#<puerto>]]]
+.B \-S, --local, --server=[/[<dominio>]/[dominio/]][<dirección IP>[#<puerto>][@<IP de remitente>|<interface>[#<puerto>]]
 Especificar la dirección IP de servidores upstream directamente. Fijar
 esta opción no suprime la lectura de /etc/resolv.conf, use -R para
 hacer eso. Si uno a más dominios opcionales son brindados, ese servidor
@@ -307,14 +329,19 @@ es un sinónimo de
 .B server
 para hacer los archivos de configuración mas claros en este caso.
 
-La segunda dirección IP opcional después del carácter @ le dice
-a dnsmasq como fijar la dirección de remitente de las búsquedas
-hacia este servidor DNS. Debe ser una dirección perteneciente a
-la máquina en la cual corre dnsmasq, de forma contraria esta
-línea de servidor será bitacoreada y después ignorada. La opción
-query-port es ignorada para cualquier servidores que tengan una
-dirección remitente especificada, pero el puerto puede ser
-especificado directamente como parte de la dirección remitente.
+El string opcional despues del carácter @ le dice a dnsmasq como fijar
+el remitente de las búsquedas hacia este servidor DNS. Debe ser una
+dirección IP, la cual debe ser perteneciente a la máquina en la cual
+corre dnsmasq, de forma contraria esta línea de servidor será bitacoreada
+y después ignorada, o un nombre de interface. Si un nombre de interface
+es brindado, entonces búsquedas hacia el servidor serán forzadas vía esa
+interface; si una dirección IP es brindada, entonces la dirección de
+remitente de las búsquedas será fijada a esa dirección.
+La etiqueta query-port es ignorada para cualquier servidores que tengan
+una dirección remitente especificada, pero el puerto puede ser
+especificado directamente como parte de la dirección remitente. Forzar
+búsquedas a una interface no está implementado en todas las plataformas
+soportadas por dnsmasq.
 .TP
 .B \-A, --address=/<dominio>/[dominio/]<dirección IP>
 Especificar una dirección IP para retornar por cualquier host en
@@ -498,6 +525,11 @@ el tipo ARP para Token-Ring es 6.
 .B --dhcp-hostsfile=<archivo>
 Leer información host DHCP desde el archivo especificado. El archivo contiene información de un host por línea. El formato de una línea es igual que texto hacia la derecha de '=' en --dhcp-host. La ventaja de almacenar información host DHCP en este archivo es que puede ser cambiada sin tener que reiniciar dnsmasq. El archivo será re-leído cuando dnsmasq recibe un SIGHUP.
 .TP
+.B --dhcp-optsfile=<archivo>
+Leer información sobre opciones DHCP desde el archivo especificado. La
+ventaja de usar esta opción es la misma que con --dhcp-hostsfile: el
+archivo dhcp-optsfile será re-leído cuando dnsmasq recibe un SIGHUP.
+.TP
 .B \-Z, --read-ethers
 Leer /etc/ethers en busca de información sobre hosts para el servidor
 DHCP. El formato de /etc/ethers es una dirección de hardware, seguida
@@ -580,6 +612,14 @@ excepto que la opción siempre será enviada, aún si el cliente no la pide en
 la lista de pedido de parámetros. Esto se necesita aveces, por ejemplo cuando
 enviando opciones a PXELinux.
 .TP
+.B --dhcp-no-override
+Deshabilitar la reutilización de los campos DHCP de nombre de servidor y
+archivo como espacio para opciones extra. Si puede, dnsmasq mueve la información
+del servidor boot y del nombre de archivo (de dhcp-boot) de sus campos dedicados
+hacia opciones DHCP. Esto crea espacio extra en el paquete DHCP para opciones,
+pero puede raramente confundir clientes viejos o defectuosos. Esta opción forza
+comportamiento "simple y sencillo" para prevenir problemas en tales casos.
+.TP
 .B \-U, --dhcp-vendorclass=<network-id>,<vendor-class>
 Trazar desde un string vendor-class a un network id. La mayoría de los
 clientes DHCP proveen una "vendor class" la cual representa, en cierto
@@ -619,6 +659,11 @@ network-id es fijado.
 .B --dhcp-subscrid=<network-id>,<subscriber-id>
 Trazar de opciones relay subscriber-id RFC3993 a opciones network-id.
 .TP
+.B --dhcp-match=<network-id>,<número de opción>
+Fijar la opción network-id si el cliente envía un opción DHCP del nombre
+brindado. Esto puede ser utilizado para identificar clientes particulares
+que envían información usando números privados de opciones.
+.TP
 .B \-J, --dhcp-ignore=<network-id>[,<network-id>]
 Cuando todos los network ids brindados coincidan con el juego de
 network ids derivados de las clases net, host, y vendor, ignorar
@@ -632,6 +677,14 @@ a diferencia de dhcp-ignore, es permisible no brindar ningún tag netid,
 y en tal caso nombres de host proveidos por clientes DHCP siempre son
 ignorados, y hosts DHCP son agregados al DNS usando solo la configuración
 dhcp-host en dnsmasq y el contenido de /etc/hosts y /etc/ethers.
+.TP
+.B --dhcp-broadcast=<network-id>[,<network-id>]
+Cuando todos los network-ids brindados coinciden con el juego de network-ids
+derivados de la red, host, clases de vendedor y usuarios, siempre usar
+broadcast para comunicarse con el host cuando está sin configurar. La
+mayoría de clientes DHCP que necesitan respuestas broadcast fijan una
+opción en sus pedidos para que esto pase automaticamente, algunos
+clientes BOOTP viejos no lo hacen.
 .TP
 .B \-M, --dhcp-boot=[net:<network-id>,]<filename>,[<servername>[,<server address>]]
 Fijar opciones BOOTP que han de ser devueltas por el servidor DHCP. Nombre
@@ -716,7 +769,9 @@ es almacenado en DNSMASQ_TIME_REMAINING.
 Si un arriendo solía tener un nombre de host, el cual es removido, un
 evento "old" es generado con el nuevo estado del arriendo, (por ejemplo, sin
 nombre), y el nombre anterior es brindado en la variable de ambiente
-DNSMASQ_OLD_HOSTNAME.
+DNSMASQ_OLD_HOSTNAME. DNSMASQ_INTERFACE almacena el nombre de la interface
+en la cual llegó el pedido; esto no es fijado para acciones "viejas"
+cuando dnsmasq re-inicia.
 Todos los descriptores de archivo están cerrados
 excepto stdin, stdout, y stderr los cuales están abiertos a /dev/null
 (excepto en modo debug).
@@ -812,12 +867,24 @@ un descriptor de archivo por cada coneccion TFTP concurrente, y por archivo
 único (mas algunos otros). De tal manera que servirle el mismo archivo
 simultáneo a n clientes requerirá el uso de n + 10 descriptores de archivo,
 y servirles archivos diferentes simultáneamente requerirá (2*n) + 10
-descriptores.
+descriptores. Si
+.B --tftp-port-range
+es brindado, eso puede afectar el número de conexiones simultáneas.
 .TP
 .B --tftp-no-blocksize
 No permitir que el servidor negocie la opción "blocksize" con un cliente.
 Algunos clientes con errores piden esta opción pero se portán mal cuando se
 les brinda.
+.TP
+.B --tftp-port-range=<inicio>,<final>
+Un servidor TFTP escucha por inicios de conexión en un puerto bien conocido
+(69), pero tambien usa un puerto dinamicamente seleccionado para cada
+conexión. Normalmente estos son seleccionados por el sistema operativo,
+pero esta opción especifica un rango de puertos para ser usado por transferencias
+TFTP. Esto puede ser útil cuando TFTP tiene que pasar atraves de un firewall.
+El comienzo del rango no puede ser menor a 1025 a menos que dnsmasq esté corriendo
+como root. El número de conexiones simultáneas está limitado por el tamaño del
+rango de puertos.
 .TP
 .B \-C, --conf-file=<archivo>
 Especificar un archivo de configuración diferente. La opción conf-file
@@ -845,8 +912,8 @@ y son ignoradas. Para opciones que solo pueden ser especificadas una
 sola vez, el archivo de configuración invalida la línea de comandos.
 Las comillas son permitidas en el archivo de configuración: entre comillas
 tipo " los significados especiales de ,:. y # son eliminados y los
-siguientes escapes son permitidos: \\\\ \\" \\t \\a \\b \\r y \\n. El
-último corresponde a tab, bell, backspace, return y newline.
+siguientes escapes son permitidos: \\\\ \\" \\t \\e \\b \\r y \\n.
+Corresponden a tab, escape, backspace, return y newline.
 .SH NOTAS
 Al recibir un SIGHUP
 .B dnsmasq 
@@ -854,7 +921,8 @@ libera su cache y entonces recarga
 .I /etc/hosts
 y
 .I /etc/ethers
-al igual que cualquier archivo brindado con --dhcp-hostsfile.
+al igual que cualquier archivo brindado con --dhcp-hostsfile, --dhcp-optsfile,
+o --addn-hosts.
 El archivo guión de cambio de arriendos es llamado para todos los arriendos
 DHCP existentes. Si
 .B
@@ -866,10 +934,12 @@ NO re-lee el archivo de configuración.
 .PP
 Al recibir un SIGUSR1,
 .B dnsmasq 
-escribe estadísticas de caché a la bitácora del sistema. Escribe el tamaño
+escribe estadísticas a la bitácora del sistema. Escribe el tamaño
 del caché, el numero de nombres que han tenido que ser removidos del
 caché antes de que vencieran para hacer espacio para nombres nuevos, y el
-número total de nombres que han sido insertados en el caché. En modo
+número total de nombres que han sido insertados en el caché. Para cada
+servidor upstream brinda el número de búsquedas enviadas, y el
+número que resultaron en error. En modo
 .B --no-daemon
 o cuando bitacoréo completo está habilitado (-q), una descarga completa de
 el contenido del caché es hecha.

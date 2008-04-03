@@ -1,13 +1,17 @@
-/* dnsmasq is Copyright (c) 2000 - 2006 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2007 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 dated June, 1991.
-
+   the Free Software Foundation; version 2 dated June, 1991, or
+   (at your option) version 3 dated 29 June, 2007.
+ 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
+     
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "dnsmasq.h"
@@ -32,7 +36,7 @@ static int extract_name(HEADER *header, size_t plen, unsigned char **pp,
       unsigned int label_type = l & 0xc0;
       if (label_type == 0xc0) /* pointer */
 	{ 
-	  if ((size_t)(p - (unsigned char *)header + 1) >= plen)
+	  if ((size_t)(p - (unsigned char *)header) >= plen)
 	    return 0;
 	      
 	  /* get offset */
@@ -70,7 +74,7 @@ static int extract_name(HEADER *header, size_t plen, unsigned char **pp,
 	  /* output is \[x<hex>/siz]. which is digs+9 chars */
 	  if (cp - (unsigned char *)name + digs + 9 >= MAXDNAME)
 	    return 0;
-	  if ((size_t)(p - (unsigned char *)header + ((count-1)>>3) + 1) >= plen)
+	  if ((size_t)(p - (unsigned char *)header + ((count-1)>>3)) >= plen)
 	    return 0;
 
 	  *cp++ = '\\';
@@ -94,7 +98,7 @@ static int extract_name(HEADER *header, size_t plen, unsigned char **pp,
 	{ /* label_type = 0 -> label. */
 	  if (cp - (unsigned char *)name + l + 1 >= MAXDNAME)
 	    return 0;
-	  if ((size_t)(p - (unsigned char *)header + 1) >= plen)
+	  if ((size_t)(p - (unsigned char *)header) >= plen)
 	    return 0;
 	  for(j=0; j<l; j++, p++)
 	    if (isExtract)
@@ -497,6 +501,50 @@ static int private_net(struct in_addr addr)
     ((ip_addr & 0xFFFF0000) == 0xA9FE0000)  /* 169.254.0.0/16 (zeroconf) */ ;
 }
 
+static unsigned char *do_doctor(unsigned char *p, int count, HEADER *header, size_t qlen)
+{
+  int i, qtype, qclass, rdlen;
+  unsigned long ttl;
+
+  for (i = count; i != 0; i--)
+    {
+      if (!(p = skip_name(p, header, qlen)))
+	return 0; /* bad packet */
+      
+      GETSHORT(qtype, p); 
+      GETSHORT(qclass, p);
+      GETLONG(ttl, p);
+      GETSHORT(rdlen, p);
+      
+      if ((qclass == C_IN) && (qtype == T_A))
+	{
+	  struct doctor *doctor;
+	  struct in_addr addr;
+	  
+	  /* alignment */
+	  memcpy(&addr, p, INADDRSZ);
+	  
+	  for (doctor = daemon->doctors; doctor; doctor = doctor->next)
+	    if (is_same_net(doctor->in, addr, doctor->mask))
+	      {
+		addr.s_addr &= ~doctor->mask.s_addr;
+		addr.s_addr |= (doctor->out.s_addr & doctor->mask.s_addr);
+		/* Since we munged the data, the server it came from is no longer authoritative */
+		header->aa = 0;
+		memcpy(p, &addr, INADDRSZ);
+		break;
+	      }
+	}
+      
+      p += rdlen;
+      
+      if ((size_t)(p - (unsigned char *)header) > qlen)
+	return 0; /* bad packet */
+    }
+  
+  return p; 
+}
+
 static int find_soa(HEADER *header, size_t qlen)
 {
   unsigned char *p;
@@ -506,8 +554,8 @@ static int find_soa(HEADER *header, size_t qlen)
   
   /* first move to NS section and find TTL from any SOA section */
   if (!(p = skip_questions(header, qlen)) ||
-      !(p = skip_section(p, ntohs(header->ancount), header, qlen)))
-    return 0; /* bad packet */
+      !(p = do_doctor(p, ntohs(header->ancount), header, qlen)))
+    return 0;  /* bad packet */
   
   for (i = ntohs(header->nscount); i != 0; i--)
     {
@@ -544,52 +592,23 @@ static int find_soa(HEADER *header, size_t qlen)
 	return 0; /* bad packet */
     }
  
-  if (daemon->doctors)
-    for (i = ntohs(header->arcount); i != 0; i--)
-      {
-	if (!(p = skip_name(p, header, qlen)))
-	  return 0; /* bad packet */
-      
-	GETSHORT(qtype, p); 
-	GETSHORT(qclass, p);
-	GETLONG(ttl, p);
-	GETSHORT(rdlen, p);
-	
-	if ((qclass == C_IN) && (qtype == T_A))
-	  {
-	    struct doctor *doctor;
-	    struct in_addr addr;
-	    
-	    /* alignment */
-	    memcpy(&addr, p, INADDRSZ);
-	    
-	    for (doctor = daemon->doctors; doctor; doctor = doctor->next)
-	      if (is_same_net(doctor->in, addr, doctor->mask))
-		{
-		  addr.s_addr &= ~doctor->mask.s_addr;
-		  addr.s_addr |= (doctor->out.s_addr & doctor->mask.s_addr);
-		  /* Since we munged the data, the server it came from is no longer authoritative */
-		  header->aa = 0;
-		  memcpy(p, &addr, INADDRSZ);
-		  break;
-		}
-	  }
-	
-	p += rdlen;
-	
-	if ((size_t)(p - (unsigned char *)header) > qlen)
-	  return 0; /* bad packet */
-      }
- 
-  return found_soa ? minttl : 0;
+  /* rewrite addresses in additioal section too */
+  if (!do_doctor(p, ntohs(header->arcount), header, qlen))
+    return 0;
+  
+  if (!found_soa)
+    minttl = daemon->neg_ttl;
+
+  return minttl;
 }
 
 /* Note that the following code can create CNAME chains that don't point to a real record,
    either because of lack of memory, or lack of SOA records.  These are treated by the cache code as 
-   expired and cleaned out that way. */
-void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
+   expired and cleaned out that way. 
+   Return 1 if we reject an address because it look like parct of dns-rebinding attack. */
+int extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
 {
-  unsigned char *p, *p1, *endrr;
+  unsigned char *p, *p1, *endrr, *namep;
   int i, j, qtype, qclass, aqtype, aqclass, ardlen, res, searched_soa = 0;
   unsigned long ttl = 0;
   struct all_addr addr;
@@ -613,8 +632,9 @@ void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
       int flags = header->rcode == NXDOMAIN ? F_NXDOMAIN : 0;
       unsigned long cttl = ULONG_MAX, attl;
       
+      namep = p;
       if (!extract_name(header, qlen, &p, name, 1))
-	return; /* bad packet */
+	return 0; /* bad packet */
            
       GETSHORT(qtype, p); 
       GETSHORT(qclass, p);
@@ -635,12 +655,15 @@ void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
 	    {
 	    cname_loop:
 	      if (!(p1 = skip_questions(header, qlen)))
-		return;
+		return 0;
 	      
 	      for (j = ntohs(header->ancount); j != 0; j--) 
 		{
-		  if (!(res = extract_name(header, qlen, &p1, name, 0)))
-		    return; /* bad packet */
+		  unsigned char *tmp = namep;
+		  /* the loop body overwrites the original name, so get it back here. */
+		  if (!extract_name(header, qlen, &tmp, name, 1) ||
+		      !(res = extract_name(header, qlen, &p1, name, 0)))
+		    return 0; /* bad packet */
 		  
 		  GETSHORT(aqtype, p1); 
 		  GETSHORT(aqclass, p1);
@@ -655,12 +678,12 @@ void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
 		  if (aqclass == C_IN && res != 2 && (aqtype == T_CNAME || aqtype == T_PTR))
 		    {
 		      if (!extract_name(header, qlen, &p1, name, 1))
-			return;
+			return 0;
 		      
 		      if (aqtype == T_CNAME)
 			{
 			  if (!cname_count--)
-			    return; /* looped CNAMES */
+			    return 0; /* looped CNAMES */
 			  goto cname_loop;
 			}
 		      
@@ -670,7 +693,7 @@ void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
 		  
 		  p1 = endrr;
 		  if ((size_t)(p1 - (unsigned char *)header) > qlen)
-		    return; /* bad packet */
+		    return 0; /* bad packet */
 		}
 	    }
 	  
@@ -710,12 +733,12 @@ void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
 	    {
 	    cname_loop1:
 	      if (!(p1 = skip_questions(header, qlen)))
-		return;
+		return 0;
 	      
 	      for (j = ntohs(header->ancount); j != 0; j--) 
 		{
 		  if (!(res = extract_name(header, qlen, &p1, name, 0)))
-		    return; /* bad packet */
+		    return 0; /* bad packet */
 		  
 		  GETSHORT(aqtype, p1); 
 		  GETSHORT(aqclass, p1);
@@ -728,7 +751,7 @@ void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
 		      if (aqtype == T_CNAME)
 			{
 			  if (!cname_count--)
-			    return; /* looped CNAMES */
+			    return 0; /* looped CNAMES */
 			  newc = cache_insert(name, NULL, now, attl, F_CNAME | F_FORWARD);
 			  if (newc && cpp)
 			    {
@@ -741,7 +764,7 @@ void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
 			    cttl = attl;
 			  
 			  if (!extract_name(header, qlen, &p1, name, 1))
-			    return;
+			    return 0;
 			  goto cname_loop1;
 			}
 		      else
@@ -749,6 +772,13 @@ void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
 			  found = 1;
 			  /* copy address into aligned storage */
 			  memcpy(&addr, p1, addrlen);
+			  
+			  /* check for returned address in private space */
+			  if ((daemon->options & OPT_NO_REBIND) &&
+			      (flags & F_IPV4) &&
+			      private_net(addr.addr.addr4))
+			    return 1;
+			  
 			  newc = cache_insert(name, &addr, now, attl, flags | F_FORWARD);
 			  if (newc && cpp)
 			    {
@@ -761,7 +791,7 @@ void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
 		  
 		  p1 = endrr;
 		  if ((size_t)(p1 - (unsigned char *)header) > qlen)
-		    return; /* bad packet */
+		    return 0; /* bad packet */
 		}
 	    }
 	  
@@ -773,7 +803,7 @@ void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
 		  ttl = find_soa(header, qlen);
 		}
 	      /* If there's no SOA to get the TTL from, but there is a CNAME 
-		 pointing at this, inherit it's TTL */
+		 pointing at this, inherit its TTL */
 	      if (ttl || cpp)
 		{
 		  newc = cache_insert(name, NULL, now, ttl ? ttl : cttl, F_FORWARD | F_NEG | flags);	
@@ -787,7 +817,11 @@ void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now)
 	}
     }
   
-  cache_end_insert();
+  /* Don't put stuff from a truncated packet into the cache, but do everything else */
+  if (!header->tc)
+    cache_end_insert();
+
+  return 0;
 }
 
 /* If the packet holds exactly one query
@@ -844,7 +878,7 @@ size_t setup_reply(HEADER *header, size_t qlen,
   header->ancount = htons(0); /* no answers unless changed below */
   if (flags == F_NEG)
     header->rcode = SERVFAIL; /* couldn't get memory */
-  else if (flags == F_NOERR || flags == F_QUERY)
+  else if (flags == F_NOERR)
     header->rcode = NOERROR; /* empty domain */
   else if (flags == F_NXDOMAIN)
     header->rcode = NXDOMAIN;
