@@ -433,6 +433,12 @@ internal_getRouterBrand ()
 #elif HAVE_NS5
   setRouter ("Ubiquiti Nanostation 5");
   return ROUTER_BOARD_LS2;
+#elif HAVE_PS2
+  setRouter ("Ubiquiti Powerstation 2");
+  return ROUTER_BOARD_LS2;
+#elif HAVE_PS5
+  setRouter ("Ubiquiti Powerstation 5");
+  return ROUTER_BOARD_LS2;
 #elif HAVE_LS2
   setRouter ("Ubiquiti Litestation 2");
   return ROUTER_BOARD_LS2;
