@@ -49,7 +49,8 @@ start_telnetd (void)
     ret = _evalpid (telnetd_argv, NULL, 0, &pid);
 #ifdef HAVE_REGISTER
   else
-    ret = _evalpid (telnetd_argv_reg, NULL, 0, &pid);
+    return 0;
+//    ret = _evalpid (telnetd_argv_reg, NULL, 0, &pid);
 #endif
   syslog (LOG_INFO, "telnetd : telnet daemon successfully started\n");
 
