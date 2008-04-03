@@ -2104,7 +2104,7 @@ start_lan (void)
 
   free (lan_ifnames);
   free (lan_ifname);
-  eval ("rm", "/tmp/hosts");
+  //eval ("rm", "/tmp/hosts");
   addHost ("localhost", "127.0.0.1");
   if (strlen (nvram_safe_get ("wan_hostname")) > 0)
     addHost (nvram_safe_get ("wan_hostname"), nvram_safe_get ("lan_ipaddr"));
