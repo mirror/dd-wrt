@@ -1327,7 +1327,7 @@ configure_single (int count)
       setdistance (wif, distance,atoi(chanbw));	//sets the receiver sensitivity
     }
   else
-    setsysctrl (wif, "dynack_count", 1);
+    setsysctrl (wif, "dynack_count", 20);
   int rx = atoi (default_get (rxantenna, "1"));
   int tx = atoi (default_get (txantenna, "1"));
   int diva = atoi (default_get (diversity, "0"));
