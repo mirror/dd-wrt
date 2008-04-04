@@ -34,11 +34,23 @@ else
 ifeq ($(CONFIG_DIR300),y)
 OBJS += gpio_atheros.o
 else
+ifeq ($(CONFIG_LS2),y)
+OBJS += gpio_atheros.o
+else
+ifeq ($(CONFIG_LS5),y)
+OBJS += gpio_atheros.o
+else
+ifeq ($(CONFIG_CA8),y)
+OBJS += gpio_atheros.o
+else
 ifeq ($(CONFIG_MERAKI),y)
 OBJS += gpio_atheros.o
 else
 ifneq ($(CONFIG_XSCALE),y)
 OBJS += gpio_brcm.o
+endif
+endif
+endif
 endif
 endif
 endif
