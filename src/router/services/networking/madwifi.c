@@ -200,7 +200,7 @@ setsysctrl (const char *dev, const char *control, u_long value)
 }
 
 static void
-setdistance (char *device, int distance,int chanbw)
+setdistance (char *device, int distance, int chanbw)
 {
 
   if (distance >= 0)
@@ -765,18 +765,18 @@ static void
 set_scanlist (char *dev, char *wif)
 {
 
-   char *next;
-   struct iwreq iwr;
-   char scanlist[32];
+  char *next;
+  struct iwreq iwr;
+  char scanlist[32];
   unsigned short list[1024];
-   sprintf (scanlist, "%s_scanlist", dev);
-   char *sl = default_get (scanlist, "default");
+  sprintf (scanlist, "%s_scanlist", dev);
+  char *sl = default_get (scanlist, "default");
   memset (list, 0, 1024 * sizeof (unsigned short));
-   int c = 0;
-   if (strlen (sl) > 0 && strcmp (sl, "default"))
-     {
-       foreach (var, sl, next)
-       {
+  int c = 0;
+  if (strlen (sl) > 0 && strcmp (sl, "default"))
+    {
+      foreach (var, sl, next)
+      {
 	int ch = atoi (var);
 	if (ch < 1000 || ch > 7000)
 	  {
@@ -787,14 +787,14 @@ set_scanlist (char *dev, char *wif)
 
 //      fprintf(stderr,"scanlist %d\n",chan);
 	list[c++] = chan;
-       }
-     }
-   else
+      }
+    }
+  else
     c = 1;
 
-   memset (&iwr, 0, sizeof (struct iwreq));
-   strncpy (iwr.ifr_name, wif, IFNAMSIZ);
-   {
+  memset (&iwr, 0, sizeof (struct iwreq));
+  strncpy (iwr.ifr_name, wif, IFNAMSIZ);
+  {
     /*
      * Argument data too big for inline transfer; setup a
      * parameter block instead; the kernel will transfer
@@ -802,14 +802,14 @@ set_scanlist (char *dev, char *wif)
      */
     iwr.u.data.pointer = &list[0];
     iwr.u.data.length = 1024 * sizeof (unsigned short);
-   }
+  }
 
   int r = ioctl (getsocket (), SIOCSSCANLIST, &iwr);
   if (r < 0)
     {
       fprintf (stderr, "error while setting scanlist on %s, %d\n", wif, r);
     }
- }
+}
 #else
 static void
 set_scanlist (char *dev, char *wif)
@@ -822,19 +822,19 @@ set_scanlist (char *dev, char *wif)
   sprintf (scanlist, "%s_scanlist", dev);
   char *sl = default_get (scanlist, "default");
   int c = 0;
-  eval("iwpriv",dev,"setscanlist","-ALL");
+  eval ("iwpriv", dev, "setscanlist", "-ALL");
   if (strlen (sl) > 0 && strcmp (sl, "default"))
     {
       foreach (var, sl, next)
       {
-	sprintf(list,"+%s",var);
-        eval("iwpriv",dev,"setscanlist",list);
+	sprintf (list, "+%s", var);
+	eval ("iwpriv", dev, "setscanlist", list);
       }
     }
   else
-  {
-        eval("iwpriv",dev,"setscanlist","+ALL");    
-  }
+    {
+      eval ("iwpriv", dev, "setscanlist", "+ALL");
+    }
 }
 #endif
 
@@ -1229,7 +1229,7 @@ configure_single (int count)
 	  eval ("iwpriv", wdsdev, "wds", "1");
 #else
 	  eval ("iwpriv", dev, "wds_add", hwaddr);
-//	  eval ("iwpriv", dev, "wds", "1");
+//        eval ("iwpriv", dev, "wds", "1");
 #endif
 	}
     }
@@ -1290,7 +1290,7 @@ configure_single (int count)
       set_scanlist (dev, wif);
     }
 #else
-    set_scanlist(dev,wif);
+  set_scanlist (dev, wif);
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
     {
       char *ch = default_get (channel, "0");
@@ -1305,7 +1305,7 @@ configure_single (int count)
 	  eval ("iwconfig", dev, "freq", freq);
 	}
     }
-#endif    
+#endif
 
 
   if (useif)
@@ -1323,33 +1323,41 @@ configure_single (int count)
   if (distance > 0)
     {
       setsysctrl (wif, "dynack_count", 0);
-      char *chanbw = nvram_nget("%s_channelbw",dev);
-      setdistance (wif, distance,atoi(chanbw));	//sets the receiver sensitivity
+      char *chanbw = nvram_nget ("%s_channelbw", dev);
+      setdistance (wif, distance, atoi (chanbw));	//sets the receiver sensitivity
     }
   else
     setsysctrl (wif, "dynack_count", 20);
+
+#ifdef HAVE_NS5
+  char *gpio = "1";
+#endif
+#ifdef HAVE_NS2
+  char *gpio = "7";
+#endif
+
 #if defined(HAVE_NS2) || defined(HAVE_NS5)
   int tx = atoi (default_get (txantenna, "0"));
 
   setsysctrl (wif, "diversity", 0);
-switch(tx)
-{
-case 0:
-  setsysctrl (wif, "rxantenna", 2);
-  setsysctrl (wif, "txantenna", 2);
-  eval("gpio","enable","1");
-break;
-case 1:
-  setsysctrl (wif, "rxantenna", 1);
-  setsysctrl (wif, "txantenna", 1);
-  eval("gpio","enable","1");
-break;
-case 2:
-  setsysctrl (wif, "rxantenna", 1);
-  setsysctrl (wif, "txantenna", 1);
-  eval("gpio","disable","1");
-break;
-}
+  switch (tx)
+    {
+    case 0:
+      setsysctrl (wif, "rxantenna", 2);
+      setsysctrl (wif, "txantenna", 2);
+      eval ("gpio", "enable", gpio);
+      break;
+    case 1:
+      setsysctrl (wif, "rxantenna", 1);
+      setsysctrl (wif, "txantenna", 1);
+      eval ("gpio", "enable", gpio);
+      break;
+    case 2:
+      setsysctrl (wif, "rxantenna", 1);
+      setsysctrl (wif, "txantenna", 1);
+      eval ("gpio", "disable", gpio);
+      break;
+    }
 #else
 
   int rx = atoi (default_get (rxantenna, "1"));
@@ -1373,7 +1381,7 @@ break;
       sprintf (mode, "%s_mode", var);
       m = default_get (mode, "ap");
 #ifndef OLD_MADWIFI
-        set_scanlist (dev, wif);
+      set_scanlist (dev, wif);
 #endif
 
       if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
@@ -1401,7 +1409,7 @@ break;
       else
 	{
 #ifdef OLD_MADWIFI
-        set_scanlist (dev, wif);
+	  set_scanlist (dev, wif);
 #endif
 	}
 
