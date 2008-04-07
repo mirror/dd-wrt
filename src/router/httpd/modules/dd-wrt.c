@@ -4759,7 +4759,6 @@ ej_show_wireless_single (webs_t wp, char *prefix)
       showOption (wp, "wl_basic.outband", wl_outdoor);
     }
 #endif
-  showOption (wp, "wl_basic.diversity", wl_diversity);
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" >\n",
 	     wl_width);
@@ -4777,46 +4776,40 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
 
-  websWrite (wp,
-	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label12)</script></div><select name=\"%s\" >\n",
-	     wl_txantenna);
+#if defined(HAVE_NS2) || defined(HAVE_NS5)
+
+  websWrite (wp,"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label24)</script></div><select name=\"%s\" >\n",wl_txantenna);
   websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-  websWrite (wp,
-	     "document.write(\"<option value=\\\"0\\\" %s >\" + wl_basic.diversity + \"</option>\");\n",
-	     nvram_match (wl_txantenna,
-			  "0") ? "selected=\\\"selected\\\"" : "");
-  websWrite (wp,
-	     "document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.primary + \"</option>\");\n",
-	     nvram_match (wl_txantenna,
-			  "1") ? "selected=\\\"selected\\\"" : "");
-  websWrite (wp,
-	     "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.secondary + \"</option>\");\n",
-	     nvram_match (wl_txantenna,
-			  "2") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,"document.write(\"<option value=\\\"0\\\" %s >\" + wl_basic.vertical + \"</option>\");\n",nvram_match (wl_txantenna,"0") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,"document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.horizontal + \"</option>\");\n",nvram_match (wl_txantenna,"1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,"document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.external + \"</option>\");\n",nvram_match (wl_txantenna,"2") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp, "//]]>\n</script>\n");
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
 
-  websWrite (wp,
-	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label13)</script></div><select name=\"%s\" >\n",
-	     wl_rxantenna);
+
+
+
+#else
+  showOption (wp, "wl_basic.diversity", wl_diversity);
+  websWrite (wp,"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label12)</script></div><select name=\"%s\" >\n",wl_txantenna);
   websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-  websWrite (wp,
-	     "document.write(\"<option value=\\\"0\\\" %s >\" + wl_basic.diversity + \"</option>\");\n",
-	     nvram_match (wl_rxantenna,
-			  "0") ? "selected=\\\"selected\\\"" : "");
-  websWrite (wp,
-	     "document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.primary + \"</option>\");\n",
-	     nvram_match (wl_rxantenna,
-			  "1") ? "selected=\\\"selected\\\"" : "");
-  websWrite (wp,
-	     "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.secondary + \"</option>\");\n",
-	     nvram_match (wl_rxantenna,
-			  "2") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,"document.write(\"<option value=\\\"0\\\" %s >\" + wl_basic.diversity + \"</option>\");\n",nvram_match (wl_txantenna,"0") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,"document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.primary + \"</option>\");\n",nvram_match (wl_txantenna,"1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,"document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.secondary + \"</option>\");\n",nvram_match (wl_txantenna,"2") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp, "//]]>\n</script>\n");
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
 
+  websWrite (wp,"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label13)</script></div><select name=\"%s\" >\n",wl_rxantenna);
+  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+  websWrite (wp,"document.write(\"<option value=\\\"0\\\" %s >\" + wl_basic.diversity + \"</option>\");\n",nvram_match (wl_rxantenna,"0") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,"document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.primary + \"</option>\");\n",nvram_match (wl_rxantenna,"1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,"document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.secondary + \"</option>\");\n",nvram_match (wl_rxantenna,"2") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp, "//]]>\n</script>\n");
+  websWrite (wp, "</select>\n");
+  websWrite (wp, "</div>\n");
+#endif
 #endif
 #ifdef HAVE_MADWIFI
   sprintf (wl_isolate, "%s_ap_isolate", prefix);
