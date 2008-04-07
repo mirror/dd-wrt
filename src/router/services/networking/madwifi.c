@@ -1328,6 +1328,30 @@ configure_single (int count)
     }
   else
     setsysctrl (wif, "dynack_count", 20);
+#if defined(HAVE_NS2) || defined(HAVE_NS5)
+  int tx = atoi (default_get (txantenna, "0"));
+
+  setsysctrl (wif, "diversity", 0);
+switch(tx)
+{
+case 0:
+  setsysctrl (wif, "rxantenna", 2);
+  setsysctrl (wif, "txantenna", 2);
+  eval("gpio","enable","1");
+break;
+case 1:
+  setsysctrl (wif, "rxantenna", 1);
+  setsysctrl (wif, "txantenna", 1);
+  eval("gpio","enable","1");
+break;
+case 2:
+  setsysctrl (wif, "rxantenna", 1);
+  setsysctrl (wif, "txantenna", 1);
+  eval("gpio","disable","1");
+break;
+}
+#else
+
   int rx = atoi (default_get (rxantenna, "1"));
   int tx = atoi (default_get (txantenna, "1"));
   int diva = atoi (default_get (diversity, "0"));
@@ -1335,7 +1359,7 @@ configure_single (int count)
   setsysctrl (wif, "diversity", diva);
   setsysctrl (wif, "rxantenna", rx);
   setsysctrl (wif, "txantenna", tx);
-
+#endif
 //setup vif interfaces first
 
   vifs = nvram_safe_get (wifivifs);
