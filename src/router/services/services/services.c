@@ -119,6 +119,9 @@ void
 start_vpn_modules (void)
 {
 #if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X86) ||defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5)
+
+
+
   if ((nvram_match ("pptp_pass", "1") || nvram_match ("l2tp_pass", "1")
        || nvram_match ("ipsec_pass", "1")))
     {
@@ -129,7 +132,7 @@ start_vpn_modules (void)
       syslog (LOG_INFO,
 	      "vpn modules : nf_nat_proto_gre successfully loaded\n");
     }
-
+  sleep(1);
   if (nvram_match ("pptp_pass", "1"))
     {
       eval ("/sbin/insmod", "nf_conntrack_pptp");
