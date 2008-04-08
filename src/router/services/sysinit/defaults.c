@@ -163,6 +163,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"sv_localdns", "0.0.0.0", 0},	/* Local DNS */
 #ifdef HAVE_SKYTRON
   {"lan_stp", "0", 0},		/* LAN spanning tree protocol */
+#elif HAVE_MAKSAT
+  {"lan_stp", "0", 0},		/* LAN spanning tree protocol */
 #else
   {"lan_stp", "1", 0},		/* LAN spanning tree protocol */
 #endif
