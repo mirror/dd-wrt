@@ -1369,8 +1369,12 @@ start_lan (void)
 	  br_set_stp_state (lan_ifname, 0);
 	}
       else
-	br_set_stp_state (lan_ifname, 1);
-
+      {
+	if (nvram_match ("lan_stp", "0"))
+	    br_set_stp_state (lan_ifname, 0);
+	else
+	    br_set_stp_state (lan_ifname, 1);
+      }
       foreach (name, lan_ifnames, next)
       {
 	if (nvram_match ("wan_ifname", name))
@@ -3041,8 +3045,10 @@ start_wan_done (char *wan_ifname)
       br_init ();
 #endif
 
-      br_set_stp_state (nvram_safe_get ("lan_ifname"), 1);
-
+  if (nvram_match ("lan_stp", "0"))
+    br_set_stp_state (nvram_safe_get ("lan_ifname"), 0);
+  else
+    br_set_stp_state (nvram_safe_get ("lan_ifname"), 1);
 
     }
   cprintf ("check wan link\n");
