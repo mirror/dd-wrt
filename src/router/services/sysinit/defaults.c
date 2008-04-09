@@ -442,7 +442,7 @@ struct nvram_tuple srouter_defaults[] = {
   /* Wireless parameters */
 
 #ifdef HAVE_MSSID
-  {"wl0_nbw", "40", 0},		/* N-BW */
+  {"wl0_nbw", "20", 0},		/* N-BW */
   {"wl0_nctrlsb", "lower", 0},	/* N-CTRL SB */
   {"wl0_nband", "2", 0},	/* N-BAND */
   {"wl0_nmcsidx", "-1", 0},	/* N-MCS Index - rate */
