@@ -1379,7 +1379,7 @@ enable_dtag_vlan (int enable)
 #ifndef HAVE_MADWIFI
       if (getRouterBrand () == ROUTER_WRT600N)
 	eth = "eth2";
-#else
+#endif
       if (donothing)
 	return eth;
       if (enable)
