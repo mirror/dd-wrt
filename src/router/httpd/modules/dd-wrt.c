@@ -6065,7 +6065,7 @@ rssi2dbm (u_int rssi)
 
 int
 ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
-		       char *ifname, int cnt, int turbo)
+		       char *ifname, int cnt, int turbo,int macmask)
 {
 //  unsigned char buf[24 * 1024];
 
@@ -6123,7 +6123,7 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
       cnt++;
       char mac[32];
       strcpy (mac, ieee80211_ntoa (si->isi_macaddr));
-      if (nvram_match ("maskmac", "1"))
+      if (nvram_match ("maskmac", "1") && macmask)
 	{
 	  mac[0] = 'x';
 	  mac[1] = 'x';
@@ -6172,6 +6172,16 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
   int cnt = 0;
   char turbo[32];
   int t;
+  int macmask;
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%d", &macmask);
+#else
+  if (ejArgs (argc, argv, "%d", &macmask) < 1)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+#endif
   for (i = 0; i < c; i++)
     {
       sprintf (devs, "ath%d", i);
@@ -6180,7 +6190,7 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 	t = 2;
       else
 	t = 1;
-      cnt = ej_active_wireless_if (wp, argc, argv, devs, cnt, t);
+      cnt = ej_active_wireless_if (wp, argc, argv, devs, cnt, t,macmask);
       char vif[32];
       sprintf (vif, "%s_vifs", devs);
       char var[80], *next;
@@ -6188,7 +6198,7 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
       if (vifs != NULL)
 	foreach (var, vifs, next)
 	{
-	  cnt = ej_active_wireless_if (wp, argc, argv, var, cnt, t);
+	  cnt = ej_active_wireless_if (wp, argc, argv, var, cnt, t,macmask);
 	}
     }
 
@@ -6219,7 +6229,7 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 	    continue;
 	  if (nvram_match (wdsvarname, "0"))
 	    continue;
-	  cnt = ej_active_wireless_if (wp, argc, argv, dev, cnt, t);
+	  cnt = ej_active_wireless_if (wp, argc, argv, dev, cnt, t,macmask);
 	}
     }
 }
