@@ -1,4 +1,4 @@
-<% do_pagehead("anchorfree.title"); %>
+<% do_pagehead("anchorfree.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
 

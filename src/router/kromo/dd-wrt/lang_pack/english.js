@@ -408,7 +408,7 @@ bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="PPTP";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Milkfish SIP Router";
-bmenu.servicesAnchorFree="Earn Hotspot Revenue";
+bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
@@ -713,7 +713,8 @@ hotspot.wifidog_authsrvpath="AuthServer Path";
 
 var anchorfree = new Object();
 anchorfree.anchorfree="AnchorFree";
-anchorfree.title="Earn Hotspot Revenue";
+anchorfree.titl="My Ad Network";
+anchorfree.h2="AnchorFree Ad Network";
 anchorfree.anchorfree_revenue="Earn revenue by creating ad-supported AnchorFree Hotspot";
 anchorfree.email="Email to receive revenue reports";
 anchorfree.ssid="Use different SSID";
