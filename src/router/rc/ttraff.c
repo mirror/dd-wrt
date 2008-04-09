@@ -94,9 +94,9 @@ ttraff_main (void)
   unsigned long in_dev_last = 0;
   unsigned long out_dev_last = 0;
   int gotbase = 0;
-  unsigned long gigcounti, gigcounto;
-  int gigi = 0;
-  int gigo = 0;
+  unsigned long megcounti, megcounto;
+  unsigned long megi = 0;
+  unsigned long mego = 0;
   int needcommit = 0;
   int commited = 0;
   int day, month, year;
@@ -147,24 +147,23 @@ ttraff_main (void)
 	 gotbase = 1;
    }	    
     
-   if (in_dev_last > in_dev)  //4GB limit was reached
+   if (in_dev_last > in_dev)  //4GB limit was reached or couter reseted
    {
-	 gigi = 4;
-	 in_diff = (4294967295 - in_dev_last + in_dev) >> 20;
-	 in_dev_last = in_dev;  //we loose < 1 MB here, but we don't care	 
+	 megi = (in_dev_last >> 20) + (in_dev >> 20);  //to avarage loss and gain here to 0 over long time
+	 in_diff = ((megi << 20) - in_dev_last + in_dev) >> 20;
+	 in_dev_last = in_dev; 
    }
    else
    {
 	 in_diff = (in_dev - in_dev_last) >> 20;  //MB
 	 in_dev_last += (in_diff << 20);
    }	   
-
    
-   if (out_dev_last > out_dev)  //4GB limit was reached
+   if (out_dev_last > out_dev)  //4GB limit was reached or counter reseted
    {
-	 gigo = 4;
-	 out_diff = (4294967295 - out_dev_last + out_dev) >> 20;
-	 out_dev_last = out_dev;  //we loose < 1 MB here, but we don't care
+	 mego = (out_dev_last >> 20) + (out_dev >> 20);  //to avarage loss and gain here to 0 over long time
+	 out_diff = ((mego << 20) - out_dev_last + out_dev) >> 20;
+	 out_dev_last = out_dev;
    }
    else
    {
@@ -180,18 +179,18 @@ ttraff_main (void)
     write_to_nvram (day, month, year, in_diff, out_diff);
    }
 
-   if (gigi || gigo)  // leave trace in /tmp/.gigc
+   if (megi || mego)  // leave trace in /tmp/.megc
    {
-	 gigcounti = 0;
-	 gigcounto = 0;
-	 if ((in = fopen ("/tmp/.gigc", "r")) != NULL)
+	 megcounti = 0;
+	 megcounto = 0;
+	 if ((in = fopen ("/tmp/.megc", "r")) != NULL)
 	 {
 	  fgets (line, sizeof (line), in);
-      sscanf (line, "%lu:%lu", &gigcounti, &gigcounto);
+      sscanf (line, "%lu:%lu", &megcounti, &megcounto);
       fclose (in);
      }
-     in = fopen ("/tmp/.gigc", "w"); 
-	 sprintf (line, "%lu:%lu", gigcounti + gigi, gigcounto + gigo);	    
+     in = fopen ("/tmp/.megc", "w"); 
+	 sprintf (line, "%lu:%lu", megcounti + megi, megcounto + mego);	    
 	 fputs (line, in);
 	 fclose (in);
 	 gigi = 0;
