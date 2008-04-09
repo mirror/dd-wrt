@@ -132,7 +132,6 @@ start_vpn_modules (void)
       syslog (LOG_INFO,
 	      "vpn modules : nf_nat_proto_gre successfully loaded\n");
     }
-  sleep(1);
   if (nvram_match ("pptp_pass", "1"))
     {
       eval ("/sbin/insmod", "nf_conntrack_pptp");

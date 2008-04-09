@@ -1888,7 +1888,7 @@ filter_output (void)
 }
 
 
-void
+static void
 filter_forward (void)
 {
 
@@ -2063,7 +2063,7 @@ filter_forward (void)
 		   wanface, ISAKMP_PORT, log_drop);
 
     }
-  start_vpn_modules ();
+  start_vpn_modules();
 //      load_vpn_modules ();
   if (nvram_invmatch ("filter", "off"))
     {
@@ -2669,8 +2669,6 @@ start_firewall (void)
   strncpy (lanface, nvram_safe_get ("lan_ifname"), IFNAMSIZ);
   strncpy (wanface, get_wan_face (), IFNAMSIZ);
 
-  stop_vpn_modules ();
-  start_vpn_modules ();
 
   if (nvram_match ("wan_proto", "pptp"))
     strncpy (wanaddr, nvram_safe_get ("pptp_get_ip"), sizeof (wanaddr));
