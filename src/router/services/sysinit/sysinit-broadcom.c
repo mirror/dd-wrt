@@ -1361,7 +1361,11 @@ enable_dtag_vlan (int enable)
     }
   if (nvram_match ("vlan2ports", "0 8") || nvram_match ("vlan2ports", "0 8*") || nvram_match ("vlan2ports", "0 8t") || nvram_match ("vlan1ports", "4 8"))	// special condition for Broadcom Gigabit Phy routers 
     {
+#ifdef HAVE_MADWIFI
+      char *eth = "eth0";
+#else
       char *eth = "eth1";
+#endif
       vlan7ports = "0t 8";
       int vlanswap=0;
       if (nvram_match("vlan1ports","4 8"))
@@ -1372,8 +1376,10 @@ enable_dtag_vlan (int enable)
       char *save_ports2 = nvram_safe_get ("vlan2ports");
       if (vlanswap)
     	    save_ports2 = nvram_safe_get ("vlan1ports");
+#ifndef HAVE_MADWIFI
       if (getRouterBrand () == ROUTER_WRT600N)
 	eth = "eth2";
+#else
       if (donothing)
 	return eth;
       if (enable)
@@ -1408,6 +1414,15 @@ enable_dtag_vlan (int enable)
     {
       eth = "eth1";
       fclose (in);
+    }else
+    {
+     FILE *in = fopen ("/proc/switch/eth2/reset", "rb");	// this condition fails almost. just one router (DLINK DIR-330) requires it
+     if (in)
+	{
+        eth = "eth2";
+        fclose (in);
+	}else
+	    return "eth0";
     }
 
   if (!donothing)
