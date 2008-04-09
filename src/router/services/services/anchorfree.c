@@ -113,8 +113,7 @@ deviceID (char *output)
 //  fprintf (stderr, "generate hash\n");
   doHash (&MD, "/dev/mtdblock/0");
   doHash (&MD, "/dev/mtdblock0");
-  doHash (&MD,
-	  "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom");
+  doHash (&MD, "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom");
   doHash (&MD, "/dev/discs/disc0/part4");
   MD5Final ((unsigned char *) key, &MD);
   int i;
@@ -407,14 +406,24 @@ start_anchorfreednat (void)
 	sprintf (source, "%s/%d", nvram_safe_get (IFPREFIX "0.1_ipaddr"),
 		 getmask (nvram_safe_get (IFPREFIX "0.1_netmask")));
 
+//      eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p",
+//	    "tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DNAT", "--to",
+//	    nvram_safe_get ("lan_ipaddr"));
+
       eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p",
-	    "tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DNAT", "--to",
-	    nvram_safe_get ("lan_ipaddr"));
+	    "tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DROP");
+
+
       eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p",
 	    "tcp", "--dport", "80", "-j", "DNAT", "--to", dest);
+
+//      eval ("iptables", "-t", "nat", "-A", "PREROUTING", "-s", source, "-p",
+//	    "tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DNAT", "--to",
+//	    nvram_safe_get ("lan_ipaddr"));
+
       eval ("iptables", "-t", "nat", "-A", "PREROUTING", "-s", source, "-p",
-	    "tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DNAT", "--to",
-	    nvram_safe_get ("lan_ipaddr"));
+	    "tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DROP");
+
       eval ("iptables", "-t", "nat", "-A", "PREROUTING", "-s", source, "-p",
 	    "tcp", "--dport", "80", "-j", "DNAT", "--to", dest);
     }
@@ -454,9 +463,14 @@ stop_anchorfree (void)
 
       eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p",
 	    "tcp", "--dport", "80", "-j", "DNAT", "--to", dest);
+
+//      eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p",
+//	    "tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DNAT", "--to",
+//	    nvram_safe_get ("lan_ipaddr"));
+
       eval ("iptables", "-t", "nat", "-D", "PREROUTING", "-s", source, "-p",
-	    "tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DNAT", "--to",
-	    nvram_safe_get ("lan_ipaddr"));
+	    "tcp", "-d", nvram_safe_get ("lan_ipaddr"), "-j", "DROP");
+
       eval ("rm", "-f", "/tmp/.anchorfree");
       if (nvram_match ("af_enable", "0"))
 	stop_anchorfree_unregister ();
