@@ -5,7 +5,7 @@
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();"><% tran("sbutton.clos"); %></a></div>
 		</div>
 		<div id="content">
-			<h2><%% tran("wds.h2"); %%></h2>
+			<h2><% tran("wds.h2"); %></h2>
 			<dl>
 				<dd>WDS (Wireless Distribution System) is a Wireless Access Point mode that enables wireless bridging in which WDS APs communicate only with each other only (without allowing for wireless clients or stations to access them), and/or wireless repeating in which APs communicate both with each other and with wireless stations (at the expense of half the throughput). This firmware currently supports two types of WDS, LAN and Point to Point.</dd>
 				
