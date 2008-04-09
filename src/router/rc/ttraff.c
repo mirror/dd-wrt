@@ -150,8 +150,8 @@ ttraff_main (void)
    if (in_dev_last > in_dev)  //4GB limit was reached or couter reseted
    {
 	 megi = (in_dev_last >> 20) + (in_dev >> 20);  //to avarage loss and gain here to 0 over long time
-	 in_diff = ((megi << 20) - in_dev_last + in_dev) >> 20;
-	 in_dev_last = in_dev; 
+	 in_diff = (in_dev >> 20) * 2;  //to avarage loss and gain here to 0 over long time
+	 in_dev_last = in_dev;
    }
    else
    {
@@ -162,7 +162,7 @@ ttraff_main (void)
    if (out_dev_last > out_dev)  //4GB limit was reached or counter reseted
    {
 	 mego = (out_dev_last >> 20) + (out_dev >> 20);  //to avarage loss and gain here to 0 over long time
-	 out_diff = ((mego << 20) - out_dev_last + out_dev) >> 20;
+	 out_diff = (out_dev >> 20) * 2;  //to avarage loss and gain here to 0 over long time
 	 out_dev_last = out_dev;
    }
    else
