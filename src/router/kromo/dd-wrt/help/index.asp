@@ -35,6 +35,7 @@
 						<li><a href="HPPTP.asp"><% tran("bmenu.servicesPptp"); %></a></li>
 						<li><a href="HHotspot.asp"><% tran("bmenu.servicesHotspot"); %></a></li>
 						<li><a href="HMilkfish.asp"><% tran("bmenu.servicesMilkfish"); %></a></li>
+						<li><a href="HAnchorFree.asp"><% tran("bmenu.servicesAnchorFree"); %></a></li>
 					</ul>
 				</dd>
 				<dt><% tran("bmenu.security"); %></dt>
