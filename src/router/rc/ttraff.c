@@ -193,8 +193,8 @@ ttraff_main (void)
 	 sprintf (line, "%lu:%lu", megcounti + megi, megcounto + mego);	    
 	 fputs (line, in);
 	 fclose (in);
-	 gigi = 0;
-	 gigo = 0;
+	 megi = 0;
+	 mego = 0;
    }
       
    if (currtime->tm_hour == 23 && currtime->tm_min == 59 && commited == 0)
