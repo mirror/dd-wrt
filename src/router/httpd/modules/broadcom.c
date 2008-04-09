@@ -3923,7 +3923,7 @@ ej_get_totaltraff (webs_t wp, int argc, char_t ** argv)
 char *type;
 static char wanface[32];
 char line[256];
-unsigned long rcvd, sent, gigcounti, gigcounto;
+unsigned long rcvd, sent, megcounti, megcounto;
 FILE *in;
 
 #ifdef FASTWEB
@@ -3968,12 +3968,12 @@ FILE *in;
   sent >>= 20;
   
 
-  if ((in = fopen ("/tmp/.gigc", "r")) != NULL)
+  if ((in = fopen ("/tmp/.megc", "r")) != NULL)
   {
 	fgets (line, sizeof (line), in);  
-    sscanf (line, "%lu:%lu", &gigcounti, &gigcounto);
-    rcvd += (gigcounti << 10);
-    sent += (gigcounto << 10);    
+    sscanf (line, "%lu:%lu", &megcounti, &megcounto);
+    rcvd += megcounti;
+    sent += megcounto;    
     fclose (in);
   }
   
