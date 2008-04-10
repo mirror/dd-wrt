@@ -65,15 +65,6 @@ start_overclock (void)		// hidden feature. must be called with "startservice ove
       eval ("mtd", "-f", "write", "/tmp/boot", "RedBoot");
       fprintf (stderr, "board is now clocked at 220 mhz, please reboot\n");
     }
-  else if (vipermul == 0x9)
-    {
-      fprintf (stderr, "viper (ar2313) found\n");
-      fseek (in, 0xcb, SEEK_SET);
-      putc (0xb, out);
-      fclose (in);
-      eval ("mtd", "-f", "write", "/tmp/boot", "RedBoot");
-      fprintf (stderr, "board is now clocked at 200 mhz, please reboot\n");
-    }
   else if (div == 0x01 && mul == 0x28)
     {
       fprintf (stderr, "board already clocked to 220mhz\n");
@@ -83,6 +74,15 @@ start_overclock (void)		// hidden feature. must be called with "startservice ove
     {
       fprintf (stderr, "board already clocked to 200mhz\n");
       fclose (in);
+    }
+  else if (vipermul == 0x9)
+    {
+      fprintf (stderr, "viper (ar2313) found\n");
+      fseek (in, 0xcb, SEEK_SET);
+      putc (0xb, out);
+      fclose (in);
+      eval ("mtd", "-f", "write", "/tmp/boot", "RedBoot");
+      fprintf (stderr, "board is now clocked at 200 mhz, please reboot\n");
     }
   else
     {
