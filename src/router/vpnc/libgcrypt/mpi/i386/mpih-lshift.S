@@ -40,8 +40,8 @@
 
 .text
 	ALIGN (3)
-	.globl C_SYMBOL_NAME(_gcry_mpih_lshift)
-C_SYMBOL_NAME(_gcry_mpih_lshift:)
+	.globl _gcry_mpih_lshift
+_gcry_mpih_lshift:
 	pushl	%edi
 	pushl	%esi
 	pushl	%ebx

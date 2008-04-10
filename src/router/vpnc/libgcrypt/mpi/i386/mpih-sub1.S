@@ -43,8 +43,8 @@
 
 .text
 	ALIGN (3)
-	.globl C_SYMBOL_NAME(_gcry_mpih_sub_n)
-C_SYMBOL_NAME(_gcry_mpih_sub_n:)
+	.globl _gcry_mpih_sub_n
+_gcry_mpih_sub_n:
 	pushl %edi
 	pushl %esi
 
