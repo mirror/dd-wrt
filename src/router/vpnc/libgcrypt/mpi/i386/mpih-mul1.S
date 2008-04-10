@@ -46,8 +46,8 @@
 
 	TEXT
 	ALIGN (3)
-	GLOBL	C_SYMBOL_NAME(_gcry_mpih_mul_1)
-C_SYMBOL_NAME(_gcry_mpih_mul_1:)
+	GLOBL	_gcry_mpih_mul_1
+_gcry_mpih_mul_1:
 
 	INSN1(push,l	,R(edi))
 	INSN1(push,l	,R(esi))
