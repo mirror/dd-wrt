@@ -41,7 +41,7 @@ function to_submit(F) {
 					<legend>SuperChannel feature activation</legend>
 					SuperChannel allows you to use special frequencies from 2.3 Ghz - 2.7 Ghz (802.11g capable devices only) and 4.9 Ghz - 6.1 Ghz (802.11a capable devices only) This feature is not enabled yet<br>
 					<h2>Disclaimer</h2>
-					Consider that its not allowed to use these frequencies in the most countries,so DD-WRT / NewMedia-NET GmbH does not take any liability about the usage of this feature.<br>		    			    
+					Consider that in many Countries, it is not allowed to use these frequencies, DD-WRT / NewMedia-NET GmbH shall not be liable in the usage of this feature.<br>		    			    
 						<div class="setting">
 						    <div class="label">System Key</div>
 						    <% getregcode(); %>
