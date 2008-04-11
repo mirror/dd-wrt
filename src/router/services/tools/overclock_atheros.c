@@ -43,6 +43,7 @@ start_overclock (void)		// hidden feature. must be called with "startservice ove
   FILE *out = fopen ("/tmp/boot", "wb");
   fseek (in, 0, SEEK_END);
   len = ftell (in);
+  fseek (in, 0, SEEK_SET);
   for (i = 0; i < len; i++)
     putc (getc (in), out);
   fclose (in);
@@ -54,13 +55,14 @@ start_overclock (void)		// hidden feature. must be called with "startservice ove
   int div = getc (in);
   fseek (in, 0x1ef, SEEK_SET);
   int mul = getc (in);
+ // fprintf(stderr,"vipermul %X, div %X, mul %X\n",vipermul,div,mul);
   if (div == 0x3 && mul == 0x5c)
     {
       fprintf (stderr, "ap51/ap61 (ar2315 or ar2317) found\n");
       fseek (in, 0x1e3, SEEK_SET);
-      putc (0x1, out);
+      putc (0x1, in);
       fseek (in, 0x1ef, SEEK_SET);
-      putc (0x28, out);
+      putc (0x28, in);
       fclose (in);
       eval ("mtd", "-f", "write", "/tmp/boot", "RedBoot");
       fprintf (stderr, "board is now clocked at 200 mhz, please reboot\n");
@@ -79,7 +81,7 @@ start_overclock (void)		// hidden feature. must be called with "startservice ove
     {
       fprintf (stderr, "viper (ar2313) found\n");
       fseek (in, 0xcb, SEEK_SET);
-      putc (0xb, out);
+      putc (0xb, in);
       fclose (in);
       eval ("mtd", "-f", "write", "/tmp/boot", "RedBoot");
       fprintf (stderr, "board is now clocked at 220 mhz, please reboot\n");
