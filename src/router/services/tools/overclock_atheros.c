@@ -63,16 +63,16 @@ start_overclock (void)		// hidden feature. must be called with "startservice ove
       putc (0x28, out);
       fclose (in);
       eval ("mtd", "-f", "write", "/tmp/boot", "RedBoot");
-      fprintf (stderr, "board is now clocked at 220 mhz, please reboot\n");
+      fprintf (stderr, "board is now clocked at 200 mhz, please reboot\n");
     }
   else if (div == 0x01 && mul == 0x28)
     {
-      fprintf (stderr, "board already clocked to 220mhz\n");
+      fprintf (stderr, "board already clocked to 200mhz\n");
       fclose (in);
     }
   else if (vipermul == 0xb)
     {
-      fprintf (stderr, "board already clocked to 200mhz\n");
+      fprintf (stderr, "board already clocked to 220mhz\n");
       fclose (in);
     }
   else if (vipermul == 0x9)
@@ -82,7 +82,7 @@ start_overclock (void)		// hidden feature. must be called with "startservice ove
       putc (0xb, out);
       fclose (in);
       eval ("mtd", "-f", "write", "/tmp/boot", "RedBoot");
-      fprintf (stderr, "board is now clocked at 200 mhz, please reboot\n");
+      fprintf (stderr, "board is now clocked at 220 mhz, please reboot\n");
     }
   else
     {
