@@ -412,3 +412,4 @@ void br_fdb_update(struct net_bridge *br, struct net_bridge_port *source,
 		spin_unlock(&br->hash_lock);
 	}
 }
+EXPORT_SYMBOL(br_fdb_get);
