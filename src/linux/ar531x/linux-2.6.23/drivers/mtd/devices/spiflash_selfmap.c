@@ -739,6 +739,7 @@ static int spiflash_probe(struct platform_device *pdev)
 		len +=  (mtd->erasesize - 1);
 		len &= ~(mtd->erasesize - 1);
 		dir_parts[2].size = len - dir_parts[2].offset;
+		dir_parts[3].offset = dir_parts[2].offset + dir_parts[2].size; 
 
 		
 		
@@ -749,7 +750,8 @@ static int spiflash_probe(struct platform_device *pdev)
 		dir_parts[5].size = mtd->erasesize;
 		dir_parts[4].offset = dir_parts[4].offset-mtd->erasesize; //nvram
 		dir_parts[4].size = mtd->erasesize;
-		rootsize = dir_parts[3].offset-offset; //size of rootfs aligned to nvram offset
+		dir_parts[3].size = dir_parts[4].offset - dir_parts[3].offset;
+		rootsize = dir_parts[4].offset-offset; //size of rootfs aligned to nvram offset
 		//now scan for linux offset
 		p=(unsigned char*)(0xa8000000+dir_parts[5].offset);
 		fis = (struct fis_image_desc*)p;

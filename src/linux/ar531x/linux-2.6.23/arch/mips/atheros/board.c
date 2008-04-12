@@ -56,7 +56,8 @@ static u8 *find_board_config(char *flash_limit)
 
 	if (!found) {
 		addr = NULL;
-		if (strstr((char*)(0xbfc00010),"CA804.SOB")) {
+		if (strstr((char*)(0xbfc00010),"CA804.SOB") || strstr((char*)(0xbfc00010),"OVISCA401") || strstr((char*)(0xbfc00010),"OVISCE401"))
+		 {
 		
  		printk("WARNING: No board configuration data found, creating defaults in memory!\n");
  		

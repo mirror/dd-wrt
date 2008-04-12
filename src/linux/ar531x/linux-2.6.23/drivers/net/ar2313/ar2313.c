@@ -194,7 +194,12 @@ static int marvell_find_vlan(struct ar2313_private *sp,
 
 	/* FIXME: ugly, ugly hack! */
 	switch (buf[1]) {
+#ifdef CONFIG_MTD_AR531X
+	case 0:					/* Packet came from the WAN port */
+#else
 	case 4:					/* Packet came from the WAN port */
+#endif
+
 		ret = 1;
 		break;
 	default:					/* Packet probably came from LAN */
@@ -257,7 +262,12 @@ tag_append:
 
 	*((u32 *) buf) = vid ? cpu_to_be32(
 		(0x80 << 24) |
+#ifdef CONFIG_MTD_AR531X
+		(0x1 << 16)
+#else
 		(0x10 << 16)
+#endif
+
 	) : 0; 
 
 done:
@@ -496,11 +506,19 @@ ar2313_probe (struct platform_device *pdev)
 		armiiwrite(dev, 0x1d, 0x4, 0x4103);	/* port 5 - connected to CPU */
 
 		/* put ports into vlans */
+#ifdef CONFIG_MTD_AR531X
+		armiiwrite(dev, 0x18, 0x6, 0x1020);	/* port 0 */
+		armiiwrite(dev, 0x19, 0x6, 0x3c);	/* port 1 */
+		armiiwrite(dev, 0x1a, 0x6, 0x3a);	/* port 2 */
+		armiiwrite(dev, 0x1b, 0x6, 0x36);	/* port 3 */
+		armiiwrite(dev, 0x1c, 0x6, 0x2e);	/* port 4 - WAN */
+#else
 		armiiwrite(dev, 0x18, 0x6, 0x2e);	/* port 0 */
 		armiiwrite(dev, 0x19, 0x6, 0x2d);	/* port 1 */
 		armiiwrite(dev, 0x1a, 0x6, 0x2b);	/* port 2 */
 		armiiwrite(dev, 0x1b, 0x6, 0x27);	/* port 3 */
 		armiiwrite(dev, 0x1c, 0x6, 0x1020);	/* port 4 - WAN */
+#endif
 		armiiwrite(dev, 0x1d, 0x6, 0x0f);	/* port 5 - connected to CPU */
 
 		/* hmz */
