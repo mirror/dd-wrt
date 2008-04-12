@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux kernel version: 2.6.23.12
-# Tue Jan 29 17:44:55 2008
+# Linux kernel version: 2.6.23.17
+# Sat Mar 29 20:07:38 2008
 #
 CONFIG_MIPS=y
 
@@ -596,12 +596,14 @@ CONFIG_MTD_PHYSMAP_START=0x0
 CONFIG_MTD_PHYSMAP_LEN=0x0
 CONFIG_MTD_PHYSMAP_BANKWIDTH=0
 # CONFIG_MTD_PLATRAM is not set
+# CONFIG_MTD_AR531X is not set
 
 #
 # Self-contained MTD device drivers
 #
 CONFIG_MTD_SPIFLASH=y
 # CONFIG_MTD_SPIFLASH_SELFMAP is not set
+# CONFIG_MTD_SPIFLASH_PP is not set
 # CONFIG_MTD_SLRAM is not set
 # CONFIG_MTD_PHRAM is not set
 # CONFIG_MTD_MTDRAM is not set
