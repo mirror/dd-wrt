@@ -120,7 +120,7 @@ start_overclock
       fseek (in, 0xe64b, SEEK_SET);				
       putc (0xb, in);
       fclose (in);
-      eval ("mtd", "-f", "write", "/tmp/boot", "RedBoot");
+      eval ("mtd", "-f", "write", "/tmp/boot", "ar531x");
       fprintf (stderr, "board is now clocked at 220 mhz, please reboot\n");
     }
   else
