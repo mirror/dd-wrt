@@ -172,16 +172,6 @@ void start_overclock (void)	// hidden feature. must be called with "startservice
       eval ("mtd", "-f", "write", "/tmp/boot", "RedBoot");
       fprintf (stderr, "board is now clocked at 220 mhz, please reboot\n");
     }
-  else if (zmul == 0xb)
-    {
-      fprintf (stderr, "board already clocked to 220mhz\n");
-      fclose (in);
-    }
-  else if (zmul == 0xc)
-    {
-      fprintf (stderr, "board already clocked to 240mhz\n");
-      fclose (in);
-    }
   else if (zmul == 0x9 || zmul == 0xa || zmul == 0xb || zmul == 0xc)	// special handling for zLoader based boards
     {
       fprintf (stderr, "viper (ar2313) found (zLoader)\n");
