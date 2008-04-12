@@ -35,7 +35,8 @@ to prevent bricks and other troubles you should use this tool only manually. it 
 */
 
 void
-start_overclock (void)		// hidden feature. must be called with "startservice overlock". then reboot the unit
+start_overclock
+ (void)		// hidden feature. must be called with "startservice overlock". then reboot the unit
 {
   long len;
   long i;
@@ -49,7 +50,9 @@ start_overclock (void)		// hidden feature. must be called with "startservice ove
   fclose (in);
   fclose (out);
   in = fopen ("/tmp/boot", "r+b");
-  fseek (in, 0xcb, SEEK_SET);
+  fseek (in, 0xe64b, SEEK_SET);				
+  int zmul = getc(in);
+  fseek (in, 0xcb, SEEK_SET);				
   int vipermul = getc (in);
   fseek (in, 0x1e3, SEEK_SET);
   int div = getc (in);
@@ -62,7 +65,7 @@ start_overclock (void)		// hidden feature. must be called with "startservice ove
       fseek (in, 0x1e3, SEEK_SET);
       putc (0x1, in);
       fseek (in, 0x1ef, SEEK_SET);
-      putc (0x28, in);
+      putc (0x28, in); //0x2c for 220 mhz 0x30 for 240 mhz
       fclose (in);
       eval ("mtd", "-f", "write", "/tmp/boot", "RedBoot");
       fprintf (stderr, "board is now clocked at 200 mhz, please reboot\n");
@@ -72,15 +75,49 @@ start_overclock (void)		// hidden feature. must be called with "startservice ove
       fprintf (stderr, "board already clocked to 200mhz\n");
       fclose (in);
     }
+  else if (div == 0x01 && mul == 0x2c)
+    {
+      fprintf (stderr, "board already clocked to 220mhz\n");
+      fclose (in);
+    }
+  else if (div == 0x01 && mul == 0x30)
+    {
+      fprintf (stderr, "board already clocked to 220mhz\n");
+      fclose (in);
+    }
   else if (vipermul == 0xb)
     {
       fprintf (stderr, "board already clocked to 220mhz\n");
+      fclose (in);
+    }
+  else if (vipermul == 0xc)
+    {
+      fprintf (stderr, "board already clocked to 240mhz\n");
       fclose (in);
     }
   else if (vipermul == 0x9)
     {
       fprintf (stderr, "viper (ar2313) found\n");
       fseek (in, 0xcb, SEEK_SET);
+      putc (0xb, in);
+      fclose (in);
+      eval ("mtd", "-f", "write", "/tmp/boot", "RedBoot");
+      fprintf (stderr, "board is now clocked at 220 mhz, please reboot\n");
+    }
+  else if (zmul == 0xb)
+    {
+      fprintf (stderr, "board already clocked to 220mhz\n");
+      fclose (in);
+    }
+  else if (zmul == 0xc)
+    {
+      fprintf (stderr, "board already clocked to 240mhz\n");
+      fclose (in);
+    }
+  else if (zmul == 0x9)
+    {
+      fprintf (stderr, "viper (ar2313) found (zLoader)\n");
+      fseek (in, 0xe64b, SEEK_SET);				
       putc (0xb, in);
       fclose (in);
       eval ("mtd", "-f", "write", "/tmp/boot", "RedBoot");
