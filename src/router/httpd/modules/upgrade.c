@@ -122,6 +122,9 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
 #elif HAVE_CA8PRO
   if (url)
     return eval ("write", url, "linux");
+#elif HAVE_CA8
+  if (url)
+    return eval ("write", url, "linux");
 #elif HAVE_FONERA2200
   eval ("fischecksum");
   if (url)
