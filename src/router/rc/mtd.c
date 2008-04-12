@@ -390,7 +390,7 @@ fail:
     close (mtd_fd);
   if (fp)
     fclose (fp);
-#ifdef HAVE_CA8PRO
+#ifdef HAVE_CA8
 buf = malloc(65536);
 FILE *in=fopen("/dev/mtdblock/2","rb");
 fread(buf,65536,1,in);
