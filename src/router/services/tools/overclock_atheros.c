@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
  * desc:
- * overclocks 2313 and 2316/17 or compatible wisoc boards with redboot to 220mhz/200mhz
+ * overclocks 2313 and 2316/17 or compatible wisoc boards with redboot or wistron zLoader to 220mhz/200mhz
  * just a dirty hack i found while playing with code 
  */
 #include <unistd.h>
@@ -40,7 +40,11 @@ start_overclock
 {
   long len;
   long i;
+#ifdef HAVE_CA8  
+  FILE *in = fopen ("/dev/mtdblock/2", "rb");  // zloader Board Data access. the board data section contains also the cpu programming code
+#else
   FILE *in = fopen ("/dev/mtdblock/0", "rb");
+#endif
   FILE *out = fopen ("/tmp/boot", "wb");
   fseek (in, 0, SEEK_END);
   len = ftell (in);
@@ -114,13 +118,13 @@ start_overclock
       fprintf (stderr, "board already clocked to 240mhz\n");
       fclose (in);
     }
-  else if (zmul == 0x9)
+  else if (zmul == 0x9) // special handling for zLoader based boards
     {
       fprintf (stderr, "viper (ar2313) found (zLoader)\n");
       fseek (in, 0xe64b, SEEK_SET);				
       putc (0xb, in);
       fclose (in);
-      eval ("mtd", "-f", "write", "/tmp/boot", "ar531x");
+      eval ("mtd", "-f", "write", "/tmp/boot", "bdata");
       fprintf (stderr, "board is now clocked at 220 mhz, please reboot\n");
     }
   else
