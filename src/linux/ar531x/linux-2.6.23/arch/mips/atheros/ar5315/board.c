@@ -123,13 +123,11 @@ static __u8 spiflash_probe(void)
 	} while (reg & SPI_CTL_BUSY);
 
 	spiflash_regwrite32(SPI_FLASH_OPCODE, 0xab);
-	printk(KERN_INFO "spiflash register control %X\n",reg);
 
 	reg = (reg & ~SPI_CTL_TX_RX_CNT_MASK) | 4 |
         	(1 << 4) | SPI_CTL_START;
 	reg = (reg & ~SPI_CTL_CLK_SEL_MASK); 
-	reg = (reg | (1 << 24)); // use slower clock timing since accton mounts crappy spi flash chips
-	printk(KERN_INFO "spiflash register speedup control %X\n",reg);
+	reg = (reg | (1 << 24)); // use slower clock timing (but still faster than original) since accton mounts crappy spi flash chips
 	
 
 	spiflash_regwrite32(SPI_FLASH_CTL, reg);
