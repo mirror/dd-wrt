@@ -20,8 +20,8 @@ static int to_source_supplied, to_dest_supplied;
 #define NAT_D '1'
 #define NAT_S_TARGET '2'
 #define NAT_D_TARGET '2'
+#define NAT_ARP_TARGET '2'
 
-#define ARPNAT_TARGET '1'
 static struct option opts_s[] =
 {
 	{ "to-source"     , required_argument, 0, NAT_S },
@@ -33,7 +33,7 @@ static struct option opts_s[] =
 
 static struct option opts_arpnat[] =
 {
-	{ "arpnat-target"   , required_argument, 0, ARPNAT_TARGET },
+	{ "arpnat-target"   , required_argument, 0, NAT_ARP_TARGET },
 	{ 0 }
 };
 
@@ -122,16 +122,15 @@ static int parse_s(int c, char **argv, int argc,
 	}
 	return 1;
 }
-#define OPT_ARPNAT_TARGET 0x1
+#define OPT_ARPNAT_TARGET 0x2
 static int parse_arpnat(int c, char **argv, int argc,
    const struct ebt_u_entry *entry, unsigned int *flags,
    struct ebt_entry_target **target)
 {
 	struct ebt_nat_info *natinfo = (struct ebt_nat_info *)(*target)->data;
-	struct ether_addr *addr;
 
 	switch (c) {
-	case ARPNAT_TARGET:
+	case NAT_ARP_TARGET:
 		ebt_check_option2(flags, OPT_ARPNAT_TARGET);
 		if (FILL_TARGET(optarg, natinfo->target))
 			ebt_print_error2("Illegal --arpnat-target target");
@@ -193,10 +192,12 @@ static void final_check_arpnat(const struct ebt_u_entry *entry,
 {
 	struct ebt_nat_info *natinfo = (struct ebt_nat_info *)target->data;
 
-	if (BASE_CHAIN && natinfo->target == EBT_RETURN) {
+	if (BASE_CHAIN && natinfo->target == EBT_RETURN)
 		ebt_print_error("--arpnat-target RETURN not allowed on base chain");
-		return;
-	}
+	CLEAR_BASE_CHAIN_BIT;
+	if (((hookmask & ~((1 << NF_BR_PRE_ROUTING) | (1 << NF_BR_POST_ROUTING)))
+	   || strcmp(name, "nat")))
+		ebt_print_error("Wrong chain for arpnat");
 }
 
 static void final_check_d(const struct ebt_u_entry *entry,
