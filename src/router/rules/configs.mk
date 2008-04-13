@@ -148,6 +148,7 @@ obj-$(CONFIG_MEDIASERVER) += mediaserver
 obj-$(CONFIG_QUAGGA) += quagga
 obj-$(CONFIG_VPNC) += vpnc
 obj-$(CONFIG_STUCK) += stuck_beacon
+obj-$(CONFIG_GPSI) += gpsi
 obj-$(CONFIG_BMON) += bmon
 obj-$(CONFIG_HOSTAPD2) += hostapd2
 obj-$(CONFIG_WPA_SUPPLICANT2) += wpa_supplicant2
@@ -158,6 +159,8 @@ obj-$(CONFIG_STRACE) += strace
 obj-$(CONFIG_OPENLLDP) += openlldp
 obj-$(CONFIG_WGETS) += wgets
 obj-$(CONFIG_USB) += usb
+obj-$(CONFIG_ASTERISK) += asterisk
+obj-$(CONFIG_ZAPTEL) += zaptel
 obj-y+=anchorfree
 obj-y+=ttraff
 

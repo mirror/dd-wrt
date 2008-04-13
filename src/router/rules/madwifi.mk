@@ -30,10 +30,13 @@ madwifi-install:
 else
 madwifi:
 	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=xscale-boese-be-elf  
-	make -C madwifi.dev/madwifi.dev/tools CFLAGS="-DBOESE=1 $(COPTS)" TARGET=xscale-boese-be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
+	make -C madwifi.dev/madwifi.dev/tools CFLAGS="-DBOESE=1 $(COPTS)" TARGET=xscale-boese-be-elf INDIR=$(INSTALLDIR)/madwifi/usr/sbin
+	#make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=xscale-be-elf ARCH=arm 
+	#make -C madwifi.dev/madwifi.dev/tools CFLAGS="-DBOESE=1 $(COPTS)" TARGET=xscale-be-elf ARCH=armeb ARCH=arm BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
 
 madwifi-clean:
 	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=xscale-boese-be-elf
+	#make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=xscale-be-elf ARCH=arm
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
 
 madwifi-install:

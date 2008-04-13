@@ -1,4 +1,4 @@
-openvpn-configure:
+openvpn-configure: openssl
 	cd lzo && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections"
 	make -C lzo
 ifeq ($(CONFIG_NEWMEDIA),y)
