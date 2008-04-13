@@ -35,6 +35,64 @@
 to prevent bricks and other troubles you should use this tool only manually. it will not be implemented in the webgui
 */
 
+void fixup(FILE *in, unsigned int src, unsigned int dst)
+{
+fprintf(stderr,"fixup 0x%08X to 0x%08X\n",src,dst);
+int f = ftell(in);
+fseek(in,0,SEEK_END);
+int len = ftell(in);
+fseek(in,0,SEEK_SET);
+int i;
+for (i=0;i<len;i++)
+{
+fseek(in,i,SEEK_SET);
+unsigned int chk;
+fread(&chk,4,1,in);
+if (chk == src)
+    {
+    fprintf(stderr,"fixup found at 0x%08X\n",i);
+    fseek(in,i,SEEK_SET);
+    fwrite(&dst,4,1,in);
+    fseek(in,f,SEEK_SET);
+    return;
+    }
+}
+fprintf(stderr,"warning. no fixup found\n");
+fseek(in,f,SEEK_SET);
+}
+
+void fixclk(FILE *in, int oldclk, int clk)
+{
+//fixup amba clock
+int amba = oldclk / 2 * 1000000;
+unsigned int part1 = amba >> 16;
+unsigned int part2 = amba & 0x0000ffff;
+part1 = part1 | 0x3c020000;
+part2 = part2 | 0x34420000;
+int ambadst = clk / 2 * 1000000;
+unsigned int part1dst = ambadst >> 16;
+unsigned int part2dst = ambadst & 0x0000ffff;
+part1dst = part1dst | 0x3c020000;
+part2dst = part2dst | 0x34420000;
+fixup(in,part1,part1dst);
+fixup(in,part2,part2dst);
+//fixup cpu frequency
+/*
+//not required. code is not compiled into redboot
+amba = oldclk * 1000000;
+part1 = amba >> 16;
+part2 = amba & 0x0000ffff;
+part1 = part1 | 0x3c020000;
+part2 = part2 | 0x34420000;
+ambadst = clk * 1000000;
+part1dst = ambadst >> 16;
+part2dst = ambadst & 0x0000ffff;
+part1dst = part1dst | 0x3c020000;
+part2dst = part2dst | 0x34420000;
+fixup(in,part1,part1dst);
+fixup(in,part2,part2dst);*/
+}
+
 void start_overclock (void)	// hidden feature. must be called with "startservice overlock". then reboot the unit
 {
   long len;
@@ -71,15 +129,49 @@ void start_overclock (void)	// hidden feature. must be called with "startservice
       putc (0x1, in);
       fseek (in, 0x1ef, SEEK_SET);
       if (clk == 200)
+      {
+        if (mul==0x2c)
+	    {
+	    fixclk(in,220,200);
+	    }else
+        if (mul==0x30)
+	    {
+	    fixclk(in,240,200);
+	    }else
+	    fixclk(in,184,200);
 	putc (0x28, in);	//0x2c for 220 mhz 0x30 for 240 mhz
+      }
       else if (clk == 220)
+      {
+        if (mul==0x28)
+	    {
+	    fixclk(in,200,220);
+	    }else
+        if (mul==0x30)
+	    {
+	    fixclk(in,240,220);
+	    }else
+	    fixclk(in,184,220);
+	    
 	putc (0x2c, in);	//0x2c for 220 mhz 0x30 for 240 mhz
+      }
       else if (clk == 240)
+      {
+        if (mul==0x28)
+	    {
+	    fixclk(in,200,240);
+	    }else
+        if (mul==0x2c)
+	    {
+	    fixclk(in,220,240);
+	    }else
+	    fixclk(in,184,240);
 	putc (0x30, in);	//0x2c for 220 mhz 0x30 for 240 mhz
+      }
       else
 	{
+	  fixclk(in,184,200);
 	  nvram_set ("cpuclk", "200");
-          clk = atoi (nvram_default_get ("cpuclk", "180"));
 	  nvram_commit ();
 	  putc (0x28, in);	//0x2c for 220 mhz 0x30 for 240 mhz
 	}
@@ -112,13 +204,48 @@ void start_overclock (void)	// hidden feature. must be called with "startservice
       putc (0x1, in);
       fseek (in, 0x1ef, SEEK_SET);
       if (clk == 200)
+      {
+        if (mul==0x2c)
+	    {
+	    fixclk(in,220,200);
+	    }else
+        if (mul==0x30)
+	    {
+	    fixclk(in,240,200);
+	    }else
+	    fixclk(in,184,200);
 	putc (0x28, in);	//0x2c for 220 mhz 0x30 for 240 mhz
+      }
       else if (clk == 220)
+      {
+        if (mul==0x28)
+	    {
+	    fixclk(in,200,220);
+	    }else
+        if (mul==0x30)
+	    {
+	    fixclk(in,240,220);
+	    }else
+	    fixclk(in,184,220);
+	    
 	putc (0x2c, in);	//0x2c for 220 mhz 0x30 for 240 mhz
+      }
       else if (clk == 240)
+      {
+        if (mul==0x28)
+	    {
+	    fixclk(in,200,240);
+	    }else
+        if (mul==0x2c)
+	    {
+	    fixclk(in,220,240);
+	    }else
+	    fixclk(in,184,240);
 	putc (0x30, in);	//0x2c for 220 mhz 0x30 for 240 mhz
+      }
       else
 	{
+	  fixclk(in,184,200);
 	  nvram_set ("cpuclk", "200");
 	  nvram_commit ();
 	  putc (0x28, in);	//0x2c for 220 mhz 0x30 for 240 mhz
@@ -234,4 +361,9 @@ void start_overclock (void)	// hidden feature. must be called with "startservice
       fclose (in);
     }
       fprintf (stderr, "board is now clocked at %d mhz, please reboot\n",clk);
+}
+
+void main(int arg,char *argv[])
+{
+start_overclock();
 }
