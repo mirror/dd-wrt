@@ -79,13 +79,14 @@ void start_overclock (void)	// hidden feature. must be called with "startservice
       else
 	{
 	  nvram_set ("cpuclk", "200");
+          clk = atoi (nvram_default_get ("cpuclk", "180"));
 	  nvram_commit ();
 	  putc (0x28, in);	//0x2c for 220 mhz 0x30 for 240 mhz
 	}
 
       fclose (in);
       eval ("mtd", "-f", "write", "/tmp/boot", "RedBoot");
-    }
+    }else
   if (div == 0x1 && (mul == 0x28 || mul == 0x2c || mul == 0x30))
     {
       fprintf (stderr, "ap51/ap61 (ar2315 or ar2317) found\n");
@@ -163,6 +164,7 @@ void start_overclock (void)	// hidden feature. must be called with "startservice
       else
 	{
 	  nvram_set ("cpuclk", "220");
+          clk = atoi (nvram_default_get ("cpuclk", "180"));
 	  nvram_commit ();
 	  putc (0xb, in);	//0x2c for 220 mhz 0x30 for 240 mhz
 	}
@@ -206,6 +208,7 @@ void start_overclock (void)	// hidden feature. must be called with "startservice
       else
 	{
 	  nvram_set ("cpuclk", "220");
+          clk = atoi (nvram_default_get ("cpuclk", "180"));
 	  nvram_commit ();
 	  putc (0xb, in);	//0x2c for 220 mhz 0x30 for 240 mhz
 	}
