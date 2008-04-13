@@ -85,7 +85,6 @@ void start_overclock (void)	// hidden feature. must be called with "startservice
 
       fclose (in);
       eval ("mtd", "-f", "write", "/tmp/boot", "RedBoot");
-      fprintf (stderr, "board is now clocked at 200 mhz, please reboot\n");
     }
   if (div == 0x1 && (mul == 0x28 || mul == 0x2c || mul == 0x30))
     {
@@ -125,7 +124,6 @@ void start_overclock (void)	// hidden feature. must be called with "startservice
 	}
       fclose (in);
       eval ("mtd", "-f", "write", "/tmp/boot", "RedBoot");
-      fprintf (stderr, "board is now clocked at 200 mhz, please reboot\n");
     }
   else if (vipermul == 0x9 || vipermul == 0xa || vipermul == 0xb
 	   || vipermul == 0xc)
@@ -170,7 +168,6 @@ void start_overclock (void)	// hidden feature. must be called with "startservice
 	}
       fclose (in);
       eval ("mtd", "-f", "write", "/tmp/boot", "RedBoot");
-      fprintf (stderr, "board is now clocked at 220 mhz, please reboot\n");
     }
   else if (zmul == 0x9 || zmul == 0xa || zmul == 0xb || zmul == 0xc)	// special handling for zLoader based boards
     {
@@ -214,11 +211,11 @@ void start_overclock (void)	// hidden feature. must be called with "startservice
 	}
       fclose (in);
       eval ("mtd", "-f", "write", "/tmp/boot", "bdata");
-      fprintf (stderr, "board is now clocked at 220 mhz, please reboot\n");
     }
   else
     {
       fprintf (stderr, "unknown board or no redboot found\n");
       fclose (in);
     }
+      fprintf (stderr, "board is now clocked at %d mhz, please reboot\n",clk);
 }
