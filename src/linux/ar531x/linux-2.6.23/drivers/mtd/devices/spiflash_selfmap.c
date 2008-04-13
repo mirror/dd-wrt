@@ -738,7 +738,7 @@ static int spiflash_probe(struct platform_device *pdev)
 		len = dir_parts[2].offset + dir_parts[2].size;
 		len +=  (mtd->erasesize - 1);
 		len &= ~(mtd->erasesize - 1);
-		dir_parts[2].size = len - dir_parts[2].offset;
+		dir_parts[2].size = (len&0xffffff) - dir_parts[2].offset;
 		dir_parts[3].offset = dir_parts[2].offset + dir_parts[2].size; 
 
 		
@@ -746,9 +746,9 @@ static int spiflash_probe(struct platform_device *pdev)
 		
 		dir_parts[6].offset = mtd->size-mtd->erasesize; // board config
 		dir_parts[6].size = mtd->erasesize;
-		dir_parts[5].offset = dir_parts[5].offset-mtd->erasesize; //fis config
+		dir_parts[5].offset = dir_parts[6].offset-mtd->erasesize; //fis config
 		dir_parts[5].size = mtd->erasesize;
-		dir_parts[4].offset = dir_parts[4].offset-mtd->erasesize; //nvram
+		dir_parts[4].offset = dir_parts[5].offset-mtd->erasesize; //nvram
 		dir_parts[4].size = mtd->erasesize;
 		dir_parts[3].size = dir_parts[4].offset - dir_parts[3].offset;
 		rootsize = dir_parts[4].offset-offset; //size of rootfs aligned to nvram offset
@@ -771,8 +771,8 @@ static int spiflash_probe(struct platform_device *pdev)
 		    {
 		    printk(KERN_EMERG "found linux partition at [0x%08lX]\n",fis->flash_base);
 		    dir_parts[1].offset=fis->flash_base&(mtd->size-1);
-		    dir_parts[1].size=dir_parts[2].offset-dir_parts[1].offset+rootsize;
-		    dir_parts[7].size=dir_parts[1].size+dir_parts[3].size; // linux + nvram = phy size
+		    dir_parts[1].size=(dir_parts[2].offset-dir_parts[1].offset)+rootsize;
+		    dir_parts[7].size=dir_parts[1].size+dir_parts[4].size; // linux + nvram = phy size
 		    }
 		p+=sizeof(struct fis_image_desc);
 		fis = (struct fis_image_desc*)p;
