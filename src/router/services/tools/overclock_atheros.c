@@ -212,6 +212,19 @@ void start_overclock (void)	// hidden feature. must be called with "startservice
 	  nvram_commit ();
 	  putc (0xb, in);	//0x2c for 220 mhz 0x30 for 240 mhz
 	}
+
+
+      unsigned int myclk = clk * 1000000;
+      unsigned short part1,part2;
+      part1 = myclk >> 16;
+      part2 = myclk & 0x0000ffff;
+      
+      fprintf(stderr,"patch uart init with %X:%X\n",part1,part2);
+      fseek (in, 0xed16, SEEK_SET);
+      fwrite(&part1,2,1,in);
+      fseek (in, 0xed1a, SEEK_SET);
+      fwrite(&part2,2,1,in);
+
       fclose (in);
       eval ("mtd", "-f", "write", "/tmp/boot", "bdata");
     }
