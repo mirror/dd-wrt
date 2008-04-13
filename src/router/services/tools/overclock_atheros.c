@@ -173,6 +173,7 @@ void start_overclock (void)	// hidden feature. must be called with "startservice
 	  fixclk(in,184,200);
 	  nvram_set ("cpuclk", "200");
 	  nvram_commit ();
+          clk = atoi (nvram_default_get ("cpuclk", "180"));
 	  putc (0x28, in);	//0x2c for 220 mhz 0x30 for 240 mhz
 	}
 
@@ -248,6 +249,7 @@ void start_overclock (void)	// hidden feature. must be called with "startservice
 	  fixclk(in,184,200);
 	  nvram_set ("cpuclk", "200");
 	  nvram_commit ();
+          clk = atoi (nvram_default_get ("cpuclk", "180"));
 	  putc (0x28, in);	//0x2c for 220 mhz 0x30 for 240 mhz
 	}
       fclose (in);
