@@ -1,4 +1,4 @@
-dropbear-configure:
+dropbear-configure: zlib
 	cd dropbear && ./configure --host=$(ARCH)-linux --disable-lastlog --disable-utmp --disable-utmpx --disable-wtmp --disable-wtmpx --disable-libutil CC=$(ARCH)-linux-uclibc-gcc CFLAGS="-I../zlib $(COPTS) -L../zlib -ffunction-sections -fdata-sections -Wl,--gc-sections -fpic" LDFLAGS="-L../zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" host_alias=$(ARCH)-linux
 
 dropbear: zlib
