@@ -336,6 +336,14 @@ start_restore_defaults (void)
     {"wan_ifnames", "vlan0", 0},
     {0, 0, 0}
   };
+#elif HAVE_LSX
+  struct nvram_tuple generic[] = {
+    {"lan_ifname", "br0", 0},
+    {"lan_ifnames", "eth0 ath0", 0},
+    {"wan_ifname", "", 0},
+    {"wan_ifnames", "", 0},
+    {0, 0, 0}
+  };
 #elif HAVE_LS5
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
@@ -525,6 +533,13 @@ start_restore_defaults (void)
       restore_defaults = 1;
     }
 #elif HAVE_PB42
+  linux_overrides = generic;
+  int brand = getRouterBrand ();
+  if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
+    {
+      restore_defaults = 1;
+    }
+#elif HAVE_LSX
   linux_overrides = generic;
   int brand = getRouterBrand ();
   if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
