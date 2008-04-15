@@ -166,7 +166,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_MAKSAT
   {"lan_stp", "0", 0},		/* LAN spanning tree protocol */
 #else
-  {"lan_stp", "1", 0},		/* LAN spanning tree protocol */
+  {"lan_stp", "0", 0},		/* LAN spanning tree protocol */
 #endif
   {"lan_wins", "", 0},		/* x.x.x.x x.x.x.x ... */
 #ifdef HAVE_SKYTRON
@@ -229,6 +229,8 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_LS2
   {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_CA8
+  {"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
+#elif HAVE_LSX
   {"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #else
   {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
