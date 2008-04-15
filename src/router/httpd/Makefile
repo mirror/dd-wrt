@@ -431,6 +431,9 @@ endif
 ifeq ($(CONFIG_PB42),y)
 CFLAGS += -DHAVE_PB42
 endif
+ifeq ($(CONFIG_LSX),y)
+CFLAGS += -DHAVE_LSX
+endif
 
 ifeq ($(SAMBA_SUPPORT),1)
 OBJS  += samba.o
