@@ -18,7 +18,7 @@
  *                                                                  *
  \********************************************************************/
 
-/* $Id: gateway.c 1104 2006-10-09 00:58:46Z acv $ */
+/* $Id: gateway.c 1305 2007-11-01 20:04:20Z benoitg $ */
 /** @internal
   @file gateway.c
   @brief Main loop
@@ -269,7 +269,6 @@ void
 termination_handler(int s)
 {
 	static	pthread_mutex_t	sigterm_mutex = PTHREAD_MUTEX_INITIALIZER;
-	s_config *config = config_get_config();
 
 	debug(LOG_INFO, "Handler for termination caught signal %d", s);
 
@@ -367,7 +366,6 @@ main_loop(void)
 	s_config *config = config_get_config();
 	request *r;
 	void **params;
-    FILE *fh;
 
     /* Set the time when wifidog started */
 	if (!started_time) {
@@ -419,7 +417,10 @@ main_loop(void)
 	/* Reset the firewall (if WiFiDog crashed) */
 	fw_destroy();
 	/* Then initialize it */
-	fw_init();
+	if (!fw_init()) {
+		debug(LOG_ERR, "FATAL: Failed to initialize firewall");
+		exit(1);
+	}
 
 	/* Start clean up thread */
 	result = pthread_create(&tid_fw_counter, NULL, (void *)thread_client_timeout_check, NULL);
