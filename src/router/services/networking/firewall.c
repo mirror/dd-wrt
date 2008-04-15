@@ -761,6 +761,7 @@ nat_postrouting (void)
 #ifndef HAVE_LS2
 #ifndef HAVE_LS5
 #ifndef HAVE_PB42
+#ifndef HAVE_LSX
 #ifndef HAVE_WHRAG108
 #ifndef HAVE_XSCALE
 #ifndef HAVE_X86
@@ -768,6 +769,7 @@ nat_postrouting (void)
 #ifndef HAVE_RB500
 #ifndef HAVE_TW6600
 	  system2 ("echo 1 > /proc/sys/net/ipv4/conf/br0/loop");
+#endif
 #endif
 #endif
 #endif
@@ -2835,6 +2837,15 @@ start_firewall (void)
   else
     perror ("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
 #elif HAVE_WHRAG108
+  if ((fp =
+       fopen ("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout", "r+")))
+    {
+      fprintf (fp, "%d", 65);
+      fclose (fp);
+    }
+  else
+    perror ("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
+#elif HAVE_LSX
   if ((fp =
        fopen ("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout", "r+")))
     {
