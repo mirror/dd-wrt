@@ -1,5 +1,5 @@
 ## -*-m4-*-
-# $Id: configure.in 1303 2007-10-18 21:13:28Z benoitg $
+# $Id: configure.in 1340 2008-03-25 02:22:37Z benoitg $
 
 dnl Process this file with autoconf to produce a configure script.
 
@@ -20,7 +20,7 @@ AC_SUBST(BUILDROOT)
 
 WIFIDOG_MAJOR_VERSION=1
 WIFIDOG_MINOR_VERSION=1
-WIFIDOG_MICRO_VERSION=4
+WIFIDOG_MICRO_VERSION=5
 WIFIDOG_VERSION=$WIFIDOG_MAJOR_VERSION.$WIFIDOG_MINOR_VERSION.$WIFIDOG_MICRO_VERSION
 
 AC_SUBST(WIFIDOG_MAJOR_VERSION)
@@ -81,8 +81,7 @@ AC_SUBST(enable_html_docs)
 AC_SUBST(enable_latex_docs)
 ])
 
-# check for doxygen
-# ----------------------------------------------------------------------------
+# Acutally perform the doxygen check
 BB_ENABLE_DOXYGEN
 
 # check for pthread

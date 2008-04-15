@@ -18,7 +18,7 @@
  *                                                                  *
  \********************************************************************/
 
-/* $Id: http.c 1243 2007-06-28 01:48:01Z benoitg $ */
+/* $Id: http.c 1340 2008-03-25 02:22:37Z benoitg $ */
 /** @file http.c
   @brief HTTP IO functions
   @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
@@ -67,7 +67,7 @@ http_callback_404(httpd *webserver, request *r)
 
 	memset(tmp_url, 0, sizeof(tmp_url));
 	/* 
-	 * XXX Note the code belows assume that the client's request is a plain
+	 * XXX Note the code below assumes that the client's request is a plain
 	 * http request to a standard port. At any rate, this handler is called only
 	 * if the internet/auth server is down so it's not a huge loss, but still.
 	 */
@@ -140,7 +140,7 @@ http_callback_status(httpd *webserver, request *r)
 	http_wifidog_footer(r);
 	free(status);
 }
-/** @brief Convenience function to redirect the web browser to the authe server
+/** @brief Convenience function to redirect the web browser to the auth server
  * @param r The request 
  * @param urlFragment The end of the auth server URL to redirect to (the part after path)
  * @param text The text to include in the redirect header ant the mnual redirect title */

@@ -18,7 +18,7 @@
  *                                                                  *
  \********************************************************************/
 
-/* $Id: fw_iptables.c 1302 2007-10-16 03:12:51Z papril $ */
+/* $Id: fw_iptables.c 1305 2007-11-01 20:04:20Z benoitg $ */
 /** @internal
   @file fw_iptables.c
   @brief Firewall iptables functions
@@ -206,6 +206,11 @@ iptables_fw_init(void)
      }
 	 UNLOCK_CONFIG();
     
+	if (ext_interface == NULL) {
+		debug(LOG_ERR, "FATAL: no external interface");
+		/* XXX leaks safe_strdup()'d strings */
+		return 0;
+	}
 	 /*
 	  *
 	  * Everything in the MANGLE table
