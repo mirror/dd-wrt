@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: auth.h 1104 2006-10-09 00:58:46Z acv $ */
+/* $Id: auth.h 1305 2007-11-01 20:04:20Z benoitg $ */
 /** @file auth.h
     @brief Authentication handling thread
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@miniguru.ca>
@@ -26,6 +26,8 @@
 
 #ifndef _AUTH_H_
 #define _AUTH_H_
+
+#include "httpd.h"
 
 /**
  * @brief Authentication codes returned by auth server.

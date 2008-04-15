@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: debug.c 901 2006-01-17 18:58:13Z mina $ */
+/* $Id: debug.c 1305 2007-11-01 20:04:20Z benoitg $ */
 /** @file debug.c
     @brief Debug output routines
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
@@ -29,6 +29,7 @@
 #include <syslog.h>
 #include <stdarg.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "conf.h"
 

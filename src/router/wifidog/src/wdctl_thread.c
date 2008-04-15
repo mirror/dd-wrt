@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: wdctl_thread.c 1241 2007-06-24 04:13:13Z benoitg $ */
+/* $Id: wdctl_thread.c 1305 2007-11-01 20:04:20Z benoitg $ */
 /** @file wdctl_thread.c
     @brief Monitoring and control of wifidog, server part
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@acv.ca>
@@ -50,6 +50,8 @@
 #include "firewall.h"
 #include "client_list.h"
 #include "wdctl_thread.h"
+#include "gateway.h"
+#include "safe.h"
 
 /* Defined in clientlist.c */
 extern	pthread_mutex_t	client_list_mutex;
@@ -234,7 +236,6 @@ wdctl_restart(int afd)
 		fd;
 	char	*sock_name;
 	struct 	sockaddr_un	sa_un;
-	int result;
 	s_config * conf = NULL;
 	t_client * client = NULL;
 	char * tempstring = NULL;
