@@ -14,7 +14,7 @@
 ** connection with the use or performance of this software.
 **
 **
-** $Id: httpd.h 1239 2007-05-30 19:21:21Z david $
+** $Id: httpd.h 1305 2007-11-01 20:04:20Z benoitg $
 **
 */
 
@@ -31,6 +31,8 @@
 #ifndef LIB_HTTPD_H
 
 #define LIB_HTTPD_H 1
+
+#include <sys/time.h>
 
 #if !defined(__ANSI_PROTO)
 #if defined(_WIN32) || defined(__STDC__) || defined(__cplusplus)

@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: ping_thread.c 1243 2007-06-28 01:48:01Z benoitg $ */
+/* $Id: ping_thread.c 1305 2007-11-01 20:04:20Z benoitg $ */
 /** @file ping_thread.c
     @brief Periodically checks in with the central auth server so the auth
     server knows the gateway is still up.  Note that this is NOT how the gateway
@@ -50,6 +50,7 @@
 #include "debug.h"
 #include "ping_thread.h"
 #include "util.h"
+#include "centralserver.h"
 
 static void ping(void);
 

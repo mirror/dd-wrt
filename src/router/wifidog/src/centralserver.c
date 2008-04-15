@@ -18,12 +18,13 @@
  *                                                                  *
  \********************************************************************/
 
-/* $Id: centralserver.c 1243 2007-06-28 01:48:01Z benoitg $ */
+/* $Id: centralserver.c 1305 2007-11-01 20:04:20Z benoitg $ */
 /** @file centralserver.c
   @brief Functions to talk to the central server (auth/send stats/get rules/etc...)
   @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
  */
 
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -45,6 +46,7 @@
 #include "conf.h"
 #include "debug.h"
 #include "centralserver.h"
+#include "firewall.h"
 #include "../config.h"
 
 extern pthread_mutex_t	config_mutex;

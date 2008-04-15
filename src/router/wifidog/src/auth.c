@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: auth.c 1243 2007-06-28 01:48:01Z benoitg $ */
+/* $Id: auth.c 1305 2007-11-01 20:04:20Z benoitg $ */
 /** @file auth.c
     @brief Authentication handling thread
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@miniguru.ca>
@@ -95,8 +95,7 @@ authenticate_client(request *r)
 {
 	t_client	*client;
 	t_authresponse	auth_response;
-	char	*ip,
-		*mac,
+	char	*mac,
 		*token;
 	char *urlFragment = NULL;
 	s_config	*config = NULL;
@@ -107,7 +106,7 @@ authenticate_client(request *r)
 	client = client_list_find_by_ip(r->clientAddr);
 
 	if (client == NULL) {
-		debug(LOG_ERR, "Could not find client for %s", ip);
+		debug(LOG_ERR, "Could not find client for %s", r->clientAddr);
 		UNLOCK_CLIENT_LIST();
 		return;
 	}

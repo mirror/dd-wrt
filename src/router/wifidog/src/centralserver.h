@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: centralserver.h 1243 2007-06-28 01:48:01Z benoitg $ */
+/* $Id: centralserver.h 1305 2007-11-01 20:04:20Z benoitg $ */
 /** @file centralserver.h
     @brief Functions to talk to the central server (auth/send stats/get rules/etc...)
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
@@ -26,6 +26,8 @@
 
 #ifndef _CENTRALSERVER_H_
 #define _CENTRALSERVER_H_
+
+#include "auth.h"
 
 /** @brief Ask the central server to login a client */
 #define REQUEST_TYPE_LOGIN     "login"
