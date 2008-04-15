@@ -189,10 +189,11 @@ static int marvell_find_vlan(struct ar2313_private *sp,
 	int ret = -1;
 
 	/* Is this a Marvell trailer? */
-	if (*buf != 0x80)
-		return 0;
+//	if (*buf != 0x80)
+//		return 0;
 
 	/* FIXME: ugly, ugly hack! */
+//	printk(KERN_EMERG "packet is %d\n",buf[1]);
 	switch (buf[1]) {
 #ifdef CONFIG_MTD_AR531X
 	case 0:					/* Packet came from the WAN port */
@@ -200,10 +201,10 @@ static int marvell_find_vlan(struct ar2313_private *sp,
 	case 4:					/* Packet came from the WAN port */
 #endif
 
-		ret = 1;
+		ret = 2;
 		break;
 	default:					/* Packet probably came from LAN */
-		ret = 0;
+		ret = 1;
 		break;
 	}
 
@@ -242,6 +243,7 @@ static struct sk_buff *marvell_add_vlan(struct ar2313_private *sp,
 		 * remove the vlan tag by closing the gap between the ethernet header
 		 * and the rest of the packet */
 		memmove(skb->data + 12, skb->data + 16, skb->len - 16);
+//		skb->network_header-=4;
 		skb_set_network_header(skb,-4);
 		buf = skb->data + skb->len - 4;
 		goto tag_append;
@@ -251,6 +253,7 @@ tag_move:
 	/* move the ethernet header 4 bytes forward, overwriting the vlan tag */
 	memmove(skb->data + 4, skb->data, 12);
 	skb_set_mac_header(skb,4);
+//	skb->mac_header+=4;
 //	skb->mac.raw += 4;
 	skb->data += 4;
 	skb->len -= 4;
@@ -260,7 +263,7 @@ tag_append:
 	if (!buf)
 		return skb;
 
-	*((u32 *) buf) = vid ? cpu_to_be32(
+	*((u32 *) buf) = (vid==2) ? cpu_to_be32(
 		(0x80 << 24) |
 #ifdef CONFIG_MTD_AR531X
 		(0x1 << 16)
@@ -489,6 +492,9 @@ ar2313_probe (struct platform_device *pdev)
 		cnt++;
 		} while (i & 0x8000 && cnt<2);
 
+		int atuControl  = MV_ATUCTRL_AGE_TIME_DEFAULT << MV_ATUCTRL_AGE_TIME_SHIFT;
+		atuControl |= MV_ATUCTRL_ATU_SIZE_DEFAULT << MV_ATUCTRL_ATU_SIZE_SHIFT;
+		armiiwrite(dev, MV_SWITCH_GLOBAL_ADDR, MV_ATU_CONTROL, atuControl);
 		/* configure MAC address */
 		armiiwrite(dev, sp->phy, 0x1,
 				   dev->dev_addr[0] << 8 | dev->dev_addr[1]);
@@ -824,13 +830,13 @@ ar2313_setup_timer (struct net_device *dev)
 {
   struct ar2313_private *sp = dev->priv;
 
-  init_timer (&sp->link_timer);
+//  init_timer (&sp->link_timer);
 
-  sp->link_timer.function = ar2313_link_timer_fn;
-  sp->link_timer.data = (int) dev;
-  sp->link_timer.expires = jiffies + HZ;
+///  sp->link_timer.function = ar2313_link_timer_fn;
+///  sp->link_timer.data = (int) dev;
+//  sp->link_timer.expires = jiffies + HZ;
 
-  add_timer (&sp->link_timer);
+//  add_timer (&sp->link_timer);
   return 0;
 
 }
@@ -1614,7 +1620,7 @@ ar2313_rx (struct net_device *dev,int budget)
 #if DO_VLAN
 				if ((sp->eth_phy == AR2313_EPHY_MARVELL) && sp->vlgrp) {
 					vlan_id = marvell_find_vlan(sp, skb);
-					vlan_hwaccel_rx(skb, sp->vlgrp, vlan_id);
+					vlan_hwaccel_receive_skb(skb, sp->vlgrp, vlan_id);
 				} else
 #endif
 	      netif_receive_skb(skb);
