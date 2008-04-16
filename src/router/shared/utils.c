@@ -1689,6 +1689,8 @@ led_control (int type, int act)
       diag_gpio = 0x11;		//power led blink / off to indicate fac.def.
       break;
     case ROUTER_WRT160N:
+      power_gpio = 0x01;
+      diag_gpio = 0x11;		//power led blink / off to indicate fac.def.   
       connected_gpio = 0x13;	//ses orange
       ses_gpio = 0x15;			//ses blue
       break;
