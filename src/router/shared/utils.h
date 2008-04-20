@@ -200,7 +200,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BOARD_TW6600 0x3901
 
 // Atheros PB42 prototype (AR5416 MIMO Wifi, 400 Mhz Mips CPU, 32 MB RAM)
-#define ROUTER_BOARD_PB42 0x3a0f
+#define ROUTER_BOARD_PB42 0x3a01
 
 // Asus WL-500W (MIMO, 4704 cpu, fccid: Asus MSQWL500W)
 #define ROUTER_ASUS_WL500W 0x3b06
