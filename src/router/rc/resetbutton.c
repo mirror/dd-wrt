@@ -105,6 +105,21 @@ getbuttonstate ()
   fclose (in);
   return ret;
 }
+#elif defined(HAVE_LSX)
+int
+getbuttonstate ()
+{
+  FILE *in;
+  int ret;
+  in = fopen ("/proc/simple_config/push_button", "rb");
+  if (in == NULL)
+    return 0;
+  fscanf (in, "%d", &ret);
+  fclose (in);
+  if (ret==0)
+    return 1;
+  return 0;
+}
 #endif
 #if defined(HAVE_GATEWORX)
 
@@ -306,7 +321,7 @@ period_check (int sig)
 //      time(&t);
 //      DEBUG("resetbutton: now time=%d\n", t);
 
-#if defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5)
+#if defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_LSX)
   val = getbuttonstate ();
 #ifdef HAVE_WRK54G
   if (val)
@@ -340,7 +355,7 @@ period_check (int sig)
   int gpio = 0;
 
   int state = 0;
-#if defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5)
+#if defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_LSX)
   state = val;
 #else
   if ((brand & 0x000f) != 0x000f)
@@ -448,7 +463,7 @@ period_check (int sig)
 		printf ("resetbutton: factory default.\n");
 		syslog (LOG_DEBUG,
 			"Reset button: restoring factory defaults now!\n");
-#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5)
+#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX)
 		led_control (LED_DIAG, LED_ON);
 #endif
 		ACTION ("ACT_HW_RESTORE");
@@ -471,7 +486,7 @@ period_check (int sig)
 		nvram_set ("sv_restore_defaults", "1");
 		nvram_commit ();
 		eval ("killall", "ledtool"); //stop blinking on nvram_commit
-#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5)
+#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX)
 		led_control (LED_DIAG, LED_ON);  //turn diag led on, so we know reset was pressed and we're restoring defaults.
 #endif
 		eval ("erase", "nvram");
@@ -488,7 +503,7 @@ period_check (int sig)
 	  }
       }
     }
-#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5)
+#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX)
 
   else if ((sesgpio != 0xff)
 	   && (((sesgpio & 0x10) == 0 && (val & push))
