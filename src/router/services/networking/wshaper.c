@@ -747,8 +747,7 @@ stop_wshaper (void)
   ret = eval (script_name, "stop", "XX", "ath0");
   ret = eval (script_name, "stop", "XX", "ath1");
 #elif HAVE_CA8PRO
-  ret = eval (script_name, "stop", "XX", "vlan1");
-  ret = eval (script_name, "stop", "XX", "vlan2");
+  ret = eval (script_name, "stop", "XX", "eth0");
   ret = eval (script_name, "stop", "XX", "ath0");
 #elif HAVE_CA8
   ret = eval (script_name, "stop", "XX", "eth0");
