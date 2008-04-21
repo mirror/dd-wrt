@@ -2316,7 +2316,7 @@ start_wan (int status)
 #elif HAVE_CA8PRO
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
-    nvram_safe_get ("pppoe_wan_ifname") : "vlan2";
+    nvram_safe_get ("pppoe_wan_ifname") : "eth0";
 #elif HAVE_CA8
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
