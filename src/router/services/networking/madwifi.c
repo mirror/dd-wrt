@@ -1022,6 +1022,8 @@ set_netmode (char *wif, char *dev, char *use)
     eval ("iwpriv", use, "ff", "1");
   else
     eval ("iwpriv", use, "ff", "0");
+    
+    eval ("iwpriv", use, "protmode", "0"); //avoid throughput problems (CTS disabled for now)
 
 
 }
