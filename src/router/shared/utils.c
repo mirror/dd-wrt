@@ -991,7 +991,7 @@ internal_getRouterBrand ()
       return ROUTER_WRT54G1X;
     }
 
-  if (boardnum == 1 && nvram_match ("boardtype", "0x0446"))
+  if ((boardnum == 1 || boardnum == 0) && nvram_match ("boardtype", "0x0446"))
     {
       cprintf ("router is U.S. Robotics USR5430\n");
       setRouter ("U.S.Robotics USR5430");
