@@ -178,7 +178,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Buffalo WZR-G144HH (only available on japanese market, 802.11n, Gigabit switch. Similar to WRT350N)
 #define ROUTER_BUFFALO_WZRG144NH 0x3217
 
-// U.S.Robotics USR5430 bridge (BCM4712 cpu, no switch, fccid: ?)
+// U.S.Robotics USR5430 bridge (BCM4712 cpu, no switch, fccid: MXF-EB921201G)
 #define ROUTER_USR_5430 0x3310
 
 // U.S.Robotics USR5461 (BCM5350 cpu, fccid: ?)
