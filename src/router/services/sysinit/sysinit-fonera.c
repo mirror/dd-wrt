@@ -127,8 +127,8 @@ start_sysinit (void)
     {
       eval ("ifconfig", "eth0", "up");	// required for vlan config
       eval ("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+      eval ("/sbin/vconfig", "add", "eth0", "0");
       eval ("/sbin/vconfig", "add", "eth0", "1");
-      eval ("/sbin/vconfig", "add", "eth0", "2");
       struct ifreq ifr;
       int s;
       if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)))
@@ -143,7 +143,7 @@ start_sysinit (void)
 	  nvram_set ("et0macaddr", macaddr);
 	  MAC_ADD (macaddr);
 	  ether_atoe (macaddr, (unsigned char *) ifr.ifr_hwaddr.sa_data);
-	  strncpy (ifr.ifr_name, "vlan2", IFNAMSIZ);
+	  strncpy (ifr.ifr_name, "vlan1", IFNAMSIZ);
 	  ioctl (s, SIOCSIFHWADDR, &ifr);
 	  close (s);
 	}

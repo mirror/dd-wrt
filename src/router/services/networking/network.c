@@ -816,16 +816,16 @@ start_lan (void)
 	  || nvram_match ("wan_proto", "disabled"))
 	{
 	  nvram_set ("lan_ifname", "br0");
-	  nvram_set ("lan_ifnames", "vlan1 vlan2 ath0");
+	  nvram_set ("lan_ifnames", "vlan0 vlan1 ath0");
 	  nvram_set ("wan_ifname", "");
 	  nvram_set ("wan_ifnames", "");
 	}
       else
 	{
 	  nvram_set ("lan_ifname", "br0");
-	  nvram_set ("lan_ifnames", "vlan1 ath0");
-	  nvram_set ("wan_ifname", "vlan2");
-	  nvram_set ("wan_ifnames", "vlan2");
+	  nvram_set ("lan_ifnames", "vlan0 ath0");
+	  nvram_set ("wan_ifname", "vlan1");
+	  nvram_set ("wan_ifnames", "vlan1");
 	}
     }
   else
@@ -2280,7 +2280,7 @@ start_wan (int status)
   if (getRouterBrand () == ROUTER_BOARD_FONERA2200)
     pppoe_wan_ifname =
       nvram_invmatch ("pppoe_wan_ifname",
-		      "") ? nvram_safe_get ("pppoe_wan_ifname") : "vlan2";
+		      "") ? nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
   else
     pppoe_wan_ifname =
       nvram_invmatch ("pppoe_wan_ifname",
