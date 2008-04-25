@@ -114,13 +114,13 @@ start_overclock (void)		// hidden feature. must be called with "startservice ove
   FILE *out = fopen ("/tmp/boot", "wb");
   fseek (in, 0, SEEK_END);
   len = ftell (in);
+  fprintf(stderr,"size = %ld\n",len);
   fseek (in, 0, SEEK_SET);
   for (i = 0; i < len; i++)
     putc (getc (in), out);
   fclose (in);
   fclose (out);
   int clk = atoi (nvram_default_get ("cpuclk", "180"));
-
   in = fopen ("/tmp/boot", "r+b");
   fseek (in, 0xe64b, SEEK_SET);
   int zmul = getc (in);
@@ -130,7 +130,6 @@ start_overclock (void)		// hidden feature. must be called with "startservice ove
   int div = getc (in);
   fseek (in, 0x1ef, SEEK_SET);
   int mul = getc (in);
-  // fprintf(stderr,"vipermul %X, div %X, mul %X\n",vipermul,div,mul);
   if (div == 0x3 && mul == 0x5c)
     {
       fprintf (stderr, "ap51/ap61 (ar2315 or ar2317) found\n");
@@ -401,4 +400,9 @@ start_overclock (void)		// hidden feature. must be called with "startservice ove
       fclose (in);
     }
   fprintf (stderr, "board is now clocked at %d mhz, please reboot\n", clk);
+}
+
+int main(int argc,char *argv[])
+{
+start_overclock();
 }
