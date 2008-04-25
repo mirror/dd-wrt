@@ -1,3 +1,8 @@
+2008 04 23
+Testing for random matches with test_match.sh and the kernel library was 
+completely broken.  It now actually works.  Added includes to testing 
+programs for gcc 4.3 compatibility.  Updated qq.
+
 2008 02 20
 Added png.
 
