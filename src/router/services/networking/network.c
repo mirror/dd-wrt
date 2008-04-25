@@ -1049,7 +1049,7 @@ start_lan (void)
       if (getRouterBrand () == ROUTER_BOARD_CA8PRO)
 	{
       nvram_set ("lan_ifname", "br0");
-      nvram_set ("lan_ifnames", "vlan1 vlan2 ath0");
+      nvram_set ("lan_ifnames", "vlan0 vlan1 ath0");
       nvram_set ("wan_ifname", "");
       nvram_set ("wan_ifnames", "");
       }else{
@@ -1064,9 +1064,9 @@ start_lan (void)
       if (getRouterBrand () == ROUTER_BOARD_CA8PRO)
 	{
       nvram_set ("lan_ifname", "br0");
-      nvram_set ("lan_ifnames", "vlan1 ath0");
-      nvram_set ("wan_ifname", "vlan2");
-      nvram_set ("wan_ifnames", "vlan2");
+      nvram_set ("lan_ifnames", "vlan0 ath0");
+      nvram_set ("wan_ifname", "vlan1");
+      nvram_set ("wan_ifnames", "vlan1");
       }else{
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "ath0");
@@ -2316,7 +2316,7 @@ start_wan (int status)
 #elif HAVE_CA8PRO
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
-    nvram_safe_get ("pppoe_wan_ifname") : "eth0";
+    nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
 #elif HAVE_CA8
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
