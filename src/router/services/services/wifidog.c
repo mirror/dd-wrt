@@ -72,7 +72,7 @@ start_wifidog (void)
       fprintf (fp, "}\n");
 
       fclose (fp);
-      eval ("/usr/sbin/wifidog");
+      eval ("wifidog");
       syslog (LOG_INFO, "wifidog successfully started\n");
     }
 }
