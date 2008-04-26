@@ -265,6 +265,14 @@ eval("insmod","crypto_null");
     eval ("insmod", "forcedeth");
   else if (detect ("MCP67 Ethernet"))	// nForce
     eval ("insmod", "forcedeth");
+  else if (detect ("MCP67 Gigabit"))	// nForce
+    eval ("insmod", "forcedeth");
+  else if (detect ("MCP73 Ethernet"))	// nForce
+    eval ("insmod", "forcedeth");
+  else if (detect ("MCP77 Ethernet"))	// nForce
+    eval ("insmod", "forcedeth");
+  else if (detect ("MCP79 Ethernet"))	// nForce
+    eval ("insmod", "forcedeth");
 
   if (detect ("Sundance"))	//Dlink fibre
     eval ("insmod", "sundance");
