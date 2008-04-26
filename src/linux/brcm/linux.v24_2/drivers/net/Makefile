@@ -50,7 +50,7 @@ endif
 subdir-$(CONFIG_ET) += et
 subdir-$(CONFIG_BRCMSWITCH) += switch
 subdir-$(CONFIG_ROBO) += robo
-#subdir-$(CONFIG_WL)	+= brcm
+subdir-$(CONFIG_WL)	+= brcm
 subdir-$(CONFIG_WL) += wl
 #ifdef CONFIG_LED	#added by Jerry Lee
 #subdir-$(CONFIG_LED) += led

@@ -21,7 +21,7 @@
  */
 
 /* NOTE: Arguments are modified. */
-#define __jhash_mix(a, b, c) \
+/*#define __jhash_mix(a, b, c) \
 { \
   a -= b; a -= c; a ^= (c>>13); \
   b -= c; b -= a; b ^= (a<<8); \
@@ -32,30 +32,60 @@
   a -= b; a -= c; a ^= (c>>3);  \
   b -= c; b -= a; b ^= (a<<10); \
   c -= a; c -= b; c ^= (b>>15); \
+}*/
+
+// Updated to Jenkin's lookup3 final mix by Rodney Chua
+
+#define rot(x,k) (((x)<<(k)) | ((x)>>(32-(k))))
+#define __jhash_mix(a,b,c) \
+{ \
+  c ^= b; c -= rot(b,14); \
+  a ^= c; a -= rot(c,11); \
+  b ^= a; b -= rot(a,25); \
+  c ^= b; c -= rot(b,16); \
+  a ^= c; a -= rot(c,4);  \
+  b ^= a; b -= rot(a,14); \
+  c ^= b; c -= rot(b,24); \
+}
+
+// Jenkin's lookup3 intermediate mix
+
+#define __jhash_i_mix(a,b,c) \
+{ \
+  a -= c;  a ^= rot(c, 4);  c += b; \
+  b -= a;  b ^= rot(a, 6);  a += c; \
+  c -= b;  c ^= rot(b, 8);  b += a; \
+  a -= c;  a ^= rot(c,16);  c += b; \
+  b -= a;  b ^= rot(a,19);  a += c; \
+  c -= b;  c ^= rot(b, 4);  b += a; \
 }
 
 /* The golden ration: an arbitrary value */
-#define JHASH_GOLDEN_RATIO	0x9e3779b9
+//#define JHASH_GOLDEN_RATIO	0x9e3779b9
+#define JHASH_GOLDEN_RATIO	0xdeadbeef
 
 /* The most generic version, hashes an arbitrary sequence
  * of bytes.  No alignment or length assumptions are made about
  * the input key.
  */
+
 static inline u32 jhash(const void *key, u32 length, u32 initval)
 {
 	u32 a, b, c, len;
 	const u8 *k = key;
 
 	len = length;
-	a = b = JHASH_GOLDEN_RATIO;
-	c = initval;
+	//a = b = JHASH_GOLDEN_RATIO;
+	//c = initval;
+	a = b = c = JHASH_GOLDEN_RATIO + (((u32)length)<<2) + initval;
 
 	while (len >= 12) {
 		a += (k[0] +((u32)k[1]<<8) +((u32)k[2]<<16) +((u32)k[3]<<24));
 		b += (k[4] +((u32)k[5]<<8) +((u32)k[6]<<16) +((u32)k[7]<<24));
 		c += (k[8] +((u32)k[9]<<8) +((u32)k[10]<<16)+((u32)k[11]<<24));
 
-		__jhash_mix(a,b,c);
+		//__jhash_mix(a,b,c);
+		__jhash_i_mix(a,b,c);
 
 		k += 12;
 		len -= 12;
@@ -75,7 +105,6 @@ static inline u32 jhash(const void *key, u32 length, u32 initval)
 	case 2 : a += ((u32)k[1]<<8);
 	case 1 : a += k[0];
 	};
-
 	__jhash_mix(a,b,c);
 
 	return c;
@@ -84,34 +113,41 @@ static inline u32 jhash(const void *key, u32 length, u32 initval)
 /* A special optimized version that handles 1 or more of u32s.
  * The length parameter here is the number of u32s in the key.
  */
-static inline u32 jhash2(u32 *k, u32 length, u32 initval)
+
+static inline u32 jhash2(const u32 *k, u32 length, u32 initval)
 {
 	u32 a, b, c, len;
 
-	a = b = JHASH_GOLDEN_RATIO;
-	c = initval;
+	//a = b = JHASH_GOLDEN_RATIO;
+	//c = initval;
+	a = b = c = JHASH_GOLDEN_RATIO + (((u32)length)<<2) + initval;
 	len = length;
 
-	while (len >= 3) {
+	//while (len >= 3) {
+	while (len > 3) {
 		a += k[0];
 		b += k[1];
 		c += k[2];
-		__jhash_mix(a, b, c);
+		//__jhash_mix(a, b, c);
+		__jhash_i_mix(a, b, c);
 		k += 3; len -= 3;
 	}
 
-	c += length * 4;
+	//c += length * 4;
 
 	switch (len) {
+	case 3 : c += k[2];
 	case 2 : b += k[1];
 	case 1 : a += k[0];
-	};
 
 	__jhash_mix(a,b,c);
 
+	case 0:     /* case 0: nothing left to add */
+		break;
+	};
+
 	return c;
 }
-
 
 /* A special ultra-optimized versions that knows they are hashing exactly
  * 3, 2 or 1 word(s).
@@ -119,11 +155,15 @@ static inline u32 jhash2(u32 *k, u32 length, u32 initval)
  * NOTE: In partilar the "c += length; __jhash_mix(a,b,c);" normally
  *       done at the end is not done here.
  */
+
 static inline u32 jhash_3words(u32 a, u32 b, u32 c, u32 initval)
 {
-	a += JHASH_GOLDEN_RATIO;
-	b += JHASH_GOLDEN_RATIO;
-	c += initval;
+	//a += JHASH_GOLDEN_RATIO;
+	//b += JHASH_GOLDEN_RATIO;
+	//c += initval;
+	a += JHASH_GOLDEN_RATIO + initval;
+	b += JHASH_GOLDEN_RATIO + initval;
+	c += JHASH_GOLDEN_RATIO + initval;
 
 	__jhash_mix(a, b, c);
 
