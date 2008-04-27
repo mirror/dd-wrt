@@ -422,6 +422,9 @@ unlink("/tmp/.rstp_server");
 #ifdef HAVE_REGISTER
 	  start_service ("mkfiles");
 #endif
+#ifdef HAVE_MADWIFI
+	  start_service ("stabridge");
+#endif
 
 
 	  cprintf ("start services\n");
