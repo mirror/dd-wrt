@@ -181,6 +181,7 @@ extern void start_heartbeat_boot (void);
 static int
 bound (void)
 {
+  nvram_unset("dhcpc_done");
   char *wan_ifname = safe_getenv ("interface");
   char *value;
   char temp_wan_ipaddr[16], temp_wan_netmask[16], temp_wan_gateway[16];
@@ -332,7 +333,7 @@ bound (void)
       cprintf ("start wan done\n");
       start_wan_done (wan_ifname);
     }
-
+  nvram_set("dhcpc_done","1");
   cprintf ("done\n");
   return 0;
 }
