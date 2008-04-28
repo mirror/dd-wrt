@@ -780,11 +780,11 @@ start_pptp (int status)
 //      char *wan_hostname = nvram_safe_get ("wan_hostname");
 
       nvram_set ("wan_get_dns", "");
-
+      nvram_unset("dhcpc_done");
       start_dhcpc (wan_ifname);
       int timeout;
 
-      for (timeout = 60; nvram_match ("wan_get_dns", "") && timeout > 0;
+      for (timeout = 60; !nvram_match ("dhcpc_done", "1") && timeout > 0;
 	   --timeout)
 	{			/* wait for info from dhcp server */
 	  sleep (1);
