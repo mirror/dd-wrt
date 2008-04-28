@@ -4239,3 +4239,42 @@ getMTD (char *name)
   pclose (fp);
   return device;
 }
+
+static int
+sockaddr_to_dotted (struct sockaddr *saddr, char *buf)
+{
+  buf[0] = '\0';
+  if (saddr->sa_family == AF_INET)
+    {
+      inet_ntop (AF_INET, &((struct sockaddr_in *) saddr)->sin_addr, buf,
+		 128);
+      return 0;
+    }
+  if (saddr->sa_family == AF_INET6)
+    {
+      inet_ntop (AF_INET6, &((struct sockaddr_in6 *) saddr)->sin6_addr, buf,
+		 128);
+      return 0;
+    }
+  return -1;
+}
+
+void
+getIPFromName (char *name, char *ip)
+{
+  struct addrinfo *result = NULL;
+  int rc;
+  struct addrinfo hint;
+  memset (&hint, 0, sizeof (hint));
+  hint.ai_socktype = SOCK_STREAM;
+  rc = getaddrinfo (name, NULL, &hint, &result);
+  if (!result)			//give it a second try
+    rc = getaddrinfo (name, NULL, &hint, &result);
+
+  if (result)
+    {
+      sockaddr_to_dotted (result->ai_addr, ip);
+    }
+  else
+    sprintf (ip, "0.0.0.0");
+}

@@ -292,6 +292,11 @@ bound (void)
   else if (nvram_match ("wan_proto", "pptp")
 	   && nvram_match ("pptp_use_dhcp", "1"))
     {
+     char pptpip[64];
+     struct dns_lists *dns_list = NULL;
+      dns_to_resolv();
+     getIPFromName (nvram_safe_get("pptp_server_name"), pptpip);
+     nvram_set("pptp_server_ip",pptpip);
       int i = 0;
       /* Delete all default routes */
       while (route_del (wan_ifname, 0, NULL, NULL, NULL) == 0 || i++ < 10);
@@ -305,6 +310,17 @@ bound (void)
 	route_add (wan_ifname, 0, nvram_safe_get ("pptp_server_ip"),
 		   nvram_safe_get ("wan_gateway"),
 		   nvram_safe_get ("wan_netmask"));
+
+    dns_list = get_dns_list ();
+
+    if (dns_list)
+    {
+    for (i = 0; i < dns_list->num_servers; i++)
+	route_add (wan_ifname, 0, dns_list->dns_server[i],
+		   nvram_safe_get ("wan_gateway"), "255.255.255.255");
+     free (dns_list);
+    }
+
     }
 #endif
 #ifdef HAVE_L2TP
