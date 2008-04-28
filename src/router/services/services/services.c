@@ -674,7 +674,7 @@ start_pptp (int status)
       fprintf (fp, "defaultroute\n");	//Add a default route to the system routing tables, using the peer as the gateway
       fprintf (fp, "usepeerdns\n");	//Ask the peer for up to 2 DNS server addresses
       fprintf (fp, "pty 'pptp %s --nolaunchpppd",
-	       nvram_safe_get ("pptp_server_ip"));
+	       nvram_safe_get ("pptp_server_name"));
 
       // PPTP client also supports synchronous mode.
       // This should improve the speeds.

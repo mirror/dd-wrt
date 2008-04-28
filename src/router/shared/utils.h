@@ -558,6 +558,7 @@ int softkill (char *name);
 int getmask(char *netmask);
 int doMultiCast(void);
 int getMTD (char *name);
+void getIPFromName (char *name, char *ip);
 
 #define MAX_WDS_DEVS 10
 #endif

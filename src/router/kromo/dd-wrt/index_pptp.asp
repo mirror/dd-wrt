@@ -15,8 +15,7 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("idx_pptp.gateway"); %></div>
-	<input type="hidden" name="pptp_server_ip" value="4"/>
-	<input class="num" maxlength="3" size="3" name="pptp_server_ip_0" onblur="valid_range(this,0,255,idx_pptp.gateway)" value="<% get_single_ip("pptp_server_ip","0"); %>" />.<input class="num" maxlength="3" size="3" name="pptp_server_ip_1" onblur="valid_range(this,0,255,idx_pptp.gateway)" value="<% get_single_ip("pptp_server_ip","1"); %>" />.<input class="num" maxlength="3" size="3" name="pptp_server_ip_2" onblur="valid_range(this,0,255,idx_pptp.gateway)" value="<% get_single_ip("pptp_server_ip","2"); %>" />.<input class="num" maxlength="3" size="3" name="pptp_server_ip_3" onblur="valid_range(this,1,254,idx_pptp.gateway)" value="<% get_single_ip("pptp_server_ip","3"); %>" />
+	<input name="pptp_server_name" size="40" maxlength="63" onblur="valid_name(this,share.usrname)" value="<% nvram_get("pptp_server_name"); %>" />
 </div>
 <div class="setting">
 	<div class="label"><% tran("share.usrname"); %></div>
