@@ -267,6 +267,8 @@ switch(vendor)
     case 1: //ubnt xr5
     case 2: //ubnt xr2
     case 3: //ubnt sr2
+    case 13: //ubnt xr3
+    case 9: //ubnt xr9
 	poweroffset=10;
     break;    
     case 4: //ubnt sr9
@@ -306,6 +308,37 @@ switch(vendor)
 	 return dbm + poweroffset;
 	}
     }
+}
+
+
+int get_wifioffset (char *ifname)
+{
+int poweroffset = 0;
+int vendor;
+int devcount;
+char readid[64];
+strcpy(readid,ifname);
+sscanf(readid,"ath%d",&devcount);
+sprintf(readid,"/proc/sys/dev/wifi%d/vendor",devcount);
+FILE *in = fopen(readid,"rb");
+vendor=0;
+if (in)
+    {
+    vendor = atoi(fgets(readid,sizeof(readid),in));
+    fclose(in);
+    }
+switch(vendor)
+    {   
+    case 9: //ubnt xr9
+    case 4: //ubnt sr9
+    return -(2427-907);
+    case 13:
+    return -(5540-3540);
+    default:
+    return 0;
+    break;            
+    }
+return 0;
 }
 
 
@@ -363,9 +396,7 @@ wifi_getfreq (char *ifname)
     freq *= 10;
   freq /= 1000000;
   cprintf ("wifi channel %f\n", freq);
-  channel = ieee80211_mhz2ieee (freq);
-
-  return channel;
+  return freq;
 }
 
 
