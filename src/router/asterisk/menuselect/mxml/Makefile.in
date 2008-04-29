@@ -34,7 +34,7 @@ LN		=	@LN@ -s
 MKDIR		=	@MKDIR@
 NROFF		=	@NROFF@
 OPTIM		=	@OPTIM@
-RANLIB		=	@RANLIB@
+RANLIB		=	ranlib
 RM		=	@RM@ -f
 SHELL		=	/bin/sh
 
