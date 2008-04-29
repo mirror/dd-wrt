@@ -5,11 +5,6 @@
 #include <asm/bootinfo.h>
 #include <ar531x_platform.h>
 
-#define BOOL int
-#define UINT32 u32
-#define TRUE 1
-#define FALSE 0
-
 /*
  * probe link timer - 5 secs
  */
@@ -51,11 +46,6 @@ static inline int tx_space(u32 csm, u32 prd)
 #define AR2313_TEST_HANG	11
 #define AR2313_SYNC		12
 
-#define AR2313_EPHY_UNKNOWN 0
-#define AR2313_EPHY_ICSPLUS 1
-#define AR2313_EPHY_MARVELL 2
-#define AR2313_EPHY_ADMTEK  3
-
 
 //
 // New Combo structure for Both Eth0 AND eth1
@@ -74,7 +64,7 @@ typedef struct {
 } ETHERNET_STRUCT;
 
 /********************************************************************
- * Interrupt controller 
+ * Interrupt controller
  ********************************************************************/
 
 typedef struct {
@@ -105,7 +95,6 @@ typedef struct {
 	volatile unsigned int cur_rx_buf_addr;	/* 0x50 (CSR21) */
 } DMA;
 
-
 /*
  * Struct private for the Sibyte.
  *
@@ -118,6 +107,8 @@ typedef struct {
  */
 struct ar2313_private {
 	struct net_device *dev;
+	int (*rx)(struct sk_buff *skb);
+
 	int version;
 	u32 mb[2];
 
@@ -129,7 +120,7 @@ struct ar2313_private {
 
 	spinlock_t lock;			/* Serialise access to device */
 
-	/* 
+	/*
 	 * RX and TX descriptors, must be adjacent
 	 */
 	ar2313_descr_t *rx_ring;
@@ -139,24 +130,23 @@ struct ar2313_private {
 	struct sk_buff **rx_skb;
 	struct sk_buff **tx_skb;
 
-	/* 
+	/*
 	 * RX elements
 	 */
 	u32 rx_skbprd;
 	u32 cur_rx;
 
-	/* 
+	/*
 	 * TX elements
 	 */
 	u32 tx_prd;
 	u32 tx_csm;
 
-	/* 
+	/*
 	 * Misc elements
 	 */
 	int board_idx;
 	char name[48];
-	struct net_device_stats stats;
 	struct {
 		u32 address;
 		u32 length;
@@ -166,13 +156,16 @@ struct ar2313_private {
 
 	struct timer_list link_timer;
 	unsigned short phy;			/* merlot phy = 1, samsung phy = 0x1f */
-	unsigned short eth_phy;		/* typ eth phy  ICPLUS, MARVELL etc... */
 	unsigned short mac;
 	unsigned short link;		/* 0 - link down, 1 - link up */
 	u16 phyData;
+
 	struct tasklet_struct rx_tasklet;
 	int unloading;
-	struct vlan_group *vlgrp;
+
+	struct phy_device *phy_dev;
+	struct mii_bus mii_bus;
+	int oldduplex;
 };
 
 
@@ -201,5 +194,4 @@ static void ar2313_init_cleanup(struct net_device *dev);
 static int ar2313_setup_timer(struct net_device *dev);
 static void ar2313_link_timer_fn(unsigned long data);
 static void ar2313_check_link(struct net_device *dev);
-static struct net_device_stats *ar2313_get_stats(struct net_device *dev);
 #endif							/* _AR2313_H_ */
