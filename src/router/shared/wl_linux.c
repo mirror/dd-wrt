@@ -88,12 +88,8 @@ wl_hwaddr (char *name, unsigned char *hwaddr)
 int
 wl_bssid (char *name, unsigned char *hwaddr)
 {
-  struct ifreq ifr;
-  int ret = 0;
-  int s;
-
   wl_ioctl(name,WLC_GET_BSSID,hwaddr,ETHER_ADDR_LEN);
-  return ret;
+  return 0;
 }
 
 int
