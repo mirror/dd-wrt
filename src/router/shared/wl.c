@@ -268,7 +268,11 @@ switch(vendor)
     case 2: //ubnt xr2
     case 3: //ubnt sr2
     case 13: //ubnt xr3
+    case 14: //ubnt xr4
+    case 1328: //ubnt xr3
+    case 1336: //ubnt xr3
     case 71: //ubnt sr71a
+    case 7:
     case 9: //ubnt xr9
 	poweroffset=10;
     break;    
@@ -276,6 +280,8 @@ switch(vendor)
 	poweroffset=12;
     break;    
     case 5: //ubnt sr5
+	poweroffset=7;
+    case 24: //ubnt sr4
 	poweroffset=7;
     break;    
     default:
@@ -334,7 +340,17 @@ switch(vendor)
     case 4: //ubnt sr9
     return -(2427-907);
     case 13:
-    return -(5540-3540);
+    return -(5540-3540);  //xr3 general 3,5 ghz
+    case 1328:
+    return -(5540-2840);  //xr3 special 2.8 ghz
+    case 1336:
+    return -(5540-3340);  //xr3 special 3.3 ghz
+    case 7:
+    return -(2427-760);  //xr7 
+    case 14:
+    return -(5540-4540);  //xr4 
+    case 24:
+    return -(5540-4540);  //sr4 
     default:
     return 0;
     break;            
