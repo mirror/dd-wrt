@@ -67,6 +67,8 @@ struct phy_device* phy_device_create(struct mii_bus *bus, int addr, int phy_id)
 	dev->bus = bus;
 
 	dev->state = PHY_DOWN;
+	dev->netif_receive_skb = &netif_receive_skb;
+	dev->netif_rx = &netif_rx;
 
 	spin_lock_init(&dev->lock);
 

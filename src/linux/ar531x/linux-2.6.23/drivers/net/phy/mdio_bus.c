@@ -35,6 +35,12 @@
 #include <asm/irq.h>
 #include <asm/uaccess.h>
 
+static void mdio_dev_release(struct device *dev)
+{
+	/* nothing to do */
+}
+
+
 /**
  * mdiobus_register - bring up all the PHYs on a given bus and attach them to bus
  * @bus: target mii_bus
@@ -85,6 +91,7 @@ int mdiobus_register(struct mii_bus *bus)
 
 			phydev->dev.parent = bus->dev;
 			phydev->dev.bus = &mdio_bus_type;
+			phydev->dev.release = mdio_dev_release;
 			snprintf(phydev->dev.bus_id, BUS_ID_SIZE, PHY_ID_FMT, bus->id, i);
 
 			phydev->bus = bus;
@@ -130,6 +137,9 @@ static int mdio_bus_match(struct device *dev, struct device_driver *drv)
 {
 	struct phy_device *phydev = to_phy_device(dev);
 	struct phy_driver *phydrv = to_phy_driver(drv);
+
+	if (phydrv->detect)
+		return (phydrv->detect(phydev->bus, phydev->addr));
 
 	return ((phydrv->phy_id & phydrv->phy_id_mask) ==
 		(phydev->phy_id & phydrv->phy_id_mask));
