@@ -268,6 +268,7 @@ switch(vendor)
     case 2: //ubnt xr2
     case 3: //ubnt sr2
     case 13: //ubnt xr3
+    case 71: //ubnt sr71a
     case 9: //ubnt xr9
 	poweroffset=10;
     break;    
