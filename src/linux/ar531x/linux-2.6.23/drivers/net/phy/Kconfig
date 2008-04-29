@@ -60,6 +60,17 @@ config ICPLUS_PHY
 	---help---
 	  Currently supports the IP175C PHY.
 
+config ADM6996_PHY
+	tristate "Driver for ADM6996 switches"
+	---help---
+	  Currently supports the ADM6996F switch
+
+config MVSWITCH_PHY
+	tristate "Driver for Marvell switches"
+	select VLAN_8021Q
+	---help---
+	  Currently supports the Marvell 88E6060 switch.
+
 config FIXED_PHY
 	tristate "Drivers for PHY emulation on fixed speed/link"
 	---help---

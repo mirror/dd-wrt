@@ -12,4 +12,6 @@ obj-$(CONFIG_SMSC_PHY)		+= smsc.o
 obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o
 obj-$(CONFIG_BROADCOM_PHY)	+= broadcom.o
 obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o
+obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
+obj-$(CONFIG_MVSWITCH_PHY)	+= mvswitch.o
 obj-$(CONFIG_FIXED_PHY)		+= fixed.o
