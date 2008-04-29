@@ -77,6 +77,9 @@ unsigned int getCountry (const char *country);
 char *getCountryList (void);
 u_int ieee80211_mhz2ieee(u_int freq);
 
+int wifi_getchannel (char *ifname);
+int wifi_getfreq (char *ifname);
+
 #endif
 /*
  * Set/Get named variable.
