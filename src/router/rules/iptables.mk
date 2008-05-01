@@ -28,6 +28,7 @@ ifeq ($(CONFIG_IPTABLES),y)
 		  rm -f $(INSTALLDIR)/iptables/etc/l7-protocols/CHANGELOG
 		  rm -f $(INSTALLDIR)/iptables/etc/l7-protocols/LICENSE
 		  rm -f $(INSTALLDIR)/iptables/etc/l7-protocols/README
+		  rm -f $(INSTALLDIR)/iptables/etc/l7-protocols/HOWTO
         endif
 else
         # So that generic rule does not take precedence
