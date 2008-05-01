@@ -1,11 +1,11 @@
-<% do_hpagehead("upgrad.titl"); %>
+<% do_hpagehead("alive.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();"><% tran("sbutton.clos"); %></a></div>
 		</div>
 		<div id="content">
-			<h2>Keep Alive</h2>
+			<h2><% tran("alive.titl"); %></h2>
 			<dl>
 				<dt><% tran("alive.legend"); %></dt>
 				<dd>You can schedule regular reboots for the router : 
