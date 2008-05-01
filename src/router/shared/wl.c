@@ -272,7 +272,7 @@ switch(vendor)
     case 1328: //ubnt xr3
     case 1336: //ubnt xr3
     case 71: //ubnt sr71a
-    case 7:
+    case 7: // ubnt xr7
     case 9: //ubnt xr9
 	poweroffset=10;
     break;    
@@ -346,11 +346,11 @@ switch(vendor)
     case 1336:
     return -(5540-3340);  //xr3 special 3.3 ghz
     case 7:
-    return -(2427-760);  //xr7 
+    return -(2427-763);  //xr7 
     case 14:
-    return -(5540-4540);  //xr4 
-    case 24:
-    return -(5540-4540);  //sr4 
+    return -(5540-4516);  //xr4 
+//    case 24:
+//    return -(5540-4540);  //sr4 
     default:
     return 0;
     break;            
