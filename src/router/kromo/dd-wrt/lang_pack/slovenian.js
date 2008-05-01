@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 24.feb.2008, svn 9100	//
+//				Slovenian translation DD-WRT by Eko, last revision: 1.May.2008, svn 9465	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 // IMPORTANT: for live values use UTF-8 Unicode Character Set
 
@@ -408,7 +408,7 @@ bmenu.servicesPppoesrv="PPPoE stre¾nik";
 bmenu.servicesPptp="PPTP";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Milkfish SIP Usmerjalnik";
-bmenu.servicesAnchorFree="Zaslu¾i s Hotspotom";
+bmenu.servicesAnchorFree="Moja Ad mre¾a";
 
 bmenu.statu="Status";
 bmenu.statuRouter="Usmerjalnik";
@@ -713,7 +713,8 @@ hotspot.wifidog_authsrvpath="AuthServer pot";
 
 var anchorfree = new Object();
 anchorfree.anchorfree="AnchorFree";
-anchorfree.title="Earn Hotspot Revenue";
+anchorfree.titl="My Ad Network";
+anchorfree.h2="AnchorFree Ad Network";
 anchorfree.anchorfree_revenue="Earn revenue by creating ad-supported AnchorFree Hotspot";
 anchorfree.email="Email to receive revenue reports";
 anchorfree.ssid="Use different SSID";
@@ -1698,6 +1699,7 @@ wl_adv.label20="Razveljavi Shortslot";
 wl_adv.label21="Najveèja hitrost oddajanja";
 wl_adv.label23="Najmanj¹a hitrost oddajanja";
 wl_adv.label22="Naèin koeksistenca z Bluetoothom";
+wl_adv.label24="Orientacija antene";
 wl_adv.table1="EDCA AP parameteri (AP do odjemalca)";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmaks";
