@@ -1078,6 +1078,12 @@ ej_ifndef (webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_SSHD
   if (!strcmp(name, "SSHD")) return;
 #endif
+#ifdef HAVE_PPPOESERVER
+  if (!strcmp(name, "PPPOESERVER")) return;
+#endif
+#ifdef HAVE_MILKFISH
+  if (!strcmp(name, "MILKFISH")) return;
+#endif
 // HAVE_AFTERBURNER
   if (!strcmp (name, "AFTERBURNER"))
     {
