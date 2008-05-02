@@ -1,8 +1,8 @@
 /*
  * ar2313.c: Linux driver for the Atheros AR231x Ethernet device.
  *
- * Copyright (C) 2004 Sameer Dekate <sdekate@arubanetworks.com>
- * Copyright (C) 2006-2007 Imre Kaloz <kaloz@openwrt.org>
+ * Copyright (C) 2004 by Sameer Dekate <sdekate@arubanetworks.com>
+ * Copyright (C) 2006 Imre Kaloz <kaloz@openwrt.org>
  * Copyright (C) 2006-2007 Felix Fietkau <nbd@openwrt.org>
  *
  * Thanks to Atheros for providing hardware and documentation
@@ -14,7 +14,7 @@
  * (at your option) any later version.
  *
  * Additional credits:
- * 	This code is taken from John Taylor's Sibyte driver and then 
+ * 	This code is taken from John Taylor's Sibyte driver and then
  * 	modified for the AR2313.
  */
 
@@ -36,10 +36,10 @@
 #include <linux/pkt_sched.h>
 #include <linux/compile.h>
 #include <linux/mii.h>
+#include <linux/phy.h>
 #include <linux/ethtool.h>
 #include <linux/ctype.h>
 #include <linux/platform_device.h>
-#include <linux/if_vlan.h>
 
 #include <net/sock.h>
 #include <net/ip.h>
@@ -55,12 +55,6 @@
 #define AR2313_PRIOS                   1
 #define AR2313_QUEUES                  (2*AR2313_PRIOS)
 #define AR2313_DESCR_ENTRIES           64
-
-#if defined(CONFIG_VLAN_8021Q) || defined(CONFIG_VLAN_8021Q_MODULE)
-#define DO_VLAN 1
-#else
-#define DO_VLAN 0
-#endif
 
 #undef INDEX_DEBUG
 #define DEBUG     0
@@ -139,143 +133,42 @@
 #define RX_LOW_THRES	        ((3*RX_RING_SIZE)/4)
 #define CRC_LEN                 4
 #define RX_OFFSET               2
-#define VLAN_TRAILER_LEN	4
 
-#define AR2313_BUFSIZE		(AR2313_MTU + ETH_HLEN + CRC_LEN + RX_OFFSET + VLAN_TRAILER_LEN)
+#if defined(CONFIG_VLAN_8021Q) || defined(CONFIG_VLAN_8021Q_MODULE)
+#define VLAN_HDR                4
+#else
+#define VLAN_HDR                0
+#endif
+
+#define AR2313_BUFSIZE		(AR2313_MTU + VLAN_HDR + ETH_HLEN + CRC_LEN + RX_OFFSET)
 
 #ifdef MODULE
-MODULE_AUTHOR
-	("Sameer Dekate <sdekate@arubanetworks.com>, Imre Kaloz <kaloz@openwrt.org>, Felix Fietkau <nbd@openwrt.org>");
-MODULE_DESCRIPTION("AR2313 Ethernet driver");
 MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Sameer Dekate <sdekate@arubanetworks.com>, Imre Kaloz <kaloz@openwrt.org>, Felix Fietkau <nbd@openwrt.org>");
+MODULE_DESCRIPTION("AR2313 Ethernet driver");
 #endif
 
 #define virt_to_phys(x) ((u32)(x) & 0x1fffffff)
 
 // prototypes
-static short armiiread(struct net_device *dev, short phy, short reg);
-static void armiiwrite(struct net_device *dev, short phy, short reg,
-					   short data);
 #ifdef TX_TIMEOUT
 static void ar2313_tx_timeout(struct net_device *dev);
 #endif
 static void ar2313_halt(struct net_device *dev);
 static void rx_tasklet_func(unsigned long data);
+static void rx_tasklet_cleanup(struct net_device *dev);
 static void ar2313_multicast_list(struct net_device *dev);
+
+static int mdiobus_read(struct mii_bus *bus, int phy_addr, int regnum);
+static int mdiobus_write(struct mii_bus *bus, int phy_addr, int regnum, u16 value);
+static int mdiobus_reset(struct mii_bus *bus);
+static int mdiobus_probe (struct net_device *dev);
+static void ar2313_adjust_link(struct net_device *dev);
 
 #ifndef ERR
 #define ERR(fmt, args...) printk("%s: " fmt, __func__, ##args)
 #endif
 
-#if DO_VLAN
-/*
- * Marvell switches are too braindead to do real VLAN,
- * so we have to deal with their custom crap here...
- */
-
-static int marvell_find_vlan(struct ar2313_private *sp,
-							 struct sk_buff *skb)
-{
-	unsigned char *buf = skb->data + skb->len - 4;
-	int ret = -1;
-
-	/* Is this a Marvell trailer? */
-	if (*buf != 0x80)
-		return 0;
-
-	/* FIXME: ugly, ugly hack! */
-	switch (buf[1]) {
-	case 4:					/* Packet came from the WAN port */
-		ret = 1;
-		break;
-	default:					/* Packet probably came from LAN */
-		ret = 0;
-		break;
-	}
-
-	return ret;
-}
-
-static struct sk_buff *marvell_add_vlan(struct ar2313_private *sp,
-										struct sk_buff *skb)
-{
-	u8 *buf = NULL;
-	struct sk_buff *newskb;
-	u8 vid;
-
-	if (unlikely(skb->len < 16))
-		return skb;
-
-	vid = skb->data[15];
-
-	/* XXX: clean up this garbage! */
-	if (skb->len <= 64) {
-		newskb = skb_copy_expand(skb, skb_headroom(skb), 68, GFP_ATOMIC);
-		if (!newskb) {
-			if (net_ratelimit())
-				printk("%s: failed to expand skb!\n", sp->dev->name);
-			goto done;
-		}
-		dev_kfree_skb(skb);
-		skb = newskb;
-		buf = skb->data + 64;
-		skb->len = 68;
-		goto tag_move;
-	}
-	
-	if (unlikely(skb_tailroom(skb) < 4)) {
-		/* not enough tailroom:
-		 * remove the vlan tag by closing the gap between the ethernet header
-		 * and the rest of the packet */
-		memmove(skb->data + 12, skb->data + 16, skb->len - 16);
-		skb->nh.raw -= 4;
-		buf = skb->data + skb->len - 4;
-		goto tag_append;
-	}
-
-tag_move:
-	/* move the ethernet header 4 bytes forward, overwriting the vlan tag */
-	memmove(skb->data + 4, skb->data, 12);
-	skb->mac.raw += 4;
-	skb->data += 4;
-	skb->len -= 4;
-	
-tag_append:
-	buf = (buf ?: skb_put(skb, 4));
-	if (!buf)
-		return skb;
-
-	*((u32 *) buf) = vid ? cpu_to_be32(
-		(0x80 << 24) |
-		(0x10 << 16)
-	) : 0; 
-
-done:
-	return skb;
-}
-
-static void ar2313_vlan_rx_register(struct net_device *dev,
-									struct vlan_group *grp)
-{
-	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
-
-	sp->vlgrp = grp;
-}
-#ifndef VLAN_GROUP_ARRAY_PART_LEN
-#define vlan_group_set_device(group,vid,dev) do { \
-    group->vlan_devices[vid] = dev; \
-} while (0);
-#endif
-
-static void ar2313_vlan_rx_kill_vid(struct net_device *dev,
-									unsigned short vid)
-{
-	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
-
-	if (sp->vlgrp)
-		vlan_group_set_device(sp->vlgrp, vid, NULL);
-}
-#endif
 
 int __init ar2313_probe(struct platform_device *pdev)
 {
@@ -293,10 +186,9 @@ int __init ar2313_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 
-	SET_MODULE_OWNER(dev);
 	platform_set_drvdata(pdev, dev);
 
-	sp = dev->priv;
+	sp = netdev_priv(dev);
 	sp->dev = dev;
 	sp->cfg = pdev->dev.platform_data;
 
@@ -319,7 +211,6 @@ int __init ar2313_probe(struct platform_device *pdev)
 	dev->stop = &ar2313_close;
 	dev->hard_start_xmit = &ar2313_start_xmit;
 
-	dev->get_stats = &ar2313_get_stats;
 	dev->set_multicast_list = &ar2313_multicast_list;
 #ifdef TX_TIMEOUT
 	dev->tx_timeout = ar2313_tx_timeout;
@@ -340,8 +231,8 @@ int __init ar2313_probe(struct platform_device *pdev)
 		return (-ENXIO);
 	}
 
-	/* 
-	 * When there's only one MAC, PHY regs are typically on ENET0, 
+	/*
+	 * When there's only one MAC, PHY regs are typically on ENET0,
 	 * even though the MAC might be on ENET1.
 	 * Needto remap PHY regs separately in this case
 	 */
@@ -378,28 +269,12 @@ int __init ar2313_probe(struct platform_device *pdev)
 	sp->board_idx = BOARD_IDX_STATIC;
 
 	if (ar2313_init(dev)) {
-		/* 
+		/*
 		 * ar2313_init() calls ar2313_init_cleanup() on error.
 		 */
 		kfree(dev);
 		return -ENODEV;
 	}
-
-	/* FIXME: does this work? */
-	printk("PHY ID: %04x:%04x\n", (u16) armiiread(dev, 0x1f, 1),
-		   (u16) armiiread(dev, 0x1f, 2));
-	if (armiiread(dev, 0x1f, 1)&0xffff != 0xffff)
-		sp->marvell = 1;
-	else
-		sp->phy = 1;
-
-#if DO_VLAN
-	if (sp->marvell) {
-		dev->features |= NETIF_F_HW_VLAN_RX;
-		dev->vlan_rx_register = ar2313_vlan_rx_register;
-		dev->vlan_rx_kill_vid = ar2313_vlan_rx_kill_vid;
-	}
-#endif
 
 	if (register_netdev(dev)) {
 		printk("%s: register_netdev failed\n", __func__);
@@ -411,51 +286,27 @@ int __init ar2313_probe(struct platform_device *pdev)
 		   dev->dev_addr[0], dev->dev_addr[1], dev->dev_addr[2],
 		   dev->dev_addr[3], dev->dev_addr[4], dev->dev_addr[5], dev->irq);
 
-	if (sp->marvell) {
-		int i;
+	sp->mii_bus.priv = dev;
+	sp->mii_bus.read = mdiobus_read;
+	sp->mii_bus.write = mdiobus_write;
+	sp->mii_bus.reset = mdiobus_reset;
+	sp->mii_bus.name = "ar2313_eth_mii";
+	sp->mii_bus.id = 0;
+	sp->mii_bus.irq = kmalloc(sizeof(int), GFP_KERNEL);
+	*sp->mii_bus.irq = PHY_POLL;
 
-		printk("Initialising Marvell switch... ");
+	mdiobus_register(&sp->mii_bus);
 
-		/* reset chip */
-		armiiwrite(dev, 0x1f, 0xa, 0xa130);
-		do {
-			udelay(1000);
-			i = armiiread(dev, sp->phy, 0xa);
-		} while (i & 0x8000);
-
-		/* configure MAC address */
-		armiiwrite(dev, sp->phy, 0x1,
-				   dev->dev_addr[0] << 8 | dev->dev_addr[1]);
-		armiiwrite(dev, sp->phy, 0x2,
-				   dev->dev_addr[2] << 8 | dev->dev_addr[3]);
-		armiiwrite(dev, sp->phy, 0x3,
-				   dev->dev_addr[4] << 8 | dev->dev_addr[5]);
-
-		/* set ports to forwarding */
-		armiiwrite(dev, 0x18, 0x4, 0x3);	/* port 0 */
-		armiiwrite(dev, 0x19, 0x4, 0x3);	/* port 1 */
-		armiiwrite(dev, 0x1a, 0x4, 0x3);	/* port 2 */
-		armiiwrite(dev, 0x1b, 0x4, 0x3);	/* port 3 */
-		armiiwrite(dev, 0x1c, 0x4, 0x3);	/* port 4 - WAN */
-		armiiwrite(dev, 0x1d, 0x4, 0x4103);	/* port 5 - connected to CPU */
-
-		/* put ports into vlans */
-		armiiwrite(dev, 0x18, 0x6, 0x2e);	/* port 0 */
-		armiiwrite(dev, 0x19, 0x6, 0x2d);	/* port 1 */
-		armiiwrite(dev, 0x1a, 0x6, 0x2b);	/* port 2 */
-		armiiwrite(dev, 0x1b, 0x6, 0x27);	/* port 3 */
-		armiiwrite(dev, 0x1c, 0x6, 0x1020);	/* port 4 - WAN */
-		armiiwrite(dev, 0x1d, 0x6, 0x0f);	/* port 5 - connected to CPU */
-
-		/* hmz */
-		for (i = 0; i <= 5; i++)
-			armiiwrite(dev, 0x18 + i, 11, 1 << i);
-
-		printk("done.\n");
+	if (mdiobus_probe(dev) != 0) {
+		printk(KERN_ERR "ar2313: mdiobus_probe failed");
+		rx_tasklet_cleanup(dev);
+		ar2313_init_cleanup(dev);
+		unregister_netdev(dev);
+		kfree(dev);
+	} else {
+		/* start link poll timer */
+		ar2313_setup_timer(dev);
 	}
-
-	/* start link poll timer */
-	ar2313_setup_timer(dev);
 
 	return 0;
 }
@@ -464,7 +315,7 @@ int __init ar2313_probe(struct platform_device *pdev)
 static void ar2313_dump_regs(struct net_device *dev)
 {
 	unsigned int *ptr, i;
-	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 
 	ptr = (unsigned int *) sp->eth_regs;
 	for (i = 0; i < (sizeof(ETHERNET_STRUCT) / sizeof(unsigned int));
@@ -493,7 +344,7 @@ static void ar2313_dump_regs(struct net_device *dev)
 #ifdef TX_TIMEOUT
 static void ar2313_tx_timeout(struct net_device *dev)
 {
-	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	unsigned long flags;
 
 #if DEBUG_TX
@@ -527,11 +378,11 @@ static void printMcList(struct net_device *dev)
  */
 static void ar2313_multicast_list(struct net_device *dev)
 {
-	/* 
-	 * Always listen to broadcasts and 
-	 * treat IFF bits independently 
+	/*
+	 * Always listen to broadcasts and
+	 * treat IFF bits independently
 	 */
-	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	unsigned int recognise;
 
 	recognise = sp->eth_regs->mac_control;
@@ -566,9 +417,9 @@ static void ar2313_multicast_list(struct net_device *dev)
 
 static void rx_tasklet_cleanup(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 
-	/* 
+	/*
 	 * Tasklet may be scheduled. Need to get it removed from the list
 	 * since we're about to free the struct.
 	 */
@@ -590,7 +441,7 @@ static int __exit ar2313_remove(struct platform_device *pdev)
 
 
 /*
- * Restart the AR2313 ethernet controller. 
+ * Restart the AR2313 ethernet controller.
  */
 static int ar2313_restart(struct net_device *dev)
 {
@@ -631,7 +482,7 @@ module_exit(ar2313_module_cleanup);
 
 static void ar2313_free_descriptors(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	if (sp->rx_ring != NULL) {
 		kfree((void *) KSEG0ADDR(sp->rx_ring));
 		sp->rx_ring = NULL;
@@ -642,7 +493,7 @@ static void ar2313_free_descriptors(struct net_device *dev)
 
 static int ar2313_allocate_descriptors(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	int size;
 	int j;
 	ar2313_descr_t *space;
@@ -693,7 +544,7 @@ static int ar2313_allocate_descriptors(struct net_device *dev)
  */
 static void ar2313_init_cleanup(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	struct sk_buff *skb;
 	int j;
 
@@ -731,7 +582,7 @@ static void ar2313_init_cleanup(struct net_device *dev)
 
 static int ar2313_setup_timer(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 
 	init_timer(&sp->link_timer);
 
@@ -747,14 +598,14 @@ static int ar2313_setup_timer(struct net_device *dev)
 static void ar2313_link_timer_fn(unsigned long data)
 {
 	struct net_device *dev = (struct net_device *) data;
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 
 	// see if the link status changed
 	// This was needed to make sure we set the PHY to the
 	// autonegotiated value of half or full duplex.
 	ar2313_check_link(dev);
 
-	// Loop faster when we don't have link. 
+	// Loop faster when we don't have link.
 	// This was needed to speed up the AP bootstrap time.
 	if (sp->link == 0) {
 		mod_timer(&sp->link_timer, jiffies + HZ / 2);
@@ -765,10 +616,10 @@ static void ar2313_link_timer_fn(unsigned long data)
 
 static void ar2313_check_link(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	u16 phyData;
 
-	phyData = armiiread(dev, sp->phy, MII_BMSR);
+	phyData = mdiobus_read(&sp->mii_bus, sp->phy, MII_BMSR);
 	if (sp->phyData != phyData) {
 		if (phyData & BMSR_LSTATUS) {
 			/* link is present, ready link partner ability to deterine
@@ -777,10 +628,10 @@ static void ar2313_check_link(struct net_device *dev)
 			u16 reg;
 
 			sp->link = 1;
-			reg = armiiread(dev, sp->phy, MII_BMCR);
+			reg = mdiobus_read(&sp->mii_bus, sp->phy, MII_BMCR);
 			if (reg & BMCR_ANENABLE) {
 				/* auto neg enabled */
-				reg = armiiread(dev, sp->phy, MII_LPA);
+				reg = mdiobus_read(&sp->mii_bus, sp->phy, MII_LPA);
 				duplex = (reg & (LPA_100FULL | LPA_10FULL)) ? 1 : 0;
 			} else {
 				/* no auto neg, just read duplex config */
@@ -811,7 +662,7 @@ static void ar2313_check_link(struct net_device *dev)
 
 static int ar2313_reset_reg(struct net_device *dev)
 {
-	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	unsigned int ethsal, ethsah;
 	unsigned int flags;
 
@@ -873,10 +724,10 @@ static int ar2313_reset_reg(struct net_device *dev)
 
 static int ar2313_init(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	int ecode = 0;
 
-	/* 
+	/*
 	 * Allocate descriptors
 	 */
 	if (ar2313_allocate_descriptors(dev)) {
@@ -886,7 +737,7 @@ static int ar2313_init(struct net_device *dev)
 		goto init_error;
 	}
 
-	/* 
+	/*
 	 * Get the memory for the skb rings.
 	 */
 	if (sp->rx_skb == NULL) {
@@ -915,7 +766,7 @@ static int ar2313_init(struct net_device *dev)
 	}
 	memset(sp->tx_skb, 0, sizeof(struct sk_buff *) * AR2313_DESCR_ENTRIES);
 
-	/* 
+	/*
 	 * Set tx_csm before we start receiving interrupts, otherwise
 	 * the interrupt handler might think it is supposed to process
 	 * tx ints before we are up and running, which may cause a null
@@ -926,23 +777,23 @@ static int ar2313_init(struct net_device *dev)
 	sp->tx_prd = 0;
 	sp->tx_csm = 0;
 
-	/* 
+	/*
 	 * Zero the stats before starting the interface
 	 */
-	memset(&sp->stats, 0, sizeof(sp->stats));
+	memset(&dev->stats, 0, sizeof(dev->stats));
 
-	/* 
+	/*
 	 * We load the ring here as there seem to be no way to tell the
 	 * firmware to wipe the ring without re-initializing it.
 	 */
 	ar2313_load_rx_ring(dev, RX_RING_SIZE);
 
-	/* 
+	/*
 	 * Init hardware
 	 */
 	ar2313_reset_reg(dev);
 
-	/* 
+	/*
 	 * Get the IRQ
 	 */
 	ecode =
@@ -975,7 +826,7 @@ static int ar2313_init(struct net_device *dev)
 static void ar2313_load_rx_ring(struct net_device *dev, int nr_bufs)
 {
 
-	struct ar2313_private *sp = ((struct net_device *) dev)->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	short i, idx;
 
 	idx = sp->rx_skbprd;
@@ -1000,7 +851,7 @@ static void ar2313_load_rx_ring(struct net_device *dev, int nr_bufs)
 		// partha: create additional room in the front for tx pkt capture
 		skb_reserve(skb, 32);
 
-		/* 
+		/*
 		 * Make sure IP header starts on a fresh cache line.
 		 */
 		skb->dev = dev;
@@ -1037,20 +888,17 @@ static void ar2313_load_rx_ring(struct net_device *dev, int nr_bufs)
 
 static int ar2313_rx_int(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	struct sk_buff *skb, *skb_new;
 	ar2313_descr_t *rxdesc;
 	unsigned int status;
 	u32 idx;
 	int pkts = 0;
 	int rval;
-#if DO_VLAN
-	int vlan_id;
-#endif
 
 	idx = sp->cur_rx;
 
-	/* process at most the entire ring and then wait for another interrupt 
+	/* process at most the entire ring and then wait for another interrupt
 	 */
 	while (1) {
 
@@ -1079,20 +927,20 @@ static int ar2313_rx_int(struct net_device *dev)
 #if DEBUG_RX
 			printk("%s: rx ERROR %08x\n", __FUNCTION__, status);
 #endif
-			sp->stats.rx_errors++;
-			sp->stats.rx_dropped++;
+			dev->stats.rx_errors++;
+			dev->stats.rx_dropped++;
 
 			/* add statistics counters */
 			if (status & DMA_RX_ERR_CRC)
-				sp->stats.rx_crc_errors++;
+				dev->stats.rx_crc_errors++;
 			if (status & DMA_RX_ERR_COL)
-				sp->stats.rx_over_errors++;
+				dev->stats.rx_over_errors++;
 			if (status & DMA_RX_ERR_LENGTH)
-				sp->stats.rx_length_errors++;
+				dev->stats.rx_length_errors++;
 			if (status & DMA_RX_ERR_RUNT)
-				sp->stats.rx_over_errors++;
+				dev->stats.rx_over_errors++;
 			if (status & DMA_RX_ERR_DESC)
-				sp->stats.rx_over_errors++;
+				dev->stats.rx_over_errors++;
 
 		} else {
 			/* alloc new buffer. */
@@ -1104,18 +952,10 @@ static int ar2313_rx_int(struct net_device *dev)
 				skb_put(skb,
 						((status >> DMA_RX_LEN_SHIFT) & 0x3fff) - CRC_LEN);
 
-				sp->stats.rx_bytes += skb->len;
+				dev->stats.rx_bytes += skb->len;
 				skb->protocol = eth_type_trans(skb, dev);
 				/* pass the packet to upper layers */
-
-#if DO_VLAN
-				if ((sp->marvell = 1) && sp->vlgrp) {
-					vlan_id = marvell_find_vlan(sp, skb);
-					vlan_hwaccel_rx(skb, sp->vlgrp, vlan_id);
-				} else
-#endif
-
-					netif_rx(skb);
+				netif_rx(skb);
 
 				skb_new->dev = dev;
 				/* 16 bit align */
@@ -1123,10 +963,10 @@ static int ar2313_rx_int(struct net_device *dev)
 				/* reset descriptor's curr_addr */
 				rxdesc->addr = virt_to_phys(skb_new->data);
 
-				sp->stats.rx_packets++;
+				dev->stats.rx_packets++;
 				sp->rx_skb[idx] = skb_new;
 			} else {
-				sp->stats.rx_dropped++;
+				dev->stats.rx_dropped++;
 			}
 		}
 
@@ -1145,7 +985,7 @@ static int ar2313_rx_int(struct net_device *dev)
 
 static void ar2313_tx_int(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	u32 idx;
 	struct sk_buff *skb;
 	ar2313_descr_t *txdesc;
@@ -1175,27 +1015,27 @@ static void ar2313_tx_int(struct net_device *dev)
 		txdesc->status = 0;
 
 		if (status & DMA_TX_ERROR) {
-			sp->stats.tx_errors++;
-			sp->stats.tx_dropped++;
+			dev->stats.tx_errors++;
+			dev->stats.tx_dropped++;
 			if (status & DMA_TX_ERR_UNDER)
-				sp->stats.tx_fifo_errors++;
+				dev->stats.tx_fifo_errors++;
 			if (status & DMA_TX_ERR_HB)
-				sp->stats.tx_heartbeat_errors++;
+				dev->stats.tx_heartbeat_errors++;
 			if (status & (DMA_TX_ERR_LOSS | DMA_TX_ERR_LINK))
-				sp->stats.tx_carrier_errors++;
+				dev->stats.tx_carrier_errors++;
 			if (status & (DMA_TX_ERR_LATE |
 						  DMA_TX_ERR_COL |
 						  DMA_TX_ERR_JABBER | DMA_TX_ERR_DEFER))
-				sp->stats.tx_aborted_errors++;
+				dev->stats.tx_aborted_errors++;
 		} else {
 			/* transmit OK */
-			sp->stats.tx_packets++;
+			dev->stats.tx_packets++;
 		}
 
 		skb = sp->tx_skb[idx];
 		sp->tx_skb[idx] = NULL;
 		idx = DSC_NEXT(idx);
-		sp->stats.tx_bytes += skb->len;
+		dev->stats.tx_bytes += skb->len;
 		dev_kfree_skb_irq(skb);
 	}
 
@@ -1208,7 +1048,7 @@ static void ar2313_tx_int(struct net_device *dev)
 static void rx_tasklet_func(unsigned long data)
 {
 	struct net_device *dev = (struct net_device *) data;
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 
 	if (sp->unloading) {
 		return;
@@ -1226,7 +1066,7 @@ static void rx_tasklet_func(unsigned long data)
 
 static void rx_schedule(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 
 	sp->dma_regs->intr_ena &= ~DMA_STATUS_RI;
 
@@ -1236,11 +1076,11 @@ static void rx_schedule(struct net_device *dev)
 static irqreturn_t ar2313_interrupt(int irq, void *dev_id)
 {
 	struct net_device *dev = (struct net_device *) dev_id;
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	unsigned int status, enabled;
 
 	/* clear interrupt */
-	/* 
+	/*
 	 * Don't clear RI bit if currently disabled.
 	 */
 	status = sp->dma_regs->status;
@@ -1249,7 +1089,7 @@ static irqreturn_t ar2313_interrupt(int irq, void *dev_id)
 
 	if (status & DMA_STATUS_NIS) {
 		/* normal status */
-		/* 
+		/*
 		 * Don't schedule rx processing if interrupt
 		 * is already disabled.
 		 */
@@ -1279,9 +1119,7 @@ static irqreturn_t ar2313_interrupt(int irq, void *dev_id)
 
 static int ar2313_open(struct net_device *dev)
 {
-	struct ar2313_private *sp;
-
-	sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 
 	dev->mtu = 1500;
 	netif_start_queue(dev);
@@ -1293,7 +1131,7 @@ static int ar2313_open(struct net_device *dev)
 
 static void ar2313_halt(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	int j;
 
 	tasklet_disable(&sp->rx_tasklet);
@@ -1337,12 +1175,12 @@ static void ar2313_halt(struct net_device *dev)
 static int ar2313_close(struct net_device *dev)
 {
 #if 0
-	/* 
+	/*
 	 * Disable interrupts
 	 */
 	disable_irq(dev->irq);
 
-	/* 
+	/*
 	 * Without (or before) releasing irq and stopping hardware, this
 	 * is an absolute non-sense, by the way. It will be reset instantly
 	 * by the first irq.
@@ -1361,14 +1199,10 @@ static int ar2313_close(struct net_device *dev)
 
 static int ar2313_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	ar2313_descr_t *td;
 	u32 idx;
 
-#if DO_VLAN
-	if (sp->marvell)
-		skb = marvell_add_vlan(sp, skb);
-#endif
 	idx = sp->tx_prd;
 	td = &sp->tx_ring[idx];
 
@@ -1377,7 +1211,7 @@ static int ar2313_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		printk("%s: No space left to Tx\n", __FUNCTION__);
 #endif
 		/* free skbuf and lie to the caller that we sent it out */
-		sp->stats.tx_dropped++;
+		dev->stats.tx_dropped++;
 		dev_kfree_skb(skb);
 
 		/* restart transmitter in case locked */
@@ -1409,195 +1243,19 @@ static int ar2313_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	return 0;
 }
 
-static int netdev_get_ecmd(struct net_device *dev,
-						   struct ethtool_cmd *ecmd)
-{
-	struct ar2313_private *np = dev->priv;
-	u32 tmp;
-
-	ecmd->supported =
-		(SUPPORTED_10baseT_Half | SUPPORTED_10baseT_Full |
-		 SUPPORTED_100baseT_Half | SUPPORTED_100baseT_Full |
-		 SUPPORTED_Autoneg | SUPPORTED_TP | SUPPORTED_MII);
-
-	ecmd->port = PORT_TP;
-	/* only supports internal transceiver */
-	ecmd->transceiver = XCVR_INTERNAL;
-	/* not sure what this is for */
-	ecmd->phy_address = 1;
-
-	ecmd->advertising = ADVERTISED_MII;
-	tmp = armiiread(dev, np->phy, MII_ADVERTISE);
-	if (tmp & ADVERTISE_10HALF)
-		ecmd->advertising |= ADVERTISED_10baseT_Half;
-	if (tmp & ADVERTISE_10FULL)
-		ecmd->advertising |= ADVERTISED_10baseT_Full;
-	if (tmp & ADVERTISE_100HALF)
-		ecmd->advertising |= ADVERTISED_100baseT_Half;
-	if (tmp & ADVERTISE_100FULL)
-		ecmd->advertising |= ADVERTISED_100baseT_Full;
-
-	tmp = armiiread(dev, np->phy, MII_BMCR);
-	if (tmp & BMCR_ANENABLE) {
-		ecmd->advertising |= ADVERTISED_Autoneg;
-		ecmd->autoneg = AUTONEG_ENABLE;
-	} else {
-		ecmd->autoneg = AUTONEG_DISABLE;
-	}
-
-	if (ecmd->autoneg == AUTONEG_ENABLE) {
-		tmp = armiiread(dev, np->phy, MII_LPA);
-		if (tmp & (LPA_100FULL | LPA_10FULL)) {
-			ecmd->duplex = DUPLEX_FULL;
-		} else {
-			ecmd->duplex = DUPLEX_HALF;
-		}
-		if (tmp & (LPA_100FULL | LPA_100HALF)) {
-			ecmd->speed = SPEED_100;
-		} else {
-			ecmd->speed = SPEED_10;
-		}
-	} else {
-		if (tmp & BMCR_FULLDPLX) {
-			ecmd->duplex = DUPLEX_FULL;
-		} else {
-			ecmd->duplex = DUPLEX_HALF;
-		}
-		if (tmp & BMCR_SPEED100) {
-			ecmd->speed = SPEED_100;
-		} else {
-			ecmd->speed = SPEED_10;
-		}
-	}
-
-	/* ignore maxtxpkt, maxrxpkt for now */
-
-	return 0;
-}
-
-static int netdev_set_ecmd(struct net_device *dev,
-						   struct ethtool_cmd *ecmd)
-{
-	struct ar2313_private *np = dev->priv;
-	u32 tmp;
-
-	if (ecmd->speed != SPEED_10 && ecmd->speed != SPEED_100)
-		return -EINVAL;
-	if (ecmd->duplex != DUPLEX_HALF && ecmd->duplex != DUPLEX_FULL)
-		return -EINVAL;
-	if (ecmd->port != PORT_TP)
-		return -EINVAL;
-	if (ecmd->transceiver != XCVR_INTERNAL)
-		return -EINVAL;
-	if (ecmd->autoneg != AUTONEG_DISABLE
-		&& ecmd->autoneg != AUTONEG_ENABLE)
-		return -EINVAL;
-	/* ignore phy_address, maxtxpkt, maxrxpkt for now */
-
-	/* WHEW! now lets bang some bits */
-
-	tmp = armiiread(dev, np->phy, MII_BMCR);
-	if (ecmd->autoneg == AUTONEG_ENABLE) {
-		/* turn on autonegotiation */
-		tmp |= BMCR_ANENABLE;
-		printk("%s: Enabling auto-neg\n", dev->name);
-	} else {
-		/* turn off auto negotiation, set speed and duplexity */
-		tmp &= ~(BMCR_ANENABLE | BMCR_SPEED100 | BMCR_FULLDPLX);
-		if (ecmd->speed == SPEED_100)
-			tmp |= BMCR_SPEED100;
-		if (ecmd->duplex == DUPLEX_FULL)
-			tmp |= BMCR_FULLDPLX;
-		printk("%s: Hard coding %d/%s\n", dev->name,
-			   (ecmd->speed == SPEED_100) ? 100 : 10,
-			   (ecmd->duplex == DUPLEX_FULL) ? "full" : "half");
-	}
-	armiiwrite(dev, np->phy, MII_BMCR, tmp);
-	np->phyData = 0;
-	return 0;
-}
-
-static int netdev_ethtool_ioctl(struct net_device *dev, void *useraddr)
-{
-	struct ar2313_private *np = dev->priv;
-	u32 cmd;
-
-	if (get_user(cmd, (u32 *) useraddr))
-		return -EFAULT;
-
-	switch (cmd) {
-		/* get settings */
-	case ETHTOOL_GSET:{
-			struct ethtool_cmd ecmd = { ETHTOOL_GSET };
-			spin_lock_irq(&np->lock);
-			netdev_get_ecmd(dev, &ecmd);
-			spin_unlock_irq(&np->lock);
-			if (copy_to_user(useraddr, &ecmd, sizeof(ecmd)))
-				return -EFAULT;
-			return 0;
-		}
-		/* set settings */
-	case ETHTOOL_SSET:{
-			struct ethtool_cmd ecmd;
-			int r;
-			if (copy_from_user(&ecmd, useraddr, sizeof(ecmd)))
-				return -EFAULT;
-			spin_lock_irq(&np->lock);
-			r = netdev_set_ecmd(dev, &ecmd);
-			spin_unlock_irq(&np->lock);
-			return r;
-		}
-		/* restart autonegotiation */
-	case ETHTOOL_NWAY_RST:{
-			int tmp;
-			int r = -EINVAL;
-			/* if autoneg is off, it's an error */
-			tmp = armiiread(dev, np->phy, MII_BMCR);
-			if (tmp & BMCR_ANENABLE) {
-				tmp |= (BMCR_ANRESTART);
-				armiiwrite(dev, np->phy, MII_BMCR, tmp);
-				r = 0;
-			}
-			return r;
-		}
-		/* get link status */
-	case ETHTOOL_GLINK:{
-			struct ethtool_value edata = { ETHTOOL_GLINK };
-			edata.data =
-				(armiiread(dev, np->phy, MII_BMSR) & BMSR_LSTATUS) ? 1 : 0;
-			if (copy_to_user(useraddr, &edata, sizeof(edata)))
-				return -EFAULT;
-			return 0;
-		}
-	}
-
-	return -EOPNOTSUPP;
-}
-
 static int ar2313_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 {
 	struct mii_ioctl_data *data = (struct mii_ioctl_data *) &ifr->ifr_data;
-	struct ar2313_private *sp = dev->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
+	int ret;
 
 	switch (cmd) {
 
 	case SIOCETHTOOL:
-		return netdev_ethtool_ioctl(dev, (void *) ifr->ifr_data);
-
-	case SIOCGMIIPHY:			/* Get address of MII PHY in use. */
-		data->phy_id = 1;
-		/* Fall Through */
-
-	case SIOCGMIIREG:			/* Read MII PHY register. */
-		data->val_out = armiiread(dev, data->phy_id & 0x1f,
-								  data->reg_num & 0x1f);
-		return 0;
-	case SIOCSMIIREG:			/* Write MII PHY register. */
-		if (!capable(CAP_NET_ADMIN))
-			return -EPERM;
-		armiiwrite(dev, data->phy_id & 0x1f,
-				   data->reg_num & 0x1f, data->val_in);
-		return 0;
+		spin_lock_irq(&sp->lock);
+		ret = phy_ethtool_ioctl(sp->phy_dev, (void *) ifr->ifr_data);
+		spin_unlock_irq(&sp->lock);
+		return ret;
 
 	case SIOCSIFHWADDR:
 		if (copy_from_user
@@ -1611,6 +1269,11 @@ static int ar2313_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 			return -EFAULT;
 		return 0;
 
+	case SIOCGMIIPHY:
+	case SIOCGMIIREG:
+	case SIOCSMIIREG:
+		return phy_mii_ioctl(sp->phy_dev, data, cmd);
+
 	default:
 		break;
 	}
@@ -1618,33 +1281,114 @@ static int ar2313_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 	return -EOPNOTSUPP;
 }
 
-static struct net_device_stats *ar2313_get_stats(struct net_device *dev)
+static void ar2313_adjust_link(struct net_device *dev)
 {
-	struct ar2313_private *sp = dev->priv;
-	return &sp->stats;
-}
+	struct ar2313_private *sp = netdev_priv(dev);
+	unsigned int mc;
 
+	if (!sp->phy_dev->link)
+		return;
+
+	if (sp->phy_dev->duplex != sp->oldduplex) {
+		mc = readl(&sp->eth_regs->mac_control);
+		mc &= ~(MAC_CONTROL_F | MAC_CONTROL_DRO);
+		if (sp->phy_dev->duplex)
+			mc |= MAC_CONTROL_F;
+		else
+			mc |= MAC_CONTROL_DRO;
+		writel(mc, &sp->eth_regs->mac_control);
+		sp->oldduplex = sp->phy_dev->duplex;
+	}
+}
 
 #define MII_ADDR(phy, reg) \
 	((reg << MII_ADDR_REG_SHIFT) | (phy << MII_ADDR_PHY_SHIFT))
 
-static short armiiread(struct net_device *dev, short phy, short reg)
+static int
+mdiobus_read(struct mii_bus *bus, int phy_addr, int regnum)
 {
-	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
+	struct net_device *const dev = bus->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	volatile ETHERNET_STRUCT *ethernet = sp->phy_regs;
 
-	ethernet->mii_addr = MII_ADDR(phy, reg);
+	ethernet->mii_addr = MII_ADDR(phy_addr, regnum);
 	while (ethernet->mii_addr & MII_ADDR_BUSY);
 	return (ethernet->mii_data >> MII_DATA_SHIFT);
 }
 
-static void
-armiiwrite(struct net_device *dev, short phy, short reg, short data)
+static int
+mdiobus_write(struct mii_bus *bus, int phy_addr, int regnum,
+             u16 value)
 {
-	struct ar2313_private *sp = (struct ar2313_private *) dev->priv;
+	struct net_device *const dev = bus->priv;
+	struct ar2313_private *sp = netdev_priv(dev);
 	volatile ETHERNET_STRUCT *ethernet = sp->phy_regs;
 
 	while (ethernet->mii_addr & MII_ADDR_BUSY);
-	ethernet->mii_data = data << MII_DATA_SHIFT;
-	ethernet->mii_addr = MII_ADDR(phy, reg) | MII_ADDR_WRITE;
+	ethernet->mii_data = value << MII_DATA_SHIFT;
+	ethernet->mii_addr = MII_ADDR(phy_addr, regnum) | MII_ADDR_WRITE;
+
+	return 0;
 }
+
+static int mdiobus_reset(struct mii_bus *bus)
+{
+	struct net_device *const dev = bus->priv;
+
+	ar2313_reset_reg(dev);
+
+	return 0;
+}
+
+static int mdiobus_probe (struct net_device *dev)
+{
+	struct ar2313_private *const sp = netdev_priv(dev);
+	struct phy_device *phydev = NULL;
+	int phy_addr;
+
+	/* find the first (lowest address) PHY on the current MAC's MII bus */
+	for (phy_addr = 0; phy_addr < PHY_MAX_ADDR; phy_addr++)
+		if (sp->mii_bus.phy_map[phy_addr]) {
+			phydev = sp->mii_bus.phy_map[phy_addr];
+			break; /* break out with first one found */
+		}
+
+	if (!phydev) {
+		printk (KERN_ERR "ar2313:%s: no PHY found\n", dev->name);
+		return -1;
+	}
+
+	/* now we are supposed to have a proper phydev, to attach to... */
+	BUG_ON(!phydev);
+	BUG_ON(phydev->attached_dev);
+
+	phydev = phy_connect(dev, phydev->dev.bus_id, &ar2313_adjust_link, 0,
+		PHY_INTERFACE_MODE_MII);
+
+	if (IS_ERR(phydev)) {
+		printk(KERN_ERR "%s: Could not attach to PHY\n", dev->name);
+		return PTR_ERR(phydev);
+	}
+
+	/* mask with MAC supported features */
+	phydev->supported &= (SUPPORTED_10baseT_Half
+		| SUPPORTED_10baseT_Full
+		| SUPPORTED_100baseT_Half
+		| SUPPORTED_100baseT_Full
+		| SUPPORTED_Autoneg
+		/* | SUPPORTED_Pause | SUPPORTED_Asym_Pause */
+		| SUPPORTED_MII
+		| SUPPORTED_TP);
+
+	phydev->advertising = phydev->supported;
+
+	sp->oldduplex = -1;
+	sp->phy_dev = phydev;
+
+	printk(KERN_INFO "%s: attached PHY driver [%s] "
+		"(mii_bus:phy_addr=%s)\n",
+		dev->name, phydev->drv->name, phydev->dev.bus_id);
+
+	return 0;
+}
+
