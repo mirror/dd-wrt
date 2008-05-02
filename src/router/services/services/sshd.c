@@ -162,7 +162,7 @@ write_key_file (char *keyname, char *keyfile, int chmodval)
     return -1;
 
   /* Update the named key file */
-  if ((fd = fopen (keyfile, "w")) == NULL)
+  if ((fd = fopen (keyfile, "wb")) == NULL)
     {
       cprintf ("Can't open %s\n", keyfile);
       return -1;
