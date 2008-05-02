@@ -9,5 +9,5 @@ iperf-clean:
 	@true
 
 iperf-install:
-	install -D iperf/iperf $(INSTALLDIR)/iperf/usr/sbin/iperf
+	install -D iperf/src/iperf $(INSTALLDIR)/iperf/usr/sbin/iperf
 
