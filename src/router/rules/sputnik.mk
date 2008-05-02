@@ -1,8 +1,9 @@
 sputnik:
 	if test -e "sputnik/Makefile"; then make -C sputnik; fi
-
+	@true
 sputnik-clean:
 	if test -e "sputnik/Makefile"; then make -C sputnik clean; fi
+	@true
 
 sputnik-install:
 	mkdir -p $(INSTALLDIR)/sputnik/etc/config
