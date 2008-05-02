@@ -88,13 +88,12 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #ifdef HAVE_SKYTRON
   {"ntp_server", "ntp0.fau.de", 0},	/* NTP server *//* Modify */
+#elif HAVE_DDLAN
+  {"ntp_server", "10.0.0.1", 0},	/* NTP server *//* Modify */
 #else
   {"ntp_server", "", 0},	/* NTP server *//* Modify */
-
-
-  {"refresh_time", "3", 0},	/* GUI Auto-Refresh interval */
-
 #endif
+  {"refresh_time", "3", 0},	/* GUI Auto-Refresh interval */
   {"log_level", "0", 0},	/* Bitmask 0:off 1:denied 2:accepted */
 
 
@@ -640,7 +639,11 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl_mode", "ap", 0},		/* AP mode (ap|sta|wet|infra) */
   {"wl0_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
 #else
+#ifdef HAVE_DDLAN
+  {"wl_mode", "sta", 0},		/* AP mode (ap|sta|wet|infra) */
+#else
   {"wl_mode", "ap", 0},		/* AP mode (ap|sta|wet|infra) */
+#endif
   {"ath0_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
   {"ath1_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
   {"ath2_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
@@ -956,6 +959,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"router_name", "MAKSAT", 0},
 #elif  HAVE_TRIMAX
   {"router_name", "TRIMAX", 0},
+#elif  HAVE_DDLAN
+  {"router_name", "WDSL-Modem XXX", 0},
 #else
   {"router_name", MODEL_NAME, 0},	/* Router name string */
 #endif
@@ -1253,11 +1258,11 @@ struct nvram_tuple srouter_defaults[] = {
 #else
   {"nas_enable", "1", 0},
 #endif
-#ifdef HAVE_DDLAN
-  {"ntp_enable", "0", 0},
-#else
+//#ifdef HAVE_DDLAN
+//  {"ntp_enable", "0", 0},
+//#else
   {"ntp_enable", "1", 0},
-#endif
+//#endif
   {"pptpd_enable", "0", 0},
   {"pptpd_lip", "", 0},
   {"pptpd_rip", "", 0},
@@ -1927,7 +1932,11 @@ struct nvram_tuple srouter_defaults[] = {
   {"static_leasenum", "0", 0},
   {"dhcpc_vendorclass", "", 0},	//vendor class id for client (optional)
   {"dhcpc_requestip", "", 0},	//request ip (optional)
+#ifdef HAVE_DDLAN
+  {"maskmac", "0", 0},
+#else
   {"maskmac", "1", 0},
+#endif
   {"fullswitch", "0", 0},
 #ifdef HAVE_OPENVPN
   {"openvpn_enable", "0", 0},
