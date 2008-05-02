@@ -134,17 +134,17 @@
 #define CRC_LEN                 4
 #define RX_OFFSET               2
 
-//#if defined(CONFIG_VLAN_8021Q) || defined(CONFIG_VLAN_8021Q_MODULE)
+#if defined(CONFIG_VLAN_8021Q) || defined(CONFIG_VLAN_8021Q_MODULE)
 #define VLAN_HDR                4
-//#else
-//#define VLAN_HDR                0
-//#endif
+#else
+#define VLAN_HDR                0
+#endif
 
 #define RXBUFF_RESERVE   96
 
-#define AR2313_BUFSIZE (((RXBUFF_RESERVE + ETH_HLEN + AR2313_MTU + VLAN_HDR + 4) + 3) & ~3)
+//#define AR2313_BUFSIZE (((RXBUFF_RESERVE + ETH_HLEN + AR2313_MTU + VLAN_HDR + 4) + 3) & ~3)
 
-//#define AR2313_BUFSIZE		(AR2313_MTU + VLAN_HDR + ETH_HLEN + CRC_LEN + RX_OFFSET)
+#define AR2313_BUFSIZE		(AR2313_MTU + VLAN_HDR + ETH_HLEN + CRC_LEN + RX_OFFSET)
 
 #ifdef MODULE
 MODULE_LICENSE("GPL");
@@ -223,7 +223,8 @@ int __init ar2313_probe(struct platform_device *pdev)
 	dev->do_ioctl = &ar2313_ioctl;
 
 	// SAMEER: do we need this?
-	dev->features |= NETIF_F_HIGHDMA | NETIF_F_HW_CSUM;
+	dev->features |= NETIF_F_SG | NETIF_F_HIGHDMA;
+//	dev->features |= NETIF_F_HIGHDMA | NETIF_F_HW_CSUM;
 
 	tasklet_init(&sp->rx_tasklet, rx_tasklet_func, (unsigned long) dev);
 	tasklet_disable(&sp->rx_tasklet);
@@ -295,7 +296,7 @@ int __init ar2313_probe(struct platform_device *pdev)
 	sp->mii_bus.write = mdiobus_write;
 	sp->mii_bus.reset = mdiobus_reset;
 	sp->mii_bus.name = "ar2313_eth_mii";
-	sp->mii_bus.id = 0;
+	sp->mii_bus.id = pdev->id;
 	sp->mii_bus.irq = kmalloc(sizeof(int), GFP_KERNEL);
 	*sp->mii_bus.irq = PHY_POLL;
 
