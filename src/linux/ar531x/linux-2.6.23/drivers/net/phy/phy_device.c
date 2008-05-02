@@ -44,6 +44,18 @@ static struct phy_driver genphy_driver;
 extern int mdio_bus_init(void);
 extern void mdio_bus_exit(void);
 
+static int generic_receive_skb(struct sk_buff *skb)
+{
+	skb->protocol = eth_type_trans(skb, skb->dev);
+	return netif_receive_skb(skb);
+}
+
+static int generic_rx(struct sk_buff *skb)
+{
+	skb->protocol = eth_type_trans(skb, skb->dev);
+	return netif_rx(skb);
+}
+
 struct phy_device* phy_device_create(struct mii_bus *bus, int addr, int phy_id)
 {
 	struct phy_device *dev;
@@ -67,8 +79,8 @@ struct phy_device* phy_device_create(struct mii_bus *bus, int addr, int phy_id)
 	dev->bus = bus;
 
 	dev->state = PHY_DOWN;
-	dev->netif_receive_skb = &netif_receive_skb;
-	dev->netif_rx = &netif_rx;
+	dev->netif_receive_skb = &generic_receive_skb;
+	dev->netif_rx = &generic_rx;
 
 	spin_lock_init(&dev->lock);
 
