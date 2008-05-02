@@ -54,6 +54,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"router_style", "fon", 0},
 #elif HAVE_GGEW
   {"router_style", "blue", 0},
+#elif HAVE_DDLAN
+  {"router_style", "blue", 0},
 #elif HAVE_CESAR
   {"router_style", "cesar", 0},
 #elif HAVE_THOM
@@ -142,7 +144,13 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_SKYTRON
   {"lan_ipaddr", "192.168.0.1", 0},	/* LAN IP address */
 #elif HAVE_DDLAN
-  {"lan_ipaddr", "192.168.11.1", 0},	/* LAN IP address */
+#ifdef HAVE_NS5
+  {"ath0_regdomain", "GERMANY_BFWA", 0},	/* LAN IP address */
+  {"ath0_channelbw", "10", 0},	/* LAN IP address */
+#else
+  {"ath0_regdomain", "GERMANY", 0},	/* LAN IP address */
+#endif
+  {"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
 #elif HAVE_BUFFALO
   {"lan_ipaddr", "192.168.11.1", 0},	/* LAN IP address */
 #elif HAVE_GGEW
@@ -194,7 +202,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wan_gateway", "10.0.0.1", 0},	/* WAN gateway */
   {"wan_dns", "213.146.232.2 213.146.230.2", 0},	/* x.x.x.x x.x.x.x ... */
 #elif HAVE_DDLAN
-  {"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
+  {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 
   {"wan_ipaddr", "0.0.0.0", 0},	/* WAN IP address */
   {"wan_netmask", "0.0.0.0", 0},	/* WAN netmask */
@@ -384,10 +392,6 @@ struct nvram_tuple srouter_defaults[] = {
 
 
   /* Web server parameters */
-#ifdef HAVE_DDLAN
-  {"http2_username", "bJQHeWqy4l/Ng", 0},	/* Username */
-  {"http2_passwd", "bJQHeWqy4l/Ng", 0},	/* Username */
-#endif
 #ifdef HAVE_POWERNOC
   {"http_username", "bJz7PcC1rCRJQ", 0},	/* Username */
 #else
@@ -406,6 +410,8 @@ struct nvram_tuple srouter_defaults[] = {
 #else
   {"http_passwd", "bJxJZz5DYRGxI", 0},	/* Password */
 #endif
+#elif HAVE_DDLAN
+  {"http_passwd", "4DC5smu4lEiiQ", 0},	/* Password */
 #else
   {"http_passwd", "bJz7PcC1rCRJQ", 0},	/* Password */
 #endif
@@ -508,6 +514,9 @@ struct nvram_tuple srouter_defaults[] = {
 #elif defined(HAVE_TRIMAX)
   {"wl0_ssid", "trimax", 0},	/* Service set ID (network name) */
   {"ath0_ssid", "trimax", 0},	/* Service set ID (network name) */
+#elif defined(HAVE_DDLAN)
+  {"wl0_ssid", "www.ddlan.de", 0},	/* Service set ID (network name) */
+  {"ath0_ssid", "www.ddlan.de", 0},	/* Service set ID (network name) */
 #else
   {"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
   {"ath0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
@@ -612,9 +621,6 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_SKYTRON
   {"wl_mode", "sta", 0},
   {"wl0_mode", "sta", 0},
-#elif HAVE_DDLAN
-  {"wl_mode", "sta", 0},
-  {"wl0_mode", "sta", 0},
 #elif HAVE_GGEW
   {"wl_mode", "sta", 0},
   {"wl0_mode", "sta", 0},
@@ -642,13 +648,16 @@ struct nvram_tuple srouter_defaults[] = {
   {"ath4_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
   {"ath5_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
 
+#ifdef HAVE_DDLAN
+  {"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
+#else
   {"ath0_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
   {"ath1_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
   {"ath2_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
   {"ath3_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
   {"ath4_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
   {"ath5_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
-
+#endif
   {"ath0_xr", "0", 0},		/* AP mode (ap|sta|wds) */
   {"ath1_xr", "0", 0},		/* AP mode (ap|sta|wds) */
   {"ath2_xr", "0", 0},		/* AP mode (ap|sta|wds) */
@@ -747,22 +756,22 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl_bcn", "100", 0},		/* Beacon interval */
   {"wl_plcphdr", "long", 0},	/* 802.11b PLCP preamble type */
 
-#ifndef HAVE_MSSID
 #ifdef HAVE_GGEW
   {"wl_net_mode", "b-only", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
-#elif  HAVE_NEWMEDIA
+  {"wl0_net_mode", "b-only", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
+#elif HAVE_NEWMEDIA
   {"wl_net_mode", "disabled", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
+  {"wl0_net_mode", "disabled", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
+#elif HAVE_DDLAN
+#ifdef HAVE_NS5
+  {"ath0_net_mode","a-only",0 },
+  {"wl0_net_mode", "a-only", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
+#else
+  {"ath0_net_mode","b-only",0 },
+  {"wl0_net_mode", "b-only", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
+#endif
 #else
   {"wl_net_mode", "mixed", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
-#endif
-#else
-#ifdef HAVE_GGEW
-  {"wl0_net_mode", "b-only", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
-#elif  HAVE_NEWMEDIA
-  {"wl0_net_mode", "disabled", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
-#else
-  {"wl0_net_mode", "mixed", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
-#endif
 #endif
 
 
@@ -971,6 +980,20 @@ struct nvram_tuple srouter_defaults[] = {
   {"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
   {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_SAGAR
+  {"filter", "off", 0},		/* Firewall Protection [on|off] */
+  {"block_wan", "0", 0},	/* Block WAN Request [1|0] */
+  {"block_ident", "0", 0},	/* Block IDENT passthrough [1|0] */
+  {"block_proxy", "0", 0},	/* Block Proxy [1|0] */
+  {"block_java", "0", 0},	/* Block Java [1|0] */
+  {"block_activex", "0", 0},	/* Block ActiveX [1|0] */
+  {"block_cookie", "0", 0},	/* Block Cookie [1|0] */
+  {"block_multicast", "1", 0},	/* Multicast Pass Through [1|0] */
+  {"block_loopback", "0", 0},	/* Block NAT loopback [1|0] */
+  {"ipsec_pass", "1", 0},	/* IPSec Pass Through [1|0] */
+  {"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
+  {"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
+  {"remote_management", "1", 0},	/* Remote Management [1|0] */
+#elif HAVE_DDLAN
   {"filter", "off", 0},		/* Firewall Protection [on|off] */
   {"block_wan", "0", 0},	/* Block WAN Request [1|0] */
   {"block_ident", "0", 0},	/* Block IDENT passthrough [1|0] */
@@ -1629,6 +1652,8 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_SAGAR
   {"snmpd_enable", "1", 0},
 #elif HAVE_GGEW
+  {"snmpd_enable", "1", 0},
+#elif HAVE_DDLAN
   {"snmpd_enable", "1", 0},
 #else
   {"snmpd_enable", "0", 0},
