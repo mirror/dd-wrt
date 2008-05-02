@@ -1111,6 +1111,10 @@ trigger_add (webs_t wp)
 void
 ej_show_paypal (webs_t wp, int argc, char_t ** argv)
 {
+#ifdef HAVE_DDLAN
+  websWrite (wp, "<a href=\"mailto:support@mcdd.de\">support@mcdd.de</a><br />");
+#endif
+
 #ifndef CONFIG_BRANDING
   websWrite (wp, "<a href=\"http://www.dd-wrt.com/\">DD-WRT</a><br />");
   websWrite (wp,

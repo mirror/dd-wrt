@@ -781,6 +781,11 @@ start_restore_defaults (void)
 	  }
       }
   }
+  if (strlen (nvram_safe_get ("http_username")) == 0)
+    {
+      nvram_set ("http_username", zencrypt ("root"));
+      nvram_set ("http_passwd", zencrypt ("admin"));
+    }
 #ifndef HAVE_FON
   if (restore_defaults)
     {
@@ -992,14 +997,6 @@ start_restore_defaults (void)
   nvram_set ("os_name", "linux");
   nvram_set ("os_version", EPI_VERSION_STR);
 
-#ifdef HAVE_DDLAN
-  nvram_unset ("cur_rssi");
-  nvram_unset ("cur_noise");
-  nvram_unset ("cur_bssid");
-  nvram_unset ("cur_snr");
-  nvram_set ("cur_state",
-	     "<span style=\"background-color: rgb(255, 0, 0);\">Nicht Verbunden</span>");
-#endif
 #ifdef HAVE_SPUTNIK_APD
   /* Added for Sputnik Agent */
   nvram_unset ("sputnik_mjid");
@@ -1240,11 +1237,6 @@ start_nvram (void)
   //dirty fix for WBR2 units
 
 
-  if (strlen (nvram_safe_get ("http_username")) == 0)
-    {
-      nvram_set ("http_username", zencrypt ("root"));
-      nvram_set ("http_passwd", zencrypt ("admin"));
-    }
 
   //clean old filter_servicesX to free nvram
   nvram_unset ("filter_services0");
