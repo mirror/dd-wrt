@@ -173,6 +173,7 @@ include rules/ipsec-tools.mk
 include rules/strace.mk
 include rules/asterisk.mk
 include rules/zaptel.mk
+include rules/iperf.mk
 
 # Generic rules
 #
