@@ -3493,13 +3493,13 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 			 "document.write(\"<option value=\\\"%s\\\" %s>%s - %d MHz</option>\");\n",
 			 fr, nvram_match (wl_channel,
 					  fr) ? "selected=\\\"selected\\\"" :
-			 "", cn, chan[i].freq-atoi(nvram_default_get(ofs,"0")));
+			 "", cn, chan[i].freq+atoi(nvram_default_get(ofs,"0")));
 #else
 	      websWrite (wp,
 			 "document.write(\"<option value=\\\"%s\\\" %s>%s - %d MHz</option>\");\n",
 			 fr, nvram_match (wl_channel,
 					  fr) ? "selected=\\\"selected\\\"" :
-			 "", cn, chan[i].freq);
+			 "", cn, (chan[i].freq+get_wifioffset(prefix)));
 #endif
 	      //free (chan[i].freq);
 	      i++;
@@ -6039,7 +6039,7 @@ ej_get_curchannel (webs_t wp, int argc, char_t ** argv)
       int offset = atoi(nvram_default_get(ofs,"0"))      
       websWrite (wp, "%d (%d Mhz)", channel,wifi_getfreq(nvram_safe_get ("wifi_display"))+offset);
 #else
-      websWrite (wp, "%d (%d Mhz)", channel,wifi_getfreq(nvram_safe_get ("wifi_display")));
+      websWrite (wp, "%d (%d Mhz)", channel,(wifi_getfreq(nvram_safe_get ("wifi_display"))+get_wifioffset(nvram_safe_get("wifi_display"))));
 #endif
     }
   else

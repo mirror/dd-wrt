@@ -69,7 +69,7 @@ ifeq ($(ARCHITECTURE),ls2)
 	cp busybox/.config_fonera busybox/.config
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 else
-ifeq ($(ARCHITECTURE),pb42)
+ifeq ($(ARCHITECTURE),lsx)
 	cp busybox/.config_fonera busybox/.config
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 else
