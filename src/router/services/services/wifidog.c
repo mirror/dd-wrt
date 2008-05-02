@@ -86,7 +86,7 @@ stop_wifidog (void)
 {
   if (pidof ("wifidog") > 0)
     syslog (LOG_INFO, "wifidog successfully stopped\n");
-  killall ("wifidog", SIGKILL);
+  killall ("wifidog", SIGTERM);
 }
 
 #endif
