@@ -3687,6 +3687,7 @@ do_cauth (char *userid, char *passwd, char *realm)
   return do_auth (userid, passwd, realm);
 }
 #endif
+#undef HAVE_DDLAN
 
 #ifdef HAVE_DDLAN
 int

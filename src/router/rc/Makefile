@@ -513,9 +513,9 @@ ifeq ($(CONFIG_WOL),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc wol
 endif
 
-ifeq ($(CONFIG_DDLAN),y)
-	cp check.sh $(INSTALLDIR)/sbin
-endif
+#ifeq ($(CONFIG_DDLAN),y)
+#	cp check.sh $(INSTALLDIR)/sbin
+#endif
 
 
 
