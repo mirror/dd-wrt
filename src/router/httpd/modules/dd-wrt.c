@@ -6036,7 +6036,7 @@ ej_get_curchannel (webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_XR4SPECIAL
       char ofs[32];
       sprintf(ofs,"%s_offset",nvram_safe_get ("wifi_display"));
-      int offset = atoi(nvram_default_get(ofs,"0"))      
+      int offset = atoi(nvram_default_get(ofs,"0"));      
       websWrite (wp, "%d (%d Mhz)", channel,wifi_getfreq(nvram_safe_get ("wifi_display"))+offset);
 #else
       websWrite (wp, "%d (%d Mhz)", channel,(wifi_getfreq(nvram_safe_get ("wifi_display"))+get_wifioffset(nvram_safe_get("wifi_display"))));
