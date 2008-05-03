@@ -130,7 +130,7 @@ mk_nocat_conf (void)
 	       nvram_safe_get ("NC_SplashURLTimeout"));
     }
   /* do we really need this? */
-//  fprintf (fp, "LeaseFile\t%s\n", nvram_default_get ("NC_LeaseFile","/tmp/nocat.leases"));
+  fprintf (fp, "LeaseFile\t%s\n", nvram_default_get ("NC_LeaseFile","/tmp/nocat.leases"));
 
   /* Open-mode and common options */
   fprintf (fp, "FirewallPath\t%s\n", "/usr/libexec/nocat/");
