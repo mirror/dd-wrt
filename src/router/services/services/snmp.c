@@ -40,7 +40,7 @@ start_snmp (void)
   int ret = 0;
   pid_t pid;
 
-  char *snmpd_argv[] = { "/usr/sbin/snmpd", "-c", SNMP_CONF_FILE, NULL };
+  char *snmpd_argv[] = { "snmpd", "-c", SNMP_CONF_FILE, NULL };
   FILE *fp = NULL;
 
   stop_snmp ();
