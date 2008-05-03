@@ -392,7 +392,7 @@ start_cron (void)
   eval ("cp", "-af", "/mmc/mycron.d/*", "/tmp/cron.d/");
 
   cprintf ("starting cron\n");
-  ret = eval ("/usr/sbin/cron");
+  ret = eval ("cron");
   syslog (LOG_INFO, "cron : cron daemon successfully started\n");
 
   cprintf ("done\n");
