@@ -39,7 +39,7 @@
 				<dd>Adjusts the ack timing in Atheros typical way based on the maximum distance in meters
 					<div class="note">
 						<h4>Note</h4>
-						<div>On Atheros based DD-WRT firmwares 0 will not disable ack timing but will turn into default ACK timing mode</div>
+						<div>On Atheros based DD-WRT firmwares 0 will not disable ack timing but will turn into auto ACK timing mode</div>
 					</div>
 					<ul class="wide">
 						<li> 0 disables ack timing completely</li>
