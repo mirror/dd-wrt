@@ -166,7 +166,7 @@ start_chilli (void)
 */
   ret = killall ("chilli", SIGTERM);
   ret = killall ("chilli", SIGKILL);
-  ret = eval ("/usr/sbin/chilli", "-c", "/tmp/chilli.conf");
+  ret = eval ("chilli", "-c", "/tmp/chilli.conf");
   syslog (LOG_INFO, "chilli : chilli daemon successfully started\n");
 
   cprintf ("done\n");
