@@ -219,6 +219,10 @@ start_splashd (void)
      if not, check_ps will start us later */
   if (nvram_match ("wan_ipaddr", "0.0.0.0"))
     return 0;
+    eval ("insmod", "ipt_mark");
+    eval ("insmod", "ipt_mac");
+    eval ("insmod", "xt_mark");
+    eval ("insmod", "xt_mac");
 
   mk_nocat_conf ();
 
