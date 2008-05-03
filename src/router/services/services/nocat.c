@@ -247,7 +247,11 @@ stop_splashd (void)
     syslog (LOG_INFO, "splashd : splash daemon successfully stopped\n");
   //ret = killps("splashd",NULL);
   ret = killall ("splashd", SIGTERM);
-  eval("/usr/libexec/nocat/reset.fw");
+  eval("/usr/libexec/nocat/clear.fw");
+  stop_firewall();  // evil
+  stop_wshaper();
+  start_firewall();
+  start_wshaper();
   cprintf ("done\n");
   return ret;
 }
