@@ -1668,7 +1668,7 @@ wl_basic.regulatory="SuperKanal";
 
 hwl_basic.right2="Wenn Sie G-Clients komplett ausschlieﬂen wollen, sollten Sie <em>Nur-B</em> w‰hlen. Wenn Sie den WLAN Zugriff abschalten wollen, w‰hlen Sie <em>abschalten</em>.";
 hwl_basic.right3="Empfindlichkeitsbereich: ";
-hwl_basic.right4="Setzt das ACK Timing. 0 Schaltet das ACK timing komplett ab.";
+hwl_basic.right4="Setzt das ACK Timing. 0 Schaltet das ACK timing auf broadcom firmwares komplett ab. Auf Atheros wechselt es in den Auto ACK Timing modus";
 
 // **************************************************************** Fail_s.asp & Fail_u_s.asp & Fail.asp **********************************************************************//
 
