@@ -1565,7 +1565,7 @@ wl_basic.multicast="Multicast forwarding";
 //help container
 hwl_basic.right2="Si vous disposez à la fois des périphériques 802.11g et 802.11b sur votre réseau, conservez le paramètre par défaut <em>Mixte</em>. Si vous utilisez uniquement des périphériques 802.11g, sélectionnez <em>G-uniquement</em>. Si vous travaillez uniquement avec des périphériques 802.11b, sélectionnez <em>B-uniquement</em>. Si votre réseau n'est muni d'aucun périphérique sans fil, sélectionnez l'option <em>Désactiver</em>.<br/><b>Remarque :</b> quand vous changez de mode, certains paramètres avancés sont succeptibles d'être modifiés (\""+wl_adv.label16+"\", \""+wl_adv.label2+"\" ou \""+wl_adv.label5+"\").";
 hwl_basic.right3="Sensibilité: ";
-hwl_basic.right4="Permet de régler le <em>ack timing</em>. 0 désactive complètement cette fonctionnalité pour les firmware Broadcom firmwares. Pour ceux basés sur un chipset Atheros cela bascule en mode ack timing automatique";
+hwl_basic.right4="Permet de régler le <em>ack timing</em>. 0 désactive complètement cette fonctionnalité pour les firmware Broadcom. Pour ceux basés sur un chipset Atheros cela bascule en mode ack timing automatique";
 
 hwl_basic.right6="Sélectionnez les heures pendant lesquelles le signal radio sans fil sera activé (<em>vert</em> indique que le signal sans fil est activé, et <em>rouge</em> indique que le signal est désactivé).";
 
