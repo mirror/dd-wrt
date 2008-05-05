@@ -1780,7 +1780,7 @@ wl_basic.multicast="Posredovanje multicast paketov";
 
 hwl_basic.right2="Èe ¾elite prepovedati vstop odjemalcem G, izberite <em>Samo-B</em> naèin. Èe ¾elite izkljuèiti brez¾ièno omre¾je, izberite <em>Onemogoèie</em>.";
 hwl_basic.right3="Obmoèje obèutljivosti: ";
-hwl_basic.right4="Prilagodi ACK uèasenje. 0 onemogoèi ACK uèasenje.";
+hwl_basic.right4="Prilagodi ACK uèasenje. 0 onemogoèi ACK uèasenje na Broadcomovi strojni programski opremi, na Atherosovi pa 0 vkljuèi avtomatsko ACK uèasenje";
 hwl_basic.right6="Klikni na uro za omogoèenje ali onemogoèenje radijskega signala (<em>zeleno</em> pomeni dovoljen brez¾ièni dostop, <em>rdeèe</em> pomeni nedovoljen brez¾ièni dostop)";
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
