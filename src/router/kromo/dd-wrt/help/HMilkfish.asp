@@ -19,9 +19,9 @@
 #                                                                    #
 # The Milkfish-dd Web Interface - Milkfish Help Page                 #
 #                                                                    #
-# Built/Version:  20071229                                           #
+# Built/Version:  20080506                                           #
 # Co-Author/Contact: Michael Poehnl <budrus@sipwerk.com>             #
-# Copyright (C) 2007 partly by sipwerk - All rights reserved.        #
+# Copyright (C) 2008 partly by sipwerk - All rights reserved.        #
 #                                                                    #
 # Please note that this software is under development and comes with #
 # absolutely no warranty, to the extend permitted by applicable law. #
@@ -35,7 +35,7 @@
 		<div id="content">
 			<h2><% tran("bmenu.servicesMilkfish"); %></h2>
 			<dl>
-				<dt>Milkfish-dd - Personal VoIP/IM Router - v1.0</dt>
+				<dt>Milkfish-dd - Professional VoIP/IM Router - v1.0</dt>
 				<ul class="wide">
 				<br><b>Welcome to the Milkfish on DD-WRT...</b><br>
 				The Milkfish enables the operation and management of several SIP phones in spite of NAT.<br><br>
@@ -71,13 +71,13 @@
 					<div class="note">
 						<h4>Legal</h4>
 						<div>
-						Copyright © 2005-2007 by <a href="http://www.milkfish.org" target="new">The Milkfish Project</a>. All rights reserved.<br />
+						Copyright © 2005-2008 by <a href="http://www.milkfish.org" target="new">The Milkfish Project</a>. All rights reserved.<br />
 						Logos and trademarks are the property of their respective owners.<br />
 						The Milkfish software is licensed under the <a href="http://www.gnu.org/licenses/gpl.html" target="new">GNU General Public License</a>.<br />
 						Please note that this software is under development and comes with absolutely no warranty, to the extend permitted by applicable law.</div>
 					</div><br />
 					<div class="note">
-        					<div class="center">Milkfish is powered by...<br><a target="_blank" href="http://www.sipwerk.com"><img border="1" src="../images/sipwerk.png" alt="sipwerk logo" /></a><br></div><br />
+        					<div class="center">Milkfish is developed by...<br><a target="_blank" href="http://www.sipwerk.com"><img border="1" src="../images/sipwerk.png" alt="sipwerk logo" /></a><br></div><br />
 					</div><br />
 				</dd>
 				<dd>Click <i>Save Settings</i> to save your settings or click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>
