@@ -506,9 +506,9 @@ setupSupplicant (char *prefix, char *ssidoverride)
 	  sprintf (psk, "/tmp/%s/user.prv", prefix);
 	  sprintf (ath, "%s_tls8021xprv", prefix);
 	  write_nvram (psk, ath);
-	  fprintf (fp, "\tca_cert=/tmp/%s/ca.pem\n", prefix);
-	  fprintf (fp, "\tclient_cert=/tmp/%s/user.pem\n", prefix);
-	  fprintf (fp, "\tprivate_key=/tmp/%s/user.prv\n", prefix);
+	  fprintf (fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
+	  fprintf (fp, "\tclient_cert=\"/tmp/%s/user.pem\"\n", prefix);
+	  fprintf (fp, "\tprivate_key=\"/tmp/%s/user.prv\"\n", prefix);
 	  fprintf (fp, "\tprivate_key_passwd=\"%s\"\n",
 		   nvram_prefix_get ("tls8021xpasswd", prefix));
 	  fprintf (fp, "\teapol_flags=3\n");
@@ -527,7 +527,7 @@ setupSupplicant (char *prefix, char *ssidoverride)
 	  sprintf (psk, "/tmp/%s/ca.pem", prefix);
 	  sprintf (ath, "%s_peap8021xca", prefix);
 	  write_nvram (psk, ath);
-	  fprintf (fp, "\tca_cert=/tmp/%s/ca.pem\n", prefix);
+	  fprintf (fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
 	}
       if (nvram_prefix_match ("8021xtype", prefix, "leap"))
 	{
@@ -546,7 +546,7 @@ setupSupplicant (char *prefix, char *ssidoverride)
 //        sprintf (psk, "/tmp/%s/ca.pem", prefix);
 //        sprintf (ath, "%s_peap8021xca", prefix);
 //        write_nvram (psk, ath);
-//        fprintf (fp, "\tca_cert=/tmp/%s/ca.pem\n", prefix);
+//        fprintf (fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
 	}
       fprintf (fp, "}\n");
       fclose (fp);
@@ -1265,6 +1265,9 @@ configure_single (int count)
   char wmm[32];
   sprintf (wmm, "%s_wmm", dev);
   eval ("iwpriv", dev, "wmm", default_get (wmm, "0"));
+  char doth[32];
+  sprintf (doth, "%s_doth", dev);
+  eval ("iwpriv", dev, "doth", default_get (doth, "0"));
 //  eval ("iwpriv", dev, "uapsd","0");
   eval ("iwpriv", dev, "scandisable", "0");
   int disablescan = 0;
