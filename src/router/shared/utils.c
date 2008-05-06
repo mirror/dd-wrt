@@ -1094,10 +1094,13 @@ internal_getRouterBrand ()
 	fread(mac,32,1,in);
 	fclose(in);
 	mac[17]=0;
+	if (sv_valid_hwaddr(mac))
+	{
 	nvram_set("et0macaddr",mac);
 	fprintf(stderr,"restore D-Link MAC\n");
 	nvram_commit();
 	sys_reboot();
+	}
 	}
 /*      if (nvram_get("vlan2ports")!=NULL)
       {
