@@ -2072,10 +2072,10 @@ filter_forward (void)
       if (nvram_match ("pptp_pass", "1"))
 	{
 	  save2file
-	    ("-I FORWARD -o %s -s %s/24 -p tcp --dport %d -j ACCEPT\n",
-	     wanface, nvram_safe_get ("lan_ipaddr"), PPTP_PORT);
-	  save2file ("-I FORWARD -o %s -s %s/24 -p gre -j ACCEPT\n", wanface,
-		     nvram_safe_get ("lan_ipaddr"));
+	    ("-I FORWARD -o %s -s %s/%d -p tcp --dport %d -j ACCEPT\n",
+	     wanface, nvram_safe_get ("lan_ipaddr"),getmask(nvram_safe_get("lan_netmask")), PPTP_PORT);
+	  save2file ("-I FORWARD -o %s -s %s/%d -p gre -j ACCEPT\n", wanface,
+		     nvram_safe_get ("lan_ipaddr"),getmask(nvram_safe_get("lan_netmask")));
 	}
     }
   /* ACCEPT packets for Multicast pass through */
