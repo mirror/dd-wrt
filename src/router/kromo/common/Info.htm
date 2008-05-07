@@ -8,7 +8,7 @@ function setWirelessTable() {
 	cleanTable(table);
 	if(!val.length) {
 		var cell = table.insertRow(-1).insertCell(-1);
-		cell.colSpan = 7;
+		cell.colSpan = 8;
 		cell.align = "center";
 		cell.innerHTML = "- " + share.none + " -";
 		return;
