@@ -9,7 +9,7 @@ lang_charset.set="UTF-8";
 
 share.firmware="Firmware";
 share.time="Time";
-share.interipaddr="WAN IP位址";
+share.interipaddr="WAN IP 位址";
 share.more="更多...";
 share.help="幫助";
 share.enable="啟用";
@@ -152,7 +152,7 @@ share.unknown="Unknown";
 share.expired="expired";
 share.logout="登出";
 share.nmounted="Not mounted";
-share.fssize="合計 / 閒空大小";
+share.fssize="合計 / 剩餘大小";
 share.src="來源位址";
 share.dst="遠端位址";
 share.name_resolution="Name Resolution";
@@ -173,7 +173,7 @@ share.days="天";
 share.standard="標準（Standard）";
 share.execscript="執行 script";
 share.user="用戶";
-share.privatekey="私密金鑰";
+share.privatekey="私人金鑰";
 share.bytes="bytes";
 share.kbytes="KB";
 share.mbytes="MB";
@@ -610,7 +610,7 @@ prforward.app="應用程式";
 
 //help container
 //
-hprforward.right2="某些應用程式可能需要打開特定埠才能正常工作. 舉例來說,這些應用程式包括伺服器軟體和一些線上遊戲.當從Internet接收到一個針對特定埠的請求時,路由器將會把這些資料路由到您指定的電腦.基於安全的考慮,您可能想只對您需要使用的埠設定通訊埠轉發（映射）,同時,在您完成之後,取消對 <em>" + share.enable +"</em> 核取方塊的選定.";
+hprforward.right2="某些應用程式可能需要打開特定埠才能正常工作. 舉例來說,這些應用程式包括伺服器軟體和一些線上遊戲.當從Internet接收到一個針對特定埠的請求時,路由器將會把這些資料路由到您指定的電腦.基於安全的考慮,您可能想只對您需要使用的埠設定通訊埠轉發（映射）,同時,在您完成之後,取消對 <em>" + share.enable +"</em> 核取方塊的選擇.";
 
 
 // ** P2P.asp **//
@@ -623,7 +623,7 @@ p2p.ctorrent_srv="Ctorrent 服務";
 
 //help container
 //
-//hpp2p.right2="某些應用程式可能會要求要開啟特定的連接埠以讓其正常運作. 這些應用程式的範例包括伺服器及某些線上遊戲. 來自網際網路特定連接埠的連線要求, 路由器將轉送資料到你指定的電腦. 基於安全性考量, 你可以限制連接埠轉送到你正在使用的連接埠, 在您完成之後,取消對 <em>" + share.enable +"</em> 核取方塊的選定.";
+//hpp2p.right2="某些應用程式可能會要求要開啟特定的連接埠以讓其正常運作. 這些應用程式的範例包括伺服器及某些線上遊戲. 來自網際網路特定連接埠的連線要求, 路由器將轉送資料到你指定的電腦. 基於安全性考量, 你可以限制連接埠轉送到你正在使用的連接埠, 在您完成之後,取消對 <em>" + share.enable +"</em> 核取方塊的選擇.";
 
 
 // ** ForwardSpec.asp **//
@@ -637,20 +637,20 @@ pforward.to="目的地埠";
 
 //help container
 //
-hpforward.right2="某些應用程式可能需要打開特定埠才能正常工作. 舉例來說,這些應用程式包括伺服器軟體和一些線上遊戲.當從Internet接收到一個針對特定埠的請求時,路由器將會把這些資料路由到您指定的電腦.基於安全的考慮,您可能想只對您需要使用的埠設定通訊埠轉發（映射）,同時,在您完成之後,取消對 <em>" + share.enable +"</em> 核取方塊的選定.";
+hpforward.right2="某些應用程式可能需要打開特定埠才能正常工作. 舉例來說,這些應用程式包括伺服器軟體和一些線上遊戲.當從Internet接收到一個針對特定埠的請求時,路由器將會把這些資料路由到您指定的電腦.基於安全的考慮,您可能想只對您需要使用的埠設定通訊埠轉發（映射）,同時,在您完成之後,取消對 <em>" + share.enable +"</em> 核取方塊的選擇.";
 
 
 // ** Hotspot.asp **//
 //
 hotspot.titl="Hotspot";
-hotspot.h2="Hotspot 門戶";
+hotspot.h2="Hotspot 入口";
 hotspot.legend="Chillispot";
 hotspot.nowifibridge="把無線與區域網橋接分開";
 hotspot.hotspot="Chillispot";
 hotspot.pserver="主要Radius IP/DNS";
 hotspot.bserver="備用Radius IP/DNS";
 hotspot.dns="DNS IP";
-hotspot.url="重新定向URL";
+hotspot.url="重新導向URL";
 hotspot.dhcp="DHCP 介面";
 hotspot.radnas="Radius NAS ID";
 hotspot.net="遠端 Network";
@@ -661,8 +661,8 @@ hotspot.macauth="MACauth";
 hotspot.option="Chillispot附加選項";
 hotspot.fon_chilli="Chillispot本地用戶管理";
 hotspot.fon_user="用戶清單";
-hotspot.http_legend="HTTP 重定向";
-hotspot.http_srv="HTTP 重定向";
+hotspot.http_legend="HTTP 重新導向";
+hotspot.http_srv="HTTP 重新導向";
 hotspot.http_ip="HTTP目標IP";
 hotspot.http_port="HTTP目標埠";
 hotspot.http_net="HTTP來源網路";
@@ -671,15 +671,15 @@ hotspot.nocat_srv="NoCatSplash";
 hotspot.nocat_gateway="閘道名稱";
 hotspot.nocat_home="主頁面";
 hotspot.nocat_allowweb="被許可的Web主機清單";
-hotspot.nocat_docroot="文件（根目錄）";
+hotspot.nocat_docroot="檔案（根目錄）";
 hotspot.nocat_splash="Splash URL";
 hotspot.nocat_port="排除的埠";
 hotspot.nocat_timeout="登錄超時";
 hotspot.nocat_verbose="細緻程度";
 hotspot.nocat_route="僅路由";
 hotspot.nocat_MAClist="MAC White List";
-hotspot.smtp_legend="SMTP重定向";
-hotspot.smtp_srv="SMTP重定向";
+hotspot.smtp_legend="SMTP重新導向";
+hotspot.smtp_srv="SMTP重新導向";
 hotspot.smtp_ip="SMTP目的地IP";
 hotspot.smtp_net="SMTP來源網路";
 hotspot.shat_legend="零IP設定";
@@ -692,7 +692,7 @@ hotspot.sputnik_id="Sputnik伺服器ID";
 hotspot.sputnik_instant="使用Sputnik即時設定";
 hotspot.sputnik_express="使用SputnikNet Express";
 hotspot.sputnik_about="關於Sputnik";
-hotspot.sputnik_learn="學習更多";
+hotspot.sputnik_learn="更多";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Wifidog daemon";
 hotspot.wifidog_id="Gateway ID";
@@ -760,7 +760,7 @@ info.ap="存取點";
 idx_h.srv="Heart Beat伺服器";
 idx_h.con_strgy="連接計畫";
 idx_h.max_idle="一經請求連結: 最大閒置時間";
-idx_h.alive="持續動作: 重撥間期";
+idx_h.alive="持續動作: 重撥間隔";
 idx_h.reconnect="強制 重撥";
 
 
@@ -1336,7 +1336,7 @@ status_band.up="up";
 
 //help container
 //
-hstatus_band.right1="按 SWITCH TO 選擇 (bytes/s or bits/s).";
+hstatus_band.right1="按 SWITCH TO 選擇 (bytes/s 或 bits/s).";
 hstatus_band.right2="按 AUTOSCALE 調整顯示範圍.";
 
 // ** Status_Router.asp **//
@@ -1362,7 +1362,7 @@ status_router.mem_active="使用中";
 status_router.mem_inactive="非使用中";
 status_router.mem_hidden="Hidden"; // do not translate this line, this is bogus (BrainSlayer)
 status_router.legend4="網路";
-status_router.net_maxports="最大連接埠";
+status_router.net_maxports="最大連接數";
 status_router.net_conntrack="使用中";
 status_router.notavail="伺服器未連線";
 status_router.legend6="空間使用";
@@ -1774,7 +1774,7 @@ wl_basic.multicast="多點傳播轉送";
 //
 hwl_basic.right2="如果您想排除無線-G用戶端,選擇 <em>B</em> 模式.如果您想關閉無線連線,選擇 <em>關閉</em>.";
 hwl_basic.right3="感度範圍: ";
-hwl_basic.right4="調整ack時序.輸入0將完全關閉ack時序(V.24 無此功能).";
+hwl_basic.right4="調整ACK. 輸入0 ,關閉ACK調整(broadcom 平台), 自動ACK調整(Atheros 平台)";
 hwl_basic.right6="按 時間表格 開啟或關閉無線網路 (<em>green</em> 無線網路開啟, and <em>red</em> 無線網路關閉)";
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
