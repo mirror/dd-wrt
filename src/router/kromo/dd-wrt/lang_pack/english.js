@@ -20,6 +20,7 @@ share.usrname="User Name";
 share.passwd="Password";
 share.hostname="Host Name";
 share.vdsl="DTAG VDSL Vlan Tagging";
+share.wan_vlantag="Vlan Tag ID";
 share.compression="PPP Compression";
 share.domainname="Domain Name";
 share.wandomainname="WAN Domain Name";
