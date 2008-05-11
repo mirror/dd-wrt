@@ -144,6 +144,14 @@ init_ddns (void)
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_8");
       break;
 
+    case 9:
+      strcpy (service, "default@dynsip.org");
+
+      snprintf (_username, sizeof (_username), "%s", "ddns_username_9");
+      snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_9");
+      snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_9");
+      break;
+      
     default:
       return -1;
     }
