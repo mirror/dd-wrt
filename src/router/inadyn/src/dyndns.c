@@ -58,6 +58,7 @@ static BOOL is_zoneedit_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char*
 static BOOL is_easydns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
 static BOOL is_tzo_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
 
+
 DYNDNS_SYSTEM_INFO dns_system_table[] = 
 { 
     {DYNDNS_DEFAULT, 
@@ -126,6 +127,13 @@ DYNDNS_SYSTEM_INFO dns_system_table[] =
             (DNS_SYSTEM_REQUEST_FUNC) get_req_for_tzo_http_dns_server,
             DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL, 
 			"cgi.tzo.com", "/webclient/signedon.html?TZOName=", ""}},
+//milkfish
+    {DYNSIP_DEFAULT, 
+        {"default@dynsip.org", NULL, 
+            (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC) is_dyndns_server_rsp_ok, 
+            (DNS_SYSTEM_REQUEST_FUNC) get_req_for_generic_http_dns_server,
+             DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL,
+			"dynsip.org", "/nic/update?hostname=", ""}},
 
     {CUSTOM_HTTP_BASIC_AUTH, 
         {"custom@http_svr_basic_auth", NULL,  
