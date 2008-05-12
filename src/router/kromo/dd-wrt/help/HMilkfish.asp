@@ -83,11 +83,11 @@
 				<dd>Click <i>Save Settings</i> to save your settings or click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>
 			</dl>
 		</div>
-		<div class="also">
+<!--		<div class="also">
 			<h4><% tran("share.seealso"); %></h4>
 			<ul>
 			</ul>
 		</div>
-	</body>
+-->	</body>
 </html>
 
