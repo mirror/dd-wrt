@@ -1410,8 +1410,6 @@ enable_dtag_vlan (int enable)
   char tmp[200];
   char *eth = "eth0";
 
-  if (getRouterBrand () == ROUTER_DLINK_DIR330)
-    {
   	FILE *in = fopen ("/proc/switch/eth1/reset", "rb");	// this condition fails almost. just one router (DLINK DIR-330) requires it
   	if (in)
     	{
@@ -1425,9 +1423,8 @@ enable_dtag_vlan (int enable)
             eth = "eth2";
             fclose (in);
 	  }else
-	    return "eth0";
+            eth = "eth0";
     	}
-    }
 
   if (!donothing)
     {
