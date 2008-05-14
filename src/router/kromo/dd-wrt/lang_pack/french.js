@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////
-//  French translation DD-WRT by Botho & GaLaGaNN 11/05/2008 version - svn 9502  //
+//  French translation DD-WRT by Botho & GaLaGaNN 11/05/2008 version - svn 9511  //
 ///////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -23,7 +23,7 @@ share.compression="Compression PPP";
 share.domainname="Nom de domaine";
 share.wandomainname="Nom de domaine WAN";
 share.landomainname="Nom de domaine LAN";
-share.statu="Statut";
+share.statu="État";
 share.start="Début";
 share.end="Fin";
 share.proto="Protocole";
@@ -37,7 +37,7 @@ share.remove="Enlever";
 share.descr="Description";
 share.from="De";
 share.to="A";
-share.about="A propos";
+share.about="À propos";
 share.everyday="Tous les jours";
 share.sun="Dimanche";
 share.sun_s="Dim";
@@ -144,14 +144,14 @@ share.styl="Apparence";
 share.err="erreur";
 share.errs="erreurs";
 share.meters="mètres";
-share.full="Full (20 Mhz)";
-share.half="Half (10 Mhz)";
-share.quarter="Quarter (5 Mhz)";
+share.full="Full (20 MHz)";
+share.half="Half (10 MHz)";
+share.quarter="Quarter (5 MHz)";
 share.seealso="Voir aussi";
 share.never="jamais";
 share.unknown="Inconnu";
 share.expired="Expiré";
-share.logout="Déconnection";
+share.logout="Déconnexion";
 share.nmounted="Partition non montée";
 share.fssize="Total / libre";
 share.src="Adresse source";
@@ -206,7 +206,7 @@ sbutton.cptotext="Éditer";
 sbutton.runcmd="Exécutez la commande";
 sbutton.startup="Sauver le Démarrage";
 sbutton.firewall="Sauver le Pare-feu";
-sbutton.custom="Sauver le script personnalisé";
+sbutton.custom="Sauver le script";
 sbutton.wol="Réveiller";
 sbutton.add_wol="Ajouter un hôte";
 sbutton.manual_wol="Réveil manuel";
@@ -226,7 +226,7 @@ sbutton.routingtab="Table de routage";
 sbutton.wanmac="Obtenir l'adresse MAC du PC";
 sbutton.dhcprel="Libérer DHCP";
 sbutton.dhcpren="Renouveler DHCP";
-sbutton.survey="Réseaux sans fil à porté";
+sbutton.survey="Réseaux sans fil à portée";
 sbutton.upgrading="Mise à jour...";
 sbutton.upgrade="Mettre à jour";
 sbutton.preview="Visualiser";
@@ -353,7 +353,7 @@ bmenu.wireless="Sans fil";
 bmenu.wirelessBasic="Paramètres de base";
 bmenu.wirelessRadius="Radius";
 bmenu.wirelessSuperchannel="Supercanal";
-bmenu.wirelessSecurity="Sécurité Sans fil";
+bmenu.wirelessSecurity="Sécurité sans fil";
 bmenu.wirelessMac="Filtrage MAC";
 bmenu.wirelessAdvanced="Paramètres avancés";
 bmenu.wirelessWds="WDS";
@@ -383,7 +383,7 @@ bmenu.applicationsP2P="P2P";
 bmenu.sipath="SIPatH";
 bmenu.sipathoverview="Vue d'ensemble";
 bmenu.sipathphone="Carnet d'adresses";
-bmenu.sipathstatus="Statut";
+bmenu.sipathstatus="État";
 
 bmenu.admin="Administration";
 bmenu.adminManagement="Gestion";
@@ -391,7 +391,7 @@ bmenu.adminAlive="Keep Alive";
 bmenu.adminLog="Journal";
 bmenu.adminDiag="Shell";
 bmenu.adminWol="WOL";
-bmenu.adminFactory="Reset";
+bmenu.adminFactory="Réinitialiser";
 bmenu.adminUpgrade="Mise à jour";
 bmenu.adminBackup="Sauvegarde";
 
@@ -403,7 +403,7 @@ bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Routeur SIP Milkfish";
 bmenu.servicesAnchorFree="Mon réseau publicitaire";
 
-bmenu.statu="Statut";
+bmenu.statu="État";
 bmenu.statuRouter="Routeur";
 bmenu.statuInet="WAN";
 bmenu.statuLAN="LAN";
@@ -416,9 +416,9 @@ bmenu.statuSysInfo="Système";
 // ** Alive.asp **//
 alive.titl="Keep Alive";
 alive.h2="Keep Alive";
-alive.legend="Redémarrage Programmé du Routeur";
+alive.legend="Redémarrage programmé du Routeur";
 alive.sevr1="Redémarrage programmé";
-alive.hour="A heure fixe";
+alive.hour="À heure fixe";
 alive.legend2="WDS/Connexion Watchdog";
 alive.sevr2="Watchdog";
 alive.IP="Adresses IP";
@@ -525,7 +525,7 @@ filter.polallow="Accès Internet pendant les horaires ci-dessous.";
 filter.legend2="Calendrier";
 filter.time="Plage horaire";
 filter.h24="24 heures";
-filter.legend3="Services Bloqués";
+filter.legend3="Services bloqués";
 filter.catchall="Interdire P2P";
 filter.legend4="Blocage de site Web par adresse URL";
 filter.legend5="Blocage de site Web par mot clé";
@@ -575,7 +575,7 @@ prforward.legend="Transfert de connexion";
 prforward.app="Application";
 
 //help container
-hprforward.right2="Certaines applications nécessitent d'ouvrir des ports spécifiques pour fonctionner correctement. Il peut s'agir de certains jeux en ligne, les serveurs type FTP, messagerie, web etc ... Certaines applications Internet peuvent n'exiger aucun transfert. Quand une demande sur un port bien précis venant d'Internet se présente au niveau du routeur, celui-ci transfert les données vers l'ordinateur adéquat. En raison des problématiques de sécurité, vous pouvez activer ou désactiver les transferts de connexion quand ils ne sont pas nécessaires grâce à la case à cocher <em>" + share.enable +"</em>.";
+hprforward.right2="Certaines applications nécessitent d'ouvrir des ports spécifiques pour fonctionner correctement. Il peut s'agir de certains jeux en ligne, les serveurs type FTP, messagerie, Web, etc ... Certaines applications Internet peuvent n'exiger aucun transfert. Quand une demande sur un port bien précis venant d'Internet se présente au niveau du routeur, celui-ci transfert les données vers l'ordinateur adéquat. En raison des problématiques de sécurité, vous pouvez activer ou désactiver les transferts de connexion quand ils ne sont pas nécessaires grâce à la case à cocher <em>" + share.enable +"</em>.";
 
 // ** P2P.asp **//
 p2p.titl="Appications Peer-to-Peer";
@@ -596,7 +596,7 @@ pforward.from="du Port";
 pforward.to="vers le Port";
 
 //help container
-hpforward.right2="Certaines applications nécessitent d'ouvrir des ports spécifiques pour fonctionner correctement. Il peut s'agir de certains jeux en ligne, les serveurs type FTP, messagerie, web etc... Certaines applications Internet peuvent n'exiger aucun transfert. Quand une demande sur un port bien précis venant d'Internet se présente au niveau du routeur, celui-ci transfert les données vers l'ordinateur adéquat. En raison des problématiques de sécurité, vous pouvez activer ou désactiver les transferts de connexion quand ils ne sont pas nécessaires grâce à la case à cocher <em>" + share.enable +"</em>.";
+hpforward.right2="Certaines applications nécessitent d'ouvrir des ports spécifiques pour fonctionner correctement. Il peut s'agir de certains jeux en ligne, les serveurs type FTP, messagerie, Web, etc... Certaines applications Internet peuvent n'exiger aucun transfert. Quand une demande sur un port bien précis venant d'Internet se présente au niveau du routeur, celui-ci transfert les données vers l'ordinateur adéquat. En raison des problématiques de sécurité, vous pouvez activer ou désactiver les transferts de connexion quand ils ne sont pas nécessaires grâce à la case à cocher <em>" + share.enable +"</em>.";
 
 // ** Hotspot.asp **//
 hotspot.titl="Hotspot";
@@ -616,7 +616,7 @@ hotspot.uamdns="DNS du UAM";
 hotspot.allowuam="UAM Autorisé";
 hotspot.macauth="MACauth";
 hotspot.option="Options supplémentaires";
-hotspot.fon_chilli="Gestion des Utilisateurs Locaux";
+hotspot.fon_chilli="Gestion des Utilisateurs locaux";
 hotspot.fon_user="Liste des Utilisateurs";
 hotspot.http_legend="Redirection HTTP";
 hotspot.http_srv="Redirection HTTP";
@@ -681,7 +681,7 @@ anchorfree.zip="Code postal ou Zip";
 anchorfree.state="Comté/état/province";
 anchorfree.country="Pays";
 anchorfree.category="Catégorie";
-anchorfree.publish="Publier ce Hotspot sur la carte des réseaux sans fil gratuits";
+anchorfree.publish="Publication du Hotspot sur la carte";
 anchorfree.serviceid="ID Service";
 anchorfree.servicestatus="Etat du service";
 anchorfree.agreement="Conditions générales de vente";
@@ -740,7 +740,7 @@ idx.h22="Configuration sans fil";
 idx.legend="Type de connexion WAN";
 idx.conn_type="Type de connexion";
 idx.stp="STP";
-idx.stp_mess="(Désactiver pour le FAI COMCAST)";
+idx.stp_mess="(Désactivé pour le FAI COMCAST)";
 idx.optional="Paramètres facultatifs";
 idx.mtu="MTU";
 idx.h23="Configuration réseau";
@@ -759,7 +759,7 @@ idx.dhcp_srv="Serveur DHCP";
 idx.dhcp_fwd="Transfert de DHCP";
 idx.dhcp_start="Adresse IP de début";
 idx.dhcp_end="Adresse IP de fin";
-idx.dhcp_maxusers="Nombre maximal d'utilisateurs DHCP";
+idx.dhcp_maxusers="Utilisateurs DHCP maximum";
 idx.dhcp_lease="Durée du bail";
 idx.dhcp_dnsmasq="Utiliser DNSMasq pour DHCP";
 idx.dns_dnsmasq="Utiliser DNSMasq pour DNS";
@@ -934,14 +934,14 @@ qos.maxuprate_b="Maximum montant en Kbits";
 qos.maxdownrate_b="Maximum descendant en Kbits";
 qos.maxrate_o="Taux maximum";
 qos.legend4="Priorité MAC";
-qos.legend5="Priorité de Port Ethernet";
+qos.legend5="Priorité des Ports Ethernet";
 qos.legend6="Niveau par défaut de la Bande Passante";
 qos.bandwith="Bande Passante (Kbits)";
 
 //help container
-hqos.right1="Débit montant:";
+hqos.right1="Débit montant :";
 hqos.right2="Doit être entre 80% et 95% (max) du débit montant maximum de la connexion.";
-hqos.right3="Débit descendant:";
+hqos.right3="Débit descendant :";
 hqos.right4="Doit être entre 80% et 100% du débit descendant maximum de la connexion.";
 hqos.right6="Vous pouvez contrôler la priorité de plusieurs types d'applications pour optimiser la bande passante.";
 hqos.right8="Vous pouvez contrôler la priorité du trafic pour les adresses IP spécifiées ou une plage d'adresses.";
@@ -1085,7 +1085,7 @@ service.snmp_srv="SNMP";
 service.snmp_loc="Emplacement";
 service.snmp_contact="Contact";
 service.snmp_name="Nom";
-service.snmp_read="Communauté lecture seul";
+service.snmp_read="Communauté lecture seule";
 service.snmp_write="Communauté accès complet";
 
 //openvpn.webservices
@@ -1097,8 +1097,8 @@ service.vpn_mru="TUN MTU Extra";
 service.vpn_mss="TCP MSS";
 service.vpn_compress="Utilisez la compression LZO";
 service.vpn_tunnel="Tunnel du Protocole";
-service.vpn_srvcert="Certification du Serveur Publique";
-service.vpn_clicert="Certification du Client Publique";
+service.vpn_srvcert="Certification du Serveur public";
+service.vpn_clicert="Certification du Client public";
 service.vpn_certtype="nsCertType";
 service.vpn_clikey="Clef du Client Privée";
 
@@ -1123,7 +1123,7 @@ service.ses_script="Script à lancer";
 //hwmon.webservices
 service.hwmon_legend="Surveillance du Matériel";
 service.hwmon_critemp="Température critique (Ventilateur On)";
-service.hwmon_hystemp="Temperature Hystérésis (Ventilateur Off)";
+service.hwmon_hystemp="Température Hystérésis (Ventilateur Off)";
 
 //rstat.webservices
 service.rstats_legend="Contrôle de la Bande passante";
@@ -1167,7 +1167,7 @@ service.milkfish_siptrace="SIP Trace";
 service.milkfish_subscribers="Abonnés locaux";
 service.milkfish_aliases="Alias locaux";
 service.milkfish_dynsip="SIP dynamique";
-service.milkfish_status="SIP Statut";
+service.milkfish_status="État SIP";
 service.milkfish_database="Base de données SIP";
 service.milkfish_messaging="Messagerie SIP";
 service.milkfish_phonebook="Annuaire téléphonique SIP";
@@ -1212,17 +1212,17 @@ eoip.bridging="Bridging";
 // ** Sipath.asp + cgi **//
 sipath.titl="Généralités SiPath";
 sipath.phone_titl="Répertoire";
-sipath.status_titl="Statut";
+sipath.status_titl="État";
 
 // ** Status_Lan.asp **//
-status_lan.titl="Statut LAN";
+status_lan.titl="État LAN";
 status_lan.h2="Réseau local";
-status_lan.legend="Statut LAN";
+status_lan.legend="État LAN";
 status_lan.h22="Dynamic Host Configuration Protocol (DHCP)";
-status_lan.legend2="Statut DHCP";
+status_lan.legend2="État DHCP";
 status_lan.legend3="Clients DHCP";
-status_lan.legend4="Clients Connectés";
-status_lan.concount="Connections";
+status_lan.legend4="Clients connectés";
+status_lan.concount="Connexions";
 status_lan.conratio="Proportion";
 
 //help container
@@ -1233,7 +1233,7 @@ hstatus_lan.right8="Si vous utilisez le routeur comme serveur DHCP, c'est indiqu
 hstatus_lan.right10="En cliquant sur n'importe quelle adresse Mac, vous obtiendrez l'Identifient Unique du Constructeur (Organizationally Unique Identifier) de la carte réseau (recherche dans la base IEEE Standards OUI).";
 
 // ** Status_Bandwidth.asp **//
-status_band.titl="Statut de la Bande Passante";
+status_band.titl="État de la Bande Passante";
 status_band.h2="État de la Bande Passante";
 status_band.chg_unit="Basculer en ";
 status_band.chg_scale="Échelle auto";
@@ -1249,7 +1249,7 @@ hstatus_band.right1="Cliquez sur l'étiquette \"<em>"+status_band.chg_unit+" ...<
 hstatus_band.right2="Cliquer sur \"<em>"+status_band.chg_scale+" ...</em>\" permet de modifier le type d'échelle (<em>"+status_band.follow+"</em> ajuste l'échelle en permanence tandis que <em>"+status_band.up+"</em> ajuste l'échelle sur le pic maximum constaté).";
 
 // ** Status_Router.asp **//
-status_router.titl="Statut du Routeur";
+status_router.titl="État du Routeur";
 status_router.h2="Informations Routeur";
 status_router.legend="Système";
 status_router.sys_model="Modèle du Routeur";
@@ -1278,7 +1278,7 @@ status_router.inpvolt="Tension";
 status_router.cputemp="Température CPU";
 
 //help container
-hstatus_router.right2="Nom du routeur que vous avez configuré dans l'onglet <em>Setup</em>.";
+hstatus_router.right2="Nom du routeur que vous avez configuré dans l'onglet <em>Configuration</em>.";
 hstatus_router.right4="Adresse Mac vue par votre provider Internet";
 hstatus_router.right6="Micrologiciel utilisé sur votre routeur";
 hstatus_router.right8="Ceci est la date reçue depuis le serveur NTP configurable dans l'onglet <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em>.";
@@ -1286,10 +1286,10 @@ hstatus_router.right10="Temps écoulé depuis le dernier arrêt/relance du routeur.
 hstatus_router.right12="Ce sont 3 nombres qui mesurent la charge de votre routeur sur une période de 1, 5 et 15 minutes.";
 
 // ** Status_Internet.asp **//
-status_inet.titl="Statut WAN";
+status_inet.titl="État WAN";
 status_inet.h11="WAN";
 status_inet.conft="Type de configuration";
-status_inet.www_loginstatus="Statut de la connexion";
+status_inet.www_loginstatus="État de la connexion";
 status_inet.wanuptime="Connexion démarrée depuis";
 status_inet.leasetime="Renouvellement du bail dans";
 status_inet.traff="Trafic";
@@ -1301,36 +1301,36 @@ status_inet.previous="Mois précédent";
 status_inet.next="Mois suivant";
 
 //help container
-hstatus_inet.right2="Ce sont les informations requises par votre FAI afin de vous connecter à Internet et qui sont configurées dans l'onglet <em>Setup</em>. Vous pouvez connecter votre routeur à Internet en cliquant sur <em>Connect</em> ou le déconnecter en cliquant sur <em>Disconnect</em>.";
+hstatus_inet.right2="Ce sont les informations requises par votre FAI afin de vous connecter à Internet et qui sont configurées dans l'onglet <em>Configuration</em>. Vous pouvez connecter votre routeur à Internet en cliquant sur <em>Connect</em> ou le déconnecter en cliquant sur <em>Disconnect</em>.";
 hstatus_inet.right4="Informations sur le trafic Internet depuis le dernier démarrage du routeur.";
 hstatus_inet.right6="Trafic Internet ventilé par mois. Par défaut, le mois courant est affiché. Déplacez la souris sur le graphique pour afficher les données des autres mois (les données sont stockées dans la mémoire flash du routeur).";
 
 
 // ** Status_Conntrack.asp **//
 status_conn.titl="Table des connexions";
-status_conn.h2="Connections IP actives";
+status_conn.h2="Connexions IP actives";
 
 // ** Status_SputnikAPD.asp **//
-status_sputnik.titl="Statut de l'agent Sputnik";
+status_sputnik.titl="État de l'agent Sputnik";
 status_sputnik.h2="Agent&trade; Sputnik&reg;";
 status_sputnik.manage="Géré Par";
 status_sputnik.license="Numéro de License SCC";
 
 //help container
-hstatus_sputnik.right1="Statut de l'agent Sputnik";
+hstatus_sputnik.right1="État de l'agent Sputnik";
 hstatus_sputnik.right2="Cette partie affiche l'état du processus de l'Agent Sputnik.";
 hstatus_sputnik.right4="Le centre de contrôle Sputnik auquel ce point d'accès est connecté.";
-hstatus_sputnik.right6="Statut actuel de l'agent Sputnik";
+hstatus_sputnik.right6="État actuel de l'agent Sputnik";
 hstatus_sputnik.right8="Le numéro de licence de votre centre de contrôle Sputnik.";
 
 // ** Status_Wireless.asp **//
-status_wireless.titl="Statut sans Fil";
-status_wireless.h2="Informations sans Fil";
+status_wireless.titl="État sans fil";
+status_wireless.h2="Informations sans fil";
 status_wireless.legend="Wifi";
 status_wireless.net="Réseau";
-status_wireless.pptp="Statut PPTP";
-status_wireless.legend2="Information Paquets";
-status_wireless.rx="Recus (RX)";
+status_wireless.pptp="État PPTP";
+status_wireless.legend2="Information Paquet (sans fil)";
+status_wireless.rx="Reçus (RX)";
 status_wireless.tx="Transmis (TX)";
 status_wireless.h22="Noeuds sans fil";
 status_wireless.legend3="Clients sans fil";
@@ -1339,25 +1339,25 @@ status_wireless.wds="Noeuds WDS";
 
 // ** GPS info **//
 status_gpsi.legend="Informations GPS";
-status_gpsi.status="Statut";
+status_gpsi.status="État";
 status_gpsi.lon="Longitude";
 status_gpsi.lat="Latitude";
 status_gpsi.alt="Altitude";
 status_gpsi.sat="Satellites visibles";
 
 //help container
-hstatus_wireless.right2="Ceci est l'adresse mac de votre routeur vue depuis votre réseau local (filaire et sans-fil)";
+hstatus_wireless.right2="Ceci est l'adresse MAC de votre routeur vue depuis votre réseau local (filaire et sans-fil)";
 hstatus_wireless.right4="Comme configuré dans l'onglet Wireless, ce sont les normes de connexions acceptées pour votre réseau sans fil (Mixed, G-Only, or Disabled).";
 
 // ** Status_OpenVPN.asp **//
-status_openvpn.titl="Statut OpenVPN";
+status_openvpn.titl="État OpenVPN";
 
 // ** Triggering.asp **//
 trforward.titl="Déclenchement de Port";
 trforward.h2="Déclenchement de Port";
 trforward.legend="Expédier";
-trforward.trrange="Gamme de Port déclenché";
-trforward.fwdrange="Gamme de Port expédié";
+trforward.trrange="Gamme de Ports déclenchés";
+trforward.fwdrange="Gamme de Ports expédiés";
 trforward.app="Application";
 
 //help container
@@ -1365,16 +1365,16 @@ htrforward.right2="Entrez au nom d'application du déclenchement.";
 htrforward.right4="Pour chaque application, inscrivez une gamme de nombres pour le port déclenché. Vérifiez auprès de l'application Internet la documentation pour les numéros de port.";
 htrforward.right6="Pour chaque application, inscrivez une gamme de nombres pour le port expédié. Vérifiez auprès de l'application Internet la documentation pour les numéros de port.";
 htrforward.right8="Entrez le nombre de ports de départ de la gamme à déclencher et à expédier.";
-htrforward.right10="Entrez le nombre de ports de fun de la gamme à déclencher et à expédier.";
+htrforward.right10="Entrez le nombre de ports de fin de la gamme à déclencher et à expédier.";
 
 // ** Upgrade.asp **//
 upgrad.titl="Mise à jour du Micrologiciel";
 upgrad.h2="Gestion du Micrologiciel";
 upgrad.legend="Mise à jour du Micrologiciel";
 upgrad.info1="Après la mise à jour, réinitialiser";
-upgrad.resetOff="Pas de reset";
-upgrad.resetOn="Reset usine";
-upgrad.file="Séléctionner le fichier de mise à jour";
+upgrad.resetOff="Pas de réinitialisation";
+upgrad.resetOn="Réinitialisation usine";
+upgrad.file="Sélectionner le fichier de mise à jour";
 upgrad.warning="A T T E N T I O N";
 upgrad.mess1="La mise à jour du Micrologiciel peut prendre quelques minutes.<br />N'éteignez/redémarrez surtout pas votre routeur pendant la mise à jour !";
 
@@ -1384,7 +1384,7 @@ hupgrad.right2="Cliquez sur le bouton <em>Parcourir...</em> pour sélectionner le
 // ** UPnP.asp **//
 upnp.titl="UPnP";
 upnp.h2="Universal Plug and Play (UPnP)";
-upnp.legend="Listes Redirections UPnP";
+upnp.legend="Listes redirections UPnP";
 upnp.legend2="Configuration UPnP";
 upnp.serv="Service UPnP";
 upnp.clear="Réinitialiser au démarrage";
@@ -1427,7 +1427,7 @@ wol.h2="Wake-On-LAN";
 wol.legend="Hôtes disponibles";
 wol.legend2="Nouvel Hôte";
 wol.legend3="Journal";
-wol.legend4="Réveil Manuel";
+wol.legend4="Réveil manuel";
 wol.enable="Activer WOL ?";
 wol.mac="Adresse(s) MAC";
 wol.broadcast="Net Broadcast";
@@ -1562,7 +1562,7 @@ wl_adv.col4="TXOP(b)";
 wl_adv.col5="TXOP(a/g)";
 wl_adv.col6="Admin. Forcé";
 wl_adv.row1="Arrière plan";
-wl_adv.row2="Meilleurs effort";
+wl_adv.row2="Meilleur effort";
 wl_adv.row3="Vidéo";
 wl_adv.row4="Voix";
 wl_adv.table2="Paramètres EDCA STA (Client vers AP)";
@@ -1599,11 +1599,11 @@ wl_basic.a="A-uniquement";
 wl_basic.g="G-uniquement";
 wl_basic.bg="BG-Mixte";
 wl_basic.n="N-uniquement";
-wl_basic.legend2="Plages horaire de fonctionnement";
+wl_basic.legend2="Plages horaires de fonctionnement";
 wl_basic.radio="Radio";
 wl_basic.radiotimer="Programmation sans fil";
-wl_basic.radio_on="Sans fil On";
-wl_basic.radio_off="Sans fil Off";
+wl_basic.radio_on="Sans fil activé";
+wl_basic.radio_off="Sans fil désactivé";
 
 wl_basic.h2_v24="Interface sans fil";
 wl_basic.h2_vi="Interfaces virtuelles";
@@ -1636,7 +1636,7 @@ wl_basic.multicast="Transmission Multicast";
 
 //help container
 hwl_basic.right2="Si vous disposez à la fois des périphériques 802.11g et 802.11b sur votre réseau, conservez le paramètre par défaut <em>Mixte</em>. Si vous utilisez uniquement des périphériques 802.11g, sélectionnez <em>G-uniquement</em>. Si vous travaillez uniquement avec des périphériques 802.11b, sélectionnez <em>B-uniquement</em>. Si votre réseau n'est muni d'aucun périphérique sans fil, sélectionnez l'option <em>Désactiver</em>.<br/><b>Remarque :</b> quand vous changez de mode, certains paramètres avancés sont susceptibles d'être modifiés (\""+wl_adv.label16+"\", \""+wl_adv.label2+"\" ou \""+wl_adv.label5+"\").";
-hwl_basic.right3="Sensibilité: ";
+hwl_basic.right3="Sensibilité :";
 hwl_basic.right4="Permet de régler le <em>ack timing</em>. 0 désactive complètement cette fonctionnalité pour les Micrologiciels Broadcom. Pour ceux basés sur un chipset Atheros cela bascule en mode ack timing automatique";
 hwl_basic.right6="Sélectionnez les heures pendant lesquelles le signal radio sans fil sera activé (<em>vert</em> indique que le signal sans fil est activé, et <em>rouge</em> indique que le signal est désactivé).";
 
