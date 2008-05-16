@@ -20,6 +20,7 @@ share.usrname="Uporabni¹ko ime";
 share.passwd="Geslo";
 share.hostname="Ime gostitelja";
 share.vdsl="DTAG VDSL Vlan oznaèevanje";
+share.wan_vlantag="ID Vlan znaèke";
 share.compression="PPP kompresija";
 share.domainname="Domensko ime";
 share.wandomainname="WAN domensko ime";
