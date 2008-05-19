@@ -49,13 +49,16 @@ start_sputnik (void)
 int
 stop_sputnik (void)
 {
+int ret=0;
   if (pidof ("sputnik") > 0)
+  {
     syslog (LOG_INFO, "sputnik : sputnik daemon successfully stopped\n");
-  int ret = killall ("sputnik", SIGTERM);
+   ret = killall ("sputnik", SIGTERM);
 //  eval("rmmod","ipt_mac");
 //  eval("rmmod","ipt_mark");
 
   cprintf ("done\n");
+  }
   return ret;
 }
 
