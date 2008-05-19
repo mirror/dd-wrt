@@ -503,34 +503,34 @@ stop_zebra (void)
 {
   int ret1 = 0;
 #ifdef HAVE_QUAGGA
-  int ret2=0, ret3=0;
+  int ret2 = 0, ret3 = 0;
   if (pidof ("zebra") > 0 || pidof ("ripd") > 0 || pidof ("ospfd") > 0)
-  {
-    syslog (LOG_INFO,
-	    "zebra : zebra (ripd and ospfd) daemon successfully stopped\n");
-  ret1 = killall ("zebra", SIGTERM);
-  ret2 = killall ("ripd", SIGTERM);
-  ret3 = killall ("ospfd", SIGTERM);
+    {
+      syslog (LOG_INFO,
+	      "zebra : zebra (ripd and ospfd) daemon successfully stopped\n");
+      ret1 = killall ("zebra", SIGTERM);
+      ret2 = killall ("ripd", SIGTERM);
+      ret3 = killall ("ospfd", SIGTERM);
 
-  while (!
-	 (killall ("zebra", SIGTERM) && killall ("ripd", SIGTERM)
-	  && killall ("ospfd", SIGTERM)))
-    sleep (1);
+      while (!
+	     (killall ("zebra", SIGTERM) && killall ("ripd", SIGTERM)
+	      && killall ("ospfd", SIGTERM)))
+	sleep (1);
 
-  cprintf ("done\n");
-  }
+      cprintf ("done\n");
+    }
   return ret1 | ret2 | ret3;
 
 #elif defined(HAVE_BIRD)
   if (pidof ("bird") > 0)
-  {
-    syslog (LOG_INFO, "bird : bird daemon successfully stopped\n");
-  ret1 = killall ("bird", SIGTERM);
+    {
+      syslog (LOG_INFO, "bird : bird daemon successfully stopped\n");
+      ret1 = killall ("bird", SIGTERM);
 
-  cprintf ("done\n");
-  }
+      cprintf ("done\n");
+    }
   return ret1;
-  
+
 #else
   return -1;
 #endif

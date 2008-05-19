@@ -63,10 +63,10 @@ stop_telnetd (void)
 {
   int ret;
   if (pidof ("telnetd") > 0)
-  {
-    syslog (LOG_INFO, "telnetd : telnet daemon successfully stopped\n");
-  ret = killall ("telnetd", SIGTERM);
-  }
+    {
+      syslog (LOG_INFO, "telnetd : telnet daemon successfully stopped\n");
+      ret = killall ("telnetd", SIGTERM);
+    }
   cprintf ("done\n");
   return ret;
 }

@@ -780,7 +780,7 @@ start_pptp (int status)
 //      char *wan_hostname = nvram_safe_get ("wan_hostname");
 
       nvram_set ("wan_get_dns", "");
-      nvram_unset("dhcpc_done");
+      nvram_unset ("dhcpc_done");
       start_dhcpc (wan_ifname);
       int timeout;
 
@@ -1438,17 +1438,17 @@ int
 start_ttraff (void)
 {
   if (!nvram_match ("ttraff_enable", "1"))
-    return 0;	
-	
-  if (nvram_match ("wan_proto", "disabled") || nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "apstawet"))
+    return 0;
+
+  if (nvram_match ("wan_proto", "disabled") || nvram_match ("wl0_mode", "wet")
+      || nvram_match ("wl0_mode", "apstawet"))
     return 0;
 
   pid_t pid;
 
   char *argv[] = { "ttraff", NULL };
   int ret = _evalpid (argv, NULL, 0, &pid);
-  syslog (LOG_INFO,
-	  "ttraff : traffic counter daemon successfully started\n");
+  syslog (LOG_INFO, "ttraff : traffic counter daemon successfully started\n");
 
   cprintf ("done");
 

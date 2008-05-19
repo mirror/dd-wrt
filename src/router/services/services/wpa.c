@@ -512,7 +512,7 @@ start_nas_single (char *type, char *prefix)
 		{
 		  char *argv[] =
 		    { "nas", "-P", pidfile, "-H", "34954", "-i", iface, mode,
-	 "-m",
+		    "-m",
 		    auth_mode, "-r", key, "-s", nvram_safe_get (ssid), "-w",
 		    sec_mode, "-g", nvram_safe_get (rekey), "-h",
 		    nvram_safe_get (radius), "-p", nvram_safe_get (port),	// "-t", //radius rekey time
@@ -554,7 +554,7 @@ start_nas_single (char *type, char *prefix)
 		{
 		  char *argv[] =
 		    { "nas", "-P", pidfile, "-H", "34954", "-i", iface, mode,
-	 "-m",
+		    "-m",
 		    auth_mode, "-r", key, "-s", nvram_safe_get (ssid), "-w",
 		    sec_mode, "-I", nvram_safe_get (index), "-k",
 		    nvram_safe_get (wepkey), "-h",
@@ -597,7 +597,7 @@ start_nas_single (char *type, char *prefix)
 		{
 		  char *argv[] =
 		    { "nas", "-P", pidfile, "-H", "34954", "-i", iface, mode,
-	 "-m",
+		    "-m",
 		    auth_mode, "-k", key, "-s", nvram_safe_get (ssid), "-w",
 		    sec_mode, "-g",
 		    nvram_safe_get (rekey), NULL
@@ -646,11 +646,11 @@ int
 stop_nas (void)
 {
   int ret = 0;
-  
+
 #ifdef HAVE_MSSID
   unlink ("/tmp/.nas");
 #endif
-  
+
   if (pidof ("nas") > 0)
     syslog (LOG_INFO, "NAS : NAS daemon successfully stopped\n");
 

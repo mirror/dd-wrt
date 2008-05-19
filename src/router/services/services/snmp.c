@@ -77,14 +77,14 @@ start_snmp (void)
 int
 stop_snmp (void)
 {
-  int ret=0;
+  int ret = 0;
 
   cprintf ("done\n");
   if (pidof ("snmpd") > 0)
-  {
-    syslog (LOG_INFO, "snmpd : SNMP daemon successfully stopped\n");
-  ret = killall ("snmpd", SIGKILL);
-  }
+    {
+      syslog (LOG_INFO, "snmpd : SNMP daemon successfully stopped\n");
+      ret = killall ("snmpd", SIGKILL);
+    }
   return ret;
 }
 #endif
