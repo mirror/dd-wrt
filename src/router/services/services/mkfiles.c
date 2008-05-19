@@ -43,7 +43,8 @@
 
 int isregistered (void);
 
-void setPassword(char *passwd)
+void
+setPassword (char *passwd)
 {
   FILE *fp;
   struct stat buf;
@@ -58,9 +59,8 @@ void setPassword(char *passwd)
       return;
     }
 
-      fprintf (fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
-	       passwd);
-  fclose(fp);
+  fprintf (fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", passwd);
+  fclose (fp);
 }
 
 int
@@ -68,7 +68,7 @@ start_mkfiles (void)
 {
   FILE *fp;
   struct stat buf;
-cprintf("%s:%d",__func__,__LINE__);
+  cprintf ("%s:%d", __func__, __LINE__);
 #ifdef HAVE_SKYTRON
   char *http_passwd = nvram_safe_get ("skyhttp_passwd");
 #elif HAVE_NEWMEDIA
@@ -78,12 +78,12 @@ cprintf("%s:%d",__func__,__LINE__);
 #else
   char *http_passwd = nvram_safe_get ("http_passwd");
 #endif
-cprintf("%s:%d",__func__,__LINE__);
+  cprintf ("%s:%d", __func__, __LINE__);
   if (stat (HOME_DIR, &buf) != 0)
     {
       mkdir (HOME_DIR, 0700);
     }
-cprintf("%s:%d",__func__,__LINE__);
+  cprintf ("%s:%d", __func__, __LINE__);
 
 #ifdef HAVE_SSHD
   if (stat (SSH_DIR, &buf) != 0)
@@ -91,14 +91,14 @@ cprintf("%s:%d",__func__,__LINE__);
       mkdir (SSH_DIR, 0700);
     }
 #endif
-cprintf("%s:%d",__func__,__LINE__);
+  cprintf ("%s:%d", __func__, __LINE__);
 
   /* Create password's and group's database directory */
   if (stat (PASSWD_DIR, &buf) != 0)
     {
       mkdir (PASSWD_DIR, 0700);
     }
-cprintf("%s:%d",__func__,__LINE__);
+  cprintf ("%s:%d", __func__, __LINE__);
 
   /* Write password file with username root and password */
   if (!(fp = fopen (PASSWD_FILE, "w")))
@@ -106,7 +106,7 @@ cprintf("%s:%d",__func__,__LINE__);
       perror (PASSWD_FILE);
       return errno;
     }
-cprintf("%s:%d",__func__,__LINE__);
+  cprintf ("%s:%d", __func__, __LINE__);
 #ifdef HAVE_REGISTER
   if (isregistered ())
 #endif
@@ -117,14 +117,14 @@ cprintf("%s:%d",__func__,__LINE__);
 	       http_passwd);
       fclose (fp);
     }
-cprintf("%s:%d",__func__,__LINE__);
+  cprintf ("%s:%d", __func__, __LINE__);
   /* Write group file with group 'root' */
   if (!(fp = fopen (GROUP_FILE, "w")))
     {
       perror (GROUP_FILE);
       return errno;
     }
-cprintf("%s:%d",__func__,__LINE__);
+  cprintf ("%s:%d", __func__, __LINE__);
   fprintf (fp, "root:x:0:\n");
   fclose (fp);
 
@@ -139,16 +139,16 @@ cprintf("%s:%d",__func__,__LINE__);
 
   system2 ("/bin/mkdir -p /var/log");
   system2 ("/bin/touch /var/log/messages");
-cprintf("%s:%d",__func__,__LINE__);
+  cprintf ("%s:%d", __func__, __LINE__);
 
 #ifdef HAVE_SNMP
   system2 ("/bin/mkdir -p /var/snmp");
 #endif
   system2 ("/bin/chmod 0777 /tmp");
-cprintf("%s:%d",__func__,__LINE__);
+  cprintf ("%s:%d", __func__, __LINE__);
 
   dns_to_resolv ();
-cprintf("%s:%d",__func__,__LINE__);
+  cprintf ("%s:%d", __func__, __LINE__);
 
   return 0;
 }

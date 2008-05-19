@@ -370,10 +370,10 @@ int
 stop_udhcpd (void)
 {
   if (pidof ("udhcpd") > 0)
-  {
-    syslog (LOG_INFO, "udhcpd : udhcp daemon successfully stopped\n");
-  softkill ("udhcpd");
-  }
+    {
+      syslog (LOG_INFO, "udhcpd : udhcp daemon successfully stopped\n");
+      softkill ("udhcpd");
+    }
   cprintf ("done\n");
   return 0;
 }

@@ -31,10 +31,10 @@ void
 stop_rstats (void)
 {
   if (pidof ("rstats") > 0)
-  {
-    syslog (LOG_INFO, "rstats : rstats daemon successfully stopped\n");
-  killall ("rstats", SIGTERM);
-  }
+    {
+      syslog (LOG_INFO, "rstats : rstats daemon successfully stopped\n");
+      killall ("rstats", SIGTERM);
+    }
 }
 
 void
