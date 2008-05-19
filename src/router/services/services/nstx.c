@@ -31,8 +31,10 @@ void
 stop_nstxd (void)
 {
   if (pidof ("nstxd") > 0)
+  {
     syslog (LOG_INFO, "nstxd : nstx daemon successfully stopped\n");
   killall ("nstxd", SIGTERM);
+  }
 }
 
 void
