@@ -248,6 +248,7 @@ stop_splashd (void)
 {
   int ret;
   if (pidof ("splashd") > 0)
+  {
     syslog (LOG_INFO, "splashd : splash daemon successfully stopped\n");
   //ret = killps("splashd",NULL);
   ret = killall ("splashd", SIGTERM);
@@ -257,6 +258,7 @@ stop_splashd (void)
   start_firewall();
   start_wshaper();
   cprintf ("done\n");
+  }
   return ret;
 }
 
