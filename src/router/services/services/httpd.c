@@ -71,14 +71,17 @@ start_httpd (void)
 int
 stop_httpd (void)
 {
+int ret = 0;
   if (pidof ("httpd") > 0)
-    syslog (LOG_INFO, "httpd : http daemon successfully stopped\n");
-  int ret = killall ("httpd", SIGTERM);
+  {
+  syslog (LOG_INFO, "httpd : http daemon successfully stopped\n");
+  ret = killall ("httpd", SIGTERM);
 
   unlink ("/var/run/httpd.pid");
 #ifdef HAVE_HTTPS
   unlink ("/var/run/httpsd.pid");
 #endif
   cprintf ("done\n");
+  }
   return ret;
 }
