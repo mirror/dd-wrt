@@ -246,7 +246,7 @@ start_splashd (void)
 int
 stop_splashd (void)
 {
-  int ret;
+  int ret = 0;
   if (pidof ("splashd") > 0)
   {
     syslog (LOG_INFO, "splashd : splash daemon successfully stopped\n");
