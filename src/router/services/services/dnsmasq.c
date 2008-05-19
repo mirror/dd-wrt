@@ -152,10 +152,11 @@ start_dnsmasq (void)
 	      if (strlen (nvram_nget ("%s_ipaddr", getmdhcp (0, i))) == 0
 		  || strlen (nvram_nget ("%s_netmask", getmdhcp (0, i))) == 0)
 		continue;
-	    if (nvram_match ("pptpd_enable", "1"))
-	      fprintf (fp, ",%s", nvram_nget("%s_ipaddr",getmdhcp (0, i)));
-	    else
-	      fprintf (fp, ",%s", getmdhcp (0, i));
+	      if (nvram_match ("pptpd_enable", "1"))
+		fprintf (fp, ",%s",
+			 nvram_nget ("%s_ipaddr", getmdhcp (0, i)));
+	      else
+		fprintf (fp, ",%s", getmdhcp (0, i));
 	    }
 	}
     }
@@ -205,7 +206,7 @@ start_dnsmasq (void)
 	    if (strlen (nvram_nget ("%s_ipaddr", getmdhcp (0, i))) == 0
 		|| strlen (nvram_nget ("%s_netmask", getmdhcp (0, i))) == 0)
 	      continue;
-	    dhcp_max += atoi(getmdhcp (3, i));
+	    dhcp_max += atoi (getmdhcp (3, i));
 	  }
 	fprintf (fp, "dhcp-lease-max=%d\n", dhcp_max);
 	fprintf (fp, "dhcp-option=lan,3,%s\n", nvram_safe_get ("lan_ipaddr"));
@@ -347,15 +348,15 @@ start_dnsmasq (void)
 int
 stop_dnsmasq (void)
 {
-int ret = 0;
+  int ret = 0;
   if (pidof ("dnsmasq") > 0)
-  {
-    syslog (LOG_INFO, "dnsmasq : dnsmasq daemon successfully stopped\n");
-  ret = softkill ("dnsmasq");
-  unlink ("/tmp/resolv.dnsmasq");
+    {
+      syslog (LOG_INFO, "dnsmasq : dnsmasq daemon successfully stopped\n");
+      ret = softkill ("dnsmasq");
+      unlink ("/tmp/resolv.dnsmasq");
 
-  cprintf ("done\n");
-  }
+      cprintf ("done\n");
+    }
   return ret;
 }
 #endif

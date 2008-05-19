@@ -104,13 +104,13 @@ start_sshd (void)
   ret = eval ("dropbear", "-r", RSA_HOST_KEY_FILE, "-d",
 	      DSS_HOST_KEY_FILE, "-p", port, passwd_ok);
 #else
-      ret =
-	eval ("dropbear", "-b", "/tmp/loginprompt", "-r", RSA_HOST_KEY_FILE,
-	      "-d", DSS_HOST_KEY_FILE, "-p", port, passwd_ok,forwarding_ok);
+  ret =
+    eval ("dropbear", "-b", "/tmp/loginprompt", "-r", RSA_HOST_KEY_FILE,
+	  "-d", DSS_HOST_KEY_FILE, "-p", port, passwd_ok, forwarding_ok);
 #endif
 //  ret = _eval (sshd_argv, NULL, 0, &pid);
 
-return ret;
+  return ret;
 }
 
 int

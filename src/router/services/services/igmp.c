@@ -51,12 +51,11 @@ start_igmp_proxy (void)
       fprintf (fp, "phyint %s downstream  ratelimit 0  threshold 1\n",
 	       nvram_safe_get ("lan_ifname"));
       ifcount++;
-    }else
+    }
+  else
     {
-      fprintf (fp, "phyint %s disabled\n",
-	       nvram_safe_get ("lan_ifname"));    
-      fprintf (fp, "phyint %s:0 disabled\n",
-	       nvram_safe_get ("lan_ifname"));    
+      fprintf (fp, "phyint %s disabled\n", nvram_safe_get ("lan_ifname"));
+      fprintf (fp, "phyint %s:0 disabled\n", nvram_safe_get ("lan_ifname"));
     }
   foreach (name, nvram_safe_get ("lan_ifnames"), next)
   {
@@ -94,10 +93,12 @@ start_igmp_proxy (void)
 int
 stop_igmp_proxy (void)
 {
+  int ret = 0;
   if (pidof ("igmprt") > 0)
-    syslog (LOG_INFO, "igmprt : multicast daemon successfully stopped\n");
-  int ret = killall ("igmprt", SIGKILL);
-
+    {
+      syslog (LOG_INFO, "igmprt : multicast daemon successfully stopped\n");
+      ret = killall ("igmprt", SIGKILL);
+    }
   cprintf ("done\n");
   return ret;
 }
