@@ -35,12 +35,14 @@ void
 stop_milkfish (void)
 {
   if (pidof ("rtpproxy") > 0 || pidof ("openser") > 0)
+  {
     syslog (LOG_INFO, "Milkfish service successfully stopped\n");
 
   killall ("rtpproxy", SIGTERM);
   killall ("openser", SIGTERM);
 // Stop the milkfish services
   eval ("/usr/sbin/milkfish_services", "stop");
+  }
 }
 
 void
