@@ -45,7 +45,9 @@ void
 stop_pppoerelay (void)
 {
   if (pidof ("pppoe-relay") > 0)
-    syslog (LOG_INFO, "pppoe-relay successfully stopped\n");
-  killall ("pppoe-relay", SIGTERM);
+    {
+      syslog (LOG_INFO, "pppoe-relay successfully stopped\n");
+      killall ("pppoe-relay", SIGTERM);
+    }
 }
 #endif

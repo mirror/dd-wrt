@@ -130,7 +130,8 @@ mk_nocat_conf (void)
 	       nvram_safe_get ("NC_SplashURLTimeout"));
     }
   /* do we really need this? */
-  fprintf (fp, "LeaseFile\t%s\n", nvram_default_get ("NC_LeaseFile","/tmp/nocat.leases"));
+  fprintf (fp, "LeaseFile\t%s\n",
+	   nvram_default_get ("NC_LeaseFile", "/tmp/nocat.leases"));
 
   /* Open-mode and common options */
   fprintf (fp, "FirewallPath\t%s\n", "/usr/libexec/nocat/");
@@ -219,10 +220,10 @@ start_splashd (void)
      if not, check_ps will start us later */
   if (nvram_match ("wan_ipaddr", "0.0.0.0"))
     return 0;
-    eval ("insmod", "ipt_mark");
-    eval ("insmod", "ipt_mac");
-    eval ("insmod", "xt_mark");
-    eval ("insmod", "xt_mac");
+  eval ("insmod", "ipt_mark");
+  eval ("insmod", "ipt_mac");
+  eval ("insmod", "xt_mark");
+  eval ("insmod", "xt_mac");
 
   mk_nocat_conf ();
 
@@ -248,17 +249,17 @@ stop_splashd (void)
 {
   int ret = 0;
   if (pidof ("splashd") > 0)
-  {
-    syslog (LOG_INFO, "splashd : splash daemon successfully stopped\n");
-  //ret = killps("splashd",NULL);
-  ret = killall ("splashd", SIGTERM);
-  eval("/usr/libexec/nocat/clear.fw");
-  stop_firewall();  // evil
-  stop_wshaper();
-  start_firewall();
-  start_wshaper();
-  cprintf ("done\n");
-  }
+    {
+      syslog (LOG_INFO, "splashd : splash daemon successfully stopped\n");
+      //ret = killps("splashd",NULL);
+      ret = killall ("splashd", SIGTERM);
+      eval ("/usr/libexec/nocat/clear.fw");
+      stop_firewall ();		// evil
+      stop_wshaper ();
+      start_firewall ();
+      start_wshaper ();
+      cprintf ("done\n");
+    }
   return ret;
 }
 

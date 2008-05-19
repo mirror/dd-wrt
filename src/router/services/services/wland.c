@@ -284,7 +284,7 @@ do_ap_check (void)
 
 //  if (nvram_match ("apwatchdog_enable", "1"))
 //    do_ap_watchdog ();
-  start_wds_check();
+  start_wds_check ();
 //  do_wds_check ();
 
   return;
@@ -320,7 +320,7 @@ checkbssid (void)
 static void
 do_client_check (void)
 {
-   FILE *fp = NULL;
+  FILE *fp = NULL;
   char buf[1024];
 //  char mac[512];
   int len;
@@ -575,7 +575,9 @@ do_wlan_check (void)
   do_aqos_check ();
 #endif
 #ifndef HAVE_MADWIFI
-  if (nvram_match ("wl0_mode", "sta") || nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "apsta") || nvram_match ("wl0_mode", "apstawet"))
+  if (nvram_match ("wl0_mode", "sta") || nvram_match ("wl0_mode", "wet")
+      || nvram_match ("wl0_mode", "apsta")
+      || nvram_match ("wl0_mode", "apstawet"))
     do_client_check ();
   else
     do_ap_check ();

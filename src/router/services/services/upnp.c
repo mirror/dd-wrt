@@ -58,12 +58,12 @@ int
 stop_upnp (void)
 {
   if (pidof ("upnp") > 0)
-  {
-  syslog (LOG_INFO, "upnp : upnp daemon successfully stopped\n");
-  killall ("upnp", SIGUSR1);
-  killall ("upnp", SIGTERM);
-  cprintf ("done\n");
-  }
+    {
+      syslog (LOG_INFO, "upnp : upnp daemon successfully stopped\n");
+      killall ("upnp", SIGUSR1);
+      killall ("upnp", SIGTERM);
+      cprintf ("done\n");
+    }
   return 0;
 }
 #endif
