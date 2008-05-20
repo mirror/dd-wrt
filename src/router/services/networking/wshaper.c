@@ -247,7 +247,7 @@ aqos_tables (void)
   int qosidx = 0;
   do
     {
-      if (sscanf (qos_mac, "%31s %31s %31s |", data, level, level2) < 2)
+      if (sscanf (qos_mac, "%31s %31s %31s |", data, level, level2) < 3)
 	break;
       fprintf (outmacs, "%s\n", data);
       add_usermac (data, qosidx, level, level2);
@@ -258,7 +258,7 @@ aqos_tables (void)
   while ((qos_mac = strpbrk (++qos_mac, "|")) && qos_mac++);
   do
     {
-      if (sscanf (qos_ipaddr, "%31s %31s %31s |", data, level, level2) < 2)
+      if (sscanf (qos_ipaddr, "%31s %31s %31s |", data, level, level2) < 3)
 	break;
       fprintf (outips, "%s\n", data);
 
