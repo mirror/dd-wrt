@@ -3232,6 +3232,15 @@ int cb_dhcp_connect(struct dhcp_conn_t *conn) {
 	  conn->hismac[0], conn->hismac[1], 
 	  conn->hismac[2], conn->hismac[3],
 	  conn->hismac[4], conn->hismac[5]);
+  if (conn->hismac[0]==0 && conn->hismac[1]==0 && conn->hismac[2]==0 && conn->hismac[3]==0 && conn->hismac[4]==0 && conn->hismac[5]==0)
+     {
+     sys_err(LOG_NOTICE, __FILE__, __LINE__, 0,
+	  "New DHCP request invalid MAC, ignore=%.2X-%.2X-%.2X-%.2X-%.2X-%.2X" , 
+	  conn->hismac[0], conn->hismac[1], 
+	  conn->hismac[2], conn->hismac[3],
+	  conn->hismac[4], conn->hismac[5]);
+        return 0;
+     }
   
   if (options.debug) printf("New DHCP connection established\n");
 
@@ -3274,6 +3283,16 @@ int cb_dhcp_disconnect(struct dhcp_conn_t *conn) {
 	  conn->hismac[2], conn->hismac[3],
 	  conn->hismac[4], conn->hismac[5], 
 	  inet_ntoa(conn->hisip));
+
+  if (conn->hismac[0]==0 && conn->hismac[1]==0 && conn->hismac[2]==0 && conn->hismac[3]==0 && conn->hismac[4]==0 && conn->hismac[5]==0)
+     {
+     sys_err(LOG_NOTICE, __FILE__, __LINE__, 0,
+	  "DHCP addr release invalid MAC, ignore=%.2X-%.2X-%.2X-%.2X-%.2X-%.2X" , 
+	  conn->hismac[0], conn->hismac[1], 
+	  conn->hismac[2], conn->hismac[3],
+	  conn->hismac[4], conn->hismac[5]);
+        return 0;
+     }
 
   if (options.debug) printf("DHCP connection removed\n");
 
