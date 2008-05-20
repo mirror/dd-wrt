@@ -66,8 +66,7 @@ void
 checkupdate (void)
 {
   int res, res2 = 0;
-  FILE *in =
-    popen ("/bin/cat /dev/mtdblock/0|/bin/grep NewMedia|wc -l", "rb");
+  FILE *in = popen ("/bin/cat /dev/mtdblock/0|/bin/grep NewMedia|wc -l", "rb");
   fscanf (in, "%d", &res);
   pclose (in);
   if (res == 0)
@@ -316,7 +315,6 @@ Configure mac addresses by reading data from eeprom
       sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[6], buf[7], buf[8],
 	       buf[9], buf[10], buf[11]);
       eval ("ifconfig", "ixp1", "hw", "ether", mac);
-
 
       fclose (file);
     }

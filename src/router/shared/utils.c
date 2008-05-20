@@ -295,10 +295,30 @@ internal_getRouterBrand ()
         setRouter ("Avila GW2347");
         return ROUTER_BOARD_GATEWORX_SWAP;
 	}
+    if (!strcmp(gwid,"GW2357"))
+	{
+        setRouter ("Avila GW2357");
+        return ROUTER_BOARD_GATEWORX_SWAP;
+	}
+    if (!strcmp(gwid,"GW2353"))
+	{
+        setRouter ("Avila GW2343");
+        return ROUTER_BOARD_GATEWORX;
+	}
     if (!strcmp(gwid,"GW2348"))
 	{
         setRouter ("Avila GW2348-4/2");
         return ROUTER_BOARD_GATEWORX;
+	}
+    if (!strcmp(gwid,"GW2358"))
+	{
+        setRouter ("Cambria GW2358-4/2");
+        return ROUTER_BOARD_GATEWORX;
+	}
+    if (!strcmp(gwid,"GW2355"))
+	{
+        setRouter ("Avila GW2355");
+        return ROUTER_BOARD_GATEWORX_GW2345;
 	}
     if (!strcmp(gwid,"GW2345"))
 	{
