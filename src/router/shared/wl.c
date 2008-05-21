@@ -317,10 +317,57 @@ switch(vendor)
     }
 }
 
+int
+wifi_gettxpoweroffset (char *ifname)
+{
+int poweroffset = 0;
+int vendor;
+int devcount;
+char readid[64];
+strcpy(readid,ifname);
+sscanf(readid,"ath%d",&devcount);
+sprintf(readid,"/proc/sys/dev/wifi%d/vendor",devcount);
+FILE *in = fopen(readid,"rb");
+vendor=0;
+if (in)
+    {
+    vendor = atoi(fgets(readid,sizeof(readid),in));
+    fclose(in);
+    }
+switch(vendor)
+    {
+    case 1: //ubnt xr5
+    case 2: //ubnt xr2
+    case 3: //ubnt sr2
+    case 13: //ubnt xr3
+    case 14: //ubnt xr4
+    case 1328: //ubnt xr3
+    case 1336: //ubnt xr3
+    case 71: //ubnt sr71a
+    case 7: // ubnt xr7
+	poweroffset=10;
+    break;
+    case 9: //ubnt xr9
+	poweroffset=12;
+    case 4: //ubnt sr9
+	poweroffset=12;
+    break;    
+    case 5: //ubnt sr5
+	poweroffset=7;
+    case 24: //ubnt sr4
+	poweroffset=7;
+    break;    
+    default:
+	poweroffset=0;
+    break;            
+    }
+
+return poweroffset;
+}
+
 
 int get_wifioffset (char *ifname)
 {
-int poweroffset = 0;
 int vendor;
 int devcount;
 char readid[64];
