@@ -296,3 +296,4 @@ MACHINE_START(KIXRP435, "Intel KIXRP435 Reference Platform")
 	.init_machine	= ixdp425_init,
 MACHINE_END
 #endif
+

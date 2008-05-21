@@ -244,6 +244,19 @@ config SERIAL_8250_RSA
 	help
 	  ::: To be written :::
 
+config SERIAL_8250_GW2356
+	bool "GW2356 serial port support"
+	depends on SERIAL_8250 != n && MACH_KIXRP435
+	help
+		::: To be written :::
+
+config SERIAL_8250_GW2358
+	bool "GW2358 serial port support"
+	depends on SERIAL_8250 != n && MACH_CAMBRIA
+	help
+		::: To be written :::
+
+
 config SERIAL_8250_MCA
 	tristate "Support 8250-type ports on MCA buses"
 	depends on SERIAL_8250 != n && MCA

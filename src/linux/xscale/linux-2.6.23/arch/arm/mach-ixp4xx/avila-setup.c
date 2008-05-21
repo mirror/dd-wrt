@@ -190,6 +190,7 @@ MACHINE_START(AVILA, "Gateworks Avila Network Platform")
 	.init_machine	= avila_init,
 MACHINE_END
 
+
  /*
   * Loft is functionally equivalent to Avila except that it has a
   * different number for the maximum PCI devices.  The MACHINE

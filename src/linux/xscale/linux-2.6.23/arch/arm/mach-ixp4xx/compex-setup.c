@@ -107,7 +107,7 @@ static void __init compex_init(void)
 }
 
 #ifdef CONFIG_MACH_COMPEX
-MACHINE_START(COMPEX, "Compex WP18 / NP18A")
+MACHINE_START(COMPEX, "Compex WP188")
 	/* Maintainer: Imre Kaloz <Kaloz@openwrt.org> */
 	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
 	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,

@@ -25,6 +25,14 @@ config MACH_AVILA
 	  Avila Network Platform. For more information on this platform,
 	  see <file:Documentation/arm/IXP4xx>.
 
+config MACH_CAMBRIA
+	bool "Cambria"
+	select PCI
+	help
+	  Say 'Y' here if you want your kernel to support the Gateworks
+	  Avila Network Platform. For more information on this platform,
+	  see <file:Documentation/arm/IXP4xx>.
+
 config MACH_LOFT
     bool "Loft"
     depends on MACH_AVILA
@@ -202,7 +210,7 @@ config CPU_IXP46X
 
 config CPU_IXP43X
 	bool
-	depends on MACH_KIXRP435
+	depends on MACH_KIXRP435 || MACH_CAMBRIA
 	default y
 
 config MACH_GTWX5715
