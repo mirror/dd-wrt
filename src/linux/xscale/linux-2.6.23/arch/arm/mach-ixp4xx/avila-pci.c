@@ -69,7 +69,7 @@ struct hw_pci avila_pci __initdata = {
 
 int __init avila_pci_init(void)
 {
-	if (machine_is_avila() || machine_is_loft())
+	if (machine_is_avila() || machine_is_loft() || machine_is_cambria())
 		pci_common_init(&avila_pci);
 	return 0;
 }

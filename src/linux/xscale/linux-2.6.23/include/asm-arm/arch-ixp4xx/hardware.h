@@ -18,7 +18,7 @@
 #define __ASM_ARCH_HARDWARE_H__
 
 #define PCIBIOS_MIN_IO		0x00001000
-#define PCIBIOS_MIN_MEM		(cpu_is_ixp43x() ? 0x40000000 : 0x48000000)
+#define PCIBIOS_MIN_MEM		(cpu_is_ixp43x() ? 0x48000000 : 0x48000000)
 
 /*
  * We override the standard dma-mask routines for bouncing.
@@ -40,6 +40,7 @@
 /* Platform specific details */
 #include "ixdp425.h"
 #include "avila.h"
+#include "cambria.h"
 #include "coyote.h"
 #include "pronghornmetro.h"
 #include "prpmc1100.h"
