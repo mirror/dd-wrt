@@ -4194,8 +4194,18 @@ save_prefix (webs_t wp, char *prefix)
   sprintf (n, "%s_distance", prefix);
   copytonv (wp, n);
 #ifdef HAVE_MADWIFI
-  sprintf (n, "%s_txpwrdbm", prefix);
-  copytonv (wp, n);
+  {
+    sprintf (n, "%s_txpwrdbm", prefix);
+    char *sl = websGetVar (wp, n, NULL);
+    if (sl)
+    {
+	int txpower = atoi(sl) - wifi_gettxpoweroffset(prefix);
+	if (txpower<1)
+	    txpower=1;  
+	sprintf (turbo, "%d",txpower);
+	nvram_set(n,turbo);
+    }
+  }
   sprintf (n, "%s_antgain", prefix);
   copytonv (wp, n);
   sprintf (n, "ath_regulatory");
@@ -4618,8 +4628,8 @@ ej_show_wireless_single (webs_t wp, char *prefix)
     }
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
-	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%s\" /> dBm\n",
-	     power, nvram_safe_get (power));
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm\n",
+	     power, atoi(nvram_safe_get (power))+wifi_gettxpoweroffset(prefix));
   websWrite (wp, "</div>\n");
   sprintf (power, "%s_antgain", prefix);
 #ifndef HAVE_MAKSAT
