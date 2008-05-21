@@ -154,10 +154,15 @@ static u32 npe_error_handler_initialized = 0;
 static int npe_learning = 0;      /* default : NPE learning & filtering enable */
 static int log_level = 0;         /* default : no log */
 static int no_ixp400_sw_init = 0; /* default : init core components of the IXP400 Software */
+#ifdef CONFIG_MACH_CAMBRIA
+static int no_phy_scan = 1;       /* default : do phy discovery */
+static int hss_coexist = 1;	  /* default : HSS coexist disabled */
+#else
 static int no_phy_scan = 0;       /* default : do phy discovery */
+static int hss_coexist = 0;	  /* default : HSS coexist disabled */
+#endif
 static int phy_reset = 0;         /* default : no phy reset */
 static int npe_error_handler = 0; /* default : no npe error handler */
-static int hss_coexist = 0;	  /* default : HSS coexist disabled */
 
 /* 
  * maximum number of ports supported by this driver ixp0, ixp1 ....
@@ -168,7 +173,7 @@ static int dev_max_count = 1; /* only NPEC is used */
 #elif defined (CONFIG_IXP400_ETH_NPEB_ONLY)
 static int dev_max_count = 1; /* only NPEB is used */
 #elif defined (CONFIG_ARCH_IXDP425) || defined(CONFIG_ARCH_IXDPG425)\
-      || defined (CONFIG_ARCH_ADI_COYOTE) || defined (CONFIG_MACH_AVILA) || defined (CONFIG_MACH_KIXRP435) \
+      || defined (CONFIG_ARCH_ADI_COYOTE) || defined (CONFIG_MACH_AVILA) || defined (CONFIG_MACH_CAMBRIA) || defined (CONFIG_MACH_KIXRP435) \
       || defined (CONFIG_MACH_PRONGHORNMETRO) \
       || defined (CONFIG_MACH_PRONGHORN)
 
@@ -524,7 +529,7 @@ static struct platform_device ixp400_eth_devices[IX_ETH_ACC_NUMBER_OF_PORTS] = {
     {
 #if IX_ETH_ACC_NUMBER_OF_PORTS > 0
 	.name 	= MODULE_NAME,
-#if defined (CONFIG_IXP400_ETH_NPEC_ONLY) || defined (CONFIG_MACH_KIXRP435)
+#if defined (CONFIG_IXP400_ETH_NPEC_ONLY) || defined (CONFIG_MACH_KIXRP435) || defined (CONFIG_MACH_CAMBRIA)
 	.id   	= IX_ETH_PORT_2,
 #else
 	.id   	= IX_ETH_PORT_1,
@@ -539,6 +544,8 @@ static struct platform_device ixp400_eth_devices[IX_ETH_ACC_NUMBER_OF_PORTS] = {
 	.name 	= MODULE_NAME,
 #ifdef CONFIG_MACH_KIXRP435
 	.id   	= IX_ETH_PORT_3,
+#elif CONFIG_MACH_CAMBRIA
+	.id			= IX_ETH_PORT_3,
 #else
 	.id   	= IX_ETH_PORT_2,
 #endif
@@ -659,6 +666,9 @@ static int phyAddresses[IXP400_ETH_ACC_MII_MAX_ADDR] =
         /* /_______________/|     /___/|                         */
 	/* | 1 | 2 | 3 | 4 |      | 5 |                          */
         /* ----------------------------------------              */
+#elif defined(CONFIG_MACH_CAMBRIA)
+    2, /* Port 1 (IX_ETH_PORT_2) - Connected to PHYs 1-4      */
+    1, /* Port 2 (IX_ETH_PORT_3) - Only connected to PHY 5    */
 #else
     /* other platforms : suppose 1 PHY per NPE port */
     0, /* PHY address for EthAcc Port 1 (IX_ETH_PORT_1 / NPE B) */
@@ -731,6 +741,9 @@ static phy_cfg_t default_phy_cfg[] =
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}
+#elif defined(CONFIG_MACH_CAMBRIA)
+    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}, /* Port 1: monitor the link */
+    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}  /* Port 2: monitor the link */
 #else
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}, /* Port 0: monitor the link*/
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}  /* Port 1: monitor the link*/
@@ -749,7 +762,7 @@ static IxEthAccMacAddr default_mac_addr[] =
     {{0x00, 0x02, 0xB3, 0x01, 0x01, 0x01}}  /* EthAcc Port 0 */
     ,{{0x00, 0x02, 0xB3, 0x02, 0x02, 0x02}} /* EthAcc Port 1 */
 #if defined (CONFIG_ARCH_IXDP465) || defined(CONFIG_MACH_IXDP465) ||\
-    defined (CONFIG_MACH_KIXRP435)
+    defined (CONFIG_MACH_KIXRP435) || defined(CONFIG_MACH_CAMBRIA)
     ,{{0x00, 0x02, 0xB3, 0x03, 0x03, 0x03}} /* EthAcc Port 2 */
 #endif
 };
@@ -768,7 +781,7 @@ static npe_info_t default_npeImageId[]=
     {IX_ETH_NPE_B_IMAGE_ID, IX_NPEDL_NPEID_NPEB}, /* Npe firmware for EthAcc Port 0  */
     {IX_ETH_NPE_C_IMAGE_ID, IX_NPEDL_NPEID_NPEC}, /* Npe firmware for EthAcc Port 1  */
 #if defined (CONFIG_ARCH_IXDP465) || defined(CONFIG_MACH_IXDP465) || \
-    defined (CONFIG_MACH_KIXRP435)
+    defined (CONFIG_MACH_KIXRP435) || defined (CONFIG_MACH_CAMBRIA)
     {IX_ETH_NPE_A_IMAGE_ID, IX_NPEDL_NPEID_NPEA}  /* Npe firmware for EthAcc Port 2  */
 #endif
 };
@@ -803,6 +816,10 @@ static IxEthAccPortId default_portId[] =
     IX_ETH_PORT_2, /* EthAcc Port 2 for ixp1 */
     IX_ETH_PORT_3  /* EthAcc Port 3 for ixp2 */
 #elif defined (CONFIG_MACH_KIXRP435)
+    /* configure port for NPE C first */
+    IX_ETH_PORT_2, /* EthAcc Port 2 for ixp1 */
+    IX_ETH_PORT_3  /* EthAcc Port 3 for ixp2 */
+#elif defined (CONFIG_MACH_CAMBRIA)
     /* configure port for NPE C first */
     IX_ETH_PORT_2, /* EthAcc Port 2 for ixp1 */
     IX_ETH_PORT_3  /* EthAcc Port 3 for ixp2 */
@@ -3199,11 +3216,15 @@ static int phy_init(void)
 	if (port_id == IX_ETH_PORT_1) npe_id = "B";
 	if (port_id == IX_ETH_PORT_2) npe_id = "C";
 	if (port_id == IX_ETH_PORT_3) npe_id = "A";
-
+#ifdef CONFIG_MACH_CAMBRIA
+	P_INFO("%s%d is using NPE%s and the PHY at address %d\n",
+	       DEVICE_NAME, port_id-1, npe_id,
+	       phyAddresses[portIdPhyIndexMap[port_id]]);
+#else
 	P_INFO("%s%d is using NPE%s and the PHY at address %d\n",
 	       DEVICE_NAME, port_id, npe_id,
 	       phyAddresses[portIdPhyIndexMap[port_id]]);
-
+#endif
 	/* Set the MAC to the same duplex mode as the phy */
 	ixEthAccPortDuplexModeSet(port_id,
             (default_phy_cfg[portIdPhyIndexMap[port_id]].duplexFull) ?
@@ -4100,9 +4121,12 @@ static int __devinit dev_eth_probe(struct device *dev)
     /* set the private port ID */
     priv->port_id  = portId;
 
+#ifdef CONFIG_MACH_CAMBRIA
     /* set device name */
+    sprintf(ndev->name, DEVICE_NAME"%d", priv->port_id-1);
+#else
     sprintf(ndev->name, DEVICE_NAME"%d", priv->port_id);
-
+#endif
     TRACE;
 
     /* initialize RX pool */
