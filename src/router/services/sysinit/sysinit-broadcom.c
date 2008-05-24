@@ -178,6 +178,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_WRT300N:
     case ROUTER_WRT600N:
     case ROUTER_WRT350N:
+    case ROUTER_WRT310N:
     case ROUTER_NETGEAR_WG602_V4:
       nvram_set ("wl0gpio0", "8");
       break;
@@ -629,6 +630,7 @@ start_sysinit (void)
       break;
 
     case ROUTER_WRT350N:
+    case ROUTER_WRT310N:
       nvram_set ("wan_ifname", "vlan2");
       break;
     case ROUTER_WRT600N:
@@ -863,6 +865,7 @@ start_sysinit (void)
 	{
 	  switch (brand)
 	    {
+	    case ROUTER_WRT310N:
 	    case ROUTER_WRT350N:
 	    case ROUTER_WRT600N:
 	    case ROUTER_BUFFALO_WZRG144NH:
