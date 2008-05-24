@@ -621,8 +621,7 @@ nat_postrouting (void)
 {
   if ((nvram_match ("chilli_enable", "1"))
       && (nvram_match ("wan_proto", "disabled")))
-    save2file ("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
-	       nvram_safe_get ("lan_ipaddr"));
+    save2file ("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",nvram_safe_get ("lan_ipaddr"));
 #ifdef HAVE_PPPOESERVER
   if (nvram_match ("pppoeserver_enabled", "1"))
     save2file ("-I POSTROUTING -s %s/%s -j SNAT --to-source=%s\n",
@@ -2266,6 +2265,10 @@ filter_table (void)
     {
       save2file ("-A FORWARD -i br0 -j DROP\n");
       save2file ("-A FORWARD -o br0 -j DROP\n");
+//      if (nvram_match("chilli_nowifibridge","1"))
+//        {
+//	save2file("-t nat -A PREROUTING -s 192.168.182.0/24 -d 192.168.182.1 -j DROP");   	
+//	}
     }
   /* DD-WRT end */
 #endif

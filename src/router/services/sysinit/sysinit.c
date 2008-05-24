@@ -613,6 +613,9 @@ start_restore_defaults (void)
     case ROUTER_WRT350N:
       linux_overrides = wrt350vlan;
       break;
+    case ROUTER_WRT310N:
+      linux_overrides = wrt350vlan;
+      break;
     case ROUTER_WRT600N:
       linux_overrides = wrt600vlan;
       break;
@@ -868,6 +871,19 @@ start_restore_defaults (void)
 	}
 
     }
+  else if (brand == ROUTER_WRT310N)
+    {
+
+      if (!nvram_get ("vlan1ports") || nvram_match ("vlan1ports", ""))
+	{
+	  nvram_set ("vlan1ports", "1 2 3 4 8*");
+	}
+      if (!nvram_get ("vlan2ports") || nvram_match ("vlan2ports", ""))
+	{
+	  nvram_set ("vlan2ports", "0 8");
+	}
+
+    }
   else if (brand == ROUTER_BUFFALO_WZRG144NH)
 
     {
@@ -970,7 +986,6 @@ start_restore_defaults (void)
 	}
 
     }
-
   if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X
       || brand == ROUTER_LINKSYS_WRT55AG)
     {
