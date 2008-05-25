@@ -1017,6 +1017,7 @@ internal_getRouterBrand ()
       setRouter ("U.S.Robotics USR5430");
       return ROUTER_USR_5430;
     }
+
     
   if (boardnum == 1 && nvram_match ("boardtype", "0x456"))
     {
@@ -1029,6 +1030,13 @@ internal_getRouterBrand ()
     {
       setRouter ("U.S.Robotics USR5461");
       return ROUTER_USR_5461;
+    }
+
+  if (boardnum == 10506 && nvram_match ("boardtype", "0x456"))
+    {
+      cprintf ("router is U.S. Robotics USR5451\n");
+      setRouter ("U.S.Robotics USR5451");
+      return ROUTER_USR_5461; //should work in the same way
     }
 
   if (boardnum == 1024 && nvram_match ("boardtype", "0x0446"))
