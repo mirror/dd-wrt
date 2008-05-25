@@ -59,7 +59,7 @@ wget (int method, const char *server, char *buf, size_t count, off_t offset)
 
   if (server == NULL || !strcmp (server, ""))
     {
-      cprintf ("wget: null server input\n");
+      fprintf (stderr,"wget: null server input\n");
       return (0);
     }
 
@@ -87,14 +87,14 @@ wget (int method, const char *server, char *buf, size_t count, off_t offset)
       *s++ = '\0';
       port = atoi (s);
     }
-
+  fprintf(stderr,"try to resolve %s\n",host);
   /* Open socket */
   if (!inet_aton (host, &sin.sin_addr))
     return 0;
   sin.sin_family = AF_INET;
   sin.sin_port = htons (port);
 
-  cprintf ("Connecting to %s:%u...\n", host, port);
+  fprintf (stderr, "Connecting to %s:%u...\n", host, port);
   if ((fd = socket (AF_INET, SOCK_STREAM, 0)) < 0 ||
       connect (fd, (struct sockaddr *) &sin, sizeof (sin)) < 0 ||
       !(fp = fdopen (fd, "r+")))
