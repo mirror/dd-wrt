@@ -1,5 +1,5 @@
 #CC              = gcc
-CFLAGS          = -fomit-frame-pointer -Os -DNEED_PRINTF
+CFLAGS          = -fomit-frame-pointer $(COPTS) -DNEED_PRINTF
 OPTFLAGS        = -D_FILE_OFFSET_BITS=64
 
 iCC             = /opt/intel/cc/9.0/bin/icc
@@ -67,10 +67,10 @@ makeivs: test/makeivs.c
 	$(CC) $(CFLAGS) $(OPTFLAGS) test/makeivs.c -o makeivs
 
 aircrack-ptw: src/aircrack-ptw.c src/aircrack-ptw-lib.c src/aircrack-ptw-lib.h
-	$(CC) -o aircrack-ptw -Wall -fomit-frame-pointer -Os -DNEED_PRINTF -I$(TOP)/libpcap_noring -L$(TOP)/libpcap_noring src/aircrack-ptw.c src/aircrack-ptw-lib.c  $(TOP)/libpcap_noring/libpcap.a
+	$(CC) -o aircrack-ptw -Wall -fomit-frame-pointer $(COPTS) -DNEED_PRINTF -I$(TOP)/libpcap_noring -L$(TOP)/libpcap_noring src/aircrack-ptw.c src/aircrack-ptw-lib.c  $(TOP)/libpcap_noring/libpcap.a
 
 attacksim: src/attacksim.c src/aircrack-ptw-lib.c src/aircrack-ptw-lib.h
-	$(CC) -o attacksim -Wall -fomit-frame-pointer -Os -DNEED_PRINTF -I$(TOP)/libpcap_noring -L$(TOP)/libpcap_noring src/attacksim.c src/aircrack-ptw-lib.c $(TOP)/libpcap_noring/libpcap.a
+	$(CC) -o attacksim -Wall -fomit-frame-pointer $(COPTS) -DNEED_PRINTF -I$(TOP)/libpcap_noring -L$(TOP)/libpcap_noring src/attacksim.c src/aircrack-ptw-lib.c $(TOP)/libpcap_noring/libpcap.a
 
 
 strip:
