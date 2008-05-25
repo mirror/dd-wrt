@@ -4806,6 +4806,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
   websWrite (wp,"document.write(\"<option value=\\\"0\\\" %s >\" + wl_basic.vertical + \"</option>\");\n",nvram_match (wl_txantenna,"0") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp,"document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.horizontal + \"</option>\");\n",nvram_match (wl_txantenna,"1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,"document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.adaptive + \"</option>\");\n",nvram_match (wl_txantenna,"3") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp,"document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.external + \"</option>\");\n",nvram_match (wl_txantenna,"2") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp, "//]]>\n</script>\n");
   websWrite (wp, "</select>\n");
