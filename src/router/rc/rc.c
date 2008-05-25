@@ -415,10 +415,6 @@ unlink("/tmp/.rstp_server");
 #ifdef HAVE_BONDING
 	  start_service ("bonding");
 #endif
-#ifdef HAVE_VLANTAGGING
-	  start_service ("vlantagging");
-	  start_service ("bridgesif");
-#endif
 #ifdef HAVE_REGISTER
 	  start_service ("mkfiles");
 #endif
@@ -465,6 +461,10 @@ unlink("/tmp/.rstp_server");
 #endif
 
 	  start_service ("radio_timer");
+#ifdef HAVE_VLANTAGGING
+	  start_service ("vlantagging");
+	  start_service ("bridgesif");
+#endif
 
 
 	  cprintf ("create rc file\n");
