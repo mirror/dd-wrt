@@ -183,7 +183,8 @@ mtd_write (const char *path, const char *mtd)
   if ((fp = fopen (path, "r")))
     count = safe_fread (&trx, 1, sizeof (struct trx_header), fp);
   else
-    count = http_get (path, (char *) &trx, sizeof (struct trx_header), 0);
+   return -1;
+//    count = http_get (path, (char *) &trx, sizeof (struct trx_header), 0);
   if (count < sizeof (struct trx_header))
     {
       fprintf (stderr, "%s: File is too small (%ld bytes)\n", path, count);
@@ -323,11 +324,11 @@ mtd_write (const char *path, const char *mtd)
 	  count = off = sizeof (struct trx_header);
 	  memcpy (buf, &trx, sizeof (struct trx_header));
 	}
-      if (fp)
+//      if (fp)
 	count += safe_fread (&buf[off], 1, len - off, fp);
-      else
-	count +=
-	  http_get (path, &buf[off], len - off, erase_info.start + off);
+//      else
+//	count +=
+//	  http_get (path, &buf[off], len - off, erase_info.start + off);
 
       /* for debug */
       sum = sum + count;
