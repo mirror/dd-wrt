@@ -26,7 +26,8 @@ endif
 
 #LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-OBJS := rc.o init.o servicemanager.o services.o stats.o crc.o http.o
+OBJS := rc.o init.o servicemanager.o services.o crc.o 
+#http.o stats.o
 OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o radio_timer.o watchdog.o event.o nvram.o ledtool.o ttraff.o pptpd.o
 
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
@@ -433,7 +434,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc ledtool
 	cd $(INSTALLDIR)/sbin && ln -sf rc write
 	cd $(INSTALLDIR)/sbin && ln -sf rc restore
-	cd $(INSTALLDIR)/sbin && ln -sf rc stats
+#	cd $(INSTALLDIR)/sbin && ln -sf rc stats
 	cd $(INSTALLDIR)/sbin && ln -sf rc event
 	cd $(INSTALLDIR)/sbin && ln -sf rc hotplug
 	cd $(INSTALLDIR)/sbin && ln -sf rc filter
