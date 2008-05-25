@@ -1347,20 +1347,26 @@ configure_single (int count)
   setsysctrl (wif, "diversity", 0);
   switch (tx)
     {
-    case 0:
+    case 0: // vertical
       setsysctrl (wif, "rxantenna", 2);
       setsysctrl (wif, "txantenna", 2);
       eval ("gpio", "enable", gpio);
       break;
-    case 1:
+    case 1: // horizontal
       setsysctrl (wif, "rxantenna", 1);
       setsysctrl (wif, "txantenna", 1);
       eval ("gpio", "enable", gpio);
       break;
-    case 2:
+    case 2: //external
       setsysctrl (wif, "rxantenna", 1);
       setsysctrl (wif, "txantenna", 1);
       eval ("gpio", "disable", gpio);
+      break;
+    case 3: //adaptive
+      setsysctrl (wif, "diversity", 1);
+      setsysctrl (wif, "rxantenna", 0);
+      setsysctrl (wif, "txantenna", 0);
+      eval ("gpio", "enable", gpio);
       break;
     }
 #else

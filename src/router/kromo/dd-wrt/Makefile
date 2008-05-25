@@ -230,6 +230,16 @@ endif
 ifeq ($(CONFIG_GGEW),y)
 	cp -f ggew/logo.png $(INSTALLDIR)/www/style/logo.png
 endif
+ifeq ($(CONFIG_DDLAN),y)
+	cp -f ddlan/logo.png $(INSTALLDIR)/www/style/logo.png
+ifeq ($(CONFIG_NS5),y)
+	cp -f ddlan/logo_ns5.png $(INSTALLDIR)/www/style/logo.png
+endif
+ifeq ($(CONFIG_NS2),y)
+	cp -f ddlan/logo_ns2.png $(INSTALLDIR)/www/style/logo.png
+endif
+	cp -f ddlan/common.css $(INSTALLDIR)/www/style
+endif
 
 ifeq ($(CONFIG_MAKSAT_CORAL_ELEGANT),y)
 	mkdir $(INSTALLDIR)/www/style/maksat_coral_elegant
@@ -441,9 +451,9 @@ ifeq ($(CONFIG_OMNI),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/omni-wifi/ install
 endif
 
-ifeq ($(CONFIG_DDLAN),y)
-	$(MAKE) -C $(SRCBASE)/router/kromo/ddlan/ install
-endif
+#ifeq ($(CONFIG_DDLAN),y)
+#	$(MAKE) -C $(SRCBASE)/router/kromo/ddlan/ install
+#endif
 
 
 
