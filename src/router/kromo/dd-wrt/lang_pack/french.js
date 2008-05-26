@@ -1615,6 +1615,7 @@ wl_basic.primary="Primaire";
 wl_basic.secondary="Secondaire";
 wl_basic.vertical="Vertical";
 wl_basic.horizontal="Horizontal";
+wl_basic.adaptive="Adaptive";
 wl_basic.external="Externe";
 wl_basic.network="Configuration réseau";
 wl_basic.unbridged="Unbridged";
