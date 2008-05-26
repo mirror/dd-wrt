@@ -1926,8 +1926,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"sip_domain", "192.168.1.1", 0},	/* MILKFISH SETTING *///set "192.168.1.1" as default - not setting at all disables dbtextctl script - fs070712
 #endif
 #ifdef HAVE_AQOS
-  {"default_uplevel", "1000", 0},	//set a useful value to prevent deadlock
-  {"default_downlevel", "16000", 0},	//set a useful value to prevent deadlock
+  {"default_uplevel", "100000", 0},	//set a useful value to prevent deadlock
+  {"default_downlevel", "100000", 0},	//set a useful value to prevent deadlock
 #endif
   {"static_leases", "", 0},
   {"static_leasenum", "0", 0},
