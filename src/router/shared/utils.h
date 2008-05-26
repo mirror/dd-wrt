@@ -181,7 +181,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // U.S.Robotics USR5430 bridge (BCM4712 cpu, no switch, fccid: MXF-EB921201G)
 #define ROUTER_USR_5430 0x3310
 
-// U.S.Robotics USR5461 (BCM5350 cpu, fccid: ?)
+// U.S.Robotics USR5451 (BCM5350 cpu, no switch, fccid: Universal Scientific Industrial Co. IXM-APGBR02)
+// U.S.Robotics USR5461 (BCM5350 cpu, fccid: Universal Scientific Industrial Co. IXM-RTGBR02)
 #define ROUTER_USR_5461 0x340f
 
 // Meraki Mini (Atheros SoC, no switch, fccid: Meraki UDX-MERAKI-MINI)
@@ -288,6 +289,10 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Askey board RT2205D-D56 / RT2206D-D56 (BCM4704 cpu, mini-pci)
 // Belkin MIMO F5D8230_v2 or F5D8230_v1001ea (fccid: SA3-AGN0901AP0100)
 #define ROUTER_ASKEY_RT220XD 0x560f
+
+// U.S.Robotics USR5455 (BCM5354 cpu, no switch, fccid: Universal Scientific Industrial Co. IXM-APGBR03)
+// U.S.Robotics USR5465 (BCM5354 cpu, fccid: Universal Scientific Industrial Co. IXM-RTGBR03)
+#define ROUTER_USR_5465 0x570f
 
 
 #define NVROUTER "DD_BOARD"
