@@ -101,7 +101,7 @@ static void __init compex_init(void)
 
 	compex_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
 	compex_flash_resource.end =
-		IXP4XX_EXP_BUS_BASE(0) + ixp4xx_exp_bus_size - 1;
+		IXP4XX_EXP_BUS_BASE(0) + SZ_32M - 1;
 
 	platform_add_devices(compex_devices, ARRAY_SIZE(compex_devices));
 }

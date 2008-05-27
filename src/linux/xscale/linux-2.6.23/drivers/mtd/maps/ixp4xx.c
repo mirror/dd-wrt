@@ -317,9 +317,9 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 	while((offset+mtd->erasesize)<mtd->size)
 	    {
 	    printk(KERN_EMERG "[0x%08X]\n",offset);
-	    if (*((__u32 *) buf) == SQUASHFS_MAGIC) 
+	    if (*((__u32 *) buf) == SQUASHFS_MAGIC || *((__u16 *) buf) == 0x1985) 
 		{
-		printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
+		printk(KERN_EMERG "\nfound squashfs/jffs2 at %X\n",offset);
 		dir_parts[2].offset = offset;
 		//detect now compex board
 		//printk(KERN_EMERG "id = %s\n",(char*)(info->map.virt+0x23d6));
