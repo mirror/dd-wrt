@@ -267,7 +267,9 @@ ifeq ($(CONFIG_MAKSAT),y)
 	mkdir $(INSTALLDIR)/www/style/maksat
 	cp maksat/maksat/* $(INSTALLDIR)/www/style/maksat
 endif
-
+ifneq ($(CONFIG_WAVESAT),y)
+	rm -f $(INSTALLDIR)/www/WiMAX.asp 
+endif
 
 ifeq ($(CONFIG_MAKSAT_CORAL),y)
 	cp -f maksat/logo-coral.png $(INSTALLDIR)/www/style/logo-coral.png

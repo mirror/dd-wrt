@@ -312,7 +312,7 @@ internal_getRouterBrand ()
 	}
     if (!strcmp(gwid,"GW2358"))
 	{
-        setRouter ("Cambria GW2358-4/2");
+        setRouter ("Cambria GW2358-4");
         return ROUTER_BOARD_GATEWORX;
 	}
     if (!strcmp(gwid,"GW2355"))

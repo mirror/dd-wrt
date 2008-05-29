@@ -71,6 +71,9 @@ endif
 ifeq ($(CONFIG_WIVIZ),y)
 CFLAGS += -DHAVE_WIVIZ
 endif
+ifeq ($(CONFIG_WAVESAT),y)
+CFLAGS += -DHAVE_WAVESAT
+endif
 ifeq ($(CONFIG_OVERCLOCKING),y)
 CFLAGS += -DHAVE_OVERCLOCKING
 endif
