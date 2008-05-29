@@ -238,6 +238,7 @@ start_sysinit (void)
 
 
 
+#ifndef HAVE_NOWIFI
   eval ("insmod", "ath_hal");
 if (nvram_get("rate_control")!=NULL)
  {
@@ -248,6 +249,7 @@ if (nvram_get("rate_control")!=NULL)
  {
   eval ("insmod", "ath_pci"); 
  }
+#endif
 #ifdef HAVE_MADWIFI_MIMO
   eval ("insmod", "ath_mimo_pci");
 #endif
