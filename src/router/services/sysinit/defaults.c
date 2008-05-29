@@ -2330,6 +2330,13 @@ struct nvram_tuple srouter_defaults[] = {
   {"af_category", "0", 0},
   {"af_publish", "1", 0},
   {"af_agree", "0", 0},
+#ifdef HAVE_WAVESAT
+  {"ofdm_mode","disabled",0},
+  {"ofdm_upstream","3525000",0},
+  {"ofdm_downstream","3450000",0},
+  {"ofdm_width","7",0},
+  {"ofdm_duplex","TDD",0},
+#endif
   {0, 0, 0}
 };
 

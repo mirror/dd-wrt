@@ -4379,12 +4379,13 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   int wifi = haswifi ();
 #endif
 #endif
+  int wimaxwifi=0;
   char menu[8][11][32] =
     { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp",
        "Networking.asp", "", "", "", "", ""},
-  {"Wireless_Basic.asp", "SuperChannel.asp","Wireless_radauth.asp", "WL_WPATable.asp",
+  {"Wireless_Basic.asp", "SuperChannel.asp","WiMAX.asp","Wireless_radauth.asp", "WL_WPATable.asp",
    "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "",
-   "", ""},
+   ""},
   {"Services.asp", "PPPoE_Server.asp", "PPTP.asp", "Hotspot.asp",
    "Milkfish.asp", "eop-tunnel.asp", "AnchorFree.asp", "", "", "", ""},
   {"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", ""},
@@ -4399,23 +4400,23 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   };
 
 /* real name is bmenu.menuname[i][j] */
-  char menuname[8][11][32] =
+  char menuname[8][12][32] =
     { {"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting",
-       "setupvlan", "networking", "", "", "", ""},
-  {"wireless", "wirelessBasic","wirelessSuperchannel", "wirelessRadius", "wirelessSecurity",
-   "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", ""},
+       "setupvlan", "networking", "", "", "", "",""},
+  {"wireless", "wirelessBasic","wirelessSuperchannel","wimax", "wirelessRadius", "wirelessSecurity",
+   "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "",""},
   {"services", "servicesServices", "servicesPppoesrv", "servicesPptp",
-   "servicesHotspot", "servicesMilkfish", "setupeop", "servicesAnchorFree", "", "", ""},
-  {"security", "firwall", "vpn", "", "", "", "", "", "", "", ""},
-  {"accrestriction", "webaccess", "", "", "", "", "", "", "", "", ""},
+   "servicesHotspot", "servicesMilkfish", "setupeop", "servicesAnchorFree", "", "", "",""},
+  {"security", "firwall", "vpn", "", "", "", "", "", "", "", "",""},
+  {"accrestriction", "webaccess", "", "", "", "", "", "", "", "", "",""},
   {"applications", "applicationspforwarding", "applicationsprforwarding",
    "applicationsptriggering", "applicationsUpnp", "applicationsDMZ",
-   "applicationsQoS", "applicationsP2P", "", "", ""},
+   "applicationsQoS", "applicationsP2P", "", "", "",""},
   {"admin", "adminManagement", "adminAlive",
    "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup",
-   "", "", ""},
+   "", "", "",""},
   {"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN", "statuSputnik",
-   "statuVPN", "statuBand", "statuSysInfo", "", ""}
+   "statuVPN", "statuBand", "statuSysInfo", "", "",""}
   };
 
 #ifdef HAVE_MADWIFI
@@ -4424,22 +4425,22 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   int a;
   for (a = 0; a < ifcount; a++)
     {
-      sprintf (&menu[1][a + 6][0], "Wireless_WDS-ath%d.asp", a);
+      sprintf (&menu[1][a + 7][0], "Wireless_WDS-ath%d.asp", a);
       if (ifcount==1)
-      sprintf (&menuname[1][a + 7][0], "wirelessWds");
+      sprintf (&menuname[1][a + 8][0], "wirelessWds");
       else
-      sprintf (&menuname[1][a + 7][0], "wirelessWds%d", a);
+      sprintf (&menuname[1][a + 8][0], "wirelessWds%d", a);
     }
 #else
   int ifcount = get_wl_instances();
   int a;
   for (a = 0; a < ifcount; a++)
     {
-      sprintf (&menu[1][a + 6][0], "Wireless_WDS-wl%d.asp", a);
+      sprintf (&menu[1][a + 7][0], "Wireless_WDS-wl%d.asp", a);
       if (ifcount==1)
-      sprintf (&menuname[1][a + 7][0], "wirelessWds");
+      sprintf (&menuname[1][a + 8][0], "wirelessWds");
       else
-      sprintf (&menuname[1][a + 7][0], "wirelessWdswl%d", a);
+      sprintf (&menuname[1][a + 8][0], "wirelessWdswl%d", a);
     }
 #endif
 
@@ -4448,30 +4449,57 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "<div id=\"menu\">\n");
   websWrite (wp, " <div id=\"menuMain\">\n");
   websWrite (wp, "  <ul id=\"menuMainList\">\n");
-
+#ifdef HAVE_WAVESAT
+wimaxwifi=1;
+#endif
   for (i = 0; i < 8; i++)
     {
 #ifdef HAVE_MADWIFI
-      if (!wifi && !strcmp (menu[i][0], "Wireless_Basic.asp"))
+      if (!wifi && !wimaxwifi && !strcmp (menu[i][0], "Wireless_Basic.asp"))
 	i++;
 #endif
       if (!strcmp (menu[i][0], mainmenu))
 	{
-	  websWrite (wp,
-		     "   <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></span>\n",
-		     menuname[i][0]);
+      if (!wifi && wimaxwifi && !strcmp (menu[i][0], "Wireless_Basic.asp"))
+	  websWrite (wp,"   <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.wimax)</script></span>\n");
+      else
+	  websWrite (wp,"   <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></span>\n",menuname[i][0]);
 	  websWrite (wp, "    <div id=\"menuSub\">\n");
 	  websWrite (wp, "     <ul id=\"menuSubList\">\n");
 
 	  for (j = 0; j < 11; j++)
 	    {
+
 #ifdef HAVE_MADWIFI
+	      if (!wifi && !strncmp(menu[i][j],"Wireless_Basic.asp",8))
+	        j++;
+#ifndef HAVE_SUPERCHANNEL
+	      if (!strcmp (menu[i][j], "SuperChannel.asp"))	//jump over PPTP in micro build
+		j++;
+#else
+	      if (!strcmp (menu[i][j], "SuperChannel.asp") && (issuperchannel() || !wifi))	//jump over PPTP in micro build
+	      	j++;
+#endif
+#ifndef HAVE_WAVESAT
+	      if (!strcmp (menu[i][j], "WiMAX.asp"))	//jump over WiMAX
+		j++;
+#else
+	      if (!wimaxwifi && !strcmp (menu[i][j], "WiMAX.asp"))	//jump over WiMAX
+		j++;
+#endif
+	      if (!wifi && !strcmp (menu[i][j], "WL_WPATable.asp"))	//jump over PPTP in micro build
+	      	j++;
 	      if (!strcmp (menu[i][j], "Wireless_radauth.asp"))
 		j++;
+	      if (!wifi && !strncmp(menu[i][j],"Wireless_MAC.asp",8))
+	        j++;
 	      if (!strcmp (menu[i][j], "Wireless_Advanced.asp"))
+		j++;
+	      if (!wifi && !strncmp (menu[i][j], "Wireless_WDS",12))
 		j++;
 	      if (!wifi && !strcmp (menu[i][j], "Status_Wireless.asp"))
 		j++;
+	      
 #endif
 	      if ((!vlan_supp) && !strcmp (menu[i][j], "Vlan.asp"))	//jump over VLANs if vlan not supported
 		j++;
@@ -4483,13 +4511,6 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_MICRO
 	      if (!strcmp (menu[i][j], "PPTP.asp"))	//jump over PPTP in micro build
 		j++;
-#endif
-#ifndef HAVE_SUPERCHANNEL
-	      if (!strcmp (menu[i][j], "SuperChannel.asp"))	//jump over PPTP in micro build
-		j++;
-#else
-	      if (!strcmp (menu[i][j], "SuperChannel.asp") && issuperchannel())	//jump over PPTP in micro build
-	      	j++;
 #endif
 #ifdef HAVE_GLAUCO
 	      if (!strcmp (menu[i][j], "Factory_Defaults.asp"))
@@ -4523,8 +4544,14 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 		j++;
 	      if ((!auth) && !strcmp (menu[i][j], "Info.htm"))	//jump over Sys-Info
 		j++;
-
-	      if (!strcmp (menu[i][j], submenu) && (strlen (menu[i][j])))
+#ifdef HAVE_MADWIFI
+	      if (!strcmp (menu[i][j], submenu) && (strlen (menu[i][j]) && !strcmp(menu[i][j],"Wireless_Basic.asp") && !wifi && wimaxwifi))
+		{
+		  websWrite (wp,
+			     "      <li><span><script type=\"text/javascript\">Capture(bmenu.wimax)</script></span></li>\n");
+		}
+#endif
+	      else if (!strcmp (menu[i][j], submenu) && (strlen (menu[i][j])))
 		{
 		  websWrite (wp,
 			     "      <li><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></span></li>\n",
@@ -4544,6 +4571,13 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 		  websWrite (wp, "      \n//]]>\n</script>\n");
 		}
 #endif
+#ifdef HAVE_MADWIFI
+	      else if (strlen (menu[i][j]) && !strcmp(menu[i][j],"Wireless_Basic.asp") && !wifi && wimaxwifi)
+		{
+		  websWrite (wp,
+			     "      <li><a href=\"WiMAX.asp\"><script type=\"text/javascript\">Capture(bmenu.wimax)</script></a></li>\n");
+		}
+#endif
 	      else if (strlen (menu[i][j]))
 		{
 		  websWrite (wp,
@@ -4555,6 +4589,13 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 	  websWrite (wp, "    </div>\n");
 	  websWrite (wp, "    </li>\n");
 	}
+#ifdef HAVE_MADWIFI
+	      else if (!strcmp(menu[i][0],"Wireless_Basic.asp") && !wifi && wimaxwifi)
+		{
+		  websWrite (wp,
+			     "      <li><a href=\"WiMAX.asp\"><script type=\"text/javascript\">Capture(bmenu.wimax)</script></a></li>\n");
+		}
+#endif
       else
 	{
 	  websWrite (wp,
