@@ -360,6 +360,7 @@ bmenu.wireless="Wireless";
 bmenu.wirelessBasic="Basic Settings";
 bmenu.wirelessRadius="Radius";
 bmenu.wirelessSuperchannel="SuperChannel";
+bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Wireless Security";
 bmenu.wirelessMac="MAC Filter";
 bmenu.wirelessAdvanced="Advanced Settings";
@@ -1670,6 +1671,17 @@ wl_mac.label="Use Filter";
 wl_mac.label2="Filter Mode";
 wl_mac.deny="Prevent clients listed from accessing the wireless network";
 wl_mac.allow="Permit only clients listed to access the wireless network";
+
+// ** WiMAX
+var wl_wimax = new Object();
+wl_wimax.titl="WiMAX";
+wl_wimax.h2="Worldwide Interoperability for Microwave Access";
+wl_wimax.downstream="Downstream Frequency";
+wl_wimax.upstream="Upstream Frequency";
+wl_wimax.width="Channel Width";
+wl_wimax.duplex="Duplex Mode";
+wl_wimax.mode="Operation Mode";
+wl_wimax.mac="Subscriber MAC Address";
 
 // ** Wireless_Advanced.asp **//
 var wl_adv = new Object();
