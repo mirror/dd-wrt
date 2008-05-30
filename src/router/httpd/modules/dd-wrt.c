@@ -3863,7 +3863,7 @@ show_netmode (webs_t wp, char *prefix)
 }
 
 void
-showbridgesettings (webs_t wp, char *var)
+showbridgesettings (webs_t wp, char *var, int mcast)
 {
   
   websWrite (wp,
@@ -3886,10 +3886,13 @@ showbridgesettings (webs_t wp, char *var)
   websWrite (wp, "</div>\n");
 
   websWrite (wp, "<div id=\"%s_idnetvifs\">\n", vvar);
+if (mcast)
+{
   char mcast[32];
   sprintf (mcast, "%s_multicast", var);
   nvram_default_get(mcast,"0");
   showOption (wp, "wl_basic.multicast", mcast);
+}
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
@@ -4012,7 +4015,7 @@ show_virtualssid (webs_t wp, char *prefix)
     sprintf (ssid, "%s_ap_isolate", var);
     showOption (wp, "wl_adv.label11", ssid);
     sprintf (wl_mode, "%s_mode", var);
-    showbridgesettings (wp, var);
+    showbridgesettings (wp, var,1);
     websWrite (wp, "</fieldset><br />\n");
     count++;
   }
@@ -4952,12 +4955,12 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 // end ACK timing
 #endif
 #ifdef HAVE_MADWIFI
-  showbridgesettings (wp, prefix);
+  showbridgesettings (wp, prefix,1);
 #else
   if (!strcmp(prefix,"wl0"))
-  showbridgesettings (wp, get_wl_instance_name(0));
+  showbridgesettings (wp, get_wl_instance_name(0),1);
   if (!strcmp(prefix,"wl1"))
-  showbridgesettings (wp, get_wl_instance_name(1));
+  showbridgesettings (wp, get_wl_instance_name(1),1);
 #endif
   websWrite (wp, "</fieldset>\n");
   websWrite (wp, "<br />\n");
@@ -5669,6 +5672,24 @@ ej_get_wds_mac (webs_t wp, int argc, char_t ** argv)
 
   return;
 
+}
+
+
+void
+ej_showbridgesettings (webs_t wp, int argc, char_t ** argv)
+{
+  char *interface;
+  int mcast;
+#ifdef FASTWEB
+  ejArgs (argc, argv, "%s %d", &interface,&mcast);
+#else
+  if (ejArgs (argc, argv, "%s %d", &interface,&mcast) < 2)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+#endif
+showbridgesettings(wp,interface,mcast);
 }
 
 void
