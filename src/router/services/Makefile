@@ -371,6 +371,7 @@ CFLAGS += -DHAVE_CAMBRIA
 endif
 ifeq ($(CONFIG_WAVESAT),y)
 CFLAGS += -DHAVE_WAVESAT
+OBJS += wavesat.o
 endif
 ifeq ($(CONFIG_NOP8670),y)
 CFLAGS += -DHAVE_NOP8670
