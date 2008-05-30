@@ -70,12 +70,7 @@ if (nvram_match("ofdm_duplex","H-FDD"))
 if (nvram_match("ofdm_mode","disabled"))
     return;
 eval("/sub/lm_scripts/go_ss",nvram_safe_get("ofdm_width"),mode);
-if (nvram_match("ofdm_mode","bridge"))
-    {
-    ifconfig (dev, IFUP, NULL, NULL);
-    br_add_interface (getBridge (dev), dev);
-    }
-if (strcmp ("ofdm_mode", "sta"))
+if (!nvram_match("ofdm_mode", "sta"))
     {
       char bridged[32];
       sprintf (bridged, "%s_bridged", dev);
@@ -114,6 +109,13 @@ if (strcmp ("ofdm_mode", "sta"))
 }
 void deconfigure_wimax(void)
 {
+char *dev = "ofdm";
+
+  if (ifexists (dev))
+    {
+      br_del_interface ("br0", dev);
+      eval ("ifconfig", dev, "down");
+    }
 eval("/sub/common/ssmodunload");
 }
 #endif
