@@ -81,6 +81,7 @@
 
 #define MMC_CMD_0_GO_IDLE				0
 #define MMC_CMD_1_SEND_OP_COND				1
+#define MMC_CMD_8_SEND_EXT_CSD				8
 #define MMC_CMD_9_SEND_CSD				9
 #define MMC_CMD_10_SEND_CID				10
 #define MMC_CMD_12_STOP					12
@@ -336,8 +337,25 @@ unsigned char MMC_get_CSD(unsigned char *ptr_data){
 	return 1;
 }
 
+int MMC_get_extCSD(unsigned char *ptr_data){
+	unsigned char retval;
+	SPI_SHADOW;
+	SPI_WAIT_TILL_CARD_IS_READY(retval);
+	SPI_CS_LO;
+	SPI_SEND_CMD(MMC_CMD_8_SEND_EXT_CSD, 0x0);
+	SPI_GET_R1(retval);
+	SPI_GET_DATA(512, ptr_data);
+	SPI_CS_HI;
+	SPI_OUT_0xFF;
+	return retval;
+}
+
+#define EXT_CSD_SEC_CNT		212	/* RO, 4 bytes */
+
+
 void MMC_get_volume_info(VOLUME_INFO* vinf){
-	unsigned char data[16];
+	unsigned char data[512];
+	int extcsd;
 	MMC_get_CSD(data);
 	vinf->sector_count = data[6] & 0x03;
 	vinf->sector_count <<= 8;
@@ -347,9 +365,20 @@ void MMC_get_volume_info(VOLUME_INFO* vinf){
 		
 	vinf->sector_multiply = data[9] & 0x03;
 	vinf->sector_multiply <<= 1;
-	vinf->sector_multiply += (data[10] & 0x80) >> 7;
-	
-	
+    	vinf->sector_multiply += (data[10] & 0x80) >> 7;
+        extcsd=MMC_get_extCSD(data);	
+	if (!extcsd)
+	{
+	vinf->sector_count=
+		data[EXT_CSD_SEC_CNT + 0] << 0 |
+		data[EXT_CSD_SEC_CNT + 1] << 8 |
+		data[EXT_CSD_SEC_CNT + 2] << 16 |
+		data[EXT_CSD_SEC_CNT + 3] << 24;
+	printk(KERN_INFO "get %d sectors from EXT CSD.\n",vinf->sector_count);
+  	}else
+	{
+	printk(KERN_INFO "EXT CSD not readable. (old card)\n");
+	}
 	vinf->size_MB = vinf->sector_count >> (9-vinf->sector_multiply);
 	vinf->size    = (vinf->sector_count * 512 )<< (vinf->sector_multiply+2);
 	vinf->sector_size = 512;
@@ -796,7 +825,8 @@ static void mmc_timer_callback(unsigned long ptr){
 }
 
 static int __init mod_init(void){
-	printk("mmc : MMC Driver for Fonera Version 2.5 (050507) -- '2B|!2B' (john@phrozen.org)\n");
+	printk("mmc : MMC Driver for Fonera Version 2.6 (290508) -- '2B|!2B' (john@phrozen.org)\n");
+	printk("mmc : >512MB card support by Sebastian Gottschall\n");
 	
 	sysRegWrite(AR5315_GPIO_CR, (sysRegRead(AR5315_GPIO_CR) | SI | SCK | CS) & ~SO);
 	
@@ -823,6 +853,6 @@ module_init (mod_init);
 module_exit (mod_exit);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("John Crispin - john@phrozen.org");
+MODULE_AUTHOR("John Crispin - john@phrozen.org, Sebastian Gottschall - s.gottschall@newmedia-net.de");
 MODULE_DESCRIPTION("AR5315 - GPIO - MMC (SD-SPI) Driver");
 
