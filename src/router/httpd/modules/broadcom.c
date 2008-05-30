@@ -6055,6 +6055,7 @@ struct ej_handler ej_handlers[] = {
   {"show_acktiming", ej_show_acktiming},
   {"update_acktiming", ej_update_acktiming},
 #endif
+  {"showbridgesettings",ej_showbridgesettings},
   {NULL, NULL}
 };
 #endif /* !WEBS */
