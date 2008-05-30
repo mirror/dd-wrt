@@ -613,3 +613,5 @@ extern void get_filter_services (char *services);
 #ifdef HAVE_RFLOW
 extern void ej_show_rflowif (webs_t wp, int argc, char_t ** argv);
 #endif
+
+void ej_showbridgesettings (webs_t wp, int argc, char_t ** argv);
