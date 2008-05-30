@@ -3899,6 +3899,7 @@ if (mcast)
   char ip[32];
   sprintf (ip, "%s_ipaddr", var);
   char *ipv = nvram_safe_get (ip);
+  websWrite (wp,"<input type=\"hidden\" name=\"%s_ipaddr\" value=\"4\" />\n",var);
   websWrite (wp,
 	     "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,1,223,share.ip)\" name=\"%s_ipaddr_0\" value=\"%d\" />.",
 	     var, get_single_ip (ipv, 0));
@@ -3918,6 +3919,7 @@ if (mcast)
   sprintf (ip, "%s_netmask", var);
   ipv = nvram_safe_get (ip);
 
+  websWrite (wp,"<input type=\"hidden\" name=\"%s_netmask\" value=\"4\" />\n",var);
   websWrite (wp,
 	     "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_0\" value=\"%d\" />.",
 	     var, get_single_ip (ipv, 0));
