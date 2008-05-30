@@ -60,6 +60,7 @@ addEvent(window, "unload", function() {
 								</script>
 							    </select>
 							</div>
+							<% showbridgesettings("ofdm","0"); %>
 							<div class="setting">
 							    <div class="label"><% tran("wl_wimax.downstream"); %></div>
 							    <input size="27" name="ofdm_downstream" value="<% nvram_get("ofdm_downstream"); %>" />&nbsp;KHz
