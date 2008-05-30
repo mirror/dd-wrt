@@ -1089,9 +1089,9 @@ start_lan (void)
 	{
 	  nvram_set ("lan_ifname", "br0");
 	  if (nvram_match ("intel_eth", "1"))
-	    nvram_set ("lan_ifnames", "ixp0 eth0 eth1 ath0 ath1 ath2 ath3");
+	    nvram_set ("lan_ifnames", "ixp0 eth0 eth1 ath0 ath1 ath2 ath3 ofdm");
 	  else
-	    nvram_set ("lan_ifnames", "ixp0 ath0 ath1 ath2 ath3");
+	    nvram_set ("lan_ifnames", "ixp0 ath0 ath1 ath2 ath3 ofdm");
 	  nvram_set ("wan_ifname", "");
 	  nvram_set ("wan_ifnames", "");
 	}
@@ -1100,9 +1100,9 @@ start_lan (void)
 	  nvram_set ("lan_ifname", "br0");
 	  if (nvram_match ("intel_eth", "1"))
 	    nvram_set ("lan_ifnames",
-		       "ixp0 ixp1 eth0 eth1 ath0 ath1 ath2 ath3");
+		       "ixp0 ixp1 eth0 eth1 ath0 ath1 ath2 ath3 ofdm");
 	  else
-	    nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3");
+	    nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 	  nvram_set ("wan_ifname", "");
 	  nvram_set ("wan_ifnames", "");
 	}
@@ -1111,9 +1111,9 @@ start_lan (void)
 	  nvram_set ("lan_ifname", "br0");
 	  if (nvram_match ("intel_eth", "1"))
 	    nvram_set ("lan_ifnames",
-		       "ixp0 ixp1 eth0 eth1 ath0 ath1 ath2 ath3");
+		       "ixp0 ixp1 eth0 eth1 ath0 ath1 ath2 ath3 ofdm");
 	  else
-	    nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3");
+	    nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 	  nvram_set ("wan_ifname", "");
 	  nvram_set ("wan_ifnames", "");
 	}
@@ -1124,9 +1124,9 @@ start_lan (void)
 	{
 	  nvram_set ("lan_ifname", "br0");
 	  if (nvram_match ("intel_eth", "1"))
-	    nvram_set ("lan_ifnames", "eth0 eth1 ixp0 ath0 ath1 ath2 ath3");
+	    nvram_set ("lan_ifnames", "eth0 eth1 ixp0 ath0 ath1 ath2 ath3 ofdm");
 	  else
-	    nvram_set ("lan_ifnames", "ixp0 ath0 ath1 ath2 ath3");
+	    nvram_set ("lan_ifnames", "ixp0 ath0 ath1 ath2 ath3 ofdm");
 	  if (nvram_get ("wan_ifname2") != NULL)
 	    {
 	      nvram_set ("wan_ifname", nvram_safe_get ("wan_ifname2"));
@@ -1144,9 +1144,9 @@ start_lan (void)
 	  nvram_set ("lan_ifname", "br0");
 	  if (nvram_match ("intel_eth", "1"))
 	    nvram_set ("lan_ifnames",
-		       "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3");
+		       "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 	  else
-	    nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3");
+	    nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 	  if (nvram_get ("wan_ifname2") != NULL)
 	    {
 	      nvram_set ("wan_ifname", nvram_safe_get ("wan_ifname2"));
@@ -1164,9 +1164,9 @@ start_lan (void)
 	  nvram_set ("lan_ifname", "br0");
 	  if (nvram_match ("intel_eth", "1"))
 	    nvram_set ("lan_ifnames",
-		       "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3");
+		       "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 	  else
-	    nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3");
+	    nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 
 	  if (nvram_get ("wan_ifname2") != NULL)
 	    {
@@ -1319,7 +1319,9 @@ start_lan (void)
 #else
   eval ("wlconf", wl_face, "down");
 #endif
-
+#ifdef HAVE_WAVESAT
+  deconfigure_wimax();
+#endif
 
 
   /* you gotta bring it down before you can set its MAC */
@@ -1569,6 +1571,14 @@ start_lan (void)
 #endif
 	      }
 
+#ifdef HAVE_WAVESAT
+	    if (nvram_match (wl_name, "bridge"))
+	      {
+		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);	// from up
+		br_add_interface (getBridge (name), name);
+		led_control (LED_BRIDGE, LED_ON);
+	      }
+#endif
 
 	    if (nvram_match (wl_name, "ap"))
 	      {
@@ -1654,6 +1664,17 @@ start_lan (void)
 #endif
 #endif
 	      }
+#ifdef HAVE_WAVESAT
+	    if (nvram_match (wl_name, "router"))
+	      {
+
+		do_portsetup (lan_ifname, name);
+		//br_add_interface (getBridge (name), name);    //eval ("brctl", "addif", lan_ifname, name);
+#ifdef HAVE_MSSID
+		do_mssid (lan_ifname, name);
+#endif
+	      }
+#endif
 
 	  }
 
@@ -1683,6 +1704,9 @@ start_lan (void)
     }
 
 #endif
+#endif
+#ifdef HAVE_WAVESAT
+  configure_wimax();
 #endif
   lan_ifname = strdup (nvram_safe_get ("lan_ifname"));
   lan_ifnames = strdup (nvram_safe_get ("lan_ifnames"));

@@ -53,7 +53,7 @@ addEvent(window, "unload", function() {
 								<script type="text/javascript">
 								//<![CDATA[
 								document.write("<option value=\"disabled\" <% nvram_selmatch("ofdm_mode", "disabled", "selected"); %> >Disabled</option>");
-								document.write("<option value=\"wanrouter\" <% nvram_selmatch("ofdm_mode", "wanrouter", "selected"); %> >WAN Router</option>");
+								document.write("<option value=\"wanrouter\" <% nvram_selmatch("ofdm_mode", "sta", "selected"); %> >WAN Router</option>");
 								document.write("<option value=\"bridge\" <% nvram_selmatch("ofdm_mode", "bridge", "selected"); %> >Bridge</option>");
 								document.write("<option value=\"router\" <% nvram_selmatch("ofdm_mode", "router", "selected"); %> >LAN Router</option>");
 								//]]>

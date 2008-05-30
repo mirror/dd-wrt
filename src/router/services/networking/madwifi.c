@@ -326,29 +326,6 @@ deconfigure_wifi (void)
 
 static int need_commit = 0;
 
-char *
-default_get (char *var, char *def)
-{
-  char *v = nvram_get (var);
-  if (v == NULL || strlen (v) == 0)
-    {
-      nvram_set (var, def);
-      need_commit = 1;
-    }
-  return nvram_safe_get (var);
-}
-
-int
-default_match (char *var, char *match, char *def)
-{
-  char *v = nvram_get (var);
-  if (v == NULL || strlen (v) == 0)
-    {
-      nvram_set (var, def);
-      need_commit = 1;
-    }
-  return nvram_match (var, match);
-}
 
 
 
@@ -710,7 +687,7 @@ setupHostAP (char *prefix, int iswan)
       char type[32];
       sprintf (type, "%s_radmactype", prefix);
       char *pragma = "";
-      if (default_match (type, "0", "0"))
+      if (nvram_default_match (type, "0", "0"))
 	pragma = "-n1 ";
       if (nvram_match (type, "1"))
 	pragma = "-n2 ";
@@ -770,7 +747,7 @@ set_scanlist (char *dev, char *wif)
   char scanlist[32];
   unsigned short list[1024];
   sprintf (scanlist, "%s_scanlist", dev);
-  char *sl = default_get (scanlist, "default");
+  char *sl = nvram_default_get (scanlist, "default");
   memset (list, 0, 1024 * sizeof (unsigned short));
   int c = 0;
   if (strlen (sl) > 0 && strcmp (sl, "default"))
@@ -820,7 +797,7 @@ set_scanlist (char *dev, char *wif)
   char scanlist[32];
   unsigned short list[64];
   sprintf (scanlist, "%s_scanlist", dev);
-  char *sl = default_get (scanlist, "default");
+  char *sl = nvram_default_get (scanlist, "default");
   int c = 0;
   eval ("iwpriv", dev, "setscanlist", "-ALL");
   if (strlen (sl) > 0 && strcmp (sl, "default"))
@@ -854,16 +831,16 @@ set_rate (char *dev)
   sprintf (maxrate, "%s_maxrate", dev);
   sprintf (xr, "%s_xr", dev);
   sprintf (turbo, "%s_turbo", dev);
-  char *r = default_get (rate, "0");
-  char *mr = default_get (maxrate, "0");
+  char *r = nvram_default_get (rate, "0");
+  char *mr = nvram_default_get (maxrate, "0");
 #ifdef HAVE_WHRAG108
   char *netmode;
   if (!strcmp (dev, "ath0"))
-    netmode = default_get (net, "a-only");
+    netmode = nvram_default_get (net, "a-only");
   else
-    netmode = default_get (net, "mixed");
+    netmode = nvram_default_get (net, "mixed");
 #else
-  char *netmode = default_get (net, "mixed");
+  char *netmode = nvram_default_get (net, "mixed");
 #endif
 
   if (nvram_match (bw, "20") && nvram_match (xr, "0"))
@@ -929,11 +906,11 @@ set_netmode (char *wif, char *dev, char *use)
 #ifdef HAVE_WHRAG108
   char *netmode;
   if (!strcmp (dev, "ath0"))
-    netmode = default_get (net, "a-only");
+    netmode = nvram_default_get (net, "a-only");
   else
-    netmode = default_get (net, "mixed");
+    netmode = nvram_default_get (net, "mixed");
 #else
-  char *netmode = default_get (net, "mixed");
+  char *netmode = nvram_default_get (net, "mixed");
 #endif
 //  fprintf (stderr, "set netmode of %s to %s\n", net, netmode);
   cprintf ("configure net mode %s\n", netmode);
@@ -984,7 +961,7 @@ set_netmode (char *wif, char *dev, char *use)
 	  eval ("iwpriv", use, "mode", "1");
       }
   }
-  if (default_match (turbo, "1", "0"))
+  if (nvram_default_match (turbo, "1", "0"))
     {
       {
 	if (!strcmp (netmode, "g-only"))
@@ -1013,12 +990,12 @@ set_netmode (char *wif, char *dev, char *use)
 	    }
 	}
     }
-  if (default_match (comp, "1", "0"))
+  if (nvram_default_match (comp, "1", "0"))
     eval ("iwpriv", use, "compression", "1");
   else
     eval ("iwpriv", use, "compression", "0");
 
-  if (default_match (ff, "1", "0"))
+  if (nvram_default_match (ff, "1", "0"))
     eval ("iwpriv", use, "ff", "1");
   else
     eval ("iwpriv", use, "ff", "0");
@@ -1035,7 +1012,7 @@ set_compression (int count)
   char wif[32];
   sprintf (wif, "wifi%d", count);
   sprintf (comp, "ath%d_compression", count);
-  if (default_match (comp, "1", "0"))
+  if (nvram_default_match (comp, "1", "0"))
     setsysctrl (wif, "compression", 1);
   else
     setsysctrl (wif, "compression", 0);
@@ -1159,7 +1136,7 @@ configure_single (int count)
     foreach (var, vifs, next)
     {
       sprintf (mode, "%s_mode", var);
-      m = default_get (mode, "ap");
+      m = nvram_default_get (mode, "ap");
       //create device
       if (strlen (mode) > 0)
 	{
@@ -1187,7 +1164,7 @@ configure_single (int count)
 
 
 //create original primary interface
-  m = default_get (wl, "ap");
+  m = nvram_default_get (wl, "ap");
 
   if (!strcmp (m, "wet") || !strcmp (m, "wdssta") || !strcmp (m, "sta"))
     {
@@ -1239,7 +1216,7 @@ configure_single (int count)
 
 
   cprintf ("detect maxpower\n");
-  m = default_get (wl, "ap");
+  m = nvram_default_get (wl, "ap");
   char maxp[16];
 
   vifs = nvram_safe_get (wifivifs);
@@ -1264,10 +1241,10 @@ configure_single (int count)
 
   char wmm[32];
   sprintf (wmm, "%s_wmm", dev);
-  eval ("iwpriv", dev, "wmm", default_get (wmm, "0"));
+  eval ("iwpriv", dev, "wmm", nvram_default_get (wmm, "0"));
   char doth[32];
   sprintf (doth, "%s_doth", dev);
-  eval ("iwpriv", dev, "doth", default_get (doth, "0"));
+  eval ("iwpriv", dev, "doth", nvram_default_get (doth, "0"));
 //  eval ("iwpriv", dev, "uapsd","0");
   eval ("iwpriv", dev, "scandisable", "0");
   int disablescan = 0;
@@ -1275,7 +1252,7 @@ configure_single (int count)
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
     {
       cprintf ("set channel\n");
-      char *ch = default_get (channel, "0");
+      char *ch = nvram_default_get (channel, "0");
       if (strcmp (ch, "0") == 0)
 	{
 	  eval ("iwpriv", dev, "scandisable", "0");
@@ -1298,7 +1275,7 @@ configure_single (int count)
   set_scanlist (dev, wif);
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
     {
-      char *ch = default_get (channel, "0");
+      char *ch = nvram_default_get (channel, "0");
       if (strcmp (ch, "0") == 0)
 	{
 	  eval ("iwconfig", dev, "channel", "0");
@@ -1324,7 +1301,7 @@ configure_single (int count)
 
   cprintf ("adjust sensitivity\n");
 
-  int distance = atoi (default_get (sens, "2000"));	//to meter
+  int distance = atoi (nvram_default_get (sens, "2000"));	//to meter
   if (distance > 0)
     {
       setsysctrl (wif, "dynack_count", 0);
@@ -1342,7 +1319,7 @@ configure_single (int count)
 #endif
 
 #if defined(HAVE_NS2) || defined(HAVE_NS5)
-  int tx = atoi (default_get (txantenna, "0"));
+  int tx = atoi (nvram_default_get (txantenna, "0"));
 
   setsysctrl (wif, "diversity", 0);
   switch (tx)
@@ -1371,9 +1348,9 @@ configure_single (int count)
     }
 #else
 
-  int rx = atoi (default_get (rxantenna, "1"));
-  int tx = atoi (default_get (txantenna, "1"));
-  int diva = atoi (default_get (diversity, "0"));
+  int rx = atoi (nvram_default_get (rxantenna, "1"));
+  int tx = atoi (nvram_default_get (txantenna, "1"));
+  int diva = atoi (nvram_default_get (diversity, "0"));
 
   setsysctrl (wif, "diversity", diva);
   setsysctrl (wif, "rxantenna", rx);
@@ -1390,7 +1367,7 @@ configure_single (int count)
 	continue;
       sprintf (ssid, "%s_ssid", var);
       sprintf (mode, "%s_mode", var);
-      m = default_get (mode, "ap");
+      m = nvram_default_get (mode, "ap");
 #ifndef OLD_MADWIFI
       set_scanlist (dev, wif);
 #endif
@@ -1398,7 +1375,7 @@ configure_single (int count)
       if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
 	{
 	  cprintf ("set channel\n");
-	  char *ch = default_get (channel, "0");
+	  char *ch = nvram_default_get (channel, "0");
 	  if (strcmp (ch, "0") == 0)
 	    {
 #ifdef OLD_MADWIFI
@@ -1426,21 +1403,21 @@ configure_single (int count)
 
       eval ("iwpriv", var, "bgscan", "0");
 #ifdef HAVE_MAKSAT
-      eval ("iwconfig", var, "essid", default_get (ssid, "maksat_vap"));
+      eval ("iwconfig", var, "essid", nvram_default_get (ssid, "maksat_vap"));
 #elif defined(HAVE_TRIMAX)
-      eval ("iwconfig", var, "essid", default_get (ssid, "trimax_vap"));
+      eval ("iwconfig", var, "essid", nvram_default_get (ssid, "trimax_vap"));
 #else
-      eval ("iwconfig", var, "essid", default_get (ssid, "dd-wrt_vap"));
+      eval ("iwconfig", var, "essid", nvram_default_get (ssid, "dd-wrt_vap"));
 #endif
       cprintf ("set broadcast flag vif %s\n", var);	//hide ssid
       sprintf (broadcast, "%s_closed", var);
-      eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
+      eval ("iwpriv", var, "hide_ssid", nvram_default_get (broadcast, "0"));
       sprintf (wmm, "%s_wmm", var);
-      eval ("iwpriv", var, "wmm", default_get (wmm, "0"));
+      eval ("iwpriv", var, "wmm", nvram_default_get (wmm, "0"));
 //      eval ("iwpriv", var, "uapsd", "0");
       char isolate[32];
       sprintf (isolate, "%s_ap_isolate", var);
-      if (default_match (isolate, "1", "0"))
+      if (nvram_default_match (isolate, "1", "0"))
 	eval ("iwpriv", var, "ap_bridge", "0");
       if (!strcmp (m, "wdssta") || !strcmp (m, "wdsap"))
 	eval ("iwpriv", var, "wds", "1");
@@ -1464,7 +1441,7 @@ configure_single (int count)
 
   char isolate[32];
   sprintf (isolate, "%s_ap_isolate", dev);
-  if (default_match (isolate, "1", "0"))
+  if (nvram_default_match (isolate, "1", "0"))
     eval ("iwpriv", dev, "ap_bridge", "0");
   eval("iwpriv",dev,"hostroaming","0");
 
@@ -1477,21 +1454,21 @@ configure_single (int count)
 
   cprintf ("set ssid\n");
 #ifdef HAVE_MAKSAT
-  eval ("iwconfig", dev, "essid", default_get (ssid, "maksat"));
+  eval ("iwconfig", dev, "essid", nvram_default_get (ssid, "maksat"));
 #elif defined(HAVE_TRIMAX)
-  eval ("iwconfig", dev, "essid", default_get (ssid, "trimax"));
+  eval ("iwconfig", dev, "essid", nvram_default_get (ssid, "trimax"));
 #else
-  eval ("iwconfig", dev, "essid", default_get (ssid, "dd-wrt"));
+  eval ("iwconfig", dev, "essid", nvram_default_get (ssid, "dd-wrt"));
 #endif
   cprintf ("set broadcast flag\n");	//hide ssid
-  eval ("iwpriv", dev, "hide_ssid", default_get (broadcast, "0"));
+  eval ("iwpriv", dev, "hide_ssid", nvram_default_get (broadcast, "0"));
   eval ("iwpriv", dev, "bgscan", "0");
-  m = default_get (wl, "ap");
+  m = nvram_default_get (wl, "ap");
 
 
   char preamble[32];
   sprintf (preamble, "%s_preamble", dev);
-  if (default_match (preamble, "1", "0"))
+  if (nvram_default_match (preamble, "1", "0"))
     {
       eval ("iwpriv", dev, "shpreamble", "1");
     }
@@ -1503,11 +1480,11 @@ configure_single (int count)
     {
       cprintf ("set ssid\n");
 #ifdef HAVE_MAKSAT
-      eval ("iwconfig", dev, "essid", default_get (ssid, "maksat"));
+      eval ("iwconfig", dev, "essid", nvram_default_get (ssid, "maksat"));
 #elif defined(HAVE_TRIMAX)
-      eval ("iwconfig", dev, "essid", default_get (ssid, "trimax"));
+      eval ("iwconfig", dev, "essid", nvram_default_get (ssid, "trimax"));
 #else
-      eval ("iwconfig", dev, "essid", default_get (ssid, "dd-wrt"));
+      eval ("iwconfig", dev, "essid", nvram_default_get (ssid, "dd-wrt"));
 #endif
     }
 
@@ -1516,7 +1493,7 @@ configure_single (int count)
 
   cprintf ("adjust power\n");
 
-  int newpower = atoi (default_get (power, "16"));
+  int newpower = atoi (nvram_default_get (power, "16"));
   // fprintf (stderr, "new power limit %d\n", newpower);
   sprintf (var, "%ddBm", newpower);
   eval ("iwconfig", dev, "txpower", var);
@@ -1540,7 +1517,7 @@ configure_single (int count)
     {
       char bridged[32];
       sprintf (bridged, "%s_bridged", dev);
-      if (default_match (bridged, "1", "1"))
+      if (nvram_default_match (bridged, "1", "1"))
 	{
 	  ifconfig (dev, IFUP, NULL, NULL);
 	  br_add_interface (getBridge (dev), dev);
@@ -1561,7 +1538,7 @@ configure_single (int count)
     {
       char bridged[32];
       sprintf (bridged, "%s_bridged", dev);
-      if (default_match (bridged, "0", "1"))
+      if (nvram_default_match (bridged, "0", "1"))
 	{
 	  char ip[32];
 	  char mask[32];
@@ -1585,7 +1562,7 @@ configure_single (int count)
     foreach (var, vifs, next)
     {
       sprintf (mode, "%s_mode", var);
-      m = default_get (mode, "ap");
+      m = nvram_default_get (mode, "ap");
       if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
 	setupHostAP (var, 0);
       else
@@ -1604,13 +1581,13 @@ configure_single (int count)
 	eval ("iwpriv", var, "scandisable", "1");
 
 	sprintf (mode, "%s_mode", var);
-	char *m2 = default_get (mode, "ap");
+	char *m2 = nvram_default_get (mode, "ap");
 
 	if (strcmp (m2, "sta"))
 	  {
 	    char bridged[32];
 	    sprintf (bridged, "%s_bridged", var);
-	    if (default_match (bridged, "1", "1"))
+	    if (nvram_default_match (bridged, "1", "1"))
 	      {
 		ifconfig (var, IFUP, NULL, NULL);
 		br_add_interface (getBridge (var), var);
@@ -1648,12 +1625,12 @@ configure_single (int count)
       }
     }
 
-  m = default_get (wl, "ap");
+  m = nvram_default_get (wl, "ap");
   eval ("iwpriv", dev, "scandisable", "0");
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
     {
       cprintf ("set channel\n");
-      char *ch = default_get (channel, "0");
+      char *ch = nvram_default_get (channel, "0");
       if (strcmp (ch, "0") == 0)
 	{
 	  eval ("iwconfig", dev, "channel", "0");
@@ -1719,13 +1696,13 @@ start_vifs (void)
 	    setMacFilter (var);
 
 	    sprintf (mode, "%s_mode", var);
-	    m = default_get (mode, "ap");
+	    m = nvram_default_get (mode, "ap");
 
 	    if (strcmp (m, "sta"))
 	      {
 		char bridged[32];
 		sprintf (bridged, "%s_bridged", var);
-		if (default_match (bridged, "1", "1"))
+		if (nvram_default_match (bridged, "1", "1"))
 		  {
 		    ifconfig (var, IFUP, NULL, NULL);
 		    br_add_interface (getBridge (var), var);
