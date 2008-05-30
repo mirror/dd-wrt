@@ -3356,10 +3356,15 @@ route_del (char *name, int metric, char *dst, char *gateway, char *genmask)
 
 #ifdef HAVE_MADWIFI
 static char *stalist[] =
-  { "ath0", "ath1", "ath2", "ath3", "ath4", "ath5", "ath6", "ath8", "ath9" };
+  { "ath0", "ath1", "ath2", "ath3", "ath4", "ath5", "ath6", "ath8", "ath9"};
 char *
 getSTA (void)
 {
+
+#ifdef HAVE_WAVESAT
+if (nvram_match("ofdm_mode","sta"))
+    return "ofdm";
+#endif
   int c = getifcount ("wifi");
   int i;
   for (i = 0; i < c; i++)
@@ -3380,6 +3385,10 @@ getSTA (void)
 char *
 getWET (void)
 {
+#ifdef HAVE_WAVESAT
+if (nvram_match("ofdm_mode","bridge"))
+    return "ofdm";
+#endif
   int c = getifcount ("wifi");
   int i;
   for (i = 0; i < c; i++)
