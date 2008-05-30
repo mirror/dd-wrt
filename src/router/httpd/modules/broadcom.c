@@ -4250,6 +4250,11 @@ ej_show_bandwidth (webs_t wp, int argc, char_t ** argv)
     show_bwif (wp, var, name);
   }*/
 #endif
+#ifdef HAVE_WAVESAT
+  char name[32];
+  sprintf (name, "%s", live_translate ("wl_wimax.titl"));
+  show_bwif (wp, "ofdm", name);
+#endif
 }
 
 void
