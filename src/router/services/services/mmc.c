@@ -38,6 +38,7 @@ start_mmc (void)
       if (!res)
 	{
 	  //device detected
+	  eval ("insmod", "mbcache");
 	  eval ("insmod", "ext2");
 
 	  if (mount ("/dev/mmc", "/mmc", "ext2", MS_MGC_VAL, NULL))
