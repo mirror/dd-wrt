@@ -366,7 +366,7 @@ void MMC_get_volume_info(VOLUME_INFO* vinf){
 	vinf->sector_multiply = data[9] & 0x03;
 	vinf->sector_multiply <<= 1;
     	vinf->sector_multiply += (data[10] & 0x80) >> 7;
-        extcsd=MMC_get_extCSD(data);	
+/*        extcsd=MMC_get_extCSD(data);	
 	if (!extcsd)
 	{
 	vinf->sector_count=
@@ -378,7 +378,7 @@ void MMC_get_volume_info(VOLUME_INFO* vinf){
   	}else
 	{
 	printk(KERN_INFO "EXT CSD not readable. (old card)\n");
-	}
+	}*/
 	vinf->size_MB = vinf->sector_count >> (9-vinf->sector_multiply);
 	vinf->size    = (vinf->sector_count * 512 )<< (vinf->sector_multiply+2);
 	vinf->sector_size = 512;
