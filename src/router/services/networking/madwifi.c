@@ -1450,6 +1450,7 @@ configure_single (int count)
       if (disablescan)
 	eval ("iwpriv", var, "scandisable", "1");
 #endif
+      eval("iwpriv",var,"hostroaming","0");
       cnt++;
     }
 
@@ -1465,6 +1466,7 @@ configure_single (int count)
   sprintf (isolate, "%s_ap_isolate", dev);
   if (default_match (isolate, "1", "0"))
     eval ("iwpriv", dev, "ap_bridge", "0");
+  eval("iwpriv",dev,"hostroaming","0");
 
 
   sprintf (ssid, "ath%d_ssid", count);
