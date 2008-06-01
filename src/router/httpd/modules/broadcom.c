@@ -4465,9 +4465,11 @@ wimaxwifi=1;
 #endif
       if (!strcmp (menu[i][0], mainmenu))
 	{
+#ifdef HAVE_MADWIFI
       if (!wifi && wimaxwifi && !strcmp (menu[i][0], "Wireless_Basic.asp"))
 	  websWrite (wp,"   <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.wimax)</script></span>\n");
       else
+#endif
 	  websWrite (wp,"   <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></span>\n",menuname[i][0]);
 	  websWrite (wp, "    <div id=\"menuSub\">\n");
 	  websWrite (wp, "     <ul id=\"menuSubList\">\n");
