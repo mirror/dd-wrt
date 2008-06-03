@@ -6013,7 +6013,7 @@ ej_get_wan_uptime (webs_t wp, int argc, char_t ** argv)
       websWrite (wp, "%s", live_translate ("status_router.notavail"));
       return;
     }
-  if (fscanf (fp, "%f", &uptime) == 1)
+  if (!feof(fp) && fscanf (fp, "%f", &uptime) == 1)
     {
       fp2 = fopen ("/proc/uptime", "r");
       fscanf (fp2, "%f", &sys_uptime);
