@@ -528,6 +528,7 @@ setupSupplicant (char *prefix, char *ssidoverride)
       fprintf (fp, "}\n");
       fclose (fp);
       sprintf (psk, "-i%s", prefix);
+      eval("iwpriv",prefix,"hostroaming","2");
       if (nvram_match (bridged, "1")
 	  && (nvram_match (wmode, "wdssta") || nvram_match (wmode, "wet")))
 	eval ("wpa_supplicant", "-b", nvram_safe_get ("lan_ifname"), "-B",
