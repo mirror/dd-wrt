@@ -105,6 +105,7 @@ compareNet (char *ip, char *net, char *dest)
 {
   if (ip == NULL || net == NULL || dest == NULL)
     return 0;
+//fprintf(stderr,"compare ip%s/net%s with %s\n",ip,net,dest);
   char ips2[32];
   char dest2[32];
   strcpy (ips2, ip);
@@ -137,6 +138,7 @@ containsIP (char *ip)
   char buf_ip[32];
   char *i, *net;
   char cip[32];
+//fprintf(stderr,"scan for ip2 %s\n",ip);
   strcpy (cip, ip);
   in = fopen ("/tmp/aqos_ips", "rb");
   if (in == NULL)
@@ -144,19 +146,19 @@ containsIP (char *ip)
 
 
 //fprintf(stderr,"scan for ip %s\n",ip);
-  while (fscanf (in, "%s", buf_ip) != EOF)
+  while (feof(in)==0 && fscanf (in, "%s", buf_ip) == 1)
     {
-//    fprintf(stderr,"begin\n");
+    //fprintf(stderr,"begin\n");
       i = (char *) &buf_ip[0];
       net = strsep (&i, "/");
-//      fprintf(stderr,"found %s/%s\n", net, i);
+      //fprintf(stderr,"found %s/%s\n", net, i);
       if (compareNet (net, i, cip))
 	{
-//        fprintf (stderr,"%s/%s fits to %s\n", net, i, ip);
+        //fprintf (stderr,"%s/%s fits to %s\n", net, i, ip);
 	  fclose (in);
 	  return 1;
 	}
-//      fprintf (stderr,"%s/%s dosnt fit to %s\n", net, i, ip);
+      //fprintf (stderr,"%s/%s dosnt fit to %s\n", net, i, ip);
       memset (buf_ip, 0, 32);
     }
   fclose (in);
@@ -169,21 +171,22 @@ int
 containsMAC (char *ip)
 {
   FILE *in;
-  char buf_ip[16];
+  char buf_ip[32];
   in = fopen ("/tmp/aqos_macs", "rb");
   if (in == NULL)
     return 0;
-//cprintf("scan for mac %s \n",ip);
-  while (fscanf (in, "%s", buf_ip) != EOF)
+//fprintf(stderr,"scan for mac %s \n",ip);
+  while (feof(in)==0 && fscanf (in, "%s", buf_ip) == 1)
     {
       if (!strcmp (buf_ip, ip))
 	{
 	  fclose (in);
+//fprintf(stderr,"found mac %s \n",ip);
 	  return 1;
 	}
     }
   fclose (in);
-//cprintf("no mac found\n");
+//fprintf(stderr,"no mac found\n");
   return 0;
 }
 
@@ -230,21 +233,23 @@ do_aqos_check (void)
   while (fgetc (arp) != '\n');
 
 //fscanf(arp,"%s %s %s %s %s %s",ip_buf,hw_buf,fl_buf,mac_buf,mask_buf,dev_buf); //skip first line
-  while (fscanf
+  while (!feof(arp) && fscanf
 	 (arp, "%s %s %s %s %s %s", ip_buf, hw_buf, fl_buf, mac_buf, mask_buf,
 	  dev_buf) == 6)
     {
       char *wan = get_wan_face ();
+      //fprintf(stderr,"wan is %s, dev_buf = %s\n",wan,dev_buf);
       if (wan && strlen (wan) > 0 && !strcmp (dev_buf, wan))
 	continue;
 
-
+     
       cmac = containsMAC (mac_buf);
       cip = containsIP (ip_buf);
 
 
       if (cip || cmac)
 	{
+	  //fprintf(stderr,"no mac found, continue\n");
 	  continue;
 	}
 
@@ -255,7 +260,9 @@ do_aqos_check (void)
 	  sprintf (addition, "echo \"%s\" >>/tmp/aqos_macs", mac_buf);
 	  system2 (addition);
 	  //create default rule for mac
+	  //fprintf(stderr,"add usermac\n");
 	  add_usermac (mac_buf, qosidx, defaulup, defauldown);
+	  //fprintf(stderr,"done\n");
 	  qosidx += 2;
 	}
       if (!cip && strlen (ip_buf) > 0)
@@ -266,7 +273,9 @@ do_aqos_check (void)
 	  sprintf (addition, "echo \"%s\" >>/tmp/aqos_ips", ipnet);
 	  system2 (addition);
 	  //create default rule for ip
+	  //fprintf(stderr,"add userip\n");
 	  add_userip (ipnet, qosidx, defaulup, defauldown);
+	  //fprintf(stderr,"done\n");
 	  qosidx += 2;
 	}
       memset (ip_buf, 0, 32);
@@ -384,6 +393,7 @@ static int lastchans[256];
 static void
 do_madwifi_check (void)
 {
+//fprintf(stderr,"do wlan check\n");
   int c = getdevicecount ();
   char dev[32];
   int i, s;
@@ -491,7 +501,7 @@ do_madwifi_check (void)
 	}
 
     }
-
+//fprintf(stderr,"do wlancheck end\n");
 }
 #endif
 

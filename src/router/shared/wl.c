@@ -48,7 +48,7 @@ sprintf(exec,"wl -i %s channels",ifname);
 #endif
   int chan;
   int count = 0;
-  while (fscanf (in, "%d", &chan) != EOF)
+  while (!feof(in) && fscanf (in, "%d", &chan) == 1)
     {
       list[count++] = chan;
     }
