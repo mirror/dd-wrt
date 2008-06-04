@@ -997,6 +997,13 @@ internal_getRouterBrand ()
     }
 
   if (nvram_match("boardnum","20070615") &&
+      nvram_match ("boardtype", "0x478") && nvram_match ("cardbus", "0") && nvram_match("switch_type","5395"))
+    {
+      cprintf ("router is Linksys WRT600N v1.1\n");
+      setRouter ("Linksys WRT600N v1.1");
+      return ROUTER_WRT600N;
+    }
+  if (nvram_match("boardnum","20070615") &&
       nvram_match ("boardtype", "0x478") && nvram_match ("cardbus", "0"))
     {
       cprintf ("router is Linksys WRT600N\n");
