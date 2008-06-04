@@ -297,7 +297,7 @@ endif
 ifeq ($(CONFIG_XSCALE),y)
 CFLAGS += -DHAVE_XSCALE
 endif
-ifeq ($(CONFIG_PORTSETUP),y)
+ifeq ($(CONFIG_VLANTAGGING),y)
 CFLAGS += -DHAVE_PORTSETUP
 endif
 ifeq ($(CONFIG_CPUTEMP),y)
