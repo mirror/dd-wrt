@@ -8360,11 +8360,11 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
   char eths[256];
   char eths2[256];
 #ifdef HAVE_XSCALE
-  if (getifcount ("ixp") == 1 && getifcount ("eth") == 0)
-    return;
+//  if (getifcount ("ixp") == 1 && getifcount ("eth") == 0)
+//    return;
 #else
-  if (getifcount ("eth") == 1)
-    return;
+//  if (getifcount ("eth") == 1)
+//    return;
 #endif
   websWrite (wp,
 	     "<h2><script type=\"text/javascript\">Capture(idx.portsetup)</script></h2>\n");
@@ -8380,16 +8380,20 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
 #else
   getinterfacelist ("eth", eths);
 #endif
+  memset (eths2, 0, 256);
   getinterfacelist ("vlan", eths2);
   sprintf (eths, "%s %s", eths, eths2);
 #ifdef HAVE_MADWIFI
+  memset (eths2, 0, 256);
   getinterfacelist ("ath", eths2);
   sprintf (eths, "%s %s", eths, eths2);
 #else
+  memset (eths2, 0, 256);
   getinterfacelist ("wl", eths2);
   sprintf (eths, "%s %s", eths, eths2);
 #endif
 #ifdef HAVE_WAVESAT
+  memset (eths2, 0, 256);
   getinterfacelist ("ofdm", eths2);
   sprintf (eths, "%s %s", eths, eths2);
 #endif
@@ -8418,12 +8422,12 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
 	       var);
     websWrite (wp,
 	       "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnet', true);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script>&nbsp;\n",
-	       var, var, nvram_match (ssid,
-				      "0") ? "checked=\"checked\"" : "");
+	       var, var, nvram_default_match (ssid,
+				      "0","0") ? "checked=\"checked\"" : "");
     websWrite (wp,
 	       "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnet', false);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(wl_basic.bridged)</script>\n",
-	       var, var, nvram_match (ssid,
-				      "1") ? "checked=\"checked\"" : "");
+	       var, var, nvram_default_match (ssid,
+				      "1","0") ? "checked=\"checked\"" : "");
     websWrite (wp, "</div>\n");
 
     websWrite (wp, "<div id=\"%s_idnet\">\n", var);

@@ -19,11 +19,41 @@
  *
  * $Id:
  */
+#include <sys/mman.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <signal.h>
+#include <fcntl.h>
+
+
+
+
+#include <sys/types.h>
+#include <sys/file.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <ctype.h>
+#include <getopt.h>
+#include <err.h>
+
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <bcmnvram.h>
+#include <bcmutils.h>
 #include <shutils.h>
 #include <utils.h>
+#include <unistd.h>
+#include <linux/if.h>
 
 #ifdef HAVE_VLANTAGGING
+#define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 void
 start_vlantagging (void)
@@ -43,7 +73,19 @@ start_vlantagging (void)
     eval ("vconfig", "add", tag, port);
     char vlan_name[32];
     sprintf (vlan_name, "%s.%s", tag, port);
+
+  char var[64];
+  char var2[64];
+  sprintf (var, "%s_bridged", vlan_name);
+  if (nvram_default_match (var, "1", "1"))
+    {
     eval ("ifconfig", vlan_name, "0.0.0.0", "up");
+    }
+  else
+    {
+      ifconfig (vlan_name, IFUP, nvram_nget ("%s_ipaddr", vlan_name),
+		nvram_nget ("%s_netmask", vlan_name));
+    }
   }
 }
 
