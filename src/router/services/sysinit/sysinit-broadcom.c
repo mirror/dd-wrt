@@ -1440,13 +1440,13 @@ enable_dtag_vlan (int enable)
       system2 (tmp);
       if (enable)
 	{
-	  fprintf (stderr, "enable vlan port mapping %s/%s\n",
-		   nvram_safe_get ("vlan0ports"), vlan7ports);
-	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/1/ports", "",
-		   eth);
-	  system2 (tmp);
+	  fprintf (stderr, "enable vlan port mapping %s/%s\n",nvram_safe_get ("vlan0ports"), vlan7ports);
 	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/0/ports",
 		   nvram_safe_get ("vlan0ports"), eth);
+	  system2 (tmp);
+	  start_setup_vlans();
+	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/1/ports", "",
+		   eth);
 	  system2 (tmp);
 	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/7/ports",
 		   vlan7ports, eth);
@@ -1464,6 +1464,7 @@ enable_dtag_vlan (int enable)
 	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/1/ports",
 		   nvram_safe_get ("vlan1ports"), eth);
 	  system2 (tmp);
+    	  start_setup_vlans();
 	}
     }
   return eth;
