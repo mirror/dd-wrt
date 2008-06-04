@@ -8423,11 +8423,11 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
     websWrite (wp,
 	       "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnet', true);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script>&nbsp;\n",
 	       var, var, nvram_default_match (ssid,
-				      "0","0") ? "checked=\"checked\"" : "");
+				      "0","1") ? "checked=\"checked\"" : "");
     websWrite (wp,
 	       "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnet', false);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(wl_basic.bridged)</script>\n",
 	       var, var, nvram_default_match (ssid,
-				      "1","0") ? "checked=\"checked\"" : "");
+				      "1","1") ? "checked=\"checked\"" : "");
     websWrite (wp, "</div>\n");
 
     websWrite (wp, "<div id=\"%s_idnet\">\n", var);
