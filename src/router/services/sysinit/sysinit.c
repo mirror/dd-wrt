@@ -408,6 +408,14 @@ start_restore_defaults (void)
     {0, 0, 0}
   };
 
+  struct nvram_tuple wrt30011vlan[] = {
+    {"lan_ifname", "br0", 0},
+    {"lan_ifnames", "vlan0 eth0", 0},
+    {"wan_ifname", "vlan1", 0},
+    {"wan_ifnames", "vlan1", 0},
+    {0, 0, 0}
+  };
+
   struct nvram_tuple wrt600vlan[] = {
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "vlan0 eth0 eth1", 0},
@@ -625,7 +633,7 @@ start_restore_defaults (void)
       linux_overrides = wrt350vlan;
       break;
     case ROUTER_WRT300NV11:
-      linux_overrides = wrt350vlan;
+      linux_overrides = wrt30011vlan;
       break;
     case ROUTER_WRT600N:
       if (nvram_match("switch_type","BCM5395"))
@@ -918,15 +926,15 @@ start_restore_defaults (void)
   else if (brand == ROUTER_WRT300NV11)
     {
 
+      if (!nvram_get ("vlan0ports") || nvram_match ("vlan0ports", ""))
+	{
+	  nvram_set ("vlan0ports", "1 2 3 4 5*");
+	  nvram_set ("vlan1ports", "0 5");
+	}
       if (!nvram_get ("vlan1ports") || nvram_match ("vlan1ports", ""))
 	{
-	  nvram_set ("vlan1ports", "1 2 3 4 8*");
-	  nvram_set ("vlan2ports", "0 8");
-	}
-      if (!nvram_get ("vlan2ports") || nvram_match ("vlan2ports", ""))
-	{
-	  nvram_set ("vlan1ports", "1 2 3 4 8*");
-	  nvram_set ("vlan2ports", "0 8");
+	  nvram_set ("vlan0ports", "1 2 3 4 5*");
+	  nvram_set ("vlan1ports", "0 5");
 	}
 
     }
