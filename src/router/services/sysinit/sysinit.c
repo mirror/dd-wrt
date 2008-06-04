@@ -416,6 +416,14 @@ start_restore_defaults (void)
     {0, 0, 0}
   };
 
+  struct nvram_tuple wrt60011vlan[] = {
+    {"lan_ifname", "br0", 0},
+    {"lan_ifnames", "vlan1 eth0 eth1", 0},
+    {"wan_ifname", "vlan2", 0},
+    {"wan_ifnames", "vlan2", 0},
+    {0, 0, 0}
+  };
+
   struct nvram_tuple wzr144nhvlan[] = {
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "vlan2 eth0", 0},
@@ -620,7 +628,10 @@ start_restore_defaults (void)
       linux_overrides = wrt350vlan;
       break;
     case ROUTER_WRT600N:
-      linux_overrides = wrt600vlan;
+      if (nvram_match("switch_type","BCM5395"))
+        linux_overrides = wrt60011vlan;
+      else
+        linux_overrides = wrt600vlan;
       break;
 #endif
     case ROUTER_BUFFALO_WZRG144NH:
@@ -852,7 +863,16 @@ start_restore_defaults (void)
 #endif
   if (brand == ROUTER_WRT600N)
     {
-
+      if (nvram_match("switch_type","BCM5395")) // fix for WRT600N v1.1 (BCM5395 does not suppport vid 0, so gemtek internally configured vid 1 as lan)
+        {
+	  nvram_set ("vlan0ports", " ");
+	  nvram_set ("vlan1ports", "1 2 3 4 8*");
+	  nvram_set ("vlan2ports", "0 8*");	
+	  nvram_set ("vlan0hwname"," ");
+	  nvram_set ("vlan1hwname","et0");
+	  nvram_set ("landevs","vlan1 wl0 wl1");
+	  nvram_set ("lan_ifnames","vlan1 eth0 eth1");
+	}else{
       if (!nvram_get ("vlan0ports") || nvram_match ("vlan0ports", ""))
 	{
 	  nvram_set ("vlan0ports", "1 2 3 4 8*");
@@ -863,7 +883,7 @@ start_restore_defaults (void)
 	  nvram_set ("vlan0ports", "1 2 3 4 8*");
 	  nvram_set ("vlan2ports", "0 8*");
 	}
-
+	}
     }
   else if (brand == ROUTER_WRT350N)
     {
