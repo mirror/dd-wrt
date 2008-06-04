@@ -155,11 +155,28 @@ validate_portsetup (webs_t wp, char *value, struct variable *v)
   char eths2[256];
   memset (eths, 0, 256);
 #ifdef HAVE_XSCALE
-  getinterfacelist ("ixp", eths);
-  getinterfacelist ("eth", eths2);
+  getIfList(eths,"ixp");
+  getIfList(eths2,"eth");
   sprintf (eths, "%s %s\n", eths, eths2);
 #else
-  getinterfacelist ("eth", eths);
+  getIfList(eths,"eth");
+#endif
+  memset (eths2, 0, 256);
+  getIfList(eths2,"vlan");
+  sprintf (eths, "%s %s\n", eths, eths2);
+#ifdef HAVE_MADWIFI
+  memset (eths2, 0, 256);
+  getIfList(eths2,"ath");
+  sprintf (eths, "%s %s\n", eths, eths2);
+#else
+  memset (eths2, 0, 256);
+  getIfList(eths2,"wl");
+  sprintf (eths, "%s %s\n", eths, eths2);
+#endif
+#ifdef HAVE_WAVESAT
+  memset (eths2, 0, 256);
+  getIfList(eths2,"ofdm");
+  sprintf (eths, "%s %s\n", eths, eths2);
 #endif
   foreach (var, eths, next)
   {
