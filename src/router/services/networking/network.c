@@ -2516,18 +2516,16 @@ start_wan (int status)
 		 nvram_safe_get ("pppoe_service"));
       fprintf (fp, "\n");
       char vlannic[32];
-      char wan_vlantag[32];
-      sprintf (wan_vlantag, "%s",nvram_default_get("wan_vlantag","7"));
       if (!strncmp (pppoe_wan_ifname, "vlan", 4))
 	{
 	  if (nvram_match ("wan_vdsl", "1"))
 	    {
 	      char *ifn = enable_dtag_vlan (1);
-	      sprintf (vlannic, "%s.%04d", ifn,atoi(wan_vlantag));
+	      sprintf (vlannic, "%s.0007", ifn);
 	      if (!ifexists (vlannic))
 		{
 		  eval ("vconfig", "set_name_type", "DEV_PLUS_VID");
-                  eval ("vconfig", "add", ifn, wan_vlantag);
+		  eval ("vconfig", "add", ifn, "7");
 		  eval ("ifconfig", vlannic, "up");
 		}
 	      fprintf (fp, "nic-%s\n", vlannic);
@@ -2535,7 +2533,7 @@ start_wan (int status)
 	  else
 	    {
 	      char *ifn = enable_dtag_vlan (0);
-              sprintf (vlannic, "%s.%04d", ifn,atoi(wan_vlantag));
+	      sprintf (vlannic, "%s.0007", ifn);
 	      if (ifexists (vlannic))
 		eval ("vconfig", "rem", vlannic);
 	      fprintf (fp, "nic-%s\n", pppoe_wan_ifname);
@@ -2545,13 +2543,13 @@ start_wan (int status)
 	}
       else
 	{
-          sprintf (vlannic, "%s.%04d", pppoe_wan_ifname,atoi(wan_vlantag));
+	  sprintf (vlannic, "%s.0007", pppoe_wan_ifname);
 	  if (nvram_match ("wan_vdsl", "1"))	// Deutsche Telekom VDSL2 Vlan 7 Tag
 	    {
 	      if (!ifexists (vlannic))
 		{
 		  eval ("vconfig", "set_name_type", "DEV_PLUS_VID");
-                  eval ("vconfig", "add", pppoe_wan_ifname, wan_vlantag);
+		  eval ("vconfig", "add", pppoe_wan_ifname, "7");
 		  eval ("ifconfig", vlannic, "up");
 		}
 	      fprintf (fp, "nic-%s\n", vlannic);
