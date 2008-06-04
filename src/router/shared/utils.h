@@ -23,6 +23,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 // Linksys WRT54Gv8, WRT54GSv7 (BCM5354 cpu, fccid: Linksys Q87-WRT54GV8, Q87-WRT54GSV7)
 // Linksys WRT54Gv8.2, WRT54GSv7.2 (BCM5354 cpu, fccid: Linksys Q87-WRT54GV82, Q87-WRT54GSV72)
+// Linksys WRT54Gv7.2 (EMEA only - same hardware as v8)
 #define ROUTER_WRT54G_V8 0x0216
 
 // Linksys WRT54G v1.0 and v1.1, Alnet ALL0277 (BCM4702 cpu, fccid: v1: Linksys PKW-WM54G; v1.1: Linksys Q87-WRT54G11)
@@ -56,10 +57,10 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Buffalo WHR3-AG54, WVR-G54-NF, WHR2-A54G54
 #define ROUTER_BUFFALO_WZRRSG54 0x0b04
 
-// Motorola WR850G v1 (BCM4702 cpu, fccid Motorola ACQWR850G) 
+// Motorola WR850G v1 (BCM4702 cpu, fccid: Motorola ACQWR850G) 
 #define ROUTER_MOTOROLA_V1 0x0c10
 
-// Motorola WR850G v2/v3, WR850GP (BCM4712 cpu, ADM6996 switch, fccid Motorola ACQWR850GV2)
+// Motorola WR850G v2/v3, WR850GP (BCM4712 cpu, ADM6996 switch, fccid: Motorola ACQWR850GV2)
 #define ROUTER_MOTOROLA 0x0d15
 
 // RT210W and RT211W generic and branded (BCM4702 cpu, fccid: Askey H8N-RT210W, H8N-RT211W)
@@ -77,7 +78,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // NMN A/B/G Router Protoype (266 Mhz Xscale, dual minipci)
 #define ROUTER_BOARD_XSCALE 0x1101
 
-// Generic BRCM 4702 boards: e.g. Asus WL300g (BCM4702 cpu, fccid: Asus MSQWL300G)
+// Generic BRCM 4702 boards
 #define ROUTER_BRCM4702_GENERIC 0x120f
 
 // Buffalo WLI_TX4_G54HP bridge
@@ -151,7 +152,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // swapped phy definition 
 #define ROUTER_BOARD_GATEWORX_SWAP 0x290f
 
-// Netgear WNR834Bv1 (BCM4704 cpu, BCM5325 switch, cardbus radio,  fccid: Netgear PY306100032)
+// Netgear WNR834Bv1 (BCM4704 cpu, BCM5325 switch, cardbus radio, fccid: Netgear PY306100032)
 #define ROUTER_NETGEAR_WNR834B 0x2a17
 
 // swapped phy definition and Kendin switch
@@ -178,16 +179,18 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Buffalo WZR-G144HH (only available on japanese market, 802.11n, Gigabit switch. Similar to WRT350N)
 #define ROUTER_BUFFALO_WZRG144NH 0x3217
 
-// U.S.Robotics USR5430 bridge (BCM4712 cpu, no switch, fccid: MXF-EB921201G)
+// U.S.Robotics USR5430 bridge (BCM4712 cpu, no switch, fccid: Gemtek MXF-EB921201G)
 #define ROUTER_USR_5430 0x3310
 
-// U.S.Robotics USR5451 (BCM5350 cpu, no switch, fccid: Universal Scientific Industrial Co. IXM-APGBR02)
-// U.S.Robotics USR5461 (BCM5350 cpu, fccid: Universal Scientific Industrial Co. IXM-RTGBR02)
+// U.S.Robotics USR5432 bridge (BCM5350 cpu, 1 port, fccid: Universal Scientific Industrial Co. IXM-APGBR02)
+// U.S.Robotics USR5451 AP     (BCM5350 cpu, 1 port, fccid: Universal Scientific Industrial Co. IXM-APGBR02)
+// U.S.Robotics USR5461 router (BCM5350 cpu, fccid: Universal Scientific Industrial Co. IXM-RTGBR02)
 #define ROUTER_USR_5461 0x340f
 
 // Meraki Mini (Atheros SoC, no switch, fccid: Meraki UDX-MERAKI-MINI)
 #define ROUTER_BOARD_MERAKI 0x350f
 
+// Asus WL300g (BCM4702 cpu, no switch, fccid: Asus MSQWL300G)
 // Asus WL500g (BCM4702 cpu, fccid: Asus MSQWL500G)
 #define ROUTER_ASUS_WL500G 0x3606
 
@@ -215,10 +218,10 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // D-Link DIR-320 (BCM5354 cpu, fccid: D Link KA2DIR320A1)
 #define ROUTER_DLINK_DIR320 0x3e17
 
-// Linksys WTR54GS travel router (BCM5350 cpu, fccid: v1, v2: Q87-WTR54GS; v2.1 Q87-WTR54GSV21)
+// Linksys WTR54GS travel router (BCM5350 cpu, 2 ports, fccid: v1, v2: Linksys Q87-WTR54GS; v2.1 Q87-WTR54GSV21)
 #define ROUTER_LINKSYS_WTR54GS 0x3f13
 
-// Belkin F5D7230 v2000 (BCM4712 cpu, 5325E switch, serial flash, fccid: K7SF5D7234A)
+// Belkin F5D7230 v2000 (BCM4712 cpu, 5325E switch, serial flash, fccid: Belkin K7SF5D7234A)
 #define ROUTER_BELKIN_F5D7230_V2000 0x400f
 
 // Belkin F5D7231-4 v1212UK (BCM5352E cpu, fccid: Askey H8NRT2406W)
@@ -243,7 +246,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Linksys WRT600N (BCM4704 cpu, Gigabit switch, dual radio 2.4 and 5 GHz Broadcom, fccid: Linksys Q87-WRT600NV1, Q87-WRT600NV11)
 #define ROUTER_WRT600N 0x4717
 
-// Linksys WRH54G (BCM5354 cpu, fccid: Q87-WRH54G)
+// Linksys WRH54G (BCM5354 cpu, fccid: Linksys Q87-WRH54G)
 #define ROUTER_LINKSYS_WRH54G 0x4816
 
 // Linksys WRT150N v1.1 (BCM4704 cpu, BCM5325F switch, fccid: Linksys Q87-WRT150NV11)
@@ -287,7 +290,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BOARD_CA8PRO 0x5506
 
 // Askey board RT2205D-D56 / RT2206D-D56 (BCM4704 cpu, mini-pci)
-// Belkin MIMO F5D8230_v2 or F5D8230_v1001ea (fccid: SA3-AGN0901AP0100)
+// Belkin MIMO F5D8230_v2 or F5D8230_v1001ea (fccid: Airgo networks Inc. SA3-AGN0901AP0100)
 #define ROUTER_ASKEY_RT220XD 0x560f
 
 // U.S.Robotics USR5455 (BCM5354 cpu, no switch, fccid: Universal Scientific Industrial Co. IXM-APGBR03)
