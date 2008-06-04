@@ -4487,6 +4487,9 @@ wimaxwifi=1;
 	      if (!strcmp (menu[i][j], "SuperChannel.asp") && (issuperchannel() || !wifi))	//jump over PPTP in micro build
 	      	j++;
 #endif
+#else
+	      if (!strcmp (menu[i][j], "SuperChannel.asp"))	//jump over PPTP in micro build
+		j++;
 #endif
 #ifndef HAVE_WAVESAT
 	      if (!strcmp (menu[i][j], "WiMAX.asp"))	//jump over WiMAX
