@@ -3301,6 +3301,7 @@ ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv)
   getIfList (bufferif2, "ixp");
   sprintf (bufferif, "%s %s", bufferif, bufferif2);
 #endif
+
   memset (bufferif2, 0, 256);
   getIfList (bufferif2, "vlan");
   sprintf (bufferif, "%s %s", bufferif, bufferif2);
@@ -3314,6 +3315,13 @@ ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv)
   }
   int i;
 #ifdef HAVE_MADWIFI
+  memset (bufferif2, 0, 256);
+  getIfList (bufferif2, "ath");
+  foreach (word, bufferif2, next)
+  {
+    if (contains (word, '.'))
+      sprintf (bufferif, "%s %s", bufferif, word);
+  }
   int c = getifcount ("wifi");
   for (i = 0; i < c; i++)
     {
