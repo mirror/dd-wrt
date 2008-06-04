@@ -390,6 +390,7 @@ start_restore_defaults (void)
     {"lan_ifnames", "eth0 eth2 eth3 eth4", 0},
     {"wan_ifname", "eth1", 0},
     {"wan_ifnames", "eth1", 0},
+    {"wan_default", "eth1", 0},
     {0, 0, 0}
   };
   struct nvram_tuple vlan[] = {
@@ -397,6 +398,7 @@ start_restore_defaults (void)
     {"lan_ifnames", "vlan0 eth1 eth2 eth3", 0},
     {"wan_ifname", "vlan1", 0},
     {"wan_ifnames", "vlan1", 0},
+    {"wan_default", "vlan1", 0},
     {0, 0, 0}
   };
 
@@ -405,6 +407,7 @@ start_restore_defaults (void)
     {"lan_ifnames", "vlan1 eth0", 0},
     {"wan_ifname", "vlan2", 0},
     {"wan_ifnames", "vlan2", 0},
+    {"wan_default", "vlan2", 0},
     {0, 0, 0}
   };
 
@@ -413,6 +416,7 @@ start_restore_defaults (void)
     {"lan_ifnames", "vlan0 eth0", 0},
     {"wan_ifname", "vlan1", 0},
     {"wan_ifnames", "vlan1", 0},
+    {"wan_default", "vlan1", 0},
     {0, 0, 0}
   };
 
@@ -421,6 +425,7 @@ start_restore_defaults (void)
     {"lan_ifnames", "vlan0 eth0 eth1", 0},
     {"wan_ifname", "vlan2", 0},
     {"wan_ifnames", "vlan2", 0},
+    {"wan_default", "vlan2", 0},
     {0, 0, 0}
   };
 
@@ -429,6 +434,7 @@ start_restore_defaults (void)
     {"lan_ifnames", "vlan1 eth0 eth1", 0},
     {"wan_ifname", "vlan2", 0},
     {"wan_ifnames", "vlan2", 0},
+    {"wan_default", "vlan2", 0},
     {0, 0, 0}
   };
 
@@ -437,6 +443,7 @@ start_restore_defaults (void)
     {"lan_ifnames", "vlan2 eth0", 0},
     {"wan_ifname", "vlan1", 0},
     {"wan_ifnames", "vlan1", 0},
+    {"wan_default", "vlan1", 0},
     {0, 0, 0}
   };
 
@@ -445,6 +452,7 @@ start_restore_defaults (void)
     {"lan_ifnames", "eth1 eth2", 0},
     {"wan_ifname", "eth0", 0},
     {"wan_ifnames", "eth0", 0},
+    {"wan_default", "eth0", 0},
     {0, 0, 0}
   };
 
@@ -453,6 +461,7 @@ start_restore_defaults (void)
     {"lan_ifnames", "eth0 eth1", 0},
     {"wan_ifname", "eth2", 0},
     {"wan_ifnames", "eth2", 0},
+    {"wan_default", "eth2", 0},
     {0, 0, 0}
   };
 #endif
