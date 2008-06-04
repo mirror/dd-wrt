@@ -631,7 +631,6 @@ start_sysinit (void)
       break;
 
     case ROUTER_WRT350N:
-    case ROUTER_WRT300NV11:
     case ROUTER_WRT310N:
       nvram_set ("wan_ifname", "vlan2");
       break;
@@ -639,6 +638,7 @@ start_sysinit (void)
       nvram_set ("wan_ifname", "vlan2");
       break;
 
+    case ROUTER_WRT300NV11:
     case ROUTER_BUFFALO_WZRG144NH:
       nvram_set ("wan_ifname", "vlan1");
       break;
