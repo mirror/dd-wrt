@@ -828,11 +828,6 @@ start_restore_defaults (void)
 		nvram_set ("vlan0ports", "3 2 1 0 5*");
 		nvram_set ("vlan1ports", "4 5");
 		}
-	  else
-		{
-		nvram_set ("vlan0ports", "1 2 3 4 5*");
-		nvram_set ("vlan1ports", "0 5");
-		}
 	  break;
 	}
 #ifdef HAVE_SPUTNIK
