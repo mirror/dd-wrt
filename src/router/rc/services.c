@@ -802,9 +802,7 @@ handle_wireless_2 (void)
 #ifdef HAVE_MADWIFI
   handle = stop_service_nofree ("stabridge", handle);
 #endif
-  if (nvram_match ("wl0_mode", "sta")
-      || nvram_match ("wl0_mode", "apsta")
-      || nvram_match ("wl0_mode", "apstawet"))
+  if (getSTA() || getWET())
       {
 	handle = stop_service_nofree ("ttraff", handle);
     handle = stop_service_nofree ("wan", handle);
@@ -839,12 +837,10 @@ handle_wireless_2 (void)
 #ifdef HAVE_BONDING
   handle = start_service_nofree ("bonding", handle);
 #endif
-  if (nvram_match ("wl0_mode", "sta")
-      || nvram_match ("wl0_mode", "apsta")
-      || nvram_match ("wl0_mode", "apstawet"))
+  if (getSTA() || getWET())  // since we need to cover apstawet, we must use getWET as well
       {
-    handle = start_service_nofree ("wan", handle);
-    handle = start_service_nofree ("ttraff", handle);
+	handle = start_service_nofree ("wan", handle);
+	handle = start_service_nofree ("ttraff", handle);
       }
 #ifdef HAVE_MADWIFI
   handle = start_service_nofree ("stabridge", handle);
@@ -860,9 +856,7 @@ handle_wireless_2 (void)
   handle = start_service_nofree ("bridgesif", handle);
 #endif
   handle = start_service_nofree ("radio_timer", handle);
-  if (nvram_match ("wl0_mode", "sta")
-      || nvram_match ("wl0_mode", "apsta")
-      || nvram_match ("wl0_mode", "apstawet"))
+  if (getSTA() || getWET())
     startstop ("httpd");	//httpd will not accept connection anymore on wan/lan ip changes changes
 #ifdef HAVE_MADWIFI
   handle = start_service_nofree ("hostapdwan", handle);
