@@ -744,6 +744,16 @@ do_portsetup (char *lan, char *ifname)
 
 //#endif
 
+#define PORTSETUPWAN(a) if (nvram_get ("wan_ifname2") != NULL) \
+	    { \
+	      nvram_set ("wan_ifname", nvram_safe_get ("wan_ifname2")); \
+	      nvram_set ("wan_ifnames", nvram_safe_get ("wan_ifname2"));\
+	    } \
+	  else \
+	    { \
+           nvram_set ("wan_ifname",a); \
+	    nvram_set ("wan_ifnames",a ); \
+	    }
 
 void
 start_lan (void)
@@ -756,6 +766,8 @@ start_lan (void)
   char eabuf[32];
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
+if (nvram_get("wan_default"))
+    PORTSETUPWAN(nvram_safe_get("wan_default")); //for broadcom, safe state
 #ifdef HAVE_RB500
   if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("wan_proto", "disabled"))
@@ -763,16 +775,14 @@ start_lan (void)
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames",
 		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5");
-      nvram_set ("wan_ifname", "");
-      nvram_set ("wan_ifnames", "");
+      PORTSETUPWAN("");
     }
   else
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames",
 		 "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5");
-      nvram_set ("wan_ifname", "eth0");
-      nvram_set ("wan_ifnames", "eth0");
+      PORTSETUPWAN("eth0");
     }
 
 
@@ -787,15 +797,13 @@ start_lan (void)
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth0 eth1 ath0");
-      nvram_set ("wan_ifname", "");
-      nvram_set ("wan_ifnames", "");
+      PORTSETUPWAN("");
     }
   else
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth1 ath0");
-      nvram_set ("wan_ifname", "eth0");
-      nvram_set ("wan_ifnames", "eth0");
+      PORTSETUPWAN("eth0");
     }
 
 
@@ -817,15 +825,13 @@ start_lan (void)
 	{
 	  nvram_set ("lan_ifname", "br0");
 	  nvram_set ("lan_ifnames", "vlan0 vlan1 ath0");
-	  nvram_set ("wan_ifname", "");
-	  nvram_set ("wan_ifnames", "");
+      PORTSETUPWAN("");
 	}
       else
 	{
 	  nvram_set ("lan_ifname", "br0");
 	  nvram_set ("lan_ifnames", "vlan0 ath0");
-	  nvram_set ("wan_ifname", "vlan1");
-	  nvram_set ("wan_ifnames", "vlan1");
+      PORTSETUPWAN("vlan1");
 	}
     }
   else
@@ -835,15 +841,13 @@ start_lan (void)
 	{
 	  nvram_set ("lan_ifname", "br0");
 	  nvram_set ("lan_ifnames", "eth0 ath0");
-	  nvram_set ("wan_ifname", "");
-	  nvram_set ("wan_ifnames", "");
+      PORTSETUPWAN("");
 	}
       else
 	{
 	  nvram_set ("lan_ifname", "br0");
 	  nvram_set ("lan_ifnames", "ath0");
-	  nvram_set ("wan_ifname", "eth0");
-	  nvram_set ("wan_ifnames", "eth0");
+      PORTSETUPWAN("eth0");
 	}
     }
   strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
@@ -857,15 +861,13 @@ start_lan (void)
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "vlan0 vlan2 ath0");
-      nvram_set ("wan_ifname", "");
-      nvram_set ("wan_ifnames", "");
+      PORTSETUPWAN("");
     }
   else
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "vlan0 ath0");
-      nvram_set ("wan_ifname", "vlan2");
-      nvram_set ("wan_ifnames", "vlan2");
+      PORTSETUPWAN("vlan2");
     }
   strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
   ioctl (s, SIOCGIFHWADDR, &ifr);
@@ -878,15 +880,13 @@ start_lan (void)
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth0 ath0");
-      nvram_set ("wan_ifname", "");
-      nvram_set ("wan_ifnames", "");
+      PORTSETUPWAN("");
     }
   else
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "ath0");
-      nvram_set ("wan_ifname", "eth0");
-      nvram_set ("wan_ifnames", "eth0");
+      PORTSETUPWAN("eth0");
     }
   strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
   ioctl (s, SIOCGIFHWADDR, &ifr);
@@ -899,15 +899,13 @@ start_lan (void)
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "vlan1 vlan2 ath0");
-      nvram_set ("wan_ifname", "");
-      nvram_set ("wan_ifnames", "");
+      PORTSETUPWAN("");
     }
   else
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "vlan1 ath0");
-      nvram_set ("wan_ifname", "vlan2");
-      nvram_set ("wan_ifnames", "vlan2");
+      PORTSETUPWAN("vlan2");
     }
   strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
   ioctl (s, SIOCGIFHWADDR, &ifr);
@@ -921,13 +919,11 @@ start_lan (void)
 #ifdef HAVE_NS2
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth0 vlan2 ath0");
-      nvram_set ("wan_ifname", "");
-      nvram_set ("wan_ifnames", "");
+      PORTSETUPWAN("");
 #else
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "vlan0 vlan2 ath0");
-      nvram_set ("wan_ifname", "");
-      nvram_set ("wan_ifnames", "");
+      PORTSETUPWAN("");
 #endif
     }
   else
@@ -935,13 +931,11 @@ start_lan (void)
 #ifdef HAVE_NS2
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "ath0");
-      nvram_set ("wan_ifname", "eth0");
-      nvram_set ("wan_ifnames", "eth0");
+      PORTSETUPWAN("eth0");
 #else
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "vlan2 ath0");
-      nvram_set ("wan_ifname", "vlan0");
-      nvram_set ("wan_ifnames", "vlan0");
+      PORTSETUPWAN("vlan0");
 #endif
     }
 
@@ -957,15 +951,13 @@ start_lan (void)
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth0 ath0");
-      nvram_set ("wan_ifname", "");
-      nvram_set ("wan_ifnames", "");
+      PORTSETUPWAN("");
     }
   else
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "ath0");
-      nvram_set ("wan_ifname", "eth0");
-      nvram_set ("wan_ifnames", "eth0");
+      PORTSETUPWAN("eth0");
     }
 
 
@@ -980,15 +972,13 @@ start_lan (void)
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth0 ath0 ath1");
-      nvram_set ("wan_ifname", "");
-      nvram_set ("wan_ifnames", "");
+      PORTSETUPWAN("");
     }
   else
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "ath0 ath1");
-      nvram_set ("wan_ifname", "eth0");
-      nvram_set ("wan_ifnames", "eth0");
+      PORTSETUPWAN("eth0");
     }
 
   strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
@@ -1002,15 +992,13 @@ start_lan (void)
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth0 eth1 ath0 ath1");
-      nvram_set ("wan_ifname", "");
-      nvram_set ("wan_ifnames", "");
+      PORTSETUPWAN("");
     }
   else
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth1 ath0 ath1");
-      nvram_set ("wan_ifname", "eth0");
-      nvram_set ("wan_ifnames", "eth0");
+      PORTSETUPWAN("eth0");
     }
 
 
@@ -1025,15 +1013,13 @@ start_lan (void)
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth0 eth1 ath0 ath1");
-      nvram_set ("wan_ifname", "");
-      nvram_set ("wan_ifnames", "");
+      PORTSETUPWAN("");
     }
   else
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth0 ath0 ath1");
-      nvram_set ("wan_ifname", "eth1");
-      nvram_set ("wan_ifnames", "eth1");
+      PORTSETUPWAN("eth1");
     }
 
 
@@ -1050,13 +1036,11 @@ start_lan (void)
 	{
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "vlan0 vlan1 ath0");
-      nvram_set ("wan_ifname", "");
-      nvram_set ("wan_ifnames", "");
+      PORTSETUPWAN("");
       }else{
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth0 ath0");
-      nvram_set ("wan_ifname", "");
-      nvram_set ("wan_ifnames", "");      
+      PORTSETUPWAN("");
       }
     }
   else
@@ -1065,13 +1049,11 @@ start_lan (void)
 	{
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "vlan0 ath0");
-      nvram_set ("wan_ifname", "vlan1");
-      nvram_set ("wan_ifnames", "vlan1");
+      PORTSETUPWAN("vlan1");
       }else{
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "ath0");
-      nvram_set ("wan_ifname", "eth0");
-      nvram_set ("wan_ifnames", "eth0");
+      PORTSETUPWAN("eth0");
       }
     }
 
@@ -1092,8 +1074,7 @@ start_lan (void)
 	    nvram_set ("lan_ifnames", "ixp0 eth0 eth1 ath0 ath1 ath2 ath3 ofdm");
 	  else
 	    nvram_set ("lan_ifnames", "ixp0 ath0 ath1 ath2 ath3 ofdm");
-	  nvram_set ("wan_ifname", "");
-	  nvram_set ("wan_ifnames", "");
+      PORTSETUPWAN("");
 	}
       else if (getRouterBrand () == ROUTER_BOARD_GATEWORX_GW2345)
 	{
@@ -1103,8 +1084,7 @@ start_lan (void)
 		       "ixp0 ixp1 eth0 eth1 ath0 ath1 ath2 ath3 ofdm");
 	  else
 	    nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
-	  nvram_set ("wan_ifname", "");
-	  nvram_set ("wan_ifnames", "");
+      PORTSETUPWAN("");
 	}
       else
 	{
@@ -1114,8 +1094,7 @@ start_lan (void)
 		       "ixp0 ixp1 eth0 eth1 ath0 ath1 ath2 ath3 ofdm");
 	  else
 	    nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
-	  nvram_set ("wan_ifname", "");
-	  nvram_set ("wan_ifnames", "");
+      PORTSETUPWAN("");
 	}
     }
   else
@@ -1127,17 +1106,7 @@ start_lan (void)
 	    nvram_set ("lan_ifnames", "eth0 eth1 ixp0 ath0 ath1 ath2 ath3 ofdm");
 	  else
 	    nvram_set ("lan_ifnames", "ixp0 ath0 ath1 ath2 ath3 ofdm");
-	  if (nvram_get ("wan_ifname2") != NULL)
-	    {
-	      nvram_set ("wan_ifname", nvram_safe_get ("wan_ifname2"));
-	      nvram_set ("wan_ifnames", nvram_safe_get ("wan_ifname2"));
-
-	    }
-	  else
-	    {
-	      nvram_set ("wan_ifname", "ixp0");
-	      nvram_set ("wan_ifnames", "ixp0");
-	    }
+      PORTSETUPWAN("ixp0");
 	}
       else if (getRouterBrand () == ROUTER_BOARD_GATEWORX_GW2345)
 	{
@@ -1147,17 +1116,7 @@ start_lan (void)
 		       "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 	  else
 	    nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
-	  if (nvram_get ("wan_ifname2") != NULL)
-	    {
-	      nvram_set ("wan_ifname", nvram_safe_get ("wan_ifname2"));
-	      nvram_set ("wan_ifnames", nvram_safe_get ("wan_ifname2"));
-
-	    }
-	  else
-	    {
-	      nvram_set ("wan_ifname", "ixp1");
-	      nvram_set ("wan_ifnames", "ixp1");
-	    }
+      PORTSETUPWAN("ixp1");
 	}
       else
 	{
@@ -1168,17 +1127,7 @@ start_lan (void)
 	  else
 	    nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm");
 
-	  if (nvram_get ("wan_ifname2") != NULL)
-	    {
-	      nvram_set ("wan_ifname", nvram_safe_get ("wan_ifname2"));
-	      nvram_set ("wan_ifnames", nvram_safe_get ("wan_ifname2"));
-
-	    }
-	  else
-	    {
-	      nvram_set ("wan_ifname", "ixp1");
-	      nvram_set ("wan_ifnames", "ixp1");
-	    }
+      PORTSETUPWAN("ixp1");
 	}
     }
   strncpy (ifr.ifr_name, "ixp1", IFNAMSIZ);
@@ -1211,8 +1160,7 @@ start_lan (void)
 		   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
 
 #endif
-      nvram_set ("wan_ifname", "");
-      nvram_set ("wan_ifnames", "");
+      PORTSETUPWAN("");
     }
   else if (nvram_match ("wan_proto", "disabled"))
     {
@@ -1228,8 +1176,7 @@ start_lan (void)
 	nvram_set ("lan_ifnames",
 		   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
 #endif
-      nvram_set ("wan_ifname", "");
-      nvram_set ("wan_ifnames", "");
+      PORTSETUPWAN("");
     }
   else
     {
@@ -1245,20 +1192,10 @@ start_lan (void)
 	nvram_set ("lan_ifnames",
 		   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
 #endif
-      if (nvram_get ("wan_ifname2") != NULL)
-	{
-	  nvram_set ("wan_ifname", nvram_safe_get ("wan_ifname2"));
-	  nvram_set ("wan_ifnames", nvram_safe_get ("wan_ifname2"));
-
-	}
-      else
-	{
 #ifdef HAVE_GW700
-	  nvram_set ("wan_ifname", "eth1");
-	  nvram_set ("wan_ifnames", "eth1");
+      PORTSETUPWAN("eth1");
 #else
-	  nvram_set ("wan_ifname", "eth0");
-	  nvram_set ("wan_ifnames", "eth0");
+      PORTSETUPWAN("eth0");
 #endif
 	}
     }
