@@ -4487,6 +4487,7 @@ wimaxwifi=1;
 	      if (!strcmp (menu[i][j], "SuperChannel.asp") && (issuperchannel() || !wifi))	//jump over PPTP in micro build
 	      	j++;
 #endif
+#endif
 #ifndef HAVE_WAVESAT
 	      if (!strcmp (menu[i][j], "WiMAX.asp"))	//jump over WiMAX
 		j++;
@@ -4494,6 +4495,7 @@ wimaxwifi=1;
 	      if (!wimaxwifi && !strcmp (menu[i][j], "WiMAX.asp"))	//jump over WiMAX
 		j++;
 #endif
+#ifdef HAVE_MADWIFI
 	      if (!wifi && !strcmp (menu[i][j], "WL_WPATable.asp"))	//jump over PPTP in micro build
 	      	j++;
 	      if (!strcmp (menu[i][j], "Wireless_radauth.asp"))
