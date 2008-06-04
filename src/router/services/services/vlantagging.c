@@ -87,6 +87,7 @@ start_vlantagging (void)
 		nvram_nget ("%s_netmask", vlan_name));
     }
   }
+  start_set_routes ();
 }
 
 void
@@ -173,6 +174,7 @@ start_bridging (void)
     else
       eval ("ifconfig", tag, "0.0.0.0", "up");
   }
+  start_set_routes ();
 }
 
 char *
