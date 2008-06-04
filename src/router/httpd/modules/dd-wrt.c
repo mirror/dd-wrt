@@ -8380,6 +8380,17 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
 #else
   getinterfacelist ("eth", eths);
 #endif
+#ifdef HAVE_MADWIFI
+  getinterfacelist ("ath", eths2);
+  sprintf (eths, "%s %s", eths, eths2);
+#else
+  getinterfacelist ("wl", eths2);
+  sprintf (eths, "%s %s", eths, eths2);
+#endif
+#ifdef HAVE_WAVESAT
+  getinterfacelist ("ofdm", eths2);
+  sprintf (eths, "%s %s", eths, eths2);
+#endif
   websWrite (wp,
 	     "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.wanport)</script></div>\n");
   websWrite (wp, "<select name=\"wan_ifname\">\n");
