@@ -189,6 +189,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wan_ifname", "", 0},	/* WAN interface name */
   {"wan_ifname2", "", 0},	/* WAN interface name (clone) */
   {"wan_ifnames", "", 0},	/* WAN interface names */
+  {"wan_default", "", 0},	/* WAN interface names */
   {"wan_hwname", "", 0},	/* WAN driver name (e.g. et1) */
   {"wan_hwaddr", "", 0},	/* WAN interface MAC address */
 

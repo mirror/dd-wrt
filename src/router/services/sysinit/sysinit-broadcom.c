@@ -333,6 +333,7 @@ setup_4712 (void)
 	      //nvram_set("setup_4712","1-1");
 	      nvram_set ("wan_ifname", "vlan1");
 	      nvram_set ("wan_ifnames", "vlan1");
+	      nvram_set ("wan_default", "vlan1");
 	    }
 	  if (!strstr (nvram_safe_get ("lan_ifnames"), "vlan0"))
 	    {
@@ -743,6 +744,7 @@ start_sysinit (void)
   /* set wan_ifnames, pppoe_wan_ifname and pppoe_ifname */
   nvram_set ("wan_ifname", wanifname);
   nvram_set ("wan_ifnames", wanifname);
+  nvram_set ("wan_default", wanifname);
   nvram_set ("pppoe_wan_ifname", wanifname);
   nvram_set ("pppoe_ifname", wanifname);
 
