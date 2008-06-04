@@ -302,10 +302,6 @@ handle_index (void)
 #ifdef HAVE_BONDING
   handle = start_service_nofree ("bonding", handle);
 #endif
-#ifdef HAVE_VLANTAGGING
-  handle = start_service_nofree ("vlantagging", handle);
-  handle = start_service_nofree ("bridgesif", handle);
-#endif
   handle = start_service_nofree ("wan_boot", handle);
   handle = start_service_nofree ("ttraff", handle);
 #ifdef HAVE_MADWIFI
@@ -327,6 +323,10 @@ handle_index (void)
 #endif
 #ifdef HAVE_OLSRD
   handle = startstop_nofree ("olsrd", handle);
+#endif
+#ifdef HAVE_VLANTAGGING
+  handle = start_service_nofree ("vlantagging", handle);
+  handle = start_service_nofree ("bridgesif", handle);
 #endif
   handle = startstop_nofree ("firewall", handle);
   handle = startstop_nofree ("httpd", handle);	//httpd will not accept connection anymore on wan/lan ip changes changes
@@ -533,10 +533,6 @@ handle_pppoe (void)
 #ifdef HAVE_BONDING
   handle = start_service_nofree ("bonding", handle);
 #endif
-#ifdef HAVE_VLANTAGGING
-  handle = start_service_nofree ("vlantagging", handle);
-  handle = start_service_nofree ("bridgesif", handle);
-#endif
   handle = start_service_nofree ("wan_boot", handle);
   handle = start_service_nofree ("ttraff", handle);
 #ifdef HAVE_MADWIFI
@@ -549,6 +545,10 @@ handle_pppoe (void)
 #endif
 #endif
   handle = start_service_nofree ("radio_timer", handle);
+#ifdef HAVE_VLANTAGGING
+  handle = start_service_nofree ("vlantagging", handle);
+  handle = start_service_nofree ("bridgesif", handle);
+#endif
   if (handle)
     dlclose (handle);
 
@@ -766,10 +766,6 @@ handle_wireless (void)
 #ifdef HAVE_BONDING
   handle = start_service_nofree ("bonding", handle);
 #endif
-#ifdef HAVE_VLANTAGGING
-  handle = start_service_nofree ("vlantagging", handle);
-  handle = start_service_nofree ("bridgesif", handle);
-#endif
   handle = start_service_nofree ("wan", handle);
   handle = start_service_nofree ("ttraff", handle);
 #ifdef HAVE_MADWIFI
@@ -780,6 +776,10 @@ handle_wireless (void)
 #ifdef HAVE_MSSID
   handle = start_service_nofree ("guest_nas", handle);
 #endif
+#endif
+#ifdef HAVE_VLANTAGGING
+  handle = start_service_nofree ("vlantagging", handle);
+  handle = start_service_nofree ("bridgesif", handle);
 #endif
   handle = start_service_nofree ("radio_timer", handle);
   startstop ("httpd");		//httpd will not accept connection anymore on wan/lan ip changes changes
@@ -839,10 +839,6 @@ handle_wireless_2 (void)
 #ifdef HAVE_BONDING
   handle = start_service_nofree ("bonding", handle);
 #endif
-#ifdef HAVE_VLANTAGGING
-  handle = start_service_nofree ("vlantagging", handle);
-  handle = start_service_nofree ("bridgesif", handle);
-#endif
   if (nvram_match ("wl0_mode", "sta")
       || nvram_match ("wl0_mode", "apsta")
       || nvram_match ("wl0_mode", "apstawet"))
@@ -858,6 +854,10 @@ handle_wireless_2 (void)
 #ifdef HAVE_MSSID
   handle = start_service_nofree ("guest_nas", handle);
 #endif
+#endif
+#ifdef HAVE_VLANTAGGING
+  handle = start_service_nofree ("vlantagging", handle);
+  handle = start_service_nofree ("bridgesif", handle);
 #endif
   handle = start_service_nofree ("radio_timer", handle);
   if (nvram_match ("wl0_mode", "sta")
