@@ -821,12 +821,19 @@ start_restore_defaults (void)
 	  nvram_set ("vlan0ports", "4 3 2 1 5*");
 	  nvram_set ("vlan1ports", "0 5");
 	  break;
-	}
-      if (nvram_match ("bootnv_ver", "4")
-	  || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
-	{
-	  nvram_set ("vlan0ports", "3 2 1 0 5*");
-	  nvram_set ("vlan1ports", "4 5");
+	default:
+	  if (nvram_match ("bootnv_ver", "4")
+		  || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
+		{
+		nvram_set ("vlan0ports", "3 2 1 0 5*");
+		nvram_set ("vlan1ports", "4 5");
+		}
+	  else
+		{
+		nvram_set ("vlan0ports", "1 2 3 4 5*");
+		nvram_set ("vlan1ports", "0 5");
+		}
+	  break;
 	}
 #ifdef HAVE_SPUTNIK
       nvram_set ("lan_ipaddr", "192.168.180.1");
