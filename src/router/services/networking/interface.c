@@ -416,8 +416,7 @@ start_setup_vlans (void)
     }
   for (i = 0; i < 16; i++)
     {
-      sprintf (exec, "echo %s > /proc/switch/eth0/vlan/%d/ports",
-	       portsettings[i], i);
+      sprintf (exec, "echo %s > /proc/switch/eth0/vlan/%d/ports",portsettings[i], i);
       system2 (exec);
     }
   return ret;
