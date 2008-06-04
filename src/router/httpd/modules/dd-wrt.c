@@ -8380,6 +8380,8 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
 #else
   getinterfacelist ("eth", eths);
 #endif
+  getinterfacelist ("vlan", eths2);
+  sprintf (eths, "%s %s", eths, eths2);
 #ifdef HAVE_MADWIFI
   getinterfacelist ("ath", eths2);
   sprintf (eths, "%s %s", eths, eths2);

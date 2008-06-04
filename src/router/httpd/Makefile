@@ -143,7 +143,7 @@ endif
 ifeq ($(CONFIG_RSTATS),y)
 CFLAGS += -DHAVE_RSTATS
 endif
-ifeq ($(CONFIG_PORTSETUP),y)
+ifeq ($(CONFIG_VLANTAGGING),y)
 CFLAGS += -DHAVE_PORTSETUP
 endif
 ifeq ($(CONFIG_NOWIFI),y)
