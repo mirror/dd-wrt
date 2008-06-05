@@ -655,6 +655,7 @@ nat_postrouting (void)
 	  char *next;
 	  char dev[16];
 	  char var[80];
+/*
 #ifdef HAVE_MSSID
 
 #ifdef HAVE_MADWIFI
@@ -736,9 +737,11 @@ nat_postrouting (void)
 #endif
 
 
-#endif
-	  char *vifs = nvram_safe_get ("lan_ifnames");
-	  if (vifs != NULL)
+#endif*/
+char vifs[256];
+getIfLists(vifs,256);
+//	  char *vifs = nvram_safe_get ("lan_ifnames");
+//	  if (vifs != NULL)
 	    foreach (var, vifs, next)
 	    {
 	      if (nvram_nmatch ("0", "%s_bridged", var))
@@ -1805,7 +1808,7 @@ filter_input (void)
   char var[80];
 #ifdef HAVE_MSSID
 
-#ifdef HAVE_MADWIFI
+/*#ifdef HAVE_MADWIFI
   int i;
 
   char wifivifs[16];
@@ -1849,12 +1852,15 @@ filter_input (void)
 	    }
 	}
     }
-#endif
+#endif*/
 
 
 #endif
-  char *vifs = nvram_safe_get ("lan_ifnames");
-  if (vifs != NULL)
+  char vifs[256];
+  getIfLists(vifs,256);
+  
+  //char *vifs = nvram_safe_get ("lan_ifnames");
+  //if (vifs != NULL)
     foreach (var, vifs, next)
     {
       if (nvram_nmatch ("0", "%s_bridged", var))
@@ -1896,7 +1902,7 @@ filter_forward (void)
   char *next;
   char dev[16];
   char var[80];
-
+/*
 #ifdef HAVE_MSSID
 
 #ifdef HAVE_MADWIFI
@@ -1945,9 +1951,11 @@ filter_forward (void)
 #endif
 
 
-#endif
-  char *vifs = nvram_safe_get ("lan_ifnames");
-  if (vifs != NULL)
+#endif*/
+  char vifs[256];//
+  getIfLists(vifs,256);
+//   = nvram_safe_get ("lan_ifnames");
+//  if (vifs != NULL)
     foreach (var, vifs, next)
     {
       if (nvram_nmatch ("0", "%s_bridged", var))
