@@ -5475,6 +5475,8 @@ ej_get_radio_state (webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
+int isLocal
+
 static void
 ej_dumparptable (webs_t wp, int argc, char_t ** argv)
 {
@@ -5500,7 +5502,7 @@ ej_dumparptable (webs_t wp, int argc, char_t ** argv)
 	  if ((strlen (mac) != 17)
 	      || (strcmp (mac, "00:00:00:00:00:00") == 0))
 	    continue;
-	  if (strcmp (landev, nvram_get ("lan_ifname")) != 0)
+	  if (strcmp (landev, nvram_get ("wan_iface")) == 0)
 	    continue;		//skip all but LAN arp entries
 	  strcpy (hostname, "*");	//set name to *
 
