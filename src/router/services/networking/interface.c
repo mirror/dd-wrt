@@ -329,8 +329,11 @@ start_setup_vlans (void)
 		    snprintf (buff, 9, "%d", tmp);
 		    eval ("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		    eval ("vconfig", "add", "eth0", buff);
-		    snprintf (buff, 9, "vlan%d", i);
-		    eval ("ifconfig", buff, "0.0.0.0", "up");
+		    snprintf (buff, 9, "vlan%d", tmp);
+		    if (strlen(nvram_nget("%s_ipaddr",buff))>0)
+			eval ("ifconfig", buff, nvram_nget("%s_ipaddr",buff),"netmask",nvram_nget("%s_netmask",buff), "up");
+			    else
+			eval ("ifconfig", buff, "0.0.0.0", "up");
 		  }
 
 

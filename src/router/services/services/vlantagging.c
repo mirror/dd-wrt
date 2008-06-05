@@ -75,7 +75,6 @@ start_vlantagging (void)
     sprintf (vlan_name, "%s.%s", tag, port);
 
   char var[64];
-  char var2[64];
   sprintf (var, "%s_bridged", vlan_name);
   if (nvram_default_match (var, "1", "1"))
     {
@@ -87,6 +86,24 @@ start_vlantagging (void)
 		nvram_nget ("%s_netmask", vlan_name));
     }
   }
+char eths[256];
+getIfLists(eths,256);
+  foreach (word, eths, next)
+  {
+  char var[32];
+  sprintf (var, "%s_bridged", word);
+  if (nvram_default_match (word, "1", "1"))
+    {
+    eval ("ifconfig", word, "0.0.0.0", "up");
+    }
+  else
+    {
+      ifconfig (word, IFUP, nvram_nget ("%s_ipaddr", word),
+		nvram_nget ("%s_netmask", word));
+    }
+  
+  }
+
   start_set_routes ();
 }
 
