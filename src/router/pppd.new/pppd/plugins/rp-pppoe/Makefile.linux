@@ -24,7 +24,7 @@ INSTALL	= install
 # Version is set ONLY IN THE MAKEFILE!  Don't delete this!
 VERSION=3.3
 
-COPTS=-O2 -g
+#COPTS=-O2 -g
 CFLAGS=$(COPTS) -I../../../include/linux
 #CFLAGS=$(COPTS) -I$(LINUXDIR)/include/linux
 

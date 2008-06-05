@@ -82,6 +82,9 @@ static int noopt __P((char **));
 static int setendpoint __P((char **));
 static void printendpoint __P((option_t *, void (*)(void *, char *, ...),
 			       void *));
+static int setreqendpoint __P((char **));
+static void printreqendpoint __P((option_t *, void (*)(void *, char *, ...),
+			       void *));
 #endif /* HAVE_MULTILINK */
 
 static option_t lcp_option_list[] = {
@@ -178,6 +181,10 @@ static option_t lcp_option_list[] = {
     { "endpoint", o_special, (void *) setendpoint,
       "Endpoint discriminator for multilink",
       OPT_PRIO | OPT_A2PRINTER, (void *) printendpoint },
+
+    { "require-remote-endpoint", o_special, (void *) setreqendpoint,
+      "Require that the remote endpoint have the specific given endpoint",
+      OPT_PRIO | OPT_A2PRINTER, (void *) printreqendpoint },
 #endif /* HAVE_MULTILINK */
 
     { "noendpoint", o_bool, &noendpoint,
@@ -326,6 +333,27 @@ printendpoint(opt, printer, arg)
     void *arg;
 {
 	printer(arg, "%s", epdisc_to_str(&lcp_wantoptions[0].endpoint));
+}
+
+static int
+setreqendpoint(argv)
+    char **argv;
+{
+    if (str_to_epdisc(&lcp_wantoptions[0].req_endpoint, *argv)) {
+	lcp_wantoptions[0].need_endpoint = 1;
+	return 1;
+    }
+    option_error("Can't parse '%s' as an endpoint discriminator", *argv);
+    return 0;
+}
+
+static void
+printreqendpoint(opt, printer, arg)
+    option_t *opt;
+    void (*printer) __P((void *, char *, ...));
+    void *arg;
+{
+	printer(arg, "%s", epdisc_to_str(&lcp_wantoptions[0].req_endpoint));
 }
 #endif /* HAVE_MULTILINK */
 
@@ -1507,6 +1535,7 @@ lcp_reqci(f, inp, lenp, reject_if_disagree)
     lcp_options *go = &lcp_gotoptions[f->unit];
     lcp_options *ho = &lcp_hisoptions[f->unit];
     lcp_options *ao = &lcp_allowoptions[f->unit];
+    lcp_options *wo = &lcp_wantoptions[f->unit];
     u_char *cip, *next;		/* Pointer to current and next CIs */
     int cilen, citype, cichar;	/* Parsed len, type, char value */
     u_short cishort;		/* Parsed short value */
@@ -1826,6 +1855,15 @@ lcp_reqci(f, inp, lenp, reject_if_disagree)
 	    ho->endpoint.length = cilen;
 	    BCOPY(p, ho->endpoint.value, cilen);
 	    INCPTR(cilen, p);
+	    if (wo->need_endpoint && 
+	    	( ho->endpoint.class != wo->req_endpoint.class
+		|| ho->endpoint.length != wo->req_endpoint.length
+		|| memcmp(ho->endpoint.value,wo->req_endpoint.value,ho->endpoint.length )) ) {
+	    	warn("Peer has wrong endpoint descriminator: terminating link");
+		status = EXIT_PEER_AUTH_FAILED;
+		lcp_close(f->unit, "wrong endpoint descriminator");
+		return TERMREQ;
+	    }
 	    break;
 
 	default:
