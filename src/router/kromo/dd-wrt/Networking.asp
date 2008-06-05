@@ -123,6 +123,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="del_value" />
 							<input type="hidden" name="submit_type" />
+							<input type="hidden" name="portsetup" value="1" />
 							<input type="hidden" name="commit" value="1" />
 
 							<h2><% tran("networking.h2"); %></h2>
