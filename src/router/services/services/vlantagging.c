@@ -92,12 +92,13 @@ getIfLists(eths,256);
   {
   char var[32];
   sprintf (var, "%s_bridged", word);
-  if (nvram_default_match (word, "1", "1"))
+  if (nvram_default_match (var, "1", "1"))
     {
     eval ("ifconfig", word, "0.0.0.0", "up");
     }
   else
     {
+    
       ifconfig (word, IFUP, nvram_nget ("%s_ipaddr", word),
 		nvram_nget ("%s_netmask", word));
     }
