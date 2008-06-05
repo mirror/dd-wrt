@@ -8372,31 +8372,7 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
   websWrite (wp,
 	     "<legend><script type=\"text/javascript\">Capture(idx.portsetup)</script></legend>\n");
   memset (eths, 0, 256);
-  memset (eths2, 0, 256);
-#ifdef HAVE_XSCALE
-  getIfList (eths2,"eth");
-  getIfList (eths,"ixp");
-  sprintf (eths, "%s %s", eths, eths2);
-#else
-  getIfList (eths,"eth");
-#endif
-  memset (eths2, 0, 256);
-  getIfList (eths2,"vlan");
-  sprintf (eths, "%s %s", eths, eths2);
-#ifdef HAVE_MADWIFI
-  memset (eths2, 0, 256);
-  getIfList (eths2,"ath");
-  sprintf (eths, "%s %s", eths, eths2);
-#else
-  memset (eths2, 0, 256);
-  getIfList (eths2,"wl");
-  sprintf (eths, "%s %s", eths, eths2);
-#endif
-#ifdef HAVE_WAVESAT
-  memset (eths2, 0, 256);
-  getIfList (eths2,"ofdm");
-  sprintf (eths, "%s %s", eths, eths2);
-#endif
+  getIfLists(eths,256);
   websWrite (wp,
 	     "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.wanport)</script></div>\n");
   websWrite (wp, "<select name=\"wan_ifname\">\n");
