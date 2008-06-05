@@ -257,3 +257,4 @@
  "radio0_timer_enable"  "Radio Time restriction activation"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "radio1_timer_enable"  "Radio Time restriction activation"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "dhcpd_usenvram" "Use NVRAM for client DB" "CHOICE" "2" "0" "1" "FALSE" "0"
+ "portsetup" "portsetup" "PORTSETUP" "FALSE" "0"
