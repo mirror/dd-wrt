@@ -182,7 +182,9 @@ mp_join_bundle()
 	 * and attach the link.
 	 */
 	mtu = MIN(ho->mrru, ao->mru);
+	script_setenv("REMOTE_ENDPOINT", epdisc_to_str(&(ho->endpoint)), 0 );
 	if (demand) {
+	    warn("at this point");
 		cfg_bundle(go->mrru, ho->mrru, go->neg_ssnhf, ho->neg_ssnhf);
 		netif_set_mtu(0, mtu);
 		script_setenv("BUNDLE", bundle_id + 7, 1);
