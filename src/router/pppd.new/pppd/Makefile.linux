@@ -53,7 +53,7 @@ MPPE=y
 # Uncomment the next line to enable multilink PPP (enabled by default)
 # Linux distributions: Please leave multilink ENABLED in your builds
 # of pppd!
-#HAVE_MULTILINK=y
+HAVE_MULTILINK=y
 
 # Uncomment the next line to enable the TDB database (enabled by default.)
 # If you enable multilink, then TDB is automatically enabled also.
