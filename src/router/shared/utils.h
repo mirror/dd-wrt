@@ -291,7 +291,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 // Askey board RT2205D-D56 / RT2206D-D56 (BCM4704 cpu, mini-pci)
 // Belkin MIMO F5D8230_v2 or F5D8230_v1001ea (fccid: Airgo networks Inc. SA3-AGN0901AP0100)
-#define ROUTER_ASKEY_RT220XD 0x560f
+#define ROUTER_ASKEY_RT220XD 0x5617
 
 // U.S.Robotics USR5455 (BCM5354 cpu, no switch, fccid: Universal Scientific Industrial Co. IXM-APGBR03)
 // U.S.Robotics USR5465 (BCM5354 cpu, fccid: Universal Scientific Industrial Co. IXM-RTGBR03)
