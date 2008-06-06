@@ -1575,6 +1575,7 @@ if (nvram_get("wan_default"))
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);
 		eval ("wl", "-i", name, "ssid",
 		      nvram_nget ("wl%d_ssid", get_wl_instance (name)));
+		do_portsetup (lan_ifname, name);
 	      }
 
 	    if (nvram_match (wl_name, "sta"))
