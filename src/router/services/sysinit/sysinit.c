@@ -850,8 +850,7 @@ start_restore_defaults (void)
 	  nvram_set ("vlan1ports", "0 5");
 	  break;
 	default:
-	  if (nvram_match ("bootnv_ver", "4")
-		  || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
+	  if (nvram_match ("boardnum", "WAP54GV3_8M_0614"))
 		{
 		nvram_set ("vlan0ports", "3 2 1 0 5*");
 		nvram_set ("vlan1ports", "4 5");
