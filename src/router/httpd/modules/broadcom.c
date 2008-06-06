@@ -5475,7 +5475,6 @@ ej_get_radio_state (webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
-int isLocal
 
 static void
 ej_dumparptable (webs_t wp, int argc, char_t ** argv)
