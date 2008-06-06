@@ -1760,7 +1760,11 @@ led_control (int type, int act)
       power_gpio = 0x02;
       diag_gpio = 0x03;		//power led amber   
       connected_gpio = 0x07;//WAN led green  
-      break;    
+      break;
+    case ROUTER_ASKEY_RT220XD:
+      wlan_gpio = 0x10;
+      dmz_gpio = 0x11;  //not soldered  
+      break;   
 #endif
     }
   if (type == LED_DIAG && v1func == 1)
