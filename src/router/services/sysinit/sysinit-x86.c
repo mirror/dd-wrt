@@ -234,8 +234,11 @@ eval("insmod","crypto_null");
 
   if (detect ("RTL-8110"))	// Realtek 8169 Adapter (various notebooks) 
     eval ("insmod", "r8169");
-  if (detect ("RTL-8169"))	// Realtek 8169 Adapter (various notebooks) 
+  else if (detect ("RTL-8169"))	// Realtek 8169 Adapter (various notebooks) 
     eval ("insmod", "r8169");
+  else if (detect ("RTL8101"))	// Realtek 8169 Adapter (various notebooks) 
+    eval ("insmod", "r8169");
+
   if (detect ("8139"))		// Realtek 8139 Adapter (various notebooks) 
     eval ("insmod", "8139too");
   if (detect ("DFE-690TXD"))	// Realtek 8139 Adapter (various notebooks) 
@@ -244,6 +247,7 @@ eval("insmod","crypto_null");
     eval ("insmod", "8139too");
   else if (detect ("Robotics"))	// Realtek 8139 Adapter (various notebooks) 
     eval ("insmod", "8139too");
+
 
   if (detect ("nForce2 Ethernet"))	// nForce2 
     eval ("insmod", "forcedeth");
