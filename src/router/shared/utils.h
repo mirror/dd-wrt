@@ -521,6 +521,12 @@ struct detect_wans
 	printf("\n\n"); \
 }
 
+void set_gpio (int gpio, int value);
+
+int get_gpio (int gpio);
+
+
+
 #ifdef HAVE_X86
 void lcdmessage (char *message);
 void initlcd (void);
