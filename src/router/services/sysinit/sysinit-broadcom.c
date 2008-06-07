@@ -1343,6 +1343,7 @@ char *
 enable_dtag_vlan (int enable)
 {
   int donothing = 0;
+nvram_set("fromvdsl","1");
   if (nvram_match ("vdsl_state", "1") && enable)
     donothing = 1;
   if ((nvram_match ("vdsl_state", "0") || nvram_match ("vdsl_state", ""))
@@ -1389,7 +1390,10 @@ enable_dtag_vlan (int enable)
 	eth = "eth2";
 #endif
       if (donothing)
+        {
+	nvram_set("fromvdsl","0");
 	return eth;
+	}
       if (enable)
 	{
         if (vlanswap)
@@ -1413,6 +1417,7 @@ enable_dtag_vlan (int enable)
 	  nvram_set ("vlan2ports", save_ports2);
 	  nvram_set ("vlan7ports", "");
 	}
+nvram_set("fromvdsl","0");
       return eth;
     }
   char tmp[200];
@@ -1467,6 +1472,7 @@ enable_dtag_vlan (int enable)
     	  start_setup_vlans();
 	}
     }
+nvram_set("fromvdsl","0");
   return eth;
 }
 
