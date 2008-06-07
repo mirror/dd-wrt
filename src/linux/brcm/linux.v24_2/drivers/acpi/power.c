@@ -90,7 +90,7 @@ acpi_power_get_context (
 	}
 
 	*resource = (struct acpi_power_resource *) acpi_driver_data(device);
-	if (!resource)
+	if (!*resource)
 		return_VALUE(-ENODEV);
 
 	return_VALUE(0);

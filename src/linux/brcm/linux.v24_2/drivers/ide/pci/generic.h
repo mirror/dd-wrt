@@ -157,6 +157,16 @@ static ide_pci_device_t generic_chipsets[] __devinitdata = {
 		.channels	= 2,
 		.autodma	= NOAUTODMA,
 		.bootable	= ON_BOARD,
+	},{     /* 12 */
+		.vendor		= PCI_VENDOR_ID_JMICRON,
+		.device		= PCI_DEVICE_ID_JMICRON_20363,
+		.name		= "JMICRON_20363",
+		.init_chipset	= init_chipset_generic,
+		.init_hwif	= init_hwif_generic,
+		.init_dma	= init_dma_generic,
+		.channels	= 1,
+		.autodma	= NOAUTODMA,
+		.bootable	= ON_BOARD,
 	},{
 		.vendor		= 0,
 		.device		= 0,

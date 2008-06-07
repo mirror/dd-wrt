@@ -9,6 +9,76 @@
 #include <linux/fs.h>
 #include <linux/stat.h>
 #include <linux/sched.h>
+#include <linux/poll.h>
+
+static loff_t bad_file_llseek(struct file *file, loff_t offset, int origin)
+{
+	return -EIO;
+}
+
+static ssize_t bad_file_read(struct file *filp, char __user *buf,
+			size_t size, loff_t *ppos)
+{
+        return -EIO;
+}
+
+static ssize_t bad_file_write(struct file *filp, const char __user *buf,
+			size_t siz, loff_t *ppos)
+{
+        return -EIO;
+}
+
+static int bad_file_readdir(struct file *filp, void *dirent, filldir_t filldir)
+{
+	return -EIO;
+}
+
+static unsigned int bad_file_poll(struct file *filp, poll_table *wait)
+{
+	return POLLERR;
+}
+
+static int bad_file_ioctl (struct inode *inode, struct file *filp,
+			unsigned int cmd, unsigned long arg)
+{
+	return -EIO;
+}
+
+static int bad_file_mmap(struct file *file, struct vm_area_struct *vma)
+{
+	return -EIO;
+}
+
+static int bad_file_open(struct inode *inode, struct file *filp)
+{
+	return -EIO;
+}
+
+static int bad_file_flush(struct file *file)
+{
+	return -EIO;
+}
+
+static int bad_file_release(struct inode *inode, struct file *filp)
+{
+	return -EIO;
+}
+
+static int bad_file_fsync(struct file *file, struct dentry *dentry,
+			int datasync)
+{
+	return -EIO;
+}
+
+static int bad_file_fasync(int fd, struct file *filp, int on)
+{
+	return -EIO;
+}
+
+static int bad_file_lock(struct file *file, int cmd, struct file_lock *fl)
+{
+	return -EIO;
+}
 
 /*
  * The follow_link operation is special: it must behave as a no-op
@@ -20,46 +90,107 @@ static int bad_follow_link(struct dentry *dent, struct nameidata *nd)
 	return vfs_follow_link(nd, ERR_PTR(-EIO));
 }
 
-static int return_EIO(void)
+static struct file_operations bad_file_ops =
+{
+	llseek:		bad_file_llseek,
+	read:		bad_file_read,
+	write:		bad_file_write,
+	readdir:	bad_file_readdir,
+	poll:		bad_file_poll,
+	ioctl:		bad_file_ioctl,
+	mmap:		bad_file_mmap,
+	open:		bad_file_open,
+	flush:		bad_file_flush,
+	release:	bad_file_release,
+	fsync:		bad_file_fsync,
+	fasync:		bad_file_fasync,
+	lock:		bad_file_lock,
+};
+
+static int bad_inode_create (struct inode *dir, struct dentry *dentry,
+		int mode)
+{
+	return -EIO;
+}
+  
+static struct dentry *bad_inode_lookup(struct inode *dir,
+			struct dentry *dentry)
+{
+	return ERR_PTR(-EIO);
+}
+
+static int bad_inode_link (struct dentry *old_dentry, struct inode *dir,
+		struct dentry *dentry)
 {
 	return -EIO;
 }
 
-#define EIO_ERROR ((void *) (return_EIO))
-
-static struct file_operations bad_file_ops =
+static int bad_inode_unlink(struct inode *dir, struct dentry *dentry)
 {
-	llseek:		EIO_ERROR,
-	read:		EIO_ERROR,
-	write:		EIO_ERROR,
-	readdir:	EIO_ERROR,
-	poll:		EIO_ERROR,
-	ioctl:		EIO_ERROR,
-	mmap:		EIO_ERROR,
-	open:		EIO_ERROR,
-	flush:		EIO_ERROR,
-	release:	EIO_ERROR,
-	fsync:		EIO_ERROR,
-	fasync:		EIO_ERROR,
-	lock:		EIO_ERROR,
-};
+	return -EIO;
+}
+
+static int bad_inode_symlink (struct inode *dir, struct dentry *dentry,
+		const char *symname)
+{
+	return -EIO;
+}
+
+static int bad_inode_mkdir(struct inode *dir, struct dentry *dentry,
+			int mode)
+{
+	return -EIO;
+}
+
+static int bad_inode_rmdir (struct inode *dir, struct dentry *dentry)
+{
+	return -EIO;
+}
+
+static int bad_inode_mknod (struct inode *dir, struct dentry *dentry,
+			int mode, int rdev)
+{
+	return -EIO;
+}
+
+static int bad_inode_rename (struct inode *old_dir, struct dentry *old_dentry,
+		struct inode *new_dir, struct dentry *new_dentry)
+{
+	return -EIO;
+}
+
+static int bad_inode_readlink(struct dentry *dentry, char __user *buffer,
+		int buflen)
+{
+	return -EIO;
+}
+
+static int bad_inode_permission(struct inode *inode, int mask)
+{
+	return -EIO;
+}
+
+static int bad_inode_revalidate(struct dentry *dentry)
+{
+	return -EIO;
+}
 
 struct inode_operations bad_inode_ops =
 {
-	create:		EIO_ERROR,
-	lookup:		EIO_ERROR,
-	link:		EIO_ERROR,
-	unlink:		EIO_ERROR,
-	symlink:	EIO_ERROR,
-	mkdir:		EIO_ERROR,
-	rmdir:		EIO_ERROR,
-	mknod:		EIO_ERROR,
-	rename:		EIO_ERROR,
-	readlink:	EIO_ERROR,
+	create:		bad_inode_create,
+	lookup:		bad_inode_lookup,
+	link:		bad_inode_link,
+	unlink:		bad_inode_unlink,
+	symlink:	bad_inode_symlink,
+	mkdir:		bad_inode_mkdir,
+	rmdir:		bad_inode_rmdir,
+	mknod:		bad_inode_mknod,
+	rename:		bad_inode_rename,
+	readlink:	bad_inode_readlink,
 	follow_link:	bad_follow_link,
-	truncate:	EIO_ERROR,
-	permission:	EIO_ERROR,
-	revalidate:	EIO_ERROR,
+	/* truncate returns void */
+	permission:	bad_inode_permission,
+	revalidate:	bad_inode_revalidate,
 };
 
 

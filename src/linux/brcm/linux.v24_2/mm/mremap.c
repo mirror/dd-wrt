@@ -273,6 +273,12 @@ unsigned long do_mremap(unsigned long addr,
 		if ((addr <= new_addr) && (addr+old_len) > new_addr)
 			goto out;
 
+		/* Ensure a non-privileged process is not trying to map
+		 * lower pages.
+		 */
+		if (new_addr < mmap_min_addr && !capable(CAP_SYS_RAWIO))
+			return -EPERM;
+
 		ret = do_munmap(current->mm, new_addr, new_len);
 		if (ret && new_len)
 			goto out;

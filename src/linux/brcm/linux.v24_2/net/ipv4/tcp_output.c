@@ -142,6 +142,10 @@ static __inline__ void tcp_event_ack_sent(struct sock *sk)
 	tcp_clear_xmit_timer(sk, TCP_TIME_DACK);
 }
 
+/* from 2.6's ALIGN, used in tcp_select_window() */
+#define ALIGN_WIN(x,a)		__ALIGN_MASK(x,(typeof(x))(a)-1)
+#define __ALIGN_MASK(x,mask)	(((x)+(mask))&~(mask))
+
 /* Chose a new window to advertise, update state in tcp_opt for the
  * socket, and return result with RFC1323 scaling applied.  The return
  * value can be stuffed directly into th->window for an outgoing
@@ -162,7 +166,7 @@ static __inline__ u16 tcp_select_window(struct sock *sk)
 		 *
 		 * Relax Will Robinson.
 		 */
-		new_win = cur_win;
+		new_win = ALIGN_WIN(cur_win, 1 << tp->rcv_wscale);
 	}
 	tp->rcv_wnd = new_win;
 	tp->rcv_wup = tp->rcv_nxt;

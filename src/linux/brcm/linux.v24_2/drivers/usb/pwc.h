@@ -141,6 +141,7 @@ struct pwc_device
    char vsnapshot;		/* snapshot mode */
    char vsync;			/* used by isoc handler */
    char vmirror;		/* for ToUCaM series */
+	char unplugged;
 
    /* The image acquisition requires 3 to 4 steps:
       1. data is gathered in short packets from the USB controller

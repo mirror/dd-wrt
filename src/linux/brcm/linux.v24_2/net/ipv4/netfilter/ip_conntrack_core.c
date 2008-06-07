@@ -1500,9 +1500,8 @@ int __init ip_conntrack_init(void)
 		if (ip_conntrack_htable_size < 16)
 			ip_conntrack_htable_size = 16;
 	}
-
-	ip_conntrack_htable_size = 16384; //Fix hash table size
-	ip_conntrack_max = ip_conntrack_htable_size / 2; //Fix default conntrack max
+	ip_conntrack_max = 8 * ip_conntrack_htable_size;
+	if (ip_conntrack_max < 2048) ip_conntrack_max = 2048;	// tofu6 test
 
 	printk("ip_conntrack version %s (%u buckets, %d max)"
 	       " - %Zd bytes per conntrack\n", IP_CONNTRACK_VERSION,

@@ -1339,6 +1339,8 @@ bcm5700_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 	}
 	printk("\n");
 
+	printk(KERN_INFO "%s: tranceiver %X\n",dev->name,(pDevice->PhyId & PHY_ID_MASK));
+	printk(KERN_INFO "%s: tbiflags %X\n",dev->name,pDevice->TbiFlags);
 	printk(KERN_INFO "%s: ", dev->name);
 	if ((pDevice->PhyId & PHY_ID_MASK) == PHY_BCM5400_PHY_ID)
 		printk("Broadcom BCM5400 Copper ");

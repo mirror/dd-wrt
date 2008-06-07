@@ -44,6 +44,9 @@
 static int debug;
 
 
+/* TODO first char received is lost on second open of device.  anecdotal evidence
+ * TODO suggests this might be on all even opens of device. dn. */
+
 #include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/errno.h>
@@ -182,6 +185,8 @@ enum pl2303_type {
 
 struct pl2303_private {
 	spinlock_t lock;
+	struct pl2303_buf *buf;
+	int write_urb_in_use;
 	wait_queue_head_t delta_msr_wait;
 	u8 line_control;
 	u8 line_status;
@@ -189,8 +194,177 @@ struct pl2303_private {
 	enum pl2303_type type;
 };
 
+/*
+ * pl2303_buf_alloc
+ *
+ * Allocate a circular buffer and all associated memory.
+ */
+static struct pl2303_buf *pl2303_buf_alloc(unsigned int size)
+{
+	struct pl2303_buf *pb;
 
-static int pl2303_startup (struct usb_serial *serial)
+	if (size == 0)
+		return NULL;
+
+	pb = kmalloc(sizeof(struct pl2303_buf), GFP_KERNEL);
+	if (pb == NULL)
+		return NULL;
+
+	pb->buf_buf = kmalloc(size, GFP_KERNEL);
+	if (pb->buf_buf == NULL) {
+		kfree(pb);
+		return NULL;
+	}
+
+	pb->buf_size = size;
+	pb->buf_get = pb->buf_put = pb->buf_buf;
+
+	return pb;
+}
+
+/*
+ * pl2303_buf_free
+ *
+ * Free the buffer and all associated memory.
+ */
+static void pl2303_buf_free(struct pl2303_buf *pb)
+{
+	if (pb) {
+		kfree(pb->buf_buf);
+		kfree(pb);
+	}
+}
+
+/*
+ * pl2303_buf_clear
+ *
+ * Clear out all data in the circular buffer.
+ */
+static void pl2303_buf_clear(struct pl2303_buf *pb)
+{
+	if (pb != NULL)
+		pb->buf_get = pb->buf_put;
+		/* equivalent to a get of all data available */
+}
+
+/*
+ * pl2303_buf_data_avail
+ *
+ * Return the number of bytes of data available in the circular
+ * buffer.
+ */
+static unsigned int pl2303_buf_data_avail(struct pl2303_buf *pb)
+{
+	if (pb == NULL)
+		return 0;
+
+	return ((pb->buf_size + pb->buf_put - pb->buf_get) % pb->buf_size);
+}
+
+/*
+ * pl2303_buf_space_avail
+ *
+ * Return the number of bytes of space available in the circular
+ * buffer.
+ */
+static unsigned int pl2303_buf_space_avail(struct pl2303_buf *pb)
+{
+	if (pb == NULL)
+		return 0;
+
+	return ((pb->buf_size + pb->buf_get - pb->buf_put - 1) % pb->buf_size);
+}
+
+static int copy(char *dest, int from_user, const char *source, unsigned count)
+{
+	if (!from_user)
+		memcpy (dest, source, count);
+	else if (copy_from_user (dest, source, count))
+		return -EFAULT;
+	return count;
+}
+
+/*
+ * pl2303_buf_put
+ *
+ * Copy data data from a user buffer and put it into the circular buffer.
+ * Restrict to the amount of space available.
+ *
+ * Return the number of bytes copied.
+ */
+static unsigned int pl2303_buf_put(struct pl2303_buf *pb, int from_user,
+				   const char *buf, unsigned int count)
+{
+	unsigned int len;
+
+	if (pb == NULL)
+		return 0;
+
+	len  = pl2303_buf_space_avail(pb);
+	if (count > len)
+		count = len;
+
+	if (count == 0)
+		return 0;
+
+	len = pb->buf_buf + pb->buf_size - pb->buf_put;
+	if (count > len) {
+		if (copy(pb->buf_put, from_user, buf, len) < 0 ||
+		    copy(pb->buf_buf, from_user, buf+len, count - len) < 0)
+			return -EFAULT;
+		pb->buf_put = pb->buf_buf + count - len;
+	} else {
+		if (copy(pb->buf_put, from_user, buf, count) < 0)
+			return -EFAULT;
+		if (count < len)
+			pb->buf_put += count;
+		else /* count == len */
+			pb->buf_put = pb->buf_buf;
+	}
+
+	return count;
+}
+
+/*
+ * pl2303_buf_get
+ *
+ * Get data from the circular buffer and copy to the given buffer.
+ * Restrict to the amount of data available.
+ *
+ * Return the number of bytes copied.
+ */
+static unsigned int pl2303_buf_get(struct pl2303_buf *pb, char *buf,
+				   unsigned int count)
+{
+	unsigned int len;
+
+	if (pb == NULL)
+		return 0;
+
+	len = pl2303_buf_data_avail(pb);
+	if (count > len)
+		count = len;
+
+	if (count == 0)
+		return 0;
+
+	len = pb->buf_buf + pb->buf_size - pb->buf_get;
+	if (count > len) {
+		memcpy(buf, pb->buf_get, len);
+		memcpy(buf+len, pb->buf_buf, count - len);
+		pb->buf_get = pb->buf_buf + count - len;
+	} else {
+		memcpy(buf, pb->buf_get, count);
+		if (count < len)
+			pb->buf_get += count;
+		else /* count == len */
+			pb->buf_get = pb->buf_buf;
+	}
+
+	return count;
+}
+
+static int pl2303_startup(struct usb_serial *serial)
 {
 	struct pl2303_private *priv;
 	enum pl2303_type type = type_0;
@@ -295,6 +469,7 @@ static void pl2303_set_termios (struct usb_serial_port *port, struct termios *ol
 
 	cflag = port->tty->termios->c_cflag;
 	/* check that they really want us to change something */
+	/* important to do this as even a null change can corrupt data in transit */
 	if (old_termios) {
 		if ((cflag == old_termios->c_cflag) &&
 		    (RELEVANT_IFLAG(port->tty->termios->c_iflag) == RELEVANT_IFLAG(old_termios->c_iflag))) {
@@ -309,13 +484,12 @@ static void pl2303_set_termios (struct usb_serial_port *port, struct termios *ol
 		return;
 	}
 	memset (buf, 0x00, 0x07);
-	
-	i = usb_control_msg (serial->dev, usb_rcvctrlpipe (serial->dev, 0),
-			     GET_LINE_REQUEST, GET_LINE_REQUEST_TYPE,
-			     0, 0, buf, 7, 100);
-	dbg ("0xa1:0x21:0:0  %d - %x %x %x %x %x %x %x", i,
-	     buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6]);
 
+	i = usb_control_msg(serial->dev, usb_rcvctrlpipe(serial->dev, 0),
+			    GET_LINE_REQUEST, GET_LINE_REQUEST_TYPE,
+			    0, 0, buf, 7, 100);
+	dbg("0xa1:0x21:0:0  %d - %x %x %x %x %x %x %x", i,
+	    buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6]);
 
 	if (cflag & CSIZE) {
 		switch (cflag & CSIZE) {
@@ -387,10 +561,10 @@ static void pl2303_set_termios (struct usb_serial_port *port, struct termios *ol
 		dbg("%s - parity = none", __FUNCTION__);
 	}
 
-	i = usb_control_msg (serial->dev, usb_sndctrlpipe (serial->dev, 0),
-			     SET_LINE_REQUEST, SET_LINE_REQUEST_TYPE, 
-			     0, 0, buf, 7, 100);
-	dbg ("0x21:0x20:0:0  %d", i);
+	i = usb_control_msg(serial->dev, usb_sndctrlpipe(serial->dev, 0),
+			    SET_LINE_REQUEST, SET_LINE_REQUEST_TYPE,
+			    0, 0, buf, 7, 100);
+	dbg("0x21:0x20:0:0  %d", i);
 
 	/* change control lines if we are switching to or from B0 */
 	spin_lock_irqsave(&priv->lock, flags);
@@ -406,13 +580,13 @@ static void pl2303_set_termios (struct usb_serial_port *port, struct termios *ol
 	} else {
 		spin_unlock_irqrestore(&priv->lock, flags);
 	}
-	
+
 	buf[0] = buf[1] = buf[2] = buf[3] = buf[4] = buf[5] = buf[6] = 0;
 
-	i = usb_control_msg (serial->dev, usb_rcvctrlpipe (serial->dev, 0),
-			     GET_LINE_REQUEST, GET_LINE_REQUEST_TYPE,
-			     0, 0, buf, 7, 100);
-	dbg ("0xa1:0x21:0:0  %d - %x %x %x %x %x %x %x", i,
+	i = usb_control_msg(serial->dev, usb_rcvctrlpipe(serial->dev, 0),
+			    GET_LINE_REQUEST, GET_LINE_REQUEST_TYPE,
+			    0, 0, buf, 7, 100);
+	dbg("0xa1:0x21:0:0  %d - %x %x %x %x %x %x %x", i,
 	     buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6]);
 
 	if (cflag & CRTSCTS) {
@@ -442,8 +616,10 @@ static int pl2303_open (struct usb_serial_port *port, struct file *filp)
 
 	dbg("%s -  port %d", __FUNCTION__, port->number);
 
-	usb_clear_halt(serial->dev, port->write_urb->pipe);
-	usb_clear_halt(serial->dev, port->read_urb->pipe);
+	if (priv->type != HX) {
+		usb_clear_halt(serial->dev, port->write_urb->pipe);
+		usb_clear_halt(serial->dev, port->read_urb->pipe);
+	}
 
 	buf = kmalloc(10, GFP_KERNEL);
 	if (buf==NULL)
@@ -469,7 +645,7 @@ static int pl2303_open (struct usb_serial_port *port, struct file *filp)
 	FISH (VENDOR_READ_REQUEST_TYPE, VENDOR_READ_REQUEST, 0x8383, 0);
 	SOUP (VENDOR_WRITE_REQUEST_TYPE, VENDOR_WRITE_REQUEST, 0, 1);
 	SOUP (VENDOR_WRITE_REQUEST_TYPE, VENDOR_WRITE_REQUEST, 1, 0);
- 
+
 	if (priv->type == HX) {
 		/* HX chip */
 		SOUP (VENDOR_WRITE_REQUEST_TYPE, VENDOR_WRITE_REQUEST, 2, 0x44);
@@ -484,7 +660,7 @@ static int pl2303_open (struct usb_serial_port *port, struct file *filp)
 
 	/* Setup termios */
 	if (port->tty) {
-		pl2303_set_termios (port, &tmp_termios);
+		pl2303_set_termios(port, &tmp_termios);
 	}
 
 	//FIXME: need to assert RTS and DTR if CRTSCTS off
@@ -614,22 +790,22 @@ static int wait_modem_info(struct usb_serial_port *port, unsigned int arg)
 	unsigned int status;
 	unsigned int changed;
 
-	spin_lock_irqsave (&priv->lock, flags);
+	spin_lock_irqsave(&priv->lock, flags);
 	prevstatus = priv->line_status;
-	spin_unlock_irqrestore (&priv->lock, flags);
+	spin_unlock_irqrestore(&priv->lock, flags);
 
 	while (1) {
 		interruptible_sleep_on(&priv->delta_msr_wait);
 		/* see if a signal did it */
 		if (signal_pending(current))
 			return -ERESTARTSYS;
-		
-		spin_lock_irqsave (&priv->lock, flags);
+
+		spin_lock_irqsave(&priv->lock, flags);
 		status = priv->line_status;
-		spin_unlock_irqrestore (&priv->lock, flags);
-		
+		spin_unlock_irqrestore(&priv->lock, flags);
+
 		changed=prevstatus^status;
-		
+
 		if (((arg & TIOCM_RNG) && (changed & UART_RING)) ||
 		    ((arg & TIOCM_DSR) && (changed & UART_DSR)) ||
 		    ((arg & TIOCM_CD)  && (changed & UART_DCD)) ||
@@ -669,7 +845,7 @@ static int pl2303_ioctl (struct usb_serial_port *port, struct file *file, unsign
 	return -ENOIOCTLCMD;
 }
 
-static void pl2303_break_ctl (struct usb_serial_port *port, int break_state)
+static void pl2303_break_ctl(struct usb_serial_port *port, int break_state)
 {
 	struct usb_serial *serial = port->serial;
 	u16 state;

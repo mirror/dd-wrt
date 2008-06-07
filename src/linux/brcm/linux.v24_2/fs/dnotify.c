@@ -19,6 +19,7 @@
 #include <linux/init.h>
 #include <linux/spinlock.h>
 #include <linux/slab.h>
+#include <linux/file.h>
 
 extern void send_sigio(struct fown_struct *fown, int fd, int band);
 
@@ -68,6 +69,7 @@ int fcntl_dirnotify(int fd, struct file *filp, unsigned long arg)
 	struct dnotify_struct **prev;
 	struct inode *inode;
 	fl_owner_t id = current->files;
+	struct file *f;
 
 	if ((arg & ~DN_MULTISHOT) == 0) {
 		dnotify_flush(filp, id);
@@ -93,6 +95,16 @@ int fcntl_dirnotify(int fd, struct file *filp, unsigned long arg)
 		}
 		prev = &odn->dn_next;
 	}
+
+	/* we'd lost the race with close(), sod off silently */
+	read_lock(&current->files->file_lock);
+	f = fcheck(fd);
+	read_unlock(&current->files->file_lock);
+	if (f != filp) {
+		kmem_cache_free(dn_cache, dn);
+		goto out;
+	}
+
 	filp->f_owner.pid = current->pid;
 	filp->f_owner.uid = current->uid;
 	filp->f_owner.euid = current->euid;
