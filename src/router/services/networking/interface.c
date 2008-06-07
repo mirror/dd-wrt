@@ -229,6 +229,13 @@ start_setup_vlans (void)
 #else
   /* VLAN #16 is just a convieniant way of storing tagging info.  There is no VLAN #16 */
 
+if (nvram_match ("wan_vdsl", "1") && !nvram_match("fromvdsl","1"))
+	{
+	nvram_set("vdsl_state","0");
+	enable_dtag_vlan (1);
+	return 0;
+	}
+
   if (!nvram_get ("port5vlans") || nvram_match ("vlans", "0"))
     return 0;			// for some reason VLANs are not set up, and we don't want to disable everything!
 
@@ -337,7 +344,7 @@ start_setup_vlans (void)
 		  }
 
 
-		sprintf ((char *) &portsettings[tmp][0], "%s %d",
+		sprintf ((char *) &portsettings[tmp][0], "%s\t%d",
 			 (char *) &portsettings[tmp][0], use);
 	      }
 	    else
