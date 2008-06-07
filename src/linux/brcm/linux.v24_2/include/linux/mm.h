@@ -117,6 +117,7 @@ struct vm_area_struct {
 /* read ahead limits */
 extern int vm_min_readahead;
 extern int vm_max_readahead;
+extern unsigned long mmap_min_addr;
 
 /*
  * mapping from the currently active vm_flags protection bits (the
@@ -652,6 +653,11 @@ static inline int expand_stack(struct vm_area_struct * vma, unsigned long addres
 	 * page_table_lock lock to serialize against concurrent expand_stacks.
 	 */
 	address &= PAGE_MASK;
+
+	/* ensure a non-privileged process is not trying to mmap lower pages */
+	if (address < mmap_min_addr && !capable(CAP_SYS_RAWIO))
+		return -EPERM;
+
  	spin_lock(&vma->vm_mm->page_table_lock);
 
 	/* already expanded while we were spinning? */

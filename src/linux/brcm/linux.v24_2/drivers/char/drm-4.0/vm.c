@@ -256,6 +256,7 @@ int drm_mmap_dma(struct file *filp, struct vm_area_struct *vma)
 
 	vma->vm_ops   = &drm_vm_dma_ops;
 	vma->vm_flags |= VM_LOCKED | VM_SHM; /* Don't swap */
+	vma->vm_flags |= VM_DONTEXPAND;
 	
 #if LINUX_VERSION_CODE < 0x020203 /* KERNEL_VERSION(2,2,3) */
 				/* In Linux 2.2.3 and above, this is
@@ -358,6 +359,7 @@ int drm_mmap(struct file *filp, struct vm_area_struct *vma)
 		return -EINVAL;	/* This should never happen. */
 	}
 	vma->vm_flags |= VM_LOCKED | VM_SHM; /* Don't swap */
+	vma->vm_flags |= VM_DONTEXPAND;
 
 #if LINUX_VERSION_CODE < 0x020203 /* KERNEL_VERSION(2,2,3) */
 				/* In Linux 2.2.3 and above, this is

@@ -160,8 +160,8 @@ static inline void sigfillset(sigset_t *set)
 	default:
 		memset(set, -1, sizeof(sigset_t));
 		break;
-	case 2: set->sig[1] = -1;
-	case 1:	set->sig[0] = -1;
+	case 2: set->sig[1] = (unsigned long)-1;
+	case 1:	set->sig[0] = (unsigned long)-1;
 		break;
 	}
 }
@@ -204,7 +204,7 @@ static inline void siginitsetinv(sigset_t *set, unsigned long mask)
 	default:
 		memset(&set->sig[1], -1, sizeof(long)*(_NSIG_WORDS-1));
 		break;
-	case 2: set->sig[1] = -1;
+	case 2: set->sig[1] = (unsigned long)-1;
 	case 1: ;
 	}
 }

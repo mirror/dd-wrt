@@ -159,6 +159,7 @@ enum
 	VM_LAPTOP_MODE=21,	/* kernel in laptop flush mode */
 	VM_BLOCK_DUMP=22,	/* dump fs activity to log */
 	VM_ANON_LRU=23,		/* immediatly insert anon pages in the vm page lru */
+	VM_MMAP_MIN_ADDR=24,	/* prevent mapping of low addresses by mmap() */
 };
 
 

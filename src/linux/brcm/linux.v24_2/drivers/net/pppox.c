@@ -67,7 +67,7 @@ void pppox_unbind_sock(struct sock *sk)
 {
 	/* Clear connection to ppp device, if attached. */
 
-	if (sk->state & (PPPOX_BOUND|PPPOX_ZOMBIE)) {
+	if (sk->state & (PPPOX_BOUND | PPPOX_CONNECTED | PPPOX_ZOMBIE)) {
 		ppp_unregister_channel(&sk->protinfo.pppox->chan);
 		sk->state = PPPOX_DEAD;
 	}
