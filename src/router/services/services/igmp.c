@@ -57,7 +57,9 @@ start_igmp_proxy (void)
       fprintf (fp, "phyint %s disabled\n", nvram_safe_get ("lan_ifname"));
       fprintf (fp, "phyint %s:0 disabled\n", nvram_safe_get ("lan_ifname"));
     }
-  foreach (name, nvram_safe_get ("lan_ifnames"), next)
+char ifnames[256];
+getIfLists(ifnames,256);
+  foreach (name, ifnames, next)
   {
     if (nvram_nmatch ("0", "%s_bridged", name)
 	&& nvram_nmatch ("1", "%s_multicast", name))
