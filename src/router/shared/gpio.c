@@ -156,38 +156,44 @@ get_gpio (int gpio)
 #else
 
 void
-set_gpio (int gpio, int value)
+set_gpio (int pin, int value)
 {
+  int gpioouten = open ("/dev/gpio/outen", O_RDWR);
   int gpioout = open ("/dev/gpio/out", O_RDWR);
+  unsigned int gpio;
 
   read (gpioouten, &gpio, sizeof (gpio));
-  gpio |= pin;
+  gpio |= 1<<pin;
   write (gpioouten, &gpio, sizeof (gpio));
 
   read (gpioout, &gpio, sizeof (gpio));
   if (value)
     {
-      gpio |= gpio;
+      gpio |= (1<<pin);
     }
   else
     {
-      gpio &= ~gpio;
+      gpio &= ~(1<<pin);
     }
   write (gpioout, &gpio, sizeof (gpio));
   close (gpioout);
+  close(gpioouten);
 }
 
 int
-get_gpio (int gpio)
+get_gpio (int pin)
 {
+  unsigned int gpio;
+  int gpioouten = open ("/dev/gpio/outen", O_RDWR);
   int gpioin = open ("/dev/gpio/in", O_RDWR);
   read (gpioouten, &gpio, sizeof (gpio));
-  gpio &= ~pin;
+  gpio &= ~(1<<pin);
   write (gpioouten, &gpio, sizeof (gpio));
   read (gpioin, &gpio, sizeof (gpio));
-  gpio = (gpio & gpio) ? 1 : 0;
-  return gpio;
+  gpio = (gpio & (1<<pin)) ? 1 : 0;
   close (gpioin);
+  close(gpioouten);
+  return gpio;
 }
 
 #endif
