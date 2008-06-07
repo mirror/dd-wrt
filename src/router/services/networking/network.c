@@ -744,7 +744,7 @@ do_portsetup (char *lan, char *ifname)
 
 //#endif
 
-#define PORTSETUPWAN(a) if (nvram_get ("wan_ifname2") != NULL) \
+#define PORTSETUPWAN(a) if (strlen(nvram_safe_get ("wan_ifname2"))>0) \
 	    { \
 	      nvram_set ("wan_ifname", nvram_safe_get ("wan_ifname2")); \
 	      nvram_set ("wan_ifnames", nvram_safe_get ("wan_ifname2"));\
