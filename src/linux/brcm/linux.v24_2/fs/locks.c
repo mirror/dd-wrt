@@ -1477,9 +1477,10 @@ out:
 /* Apply the lock described by l to an open file descriptor.
  * This implements both the F_SETLK and F_SETLKW commands of fcntl().
  */
-int fcntl_setlk(unsigned int fd, unsigned int cmd, struct flock *l)
+int fcntl_setlk(unsigned int fd, struct file *filp, unsigned int cmd,
+		struct flock *l)
 {
-	struct file *filp;
+	struct file *f;
 	struct file_lock *file_lock = locks_alloc_lock();
 	struct flock flock;
 	struct inode *inode;
@@ -1498,11 +1499,6 @@ int fcntl_setlk(unsigned int fd, unsigned int cmd, struct flock *l)
 	/* Get arguments and validate them ...
 	 */
 
-	error = -EBADF;
-	filp = fget(fd);
-	if (!filp)
-		goto out;
-
 	error = -EINVAL;
 	inode = filp->f_dentry->d_inode;
 
@@ -1515,23 +1511,23 @@ int fcntl_setlk(unsigned int fd, unsigned int cmd, struct flock *l)
 
 		if (mapping->i_mmap_shared != NULL) {
 			error = -EAGAIN;
-			goto out_putf;
+			goto out;
 		}
 	}
 
 	error = flock_to_posix_lock(filp, file_lock, &flock);
 	if (error)
-		goto out_putf;
+		goto out;
 	
 	error = -EBADF;
 	switch (flock.l_type) {
 	case F_RDLCK:
 		if (!(filp->f_mode & FMODE_READ))
-			goto out_putf;
+			goto out;
 		break;
 	case F_WRLCK:
 		if (!(filp->f_mode & FMODE_WRITE))
-			goto out_putf;
+			goto out;
 		break;
 	case F_UNLCK:
 		break;
@@ -1549,23 +1545,29 @@ int fcntl_setlk(unsigned int fd, unsigned int cmd, struct flock *l)
 	}
 }
 		if (!(filp->f_mode & 3))
-			goto out_putf;
+			goto out;
 		break;
 #endif
 	default:
 		error = -EINVAL;
-		goto out_putf;
+		goto out;
 	}
 
+do_it:
 	if (filp->f_op && filp->f_op->lock != NULL) {
 		error = filp->f_op->lock(filp, cmd, file_lock);
 		if (error < 0)
-			goto out_putf;
+			goto out;
 	}
 	error = posix_lock_file(filp, file_lock, cmd == F_SETLKW);
-
-out_putf:
-	fput(filp);
+	read_lock(&current->files->file_lock);
+	f = fcheck(fd);
+	read_unlock(&current->files->file_lock);
+	/* lost race with close, kill stuck lock if close didn't get it */
+	if (!error && flock.l_type != F_UNLCK && filp != f) {
+		file_lock->fl_type = F_UNLCK;
+		goto do_it;
+	}
 out:
 	locks_free_lock(file_lock);
 	return error;
@@ -1633,9 +1635,10 @@ out:
 /* Apply the lock described by l to an open file descriptor.
  * This implements both the F_SETLK and F_SETLKW commands of fcntl().
  */
-int fcntl_setlk64(unsigned int fd, unsigned int cmd, struct flock64 *l)
+int fcntl_setlk64(unsigned int fd, struct file *filp, unsigned int cmd,
+		struct flock64 *l)
 {
-	struct file *filp;
+	struct file *f;
 	struct file_lock *file_lock = locks_alloc_lock();
 	struct flock64 flock;
 	struct inode *inode;
@@ -1654,11 +1657,6 @@ int fcntl_setlk64(unsigned int fd, unsigned int cmd, struct flock64 *l)
 	/* Get arguments and validate them ...
 	 */
 
-	error = -EBADF;
-	filp = fget(fd);
-	if (!filp)
-		goto out;
-
 	error = -EINVAL;
 	inode = filp->f_dentry->d_inode;
 
@@ -1671,23 +1669,23 @@ int fcntl_setlk64(unsigned int fd, unsigned int cmd, struct flock64 *l)
 
 		if (mapping->i_mmap_shared != NULL) {
 			error = -EAGAIN;
-			goto out_putf;
+			goto out;
 		}
 	}
 
 	error = flock64_to_posix_lock(filp, file_lock, &flock);
 	if (error)
-		goto out_putf;
+		goto out;
 	
 	error = -EBADF;
 	switch (flock.l_type) {
 	case F_RDLCK:
 		if (!(filp->f_mode & FMODE_READ))
-			goto out_putf;
+			goto out;
 		break;
 	case F_WRLCK:
 		if (!(filp->f_mode & FMODE_WRITE))
-			goto out_putf;
+			goto out;
 		break;
 	case F_UNLCK:
 		break;
@@ -1695,18 +1693,24 @@ int fcntl_setlk64(unsigned int fd, unsigned int cmd, struct flock64 *l)
 	case F_EXLCK:
 	default:
 		error = -EINVAL;
-		goto out_putf;
+		goto out;
 	}
 
+do_it:
 	if (filp->f_op && filp->f_op->lock != NULL) {
 		error = filp->f_op->lock(filp, cmd, file_lock);
 		if (error < 0)
-			goto out_putf;
+			goto out;
 	}
 	error = posix_lock_file(filp, file_lock, cmd == F_SETLKW64);
-
-out_putf:
-	fput(filp);
+	read_lock(&current->files->file_lock);
+	f = fcheck(fd);
+	read_unlock(&current->files->file_lock);
+	/* lost race with close, kill stuck lock if close didn't get it */
+	if (!error && flock.l_type != F_UNLCK && filp != f) {
+		file_lock->fl_type = F_UNLCK;
+		goto do_it;
+	}
 out:
 	locks_free_lock(file_lock);
 	return error;

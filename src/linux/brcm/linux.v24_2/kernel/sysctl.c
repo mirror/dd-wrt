@@ -317,6 +317,8 @@ static ctl_table vm_table[] = {
 	 &laptop_mode, sizeof(int), 0644, NULL, &proc_dointvec},
 	{VM_BLOCK_DUMP, "block_dump",
 	 &block_dump, sizeof(int), 0644, NULL, &proc_dointvec},
+	{VM_MMAP_MIN_ADDR, "mmap_min_addr",
+	 &mmap_min_addr, sizeof(unsigned long), 0644, NULL, &proc_doulongvec_minmax},
 	{0}
 };
 

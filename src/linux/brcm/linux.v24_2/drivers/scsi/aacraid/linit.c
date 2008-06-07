@@ -683,6 +683,8 @@ static int aac_cfg_release(struct inode * inode, struct file * file )
 static int aac_cfg_ioctl(struct inode * inode,  struct file * file, unsigned int cmd, unsigned long arg )
 {
 	struct aac_dev *dev = aac_devices[MINOR(inode->i_rdev)];
+	if (!capable(CAP_SYS_ADMIN))
+		return -EPERM;
 	return aac_do_ioctl(dev, cmd, (void *)arg);
 }
 
