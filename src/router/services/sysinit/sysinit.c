@@ -271,6 +271,7 @@ start_restore_defaults (void)
      0},
     {"wan_ifname2", "ixp1", 0},
     {"wan_ifname", "ixp1", 0},
+    {"wan_default", "ixp1", 0},
     {"wan_ifnames", "ixp1", 0},
     {0, 0, 0}
   };
@@ -308,7 +309,9 @@ start_restore_defaults (void)
      "ixp0.1 ixp0.2 ath0 ath1",
      0},
     {"wan_ifname", "ixp1", 0},
+    {"wan_ifname2", "ixp1", 0},
     {"wan_ifnames", "ixp1", 0},
+    {"wan_default", "ixp1", 0},
     {0, 0, 0}
   };
 #elif HAVE_MAGICBOX
@@ -317,7 +320,9 @@ start_restore_defaults (void)
     {"lan_ifnames", "eth1 ath0",
      0},
     {"wan_ifname", "eth0", 0},
+    {"wan_ifname2", "eth0", 0},
     {"wan_ifnames", "eth0", 0},
+    {"wan_default", "eth0", 0},
     {0, 0, 0}
   };
 #elif HAVE_FONERA
@@ -325,6 +330,8 @@ start_restore_defaults (void)
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "vlan0 ath0", 0},
     {"wan_ifname", "", 0},
+    {"wan_ifname2", "", 0},
+    {"wan_default", "", 0},
     {"wan_ifnames", "eth0 vlan1", 0},
     {0, 0, 0}
   };
@@ -333,7 +340,9 @@ start_restore_defaults (void)
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "vlan2 ath0", 0},
     {"wan_ifname", "vlan0", 0},
+    {"wan_ifname2", "vlan0", 0},
     {"wan_ifnames", "vlan0", 0},
+    {"wan_default", "vlan0", 0},
     {0, 0, 0}
   };
 #elif HAVE_LSX
@@ -341,7 +350,9 @@ start_restore_defaults (void)
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "eth0 ath0", 0},
     {"wan_ifname", "", 0},
+    {"wan_ifname2", "", 0},
     {"wan_ifnames", "", 0},
+    {"wan_default", "", 0},
     {0, 0, 0}
   };
 #elif HAVE_LS5
@@ -349,31 +360,39 @@ start_restore_defaults (void)
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "ath0", 0},
     {"wan_ifname", "eth0", 0},
+    {"wan_ifname2", "eth0", 0},
     {"wan_ifnames", "eth0", 0},
+    {"wan_default", "eth0", 0},
     {0, 0, 0}
   };
 #elif HAVE_WHRAG108
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "eth0 ath0 ath1", 0},
+    {"wan_ifname2", "eth1", 0},
     {"wan_ifname", "eth1", 0},
     {"wan_ifnames", "eth1", 0},
+    {"wan_default", "eth1", 0},
     {0, 0, 0}
   };
 #elif HAVE_PB42
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "eth1 ath0 ath1", 0},
+    {"wan_ifname2", "eth0", 0},
     {"wan_ifname", "eth0", 0},
     {"wan_ifnames", "eth0", 0},
+    {"wan_default", "eth0", 0},
     {0, 0, 0}
   };
 #elif HAVE_TW6600
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "ath0 ath1", 0},
+    {"wan_ifname2", "eth0", 0},
     {"wan_ifname", "eth0", 0},
     {"wan_ifnames", "eth0", 0},
+    {"wan_default", "eth0", 0},
     {0, 0, 0}
   };
 #elif HAVE_CA8
@@ -381,7 +400,9 @@ start_restore_defaults (void)
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "ath0", 0},
     {"wan_ifname", "eth0", 0},
+    {"wan_ifname2", "eth0", 0},
     {"wan_ifnames", "eth0", 0},
+    {"wan_default", "eth0", 0},
     {0, 0, 0}
   };
 #else
@@ -389,6 +410,7 @@ start_restore_defaults (void)
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "eth0 eth2 eth3 eth4", 0},
     {"wan_ifname", "eth1", 0},
+    {"wan_ifname2", "eth1", 0},
     {"wan_ifnames", "eth1", 0},
     {"wan_default", "eth1", 0},
     {0, 0, 0}
@@ -397,6 +419,7 @@ start_restore_defaults (void)
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "vlan0 eth1 eth2 eth3", 0},
     {"wan_ifname", "vlan1", 0},
+    {"wan_ifname2", "vlan1", 0},
     {"wan_ifnames", "vlan1", 0},
     {"wan_default", "vlan1", 0},
     {0, 0, 0}
@@ -406,6 +429,7 @@ start_restore_defaults (void)
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "vlan1 eth0", 0},
     {"wan_ifname", "vlan2", 0},
+    {"wan_ifname2", "vlan2", 0},
     {"wan_ifnames", "vlan2", 0},
     {"wan_default", "vlan2", 0},
     {0, 0, 0}
@@ -415,6 +439,7 @@ start_restore_defaults (void)
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "vlan0 eth0", 0},
     {"wan_ifname", "vlan1", 0},
+    {"wan_ifname2", "vlan1", 0},
     {"wan_ifnames", "vlan1", 0},
     {"wan_default", "vlan1", 0},
     {0, 0, 0}
@@ -424,6 +449,7 @@ start_restore_defaults (void)
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "vlan0 eth0 eth1", 0},
     {"wan_ifname", "vlan2", 0},
+    {"wan_ifname2", "vlan2", 0},
     {"wan_ifnames", "vlan2", 0},
     {"wan_default", "vlan2", 0},
     {0, 0, 0}
@@ -433,6 +459,7 @@ start_restore_defaults (void)
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "vlan1 eth0 eth1", 0},
     {"wan_ifname", "vlan2", 0},
+    {"wan_ifname2", "vlan2", 0},
     {"wan_ifnames", "vlan2", 0},
     {"wan_default", "vlan2", 0},
     {0, 0, 0}
@@ -442,6 +469,7 @@ start_restore_defaults (void)
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "vlan2 eth0", 0},
     {"wan_ifname", "vlan1", 0},
+    {"wan_ifname2", "vlan1", 0},
     {"wan_ifnames", "vlan1", 0},
     {"wan_default", "vlan1", 0},
     {0, 0, 0}
@@ -451,6 +479,7 @@ start_restore_defaults (void)
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "eth1 eth2", 0},
     {"wan_ifname", "eth0", 0},
+    {"wan_ifname2", "eth0", 0},
     {"wan_ifnames", "eth0", 0},
     {"wan_default", "eth0", 0},
     {0, 0, 0}
@@ -460,6 +489,7 @@ start_restore_defaults (void)
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "eth0 eth1", 0},
     {"wan_ifname", "eth2", 0},
+    {"wan_ifname2", "eth2", 0},
     {"wan_ifnames", "eth2", 0},
     {"wan_default", "eth2", 0},
     {0, 0, 0}
