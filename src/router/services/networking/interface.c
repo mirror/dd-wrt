@@ -344,7 +344,7 @@ if (nvram_match ("wan_vdsl", "1") && !nvram_match("fromvdsl","1"))
 		  }
 
 
-		sprintf ((char *) &portsettings[tmp][0], "%s\t%d",
+		sprintf ((char *) &portsettings[tmp][0], "%s %d",
 			 (char *) &portsettings[tmp][0], use);
 	      }
 	    else
