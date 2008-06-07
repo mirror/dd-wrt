@@ -5501,7 +5501,7 @@ ej_dumparptable (webs_t wp, int argc, char_t ** argv)
 	  if ((strlen (mac) != 17)
 	      || (strcmp (mac, "00:00:00:00:00:00") == 0))
 	    continue;
-	  if (strcmp (landev, nvram_get ("wan_iface")) == 0)
+	  if (strcmp (landev, nvram_safe_get ("wan_iface")) == 0)
 	    continue;		//skip all but LAN arp entries
 	  strcpy (hostname, "*");	//set name to *
 
