@@ -350,9 +350,11 @@ if (nvram_match ("wan_vdsl", "1") && !nvram_match("fromvdsl","1"))
 	      }
 	    else
 	      {
-		if (tmp == 16 && ast)
+		if (tmp == 16 && ast && use>4)
 		  strcat ((char *) &portsettings[lastvlan][0], "*");
-		if (tmp == 16 && !ast)
+		if (tmp == 16 && !ast && use>4)
+		  strcat ((char *) &portsettings[lastvlan][0], "t");
+		if (tmp == 16 && use<5)
 		  strcat ((char *) &portsettings[lastvlan][0], "t");
 		if (tmp == 17)
 		  mask |= 4;
@@ -427,6 +429,7 @@ if (nvram_match ("wan_vdsl", "1") && !nvram_match("fromvdsl","1"))
     }
   for (i = 0; i < 16; i++)
     {
+//      fprintf(stderr,"configure vlan ports to %s\n",portsettings[i]);
       sprintf (exec, "echo %s > /proc/switch/eth0/vlan/%d/ports",portsettings[i], i);
       system2 (exec);
     }
