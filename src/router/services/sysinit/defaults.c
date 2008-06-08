@@ -1246,10 +1246,6 @@ struct nvram_tuple srouter_defaults[] = {
   {"dnsmasq_enable", "1", 0},
 #endif
   {"dnsmasq_options", "", 0},
-  {"httpd_enable", "1", 0},
-#ifdef HAVE_HTTPS
-  {"httpsd_enable", "1", 0},
-#endif
 #ifdef HAVE_POWERNOC_WOAP54G
   {"loopback_enable", "0", 0},
 #else
