@@ -90,6 +90,8 @@ char eths[256];
 getIfLists(eths,256);
   foreach (word, eths, next)
   {
+  if (strcmp(word,nvram_safe_get("wan_ifname")))
+  {
   char var[32];
   sprintf (var, "%s_bridged", word);
   if (nvram_default_match (var, "1", "1"))
@@ -102,7 +104,7 @@ getIfLists(eths,256);
       ifconfig (word, IFUP, nvram_nget ("%s_ipaddr", word),
 		nvram_nget ("%s_netmask", word));
     }
-  
+  }
   }
 
   start_set_routes ();
