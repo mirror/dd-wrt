@@ -25,7 +25,7 @@ UTILS += epi_ttcp
 endif
 endif
 
-CFLAGS += -s $(COPTS) -I../shared -I$(SRCBASE)/include.v23 -I$(SRCBASE)/wl/exe -I$(LINUXDIR) -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS += -s $(COPTS) -I../shared -I$(SRCBASE)/include.bcm -I$(SRCBASE)/wl/exe -I$(LINUXDIR) -ffunction-sections -fdata-sections -Wl,--gc-sections
 LDFLAGS += -L../nvram -L../shared -lshared -lnvram -ffunction-sections -fdata-sections -Wl,--gc-sections
 vpath %.c $(SRCBASE)/tools/misc
 
@@ -59,6 +59,9 @@ ifeq ($(CONFIG_TW6600),y)
 UTILS += fischecksum
 endif
 ifeq ($(CONFIG_PB42),y)
+UTILS += fischecksum
+endif
+ifeq ($(CONFIG_LSX),y)
 UTILS += fischecksum
 endif
 ifeq ($(CONFIG_XSCALE),y)
