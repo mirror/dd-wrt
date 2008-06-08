@@ -171,6 +171,8 @@ extern void wan_proto (webs_t wp);
 extern void ej_show_wan_to_switch (webs_t wp, int argc, char_t ** argv);	/* Added by Botho 10.May.06 */
 extern void ej_show_countrylist (webs_t wp, int argc, char_t ** argv);
 
+void convert_wl_gmode (char *value,char *prefix);
+
 
 /* for status */
 extern int nvram_selmatch (webs_t wp, char *name, char *match);
