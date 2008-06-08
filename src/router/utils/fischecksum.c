@@ -152,6 +152,11 @@ int main (int argc, char** argv) {
     }  
   sprintf(op,"/dev/mtdblock/%d",dev);
   in=fopen(op,"rb");
+  if (in==NULL)
+  {
+  sprintf(op,"/dev/mtdblock%d",dev);
+  in=fopen(op,"rb");
+  }
   char *mem=(char*)malloc(esize);
   fread(mem,esize,1,in); 
   fclose(in);
@@ -171,7 +176,7 @@ int main (int argc, char** argv) {
     fprintf(stderr,"data_length %lX\n",fis->data_length);
     fprintf(stderr,"desc_cksum %lX\n",fis->desc_cksum);
     fprintf(stderr,"file_cksum %lX\n",fis->file_cksum);*/
-    if (!strcmp(fis->name,"linux") || !strncmp(fis->name,"vmlinux",7))
+    if (!strcmp(fis->name,"linux") || !strncmp(fis->name,"vmlinux",7) || !strcmp(fis->name,"kernel") || !strcmp(fis->name,"rootfs") )
 	{
 	lfis=fis;
 	if (fis->size!=fis->data_length)
