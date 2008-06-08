@@ -39,7 +39,12 @@ ifeq ($(CONFIG_UCLIBC),y)
 export PLATFORM := $(PLATFORM)-uclibc
 endif
 
+ifeq ($(CONFIG_BCM5354),y)
+export LINUXVER := 2.4.36
+else
 export LINUXVER := 2.4.35
+endif
+
 ifneq ($(CONFIG_MSSID),y)
 export LINUXDIR := $(SRCBASE)/linux/brcm/linux.v23
 endif
