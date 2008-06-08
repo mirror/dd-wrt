@@ -1197,7 +1197,7 @@ if (nvram_get("wan_default"))
 #else
       PORTSETUPWAN("eth0");
 #endif
-	}
+	
     }
   strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
   ioctl (s, SIOCGIFHWADDR, &ifr);
