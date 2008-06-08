@@ -168,14 +168,14 @@ int main (int argc, char** argv) {
   int flash=0;
   while (fis->name[0]!=0xff)
     {
-/*    fprintf(stderr,"==========[%s]===========\n",fis->name);
+    fprintf(stderr,"==========[%s]===========\n",fis->name);
     fprintf(stderr,"flash base %lX\n",fis->flash_base);
     fprintf(stderr,"mem base %lX\n",fis->mem_base);
     fprintf(stderr,"size %lX\n",fis->size);
     fprintf(stderr,"entry_point %lX\n",fis->entry_point);
     fprintf(stderr,"data_length %lX\n",fis->data_length);
     fprintf(stderr,"desc_cksum %lX\n",fis->desc_cksum);
-    fprintf(stderr,"file_cksum %lX\n",fis->file_cksum);*/
+    fprintf(stderr,"file_cksum %lX\n",fis->file_cksum);
     if (!strcmp(fis->name,"linux") || !strncmp(fis->name,"vmlinux",7) || !strcmp(fis->name,"kernel") || !strcmp(fis->name,"rootfs") )
 	{
 	lfis=fis;
