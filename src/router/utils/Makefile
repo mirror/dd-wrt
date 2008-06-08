@@ -43,10 +43,22 @@ endif
 ifeq ($(CONFIG_FONERA),y)
 UTILS += fischecksum
 endif
+ifeq ($(CONFIG_LS2),y)
+UTILS += fischecksum
+endif
+ifeq ($(CONFIG_LS5),y)
+UTILS += fischecksum
+endif
 ifeq ($(CONFIG_MERAKI),y)
 UTILS += fischecksum
 endif
 ifeq ($(CONFIG_WHRAG108),y)
+UTILS += fischecksum
+endif
+ifeq ($(CONFIG_TW6600),y)
+UTILS += fischecksum
+endif
+ifeq ($(CONFIG_PB42),y)
 UTILS += fischecksum
 endif
 ifeq ($(CONFIG_XSCALE),y)
