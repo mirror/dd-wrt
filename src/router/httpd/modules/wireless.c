@@ -2184,7 +2184,7 @@ convert_wl_gmode (char *value,char *prefix)
 }else*/
   {
 #ifndef HAVE_MSSID
-    if (nvram_nmatch ("wl_net_mode",prefix, value))
+    if (nvram_nmatch (value,"%s_net_mode",prefix))
       {
 	return;
       }
