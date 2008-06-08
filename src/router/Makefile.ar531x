@@ -102,7 +102,7 @@ ifeq ($(ARCH),mips)
 ifeq ($(ARCHITECTURE),pb42)
 export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
 else
-export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
+export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time -DHAVE_AR531X 
 endif
 endif
 ifeq ($(ARCH),powerpc)
@@ -163,7 +163,7 @@ kernel:
         # Also build kernel
 	# Also build kernel
 ifeq ($(CONFIG_CA8),y)
-	cp $(LINUXDIR)/.config_ca8 $(LINUXDIR)/.config
+	cp $(LINUXDIR)/.config_ca8pro $(LINUXDIR)/.config
 else
 ifeq ($(CONFIG_LS5),y)
 	cp $(LINUXDIR)/.config_ca8 $(LINUXDIR)/.config
@@ -180,14 +180,35 @@ endif
 endif
 endif
 endif
-ifeq ($(CONFIG_WRK54G),y)
-	cp $(LINUXDIR)/.config_micro_tw6660 $(LINUXDIR)/.config
+ifeq ($(CONFIG_CA8PRO),y)
+	cp $(LINUXDIR)/.config_ca8pro $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_FONERA2200),y)
-	cp $(LINUXDIR)/.config_generic_vlan $(LINUXDIR)/.config
+	cp $(LINUXDIR)/.config_generic_selfmap_vlan $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_DIR400),y)
 	cp $(LINUXDIR)/.config_dir400 $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_DIR300),y)
+	cp $(LINUXDIR)/.config_dir300 $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_LS2),y)
+	cp $(LINUXDIR)/.config_generic_selfmap $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_MERAKI),y)
+	cp $(LINUXDIR)/.config_generic_selfmap $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_MR3202A),y)
+	cp $(LINUXDIR)/.config_generic_selfmap $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_WRK54G),y)
+	cp $(LINUXDIR)/.config_micro_wrk $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_WHRAG108),y)
+	cp $(LINUXDIR)/.config_whr $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_USR5453),y)
+	cp $(LINUXDIR)/.config_usr5453 $(LINUXDIR)/.config
 endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
@@ -200,14 +221,19 @@ endif
 	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/whrag108/vmlinux.lzma
 	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/aw6600/vmlinux.lzma
 	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/ls5/vmlinux.lzma
+	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/ca8pro/vmlinux.lzma
 	make -C lzma-loader/whrag108 clean
 	make -C lzma-loader/whrag108 
 	make -C lzma-loader/aw6600 clean
 	make -C lzma-loader/aw6600 
 	make -C lzma-loader/ls5 clean
 	make -C lzma-loader/ls5 
+	make -C lzma-loader/ca8pro clean
+	make -C lzma-loader/ca8pro 
 	cp lzma-loader/whrag108/lzma.elf $(ARCH)-uclibc/lzma_vmlinux
 	$(ARCH)-linux-objcopy -O binary $(strip-flags) $(ARCH)-uclibc/lzma_vmlinux $(ARCH)-uclibc/lzma_vmlinus 
+	cp lzma-loader/ca8pro/lzma.elf $(ARCH)-uclibc/lzma_vmlinux
+	$(ARCH)-linux-objcopy -O binary $(strip-flags) $(ARCH)-uclibc/lzma_vmlinux $(ARCH)-uclibc/lzma_vmlinusca8pro 
 	cp lzma-loader/aw6600/lzma.elf $(ARCH)-uclibc/lzma_vmlinuxaw
 	$(ARCH)-linux-objcopy -O binary $(strip-flags) $(ARCH)-uclibc/lzma_vmlinuxaw $(ARCH)-uclibc/lzma_vmlinusaw 
 	cp lzma-loader/aw6600/lzma.elf $(ARCH)-uclibc/lzma_vmlinuxls5
@@ -403,10 +429,6 @@ ifeq ($(CONFIG_TW6600),y)
 else
 	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.bin.l7 bs=131072 conv=sync
 endif
-ifeq ($(CONFIG_WRK54G),y)
-	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.bin.l7 bs=65536 conv=sync
-	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/rootfs.wrk54g bs=1179648 conv=sync
-endif
 
 #	dd if=$(ARCH)-uclibc/vmlinux.gz of=$(ARCH)-uclibc/vmlinux.bin.gz bs=65536 conv=sync
 ifeq ($(CONFIG_GLAUCO),y)
@@ -422,6 +444,31 @@ ifeq ($(CONFIG_DIR400),y)
 	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.dir400 bs=65536 conv=sync
 	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.dir400
 endif
+ifeq ($(CONFIG_MERAKI),y)
+	dd if=$(ARCH)-uclibc/lzma_vmlinus of=$(ARCH)-uclibc/lzma_vmlinus.meraki bs=65536 conv=sync
+	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/lzma_vmlinus.meraki
+endif
+ifeq ($(CONFIG_DIR300),y)
+	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.dir300 bs=65536 conv=sync
+	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.dir300
+endif
+ifeq ($(CONFIG_LS2),y)
+	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.ls2 bs=65536 conv=sync
+	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.ls2
+endif
+ifeq ($(CONFIG_WRK54G),y)
+	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.wrk bs=65536 conv=sync
+	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.wrk
+endif
+ifeq ($(CONFIG_MR3202A),y)
+	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.mr3202a bs=65536 conv=sync
+	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.mr3202a
+endif
+ifeq ($(CONFIG_FONERA2200),y)
+	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.fonera bs=65536 conv=sync
+	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.fonera
+endif
+
 ifeq ($(CONFIG_WHRAG108),y)
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.whr bs=2752512 conv=sync
 	./tools/trx_n -o $(ARCH)-uclibc/whrag108-firmware.bin $(ARCH)-uclibc/root.whr $(ARCH)-uclibc/lzma_vmlinus
@@ -430,30 +477,59 @@ ifeq ($(CONFIG_TW6600),y)
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.whr bs=2752512 conv=sync
 	./tools/trx_n -o $(ARCH)-uclibc/whrag108-firmware.bin $(ARCH)-uclibc/root.whr $(ARCH)-uclibc/lzma_vmlinusaw
 endif
-ifeq ($(CONFIG_CA8),y)
-	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.ca8 bs=2752512 conv=sync
-	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/ca8-firmware.bin $(ARCH)-uclibc/root.ca8 $(ARCH)-uclibc/lzma_vmlinus
-endif
 ifeq ($(CONFIG_USR5453),y)
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.usr bs=6815744 conv=sync
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/usr5453-firmware.bin $(ARCH)-uclibc/root.usr $(ARCH)-uclibc/lzma_vmlinus
+else
+ifeq ($(CONFIG_CA8),y)
+	dd if=$(ARCH)-uclibc/lzma_vmlinusca8pro of=$(ARCH)-uclibc/lzma_vmlinusca8pro.fix bs=65536 conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/lzma_vmlinusca8pro.fix
+	./tools/ca8pro/gen_gzimage_ca8 -o $(ARCH)-uclibc/zImage -k $(ARCH)-uclibc/lzma_vmlinusca8pro.fix
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/ca8-firmware.bin $(ARCH)-uclibc/lzma_vmlinusca8pro.fix
+endif
+endif
+ifeq ($(CONFIG_CA8PRO),y)
+	dd if=$(ARCH)-uclibc/lzma_vmlinusca8pro of=$(ARCH)-uclibc/lzma_vmlinusca8pro.fix bs=65536 conv=sync
+	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/lzma_vmlinusca8pro.fix
+	./tools/ca8pro/gen_gzimage -o $(ARCH)-uclibc/zImage -k $(ARCH)-uclibc/lzma_vmlinusca8pro.fix
+	./tools/ca8pro/gen_gzimage_client -o $(ARCH)-uclibc/zImageclient -k $(ARCH)-uclibc/lzma_vmlinusca8pro.fix
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/ca8pro-firmware.bin $(ARCH)-uclibc/lzma_vmlinusca8pro.fix
+#	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.ca8 bs=2752512 conv=sync
+#	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/ca8-firmware.bin $(ARCH)-uclibc/root.ca8 $(ARCH)-uclibc/lzma_vmlinus
 endif
 ifeq ($(CONFIG_LS5),y)
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.ls5 bs=2883584 conv=sync
 	./tools/trx_n -o $(ARCH)-uclibc/ls5-firmware.bin $(ARCH)-uclibc/root.ls5 $(ARCH)-uclibc/vmlinux.lzma
 endif
 ifeq ($(CONFIG_WRK54G),y)
-	./tools/trx_n -o $(ARCH)-uclibc/wrk54g-firmware.bin $(ARCH)-uclibc/rootfs.wrk54g $(ARCH)-uclibc/vmlinux.bin.l7
+	./tools/trx_n -o $(ARCH)-uclibc/wrk54g-firmware.bin $(ARCH)-uclibc/vmlinux.wrk
 endif
 ifeq ($(CONFIG_MERAKI),y)
-	./tools/trx_n -o $(ARCH)-uclibc/meraki-firmware.bin $(ARCH)-uclibc/root.aligned $(ARCH)-uclibc/lzma_vmlinus
+	./tools/trx_n -o $(ARCH)-uclibc/meraki-firmware.bin $(ARCH)-uclibc/lzma_vmlinus.meraki
 endif
 ifeq ($(CONFIG_DIR400),y)
 	./tools/trx_n -o $(ARCH)-uclibc/dir400-firmware.bin $(ARCH)-uclibc/vmlinux.dir400
 endif
+ifeq ($(CONFIG_DIR300),y)
+	./tools/trx_n -o $(ARCH)-uclibc/dir300-firmware.bin $(ARCH)-uclibc/vmlinux.dir300
+endif
+ifeq ($(CONFIG_LS2),y)
+	./tools/trx_n -o $(ARCH)-uclibc/ls2-firmware.bin $(ARCH)-uclibc/vmlinux.ls2
+endif
+ifeq ($(CONFIG_MR3202A),y)
+	./tools/trx_n -o $(ARCH)-uclibc/mr3202a-firmware.bin $(ARCH)-uclibc/vmlinux.mr3202a
+endif
+ifeq ($(CONFIG_FONERA2200),y)
+	./tools/trx_n -o $(ARCH)-uclibc/fonera-firmware.bin -m 100000000 $(ARCH)-uclibc/vmlinux.fonera
+else
 	./tools/trx_n -o $(ARCH)-uclibc/fonera-firmware.bin -m 100000000 $(ARCH)-uclibc/root.aligned $(ARCH)-uclibc/vmlinux.lzma 
+endif
 	tools/ubnt/src/mkfwimage -v LS2.ar2316.DD-WRT -o mips-uclibc/LS2.dd-wrt.bin -i tools/ubnt/ls2-ddwrt.txt
+	tools/ubnt/src/mkfwimage -v NS2.ar2316.DD-WRT -o mips-uclibc/NS2.dd-wrt.bin -i tools/ubnt/ls2-ddwrt.txt
+	tools/ubnt/src/mkfwimage -v PS2.ar2316.DD-WRT -o mips-uclibc/PS2.dd-wrt.bin -i tools/ubnt/ls2-ddwrt.txt
 	tools/ubnt/src/mkfwimage -v LS5.ar2313.DD-WRT -o mips-uclibc/LS5.dd-wrt.bin -i tools/ubnt/ls5-ddwrt.txt
+	tools/ubnt/src/mkfwimage -v PS5.ar2313.DD-WRT -o mips-uclibc/PS5.dd-wrt.bin -i tools/ubnt/ls5-ddwrt.txt
+	tools/ubnt/src/mkfwimage -v NS5.ar2313.DD-WRT -o mips-uclibc/NS5.dd-wrt.bin -i tools/ubnt/ls5-ddwrt.txt
 include rules/all.mk
 
 .PHONY: all clean distclean mrproper install package
