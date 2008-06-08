@@ -53,8 +53,6 @@
  "dns_dnsmasq"  "Use DNSMasq for DNS"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"  
  "auth_dnsmaq"  "DHCP-Authoritative"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"  
  "dnsmasq_options"  "DNS Masq"  "NULL"  "TRUE" "0"  
- "httpd_enable"  "Httpd"  "CHOICE" "2" "0"  "1"  "FALSE" "0"  
- "httpsd_enable"  "Httpsd"  "CHOICE" "2" "0"  "1"  "FALSE" "0"  
  "loopback_enable"  "Loopback"  "CHOICE" "2" "0"  "1"  "FALSE" "0"  
  "local_dns"  "Local DNS"  "CHOICE" "2" "0"  "1"  "FALSE" "0"  
  "nas_enable"  "NAS"  "CHOICE" "2" "0"  "1"  "FALSE" "0"  
