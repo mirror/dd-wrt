@@ -426,16 +426,6 @@ wlconf_auto_chanspec(char *name,char *prefix)
 		}
 	}
 
-	printf("interface %s: chanspec selected %04x %d\n", name, chosen,chanspec_asus);
-	 //2006_05_29_Roly
-        //handle channel is auto and bw is 40MHz
-        if((chanspec_asus=atoi(nvram_default_get(strcat_r(prefix,"nbw",tmp),"40")))==40)
-        chosen=0x2d08;//channel 8 40MHz(lower)
-        if((chanspec_asus=atoi(nvram_safe_get(strcat_r(prefix,"nbw",tmp))))==20)
-    	chosen = (chosen&0xfbff);//20MHz
-
-	printf("interface %s: chanspec selected %04x %d\n", name, chosen,chanspec_asus);
-
 	WLCONF_DBG("interface %s: chanspec selected %04x\n", name, chosen);
 	return chosen;
 }
@@ -1108,7 +1098,10 @@ cprintf("set channel %s\n",name);
 		channel = val;
 		/* Get BW */
 		val = atoi(nvram_safe_get(strcat_r(prefix, "nbw", tmp)));
-
+		if (nvram_match(strcat_r(prefix, "net_mode", tmp),"b-only") ||  nvram_match(strcat_r(prefix, "net_mode", tmp),"g-only") || nvram_match(strcat_r(prefix, "net_mode", tmp),"a-only") ||  nvram_match(strcat_r(prefix, "net_mode", tmp),"bg-mixed"));
+			val = 20;
+		
+		fprintf(stderr,"channel %d, val %d\n",channel,val);
 		switch (val) {
 		case 40:
 			val = WL_CHANSPEC_BW_40;
@@ -1140,10 +1133,10 @@ cprintf("set channel %s\n",name);
 		}
 
 		/* band | BW | CTRL SB | Channel */
-//		fprintf(stderr,"%X, %X, %X\n",nbw,nctrlsb,channel);
+		fprintf(stderr,"%X, %X, %X\n",nbw,nctrlsb,channel);
 		chanspec |= ((bandtype << WL_CHANSPEC_BAND_SHIFT) |
 		             (nbw | nctrlsb | channel));
-//		fprintf(stderr,"spec %X\n",chanspec);
+		fprintf(stderr,"spec %X\n",chanspec);
 
 		WL_IOVAR_SETINT(name, "chanspec", (uint32)chanspec);
 	}
