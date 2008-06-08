@@ -338,10 +338,13 @@ if (nvram_match ("wan_vdsl", "1") && !nvram_match("fromvdsl","1"))
 		    eval ("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		    eval ("vconfig", "add", "eth0", buff);
 		    snprintf (buff, 9, "vlan%d", tmp);
+		    if (strcmp(nvram_safe_get("wan_ifname"),buff))
+		    {
 		    if (strlen(nvram_nget("%s_ipaddr",buff))>0)
 			eval ("ifconfig", buff, nvram_nget("%s_ipaddr",buff),"netmask",nvram_nget("%s_netmask",buff), "up");
 			    else
 			eval ("ifconfig", buff, "0.0.0.0", "up");
+		    }
 		  }
 
 
