@@ -2138,7 +2138,7 @@ validate_wl_gmode (webs_t wp, char *value, struct variable *v)
    Afterburner bizarre settings maintained for "speedbooster" mode */
 
 void
-convert_wl_gmode (char *value)
+convert_wl_gmode (char *value,char *prefix)
 {
 /*if (nvram_match("wl_mode","ap"))
 {
@@ -2184,88 +2184,88 @@ convert_wl_gmode (char *value)
 }else*/
   {
 #ifndef HAVE_MSSID
-    if (nvram_match ("wl_net_mode", value))
+    if (nvram_nmatch ("wl_net_mode",prefix, value))
       {
 	return;
       }
 #endif
     if (!strcmp (value, "disabled"))
       {
-	nvram_set ("wl_net_mode", value);
-	nvram_set ("wl_gmode", "-1");
+	nvram_nset (value,"%s_net_mode", prefix);
+	nvram_nset ("-1","%s_gmode", prefix);
 #ifdef HAVE_MSSID
-	nvram_set ("wl_nmode", "-1");
+	nvram_nset ("-1","%s_nmode", prefix);
 #endif
-	nvram_set ("wl_nreqd", "0");
+	nvram_nset ("0","%s_nreqd", prefix);
       }
     else if (!strcmp (value, "mixed"))
       {
-	nvram_set ("wl_net_mode", value);
+	nvram_nset (value,"wl_net_mode", prefix);
 #ifdef HAVE_MSSID
-	nvram_set ("wl_gmode", "1");
-	nvram_set ("wl_nmode", "-1");
+	nvram_nset ("1","%s_gmode", prefix);
+	nvram_nset ("-1","%s_nmode",prefix );
 #else
-	nvram_set ("wl_gmode", "6");
+	nvram_nset ("6","%s_gmode", prefix);
 #endif
-	nvram_set ("wl_afterburner", "auto");
-	nvram_set ("wl_rateset", "default");
-	nvram_set ("wl_frameburst", "on");
-	nvram_set ("wl_phytype", "g");
-	nvram_set ("wl_nreqd", "0");
+	nvram_nset ("auto","%s_afterburner", prefix);
+	nvram_nset ("default","%s_rateset", prefix);
+	nvram_nset ("on","%s_frameburst", prefix);
+	nvram_nset ("g","%s_phytype", prefix);
+	nvram_nset ("0","%s_nreqd", prefix);
       }
 #ifdef HAVE_MSSID
     else if (!strcmp (value, "bg-mixed"))
       {
-	nvram_set ("wl_net_mode", value);
-	nvram_set ("wl_gmode", "1");
-	nvram_set ("wl_afterburner", "auto");
-	nvram_set ("wl_rateset", "default");
-	nvram_set ("wl_frameburst", "on");
-	nvram_set ("wl_nmode", "0");
-	nvram_set ("wl_phytype", "g");
-	nvram_set ("wl_nreqd", "0");
+	nvram_nset (value,"%s_net_mode", prefix);
+	nvram_nset ("1","%s_gmode", prefix);
+	nvram_nset ("auto","%s_afterburner", prefix);
+	nvram_nset ("default","%s_rateset", prefix);
+	nvram_nset ("on","%s_frameburst", prefix);
+	nvram_nset ("0","%s_nmode", prefix);
+	nvram_nset ("g","%s_phytype",prefix);
+	nvram_nset ("0","%s_nreqd", prefix);
       }
 #endif
     else if (!strcmp (value, "g-only"))
       {
-	nvram_set ("wl_net_mode", value);
+	nvram_nset (value,"wl_net_mode", prefix);
 #ifdef HAVE_MSSID
-	nvram_set ("wl_nmode", "0");
+	nvram_nset ("0","wl_nmode", prefix);
 #endif
-	nvram_set ("wl_gmode", "2");
-	nvram_set ("wl_phytype", "g");
-	nvram_set ("wl_nreqd", "0");
+	nvram_nset ("2","wl_gmode", prefix);
+	nvram_nset ("g","wl_phytype", prefix);
+	nvram_nset ("0","wl_nreqd", prefix);
 
       }
     else if (!strcmp (value, "b-only"))
       {
-	nvram_set ("wl_net_mode", value);
-	nvram_set ("wl_gmode", "0");
+	nvram_nset (value,"%s_net_mode", prefix);
+	nvram_nset ("0","%s_gmode", prefix);
 #ifdef HAVE_MSSID
-	nvram_set ("wl_nmode", "0");
+	nvram_nset ("0","%s_nmode", prefix);
 #endif
-	nvram_set ("wl_afterburner", "off");
-	nvram_set ("wl_rateset", "default");
-	nvram_set ("wl_frameburst", "on");
-	nvram_set ("wl_phytype", "g");
-	nvram_set ("wl_nreqd", "0");
+	nvram_nset ("off","%s_afterburner", prefix);
+	nvram_nset ("default","%s_rateset", prefix);
+	nvram_nset ("on","%s_frameburst", prefix);
+	nvram_nset ("g","%s_phytype",prefix);
+	nvram_nset ("0","%s_nreqd", prefix);
       }
 #ifdef HAVE_MSSID
     else if (!strcmp (value, "n-only"))
       {
-	nvram_set ("wl_net_mode", value);
-	nvram_set ("wl_gmode", "1");
-	nvram_set ("wl_nmode", "2");
-	nvram_set ("wl_nreqd", "1");
-	nvram_set ("wl_afterburner", "off");	// From 3.61.13.0
-	nvram_set ("wl_phytype", "n");
+	nvram_nset (value,"%s_net_mode", prefix);
+	nvram_nset ("1","%s_gmode", prefix);
+	nvram_nset ("2","%s_nmode", prefix);
+	nvram_nset ("1","%s_nreqd", prefix);
+	nvram_nset ("off","%s_afterburner", prefix);	// From 3.61.13.0
+	nvram_nset ("n","%s_phytype", prefix);
       }
 #endif
     else if (!strcmp (value, "a-only"))
       {
-	nvram_set ("wl_net_mode", value);
-	nvram_set ("wl_phytype", "a");
-	nvram_set ("wl_nreqd", "0");
+	nvram_nset (value,"%s_net_mode", prefix);
+	nvram_nset ("a","%s_phytype", prefix);
+	nvram_nset ("0","%s_nreqd", prefix);
       }
   }
 }
@@ -2277,7 +2277,7 @@ validate_wl_net_mode (webs_t wp, char *value, struct variable *v)
   if (!valid_choice (wp, value, v))
     return;
 
-  convert_wl_gmode (value);
+  convert_wl_gmode (value,"wl");
 
   nvram_set (v->name, value);
 }

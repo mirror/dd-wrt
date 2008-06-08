@@ -4197,12 +4197,14 @@ save_prefix (webs_t wp, char *prefix)
   int cbwchanged = 0;
   sprintf (n, "%s_ssid", prefix);
   copytonv (wp, n);
-  if (!strcmp (prefix, "wl0"))
+  if (!strcmp (prefix, "wl0") || !strcmp (prefix, "wl1"))
     {
       char *wl = websGetVar (wp, n, NULL);
       cprintf ("copy value %s which is [%s] to nvram\n", n, wl);
-      if (wl)
+      if (wl && !strcmp (prefix, "wl0"))
 	nvram_set ("wl_ssid", wl);
+      else
+	nvram_set ("wl1_ssid", wl);
     }
   sprintf (n, "%s_distance", prefix);
   copytonv (wp, n);
@@ -4354,23 +4356,22 @@ char *ifname = "wl0";
   copytonv (wp, n);
   sprintf (n, "%s_mode", prefix);
   copytonv (wp, n);
-  if (!strcmp (prefix, "wl0"))
+  if (!strcmp (prefix, "wl0") || !strcmp (prefix, "wl1"))
     {
       char *wl = websGetVar (wp, n, NULL);
       cprintf ("copy value %s which is [%s] to nvram\n", n, wl);
-      if (wl)
+      if (wl && !strcmp (prefix, "wl0"))
 	nvram_set ("wl_mode", wl);
 #ifndef HAVE_MADWIFI
-      if (strcmp (wl, "ap") && strcmp (wl, "apsta")
-	  && strcmp (wl, "apstawet"))
+      if (strcmp (wl, "ap") && strcmp (wl, "apsta") && strcmp (wl, "apstawet"))
 	{
-	  nvram_set ("wl0_vifs", "");
+	  nvram_nset ("","%s_vifs", prefix);
 	}
 #endif
     }
   int chanchanged = 0;
 #ifndef HAVE_MADWIFI
-  if (!strcmp (prefix, "wl0"))
+  if (!strcmp (prefix, "wl0") || !strcmp (prefix, "wl1"))
 #endif
     {
 
@@ -4379,9 +4380,10 @@ char *ifname = "wl0";
 	{
 	  chanchanged = 1;
 	  copytonv (wp, n);
-//#ifndef HAVE_MADWIFI
-	  convert_wl_gmode (nvram_safe_get (n));
-//#endif
+	if (!strcmp (prefix, "wl0"))
+	  convert_wl_gmode (nvram_safe_get (n),"wl");
+	else
+	  convert_wl_gmode (nvram_safe_get (n),prefix);
 	}
     }
 #ifdef HAVE_MADWIFI
@@ -4418,22 +4420,27 @@ char *ifname = "wl0";
 
 
   sprintf (n, "%s_channel", prefix);
-  if (!strcmp (prefix, "wl0"))
+  if (!strcmp (prefix, "wl0") || !strcmp (prefix, "wl1"))
     {
       char *wl = websGetVar (wp, n, NULL);
       cprintf ("copy value %s which is [%s] to nvram\n", n, wl);
-      if (wl)
+      if (wl  && !strcmp (prefix, "wl0"))
 	nvram_set ("wl_channel", wl);
+      else
+	nvram_set ("wl1_wchannel", wl);
     }
   copytonv (wp, n);
 
   sprintf (n, "%s_wchannel", prefix);
-  if (!strcmp (prefix, "wl0"))
+  if (!strcmp (prefix, "wl0") || !strcmp (prefix, "wl1"))
     {
       char *wl = websGetVar (wp, n, NULL);
       cprintf ("copy value %s which is [%s] to nvram\n", n, wl);
-      if (wl)
+      if (wl && !strcmp (prefix, "wl0"))
 	nvram_set ("wl_wchannel", wl);
+      else
+	nvram_set ("wl1_wchannel", wl);
+      
     }
 
   copytonv (wp, n);
