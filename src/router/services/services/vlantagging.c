@@ -92,9 +92,9 @@ getIfLists(eths,256);
   {
   if (strcmp(word,nvram_safe_get("wan_ifname")))
   {
-  if (!nvram_match("wan_proto","disabled") && getSTA() && !strcmp(word,getSTA())
+  if (!nvram_match("wan_proto","disabled") && getSTA() && !strcmp(word,getSTA()))
     continue;
-  if (!nvram_match("wan_proto","disabled") && getWET() && !strcmp(word,getWET())
+  if (!nvram_match("wan_proto","disabled") && getWET() && !strcmp(word,getWET()))
     continue;
   char var[32];
   sprintf (var, "%s_bridged", word);
