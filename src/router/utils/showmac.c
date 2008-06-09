@@ -13,7 +13,8 @@ int main (int argc, char** argv) {
   FILE *file;
   int mac = -1;
   int adapter_nr = 0;
-  char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom"; /* bank2=0x100 */
+  char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom";	/* bank2=0x100 */
+//  char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom"; /* bank2=0x100 */
 
   if (argc > 1) {
     int i;
