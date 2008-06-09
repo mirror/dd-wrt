@@ -45,7 +45,7 @@ beep_main (int argc, char **argv)
   unsigned int gpio;
   unsigned  char assoclist[1024];
 
-  if (argc != 2)
+  if (argc != 3)
     {
       fprintf (stderr, "%s <interface> <time>\n", argv[0]);
       exit (1);
