@@ -65,6 +65,14 @@ cd ../../../../../opt
 ./tools/addpattern -4 -p W54S -v v4.70.6 -i dd-wrt.v23.trx -o dd-wrt.v23_wrt54gs.bin -g
 ./tools/addpattern -4 -p W54s -v v1.05.0 -i dd-wrt.v23.trx -o dd-wrt.v23_wrt54gsv4.bin -g
 
+rm -f *.chk
+./tools/packet -k dd-wrt.v23_wrt54g.bin -f emptyfile -b comp-wgr614v8.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i emptyfile && \
+ cp dd-wrt.bin.chk dd-wrt-bin-wgr614v8_`date +%m%d%H%M`.chk && rm -f kernel_image.chk rootfs_image.chk dd-wrt.bin.chk
+
+./tools/packet -k dd-wrt.v23_wrt54g.bin -f emptyfile -b comp-wnr834bv2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i emptyfile && \
+ cp dd-wrt.bin.chk dd-wrt-bin-wnr834bv2_`date +%m%d%H%M`.chk && rm -f kernel_image.chk rootfs_image.chk dd-wrt.bin.chk
+
+
 #./tools/addpattern -i dd-wrt.v23.trx -o dd-wrt.v23_wrt54gs.bin -2 -g
 #sed -e  1s,^W54S,W54G, < dd-wrt.v23_wrt54gs.bin > dd-wrt.v23_wrt54g.bin 
 
