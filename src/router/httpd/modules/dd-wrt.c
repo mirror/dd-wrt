@@ -8399,6 +8399,12 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
       continue;
     if (nvram_match ("wan_ifname", var))
       continue;
+
+  if (!nvram_match("wan_proto","disabled") && getSTA() && !strcmp(var,getSTA()))
+    continue;
+  if (!nvram_match("wan_proto","disabled") && getWET() && !strcmp(var,getWET()))
+    continue;
+
     sprintf (ssid, "%s_bridged", var);
     websWrite (wp,
 	       "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script> %s</div>\n",
