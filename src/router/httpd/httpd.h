@@ -42,7 +42,7 @@ extern size_t wfread(char *buf, int size, int n, FILE *fp);
 extern int wfflush(FILE *fp);
 extern int wfclose(FILE *fp);
 #ifdef HAVE_HTTPS  
-int do_ssl;
+extern int do_ssl;
 #endif
 /* Basic authorization userid and passwd limit */
 #define AUTH_MAX 64
