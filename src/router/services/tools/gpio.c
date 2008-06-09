@@ -53,16 +53,18 @@ gpio_main (int argc, char **argv)
 	  old_gpio = gpio;
 	}
     }
-  else if (!strcmp (argv[1], "enable") || !strcmp (argv[1], "disable"))
+  else if (!strcmp (argv[1], "init"))
     {
-      if (!strcmp (argv[1], "enable"))
-	{
+	  gpio = get_gpio (pin);
+    }
+  else if (!strcmp (argv[1], "enable"))
+    {
 	  gpio = 1;
-	}
-      else
-	{
+      set_gpio (pin, gpio);
+    }
+  else if (!strcmp (argv[1], "disable"))
+    {
 	  gpio = 0;
-	}
       set_gpio (pin, gpio);
     }
 
