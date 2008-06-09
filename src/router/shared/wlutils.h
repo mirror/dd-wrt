@@ -67,6 +67,7 @@ int getchannels (unsigned int *list,char *ifname);
 int getassoclist (char *name, unsigned char *list);
 int getwdslist (char *name, unsigned char *list);
 int getNoise (char *ifname, unsigned char *name);
+int getRssi (char *ifname, unsigned char *mac);
 
 #ifdef HAVE_MADWIFI
 int get_radiostate (char *ifname);

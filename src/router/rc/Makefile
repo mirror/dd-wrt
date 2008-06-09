@@ -449,9 +449,8 @@ endif
 	cd $(INSTALLDIR)/usr/sbin && ln -sf /sbin/rc nvram
 	cd $(INSTALLDIR)/sbin && ln -sf rc hb_connect
 	cd $(INSTALLDIR)/sbin && ln -sf rc hb_disconnect
-ifneq ($(CONFIG_XSCALE),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc gpio
-endif
+	cd $(INSTALLDIR)/sbin && ln -sf rc beep
 ifeq ($(CONFIG_REGISTER),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc regshell
 endif

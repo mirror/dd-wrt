@@ -34,6 +34,9 @@ vpath %.c $(SRCBASE)/et/freebsd
 ifeq ($(ARCHITECTURE),gateworx)
 UTILS += showmac
 endif
+ifeq ($(CONFIG_NOP8670),y)
+UTILS += fischecksum
+endif
 ifeq ($(CONFIG_MADWIFI),y)
 UTILS += wl_atheros
 endif
@@ -64,9 +67,9 @@ endif
 ifeq ($(CONFIG_LSX),y)
 UTILS += fischecksum
 endif
-ifeq ($(CONFIG_XSCALE),y)
-UTILS += gpio
-endif
+#ifeq ($(CONFIG_XSCALE),y)
+#UTILS += gpio
+#endif
 
 ifeq ($(ARCHITECTURE),newmedia)
 all:
