@@ -160,7 +160,7 @@ CFLAGS += -DHAVE_THOM
 endif
 ifeq ($(CONFIG_MADWIFI),y)
 OBJS += site_survey_madwifi.o
-OBJS += stabridge.o
+OBJS += stabridge.o beep.o
 else
 OBJS += site_survey_broadcom.o
 endif
