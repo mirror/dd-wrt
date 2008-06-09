@@ -104,7 +104,7 @@ extern sslKeys_t *keys;
 
 #define DEFAULT_HTTP_PORT 80
 #ifdef HAVE_HTTPS
-extern int do_ssl;
+int do_ssl;
 #endif
 int server_port;
 char pid_file[80];
