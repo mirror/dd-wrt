@@ -68,7 +68,7 @@ beep_main (int argc, char **argv)
   pos+=4; 
   int rssi = getRssi(argv[1],pos);
   int noise = getNoise(argv[1],pos);
-  int snr = noise + rssi;
+  int snr = rssi - noise;
   if (snr<0)
     {
     fprintf(stderr,"snr is %d, invalid\n",snr);
