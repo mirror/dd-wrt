@@ -1,7 +1,7 @@
 /*
- * gpio.c
+ * beep.c
  *
- * Copyright (C) 2006,2008 Sebastian Gottschall <gottschall@dd-wrt.com>
+ * Copyright (C) 2008 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,47 +26,63 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <utils.h>
+#include <wlutils.h>
 
+
+
+void beep(int gpio, int time)
+{
+set_gpio(gpio,1);
+usleep(time);
+set_gpio(gpio,0);
+usleep(time);
+}
 
 int
-gpio_main (int argc, char **argv)
+beep_main (int argc, char **argv)
 {
 
   unsigned int gpio;
-  unsigned int old_gpio = -1;
-  unsigned int pin;
+  unsigned  char assoclist[1024];
 
-  if (argc != 3)
+  if (argc != 2)
     {
-      fprintf (stderr, "%s <poll | enable | disable> <pin>\n", argv[0]);
+      fprintf (stderr, "%s <interface> <time>\n", argv[0]);
       exit (1);
     }
-
-  pin = atoi (argv[2]);
-  if (!strcmp (argv[1], "poll"))
+  gpio = atoi(argv[2]);
+  while(1)
+  {
+  int cnt = getassoclist(argv[1],assoclist);
+  if (cnt==-1)
     {
-      while (1)
-	{
-	  gpio = get_gpio (pin);
-	  if (gpio != old_gpio)
-	    fprintf (stdout, "%02X\n", gpio);
-	  old_gpio = gpio;
-	}
+    cnt=0;
     }
-  else if (!strcmp (argv[1], "init"))
+  if (!cnt)
     {
-	  gpio = get_gpio (pin);
+    fprintf(stderr,"not associated, wait 5 seconds\n");
+    sleep(5);
+    continue;
     }
-  else if (!strcmp (argv[1], "enable"))
+  unsigned char *pos = assoclist;
+  pos+=4; 
+  int rssi = getRssi(argv[1],pos);
+  int noise = getNoise(argv[1],pos);
+  int snr = noise + rssi;
+  if (snr<0)
     {
-	  gpio = 1;
-      set_gpio (pin, gpio);
+    fprintf(stderr,"snr is %d, invalid\n",snr);
+    continue;
     }
-  else if (!strcmp (argv[1], "disable"))
+  if (snr>30)
     {
-	  gpio = 0;
-      set_gpio (pin, gpio);
+    fprintf(stderr,"snr perfect, full beep (%d)\n",snr);
+    set_gpio(gpio,1); //snr perfect
+    continue; 
     }
+  int beeptime = 66*(30-snr);
+    beep(gpio,beeptime); 
+  }
 
   return 0;
 }
