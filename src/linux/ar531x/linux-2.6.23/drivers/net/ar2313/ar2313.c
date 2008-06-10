@@ -223,7 +223,8 @@ int __init ar2313_probe(struct platform_device *pdev)
 	dev->do_ioctl = &ar2313_ioctl;
 
 	// SAMEER: do we need this?
-	dev->features |= NETIF_F_SG | NETIF_F_HIGHDMA;
+//	dev->features |= NETIF_F_SG | NETIF_F_HIGHDMA;
+	dev->features |= NETIF_F_HIGHDMA;
 //	dev->features |= NETIF_F_HIGHDMA | NETIF_F_HW_CSUM;
 
 	tasklet_init(&sp->rx_tasklet, rx_tasklet_func, (unsigned long) dev);

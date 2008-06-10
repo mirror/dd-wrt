@@ -289,6 +289,17 @@ struct phy_device {
 	void (*adjust_link)(struct net_device *dev);
 
 	void (*adjust_state)(struct net_device *dev);
+
+	/*
+	 * By default these point to the original functions
+	 * with the same name. adding them to the phy_device
+	 * allows the phy driver to override them for packet
+	 * mangling if the ethernet driver supports it
+	 * This is required to support some really horrible
+	 * switches such as the Marvell 88E6060
+	 */
+	int (*netif_receive_skb)(struct sk_buff *skb);
+	int (*netif_rx)(struct sk_buff *skb);
 };
 #define to_phy_device(d) container_of(d, struct phy_device, dev)
 
@@ -318,6 +329,11 @@ struct phy_driver {
 	unsigned int phy_id_mask;
 	u32 features;
 	u32 flags;
+
+	/* Called during discovery to test if the
+	 * device can attach to the bus, even if
+	 * phy id and mask do not match */
+	bool (*detect)(struct mii_bus *bus, int addr);
 
 	/* Called to initialize the PHY,
 	 * including after a reset */
@@ -393,6 +409,7 @@ void phy_start_machine(struct phy_device *phydev,
 void phy_stop_machine(struct phy_device *phydev);
 int phy_ethtool_sset(struct phy_device *phydev, struct ethtool_cmd *cmd);
 int phy_ethtool_gset(struct phy_device *phydev, struct ethtool_cmd *cmd);
+int phy_ethtool_ioctl(struct phy_device *phydev, void *useraddr);
 int phy_mii_ioctl(struct phy_device *phydev,
 		struct mii_ioctl_data *mii_data, int cmd);
 int phy_start_interrupts(struct phy_device *phydev);
