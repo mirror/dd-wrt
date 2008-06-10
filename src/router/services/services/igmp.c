@@ -61,7 +61,7 @@ start_igmp_proxy (void)
   getIfLists (ifnames, 256);
   foreach (name, ifnames, next)
   {
-    if (strcmp (get_wan_face (), nvram_safe_get ("wan_ifname")))
+    if (strcmp (get_wan_face (), var))
       {
 	if (nvram_nmatch ("0", "%s_bridged", name)
 	    && nvram_nmatch ("1", "%s_multicast", name))
