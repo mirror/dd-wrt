@@ -102,14 +102,14 @@ start_sysinit (void)
 #ifndef HAVE_DIR400
   int mtd = getMTD ("board_config");
   char mtdpath[64];
-  sprintf(mtdpath,"/dev/mtdblock/%d",mtd);
+  sprintf (mtdpath, "/dev/mtdblock/%d", mtd);
   FILE *fp = fopen (mtdpath, "rb");
   if (fp)
     {
       fseek (fp, 0x1000, SEEK_SET);
       unsigned int test;
       fread (&test, 4, 1, fp);
-      fprintf(stderr,"test pattern is %X\n",test);
+      fprintf (stderr, "test pattern is %X\n", test);
       if (test != 0xffffffff)
 	{
 	  fprintf (stderr,
@@ -201,19 +201,20 @@ enable_dtag_vlan (int enable)
 
 }
 
-void start_fixboard(void)
+void
+start_fixboard (void)
 {
   int mtd = getMTD ("board_config");
   char mtdpath[64];
-  sprintf(mtdpath,"/dev/mtdblock/%d",mtd);
-  fprintf(stderr,"board config path = %s\n",mtdpath);
+  sprintf (mtdpath, "/dev/mtdblock/%d", mtd);
+  fprintf (stderr, "board config path = %s\n", mtdpath);
   FILE *fp = fopen (mtdpath, "rb");
   if (fp)
     {
       fseek (fp, 0x1000, SEEK_SET);
       unsigned int test;
       fread (&test, 4, 1, fp);
-      fprintf(stderr,"test pattern is %X\n",test);
+      fprintf (stderr, "test pattern is %X\n", test);
       if (test != 0xffffffff)
 	{
 	  fprintf (stderr,

@@ -57,19 +57,22 @@ start_igmp_proxy (void)
       fprintf (fp, "phyint %s disabled\n", nvram_safe_get ("lan_ifname"));
       fprintf (fp, "phyint %s:0 disabled\n", nvram_safe_get ("lan_ifname"));
     }
-char ifnames[256];
-getIfLists(ifnames,256);
+  char ifnames[256];
+  getIfLists (ifnames, 256);
   foreach (name, ifnames, next)
   {
-    if (nvram_nmatch ("0", "%s_bridged", name)
-	&& nvram_nmatch ("1", "%s_multicast", name))
+    if (strcmp (get_wan_face (), nvram_safe_get ("wan_ifname")))
       {
-	fprintf (fp, "phyint %s downstream  ratelimit 0  threshold 1\n",
-		 name);
-	ifcount++;
+	if (nvram_nmatch ("0", "%s_bridged", name)
+	    && nvram_nmatch ("1", "%s_multicast", name))
+	  {
+	    fprintf (fp, "phyint %s downstream  ratelimit 0  threshold 1\n",
+		     name);
+	    ifcount++;
+	  }
+	else
+	  fprintf (fp, "phyint %s disabled\n", name);
       }
-    else
-      fprintf (fp, "phyint %s disabled\n", name);
   }
   fprintf (fp, "phyint lo disabled\n");
   fclose (fp);

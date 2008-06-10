@@ -641,7 +641,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl0_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
 #else
 #ifdef HAVE_DDLAN
-  {"wl_mode", "sta", 0},		/* AP mode (ap|sta|wet|infra) */
+  {"wl_mode", "sta", 0},	/* AP mode (ap|sta|wet|infra) */
 #else
   {"wl_mode", "ap", 0},		/* AP mode (ap|sta|wet|infra) */
 #endif
@@ -768,10 +768,10 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl0_net_mode", "disabled", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
 #elif HAVE_DDLAN
 #ifdef HAVE_NS5
-  {"ath0_net_mode","a-only",0 },
+  {"ath0_net_mode", "a-only", 0},
   {"wl0_net_mode", "a-only", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
 #else
-  {"ath0_net_mode","b-only",0 },
+  {"ath0_net_mode", "b-only", 0},
   {"wl0_net_mode", "b-only", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
 #endif
 #else
@@ -2328,11 +2328,11 @@ struct nvram_tuple srouter_defaults[] = {
   {"af_publish", "1", 0},
   {"af_agree", "0", 0},
 #ifdef HAVE_WAVESAT
-  {"ofdm_mode","disabled",0},
-  {"ofdm_upstream","3525000",0},
-  {"ofdm_downstream","3450000",0},
-  {"ofdm_width","7",0},
-  {"ofdm_duplex","TDD",0},
+  {"ofdm_mode", "disabled", 0},
+  {"ofdm_upstream", "3525000", 0},
+  {"ofdm_downstream", "3450000", 0},
+  {"ofdm_width", "7", 0},
+  {"ofdm_duplex", "TDD", 0},
 #endif
   {0, 0, 0}
 };

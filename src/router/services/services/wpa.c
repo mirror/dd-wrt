@@ -69,7 +69,7 @@ start_radius (char *prefix)
 	pragma = "";
       sleep (1);		//some delay is usefull
       sprintf (exec, "wrt-radauth %s %s %s %s %s %s %s %s &", pragma, ifname,
-	       server, port, share, nvram_nget ("%s_radius_override",prefix),
+	       server, port, share, nvram_nget ("%s_radius_override", prefix),
 	       nvram_nget ("%s_radmacpassword", prefix),
 	       nvram_nget ("%s_max_unauth_users", prefix));
       system2 (exec);
