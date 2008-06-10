@@ -152,15 +152,15 @@ gpio_proc_write (struct file *file, const char *buffer, unsigned long count,
     }
   //printk (KERN_NOTICE "value before ... %#08X\n",reg);
 
-  if (procfs_buffer[0] == '0' || procfs_buffer[0] == 'i')
-    reg = reg & ~(GPIO_CR_M (((unsigned int) data) & PIN_MASK));
-  if (procfs_buffer[0] == '1' || procfs_buffer[0] == 'o')
-    reg = reg | GPIO_CR_M (((unsigned int) data) & PIN_MASK);
 
   //printk (KERN_NOTICE ".. and after write %#08X \n",reg);
 
   if (!strcmp (get_arch_type (), "Atheros AR5315"))
     {
+  if (procfs_buffer[0] == '0' || procfs_buffer[0] == 'i')
+    reg = reg & ~(GPIO_CR_M (((unsigned int) data) & PIN_MASK));
+  if (procfs_buffer[0] == '1' || procfs_buffer[0] == 'o')
+    reg = reg | GPIO_CR_M (((unsigned int) data) & PIN_MASK);
       if ((unsigned int) data & GPIO_IN)
 	{
 	  sysRegWrite (AR5315_GPIO_DI, reg);
@@ -179,6 +179,10 @@ gpio_proc_write (struct file *file, const char *buffer, unsigned long count,
     }
   else
     {
+  if (procfs_buffer[0] == '0' || procfs_buffer[0] == 'i')
+    reg = reg | GPIO_CR_M (((unsigned int) data) & PIN_MASK);
+  if (procfs_buffer[0] == '1' || procfs_buffer[0] == 'o')
+    reg = reg & ~(GPIO_CR_M (((unsigned int) data) & PIN_MASK));
       if ((unsigned int) data & GPIO_IN)
 	{
 	  sysRegWrite (AR531X_GPIO_DI, reg);

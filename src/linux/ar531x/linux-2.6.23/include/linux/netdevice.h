@@ -427,6 +427,7 @@ struct net_device
 	void			*ax25_ptr;	/* AX.25 specific data */
 	struct wireless_dev	*ieee80211_ptr;	/* IEEE 802.11 specific data,
 						   assign before registering */
+	void			*phy_ptr; /* PHY device specific data */
 
 /*
  * Cache line mostly used on receive path (including eth_type_trans())
