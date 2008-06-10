@@ -90,7 +90,7 @@ start_vlantagging (void)
   getIfLists (eths, 256);
   foreach (word, eths, next)
   {
-    if (strcmp (get_wan_face (), nvram_safe_get ("wan_ifname")))
+    if (strcmp (get_wan_face (), word))
       {
 	char var[32];
 	sprintf (var, "%s_bridged", word);
