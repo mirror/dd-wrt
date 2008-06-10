@@ -19,7 +19,8 @@
 #	$(CC) $(CFLAGS) -D__ASSEMBLY__ -c $< -o $*.o
 
 obj-y	+=	prom.o	\
-			gpio.o	\
+			proc_gpio.o	\
+			gpio.o \
 			irq.o	\
 			setup.o	\
 			ar7100.o \

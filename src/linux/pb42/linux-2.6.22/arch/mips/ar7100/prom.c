@@ -19,7 +19,7 @@
 
 void __init prom_init(void)
 {
-	int memsz = 0x1000000, argc = fw_arg0, i;
+	int memsz = 0x2000000, argc = fw_arg0, i;
 	char **arg = (char**) fw_arg1;
 
 	/* 
