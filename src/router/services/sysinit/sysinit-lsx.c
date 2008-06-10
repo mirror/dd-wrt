@@ -122,6 +122,8 @@ start_sysinit (void)
 
 //  eval ("ifconfig", "wifi0", "up");
 
+  system ("echo 2 >/proc/sys/dev/wifi0/ledpin");
+  system ("echo 1 >/proc/sys/dev/wifi0/softled");
 
 
   eval ("insmod", "ipv6");
