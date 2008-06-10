@@ -528,7 +528,7 @@ setupSupplicant (char *prefix, char *ssidoverride)
       fprintf (fp, "}\n");
       fclose (fp);
       sprintf (psk, "-i%s", prefix);
-      eval("iwpriv",prefix,"hostroaming","2");
+      eval ("iwpriv", prefix, "hostroaming", "2");
       if (nvram_match (bridged, "1")
 	  && (nvram_match (wmode, "wdssta") || nvram_match (wmode, "wet")))
 	eval ("wpa_supplicant", "-b", nvram_safe_get ("lan_ifname"), "-B",
@@ -1000,8 +1000,8 @@ set_netmode (char *wif, char *dev, char *use)
     eval ("iwpriv", use, "ff", "1");
   else
     eval ("iwpriv", use, "ff", "0");
-    
-    eval ("iwpriv", use, "protmode", "0"); //avoid throughput problems (CTS disabled for now)
+
+  eval ("iwpriv", use, "protmode", "0");	//avoid throughput problems (CTS disabled for now)
 
 
 }
@@ -1325,22 +1325,22 @@ configure_single (int count)
   setsysctrl (wif, "diversity", 0);
   switch (tx)
     {
-    case 0: // vertical
+    case 0:			// vertical
       setsysctrl (wif, "rxantenna", 2);
       setsysctrl (wif, "txantenna", 2);
       eval ("gpio", "enable", gpio);
       break;
-    case 1: // horizontal
+    case 1:			// horizontal
       setsysctrl (wif, "rxantenna", 1);
       setsysctrl (wif, "txantenna", 1);
       eval ("gpio", "enable", gpio);
       break;
-    case 2: //external
+    case 2:			//external
       setsysctrl (wif, "rxantenna", 1);
       setsysctrl (wif, "txantenna", 1);
       eval ("gpio", "disable", gpio);
       break;
-    case 3: //adaptive
+    case 3:			//adaptive
       setsysctrl (wif, "diversity", 1);
       setsysctrl (wif, "rxantenna", 0);
       setsysctrl (wif, "txantenna", 0);
@@ -1428,7 +1428,7 @@ configure_single (int count)
       if (disablescan)
 	eval ("iwpriv", var, "scandisable", "1");
 #endif
-      eval("iwpriv",var,"hostroaming","0");
+      eval ("iwpriv", var, "hostroaming", "0");
       cnt++;
     }
 
@@ -1444,7 +1444,7 @@ configure_single (int count)
   sprintf (isolate, "%s_ap_isolate", dev);
   if (nvram_default_match (isolate, "1", "0"))
     eval ("iwpriv", dev, "ap_bridge", "0");
-  eval("iwpriv",dev,"hostroaming","0");
+  eval ("iwpriv", dev, "hostroaming", "0");
 
 
   sprintf (ssid, "ath%d_ssid", count);

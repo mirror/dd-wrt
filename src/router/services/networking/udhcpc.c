@@ -181,7 +181,7 @@ extern void start_heartbeat_boot (void);
 static int
 bound (void)
 {
-  nvram_unset("dhcpc_done");
+  nvram_unset ("dhcpc_done");
   char *wan_ifname = safe_getenv ("interface");
   char *value;
   char temp_wan_ipaddr[16], temp_wan_netmask[16], temp_wan_gateway[16];
@@ -292,11 +292,11 @@ bound (void)
   else if (nvram_match ("wan_proto", "pptp")
 	   && nvram_match ("pptp_use_dhcp", "1"))
     {
-     char pptpip[64];
-     struct dns_lists *dns_list = NULL;
-      dns_to_resolv();
-     getIPFromName (nvram_safe_get("pptp_server_name"), pptpip);
-     nvram_set("pptp_server_ip",pptpip);
+      char pptpip[64];
+      struct dns_lists *dns_list = NULL;
+      dns_to_resolv ();
+      getIPFromName (nvram_safe_get ("pptp_server_name"), pptpip);
+      nvram_set ("pptp_server_ip", pptpip);
       int i = 0;
       /* Delete all default routes */
       while (route_del (wan_ifname, 0, NULL, NULL, NULL) == 0 || i++ < 10);
@@ -311,15 +311,15 @@ bound (void)
 		   nvram_safe_get ("wan_gateway"),
 		   nvram_safe_get ("wan_netmask"));
 
-    dns_list = get_dns_list ();
+      dns_list = get_dns_list ();
 
-    if (dns_list)
-    {
-    for (i = 0; i < dns_list->num_servers; i++)
-	route_add (wan_ifname, 0, dns_list->dns_server[i],
-		   nvram_safe_get ("wan_gateway"), "255.255.255.255");
-     free (dns_list);
-    }
+      if (dns_list)
+	{
+	  for (i = 0; i < dns_list->num_servers; i++)
+	    route_add (wan_ifname, 0, dns_list->dns_server[i],
+		       nvram_safe_get ("wan_gateway"), "255.255.255.255");
+	  free (dns_list);
+	}
 
     }
 #endif
@@ -349,7 +349,7 @@ bound (void)
       cprintf ("start wan done\n");
       start_wan_done (wan_ifname);
     }
-  nvram_set("dhcpc_done","1");
+  nvram_set ("dhcpc_done", "1");
   cprintf ("done\n");
   return 0;
 }

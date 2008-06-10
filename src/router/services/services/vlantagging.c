@@ -74,41 +74,37 @@ start_vlantagging (void)
     char vlan_name[32];
     sprintf (vlan_name, "%s.%s", tag, port);
 
-  char var[64];
-  sprintf (var, "%s_bridged", vlan_name);
-  if (nvram_default_match (var, "1", "1"))
-    {
-    eval ("ifconfig", vlan_name, "0.0.0.0", "up");
-    }
-  else
-    {
-      ifconfig (vlan_name, IFUP, nvram_nget ("%s_ipaddr", vlan_name),
-		nvram_nget ("%s_netmask", vlan_name));
-    }
+    char var[64];
+    sprintf (var, "%s_bridged", vlan_name);
+    if (nvram_default_match (var, "1", "1"))
+      {
+	eval ("ifconfig", vlan_name, "0.0.0.0", "up");
+      }
+    else
+      {
+	ifconfig (vlan_name, IFUP, nvram_nget ("%s_ipaddr", vlan_name),
+		  nvram_nget ("%s_netmask", vlan_name));
+      }
   }
-char eths[256];
-getIfLists(eths,256);
+  char eths[256];
+  getIfLists (eths, 256);
   foreach (word, eths, next)
   {
-  if (strcmp(word,nvram_safe_get("wan_ifname")))
-  {
-  if (!nvram_match("wan_proto","disabled") && getSTA() && !strcmp(word,getSTA()))
-    continue;
-  if (!nvram_match("wan_proto","disabled") && getWET() && !strcmp(word,getWET()))
-    continue;
-  char var[32];
-  sprintf (var, "%s_bridged", word);
-  if (nvram_default_match (var, "1", "1"))
-    {
-    eval ("ifconfig", word, "0.0.0.0", "up");
-    }
-  else
-    {
-    
-      ifconfig (word, IFUP, nvram_nget ("%s_ipaddr", word),
-		nvram_nget ("%s_netmask", word));
-    }
-  }
+    if (strcmp (get_wan_face (), nvram_safe_get ("wan_ifname")))
+      {
+	char var[32];
+	sprintf (var, "%s_bridged", word);
+	if (nvram_default_match (var, "1", "1"))
+	  {
+	    eval ("ifconfig", word, "0.0.0.0", "up");
+	  }
+	else
+	  {
+
+	    ifconfig (word, IFUP, nvram_nget ("%s_ipaddr", word),
+		      nvram_nget ("%s_netmask", word));
+	  }
+      }
   }
 
   start_set_routes ();

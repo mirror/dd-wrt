@@ -59,18 +59,19 @@
 
 extern int br_add_interface (const char *br, const char *dev);
 
-void configure_wimax(void)
+void
+configure_wimax (void)
 {
-char *mode = "0";
-char *dev = "ofdm";
-if (nvram_match("ofdm_duplex","TDD"))
+  char *mode = "0";
+  char *dev = "ofdm";
+  if (nvram_match ("ofdm_duplex", "TDD"))
     mode = "0";
-if (nvram_match("ofdm_duplex","H-FDD"))
+  if (nvram_match ("ofdm_duplex", "H-FDD"))
     mode = "1";
-if (nvram_match("ofdm_mode","disabled"))
+  if (nvram_match ("ofdm_mode", "disabled"))
     return;
-eval("/sub/lm_scripts/go_ss",nvram_safe_get("ofdm_width"),mode);
-if (!nvram_match("ofdm_mode", "sta"))
+  eval ("/sub/lm_scripts/go_ss", nvram_safe_get ("ofdm_width"), mode);
+  if (!nvram_match ("ofdm_mode", "sta"))
     {
       char bridged[32];
       sprintf (bridged, "%s_bridged", dev);
@@ -86,7 +87,7 @@ if (!nvram_match("ofdm_mode", "sta"))
 	  char mask[32];
 	  sprintf (ip, "%s_ipaddr", dev);
 	  sprintf (mask, "%s_netmask", dev);
-//	  eval ("ifconfig", dev, "mtu", "1500");
+//        eval ("ifconfig", dev, "mtu", "1500");
 	  eval ("ifconfig", dev, nvram_safe_get (ip), "netmask",
 		nvram_safe_get (mask), "up");
 	}
@@ -107,15 +108,16 @@ if (!nvram_match("ofdm_mode", "sta"))
 	}
     }
 }
-void deconfigure_wimax(void)
+void
+deconfigure_wimax (void)
 {
-char *dev = "ofdm";
+  char *dev = "ofdm";
 
   if (ifexists (dev))
     {
       br_del_interface ("br0", dev);
       eval ("ifconfig", dev, "down");
     }
-eval("/sub/common/ssmodunload");
+  eval ("/sub/common/ssmodunload");
 }
 #endif

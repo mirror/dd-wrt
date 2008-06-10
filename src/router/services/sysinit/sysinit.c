@@ -675,10 +675,10 @@ start_restore_defaults (void)
       linux_overrides = wrt30011vlan;
       break;
     case ROUTER_WRT600N:
-      if (nvram_match("switch_type","BCM5395"))
-        linux_overrides = wrt60011vlan;
+      if (nvram_match ("switch_type", "BCM5395"))
+	linux_overrides = wrt60011vlan;
       else
-        linux_overrides = wrt600vlan;
+	linux_overrides = wrt600vlan;
       break;
 #endif
     case ROUTER_BUFFALO_WZRG144NH:
@@ -881,10 +881,10 @@ start_restore_defaults (void)
 	  break;
 	default:
 	  if (nvram_match ("boardnum", "WAP54GV3_8M_0614"))
-		{
-		nvram_set ("vlan0ports", "3 2 1 0 5*");
-		nvram_set ("vlan1ports", "4 5");
-		}
+	    {
+	      nvram_set ("vlan0ports", "3 2 1 0 5*");
+	      nvram_set ("vlan1ports", "4 5");
+	    }
 	  break;
 	}
 #ifdef HAVE_SPUTNIK
@@ -909,26 +909,28 @@ start_restore_defaults (void)
 #endif
   if (brand == ROUTER_WRT600N)
     {
-      if (nvram_match("switch_type","BCM5395")) // fix for WRT600N v1.1 (BCM5395 does not suppport vid 0, so gemtek internally configured vid 1 as lan)
-        {
+      if (nvram_match ("switch_type", "BCM5395"))	// fix for WRT600N v1.1 (BCM5395 does not suppport vid 0, so gemtek internally configured vid 1 as lan)
+	{
 	  nvram_set ("vlan0ports", " ");
 	  nvram_set ("vlan1ports", "1 2 3 4 8*");
-	  nvram_set ("vlan2ports", "0 8*");	
-	  nvram_set ("vlan0hwname"," ");
-	  nvram_set ("vlan1hwname","et0");
-	  nvram_set ("landevs","vlan1 wl0 wl1");
-	  nvram_set ("lan_ifnames","vlan1 eth0 eth1");
-	}else{
-      if (!nvram_get ("vlan0ports") || nvram_match ("vlan0ports", ""))
-	{
-	  nvram_set ("vlan0ports", "1 2 3 4 8*");
 	  nvram_set ("vlan2ports", "0 8*");
+	  nvram_set ("vlan0hwname", " ");
+	  nvram_set ("vlan1hwname", "et0");
+	  nvram_set ("landevs", "vlan1 wl0 wl1");
+	  nvram_set ("lan_ifnames", "vlan1 eth0 eth1");
 	}
-      if (!nvram_get ("vlan2ports") || nvram_match ("vlan2ports", ""))
+      else
 	{
-	  nvram_set ("vlan0ports", "1 2 3 4 8*");
-	  nvram_set ("vlan2ports", "0 8*");
-	}
+	  if (!nvram_get ("vlan0ports") || nvram_match ("vlan0ports", ""))
+	    {
+	      nvram_set ("vlan0ports", "1 2 3 4 8*");
+	      nvram_set ("vlan2ports", "0 8*");
+	    }
+	  if (!nvram_get ("vlan2ports") || nvram_match ("vlan2ports", ""))
+	    {
+	      nvram_set ("vlan0ports", "1 2 3 4 8*");
+	      nvram_set ("vlan2ports", "0 8*");
+	    }
 	}
     }
   else if (brand == ROUTER_WRT350N)
@@ -1128,10 +1130,10 @@ start_restore_defaults (void)
 #endif
 	}
     }
-   if (atoi(nvram_safe_get("nvram_ver"))<3)
+  if (atoi (nvram_safe_get ("nvram_ver")) < 3)
     {
-    nvram_set("nvram_ver","3");
-    nvram_set("block_multicast","1");
+      nvram_set ("nvram_ver", "3");
+      nvram_set ("block_multicast", "1");
     }
 
   cprintf ("check CFE nv\n");
@@ -1379,7 +1381,7 @@ start_nvram (void)
 #endif
 #endif
   }
-  
+
 #ifdef HAVE_SSHD
   nvram_unset ("remote_mgt_telnet");
   nvram_unset ("telnet_wanport");
