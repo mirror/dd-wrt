@@ -175,7 +175,7 @@ int __init init_ar531x(void)
 			    if (retlen != mymtd->erasesize) 
 				goto out;
 	
-			    if (strstr(buf+0x10,"CA804.SOB") || strstr(buf+0x10,"OVISCA401") || strstr(buf+0x10,"OVISCE401")) {
+			    if (strstr(buf+0x10,"CA804.SOB") || strstr(buf+0x10,"CE801.SOB") || strstr(buf+0x10,"OVISCA401") || strstr(buf+0x10,"OVISCE401")) {
 				image_info = buf+0x56;
 				ar531x_partitions[2].size = 0x400000 - 0x70000;	/* Velikost kernelu */
 			    int offset = 0x0;
@@ -194,7 +194,7 @@ int __init init_ar531x(void)
 			    }
 				if (NUM_PARTITIONS != 0) 
 				{
-				    printk(KERN_NOTICE "Using ar531x openwrt partition definition\n");
+				    printk(KERN_NOTICE "Using ar531x DD-WRT partition definition\n");
 				    add_mtd_partitions (mymtd, ar531x_partitions, NUM_PARTITIONS);
 				}
 

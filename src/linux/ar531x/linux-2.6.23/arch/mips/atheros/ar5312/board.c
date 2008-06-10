@@ -200,6 +200,7 @@ static char __init *ar5312_flash_limit(void)
 static struct ar531x_config __init *init_wmac(int unit)
 {
 	struct ar531x_config *config;
+//	printk(KERN_EMERG "init wmac %d\n",unit);
 	config = (struct ar531x_config *) kzalloc(sizeof(struct ar531x_config), GFP_KERNEL);
 	config->board = board_config;
 	config->radio = radio_config;
@@ -222,6 +223,7 @@ int __init ar5312_init_devices(void)
 	/* Locate board/radio config data */
 	ar531x_find_config(ar5312_flash_limit());
 	bcfg = (struct ar531x_boarddata *) board_config;
+//	printk(KERN_EMERG "radio = 0x%X\n",radio_config);
 
 	
 	/*
@@ -297,7 +299,9 @@ int __init ar5312_init_devices(void)
 	}
 
 	if (radio) {
+//		printk("radio mask %X \n",*((u32 *) radio));
 		if (mips_machtype == MACH_ATHEROS_AR5312) {
+//		printk("init wmac 0\n");
 			if (*((u32 *) radio) & AR531X_RADIO0_MASK) {
 				ar5312_wmac[0].dev.platform_data = init_wmac(0);
 				ar5312_devs[dev++] = &ar5312_wmac[0];
