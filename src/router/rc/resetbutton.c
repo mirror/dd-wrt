@@ -110,12 +110,12 @@ int
 getbuttonstate ()
 {
   FILE *in;
-  int ret;
-  in = fopen ("/proc/simple_config/push_button", "rb");
+  int ret = get_gpio(8);
+/*  in = fopen ("/proc/simple_config/push_button", "rb");
   if (in == NULL)
     return 0;
   fscanf (in, "%d", &ret);
-  fclose (in);
+  fclose (in);*/
   if (ret==0)
     return 1;
   return 0;
