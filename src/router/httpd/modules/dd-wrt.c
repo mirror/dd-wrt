@@ -8395,15 +8395,8 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
 
   foreach (var, eths, next)
   {
-    if (nvram_match ("wan_ifnames", var))
+    if (nvram_match (get_wan_face(), var))
       continue;
-    if (nvram_match ("wan_ifname", var))
-      continue;
-
-  if (!nvram_match("wan_proto","disabled") && getSTA() && !strcmp(var,getSTA()))
-    continue;
-  if (!nvram_match("wan_proto","disabled") && getWET() && !strcmp(var,getWET()))
-    continue;
 
     sprintf (ssid, "%s_bridged", var);
     websWrite (wp,
