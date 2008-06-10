@@ -746,7 +746,7 @@ nat_postrouting (void)
 //        if (vifs != NULL)
 	  foreach (var, vifs, next)
 	  {
-	    if (strcmp (get_wan_face (), nvram_safe_get ("wan_ifname")))
+	    if (strcmp (get_wan_face (), var))
 	      {
 		if (nvram_nmatch ("0", "%s_bridged", var))
 		  {
@@ -1868,7 +1868,7 @@ filter_input (void)
   //if (vifs != NULL)
   foreach (var, vifs, next)
   {
-    if (strcmp (get_wan_face (), nvram_safe_get ("wan_ifname")))
+    if (strcmp (get_wan_face (), var))
       {
 	if (nvram_nmatch ("0", "%s_bridged", var))
 	  {
@@ -1966,7 +1966,7 @@ filter_forward (void)
 //  if (vifs != NULL)
   foreach (var, vifs, next)
   {
-    if (strcmp (get_wan_face (), nvram_safe_get ("wan_ifname")))
+    if (strcmp (get_wan_face (), var))
       {
 	if (nvram_nmatch ("0", "%s_bridged", var))
 	  {
