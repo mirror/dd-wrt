@@ -68,15 +68,15 @@ start_stabridge (void)
 void
 stop_stabridge (void)
 {
-if (getWET())
-{
-  eval ("ebtables", "-t", "broute", "-D", "BROUTING", "--protocol",
-	"0x888e", "--in-interface", getWET (), "-j", "DROP");
-  eval ("ebtables", "-t", "nat", "-D", "POSTROUTING", "--out-interface",
-	getWET (), "-j", "arpnat", "--arpnat-target", "ACCEPT");
-  eval ("ebtables", "-t", "nat", "-D", "PREROUTING", "--in-interface",
-	getWET (), "-j", "arpnat", "--arpnat-target", "ACCEPT");
-}
+  if (getWET ())
+    {
+      eval ("ebtables", "-t", "broute", "-D", "BROUTING", "--protocol",
+	    "0x888e", "--in-interface", getWET (), "-j", "DROP");
+      eval ("ebtables", "-t", "nat", "-D", "POSTROUTING", "--out-interface",
+	    getWET (), "-j", "arpnat", "--arpnat-target", "ACCEPT");
+      eval ("ebtables", "-t", "nat", "-D", "PREROUTING", "--in-interface",
+	    getWET (), "-j", "arpnat", "--arpnat-target", "ACCEPT");
+    }
   // flush the tables, since getWET will not find the interface
   // in the nvram (if changed from client-bridge to whatever)
   // Fix, cause the rmmod command does not

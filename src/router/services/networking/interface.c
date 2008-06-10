@@ -119,27 +119,28 @@ err:
   return errno;
 }
 
-static char *getPhyDev()
+static char *
+getPhyDev ()
 {
-FILE *in=fopen("/proc/switch/eth0/enable","rb");
-if (in)
+  FILE *in = fopen ("/proc/switch/eth0/enable", "rb");
+  if (in)
     {
-    fclose(in);
-    return "eth0";
+      fclose (in);
+      return "eth0";
     }
-in=fopen("/proc/switch/eth1/enable","rb");
-if (in)
+  in = fopen ("/proc/switch/eth1/enable", "rb");
+  if (in)
     {
-    fclose(in);
-    return "eth1";
+      fclose (in);
+      return "eth1";
     }
-in=fopen("/proc/switch/eth2/enable","rb");
-if (in)
+  in = fopen ("/proc/switch/eth2/enable", "rb");
+  if (in)
     {
-    fclose(in);
-    return "eth2";
+      fclose (in);
+      return "eth2";
     }
-return "eth0";
+  return "eth0";
 }
 
 #define MAX_VLAN_GROUPS	16
@@ -154,7 +155,7 @@ start_config_vlan (void)
   int i, j;
   char ea[ETHER_ADDR_LEN];
   char tmp[200];
-  char *phy = getPhyDev();
+  char *phy = getPhyDev ();
 // configure ports
   system2 ("echo 1 > /proc/switch/eth0/reset");
   system2 ("echo 1 > /proc/switch/eth1/reset");
@@ -165,10 +166,10 @@ start_config_vlan (void)
       if (nvram_get (vlanb) == NULL || nvram_match (vlanb, ""))
 	continue;
       sprintf (tmp, "echo %s > /proc/switch/%s/vlan/%d/ports",
-	       nvram_safe_get (vlanb),phy, i);
+	       nvram_safe_get (vlanb), phy, i);
       system2 (tmp);
       sprintf (tmp, "echo %s > /proc/switch/%s/vlan/%d/ports",
-	       nvram_safe_get (vlanb),phy, i);
+	       nvram_safe_get (vlanb), phy, i);
       system2 (tmp);
     }
 
@@ -233,12 +234,12 @@ start_setup_vlans (void)
   if (!nvram_get ("port5vlans") || nvram_match ("vlans", "0"))
     return 0;			// for some reason VLANs are not set up, and we don't want to disable everything!
 
-if (nvram_match ("wan_vdsl", "1") && !nvram_match("fromvdsl","1"))
-	{
-	nvram_set("vdsl_state","0");
-	enable_dtag_vlan (1);
-	return 0;
-	}
+  if (nvram_match ("wan_vdsl", "1") && !nvram_match ("fromvdsl", "1"))
+    {
+      nvram_set ("vdsl_state", "0");
+      enable_dtag_vlan (1);
+      return 0;
+    }
 
   int ports[21][6], i, j, ret = 0, tmp, workaround = 0, found;
   char *vlans, *next, vlan[4], buff[70], buff2[16];
@@ -251,56 +252,56 @@ if (nvram_match ("wan_vdsl", "1") && !nvram_match("fromvdsl","1"))
   s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW);
   strcpy (mac, nvram_safe_get ("et0macaddr"));
 
-  int vlanmap[6] = {0, 1, 2, 3, 4, 5};  // 0=wan; 1,2,3,4=lan; 5=internal 
+  int vlanmap[6] = { 0, 1, 2, 3, 4, 5 };	// 0=wan; 1,2,3,4=lan; 5=internal 
 
   if (nvram_match ("vlan1ports", "0 5"))
-  {
-   vlanmap[0] = 0;
-   vlanmap[5] = 5;	 
-   if (nvram_match ("vlan0ports", "4 3 2 1 5*"))
-   {
-	   vlanmap[1] = 4;
-	   vlanmap[2] = 3;	   
-	   vlanmap[3] = 2;
-	   vlanmap[4] = 1;
-   }
-   else  // nvram_match ("vlan0ports", "1 2 3 4 5*") nothing to do
-   {
-   }
-  }
+    {
+      vlanmap[0] = 0;
+      vlanmap[5] = 5;
+      if (nvram_match ("vlan0ports", "4 3 2 1 5*"))
+	{
+	  vlanmap[1] = 4;
+	  vlanmap[2] = 3;
+	  vlanmap[3] = 2;
+	  vlanmap[4] = 1;
+	}
+      else			// nvram_match ("vlan0ports", "1 2 3 4 5*") nothing to do
+	{
+	}
+    }
   else if (nvram_match ("vlan1ports", "4 5"))
-  {
-   vlanmap[0] = 4;
-   vlanmap[5] = 5;	   
-   if (nvram_match ("vlan0ports", "0 1 2 3 5*"))
-   {
-	   vlanmap[1] = 0;
-	   vlanmap[2] = 1;	   
-	   vlanmap[3] = 2;
-	   vlanmap[4] = 3;
-   }
-   else  // nvram_match ("vlan0ports", "3 2 1 0 5*")
-   {
-	   vlanmap[1] = 3;
-	   vlanmap[2] = 2;	   
-	   vlanmap[3] = 1;
-	   vlanmap[4] = 0;
-   }  
-  }
-  else if (nvram_match ("vlan1ports", "1 5"))    //Linksys WTR54GS
-  {
-   vlanmap[5] = 5;
-   vlanmap[0] = 1;
-   vlanmap[1] = 0;
-  }
+    {
+      vlanmap[0] = 4;
+      vlanmap[5] = 5;
+      if (nvram_match ("vlan0ports", "0 1 2 3 5*"))
+	{
+	  vlanmap[1] = 0;
+	  vlanmap[2] = 1;
+	  vlanmap[3] = 2;
+	  vlanmap[4] = 3;
+	}
+      else			// nvram_match ("vlan0ports", "3 2 1 0 5*")
+	{
+	  vlanmap[1] = 3;
+	  vlanmap[2] = 2;
+	  vlanmap[3] = 1;
+	  vlanmap[4] = 0;
+	}
+    }
+  else if (nvram_match ("vlan1ports", "1 5"))	//Linksys WTR54GS
+    {
+      vlanmap[5] = 5;
+      vlanmap[0] = 1;
+      vlanmap[1] = 0;
+    }
 //  else if .... feel free to extend for giga routers
-   
-   
-  int ast = 0;    
-  char *asttemp = nvram_safe_get ("vlan0ports");  
+
+
+  int ast = 0;
+  char *asttemp = nvram_safe_get ("vlan0ports");
   if (strstr (asttemp, "5*") || strstr (asttemp, "8*"))
     ast = 1;
-    
+
 //  if (nvram_match ("trunking", "1"))
 //    system ("echo 1 > /proc/sys/dev/adm6996/trunk");
 //  else
@@ -319,7 +320,7 @@ if (nvram_match ("wan_vdsl", "1") && !nvram_match("fromvdsl","1"))
       snprintf (buff, 31, "port%dvlans", i);
       vlans = nvram_safe_get (buff);
       int use = vlanmap[i];
-	
+
       if (vlans)
 	{
 	  int lastvlan = 0;
@@ -338,13 +339,15 @@ if (nvram_match ("wan_vdsl", "1") && !nvram_match("fromvdsl","1"))
 		    eval ("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		    eval ("vconfig", "add", "eth0", buff);
 		    snprintf (buff, 9, "vlan%d", tmp);
-		    if (strcmp(nvram_safe_get("wan_ifname"),buff))
-		    {
-		    if (strlen(nvram_nget("%s_ipaddr",buff))>0)
-			eval ("ifconfig", buff, nvram_nget("%s_ipaddr",buff),"netmask",nvram_nget("%s_netmask",buff), "up");
-			    else
-			eval ("ifconfig", buff, "0.0.0.0", "up");
-		    }
+		    if (strcmp (nvram_safe_get ("wan_ifname"), buff))
+		      {
+			if (strlen (nvram_nget ("%s_ipaddr", buff)) > 0)
+			  eval ("ifconfig", buff,
+				nvram_nget ("%s_ipaddr", buff), "netmask",
+				nvram_nget ("%s_netmask", buff), "up");
+			else
+			  eval ("ifconfig", buff, "0.0.0.0", "up");
+		      }
 		  }
 
 
@@ -353,11 +356,11 @@ if (nvram_match ("wan_vdsl", "1") && !nvram_match("fromvdsl","1"))
 	      }
 	    else
 	      {
-		if (tmp == 16 && ast && use>4)
+		if (tmp == 16 && ast && use > 4)
 		  strcat ((char *) &portsettings[lastvlan][0], "*");
-		if (tmp == 16 && !ast && use>4)
+		if (tmp == 16 && !ast && use > 4)
 		  strcat ((char *) &portsettings[lastvlan][0], "t");
-		if (tmp == 16 && use<5)
+		if (tmp == 16 && use < 5)
 		  strcat ((char *) &portsettings[lastvlan][0], "t");
 		if (tmp == 17)
 		  mask |= 4;
@@ -433,7 +436,8 @@ if (nvram_match ("wan_vdsl", "1") && !nvram_match("fromvdsl","1"))
   for (i = 0; i < 16; i++)
     {
 //      fprintf(stderr,"configure vlan ports to %s\n",portsettings[i]);
-      sprintf (exec, "echo %s > /proc/switch/eth0/vlan/%d/ports",portsettings[i], i);
+      sprintf (exec, "echo %s > /proc/switch/eth0/vlan/%d/ports",
+	       portsettings[i], i);
       system2 (exec);
     }
   return ret;

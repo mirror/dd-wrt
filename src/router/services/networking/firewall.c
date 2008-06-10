@@ -575,7 +575,8 @@ nat_prerouting (void)
   if (remotetelnet)
     save2file ("-A PREROUTING -p tcp -m tcp -d %s --dport %s "
 	       "-j DNAT --to-destination %s:23\n", wanaddr,
-	       nvram_safe_get ("telnet_wanport"), nvram_safe_get ("lan_ipaddr"));
+	       nvram_safe_get ("telnet_wanport"),
+	       nvram_safe_get ("lan_ipaddr"));
 #endif
 
   /* ICMP packets are always redirected to INPUT chains */
@@ -621,7 +622,8 @@ nat_postrouting (void)
 {
   if ((nvram_match ("chilli_enable", "1"))
       && (nvram_match ("wan_proto", "disabled")))
-    save2file ("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",nvram_safe_get ("lan_ipaddr"));
+    save2file ("-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+	       nvram_safe_get ("lan_ipaddr"));
 #ifdef HAVE_PPPOESERVER
   if (nvram_match ("pppoeserver_enabled", "1"))
     save2file ("-I POSTROUTING -s %s/%s -j SNAT --to-source=%s\n",
@@ -738,25 +740,28 @@ nat_postrouting (void)
 
 
 #endif*/
-char vifs[256];
-getIfLists(vifs,256);
-//	  char *vifs = nvram_safe_get ("lan_ifnames");
-//	  if (vifs != NULL)
-	    foreach (var, vifs, next)
-	    {
-	      if (nvram_nmatch ("0", "%s_bridged", var))
-		{
-		  save2file
-		    ("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
-		     var);
-		  save2file
-		    ("-A POSTROUTING -o %s -s %s/%d -d %s/%d -j MASQUERADE\n",
-		     var, nvram_nget ("%s_ipaddr", var),
-		     getmask (nvram_nget ("%s_netmask", var)),
-		     nvram_nget ("%s_ipaddr", var),
-		     getmask (nvram_nget ("%s_netmask", var)));
-		}
-	    }
+	  char vifs[256];
+	  getIfLists (vifs, 256);
+//        char *vifs = nvram_safe_get ("lan_ifnames");
+//        if (vifs != NULL)
+	  foreach (var, vifs, next)
+	  {
+	    if (strcmp (get_wan_face (), nvram_safe_get ("wan_ifname")))
+	      {
+		if (nvram_nmatch ("0", "%s_bridged", var))
+		  {
+		    save2file
+		      ("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
+		       var);
+		    save2file
+		      ("-A POSTROUTING -o %s -s %s/%d -d %s/%d -j MASQUERADE\n",
+		       var, nvram_nget ("%s_ipaddr", var),
+		       getmask (nvram_nget ("%s_netmask", var)),
+		       nvram_nget ("%s_ipaddr", var),
+		       getmask (nvram_nget ("%s_netmask", var)));
+		  }
+	      }
+	  }
 
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_FONERA
@@ -1857,17 +1862,20 @@ filter_input (void)
 
 #endif
   char vifs[256];
-  getIfLists(vifs,256);
-  
+  getIfLists (vifs, 256);
+
   //char *vifs = nvram_safe_get ("lan_ifnames");
   //if (vifs != NULL)
-    foreach (var, vifs, next)
-    {
-      if (nvram_nmatch ("0", "%s_bridged", var))
-	{
-	  save2file ("-A INPUT -i %s -j ACCEPT\n", var);
-	}
-    }
+  foreach (var, vifs, next)
+  {
+    if (strcmp (get_wan_face (), nvram_safe_get ("wan_ifname")))
+      {
+	if (nvram_nmatch ("0", "%s_bridged", var))
+	  {
+	    save2file ("-A INPUT -i %s -j ACCEPT\n", var);
+	  }
+      }
+  }
 
 
   /* end lonewolf mods */
@@ -1952,17 +1960,20 @@ filter_forward (void)
 
 
 #endif*/
-  char vifs[256];//
-  getIfLists(vifs,256);
+  char vifs[256];		//
+  getIfLists (vifs, 256);
 //   = nvram_safe_get ("lan_ifnames");
 //  if (vifs != NULL)
-    foreach (var, vifs, next)
-    {
-      if (nvram_nmatch ("0", "%s_bridged", var))
-	{
-	  save2file ("-A FORWARD -i %s -j ACCEPT\n", var);
-	}
-    }
+  foreach (var, vifs, next)
+  {
+    if (strcmp (get_wan_face (), nvram_safe_get ("wan_ifname")))
+      {
+	if (nvram_nmatch ("0", "%s_bridged", var))
+	  {
+	    save2file ("-A FORWARD -i %s -j ACCEPT\n", var);
+	  }
+      }
+  }
   /* Accept the redirect, might be seen as INVALID, packets */
   save2file ("-A FORWARD -i %s -o %s -j ACCEPT\n", lanface, lanface);
 
@@ -2072,7 +2083,7 @@ filter_forward (void)
 		   wanface, ISAKMP_PORT, log_drop);
 
     }
-  start_vpn_modules();
+  start_vpn_modules ();
 //      load_vpn_modules ();
   if (nvram_invmatch ("filter", "off"))
     {
@@ -2080,9 +2091,11 @@ filter_forward (void)
 	{
 	  save2file
 	    ("-I FORWARD -o %s -s %s/%d -p tcp --dport %d -j ACCEPT\n",
-	     wanface, nvram_safe_get ("lan_ipaddr"),getmask(nvram_safe_get("lan_netmask")), PPTP_PORT);
+	     wanface, nvram_safe_get ("lan_ipaddr"),
+	     getmask (nvram_safe_get ("lan_netmask")), PPTP_PORT);
 	  save2file ("-I FORWARD -o %s -s %s/%d -p gre -j ACCEPT\n", wanface,
-		     nvram_safe_get ("lan_ipaddr"),getmask(nvram_safe_get("lan_netmask")));
+		     nvram_safe_get ("lan_ipaddr"),
+		     getmask (nvram_safe_get ("lan_netmask")));
 	}
     }
   /* ACCEPT packets for Multicast pass through */
@@ -2275,8 +2288,8 @@ filter_table (void)
       save2file ("-A FORWARD -o br0 -j DROP\n");
 //      if (nvram_match("chilli_nowifibridge","1"))
 //        {
-//	save2file("-t nat -A PREROUTING -s 192.168.182.0/24 -d 192.168.182.1 -j DROP");   	
-//	}
+//      save2file("-t nat -A PREROUTING -s 192.168.182.0/24 -d 192.168.182.1 -j DROP");         
+//      }
     }
   /* DD-WRT end */
 #endif

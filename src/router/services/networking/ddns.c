@@ -151,7 +151,7 @@ init_ddns (void)
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_9");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_9");
       break;
-      
+
     default:
       return -1;
     }

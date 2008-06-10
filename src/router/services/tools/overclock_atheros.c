@@ -114,7 +114,7 @@ start_overclock (void)		// hidden feature. must be called with "startservice ove
   FILE *out = fopen ("/tmp/boot", "wb");
   fseek (in, 0, SEEK_END);
   len = ftell (in);
-  fprintf(stderr,"size = %ld\n",len);
+  fprintf (stderr, "size = %ld\n", len);
   fseek (in, 0, SEEK_SET);
   for (i = 0; i < len; i++)
     putc (getc (in), out);
@@ -402,7 +402,8 @@ start_overclock (void)		// hidden feature. must be called with "startservice ove
   fprintf (stderr, "board is now clocked at %d mhz, please reboot\n", clk);
 }
 
-int main(int argc,char *argv[])
+int
+main (int argc, char *argv[])
 {
-start_overclock();
+  start_overclock ();
 }

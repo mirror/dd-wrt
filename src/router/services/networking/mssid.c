@@ -57,8 +57,7 @@ start_config_macs (char *wlifname)	//reconfigure macs which should fix the corer
 	  eval ("wl", "-i", var, "down");
 	  eval ("wl", "-i", var, "cur_etheraddr",
 		nvram_nget ("%s_hwaddr", var));
-	  eval ("wl", "-i", var, "bssid",
-		nvram_nget ("%s_hwaddr", var));
+	  eval ("wl", "-i", var, "bssid", nvram_nget ("%s_hwaddr", var));
 	  eval ("wl", "-i", var, "up");
 	}
     }

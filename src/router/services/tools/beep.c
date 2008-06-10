@@ -30,12 +30,13 @@
 
 
 
-void beep(int gpio, int time)
+void
+beep (int gpio, int time)
 {
-set_gpio(gpio,1);
-usleep(time);
-set_gpio(gpio,0);
-usleep(time);
+  set_gpio (gpio, 1);
+  usleep (time);
+  set_gpio (gpio, 0);
+  usleep (time);
 }
 
 int
@@ -43,46 +44,46 @@ beep_main (int argc, char **argv)
 {
 
   unsigned int gpio;
-  unsigned  char assoclist[1024];
+  unsigned char assoclist[1024];
 
   if (argc != 3)
     {
       fprintf (stderr, "%s <interface> <time>\n", argv[0]);
       exit (1);
     }
-  gpio = atoi(argv[2]);
-  while(1)
-  {
-  int cnt = getassoclist(argv[1],assoclist);
-  if (cnt==-1)
+  gpio = atoi (argv[2]);
+  while (1)
     {
-    cnt=0;
+      int cnt = getassoclist (argv[1], assoclist);
+      if (cnt == -1)
+	{
+	  cnt = 0;
+	}
+      if (!cnt)
+	{
+	  fprintf (stderr, "not associated, wait 5 seconds\n");
+	  sleep (5);
+	  continue;
+	}
+      unsigned char *pos = assoclist;
+      pos += 4;
+      int rssi = getRssi (argv[1], pos);
+      int noise = getNoise (argv[1], pos);
+      int snr = rssi - noise;
+      if (snr < 0)
+	{
+	  fprintf (stderr, "snr is %d, invalid\n", snr);
+	  continue;
+	}
+      if (snr > 30)
+	{
+	  fprintf (stderr, "snr perfect, full beep (%d)\n", snr);
+	  set_gpio (gpio, 1);	//snr perfect
+	  continue;
+	}
+      int beeptime = 66 * (30 - snr);
+      beep (gpio, beeptime);
     }
-  if (!cnt)
-    {
-    fprintf(stderr,"not associated, wait 5 seconds\n");
-    sleep(5);
-    continue;
-    }
-  unsigned char *pos = assoclist;
-  pos+=4; 
-  int rssi = getRssi(argv[1],pos);
-  int noise = getNoise(argv[1],pos);
-  int snr = rssi - noise;
-  if (snr<0)
-    {
-    fprintf(stderr,"snr is %d, invalid\n",snr);
-    continue;
-    }
-  if (snr>30)
-    {
-    fprintf(stderr,"snr perfect, full beep (%d)\n",snr);
-    set_gpio(gpio,1); //snr perfect
-    continue; 
-    }
-  int beeptime = 66*(30-snr);
-    beep(gpio,beeptime); 
-  }
 
   return 0;
 }
