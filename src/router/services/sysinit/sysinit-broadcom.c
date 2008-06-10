@@ -1343,7 +1343,7 @@ char *
 enable_dtag_vlan (int enable)
 {
   int donothing = 0;
-nvram_set("fromvdsl","1");
+  nvram_set ("fromvdsl", "1");
   if (nvram_match ("vdsl_state", "1") && enable)
     donothing = 1;
   if ((nvram_match ("vdsl_state", "0") || nvram_match ("vdsl_state", ""))
@@ -1376,30 +1376,30 @@ nvram_set("fromvdsl","1");
       char *eth = "eth1";
 #endif
       vlan7ports = "0t 8";
-      int vlanswap=0;
-      if (nvram_match("vlan1ports","4 8"))
-        {
-        vlanswap=1;	
-        vlan7ports = "4t 8";
+      int vlanswap = 0;
+      if (nvram_match ("vlan1ports", "4 8"))
+	{
+	  vlanswap = 1;
+	  vlan7ports = "4t 8";
 	}
       char *save_ports2 = nvram_safe_get ("vlan2ports");
       if (vlanswap)
-    	    save_ports2 = nvram_safe_get ("vlan1ports");
+	save_ports2 = nvram_safe_get ("vlan1ports");
 #ifndef HAVE_MADWIFI
       if (getRouterBrand () == ROUTER_WRT600N)
 	eth = "eth2";
 #endif
       if (donothing)
-        {
-	nvram_set("fromvdsl","0");
-	return eth;
+	{
+	  nvram_set ("fromvdsl", "0");
+	  return eth;
 	}
       if (enable)
 	{
-        if (vlanswap)
-	  nvram_set ("vlan1ports", "");
-	else
-	  nvram_set ("vlan2ports", "");
+	  if (vlanswap)
+	    nvram_set ("vlan1ports", "");
+	  else
+	    nvram_set ("vlan2ports", "");
 	  nvram_set ("vlan7ports", vlan7ports);
 	}
       stop_lan ();
@@ -1411,33 +1411,35 @@ nvram_set("fromvdsl","1");
       start_lan ();
       if (enable)
 	{
-        if (vlanswap)
-	  nvram_set ("vlan1ports", save_ports2);
-	else
-	  nvram_set ("vlan2ports", save_ports2);
+	  if (vlanswap)
+	    nvram_set ("vlan1ports", save_ports2);
+	  else
+	    nvram_set ("vlan2ports", save_ports2);
 	  nvram_set ("vlan7ports", "");
 	}
-nvram_set("fromvdsl","0");
+      nvram_set ("fromvdsl", "0");
       return eth;
     }
   char tmp[200];
   char *eth = "eth0";
 
-  	FILE *in = fopen ("/proc/switch/eth1/reset", "rb");	// this condition fails almost. just one router (DLINK DIR-330) requires it
-  	if (in)
-    	{
-      		eth = "eth1";
-      		fclose (in);
-    	}else
-    	{
-     	  FILE *in = fopen ("/proc/switch/eth2/reset", "rb");	// this condition fails almost. just one router (DLINK DIR-330) requires it
-     	  if (in)
-	  {
-            eth = "eth2";
-            fclose (in);
-	  }else
-            eth = "eth0";
-    	}
+  FILE *in = fopen ("/proc/switch/eth1/reset", "rb");	// this condition fails almost. just one router (DLINK DIR-330) requires it
+  if (in)
+    {
+      eth = "eth1";
+      fclose (in);
+    }
+  else
+    {
+      FILE *in = fopen ("/proc/switch/eth2/reset", "rb");	// this condition fails almost. just one router (DLINK DIR-330) requires it
+      if (in)
+	{
+	  eth = "eth2";
+	  fclose (in);
+	}
+      else
+	eth = "eth0";
+    }
 
   if (!donothing)
     {
@@ -1445,11 +1447,12 @@ nvram_set("fromvdsl","0");
       system2 (tmp);
       if (enable)
 	{
-	  fprintf (stderr, "enable vlan port mapping %s/%s\n",nvram_safe_get ("vlan0ports"), vlan7ports);
+	  fprintf (stderr, "enable vlan port mapping %s/%s\n",
+		   nvram_safe_get ("vlan0ports"), vlan7ports);
 	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/0/ports",
 		   nvram_safe_get ("vlan0ports"), eth);
 	  system2 (tmp);
-	  start_setup_vlans();
+	  start_setup_vlans ();
 	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/1/ports", "",
 		   eth);
 	  system2 (tmp);
@@ -1459,7 +1462,9 @@ nvram_set("fromvdsl","0");
 	}
       else
 	{
-	  fprintf (stderr, "disable vlan port mapping %s/%s\n",nvram_safe_get ("vlan0ports"), nvram_safe_get ("vlan1ports"));
+	  fprintf (stderr, "disable vlan port mapping %s/%s\n",
+		   nvram_safe_get ("vlan0ports"),
+		   nvram_safe_get ("vlan1ports"));
 	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/7/ports", "",
 		   eth);
 	  system2 (tmp);
@@ -1469,10 +1474,10 @@ nvram_set("fromvdsl","0");
 	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/1/ports",
 		   nvram_safe_get ("vlan1ports"), eth);
 	  system2 (tmp);
-    	  start_setup_vlans();
+	  start_setup_vlans ();
 	}
     }
-nvram_set("fromvdsl","0");
+  nvram_set ("fromvdsl", "0");
   return eth;
 }
 

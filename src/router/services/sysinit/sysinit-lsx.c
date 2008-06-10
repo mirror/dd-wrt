@@ -102,7 +102,7 @@ start_sysinit (void)
 /* network drivers */
   eval ("insmod", "ag7100_mod");
 //  sleep(1);
-  eval ("ifconfig","eth0","up");
+  eval ("ifconfig", "eth0", "up");
   struct ifreq ifr;
   int s;
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)))

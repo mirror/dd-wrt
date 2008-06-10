@@ -146,15 +146,15 @@ containsIP (char *ip)
 
 
 //fprintf(stderr,"scan for ip %s\n",ip);
-  while (feof(in)==0 && fscanf (in, "%s", buf_ip) == 1)
+  while (feof (in) == 0 && fscanf (in, "%s", buf_ip) == 1)
     {
-    //fprintf(stderr,"begin\n");
+      //fprintf(stderr,"begin\n");
       i = (char *) &buf_ip[0];
       net = strsep (&i, "/");
       //fprintf(stderr,"found %s/%s\n", net, i);
       if (compareNet (net, i, cip))
 	{
-        //fprintf (stderr,"%s/%s fits to %s\n", net, i, ip);
+	  //fprintf (stderr,"%s/%s fits to %s\n", net, i, ip);
 	  fclose (in);
 	  return 1;
 	}
@@ -176,7 +176,7 @@ containsMAC (char *ip)
   if (in == NULL)
     return 0;
 //fprintf(stderr,"scan for mac %s \n",ip);
-  while (feof(in)==0 && fscanf (in, "%s", buf_ip) == 1)
+  while (feof (in) == 0 && fscanf (in, "%s", buf_ip) == 1)
     {
       if (!strcmp (buf_ip, ip))
 	{
@@ -233,7 +233,7 @@ do_aqos_check (void)
   while (fgetc (arp) != '\n');
 
 //fscanf(arp,"%s %s %s %s %s %s",ip_buf,hw_buf,fl_buf,mac_buf,mask_buf,dev_buf); //skip first line
-  while (!feof(arp) && fscanf
+  while (!feof (arp) && fscanf
 	 (arp, "%s %s %s %s %s %s", ip_buf, hw_buf, fl_buf, mac_buf, mask_buf,
 	  dev_buf) == 6)
     {
@@ -242,7 +242,7 @@ do_aqos_check (void)
       if (wan && strlen (wan) > 0 && !strcmp (dev_buf, wan))
 	continue;
 
-     
+
       cmac = containsMAC (mac_buf);
       cip = containsIP (ip_buf);
 
