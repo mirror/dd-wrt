@@ -8395,7 +8395,7 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
 
   foreach (var, eths, next)
   {
-    if (nvram_match (get_wan_face(), var))
+    if (!strcmp(get_wan_face(), var))
       continue;
 
     sprintf (ssid, "%s_bridged", var);
