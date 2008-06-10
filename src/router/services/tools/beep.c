@@ -34,9 +34,9 @@ void
 beep (int gpio, int time)
 {
   set_gpio (gpio, 1);
-  usleep (time);
+  usleep (time*1000);
   set_gpio (gpio, 0);
-  usleep (time);
+  usleep (time*1000);
 }
 
 int
@@ -82,6 +82,8 @@ beep_main (int argc, char **argv)
 	  continue;
 	}
       int beeptime = 66 * (30 - snr);
+     fprintf (stderr, "snr is %d, beep interval %d\n", snr, beeptime);
+      
       beep (gpio, beeptime);
     }
 
