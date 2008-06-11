@@ -28,7 +28,7 @@ endif
 
 OBJS := rc.o init.o servicemanager.o services.o crc.o 
 #http.o stats.o
-OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o radio_timer.o watchdog.o event.o nvram.o ledtool.o ttraff.o pptpd.o
+OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o radio_timer.o watchdog.o event.o nvram.o ledtool.o ttraff.o 
 
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
 REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
@@ -283,6 +283,7 @@ endif
 
 ifeq ($(CONFIG_PPTPD),y)
 CFLAGS += -DHAVE_PPTPD
+OBJS += pptpd.o
 endif
 ifeq ($(CONFIG_PPTP),y)
 CFLAGS += -DHAVE_PPTP
