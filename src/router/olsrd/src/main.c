@@ -255,13 +255,6 @@ main(int argc, char *argv[])
       fprintf(stderr, "Bad configuration!\n");
       olsr_exit(__func__, EXIT_FAILURE);      
     }
-
-  /*
-   * Print configuration 
-   */
-  if(olsr_cnf->debug_level > 1) {
-    olsrd_print_cnf(olsr_cnf);
-  }
 #ifndef WIN32
   /* Disable redirects globally */
   disable_redirects_global(olsr_cnf->ip_version);
