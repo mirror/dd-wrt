@@ -227,8 +227,8 @@ extern int scp_main (int argc, char **argv);
 #endif
 extern int roaming_daemon_main (int argc, char *argv[]);
 
-extern int pptpd_main (int argc, char **argv);
 #ifdef HAVE_PPTPD
+extern int pptpd_main (int argc, char **argv);
 extern int start_pptpd (void);
 extern int stop_pptpd (void);
 #endif
