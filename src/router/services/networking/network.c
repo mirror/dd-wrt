@@ -3131,7 +3131,7 @@ start_wan_done (char *wan_ifname)
   cprintf ("done\n");
 
 #endif
-#ifdef HAVE_NEWMEDIA
+#ifdef HAVE_OPENVPN
   stop_openvpnserverwan ();
   start_openvpnserverwan ();
 #endif
@@ -3233,10 +3233,8 @@ stop_wan (void)
   unlink ("/tmp/.wanuptime");
 
   cprintf ("%s %s\n", wan_ifname, nvram_safe_get ("wan_proto"));
-#ifdef HAVE_NEWMEDIA
-  stop_openvpnserverwan ();
-#endif
 #ifdef HAVE_OPENVPN
+  stop_openvpnserverwan ();
   stop_openvpn ();
 #endif
 #ifdef HAVE_DHCPFORWARD
