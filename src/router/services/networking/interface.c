@@ -245,6 +245,7 @@ start_setup_vlans (void)
   char *vlans, *next, vlan[4], buff[70], buff2[16];
   FILE *fp;
   char portsettings[16][64];
+  char tagged[16];
   unsigned char mac[20];;
   struct ifreq ifr;
   int s;
@@ -315,6 +316,7 @@ start_setup_vlans (void)
 //    workaround = 0;
 
   memset (&portsettings[0][0], 0, 16 * 64);
+  memset (&tagged[0], 0, 16);
   for (i = 0; i < 6; i++)
     {
       snprintf (buff, 31, "port%dvlans", i);
@@ -360,8 +362,9 @@ start_setup_vlans (void)
 		  strcat ((char *) &portsettings[lastvlan][0], "*");
 		if (tmp == 16 && !ast && use > 4)
 		  strcat ((char *) &portsettings[lastvlan][0], "t");
-		if (tmp == 16 && use < 5)
-		  strcat ((char *) &portsettings[lastvlan][0], "t");
+		if (tmp == 16)
+		  tagged[use] = 1;
+//                strcat ((char *) &portsettings[lastvlan][0], "t");
 		if (tmp == 17)
 		  mask |= 4;
 		if (tmp == 18)
@@ -430,12 +433,29 @@ start_setup_vlans (void)
 //    }
   for (i = 0; i < 16; i++)
     {
+      char port[64];
+      strcpy (port, &portsettings[i][0]);
+      memset (&portsettings[i][0], 0, 64);
+      foreach (vlan, port, next)
+      {
+	if (atoi (vlan) < 5 && atoi (vlan) >= 0 && tagged[atoi (vlan)])
+	  sprintf (&portsettings[i][0], "%s %st", &portsettings[i][0], vlan);
+	else if (atoi (vlan) == 5 tagged[atoi (vlan)] && !ast)
+	  sprintf (&portsettings[i][0], "%s %st", &portsettings[i][0], vlan);
+	else if (atoi (vlan) == 5 tagged[atoi (vlan)] && ast)
+	  sprintf (&portsettings[i][0], "%s %s*", &portsettings[i][0], vlan);
+	else
+	  sprintf (&portsettings[i][0], "%s %s", &portsettings[i][0], vlan);
+      }
+    }
+  for (i = 0; i < 16; i++)
+    {
       sprintf (exec, "echo " " > /proc/switch/eth0/vlan/%d/ports", i);
       system2 (exec);
     }
   for (i = 0; i < 16; i++)
     {
-//      fprintf(stderr,"configure vlan ports to %s\n",portsettings[i]);
+      fprintf (stderr, "configure vlan ports to %s\n", portsettings[i]);
       sprintf (exec, "echo %s > /proc/switch/eth0/vlan/%d/ports",
 	       portsettings[i], i);
       system2 (exec);
