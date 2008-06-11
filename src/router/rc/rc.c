@@ -564,7 +564,9 @@ static struct MAIN maincalls[] = {
   {"ip-down", "ipdown", NULL},
   {"ipdown", "disconnected_pppoe", NULL},
   {"udhcpc", "udhcpc", NULL},
+#ifdef HAVE_PPTPD
   {"poptop", NULL, &pptpd_main},
+#endif
   {"redial", NULL, &redial_main},
 #ifndef HAVE_RB500
   {"resetbutton", NULL, &resetbutton_main},
