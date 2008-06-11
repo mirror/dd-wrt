@@ -327,5 +327,6 @@ extern int watchdog_main (int argc, char *argv[]);
 extern int event_main (int argc, char **argv);
 void cfe_default (void);
 //extern int nvram_restore(const char *path, char *mtd);
+int reg_main(int argc,char **argv);
 
 #endif /* _rc_h_ */
