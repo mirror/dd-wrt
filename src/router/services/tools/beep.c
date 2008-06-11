@@ -81,7 +81,7 @@ beep_main (int argc, char **argv)
 	  set_gpio (gpio, 1);	//snr perfect
 	  continue;
 	}
-      int beeptime = 66 * (30 - snr);
+      int beeptime = 66 * (31 - snr);
      fprintf (stderr, "snr is %d, beep interval %d\n", snr, beeptime);
       
       beep (gpio, beeptime);
