@@ -1420,7 +1420,6 @@ enable_dtag_vlan (int enable)
       nvram_set ("fromvdsl", "0");
       return eth;
     }
-  char tmp[200];
   char *eth = "eth0";
 
   FILE *in = fopen ("/proc/switch/eth1/reset", "rb");	// this condition fails almost. just one router (DLINK DIR-330) requires it
@@ -1443,37 +1442,30 @@ enable_dtag_vlan (int enable)
 
   if (!donothing)
     {
-      sprintf (tmp, "echo 1 > /proc/switch/%s/reset", eth);
-      system2 (tmp);
+      sysprintf( "echo 1 > /proc/switch/%s/reset", eth);
       if (enable)
 	{
 	  fprintf (stderr, "enable vlan port mapping %s/%s\n",
 		   nvram_safe_get ("vlan0ports"), vlan7ports);
-	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/0/ports",
+	  sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/0/ports",
 		   nvram_safe_get ("vlan0ports"), eth);
-	  system2 (tmp);
 	  start_setup_vlans ();
-	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/1/ports", "",
+	  sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/1/ports", "",
 		   eth);
-	  system2 (tmp);
-	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/7/ports",
+	  sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/7/ports",
 		   vlan7ports, eth);
-	  system2 (tmp);
 	}
       else
 	{
 	  fprintf (stderr, "disable vlan port mapping %s/%s\n",
 		   nvram_safe_get ("vlan0ports"),
 		   nvram_safe_get ("vlan1ports"));
-	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/7/ports", "",
+	  sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/7/ports", "",
 		   eth);
-	  system2 (tmp);
-	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/0/ports",
+	  sysprintf("echo \"%s\" > /proc/switch/%s/vlan/0/ports",
 		   nvram_safe_get ("vlan0ports"), eth);
-	  system2 (tmp);
-	  sprintf (tmp, "echo \"%s\" > /proc/switch/%s/vlan/1/ports",
+	  sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/1/ports",
 		   nvram_safe_get ("vlan1ports"), eth);
-	  system2 (tmp);
 	  start_setup_vlans ();
 	}
     }

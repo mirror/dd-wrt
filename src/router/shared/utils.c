@@ -3012,7 +3012,6 @@ wds_dev_config (int dev, int up)
   char wds_dev[32] = "";
   char *wds = (void *) 0;
   char wds_gw_var[32] = "";
-  char cmd[100] = "";
   char *gw = (void *) 0;
   int s = -1;
   struct ifreq ifr;
@@ -3088,12 +3087,10 @@ wds_dev_config (int dev, int up)
       fprintf (fp, "valid mac %s ip %s nm %s\n", hwaddr, ip, netmask);
 #endif
 
-      snprintf (cmd, 99, "ifconfig %s down", wds_dev);
-      system2 (cmd);
+      sysprintf( "ifconfig %s down", wds_dev);
 
-      snprintf (cmd, 99, "ifconfig %s %s netmask %s up", wds_dev, ip,
+      sysprintf( "ifconfig %s %s netmask %s up", wds_dev, ip,
 		netmask);
-      system2 (cmd);
 
       snprintf (wds_gw_var, 31, "%s_gw", wds_var);
       gw = nvram_safe_get (wds_gw_var);
@@ -3110,8 +3107,7 @@ wds_dev_config (int dev, int up)
 #ifdef WDS_DEBUG
       fprintf (fp, "running down\n");
 #endif
-      snprintf (cmd, 99, "ifconfig %s down", wds_dev);
-      system2 (cmd);
+      sysprintf( "ifconfig %s down", wds_dev);
 
     }
 

@@ -93,8 +93,7 @@ ej_dump_site_survey (webs_t wp, int argc, char_t ** argv)
     system2 ("site_survey");
   else
     {
-      sprintf (buf, "site_survey \"%s\"", name);
-      system2 (buf);
+      sysprintf("site_survey \"%s\"", name);
     }
 
   open_site_survey ();

@@ -111,7 +111,6 @@ runStartup (char *folder, char *extension)
 {
   struct dirent *entry;
   DIR *directory;
-  unsigned char buf[128];
   directory = opendir (folder);
   if (directory == NULL)
     {
@@ -122,9 +121,8 @@ runStartup (char *folder, char *extension)
     {
       if (endswith (entry->d_name, extension))
 	{
-	  sprintf (buf, "%s/%s 2>&1 > /dev/null&\n", folder, entry->d_name);
+	  sysprintf( "%s/%s 2>&1 > /dev/null&\n", folder, entry->d_name);
 	  //execute script     
-	  system2 (buf);
 	}
     }
   closedir (directory);

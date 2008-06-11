@@ -256,9 +256,7 @@ do_aqos_check (void)
       if (!cmac && strlen (mac_buf) > 0)
 	{
 
-	  char addition[128];
-	  sprintf (addition, "echo \"%s\" >>/tmp/aqos_macs", mac_buf);
-	  system2 (addition);
+	  sysprintf( "echo \"%s\" >>/tmp/aqos_macs", mac_buf);
 	  //create default rule for mac
 	  //fprintf(stderr,"add usermac\n");
 	  add_usermac (mac_buf, qosidx, defaulup, defauldown);

@@ -18,7 +18,7 @@
 #include <wlutils.h>
 
 int
-radio_timer_main (void)
+radio_timer_main (int argc, char **argv)
 {
 
   long radiotime0;		//4 byte int number (24 bits from gui + 1 bit for midnight)

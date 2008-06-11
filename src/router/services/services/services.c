@@ -111,8 +111,7 @@ addHost (char *host, char *ip)
 
   if (alreadyInHost (newhost))
     return;
-  sprintf (buf, "echo \"%s\t%s\">>/tmp/hosts", ip, newhost);
-  system2 (buf);
+  sysprintf ("echo \"%s\t%s\">>/tmp/hosts", ip, newhost);
 }
 
 void
@@ -1124,7 +1123,6 @@ start_l2tp (int status)
   char *l2tp_argv[] = { "l2tpd",
     NULL
   };
-  char l2tpctrl[64];
   char username[80], passwd[80];
 
   //stop_dhcpc();
@@ -1270,10 +1268,6 @@ start_l2tp (int status)
 
   ret = _evalpid (l2tp_argv, NULL, 0, NULL);
   sleep (1);
-  snprintf (l2tpctrl, sizeof (l2tpctrl),
-	    "/usr/sbin/l2tp-control \"start-session %s\"",
-	    nvram_safe_get ("l2tp_server_ip"));
-  //system(l2tpctrl);
 
   if (nvram_match ("ppp_demand", "1"))
     {
@@ -1288,7 +1282,8 @@ start_l2tp (int status)
 	eval ("listen", nvram_safe_get ("lan_ifname"));
     }
   else
-    system2 (l2tpctrl);
+  sysprintf ("/usr/sbin/l2tp-control \"start-session %s\"",
+	    nvram_safe_get ("l2tp_server_ip"));
 
   cprintf ("done\n");
   return ret;
@@ -1492,12 +1487,9 @@ start_force_to_dial (void)
 #ifdef HAVE_L2TP
   if (nvram_match ("wan_proto", "l2tp"))
     {
-      char l2tpctrl[64];
 
-      snprintf (l2tpctrl, sizeof (l2tpctrl),
-		"/usr/sbin/l2tp-control \"start-session %s\"",
+      sysprintf("/usr/sbin/l2tp-control \"start-session %s\"",
 		nvram_safe_get ("l2tp_server_ip"));
-      system2 (l2tpctrl);
       return ret;
     }
 #endif
@@ -1538,12 +1530,9 @@ start_hwmon (void)
 {
   int temp_max = atoi (nvram_safe_get ("hwmon_temp_max")) * TEMP_MUL;
   int temp_hyst = atoi (nvram_safe_get ("hwmon_temp_hyst")) * TEMP_MUL;
-  char buf[128];
-  sprintf (buf, "/bin/echo %d > %s/%s_max", temp_max, TEMP_PATH, TEMP_PREFIX);
-  system2 (buf);
-  sprintf (buf, "/bin/echo %d > %s/%s_max_hyst", temp_hyst, TEMP_PATH,
+  sysprintf("/bin/echo %d > %s/%s_max", temp_max, TEMP_PATH, TEMP_PREFIX);
+  sysprintf("/bin/echo %d > %s/%s_max_hyst", temp_hyst, TEMP_PATH,
 	   TEMP_PREFIX);
-  system2 (buf);
   syslog (LOG_INFO, "hwmon successfully started\n");
 }
 

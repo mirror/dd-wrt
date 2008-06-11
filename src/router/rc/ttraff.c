@@ -68,7 +68,7 @@ char *tdata;
 
 
 int
-ttraff_main (void)
+ttraff_main (int argc,char **argv)
 {
 
   struct tm *currtime;

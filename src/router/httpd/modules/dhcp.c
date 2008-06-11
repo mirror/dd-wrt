@@ -242,7 +242,6 @@ ej_dumpleases (webs_t wp, int argc, char_t ** argv)
 void
 delete_leases (webs_t wp)
 {
-  char buf[100];
   char *iface;
   char *ip;
   char *mac;
@@ -267,8 +266,7 @@ delete_leases (webs_t wp)
   ip = websGetVar (wp, "ip_del", NULL);
   mac = websGetVar (wp, "mac_del", NULL);
 
-  snprintf (buf, sizeof (buf), "dhcp_release %s %s %s", iface, ip, mac);
-  system2 (buf);
+  sysprintf( "dhcp_release %s %s %s", iface, ip, mac);
 }
 
 

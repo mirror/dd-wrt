@@ -32,7 +32,7 @@ extern int timer_connect (timer_t timerid, void (*routine) (timer_t, int),
 #define NTP_N_TIMER 30
 
 int
-process_monitor_main (void)
+process_monitor_main (int argc,char **argv)
 {
   struct itimerspec t1, t4, t5;
   timer_t ntp1_id, ntp2_id, udhcpd_id;

@@ -55,7 +55,6 @@ start_radius (char *prefix)
       char *server = nvram_nget ("%s_radius_ipaddr", prefix);
       char *port = nvram_nget ("%s_radius_port", prefix);
       char *share = nvram_nget ("%s_radius_key", prefix);
-      char exec[64];
       char type[32];
       sprintf (type, "%s_radmactype", prefix);
       char *pragma = "";
@@ -68,11 +67,10 @@ start_radius (char *prefix)
       if (nvram_match (type, "3"))
 	pragma = "";
       sleep (1);		//some delay is usefull
-      sprintf (exec, "wrt-radauth %s %s %s %s %s %s %s %s &", pragma, ifname,
+      sysprintf( "wrt-radauth %s %s %s %s %s %s %s %s &", pragma, ifname,
 	       server, port, share, nvram_nget ("%s_radius_override", prefix),
 	       nvram_nget ("%s_radmacpassword", prefix),
 	       nvram_nget ("%s_max_unauth_users", prefix));
-      system2 (exec);
     }
 
 

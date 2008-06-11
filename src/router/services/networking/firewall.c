@@ -2949,11 +2949,9 @@ start_firewall (void)
 
   char *wordlist = nvram_safe_get ("ral");
   char var[256], *next;
-  char buf[256];
   foreach (var, wordlist, next)
   {
-    sprintf (buf, "/usr/sbin/iptables -I INPUT -s %s -j ACCEPT", var);
-    system2 (buf);
+    sysprintf ("/usr/sbin/iptables -I INPUT -s %s -j ACCEPT", var);
   }
 #ifdef HAVE_WIFIDOG
   stop_wifidog ();
@@ -2974,11 +2972,9 @@ stop_firewall (void)
 
   char *wordlist = nvram_safe_get ("ral");
   char var[256], *next;
-  char buf[256];
   foreach (var, wordlist, next)
   {
-    sprintf (buf, "/usr/sbin/iptables -D INPUT -s %s -j ACCEPT", var);
-    system2 (buf);
+    sysprintf ("/usr/sbin/iptables -D INPUT -s %s -j ACCEPT", var);
   }
   char num[32];
   int i;
