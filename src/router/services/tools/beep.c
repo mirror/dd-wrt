@@ -48,7 +48,7 @@ beep_main (int argc, char **argv)
 
   if (argc != 3)
     {
-      fprintf (stderr, "%s <interface> <time>\n", argv[0]);
+      fprintf (stderr, "%s <interface> <gpio>\n", argv[0]);
       exit (1);
     }
   gpio = atoi (argv[2]);
