@@ -358,13 +358,8 @@ start_setup_vlans (void)
 	      }
 	    else
 	      {
-		if (tmp == 16 && ast && use > 4)
-		  strcat ((char *) &portsettings[lastvlan][0], "*");
-		if (tmp == 16 && !ast && use > 4)
-		  strcat ((char *) &portsettings[lastvlan][0], "t");
 		if (tmp == 16)
 		  tagged[use] = 1;
-//                strcat ((char *) &portsettings[lastvlan][0], "t");
 		if (tmp == 17)
 		  mask |= 4;
 		if (tmp == 18)
