@@ -4,7 +4,6 @@ VERS_1.0
     olsrd_parse_cnf;
     olsrd_sanity_check_cnf;
     olsrd_free_cnf;
-    olsrd_print_cnf;
     get_default_if_config;
     olsrd_get_default_cnf;
     olsrd_parse_cnf;
