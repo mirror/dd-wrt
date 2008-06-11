@@ -1188,19 +1188,6 @@ static int build_cfgfile_body(char *buf, olsr_u32_t bufsize)
                    "<hr/>\n"
                    "<pre>\n");
 
-#ifdef NETDIRECT
-  {
-        /* Hack to make netdirect stuff work with
-           olsrd_write_cnf_buf
-        */
-        char tmpBuf[10000];
-        size = olsrd_write_cnf_buf(olsr_cnf, tmpBuf, 10000);
-        snprintf(&buf[size], bufsize-size, tmpBuf);
-  }
-#else
-  size += olsrd_write_cnf_buf(olsr_cnf, &buf[size], bufsize-size);
-#endif
-
   if (size < 0) {
     size = snprintf(buf, size, "ERROR GENERATING CONFIGFILE!\n");
   }
