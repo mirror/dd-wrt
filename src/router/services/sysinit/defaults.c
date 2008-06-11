@@ -1937,6 +1937,19 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
   {"fullswitch", "0", 0},
 #ifdef HAVE_OPENVPN
+  {"openvpncl_enable", "0", 0},
+  {"openvpncl_remoteip", "0.0.0.0", 0},
+  {"openvpncl_remoteport", "1194", 0},
+  {"openvpncl_ca", "", 0},
+  {"openvpncl_client", "", 0},
+  {"openvpncl_key", "", 0},
+  {"openvpncl_lzo", "0", 0},
+  {"openvpncl_proto", "udp", 0},
+  {"openvpncl_mtu", "1500", 0},
+  {"openvpncl_extramtu", "32", 0},
+  {"openvpncl_mssfix", "1450", 0},
+  {"openvpncl_certtype", "0", 0},
+
   {"openvpn_enable", "0", 0},
   {"openvpn_remoteip", "0.0.0.0", 0},
   {"openvpn_remoteport", "1194", 0},
@@ -1949,8 +1962,6 @@ struct nvram_tuple srouter_defaults[] = {
   {"openvpn_extramtu", "32", 0},
   {"openvpn_mssfix", "1450", 0},
   {"openvpn_certtype", "0", 0},
-#endif
-#ifdef HAVE_NEWMEDIA
   {"openvpn_config", "", 0},
   {"openvpn_dh", "", 0},
   {"openvpn_tlsauth", "", 0},
