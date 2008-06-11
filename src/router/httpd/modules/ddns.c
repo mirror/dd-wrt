@@ -243,15 +243,12 @@ request_freedns (char *user, char *password)
   sha1_hash (un, strlen (un), &context);
   sha1_end (final, &context);
   char request[128] = { 0 };
-  char request2[128] = { 0 };
   int i;
   for (i = 0; i < 20; i++)
     sprintf (request, "%s%02x", request, final[i]);
   system ("rm -f /tmp/.hash");
-  sprintf (request2,
-	   "wget \"http://freedns.afraid.org/api/?action=getdyndns&sha=%s\" -O /tmp/.hash",
+  sysprintf("wget \"http://freedns.afraid.org/api/?action=getdyndns&sha=%s\" -O /tmp/.hash",
 	   request);
-  system (request2);
   FILE *in = fopen ("/tmp/.hash", "rb");
   if (in == NULL)
     return NULL;

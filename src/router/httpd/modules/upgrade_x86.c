@@ -183,13 +183,12 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
   linuxsize += getc (fifo) * 256 * 256;
   linuxsize += getc (fifo) * 256 * 256 * 256;
   char dev[128];
-  sprintf (dev, "sync|dd if=/tmp/flash of=/dev/discs/disc%d/disc|sync", getdiscindex ());
 //  fprintf (stderr, "Write Linux %d to %s\n", linuxsize,dev);
   FILE *out = fopen ("/tmp/flash", "wb");
   for (i = 0; i < linuxsize; i++)
     putc (getc (fifo), out);
   fclose (out);  
-  system(dev);
+  sysprintf("sync|dd if=/tmp/flash of=/dev/discs/disc%d/disc|sync", getdiscindex ());
   /* Wait for write to terminate */
 //  waitpid (pid, &ret, 0);
   cprintf ("done\n");

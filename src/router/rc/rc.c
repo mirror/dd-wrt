@@ -118,8 +118,8 @@ do_timer (void)
 static int noconsole = 0;
 
 /* Main loop */
-void
-main_loop (void)
+int
+main_loop (int argc, char **argv)
 {
   sigset_t sigset;
   pid_t shell_pid = 0;
@@ -167,7 +167,7 @@ main_loop (void)
 
   if (brand == ROUTER_WRT600N)
     {
-      nvram_set("vlan2hwname","et0");
+      nvram_set ("vlan2hwname", "et0");
     }
 
 
@@ -343,15 +343,15 @@ main_loop (void)
 	  stop_service ("nas");
 #endif
 	  cprintf ("STOP WAN\n");
-	  stop_service ("ttraff");	  
+	  stop_service ("ttraff");
 	  stop_service ("wan");
 	  cprintf ("STOP LAN\n");
 #ifdef HAVE_MADWIFI
 	  stop_service ("stabridge");
 #endif
 #ifdef HAVE_RSTP
-eval("killall","rstpd");
-unlink("/tmp/.rstp_server");
+	  eval ("killall", "rstpd");
+	  unlink ("/tmp/.rstp_server");
 #endif
 #ifdef HAVE_VLANTAGGING
 	  stop_service ("bridging");
@@ -429,7 +429,7 @@ unlink("/tmp/.rstp_server");
 	  cprintf ("start wan boot\n");
 	  start_service ("wan_boot");
 	  start_service ("ttraff");
-	  
+
 	  cprintf ("diag STOP LED\n");
 	  diag_led (DIAG, STOP_LED);
 	  cprintf ("set led release wan control\n");
@@ -448,13 +448,13 @@ unlink("/tmp/.rstp_server");
 #ifndef HAVE_MADWIFI
 #ifdef HAVE_RADIOOFF
 	  if (nvram_match ("radiooff_button", "1")
-        && nvram_match ("radiooff_boot_off", "1"))
-      {
-		eval ("wl", "-i", get_wl_instance_name (0), "radio", "off");
-      }
-      else
+	      && nvram_match ("radiooff_boot_off", "1"))
+	    {
+	      eval ("wl", "-i", get_wl_instance_name (0), "radio", "off");
+	    }
+	  else
 #endif
-	  start_service ("nas");
+	    start_service ("nas");
 #ifdef HAVE_MSSID
 	  start_service ("guest_nas");
 #endif
@@ -500,9 +500,9 @@ unlink("/tmp/.rstp_server");
 #endif
 #ifdef HAVE_RSTP
 //just experimental for playing
-  eval("brctl","stp","br0","off");
-  eval("rstpd");
-  eval("rstpctl","rstp","br0","on");
+	  eval ("brctl", "stp", "br0", "off");
+	  eval ("rstpd");
+	  eval ("rstpctl", "rstp", "br0", "on");
 #endif
 
 	  system ("/etc/postinit");
@@ -537,7 +537,7 @@ unlink("/tmp/.rstp_server");
 #endif
 	default:
 	  cprintf ("UNKNOWN\n");
-	  return;
+	  return 0;
 	}
 
     }
@@ -547,9 +547,69 @@ unlink("/tmp/.rstp_server");
 int
 get_wanface (int argc, char **argv)
 {
-fprintf(stdout,"%s",get_wan_face());
-return 0;
+  fprintf (stdout, "%s", get_wan_face ());
+  return 0;
 }
+
+struct MAIN
+{
+  char *callname;
+  char *execname;
+  int (*exec) (int argc, char **argv);
+};
+
+static struct MAIN maincalls[] = {
+  {"init", NULL, &main_loop},
+  {"ip-up", "ipup", NULL},
+  {"ip-down", "ipdown", NULL},
+  {"ipdown", "disconnected_pppoe", NULL},
+  {"udhcpc", "udhcpc", NULL},
+  {"poptop", NULL, &pptpd_main},
+  {"redial", NULL, &redial_main},
+#ifndef HAVE_RB500
+  {"resetbutton", NULL, &resetbutton_main},
+#endif
+  {"wland", "wland", NULL},
+  {"hb_connect", "hb_connect", NULL},
+  {"hb_disconnect", "hb_disconnect", NULL},
+  {"gpio", "gpio", NULL},
+  {"beep", "beep", NULL},
+  {"listen", NULL, &listen_main},
+  {"check_ps", NULL, &check_ps_main},
+  {"ddns_success", "ddns_success", NULL},
+  {"process_monitor", NULL, &process_monitor_main},
+  {"radio_timer", NULL, &radio_timer_main},
+  {"ttraf", NULL, &ttraff_main},
+#ifdef HAVE_WIVIZ
+  {"run_wiviz", NULL, &run_wiviz_main},
+  {"autokill_wiviz", NULL, &autokill_wiviz},
+#endif
+  {"site_survey", "site_survey", NULL},
+#ifdef HAVE_WOL
+  {"wol", NULL, &wol_main},
+#endif
+  {"event", NULL, &event_main},
+  {"switch", "switch", NULL},
+#ifdef HAVE_MICRO
+  {"brctl", "brctl", NULL},
+#endif
+  {"getbridgeprio", "getbridgeprio", NULL},
+  {"setuserpasswd", "setuserpasswd", NULL},
+  {"getbridge", "getbridge", NULL},
+  {"watchdog", NULL, &watchdog_main},
+  {"nvram", NULL, &nvram_main},
+#ifdef HAVE_ROAMING
+  {"roaming_daemon", NULL, &roaming_daemon_main},
+  {"supplicant", "supplicant", NULL},
+#endif
+  {"get_wanface", NULL, &get_wanface},
+#ifndef HAVE_XSCALE
+  {"ledtool", NULL, &ledtool_main},
+#endif
+#ifdef HAVE_REGISTER
+  {"regshell", NULL, &reg_main}
+#endif
+};
 
 int
 main (int argc, char **argv)
@@ -557,33 +617,19 @@ main (int argc, char **argv)
   char *base = strrchr (argv[0], '/');
 
   base = base ? base + 1 : argv[0];
-
-  /* init */
-  if (strstr (base, "init"))
+  int i;
+  for (i = 0; i < sizeof (maincalls) / sizeof (struct MAIN); i++)
     {
-      main_loop ();
-      return 0;
+      if (strstr (base, maincalls[i].callname))
+	{
+	  if (maincalls[i].execname)
+	    return start_main (maincalls[i].execname, argc, argv);
+	  if (maincalls[i].exec)
+	    return maincalls[i].exec (argc, argv);
+	}
     }
 
-  /* Set TZ for all rc programs - don't use it, breaks a lot (cron....)
-char tz[10] = "UTC+00:00";
-char *tznvram = nvram_safe_get ("time_zone");
-int hour = 0;
-int minute = 0;
 
-  hour = atoi (tznvram);
-
-  if (strstr (tznvram, ".5"))
-    minute = 30;
-  else if (strstr (tznvram, ".75"))
-    minute = 45;
-
-  snprintf (tz, 10, "UTC%s%02d:%02d", hour >= 0 ? "+" : "", hour, minute);
-  
-  cprintf ("TZ=%s\n", tz);
-  
-  setenv ("TZ", tz, 1);
-   end set TZ */
 
   if (strstr (base, "startservice"))
     {
@@ -604,37 +650,13 @@ int minute = 0;
       return stop_service (argv[1]);
     }
 
-  /* ppp */
-  if (strstr (base, "ip-up"))
-    return start_main ("ipup", argc, argv);
-  else if (strstr (base, "ip-down"))
-    return start_main ("ipdown", argc, argv);
-//  else if (strstr(base, "set-pppoepid")) //tallest 1219
-//     return start_main("set_pppoepid_to_nv",argc, argv);
-  else if (strstr (base, "disconnected_pppoe"))	//by tallest 0407
-    return start_main ("disconnected_pppoe", argc, argv);
-//  else if (strstr(base, "ppp_event")) 
-//    return start_main("pppevent_main",argc, argv);
-
-  /* udhcpc [ deconfig bound renew ] */
-  else if (strstr (base, "udhcpc"))
-    return start_main ("udhcpc", argc, argv);
-#ifdef HAVE_PPTPD
-  /* poptop [ stop start restart ]  */
-  else if (strstr (base, "poptop"))
-    return pptpd_main(argc,argv);
-#endif
 #ifndef HAVE_RB500
 #ifndef HAVE_X86
   /* erase [device] */
-  else if (strstr (base, "erase"))
+  if (strstr (base, "erase"))
     {
       int brand = getRouterBrand ();
-      if (brand == ROUTER_MOTOROLA || 
-          brand == ROUTER_MOTOROLA_V1 || 
-          brand == ROUTER_MOTOROLA_WE800G || 
-          brand == ROUTER_RT210W ||
-          brand == ROUTER_BUFFALO_WZRRSG54)	//these routers have problem erasing nvram, so we only software restore defaults
+      if (brand == ROUTER_MOTOROLA || brand == ROUTER_MOTOROLA_V1 || brand == ROUTER_MOTOROLA_WE800G || brand == ROUTER_RT210W || brand == ROUTER_BUFFALO_WZRRSG54)	//these routers have problem erasing nvram, so we only software restore defaults
 	{
 	  if (argv[1] && strcmp (argv[1], "nvram"))
 	    {
@@ -653,10 +675,11 @@ int minute = 0;
 	      return EINVAL;
 	    }
 	}
+      return 0;
     }
 
   /* write [path] [device] */
-  else if (strstr (base, "write"))
+  if (strstr (base, "write"))
     {
       if (argc >= 3)
 	return mtd_write (argv[1], argv[2]);
@@ -665,9 +688,9 @@ int minute = 0;
 	  fprintf (stderr, "usage: write [path] [device]\n");
 	  return EINVAL;
 	}
-    }	
+    }
 #else
-  else if (strstr (base, "erase"))
+  if (strstr (base, "erase"))
     {
       if (argv[1] && strcmp (argv[1], "nvram"))
 	{
@@ -678,11 +701,12 @@ int minute = 0;
 	  eval ("rm", "-f", "/etc/nvram/*");	// delete nvram database
 	  eval ("mount", "/usr/local", "-o", "remount,ro");
 	}
+      return 0;
     }
 #endif
 #endif
   /* hotplug [event] */
-  else if (strstr (base, "hotplug"))
+  if (strstr (base, "hotplug"))
     {
       if (argc >= 2)
 	{
@@ -703,13 +727,14 @@ int minute = 0;
 	  fprintf (stderr, "usage: hotplug [event]\n");
 	  return EINVAL;
 	}
+      return 0;
     }
   //////////////////////////////////////////////////////
   //
-  else if (strstr (base, "filtersync"))
+  if (strstr (base, "filtersync"))
     return start_service ("filtersync");
   /* filter [add|del] number */
-  else if (strstr (base, "filter"))
+  if (strstr (base, "filter"))
     {
       if (argv[1] && argv[2])
 	{
@@ -727,107 +752,22 @@ int minute = 0;
 	  fprintf (stderr, "usage: filter [add|del] number\n");
 	  return EINVAL;
 	}
+      return 0;
     }
-  else if (strstr (base, "redial"))
-    return redial_main (argc, argv);
 
-  else if (strstr (base, "resetbutton"))
-    {
-#ifndef HAVE_RB500
-      return resetbutton_main (argc, argv);
-#endif
-    }
-  else if (strstr (base, "wland"))
-    return start_main ("wland", argc, argv);
-//  else if (strstr (base, "write_boot"))
-//    return write_boot ("/tmp/boot.bin", "pmon");
-
-#ifdef DEBUG_IPTABLE
-  else if (strstr (base, "iptable_range"))
-    return range_main (argc, argv);
-  else if (strstr (base, "iptable_rule"))
-    return rule_main (argc, argv);
-#endif
-
-
-
-  else if (strstr (base, "hb_connect"))
-    return start_main ("hb_connect", argc, argv);
-  else if (strstr (base, "hb_disconnect"))
-    return start_main ("hb_disconnect", argc, argv);
-  else if (strstr (base, "gpio"))
-    return start_main ("gpio", argc, argv);
-  else if (strstr (base, "beep"))
-    return start_main ("beep", argc, argv);
-  else if (strstr (base, "listen"))
-    return listen_main (argc, argv);
-  else if (strstr (base, "check_ps"))
-    return check_ps_main (argc, argv);
-  else if (strstr (base, "ddns_success"))
-    return start_main ("ddns_success", argc, argv);
-//      else if (strstr(base, "eou_status"))
-//                return eou_status_main();
-  else if (strstr (base, "process_monitor"))
-    return process_monitor_main ();
-  else if (strstr (base, "radio_timer"))
-    return radio_timer_main ();
-  else if (strstr (base, "ttraff"))
-    return ttraff_main ();
-#ifdef HAVE_WIVIZ
-  else if (strstr (base, "run_wiviz"))
-    return run_wiviz_main ();
-  else if (strstr (base, "autokill_wiviz"))
-    return autokill_wiviz_main ();
-#endif
-  else if (strstr (base, "restart_dns"))
+  if (strstr (base, "restart_dns"))
     {
       stop_service ("dnsmasq");
       stop_service ("udhcpd");
       start_service ("udhcpd");
       start_service ("dnsmasq");
+      return 0;
     }
-  else if (strstr (base, "site_survey"))
-    return start_main ("site_survey", argc, argv);
-  else if (strstr (base, "setpasswd"))
-    start_service ("mkfiles");
-#ifdef HAVE_WOL
-  else if (strstr (base, "wol"))
-    return wol_main (argc, argv);
-#endif
-  else if (strstr (base, "event"))
-    return event_main (argc, argv);
-  else if (strstr (base, "switch"))
-    return start_main ("switch", argc, argv);
-#ifdef HAVE_MICRO
-  else if (strstr (base, "brctl"))
-    return start_main ("brctl", argc, argv);
-#endif
-  else if (strstr (base, "getbridgeprio"))
-    return start_main ("getbridgeprio", argc, argv);
-  else if (strstr (base, "setuserpasswd"))
-    return start_main ("setuserpasswd", argc, argv);
-  else if (strstr (base, "getbridge"))
-    return start_main ("getbridge", argc, argv);
-  else if (strstr (base, "watchdog"))
-    return watchdog_main (argc, argv);
-  else if (strstr (base, "nvram"))
-    return nvram_main (argc, argv);
-#ifdef HAVE_ROAMING
-  else if (strstr (base, "roaming_daemon"))
-    return roaming_daemon_main(argc, argv);
-  else if (strstr (base, "supplicant"))
-    return start_main ("supplicant", argc, argv);
-#endif
-  else if (strstr (base, "get_wanface"))
-    return get_wanface (argc, argv);
-#ifndef HAVE_XSCALE
-  else if (strstr (base, "ledtool"))
-    return ledtool_main (argc, argv);
-#endif
-#ifdef HAVE_REGISTER
-  else if (strstr (base, "regshell"))
-    return reg_main (argc, argv);
-#endif
+  if (strstr (base, "setpasswd"))
+    {
+      start_service ("mkfiles");
+      return 0;
+    }
   /* rc [stop|start|restart ] */
   else if (strstr (base, "rc"))
     {
@@ -846,8 +786,5 @@ int minute = 0;
 	  return EINVAL;
 	}
     }
-
-//  else if (strstr (base, "reboot"))
-//    shutdown_system();
   return 1;
 }

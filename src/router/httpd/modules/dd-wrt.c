@@ -829,14 +829,12 @@ ej_active_wireless2 (webs_t wp, int argc, char_t ** argv)
   char mac[30];
   char list[2][30];
   char line[80];
-  char cmd[80];
 
   unlink (ASSOCLIST_TMP);
   unlink (RSSI_TMP);
 
   mode = nvram_safe_get ("wl_mode");
-  snprintf (cmd, sizeof (cmd), "%s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP);
-  system2 (cmd);		// get active wireless mac
+  sysprintf( "%s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP);
 
   int connected = 0;
   if ((fp = fopen (ASSOCLIST_TMP, "r")))
@@ -853,17 +851,15 @@ ej_active_wireless2 (webs_t wp, int argc, char_t ** argv)
 	  noise = 0;
 	  // get rssi value
 	  if (strcmp (mode, "ap"))
-	    snprintf (cmd, sizeof (cmd), "%s > %s", RSSI_CMD, RSSI_TMP);
+	    sysprintf( "%s > %s", RSSI_CMD, RSSI_TMP);
 	  else
-	    snprintf (cmd, sizeof (cmd), "%s \"%s\" > %s", RSSI_CMD, mac,
+	    sysprintf( "%s \"%s\" > %s", RSSI_CMD, mac,
 		      RSSI_TMP);
-	  system2 (cmd);
 
 	  // get noise value if not ap mode
 	  if (strcmp (mode, "ap"))
-	    snprintf (cmd, sizeof (cmd), "%s >> %s", NOISE_CMD, RSSI_TMP);
+	    sysprintf( "%s >> %s", NOISE_CMD, RSSI_TMP);
 
-	  system2 (cmd);	// get RSSI value for mac
 
 	  fp2 = fopen (RSSI_TMP, "r");
 	  if (fgets (line, sizeof (line), fp2) != NULL)
@@ -4540,14 +4536,13 @@ websWrite(wp,"</script>\n");
 static int
 getMaxPower (char *ifname)
 {
-  char buf[128];
-  sprintf (buf, "iwlist %s txpower|grep \"Maximum Power:\" > /tmp/.power",
+  sysprintf("iwlist %s txpower|grep \"Maximum Power:\" > /tmp/.power",
 	   ifname);
-  system2 (buf);
   FILE *in = fopen ("/tmp/.power", "rb");
   if (in == NULL)
     return 1000;
   char buf2[16];
+  char buf[16];
   int max;
   fscanf (in, "%s %s %d", buf, buf2, &max);
   fclose (in);
@@ -6355,16 +6350,14 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
       // get rssi value
       if (strcmp (mode, "ap") && strcmp (mode, "apsta")
 	  && strcmp (mode, "apstawet"))
-	snprintf (cmd, sizeof (cmd), "%s > %s", RSSI_CMD, RSSI_TMP);
+	sysprintf( "%s > %s", RSSI_CMD, RSSI_TMP);
       else
-	snprintf (cmd, sizeof (cmd), "%s \"%s\" > %s", RSSI_CMD, mac,
+	sysprintf( "%s \"%s\" > %s", RSSI_CMD, mac,
 		  RSSI_TMP);
-      system2 (cmd);
 
       // get noise value if not ap mode
       if (strcmp (mode, "ap"))
-	snprintf (cmd, sizeof (cmd), "%s >> %s", NOISE_CMD, RSSI_TMP);
-      system2 (cmd);		// get RSSI value for mac
+	sysprintf( "%s >> %s", NOISE_CMD, RSSI_TMP);
 
       fp2 = fopen (RSSI_TMP, "r");
       if (fgets (line, sizeof (line), fp2) != NULL)
@@ -6432,7 +6425,6 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
   char mac[30];
   char list[2][30];
   char line[80];
-  char cmd[80];
   int macmask;
 #ifdef FASTWEB
   ejArgs (argc, argv, "%d", &macmask);
@@ -6465,11 +6457,10 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
       // get rssi value
       if (strcmp (mode, "ap") && strcmp (mode, "apsta")
 	  && strcmp (mode, "apstawet"))
-	snprintf (cmd, sizeof (cmd), "wl -i %s rssi > %s", iface, RSSI_TMP);
+	sysprintf( "wl -i %s rssi > %s", iface, RSSI_TMP);
       else
-	snprintf (cmd, sizeof (cmd), "wl -i %s rssi \"%s\" > %s", iface, mac,
+	sysprintf( "wl -i %s rssi \"%s\" > %s", iface, mac,
 		  RSSI_TMP);
-      system2 (cmd);
 
       // get noise value if not ap mode
 //      if (strcmp (mode, "ap"))
@@ -6568,7 +6559,6 @@ ej_active_wds_instance (webs_t wp, int argc, char_t ** argv,int instance)
   char mac[30];
   char list[2][30];
   char line[80];
-  char cmd[80];
 //  char title[30];
   char wdsvar[30];
   char desc[30];
@@ -6616,8 +6606,7 @@ ej_active_wds_instance (webs_t wp, int argc, char_t ** argv,int instance)
 	    }
 	}
 
-      snprintf (cmd, sizeof (cmd), "%s \"%s\" > %s", RSSI_CMD, mac, RSSI_TMP);
-      system2 (cmd);
+      sysprintf( "%s \"%s\" > %s", RSSI_CMD, mac, RSSI_TMP);
 
       fp2 = fopen (RSSI_TMP, "r");
       if (fgets (line, sizeof (line), fp2) != NULL)
