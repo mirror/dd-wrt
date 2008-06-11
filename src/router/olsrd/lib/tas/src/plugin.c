@@ -64,9 +64,9 @@
 #include <hna_set.h>
 #include <routing_table.h>
 #include <olsr_protocol.h>
-#include <lq_route.h>
 #include <mpr_selector_set.h>
 #include <duplicate_set.h>
+#include <lq_plugin.h>
 
 #define PLUGIN_INTERFACE_VERSION 5
 
@@ -105,28 +105,40 @@ static void __attribute__((constructor)) banner(void)
 
 int iterLinkTabNext(char *buff, int len)
 {
-  double etx;
-
+  struct list_node *link_node;
+  struct lqtextbuffer lqbuffer;
+  
   if (iterLinkTab == NULL)
     return -1;
 
-  etx = olsr_calc_link_etx(iterLinkTab);
-
-  snprintf(buff, len, "local~%s~remote~%s~main~%s~hysteresis~%f~lq~%f~nlq~%f~etx~%f~",
+  snprintf(buff, len, "local~%s~remote~%s~main~%s~hysteresis~%f~cost~%s~",
            rawIpAddrToString(&iterLinkTab->local_iface_addr, ipAddrLen),
            rawIpAddrToString(&iterLinkTab->neighbor_iface_addr, ipAddrLen),
            rawIpAddrToString(&iterLinkTab->neighbor->neighbor_main_addr, ipAddrLen),
-           iterLinkTab->L_link_quality, iterLinkTab->loss_link_quality,
-           iterLinkTab->neigh_link_quality, etx);
+           iterLinkTab->L_link_quality,
+           get_linkcost_text(iterLinkTab->linkcost, OLSR_FALSE, &lqbuffer));
 
-  iterLinkTab = iterLinkTab->next;
+
+  link_node = iterLinkTab->link_list.next;
+  if (link_node != &link_entry_head) {
+    iterLinkTab = list2link(link_node);
+  } else {
+    iterLinkTab = NULL;
+  }
 
   return 0;
 }
 
 void iterLinkTabInit(void)
 {
-  iterLinkTab = get_link_set();
+  struct list_node *link_node;
+
+  link_node = link_entry_head.next;
+  if (link_node != &link_entry_head) {
+    iterLinkTab = list2link(link_node);
+  } else {
+    iterLinkTab = NULL;
+  }
 }
 
 int iterNeighTabNext(char *buff, int len)
@@ -222,7 +234,7 @@ int iterRouteTabNext(char *buff, int len)
 
   rt_tree_node = avl_walk_next(&iterRouteTab->rt_tree_node);
   if (rt_tree_node) {
-      iterRouteTab = rt_tree_node->data;
+      iterRouteTab = rt_tree2rt(rt_tree_node);
   } else {
       iterRouteTab = NULL;
   }
@@ -238,7 +250,7 @@ void iterRouteTabInit(void)
   routingtree_version = 0;
 
   node = avl_walk_first(&routingtree);
-  iterRouteTab = node ? node->data : NULL;
+  iterRouteTab = node ? rt_tree2rt(node) : NULL;
 
 }
 
@@ -253,11 +265,7 @@ tas_getnext_tc_entry(struct tc_entry *tc)
 {
   struct avl_node *node = avl_walk_next(&tc->vertex_node);
 
-  if (node) {
-    return node->data;
-  }
-
-  return NULL;
+  return (node ? vertex_tree2tc(node) : NULL);
 }
 
 int iterTcTabNext(char *buff, int len)
@@ -265,6 +273,7 @@ int iterTcTabNext(char *buff, int len)
   int res;
   int i;
   struct tc_edge_entry *tc_edge;
+  struct lqtextbuffer lqbuffer;
   
   if (iterTcTab == NULL)
     return -1;
@@ -281,9 +290,9 @@ int iterTcTabNext(char *buff, int len)
 
   OLSR_FOR_ALL_TC_EDGE_ENTRIES(iterTcTab, tc_edge) {
 
-    res = snprintf(buff, len, "[~%d~address~%s~etx~%f~]~", i,
+    res = snprintf(buff, len, "[~%d~address~%s~cost~%s~]~", i,
                    rawIpAddrToString(&tc_edge->T_dest_addr, ipAddrLen),
-                   olsr_calc_tc_etx(tc_edge));
+                   get_linkcost_text(tc_edge->cost, OLSR_FALSE, &lqbuffer));
 
     if (res < len)
       buff += res;
@@ -307,18 +316,18 @@ void iterTcTabInit(void)
 {
   struct avl_node *node;
   
-  avl_init(&tc_tree, avl_comp_prefix_default);
+  avl_init(&tc_tree, avl_comp_default);
 
   node = avl_walk_first(&tc_tree);
-  iterTcTab = node ? node->data : NULL;
+  iterTcTab = (node ? vertex_tree2tc(node) : NULL);
 }
 
-static void parserFunc(union olsr_message *msg, struct interface *inInt,
+static void parserFunc(union olsr_message *msg,
+                       struct interface *inInt __attribute__((unused)),
                        union olsr_ip_addr *neighIntAddr)
 {
   char *mess = (char *)msg;
   union olsr_ip_addr *orig = (union olsr_ip_addr *)(mess + 4);
-  unsigned short seqNo = (mess[ipAddrLen + 6] << 8) | mess[ipAddrLen + 7];
   int len = (mess[2] << 8) | mess[3];
   char *service, *string;
   int i;
@@ -338,8 +347,6 @@ static void parserFunc(union olsr_message *msg, struct interface *inInt,
     return;
   }
 
-  if (olsr_check_dup_table_proc(orig, seqNo) != 0)
-  {
     len -= ipAddrLen + 8;
     service = mess + ipAddrLen + 8;
 
@@ -369,9 +376,8 @@ static void parserFunc(union olsr_message *msg, struct interface *inInt,
     }
 
     httpAddTasMessage(service, string, rawIpAddrToString(orig, ipAddrLen));
-  }
 
-  olsr_forward_message(msg, orig, seqNo, inInt, neighIntAddr);
+  olsr_forward_message(msg, neighIntAddr);
 }
 
 void sendMessage(const char *service, const char *string)
@@ -427,7 +433,7 @@ void sendMessage(const char *service, const char *string)
   }
 }
 
-static void serviceFunc(void)
+static void serviceFunc(void *context __attribute__((unused)))
 {
   static int up = 0;
 
@@ -461,7 +467,9 @@ int olsrd_plugin_init(void)
 
   httpInit();
   
-  olsr_register_timeout_function(serviceFunc, OLSR_FALSE);
+  olsr_start_timer(OLSR_TAS_SERVICE_INT, 0, OLSR_TIMER_PERIODIC,
+                   &serviceFunc, NULL, 0);
+
   olsr_parser_add_function(parserFunc, MESSAGE_TYPE, 1);
 
   return 0;

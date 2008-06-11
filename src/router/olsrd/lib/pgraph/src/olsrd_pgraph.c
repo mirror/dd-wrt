@@ -313,42 +313,32 @@ static int pcf_event(int changes_neighborhood,
                      int changes_hna __attribute__((unused)))
 {
   int res;
-  olsr_u8_t index;
   struct neighbor_entry *neighbor_table_tmp;
   struct tc_entry *tc;
   struct tc_edge_entry *tc_edge;
 
   res = 0;
 
-  //if(changes_neighborhood || changes_topology || changes_hna)
-  if(changes_neighborhood || changes_topology)
-    {
-      /* Print tables to IPC socket */
+  if (changes_neighborhood || changes_topology) {
+    /* Print tables to IPC socket */
 
-      //ipc_send("start ", strlen("start "));
+    //ipc_send("start ", strlen("start "));
 
-      /* Neighbors */
-      for(index=0;index<HASHSIZE;index++)
-	{
-	  
-	  for(neighbor_table_tmp = neighbortable[index].next;
-	      neighbor_table_tmp != &neighbortable[index];
-	      neighbor_table_tmp = neighbor_table_tmp->next)
-	    {
-	      ipc_print_neigh_link( neighbor_table_tmp );
-	    }
-	}
+    /* Neighbors */
+    OLSR_FOR_ALL_NBR_ENTRIES(neighbor_table_tmp) {
+      ipc_print_neigh_link( neighbor_table_tmp );
+    } OLSR_FOR_ALL_NBR_ENTRIES_END(neighbor_table_tmp);
 
-      /* Topology */  
-      OLSR_FOR_ALL_TC_ENTRIES(tc) {
-          OLSR_FOR_ALL_TC_EDGE_ENTRIES(tc, tc_edge) {
-              ipc_print_tc_link(tc, tc_edge);
-          } OLSR_FOR_ALL_TC_EDGE_ENTRIES_END(tc, tc_edge);
-      } OLSR_FOR_ALL_TC_ENTRIES_END(tc);
+    /* Topology */  
+    OLSR_FOR_ALL_TC_ENTRIES(tc) {
+      OLSR_FOR_ALL_TC_EDGE_ENTRIES(tc, tc_edge) {
+        ipc_print_tc_link(tc, tc_edge);
+      } OLSR_FOR_ALL_TC_EDGE_ENTRIES_END(tc, tc_edge);
+    } OLSR_FOR_ALL_TC_ENTRIES_END(tc);
 
-      ipc_send(" end ", strlen(" end "));
+    ipc_send(" end ", strlen(" end "));
 
-      /* HNA entries */
+    /* HNA entries */
 //      for(index=0;index<HASHSIZE;index++)
 //	{
 //	  tmp_hna = hna_set[index].next;
@@ -372,12 +362,12 @@ static int pcf_event(int changes_neighborhood,
 
 //      ipc_send("}\n\n", strlen("}\n\n"));
 
-      res = 1;
-    }
+    res = 1;
+  }
 
-
-  if(ipc_socket == -1)
+  if (ipc_socket == -1) {
     plugin_ipc_init();
+  }
 
   return res;
 }
@@ -415,3 +405,9 @@ static int ipc_send(const char *data, int size)
 
   return 1;
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */

@@ -442,7 +442,6 @@ net_output(struct interface *ifp)
   // if we've just transmitted a TC message, let Dijkstra use the current
   // link qualities for the links to our neighbours
 
-  olsr_update_dijkstra_link_qualities();
   lq_tc_pending = OLSR_FALSE;
 
   return retval;

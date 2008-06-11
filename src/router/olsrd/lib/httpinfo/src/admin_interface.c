@@ -138,8 +138,8 @@ build_admin_body(char *buf, olsr_u32_t bufsize __attribute__((unused)))
   if(olsr_cnf->lq_level) {
     size += snprintf(&buf[size], bufsize-size, admin_basic_setting_int,
                      "LQ level:", "lq_level", 1, olsr_cnf->lq_level);
-    size += snprintf(&buf[size], bufsize-size, admin_basic_setting_int,
-                     "LQ winsize:", "lq_wsize", 2, olsr_cnf->lq_wsize);
+    size += snprintf(&buf[size], bufsize-size, admin_basic_setting_float,
+                     "LQ aging:", "lq_aging", 2, olsr_cnf->lq_aging);
   } else {
     size += snprintf(&buf[size], bufsize-size, "<td>LQ disabled</td>\n");
   }

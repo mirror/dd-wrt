@@ -42,7 +42,7 @@
 
 #define PLUGIN_NAME    "OLSRD nameservice plugin"
 #define PLUGIN_VERSION "0.3"
-#define PLUGIN_AUTHOR   "Bruno Randolf, Jens Nachtigall, Sven-Ola"
+#define PLUGIN_AUTHOR   "Bruno Randolf, Jens Nachtigall, Sven-Ola Tuecke"
 #define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION
 #define PLUGIN_INTERFACE_VERSION 5
 

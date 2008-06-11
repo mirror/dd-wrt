@@ -69,6 +69,7 @@
 #include "link_set.h"
 #include "socket_parser.h"
 #include "net_olsr.h"
+#include "lq_plugin.h"
 
 #include "olsrd_dot_draw.h"
 #include "olsrd_plugin.h"
@@ -154,25 +155,26 @@ static void
 ipc_print_neigh_link(const struct neighbor_entry *neighbor)
 {
   struct ipaddr_str mainaddrstrbuf, strbuf;
-  double etx = 0.0;
+  olsr_linkcost etx = 0.0;
   const char *style;
   const char *adr = olsr_ip_to_string(&mainaddrstrbuf, &olsr_cnf->main_addr);
   struct link_entry* link;
-
+  struct lqtextbuffer lqbuffer;
+  
   if (neighbor->status == 0) { // non SYM
     style = "dashed";
   } else {   
     link = get_best_link_to_neighbor(&neighbor->neighbor_main_addr);
     if (link) {
-      etx = olsr_calc_link_etx(link);
+      etx = link->linkcost;
     }
     style = "solid";
   }
     
-  ipc_send_fmt("\"%s\" -> \"%s\"[label=\"%.2f\", style=%s];\n",
+  ipc_send_fmt("\"%s\" -> \"%s\"[label=\"%s\", style=%s];\n",
                adr,
                olsr_ip_to_string(&strbuf, &neighbor->neighbor_main_addr),
-               etx,
+               get_linkcost_text(etx, OLSR_FALSE, &lqbuffer),
                style);
   
   if (neighbor->is_mpr) {
@@ -264,6 +266,7 @@ ipc_action(int fd __attribute__((unused)))
   }
   olsr_printf(1, "(DOT DRAW)IPC: Connection from %s\n", inet_ntoa(pin.sin_addr));
   pcf_event(1, 1, 1);
+  close(ipc_connection); /* close connection after one output */
 }
 
 
@@ -275,25 +278,23 @@ pcf_event(int changes_neighborhood,
 	  int changes_topology,
 	  int changes_hna)
 {
+  struct neighbor_entry *neighbor_table_tmp;
+  struct tc_entry *tc;
+  struct tc_edge_entry *tc_edge;
+  struct hna_entry *tmp_hna;
+  struct hna_net *tmp_net;
+  struct ip_prefix_list *hna;
   int res = 0;
-  if(changes_neighborhood || changes_topology || changes_hna) {
-    struct neighbor_entry *neighbor_table_tmp;
-    struct tc_entry *tc;
-    struct tc_edge_entry *tc_edge;
-    struct ip_prefix_list *hna;
-    int idx;
+
+  if (changes_neighborhood || changes_topology || changes_hna) {
     
     /* Print tables to IPC socket */
     ipc_send_str("digraph topology\n{\n");
 
     /* Neighbors */
-    for (idx = 0; idx < HASHSIZE; idx++) {	  
-      for(neighbor_table_tmp = neighbortable[idx].next;
-          neighbor_table_tmp != &neighbortable[idx];
-          neighbor_table_tmp = neighbor_table_tmp->next){
-        ipc_print_neigh_link( neighbor_table_tmp );
-      }
-    }
+    OLSR_FOR_ALL_NBR_ENTRIES(neighbor_table_tmp) {
+      ipc_print_neigh_link( neighbor_table_tmp );
+    } OLSR_FOR_ALL_NBR_ENTRIES_END(neighbor_table_tmp);
 
     /* Topology */  
     OLSR_FOR_ALL_TC_ENTRIES(tc) {
@@ -303,19 +304,17 @@ pcf_event(int changes_neighborhood,
     } OLSR_FOR_ALL_TC_ENTRIES_END(tc);
 
     /* HNA entries */
-    for (idx = 0; idx < HASHSIZE; idx++) {
-      struct hna_entry *tmp_hna;
-      /* Check all entrys */
-      for (tmp_hna = hna_set[idx].next; tmp_hna != &hna_set[idx]; tmp_hna = tmp_hna->next) {
-        /* Check all networks */
-        struct hna_net *tmp_net;
-        for (tmp_net = tmp_hna->networks.next; tmp_net != &tmp_hna->networks; tmp_net = tmp_net->next) {
-          ipc_print_net(&tmp_hna->A_gateway_addr, 
-                        &tmp_net->A_network_addr, 
-                        tmp_net->prefixlen);
-        }
+    OLSR_FOR_ALL_HNA_ENTRIES(tmp_hna) {
+
+      /* Check all networks */
+      for (tmp_net = tmp_hna->networks.next;
+           tmp_net != &tmp_hna->networks;
+           tmp_net = tmp_net->next) {
+        ipc_print_net(&tmp_hna->A_gateway_addr, 
+                      &tmp_net->A_network_addr, 
+                      tmp_net->prefixlen);
       }
-    }
+    } OLSR_FOR_ALL_HNA_ENTRIES_END(tmp_hna);
 
     /* Local HNA entries */
     for (hna = olsr_cnf->hna_entries; hna != NULL; hna = hna->next) {
@@ -338,11 +337,12 @@ static void
 ipc_print_tc_link(const struct tc_entry *entry, const struct tc_edge_entry *dst_entry)
 {
   struct ipaddr_str strbuf1, strbuf2;
-
-  ipc_send_fmt("\"%s\" -> \"%s\"[label=\"%.2f\"];\n",
+  struct lqtextbuffer lqbuffer;
+  
+  ipc_send_fmt("\"%s\" -> \"%s\"[label=\"%s\"];\n",
                olsr_ip_to_string(&strbuf1, &entry->addr),
                olsr_ip_to_string(&strbuf2, &dst_entry->T_dest_addr),
-               olsr_calc_tc_etx(dst_entry));
+               get_linkcost_text(dst_entry->cost, OLSR_FALSE, &lqbuffer));
 }
 
 
@@ -390,3 +390,9 @@ ipc_send_fmt(const char *format, ...)
     ipc_send(buf, len);
   }
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */

@@ -1,6 +1,6 @@
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
+ * Copyright (c) 2004, Andreas Tï¿½nnesen(andreto@olsr.org)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -44,6 +44,7 @@
 
 #include "defs.h"
 #include "hashing.h"
+#include "lq_plugin.h"
 
 #define	NB2S_COVERED 	0x1		/* node has been covered by a MPR */
 
@@ -51,9 +52,9 @@
 struct neighbor_list_entry 
 {
   struct	neighbor_entry *neighbor;
-  double        second_hop_link_quality;
-  double        path_link_quality;
-  double        saved_path_link_quality;
+  olsr_linkcost second_hop_linkcost;
+  olsr_linkcost path_linkcost;
+  olsr_linkcost saved_path_linkcost;
   struct	neighbor_list_entry *next;
   struct	neighbor_list_entry *prev;
 };

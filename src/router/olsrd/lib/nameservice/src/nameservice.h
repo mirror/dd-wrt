@@ -43,15 +43,17 @@
 #include "olsr_types.h"
 #include "interfaces.h"
 #include "olsr_protocol.h"
+#include "common/list.h"
 
 #include "olsrd_plugin.h"
 #include "nameservice_msg.h"
 #include "hashing.h"
 #include "mapwrite.h"
+#include "mantissa.h"
 
 #define PLUGIN_NAME	"OLSRD nameservice plugin"
 #define PLUGIN_VERSION	"0.3"
-#define PLUGIN_AUTHOR   "Bruno Randolf, Jens Nachtigall, Sven-Ola"
+#define PLUGIN_AUTHOR   "Bruno Randolf, Jens Nachtigall, Sven-Ola Tuecke"
 
 // useful to set for the freifunkfirmware to remove all
 // calls to olsr_printf by the empty statement ";"
@@ -59,8 +61,9 @@
 
 #define MESSAGE_TYPE		130
 #define PARSER_TYPE		MESSAGE_TYPE
-#define EMISSION_INTERVAL	120 /* two minutes */
-#define NAME_VALID_TIME		1800 /* half one hour */
+#define EMISSION_INTERVAL	120 /* seconds */
+#define EMISSION_JITTER         25 /* percent */
+#define NAME_VALID_TIME		1800 /* seconds */
 #define NAMESERVER_COUNT        3
 
 #define NAME_PROTOCOL_VERSION	1
@@ -103,26 +106,29 @@ struct name_entry
 struct db_entry
 {
 	union olsr_ip_addr	originator;	/* IP address of the node this entry describes */
-	struct timeval		timer;		/* Validity time */
+        struct timer_entry      *db_timer;      /* Validity time */
 	struct name_entry	*names;		/* list of names this originator declares */
-	struct db_entry		*next;		/* linked list */
+        struct list_node        db_list;        /* linked list of db entries per hash container */
 };
 
+/* inline to recast from db_list back to db_entry */
+LISTNODE2STRUCT(list2db, struct db_entry, db_list);
+
+#define OLSR_NAMESVC_DB_JITTER 5 /* percent */
+
 extern struct name_entry *my_names;
-extern struct db_entry* latlon_list[HASHSIZE];
+extern struct list_node latlon_list[HASHSIZE];
 extern float my_lat, my_lon;
 
-/* Timeout function to register with the sceduler */
-void
-olsr_timeout(void);
+void olsr_expire_write_file_timer(void *);
+void olsr_namesvc_delete_db_entry(struct db_entry *);
 
 /* Parser function to register with the sceduler */
 void
 olsr_parser(union olsr_message *, struct interface *, union olsr_ip_addr *);
 
-/* Event function to register with the sceduler */
-void
-olsr_event(void *);
+/* callback for periodic timer */
+void olsr_namesvc_gen(void *);
 
 int
 encap_namemsg(struct namemsg *);
@@ -134,22 +140,20 @@ struct name_entry*
 remove_nonvalid_names_from_list(struct name_entry *my_list, int type);
 
 void 
-free_all_list_entries(struct db_entry **this_db_list) ;
-
-void
-timeout_old_names(struct db_entry **this_list, olsr_bool *this_table_changed);
+free_all_list_entries(struct list_node *) ;
 
 void
 decap_namemsg(struct name *from_packet, struct name_entry **to, olsr_bool *this_table_changed );
 
 void
-insert_new_name_in_list(union olsr_ip_addr *originator, struct db_entry **this_list, struct name *from_packet, olsr_bool *this_table_changed, double vtime);
+insert_new_name_in_list(union olsr_ip_addr *, struct list_node *,
+                        struct name *, olsr_bool *, olsr_reltime);
 
 olsr_bool
 allowed_hostname_or_ip_in_service(const char *service_line, const regmatch_t *hostname_or_ip);
 
 void
-update_name_entry(union olsr_ip_addr *, struct namemsg *, int, double);
+update_name_entry(union olsr_ip_addr *, struct namemsg *, int, olsr_reltime);
 
 void
 write_hosts_file(void);
@@ -209,3 +213,4 @@ int
 name_init(void);
 
 #endif
+

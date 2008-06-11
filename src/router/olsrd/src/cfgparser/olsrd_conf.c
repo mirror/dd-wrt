@@ -234,6 +234,12 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
 	}
     }
 
+  /* Check Link quality dijkstra limit */
+  if (olsr_cnf->lq_dinter < cnf->pollrate && olsr_cnf->lq_dlimit != 255) {
+  	fprintf(stderr, "Link quality dijkstra limit must be higher than pollrate\n");
+  	return -1;
+  }
+  
   /* Pollrate */
 
   if(cnf->pollrate < MIN_POLLRATE ||
@@ -285,9 +291,9 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
     }
 
   /* Link quality window size */
-  if(cnf->lq_level && (cnf->lq_wsize < MIN_LQ_WSIZE || cnf->lq_wsize > MAX_LQ_WSIZE))
+  if(cnf->lq_level && (cnf->lq_aging < MIN_LQ_AGING || cnf->lq_aging > MAX_LQ_AGING))
     {
-      fprintf(stderr, "LQ window size %d is not allowed\n", cnf->lq_wsize);
+      fprintf(stderr, "LQ aging factor %f is not allowed\n", cnf->lq_aging);
       return -1;
     }
 
@@ -329,7 +335,7 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
           io->hello_params.validity_time = NEIGHB_HOLD_TIME;
 
         else
-          io->hello_params.validity_time = cnf->lq_wsize * io->hello_params.emission_interval;
+          io->hello_params.validity_time = (int)(REFRESH_INTERVAL / cnf->lq_aging);
       }
 
       if(io->hello_params.emission_interval < cnf->pollrate ||
@@ -463,7 +469,8 @@ set_default_cnf(struct olsrd_config *cnf)
     cnf->lq_fish = DEF_LQ_FISH;
     cnf->lq_dlimit = DEF_LQ_DIJK_LIMIT;
     cnf->lq_dinter = DEF_LQ_DIJK_INTER;
-    cnf->lq_wsize = DEF_LQ_WSIZE;
+    cnf->lq_aging = DEF_LQ_AGING;
+    cnf->lq_algorithm = NULL;
     cnf->lq_nat_thresh = DEF_LQ_NAT_THRESH;
     cnf->clear_screen = DEF_CLEAR_SCREEN;
 
@@ -585,8 +592,10 @@ olsrd_print_cnf(struct olsrd_config *cnf)
 
   printf("LQ Dijkstra limit: %d, %0.2f\n", cnf->lq_dlimit, cnf->lq_dinter);
 
-  printf("LQ window size   : %d\n", cnf->lq_wsize);
+  printf("LQ aging factor  : %f\n", cnf->lq_aging);
 
+  printf("LQ algorithm name: %s\n", cnf->lq_algorithm ? cnf->lq_algorithm : "default");
+  
   printf("NAT threshold    : %f\n", cnf->lq_nat_thresh);
 
   printf("Clear screen     : %s\n", cnf->clear_screen ? "yes" : "no");
@@ -622,7 +631,7 @@ olsrd_print_cnf(struct olsrd_config *cnf)
 	  
           for (mult = in->cnf->lq_mult; mult != NULL; mult = mult->next)
           {
-            printf("\tLinkQualityMult          : %s %0.2f\n", inet_ntop(cnf->ip_version, &mult->addr, ipv6_buf, sizeof (ipv6_buf)), mult->val);
+            printf("\tLinkQualityMult          : %s %0.2f\n", inet_ntop(cnf->ip_version, &mult->addr, ipv6_buf, sizeof (ipv6_buf)), (float)(mult->value)/65536.0);
           }
 
           printf("\tAutodetetc changes       : %s\n", in->cnf->autodetect_chg ? "yes" : "no");

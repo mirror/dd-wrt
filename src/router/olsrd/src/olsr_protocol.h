@@ -1,6 +1,6 @@
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
+ * Copyright (c) 2004, Andreas Tï¿½nnesen(andreto@olsr.org)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -76,6 +76,13 @@
 #define MID_INTERVAL          TC_INTERVAL
 #define HNA_INTERVAL          TC_INTERVAL
 
+
+/* Emission Jitter */
+#define HELLO_JITTER         25 /* percent */
+#define HNA_JITTER           25 /* percent */
+#define MID_JITTER           25 /* percent */
+#define TC_JITTER            25 /* percent */
+
 /*
  *Holding Time
  */
@@ -85,12 +92,6 @@
 #define DUP_HOLD_TIME         30
 #define MID_HOLD_TIME         3 * MID_INTERVAL
 #define HNA_HOLD_TIME         3 * HNA_INTERVAL
-
-/*
- * Scaling factor
- */
-
-#define VTIME_SCALE_FACTOR    0.0625
 
 /*
  *Message Types
@@ -434,3 +435,9 @@ union olsr_packet
 
 
 #endif
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */

@@ -154,10 +154,6 @@ main(int argc, char *argv[])
 
   /* Grab initial timestamp */
   now_times = times(&tms_buf);
-  do {
-    time_t t = now.tv_sec;
-    nowtm = localtime(&t);
-  } while (nowtm == NULL);
     
   printf("\n *** %s ***\n Build date: %s on %s\n http://www.olsr.org\n\n", 
 	 olsrd_version, 
@@ -232,6 +228,9 @@ main(int argc, char *argv[])
 #else
   olsr_cnf->system_tick_divider = 1;
 #endif
+
+  /* Initialize timers */
+  olsr_init_timers();
 
   /*
    * Process olsrd options.
@@ -357,12 +356,11 @@ main(int argc, char *argv[])
   /* Print heartbeat to stdout */
 
 #if !defined WINCE
-  if(olsr_cnf->debug_level > 0 && isatty(STDOUT_FILENO))
-    olsr_register_scheduler_event(&generate_stdout_pulse, NULL, STDOUT_PULSE_INT, 0, NULL);
+  if (olsr_cnf->debug_level > 0 && isatty(STDOUT_FILENO)) {
+    olsr_start_timer(STDOUT_PULSE_INT, 0, OLSR_TIMER_PERIODIC,
+                     &generate_stdout_pulse, NULL, 0);
+  }
 #endif
-  
-  gettimeofday(&now, NULL);
-
 
   /* Initialize the IPC socket */
 
@@ -406,16 +404,15 @@ main(int argc, char *argv[])
   signal(SIGQUIT, olsr_shutdown);
   signal(SIGILL,  olsr_shutdown);
   signal(SIGABRT, olsr_shutdown);
-  signal(SIGSEGV, olsr_shutdown);
+//  signal(SIGSEGV, olsr_shutdown);
   signal(SIGTERM, olsr_shutdown);
   signal(SIGPIPE, SIG_IGN);
 #endif
 
-  /* Register socket poll event */
-  olsr_register_timeout_function(&poll_sockets, OLSR_FALSE);
+  link_changes = OLSR_FALSE;
 
   /* Starting scheduler */
-  scheduler();
+  olsr_scheduler();
 
   /* Like we're ever going to reach this ;-) */
   return 1;
@@ -505,6 +502,9 @@ olsr_shutdown(int signal __attribute__((unused)))
   close(olsr_cnf->rts);
 #endif
 
+  /* Free cookies and memory pools attached. */
+  olsr_delete_all_cookies();
+
   olsr_syslog(OLSR_LOG_INFO, "%s stopped", olsrd_version);
 
   OLSR_PRINTF(1, "\n <<<< %s - terminating >>>>\n           http://www.olsr.org\n", olsrd_version);
@@ -528,7 +528,7 @@ print_usage(void)
           "  [-hint <hello interval (secs)>] [-tcint <tc interval (secs)>]\n"
           "  [-midint <mid interval (secs)>] [-hnaint <hna interval (secs)>]\n"
           "  [-T <Polling Rate (secs)>] [-nofork] [-hemu <ip_address>]\n"
-          "  [-lql <LQ level>] [-lqw <LQ winsize>]\n");
+          "  [-lql <LQ level>] [-lqa <LQ aging factor>]\n");
 }
 
 
@@ -646,21 +646,21 @@ olsr_process_arguments(int argc, char *argv[],
       /*
        * Set LQ winsize
        */
-      if (strcmp(*argv, "-lqw") == 0) 
+      if (strcmp(*argv, "-lqa") == 0) 
 	{
-	  int tmp_lq_wsize;
+	  float tmp_lq_aging;
 	  NEXT_ARG;
           CHECK_ARGC;
 	  
-	  sscanf(*argv, "%d", &tmp_lq_wsize);
+	  sscanf(*argv, "%f", &tmp_lq_aging);
 
-	  if(tmp_lq_wsize < MIN_LQ_WSIZE || tmp_lq_wsize > MAX_LQ_WSIZE)
+	  if(tmp_lq_aging < MIN_LQ_AGING || tmp_lq_aging > MAX_LQ_AGING)
 	    {
-	      printf("LQ winsize %d not allowed. Range [%d-%d]\n", 
-		     tmp_lq_wsize, MIN_LQ_WSIZE, MAX_LQ_WSIZE);
+	      printf("LQ aging factor %f not allowed. Range [%f-%f]\n", 
+		     tmp_lq_aging, MIN_LQ_AGING, MAX_LQ_AGING);
 	      olsr_exit(__func__, EXIT_FAILURE);
 	    }
-	  olsr_cnf->lq_wsize = tmp_lq_wsize;
+	  olsr_cnf->lq_aging = tmp_lq_aging;
 	  continue;
 	}
       
@@ -885,3 +885,9 @@ olsr_process_arguments(int argc, char *argv[],
     }
   return 0;
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */
