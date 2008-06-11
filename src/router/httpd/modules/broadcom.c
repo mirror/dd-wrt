@@ -2712,8 +2712,7 @@ static void execute (webs_t wp);
 {
   char command[256];
   char *var = websGetVar (wp, "command", "");
-  sprintf (command, "%s > /tmp/.result");
-  system2 (command);
+  sysprintf ("%s > /tmp/.result");
 }
 
 #endif

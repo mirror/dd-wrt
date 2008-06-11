@@ -10,7 +10,7 @@
 
 
 int
-run_wiviz_main (void)
+run_wiviz_main (int argc,char **argv)
 {
   pid_t pid;
   pid = fork ();

@@ -177,7 +177,6 @@ int
 hb_connect_main (int argc, char **argv)
 {
   FILE *fp;
-  char buf[254];
 
   openlog ("heartbeat", LOG_PID, LOG_DAEMON);
 
@@ -195,13 +194,8 @@ hb_connect_main (int argc, char **argv)
 
   start_wan_done (get_wan_face ());
 
-  snprintf (buf, sizeof (buf),
-	    "iptables -I INPUT -i %s -p udp -s %s -d %s --dport %s -j ACCEPT",
+  sysprintf ("iptables -I INPUT -i %s -p udp -s %s -d %s --dport %s -j ACCEPT",
 	    get_wan_face (), argv[3], nvram_safe_get ("wan_ipaddr"), argv[1]);
-
-  MY_LOG (LOG_INFO, "Adding firewall [%s]\n", buf);
-
-  system2 (buf);
 
   return TRUE;
 }

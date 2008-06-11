@@ -225,6 +225,7 @@ extern int dropbearkey_main (int argc, char **argv);
 extern int dropbear_main (int argc, char **argv);
 extern int scp_main (int argc, char **argv);
 #endif
+extern int roaming_daemon_main (int argc, char *argv[]);
 
 #ifdef HAVE_PPTPD
 extern int pptpd_main (int argc, char **argv);
@@ -315,13 +316,13 @@ extern int hb_disconnect_main (int argc, char **argv);
 extern int check_ps_main (int argc, char **argv);
 extern int listen_main (int argc, char **argv);
 extern int ddns_success_main (int argc, char **argv);
-extern int process_monitor_main (void);
-extern int radio_timer_main (void);
-extern int ttraff_main (void);
+extern int process_monitor_main (int argc,char **argv);
+extern int radio_timer_main (int argc,char **argv);
+extern int ttraff_main (int argc,char **argv);
 extern int wol_main (int argc, char **argv);
 extern int sendudp_main (int argc, char *argv[]);
-extern int autokill_wiviz_main (void);
-extern int run_wiviz_main (void);
+extern int autokill_wiviz_main (int argc,char **argv);
+extern int run_wiviz_main (int argc,char **argv);
 extern int watchdog_main (int argc, char *argv[]);
 extern int event_main (int argc, char **argv);
 void cfe_default (void);

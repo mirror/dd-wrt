@@ -1206,7 +1206,6 @@ ej_wireless_active_table (webs_t wp, int argc, char_t ** argv)
   char list[2][20];
   char line[80];
   int dhcp_table_count;
-  char cmd[80];
 
 #ifdef FASTWEB
   ejArgs (argc, argv, "%s", &type);
@@ -1238,8 +1237,7 @@ ej_wireless_active_table (webs_t wp, int argc, char_t ** argv)
 	wl_client_macs[nv_count].check = 1;	// checked
 	nv_count++;
       }
-      snprintf (cmd, sizeof (cmd), "%s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP);
-      system2 (cmd);		// get active wireless mac
+      sysprintf( "%s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP);
 
 
       if ((fp = fopen (ASSOCLIST_TMP, "r")))
@@ -1703,13 +1701,12 @@ wl_active_onload (webs_t wp, char *arg)
 void
 ej_get_wl_active_mac (webs_t wp, int argc, char_t ** argv)
 {
-  char cmd[80], line[80];
+  char line[80];
   char list[2][20];
   FILE *fp;
   int count = 0;
 
-  snprintf (cmd, sizeof (cmd), "%s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP);
-  system2 (cmd);		// get active wireless mac
+  sysprintf( "%s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP);
 
   if ((fp = fopen (ASSOCLIST_TMP, "r")))
     {
