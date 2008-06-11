@@ -68,7 +68,7 @@ static int hfd = 0;
  *@param pf the processing function
  */
 void
-add_olsr_socket(int fd, void(*pf)(int))
+add_olsr_socket(int fd, void(*pf)(int fd))
 {
   struct olsr_socket_entry *new_entry;
 
@@ -153,7 +153,7 @@ remove_olsr_socket(int fd, void(*pf)(int))
 
 
 void
-poll_sockets(void)
+olsr_poll_sockets(void)
 {
   int n;
   struct olsr_socket_entry *olsr_sockets;
@@ -195,7 +195,6 @@ poll_sockets(void)
     }
 
   /* Update time since this is much used by the parsing functions */
-  gettimeofday(&now, NULL);
   now_times = times(&tms_buf);
 
   for(olsr_sockets = olsr_socket_entries;olsr_sockets;olsr_sockets = olsr_sockets->next)

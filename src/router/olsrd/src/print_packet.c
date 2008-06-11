@@ -110,10 +110,10 @@ print_olsr_serialized_message(FILE *handle, union olsr_message *msg)
   fprintf(handle, "   ------------ OLSR MESSAGE ------------\n");
   fprintf(handle, "    Sender main addr: %s\n", 
 	  olsr_ip_to_string(&buf, (union olsr_ip_addr *)&msg->v4.originator));
-  fprintf(handle, "    Type: %s, size: %d, vtime: %0.2f\n", 
+  fprintf(handle, "    Type: %s, size: %d, vtime: %u ms\n", 
 	  olsr_msgtype_to_string(msg->v4.olsr_msgtype), 
 	  ntohs(msg->v4.olsr_msgsize),
-	  me_to_double(msg->v4.olsr_vtime));
+	  me_to_reltime(msg->v4.olsr_vtime));
   fprintf(handle, "    TTL: %d, Hopcnt: %d, seqno: %d\n",
 	  (olsr_cnf->ip_version == AF_INET) ? msg->v4.ttl : msg->v6.ttl,
 	  (olsr_cnf->ip_version == AF_INET) ? msg->v4.hopcnt : msg->v6.hopcnt,
@@ -196,7 +196,7 @@ print_hellomsg(FILE *handle, olsr_u8_t *data, olsr_16_t totsize)
   union olsr_ip_addr *haddr;
   int hellosize = totsize - ((olsr_cnf->ip_version == AF_INET) ? OLSR_MSGHDRSZ_IPV4 : OLSR_MSGHDRSZ_IPV6);
 
-  fprintf(handle, "    +Htime: %0.2f\n", me_to_double(data[2]));
+  fprintf(handle, "    +Htime: %u ms\n", me_to_reltime(data[2]));
 
   fprintf(handle, "    +Willingness: %d\n", data[3]);
 
@@ -264,7 +264,7 @@ print_hellomsg_lq(FILE *handle, olsr_u8_t *data, olsr_16_t totsize)
   union olsr_ip_addr *haddr;
   int hellosize = totsize - ((olsr_cnf->ip_version == AF_INET) ? OLSR_MSGHDRSZ_IPV4 : OLSR_MSGHDRSZ_IPV6);
 
-  fprintf(handle, "    +Htime: %0.2f\n", me_to_double(data[2]));
+  fprintf(handle, "    +Htime: %u ms\n", me_to_reltime(data[2]));
 
   fprintf(handle, "    +Willingness: %d\n", data[3]);
 

@@ -304,7 +304,7 @@ serialize_hello4(struct hello_message *message, struct interface *ifp)
 
   /* Fill HELLO header */
   h->willingness = message->willingness; 
-  h->htime = double_to_me(ifp->hello_etime);
+  h->htime = reltime_to_me(ifp->hello_etime);
 
   memset(&h->reserved, 0, sizeof(olsr_u16_t));
   
@@ -479,7 +479,7 @@ serialize_hello6(struct hello_message *message, struct interface *ifp)
   
   /* Fill packet header */
   h6->willingness = message->willingness; 
-  h6->htime = double_to_me(ifp->hello_etime);
+  h6->htime = reltime_to_me(ifp->hello_etime);
   memset(&h6->reserved, 0, sizeof(olsr_u16_t));
 
   /*

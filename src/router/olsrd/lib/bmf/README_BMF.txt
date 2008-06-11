@@ -1,6 +1,6 @@
 BASIC MULTICAST FORWARDING PLUGIN FOR OLSRD
 by Erik Tromp (erik.tromp@nl.thalesgroup.com, erik_tromp@hotmail.com)
-Version 1.5.2
+Version 1.5.3
 
 1. Introduction
 ---------------
@@ -17,14 +17,14 @@ in the past 3-6 seconds are forwarded.
 2. How to build and install
 ---------------------------
 
-Download the olsr-bmf-v1.5.2.tar.gz file and save it into your OLSRD
+Download the olsr-bmf-v1.5.3.tar.gz file and save it into your OLSRD
 base install directory.
 
 Change directory (cd) to your OLSRD base install directory.
 
 At the command prompt, type:
 
-  tar -zxvf ./olsr-bmf-v1.5.2.tar.gz
+  tar -zxvf ./olsr-bmf-v1.5.3.tar.gz
 
 then type:
 
@@ -47,7 +47,7 @@ Set permissions, e.g.:
 To configure BMF in OLSR, you must edit the file /etc/olsrd.conf
 to load the BMF plugin. For example, add the following lines:
 
-  LoadPlugin "olsrd_bmf.so.1.5.2"
+  LoadPlugin "olsrd_bmf.so.1.5.3"
   {
     # No PlParam entries required for basic operation
   }
@@ -63,19 +63,18 @@ olsrd daemon by entering at the shell prompt:
 
 Look at the output; it should list the BMF plugin, e.g.:
 
-  ---------- Plugin loader ----------
-  Library: olsrd_bmf.so.1.5.2
-  OLSRD Basic Multicast Forwarding plugin 1.5.2 (Dec  7 2007 09:08:19)
+  ---------- LOADING LIBRARY olsrd_bmf.so.1.5.3 ----------
+  OLSRD Basic Multicast Forwarding (BMF) plugin 1.5.3 (Feb 24 2008 17:58:02)
     (C) Thales Communications Huizen, Netherlands
-    Erik Tromp (erik.tromp@nl.thalesgroup.com)
-  Checking plugin interface version...  4 - OK
-  Trying to fetch plugin init function... OK
-  Trying to fetch param function... OK
+    Erik Tromp (eriktromp@users.sourceforge.net)
+  Checking plugin interface version:  5 - OK
+  Trying to fetch plugin init function: OK
+  Trying to fetch parameter table and it's size...
   Sending parameters...
-  "NonOlsrIf"/"eth0"... OK
+  "NonOlsrIf"/"eth0"... NonOlsrIf: OK
   Running plugin_init function...
-  OLSRD Basic Multicast Forwarding (BMF) plugin: opened 6 sockets
-  ---------- LIBRARY LOADED ----------
+  OLSRD Basic Multicast Forwarding (BMF) plugin: opened 5 sockets
+  ---------- LIBRARY olsrd_bmf.so.1.5.3 LOADED ----------
 
 
 4. How to check if it works
@@ -190,7 +189,7 @@ the /etc/olsrd.conf file.
 The following gives an overview of all plugin parameters that can be
 configured:
 
-  LoadPlugin "olsrd_bmf.so.1.5.2"
+  LoadPlugin "olsrd_bmf.so.1.5.3"
   {
     # Specify the name of the BMF network interface.
     # Defaults to "bmf0".
@@ -344,7 +343,7 @@ want to forward multicast and local-broadcast IP packets, specify these
 interfaces one by one as "NonOlsrIf" parameters in the BMF plugin section
 of /etc/olsrd.conf. For example:
 
-  LoadPlugin "olsrd_bmf.so.1.5.2"
+  LoadPlugin "olsrd_bmf.so.1.5.3"
   {
     # Non-OLSR interfaces to participate in the multicast flooding
     PlParam     "NonOlsrIf"  "eth2"
@@ -402,7 +401,7 @@ Therefore, override the default IP address and prefix length of
 the BMF network interface, by editing the /etc/olsrd.conf file.
 For example:
 
-  LoadPlugin "olsrd_bmf.so.1.5.2"
+  LoadPlugin "olsrd_bmf.so.1.5.3"
   {
       PlParam "BmfInterfaceIp" "10.10.10.4/24"
   }
@@ -539,6 +538,13 @@ the BMF network interface, either by specifying the interface name itself
 
 10. Version history
 -------------------
+
+24 February 2008: Version 1.5.3
+
+* Fixed a bug so that dying or dead end edges are not taken into account.
+  As of OLSRd version 0.5.4 , stale TC entries are not cleaned up, but
+  marked with a flag OLSR_TC_EDGE_DOWN. This flag was not taken into account
+  by BMF.
 
 7 December 2007: Version 1.5.2
 

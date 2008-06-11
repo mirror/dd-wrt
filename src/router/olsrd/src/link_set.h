@@ -1,3 +1,4 @@
+
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
  * Copyright (c) 2004, Andreas TÃÂ¸nnesen(andreto@olsr.org)
@@ -38,7 +39,6 @@
  *
  */
 
-
 /*
  * Link sensing database for the OLSR routing daemon
  */
@@ -46,113 +46,103 @@
 #ifndef _LINK_SET_H
 #define _LINK_SET_H
 
+#include "lq_plugin.h"
 #include "packet.h"
+#include "common/list.h"
+#include "mantissa.h"
 
 #define MID_ALIAS_HACK_VTIME  10.0
 
-struct link_entry
-{
+struct link_entry {
   union olsr_ip_addr local_iface_addr;
   union olsr_ip_addr neighbor_iface_addr;
   const struct interface *inter;
   char *if_name;
-  clock_t SYM_time;
+  struct timer_entry *link_timer;
+  struct timer_entry *link_sym_timer;
   clock_t ASYM_time;
-  clock_t time;
-  unsigned int vtime;
+  olsr_reltime vtime;
   struct neighbor_entry *neighbor;
   olsr_u8_t prev_status;
 
   /*
-   *Hysteresis
+   * Hysteresis
    */
   float L_link_quality;
   int L_link_pending;
   clock_t L_LOST_LINK_time;
-  clock_t hello_timeout; /* When we should receive a new HELLO */
-  double last_htime;
+  struct timer_entry *link_hello_timer;	/* When we should receive a new HELLO */
+  olsr_reltime last_htime;
   olsr_bool olsr_seqno_valid;
   olsr_u16_t olsr_seqno;
 
   /*
    * packet loss
    */
-  olsr_u16_t loss_seqno;
-  int loss_seqno_valid;
-  int loss_missed_hellos;
+  olsr_reltime loss_helloint;
+  struct timer_entry *link_loss_timer;
 
-  double loss_hello_int;
-  clock_t loss_timeout;
+  /* user defined multiplies for link quality, multiplied with 65536 */
+  olsr_u32_t loss_link_multiplier;
 
-  unsigned int lost_packets;
-  unsigned int total_packets;
+  /* cost of this link */
+  olsr_linkcost linkcost;
 
-  double loss_link_quality;
-  double loss_link_quality2;
-  double loss_link_multiplier;
-
-  unsigned int loss_index;
-
-  unsigned char loss_bitmap[16];
-
-  double neigh_link_quality, neigh_link_quality2;
-
-  double saved_loss_link_quality;
-  double saved_neigh_link_quality;
-
-  struct link_entry *next;
+  struct list_node link_list;	       /* double linked list of all link entries */
+  olsr_u32_t linkquality[0];
 };
 
+/* inline to recast from link_list back to link_entry */
+LISTNODE2STRUCT(list2link, struct link_entry, link_list);
 
-extern struct link_entry *link_set;
+#define OLSR_LINK_JITTER       5	/* percent */
+#define OLSR_LINK_HELLO_JITTER 0	/* percent jitter */
+#define OLSR_LINK_SYM_JITTER   0	/* percent jitter */
+#define OLSR_LINK_LOSS_JITTER  0	/* percent jitter */
 
+/* deletion safe macro for link entry traversal */
+#define OLSR_FOR_ALL_LINK_ENTRIES(link) \
+{ \
+  struct list_node *link_head_node, *link_node, *next_link_node; \
+  link_head_node = &link_entry_head; \
+  for (link_node = link_head_node->next; \
+    link_node != link_head_node; link_node = next_link_node) { \
+    next_link_node = link_node->next; \
+    link = list2link(link_node);
+#define OLSR_FOR_ALL_LINK_ENTRIES_END(link) }}
+
+/* Externals */
+extern struct list_node link_entry_head;
+extern olsr_bool link_changes;
 
 /* Function prototypes */
 
-struct link_entry *
-get_link_set(void);
+void olsr_set_link_timer(struct link_entry *, unsigned int);
+void olsr_init_link_set(void);
+void olsr_delete_link_entry_by_ip(const union olsr_ip_addr *);
+void olsr_expire_link_hello_timer(void *);
+void olsr_update_packet_loss_worker(struct link_entry *, olsr_bool);
+void signal_link_changes(olsr_bool);   /* XXX ugly */
 
-clock_t 
-get_hold_time_neighbor(void);
 
-void
-olsr_init_link_set(void);
+struct link_entry *get_best_link_to_neighbor(const union olsr_ip_addr *);
 
-void
-del_if_link_entries(const union olsr_ip_addr *);
+struct link_entry *lookup_link_entry(const union olsr_ip_addr *,
+				     const union olsr_ip_addr *remote_main,
+				     const struct interface *);
 
-struct link_entry *
-get_best_link_to_neighbor(const union olsr_ip_addr *);
+struct link_entry *update_link_entry(const union olsr_ip_addr *,
+				     const union olsr_ip_addr *,
+				     const struct hello_message *,
+				     const struct interface *);
 
-struct link_entry *
-lookup_link_entry(const union olsr_ip_addr *, const union olsr_ip_addr *remote_main, const struct interface *);
-
-struct link_entry *
-update_link_entry(const union olsr_ip_addr *, const union olsr_ip_addr *, const struct hello_message *, const struct interface *);
-
-int
-check_neighbor_link(const union olsr_ip_addr *);
-
-int
-replace_neighbor_link_set(const struct neighbor_entry *,
-			  struct neighbor_entry *);
-
-int
-lookup_link_status(const struct link_entry *);
-
-void 
-olsr_update_packet_loss_hello_int(struct link_entry *, double);
-
-void 
-olsr_update_packet_loss(const union olsr_ip_addr *, const struct interface *, olsr_u16_t);
-
-void 
-olsr_print_link_set(void);
-
-void
-olsr_update_dijkstra_link_qualities(void);
-
-float olsr_calc_link_etx(const struct link_entry *);
+int check_neighbor_link(const union olsr_ip_addr *);
+int replace_neighbor_link_set(const struct neighbor_entry *,
+			    struct neighbor_entry *);
+int lookup_link_status(const struct link_entry *);
+void olsr_update_packet_loss_hello_int(struct link_entry *, olsr_reltime);
+void olsr_update_packet_loss(struct link_entry *entry);
+void olsr_print_link_set(void);
 
 #endif
 

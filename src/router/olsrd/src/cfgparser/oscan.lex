@@ -2,7 +2,7 @@
 
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
+ * Copyright (c) 2004, Andreas Tï¿½nnesen(andreto@olsr.org)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -381,6 +381,16 @@ IPV6ADDR {IP6PAT1}|{IP6PAT2}|{IP6PAT3}|{IP6PAT4}|{IP6PAT5}|{IP6PAT6}|{IP6PAT7}|{
 "LinkQualityDijkstraLimit" {
     yylval = NULL;
     return TOK_LQ_DLIMIT;
+}
+
+"LinkQualityAging" {
+    yylval = NULL;
+    return TOK_LQ_AGING;
+}
+
+"LinkQualityAlgorithm" {
+    yylval = NULL;
+    return TOK_LQ_PLUGIN;
 }
 
 "LinkQualityWinSize" {

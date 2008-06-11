@@ -104,7 +104,11 @@ static const char * const acpi_ac[] =
 #define USE_APM    1
 #define USE_ACPI   2
 
-static int method, fd_index;
+static int method;
+
+static int fd_index;
+
+static int ac_power_on;
 
 /* Prototypes */
 
@@ -126,7 +130,7 @@ apm_init(void)
   method = -1;
   OLSR_PRINTF(3, "Initializing APM\n");
 
-  if(((fd_index = acpi_probe()) >= 0) && apm_read_acpi(&ainfo))
+  if((((fd_index = acpi_probe()) >= 0) || ac_power_on) && apm_read_acpi(&ainfo))
     method = USE_ACPI;
   else if(apm_read_apm(&ainfo))
     method = USE_APM;
@@ -139,12 +143,14 @@ apm_init(void)
 
 
 void
-apm_printinfo(struct olsr_apm_info *ainfo __attribute__((unused)))
+apm_printinfo(struct olsr_apm_info *ainfo)
 {
   OLSR_PRINTF(5, "APM info:\n\tAC status %d\n\tBattery percentage %d%%\n\tBattery time left %d mins\n\n",
 	      ainfo->ac_line_status,
 	      ainfo->battery_percentage,
 	      ainfo->battery_time_left);
+
+  ainfo = NULL; /* squelch compiler warnings */
 }
 
 
@@ -237,15 +243,26 @@ apm_read_acpi(struct olsr_apm_info *ainfo)
   FILE *fd;
   int bat_max = 5000; /* Find some sane value */
   int bat_val = 0;
-  
-  printf("READING ACPI\n");
+  int result;
+ 
+  /* reporbe in case ac status changed */
+  fd_index = acpi_probe();
 
+  /* No battery was found */
   if(fd_index < 0)
     {
-      /* No battery was found or AC power was detected */
-      ainfo->ac_line_status = OLSR_AC_POWERED;
-      ainfo->battery_percentage = 100;
-      return 1;
+      /* but we have ac */
+      if(ac_power_on)
+        {
+           ainfo->ac_line_status = OLSR_AC_POWERED;
+
+           ainfo->battery_percentage = -1;
+
+           return 1;
+        }
+
+      /* not enough info */
+      return 0;
     }
 
   /* Get maxvalue */
@@ -282,8 +299,11 @@ apm_read_acpi(struct olsr_apm_info *ainfo)
     }
   fclose(fd);
 
-  ainfo->ac_line_status = OLSR_BATTERY_POWERED;
-  ainfo->battery_percentage = bat_val * 100 / bat_max;
+  ainfo->ac_line_status = ac_power_on ? OLSR_AC_POWERED : OLSR_BATTERY_POWERED;
+
+  result = bat_val * 100 / bat_max;
+
+  ainfo->battery_percentage = result > 100 ? 100 : result;
 
   return 1;
 }
@@ -295,6 +315,7 @@ acpi_probe(void)
   unsigned int i;
   
   /* First check for AC power */
+  ac_power_on = 0;
 
   for(i = 0; i < ACPI_AC_CNT; i++)
     {
@@ -316,8 +337,13 @@ acpi_probe(void)
 	  continue;
       
       /* Running on AC power */
-      if(!strcasecmp(s2, "on-line"))
-	return -1;
+      if(!strcasecmp(s2, "on-line")) {
+
+        /* ac power enabled */
+        ac_power_on = 1;
+
+	break;
+      }
     }
 
   /* Only checking the first found battery entry... */
@@ -333,6 +359,7 @@ acpi_probe(void)
 
       /* Extract info */
       rc = fscanf(fd, "%s %s", s1, s2);
+
       /* Close info entry */
       fclose(fd);
 

@@ -87,7 +87,7 @@ mid_chgestruct(struct mid_message *mmsg, const union olsr_message *m)
       mmsg->mid_addr = NULL;
 
       /* Get vtime */
-      mmsg->vtime = me_to_double(m->v4.olsr_vtime);
+      mmsg->vtime = me_to_reltime(m->v4.olsr_vtime);
 
       //printf("Sequencenuber of MID from %s is %d\n", ip_to_string(&mmsg->addr), mmsg->mid_seqno);
 
@@ -138,7 +138,7 @@ mid_chgestruct(struct mid_message *mmsg, const union olsr_message *m)
       mmsg->mid_addr = NULL;
 
       /* Get vtime */
-      mmsg->vtime = me_to_double(m->v6.olsr_vtime);
+      mmsg->vtime = me_to_reltime(m->v6.olsr_vtime);
 
       //printf("Sequencenuber of MID from %s is %d\n", ip_to_string(&mmsg->addr), mmsg->mid_seqno);
 

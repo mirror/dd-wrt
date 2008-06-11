@@ -71,7 +71,7 @@ add_spy_node(union olsr_ip_addr *, char *);
 #define	MAXIPLEN	60
 #define	MAXICMPLEN	76
 
-float poll_int = 0.2;
+float poll_int = 200; /* msec */
 
 int
 iw_get_range_info(char *, struct iw_range *);
@@ -100,7 +100,7 @@ init_link_layer_notification()
 	clear_spy_list(ifd->int_name);
     }
 
-  olsr_register_scheduler_event(&poll_link_layer, NULL, poll_int, 0, NULL);
+  olsr_start_timer(poll_int, 0, OLSR_TIMER_PERIODIC, &poll_link_layer, NULL, 0);
 
   return;
 }

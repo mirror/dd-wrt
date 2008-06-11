@@ -1,4 +1,3 @@
-
 /*
  * Secure OLSR plugin
  * http://www.olsr.org

@@ -67,7 +67,7 @@
 #define DEF_LQ_DIJK_LIMIT   255
 #define DEF_LQ_DIJK_INTER   0.0
 #define DEF_LQ_NAT_THRESH   1.0
-#define DEF_LQ_WSIZE        12
+#define DEF_LQ_AGING        0.1
 #define DEF_CLEAR_SCREEN    OLSR_FALSE
 
 /* Bounds */
@@ -92,8 +92,8 @@
 #define MIN_HYST_PARAM      0.0
 #define MAX_LQ_LEVEL        2
 #define MIN_LQ_LEVEL        0
-#define MAX_LQ_WSIZE        128
-#define MIN_LQ_WSIZE        3
+#define MAX_LQ_AGING        1.0
+#define MIN_LQ_AGING        0.01
 
 /* Option values */
 #define CFG_FIBM_FLAT          "flat"
@@ -115,7 +115,7 @@ struct olsr_msg_params
 struct olsr_lq_mult
 {
   union olsr_ip_addr addr;
-  float val;
+  olsr_u32_t value;
   struct olsr_lq_mult *next;
 };
 
@@ -220,7 +220,8 @@ struct olsrd_config
   olsr_u8_t                lq_level;
   olsr_u8_t                lq_fish;
   float                    lq_dinter;
-  olsr_u32_t               lq_wsize;
+  float                    lq_aging;
+  char                     *lq_algorithm;
   olsr_u8_t                lq_dlimit;
 
   /* Stuff set by olsrd */

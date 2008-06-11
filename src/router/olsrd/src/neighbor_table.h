@@ -48,13 +48,14 @@
 
 struct neighbor_2_list_entry 
 {
+  struct neighbor_entry *nbr2_nbr; /* backpointer to owning nbr entry */
   struct neighbor_2_entry      *neighbor_2;
-  clock_t       	       neighbor_2_timer;
+  struct timer_entry *nbr2_list_timer;
   struct neighbor_2_list_entry *next;
   struct neighbor_2_list_entry *prev;
 };
 
-
+#define OLSR_NBR2_LIST_JITTER 5 /* percent */
 
 struct neighbor_entry
 {
@@ -70,6 +71,15 @@ struct neighbor_entry
   struct neighbor_entry        *next;
   struct neighbor_entry        *prev;
 };
+
+#define OLSR_FOR_ALL_NBR_ENTRIES(nbr) \
+{ \
+  int _idx; \
+  for (_idx = 0; _idx < HASHSIZE; _idx++) { \
+    for(nbr = neighbortable[_idx].next; \
+        nbr != &neighbortable[_idx]; \
+        nbr = nbr->next)
+#define OLSR_FOR_ALL_NBR_ENTRIES_END(nbr) }}
 
 
 /*
@@ -104,6 +114,7 @@ olsr_time_out_two_hop_neighbors(struct neighbor_entry  *);
 
 void
 olsr_time_out_neighborhood_tables(void);
+void olsr_expire_nbr2_list(void *);
 
 void
 olsr_print_neighbor_table(void);
@@ -113,3 +124,9 @@ int
 update_neighbor_status(struct neighbor_entry *, int);
 
 #endif
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */
