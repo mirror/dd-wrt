@@ -2279,7 +2279,7 @@ ej_show_olsrd (webs_t wp, int argc, char_t ** argv)
 			"0 1 2", nvram_default_get ("olsrd_redundancy", "2"));
       show_inputlabel (wp, "route.olsrd_mpr", "olsrd_coverage", 5, "num", 5);
       showOption (wp, "route.olsrd_lqfe", "olsrd_lqfisheye");
-      show_inputlabel (wp, "route.olsrd_lqws", "olsrd_lqwinsize", 5, "num",
+      show_inputlabel (wp, "route.olsrd_lqag", "olsrd_lqaging", 5, "num",
 		       5);
 
       websWrite (wp, "<div class=\"setting\">\n");

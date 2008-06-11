@@ -263,11 +263,7 @@ nv_file_out (char *path, webs_t wp, char *query)
 {
 
   int backupcount = 0;
-#ifdef HAVE_NEWMEDIA
-  char sign[7] = { "XX-WRT" };
-#else
   char sign[7] = { "DD-WRT" };
-#endif
 
   char *buf = (char *) malloc (NVRAM_SPACE);
   nvram_getall (buf, NVRAM_SPACE);
@@ -294,23 +290,13 @@ nv_file_out (char *path, webs_t wp, char *query)
       char *name = p;
       wfputc (strlen (name), wp);
 
-#ifdef HAVE_NEWMEDIA
-      for (i = 0; i < strlen (name); i++)
-	wfputc (name[i] ^ 37, wp);
-#else
       for (i = 0; i < strlen (name); i++)
 	wfputc (name[i], wp);
-#endif
       char *val = nvram_safe_get (name);
       wfputc (strlen (val) & 255, wp);
       wfputc (strlen (val) >> 8, wp);
-#ifdef HAVE_NEWMEDIA
-      for (i = 0; i < strlen (val); i++)
-	wfputc (val[i] ^ 37, wp);
-#else
       for (i = 0; i < strlen (val); i++)
 	wfputc (val[i], wp);
-#endif
 
       p += len + 1;
     }

@@ -3654,17 +3654,6 @@ do_auth2 (char *userid, char *passwd, char *realm)
   return 0;
 }
 #else
-#ifdef HAVE_NEWMEDIA
-int
-do_auth2 (char *userid, char *passwd, char *realm)
-{
-  strncpy (userid, nvram_safe_get ("newhttp_username"), AUTH_MAX);
-  strncpy (passwd, nvram_safe_get ("newhttp_passwd"), AUTH_MAX);
-  //strncpy(realm, MODEL_NAME, AUTH_MAX);
-  strncpy (realm, nvram_safe_get ("router_name"), AUTH_MAX);
-  return 0;
-}
-#endif
 
 
 
@@ -4370,11 +4359,7 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 #else
   int sputnik = 0;
 #endif
-#ifdef HAVE_NEWMEDIA
-  int openvpn = nvram_match ("openvpn_enable", "1");
-#else
-  int openvpn = 0;
-#endif
+  int openvpn = nvram_match ("openvpn_enable", "1") | nvram_match ("openvpncl_enable", "1");
   int auth = nvram_match ("status_auth", "1");
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_NOWIFI
@@ -4830,11 +4815,6 @@ struct mime_handler mime_handlers[] = {
   {"config*", "text/html", no_cache, NULL, do_ej, do_auth2},
 #endif
 
-#ifdef HAVE_NEWMEDIA
-  {"Services.asp", "text/html", no_cache, NULL, do_ej, do_auth2},
-  {"Ping.asp", "text/html", no_cache, NULL, do_ej, do_auth2},
-  {"Diagnostics.asp", "text/html", no_cache, NULL, do_ej, do_auth2},
-#endif
   {"register.asp", "text/html", no_cache, NULL, do_ej, NULL},
   {"WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable, do_auth},
 //#endif
@@ -4883,9 +4863,6 @@ struct mime_handler mime_handlers[] = {
   {"**.js", "text/javascript", NULL, NULL, do_file, NULL},
   {"**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL},  
 #ifdef HAVE_SKYTRON
-  {"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
-   do_auth2},
-#elif HAVE_NEWMEDIA
   {"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
    do_auth2},
 #elif HAVE_DDLAN
@@ -5380,7 +5357,6 @@ ej_getwirelessnetmode (webs_t wp, int argc, char_t ** argv)
 }
 
 
-#ifdef HAVE_NEWMEDIA
 
 
 static void
@@ -5426,7 +5402,6 @@ ej_show_openvpn_status (webs_t wp, int argc, char_t ** argv)
 
 }
 
-#endif
 
 
 static void
@@ -5848,10 +5823,8 @@ struct ej_handler ej_handlers[] = {
   {"sputnik_apd_status", ej_sputnik_apd_status},
 //  {"show_sputnik", ej_show_sputnik},
 #endif
-#ifdef HAVE_NEWMEDIA
 //  {"show_openvpn", ej_show_openvpn},
   {"show_openvpn_status", ej_show_openvpn_status},
-#endif
   /* for filter */
   {"filter_init", ej_filter_init},
   {"filter_summary_show", ej_filter_summary_show},
