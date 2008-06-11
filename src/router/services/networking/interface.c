@@ -440,9 +440,9 @@ start_setup_vlans (void)
       {
 	if (atoi (vlan) < 5 && atoi (vlan) >= 0 && tagged[atoi (vlan)])
 	  sprintf (&portsettings[i][0], "%s %st", &portsettings[i][0], vlan);
-	else if (atoi (vlan) == 5 tagged[atoi (vlan)] && !ast)
+	else if (atoi (vlan) == 5 && tagged[atoi (vlan)] && !ast)
 	  sprintf (&portsettings[i][0], "%s %st", &portsettings[i][0], vlan);
-	else if (atoi (vlan) == 5 tagged[atoi (vlan)] && ast)
+	else if (atoi (vlan) == 5 && tagged[atoi (vlan)] && ast)
 	  sprintf (&portsettings[i][0], "%s %s*", &portsettings[i][0], vlan);
 	else
 	  sprintf (&portsettings[i][0], "%s %s", &portsettings[i][0], vlan);
