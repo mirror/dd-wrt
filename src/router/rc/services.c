@@ -148,7 +148,7 @@ start_services (void)
   handle = start_service_nofree ("upnp", handle);
 #endif
 
-#ifdef HAVE_NEWMEDIA
+#ifdef HAVE_OPENVPN
   handle = start_service_nofree ("openvpnserversys", handle);
 #endif
 #ifdef HAVE_RSTATS
@@ -250,7 +250,7 @@ stop_services (void)
 #ifdef HAVE_NOCAT
   handle = stop_service_nofree ("splashd", handle);
 #endif
-#ifdef HAVE_NEWMEDIA
+#ifdef HAVE_OPENVPN
   handle = stop_service_nofree ("openvpnserversys", handle);
 #endif
   if (handle)
@@ -445,7 +445,7 @@ handle_services (void)
 #ifndef HAVE_WRK54G
   handle = startstop_nofree ("syslog", handle);
 #endif
-#ifdef HAVE_NEWMEDIA
+#ifdef HAVE_OPENVPN
   handle = startstop_nofree ("openvpnserversys", handle);
 #endif
   handle = start_service_nofree ("anchorfreednat", handle);
