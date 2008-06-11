@@ -24,14 +24,11 @@ diag_ping_start (webs_t wp)
   unlink (PING_TMP);
   nvram_set ("ping_ip", ip);
 
-  char cmd[256] = { 0 };
 
   setenv ("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
 
-  snprintf (cmd, sizeof (cmd),
-	    "alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip,
+  sysprintf("alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip,
 	    PING_TMP);
-  system (cmd);
 
   return;
 }
@@ -141,9 +138,7 @@ ping_wol (webs_t wp)
   nvram_set ("wol_cmd", wol_cmd);
 
   // use Wol.asp as a debugging console
-  char cmd[256] = { 0 };
-  snprintf (cmd, sizeof (cmd), "%s > %s 2>&1 &", wol_cmd, PING_TMP);
-  system2 (cmd);
+  sysprintf( "%s > %s 2>&1 &", wol_cmd, PING_TMP);
 
 }
 

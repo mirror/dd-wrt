@@ -8,7 +8,7 @@
 #include <utils.h>
 
 int
-autokill_wiviz_main (void)
+autokill_wiviz_main (int argc,char **argv)
 {
   pid_t pid;
   pid = fork ();
