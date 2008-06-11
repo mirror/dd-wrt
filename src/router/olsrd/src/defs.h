@@ -1,6 +1,6 @@
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
+ * Copyright (c) 2004, Andreas Tï¿½nnesen(andreto@olsr.org)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -91,10 +91,16 @@ extern FILE *debug_handle;
   } while (0)
 #endif
 
-/* Provides a timestamp s1 milliseconds in the future
-   according to system ticks returned by times(2) */
+/*
+ * Provides a timestamp s1 milliseconds in the future according
+ * to system ticks returned by times(2)
+*/
 #define GET_TIMESTAMP(s1)	(now_times + ((s1) / olsr_cnf->system_tick_divider))
 
+/* Compute the time in milliseconds when a timestamp will expire. */
+#define TIME_DUE(s1)   ((int)((s1) * olsr_cnf->system_tick_divider) - now_times)
+
+/* Returns TRUE if a timestamp is expired */
 #define TIMED_OUT(s1)	((int)((s1) - now_times) < 0)
 
 
@@ -132,13 +138,10 @@ extern FILE *debug_handle;
 /*
  * Global olsrd configuragtion
  */
-
 extern struct olsrd_config *olsr_cnf;
 
 /* Timer data */
-extern clock_t now_times;              /* current idea of times(2) reported uptime */
-extern struct timeval now;	       /* current idea of time */
-extern struct tm *nowtm;	       /* current idea of time (in tm) */
+extern clock_t now_times; /* current idea of times(2) reported uptime */
 
 #if defined WIN32
 extern olsr_bool olsr_win32_end_request;

@@ -50,8 +50,6 @@
  * on the heap.
  */
 
-#define SPF_PROFILING 0
-
 #include "ipcalc.h"
 #include "defs.h"
 #include "olsr.h"
@@ -62,10 +60,13 @@
 #include "routing_table.h"
 #include "mid_set.h"
 #include "hna_set.h"
-#include "lq_list.h"
-#include "lq_avl.h"
-#include "lq_route.h"
+#include "common/list.h"
+#include "common/avl.h"
+ #include "olsr_spf.h"
 #include "net_olsr.h"
+#include "lq_plugin.h"
+
+struct timer_entry *spf_backoff_timer = NULL;
 
 /*
  * avl_comp_etx
@@ -79,11 +80,11 @@
 static int
 avl_comp_etx (const void *etx1, const void *etx2)
 {       
-  if (*(const float *)etx1 < *(const float *)etx2) {
+  if (*(const olsr_linkcost *)etx1 < *(const olsr_linkcost *)etx2) {
     return -1;
   }
 
-  if (*(const float *)etx1 > *(const float *)etx2) {
+  if (*(const olsr_linkcost *)etx1 > *(const olsr_linkcost *)etx2) {
     return +1;
   }
 
@@ -101,14 +102,14 @@ olsr_spf_add_cand_tree (struct avl_tree *tree,
 {
 #if !defined(NODEBUG) && defined(DEBUG)
   struct ipaddr_str buf;
+  struct lqtextbuffer lqbuffer;
 #endif
-  tc->cand_tree_node.key = &tc->path_etx;
-  tc->cand_tree_node.data = tc;
+  tc->cand_tree_node.key = &tc->path_cost;
 
 #ifdef DEBUG
-  OLSR_PRINTF(1, "SPF: insert candidate %s, cost %f\n",
+  OLSR_PRINTF(2, "SPF: insert candidate %s, cost %s\n",
               olsr_ip_to_string(&buf, &tc->addr),
-              tc->path_etx);
+              get_linkcost_text(tc->path_cost, OLSR_FALSE, &lqbuffer));
 #endif
 
   avl_insert(tree, &tc->cand_tree_node, AVL_DUP);
@@ -127,10 +128,11 @@ olsr_spf_del_cand_tree (struct avl_tree *tree,
 #ifdef DEBUG
 #ifndef NODEBUG
   struct ipaddr_str buf;
+  struct lqtextbuffer lqbuffer;
 #endif
-  OLSR_PRINTF(1, "SPF: delete candidate %s, cost %f\n",
+  OLSR_PRINTF(2, "SPF: delete candidate %s, cost %s\n",
               olsr_ip_to_string(&buf, &tc->addr),
-              tc->path_etx);
+              get_linkcost_text(tc->path_cost, OLSR_FALSE, &lqbuffer));
 #endif
 
   avl_delete(tree, &tc->cand_tree_node);
@@ -147,14 +149,15 @@ olsr_spf_add_path_list (struct list_node *head, int *path_count,
 {
 #if !defined(NODEBUG) && defined(DEBUG)
   struct ipaddr_str pathbuf, nbuf;
+  struct lqtextbuffer lqbuffer;
 #endif
-  tc->path_list_node.data = tc;
 
 #ifdef DEBUG
-  OLSR_PRINTF(1, "SPF: append path %s, cost %f, via %s\n",
+  OLSR_PRINTF(2, "SPF: append path %s, cost %s, via %s\n",
               olsr_ip_to_string(&pathbuf, &tc->addr),
-              tc->path_etx,
-              tc->next_hop ? olsr_ip_to_string(&nbuf, &tc->next_hop->neighbor_iface_addr) : "-");
+              get_linkcost_text(tc->path_cost, OLSR_FALSE, &lqbuffer),
+              tc->next_hop ? olsr_ip_to_string(
+                &nbuf, &tc->next_hop->neighbor_iface_addr) : "-");
 #endif
 
   list_add_before(head, &tc->path_list_node);
@@ -171,19 +174,7 @@ olsr_spf_extract_best (struct avl_tree *tree)
 {
   struct avl_node *node = avl_walk_first(tree);
 
-  return (node ? node->data :  NULL);
-}
-
-
-const char *olsr_etx_to_string(float etx)
-{
-  static char buff[20];
-
-  if (etx == INFINITE_ETX) {
-    return "INF";
-  }
-  snprintf(buff, sizeof(buff), "%.6f", etx);
-  return buff;
+  return (node ? cand_tree2tc(node) :  NULL);
 }
 
 
@@ -198,15 +189,16 @@ static void
 olsr_spf_relax (struct avl_tree *cand_tree, struct tc_entry *tc)
 {
   struct avl_node *edge_node;
-  float new_etx;
+  olsr_linkcost new_cost;
 
 #ifdef DEBUG
 #ifndef NODEBUG
   struct ipaddr_str buf, nbuf;
+  struct lqtextbuffer lqbuffer;
 #endif
-  OLSR_PRINTF(1, "SPF: exploring node %s, cost %f\n",
+  OLSR_PRINTF(2, "SPF: exploring node %s, cost %s\n",
               olsr_ip_to_string(&buf, &tc->addr),
-              tc->path_etx);
+              get_linkcost_text(tc->path_cost, OLSR_FALSE, &lqbuffer));
 #endif
 
   /*
@@ -217,20 +209,17 @@ olsr_spf_relax (struct avl_tree *cand_tree, struct tc_entry *tc)
        edge_node = avl_walk_next(edge_node)) {
 
     struct tc_entry *new_tc;
-    struct tc_edge_entry *tc_edge = edge_node->data;
+    struct tc_edge_entry *tc_edge = edge_tree2tc_edge(edge_node);
 
     /*
-     * We are not interested in dead-end or dying edges.
+     * We are not interested in dead-end edges.
      */
-    if (!tc_edge->edge_inv || (tc_edge->flags & OLSR_TC_EDGE_DOWN)) {
+    if (!tc_edge->edge_inv) {
 #ifdef DEBUG
-      OLSR_PRINTF(1, "SPF:   ignoring edge %s\n",
+      OLSR_PRINTF(2, "SPF:   ignoring edge %s\n",
                   olsr_ip_to_string(&buf, &tc_edge->T_dest_addr));
-      if (tc_edge->flags & OLSR_TC_EDGE_DOWN) {
-        OLSR_PRINTF(1, "SPF:     edge down\n");
-      }
       if (!tc_edge->edge_inv) {
-        OLSR_PRINTF(1, "SPF:     no inverse edge\n");
+        OLSR_PRINTF(2, "SPF:     no inverse edge\n");
       }
 #endif
       continue;
@@ -240,29 +229,29 @@ olsr_spf_relax (struct avl_tree *cand_tree, struct tc_entry *tc)
      * total quality of the path through this vertex
      * to the destination of this edge
      */
-    new_etx = tc->path_etx + tc_edge->etx;
+    new_cost = tc->path_cost + tc_edge->cost;
 
 #ifdef DEBUG
-      OLSR_PRINTF(1, "SPF:   exploring edge %s, cost %s\n",
-                  olsr_ip_to_string(&buf, &tc_edge->T_dest_addr),
-                  olsr_etx_to_string(new_etx));
+    OLSR_PRINTF(2, "SPF:   exploring edge %s, cost %s\n",
+                olsr_ip_to_string(&buf, &tc_edge->T_dest_addr),
+                get_linkcost_text(new_cost, OLSR_TRUE, &lqbuffer));
 #endif
 
-      /* 
-       * if it's better than the current path quality of this edge's
-       * destination node, then we've found a better path to this node.
-       */
+    /* 
+     * if it's better than the current path quality of this edge's
+     * destination node, then we've found a better path to this node.
+     */
     new_tc = tc_edge->edge_inv->tc;
 
-    if (new_etx < new_tc->path_etx) {
+    if (new_cost < new_tc->path_cost) {
 
       /* if this node has been on the candidate tree delete it */
-      if (new_tc->path_etx != INFINITE_ETX) {
+      if (new_tc->path_cost < ROUTE_COST_BROKEN) {
         olsr_spf_del_cand_tree(cand_tree, new_tc);
       }
 
       /* re-insert on candidate tree with the better metric */
-      new_tc->path_etx = new_etx;
+      new_tc->path_cost = new_cost;
       olsr_spf_add_cand_tree(cand_tree, new_tc);
 
       /* pull-up the next-hop and bump the hop count */
@@ -272,11 +261,11 @@ olsr_spf_relax (struct avl_tree *cand_tree, struct tc_entry *tc)
       new_tc->hops = tc->hops + 1;
 
 #ifdef DEBUG
-      OLSR_PRINTF(1, "SPF:   better path to %s, cost %s -> %s, via %s, hops %u\n",
+      OLSR_PRINTF(2, "SPF:   better path to %s, cost %s, via %s, hops %u\n",
                   olsr_ip_to_string(&buf, &new_tc->addr),
-                  olsr_etx_to_string(new_tc->path_etx),
-                  olsr_etx_to_string(new_etx),
-                  tc->next_hop ? olsr_ip_to_string(&nbuf, &tc->next_hop->neighbor_iface_addr) : "<none>",
+                  get_linkcost_text(new_cost, OLSR_TRUE, &lqbuffer),
+                  tc->next_hop ? olsr_ip_to_string(
+                    &nbuf, &tc->next_hop->neighbor_iface_addr) : "<none>",
                   new_tc->hops);
 #endif
 
@@ -317,22 +306,41 @@ olsr_spf_run_full (struct avl_tree *cand_tree, struct list_node *path_list,
   }
 }
 
+/**
+ * Callback for the SPF backoff timer.
+ */
+static void
+olsr_expire_spf_backoff(void *context __attribute__((unused)))
+{
+  spf_backoff_timer = NULL;
+}
+
 void
 olsr_calculate_routing_table (void)
 {
+#ifdef SPF_PROFILING
+  struct timeval t1, t2, t3, t4, t5, spf_init, spf_run, route, kernel, total;
+#endif
   struct avl_tree cand_tree;
   struct avl_node *rtp_tree_node;
   struct list_node path_list; /* head of the path_list */
-  int i, path_count = 0;
   struct tc_entry *tc;
   struct rt_path *rtp;
   struct tc_edge_entry *tc_edge;
   struct neighbor_entry *neigh;
   struct link_entry *link;
+  int path_count = 0;
+
+  /* We are done if our backoff timer is running */
+  if (!spf_backoff_timer) {
+    spf_backoff_timer = 
+      olsr_start_timer(1000, 5, OLSR_TIMER_ONESHOT, &olsr_expire_spf_backoff,
+                       NULL, 0);
+  } else {
+    return;
+  }
 
 #ifdef SPF_PROFILING
-  struct timeval t1, t2, t3, t4, t5, spf_init, spf_run, route, kernel, total;
-
   gettimeofday(&t1, NULL);
 #endif
 
@@ -348,7 +356,7 @@ olsr_calculate_routing_table (void)
    */
   OLSR_FOR_ALL_TC_ENTRIES(tc) {
     tc->next_hop = NULL;
-    tc->path_etx = INFINITE_ETX;
+    tc->path_cost = ROUTE_COST_BROKEN;
     tc->hops = 0;
   } OLSR_FOR_ALL_TC_ENTRIES_END(tc);
 
@@ -356,62 +364,56 @@ olsr_calculate_routing_table (void)
    * zero ourselves and add us to the candidate tree.
    */
   olsr_change_myself_tc();
-  tc_myself->path_etx = ZERO_ETX;
+  tc_myself->path_cost = ZERO_ROUTE_COST;
   olsr_spf_add_cand_tree(&cand_tree, tc_myself);
 
   /*
    * add edges to and from our neighbours.
    */
-  for (i = 0; i < HASHSIZE; i++)
-    for (neigh = neighbortable[i].next; neigh != &neighbortable[i];
-         neigh = neigh->next) {
+  OLSR_FOR_ALL_NBR_ENTRIES(neigh) {
 
-      if (neigh->status == SYM) {
+    if (neigh->status == SYM) {
 
-        tc_edge = olsr_lookup_tc_edge(tc_myself, &neigh->neighbor_main_addr);
-        link = get_best_link_to_neighbor(&neigh->neighbor_main_addr);
-	if (!link) {
-
-          /*
-           * If there is no best link to this neighbor
-           * and we had an edge before then flush the edge.
-           */
-          if (tc_edge) {
-            olsr_delete_tc_edge_entry(tc_edge);
-          }
-	  continue;
-        }
-
-        /* find the interface for the link */
-        if (link->if_name) {
-          link->inter = if_ifwithname(link->if_name);
-        } else {
-          link->inter = if_ifwithaddr(&link->local_iface_addr);
-        }
+      tc_edge = olsr_lookup_tc_edge(tc_myself, &neigh->neighbor_main_addr);
+      link = get_best_link_to_neighbor(&neigh->neighbor_main_addr);
+      if (!link) {
 
         /*
-         * Set the next-hops of our neighbors. 
+         * If there is no best link to this neighbor
+         * and we had an edge before then flush the edge.
          */
-        if (!tc_edge) {
-          tc_edge = olsr_add_tc_edge_entry(tc_myself, &neigh->neighbor_main_addr,
-                                           0, link->vtime,
-                                           link->loss_link_quality2,
-                                           link->neigh_link_quality2);
-        } else {
+        if (tc_edge) {
+          olsr_delete_tc_edge_entry(tc_edge);
+        }
+        continue;
+      }
 
-          /*
-           * Update LQ and timers, such that the edge does not get deleted.
-           */
-          tc_edge->link_quality = link->loss_link_quality2;
-          tc_edge->inverse_link_quality = link->neigh_link_quality2;
-          olsr_set_tc_edge_timer(tc_edge, link->vtime*1000);
-          olsr_calc_tc_edge_entry_etx(tc_edge);
-        }
-        if (tc_edge->edge_inv) {
-          tc_edge->edge_inv->tc->next_hop = link;
-        }
+      /* find the interface for the link */
+      if (link->if_name) {
+        link->inter = if_ifwithname(link->if_name);
+      } else {
+        link->inter = if_ifwithaddr(&link->local_iface_addr);
+      }
+
+      /*
+       * Set the next-hops of our neighbors. 
+       */
+      if (!tc_edge) {
+        tc_edge = olsr_add_tc_edge_entry(tc_myself, &neigh->neighbor_main_addr,
+                                         0);
+      } else {
+
+        /*
+         * Update LQ and timers, such that the edge does not get deleted.
+         */
+        olsr_copylq_link_entry_2_tc_edge_entry(tc_edge, link);
+        olsr_calc_tc_edge_entry_etx(tc_edge);
+      }
+      if (tc_edge->edge_inv) {
+        tc_edge->edge_inv->tc->next_hop = link;
       }
     }
+  } OLSR_FOR_ALL_NBR_ENTRIES_END(neigh);
 
 #ifdef SPF_PROFILING
   gettimeofday(&t2, NULL);
@@ -422,11 +424,8 @@ olsr_calculate_routing_table (void)
    */
   olsr_spf_run_full(&cand_tree, &path_list, &path_count);
 
-  OLSR_PRINTF(2, "\n--- %02d:%02d:%02d.%02d ------------------------------------------------- DIJKSTRA\n\n",
-              nowtm->tm_hour,
-              nowtm->tm_min,
-              nowtm->tm_sec,
-              (int)now.tv_usec/10000);
+  OLSR_PRINTF(2, "\n--- %s ------------------------------------------------- DIJKSTRA\n\n",
+              olsr_wallclock_string());
 
 #ifdef SPF_PROFILING
   gettimeofday(&t3, NULL);
@@ -437,7 +436,7 @@ olsr_calculate_routing_table (void)
    */
   for (; !list_is_empty(&path_list); list_remove(path_list.next)) {
 
-    tc = path_list.next->data;
+    tc = pathlist2tc(path_list.next);
     link = tc->next_hop;
 
     if (!link) {
@@ -450,7 +449,7 @@ olsr_calculate_routing_table (void)
 #ifndef NODEBUG
         struct ipaddr_str buf;
 #endif
-        OLSR_PRINTF(1, "SPF: %s no next-hop\n", olsr_ip_to_string(&buf, &tc->addr));
+        OLSR_PRINTF(2, "SPF: %s no next-hop\n", olsr_ip_to_string(&buf, &tc->addr));
       }
 #endif
       continue;
@@ -466,7 +465,7 @@ olsr_calculate_routing_table (void)
          rtp_tree_node;
          rtp_tree_node = avl_walk_next(rtp_tree_node)) {
 
-      rtp = rtp_tree_node->data;
+      rtp = rtp_prefix_tree2rtp(rtp_tree_node);
 
       if (rtp->rtp_rt) {
 

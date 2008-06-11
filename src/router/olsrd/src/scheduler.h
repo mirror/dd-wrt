@@ -1,6 +1,8 @@
+
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
  * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
+ * Timer rewrite (c) 2008, Hannes Gredler (hannes@gredler.at)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -39,53 +41,76 @@
  */
 
 
-
-
 #ifndef _OLSR_SCHEDULER
 #define _OLSR_SCHEDULER
 
+#include "common/list.h"
 
-/* List entries */
+#define TIMER_WHEEL_SLOTS 256
+#define TIMER_WHEEL_MASK (TIMER_WHEEL_SLOTS - 1)
 
-/* Timeout entry */
+/* Some defs for juggling with timers */
+#define MSEC_PER_SEC 1000
+#define USEC_PER_SEC 1000000
+#define NSEC_PER_USEC 1000
+#define USEC_PER_MSEC 1000
 
-struct timeout_entry
-{
-  void (*function)(void);
-  struct timeout_entry *next;
+/*
+ * Our timer implementation is a based on individual timers arranged in
+ * a double linked list hanging of hash containers called a timer wheel slot.
+ * For every timer a timer_entry is created and attached to the timer wheel slot.
+ * When the timer fires, the timer_cb function is called with the
+ * context pointer.
+ * The implementation supports periodic and oneshot timers.
+ * For a periodic timer the timer_period field is set to non zero,
+ * which causes the timer to run forever until manually stopped.
+ */
+struct timer_entry {
+  struct list_node timer_list;	       /* memory pooling, or wheel membership */
+  clock_t timer_clock;		       /* when timer shall fire (absolute time) */
+  unsigned int timer_period;	       /* set for periodical timers (relative time) */
+  olsr_cookie_t timer_cookie;	       /* used for diag stuff */
+  olsr_u8_t timer_jitter_pct;	       /* the jitter expressed in percent */
+  olsr_u8_t timer_flags;	       /* misc flags */
+  unsigned int timer_random;	       /* cache random() result for performance reasons */
+  void (*timer_cb) (void *);	       /* callback function */
+  void *timer_cb_context;	       /* context pointer */
 };
 
-/* Event entry */
+/* inline to recast from timer_list back to timer_entry */
+LISTNODE2STRUCT(list2timer, struct timer_entry, timer_list);
 
-struct event_entry
-{
-  void (*function)(void *);
-  void *param;
-  float interval;
-  float since_last;
-  olsr_u8_t *trigger;
-  struct event_entry *next;
-};
+#define OLSR_TIMER_ONESHOT    0	/* One shot timer */
+#define OLSR_TIMER_PERIODIC   1	/* Periodic timer */
 
-void
-signal_link_changes(olsr_bool);
+/* Timer flags */
+#define OLSR_TIMER_RUNNING  ( 1 << 0)	/* this timer is running */
 
-int
-olsr_register_timeout_function(void (*)(void), olsr_bool);
+/* Memory pooling */
+#define OLSR_TIMER_MEMORY_CHUNK 100	/* timers per chunk */
 
-int
-olsr_remove_timeout_function(void (*)(void), olsr_bool);
+/* Timers */
+void olsr_init_timers(void);
+void olsr_walk_timers(clock_t *);
+void olsr_set_timer(struct timer_entry **, unsigned int, olsr_u8_t, olsr_bool,
+		    void (*)(void *), void *, olsr_cookie_t);
+struct timer_entry *olsr_start_timer(unsigned int, olsr_u8_t, olsr_bool,
+				     void (*)(void *), void *, olsr_cookie_t);
+void olsr_change_timer(struct timer_entry *, unsigned int, olsr_u8_t,
+		       olsr_bool);
+void olsr_stop_timer(struct timer_entry *);
 
-int
-olsr_register_scheduler_event_dijkstra(void (*)(void *), void *, float, float, olsr_u8_t *);
+/* Printing timestamps */
+const char *olsr_clock_string(clock_t);
+const char *olsr_wallclock_string(void);
 
-int
-olsr_register_scheduler_event(void (*)(void *), void *, float, float, olsr_u8_t *);
-
-int
-olsr_remove_scheduler_event(void (*)(void *), void *, float, float, olsr_u8_t *);
-
-void
-scheduler(void) __attribute__((noreturn));
+/* Main scheduler loop */
+void olsr_scheduler(void) __attribute__ ((noreturn));
 
 #endif
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */

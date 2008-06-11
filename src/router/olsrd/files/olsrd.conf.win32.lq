@@ -31,11 +31,9 @@ ClearScreen		no
 
 LinkQualityLevel	2
 
-#
-# Windows size for packet loss calculation
-#
-
-LinkQualityWinSize	12
+# Link quality aging factor
+# Defaults to 0.05, smaller values mean larger LQ window size
+LinkQualityAging 0.1 
 
 #
 # Do not use hysteresis

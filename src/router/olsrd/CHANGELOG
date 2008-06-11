@@ -1,5 +1,39 @@
 This file states changes as of version 0.2.4:
 
+0.5.6 ---------------------------------------------------------------------
+
+PATCHES from Hannes Gredler <hannes@gredler.at>:
+- add small valgrind howto
+- remove the per tc_edge timer
+- add some basic infrastructure for cookies
+- eliminate data field from avl_node and list_node and
+  replace this via inline recasts
+- add indentation dotfile for future code cleanup
+- refactor the timer implementation, get rid of timeout functions
+  all manipulations done in constant time.
+- use calloc rather than malloc for lazy callers
+
+PATCHES and BUGFIXES from Henning Rogge <rogge@fgan.de>
+- Bugfix for fragmented TC sequence numbers
+- fix SPF bug
+- refactor linkset code
+- add netsimpcap, a network simulation device
+- parser refactoring
+
+PATCHES from Sven-Ola Tuecke <sven-ola@gmx.de>:
+- add a fixed-point math implementation, which saves
+  a great deal of CPU on embedded devices
+
+BUGFIX from Erik Tromp <erik_tromp@hotmail.com>:
+- update in bmf due to new flags field in tc_edge_entry
+
+PATCH from Clemens Hopfer <datacop@inode.at>:
+- dot_draw plugin: close the connection after graph output.
+
+PATCH from Joe Gio <joezgio@gmail.com>:
+- track if AC power is connected/disconnected
+
+
 0.5.5 ---------------------------------------------------------------------
 
 BUGFIX from Andreas Jacobs <andjac@kawo1.rwth-aachen.de>:

@@ -45,7 +45,7 @@
 #include "olsrd_plugin.h"
 #include "plugin_util.h"
 #include "defs.h" /* olsr_u8_t, olsr_cnf */
-#include "scheduler.h" /* olsr_register_scheduler_event */
+#include "scheduler.h" /* olsr_start_timer() */
 
 /* BMF includes */
 #include "Bmf.h" /* InitBmf(), CloseBmf() */
@@ -98,7 +98,9 @@ int olsrd_plugin_init(void)
   add_ifchgf(&InterfaceChange);
 
   /* Register the duplicate registration pruning process */
-  olsr_register_scheduler_event(&PrunePacketHistory, NULL, 3.0, 2.0, NULL);
+  olsr_start_timer(3 * MSEC_PER_SEC, 0, OLSR_TIMER_PERIODIC,
+                   &PrunePacketHistory, NULL, 0);
+
 
   return InitBmf(NULL);
 }

@@ -64,6 +64,9 @@ typedef enum {
     OLSR_TRUE
 } olsr_bool;
 
+/* user defined cookies */
+typedef uint16_t        olsr_cookie_t;
+
 #if defined linux || defined __MacOSX__ || defined WIN32 || defined __FreeBSD__ || defined __NetBSD__ || defined __OpenBSD__
 
 typedef uint8_t         olsr_u8_t;
@@ -94,5 +97,7 @@ struct olsr_ip_prefix {
   union olsr_ip_addr prefix;
   olsr_u8_t prefix_len;
 };
+
+typedef olsr_u32_t olsr_linkcost;
 
 #endif

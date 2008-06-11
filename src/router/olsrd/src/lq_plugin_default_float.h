@@ -1,7 +1,6 @@
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
- * IPv4 performance optimization (c) 2006, sven-ola(gmx.de)
+ * Copyright (c) 2008 Henning Rogge <rogge@fgan.de>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -39,68 +38,42 @@
  *
  */
 
-#include <stdlib.h>
-#include "lq_list.h"
+#ifndef LQ_PLUGIN_DEFAULT_H_
+#define LQ_PLUGIN_DEFAULT_H_
 
-/* init a circular list  */
-void list_head_init(struct list_node *node)
-{
-  node->prev = node;
-  node->next = node;
-}
+#include "olsr_types.h"
+#include "lq_plugin.h"
 
-void list_node_init(struct list_node *node)
-{
-  node->prev = NULL;
-  node->next = NULL;
-}
+#define LQ_ALGORITHM_ETX_FLOAT_NAME "etx_float"
 
-int list_node_on_list(struct list_node *node)
-{
-  if (node->prev || node->next) {
-    return 1;
-  }
+#define LQ_PLUGIN_LC_MULTIPLIER 1024
+#define LQ_PLUGIN_RELEVANT_COSTCHANGE 8
 
-  return 0;
-}
+struct default_lq_float {
+  float lq, nlq;
+  olsr_u16_t quickstart;
+};
 
-int list_is_empty(struct list_node *node)
-{
-  if (node->prev == node && node->next == node) {
-    return 1;
-  }
+void default_lq_initialize_float(void);
 
-  return 0;
-}
+olsr_linkcost default_lq_calc_cost_float(const void *lq);
 
-void list_add_after(struct list_node *pos_node, struct list_node *new_node)
-{
-  new_node->next = pos_node->next;
-  new_node->prev = pos_node;
+olsr_bool default_lq_is_relevant_costchange_float(olsr_linkcost c1, olsr_linkcost c2);
 
-  pos_node->next->prev = new_node;
-  pos_node->next = new_node;
-}
+olsr_linkcost default_lq_packet_loss_worker_float(struct link_entry *link, void *lq, olsr_bool lost);
+void default_lq_memorize_foreign_hello_float(void *local, void *foreign);
 
-void list_add_before(struct list_node *pos_node, struct list_node *new_node)
-{
-  new_node->prev = pos_node->prev;
-  new_node->next = pos_node;
+int default_lq_serialize_hello_lq_pair_float(unsigned char *buff, void *lq);
+void default_lq_deserialize_hello_lq_pair_float(const olsr_u8_t **curr, void *lq);
+int default_lq_serialize_tc_lq_pair_float(unsigned char *buff, void *lq);
+void default_lq_deserialize_tc_lq_pair_float(const olsr_u8_t **curr, void *lq);
 
-  pos_node->prev->next = new_node;
-  pos_node->prev = new_node;
-}
+void default_lq_copy_link2tc_float(void *target, void *source);
+void default_lq_clear_float(void *target);
 
-void list_remove(struct list_node *del_node)
-{
-  del_node->next->prev = del_node->prev;
-  del_node->prev->next = del_node->next;
+const char *default_lq_print_float(void *ptr, struct lqtextbuffer *buffer);
+const char *default_lq_print_cost_float(olsr_linkcost cost, struct lqtextbuffer *buffer);
 
-  list_node_init(del_node);
-}
+extern struct lq_handler lq_etx_float_handler;
 
-/*
- * Local Variables:
- * c-basic-offset: 2
- * End:
- */
+#endif /*LQ_PLUGIN_DEFAULT_H_*/

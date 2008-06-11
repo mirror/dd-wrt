@@ -39,6 +39,8 @@
  *
  */
 
+#define OLSR_TAS_SERVICE_INT 100 /* msec */
+
 extern void sendMessage(const char *service, const char *string);
 extern void iterLinkTabInit(void);
 extern int iterLinkTabNext(char *buff, int len);

@@ -1,6 +1,6 @@
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
+ * Copyright (c) 2004, Andreas Tï¿½nnesen(andreto@olsr.org)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -42,15 +42,17 @@
 #ifndef _OLSR_MPRS_SET
 #define _OLSR_MPRS_SET
 
+#include "mantissa.h"
 
 struct mpr_selector
 {
   union olsr_ip_addr  MS_main_addr;
-  clock_t             MS_time;
+  struct timer_entry  *MS_timer;
   struct mpr_selector *next;
   struct mpr_selector *prev;
 };
 
+#define OLSR_MPR_SEL_JITTER 5 /* percent */
 
 #if 0
 olsr_bool
@@ -68,7 +70,7 @@ olsr_init_mprs_set(void);
 
 
 struct mpr_selector *
-olsr_add_mpr_selector(const union olsr_ip_addr *, float);
+olsr_add_mpr_selector(const union olsr_ip_addr *, olsr_reltime);
 
 
 struct mpr_selector *
@@ -76,7 +78,7 @@ olsr_lookup_mprs_set(const union olsr_ip_addr *);
 
 
 int
-olsr_update_mprs_set(const union olsr_ip_addr *, float);
+olsr_update_mprs_set(const union olsr_ip_addr *, olsr_reltime);
 
 
 void
@@ -88,3 +90,9 @@ olsr_print_mprs_set(void);
 #endif
 
 #endif
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */

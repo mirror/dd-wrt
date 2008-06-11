@@ -43,12 +43,13 @@
 #define _OLSR_MANTISSA
 
 #include "olsr_types.h"
-#include "olsr_protocol.h"
 
+/* olsr_reltime is a relative timestamp measured in microseconds */
+typedef olsr_u32_t olsr_reltime;
 
 /**
  * Macro for converting a mantissa/exponent 8bit value back
- * to double as described in RFC3626:
+ * to an integer (measured in microseconds) as described in RFC3626:
  *
  * value = C*(1+a/16)*2^b [in seconds]
  *
@@ -59,8 +60,8 @@
  * me is the 8 bit mantissa/exponent value
  *
  */
-double me_to_double(const olsr_u8_t);
+olsr_reltime me_to_reltime(const olsr_u8_t);
 
-olsr_u8_t double_to_me(const double);
+olsr_u8_t reltime_to_me(const olsr_reltime);
 
 #endif

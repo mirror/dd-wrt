@@ -59,7 +59,6 @@ olsr_init_neighbor_table(void)
 {
   int i;
 
-  olsr_register_timeout_function(&olsr_time_out_neighborhood_tables, OLSR_TRUE);
   for(i = 0; i < HASHSIZE; i++)
     {
       neighbortable[i].next = &neighbortable[i];
@@ -67,38 +66,61 @@ olsr_init_neighbor_table(void)
     }
 }
 
+/**
+ * Unlink, delete and free a nbr2_list entry.
+ */
+static void
+olsr_del_nbr2_list(struct neighbor_2_list_entry *nbr2_list)
+{
+  struct neighbor_entry *nbr;
+  struct neighbor_2_entry *nbr2;
+
+  nbr = nbr2_list->nbr2_nbr;
+  nbr2 = nbr2_list->neighbor_2;
+
+  if (nbr2->neighbor_2_pointer < 1) {
+      DEQUEUE_ELEM(nbr2);
+      free(nbr2);
+  }
+
+  /*
+   * Kill running timers.
+   */
+  olsr_stop_timer(nbr2_list->nbr2_list_timer);
+  nbr2_list->nbr2_list_timer = NULL;
+  
+  /* Dequeue */
+  DEQUEUE_ELEM(nbr2_list);
+  
+  free(nbr2_list);
+
+  /* Set flags to recalculate the MPR set and the routing table */
+  changes_neighborhood = OLSR_TRUE;
+  changes_topology = OLSR_TRUE;
+}
 
 /**
- *Delete a two hop neighbor from a neighbors two 
- *hop neighbor list.
+ * Delete a two hop neighbor from a neighbors two hop neighbor list.
  *
- *@param neighbor the neighbor to delete the two hop 
- *neighbor from.
- *@param address the IP address of the two hop neighbor 
- *to delete.
+ * @param neighbor the neighbor to delete the two hop neighbor from.
+ * @param address the IP address of the two hop neighbor to delete.
  *
- *@return positive if entry deleted
+ * @return positive if entry deleted
  */
 int
 olsr_delete_neighbor_2_pointer(struct neighbor_entry *neighbor, union olsr_ip_addr *address)
 {
-
-  struct neighbor_2_list_entry *entry;
+  struct neighbor_2_list_entry *nbr2_list;
   
-  entry = neighbor->neighbor_2_list.next;
+  nbr2_list = neighbor->neighbor_2_list.next;
 
-  while(entry != &neighbor->neighbor_2_list)
-    {      
-      if(ipequal(&entry->neighbor_2->neighbor_2_addr, address))
-	{
-	  /* Dequeue */
-	  DEQUEUE_ELEM(entry);
-	  /* Delete */
-	  free(entry);
-	  return 1;	  
-	}
-      entry = entry->next;      
+  while (nbr2_list != &neighbor->neighbor_2_list) {
+    if (ipequal(&nbr2_list->neighbor_2->neighbor_2_addr, address)) {
+      olsr_del_nbr2_list(nbr2_list);
+      return 1;	  
     }
+    nbr2_list = nbr2_list->next;      
+  }
   return 0;
 }
 
@@ -152,7 +174,7 @@ olsr_delete_neighbor_table(const union olsr_ip_addr *neighbor_addr)
 
   //printf("inserting neighbor\n");
 
-  hash = olsr_hashing(neighbor_addr);
+  hash = olsr_ip_hashing(neighbor_addr);
 
   entry = neighbortable[hash].next;
 
@@ -173,28 +195,15 @@ olsr_delete_neighbor_table(const union olsr_ip_addr *neighbor_addr)
 
   two_hop_list = entry->neighbor_2_list.next;
 
-  while(two_hop_list != &entry->neighbor_2_list)
-    {
-      struct neighbor_2_entry *two_hop_entry = two_hop_list->neighbor_2;
-      
-      two_hop_entry->neighbor_2_pointer--;
-
-      olsr_delete_neighbor_pointer(two_hop_entry, &entry->neighbor_main_addr);
-
-      /* Delete entry if it has no more one hop neighbors pointing to it */
-      if(two_hop_entry->neighbor_2_pointer < 1)
-	{
-	  DEQUEUE_ELEM(two_hop_entry);
-
-	  free(two_hop_entry);
-	}
-
-
+  while (two_hop_list != &entry->neighbor_2_list) {
       two_hop_to_delete = two_hop_list;
       two_hop_list = two_hop_list->next;
-      /* Delete entry */
-      free(two_hop_to_delete);
-      
+
+      two_hop_to_delete->neighbor_2->neighbor_2_pointer--;
+      olsr_delete_neighbor_pointer(two_hop_to_delete->neighbor_2,
+                                   &entry->neighbor_main_addr);
+
+      olsr_del_nbr2_list(two_hop_to_delete);
     }
 
 
@@ -223,7 +232,7 @@ olsr_insert_neighbor_table(const union olsr_ip_addr *main_addr)
   olsr_u32_t             hash;
   struct neighbor_entry  *new_neigh;
   
-  hash = olsr_hashing(main_addr);
+  hash = olsr_ip_hashing(main_addr);
 
   /* Check if entry exists */
   
@@ -292,7 +301,7 @@ struct neighbor_entry *
 olsr_lookup_neighbor_table_alias(const union olsr_ip_addr *dst)
 {
   struct neighbor_entry  *entry;
-  olsr_u32_t             hash = olsr_hashing(dst);
+  olsr_u32_t             hash = olsr_ip_hashing(dst);
   
   //printf("\nLookup %s\n", olsr_ip_to_string(&buf, dst));
   for(entry = neighbortable[hash].next;
@@ -357,69 +366,28 @@ update_neighbor_status(struct neighbor_entry *entry, int lnk)
 }
 
 
-
 /**
- *Times out the entries in the two hop neighbor table and 
- *deletes those who have exceeded their time to live since 
- *last update.
- *
- *@return nada
+ * Callback for the nbr2_list timer.
  */
-
 void
-olsr_time_out_two_hop_neighbors(struct neighbor_entry  *neighbor)
+olsr_expire_nbr2_list(void *context)
 {
-  struct neighbor_2_list_entry *two_hop_list = neighbor->neighbor_2_list.next;
+  struct neighbor_2_list_entry *nbr2_list;
+  struct neighbor_entry *nbr;
+  struct neighbor_2_entry *nbr2; 
 
-  while(two_hop_list != &neighbor->neighbor_2_list)
-    {
-      if(TIMED_OUT(two_hop_list->neighbor_2_timer))
-	{
-	  struct neighbor_2_list_entry *two_hop_to_delete;
-	  struct neighbor_2_entry      *two_hop_entry = two_hop_list->neighbor_2;
+  nbr2_list = (struct neighbor_2_list_entry *)context;
+  nbr2_list->nbr2_list_timer = NULL;
 
-	  two_hop_entry->neighbor_2_pointer--;
-	  olsr_delete_neighbor_pointer(two_hop_entry, &neighbor->neighbor_main_addr);
-	  
-	  if(two_hop_entry->neighbor_2_pointer < 1)
-	    {
-	      DEQUEUE_ELEM(two_hop_entry);
-	      free(two_hop_entry);
-	    }
-	  
-	  two_hop_to_delete = two_hop_list;
-	  two_hop_list = two_hop_list->next;
-	  
-	  /* Dequeue */
-	  DEQUEUE_ELEM(two_hop_to_delete);
-	  
-	  free(two_hop_to_delete);
+  nbr = nbr2_list->nbr2_nbr;
+  nbr2 = nbr2_list->neighbor_2;
 
-	  /* This flag is set to OLSR_TRUE to recalculate the MPR set and the routing table*/
-	  changes_neighborhood = OLSR_TRUE;
-	  changes_topology = OLSR_TRUE;
-	  
-	}
-      else
-	two_hop_list = two_hop_list->next;
+  nbr2->neighbor_2_pointer--;
+  olsr_delete_neighbor_pointer(nbr2, &nbr->neighbor_main_addr); 
 
-    }
+  olsr_del_nbr2_list(nbr2_list);
 }
 
-void
-olsr_time_out_neighborhood_tables(void)
-{
-  int idx;
-  
-  for(idx=0;idx<HASHSIZE;idx++)
-    {
-      struct neighbor_entry *entry;
-      for(entry = neighbortable[idx].next; entry != &neighbortable[idx]; entry = entry->next)
-	{	  
-	  olsr_time_out_two_hop_neighbors(entry);
-	}
-    }
-}
 
 /**
  *Prints the registered neighbors and two hop neighbors
@@ -467,3 +435,9 @@ olsr_print_neighbor_table(void)
   }
 #endif
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */

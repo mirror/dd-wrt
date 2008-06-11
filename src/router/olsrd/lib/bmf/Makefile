@@ -34,7 +34,7 @@
 
 OLSRD_PLUGIN =	true
 PLUGIN_NAME =	olsrd_bmf
-PLUGIN_VER =	1.5.2
+PLUGIN_VER =	1.5.3
 
 TOPDIR = ../..
 include $(TOPDIR)/Makefile.inc

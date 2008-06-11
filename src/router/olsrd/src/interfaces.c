@@ -71,26 +71,23 @@ ifinit(void)
 {
   struct olsr_if *tmp_if;
 
-
   /* Initial values */
   ifnet = NULL;
 
   OLSR_PRINTF(1, "\n ---- Interface configuration ---- \n\n");
-    /* Run trough all interfaces immedeatly */
-    for(tmp_if = olsr_cnf->interfaces; tmp_if != NULL; tmp_if = tmp_if->next)
-      {
-	if(!tmp_if->host_emul)
-	  {
-	    if(!olsr_cnf->host_emul) /* XXX: TEMPORARY! */
-	      chk_if_up(tmp_if, 1);	
-	  }
-	else
-	  add_hemu_if(tmp_if);
-      }
+  /* Run trough all interfaces immedeatly */
+  for (tmp_if = olsr_cnf->interfaces; tmp_if != NULL; tmp_if = tmp_if->next) {
+    if (!tmp_if->host_emul) {
+      if (!olsr_cnf->host_emul) /* XXX: TEMPORARY! */
+        chk_if_up(tmp_if, 1);	
+    } else {
+      add_hemu_if(tmp_if);
+    }
+  }
   
-  /* register network interface update function with scheduler */
-  olsr_register_scheduler_event(&check_interface_updates, NULL, 
-                                olsr_cnf->nic_chgs_pollrate, 0, NULL);
+  /* Kick a periodic timer for the network interface update function */
+  olsr_start_timer((unsigned int)olsr_cnf->nic_chgs_pollrate * MSEC_PER_SEC, 5,
+                   OLSR_TIMER_PERIODIC, &check_interface_updates, NULL, 0);
 
   return (ifnet == NULL) ? 0 : 1;
 }
@@ -338,3 +335,8 @@ del_ifchgf(int (*f)(struct interface *, int))
 
   return 0;
 }
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */

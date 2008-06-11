@@ -47,6 +47,7 @@
 #include "olsr.h"
 #include "net_olsr.h"
 #include "ipcalc.h"
+#include "scheduler.h"
 
 #define hscaling olsr_cnf->hysteresis_param.scaling
 #define hhigh    olsr_cnf->hysteresis_param.thr_high
@@ -71,8 +72,6 @@ olsr_hyst_calc_instability(float old_quality)
 int
 olsr_process_hysteresis(struct link_entry *entry)
 {
-  clock_t tmp_timer;
-
   //printf("PROCESSING QUALITY: %f\n", entry->L_link_quality);
   if(entry->L_link_quality > hhigh)
     {
@@ -117,12 +116,8 @@ olsr_process_hysteresis(struct link_entry *entry)
 	changes_neighborhood = OLSR_TRUE;
 
       /* Timer = min (L_time, current time + NEIGHB_HOLD_TIME) */
-      //tmp_timer = now;
-      //tmp_timer.tv_sec += NEIGHB_HOLD_TIME; /* Takafumi fix */
-      tmp_timer = now_times + get_hold_time_neighbor();
-
-	entry->L_LOST_LINK_time = 
-	  entry->time > tmp_timer ? tmp_timer : entry->time;
+      entry->L_LOST_LINK_time = MIN(GET_TIMESTAMP(NEIGHB_HOLD_TIME * MSEC_PER_SEC),
+                                    entry->link_timer->timer_clock);
 
       /* (the link is then considered as lost according to section
 	 8.5 and this may produce a neighbor loss).
@@ -152,17 +147,16 @@ olsr_process_hysteresis(struct link_entry *entry)
  *@return nada
  */
 void
-olsr_update_hysteresis_hello(struct link_entry *entry, double htime)
+olsr_update_hysteresis_hello(struct link_entry *entry, olsr_reltime htime)
 {
 #ifndef NODEBUG
   struct ipaddr_str buf;
 #endif
-  OLSR_PRINTF(3, "HYST[%s]: HELLO update vtime %f\n", olsr_ip_to_string(&buf, &entry->neighbor_iface_addr), htime*1.5);
-  /* hello timeout = current time + hint time */
-  /* SET TIMER TO 1.5 TIMES THE INTERVAL */
-  /* Update timer */
+  OLSR_PRINTF(3, "HYST[%s]: HELLO update vtime %u ms\n",
+              olsr_ip_to_string(&buf, &entry->neighbor_iface_addr), htime+htime/2);
 
-  entry->hello_timeout = GET_TIMESTAMP(htime*1500);
+  olsr_set_timer(&entry->link_hello_timer, htime + htime/2, OLSR_LINK_HELLO_JITTER,
+                 OLSR_TIMER_PERIODIC, &olsr_expire_link_hello_timer, entry, 0);
 
   return;
 }
@@ -182,7 +176,7 @@ update_hysteresis_incoming(union olsr_ip_addr *remote, struct interface *local, 
 #endif
       lnk->L_link_quality = olsr_hyst_calc_stability(lnk->L_link_quality);
 #ifdef DEBUG
-      OLSR_PRINTF(3, "HYST[%s]: %0.3f\n", olsr_ip_to_string(&buf, remote), lnk->L_link_quality);
+      OLSR_PRINTF(3, "HYST[%s]: %f\n", olsr_ip_to_string(&buf, remote), lnk->L_link_quality);
 #endif
 
       /* 
@@ -198,7 +192,7 @@ update_hysteresis_incoming(union olsr_ip_addr *remote, struct interface *local, 
 	    {
 	      lnk->L_link_quality = olsr_hyst_calc_instability(lnk->L_link_quality);
 #ifdef DEBUG
-	      OLSR_PRINTF(5, "HYST[%s] PACKET LOSS! %0.3f\n",
+	      OLSR_PRINTF(5, "HYST[%s] PACKET LOSS! %f\n",
 			  olsr_ip_to_string(&buf, remote), lnk->L_link_quality);
 #endif
 	      if(lnk->L_link_quality < olsr_cnf->hysteresis_param.thr_low)

@@ -54,6 +54,8 @@ CPPFLAGS =	-Isrc
 ifneq ($(TOPDIR),.)
 CPPFLAGS +=	-I$(TOPDIR)/src
 endif
+# use the new fixed point math stuff
+CPPFLAGS +=     -DUSE_FPM
 
 # add gcc warnings and optimizations if CFLAGS not set
 ifndef CFLAGS
@@ -151,8 +153,8 @@ CPPFLAGS +=	$(EXTRA_CPPFLAGS)
 #CPPFLAGS +=	-DSUPPORT_OLD_PLUGIN_VERSIONS=1
 
 # search sources and headers in current dir and in src/
-SRCS +=		$(wildcard src/*.c *.c)
-HDRS +=		$(wildcard src/*.h *.h)
+SRCS +=		$(wildcard src/common/*.c src/*.c *.c)
+HDRS +=		$(wildcard src/common/*.h src/*.h *.h)
 
 # OS detection
 ifeq ($(OS),Windows_NT)
