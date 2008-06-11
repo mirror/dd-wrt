@@ -397,6 +397,10 @@ ifneq ($(CONFIG_WIVIZ),y)
 	rm -f $(INSTALLDIR)/www/Wiviz.live.asp
 endif
 
+ifneq ($(CONFIG_OPENVPN),y)
+	rm -f $(INSTALLDIR)/www/Status_OpenVPN.asp
+endif
+
 ifneq ($(CONFIG_PPPOESERVER),y)
 	rm -f $(INSTALLDIR)/www/PPPoE_Server.asp
 	rm -f $(INSTALLDIR)/www/help/HPPPoE_Server.asp
@@ -415,9 +419,6 @@ ifneq ($(CONFIG_MILKFISH),y)
 endif
 ifneq ($(CONFIG_EOP_TUNNEL),y)
 	rm -f $(INSTALLDIR)/www/help/HEoIP.asp
-endif
-ifneq ($(CONFIG_VPND),y)
-	rm -f $(INSTALLDIR)/www/Status_OpenVPN.asp
 endif
 ifneq ($(CONFIG_SPUTNIK_APD),y)
 	rm -f $(INSTALLDIR)/www/Status_SputnikAPD.asp

@@ -222,10 +222,6 @@ OBJS += ../wireless-tools/libiw.so.29
 endif
 OBJS += countrycode/countrycode_$(ARCH).o
 
-ifeq ($(CONFIG_NEWMEDIA),y)
-  CFLAGS += -DHAVE_NEWMEDIA
-endif
-
 ifeq ($(CONFIG_GGEW),y)
   CFLAGS += -DHAVE_NEWMEDIA
   CFLAGS += -DHAVE_GGEW
