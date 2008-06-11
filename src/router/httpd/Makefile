@@ -246,12 +246,8 @@ endif
 
 ifeq ($(CONFIG_GGEW),y)
 CFLAGS += -DHAVE_GGEW
-CFLAGS += -DHAVE_NEWMEDIA
 endif
 
-ifeq ($(CONFIG_NEWMEDIA),y)
-CFLAGS += -DHAVE_NEWMEDIA
-endif
 
 ifeq ($(CONFIG_PPPOE),y)
 CFLAGS += -DHAVE_PPPOE

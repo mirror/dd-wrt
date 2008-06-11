@@ -58,8 +58,9 @@ start_olsrd (void)
   fprintf (fp, "MprCoverage\t%s\n", nvram_safe_get ("olsrd_coverage"));
   fprintf (fp, "LinkQualityFishEye\t%s\n",
 	   nvram_safe_get ("olsrd_lqfisheye"));
-  fprintf (fp, "LinkQualityWinSize\t%s\n",
-	   nvram_safe_get ("olsrd_lqwinsize"));
+  fprintf (fp, "LinkQualityAging\t%s\n",
+	   nvram_safe_get ("olsrd_lqaging"));
+  fprintf (fp, "LinkQualityAlgorithm    \"etx_fpm\"\n");
   fprintf (fp, "LinkQualityDijkstraLimit\t%s %s\n",
 	   nvram_safe_get ("olsrd_lqdijkstramin"),
 	   nvram_safe_get ("olsrd_lqdijkstramax"));
@@ -69,7 +70,6 @@ start_olsrd (void)
     fprintf (fp, "LinkQualityLevel\t%s\n", nvram_safe_get ("olsrd_lqlevel"));
   else
     fprintf (fp, "LinkQualityLevel\t0\n");
-
   fprintf (fp, "LoadPlugin \"olsrd_dyn_gw_plain.so\"\n");
   fprintf (fp, "{\n");
   fprintf (fp, "}\n");
