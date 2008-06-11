@@ -582,7 +582,7 @@ static struct MAIN maincalls[] = {
   {"ttraf", NULL, &ttraff_main},
 #ifdef HAVE_WIVIZ
   {"run_wiviz", NULL, &run_wiviz_main},
-  {"autokill_wiviz", NULL, &autokill_wiviz},
+  {"autokill_wiviz", NULL, &autokill_wiviz_main},
 #endif
   {"site_survey", "site_survey", NULL},
 #ifdef HAVE_WOL
