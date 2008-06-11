@@ -43,7 +43,7 @@
 
 #include "interfaces.h"
 
-#define STDOUT_PULSE_INT 0.6
+#define STDOUT_PULSE_INT 600 /* msec */
 
 /* Functions */
 

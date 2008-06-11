@@ -101,6 +101,23 @@ PlParam "latlon-infile" "name-of-input.txt"
 	latitude and longitude to this file. Will overwrite the
 	"lat" and "lon" parameters during runtime.
 
+PlParam "sighup-pid-file" "/path/to/pidfile.pid"
+        (*nix systems only) Sends a HUP signal to the process specified
+        by the pidfile (usually /var/run/dnsmasq.pid) when the host name
+        table changes. This is useful for letting dnsmasq or bind know
+        they have to reload their hosts file.
+
+PlParam "name-change-script" "/path/to/script"
+        Script to execute when there is a change in the hosts names
+        table. Useful for executing a script that uses the hosts file
+        to keep a website or a database updated.
+
+PlParam "services-change-script" "/path/to/script"
+        Similar to the previous parameter. Script to execute when there
+        is a change in the services list propagated by the nameserver
+        plugin. Useful for executing a script that uses the services file
+        to keep a website or a database updated.
+
 ---------------------------------------------------------------------
 SAMPLE CONFIG
 ---------------------------------------------------------------------
@@ -135,15 +152,22 @@ UNIX VARIANTS:
 	if you want to make the names available via ordinary DNS
 	you can use dnsmasq to read the hosts file and serve it to
 	users. add "addn-hosts=/var/run/hosts_olsr" to dnsmasq.conf 
-	and restart dnsmasq
+        and:
+               PlParam "sighup-pid-file" "/var/run/dnsmasq.pid"
+
+        to your nameservice plugin configuration.
+
+        This is especially usefull for infrastructure mesh networks that
+        can't afford to run olsrd on all the clients but wish to provide
+        DNS to them. This is solved by running dnsmasq and olsrd with
+        this setup on "edge" nodes that provide connectivity.
 
 WINDOWS:
 
 * overwrite C:\WINDOWS\system32\drivers\etc\hosts
 	be sure you have nothing in the file which you still need 
 	and configure the plugin with
-	PlParam "filename" "C:\WINDOWS\system32\drivers\etc\hosts"
-
+        PlParam "hosts-file" "C:\WINDOWS\system32\drivers\etc\hosts"
 
 ---------------------------------------------------------------------
 TODO

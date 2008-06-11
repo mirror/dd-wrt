@@ -125,7 +125,9 @@ int olsrd_plugin_init(void) {
     return 1;
   }
 
-  olsr_register_scheduler_event(&zebra_check, NULL, 1, 0, NULL);
+  olsr_start_timer(1 * MSEC_PER_SEC, 0, OLSR_TIMER_PERIODIC,
+                   &zebra_check, NULL, 0);
+
   return 0;
 }
 

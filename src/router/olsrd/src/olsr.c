@@ -52,15 +52,16 @@
 #include "mid_set.h"
 #include "mpr.h"
 #include "lq_mpr.h"
-#include "lq_route.h"
+#include "olsr_spf.h"
 #include "scheduler.h"
 #include "apm.h"
 #include "misc.h"
 #include "neighbor_table.h"
 #include "log.h"
 #include "lq_packet.h"
-#include "lq_avl.h"
+#include "common/avl.h"
 #include "net_olsr.h"
+#include "lq_plugin.h"
 
 #include <stdarg.h>
 #include <signal.h>
@@ -211,9 +212,19 @@ olsr_process_changes(void)
   changes_force = OLSR_FALSE;
 }
 
+/*
+ * Callback for the periodic route calculation.
+ */
+void
+olsr_trigger_forced_update(void *unused __attribute__((unused))) {
 
-
-
+  changes_force = OLSR_TRUE;
+  changes_neighborhood = OLSR_TRUE;
+  changes_topology = OLSR_TRUE;
+  changes_hna = OLSR_TRUE;
+  
+  olsr_process_changes();
+}
 
 /**
  *Initialize all the tables used(neighbor,
@@ -229,18 +240,21 @@ olsr_init_tables(void)
 
   /* Set avl tree comparator */
   if (olsr_cnf->ipsize == 4) {
-    avl_comp_default = NULL;
+    avl_comp_default = avl_comp_ipv4;
     avl_comp_prefix_default = avl_comp_ipv4_prefix;
   } else {
     avl_comp_default = avl_comp_ipv6;
     avl_comp_prefix_default = avl_comp_ipv6_prefix;
   }
 
+  /* Initialize lq plugin set */
+  init_lq_handler_tree();
+  
   /* Initialize link set */
   olsr_init_link_set();
 
   /* Initialize duplicate table */
-  olsr_init_duplicate_table();
+  olsr_init_duplicate_set();
 
   /* Initialize neighbor table */
   olsr_init_neighbor_table();
@@ -262,6 +276,17 @@ olsr_init_tables(void)
 
   /* Initialize HNA set */
   olsr_init_hna_set();  
+
+#if 0
+  /* Initialize Layer 1/2 database */
+  olsr_initialize_layer12();
+#endif
+  
+  /* Start periodic SPF and RIB recalculation */
+  if (olsr_cnf->lq_dinter > 0.0) {
+    olsr_start_timer((unsigned int)(olsr_cnf->lq_dinter * MSEC_PER_SEC), 5,
+                     OLSR_TIMER_PERIODIC, &olsr_trigger_forced_update, NULL, 0);
+  }
 }
 
 /**
@@ -276,9 +301,6 @@ olsr_init_tables(void)
  */
 int
 olsr_forward_message(union olsr_message *m, 
-		     union olsr_ip_addr *originator, 
-		     olsr_u16_t seqno,
-		     struct interface *in_if, 
 		     union olsr_ip_addr *from_addr)
 {
   union olsr_ip_addr *src;
@@ -300,14 +322,6 @@ olsr_forward_message(union olsr_message *m,
     if (2 > m->v6.ttl || 255 < (int)m->v6.hopcnt + (int)m->v6.ttl) return 0;
   }
 
-  if(!olsr_check_dup_table_fwd(originator, seqno, &in_if->ip_addr))
-    {
-#ifdef DEBUG
-      OLSR_PRINTF(3, "Message already forwarded!\n");
-#endif
-      return 0;
-    }
-
   /* Lookup sender address */
   src = mid_lookup_main_addr(from_addr);
   if(!src)
@@ -320,10 +334,6 @@ olsr_forward_message(union olsr_message *m,
   if(neighbor->status != SYM)
     return 0;
 
-  /* Update duplicate table interface */
-  olsr_update_dup_entry(originator, seqno, &in_if->ip_addr);
-
-  
   /* Check MPR */
   if(olsr_lookup_mprs_set(src) == NULL)
     {
@@ -349,9 +359,6 @@ olsr_forward_message(union olsr_message *m,
       m->v6.hopcnt++;
       m->v6.ttl--; 
     }
-
-  /* Update dup forwarded */
-  olsr_set_dup_forward(originator, seqno);
 
   /* Update packet data */
   msgsize = ntohs(m->v4.olsr_msgsize);
@@ -404,9 +411,14 @@ set_buffer_timer(struct interface *ifn)
 void
 olsr_init_willingness(void)
 {
-  if(olsr_cnf->willingness_auto)
-    olsr_register_scheduler_event(&olsr_update_willingness, 
-				  NULL, olsr_cnf->will_int, olsr_cnf->will_int, NULL);
+  if (olsr_cnf->willingness_auto) {
+
+    /* Run it first and then periodic. */
+    olsr_update_willingness(NULL);
+
+    olsr_start_timer((unsigned int)olsr_cnf->will_int * MSEC_PER_SEC, 5,
+                     OLSR_TIMER_PERIODIC, &olsr_update_willingness, NULL, 0);
+  }
 }
 
 void
@@ -555,25 +567,38 @@ olsr_exit(const char *msg, int val)
 
 
 /**
- *Wrapper for malloc(3) that does error-checking
+ * Wrapper for malloc(3) that does error-checking
  *
- *@param size the number of bytes to allocalte
- *@param caller a string identifying the caller for
- *use in error messaging
+ * @param size the number of bytes to allocalte
+ * @param caller a string identifying the caller for
+ * use in error messaging
  *
- *@return a void pointer to the memory allocated
+ * @return a void pointer to the memory allocated
  */
 void *
 olsr_malloc(size_t size, const char *id)
 {
-  void *ptr = malloc(size);
-  if(ptr == 0) 
-    {
+  void *ptr;
+
+  /*
+   * Not all the callers do a proper cleaning of memory.
+   * Clean it on behalf of those.
+   */
+  ptr = calloc(1, size);
+
+  if (!ptr) {
       const char * const err_msg = strerror(errno);
       OLSR_PRINTF(1, "OUT OF MEMORY: %s\n", err_msg);
       olsr_syslog(OLSR_LOG_ERR, "olsrd: out of memory!: %s\n", err_msg);
       olsr_exit(id, EXIT_FAILURE);
-    }
+  }
+
+#if 0 
+  /* useful for debugging */
+  olsr_printf(1, "MEMORY: alloc %s %p, %u bytes\n",
+              id, ptr, size);
+#endif
+
   return ptr;
 }
 

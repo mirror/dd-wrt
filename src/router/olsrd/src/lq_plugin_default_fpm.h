@@ -1,7 +1,6 @@
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
- * IPv4 performance optimization (c) 2006, sven-ola(gmx.de)
+ * Copyright (c) 2008 Henning Rogge <rogge@fgan.de>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -39,25 +38,43 @@
  *
  */
 
-#ifndef _LQ_LIST_H
-#define _LQ_LIST_H
+#ifndef LQ_ETX_FPM_
+#define LQ_ETX_FPM_
 
-struct list_node
-{
-  struct list_node *next;
-  struct list_node *prev;
-  void *data;
+#include "olsr_types.h"
+#include "fpm.h"
+#include "lq_plugin.h"
+
+#define LQ_PLUGIN_LC_MULTIPLIER 1024
+#define LQ_PLUGIN_RELEVANT_COSTCHANGE_FPM 16
+
+#define LQ_ALGORITHM_ETX_FPM_NAME "etx_fpm"
+struct default_lq_fpm {
+	olsr_u8_t valueLq;
+	olsr_u8_t valueNlq;
+	olsr_u16_t quickstart;
 };
 
-void list_head_init(struct list_node *);
-void list_node_init(struct list_node *);
-int list_node_on_list(struct list_node *);
-int list_is_empty(struct list_node *);
+void default_lq_initialize_fpm(void);
 
-void list_add_before(struct list_node *, struct list_node *);
-void list_add_after(struct list_node *, struct list_node *);
+olsr_linkcost default_lq_calc_cost_fpm(const void *lq);
 
-void list_remove(struct list_node *);
+olsr_bool default_lq_is_relevant_costchange_fpm(olsr_linkcost c1, olsr_linkcost c2);
 
-#endif
+olsr_linkcost default_lq_packet_loss_worker_fpm(struct link_entry *link, void *lq, olsr_bool lost);
+void default_lq_memorize_foreign_hello_fpm(void *local, void *foreign);
 
+int default_lq_serialize_hello_lq_pair_fpm(unsigned char *buff, void *lq);
+void default_lq_deserialize_hello_lq_pair_fpm(const olsr_u8_t **curr, void *lq);
+int default_lq_serialize_tc_lq_pair_fpm(unsigned char *buff, void *lq);
+void default_lq_deserialize_tc_lq_pair_fpm(const olsr_u8_t **curr, void *lq);
+
+void default_lq_copy_link2tc_fpm(void *target, void *source);
+void default_lq_clear_fpm(void *target);
+
+const char *default_lq_print_fpm(void *ptr, struct lqtextbuffer *buffer);
+const char *default_lq_print_cost_fpm(olsr_linkcost cost, struct lqtextbuffer *buffer);
+
+extern struct lq_handler lq_etx_fpm_handler;
+
+#endif /*LQ_ETX_FPM_*/

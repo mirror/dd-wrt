@@ -64,9 +64,6 @@ get_msg_seqno(void);
 
 int
 olsr_forward_message(union olsr_message *, 
-		     union olsr_ip_addr *, 
-		     olsr_u16_t, 
-		     struct interface *, 
 		     union olsr_ip_addr *);
 
 void
@@ -101,5 +98,8 @@ olsr_malloc(size_t, const char *);
 
 int
 olsr_printf(int, const char *, ...) __attribute__((format(printf,2,3)));
+
+void
+olsr_trigger_forced_update(void *);
 
 #endif

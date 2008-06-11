@@ -1,6 +1,7 @@
+
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
+ * Copyright (c) 2004, Andreas Tï¿½nnesen(andreto@olsr.org)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -38,18 +39,16 @@
  *
  */
 
-
 #ifndef _OLSR_MID
 #define _OLSR_MID
 
 #include "olsr_types.h"
 #include "hashing.h"
+#include "mantissa.h"
 
-
-struct mid_address
-{
-  union olsr_ip_addr  alias;
-  struct mid_entry   *main_entry;
+struct mid_address {
+  union olsr_ip_addr alias;
+  struct mid_entry *main_entry;
   struct mid_address *next_alias;
 
   /* These are for the reverse list */
@@ -58,55 +57,33 @@ struct mid_address
 };
 
 /*
- *Contains the main addr of a node and a list of aliases
+ * Contains the main addr of a node and a list of aliases
  */
-struct mid_entry
-{
-  union olsr_ip_addr  main_addr;
+struct mid_entry {
+  union olsr_ip_addr main_addr;
   struct mid_address *aliases;
-  struct mid_entry   *prev;
-  struct mid_entry   *next;
-  clock_t             ass_timer;  
+  struct mid_entry *prev;
+  struct mid_entry *next;
+  struct timer_entry *mid_timer;
 };
 
+#define OLSR_MID_JITTER 5	/* percent */
 
 extern struct mid_entry mid_set[HASHSIZE];
 extern struct mid_address reverse_mid_set[HASHSIZE];
 
 struct mid_alias;
 
-int
-olsr_init_mid_set(void);
-
-void 
-insert_mid_tuple(union olsr_ip_addr *, struct mid_address *, float);
-
-void
-insert_mid_alias(union olsr_ip_addr *, const union olsr_ip_addr *, float);
-
-union olsr_ip_addr *
-mid_lookup_main_addr(const union olsr_ip_addr *);
-
-struct mid_address *
-mid_lookup_aliases(const union olsr_ip_addr *);
-
-struct mid_entry *
-mid_lookup_entry_bymain(const union olsr_ip_addr *);
-
-void
-olsr_print_mid_set(void);
-
-void
-olsr_time_out_mid_set(void *);
-
-void
-olsr_prune_aliases(const union olsr_ip_addr *m_addr, struct mid_alias *declared_aliases);
-
-int
-olsr_update_mid_table(const union olsr_ip_addr *, float);
-
-int
-mid_delete_node(struct mid_entry *);
+int olsr_init_mid_set(void);
+void insert_mid_tuple(union olsr_ip_addr *, struct mid_address *, olsr_reltime);
+void insert_mid_alias(union olsr_ip_addr *, const union olsr_ip_addr *, olsr_reltime);
+union olsr_ip_addr *mid_lookup_main_addr(const union olsr_ip_addr *);
+struct mid_address *mid_lookup_aliases(const union olsr_ip_addr *);
+struct mid_entry *mid_lookup_entry_bymain(const union olsr_ip_addr *);
+void olsr_print_mid_set(void);
+void olsr_prune_aliases(const union olsr_ip_addr *, struct mid_alias *);
+int olsr_update_mid_table(const union olsr_ip_addr *, olsr_reltime);
+void olsr_delete_mid_entry(struct mid_entry *);
 
 #endif
 

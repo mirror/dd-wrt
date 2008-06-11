@@ -39,7 +39,7 @@ USAGE
   To make olsrd load the secure OLSR plugin add the
   following in the olsrd configuration file:
 
-LoadPlugin "olsrd_secure.so.0.4"
+LoadPlugin "olsrd_secure.so.0.5"
 {
     PlParam     "Keyfile"   "FILENAME"
 }

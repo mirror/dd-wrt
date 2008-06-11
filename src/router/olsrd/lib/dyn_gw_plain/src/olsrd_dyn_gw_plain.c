@@ -95,7 +95,8 @@ olsrd_plugin_init(void)
   }
 
   /* Register the GW check */
-  olsr_register_scheduler_event(&olsr_event, NULL, 3, 4, NULL);
+  olsr_start_timer(3 * MSEC_PER_SEC, 0, OLSR_TIMER_PERIODIC,
+                   &olsr_event, NULL, 0);
 
   return 1;
 }

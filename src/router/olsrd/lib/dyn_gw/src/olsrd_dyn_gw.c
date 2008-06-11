@@ -1,4 +1,3 @@
-
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
  * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
@@ -48,10 +47,10 @@
 
 #include "olsr_types.h"
 #include "olsrd_dyn_gw.h"
-#include "scheduler.h"
 #include "olsr.h"
 #include "defs.h"
 #include "ipcalc.h"
+#include "scheduler.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -251,7 +250,8 @@ olsrd_plugin_init(void)
   pthread_create(&ping_thread, NULL, (void *(*)(void *))looped_checks, NULL);
   
   /* Register the GW check */
-  olsr_register_scheduler_event(&olsr_event_doing_hna, NULL, 3, 4, NULL);
+  olsr_start_timer(3 * MSEC_PER_SEC, 0, OLSR_TIMER_PERIODIC,
+                   &olsr_event_doing_hna, NULL, 0);
 
   return 1;
 }

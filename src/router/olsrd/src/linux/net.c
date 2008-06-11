@@ -358,7 +358,7 @@ restore_settings(int version)
 }
 
 /**
- *Creates a nonblocking broadcast socket.
+ *Creates a blocking tcp socket for communication with switch daemon.
  *@param sa sockaddr struct. Used for bind(2).
  *@return the FD of the socket or -1 on error.
  */

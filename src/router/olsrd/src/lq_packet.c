@@ -56,7 +56,7 @@
 #include "olsr.h"
 #include "build_msg.h"
 #include "net_olsr.h"
-
+#include "lq_plugin.h"
 
 olsr_bool lq_tc_pending = OLSR_FALSE;
 
@@ -70,14 +70,13 @@ create_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
   // initialize the static fields
 
   lq_hello->comm.type = LQ_HELLO_MESSAGE;
-  lq_hello->comm.vtime = me_to_double(outif->valtimes.hello);
+  lq_hello->comm.vtime = me_to_reltime(outif->valtimes.hello);
   lq_hello->comm.size = 0;
 
   lq_hello->comm.orig = olsr_cnf->main_addr;
 
   lq_hello->comm.ttl = 1;
   lq_hello->comm.hops = 0;
-  lq_hello->comm.seqno = get_msg_seqno();
 
   lq_hello->htime = outif->hello_etime;
   lq_hello->will = olsr_cnf->willingness;
@@ -86,50 +85,48 @@ create_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
   
   // loop through the link set
 
-  for (walker = get_link_set(); walker != NULL; walker = walker->next)
-    {
-      // allocate a neighbour entry
-      struct lq_hello_neighbor *neigh = olsr_malloc(sizeof (struct lq_hello_neighbor), "Build LQ_HELLO");
+  OLSR_FOR_ALL_LINK_ENTRIES(walker) {
 
-      // a) this neighbor interface IS NOT visible via the output interface
-      if(!ipequal(&walker->local_iface_addr, &outif->ip_addr))
-        neigh->link_type = UNSPEC_LINK;
+    // allocate a neighbour entry
+    struct lq_hello_neighbor *neigh = olsr_malloc_lq_hello_neighbor("Build LQ_HELLO");
+
+    // a) this neighbor interface IS NOT visible via the output interface
+    if(!ipequal(&walker->local_iface_addr, &outif->ip_addr))
+      neigh->link_type = UNSPEC_LINK;
       
-      // b) this neighbor interface IS visible via the output interface
+    // b) this neighbor interface IS visible via the output interface
 
-      else
-        neigh->link_type = lookup_link_status(walker);
+    else
+      neigh->link_type = lookup_link_status(walker);
 
-      // set the entry's link quality
+    // set the entry's link quality
+    olsr_copy_hello_lq(neigh, walker);
 
-      neigh->link_quality = walker->loss_link_quality;
-      neigh->neigh_link_quality = walker->neigh_link_quality;
+    // set the entry's neighbour type
 
-      // set the entry's neighbour type
+    if(walker->neighbor->is_mpr)
+      neigh->neigh_type = MPR_NEIGH;
 
-      if(walker->neighbor->is_mpr)
-        neigh->neigh_type = MPR_NEIGH;
+    else if (walker->neighbor->status == SYM)
+      neigh->neigh_type = SYM_NEIGH;
 
-      else if (walker->neighbor->status == SYM)
-        neigh->neigh_type = SYM_NEIGH;
-
-      else if (walker->neighbor->status == NOT_SYM)
-        neigh->neigh_type = NOT_NEIGH;
+    else if (walker->neighbor->status == NOT_SYM)
+      neigh->neigh_type = NOT_NEIGH;
         
-      else {
-        OLSR_PRINTF(0, "Error: neigh_type undefined");
-        neigh->neigh_type = NOT_NEIGH;
-      }
-  
-      // set the entry's neighbour interface address
-
-      neigh->addr = walker->neighbor_iface_addr;
-      
-      // queue the neighbour entry
-
-      neigh->next = lq_hello->neigh;
-      lq_hello->neigh = neigh;
+    else {
+      OLSR_PRINTF(0, "Error: neigh_type undefined");
+      neigh->neigh_type = NOT_NEIGH;
     }
+  
+    // set the entry's neighbour interface address
+
+    neigh->addr = walker->neighbor_iface_addr;
+      
+    // queue the neighbour entry
+    neigh->next = lq_hello->neigh;
+    lq_hello->neigh = neigh;
+
+  } OLSR_FOR_ALL_LINK_ENTRIES_END(walker);
 }
 
 static void
@@ -151,7 +148,9 @@ destroy_lq_hello(struct lq_hello_message *lq_hello)
 static void
 create_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
 {
-  int i;
+  struct link_entry *lnk;
+  struct neighbor_entry *walker;
+  struct tc_mpr_addr *neigh;
   static int ttl_list[] = { 2, 8, 2, 16, 2, 8, 2, MAX_TTL};
 
   // remember that we have generated an LQ TC message; this is
@@ -162,7 +161,7 @@ create_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
   // initialize the static fields
 
   lq_tc->comm.type = LQ_TC_MESSAGE;
-  lq_tc->comm.vtime = me_to_double(outif->valtimes.tc);
+  lq_tc->comm.vtime = me_to_reltime(outif->valtimes.tc);
   lq_tc->comm.size = 0;
 
   lq_tc->comm.orig = olsr_cnf->main_addr;
@@ -182,7 +181,6 @@ create_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
     lq_tc->comm.ttl = MAX_TTL;
 
   lq_tc->comm.hops = 0;
-  lq_tc->comm.seqno = get_msg_seqno();
 
   lq_tc->from = olsr_cnf->main_addr;
 
@@ -190,58 +188,83 @@ create_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
 
   lq_tc->neigh = NULL;
  
-  // loop through all neighbours
-  
-  for(i = 0; i < HASHSIZE; i++)
-    {
-      struct neighbor_entry *walker;
-      struct tc_mpr_addr    *neigh;
-      for(walker = neighbortable[i].next; walker != &neighbortable[i];
-          walker = walker->next)
-        {
-          struct link_entry *lnk;
-          // only consider symmetric neighbours
+  OLSR_FOR_ALL_NBR_ENTRIES(walker) {
 
-          if(walker->status != SYM)
-            continue;
-
-          // TC redundancy == 1: only consider MPRs and MPR selectors
-
-          if (olsr_cnf->tc_redundancy == 1 && !walker->is_mpr &&
-              olsr_lookup_mprs_set(&walker->neighbor_main_addr) == NULL)
-            continue;
-
-          // TC redundancy == 0: only consider MPR selectors
-          if (olsr_cnf->tc_redundancy == 0 &&
-              olsr_lookup_mprs_set(&walker->neighbor_main_addr) == NULL)
-            continue;
-
-          // allocate a neighbour entry          
-          neigh = olsr_malloc(sizeof (struct tc_mpr_addr), "Build LQ_TC");
-
-          // set the entry's main address
-
-          neigh->address = walker->neighbor_main_addr;
-
-          // set the entry's link quality
-          lnk = get_best_link_to_neighbor(&neigh->address);
-
-          if (lnk) {
-            neigh->link_quality = lnk->loss_link_quality;
-            neigh->neigh_link_quality = lnk->neigh_link_quality;
-          }
-          else {
-            OLSR_PRINTF(0, "Error: link_qualtiy undefined");
-            neigh->link_quality = 0.0;
-            neigh->neigh_link_quality = 0.0;
-          }          
-
-          // queue the neighbour entry
-
-          neigh->next = lq_tc->neigh;
-          lq_tc->neigh = neigh;
-        }
+    /*
+     * TC redundancy 2
+     *
+     * Only consider symmetric neighbours.
+     */
+    if (walker->status != SYM) {
+      continue;
     }
+
+    /*
+     * TC redundancy 1
+     *
+     * Only consider MPRs and MPR selectors
+     */
+    if (olsr_cnf->tc_redundancy == 1 && !walker->is_mpr &&
+        !olsr_lookup_mprs_set(&walker->neighbor_main_addr)) {
+      continue;
+    }
+
+    /*
+     * TC redundancy 0
+     *
+     * Only consider MPR selectors
+     */
+    if (olsr_cnf->tc_redundancy == 0 &&
+        !olsr_lookup_mprs_set(&walker->neighbor_main_addr)) {
+      continue;
+    }
+
+    /* Set the entry's link quality */
+    lnk = get_best_link_to_neighbor(&walker->neighbor_main_addr);
+    if (!lnk) {
+      continue; // no link ?
+    }
+    
+    if (lnk->linkcost >= LINK_COST_BROKEN) {
+      continue; // don't advertise links with very low LQ
+    }
+    
+    /* Allocate a neighbour entry. */
+    neigh = olsr_malloc_tc_mpr_addr("Build LQ_TC");
+
+    /* Set the entry's main address. */
+    neigh->address = walker->neighbor_main_addr;
+
+    if (lnk) {
+      olsr_copylq_link_entry_2_tc_mpr_addr(neigh, lnk);
+    }
+
+    /* Queue the neighbour entry. */
+
+    // TODO: ugly hack until neighbor table is ported to avl tree
+    
+    if (lq_tc->neigh == NULL || avl_comp_default(&lq_tc->neigh->address, &neigh->address) > 0) {
+      neigh->next = lq_tc->neigh;
+      lq_tc->neigh = neigh;
+    }
+    else {
+      struct tc_mpr_addr *last = lq_tc->neigh, *n = last->next;
+      
+      while (n) {
+        if (avl_comp_default(&n->address, &neigh->address) > 0) {
+          break;
+        }
+        last = n;
+        n = n->next;
+      }
+      neigh->next = n;
+      last->next = neigh;
+    }
+
+    // neigh->next = lq_tc->neigh;
+    // lq_tc->neigh = neigh;
+
+  } OLSR_FOR_ALL_NBR_ENTRIES_END(walker);
 }
 
 static void
@@ -274,14 +297,14 @@ static void serialize_common(struct olsr_common *comm)
       struct olsr_header_v4 *olsr_head_v4 = (struct olsr_header_v4 *)msg_buffer;
 
       olsr_head_v4->type = comm->type;
-      olsr_head_v4->vtime = double_to_me(comm->vtime);
+      olsr_head_v4->vtime = reltime_to_me(comm->vtime);
       olsr_head_v4->size = htons(comm->size);
 
       olsr_head_v4->orig = comm->orig.v4.s_addr;
 
       olsr_head_v4->ttl = comm->ttl;
       olsr_head_v4->hops = comm->hops;
-      olsr_head_v4->seqno = htons(comm->seqno);
+      olsr_head_v4->seqno = htons(get_msg_seqno());
     }
   else
     {
@@ -289,14 +312,14 @@ static void serialize_common(struct olsr_common *comm)
       struct olsr_header_v6 *olsr_head_v6 = (struct olsr_header_v6 *)msg_buffer;
 
       olsr_head_v6->type = comm->type;
-      olsr_head_v6->vtime = double_to_me(comm->vtime);
+      olsr_head_v6->vtime = reltime_to_me(comm->vtime);
       olsr_head_v6->size = htons(comm->size);
 
       memcpy(&olsr_head_v6->orig, &comm->orig.v6.s6_addr, sizeof(olsr_head_v6->orig));
 
       olsr_head_v6->ttl = comm->ttl;
       olsr_head_v6->hops = comm->hops;
-      olsr_head_v6->seqno = htons(comm->seqno);
+      olsr_head_v6->seqno = htons(get_msg_seqno());
     }
 }
 
@@ -319,7 +342,7 @@ serialize_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
   struct lq_hello_header *head = (struct lq_hello_header *)(msg_buffer + off);
 
   head->reserved = 0;
-  head->htime = double_to_me(lq_hello->htime);
+  head->htime = reltime_to_me(lq_hello->htime);
   head->will = lq_hello->will; 
 
   // 'off' is the offset of the byte following the LQ_HELLO header
@@ -444,14 +467,7 @@ serialize_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
               size += olsr_cnf->ipsize;
 
               // add the corresponding link quality
-
-              buff[size++] = (unsigned char)(neigh->link_quality * 255);
-              buff[size++] = (unsigned char)(neigh->neigh_link_quality * 255);
-
-              // pad
-
-              buff[size++] = 0;
-              buff[size++] = 0;
+              size += olsr_serialize_hello_lq_pair(&buff[size], neigh);
 
               is_first = OLSR_FALSE;
             }
@@ -475,6 +491,35 @@ serialize_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
   net_outbuffer_push(outif, msg_buffer, size + off);
 }
 
+static olsr_u8_t
+calculate_border_flag(void *lower_border, void *higher_border) {
+	olsr_u8_t *lower = lower_border;
+	olsr_u8_t *higher = higher_border;
+	olsr_u8_t bitmask;
+	olsr_u8_t part, bitpos;
+	
+	for (part = 0; part < olsr_cnf->ipsize; part ++) {
+		if (lower[part] != higher[part]) {
+			break;
+		}
+	}
+	
+	if (part == olsr_cnf->ipsize) { // same IPs ?
+		return 0;
+	}
+	
+	// look for first bit of difference
+	bitmask = 0xfe;
+	for (bitpos = 0; bitpos < 8; bitpos++, bitmask <<= 1) {
+		if ((lower[part] & bitmask) == (higher[part] & bitmask)) {
+			break;
+		}
+	}
+	
+  bitpos += 8 * (olsr_cnf->ipsize - part - 1);
+	return bitpos + 1;
+}
+
 static void
 serialize_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
 {
@@ -483,6 +528,9 @@ serialize_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
   struct tc_mpr_addr *neigh;
   unsigned char *buff;
 
+  union olsr_ip_addr *last_ip = NULL;
+  olsr_u8_t left_border_flag = 0xff;
+  
   // leave space for the OLSR header
 
   off = common_size();
@@ -492,8 +540,9 @@ serialize_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
   head = (struct lq_tc_header *)(msg_buffer + off);
 
   head->ansn = htons(lq_tc->ansn);
-  head->reserved = 0;
-
+  head->lower_border = 0;
+  head->upper_border = 0;
+  
   // 'off' is the offset of the byte following the LQ_TC header
 
   off += sizeof (struct lq_tc_header);
@@ -516,6 +565,7 @@ serialize_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
    */
   if (0 < net_output_pending(outif)) {
     for (neigh = lq_tc->neigh; neigh != NULL; neigh = neigh->next) {
+      // TODO sizeof_tc_lq function required
       expected_size += olsr_cnf->ipsize + 4;
     }
   }
@@ -534,8 +584,13 @@ serialize_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
 
       // force signed comparison
 
+    // TODO sizeof_tc_lq function required
       if ((int)(size + olsr_cnf->ipsize + 4) > rem)
         {
+      	  head->lower_border = left_border_flag;
+      	  head->upper_border = calculate_border_flag(last_ip, &neigh->address);
+      	  left_border_flag = head->upper_border;
+      	  
           // finalize the OLSR header
 
           lq_tc->comm.size = size + off;
@@ -556,19 +611,20 @@ serialize_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
 
       // add the current neighbor's IP address
       genipcopy(buff + size, &neigh->address);
+      
+      // remember last ip
+      last_ip = (union olsr_ip_addr *)(buff+size);
+      
       size += olsr_cnf->ipsize;
 
       // add the corresponding link quality
-      buff[size++] = (unsigned char)(neigh->link_quality * 255);
-      buff[size++] = (unsigned char)(neigh->neigh_link_quality * 255);
-
-      // pad
-      buff[size++] = 0;
-      buff[size++] = 0;
+      size += olsr_serialize_tc_lq_pair(&buff[size], neigh);
     }
 
   // finalize the OLSR header
 
+  head->lower_border = left_border_flag;
+  head->upper_border = 0xff;
   lq_tc->comm.size = size + off;
 
   serialize_common((struct olsr_common *)lq_tc);
@@ -646,3 +702,9 @@ olsr_output_lq_tc(void *para)
     set_buffer_timer(outif);
   }
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */

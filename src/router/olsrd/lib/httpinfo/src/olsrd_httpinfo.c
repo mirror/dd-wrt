@@ -62,6 +62,7 @@
 #include "link_set.h"
 #include "socket_parser.h"
 #include "ipcalc.h"
+#include "lq_plugin.h"
 
 #include "olsrd_httpinfo.h"
 #include "admin_interface.h"
@@ -86,7 +87,7 @@
 #define OS "Undefined"
 #endif
 
-static char copyright_string[] __attribute__((unused)) = "olsr.org HTTPINFO plugin Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org) All rights reserved.";
+static char copyright_string[] __attribute__((unused)) = "olsr.org HTTPINFO plugin Copyright (c) 2004, Andreas TÃ¸nnesen(andreto@olsr.org) All rights reserved.";
 
 #define MAX_CLIENTS 3
 
@@ -750,7 +751,8 @@ static int build_ipaddr_link(char *buf, const olsr_u32_t bufsize,
 static int build_route(char *buf, olsr_u32_t bufsize, const struct rt_entry * rt)
 {
   int size = 0;
-
+  struct lqtextbuffer lqbuffer;
+  
   size += snprintf(&buf[size], bufsize-size, "<tr>");
   size += build_ipaddr_with_link(&buf[size], bufsize-size,
                                  &rt->rt_dst.prefix,
@@ -763,8 +765,8 @@ static int build_route(char *buf, olsr_u32_t bufsize, const struct rt_entry * rt
                    "<td align=\"center\">%d</td>",
                    rt->rt_best->rtp_metric.hops);
   size += snprintf(&buf[size], bufsize-size,
-                   "<td align=\"right\">%.3f</td>",
-                   rt->rt_best->rtp_metric.etx);
+                   "<td align=\"right\">%s</td>",
+                   get_linkcost_text(rt->rt_best->rtp_metric.cost, OLSR_TRUE, &lqbuffer));
   size += snprintf(&buf[size], bufsize-size,
                    "<td align=\"center\">%s</td></tr>\n",
                    if_ifwithindex_name(rt->rt_best->rtp_nexthop.iif_index));
@@ -870,9 +872,9 @@ static int build_config_body(char *buf, olsr_u32_t bufsize)
     if (olsr_cnf->lq_level) {
       size += snprintf(&buf[size], bufsize-size,
                        "<td>LQ level: %d</td>\n"
-                       "<td>LQ winsize: %d</td>\n",
+                       "<td>LQ aging: %f</td>\n",
                        olsr_cnf->lq_level,
-                       olsr_cnf->lq_wsize);
+                       olsr_cnf->lq_aging);
     }
     size += snprintf(&buf[size], bufsize-size, "</tr></table>\n");
 
@@ -966,7 +968,7 @@ static int build_neigh_body(char *buf, olsr_u32_t bufsize)
 {
   struct neighbor_entry *neigh;
   struct link_entry *link = NULL;
-  int size = 0, idx;
+  int size = 0;
   const char *colspan = resolve_ip_addresses ? " colspan=\"2\"" : "";
 
   size += section_title(&buf[size], bufsize-size, "Links");
@@ -975,31 +977,25 @@ static int build_neigh_body(char *buf, olsr_u32_t bufsize)
                    "<tr><th align=\"center\"%s>Local IP</th><th align=\"center\"%s>Remote IP</th><th align=\"right\">Hysteresis</th>", colspan, colspan);
   if (olsr_cnf->lq_level > 0) {
     size += snprintf(&buf[size], bufsize-size,
-                     "<th align=\"right\">LinkQuality</th><th>lost</th><th>total</th><th align=\"right\">NLQ</th><th align=\"right\">ETX</th>");
+                     "<th align=\"right\">LinkCost</th>");
   }
   size += snprintf(&buf[size], bufsize-size, "</tr>\n");
 
   /* Link set */
-  for (link = link_set; link != NULL; link = link->next) {
+  OLSR_FOR_ALL_LINK_ENTRIES(link) {
     size += snprintf(&buf[size], bufsize-size, "<tr>");
     size += build_ipaddr_with_link(&buf[size], bufsize, &link->local_iface_addr, -1);
     size += build_ipaddr_with_link(&buf[size], bufsize, &link->neighbor_iface_addr, -1);
     size += snprintf(&buf[size], bufsize-size, "<td align=\"right\">%0.2f</td>", link->L_link_quality);
     if (olsr_cnf->lq_level > 0) {
+      struct lqtextbuffer lqbuffer1, lqbuffer2;
       size += snprintf(&buf[size], bufsize-size,
-                       "<td align=\"right\">%0.2f</td>"
-                       "<td>%d</td>"
-                       "<td>%d</td>"
-                       "<td align=\"right\">%0.2f</td>"
-                       "<td align=\"right\">%0.2f</td>\n",
-                       link->loss_link_quality,
-                       link->lost_packets,
-                       link->total_packets,
-                       link->neigh_link_quality,
-                       olsr_calc_link_etx(link));
+                       "<td align=\"right\">(%s) %s</td>",
+                       get_link_entry_text(link, &lqbuffer1),
+                       get_linkcost_text(link->linkcost, OLSR_FALSE, &lqbuffer2));
     }
     size += snprintf(&buf[size], bufsize-size, "</tr>\n");
-  }
+  } OLSR_FOR_ALL_LINK_ENTRIES_END(link);
 
   size += snprintf(&buf[size], bufsize-size, "</table>\n");
 
@@ -1007,33 +1003,36 @@ static int build_neigh_body(char *buf, olsr_u32_t bufsize)
   size += snprintf(&buf[size], bufsize-size,
                    "<tr><th align=\"center\"%s>IP Address</th><th align=\"center\">SYM</th><th align=\"center\">MPR</th><th align=\"center\">MPRS</th><th align=\"center\">Willingness</th><th>2 Hop Neighbors</th></tr>\n", colspan);
   /* Neighbors */
-  for (idx = 0; idx < HASHSIZE; idx++) {
-    for (neigh = neighbortable[idx].next; neigh != &neighbortable[idx]; neigh = neigh->next) {
-      struct neighbor_2_list_entry *list_2;
-      int thop_cnt;
-      size += snprintf(&buf[size], bufsize-size, "<tr>");
-      size += build_ipaddr_with_link(&buf[size], bufsize, &neigh->neighbor_main_addr, -1);
-      size += snprintf(&buf[size], bufsize-size,
-                       "<td align=\"center\">%s</td>"
-                       "<td align=\"center\">%s</td>"
-                       "<td align=\"center\">%s</td>"
-                       "<td align=\"center\">%d</td>",
-                       (neigh->status == SYM) ? "YES" : "NO",
-                       neigh->is_mpr ? "YES" : "NO",
-                       olsr_lookup_mprs_set(&neigh->neighbor_main_addr) ? "YES" : "NO",
-                       neigh->willingness);
+  OLSR_FOR_ALL_NBR_ENTRIES(neigh) {
 
-      size += snprintf(&buf[size], bufsize-size, "<td><select>\n"
-                       "<option>IP ADDRESS</option>\n");
+    struct neighbor_2_list_entry *list_2;
+    int thop_cnt;
+    size += snprintf(&buf[size], bufsize-size, "<tr>");
+    size += build_ipaddr_with_link(&buf[size], bufsize, &neigh->neighbor_main_addr, -1);
+    size += snprintf(&buf[size], bufsize-size,
+                     "<td align=\"center\">%s</td>"
+                     "<td align=\"center\">%s</td>"
+                     "<td align=\"center\">%s</td>"
+                     "<td align=\"center\">%d</td>",
+                     (neigh->status == SYM) ? "YES" : "NO",
+                     neigh->is_mpr ? "YES" : "NO",
+                     olsr_lookup_mprs_set(&neigh->neighbor_main_addr) ? "YES" : "NO",
+                     neigh->willingness);
+
+    size += snprintf(&buf[size], bufsize-size, "<td><select>\n"
+                     "<option>IP ADDRESS</option>\n");
 
 
-      for (list_2 = neigh->neighbor_2_list.next, thop_cnt = 0; list_2 != &neigh->neighbor_2_list; list_2 = list_2->next, thop_cnt++) {
-        struct ipaddr_str strbuf;
-        size += snprintf(&buf[size], bufsize-size, "<option>%s</option>\n", olsr_ip_to_string(&strbuf, &list_2->neighbor_2->neighbor_2_addr));
-      }
-      size += snprintf(&buf[size], bufsize-size, "</select> (%d)</td></tr>\n", thop_cnt);
+    for (list_2 = neigh->neighbor_2_list.next, thop_cnt = 0;
+         list_2 != &neigh->neighbor_2_list;
+         list_2 = list_2->next, thop_cnt++) {
+      struct ipaddr_str strbuf;
+      size += snprintf(&buf[size], bufsize-size, "<option>%s</option>\n",
+                       olsr_ip_to_string(&strbuf, &list_2->neighbor_2->neighbor_2_addr));
     }
-  }
+    size += snprintf(&buf[size], bufsize-size, "</select> (%d)</td></tr>\n", thop_cnt);
+  } OLSR_FOR_ALL_NBR_ENTRIES_END(neigh);
+
   size += snprintf(&buf[size], bufsize-size, "</table>\n");
   return size;
 }
@@ -1047,27 +1046,26 @@ static int build_topo_body(char *buf, olsr_u32_t bufsize)
   size += section_title(&buf[size], bufsize-size, "Topology Entries");
   size += snprintf(&buf[size], bufsize-size, "<tr><th align=\"center\"%s>Destination IP</th><th align=\"center\"%s>Last Hop IP</th>", colspan, colspan);
   if (olsr_cnf->lq_level > 0) {
-    size += snprintf(&buf[size], bufsize-size, "<th align=\"right\">LQ</th><th align=\"right\">ILQ</th><th align=\"right\">ETX</th>");
+    size += snprintf(&buf[size], bufsize-size, "<th align=\"right\">Linkcost</th>");
   }
   size += snprintf(&buf[size], bufsize-size, "</tr>\n");
 
   OLSR_FOR_ALL_TC_ENTRIES(tc) {
       struct tc_edge_entry *tc_edge;
       OLSR_FOR_ALL_TC_EDGE_ENTRIES(tc, tc_edge) {
+      	if (tc_edge->edge_inv)  {
           size += snprintf(&buf[size], bufsize-size, "<tr>");
           size += build_ipaddr_with_link(&buf[size], bufsize, &tc_edge->T_dest_addr, -1);
           size += build_ipaddr_with_link(&buf[size], bufsize, &tc->addr, -1);
           if (olsr_cnf->lq_level > 0) {
+            struct lqtextbuffer lqbuffer1, lqbuffer2;
               size += snprintf(&buf[size], bufsize-size,
-                               "<td align=\"right\">%0.2f</td>"
-                               "<td align=\"right\">%0.2f</td>"
-                               "<td align=\"right\">%0.2f</td>\n",
-                               tc_edge->link_quality,
-                               tc_edge->inverse_link_quality,
-                               olsr_calc_tc_etx(tc_edge));
+                               "<td align=\"right\">(%s) %s</td>\n",
+                               get_tc_edge_entry_text(tc_edge, &lqbuffer1),
+                               get_linkcost_text(tc_edge->cost, OLSR_FALSE, &lqbuffer2));
           }
           size += snprintf(&buf[size], bufsize-size, "</tr>\n");
-
+      	}
       } OLSR_FOR_ALL_TC_EDGE_ENTRIES_END(tc, tc_edge);
   } OLSR_FOR_ALL_TC_ENTRIES_END(tc);
 
@@ -1274,3 +1272,9 @@ static ssize_t writen(int fd, const void *buf, size_t count)
     }
     return count;
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */

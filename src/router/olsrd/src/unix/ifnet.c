@@ -70,7 +70,6 @@
 
 #define BUFSPACE  (127*1024)	/* max. input buffer size to request */
 
-
 int
 set_flag(char *ifname, short flag __attribute__((unused)))
 {
@@ -418,7 +417,7 @@ chk_if_changed(struct olsr_if *iface)
   OLSR_PRINTF(1, "Removing interface %s\n", iface->name);
   olsr_syslog(OLSR_LOG_INFO, "Removing interface %s\n", iface->name);
 
-  del_if_link_entries(&ifp->ip_addr);
+  olsr_delete_link_entry_by_ip(&ifp->ip_addr);
 
   /*
    *Call possible ifchange functions registered by plugins  
@@ -462,51 +461,13 @@ chk_if_changed(struct olsr_if *iface)
 	}
     }
 
-
   /*
-   * Deregister scheduled functions 
+   * Deregister functions for periodic message generation 
    */
-
-  if (olsr_cnf->lq_level == 0)
-    {
-      olsr_remove_scheduler_event(&generate_hello, 
-                                  ifp, 
-                                  iface->cnf->hello_params.emission_interval, 
-                                  0, 
-                                  NULL);
-      olsr_remove_scheduler_event(&generate_tc, 
-                                  ifp, 
-                                  iface->cnf->tc_params.emission_interval,
-                                  0, 
-                                  NULL);
-    }
-
-  else
-    {
-      olsr_remove_scheduler_event(&olsr_output_lq_hello, 
-                                  ifp, 
-                                  iface->cnf->hello_params.emission_interval, 
-                                  0, 
-                                  NULL);
-      olsr_remove_scheduler_event(&olsr_output_lq_tc, 
-                                  ifp, 
-                                  iface->cnf->tc_params.emission_interval,
-                                  0, 
-                                  NULL);
-    }
-
-  olsr_remove_scheduler_event(&generate_mid, 
-			      ifp, 
-			      iface->cnf->mid_params.emission_interval,
-			      0, 
-			      NULL);
-  olsr_remove_scheduler_event(&generate_hna, 
-			      ifp, 
-			      iface->cnf->hna_params.emission_interval,
-			      0, 
-			      NULL);
-
-
+  olsr_stop_timer(ifp->hello_gen_timer);
+  olsr_stop_timer(ifp->tc_gen_timer);
+  olsr_stop_timer(ifp->mid_gen_timer);
+  olsr_stop_timer(ifp->hna_gen_timer);
 
   iface->configured = 0;
   iface->interf = NULL;
@@ -658,60 +619,36 @@ add_hemu_if(struct olsr_if *iface)
   add_olsr_socket(ifp->olsr_socket, &olsr_input_hostemu);
 
 
-  if (olsr_cnf->lq_level == 0)
-    {
-      olsr_register_scheduler_event(&generate_hello, 
-                                    ifp, 
-                                    iface->cnf->hello_params.emission_interval, 
-                                    0, 
-                                    NULL);
-      olsr_register_scheduler_event(&generate_tc, 
-                                    ifp, 
-                                    iface->cnf->tc_params.emission_interval,
-                                    0, 
-                                    NULL);
-    }
-
-  else
-    {
-      olsr_register_scheduler_event(&olsr_output_lq_hello, 
-                                    ifp, 
-                                    iface->cnf->hello_params.emission_interval, 
-                                    0, 
-                                    NULL);
-      olsr_register_scheduler_event(&olsr_output_lq_tc, 
-                                    ifp, 
-                                    iface->cnf->tc_params.emission_interval,
-                                    0, 
-                                    NULL);
-    }
-
-  olsr_register_scheduler_event(&generate_mid, 
-				ifp, 
-				iface->cnf->mid_params.emission_interval,
-				0, 
-				NULL);
-  olsr_register_scheduler_event(&generate_hna, 
-				ifp, 
-				iface->cnf->hna_params.emission_interval,
-				0, 
-				NULL);
-
-  /* Recalculate max jitter */
-
-  if((olsr_cnf->max_jitter == 0) || 
-     ((iface->cnf->hello_params.emission_interval / 4) < olsr_cnf->max_jitter))
-    olsr_cnf->max_jitter = iface->cnf->hello_params.emission_interval / 4;
+  /*
+   * Register functions for periodic message generation 
+   */
+  
+  ifp->hello_gen_timer =
+    olsr_start_timer(iface->cnf->hello_params.emission_interval * MSEC_PER_SEC,
+                     HELLO_JITTER, OLSR_TIMER_PERIODIC,
+                     olsr_cnf->lq_level == 0 ? &generate_hello : &olsr_output_lq_hello,
+                     ifp, 0);
+  ifp->tc_gen_timer =
+    olsr_start_timer(iface->cnf->tc_params.emission_interval * MSEC_PER_SEC,
+                     TC_JITTER, OLSR_TIMER_PERIODIC,
+                     olsr_cnf->lq_level == 0 ? &generate_tc : &olsr_output_lq_tc,
+                     ifp, 0);
+  ifp->mid_gen_timer =
+    olsr_start_timer(iface->cnf->mid_params.emission_interval * MSEC_PER_SEC,
+                     MID_JITTER, OLSR_TIMER_PERIODIC, &generate_mid, ifp, 0);
+  ifp->hna_gen_timer =
+    olsr_start_timer(iface->cnf->hna_params.emission_interval * MSEC_PER_SEC,
+                     HNA_JITTER, OLSR_TIMER_PERIODIC, &generate_hna, ifp, 0);
 
   /* Recalculate max topology hold time */
   if(olsr_cnf->max_tc_vtime < iface->cnf->tc_params.emission_interval)
     olsr_cnf->max_tc_vtime = iface->cnf->tc_params.emission_interval;
 
-  ifp->hello_etime = iface->cnf->hello_params.emission_interval;
-  ifp->valtimes.hello = double_to_me(iface->cnf->hello_params.validity_time);
-  ifp->valtimes.tc = double_to_me(iface->cnf->tc_params.validity_time);
-  ifp->valtimes.mid = double_to_me(iface->cnf->mid_params.validity_time);
-  ifp->valtimes.hna = double_to_me(iface->cnf->hna_params.validity_time);
+  ifp->hello_etime = (olsr_reltime)(iface->cnf->hello_params.emission_interval * MSEC_PER_SEC);
+  ifp->valtimes.hello = reltime_to_me(iface->cnf->hello_params.validity_time * MSEC_PER_SEC);
+  ifp->valtimes.tc = reltime_to_me(iface->cnf->tc_params.validity_time * MSEC_PER_SEC);
+  ifp->valtimes.mid = reltime_to_me(iface->cnf->mid_params.validity_time * MSEC_PER_SEC);
+  ifp->valtimes.hna = reltime_to_me(iface->cnf->hna_params.validity_time * MSEC_PER_SEC);
 
   return 1;
 }
@@ -752,6 +689,7 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__((unused)))
     return -1;
 
   memset(&ifr, 0, sizeof(struct ifreq));
+  memset(&ifs, 0, sizeof(struct interface));
   strncpy(ifr.ifr_name, iface->name, IFNAMSIZ);
 
   OLSR_PRINTF(debuglvl, "Checking %s:\n", ifr.ifr_name);
@@ -763,7 +701,6 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__((unused)))
       return 0;
     }
 
-  memset(&ifs.netbuf, 0, sizeof(struct olsr_netbuf));
   ifs.int_flags = ifr.ifr_flags;      
 
 
@@ -861,7 +798,6 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__((unused)))
       if(iface->cnf->ipv4_broadcast.v4.s_addr)
 	{
 	  /* Specified broadcast */
-	  memset(&ifs.int_broadaddr, 0, sizeof(struct sockaddr));
 	  memcpy(&((struct sockaddr_in *)&ifs.int_broadaddr)->sin_addr.s_addr, 
 		 &iface->cnf->ipv4_broadcast.v4, 
 		 sizeof(olsr_u32_t));
@@ -940,7 +876,8 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__((unused)))
 
   iface->configured = 1;
   iface->interf = ifp;
-  
+
+  /* XXX bad code */
   memcpy(ifp, &ifs, sizeof(struct interface));
   
   ifp->gen_properties = NULL;
@@ -1035,46 +972,34 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__((unused)))
     }
   
   /*
-   * Register scheduled functions 
+   * Register functions for periodic message generation 
    */
-
-  olsr_register_scheduler_event(olsr_cnf->lq_level == 0 ? &generate_hello : &olsr_output_lq_hello,
-                                ifp, 
-                                iface->cnf->hello_params.emission_interval, 
-                                0, 
-                                NULL);
-  olsr_register_scheduler_event(olsr_cnf->lq_level == 0 ? &generate_tc : &olsr_output_lq_tc,
-                                ifp, 
-                                iface->cnf->tc_params.emission_interval,
-                                0, 
-                                NULL);
-  olsr_register_scheduler_event(&generate_mid, 
-				ifp, 
-				iface->cnf->mid_params.emission_interval,
-				0, 
-				NULL);
-  olsr_register_scheduler_event(&generate_hna, 
-				ifp, 
-				iface->cnf->hna_params.emission_interval,
-				0, 
-				NULL);
-
-  /* Recalculate max jitter */
-
-  if((olsr_cnf->max_jitter == 0) || 
-     ((iface->cnf->hello_params.emission_interval / 4) < olsr_cnf->max_jitter)) {
-    olsr_cnf->max_jitter = iface->cnf->hello_params.emission_interval / 4;
-  }
+  ifp->hello_gen_timer =
+    olsr_start_timer(iface->cnf->hello_params.emission_interval * MSEC_PER_SEC,
+                     HELLO_JITTER, OLSR_TIMER_PERIODIC,
+                     olsr_cnf->lq_level == 0 ? &generate_hello : &olsr_output_lq_hello,
+                     ifp, 0);
+  ifp->tc_gen_timer =
+    olsr_start_timer(iface->cnf->tc_params.emission_interval * MSEC_PER_SEC,
+                     TC_JITTER, OLSR_TIMER_PERIODIC,
+                     olsr_cnf->lq_level == 0 ? &generate_tc : &olsr_output_lq_tc,
+                     ifp, 0);
+  ifp->mid_gen_timer =
+    olsr_start_timer(iface->cnf->mid_params.emission_interval * MSEC_PER_SEC,
+                     MID_JITTER, OLSR_TIMER_PERIODIC, &generate_mid, ifp, 0);
+  ifp->hna_gen_timer =
+    olsr_start_timer(iface->cnf->hna_params.emission_interval * MSEC_PER_SEC,
+                     HNA_JITTER, OLSR_TIMER_PERIODIC, &generate_hna, ifp, 0);
 
   /* Recalculate max topology hold time */
   if(olsr_cnf->max_tc_vtime < iface->cnf->tc_params.emission_interval) {
     olsr_cnf->max_tc_vtime = iface->cnf->tc_params.emission_interval;
   }
-  ifp->hello_etime = iface->cnf->hello_params.emission_interval;
-  ifp->valtimes.hello = double_to_me(iface->cnf->hello_params.validity_time);
-  ifp->valtimes.tc = double_to_me(iface->cnf->tc_params.validity_time);
-  ifp->valtimes.mid = double_to_me(iface->cnf->mid_params.validity_time);
-  ifp->valtimes.hna = double_to_me(iface->cnf->hna_params.validity_time);
+  ifp->hello_etime = (olsr_reltime)(iface->cnf->hello_params.emission_interval * MSEC_PER_SEC);
+  ifp->valtimes.hello = reltime_to_me(iface->cnf->hello_params.validity_time * MSEC_PER_SEC);
+  ifp->valtimes.tc = reltime_to_me(iface->cnf->tc_params.validity_time * MSEC_PER_SEC);
+  ifp->valtimes.mid = reltime_to_me(iface->cnf->mid_params.validity_time * MSEC_PER_SEC);
+  ifp->valtimes.hna = reltime_to_me(iface->cnf->hna_params.validity_time * MSEC_PER_SEC);
 
 
   /*
@@ -1085,4 +1010,8 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__((unused)))
   return 1;
 }
 
-
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * End:
+ */
