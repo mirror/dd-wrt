@@ -71,8 +71,6 @@ start_mkfiles (void)
   cprintf ("%s:%d", __func__, __LINE__);
 #ifdef HAVE_SKYTRON
   char *http_passwd = nvram_safe_get ("skyhttp_passwd");
-#elif HAVE_NEWMEDIA
-  char *http_passwd = nvram_safe_get ("newhttp_passwd");
 #elif HAVE_34TELECOM
   char *http_passwd = nvram_safe_get ("newhttp_passwd");
 #else
