@@ -4190,9 +4190,7 @@ ej_show_bandwidth (webs_t wp, int argc, char_t ** argv)
       char name[32];
       sprintf (name, "%s (%s)", live_translate ("share.wireless"), dev);
       show_bwif (wp, dev, name);
-      char v[60];
-      sprintf (v, "%s_vifs", dev);
-      char *vifs = nvram_safe_get (v);
+      char *vifs = nvram_nget ("%s_vifs",dev);
       if (vifs == NULL)
 	continue;
       foreach (var, vifs, next)
@@ -4203,18 +4201,11 @@ ej_show_bandwidth (webs_t wp, int argc, char_t ** argv)
     int s;
   for (s = 1; s <= 10; s++)
     {
-      char wdsvarname[32] = { 0 };
-      char wdsdevname[32] = { 0 };
-      char wdsmacname[32] = { 0 };
       char *wdsdev;
-
-      sprintf (wdsvarname, "%s_wds%d_enable", dev, s);
-      sprintf (wdsdevname, "%s_wds%d_if", dev, s);
-      sprintf (wdsmacname, "%s_wds%d_hwaddr", dev, s);
-      wdsdev = nvram_safe_get (wdsdevname);
+      wdsdev = nvram_nget ("%s_wds%d_if", dev, s);
       if (strlen (wdsdev) == 0)
 	continue;
-      if (nvram_match (wdsvarname, "0"))
+      if (nvram_nmatch ("0","%s_wds%d_enable", dev, s))
 	continue;
 	sprintf (name, "%s (%s)", live_translate ("share.wireless"), wdsdev);
 	show_bwif (wp, wdsdev, name);
@@ -4226,17 +4217,6 @@ ej_show_bandwidth (webs_t wp, int argc, char_t ** argv)
   char name[32];
   sprintf (name, "%s", live_translate ("share.wireless"));
   show_bwif (wp, get_wdev (), name);
-/*  char v[60];
-  sprintf (v, "wl0_vifs");
-  char *vifs = nvram_safe_get (v);
-  if (vifs == NULL)
-    return;
-  foreach (var, vifs, next)
-  {
-    char name[32];
-    sprintf (name, "%s (%s)", live_translate ("share.wireless"), var);
-    show_bwif (wp, var, name);
-  }*/
 #endif
 #ifdef HAVE_WAVESAT
   char name[32];
@@ -5191,9 +5171,7 @@ static void
 showencstatus (webs_t wp, char *prefix)
 {
   char akm[64];
-  char ssid[64];
   sprintf (akm, "%s_akm", prefix);
-  sprintf (ssid, "%s_ssid", prefix);
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(share.encrypt)</script>&nbsp;-&nbsp;<script type=\"text/javascript\">Capture(share.intrface)</script>&nbsp;%s</div>\n",
@@ -5285,12 +5263,12 @@ static void
 ej_getwirelessssid (webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
-  char *ssid = "wl0_ssid";
+  tf_webWriteESCNV (wp, "wl0_ssid");
 #else
   char ssid[32];
   sprintf (ssid, "%s_ssid", nvram_safe_get ("wifi_display"));
-#endif
   tf_webWriteESCNV (wp, ssid);
+#endif
 }
 static void
 ej_getwirelessmode (webs_t wp, int argc, char_t ** argv)
@@ -5552,8 +5530,7 @@ ej_dumparptable (webs_t wp, int argc, char_t ** argv)
 	  if (!strcmp (hostname, "*") && nvram_match ("dhcp_dnsmasq", "1")
 	      && nvram_match ("dhcpd_usenvram", "1"))
 	    {
-	      sprintf (buf, "dnsmasq_lease_%s", ip);
-	      sscanf (nvram_safe_get (buf), "%*s %*s %*s %s", hostname);
+	      sscanf (nvram_nget ("dnsmasq_lease_%s", ip), "%*s %*s %*s %s", hostname);
 	    }
 /* end nvram check */
 
@@ -6110,7 +6087,6 @@ ej_tf_upnp (webs_t wp, int argc, char_t ** argv)
 {
   int i;
   int len, pos, count;
-  char s[32];
   char *temp;
 
   if (nvram_match ("upnp_enable", "1"))
@@ -6118,10 +6094,9 @@ ej_tf_upnp (webs_t wp, int argc, char_t ** argv)
       for (i = 0; i < 50; i++)
 	{
 	  websWrite (wp, (i > 0) ? ",'" : "'");
-	  sprintf (s, "forward_port%d", i);
 
 // fix: some entries are missing the desc. - this breaks the upnp.asp page, so we add ,*
-	  temp = nvram_safe_get (s);
+	  temp = nvram_nget ("forward_port%d", i);
 	  count = 0;
 	  len = strlen (temp);
 
@@ -6131,7 +6106,7 @@ ej_tf_upnp (webs_t wp, int argc, char_t ** argv)
 		count++;
 	    }
 
-	  tf_webWriteJS (wp, nvram_safe_get (s));
+	  tf_webWriteJS (wp, temp);
 	  if (count == 2)
 	    websWrite (wp, ",*");
 
