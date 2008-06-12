@@ -930,7 +930,6 @@ match_hrmin (int hr_st, int mi_st, int hr_end, int mi_end)
 static int
 schedule_by_tod (int seq)
 {
-  char todname[] = "filter_todxxx";
   char *todvalue;
   int sched = 0, allday = 0;
   int hr_st, hr_end;		/* hour */
@@ -939,10 +938,8 @@ schedule_by_tod (int seq)
   int intime = 0;
 
   /* Get the NVRAM data */
-  sprintf (todname, "filter_tod%d", seq);
-  todvalue = nvram_safe_get (todname);
+  todvalue = nvram_nget ("filter_tod%d", seq);
 
-  DEBUG ("%s: %s\n", todname, todvalue);
   if (strcmp (todvalue, "") == 0)
     return 0;
 
@@ -1040,11 +1037,9 @@ static void
 macgrp_chain (int seq, unsigned int mark, int urlenable)
 {
   char var[256], *next;
-  char buf[100];
   char *wordlist;
 
-  sprintf (buf, "filter_mac_grp%d", seq);
-  wordlist = nvram_safe_get (buf);
+  wordlist = nvram_nget ("filter_mac_grp%d", seq);
   if (strcmp (wordlist, "") == 0)
     return;
 
@@ -1092,8 +1087,7 @@ ipgrp_chain (int seq, unsigned int mark, int urlenable)
   int a1 = 0, a2 = 0;
 
 
-  sprintf (buf, "filter_ip_grp%d", seq);
-  wordlist1 = nvram_safe_get (buf);
+  wordlist1 = nvram_nget ("filter_ip_grp%d", seq);
   if (strcmp (wordlist1, "") == 0)
     return;
 
@@ -1156,13 +1150,11 @@ portgrp_chain (int seq, unsigned int mark, int urlenable)
 {
   char var[256], *next;
   char *wordlist;
-  char buf[100];
   char target[100];
   char *protocol, *lan_port0, *lan_port1;
 
 
-  sprintf (buf, "filter_dport_grp%d", seq);
-  wordlist = nvram_safe_get (buf);
+  wordlist = nvram_nget ("filter_dport_grp%d", seq);
   if (strcmp (wordlist, "") == 0)
     return;
 
@@ -1249,7 +1241,6 @@ fw_get_filter_services (void)
 static void
 advgrp_chain (int seq, unsigned int mark, int urlenable)
 {
-  char nvname[100];
   char *wordlist, word[1024], *next;
   char services[8192], srv[1024], *next2;
   char delim[] = "<&nbsp;>";
@@ -1264,8 +1255,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
 
 
   /* filter_port_grp5=My ICQ<&nbsp;>Game boy */
-  sprintf (nvname, "filter_port_grp%d", seq);
-  wordlist = nvram_safe_get (nvname);
+  wordlist = nvram_nget ("filter_port_grp%d", seq);
   split (word, wordlist, next, delim)
   {
 
@@ -1357,17 +1347,15 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
 	}
     }
   }
-  sprintf (nvname, "filter_p2p_grp%d", seq);
   /* p2p catchall */
-  if (nvram_match (nvname, "1"))
+  if (nvram_nmatch ("1","filter_p2p_grp%d", seq))
     {
       eval ("insmod", "ipt_ipp2p");
       save2file ("-A advgrp_%d -p tcp -m ipp2p --ipp2p -j %s\n", seq,
 		 log_drop);
     }
   /* filter_web_host2=hello<&nbsp;>world<&nbsp;>friend */
-  sprintf (nvname, "filter_web_host%d", seq);
-  wordlist = nvram_safe_get (nvname);
+  wordlist = nvram_nget ("filter_web_host%d", seq);
   if (strcmp (wordlist, ""))
     {
       eval ("insmod", "ipt_webstr");
@@ -1375,8 +1363,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
 		 seq, wordlist, log_reject);
     }
   /* filter_web_url3=hello<&nbsp;>world<&nbsp;>friend */
-  sprintf (nvname, "filter_web_url%d", seq);
-  wordlist = nvram_safe_get (nvname);
+  wordlist = nvram_nget ("filter_web_url%d", seq);
   if (strcmp (wordlist, ""))
     {
       eval ("insmod", "ipt_webstr");
@@ -1432,8 +1419,7 @@ lan2wan_chains (void)
   for (seq = 1; seq <= NR_RULES; seq++)
     {
 #endif
-      sprintf (buf, "filter_rule%d", seq);
-      data = nvram_safe_get (buf);
+      data = nvram_nget ("filter_rule%d", seq);
 
       if (strcmp (data, "") == 0)
 	up = 0;
@@ -1448,8 +1434,7 @@ lan2wan_chains (void)
 
   for (seq = 1; seq <= NR_RULES; seq++)
     {
-      sprintf (buf, "filter_rule%d", seq);
-      data = nvram_safe_get (buf);
+      data = nvram_nget ("filter_rule%d", seq);
       if (strcmp (data, "") == 0)
 	continue;
 
@@ -3018,7 +3003,6 @@ stop_firewall (void)
 int
 if_tod_intime (int seq)
 {
-  char todname[] = "filter_todxxx";
   char *todvalue;
   int sched = 0, allday = 0;
   int hr_st, hr_end;		/* hour */
@@ -3027,8 +3011,7 @@ if_tod_intime (int seq)
   int intime = 0;
 
   /* Get the NVRAM data */
-  sprintf (todname, "filter_tod%d", seq);
-  todvalue = nvram_safe_get (todname);
+  todvalue = nvram_nget ("filter_tod%d", seq);
 
   DEBUG ("%s: %s\n", todname, todvalue);
   if (strcmp (todvalue, "") == 0)
