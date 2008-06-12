@@ -60,9 +60,7 @@ show_ipnetmask (webs_t wp, char *var)
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
 
-  char ip[32];
-  sprintf (ip, "%s_ipaddr", var);
-  char *ipv = nvram_safe_get (ip);
+  char *ipv = nvram_nget ("%s_ipaddr", var);
   websWrite (wp,
 	     "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,1,223,share.ip)\" name=\"%s_ipaddr_0\" value=\"%d\" />.",
 	     var, get_single_ip (ipv, 0));
@@ -80,8 +78,7 @@ show_ipnetmask (webs_t wp, char *var)
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
-  sprintf (ip, "%s_netmask", var);
-  ipv = nvram_safe_get (ip);
+  ipv = nvram_nget ("%s_netmask", var);
 
   websWrite (wp,
 	     "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_0\" value=\"%d\" />.",
@@ -1785,11 +1782,9 @@ ej_show_security_single (webs_t wp, int argc, char_t ** argv, char *prefix)
   char *next;
   char var[80];
   char ssid[80];
-  char vif[16];
   char mac[16];
   sprintf (mac, "%s_hwaddr", prefix);
-  sprintf (vif, "%s_vifs", prefix);
-  char *vifs = nvram_safe_get (vif);
+  char *vifs = nvram_nget ("%s_vifs", prefix);
   if (vifs == NULL)
     return;
   sprintf (ssid, "%s_ssid", prefix);
@@ -2020,7 +2015,6 @@ void
 ej_show_wifiselect (webs_t wp, int argc, char_t ** argv)
 {
   char *next;
-  char var[80];
   int count = getifcount ("wifi");
   if (count < 2)
     return;
@@ -2036,8 +2030,7 @@ ej_show_wifiselect (webs_t wp, int argc, char_t ** argv)
       websWrite (wp, "<option value=\"%s\" %s >%s</option>\n</script>\n",
 		 var, nvram_match ("wifi_display",
 				   var) ? "selected=\"selected\"" : "", var);
-      sprintf (var, "ath%d_vifs", i);
-      char *names = nvram_safe_get (var);
+      char *names = nvram_nget ("ath%d_vifs", i);
       foreach (var, names, next)
       {
 	websWrite (wp, "<option value=\"%s\" %s >%s</option>\n</script>\n",
