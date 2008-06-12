@@ -116,7 +116,7 @@ extern int osifname_to_nvifname (const char *osifname, char *nvifname_buf,
 
 
 extern int system2 (char *command);
-extern int sysprintf (const char *fmt,...);
+extern int sysprintf (const char *fmt, ...);
 
 extern int get_ifname_unit (const char *ifname, int *unit, int *subunit);
 

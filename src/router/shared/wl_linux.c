@@ -88,7 +88,7 @@ wl_hwaddr (char *name, unsigned char *hwaddr)
 int
 wl_bssid (char *name, unsigned char *hwaddr)
 {
-  wl_ioctl(name,WLC_GET_BSSID,hwaddr,ETHER_ADDR_LEN);
+  wl_ioctl (name, WLC_GET_BSSID, hwaddr, ETHER_ADDR_LEN);
   return 0;
 }
 

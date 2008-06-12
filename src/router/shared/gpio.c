@@ -27,13 +27,13 @@ set_gpio (int gpio, int value)
   char buf[64];
   sprintf (buf, "/proc/gpio/%d_dir", gpio);
   in = fopen (buf, "wb");
-  if (in==NULL)
+  if (in == NULL)
     return;
   fprintf (in, "1");
   fclose (in);
   sprintf (buf, "/proc/gpio/%d_out", gpio);
   in = fopen (buf, "wb");
-  if (in==NULL)
+  if (in == NULL)
     return;
   fprintf (in, "%d", value);
   fclose (in);
@@ -47,13 +47,13 @@ get_gpio (int gpio)
   char buf[64];
   sprintf (buf, "/proc/gpio/%d_dir", gpio);
   in = fopen (buf, "wb");
-  if (in==NULL)
+  if (in == NULL)
     return 0;
   fprintf (in, "0");
   fclose (in);
   sprintf (buf, "/proc/gpio/%d_in", gpio);
   in = fopen (buf, "rb");
-  if (in==NULL)
+  if (in == NULL)
     return 0;
   fscanf (in, "%d", &ret);
   fclose (in);
@@ -171,21 +171,21 @@ set_gpio (int pin, int value)
   unsigned int gpio;
 
   read (gpioouten, &gpio, sizeof (gpio));
-  gpio |= 1<<pin;
+  gpio |= 1 << pin;
   write (gpioouten, &gpio, sizeof (gpio));
 
   read (gpioout, &gpio, sizeof (gpio));
   if (value)
     {
-      gpio |= (1<<pin);
+      gpio |= (1 << pin);
     }
   else
     {
-      gpio &= ~(1<<pin);
+      gpio &= ~(1 << pin);
     }
   write (gpioout, &gpio, sizeof (gpio));
   close (gpioout);
-  close(gpioouten);
+  close (gpioouten);
 }
 
 int
@@ -195,12 +195,12 @@ get_gpio (int pin)
   int gpioouten = open ("/dev/gpio/outen", O_RDWR);
   int gpioin = open ("/dev/gpio/in", O_RDWR);
   read (gpioouten, &gpio, sizeof (gpio));
-  gpio &= ~(1<<pin);
+  gpio &= ~(1 << pin);
   write (gpioouten, &gpio, sizeof (gpio));
   read (gpioin, &gpio, sizeof (gpio));
-  gpio = (gpio & (1<<pin)) ? 1 : 0;
+  gpio = (gpio & (1 << pin)) ? 1 : 0;
   close (gpioin);
-  close(gpioouten);
+  close (gpioouten);
   return gpio;
 }
 

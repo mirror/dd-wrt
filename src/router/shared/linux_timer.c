@@ -76,9 +76,10 @@ typedef void (*event_callback_t) (timer_t, int);
 }
 #endif
 
-unsigned long ROUNDUP(unsigned long x, unsigned long y)
+unsigned long
+ROUNDUP (unsigned long x, unsigned long y)
 {
-return ((((x)+(y)-1)/(y))*(y));
+  return ((((x) + (y) - 1) / (y)) * (y));
 }
 
 
@@ -160,8 +161,8 @@ init_event_queue (int n)
 //    getitimer (ITIMER_REAL, &tv);
   setitimer (ITIMER_REAL, 0, &tv);
   g_granularity = tv.it_interval.tv_usec;
-  if (g_granularity<1)
-  g_granularity = 1;
+  if (g_granularity < 1)
+    g_granularity = 1;
   signal (SIGALRM, alarm_handler);
 }
 
