@@ -2015,6 +2015,7 @@ void
 ej_show_wifiselect (webs_t wp, int argc, char_t ** argv)
 {
   char *next;
+  char var[32];
   int count = getifcount ("wifi");
   if (count < 2)
     return;
