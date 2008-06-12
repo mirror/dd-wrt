@@ -3297,6 +3297,14 @@ ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv)
   sprintf (bufferif, "%s %s", bufferif, bufferif2);
 
   memset (bufferif2, 0, 256);
+  getIfList (bufferif2, "wl");
+  sprintf (bufferif, "%s %s", bufferif, bufferif2);
+
+  memset (bufferif2, 0, 256);
+  getIfList (bufferif2, "ofdm");
+  sprintf (bufferif, "%s %s", bufferif, bufferif2);
+
+  memset (bufferif2, 0, 256);
   getIfList (bufferif2, "br");
   foreach (word, bufferif2, next)
   {
