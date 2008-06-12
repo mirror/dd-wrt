@@ -189,8 +189,11 @@ protected:
 
 
 #ifdef _LZMA_PARAMS
+
+
+
 /* jc: new compress2 proxy that allows lzma param specification */
-extern "C" int compress2_lzma (Bytef *dest,   uLongf *destLen,
+extern "C" int compress2_lzma_test (Bytef *dest,   uLongf *destLen,
                                   	const Bytef *source, uLong sourceLen,
                                   	int level, int fb, int lc, int lp, int pb)
 {	
@@ -256,6 +259,71 @@ extern "C" int compress2_lzma (Bytef *dest,   uLongf *destLen,
 	
 	return Z_OK;
 }
+
+#include <malloc.h>
+#include <stdio.h>
+
+extern "C" int compress2_lzma (Bytef *dest,   uLongf *destLen,
+                                  	const Bytef *source, uLong sourceLen,
+                                  	int level, int fb, int lc, int lp, int pb)
+{
+Bytef *test1 = (Bytef*)malloc(*destLen);
+Bytef *test2 = (Bytef*)malloc(*destLen);
+uLongf test1len = *destLen+*destLen;
+uLongf test2len = *destLen;
+//int ret = compress2_lzma_test(test1,&test1len,source,sourceLen,level,-1,-1,-1,-1);
+
+unsigned char pbmatrix[3]={0,1,2};
+unsigned char lcmatrix[4]={0,1,2,3};
+unsigned char lpmatrix[4]={0,1,2,3};
+
+
+int pbsave = -1;
+int lcsave = -1;
+int lpsave = -1;
+
+
+int pbtest;
+int lctest;
+int lptest=0;
+int ret2;
+
+for (pbtest=0;pbtest<sizeof(pbmatrix);pbtest++)
+{
+for (lptest=0;lptest<sizeof(lpmatrix);lptest++)
+{
+for (lctest=0;lctest<sizeof(lcmatrix);lctest++)
+{
+//    fprintf(stderr,"test method [pb:%d lc:%d lp:%d fb:%d]\r",pbtest,lctest,lptest,fb);
+test2len = *destLen;
+ret2 = compress2_lzma_test(test2,&test2len,source,sourceLen,level,fb,lcmatrix[lctest],lpmatrix[lptest],pbmatrix[pbtest]);
+if (test2len<test1len)
+    {
+    test1len = test2len;
+    memcpy(test1,test2,test2len);
+    pbsave = pbtest;
+    lcsave = lctest;
+    lpsave = lptest;
+    }
+}
+}
+}
+//test2len = *destLen;
+//int ret2 = compress2_lzma_test(test2,&test2len,source,sourceLen,level,fb,lcsave,lpsave,pbsave);
+
+    fprintf(stderr,"use method [pb:%d lc:%d lp:%d fb:%d]\n",pbsave,lcsave,lpsave,fb);
+    memcpy(dest+4,test1,test1len);
+    dest[0]=pbsave;
+    dest[1]=lcsave;
+    dest[2]=lpsave;
+    dest[3]=fb;
+    *destLen=test1len+4;
+    free(test2);
+    free(test1);
+    return ret2;
+}
+
+
 #endif
 
 ZEXTERN int ZEXPORT compress2 OF((Bytef *dest,   uLongf *destLen,
