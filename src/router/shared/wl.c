@@ -32,7 +32,7 @@ struct nvram_tuple router_defaults[] = {
 
 #ifndef HAVE_MADWIFI
 int
-getchannels (unsigned int *list,char *ifname)
+getchannels (unsigned int *list, char *ifname)
 {
   // int ret, num;
 //  num = (sizeof (*list) - 4) / 6;     /* Maximum number of entries in the buffer */
@@ -40,23 +40,23 @@ getchannels (unsigned int *list,char *ifname)
 
 //  ret = wl_ioctl (name, WLC_GET_VALID_CHANNELS, list, 128);
 //fprintf(stderr,"get channels\n");
-char exec[64];
-sprintf(exec,"wl -i %s channels",ifname);
+  char exec[64];
+  sprintf (exec, "wl -i %s channels", ifname);
   FILE *in = popen (exec, "r");
 #ifndef HAVE_MSSID
   while (fgetc (in) != ':');
 #endif
   int chan;
   int count = 0;
-  while (!feof(in) && fscanf (in, "%d", &chan) == 1)
+  while (!feof (in) && fscanf (in, "%d", &chan) == 1)
     {
       list[count++] = chan;
     }
   pclose (in);
 #ifdef BUFFALO_JP
-    return count-1;
+  return count - 1;
 #else
-    return count;
+  return count;
 #endif
 }
 
@@ -90,7 +90,7 @@ getassoclist (char *name, unsigned char *list)
 	struct maclist *l = (struct maclist*)list;
 	l->count=1;
 	memcpy(&l->ea,&sta_info->ea,6);*/
-if (ret<0)
+  if (ret < 0)
     return -1;
   return count[0];
 }
@@ -223,24 +223,24 @@ wifi_getrate (char *ifname)
 #define LOG10_MAGIC	1.25892541179
 
 int
-iw_mwatt2dbm(int	in)
+iw_mwatt2dbm (int in)
 {
   /* Version without libm : slower */
-  double	fin = (double) in;
-  int		res = 0;
+  double fin = (double) in;
+  int res = 0;
 
   /* Split integral and floating part to avoid accumulating rounding errors */
-  while(fin > 10.0)
+  while (fin > 10.0)
     {
       res += 10;
       fin /= 10.0;
     }
-  while(fin > 1.000001)	/* Eliminate rounding errors, take ceil */
+  while (fin > 1.000001)	/* Eliminate rounding errors, take ceil */
     {
       res += 1;
       fin /= LOG10_MAGIC;
     }
-  return(res);
+  return (res);
 }
 
 
@@ -248,71 +248,71 @@ iw_mwatt2dbm(int	in)
 int
 wifi_gettxpower (char *ifname)
 {
-int poweroffset = 0;
-int vendor;
-int devcount;
-char readid[64];
-strcpy(readid,ifname);
-sscanf(readid,"ath%d",&devcount);
-sprintf(readid,"/proc/sys/dev/wifi%d/vendor",devcount);
-FILE *in = fopen(readid,"rb");
-vendor=0;
-if (in)
+  int poweroffset = 0;
+  int vendor;
+  int devcount;
+  char readid[64];
+  strcpy (readid, ifname);
+  sscanf (readid, "ath%d", &devcount);
+  sprintf (readid, "/proc/sys/dev/wifi%d/vendor", devcount);
+  FILE *in = fopen (readid, "rb");
+  vendor = 0;
+  if (in)
     {
-    vendor = atoi(fgets(readid,sizeof(readid),in));
-    fclose(in);
+      vendor = atoi (fgets (readid, sizeof (readid), in));
+      fclose (in);
     }
-switch(vendor)
+  switch (vendor)
     {
-    case 1: //ubnt xr5
-    case 2: //ubnt xr2
-    case 3: //ubnt sr2
-    case 13: //ubnt xr3
-    case 14: //ubnt xr4
-    case 1328: //ubnt xr3
-    case 1336: //ubnt xr3
-    case 71: //ubnt sr71a
-    case 7: // ubnt xr7
-    case 9: //ubnt xr9
-	poweroffset=10;
-    break;    
-    case 4: //ubnt sr9
-	poweroffset=12;
-    break;    
-    case 5: //ubnt sr5
-	poweroffset=7;
-    case 24: //ubnt sr4
-	poweroffset=7;
-    break;    
+    case 1:			//ubnt xr5
+    case 2:			//ubnt xr2
+    case 3:			//ubnt sr2
+    case 13:			//ubnt xr3
+    case 14:			//ubnt xr4
+    case 1328:			//ubnt xr3
+    case 1336:			//ubnt xr3
+    case 71:			//ubnt sr71a
+    case 7:			// ubnt xr7
+    case 9:			//ubnt xr9
+      poweroffset = 10;
+      break;
+    case 4:			//ubnt sr9
+      poweroffset = 12;
+      break;
+    case 5:			//ubnt sr5
+      poweroffset = 7;
+    case 24:			//ubnt sr4
+      poweroffset = 7;
+      break;
     default:
-	poweroffset=0;
-    break;            
+      poweroffset = 0;
+      break;
     }
 
   struct iwreq wrq;
   strncpy (wrq.ifr_name, ifname, IFNAMSIZ);
   ioctl (getsocket (), SIOCGIWTXPOW, &wrq);
   struct iw_param *txpower = &wrq.u.txpower;
-    if(txpower->disabled)
+  if (txpower->disabled)
     {
       return 0;
     }
   else
     {
       /* Check for relative values */
-      if(txpower->flags & IW_TXPOW_RELATIVE)
+      if (txpower->flags & IW_TXPOW_RELATIVE)
 	{
 	  return txpower->value + poweroffset;
 	}
       else
 	{
-	  int dbm=0;
+	  int dbm = 0;
 	  /* Convert everything to dBm */
-	  if(txpower->flags & IW_TXPOW_MWATT)
-	    dbm = iw_mwatt2dbm(txpower->value);
+	  if (txpower->flags & IW_TXPOW_MWATT)
+	    dbm = iw_mwatt2dbm (txpower->value);
 	  else
 	    dbm = txpower->value;
-	 return dbm + poweroffset;
+	  return dbm + poweroffset;
 	}
     }
 }
@@ -320,89 +320,90 @@ switch(vendor)
 int
 wifi_gettxpoweroffset (char *ifname)
 {
-int poweroffset = 0;
-int vendor;
-int devcount;
-char readid[64];
-strcpy(readid,ifname);
-sscanf(readid,"ath%d",&devcount);
-sprintf(readid,"/proc/sys/dev/wifi%d/vendor",devcount);
-FILE *in = fopen(readid,"rb");
-vendor=0;
-if (in)
+  int poweroffset = 0;
+  int vendor;
+  int devcount;
+  char readid[64];
+  strcpy (readid, ifname);
+  sscanf (readid, "ath%d", &devcount);
+  sprintf (readid, "/proc/sys/dev/wifi%d/vendor", devcount);
+  FILE *in = fopen (readid, "rb");
+  vendor = 0;
+  if (in)
     {
-    vendor = atoi(fgets(readid,sizeof(readid),in));
-    fclose(in);
+      vendor = atoi (fgets (readid, sizeof (readid), in));
+      fclose (in);
     }
-switch(vendor)
+  switch (vendor)
     {
-    case 1: //ubnt xr5
-    case 2: //ubnt xr2
-    case 3: //ubnt sr2
-    case 13: //ubnt xr3
-    case 14: //ubnt xr4
-    case 1328: //ubnt xr3
-    case 1336: //ubnt xr3
-    case 71: //ubnt sr71a
-    case 7: // ubnt xr7
-	poweroffset=10;
-    break;
-    case 9: //ubnt xr9
-	poweroffset=12;
-    case 4: //ubnt sr9
-	poweroffset=12;
-    break;    
-    case 5: //ubnt sr5
-	poweroffset=7;
-    case 24: //ubnt sr4
-	poweroffset=7;
-    break;    
+    case 1:			//ubnt xr5
+    case 2:			//ubnt xr2
+    case 3:			//ubnt sr2
+    case 13:			//ubnt xr3
+    case 14:			//ubnt xr4
+    case 1328:			//ubnt xr3
+    case 1336:			//ubnt xr3
+    case 71:			//ubnt sr71a
+    case 7:			// ubnt xr7
+      poweroffset = 10;
+      break;
+    case 9:			//ubnt xr9
+      poweroffset = 12;
+    case 4:			//ubnt sr9
+      poweroffset = 12;
+      break;
+    case 5:			//ubnt sr5
+      poweroffset = 7;
+    case 24:			//ubnt sr4
+      poweroffset = 7;
+      break;
     default:
-	poweroffset=0;
-    break;            
+      poweroffset = 0;
+      break;
     }
 
-return poweroffset;
+  return poweroffset;
 }
 
 
-int get_wifioffset (char *ifname)
+int
+get_wifioffset (char *ifname)
 {
-int vendor;
-int devcount;
-char readid[64];
-strcpy(readid,ifname);
-sscanf(readid,"ath%d",&devcount);
-sprintf(readid,"/proc/sys/dev/wifi%d/vendor",devcount);
-FILE *in = fopen(readid,"rb");
-vendor=0;
-if (in)
+  int vendor;
+  int devcount;
+  char readid[64];
+  strcpy (readid, ifname);
+  sscanf (readid, "ath%d", &devcount);
+  sprintf (readid, "/proc/sys/dev/wifi%d/vendor", devcount);
+  FILE *in = fopen (readid, "rb");
+  vendor = 0;
+  if (in)
     {
-    vendor = atoi(fgets(readid,sizeof(readid),in));
-    fclose(in);
+      vendor = atoi (fgets (readid, sizeof (readid), in));
+      fclose (in);
     }
-switch(vendor)
-    {   
-    case 9: //ubnt xr9
-    case 4: //ubnt sr9
-    return -(2427-907);
+  switch (vendor)
+    {
+    case 9:			//ubnt xr9
+    case 4:			//ubnt sr9
+      return -(2427 - 907);
     case 13:
-    return -(5540-3540);  //xr3 general 3,5 ghz
+      return -(5540 - 3540);	//xr3 general 3,5 ghz
     case 1328:
-    return -(5540-2840);  //xr3 special 2.8 ghz
+      return -(5540 - 2840);	//xr3 special 2.8 ghz
     case 1336:
-    return -(5540-3340);  //xr3 special 3.3 ghz
+      return -(5540 - 3340);	//xr3 special 3.3 ghz
     case 7:
-    return -(2427-763);  //xr7 
+      return -(2427 - 763);	//xr7 
     case 14:
-    return -(5540-4516);  //xr4 
+      return -(5540 - 4516);	//xr4 
 //    case 24:
 //    return -(5540-4540);  //sr4 
     default:
-    return 0;
-    break;            
+      return 0;
+      break;
     }
-return 0;
+  return 0;
 }
 
 
@@ -411,7 +412,8 @@ return 0;
 #else
 #define OFFSET 0
 #endif
-u_int ieee80211_mhz2ieee (u_int freq)
+u_int
+ieee80211_mhz2ieee (u_int freq)
 {
   if (freq == 2484 + OFFSET)
     return 14;
@@ -970,8 +972,8 @@ getassoclist (char *ifname, unsigned char *list)
   sprintf (netmode, "%s_net_mode", ifname);
   if (nvram_match (netmode, "disabled"))
     {
-    free(buf);
-    return 0;
+      free (buf);
+      return 0;
     }
   int mincount = 0;
   if (nvram_match (type, "wdssta") || nvram_match (type, "sta")
@@ -979,9 +981,9 @@ getassoclist (char *ifname, unsigned char *list)
     {
       int assoc = isAssociated (ifname);
       if (!assoc)
-        {
-	free(buf);
-	return 0;
+	{
+	  free (buf);
+	  return 0;
 	}
       char mac[6];
       getAssocMAC (ifname, mac);
@@ -1044,40 +1046,45 @@ getassoclist (char *ifname, unsigned char *list)
 #endif
 
 
-char *get_wl_instance_name(int instance)
+char *
+get_wl_instance_name (int instance)
 {
-if (get_wl_instance("eth1")==instance)
+  if (get_wl_instance ("eth1") == instance)
     return "eth1";
-if (get_wl_instance("eth2")==instance)
+  if (get_wl_instance ("eth2") == instance)
     return "eth2";
-if (get_wl_instance("eth0")==instance)
+  if (get_wl_instance ("eth0") == instance)
     return "eth0";
-if (get_wl_instance("eth3")==instance)
+  if (get_wl_instance ("eth3") == instance)
     return "eth3";
-fprintf(stderr,"get_wl_instance doesnt return the right value %d\n",instance);
-return "eth1"; // dirty for debugging
-} 
-
-int get_wl_instances(void)
-{
-if (get_wl_instance("eth1")==1)
-    return 2;
-if (get_wl_instance("eth2")==1)
-    return 2;
-if (get_wl_instance("eth3")==1)
-    return 2;
-return 1;    
+  fprintf (stderr, "get_wl_instance doesnt return the right value %d\n",
+	   instance);
+  return "eth1";		// dirty for debugging
 }
-int get_wl_instance(char *name)
+
+int
+get_wl_instances (void)
 {
-int unit;
-int ret;
-if (!ifexists(name))
+  if (get_wl_instance ("eth1") == 1)
+    return 2;
+  if (get_wl_instance ("eth2") == 1)
+    return 2;
+  if (get_wl_instance ("eth3") == 1)
+    return 2;
+  return 1;
+}
+
+int
+get_wl_instance (char *name)
+{
+  int unit;
+  int ret;
+  if (!ifexists (name))
     return -1;
-ret = wl_ioctl (name, WLC_GET_INSTANCE, &unit, sizeof (unit));
-if (ret==0)
+  ret = wl_ioctl (name, WLC_GET_INSTANCE, &unit, sizeof (unit));
+  if (ret == 0)
     return unit;
-return ret;
+  return ret;
 /*if (!strcmp(name,"eth0") && !wl_probe("eth0"))
     return 0;
 if (!strcmp(name,"eth1") && !wl_probe("eth1"))
@@ -1092,6 +1099,7 @@ if (!strcmp(name,"eth2") && !wl_probe("eth2"))
     }
 return -1;*/
 }
+
     /* return wireless interface */
 char *
 get_wdev (void)
@@ -1110,7 +1118,7 @@ get_wdev (void)
     return "eth2";
   if (!wl_probe ("eth0"))
     return "eth0";
-    return nvram_safe_get ("wl0_ifname");
+  return nvram_safe_get ("wl0_ifname");
 #endif
 }
 

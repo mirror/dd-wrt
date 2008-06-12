@@ -171,7 +171,7 @@ extern void wan_proto (webs_t wp);
 extern void ej_show_wan_to_switch (webs_t wp, int argc, char_t ** argv);	/* Added by Botho 10.May.06 */
 extern void ej_show_countrylist (webs_t wp, int argc, char_t ** argv);
 
-void convert_wl_gmode (char *value,char *prefix);
+void convert_wl_gmode (char *value, char *prefix);
 
 
 /* for status */
@@ -247,7 +247,7 @@ extern void filtersummary_onload (webs_t wp, char *arg);
 /* for upgrade */
 extern void do_upgrade_post (char *url, webs_t stream, int len,
 			     char *boundary);
-extern void do_upgrade_cgi (char *url, webs_t stream,char *query);
+extern void do_upgrade_cgi (char *url, webs_t stream, char *query);
 extern int sys_restore (char *url, webs_t stream, int *total);
 extern void do_restore_post (char *url, webs_t stream, int len,
 			     char *boundary);
@@ -354,8 +354,8 @@ extern void validate_wl_net_mode (webs_t wp, char *value, struct variable *v);
 
 /* for nvram save-restore */
 extern void nv_file_in (char *url, webs_t stream, int len, char *boundary);
-extern void nv_file_out (char *path, webs_t wp,char *query);
-extern void sr_config_cgi (char *path, webs_t wp,char *query);
+extern void nv_file_out (char *path, webs_t wp, char *query);
+extern void sr_config_cgi (char *path, webs_t wp, char *query);
 
 
 /* for ddns */

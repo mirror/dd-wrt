@@ -38,5 +38,4 @@
 #include <stdarg.h>
 
 
-int osl_join_multicast(struct iface *pif, int fd, ulong ipaddr, ushort port);	// added - tofu
-
+int osl_join_multicast (struct iface *pif, int fd, ulong ipaddr, ushort port);	// added - tofu

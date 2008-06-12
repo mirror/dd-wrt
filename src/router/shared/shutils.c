@@ -117,14 +117,16 @@ system2 (char *command)
 #endif
   return system (command);
 }
-int sysprintf(const char *fmt,...)
+
+int
+sysprintf (const char *fmt, ...)
 {
-char varbuf[256];
-va_list args;
-va_start(args, (char*)fmt);
-vsnprintf(varbuf, sizeof(varbuf), fmt, args);
-va_end(args);
-return system2(varbuf);
+  char varbuf[256];
+  va_list args;
+  va_start (args, (char *) fmt);
+  vsnprintf (varbuf, sizeof (varbuf), fmt, args);
+  va_end (args);
+  return system2 (varbuf);
 }
 
 //FILE *debugfp=NULL;
@@ -235,8 +237,9 @@ _evalpid (char *const argv[], char *path, int timeout, int *ppid)
 int
 _eval (char *const argv[])
 {
-return _evalpid(argv,">/dev/console",0,NULL);
+  return _evalpid (argv, ">/dev/console", 0, NULL);
 }
+
 /* 
  * Concatenates NULL-terminated list of arguments into a single
  * commmand and executes it
