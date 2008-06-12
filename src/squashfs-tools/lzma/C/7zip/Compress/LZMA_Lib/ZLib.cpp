@@ -392,7 +392,7 @@ ZEXTERN int ZEXPORT compress2 OF((Bytef *dest,   uLongf *destLen,
 ZEXTERN int ZEXPORT uncompress OF((Bytef *dest,   uLongf *destLen,
                                    const Bytef *source, uLong sourceLen))
 {
-	CInMemoryStream *inStreamSpec = new CInMemoryStream(source, sourceLen);
+	CInMemoryStream *inStreamSpec = new CInMemoryStream(source+4, sourceLen-4);
 	CMyComPtr<ISequentialInStream> inStream = inStreamSpec;
 	
 	COutMemoryStream *outStreamSpec = new COutMemoryStream(dest, *destLen);
@@ -402,8 +402,8 @@ ZEXTERN int ZEXPORT uncompress OF((Bytef *dest,   uLongf *destLen,
 		new NCompress::NLZMA::CDecoder;
 	CMyComPtr<ICompressCoder> decoder = decoderSpec;
 	
-	if (decoderSpec->SetDecoderPropertiesRaw(ZLIB_LC, 
-		ZLIB_LP, ZLIB_PB, (1 << 23)) != S_OK) return Z_DATA_ERROR;
+	if (decoderSpec->SetDecoderPropertiesRaw(source[1], 
+		source[2], source[0], (1 << 23)) != S_OK) return Z_DATA_ERROR;
 	
 	UInt64 fileSize = *destLen;
 	
