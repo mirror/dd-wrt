@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
@@ -4174,14 +4175,21 @@ remove_vifs (webs_t wp)
 }
 #endif
 
-void
-copytonv (webs_t wp, char *n)
+
+void copytonv (webs_t wp,const char *fmt, ...)
 {
-  char *wl = websGetVar (wp, n, NULL);
+  char varbuf[64];
+  va_list args;
+  va_start (args, (char *) fmt);
+  vsnprintf (varbuf, sizeof (varbuf), fmt, args);
+  va_end (args);
+
+  char *wl = websGetVar (wp, varbuf, NULL);
   cprintf ("copy value %s which is [%s] to nvram\n", n, wl);
   if (wl)
-    nvram_set (n, wl);
+    nvram_set (varbuf, wl);
 }
+
 
 static void
 save_prefix (webs_t wp, char *prefix)
@@ -4204,8 +4212,7 @@ save_prefix (webs_t wp, char *prefix)
       else
 	nvram_set ("wl1_ssid", wl);
     }
-  sprintf (n, "%s_distance", prefix);
-  copytonv (wp, n);
+  copytonv (wp, "%s_distance", prefix);
 #ifdef HAVE_MADWIFI
   {
     sprintf (n, "%s_txpwrdbm", prefix);
@@ -4219,10 +4226,8 @@ save_prefix (webs_t wp, char *prefix)
 	nvram_set(n,turbo);
     }
   }
-  sprintf (n, "%s_antgain", prefix);
-  copytonv (wp, n);
-  sprintf (n, "ath_regulatory");
-  copytonv (wp, n);
+  copytonv (wp, "%s_antgain", prefix);
+  copytonv (wp, "ath_regulatory");
   sprintf (n, "%s_scanlist", prefix);
   {
     char *sl = websGetVar (wp, n, NULL);
@@ -4242,12 +4247,9 @@ save_prefix (webs_t wp, char *prefix)
       }
   }
 #ifdef HAVE_MAKSAT
-  sprintf (n, "ath_specialmode");
-  copytonv (wp, n);
-
+  copytonv (wp, "ath_specialmode");
 #endif
-  sprintf (n, "%s_regdomain", prefix);
-  copytonv (wp, n);
+  copytonv (wp, "%s_regdomain", prefix);
 
   sprintf (turbo, "%s_turbo", prefix);
   char *tw = websGetVar (wp, turbo, NULL);
@@ -4259,32 +4261,17 @@ save_prefix (webs_t wp, char *prefix)
   if (tw)
     nvram_set (turbo, tw);
 
-  sprintf (n, "%s_minrate", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_maxrate", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_xr", prefix);
-  copytonv (wp, n);
-//  sprintf (n, "%s_xchanmode", prefix);
-//  copytonv (wp, n);
-  sprintf (n, "%s_outdoor", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_compression", prefix);	// Atheros SuperG header compression
-  copytonv (wp, n);
-  sprintf (n, "%s_ff", prefix);	// ff = 0, Atheros SuperG fast framing disabled, 1 fast framing enabled
-  copytonv (wp, n);
-  sprintf (n, "%s_diversity", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_preamble", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_wmm", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_txantenna", prefix);
-  copytonv (wp, n);
-//  sprintf (n, "wifi_bonding");
-//  copytonv (wp, n);
-  sprintf (n, "%s_rxantenna", prefix);
-  copytonv (wp, n);
+  copytonv (wp, "%s_minrate", prefix);
+  copytonv (wp, "%s_maxrate", prefix);
+  copytonv (wp,  "%s_xr", prefix);
+  copytonv (wp, "%s_outdoor", prefix);
+  copytonv (wp, "%s_compression", prefix);// Atheros SuperG header compression
+  copytonv (wp, "%s_ff", prefix);// ff = 0, Atheros SuperG fast framing disabled, 1 fast framing enabled
+  copytonv (wp, "%s_diversity", prefix);
+  copytonv (wp, "%s_preamble", prefix);
+  copytonv (wp, "%s_wmm", prefix);
+  copytonv (wp, "%s_txantenna", prefix);
+  copytonv (wp,  "%s_rxantenna", prefix);
 
   sprintf (chanbw, "%s_channelbw", prefix);
   char *cbw = websGetVar (wp, chanbw, NULL);
@@ -4296,17 +4283,13 @@ save_prefix (webs_t wp, char *prefix)
   if (cbw)
     nvram_set (chanbw, cbw);
 
-  sprintf (n, "%s_xr", prefix);
-  copytonv (wp, n);
-  sprintf (sifs, "%s_sifstime", prefix);
-  copytonv (wp, sifs);
-  sprintf (preamble, "%s_preambletime", prefix);
-  copytonv (wp, preamble);
+  copytonv (wp, "%s_xr", prefix);
+  copytonv (wp, "%s_sifstime", prefix);
+  copytonv (wp, "%s_preambletime", prefix);
 
 
 #endif
-  sprintf (n, "%s_closed", prefix);
-  copytonv (wp, n);
+  copytonv (wp, "%s_closed", prefix);
 
 #ifndef HAVE_MADWIFI
 char *ifname = "wl0";
@@ -4316,12 +4299,9 @@ char *ifname = "wl0";
      ifname = get_wl_instance_name(1); 
   else
      ifname = prefix;
+  copytonv (wp, "%s_multicast",ifname);
+  copytonv (wp, "%s_bridged", ifname);
 
-  sprintf (n, "%s_multicast", ifname);
-  copytonv (wp, n);
-
-  sprintf (n, "%s_bridged", ifname);
-  copytonv (wp, n);
 
   char addr[32];
   sprintf (n, "%s_ipaddr", ifname);
@@ -4333,12 +4313,8 @@ char *ifname = "wl0";
     nvram_set (n, addr);
 #else
 
-  sprintf (n, "%s_multicast", prefix);
-  copytonv (wp, n);
-
-  sprintf (n, "%s_bridged", prefix);
-  copytonv (wp, n);
-
+  copytonv (wp, "%s_multicast", prefix);
+  copytonv (wp, "%s_bridged", prefix);
   char addr[32];
   sprintf (n, "%s_ipaddr", prefix);
   if (get_merge_ipaddr (wp, n, addr))
@@ -4350,9 +4326,8 @@ char *ifname = "wl0";
 
 #endif
 
-  sprintf (n, "%s_ap_isolate", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_mode", prefix);
+  copytonv (wp, "%s_ap_isolate", prefix);
+  sprintf(n,"%s_mode",prefix)
   copytonv (wp, n);
   if (!strcmp (prefix, "wl0") || !strcmp (prefix, "wl1"))
     {
@@ -4410,10 +4385,8 @@ char *ifname = "wl0";
 
     }
 #endif
-  sprintf (n, "%s_nbw", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_nctrlsb", prefix);
-  copytonv (wp, n);
+  copytonv (wp, "%s_nbw", prefix);
+  copytonv (wp, "%s_nctrlsb", prefix);
 
 
 
@@ -4453,27 +4426,24 @@ wireless_save (webs_t wp)
 #ifdef HAVE_MSSID
   char *next;
   char var[80];
-  char vif[16];
 #ifndef HAVE_MADWIFI
  int c = get_wl_instances();
   int i;
   for (i = 0; i < c; i++)
     {
-      sprintf (vif, "wl%d_vifs", i);
       char buf[16];
       sprintf (buf, "wl%d", i);
       save_prefix (wp, buf);
-      char *vifs = nvram_safe_get (vif);
+      char *vifs = nvram_nget ("wl%d_vifs", i);
 #else
   int c = getdevicecount ();
   int i;
   for (i = 0; i < c; i++)
     {
-      sprintf (vif, "ath%d_vifs", i);
       char buf[16];
       sprintf (buf, "ath%d", i);
       save_prefix (wp, buf);
-      char *vifs = nvram_safe_get (vif);
+      char *vifs = nvram_nget ("ath%d_vifs", i);
 
 #endif
       if (vifs == NULL)

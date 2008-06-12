@@ -1780,53 +1780,32 @@ _8021xca
 _8021xpem
 _8021xprv
 */
-  sprintf (n, "%s_8021xtype", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_tls8021xuser", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_tls8021xpasswd", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_tls8021xca", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_tls8021xpem", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_tls8021xprv", prefix);
-  copytonv (wp, n);
-
-  sprintf (n, "%s_peap8021xuser", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_peap8021xpasswd", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_peap8021xca", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_leap8021xuser", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_leap8021xpasswd", prefix);
-  copytonv (wp, n);
+  copytonv (wp, "%s_8021xtype", prefix);
+  copytonv (wp, "%s_tls8021xuser", prefix);
+  copytonv (wp, "%s_tls8021xpasswd", prefix);
+  copytonv (wp,  "%s_tls8021xca", prefix);
+  copytonv (wp, "%s_tls8021xpem", prefix);
+  copytonv (wp, "%s_tls8021xprv", prefix);
+  copytonv (wp, "%s_peap8021xuser", prefix);
+  copytonv (wp, "%s_peap8021xpasswd", prefix);
+  copytonv (wp, "%s_peap8021xca", prefix);
+  copytonv (wp, "%s_leap8021xuser", prefix);
+  copytonv (wp, "%s_leap8021xpasswd", prefix);
 
 
 #endif
 
-  sprintf (n, "%s_crypto", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_wpa_psk", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_wpa_gtk_rekey", prefix);
-  copytonv (wp, n);
-
+  copytonv (wp, "%s_crypto", prefix);
+  copytonv (wp, "%s_wpa_psk", prefix);
+  copytonv (wp, "%s_wpa_gtk_rekey", prefix);
   sprintf (n, "%s_radius_ipaddr", prefix);
-  //copytonv (wp,n);
   if (get_merge_ipaddr (wp, n, radius))
     nvram_set (n, radius);
-  sprintf (n, "%s_radius_port", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_radius_key", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_radmactype", prefix);
-  copytonv (wp, n);
+  copytonv (wp, "%s_radius_port", prefix);
+  copytonv (wp, "%s_radius_key", prefix);
+  copytonv (wp, "%s_radmactype", prefix);
   sprintf (n, "%s_key1", prefix);
   char *key1 = websGetVar (wp, n, "");
-
   copytonv (wp, n);
   sprintf (n, "%s_key2", prefix);
   char *key2 = websGetVar (wp, n, "");
@@ -1851,14 +1830,6 @@ _8021xprv
   sprintf (n, "%s_wep_buf", prefix);
   nvram_set (n, buf);
 
-
-
-//  sprintf (n, "%s_wep_gen", prefix);
-//  char *wep = nvram_safe_get (n);
-//  sprintf (n, "%s_wep_buf", prefix);
-//  nvram_set (n, wep);
-//  sprintf (n, "%s_wep_gen", prefix);
-  //nvram_unset(n);
   sprintf (n, "%s_security_mode", p2);
   char n2[80];
   sprintf (n2, "%s_akm", prefix);
@@ -1898,9 +1869,7 @@ security_save_prefix (webs_t wp, char *prefix)
   save_prefix (wp, prefix);
   char *next;
   char var[80];
-  char v[60];
-  sprintf (v, "%s_vifs", prefix);
-  char *vifs = nvram_safe_get (v);
+  char *vifs = nvram_nget ("%s_vifs", prefix);
   if (vifs == NULL)
     return 0;
   foreach (var, vifs, next)
