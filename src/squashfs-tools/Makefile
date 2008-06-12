@@ -1,7 +1,7 @@
 INCLUDEDIR = .
 LZMAPATH = ./lzma/C/7zip/Compress/LZMA_Lib
 
-CFLAGS := -I$(INCLUDEDIR) -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -O2 -D_LZMA_PARAMS
+CFLAGS := -I$(INCLUDEDIR) -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -O3 -D_LZMA_PARAMS
 
 all: mksquashfs-lzma unsquashfs
 
@@ -24,3 +24,7 @@ unsquashfs: unsquashfs.o
 unsquashfs.o: unsquashfs.c squashfs_fs.h read_fs.h global.h
 
 clean:
+	make -C $(LZMAPATH) clean
+	rm -f *.o 
+	rm -f mksquashfs-lzma
+	rm -f unsquashfs
