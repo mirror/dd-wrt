@@ -4327,7 +4327,7 @@ char *ifname = "wl0";
 #endif
 
   copytonv (wp, "%s_ap_isolate", prefix);
-  sprintf(n,"%s_mode",prefix)
+  sprintf(n,"%s_mode",prefix);
   copytonv (wp, n);
   if (!strcmp (prefix, "wl0") || !strcmp (prefix, "wl1"))
     {
