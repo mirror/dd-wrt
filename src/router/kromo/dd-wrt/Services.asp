@@ -109,6 +109,7 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.setup.pptpd_enable, 'idpptp', <% nvram_else_match("pptpd_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvram_else_match("pptpd_client_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_enable, 'idvpn', <% nvram_else_match("openvpn_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpncl_enable, 'idvpncl', <% nvram_else_match("openvpncl_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.syslogd_enable, 'idsyslog', <% nvram_else_match("syslogd_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.nstx_ipenable, 'idnstxip', <% nvram_else_match("nstx_ipenable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.nstxd_enable, 'idnstx', <% nvram_else_match("nstxd_enable", "1", "1", "0"); %> == 1);
