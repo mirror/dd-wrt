@@ -1967,21 +1967,21 @@ start_lan (void)
 	  //  eval ("ifconfig", dev, "down");
 	  if (nvram_match (wdsvarname, "1"))
 	    {
-	      char wdsip[32] = { 0 };
+	      char *wdsip;
+	      char *wdsnm;
 	      char wdsbc[32] = { 0 };
-	      char wdsnm[32] = { 0 };
 #ifdef HAVE_MADWIFI
-	      snprintf (wdsip, 31, "ath%d_wds%d_ipaddr", c, s);
-	      snprintf (wdsnm, 31, "ath%d_wds%d_netmask", c, s);
+	      wdsip = nvram_nget("ath%d_wds%d_ipaddr",c,s);
+	      wdsnm = nvram_nget("ath%d_wds%d_netmask", c, s);
 #else
-	      snprintf (wdsip, 31, "wl%d_wds%d_ipaddr", c, s);
-	      snprintf (wdsnm, 31, "wl%d_wds%d_netmask", c, s);
+	      wdsip = nvram_nget("wl%d_wds%d_ipaddr",c,s);
+	      wdsnm = nvram_nget("wl%d_wds%d_netmask", c, s);
 #endif
 
-	      snprintf (wdsbc, 31, "%s", nvram_safe_get (wdsip));
-	      get_broadcast (wdsbc, nvram_safe_get (wdsnm));
-	      eval ("ifconfig", dev, nvram_safe_get (wdsip), "broadcast",
-		    wdsbc, "netmask", nvram_safe_get (wdsnm), "up");
+	      snprintf (wdsbc, 31, "%s", wdsip);
+	      get_broadcast (wdsbc, wdsnm);
+	      eval ("ifconfig", dev, wdsip, "broadcast",
+		    wdsbc, "netmask", wdsnm, "up");
 	    }
 	  else if (nvram_match (wdsvarname, "2")
 		   && nvram_match (br1enable, "1"))

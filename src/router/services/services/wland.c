@@ -265,11 +265,9 @@ do_aqos_check (void)
 	}
       if (!cip && strlen (ip_buf) > 0)
 	{
-	  char addition[128];
 	  char ipnet[32];
 	  sprintf (ipnet, "%s/32", ip_buf);
-	  sprintf (addition, "echo \"%s\" >>/tmp/aqos_ips", ipnet);
-	  system2 (addition);
+	  sysprintf("echo \"%s\" >>/tmp/aqos_ips", ipnet);
 	  //create default rule for ip
 	  //fprintf(stderr,"add userip\n");
 	  add_userip (ipnet, qosidx, defaulup, defauldown);

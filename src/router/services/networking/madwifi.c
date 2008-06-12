@@ -185,17 +185,8 @@ static int
 setsysctrl (const char *dev, const char *control, u_long value)
 {
   char buffer[256];
-//  FILE *fd;
+  sysprintf ("echo %li > /proc/sys/dev/%s/%s", value,dev, control);
 
-  snprintf (buffer, sizeof (buffer), "echo %li > /proc/sys/dev/%s/%s", value,
-	    dev, control);
-
-  system2 (buffer);
-  /* fd = fopen (buffer, "w");
-     if (fd != NULL)
-     {
-     fprintf (fd, "%li", value);
-     } */
   return 0;
 }
 
@@ -366,16 +357,14 @@ setupSupplicant (char *prefix, char *ssidoverride)
       char bul[8];
       for (i = 1; i < 5; i++)
 	{
-	  sprintf (key, "%s_key%d", prefix, i);
-	  char *athkey = nvram_safe_get (key);
+	  char *athkey = nvram_nget ("%s_key%d", prefix, i);
 	  if (athkey != NULL && strlen (athkey) > 0)
 	    {
 	      sprintf (bul, "[%d]", cnt++);
 	      eval ("iwconfig", prefix, "key", bul, athkey);	// setup wep encryption key
 	    }
 	}
-      sprintf (key, "%s_key", prefix);
-      sprintf (bul, "[%s]", nvram_safe_get (key));
+      sprintf (bul, "[%s]", nvram_safe_get ("%s_key", prefix));
       eval ("iwconfig", prefix, "key", bul);
 //      eval ("iwpriv", prefix, "authmode", "2");
     }
@@ -394,9 +383,8 @@ setupSupplicant (char *prefix, char *ssidoverride)
       //  fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 
       fprintf (fp, "network={\n");
-      sprintf (psk, "%s_ssid", prefix);
       if (!ssidoverride)
-	ssidoverride = nvram_safe_get (psk);
+	ssidoverride = nvram_nget ("%s_ssid", prefix);
       fprintf (fp, "\tssid=\"%s\"\n", ssidoverride);
 //      fprintf (fp, "\tmode=0\n");
       fprintf (fp, "\tscan_ssid=1\n");
@@ -425,8 +413,7 @@ setupSupplicant (char *prefix, char *ssidoverride)
       if (nvram_match (akm, "psk psk2"))
 	fprintf (fp, "\tproto=WPA RSN\n");
 
-      sprintf (psk, "%s_wpa_psk", prefix);
-      fprintf (fp, "\tpsk=\"%s\"\n", nvram_safe_get (psk));
+      fprintf (fp, "\tpsk=\"%s\"\n", nvram_nget ("%s_wpa_psk", prefix));
       fprintf (fp, "}\n");
       fclose (fp);
       sprintf (psk, "-i%s", prefix);
@@ -450,9 +437,8 @@ setupSupplicant (char *prefix, char *ssidoverride)
 //      fprintf (fp, "ctrl_interface_group=0\n");
 //      fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
       fprintf (fp, "network={\n");
-      sprintf (psk, "%s_ssid", prefix);
       if (!ssidoverride)
-	ssidoverride = nvram_safe_get (psk);
+	ssidoverride = nvram_nget ("%s_ssid", prefix);
       fprintf (fp, "\tssid=\"%s\"\n", ssidoverride);
       fprintf (fp, "\tscan_ssid=1\n");
       if (nvram_prefix_match ("8021xtype", prefix, "tls"))
@@ -563,22 +549,19 @@ setupHostAP (char *prefix, int iswan)
 //wep key support
   if (nvram_match (akm, "wep"))
     {
-      char key[16];
       int cnt = 1;
       int i;
       char bul[8];
       for (i = 1; i < 5; i++)
 	{
-	  sprintf (key, "%s_key%d", prefix, i);
-	  char *athkey = nvram_safe_get (key);
+	  char *athkey = nvram_nget ("%s_key%d", prefix, i);
 	  if (athkey != NULL && strlen (athkey) > 0)
 	    {
 	      sprintf (bul, "[%d]", cnt++);
 	      eval ("iwconfig", prefix, "key", bul, athkey);	// setup wep encryption key
 	    }
 	}
-      sprintf (key, "%s_key", prefix);
-      sprintf (bul, "[%s]", nvram_safe_get (key));
+      sprintf (bul, "[%s]", nvram_nget ("%s_key", prefix));
       eval ("iwconfig", prefix, "key", bul);
       //  eval ("iwpriv", prefix, "authmode", "2");
     }
@@ -594,9 +577,7 @@ setupHostAP (char *prefix, int iswan)
       FILE *fp = fopen (fstr, "wb");
       fprintf (fp, "interface=%s\n", prefix);
       //sprintf(buf, "rsn_preauth_interfaces=%s\n", "br0");
-      char bvar[32];
-      sprintf (bvar, "%s_bridged", prefix);
-      if (nvram_match (bvar, "1"))
+      if (nvram_nmatch ("1","%s_bridged", prefix))
 	fprintf (fp, "bridge=%s\n", getBridge (prefix));
 
       fprintf (fp, "driver=madwifi\n");
@@ -621,8 +602,7 @@ setupHostAP (char *prefix, int iswan)
       if (nvram_match (akm, "psk") ||
 	  nvram_match (akm, "psk2") || nvram_match (akm, "psk psk2"))
 	{
-	  sprintf (psk, "%s_wpa_psk", prefix);
-	  fprintf (fp, "wpa_passphrase=%s\n", nvram_safe_get (psk));
+	  fprintf (fp, "wpa_passphrase=%s\n", nvram_nget ("%s_wpa_psk", prefix));
 	  fprintf (fp, "wpa_key_mgmt=WPA-PSK\n");
 	}
       else
@@ -638,15 +618,10 @@ setupHostAP (char *prefix, int iswan)
 	  fprintf (fp, "eap_server=0\n");
 	  fprintf (fp, "auth_algs=1\n");
 	  fprintf (fp, "radius_retry_primary_interval=60\n");
-	  sprintf (psk, "%s_radius_ipaddr", prefix);
-	  fprintf (fp, "auth_server_addr=%s\n", nvram_safe_get (psk));
-
-	  sprintf (psk, "%s_radius_port", prefix);
-	  fprintf (fp, "auth_server_port=%s\n", nvram_safe_get (psk));
-
-	  sprintf (psk, "%s_radius_key", prefix);
+	  fprintf (fp, "auth_server_addr=%s\n", nvram_nget ("%s_radius_ipaddr", prefix));
+	  fprintf (fp, "auth_server_port=%s\n", nvram_nget ("%s_radius_port", prefix));
 	  fprintf (fp, "auth_server_shared_secret=%s\n",
-		   nvram_safe_get (psk));
+		   nvram_nget ("%s_radius_key", prefix));
 	}
       if (nvram_invmatch (akm, "radius"))
 	{
@@ -657,8 +632,7 @@ setupHostAP (char *prefix, int iswan)
 	    fprintf (fp, "wpa_pairwise=TKIP\n");
 	  if (nvram_match (psk, "tkip+aes"))
 	    fprintf (fp, "wpa_pairwise=TKIP CCMP\n");
-	  sprintf (psk, "%s_wpa_gtk_rekey", prefix);
-	  fprintf (fp, "wpa_group_rekey=%s\n", nvram_safe_get (psk));
+	  fprintf (fp, "wpa_group_rekey=%s\n", nvram_nget ("%s_wpa_gtk_rekey", prefix));
 	}
 //      fprintf (fp, "jumpstart_p1=1\n");
       fclose (fp);
@@ -668,12 +642,9 @@ setupHostAP (char *prefix, int iswan)
     {
       //  wrt-radauth $IFNAME $server $port $share $override $mackey $maxun &
       char *ifname = prefix;
-      sprintf (psk, "%s_radius_ipaddr", prefix);
-      char *server = nvram_safe_get (psk);
-      sprintf (psk, "%s_radius_port", prefix);
-      char *port = nvram_safe_get (psk);
-      sprintf (psk, "%s_radius_key", prefix);
-      char *share = nvram_safe_get (psk);
+      char *server = nvram_nget ("%s_radius_ipaddr", prefix);
+      char *port = nvram_nget ("%s_radius_port", prefix);
+      char *share = nvram_nget ("%s_radius_key", prefix);
       char exec[64];
       char type[32];
       sprintf (type, "%s_radmactype", prefix);
@@ -687,18 +658,12 @@ setupHostAP (char *prefix, int iswan)
       if (nvram_match (type, "3"))
 	pragma = "";
       sleep (1);		//some delay is usefull
-      sprintf (exec, "wrt-radauth %s %s %s %s %s 1 1 0 &", pragma, prefix,
+      sysprintf ("wrt-radauth %s %s %s %s %s 1 1 0 &", pragma, prefix,
 	       server, port, share);
-      system2 (exec);
-
-//    eval("wrt-radauth",prefix,server,port,share,"1","1","0");
-
-
     }
   else
     {
       eval ("iwconfig", prefix, "key", "off");
-//      eval ("iwpriv", prefix, "authmode", "0");
     }
 
 
@@ -707,7 +672,6 @@ void
 start_hostapdwan (void)
 {
   char ath[32];
-  char wifivifs[16];
   char *next;
   char var[80];
   int c = getdevicecount ();
@@ -716,8 +680,7 @@ start_hostapdwan (void)
     {
       sprintf (ath, "ath%d", i);
       setupHostAP (ath, 1);
-      sprintf (wifivifs, "ath%d_vifs", i);
-      char *vifs = nvram_safe_get (wifivifs);
+      char *vifs = nvram_nget ("ath%d_vifs", i);
       if (vifs != NULL)
 	foreach (var, vifs, next)
 	{

@@ -180,14 +180,11 @@ start_config_vlan (void)
 
   for (i = 0; i < MAX_VLAN_GROUPS; i++)
     {
-      char nvvar_name[16];
       char vlan_id[16];
       char *hwname, *hwaddr;
-      snprintf (nvvar_name, sizeof (nvvar_name), "vlan%dhwname", i);
-      if (!(hwname = nvram_get (nvvar_name)))
+      if (!(hwname = nvram_nget ("vlan%dhwname",i)))
 	continue;
-      snprintf (nvvar_name, sizeof (nvvar_name), "%smacaddr", hwname);
-      if (!(hwaddr = nvram_get (nvvar_name)))
+      if (!(hwaddr = nvram_nget ("%smacaddr", hwname)))
 	continue;
       ether_atoe (hwaddr, ea);
       for (j = 1; j <= MAX_DEV_IFINDEX; j++)
@@ -315,8 +312,7 @@ start_setup_vlans (void)
   memset (&tagged[0], 0, 16);
   for (i = 0; i < 6; i++)
     {
-      snprintf (buff, 31, "port%dvlans", i);
-      vlans = nvram_safe_get (buff);
+      vlans = nvram_nget ("port%dvlans", i);
       int use = vlanmap[i];
 
       if (vlans)
