@@ -175,3 +175,15 @@ br_set_stp_state (const char *br, int stp_state)
 {
   return br_set (br, "stp_state", stp_state, BRCTL_SET_BRIDGE_STP_STATE);
 }
+
+
+int br_set_bridge_prio(char *br, char *prio)
+{
+	return br_set(br, "priority", atoi(prio), 
+		      BRCTL_SET_BRIDGE_PRIORITY);
+}
+
+int br_set_port_prio(char *bridge, const char *port, char *prio)
+{
+	return port_set(bridge, port, "priority", atoi(prio), BRCTL_SET_PORT_PRIORITY);
+}
