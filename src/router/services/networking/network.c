@@ -1511,7 +1511,7 @@ start_lan (void)
 		wl_iovar_set (name, "wet_host_mac", ifr.ifr_hwaddr.sa_data,
 			      ETHER_ADDR_LEN);
 		enable_dhcprelay (lan_ifname);
-		do_mssid (lan_ifname, name);
+		do_mssid (name);
 #endif
 	      }
 
@@ -1530,7 +1530,7 @@ start_lan (void)
 		do_portsetup (lan_ifname, name);
 		//br_add_interface (getBridge (name), name);    //eval ("brctl", "addif", lan_ifname, name);
 #ifdef HAVE_MSSID
-		do_mssid (lan_ifname, name);
+		do_mssid (name);
 #endif
 	      }
 #ifdef HAVE_MSSID
@@ -1560,7 +1560,7 @@ start_lan (void)
 //              eval ("brctl", "addif", lan_ifname, name);
 #ifndef HAVE_FON
 		if (nvram_match ("fon_enable", "0"))
-		  do_mssid (lan_ifname, name);
+		  do_mssid (name);
 #endif
 	      }
 #endif
@@ -1616,7 +1616,7 @@ start_lan (void)
 		do_portsetup (lan_ifname, name);
 		//br_add_interface (getBridge (name), name);    //eval ("brctl", "addif", lan_ifname, name);
 #ifdef HAVE_MSSID
-		do_mssid (lan_ifname, name);
+		do_mssid (name);
 #endif
 	      }
 #endif
