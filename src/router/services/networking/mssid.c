@@ -63,7 +63,7 @@ start_config_macs (char *wlifname)	//reconfigure macs which should fix the corer
     }
 }
 void
-do_mssid (char *lan_ifname, char *wlifname)
+do_mssid (char *wlifname)
 {
   //bridge the virtual interfaces too
   struct ifreq ifr;
@@ -85,7 +85,7 @@ do_mssid (char *lan_ifname, char *wlifname)
 	  eval ("ifconfig", var, "down");
 	  ioctl (s, SIOCSIFHWADDR, &ifr);
 	  eval ("ifconfig", var, "up");
-	  br_add_interface (lan_ifname, var);
+	  br_add_interface (getBridge(var), var);
 	}
       else
 	{
