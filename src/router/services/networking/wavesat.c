@@ -83,13 +83,8 @@ configure_wimax (void)
 	}
       else
 	{
-	  char ip[32];
-	  char mask[32];
-	  sprintf (ip, "%s_ipaddr", dev);
-	  sprintf (mask, "%s_netmask", dev);
-//        eval ("ifconfig", dev, "mtu", "1500");
-	  eval ("ifconfig", dev, nvram_safe_get (ip), "netmask",
-		nvram_safe_get (mask), "up");
+	  eval ("ifconfig", dev, nvram_nget ("%s_ipaddr", dev), "netmask",
+		nvram_nget ("%s_netmask", dev), "up");
 	}
     }
   else
@@ -98,13 +93,8 @@ configure_wimax (void)
       sprintf (bridged, "%s_bridged", dev);
       if (nvram_default_match (bridged, "0", "1"))
 	{
-	  char ip[32];
-	  char mask[32];
-	  sprintf (ip, "%s_ipaddr", dev);
-	  sprintf (mask, "%s_netmask", dev);
-	  eval ("ifconfig", dev, "mtu", "1500");
-	  eval ("ifconfig", dev, nvram_safe_get (ip), "netmask",
-		nvram_safe_get (mask), "up");
+	  eval ("ifconfig", dev, nvram_nget ("%s_ipaddr", dev), "netmask",
+		nvram_nget ("%s_netmask", dev), "up");
 	}
     }
 }

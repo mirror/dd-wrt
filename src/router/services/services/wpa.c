@@ -45,12 +45,8 @@ start_radius (char *prefix)
     strcpy (ifname, nvram_safe_get ("wl0_ifname"));
   if (!strcmp (ifname, "wl1"))
     strcpy (ifname, nvram_safe_get ("wl1_ifname"));
-  char ap[32];
 
-  char radauth[32];
-  sprintf (radauth, "%s_radauth", prefix);
-  sprintf (ap, "%s_mode", prefix);
-  if (nvram_match (radauth, "1") && nvram_match (ap, "ap"))
+  if (nvram_nmatch ("1","%s_radauth", prefix) && nvram_nmatch ("ap","%s_mode", prefix))
     {
       char *server = nvram_nget ("%s_radius_ipaddr", prefix);
       char *port = nvram_nget ("%s_radius_port", prefix);
@@ -95,7 +91,6 @@ convert_wds (int instance)
   if (nvram_match ("security_mode", "psk")
       || nvram_match ("security_mode", "psk2"))
     {
-      char wl_wds[] = "wl0_wdsXXX";
       int i = 0;
       int j;
       char mac[254];
@@ -103,7 +98,6 @@ convert_wds (int instance)
 
       foreach (mac, wds_mac, next)
       {
-	snprintf (wl_wds, sizeof (wl_wds), "wl%d_wds%d", instance, i);
 	snprintf (buf, sizeof (buf), "%s,auto,%s,%s,%s,%s",
 		  mac,
 		  nvram_safe_get ("wl_crypto"),
@@ -114,7 +108,7 @@ convert_wds (int instance)
 		  nvram_nget ("wl%d_ssid", instance),
 		  nvram_safe_get ("wl_wpa_psk"));
 #endif
-	nvram_set (wl_wds, buf);
+	nvram_nset (buf,"wl%d_wds%d", instance, i);
 	i++;
       }
 
@@ -201,17 +195,13 @@ char *
 getKey (char *prefix)
 {
   char akm[32];
-  char psk[32];
-  char radius[32];
   sprintf (akm, "%s_akm", prefix);
-  sprintf (psk, "%s_wpa_psk", prefix);
-  sprintf (radius, "%s_radius_key", prefix);
   if (nvram_match (akm, "wpa") || nvram_match (akm, "radius")
       || nvram_match (akm, "wpa2") || nvram_match (akm, "wpa wpa2"))
-    return nvram_safe_get (radius);
+    return nvram_nget ("%s_radius_key", prefix);
   else if (nvram_match (akm, "psk") || nvram_match (akm, "psk2")
 	   || nvram_match (akm, "psk psk2"))
-    return nvram_safe_get (psk);
+    return nvram_nget ("%s_wpa_psk", prefix);
   else
     return "";
 }
@@ -381,11 +371,10 @@ start_nas_single (char *type, char *prefix)
     snprintf (conffile, sizeof (conffile), "/tmp/nas.%s%s.conf", prefix,
 	      type);
 #endif
-
+   
     char apmode[32];
-    sprintf (apmode, "%s_mode", prefix);
-
-    if (!strcmp (type, "wan") && nvram_match (apmode, "ap"))
+    sprintf(apmode,"%s_mode",prefix);
+    if (!strcmp (type, "wan") && nvram_match (apmode,"ap"))
       {
 	return 0;
       }

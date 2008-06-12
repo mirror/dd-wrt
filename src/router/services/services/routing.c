@@ -139,22 +139,16 @@ zebra_ospf_init (void)
 	  if (nvram_nmatch ("ap", "wl%d_mode", c))
 	    for (s = 1; s <= MAX_WDS_DEVS; s++)
 	      {
-		char wdsvarname[32] = { 0 };
-		char wdsdevname[32] = { 0 };
-		char wdsdevlabel[32] = { 0 };
 		char wdsdevospf[32] = { 0 };
 		char *dev;
 
-		sprintf (wdsvarname, "wl%d_wds%d_enable", c, s);
-		sprintf (wdsdevname, "wl%d_wds%d_if", c, s);
-		sprintf (wdsdevlabel, "wl%d_wds%d_desc", c, s);
 		sprintf (wdsdevospf, "wl%d_wds%d_ospf", c, s);
-		dev = nvram_safe_get (wdsdevname);
+		dev = nvram_nget ("wl%d_wds%d_if", c, s);
 
-		if (nvram_match (wdsvarname, "1"))
+		if (nvram_nmatch ("1","wl%d_wds%d_enable", c, s))
 		  {
 		    fprintf (fp, "!\n! WDS: %s\n",
-			     nvram_safe_get (wdsdevlabel));
+			     nvram_nget ("wl%d_wds%d_desc", c, s));
 		    fprintf (fp, "interface %s\n", dev);
 
 		    if (atoi (nvram_safe_get (wdsdevospf)) > 0)
@@ -175,14 +169,11 @@ zebra_ospf_init (void)
       for (s = 1; s <= MAX_WDS_DEVS; s++)
 	{
 	  char wdsdevospf[32] = { 0 };
-	  char wdsdevname[32] = { 0 };
-
-	  sprintf (wdsdevname, "wl_wds%d_if", s);
 	  sprintf (wdsdevospf, "wl_wds%d_ospf", s);
 
 	  if (atoi (nvram_safe_get (wdsdevospf)) < 0)
 	    fprintf (fp, " passive-interface %s\n",
-		     nvram_safe_get (wdsdevname));
+		     nvram_nget ("wl_wds%d_if", s));
 	}
 
       if (nvram_match ("zebra_log", "1"))
