@@ -49,7 +49,7 @@
 
 /* default LZMA settings, should be in sync with mksquashfs */
 #define LZMA_LC 3
-#define LZMA_LP 0
+#define LZMA_LP 3
 #define LZMA_PB 2
 
 #define LZMA_WORKSPACE_SIZE ((LZMA_BASE_SIZE + \
@@ -252,9 +252,13 @@ SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 		int zlib_err;
 
 #ifdef SQUASHFS_LZMA
+//    dest[0]=pb;
+//    dest[1]=lc;
+//    dest[2]=lp;
+//    dest[3]=fb;
 		if ((zlib_err = LzmaDecode(lzma_workspace, 
-			LZMA_WORKSPACE_SIZE, LZMA_LC, LZMA_LP, LZMA_PB, 
-			c_buffer, c_byte, buffer, msblk->read_size, &bytes)) != LZMA_RESULT_OK)
+			LZMA_WORKSPACE_SIZE, c_buffer[1],c_buffer[2],c_buffer[0],//LZMA_LC, LZMA_LP, LZMA_PB, 
+			c_buffer+4, c_byte-4, buffer, msblk->read_size, &bytes)) != LZMA_RESULT_OK)
 		{
 			ERROR("lzma returned unexpected result 0x%x\n", zlib_err);
 			bytes = 0;
