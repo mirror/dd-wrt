@@ -64,8 +64,8 @@ kick_mac (char *iface, char *mac)
 {
   scb_val_t scb_val;
   scb_val.val = (uint32) DOT11_RC_NOT_AUTH;
-  memcpy(&scb_val.ea, mac, ETHER_ADDR_LEN);
-  wl_ioctl (iface, WLC_SCB_DEAUTHENTICATE_FOR_REASON, &scb_val, sizeof(scb_val));	/* Kick station off AP */
+  memcpy (&scb_val.ea, mac, ETHER_ADDR_LEN);
+  wl_ioctl (iface, WLC_SCB_DEAUTHENTICATE_FOR_REASON, &scb_val, sizeof (scb_val));	/* Kick station off AP */
 }
 #else
 #include <sys/types.h>
@@ -235,7 +235,8 @@ set_maclist (char *iface, char *buf)
   for (i = 0; i < maclist->count; i++)
     {
       memcpy (sa.sa_data, &maclist->ea[i], IEEE80211_ADDR_LEN);
-      fprintf (stderr, "maclist add %s\n", ieee80211_ntoa ((unsigned char*)&maclist->ea[i]));
+      fprintf (stderr, "maclist add %s\n",
+	       ieee80211_ntoa ((unsigned char *) &maclist->ea[i]));
       do80211priv (iface, IEEE80211_IOCTL_ADDMAC, &sa, sizeof (sa));
     }
 }
