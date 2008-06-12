@@ -28,7 +28,7 @@
 #define TRUE 1
 
 /* jc: Define to enable LZMA encoding parameters on command line */
-//#define _LZMA_PARAMS 
+#define _LZMA_PARAMS 
 
 #include <pwd.h>
 #include <grp.h>
@@ -91,10 +91,11 @@
 #ifdef _LZMA_PARAMS
 #include "./lzma/C/7zip/Compress/LZMA_Lib/lzmaext.h"					
 /* jc: be lame and use some globals.. this app is single threaded*/					
+
 int g_fb=-1;
-int g_lc=-1;
-int g_lp=-1;
-int g_pb=-1;				
+int g_lc=1;
+int g_lp=2;
+int g_pb=2;				
 #endif
 				
 int delete = FALSE;
