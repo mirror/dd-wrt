@@ -29,7 +29,7 @@ extern char *get_wdev (void);
 
 extern int get_wl_instance (char *ifname);
 extern int get_wl_instances (void);
-extern char * get_wl_instance_name (int instance);
+extern char *get_wl_instance_name (int instance);
 
 float wifi_getrate (char *ifname);
 int wifi_gettxpower (char *ifname);
@@ -63,7 +63,7 @@ extern int wl_probe (char *name);
 
 
 /* Returns the list of associated stations in the pre-existing buffer list */
-int getchannels (unsigned int *list,char *ifname);
+int getchannels (unsigned int *list, char *ifname);
 int getassoclist (char *name, unsigned char *list);
 int getwdslist (char *name, unsigned char *list);
 int getNoise (char *ifname, unsigned char *name);
@@ -77,7 +77,7 @@ int isAssociated (char *ifname);
 unsigned int getRegDomain (const char *country);
 unsigned int getCountry (const char *country);
 char *getCountryList (void);
-u_int ieee80211_mhz2ieee(u_int freq);
+u_int ieee80211_mhz2ieee (u_int freq);
 
 int wifi_getchannel (char *ifname);
 int wifi_getfreq (char *ifname);

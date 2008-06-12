@@ -32,7 +32,7 @@
 #include <nvparse.h>
 #include <utils.h>
 #include <bcmconfig.h>
-extern char * safe_snprintf(char *str, int *len, const char *fmt, ...);
+extern char *safe_snprintf (char *str, int *len, const char *fmt, ...);
 
 
 #ifdef __CONFIG_NAT__

@@ -80,11 +80,11 @@ getcpurev (void)
 	    return 0;
 	  if (!strcmp (cpurev, "BCM3302 V0.6"))	// BCM4704
 	    return 6;
-	  if (!strcmp (cpurev, "BCM3302 V0.7")) // BCM4712, BCM5365
+	  if (!strcmp (cpurev, "BCM3302 V0.7"))	// BCM4712, BCM5365
 	    return 7;
-	  if (!strcmp (cpurev, "BCM3302 V0.8")) // BCM5350, BCM5352
+	  if (!strcmp (cpurev, "BCM3302 V0.8"))	// BCM5350, BCM5352
 	    return 8;
-	  if (!strcmp (cpurev, "BCM3302 V2.9")) // BCM5354
+	  if (!strcmp (cpurev, "BCM3302 V2.9"))	// BCM5354
 	    return 29;
 	  return -1;
 	}
@@ -99,22 +99,22 @@ cpu_plltype (void)
   int cpurev = getcpurev ();
   int cputype = check_hw_type ();
 
-	  if (cpurev == 0)	// BCM4702, BCM4710 (old 125 MHz)
-	    return 0;
-	  if (cpurev == 6)	// BCM4704
-	    return 0;
-	  if (cpurev == 7 && cputype == BCM5365_CHIP) // BCM5365 only supports fixed 200 MHz
-	    return 0;	  
-	  if (cpurev == 7 && cputype != BCM5365_CHIP) // BCM4712
-	    return 4;
-	  if (cpurev == 8 && cputype == BCM5350_CHIP) // BCM5350
-	    return 3;
-	  if (cpurev == 8 && cputype != BCM5350_CHIP) // BCM5352
-	    return 7;
-	  if (cpurev == 29) // BCM5354, only supports fixed 240 MHz
-	    return 0;
-	  if (cputype == BCM4705_BCM5397_EWC_CHIP) // BCM4705
-	    return 0; // could use table 2
+  if (cpurev == 0)		// BCM4702, BCM4710 (old 125 MHz)
+    return 0;
+  if (cpurev == 6)		// BCM4704
+    return 0;
+  if (cpurev == 7 && cputype == BCM5365_CHIP)	// BCM5365 only supports fixed 200 MHz
+    return 0;
+  if (cpurev == 7 && cputype != BCM5365_CHIP)	// BCM4712
+    return 4;
+  if (cpurev == 8 && cputype == BCM5350_CHIP)	// BCM5350
+    return 3;
+  if (cpurev == 8 && cputype != BCM5350_CHIP)	// BCM5352
+    return 7;
+  if (cpurev == 29)		// BCM5354, only supports fixed 240 MHz
+    return 0;
+  if (cputype == BCM4705_BCM5397_EWC_CHIP)	// BCM4705
+    return 0;			// could use table 2
 
   return 0;
 }
@@ -122,7 +122,7 @@ cpu_plltype (void)
 int
 startswith (char *source, char *cmp)
 {
-return !strncmp(source,cmp,strlen(cmp));
+  return !strncmp (source, cmp, strlen (cmp));
 /*  int i;
   if (cmp == NULL)
     return 0;
@@ -142,92 +142,95 @@ return !strncmp(source,cmp,strlen(cmp));
 int
 count_occurences (char *source, int cmp)
 {
-   int i, cnt = 0;
-   int len = strlen (source);
+  int i, cnt = 0;
+  int len = strlen (source);
 
-   for (i = 0; i < len; i++)
-       {
-       if (source[i] == cmp)
-          cnt++;
-       }
-   return cnt;
+  for (i = 0; i < len; i++)
+    {
+      if (source[i] == cmp)
+	cnt++;
+    }
+  return cnt;
 }
 
 int
 pos_nthoccurence (char *source, int cmp, int which)
 {
-   int i, cnt = 0;
-   int len = strlen (source);
+  int i, cnt = 0;
+  int len = strlen (source);
 
-   for (i=0; i < len; i++)
-	   {
-		if (source[i] == cmp)
-          cnt++;
-		if (cnt == which)
-          return i;
-       }
-   return -1;
+  for (i = 0; i < len; i++)
+    {
+      if (source[i] == cmp)
+	cnt++;
+      if (cnt == which)
+	return i;
+    }
+  return -1;
 }
 
 char *
 substring (int start, int stop, const char *src, char *dst)
 {
-   int count = stop - start;
+  int count = stop - start;
 
-   sprintf(dst, "%.*s", count, src + start);
+  sprintf (dst, "%.*s", count, src + start);
 
-   return dst;
+  return dst;
 }
 
 /*  This function returns the number of days for the given month in the given year    */
-unsigned int 
+unsigned int
 daysformonth (unsigned int month, unsigned int year)
 {
-    return (30 + (((month & 9) == 8) || ((month & 9) == 1)) - (month == 2) - (!(((year % 4) == 0) && (((year % 100) != 0) || ((year % 400) == 0))) && (month == 2)));
+  return (30 + (((month & 9) == 8) || ((month & 9) == 1)) - (month == 2) -
+	  (!(((year % 4) == 0)
+	     && (((year % 100) != 0) || ((year % 400) == 0)))
+	   && (month == 2)));
 }
 
 /* given month, day, year, returns day of week, eg. Monday = 0 etc.    */
 int
-weekday(int month, int day, int year)
+weekday (int month, int day, int year)
 {
   int ix, tx, vx;
 
   switch (month)
-   {
-	case 2:
-	case 6:
-	  vx = 0;
-	  break;
-	case 8:
-	  vx = 4;
-	  break;
-	case 10:
-	  vx = 8;
-	  break;
-	case 9:
-	case 12:
-	  vx = 12;
-	  break;
-	case 3:
-	case 11:
-	  vx = 16;
-	  break;
-	case 1:
-	case 5:
-	  vx = 20;
-	  break;
-	case 4:
-	case 7:
-	  vx = 24;
-	  break;
-   }
+    {
+    case 2:
+    case 6:
+      vx = 0;
+      break;
+    case 8:
+      vx = 4;
+      break;
+    case 10:
+      vx = 8;
+      break;
+    case 9:
+    case 12:
+      vx = 12;
+      break;
+    case 3:
+    case 11:
+      vx = 16;
+      break;
+    case 1:
+    case 5:
+      vx = 20;
+      break;
+    case 4:
+    case 7:
+      vx = 24;
+      break;
+    }
 
-  if (year > 1900) // 1900 was not a leap year
-	year -= 1900;
-  ix = ((year - 21) % 28) + vx + (month > 2); // take care of February
-  tx = (ix + (ix / 4)) % 7 + day; // take care of leap year
+  if (year > 1900)		// 1900 was not a leap year
+    year -= 1900;
+  ix = ((year - 21) % 28) + vx + (month > 2);	// take care of February
+  tx = (ix + (ix / 4)) % 7 + day;	// take care of leap year
 
-return (tx % 7);
+  return (tx % 7);
 
 }
 
@@ -279,54 +282,55 @@ internal_getRouterBrand ()
 #elif HAVE_GATEWORX
   char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom";	/* bank2=0x100 */
   FILE *file = fopen (filename, "r");
-  if (file) //new detection scheme
+  if (file)			//new detection scheme
     {
-    fseek(file,32,SEEK_SET);
-    char gwid[7];
-    gwid[6]=0;
-    int ret = fread(gwid,6,1,file);
-    if (ret<1){
-	fclose(file);
-	goto old_way;
-	}
-    fclose(file);
-    if (!strcmp(gwid,"GW2347"))
+      fseek (file, 32, SEEK_SET);
+      char gwid[7];
+      gwid[6] = 0;
+      int ret = fread (gwid, 6, 1, file);
+      if (ret < 1)
 	{
-        setRouter ("Avila GW2347");
-        return ROUTER_BOARD_GATEWORX_SWAP;
+	  fclose (file);
+	  goto old_way;
 	}
-    if (!strcmp(gwid,"GW2357"))
+      fclose (file);
+      if (!strcmp (gwid, "GW2347"))
 	{
-        setRouter ("Avila GW2357");
-        return ROUTER_BOARD_GATEWORX_SWAP;
+	  setRouter ("Avila GW2347");
+	  return ROUTER_BOARD_GATEWORX_SWAP;
 	}
-    if (!strcmp(gwid,"GW2353"))
+      if (!strcmp (gwid, "GW2357"))
 	{
-        setRouter ("Avila GW2343");
-        return ROUTER_BOARD_GATEWORX;
+	  setRouter ("Avila GW2357");
+	  return ROUTER_BOARD_GATEWORX_SWAP;
 	}
-    if (!strcmp(gwid,"GW2348"))
+      if (!strcmp (gwid, "GW2353"))
 	{
-        setRouter ("Avila GW2348-4/2");
-        return ROUTER_BOARD_GATEWORX;
+	  setRouter ("Avila GW2343");
+	  return ROUTER_BOARD_GATEWORX;
 	}
-    if (!strcmp(gwid,"GW2358"))
+      if (!strcmp (gwid, "GW2348"))
 	{
-        setRouter ("Cambria GW2358-4");
-        return ROUTER_BOARD_GATEWORX;
+	  setRouter ("Avila GW2348-4/2");
+	  return ROUTER_BOARD_GATEWORX;
 	}
-    if (!strcmp(gwid,"GW2355"))
+      if (!strcmp (gwid, "GW2358"))
 	{
-        setRouter ("Avila GW2355");
-        return ROUTER_BOARD_GATEWORX_GW2345;
+	  setRouter ("Cambria GW2358-4");
+	  return ROUTER_BOARD_GATEWORX;
 	}
-    if (!strcmp(gwid,"GW2345"))
+      if (!strcmp (gwid, "GW2355"))
 	{
-        setRouter ("Avila GW2345");
-        return ROUTER_BOARD_GATEWORX_GW2345;
+	  setRouter ("Avila GW2355");
+	  return ROUTER_BOARD_GATEWORX_GW2345;
+	}
+      if (!strcmp (gwid, "GW2345"))
+	{
+	  setRouter ("Avila GW2345");
+	  return ROUTER_BOARD_GATEWORX_GW2345;
 	}
     }
-  old_way:;
+old_way:;
   struct mii_ioctl_data *data;
   struct ifreq iwr;
   int s = socket (AF_INET, SOCK_DGRAM, 0);
@@ -424,26 +428,27 @@ internal_getRouterBrand ()
   data->reg_num = 0x2;
   ioctl (s, SIOCGMIIREG, &iwr);
   if (data->val_out == 0x0141)
-  {
-  data->phy_id = 0x10;
-  data->reg_num = 0x3;
-  ioctl (s, SIOCGMIIREG, &iwr);
-  close (s);
-  if ((data->val_out & 0xfc00) != 0x0c00)	// marvell phy
+    {
+      data->phy_id = 0x10;
+      data->reg_num = 0x3;
+      ioctl (s, SIOCGMIIREG, &iwr);
+      close (s);
+      if ((data->val_out & 0xfc00) != 0x0c00)	// marvell phy
+	{
+	  setRouter ("Fonera 2100/2200");
+	  return ROUTER_BOARD_FONERA;
+	}
+      else
+	{
+	  setRouter ("Fonera 2201");
+	  return ROUTER_BOARD_FONERA2200;
+	}
+    }
+  else
     {
       setRouter ("Fonera 2100/2200");
       return ROUTER_BOARD_FONERA;
     }
-  else
-    {
-      setRouter ("Fonera 2201");
-      return ROUTER_BOARD_FONERA2200;
-    }
-  }else
-  {
-      setRouter ("Fonera 2100/2200");
-      return ROUTER_BOARD_FONERA;  
-  }
 #elif HAVE_MERAKI
   setRouter ("Meraki Mini");
   return ROUTER_BOARD_MERAKI;
@@ -535,7 +540,7 @@ internal_getRouterBrand ()
       setRouter ("Asus WL-500g Deluxe");
       return ROUTER_ASUS_WL500GD;
     }
-    
+
   if (boardnum == 45 && nvram_match ("boardtype", "0x0472")
       && nvram_match ("boardrev", "0x23") && nvram_match ("parkid", "1"))
     {
@@ -543,7 +548,7 @@ internal_getRouterBrand ()
       setRouter ("Asus WL-500W");
       return ROUTER_ASUS_WL500W;
     }
-    
+
   if (boardnum == 45 && nvram_match ("boardtype", "0x467"))
     {
       cprintf ("router is Asus WL-550gE\n");
@@ -596,22 +601,24 @@ internal_getRouterBrand ()
       nvram_match ("boardrev", "0x13") && nvram_match ("boardtype", "0x467"))
     {
       if (nvram_match ("boardflags", "0x1658")
-       || nvram_match ("boardflags", "0x2658")
-       || nvram_match ("boardflags", "0x3658"))
+	  || nvram_match ("boardflags", "0x2658")
+	  || nvram_match ("boardflags", "0x3658"))
 	{
 	  cprintf ("router is Buffalo WLI-TX4-G54HP\n");
 	  setRouter ("Buffalo WLI-TX4-G54HP");
 	  return ROUTER_BUFFALO_WLI_TX4_G54HP;
 	}
-      if (!nvram_match ("buffalo_hp", "1") && nvram_match ("boardflags", "0x2758"))
+      if (!nvram_match ("buffalo_hp", "1")
+	  && nvram_match ("boardflags", "0x2758"))
 	{
 	  cprintf ("router is Buffalo WHR-G54S\n");
 	  setRouter ("Buffalo WHR-G54S");
 	  return ROUTER_BUFFALO_WHRG54S;
 	}
-      if (nvram_match ("buffalo_hp", "1") || nvram_match ("boardflags", "0x1758"))
+      if (nvram_match ("buffalo_hp", "1")
+	  || nvram_match ("boardflags", "0x1758"))
 	{
-#ifndef HAVE_BUFFALO		
+#ifndef HAVE_BUFFALO
 	  cprintf ("router is Buffalo WHR-HP-G54\n");
 	  setRouter ("Buffalo WHR-HP-G54");
 #else
@@ -749,18 +756,19 @@ internal_getRouterBrand ()
       return ROUTER_BRCM4702_GENERIC;
     }
 
-  if (boardnum == 0 && nvram_match ("boardtype", "0x0100") && nvram_match ("boardrev", "0x10"))
+  if (boardnum == 0 && nvram_match ("boardtype", "0x0100")
+      && nvram_match ("boardrev", "0x10"))
     {
-      cprintf ("router is Askey board RT2205(6)D-D56\n");	    
+      cprintf ("router is Askey board RT2205(6)D-D56\n");
       if (startswith (et0, "00:11:50") ||
 	  startswith (et0, "00:30:BD") || startswith (et0, "00:30:bd"))
 	{
-      setRouter ("Askey board RT2205(6)D-D56");
+	  setRouter ("Askey board RT2205(6)D-D56");
 	}
-	  else
+      else
 	{
-      setRouter ("Belkin board F5D8230");
-    }
+	  setRouter ("Belkin board F5D8230");
+	}
       return ROUTER_ASKEY_RT220XD;
     }
 
@@ -769,18 +777,18 @@ internal_getRouterBrand ()
       if (startswith (et0, "00:11:50") ||
 	  startswith (et0, "00:30:BD") || startswith (et0, "00:30:bd"))
 	{
-      if (nvram_match ("Belkin_ver", "2000"))
-      {
-	  cprintf ("router is Belkin F5D7230-4 v2000\n");
-	  setRouter ("Belkin F5D7230-4 v2000");
-	  return ROUTER_BELKIN_F5D7230_V2000;	      
-      }	
-      else
-      {      
-	  cprintf ("router is Belkin F5D7230-4 v1444\n");
-	  setRouter ("Belkin F5D7230-4 v1444");
-	  return ROUTER_RT480W;
-      }
+	  if (nvram_match ("Belkin_ver", "2000"))
+	    {
+	      cprintf ("router is Belkin F5D7230-4 v2000\n");
+	      setRouter ("Belkin F5D7230-4 v2000");
+	      return ROUTER_BELKIN_F5D7230_V2000;
+	    }
+	  else
+	    {
+	      cprintf ("router is Belkin F5D7230-4 v1444\n");
+	      setRouter ("Belkin F5D7230-4 v1444");
+	      return ROUTER_RT480W;
+	    }
 	}
       if (startswith (et0, "00:01:E3") ||
 	  startswith (et0, "00:01:e3") || startswith (et0, "00:90:96"))
@@ -791,20 +799,21 @@ internal_getRouterBrand ()
 	}
     }
 
-  if (nvram_match ("boardtype", "0x456") && nvram_match ("hw_model", "F5D7231-4"))
+  if (nvram_match ("boardtype", "0x456")
+      && nvram_match ("hw_model", "F5D7231-4"))
     {
-	  cprintf ("router is Belkin F5D7231-4 v1212UK\n");
-	  setRouter ("Belkin F5D7231-4 v1212UK");
-	  return ROUTER_BELKIN_F5D7231;
+      cprintf ("router is Belkin F5D7231-4 v1212UK\n");
+      setRouter ("Belkin F5D7231-4 v1212UK");
+      return ROUTER_BELKIN_F5D7231;
     }
-    
-  if (boardnum == 8 && nvram_match ("boardtype", "0x0467"))  //fccid: K7SF5D7231B
+
+  if (boardnum == 8 && nvram_match ("boardtype", "0x0467"))	//fccid: K7SF5D7231B
     {
-	  cprintf ("router is Belkin F5D7231-4 v2000\n");
-	  setRouter ("Belkin F5D7231-4 v2000");
-	  return ROUTER_BELKIN_F5D7231;
+      cprintf ("router is Belkin F5D7231-4 v2000\n");
+      setRouter ("Belkin F5D7231-4 v2000");
+      return ROUTER_BELKIN_F5D7231;
     }
-    
+
   if (nvram_match ("boardtype", "0x467"))
     {
       if (startswith (et0, "00:11:50") ||
@@ -826,27 +835,27 @@ internal_getRouterBrand ()
 
   char *gemtek = nvram_safe_get ("GemtekPmonVer");
   uint gemteknum = strtoul (gemtek, NULL, 0);
-  
-  if (boardnum == 2 && gemteknum == 10 &&
-     (startswith (et0, "00:0C:E5") ||
-	  startswith (et0, "00:0c:e5") ||
-	  startswith (et0, "00:0C:10") ||
-	  startswith (et0, "00:0c:10") ||
-	  startswith (et0, "00:0C:11") ||
-	  startswith (et0, "00:0c:11")))
-	{
-	  cprintf ("router Motorola WE800G v1\n");
-	  setRouter ("Motorola WE800G v1");
-	  return ROUTER_MOTOROLA_WE800G;
-	}
 
-  if (boardnum == 2 && (startswith (gemtek, "RC") || gemteknum == 1 || gemteknum == 10))
+  if (boardnum == 2 && gemteknum == 10 &&
+      (startswith (et0, "00:0C:E5") ||
+       startswith (et0, "00:0c:e5") ||
+       startswith (et0, "00:0C:10") ||
+       startswith (et0, "00:0c:10") ||
+       startswith (et0, "00:0C:11") || startswith (et0, "00:0c:11")))
     {
-	  cprintf ("router is Linksys wap54g v1.x\n");
-	  setRouter ("Linksys WAP54G v1.x");
-	  return ROUTER_WAP54G_V1;
+      cprintf ("router Motorola WE800G v1\n");
+      setRouter ("Motorola WE800G v1");
+      return ROUTER_MOTOROLA_WE800G;
     }
-        
+
+  if (boardnum == 2
+      && (startswith (gemtek, "RC") || gemteknum == 1 || gemteknum == 10))
+    {
+      cprintf ("router is Linksys wap54g v1.x\n");
+      setRouter ("Linksys WAP54G v1.x");
+      return ROUTER_WAP54G_V1;
+    }
+
   if (boardnum == 2 && gemteknum == 1)
     {
       cprintf ("router is Sitecom wl-105b\n");
@@ -854,14 +863,15 @@ internal_getRouterBrand ()
       return ROUTER_SITECOM_WL105B;
     }
 
-  if (boardnum == 2 && gemteknum == 7 && nvram_match ("boardtype", "bcm94710dev"))
+  if (boardnum == 2 && gemteknum == 7
+      && nvram_match ("boardtype", "bcm94710dev"))
     {
       cprintf ("router is Sitecom wl-111\n");
       setRouter ("Sitecom WL-111");
       return ROUTER_SITECOM_WL111;
     }
 
-  if (gemteknum == 9)	//Must be Motorola wr850g v1 or we800g v1 or Linksys wrt55ag v1
+  if (gemteknum == 9)		//Must be Motorola wr850g v1 or we800g v1 or Linksys wrt55ag v1
     {
       if (startswith (et0, "00:0C:E5") ||
 	  startswith (et0, "00:0c:e5") ||
@@ -870,8 +880,7 @@ internal_getRouterBrand ()
 	  startswith (et0, "00:0C:11") ||
 	  startswith (et0, "00:0c:11") ||
 	  startswith (et0, "00:11:22") ||
-	  startswith (et0, "00:0C:90") ||
-	  startswith (et0, "00:0c:90"))
+	  startswith (et0, "00:0C:90") || startswith (et0, "00:0c:90"))
 	{
 	  if (!strlen (nvram_safe_get ("phyid_num")))
 	    {
@@ -920,14 +929,14 @@ internal_getRouterBrand ()
     }
 #ifndef HAVE_BUFFALO
 
-  if (boardnum == 8 && 
+  if (boardnum == 8 &&
       nvram_match ("boardtype", "0x0472") && nvram_match ("cardbus", "1"))
     {
       cprintf ("router is Netgear WNR834B\n");
       setRouter ("Netgear WNR834B");
       return ROUTER_NETGEAR_WNR834B;
     }
-    
+
   if (boardnum == 1 &&
       nvram_match ("boardtype", "0x0472") && nvram_match ("cardbus", "1"))
     {
@@ -935,57 +944,63 @@ internal_getRouterBrand ()
       setRouter ("Netgear WNR834B v2");
       return ROUTER_NETGEAR_WNR834BV2;
     }
-    
+
   if (boardnum == 1 &&
       nvram_match ("boardtype", "0x0472") && nvram_match ("boardrev", "0x23"))
     {
       cprintf ("router is Netgear WNDR-3300\n");
       setRouter ("Netgear WNDR3300");
       return ROUTER_NETGEAR_WNDR3300;
-    }    
+    }
 
-  if (boardnum == 42)  //Get Linksys N models
-  {
-	if(nvram_match ("boot_hw_model", "WRT300N") && nvram_match ("boot_hw_ver", "1.1"))
-	{ 
-		setRouter ("Linksys WRT300N v1.1");
-		return ROUTER_WRT300NV11;
+  if (boardnum == 42)		//Get Linksys N models
+    {
+      if (nvram_match ("boot_hw_model", "WRT300N")
+	  && nvram_match ("boot_hw_ver", "1.1"))
+	{
+	  setRouter ("Linksys WRT300N v1.1");
+	  return ROUTER_WRT300NV11;
 	}
-	else if(nvram_match ("boot_hw_model", "WRT150N") && nvram_match ("boot_hw_ver", "1"))
-	{ 
-		setRouter ("Linksys WRT150N v1");
-		return ROUTER_WRT150N;
+      else if (nvram_match ("boot_hw_model", "WRT150N")
+	       && nvram_match ("boot_hw_ver", "1"))
+	{
+	  setRouter ("Linksys WRT150N v1");
+	  return ROUTER_WRT150N;
 	}
-	else if(nvram_match ("boot_hw_model", "WRT150N") && nvram_match ("boot_hw_ver", "1.1"))
-	{ 
-		setRouter ("Linksys WRT150N v1.1");
-//		return ROUTER_WRT150NV11;
-		return ROUTER_WRT150N;
+      else if (nvram_match ("boot_hw_model", "WRT150N")
+	       && nvram_match ("boot_hw_ver", "1.1"))
+	{
+	  setRouter ("Linksys WRT150N v1.1");
+//              return ROUTER_WRT150NV11;
+	  return ROUTER_WRT150N;
 	}
-	else if(nvram_match ("boot_hw_model", "WRT150N") && nvram_match ("boot_hw_ver", "1.2"))
-	{ 
-		setRouter ("Linksys WRT150N v1.2");	
-//		return ROUTER_WRT150NV12;
-		return ROUTER_WRT150N;
+      else if (nvram_match ("boot_hw_model", "WRT150N")
+	       && nvram_match ("boot_hw_ver", "1.2"))
+	{
+	  setRouter ("Linksys WRT150N v1.2");
+//              return ROUTER_WRT150NV12;
+	  return ROUTER_WRT150N;
 	}
-	else if(nvram_match ("boot_hw_model", "WRT160N") && nvram_match ("boot_hw_ver", "1.0"))
-	{ 
-		setRouter ("Linksys WRT160N");
-		return ROUTER_WRT160N;
+      else if (nvram_match ("boot_hw_model", "WRT160N")
+	       && nvram_match ("boot_hw_ver", "1.0"))
+	{
+	  setRouter ("Linksys WRT160N");
+	  return ROUTER_WRT160N;
 	}
-	else if(nvram_match ("boot_hw_model", "WRT310N") && nvram_match ("boot_hw_ver", "1.0"))
-	{ 
-		setRouter ("Linksys WRT310N");
-		return ROUTER_WRT310N;
+      else if (nvram_match ("boot_hw_model", "WRT310N")
+	       && nvram_match ("boot_hw_ver", "1.0"))
+	{
+	  setRouter ("Linksys WRT310N");
+	  return ROUTER_WRT310N;
 	}
-  }
+    }
 
   if (boardnum == 42 &&
       nvram_match ("boardtype", "0x0472") && nvram_match ("cardbus", "1"))
     {
-	  setRouter ("Linksys WRT300N v1");
-	  return ROUTER_WRT300N;
-	}
+      setRouter ("Linksys WRT300N v1");
+      return ROUTER_WRT300N;
+    }
 
 
   if (boardnum == 42 &&
@@ -996,14 +1011,15 @@ internal_getRouterBrand ()
       return ROUTER_WRT350N;
     }
 
-  if (nvram_match("boardnum","20070615") &&
-      nvram_match ("boardtype", "0x478") && nvram_match ("cardbus", "0") && nvram_match("switch_type","BCM5395"))
+  if (nvram_match ("boardnum", "20070615") &&
+      nvram_match ("boardtype", "0x478") && nvram_match ("cardbus", "0")
+      && nvram_match ("switch_type", "BCM5395"))
     {
       cprintf ("router is Linksys WRT600N v1.1\n");
       setRouter ("Linksys WRT600N v1.1");
       return ROUTER_WRT600N;
     }
-  if (nvram_match("boardnum","20070615") &&
+  if (nvram_match ("boardnum", "20070615") &&
       nvram_match ("boardtype", "0x478") && nvram_match ("cardbus", "0"))
     {
       cprintf ("router is Linksys WRT600N\n");
@@ -1025,10 +1041,10 @@ internal_getRouterBrand ()
       return ROUTER_USR_5430;
     }
 
-    
+
   if (boardnum == 1 && nvram_match ("boardtype", "0x456"))
     {
-      cprintf ("router is Netgear WG602 v3\n");	    
+      cprintf ("router is Netgear WG602 v3\n");
       setRouter ("Netgear WG602 v3");
       return ROUTER_NETGEAR_WG602_V3;
     }
@@ -1043,7 +1059,7 @@ internal_getRouterBrand ()
     {
       cprintf ("router is U.S. Robotics USR5451\n");
       setRouter ("U.S.Robotics USR5451");
-      return ROUTER_USR_5461; //should work in the same way
+      return ROUTER_USR_5461;	//should work in the same way
     }
 
   if (boardnum == 1024 && nvram_match ("boardtype", "0x0446"))
@@ -1107,11 +1123,11 @@ internal_getRouterBrand ()
       cprintf ("router is D-Link DIR-320\n");
       setRouter ("D-Link DIR-320");
       //apply some fixes
-      if (nvram_get("vlan2ports")!=NULL)
-      {
-        nvram_unset("vlan2ports");
-        nvram_unset("vlan2hwname");
-      }
+      if (nvram_get ("vlan2ports") != NULL)
+	{
+	  nvram_unset ("vlan2ports");
+	  nvram_unset ("vlan2hwname");
+	}
       return ROUTER_DLINK_DIR320;
     }
   if (nvram_match ("model_name", "DIR-330") &&
@@ -1119,23 +1135,23 @@ internal_getRouterBrand ()
     {
       cprintf ("router is D-Link DIR-330\n");
       setRouter ("D-Link DIR-330");
-      nvram_set("wan_ifnames","eth0"); // quirk
-      nvram_set("wan_ifname","eth0");
-      if (nvram_match("et0macaddr","00:90:4c:4e:00:0c"))
-        {
-	FILE *in=fopen("/dev/mtdblock/1","rb");
-	fseek(in,0x7a0022,SEEK_SET);
-	char mac[32];
-	fread(mac,32,1,in);
-	fclose(in);
-	mac[17]=0;
-	if (sv_valid_hwaddr(mac))
+      nvram_set ("wan_ifnames", "eth0");	// quirk
+      nvram_set ("wan_ifname", "eth0");
+      if (nvram_match ("et0macaddr", "00:90:4c:4e:00:0c"))
 	{
-	nvram_set("et0macaddr",mac);
-	fprintf(stderr,"restore D-Link MAC\n");
-	nvram_commit();
-	sys_reboot();
-	}
+	  FILE *in = fopen ("/dev/mtdblock/1", "rb");
+	  fseek (in, 0x7a0022, SEEK_SET);
+	  char mac[32];
+	  fread (mac, 32, 1, in);
+	  fclose (in);
+	  mac[17] = 0;
+	  if (sv_valid_hwaddr (mac))
+	    {
+	      nvram_set ("et0macaddr", mac);
+	      fprintf (stderr, "restore D-Link MAC\n");
+	      nvram_commit ();
+	      sys_reboot ();
+	    }
 	}
 /*      if (nvram_get("vlan2ports")!=NULL)
       {
@@ -1158,16 +1174,17 @@ internal_getRouterBrand ()
       cprintf ("router is Netgear WG602 v4\n");
       setRouter ("Netgear WG602 v4");
       return ROUTER_NETGEAR_WG602_V4;
-    }    
+    }
 
   if (boardnum == 1 &&
-      nvram_match ("boardtype", "0x048e") && nvram_match ("boardrev", "0x35") && nvram_match("parefldovoltage","0x28"))
+      nvram_match ("boardtype", "0x048e") && nvram_match ("boardrev", "0x35")
+      && nvram_match ("parefldovoltage", "0x28"))
     {
       cprintf ("router is netcore nw618\n");
       setRouter ("NetCore NW618");
       return ROUTER_WRT54G;
     }
-    
+
   if (boardnum == 42 &&
       nvram_match ("boardtype", "0x048E") && nvram_match ("boardrev", "0x10"))
     {
@@ -1175,8 +1192,8 @@ internal_getRouterBrand ()
       setRouter ("Linksys WRH54G");
       return ROUTER_LINKSYS_WRH54G;
     }
-    
-  if (nvram_match ("boardnum","00") &&
+
+  if (nvram_match ("boardnum", "00") &&
       nvram_match ("boardtype", "0x048E") && nvram_match ("boardrev", "0x10"))
     {
       cprintf ("router is Linksys WRT54G v8.1\n");
@@ -1184,39 +1201,38 @@ internal_getRouterBrand ()
       return ROUTER_WRT54G_V81;
     }
 
-  if (boardnum == 45 &&
-      nvram_match ("boardtype", "0x456"))
+  if (boardnum == 45 && nvram_match ("boardtype", "0x456"))
     {
       cprintf ("router is Asus WL-520G\n");
       setRouter ("Asus WL-520G");
       return ROUTER_ASUS_WL520G;
-    }    
-    
+    }
+
   if (boardnum == 45 &&
       nvram_match ("boardtype", "0x48E") && nvram_match ("boardrev", "0x10"))
     {
-	  char *hwver= nvram_safe_get ("hardware_version");
-	  if (startswith (hwver, "WL500GPV2"))
-	  {
-      cprintf ("router is Asus WL-500G Premium V2\n");
-      setRouter ("Asus WL-500G Premium V2");
-      return ROUTER_ASUS_WL500G_PRE_V2;		  
-	  }
-	  else
-	  {
-      cprintf ("router is Asus WL-520GU/GC\n");
-      setRouter ("Asus WL-520GU/GC");
-      return ROUTER_ASUS_WL520GUGC;
-  	  }
-    }   
-    
+      char *hwver = nvram_safe_get ("hardware_version");
+      if (startswith (hwver, "WL500GPV2"))
+	{
+	  cprintf ("router is Asus WL-500G Premium V2\n");
+	  setRouter ("Asus WL-500G Premium V2");
+	  return ROUTER_ASUS_WL500G_PRE_V2;
+	}
+      else
+	{
+	  cprintf ("router is Asus WL-520GU/GC\n");
+	  setRouter ("Asus WL-520GU/GC");
+	  return ROUTER_ASUS_WL520GUGC;
+	}
+    }
+
   if (boardnum == 83258 &&
       nvram_match ("boardtype", "0x48E") && nvram_match ("boardrev", "0x10"))
     {
       cprintf ("router is Netgear WGR614L\n");
       setRouter ("Netgear WGR614L");
       return ROUTER_NETGEAR_WGR614L;
-    }      
+    }
 
   if (boardnum == 56 &&
       nvram_match ("boardtype", "0x456") && nvram_match ("boardrev", "0x10"))
@@ -1226,14 +1242,16 @@ internal_getRouterBrand ()
       return ROUTER_LINKSYS_WTR54GS;
     }
 
-  if (nvram_match("boardnum", "WAP54GV3_8M_0614") && (nvram_match ("boardtype", "0x0467") || nvram_match ("boardtype", "0x467"))
-    && nvram_match ("WAPver", "3"))
+  if (nvram_match ("boardnum", "WAP54GV3_8M_0614")
+      && (nvram_match ("boardtype", "0x0467")
+	  || nvram_match ("boardtype", "0x467"))
+      && nvram_match ("WAPver", "3"))
     {
       cprintf ("router is WAP54G v3.x\n");
       setRouter ("Linksys WAP54G v3.x");
       return ROUTER_WAP54G_V3;
     }
-    
+
   setRouter ("Linksys WRT54G/GL/GS");
   cprintf ("router is wrt54g\n");
   return ROUTER_WRT54G;
@@ -1248,7 +1266,7 @@ internal_getRouterBrand ()
 int
 has_mimo (char *prefix)
 {
-  if (nvram_nmatch ("n","%s_phytypes", prefix))
+  if (nvram_nmatch ("n", "%s_phytypes", prefix))
     return 1;
   return 0;
 }
@@ -1475,9 +1493,8 @@ C_led (int i)
 {
 //show_hw_type(check_hw_type());
   int brand = getRouterBrand ();
-  
-  if (brand == ROUTER_WRT54G1X
-      || brand == ROUTER_LINKSYS_WRT55AG)
+
+  if (brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
     return C_led_4702 (i);
   else if (brand == ROUTER_WRT54G)
     return C_led_4712 (i);
@@ -1495,8 +1512,9 @@ diag_led (int type, int act)
   else if (brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
     return diag_led_4702 (type, act);
   else
-    if ((brand == ROUTER_WRTSL54GS || brand == ROUTER_WRT350N || brand == ROUTER_WRT310N
-	 || brand == ROUTER_WRT300NV11 || brand == ROUTER_BUFFALO_WZRG144NH) && type == DIAG)
+    if ((brand == ROUTER_WRTSL54GS || brand == ROUTER_WRT350N
+	 || brand == ROUTER_WRT310N || brand == ROUTER_WRT300NV11
+	 || brand == ROUTER_BUFFALO_WZRG144NH) && type == DIAG)
     return diag_led_4704 (type, act);
   else
     {
@@ -1547,9 +1565,9 @@ led_control (int type, int act)
   switch (getRouterBrand ())	//gpio definitions here: 0xYZ, Y=0:normal, Y=1:inverted, Z:gpio number (f=disabled)
     {
 #ifndef HAVE_BUFFALO
-	case ROUTER_LINKSYS_WRH54G:
-      diag_gpio = 0x11;  //power led blink / off to indicate factory defaults
-      break;	
+    case ROUTER_LINKSYS_WRH54G:
+      diag_gpio = 0x11;		//power led blink / off to indicate factory defaults
+      break;
     case ROUTER_WRT54G:
     case ROUTER_WRT54G_V8:
       power_gpio = 0x01;
@@ -1690,14 +1708,14 @@ led_control (int type, int act)
     case ROUTER_ASUS_WL550GE:
       power_gpio = 0x12;
       diag_gpio = 0x02;		//power led blink / off to indicate factory defaults
-      break; 
+      break;
     case ROUTER_WRT54G3G:
     case ROUTER_WRTSL54GS:
       power_gpio = 0x01;
       dmz_gpio = 0x10;
       connected_gpio = 0x17;	//ses orange
-      ses_gpio = 0x15;			//ses white
-      ses2_gpio = 0x17;			//ses orange    
+      ses_gpio = 0x15;		//ses white
+      ses2_gpio = 0x17;		//ses orange    
       break;
     case ROUTER_MOTOROLA_WE800G:
     case ROUTER_MOTOROLA_V1:
@@ -1735,7 +1753,7 @@ led_control (int type, int act)
       power_gpio = 0x01;
       diag_gpio = 0x11;		//power led blink / off to indicate fac.def.   
       connected_gpio = 0x13;	//ses orange
-      ses_gpio = 0x15;			//ses blue
+      ses_gpio = 0x15;		//ses blue
       break;
     case ROUTER_ASUS_WL500G:
       power_gpio = 0x10;
@@ -1759,12 +1777,12 @@ led_control (int type, int act)
     case ROUTER_NETGEAR_WNR834BV2:
       power_gpio = 0x02;
       diag_gpio = 0x03;		//power led amber   
-      connected_gpio = 0x07;//WAN led green  
+      connected_gpio = 0x07;	//WAN led green  
       break;
     case ROUTER_ASKEY_RT220XD:
       wlan_gpio = 0x10;
-      dmz_gpio = 0x11;  //not soldered  
-      break;   
+      dmz_gpio = 0x11;		//not soldered  
+      break;
 #endif
     }
   if (type == LED_DIAG && v1func == 1)
@@ -2070,7 +2088,7 @@ get_wan_face (void)
 #ifndef HAVE_MADWIFI
   else if (getSTA ())
     {
-	strcpy (localwanface, getSTA ());
+      strcpy (localwanface, getSTA ());
     }
 #else
   else if (getSTA ())
@@ -2355,9 +2373,9 @@ count_processes (char *pidName)
   FILE *fp;
   char line[254];
   char safename[64];
-  sprintf (safename, " %s ", pidName);  
+  sprintf (safename, " %s ", pidName);
   char zombie[64];
-  sprintf (zombie, "Z   [%s]", pidName);  // do not count zombies
+  sprintf (zombie, "Z   [%s]", pidName);	// do not count zombies
   int i = 0;
   cprintf ("Search for %s\n", pidName);
   if ((fp = popen ("ps", "r")))
@@ -2569,7 +2587,7 @@ show_hw_type (int type)
   else if (type == BCM4705G_BCM5395S_EWC_CHIP)
     cprintf ("BCM4705G + BCM5395S for EWC\n");
   else if (type == BCM4704_BCM5325F_CHIP)
-    cprintf ("BCM4704 + BCM5325F\n");  
+    cprintf ("BCM4704 + BCM5325F\n");
   else
     cprintf ("not defined\n");
 
@@ -2589,26 +2607,26 @@ check_hw_type (void)
     return BCM4702_CHIP;
   else if (btype == 0x0708 && !(boardflags & BFL_ENETADM))
     return BCM5325E_CHIP;
-  else if (btype == 0x456 && getRouterBrand () == ROUTER_BELKIN_F5D7231)  //stupid Belkin!
-    return BCM5352E_CHIP;    
+  else if (btype == 0x456 && getRouterBrand () == ROUTER_BELKIN_F5D7231)	//stupid Belkin!
+    return BCM5352E_CHIP;
   else if (btype == 0x456)
     return BCM5350_CHIP;
   else if (!strncmp (boardtype, "bcm95365", 8))
-    return BCM5365_CHIP;    
+    return BCM5365_CHIP;
   else if (btype == 0x048e)
     return BCM5354G_CHIP;
   else if (btype == 0x042f && !(boardflags & BFL_ENETADM))
     return BCM4704_BCM5325F_CHIP;
-  else if (btype == 0x478 && strstr (vlan0, "5*")) /* WRT300NV1.1 */
-	return BCM4705L_BCM5325E_EWC_CHIP;
-  else if ((btype == 0x478 && (strstr (vlan0, "8*") || strstr (vlan1, "8*"))) || nvram_match ("boot_hw_model", "WRT350N")) /* WRT350N */
-	return BCM4705_BCM5397_EWC_CHIP;
-  else if (btype == 0x489 || nvram_match ("boot_hw_model", "WRT310N")) /* WRT310N, temporal boardtype 0x478, wait for braodcom's txt file */
-	return BCM4705G_BCM5395S_EWC_CHIP;
+  else if (btype == 0x478 && strstr (vlan0, "5*"))	/* WRT300NV1.1 */
+    return BCM4705L_BCM5325E_EWC_CHIP;
+  else if ((btype == 0x478 && (strstr (vlan0, "8*") || strstr (vlan1, "8*"))) || nvram_match ("boot_hw_model", "WRT350N"))	/* WRT350N */
+    return BCM4705_BCM5397_EWC_CHIP;
+  else if (btype == 0x489 || nvram_match ("boot_hw_model", "WRT310N"))	/* WRT310N, temporal boardtype 0x478, wait for braodcom's txt file */
+    return BCM4705G_BCM5395S_EWC_CHIP;
   else if (btype == 0x0467)
     return BCM5352E_CHIP;
   else if (btype == 0x0101 && !(boardflags & BFL_ENETADM))
-	return BCM4712_BCM5325E_CHIP;
+    return BCM4712_BCM5325E_CHIP;
   else if ((btype == 0x0101 || btype == 0x0446) && (boardflags & BFL_ENETADM))	//0x446 is wap54g v2
     return BCM4712_CHIP;
   else if (btype == 0x0472 && !(boardflags & BFL_ENETADM))
@@ -2700,11 +2718,11 @@ get_device_name (void)
     case BCM5350_CHIP:
     case BCM5365_CHIP:
     case BCM4704_BCM5325F_CHIP:
-	case BCM4704_BCM5325F_EWC_CHIP:
+    case BCM4704_BCM5325F_EWC_CHIP:
     case BCM5352E_CHIP:
     case BCM5354G_CHIP:
-	case BCM4712_BCM5325E_CHIP:
-	case BCM4705L_BCM5325E_EWC_CHIP:
+    case BCM4712_BCM5325E_CHIP:
+    case BCM4705L_BCM5325E_EWC_CHIP:
       i = 0;
       break;
     case BCM4702_CHIP:
@@ -2812,7 +2830,8 @@ get_wl_assoc_mac (int *c)
 
 #ifdef HAVE_MSSID
   char assoccmd[4][32] =
-    { "wl assoclist", "wl -i wl0.1 assoclist", "wl -i wl0.2 assoclist", "wl -i wl0.3 assoclist" };
+    { "wl assoclist", "wl -i wl0.1 assoclist", "wl -i wl0.2 assoclist",
+"wl -i wl0.3 assoclist" };
   int ifcnt = 4;
 #else
   char assoccmd[1][16] = { "wl assoclist" };
@@ -2825,10 +2844,10 @@ get_wl_assoc_mac (int *c)
   for (i = 0; i < ifcnt; i++)
     {
       if (i)
-        {
-	char checkif[12];
-	sprintf(checkif,"wl0.%d",i);
-	if (!ifexists(checkif))
+	{
+	  char checkif[12];
+	  sprintf (checkif, "wl0.%d", i);
+	  if (!ifexists (checkif))
 	    break;
 	}
       if ((fp = popen (assoccmd[i], "r")))
@@ -3067,10 +3086,10 @@ wds_dev_config (int dev, int up)
       netmask = nvram_safe_get (wds_netmask_var);
 
       if (!strstr (wds_list, hwaddr))
-      {
-        close (s);
-        return -1;
-      }
+	{
+	  close (s);
+	  return -1;
+	}
 
 #ifdef WDS_DEBUG
       fprintf (fp, "checking validity\n");
@@ -3078,19 +3097,18 @@ wds_dev_config (int dev, int up)
 
       if (!sv_valid_hwaddr (hwaddr) || !sv_valid_ipaddr (ip)
 	  || !sv_valid_ipaddr (netmask))
-      {
-        close (s);
-        return -1;
-      }
+	{
+	  close (s);
+	  return -1;
+	}
 
 #ifdef WDS_DEBUG
       fprintf (fp, "valid mac %s ip %s nm %s\n", hwaddr, ip, netmask);
 #endif
 
-      sysprintf( "ifconfig %s down", wds_dev);
+      sysprintf ("ifconfig %s down", wds_dev);
 
-      sysprintf( "ifconfig %s %s netmask %s up", wds_dev, ip,
-		netmask);
+      sysprintf ("ifconfig %s %s netmask %s up", wds_dev, ip, netmask);
 
       snprintf (wds_gw_var, 31, "%s_gw", wds_var);
       gw = nvram_safe_get (wds_gw_var);
@@ -3107,7 +3125,7 @@ wds_dev_config (int dev, int up)
 #ifdef WDS_DEBUG
       fprintf (fp, "running down\n");
 #endif
-      sysprintf( "ifconfig %s down", wds_dev);
+      sysprintf ("ifconfig %s down", wds_dev);
 
     }
 
@@ -3363,13 +3381,13 @@ route_del (char *name, int metric, char *dst, char *gateway, char *genmask)
 
 #ifdef HAVE_MADWIFI
 static char *stalist[] =
-  { "ath0", "ath1", "ath2", "ath3", "ath4", "ath5", "ath6", "ath8", "ath9"};
+  { "ath0", "ath1", "ath2", "ath3", "ath4", "ath5", "ath6", "ath8", "ath9" };
 char *
 getSTA (void)
 {
 
 #ifdef HAVE_WAVESAT
-if (nvram_match("ofdm_mode","sta"))
+  if (nvram_match ("ofdm_mode", "sta"))
     return "ofdm";
 #endif
   int c = getifcount ("wifi");
@@ -3393,7 +3411,7 @@ char *
 getWET (void)
 {
 #ifdef HAVE_WAVESAT
-if (nvram_match("ofdm_mode","bridge"))
+  if (nvram_match ("ofdm_mode", "bridge"))
     return "ofdm";
 #endif
   int c = getifcount ("wifi");
@@ -3420,12 +3438,13 @@ getSTA ()
   int i;
   for (i = 0; i < c; i++)
     {
-      if (nvram_nmatch ("sta","wl%d_mode", i) || nvram_nmatch ("apsta","wl%d_mode", i))
+      if (nvram_nmatch ("sta", "wl%d_mode", i)
+	  || nvram_nmatch ("apsta", "wl%d_mode", i))
 	{
-	 if (!nvram_nmatch ("disabled","wl%d_net_mode",i))
-	  return get_wl_instance_name(i);
-//	 else
-//	  return nvram_nget ("wl%d_ifname", i);
+	  if (!nvram_nmatch ("disabled", "wl%d_net_mode", i))
+	    return get_wl_instance_name (i);
+//       else
+//        return nvram_nget ("wl%d_ifname", i);
 	}
 
     }
@@ -3439,12 +3458,13 @@ getWET ()
   int i;
   for (i = 0; i < c; i++)
     {
-      if (nvram_nmatch ("wet","wl%d_mode", i) ||nvram_nmatch ("apstawet","wl%d_mode", i))
+      if (nvram_nmatch ("wet", "wl%d_mode", i)
+	  || nvram_nmatch ("apstawet", "wl%d_mode", i))
 	{
-	 if (!nvram_nmatch ("disabled","wl%d_net_mode",i))
-	  return get_wl_instance_name(i);
-//	 else
-//	  return nvram_nget ("wl%d_ifname", i);
+	  if (!nvram_nmatch ("disabled", "wl%d_net_mode", i))
+	    return get_wl_instance_name (i);
+//       else
+//        return nvram_nget ("wl%d_ifname", i);
 
 	}
 
@@ -3527,7 +3547,7 @@ getIfList (char *buffer, const char *ifprefix)
 	}
       if (c == 0x20)
 	continue;
-      if (c == ':' || ifcount==30)
+      if (c == ':' || ifcount == 30)
 	{
 	  ifname[ifcount++] = 0;
 	  int skip = 0;
@@ -3569,41 +3589,43 @@ getIfList (char *buffer, const char *ifprefix)
 	  skipline (in);
 	  continue;
 	}
-      if (ifcount<30)
-      ifname[ifcount++] = c;
+      if (ifcount < 30)
+	ifname[ifcount++] = c;
     }
 }
-void getIfLists(char *eths,int size)
+void
+getIfLists (char *eths, int size)
 {
-char eths2[256];
-memset (eths, 0, size);
-memset (eths2, 0, 256);
+  char eths2[256];
+  memset (eths, 0, size);
+  memset (eths2, 0, 256);
 #ifdef HAVE_XSCALE
-  getIfList(eths,"ixp");
-  getIfList(eths2,"eth");
+  getIfList (eths, "ixp");
+  getIfList (eths2, "eth");
   sprintf (eths, "%s %s", eths, eths2);
 #else
-  getIfList(eths,"eth");
+  getIfList (eths, "eth");
 #endif
   memset (eths2, 0, 256);
-  getIfList(eths2,"vlan");
+  getIfList (eths2, "vlan");
   sprintf (eths, "%s %s", eths, eths2);
 #ifdef HAVE_MADWIFI
   memset (eths2, 0, 256);
-  getIfList(eths2,"ath");
+  getIfList (eths2, "ath");
   sprintf (eths, "%s %s", eths, eths2);
 #else
   memset (eths2, 0, 256);
-  getIfList(eths2,"wl");
+  getIfList (eths2, "wl");
   sprintf (eths, "%s %s", eths, eths2);
 #endif
 #ifdef HAVE_WAVESAT
   memset (eths2, 0, 256);
-  getIfList(eths2,"ofdm");
+  getIfList (eths2, "ofdm");
   sprintf (eths, "%s %s", eths, eths2);
 #endif
 
 }
+
 int
 contains (const char *string, char value)
 {
@@ -3820,6 +3842,7 @@ killall (const char *name, int sig)
     }
   return -2;
 }
+
 int
 isGrep (char *string, char *cmp)
 {
@@ -3870,84 +3893,87 @@ zencrypt (char *passwd)
   return crypt (passwd, salt);
 }
 
-void getLANMac (char *newmac)
+void
+getLANMac (char *newmac)
 {
-	strcpy (newmac, nvram_safe_get ("et0macaddr"));
+  strcpy (newmac, nvram_safe_get ("et0macaddr"));
 #ifndef HAVE_BUFFALO
-  
-  	if (nvram_match ("port_swap", "1"))
-  		{
-  		if (strlen(nvram_safe_get ("et1macaddr")) != 0) //safe: maybe et1macaddr not there?
-  			{
-			strcpy (newmac, nvram_safe_get ("et1macaddr"));
-			}
-		else
-			{
-			MAC_ADD(newmac);  //et0macaddr +1
-			}
-		}
-#endif	
-	return;
+
+  if (nvram_match ("port_swap", "1"))
+    {
+      if (strlen (nvram_safe_get ("et1macaddr")) != 0)	//safe: maybe et1macaddr not there?
+	{
+	  strcpy (newmac, nvram_safe_get ("et1macaddr"));
+	}
+      else
+	{
+	  MAC_ADD (newmac);	//et0macaddr +1
+	}
+    }
+#endif
+  return;
 }
 
-void getWirelessMac (char *newmac)
+void
+getWirelessMac (char *newmac)
 {
 #ifdef HAVE_BUFFALO
-		strcpy (newmac, nvram_safe_get ("il0macaddr"));
+  strcpy (newmac, nvram_safe_get ("il0macaddr"));
 #else
-//	if (strlen(nvram_safe_get ("il0macaddr")) != 0)
-//		{
-//		strcpy (newmac, nvram_safe_get ("il0macaddr"));
-//		}
-//	else
-		{
-		if (nvram_match ("port_swap", "1"))
-  			{
-  			if (strlen(nvram_safe_get ("et1macaddr")) != 0) //safe: maybe et1macaddr not there?
-  				{
-				strcpy (newmac, nvram_safe_get ("et1macaddr"));
-				MAC_ADD (newmac);  //et1macaddr +2
-				MAC_ADD (newmac);		
-				}
-			else
-				{
-				strcpy (newmac, nvram_safe_get ("et0macaddr"));
-				MAC_ADD (newmac);  //et0macaddr +3
-				MAC_ADD (newmac);
-				MAC_ADD (newmac);				
-				}
-			}
-		else
-			{
-			strcpy (newmac, nvram_safe_get ("et0macaddr"));
-			MAC_ADD (newmac);  //et0macaddr +2
-			MAC_ADD (newmac);
-			}
-		}
-#endif	
-	return;		
+//      if (strlen(nvram_safe_get ("il0macaddr")) != 0)
+//              {
+//              strcpy (newmac, nvram_safe_get ("il0macaddr"));
+//              }
+//      else
+  {
+    if (nvram_match ("port_swap", "1"))
+      {
+	if (strlen (nvram_safe_get ("et1macaddr")) != 0)	//safe: maybe et1macaddr not there?
+	  {
+	    strcpy (newmac, nvram_safe_get ("et1macaddr"));
+	    MAC_ADD (newmac);	//et1macaddr +2
+	    MAC_ADD (newmac);
+	  }
+	else
+	  {
+	    strcpy (newmac, nvram_safe_get ("et0macaddr"));
+	    MAC_ADD (newmac);	//et0macaddr +3
+	    MAC_ADD (newmac);
+	    MAC_ADD (newmac);
+	  }
+      }
+    else
+      {
+	strcpy (newmac, nvram_safe_get ("et0macaddr"));
+	MAC_ADD (newmac);	//et0macaddr +2
+	MAC_ADD (newmac);
+      }
+  }
+#endif
+  return;
 }
 
-void getWANMac (char *newmac)
+void
+getWANMac (char *newmac)
 {
-	strcpy (newmac, nvram_safe_get ("et0macaddr"));
+  strcpy (newmac, nvram_safe_get ("et0macaddr"));
 #ifndef HAVE_BUFFALO
-	MAC_ADD (newmac);  //et0macaddr +1
-  
-  	if (nvram_match ("port_swap", "1"))
-  		{
-  		if (strlen(nvram_safe_get ("et1macaddr")) != 0) //safe: maybe et1macaddr not there?
-  			{
-			strcpy (newmac, nvram_safe_get ("et1macaddr"));
-			MAC_ADD (newmac);  //et1macaddr +1			
-			}
-		else
-			{
-			MAC_ADD (newmac);  //et0macaddr +2
-			}
-		}
-#endif	
-	return;	
+  MAC_ADD (newmac);		//et0macaddr +1
+
+  if (nvram_match ("port_swap", "1"))
+    {
+      if (strlen (nvram_safe_get ("et1macaddr")) != 0)	//safe: maybe et1macaddr not there?
+	{
+	  strcpy (newmac, nvram_safe_get ("et1macaddr"));
+	  MAC_ADD (newmac);	//et1macaddr +1                      
+	}
+      else
+	{
+	  MAC_ADD (newmac);	//et0macaddr +2
+	}
+    }
+#endif
+  return;
 }
 
 
@@ -4288,10 +4314,12 @@ getmask (char *nmask)
     }
   return loopmask;
 }
-int doMultiCast(void)
+
+int
+doMultiCast (void)
 {
- char name[80], *next;
- int ifcount;
+  char name[80], *next;
+  int ifcount;
   if (nvram_match ("wan_proto", "disabled"))
     return 0;
   if (nvram_match ("block_multicast", "0"))
@@ -4306,7 +4334,7 @@ int doMultiCast(void)
 	ifcount++;
       }
   }
- return ifcount;
+  return ifcount;
 }
 
 int

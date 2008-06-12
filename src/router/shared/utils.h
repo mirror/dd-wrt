@@ -344,12 +344,12 @@ extern void set_host_domain_name (void);
 
 extern void encode (char *buf, int len);
 extern void decode (char *buf, int len);
-extern char * zencrypt (char *passwd);
+extern char *zencrypt (char *passwd);
 
 extern void getLANMac (char *newmac);
 extern void getWirelessMac (char *newmac);
 extern void getWANMac (char *newmac);
- 
+
 extern int led_control (int type, int act);
 enum
 { LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN,
@@ -419,9 +419,11 @@ enum
 { UNKNOWN_BOOT = -1, PMON_BOOT, CFE_BOOT };
 
 enum
-{ BCM4702_CHIP, BCM4712_CHIP, BCM5325E_CHIP, BCM5350_CHIP, BCM5365_CHIP, BCM4704_BCM5325F_CHIP,
+{ BCM4702_CHIP, BCM4712_CHIP, BCM5325E_CHIP, BCM5350_CHIP, BCM5365_CHIP,
+    BCM4704_BCM5325F_CHIP,
   BCM5352E_CHIP, BCM4712_BCM5325E_CHIP, BCM4704_BCM5325F_EWC_CHIP,
-  BCM4705_BCM5397_EWC_CHIP, BCM5354G_CHIP, BCM4705L_BCM5325E_EWC_CHIP, BCM4705G_BCM5395S_EWC_CHIP, 
+  BCM4705_BCM5397_EWC_CHIP, BCM5354G_CHIP, BCM4705L_BCM5325E_EWC_CHIP,
+    BCM4705G_BCM5395S_EWC_CHIP,
   NO_DEFINE_CHIP
 };
 
@@ -563,7 +565,7 @@ extern int pidof (const char *name);
 extern int killall (const char *name, int sig);
 extern int getifcount (const char *ifprefix);
 extern int getIfList (char *buffer, const char *ifprefix);
-extern void getIfLists(char *eths,int size);
+extern void getIfLists (char *eths, int size);
 extern int ifexists (const char *ifname);
 extern void getinterfacelist (const char *ifprefix, char *buffer);
 extern int count_processes (char *pidName);
@@ -571,8 +573,8 @@ extern int count_processes (char *pidName);
 int isGrep (char *string, char *cmp);
 int softkill (char *name);
 
-int getmask(char *netmask);
-int doMultiCast(void);
+int getmask (char *netmask);
+int doMultiCast (void);
 int getMTD (char *name);
 void getIPFromName (char *name, char *ip);
 
