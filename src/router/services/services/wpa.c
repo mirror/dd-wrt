@@ -465,7 +465,7 @@ start_nas_single (char *type, char *prefix)
 	      argv = (char *[])
 	      {
 	      "nas", "-P", pidfile, "-H", "34954", "-l",
-		  nvram_safe_get ("lan_ifname"), "-i", iface, mode, "-m",
+		  getBridge(iface), "-i", iface, mode, "-m",
 		  auth_mode, "-k", key, "-s", nvram_safe_get (ssid), "-w",
 		  sec_mode, "-g", nvram_safe_get (rekey), NULL};
 	    }
@@ -510,7 +510,7 @@ start_nas_single (char *type, char *prefix)
 	      else
 		{
 		  char *argv[] = { "nas", "-P", pidfile, "-H", "34954", "-l",
-		    nvram_safe_get ("lan_ifname"), "-i", iface, mode, "-m",
+		    getBridge(iface), "-i", iface, mode, "-m",
 		    auth_mode, "-r", key, "-s", nvram_safe_get (ssid), "-w",
 		    sec_mode, "-g", nvram_safe_get (rekey), "-h",
 		    nvram_safe_get (radius), "-p", nvram_safe_get (port),	// "-t", //radius rekey time
@@ -522,7 +522,7 @@ start_nas_single (char *type, char *prefix)
 	      conf = fopen (conffile, "w");
 	      fprintf (conf,
 		       "-H 34954 -l %s -i %s %s -m %s -r %s -s %s -w %s -g %s -h %s -p %s\n",
-		       nvram_safe_get ("lan_ifname"), iface, mode, auth_mode,
+		       getBridge(iface), iface, mode, auth_mode,
 		       key, nvram_safe_get (ssid), sec_mode,
 		       nvram_safe_get (rekey), nvram_safe_get (radius),
 		       nvram_safe_get (port));
@@ -553,7 +553,7 @@ start_nas_single (char *type, char *prefix)
 	      else
 		{
 		  char *argv[] = { "nas", "-P", pidfile, "-H", "34954", "-l",
-		    nvram_safe_get ("lan_ifname"), "-i", iface, mode, "-m",
+		    getBridge(iface), "-i", iface, mode, "-m",
 		    auth_mode, "-r", key, "-s", nvram_safe_get (ssid), "-w",
 		    sec_mode, "-I", nvram_safe_get (index), "-k",
 		    nvram_safe_get (wepkey), "-h",
@@ -568,7 +568,7 @@ start_nas_single (char *type, char *prefix)
 	      conf = fopen (conffile, "w");
 	      fprintf (conf,
 		       "-H 34954 -l %s -i %s %s -m %s -r %s -s %s -w %s -I %s -k %s -h %s -p %s\n",
-		       nvram_safe_get ("lan_ifname"), iface, mode, auth_mode,
+		       getBridge(iface), iface, mode, auth_mode,
 		       key, nvram_safe_get (ssid), sec_mode,
 		       nvram_safe_get (index), nvram_safe_get (wepkey),
 		       nvram_safe_get (radius), nvram_safe_get (port));
@@ -594,7 +594,7 @@ start_nas_single (char *type, char *prefix)
 	      else
 		{
 		  char *argv[] = { "nas", "-P", pidfile, "-H", "34954", "-l",
-		    nvram_safe_get ("lan_ifname"), "-i", iface, mode, "-m",
+		 getBridge(iface), "-i", iface, mode, "-m",
 		    auth_mode, "-k", key, "-s", nvram_safe_get (ssid), "-w",
 		    sec_mode, "-g",
 		    nvram_safe_get (rekey), NULL
@@ -605,7 +605,7 @@ start_nas_single (char *type, char *prefix)
 	      conf = fopen (conffile, "w");
 	      fprintf (conf,
 		       "-H 34954 -l %s -i %s %s -m %s -k %s -s %s -w %s -g %s\n",
-		       nvram_safe_get ("lan_ifname"), iface, mode, auth_mode,
+		       getBridge(iface), iface, mode, auth_mode,
 		       key, nvram_safe_get (ssid), sec_mode,
 		       nvram_safe_get (rekey));
 	      fclose (conf);
