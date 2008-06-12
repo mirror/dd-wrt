@@ -364,7 +364,7 @@ setupSupplicant (char *prefix, char *ssidoverride)
 	      eval ("iwconfig", prefix, "key", bul, athkey);	// setup wep encryption key
 	    }
 	}
-      sprintf (bul, "[%s]", nvram_safe_get ("%s_key", prefix));
+      sprintf (bul, "[%s]", nvram_nget ("%s_key", prefix));
       eval ("iwconfig", prefix, "key", bul);
 //      eval ("iwpriv", prefix, "authmode", "2");
     }
