@@ -292,20 +292,15 @@ int running=0;
 extern "C" void *brute(void *arg)
 {
 	int oldstate;
-uLongf test3len = test2len;
-pthread_mutex_lock(&pos_mutex);
-if (pbtest==3)
-    {
-    running--;
-    pthread_mutex_unlock(&pos_mutex);
-    return NULL;
-    }
-pthread_mutex_unlock(&pos_mutex);
+	uLongf test3len = test2len;
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &oldstate);
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldstate);
-Bytef *test2 = (Bytef*)malloc(test2len);
 
 pthread_mutex_lock(&pos_mutex);
+int takelcvalue = lctest;
+int takepbvalue = pbtest;
+int takelpvalue = lptest;
+lctest++;
 if (lctest==4)
     {
     lctest=0;
@@ -316,19 +311,25 @@ if (lptest==4)
     lptest=0;
     pbtest++;
     }
-lctest++;
+if (pbtest==3)
+    {
+    running--;
+    pthread_mutex_unlock(&pos_mutex);
+    return NULL;
+    }
 pthread_mutex_unlock(&pos_mutex);
+Bytef *test2 = (Bytef*)malloc(test2len);
 //fprintf(stderr,"try method [pb:%d lc:%d lp:%d fb:%d]\n",pbtest,lctest,lptest,testfb);
-int ret =  compress2_lzma_test(test2,&test3len,testsource,testsourcelen,testlevel,testfb,lcmatrix[lctest],lpmatrix[lptest],pbmatrix[pbtest]);
+int ret =  compress2_lzma_test(test2,&test3len,testsource,testsourcelen,testlevel,testfb,lcmatrix[takelcvalue],lpmatrix[takelpvalue],pbmatrix[takepbvalue]);
 //fprintf(stderr,"test return %d\n",ret);
 pthread_mutex_lock(&pos_mutex);
 if (test3len<test1len)
     {
     test1len = test3len;
     memcpy(test1,test2,test3len);
-    pbsave = pbtest;
-    lcsave = lctest;
-    lpsave = lptest;
+    pbsave = takepbvalue;
+    lcsave = takelcvalue;
+    lpsave = takelpvalue;
     }
 //fprintf(stderr,"finished %d running\n",running);
 running--;
