@@ -27,20 +27,19 @@
 #ifdef CONFIG_SQUASHFS_2_0_COMPATIBILITY
 #undef CONFIG_SQUASHFS_2_0_COMPATIBILITY
 #endif
+//#define SQUASHFS_TRACE 1
+
 #ifdef SQUASHFS_TRACE
-#define TRACE(s, args...)	printk(KERN_NOTICE "SQUASHFS: "s, ## args)
+#define TRACE(s, args...)	printk(KERN_EMERG "SQUASHFS: "s, ## args)
 #else
 #define TRACE(s, args...)	{}
 #endif
 
-#define ERROR(s, args...)	printk(KERN_ERR "SQUASHFS error: "s, ## args)
+#define ERROR(s, args...)	printk(KERN_EMERG "SQUASHFS error: "s, ## args)
 
-#define SERROR(s, args...)	do { \
-				if (!silent) \
-				printk(KERN_ERR "SQUASHFS error: "s, ## args);\
-				} while(0)
+#define SERROR(s, args...)	printk(KERN_EMERG "SQUASHFS error: "s, ## args);
 
-#define WARNING(s, args...)	printk(KERN_WARNING "SQUASHFS: "s, ## args)
+#define WARNING(s, args...)	printk(KERN_EMERG "SQUASHFS: "s, ## args)
 
 #define SQUASHFS_I(INO)			(&INO->u.squashfs_i)
 
@@ -50,7 +49,7 @@
 #define SQSH_EXTERN
 extern unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 				long long index, unsigned int length,
-				long long *next_index);
+				long long *next_index,int srclength);
 extern int squashfs_get_cached_block(struct super_block *s, char *buffer,
 				long long block, unsigned int offset,
 				int length, long long *next_block,
