@@ -2066,6 +2066,28 @@ showOption (webs_t wp, char *propname, char *nvname)
 
 }
 
+static void showAutoOption (webs_t wp, char *propname, char *nvname)
+{
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(%s)</script></div>\n<select name=\"%s\">\n",
+	     propname, nvname);
+  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"-1\\\" %s >\" + share.auto + \"</option>\");\n",
+	     nvram_default_match (nvname, "0",
+				  "-1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"1\\\" %s >\" + share.enabled + \"</option>\");\n",
+	     nvram_default_match (nvname, "1",
+				  "-1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n",
+	     nvram_default_match (nvname, "0",
+				  "-1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp, "//]]>\n</script>\n</select>\n</div>\n");
+
+}
 
 static void
 showOptions (webs_t wp, char *propname, char *names, char *select)
@@ -4272,6 +4294,9 @@ save_prefix (webs_t wp, char *prefix)
   copytonv (wp, "%s_wmm", prefix);
   copytonv (wp, "%s_txantenna", prefix);
   copytonv (wp,  "%s_rxantenna", prefix);
+  copytonv (wp, "%s_intmit",prefix);
+  copytonv (wp, "%s_noise_immunity",prefix);
+  copytonv (wp, "%s_ofdm_weak_det",prefix);
 
   sprintf (chanbw, "%s_channelbw", prefix);
   char *cbw = websGetVar (wp, chanbw, NULL);
@@ -4739,6 +4764,9 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   char wl_isolate[32];
   char wl_sifstime[32];
   char wl_preambletime[32];
+  char wl_intmit[32];
+  char wl_noise_immunity[32];
+  char wl_ofdm_weak_det[32];
   sprintf (wl_turbo, "%s_turbo", prefix);
 //  sprintf (wl_xchanmode, "%s_xchanmode", prefix);
   sprintf (wl_outdoor, "%s_outdoor", prefix);
@@ -4752,6 +4780,46 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   sprintf (wl_preambletime, "%s_preambletime", prefix);
   sprintf (wl_sifstime, "%s_sifstime", prefix);
   sprintf (wl_xr, "%s_xr", prefix);
+
+  sprintf (wl_intmit, "%s_intmit", prefix);
+  sprintf (wl_noise_immunity, "%s_noise_immunity", prefix);
+  sprintf (wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
+  showAutoOption(wp,"wl_basic.intmit", wl_intmit);
+
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.noise_immunity)</script></div>\n<select name=\"%s\">\n",
+	     wl_noise_immunity);
+  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"-1\\\" %s >\" + share.auto + \"</option>\");\n",
+	     nvram_default_match (wl_noise_immunity, "-1",
+				  "-1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"0\\\" %s >0</option>\");\n",
+	     nvram_default_match (wl_noise_immunity, "0",
+				  "-1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
+	     nvram_default_match (wl_noise_immunity, "1",
+				  "-1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"2\\\" %s >2</option>\");\n",
+	     nvram_default_match (wl_noise_immunity, "2",
+				  "-1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"3\\\" %s >3</option>\");\n",
+	     nvram_default_match (wl_noise_immunity, "3",
+				  "-1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"4\\\" %s >4</option>\");\n",
+	     nvram_default_match (wl_noise_immunity, "4",
+				  "-1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp, "//]]>\n</script>\n</select>\n</div>\n");
+
+
+  showOption (wp, "wl_basic.ofdm_weak_det", wl_ofdm_weak_det);
+   
   show_rates (wp, prefix, 0);
   show_rates (wp, prefix, 1);
 //#if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
