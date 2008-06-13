@@ -28,14 +28,18 @@
 #define CONFIG_SQUASHFS_2_0_COMPATIBILITY
 #endif
 
-#ifdef	CONFIG_SQUASHFS_VMALLOC
-#define SQUASHFS_ALLOC(a)		vmalloc(a)
-#define SQUASHFS_FREE(a)		vfree(a)
-#else
+//#ifdef CONFIG_SQUASHFS_VMALLOC
+//#define SQUASHFS_ALLOC(a)		vmalloc(a)
+//#define SQUASHFS_FREE(a)		vfree(a)
+//#else
 #define SQUASHFS_ALLOC(a)		kmalloc(a, GFP_KERNEL)
 #define SQUASHFS_FREE(a)		kfree(a)
+//#endif
+#ifdef CONFIG_SQUASHFS_FRAGMENT_CACHE_SIZE
+#define SQUASHFS_CACHED_FRAGMENTS	CONFIG_SQUASHFS_FRAGMENT_CACHE_SIZE
+#else
+#define SQUASHFS_CACHED_FRAGMENTS	3
 #endif
-#define SQUASHFS_CACHED_FRAGMENTS	CONFIG_SQUASHFS_FRAGMENT_CACHE_SIZE	
 #define SQUASHFS_MAJOR			3
 #define SQUASHFS_MINOR			0
 #define SQUASHFS_MAGIC			0x74717368
@@ -47,10 +51,14 @@
 #define SQUASHFS_METADATA_LOG		13
 
 /* default size of data blocks */
-#define SQUASHFS_FILE_SIZE		65536
+#define SQUASHFS_FILE_SIZE		131072
+#define SQUASHFS_FILE_LOG		17
+
+#define SQUASHFS_FILE_MAX_SIZE		1048576
+/*#define SQUASHFS_FILE_SIZE		65536
 #define SQUASHFS_FILE_LOG		16
 
-#define SQUASHFS_FILE_MAX_SIZE		65536
+#define SQUASHFS_FILE_MAX_SIZE		65536*/
 
 /* Max number of uids and gids */
 #define SQUASHFS_UIDS			256
