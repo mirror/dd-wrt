@@ -324,7 +324,7 @@ if (lctest==sizeof(lcmatrix))
     lctest=0;
     pbtest++;
     }
-//fprintf(stderr,"use method [pb:%d lc:%d lp:%d fb:%d]\n",pbtest,lctest,lptest,testfb);
+//fprintf(stderr,"try method [pb:%d lc:%d lp:%d fb:%d]\n",pbtest,lctest,lptest,testfb);
 //fprintf(stderr,"finished %d running\n",running);
 running--;
 pthread_mutex_unlock(&pos_mutex);
@@ -350,16 +350,16 @@ testlevel = level;
 pbtest=0;
 lctest=0;
 lptest=0;
-	if((thread = (pthread_t *)malloc((4) * sizeof(pthread_t))) == NULL)
+	if((thread = (pthread_t *)malloc((8) * sizeof(pthread_t))) == NULL)
 		fprintf(stderr,"Out of memory allocating thread descriptors\n");
 for (a=0;a<6;a++)
 {
 running=8;
-	for(i = 0; i < 4; i++) {
+	for(i = 0; i < 8; i++) {
 		if(pthread_create(&thread[i], NULL, brute, NULL) != 0 )
 			fprintf(stderr,"Failed to create thread\n");
 	}
-	for (i=0;i<4;i++)
+	for (i=0;i<8;i++)
 	    {
 	    pthread_join(thread[i],NULL);
 	    }
