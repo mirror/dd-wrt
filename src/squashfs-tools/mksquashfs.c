@@ -179,7 +179,7 @@ int excluded(char *filename, struct stat *buf);
 
 /* fragment block data structures */
 int fragments = 0;
-char fragment_data[SQUASHFS_FILE_SIZE];
+char fragment_data[SQUASHFS_FILE_MAX_SIZE];
 int fragment_size = 0;
 struct fragment {
 	unsigned int		index;
@@ -1188,14 +1188,14 @@ int write_file(squashfs_inode *inode, struct dir_ent *dir_ent, long long size, i
 	int block = 0, i, file, whole_file = 1, status;
 	unsigned int c_byte, frag_bytes;
 	long long bbytes, file_bytes = 0, start;
-	char buff[block_size], *c_buffer = NULL, *filename = dir_ent->pathname;
+	char *c_buffer = NULL, *filename = dir_ent->pathname;
 	struct fragment *fragment;
 	struct file_info *dupl_ptr = NULL;
 	struct duplicate_buffer_handle handle;
 	long long read_size = (size > SQUASHFS_MAX_FILE_SIZE) ? SQUASHFS_MAX_FILE_SIZE : size;
 	int blocks = (read_size + block_size - 1) >> block_log, allocated_blocks = blocks;
 	unsigned int *block_list, *block_listp;
-
+	char *buff = (char*)malloc(SQUASHFS_FILE_MAX_SIZE);
 	if((block_list = malloc(blocks * sizeof(unsigned int))) == NULL)
 		BAD_ERROR("Out of memory allocating block_list\n");
 	block_listp = block_list;
@@ -1240,8 +1240,10 @@ int write_file(squashfs_inode *inode, struct dir_ent *dir_ent, long long size, i
 	}
 
 	if(frag_bytes != 0)
+		{
 		if(read(file, buff, frag_bytes) == -1)
 			goto read_err;
+		}
 
 	close(file);
 	if(whole_file) {
@@ -1282,6 +1284,7 @@ wr_inode:
 
 read_err:
 	perror("Error in reading file, skipping...");
+	free(buff);
 	free(c_buffer);
 	free(block_list);
 	return FALSE;
@@ -1742,7 +1745,7 @@ unsigned int slog(unsigned int block)
 {
 	int i;
 
-	for(i = 12; i <= 16; i++)
+	for(i = 12; i <= 20; i++)
 		if(block == (1 << i))
 			return i;
 	return 0;
