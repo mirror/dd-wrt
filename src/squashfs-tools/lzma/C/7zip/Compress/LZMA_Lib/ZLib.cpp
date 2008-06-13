@@ -293,15 +293,32 @@ extern "C" void *brute(void *arg)
 {
 	int oldstate;
 uLongf test3len = test2len;
-if (pbtest==sizeof(pbmatrix))
+pthread_mutex_lock(&pos_mutex);
+if (pbtest==3)
     {
     running--;
+    pthread_mutex_unlock(&pos_mutex);
     return NULL;
     }
+pthread_mutex_unlock(&pos_mutex);
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &oldstate);
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldstate);
 Bytef *test2 = (Bytef*)malloc(test2len);
 
+pthread_mutex_lock(&pos_mutex);
+if (lctest==4)
+    {
+    lctest=0;
+    lptest++;
+    }
+if (lptest==4)
+    {
+    lptest=0;
+    pbtest++;
+    }
+lctest++;
+pthread_mutex_unlock(&pos_mutex);
+//fprintf(stderr,"try method [pb:%d lc:%d lp:%d fb:%d]\n",pbtest,lctest,lptest,testfb);
 int ret =  compress2_lzma_test(test2,&test3len,testsource,testsourcelen,testlevel,testfb,lcmatrix[lctest],lpmatrix[lptest],pbmatrix[pbtest]);
 //fprintf(stderr,"test return %d\n",ret);
 pthread_mutex_lock(&pos_mutex);
@@ -313,18 +330,6 @@ if (test3len<test1len)
     lcsave = lctest;
     lpsave = lptest;
     }
-lptest++;
-if (lptest==sizeof(lpmatrix))
-    {
-    lptest=0;
-    lctest++;
-    }
-if (lctest==sizeof(lcmatrix))
-    {
-    lctest=0;
-    pbtest++;
-    }
-//fprintf(stderr,"try method [pb:%d lc:%d lp:%d fb:%d]\n",pbtest,lctest,lptest,testfb);
 //fprintf(stderr,"finished %d running\n",running);
 running--;
 pthread_mutex_unlock(&pos_mutex);
