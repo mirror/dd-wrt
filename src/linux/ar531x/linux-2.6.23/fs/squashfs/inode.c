@@ -53,7 +53,7 @@
 
 /* default LZMA settings, should be in sync with mksquashfs */
 #define LZMA_LC 3
-#define LZMA_LP 0
+#define LZMA_LP 3
 #define LZMA_PB 2
 
 #define LZMA_WORKSPACE_SIZE ((LZMA_BASE_SIZE + \
@@ -200,14 +200,21 @@ SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 			long long *next_index)
 {
 	struct squashfs_sb_info *msblk = s->s_fs_info;
-	struct buffer_head *bh[((SQUASHFS_FILE_MAX_SIZE - 1) >>
-			msblk->devblksize_log2) + 2];
+	struct squashfs_super_block *sblk = &msblk->sblk;
+	struct buffer_head **bh;
 	unsigned int offset = index & ((1 << msblk->devblksize_log2) - 1);
 	unsigned int cur_index = index >> msblk->devblksize_log2;
 	int bytes, avail_bytes, b = 0, k;
 	char *c_buffer;
 	unsigned int compressed;
 	unsigned int c_byte = length;
+
+	bh = kmalloc(((sblk->block_size >> msblk->devblksize_log2) + 1) *
+								sizeof(struct buffer_head *), GFP_KERNEL);
+	if (bh == NULL)
+		{
+		goto read_failure;
+		}
 
 	if (c_byte) {
 		bytes = msblk->devblksize - offset;
@@ -271,9 +278,9 @@ SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 		int zlib_err;
 
 #ifdef SQUASHFS_LZMA
-		if ((zlib_err = LzmaDecode(lzma_workspace,
-			LZMA_WORKSPACE_SIZE, LZMA_LC, LZMA_LP, LZMA_PB,
-			c_buffer, c_byte, buffer, msblk->read_size, &bytes)) != LZMA_RESULT_OK)
+		if ((zlib_err = LzmaDecode(lzma_workspace, 
+			LZMA_WORKSPACE_SIZE, c_buffer[1],c_buffer[2],c_buffer[0],//LZMA_LC, LZMA_LP, LZMA_PB, 
+			c_buffer+4, c_byte-4, buffer, msblk->read_size, &bytes)) != LZMA_RESULT_OK)
 		{
 			ERROR("lzma returned unexpected result 0x%x\n", zlib_err);
 			bytes = 0;
@@ -301,6 +308,7 @@ SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 		*next_index = index + c_byte + (length ? 0 :
 				(SQUASHFS_CHECK_DATA(msblk->sblk.flags)
 				 ? 3 : 2));
+	kfree(bh);
 	return bytes;
 
 block_release:
@@ -308,6 +316,8 @@ block_release:
 		brelse(bh[b]);
 
 read_failure:
+	if (bh)
+	    kfree(bh);
 	ERROR("sb_bread failed reading block 0x%x\n", cur_index);
 	return 0;
 }
@@ -475,6 +485,7 @@ SQSH_EXTERN struct squashfs_fragment_cache *get_cached_fragment(struct super_blo
 {
 	int i, n;
 	struct squashfs_sb_info *msblk = s->s_fs_info;
+	struct squashfs_super_block *sblk = &msblk->sblk;
 
 	while ( 1 ) {
 		down(&msblk->fragment_mutex);
@@ -507,7 +518,7 @@ SQSH_EXTERN struct squashfs_fragment_cache *get_cached_fragment(struct super_blo
 
 			if (msblk->fragment[i].data == NULL)
 				if (!(msblk->fragment[i].data = SQUASHFS_ALLOC
-						(SQUASHFS_FILE_MAX_SIZE))) {
+						(sblk->block_size))) {
 					ERROR("Failed to allocate fragment "
 							"cache block\n");
 					up(&msblk->fragment_mutex);
