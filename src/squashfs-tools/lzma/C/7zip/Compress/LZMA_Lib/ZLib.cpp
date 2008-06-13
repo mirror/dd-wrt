@@ -262,16 +262,8 @@ extern "C" int compress2_lzma_test (Bytef *dest,   uLongf *destLen,
 
 #include <malloc.h>
 #include <stdio.h>
+#include <pthread.h>
 
-extern "C" int compress2_lzma (Bytef *dest,   uLongf *destLen,
-                                  	const Bytef *source, uLong sourceLen,
-                                  	int level, int fb, int lc, int lp, int pb)
-{
-Bytef *test1 = (Bytef*)malloc(*destLen);
-Bytef *test2 = (Bytef*)malloc(*destLen);
-uLongf test1len = *destLen+*destLen;
-uLongf test2len = *destLen;
-//int ret = compress2_lzma_test(test1,&test1len,source,sourceLen,level,-1,-1,-1,-1);
 
 unsigned char pbmatrix[3]={0,1,2};
 unsigned char lcmatrix[4]={0,1,2,3};
@@ -283,44 +275,105 @@ int lcsave = -1;
 int lpsave = -1;
 
 
-int pbtest;
-int lctest;
+int pbtest=0;
+int lctest=0;
 int lptest=0;
-int ret2;
 
-for (pbtest=0;pbtest<sizeof(pbmatrix);pbtest++)
+int testlevel;
+int testfb;
+pthread_mutex_t	pos_mutex;
+Bytef *test1;
+const Bytef *testsource;
+
+uLongf test2len;
+uLongf test1len;
+uLongf testsourcelen;
+int running=0;
+extern "C" void *brute(void *arg)
 {
-for (lptest=0;lptest<sizeof(lpmatrix);lptest++)
-{
-for (lctest=0;lctest<sizeof(lcmatrix);lctest++)
-{
-//    fprintf(stderr,"test method [pb:%d lc:%d lp:%d fb:%d]\r",pbtest,lctest,lptest,fb);
-test2len = *destLen;
-ret2 = compress2_lzma_test(test2,&test2len,source,sourceLen,level,fb,lcmatrix[lctest],lpmatrix[lptest],pbmatrix[pbtest]);
-if (test2len<test1len)
+	int oldstate;
+uLongf test3len = test2len;
+if (pbtest==sizeof(pbmatrix))
     {
-    test1len = test2len;
-    memcpy(test1,test2,test2len);
+    running--;
+    return NULL;
+    }
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &oldstate);
+	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldstate);
+Bytef *test2 = (Bytef*)malloc(test2len);
+
+int ret =  compress2_lzma_test(test2,&test3len,testsource,testsourcelen,testlevel,testfb,lcmatrix[lctest],lpmatrix[lptest],pbmatrix[pbtest]);
+//fprintf(stderr,"test return %d\n",ret);
+pthread_mutex_lock(&pos_mutex);
+if (test3len<test1len)
+    {
+    test1len = test3len;
+    memcpy(test1,test2,test3len);
     pbsave = pbtest;
     lcsave = lctest;
     lpsave = lptest;
     }
+lptest++;
+if (lptest==sizeof(lpmatrix))
+    {
+    lptest=0;
+    lctest++;
+    }
+if (lctest==sizeof(lcmatrix))
+    {
+    lctest=0;
+    pbtest++;
+    }
+//fprintf(stderr,"use method [pb:%d lc:%d lp:%d fb:%d]\n",pbtest,lctest,lptest,testfb);
+//fprintf(stderr,"finished %d running\n",running);
+running--;
+pthread_mutex_unlock(&pos_mutex);
+free(test2);
+return NULL;
 }
-}
-}
-//test2len = *destLen;
-//int ret2 = compress2_lzma_test(test2,&test2len,source,sourceLen,level,fb,lcsave,lpsave,pbsave);
 
-    fprintf(stderr,"use method [pb:%d lc:%d lp:%d fb:%d]\n",pbsave,lcsave,lpsave,fb);
+
+
+extern "C" int compress2_lzma (Bytef *dest,   uLongf *destLen,
+                                  	const Bytef *source, uLong sourceLen,
+                                  	int level, int fb, int lc, int lp, int pb)
+{
+int i,a;
+pthread_t *thread;
+test1 = (Bytef*)malloc(*destLen);
+test1len = *destLen+*destLen;
+test2len = *destLen;
+testsource = source;
+testfb = fb;
+testsourcelen = sourceLen;
+testlevel = level;
+pbtest=0;
+lctest=0;
+lptest=0;
+	if((thread = (pthread_t *)malloc((4) * sizeof(pthread_t))) == NULL)
+		fprintf(stderr,"Out of memory allocating thread descriptors\n");
+for (a=0;a<6;a++)
+{
+running=8;
+	for(i = 0; i < 4; i++) {
+		if(pthread_create(&thread[i], NULL, brute, NULL) != 0 )
+			fprintf(stderr,"Failed to create thread\n");
+	}
+	for (i=0;i<4;i++)
+	    {
+	    pthread_join(thread[i],NULL);
+	    }
+}
+    fprintf(stderr,"use method [pb:%d lc:%d lp:%d fb:%d] (len %d)\n",pbsave,lcsave,lpsave,fb,test1len);
     memcpy(dest+4,test1,test1len);
     dest[0]=pbsave;
     dest[1]=lcsave;
     dest[2]=lpsave;
     dest[3]=fb;
     *destLen=test1len+4;
-    free(test2);
+free(thread);
     free(test1);
-    return ret2;
+    return Z_OK;
 }
 
 
@@ -370,11 +423,14 @@ ZEXTERN int ZEXPORT compress2 OF((Bytef *dest,   uLongf *destLen,
 	properties[7].boolVal = VARIANT_TRUE;
 	
 	if (encoderSpec->SetCoderProperties(propIDs, properties, kNumProps) != S_OK)
+		{
+		fprintf(stderr,"coder properties error\n");
 		return Z_MEM_ERROR; // should not happen
-	
+		}
 	HRESULT result = encoder->Code(inStream, outStream, 0, 0, 0);
 	if (result == E_OUTOFMEMORY)
 	{
+		fprintf(stderr,"mem error\n");
 		return Z_MEM_ERROR;
 	}   
 	else if (result != S_OK)
