@@ -178,17 +178,25 @@ out:
 
 SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 			long long index, unsigned int length,
-			long long *next_index)
+			long long *next_index,int srclength)
 {
 	struct squashfs_sb_info *msblk = &s->u.squashfs_sb;
-	struct buffer_head *bh[((SQUASHFS_FILE_MAX_SIZE - 1) >>
-			msblk->devblksize_log2) + 2];
+	struct squashfs_super_block *sblk = &msblk->sblk;
+	struct buffer_head **bh;
 	unsigned int offset = index & ((1 << msblk->devblksize_log2) - 1);
 	unsigned int cur_index = index >> msblk->devblksize_log2;
 	int bytes, avail_bytes, b = 0, k;
 	char *c_buffer;
 	unsigned int compressed;
 	unsigned int c_byte = length;
+	bh = kmalloc(((sblk->block_size >> msblk->devblksize_log2) + 1) *
+								sizeof(struct buffer_head *), GFP_KERNEL);
+	if (bh == NULL)
+		{
+		ERROR("Error while kmalloc %d\n",((sblk->block_size >> msblk->devblksize_log2) + 1) * sizeof(struct buffer_head *));
+		ERROR("sblk %d devblksize_log2 %d\n",sblk->block_size,msblk->devblksize_log2);
+		goto read_failure;
+		}
 
 	if (c_byte) {
 		bytes = msblk->devblksize - offset;
@@ -198,6 +206,12 @@ SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 
 		TRACE("Block @ 0x%llx, %scompressed size %d\n", index, compressed
 					? "" : "un", (unsigned int) c_byte);
+
+		if (c_byte > srclength || index < 0 || (index + c_byte) > sblk->bytes_used)
+			{
+			ERROR("size check failed cbyte %d > srclength %d || index %d < 0 || index+cbyte %d > sblk->bytes_used %d\n",c_byte,srclength,index,(index+c_byte),sblk->bytes_used); 
+			goto read_failure;
+			}
 
 		if (!(bh[0] = sb_getblk(s, cur_index)))
 			goto block_release;
@@ -209,9 +223,18 @@ SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 		}
 		ll_rw_block(READ, b, bh);
 	} else {
+		if (index < 0 || (index + 2) > sblk->bytes_used)
+			{
+			ERROR("index %d < 0 || index+2 > sblk->bytes_used %d\n",index,index+2,sblk->bytes_used);
+			goto read_failure;
+			}
+
 		if (!(bh[0] = get_block_length(s, &cur_index, &offset,
 								&c_byte)))
+			{
+			ERROR("get_block_length failed\n");
 			goto read_failure;
+			}
 
 		bytes = msblk->devblksize - offset;
 		compressed = SQUASHFS_COMPRESSED(c_byte);
@@ -221,6 +244,11 @@ SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 		TRACE("Block @ 0x%llx, %scompressed size %d\n", index, compressed
 					? "" : "un", (unsigned int) c_byte);
 
+		if (c_byte > srclength || (index + c_byte) > sblk->bytes_used)
+			{
+			ERROR("index %d > srclength %d || index+cbyte > sblk->bytes_used %d\n",index,srclength,index+c_byte,sblk->bytes_used);
+			goto read_failure;
+			}
 		for (b = 1; bytes < c_byte; b++) {
 			if (!(bh[b] = sb_getblk(s, ++cur_index)))
 				goto block_release;
@@ -287,6 +315,7 @@ SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 		*next_index = index + c_byte + (length ? 0 :
 				(SQUASHFS_CHECK_DATA(msblk->sblk.flags)
 				 ? 3 : 2));
+	kfree(bh);
 	return bytes;
 
 block_release:
@@ -295,6 +324,7 @@ block_release:
 
 read_failure:
 	ERROR("sb_bread failed reading block 0x%x\n", cur_index);
+	kfree(bh);
 	return 0;
 }
 
@@ -358,7 +388,7 @@ SQSH_EXTERN int squashfs_get_cached_block(struct super_block *s, char *buffer,
 			if (!(msblk->block_cache[i].length =
 						squashfs_read_data(s,
 						msblk->block_cache[i].data,
-						block, 0, &next_index))) {
+						block, 0, &next_index,SQUASHFS_METADATA_SIZE))) {
 				ERROR("Unable to read cache block [%llx:%x]\n",
 						block, offset);
 				goto out;
@@ -461,6 +491,7 @@ SQSH_EXTERN struct squashfs_fragment_cache *get_cached_fragment(struct super_blo
 {
 	int i, n;
 	struct squashfs_sb_info *msblk = &s->u.squashfs_sb;
+	struct squashfs_super_block *sblk = &msblk->sblk;
 
 	while ( 1 ) {
 		down(&msblk->fragment_mutex);
@@ -493,7 +524,7 @@ SQSH_EXTERN struct squashfs_fragment_cache *get_cached_fragment(struct super_blo
 			
 			if (msblk->fragment[i].data == NULL)
 				if (!(msblk->fragment[i].data = SQUASHFS_ALLOC
-						(SQUASHFS_FILE_MAX_SIZE))) {
+						(sblk->block_size))) {
 					ERROR("Failed to allocate fragment "
 							"cache block\n");
 					up(&msblk->fragment_mutex);
@@ -506,7 +537,7 @@ SQSH_EXTERN struct squashfs_fragment_cache *get_cached_fragment(struct super_blo
 
 			if (!(msblk->fragment[i].length = squashfs_read_data(s,
 						msblk->fragment[i].data,
-						start_block, length, NULL))) {
+						start_block, length, NULL,sblk->block_size))) {
 				ERROR("Unable to read fragment cache block "
 							"[%llx]\n", start_block);
 				msblk->fragment[i].locked = 0;
@@ -894,6 +925,7 @@ int read_fragment_index_table(struct super_block *s)
 {
 	struct squashfs_sb_info *msblk = &s->u.squashfs_sb;
 	struct squashfs_super_block *sblk = &msblk->sblk;
+	unsigned int length = SQUASHFS_FRAGMENT_INDEX_BYTES(sblk->fragments);
 
 	if (!(msblk->fragment_index = kmalloc(SQUASHFS_FRAGMENT_INDEX_BYTES
 					(sblk->fragments), GFP_KERNEL))) {
@@ -907,7 +939,7 @@ int read_fragment_index_table(struct super_block *s)
 					sblk->fragment_table_start,
 					SQUASHFS_FRAGMENT_INDEX_BYTES
 					(sblk->fragments) |
-					SQUASHFS_COMPRESSED_BIT_BLOCK, NULL)) {
+					SQUASHFS_COMPRESSED_BIT_BLOCK, NULL,length)) {
 		ERROR("unable to read fragment index table\n");
 		return 0;
 	}
@@ -988,10 +1020,10 @@ static struct super_block *squashfs_read_super(struct super_block *s,
 	
 	init_waitqueue_head(&msblk->waitq);
 	init_waitqueue_head(&msblk->fragment_wait_queue);
-
+	sblk->bytes_used = sizeof(struct squashfs_super_block);
 	if (!squashfs_read_data(s, (char *) sblk, SQUASHFS_START,
 					sizeof(struct squashfs_super_block) |
-					SQUASHFS_COMPRESSED_BIT_BLOCK, NULL)) {
+					SQUASHFS_COMPRESSED_BIT_BLOCK, NULL,sizeof(struct squashfs_super_block))) {
 		SERROR("unable to read superblock\n");
 		goto failed_mount;
 	}
@@ -1088,7 +1120,7 @@ static struct super_block *squashfs_read_super(struct super_block *s,
 		if (!squashfs_read_data(s, (char *) &suid, sblk->uid_start,
 					((sblk->no_uids + sblk->no_guids) *
 					 sizeof(unsigned int)) |
-					SQUASHFS_COMPRESSED_BIT_BLOCK, NULL)) {
+					SQUASHFS_COMPRESSED_BIT_BLOCK, NULL, (sblk->no_uids + sblk->no_guids) * sizeof(unsigned int))) {
 			ERROR("unable to read uid/gid table\n");
 			goto failed_mount;
 		}
@@ -1099,7 +1131,7 @@ static struct super_block *squashfs_read_super(struct super_block *s,
 		if (!squashfs_read_data(s, (char *) msblk->uid, sblk->uid_start,
 					((sblk->no_uids + sblk->no_guids) *
 					 sizeof(unsigned int)) |
-					SQUASHFS_COMPRESSED_BIT_BLOCK, NULL)) {
+					SQUASHFS_COMPRESSED_BIT_BLOCK, NULL, (sblk->no_uids + sblk->no_guids) * sizeof(unsigned int))) {
 			ERROR("unable to read uid/gid table\n");
 			goto failed_mount;
 		}
@@ -1514,7 +1546,7 @@ static int squashfs_readpage(struct file *file, struct page *page)
 		down(&msblk->read_page_mutex);
 		
 		if (!(bytes = squashfs_read_data(inode->i_sb, msblk->read_page,
-					block, bsize, NULL))) {
+					block, bsize, NULL,sblk->block_size))) {
 			ERROR("Unable to read page, block %llx, size %x\n", block,
 					bsize);
 			up(&msblk->read_page_mutex);
@@ -1624,7 +1656,7 @@ static int squashfs_readpage4K(struct file *file, struct page *page)
 
 		down(&msblk->read_page_mutex);
 		bytes = squashfs_read_data(inode->i_sb, msblk->read_page, block,
-					bsize, NULL);
+					bsize, NULL,sblk->block_size);
 		pageaddr = kmap_atomic(page, KM_USER0);
 		if (bytes)
 			memcpy(pageaddr, msblk->read_page, bytes);
