@@ -207,6 +207,7 @@ setdistance (char *device, int distance, int chanbw)
     }
 }
 
+
 //returns the number of installed atheros devices/cards
 
 static char iflist[1024];
@@ -1264,7 +1265,18 @@ configure_single (int count)
     }
   else
     setsysctrl (wif, "dynack_count", 20);
-
+  
+  char wl_intmit[32];
+  char wl_noise_immunity[32];
+  char wl_ofdm_weak_det[32];
+  sprintf (wl_intmit, "%s_intmit", dev);
+  sprintf (wl_noise_immunity, "%s_noise_immunity", dev);
+  sprintf (wl_ofdm_weak_det, "%s_ofdm_weak_det", dev);
+  setsysctrl(wif,"intmit",atoi(nvram_default_get(wl_intmit,"-1")));
+  setsysctrl(wif,"noise_immunity",atoi(nvram_default_get(wl_noise_immunity,"-1")));
+  setsysctrl(wif,"ofdm_weak_det",atoi(nvram_default_get(wl_ofdm_weak_det,"1")));
+  
+  
 #ifdef HAVE_NS5
   char *gpio = "1";
 #endif
