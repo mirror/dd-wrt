@@ -2713,13 +2713,14 @@ static void changepass (webs_t wp)
     }
 
 
-  if (pass && pass && strcmp (value, TMP_PASSWD) && valid_name (wp, pass, NULL))
+  if (pass && value && strcmp (value, TMP_PASSWD) && valid_name (wp, pass, NULL))
     {
       nvram_set ("http_passwd", zencrypt (pass));
     
       system2 ("/sbin/setpasswd");
     }
 nvram_commit();
+sys_reboot();
 }
 
 #ifdef HAVE_CCONTROL
@@ -2855,7 +2856,7 @@ static struct gozila_action gozila_actions[] = {
 #ifdef HAVE_REGISTER
   {"Register", "activate", "", 1, RESTART, reg_validate},
 #endif
-  {"index","changepass","",1,RESTART, changepass},
+  {"Reboot","changepass","",1,RESTART, changepass},
 #ifdef HAVE_SUPERCHANNEL
   {"SuperChannel", "activate", "", 1, REFRESH, superchannel_validate},
 #endif
