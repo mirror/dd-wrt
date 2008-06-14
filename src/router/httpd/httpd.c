@@ -753,7 +753,7 @@ handle_request (void)
 	}
     }
 #endif
-
+int changepassword=0;
 
 #ifdef HAVE_REGISTER
   if (!registered)
@@ -770,6 +770,7 @@ handle_request (void)
     {
     if ((nvram_match("http_username",DEFAULT_USER) && nvram_match("http_passwd",DEFAULT_PASS)) || nvram_match("http_username","") || nvram_match("http_passwd","admin"))
     {
+    changepassword=1;
       if (endswith (file, ".asp"))
         file = "changepass.asp";
       else if (endswith (file, ".htm"))
@@ -879,7 +880,7 @@ handle_request (void)
 #ifdef HAVE_REGISTER
 	    if (registered)
 #endif
-	      if (handler->auth)
+	      if (!changepassword && handler->auth)
 		{
 		  int result =
 		    handler->auth (auth_userid, auth_passwd, auth_realm);
