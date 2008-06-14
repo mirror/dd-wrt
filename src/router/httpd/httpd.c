@@ -760,13 +760,24 @@ handle_request (void)
     {
       if (endswith (file, ".asp"))
 	file = "register.asp";
-      if (endswith (file, ".htm"))
+      else if (endswith (file, ".htm"))
 	file = "register.asp";
-      if (endswith (file, ".html"))
+      else if (endswith (file, ".html"))
 	file = "register.asp";
-    }
+    }else
 
 #endif
+    {
+    if ((nvram_match("http_username",DEFAULT_USER) && nvram_match("http_passwd",DEFAULT_PASS)) || nvram_match("http_username","") || nvram_match("http_passwd","admin"))
+    {
+      if (endswith (file, ".asp"))
+        file = "changepass.asp";
+      else if (endswith (file, ".htm"))
+        file = "changepass.asp";
+      else if (endswith (file, ".html"))
+        file = "changepass.asp";
+    }
+    }
 
   if (containsstring (file, "cgi-bin"))
     {

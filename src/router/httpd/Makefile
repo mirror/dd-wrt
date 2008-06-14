@@ -516,6 +516,7 @@ clean:
 	#rm -rf $(SRCBASE)/../tools/src/code_header.o	
 
 install:
+#	lzma e www www.lz
 	install -D www $(INSTALLDIR)/etc/www
 	install -D httpd $(INSTALLDIR)/usr/sbin/httpd
 ifneq ($(CONFIG_NOSSL),y)
