@@ -46,7 +46,7 @@ unqstrstr (char *haystack, char *needle)
 {
   char *cur;
   int q;
-  int needlelen = strlen(needle);
+  int needlelen = strlen (needle);
   int haylen = strlen (haystack);
   for (cur = haystack, q = 0;
        cur < &haystack[haylen] && !(!q && !strncmp (needle, cur, needlelen));
@@ -62,7 +62,7 @@ static char *
 get_arg (char *args, char **next)
 {
   char *arg, *end;
-  
+
   /* Parse out arg, ... */
   if (!(end = uqstrchr (args, ',')))
     {
@@ -140,9 +140,9 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
       /* Look for <% ... */
 //      LOG("look start");
 
-      if (!asp && pattern[0]=='{')
+      if (!asp && pattern[0] == '{')
 	{
-	
+
 	  if (!strncmp (pattern, "{i}", len))
 	    {
 	      if (len == 3)
@@ -341,21 +341,21 @@ sprintf(tmpfile,"/tmp/%s",path);
 //fprintf(stderr,"read %s\n",path);
 FILE *web = fopen(tmpfile,"rb");
 if (web!=NULL)return web;*/
-cprintf("opening %s\n",path);
+  cprintf ("opening %s\n", path);
   char *buf = NULL;
   int i = 0;
   while (websRomPageIndex[i].path != NULL)
     {
       if (!strcmp (websRomPageIndex[i].path, path))
 	{
-	 FILE *web=fopen("/etc/www","rb");
-	  fseek(web,websRomPageIndex[i].offset,0);
-cprintf("found %s\n",path);
+	  FILE *web = fopen ("/etc/www", "rb");
+	  fseek (web, websRomPageIndex[i].offset, 0);
+	  cprintf ("found %s\n", path);
 	  return web;
 	}
       i++;
     }
-cprintf("not found %s\n",path);
+  cprintf ("not found %s\n", path);
 
   return NULL;
 }
@@ -389,12 +389,12 @@ if (web!=NULL)
 }
 
 void
-do_ej (char *path, webs_t stream,char *query)	// jimmy, https, 8/4/2003
+do_ej (char *path, webs_t stream, char *query)	// jimmy, https, 8/4/2003
 {
 
 //open file and read into memory
-  char *buffer=NULL;
-  FILE  *fp = NULL;
+  char *buffer = NULL;
+  FILE *fp = NULL;
 #ifdef HAVE_VFS
   entry *e;
 #endif
@@ -417,8 +417,8 @@ do_ej (char *path, webs_t stream,char *query)	// jimmy, https, 8/4/2003
 //fprintf(stderr,"try to find %s from %s\n",path,websRomPageIndex[i].path);
 	  if (!strcmp (websRomPageIndex[i].path, path))
 	    {
-	      fp = fopen("/etc/www","rb");
-	      fseek(fp,websRomPageIndex[i].offset,SEEK_SET);   
+	      fp = fopen ("/etc/www", "rb");
+	      fseek (fp, websRomPageIndex[i].offset, SEEK_SET);
 	      len = websRomPageIndex[i].size;
 	      break;
 	    }
@@ -438,7 +438,8 @@ do_ej (char *path, webs_t stream,char *query)	// jimmy, https, 8/4/2003
 	  fread (buffer, 1, len, in);
 	  buffer[len] = 0;
 	  fclose (in);
-	}else
+	}
+      else
 	{
 	  le = 1;
 	  buffer = (char *) malloc (len + 1);
