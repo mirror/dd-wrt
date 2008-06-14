@@ -1650,24 +1650,20 @@ valid_name (webs_t wp, char *value, struct variable *v)
   int n, max;
 
   n = atoi (value);
-  max = atoi (v->argv[0]);
 
 
   if (!ISASCII (value, 1))
     {
-      websDebugWrite (wp,
-		      "Invalid <b>%s</b> %s: NULL or have illegal characters<br>",
-		      v->longname, value);
       return FALSE;
     }
+if (v)
+{
+  max = atoi (v->argv[0]);
   if (strlen (value) > max)
     {
-      websDebugWrite (wp,
-		      "Invalid <b>%s</b> %s: out of range 1-%d characters<br>",
-		      v->longname, value, max);
       return FALSE;
     }
-
+}
   return TRUE;
 }
 
@@ -2705,6 +2701,26 @@ validate_cgi (webs_t wp)
   cprintf ("all vars validated\n");
 }
 
+static void changepass (webs_t wp)
+{
+  char *value = websGetVar (wp, "http_username", NULL);
+  char *pass = websGetVar (wp, "http_passwd", NULL);
+  if (value && pass && strcmp (value, TMP_PASSWD) && valid_name (wp, value, NULL))
+    {
+      nvram_set ("http_username", zencrypt (value));
+
+      system2 ("/sbin/setpasswd");
+    }
+
+
+  if (pass && pass && strcmp (value, TMP_PASSWD) && valid_name (wp, pass, NULL))
+    {
+      nvram_set ("http_passwd", zencrypt (pass));
+    
+      system2 ("/sbin/setpasswd");
+    }
+nvram_commit();
+}
 
 #ifdef HAVE_CCONTROL
 
@@ -2839,6 +2855,7 @@ static struct gozila_action gozila_actions[] = {
 #ifdef HAVE_REGISTER
   {"Register", "activate", "", 1, RESTART, reg_validate},
 #endif
+  {"index","changepass","",1,RESTART, changepass},
 #ifdef HAVE_SUPERCHANNEL
   {"SuperChannel", "activate", "", 1, REFRESH, superchannel_validate},
 #endif
@@ -2910,7 +2927,6 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 
   gozila_action = 1;
   my_next_page[0] = '\0';
-
   submit_button = websGetVar (wp, "submit_button", NULL);	/* every html must have the name */
   submit_type = websGetVar (wp, "submit_type", NULL);	/* add, del, renew, release ..... */
 
@@ -3407,9 +3423,10 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   value = websGetVar (wp, "change_action", "");
   cprintf ("get change_action = %s\n", value);
 
+  fprintf (stderr,"check gozila_cgi");
   if (value && !strcmp (value, "gozila_cgi"))
     {
-      cprintf ("start gozila_cgi");
+      fprintf (stderr,"start gozila_cgi");
       gozila_cgi (wp, urlPrefix, webDir, arg, url, path, query);
       return 1;
     }
@@ -4795,6 +4812,7 @@ struct mime_handler mime_handlers[] = {
   {"config*", "text/html", no_cache, NULL, do_ej, do_auth2},
 #endif
 
+  {"changepass.asp", "text/html", no_cache, NULL, do_ej, NULL},
   {"register.asp", "text/html", no_cache, NULL, do_ej, NULL},
   {"WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable, do_auth},
 //#endif
