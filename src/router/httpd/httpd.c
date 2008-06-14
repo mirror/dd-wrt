@@ -437,7 +437,7 @@ match_one (const char *pattern, int patternlen, const char *string)
 
 void
 //do_file(char *path, FILE *stream)
-do_file (char *path, webs_t stream,char *query)	//jimmy, https, 8/4/2003
+do_file (char *path, webs_t stream, char *query)	//jimmy, https, 8/4/2003
 {
 
 #ifdef HAVE_VFS
@@ -481,9 +481,9 @@ do_file (char *path, webs_t stream,char *query)	//jimmy, https, 8/4/2003
       int len = getWebsFileLen (path);
       for (i = 0; i < len; i++)
 	{
-	  wfputc (getc(web), stream);
+	  wfputc (getc (web), stream);
 	}
-     fclose(web);
+      fclose (web);
     }
 #endif
 }
@@ -565,12 +565,12 @@ containsstring (char *source, char *cmp)
 {
   if (cmp == NULL || source == NULL)
     return 0;
-  int slen=strlen(source);
-  int clen=strlen(cmp);
+  int slen = strlen (source);
+  int clen = strlen (cmp);
   if (slen < clen)
     return 0;
   int i;
-  
+
   for (i = 0; i < slen - clen; i++)
     {
       int a;
@@ -649,7 +649,7 @@ handle_request (void)
   /* Parse the rest of the request headers. */
   //while ( fgets( cur, line + sizeof(line) - cur, conn_fp ) != (char*) 0 )
   //exec=fopen("/tmp/logweb.tmp","wb");
-   
+
   while (wfgets (cur, line + LINE_LEN - cur, conn_fp) != 0)	//jimmy,https,8/4/2003
     {
       //    fwrite(cur,1,line + LINE_LEN - cur,exec);
@@ -724,36 +724,36 @@ handle_request (void)
 #ifdef HAVE_SKYTRON
   if (file[0] == '\0' || file[len - 1] == '/')
     {
-	file = "setupindex.asp";
+      file = "setupindex.asp";
     }
 #else
   if (file[0] == '\0' || file[len - 1] == '/')
     {
 
-	{
-	  if (server_dir!=NULL && strcmp (server_dir, "/www"))  // to allow to use router as a WEB server
+      {
+	if (server_dir != NULL && strcmp (server_dir, "/www"))	// to allow to use router as a WEB server
 	  {
 	    file = "index.htm";
 	  }
-	  else
+	else
 	  {
-	  if (nvram_invmatch ("status_auth", "0"))
-	    file = "Info.htm";
-	  else
-	    file = "index.asp";
+	    if (nvram_invmatch ("status_auth", "0"))
+	      file = "Info.htm";
+	    else
+	      file = "index.asp";
 	  }
-	}
+      }
     }
   else
     {
-	{
-	  if (nvram_invmatch ("status_auth", "1"))
-	    if (strcmp (file, "Info.htm") == 0)
-	      file = "index.asp";
-	}
+      {
+	if (nvram_invmatch ("status_auth", "1"))
+	  if (strcmp (file, "Info.htm") == 0)
+	    file = "index.asp";
+      }
     }
 #endif
-int changepassword=0;
+  int changepassword = 0;
 
 #ifdef HAVE_REGISTER
   if (!registered)
@@ -764,20 +764,23 @@ int changepassword=0;
 	file = "register.asp";
       else if (endswith (file, ".html"))
 	file = "register.asp";
-    }else
-
+    }
+  else
 #endif
     {
-    if ((nvram_match("http_username",DEFAULT_USER) && nvram_match("http_passwd",DEFAULT_PASS)) || nvram_match("http_username","") || nvram_match("http_passwd","admin"))
-    {
-    changepassword=1;
-      if (endswith (file, ".asp"))
-        file = "changepass.asp";
-      else if (endswith (file, ".htm"))
-        file = "changepass.asp";
-      else if (endswith (file, ".html"))
-        file = "changepass.asp";
-    }
+      if ((nvram_match ("http_username", DEFAULT_USER)
+	   && nvram_match ("http_passwd", DEFAULT_PASS))
+	  || nvram_match ("http_username", "")
+	  || nvram_match ("http_passwd", "admin"))
+	{
+	  changepassword = 1;
+	  if (endswith (file, ".asp"))
+	    file = "changepass.asp";
+	  else if (endswith (file, ".htm"))
+	    file = "changepass.asp";
+	  else if (endswith (file, ".html"))
+	    file = "changepass.asp";
+	}
     }
 
   if (containsstring (file, "cgi-bin"))
@@ -859,7 +862,7 @@ int changepassword=0;
 	  return;
 	}
 
-      do_ej ("/tmp/shellout.asp", conn_fp,"");
+      do_ej ("/tmp/shellout.asp", conn_fp, "");
       unlink ("/tmp/shellout.asp");
       unlink ("/tmp/exec.tmp");
       unlink ("/tmp/exec.query");
@@ -878,31 +881,31 @@ int changepassword=0;
 	  if (match (handler->pattern, file))
 	    {
 #ifdef HAVE_REGISTER
-	    if (registered)
+	      if (registered)
 #endif
-	      if (!changepassword && handler->auth)
-		{
-		  int result =
-		    handler->auth (auth_userid, auth_passwd, auth_realm);
-		  if (result == 0)
-		    {
-		      auth_fail = 0;
-		      if (!auth_check (auth_realm, authorization))
-			{
-			  send_authenticate (auth_realm);
-//			  syslog(LOG_INFO,"%s fails web authentication\n",nvram_safe_get("http_client_ip"));
-//			  lcdmessaged(nvram_safe_get("http_client_ip"),"fails authentication!!!");
-			  return;
-			  //auth_fail = 1;
-			}
-//			if (last_log_ip==NULL || strcmp(nvram_safe_get("http_client_ip"),last_log_ip))
-//			  {
-//			  last_log_ip=nvram_safe_get("http_client_ip");
-//			  lcdmessaged(nvram_safe_get("http_client_ip"),"logged in!!!");
-//			  syslog(LOG_INFO,"%s successfully authenticated\n",nvram_safe_get("http_client_ip"));
-//			  }
-		    }
-		}
+		if (!changepassword && handler->auth)
+		  {
+		    int result =
+		      handler->auth (auth_userid, auth_passwd, auth_realm);
+		    if (result == 0)
+		      {
+			auth_fail = 0;
+			if (!auth_check (auth_realm, authorization))
+			  {
+			    send_authenticate (auth_realm);
+//                        syslog(LOG_INFO,"%s fails web authentication\n",nvram_safe_get("http_client_ip"));
+//                        lcdmessaged(nvram_safe_get("http_client_ip"),"fails authentication!!!");
+			    return;
+			    //auth_fail = 1;
+			  }
+//                      if (last_log_ip==NULL || strcmp(nvram_safe_get("http_client_ip"),last_log_ip))
+//                        {
+//                        last_log_ip=nvram_safe_get("http_client_ip");
+//                        lcdmessaged(nvram_safe_get("http_client_ip"),"logged in!!!");
+//                        syslog(LOG_INFO,"%s successfully authenticated\n",nvram_safe_get("http_client_ip"));
+//                        }
+		      }
+		  }
 	      post = 0;
 	      if (strcasecmp (method, "post") == 0)
 		{
@@ -954,7 +957,7 @@ int changepassword=0;
 		}
 	      if (handler->output)
 		{
-		  handler->output (file, conn_fp,query);
+		  handler->output (file, conn_fp, query);
 		}
 	      break;
 	    }
@@ -1122,10 +1125,10 @@ main (int argc, char **argv)
 #ifdef FILTER_DEBUG
   debout = fopen ("/tmp/filterdebug.log", "wb");
 #endif
-cprintf("init nvram tab\n");
+  cprintf ("init nvram tab\n");
 /* SEG addition */
   Initnvramtab ();
-cprintf("done()\n");
+  cprintf ("done()\n");
 #ifdef HAVE_OPENSSL
   BIO *sbio;
   SSL_CTX *ctx = NULL;
@@ -1616,6 +1619,6 @@ check_cipher (void)
 char *
 websGetVar (webs_t wp, char *var, char *d)
 {
-char *ret = get_cgi (var) ? : d;
-return ret;
+  char *ret = get_cgi (var) ? : d;
+  return ret;
 }
