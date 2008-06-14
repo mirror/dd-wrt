@@ -11,11 +11,12 @@
 #include <broadcom.h>
 
 static char word[256];
-void ej_show_routeif (webs_t wp, int argc, char_t ** argv)
+void
+ej_show_routeif (webs_t wp, int argc, char_t ** argv)
 {
   char *arg;
   int which, count;
-  char  *next, *page;
+  char *next, *page;
   char *ipaddr, *netmask, *gateway, *metric, *ifname;
   static ifnamecopy[32];
   int temp;
@@ -225,7 +226,7 @@ validate_static_route (webs_t wp, char *value, struct variable *v)
   {argv:ARGV ("lan", "wan")},
   };
 
-  char *name, ipaddr[20], netmask[20], gateway[20], *metric , *ifname, *page;
+  char *name, ipaddr[20], netmask[20], gateway[20], *metric, *ifname, *page;
   char new_name[80];
   char temp[30], *val = NULL;
 

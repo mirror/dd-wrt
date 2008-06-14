@@ -106,7 +106,7 @@ nvram_clear ()
 {
   char *buf = (char *) malloc (NVRAM_SPACE);
   nvram_getall (buf, NVRAM_SPACE);
-  nvram_open();
+  nvram_open ();
   char *p = buf;
   int i;
   while (strlen (p) != 0)
@@ -119,8 +119,9 @@ nvram_clear ()
 	nvram_immed_set (p, NULL);
       p += len + 1;
     }
-  nvram_close();
+  nvram_close ();
 }
+
 void
 nv_file_in (char *url, webs_t wp, int len, char *boundary)
 {
@@ -215,7 +216,7 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 #ifdef HAVE_HTTPS
       if (do_ssl)
 	{
-	wfgets(buf,1,wp);
+	  wfgets (buf, 1, wp);
 	}
       else
 #endif
