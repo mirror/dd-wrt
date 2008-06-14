@@ -66,7 +66,7 @@ if (valid_password(F))
 
 					<div id="contentsInfo">
 			<dl>
-				<dd>Your Router is currently not protected and uses a unsafe default username and password combination, please change it using the following dialog</dd>
+				<dd><% tran("management.changepassword"); %></dd>
 			</dl>
 	<fieldset>
 		<legend><% tran("management.psswd_legend"); %></legend>
