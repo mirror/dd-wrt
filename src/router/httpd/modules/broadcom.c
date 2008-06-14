@@ -515,7 +515,8 @@ sys_commit (void)
 }
 
 
-char *rfctime (const time_t * timep, char *s)
+char *
+rfctime (const time_t * timep, char *s)
 {
   struct tm tm;
   setenv ("TZ", nvram_safe_get ("time_zone"), 1);
@@ -941,7 +942,7 @@ ej_startswith (webs_t wp, int argc, char_t ** argv)
       return;
     }
 #endif
-  if (startswith(nvram_safe_get(name),match))
+  if (startswith (nvram_safe_get (name), match))
     websWrite (wp, output);
 
   return;
@@ -963,62 +964,62 @@ ej_ifdef (webs_t wp, int argc, char_t ** argv)
 #endif
 
 #ifdef HAVE_MICRO
-  if (!strcmp(name, "MICRO"))
-   {
-	   websWrite (wp, output);
-	   return;
-   }
-#endif 
-  if (!strcmp(name, "MINI"))  //to include mini + mini-special
-  {
-	  if (startswith (nvram_safe_get("dist_type"), "mini"))
-	  {
-		  websWrite (wp, output);    
-		  return;
-	  }
-  }
-  if (!strcmp(name, "VPN"))  //to include vpn + vpn-special
-  {
-	  if (startswith (nvram_safe_get("dist_type"), "vpn"))
-      {
-		  websWrite (wp, output);    
-		  return;
-	  }
-  }
+  if (!strcmp (name, "MICRO"))
+    {
+      websWrite (wp, output);
+      return;
+    }
+#endif
+  if (!strcmp (name, "MINI"))	//to include mini + mini-special
+    {
+      if (startswith (nvram_safe_get ("dist_type"), "mini"))
+	{
+	  websWrite (wp, output);
+	  return;
+	}
+    }
+  if (!strcmp (name, "VPN"))	//to include vpn + vpn-special
+    {
+      if (startswith (nvram_safe_get ("dist_type"), "vpn"))
+	{
+	  websWrite (wp, output);
+	  return;
+	}
+    }
 #ifdef HAVE_MULTICAST
-  if (!strcmp(name, "MULTICAST"))
-   {
-	   websWrite (wp, output);
-	   return;
-   }
+  if (!strcmp (name, "MULTICAST"))
+    {
+      websWrite (wp, output);
+      return;
+    }
 #endif
 #ifdef HAVE_WIVIZ
-  if (!strcmp(name, "WIVIZ"))
-   {
-	   websWrite (wp, output);
-	   return;
-   }
+  if (!strcmp (name, "WIVIZ"))
+    {
+      websWrite (wp, output);
+      return;
+    }
 #endif
 #ifdef HAVE_RSTATS
-  if (!strcmp(name, "RSTATS"))
-   {
-	   websWrite (wp, output);
-	   return;
-   }
+  if (!strcmp (name, "RSTATS"))
+    {
+      websWrite (wp, output);
+      return;
+    }
 #endif
 #ifdef HAVE_ACK
-  if (!strcmp(name, "ACK"))
-   {
-	   websWrite (wp, output);
-	   return;
-   }
+  if (!strcmp (name, "ACK"))
+    {
+      websWrite (wp, output);
+      return;
+    }
 #endif
 #ifdef HAVE_SSHD
-  if (!strcmp(name, "SSHD"))
-   {
-	   websWrite (wp, output);
-	   return;
-   }
+  if (!strcmp (name, "SSHD"))
+    {
+      websWrite (wp, output);
+      return;
+    }
 #endif
 
   return;
@@ -1040,49 +1041,64 @@ ej_ifndef (webs_t wp, int argc, char_t ** argv)
 #endif
 
 #ifdef HAVE_MICRO
-  if (!strcmp(name, "MICRO")) return;
+  if (!strcmp (name, "MICRO"))
+    return;
 #endif
 #ifdef HAVE_MULTICAST
-  if (!strcmp(name, "MULTICAST")) return;
+  if (!strcmp (name, "MULTICAST"))
+    return;
 #endif
 #ifdef HAVE_WIVIZ
-  if (!strcmp(name, "WIVIZ")) return;
+  if (!strcmp (name, "WIVIZ"))
+    return;
 #endif
 #ifdef HAVE_RSTATS
-  if (!strcmp(name, "RSTATS")) return;
+  if (!strcmp (name, "RSTATS"))
+    return;
 #endif
 #ifdef HAVE_ACK
-  if (!strcmp(name, "ACK")) return;
+  if (!strcmp (name, "ACK"))
+    return;
 #endif
 #ifdef HAVE_SAMBA
-  if (!strcmp(name, "SAMBA")) return;
+  if (!strcmp (name, "SAMBA"))
+    return;
 #endif
 #ifdef HAVE_JFFS2
-  if (!strcmp(name, "JFFS2")) return;
+  if (!strcmp (name, "JFFS2"))
+    return;
 #endif
 #ifdef HAVE_GPSI
-  if (!strcmp(name, "GPSI")) return;
+  if (!strcmp (name, "GPSI"))
+    return;
 #endif
 #ifdef HAVE_MMC
-  if (!strcmp(name, "MMC")) return;
+  if (!strcmp (name, "MMC"))
+    return;
 #endif
 #ifdef HAVE_SPUTNIK_APD
-  if (!strcmp(name, "SPUTNIK_APD")) return;
+  if (!strcmp (name, "SPUTNIK_APD"))
+    return;
 #endif
 #ifdef HAVE_RFLOW
-  if (!strcmp(name, "RFLOW")) return;
+  if (!strcmp (name, "RFLOW"))
+    return;
 #endif
 #ifdef HAVE_USB
-  if (!strcmp(name, "USB")) return;
+  if (!strcmp (name, "USB"))
+    return;
 #endif
 #ifdef HAVE_SSHD
-  if (!strcmp(name, "SSHD")) return;
+  if (!strcmp (name, "SSHD"))
+    return;
 #endif
 #ifdef HAVE_PPPOESERVER
-  if (!strcmp(name, "PPPOESERVER")) return;
+  if (!strcmp (name, "PPPOESERVER"))
+    return;
 #endif
 #ifdef HAVE_MILKFISH
-  if (!strcmp(name, "MILKFISH")) return;
+  if (!strcmp (name, "MILKFISH"))
+    return;
 #endif
 // HAVE_AFTERBURNER
   if (!strcmp (name, "AFTERBURNER"))
@@ -1097,7 +1113,7 @@ ej_ifndef (webs_t wp, int argc, char_t ** argv)
       char *next;
 
       if (wl_iovar_get (name, "cap", (void *) caps, WLC_IOCTL_SMLEN) == 0)
-    {
+	{
 	  foreach (cap, caps, next)
 	  {
 	    if (!strcmp (cap, "afterburner"))
@@ -1111,9 +1127,10 @@ ej_ifndef (webs_t wp, int argc, char_t ** argv)
     }
 // end HAVE_AFTERBURNER
 // HAVE_HASWIFI
-  if (!strcmp(name, "HASWIFI"))
+  if (!strcmp (name, "HASWIFI"))
     {
-  	if (haswifi ()) return;
+      if (haswifi ())
+	return;
     }
 // end HAVE_HASWIFI
 
@@ -1656,14 +1673,14 @@ valid_name (webs_t wp, char *value, struct variable *v)
     {
       return FALSE;
     }
-if (v)
-{
-  max = atoi (v->argv[0]);
-  if (strlen (value) > max)
+  if (v)
     {
-      return FALSE;
+      max = atoi (v->argv[0]);
+      if (strlen (value) > max)
+	{
+	  return FALSE;
+	}
     }
-}
   return TRUE;
 }
 
@@ -2339,14 +2356,14 @@ Initnvramtab ()
 #endif
 
 #ifdef HAVE_MILKFISH
-                  if (!stricmp (tmpstr, "MFSUBSCRIBERS"))
-                    {
-                      tmp->validate = validate_subscribers;
-                    }
-                  if (!stricmp (tmpstr, "MFALIASES"))
-                    {
-                      tmp->validate = validate_aliases;
-                    }
+		  if (!stricmp (tmpstr, "MFSUBSCRIBERS"))
+		    {
+		      tmp->validate = validate_subscribers;
+		    }
+		  if (!stricmp (tmpstr, "MFALIASES"))
+		    {
+		      tmp->validate = validate_aliases;
+		    }
 #endif
 
 
@@ -2688,7 +2705,7 @@ validate_cgi (webs_t wp)
 	{
 	  if (variables[i]->validate)
 	    {
-//	      fprintf(stderr,"validating %s = %s\n",variables[i]->name,value);
+//            fprintf(stderr,"validating %s = %s\n",variables[i]->name,value);
 	      variables[i]->validate (wp, value, variables[i]);
 	    }
 	  else
@@ -2701,11 +2718,13 @@ validate_cgi (webs_t wp)
   cprintf ("all vars validated\n");
 }
 
-static void changepass (webs_t wp)
+static void
+changepass (webs_t wp)
 {
   char *value = websGetVar (wp, "http_username", NULL);
   char *pass = websGetVar (wp, "http_passwd", NULL);
-  if (value && pass && strcmp (value, TMP_PASSWD) && valid_name (wp, value, NULL))
+  if (value && pass && strcmp (value, TMP_PASSWD)
+      && valid_name (wp, value, NULL))
     {
       nvram_set ("http_username", zencrypt (value));
 
@@ -2713,14 +2732,14 @@ static void changepass (webs_t wp)
     }
 
 
-  if (pass && value && strcmp (value, TMP_PASSWD) && valid_name (wp, pass, NULL))
+  if (pass && value && strcmp (value, TMP_PASSWD)
+      && valid_name (wp, pass, NULL))
     {
       nvram_set ("http_passwd", zencrypt (pass));
-    
+
       system2 ("/sbin/setpasswd");
     }
-nvram_commit();
-sys_reboot();
+  nvram_commit ();
 }
 
 #ifdef HAVE_CCONTROL
@@ -2806,7 +2825,7 @@ static struct gozila_action gozila_actions[] = {
   /* Siafu addition */
   {"Ping", "wol", "", 1, REFRESH, ping_wol},
   /* Sveasoft addition */
- // {"Wireless_WDS", "save", "", 0, REFRESH, save_wds},
+  // {"Wireless_WDS", "save", "", 0, REFRESH, save_wds},
 #ifndef HAVE_MADWIFI
   {"Wireless_WDS-wl0", "save", "", 0, REFRESH, save_wds},
   {"Wireless_WDS-wl1", "save", "", 0, REFRESH, save_wds},
@@ -2856,7 +2875,7 @@ static struct gozila_action gozila_actions[] = {
 #ifdef HAVE_REGISTER
   {"Register", "activate", "", 1, RESTART, reg_validate},
 #endif
-  {"Reboot","changepass","",1,RESTART, changepass},
+  {"index", "changepass", "", 1, REFRESH, changepass},
 #ifdef HAVE_SUPERCHANNEL
   {"SuperChannel", "activate", "", 1, REFRESH, superchannel_validate},
 #endif
@@ -2893,7 +2912,8 @@ static struct gozila_action gozila_actions[] = {
    milkfish_alias_add},
   {"Milkfish_aliases", "remove_milkfish_alias", "", 0, REFRESH,
    milkfish_alias_remove},
-  {"Milkfish_messaging", "send_message", "", 1, SERVICE_RESTART, milkfish_sip_message},
+  {"Milkfish_messaging", "send_message", "", 1, SERVICE_RESTART,
+   milkfish_sip_message},
 #endif
 };
 
@@ -3109,7 +3129,7 @@ ej_show_forward (webs_t wp, int argc, char_t ** argv)
   char *count;
   int c = 0;
   count = nvram_safe_get ("forward_entries");
-  if (count == NULL || strlen (count) == 0 || (c=atoi(count))<=0)
+  if (count == NULL || strlen (count) == 0 || (c = atoi (count)) <= 0)
     {
       //return -1;      botho 07/03/06 add "- None -" if empty
       websWrite (wp, "<tr>\n");
@@ -3120,15 +3140,21 @@ ej_show_forward (webs_t wp, int argc, char_t ** argv)
   for (i = 0; i < c; i++)
     {
       websWrite (wp, "<tr><td>\n");
-      websWrite (wp, "<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"",i);
+      websWrite (wp,
+		 "<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+		 i);
       port_forward_table (wp, "name", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      websWrite (wp, "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",i);
+      websWrite (wp,
+		 "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
+		 i);
       port_forward_table (wp, "from", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      websWrite (wp, "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",i);
+      websWrite (wp,
+		 "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
+		 i);
       port_forward_table (wp, "to", i);
       websWrite (wp, "\"/></td>\n");
       websWrite (wp, "<td><select size=\"1\" name=\"pro%d\">\n", i);
@@ -3145,11 +3171,15 @@ ej_show_forward (webs_t wp, int argc, char_t ** argv)
       	\n//]]>\n</script>\n");
       websWrite (wp, "</select></td>\n");
       websWrite (wp, "<td>\n");
-      websWrite (wp, "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"",i);
+      websWrite (wp,
+		 "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"",
+		 i);
       port_forward_table (wp, "ip", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      websWrite (wp, "<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
+      websWrite (wp,
+		 "<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ",
+		 i);
       port_forward_table (wp, "enable", i);
       websWrite (wp, " /></td>\n");
       websWrite (wp, "</tr>\n");
@@ -3166,7 +3196,7 @@ ej_show_forward_spec (webs_t wp, int argc, char_t ** argv)
   char *count;
   int c = 0;
   count = nvram_safe_get ("forwardspec_entries");
-  if (count == NULL || strlen (count) == 0 || (c=atoi(count))<=0)
+  if (count == NULL || strlen (count) == 0 || (c = atoi (count)) <= 0)
     {
       //return -1;      botho 07/03/06 add "- None -" if empty
       //websWrite (wp, "<tr></tr><tr></tr>\n");
@@ -3178,12 +3208,15 @@ ej_show_forward_spec (webs_t wp, int argc, char_t ** argv)
   for (i = 0; i < c; i++)
     {
       websWrite (wp, "<tr><td>\n");
-      websWrite (wp, "<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"",i);
+      websWrite (wp,
+		 "<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+		 i);
       port_forward_spec (wp, "name", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      websWrite (wp, "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
-	 i);
+      websWrite (wp,
+		 "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
+		 i);
       port_forward_spec (wp, "from", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td><select size=\"1\" name=\"pro%d\">\n", i);
@@ -3200,17 +3233,21 @@ ej_show_forward_spec (webs_t wp, int argc, char_t ** argv)
       		\n//]]>\n</script>\n");
       websWrite (wp, "</select></td>\n");
       websWrite (wp, "<td>\n");
-      websWrite (wp, "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"",
-	 i);
+      websWrite (wp,
+		 "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"",
+		 i);
       port_forward_spec (wp, "ip", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      websWrite (wp, "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
-	 i);
+      websWrite (wp,
+		 "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
+		 i);
       port_forward_spec (wp, "to", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      websWrite (wp, "<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
+      websWrite (wp,
+		 "<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ",
+		 i);
       port_forward_spec (wp, "enable", i);
       websWrite (wp, " /></td>\n");
       websWrite (wp, "</tr>\n");
@@ -3225,7 +3262,7 @@ ej_show_triggering (webs_t wp, int argc, char_t ** argv)
   char *count;
   int c = 0;
   count = nvram_safe_get ("trigger_entries");
-  if (count == NULL || strlen (count) == 0 || (c=atoi(count))<=0)
+  if (count == NULL || strlen (count) == 0 || (c = atoi (count)) <= 0)
     {
       websWrite (wp, "<tr>\n");
       websWrite (wp,
@@ -3233,17 +3270,23 @@ ej_show_triggering (webs_t wp, int argc, char_t ** argv)
       websWrite (wp, "</tr>\n");
     }
   for (i = 0; i < c; i++)
-    {     
+    {
       websWrite (wp, "<tr>\n");
-      websWrite (wp,"<td><input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"",i);
-      port_trigger_table(wp,"name",i);
-      websWrite (wp,"\" /></td>\n");
-      websWrite (wp,"<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",i);
-      port_trigger_table(wp,"i_from",i);
-      websWrite (wp,"\" /></td>\n");
-      websWrite (wp,"<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",i);
-      port_trigger_table(wp,"i_to",i);
-      websWrite (wp,"\" /></td>\n");
+      websWrite (wp,
+		 "<td><input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+		 i);
+      port_trigger_table (wp, "name", i);
+      websWrite (wp, "\" /></td>\n");
+      websWrite (wp,
+		 "<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
+		 i);
+      port_trigger_table (wp, "i_from", i);
+      websWrite (wp, "\" /></td>\n");
+      websWrite (wp,
+		 "<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
+		 i);
+      port_trigger_table (wp, "i_to", i);
+      websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td><select size=\"1\" name=\"pro%d\">\n", i);
       websWrite (wp, "<option value=\"tcp\" ");
       port_trigger_table (wp, "sel_tcp", i);
@@ -3257,16 +3300,22 @@ ej_show_triggering (webs_t wp, int argc, char_t ** argv)
       websWrite (wp, " >\" + share.both + \"</option>\");\n\
       		\n//]]>\n</script>\n");
       websWrite (wp, "</select></td>\n");
-      websWrite (wp,"<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",i);
-      port_trigger_table(wp,"o_from",i);
-      websWrite (wp,"\" /></td>\n");
-      websWrite (wp,"<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",i);
-      port_trigger_table(wp,"o_to",i);
-      websWrite (wp,"\" /></td>\n");
-      websWrite (wp,"<td><input type=\"checkbox\" value=\"on\" name=\"enable%d\" ",i);
-      port_trigger_table(wp,"enable",i);
+      websWrite (wp,
+		 "<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
+		 i);
+      port_trigger_table (wp, "o_from", i);
+      websWrite (wp, "\" /></td>\n");
+      websWrite (wp,
+		 "<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"",
+		 i);
+      port_trigger_table (wp, "o_to", i);
+      websWrite (wp, "\" /></td>\n");
+      websWrite (wp,
+		 "<td><input type=\"checkbox\" value=\"on\" name=\"enable%d\" ",
+		 i);
+      port_trigger_table (wp, "enable", i);
       websWrite (wp, " /></td>\n");
-      websWrite (wp,"</tr>\n");
+      websWrite (wp, "</tr>\n");
     }
   return;
 }
@@ -3424,10 +3473,10 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   value = websGetVar (wp, "change_action", "");
   cprintf ("get change_action = %s\n", value);
 
-  fprintf (stderr,"check gozila_cgi");
+  fprintf (stderr, "check gozila_cgi");
   if (value && !strcmp (value, "gozila_cgi"))
     {
-      fprintf (stderr,"start gozila_cgi");
+      fprintf (stderr, "start gozila_cgi");
       gozila_cgi (wp, urlPrefix, webDir, arg, url, path, query);
       return 1;
     }
@@ -3737,7 +3786,7 @@ do_apply_post (char *url, webs_t stream, int len, char *boundary)
       while (--len > 0)
 #ifdef HAVE_HTTPS
 	if (do_ssl)
-	  wfgets(buf,1,stream);
+	  wfgets (buf, 1, stream);
 	else
 #endif
 	  (void) fgetc (stream);
@@ -3747,11 +3796,11 @@ do_apply_post (char *url, webs_t stream, int len, char *boundary)
 
 #if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)
 static void
-do_cfebackup (char *url, webs_t stream,char *query)
+do_cfebackup (char *url, webs_t stream, char *query)
 {
-	system2 ("cat /dev/mtd/0 > /tmp/cfe.bin");
-	do_file ("/tmp/cfe.bin", stream, NULL);
-	unlink ("/tmp/cfe.bin");
+  system2 ("cat /dev/mtd/0 > /tmp/cfe.bin");
+  do_file ("/tmp/cfe.bin", stream, NULL);
+  unlink ("/tmp/cfe.bin");
 }
 #endif
 
@@ -3759,72 +3808,104 @@ static void
 do_stylecss (char *url, webs_t stream, char *query)
 {
   char *style = nvram_get ("router_style");
-  
-  if (query != NULL) style = query;
+
+  if (query != NULL)
+    style = query;
 
   long sdata[30];
 
-  long blue[30] = { 0x36f, 0xfff, 0x68f, 0x24d, 0x24d, 0x68f, 0x57f, 0xccf, 0x78f, 0x35d, 0x35c, 0x78f,
-                    0x78f, 0xfff, 0x9af, 0x46e, 0x46e, 0x9af, 0x36f, 0xccf, 0xfff, 0x69f, 0xfff, 0xfff,
-                    0x999, 0x69f, 0x69f, 0xccf, 0x78f, 0xfff };
-                      
-  long cyan[30] = { 0x099, 0xfff, 0x3bb, 0x066, 0x066, 0x3bb, 0x3bb, 0xcff, 0x4cc, 0x1aa, 0x1aa, 0x4cc,
-                    0x6cc, 0xfff, 0x8dd, 0x5bb, 0x5bb, 0x8dd, 0x099, 0xcff, 0xfff, 0x3bb, 0xfff, 0xfff,
-                    0x999, 0x3bb, 0x3bb, 0xcff, 0x6cc, 0xfff };
-                       
-  long elegant[30] = { 0x30519c, 0xfff, 0x496fc7, 0x496fc7, 0x496fc7, 0x496fc7, 0x496fc7, 0xfff, 0x6384cf, 0x6384cf, 0x6384cf, 0x6384cf, 
-                       0x6384cf, 0xfff, 0x849dd9, 0x849dd9, 0x849dd9, 0x849dd9, 0x30519c, 0xfff, 0xfff, 0x496fc7, 0xfff, 0xfff,
-                       0x999, 0x496fc7, 0x496fc7, 0xfff, 0x6384cf, 0xfff };
-                   
-  long green[30] = { 0x090, 0xfff, 0x3b3, 0x060, 0x060, 0x3b3, 0x3b3, 0xcfc, 0x4c4, 0x1a1, 0x1a1, 0x4c4,
-                     0x6c6, 0xfff, 0x8d8, 0x5b5, 0x5b5, 0x8d8, 0x090, 0xcfc, 0xfff, 0x3b3, 0xfff, 0xfff,
-                     0x999, 0x3b3, 0x3b3, 0xcfc, 0x6c6, 0xfff };
+  long blue[30] =
+    { 0x36f, 0xfff, 0x68f, 0x24d, 0x24d, 0x68f, 0x57f, 0xccf, 0x78f, 0x35d,
+0x35c, 0x78f,
+    0x78f, 0xfff, 0x9af, 0x46e, 0x46e, 0x9af, 0x36f, 0xccf, 0xfff, 0x69f,
+      0xfff, 0xfff,
+    0x999, 0x69f, 0x69f, 0xccf, 0x78f, 0xfff
+  };
 
-  long orange[30] = { 0xf26522, 0xfff, 0xff8400, 0xff8400, 0xff8400, 0xff8400, 0xff8400, 0xfff, 0xfeb311, 0xfeb311, 0xfeb311, 0xfeb311,
-                      0xff9000, 0xfff, 0xffa200, 0xffa200, 0xffa200, 0xffa200, 0xf26522, 0xfff, 0xfff, 0xff8400, 0xfff, 0xfff,
-                      0x999, 0xff8400, 0xff8400, 0xfff, 0xff9000, 0xfff };
-                  
-  long red[30] = { 0xc00, 0xfff, 0xe33, 0x800, 0x800, 0xe33, 0xd55, 0xfcc, 0xe77, 0xc44, 0xc44, 0xe77,
-                   0xe77, 0xfff, 0xf99, 0xd55, 0xd55, 0xf99, 0xc00, 0xfcc, 0xfff, 0xd55, 0xfff, 0xfff,
-                   0x999, 0xd55, 0xd55, 0xfcc, 0xe77, 0xfff };
+  long cyan[30] =
+    { 0x099, 0xfff, 0x3bb, 0x066, 0x066, 0x3bb, 0x3bb, 0xcff, 0x4cc, 0x1aa,
+0x1aa, 0x4cc,
+    0x6cc, 0xfff, 0x8dd, 0x5bb, 0x5bb, 0x8dd, 0x099, 0xcff, 0xfff, 0x3bb,
+      0xfff, 0xfff,
+    0x999, 0x3bb, 0x3bb, 0xcff, 0x6cc, 0xfff
+  };
 
-  long yellow[30] = { 0xcc0, 0x000, 0xee3, 0x880, 0x880, 0xee3, 0xdd5, 0x660, 0xee7, 0xbb4, 0xbb4, 0xee7,
-                      0xee7, 0x000, 0xff9, 0xcc5, 0xcc5, 0xff9, 0x990, 0x660, 0x000, 0xdd5, 0x000, 0xfff,
-                      0x999, 0xdd5, 0xdd5, 0x660, 0xee7, 0x000 };
+  long elegant[30] =
+    { 0x30519c, 0xfff, 0x496fc7, 0x496fc7, 0x496fc7, 0x496fc7, 0x496fc7,
+0xfff, 0x6384cf, 0x6384cf, 0x6384cf, 0x6384cf,
+    0x6384cf, 0xfff, 0x849dd9, 0x849dd9, 0x849dd9, 0x849dd9, 0x30519c, 0xfff,
+      0xfff, 0x496fc7, 0xfff, 0xfff,
+    0x999, 0x496fc7, 0x496fc7, 0xfff, 0x6384cf, 0xfff
+  };
+
+  long green[30] =
+    { 0x090, 0xfff, 0x3b3, 0x060, 0x060, 0x3b3, 0x3b3, 0xcfc, 0x4c4, 0x1a1,
+0x1a1, 0x4c4,
+    0x6c6, 0xfff, 0x8d8, 0x5b5, 0x5b5, 0x8d8, 0x090, 0xcfc, 0xfff, 0x3b3,
+      0xfff, 0xfff,
+    0x999, 0x3b3, 0x3b3, 0xcfc, 0x6c6, 0xfff
+  };
+
+  long orange[30] =
+    { 0xf26522, 0xfff, 0xff8400, 0xff8400, 0xff8400, 0xff8400, 0xff8400,
+0xfff, 0xfeb311, 0xfeb311, 0xfeb311, 0xfeb311,
+    0xff9000, 0xfff, 0xffa200, 0xffa200, 0xffa200, 0xffa200, 0xf26522, 0xfff,
+      0xfff, 0xff8400, 0xfff, 0xfff,
+    0x999, 0xff8400, 0xff8400, 0xfff, 0xff9000, 0xfff
+  };
+
+  long red[30] =
+    { 0xc00, 0xfff, 0xe33, 0x800, 0x800, 0xe33, 0xd55, 0xfcc, 0xe77, 0xc44,
+0xc44, 0xe77,
+    0xe77, 0xfff, 0xf99, 0xd55, 0xd55, 0xf99, 0xc00, 0xfcc, 0xfff, 0xd55,
+      0xfff, 0xfff,
+    0x999, 0xd55, 0xd55, 0xfcc, 0xe77, 0xfff
+  };
+
+  long yellow[30] =
+    { 0xcc0, 0x000, 0xee3, 0x880, 0x880, 0xee3, 0xdd5, 0x660, 0xee7, 0xbb4,
+0xbb4, 0xee7,
+    0xee7, 0x000, 0xff9, 0xcc5, 0xcc5, 0xff9, 0x990, 0x660, 0x000, 0xdd5,
+      0x000, 0xfff,
+    0x999, 0xdd5, 0xdd5, 0x660, 0xee7, 0x000
+  };
 
   if (!strcmp (style, "blue"))
-    memcpy (sdata, blue, 30 * sizeof(long));
+    memcpy (sdata, blue, 30 * sizeof (long));
   else if (!strcmp (style, "cyan"))
-    memcpy (sdata, cyan, 30 * sizeof(long));
+    memcpy (sdata, cyan, 30 * sizeof (long));
   else if (!strcmp (style, "elegant"))
-    memcpy (sdata, elegant, 30 * sizeof(long));
+    memcpy (sdata, elegant, 30 * sizeof (long));
   else if (!strcmp (style, "green"))
-    memcpy (sdata, green, 30 * sizeof(long));
+    memcpy (sdata, green, 30 * sizeof (long));
   else if (!strcmp (style, "orange"))
-    memcpy (sdata, orange, 30 * sizeof(long));
+    memcpy (sdata, orange, 30 * sizeof (long));
   else if (!strcmp (style, "red"))
-    memcpy (sdata, red, 30 * sizeof(long));
-  else //yellow
-    memcpy (sdata, yellow, 30 * sizeof(long));               
-                   
-   
+    memcpy (sdata, red, 30 * sizeof (long));
+  else				//yellow
+    memcpy (sdata, yellow, 30 * sizeof (long));
+
+
   websWrite (stream, "@import url(../common.css);\n");
   websWrite (stream, "#menuSub,\n");
-  websWrite (stream, "#menuMainList li span,\n"); 
+  websWrite (stream, "#menuMainList li span,\n");
   websWrite (stream, "#help h2 {\n");
   websWrite (stream, "background:#%03x;\n", sdata[0]);
   websWrite (stream, "color:#%03x;\n", sdata[1]);
-  websWrite (stream, "border-color:#%03x #%03x #%03x #%03x;\n", sdata[2],  sdata [3], sdata[4], sdata[5]);
+  websWrite (stream, "border-color:#%03x #%03x #%03x #%03x;\n", sdata[2],
+	     sdata[3], sdata[4], sdata[5]);
   websWrite (stream, "}\n");
   websWrite (stream, "#menuSubList li a {\n");
   websWrite (stream, "background:#%03x;\n", sdata[6]);
   websWrite (stream, "color:#%03x;\n", sdata[7]);
-  websWrite (stream, "border-color:#%03x #%03x #%03x #%03x;\n", sdata[8], sdata[9], sdata[10], sdata[11]);
+  websWrite (stream, "border-color:#%03x #%03x #%03x #%03x;\n", sdata[8],
+	     sdata[9], sdata[10], sdata[11]);
   websWrite (stream, "}\n");
   websWrite (stream, "#menuSubList li a:hover {\n");
   websWrite (stream, "background:#%03x;\n", sdata[12]);
   websWrite (stream, "color:#%03x;\n", sdata[13]);
-  websWrite (stream, "border-color:#%03x #%03x #%03x #%03x;\n", sdata[14], sdata[15], sdata[16], sdata[17]);
+  websWrite (stream, "border-color:#%03x #%03x #%03x #%03x;\n", sdata[14],
+	     sdata[15], sdata[16], sdata[17]);
   websWrite (stream, "}\n");
   websWrite (stream, "fieldset legend {\n");
   websWrite (stream, "color:#%03x;\n", sdata[18]);
@@ -3859,7 +3940,7 @@ do_stylecss (char *url, webs_t stream, char *query)
   websWrite (stream, "background: #%03x;\n", sdata[28]);
   websWrite (stream, "color: #%03x;\n", sdata[29]);
   websWrite (stream, "}\n");
-  
+
 }
 
 static void
@@ -3877,6 +3958,7 @@ do_stylecss_ie (char *url, webs_t stream, char *query)
   websWrite (stream, "padding:0 .09em;\n");
   websWrite (stream, "}\n");
 }
+
 /*
 static void
 do_style (char *url, webs_t stream, char *query)
@@ -3901,30 +3983,30 @@ do_fetchif (char *url, webs_t stream, char *query)
   int strbuffer = 0;
   time_t tm;
   struct tm tm_time;
-  time(&tm);
-  memcpy(&tm_time, localtime(&tm), sizeof(tm_time));
+  time (&tm);
+  memcpy (&tm_time, localtime (&tm), sizeof (tm_time));
   char *date_fmt = "%a %b %e %H:%M:%S %Z %Y";
-  strftime(buffer, 200, date_fmt, &tm_time);
-  strbuffer = strlen(buffer);
-  buffer[strbuffer++]='\n';
+  strftime (buffer, 200, date_fmt, &tm_time);
+  strbuffer = strlen (buffer);
+  buffer[strbuffer++] = '\n';
   FILE *in = fopen ("/proc/net/dev", "rb");
   if (in == NULL)
     return;
 
   while (fgets (line, sizeof (line), in) != NULL)
-  {
-  if (!strchr (line, ':'))
-	 continue;
-  if (strstr (line, query))
-   { 
+    {
+      if (!strchr (line, ':'))
+	continue;
+      if (strstr (line, query))
+	{
 	  llen = strlen (line);
 	  for (i = 0; i < llen; i++)
-	  {
-        buffer[strbuffer++] = line[i];
-      }
-      break;
-   }
-  }
+	    {
+	      buffer[strbuffer++] = line[i];
+	    }
+	  break;
+	}
+    }
   buffer[strbuffer] = 0;
   fclose (in);
   websWrite (stream, "%s", buffer);
@@ -3933,11 +4015,11 @@ do_fetchif (char *url, webs_t stream, char *query)
 static void
 ej_get_totaltraff (webs_t wp, int argc, char_t ** argv)
 {
-char *type;
-static char wanface[32];
-char line[256];
-unsigned long rcvd, sent, megcounti, megcounto;
-FILE *in;
+  char *type;
+  static char wanface[32];
+  char line[256];
+  unsigned long rcvd, sent, megcounti, megcounto;
+  FILE *in;
 
 #ifdef FASTWEB
   ejArgs (argc, argv, "%s", &type);
@@ -3951,7 +4033,7 @@ FILE *in;
 
   if (!nvram_match ("ttraff_enable", "1"))
     return;
-	
+
   strncpy (wanface, get_wan_face (), sizeof (wanface));
 
   in = fopen ("/proc/net/dev", "rb");
@@ -3959,99 +4041,112 @@ FILE *in;
     return;
 
   while (fgets (line, sizeof (line), in) != NULL)
-  {
-  int ifl = 0;
-  if (!strchr (line, ':'))
-    continue;
-  while (line[ifl] != ':')
-    ifl++;
-  line[ifl] = 0;	/* interface */
-  if (strstr (line, wanface))
-   { 
-	 sscanf (line + ifl + 1,
-		      "%lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld %lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld",
-		      &rcvd,  &sent);
-	 
-   }
-  }
+    {
+      int ifl = 0;
+      if (!strchr (line, ':'))
+	continue;
+      while (line[ifl] != ':')
+	ifl++;
+      line[ifl] = 0;		/* interface */
+      if (strstr (line, wanface))
+	{
+	  sscanf (line + ifl + 1,
+		  "%lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld %lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld",
+		  &rcvd, &sent);
+
+	}
+    }
 
   fclose (in);
-  
-  rcvd >>= 20;  //output in MBytes
+
+  rcvd >>= 20;			//output in MBytes
   sent >>= 20;
-  
+
 
   if ((in = fopen ("/tmp/.megc", "r")) != NULL)
-  {
-	fgets (line, sizeof (line), in);  
-    sscanf (line, "%lu:%lu", &megcounti, &megcounto);
-    rcvd += megcounti;
-    sent += megcounto;    
-    fclose (in);
-  }
-  
+    {
+      fgets (line, sizeof (line), in);
+      sscanf (line, "%lu:%lu", &megcounti, &megcounto);
+      rcvd += megcounti;
+      sent += megcounto;
+      fclose (in);
+    }
+
   if (!strcmp (type, "in"))
     {
-      websWrite (wp, "%lu", rcvd);  //output in MBytes
+      websWrite (wp, "%lu", rcvd);	//output in MBytes
     }
   else if (!strcmp (type, "out"))
     {
       websWrite (wp, "%lu", sent);
     }
-return;
+  return;
 }
 
 static void
 do_ttgraph (char *url, webs_t stream, char *query)
 {
-#define COL_WIDTH 16	/* single column width */
+#define COL_WIDTH 16		/* single column width */
 
-char *next;
-char var[80];
-	
-unsigned int days;
-unsigned int month; 
-unsigned int year;
-int wd;
-int i = 0;
-char months[12][12] = {"share.jan", "share.feb", "share.mar", "share.apr", "share.may", "share.jun",
-					   "share.jul", "share.aug", "share.sep", "share.oct", "share.nov", "share.dec"};
-unsigned long rcvd[31] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-unsigned long sent[31] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-unsigned long max = 5, smax = 5, f = 1;
-unsigned long totin = 0;
-unsigned long totout = 0;
+  char *next;
+  char var[80];
+
+  unsigned int days;
+  unsigned int month;
+  unsigned int year;
+  int wd;
+  int i = 0;
+  char months[12][12] =
+    { "share.jan", "share.feb", "share.mar", "share.apr", "share.may",
+"share.jun",
+    "share.jul", "share.aug", "share.sep", "share.oct", "share.nov",
+      "share.dec"
+  };
+  unsigned long rcvd[31] =
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0 };
+  unsigned long sent[31] =
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0 };
+  unsigned long max = 5, smax = 5, f = 1;
+  unsigned long totin = 0;
+  unsigned long totout = 0;
 
   if (sscanf (query, "%u-%u", &month, &year) != 2)
-	    return;
-	    
+    return;
+
   days = daysformonth (month, year);
-  wd = weekday (month, 1, year);   //first day in month (mon=0, tue=1, ..., sun=6)
-  
+  wd = weekday (month, 1, year);	//first day in month (mon=0, tue=1, ..., sun=6)
+
   char tq[32];
   sprintf (tq, "traff-%02u-%u", month, year);
   char *tdata = nvram_safe_get (tq);
-  if (tdata != NULL || strlen(tdata))
-   {
-    foreach (var, tdata, next)
+  if (tdata != NULL || strlen (tdata))
     {
-     sscanf (var, "%lu:%lu", &rcvd[i], &sent[i]);
-	 totin += rcvd[i];
-	 totout += sent[i];
-     if (rcvd[i] > max) max = rcvd[i];
-     if (sent[i] > max) max = sent[i];
-     i++;
+      foreach (var, tdata, next)
+      {
+	sscanf (var, "%lu:%lu", &rcvd[i], &sent[i]);
+	totin += rcvd[i];
+	totout += sent[i];
+	if (rcvd[i] > max)
+	  max = rcvd[i];
+	if (sent[i] > max)
+	  max = sent[i];
+	i++;
+      }
     }
-   }
 
-   
+
   while (max > smax)
-  {    
-   if (max > (f * 5)) smax = f * 10;
-   if (max > (f * 10)) smax = f * 25;
-   if (max > (f * 25)) smax = f * 50;
-   f = f * 10;
-  }  
+    {
+      if (max > (f * 5))
+	smax = f * 10;
+      if (max > (f * 10))
+	smax = f * 25;
+      if (max > (f * 25))
+	smax = f * 50;
+      f = f * 10;
+    }
 
   char incom[32];
   sprintf (incom, "%s", live_translate ("status_inet.traffin"));
@@ -4059,81 +4154,111 @@ unsigned long totout = 0;
   sprintf (outcom, "%s", live_translate ("status_inet.traffout"));
   char monthname[32];
   sprintf (monthname, "%s", live_translate (months[month - 1]));
-  
-  websWrite (stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
+
+  websWrite (stream,
+	     "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
   websWrite (stream, "<html>\n");
-  websWrite (stream, "<head>\n"); 
+  websWrite (stream, "<head>\n");
   websWrite (stream, "<title>dd-wrt traffic graph</title>\n");
 
   websWrite (stream, "<script type=\"text/javascript\">\n");
   websWrite (stream, "//<![CDATA[\n");
   websWrite (stream, "function Show(label) {\n");
-  websWrite (stream, "document.getElementById(\"label\").innerHTML = label;\n");
+  websWrite (stream,
+	     "document.getElementById(\"label\").innerHTML = label;\n");
   websWrite (stream, "}\n");
   websWrite (stream, "//]]>\n");
   websWrite (stream, "</script>\n");
-  
+
   websWrite (stream, "<style type=\"text/css\">\n\n");
-  websWrite (stream, "#t-graph {position: relative; width: %upx; height: 300px;\n", days * COL_WIDTH);
+  websWrite (stream,
+	     "#t-graph {position: relative; width: %upx; height: 300px;\n",
+	     days * COL_WIDTH);
   websWrite (stream, "  margin: 1.1em 0 3.5em; padding: 0;\n");
   websWrite (stream, "  border: 1px solid gray; list-style: none;\n");
   websWrite (stream, "  font: 9px Tahoma, Arial, sans-serif;}\n");
-  websWrite (stream, "#t-graph ul {margin: 0; padding: 0; list-style: none;}\n");
-  websWrite (stream, "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n", COL_WIDTH);
+  websWrite (stream,
+	     "#t-graph ul {margin: 0; padding: 0; list-style: none;}\n");
+  websWrite (stream,
+	     "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n",
+	     COL_WIDTH);
   websWrite (stream, "  margin: 0; padding: 0;\n");
   websWrite (stream, "  text-align: center; list-style: none;}\n");
-  websWrite (stream, "#t-graph li.day {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #AAA;}\n");
-  websWrite (stream, "#t-graph li.day_sun {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #E00;}\n");
-  websWrite (stream, "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n");
+  websWrite (stream,
+	     "#t-graph li.day {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #AAA;}\n");
+  websWrite (stream,
+	     "#t-graph li.day_sun {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #E00;}\n");
+  websWrite (stream,
+	     "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n");
   websWrite (stream, "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n");
-  websWrite (stream, "#t-graph li.rcvd {left: 3px; background: #228B22;}\n");  //set rcvd bar colour here (green)
-  websWrite (stream, "#t-graph li.sent {left: 8px; background: #CD0000;}\n");  //set sent bar colour here (red)
-  
+  websWrite (stream, "#t-graph li.rcvd {left: 3px; background: #228B22;}\n");	//set rcvd bar colour here (green)
+  websWrite (stream, "#t-graph li.sent {left: 8px; background: #CD0000;}\n");	//set sent bar colour here (red)
+
   for (i = 0; i < days - 1; i++)
-  {   
-  websWrite (stream, "#t-graph #d%d {left: %dpx;}\n", i + 1, i * COL_WIDTH);
-  }
-  websWrite (stream, "#t-graph #d%u {left: %upx; border-right: none;}\n", days, (days - 1) * COL_WIDTH);
-  
-  websWrite (stream, "#t-graph #ticks {width: %upx; height: 300px; z-index: 1;}\n", days * COL_WIDTH);
-  websWrite (stream, "#t-graph #ticks .tick {position: relative; border-bottom: 1px solid #BBB; width: %upx;}\n", days * COL_WIDTH);
-  websWrite (stream, "#t-graph #ticks .tick p {position: absolute; left: 100%%; top: -0.67em; margin: 0 0 0 0.5em;}\n");
-  websWrite (stream, "#t-graph #label {width: 500px; bottom: -20px;  z-index: 1; font: 12px Tahoma, Arial, sans-serif; font-weight: bold;}\n");
+    {
+      websWrite (stream, "#t-graph #d%d {left: %dpx;}\n", i + 1,
+		 i * COL_WIDTH);
+    }
+  websWrite (stream, "#t-graph #d%u {left: %upx; border-right: none;}\n",
+	     days, (days - 1) * COL_WIDTH);
+
+  websWrite (stream,
+	     "#t-graph #ticks {width: %upx; height: 300px; z-index: 1;}\n",
+	     days * COL_WIDTH);
+  websWrite (stream,
+	     "#t-graph #ticks .tick {position: relative; border-bottom: 1px solid #BBB; width: %upx;}\n",
+	     days * COL_WIDTH);
+  websWrite (stream,
+	     "#t-graph #ticks .tick p {position: absolute; left: 100%%; top: -0.67em; margin: 0 0 0 0.5em;}\n");
+  websWrite (stream,
+	     "#t-graph #label {width: 500px; bottom: -20px;  z-index: 1; font: 12px Tahoma, Arial, sans-serif; font-weight: bold;}\n");
   websWrite (stream, "</style>\n");
   websWrite (stream, "</head>\n\n");
   websWrite (stream, "<body>\n");
   websWrite (stream, "<ul id=\"t-graph\">\n");
-  
-  for (i = 0; i < days; i++)
-  {
-  websWrite (stream, "<li class=\"day%s\" id=\"d%d\" ", (wd % 7) == 6 ? "_sun" : "", i + 1);
-  wd++;
-  websWrite (stream, "onmouseover=\"Show(\'%s %d, %d (%s: %lu MB / %s: %lu MB)\')\" ", monthname, i + 1, year, incom, rcvd[i], outcom, sent[i]);
-  websWrite (stream, "onmouseout=\"Show(\'%s %d (%s: %lu MB / %s: %lu MB)\')\"", monthname, year, incom, totin, outcom, totout);
-  websWrite (stream, ">%d\n",  i + 1);
-  websWrite (stream, "<ul>\n");
-  websWrite (stream, "<li class=\"rcvd bar\" style=\"height: %lupx;\"><p></p></li>\n", rcvd[i] * 300 / smax);
-  websWrite (stream, "<li class=\"sent bar\" style=\"height: %lupx;\"><p></p></li>\n", sent[i] * 300 / smax);
-  websWrite (stream, "</ul>\n");
-  websWrite (stream, "</li>\n");
-  }
 
-  websWrite (stream, "<li id=\"ticks\">\n");  
-  for (i = 5; i ; i--)  //scale
-  {  
-  websWrite (stream, "<div class=\"tick\" style=\"height: 59px;\"><p>%d%sMB</p></div>\n", smax * i / 5, (smax > 10000) ? " " : "&nbsp;");
-  }
+  for (i = 0; i < days; i++)
+    {
+      websWrite (stream, "<li class=\"day%s\" id=\"d%d\" ",
+		 (wd % 7) == 6 ? "_sun" : "", i + 1);
+      wd++;
+      websWrite (stream,
+		 "onmouseover=\"Show(\'%s %d, %d (%s: %lu MB / %s: %lu MB)\')\" ",
+		 monthname, i + 1, year, incom, rcvd[i], outcom, sent[i]);
+      websWrite (stream,
+		 "onmouseout=\"Show(\'%s %d (%s: %lu MB / %s: %lu MB)\')\"",
+		 monthname, year, incom, totin, outcom, totout);
+      websWrite (stream, ">%d\n", i + 1);
+      websWrite (stream, "<ul>\n");
+      websWrite (stream,
+		 "<li class=\"rcvd bar\" style=\"height: %lupx;\"><p></p></li>\n",
+		 rcvd[i] * 300 / smax);
+      websWrite (stream,
+		 "<li class=\"sent bar\" style=\"height: %lupx;\"><p></p></li>\n",
+		 sent[i] * 300 / smax);
+      websWrite (stream, "</ul>\n");
+      websWrite (stream, "</li>\n");
+    }
+
+  websWrite (stream, "<li id=\"ticks\">\n");
+  for (i = 5; i; i--)		//scale
+    {
+      websWrite (stream,
+		 "<div class=\"tick\" style=\"height: 59px;\"><p>%d%sMB</p></div>\n",
+		 smax * i / 5, (smax > 10000) ? " " : "&nbsp;");
+    }
   websWrite (stream, "</li>\n\n");
 
   websWrite (stream, "<li id=\"label\">\n");
-  websWrite (stream, "%s %d (%s: %lu MB / %s: %lu MB)\n", monthname, year, incom, totin, outcom, totout);
+  websWrite (stream, "%s %d (%s: %lu MB / %s: %lu MB)\n", monthname, year,
+	     incom, totin, outcom, totout);
   websWrite (stream, "</li>\n");
-    
+
   websWrite (stream, "</ul>\n\n");
   websWrite (stream, "</body>\n");
   websWrite (stream, "</html>\n");
 
- 
+
 }
 
 static void
@@ -4184,15 +4309,15 @@ ej_show_bandwidth (webs_t wp, int argc, char_t ** argv)
   show_bwif (wp, nvram_safe_get ("lan_ifname"), "LAN");
   if (!nvram_match ("wan_proto", "disabled"))
     {
-	if (strlen(nvram_safe_get("wan_iface"))>0)
+      if (strlen (nvram_safe_get ("wan_iface")) > 0)
 	{
-	show_bwif (wp, nvram_safe_get ("wan_iface"), "WAN");
+	  show_bwif (wp, nvram_safe_get ("wan_iface"), "WAN");
 	}
-	else
+      else
 	{
-	    if (strlen(nvram_safe_get("wan_ifname"))>0)
+	  if (strlen (nvram_safe_get ("wan_ifname")) > 0)
 	    {
-	    show_bwif (wp, nvram_safe_get ("wan_ifname"), "WAN");
+	      show_bwif (wp, nvram_safe_get ("wan_ifname"), "WAN");
 	    }
 	}
     }
@@ -4208,7 +4333,7 @@ ej_show_bandwidth (webs_t wp, int argc, char_t ** argv)
       char name[32];
       sprintf (name, "%s (%s)", live_translate ("share.wireless"), dev);
       show_bwif (wp, dev, name);
-      char *vifs = nvram_nget ("%s_vifs",dev);
+      char *vifs = nvram_nget ("%s_vifs", dev);
       if (vifs == NULL)
 	continue;
       foreach (var, vifs, next)
@@ -4216,18 +4341,19 @@ ej_show_bandwidth (webs_t wp, int argc, char_t ** argv)
 	sprintf (name, "%s (%s)", live_translate ("share.wireless"), var);
 	show_bwif (wp, var, name);
       }
-    int s;
-  for (s = 1; s <= 10; s++)
-    {
-      char *wdsdev;
-      wdsdev = nvram_nget ("%s_wds%d_if", dev, s);
-      if (strlen (wdsdev) == 0)
-	continue;
-      if (nvram_nmatch ("0","%s_wds%d_enable", dev, s))
-	continue;
-	sprintf (name, "%s (%s)", live_translate ("share.wireless"), wdsdev);
-	show_bwif (wp, wdsdev, name);
-    }
+      int s;
+      for (s = 1; s <= 10; s++)
+	{
+	  char *wdsdev;
+	  wdsdev = nvram_nget ("%s_wds%d_if", dev, s);
+	  if (strlen (wdsdev) == 0)
+	    continue;
+	  if (nvram_nmatch ("0", "%s_wds%d_enable", dev, s))
+	    continue;
+	  sprintf (name, "%s (%s)", live_translate ("share.wireless"),
+		   wdsdev);
+	  show_bwif (wp, wdsdev, name);
+	}
 
     }
 
@@ -4357,7 +4483,9 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 #else
   int sputnik = 0;
 #endif
-  int openvpn = nvram_match ("openvpn_enable", "1") | nvram_match ("openvpncl_enable", "1");
+  int openvpn =
+    nvram_match ("openvpn_enable", "1") | nvram_match ("openvpncl_enable",
+						       "1");
   int auth = nvram_match ("status_auth", "1");
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_NOWIFI
@@ -4366,11 +4494,12 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   int wifi = haswifi ();
 #endif
 #endif
-  int wimaxwifi=0;
+  int wimaxwifi = 0;
   char menu[8][11][32] =
     { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp",
        "Networking.asp", "", "", "", "", ""},
-  {"Wireless_Basic.asp", "SuperChannel.asp","WiMAX.asp","Wireless_radauth.asp", "WL_WPATable.asp",
+  {"Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp",
+   "Wireless_radauth.asp", "WL_WPATable.asp",
    "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "",
    ""},
   {"Services.asp", "PPPoE_Server.asp", "PPTP.asp", "Hotspot.asp",
@@ -4381,7 +4510,8 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
    "QoS.asp", "P2P.asp", "", "", "", ""},
   {"Management.asp", "Alive.asp", "Diagnostics.asp", "Wol.asp",
    "Factory_Defaults.asp", "Upgrade.asp", "config.asp", "", "", "", ""},
-  {"Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp", "Status_Wireless.asp",
+  {"Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp",
+   "Status_Wireless.asp",
    "Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp",
    "Info.htm", "", "", ""}
   };
@@ -4389,21 +4519,24 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 /* real name is bmenu.menuname[i][j] */
   char menuname[8][12][32] =
     { {"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting",
-       "setupvlan", "networking", "", "", "", "",""},
-  {"wireless", "wirelessBasic","wirelessSuperchannel","wimax", "wirelessRadius", "wirelessSecurity",
-   "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "",""},
+       "setupvlan", "networking", "", "", "", "", ""},
+  {"wireless", "wirelessBasic", "wirelessSuperchannel", "wimax",
+   "wirelessRadius", "wirelessSecurity",
+   "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", ""},
   {"services", "servicesServices", "servicesPppoesrv", "servicesPptp",
-   "servicesHotspot", "servicesMilkfish", "setupeop", "servicesAnchorFree", "", "", "",""},
-  {"security", "firwall", "vpn", "", "", "", "", "", "", "", "",""},
-  {"accrestriction", "webaccess", "", "", "", "", "", "", "", "", "",""},
+   "servicesHotspot", "servicesMilkfish", "setupeop", "servicesAnchorFree",
+   "", "", "", ""},
+  {"security", "firwall", "vpn", "", "", "", "", "", "", "", "", ""},
+  {"accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", ""},
   {"applications", "applicationspforwarding", "applicationsprforwarding",
    "applicationsptriggering", "applicationsUpnp", "applicationsDMZ",
-   "applicationsQoS", "applicationsP2P", "", "", "",""},
+   "applicationsQoS", "applicationsP2P", "", "", "", ""},
   {"admin", "adminManagement", "adminAlive",
    "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup",
-   "", "", "",""},
-  {"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN", "statuSputnik",
-   "statuVPN", "statuBand", "statuSysInfo", "", "",""}
+   "", "", "", ""},
+  {"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN",
+   "statuSputnik",
+   "statuVPN", "statuBand", "statuSysInfo", "", "", ""}
   };
 
 #ifdef HAVE_MADWIFI
@@ -4413,21 +4546,21 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   for (a = 0; a < ifcount; a++)
     {
       sprintf (&menu[1][a + 7][0], "Wireless_WDS-ath%d.asp", a);
-      if (ifcount==1)
-      sprintf (&menuname[1][a + 8][0], "wirelessWds");
+      if (ifcount == 1)
+	sprintf (&menuname[1][a + 8][0], "wirelessWds");
       else
-      sprintf (&menuname[1][a + 8][0], "wirelessWds%d", a);
+	sprintf (&menuname[1][a + 8][0], "wirelessWds%d", a);
     }
 #else
-  int ifcount = get_wl_instances();
+  int ifcount = get_wl_instances ();
   int a;
   for (a = 0; a < ifcount; a++)
     {
       sprintf (&menu[1][a + 7][0], "Wireless_WDS-wl%d.asp", a);
-      if (ifcount==1)
-      sprintf (&menuname[1][a + 8][0], "wirelessWds");
+      if (ifcount == 1)
+	sprintf (&menuname[1][a + 8][0], "wirelessWds");
       else
-      sprintf (&menuname[1][a + 8][0], "wirelessWdswl%d", a);
+	sprintf (&menuname[1][a + 8][0], "wirelessWdswl%d", a);
     }
 #endif
 
@@ -4437,7 +4570,7 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, " <div id=\"menuMain\">\n");
   websWrite (wp, "  <ul id=\"menuMainList\">\n");
 #ifdef HAVE_WAVESAT
-wimaxwifi=1;
+  wimaxwifi = 1;
 #endif
   for (i = 0; i < 8; i++)
     {
@@ -4448,11 +4581,15 @@ wimaxwifi=1;
       if (!strcmp (menu[i][0], mainmenu))
 	{
 #ifdef HAVE_MADWIFI
-      if (!wifi && wimaxwifi && !strcmp (menu[i][0], "Wireless_Basic.asp"))
-	  websWrite (wp,"   <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.wimax)</script></span>\n");
-      else
+	  if (!wifi && wimaxwifi
+	      && !strcmp (menu[i][0], "Wireless_Basic.asp"))
+	    websWrite (wp,
+		       "   <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.wimax)</script></span>\n");
+	  else
 #endif
-	  websWrite (wp,"   <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></span>\n",menuname[i][0]);
+	    websWrite (wp,
+		       "   <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></span>\n",
+		       menuname[i][0]);
 	  websWrite (wp, "    <div id=\"menuSub\">\n");
 	  websWrite (wp, "     <ul id=\"menuSubList\">\n");
 
@@ -4460,14 +4597,14 @@ wimaxwifi=1;
 	    {
 
 #ifdef HAVE_MADWIFI
-	      if (!wifi && !strncmp(menu[i][j],"Wireless_Basic.asp",8))
-	        j++;
+	      if (!wifi && !strncmp (menu[i][j], "Wireless_Basic.asp", 8))
+		j++;
 #ifndef HAVE_SUPERCHANNEL
 	      if (!strcmp (menu[i][j], "SuperChannel.asp"))	//jump over PPTP in micro build
 		j++;
 #else
-	      if (!strcmp (menu[i][j], "SuperChannel.asp") && (issuperchannel() || !wifi))	//jump over PPTP in micro build
-	      	j++;
+	      if (!strcmp (menu[i][j], "SuperChannel.asp") && (issuperchannel () || !wifi))	//jump over PPTP in micro build
+		j++;
 #endif
 #else
 	      if (!strcmp (menu[i][j], "SuperChannel.asp"))	//jump over PPTP in micro build
@@ -4482,18 +4619,18 @@ wimaxwifi=1;
 #endif
 #ifdef HAVE_MADWIFI
 	      if (!wifi && !strcmp (menu[i][j], "WL_WPATable.asp"))	//jump over PPTP in micro build
-	      	j++;
+		j++;
 	      if (!strcmp (menu[i][j], "Wireless_radauth.asp"))
 		j++;
-	      if (!wifi && !strncmp(menu[i][j],"Wireless_MAC.asp",8))
-	        j++;
+	      if (!wifi && !strncmp (menu[i][j], "Wireless_MAC.asp", 8))
+		j++;
 	      if (!strcmp (menu[i][j], "Wireless_Advanced.asp"))
 		j++;
-	      if (!wifi && !strncmp (menu[i][j], "Wireless_WDS",12))
+	      if (!wifi && !strncmp (menu[i][j], "Wireless_WDS", 12))
 		j++;
 	      if (!wifi && !strcmp (menu[i][j], "Status_Wireless.asp"))
 		j++;
-	      
+
 #endif
 	      if ((!vlan_supp) && !strcmp (menu[i][j], "Vlan.asp"))	//jump over VLANs if vlan not supported
 		j++;
@@ -4539,7 +4676,10 @@ wimaxwifi=1;
 	      if ((!auth) && !strcmp (menu[i][j], "Info.htm"))	//jump over Sys-Info
 		j++;
 #ifdef HAVE_MADWIFI
-	      if (!strcmp (menu[i][j], submenu) && (strlen (menu[i][j]) && !strcmp(menu[i][j],"Wireless_Basic.asp") && !wifi && wimaxwifi))
+	      if (!strcmp (menu[i][j], submenu)
+		  && (strlen (menu[i][j])
+		      && !strcmp (menu[i][j], "Wireless_Basic.asp") && !wifi
+		      && wimaxwifi))
 		{
 		  websWrite (wp,
 			     "      <li><span><script type=\"text/javascript\">Capture(bmenu.wimax)</script></span></li>\n");
@@ -4566,7 +4706,9 @@ wimaxwifi=1;
 		}
 #endif
 #ifdef HAVE_MADWIFI
-	      else if (strlen (menu[i][j]) && !strcmp(menu[i][j],"Wireless_Basic.asp") && !wifi && wimaxwifi)
+	      else if (strlen (menu[i][j])
+		       && !strcmp (menu[i][j], "Wireless_Basic.asp") && !wifi
+		       && wimaxwifi)
 		{
 		  websWrite (wp,
 			     "      <li><a href=\"WiMAX.asp\"><script type=\"text/javascript\">Capture(bmenu.wimax)</script></a></li>\n");
@@ -4584,11 +4726,12 @@ wimaxwifi=1;
 	  websWrite (wp, "    </li>\n");
 	}
 #ifdef HAVE_MADWIFI
-	      else if (!strcmp(menu[i][0],"Wireless_Basic.asp") && !wifi && wimaxwifi)
-		{
-		  websWrite (wp,
-			     "      <li><a href=\"WiMAX.asp\"><script type=\"text/javascript\">Capture(bmenu.wimax)</script></a></li>\n");
-		}
+      else if (!strcmp (menu[i][0], "Wireless_Basic.asp") && !wifi
+	       && wimaxwifi)
+	{
+	  websWrite (wp,
+		     "      <li><a href=\"WiMAX.asp\"><script type=\"text/javascript\">Capture(bmenu.wimax)</script></a></li>\n");
+	}
 #endif
       else
 	{
@@ -4632,10 +4775,10 @@ ej_do_pagehead (webs_t wp, int argc, char_t ** argv)	//Eko
 	     "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
 	     live_translate ("lang_charset.set"));
 #ifndef HAVE_MICRO
-      websWrite (wp,
-		 "\t\t<link rel=\"icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
-      websWrite (wp,
-		 "\t\t<link rel=\"shortcut icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
+  websWrite (wp,
+	     "\t\t<link rel=\"icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
+  websWrite (wp,
+	     "\t\t<link rel=\"shortcut icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
 #endif
   websWrite (wp,
 	     "\t\t<script type=\"text/javascript\" src=\"common.js\"></script>\n");
@@ -4689,7 +4832,8 @@ ej_do_hpagehead (webs_t wp, int argc, char_t ** argv)	//Eko
 #endif
   websWrite (wp,
 	     "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
-   if (!strcmp (htitle, "doctype_only")) return;  //stop here, for About.htm
+  if (!strcmp (htitle, "doctype_only"))
+    return;			//stop here, for About.htm
   websWrite (wp, "<html>\n");
   websWrite (wp, "\t<head>\n");
   websWrite (wp,
@@ -4714,17 +4858,21 @@ ej_show_timeoptions (webs_t wp, int argc, char_t ** argv)	//Eko
 {
 
   char timediffs[39][8] =
-    { "-12", "-11", "-10", "-09.5", "-09", "-08", "-07", "-06", "-05", "-04.5", "-04",
+    { "-12", "-11", "-10", "-09.5", "-09", "-08", "-07", "-06", "-05",
+"-04.5", "-04",
     "-03.5", "-03", "-02", "-01", "+00",
-    "+01", "+02", "+03", "+03.5", "+04", "+04.5", "+05", "+05.5", "+05.75", "+06",
+    "+01", "+02", "+03", "+03.5", "+04", "+04.5", "+05", "+05.5", "+05.75",
+      "+06",
     "+06.5", "+07", "+08", "+09", "+09.5", "+10", "+10.5", "+11", "+11.5",
     "+12", "+12.75", "+13", "+14"
   };
 
   char timezones[39][8] =
     { "-12:00", "-11:00", "-10:00", "-09:30", "-09:00", "-08:00", "-07:00",
-    "-06:00", "-05:00", "-04:30", "-04:00", "-03:30", "-03:00", "-02:00", "-01:00", "",
-    "+01:00", "+02:00", "+03:00", "+03:30", "+04:00", "+04:30", "+05:00", "+05:30",
+    "-06:00", "-05:00", "-04:30", "-04:00", "-03:30", "-03:00", "-02:00",
+      "-01:00", "",
+    "+01:00", "+02:00", "+03:00", "+03:30", "+04:00", "+04:30", "+05:00",
+      "+05:30",
     "+05:45", "+06:00", "+06:30", "+07:00", "+08:00", "+09:00", "+09:30",
     "+10:00", "+10:30", "+11:00", "+11:30", "+12:00", "+12:45", "+13:00",
     "+14:00"
@@ -4848,7 +4996,8 @@ struct mime_handler mime_handlers[] = {
   {"style/yellow/style.css", "text/css", NULL, NULL, do_stylecss, NULL},
   {"style/blue/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL},
   {"style/cyan/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL},
-  {"style/elegant/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL},
+  {"style/elegant/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie,
+   NULL},
   {"style/green/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL},
   {"style/orange/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL},
   {"style/red/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL},
@@ -4860,7 +5009,7 @@ struct mime_handler mime_handlers[] = {
   {"**.jpg", "image/jpeg", NULL, NULL, do_file, NULL},
   {"**.ico", "image/x-icon", NULL, NULL, do_file, NULL},
   {"**.js", "text/javascript", NULL, NULL, do_file, NULL},
-  {"**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL},  
+  {"**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL},
 #ifdef HAVE_SKYTRON
   {"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
    do_auth2},
@@ -4907,7 +5056,8 @@ struct mime_handler mime_handlers[] = {
   {"nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, do_auth},
 #endif
 #if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)
-  {"backup/cfe.bin", "application/octet-stream", no_cache, NULL, do_cfebackup, do_auth},
+  {"backup/cfe.bin", "application/octet-stream", no_cache, NULL, do_cfebackup,
+   do_auth},
 #endif
   {"ttgraph.cgi*", "text/html", no_cache, NULL, do_ttgraph, do_auth},
 //for ddm
@@ -5237,7 +5387,7 @@ ej_get_txpower (webs_t wp, int argc, char_t ** argv)
   char m[32];
   strncpy (m, nvram_safe_get ("wifi_display"), 4);
   m[4] = 0;
-  websWrite (wp, "%d dBm", wifi_gettxpower(m));
+  websWrite (wp, "%d dBm", wifi_gettxpower (m));
 #endif
 }
 
@@ -5549,7 +5699,8 @@ ej_dumparptable (webs_t wp, int argc, char_t ** argv)
 	  if (!strcmp (hostname, "*") && nvram_match ("dhcp_dnsmasq", "1")
 	      && nvram_match ("dhcpd_usenvram", "1"))
 	    {
-	      sscanf (nvram_nget ("dnsmasq_lease_%s", ip), "%*s %*s %*s %s", hostname);
+	      sscanf (nvram_nget ("dnsmasq_lease_%s", ip), "%*s %*s %*s %s",
+		      hostname);
 	    }
 /* end nvram check */
 
@@ -6031,7 +6182,7 @@ struct ej_handler ej_handlers[] = {
   {"show_acktiming", ej_show_acktiming},
   {"update_acktiming", ej_update_acktiming},
 #endif
-  {"showbridgesettings",ej_showbridgesettings},
+  {"showbridgesettings", ej_showbridgesettings},
   {NULL, NULL}
 };
 #endif /* !WEBS */

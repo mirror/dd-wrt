@@ -582,7 +582,7 @@ validate_port_trigger (webs_t wp, char *value, struct variable *v)
       char trigger_o_to[] = "o_toXXX";
       char trigger_proto[] = "proXXX";
       char *name = "", *enable, new_name[200] = "", *i_from = "", *i_to =
-	"", *o_from = "", *o_to = "", *proto="both";
+	"", *o_from = "", *o_to = "", *proto = "both";
 
       snprintf (trigger_name, sizeof (trigger_name), "name%d", i);
       snprintf (trigger_enable, sizeof (trigger_enable), "enable%d", i);
@@ -649,8 +649,8 @@ validate_port_trigger (webs_t wp, char *value, struct variable *v)
 	}
 
       cur += snprintf (cur, buf + sof - cur, "%s%s:%s:%s:%s-%s>%s-%s",
-		       cur == buf ? "" : " ", new_name, enable,proto, i_from, i_to,
-		       o_from, o_to);
+		       cur == buf ? "" : " ", new_name, enable, proto, i_from,
+		       i_to, o_from, o_to);
 
     }
 
@@ -663,7 +663,8 @@ validate_port_trigger (webs_t wp, char *value, struct variable *v)
  * name:on:both:1000-2000>3000-4000
  */
 
-void port_trigger_table (webs_t wp, char *type, int which)
+void
+port_trigger_table (webs_t wp, char *type, int which)
 {
 
   static char word[256];

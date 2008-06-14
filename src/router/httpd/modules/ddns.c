@@ -247,8 +247,9 @@ request_freedns (char *user, char *password)
   for (i = 0; i < 20; i++)
     sprintf (request, "%s%02x", request, final[i]);
   system ("rm -f /tmp/.hash");
-  sysprintf("wget \"http://freedns.afraid.org/api/?action=getdyndns&sha=%s\" -O /tmp/.hash",
-	   request);
+  sysprintf
+    ("wget \"http://freedns.afraid.org/api/?action=getdyndns&sha=%s\" -O /tmp/.hash",
+     request);
   FILE *in = fopen ("/tmp/.hash", "rb");
   if (in == NULL)
     return NULL;
