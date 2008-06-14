@@ -831,6 +831,7 @@ log.accept="Akzeptiert";
 management.titl="Administration";
 management.h2="Router Management";
 
+management.changepassword="Ihr Router ist derzeit nicht geschützt, bitte ändern Sie ihren Nutzernamen und ihr Passwort mithilfe des folgenden Dialogs!";
 management.psswd_legend="Router-Password";
 management.psswd_user="Router-Nutzername";
 management.psswd_pass="Router-Passwort";
