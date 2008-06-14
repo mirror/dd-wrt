@@ -58,9 +58,9 @@ ej_exec_milkfish_phonebook (webs_t wp, int argc, char_t ** argv)
   if ((fp = popen (request, "r")))
     {
       while (fgets (line, sizeof (line), fp) != NULL)
-        {
-          websWrite (wp, line);
-        }
+	{
+	  websWrite (wp, line);
+	}
       pclose (fp);
     }
 
@@ -94,8 +94,7 @@ validate_subscribers (webs_t wp, char *value, struct variable *v)
 
       char subscriber_user[] = "userXXX";
       char subscriber_pass[] = "passXXX";
-      char *user = "", new_user[200] = "", *pass = "", new_pass[200] =
-        "";
+      char *user = "", new_user[200] = "", *pass = "", new_pass[200] = "";
 
       snprintf (subscriber_user, sizeof (subscriber_user), "user%d", i);
       snprintf (subscriber_pass, sizeof (subscriber_pass), "pass%d", i);
@@ -105,32 +104,32 @@ validate_subscribers (webs_t wp, char *value, struct variable *v)
 
       which = &subscriber_variables[0];
       if (strcmp (user, ""))
-        {
-          if (!valid_name (wp, user, &which[0]))
-            {
-              error_value = 1;
-              continue;
-            }
-          else
-            {
-              httpd_filter_name (user, new_user, sizeof (new_user), SET);
-            }
-        }
+	{
+	  if (!valid_name (wp, user, &which[0]))
+	    {
+	      error_value = 1;
+	      continue;
+	    }
+	  else
+	    {
+	      httpd_filter_name (user, new_user, sizeof (new_user), SET);
+	    }
+	}
 
       if (strcmp (pass, ""))
-        {
-          if (!valid_name (wp, pass, &which[1]))
-            {
-              error_value = 1;
-              continue;
-            }
-          else
-            {
-              httpd_filter_name (pass, new_pass, sizeof (new_pass), SET);
-            }
-        }
+	{
+	  if (!valid_name (wp, pass, &which[1]))
+	    {
+	      error_value = 1;
+	      continue;
+	    }
+	  else
+	    {
+	      httpd_filter_name (pass, new_pass, sizeof (new_pass), SET);
+	    }
+	}
       cur += snprintf (cur, buf + sof - cur, "%s%s:%s",
-                  cur == buf ? "" : " ", new_user, new_pass);
+		       cur == buf ? "" : " ", new_user, new_pass);
 
     }
   if (!error)
@@ -156,25 +155,25 @@ show_subscriber_table (webs_t wp, char *type, int which)
   {
     if (which-- == 0)
       {
-        pass = word;
-        user = strsep (&pass, ":");
-        if (!user || !pass)
-          continue;
+	pass = word;
+	user = strsep (&pass, ":");
+	if (!user || !pass)
+	  continue;
 
 
-        if (!strcmp (type, "user"))
-          {
-            httpd_filter_name (user, new_user, sizeof (new_user), GET);
-            websWrite (wp, "%s", new_user);
-          }
-        else if (!strcmp (type, "pass"))
-          {
-            httpd_filter_name (pass, new_pass, sizeof (new_pass), GET);
-            websWrite (wp, "%s", new_pass);
-          }
-        return;
+	if (!strcmp (type, "user"))
+	  {
+	    httpd_filter_name (user, new_user, sizeof (new_user), GET);
+	    websWrite (wp, "%s", new_user);
+	  }
+	else if (!strcmp (type, "pass"))
+	  {
+	    httpd_filter_name (pass, new_pass, sizeof (new_pass), GET);
+	    websWrite (wp, "%s", new_pass);
+	  }
+	return;
       }
-   }
+  }
 }
 
 
@@ -188,21 +187,25 @@ ej_show_subscribers (webs_t wp, int argc, char_t ** argv)
   int c = 0;
 
   count = nvram_safe_get ("milkfish_ddsubscribersnum");
-  if (count == NULL || strlen (count) == 0 || (c=atoi(count))<=0)
-  {
+  if (count == NULL || strlen (count) == 0 || (c = atoi (count)) <= 0)
+    {
       websWrite (wp, "<tr>\n");
       websWrite (wp,
 		 "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
-  }
+    }
   for (i = 0; i < c; i++)
     {
       websWrite (wp, "<tr><td>\n");
-      websWrite (wp, "<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",i);
+      websWrite (wp,
+		 "<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+		 i);
       show_subscriber_table (wp, "user", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      websWrite (wp, "<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",i);
+      websWrite (wp,
+		 "<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+		 i);
       show_subscriber_table (wp, "pass", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "</tr>\n");
@@ -236,8 +239,7 @@ validate_aliases (webs_t wp, char *value, struct variable *v)
 
       char alias_user[] = "userXXX";
       char alias_pass[] = "passXXX";
-      char *user = "", new_user[200] = "", *pass = "", new_pass[200] =
-        "";
+      char *user = "", new_user[200] = "", *pass = "", new_pass[200] = "";
 
       snprintf (alias_user, sizeof (alias_user), "user%d", i);
       snprintf (alias_pass, sizeof (alias_pass), "pass%d", i);
@@ -247,32 +249,32 @@ validate_aliases (webs_t wp, char *value, struct variable *v)
 
       which = &alias_variables[0];
       if (strcmp (user, ""))
-        {
-          if (!valid_name (wp, user, &which[0]))
-            {
-              error_value = 1;
-              continue;
-            }
-          else
-            {
-              httpd_filter_name (user, new_user, sizeof (new_user), SET);
-            }
-        }
+	{
+	  if (!valid_name (wp, user, &which[0]))
+	    {
+	      error_value = 1;
+	      continue;
+	    }
+	  else
+	    {
+	      httpd_filter_name (user, new_user, sizeof (new_user), SET);
+	    }
+	}
 
       if (strcmp (pass, ""))
-        {
-          if (!valid_name (wp, pass, &which[1]))
-            {
-              error_value = 1;
-              continue;
-            }
-          else
-            {
-              httpd_filter_name (pass, new_pass, sizeof (new_pass), SET);
-            }
-        }
+	{
+	  if (!valid_name (wp, pass, &which[1]))
+	    {
+	      error_value = 1;
+	      continue;
+	    }
+	  else
+	    {
+	      httpd_filter_name (pass, new_pass, sizeof (new_pass), SET);
+	    }
+	}
       cur += snprintf (cur, buf + sof - cur, "%s%s:%s",
-                  cur == buf ? "" : " ", new_user, new_pass);
+		       cur == buf ? "" : " ", new_user, new_pass);
 
     }
   if (!error)
@@ -298,25 +300,25 @@ show_aliases_table (webs_t wp, char *type, int which)
   {
     if (which-- == 0)
       {
-        pass = word;
-        user = strsep (&pass, ":");
-        if (!user || !pass)
-          continue;
+	pass = word;
+	user = strsep (&pass, ":");
+	if (!user || !pass)
+	  continue;
 
 
-        if (!strcmp (type, "user"))
-          {
-            httpd_filter_name (user, new_user, sizeof (new_user), GET);
-            websWrite (wp, "%s", new_user);
-          }
-        else if (!strcmp (type, "pass"))
-          {
-            httpd_filter_name (pass, new_pass, sizeof (new_pass), GET);
-            websWrite (wp, "%s", new_pass);
-          }
-        return;
+	if (!strcmp (type, "user"))
+	  {
+	    httpd_filter_name (user, new_user, sizeof (new_user), GET);
+	    websWrite (wp, "%s", new_user);
+	  }
+	else if (!strcmp (type, "pass"))
+	  {
+	    httpd_filter_name (pass, new_pass, sizeof (new_pass), GET);
+	    websWrite (wp, "%s", new_pass);
+	  }
+	return;
       }
-   }
+  }
 }
 
 
@@ -327,21 +329,25 @@ ej_show_aliases (webs_t wp, int argc, char_t ** argv)
   char *count;
   int c = 0;
   count = nvram_safe_get ("milkfish_ddaliasesnum");
-  if (count == NULL || strlen (count) == 0 || (c=atoi(count))<=0)
-  {
+  if (count == NULL || strlen (count) == 0 || (c = atoi (count)) <= 0)
+    {
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-                 "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
+		 "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
-  }
+    }
   for (i = 0; i < c; i++)
     {
       websWrite (wp, "<tr><td>\n");
-      websWrite (wp, "<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",i);
+      websWrite (wp,
+		 "<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+		 i);
       show_aliases_table (wp, "user", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      websWrite (wp, "<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",i);
+      websWrite (wp,
+		 "<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+		 i);
       show_aliases_table (wp, "pass", i);
       websWrite (wp, "\" /></td>\n");
       websWrite (wp, "</tr>\n");
@@ -354,21 +360,21 @@ milkfish_sip_message (webs_t wp)
 {
   char *message = websGetVar (wp, "sip_message", NULL);
   char *dest = websGetVar (wp, "sip_message_dest", NULL);
-int i;
-FILE *fp=fopen("/tmp/sipmessage","wb");
-if (fp==NULL)
+  int i;
+  FILE *fp = fopen ("/tmp/sipmessage", "wb");
+  if (fp == NULL)
     return;
-      char *host_key = message;
-      i = 0;
-      do
-	{
-	  if (host_key[i] != 0x0D)
-	    fprintf (fp, "%c", host_key[i]);
-	}
-      while (host_key[++i]);
-putc(0xa,fp);
-fclose(fp);
-  eval("milkfish_services","simpledd",dest);
+  char *host_key = message;
+  i = 0;
+  do
+    {
+      if (host_key[i] != 0x0D)
+	fprintf (fp, "%c", host_key[i]);
+    }
+  while (host_key[++i]);
+  putc (0xa, fp);
+  fclose (fp);
+  eval ("milkfish_services", "simpledd", dest);
   return;
 }
 
@@ -388,36 +394,37 @@ show_registrations_table (webs_t wp, char *type, int which)
   {
     if (which-- == 0)
       {
-        contact = word;
-        user = strsep (&contact, ":");
-        if (!user || !contact)
-          continue;
+	contact = word;
+	user = strsep (&contact, ":");
+	if (!user || !contact)
+	  continue;
 
-        agent = contact;
-        contact = strsep (&agent, ":");
-        if (!contact || !agent)
-          continue;
-       
+	agent = contact;
+	contact = strsep (&agent, ":");
+	if (!contact || !agent)
+	  continue;
 
-        if (!strcmp (type, "user"))
-          {
-            httpd_filter_name (user, new_user, sizeof (new_user), GET);
-            websWrite (wp, "%s", new_user);
-          }
-        else if (!strcmp (type, "contact"))
-          {
-            httpd_filter_name (contact, new_contact, sizeof (new_contact), GET);
-            websWrite (wp, "%s", new_contact);
-          }
-        else if (!strcmp (type, "agent"))
-          {
-            httpd_filter_name (agent, new_agent, sizeof (new_agent), GET);
-            websWrite (wp, "%s", new_agent);
-          }
 
-        return;
+	if (!strcmp (type, "user"))
+	  {
+	    httpd_filter_name (user, new_user, sizeof (new_user), GET);
+	    websWrite (wp, "%s", new_user);
+	  }
+	else if (!strcmp (type, "contact"))
+	  {
+	    httpd_filter_name (contact, new_contact, sizeof (new_contact),
+			       GET);
+	    websWrite (wp, "%s", new_contact);
+	  }
+	else if (!strcmp (type, "agent"))
+	  {
+	    httpd_filter_name (agent, new_agent, sizeof (new_agent), GET);
+	    websWrite (wp, "%s", new_agent);
+	  }
+
+	return;
       }
-   }
+  }
 }
 
 
@@ -428,30 +435,34 @@ ej_show_registrations (webs_t wp, int argc, char_t ** argv)
   char *count;
   int c = 0;
   count = nvram_safe_get ("milkfish_ddactivenum");
-  if (count == NULL || strlen (count) == 0 || (c=atoi(count))<=0)
-  {
+  if (count == NULL || strlen (count) == 0 || (c = atoi (count)) <= 0)
+    {
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-                 "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
+		 "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
-  }
+    }
   for (i = 0; i < c; i++)
     {
       websWrite (wp, "<tr><td>\n");
-      websWrite (wp, "<input maxlength=\"20\" size=\"20\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",i);
+      websWrite (wp,
+		 "<input maxlength=\"20\" size=\"20\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+		 i);
       show_registrations_table (wp, "user", i);
       websWrite (wp, "\" readonly=\"readonly\" /></td>\n");
       websWrite (wp, "<td>\n");
-      websWrite (wp, "<input maxlength=\"50\" size=\"50\" name=\"contact%d\" onblur=\"valid_name(this,'Name')\" value=\"",i);
+      websWrite (wp,
+		 "<input maxlength=\"50\" size=\"50\" name=\"contact%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+		 i);
       show_registrations_table (wp, "contact", i);
       websWrite (wp, "\" readonly=\"readonly\" /></td>\n");
       websWrite (wp, "<td>\n");
-      websWrite (wp, "<input maxlength=\"50\" size=\"50\" name=\"agent%d\" onblur=\"valid_name(this,'Name')\" value=\"",i);
+      websWrite (wp,
+		 "<input maxlength=\"50\" size=\"50\" name=\"agent%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+		 i);
       show_registrations_table (wp, "agent", i);
       websWrite (wp, "\" readonly=\"readonly\" /></td>\n");
       websWrite (wp, "</tr>\n");
     }
   return;
 }
-
-

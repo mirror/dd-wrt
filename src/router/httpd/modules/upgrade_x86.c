@@ -187,8 +187,9 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
   FILE *out = fopen ("/tmp/flash", "wb");
   for (i = 0; i < linuxsize; i++)
     putc (getc (fifo), out);
-  fclose (out);  
-  sysprintf("sync|dd if=/tmp/flash of=/dev/discs/disc%d/disc|sync", getdiscindex ());
+  fclose (out);
+  sysprintf ("sync|dd if=/tmp/flash of=/dev/discs/disc%d/disc|sync",
+	     getdiscindex ());
   /* Wait for write to terminate */
 //  waitpid (pid, &ret, 0);
   cprintf ("done\n");
@@ -285,7 +286,7 @@ do_upgrade_post (char *url, webs_t stream, int len, char *boundary)	//jimmy, htt
 #ifdef HAVE_HTTPS
       if (do_ssl)
 	{
-	  wfgets(buf,1,stream);
+	  wfgets (buf, 1, stream);
 	}
       else
 	{

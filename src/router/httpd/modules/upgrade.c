@@ -100,7 +100,7 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
     write_argv[2] = "linux";
 #elif HAVE_FONERA2200
     write_argv[2] = "linux";
-#elif defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_MERAKI) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) 
+#elif defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_MERAKI) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5)
     write_argv[2] = "rootfs";
 #else
     write_argv[2] = "linux";
@@ -164,7 +164,7 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
   else
 #endif
     ACTION ("ACT_WEB_UPGRADE");
-int uploadcount=0;
+  int uploadcount = 0;
   /* Feed write from a temporary FIFO */
   if (!mktemp (upload_fifo) ||
       mkfifo (upload_fifo, S_IRWXU) < 0 ||
@@ -306,8 +306,8 @@ int uploadcount=0;
       *total -= count;
       safe_fwrite (buf, 1, count, fifo);
       //safe_fwrite(buf, 1, size, fifo);
-      uploadcount+=count;
-      fprintf (stderr, "uploading [%d]\r",uploadcount);
+      uploadcount += count;
+      fprintf (stderr, "uploading [%d]\r", uploadcount);
       i++;
     }
   fclose (fifo);
@@ -315,7 +315,7 @@ int uploadcount=0;
 
   /* Wait for write to terminate */
   waitpid (pid, &ret, 0);
-  fprintf (stderr, "uploading [%d]\n",uploadcount);
+  fprintf (stderr, "uploading [%d]\n", uploadcount);
   cprintf ("done\n");
 #ifdef HAVE_HTTPS
   if (!do_ssl)
@@ -422,12 +422,12 @@ do_upgrade_post (char *url, webs_t stream, int len, char *boundary)	//jimmy, htt
 //#endif
   /* Slurp anything remaining in the request */
 
-  while ((len--)>0)
+  while ((len--) > 0)
     {
 #ifdef HAVE_HTTPS
       if (do_ssl)
 	{
-	  wfgets(buf,1,stream);
+	  wfgets (buf, 1, stream);
 	}
       else
 	{
