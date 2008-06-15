@@ -21,7 +21,8 @@ function to_submit(F) {
 if (valid_password(F))
     {
 	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "Reboot";
+	F.next_page.value = "Info.htm";
+	F.submit_button.value = "index";
 	F.submit_type.value = "changepass";
 	F.changepassword.value = "Changing Password";
 	F.action.value = "Apply";
@@ -59,8 +60,9 @@ if (valid_password(F))
 				</div>
 				<div id="main">
                     		<form name="changepassword" action="apply.cgi" method="<% get_http_method(); %>">
-                  			<input type="hidden" name="submit_button" value="Reboot" />
+                  			<input type="hidden" name="submit_button" value="index" />
                   			<input type="hidden" name="submit_type" />
+                  			<input type="hidden" name="next_page" />
                   			<input type="hidden" name="change_action" />
 					<input type="hidden" name="action" value="Apply" />
 
