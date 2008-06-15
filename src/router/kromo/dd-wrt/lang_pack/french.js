@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////
-//  French translation DD-WRT by Botho & GaLaGaNN 11/05/2008 version - svn 9511  //
+//  French translation DD-WRT by Botho & GaLaGaNN 14/06/2008 version - svn 9655  //
 ///////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -814,6 +814,7 @@ log.accept="Accepté";
 // ** Management.asp **//
 management.titl="Administration";
 management.h2="Administration du Routeur";
+management.changepassword="Votre routeur utilise actuellement le couple utilisateur/mot de passe par défaut ce qui le rend particulièrement vulnérable. Modifier le SVP.";
 management.psswd_legend="Administrateur";
 management.psswd_user="Nom d'utilisateur";
 management.psswd_pass="Mot de passe";
@@ -1634,6 +1635,9 @@ wl_basic.wifi_bonding="Wifi Bonding";
 wl_basic.sifstime="OFDM SIFS Time";
 wl_basic.preambletime="OFDM Preamble Time";
 wl_basic.multicast="Transmission Multicast";
+wl_basic.intmit="Immunité au bruit";
+wl_basic.noise_immunity="Niveau d'immunité au bruit";
+wl_basic.ofdm_weak_det="Faiblesse de détection OFDM";
 
 //help container
 hwl_basic.right2="Si vous disposez à la fois des périphériques 802.11g et 802.11b sur votre réseau, conservez le paramètre par défaut <em>Mixte</em>. Si vous utilisez uniquement des périphériques 802.11g, sélectionnez <em>G-uniquement</em>. Si vous travaillez uniquement avec des périphériques 802.11b, sélectionnez <em>B-uniquement</em>. Si votre réseau n'est muni d'aucun périphérique sans fil, sélectionnez l'option <em>Désactiver</em>.<br/><b>Remarque :</b> quand vous changez de mode, certains paramètres avancés sont susceptibles d'être modifiés (\""+wl_adv.label16+"\", \""+wl_adv.label2+"\" ou \""+wl_adv.label5+"\").";
