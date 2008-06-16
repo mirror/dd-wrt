@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 1.May.2008, svn 9465	//
+//				Slovenian translation DD-WRT by Eko, last revision: 15.Jun.2008, svn 9716	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 // IMPORTANT: for live values use UTF-8 Unicode Character Set
 
@@ -1672,6 +1672,17 @@ wl_mac.label="Uporabi filter";
 wl_mac.label2="Naèin filtra";
 wl_mac.deny="Prepreèi odjemalcem na seznamu dostop do brez¾iènega omre¾ja";
 wl_mac.allow="Dovoli odjemalcem na seznamu dostop do brez¾iènega omre¾ja";
+
+// ** WiMAX
+
+wl_wimax.titl="WiMAX";
+wl_wimax.h2="Worldwide Interoperability for Microwave Access";
+wl_wimax.downstream="Downstream Frequency";
+wl_wimax.upstream="Upstream Frequency";
+wl_wimax.width="Channel Width";
+wl_wimax.duplex="Duplex Mode";
+wl_wimax.mode="Operation Mode";
+wl_wimax.mac="Subscriber MAC Address";
 
 // ** Wireless_Advanced.asp **//
 

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-//Chinese (Traditional) translation file - DD-WRT V23/V24 2008/02/13 UTF-8    //
+//Chinese (Traditional) translation file - DD-WRT V23/V24 2008/06/15 UTF-8    //
 ////////////////////////////////////////////////////////////////////////////////
 // ** COMMON SHARE LABEL **//
 
@@ -19,7 +19,7 @@ share.disabled="關閉";
 share.usrname="帳號";
 share.passwd="密碼";
 share.hostname="主機名";
-share.vdsl="DTAG VDSL Vlan Tagging"
+share.vdsl="DTAG VDSL Vlan Tagging";
 share.compression="PPP 壓縮";
 share.domainname="網域名稱";
 share.wandomainname="WAN 網域名稱";
@@ -142,7 +142,7 @@ share.dhcp="DHCP";
 share.styl="風格";
 share.err="error";
 share.errs="errors";
-share.meters="meters";
+share.meters="公尺";
 share.full="全部 (20 Mhz)";
 share.half="一半 (10 Mhz)";
 share.quarter="1/4 (5 Mhz)";
@@ -151,14 +151,14 @@ share.never="never";
 share.unknown="Unknown";
 share.expired="expired";
 share.logout="登出";
-share.nmounted="Not mounted";
+share.nmounted="未掛載";
 share.fssize="合計 / 剩餘大小";
 share.src="來源位址";
 share.dst="遠端位址";
 share.name_resolution="Name Resolution";
 share.timeout="Timeout (s)";
 share.detail="查看細項";
-share.tmpmem="Temporary Memory";
+share.tmpmem="暫存記憶體";
 share._1h="每小時";
 share._2h="每 2 小時";
 share._3h="每 3 小時";
@@ -711,26 +711,26 @@ hotspot.wifidog_authsrvpath="AuthServer 路徑";
 
 //
 anchorfree.anchorfree="AnchorFree";
-anchorfree.title="Earn Hotspot Revenue";
-anchorfree.anchorfree_revenue="Earn revenue by creating ad-supported AnchorFree Hotspot";
-anchorfree.email="Email to receive revenue reports";
-anchorfree.ssid="Use different SSID";
+anchorfree.title="賺取 Hotspot 的收入";
+anchorfree.anchorfree_revenue="透過建立支持廣告的 AnchorFree Hotspot 賺取收入";
+anchorfree.email="Email 收入的報告";
+anchorfree.ssid="使用不同的 SSID";
 anchorfree.ssid_name="SSID";
-anchorfree.address_1="Street Address";
-anchorfree.address_2="Street Address 2";
-anchorfree.city="City";
-anchorfree.zip="Postal or Zip Code";
-anchorfree.state="County/State/Province";
-anchorfree.country="Country";
-anchorfree.category="Category";
-anchorfree.publish="Publish this hotspot on the free WiFi map";
+anchorfree.address_1="地址";
+anchorfree.address_2="地址 2";
+anchorfree.city="城市名稱";
+anchorfree.zip="郵遞區號";
+anchorfree.state="縣/州/省";
+anchorfree.country="國家";
+anchorfree.category="類別";
+anchorfree.publish="刊載此 hotspot 於免費WiFi地圖上";
 anchorfree.serviceid="Service ID";
-anchorfree.servicestatus="Service Status";
-anchorfree.agreement="Terms and Conditions";
+anchorfree.servicestatus="服務狀態";
+anchorfree.agreement="條款和條件";
 anchorfree.agree="我同意並接受";
-anchorfree.validaddr="a valid address field must be provided if this hotspot should be published on the wifi hotspot map!";
-anchorfree.validcity="a valid city or zip/postal code must be provided if this hotspot should be published on the wifi hotspot map!";
-anchorfree.validcat="please select a advertising category for your hotspot";
+anchorfree.validaddr="若這個 hotspot 要刊載於WiFi hotspot地圖上須提供一個正確的地址";
+anchorfree.validcity="若這個 hotspot 要刊載於WiFi hotspot地圖上須提供一個正確的 城市名稱 或 郵遞區號!";
+anchorfree.validcat="請選擇 hotspot 的廣告類別";
 anchorfree.validcountry="你的 hotspot 所在地";
 anchorfree.validterms="你必須同意條款和條件!";
 
@@ -739,7 +739,7 @@ hanchorfree.right1="Join AnchorFree's hotspot advertising network";
 hanchorfree.right2="AnchorFree operates a hotspot advertising network allowing DD-WRT customers to generate incremental revenues.";
 hanchorfree.right3="Generate incremental revenue with advertising from AnchorFree";
 hanchorfree.right4="By activating this feature and creating an account with AnchorFree (it's free and easy), a persistent advertising frame is inserted directly into users web browsers, which will earn you a payment every month.  Earn a minimum monthly threshold of $25 and AnchorFree will automatically credit your account with funds.";
-hanchorfree.right5="For more information please visit www.anchorfree.com";
+hanchorfree.right5="更多的資訊在 www.anchorfree.com";
 hanchorfree.right6="Activation is easy";
 hanchorfree.right7="Once you have activated, AnchorFree will send an email to the registered account owner with simple instructions on optimizing your hotspot, FAQs, and other pertinent information on earning money from your router. Through this configuration screen, AnchorFree inserts a thin, non-intrusive advertising frame directly into web browsers accessing the internet from this router.";
 hanchorfree.right8="客戶支援";
@@ -882,6 +882,7 @@ log.accept="接受的";
 //
 management.titl="管理";
 management.h2="路由器管理";
+management.changepassword="路由器目前未受保護和使用不安全的預設帳號和密碼組合，請使用以下對話框改變它!";
 management.psswd_legend="密碼設定";
 management.psswd_user="帳號";
 management.psswd_pass="密碼";
@@ -892,6 +893,8 @@ management.remote_https="使用 HTTPS";
 management.remote_guiport="Web 埠";
 management.remote_ssh="SSH 管理";
 management.remote_sshport="SSH 遠端埠";
+management.remote_telnet="Telnet 管理";
+management.remote_telnetport="Telnet 遠端埠";
 management.web_legend="Web 連線";
 management.web_refresh="畫面更新（秒）";
 management.web_sysinfo="登入前顯示系統資訊網頁";
@@ -1143,7 +1146,7 @@ service.pppoe_srv="中繼";
 
 //pppoe-server.webservices
 service.pppoesrv_legend="PPPoE 伺服器";
-service.pppoesrv_srv="RP-PPPoE Server Daemon";
+service.pppoesrv_srv="RP-PPPoE 伺服器 守護程式";
 service.pppoesrv_srvopt="RP-PPPoE 伺服器選項";
 service.pppoesrv_compr="壓縮";
 service.pppoesrv_remoteaddr="遠端開始的IP";
@@ -1195,8 +1198,8 @@ service.radiooff_srv="用此按鈕關閉無線網路";
 service.radiooff_bootoff="Turn radio off at boot";
 
 //ses.webservices ====> might replace the above radiooff_button
-service.ses_legend="SES / AOSS 按鈕";
-service.ses_srv="SES / AOSS 按鈕行動";
+service.ses_legend="SES / AOSS / EZ-SETUP 按鈕";
+service.ses_srv="SES / AOSS / EZ-SETUP 按鈕啟用";
 service.ses_toggleradio="無線開關（Toggle Wireless）";
 service.ses_script="自訂";
 
@@ -1654,7 +1657,6 @@ radius.label6="密碼格式";
 radius.label7="RADIUS Shared Secret";
 radius.label8="如果伺服器不可用則越過Radius";
 
-
 // ** Wireless_MAC.asp **//
 //
 wl_mac.titl="MAC連線限制";
@@ -1664,6 +1666,17 @@ wl_mac.label="無線連線限制";
 wl_mac.label2="連線限制方式";
 wl_mac.deny="禁止所列的MAC連接無線網路";
 wl_mac.allow="允許所列的MAC連接無線網路";
+
+// ** WiMAX
+//
+wl_wimax.titl="WiMAX";
+wl_wimax.h2="Worldwide Interoperability for Microwave Access 縮寫 WiMAX";
+wl_wimax.downstream="Downstream Frequency";
+wl_wimax.upstream="Upstream Frequency";
+wl_wimax.width="Channel Width";
+wl_wimax.duplex="雙工模式";
+wl_wimax.mode="操作模式";
+wl_wimax.mac="用戶的 MAC 位址";
 
 // ** Wireless_Advanced.asp **//
 //
@@ -1753,6 +1766,10 @@ wl_basic.AntGain="天線增益";
 wl_basic.diversity="差異";
 wl_basic.primary="主要";
 wl_basic.secondary="次要";
+wl_basic.vertical="垂直偏波";
+wl_basic.horizontal="水平偏波";
+wl_basic.adaptive="自動選擇";
+wl_basic.external="外接";
 wl_basic.network="網路設定";
 wl_basic.unbridged="Unbridged";
 wl_basic.bridged="橋接";
@@ -1767,9 +1784,12 @@ wl_basic.channel_wide="Wide Channel";
 wl_basic.regulatory="管理";
 wl_basic.specialmode="2.3 Ghz 模式";
 wl_basic.wifi_bonding="Wifi Bonding";
-wl_basic.sifstime="OFDM SIFS 時間";
-wl_basic.preambletime="OFDM Preamble 時間";
+wl_basic.sifstime="OFDM SIFS Time";
+wl_basic.preambletime="OFDM Preamble time";
 wl_basic.multicast="多點傳播轉送";
+wl_basic.intmit="雜訊消除";
+wl_basic.noise_immunity="雜訊消除等級";
+wl_basic.ofdm_weak_det="OFDM Weak Detection";
 //help container
 //
 hwl_basic.right2="如果您想排除無線-G用戶端,選擇 <em>B</em> 模式.如果您想關閉無線連線,選擇 <em>關閉</em>.";
