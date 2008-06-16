@@ -360,6 +360,7 @@ bmenu.wireless="Brez¾ièno";
 bmenu.wirelessBasic="Osnovne nastavitve";
 bmenu.wirelessRadius="Radius";
 bmenu.wirelessSuperchannel="SuperChannel";
+bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Brez¾ièna za¹èita";
 bmenu.wirelessMac="Filter MAC";
 bmenu.wirelessAdvanced="Napredne nastavitve";
@@ -886,6 +887,7 @@ log.accept="Sprejeti";
 
 management.titl="Administracija";
 management.h2="Upravljanje usmerjalnika";
+management.changepassword="Va¹ usmerjalnik trenutno uprablja privzeto uporabni¹ko ime in geslo, kar ni varno. Prosimo, da ju èimprej spremenite!";
 management.psswd_legend="Geslo usmerjalnika";
 management.psswd_user="Uporabni¹ko ime usmerjalnika";
 management.psswd_pass="Geslo usmerjalnika";
@@ -1781,6 +1783,9 @@ wl_basic.wifi_bonding="Wifi vezanje";
 wl_basic.sifstime="OFDM SIFS èas";
 wl_basic.preambletime="OFDM Preamble èas";
 wl_basic.multicast="Posredovanje multicast paketov";
+wl_basic.intmit="Odpornost na ¹um";
+wl_basic.noise_immunity="Nivo odpornosti na ¹um";
+wl_basic.ofdm_weak_det="©ibko zaznavanje OFDM";
 //help container
 
 hwl_basic.right2="Èe ¾elite prepovedati vstop odjemalcem G, izberite <em>Samo-B</em> naèin. Èe ¾elite izkljuèiti brez¾ièno omre¾je, izberite <em>Onemogoèie</em>.";
