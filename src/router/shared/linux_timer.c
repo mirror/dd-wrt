@@ -94,6 +94,7 @@ typedef long uclock_t;
 #define TFLAG_NONE	0
 #define TFLAG_CANCELLED	(1<<0)
 #define TFLAG_DELETED	(1<<1)
+#define TFLAG_QUEUED	(1<<2)
 
 struct event
 {
@@ -218,6 +219,7 @@ timer_create (clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
 
   event_freelist = event->next;
   event->next = NULL;
+  event->flags &= ~TFLAG_QUEUED;
 
   check_event_queue ();
 
@@ -406,6 +408,7 @@ timer_settime (timer_t timerid,	/* timer ID */
     }
 
   event->flags &= ~TFLAG_CANCELLED;
+  event->flags |= TFLAG_QUEUED;
 
   unblock_timer ();
 
@@ -531,7 +534,15 @@ alarm_handler (int i)
       (*(event->func)) ((timer_t) event, (int) event->arg);
 
       /* If the event has been cancelled, do NOT put it back on the queue. */
-      if (!(event->flags & TFLAG_CANCELLED))
+ 		/* Check for TFLAG_QUEUED is to avoid pathologic case, when after
+ 		 * dequeueing event handler deletes its own timer and allocates new one
+ 		 * which (at least in some cases) gets the same pointer and thus its
+ 		 * 'flags' will be rewritten, most notably TFLAG_CANCELLED, and, to
+ 		 * complete the disaster, it will be queued. alarm_handler tries to
+ 		 * enqueue 'event' (which is on the same memory position as newly
+ 		 * allocated timer), which results in queueing the same pointer once
+ 		 * more. And this way, loop in event queue is created. */
+ 	if ( !(event->flags & TFLAG_CANCELLED) && !(event->flags & TFLAG_QUEUED) ) {
 	{
 
 	  // if the event is a recurring event, reset the timer and
@@ -575,6 +586,7 @@ alarm_handler (int i)
 	      // link our new event into the pending event queue.
 	      event->next = *ppevent;
 	      *ppevent = event;
+	      event->flags |= TFLAG_QUEUED;
 	    }
 	  else
 	    {
