@@ -1130,13 +1130,13 @@ ej_show_paypal (webs_t wp, int argc, char_t ** argv)
 	     "<br /><script type=\"text/javascript\">Capture(donate.mb)</script><br />\n");
   websWrite (wp,
 	     "<a href=\"https://www.moneybookers.com/app/send.pl\" target=\"_blank\">\n");
-#ifdef HAVE_MICRO
+//#ifdef HAVE_MICRO
+//  websWrite (wp,
+//	     "<img style=\"border-width: 1px; border-color: #8B8583;\" src=\"http://www.moneybookers.com/images/banners/88_en_interpayments.gif\" alt=\"donate thru moneybookers\" />\n");
+//#else
   websWrite (wp,
-	     "<img style=\"border-width: 1px; border-color: #8B8583;\" src=\"http://www.moneybookers.com/images/banners/88_en_interpayments.gif\" alt=\"donate thru moneybookers\" />\n");
-#else
-  websWrite (wp,
-	     "<img style=\"border-width: 1px; border-color: #8B8583;\" src=\"images/88_en_interpayments.gif\" alt=\"donate thru interpayments\" />\n");
-#endif
+	     "<img style=\"border-width: 1px; border-color: #8B8583;\" src=\"images/88_en_interpayments.png\" alt=\"donate thru interpayments\" />\n");
+//#endif
   websWrite (wp, "</a>\n");
 #endif
   return;
