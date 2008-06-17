@@ -53,17 +53,12 @@
     The postal address is:
       Richard Gooch, c/o ATNF, P. O. Box 76, Epping, N.S.W., 2121, Australia.
 */
-
-//#include <sys/wait.h>
-//#include <sys/ioctl.h>
-//#include <sys/socket.h>
-#include <sys/un.h>
-#include <dirent.h>
-#include <syslog.h>
-#include <sys/sysmacros.h>
 #include "libbb.h"
 #include "xregex.h"
+#include <syslog.h>
 
+#include <sys/un.h>
+#include <sys/sysmacros.h>
 
 /* Various defines taken from linux/major.h */
 #define IDE0_MAJOR	3
@@ -391,15 +386,14 @@ int devfsd_main(int argc, char **argv)
 	/*  Tell kernel we are special(i.e. we get to see hidden entries)  */
 	xioctl(fd, DEVFSDIOC_SET_EVENT_MASK, 0);
 
+	/*  Set up SIGHUP and SIGUSR1 handlers  */
 	sigemptyset(&new_action.sa_mask);
 	new_action.sa_flags = 0;
-
-	/*  Set up SIGHUP and SIGUSR1 handlers  */
 	new_action.sa_handler = signal_handler;
-	if (sigaction(SIGHUP, &new_action, NULL) != 0 || sigaction(SIGUSR1, &new_action, NULL) != 0)
-		bb_error_msg_and_die("sigaction");
+	sigaction_set(SIGHUP, &new_action);
+	sigaction_set(SIGUSR1, &new_action);
 
-	printf("%s v%s  started for %s\n",applet_name, DEVFSD_VERSION, mount_point);
+	printf("%s v%s started for %s\n", applet_name, DEVFSD_VERSION, mount_point);
 
 	/*  Set umask so that mknod(2), open(2) and mkdir(2) have complete control over permissions  */
 	umask(0);
@@ -1138,8 +1132,8 @@ static void signal_handler(int sig)
 static const char *get_variable(const char *variable, void *info)
 {
 	static char sbuf[sizeof(int)*3 + 2]; /* sign and NUL */
+	static char *hostname;
 
-	char hostname[STRING_LENGTH];
 	struct get_variable_info *gv_info = info;
 	const char *field_names[] = {
 			"hostname", "mntpt", "devpath", "devname",
@@ -1148,12 +1142,8 @@ static const char *get_variable(const char *variable, void *info)
 	};
 	int i;
 
-	if (gethostname(hostname, STRING_LENGTH - 1) != 0)
-		/* Here on error we should do exit(RV_SYS_ERROR), instead we do exit(EXIT_FAILURE) */
-		error_logger_and_die(LOG_ERR, "gethostname");
-
-	hostname[STRING_LENGTH - 1] = '\0';
-
+	if (!hostname)
+		hostname = safe_gethostname();
 	/* index_in_str_array returns i>=0  */
 	i = index_in_str_array(field_names, variable);
 

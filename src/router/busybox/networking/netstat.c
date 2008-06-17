@@ -148,7 +148,7 @@ static char *ip_port_str(struct sockaddr *addr, int port, const char *proto, int
 	return host_port;
 }
 
-static void tcp_do_one(int lnr, char *line)
+static int tcp_do_one(int lnr, char *line)
 {
 	char local_addr[64], rem_addr[64];
 	char more[512];
@@ -161,7 +161,7 @@ static void tcp_do_one(int lnr, char *line)
 	unsigned long rxq, txq, time_len, retr, inode;
 
 	if (lnr == 0)
-		return;
+		return 0;
 
 	more[0] = '\0';
 	num = sscanf(line,
@@ -169,6 +169,10 @@ static void tcp_do_one(int lnr, char *line)
 			&d, local_addr, &local_port,
 			rem_addr, &rem_port, &state,
 			&txq, &rxq, &timer_run, &time_len, &retr, &uid, &timeout, &inode, more);
+
+	if (num < 10) {
+		return 1; /* error */
+	}
 
 	if (strlen(local_addr) > 8) {
 #if ENABLE_FEATURE_IPV6
@@ -178,11 +182,6 @@ static void tcp_do_one(int lnr, char *line)
 	} else {
 		build_ipv4_addr(local_addr, &localaddr);
 		build_ipv4_addr(rem_addr, &remaddr);
-	}
-
-	if (num < 10) {
-		bb_error_msg("warning, got bogus tcp line");
-		return;
 	}
 
 	if ((rem_port && (flags & NETSTAT_CONNECTED))
@@ -199,9 +198,10 @@ static void tcp_do_one(int lnr, char *line)
 		free(l);
 		free(r);
 	}
+	return 0;
 }
 
-static void udp_do_one(int lnr, char *line)
+static int udp_do_one(int lnr, char *line)
 {
 	char local_addr[64], rem_addr[64];
 	const char *state_str;
@@ -215,7 +215,7 @@ static void udp_do_one(int lnr, char *line)
 	unsigned long rxq, txq, time_len, retr, inode;
 
 	if (lnr == 0)
-		return;
+		return 0;
 
 	more[0] = '\0';
 	num = sscanf(line,
@@ -236,8 +236,7 @@ static void udp_do_one(int lnr, char *line)
 	}
 
 	if (num < 10) {
-		bb_error_msg("warning, got bogus udp line");
-		return;
+		return 1; /* error */
 	}
 	switch (state) {
 		case TCP_ESTABLISHED:
@@ -281,9 +280,10 @@ static void udp_do_one(int lnr, char *line)
 			free(r);
 		}
 	}
+	return 0;
 }
 
-static void raw_do_one(int lnr, char *line)
+static int raw_do_one(int lnr, char *line)
 {
 	char local_addr[64], rem_addr[64];
 	char more[512];
@@ -296,7 +296,7 @@ static void raw_do_one(int lnr, char *line)
 	unsigned long rxq, txq, time_len, retr, inode;
 
 	if (lnr == 0)
-		return;
+		return 0;
 
 	more[0] = '\0';
 	num = sscanf(line,
@@ -316,8 +316,7 @@ static void raw_do_one(int lnr, char *line)
 	}
 
 	if (num < 10) {
-		bb_error_msg("warning, got bogus raw line");
-		return;
+		return 1; /* error */
 	}
 
 	{
@@ -337,9 +336,10 @@ static void raw_do_one(int lnr, char *line)
 			free(r);
 		}
 	}
+	return 0;
 }
 
-static void unix_do_one(int nr, char *line)
+static int unix_do_one(int nr, char *line)
 {
 	unsigned long refcnt, proto, unix_flags;
 	unsigned long inode;
@@ -350,33 +350,27 @@ static void unix_do_one(int nr, char *line)
 	char ss_flags[32];
 
 	if (nr == 0)
-		return; /* skip header */
-
-	{
-		char *last = last_char_is(line, '\n');
-		if (last)
-			*last = '\0';
-	}
+		return 0; /* skip header */
 
 	/* 2.6.15 may report lines like "... @/tmp/fam-user-^@^@^@^@^@^@^@..."
-	 * (those ^@ are NUL bytes). fgets sees them as tons of empty lines. */
+	 * Other users report long lines filled by NUL bytes.
+	 * (those ^@ are NUL bytes too). We see them as empty lines. */
 	if (!line[0])
-		return;
+		return 0;
 
 	path_ofs = 0; /* paranoia */
 	num = sscanf(line, "%p: %lX %lX %lX %X %X %lu %n",
 			&d, &refcnt, &proto, &unix_flags, &type, &state, &inode, &path_ofs);
 	if (num < 7) {
-		bb_error_msg("got bogus unix line '%s'", line);
-		return;
+		return 1; /* error */
 	}
 	if ((flags & (NETSTAT_LISTENING|NETSTAT_CONNECTED)) != (NETSTAT_LISTENING|NETSTAT_CONNECTED)) {
 		if ((state == SS_UNCONNECTED) && (unix_flags & SO_ACCEPTCON)) {
 			if (!(flags & NETSTAT_LISTENING))
-				return;
+				return 0;
 		} else {
 			if (!(flags & NETSTAT_CONNECTED))
-				return;
+				return 0;
 		}
 	}
 
@@ -445,9 +439,17 @@ static void unix_do_one(int nr, char *line)
 		strcat(ss_flags, "N ");
 	strcat(ss_flags, "]");
 
-	printf("%-5s %-6ld %-11s %-10s %-13s %6lu %s\n",
-		ss_proto, refcnt, ss_flags, ss_type, ss_state, inode,
-		line + path_ofs);
+	printf("%-5s %-6ld %-11s %-10s %-13s %6lu ",
+		ss_proto, refcnt, ss_flags, ss_type, ss_state, inode
+		);
+
+	/* TODO: currently we stop at first NUL byte. Is it a problem? */
+	line += path_ofs;
+	*strchrnul(line, '\n') = '\0';
+	while (*line)
+		fputc_printable(*line++, stdout);
+	bb_putchar('\n');
+	return 0;
 }
 
 #define _PATH_PROCNET_UDP "/proc/net/udp"
@@ -458,7 +460,7 @@ static void unix_do_one(int nr, char *line)
 #define _PATH_PROCNET_RAW6 "/proc/net/raw6"
 #define _PATH_PROCNET_UNIX "/proc/net/unix"
 
-static void do_info(const char *file, const char *name, void (*proc)(int, char *))
+static void do_info(const char *file, const char *name, int (*proc)(int, char *))
 {
 	int lnr;
 	FILE *procinfo;
@@ -469,27 +471,22 @@ static void do_info(const char *file, const char *name, void (*proc)(int, char *
 		if (errno != ENOENT) {
 			bb_simple_perror_msg(file);
 		} else {
-			bb_error_msg("no support for '%s' on this system", name);
+			bb_error_msg("no kernel support for %s", name);
 		}
 		return;
 	}
 	lnr = 0;
-	do {
-		buffer = xmalloc_fgets(procinfo);
-		if (buffer) {
-			(proc)(lnr++, buffer);
-			free(buffer);
-		}
-	} while (buffer);
+	/* Why? because xmalloc_fgets_str doesn't stop on NULs */
+	while ((buffer = xmalloc_fgets_str(procinfo, "\n")) != NULL) {
+		if (proc(lnr++, buffer))
+			bb_error_msg("%s: bogus data on line %d", file, lnr);
+		free(buffer);
+	}
 	fclose(procinfo);
 }
 
-/*
- * Our main function.
- */
-
 int netstat_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int netstat_main(int argc, char **argv)
+int netstat_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	const char *net_conn_line_header = PRINT_NET_CONN_HEADER;
 	unsigned opt;

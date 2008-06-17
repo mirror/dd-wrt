@@ -1,6 +1,6 @@
 VERSION = 1
-PATCHLEVEL = 9
-SUBLEVEL = 2
+PATCHLEVEL = 10
+SUBLEVEL = 3
 EXTRAVERSION =
 NAME = Unnamed
 
@@ -441,7 +441,6 @@ libs-y		:= \
 		editors/ \
 		findutils/ \
 		init/ \
-		ipsvd/ \
 		libbb/ \
 		libpwdgrp/ \
 		loginutils/ \
@@ -450,12 +449,14 @@ libs-y		:= \
 		networking/ \
 		networking/libiproute/ \
 		networking/udhcp/ \
+		printutils/ \
 		procps/ \
 		runit/ \
 		selinux/ \
 		shell/ \
 		sysklogd/ \
 		util-linux/ \
+		util-linux/volume_id/ \
 
 endif # KBUILD_EXTMOD
 
@@ -575,6 +576,7 @@ quiet_cmd_busybox__ ?= LINK    $@
       cmd_busybox__ ?= $(srctree)/scripts/trylink \
       "$@" \
       "$(CC)" \
+      "$(CFLAGS)" \
       "$(LDFLAGS) $(EXTRA_LDFLAGS)" \
       "$(core-y)" \
       "$(libs-y) $(LIBRARIES)" \
@@ -733,7 +735,7 @@ localver = $(subst $(space),, \
 # Currently, only git is supported.
 # Other SCMs can edit scripts/setlocalversion and add the appropriate
 # checks as needed.
-ifdef CONFIG_LOCALVERSION_AUTO
+ifdef _BB_DISABLED_CONFIG_LOCALVERSION_AUTO
 	_localver-auto = $(shell $(CONFIG_SHELL) \
 	                  $(srctree)/scripts/setlocalversion $(srctree))
 	localver-auto  = $(LOCALVERSION)$(_localver-auto)
@@ -846,7 +848,7 @@ depend dep:
 # ---------------------------------------------------------------------------
 # Modules
 
-ifdef CONFIG_MODULES
+ifdef _BB_DISABLED_CONFIG_MODULES
 
 # 	By default, build modules as well
 

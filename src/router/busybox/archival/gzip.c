@@ -2026,7 +2026,11 @@ USE_DESKTOP(long long) int pack_gzip(void)
 }
 
 int gzip_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
+#if ENABLE_GUNZIP
 int gzip_main(int argc, char **argv)
+#else
+int gzip_main(int argc ATTRIBUTE_UNUSED, char **argv)
+#endif
 {
 	unsigned opt;
 
@@ -2042,8 +2046,8 @@ int gzip_main(int argc, char **argv)
 	//if (opt & 0x4) // -v
 	argv += optind;
 
-	PTR_TO_GLOBALS = xzalloc(sizeof(struct globals) + sizeof(struct globals2))
-			+ sizeof(struct globals);
+	SET_PTR_TO_GLOBALS(xzalloc(sizeof(struct globals) + sizeof(struct globals2))
+			+ sizeof(struct globals));
 	G2.l_desc.dyn_tree    = G2.dyn_ltree;
 	G2.l_desc.static_tree = G2.static_ltree;
 	G2.l_desc.extra_bits  = extra_lbits;

@@ -66,6 +66,21 @@ pid_t xspawn(char **argv)
 	return pid;
 }
 
+int safe_waitpid(int pid, int *wstat, int options)
+{
+	int r;
+
+	do
+		r = waitpid(pid, wstat, options);
+	while ((r == -1) && (errno == EINTR));
+	return r;
+}
+
+int wait_any_nohang(int *wstat)
+{
+	return safe_waitpid(-1, wstat, WNOHANG);
+}
+
 // Wait for the specified child PID to exit, returning child's error return.
 int wait4pid(int pid)
 {
@@ -76,28 +91,13 @@ int wait4pid(int pid)
 		/* we expect errno to be already set from failed [v]fork/exec */
 		return -1;
 	}
-	if (waitpid(pid, &status, 0) == -1)
+	if (safe_waitpid(pid, &status, 0) == -1)
 		return -1;
 	if (WIFEXITED(status))
 		return WEXITSTATUS(status);
 	if (WIFSIGNALED(status))
 		return WTERMSIG(status) + 1000;
 	return 0;
-}
-
-int wait_nohang(int *wstat)
-{
-	return waitpid(-1, wstat, WNOHANG);
-}
-
-int wait_pid(int *wstat, int pid)
-{
-	int r;
-
-	do
-		r = waitpid(pid, wstat, 0);
-	while ((r == -1) && (errno == EINTR));
-	return r;
 }
 
 #if ENABLE_FEATURE_PREFER_APPLETS
@@ -126,11 +126,13 @@ int run_nofork_applet_prime(struct nofork_save_area *old, int applet_no, char **
 
 	applet_name = APPLET_NAME(applet_no);
 	xfunc_error_retval = EXIT_FAILURE;
-	/*option_mask32 = 0; - not needed */
-	/* special flag for xfunc_die(). If xfunc will "die"
+
+	/* Special flag for xfunc_die(). If xfunc will "die"
 	 * in NOFORK applet, xfunc_die() sees negative
 	 * die_sleep and longjmp here instead. */
 	die_sleep = -1;
+
+	/* option_mask32 = 0; - not needed */
 
 	argc = 1;
 	while (argv[argc])

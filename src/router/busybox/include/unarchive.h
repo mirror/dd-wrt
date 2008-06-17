@@ -13,6 +13,10 @@
 typedef struct file_header_t {
 	char *name;
 	char *link_target;
+#if ENABLE_FEATURE_TAR_UNAME_GNAME
+	char *uname; 
+	char *gname;
+#endif
 	off_t size;
 	uid_t uid;
 	gid_t gid;
@@ -88,12 +92,12 @@ extern char get_header_tar_bz2(archive_handle_t *archive_handle);
 extern char get_header_tar_lzma(archive_handle_t *archive_handle);
 extern char get_header_tar_gz(archive_handle_t *archive_handle);
 
-extern void seek_by_jump(const archive_handle_t *archive_handle, const unsigned amount);
-extern void seek_by_read(const archive_handle_t *archive_handle, const unsigned amount);
+extern void seek_by_jump(const archive_handle_t *archive_handle, unsigned amount);
+extern void seek_by_read(const archive_handle_t *archive_handle, unsigned amount);
 
 extern ssize_t archive_xread_all_eof(archive_handle_t *archive_handle, unsigned char *buf, size_t count);
 
-extern void data_align(archive_handle_t *archive_handle, const unsigned short boundary);
+extern void data_align(archive_handle_t *archive_handle, unsigned boundary);
 extern const llist_t *find_list_entry(const llist_t *list, const char *filename);
 extern const llist_t *find_list_entry2(const llist_t *list, const char *filename);
 
@@ -109,7 +113,7 @@ typedef struct inflate_unzip_result {
 } inflate_unzip_result;
 
 extern USE_DESKTOP(long long) int unpack_bz2_stream(int src_fd, int dst_fd);
-extern USE_DESKTOP(long long) int inflate_unzip(inflate_unzip_result *res, unsigned bufsize, int src_fd, int dst_fd);
+extern USE_DESKTOP(long long) int inflate_unzip(inflate_unzip_result *res, off_t compr_size, int src_fd, int dst_fd);
 extern USE_DESKTOP(long long) int unpack_gz_stream(int src_fd, int dst_fd);
 extern USE_DESKTOP(long long) int unpack_lzma_stream(int src_fd, int dst_fd);
 

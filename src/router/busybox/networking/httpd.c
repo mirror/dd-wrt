@@ -43,6 +43,7 @@
  * A:127.0.0.1       # Allow local loopback connections
  * D:*               # Deny from other IP connections
  * E404:/path/e404.html # /path/e404.html is the 404 (not found) error page
+ * I:index.html      # Show index.html when a directory is requested
  *
  * P:/url:[http://]hostname[:port]/new/path
  *                   # When /urlXXXXXX is requested, reverse proxy
@@ -250,6 +251,7 @@ struct globals {
 	const char *g_query;
 	const char *configFile;
 	const char *home_httpd;
+	const char *index_page;
 
 	const char *found_mime_type;
 	const char *found_moved_temporarily;
@@ -295,6 +297,7 @@ struct globals {
 #define g_query           (G.g_query          )
 #define configFile        (G.configFile       )
 #define home_httpd        (G.home_httpd       )
+#define index_page        (G.index_page       )
 #define found_mime_type   (G.found_mime_type  )
 #define found_moved_temporarily (G.found_moved_temporarily)
 #define last_mod          (G.last_mod         )
@@ -319,9 +322,10 @@ struct globals {
 #define http_error_page   (G.http_error_page  )
 #define proxy             (G.proxy            )
 #define INIT_G() do { \
-	PTR_TO_GLOBALS = xzalloc(sizeof(G)); \
+	SET_PTR_TO_GLOBALS(xzalloc(sizeof(G))); \
 	USE_FEATURE_HTTPD_BASIC_AUTH(g_realm = "Web Server Authentication";) \
 	bind_addr_or_port = "80"; \
+	index_page = "index.html"; \
 	file_size = -1; \
 } while (0)
 
@@ -337,7 +341,12 @@ enum {
 #define STRNCASECMP(a, str) strncasecmp((a), (str), sizeof(str)-1)
 
 /* Prototypes */
-static void send_file_and_exit(const char *url, int headers) ATTRIBUTE_NORETURN;
+enum {
+	SEND_HEADERS     = (1 << 0),
+	SEND_BODY        = (1 << 1),
+	SEND_HEADERS_AND_BODY = SEND_HEADERS + SEND_BODY,
+};
+static void send_file_and_exit(const char *url, int what) ATTRIBUTE_NORETURN;
 
 static void free_llist(has_next_ptr **pptr)
 {
@@ -688,6 +697,11 @@ static void parse_conf(const char *path, int flag)
 		}
 #endif
 
+		if (*p0 == 'I') {
+			index_page = xstrdup(c);
+			continue;
+		}
+
 #if ENABLE_FEATURE_HTTPD_BASIC_AUTH \
  || ENABLE_FEATURE_HTTPD_CONFIG_WITH_MIME_TYPES \
  || ENABLE_FEATURE_HTTPD_CONFIG_WITH_SCRIPT_INTERPR
@@ -949,7 +963,7 @@ static void send_headers(int responseNum)
 	const char *infoString = NULL;
 	const char *mime_type;
 #if ENABLE_FEATURE_HTTPD_ERROR_PAGES
-	const char *error_page = 0;
+	const char *error_page = NULL;
 #endif
 	unsigned i;
 	time_t timer = time(0);
@@ -1004,7 +1018,7 @@ static void send_headers(int responseNum)
 		full_write(1, iobuf, len);
 		if (DEBUG)
 			fprintf(stderr, "writing error page: '%s'\n", error_page);
-		return send_file_and_exit(error_page, FALSE);
+		return send_file_and_exit(error_page, SEND_BODY);
 	}
 #endif
 
@@ -1144,7 +1158,7 @@ static NOINLINE void cgi_io_loop_and_exit(int fromCgi_rd, int toCgi_wr, int post
 		count = safe_poll(pfd, 3, -1);
 		if (count <= 0) {
 #if 0
-			if (waitpid(pid, &status, WNOHANG) <= 0) {
+			if (safe_waitpid(pid, &status, WNOHANG) <= 0) {
 				/* Weird. CGI didn't exit and no fd's
 				 * are ready, yet poll returned?! */
 				continue;
@@ -1297,8 +1311,8 @@ static void send_cgi_and_exit(
 		const char *cookie,
 		const char *content_type)
 {
-	struct { int rd; int wr; } fromCgi;  /* CGI -> httpd pipe */
-	struct { int rd; int wr; } toCgi;    /* httpd -> CGI pipe */
+	struct fd_pair fromCgi;  /* CGI -> httpd pipe */
+	struct fd_pair toCgi;    /* httpd -> CGI pipe */
 	char *fullpath;
 	char *script;
 	char *purl;
@@ -1388,8 +1402,8 @@ static void send_cgi_and_exit(
 	if (referer)
 		setenv1("HTTP_REFERER", referer);
 
-	xpipe(&fromCgi.rd);
-	xpipe(&toCgi.rd);
+	xpiped_pair(fromCgi);
+	xpiped_pair(toCgi);
 
 	pid = vfork();
 	if (pid < 0) {
@@ -1401,48 +1415,60 @@ static void send_cgi_and_exit(
 		/* Child process */
 		xfunc_error_retval = 242;
 
+		/* NB: close _first_, then move fds! */
+		close(toCgi.wr);
+		close(fromCgi.rd);
 		xmove_fd(toCgi.rd, 0);  /* replace stdin with the pipe */
 		xmove_fd(fromCgi.wr, 1);  /* replace stdout with the pipe */
-		close(fromCgi.rd);
-		close(toCgi.wr);
 		/* User seeing stderr output can be a security problem.
 		 * If CGI really wants that, it can always do dup itself. */
 		/* dup2(1, 2); */
 
-		/* script must have absolute path */
 		script = strrchr(fullpath, '/');
-		if (!script)
-			goto error_execing_cgi;
+		//fullpath is a result of concat_path_file and always has '/'
+		//if (!script)
+		//	goto error_execing_cgi;
 		*script = '\0';
 		/* chdiring to script's dir */
-		if (chdir(fullpath) == 0) {
-			char *argv[2];
-#if ENABLE_FEATURE_HTTPD_CONFIG_WITH_SCRIPT_INTERPR
-			char *interpr = NULL;
-			char *suffix = strrchr(purl, '.');
+		if (chdir(script == fullpath ? "/" : fullpath) == 0) {
+			char *argv[3];
 
-			if (suffix) {
-				Htaccess *cur;
-				for (cur = script_i; cur; cur = cur->next) {
-					if (strcmp(cur->before_colon + 1, suffix) == 0) {
-						interpr = cur->after_colon;
-						break;
+			*script++ = '/'; /* repair fullpath */
+			/* set argv[0] to name without path */
+			argv[0] = script;
+			argv[1] = NULL;
+
+#if ENABLE_FEATURE_HTTPD_CONFIG_WITH_SCRIPT_INTERPR
+			{
+				char *suffix = strrchr(script, '.');
+
+				if (suffix) {
+					Htaccess *cur;
+					for (cur = script_i; cur; cur = cur->next) {
+						if (strcmp(cur->before_colon + 1, suffix) == 0) {
+							/* found interpreter name */
+							fullpath = cur->after_colon;
+							argv[0] = cur->after_colon;
+							argv[1] = script;
+							argv[2] = NULL;
+							break;
+						}
 					}
 				}
 			}
 #endif
-			*script = '/';
-			/* set argv[0] to name without path */
-			argv[0] = (char*)bb_basename(purl);
-			argv[1] = NULL;
-#if ENABLE_FEATURE_HTTPD_CONFIG_WITH_SCRIPT_INTERPR
-			if (interpr)
-				execv(interpr, argv);
-			else
-#endif
-				execv(fullpath, argv);
+			/* restore default signal dispositions for CGI process */
+			signal(SIGCHLD, SIG_DFL);
+			signal(SIGPIPE, SIG_DFL);
+			signal(SIGHUP, SIG_DFL);
+
+			execv(fullpath, argv);
+			if (verbose)
+				bb_perror_msg("exec %s", fullpath);
+		} else if (verbose) {
+			bb_perror_msg("chdir %s", fullpath);
 		}
- error_execing_cgi:
+ //error_execing_cgi:
 		/* send to stdout
 		 * (we are CGI here, our stdout is pumped to the net) */
 		send_headers_and_exit(HTTP_NOT_FOUND);
@@ -1465,10 +1491,10 @@ static void send_cgi_and_exit(
  * Send a file response to a HTTP request, and exit
  *
  * Parameters:
- * const char *url    The requested URL (with leading /).
- * headers            Don't send headers before if FALSE.
+ * const char *url  The requested URL (with leading /).
+ * what             What to send (headers/body/both).
  */
-static void send_file_and_exit(const char *url, int headers)
+static void send_file_and_exit(const char *url, int what)
 {
 	static const char *const suffixTable[] = {
 	/* Warning: shorter equivalent suffix in one line must be first */
@@ -1500,6 +1526,10 @@ static void send_file_and_exit(const char *url, int headers)
 #if ENABLE_FEATURE_HTTPD_USE_SENDFILE
 	off_t offset;
 #endif
+
+	/* If you want to know about EPIPE below
+	 * (happens if you abort downloads from local httpd): */
+	signal(SIGPIPE, SIG_IGN);
 
 	suffix = strrchr(url, '.');
 
@@ -1537,11 +1567,15 @@ static void send_file_and_exit(const char *url, int headers)
 	if (f < 0) {
 		if (DEBUG)
 			bb_perror_msg("cannot open '%s'", url);
-		if (headers)
+		/* Error pages are sent by using send_file_and_exit(SEND_BODY).
+		 * IOW: it is unsafe to call send_headers_and_exit
+		 * if what is SEND_BODY! Can recurse! */
+		if (what != SEND_BODY)
 			send_headers_and_exit(HTTP_NOT_FOUND);
+		log_and_exit();
 	}
 #if ENABLE_FEATURE_HTTPD_RANGES
-	if (!headers)
+	if (what == SEND_BODY)
 		range_start = 0; /* err pages and ranges don't mix */
 	range_len = MAXINT(off_t);
 	if (range_start) {
@@ -1556,17 +1590,13 @@ static void send_file_and_exit(const char *url, int headers)
 		} else {
 			range_len = range_end - range_start + 1;
 			send_headers(HTTP_PARTIAL_CONTENT);
-			headers = 0;
+			what = SEND_BODY;
 		}
 	}
 #endif
 
-	if (headers)
+	if (what & SEND_HEADERS)
 		send_headers(HTTP_OK);
-
-	/* If you want to know about EPIPE below
-	 * (happens if you abort downloads from local httpd): */
-	signal(SIGPIPE, SIG_IGN);
 
 #if ENABLE_FEATURE_HTTPD_USE_SENDFILE
 	offset = range_start;
@@ -1729,7 +1759,7 @@ static Htaccess_Proxy *find_proxy_entry(const char *url)
  * Handle timeouts
  */
 static void exit_on_signal(int sig) ATTRIBUTE_NORETURN;
-static void exit_on_signal(int sig)
+static void exit_on_signal(int sig ATTRIBUTE_UNUSED)
 {
 	send_headers_and_exit(HTTP_REQUEST_TIMEOUT);
 }
@@ -1741,13 +1771,13 @@ static void handle_incoming_and_exit(const len_and_sockaddr *fromAddr) ATTRIBUTE
 static void handle_incoming_and_exit(const len_and_sockaddr *fromAddr)
 {
 	static const char request_GET[] ALIGN1 = "GET";
-
 	struct stat sb;
 	char *urlcopy;
 	char *urlp;
 	char *tptr;
 	int ip_allowed;
 #if ENABLE_FEATURE_HTTPD_CGI
+	static const char request_HEAD[] ALIGN1 = "HEAD";
 	const char *prequest;
 	char *cookie = NULL;
 	char *content_type = NULL;
@@ -1763,7 +1793,6 @@ static void handle_incoming_and_exit(const len_and_sockaddr *fromAddr)
 	char *header_ptr = header_ptr;
 	Htaccess_Proxy *proxy_entry;
 #endif
-	struct sigaction sa;
 #if ENABLE_FEATURE_HTTPD_BASIC_AUTH
 	int credentials = -1;  /* if not required this is Ok */
 #endif
@@ -1773,18 +1802,18 @@ static void handle_incoming_and_exit(const len_and_sockaddr *fromAddr)
 	iobuf = xmalloc(IOBUF_SIZE);
 
 	rmt_ip = 0;
-	if (fromAddr->sa.sa_family == AF_INET) {
-		rmt_ip = ntohl(fromAddr->sin.sin_addr.s_addr);
+	if (fromAddr->u.sa.sa_family == AF_INET) {
+		rmt_ip = ntohl(fromAddr->u.sin.sin_addr.s_addr);
 	}
 #if ENABLE_FEATURE_IPV6
-	if (fromAddr->sa.sa_family == AF_INET6
-	 && fromAddr->sin6.sin6_addr.s6_addr32[0] == 0
-	 && fromAddr->sin6.sin6_addr.s6_addr32[1] == 0
-	 && ntohl(fromAddr->sin6.sin6_addr.s6_addr32[2]) == 0xffff)
-		rmt_ip = ntohl(fromAddr->sin6.sin6_addr.s6_addr32[3]);
+	if (fromAddr->u.sa.sa_family == AF_INET6
+	 && fromAddr->u.sin6.sin6_addr.s6_addr32[0] == 0
+	 && fromAddr->u.sin6.sin6_addr.s6_addr32[1] == 0
+	 && ntohl(fromAddr->u.sin6.sin6_addr.s6_addr32[2]) == 0xffff)
+		rmt_ip = ntohl(fromAddr->u.sin6.sin6_addr.s6_addr32[3]);
 #endif
 	if (ENABLE_FEATURE_HTTPD_CGI || DEBUG || verbose) {
-		rmt_ip_str = xmalloc_sockaddr2dotted(&fromAddr->sa);
+		rmt_ip_str = xmalloc_sockaddr2dotted(&fromAddr->u.sa);
 	}
 	if (verbose) {
 		/* this trick makes -v logging much simpler */
@@ -1794,11 +1823,7 @@ static void handle_incoming_and_exit(const len_and_sockaddr *fromAddr)
 	}
 
 	/* Install timeout handler */
-	memset(&sa, 0, sizeof(sa));
-	sa.sa_handler = exit_on_signal;
-	/* sigemptyset(&sa.sa_mask); - memset should be enough */
-	/*sa.sa_flags = 0; - no SA_RESTART */
-	sigaction(SIGALRM, &sa, NULL);
+	signal_no_SA_RESTART_empty_mask(SIGALRM, exit_on_signal);
 	alarm(HEADER_READ_TIMEOUT);
 
 	if (!get_line()) /* EOF or error or empty line */
@@ -1812,9 +1837,12 @@ static void handle_incoming_and_exit(const len_and_sockaddr *fromAddr)
 #if ENABLE_FEATURE_HTTPD_CGI
 	prequest = request_GET;
 	if (strcasecmp(iobuf, prequest) != 0) {
-		prequest = "POST";
-		if (strcasecmp(iobuf, prequest) != 0)
-			send_headers_and_exit(HTTP_NOT_IMPLEMENTED);
+		prequest = request_HEAD;
+		if (strcasecmp(iobuf, prequest) != 0) {
+			prequest = "POST";
+			if (strcasecmp(iobuf, prequest) != 0)
+				send_headers_and_exit(HTTP_NOT_IMPLEMENTED);
+		}
 	}
 #else
 	if (strcasecmp(iobuf, request_GET) != 0)
@@ -1836,7 +1864,7 @@ static void handle_incoming_and_exit(const len_and_sockaddr *fromAddr)
 	*tptr = '\0';
 
 	/* Copy URL from after "GET "/"POST " to stack-allocated char[] */
-	urlcopy = alloca((tptr - urlp) + sizeof("/index.html"));
+	urlcopy = alloca((tptr - urlp) + 2 + strlen(index_page));
 	/*if (urlcopy == NULL)
 	 *	send_headers_and_exit(HTTP_INTERNAL_SERVER_ERROR);*/
 	strcpy(urlcopy, urlp);
@@ -1949,17 +1977,18 @@ static void handle_incoming_and_exit(const len_and_sockaddr *fromAddr)
 			/* Try and do our best to parse more lines */
 			if ((STRNCASECMP(iobuf, "Content-length:") == 0)) {
 				/* extra read only for POST */
-				if (prequest != request_GET) {
+				if (prequest != request_GET
+#if ENABLE_FEATURE_HTTPD_CGI
+				 && prequest != request_HEAD
+#endif
+				) {
 					tptr = skip_whitespace(iobuf + sizeof("Content-length:") - 1);
 					if (!tptr[0])
 						send_headers_and_exit(HTTP_BAD_REQUEST);
-					errno = 0;
 					/* not using strtoul: it ignores leading minus! */
-					length = strtol(tptr, &tptr, 10);
+					length = bb_strtou(tptr, NULL, 10);
 					/* length is "ulong", but we need to pass it to int later */
-					/* so we check for negative or too large values in one go: */
-					/* (long -> ulong conv caused negatives to be seen as > INT_MAX) */
-					if (tptr[0] || errno || length > INT_MAX)
+					if (errno || length > INT_MAX)
 						send_headers_and_exit(HTTP_BAD_REQUEST);
 				}
 			}
@@ -2039,7 +2068,7 @@ static void handle_incoming_and_exit(const len_and_sockaddr *fromAddr)
 		lsa = host2sockaddr(proxy_entry->host_port, 80);
 		if (lsa == NULL)
 			send_headers_and_exit(HTTP_INTERNAL_SERVER_ERROR);
-		if (connect(proxy_fd, &lsa->sa, lsa->len) < 0)
+		if (connect(proxy_fd, &lsa->u.sa, lsa->len) < 0)
 			send_headers_and_exit(HTTP_INTERNAL_SERVER_ERROR);
 		fdprintf(proxy_fd, "%s %s%s%s%s HTTP/%c.%c\r\n",
 				prequest, /* GET or POST */
@@ -2081,13 +2110,13 @@ static void handle_incoming_and_exit(const len_and_sockaddr *fromAddr)
 		}
 	}
 #endif
-	if (prequest != request_GET) {
+	if (prequest != request_GET && prequest != request_HEAD) {
 		send_headers_and_exit(HTTP_NOT_IMPLEMENTED);
 	}
 #endif  /* FEATURE_HTTPD_CGI */
 
 	if (urlp[-1] == '/')
-		strcpy(urlp, "index.html");
+		strcpy(urlp, index_page);
 	if (stat(tptr, &sb) == 0) {
 		file_size = sb.st_size;
 		last_mod = sb.st_mtime;
@@ -2108,7 +2137,13 @@ static void handle_incoming_and_exit(const len_and_sockaddr *fromAddr)
 	 * }
 	 */
 
-	send_file_and_exit(tptr, TRUE);
+	send_file_and_exit(tptr,
+#if ENABLE_FEATURE_HTTPD_CGI
+		(prequest != request_HEAD ? SEND_HEADERS_AND_BODY : SEND_HEADERS)
+#else
+		SEND_HEADERS_AND_BODY
+#endif
+	);
 }
 
 /*
@@ -2132,7 +2167,7 @@ static void mini_httpd(int server_socket)
 
 		/* Wait for connections... */
 		fromAddr.len = LSA_SIZEOF_SA;
-		n = accept(server_socket, &fromAddr.sa, &fromAddr.len);
+		n = accept(server_socket, &fromAddr.u.sa, &fromAddr.len);
 
 		if (n < 0)
 			continue;
@@ -2177,7 +2212,7 @@ static void mini_httpd_nommu(int server_socket, int argc, char **argv)
 
 		/* Wait for connections... */
 		fromAddr.len = LSA_SIZEOF_SA;
-		n = accept(server_socket, &fromAddr.sa, &fromAddr.len);
+		n = accept(server_socket, &fromAddr.u.sa, &fromAddr.len);
 
 		if (n < 0)
 			continue;
@@ -2214,22 +2249,16 @@ static void mini_httpd_inetd(void)
 	len_and_sockaddr fromAddr;
 
 	fromAddr.len = LSA_SIZEOF_SA;
-	getpeername(0, &fromAddr.sa, &fromAddr.len);
+	getpeername(0, &fromAddr.u.sa, &fromAddr.len);
 	handle_incoming_and_exit(&fromAddr);
 }
 
 #if ENABLE_FEATURE_HTTPD_RELOAD_CONFIG_SIGHUP
 static void sighup_handler(int sig)
 {
-	struct sigaction sa;
-
 	parse_conf(default_path_httpd_conf, sig == SIGHUP ? SIGNALED_PARSE : FIRST_PARSE);
 
-	memset(&sa, 0, sizeof(sa));
-	sa.sa_handler = sighup_handler;
-	/*sigemptyset(&sa.sa_mask); - memset should be enough */
-	sa.sa_flags = SA_RESTART;
-	sigaction(SIGHUP, &sa, NULL);
+	signal_SA_RESTART_empty_mask(SIGHUP, sighup_handler);
 }
 #endif
 
@@ -2260,7 +2289,7 @@ enum {
 
 
 int httpd_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int httpd_main(int argc, char **argv)
+int httpd_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	int server_socket = server_socket; /* for gcc */
 	unsigned opt;
@@ -2316,7 +2345,7 @@ int httpd_main(int argc, char **argv)
 #if ENABLE_FEATURE_HTTPD_SETUID
 	if (opt & OPT_SETUID) {
 		if (!get_uidgid(&ugid, s_ugid, 1))
-			bb_error_msg_and_die("unrecognized user[:group] "
+			bb_error_msg_and_die("unknown user[:group] "
 						"name '%s'", s_ugid);
 	}
 #endif
@@ -2365,9 +2394,8 @@ int httpd_main(int argc, char **argv)
 #if ENABLE_FEATURE_HTTPD_RELOAD_CONFIG_SIGHUP
 	if (!(opt & OPT_INETD))
 		sighup_handler(0);
-	else /* do not install HUP handler in inetd mode */
 #endif
-		parse_conf(default_path_httpd_conf, FIRST_PARSE);
+	parse_conf(default_path_httpd_conf, FIRST_PARSE);
 
 	xfunc_error_retval = 0;
 	if (opt & OPT_INETD)

@@ -25,7 +25,7 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/* Busyboxed by Denis Vlasenko <vda.linux@googlemail.com> */
+/* Busyboxed by Denys Vlasenko <vda.linux@googlemail.com> */
 /* TODO: depends on runit_lib.c - review and reduce/eliminate */
 
 #include <sys/poll.h>
@@ -106,7 +106,7 @@ struct globals {
 #define fl_flag_0      (G.fl_flag_0     )
 #define dirn           (G.dirn          )
 #define INIT_G() do { \
-	PTR_TO_GLOBALS = xzalloc(sizeof(G)); \
+	SET_PTR_TO_GLOBALS(xzalloc(sizeof(G))); \
 	linemax = 1000; \
 	/*buflen = 1024;*/ \
 	linecomplete = 1; \
@@ -206,25 +206,32 @@ static void fmt_time_bernstein_25(char *s)
 	bin2hex(s, (char*)pack, 12);
 }
 
-static unsigned processorstart(struct logdir *ld)
+static void processorstart(struct logdir *ld)
 {
+	char sv_ch;
 	int pid;
 
-	if (!ld->processor) return 0;
+	if (!ld->processor) return;
 	if (ld->ppid) {
 		warnx("processor already running", ld->name);
-		return 0;
+		return;
 	}
-	while ((pid = fork()) == -1)
-		pause2cannot("fork for processor", ld->name);
+
+	/* vfork'ed child trashes this byte, save... */
+	sv_ch = ld->fnsave[26];
+
+	while ((pid = vfork()) == -1)
+		pause2cannot("vfork for processor", ld->name);
 	if (!pid) {
 		char *prog[4];
 		int fd;
 
 		/* child */
-		signal(SIGTERM, SIG_DFL);
-		signal(SIGALRM, SIG_DFL);
-		signal(SIGHUP, SIG_DFL);
+		bb_signals(0
+			+ (1 << SIGTERM)
+			+ (1 << SIGALRM)
+			+ (1 << SIGHUP)
+			, SIG_DFL);
 		sig_unblock(SIGTERM);
 		sig_unblock(SIGALRM);
 		sig_unblock(SIGHUP);
@@ -233,7 +240,7 @@ static unsigned processorstart(struct logdir *ld)
 			bb_error_msg(INFO"processing: %s/%s", ld->name, ld->fnsave);
 		fd = xopen(ld->fnsave, O_RDONLY|O_NDELAY);
 		xmove_fd(fd, 0);
-		ld->fnsave[26] = 't';
+		ld->fnsave[26] = 't'; /* <- that's why we need sv_ch! */
 		fd = xopen(ld->fnsave, O_WRONLY|O_NDELAY|O_TRUNC|O_CREAT);
 		xmove_fd(fd, 1);
 		fd = open_read("state");
@@ -252,11 +259,11 @@ static unsigned processorstart(struct logdir *ld)
 		prog[1] = (char*)"-c";
 		prog[2] = ld->processor;
 		prog[3] = NULL;
-		execve("/bin/sh", prog, environ);
+		execv("/bin/sh", prog);
 		bb_perror_msg_and_die(FATAL"cannot %s processor %s", "run", ld->name);
 	}
+	ld->fnsave[26] = sv_ch; /* ...restore */
 	ld->ppid = pid;
-	return 1;
 }
 
 static unsigned processorstop(struct logdir *ld)
@@ -265,7 +272,7 @@ static unsigned processorstop(struct logdir *ld)
 
 	if (ld->ppid) {
 		sig_unblock(SIGHUP);
-		while (wait_pid(&wstat, ld->ppid) == -1)
+		while (safe_waitpid(ld->ppid, &wstat, 0) == -1)
 			pause2cannot("wait for processor", ld->name);
 		sig_block(SIGHUP);
 		ld->ppid = 0;
@@ -781,20 +788,20 @@ static int buffer_pread(/*int fd, */char *s, unsigned len)
 	return i;
 }
 
-static void sig_term_handler(int sig_no)
+static void sig_term_handler(int sig_no ATTRIBUTE_UNUSED)
 {
 	if (verbose)
 		bb_error_msg(INFO"sig%s received", "term");
 	exitasap = 1;
 }
 
-static void sig_child_handler(int sig_no)
+static void sig_child_handler(int sig_no ATTRIBUTE_UNUSED)
 {
 	int pid, l;
 
 	if (verbose)
 		bb_error_msg(INFO"sig%s received", "child");
-	while ((pid = wait_nohang(&wstat)) > 0) {
+	while ((pid = wait_any_nohang(&wstat)) > 0) {
 		for (l = 0; l < dirn; ++l) {
 			if (dir[l].ppid == pid) {
 				dir[l].ppid = 0;
@@ -805,14 +812,14 @@ static void sig_child_handler(int sig_no)
 	}
 }
 
-static void sig_alarm_handler(int sig_no)
+static void sig_alarm_handler(int sig_no ATTRIBUTE_UNUSED)
 {
 	if (verbose)
 		bb_error_msg(INFO"sig%s received", "alarm");
 	rotateasap = 1;
 }
 
-static void sig_hangup_handler(int sig_no)
+static void sig_hangup_handler(int sig_no ATTRIBUTE_UNUSED)
 {
 	if (verbose)
 		bb_error_msg(INFO"sig%s received", "hangup");
@@ -903,10 +910,10 @@ int svlogd_main(int argc, char **argv)
 	sigaddset(&blocked_sigset, SIGALRM);
 	sigaddset(&blocked_sigset, SIGHUP);
 	sigprocmask(SIG_BLOCK, &blocked_sigset, NULL);
-	sig_catch(SIGTERM, sig_term_handler);
-	sig_catch(SIGCHLD, sig_child_handler);
-	sig_catch(SIGALRM, sig_alarm_handler);
-	sig_catch(SIGHUP, sig_hangup_handler);
+	bb_signals_recursive(1 << SIGTERM, sig_term_handler);
+	bb_signals_recursive(1 << SIGCHLD, sig_child_handler);
+	bb_signals_recursive(1 << SIGALRM, sig_alarm_handler);
+	bb_signals_recursive(1 << SIGHUP, sig_hangup_handler);
 
 	logdirs_reopen();
 

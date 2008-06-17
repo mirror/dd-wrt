@@ -25,7 +25,7 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/* Busyboxed by Denis Vlasenko <vda.linux@googlemail.com> */
+/* Busyboxed by Denys Vlasenko <vda.linux@googlemail.com> */
 /* TODO: depends on runit_lib.c - review and reduce/eliminate */
 
 #include <sys/poll.h>
@@ -90,8 +90,8 @@ struct globals {
 	smallint haslog;
 	smallint sigterm;
 	smallint pidchanged;
-	int selfpipe[2];
-	int logpipe[2];
+	struct fd_pair selfpipe;
+	struct fd_pair logpipe;
 	char *dir;
 	struct svdir svd[2];
 };
@@ -128,15 +128,15 @@ static void warn_cannot(const char *m)
 	bb_perror_msg("%s: warning: cannot %s", dir, m);
 }
 
-static void s_child(int sig_no)
+static void s_child(int sig_no ATTRIBUTE_UNUSED)
 {
-	write(selfpipe[1], "", 1);
+	write(selfpipe.wr, "", 1);
 }
 
-static void s_term(int sig_no)
+static void s_term(int sig_no ATTRIBUTE_UNUSED)
 {
 	sigterm = 1;
-	write(selfpipe[1], "", 1); /* XXX */
+	write(selfpipe.wr, "", 1); /* XXX */
 }
 
 static char *add_str(char *p, const char *to_add)
@@ -155,16 +155,6 @@ static int open_trunc_or_warn(const char *name)
 		bb_perror_msg("%s: warning: cannot open %s",
 				dir, name);
 	return fd;
-}
-
-static int rename_or_warn(const char *old, const char *new)
-{
-	if (rename(old, new) == -1) {
-		bb_perror_msg("%s: warning: cannot rename %s to %s",
-				dir, old, new);
-		return -1;
-	}
-	return 0;
 }
 
 static void update_status(struct svdir *s)
@@ -266,24 +256,25 @@ static unsigned custom(struct svdir *s, char c)
 
 	if (s->islog) return 0;
 	strcpy(a, "control/?");
-	a[8] = c;
+	a[8] = c; /* replace '?' */
 	if (stat(a, &st) == 0) {
 		if (st.st_mode & S_IXUSR) {
-			pid = fork();
+			pid = vfork();
 			if (pid == -1) {
-				warn_cannot("fork for control/?");
+				warn_cannot("vfork for control/?");
 				return 0;
 			}
 			if (!pid) {
-				if (haslog && dup2(logpipe[1], 1) == -1)
+				/* child */
+				if (haslog && dup2(logpipe.wr, 1) == -1)
 					warn_cannot("setup stdout for control/?");
 				prog[0] = a;
 				prog[1] = NULL;
-				execve(a, prog, environ);
+				execv(a, prog);
 				fatal_cannot("run control/?");
 			}
-			while (wait_pid(&w, pid) == -1) {
-				if (errno == EINTR) continue;
+			/* parent */
+			while (safe_waitpid(pid, &w, 0) == -1) {
 				warn_cannot("wait for child control/?");
 				return 0;
 			}
@@ -329,29 +320,33 @@ static void startservice(struct svdir *s)
 
 	if (s->pid != 0)
 		stopservice(s); /* should never happen */
-	while ((p = fork()) == -1) {
-		warn_cannot("fork, sleeping");
+	while ((p = vfork()) == -1) {
+		warn_cannot("vfork, sleeping");
 		sleep(5);
 	}
 	if (p == 0) {
 		/* child */
 		if (haslog) {
+			/* NB: bug alert! right order is close, then dup2 */
 			if (s->islog) {
-				xdup2(logpipe[0], 0);
-				close(logpipe[1]);
 				xchdir("./log");
+				close(logpipe.wr);
+				xdup2(logpipe.rd, 0);
 			} else {
-				xdup2(logpipe[1], 1);
-				close(logpipe[0]);
+				close(logpipe.rd);
+				xdup2(logpipe.wr, 1);
 			}
 		}
-		signal(SIGCHLD, SIG_DFL);
-		signal(SIGTERM, SIG_DFL);
+		bb_signals(0
+			+ (1 << SIGCHLD)
+			+ (1 << SIGTERM)
+			, SIG_DFL);
 		sig_unblock(SIGCHLD);
 		sig_unblock(SIGTERM);
 		execvp(*run, run);
 		fatal2_cannot(s->islog ? "start log/" : "start ", *run);
 	}
+	/* parent */
 	if (s->state != S_FINISH) {
 		gettimeofday_ns(&s->start);
 		s->state = S_RUN;
@@ -440,7 +435,7 @@ static int ctrl(struct svdir *s, char c)
 }
 
 int runsv_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int runsv_main(int argc, char **argv)
+int runsv_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	struct stat s;
 	int fd;
@@ -453,16 +448,16 @@ int runsv_main(int argc, char **argv)
 		bb_show_usage();
 	dir = argv[1];
 
-	xpipe(selfpipe);
-	close_on_exec_on(selfpipe[0]);
-	close_on_exec_on(selfpipe[1]);
-	ndelay_on(selfpipe[0]);
-	ndelay_on(selfpipe[1]);
+	xpiped_pair(selfpipe);
+	close_on_exec_on(selfpipe.rd);
+	close_on_exec_on(selfpipe.wr);
+	ndelay_on(selfpipe.rd);
+	ndelay_on(selfpipe.wr);
 
 	sig_block(SIGCHLD);
-	sig_catch(SIGCHLD, s_child);
+	bb_signals_recursive(1 << SIGCHLD, s_child);
 	sig_block(SIGTERM);
-	sig_catch(SIGTERM, s_term);
+	bb_signals_recursive(1 << SIGTERM, s_term);
 
 	xchdir(dir);
 	/* bss: svd[0].pid = 0; */
@@ -490,9 +485,9 @@ int runsv_main(int argc, char **argv)
 			gettimeofday_ns(&svd[1].start);
 			if (stat("log/down", &s) != -1)
 				svd[1].want = W_DOWN;
-			xpipe(logpipe);
-			close_on_exec_on(logpipe[0]);
-			close_on_exec_on(logpipe[1]);
+			xpiped_pair(logpipe);
+			close_on_exec_on(logpipe.rd);
+			close_on_exec_on(logpipe.wr);
 		}
 	}
 
@@ -573,7 +568,7 @@ int runsv_main(int argc, char **argv)
 			if (svd[0].want == W_UP || svd[0].state == S_FINISH)
 				startservice(&svd[0]);
 
-		x[0].fd = selfpipe[0];
+		x[0].fd = selfpipe.rd;
 		x[0].events = POLLIN;
 		x[1].fd = svd[0].fdcontrol;
 		x[1].events = POLLIN;
@@ -586,14 +581,14 @@ int runsv_main(int argc, char **argv)
 		sig_block(SIGTERM);
 		sig_block(SIGCHLD);
 
-		while (read(selfpipe[0], &ch, 1) == 1)
+		while (read(selfpipe.rd, &ch, 1) == 1)
 			continue;
 
 		for (;;) {
 			int child;
 			int wstat;
 
-			child = wait_nohang(&wstat);
+			child = wait_any_nohang(&wstat);
 			if (!child)
 				break;
 			if ((child == -1) && (errno != EINTR))
@@ -631,7 +626,7 @@ int runsv_main(int argc, char **argv)
 						sleep(1);
 				}
 			}
-		}
+		} /* for (;;) */
 		if (read(svd[0].fdcontrol, &ch, 1) == 1)
 			ctrl(&svd[0], ch);
 		if (haslog)
@@ -650,11 +645,11 @@ int runsv_main(int argc, char **argv)
 				svd[1].want = W_EXIT;
 				/* stopservice(&svd[1]); */
 				update_status(&svd[1]);
-				close(logpipe[1]);
-				close(logpipe[0]);
+				close(logpipe.wr);
+				close(logpipe.rd);
 			}
 		}
-	}
+	} /* for (;;) */
 	/* not reached */
 	return 0;
 }

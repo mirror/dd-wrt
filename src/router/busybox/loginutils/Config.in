@@ -14,7 +14,7 @@ config FEATURE_SHADOWPASSWDS
 	  publicly readable.
 
 config USE_BB_SHADOW
-	bool "  Use busybox shadow password functions"
+	bool "Use busybox shadow password functions"
 	default y
 	depends on USE_BB_PWD_GRP && FEATURE_SHADOWPASSWDS
 	help
@@ -82,11 +82,30 @@ config FEATURE_DEL_USER_FROM_GROUP
 	  If called with two non-option arguments, deluser
 	  or delgroup will remove an user from a specified group.
 
+config FEATURE_CHECK_NAMES
+	bool "Enable sanity check on user/group names in adduser and addgroup"
+	default n
+	depends on ADDUSER || ADDGROUP
+	help
+	  Enable sanity check on user and group names in adduser and addgroup.
+	  To avoid problems, the user or group name should consist only of
+	  letters, digits, underscores, periods, at signs and dashes,
+	  and not start with a dash (as defined by IEEE Std 1003.1-2001).
+	  For compatibility with Samba machine accounts "$" is also supported
+	  at the end of the user or group name.
+
 config ADDUSER
 	bool "adduser"
 	default n
 	help
 	  Utility for creating a new user account.
+
+config FEATURE_ADDUSER_LONG_OPTIONS
+	bool "Enable long options"
+	default n
+	depends on ADDUSER && GETOPT_LONG
+	help
+	  Support long options for the adduser applet.
 
 config DELUSER
 	bool "deluser"

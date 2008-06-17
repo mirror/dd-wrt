@@ -4,9 +4,9 @@
  */
 
 #include "libbb.h"
+#include <syslog.h>
 #include <utmp.h>
 #include <sys/resource.h>
-#include <syslog.h>
 
 #if ENABLE_SELINUX
 #include <selinux/selinux.h>  /* for is_selinux_enabled()  */
@@ -114,7 +114,7 @@ static void write_utent(struct utmp *utptr, const char *username)
 #endif /* !ENABLE_FEATURE_UTMP */
 
 #if ENABLE_FEATURE_NOLOGIN
-static void die_if_nologin_and_non_root(int amroot)
+static void die_if_nologin(void)
 {
 	FILE *fp;
 	int c;
@@ -130,12 +130,10 @@ static void die_if_nologin_and_non_root(int amroot)
 		fclose(fp);
 	} else
 		puts("\r\nSystem closed for routine maintenance\r");
-	if (!amroot)
-		exit(1);
-	puts("\r\n[Disconnect bypassed -- root login allowed]\r");
+	exit(1);
 }
 #else
-static ALWAYS_INLINE void die_if_nologin_and_non_root(int amroot) {}
+static ALWAYS_INLINE void die_if_nologin(void) {}
 #endif
 
 #if ENABLE_FEATURE_SECURETTY && !ENABLE_PAM
@@ -214,17 +212,16 @@ static void alarm_handler(int sig ATTRIBUTE_UNUSED)
 	 * arrive here when their connection is broken.
 	 * We don't want to block here */
 	ndelay_on(1);
-	ndelay_on(2);
 	printf("\r\nLogin timed out after %d seconds\r\n", TIMEOUT);
+	fflush(stdout);
 	/* unix API is brain damaged regarding O_NONBLOCK,
 	 * we should undo it, or else we can affect other processes */
 	ndelay_off(1);
-	ndelay_off(2);
-	exit(EXIT_SUCCESS);
+	_exit(EXIT_SUCCESS);
 }
 
 int login_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int login_main(int argc, char **argv)
+int login_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	enum {
 		LOGIN_OPT_f = (1<<0),
@@ -238,8 +235,8 @@ int login_main(int argc, char **argv)
 	unsigned opt;
 	int count = 0;
 	struct passwd *pw;
-	char *opt_host = NULL;
-	char *opt_user = NULL;
+	char *opt_host = opt_host; /* for compiler */
+	char *opt_user = opt_user; /* for compiler */
 	char full_tty[TTYNAME_SIZE];
 	USE_SELINUX(security_context_t user_sid = NULL;)
 	USE_FEATURE_UTMP(struct utmp utent;)
@@ -254,20 +251,17 @@ int login_main(int argc, char **argv)
 
 	short_tty = full_tty;
 	username[0] = '\0';
-	amroot = (getuid() == 0);
 	signal(SIGALRM, alarm_handler);
 	alarm(TIMEOUT);
+
+	/* More of suid paranoia if called by non-root */
+	amroot = !sanitize_env_if_suid(); /* Clear dangerous stuff, set PATH */
 
 	/* Mandatory paranoia for suid applet:
 	 * ensure that fd# 0,1,2 are opened (at least to /dev/null)
 	 * and any extra open fd's are closed.
 	 * (The name of the function is misleading. Not daemonizing here.) */
 	bb_daemonize_or_rexec(DAEMON_ONLY_SANITIZE | DAEMON_CLOSE_EXTRA_FDS, NULL);
-	/* More of suid paranoia if called by non-root */
-	if (!amroot) {
-	        /* Clear dangerous stuff, set PATH */
-		sanitize_env_for_suid();
-	}
 
 	opt = getopt32(argv, "f:h:p", &opt_user, &opt_host);
 	if (opt & LOGIN_OPT_f) {
@@ -275,8 +269,9 @@ int login_main(int argc, char **argv)
 			bb_error_msg_and_die("-f is for root only");
 		safe_strncpy(username, opt_user, sizeof(username));
 	}
-	if (optind < argc) /* user from command line (getty) */
-		safe_strncpy(username, argv[optind], sizeof(username));
+	argv += optind;
+	if (argv[0]) /* user from command line (getty) */
+		safe_strncpy(username, argv[0], sizeof(username));
 
 	/* Let's find out and memorize our tty */
 	if (!isatty(0) || !isatty(1) || !isatty(2))
@@ -291,7 +286,7 @@ int login_main(int argc, char **argv)
 
 	read_or_build_utent(&utent, !amroot);
 
-	if (opt_host) {
+	if (opt & LOGIN_OPT_h) {
 		USE_FEATURE_UTMP(
 			safe_strncpy(utent.ut_host, opt_host, sizeof(utent.ut_host));
 		)
@@ -410,7 +405,8 @@ int login_main(int argc, char **argv)
 	}
 
 	alarm(0);
-	die_if_nologin_and_non_root(pw->pw_uid == 0);
+	if (!amroot)
+		die_if_nologin();
 
 	write_utent(&utent, username);
 
@@ -454,9 +450,12 @@ int login_main(int argc, char **argv)
 			xsetenv("LOGIN_UID", utoa(pw->pw_uid));
 			xsetenv("LOGIN_GID", utoa(pw->pw_gid));
 			xsetenv("LOGIN_SHELL", pw->pw_shell);
-			xspawn(t_argv); /* NOMMU-friendly */
-			/* All variables are unset by setup_environment */
-			wait(NULL);
+			spawn_and_wait(t_argv); /* NOMMU-friendly */
+			unsetenv("LOGIN_TTY"  );
+			unsetenv("LOGIN_USER" );
+			unsetenv("LOGIN_UID"  );
+			unsetenv("LOGIN_GID"  );
+			unsetenv("LOGIN_SHELL");
 		}
 	}
 
@@ -464,9 +463,8 @@ int login_main(int argc, char **argv)
 	tmp = pw->pw_shell;
 	if (!tmp || !*tmp)
 		tmp = DEFAULT_SHELL;
-	/* setup_environment params: shell, loginshell, changeenv, pw */
-	setup_environment(tmp, 1, !(opt & LOGIN_OPT_p), pw);
-	/* FIXME: login shell = 1 -> 3rd parameter is ignored! */
+	/* setup_environment params: shell, clear_env, change_env, pw */
+	setup_environment(tmp, !(opt & LOGIN_OPT_p), 1, pw);
 
 	motd();
 

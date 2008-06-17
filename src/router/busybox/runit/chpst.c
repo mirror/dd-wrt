@@ -25,7 +25,7 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/* Busyboxed by Denis Vlasenko <vda.linux@googlemail.com> */
+/* Busyboxed by Denys Vlasenko <vda.linux@googlemail.com> */
 /* Dependencies on runit_lib.c removed */
 
 #include "libbb.h"
@@ -171,8 +171,8 @@ static void limit(int what, long l)
 {
 	struct rlimit r;
 
-	if (getrlimit(what, &r) == -1)
-		bb_perror_msg_and_die("getrlimit");
+	/* Never fails under Linux (except if you pass it bad arguments) */
+	getrlimit(what, &r);
 	if ((l < 0) || (l > r.rlim_max))
 		r.rlim_cur = r.rlim_max;
 	else
@@ -290,7 +290,7 @@ static void envdir(int, char **) ATTRIBUTE_NORETURN;
 static void softlimit(int, char **) ATTRIBUTE_NORETURN;
 
 int chpst_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int chpst_main(int argc, char **argv)
+int chpst_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	INIT_G();
 
@@ -332,8 +332,7 @@ int chpst_main(int argc, char **argv)
 	if (env_dir) edir(env_dir);
 	if (root) {
 		xchdir(root);
-		if (chroot(".") == -1)
-			bb_perror_msg_and_die("chroot");
+		xchroot(".");
 	}
 	slimit();
 	if (nicelvl) {
@@ -350,7 +349,7 @@ int chpst_main(int argc, char **argv)
 	bb_perror_msg_and_die("exec %s", argv[0]);
 }
 
-static void setuidgid(int argc, char **argv)
+static void setuidgid(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	const char *account;
 
@@ -362,7 +361,7 @@ static void setuidgid(int argc, char **argv)
 	bb_perror_msg_and_die("exec %s", argv[0]);
 }
 
-static void envuidgid(int argc, char **argv)
+static void envuidgid(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	const char *account;
 
@@ -374,7 +373,7 @@ static void envuidgid(int argc, char **argv)
 	bb_perror_msg_and_die("exec %s", argv[0]);
 }
 
-static void envdir(int argc, char **argv)
+static void envdir(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	const char *dir;
 
@@ -386,7 +385,7 @@ static void envdir(int argc, char **argv)
 	bb_perror_msg_and_die("exec %s", argv[0]);
 }
 
-static void softlimit(int argc, char **argv)
+static void softlimit(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	char *a,*c,*d,*f,*l,*m,*o,*p,*r,*s,*t;
 	getopt32(argv, "+a:c:d:f:l:m:o:p:r:s:t:",

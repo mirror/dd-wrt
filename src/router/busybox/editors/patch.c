@@ -72,7 +72,7 @@ static char *extract_filename(char *line, int patch_level)
 }
 
 int patch_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int patch_main(int argc, char **argv)
+int patch_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	int patch_level = -1;
 	char *patch_line;
@@ -146,10 +146,7 @@ int patch_main(int argc, char **argv)
 			backup_filename = xmalloc(strlen(new_filename) + 6);
 			strcpy(backup_filename, new_filename);
 			strcat(backup_filename, ".orig");
-			if (rename(new_filename, backup_filename) == -1) {
-				bb_perror_msg_and_die("cannot create file %s",
-						backup_filename);
-			}
+			xrename(new_filename, backup_filename);
 			dst_stream = xfopen(new_filename, "w");
 			fchmod(fileno(dst_stream), saved_stat.st_mode);
 		}

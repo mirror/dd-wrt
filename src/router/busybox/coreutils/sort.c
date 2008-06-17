@@ -32,7 +32,7 @@ enum {
 	FLAG_u  = 8,            /* Unique */
 	FLAG_c  = 0x10,         /* Check: no output, exit(!ordered) */
 	FLAG_s  = 0x20,         /* Stable sort, no ascii fallback at end */
-	FLAG_z  = 0x40,         /* Input is null terminated, not \n */
+	FLAG_z  = 0x40,         /* Input and output is NUL terminated, not \n */
 /* These can be applied to search keys, the previous four can't */
 	FLAG_b  = 0x80,         /* Ignore leading blanks */
 	FLAG_r  = 0x100,        /* Reverse */
@@ -275,7 +275,7 @@ static unsigned str2u(char **str)
 #endif
 
 int sort_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int sort_main(int argc, char **argv)
+int sort_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	FILE *fp, *outfile = stdout;
 	char *line, **lines = NULL;
@@ -351,10 +351,13 @@ int sort_main(int argc, char **argv)
 	if (option_mask32 & FLAG_b) option_mask32 |= FLAG_bb;
 
 	/* Open input files and read data */
-	for (i = argv[optind] ? optind : optind-1; argv[i]; i++) {
-		fp = stdin;
-		if (i >= optind && NOT_LONE_DASH(argv[i]))
-			fp = xfopen(argv[i], "r");
+	argv += optind;
+	if (!*argv)
+		*--argv = (char*)"-";
+	do {
+		/* coreutils 6.9 compat: abort on first open error,
+		 * do not continue to next file: */
+		fp = xfopen_stdin(*argv);
 		for (;;) {
 			line = GET_LINE(fp);
 			if (!line) break;
@@ -362,8 +365,9 @@ int sort_main(int argc, char **argv)
 				lines = xrealloc(lines, sizeof(char *) * (linecount + 64));
 			lines[linecount++] = line;
 		}
-		fclose(fp);
-	}
+		fclose_if_not_stdin(fp);
+	} while (*++argv);
+
 #if ENABLE_FEATURE_SORT_BIG
 	/* if no key, perform alphabetic sort */
 	if (!key_list)
@@ -396,8 +400,9 @@ int sort_main(int argc, char **argv)
 		if (linecount) linecount = flag+1;
 	}
 	/* Print it */
+	flag = (option_mask32 & FLAG_z) ? '\0' : '\n';
 	for (i = 0; i < linecount; i++)
-		fprintf(outfile, "%s\n", lines[i]);
+		fprintf(outfile, "%s%c", lines[i], flag);
 
 	fflush_stdout_and_exit(EXIT_SUCCESS);
 }

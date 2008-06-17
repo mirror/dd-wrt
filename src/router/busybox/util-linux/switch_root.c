@@ -65,7 +65,7 @@ static void delete_contents(const char *directory)
 }
 
 int switch_root_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int switch_root_main(int argc, char **argv)
+int switch_root_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	char *newroot, *console = NULL;
 	struct stat st1, st2;
@@ -73,8 +73,8 @@ int switch_root_main(int argc, char **argv)
 
 	// Parse args (-c console)
 
-	opt_complementary = "-2";
-	getopt32(argv, "c:", &console);
+	opt_complementary = "-2"; // minimum 2 params
+	getopt32(argv, "+c:", &console); // '+': stop parsing at first non-option
 	argv += optind;
 
 	// Change to new root directory and verify it's a different fs.
@@ -105,8 +105,9 @@ int switch_root_main(int argc, char **argv)
 	// Overmount / with newdir and chroot into it.  The chdir is needed to
 	// recalculate "." and ".." links.
 
-	if (mount(".", "/", NULL, MS_MOVE, NULL) || chroot("."))
+	if (mount(".", "/", NULL, MS_MOVE, NULL))
 		bb_error_msg_and_die("error moving root");
+	xchroot(".");
 	xchdir("/");
 
 	// If a new console specified, redirect stdin/stdout/stderr to that.

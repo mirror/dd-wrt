@@ -99,13 +99,13 @@ int get_nport(const struct sockaddr *sa)
 void set_nport(len_and_sockaddr *lsa, unsigned port)
 {
 #if ENABLE_FEATURE_IPV6
-	if (lsa->sa.sa_family == AF_INET6) {
-		lsa->sin6.sin6_port = port;
+	if (lsa->u.sa.sa_family == AF_INET6) {
+		lsa->u.sin6.sin6_port = port;
 		return;
 	}
 #endif
-	if (lsa->sa.sa_family == AF_INET) {
-		lsa->sin.sin_port = port;
+	if (lsa->u.sa.sa_family == AF_INET) {
+		lsa->u.sin.sin_port = port;
 		return;
 	}
 	/* What? UNIX socket? IPX?? :) */
@@ -132,11 +132,15 @@ USE_FEATURE_IPV6(sa_family_t af,)
 
 	/* Ugly parsing of host:addr */
 	if (ENABLE_FEATURE_IPV6 && host[0] == '[') {
+		/* Even uglier parsing of [xx]:nn */
 		host++;
 		cp = strchr(host, ']');
-		if (!cp || cp[1] != ':') /* Malformed: must have [xx]:nn */
-			bb_error_msg_and_die("bad address '%s'", org_host);
-			//return r; /* return NULL */
+		if (!cp || cp[1] != ':') { /* Malformed: must have [xx]:nn */
+			bb_error_msg("bad address '%s'", org_host);
+			if (ai_flags & DIE_ON_ERROR)
+				xfunc_die();
+			return NULL;
+		}
 	} else {
 		cp = strrchr(host, ':');
 		if (ENABLE_FEATURE_IPV6 && cp && strchr(host, ':') != cp) {
@@ -144,13 +148,19 @@ USE_FEATURE_IPV6(sa_family_t af,)
 			cp = NULL; /* it's not a port spec */
 		}
 	}
-	if (cp) {
+	if (cp) { /* points to ":" or "]:" */
 		int sz = cp - host + 1;
 		host = safe_strncpy(alloca(sz), host, sz);
 		if (ENABLE_FEATURE_IPV6 && *cp != ':')
 			cp++; /* skip ']' */
 		cp++; /* skip ':' */
-		port = xatou16(cp);
+		port = bb_strtou(cp, NULL, 10);
+		if (errno || (unsigned)port > 0xffff) {
+			bb_error_msg("bad port spec '%s'", org_host);
+			if (ai_flags & DIE_ON_ERROR)
+				xfunc_die();
+			return NULL;
+		}
 	}
 
 	memset(&hint, 0 , sizeof(hint));
@@ -182,9 +192,9 @@ USE_FEATURE_IPV6(sa_family_t af,)
 		}
 	}
 #endif
-	r = xmalloc(offsetof(len_and_sockaddr, sa) + used_res->ai_addrlen);
+	r = xmalloc(offsetof(len_and_sockaddr, u.sa) + used_res->ai_addrlen);
 	r->len = used_res->ai_addrlen;
-	memcpy(&r->sa, used_res->ai_addr, used_res->ai_addrlen);
+	memcpy(&r->u.sa, used_res->ai_addr, used_res->ai_addrlen);
 	set_nport(r, htons(port));
  ret:
 	freeaddrinfo(result);
@@ -221,6 +231,7 @@ len_and_sockaddr* xdotted2sockaddr(const char *host, int port)
 	return str2sockaddr(host, port, AF_UNSPEC, AI_NUMERICHOST | DIE_ON_ERROR);
 }
 
+#undef xsocket_type
 int xsocket_type(len_and_sockaddr **lsap, USE_FEATURE_IPV6(int family,) int sock_type)
 {
 	SKIP_FEATURE_IPV6(enum { family = AF_INET };)
@@ -246,9 +257,9 @@ int xsocket_type(len_and_sockaddr **lsap, USE_FEATURE_IPV6(int family,) int sock
 		len = sizeof(struct sockaddr_in6);
 	}
 #endif
-	lsa = xzalloc(offsetof(len_and_sockaddr, sa) + len);
+	lsa = xzalloc(offsetof(len_and_sockaddr, u.sa) + len);
 	lsa->len = len;
-	lsa->sa.sa_family = family;
+	lsa->u.sa.sa_family = family;
 	*lsap = lsa;
 	return fd;
 }
@@ -266,13 +277,13 @@ static int create_and_bind_or_die(const char *bindaddr, int port, int sock_type)
 	if (bindaddr && bindaddr[0]) {
 		lsa = xdotted2sockaddr(bindaddr, port);
 		/* user specified bind addr dictates family */
-		fd = xsocket(lsa->sa.sa_family, sock_type, 0);
+		fd = xsocket(lsa->u.sa.sa_family, sock_type, 0);
 	} else {
 		fd = xsocket_type(&lsa, USE_FEATURE_IPV6(AF_UNSPEC,) sock_type);
 		set_nport(lsa, htons(port));
 	}
 	setsockopt_reuseaddr(fd);
-	xbind(fd, &lsa->sa, lsa->len);
+	xbind(fd, &lsa->u.sa, lsa->len);
 	free(lsa);
 	return fd;
 }
@@ -294,17 +305,17 @@ int create_and_connect_stream_or_die(const char *peer, int port)
 	len_and_sockaddr *lsa;
 
 	lsa = xhost2sockaddr(peer, port);
-	fd = xsocket(lsa->sa.sa_family, SOCK_STREAM, 0);
+	fd = xsocket(lsa->u.sa.sa_family, SOCK_STREAM, 0);
 	setsockopt_reuseaddr(fd);
-	xconnect(fd, &lsa->sa, lsa->len);
+	xconnect(fd, &lsa->u.sa, lsa->len);
 	free(lsa);
 	return fd;
 }
 
 int xconnect_stream(const len_and_sockaddr *lsa)
 {
-	int fd = xsocket(lsa->sa.sa_family, SOCK_STREAM, 0);
-	xconnect(fd, &lsa->sa, lsa->len);
+	int fd = xsocket(lsa->u.sa.sa_family, SOCK_STREAM, 0);
+	xconnect(fd, &lsa->u.sa, lsa->len);
 	return fd;
 }
 

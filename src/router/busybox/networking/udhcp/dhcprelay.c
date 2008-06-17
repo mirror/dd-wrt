@@ -14,6 +14,7 @@
 #include "options.h"
 
 /* constants */
+#define SERVER_PORT      67
 #define SELECT_TIMEOUT    5 /* select timeout in sec. */
 #define MAX_LIFETIME   2*60 /* lifetime of an xid entry in sec. */
 
@@ -155,12 +156,12 @@ static int init_sockets(char **client, int num_clients,
 	int i, n;
 
 	/* talk to real server on bootps */
-	fds[0] = listen_socket(/*INADDR_ANY,*/ 67, server);
+	fds[0] = listen_socket(/*INADDR_ANY,*/ SERVER_PORT, server);
 	n = fds[0];
 
 	for (i = 1; i < num_clients; i++) {
 		/* listen for clients on bootps */
-		fds[i] = listen_socket(/*INADDR_ANY,*/ 67, client[i-1]);
+		fds[i] = listen_socket(/*INADDR_ANY,*/ SERVER_PORT, client[i-1]);
 		if (fds[i] > n)
 			n = fds[i];
 	}
@@ -289,7 +290,7 @@ int dhcprelay_main(int argc, char **argv)
 	struct sockaddr_in server_addr;
 
 	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(67);
+	server_addr.sin_port = htons(SERVER_PORT);
 	if (argc == 4) {
 		if (!inet_aton(argv[3], &server_addr.sin_addr))
 			bb_perror_msg_and_die("didn't grok server");

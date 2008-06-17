@@ -5,9 +5,8 @@
  * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
  */
 
-#include <syslog.h>
-
 #include "libbb.h"
+#include <syslog.h>
 
 //static void catchalarm(int ATTRIBUTE_UNUSED junk)
 //{
@@ -16,11 +15,10 @@
 
 
 int sulogin_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int sulogin_main(int argc, char **argv)
+int sulogin_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	char *cp;
 	int timeout = 0;
-	char *timeout_arg;
 	struct passwd *pwd;
 	const char *shell;
 #if ENABLE_FEATURE_SHADOWPASSWDS
@@ -32,9 +30,8 @@ int sulogin_main(int argc, char **argv)
 	logmode = LOGMODE_BOTH;
 	openlog(applet_name, 0, LOG_AUTH);
 
-	if (getopt32(argv, "t:", &timeout_arg)) {
-		timeout = xatoi_u(timeout_arg);
-	}
+	opt_complementary = "t+"; /* -t N */
+	getopt32(argv, "t:", &timeout);
 
 	if (argv[optind]) {
 		close(0);
@@ -44,13 +41,14 @@ int sulogin_main(int argc, char **argv)
 		dup(0);
 	}
 
+	/* Malicious use like "sulogin /dev/sda"? */
 	if (!isatty(0) || !isatty(1) || !isatty(2)) {
 		logmode = LOGMODE_SYSLOG;
 		bb_error_msg_and_die("not a tty");
 	}
 
 	/* Clear dangerous stuff, set PATH */
-	sanitize_env_for_suid();
+	sanitize_env_if_suid();
 
 // bb_askpass() already handles this
 //	signal(SIGALRM, catchalarm);

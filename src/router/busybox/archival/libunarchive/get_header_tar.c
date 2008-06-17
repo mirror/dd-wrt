@@ -46,6 +46,9 @@ void BUG_tar_header_size(void);
 char get_header_tar(archive_handle_t *archive_handle)
 {
 	static smallint end;
+#if ENABLE_FEATURE_TAR_AUTODETECT
+	static smallint not_first;
+#endif
 
 	file_header_t *file_header = archive_handle->file_header;
 	struct {
@@ -90,17 +93,32 @@ char get_header_tar(archive_handle_t *archive_handle)
 
  again_after_align:
 
+#if ENABLE_DESKTOP
+	i = full_read(archive_handle->src_fd, &tar, 512);
+	/* if GNU tar sees EOF in above read, it says:
+	 * "tar: A lone zero block at N", where N = kilobyte
+	 * where EOF was met (not EOF block, actual EOF!),
+	 * and tar will exit with error code 0.
+	 * We will mimic exit(0), although we will not mimic
+	 * the message and we don't check whether we indeed
+	 * saw zero block directly before this. */
+	if (i == 0)
+		xfunc_error_retval = 0;
+	if (i != 512)
+		bb_error_msg_and_die("short read");
+#else
 	xread(archive_handle->src_fd, &tar, 512);
+#endif
 	archive_handle->offset += 512;
 
 	/* If there is no filename its an empty header */
-	if (tar.name[0] == 0) {
+	if (tar.name[0] == 0 && tar.prefix[0] == 0) {
 		if (end) {
 			/* This is the second consecutive empty header! End of archive!
 			 * Read until the end to empty the pipe from gz or bz2
 			 */
 			while (full_read(archive_handle->src_fd, &tar, 512) == 512)
-				/* repeat */;
+				continue;
 			return EXIT_FAILURE;
 		}
 		end = 1;
@@ -108,15 +126,48 @@ char get_header_tar(archive_handle_t *archive_handle)
 	}
 	end = 0;
 
-	/* Check header has valid magic, "ustar" is for the proper tar
-	 * 0's are for the old tar format
-	 */
-	if (strncmp(tar.magic, "ustar", 5) != 0) {
-#if ENABLE_FEATURE_TAR_OLDGNU_COMPATIBILITY
-		if (memcmp(tar.magic, "\0\0\0\0", 5) != 0)
+	/* Check header has valid magic, "ustar" is for the proper tar,
+	 * five NULs are for the old tar format  */
+	if (strncmp(tar.magic, "ustar", 5) != 0
+	 && (!ENABLE_FEATURE_TAR_OLDGNU_COMPATIBILITY
+	     || memcmp(tar.magic, "\0\0\0\0", 5) != 0)
+	) {
+#if ENABLE_FEATURE_TAR_AUTODETECT
+		char (*get_header_ptr)(archive_handle_t *);
+
+		/* tar gz/bz autodetect: check for gz/bz2 magic.
+		 * If it is the very first block, and we see the magic,
+		 * we can switch to get_header_tar_gz/bz2/lzma().
+		 * Needs seekable fd. I wish recv(MSG_PEEK) would work
+		 * on any fd... */
+		if (not_first)
+			goto err;
+#if ENABLE_FEATURE_TAR_GZIP
+		if (tar.name[0] == 0x1f && tar.name[1] == 0x8b) { /* gzip */
+			get_header_ptr = get_header_tar_gz;
+		} else
 #endif
-			bb_error_msg_and_die("invalid tar magic");
+#if ENABLE_FEATURE_TAR_BZIP2
+		if (tar.name[0] == 'B' && tar.name[1] == 'Z'
+		 && tar.name[2] == 'h' && isdigit(tar.name[3])
+		) { /* bzip2 */
+			get_header_ptr = get_header_tar_bz2;
+		} else
+#endif
+			goto err;
+		if (lseek(archive_handle->src_fd, -512, SEEK_CUR) != 0)
+			goto err;
+		while (get_header_ptr(archive_handle) == EXIT_SUCCESS)
+			continue;
+		return EXIT_FAILURE;
+ err:
+#endif /* FEATURE_TAR_AUTODETECT */
+		bb_error_msg_and_die("invalid tar magic");
 	}
+
+#if ENABLE_FEATURE_TAR_AUTODETECT
+	not_first = 1;
+#endif
 
 	/* Do checksum on headers.
 	 * POSIX says that checksum is done on unsigned bytes, but
@@ -160,9 +211,12 @@ char get_header_tar(archive_handle_t *archive_handle)
 	/* getOctal trashes subsequent field, therefore we call it
 	 * on fields in reverse order */
 	if (tar.devmajor[0]) {
+		char t = tar.prefix[0];
+		/* we trash prefix[0] here, but we DO need it later! */
 		unsigned minor = GET_OCTAL(tar.devminor);
 		unsigned major = GET_OCTAL(tar.devmajor);
 		file_header->device = makedev(major, minor);
+		tar.prefix[0] = t;
 	}
 	file_header->link_target = NULL;
 	if (!linkname && parse_names && tar.linkname[0]) {
@@ -172,6 +226,10 @@ char get_header_tar(archive_handle_t *archive_handle)
 		/* FIXME: what if we have non-link object with link_target? */
 		/* Will link_target be free()ed? */
 	}
+#if ENABLE_FEATURE_TAR_UNAME_GNAME
+	file_header->uname = tar.uname[0] ? xstrndup(tar.uname, sizeof(tar.uname)) : NULL;
+	file_header->gname = tar.gname[0] ? xstrndup(tar.gname, sizeof(tar.gname)) : NULL;
+#endif
 	file_header->mtime = GET_OCTAL(tar.mtime);
 	file_header->size = GET_OCTAL(tar.size);
 	file_header->gid = GET_OCTAL(tar.gid);
@@ -302,6 +360,9 @@ char get_header_tar(archive_handle_t *archive_handle)
 
 	free(file_header->link_target);
 	/* Do not free(file_header->name)! */
-
+#if ENABLE_FEATURE_TAR_UNAME_GNAME
+	free(file_header->uname);
+	free(file_header->gname);
+#endif
 	return EXIT_SUCCESS;
 }
