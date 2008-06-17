@@ -2732,7 +2732,7 @@ changepass (webs_t wp)
     }
 
 
-  if (pass && value && strcmp (value, TMP_PASSWD)
+  if (pass && value && strcmp (pass, TMP_PASSWD)
       && valid_name (wp, pass, NULL))
     {
       nvram_set ("http_passwd", zencrypt (pass));
