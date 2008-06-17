@@ -24,14 +24,13 @@
 #define DEBUG 0
 
 #include "libbb.h"
+#include <syslog.h>
 
 #if DEBUG
 #define TELCMDS
 #define TELOPTS
 #endif
 #include <arpa/telnet.h>
-#include <sys/syslog.h>
-
 
 /* Structure that describes a session */
 struct tsession {
@@ -57,11 +56,7 @@ enum { BUFSIZE = (4 * 1024 - sizeof(struct tsession)) / 2 };
 /* Globals */
 static int maxfd;
 static struct tsession *sessions;
-#if ENABLE_LOGIN
 static const char *loginpath = "/bin/login";
-#else
-static const char *loginpath = DEFAULT_SHELL;
-#endif
 static const char *issuefile = "/etc/issue.net";
 
 
@@ -154,53 +149,6 @@ remove_iacs(struct tsession *ts, int *pnum_totty)
 }
 
 
-static int
-getpty(char *line, int size)
-{
-	int p;
-#if ENABLE_FEATURE_DEVPTS
-	p = open("/dev/ptmx", O_RDWR);
-	if (p > 0) {
-		const char *name;
-		grantpt(p);
-		unlockpt(p);
-		name = ptsname(p);
-		if (!name) {
-			bb_perror_msg("ptsname error (is /dev/pts mounted?)");
-			return -1;
-		}
-		safe_strncpy(line, name, size);
-		return p;
-	}
-#else
-	struct stat stb;
-	int i;
-	int j;
-
-	strcpy(line, "/dev/ptyXX");
-
-	for (i = 0; i < 16; i++) {
-		line[8] = "pqrstuvwxyzabcde"[i];
-		line[9] = '0';
-		if (stat(line, &stb) < 0) {
-			continue;
-		}
-		for (j = 0; j < 16; j++) {
-			line[9] = j < 10 ? j + '0' : j - 10 + 'a';
-			if (DEBUG)
-				fprintf(stderr, "Trying to open device: %s\n", line);
-			p = open(line, O_RDWR | O_NOCTTY);
-			if (p >= 0) {
-				line[5] = 't';
-				return p;
-			}
-		}
-	}
-#endif /* FEATURE_DEVPTS */
-	return -1;
-}
-
-
 static struct tsession *
 make_new_session(
 		USE_FEATURE_TELNETD_STANDALONE(int sock)
@@ -209,14 +157,14 @@ make_new_session(
 	const char *login_argv[2];
 	struct termios termbuf;
 	int fd, pid;
-	char tty_name[32];
+	char tty_name[GETPTY_BUFSIZE];
 	struct tsession *ts = xzalloc(sizeof(struct tsession) + BUFSIZE * 2);
 
 	/*ts->buf1 = (char *)(ts + 1);*/
 	/*ts->buf2 = ts->buf1 + BUFSIZE;*/
 
 	/* Got a new connection, set up a tty. */
-	fd = getpty(tty_name, 32);
+	fd = getpty(tty_name);
 	if (fd < 0) {
 		bb_error_msg("can't create pty");
 		return NULL;
@@ -280,8 +228,7 @@ make_new_session(
 	setsid();
 
 	/* Restore default signal handling */
-	signal(SIGCHLD, SIG_DFL);
-	signal(SIGPIPE, SIG_DFL);
+	bb_signals((1 << SIGCHLD) + (1 << SIGPIPE), SIG_DFL);
 
 	/* open the child's side of the tty. */
 	/* NB: setsid() disconnects from any previous ctty's. Therefore
@@ -387,14 +334,14 @@ free_session(struct tsession *ts)
 
 #endif
 
-static void handle_sigchld(int sig)
+static void handle_sigchld(int sig ATTRIBUTE_UNUSED)
 {
 	pid_t pid;
 	struct tsession *ts;
 
 	/* Looping: more than one child may have exited */
 	while (1) {
-		pid = waitpid(-1, NULL, WNOHANG);
+		pid = wait_any_nohang(NULL);
 		if (pid <= 0)
 			break;
 		ts = sessions;
@@ -409,7 +356,7 @@ static void handle_sigchld(int sig)
 }
 
 int telnetd_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int telnetd_main(int argc, char **argv)
+int telnetd_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	fd_set rdfdset, wrfdset;
 	unsigned opt;

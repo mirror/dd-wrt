@@ -6,7 +6,6 @@
 #include "libbb.h"
 #include <syslog.h>
 
-
 static void nuke_str(char *str)
 {
 	if (str) memset(str, 0, strlen(str));
@@ -71,7 +70,7 @@ static char* new_password(const struct passwd *pw, uid_t myuid, int algo)
 }
 
 int passwd_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int passwd_main(int argc, char **argv)
+int passwd_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	enum {
 		OPT_algo = 0x1, /* -a - password algorithm */
@@ -172,9 +171,11 @@ int passwd_main(int argc, char **argv)
 
 	rlimit_fsize.rlim_cur = rlimit_fsize.rlim_max = 512L * 30000;
 	setrlimit(RLIMIT_FSIZE, &rlimit_fsize);
-	signal(SIGHUP, SIG_IGN);
-	signal(SIGINT, SIG_IGN);
-	signal(SIGQUIT, SIG_IGN);
+	bb_signals(0
+		+ (1 << SIGHUP)
+		+ (1 << SIGINT)
+		+ (1 << SIGQUIT)
+		, SIG_IGN);
 	umask(077);
 	xsetuid(0);
 

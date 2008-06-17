@@ -151,7 +151,7 @@ struct globals {
 #define stb1               (G.stb1              )
 #define stb2               (G.stb2              )
 #define INIT_G() do { \
-	PTR_TO_GLOBALS = xzalloc(sizeof(G)); \
+	SET_PTR_TO_GLOBALS(xzalloc(sizeof(G))); \
 	context = 3; \
 	max_context = 64; \
 } while (0)
@@ -1095,12 +1095,6 @@ static void do_diff(char *dir1, char *path1, char *dir2, char *path2)
 
 
 #if ENABLE_FEATURE_DIFF_DIR
-static int dir_strcmp(const void *p1, const void *p2)
-{
-	return strcmp(*(char *const *) p1, *(char *const *) p2);
-}
-
-
 /* This function adds a filename to dl, the directory listing. */
 static int add_to_dirlist(const char *filename,
 		struct stat ATTRIBUTE_UNUSED * sb, void *userdata,
@@ -1144,7 +1138,7 @@ static char **get_dir(char *path)
 	}
 
 	/* Sort dl alphabetically. */
-	qsort(dl, dl_count, sizeof(char *), dir_strcmp);
+	qsort_string_vector(dl, dl_count);
 
 	dl[dl_count] = NULL;
 	return dl;
@@ -1211,20 +1205,19 @@ static void diffdir(char *p1, char *p2)
 
 
 int diff_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int diff_main(int argc, char **argv)
+int diff_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	bool gotstdin = 0;
-	char *U_opt;
 	char *f1, *f2;
 	llist_t *L_arg = NULL;
 
 	INIT_G();
 
-	/* exactly 2 params; collect multiple -L <label> */
-	opt_complementary = "=2:L::";
+	/* exactly 2 params; collect multiple -L <label>; -U N */
+	opt_complementary = "=2:L::U+";
 	getopt32(argv, "abdiL:NqrsS:tTU:wu"
 			"p" /* ignored (for compatibility) */,
-			&L_arg, &start, &U_opt);
+			&L_arg, &start, &context);
 	/*argc -= optind;*/
 	argv += optind;
 	while (L_arg) {
@@ -1239,8 +1232,6 @@ int diff_main(int argc, char **argv)
 		/* we leak L_arg here... */
 		L_arg = L_arg->link;
 	}
-	if (option_mask32 & FLAG_U)
-		context = xatoi_u(U_opt);
 
 	/*
 	 * Do sanity checks, fill in stb1 and stb2 and call the appropriate

@@ -56,7 +56,7 @@ enum { READ_BUFFER_SIZE = COMMON_BUFSIZE - 1 };
 #define SPLIT_OPT_a (1<<2)
 
 int split_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int split_main(int argc, char **argv)
+int split_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	unsigned suffix_len = 2;
 	char *pfx;
@@ -68,15 +68,13 @@ int split_main(int argc, char **argv)
 	ssize_t bytes_read, to_write;
 	char *src;
 
-	opt_complementary = "?2";
-	opt = getopt32(argv, "l:b:a:", &count_p, &count_p, &sfx);
+	opt_complementary = "?2:a+"; /* max 2 args; -a N */
+	opt = getopt32(argv, "l:b:a:", &count_p, &count_p, &suffix_len);
 
 	if (opt & SPLIT_OPT_l)
-		cnt = xatoul(count_p);
-	if (opt & SPLIT_OPT_b)
-		cnt = xatoul_sfx(count_p, split_suffices);
-	if (opt & SPLIT_OPT_a)
-		suffix_len = xatou(sfx);
+		cnt = XATOOFF(count_p);
+	if (opt & SPLIT_OPT_b) // FIXME: also needs XATOOFF
+		cnt = xatoull_sfx(count_p, split_suffices);
 	sfx = "x";
 
 	argv += optind;

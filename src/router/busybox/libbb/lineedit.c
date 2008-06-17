@@ -65,7 +65,7 @@
 enum {
 	/* We use int16_t for positions, need to limit line len */
 	MAX_LINELEN = CONFIG_FEATURE_EDITING_MAX_LEN < 0x7ff0
-                      ? CONFIG_FEATURE_EDITING_MAX_LEN
+	              ? CONFIG_FEATURE_EDITING_MAX_LEN
 	              : 0x7ff0
 };
 
@@ -146,6 +146,7 @@ static struct statics *const ptr_to_statics __attribute__ ((section (".data")));
 
 #define INIT_S() do { \
 	(*(struct statics**)&ptr_to_statics) = xzalloc(sizeof(S)); \
+	barrier(); \
 	cmdedit_termw = 80; \
 	USE_FEATURE_EDITING_FANCY_PROMPT(num_ok_lines = 1;) \
 	USE_FEATURE_GETUSERNAME_AND_HOMEDIR(home_pwd_buf = (char*)null_str;) \
@@ -293,7 +294,12 @@ static void redraw(int y, int back_cursor)
 
 /* Delete the char in front of the cursor, optionally saving it
  * for later putback */
+#if !ENABLE_FEATURE_EDITING_VI
+static void input_delete(void)
+#define input_delete(save) input_delete()
+#else
 static void input_delete(int save)
+#endif
 {
 	int j = cursor;
 
@@ -512,8 +518,8 @@ static void exe_n_cwd_tab_completion(char *command, int type)
 
 	for (i = 0; i < npaths; i++) {
 		dir = opendir(paths[i]);
-		if (!dir)                       /* Don't print an error */
-			continue;
+		if (!dir)
+			continue; /* don't print an error */
 
 		while ((next = readdir(dir)) != NULL) {
 			int len1;
@@ -523,18 +529,21 @@ static void exe_n_cwd_tab_completion(char *command, int type)
 			if (strncmp(str_found, pfind, strlen(pfind)))
 				continue;
 			/* not see .name without .match */
-			if (*str_found == '.' && *pfind == 0) {
+			if (*str_found == '.' && *pfind == '\0') {
 				if (NOT_LONE_CHAR(paths[i], '/') || str_found[1])
 					continue;
 				str_found = ""; /* only "/" */
 			}
 			found = concat_path_file(paths[i], str_found);
-			/* hmm, remover in progress? */
-			if (stat(found, &st) < 0)
+			/* hmm, remove in progress? */
+			/* NB: stat() first so that we see is it a directory;
+			 * but if that fails, use lstat() so that
+			 * we still match dangling links */
+			if (stat(found, &st) && lstat(found, &st))
 				goto cont;
 			/* find with dirs? */
 			if (paths[i] != dirbuf)
-				strcpy(found, next->d_name);    /* only name */
+				strcpy(found, next->d_name); /* only name */
 
 			len1 = strlen(found);
 			found = xrealloc(found, len1 + 2);
@@ -542,7 +551,7 @@ static void exe_n_cwd_tab_completion(char *command, int type)
 			found[len1+1] = '\0';
 
 			if (S_ISDIR(st.st_mode)) {
-				/* name is directory      */
+				/* name is a directory */
 				if (found[len1-1] != '/') {
 					found[len1] = '/';
 				}
@@ -560,7 +569,7 @@ static void exe_n_cwd_tab_completion(char *command, int type)
 		closedir(dir);
 	}
 	if (paths != path1) {
-		free(paths[0]);                 /* allocated memory only in first member */
+		free(paths[0]); /* allocated memory is only in first member */
 		free(paths);
 	}
 #undef dirbuf
@@ -795,11 +804,6 @@ static char *add_quote_for_spec_chars(char *found)
 	return s;
 }
 
-static int match_compare(const void *a, const void *b)
-{
-	return strcmp(*(char**)a, *(char**)b);
-}
-
 /* Do TAB completion */
 static void input_tab(smallint *lastWasTab)
 {
@@ -840,7 +844,7 @@ static void input_tab(smallint *lastWasTab)
 		/* Sort, then remove any duplicates found */
 		if (matches) {
 			int i, n = 0;
-			qsort(matches, num_matches, sizeof(char*), match_compare);
+			qsort_string_vector(matches, num_matches);
 			for (i = 0; i < num_matches - 1; ++i) {
 				if (matches[i] && matches[i+1]) { /* paranoia */
 					if (strcmp(matches[i], matches[i+1]) == 0) {
@@ -1203,11 +1207,7 @@ static void parse_and_put_prompt(const char *prmt_ptr)
 					break;
 #endif
 				case 'h':
-					pbuf = free_me = xzalloc(256);
-					if (gethostname(pbuf, 255) < 0) {
-						pbuf[0] = '?';
-						pbuf[1] = '\0';
-					}
+					pbuf = free_me = safe_gethostname();
 					*strchrnul(pbuf, '.') = '\0';
 					break;
 				case '$':
@@ -1408,9 +1408,9 @@ int read_line_input(const char *prompt, char *command, int maxsize, line_input_t
 	parse_and_put_prompt(prompt);
 
 	while (1) {
-		fflush(stdout);
+		fflush(NULL);
 
-		if (safe_read(STDIN_FILENO, &c, 1) < 1) {
+		if (nonblock_safe_read(STDIN_FILENO, &c, 1) < 1) {
 			/* if we can't read input then exit */
 			goto prepare_to_die;
 		}
@@ -1431,7 +1431,6 @@ int read_line_input(const char *prompt, char *command, int maxsize, line_input_t
 			goto_new_line();
 			break_out = 1;
 			break;
-#if ENABLE_FEATURE_EDITING_FANCY_KEYS
 		case CTRL('A'):
 		vi_case('0'|vbit:)
 			/* Control-a -- Beginning of line */
@@ -1444,7 +1443,6 @@ int read_line_input(const char *prompt, char *command, int maxsize, line_input_t
 			/* Control-b -- Move back one character */
 			input_backward(1);
 			break;
-#endif
 		case CTRL('C'):
 		vi_case(CTRL('C')|vbit:)
 			/* Control-c -- stop gathering input */
@@ -1465,7 +1463,6 @@ int read_line_input(const char *prompt, char *command, int maxsize, line_input_t
 			input_delete(0);
 			break;
 
-#if ENABLE_FEATURE_EDITING_FANCY_KEYS
 		case CTRL('E'):
 		vi_case('$'|vbit:)
 			/* Control-e -- End of line */
@@ -1477,7 +1474,6 @@ int read_line_input(const char *prompt, char *command, int maxsize, line_input_t
 			/* Control-f -- Move forward one character */
 			input_forward();
 			break;
-#endif
 
 		case '\b':
 		case '\x7f': /* DEL */
@@ -1491,7 +1487,6 @@ int read_line_input(const char *prompt, char *command, int maxsize, line_input_t
 			break;
 #endif
 
-#if ENABLE_FEATURE_EDITING_FANCY_KEYS
 		case CTRL('K'):
 			/* Control-k -- clear to end of line */
 			command[cursor] = 0;
@@ -1504,7 +1499,6 @@ int read_line_input(const char *prompt, char *command, int maxsize, line_input_t
 			printf("\033[H");
 			redraw(0, command_len - cursor);
 			break;
-#endif
 
 #if MAX_HISTORY > 0
 		case CTRL('N'):
@@ -1526,7 +1520,6 @@ int read_line_input(const char *prompt, char *command, int maxsize, line_input_t
 			break;
 #endif
 
-#if ENABLE_FEATURE_EDITING_FANCY_KEYS
 		case CTRL('U'):
 		vi_case(CTRL('U')|vbit:)
 			/* Control-U -- Clear line before cursor */
@@ -1536,7 +1529,6 @@ int read_line_input(const char *prompt, char *command, int maxsize, line_input_t
 				redraw(cmdedit_y, command_len);
 			}
 			break;
-#endif
 		case CTRL('W'):
 		vi_case(CTRL('W')|vbit:)
 			/* Control-W -- Remove the last word */
@@ -1760,8 +1752,8 @@ int read_line_input(const char *prompt, char *command, int maxsize, line_input_t
 			break;
 
 		default:        /* If it's regular input, do the normal thing */
-#if ENABLE_FEATURE_NONPRINTABLE_INVERSE_PUT
-			/* Control-V -- Add non-printable symbol */
+
+			/* Control-V -- force insert of next char */
 			if (c == CTRL('V')) {
 				if (safe_read(STDIN_FILENO, &c, 1) < 1)
 					goto prepare_to_die;
@@ -1769,16 +1761,12 @@ int read_line_input(const char *prompt, char *command, int maxsize, line_input_t
 					beep();
 					break;
 				}
-			} else
-#endif
+			}
 
 #if ENABLE_FEATURE_EDITING_VI
 			if (vi_cmdmode)  /* Don't self-insert */
 				break;
 #endif
-			if (!Isprint(c)) /* Skip non-printable characters */
-				break;
-
 			if (command_len >= (maxsize - 2))        /* Need to leave space for enter */
 				break;
 

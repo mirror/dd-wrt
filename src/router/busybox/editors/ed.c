@@ -51,7 +51,7 @@ struct globals {
 #define lines              (G.lines             )
 #define marks              (G.marks             )
 #define INIT_G() do { \
-	PTR_TO_GLOBALS = xzalloc(sizeof(G)); \
+	SET_PTR_TO_GLOBALS(xzalloc(sizeof(G))); \
 } while (0)
 
 
@@ -89,7 +89,7 @@ static char *skip_blank(const char *cp)
 
 
 int ed_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int ed_main(int argc, char **argv)
+int ed_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	INIT_G();
 
@@ -99,7 +99,7 @@ int ed_main(int argc, char **argv)
 	lines.next = &lines;
 	lines.prev = &lines;
 
-	if (argc > 1) {
+	if (argv[1]) {
 		fileName = xstrdup(argv[1]);
 		if (!readLines(fileName, 1)) {
 			return EXIT_SUCCESS;
@@ -847,20 +847,8 @@ static int printLines(int num1, int num2, int expandFlag)
 			count--;
 
 		while (count-- > 0) {
-			ch = *cp++;
-			if (ch & 0x80) {
-				fputs("M-", stdout);
-				ch &= 0x7f;
-			}
-			if (ch < ' ') {
-				bb_putchar('^');
-				ch += '@';
-			}
-			if (ch == 0x7f) {
-				bb_putchar('^');
-				ch = '?';
-			}
-			bb_putchar(ch);
+			ch = (unsigned char) *cp++;
+			fputc_printable(ch | PRINTABLE_META, stdout);
 		}
 
 		fputs("$\n", stdout);

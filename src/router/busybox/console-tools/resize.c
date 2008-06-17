@@ -21,10 +21,10 @@ onintr(int sig ATTRIBUTE_UNUSED)
 }
 
 int resize_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int resize_main(int argc, char **argv)
+int resize_main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED)
 {
 	struct termios new;
-	struct winsize w = { 0,0,0,0 };
+	struct winsize w = { 0, 0, 0, 0 };
 	int ret;
 
 	/* We use _stderr_ in order to make resize usable
@@ -37,10 +37,12 @@ int resize_main(int argc, char **argv)
 	new = old_termios;
 	new.c_cflag |= (CLOCAL | CREAD);
 	new.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
-	signal(SIGINT, onintr);
-	signal(SIGQUIT, onintr);
-	signal(SIGTERM, onintr);
-	signal(SIGALRM, onintr);
+	bb_signals(0
+		+ (1 << SIGINT)
+		+ (1 << SIGQUIT)
+		+ (1 << SIGTERM)
+		+ (1 << SIGALRM)
+		, onintr);
 	tcsetattr(STDERR_FILENO, TCSANOW, &new);
 
 	/* save_cursor_pos 7

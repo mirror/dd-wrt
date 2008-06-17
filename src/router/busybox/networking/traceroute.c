@@ -378,7 +378,7 @@ struct globals {
 #define wherefrom (G.wherefrom)
 #define gwlist    (G.gwlist   )
 #define INIT_G() do { \
-	PTR_TO_GLOBALS = xzalloc(sizeof(G)); \
+	SET_PTR_TO_GLOBALS(xzalloc(sizeof(G))); \
 	maxpacket = 32 * 1024; \
 	port = 32768 + 666; \
 	waittime = 5; \
@@ -729,6 +729,10 @@ pr_type(unsigned char t)
 }
 #endif
 
+#if !ENABLE_FEATURE_TRACEROUTE_VERBOSE
+#define packet_ok(buf, cc, from, seq) \
+	packet_ok(buf, cc, seq)
+#endif
 static int
 packet_ok(unsigned char *buf, int cc, struct sockaddr_in *from, int seq)
 {

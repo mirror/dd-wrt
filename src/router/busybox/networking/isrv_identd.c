@@ -2,13 +2,13 @@
 /*
  * Fake identd server.
  *
- * Copyright (C) 2007 Denis Vlasenko
+ * Copyright (C) 2007 Denys Vlasenko
  *
  * Licensed under GPL version 2, see file LICENSE in this tarball for details.
  */
 
-#include <syslog.h>
 #include "libbb.h"
+#include <syslog.h>
 #include "isrv.h"
 
 enum { TIMEOUT = 20 };
@@ -76,7 +76,7 @@ static int do_rd(int fd, void **paramp)
 	return retval;
 }
 
-static int do_timeout(void **paramp)
+static int do_timeout(void **paramp ATTRIBUTE_UNUSED)
 {
 	return 1; /* terminate session */
 }
@@ -93,7 +93,7 @@ static void inetd_mode(void)
 }
 
 int fakeidentd_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int fakeidentd_main(int argc, char **argv)
+int fakeidentd_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	enum {
 		OPT_foreground = 0x1,
@@ -113,7 +113,7 @@ int fakeidentd_main(int argc, char **argv)
 		strncpy(bogouser, argv[optind], sizeof(bogouser));
 
 	/* Daemonize if no -f and no -i and no -w */
-	if (!(opt & OPT_fiw));
+	if (!(opt & OPT_fiw))
 		bb_daemonize_or_rexec(0, argv);
 
 	/* Where to log in inetd modes? "Classic" inetd

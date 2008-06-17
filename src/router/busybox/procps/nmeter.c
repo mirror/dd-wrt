@@ -75,11 +75,11 @@ struct globals {
 #define proc_diskstats     (G.proc_diskstats    )
 #define proc_sys_fs_filenr (G.proc_sys_fs_filenr)
 #define INIT_G() do { \
-		PTR_TO_GLOBALS = xzalloc(sizeof(G)); \
-		cur_outbuf = outbuf; \
-		final_str = "\n"; \
-		deltanz = delta = 1000000; \
-	} while (0)
+	SET_PTR_TO_GLOBALS(xzalloc(sizeof(G))); \
+	cur_outbuf = outbuf; \
+	final_str = "\n"; \
+	deltanz = delta = 1000000; \
+} while (0)
 
 // We depend on this being a char[], not char* - we take sizeof() of it
 #define outbuf bb_common_bufsiz1
@@ -257,7 +257,10 @@ static int rdval_diskstats(const char* p, ullong *vec)
 static void scale(ullong ul)
 {
 	char buf[5];
-	smart_ulltoa5(ul, buf);
+
+	/* see http://en.wikipedia.org/wiki/Tera */
+	smart_ulltoa4(ul, buf, " kmgtpezy");
+	buf[4] = '\0';
 	put(buf);
 }
 
@@ -272,7 +275,7 @@ typedef struct a { \
 S_STAT(s_stat)
 S_STAT_END(s_stat)
 
-static void collect_literal(s_stat *s)
+static void collect_literal(s_stat *s ATTRIBUTE_UNUSED)
 {
 }
 
@@ -291,7 +294,7 @@ static s_stat* init_delay(const char *param)
 	return NULL;
 }
 
-static s_stat* init_cr(const char *param)
+static s_stat* init_cr(const char *param ATTRIBUTE_UNUSED)
 {
 	final_str = "\r";
 	return (s_stat*)0;
@@ -433,7 +436,7 @@ static void collect_ctx(ctx_stat *s)
 	scale(data[0] - old);
 }
 
-static s_stat* init_ctx(const char *param)
+static s_stat* init_ctx(const char *param ATTRIBUTE_UNUSED)
 {
 	ctx_stat *s = xmalloc(sizeof(ctx_stat));
 	s->collect = collect_ctx;
@@ -475,7 +478,7 @@ static void collect_blk(blk_stat *s)
 	scale(data[1]*512);
 }
 
-static s_stat* init_blk(const char *param)
+static s_stat* init_blk(const char *param ATTRIBUTE_UNUSED)
 {
 	blk_stat *s = xmalloc(sizeof(blk_stat));
 	s->collect = collect_blk;
@@ -488,7 +491,7 @@ S_STAT(fork_stat)
 	ullong old;
 S_STAT_END(fork_stat)
 
-static void collect_thread_nr(fork_stat *s)
+static void collect_thread_nr(fork_stat *s ATTRIBUTE_UNUSED)
 {
 	ullong data[1];
 
@@ -622,7 +625,7 @@ static void collect_mem(mem_stat *s)
 		put_question_marks(4);
 		return;
 	}
-	if (s->opt == 'f') {
+	if (s->opt == 't') {
 		scale(m_total << 10);
 		return;
 	}
@@ -657,7 +660,7 @@ static s_stat* init_mem(const char *param)
 S_STAT(swp_stat)
 S_STAT_END(swp_stat)
 
-static void collect_swp(swp_stat *s)
+static void collect_swp(swp_stat *s ATTRIBUTE_UNUSED)
 {
 	ullong s_total[1];
 	ullong s_free[1];
@@ -670,7 +673,7 @@ static void collect_swp(swp_stat *s)
 	scale((s_total[0]-s_free[0]) << 10);
 }
 
-static s_stat* init_swp(const char *param)
+static s_stat* init_swp(const char *param ATTRIBUTE_UNUSED)
 {
 	swp_stat *s = xmalloc(sizeof(swp_stat));
 	s->collect = collect_swp;
@@ -681,7 +684,7 @@ static s_stat* init_swp(const char *param)
 S_STAT(fd_stat)
 S_STAT_END(fd_stat)
 
-static void collect_fd(fd_stat *s)
+static void collect_fd(fd_stat *s ATTRIBUTE_UNUSED)
 {
 	ullong data[2];
 
@@ -693,7 +696,7 @@ static void collect_fd(fd_stat *s)
 	scale(data[0] - data[1]);
 }
 
-static s_stat* init_fd(const char *param)
+static s_stat* init_fd(const char *param ATTRIBUTE_UNUSED)
 {
 	fd_stat *s = xmalloc(sizeof(fd_stat));
 	s->collect = collect_fd;

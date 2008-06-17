@@ -19,10 +19,15 @@
 */
 
 #include <mntent.h>
+#include <syslog.h>
 #include "libbb.h"
 
-/* Needed for nfs support only... */
-#include <syslog.h>
+#if ENABLE_FEATURE_MOUNT_LABEL
+/* For FEATURE_MOUNT_LABEL only */
+#include "volume_id.h"
+#endif
+
+/* Needed for nfs support only */
 #include <sys/utsname.h>
 #undef TRUE
 #undef FALSE
@@ -33,6 +38,11 @@
 #ifndef MS_SILENT
 #define MS_SILENT	(1 << 15)
 #endif
+/* Grab more as needed from util-linux's mount/mount_constants.h */
+#ifndef MS_DIRSYNC
+#define MS_DIRSYNC      128     /* Directory modifications are synchronous */
+#endif
+
 
 #if defined(__dietlibc__)
 /* 16.12.2006, Sampo Kellomaki (sampo@iki.fi)
@@ -45,15 +55,42 @@ static struct mntent *getmntent_r(FILE* stream, struct mntent* result, char* buf
 }
 #endif
 
-#define getmntent_buf bb_common_bufsiz1
-
 
 // Not real flags, but we want to be able to check for this.
 enum {
-	MOUNT_USERS  = (1<<28)*ENABLE_DESKTOP,
-	MOUNT_NOAUTO = (1<<29),
-	MOUNT_SWAP   = (1<<30),
+	MOUNT_USERS  = (1 << 28) * ENABLE_DESKTOP,
+	MOUNT_NOAUTO = (1 << 29),
+	MOUNT_SWAP   = (1 << 30),
 };
+
+
+#define OPTION_STR "o:t:rwanfvsi"
+enum {
+	OPT_o = (1 << 0),
+	OPT_t = (1 << 1),
+	OPT_r = (1 << 2),
+	OPT_w = (1 << 3),
+	OPT_a = (1 << 4),
+	OPT_n = (1 << 5),
+	OPT_f = (1 << 6),
+	OPT_v = (1 << 7),
+	OPT_s = (1 << 8),
+	OPT_i = (1 << 9),
+};
+
+#if ENABLE_FEATURE_MTAB_SUPPORT
+#define useMtab (!(option_mask32 & OPT_n))
+#else
+#define useMtab 0
+#endif
+
+#if ENABLE_FEATURE_MOUNT_FAKE
+#define fakeIt (option_mask32 & OPT_f)
+#else
+#define fakeIt 0
+#endif
+
+
 // TODO: more "user" flag compatibility.
 // "user" option (from mount manpage):
 // Only the user that mounted a filesystem can unmount it again.
@@ -81,6 +118,7 @@ static const int32_t mount_options[] = {
 		/* "swap"   */ MOUNT_SWAP,
 		USE_DESKTOP(/* "user"  */ MOUNT_USERS,)
 		USE_DESKTOP(/* "users" */ MOUNT_USERS,)
+		/* "_netdev" */ 0,
 	)
 
 	USE_FEATURE_MOUNT_FLAGS(
@@ -92,6 +130,7 @@ static const int32_t mount_options[] = {
 		/* "exec"        */ ~MS_NOEXEC,
 		/* "noexec"      */ MS_NOEXEC,
 		/* "sync"        */ MS_SYNCHRONOUS,
+		/* "dirsync"     */ MS_DIRSYNC,
 		/* "async"       */ ~MS_SYNCHRONOUS,
 		/* "atime"       */ ~MS_NOATIME,
 		/* "noatime"     */ MS_NOATIME,
@@ -130,6 +169,7 @@ static const char mount_option_str[] =
 		"swap" "\0"
 		USE_DESKTOP("user" "\0")
 		USE_DESKTOP("users" "\0")
+		"_netdev" "\0"
 	)
 	USE_FEATURE_MOUNT_FLAGS(
 		// vfs flags
@@ -140,6 +180,7 @@ static const char mount_option_str[] =
 		"exec" "\0"
 		"noexec" "\0"
 		"sync" "\0"
+		"dirsync" "\0"
 		"async" "\0"
 		"atime" "\0"
 		"noatime" "\0"
@@ -165,6 +206,67 @@ static const char mount_option_str[] =
 	"rw" "\0"        // vfs flag
 	"remount" "\0"   // action flag
 ;
+
+
+struct globals {
+#if ENABLE_FEATURE_MOUNT_NFS
+	smalluint nfs_mount_version;
+#endif
+#if ENABLE_FEATURE_MOUNT_VERBOSE
+	unsigned verbose;
+#endif
+	llist_t *fslist;
+	char getmntent_buf[1];
+
+};
+enum { GETMNTENT_BUFSIZE = COMMON_BUFSIZE - offsetof(struct globals, getmntent_buf) };
+#define G (*(struct globals*)&bb_common_bufsiz1)
+#define nfs_mount_version (G.nfs_mount_version)
+#if ENABLE_FEATURE_MOUNT_VERBOSE
+#define verbose           (G.verbose          )
+#else
+#define verbose           0
+#endif
+#define fslist            (G.fslist           )
+#define getmntent_buf     (G.getmntent_buf    )
+
+
+#if ENABLE_FEATURE_MOUNT_VERBOSE
+static int verbose_mount(const char *source, const char *target,
+		const char *filesystemtype,
+		unsigned long mountflags, const void *data)
+{
+	int rc;
+
+	errno = 0;
+	rc = mount(source, target, filesystemtype, mountflags, data);
+	if (verbose >= 2)
+		bb_perror_msg("mount('%s','%s','%s',0x%08lx,'%s'):%d",
+			source, target, filesystemtype,
+			mountflags, (char*)data, rc);
+	return rc;
+}
+#else
+#define verbose_mount(...) mount(__VA_ARGS__)
+#endif
+
+static int resolve_mount_spec(char **fsname)
+{
+	char *tmp = NULL;
+
+#if ENABLE_FEATURE_MOUNT_LABEL
+	if (!strncmp(*fsname, "UUID=", 5))
+		tmp = get_devname_from_uuid(*fsname + 5);
+	else if (!strncmp(*fsname, "LABEL=", 6))
+		tmp = get_devname_from_label(*fsname + 6);
+#endif
+
+	if (tmp) {
+		*fsname = tmp;
+		return 1;
+	}
+	return 0;
+}
 
 /* Append mount options to string */
 static void append_mount_options(char **oldopts, const char *newopts)
@@ -200,9 +302,9 @@ static void append_mount_options(char **oldopts, const char *newopts)
 
 /* Use the mount_options list to parse options into flags.
  * Also return list of unrecognized options if unrecognized!=NULL */
-static int parse_mount_options(char *options, char **unrecognized)
+static long parse_mount_options(char *options, char **unrecognized)
 {
-	int flags = MS_SILENT;
+	long flags = MS_SILENT;
 
 	// Loop through options
 	for (;;) {
@@ -275,8 +377,6 @@ static llist_t *get_block_backed_filesystems(void)
 	return list;
 }
 
-static llist_t *fslist;
-
 #if ENABLE_FEATURE_CLEAN_UP
 static void delete_block_backed_filesystems(void)
 {
@@ -286,27 +386,47 @@ static void delete_block_backed_filesystems(void)
 void delete_block_backed_filesystems(void);
 #endif
 
-#if ENABLE_FEATURE_MTAB_SUPPORT
-static int useMtab = 1;
-static int fakeIt;
-#else
-#define useMtab 0
-#define fakeIt 0
-#endif
-
 // Perform actual mount of specific filesystem at specific location.
 // NB: mp->xxx fields may be trashed on exit
-static int mount_it_now(struct mntent *mp, int vfsflags, char *filteropts)
+static int mount_it_now(struct mntent *mp, long vfsflags, char *filteropts)
 {
 	int rc = 0;
 
-	if (fakeIt) goto mtab;
+	if (fakeIt) {
+		if (verbose >= 2)
+			bb_error_msg("would do mount('%s','%s','%s',0x%08lx,'%s')",
+				mp->mnt_fsname, mp->mnt_dir, mp->mnt_type,
+				vfsflags, filteropts);
+		goto mtab;
+	}
 
 	// Mount, with fallback to read-only if necessary.
-
 	for (;;) {
-		rc = mount(mp->mnt_fsname, mp->mnt_dir, mp->mnt_type,
+		errno = 0;
+		rc = verbose_mount(mp->mnt_fsname, mp->mnt_dir, mp->mnt_type,
 				vfsflags, filteropts);
+
+		// If mount failed, try
+		// helper program <mnt_type>
+		if (ENABLE_FEATURE_MOUNT_HELPERS && rc) {
+			char *args[6];
+			int errno_save = errno;
+			args[0] = xasprintf("mount.%s", mp->mnt_type);
+			rc = 1;
+			if (filteropts) {
+				args[rc++] = (char *)"-o";
+				args[rc++] = filteropts;
+			}
+			args[rc++] = mp->mnt_fsname;
+			args[rc++] = mp->mnt_dir;
+			args[rc] = NULL;
+			rc = wait4pid(spawn(args));
+			free(args[0]);
+			if (!rc)
+				break;
+			errno = errno_save;
+		}
+
 		if (!rc || (vfsflags & MS_RDONLY) || (errno != EACCES && errno != EROFS))
 			break;
 		if (!(vfsflags & MS_SILENT))
@@ -323,7 +443,7 @@ static int mount_it_now(struct mntent *mp, int vfsflags, char *filteropts)
 	/* If the mount was successful, and we're maintaining an old-style
 	 * mtab file by hand, add the new entry to it now. */
  mtab:
-	if (ENABLE_FEATURE_MTAB_SUPPORT && useMtab && !rc && !(vfsflags & MS_REMOUNT)) {
+	if (useMtab && !rc && !(vfsflags & MS_REMOUNT)) {
 		char *fsname;
 		FILE *mountTable = setmntent(bb_path_mtab_file, "a+");
 		const char *option_str = mount_option_str;
@@ -387,7 +507,7 @@ static int mount_it_now(struct mntent *mp, int vfsflags, char *filteropts)
  * Wed Oct  1 23:55:28 1997: Dick Streefland <dick_streefland@tasking.com>
  * Implemented the "bg", "fg" and "retry" mount options for NFS.
  *
- * 1999-02-22 Arkadiusz Mi¶kiewicz <misiek@misiek.eu.org>
+ * 1999-02-22 Arkadiusz Mickiewicz <misiek@misiek.eu.org>
  * - added Native Language Support
  *
  * Modified by Olaf Kirch and Trond Myklebust for new NFS code,
@@ -687,8 +807,6 @@ static bool_t xdr_mountres3(XDR *xdrs, mountres3 *objp)
 
 #define MAX_NFSPROT ((nfs_mount_version >= 4) ? 3 : 2)
 
-static smalluint nfs_mount_version;
-
 /*
  * Unfortunately, the kernel prints annoying console messages
  * in case of an unexpected nfs mount version (instead of
@@ -796,7 +914,7 @@ static inline int daemonize(void) { return -ENOSYS; }
 #endif
 
 // TODO
-static inline int we_saw_this_host_before(const char *hostname)
+static inline int we_saw_this_host_before(const char *hostname ATTRIBUTE_UNUSED)
 {
 	return 0;
 }
@@ -815,7 +933,7 @@ static void error_msg_rpc(const char *msg)
 }
 
 // NB: mp->xxx fields may be trashed on exit
-static int nfsmount(struct mntent *mp, int vfsflags, char *filteropts)
+static int nfsmount(struct mntent *mp, long vfsflags, char *filteropts)
 {
 	CLIENT *mclient;
 	char *hostname;
@@ -1424,7 +1542,7 @@ static int nfsmount(struct mntent *mp, int vfsflags, char *filteropts)
 #else /* !ENABLE_FEATURE_MOUNT_NFS */
 
 /* Never called. Call should be optimized out. */
-int nfsmount(struct mntent *mp, int vfsflags, char *filteropts);
+int nfsmount(struct mntent *mp, long vfsflags, char *filteropts);
 
 #endif /* !ENABLE_FEATURE_MOUNT_NFS */
 
@@ -1433,7 +1551,8 @@ int nfsmount(struct mntent *mp, int vfsflags, char *filteropts);
 // NB: mp->xxx fields may be trashed on exit
 static int singlemount(struct mntent *mp, int ignore_busy)
 {
-	int rc = -1, vfsflags;
+	int rc = -1;
+	long vfsflags;
 	char *loopFile = 0, *filteropts = 0;
 	llist_t *fl = 0;
 	struct stat st;
@@ -1442,16 +1561,18 @@ static int singlemount(struct mntent *mp, int ignore_busy)
 
 	// Treat fstype "auto" as unspecified.
 
-	if (mp->mnt_type && strcmp(mp->mnt_type,"auto") == 0)
-		mp->mnt_type = 0;
+	if (mp->mnt_type && strcmp(mp->mnt_type, "auto") == 0)
+		mp->mnt_type = NULL;
 
 	// Might this be a virtual filesystem?
 
 	if (ENABLE_FEATURE_MOUNT_HELPERS
-	 && (strchr(mp->mnt_fsname,'#'))
+	 && (strchr(mp->mnt_fsname, '#'))
 	) {
 		char *s, *p, *args[35];
 		int n = 0;
+// FIXME: does it allow execution of arbitrary commands?!
+// What args[0] can end up with?
 		for (s = p = mp->mnt_fsname; *s && n < 35-3; ++s) {
 			if (s[0] == '#' && s[1] != '#') {
 				*s = '\0';
@@ -1469,9 +1590,9 @@ static int singlemount(struct mntent *mp, int ignore_busy)
 	// Might this be an CIFS filesystem?
 
 	if (ENABLE_FEATURE_MOUNT_CIFS
-	 && (!mp->mnt_type || strcmp(mp->mnt_type,"cifs") == 0)
-	 && (mp->mnt_fsname[0]=='/' || mp->mnt_fsname[0]=='\\')
-	 && mp->mnt_fsname[0]==mp->mnt_fsname[1]
+	 && (!mp->mnt_type || strcmp(mp->mnt_type, "cifs") == 0)
+	 && (mp->mnt_fsname[0] == '/' || mp->mnt_fsname[0] == '\\')
+	 && mp->mnt_fsname[0] == mp->mnt_fsname[1]
 	) {
 		len_and_sockaddr *lsa;
 		char *ip, *dotted;
@@ -1494,7 +1615,7 @@ static int singlemount(struct mntent *mp, int ignore_busy)
 
 		// insert ip=... option into string flags.
 
-		dotted = xmalloc_sockaddr2dotted_noport(&lsa->sa);
+		dotted = xmalloc_sockaddr2dotted_noport(&lsa->u.sa);
 		ip = xasprintf("ip=%s", dotted);
 		parse_mount_options(ip, &filteropts);
 
@@ -1609,9 +1730,9 @@ static const char must_be_root[] ALIGN1 = "you must be root";
 int mount_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int mount_main(int argc, char **argv)
 {
-	enum { OPT_ALL = 0x10 };
-
-	char *cmdopts = xstrdup(""), *fstype=0, *storage_path=0;
+	char *cmdopts = xstrdup("");
+	char *fstype = NULL;
+	char *storage_path = NULL;
 	char *opt_o;
 	const char *fstabname;
 	FILE *fstab;
@@ -1619,32 +1740,30 @@ int mount_main(int argc, char **argv)
 	unsigned opt;
 	struct mntent mtpair[2], *mtcur = mtpair;
 	SKIP_DESKTOP(const int nonroot = 0;)
-	USE_DESKTOP( int nonroot = (getuid() != 0);)
 
-	/* parse long options, like --bind and --move.  Note that -o option
-	 * and --option are synonymous.  Yes, this means --remount,rw works. */
+	USE_DESKTOP( int nonroot = ) sanitize_env_if_suid();
+
+	// Parse long options, like --bind and --move.  Note that -o option
+	// and --option are synonymous.  Yes, this means --remount,rw works.
 
 	for (i = j = 0; i < argc; i++) {
 		if (argv[i][0] == '-' && argv[i][1] == '-') {
 			append_mount_options(&cmdopts, argv[i]+2);
 		} else argv[j++] = argv[i];
 	}
-	argv[j] = 0;
+	argv[j] = NULL;
 	argc = j;
 
 	// Parse remaining options
 
-	opt = getopt32(argv, "o:t:rwanfvsi", &opt_o, &fstype);
-	if (opt & 0x1) append_mount_options(&cmdopts, opt_o); // -o
-	//if (opt & 0x2) // -t
-	if (opt & 0x4) append_mount_options(&cmdopts, "ro"); // -r
-	if (opt & 0x8) append_mount_options(&cmdopts, "rw"); // -w
-	//if (opt & 0x10) // -a
-	if (opt & 0x20) USE_FEATURE_MTAB_SUPPORT(useMtab = 0); // -n
-	if (opt & 0x40) USE_FEATURE_MTAB_SUPPORT(fakeIt = 1); // -f
-	//if (opt & 0x80) // -v: verbose (ignore)
-	//if (opt & 0x100) // -s: sloppy (ignore)
-	//if (opt & 0x200) // -i: don't call mount.<fstype> (ignore)
+#if ENABLE_FEATURE_MOUNT_VERBOSE
+	opt_complementary = "vv"; // -v is a counter
+#endif
+	opt = getopt32(argv, OPTION_STR, &opt_o, &fstype
+			USE_FEATURE_MOUNT_VERBOSE(, &verbose));
+	if (opt & OPT_o) append_mount_options(&cmdopts, opt_o); // -o
+	if (opt & OPT_r) append_mount_options(&cmdopts, "ro"); // -r
+	if (opt & OPT_w) append_mount_options(&cmdopts, "rw"); // -w
 	argv += optind;
 	argc -= optind;
 
@@ -1655,13 +1774,13 @@ int mount_main(int argc, char **argv)
 	// If we have no arguments, show currently mounted filesystems
 
 	if (!argc) {
-		if (!(opt & OPT_ALL)) {
+		if (!(opt & OPT_a)) {
 			FILE *mountTable = setmntent(bb_path_mtab_file, "r");
 
 			if (!mountTable) bb_error_msg_and_die("no %s", bb_path_mtab_file);
 
 			while (getmntent_r(mountTable, &mtpair[0], getmntent_buf,
-								sizeof(getmntent_buf)))
+								GETMNTENT_BUFSIZE))
 			{
 				// Don't show rootfs. FIXME: why??
 				// util-linux 2.12a happily shows rootfs...
@@ -1688,11 +1807,14 @@ int mount_main(int argc, char **argv)
 		mtpair->mnt_dir = argv[1];
 		mtpair->mnt_type = fstype;
 		mtpair->mnt_opts = cmdopts;
+		if (ENABLE_FEATURE_MOUNT_LABEL) {
+			resolve_mount_spec(&mtpair->mnt_fsname);
+		}
 		rc = singlemount(mtpair, 0);
 		goto clean_up;
 	}
 
-	i = parse_mount_options(cmdopts, 0);
+	i = parse_mount_options(cmdopts, 0); // FIXME: should be "long", not "int"
 	if (nonroot && (i & ~MS_SILENT)) // Non-root users cannot specify flags
 		bb_error_msg_and_die(must_be_root);
 
@@ -1701,7 +1823,7 @@ int mount_main(int argc, char **argv)
 	if (ENABLE_FEATURE_MOUNT_FLAGS
 	 && (i & (MS_SHARED | MS_PRIVATE | MS_SLAVE | MS_UNBINDABLE))
 	) {
-		rc = mount("", argv[0], "", i, "");
+		rc = verbose_mount("", argv[0], "", i, "");
 		if (rc) bb_simple_perror_msg_and_die(argv[0]);
 		goto clean_up;
 	}
@@ -1725,8 +1847,8 @@ int mount_main(int argc, char **argv)
 		// Get next fstab entry
 
 		if (!getmntent_r(fstab, mtcur, getmntent_buf
-					+ (mtcur==mtpair ? sizeof(getmntent_buf)/2 : 0),
-				sizeof(getmntent_buf)/2))
+					+ (mtcur==mtpair ? GETMNTENT_BUFSIZE/2 : 0),
+				GETMNTENT_BUFSIZE/2))
 		{
 			// Were we looking for something specific?
 
@@ -1749,6 +1871,9 @@ int mount_main(int argc, char **argv)
 
 				mtcur->mnt_opts = xstrdup(mtcur->mnt_opts);
 				append_mount_options(&(mtcur->mnt_opts), cmdopts);
+				if (ENABLE_FEATURE_MOUNT_LABEL) {
+					resolve_mount_spec(&mtpair->mnt_fsname);
+				}
 				rc = singlemount(mtcur, 0);
 				free(mtcur->mnt_opts);
 			}
@@ -1777,12 +1902,13 @@ int mount_main(int argc, char **argv)
 
 		} else {
 			// Do we need to match a filesystem type?
-			if (fstype && match_fstype(mtcur, fstype)) continue;
+			if (fstype && match_fstype(mtcur, fstype))
+				continue;
 
 			// Skip noauto and swap anyway.
 
-			if (parse_mount_options(mtcur->mnt_opts, 0)
-				& (MOUNT_NOAUTO | MOUNT_SWAP)) continue;
+			if (parse_mount_options(mtcur->mnt_opts, 0) & (MOUNT_NOAUTO | MOUNT_SWAP))
+				continue;
 
 			// No, mount -a won't mount anything,
 			// even user mounts, for mere humans.
@@ -1791,6 +1917,8 @@ int mount_main(int argc, char **argv)
 				bb_error_msg_and_die(must_be_root);
 
 			// Mount this thing.
+			if (ENABLE_FEATURE_MOUNT_LABEL)
+				resolve_mount_spec(&mtpair->mnt_fsname);
 
 			// NFS mounts want this to be xrealloc-able
 			mtcur->mnt_opts = xstrdup(mtcur->mnt_opts);

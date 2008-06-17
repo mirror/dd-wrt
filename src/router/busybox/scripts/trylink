@@ -47,22 +47,58 @@ try() {
 }
 
 check_cc() {
-    if $CC $1 -shared -o /dev/null -xc /dev/null > /dev/null 2>&1; then
-        echo "$1";
+    local tempname="/tmp/temp.$$.$RANDOM"
+    # Can use "-o /dev/null", but older gcc tend to *unlink it* on failure! :(
+    # "-xc": C language. "/dev/null" is an empty source file.
+    if $CC $1 -shared -xc /dev/null -o "$tempname".o >/dev/null 2>&1; then
+	echo "$1";
     else
-        echo "$2";
+	echo "$2";
     fi
+    rm "$tempname".o 2>/dev/null
+}
+
+check_libc_is_glibc() {
+    local tempname="/tmp/temp.$$.$RANDOM"
+    echo "\
+	#include <stdlib.h>
+	/* Apparently uclibc defines __GLIBC__ (compat trick?). Oh well. */
+	#if defined(__GLIBC__) && !defined(__UCLIBC__)
+	syntax error here
+	#endif
+	" >"$tempname".c
+    if $CC "$tempname".c -c -o "$tempname".o >/dev/null 2>&1; then
+	echo "$2";
+    else
+	echo "$1";
+    fi
+    rm "$tempname".c "$tempname".o 2>/dev/null
 }
 
 EXE="$1"
 CC="$2"
-LDFLAGS="$3"
-O_FILES="$4"
-A_FILES="$5"
-LDLIBS="$6"
+CFLAGS="$3"
+LDFLAGS="$4"
+O_FILES="$5"
+A_FILES="$6"
+LDLIBS="$7"
 
 # The -Wl,--sort-section option is not supported by older versions of ld
 SORT_SECTION=`check_cc "-Wl,--sort-section -Wl,alignment" ""`
+
+# Static linking against glibc produces buggy executables
+# (glibc does not cope well with ld --gc-sections).
+# See sources.redhat.com/bugzilla/show_bug.cgi?id=3400
+# Note that glibc is unsuitable for static linking anyway.
+# We are removing -Wl,--gc-sections from link command line.
+GC_SECTION=`(
+. ./.config
+if test x"$CONFIG_STATIC" = x"y"; then
+    check_libc_is_glibc "" "-Wl,--gc-sections"
+else
+    echo "-Wl,--gc-sections"
+fi
+)`
 
 # Sanitize lib list (dups, extra spaces etc)
 LDLIBS=`echo "$LDLIBS" | xargs -n1 | sort | uniq | xargs`
@@ -72,15 +108,15 @@ echo "Trying libraries: $LDLIBS"
 # "lib1 lib2 lib3" -> "-llib1 -llib2 -llib3"
 l_list=`echo "$LDLIBS" | sed -e 's/ / -l/g' -e 's/^/-l/' -e 's/^-l$//'`
 test "x$l_list" != "x" && l_list="-Wl,--start-group $l_list -Wl,--end-group"
-try $CC $LDFLAGS \
+try $CC $CFLAGS $LDFLAGS \
 	-o $EXE \
 	-Wl,--sort-common \
 	$SORT_SECTION \
-	-Wl,--gc-sections \
+	$GC_SECTION \
 	-Wl,--start-group $O_FILES $A_FILES -Wl,--end-group \
 	$l_list \
 || {
-    echo "Failed: $* $l_list"
+    echo "Failed: $l_list"
     cat $EXE.out
     exit 1
 }
@@ -96,11 +132,11 @@ while test "$LDLIBS"; do
 	l_list=`echo "$without_one" | sed -e 's/ / -l/g' -e 's/^/-l/' -e 's/^-l$//'`
 	test "x$l_list" != "x" && l_list="-Wl,--start-group $l_list -Wl,--end-group"
 	$debug && echo "Trying -l options: '$l_list'"
-	try $CC $LDFLAGS \
+	try $CC $CFLAGS $LDFLAGS \
 		-o $EXE \
 		-Wl,--sort-common \
 		$SORT_SECTION \
-		-Wl,--gc-sections \
+		$GC_SECTION \
 		-Wl,--start-group $O_FILES $A_FILES -Wl,--end-group \
 		$l_list
 	if test $? = 0; then
@@ -125,11 +161,11 @@ l_list=`echo "$LDLIBS" | sed -e 's/ / -l/g' -e 's/^/-l/' -e 's/^-l$//'`
 test "x$l_list" != "x" && l_list="-Wl,--start-group $l_list -Wl,--end-group"
 # --verbose gives us gobs of info to stdout (e.g. linker script used)
 if ! test -f busybox_ldscript; then
-    try $CC $LDFLAGS \
+    try $CC $CFLAGS $LDFLAGS \
 	    -o $EXE \
 	    -Wl,--sort-common \
 	    $SORT_SECTION \
-	    -Wl,--gc-sections \
+	    $GC_SECTION \
 	    -Wl,--start-group $O_FILES $A_FILES -Wl,--end-group \
 	    $l_list \
 	    -Wl,--warn-common \
@@ -147,11 +183,11 @@ else
     #  *(.bss SORT_BY_ALIGNMENT(.bss.*) .gnu.linkonce.b.*)
     # This will eliminate most of the padding (~3kb).
     # Hmm, "ld --sort-section alignment" should do it too.
-    try $CC $LDFLAGS \
+    try $CC $CFLAGS $LDFLAGS \
 	    -o $EXE \
 	    -Wl,--sort-common \
 	    $SORT_SECTION \
-	    -Wl,--gc-sections \
+	    $GC_SECTION \
 	    -Wl,-T -Wl,busybox_ldscript \
 	    -Wl,--start-group $O_FILES $A_FILES -Wl,--end-group \
 	    $l_list \
@@ -177,7 +213,7 @@ if test "$CONFIG_BUILD_LIBBUSYBOX" = y; then
     ln -s "libbusybox.so.$BB_VER" "$sharedlib_dir"/libbusybox.so 2>/dev/null
 
     EXE="$sharedlib_dir/libbusybox.so.${BB_VER}_unstripped"
-    try $CC $LDFLAGS \
+    try $CC $CFLAGS $LDFLAGS \
 	    -o $EXE \
 	    -shared -fPIC \
 	    -Wl,--enable-new-dtags \
@@ -203,11 +239,11 @@ fi
 
 if test "$CONFIG_FEATURE_SHARED_BUSYBOX" = y; then
     EXE="$sharedlib_dir/busybox_unstripped"
-    try $CC $LDFLAGS \
+    try $CC $CFLAGS $LDFLAGS \
 	    -o $EXE \
 	    -Wl,--sort-common \
 	    $SORT_SECTION \
-	    -Wl,--gc-sections \
+	    $GC_SECTION \
 	    -Wl,--start-group $O_FILES -Wl,--end-group \
 	    -L"$sharedlib_dir" -lbusybox \
 	    -Wl,--warn-common \
@@ -242,11 +278,11 @@ int main(int argc, char **argv)
 " >"$sharedlib_dir/applet.c"
 
 	EXE="$sharedlib_dir/$name"
-	try $CC $LDFLAGS "$sharedlib_dir/applet.c" \
+	try $CC $CFLAGS $LDFLAGS "$sharedlib_dir/applet.c" \
 		-o $EXE \
 		-Wl,--sort-common \
 		$SORT_SECTION \
-		-Wl,--gc-sections \
+		$GC_SECTION \
 		-L"$sharedlib_dir" -lbusybox \
 		-Wl,--warn-common \
 	|| {

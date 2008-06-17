@@ -2,7 +2,7 @@
 /*
  * Utility routines.
  *
- * Copyright (C) 2007 Denis Vlasenko
+ * Copyright (C) 2007 Denys Vlasenko
  *
  * Licensed under GPL version 2, see file LICENSE in this tarball for details.
  */
@@ -25,10 +25,10 @@ socket_want_pktinfo(int fd)
 }
 
 
-#ifdef UNUSED
 ssize_t
 send_to_from(int fd, void *buf, size_t len, int flags,
-		const struct sockaddr *from, const struct sockaddr *to,
+		const struct sockaddr *to,
+		const struct sockaddr *from,
 		socklen_t tolen)
 {
 #ifndef IP_PKTINFO
@@ -36,11 +36,12 @@ send_to_from(int fd, void *buf, size_t len, int flags,
 #else
 	struct iovec iov[1];
 	struct msghdr msg;
-	char cbuf[sizeof(struct in_pktinfo)
+	union {
+		char cmsg[CMSG_SPACE(sizeof(struct in_pktinfo))];
 #if ENABLE_FEATURE_IPV6 && defined(IPV6_PKTINFO)
-		| sizeof(struct in6_pktinfo) /* (a|b) is poor man's max(a,b) */
+		char cmsg6[CMSG_SPACE(sizeof(struct in6_pktinfo))];
 #endif
-	];
+	} u;
 	struct cmsghdr* cmsgptr;
 
 	if (from->sa_family != AF_INET
@@ -57,15 +58,15 @@ send_to_from(int fd, void *buf, size_t len, int flags,
 	iov[0].iov_base = buf;
 	iov[0].iov_len = len;
 
-	memset(cbuf, 0, sizeof(cbuf));
+	memset(&u, 0, sizeof(u));
 
 	memset(&msg, 0, sizeof(msg));
 	msg.msg_name = (void *)(struct sockaddr *)to; /* or compiler will annoy us */
 	msg.msg_namelen = tolen;
 	msg.msg_iov = iov;
 	msg.msg_iovlen = 1;
-	msg.msg_control = cbuf;
-	msg.msg_controllen = sizeof(cbuf);
+	msg.msg_control = &u;
+	msg.msg_controllen = sizeof(u);
 	msg.msg_flags = flags;
 
 	cmsgptr = CMSG_FIRSTHDR(&msg);
@@ -89,10 +90,11 @@ send_to_from(int fd, void *buf, size_t len, int flags,
 		pktptr->ipi6_addr = ((struct sockaddr_in6*)from)->sin6_addr;
 	}
 #endif
+	msg.msg_controllen = cmsgptr->cmsg_len;
+
 	return sendmsg(fd, &msg, flags);
 #endif
 }
-#endif /* UNUSED */
 
 /* NB: this will never set port# in 'to'!
  * _Only_ IP/IPv6 address part of 'to' is _maybe_ modified.
@@ -110,7 +112,9 @@ recv_from_to(int fd, void *buf, size_t len, int flags,
 	struct iovec iov[1];
 	union {
 		char cmsg[CMSG_SPACE(sizeof(struct in_pktinfo))];
+#if ENABLE_FEATURE_IPV6 && defined(IPV6_PKTINFO)
 		char cmsg6[CMSG_SPACE(sizeof(struct in6_pktinfo))];
+#endif
 	} u;
 	struct cmsghdr *cmsgptr;
 	struct msghdr msg;

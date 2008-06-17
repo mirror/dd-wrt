@@ -28,9 +28,7 @@ struct globals {
 	struct termios new_settings;
 };
 #define G (*(struct globals*)bb_common_bufsiz1)
-//#define G (*ptr_to_globals)
 #define INIT_G() ((void)0)
-//#define INIT_G() PTR_TO_GLOBALS = xzalloc(sizeof(G))
 #define initial_settings (G.initial_settings)
 #define new_settings     (G.new_settings    )
 #define cin_fileno       (G.cin_fileno      )
@@ -38,7 +36,7 @@ struct globals {
 #define setTermSettings(fd, argp) tcsetattr(fd, TCSANOW, argp)
 #define getTermSettings(fd, argp) tcgetattr(fd, argp)
 
-static void gotsig(int sig)
+static void gotsig(int sig ATTRIBUTE_UNUSED)
 {
 	bb_putchar('\n');
 	setTermSettings(cin_fileno, &initial_settings);
@@ -53,7 +51,7 @@ static void gotsig(int sig)
 #define CONVERTED_TAB_SIZE 8
 
 int more_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int more_main(int argc, char **argv)
+int more_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	int c = c; /* for gcc */
 	int lines;
@@ -87,9 +85,11 @@ int more_main(int argc, char **argv)
 	new_settings.c_cc[VMIN] = 1;
 	new_settings.c_cc[VTIME] = 0;
 	setTermSettings(cin_fileno, &new_settings);
-	signal(SIGINT, gotsig);
-	signal(SIGQUIT, gotsig);
-	signal(SIGTERM, gotsig);
+	bb_signals(0
+		+ (1 << SIGINT)
+		+ (1 << SIGQUIT)
+		+ (1 << SIGTERM)
+		, gotsig);
 #endif
 
 	do {

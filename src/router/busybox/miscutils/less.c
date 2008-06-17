@@ -90,6 +90,7 @@ enum { pattern_valid = 0 };
 struct globals {
 	int cur_fline; /* signed */
 	int kbd_fd;  /* fd to get input from */
+	int less_gets_pos;
 /* last position in last line, taking into account tabs */
 	size_t linepos;
 	unsigned max_displayed_line;
@@ -97,8 +98,8 @@ struct globals {
 	unsigned max_lineno; /* this one tracks linewrap */
 	unsigned width;
 	ssize_t eof_error; /* eof if 0, error if < 0 */
-	size_t readpos;
-	size_t readeof;
+	ssize_t readpos;
+	ssize_t readeof; /* must be signed */
 	const char **buffer;
 	const char **flines;
 	const char *empty_line_marker;
@@ -113,7 +114,8 @@ struct globals {
 #if ENABLE_FEATURE_LESS_REGEXP
 	unsigned *match_lines;
 	int match_pos; /* signed! */
-	unsigned num_matches;
+	int wanted_match; /* signed! */
+	int num_matches;
 	regex_t pattern;
 	smallint pattern_valid;
 #endif
@@ -123,6 +125,7 @@ struct globals {
 #define G (*ptr_to_globals)
 #define cur_fline           (G.cur_fline         )
 #define kbd_fd              (G.kbd_fd            )
+#define less_gets_pos       (G.less_gets_pos     )
 #define linepos             (G.linepos           )
 #define max_displayed_line  (G.max_displayed_line)
 #define max_fline           (G.max_fline         )
@@ -144,6 +147,7 @@ struct globals {
 #define match_lines         (G.match_lines       )
 #define match_pos           (G.match_pos         )
 #define num_matches         (G.num_matches       )
+#define wanted_match        (G.wanted_match      )
 #define pattern             (G.pattern           )
 #define pattern_valid       (G.pattern_valid     )
 #endif
@@ -151,13 +155,15 @@ struct globals {
 #define term_orig           (G.term_orig         )
 #define term_less           (G.term_less         )
 #define INIT_G() do { \
-		PTR_TO_GLOBALS = xzalloc(sizeof(G)); \
-		empty_line_marker = "~"; \
-		num_files = 1; \
-		current_file = 1; \
-		eof_error = 1; \
-		terminated = 1; \
-	} while (0)
+	SET_PTR_TO_GLOBALS(xzalloc(sizeof(G))); \
+	less_gets_pos = -1; \
+	empty_line_marker = "~"; \
+	num_files = 1; \
+	current_file = 1; \
+	eof_error = 1; \
+	terminated = 1; \
+	USE_FEATURE_LESS_REGEXP(wanted_match = -1;) \
+} while (0)
 
 /* Reset terminal input to normal */
 static void set_tty_cooked(void)
@@ -169,12 +175,11 @@ static void set_tty_cooked(void)
 /* Exit the program gracefully */
 static void less_exit(int code)
 {
-	/* TODO: We really should save the terminal state when we start,
-	 * and restore it when we exit. Less does this with the
-	 * "ti" and "te" termcap commands; can this be done with
-	 * only termios.h? */
 	bb_putchar('\n');
-	fflush_stdout_and_exit(code);
+	set_tty_cooked();
+	if (code < 0)
+		kill_myself_with_sig(- code); /* does not return */
+	exit(code);
 }
 
 /* Move the cursor to a position (x,y), where (0,0) is the
@@ -233,15 +238,20 @@ static void read_lines(void)
 {
 #define readbuf bb_common_bufsiz1
 	char *current_line, *p;
-	USE_FEATURE_LESS_REGEXP(unsigned old_max_fline = max_fline;)
 	int w = width;
 	char last_terminated = terminated;
+#if ENABLE_FEATURE_LESS_REGEXP
+	unsigned old_max_fline = max_fline;
+	time_t last_time = 0;
+	unsigned seconds_p1 = 3; /* seconds_to_loop + 1 */
+#endif
 
 	if (option_mask32 & FLAG_N)
 		w -= 8;
 
-	current_line = xmalloc(w);
-	p = current_line;
+ USE_FEATURE_LESS_REGEXP(again0:)
+
+	p = current_line = xmalloc(w);
 	max_fline += last_terminated;
 	if (!last_terminated) {
 		const char *cp = flines[max_fline];
@@ -249,49 +259,26 @@ static void read_lines(void)
 			cp += 8;
 		strcpy(current_line, cp);
 		p += strlen(current_line);
+		free((char*)flines[max_fline]);
 		/* linepos is still valid from previous read_lines() */
 	} else {
 		linepos = 0;
 	}
 
-	while (1) {
- again:
+	while (1) { /* read lines until we reach cur_fline or wanted_match */
 		*p = '\0';
 		terminated = 0;
-		while (1) {
+		while (1) { /* read chars until we have a line */
 			char c;
 			/* if no unprocessed chars left, eat more */
 			if (readpos >= readeof) {
-				smallint yielded = 0;
-
 				ndelay_on(0);
- read_again:
 				eof_error = safe_read(0, readbuf, sizeof(readbuf));
+				ndelay_off(0);
 				readpos = 0;
 				readeof = eof_error;
-				if (eof_error < 0) {
-					if (errno == EAGAIN && !yielded) {
-			/* We can hit EAGAIN while searching for regexp match.
-			 * Yield is not 100% reliable solution in general,
-			 * but for less it should be good enough -
-			 * we give stdin supplier some CPU time to produce
-			 * more input. We do it just once.
-			 * Currently, we do not stop when we found the Nth
-			 * occurrence we were looking for. We read till end
-			 * (or double EAGAIN). TODO? */
-						sched_yield();
-						yielded = 1;
-						goto read_again;
-					}
-					readeof = 0;
-					if (errno != EAGAIN)
-						print_statusline("read error");
-				}
-				ndelay_off(0);
-
-				if (eof_error <= 0) {
+				if (eof_error <= 0)
 					goto reached_eof;
-				}
 			}
 			c = readbuf[readpos];
 			/* backspace? [needed for manpages] */
@@ -325,13 +312,13 @@ static void read_lines(void)
 			if (c == '\0') c = '\n';
 			*p++ = c;
 			*p = '\0';
-		}
+		} /* end of "read chars until we have a line" loop */
 		/* Corner case: linewrap with only "" wrapping to next line */
 		/* Looks ugly on screen, so we do not store this empty line */
 		if (!last_terminated && !current_line[0]) {
 			last_terminated = 1;
 			max_lineno++;
-			goto again;
+			continue;
 		}
  reached_eof:
 		last_terminated = terminated;
@@ -351,23 +338,56 @@ static void read_lines(void)
 			eof_error = 0; /* Pretend we saw EOF */
 			break;
 		}
-		if (max_fline > cur_fline + max_displayed_line)
+		if (max_fline > cur_fline + max_displayed_line) {
+#if !ENABLE_FEATURE_LESS_REGEXP
 			break;
-		if (eof_error <= 0) {
-			if (eof_error < 0 && errno == EAGAIN) {
-				/* not yet eof or error, reset flag (or else
-				 * we will hog CPU - select() will return
-				 * immediately */
-				eof_error = 1;
+#else
+			if (wanted_match >= num_matches) { /* goto_match called us */
+				fill_match_lines(old_max_fline);
+				old_max_fline = max_fline;
 			}
+			if (wanted_match < num_matches)
+				break;
+#endif
+		}
+		if (eof_error <= 0) {
+			if (eof_error < 0) {
+				if (errno == EAGAIN) {
+					/* not yet eof or error, reset flag (or else
+					 * we will hog CPU - select() will return
+					 * immediately */
+					eof_error = 1;
+				} else {
+					print_statusline("read error");
+				}
+			}
+#if !ENABLE_FEATURE_LESS_REGEXP
 			break;
+#else
+			if (wanted_match < num_matches) {
+				break;
+			} else { /* goto_match called us */
+				time_t t = time(NULL);
+				if (t != last_time) {
+					last_time = t;
+					if (--seconds_p1 == 0)
+						break;
+				}
+				sched_yield();
+				goto again0; /* go loop again (max 2 seconds) */
+			}
+#endif
 		}
 		max_fline++;
 		current_line = xmalloc(w);
 		p = current_line;
 		linepos = 0;
-	}
+	} /* end of "read lines until we reach cur_fline" loop */
 	fill_match_lines(old_max_fline);
+#if ENABLE_FEATURE_LESS_REGEXP
+	/* prevent us from being stuck in search for a match */
+	wanted_match = -1;
+#endif
 #undef readbuf
 }
 
@@ -384,6 +404,9 @@ static int calc_percent(void)
 static void m_status_print(void)
 {
 	int percentage;
+
+	if (less_gets_pos >= 0)	/* don't touch statusline while input is done! */
+		return;
 
 	clear_line();
 	printf(HIGHLIGHT"%s", filename);
@@ -407,6 +430,9 @@ static void m_status_print(void)
 static void status_print(void)
 {
 	const char *p;
+
+	if (less_gets_pos >= 0)	/* don't touch statusline while input is done! */
+		return;
 
 	/* Change the status if flags have been set */
 #if ENABLE_FEATURE_LESS_FLAGS
@@ -652,60 +678,65 @@ static void reinitialize(void)
 	buffer_fill_and_print();
 }
 
-static void getch_nowait(char* input, int sz)
+static ssize_t getch_nowait(char* input, int sz)
 {
 	ssize_t rd;
-	fd_set readfds;
- again:
-	fflush(stdout);
+	struct pollfd pfd[2];
 
-	/* NB: select returns whenever read will not block. Therefore:
-	 * (a) with O_NONBLOCK'ed fds select will return immediately
-	 * (b) if eof is reached, select will also return
-	 *     because read will immediately return 0 bytes.
-	 * Even if select says that input is available, read CAN block
+	pfd[0].fd = STDIN_FILENO;
+	pfd[0].events = POLLIN;
+	pfd[1].fd = kbd_fd;
+	pfd[1].events = POLLIN;
+ again:
+	tcsetattr(kbd_fd, TCSANOW, &term_less);
+	/* NB: select/poll returns whenever read will not block. Therefore:
+	 * if eof is reached, select/poll will return immediately
+	 * because read will immediately return 0 bytes.
+	 * Even if select/poll says that input is available, read CAN block
 	 * (switch fd into O_NONBLOCK'ed mode to avoid it)
 	 */
-	FD_ZERO(&readfds);
+	rd = 1;
 	if (max_fline <= cur_fline + max_displayed_line
 	 && eof_error > 0 /* did NOT reach eof yet */
 	) {
 		/* We are interested in stdin */
-		FD_SET(0, &readfds);
+		rd = 0;
 	}
-	FD_SET(kbd_fd, &readfds);
-	tcsetattr(kbd_fd, TCSANOW, &term_less);
-	select(kbd_fd + 1, &readfds, NULL, NULL, NULL);
+	/* position cursor if line input is done */
+	if (less_gets_pos >= 0)
+		move_cursor(max_displayed_line + 2, less_gets_pos + 1);
+	fflush(stdout);
+	safe_poll(pfd + rd, 2 - rd, -1);
 
 	input[0] = '\0';
-	ndelay_on(kbd_fd);
-	rd = read(kbd_fd, input, sz);
-	ndelay_off(kbd_fd);
-	if (rd < 0) {
-		/* No keyboard input, but we have input on stdin! */
-		if (errno != EAGAIN) /* Huh?? */
-			return;
+	rd = safe_read(kbd_fd, input, sz); /* NB: kbd_fd is in O_NONBLOCK mode */
+	if (rd < 0 && errno == EAGAIN) {
+		/* No keyboard input -> we have input on stdin! */
 		read_lines();
 		buffer_fill_and_print();
 		goto again;
 	}
+	set_tty_cooked();
+	return rd;
 }
 
 /* Grab a character from input without requiring the return key. If the
  * character is ASCII \033, get more characters and assign certain sequences
  * special return codes. Note that this function works best with raw input. */
-static int less_getch(void)
+static int less_getch(int pos)
 {
-	char input[16];
+	unsigned char input[16];
 	unsigned i;
+
  again:
+	less_gets_pos = pos;
 	memset(input, 0, sizeof(input));
 	getch_nowait(input, sizeof(input));
+	less_gets_pos = -1;
 
 	/* Detect escape sequences (i.e. arrow keys) and handle
 	 * them accordingly */
 	if (input[0] == '\033' && input[1] == '[') {
-		set_tty_cooked();
 		i = input[2] - REAL_KEY_UP;
 		if (i < 4)
 			return 20 + i;
@@ -724,8 +755,8 @@ static int less_getch(void)
 	}
 	/* Reject almost all control chars */
 	i = input[0];
-	if (i < ' ' && i != 0x0d && i != 8) goto again;
-	set_tty_cooked();
+	if (i < ' ' && i != 0x0d && i != 8)
+		goto again;
 	return i;
 }
 
@@ -734,17 +765,16 @@ static char* less_gets(int sz)
 	char c;
 	int i = 0;
 	char *result = xzalloc(1);
+
 	while (1) {
-		fflush(stdout);
-
-		/* I be damned if I know why is it needed *repeatedly*,
-		 * but it is needed. Is it because of stdio? */
-		tcsetattr(kbd_fd, TCSANOW, &term_less);
-
 		c = '\0';
-		read(kbd_fd, &c, 1);
-		if (c == 0x0d)
+		less_gets_pos = sz + i;
+		getch_nowait(&c, 1);
+		if (c == 0x0d) {
+			result[i] = '\0';
+			less_gets_pos = -1;
 			return result;
+		}
 		if (c == 0x7f)
 			c = 8;
 		if (c == 8 && i) {
@@ -758,15 +788,27 @@ static char* less_gets(int sz)
 		bb_putchar(c);
 		result[i++] = c;
 		result = xrealloc(result, i+1);
-		result[i] = '\0';
 	}
 }
 
 static void examine_file(void)
 {
+	char *new_fname;
+
 	print_statusline("Examine: ");
+	new_fname = less_gets(sizeof("Examine: ") - 1);
+	if (!new_fname[0]) {
+		status_print();
+ err:
+		free(new_fname);
+		return;
+	}
+	if (access(new_fname, R_OK) != 0) {
+		print_statusline("Cannot read this file");
+		goto err;
+	}
 	free(filename);
-	filename = less_gets(sizeof("Examine: ")-1);
+	filename = new_fname;
 	/* files start by = argv. why we assume that argv is infinitely long??
 	files[num_files] = filename;
 	current_file = num_files + 1;
@@ -820,7 +862,7 @@ static void colon_process(void)
 	/* Clear the current line and print a prompt */
 	print_statusline(" :");
 
-	keypress = less_getch();
+	keypress = less_getch(2);
 	switch (keypress) {
 	case 'd':
 		remove_current_file();
@@ -860,24 +902,19 @@ static void normalize_match_pos(int match)
 
 static void goto_match(int match)
 {
-	int sv;
-
 	if (!pattern_valid)
 		return;
 	if (match < 0)
 		match = 0;
-	sv = cur_fline;
 	/* Try to find next match if eof isn't reached yet */
 	if (match >= num_matches && eof_error > 0) {
-		cur_fline = MAXLINES; /* look as far as needed */
+		wanted_match = match; /* "I want to read until I see N'th match" */
 		read_lines();
 	}
 	if (num_matches) {
-		cap_cur_fline(cur_fline);
 		normalize_match_pos(match);
 		buffer_line(match_lines[match_pos]);
 	} else {
-		cur_fline = sv;
 		print_statusline("No matches found");
 	}
 }
@@ -953,7 +990,7 @@ static void regex_process(void)
 
 static void number_process(int first_digit)
 {
-	int i = 1;
+	int i;
 	int num;
 	char num_input[sizeof(int)*4]; /* more than enough */
 	char keypress;
@@ -965,8 +1002,9 @@ static void number_process(int first_digit)
 	printf(":%c", first_digit);
 
 	/* Receive input until a letter is given */
+	i = 1;
 	while (i < sizeof(num_input)-1) {
-		num_input[i] = less_getch();
+		num_input[i] = less_getch(i + 1);
 		if (!num_input[i] || !isdigit(num_input[i]))
 			break;
 		bb_putchar(num_input[i]);
@@ -1025,7 +1063,7 @@ static void flag_change(void)
 
 	clear_line();
 	bb_putchar('-');
-	keypress = less_getch();
+	keypress = less_getch(1);
 
 	switch (keypress) {
 	case 'M':
@@ -1050,7 +1088,7 @@ static void show_flag_status(void)
 
 	clear_line();
 	bb_putchar('_');
-	keypress = less_getch();
+	keypress = less_getch(1);
 
 	switch (keypress) {
 	case 'M':
@@ -1087,7 +1125,7 @@ static void save_input_to_file(void)
 
 	print_statusline("Log file: ");
 	current_line = less_gets(sizeof("Log file: ")-1);
-	if (strlen(current_line) > 0) {
+	if (current_line[0]) {
 		fp = fopen(current_line, "w");
 		if (!fp) {
 			msg = "Error opening log file";
@@ -1109,7 +1147,7 @@ static void add_mark(void)
 	int letter;
 
 	print_statusline("Mark: ");
-	letter = less_getch();
+	letter = less_getch(sizeof("Mark: ") - 1);
 
 	if (isalpha(letter)) {
 		/* If we exceed 15 marks, start overwriting previous ones */
@@ -1130,7 +1168,7 @@ static void goto_mark(void)
 	int i;
 
 	print_statusline("Go to mark: ");
-	letter = less_getch();
+	letter = less_getch(sizeof("Go to mark: ") - 1);
 	clear_line();
 
 	if (isalpha(letter)) {
@@ -1150,41 +1188,40 @@ static void goto_mark(void)
 static char opp_bracket(char bracket)
 {
 	switch (bracket) {
-	case '{': case '[':
-		return bracket + 2;
-	case '(':
-		return ')';
-	case '}': case ']':
-		return bracket - 2;
-	case ')':
-		return '(';
-	}
-	return 0;
+		case '{': case '[': /* '}' == '{' + 2. Same for '[' */
+			bracket++;
+		case '(':           /* ')' == '(' + 1 */
+			bracket++;
+			break;
+		case '}': case ']':
+			bracket--;
+		case ')':
+			bracket--;
+			break;
+	};
+	return bracket;
 }
 
 static void match_right_bracket(char bracket)
 {
-	int bracket_line = -1;
 	int i;
 
 	if (strchr(flines[cur_fline], bracket) == NULL) {
 		print_statusline("No bracket in top line");
 		return;
 	}
+	bracket = opp_bracket(bracket);
 	for (i = cur_fline + 1; i < max_fline; i++) {
-		if (strchr(flines[i], opp_bracket(bracket)) != NULL) {
-			bracket_line = i;
-			break;
+		if (strchr(flines[i], bracket) != NULL) {
+			buffer_line(i);
+			return;
 		}
 	}
-	if (bracket_line == -1)
-		print_statusline("No matching bracket found");
-	buffer_line(bracket_line - max_displayed_line);
+	print_statusline("No matching bracket found");
 }
 
 static void match_left_bracket(char bracket)
 {
-	int bracket_line = -1;
 	int i;
 
 	if (strchr(flines[cur_fline + max_displayed_line], bracket) == NULL) {
@@ -1192,15 +1229,14 @@ static void match_left_bracket(char bracket)
 		return;
 	}
 
+	bracket = opp_bracket(bracket);
 	for (i = cur_fline + max_displayed_line; i >= 0; i--) {
-		if (strchr(flines[i], opp_bracket(bracket)) != NULL) {
-			bracket_line = i;
-			break;
+		if (strchr(flines[i], bracket) != NULL) {
+			buffer_line(i);
+			return;
 		}
 	}
-	if (bracket_line == -1)
-		print_statusline("No matching bracket found");
-	buffer_line(bracket_line);
+	print_statusline("No matching bracket found");
 }
 #endif  /* FEATURE_LESS_BRACKETS */
 
@@ -1305,10 +1341,9 @@ static void keypress_process(int keypress)
 		number_process(keypress);
 }
 
-static void sig_catcher(int sig ATTRIBUTE_UNUSED)
+static void sig_catcher(int sig)
 {
-	set_tty_cooked();
-	exit(1);
+	less_exit(- sig);
 }
 
 int less_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
@@ -1334,6 +1369,7 @@ int less_main(int argc, char **argv)
 	kbd_fd = open(CURRENT_TTY, O_RDONLY);
 	if (kbd_fd < 0)
 		return bb_cat(argv);
+	ndelay_on(kbd_fd);
 
 	if (!num_files) {
 		if (isatty(STDIN_FILENO)) {
@@ -1347,7 +1383,7 @@ int less_main(int argc, char **argv)
 	get_terminal_width_height(kbd_fd, &width, &max_displayed_line);
 	/* 20: two tabstops + 4 */
 	if (width < 20 || max_displayed_line < 3)
-		bb_error_msg_and_die("too narrow here");
+		return bb_cat(argv);
 	max_displayed_line -= 2;
 
 	buffer = xmalloc((max_displayed_line+1) * sizeof(char *));
@@ -1355,8 +1391,6 @@ int less_main(int argc, char **argv)
 		empty_line_marker = "";
 
 	tcgetattr(kbd_fd, &term_orig);
-	signal(SIGTERM, sig_catcher);
-	signal(SIGINT, sig_catcher);
 	term_less = term_orig;
 	term_less.c_lflag &= ~(ICANON | ECHO);
 	term_less.c_iflag &= ~(IXON | ICRNL);
@@ -1364,13 +1398,12 @@ int less_main(int argc, char **argv)
 	term_less.c_cc[VMIN] = 1;
 	term_less.c_cc[VTIME] = 0;
 
-	/* Want to do it just once, but it doesn't work, */
-	/* so we are redoing it (see code above). Mystery... */
-	/*tcsetattr(kbd_fd, TCSANOW, &term_less);*/
+	/* We want to restore term_orig on exit */
+	bb_signals(BB_FATAL_SIGS, sig_catcher);
 
 	reinitialize();
 	while (1) {
-		keypress = less_getch();
+		keypress = less_getch(-1); /* -1: do not position cursor */
 		keypress_process(keypress);
 	}
 }

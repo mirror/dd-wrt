@@ -68,7 +68,7 @@ struct shm_info {
 union semun {
 	int val;
 	struct semid_ds *buf;
-	unsigned short int *array;
+	unsigned short *array;
 	struct seminfo *__buf;
 };
 #endif
@@ -559,7 +559,7 @@ static void print_sem(int semid)
 }
 
 int ipcs_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int ipcs_main(int argc, char **argv)
+int ipcs_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	int id = 0;
 	unsigned flags = 0;

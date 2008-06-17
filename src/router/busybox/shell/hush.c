@@ -80,7 +80,7 @@
 #include <glob.h>      /* glob, of course */
 #include <getopt.h>    /* should be pretty obvious */
 /* #include <dmalloc.h> */
-extern char **environ;
+
 #include "busybox.h" /* for APPLET_IS_NOFORK/NOEXEC */
 
 
@@ -460,6 +460,9 @@ enum { run_list_level = 0 };
 #endif
 #define charmap          (G.charmap         )
 #define user_input_buf   (G.user_input_buf  )
+#define INIT_G() do { \
+	SET_PTR_TO_GLOBALS(xzalloc(sizeof(G))); \
+} while (0)
 
 
 #define B_CHUNK  100
@@ -533,11 +536,13 @@ static int done_pipe(struct p_context *ctx, pipe_style type);
 static int redirect_dup_num(struct in_str *input);
 static int redirect_opt_num(o_string *o);
 #if ENABLE_HUSH_TICK
-static int process_command_subs(o_string *dest, struct p_context *ctx, struct in_str *input, const char *subst_end);
+static int process_command_subs(o_string *dest, /*struct p_context *ctx,*/
+		struct in_str *input, const char *subst_end);
 #endif
 static int parse_group(o_string *dest, struct p_context *ctx, struct in_str *input, int ch);
 static const char *lookup_param(const char *src);
-static int handle_dollar(o_string *dest, struct p_context *ctx, struct in_str *input);
+static int handle_dollar(o_string *dest, /*struct p_context *ctx,*/
+		struct in_str *input);
 static int parse_stream(o_string *dest, struct p_context *ctx, struct in_str *input0, const char *end_trigger);
 /*   setup: */
 static int parse_and_run_stream(struct in_str *inp, int parse_flag);
@@ -694,43 +699,40 @@ static const struct built_in_command bltins[] = {
 	BLTIN(NULL, NULL, NULL)
 };
 
-#if ENABLE_HUSH_JOB
-
-/* move to libbb? */
-static void signal_SA_RESTART(int sig, void (*handler)(int))
+/* Signals are grouped, we handle them in batches */
+static void set_misc_sighandler(void (*handler)(int))
 {
-	struct sigaction sa;
-	sa.sa_handler = handler;
-	sa.sa_flags = SA_RESTART;
-	sigemptyset(&sa.sa_mask);
-	sigaction(sig, &sa, NULL);
+	bb_signals(0
+		+ (1 << SIGINT)
+		+ (1 << SIGQUIT)
+		+ (1 << SIGTERM)
+		, handler);
 }
 
-/* Signals are grouped, we handle them in batches */
+#if ENABLE_HUSH_JOB
+
 static void set_fatal_sighandler(void (*handler)(int))
 {
-	signal(SIGILL , handler);
-	signal(SIGTRAP, handler);
-	signal(SIGABRT, handler);
-	signal(SIGFPE , handler);
-	signal(SIGBUS , handler);
-	signal(SIGSEGV, handler);
+	bb_signals(0
+		+ (1 << SIGILL)
+		+ (1 << SIGTRAP)
+		+ (1 << SIGABRT)
+		+ (1 << SIGFPE)
+		+ (1 << SIGBUS)
+		+ (1 << SIGSEGV)
 	/* bash 3.2 seems to handle these just like 'fatal' ones */
-	signal(SIGHUP , handler);
-	signal(SIGPIPE, handler);
-	signal(SIGALRM, handler);
+		+ (1 << SIGHUP)
+		+ (1 << SIGPIPE)
+		+ (1 << SIGALRM)
+		, handler);
 }
 static void set_jobctrl_sighandler(void (*handler)(int))
 {
-	signal(SIGTSTP, handler);
-	signal(SIGTTIN, handler);
-	signal(SIGTTOU, handler);
-}
-static void set_misc_sighandler(void (*handler)(int))
-{
-	signal(SIGINT , handler);
-	signal(SIGQUIT, handler);
-	signal(SIGTERM, handler);
+	bb_signals(0
+		+ (1 << SIGTSTP)
+		+ (1 << SIGTTIN)
+		+ (1 << SIGTTOU)
+		, handler);
 }
 /* SIGCHLD is special and handled separately */
 
@@ -742,14 +744,14 @@ static void set_every_sighandler(void (*handler)(int))
 	signal(SIGCHLD, handler);
 }
 
-static void handler_ctrl_c(int sig)
+static void handler_ctrl_c(int sig ATTRIBUTE_UNUSED)
 {
 	debug_printf_jobs("got sig %d\n", sig);
 // as usual we can have all kinds of nasty problems with leaked malloc data here
 	siglongjmp(toplevel_jb, 1);
 }
 
-static void handler_ctrl_z(int sig)
+static void handler_ctrl_z(int sig ATTRIBUTE_UNUSED)
 {
 	pid_t pid;
 
@@ -759,6 +761,8 @@ static void handler_ctrl_z(int sig)
 		return;
 	ctrl_z_flag = 1;
 	if (!pid) { /* child */
+		if (ENABLE_HUSH_JOB)
+			die_sleep = 0; /* let nofork's xfuncs die */
 		setpgrp();
 		debug_printf_jobs("set pgrp for child %d ok\n", getpid());
 		set_every_sighandler(SIG_DFL);
@@ -787,11 +791,8 @@ static void handler_ctrl_z(int sig)
 static void sigexit(int sig) ATTRIBUTE_NORETURN;
 static void sigexit(int sig)
 {
-	sigset_t block_all;
-
 	/* Disable all signals: job control, SIGPIPE, etc. */
-	sigfillset(&block_all);
-	sigprocmask(SIG_SETMASK, &block_all, NULL);
+	sigprocmask_allsigs(SIG_BLOCK);
 
 	if (interactive_fd)
 		tcsetpgrp(interactive_fd, saved_tty_pgrp);
@@ -800,12 +801,7 @@ static void sigexit(int sig)
 	if (sig <= 0)
 		_exit(- sig);
 
-	/* Enable only this sig and kill ourself with it */
-	signal(sig, SIG_DFL);
-	sigdelset(&block_all, sig);
-	sigprocmask(SIG_SETMASK, &block_all, NULL);
-	raise(sig);
-	_exit(1); /* Should not reach it */
+	kill_myself_with_sig(sig); /* does not return */
 }
 
 /* Restores tty foreground process group, and exits. */
@@ -820,7 +816,6 @@ static void hush_exit(int exitcode)
 
 #define set_fatal_sighandler(handler)   ((void)0)
 #define set_jobctrl_sighandler(handler) ((void)0)
-#define set_misc_sighandler(handler)    ((void)0)
 #define hush_exit(e)                    exit(e)
 
 #endif /* JOB */
@@ -896,7 +891,8 @@ static int builtin_cd(char **argv)
 static int builtin_exec(char **argv)
 {
 	if (argv[1] == NULL)
-		return EXIT_SUCCESS;   /* Really? */
+		return EXIT_SUCCESS; /* bash does this */
+// FIXME: if exec fails, bash does NOT exit! We do...
 	pseudo_exec_argv(argv + 1);
 	/* never returns */
 }
@@ -1265,10 +1261,10 @@ static void get_user_input(struct in_str *i)
 	prompt_str = setup_prompt_string(i->promptmode);
 #if ENABLE_FEATURE_EDITING
 	/* Enable command line editing only while a command line
-	 * is actually being read; otherwise, we'll end up bequeathing
-	 * atexit() handlers and other unwanted stuff to our
-	 * child processes (rob@sysgo.de) */
-	r = read_line_input(prompt_str, user_input_buf, BUFSIZ-1, line_input_state);
+	 * is actually being read */
+	do {
+		r = read_line_input(prompt_str, user_input_buf, BUFSIZ-1, line_input_state);
+	} while (r == 0); /* repeat if Ctrl-C */
 	i->eof_flag = (r < 0);
 	if (i->eof_flag) { /* EOF/error detected */
 		user_input_buf[0] = EOF; /* yes, it will be truncated, it's ok */
@@ -1899,6 +1895,8 @@ static int run_pipe(struct pipe *pi)
 
 		child->pid = BB_MMU ? fork() : vfork();
 		if (!child->pid) { /* child */
+			if (ENABLE_HUSH_JOB)
+				die_sleep = 0; /* let nofork's xfuncs die */
 #if ENABLE_HUSH_JOB
 			/* Every child adds itself to new process group
 			 * with pgid == pid_of_first_child_in_pipe */
@@ -2107,7 +2105,7 @@ static int run_list(struct pipe *pi)
 #if ENABLE_FEATURE_SH_STANDALONE
 		nofork_save.saved = 0; /* in case we will run a nofork later */
 #endif
-		signal_SA_RESTART(SIGTSTP, handler_ctrl_z);
+		signal_SA_RESTART_empty_mask(SIGTSTP, handler_ctrl_z);
 		signal(SIGINT, handler_ctrl_c);
 	}
 #endif /* JOB */
@@ -2571,7 +2569,7 @@ static int expand_vars_to_list(char **list, int n, char **posp, char *arg, char 
 		/* Highest bit in first_ch indicates that var is double-quoted */
 		case '$': /* pid */
 			/* FIXME: (echo $$) should still print pid of main shell */
-			val = utoa(getpid());
+			val = utoa(getpid()); /* rootpid? */
 			break;
 		case '!': /* bg pid */
 			val = last_bg_pid ? utoa(last_bg_pid) : (char*)"";
@@ -3237,7 +3235,9 @@ static FILE *generate_stream_from_list(struct pipe *head)
 	if (pid < 0)
 		bb_perror_msg_and_die(BB_MMU ? "fork" : "vfork");
 	if (pid == 0) { /* child */
-		close(channel[0]);
+		if (ENABLE_HUSH_JOB)
+			die_sleep = 0; /* let nofork's xfuncs die */
+		close(channel[0]); /* NB: close _first_, then move fd! */
 		xmove_fd(channel[1], 1);
 		/* Prevent it from trying to handle ctrl-z etc */
 #if ENABLE_HUSH_JOB
@@ -3250,17 +3250,20 @@ static FILE *generate_stream_from_list(struct pipe *head)
 		 * everywhere outside actual command execution. */
 		/*set_jobctrl_sighandler(SIG_IGN);*/
 		set_misc_sighandler(SIG_DFL);
-		_exit(run_list(head));   /* leaks memory */
+		/* Freeing 'head' here would break NOMMU. */
+		_exit(run_list(head));
 	}
 	close(channel[1]);
 	pf = fdopen(channel[0], "r");
 	return pf;
-	/* head is freed by the caller */
+	/* 'head' is freed by the caller */
 }
 
 /* Return code is exit status of the process that is run. */
-static int process_command_subs(o_string *dest, struct p_context *ctx,
-	struct in_str *input, const char *subst_end)
+static int process_command_subs(o_string *dest,
+		/*struct p_context *ctx,*/
+		struct in_str *input,
+		const char *subst_end)
 {
 	int retcode, ch, eol_cnt;
 	o_string result = NULL_O_STRING;
@@ -3353,7 +3356,7 @@ static const char *lookup_param(const char *src)
 }
 
 /* return code: 0 for OK, 1 for syntax error */
-static int handle_dollar(o_string *dest, struct p_context *ctx, struct in_str *input)
+static int handle_dollar(o_string *dest, /*struct p_context *ctx,*/ struct in_str *input)
 {
 	int ch = b_peek(input);  /* first character after the $ */
 	unsigned char quote_mask = dest->o_quote ? 0x80 : 0;
@@ -3411,7 +3414,7 @@ static int handle_dollar(o_string *dest, struct p_context *ctx, struct in_str *i
 #if ENABLE_HUSH_TICK
 		case '(':
 			b_getch(input);
-			process_command_subs(dest, ctx, input, ")");
+			process_command_subs(dest, /*ctx,*/ input, ")");
 			break;
 #endif
 		case '-':
@@ -3509,7 +3512,7 @@ static int parse_stream(o_string *dest, struct p_context *ctx,
 			b_addqchr(dest, b_getch(input), dest->o_quote);
 			break;
 		case '$':
-			if (handle_dollar(dest, ctx, input) != 0) {
+			if (handle_dollar(dest, /*ctx,*/ input) != 0) {
 				debug_printf_parse("parse_stream return 1: handle_dollar returned non-0\n");
 				return 1;
 			}
@@ -3534,7 +3537,7 @@ static int parse_stream(o_string *dest, struct p_context *ctx,
 			break;
 #if ENABLE_HUSH_TICK
 		case '`':
-			process_command_subs(dest, ctx, input, "`");
+			process_command_subs(dest, /*ctx,*/ input, "`");
 			break;
 #endif
 		case '>':
@@ -3770,7 +3773,7 @@ int hush_main(int argc, char **argv)
 	char **e;
 	struct variable *cur_var;
 
-	PTR_TO_GLOBALS = xzalloc(sizeof(G));
+	INIT_G();
 
 	/* Deal with HUSH_VERSION */
 	shell_ver = const_shell_ver; /* copying struct here */
@@ -3876,11 +3879,12 @@ int hush_main(int argc, char **argv)
 	}
 	debug_printf("interactive_fd=%d\n", interactive_fd);
 	if (interactive_fd) {
+		fcntl(interactive_fd, F_SETFD, FD_CLOEXEC);
 		/* Looks like they want an interactive shell */
 		setup_job_control();
-		/* Make xfuncs do cleanup on exit */
-		die_sleep = -1; /* flag */
-// FIXME: should we reset die_sleep = 0 whereever we fork?
+		/* -1 is special - makes xfuncs longjmp, not exit
+		 * (we reset die_sleep = 0 whereever we [v]fork) */
+		die_sleep = -1;
 		if (setjmp(die_jmp)) {
 			/* xfunc has failed! die die die */
 			hush_exit(xfunc_error_retval);
@@ -3903,8 +3907,11 @@ int hush_main(int argc, char **argv)
 				/* give up */
 				interactive_fd = 0;
 		}
+		if (interactive_fd) {
+			fcntl(interactive_fd, F_SETFD, FD_CLOEXEC);
+			set_misc_sighandler(SIG_IGN);
+		}
 	}
-
 #endif
 
 	if (argv[optind] == NULL) {

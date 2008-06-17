@@ -150,7 +150,7 @@ Exit Codes
     is 99. sv exits 100 on error.
 */
 
-/* Busyboxed by Denis Vlasenko <vda.linux@googlemail.com> */
+/* Busyboxed by Denys Vlasenko <vda.linux@googlemail.com> */
 /* TODO: depends on runit_lib.c - review and reduce/eliminate */
 
 #include <sys/poll.h>
@@ -293,7 +293,7 @@ static unsigned svstatus_print(const char *m)
 	return pid ? 1 : 2;
 }
 
-static int status(const char *unused)
+static int status(const char *unused ATTRIBUTE_UNUSED)
 {
 	int r;
 
@@ -333,8 +333,7 @@ static int checkscript(void)
 		bb_perror_msg(WARN"cannot %s child %s/check", "run", *service);
 		return 0;
 	}
-	while (wait_pid(&w, pid) == -1) {
-		if (errno == EINTR) continue;
+	while (safe_waitpid(pid, &w, 0) == -1) {
 		bb_perror_msg(WARN"cannot %s child %s/check", "wait for", *service);
 		return 0;
 	}
@@ -423,7 +422,7 @@ int sv_main(int argc, char **argv)
 	char **servicex;
 	unsigned waitsec = 7;
 	smallint kll = 0;
-	smallint verbose = 0;
+	int verbose = 0;
 	int (*act)(const char*);
 	int (*cbk)(const char*);
 	int curdir;
@@ -437,9 +436,8 @@ int sv_main(int argc, char **argv)
 	x = getenv("SVWAIT");
 	if (x) waitsec = xatou(x);
 
-	opt = getopt32(argv, "w:v", &x);
-	if (opt & 1) waitsec = xatou(x); // -w
-	if (opt & 2) verbose = 1; // -v
+	opt_complementary = "w+:vv"; /* -w N, -v is a counter */
+	opt = getopt32(argv, "w:v", &waitsec, &verbose);
 	argc -= optind;
 	argv += optind;
 	action = *argv++;

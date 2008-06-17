@@ -122,7 +122,7 @@ struct globals {
 };
 #define G (*ptr_to_globals)
 #define INIT_G() do { \
-	PTR_TO_GLOBALS = xzalloc(sizeof(G)); \
+	SET_PTR_TO_GLOBALS(xzalloc(sizeof(G))); \
 } while (0)
 
 static ALWAYS_INLINE unsigned div_roundup(unsigned size, unsigned n)
@@ -495,7 +495,7 @@ static size_t do_check(char *buffer, size_t try, unsigned current_block)
 	return try;
 }
 
-static void alarm_intr(int alnum)
+static void alarm_intr(int alnum ATTRIBUTE_UNUSED)
 {
 	if (G.currently_testing >= SB_ZONES)
 		return;
@@ -621,13 +621,13 @@ static void setup_tables(void)
 }
 
 int mkfs_minix_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int mkfs_minix_main(int argc, char **argv)
+int mkfs_minix_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	struct mntent *mp;
 	unsigned opt;
 	char *tmp;
 	struct stat statbuf;
-	char *str_i, *str_n;
+	char *str_i;
 	char *listfile = NULL;
 
 	INIT_G();
@@ -643,13 +643,13 @@ int mkfs_minix_main(int argc, char **argv)
 		bb_error_msg_and_die("bad inode size");
 #endif
 
-	opt = getopt32(argv, "ci:l:n:v", &str_i, &listfile, &str_n);
+	opt_complementary = "n+"; /* -n N */
+	opt = getopt32(argv, "ci:l:n:v", &str_i, &listfile, &G.namelen);
 	argv += optind;
 	//if (opt & 1) -c
 	if (opt & 2) G.req_nr_inodes = xatoul(str_i); // -i
 	//if (opt & 4) -l
 	if (opt & 8) { // -n
-		G.namelen = xatoi_u(str_n);
 		if (G.namelen == 14) G.magic = MINIX1_SUPER_MAGIC;
 		else if (G.namelen == 30) G.magic = MINIX1_SUPER_MAGIC2;
 		else bb_show_usage();

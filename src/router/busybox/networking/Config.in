@@ -47,6 +47,32 @@ config ARPING
 	help
 	  Ping hosts by ARP packets.
 
+config BRCTL
+	bool "brctl"
+	default n
+	help
+	  Manage ethernet bridges.
+	  Supports addbr/delbr and addif/delif.
+
+#config FEATURE_BRCTL_SHOW
+#	bool "Support show, showmac and showstp"
+#	default n
+#	depends on BRCTL
+#	help
+#	  Add support for option which print the current config:
+#	    showmacs, showstp, show
+
+config FEATURE_BRCTL_FANCY
+	bool "Fancy options"
+	default n
+	depends on BRCTL
+	help
+	  Add support for extended option like:
+	    setageing, setfd, sethello, setmaxage,
+	    setpathcost, setportprio, setbridgeprio,
+	    stp
+	  This adds about 600 bytes.
+
 config DNSD
 	bool "dnsd"
 	default n
@@ -116,7 +142,7 @@ config FEATURE_HTTPD_USE_SENDFILE
 	  instead of read/write loop.
 
 config FEATURE_HTTPD_RELOAD_CONFIG_SIGHUP
-	bool "Support reloading the global config file using hup signal"
+	bool "Support reloading of global config file on HUP signal"
 	default n
 	depends on HTTPD
 	help
@@ -166,7 +192,7 @@ config FEATURE_HTTPD_CGI
 	  when specific URLs are requested.
 
 config FEATURE_HTTPD_CONFIG_WITH_SCRIPT_INTERPR
-	bool "Enable support for running scripts through an interpreter"
+	bool "Support for running scripts through an interpreter"
 	default n
 	depends on FEATURE_HTTPD_CGI
 	help
@@ -177,7 +203,7 @@ config FEATURE_HTTPD_CONFIG_WITH_SCRIPT_INTERPR
 	  *.php:/path/to/your/php
 
 config FEATURE_HTTPD_SET_REMOTE_PORT_TO_ENV
-	bool "Support the REMOTE_PORT environment variable for CGI"
+	bool "Set REMOTE_PORT environment variable for CGI"
 	default n
 	depends on FEATURE_HTTPD_CGI
 	help
@@ -185,17 +211,17 @@ config FEATURE_HTTPD_SET_REMOTE_PORT_TO_ENV
 	  references that contain a unique port number.
 
 config FEATURE_HTTPD_ENCODE_URL_STR
-	bool "Enable the -e option for shell script CGI simplification."
+	bool "Enable -e option (useful for CGIs written as shell scripts)"
 	default y
 	depends on HTTPD
 	help
-	  This option allows html encoding arbitrary
-	  strings for display of the browser.  Output goes to stdout.
-	  For example, httpd -e "<Hello World>" as
+	  This option allows html encoding of arbitrary strings for display
+	  by the browser.  Output goes to stdout.
+	  For example, httpd -e "<Hello World>" produces
 	  "&#60Hello&#32World&#62".
 
 config FEATURE_HTTPD_ERROR_PAGES
-	bool "Enable support for custom error pages"
+	bool "Support for custom error pages"
 	default n
 	depends on HTTPD
 	help
@@ -208,7 +234,7 @@ config FEATURE_HTTPD_ERROR_PAGES
 	  message.
 
 config FEATURE_HTTPD_PROXY
-	bool "Enable support for reverse proxy"
+	bool "Support for reverse proxy"
 	default n
 	depends on HTTPD
 	help
@@ -265,6 +291,13 @@ config FEATURE_IFCONFIG_BROADCAST_PLUS
 	help
 	  Setting this will make ifconfig attempt to find the broadcast
 	  automatically if the value '+' is used.
+
+config IFENSLAVE
+	bool "ifenslave"
+	default n
+	help
+	  Userspace application to bind several interfaces
+	  to a logical interface (use with kernel bonding driver).
 
 config IFUPDOWN
 	bool "ifupdown"
@@ -330,14 +363,14 @@ config FEATURE_IFUPDOWN_IFCONFIG_BUILTIN
 	  work.
 
 config FEATURE_IFUPDOWN_IPV4
-	bool "Enable support for IPv4"
+	bool "Support for IPv4"
 	default y
 	depends on IFUPDOWN
 	help
 	  If you want ifup/ifdown to talk IPv4, leave this on.
 
 config FEATURE_IFUPDOWN_IPV6
-	bool "Enable support for IPv6"
+	bool "Support for IPv6"
 	default n
 	depends on IFUPDOWN && FEATURE_IPV6
 	help
@@ -345,7 +378,7 @@ config FEATURE_IFUPDOWN_IPV6
 
 ### UNUSED
 ###config FEATURE_IFUPDOWN_IPX
-###	bool "Enable support for IPX"
+###	bool "Support for IPX"
 ###	default n
 ###	depends on IFUPDOWN
 ###	help
@@ -361,7 +394,7 @@ config FEATURE_IFUPDOWN_MAPPING
 	  a weird network setup you don't need it.
 
 config FEATURE_IFUPDOWN_EXTERNAL_DHCP
-	bool "Enable support for external dhcp clients"
+	bool "Support for external dhcp clients"
 	default n
 	depends on IFUPDOWN
 	help
@@ -464,7 +497,7 @@ config FEATURE_IP_RULE
 	  Add support for rule commands to "ip".
 
 config FEATURE_IP_SHORT_FORMS
-	bool "Support short forms of ip commands."
+	bool "Support short forms of ip commands"
 	default n
 	depends on IP
 	help
@@ -592,7 +625,7 @@ config NETSTAT
 	  netstat prints information about the Linux networking subsystem.
 
 config FEATURE_NETSTAT_WIDE
-	bool "  Enable wide netstat output"
+	bool "Enable wide netstat output"
 	default n
 	depends on NETSTAT
 	help
@@ -619,12 +652,6 @@ config PING6
 	help
 	  This will give you a ping that can talk IPv6.
 
-config PSCAN
-	bool "pscan"
-	default n
-	help
-	  Simple network port scanner.
-
 config FEATURE_FANCY_PING
 	bool "Enable fancy ping output"
 	default y
@@ -633,11 +660,29 @@ config FEATURE_FANCY_PING
 	  Make the output from the ping applet include statistics, and at the
 	  same time provide full support for ICMP packets.
 
+config PSCAN
+	bool "pscan"
+	default n
+	help
+	  Simple network port scanner.
+
 config ROUTE
 	bool "route"
 	default n
 	help
 	  Route displays or manipulates the kernel's IP routing tables.
+
+config SENDMAIL
+	bool "sendmail"
+	default n
+	help
+	  Barebones sendmail.
+
+config FETCHMAIL
+	bool "fetchmail"
+	default n
+	help
+	  Barebones fetchmail.
 
 config SLATTACH
 	bool "slattach"
@@ -729,28 +774,41 @@ config TFTP
 	  is usually used for simple, small transfers such as a root image
 	  for a network-enabled bootloader.
 
+config TFTPD
+	bool "tftpd"
+	default n
+	help
+	  This enables the Trivial File Transfer Protocol server program.
+	  It expects that stdin is a datagram socket and a packet
+	  is already pending on it. It will exit after one transfer.
+	  In other words: it should be run from inetd in nowait mode,
+	  or from udpsvd. Example: "udpsvd -E 0 69 tftpd DIR"
+
 config FEATURE_TFTP_GET
 	bool "Enable \"get\" command"
 	default y
-	depends on TFTP
+	depends on TFTP || TFTPD
 	help
 	  Add support for the GET command within the TFTP client.  This allows
 	  a client to retrieve a file from a TFTP server.
+	  Also enable upload support in tftpd, if tftpd is selected.
 
 config FEATURE_TFTP_PUT
 	bool "Enable \"put\" command"
 	default y
-	depends on TFTP
+	depends on TFTP || TFTPD
 	help
 	  Add support for the PUT command within the TFTP client.  This allows
 	  a client to transfer a file to a TFTP server.
+	  Also enable download support in tftpd, if tftpd is selected.
 
 config FEATURE_TFTP_BLOCKSIZE
-	bool "Enable \"blocksize\" command"
+	bool "Enable \"blksize\" protocol option"
 	default n
-	depends on TFTP
+	depends on TFTP || TFTPD
 	help
-	  Allow the client to specify the desired block size for transfers.
+	  Allow tftp to specify block size, and tftpd to understand
+	  "blksize" option.
 
 config DEBUG_TFTP
 	bool "Enable debug"
@@ -837,5 +895,17 @@ config ZCIP
 
 	  See http://www.zeroconf.org for further details, and "zcip.script"
 	  in the busybox examples.
+
+config TCPSVD
+	bool "tcpsvd"
+	default n
+	help
+	  tcpsvd listens on a TCP port and runs a program for each new connection
+
+config UDPSVD
+	bool "udpsvd"
+	default n
+	help
+	  udpsvd listens on an UDP port and runs a program for each new connection
 
 endmenu

@@ -117,7 +117,7 @@ const char *opt_complementary
         if w is given once, GNU ps sets the width to 132,
         if w is given more than once, it is "unlimited"
 
-        int w_counter = 0;
+        int w_counter = 0; // must be initialized!
         opt_complementary = "ww";
         getopt32(argv, "w", &w_counter);
         if (w_counter)
@@ -220,6 +220,14 @@ Special characters:
  "x--x" Variation of the above, it means that -x option should occur
         at most once.
 
+ "a+"   A plus after a char in opt_complementary means that the parameter
+        for this option is a nonnegative integer. It will be processed
+        with xatoi_u() - allowed range is 0..INT_MAX.
+
+        int param;  // "unsigned param;" will also work
+        opt_complementary = "p+";
+        getopt32(argv, "p:", &param);
+
  "a::"  A double colon after a char in opt_complementary means that the
         option can occur multiple times. Each occurrence will be saved as
         a llist_t element instead of char*.
@@ -247,7 +255,7 @@ Special characters:
         For example from "id" applet:
 
         // Don't allow -n -r -rn -ug -rug -nug -rnug
-        opt_complementary = "r?ug:n?ug:?u--g:g--u";
+        opt_complementary = "r?ug:n?ug:u--g:g--u";
         flags = getopt32(argv, "rnug");
 
         This example allowed only:
@@ -273,16 +281,24 @@ Special characters:
 
 /* Code here assumes that 'unsigned' is at least 32 bits wide */
 
+const char *const bb_argv_dash[] = { "-", NULL };
+
 const char *opt_complementary;
 
+enum {
+	PARAM_STRING,
+	PARAM_LIST,
+	PARAM_INT,
+};
+
 typedef struct {
-	int opt;
-	int list_flg;
+	unsigned char opt_char;
+	smallint param_type;
 	unsigned switch_on;
 	unsigned switch_off;
 	unsigned incongruously;
 	unsigned requires;
-	void **optarg;               /* char **optarg or llist_t **optarg */
+	void **optarg;  /* char**, llist_t** or int *. */
 	int *counter;
 } t_complementary;
 
@@ -337,12 +353,14 @@ getopt32(char **argv, const char *applet_opts, ...)
 	if (*s == '+' || *s == '-')
 		s++;
 	while (*s) {
-		if (c >= 32) break;
-		on_off->opt = *s;
+		if (c >= 32)
+			break;
+		on_off->opt_char = *s;
 		on_off->switch_on = (1 << c);
 		if (*++s == ':') {
 			on_off->optarg = va_arg(p, void **);
-			while (*++s == ':') /* skip */;
+			while (*++s == ':')
+				continue;
 		}
 		on_off++;
 		c++;
@@ -375,11 +393,12 @@ getopt32(char **argv, const char *applet_opts, ...)
 		for (l_o = long_options; l_o->name; l_o++) {
 			if (l_o->flag)
 				continue;
-			for (on_off = complementary; on_off->opt != 0; on_off++)
-				if (on_off->opt == l_o->val)
+			for (on_off = complementary; on_off->opt_char; on_off++)
+				if (on_off->opt_char == l_o->val)
 					goto next_long;
-			if (c >= 32) break;
-			on_off->opt = l_o->val;
+			if (c >= 32)
+				break;
+			on_off->opt_char = l_o->val;
 			on_off->switch_on = (1 << c);
 			if (l_o->has_arg != no_argument)
 				on_off->optarg = va_arg(p, void **);
@@ -422,11 +441,15 @@ getopt32(char **argv, const char *applet_opts, ...)
 			s++;
 			continue;
 		}
-		for (on_off = complementary; on_off->opt; on_off++)
-			if (on_off->opt == *s)
+		for (on_off = complementary; on_off->opt_char; on_off++)
+			if (on_off->opt_char == *s)
 				break;
 		if (c == ':' && s[2] == ':') {
-			on_off->list_flg++;
+			on_off->param_type = PARAM_LIST;
+			continue;
+		}
+		if (c == '+' && (s[2] == ':' || s[2] == '\0')) {
+			on_off->param_type = PARAM_INT;
 			continue;
 		}
 		if (c == ':' || c == '\0') {
@@ -454,8 +477,8 @@ getopt32(char **argv, const char *applet_opts, ...)
 				else
 					pair_switch = &(pair->switch_off);
 			} else {
-				for (on_off = complementary; on_off->opt; on_off++)
-					if (on_off->opt == *s) {
+				for (on_off = complementary; on_off->opt_char; on_off++)
+					if (on_off->opt_char == *s) {
 						*pair_switch |= on_off->switch_on;
 						break;
 					}
@@ -473,11 +496,30 @@ getopt32(char **argv, const char *applet_opts, ...)
 		}
 	}
 
-	/* In case getopt32 was already called, reinit some state */
+	/* In case getopt32 was already called:
+	 * reset the libc getopt() function, which keeps internal state.
+	 *
+	 * BSD-derived getopt() functions require that optind be set to 1 in
+	 * order to reset getopt() state.  This used to be generally accepted
+	 * way of resetting getopt().  However, glibc's getopt()
+	 * has additional getopt() state beyond optind, and requires that
+	 * optind be set to zero to reset its state.  So the unfortunate state of
+	 * affairs is that BSD-derived versions of getopt() misbehave if
+	 * optind is set to 0 in order to reset getopt(), and glibc's getopt()
+	 * will core dump if optind is set 1 in order to reset getopt().
+	 *
+	 * More modern versions of BSD require that optreset be set to 1 in
+	 * order to reset getopt().   Sigh.  Standards, anyone?
+	 */
+#ifdef __GLIBC__
+	optind = 0;
+#else /* BSD style */
 	optind = 1;
-	/* optarg = NULL; opterr = 0; optopt = 0; ?? */
+	/* optreset = 1; */
+#endif
+	/* optarg = NULL; opterr = 0; optopt = 0; - do we need this?? */
 
-	/* Note: just "getopt() <= 0" will not work good for
+	/* Note: just "getopt() <= 0" will not work well for
 	 * "fake" short options, like this one:
 	 * wget $'-\203' "Test: test" http://kernel.org/
 	 * (supposed to act as --header, but doesn't) */
@@ -487,11 +529,11 @@ getopt32(char **argv, const char *applet_opts, ...)
 #else
 	while ((c = getopt(argc, argv, applet_opts)) != -1) {
 #endif
-		c &= 0xff; /* fight libc's sign extends */
+		c &= 0xff; /* fight libc's sign extension */
  loop_arg_is_opt:
-		for (on_off = complementary; on_off->opt != c; on_off++) {
+		for (on_off = complementary; on_off->opt_char != c; on_off++) {
 			/* c==0 if long opt have non NULL flag */
-			if (on_off->opt == 0 && c != 0)
+			if (on_off->opt_char == '\0' && c != '\0')
 				bb_show_usage();
 		}
 		if (flags & on_off->incongruously)
@@ -502,10 +544,15 @@ getopt32(char **argv, const char *applet_opts, ...)
 		flags ^= trigger;
 		if (on_off->counter)
 			(*(on_off->counter))++;
-		if (on_off->list_flg) {
-			llist_add_to_end((llist_t **)(on_off->optarg), optarg);
+		if (on_off->param_type == PARAM_LIST) {
+			if (optarg)
+				llist_add_to_end((llist_t **)(on_off->optarg), optarg);
+		} else if (on_off->param_type == PARAM_INT) {
+			if (optarg)
+				*(unsigned*)(on_off->optarg) = xatoi_u(optarg);
 		} else if (on_off->optarg) {
-			*(char **)(on_off->optarg) = optarg;
+			if (optarg)
+				*(char **)(on_off->optarg) = optarg;
 		}
 		if (pargv != NULL)
 			break;
@@ -531,7 +578,7 @@ getopt32(char **argv, const char *applet_opts, ...)
 		free(argv[1]);
 #endif
 	/* check depending requires for given options */
-	for (on_off = complementary; on_off->opt; on_off++) {
+	for (on_off = complementary; on_off->opt_char; on_off++) {
 		if (on_off->requires && (flags & on_off->switch_on) &&
 					(flags & on_off->requires) == 0)
 			bb_show_usage();
