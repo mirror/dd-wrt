@@ -602,7 +602,7 @@ static unsigned fill_package_struct(char *control_buffer)
 				&field_name, &field_value);
 
 		if (field_name == NULL) {
-			goto fill_package_struct_cleanup; /* Oh no, the dreaded goto statement! */
+			goto fill_package_struct_cleanup;
 		}
 
 		field_num = index_in_strings(field_names, field_name);
@@ -745,7 +745,7 @@ static void index_status_file(const char *filename)
 	unsigned status_num;
 
 	status_file = xfopen(filename, "r");
-	while ((control_buffer = xmalloc_fgets_str(status_file, "\n\n")) != NULL) {
+	while ((control_buffer = xmalloc_fgetline_str(status_file, "\n\n")) != NULL) {
 		const unsigned package_num = fill_package_struct(control_buffer);
 		if (package_num != -1) {
 			status_node = xmalloc(sizeof(status_node_t));
@@ -798,7 +798,7 @@ static void write_status_file(deb_file_t **deb_file)
 	int i = 0;
 
 	/* Update previously known packages */
-	while ((control_buffer = xmalloc_fgets_str(old_status_file, "\n\n")) != NULL) {
+	while ((control_buffer = xmalloc_fgetline_str(old_status_file, "\n\n")) != NULL) {
 		tmp_string = strstr(control_buffer, "Package:");
 		if (tmp_string == NULL) {
 			continue;
@@ -913,20 +913,16 @@ static void write_status_file(deb_file_t **deb_file)
 	fclose(old_status_file);
 	fclose(new_status_file);
 
-
 	/* Create a separate backfile to dpkg */
 	if (rename("/var/lib/dpkg/status", "/var/lib/dpkg/status.udeb.bak") == -1) {
-		struct stat stat_buf;
-		xstat("/var/lib/dpkg/status", &stat_buf);
+		if (errno != ENOENT)
+			bb_error_msg_and_die("cannot create backup status file");
 		/* Its ok if renaming the status file fails because status
 		 * file doesnt exist, maybe we are starting from scratch */
 		bb_error_msg("no status file found, creating new one");
 	}
 
-	if (rename("/var/lib/dpkg/status.udeb", "/var/lib/dpkg/status") == -1) {
-		bb_error_msg_and_die("DANGER: cannot create status file, "
-			"you need to manually repair your status file");
-	}
+	xrename("/var/lib/dpkg/status.udeb", "/var/lib/dpkg/status");
 }
 
 /* This function returns TRUE if the given package can satisfy a
@@ -953,7 +949,7 @@ static int package_satisfies_dependency(int package, int depend_type)
 	return 0;
 }
 
-static int check_deps(deb_file_t **deb_file, int deb_start, int dep_max_count)
+static int check_deps(deb_file_t **deb_file, int deb_start /*, int dep_max_count - ?? */)
 {
 	int *conflicts = NULL;
 	int conflicts_num = 0;
@@ -1344,7 +1340,7 @@ static void remove_package(const unsigned package_num, int noisy)
 	free_array(exclude_files);
 
 	/* rename <package>.conffile to <package>.list */
-	rename(conffile_name, list_name);
+	xrename(conffile_name, list_name);
 
 	/* Change package status */
 	set_status(status_num, "config-files", 3);
@@ -1693,7 +1689,7 @@ int dpkg_main(int argc, char **argv)
 
 	/* Check that the deb file arguments are installable */
 	if (!(opt & OPT_force_ignore_depends)) {
-		if (!check_deps(deb_file, 0, deb_count)) {
+		if (!check_deps(deb_file, 0 /*, deb_count*/)) {
 			bb_error_msg_and_die("dependency check failed");
 		}
 	}

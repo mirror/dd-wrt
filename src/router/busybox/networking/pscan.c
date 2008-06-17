@@ -31,7 +31,7 @@ static const char *port_name(unsigned port)
 #define MONOTONIC_US() ((unsigned)monotonic_us())
 
 int pscan_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int pscan_main(int argc, char **argv)
+int pscan_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	const char *opt_max_port = "1024";      /* -P: default max port */
 	const char *opt_min_port = "1";         /* -p: default min port */
@@ -73,14 +73,14 @@ int pscan_main(int argc, char **argv)
 
 		/* The SOCK_STREAM socket type is implemented on the TCP/IP protocol. */
 		set_nport(lsap, htons(port));
-		s = xsocket(lsap->sa.sa_family, SOCK_STREAM, 0);
+		s = xsocket(lsap->u.sa.sa_family, SOCK_STREAM, 0);
 
 		/* We need unblocking socket so we don't need to wait for ETIMEOUT. */
 		/* Nonblocking connect typically "fails" with errno == EINPROGRESS */
 		ndelay_on(s);
 		DMSG("connect to port %u", port);
 		start = MONOTONIC_US();
-		if (connect(s, &lsap->sa, lsap->len) == 0) {
+		if (connect(s, &lsap->u.sa, lsap->len) == 0) {
 			/* Unlikely, for me even localhost fails :) */
 			DMSG("connect succeeded");
 			goto open;

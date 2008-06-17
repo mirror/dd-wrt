@@ -25,7 +25,7 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/* Busyboxed by Denis Vlasenko <vda.linux@googlemail.com> */
+/* Busyboxed by Denys Vlasenko <vda.linux@googlemail.com> */
 /* TODO: depends on runit_lib.c - review and reduce/eliminate */
 
 #include <sys/poll.h>
@@ -42,17 +42,34 @@ struct service {
 	smallint isgone;
 };
 
-static struct service *sv;
-static char *svdir;
-static int svnum;
-static char *rplog;
-static int rploglen;
-static int logpipe[2];
-static struct pollfd pfd[1];
-static unsigned stamplog;
-static smallint check = 1;
-static smallint exitsoon;
-static smallint set_pgrp;
+struct globals {
+	struct service *sv;
+	char *svdir;
+	char *rplog;
+	int svnum;
+	int rploglen;
+	struct fd_pair logpipe;
+	struct pollfd pfd[1];
+	unsigned stamplog;
+	smallint check; /* = 1; */
+	smallint exitsoon;
+	smallint set_pgrp;
+};
+#define G (*(struct globals*)&bb_common_bufsiz1)
+#define sv        (G.sv        )
+#define svdir     (G.svdir     )
+#define rplog     (G.rplog     )
+#define svnum     (G.svnum     )
+#define rploglen  (G.rploglen  )
+#define logpipe   (G.logpipe   )
+#define pfd       (G.pfd       )
+#define stamplog  (G.stamplog  )
+#define check     (G.check     )
+#define exitsoon  (G.exitsoon  )
+#define set_pgrp  (G.set_pgrp  )
+#define INIT_G() do { \
+	check = 1; \
+} while (0)
 
 static void fatal2_cannot(const char *m1, const char *m2)
 {
@@ -72,11 +89,11 @@ static void warnx(const char *m1)
 	warn3x(m1, "", "");
 }
 
-static void s_term(int sig_no)
+static void s_term(int sig_no ATTRIBUTE_UNUSED)
 {
 	exitsoon = 1;
 }
-static void s_hangup(int sig_no)
+static void s_hangup(int sig_no ATTRIBUTE_UNUSED)
 {
 	exitsoon = 2;
 }
@@ -100,8 +117,10 @@ static void runsv(int no, const char *name)
 		/* child */
 		if (set_pgrp)
 			setsid();
-		signal(SIGHUP, SIG_DFL);
-		signal(SIGTERM, SIG_DFL);
+		bb_signals(0
+			+ (1 << SIGHUP)
+			+ (1 << SIGTERM)
+			, SIG_DFL);
 		execvp(prog[0], prog);
 		fatal2_cannot("start runsv ", name);
 	}
@@ -186,26 +205,26 @@ static int setup_log(void)
 		warnx("log must have at least seven characters");
 		return 0;
 	}
-	if (pipe(logpipe)) {
+	if (piped_pair(logpipe)) {
 		warnx("cannot create pipe for log");
 		return -1;
 	}
-	close_on_exec_on(logpipe[1]);
-	close_on_exec_on(logpipe[0]);
-	ndelay_on(logpipe[0]);
-	ndelay_on(logpipe[1]);
-	if (dup2(logpipe[1], 2) == -1) {
+	close_on_exec_on(logpipe.rd);
+	close_on_exec_on(logpipe.wr);
+	ndelay_on(logpipe.rd);
+	ndelay_on(logpipe.wr);
+	if (dup2(logpipe.wr, 2) == -1) {
 		warnx("cannot set filedescriptor for log");
 		return -1;
 	}
-	pfd[0].fd = logpipe[0];
+	pfd[0].fd = logpipe.rd;
 	pfd[0].events = POLLIN;
 	stamplog = monotonic_sec();
 	return 1;
 }
 
 int runsvdir_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int runsvdir_main(int argc, char **argv)
+int runsvdir_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	struct stat s;
 	dev_t last_dev = last_dev; /* for gcc */
@@ -220,6 +239,8 @@ int runsvdir_main(int argc, char **argv)
 	char ch;
 	int i;
 
+	INIT_G();
+
 	argv++;
 	if (!*argv)
 		bb_show_usage();
@@ -232,8 +253,8 @@ int runsvdir_main(int argc, char **argv)
 			bb_show_usage();
 	}
 
-	sig_catch(SIGTERM, s_term);
-	sig_catch(SIGHUP, s_hangup);
+	bb_signals_recursive(1 << SIGTERM, s_term);
+	bb_signals_recursive(1 << SIGHUP, s_hangup);
 	svdir = *argv++;
 	if (argv && *argv) {
 		rplog = *argv;
@@ -252,7 +273,7 @@ int runsvdir_main(int argc, char **argv)
 	for (;;) {
 		/* collect children */
 		for (;;) {
-			pid = wait_nohang(&wstat);
+			pid = wait_any_nohang(&wstat);
 			if (pid <= 0)
 				break;
 			for (i = 0; i < svnum; i++) {
@@ -296,7 +317,7 @@ int runsvdir_main(int argc, char **argv)
 
 		if (rplog) {
 			if ((int)(now - stamplog) >= 0) {
-				write(logpipe[1], ".", 1);
+				write(logpipe.wr, ".", 1);
 				stamplog = now + 900;
 			}
 		}
@@ -311,7 +332,7 @@ int runsvdir_main(int argc, char **argv)
 		sig_unblock(SIGCHLD);
 
 		if (pfd[0].revents & POLLIN) {
-			while (read(logpipe[0], &ch, 1) > 0) {
+			while (read(logpipe.rd, &ch, 1) > 0) {
 				if (ch) {
 					for (i = 6; i < rploglen; i++)
 						rplog[i-1] = rplog[i];

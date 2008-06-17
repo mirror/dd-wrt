@@ -12,7 +12,7 @@
 #define SU_OPT_l (4)
 
 int su_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int su_main(int argc, char **argv)
+int su_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	unsigned flags;
 	char *opt_shell = NULL;
@@ -24,19 +24,17 @@ int su_main(int argc, char **argv)
 	char *old_user;
 
 	flags = getopt32(argv, "mplc:s:", &opt_command, &opt_shell);
-	argc -= optind;
+	//argc -= optind;
 	argv += optind;
 
-	if (argc && LONE_DASH(argv[0])) {
+	if (argv[0] && LONE_DASH(argv[0])) {
 		flags |= SU_OPT_l;
-		argc--;
 		argv++;
 	}
 
 	/* get user if specified */
-	if (argc) {
+	if (argv[0]) {
 		opt_username = argv[0];
-		//argc--; - not used below anyway
 		argv++;
 	}
 
@@ -93,7 +91,7 @@ int su_main(int argc, char **argv)
 		opt_shell = pw->pw_shell;
 
 	change_identity(pw);
-	/* setup_environment params: shell, loginshell, changeenv, pw */
+	/* setup_environment params: shell, clear_env, change_env, pw */
 	setup_environment(opt_shell, flags & SU_OPT_l, !(flags & SU_OPT_mp), pw);
 	USE_SELINUX(set_current_security_context(NULL);)
 

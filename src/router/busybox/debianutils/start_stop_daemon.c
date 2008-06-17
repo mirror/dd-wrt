@@ -11,47 +11,61 @@
 /* NB: we have a problem here with /proc/NN/exe usage, similar to
  * one fixed in killall/pidof */
 
-#include <getopt.h>
 #include <sys/resource.h>
 
 /* Override ENABLE_FEATURE_PIDFILE */
 #define WANT_PIDFILE 1
 #include "libbb.h"
 
-static int signal_nr = 15;
-static int user_id = -1;
-static char *userspec;
-static char *cmdname;
-static char *execname;
-static char *pidfile;
-static smallint quiet;
-
 struct pid_list {
 	struct pid_list *next;
 	pid_t pid;
 };
 
-static struct pid_list *found;
 
-static int pid_is_exec(pid_t pid, const char *name)
+struct globals {
+	struct pid_list *found;
+	char *userspec;
+	char *cmdname;
+	char *execname;
+	char *pidfile;
+	int user_id;
+	smallint quiet;
+	smallint signal_nr;
+	struct stat execstat;
+};
+#define G (*(struct globals*)&bb_common_bufsiz1)
+#define found             (G.found               )
+#define userspec          (G.userspec            )
+#define cmdname           (G.cmdname             )
+#define execname          (G.execname            )
+#define pidfile           (G.pidfile             )
+#define user_id           (G.user_id             )
+#define quiet             (G.quiet               )
+#define signal_nr         (G.signal_nr           )
+#define execstat          (G.execstat            )
+#define INIT_G() \
+        do { \
+		user_id = -1; \
+		signal_nr = 15; \
+        } while (0)
+
+
+static int pid_is_exec(pid_t pid)
 {
+	struct stat st;
 	char buf[sizeof("/proc//exe") + sizeof(int)*3];
-	char *execbuf;
-	int n;
 
 	sprintf(buf, "/proc/%u/exe", pid);
-	n = strlen(name) + 1;
-	execbuf = xzalloc(n + 1);
-	readlink(buf, execbuf, n);
-
-	/* if readlink fails, execbuf still contains "" */
-	n = strcmp(execbuf, name);
-	if (ENABLE_FEATURE_CLEAN_UP)
-		free(execbuf);
-	return !n; /* nonzero (true) if execbuf == name */
+	if (stat(buf, &st) < 0)
+		return 0;
+	if (st.st_dev == execstat.st_dev
+	 && st.st_ino == execstat.st_ino)
+		return 1;
+	return 0;
 }
 
-static int pid_is_user(int pid, int uid)
+static int pid_is_user(int pid)
 {
 	struct stat sb;
 	char buf[sizeof("/proc/") + sizeof(int)*3];
@@ -59,42 +73,39 @@ static int pid_is_user(int pid, int uid)
 	sprintf(buf, "/proc/%u", pid);
 	if (stat(buf, &sb) != 0)
 		return 0;
-	return (sb.st_uid == uid);
+	return (sb.st_uid == user_id);
 }
 
-static int pid_is_cmd(pid_t pid, const char *name)
+static int pid_is_cmd(pid_t pid)
 {
-	char fname[sizeof("/proc//stat") + sizeof(int)*3];
-	char *buf;
-	int r = 0;
+	char buf[256]; /* is it big enough? */
+	char *p, *pe;
 
-	sprintf(fname, "/proc/%u/stat", pid);
-	buf = xmalloc_open_read_close(fname, NULL);
-	if (buf) {
-		char *p = strchr(buf, '(');
-		if (p) {
-			char *pe = strrchr(++p, ')');
-			if (pe) {
-				*pe = '\0';
-				r = !strcmp(p, name);
-			}
-		}
-		free(buf);
-	}
-	return r;
+	sprintf(buf, "/proc/%u/stat", pid);
+	if (open_read_close(buf, buf, sizeof(buf) - 1) < 0)
+		return 0;
+	buf[sizeof(buf) - 1] = '\0'; /* paranoia */
+	p = strchr(buf, '(');
+	if (!p)
+		return 0;
+	pe = strrchr(++p, ')');
+	if (!pe)
+		return 0;
+	*pe = '\0';
+	return !strcmp(p, cmdname);
 }
 
 static void check(int pid)
 {
 	struct pid_list *p;
 
-	if (execname && !pid_is_exec(pid, execname)) {
+	if (execname && !pid_is_exec(pid)) {
 		return;
 	}
-	if (userspec && !pid_is_user(pid, user_id)) {
+	if (userspec && !pid_is_user(pid)) {
 		return;
 	}
-	if (cmdname && !pid_is_cmd(pid, cmdname)) {
+	if (cmdname && !pid_is_cmd(pid)) {
 		return;
 	}
 	p = xmalloc(sizeof(*p));
@@ -121,7 +132,7 @@ static void do_procinit(void)
 {
 	DIR *procdir;
 	struct dirent *entry;
-	int foundany, pid;
+	int pid;
 
 	if (pidfile) {
 		do_pidfile();
@@ -130,16 +141,22 @@ static void do_procinit(void)
 
 	procdir = xopendir("/proc");
 
-	foundany = 0;
-	while ((entry = readdir(procdir)) != NULL) {
-		pid = bb_strtou(entry->d_name, NULL, 10);
-		if (errno)
+	pid = 0;
+	while(1) {
+		errno = 0; /* clear any previous error */
+		entry = readdir(procdir);
+// TODO: check for exact errno(s) which mean that we got stale entry
+		if (errno) /* Stale entry, process has died after opendir */
 			continue;
-		foundany++;
+		if (!entry) /* EOF, no more entries */
+			break;
+		pid = bb_strtou(entry->d_name, NULL, 10);
+		if (errno) /* NaN */
+			continue;
 		check(pid);
 	}
 	closedir(procdir);
-	if (!foundany)
+	if (!pid)
 		bb_error_msg_and_die("nothing in /proc - not mounted?");
 }
 
@@ -148,8 +165,6 @@ static int do_stop(void)
 	char *what;
 	struct pid_list *p;
 	int killed = 0;
-
-	do_procinit();
 
 	if (cmdname) {
 		if (ENABLE_FEATURE_CLEAN_UP) what = xstrdup(cmdname);
@@ -235,7 +250,7 @@ enum {
 };
 
 int start_stop_daemon_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int start_stop_daemon_main(int argc, char **argv)
+int start_stop_daemon_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	unsigned opt;
 	char *signame;
@@ -246,6 +261,9 @@ int start_stop_daemon_main(int argc, char **argv)
 //	int retries = -1;
 	char *opt_N;
 #endif
+
+	INIT_G();
+
 #if ENABLE_FEATURE_START_STOP_DAEMON_LONG_OPTIONS
 	applet_long_options = start_stop_daemon_longopts;
 #endif
@@ -274,7 +292,7 @@ int start_stop_daemon_main(int argc, char **argv)
 //		if (retry_arg)
 //			retries = xatoi_u(retry_arg);
 //	)
-	argc -= optind;
+	//argc -= optind;
 	argv += optind;
 
 	if (userspec) {
@@ -282,13 +300,15 @@ int start_stop_daemon_main(int argc, char **argv)
 		if (errno)
 			user_id = xuname2uid(userspec);
 	}
+	if (execname)
+		xstat(execname, &execstat);
+
+	do_procinit(); /* Both start and stop needs to know current processes */
 
 	if (opt & CTX_STOP) {
 		int i = do_stop();
 		return (opt & OPT_OKNODO) ? 0 : (i <= 0);
 	}
-
-	do_procinit();
 
 	if (found) {
 		if (!quiet)

@@ -17,7 +17,7 @@
 
 /* Written by Jim Meyering.  */
 
-/* Busyboxed by Denis Vlasenko
+/* Busyboxed by Denys Vlasenko
 
 Based on od.c from coreutils-5.2.1
 Top bloat sources:
@@ -188,7 +188,7 @@ static off_t pseudo_offset;
    a multiple of the least common multiple of the sizes associated with
    the specified output types.  It should be as large as possible, but
    no larger than 16 -- unless specified with the -w option.  */
-static size_t bytes_per_block;
+static unsigned bytes_per_block = 32; /* have to use unsigned, not size_t */
 
 /* A NULL-terminated list of the file-arguments from the command line.  */
 static const char *const *file_list;
@@ -360,7 +360,7 @@ print_long_double(size_t n_bytes, const char *block, const char *fmt_string)
 }
 
 /* print_[named]_ascii are optimized for speed.
- * Remember, someday you may want to pump gigabytes thru this thing.
+ * Remember, someday you may want to pump gigabytes through this thing.
  * Saving a dozen of .text bytes here is counter-productive */
 
 static void
@@ -723,7 +723,7 @@ decode_one_format(const char *s_orig, const char *s, const char **next,
 
 /* Decode the modern od format string S.  Append the decoded
    representation to the global array SPEC, reallocating SPEC if
-   necessary.  Return zero if S is valid, nonzero otherwise.  */
+   necessary.  */
 
 static void
 decode_format_string(const char *s)
@@ -776,18 +776,18 @@ skip(off_t n_skip)
 			   as large as the size of the current file, we can
 			   decrement n_skip and go on to the next file.  */
 		if (fstat(fileno(in_stream), &file_stats) == 0
-		 && S_ISREG(file_stats.st_mode) && file_stats.st_size >= 0
+		 && S_ISREG(file_stats.st_mode) && file_stats.st_size > 0
 		) {
 			if (file_stats.st_size < n_skip) {
 				n_skip -= file_stats.st_size;
-				/* take check&close / open_next route */
+				/* take "check & close / open_next" route */
 			} else {
 				if (fseeko(in_stream, n_skip, SEEK_CUR) != 0)
 					ioerror = 1;
 				return;
 			}
 		} else {
-			/* If it's not a regular file with nonnegative size,
+			/* If it's not a regular file with positive size,
 			   position the file pointer by reading.  */
 			char buf[1024];
 			size_t n_bytes_to_read = 1024;
@@ -1000,9 +1000,7 @@ parse_old_offset(const char *s, off_t *offset)
    spec, extend the input block with zero bytes until its length is a
    multiple of all format spec sizes.  Write the final block.  Finally,
    write on a line by itself the offset of the byte after the last byte
-   read.  Accumulate return values from calls to read_block and
-   check_and_close, and if any was nonzero, return nonzero.
-   Otherwise, return zero.  */
+   read.  */
 
 static void
 dump(off_t current_offset, off_t end_offset)
@@ -1078,8 +1076,7 @@ dump(off_t current_offset, off_t end_offset)
    and INPUT_FILENAME so they correspond to the next file in the list.
    Then try to read a byte from the newly opened file.  Repeat if
    necessary until EOF is reached for the last file in FILE_LIST, then
-   set *C to EOF and return.  Subsequent calls do likewise.  The return
-   value is nonzero if any errors occured, zero otherwise.  */
+   set *C to EOF and return.  Subsequent calls do likewise.  */
 
 static void
 read_char(int *c)
@@ -1112,8 +1109,7 @@ read_char(int *c)
    A string constant is a run of at least 'string_min' ASCII
    graphic (or formatting) characters terminated by a null.
    Based on a function written by Richard Stallman for a
-   traditional version of od.  Return nonzero if an error
-   occurs.  Otherwise, return zero.  */
+   traditional version of od.  */
 
 static void
 dump_strings(off_t address, off_t end_offset)
@@ -1181,7 +1177,6 @@ dump_strings(off_t address, off_t end_offset)
 int od_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int od_main(int argc, char **argv)
 {
-	static char const *const default_file_list[] = { "-", NULL };
 	static const struct suffix_mult bkm[] = {
 		{ "b", 512 },
 		{ "k", 1024 },
@@ -1222,7 +1217,6 @@ int od_main(int argc, char **argv)
 		;
 #endif
 	char *str_A, *str_N, *str_j, *str_S;
-	char *str_w = NULL;
 	llist_t *lst_t = NULL;
 	unsigned opt;
 	int l_c_m;
@@ -1243,7 +1237,7 @@ int od_main(int argc, char **argv)
 	/* flag_dump_strings = 0; - already is */
 
 	/* Parse command line */
-	opt_complementary = "t::"; // list
+	opt_complementary = "w+:t::"; /* -w N, -t is a list */
 #if ENABLE_GETOPT_LONG
 	applet_long_options = od_longopts;
 #endif
@@ -1252,7 +1246,7 @@ int od_main(int argc, char **argv)
 		// -S was -s and also had optional parameter
 		// but in coreutils 6.3 it was renamed and now has
 		// _mandatory_ parameter
-		&str_A, &str_N, &str_j, &lst_t, &str_S, &str_w);
+		&str_A, &str_N, &str_j, &lst_t, &str_S, &bytes_per_block);
 	argc -= optind;
 	argv += optind;
 	if (opt & OPT_A) {
@@ -1388,7 +1382,7 @@ int od_main(int argc, char **argv)
 	/* If no files were listed on the command line,
 	   set the global pointer FILE_LIST so that it
 	   references the null-terminated list of one name: "-".  */
-	file_list = default_file_list;
+	file_list = bb_argv_dash;
 	if (argc > 0) {
 		/* Set the global pointer FILE_LIST so that it
 		   references the first file-argument on the command-line.  */
@@ -1408,12 +1402,9 @@ int od_main(int argc, char **argv)
 	l_c_m = get_lcm();
 
 	if (opt & OPT_w) { /* -w: width */
-		bytes_per_block = 32;
-		if (str_w)
-			bytes_per_block = xatou(str_w);
 		if (!bytes_per_block || bytes_per_block % l_c_m != 0) {
-			bb_error_msg("warning: invalid width %zu; using %d instead",
-					bytes_per_block, l_c_m);
+			bb_error_msg("warning: invalid width %u; using %d instead",
+					(unsigned)bytes_per_block, l_c_m);
 			bytes_per_block = l_c_m;
 		}
 	} else {

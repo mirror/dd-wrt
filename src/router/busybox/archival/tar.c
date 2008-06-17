@@ -28,7 +28,21 @@
 #include "libbb.h"
 #include "unarchive.h"
 
+/* FIXME: Stop using this non-standard feature */
+#ifndef FNM_LEADING_DIR
+#define FNM_LEADING_DIR 0
+#endif
+
+
 #define block_buf bb_common_bufsiz1
+
+
+#if !ENABLE_FEATURE_TAR_GZIP && !ENABLE_FEATURE_TAR_BZIP2
+/* Do not pass gzip flag to writeTarFile() */
+#define writeTarFile(tar_fd, verboseFlag, dereferenceFlag, include, exclude, gzip) \
+	writeTarFile(tar_fd, verboseFlag, dereferenceFlag, include, exclude)
+#endif
+
 
 #if ENABLE_FEATURE_TAR_CREATE
 
@@ -509,21 +523,26 @@ static int writeTarFile(const int tar_fd, const int verboseFlag,
 	if (fstat(tbInfo.tarFd, &tbInfo.statBuf) < 0)
 		bb_perror_msg_and_die("cannot stat tar file");
 
-	if ((ENABLE_FEATURE_TAR_GZIP || ENABLE_FEATURE_TAR_BZIP2) && gzip) {
-// On Linux, vfork never unpauses parent early, although standard
-// allows for that. Do we want to waste bytes checking for it?
+#if ENABLE_FEATURE_TAR_GZIP || ENABLE_FEATURE_TAR_BZIP2
+	if (gzip) {
+#if ENABLE_FEATURE_TAR_GZIP && ENABLE_FEATURE_TAR_BZIP2
+		const char *zip_exec = (gzip == 1) ? "gzip" : "bzip2";
+#elif ENABLE_FEATURE_TAR_GZIP
+		const char *zip_exec = "gzip";
+#else /* only ENABLE_FEATURE_TAR_BZIP2 */
+		const char *zip_exec = "bzip2";
+#endif
+	// On Linux, vfork never unpauses parent early, although standard
+	// allows for that. Do we want to waste bytes checking for it?
 #define WAIT_FOR_CHILD 0
-
 		volatile int vfork_exec_errno = 0;
 #if WAIT_FOR_CHILD
-		struct { int rd; int wr; } gzipStatusPipe;
+		struct fd_pair gzipStatusPipe;
 #endif
-		struct { int rd; int wr; } gzipDataPipe;
-		const char *zip_exec = (gzip == 1) ? "gzip" : "bzip2";
-
-		xpipe(&gzipDataPipe.rd);
+		struct fd_pair gzipDataPipe;
+		xpiped_pair(gzipDataPipe);
 #if WAIT_FOR_CHILD
-		xpipe(&gzipStatusPipe.rd);
+		xpiped_pair(gzipStatusPipe);
 #endif
 
 		signal(SIGPIPE, SIG_IGN); /* we only want EPIPE on errors */
@@ -541,13 +560,16 @@ static int writeTarFile(const int tar_fd, const int verboseFlag,
 
 		if (gzipPid == 0) {
 			/* child */
-			xmove_fd(tbInfo.tarFd, 1);
-			xmove_fd(gzipDataPipe.rd, 0);
+			/* NB: close _first_, then move fds! */
 			close(gzipDataPipe.wr);
 #if WAIT_FOR_CHILD
 			close(gzipStatusPipe.rd);
+			/* gzipStatusPipe.wr will close only on exec -
+			 * parent waits for this close to happen */
 			fcntl(gzipStatusPipe.wr, F_SETFD, FD_CLOEXEC);
 #endif
+			xmove_fd(gzipDataPipe.rd, 0);
+			xmove_fd(tbInfo.tarFd, 1);
 			/* exec gzip/bzip2 program/applet */
 			BB_EXECLP(zip_exec, zip_exec, "-f", NULL);
 			vfork_exec_errno = errno;
@@ -565,7 +587,7 @@ static int writeTarFile(const int tar_fd, const int verboseFlag,
 
 			/* Wait until child execs (or fails to) */
 			n = full_read(gzipStatusPipe.rd, &buf, 1);
-			if ((n < 0) && (/*errno == EAGAIN ||*/ errno == EINTR))
+			if (n < 0 /* && errno == EAGAIN */)
 				continue;	/* try it again */
 
 		}
@@ -576,6 +598,7 @@ static int writeTarFile(const int tar_fd, const int verboseFlag,
 			bb_perror_msg_and_die("cannot exec %s", zip_exec);
 		}
 	}
+#endif
 
 	tbInfo.excludeList = exclude;
 
@@ -610,7 +633,7 @@ static int writeTarFile(const int tar_fd, const int verboseFlag,
 
 	if (gzipPid) {
 		int status;
-		if (waitpid(gzipPid, &status, 0) == -1)
+		if (safe_waitpid(gzipPid, &status, 0) == -1)
 			bb_perror_msg("waitpid");
 		else if (!WIFEXITED(status) || WEXITSTATUS(status))
 			/* gzip was killed or has exited with nonzero! */
@@ -688,7 +711,7 @@ static void handle_SIGCHLD(int status)
 	/* Actually, 'status' is a signo. We reuse it for other needs */
 
 	/* Wait for any child without blocking */
-	if (waitpid(-1, &status, WNOHANG) < 0)
+	if (wait_any_nohang(&status) < 0)
 		/* wait failed?! I'm confused... */
 		return;
 
@@ -926,11 +949,13 @@ int tar_main(int argc, char **argv)
 
 	/* create an archive */
 	if (opt & OPT_CREATE) {
+#if ENABLE_FEATURE_TAR_GZIP || ENABLE_FEATURE_TAR_BZIP2
 		int zipMode = 0;
-		if (ENABLE_FEATURE_TAR_GZIP && get_header_ptr == get_header_tar_gz)
+		if (ENABLE_FEATURE_TAR_GZIP && (opt & OPT_GZIP))
 			zipMode = 1;
-		if (ENABLE_FEATURE_TAR_BZIP2 && get_header_ptr == get_header_tar_bz2)
+		if (ENABLE_FEATURE_TAR_BZIP2 && (opt & OPT_BZIP2))
 			zipMode = 2;
+#endif
 		/* NB: writeTarFile() closes tar_handle->src_fd */
 		return writeTarFile(tar_handle->src_fd, verboseFlag, opt & OPT_DEREFERENCE,
 				tar_handle->accept,
@@ -938,7 +963,7 @@ int tar_main(int argc, char **argv)
 	}
 
 	while (get_header_ptr(tar_handle) == EXIT_SUCCESS)
-		/* nothing */;
+		continue;
 
 	/* Check that every file that should have been extracted was */
 	while (tar_handle->accept) {

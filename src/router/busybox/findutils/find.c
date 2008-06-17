@@ -74,7 +74,9 @@ typedef struct {
 #endif
 } action;
 #define ACTS(name, arg...) typedef struct { action a; arg; } action_##name;
-#define ACTF(name)         static int func_##name(const char *fileName, struct stat *statbuf, action_##name* ap)
+#define ACTF(name)         static int func_##name(const char *fileName ATTRIBUTE_UNUSED, \
+                                                  struct stat *statbuf ATTRIBUTE_UNUSED, \
+                                                  action_##name* ap ATTRIBUTE_UNUSED)
                          ACTS(print)
                          ACTS(name,  const char *pattern; bool iname;)
 USE_FEATURE_FIND_PATH(   ACTS(path,  const char *pattern;))
@@ -372,7 +374,10 @@ ACTF(context)
 #endif
 
 
-static int fileAction(const char *fileName, struct stat *statbuf, void *userData, int depth)
+static int fileAction(const char *fileName,
+		struct stat *statbuf,
+		void *userData SKIP_FEATURE_FIND_MAXDEPTH(ATTRIBUTE_UNUSED),
+		int depth SKIP_FEATURE_FIND_MAXDEPTH(ATTRIBUTE_UNUSED))
 {
 	int i;
 #if ENABLE_FEATURE_FIND_MAXDEPTH
@@ -512,7 +517,10 @@ static action*** parse_params(char **argv)
 	unsigned cur_action = 0;
 	USE_FEATURE_FIND_NOT( bool invert_flag = 0; )
 
-	/* 'static' doesn't work here! (gcc 4.1.2) */
+	/* This is the only place in busybox where we use nested function.
+	 * So far more standard alternatives were bigger. */
+	/* Suppress a warning "func without a prototype" */
+	auto action* alloc_action(int sizeof_struct, action_fp f);
 	action* alloc_action(int sizeof_struct, action_fp f)
 	{
 		action *ap;

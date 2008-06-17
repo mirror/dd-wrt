@@ -108,8 +108,13 @@ enum { LINE_BUF_SIZE = COMMON_BUFSIZE - offsetof(struct globals, line_buf) };
 #define total_pcpu       (G.total_pcpu        )
 #define line_buf         (G.line_buf          )
 
-
-#define OPT_BATCH_MODE (option_mask32 & 0x4)
+enum {
+	OPT_d = (1 << 0),
+	OPT_n = (1 << 1),
+	OPT_b = (1 << 2),
+	OPT_EOF = (1 << 3), /* pseudo: "we saw EOF in stdin" */
+};
+#define OPT_BATCH_MODE (option_mask32 & OPT_b)
 
 
 #if ENABLE_FEATURE_USE_TERMIOS
@@ -165,7 +170,7 @@ static void get_jiffy_counts(void)
 	if (fscanf(fp, "cpu  %lld %lld %lld %lld %lld %lld %lld %lld",
 			&jif.usr,&jif.nic,&jif.sys,&jif.idle,
 			&jif.iowait,&jif.irq,&jif.softirq,&jif.steal) < 4) {
-		bb_error_msg_and_die("failed to read /proc/stat");
+		bb_error_msg_and_die("can't read /proc/stat");
 	}
 	fclose(fp);
 	jif.total = jif.usr + jif.nic + jif.sys + jif.idle
@@ -450,7 +455,7 @@ static NOINLINE void display_process_list(int count, int scr_width)
 #endif
 
 	scr_width += 2; /* account for leading '\n' and trailing NUL */
-	/* Ok, all preliminary data is ready, go thru the list */
+	/* Ok, all preliminary data is ready, go through the list */
 	while (count-- > 0) {
 		unsigned col;
 		CALC_STAT(pmem, (s->vsz*pmem_scale + pmem_half) >> pmem_shift);
@@ -506,7 +511,7 @@ static void clearmems(void)
 
 static void reset_term(void)
 {
-	tcsetattr(0, TCSANOW, (void *) &initial_settings);
+	tcsetattr(0, TCSANOW, &initial_settings);
 	if (ENABLE_FEATURE_CLEAN_UP) {
 		clearmems();
 #if ENABLE_FEATURE_TOP_CPU_USAGE_PERCENTAGE
@@ -594,20 +599,20 @@ static void display_topmem_header(int scr_width)
 			/*  9 */ char *anon;
 			/* 10 */ char *map;
 			/* 11 */ char *slab;
-		};
+		} u;
 		char *str[11];
 	} Z;
-#define total     Z.total
-#define mfree     Z.mfree
-#define buf       Z.buf
-#define cache     Z.cache
-#define swaptotal Z.swaptotal
-#define swapfree  Z.swapfree
-#define dirty     Z.dirty
-#define mwrite    Z.mwrite
-#define anon      Z.anon
-#define map       Z.map
-#define slab      Z.slab
+#define total     Z.u.total
+#define mfree     Z.u.mfree
+#define buf       Z.u.buf
+#define cache     Z.u.cache
+#define swaptotal Z.u.swaptotal
+#define swapfree  Z.u.swapfree
+#define dirty     Z.u.dirty
+#define mwrite    Z.u.mwrite
+#define anon      Z.u.anon
+#define map       Z.u.map
+#define slab      Z.u.slab
 #define str       Z.str
 
 	memset(&Z, 0, sizeof(Z));
@@ -669,60 +674,10 @@ static void display_topmem_header(int scr_width)
 #undef str
 }
 
-// Converts unsigned long long value into compact 5-char
-// representation. Sixth char is always ' '
-static void smart_ulltoa6(unsigned long long ul, char buf[6])
+static void ulltoa6_and_space(unsigned long long ul, char buf[6])
 {
-	const char *fmt;
-	char c;
-	unsigned v, u, idx = 0;
-
-	if (ul > 99999) { // do not scale if 99999 or less
-		ul *= 10;
-		do {
-			ul /= 1024;
-			idx++;
-		} while (ul >= 100000);
-	}
-	v = ul; // ullong divisions are expensive, avoid them
-
-	fmt = " 123456789";
-	u = v / 10;
-	v = v % 10;
-	if (!idx) {
-		// 99999 or less: use "12345" format
-		// u is value/10, v is last digit
-		c = buf[0] = " 123456789"[u/1000];
-		if (c != ' ') fmt = "0123456789";
-		c = buf[1] = fmt[u/100%10];
-		if (c != ' ') fmt = "0123456789";
-		c = buf[2] = fmt[u/10%10];
-		if (c != ' ') fmt = "0123456789";
-		buf[3] = fmt[u%10];
-		buf[4] = "0123456789"[v];
-	} else {
-		// value has been scaled into 0..9999.9 range
-		// u is value, v is 1/10ths (allows for 92.1M format)
-		if (u >= 100) {
-			// value is >= 100: use "1234M', " 123M" formats
-			c = buf[0] = " 123456789"[u/1000];
-			if (c != ' ') fmt = "0123456789";
-			c = buf[1] = fmt[u/100%10];
-			if (c != ' ') fmt = "0123456789";
-			v = u % 10;
-			u = u / 10;
-			buf[2] = fmt[u%10];
-		} else {
-			// value is < 100: use "92.1M" format
-			c = buf[0] = " 123456789"[u/10];
-			if (c != ' ') fmt = "0123456789";
-			buf[1] = fmt[u%10];
-			buf[2] = '.';
-		}
-		buf[3] = "0123456789"[v];
-		// see http://en.wikipedia.org/wiki/Tera
-		buf[4] = " mgtpezy"[idx];
-	}
+	/* see http://en.wikipedia.org/wiki/Tera */
+	smart_ulltoa5(ul, buf, " mgtpezy");
 	buf[5] = ' ';
 }
 
@@ -739,14 +694,14 @@ static NOINLINE void display_topmem_process_list(int count, int scr_width)
 
 	while (--count >= 0) {
 		// PID VSZ VSZRW RSS (SHR) DIRTY (SHR) COMMAND
-		smart_ulltoa6(s->pid     , &line_buf[0*6]);
-		smart_ulltoa6(s->vsz     , &line_buf[1*6]);
-		smart_ulltoa6(s->vszrw   , &line_buf[2*6]);
-		smart_ulltoa6(s->rss     , &line_buf[3*6]);
-		smart_ulltoa6(s->rss_sh  , &line_buf[4*6]);
-		smart_ulltoa6(s->dirty   , &line_buf[5*6]);
-		smart_ulltoa6(s->dirty_sh, &line_buf[6*6]);
-		smart_ulltoa6(s->stack   , &line_buf[7*6]);
+		ulltoa6_and_space(s->pid     , &line_buf[0*6]);
+		ulltoa6_and_space(s->vsz     , &line_buf[1*6]);
+		ulltoa6_and_space(s->vszrw   , &line_buf[2*6]);
+		ulltoa6_and_space(s->rss     , &line_buf[3*6]);
+		ulltoa6_and_space(s->rss_sh  , &line_buf[4*6]);
+		ulltoa6_and_space(s->dirty   , &line_buf[5*6]);
+		ulltoa6_and_space(s->dirty_sh, &line_buf[6*6]);
+		ulltoa6_and_space(s->stack   , &line_buf[7*6]);
 		line_buf[8*6] = '\0';
 		if (scr_width > MIN_WIDTH) {
 			read_cmdline(&line_buf[8*6], scr_width - MIN_WIDTH, s->pid, s->comm);
@@ -785,12 +740,12 @@ enum {
 };
 
 int top_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int top_main(int argc, char **argv)
+int top_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	int count, lines, col;
 	unsigned interval;
 	int iterations;
-	char *sinterval, *siterations;
+	char *sinterval;
 	SKIP_FEATURE_TOPMEM(const) unsigned scan_mask = TOP_MASK;
 #if ENABLE_FEATURE_USE_TERMIOS
 	struct termios new_settings;
@@ -803,19 +758,16 @@ int top_main(int argc, char **argv)
 
 	INIT_G();
 
-	interval = 5; /* default update rate is 5 seconds */
+	interval = 5; /* default update interval is 5 seconds */
 	iterations = 0; /* infinite */
 
-	/* do normal option parsing */
-	opt_complementary = "-";
-	getopt32(argv, "d:n:b", &sinterval, &siterations);
-	if (option_mask32 & 0x1) {
+	/* all args are options; -n NUM */
+	opt_complementary = "-:n+";
+	getopt32(argv, "d:n:b", &sinterval, &iterations);
+	if (option_mask32 & OPT_d) {
 		/* Need to limit it to not overflow poll timeout */
 		interval = xatou16(sinterval); // -d
 	}
-	if (option_mask32 & 0x2)
-		iterations = xatoi_u(siterations); // -n
-	//if (option_mask32 & 0x4) // -b
 
 	/* change to /proc */
 	xchdir("/proc");
@@ -825,10 +777,8 @@ int top_main(int argc, char **argv)
 	/* unbuffered input, turn off echo */
 	new_settings.c_lflag &= ~(ISIG | ICANON | ECHO | ECHONL);
 
-	signal(SIGTERM, sig_catcher);
-	signal(SIGINT, sig_catcher);
+	bb_signals(BB_FATAL_SIGS, sig_catcher);
 	tcsetattr(0, TCSANOW, (void *) &new_settings);
-	atexit(reset_term);
 #endif /* FEATURE_USE_TERMIOS */
 
 #if ENABLE_FEATURE_TOP_CPU_USAGE_PERCENTAGE
@@ -845,7 +795,8 @@ int top_main(int argc, char **argv)
 		lines = 24; /* default */
 		col = 79;
 #if ENABLE_FEATURE_USE_TERMIOS
-		get_terminal_width_height(0, &col, &lines);
+		/* We output to stdout, we need size of stdout (not stdin)! */
+		get_terminal_width_height(STDOUT_FILENO, &col, &lines);
 		if (lines < 5 || col < 10) {
 			sleep(interval);
 			continue;
@@ -890,9 +841,10 @@ int top_main(int argc, char **argv)
 				topmem[n].stack    = p->stack;
 #endif
 			}
-		}
+		} /* end of "while we read /proc" */
 		if (ntop == 0) {
-			bb_error_msg_and_die("no process info in /proc");
+			bb_error_msg("no process info in /proc");
+			break;
 		}
 
 		if (scan_mask == TOP_MASK) {
@@ -909,26 +861,36 @@ int top_main(int argc, char **argv)
 #else
 			qsort(top, ntop, sizeof(top_status_t), (void*)(sort_function[0]));
 #endif /* FEATURE_TOP_CPU_USAGE_PERCENTAGE */
-		} else { /* TOPMEM */
+		}
+#if ENABLE_FEATURE_TOPMEM
+		else { /* TOPMEM */
 			qsort(topmem, ntop, sizeof(topmem_status_t), (void*)topmem_sort);
 		}
+#endif
 		count = lines;
 		if (OPT_BATCH_MODE || count > ntop) {
 			count = ntop;
 		}
 		if (scan_mask == TOP_MASK)
 			display_process_list(count, col);
+#if ENABLE_FEATURE_TOPMEM
 		else
 			display_topmem_process_list(count, col);
+#endif
 		clearmems();
 		if (iterations >= 0 && !--iterations)
 			break;
 #if !ENABLE_FEATURE_USE_TERMIOS
 		sleep(interval);
 #else
-		if (safe_poll(pfd, 1, interval * 1000) > 0) {
-			if (read(0, &c, 1) != 1)    /* signal */
-				break;
+		if (option_mask32 & (OPT_b|OPT_EOF))
+			 /* batch mode, or EOF on stdin ("top </dev/null") */
+			sleep(interval);
+		else if (safe_poll(pfd, 1, interval * 1000) > 0) {
+			if (safe_read(0, &c, 1) != 1) { /* error/EOF? */
+				option_mask32 |= OPT_EOF;
+				continue;
+			}
 			if (c == initial_settings.c_cc[VINTR])
 				break;
 			c |= 0x20; /* lowercase */
@@ -973,7 +935,11 @@ int top_main(int argc, char **argv)
 #endif
 		}
 #endif /* FEATURE_USE_TERMIOS */
-	}
+	} /* end of "while (1)" */
+
 	bb_putchar('\n');
+#if ENABLE_FEATURE_USE_TERMIOS
+	reset_term();
+#endif
 	return EXIT_SUCCESS;
 }

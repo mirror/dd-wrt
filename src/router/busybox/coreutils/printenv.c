@@ -9,13 +9,12 @@
  */
 
 #include "libbb.h"
-extern char **environ;
 
 int printenv_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int printenv_main(int argc, char **argv)
+int printenv_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	/* no variables specified, show whole env */
-	if (argc == 1) {
+	if (!argv[1]) {
 		int e = 0;
 		while (environ[e])
 			puts(environ[e++]);

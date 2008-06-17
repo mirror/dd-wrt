@@ -32,7 +32,7 @@ struct bb_applet {
 /* Define struct bb_applet applets[] */
 #include "../include/applets.h"
 
-enum { NUM_APPLETS = sizeof(applets)/sizeof(applets[0]) };
+enum { NUM_APPLETS = ARRAY_SIZE(applets) };
 
 static int offset[NUM_APPLETS];
 
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
 
 	puts("/* This is a generated file, don't edit */");
 
-	puts("const char applet_names[] ALIGN1 = \"\" \n");
+	puts("const char applet_names[] ALIGN1 = \"\"\n");
 	for (i = 0; i < NUM_APPLETS; i++) {
 		printf("\"%s\" \"\\0\"\n", applets[i].name);
 	}
@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 			+ (applets[i].noexec << 13)
 #endif
 #if ENABLE_FEATURE_SUID
-			+ (applets[i].need_suid   << 14) /* 2 bits */
+			+ (applets[i].need_suid << 14) /* 2 bits */
 #endif
 		);
 	}
