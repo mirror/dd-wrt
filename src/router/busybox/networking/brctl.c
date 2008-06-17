@@ -122,7 +122,7 @@ int brctl_main(int argc ATTRIBUTE_UNUSED, char **argv)
 		if (key == ARG_show) { /* show */
 			char brname[IFNAMSIZ];
 			int bridx[MAX_PORTS];
-			int i, num;
+			int i, num ;
 			arm_ioctl(args, BRCTL_GET_BRIDGES,
 						(unsigned long) bridx, MAX_PORTS);
 			num = xioctl(fd, SIOCGIFBR, args);
