@@ -12,18 +12,10 @@
 /* This applet currently uses only the ioctl interface and no sysfs at all.
  * At the time of this writing this was considered a feature.
  */
+#define NEED_PRINTF 1
 #include "libbb.h"
 #include <linux/sockios.h>
 #include <net/if.h>
-
-
-/* bridge calls */
-#ifndef SIOCBRADDBR
-#define SIOCBRADDBR     0x89a0		/* create new bridge device     */
-#define SIOCBRDELBR     0x89a1		/* remove bridge device         */
-#define SIOCBRADDIF	0x89a2		/* add interface to bridge      */
-#define SIOCBRDELIF	0x89a3		/* remove interface from bridge */
-#endif
 
 /* Maximum number of ports supported per bridge interface.  */
 #ifndef MAX_PORTS
@@ -33,12 +25,6 @@
 /* Use internal number parsing and not the "exact" conversion.  */
 /* #define BRCTL_USE_INTERNAL 0 */ /* use exact conversion */
 #define BRCTL_USE_INTERNAL 1
-
-#ifdef ENABLE_FEATURE_BRCTL_SHOW
-#error Remove these
-#endif
-#define ENABLE_FEATURE_BRCTL_SHOW 0
-#define USE_FEATURE_BRCTL_SHOW(...)
 
 #if ENABLE_FEATURE_BRCTL_FANCY
 #include <linux/if_bridge.h>
@@ -94,140 +80,212 @@ static void arm_ioctl(unsigned long *args,
 }
 #endif
 
-
+#define ENABLE_FEATURE_BRCTL_SHOW 1
 int brctl_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int brctl_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	static const char keywords[] ALIGN1 =
 		"addbr\0" "delbr\0" "addif\0" "delif\0"
-	USE_FEATURE_BRCTL_FANCY(
 		"stp\0"
 		"setageing\0" "setfd\0" "sethello\0" "setmaxage\0"
 		"setpathcost\0" "setportprio\0" "setbridgeprio\0"
-	)
-		USE_FEATURE_BRCTL_SHOW("showmacs\0" "show\0");
+	         "showmacs\0" "show\0";
 
-	enum { ARG_addbr = 0, ARG_delbr, ARG_addif, ARG_delif
-		USE_FEATURE_BRCTL_FANCY(,
+	enum { ARG_addbr = 0, ARG_delbr, ARG_addif, ARG_delif,
 		   ARG_stp,
 		   ARG_setageing, ARG_setfd, ARG_sethello, ARG_setmaxage,
-		   ARG_setpathcost, ARG_setportprio, ARG_setbridgeprio
-		)
-		  USE_FEATURE_BRCTL_SHOW(, ARG_showmacs, ARG_show)
+		   ARG_setpathcost, ARG_setportprio, ARG_setbridgeprio,
+		ARG_showmacs, ARG_show
 	};
 
 	int fd;
+	int ret;
 	smallint key;
 	struct ifreq ifr;
 	char *br, *brif;
-#if ENABLE_FEATURE_BRCTL_FANCY
-	unsigned long args[4] = {0, 0, 0, 0};
-	int port;
-	int tmp;
-#endif
 
 	argv++;
 	while (*argv) {
+#if ENABLE_FEATURE_BRCTL_FANCY
+		int ifidx[MAX_PORTS];
+		unsigned long args[4];
+		ifr.ifr_data = (char *) &args;
+#endif
+
 		key = index_in_strings(keywords, *argv);
 		if (key == -1) /* no match found in keywords array, bail out. */
 			bb_error_msg_and_die(bb_msg_invalid_arg, *argv, applet_name);
 		argv++;
+		fd = xsocket(AF_INET, SOCK_STREAM, 0);
+
 #if ENABLE_FEATURE_BRCTL_SHOW
 		if (key == ARG_show) { /* show */
-			goto out; /* FIXME: implement me! :) */
+			char brname[IFNAMSIZ];
+			int bridx[MAX_PORTS];
+			int i, num;
+			arm_ioctl(args, BRCTL_GET_BRIDGES,
+						(unsigned long) bridx, MAX_PORTS);
+			num = xioctl(fd, SIOCGIFBR, args);
+			printf("bridge name\tbridge id\t\tSTP enabled\tinterfaces\n");
+			for (i = 0; i < num; i++) {
+				char ifname[IFNAMSIZ];
+				int j, tabs;
+				struct __bridge_info bi;
+				unsigned char *x;
+
+				if (!if_indextoname(bridx[i], brname))
+					bb_perror_msg_and_die("can't get bridge name for index %d", i);
+				strncpy(ifr.ifr_name, brname, IFNAMSIZ);
+
+				arm_ioctl(args, BRCTL_GET_BRIDGE_INFO,
+							(unsigned long) &bi, 0);
+				xioctl(fd, SIOCDEVPRIVATE, &ifr);
+				printf("%s\t\t", brname);
+
+				/* print bridge id */
+				x = (unsigned char *) &bi.bridge_id;
+				for (j = 0; j < 8; j++) {
+					printf("%.2x", x[j]);
+					if (j == 1)
+						bb_putchar('.');
+				}
+				printf(bi.stp_enabled ? "\tyes" : "\tno");
+
+				/* print interface list */
+				arm_ioctl(args, BRCTL_GET_PORT_LIST,
+							(unsigned long) ifidx, MAX_PORTS);
+				xioctl(fd, SIOCDEVPRIVATE, &ifr);
+				tabs = 0;
+				for (j = 0; j < MAX_PORTS; j++) {
+					if (!ifidx[j])
+						continue;
+					if (!if_indextoname(ifidx[j], ifname))
+						bb_perror_msg_and_die("can't get interface name for index %d", j);
+					if (tabs)
+						printf("\t\t\t\t\t");
+					else
+						tabs = 1;
+					printf("\t\t%s\n", ifname);
+				}
+				if (!tabs)	/* bridge has no interfaces */
+					bb_putchar('\n');
+			}
+			goto done;
 		}
 #endif
-		fd = xsocket(AF_INET, SOCK_STREAM, 0);
+
+		if (!*argv) /* all but 'show' need at least one argument */
+			bb_show_usage();
+
 		br = *argv++;
 
 		if (key == ARG_addbr || key == ARG_delbr) { /* addbr or delbr */
-			ioctl_or_perror_and_die(fd,
-					key == ARG_addbr ? SIOCBRADDBR : SIOCBRDELBR,
-					br, "bridge %s", br);
+#ifdef SIOCBRADDBR
+		if (key == ARG_addbr)
+		    ret = xioctl (fd, SIOCBRADDBR, br);
+		else
+		    ret = xioctl (fd, SIOCBRDELBR, br);
+		if (ret < 0)
+#endif
+			{
+		         char _br[IFNAMSIZ];
+			unsigned long arg[3] = { ARG_addif ? BRCTL_ADD_BRIDGE : BRCTL_DEL_BRIDGE, (unsigned long)_br };
+		        strncpy (_br, br, IFNAMSIZ);
+		    	ret = xioctl (fd, SIOCSIFBR, arg);	
+			}
+			if (ret<0)
+			    bb_perror_msg_and_die("bridge %s", br);
 			goto done;
 		}
-		if (!*argv) /* all but 'show' need at least one argument */
+
+		if (!*argv) /* all but 'addif/delif' need at least two arguments */
 			bb_show_usage();
-		safe_strncpy(ifr.ifr_name, br, IFNAMSIZ);
+
+		strncpy(ifr.ifr_name, br, IFNAMSIZ);
 		if (key == ARG_addif || key == ARG_delif) { /* addif or delif */
-			brif = *argv++;
+			brif = *argv;
+#ifdef SIOCBRADDBR
 			ifr.ifr_ifindex = if_nametoindex(brif);
 			if (!ifr.ifr_ifindex) {
 				bb_perror_msg_and_die("iface %s", brif);
 			}
-			ioctl_or_perror_and_die(fd,
-					key == ARG_addif ? SIOCBRADDIF : SIOCBRDELIF,
-					&ifr, "bridge %s", br);
-			goto done;
+			ret = xioctl (fd, key == ARG_addif ? SIOCBRADDIF : SIOCBRDELIF, &ifr);
+			if (ret<0)
+#endif
+			{
+			unsigned long arg[4] = { ARG_addif ? BRCTL_ADD_IF : BRCTL_DEL_IF, if_nametoindex(brif), 0, 0 };
+    		        ifr.ifr_data = (char *) arg;
+    			ret = xioctl (fd, SIOCDEVPRIVATE, &ifr);
+			}
+			
+			if (ret<0)
+			    bb_perror_msg_and_die("bridge %s", br);
+			goto done_next_argv;
 		}
 #if ENABLE_FEATURE_BRCTL_FANCY
-		ifr.ifr_data = (char *) &args;
 		if (key == ARG_stp) { /* stp */
 			/* FIXME: parsing yes/y/on/1 versus no/n/off/0 is too involved */
 			arm_ioctl(args, BRCTL_SET_BRIDGE_STP_STATE,
 					  (unsigned)(**argv - '0'), 0);
 			goto fire;
 		}
-		if ((unsigned)(key - ARG_stp) < 5) { /* time related ops */
-			unsigned long op = (key == ARG_setageing) ? BRCTL_SET_AGEING_TIME :
-			                   (key == ARG_setfd) ? BRCTL_SET_BRIDGE_FORWARD_DELAY :
-			                   (key == ARG_sethello) ? BRCTL_SET_BRIDGE_HELLO_TIME :
-			                   /*key == ARG_setmaxage*/ BRCTL_SET_BRIDGE_MAX_AGE;
-			arm_ioctl(args, op, str_to_jiffies(*argv), 0);
+		if ((unsigned)(key - ARG_setageing) < 4) { /* time related ops */
+			static const uint8_t ops[] ALIGN1 = {
+				BRCTL_SET_AGEING_TIME,          /* ARG_setageing */
+				BRCTL_SET_BRIDGE_FORWARD_DELAY, /* ARG_setfd     */
+				BRCTL_SET_BRIDGE_HELLO_TIME,    /* ARG_sethello  */
+				BRCTL_SET_BRIDGE_MAX_AGE        /* ARG_setmaxage */
+			};
+			arm_ioctl(args, ops[key - ARG_setageing], str_to_jiffies(*argv), 0);
 			goto fire;
-		}
-		port = -1;
-		if (key == ARG_setpathcost || key == ARG_setportprio) {/* get portnum */
-			int ifidx[MAX_PORTS];
-			unsigned i;
-
-			port = if_nametoindex(*argv);
-			if (!port)
-				bb_error_msg_and_die(bb_msg_invalid_arg, *argv, "port");
-			argv++;
-			memset(ifidx, 0, sizeof ifidx);
-			arm_ioctl(args, BRCTL_GET_PORT_LIST, (unsigned long)ifidx,
-					  MAX_PORTS);
-			xioctl(fd, SIOCDEVPRIVATE, &ifr);
-			for (i = 0; i < MAX_PORTS; i++) {
-				if (ifidx[i] == port) {
-					port = i;
-					break;
-				}
-			}
 		}
 		if (key == ARG_setpathcost
 		 || key == ARG_setportprio
 		 || key == ARG_setbridgeprio
 		) {
-			unsigned long op = (key == ARG_setpathcost) ? BRCTL_SET_PATH_COST :
-			                   (key == ARG_setportprio) ? BRCTL_SET_PORT_PRIORITY :
-			                   /*key == ARG_setbridgeprio*/ BRCTL_SET_BRIDGE_PRIORITY;
-			unsigned long arg1 = port;
-			unsigned long arg2;
-# if BRCTL_USE_INTERNAL
-			tmp = xatoi(*argv);
-# else
-			if (sscanf(*argv, "%i", &tmp) != 1)
-				bb_error_msg_and_die(bb_msg_invalid_arg, *argv,
-						key == ARG_setpathcost ? "cost" : "prio");
-# endif
+			static const uint8_t ops[] ALIGN1 = {
+				BRCTL_SET_PATH_COST,      /* ARG_setpathcost   */
+				BRCTL_SET_PORT_PRIORITY,  /* ARG_setportprio   */
+				BRCTL_SET_BRIDGE_PRIORITY /* ARG_setbridgeprio */
+			};
+			int port = -1;
+			unsigned arg1, arg2;
+
+			if (key != ARG_setbridgeprio) {
+				/* get portnum */
+				unsigned i;
+
+				port = if_nametoindex(*argv++);
+				if (!port)
+					bb_error_msg_and_die(bb_msg_invalid_arg, *argv, "port");
+				memset(ifidx, 0, sizeof ifidx);
+				arm_ioctl(args, BRCTL_GET_PORT_LIST, (unsigned long)ifidx,
+						  MAX_PORTS);
+				xioctl(fd, SIOCDEVPRIVATE, &ifr);
+				for (i = 0; i < MAX_PORTS; i++) {
+					if (ifidx[i] == port) {
+						port = i;
+						break;
+					}
+				}
+			}
+			arg1 = port;
+			arg2 = xatoi_u(*argv);
 			if (key == ARG_setbridgeprio) {
-				arg1 = tmp;
+				arg1 = arg2;
 				arg2 = 0;
-			} else
-				arg2 = tmp;
-			arm_ioctl(args, op, arg1, arg2);
+			}
+			arm_ioctl(args, ops[key - ARG_setpathcost], arg1, arg2);
 		}
  fire:
-		/* Execute the previously set command.  */
+		/* Execute the previously set command */
 		xioctl(fd, SIOCDEVPRIVATE, &ifr);
-		argv++;
 #endif
+ done_next_argv:
+		argv++;
  done:
-		if (ENABLE_FEATURE_CLEAN_UP)
-			close(fd);
+		close(fd);
 	}
- USE_FEATURE_BRCTL_SHOW(out:)
+
 	return EXIT_SUCCESS;
 }
