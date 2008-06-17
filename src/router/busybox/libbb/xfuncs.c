@@ -740,10 +740,14 @@ int bb_ioctl_or_warn(int fd, unsigned request, void *argp, const char *ioctl_nam
 		bb_simple_perror_msg(ioctl_name);
 	return ret;
 }
-void bb_xioctl(int fd, unsigned request, void *argp, const char *ioctl_name)
+int bb_xioctl(int fd, unsigned request, void *argp, const char *ioctl_name)
 {
-	if (ioctl(fd, request, argp) < 0)
+	int ret;
+
+	ret = ioctl(fd, request, argp);
+	if (ret < 0)
 		bb_simple_perror_msg_and_die(ioctl_name);
+	return ret;
 }
 #else
 int bb_ioctl_or_warn(int fd, unsigned request, void *argp)
@@ -755,9 +759,13 @@ int bb_ioctl_or_warn(int fd, unsigned request, void *argp)
 		bb_perror_msg("ioctl %#x failed", request);
 	return ret;
 }
-void bb_xioctl(int fd, unsigned request, void *argp)
+int bb_xioctl(int fd, unsigned request, void *argp)
 {
-	if (ioctl(fd, request, argp) < 0)
+	int ret;
+
+	ret = ioctl(fd, request, argp);
+	if (ret < 0)
 		bb_perror_msg_and_die("ioctl %#x failed", request);
+	return ret;
 }
 #endif
