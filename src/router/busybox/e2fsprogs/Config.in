@@ -56,12 +56,4 @@ config E2LABEL
 	  e2label will display or change the filesystem label on the ext2
 	  filesystem located on device.
 
-config FINDFS
-	bool "findfs"
-	default n
-	depends on TUNE2FS
-	help
-	  findfs will search the disks in the system looking for a filesystem
-	  which has a label matching label or a UUID equal to uuid.
-
 endmenu
