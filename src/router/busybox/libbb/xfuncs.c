@@ -4,7 +4,7 @@
  *
  * Copyright (C) 1999-2004 by Erik Andersen <andersen@codepoet.org>
  * Copyright (C) 2006 Rob Landley
- * Copyright (C) 2006 Denis Vlasenko
+ * Copyright (C) 2006 Denys Vlasenko
  *
  * Licensed under GPL version 2, see file LICENSE in this tarball for details.
  */
@@ -76,7 +76,7 @@ char * xstrdup(const char *s)
 
 // Die if we can't allocate n+1 bytes (space for the null terminator) and copy
 // the (possibly truncated to length n) string into it.
-char * xstrndup(const char *s, int n)
+char *xstrndup(const char *s, int n)
 {
 	int m;
 	char *t;
@@ -146,16 +146,30 @@ int open_or_warn(const char *pathname, int flags)
 	return open3_or_warn(pathname, flags, 0666);
 }
 
-void xpipe(int filedes[2])
-{
-	if (pipe(filedes))
-		bb_perror_msg_and_die("can't create pipe");
-}
-
 void xunlink(const char *pathname)
 {
 	if (unlink(pathname))
 		bb_perror_msg_and_die("can't remove file '%s'", pathname);
+}
+
+void xrename(const char *oldpath, const char *newpath)
+{
+	if (rename(oldpath, newpath))
+		bb_perror_msg_and_die("can't move '%s' to '%s'", oldpath, newpath);
+}
+
+int rename_or_warn(const char *oldpath, const char *newpath)
+{
+	int n = rename(oldpath, newpath);
+	if (n)
+		bb_perror_msg("can't move '%s' to '%s'", oldpath, newpath);
+	return n;
+}
+
+void xpipe(int filedes[2])
+{
+	if (pipe(filedes))
+		bb_perror_msg_and_die("can't create pipe");
 }
 
 // Turn on nonblocking I/O on a fd
@@ -166,7 +180,7 @@ int ndelay_on(int fd)
 
 int close_on_exec_on(int fd)
 {
-        return fcntl(fd, F_SETFD, FD_CLOEXEC);
+	return fcntl(fd, F_SETFD, FD_CLOEXEC);
 }
 
 int ndelay_off(int fd)
@@ -234,58 +248,16 @@ void xfflush_stdout(void)
 	}
 }
 
-void sig_block(int sig)
-{
-	sigset_t ss;
-	sigemptyset(&ss);
-	sigaddset(&ss, sig);
-	sigprocmask(SIG_BLOCK, &ss, NULL);
-}
-
-void sig_unblock(int sig)
-{
-	sigset_t ss;
-	sigemptyset(&ss);
-	sigaddset(&ss, sig);
-	sigprocmask(SIG_UNBLOCK, &ss, NULL);
-}
-
-#if 0
-void sig_blocknone(void)
-{
-	sigset_t ss;
-	sigemptyset(&ss);
-	sigprocmask(SIG_SETMASK, &ss, NULL);
-}
-#endif
-
-void sig_catch(int sig, void (*f)(int))
-{
-	struct sigaction sa;
-	sa.sa_handler = f;
-	sa.sa_flags = 0;
-	sigemptyset(&sa.sa_mask);
-	sigaction(sig, &sa, NULL);
-}
-
-void sig_pause(void)
-{
-	sigset_t ss;
-	sigemptyset(&ss);
-	sigsuspend(&ss);
-}
-
-
 void xsetenv(const char *key, const char *value)
 {
 	if (setenv(key, value, 1))
 		bb_error_msg_and_die(bb_msg_memory_exhausted);
 }
 
-// Converts unsigned long long value into compact 4-char
-// representation. Examples: "1234", "1.2k", " 27M", "123T"
-// Fifth char is always '\0'
-void smart_ulltoa5(unsigned long long ul, char buf[5])
+/* Converts unsigned long long value into compact 4-char
+ * representation. Examples: "1234", "1.2k", " 27M", "123T"
+ * String is not terminated (buf[4] is untouched) */
+void smart_ulltoa4(unsigned long long ul, char buf[5], const char *scale)
 {
 	const char *fmt;
 	char c;
@@ -327,12 +299,65 @@ void smart_ulltoa5(unsigned long long ul, char buf[5])
 			buf[1] = '.';
 		}
 		buf[2] = "0123456789"[v];
-		// see http://en.wikipedia.org/wiki/Tera
-		// (small letters stand out better versus numbers)
-		buf[3] = " kmgtpezy"[idx];
+		buf[3] = scale[idx]; /* typically scale = " kmgt..." */
 	}
-	buf[4] = '\0';
 }
+
+/* Converts unsigned long long value into compact 5-char representation.
+ * String is not terminated (buf[5] is untouched) */
+void smart_ulltoa5(unsigned long long ul, char buf[6], const char *scale)
+{
+	const char *fmt;
+	char c;
+	unsigned v, u, idx = 0;
+
+	if (ul > 99999) { // do not scale if 99999 or less
+		ul *= 10;
+		do {
+			ul /= 1024;
+			idx++;
+		} while (ul >= 100000);
+	}
+	v = ul; // ullong divisions are expensive, avoid them
+
+	fmt = " 123456789";
+	u = v / 10;
+	v = v % 10;
+	if (!idx) {
+		// 99999 or less: use "12345" format
+		// u is value/10, v is last digit
+		c = buf[0] = " 123456789"[u/1000];
+		if (c != ' ') fmt = "0123456789";
+		c = buf[1] = fmt[u/100%10];
+		if (c != ' ') fmt = "0123456789";
+		c = buf[2] = fmt[u/10%10];
+		if (c != ' ') fmt = "0123456789";
+		buf[3] = fmt[u%10];
+		buf[4] = "0123456789"[v];
+	} else {
+		// value has been scaled into 0..9999.9 range
+		// u is value, v is 1/10ths (allows for 92.1M format)
+		if (u >= 100) {
+			// value is >= 100: use "1234M', " 123M" formats
+			c = buf[0] = " 123456789"[u/1000];
+			if (c != ' ') fmt = "0123456789";
+			c = buf[1] = fmt[u/100%10];
+			if (c != ' ') fmt = "0123456789";
+			v = u % 10;
+			u = u / 10;
+			buf[2] = fmt[u%10];
+		} else {
+			// value is < 100: use "92.1M" format
+			c = buf[0] = " 123456789"[u/10];
+			if (c != ' ') fmt = "0123456789";
+			buf[1] = fmt[u%10];
+			buf[2] = '.';
+		}
+		buf[3] = "0123456789"[v];
+		buf[4] = scale[idx]; /* typically scale = " kmgt..." */
+	}
+}
+
 
 // Convert unsigned integer to ascii, writing into supplied buffer.
 // A truncated result contains the first few digits of the result ala strncpy.
@@ -422,6 +447,7 @@ void xsetuid(uid_t uid)
 }
 
 // Return how long the file at fd is, if there's any way to determine it.
+#ifdef UNUSED
 off_t fdlength(int fd)
 {
 	off_t bottom = 0, top = 0, pos;
@@ -460,6 +486,7 @@ off_t fdlength(int fd)
 
 	return pos + 1;
 }
+#endif
 
 int bb_putchar(int ch)
 {
@@ -548,6 +575,12 @@ void xchdir(const char *path)
 {
 	if (chdir(path))
 		bb_perror_msg_and_die("chdir(%s)", path);
+}
+
+void xchroot(const char *path)
+{
+	if (chroot(path))
+		bb_perror_msg_and_die("can't change root directory to %s", path);
 }
 
 // Print a warning message if opendir() fails, but don't die.
@@ -671,7 +704,7 @@ int get_terminal_width_height(int fd, int *width, int *height)
 	return ret;
 }
 
-void ioctl_or_perror_and_die(int fd, int request, void *argp, const char *fmt,...)
+void ioctl_or_perror_and_die(int fd, unsigned request, void *argp, const char *fmt,...)
 {
 	va_list p;
 
@@ -684,7 +717,7 @@ void ioctl_or_perror_and_die(int fd, int request, void *argp, const char *fmt,..
 	}
 }
 
-int ioctl_or_perror(int fd, int request, void *argp, const char *fmt,...)
+int ioctl_or_perror(int fd, unsigned request, void *argp, const char *fmt,...)
 {
 	va_list p;
 	int ret = ioctl(fd, request, argp);
@@ -698,7 +731,7 @@ int ioctl_or_perror(int fd, int request, void *argp, const char *fmt,...)
 }
 
 #if ENABLE_IOCTL_HEX2STR_ERROR
-int bb_ioctl_or_warn(int fd, int request, void *argp, const char *ioctl_name)
+int bb_ioctl_or_warn(int fd, unsigned request, void *argp, const char *ioctl_name)
 {
 	int ret;
 
@@ -707,13 +740,13 @@ int bb_ioctl_or_warn(int fd, int request, void *argp, const char *ioctl_name)
 		bb_simple_perror_msg(ioctl_name);
 	return ret;
 }
-void bb_xioctl(int fd, int request, void *argp, const char *ioctl_name)
+void bb_xioctl(int fd, unsigned request, void *argp, const char *ioctl_name)
 {
 	if (ioctl(fd, request, argp) < 0)
 		bb_simple_perror_msg_and_die(ioctl_name);
 }
 #else
-int bb_ioctl_or_warn(int fd, int request, void *argp)
+int bb_ioctl_or_warn(int fd, unsigned request, void *argp)
 {
 	int ret;
 
@@ -722,7 +755,7 @@ int bb_ioctl_or_warn(int fd, int request, void *argp)
 		bb_perror_msg("ioctl %#x failed", request);
 	return ret;
 }
-void bb_xioctl(int fd, int request, void *argp)
+void bb_xioctl(int fd, unsigned request, void *argp)
 {
 	if (ioctl(fd, request, argp) < 0)
 		bb_perror_msg_and_die("ioctl %#x failed", request);

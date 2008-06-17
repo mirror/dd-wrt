@@ -19,6 +19,73 @@ config BBCONFIG
 	  The bbconfig applet will print the config file with which
 	  busybox was built.
 
+config CHAT
+	bool "chat"
+	default n
+	help
+	  Simple chat utility.
+
+config FEATURE_CHAT_NOFAIL
+	bool "Enable NOFAIL expect strings"
+	depends on CHAT
+	default y
+	help
+	  When enabled expect strings which are started with a dash trigger
+	  no-fail mode. That is when expectation is not met within timeout
+	  the script is not terminated but sends next SEND string and waits
+	  for next EXPECT string. This allows to compose far more flexible
+	  scripts.
+
+config FEATURE_CHAT_TTY_HIFI
+	bool "Force STDIN to be a TTY"
+	depends on CHAT
+	default n
+	help
+	  Original chat always treats STDIN as a TTY device and sets for it
+	  so-called raw mode. This option turns on such behaviour.
+
+config FEATURE_CHAT_IMPLICIT_CR
+	bool "Enable implicit Carriage Return"
+	depends on CHAT
+	default y
+	help
+	  When enabled make chat to terminate all SEND strings with a "\r"
+	  unless "\c" is met anywhere in the string.
+
+config FEATURE_CHAT_SWALLOW_OPTS
+	bool "Swallow options"
+	depends on CHAT
+	default n
+	help
+	  Busybox chat require no options. To make it not fail when used
+	  in place of original chat (which has a bunch of options) turn
+	  this on.
+
+config FEATURE_CHAT_SEND_ESCAPES
+	bool "Support weird SEND escapes"
+	depends on CHAT
+	default n
+	help
+	  Original chat uses some escape sequences in SEND arguments which
+	  are not sent to device but rather performs special actions.
+	  E.g. "\K" means to send a break sequence to device.
+	  "\d" delays execution for a second, "\p" -- for a 1/100 of second.
+	  Before turning this option on think twice: do you really need them?
+
+config FEATURE_CHAT_VAR_ABORT_LEN
+	bool "Support variable-length ABORT conditions"
+	depends on CHAT
+	default n
+	help
+	  Original chat uses fixed 50-bytes length ABORT conditions. Say N here.
+
+config FEATURE_CHAT_CLR_ABORT
+	bool "Support revoking of ABORT conditions"
+	depends on CHAT
+	default n
+	help
+	  Support CLR_ABORT directive.
+
 config CHRT
 	bool "chrt"
 	default n
@@ -39,15 +106,13 @@ config CROND
 	      $ cat /var/spool/cron/crontabs/root
 	      # Run daily cron jobs at 4:40 every day:
 	      40 4 * * * /etc/cron/daily > /dev/null 2>&1
-	  Note that Busybox binary must be setuid root for this applet to
-	  work properly.
 
 config DEBUG_CROND_OPTION
-	bool "Support debug option -d"
+	bool "Support option -d to redirect output to stderr"
 	depends on CROND
 	default n
 	help
-	  Support option -d to enter debug mode.
+	  -d sets loglevel to 0 (most verbose) and directs all output to stderr.
 
 config FEATURE_CROND_CALL_SENDMAIL
 	bool "Using /usr/sbin/sendmail?"
@@ -63,6 +128,8 @@ config CRONTAB
 	help
 	  Crontab manipulates the crontab for a particular user.  Only
 	  the superuser may specify a different user and/or crontab directory.
+	  Note that Busybox binary must be setuid root for this applet to
+	  work properly.
 
 config DC
 	bool "dc"
@@ -111,7 +178,7 @@ config DEVFSD_VERBOSE
 	  Increases logging to stderr or syslog.
 
 config FEATURE_DEVFS
-	bool "  Use devfs names for all devices (obsolete)"
+	bool "Use devfs names for all devices (obsolete)"
 	default n
 	help
 	  This is obsolete and will be going away at the end of 2008..
@@ -125,6 +192,14 @@ config EJECT
 	default n
 	help
 	  Used to eject cdroms.  (defaults to /dev/cdrom)
+
+config FEATURE_EJECT_SCSI
+  bool "SCSI support"
+  default n
+  depends on EJECT
+  help
+    Add the -s option to eject, this allows to eject SCSI-Devices and
+    usb-storage devices.
 
 config LAST
 	bool "last"
@@ -335,6 +410,12 @@ config RX
 	help
 	  Receive files using the Xmodem protocol.
 
+config SCRIPT
+	bool "script"
+	default n
+	help
+	  The script makes typescript of terminal session.
+
 config STRINGS
 	bool "strings"
 	default n
@@ -356,7 +437,7 @@ config TASKSET
 	  This requires sched_{g,s}etaffinity support in your libc.
 
 config FEATURE_TASKSET_FANCY
-	bool "fancy output"
+	bool "Fancy output"
 	default y
 	depends on TASKSET
 	help
@@ -392,4 +473,3 @@ config WATCHDOG
 	  hung, and will cause the hardware to reboot.
 
 endmenu
-

@@ -43,7 +43,7 @@ static void save_state(void)
 	xioctl(handle, TIOCGETD, &saved_disc);
 }
 
-static int set_termios_state_and_warn(struct termios *state)
+static int set_termios_state_or_warn(struct termios *state)
 {
 	int ret;
 
@@ -78,12 +78,12 @@ static void restore_state_and_exit(int exitcode)
 	memcpy(&state, &saved_state, sizeof(state));
 	cfsetispeed(&state, B0);
 	cfsetospeed(&state, B0);
-	if (set_termios_state_and_warn(&state))
+	if (set_termios_state_or_warn(&state))
 		exitcode = 1;
 	sleep(1);
 
 	/* Restore line status */
-	if (set_termios_state_and_warn(&saved_state))
+	if (set_termios_state_or_warn(&saved_state))
 		exit(EXIT_FAILURE);
 	if (ENABLE_FEATURE_CLEAN_UP)
 		close(handle);
@@ -99,7 +99,7 @@ static void set_state(struct termios *state, int encap)
 	int disc;
 
 	/* Set line status */
-	if (set_termios_state_and_warn(state))
+	if (set_termios_state_or_warn(state))
 		goto bad;
 	/* Set line discliple (N_SLIP always) */
 	disc = N_SLIP;
@@ -114,13 +114,13 @@ static void set_state(struct termios *state, int encap)
 	}
 }
 
-static void sig_handler(int signo)
+static void sig_handler(int signo ATTRIBUTE_UNUSED)
 {
 	restore_state_and_exit(0);
 }
 
 int slattach_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int slattach_main(int argc, char **argv)
+int slattach_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	/* Line discipline code table */
 	static const char proto_names[] ALIGN1 =
@@ -175,10 +175,12 @@ int slattach_main(int argc, char **argv)
 
 	/* Trap signals in order to restore tty states upon exit */
 	if (!(opt & OPT_e_quit)) {
-		signal(SIGHUP, sig_handler);
-		signal(SIGINT, sig_handler);
-		signal(SIGQUIT, sig_handler);
-		signal(SIGTERM, sig_handler);
+		bb_signals(0
+			+ (1 << SIGHUP)
+			+ (1 << SIGINT)
+			+ (1 << SIGQUIT)
+			+ (1 << SIGTERM)
+			, sig_handler);
 	}
 
 	/* Open tty */

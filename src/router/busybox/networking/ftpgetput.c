@@ -72,7 +72,7 @@ static int ftpcmd(const char *s1, const char *s2, FILE *stream, char *buf)
 static int xconnect_ftpdata(ftp_host_info_t *server, char *buf)
 {
 	char *buf_ptr;
-	unsigned short port_num;
+	unsigned port_num;
 
 	/* Response is "NNN garbageN1,N2,N3,N4,P1,P2[)garbage]
 	 * Server's IP is N1.N2.N3.N4 (we ignore it)
@@ -297,7 +297,7 @@ static const char ftpgetput_longopts[] ALIGN1 =
 #endif
 
 int ftpgetput_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int ftpgetput_main(int argc, char **argv)
+int ftpgetput_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	/* content-length of the file */
 	unsigned opt;
@@ -348,7 +348,7 @@ int ftpgetput_main(int argc, char **argv)
 	server->lsa = xhost2sockaddr(argv[0], bb_lookup_port(port, "tcp", 21));
 	if (verbose_flag) {
 		printf("Connecting to %s (%s)\n", argv[0],
-			xmalloc_sockaddr2dotted(&server->lsa->sa));
+			xmalloc_sockaddr2dotted(&server->lsa->u.sa));
 	}
 
 	/*  Connect/Setup/Configure the FTP session */

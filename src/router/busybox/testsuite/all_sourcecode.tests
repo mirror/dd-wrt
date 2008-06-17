@@ -16,6 +16,20 @@
 
 
 #
+# make sure all usage strings are properly escaped.  oftentimes people miss
+# an escape sequence so we end up with:
+# #define foo_usage \
+#       " this line is ok" \
+#       " as is this line"
+#       " but this one is broken as the \ is missing from above"
+#
+${CROSS_COMPILE}cpp -dD -P $srcdir/../include/usage.h \
+	| sed -e '/^#define/d' -e '/^$/d' > src.usage.escaped
+testing "Usage strings escaped" "cat src.usage.escaped" "" "" ""
+rm -f src.usage.escaped
+
+
+#
 # verify the applet order is correct in applets.h, otherwise
 # applets won't be called properly.
 #
@@ -59,7 +73,7 @@ rm -f src.typos
 # don't allow obsolete functions
 #
 find $srcdir/.. '(' -name '*.c' -o -name '*.h' ')' -print0 | xargs -0 \
-	grep -E -e '\<(bcmp|bcopy|bzero|getwd|index|mktemp|rindex|utimes)\>[[:space:]]*\(' \
+	grep -E -e '\<(bcmp|bcopy|bzero|getwd|index|mktemp|rindex|utimes|sigblock|siggetmask|sigsetmask)\>[[:space:]]*\(' \
 	| sed -e "s:^$srcdir/\.\./::g" > src.obsolete.funcs
 testing "Obsolete function usage" "cat src.obsolete.funcs" "" "" ""
 rm -f src.obsolete.funcs

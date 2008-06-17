@@ -45,7 +45,7 @@ static void act(unsigned pid, char *cmd, int signo, unsigned opt)
 }
 
 int pgrep_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int pgrep_main(int argc, char **argv)
+int pgrep_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	unsigned pid = getpid();
 	int signo = SIGTERM;
@@ -72,8 +72,9 @@ int pgrep_main(int argc, char **argv)
 		first_arg = argv[first_arg_idx];
 		if (!first_arg)
 			break;
+		/* not "-<small_letter>..."? */
 		if (first_arg[0] != '-' || first_arg[1] < 'a' || first_arg[1] > 'z') {
-			argv[first_arg_idx] = NULL;
+			argv[first_arg_idx] = NULL; /* terminate argv here */
 			break;
 		}
 		first_arg_idx++;
@@ -116,7 +117,7 @@ int pgrep_main(int argc, char **argv)
 			cmd = proc->comm;
 		/* NB: OPT_INVERT is always 0 or 1 */
 		if ((regexec(&re_buffer, cmd, 1, re_match, 0) == 0 /* match found */
-                     && (!OPT_ANCHOR || (re_match[0].rm_so == 0 && re_match[0].rm_eo == strlen(cmd)))) ^ OPT_INVERT
+		     && (!OPT_ANCHOR || (re_match[0].rm_so == 0 && re_match[0].rm_eo == strlen(cmd)))) ^ OPT_INVERT
 		) {
 			matched_pid = proc->pid;
 			if (OPT_LAST) {

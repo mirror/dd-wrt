@@ -50,6 +50,7 @@ void print_login_issue(const char *issue_file, const char *tty)
 				outbuf = uts.sysname;
 				break;
 			case 'n':
+			case 'h':
 				outbuf = uts.nodename;
 				break;
 			case 'r':
@@ -71,10 +72,6 @@ void print_login_issue(const char *issue_file, const char *tty)
 				break;
 			case 't':
 				strftime(buf, sizeof(buf), fmtstr_t, localtime(&t));
-				break;
-			case 'h':
-				gethostname(buf, sizeof(buf) - 1);
-				buf[sizeof(buf) - 1] = '\0';
 				break;
 			case 'l':
 				outbuf = tty;
@@ -104,11 +101,11 @@ void print_login_prompt(void)
     }
   fputs("\n",stdout);
 
-	if (gethostname(buf, MAXHOSTNAMELEN) == 0)
-		fputs(buf, stdout);
-
+ 	char *hostname = safe_gethostname(); 	
+ 	fputs(hostname, stdout);
 	fputs(LOGIN, stdout);
 	fflush(stdout);
+ 	free(hostname);
 }
 
 /* Clear dangerous stuff, set PATH */
@@ -127,12 +124,19 @@ static const char forbid[] ALIGN1 =
 	"LD_NOWARN" "\0"
 	"LD_KEEPDIR" "\0";
 
-void sanitize_env_for_suid(void)
+int sanitize_env_if_suid(void)
 {
-	const char *p = forbid;
+	const char *p;
+
+	if (getuid() == geteuid())
+		return 0;
+
+	p = forbid;
 	do {
 		unsetenv(p);
 		p += strlen(p) + 1;
 	} while (*p);
 	putenv((char*)bb_PATH_root_path);
+
+	return 1; /* we indeed were run by different user! */
 }

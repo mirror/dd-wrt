@@ -34,7 +34,7 @@ static const char usage_messages[] ALIGN1 = ""
 #endif /* SHOW_USAGE */
 
 
-/* Include generated applet names, pointers to <apllet>_main, etc */
+/* Include generated applet names, pointers to <applet>_main, etc */
 #include "applet_tables.h"
 
 
@@ -123,10 +123,12 @@ int find_applet_by_name(const char *name)
 int *const bb_errno __attribute__ ((section (".data")));
 #endif
 
-void lbb_prepare(const char *applet, char **argv)
+void lbb_prepare(const char *applet
+		USE_FEATURE_INDIVIDUAL(, char **argv))
 {
 #ifdef __GLIBC__
 	(*(int **)&bb_errno) = __errno_location();
+	barrier();
 #endif
 	applet_name = applet;
 
@@ -262,6 +264,7 @@ static void parse_config_file(void)
 		s = buffer;
 
 		if (!fgets(s, sizeof(buffer), f)) { /* Are we done? */
+// why?
 			if (ferror(f)) {   /* Make sure it wasn't a read error. */
 				parse_error("reading");
 			}
@@ -638,7 +641,6 @@ void run_applet_no_and_exit(int applet_no, char **argv)
 		argc++;
 
 	/* Reinit some shared global data */
-	optind = 1;
 	xfunc_error_retval = EXIT_FAILURE;
 
 	applet_name = APPLET_NAME(applet_no);
@@ -658,11 +660,10 @@ void run_applet_and_exit(const char *name, char **argv)
 		exit(busybox_main(argv));
 }
 
-
 #if ENABLE_BUILD_LIBBUSYBOX
-int lbb_main(int argc, char **argv)
+int lbb_main(char **argv)
 #else
-int main(int argc, char **argv)
+int main(int argc ATTRIBUTE_UNUSED, char **argv)
 #endif
 {
   char *base = strrchr (argv[0], '/');
@@ -676,7 +677,7 @@ int main(int argc, char **argv)
     return puts(base);
 #endif
 
-	lbb_prepare("busybox", argv);
+ 	lbb_prepare("busybox" USE_FEATURE_INDIVIDUAL(, argv));
 
 #if !BB_MMU
 	/* NOMMU re-exec trick sets high-order bit in first byte of name */

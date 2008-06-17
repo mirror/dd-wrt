@@ -36,7 +36,7 @@ struct globals {
 };
 #define G (*(struct globals*)&bb_common_bufsiz1)
 struct BUG_G_too_big {
-        char BUG_G_too_big[sizeof(G) <= COMMON_BUFSIZE ? 1 : -1];
+	char BUG_G_too_big[sizeof(G) <= COMMON_BUFSIZE ? 1 : -1];
 };
 #define content_len     (G.content_len    )
 #define beg_range       (G.beg_range      )
@@ -144,13 +144,8 @@ static void progressmeter(int flag)
 		transferred = 0;
 		fputc('\n', stderr);
 	} else {
-		if (flag == -1) {
-			/* first call to progressmeter */
-			struct sigaction sa;
-			sa.sa_handler = progressmeter;
-			sigemptyset(&sa.sa_mask);
-			sa.sa_flags = SA_RESTART;
-			sigaction(SIGALRM, &sa, NULL);
+		if (flag == -1) { /* first call to progressmeter */
+			signal_SA_RESTART_empty_mask(SIGALRM, progressmeter);
 		}
 		alarm(1);
 	}
@@ -194,7 +189,7 @@ static void progressmeter(int flag)
  */
 #else /* FEATURE_WGET_STATUSBAR */
 
-static ALWAYS_INLINE void progressmeter(int flag) { }
+static ALWAYS_INLINE void progressmeter(int flag ATTRIBUTE_UNUSED) { }
 
 #endif
 
@@ -392,7 +387,7 @@ static char *gethdr(char *buf, size_t bufsiz, FILE *fp /*, int *istrunc*/)
 
 
 int wget_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int wget_main(int argc, char **argv)
+int wget_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	char buf[512];
 	struct host_info server, target;
@@ -535,7 +530,7 @@ int wget_main(int argc, char **argv)
 	lsa = xhost2sockaddr(server.host, server.port);
 	if (!(opt & WGET_OPT_QUIET)) {
 		fprintf(stderr, "Connecting to %s (%s)\n", server.host,
-				xmalloc_sockaddr2dotted(&lsa->sa));
+				xmalloc_sockaddr2dotted(&lsa->u.sa));
 		/* We leak result of xmalloc_sockaddr2dotted */
 	}
 
@@ -614,7 +609,7 @@ int wget_main(int argc, char **argv)
 			case 206:
 				if (beg_range)
 					break;
-				/*FALLTHRU*/
+				/* fall through */
 			default:
 				/* Show first line only and kill any ESC tricks */
 				buf[strcspn(buf, "\n\r\x1b")] = '\0';
@@ -685,7 +680,7 @@ int wget_main(int argc, char **argv)
 		case 331:
 			if (ftpcmd("PASS ", str, sfp, buf) == 230)
 				break;
-			/* FALLTHRU (failed login) */
+			/* fall through (failed login) */
 		default:
 			bb_error_msg_and_die("ftp login: %s", buf+4);
 		}

@@ -95,12 +95,12 @@ static void rewrite(FS * fs)
 		 */
 		for (nconv = 0, fmtp = fu->fmt; *fmtp; nextpr = &pr->nextpr) {
 			/* NOSTRICT */
-			/* DBU:[dvae@cray.com] calloc so that forward ptrs start out NULL*/
+			/* DBU:[dvae@cray.com] zalloc so that forward ptrs start out NULL*/
 			pr = xzalloc(sizeof(PR));
 			if (!fu->nextpr)
 				fu->nextpr = pr;
 			/* ignore nextpr -- its unused inside the loop and is
-			 * uninitialized 1st time thru.
+			 * uninitialized 1st time through.
 			 */
 
 			/* bb_dump_skip preceding text and up to the next % sign */
@@ -704,7 +704,7 @@ void bb_dump_add(const char *fmt)
 
 		/* allocate a new format unit and link it in */
 		/* NOSTRICT */
-		/* DBU:[dave@cray.com] calloc so that forward pointers start out NULL */
+		/* DBU:[dave@cray.com] zalloc so that forward pointers start out NULL */
 		tfu = xzalloc(sizeof(FU));
 		*nextfu = tfu;
 		nextfu = &tfu->nextfu;

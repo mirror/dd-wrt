@@ -483,9 +483,9 @@ static const struct dhcp_client_t ext_dhcp_clients[] = {
 };
 #endif /* ENABLE_FEATURE_IFUPDOWN_EXTERNAL_DHCPC */
 
+#if ENABLE_FEATURE_IFUPDOWN_EXTERNAL_DHCP
 static int dhcp_up(struct interface_defn_t *ifd, execfn *exec)
 {
-#if ENABLE_FEATURE_IFUPDOWN_EXTERNAL_DHCP
 	int i;
 #if ENABLE_FEATURE_IFUPDOWN_IP
 	/* ip doesn't up iface when it configures it (unlike ifconfig) */
@@ -498,7 +498,10 @@ static int dhcp_up(struct interface_defn_t *ifd, execfn *exec)
 	}
 	bb_error_msg("no dhcp clients found");
 	return 0;
+}
 #elif ENABLE_APP_UDHCPC
+static int dhcp_up(struct interface_defn_t *ifd, execfn *exec)
+{
 #if ENABLE_FEATURE_IFUPDOWN_IP
 	/* ip doesn't up iface when it configures it (unlike ifconfig) */
 	if (!execute("ip link set %iface% up", ifd, exec))
@@ -507,14 +510,18 @@ static int dhcp_up(struct interface_defn_t *ifd, execfn *exec)
 	return execute("udhcpc -R -n -p /var/run/udhcpc.%iface%.pid "
 			"-i %iface%[[ -H %hostname%]][[ -c %clientid%]][[ -s %script%]]",
 			ifd, exec);
-#else
-	return 0; /* no dhcp support */
-#endif
 }
+#else
+static int dhcp_up(struct interface_defn_t *ifd ATTRIBUTE_UNUSED,
+		execfn *exec ATTRIBUTE_UNUSED)
+{
+	return 0; /* no dhcp support */
+}
+#endif
 
+#if ENABLE_FEATURE_IFUPDOWN_EXTERNAL_DHCP
 static int dhcp_down(struct interface_defn_t *ifd, execfn *exec)
 {
-#if ENABLE_FEATURE_IFUPDOWN_EXTERNAL_DHCP
 	int i;
 	for (i = 0; i < ARRAY_SIZE(ext_dhcp_clients); i++) {
 		if (exists_execable(ext_dhcp_clients[i].name))
@@ -522,15 +529,22 @@ static int dhcp_down(struct interface_defn_t *ifd, execfn *exec)
 	}
 	bb_error_msg("no dhcp clients found, using static interface shutdown");
 	return static_down(ifd, exec);
+}
 #elif ENABLE_APP_UDHCPC
+static int dhcp_down(struct interface_defn_t *ifd, execfn *exec)
+{
 	return execute("kill "
 	               "`cat /var/run/udhcpc.%iface%.pid` 2>/dev/null", ifd, exec);
-#else
-	return 0; /* no dhcp support */
-#endif
 }
+#else
+static int dhcp_down(struct interface_defn_t *ifd ATTRIBUTE_UNUSED,
+		execfn *exec ATTRIBUTE_UNUSED)
+{
+	return 0; /* no dhcp support */
+}
+#endif
 
-static int manual_up_down(struct interface_defn_t *ifd, execfn *exec)
+static int manual_up_down(struct interface_defn_t *ifd ATTRIBUTE_UNUSED, execfn *exec ATTRIBUTE_UNUSED)
 {
 	return 1;
 }
@@ -584,32 +598,24 @@ static const struct address_family_t addr_inet = {
 
 static char *next_word(char **buf)
 {
-	unsigned short length;
+	unsigned length;
 	char *word;
-
-	if (!buf || !*buf || !**buf) {
-		return NULL;
-	}
 
 	/* Skip over leading whitespace */
 	word = skip_whitespace(*buf);
 
-	/* Skip over comments */
-	if (*word == '#') {
+	/* Stop on EOL */
+	if (*word == '\0')
 		return NULL;
-	}
 
-	/* Find the length of this word */
+	/* Find the length of this word (can't be 0) */
 	length = strcspn(word, " \t\n");
-	if (length == 0) {
-		return NULL;
-	}
+
+	/* Unless we are already at NUL, store NUL and advance */
+	if (word[length] != '\0')
+		word[length++] = '\0';
+
 	*buf = word + length;
-	/*DBU:[dave@cray.com] if we are already at EOL dont't increment beyond it */
-	if (**buf) {
-		**buf = '\0';
-		(*buf)++;
-	}
 
 	return word;
 }
@@ -660,58 +666,84 @@ static const llist_t *find_list_string(const llist_t *list, const char *string)
 
 static struct interfaces_file_t *read_interfaces(const char *filename)
 {
+	/* Let's try to be compatible.
+	 *
+	 * "man 5 interfaces" says:
+	 * Lines starting with "#" are ignored. Note that end-of-line
+	 * comments are NOT supported, comments must be on a line of their own.
+	 * A line may be extended across multiple lines by making
+	 * the last character a backslash.
+	 *
+	 * Seen elsewhere in example config file:
+	 * A "#" character in the very first column makes the rest of the line
+	 * be ignored. Blank lines are ignored. Lines may be indented freely.
+	 * A "\" character at the very end of the line indicates the next line
+	 * should be treated as a continuation of the current one.
+	 */
 #if ENABLE_FEATURE_IFUPDOWN_MAPPING
 	struct mapping_defn_t *currmap = NULL;
 #endif
 	struct interface_defn_t *currif = NULL;
 	struct interfaces_file_t *defn;
 	FILE *f;
-	char *firstword;
 	char *buf;
-
+	char *first_word;
+	char *rest_of_line;
 	enum { NONE, IFACE, MAPPING } currently_processing = NONE;
 
-	defn = xzalloc(sizeof(struct interfaces_file_t));
-
+	defn = xzalloc(sizeof(*defn));
 	f = xfopen(filename, "r");
 
 	while ((buf = xmalloc_getline(f)) != NULL) {
-		char *buf_ptr = buf;
-
-		firstword = next_word(&buf_ptr);
-		if (firstword == NULL) {
+#if ENABLE_DESKTOP
+		/* Trailing "\" concatenates lines */
+		char *p;
+		while ((p = last_char_is(buf, '\\')) != NULL) {
+			*p = '\0';
+			rest_of_line = xmalloc_getline(f);
+			if (!rest_of_line)
+				break;
+			p = xasprintf("%s%s", buf, rest_of_line);
 			free(buf);
-			continue;	/* blank line */
+			free(rest_of_line);
+			buf = p;
+		}
+#endif
+		rest_of_line = buf;
+		first_word = next_word(&rest_of_line);
+		if (!first_word || *buf == '#') {
+			free(buf);
+			continue; /* blank/comment line */
 		}
 
-		if (strcmp(firstword, "mapping") == 0) {
+		if (strcmp(first_word, "mapping") == 0) {
 #if ENABLE_FEATURE_IFUPDOWN_MAPPING
-			currmap = xzalloc(sizeof(struct mapping_defn_t));
+			currmap = xzalloc(sizeof(*currmap));
 
-			while ((firstword = next_word(&buf_ptr)) != NULL) {
-				if (currmap->max_matches == currmap->n_matches) {
+			while ((first_word = next_word(&rest_of_line)) != NULL) {
+				if (currmap->n_matches >= currmap->max_matches) {
 					currmap->max_matches = currmap->max_matches * 2 + 1;
-					currmap->match = xrealloc(currmap->match, sizeof(currmap->match) * currmap->max_matches);
+					currmap->match = xrealloc(currmap->match,
+						sizeof(*currmap->match) * currmap->max_matches);
 				}
-
-				currmap->match[currmap->n_matches++] = xstrdup(firstword);
+				currmap->match[currmap->n_matches++] = xstrdup(first_word);
 			}
-			currmap->max_mappings = 0;
-			currmap->n_mappings = 0;
-			currmap->mapping = NULL;
-			currmap->script = NULL;
+			/*currmap->max_mappings = 0; - done by xzalloc */
+			/*currmap->n_mappings = 0;*/
+			/*currmap->mapping = NULL;*/
+			/*currmap->script = NULL;*/
 			{
 				struct mapping_defn_t **where = &defn->mappings;
 				while (*where != NULL) {
 					where = &(*where)->next;
 				}
 				*where = currmap;
-				currmap->next = NULL;
+				/*currmap->next = NULL;*/
 			}
 			debug_noise("Added mapping\n");
 #endif
 			currently_processing = MAPPING;
-		} else if (strcmp(firstword, "iface") == 0) {
+		} else if (strcmp(first_word, "iface") == 0) {
 			static const struct address_family_t *const addr_fams[] = {
 #if ENABLE_FEATURE_IFUPDOWN_IPV4
 				&addr_inet,
@@ -721,143 +753,114 @@ static struct interfaces_file_t *read_interfaces(const char *filename)
 #endif
 				NULL
 			};
-
 			char *iface_name;
 			char *address_family_name;
 			char *method_name;
 			llist_t *iface_list;
 
-			currif = xzalloc(sizeof(struct interface_defn_t));
-			iface_name = next_word(&buf_ptr);
-			address_family_name = next_word(&buf_ptr);
-			method_name = next_word(&buf_ptr);
+			currif = xzalloc(sizeof(*currif));
+			iface_name = next_word(&rest_of_line);
+			address_family_name = next_word(&rest_of_line);
+			method_name = next_word(&rest_of_line);
 
-			if (buf_ptr == NULL) {
-				bb_error_msg("too few parameters for line \"%s\"", buf);
-				return NULL;
-			}
+			if (method_name == NULL)
+				bb_error_msg_and_die("too few parameters for line \"%s\"", buf);
 
 			/* ship any trailing whitespace */
-			buf_ptr = skip_whitespace(buf_ptr);
+			rest_of_line = skip_whitespace(rest_of_line);
 
-			if (buf_ptr[0] != '\0') {
-				bb_error_msg("too many parameters \"%s\"", buf);
-				return NULL;
-			}
+			if (rest_of_line[0] != '\0' /* && rest_of_line[0] != '#' */)
+				bb_error_msg_and_die("too many parameters \"%s\"", buf);
 
 			currif->iface = xstrdup(iface_name);
 
 			currif->address_family = get_address_family(addr_fams, address_family_name);
-			if (!currif->address_family) {
-				bb_error_msg("unknown address type \"%s\"", address_family_name);
-				return NULL;
-			}
+			if (!currif->address_family)
+				bb_error_msg_and_die("unknown address type \"%s\"", address_family_name);
 
 			currif->method = get_method(currif->address_family, method_name);
-			if (!currif->method) {
-				bb_error_msg("unknown method \"%s\"", method_name);
-				return NULL;
-			}
+			if (!currif->method)
+				bb_error_msg_and_die("unknown method \"%s\"", method_name);
 
 			for (iface_list = defn->ifaces; iface_list; iface_list = iface_list->link) {
 				struct interface_defn_t *tmp = (struct interface_defn_t *) iface_list->data;
-				if ((strcmp(tmp->iface, currif->iface) == 0) &&
-					(tmp->address_family == currif->address_family)) {
-					bb_error_msg("duplicate interface \"%s\"", tmp->iface);
-					return NULL;
+				if ((strcmp(tmp->iface, currif->iface) == 0)
+				 && (tmp->address_family == currif->address_family)
+				) {
+					bb_error_msg_and_die("duplicate interface \"%s\"", tmp->iface);
 				}
 			}
 			llist_add_to_end(&(defn->ifaces), (char*)currif);
 
 			debug_noise("iface %s %s %s\n", currif->iface, address_family_name, method_name);
 			currently_processing = IFACE;
-		} else if (strcmp(firstword, "auto") == 0) {
-			while ((firstword = next_word(&buf_ptr)) != NULL) {
+		} else if (strcmp(first_word, "auto") == 0) {
+			while ((first_word = next_word(&rest_of_line)) != NULL) {
 
 				/* Check the interface isnt already listed */
-				if (find_list_string(defn->autointerfaces, firstword)) {
+				if (find_list_string(defn->autointerfaces, first_word)) {
 					bb_perror_msg_and_die("interface declared auto twice \"%s\"", buf);
 				}
 
 				/* Add the interface to the list */
-				llist_add_to_end(&(defn->autointerfaces), xstrdup(firstword));
-				debug_noise("\nauto %s\n", firstword);
+				llist_add_to_end(&(defn->autointerfaces), xstrdup(first_word));
+				debug_noise("\nauto %s\n", first_word);
 			}
 			currently_processing = NONE;
 		} else {
 			switch (currently_processing) {
 			case IFACE:
-				{
+				if (rest_of_line[0] == '\0')
+					bb_error_msg_and_die("option with empty value \"%s\"", buf);
+
+				if (strcmp(first_word, "up") != 0
+				 && strcmp(first_word, "down") != 0
+				 && strcmp(first_word, "pre-up") != 0
+				 && strcmp(first_word, "post-down") != 0
+				) {
 					int i;
-
-					if (strlen(buf_ptr) == 0) {
-						bb_error_msg("option with empty value \"%s\"", buf);
-						return NULL;
-					}
-
-					if (strcmp(firstword, "up") != 0
-							&& strcmp(firstword, "down") != 0
-							&& strcmp(firstword, "pre-up") != 0
-							&& strcmp(firstword, "post-down") != 0) {
-						for (i = 0; i < currif->n_options; i++) {
-							if (strcmp(currif->option[i].name, firstword) == 0) {
-								bb_error_msg("duplicate option \"%s\"", buf);
-								return NULL;
-							}
-						}
+					for (i = 0; i < currif->n_options; i++) {
+						if (strcmp(currif->option[i].name, first_word) == 0)
+							bb_error_msg_and_die("duplicate option \"%s\"", buf);
 					}
 				}
 				if (currif->n_options >= currif->max_options) {
-					struct variable_t *opt;
-
-					currif->max_options = currif->max_options + 10;
-					opt = xrealloc(currif->option, sizeof(*opt) * currif->max_options);
-					currif->option = opt;
+					currif->max_options += 10;
+					currif->option = xrealloc(currif->option,
+						sizeof(*currif->option) * currif->max_options);
 				}
-				currif->option[currif->n_options].name = xstrdup(firstword);
-				currif->option[currif->n_options].value = xstrdup(buf_ptr);
-				if (!currif->option[currif->n_options].name) {
-					perror(filename);
-					return NULL;
-				}
-				if (!currif->option[currif->n_options].value) {
-					perror(filename);
-					return NULL;
-				}
-				debug_noise("\t%s=%s\n", currif->option[currif->n_options].name,
-						currif->option[currif->n_options].value);
+				debug_noise("\t%s=%s\n", first_word, rest_of_line);
+				currif->option[currif->n_options].name = xstrdup(first_word);
+				currif->option[currif->n_options].value = xstrdup(rest_of_line);
 				currif->n_options++;
 				break;
 			case MAPPING:
 #if ENABLE_FEATURE_IFUPDOWN_MAPPING
-				if (strcmp(firstword, "script") == 0) {
-					if (currmap->script != NULL) {
-						bb_error_msg("duplicate script in mapping \"%s\"", buf);
-						return NULL;
-					} else {
-						currmap->script = xstrdup(next_word(&buf_ptr));
-					}
-				} else if (strcmp(firstword, "map") == 0) {
-					if (currmap->max_mappings == currmap->n_mappings) {
+				if (strcmp(first_word, "script") == 0) {
+					if (currmap->script != NULL)
+						bb_error_msg_and_die("duplicate script in mapping \"%s\"", buf);
+					currmap->script = xstrdup(next_word(&rest_of_line));
+				} else if (strcmp(first_word, "map") == 0) {
+					if (currmap->n_mappings >= currmap->max_mappings) {
 						currmap->max_mappings = currmap->max_mappings * 2 + 1;
-						currmap->mapping = xrealloc(currmap->mapping, sizeof(char *) * currmap->max_mappings);
+						currmap->mapping = xrealloc(currmap->mapping,
+							sizeof(char *) * currmap->max_mappings);
 					}
-					currmap->mapping[currmap->n_mappings] = xstrdup(next_word(&buf_ptr));
+					currmap->mapping[currmap->n_mappings] = xstrdup(next_word(&rest_of_line));
 					currmap->n_mappings++;
 				} else {
-					bb_error_msg("misplaced option \"%s\"", buf);
-					return NULL;
+					bb_error_msg_and_die("misplaced option \"%s\"", buf);
 				}
 #endif
 				break;
 			case NONE:
 			default:
-				bb_error_msg("misplaced option \"%s\"", buf);
-				return NULL;
+				bb_error_msg_and_die("misplaced option \"%s\"", buf);
 			}
 		}
 		free(buf);
-	}
+	} /* while (fgets) */
+
 	if (ferror(f) != 0) {
 		/* ferror does NOT set errno! */
 		bb_error_msg_and_die("%s: I/O error", filename);
@@ -936,15 +939,15 @@ static int doit(char *str)
 		int status;
 
 		fflush(NULL);
-		child = fork();
+		child = vfork();
 		switch (child) {
 		case -1: /* failure */
 			return 0;
 		case 0: /* child */
 			execle(DEFAULT_SHELL, DEFAULT_SHELL, "-c", str, NULL, my_environ);
-			exit(127);
+			_exit(127);
 		}
-		waitpid(child, &status, 0);
+		safe_waitpid(child, &status, 0);
 		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
 			return 0;
 		}
@@ -995,60 +998,39 @@ static int iface_down(struct interface_defn_t *iface)
 }
 
 #if ENABLE_FEATURE_IFUPDOWN_MAPPING
-static int popen2(FILE **in, FILE **out, char *command, ...)
+static int popen2(FILE **in, FILE **out, char *command, char *param)
 {
-	va_list ap;
-	char *argv[11] = { command };
-	int argc;
-	int infd[2], outfd[2];
+	char *argv[3] = { command, param, NULL };
+	struct fd_pair infd, outfd;
 	pid_t pid;
 
-	argc = 1;
-	va_start(ap, command);
-	while ((argc < 10) && (argv[argc] = va_arg(ap, char *))) {
-		argc++;
-	}
-	argv[argc] = NULL;	/* make sure */
-	va_end(ap);
-
-	if (pipe(infd) != 0) {
-		return 0;
-	}
-
-	if (pipe(outfd) != 0) {
-		close(infd[0]);
-		close(infd[1]);
-		return 0;
-	}
+	xpiped_pair(infd);
+	xpiped_pair(outfd);
 
 	fflush(NULL);
-	switch (pid = fork()) {
-	case -1:			/* failure */
-		close(infd[0]);
-		close(infd[1]);
-		close(outfd[0]);
-		close(outfd[1]);
-		return 0;
-	case 0:			/* child */
-		dup2(infd[0], 0);
-		dup2(outfd[1], 1);
-		close(infd[0]);
-		close(infd[1]);
-		close(outfd[0]);
-		close(outfd[1]);
+	pid = vfork();
+
+	switch (pid) {
+	case -1:  /* failure */
+		bb_perror_msg_and_die("vfork");
+	case 0:  /* child */
+		/* NB: close _first_, then move fds! */
+		close(infd.wr);
+		close(outfd.rd);
+		xmove_fd(infd.rd, 0);
+		xmove_fd(outfd.wr, 1);
 		BB_EXECVP(command, argv);
-		exit(127);
-	default:			/* parent */
-		*in = fdopen(infd[1], "w");
-		*out = fdopen(outfd[0], "r");
-		close(infd[0]);
-		close(outfd[1]);
-		return pid;
+		_exit(127);
 	}
-	/* unreached */
+	/* parent */
+	close(infd.rd);
+	close(outfd.wr);
+	*in = fdopen(infd.wr, "w");
+	*out = fdopen(outfd.rd, "r");
+	return pid;
 }
 
-static char *run_mapping(char *physical, struct mapping_defn_t * map)
+static char *run_mapping(char *physical, struct mapping_defn_t *map)
 {
 	FILE *in, *out;
 	int i, status;
@@ -1056,27 +1038,23 @@ static char *run_mapping(char *physical, struct mapping_defn_t * map)
 
 	char *logical = xstrdup(physical);
 
-	/* Run the mapping script. */
-	pid = popen2(&in, &out, map->script, physical, NULL);
-
-	/* popen2() returns 0 on failure. */
-	if (pid == 0)
-		return logical;
+	/* Run the mapping script. Never fails. */
+	pid = popen2(&in, &out, map->script, physical);
 
 	/* Write mappings to stdin of mapping script. */
 	for (i = 0; i < map->n_mappings; i++) {
 		fprintf(in, "%s\n", map->mapping[i]);
 	}
 	fclose(in);
-	waitpid(pid, &status, 0);
+	safe_waitpid(pid, &status, 0);
 
 	if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
 		/* If the mapping script exited successfully, try to
 		 * grab a line of output and use that as the name of the
 		 * logical interface. */
-		char *new_logical = xmalloc(MAX_INTERFACE_LENGTH);
+		char *new_logical = xmalloc_getline(out);
 
-		if (fgets(new_logical, MAX_INTERFACE_LENGTH, out)) {
+		if (new_logical) {
 			/* If we are able to read a line of output from the script,
 			 * remove any trailing whitespace and use this value
 			 * as the name of the logical interface. */
@@ -1087,10 +1065,6 @@ static char *run_mapping(char *physical, struct mapping_defn_t * map)
 
 			free(logical);
 			logical = new_logical;
-		} else {
-			/* If we are UNABLE to read a line of output, discard our
-			 * freshly allocated memory. */
-			free(new_logical);
 		}
 	}
 
@@ -1102,12 +1076,13 @@ static char *run_mapping(char *physical, struct mapping_defn_t * map)
 
 static llist_t *find_iface_state(llist_t *state_list, const char *iface)
 {
-	unsigned short iface_len = strlen(iface);
+	unsigned iface_len = strlen(iface);
 	llist_t *search = state_list;
 
 	while (search) {
 		if ((strncmp(search->data, iface, iface_len) == 0)
-		 && (search->data[iface_len] == '=')) {
+		 && (search->data[iface_len] == '=')
+		) {
 			return search;
 		}
 		search = search->link;
@@ -1138,7 +1113,7 @@ static llist_t *read_iface_state(void)
 int ifupdown_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int ifupdown_main(int argc, char **argv)
 {
-	int (*cmds)(struct interface_defn_t *) = NULL;
+	int (*cmds)(struct interface_defn_t *);
 	struct interfaces_file_t *defn;
 	llist_t *target_list = NULL;
 	const char *interfaces = "/etc/network/interfaces";
@@ -1160,10 +1135,6 @@ int ifupdown_main(int argc, char **argv)
 	debug_noise("reading %s file:\n", interfaces);
 	defn = read_interfaces(interfaces);
 	debug_noise("\ndone reading %s\n\n", interfaces);
-
-	if (!defn) {
-		return EXIT_FAILURE;
-	}
 
 	startup_PATH = getenv("PATH");
 	if (!startup_PATH) startup_PATH = "";
