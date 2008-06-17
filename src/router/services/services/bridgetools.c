@@ -125,12 +125,12 @@ br_set_stp_state (const char *br, int stp_state)
   if (stp_state == 1)
     {
 //      syslog (LOG_INFO, "stp is set to on\n");
-      return eval ("/usr/sbin/brctl", "stp", br, "on");
+      return eval ("/usr/sbin/brctl", "stp", br, "1");
     }
   else
     {
 //      syslog (LOG_INFO, "stp is set to off\n");
-      return eval ("/usr/sbin/brctl", "stp", br, "off");
+      return eval ("/usr/sbin/brctl", "stp", br, "0");
     }
 }
 int
