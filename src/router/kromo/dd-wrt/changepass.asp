@@ -45,10 +45,13 @@ if (valid_password(F))
 						<div id="menuMain">
 							<ul id="menuMainList">
 								<li><span><% tran("bmenu.setup"); %></span></li>
+								<% ifndef("HASWIFI", "<!--"); %>
 								<li><span><% tran("bmenu.wireless"); %></span></li>
+								<% ifndef("HASWIFI", "-->"); %>								
 								<% nvram_invmatch("sipgate","1","<!--"); %>
 								<li><span><% tran("bmenu.sipath"); %></span></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
+								<li><span><% tran("bmenu.services"); %></span></li>
 								<li><span><% tran("bmenu.security"); %></span></li>
 								<li><span><% tran("bmenu.accrestriction"); %></span></li>
 								<li><span><% tran("bmenu.applications"); %></span></li>
@@ -67,9 +70,13 @@ if (valid_password(F))
 					<input type="hidden" name="action" value="Apply" />
 
 					<div id="contentsInfo">
-			<dl>
-				<dd><% tran("management.changepassword"); %></dd>
-			</dl>
+					
+			<h2><% tran("management.h2"); %></h2>
+			<div class="warning">
+				<div id="warning_text"><p><b><% tran("management.changepassword"); %></script></b></p></div>
+			</div>
+			<br />
+
 	<fieldset>
 		<legend><% tran("management.psswd_legend"); %></legend>
 		<div class="setting">
