@@ -542,7 +542,7 @@ alarm_handler (int i)
  		 * enqueue 'event' (which is on the same memory position as newly
  		 * allocated timer), which results in queueing the same pointer once
  		 * more. And this way, loop in event queue is created. */
- 	if ( !(event->flags & TFLAG_CANCELLED) && !(event->flags & TFLAG_QUEUED) ) {
+ 	if ( !(event->flags & TFLAG_CANCELLED) && !(event->flags & TFLAG_QUEUED) ) 
 	{
 
 	  // if the event is a recurring event, reset the timer and
