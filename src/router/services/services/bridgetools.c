@@ -24,7 +24,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <syslog.h>
-#ifdef HAVE_MICRO
+#if 0
 extern int br_add_bridge (const char *brname);
 extern int br_del_bridge (const char *brname);
 extern int br_add_interface (const char *br, const char *dev);
