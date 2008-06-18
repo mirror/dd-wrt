@@ -68,10 +68,9 @@ nvram_init (void *unused)
 #define cprintf(fmt, args...)
 
 /*#define cprintf(fmt, args...) do { \
-	FILE *fp = fopen("/dev/console", "w"); \
+	FILE *fp = stderr; \
 	if (fp) { \
 		fprintf(fp, fmt, ## args); \
-		fclose(fp); \
 	} \
 } while (0)
 */
@@ -225,12 +224,12 @@ nvram_get (const char *name)
   int i;
   if (!name)
     return NULL;
+  cprintf ("get nvram %s\n", name);
   int len = strlen (name);
   if (len == 0)
     return NULL;
   lock ();
 
-  cprintf ("get nvram %s\n", name);
   FILE *in = fopen ("/tmp/nvram/offsets.db", "rb");
   if (in == NULL)
     {
@@ -317,12 +316,15 @@ nvram_getall (char *b, int count)
   int i;
   for (i = 0; i < values.nov; i++)
     {
+    if (values.values[i].name!=NULL)
+    {
       strcat (buf, values.values[i].name);
       strcat (buf, "=");
       strcat (buf, values.values[i].value);
       int len = strlen (buf);
       buf[len] = 0;
       buf += len + 1;
+    }
     }
   closedb ();
   unlock ();
@@ -357,7 +359,7 @@ int nvram_immed_set (const char *name, const char *value)
   int i;
   for (i = 0; i < values.nov; i++)
     {
-      if (!strcmp (values.values[i].name, name))
+      if (values.values[i].name!=NULL && !strcmp (values.values[i].name, name))
 	{
 	  if (value == NULL)
 	    {
@@ -399,7 +401,7 @@ nvram_open();
       if (val > 4096)
 	{
 	  int ret = nvram_immed_set (name, "4096");
-	  unlock ();
+	  nvram_close();
 	  return ret;
 	}
 
