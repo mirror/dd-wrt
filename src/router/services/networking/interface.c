@@ -50,34 +50,44 @@
 int
 ifconfig (char *name, int flags, char *addr, char *netmask)
 {
-  int s;
-  struct ifreq ifr;
-  struct in_addr in_addr, in_netmask, in_broadaddr;
+//char *down="down";
+//if (flags == IFUP)
+//    down = "up";
+cprintf("ifconfig %s = %s/%s\n",name,addr,netmask);
   if (!ifexists (name))
     {
       cprintf ("interface %s does not exists, ignoring\n", name);
       return -1;
     }
+//if (addr==NULL)
+//    addr="0.0.0.0";
+//int ret;
+//if (netmask==NULL)
+//    {
+//    ret = eval("ifconfig",name,addr,down);
+//    }else
+//    {
+//    ret = eval("ifconfig",name,addr,"netmask",netmask,down);
+//    }
+  int s;
+  struct ifreq ifr;
+  struct in_addr in_addr, in_netmask, in_broadaddr;
   cprintf ("ifconfig(): name=[%s] flags=[%s] addr=[%s] netmask=[%s]\n", name,
 	   flags == IFUP ? "IFUP" : "0", addr, netmask);
 
-  /* Open a raw socket to the kernel */
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     goto err;
   cprintf ("ifconfig(): socket opened\n");
 
-  /* Set interface name */
   strncpy (ifr.ifr_name, name, IFNAMSIZ);
   cprintf ("ifconfig(): set interface name\n");
   if (flags)
     {
-      /* Set interface flags */
       ifr.ifr_flags = flags;
       if (ioctl (s, SIOCSIFFLAGS, &ifr) < 0)
 	goto err;
     }
   cprintf ("ifconfig(): interface flags configured\n");
-  /* Set IP address */
   if (addr)
     {
       inet_aton (addr, &in_addr);
@@ -88,7 +98,6 @@ ifconfig (char *name, int flags, char *addr, char *netmask)
     }
   cprintf ("ifconfig() ip configured\n");
 
-  /* Set IP netmask and broadcast */
   if (addr && netmask)
     {
       inet_aton (netmask, &in_netmask);
@@ -117,6 +126,7 @@ err:
   perror (name);
 #endif
   return errno;
+//  return ret;
 }
 
 static char *
@@ -186,6 +196,8 @@ start_config_vlan (void)
 	continue;
       if (!(hwaddr = nvram_nget ("%smacaddr", hwname)))
 	continue;
+      if (strlen(hwname)==0 || strlen(hwaddr)==0)
+        continue;
       ether_atoe (hwaddr, ea);
       for (j = 1; j <= MAX_DEV_IFINDEX; j++)
 	{
