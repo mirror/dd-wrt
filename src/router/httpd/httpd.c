@@ -780,6 +780,10 @@ handle_request (void)
 	    file = "changepass.asp";
 	  else if (endswith (file, ".html"))
 	    file = "changepass.asp";
+	}else
+	{
+	  if (endswith (file, "changepass.asp"))
+	    file = "Info.htm";
 	}
     }
 
