@@ -1422,6 +1422,45 @@ enable_dtag_vlan (int enable)
       nvram_set ("fromvdsl", "0");
       return eth;
     }
+
+
+  if (nvram_match ("switch_type","BCM5325"))	// special condition for Broadcom Gigabit Phy routers 
+    {
+#ifdef HAVE_MADWIFI
+      char *eth = "eth0";
+#else
+      char *eth = "eth1";
+#endif
+      vlan7ports = "0t 5";
+      int vlanswap = 0;
+      char *save_ports2 = nvram_safe_get ("vlan1ports");
+      if (donothing)
+	{
+	  nvram_set ("fromvdsl", "0");
+	  return eth;
+	}
+      if (enable)
+	{
+	    nvram_set ("vlan1ports", "");
+	  nvram_set ("vlan7ports", vlan7ports);
+	}
+      stop_lan ();
+      eval ("ifconfig", eth, "down");
+      eval ("rmmod", "bcm57xxlsys");
+      eval ("insmod", "bcm57xxlsys");
+      eval ("ifconfig", eth, "up");
+      start_config_vlan ();
+      start_lan ();
+      if (enable)
+	{
+	  nvram_set ("vlan1ports", save_ports2);
+	  nvram_set ("vlan7ports", "");
+	}
+      nvram_set ("fromvdsl", "0");
+      return eth;
+    }
+
+
   char *eth = "eth0";
 
   FILE *in = fopen ("/proc/switch/eth1/reset", "rb");	// this condition fails almost. just one router (DLINK DIR-330) requires it
