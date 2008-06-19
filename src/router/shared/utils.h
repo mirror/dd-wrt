@@ -259,7 +259,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_WRT160N 0x4b16
 
 // Linksys WRT300N v1.1 (BCM4705 cpu, 5325 switch, fccid: Linksys Q87-WRT300NV11)
-#define ROUTER_WRT300NV11 0x4c0f
+#define ROUTER_WRT300NV11 0x4c16
 
 // Linksys WRT310N v1 (BCM4705 cpu, fccid: Linksys Q87-WRT310N)
 #define ROUTER_WRT310N 0x4d16
