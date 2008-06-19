@@ -4228,7 +4228,6 @@ copytonv (webs_t wp, const char *fmt, ...)
   va_end (args);
 
   char *wl = websGetVar (wp, varbuf, NULL);
-  cprintf ("copy value %s which is [%s] to nvram\n", n, wl);
   if (wl)
     nvram_set (varbuf, wl);
 }
