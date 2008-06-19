@@ -166,7 +166,6 @@ get_gpio (int gpio)
 void
 set_gpio (int pin, int value)
 {
-  cprintf("set GPIO %d = %d\n",pin,value);
   int gpioouten = open ("/dev/gpio/outen", O_RDWR);
   int gpioout = open ("/dev/gpio/out", O_RDWR);
   unsigned int gpio;
@@ -192,7 +191,6 @@ set_gpio (int pin, int value)
 int
 get_gpio (int pin)
 {
-  cprintf("get GPIO %d\n",pin);
   unsigned int gpio;
   int gpioouten = open ("/dev/gpio/outen", O_RDWR);
   int gpioin = open ("/dev/gpio/in", O_RDWR);
