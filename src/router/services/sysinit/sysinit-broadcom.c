@@ -176,11 +176,13 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_WRT150N:
     case ROUTER_WRT160N:
     case ROUTER_WRT300N:
-    case ROUTER_WRT300NV11:
     case ROUTER_WRT600N:
     case ROUTER_WRT350N:
     case ROUTER_WRT310N:
     case ROUTER_NETGEAR_WG602_V4:
+      nvram_set ("wl0gpio0", "8");
+      break;
+    case ROUTER_WRT300NV11:
       nvram_set ("wl0gpio0", "8");
       break;
     case ROUTER_BUFFALO_WHRG54S:
@@ -805,9 +807,9 @@ start_sysinit (void)
 	  switch (brand)
 	    {
 	    case ROUTER_WRT310N:
-	    case ROUTER_WRT300NV11:
 	    case ROUTER_WRT350N:
 	    case ROUTER_WRT600N:
+	    case ROUTER_WRT300NV11:
 	    case ROUTER_BUFFALO_WZRG144NH:
 	      nvram_set ("portprio_support", "0");
 	      modules = "bcm57xxlsys";
