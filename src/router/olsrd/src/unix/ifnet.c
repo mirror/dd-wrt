@@ -835,10 +835,10 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__((unused)))
   OLSR_PRINTF(1, "\tMetric: %d\n", ifs.int_metric);
 
   /* Get MTU */
-  if (ioctl(olsr_cnf->ioctl_s, SIOCGIFMTU, &ifr) < 0)
+//  if (ioctl(olsr_cnf->ioctl_s, SIOCGIFMTU, &ifr) < 0)
     ifs.int_mtu = OLSR_DEFAULT_MTU;
-  else
-    ifs.int_mtu = ifr.ifr_mtu;
+//  else
+//    ifs.int_mtu = ifr.ifr_mtu;
 
   ifs.int_mtu -= (olsr_cnf->ip_version == AF_INET6) ? UDP_IPV6_HDRSIZE : UDP_IPV4_HDRSIZE;
 
