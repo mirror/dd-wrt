@@ -149,6 +149,12 @@ if_get_mtu (struct interface *ifp)
       return;
     }
 
+  /* on some wifi interfaces, hostapd increases the mtu to a high value
+   * to be able to send out management frames properly. This can cause
+   * routing issues, so clamp to maximum ethernet frame size, 1500 */
+  if (ifp->mtu > 1500)
+      ifp->mtu = 1500;
+
 #ifdef SUNOS_5
   ifp->mtu6 = ifp->mtu = ifreq.ifr_metric;
 #else
