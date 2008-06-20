@@ -877,7 +877,12 @@ handle_request (void)
 	  else
 	    {
 	      if (endswith (file, "changepass.asp"))
-		file = "Info.htm";
+	  		{
+	    if (nvram_invmatch ("status_auth", "0"))
+	      file = "Info.htm";
+	    else
+	      file = "index.asp";
+	  		}
 	    }
 	}
       for (handler = &mime_handlers[0]; handler->pattern; handler++)
