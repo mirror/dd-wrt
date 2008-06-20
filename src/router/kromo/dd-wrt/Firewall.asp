@@ -45,9 +45,9 @@ function to_apply(F)
 }
 
 function setFirewall(val) {
-if (val != "on") document.firewall.log_enable[1].click();
-setElementsActive("_block_proxy", "log_level", val == "on");
-setElementsActive("_block_proxy", "_block_ident", val == "on");
+<% ifdef("MICRO", "/"); %><% ifdef("MICRO", "/"); %>if (val != "on") document.firewall.log_enable[1].click();
+<% ifdef("MICRO", "/"); %><% ifdef("MICRO", "/"); %>setElementsActive("_block_proxy", "log_level", val == "on");
+<% ifdef("MICRO", "/"); %><% ifdef("MICRO", "/"); %>setElementsActive("_block_proxy", "_block_ident", val == "on");
 }
 
 var update;
@@ -145,7 +145,7 @@ addEvent(window, "unload", function() {
 										</div>
 									</fieldset><br />
 								</div>
-								
+								<% ifdef("MICRO", "<!--"); %>
 								<h2><% tran("log.h2"); %></h2>
 							
 							<fieldset>
@@ -218,7 +218,7 @@ addEvent(window, "unload", function() {
 									</script>
 								</div><br />
 							</div>
-								
+								<% ifdef("MICRO", "-->"); %>								
 								<div class="submitFooter">
 									<script type="text/javascript">
 									//<![CDATA[
