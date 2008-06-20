@@ -18,8 +18,8 @@ ifeq ($(CONFIG_DIST),"micro")
 #	cp common.compressed.js $(INSTALLDIR)/www/common.js
 	rm -f $(INSTALLDIR)/www/common_micro.js
 #	rm -f $(INSTALLDIR)/www/common.compressed.js
-	rm -f $(INSTALLDIR)/www/Log_incoming.asp
-	rm -f $(INSTALLDIR)/www/Log_outgoing.asp
+#	rm -f $(INSTALLDIR)/www/Log_incoming.asp
+#	rm -f $(INSTALLDIR)/www/Log_outgoing.asp
 endif
 ifeq ($(CONFIG_DIST),"micro-special")
 	rm -f $(INSTALLDIR)/www/images/favicon.ico
@@ -28,8 +28,8 @@ ifeq ($(CONFIG_DIST),"micro-special")
 #	cp common.compressed.js $(INSTALLDIR)/www/common.js
 	rm -f $(INSTALLDIR)/www/common_micro.js
 #	rm -f $(INSTALLDIR)/www/common.compressed.js
-	rm -f $(INSTALLDIR)/www/Log_incoming.asp
-	rm -f $(INSTALLDIR)/www/Log_outgoing.asp
+#	rm -f $(INSTALLDIR)/www/Log_incoming.asp
+#	rm -f $(INSTALLDIR)/www/Log_outgoing.asp
 endif
 	cp -a images $(INSTALLDIR)/www
 	cp -a style $(INSTALLDIR)/www
