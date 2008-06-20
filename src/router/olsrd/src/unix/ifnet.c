@@ -237,6 +237,8 @@ chk_if_changed(struct olsr_if *iface)
     ifp->int_mtu = 0;
   else
     {
+      if (ifr.ifr_mtu>1500)
+    	    ifr.ifr_mtu = OLSR_DEFAULT_MTU;
       ifr.ifr_mtu -= (olsr_cnf->ip_version == AF_INET6) ? UDP_IPV6_HDRSIZE : UDP_IPV4_HDRSIZE;
 
       if(ifp->int_mtu != ifr.ifr_mtu)
@@ -835,11 +837,13 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__((unused)))
   OLSR_PRINTF(1, "\tMetric: %d\n", ifs.int_metric);
 
   /* Get MTU */
-//  if (ioctl(olsr_cnf->ioctl_s, SIOCGIFMTU, &ifr) < 0)
+  if (ioctl(olsr_cnf->ioctl_s, SIOCGIFMTU, &ifr) < 0)
     ifs.int_mtu = OLSR_DEFAULT_MTU;
-//  else
-//    ifs.int_mtu = ifr.ifr_mtu;
-
+  else
+    ifs.int_mtu = ifr.ifr_mtu;
+  if (ifs.int_mtu>1500)
+    ifs.int_mtu = OLSR_DEFAULT_MTU;
+  
   ifs.int_mtu -= (olsr_cnf->ip_version == AF_INET6) ? UDP_IPV6_HDRSIZE : UDP_IPV4_HDRSIZE;
 
   ifs.ttl_index = -32; /* For the first 32 TC's, fish-eye is disabled */
