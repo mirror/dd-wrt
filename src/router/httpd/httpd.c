@@ -754,17 +754,6 @@ handle_request (void)
     }
 #endif
 
-#ifdef HAVE_REGISTER
-  if (!registered)
-    {
-      if (endswith (file, ".asp"))
-	file = "register.asp";
-      else if (endswith (file, ".htm"))
-	file = "register.asp";
-      else if (endswith (file, ".html"))
-	file = "register.asp";
-    }
-#endif
 
   if (containsstring (file, "cgi-bin"))
     {
@@ -861,7 +850,15 @@ handle_request (void)
 	}
       int changepassword = 0;
 #ifdef HAVE_REGISTER
-      if (registered)
+  if (!registered)
+    {
+      if (endswith (file, ".asp"))
+	file = "register.asp";
+      else if (endswith (file, ".htm"))
+	file = "register.asp";
+      else if (endswith (file, ".html"))
+	file = "register.asp";
+    }else
 #endif
 	{
 	  if ((nvram_match ("http_username", DEFAULT_USER)
