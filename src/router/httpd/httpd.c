@@ -753,7 +753,6 @@ handle_request (void)
       }
     }
 #endif
-  int changepassword = 0;
 
 #ifdef HAVE_REGISTER
   if (!registered)
@@ -765,27 +764,7 @@ handle_request (void)
       else if (endswith (file, ".html"))
 	file = "register.asp";
     }
-  else
 #endif
-    {
-      if ((nvram_match ("http_username", DEFAULT_USER)
-	   && nvram_match ("http_passwd", DEFAULT_PASS))
-	  || nvram_match ("http_username", "")
-	  || nvram_match ("http_passwd", "admin"))
-	{
-	  changepassword = 1;
-	  if (endswith (file, ".asp"))
-	    file = "changepass.asp";
-	  else if (endswith (file, ".htm"))
-	    file = "changepass.asp";
-	  else if (endswith (file, ".html"))
-	    file = "changepass.asp";
-	}else
-	{
-	  if (endswith (file, "changepass.asp"))
-	    file = "Info.htm";
-	}
-    }
 
   if (containsstring (file, "cgi-bin"))
     {
@@ -879,6 +858,30 @@ handle_request (void)
       if (query)
 	{
 	  *query++ = 0;
+	}
+      int changepassword = 0;
+#ifdef HAVE_REGISTER
+      if (registered)
+#endif
+	{
+	  if ((nvram_match ("http_username", DEFAULT_USER)
+	       && nvram_match ("http_passwd", DEFAULT_PASS))
+	      || nvram_match ("http_username", "")
+	      || nvram_match ("http_passwd", "admin"))
+	    {
+	      changepassword = 1;
+	      if (endswith (file, ".asp"))
+		file = "changepass.asp";
+	      else if (endswith (file, ".htm"))
+		file = "changepass.asp";
+	      else if (endswith (file, ".html"))
+		file = "changepass.asp";
+	    }
+	  else
+	    {
+	      if (endswith (file, "changepass.asp"))
+		file = "Info.htm";
+	    }
 	}
       for (handler = &mime_handlers[0]; handler->pattern; handler++)
 	{
