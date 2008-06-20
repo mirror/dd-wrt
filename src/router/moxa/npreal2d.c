@@ -453,7 +453,7 @@ char *	cmdpath;
 // Scott: 2005-10-03
 // The original design will lead to an incorrect workpath.
 // Use fixed path instead.
-    sprintf(workpath, "/usr/lib/npreal2/driver");
+    sprintf(workpath, "/tmp/npreal2");
 
     /*
      * Prepare the full-path file names of LOG/Configuration.
