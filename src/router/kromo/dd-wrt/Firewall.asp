@@ -45,16 +45,15 @@ function to_apply(F)
 }
 
 function setFirewall(val) {
-<% ifdef("MICRO", "/"); %><% ifdef("MICRO", "/"); %>if (val != "on") document.firewall.log_enable[1].click();
-<% ifdef("MICRO", "/"); %><% ifdef("MICRO", "/"); %>setElementsActive("_block_proxy", "log_level", val == "on");
-<% ifndef("MICRO", "/"); %><% ifndef("MICRO", "/"); %>setElementsActive("_block_proxy", "_block_ident", val == "on");
+if (val != "on") document.firewall.log_enable[1].click();
+setElementsActive("_block_proxy", "log_level", val == "on");
+setElementsActive("_block_proxy", "_block_ident", val == "on");
 }
 
 var update;
 
 addEvent(window, "load", function() {
 	setFirewall("<% nvram_get("filter"); %>");
-	//show_layer_ext(document.firewall.log_enable, 'idfilter', <% nvram_else_match("filter", "on", "on", "off"); %> == 'on');
 	show_layer_ext(document.firewall.log_enable, 'idlog1', <% nvram_else_match("log_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.firewall.log_enable, 'idlog2', <% nvram_else_match("log_enable", "1", "1", "0"); %> == 1);
 	
@@ -146,7 +145,7 @@ addEvent(window, "unload", function() {
 										</div>
 									</fieldset><br />
 								</div>
-								<% ifdef("MICRO", "<!--"); %>								
+								
 								<h2><% tran("log.h2"); %></h2>
 							
 							<fieldset>
@@ -219,7 +218,7 @@ addEvent(window, "unload", function() {
 									</script>
 								</div><br />
 							</div>
-							<% ifdef("MICRO", "-->"); %>								
+								
 								<div class="submitFooter">
 									<script type="text/javascript">
 									//<![CDATA[
