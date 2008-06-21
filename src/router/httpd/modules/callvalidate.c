@@ -116,18 +116,18 @@ start_gozila (char *name, webs_t wp)
 
   void (*init) (char *(*web) (webs_t wp, char *var, char *d),
 		int (*filter) (char *old_name, char *new_name, size_t size,
-			       int type),struct wl_client_mac *macs);
+			       int type),struct wl_client_mac *macs,int (*write) (webs_t wp, char *fmt, ...));
   init =
     (void (*)
      (char *(*web) (webs_t wp, char *var, char *d),
       int (*filter) (char *old_name, char *new_name, size_t size,
-		     int type),struct wl_client_mac *macs)) dlsym (handle, "initWeb");
+		     int type),struct wl_client_mac *macs,int (*write) (webs_t wp, char *fmt, ...))) dlsym (handle, "initWeb");
   if (!init)
     {
       fprintf (stderr, "error, initWeb not found\n");
       return;
     }
-  init (websGetVar, httpd_filter_name,wl_client_macs);
+  init (websGetVar, httpd_filter_name,wl_client_macs,websWrite);
 
   int (*fptr) (webs_t wp);
   sprintf (service, "%s", name);
@@ -157,19 +157,19 @@ start_validator (char *name, webs_t wp, char *value, struct variable *v)
   int ret = FALSE;
   void (*init) (char *(*web) (webs_t wp, char *var, char *d),
 		int (*filter) (char *old_name, char *new_name, size_t size,
-			       int type),struct wl_client_mac *macs);
+			       int type),struct wl_client_mac *macs,int (*write) (webs_t wp, char *fmt, ...));
 
   init =
     (void (*)
      (char *(*web) (webs_t wp, char *var, char *d),
       int (*filter) (char *old_name, char *new_name, size_t size,
-		     int type),struct wl_client_mac *macs)) dlsym (handle, "initWeb");
+		     int type),struct wl_client_mac *macs,int (*write) (webs_t wp, char *fmt, ...))) dlsym (handle, "initWeb");
   if (!init)
     {
       fprintf (stderr, "error, initWeb not found\n");
       return ret;
     }
-  init (websGetVar, httpd_filter_name,wl_client_macs);
+  init (websGetVar, httpd_filter_name,wl_client_macs,websWrite);
 
   int (*fptr) (webs_t wp, char *value, struct variable * v);
   sprintf (service, "%s", name);
@@ -210,22 +210,22 @@ start_validator_nofree (char *name, void *handle, webs_t wp, char *value,
   if (nohandle)
     {
       cprintf ("resolve init\n");
-      void (*init) (char *(*web) (webs_t wp, char *var, char *d),
-		    int (*filter) (char *old_name, char *new_name,
-				   size_t size, int type),struct wl_client_mac *macs);
+  void (*init) (char *(*web) (webs_t wp, char *var, char *d),
+		int (*filter) (char *old_name, char *new_name, size_t size,
+			       int type),struct wl_client_mac *macs,int (*write) (webs_t wp, char *fmt, ...));
 
       init =
 	(void (*)
 	 (char *(*web) (webs_t wp, char *var, char *d),
 	  int (*filter) (char *old_name, char *new_name, size_t size,
-			 int type),struct wl_client_mac *macs)) dlsym (handle, "initWeb");
+			 int type),struct wl_client_mac *macs,int (*write) (webs_t wp, char *fmt, ...))) dlsym (handle, "initWeb");
       if (!init)
 	{
 	  fprintf (stderr, "error, initWeb not found\n");
 	  return NULL;
 	}
       cprintf ("call init");
-      init (websGetVar, httpd_filter_name,wl_client_macs);
+      init (websGetVar, httpd_filter_name,wl_client_macs,websWrite);
     }
   cprintf ("resolving %s\n", service);
   fptr =

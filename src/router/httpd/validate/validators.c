@@ -103,19 +103,21 @@ static chan_info_t chan_info[] = {
 static int (*httpd_filter_name) (char *old_name, char *new_name, size_t size,
 				 int type);
 char *(*websGetVar) (webs_t wp, char *var, char *d);
+int (*websWrite) (webs_t wp, char *fmt, ...);
 
 struct wl_client_mac *wl_client_macs;
 
 void
 initWeb (char *(*web) (webs_t wp, char *var, char *d),
 	 int (*filter) (char *old_name, char *new_name, size_t size,
-			int type),struct wl_client_mac *macs)
+			int type),struct wl_client_mac *macs,int (*write) (webs_t wp, char *fmt, ...))
 {
   cprintf ("set web pointer\n");
   websGetVar = web;
   cprintf ("set web filter\n");
   httpd_filter_name = filter;
   wl_client_macs=macs;
+  websWrite = write;
   cprintf ("return\n");
 }
 
