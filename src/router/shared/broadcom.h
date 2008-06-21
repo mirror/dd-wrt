@@ -111,7 +111,7 @@ struct apply_action
   char *service;
   int sleep_time;
   int action;
-  void (*go) (webs_t wp);
+  char *goname;
 };
 
 struct gozila_action
@@ -121,7 +121,7 @@ struct gozila_action
   char *service;
   int sleep_time;
   int action;
-  void (*go) (webs_t wp);
+  char *goname;
 };
 
 enum
@@ -407,7 +407,6 @@ extern void rep (char *in, char from, char to);
 extern void save_wds (webs_t wp);
 extern void validate_iradius (webs_t wp, char *value, struct variable *v);
 extern void validate_wds (webs_t wp, char *value, struct variable *v);
-extern void validate_statics (webs_t wp, char *value, struct variable *v);
 extern void ej_get_wdsp2p (webs_t wp, int argc, char_t ** argv);
 extern void ej_active_wireless (webs_t wp, int argc, char_t ** argv);
 #ifdef HAVE_SKYTRON
@@ -487,17 +486,28 @@ extern void alias_delete_ip (webs_t wp);
 /* end lonewolf additions */
 
 extern int valid_ipaddr (webs_t wp, char *value, struct variable *v);
+
+#ifndef VALIDSOURCE
+#define valid_range(wp,value,v) start_validator("valid_range",wp,value,v)
+#define valid_hwaddr(wp,value,v) start_validator("valid_hwaddr",wp,value,v)
+#define valid_netmask(wp,value,v) start_validator("valid_netmask",wp,value,v)
+#define valid_wep_key(wp, value, v) start_validator("valid_wep_key",wp,value,v)
+#define valid_choice(wp,value,v) start_validator("valid_choice",wp,value,v)
+#else
+
 extern int valid_range (webs_t wp, char *value, struct variable *v);
 extern int valid_hwaddr (webs_t wp, char *value, struct variable *v);
-extern int valid_choice (webs_t wp, char *value, struct variable *v);
 extern int valid_netmask (webs_t wp, char *value, struct variable *v);
+extern int valid_wep_key (webs_t wp, char *value, struct variable *v);
+extern int valid_choice (webs_t wp, char *value, struct variable *v);
+#endif
+extern void validate_statics (webs_t wp, char *value, struct variable *v);
 extern int valid_name (webs_t wp, char *value, struct variable *v);
 extern int valid_merge_ipaddrs (webs_t wp, char *value, struct variable *v);
-extern int valid_wep_key (webs_t wp, char *value, struct variable *v);
 
 extern int get_dns_ip (char *name, int which, int count);
 extern int get_single_ip (char *ipaddr, int which);
-extern int get_merge_ipaddr (webs_t wp, char *name, char *ipaddr);
+//extern int get_merge_ipaddr (webs_t wp, char *name, char *ipaddr);
 extern int get_merge_mac (webs_t wp, char *name, char *macaddr);
 extern char *rfctime (const time_t * timep, char *t);
 extern int legal_ipaddr (char *value);
@@ -521,9 +531,14 @@ extern int find_each (char *name, int len,
  * set type to 1 to replace ' ' with "&nbsp;" and ':' with "&semi;"
  * set type to 2 to replace "&nbsp;" with ' ' and "&semi;" with ':'
  */
+#ifndef VALIDSOURCE
+
 extern int httpd_filter_name (char *old_name, char *new_name, size_t size,
 			      int type);
-
+#else
+//static int (*httpd_filter_name) (char *old_name, char *new_name, size_t size,
+//			      int type);
+#endif
 /* check the value for a digit (0 through 9) 
  * set flag to 0 to ignore zero-length values
  */
@@ -617,3 +632,7 @@ extern void ej_show_rflowif (webs_t wp, int argc, char_t ** argv);
 #endif
 
 void ej_showbridgesettings (webs_t wp, int argc, char_t ** argv);
+
+void *start_validator_nofree (char *name, void *handle,webs_t wp, char *value, struct variable *v);
+int start_validator (char *name,webs_t wp, char *value, struct variable *v);
+void start_gozila (char *name,webs_t wp);

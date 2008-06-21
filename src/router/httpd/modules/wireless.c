@@ -40,16 +40,12 @@
 #include <wlutils.h>
 
 #define ASSOCLIST_TMP	"/tmp/.wl_assoclist"
-#define OLD_NAME_IP	"/tmp/.old_name_ip"
 #define ASSOCLIST_CMD	"wl assoclist"
 
 #define LEASES_NAME_IP	"/tmp/.leases_name_ip"
 
 #undef ABURN_WSEC_CHECK
 
-#ifndef GMODE_AFTERBURNER
-#	define GMODE_AFTERBURNER 7
-#endif
 
 /*
   WEP Format:
@@ -65,17 +61,7 @@
 
  */
 
-extern unsigned char key128[4][13];
-extern unsigned char key64[4][5];
 
-struct wl_client_mac
-{
-  unsigned char hostname[32];
-  char ipaddr[20];
-  char hwaddr[20];
-  int status;			// 0:offline 1:online
-  int check;
-} wl_client_macs[MAX_LEASES];
 
 struct lease_table
 {
@@ -84,248 +70,8 @@ struct lease_table
   char hwaddr[20];
 } *dhcp_lease_table;
 
-int generate_key;
-extern void gen_key (char *genstr, int weptype);
-int nv_count;
 extern struct variable variables[];
 																																																																																																																																																																/* channel info structure *///from 11.9
-typedef struct
-{
-  uint chan;			/* channel number */
-  uint freq;			/* in Mhz */
-} chan_info_t;
-
-static chan_info_t chan_info[] = {
-  /* A channels */
-  /* 11a usa low */
-  {36, 5180},
-  {40, 5200},
-  {44, 5220},
-  {48, 5240},
-  {52, 5260},
-  {56, 5280},
-  {60, 5300},
-  {64, 5320},
-
-  /* 11a Europe */
-  {100, 5500},
-  {104, 5520},
-  {108, 5540},
-  {112, 5560},
-  {116, 5580},
-  {120, 5600},
-  {124, 5620},
-  {128, 5640},
-  {132, 5660},
-  {136, 5680},
-  {140, 5700},
-
-  /* 11a usa high */
-  {149, 5745},
-  {153, 5765},
-  {157, 5785},
-  {161, 5805},
-
-  /* 11a japan */
-  {184, 4920},
-  {188, 4940},
-  {192, 4960},
-  {196, 4980},
-  {200, 5000},
-  {204, 5020},
-  {208, 5040},
-  {212, 5060},
-  {216, 5080}
-};
-
-#ifndef HAVE_MSSID
-void
-validate_security_mode (webs_t wp, char *value, struct variable *v)
-{
-  char *security_mode_last = websGetVar (wp, "security_mode_last", NULL);
-  char *wl_wep_last = websGetVar (wp, "wl_wep_last", NULL);
-  int from_index_page = 0;
-  char *wl_wep = NULL;
-
-  //If you don't press "Edit Security Setting" to set some value, and direct select to enable "Wireless Security".
-  //It'll returned, due to security_mode_buf is space.
-  if (!strcmp (value, "enabled"))
-    {
-      if (nvram_match ("security_mode_last", ""))	// from index.asp and first time
-	return;
-      else
-	{
-	  if (!security_mode_last)
-	    {			// from index.asp
-	      from_index_page = 1;
-	      value = nvram_safe_get ("security_mode_last");
-	      wl_wep = nvram_safe_get ("wl_wep_last");
-	    }
-	  else
-	    {			// from WL_WPATable.asp page
-	      value = websGetVar (wp, "security_mode_last", NULL);
-	      wl_wep = nvram_safe_get ("wl_wep_last");
-	    }
-	}
-    }
-
-  if (!valid_choice (wp, value, v))
-    return;
-
-  if (!strcmp (value, "disabled"))
-    {
-      nvram_set ("security_mode", "disabled");
-      nvram_set ("wl_akm", "");
-      nvram_set ("wl_auth_mode", "none");
-      nvram_set ("wl_wep", "disabled");
-    }
-  else if (!strcmp (value, "psk"))
-    {
-      nvram_set ("wl_akm", value);
-      nvram_set ("wl_auth_mode", "none");
-      nvram_set ("wl_wep", "disabled");
-    }
-  else if (!strcmp (value, "wpa"))
-    {
-      nvram_set ("wl_akm", value);
-      nvram_set ("wl_auth_mode", "none");
-      nvram_set ("wl_wep", "disabled");
-    }
-  else if (!strcmp (value, "radius"))
-    {
-      nvram_set ("security_mode", "radius");
-      nvram_set ("wl_akm", "");
-      nvram_set ("wl_auth_mode", "radius");
-      nvram_set ("wl_wep", "enabled");	// the nas need this value, the "restricted" is no longer need. (20040624 by honor)
-    }
-  else if (!strcmp (value, "wep"))
-    {
-      nvram_set ("wl_akm", "");
-      nvram_set ("wl_auth_mode", "none");
-      nvram_set ("wl_wep", "enabled");	// the nas need this value, the "restricted" is no longer need. (20040624 by honor)
-    }
-  else if (!strcmp (value, "psk2"))
-    {				// WPA2 Only Mode
-      nvram_set ("wl_akm", value);
-      nvram_set ("wl_auth_mode", "none");
-      nvram_set ("wl_wep", "disabled");
-    }
-  else if (!strcmp (value, "wpa2"))
-    {				// WPA2 Only Mode
-      nvram_set ("wl_akm", value);
-      nvram_set ("wl_auth_mode", "none");
-      nvram_set ("wl_wep", "disabled");
-    }
-  else if (!strcmp (value, "psk psk2"))
-    {				// WPA2 Mixed Mode
-      nvram_set ("wl_akm", value);
-      nvram_set ("wl_auth_mode", "none");
-      nvram_set ("wl_wep", "disabled");
-    }
-  else if (!strcmp (value, "wpa wpa2"))
-    {				// WPA2 Mixed Mode
-      nvram_set ("wl_akm", value);
-      nvram_set ("wl_auth_mode", "none");
-      nvram_set ("wl_wep", "disabled");
-    }
-
-  if (security_mode_last)
-    nvram_set ("security_mode_last", security_mode_last);
-
-  if (wl_wep_last)
-    nvram_set ("wl_wep_last", wl_wep_last);
-
-  nvram_set (v->name, value);
-}
-#endif
-void
-validate_wl_key (webs_t wp, char *value, struct variable *v)
-{
-  char *c;
-
-  switch (strlen (value))
-    {
-    case 5:
-    case 13:
-      break;
-    case 10:
-    case 26:
-      for (c = value; *c; c++)
-	{
-	  if (!isxdigit (*c))
-	    {
-	      websDebugWrite (wp,
-			      "Invalid <b>%s</b>: character %c is not a hexadecimal digit<br>",
-			      v->longname, *c);
-	      return;
-	    }
-	}
-      break;
-    default:
-      websDebugWrite (wp,
-		      "Invalid <b>%s</b>: must be 5 or 13 ASCII characters or 10 or 26 hexadecimal digits<br>",
-		      v->longname);
-      return;
-    }
-
-  nvram_set (v->name, value);
-}
-
-void
-validate_wl_wep (webs_t wp, char *value, struct variable *v)
-{
-  if (!valid_choice (wp, value, v))
-    return;
-#ifdef ABURN_WSEC_CHECK
-  if (strcmp (value, "off")
-      && atoi (nvram_safe_get ("wl_gmode")) == GMODE_AFTERBURNER)
-    {
-      websDebugWrite (wp,
-		      "<br>Invalid <b>%s</b>: must be set to <b>Off</b> when 54g Mode is AfterBurner.",
-		      v->longname);
-      return;
-    }
-#endif
-  nvram_set (v->name, value);
-}
-
-void
-validate_auth_mode (webs_t wp, char *value, struct variable *v)
-{
-  if (!valid_choice (wp, value, v))
-    return;
-  nvram_set (v->name, value);
-}
-
-void
-validate_wpa_psk (webs_t wp, char *value, struct variable *v)
-{
-  int len = strlen (value);
-  char *c;
-
-  if (len == 64)
-    {
-      for (c = value; *c; c++)
-	{
-	  if (!isxdigit ((int) *c))
-	    {
-	      websDebugWrite (wp,
-			      "Invalid <b>%s</b>: character %c is not a hexadecimal digit<br>",
-			      v->longname, *c);
-	      return;
-	    }
-	}
-    }
-  else if (len < 8 || len > 63)
-    {
-      websDebugWrite (wp,
-		      "Invalid <b>%s</b>: must be between 8 and 63 ASCII characters or 64 hexadecimal digits<br>",
-		      v->longname);
-      return;
-    }
-
-  nvram_set (v->name, value);
-}
 
 /* Hook to write wl_* default set through to wl%d_* variable set */
 void
@@ -354,405 +100,6 @@ wl_unit (webs_t wp, char *value, struct variable *v)
   for (t = cur; t < last; t++)
     nvram_set (strcat_r (prefix, &t->name[3], tmp), t->value);
 }
-
-
-#ifdef HAVE_MSSID
-
-void
-validate_wl_wep_key (webs_t wp, char *value, struct variable *v)
-{
-  char buf[200] = "";
-  struct variable wl_wep_variables[] = {
-  {argv:ARGV ("16")},
-  {argv:ARGV ("5", "10")},
-    //for 64 bit
-  {argv:ARGV ("13", "26")},
-    //for 128 bit
-  {argv:ARGV ("1", "4")},
-  }, *which;
-
-  char *wep_bit = "", *wep_passphrase = "", *wep_key1 = "", *wep_key2 =
-    "", *wep_key3 = "", *wep_key4 = "", *wep_tx = "";
-  char new_wep_passphrase[50] = "", new_wep_key1[30] = "", new_wep_key2[30] =
-    "", new_wep_key3[30] = "", new_wep_key4[30] = "";
-  int index;
-
-  which = &wl_wep_variables[0];
-
-  wep_bit = websGetVar (wp, "wl_wep_bit", NULL);	//64 or 128
-  if (!wep_bit)
-    return;
-  if (strcmp (wep_bit, "64") && strcmp (wep_bit, "128"))
-    return;
-
-  wep_passphrase = websGetVar (wp, "wl_passphrase", "");
-  //if(!wep_passphrase)   return ;
-
-  //strip_space(wep_passphrase);
-  if (strcmp (wep_passphrase, ""))
-    {
-      if (!valid_name (wp, wep_passphrase, &which[0]))
-	{
-	  error_value = 1;
-	}
-      else
-	{
-	  httpd_filter_name (wep_passphrase, new_wep_passphrase,
-			     sizeof (new_wep_passphrase), SET);
-	}
-    }
-
-  wep_key1 = websGetVar (wp, "wl_key1", "");
-  wep_key2 = websGetVar (wp, "wl_key2", "");
-  wep_key3 = websGetVar (wp, "wl_key3", "");
-  wep_key4 = websGetVar (wp, "wl_key4", "");
-  wep_tx = websGetVar (wp, "wl_key", NULL);
-
-  if (!wep_tx)
-    {
-      error_value = 1;
-      return;
-    }
-
-  index = (atoi (wep_bit) == 64) ? 1 : 2;
-
-  if (strcmp (wep_key1, ""))
-    {
-      if (!valid_wep_key (wp, wep_key1, &which[index]))
-	{
-	  error_value = 1;
-	}
-      else
-	{
-	  httpd_filter_name (wep_key1, new_wep_key1, sizeof (new_wep_key1),
-			     SET);
-	}
-
-    }
-  if (strcmp (wep_key2, ""))
-    {
-      if (!valid_wep_key (wp, wep_key2, &which[index]))
-	{
-	  error_value = 1;
-	}
-      else
-	{
-	  httpd_filter_name (wep_key2, new_wep_key2, sizeof (new_wep_key2),
-			     SET);
-	}
-    }
-  if (strcmp (wep_key3, ""))
-    {
-      if (!valid_wep_key (wp, wep_key3, &which[index]))
-	{
-	  error_value = 1;
-	}
-      else
-	{
-	  httpd_filter_name (wep_key3, new_wep_key3, sizeof (new_wep_key3),
-			     SET);
-	}
-    }
-  if (strcmp (wep_key4, ""))
-    {
-      if (!valid_wep_key (wp, wep_key4, &which[index]))
-	{
-	  error_value = 1;
-	}
-      else
-	{
-	  httpd_filter_name (wep_key4, new_wep_key4, sizeof (new_wep_key4),
-			     SET);
-	}
-    }
-
-
-  if (!error_value)
-    {
-      snprintf (buf, sizeof (buf), "%s:%s:%s:%s:%s:%s", new_wep_passphrase,
-		new_wep_key1, new_wep_key2, new_wep_key3, new_wep_key4,
-		wep_tx);
-      nvram_set ("wl_wep_bit", wep_bit);
-      nvram_set ("wl_wep_buf", buf);
-
-      nvram_set ("wl_passphrase", wep_passphrase);
-      nvram_set ("wl_key", wep_tx);
-      nvram_set ("wl_key1", wep_key1);
-      nvram_set ("wl_key2", wep_key2);
-      nvram_set ("wl_key3", wep_key3);
-      nvram_set ("wl_key4", wep_key4);
-
-      if (!strcmp (wep_key1, "") && !strcmp (wep_key2, "") && !strcmp (wep_key3, "") && !strcmp (wep_key4, ""))	// Allow null wep
-	nvram_set ("wl_wep", "off");
-      else
-	nvram_set ("wl_wep", "restricted");
-    }
-
-}
-
-#else
-
-void
-validate_wl_wep_key (webs_t wp, char *value, struct variable *v)
-{
-  char buf[200] = "";
-  struct variable wl_wep_variables[] = {
-  {argv:ARGV ("16")},
-  {argv:ARGV ("5", "10")},
-    //for 64 bit
-  {argv:ARGV ("13", "26")},
-    //for 128 bit
-  {argv:ARGV ("1", "4")},
-  }, *which;
-
-  char *wep_bit = "", *wep_passphrase = "", *wep_key1 = "", *wep_key2 =
-    "", *wep_key3 = "", *wep_key4 = "", *wep_tx = "";
-  char new_wep_passphrase[50] = "", new_wep_key1[30] = "", new_wep_key2[30] =
-    "", new_wep_key3[30] = "", new_wep_key4[30] = "";
-  int index;
-
-  which = &wl_wep_variables[0];
-
-  wep_bit = websGetVar (wp, "wl_wep_bit", NULL);	//64 or 128
-  if (!wep_bit)
-    return;
-  if (strcmp (wep_bit, "64") && strcmp (wep_bit, "128"))
-    return;
-
-  wep_passphrase = websGetVar (wp, "wl_passphrase", "");
-  //if(!wep_passphrase)   return ;
-
-  //strip_space(wep_passphrase);
-  if (strcmp (wep_passphrase, ""))
-    {
-      if (!valid_name (wp, wep_passphrase, &which[0]))
-	{
-	  error_value = 1;
-	}
-      else
-	{
-	  httpd_filter_name (wep_passphrase, new_wep_passphrase,
-			     sizeof (new_wep_passphrase), SET);
-	}
-    }
-
-  wep_key1 = websGetVar (wp, "wl_key1", "");
-  wep_key2 = websGetVar (wp, "wl_key2", "");
-  wep_key3 = websGetVar (wp, "wl_key3", "");
-  wep_key4 = websGetVar (wp, "wl_key4", "");
-  wep_tx = websGetVar (wp, "wl_key", NULL);
-
-  if (!wep_tx)
-    {
-      error_value = 1;
-      return;
-    }
-
-  index = (atoi (wep_bit) == 64) ? 1 : 2;
-
-  if (strcmp (wep_key1, ""))
-    {
-      if (!valid_wep_key (wp, wep_key1, &which[index]))
-	{
-	  error_value = 1;
-	}
-      else
-	{
-	  httpd_filter_name (wep_key1, new_wep_key1, sizeof (new_wep_key1),
-			     SET);
-	}
-
-    }
-  if (strcmp (wep_key2, ""))
-    {
-      if (!valid_wep_key (wp, wep_key2, &which[index]))
-	{
-	  error_value = 1;
-	}
-      else
-	{
-	  httpd_filter_name (wep_key2, new_wep_key2, sizeof (new_wep_key2),
-			     SET);
-	}
-    }
-  if (strcmp (wep_key3, ""))
-    {
-      if (!valid_wep_key (wp, wep_key3, &which[index]))
-	{
-	  error_value = 1;
-	}
-      else
-	{
-	  httpd_filter_name (wep_key3, new_wep_key3, sizeof (new_wep_key3),
-			     SET);
-	}
-    }
-  if (strcmp (wep_key4, ""))
-    {
-      if (!valid_wep_key (wp, wep_key4, &which[index]))
-	{
-	  error_value = 1;
-	}
-      else
-	{
-	  httpd_filter_name (wep_key4, new_wep_key4, sizeof (new_wep_key4),
-			     SET);
-	}
-    }
-
-
-  if (!error_value)
-    {
-      snprintf (buf, sizeof (buf), "%s:%s:%s:%s:%s:%s", new_wep_passphrase,
-		new_wep_key1, new_wep_key2, new_wep_key3, new_wep_key4,
-		wep_tx);
-      nvram_set ("wl_wep_bit", wep_bit);
-      nvram_set ("wl_wep_buf", buf);
-
-      nvram_set ("wl_passphrase", wep_passphrase);
-      nvram_set ("wl_key", wep_tx);
-      nvram_set ("wl_key1", wep_key1);
-      nvram_set ("wl_key2", wep_key2);
-      nvram_set ("wl_key3", wep_key3);
-      nvram_set ("wl_key4", wep_key4);
-
-      if (!strcmp (wep_key1, "") && !strcmp (wep_key2, "") && !strcmp (wep_key3, "") && !strcmp (wep_key4, ""))	// Allow null wep
-	nvram_set ("wl_wep", "off");
-      else
-	nvram_set ("wl_wep", "restricted");
-    }
-
-}
-#endif
-void
-validate_wl_auth (webs_t wp, char *value, struct variable *v)
-{
-  if (!valid_choice (wp, value, v))
-    return;
-  /*  // not to check , spec for linksys
-     if (atoi(value) == 1) {
-     char wl_key[] = "wl_keyXXX";
-
-     snprintf(wl_key, sizeof(wl_key), "wl_key%s", nvram_safe_get("wl_key"));
-     if (!strlen(nvram_safe_get(wl_key))) {
-     websDebugWrite(wp, "Invalid <b>%s</b>: must first specify a valid <b>Network Key</b><br>", v->longname);
-     return;
-     }
-     }
-   */
-  nvram_set (v->name, value);
-}
-
-void
-validate_d11_channel (webs_t wp, char *value, struct variable *v)
-{
-  char *country = nvram_safe_get ("wl_country");
-  int channel = atoi (value), min = 0, max = 0, i;
-
-  if ((!strcmp (v->name, "d11b_channel"))
-      || (!strcmp (v->name, "d11g_channel")))
-    {
-      if (!strcmp (country, "Japan") || !strcmp (country, "Thailand"))
-	{
-	  min = 1;
-	  max = 14;
-	}
-      else if (!strcmp (country, "Jordan"))
-	{
-	  min = 10;
-	  max = 13;
-	}
-      else if (!strcmp (country, "Israel"))
-	{
-	  min = 5;
-	  max = 7;
-	}
-      else
-	{
-	  min = 1;
-	  max = 13;
-	}
-
-      if (channel < min || channel > max)
-	{
-	  websDebugWrite (wp,
-			  "Invalid <b>%s</b>: valid %s channels are %d-%d<br>",
-			  v->longname, country, min, max);
-	  return;
-	}
-    }
-  else if (!strcmp (v->name, "d11a_channel"))
-    {
-      for (i = 0; i < ARRAYSIZE (chan_info); i++)
-	{
-	  if (chan_info[i].chan == channel)
-	    break;
-	}
-
-      if (i >= ARRAYSIZE (chan_info))
-	{
-	  websDebugWrite (wp, "Invalid <b>%s</b>: valid %s channels are ",
-			  v->longname, country);
-	  for (i = 0; i < ARRAYSIZE (chan_info); i++)
-	    {
-	      channel = chan_info[i].chan;
-	      websWrite (wp, "%d%s", channel, channel == 216 ? "<br>" : "/");
-	    }
-	  return;
-	}
-    }
-
-
-  nvram_set (v->name, value);
-}
-
-#ifdef SUPPORT_11b
-void
-validate_d11b_rate (webs_t wp, char *value, struct variable *v)
-{
-  char *country = nvram_safe_get ("wl_country");
-  int channel = atoi (nvram_safe_get ("d11b_channel"));
-
-  if (!strcmp (country, "Japan") && channel == 14)
-    {
-      if (atoi (value) > 2000000)
-	{
-	  websDebugWrite (wp,
-			  "Invalid <b>%s</b>: valid rates in Japan on channel 14 are Auto, 1 Mbps, and 2 Mbps<br>",
-			  v->longname);
-	  return;
-	}
-    }
-
-  if (!valid_choice (wp, value, v))
-    return;
-
-  nvram_set (v->name, value);
-}
-
-void
-validate_d11b_rateset (webs_t wp, char *value, struct variable *v)
-{
-  char *country = nvram_safe_get ("wl_country");
-  int channel = atoi (nvram_safe_get ("d11b_channel"));
-
-  if (!strcmp (country, "Japan") && channel == 14)
-    {
-      if (!strcmp (value, "all"))
-	{
-	  websDebugWrite (wp,
-			  "Invalid <b>%s</b>: valid rate set in Japan on channel 14 is Default<br>",
-			  v->longname);
-	  return;
-	}
-    }
-
-  if (!valid_choice (wp, value, v))
-    return;
-
-  nvram_set (v->name, value);
-}
-#endif
 
 char *
 wl_filter_mac_get (char *ifname, char *type, int which)
@@ -793,81 +140,7 @@ wl_filter_mac_get (char *ifname, char *type, int which)
 
 }
 
-/* Example:
- * 00:11:22:33:44:55=1 00:12:34:56:78:90=0 (ie 00:11:22:33:44:55 if filterd, and 00:12:34:56:78:90 is not)
- * wl_maclist = "00:11:22:33:44:55"
- */
-void
-validate_wl_hwaddrs (webs_t wp, char *value, struct variable *v)
-{
-  int i;
 
-  char buf[19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE] = "", *cur = buf;
-  char *wordlist;
-  unsigned int m[6];
-  char *ifname = websGetVar (wp, "ifname", NULL);	//64 or 128
-  if (ifname == NULL)
-    return;
-  char mlist[32];
-  sprintf (mlist, "%s_maclist", ifname);
-  wordlist = nvram_safe_get (mlist);
-  if (!wordlist)
-    return;
-
-  for (i = 0; i < WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE; i++)
-    {
-      char filter_mac[] = "ath10.99_macXXX";
-      char *mac = NULL;
-      char mac1[20];
-
-      snprintf (filter_mac, sizeof (filter_mac), "%s%s%d", ifname, "_mac", i);
-
-      mac = websGetVar (wp, filter_mac, NULL);
-
-      if (!mac || !strcmp (mac, "0") || !strcmp (mac, ""))
-	{
-	  continue;
-	}
-
-      if (strlen (mac) == 12)
-	{
-	  sscanf (mac, "%02X%02X%02X%02X%02X%02X", &m[0],
-		  &m[1], &m[2], &m[3], &m[4], &m[5]);
-	  sprintf (mac1, "%02X:%02X:%02X:%02X:%02X:%02X", m[0], m[1], m[2],
-		   m[3], m[4], m[5]);
-	}
-      else if (strlen (mac) == 17)
-	{
-	  sscanf (mac, "%02X:%02X:%02X:%02X:%02X:%02X", &m[0],
-		  &m[1], &m[2], &m[3], &m[4], &m[5]);
-	  sprintf (mac1, "%02X:%02X:%02X:%02X:%02X:%02X", m[0], m[1], m[2],
-		   m[3], m[4], m[5]);
-	}
-      else
-	{
-	  mac1[0] = 0;
-	}
-
-      if (!valid_hwaddr (wp, mac1, v))
-	{
-	  error_value = 1;
-	  continue;
-	}
-      cur += snprintf (cur, buf + sizeof (buf) - cur, "%s%s",
-		       cur == buf ? "" : " ", mac1);
-
-
-    }
-
-
-  if (!error_value)
-    {
-      nvram_set (v->name, buf);
-      nvram_set (mlist, buf);
-      nvram_set ("wl_active_mac", "");
-      nvram_set ("wl0_active_mac", "");
-    }
-}
 
 void
 ej_wireless_filter_table (webs_t wp, int argc, char_t ** argv)
@@ -952,48 +225,6 @@ ej_wireless_filter_table (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
-void
-add_active_mac (webs_t wp)
-{
-  char buf[1000] = "", *cur = buf;
-  int i, count = 0;
-
-  nvram_set ("wl_active_add_mac", "1");
-
-  for (i = 0; i < MAX_LEASES; i++)
-    {
-      char active_mac[] = "onXXX";
-      char *index = NULL;
-
-      snprintf (active_mac, sizeof (active_mac), "%s%d", "on", i);
-      index = websGetVar (wp, active_mac, NULL);
-      if (!index)
-	continue;
-
-      count++;
-
-      cur += snprintf (cur, buf + sizeof (buf) - cur, "%s%s",
-		       cur == buf ? "" : " ",
-		       wl_client_macs[atoi (index)].hwaddr);
-    }
-  for (i = 0; i < MAX_LEASES; i++)
-    {
-      char active_mac[] = "offXXX";
-      char *index;
-
-      snprintf (active_mac, sizeof (active_mac), "%s%d", "off", i);
-      index = websGetVar (wp, active_mac, NULL);
-      if (!index)
-	continue;
-
-      count++;
-      cur += snprintf (cur, buf + sizeof (buf) - cur, "%s%s",
-		       cur == buf ? "" : " ",
-		       wl_client_macs[atoi (index)].hwaddr);
-    }
-  nvram_set ("wl_active_mac", buf);
-  nvram_set ("wl0_active_mac", buf);
-}
 
 
 int
@@ -1065,6 +296,45 @@ dhcp_lease_table_init (void)
   return count;
 }
 
+struct wl_client_mac wl_client_macs[MAX_LEASES];
+
+void
+get_hostname_ip (char *type, char *filename)
+{
+  FILE *fp;
+  char line[80];
+  char leases[3][50];
+  int i;
+
+  if ((fp = fopen (filename, "r")))
+    {				// find out hostname and ip
+      while (fgets (line, sizeof (line), fp) != NULL)
+	{
+	  strcpy (leases[0], "");
+	  strcpy (leases[1], "");
+	  strcpy (leases[2], "");
+	  // 00:11:22:33:44:55 192.168.1.100 honor
+	  if (sscanf (line, "%s %s %s", leases[0], leases[1], leases[2]) != 3)
+	    continue;
+	  for (i = 0; i < MAX_LEASES; i++)
+	    {
+	      if (!strcmp (leases[0], wl_client_macs[i].hwaddr))
+		{
+		  snprintf (wl_client_macs[i].ipaddr,
+			    sizeof (wl_client_macs[i].ipaddr), "%s",
+			    leases[1]);
+		  snprintf (wl_client_macs[i].hostname,
+			    sizeof (wl_client_macs[i].hostname), "%s",
+			    leases[2]);
+		  break;
+		}
+	    }
+	}
+    }
+  fclose (fp);
+}
+
+int nv_count=0;
 void
 save_hostname_ip (void)
 {
@@ -1109,7 +379,6 @@ save_hostname_ip (void)
 
     }
   count = i;
-
   for (i = 0; i < nv_count; i++)
     {				// init value
       if (wl_client_macs[i].status == 1
@@ -1161,42 +430,6 @@ save_hostname_ip (void)
 }
 
 void
-get_hostname_ip (char *type, char *filename)
-{
-  FILE *fp;
-  char line[80];
-  char leases[3][50];
-  int i;
-
-  if ((fp = fopen (filename, "r")))
-    {				// find out hostname and ip
-      while (fgets (line, sizeof (line), fp) != NULL)
-	{
-	  strcpy (leases[0], "");
-	  strcpy (leases[1], "");
-	  strcpy (leases[2], "");
-	  // 00:11:22:33:44:55 192.168.1.100 honor
-	  if (sscanf (line, "%s %s %s", leases[0], leases[1], leases[2]) != 3)
-	    continue;
-	  for (i = 0; i < MAX_LEASES; i++)
-	    {
-	      if (!strcmp (leases[0], wl_client_macs[i].hwaddr))
-		{
-		  snprintf (wl_client_macs[i].ipaddr,
-			    sizeof (wl_client_macs[i].ipaddr), "%s",
-			    leases[1]);
-		  snprintf (wl_client_macs[i].hostname,
-			    sizeof (wl_client_macs[i].hostname), "%s",
-			    leases[2]);
-		  break;
-		}
-	    }
-	}
-    }
-  fclose (fp);
-}
-
-void
 ej_wireless_active_table (webs_t wp, int argc, char_t ** argv)
 {
   int i, flag = 0;
@@ -1206,7 +439,6 @@ ej_wireless_active_table (webs_t wp, int argc, char_t ** argv)
   char list[2][20];
   char line[80];
   int dhcp_table_count;
-
 #ifdef FASTWEB
   ejArgs (argc, argv, "%s", &type);
 #else
@@ -1412,7 +644,7 @@ get_wep_value (char *type, char *_bit, char *prefix)
   char wl_wep[] = "wlX.XX_wep_XXXXXX";
   char temp[256] = "";
 
-  if (generate_key)
+  if (nvram_match("generate_key","1"))
     {
       snprintf (wl_wep, sizeof (wl_wep), "%s_wep_gen", prefix);
     }
@@ -1576,121 +808,6 @@ validate_macmode (webs_t wp, char *value, struct variable *v)
     }
 }*/
 
-int
-generate_wep_key (webs_t wp, int key, char *prefix)
-{
-  int i;
-  char buf[256];
-  char *passphrase, *bit, *tx;
-  char var[80];
-  sprintf (var, "%s_wep_bit", prefix);
-  bit = websGetVar (wp, var, NULL);
-  sprintf (var, "%s_passphrase", prefix);
-  passphrase = websGetVar (wp, var, NULL);
-  sprintf (var, "%s_key", prefix);
-  tx = websGetVar (wp, var, NULL);
-  cprintf ("bits = %s\n", bit);
-  if (!bit || !passphrase || !tx)
-    return 0;
-
-  gen_key (passphrase, atoi (bit));
-
-  if (atoi (bit) == 64)
-    {
-      char key1[27] = "";
-      char key2[27] = "";
-      char key3[27] = "";
-      char key4[27] = "";
-      for (i = 0; i < 5; i++)
-	sprintf (key1 + (i << 1), "%02X", key64[0][i]);
-      for (i = 0; i < 5; i++)
-	sprintf (key2 + (i << 1), "%02X", key64[1][i]);
-      for (i = 0; i < 5; i++)
-	sprintf (key3 + (i << 1), "%02X", key64[2][i]);
-      for (i = 0; i < 5; i++)
-	sprintf (key4 + (i << 1), "%02X", key64[3][i]);
-
-      snprintf (buf, sizeof (buf), "%s:%s:%s:%s:%s:%s", passphrase, key1,
-		key2, key3, key4, tx);
-      //nvram_set("wl_wep_gen_64",buf);
-      cprintf ("buf = %s\n", buf);
-      sprintf (var, "%s_wep_gen", prefix);
-
-      nvram_set (var, buf);
-    }
-  else if (atoi (bit) == 128)
-    {
-      char key1[27] = "";
-      char key2[27] = "";
-      char key3[27] = "";
-      char key4[27] = "";
-
-      for (i = 0; i < 13; i++)
-	sprintf (key1 + (i << 1), "%02X", key128[0][i]);
-      key1[26] = 0;
-
-      for (i = 0; i < 13; i++)
-	sprintf (key2 + (i << 1), "%02X", key128[1][i]);
-      key2[26] = 0;
-
-      for (i = 0; i < 13; i++)
-	sprintf (key3 + (i << 1), "%02X", key128[2][i]);
-      key3[26] = 0;
-
-      for (i = 0; i < 13; i++)
-	sprintf (key4 + (i << 1), "%02X", key128[3][i]);
-      key4[26] = 0;
-      //cprintf("passphrase[%s]\n", passphrase);
-      //filter_name(passphrase, new_passphrase, sizeof(new_passphrase), SET);
-      //cprintf("new_passphrase[%s]\n", new_passphrase);
-      cprintf ("key1 = %s\n", key1);
-      cprintf ("key2 = %s\n", key2);
-      cprintf ("key3 = %s\n", key3);
-      cprintf ("key4 = %s\n", key4);
-
-      snprintf (buf, sizeof (buf), "%s:%s:%s:%s:%s:%s", passphrase, key1,
-		key2, key3, key4, tx);
-      cprintf ("buf = %s\n", buf);
-      //nvram_set("wl_wep_gen_128",buf);
-      sprintf (var, "%s_wep_gen", prefix);
-      nvram_set (var, buf);
-    }
-
-  return 1;
-}
-
-void
-generate_key_64 (webs_t wp)
-{
-  char *var = websGetVar (wp, "wl_wep_bit", NULL);
-  if (var != NULL)
-    nvram_set ("wl_wep_bit", var);
-
-  int ret;
-  cprintf ("gen wep key 64");
-  generate_key = 1;
-#ifdef HAVE_MADWIFI
-  generate_wep_key (wp, 64, websGetVar (wp, "security_varname", "ath0"));
-#else
-  generate_wep_key (wp, 64, websGetVar (wp, "security_varname", "wl"));
-#endif
-}
-
-void
-generate_key_128 (webs_t wp)
-{
-  char *var = websGetVar (wp, "wl_wep_bit", NULL);
-  if (var != NULL)
-    nvram_set ("wl_wep_bit", var);
-
-  cprintf ("gen wep key 128");
-  generate_key = 1;
-#ifdef HAVE_MADWIFI
-  generate_wep_key (wp, 128, websGetVar (wp, "security_varname", "ath0"));
-#else
-  generate_wep_key (wp, 128, websGetVar (wp, "security_varname", "wl"));
-#endif
-}
 
 void
 wl_active_onload (webs_t wp, char *arg)
@@ -1766,159 +883,6 @@ ej_get_wl_value (webs_t wp, int argc, char_t ** argv)
 
 }
 
-#ifdef HAVE_MSSID
-
-static void
-save_prefix (webs_t wp, char *prefix)
-{
-  char n[80];
-  char radius[80];
-  char p2[80];
-  strcpy (p2, prefix);
-  if (strcmp (prefix, "wl0"))
-    rep (p2, '.', 'X');
-
-
-#ifdef HAVE_WPA_SUPPLICANT
-/*_8021xtype
-_8021xuser
-_8021xpasswd
-_8021xca
-_8021xpem
-_8021xprv
-*/
-  copytonv (wp, "%s_8021xtype", prefix);
-  copytonv (wp, "%s_tls8021xuser", prefix);
-  copytonv (wp, "%s_tls8021xpasswd", prefix);
-  copytonv (wp, "%s_tls8021xca", prefix);
-  copytonv (wp, "%s_tls8021xpem", prefix);
-  copytonv (wp, "%s_tls8021xprv", prefix);
-  copytonv (wp, "%s_peap8021xuser", prefix);
-  copytonv (wp, "%s_peap8021xpasswd", prefix);
-  copytonv (wp, "%s_peap8021xca", prefix);
-  copytonv (wp, "%s_leap8021xuser", prefix);
-  copytonv (wp, "%s_leap8021xpasswd", prefix);
-
-
-#endif
-
-  copytonv (wp, "%s_crypto", prefix);
-  copytonv (wp, "%s_wpa_psk", prefix);
-  copytonv (wp, "%s_wpa_gtk_rekey", prefix);
-  sprintf (n, "%s_radius_ipaddr", prefix);
-  if (get_merge_ipaddr (wp, n, radius))
-    nvram_set (n, radius);
-  copytonv (wp, "%s_radius_port", prefix);
-  copytonv (wp, "%s_radius_key", prefix);
-  copytonv (wp, "%s_radmactype", prefix);
-  sprintf (n, "%s_key1", prefix);
-  char *key1 = websGetVar (wp, n, "");
-  copytonv (wp, n);
-  sprintf (n, "%s_key2", prefix);
-  char *key2 = websGetVar (wp, n, "");
-  copytonv (wp, n);
-  sprintf (n, "%s_key3", prefix);
-  char *key3 = websGetVar (wp, n, "");
-  copytonv (wp, n);
-  sprintf (n, "%s_key4", prefix);
-  char *key4 = websGetVar (wp, n, "");
-  copytonv (wp, n);
-  sprintf (n, "%s_passphrase", prefix);
-  char *pass = websGetVar (wp, n, "");
-  copytonv (wp, n);
-  sprintf (n, "%s_key", prefix);
-  char *tx = websGetVar (wp, n, "");
-  copytonv (wp, n);
-  sprintf (n, "%s_wep_bit", prefix);
-  copytonv (wp, n);
-  char buf[128];
-  snprintf (buf, sizeof (buf), "%s:%s:%s:%s:%s:%s", pass,
-	    key1, key2, key3, key4, tx);
-  sprintf (n, "%s_wep_buf", prefix);
-  nvram_set (n, buf);
-
-  sprintf (n, "%s_security_mode", p2);
-  char n2[80];
-  sprintf (n2, "%s_akm", prefix);
-  char *v = websGetVar (wp, n, NULL);
-  if (v)
-    {
-      char auth[32];
-      char wep[32];
-      sprintf (auth, "%s_auth_mode", prefix);
-      sprintf (wep, "%s_wep", prefix);
-      if (!strcmp (v, "wep"))
-	{
-	  nvram_set (auth, "none");
-	  nvram_set (wep, "enabled");
-	}
-      else if (!strcmp (v, "radius"))
-	{
-	  nvram_set (auth, "radius");
-	  nvram_set (wep, "enabled");
-	}
-      else
-	{
-	  nvram_set (auth, "none");
-	  nvram_set (wep, "disabled");
-	}
-      nvram_set (n2, v);
-    }
-
-  copytonv (wp, n);
-
-}
-
-static int
-security_save_prefix (webs_t wp, char *prefix)
-{
-
-  save_prefix (wp, prefix);
-  char *next;
-  char var[80];
-  char *vifs = nvram_nget ("%s_vifs", prefix);
-  if (vifs == NULL)
-    return 0;
-  foreach (var, vifs, next)
-  {
-    save_prefix (wp, var);
-  }
-  //nvram_commit ();
-  return 0;
-}
-
-void
-security_save (webs_t wp)
-{
-  char *value = websGetVar (wp, "action", "");
-  addAction ("wireless_2");
-#ifdef HAVE_MADWIFI
-  int dc = getdevicecount ();
-  int i;
-  for (i = 0; i < dc; i++)
-    {
-      char b[16];
-      sprintf (b, "ath%d", i);
-      security_save_prefix (wp, b);
-    }
-#else
-  int dc = get_wl_instances ();
-  int i;
-  for (i = 0; i < dc; i++)
-    {
-      char b[16];
-      sprintf (b, "wl%d", i);
-      security_save_prefix (wp, b);
-    }
-#endif
-  if (!strcmp (value, "ApplyTake"))
-    {
-      nvram_commit ();
-      service_restart ();
-    }
-}
-
-#endif
 
 
 
@@ -2050,210 +1014,8 @@ ej_wl_ioctl (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
-void
-validate_wl_gmode (webs_t wp, char *value, struct variable *v)
-{
-  if (!valid_choice (wp, value, v))
-    return;
-  if (atoi (value) == GMODE_AFTERBURNER)
-    {
-      nvram_set ("wl_lazywds", "0");
-      nvram_set ("wl_wds", "");
-      nvram_set ("wl_mode", "ap");
-      /*
-         if(nvram_invmatch("security_mode", "disabled") && nvram_invmatch("security_mode", "wep")){
-         nvram_set("security_mode", "disabled");
-         nvram_set("security_mode_last", nvram_safe_get("security_mode"));
-         nvram_set("security_mode", "disabled");
-         }
-       */
-    }
-  nvram_set (v->name, value);
 
-  return;
-  /* force certain wireless variables to fixed values */
-  if (atoi (value) == GMODE_AFTERBURNER)
-    {
-      if (nvram_invmatch ("wl_auth_mode", "disabled") ||
-#ifdef ABURN_WSEC_CHECK
-	  nvram_invmatch ("wl_wep", "off") ||
-#endif
-	  nvram_invmatch ("wl_mode", "ap") ||
-	  nvram_invmatch ("wl_lazywds", "0") || nvram_invmatch ("wl_wds", ""))
-	{
-	  /* notify the user */
-#ifdef ABURN_WSEC_CHECK
-	  websWrite (wp, "Invalid <b>%s</b>: AfterBurner mode requires:"
-		     "<br><b>Network Authentication</b> set to <b>Disabled</b>"
-		     "<br><b>Data Encryption</b> set to <b>Off</b>"
-		     "<br><b>Mode</b> set to <b>Access Point</b>"
-//                              "<br><b>Bridge Restrict</b> set to <b>Enabled</b>"
-		     "<br><b>WDS devices</b> disabled." "<br>", v->name);
-#else
-	  websWrite (wp, "Invalid <b>%s</b>: AfterBurner mode requires:"
-		     "<br><b>Network Authentication</b> set to <b>Disabled</b>"
-		     "<br><b>Mode</b> set to <b>Access Point</b>"
-//                              "<br><b>Bridge Restrict</b> set to <b>Enabled</b>"
-		     "<br><b>WDS devices</b> disabled." "<br>", v->name);
-#endif
-	  return;
-	}
-    }
-}
 
-/* UI Mode		GMODE			Afterburner Override	Basic Rate Set	FrameBurst	CTS Protection
- * Mixed		6 - AfterBurner		-1			Default		ON		-1(auto)
- * 54g-Only		6 - AfterBurner		-1			ALL		ON		0(off)
- * 11b-Only		0 - 54g Legacy B	NA			Default		ON		-1(auto)
- */
-
-/* Sveasoft note: settings for b-only, mixed, and g-mode set back to original defaults before "afterburner" mods.
-   Afterburner bizarre settings maintained for "speedbooster" mode */
-
-void
-convert_wl_gmode (char *value, char *prefix)
-{
-/*if (nvram_match("wl_mode","ap"))
-{
-	if(!strcmp(value, "disabled")){
-		nvram_set("wl_net_mode", value);
-		nvram_set("wl_gmode", "-1");
-	}
-	else if(!strcmp(value, "mixed")){
-		nvram_set("wl_net_mode", value);
-		nvram_set("wl_gmode", "6");
-		nvram_set("wl_afterburner", "auto");	// From 3.61.13.0
-//		nvram_set("wl_afterburner_override", "-1");
-		nvram_set("wl_rateset", "default");
-		nvram_set("wl_frameburst", "on");
-	//	nvram_set("wl_gmode_protection", "off");
-	}
-	else if(!strcmp(value, "g-only")){
-		nvram_set("wl_net_mode", value);
-		// In order to backward compatiable old firmware, we reserve original value "6", and we will exec "wl gmode 1" later
-		nvram_set("wl_gmode", "6");
-		nvram_set("wl_afterburner", "auto");
-		nvram_set("wl_rateset", "all");
-		nvram_set("wl_frameburst", "on");
-		//nvram_set("wl_gmode_protection", "off");
-	}
-	else if(!strcmp(value, "speedbooster")){
-		nvram_set("wl_net_mode", value);
-		nvram_set("wl_gmode", "6");
-		nvram_set("wl_afterburner_override", "1");
-		nvram_set("wl_rateset", "all");
-		nvram_set("wl_frameburst", "on");
-	//	nvram_set("wl_gmode_protection", "off");
-	}
-
-	else if(!strcmp(value, "b-only")){
-		nvram_set("wl_net_mode", value);
-		nvram_set("wl_gmode", "0");
-		nvram_set("wl_afterburner", "off");
-		nvram_set("wl_rateset", "default");
-		nvram_set("wl_frameburst", "on");
-
-	}
-}else*/
-  {
-#ifndef HAVE_MSSID
-    if (nvram_nmatch (value, "%s_net_mode", prefix))
-      {
-	return;
-      }
-#endif
-    if (!strcmp (value, "disabled"))
-      {
-	nvram_nset (value, "%s_net_mode", prefix);
-	nvram_nset ("-1", "%s_gmode", prefix);
-#ifdef HAVE_MSSID
-	nvram_nset ("-1", "%s_nmode", prefix);
-#endif
-	nvram_nset ("0", "%s_nreqd", prefix);
-      }
-    else if (!strcmp (value, "mixed"))
-      {
-	nvram_nset (value, "wl_net_mode", prefix);
-#ifdef HAVE_MSSID
-	nvram_nset ("1", "%s_gmode", prefix);
-	nvram_nset ("-1", "%s_nmode", prefix);
-#else
-	nvram_nset ("6", "%s_gmode", prefix);
-#endif
-	nvram_nset ("auto", "%s_afterburner", prefix);
-	nvram_nset ("default", "%s_rateset", prefix);
-	nvram_nset ("on", "%s_frameburst", prefix);
-	nvram_nset ("g", "%s_phytype", prefix);
-	nvram_nset ("0", "%s_nreqd", prefix);
-      }
-#ifdef HAVE_MSSID
-    else if (!strcmp (value, "bg-mixed"))
-      {
-	nvram_nset (value, "%s_net_mode", prefix);
-	nvram_nset ("1", "%s_gmode", prefix);
-	nvram_nset ("auto", "%s_afterburner", prefix);
-	nvram_nset ("default", "%s_rateset", prefix);
-	nvram_nset ("on", "%s_frameburst", prefix);
-	nvram_nset ("0", "%s_nmode", prefix);
-	nvram_nset ("g", "%s_phytype", prefix);
-	nvram_nset ("0", "%s_nreqd", prefix);
-      }
-#endif
-    else if (!strcmp (value, "g-only"))
-      {
-	nvram_nset (value, "wl_net_mode", prefix);
-#ifdef HAVE_MSSID
-	nvram_nset ("0", "wl_nmode", prefix);
-#endif
-	nvram_nset ("2", "wl_gmode", prefix);
-	nvram_nset ("g", "wl_phytype", prefix);
-	nvram_nset ("0", "wl_nreqd", prefix);
-
-      }
-    else if (!strcmp (value, "b-only"))
-      {
-	nvram_nset (value, "%s_net_mode", prefix);
-	nvram_nset ("0", "%s_gmode", prefix);
-#ifdef HAVE_MSSID
-	nvram_nset ("0", "%s_nmode", prefix);
-#endif
-	nvram_nset ("off", "%s_afterburner", prefix);
-	nvram_nset ("default", "%s_rateset", prefix);
-	nvram_nset ("on", "%s_frameburst", prefix);
-	nvram_nset ("g", "%s_phytype", prefix);
-	nvram_nset ("0", "%s_nreqd", prefix);
-      }
-#ifdef HAVE_MSSID
-    else if (!strcmp (value, "n-only"))
-      {
-	nvram_nset (value, "%s_net_mode", prefix);
-	nvram_nset ("1", "%s_gmode", prefix);
-	nvram_nset ("2", "%s_nmode", prefix);
-	nvram_nset ("1", "%s_nreqd", prefix);
-	nvram_nset ("off", "%s_afterburner", prefix);	// From 3.61.13.0
-	nvram_nset ("n", "%s_phytype", prefix);
-      }
-#endif
-    else if (!strcmp (value, "a-only"))
-      {
-	nvram_nset (value, "%s_net_mode", prefix);
-	nvram_nset ("a", "%s_phytype", prefix);
-	nvram_nset ("0", "%s_nreqd", prefix);
-      }
-  }
-}
-
-void
-validate_wl_net_mode (webs_t wp, char *value, struct variable *v)
-{
-
-  if (!valid_choice (wp, value, v))
-    return;
-
-  convert_wl_gmode (value, "wl");
-
-  nvram_set (v->name, value);
-}
 
 void
 ej_wme_match_op (webs_t wp, int argc, char_t ** argv)
@@ -2283,112 +1045,4 @@ ej_wme_match_op (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
-void
-validate_noack (webs_t wp, char *value, struct variable *v)
-{
-  char *wme;
 
-  /* return if wme is not enabled */
-  if (!(wme = websGetVar (wp, "wl_wme", NULL)))
-    return;
-  else if (strcmp (wme, "on"))
-    return;
-
-  validate_choice (wp, value, v);
-}
-
-void
-validate_wl_wme_params (webs_t wp, char *value, struct variable *v)
-{
-  int n, i;
-  int cwmin = 0, cwmax = 0;
-  char *wme, *afterburner;
-  char name[100];
-  char buf[1000] = "", *cur = buf;
-  struct
-  {
-    char *name;
-    int range;
-    char *arg1;
-    char *arg2;
-  } field_attrib[] =
-  {
-    {
-    "WME AC CWmin", 1, "0", "32767"},
-    {
-    "WME AC CWmax", 1, "0", "32767"},
-    {
-    "WME AC AIFSN", 1, "1", "15"},
-    {
-    "WME AC TXOP(b)", 1, "0", "65504"},
-    {
-    "WME AC TXOP(a/g)", 1, "0", "65504"},
-    {
-    "WME AC Admin Forced", 0, "on", "off"}
-  };
-
-  /* return if wme is not enabled */
-  if (!(wme = websGetVar (wp, "wl_wme", NULL)))
-    return;
-  else if (strcmp (wme, "on"))
-    return;
-
-  /* return if afterburner enabled */
-  if ((afterburner = websGetVar (wp, "wl_afterburner", NULL))
-      && (!strcmp (afterburner, "auto")))
-    return;
-
-  n = atoi (value) + 1;
-
-  for (i = 0; i < n; i++)
-    {
-      snprintf (name, sizeof (name), "%s%d", v->name, i);
-      if (!(value = websGetVar (wp, name, NULL)))
-	return;
-      if (!*value && v->nullok)
-	continue;
-
-      if (i == 0)
-	cwmin = atoi (value);
-      else if (i == 1)
-	{
-	  cwmax = atoi (value);
-	  if (cwmax < cwmin)
-	    {
-	      websDebugWrite (wp,
-			      "Invalid <b>%s</b> %d: greater than <b>%s</b> %d<br>",
-			      field_attrib[0].name, cwmin,
-			      field_attrib[i].name, cwmax);
-	      return;
-	    }
-	}
-      if (field_attrib[i].range)
-	{
-	  if (atoi (value) < atoi (field_attrib[i].arg1)
-	      || atoi (value) > atoi (field_attrib[i].arg2))
-	    {
-	      websDebugWrite (wp,
-			      "Invalid <b>%s</b> %d: should be in range %s to %s<br>",
-			      field_attrib[i].name, atoi (value),
-			      field_attrib[i].arg1, field_attrib[i].arg2);
-	      return;
-	    }
-	}
-      else
-	{
-	  if (strcmp (value, field_attrib[i].arg1)
-	      && strcmp (value, field_attrib[i].arg2))
-	    {
-	      websDebugWrite (wp,
-			      "Invalid <b>%s</b> %s: should be %s or %s<br>",
-			      field_attrib[i].name, value,
-			      field_attrib[i].arg1, field_attrib[i].arg2);
-	    }
-	}
-
-      cur += snprintf (cur, buf + sizeof (buf) - cur, "%s%s",
-		       cur == buf ? "" : " ", value);
-    }
-
-  nvram_set (v->name, buf);
-}

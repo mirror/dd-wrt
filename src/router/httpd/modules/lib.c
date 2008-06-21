@@ -208,24 +208,3 @@ protocol_to_num (char *proto)
     return 0;
 }
 
-char *
-num_to_protocol (int num)
-{
-  switch (num)
-    {
-    case 1:
-      return "icmp";
-    case 6:
-      return "tcp";
-    case 17:
-      return "udp";
-    case 23:
-      return "both";
-    case 99:
-      return "l7";
-    case 100:
-      return "p2p";
-    default:
-      return "unknown";
-    }
-}
