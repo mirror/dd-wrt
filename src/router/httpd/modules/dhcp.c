@@ -238,63 +238,6 @@ ej_dumpleases (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
-/* Delete lease */
-void
-delete_leases (webs_t wp)
-{
-  char *iface;
-  char *ip;
-  char *mac;
-
-  if (nvram_match ("lan_proto", "static"))
-    return;
-
-  if (nvram_match ("fon_enable", "1")
-      || (nvram_match ("chilli_nowifibridge", "1")
-	  && nvram_match ("chilli_enable", "1")))
-    {
-      iface = nvram_safe_get ("wl0_ifname");
-    }
-  else
-    {
-      if (nvram_match ("chilli_enable", "1"))
-	iface = nvram_safe_get ("wl0_ifname");
-      else
-	iface = nvram_safe_get ("lan_ifname");
-    }
-
-  ip = websGetVar (wp, "ip_del", NULL);
-  mac = websGetVar (wp, "mac_del", NULL);
-
-  sysprintf ("dhcp_release %s %s %s", iface, ip, mac);
-}
 
 
-void
-dhcp_check (webs_t wp, char *value, struct variable *v)
-{
-  return;			// The udhcpd can valid lease table when re-load udhcpd.leases. by honor 2003-08-05
-}
 
-void
-dhcp_renew (webs_t wp)
-{
-  killall ("igmprt", SIGTERM);
-  killall ("udhcpc", SIGUSR1);
-}
-
-void
-dhcp_release (webs_t wp)
-{
-
-  killall ("igmprt", SIGTERM);
-  nvram_set ("wan_ipaddr", "0.0.0.0");
-  nvram_set ("wan_netmask", "0.0.0.0");
-  nvram_set ("wan_gateway", "0.0.0.0");
-  nvram_set ("wan_get_dns", "");
-  nvram_set ("wan_lease", "0");
-
-  unlink ("/tmp/get_lease_time");
-  unlink ("/tmp/lease_time");
-
-}

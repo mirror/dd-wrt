@@ -31,6 +31,7 @@
 extern BIO *bio_err;
 #endif
 
+#include <bcmnvram.h>
 
 typedef FILE *webs_t;
 extern char *wfgets (char *buf, int len, FILE * fp);
@@ -99,8 +100,16 @@ int websWrite (webs_t wp, char *fmt, ...);
 #define websFooter(wp) wfputs("</html>", wp)
 #define websDone(wp, code) wfflush(wp)
 
+#ifndef VALIDSOURCE
+static char *websGetVar (webs_t wp, char *var, char *d)
+{
+  return get_cgi (var) ? : d;
+}
+#else
+//char *(*websGetVar) (webs_t wp, char *var, char *d);
+#endif
 
-extern char *websGetVar (webs_t wp, char *var, char *d);
+
 
 #define websSetVar(wp, var, value) set_cgi(var, value)
 #define websDefaultHandler(wp, urlPrefix, webDir, arg, url, path, query) ({ do_ej(path, wp,""); fflush(wp); 1; })
