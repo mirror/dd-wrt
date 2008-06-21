@@ -1133,6 +1133,8 @@ start_restore_defaults (void)
       nvram_set ("nvram_ver", "3");
       nvram_set ("block_multicast", "1");
     }
+  nvram_set("generate_key","0");
+  nvram_set("clone_wan_mac","0");
 
   cprintf ("check CFE nv\n");
   if (check_now_boot () == PMON_BOOT)

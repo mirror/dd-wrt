@@ -18,8 +18,10 @@
 struct variable
 {
   char *name;
-  void (*validate) (webs_t wp, char *value, struct variable * v);
-  void (*validate2) (webs_t wp);
+  char *validatename;
+  char *validate2name;
+//  void (*validate) (webs_t wp, char *value, struct variable * v);
+//  void (*validate2) (webs_t wp);
   char **argv;
   unsigned char nullok;
 };

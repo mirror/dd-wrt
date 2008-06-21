@@ -328,12 +328,6 @@ ej_show_wl_mac (webs_t wp, int argc, char_t ** argv)
 }
 #endif
 
-void
-stop_ppp (webs_t wp)
-{
-  unlink ("/tmp/ppp/log");
-  unlink ("/tmp/ppp/link");
-}
 
 /* Return WAN link state */
 /*

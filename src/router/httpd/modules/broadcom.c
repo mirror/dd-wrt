@@ -49,10 +49,10 @@
 #include <wlutils.h>
 #include <netdb.h>
 #include <utils.h>
+#include <dlfcn.h>
 
 
 int gozila_action = 0;
-int error_value = 0;
 int browser_method;
 int debug_value = 0;
 
@@ -73,211 +73,9 @@ int debug_value = 0;
 //tofu
 
 #ifdef HAVE_UPNP
-static void tf_upnp (webs_t wp);
 static void ej_tf_upnp (webs_t wp, int argc, char_t ** argv);
 #endif
 
-/* Example:
- * ISDIGIT("", 0); return true;
- * ISDIGIT("", 1); return false;
- * ISDIGIT("123", 1); return true;
- */
-int
-ISDIGIT (char *value, int flag)
-{
-  int i, tag = TRUE;
-
-
-  if (!strcmp (value, ""))
-    {
-      if (flag)
-	return 0;		// null
-      else
-	return 1;
-    }
-
-  for (i = 0; *(value + i); i++)
-    {
-      if (!isdigit (*(value + i)))
-	{
-	  tag = FALSE;
-	  break;
-	}
-    }
-  return tag;
-}
-
-/* Example:
- * ISASCII("", 0); return true;
- * ISASCII("", 1); return false;
- * ISASCII("abc123", 1); return true;
- */
-int
-ISASCII (char *value, int flag)
-{
-  int i, tag = TRUE;
-
-#if COUNTRY == JAPAN
-  return tag;			// don't check for japan version
-#endif
-
-  if (!strcmp (value, ""))
-    {
-      if (flag)
-	return 0;		// null
-      else
-	return 1;
-    }
-
-  for (i = 0; *(value + i); i++)
-    {
-      if (!isascii (*(value + i)))
-	{
-	  tag = FALSE;
-	  break;
-	}
-    }
-  return tag;
-}
-
-/* Example:
- * legal_hwaddr("00:11:22:33:44:aB"); return true;
- * legal_hwaddr("00:11:22:33:44:5"); return false;
- * legal_hwaddr("00:11:22:33:44:HH"); return false;
- */
-int
-legal_hwaddr (char *value)
-{
-  unsigned int hwaddr[6];
-  int tag = TRUE;
-  int i, count;
-
-  /* Check for bad, multicast, broadcast, or null address */
-  for (i = 0, count = 0; *(value + i); i++)
-    {
-      if (*(value + i) == ':')
-	{
-	  if ((i + 1) % 3 != 0)
-	    {
-	      tag = FALSE;
-	      break;
-	    }
-	  count++;
-	}
-      else if (isxdigit (*(value + i)))	/* one of 0 1 2 3 4 5 6 7 8 9 a b c d e f A B C D E F */
-	continue;
-      else
-	{
-	  tag = FALSE;
-	  break;
-	}
-    }
-
-  if (!tag || i != 17 || count != 5)	/* must have 17's characters and 5's ':' */
-    tag = FALSE;
-  else if (sscanf (value, "%x:%x:%x:%x:%x:%x",
-		   &hwaddr[0], &hwaddr[1], &hwaddr[2],
-		   &hwaddr[3], &hwaddr[4], &hwaddr[5]) != 6)
-    {
-      //(hwaddr[0] & 1) ||                // the bit 7 is 1
-      //(hwaddr[0] & hwaddr[1] & hwaddr[2] & hwaddr[3] & hwaddr[4] & hwaddr[5]) == 0xff ){ // FF:FF:FF:FF:FF:FF
-      //(hwaddr[0] | hwaddr[1] | hwaddr[2] | hwaddr[3] | hwaddr[4] | hwaddr[5]) == 0x00){ // 00:00:00:00:00:00
-      tag = FALSE;
-    }
-  else
-    tag = TRUE;
-
-
-  return tag;
-}
-
-/* Example:
- * 255.255.255.0  (111111111111111111111100000000)  is a legal netmask
- * 255.255.0.255  (111111111111110000000011111111)  is an illegal netmask
- */
-int
-legal_netmask (char *value)
-{
-  struct in_addr ipaddr;
-  int ip[4] = { 0, 0, 0, 0 };
-  int i, j;
-  int match0 = -1;
-  int match1 = -1;
-  int ret, tag;
-
-  ret = sscanf (value, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
-
-  if (ret == 4 && inet_aton (value, &ipaddr))
-    {
-      for (i = 3; i >= 0; i--)
-	{
-	  for (j = 1; j <= 8; j++)
-	    {
-	      if ((ip[i] % 2) == 0)
-		match0 = (3 - i) * 8 + j;
-	      else if (((ip[i] % 2) == 1) && match1 == -1)
-		match1 = (3 - i) * 8 + j;
-	      ip[i] = ip[i] / 2;
-	    }
-	}
-    }
-
-  if (match0 >= match1)
-    tag = FALSE;
-  else
-    tag = TRUE;
-
-
-  return tag;
-}
-
-
-/* Example:
- * legal_ipaddr("192.168.1.1"); return true;
- * legal_ipaddr("192.168.1.1111"); return false;
- */
-int
-legal_ipaddr (char *value)
-{
-  struct in_addr ipaddr;
-  int ip[4];
-  int ret, tag;
-
-  ret = sscanf (value, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
-
-  if (ret != 4 || !inet_aton (value, &ipaddr))
-    tag = FALSE;
-  else
-    tag = TRUE;
-
-
-  return tag;
-}
-
-/* Example:
- * legal_ip_netmask("192.168.1.1","255.255.255.0","192.168.1.100"); return true;
- * legal_ip_netmask("192.168.1.1","255.255.255.0","192.168.2.100"); return false;
- */
-int
-legal_ip_netmask (char *sip, char *smask, char *dip)
-{
-  struct in_addr ipaddr, netaddr, netmask;
-  int tag;
-
-  inet_aton (nvram_safe_get (sip), &netaddr);
-  inet_aton (nvram_safe_get (smask), &netmask);
-  inet_aton (dip, &ipaddr);
-
-  netaddr.s_addr &= netmask.s_addr;
-
-  if (netaddr.s_addr != (ipaddr.s_addr & netmask.s_addr))
-    tag = FALSE;
-  else
-    tag = TRUE;
-
-
-  return tag;
-}
 
 
 /* Example:
@@ -320,87 +118,8 @@ get_single_mac (char *macaddr, int which)
 }
 
 
-/* Example:
- * lan_ipaddr_0 = 192
- * lan_ipaddr_1 = 168
- * lan_ipaddr_2 = 1
- * lan_ipaddr_3 = 1
- * get_merge_ipaddr("lan_ipaddr", ipaddr); produces ipaddr="192.168.1.1"
- */
-int
-get_merge_ipaddr (webs_t wp, char *name, char *ipaddr)
-{
-  char ipname[30];
-  int i;
-  char buf[50] = { 0 };
-  char *ip[4];
-  char *tmp;
-  //cprintf("ip addr\n");
-  strcpy (ipaddr, "");
-  //cprintf("safe get\n");
-  char *ipa = nvram_safe_get (name);
-  //cprintf("strcpy\n");
-  if (ipa == NULL)
-    strcpy (buf, "0.0.0.0");
-  else
-    strcpy (buf, ipa);
-  //cprintf("strsep\n");
-  char *b = (char *) &buf;
-  ip[0] = strsep (&b, ".");
-  ip[1] = strsep (&b, ".");
-  ip[2] = strsep (&b, ".");
-  ip[3] = b;
 
 
-  for (i = 0; i < 4; i++)
-    {
-      //cprintf("merge %s_%d\n",name,i);
-      snprintf (ipname, sizeof (ipname), "%s_%d", name, i);
-      tmp = websGetVar (wp, ipname, ip[i]);
-      if (tmp == NULL)
-	return 0;
-      strcat (ipaddr, tmp);
-      if (i < 3)
-	strcat (ipaddr, ".");
-    }
-
-  return 1;
-
-}
-
-
-/* Example:
- * wan_mac_0 = 00
- * wan_mac_1 = 11
- * wan_mac_2 = 22
- * wan_mac_3 = 33
- * wan_mac_4 = 44
- * wan_mac_5 = 55
- * get_merge_mac("wan_mac",mac); produces mac="00:11:22:33:44:55"
- */
-int
-get_merge_mac (webs_t wp, char *name, char *macaddr)
-{
-  char macname[30];
-  char *mac;
-  int i;
-
-  strcpy (macaddr, "");
-
-  for (i = 0; i < 6; i++)
-    {
-      snprintf (macname, sizeof (macname), "%s_%d", name, i);
-      mac = websGetVar (wp, macname, "00");
-      if (strlen (mac) == 1)
-	strcat (macaddr, "0");
-      strcat (macaddr, mac);
-      if (i < 5)
-	strcat (macaddr, ":");
-    }
-
-  return 1;
-
-}
 
 struct onload onloads[] = {
   //{ "Filters", filter_onload },
@@ -1284,478 +1003,6 @@ ej_get_dns_ip (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "0");		// not find
 }
 
-int
-valid_wep_key (webs_t wp, char *value, struct variable *v)
-{
-  int i;
-
-  switch (strlen (value))
-    {
-    case 5:
-    case 13:
-      for (i = 0; *(value + i); i++)
-	{
-	  if (isascii (*(value + i)))
-	    {
-	      continue;
-	    }
-	  else
-	    {
-	      websDebugWrite (wp,
-			      "Invalid <b>%s</b> %s: must be ascii code<br>",
-			      v->longname, value);
-	      return FALSE;
-	    }
-	}
-      break;
-    case 10:
-    case 26:
-      for (i = 0; *(value + i); i++)
-	{
-	  if (isxdigit (*(value + i)))
-	    {			/* one of 0 1 2 3 4 5 6 7 8 9 a b c d e f A B C D E F */
-	      continue;
-	    }
-	  else
-	    {
-	      websDebugWrite (wp,
-			      "Invalid <b>%s</b> %s: must be hexadecimal digits<br>",
-			      v->longname, value);
-	      return FALSE;
-	    }
-	}
-      break;
-
-    default:
-      websDebugWrite (wp,
-		      "Invalid <b>%s</b>: must be 5 or 13 ASCII characters or 10 or 26 hexadecimal digits<br>",
-		      v->longname);
-      return FALSE;
-
-    }
-
-/*
-	for(i=0 ; *(value+i) ; i++){
-		if(isxdigit(*(value+i))){
-			continue;
-		}
-		else{
-			websDebugWrite(wp, "Invalid <b>%s</b> %s: must be hexadecimal digits<br>",
-				  v->longname, value);
-			return FALSE;
-		}
-	}
-
-	if (i != length) {
-		websDebugWrite(wp, "Invalid <b>%s</b> %s: must be %d characters<br>",
-			  v->longname, value,length);
-		return FALSE;
-	}
-*/
-  return TRUE;
-}
-
-void
-validate_statics (webs_t wp, char *value, struct variable *v)
-{
-
-  if (!sv_valid_statics (value))
-    {
-      websDebugWrite (wp,
-		      "Invalid <b>%s</b> %s: not a legal statics entry<br>",
-		      v->longname, value);
-      return;
-    }
-
-  nvram_set (v->name, value);
-}
-
-int
-valid_netmask (webs_t wp, char *value, struct variable *v)
-{
-
-  if (!legal_netmask (value))
-    {
-      websDebugWrite (wp, "Invalid <b>%s</b> %s: not a legal netmask<br>",
-		      v->longname, value);
-      return FALSE;
-    }
-
-  return TRUE;
-
-}
-
-static void
-validate_netmask (webs_t wp, char *value, struct variable *v)
-{
-  if (valid_netmask (wp, value, v))
-    nvram_set (v->name, value);
-}
-
-static void
-validate_merge_netmask (webs_t wp, char *value, struct variable *v)
-{
-  char netmask[20], maskname[30];
-  char *mask;
-  int i;
-  strcpy (netmask, "");
-  for (i = 0; i < 4; i++)
-    {
-      snprintf (maskname, sizeof (maskname), "%s_%d", v->name, i);
-      mask = websGetVar (wp, maskname, NULL);
-      if (mask)
-	{
-	  strcat (netmask, mask);
-	  if (i < 3)
-	    strcat (netmask, ".");
-	}
-      else
-	{
-	  return;
-	}
-    }
-
-
-  if (valid_netmask (wp, netmask, v))
-    nvram_set (v->name, netmask);
-}
-
-//Added by Daniel(2004-07-29) for EZC
-//char webs_buf[5000];
-//int webs_buf_offset = 0;
-
-static void
-validate_list (webs_t wp, char *value, struct variable *v,
-	       int (*valid) (webs_t, char *, struct variable *))
-{
-  int n, i;
-  char name[100];
-  char buf[1000] = "", *cur = buf;
-
-  n = atoi (value);
-
-  for (i = 0; i < n; i++)
-    {
-      snprintf (name, sizeof (name), "%s%d", v->name, i);
-      if (!(value = websGetVar (wp, name, NULL)))
-	return;
-      if (!*value && v->nullok)
-	continue;
-      if (!valid (wp, value, v))
-	continue;
-      cur += snprintf (cur, buf + sizeof (buf) - cur, "%s%s",
-		       cur == buf ? "" : " ", value);
-    }
-  nvram_set (v->name, buf);
-
-}
-
-int
-valid_ipaddr (webs_t wp, char *value, struct variable *v)
-{
-  struct in_addr netaddr, netmask;
-
-  if (!legal_ipaddr (value))
-    {
-      websDebugWrite (wp, "Invalid <b>%s</b> %s: not an IP address<br>",
-		      v->longname, value);
-      return FALSE;
-    }
-
-  if (v->argv)
-    {
-      if (!strcmp (v->argv[0], "lan"))
-	{
-	  if (*(value + strlen (value) - 2) == '.'
-	      && *(value + strlen (value) - 1) == '0')
-	    {
-	      websDebugWrite (wp,
-			      "Invalid <b>%s</b> %s: not an IP address<br>",
-			      v->longname, value);
-	      return FALSE;
-	    }
-	}
-
-      else if (!legal_ip_netmask (v->argv[0], v->argv[1], value))
-	{
-	  (void) inet_aton (nvram_safe_get (v->argv[0]), &netaddr);
-	  (void) inet_aton (nvram_safe_get (v->argv[1]), &netmask);
-	  websDebugWrite (wp, "Invalid <b>%s</b> %s: not in the %s/",
-			  v->longname, value, inet_ntoa (netaddr));
-	  websDebugWrite (wp, "%s network<br>", inet_ntoa (netmask));
-	  return FALSE;
-	}
-    }
-
-  return TRUE;
-}
-
-static void
-validate_ipaddr (webs_t wp, char *value, struct variable *v)
-{
-  if (valid_ipaddr (wp, value, v))
-    nvram_set (v->name, value);
-}
-
-static void
-validate_ipaddrs (webs_t wp, char *value, struct variable *v)
-{
-  validate_list (wp, value, v, valid_ipaddr);
-}
-
-int
-valid_merge_ip_4 (webs_t wp, char *value, struct variable *v)
-{
-  char ipaddr[20];
-
-  if (atoi (value) == 255)
-    {
-      websDebugWrite (wp, "Invalid <b>%s</b> %s: out of range 0 - 254 <br>",
-		      v->longname, value);
-      return FALSE;
-    }
-
-  sprintf (ipaddr, "%d.%d.%d.%s",
-	   get_single_ip (nvram_safe_get ("lan_ipaddr"), 0),
-	   get_single_ip (nvram_safe_get ("lan_ipaddr"), 1),
-	   get_single_ip (nvram_safe_get ("lan_ipaddr"), 2), value);
-
-  if (!valid_ipaddr (wp, ipaddr, v))
-    {
-      return FALSE;
-    }
-
-
-  return TRUE;
-}
-
-/*static void
-validate_merge_ip_4 (webs_t wp, char *value, struct variable *v)
-{
-  if (!strcmp (value, ""))
-    {
-      nvram_set (v->name, "0");
-      return;
-    }
-
-  if (valid_merge_ip_4 (wp, value, v))
-    nvram_set (v->name, value);
-}
-*/
-static void
-validate_merge_ipaddrs (webs_t wp, char *value, struct variable *v)
-{
-  char ipaddr[20];
-
-  get_merge_ipaddr (wp, v->name, ipaddr);
-
-  if (valid_ipaddr (wp, ipaddr, v))
-    nvram_set (v->name, ipaddr);
-}
-
-static void
-validate_merge_mac (webs_t wp, char *value, struct variable *v)
-{
-  char macaddr[20];
-
-  get_merge_mac (wp, v->name, macaddr);
-
-  if (valid_hwaddr (wp, macaddr, v))
-    nvram_set (v->name, macaddr);
-
-}
-
-static void
-validate_dns (webs_t wp, char *value, struct variable *v)
-{
-  char buf[100] = "", *cur = buf;
-  char ipaddr[20], ipname[30];
-  char *ip;
-  int i, j;
-
-  for (j = 0; j < 3; j++)
-    {
-      strcpy (ipaddr, "");
-      for (i = 0; i < 4; i++)
-	{
-	  snprintf (ipname, sizeof (ipname), "%s%d_%d", v->name, j, i);
-	  ip = websGetVar (wp, ipname, NULL);
-	  if (ip)
-	    {
-	      strcat (ipaddr, ip);
-	      if (i < 3)
-		strcat (ipaddr, ".");
-	    }
-	  else
-	    return;
-	}
-
-      if (!strcmp (ipaddr, "0.0.0.0"))
-	continue;
-      if (!valid_ipaddr (wp, ipaddr, v))
-	continue;
-      cur += snprintf (cur, buf + sizeof (buf) - cur, "%s%s",
-		       cur == buf ? "" : " ", ipaddr);
-    }
-  nvram_set (v->name, buf);
-
-  dns_to_resolv ();
-}
-
-int
-valid_choice (webs_t wp, char *value, struct variable *v)
-{
-  char **choice;
-
-  for (choice = v->argv; *choice; choice++)
-    {
-      if (!strcmp (value, *choice))
-	return TRUE;
-    }
-
-  websDebugWrite (wp, "Invalid <b>%s</b> %s: not one of ", v->longname,
-		  value);
-  for (choice = v->argv; *choice; choice++)
-    websDebugWrite (wp, "%s%s", choice == v->argv ? "" : "/", *choice);
-  websDebugWrite (wp, "<br>");
-  return FALSE;
-}
-
-void
-validate_choice (webs_t wp, char *value, struct variable *v)
-{
-  if (valid_choice (wp, value, v))
-    nvram_set (v->name, value);
-}
-
-int
-valid_range (webs_t wp, char *value, struct variable *v)
-{
-  int n, start, end;
-
-  n = atoi (value);
-  start = atoi (v->argv[0]);
-  end = atoi (v->argv[1]);
-
-
-  if (!ISDIGIT (value, 1) || n < start || n > end)
-    {
-      websDebugWrite (wp, "Invalid <b>%s</b> %s: out of range %d-%d<br>",
-		      v->longname, value, start, end);
-      return FALSE;
-    }
-
-  return TRUE;
-}
-
-static void
-validate_range (webs_t wp, char *value, struct variable *v)
-{
-  char buf[20];
-  int range;
-  if (valid_range (wp, value, v))
-    {
-      range = atoi (value);
-      snprintf (buf, sizeof (buf), "%d", range);
-      nvram_set (v->name, buf);
-    }
-}
-
-int
-valid_name (webs_t wp, char *value, struct variable *v)
-{
-  int n, max;
-
-  n = atoi (value);
-
-
-  if (!ISASCII (value, 1))
-    {
-      return FALSE;
-    }
-  if (v)
-    {
-      max = atoi (v->argv[0]);
-      if (strlen (value) > max)
-	{
-	  return FALSE;
-	}
-    }
-  return TRUE;
-}
-
-static void
-validate_name (webs_t wp, char *value, struct variable *v)
-{
-  if (valid_name (wp, value, v))
-    nvram_set (v->name, value);
-}
-
-int do_reboot = 0;
-static void
-validate_reboot (webs_t wp, char *value, struct variable *v)
-{
-  if (value && v)
-    {
-      nvram_set (v->name, value);
-      do_reboot = 1;
-    }
-}
-
-/* the html always show "d6nw5v1x2pc7st9m"
- * so we must filter it.
- */
-static void
-validate_password (webs_t wp, char *value, struct variable *v)
-{
-  if (strcmp (value, TMP_PASSWD) && valid_name (wp, value, v))
-    {
-      nvram_set (v->name, zencrypt (value));
-
-      system2 ("/sbin/setpasswd");
-    }
-}
-
-static void
-validate_password2 (webs_t wp, char *value, struct variable *v)
-{
-  if (strcmp (value, TMP_PASSWD) && valid_name (wp, value, v))
-    {
-      nvram_set (v->name, value);
-    }
-}
-
-
-int
-valid_hwaddr (webs_t wp, char *value, struct variable *v)
-{
-  /* Make exception for "NOT IMPLELEMENTED" string */
-  if (!strcmp (value, "NOT_IMPLEMENTED"))
-    return (TRUE);
-
-  /* Check for bad, multicast, broadcast, or null address */
-  if (!legal_hwaddr (value))
-    {
-      websDebugWrite (wp, "Invalid <b>%s</b> %s: not a legal MAC address<br>",
-		      v->longname, value);
-      return FALSE;
-    }
-
-  return TRUE;
-}
-
-static void
-validate_hwaddr (webs_t wp, char *value, struct variable *v)
-{
-  if (valid_hwaddr (wp, value, v))
-    nvram_set (v->name, value);
-}
-
-static void
-validate_hwaddrs (webs_t wp, char *value, struct variable *v)
-{
-  validate_list (wp, value, v, valid_hwaddr);
-}
 
 void
 ej_get_http_prefix (webs_t wp, int argc, char_t ** argv)
@@ -2004,9 +1251,8 @@ Initnvramtab ()
 	      while (1)
 		{
 		  tmp = (struct variable *) malloc (sizeof (struct variable));
+		  memset(tmp,0,sizeof (struct variable));
 		  tmp->name = getFileString (in);
-		  tmp->validate = NULL;
-		  tmp->validate2 = NULL;
 		  if (tmp->name == NULL)
 		    break;
 		  skipFileString (in);	//long string
@@ -2014,7 +1260,7 @@ Initnvramtab ()
 		  tmp->argv = NULL;
 		  if (!stricmp (tmpstr, "RANGE"))
 		    {
-		      tmp->validate = validate_range;
+		      tmp->validatename = "validate_range";
 		      tmp->argv = (char **) malloc (sizeof (char **) * 3);
 		      tmp->argv[0] = getFileString (in);
 		      tmp->argv[1] = getFileString (in);
@@ -2022,7 +1268,7 @@ Initnvramtab ()
 		    }
 		  if (!stricmp (tmpstr, "CHOICE"))
 		    {
-		      tmp->validate = validate_choice;
+		      tmp->validatename = "validate_choice";
 		      free (tmpstr);
 		      tmpstr = getFileString (in);
 		      len = atoi (tmpstr);
@@ -2037,7 +1283,7 @@ Initnvramtab ()
 #ifdef HAVE_SPUTNIK_APD
 		  if (!stricmp (tmpstr, "MJIDTYPE"))
 		    {
-		      tmp->validate = validate_choice;
+		      tmp->validatename = "validate_choice";
 		      free (tmpstr);
 		      tmpstr = getFileString (in);
 		      len = atoi (tmpstr);
@@ -2053,7 +1299,7 @@ Initnvramtab ()
 #endif
 		  if (!stricmp (tmpstr, "NOACK"))
 		    {
-		      tmp->validate = validate_noack;
+		      tmp->validatename = "validate_noack";
 		      len = 2;
 		      tmp->argv =
 			(char **) malloc (sizeof (char **) * (len + 1));
@@ -2065,170 +1311,167 @@ Initnvramtab ()
 		    }
 		  if (!stricmp (tmpstr, "NAME"))
 		    {
-		      tmp->validate = validate_name;
+		      tmp->validatename = "validate_name";
 		      tmp->argv = (char **) malloc (sizeof (char **) * 2);
 		      tmp->argv[0] = getFileString (in);
 		      tmp->argv[1] = NULL;
 		    }
 		  if (!stricmp (tmpstr, "NULL"))
 		    {
-		      tmp->validate = NULL;
-		      tmp->validate2 = NULL;
 		    }
 		  if (!stricmp (tmpstr, "WMEPARAM"))
 		    {
-		      tmp->validate = validate_wl_wme_params;
+		      tmp->validatename = "validate_wl_wme_params";
 		    }
 		  if (!stricmp (tmpstr, "PASSWORD"))
 		    {
-		      tmp->validate = validate_password;
+		      tmp->validatename = "validate_password";
 		      tmp->argv = (char **) malloc (sizeof (char **) * 2);
 		      tmp->argv[0] = getFileString (in);
 		      tmp->argv[1] = NULL;
 		    }
 		  if (!stricmp (tmpstr, "PASSWORD2"))
 		    {
-		      tmp->validate = validate_password2;
+		      tmp->validatename = "validate_password2";
 		      tmp->argv = (char **) malloc (sizeof (char **) * 2);
 		      tmp->argv[0] = getFileString (in);
 		      tmp->argv[1] = NULL;
 		    }
 		  if (!stricmp (tmpstr, "LANIPADDR"))
 		    {
-		      tmp->validate = validate_lan_ipaddr;
+		      tmp->validatename = "validate_lan_ipaddr";
 		      tmp->argv = (char **) malloc (sizeof (char **) * 2);
 		      tmp->argv[0] = getFileString (in);
 		      tmp->argv[1] = NULL;
 		    }
 		  if (!stricmp (tmpstr, "WANIPADDR"))
 		    {
-		      tmp->validate = validate_wan_ipaddr;
+		      tmp->validatename = "validate_wan_ipaddr";
 		    }
 		  if (!stricmp (tmpstr, "MERGEIPADDRS"))
 		    {
-		      tmp->validate = validate_merge_ipaddrs;
+		      tmp->validatename = "validate_merge_ipaddrs";
 		    }
 		  if (!stricmp (tmpstr, "DNS"))
 		    {
-		      tmp->validate = validate_dns;
+		      tmp->validatename = "validate_dns";
 		    }
 		  if (!stricmp (tmpstr, "SAVEWDS"))
 		    {
-		      tmp->validate = NULL;
-		      tmp->validate2 = save_wds;
+		      tmp->validate2name = "save_wds";
 		    }
 		  if (!stricmp (tmpstr, "DHCP"))
 		    {
-		      tmp->validate = &dhcp_check;
+		      tmp->validatename = "dhcp_check";
 		    }
 		  if (!stricmp (tmpstr, "WPAPSK"))
 		    {
-		      tmp->validate = validate_wpa_psk;
+		      tmp->validatename = "validate_wpa_psk";
 		      tmp->argv = (char **) malloc (sizeof (char **) * 2);
 		      tmp->argv[0] = getFileString (in);
 		      tmp->argv[1] = NULL;
 		    }
 		  if (!stricmp (tmpstr, "STATICS"))
 		    {
-		      tmp->validate = validate_statics;
+		      tmp->validatename = "validate_statics";
 		    }
 #ifdef HAVE_PORTSETUP
 		  if (!stricmp (tmpstr, "PORTSETUP"))
 		    {
-		      tmp->validate = validate_portsetup;
+		      tmp->validatename = "validate_portsetup";
 		    }
 #endif
 		  if (!stricmp (tmpstr, "REBOOT"))
 		    {
-		      tmp->validate = validate_reboot;
+		      tmp->validatename = "validate_reboot";
 		    }
 		  if (!stricmp (tmpstr, "IPADDR"))
 		    {
-		      tmp->validate = validate_ipaddr;
+		      tmp->validatename = "validate_ipaddr";
 		    }
 		  if (!stricmp (tmpstr, "STATICLEASES"))
 		    {
-		      tmp->validate = validate_staticleases;
+		      tmp->validatename = "validate_staticleases";
 		    }
 #ifdef HAVE_CHILLILOCAL
 		  if (!stricmp (tmpstr, "USERLIST"))
 		    {
-		      tmp->validate = validate_userlist;
+		      tmp->validatename = "validate_userlist";
 		    }
 #endif
 #ifdef HAVE_RADLOCAL
 		  if (!stricmp (tmpstr, "IRADIUSUSERLIST"))
 		    {
-		      tmp->validate = validate_iradius;
+		      tmp->validatename = "validate_iradius";
 		    }
 #endif
 		  if (!stricmp (tmpstr, "IPADDRS"))
 		    {
-		      tmp->validate = validate_ipaddrs;
+		      tmp->validatename = "validate_ipaddrs";
 		    }
 		  if (!stricmp (tmpstr, "NETMASK"))
 		    {
-		      tmp->validate = validate_netmask;
+		      tmp->validatename = "validate_netmask";
 		    }
 		  if (!stricmp (tmpstr, "MERGENETMASK"))
 		    {
-		      tmp->validate = validate_merge_netmask;
+		      tmp->validatename = "validate_merge_netmask";
 		    }
 		  if (!stricmp (tmpstr, "WDS"))
 		    {
-		      tmp->validate = validate_wds;
+		      tmp->validatename = "validate_wds";
 		    }
 		  if (!stricmp (tmpstr, "STATICROUTE"))
 		    {
-		      tmp->validate = validate_static_route;
+		      tmp->validatename = "validate_static_route";
 		    }
 		  if (!stricmp (tmpstr, "MERGEMAC"))
 		    {
-		      tmp->validate = validate_merge_mac;
+		      tmp->validatename = "validate_merge_mac";
 		    }
 		  if (!stricmp (tmpstr, "FILTERPOLICY"))
 		    {
-		      tmp->validate = validate_filter_policy;
+		      tmp->validatename = "validate_filter_policy";
 		    }
 		  if (!stricmp (tmpstr, "FILTERIPGRP"))
 		    {
-		      tmp->validate = validate_filter_ip_grp;
+		      tmp->validatename = "validate_filter_ip_grp";
 		    }
 		  if (!stricmp (tmpstr, "FILTERPORT"))
 		    {
-		      tmp->validate = validate_filter_port;
+		      tmp->validatename = "validate_filter_port";
 		    }
 		  if (!stricmp (tmpstr, "FILTERDPORTGRP"))
 		    {
-		      tmp->validate = validate_filter_dport_grp;
+		      tmp->validatename = "validate_filter_dport_grp";
 		    }
 		  if (!stricmp (tmpstr, "BLOCKEDSERVICE"))
 		    {
-		      tmp->validate = validate_blocked_service;
+		      tmp->validatename = "validate_blocked_service";
 		    }
 		  if (!stricmp (tmpstr, "FILTERP2P"))
 		    {
-		      tmp->validate = validate_catchall;
+		      tmp->validatename = "validate_catchall";
 		    }
 		  if (!stricmp (tmpstr, "FILTERMACGRP"))
 		    {
-		      tmp->validate = validate_filter_mac_grp;
+		      tmp->validatename = "validate_filter_mac_grp";
 		    }
 		  if (!stricmp (tmpstr, "FILTERWEB"))
 		    {
-		      tmp->validate = validate_filter_web;
+		      tmp->validatename = "validate_filter_web";
 		    }
 		  if (!stricmp (tmpstr, "WLHWADDRS"))
 		    {
-		      tmp->validate = validate_wl_hwaddrs;
+		      tmp->validatename = "validate_wl_hwaddrs";
 		    }
 		  if (!stricmp (tmpstr, "FORWARDPROTO"))
 		    {
-		      tmp->validate = validate_forward_proto;
+		      tmp->validatename = "validate_forward_proto";
 		    }
 		  if (!stricmp (tmpstr, "FORWARDSPEC"))
 		    {
-		      tmp->validate = validate_forward_spec;
+		      tmp->validatename = "validate_forward_spec";
 		    }
 // changed by steve
 		  /*if (!stricmp (tmpstr, "FORWARDUPNP"))
@@ -2238,24 +1481,24 @@ Initnvramtab ()
 // end changed by steve
 		  if (!stricmp (tmpstr, "PORTTRIGGER"))
 		    {
-		      tmp->validate = validate_port_trigger;
+		      tmp->validatename = "validate_port_trigger";
 		    }
 		  if (!stricmp (tmpstr, "HWADDR"))
 		    {
-		      tmp->validate = validate_hwaddr;
+		      tmp->validatename = "validate_hwaddr";
 		    }
 		  if (!stricmp (tmpstr, "HWADDRS"))
 		    {
-		      tmp->validate = validate_hwaddrs;
+		      tmp->validatename = "validate_hwaddrs";
 		    }
 		  if (!stricmp (tmpstr, "WLWEPKEY"))
 		    {
-		      tmp->validate = validate_wl_wep_key;
+		      tmp->validatename = "validate_wl_wep_key";
 		    }
 
 		  if (!stricmp (tmpstr, "WLAUTH"))
 		    {
-		      tmp->validate = validate_wl_auth;
+		      tmp->validatename = "validate_wl_auth";
 		      tmp->argv = (char **) malloc (sizeof (char **) * 3);
 		      tmp->argv[0] = getFileString (in);
 		      tmp->argv[1] = getFileString (in);
@@ -2263,7 +1506,7 @@ Initnvramtab ()
 		    }
 		  if (!stricmp (tmpstr, "WLWEP"))
 		    {
-		      tmp->validate = validate_wl_wep;
+		      tmp->validatename = "validate_wl_wep";
 		      free (tmpstr);
 		      tmpstr = getFileString (in);
 		      len = atoi (tmpstr);
@@ -2278,7 +1521,7 @@ Initnvramtab ()
 
 		  if (!stricmp (tmpstr, "DYNAMICROUTE"))
 		    {
-		      tmp->validate = validate_dynamic_route;
+		      tmp->validatename = "validate_dynamic_route";
 		      free (tmpstr);
 		      tmpstr = getFileString (in);
 		      len = atoi (tmpstr);
@@ -2292,7 +1535,7 @@ Initnvramtab ()
 		    }
 		  if (!stricmp (tmpstr, "WLGMODE"))
 		    {
-		      tmp->validate = validate_wl_gmode;
+		      tmp->validatename = "validate_wl_gmode";
 		      free (tmpstr);
 		      tmpstr = getFileString (in);
 		      len = atoi (tmpstr);
@@ -2306,7 +1549,7 @@ Initnvramtab ()
 		    }
 		  if (!stricmp (tmpstr, "WLNETMODE"))
 		    {
-		      tmp->validate = validate_wl_net_mode;
+		      tmp->validatename = "validate_wl_net_mode";
 		      free (tmpstr);
 		      tmpstr = getFileString (in);
 		      len = atoi (tmpstr);
@@ -2320,7 +1563,7 @@ Initnvramtab ()
 		    }
 		  if (!stricmp (tmpstr, "AUTHMODE"))
 		    {
-		      tmp->validate = validate_auth_mode;
+		      tmp->validatename = "validate_auth_mode";
 		      free (tmpstr);
 		      tmpstr = getFileString (in);
 		      len = atoi (tmpstr);
@@ -2335,7 +1578,7 @@ Initnvramtab ()
 #ifndef HAVE_MSSID
 		  if (!stricmp (tmpstr, "SECURITYMODE"))
 		    {
-		      tmp->validate = validate_security_mode;
+		      tmp->validatename = "validate_security_mode";
 		      free (tmpstr);
 		      tmpstr = getFileString (in);
 		      len = atoi (tmpstr);
@@ -2351,18 +1594,18 @@ Initnvramtab ()
 #ifdef HAVE_PPPOESERVER
 		  if (!stricmp (tmpstr, "CHAPTABLE"))
 		    {
-		      tmp->validate = validate_chaps;
+		      tmp->validatename = "validate_chaps";
 		    }
 #endif
 
 #ifdef HAVE_MILKFISH
 		  if (!stricmp (tmpstr, "MFSUBSCRIBERS"))
 		    {
-		      tmp->validate = validate_subscribers;
+		      tmp->validatename = "validate_subscribers";
 		    }
 		  if (!stricmp (tmpstr, "MFALIASES"))
 		    {
-		      tmp->validate = validate_aliases;
+		      tmp->validatename = "validate_aliases";
 		    }
 #endif
 
@@ -2396,272 +1639,6 @@ Initnvramtab ()
     }
 }
 
-/*
-	{ "lan_ipaddr", "LAN IP Address", validate_lan_ipaddr, ARGV("lan"), FALSE },
-
-	{ "router_name", "Routert Name", validate_name, ARGV("255"), TRUE, 0 },
-	{ "wan_hostname","WAN Host Name", validate_name, ARGV("255"), TRUE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	{ "wan_domain", "WAN Domain Name", validate_name, ARGV("255"), TRUE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	{ "wan_ipaddr", "WAN IP Address", validate_wan_ipaddr, NULL, FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	//{ "wan_ipaddr", "WAN IP Address", validate_merge_ipaddrs, NULL, FALSE },
-	//{ "wan_netmask", "WAN Subnet Mask", validate_merge_netmask, FALSE },
-	//{ "wan_gateway", "WAN Gateway", validate_merge_ipaddrs, ARGV("wan_ipaddr","wan_netmask"), FALSE },
-	{ "wan_proto", "WAN Protocol", validate_choice, ARGV("disabled", "dhcp", "static", "pppoe", "pptp", "l2tp", "heartbeat"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	{ "ntp_server", "NTP Server", NULL, NULL, TRUE, 0 },  // not use
-	{ "ntp_mode", "NTP Mode", validate_choice, ARGV("manual","auto"), TRUE, 0 },
-	{ "daylight_time", "Daylight", validate_choice, ARGV("0", "1"), TRUE, 0 },
-	{ "time_zone", "Time Zone", validate_choice, ARGV("-12 1 0","-11 1 0","-10 1 0","-09 1 1","-08 1 1","-07 1 0","-07 2 1","-06 1 0","-06 2 1","-05 1 0","-05 2 1","-04 1 0","-04 2 1","-03.5 1 1","-03 1 0","-03 2 1","-02 1 0","-01 1 2","+00 1 0","+00 2 2","+01 1 0","+01 2 2","+02 1 0","+02 2 2","+03 1 0","+04 1 0","+05 1 0","+06 1 0","+07 1 0","+08 1 0","+08 2 0","+09 1 0","+10 1 0","+10 2 4","+11 1 0","+12 1 0","+12 2 4"), FALSE, 0 },
-	//{ "pptp_server_ip", "WAN Gateway", validate_merge_ipaddrs, ARGV("wan_ipaddr","wan_netmask"), FALSE },
-	{ "ppp_username", "Username", validate_name, ARGV("63"), FALSE, 0 },
-	{ "ppp_passwd", "Password", validate_password, ARGV("63"), TRUE, 0 },
-	{ "ppp_keepalive", "Keep Alive", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "ppp_demand", "Connect on Demand", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "ppp_idletime", "Max Idle Time", validate_range, ARGV("1", "9999"), FALSE, 0 },
-	{ "ppp_redialperiod", "Redial Period", validate_range, ARGV("1", "9999"), FALSE, 0 },
-	{ "ppp_service", "Service Name", validate_name, ARGV("63"), TRUE, 0 },	// 2003-03-19 by honor
-	{ "ppp_static", "Enable /Disable Static IP", validate_choice, ARGV("0", "1"), TRUE, 0 },
-	{ "ppp_static_ip", "Static IP", validate_merge_ipaddrs, NULL, FALSE, 0 },
-	{ "wan_dns", "WAN DNS Server", validate_dns, NULL, FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	{ "lan_proto", "LAN Protocol", validate_choice, ARGV("dhcp", "static"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	{ "dhcp_check", "DHCP check", dhcp_check, NULL, FALSE, 0 },
-	{ "dhcp_start", "DHCP Server LAN IP Address Range", validate_range, ARGV("0","255"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	//{ "dhcp_start", "DHCP Server LAN IP Address Range", validate_merge_ip_4, NULL, FALSE },
-	{ "dhcp_num", "DHCP Users", validate_range, ARGV("1","253"), FALSE, 0 },
-	{ "dhcp_lease", "DHCP Client Lease Time", validate_range, ARGV("0","99999"), FALSE, 0 },
-	{ "wan_wins", "WAN WINS Server", validate_merge_ipaddrs, NULL, FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	{ "http_username", "Router Username", validate_name, ARGV("63"), TRUE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	{ "http_passwd", "Router Password", validate_password, ARGV("63"), TRUE, EZC_FLAGS_WRITE },
-	{ "upnp_enable", "UPnP", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "web_wl_filter", "Wireless Access Web", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "http_enable", "HTTP Server", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "https_enable", "HTTPS Server", validate_choice, ARGV("0", "1"), FALSE, 0 },
-
-	{ "samba_mount", "SambaFS Mount", validate_choice, ARGV("0", "1"), FALSE,0 },
-	{ "samba_share", "SambaFS Share", NULL, NULL, FALSE,0 },
-	{ "samba_user" , "SambaFS User" , NULL, NULL, FALSE,0 },
-	{ "samba_password", "SambaFS Password", NULL,NULL, FALSE ,0},
-	{ "samba_script", "SambaFS StartScript", NULL,NULL, FALSE,0 },
-	{ "rflow_enable" , "RFLOW Enable" , validate_choice,ARGV("0","1"), FALSE,0 },
-	{ "rflow_ip", "RFLOW IP", NULL,NULL, FALSE,0 },
-	{ "rflow_port", "RFLOW PORT", NULL,NULL, FALSE,0 },
-	{ "macupd_enable" , "MAC Update Enable" , validate_choice,ARGV("0","1"), FALSE,0 },
-	{ "macupd_ip", "MAC Update IP", NULL,NULL, FALSE,0 },
-	{ "macupd_port", "MAC update PORT", NULL,NULL, FALSE,0 },
-	{ "macupd_interval", "MAC Update Interval", NULL,NULL, FALSE,0 },
-	{ "status_auth","Status Site Authentication",NULL,NULL,FALSE,0},
-
-
-	{ "rc_startup", "Startup Script", NULL, NULL, FALSE, 0 },
-	{ "rc_firewall", "Firewall Script", NULL, NULL, FALSE, 0 },
-	{ "lan_gateway", "LAN Gateway", validate_merge_ipaddrs, NULL, FALSE, 0 },
-	{ "sv_localdns", "Local DNS", validate_merge_ipaddrs, NULL, FALSE, 0 },
-	{ "lan_domain", "LAN Domain Name", validate_name, ARGV("255"), TRUE, 0 },
-	{ "wl_mode", "Wireless Mode", validate_choice, ARGV("ap", "wet", "infra"), FALSE, 0 },
-	{ "txpwr", "TX Power", validate_range, ARGV("0","251"),  FALSE, 0 },
-	{ "txant", "TX Ant", validate_choice, ARGV("0","1","3"),  FALSE, 0 },
-	{ "wl_antdiv", "RX Ant", validate_choice, ARGV("0","1","3"),  FALSE, 0 },
-	{ "apwatchdog_enable", "AP Watchdog", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "apwatchdog_interval", "AP Watchdog", validate_range, ARGV("0", "86400"), FALSE, 0 },
-	{ "boot_wait", "Boot Wait", validate_choice, ARGV("on", "off"), FALSE, 0 },
-	{ "cron_enable", "Cron", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "dhcp_domain", "DHCP Domain", validate_choice, ARGV("wan", "lan"), FALSE, 0 },
-	{ "dhcpd_statics", "DHCP", validate_statics, NULL, TRUE, 0 },
-	{ "dhcpd_options", "DHCP", NULL, NULL, TRUE, 0 },
-	{ "dnsmasq_enable", "DNS Masq", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "dnsmasq_options", "DNS Masq", NULL, NULL, TRUE, 0 },
-	{ "httpd_enable", "Httpd", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "httpsd_enable", "Httpsd", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "loopback_enable", "Loopback", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "local_dns", "Local DNS", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "nas_enable", "NAS", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "ntp_enable", "NTP Client", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "pptpd_enable", "PPTPD", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "pptpd_lip", "PPTPD", NULL, NULL, FALSE, 0 },
-	{ "pptpd_rip", "PPTPD", NULL, NULL, FALSE, 0 },
-	{ "pptpd_auth", "PPTPD", NULL, NULL, FALSE, 0 },
-	{ "pptp_encrypt", "PPTP", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "resetbutton_enable", "Resetbuttond", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "telnetd_enable", "Telnetd", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "sshd_enable", "SSHD", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "sshd_port", "SSHD", validate_range, ARGV("1", "65535"), FALSE, 0 },
-	{ "sshd_passwd_auth", "SSHD", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "sshd_rsa_host_key", "SSHD", NULL, NULL, TRUE, 0 },
-	{ "sshd_authorized_keys", "SSHD", NULL, NULL, TRUE , 0 },
-	{ "syslogd_enable", "Syslog", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "syslogd_rem_ip", "Syslog", validate_ipaddr, NULL, TRUE, 0 },
-
-	{ "wshaper_enable", "Bandwidth Mgmt", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "wshaper_dev", "Bandwidth Mgmt", validate_choice, ARGV("WAN", "LAN", "wLAN"), FALSE, 0 },
-	{ "wshaper_downlink", "Bandwidth Mgmt", NULL, NULL, TRUE, 0 },
-	{ "wshaper_uplink", "Bandwidth Mgmt", NULL, NULL, TRUE, 0 },
-	{ "wshaper_nopriohostsrc", "Bandwidth Mgmt", NULL, NULL, TRUE, 0 },
-	{ "wshaper_nopriohostdst", "Bandwidth Mgmt", NULL, NULL, TRUE, 0 },
-	{ "wshaper_noprioportsrc", "Bandwidth Mgmt", NULL, NULL, TRUE, 0 },
-	{ "wshaper_noprioportdst", "Bandwidth Mgmt", NULL, NULL, TRUE, 0 },
-	{ "zebra_enable", "Zebra", validate_choice, ARGV("0", "1"), FALSE, 0 },
-
-
-	// WDS vars
-	{ "wl_wds1_enable","WDS separate bridge Enabled", save_wds, NULL, FALSE, 0 },
-	{ "wl_wds1_hwaddr","WDS MAC", validate_wds, NULL, FALSE, 0 },
-	{ "bird_ospf","Routing", NULL, NULL, TRUE, 0 },
-
-	{ "snmpd_enable", "Snmpd", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "snmpd_syslocation", "Snmpd", NULL, NULL, TRUE, 0 },
-	{ "snmpd_syscontact", "Snmpd", NULL, NULL, TRUE, 0 },
-	{ "snmpd_sysname", "Snmpd", NULL, NULL, TRUE, 0 },
-	{ "snmpd_rocommunity", "Snmpd", NULL, NULL, TRUE, 0 },
-	{ "snmpd_rwcommunity", "Snmpd", NULL, NULL, TRUE, 0 },
-
-	{ "wol_enable", "Wol", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "wol_interval", "Wol", validate_range, ARGV("1", "86400"), TRUE, 0 },
-	{ "wol_hostname", "Wol", NULL, NULL, TRUE, 0 },
-	{ "wol_macs", "Wol", NULL, NULL, TRUE, 0 },
-	{ "wol_passwd", "Wol", NULL, NULL, TRUE, 0 },
-
-	{ "chilli_enable", "Enable Chillispot", validate_choice, ARGV("0","1"), TRUE, 0 },
-	{ "chilli_url", "Redirect URL", validate_name, ARGV("128"), TRUE, 0 },
-	{ "chilli_radius1", "Primary Radius Server", validate_merge_ipaddrs, NULL, FALSE, 0 },
-	{ "chilli_radius2", "Backup Radius Server", validate_merge_ipaddrs, NULL, FALSE, 0 },
-	{ "chilli_pass", "Radius Password", validate_name, ARGV("128"), TRUE, 0 },
-	{ "chilli_dns1", "Chillispot DNS1", validate_merge_ipaddrs, NULL, FALSE, 0 },
-
-	{ "def_whwaddr", "User define wireless MAC Address", validate_merge_mac, NULL, TRUE, 0 },
-
-	{ "log_dropped", "Access log D", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "log_rejected", "Access log R", validate_choice, ARGV("0", "1"), FALSE, 0 },
- 	{ "log_accepted", "Access log A", validate_choice, ARGV("0", "1"), FALSE, 0 },
-
-	{ "log_level", "Connection Logging", validate_range, ARGV("0", "3"), FALSE, 0 },
-	{ "log_enable", "Access log", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "filter", "Firewall Protection", validate_choice, ARGV("on", "off"), FALSE, 0 },
-	{ "filter_policy", "Filter", validate_filter_policy, NULL, FALSE, 0 },
-	{ "filter_ip_value", "TCP/UDP IP Filter", validate_filter_ip_grp, NULL, FALSE, 0 },
-	{ "filter_port", "TCP/UDP Port Filter", validate_filter_port, NULL, FALSE, 0 },
-	{ "filter_dport_value", "TCP/UDP Port Filter", validate_filter_dport_grp, NULL, FALSE, 0 },
-	{ "blocked_service", "TCP/UDP Port Filter", validate_blocked_service, NULL, FALSE, 0 },
-	{ "filter_mac_value", "TCP/UDP MAC Filter", validate_filter_mac_grp, NULL, FALSE, 0 },
-	{ "filter_web", "Website Filter", validate_filter_web, NULL, FALSE, 0 },
-	{ "block_wan", "Block WAN Request", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "ident_pass", "IDENT passthrough", validate_choice, ARGV("0", "1"), TRUE, 0 },
-	{ "block_loopback", "Filter Internet NAT redirection", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "block_proxy", "Block Proxy", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "block_java", "Block Java", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "block_activex", "Block ActiveX", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "block_cookie", "Block Cookie", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "multicast_pass", "Multicast Pass Through", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "ipsec_pass", "IPSec Pass Through", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "pptp_pass", "PPTP Pass Through", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "l2tp_pass", "L2TP Pass Through", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "remote_management", "Remote Management", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "remote_mgt_https", "Remote Management use https", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "http_wanport", "Router WAN Port", validate_range, ARGV("0", "65535"), TRUE, 0 },
-	{ "remote_upgrade", "Remote Upgrade", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "mtu_enable", "MTU enable", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "wan_mtu", "WAN MTU", validate_range, ARGV("576","1500"), FALSE, 0 },
-	{ "forward_port", "TCP/UDP Port Forward", validate_forward_proto, NULL, FALSE, 0 },
-	{ "port_trigger", "TCP/UDP Port Trigger", validate_port_trigger, NULL, FALSE, 0 },
-	{ "static_route", "Static Route", validate_static_route, NULL, FALSE, 0 },
-	{ "wk_mode", "Working Mode", validate_dynamic_route, ARGV("gateway", "router", "ospf"), FALSE, 0 },
-	//{ "dr_setting", "Dynamic Routing", validate_choice, ARGV("0", "1", "2", "3"), FALSE },
-	//{ "dr_lan_tx", "Dynamic Routing LAN TX", validate_choice, ARGV("0","1 2"), FALSE },
-	//{ "dr_lan_rx", "Dynamic Routing LAN RX", validate_choice, ARGV("0","1 2"), FALSE },
-	//{ "dr_wan_tx", "Dynamic Routing WAN TX", validate_choice, ARGV("0","1 2"), FALSE },
-	//{ "dr_wan_rx", "Dynamic Routing WAN RX", validate_choice, ARGV("0","1 2"), FALSE },
-	{ "dmz_enable", "DMZ enable", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "dmz_ipaddr", "DMZ LAN IP Address", validate_range, ARGV("0","255"), FALSE, 0 },
-	{ "mac_clone_enable", "User define WAN MAC Address", validate_choice, ARGV("0","1"), TRUE, 0 },
-	{ "def_hwaddr", "User define WAN MAC Address", validate_merge_mac, NULL, TRUE, 0 },
-	{ "upgrade_enable", "Tftp upgrade", validate_choice, ARGV("0", "1"), FALSE, 0 },
-	{ "wl_enable", "Enable Wireless", validate_choice, ARGV("0","1"), TRUE, 0 },
-	{ "wl_ssid", "Network Name (SSID)", validate_name, ARGV("32"), TRUE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-        { "wl_closed", "Network Type", validate_choice, ARGV("0", "1"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	{ "wl_country", "Country", validate_choice, ARGV("Worldwide", "Thailand", "Israel", "Jordan", "China", "Japan", "USA", "Europe", "USA Low", "Japan High", "All"), FALSE, 0 },
-        { "wl_ap_isolate", "AP Isolate", validate_choice, ARGV("0", "1"), TRUE, 0 },
-//        { "wl_mode", "AP Mode", validate_choice, ARGV("ap", "wet", "wds"), FALSE },
-        { "wl_lazywds", "Bridge Restrict", validate_choice, ARGV("0", "1"), FALSE, 0 },
-        { "wl_wds", "Remote Bridges", validate_hwaddrs, NULL, TRUE, 0 },
-        { "wl_WEP_key", "Network Key Index", validate_wl_wep_key, NULL, FALSE, 0 },
-        //{ "wl_passphrase", "Network Passphrase", validate_name, ARGV("20"), FALSE },
-        //{ "wl_key", "Network Key Index", validate_range, ARGV("1","4"), FALSE },
-        //{ "wl_key1", "Network Key 1", validate_wl_key, NULL, TRUE },
-        //{ "wl_key2", "Network Key 2", validate_wl_key, NULL, TRUE },
-        //{ "wl_key3", "Network Key 3", validate_wl_key, NULL, TRUE },
-        //{ "wl_key4", "Network Key 4", validate_wl_key, NULL, TRUE },
-        //{ "wl_wep_bit", "WEP Mode", validate_choice, ARGV("64", "128"), FALSE },
-        { "wl_wep", "WEP Mode", validate_wl_wep, ARGV("off", "on", "restricted","tkip","aes","tkip+aes"), FALSE , EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	{ "wl_crypto", "Crypto Mode", validate_choice, ARGV("off","tkip","aes","tkip+aes"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-        { "wl_auth", "Authentication Mode", validate_wl_auth, ARGV("0", "1"), FALSE, 0 },
-        { "wl_macmode1", "MAC Restrict Mode", validate_macmode, NULL , FALSE, 0 },
-        //{ "wl_mac", "Allowed MAC Address", validate_hwaddrs, NULL, TRUE },
-	{ "wl_radio", "Radio Enable", validate_choice, ARGV("0", "1"), FALSE, 0 }, //from 11.9
-        { "wl_mac_list", "Filter MAC Address", validate_wl_hwaddrs, NULL, FALSE, 0 },
-        //{ "wl_active_mac", "Active MAC Address", validate_wl_active_mac, NULL, FALSE },
-        { "wl_channel", "802.11g Channel", validate_range, ARGV("0","14"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-        { "wl_rate", "802.11g Rate", validate_choice, ARGV("0", "1000000", "2000000", "5500000", "6000000", "9000000", "11000000", "12000000", "18000000", "24000000", "36000000", "48000000", "54000000"), FALSE, 0 },
-        { "wl_rateset", "802.11g Supported Rates", validate_choice, ARGV("all", "default","12"), FALSE, 0 },
-        { "wl_frag", "802.11g Fragmentation Threshold", validate_range, ARGV("256", "2346"), FALSE, 0 },
-        { "wl_rts", "802.11g RTS Threshold", validate_range, ARGV("0", "2347"), FALSE, 0 },
-        { "wl_dtim", "802.11g DTIM Period", validate_range, ARGV("1", "255"), FALSE, 0 },
-        { "wl_bcn", "802.11g Beacon Interval", validate_range, ARGV("1", "65535"), FALSE, 0 },
-        { "wl_gmode", "802.11g mode", validate_wl_gmode, ARGV("-1", "0", "1", "2", "4", "5"), FALSE, 0 },
-        { "wl_net_mode", "802.11g mode", validate_wl_net_mode, ARGV("disabled", "mixed", "b-only", "g-only", "speedbooster"), FALSE, 0 },
-	{ "wl_gmode_protection", "54g Protection", validate_choice, ARGV("off", "auto"), FALSE, 0 },
-	{ "wl_frameburst", "Frame Bursting", validate_choice, ARGV("off", "on"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	{ "wl_plcphdr", "Preamble Type", validate_choice, ARGV("long", "short"), FALSE, 0 },
-	{ "wl_phytype", "Radio Band", validate_choice, ARGV("a", "b", "g"), TRUE, 0 },
-	{ "wl_wpa_psk", "WPA Pre-Shared Key", validate_wpa_psk, ARGV("64"), TRUE, EZC_FLAGS_WRITE },
-	{ "wl_wpa_gtk_rekey", "WPA GTK Rekey Timer", validate_range, ARGV("0","99999"), TRUE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	{ "wl_radauth", "RADIUS Server ON", NULL, validate_choice, ARGV("0", "1"), FALSE ,0},
-	{ "wl_radius_ipaddr", "RADIUS Server", validate_merge_ipaddrs, NULL, TRUE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	{ "wl_radius_port", "RADIUS Port", validate_range, ARGV("0", "65535"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	{ "wl_radius_key", "RADIUS Shared Secret", validate_name, ARGV("255"), TRUE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	{ "wl_auth_mode", "Auth Mode", validate_auth_mode, ARGV("disabled", "radius", "wpa", "psk"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	{ "security_mode", "Security Mode", validate_security_mode, ARGV("disabled", "radius", "wpa", "psk","wep"), FALSE, 0 },
-	{ "wl_unit", "802.11 Instance", wl_unit, NULL, TRUE, 0 },
-	{ "wl_ap_ssid", "SSID of associating AP", validate_name, ARGV("32"), TRUE, 0 },
-	{ "wl_ap_ip", "Default IP of associating AP", validate_merge_ipaddrs, NULL, TRUE, 0 },
-
-	//{ "ddns_enable", "DDNS", validate_choice, ARGV("0", "1"), FALSE },
-	//{ "ddns_username", "DDNS username", validate_name, ARGV("63"), FALSE },
-	//{ "ddns_passwd", "DDNS password", validate_password, ARGV("63"), FALSE },
-	//{ "ddns_hostname", "DDNS hostname", validate_name, ARGV("255"), TRUE },
-        //{ "ddns_server", "DDNS server", validate_choice,ARGV("ath.cx","dnsalias.com","dnsalias.net","dnsalias.org","dyndns.biz","dyndns.info","dyndns.org","dyndns.tv","gotdns.com","gotdns.org","homedns.org","homeftp.net","homeftp.org","homeip.net","homelinux.com","homelinux.net","homelinux.org","homeunix.com","homeunix.net","homeunix.org","kicks-ass.net","kicks-ass.org","merseine.nu","mine.nu","serveftp.net"), FALSE },
-	{ "l2tp_server_ip", "L2TP Server", validate_merge_ipaddrs, NULL, FALSE, 0 },
-	//{ "hb_server_ip", "Heart Beat Server", validate_merge_ipaddrs, NULL, FALSE },		//by tallest
-	{ "hb_server_ip", "Heart Beat Server", validate_name, ARGV("63"), TRUE, 0 },
-	{ "hb_server_ip", "Heart Beat Server", validate_merge_ipaddrs, NULL, FALSE, 0 },
-	{ "os_server", "OS Server", NULL, NULL, TRUE, 0 },
-	{ "stats_server", "Stats Server", NULL, NULL, TRUE, 0 },
-	 EZC_SUPPORT
-	{ "ezc_enable", "EZConfig", validate_choice, ARGV("0", "1"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE},
-//#endif
-	//{ "fw_disable", "Firewall", validate_choice, ARGV("0", "1"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	//{ "lan_stp", "Spanning Tree Protocol", validate_choice, ARGV("0", "1"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	//{ "lan_lease", "DHCP Server Lease Time", validate_range, ARGV("1", "604800"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	//{ "wan_desc", "Description", validate_name, ARGV("0", "255"), TRUE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	//{ "wan_hwaddr", "MAC Address", validate_hwaddr, NULL, TRUE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	//{ "wan_netmask", "Subnet Mask", validate_ipaddr, NULL, FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	//{ "wan_gateway", "Default Gateway", validate_ipaddr, NULL, TRUE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	//{ "wan_pppoe_username", "PPPoE Username", validate_name, ARGV("0", "255"), TRUE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	//{ "wan_pppoe_passwd", "PPPoE Password", validate_name, ARGV("0", "255"), TRUE, EZC_FLAGS_WRITE },
-	//{ "wan_pppoe_service", "PPPoE Service Name", validate_name, ARGV("0", "255"), TRUE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	//{ "wan_pppoe_ac", "PPPoE Access Concentrator", validate_name, ARGV("0", "255"), TRUE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	//{ "wan_pppoe_keepalive", "PPPoE Keep Alive", validate_choice, ARGV("0", "1"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	//{ "wan_pppoe_demand", "PPPoE Connect on Demand", validate_choice, ARGV("0", "1"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	//{ "wan_pppoe_idletime", "PPPoE Max Idle Time", validate_range, ARGV("1", "3600"), TRUE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	//{ "wan_pppoe_mru", "PPPoE MRU", validate_range, ARGV("128", "16384"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	//{ "wan_pppoe_mtu", "PPPoE MTU", validate_range, ARGV("128", "16384"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	//{ "wl_country_code", "Country Code", validate_country, NULL, FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	{ "wl_afterburner", "AfterBurner Technology", validate_choice, ARGV("on", "off", "auto"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	//{ "wl_key", "Network Key Index", validate_range, ARGV("1", "4"), FALSE, EZC_FLAGS_WRITE },
-	//{ "wl_key1", "Network Key 1", validate_wl_key, NULL, TRUE, EZC_FLAGS_WRITE},
-	//{ "wl_key2", "Network Key 2", validate_wl_key, NULL, TRUE, EZC_FLAGS_WRITE},
-	//{ "wl_key3", "Network Key 3", validate_wl_key, NULL, TRUE, EZC_FLAGS_WRITE},
-	//{ "wl_key4", "Network Key 4", validate_wl_key, NULL, TRUE, EZC_FLAGS_WRITE},
-
-};
-*/
 
 #ifdef HAVE_MACBIND
 #include "../../../opt/mac.h"
@@ -2691,6 +1668,7 @@ validate_cgi (webs_t wp)
     return;
 #endif
   int alen = variables_arraysize ();
+  void *handle =NULL;
   for (i = 0; i < alen; i++)
     {
       if (variables[i] == NULL)
@@ -2699,69 +1677,35 @@ validate_cgi (webs_t wp)
       if (!value)
 	continue;
       if ((!*value && variables[i]->nullok)
-	  || (!variables[i]->validate && !variables[i]->validate2))
+	  || (!variables[i]->validate2name && !variables[i]->validatename))
 	nvram_set (variables[i]->name, value);
       else
 	{
-	  if (variables[i]->validate)
+	  if (variables[i]->validatename)
 	    {
+	    cprintf("call validator_nofree %s\n",variables[i]->validatename);
+	    handle = start_validator_nofree(variables[i]->validatename,handle,wp,value,variables[i]);
+	    }else
+	  if (variables[i]->validate2name)
+	    {
+	    cprintf("call gozila %s\n",variables[i]->validate2name);
+	    start_gozila(variables[i]->validate2name,wp);
 //            fprintf(stderr,"validating %s = %s\n",variables[i]->name,value);
-	      variables[i]->validate (wp, value, variables[i]);
+//	      variables[i]->validate (wp, value, variables[i]);
 	    }
 	  else
 	    {
-	      variables[i]->validate2 (wp);
+//	      variables[i]->validate2 (wp);
 	    }
 	}
 
     }
+  cprintf ("close handle\n");
+    if (handle)
+	dlclose(handle);
   cprintf ("all vars validated\n");
 }
 
-static void
-changepass (webs_t wp)
-{
-  char *value = websGetVar (wp, "http_username", NULL);
-  char *pass = websGetVar (wp, "http_passwd", NULL);
-  if (value && pass && strcmp (value, TMP_PASSWD)
-      && valid_name (wp, value, NULL))
-    {
-      nvram_set ("http_username", zencrypt (value));
-
-      system2 ("/sbin/setpasswd");
-    }
-
-
-  if (pass && value && strcmp (pass, TMP_PASSWD)
-      && valid_name (wp, pass, NULL))
-    {
-      nvram_set ("http_passwd", zencrypt (pass));
-
-      system2 ("/sbin/setpasswd");
-    }
-  nvram_commit ();
-}
-
-#ifdef HAVE_CCONTROL
-
-static void execute (webs_t wp);
-{
-  char command[256];
-  char *var = websGetVar (wp, "command", "");
-  sysprintf ("%s > /tmp/.result");
-}
-
-#endif
-static void
-save_wifi (webs_t wp)
-{
-//  fprintf (stderr, "save wifi\n");
-  char *var = websGetVar (wp, "wifi_display", NULL);
-  if (var)
-    {
-      nvram_set ("wifi_display", var);
-    }
-}
 enum
 {
   NOTHING,
@@ -2774,146 +1718,145 @@ enum
 
 static struct gozila_action gozila_actions[] = {
   /* SETUP */
-  {"index", "wan_proto", "", 1, REFRESH, wan_proto},
-  {"index", "dhcpfwd", "", 1, REFRESH, dhcpfwd},
+  {"index", "wan_proto", "", 1, REFRESH, "wan_proto"},
+  {"index", "dhcpfwd", "", 1, REFRESH, "dhcpfwd"},
   //{"index", "clone_mac", "", 1, REFRESH, clone_mac}, //OBSOLETE
 #ifdef HAVE_CCONTROL
-  {"ccontrol", "execute", "", 1, REFRESH, execute},
+  {"ccontrol", "execute", "", 1, REFRESH, "execute"},
 #endif
-  {"WanMAC", "clone_mac", "", 1, REFRESH, clone_mac},	// for cisco style
-  {"DHCPTable", "delete", "", 2, REFRESH, delete_leases},
-  {"Info", "refresh", "", 0, REFRESH, save_wifi},
-  {"Status_Wireless", "refresh", "", 0, REFRESH, save_wifi},
-  {"Status", "release", "dhcp_release", 0, SYS_RESTART, dhcp_release},
-  {"Status", "renew", "", 3, REFRESH, dhcp_renew},
+  {"WanMAC", "clone_mac", "", 1, REFRESH, "clone_mac"},	// for cisco style
+  {"DHCPTable", "delete", "", 2, REFRESH, "delete_leases"},
+  {"Info", "refresh", "", 0, REFRESH, "save_wifi"},
+  {"Status_Wireless", "refresh", "", 0, REFRESH, "save_wifi"},
+  {"Status", "release", "dhcp_release", 0, SYS_RESTART, "dhcp_release"},
+  {"Status", "renew", "", 3, REFRESH, "dhcp_renew"},
   {"Status", "Connect", "start_pppoe", 1, RESTART, NULL},
-  {"Status_Internet", "release", "dhcp_release", 0, SYS_RESTART, dhcp_release},	// for cisco style
-  {"Status_Internet", "renew", "", 3, REFRESH, dhcp_renew},	// for cisco style
-  {"Status_Internet", "Disconnect", "stop_pppoe", 2, SYS_RESTART, stop_ppp},	// for cisco style
+  {"Status_Internet", "release", "dhcp_release", 0, SYS_RESTART, "dhcp_release"},	// for cisco style
+  {"Status_Internet", "renew", "", 3, REFRESH, "dhcp_renew"},	// for cisco style
+  {"Status_Internet", "Disconnect", "stop_pppoe", 2, SYS_RESTART, "stop_ppp"},	// for cisco style
   {"Status_Internet", "Connect_pppoe", "start_pppoe", 1, RESTART, NULL},	// for cisco style
-  {"Status_Internet", "Disconnect_pppoe", "stop_pppoe", 2, SYS_RESTART, stop_ppp},	// for cisco style
+  {"Status_Internet", "Disconnect_pppoe", "stop_pppoe", 2, SYS_RESTART, "stop_ppp"},	// for cisco style
   {"Status_Internet", "Connect_pptp", "start_pptp", 1, RESTART, NULL},	// for cisco style
-  {"Status_Internet", "Disconnect_pptp", "stop_pptp", 2, SYS_RESTART, stop_ppp},	// for cisco style
+  {"Status_Internet", "Disconnect_pptp", "stop_pptp", 2, SYS_RESTART, "stop_ppp"},	// for cisco style
   {"Status_Internet", "Connect_l2tp", "start_l2tp", 1, RESTART, NULL},	// for cisco style
-  {"Status_Internet", "Disconnect_l2tp", "stop_l2tp", 2, SYS_RESTART, stop_ppp},	// for cisco style{ "Status_Router",    "Connect_heartbeat",    "start_heartbeat",      1,      RESTART,                NULL},  // for cisco style
-  {"Status_Internet", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART, stop_ppp},	// for cisco style
-  {"Status", "Disconnect", "stop_pppoe", 2, SYS_RESTART, stop_ppp},
+  {"Status_Internet", "Disconnect_l2tp", "stop_l2tp", 2, SYS_RESTART, "stop_ppp"},	// for cisco style{ "Status_Router",    "Connect_heartbeat",    "start_heartbeat",      1,      RESTART,                NULL},  // for cisco style
+  {"Status_Internet", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART, "stop_ppp"},	// for cisco style
+  {"Status", "Disconnect", "stop_pppoe", 2, SYS_RESTART, "stop_ppp"},
   {"Status", "Connect_pppoe", "start_pppoe", 1, RESTART, NULL},
-  {"Status", "Disconnect_pppoe", "stop_pppoe", 2, SYS_RESTART, stop_ppp},
+  {"Status", "Disconnect_pppoe", "stop_pppoe", 2, SYS_RESTART, "stop_ppp"},
   {"Status", "Connect_pptp", "start_pptp", 1, RESTART, NULL},
-  {"Status", "Disconnect_pptp", "stop_pptp", 2, SYS_RESTART, stop_ppp},
+  {"Status", "Disconnect_pptp", "stop_pptp", 2, SYS_RESTART, "stop_ppp"},
   {"Status", "Connect_heartbeat", "start_heartbeat", 1, RESTART, NULL},
-  {"Status", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART,
-   stop_ppp},
-  {"Filters", "save", "filters", 1, REFRESH, save_policy},
-  {"Filters", "delete", "filters", 1, REFRESH, single_delete_policy},
-  {"FilterSummary", "delete", "filters", 1, REFRESH, summary_delete_policy},
+  {"Status", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART,"stop_ppp"},
+  {"Filters", "save", "filters", 1, REFRESH, "save_policy"},
+  {"Filters", "delete", "filters", 1, REFRESH, "single_delete_policy"},
+  {"FilterSummary", "delete", "filters", 1, REFRESH, "summary_delete_policy"},
   {"Routing", "del", "static_route_del", 1, REFRESH,
-   delete_static_route},
+   "delete_static_route"},
   {"RouteStatic", "del", "static_route_del", 1, REFRESH,
-   delete_static_route},
+   "delete_static_route"},
 //  {"WL_WEPTable", "key_64", "", 1, REFRESH, generate_key_64}, //OBSOLETE
 //  {"WL_WEPTable", "key_128", "", 1, REFRESH, generate_key_128}, //OBSOLETE
-  {"WL_WPATable", "key_64", "", 1, REFRESH, generate_key_64},
-  {"WL_WPATable", "key_128", "", 1, REFRESH, generate_key_128},
-  {"WL_WPATable", "security", "", 1, REFRESH, set_security},
+  {"WL_WPATable", "key_64", "", 1, REFRESH, "generate_key_64"},
+  {"WL_WPATable", "key_128", "", 1, REFRESH, "generate_key_128"},
+  {"WL_WPATable", "security", "", 1, REFRESH, "set_security"},
 #ifdef HAVE_MSSID
-  {"WL_WPATable", "save", "", 1, REFRESH, security_save},
-  {"WL_WPATable", "keysize", "", 1, REFRESH, security_save},
+  {"WL_WPATable", "save", "", 1, REFRESH, "security_save"},
+  {"WL_WPATable", "keysize", "", 1, REFRESH, "security_save"},
 #endif
-  {"WL_ActiveTable", "add_mac", "", 1, REFRESH, add_active_mac},
+  {"WL_ActiveTable", "add_mac", "", 1, REFRESH, "add_active_mac"},
   /* Siafu addition */
-  {"Ping", "wol", "", 1, REFRESH, ping_wol},
+  {"Ping", "wol", "", 1, REFRESH, "ping_wol"},
   /* Sveasoft addition */
   // {"Wireless_WDS", "save", "", 0, REFRESH, save_wds},
 #ifndef HAVE_MADWIFI
-  {"Wireless_WDS-wl0", "save", "", 0, REFRESH, save_wds},
-  {"Wireless_WDS-wl1", "save", "", 0, REFRESH, save_wds},
+  {"Wireless_WDS-wl0", "save", "", 0, REFRESH, "save_wds"},
+  {"Wireless_WDS-wl1", "save", "", 0, REFRESH, "save_wds"},
 #else
-  {"Wireless_WDS-ath0", "save", "", 0, REFRESH, save_wds},
-  {"Wireless_WDS-ath1", "save", "", 0, REFRESH, save_wds},
-  {"Wireless_WDS-ath2", "save", "", 0, REFRESH, save_wds},
-  {"Wireless_WDS-ath3", "save", "", 0, REFRESH, save_wds},
+  {"Wireless_WDS-ath0", "save", "", 0, REFRESH, "save_wds"},
+  {"Wireless_WDS-ath1", "save", "", 0, REFRESH, "save_wds"},
+  {"Wireless_WDS-ath2", "save", "", 0, REFRESH, "save_wds"},
+  {"Wireless_WDS-ath3", "save", "", 0, REFRESH, "save_wds"},
 #endif
-  {"Ping", "startup", "", 1, SYS_RESTART, ping_startup},
-  {"Ping", "firewall", "", 1, SYS_RESTART, ping_firewall},
-  {"Ping", "custom", "", 0, REFRESH, ping_custom},
-  {"QoS", "add_svc", "", 0, REFRESH, qos_add_svc},
-  {"QoS", "add_ip", "", 0, REFRESH, qos_add_ip},
-  {"QoS", "add_mac", "", 0, REFRESH, qos_add_mac},
-  {"QoS", "save", "filters", 1, REFRESH, qos_save},
+  {"Ping", "startup", "", 1, SYS_RESTART, "ping_startup"},
+  {"Ping", "firewall", "", 1, SYS_RESTART, "ping_firewall"},
+  {"Ping", "custom", "", 0, REFRESH, "ping_custom"},
+  {"QoS", "add_svc", "", 0, REFRESH, "qos_add_svc"},
+  {"QoS", "add_ip", "", 0, REFRESH, "qos_add_ip"},
+  {"QoS", "add_mac", "", 0, REFRESH, "qos_add_mac"},
+  {"QoS", "save", "filters", 1, REFRESH, "qos_save"},
   /* end Sveasoft addition */
-  {"Forward", "add_forward", "", 0, REFRESH, forward_add},
-  {"Forward", "remove_forward", "", 0, REFRESH, forward_remove},
+  {"Forward", "add_forward", "", 0, REFRESH, "forward_add"},
+  {"Forward", "remove_forward", "", 0, REFRESH, "forward_remove"},
 #ifdef HAVE_MSSID
-  {"Wireless_Basic", "add_vifs", "", 0, REFRESH, add_vifs},
-  {"Wireless_Basic", "remove_vifs", "", 0, REFRESH, remove_vifs},
+  {"Wireless_Basic", "add_vifs", "", 0, REFRESH, "add_vifs"},
+  {"Wireless_Basic", "remove_vifs", "", 0, REFRESH, "remove_vifs"},
 #endif
 #ifdef HAVE_BONDING
-  {"Networking", "add_bond", "", 0, REFRESH, add_bond},
-  {"Networking", "del_bond", "", 0, REFRESH, del_bond},
+  {"Networking", "add_bond", "", 0, REFRESH, "add_bond"},
+  {"Networking", "del_bond", "", 0, REFRESH, "del_bond"},
 #endif
 #ifdef HAVE_OLSRD
-  {"Routing", "add_olsrd", "", 0, REFRESH, add_olsrd},
-  {"Routing", "del_olsrd", "", 0, REFRESH, del_olsrd},
+  {"Routing", "add_olsrd", "", 0, REFRESH, "add_olsrd"},
+  {"Routing", "del_olsrd", "", 0, REFRESH, "del_olsrd"},
 #endif
 #ifdef HAVE_VLANTAGGING
-  {"Networking", "add_vlan", "", 0, REFRESH, add_vlan},
-  {"Networking", "add_bridge", "", 0, REFRESH, add_bridge},
-  {"Networking", "add_bridgeif", "", 0, REFRESH, add_bridgeif},
-  {"Networking", "del_vlan", "", 0, REFRESH, del_vlan},
-  {"Networking", "del_bridge", "", 0, REFRESH, del_bridge},
-  {"Networking", "del_bridgeif", "", 0, REFRESH, del_bridgeif},
-  {"Networking", "save_networking", "", 0, REFRESH, save_networking},
-  {"Networking", "add_mdhcp", "", 0, REFRESH, add_mdhcp},
-  {"Networking", "del_mdhcp", "", 0, REFRESH, del_mdhcp},
+  {"Networking", "add_vlan", "", 0, REFRESH, "add_vlan"},
+  {"Networking", "add_bridge", "", 0, REFRESH, "add_bridge"},
+  {"Networking", "add_bridgeif", "", 0, REFRESH, "add_bridgeif"},
+  {"Networking", "del_vlan", "", 0, REFRESH, "del_vlan"},
+  {"Networking", "del_bridge", "", 0, REFRESH, "del_bridge"},
+  {"Networking", "del_bridgeif", "", 0, REFRESH, "del_bridgeif"},
+  {"Networking", "save_networking", "", 0, REFRESH, "save_networking"},
+  {"Networking", "add_mdhcp", "", 0, REFRESH, "add_mdhcp"},
+  {"Networking", "del_mdhcp", "", 0, REFRESH, "del_mdhcp"},
 #endif
-  {"Wireless_Basic", "save", "", 1, REFRESH, wireless_save},
+  {"Wireless_Basic", "save", "", 1, REFRESH, "wireless_save"},
 #ifdef HAVE_WIVIZ
-  {"Wiviz_Survey", "Set", "", 0, REFRESH, set_wiviz},
+  {"Wiviz_Survey", "Set", "", 0, REFRESH, "set_wiviz"},
 #endif
 #ifdef HAVE_REGISTER
-  {"Register", "activate", "", 1, RESTART, reg_validate},
+  {"Register", "activate", "", 1, RESTART, "reg_validate"},
 #endif
-  {"index", "changepass", "", 1, REFRESH, changepass},
+  {"index", "changepass", "", 1, REFRESH, "changepass"},
 #ifdef HAVE_SUPERCHANNEL
-  {"SuperChannel", "activate", "", 1, REFRESH, superchannel_validate},
+  {"SuperChannel", "activate", "", 1, REFRESH, "superchannel_validate"},
 #endif
-  {"Services", "add_lease", "", 0, REFRESH, lease_add},
-  {"Services", "remove_lease", "", 0, REFRESH, lease_remove},
+  {"Services", "add_lease", "", 0, REFRESH, "lease_add"},
+  {"Services", "remove_lease", "", 0, REFRESH, "lease_remove"},
 #ifdef HAVE_PPPOESERVER
-  {"PPPoE_Server", "add_chap_user", "", 0, REFRESH, chap_user_add},
-  {"PPPoE_Server", "remove_chap_user", "", 0, REFRESH, chap_user_remove},
+  {"PPPoE_Server", "add_chap_user", "", 0, REFRESH, "chap_user_add"},
+  {"PPPoE_Server", "remove_chap_user", "", 0, REFRESH, "chap_user_remove"},
 #endif
 #ifdef HAVE_CHILLILOCAL
-  {"Hotspot", "add_user", "", 0, REFRESH, user_add},
-  {"Hotspot", "remove_user", "", 0, REFRESH, user_remove},
+  {"Hotspot", "add_user", "", 0, REFRESH, "user_add"},
+  {"Hotspot", "remove_user", "", 0, REFRESH, "user_remove"},
 #endif
 #ifdef HAVE_RADLOCAL
-  {"Hotspot", "add_iradius", "", 0, REFRESH, raduser_add},
+  {"Hotspot", "add_iradius", "", 0, REFRESH, "raduser_add"},
 #endif
-  {"ForwardSpec", "add_forward_spec", "", 0, REFRESH, forwardspec_add},
-  {"ForwardSpec", "remove_forward_spec", "", 0, REFRESH, forwardspec_remove},
-  {"Triggering", "add_trigger", "", 0, REFRESH, trigger_add},
-  {"Triggering", "remove_trigger", "", 0, REFRESH, trigger_remove},
+  {"ForwardSpec", "add_forward_spec", "", 0, REFRESH, "forwardspec_add"},
+  {"ForwardSpec", "remove_forward_spec", "", 0, REFRESH, "forwardspec_remove"},
+  {"Triggering", "add_trigger", "", 0, REFRESH, "trigger_add"},
+  {"Triggering", "remove_trigger", "", 0, REFRESH, "trigger_remove"},
   {"Port_Services", "save_services", "filters", 2, REFRESH,
-   save_services_port},
+   "save_services_port"},
   {"QOSPort_Services", "save_qosservices", "filters", 2, REFRESH,
-   save_services_port},
-  {"Ping", "start", "", 1, SERVICE_RESTART, diag_ping_start},
-  {"Ping", "stop", "", 0, REFRESH, diag_ping_stop},
-  {"Ping", "clear", "", 0, REFRESH, diag_ping_clear},
+   "save_services_port"},
+  {"Ping", "start", "", 1, SERVICE_RESTART, "diag_ping_start"},
+  {"Ping", "stop", "", 0, REFRESH, "diag_ping_stop"},
+  {"Ping", "clear", "", 0, REFRESH, "diag_ping_clear"},
 #ifdef HAVE_MILKFISH
   {"Milkfish_database", "add_milkfish_user", "", 0, REFRESH,
-   milkfish_user_add},
+   "milkfish_user_add"},
   {"Milkfish_database", "remove_milkfish_user", "", 0, REFRESH,
-   milkfish_user_remove},
+   "milkfish_user_remove"},
   {"Milkfish_aliases", "add_milkfish_alias", "", 0, REFRESH,
-   milkfish_alias_add},
+   "milkfish_alias_add"},
   {"Milkfish_aliases", "remove_milkfish_alias", "", 0, REFRESH,
-   milkfish_alias_remove},
+   "milkfish_alias_remove"},
   {"Milkfish_messaging", "send_message", "", 1, SERVICE_RESTART,
-   milkfish_sip_message},
+   "milkfish_sip_message"},
 #endif
 };
 
@@ -2965,9 +1908,9 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       addAction (act->service);
       sleep_time = act->sleep_time;
       action = act->action;
-      if (act->go)
+      if (act->goname)
 	{
-	  act->go (wp);
+	  start_gozila(act->goname,wp);
 	}
     }
   else
@@ -3022,8 +1965,8 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   websDone (wp, 200);
 
   gozila_action = 0;		//reset gozila_action
-  generate_key = 0;
-  clone_wan_mac = 0;
+  nvram_set("generate_key","0");
+  nvram_set("clone_wan_mac","0");
 
   return 1;
 }
@@ -3033,15 +1976,15 @@ struct apply_action apply_actions[] = {
 
   /* SETUP */
   {"index", "index", 0, SERVICE_RESTART, NULL},
-  {"DDNS", "ddns", 0, SERVICE_RESTART, ddns_save_value},
+  {"DDNS", "ddns", 0, SERVICE_RESTART, "ddns_save_value"},
   {"Routing", "routing", 0, SERVICE_RESTART, NULL},
-  {"Vlan", "", 0, SYS_RESTART, port_vlan_table_save},
+  {"Vlan", "", 0, SYS_RESTART, "port_vlan_table_save"},
   {"eop-tunnel", "eop", 0, SERVICE_RESTART, NULL},
 
   /* WIRELESS */
   {"Wireless_Basic", "wireless", 0, SERVICE_RESTART, NULL},	//Only for V23, since V24 it's a gozilla save
   {"Wireless_Advanced", "wireless_2", 0, SERVICE_RESTART, NULL},
-  {"Wireless_MAC", "wireless_2", 0, SERVICE_RESTART, save_macmode},
+  {"Wireless_MAC", "wireless_2", 0, SERVICE_RESTART, "save_macmode"},
   {"WL_FilterTable", "macfilter", 0, SERVICE_RESTART, NULL},
   {"Wireless_WDS", "wireless_2", 0, SERVICE_RESTART, NULL},
   {"WL_WPATable", "wireless_2", 0, SERVICE_RESTART, NULL},
@@ -3065,7 +2008,7 @@ struct apply_action apply_actions[] = {
   {"Filters", "filters", 0, SERVICE_RESTART, NULL},
   {"FilterIPMAC", "filters", 0, SERVICE_RESTART, NULL},
 #ifdef HAVE_UPNP
-  {"UPnP", "forward_upnp", 0, SERVICE_RESTART, tf_upnp},
+  {"UPnP", "forward_upnp", 0, SERVICE_RESTART, "tf_upnp"},
 #endif
   /* SECURITY */
   {"Firewall", "filters", 0, SERVICE_RESTART, NULL},
@@ -3421,37 +2364,6 @@ ej_show_modules (webs_t wp, int argc, char_t ** argv)
 }
 
 
-void
-addAction (char *action)
-{
-  char *actionstack = "";
-  char *next;
-  char service[80];
-  char *services = nvram_safe_get ("action_service");
-  foreach (service, services, next)
-  {
-    if (!strcmp (service, action))
-      {
-	return;
-      }
-  }
-  if (strlen (services) > 0)
-    {
-      actionstack = malloc (strlen (services) + strlen (action) + 2);
-      memset (actionstack, 0, strlen (services) + strlen (action) + 2);
-      strcpy (actionstack, action);
-      strcat (actionstack, " ");
-      strcat (actionstack, nvram_safe_get ("action_service"));
-      nvram_set ("action_service", actionstack);
-      free (actionstack);
-    }
-  else
-    {
-      nvram_set ("action_service", action);
-    }
-
-
-}
 
 static int
 apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
@@ -3465,7 +2377,6 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   cprintf ("need reboot\n");
   int need_reboot = atoi (websGetVar (wp, "need_reboot", "0"));
   cprintf ("apply");
-  error_value = 0;
 
 
 	/**********   get "change_action" and launch gozila_cgi if needed **********/
@@ -3473,19 +2384,17 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   value = websGetVar (wp, "change_action", "");
   cprintf ("get change_action = %s\n", value);
 
-  fprintf (stderr, "check gozila_cgi");
   if (value && !strcmp (value, "gozila_cgi"))
     {
-      fprintf (stderr, "start gozila_cgi");
       gozila_cgi (wp, urlPrefix, webDir, arg, url, path, query);
       return 1;
     }
-
   /***************************************************************************/
 
   if (!query)
+    {
     goto footer;
-
+    }
   if (legal_ip_netmask
       ("lan_ipaddr", "lan_netmask",
        nvram_safe_get ("http_client_ip")) == TRUE)
@@ -3534,8 +2443,8 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	  sleep_time = act->sleep_time;
 	  action = act->action;
 
-	  if (act->go)
-	    act->go (wp);
+	  if (act->goname)
+	    start_gozila(act->goname,wp);
 	}
       else
 	{
@@ -3597,9 +2506,11 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 
 footer:
 
-  if (do_reboot)
+  if (nvram_match("do_reboot","1"))
+    {
+    nvram_set("do_reboot","0");
     action = REBOOT;
-
+    }
   /* The will let PC to re-get a new IP Address automatically */
   if (need_reboot)
     action = REBOOT;
@@ -3611,8 +2522,6 @@ footer:
 
   if (action != REBOOT)
     {
-//      if (!error_value)
-      {
 	if (my_next_page[0] != '\0')
 	  sprintf (path, "%s", my_next_page);
 	else
@@ -3627,19 +2536,11 @@ footer:
 	cprintf ("refresh to %s\n", path);
 	if (!strncmp (path, "WL_FilterTable", strlen ("WL_FilterTable")))
 	  do_filtertable (path, wp, NULL);	//refresh
-//#ifdef HAVE_MADWIFI
 	else if (!strncmp (path, "Wireless_WDS", strlen ("Wireless_WDS")))
 	  do_wds (path, wp, NULL);	//refresh
-//#endif
 	else
 	  do_ej (path, wp, NULL);	//refresh
 	websDone (wp, 200);
-      }
-//      else
-//      {
-//        do_ej ("Fail.asp", wp);
-//        websDone (wp, 200);
-//      }
     }
   else
     {
@@ -6228,27 +5129,6 @@ tf_webWriteJS (webs_t wp, const char *s)
   return r;
 }
 
-// handle UPnP.asp requests / added 10
-static void
-tf_upnp (webs_t wp)
-{
-  char *v;
-  char s[64];
-
-  if (((v = websGetVar (wp, "remove", NULL)) != NULL) && (*v))
-    {
-      if (strcmp (v, "all") == 0)
-	{
-	  nvram_set ("upnp_clear", "1");
-	}
-      else
-	{
-	  sprintf (s, "forward_port%s", v);
-	  nvram_unset (s);
-	}
-    }
-  // firewall + upnp service is restarted after this
-}
 
 //      <% tf_upnp(); %>
 //      returns all "forward_port#" nvram entries containing upnp port forwardings
