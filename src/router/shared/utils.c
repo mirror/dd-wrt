@@ -4391,3 +4391,128 @@ getIPFromName (char *name, char *ip)
   else
     sprintf (ip, "0.0.0.0");
 }
+
+/* Example:
+ * legal_ip_netmask("192.168.1.1","255.255.255.0","192.168.1.100"); return true;
+ * legal_ip_netmask("192.168.1.1","255.255.255.0","192.168.2.100"); return false;
+ */
+int
+legal_ip_netmask (char *sip, char *smask, char *dip)
+{
+  struct in_addr ipaddr, netaddr, netmask;
+  int tag;
+
+  inet_aton (nvram_safe_get (sip), &netaddr);
+  inet_aton (nvram_safe_get (smask), &netmask);
+  inet_aton (dip, &ipaddr);
+
+  netaddr.s_addr &= netmask.s_addr;
+
+  if (netaddr.s_addr != (ipaddr.s_addr & netmask.s_addr))
+    tag = FALSE;
+  else
+    tag = TRUE;
+
+
+  return tag;
+}
+
+/* Example:
+ * ISDIGIT("", 0); return true;
+ * ISDIGIT("", 1); return false;
+ * ISDIGIT("123", 1); return true;
+ */
+int
+ISDIGIT (char *value, int flag)
+{
+  int i, tag = TRUE;
+
+
+  if (!strcmp (value, ""))
+    {
+      if (flag)
+	return 0;		// null
+      else
+	return 1;
+    }
+
+  for (i = 0; *(value + i); i++)
+    {
+      if (!isdigit (*(value + i)))
+	{
+	  tag = FALSE;
+	  break;
+	}
+    }
+  return tag;
+}
+
+
+void
+addAction (char *action)
+{
+  char *actionstack = "";
+  char *next;
+  char service[80];
+  char *services = nvram_safe_get ("action_service");
+  foreach (service, services, next)
+  {
+    if (!strcmp (service, action))
+      {
+	return;
+      }
+  }
+  if (strlen (services) > 0)
+    {
+      actionstack = malloc (strlen (services) + strlen (action) + 2);
+      memset (actionstack, 0, strlen (services) + strlen (action) + 2);
+      strcpy (actionstack, action);
+      strcat (actionstack, " ");
+      strcat (actionstack, nvram_safe_get ("action_service"));
+      nvram_set ("action_service", actionstack);
+      free (actionstack);
+    }
+  else
+    {
+      nvram_set ("action_service", action);
+    }
+
+
+}
+
+void
+rep (char *in, char from, char to)
+{
+  int i;
+  int slen = strlen (in);
+  for (i = 0; i < slen; i++)
+    if (in[i] == from)
+      in[i] = to;
+
+}
+
+#include "l7protocols.h"
+void
+get_filter_services (char *services)
+{
+
+  l7filters *filters = filters_list;
+  int namelen, protolen;
+  char temp[128] = "";
+
+  while (filters->name)		//add l7 and p2p filters
+    {
+      namelen = strlen (filters->name);
+      protolen = strlen (filters->protocol);
+
+      sprintf (temp, "$NAME:%03d:%s$PROT:%03d:%s$PORT:003:0:0<&nbsp;>",
+	       namelen, filters->name, protolen, filters->protocol);
+      strcat (services, temp);
+      filters++;
+    }
+
+  strcat (services, nvram_safe_get ("filter_services"));	//this is user defined filters
+  strcat (services, nvram_safe_get ("filter_services_1"));
+
+  return;
+}

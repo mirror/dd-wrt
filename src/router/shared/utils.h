@@ -582,4 +582,21 @@ void getIPFromName (char *name, char *ip);
 #define DEFAULT_PASS "bJz7PcC1rCRJQ"
 
 #define MAX_WDS_DEVS 10
+
+#define OLD_NAME_IP	"/tmp/.old_name_ip"
+
+#ifndef MAX_LEASES
+#define MAX_LEASES 254
+#endif
+
+struct wl_client_mac
+{
+  unsigned char hostname[32];
+  char ipaddr[20];
+  char hwaddr[20];
+  int status;			// 0:offline 1:online
+  int check;
+};
+
+
 #endif

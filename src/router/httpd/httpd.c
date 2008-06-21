@@ -1625,9 +1625,3 @@ check_cipher (void)
 
 
 
-char *
-websGetVar (webs_t wp, char *var, char *d)
-{
-  char *ret = get_cgi (var) ? : d;
-  return ret;
-}

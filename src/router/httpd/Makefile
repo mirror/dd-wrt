@@ -1,4 +1,4 @@
-#u
+#
 # milli_httpd Makefile
 #
 # Copyright 2001-2003, Broadcom Corporation
@@ -307,11 +307,13 @@ CFLAGS += -DHAVE_SSHD
 endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
-OBJS += crc.o register.o
+OBJS += crc.o register.c
+REGOBJS = register.c
 endif
 ifeq ($(CONFIG_SUPERCHANNEL),y)
 CFLAGS += -DHAVE_SUPERCHANNEL
-OBJS += crc.o register.o
+OBJS += crc.o register.c
+REGOBJS = register.c
 endif
 #ifeq ($(HSIAB_SUPPORT),1)
 #CFLAGS += -I$(TOP)/hsiab
@@ -502,14 +504,15 @@ endif
 #OBJS  += code_header.o
 
 
-vpath %.c modules modules/special.$(ARCH) $(SRCBASE)/../tools/src
+vpath %.c modules modules/special.$(ARCH) $(SRCBASE)/../tools/src validate
 
-all: httpd cert
+all: validate.so httpd cert
 
 clean:
 	rm -f *.o *~ httpd
 	rm -f modules/*.o
 	rm -f modules/*.*~
+	rm -f validate/*.*~
 	rm -f *.a 
 	#Added by Daniel(2004-07-29)
 	#cp ../shared/ezc.o ./
@@ -519,6 +522,8 @@ install:
 #	lzma e www www.lz
 	install -D www $(INSTALLDIR)/etc/www
 	install -D httpd $(INSTALLDIR)/usr/sbin/httpd
+	mkdir -p $(INSTALLDIR)/usr/lib
+	install -D validate.so $(INSTALLDIR)/usr/lib
 ifneq ($(CONFIG_NOSSL),y)
 	install -d $(INSTALLDIR)/etc
 	install *.pem $(INSTALLDIR)/etc
@@ -530,12 +535,16 @@ cert:
 	
 httpd: cgi.o ej.o httpd.o broadcom.o \
        index.o status.o dhcp.o log.o filters.o forward.o dynamic_route.o static_route.o wireless.o ddns.o \
-       find_pattern.o lib.o $(ADDOBJ) diag.o wepkey.o getservice.o dd-wrt.o nvramsr.o $(OBJS)
+       find_pattern.o lib.o $(ADDOBJ) diag.o wepkey.o getservice.o dd-wrt.o nvramsr.o callvalidate.o $(OBJS)
 	gcc -o write_web write_web.c
 	./write_web www 
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 #	ar arc -o $@ $^
 	rm -f ../rc/rc
+
+validate.so: validators.o webs.o wepkey.o $(REGOBJS)
+	$(CC) --shared -o $@ $^ $(CFLAGS) -DVALIDSOURCE -DGETREGCODE $(LDFLAGS)
+	
 	
 build_date.o: build_date.c
 build_date:
