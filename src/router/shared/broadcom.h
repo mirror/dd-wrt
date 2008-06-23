@@ -76,8 +76,8 @@ extern int gozila_action;
 extern int error_value;
 extern int debug_value;
 extern int filter_id;
-extern int generate_key;
-extern int clone_wan_mac;
+
+
 extern char http_client_ip[20];
 extern int lan_ip_changed;
 
@@ -400,7 +400,6 @@ extern void ej_get_model_name (webs_t wp, int argc, char_t ** argv);
 extern void ej_get_firmware_version (webs_t wp, int argc, char_t ** argv);
 extern void ej_get_firmware_title (webs_t wp, int argc, char_t ** argv);
 extern void ej_get_firmware_svnrev (webs_t wp, int argc, char_t ** argv);
-extern char *live_translate (char *tran);	//Eko
 extern void rep (char *in, char from, char to);
 
 
@@ -532,13 +531,20 @@ extern int find_each (char *name, int len,
  * set type to 2 to replace "&nbsp;" with ' ' and "&semi;" with ':'
  */
 #ifndef VALIDSOURCE
-
-extern int httpd_filter_name (char *old_name, char *new_name, size_t size,
-			      int type);
+#ifndef VISUALSOURCE
+extern int generate_key;
+extern int clone_wan_mac;
+extern int httpd_filter_name (char *old_name, char *new_name, size_t size,int type);
 #else
-//static int (*httpd_filter_name) (char *old_name, char *new_name, size_t size,
-//			      int type);
+extern int *generate_key;
+extern int *clone_wan_mac;
 #endif
+
+#else
+extern int *generate_key;
+extern int *clone_wan_mac;
+#endif
+
 /* check the value for a digit (0 through 9) 
  * set flag to 0 to ignore zero-length values
  */
@@ -636,3 +642,51 @@ void ej_showbridgesettings (webs_t wp, int argc, char_t ** argv);
 void *start_validator_nofree (char *name, void *handle,webs_t wp, char *value, struct variable *v);
 int start_validator (char *name,webs_t wp, char *value, struct variable *v);
 void start_gozila (char *name,webs_t wp);
+
+
+#ifdef VISUALSOURCE
+extern void (*do_ej_buffer) (char *buffer, webs_t stream);
+#define do_ej_buffer Udo_ej_buffer
+extern int (*Uhttpd_filter_name) (char *old_name, char *new_name, size_t size,int type);
+#define httpd_filter_name Uhttpd_filter_name
+extern char *(*UwebsGetVar) (webs_t wp, char *var, char *d);
+#define websGetVar UwebsGetVar
+extern int (*UwebsWrite) (webs_t wp, char *fmt, ...);
+#define websWrite UwebsWrite
+extern struct wl_client_mac *Uwl_client_macs;
+#define wl_client_macs Uwl_client_macs
+extern void (*Udo_ej) (char *path, webs_t stream, char *query);	// jimmy, https, 8/4/2003
+#define do_ej Udo_ej
+extern int (*UejArgs) (int argc, char_t ** argv, char_t * fmt, ...);
+#define ejArgs UejArgs
+extern FILE *(*UgetWebsFile) (char *path);
+#define getWebsFile UgetWebsFile
+extern int (*Uwfflush) (FILE * fp);
+#define wfflush Uwfflush
+extern int (*Uwfputc) (char c, FILE * fp);
+#define wfputc Uwfputc
+extern int (*Uwfputs) (char *buf, FILE * fp);
+#define wfputs Uwfputs
+extern char *(*Ulive_translate) (char *tran);
+#define live_translate Ulive_translate
+extern websRomPageIndexType *UwebsRomPageIndex;
+#define websRomPageIndex UwebsRomPageIndex
+#endif
+
+
+#ifdef VALIDSOURCE
+extern void (*Udo_ej_buffer) (char *buffer, webs_t stream);
+#define do_ej_buffer Udo_ej_buffer
+extern int (*Uhttpd_filter_name) (char *old_name, char *new_name, size_t size,int type);
+#define httpd_filter_name Uhttpd_filter_name
+extern char *(*UwebsGetVar) (webs_t wp, char *var, char *d);
+#define websGetVar UwebsGetVar
+extern int (*UwebsWrite) (webs_t wp, char *fmt, ...);
+#define websWrite UwebsWrite
+extern struct wl_client_mac *Uwl_client_macs;
+#define wl_client_macs Uwl_client_macs
+extern int *Uclone_wan_mac;
+#define clone_wan_mac Uclone_wan_mac
+extern int *Ugenerate_key;
+#define generate_key Ugenerate_key
+#endif
