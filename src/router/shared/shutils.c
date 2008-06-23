@@ -141,7 +141,7 @@ _evalpid (char *const argv[], char *path, int timeout, int *ppid)
 //if (debugfp==NULL)
 //    debugfp = fopen("/tmp/evallog.log","wb");
 //  char buf[254] = "";
-//#ifndef HAVE_SILENCE
+#ifndef HAVE_SILENCE
 
   int i = 0;
   while (argv[i] != NULL)
@@ -149,7 +149,7 @@ _evalpid (char *const argv[], char *path, int timeout, int *ppid)
       fprintf (stderr, "%s ", argv[i++]);
     }
   fprintf (stderr, "\n");
-//#endif
+#endif
 
   switch (pid = fork ())
     {
