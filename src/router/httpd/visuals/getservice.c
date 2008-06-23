@@ -1,3 +1,5 @@
+#define VISUALSOURCE 1
+
 /*
 ** services.c                           /etc/services access functions
 **

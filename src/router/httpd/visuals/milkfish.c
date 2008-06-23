@@ -1,3 +1,5 @@
+#define VISUALSOURCE 1
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -111,7 +113,7 @@ show_subscriber_table (webs_t wp, char *type, int which)
 
 
 void
-ej_show_subscribers (webs_t wp, int argc, char_t ** argv)
+ej_exec_show_subscribers (webs_t wp, int argc, char_t ** argv)
 {
   int i;
   char *count;
@@ -185,7 +187,7 @@ show_aliases_table (webs_t wp, char *type, int which)
 
 
 void
-ej_show_aliases (webs_t wp, int argc, char_t ** argv)
+ej_exec_show_aliases (webs_t wp, int argc, char_t ** argv)
 {
   int i;
   char *count;
@@ -269,7 +271,7 @@ show_registrations_table (webs_t wp, char *type, int which)
 
 
 void
-ej_show_registrations (webs_t wp, int argc, char_t ** argv)
+ej_exec_show_registrations (webs_t wp, int argc, char_t ** argv)
 {
   int i;
   char *count;

@@ -1,3 +1,4 @@
+#define VISUALSOURCE 1
 /*
  * dd-wrt.c
  *
@@ -1626,6 +1627,14 @@ ej_show_wifiselect (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "</div>\n");
 
 }
+#else
+void
+ej_show_wifiselect (webs_t wp, int argc, char_t ** argv)
+{
+//nothing for now
+}
+
+
 #endif
 static void
 showOption (webs_t wp, char *propname, char *nvname)
@@ -5531,7 +5540,7 @@ ej_port_vlan_table (webs_t wp, int argc, char_t ** argv)
 
 
 void
-ej_get_qossvcs2 (webs_t wp, int argc, char_t ** argv)
+ej_get_qossvcs (webs_t wp, int argc, char_t ** argv)
 {
   char *qos_svcs = nvram_safe_get ("svqos_svcs");
   char name[32], type[32], data[32], level[32];
@@ -5589,7 +5598,7 @@ ej_get_qossvcs2 (webs_t wp, int argc, char_t ** argv)
 
 #ifndef HAVE_AQOS
 void
-ej_get_qosips2 (webs_t wp, int argc, char_t ** argv)
+ej_get_qosips (webs_t wp, int argc, char_t ** argv)
 {
   char *qos_ips = nvram_safe_get ("svqos_ips");
   char ip[32], level[32];
@@ -5647,7 +5656,7 @@ ej_get_qosips2 (webs_t wp, int argc, char_t ** argv)
 }
 #else
 void
-ej_get_qosips2 (webs_t wp, int argc, char_t ** argv)
+ej_get_qosips (webs_t wp, int argc, char_t ** argv)
 {
   char *qos_ips = nvram_safe_get ("svqos_ips");
   char ip[32], level[32], level2[32];
@@ -5703,7 +5712,7 @@ ej_get_qosips2 (webs_t wp, int argc, char_t ** argv)
 #endif
 #ifndef HAVE_AQOS
 void
-ej_get_qosmacs2 (webs_t wp, int argc, char_t ** argv)
+ej_get_qosmacs (webs_t wp, int argc, char_t ** argv)
 {
   char *qos_macs = nvram_safe_get ("svqos_macs");
   char mac[32], level[32];
@@ -5763,7 +5772,7 @@ ej_get_qosmacs2 (webs_t wp, int argc, char_t ** argv)
 
 #else
 void
-ej_get_qosmacs2 (webs_t wp, int argc, char_t ** argv)
+ej_get_qosmacs (webs_t wp, int argc, char_t ** argv)
 {
   char *qos_macs = nvram_safe_get ("svqos_macs");
   char mac[32], level[32], level2[32];
@@ -6146,11 +6155,6 @@ Inter-|   Receive                                                |  Transmit
 
 
 
-void
-do_logout (void)		//static functions are not exportable, additionally this is no ej function
-{
-  send_authenticate (auth_realm);
-}
 
 
 void
@@ -6466,71 +6470,6 @@ ej_show_macfilter (webs_t wp, int argc, char_t ** argv)
 
 
 
-//and now the tricky part (more dirty as dirty)
-void
-do_filtertable (char *path, webs_t stream, char *query)
-{
-  char *temp2 = &path[indexof (path, '-') + 1];
-  char ifname[16];
-  strcpy (ifname, temp2);
-  ifname[indexof (ifname, '.')] = 0;
-  FILE *web = getWebsFile ("WL_FilterTable.asp");
-  char temp[4096];
-  memset (temp, 0, 4096);
-  unsigned int len = getWebsFileLen ("WL_FilterTable.asp");
-  char *webfile = (char *) malloc (len + 1);
-  fread (webfile, len, 1, web);
-  webfile[len] = 0;
-  sprintf (temp, webfile, ifname, ifname, ifname, ifname);
-  free (webfile);
-  fclose (web);
-  do_ej_buffer (temp, stream);
-}
-
-void
-do_wds (char *path, webs_t stream, char *query)
-{
-  char *temp2 = &path[indexof (path, '-') + 1];
-  char ifname[16];
-  strcpy (ifname, temp2);
-  ifname[indexof (ifname, '.')] = 0;
-  FILE *web = getWebsFile ("Wireless_WDS.asp");
-  unsigned int len = getWebsFileLen ("Wireless_WDS.asp");
-  char *webfile = (char *) malloc (len + 1);
-  fread (webfile, len, 1, web);
-  webfile[len] = 0;
-  fclose (web);
-
-  char temp[32768];
-  memset (temp, 0, 32768);
-  int ai = 0;
-  int i = 0;
-  int weblen = strlen (webfile);
-  for (i = 0; i < weblen; i++)
-    {
-      if (webfile[i] == '%')
-	{
-	  i++;
-	  switch (webfile[i])
-	    {
-	    case '%':
-	      temp[ai++] = '%';
-	      break;
-	    case 's':
-	      strcpy (&temp[ai], ifname);
-	      ai += strlen (ifname);
-	      break;
-	    default:
-	      temp[ai++] = webfile[i];
-	      break;
-	    }
-	}
-      else
-	temp[ai++] = webfile[i];
-    }
-  free (webfile);
-  do_ej_buffer (temp, stream);
-}
 
 
 

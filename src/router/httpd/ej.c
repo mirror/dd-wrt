@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <dlfcn.h>
 #include <ctype.h>
 #include <bcmnvram.h>
 #include <shutils.h>
@@ -19,7 +20,7 @@
 #endif
 static char *get_arg (char *args, char **next);
 //static void call(char *func, FILE *stream);
-static void call (char *func, webs_t stream);
+static void *call (void *handle,char *func, webs_t stream);
 #define PATTERN_BUFFER 1000
 
 #define LOG(a)			//fprintf(stderr,"%s\n",a);
@@ -79,20 +80,18 @@ get_arg (char *args, char **next)
 
   return arg;
 }
-static void
-//call(char *func, FILE *stream)
-call (char *func, webs_t stream)	//jimmy, https, 8/4/2003
+static void *call (void *handle,char *func, webs_t stream)	//jimmy, https, 8/4/2003
 {
   char *args, *end, *next;
   int argc;
   char *argv[16];
-  struct ej_handler *handler;
+//  struct ej_handler *handler;
 
   /* Parse out ( args ) */
   if (!(args = strchr (func, '(')))
-    return;
+    return handle;
   if (!(end = uqstrchr (func, ')')))
-    return;
+    return handle;
   *args++ = *end = '\0';
 
   /* Set up argv list */
@@ -103,12 +102,13 @@ call (char *func, webs_t stream)	//jimmy, https, 8/4/2003
     }
 
   /* Call handler */
-  for (handler = &ej_handlers[0]; handler->pattern; handler++)
+return  call_ej(func,handle,stream,argc,argv);
+/*  for (handler = &ej_handlers[0]; handler->pattern; handler++)
     {
       //if (strncmp(handler->pattern, func, strlen(handler->pattern)) == 0)
       if (strcmp (handler->pattern, func) == 0)
 	handler->output (stream, argc, argv);
-    }
+    }*/
 }
 
 
@@ -116,7 +116,7 @@ call (char *func, webs_t stream)	//jimmy, https, 8/4/2003
 void
 do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 {
-
+  void *handle = NULL;
   int c;
   char *pattern, *asp = NULL, *func = NULL, *end = NULL;
   int len = 0;
@@ -283,7 +283,7 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		  *end++ = '\0';
 
 		  /* Call function */
-		  call (func, stream);
+		  handle = call (handle,func, stream);
 		}
 	      asp = NULL;
 	      len = 0;
@@ -298,6 +298,8 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
       len = 0;
     }
   free (pattern);
+  if (handle)
+    dlclose(handle);
 }
 
 
