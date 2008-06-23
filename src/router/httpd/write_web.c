@@ -2,7 +2,7 @@
 typedef struct
 {
   char *path;			/* Web page URL path */
-  unsigned long offset;		/* Web page data */
+  unsigned int offset;		/* Web page data */
   int size;			/* Size of web page in bytes */
 //  int csize;                  /* Size of web page in bytes */
 } websRomPageIndexType;
