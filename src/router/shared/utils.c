@@ -4516,3 +4516,24 @@ get_filter_services (char *services)
 
   return;
 }
+
+
+int
+endswith (char *str, char *cmp)
+{
+  int cmp_len, str_len, i;
+  if (cmp == NULL)
+    return 0;
+  if (str == NULL)
+    return 0;
+  cmp_len = strlen (cmp);
+  str_len = strlen (str);
+  if (cmp_len > str_len)
+    return (0);
+  for (i = 0; i < cmp_len; i++)
+    {
+      if (str[(str_len - 1) - i] != cmp[(cmp_len - 1) - i])
+	return (0);
+    }
+  return (1);
+}
