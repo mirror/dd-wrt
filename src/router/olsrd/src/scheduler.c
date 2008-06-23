@@ -491,7 +491,7 @@ olsr_wallclock_string(void)
   sec = (int)now.tv_sec + olsr_get_timezone();
   usec = (int)now.tv_usec;
 
-  snprintf(ret, sizeof(buf), "%02u:%02u:%02u.%06u",
+  snprintf(ret, sizeof(buf)/4, "%02u:%02u:%02u.%06u",
 	   (sec % 86400) / 3600, (sec % 3600) / 60, sec % 60, usec);
 
   return ret;
