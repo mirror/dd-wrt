@@ -41,9 +41,9 @@ srcdir = .
 
 CC = armeb-linux-uclibc-gcc
 PROG = tcpdump
-CCOPT = -O2 -I../libpcap_noring -Os -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb -DNEED_PRINTF
+CCOPT = -O2 -I../libpcap_noring -Os -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb  -DNEED_PRINTF
 INCLS = -I.  -I$(srcdir)/missing
-DEFS = -DHAVE_CONFIG_H -I../libpcap_noring -Os -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb -DNEED_PRINTF -I$(srcdir)/missing  -D_U_="__attribute__((unused))"
+DEFS = -DHAVE_CONFIG_H -I../libpcap_noring -Os -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb  -DNEED_PRINTF -I$(srcdir)/missing  -D_U_="__attribute__((unused))"
 
 # Standard CFLAGS
 CFLAGS = $(CCOPT) $(DEFS) $(INCLS)
