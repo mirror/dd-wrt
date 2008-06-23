@@ -74,7 +74,7 @@ public:
 	CEdit	m_MprCov;
 	CButton	m_EtxRadio2;
 	CButton	m_EtxRadio1;
-	CEdit	m_EtxWindowSize;
+	// CEdit	m_EtxWindowSize;
 	CButton	m_EtxCheck;
 	CButton	m_Ipv6Check;
 	CButton	m_InternetCheck;

@@ -19,7 +19,6 @@
 #include <stdlib.h>
 #include "routing_table.h"
 #define HAVE_SOCKLEN_T
-#include <quagga/zebra.h>
 
 #ifndef ZEBRA_PORT
 #define ZEBRA_PORT 2600
@@ -30,6 +29,7 @@
 #define ZSERV_VERSION 1
 #endif
 #endif
+
 
 struct ipv4_route {
   uint8_t type;

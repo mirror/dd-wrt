@@ -233,16 +233,14 @@ static int set_nameservice_host(const char *value, void *data, set_plugin_parame
 
 static int set_nameservice_float(const char *value, void *data, set_plugin_parameter_addon addon __attribute__((unused)))
 {
-	const float thefloat = atof(value);
 	if (data != NULL)
 	{
-		float *v = data;
-		*v = thefloat;
-		OLSR_PRINTF(1, "%s float %f\n", "Got", thefloat);
+		sscanf(value, "%f", (float*)data);
+		OLSR_PRINTF(1, "%s float %f\n", "Got", *(float*)data);
 	}
 	else
 	{
-		OLSR_PRINTF(0, "%s float %f\n", "Ignored", thefloat);
+		OLSR_PRINTF(0, "%s float %s\n", "Ignored", value);
 	}
 	return 0;
 }
