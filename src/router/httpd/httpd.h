@@ -35,13 +35,18 @@ extern BIO *bio_err;
 
 typedef FILE *webs_t;
 extern char *wfgets (char *buf, int len, FILE * fp);
-extern int wfputc (char c, FILE * fp);
-extern int wfputs (char *buf, FILE * fp);
 extern int wfprintf (FILE * fp, char *fmt, ...);
 extern size_t wfwrite (char *buf, int size, int n, FILE * fp);
 extern size_t wfread (char *buf, int size, int n, FILE * fp);
-extern int wfflush (FILE * fp);
 extern int wfclose (FILE * fp);
+#ifndef VALIDSOURCE
+#ifndef VISUALSOURCE
+
+extern int wfflush (FILE * fp);
+extern int wfputc (char c, FILE * fp);
+extern int wfputs (char *buf, FILE * fp);
+#endif
+#endif
 #ifdef HAVE_HTTPS
 extern int do_ssl;
 #endif
@@ -101,16 +106,39 @@ typedef char char_t;
 #define websDone(wp, code) wfflush(wp)
 
 #ifndef VALIDSOURCE
+#ifndef VISUALSOURCE
 int websWrite (webs_t wp, char *fmt, ...);
 static char *websGetVar (webs_t wp, char *var, char *d)
 {
   return get_cgi (var) ? : d;
 }
-#else
-//char *(*websGetVar) (webs_t wp, char *var, char *d);
+#endif
 #endif
 
 
+
+struct Webenvironment{
+void (*Pdo_ej_buffer) (char *buffer, webs_t stream);
+int (*Phttpd_filter_name) (char *old_name, char *new_name, size_t size,int type);
+char *(*PwebsGetVar) (webs_t wp, char *var, char *d);
+int (*PwebsWrite) (webs_t wp, char *fmt, ...);
+struct wl_client_mac *Pwl_client_macs;
+void (*Pdo_ej) (char *path, webs_t stream, char *query);	// jimmy, https, 8/4/2003
+int (*PejArgs) (int argc, char_t ** argv, char_t * fmt, ...);
+FILE *(*PgetWebsFile) (char *path);
+int (*Pwfflush) (FILE * fp);
+int (*Pwfputc) (char c, FILE * fp);
+int (*Pwfputs) (char *buf, FILE * fp);
+char *(*Plive_translate) (char *tran);
+websRomPageIndexType *PwebsRomPageIndex;
+#ifdef HAVE_HTTPS
+int Pdo_ssl;
+#endif
+int Pgozila_action;
+int Pbrowser_method;
+int *Pclone_wan_mac;
+int *Pgenerate_key;
+};
 
 #define websSetVar(wp, var, value) set_cgi(var, value)
 #define websDefaultHandler(wp, urlPrefix, webDir, arg, url, path, query) ({ do_ej(path, wp,""); fflush(wp); 1; })
@@ -118,20 +146,25 @@ static char *websGetVar (webs_t wp, char *var, char *d)
 #define websWriteDataNonBlock websWriteData
 #define a_assert(a)
 
-extern int ejArgs (int argc, char_t ** argv, char_t * fmt, ...);
 
 /* GoAhead 2.1 Embedded JavaScript compatibility */
-extern FILE *getWebsFile (char *path);
 extern int getWebsFileLen (char *path);
 
-extern void do_ej (char *path, webs_t stream, char *query);
 extern char *zencrypt (char *passwd);
 
 extern void do_filtertable (char *path, webs_t stream, char *query);
 extern void do_wds (char *path, webs_t stream, char *query);
+#ifndef VISUALSOURCE
+#ifndef VALIDSOURCE
+extern FILE *getWebsFile (char *path);
+extern int ejArgs (int argc, char_t ** argv, char_t * fmt, ...);
+extern void do_ej (char *path, webs_t stream, char *query);
 extern void do_ej_buffer (char *buffer, webs_t stream);
+#endif
+#endif
 int do_auth (char *userid, char *passwd, char *realm);
 void Initnvramtab (void);
+void *call_ej (char *name,void *handle,webs_t wp, int argc, char_t ** argv);
 
 
 
@@ -140,7 +173,7 @@ struct ej_handler
   char *pattern;
   void (*output) (webs_t wp, int argc, char_t ** argv);
 };
-extern struct ej_handler ej_handlers[];
+//extern struct ej_handler ej_handlers[];
 
 
 

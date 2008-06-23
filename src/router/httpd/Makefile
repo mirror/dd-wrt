@@ -297,7 +297,7 @@ endif
 
 ifeq ($(CONFIG_SPUTNIK_APD),y)
 CFLAGS += -DHAVE_SPUTNIK_APD
-OBJS += sputnik.o
+VISOBJS += sputnik.o
 endif
 ifeq ($(CONFIG_USB),y)
 CFLAGS += -DHAVE_USB
@@ -307,12 +307,12 @@ CFLAGS += -DHAVE_SSHD
 endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
-OBJS += crc.o register.c
+#OBJS += crc.o register.c
 REGOBJS = register.c
 endif
 ifeq ($(CONFIG_SUPERCHANNEL),y)
 CFLAGS += -DHAVE_SUPERCHANNEL
-OBJS += crc.o register.c
+#OBJS += crc.o register.c
 REGOBJS = register.c
 endif
 #ifeq ($(HSIAB_SUPPORT),1)
@@ -461,17 +461,17 @@ ifeq ($(PERFORMANCE_SUPPORT),1)
 OBJS  += performance.o
 endif
 #ifeq ($(WL_STA_SUPPORT),1)
-OBJS  += site_survey.o
+VISOBJS  += site_survey.o
 #endif
 
 ifeq ($(CONFIG_PPPOESERVER),y)
 CFLAGS += -DHAVE_PPPOESERVER
-OBJS += chaps.o
+VISOBJS += chaps.o
 endif
 
 ifeq ($(CONFIG_MILKFISH),y)
 CFLAGS += -DHAVE_MILKFISH
-OBJS += milkfish.o
+VISOBJS += milkfish.o
 endif
 
 #use this do disable number of arguments checking (less code and faster exec)
@@ -504,9 +504,9 @@ endif
 #OBJS  += code_header.o
 
 
-vpath %.c modules modules/special.$(ARCH) $(SRCBASE)/../tools/src validate
+vpath %.c modules modules/special.$(ARCH) $(SRCBASE)/../tools/src validate visuals
 
-all: validate.so httpd cert
+all: validate.so visuals.so httpd cert
 
 clean:
 	rm -f *.o *~ httpd
@@ -524,6 +524,7 @@ install:
 	install -D httpd $(INSTALLDIR)/usr/sbin/httpd
 	mkdir -p $(INSTALLDIR)/usr/lib
 	install -D validate.so $(INSTALLDIR)/usr/lib
+	install -D visuals.so $(INSTALLDIR)/usr/lib
 ifneq ($(CONFIG_NOSSL),y)
 	install -d $(INSTALLDIR)/etc
 	install *.pem $(INSTALLDIR)/etc
@@ -534,8 +535,7 @@ cert:
 	./gencert.sh
 	
 httpd: cgi.o ej.o httpd.o broadcom.o \
-       index.o status.o dhcp.o log.o filters.o forward.o dynamic_route.o static_route.o wireless.o ddns.o \
-       find_pattern.o lib.o $(ADDOBJ) diag.o wepkey.o getservice.o dd-wrt.o nvramsr.o callvalidate.o $(OBJS)
+       $(ADDOBJ) nvramsr.o callvalidate.o $(OBJS)
 	gcc -o write_web write_web.c
 	./write_web www 
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
@@ -544,6 +544,9 @@ httpd: cgi.o ej.o httpd.o broadcom.o \
 
 validate.so: validators.o webs.o wepkey.o $(REGOBJS)
 	$(CC) --shared -o $@ $^ $(CFLAGS) -DVALIDSOURCE -DGETREGCODE $(LDFLAGS)
+
+visuals.so: dd-wrt.o lib.o ejs.o crc.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o $(REGOBJS) $(VISOBJS)
+	$(CC) --shared -o $@ $^ $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
 	
 	
 build_date.o: build_date.c

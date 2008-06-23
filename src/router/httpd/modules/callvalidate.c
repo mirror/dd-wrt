@@ -61,7 +61,8 @@
 #include <stdio.h>
 //#include <shutils.h>
 
-#define SERVICE_MODULE "/usr/lib/validate.so"
+#define SERVICE_MODULE "/tmp/validate.so"
+#define VISSERVICE_MODULE "/tmp/visuals.so"
 //#define SERVICE_MODULE "/tmp/validate.so"
 #define cprintf(fmt, args...)
 
@@ -76,6 +77,34 @@
 	} \
 } while (0)
 #endif
+
+
+
+
+void *
+load_visual_service (char *name)
+{
+  cprintf ("load service %s\n", name);
+  void *handle = dlopen (VISSERVICE_MODULE, RTLD_LAZY);
+  cprintf ("done()\n");
+  if (handle == NULL && name != NULL)
+    {
+      cprintf ("not found, try to load alternate\n");
+      char dl[64];
+      sprintf (dl, "/usr/lib/%s_visual.so", name);
+      cprintf ("try to load %s\n", dl);
+      handle = dlopen (dl, RTLD_LAZY);
+      if (handle == NULL)
+	{
+	  fprintf (stderr, "cannot load %s\n", dl);
+	  return NULL;
+	}
+    }
+  cprintf ("found it, returning handle\n");
+  return handle;
+}
+
+
 
 void *
 load_service (char *name)
@@ -99,7 +128,56 @@ load_service (char *name)
   cprintf ("found it, returning handle\n");
   return handle;
 }
-extern struct wl_client_mac *wl_client_macs;
+extern websRomPageIndexType websRomPageIndex[];
+struct wl_client_mac wl_client_macs[MAX_LEASES];
+//extern struct wl_client_mac *wl_client_macs;
+
+extern int gozila_action;
+extern int browser_method;
+extern int clone_wan_mac;
+extern int generate_key;
+extern char *live_translate (char *tran);
+
+
+
+static int initWeb(void *handle)
+{
+struct Webenvironment *env;
+env = (struct Webenvironment *)malloc(sizeof(struct Webenvironment));
+void (*init) (struct Webenvironment *env);
+
+  init = (void (*)(struct Webenvironment *env)) dlsym (handle, "initWeb");
+  if (!init)
+    {
+      fprintf (stderr, "error, initWeb not found\n");
+      return -1;
+    }
+env->PwebsGetVar = websGetVar;
+env->PwebsWrite = websWrite;
+cprintf("httpd_filter_name %p:%d\n",httpd_filter_name,sizeof(struct Webenvironment));
+env->Phttpd_filter_name = httpd_filter_name;
+env->Pwl_client_macs = wl_client_macs;
+env->Pdo_ej_buffer = do_ej_buffer;
+env->Pdo_ej = do_ej;
+#ifdef HAVE_HTTPS
+env->Pdo_ssl = do_ssl;
+#endif
+env->PejArgs = ejArgs;
+env->PgetWebsFile = getWebsFile;
+env->Pwfputc = wfputc;
+env->Pwfputs = wfputs;
+env->Pwfflush = wfflush;
+env->PwebsRomPageIndex = websRomPageIndex;
+env->Pgozila_action = gozila_action;
+env->Pbrowser_method = browser_method;
+env->Pclone_wan_mac = &clone_wan_mac;
+env->Pgenerate_key = &generate_key;
+env->Plive_translate = live_translate;
+cprintf("call initWeb\n");
+init (env);
+free(env);
+return 0;
+}
 
 void
 start_gozila (char *name, webs_t wp)
@@ -112,22 +190,11 @@ start_gozila (char *name, webs_t wp)
     {
       return;
     }
-
-
-  void (*init) (char *(*web) (webs_t wp, char *var, char *d),
-		int (*filter) (char *old_name, char *new_name, size_t size,
-			       int type),struct wl_client_mac *macs,int (*write) (webs_t wp, char *fmt, ...));
-  init =
-    (void (*)
-     (char *(*web) (webs_t wp, char *var, char *d),
-      int (*filter) (char *old_name, char *new_name, size_t size,
-		     int type),struct wl_client_mac *macs,int (*write) (webs_t wp, char *fmt, ...))) dlsym (handle, "initWeb");
-  if (!init)
+  if (initWeb(handle)!=0)
     {
-      fprintf (stderr, "error, initWeb not found\n");
-      return;
+    return;
     }
-  init (websGetVar, httpd_filter_name,wl_client_macs,websWrite);
+
 
   int (*fptr) (webs_t wp);
   sprintf (service, "%s", name);
@@ -153,23 +220,11 @@ start_validator (char *name, webs_t wp, char *value, struct variable *v)
       return FALSE;
     }
 
-
-  int ret = FALSE;
-  void (*init) (char *(*web) (webs_t wp, char *var, char *d),
-		int (*filter) (char *old_name, char *new_name, size_t size,
-			       int type),struct wl_client_mac *macs,int (*write) (webs_t wp, char *fmt, ...));
-
-  init =
-    (void (*)
-     (char *(*web) (webs_t wp, char *var, char *d),
-      int (*filter) (char *old_name, char *new_name, size_t size,
-		     int type),struct wl_client_mac *macs,int (*write) (webs_t wp, char *fmt, ...))) dlsym (handle, "initWeb");
-  if (!init)
+  if (initWeb(handle)!=0)
     {
-      fprintf (stderr, "error, initWeb not found\n");
-      return ret;
+    return FALSE;
     }
-  init (websGetVar, httpd_filter_name,wl_client_macs,websWrite);
+  int ret = FALSE;
 
   int (*fptr) (webs_t wp, char *value, struct variable * v);
   sprintf (service, "%s", name);
@@ -209,23 +264,10 @@ start_validator_nofree (char *name, void *handle, webs_t wp, char *value,
   sprintf (service, "%s", name);
   if (nohandle)
     {
-      cprintf ("resolve init\n");
-  void (*init) (char *(*web) (webs_t wp, char *var, char *d),
-		int (*filter) (char *old_name, char *new_name, size_t size,
-			       int type),struct wl_client_mac *macs,int (*write) (webs_t wp, char *fmt, ...));
-
-      init =
-	(void (*)
-	 (char *(*web) (webs_t wp, char *var, char *d),
-	  int (*filter) (char *old_name, char *new_name, size_t size,
-			 int type),struct wl_client_mac *macs,int (*write) (webs_t wp, char *fmt, ...))) dlsym (handle, "initWeb");
-      if (!init)
-	{
-	  fprintf (stderr, "error, initWeb not found\n");
-	  return NULL;
-	}
-      cprintf ("call init");
-      init (websGetVar, httpd_filter_name,wl_client_macs,websWrite);
+  if (initWeb(handle)!=0)
+    {
+    return handle;
+    }
     }
   cprintf ("resolving %s\n", service);
   fptr =
@@ -238,4 +280,46 @@ start_validator_nofree (char *name, void *handle, webs_t wp, char *value,
     fprintf (stderr, "function %s not found \n", service);
   cprintf ("start_sevice_nofree done()\n");
   return handle;
+}
+
+
+void *call_ej (char *name,void *handle,webs_t wp, int argc, char_t ** argv)
+{
+//  fprintf (stderr,"call_ej %s\n", name);
+  char service[64];
+  int nohandle = 0;
+  if (!handle)
+    {
+      cprintf("load visual_service\n");
+      handle = load_visual_service (name);
+      nohandle = 1;
+    }
+  if (handle == NULL)
+    {
+      cprintf("handle null\n");
+      return NULL;
+    }
+  cprintf("pointer init\n");
+  void (*fptr) (webs_t wp, int argc,char_t **argv);
+  sprintf (service, "ej_%s", name);
+  if (nohandle)
+    {
+      cprintf("init web\n");
+  if (initWeb(handle)!=0)
+    {
+    return handle;
+    }
+    }
+  cprintf ("resolving %s\n", service);
+  fptr = (void (*)(webs_t wp, int argc,char_t **argv)) dlsym (handle,
+								   service);
+  cprintf ("found. pointer is %p\n", fptr);
+  if (fptr)
+    (*fptr) (wp, argc, argv);
+  else
+    fprintf (stderr, "function %s not found \n", service);
+  cprintf ("start_sevice_nofree done()\n");
+  return handle;
+
+
 }

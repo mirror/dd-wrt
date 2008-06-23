@@ -82,7 +82,7 @@ void execute (webs_t wp);
 void
 clone_mac (webs_t wp)
 {
-  nvram_set ("clone_wan_mac", "1");
+  *clone_wan_mac = 1;
 }
 
 /* Delete lease */
@@ -707,7 +707,7 @@ generate_key_64 (webs_t wp)
 
   int ret;
   cprintf ("gen wep key 64");
-  nvram_set("generate_key","1");
+  *generate_key = 1;
 #ifdef HAVE_MADWIFI
   generate_wep_key (wp, 64, websGetVar (wp, "security_varname", "ath0"));
 #else
@@ -723,7 +723,7 @@ generate_key_128 (webs_t wp)
     nvram_set ("wl_wep_bit", var);
 
   cprintf ("gen wep key 128");
-  nvram_set("generate_key","1");
+  *generate_key = 1;
 #ifdef HAVE_MADWIFI
   generate_wep_key (wp, 128, websGetVar (wp, "security_varname", "ath0"));
 #else
