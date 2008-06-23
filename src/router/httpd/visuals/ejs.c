@@ -111,15 +111,16 @@ ej_onload (webs_t wp, int argc, char_t ** argv)
   char *type, *arg;
   struct onload *v;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %s", &type, &arg);
-#else
-  if (ejArgs (argc, argv, "%s %s", &type, &arg) < 2)
+#ifndef FASTWEB
+  if (argc < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
+type = argv[0];
+arg = argv[1];
+
   for (v = onloads; v < &onloads[STRUCT_LEN (onloads)]; v++)
     {
       if (!strcmp (v->name, type))
@@ -169,15 +170,15 @@ ej_prefix_ip_get (webs_t wp, int argc, char_t ** argv)
   char *name;
   int type;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %d", &name, &type);
-#else
-  if (ejArgs (argc, argv, "%s %d", &name, &type) < 2)
+#ifndef FASTWEB
+  if (argc < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
+ name = argv[0];
+ type = atoi(argv[1]);
 
   if (type == 1)
     websWrite (wp, "%d.%d.%d.", get_single_ip (nvram_safe_get (name), 0),
@@ -201,10 +202,8 @@ ej_nvram_get (webs_t wp, int argc, char_t ** argv)
 {
   char *name;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s", &name);
-#else
-  if (ejArgs (argc, argv, "%s", &name) < 1)
+#ifndef FASTWEB
+  if (argc < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
@@ -212,7 +211,7 @@ ej_nvram_get (webs_t wp, int argc, char_t ** argv)
 #endif
 
 #if COUNTRY == JAPAN
-  websWrite (wp, "%s", nvram_safe_get (name));
+  websWrite (wp, "%s", nvram_safe_get (argv[0]));
 #else
   /*for (c = nvram_safe_get (name); *c; c++)
      {
@@ -236,7 +235,7 @@ ej_nvram_get (webs_t wp, int argc, char_t ** argv)
      }
      } */
 
-  tf_webWriteESCNV (wp, name);	// test: buffered version of above
+  tf_webWriteESCNV (wp, argv[0]);	// test: buffered version of above
 
   return;
 #endif
@@ -249,17 +248,14 @@ ej_nvram_real_get (webs_t wp, int argc, char_t ** argv)
 {
   char *name;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s", &name);
-#else
-  if (ejArgs (argc, argv, "%s", &name) < 1)
+#ifndef FASTWEB
+  if (argc < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
-
-  websWrite (wp, "%s", nvram_safe_get (name));
+  websWrite (wp, "%s", nvram_safe_get (argv[0]));
 
   return;
 }
@@ -276,15 +272,14 @@ ej_nvram_selget (webs_t wp, int argc, char_t ** argv)
 {
   char *name;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s", &name);
-#else
-  if (ejArgs (argc, argv, "%s", &name) < 1)
+#ifndef FASTWEB
+  if (argc < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
+name = argv[0];
   if (gozila_action)
     {
       char *buf = websGetVar (wp, name, NULL);
@@ -294,15 +289,6 @@ ej_nvram_selget (webs_t wp, int argc, char_t ** argv)
 	  return;
 	}
     }
-
-/*  for (c = nvram_safe_get (name); *c; c++)
-    {
-      if (isprint ((int) *c) &&
-	  *c != '"' && *c != '&' && *c != '<' && *c != '>')
-	ret += websWrite (wp, "%c", *c);
-      else
-	ret += websWrite (wp, "&#%d", *c);
-    }*/
   tf_webWriteESCNV (wp, name);	// test: buffered version of above
 
   return;
@@ -316,20 +302,18 @@ ej_nvram_selget (webs_t wp, int argc, char_t ** argv)
 void
 ej_nvram_mac_get (webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *c;
+  char *c;
   char *mac;
   int i;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s", &name);
-#else
-  if (ejArgs (argc, argv, "%s", &name) < 1)
+#ifndef FASTWEB
+  if (argc < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
-  c = nvram_safe_get (name);
+  c = nvram_safe_get (argv[0]);
 
   if (c)
     {
@@ -358,18 +342,16 @@ ej_nvram_mac_get (webs_t wp, int argc, char_t ** argv)
 void
 ej_nvram_gozila_get (webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *type;
+  char *type;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s", &name);
-#else
-  if (ejArgs (argc, argv, "%s", &name) < 1)
+#ifndef FASTWEB
+  if (argc < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
-  type = GOZILA_GET (name);
+  type = GOZILA_GET (argv[0]);
 
   websWrite (wp, "%s", type);
 }
@@ -377,19 +359,17 @@ ej_nvram_gozila_get (webs_t wp, int argc, char_t ** argv)
 void
 ej_webs_get (webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *value;
+  char *value;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s", &name);
-#else
-  if (ejArgs (argc, argv, "%s", &name) < 1)
+#ifndef FASTWEB
+  if (argc < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
 
-  value = websGetVar (wp, name, NULL);
+  value = websGetVar (wp, argv[0], NULL);
 
   if (value)
     websWrite (wp, "%s", value);
@@ -405,20 +385,17 @@ ej_webs_get (webs_t wp, int argc, char_t ** argv)
 void
 ej_get_single_ip (webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *c;
-  int which;
+  char *c;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %d", &name, &which);
-#else
-  if (ejArgs (argc, argv, "%s %d", &name, &which) < 1)
+#ifndef FASTWEB
+  if (argc < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
 
-  c = nvram_safe_get (name);
+  c = nvram_safe_get (argv[0]);
   if (c)
     {
       if (!strcmp (c, PPP_PSEUDO_IP) || !strcmp (c, PPP_PSEUDO_GW))
@@ -426,7 +403,7 @@ ej_get_single_ip (webs_t wp, int argc, char_t ** argv)
       else if (!strcmp (c, PPP_PSEUDO_NM))
 	c = "255.255.255.0";
 
-      websWrite (wp, "%d", get_single_ip (c, which));
+      websWrite (wp, "%d", get_single_ip (c, atoi(argv[1])));
     }
   else
     websWrite (wp, "0");
@@ -462,20 +439,18 @@ ej_get_single_mac (webs_t wp, int argc, char_t ** argv)
   int which;
   int mac;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %d", &name, &which);
-#else
-  if (ejArgs (argc, argv, "%s %d", &name, &which) < 1)
+#ifndef FASTWEB
+  if (argc < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
 
-  c = nvram_safe_get (name);
+  c = nvram_safe_get (argv[0]);
   if (c)
     {
-      mac = get_single_mac (c, which);
+      mac = get_single_mac (c, atoi(argv[1]));
       websWrite (wp, "%02X", mac);
     }
   else

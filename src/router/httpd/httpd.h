@@ -69,9 +69,8 @@ struct mime_handler
 typedef struct
 {
   char *path;			/* Web page URL path */
-  unsigned long offset;		/* Web page data */
-  int size;			/* Size of web page in bytes */
-//  int csize;                  /* Size of web page in bytes */
+  unsigned int offset;		/* Web page data */
+  unsigned int size;			/* Size of web page in bytes */
 } websRomPageIndexType;
 
 
@@ -168,12 +167,6 @@ void *call_ej (char *name,void *handle,webs_t wp, int argc, char_t ** argv);
 
 
 
-struct ej_handler
-{
-  char *pattern;
-  void (*output) (webs_t wp, int argc, char_t ** argv);
-};
-//extern struct ej_handler ej_handlers[];
 
 
 

@@ -1322,42 +1322,6 @@ footer:
 
 }
 
-#ifdef WEBS
-
-void
-initHandlers (void)
-{
-/*  websAspDefine ("nvram_get", ej_nvram_get);
-  websAspDefine ("nvram_real_get", ej_nvram_real_get);
-  websAspDefine ("nvram_match", ej_nvram_match);
-  websAspDefine ("nvram_invmatch", ej_nvram_invmatch);
-  websAspDefine ("nvram_list", ej_nvram_list);
-  websAspDefine ("filter_ip", ej_filter_ip);
-  websAspDefine ("filter_port", ej_filter_port);
-  websAspDefine ("forward_port", ej_forward_port);
-  websAspDefine ("forward_spec", ej_forward_spec);*/
-// changed by steve
-//websAspDefine ("forward_upnp", ej_forward_upnp);      // upnp added
-// end changed by steve
-
-/*  websAspDefine ("static_route", ej_static_route);
-  websAspDefine ("localtime", ej_localtime);
-  websAspDefine ("dumplog", ej_dumplog);
-#ifdef HAVE_SPUTNIK_APD
-  websAspDefine ("sputnik_apd_status", ej_sputnik_apd_status);
-#endif
-  websAspDefine ("dumpleases", ej_dumpleases);
-  websAspDefine ("ppplink", ej_ppplink);*/
-  websUrlHandlerDefine ("/Management.asp", NULL, 0, apply_cgi, 0);
-  websUrlHandlerDefine ("/internal.cgi", NULL, 0, internal_cgi, 0);
-  //DD-WRT addition start
-  websUrlHandlerDefine ("/modules.cgi", NULL, 0, show_modules, 0);
-  //DD-WRT addition end
-  websSetPassword (nvram_safe_get ("http_passwd"));
-  websSetRealm ("DD-WRT Router OS Core");
-}
-
-#else /* !WEBS */
 #ifdef HAVE_SKYTRON
 int
 do_auth (char *userid, char *passwd, char *realm)
@@ -1414,7 +1378,6 @@ do_auth2 (char *userid, char *passwd, char *realm)
   return 0;
 }
 #endif
-
 //#ifdef EZC_SUPPORT
 char ezc_version[128];
 //#endif
@@ -1605,17 +1568,17 @@ do_stylecss (char *url, webs_t stream, char *query)
 static void
 do_stylecss_ie (char *url, webs_t stream, char *query)
 {
-  websWrite (stream, ".submitFooter input {\n");
-  websWrite (stream, "padding:.362em .453em;\n");
-  websWrite (stream, "}\n");
-  websWrite (stream, "fieldset {\n");
-  websWrite (stream, "padding-top:0;\n");
-  websWrite (stream, "}\n");
-  websWrite (stream, "fieldset legend {\n");
-  websWrite (stream, "margin-left:-9px;\n");
-  websWrite (stream, "margin-bottom:8px;\n");
-  websWrite (stream, "padding:0 .09em;\n");
-  websWrite (stream, "}\n");
+  websWrite (stream, ".submitFooter input {\n"
+  "padding:.362em .453em;\n"
+  "}\n"
+  "fieldset {\n"
+  "padding-top:0;\n"
+  "}\n"
+  "fieldset legend {\n"
+  "margin-left:-9px;\n" 
+  "margin-bottom:8px;\n" 
+  "padding:0 .09em;\n" 
+  "}\n");
 }
 
 /*
@@ -2473,6 +2436,5 @@ struct ej_handler ej_handlers[] = {
 
 #endif
 
-#endif /* !WEBS */
 
 
