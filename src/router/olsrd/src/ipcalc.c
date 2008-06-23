@@ -45,6 +45,7 @@ prefix_to_netmask(olsr_u8_t *a, int len, olsr_u8_t prefixlen)
 {
 #if !defined(NODEBUG) && defined(DEBUG)
   struct ipaddr_str buf;
+  const olsr_u8_t *a_start = a;
 #endif
   int p;
   const olsr_u8_t *a_end;
@@ -62,7 +63,7 @@ prefix_to_netmask(olsr_u8_t *a, int len, olsr_u8_t prefixlen)
   }
 
 #ifdef DEBUG
-  OLSR_PRINTF(3, "Prefix %d = Netmask: %s\n", prefixlen, inet_ntop(olsr_cnf->ip_version, a, buf.buf, sizeof(buf.buf)));
+  OLSR_PRINTF(3, "Prefix %d = Netmask: %s\n", prefixlen, inet_ntop(olsr_cnf->ip_version, a_start, buf.buf, sizeof(buf.buf)));
 #endif
   return 1;
 }

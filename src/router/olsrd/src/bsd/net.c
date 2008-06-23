@@ -163,7 +163,7 @@ set_sysctl_int(const char *name, int new)
     return -1;
 #else
 
-  if (sysctlbyname((char *)name, &old, &len, &new, sizeof(new)) < 0)
+  if (sysctlbyname((const char *)name, &old, &len, &new, sizeof(new)) < 0)
     return -1;
 #endif
 
@@ -691,7 +691,7 @@ olsr_sendto(int s,
   return (len);
 
 #else
-  return sendto(s, (caddr_t) buf, (int)len, flags, (struct sockaddr *)to,
+  return sendto(s, buf, len, flags, (const struct sockaddr *)to,
 		tolen);
 #endif
 }

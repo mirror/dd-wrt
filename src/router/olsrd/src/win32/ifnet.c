@@ -238,6 +238,8 @@ static int FriendlyNameToMiniIndex(int *MiniIndex, char *String)
   }
 
   *MiniIndex = WalkerAddr->IfIndex & 255;
+
+  return 0;
 }
 
 int GetIntInfo(struct InterfaceInfo *Info, char *Name)
@@ -1002,20 +1004,20 @@ int chk_if_up(struct olsr_if *IntConf, int DebugLevel __attribute__((unused)))
    * Register functions for periodic message generation 
    */
   New->hello_gen_timer =
-    olsr_start_timer(iface->cnf->hello_params.emission_interval * MSEC_PER_SEC,
+    olsr_start_timer(IntConf->cnf->hello_params.emission_interval * MSEC_PER_SEC,
                      HELLO_JITTER, OLSR_TIMER_PERIODIC,
                      olsr_cnf->lq_level == 0 ? &generate_hello : &olsr_output_lq_hello,
                      New, 0);
   New->tc_gen_timer =
-    olsr_start_timer(iface->cnf->tc_params.emission_interval * MSEC_PER_SEC,
+    olsr_start_timer(IntConf->cnf->tc_params.emission_interval * MSEC_PER_SEC,
                      TC_JITTER, OLSR_TIMER_PERIODIC,
                      olsr_cnf->lq_level == 0 ? &generate_tc : &olsr_output_lq_tc,
                      New, 0);
   New->mid_gen_timer =
-    olsr_start_timer(iface->cnf->mid_params.emission_interval * MSEC_PER_SEC,
+    olsr_start_timer(IntConf->cnf->mid_params.emission_interval * MSEC_PER_SEC,
                      MID_JITTER, OLSR_TIMER_PERIODIC, &generate_mid, New, 0);
   New->hna_gen_timer =
-    olsr_start_timer(iface->cnf->hna_params.emission_interval * MSEC_PER_SEC,
+    olsr_start_timer(IntConf->cnf->hna_params.emission_interval * MSEC_PER_SEC,
                      HNA_JITTER, OLSR_TIMER_PERIODIC, &generate_hna, New, 0);
 
   if(olsr_cnf->max_tc_vtime < IntConf->cnf->tc_params.emission_interval)
