@@ -48,7 +48,7 @@
 #include "ipcalc.h"
 
 #include <net/if_dl.h>
-#include <net/ifaddrs.h>
+#include <ifaddrs.h>
 
 #ifdef _WRS_KERNEL
 #include <wrn/coreip/net/route.h>
@@ -127,10 +127,12 @@ add_del_route(const struct rt_entry *rt, int add)
   OLSR_PRINTF(8, "\t- Destination of the route: %s\n", inet_ntoa(sin.sin_addr));
 
   /* change proto or tos here */
+#ifdef CODE_IS_FIXED_ON_FBSD
   OLSR_PRINTF(8, "\t- Setting Protocol: 0\n");
   ((struct sockaddr_rt *)(&sin))->srt_proto = 0;
   OLSR_PRINTF(8, "\t- Setting TOS: 0\n");
   ((struct sockaddr_rt *)(&sin))->srt_tos = 0;
+#endif
 
   memcpy(walker, &sin, sizeof(sin));
   walker += sin_size;

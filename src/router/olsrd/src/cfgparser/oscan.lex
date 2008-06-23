@@ -113,7 +113,8 @@ static struct conf_token *get_floating_token(const char * const s)
 {
     struct conf_token *rv = get_conf_token();
     if (rv != NULL) {
-        rv->floating = strtod(s, NULL);
+	rv->floating = 0.0;
+	sscanf(s, "%f", &rv->floating);
     }
     return rv;
 }

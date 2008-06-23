@@ -47,6 +47,9 @@
 
 
 struct hna_entry hna_set[HASHSIZE];
+struct olsr_cookie_info *hna_net_timer_cookie = NULL;
+struct olsr_cookie_info *hna_entry_mem_cookie = NULL;
+struct olsr_cookie_info *hna_net_mem_cookie = NULL;
 
 /**
  * Initialize the HNA set
@@ -61,29 +64,42 @@ olsr_init_hna_set(void)
     hna_set[idx].prev = &hna_set[idx];
   }
 
+  hna_net_timer_cookie =
+    olsr_alloc_cookie("HNA Network", OLSR_COOKIE_TYPE_TIMER);
+
+  hna_net_mem_cookie =
+    olsr_alloc_cookie("hna_net", OLSR_COOKIE_TYPE_MEMORY);
+  olsr_cookie_set_memory_size(hna_net_mem_cookie, sizeof(struct hna_net));
+
+  hna_entry_mem_cookie =
+    olsr_alloc_cookie("hna_entry", OLSR_COOKIE_TYPE_MEMORY);
+  olsr_cookie_set_memory_size(hna_entry_mem_cookie, sizeof(struct hna_entry));
+
   return 1;
 }
 
 /**
- *Lookup a network entry in a networkentry list
+ * Lookup a network entry in a networkentry list.
  *
- *@param nets the network list to look in
- *@param net the network to look for
- *@param mask the netmask to look for
+ * @param nets the network list to look in
+ * @param net the network to look for
+ * @param mask the netmask to look for
  *
- *@return the localted entry or NULL of not found
+ * @return the localized entry or NULL of not found
  */
 struct hna_net *
 olsr_lookup_hna_net(const struct hna_net *nets, const union olsr_ip_addr *net,
                     olsr_u8_t prefixlen)
 {
   struct hna_net *tmp;
+
   /* Loop trough entrys */
   for (tmp = nets->next; tmp != nets; tmp = tmp->next) { 
     if (tmp->prefixlen == prefixlen && ipequal(&tmp->A_network_addr, net)) {
       return tmp;
     }
   }
+
   /* Not found */
   return NULL;
 }
@@ -133,7 +149,7 @@ olsr_add_hna_entry(const union olsr_ip_addr *addr)
   struct hna_entry *new_entry;
   olsr_u32_t hash;
 
-  new_entry = olsr_malloc(sizeof(struct hna_entry), "New HNA entry");
+  new_entry = olsr_cookie_malloc(hna_entry_mem_cookie);
 
   /* Fill struct */
   new_entry->A_gateway_addr = *addr;
@@ -151,26 +167,23 @@ olsr_add_hna_entry(const union olsr_ip_addr *addr)
   new_entry->prev = &hna_set[hash];
 
   return new_entry;
-
 }
 
-
-
 /**
- *Adds a ntework entry to a HNA gateway
+ * Adds a network entry to a HNA gateway.
  *
- *@param hna_gw the gateway entry to add the
- *network to
- *@param net the networkaddress to add
- *@param mask the netmask
+ * @param hna_gw the gateway entry to add the network to
+ * @param net the networkaddress to add
+ * @param mask the netmask
  *
- *@return the newly created entry
+ * @return the newly created entry
  */
 struct hna_net *
-olsr_add_hna_net(struct hna_entry *hna_gw, const union olsr_ip_addr *net, olsr_u8_t prefixlen)
+olsr_add_hna_net(struct hna_entry *hna_gw, const union olsr_ip_addr *net,
+                 olsr_u8_t prefixlen)
 {
   /* Add the net */
-  struct hna_net *new_net = olsr_malloc(sizeof(struct hna_net), "Add HNA net");
+  struct hna_net *new_net = olsr_cookie_malloc(hna_net_mem_cookie);
   
   /* Fill struct */
   memset(new_net, 0, sizeof(struct hna_net));
@@ -185,14 +198,6 @@ olsr_add_hna_net(struct hna_entry *hna_gw, const union olsr_ip_addr *net, olsr_u
   new_net->next = hna_gw->networks.next;
   hna_gw->networks.next = new_net;
   new_net->prev = &hna_gw->networks;
-
-  /*
-   * Add the rt_path for the entry.
-   */
-  olsr_insert_routing_table(&new_net->A_network_addr,
-                            new_net->prefixlen,
-                            &hna_gw->A_gateway_addr,
-                            OLSR_RT_ORIGIN_HNA);
 
   return new_net;
 }
@@ -231,8 +236,11 @@ olsr_expire_hna_net_entry(void *context)
   /* Delete hna_gw if empty */
   if (hna_gw->networks.next == &hna_gw->networks) {
     DEQUEUE_ELEM(hna_gw);
-    free(hna_gw);
+    olsr_cookie_free(hna_entry_mem_cookie, hna_gw);
   }
+
+  DEQUEUE_ELEM(net_to_delete);
+  olsr_cookie_free(hna_net_mem_cookie, net_to_delete);
 }
 
 /**
@@ -252,14 +260,16 @@ void
 olsr_update_hna_entry(const union olsr_ip_addr *gw, const union olsr_ip_addr *net,
                       olsr_u8_t prefixlen, olsr_reltime vtime)
 {
-  struct hna_entry *gw_entry = olsr_lookup_hna_gw(gw);
+  struct hna_entry *gw_entry;
   struct hna_net *net_entry;
 
-  if (gw_entry == NULL) {
+  gw_entry = olsr_lookup_hna_gw(gw);
+  if (!gw_entry) {
 
     /* Need to add the entry */
     gw_entry = olsr_add_hna_entry(gw);
   }
+
   net_entry = olsr_lookup_hna_net(&gw_entry->networks, net, prefixlen);
   if (net_entry == NULL)  {
 
@@ -268,9 +278,21 @@ olsr_update_hna_entry(const union olsr_ip_addr *gw, const union olsr_ip_addr *ne
     changes_hna = OLSR_TRUE;
   }
 
+  /*
+   * Add the rt_path for the entry.
+   */
+  olsr_insert_routing_table(&net_entry->A_network_addr,
+                            net_entry->prefixlen,
+                            &gw_entry->A_gateway_addr,
+                            OLSR_RT_ORIGIN_HNA);
+
+  /*
+   * Start, or refresh the timer, whatever is appropriate.
+   */
   olsr_set_timer(&net_entry->hna_net_timer, vtime,
                  OLSR_HNA_NET_JITTER, OLSR_TIMER_ONESHOT,
-                 &olsr_expire_hna_net_entry, net_entry, 0);
+                 &olsr_expire_hna_net_entry, net_entry,
+                 hna_net_timer_cookie->ci_id);
 }
 
 

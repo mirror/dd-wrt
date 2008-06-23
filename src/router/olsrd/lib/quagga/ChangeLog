@@ -5,6 +5,10 @@
 	  drop me a note if you test it on any other platform!)
 	* lot of bugfixes (now support for redistribute with
 	  ZEBRA_HEADER_MARKER), etc
+	* lot of code-cleanups improvements (most to the work of Acinonyx)
+	* updated plugin interface to version 5
+	* updated to new routing core (olsrd-0.5.4)
+
 
 0.2.1: Immo 'FaUl' Wehrenberg <immo@chaostreff-dortmund.de>:
 	* now check (most of the) return-values of syscalls, improvement still

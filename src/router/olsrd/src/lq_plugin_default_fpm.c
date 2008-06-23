@@ -154,6 +154,7 @@ olsr_linkcost default_lq_packet_loss_worker_fpm(struct link_entry *link, void *p
   fpm alpha_old = aging_factor_old;
   fpm alpha_new = aging_factor_new;
   
+  fpm value;
   fpm link_loss_factor = fpmidiv(itofpm(link->loss_link_multiplier), 65536);
   
   if (tlq->quickstart < LQ_QUICKSTART_STEPS) {
@@ -161,12 +162,20 @@ olsr_linkcost default_lq_packet_loss_worker_fpm(struct link_entry *link, void *p
     alpha_old = aging_quickstart_old;
     tlq->quickstart++;
   }
-  
+
   // exponential moving average
-  tlq->valueLq = fpmmul(tlq->valueLq, alpha_old);
-  if (lost == 0) {
-    tlq->valueLq += fpmtoi(fpmmuli(fpmmul(alpha_new, link_loss_factor), 255));
+  value = itofpm(tlq->valueLq);
+
+  value = fpmmul(value, alpha_old);
+  
+  if (!lost) {
+    fpm ratio;
+    ratio = fpmmuli(alpha_new, 255);
+    ratio = fpmmul(ratio, link_loss_factor);
+    value = fpmadd(value, ratio);
   }
+  tlq->valueLq = fpmtoi(value);
+  
   return default_lq_calc_cost_fpm(ptr);
 }
 

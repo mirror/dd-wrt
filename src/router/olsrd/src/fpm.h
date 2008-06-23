@@ -72,7 +72,7 @@ typedef unsigned long long ufpm;
 typedef long fpm;
 typedef signed long sfpm;
 typedef unsigned long ufpm;
-#define FPM_BIT 12
+#define FPM_BIT 10
  
 #endif
 

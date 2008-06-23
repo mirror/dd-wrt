@@ -539,12 +539,6 @@ olsr_insert_routing_table(union olsr_ip_addr *dst, int plen,
     return NULL;
   }
 
-#ifdef DEBUG
-  OLSR_PRINTF(1, "RIB: add prefix %s/%u from %s\n",
-              olsr_ip_to_string(&dstbuf, dst), plen,
-              olsr_ip_to_string(&origbuf, originator));
-#endif
-
   /*
    * For all routes we use the tc_entry as an hookup point.
    * If the tc_entry is disconnected, i.e. has no edges it will not
@@ -569,6 +563,12 @@ olsr_insert_routing_table(union olsr_ip_addr *dst, int plen,
       return NULL;
     }
 
+#ifdef DEBUG
+    OLSR_PRINTF(1, "RIB: add prefix %s/%u from %s\n",
+                olsr_ip_to_string(&dstbuf, dst), plen,
+                olsr_ip_to_string(&origbuf, originator));
+#endif
+
     /* overload the hna change bit for flagging a prefix change */
     changes_hna = OLSR_TRUE;
 
@@ -587,7 +587,7 @@ olsr_delete_routing_table(union olsr_ip_addr *dst, int plen,
                           union olsr_ip_addr *originator)
 {
 #if !defined(NODEBUG) && defined(DEBUG)
-  struct ipaddr_str buf;
+  struct ipaddr_str dstbuf, origbuf;
 #endif
 
   struct tc_entry *tc;
@@ -601,12 +601,6 @@ olsr_delete_routing_table(union olsr_ip_addr *dst, int plen,
   if (plen > olsr_cnf->maxplen) {
     return;
   }
-
-#ifdef DEBUG
-  OLSR_PRINTF(1, "RIB: del prefix %s/%u from %s\n",
-              olsr_ip_to_string(&buf, dst), plen,
-              olsr_ip_to_string(&buf, originator));
-#endif
 
   tc = olsr_lookup_tc_entry(originator);
   if (!tc) {
@@ -624,6 +618,12 @@ olsr_delete_routing_table(union olsr_ip_addr *dst, int plen,
   if (node) {
     rtp = rtp_prefix_tree2rtp(node);
     olsr_delete_rt_path(rtp);
+
+#ifdef DEBUG
+    OLSR_PRINTF(1, "RIB: del prefix %s/%u from %s\n",
+                olsr_ip_to_string(&dstbuf, dst), plen,
+                olsr_ip_to_string(&origbuf, originator));
+#endif
 
     /* overload the hna change bit for flagging a prefix change */
     changes_hna = OLSR_TRUE;

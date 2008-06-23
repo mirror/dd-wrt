@@ -84,7 +84,7 @@ void MyDialog2::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT15, m_MprCov);
 	DDX_Control(pDX, IDC_RADIO2, m_EtxRadio2);
 	DDX_Control(pDX, IDC_RADIO1, m_EtxRadio1);
-	DDX_Control(pDX, IDC_EDIT14, m_EtxWindowSize);
+//	DDX_Control(pDX, IDC_EDIT14, m_EtxWindowSize);
 	DDX_Control(pDX, IDC_CHECK5, m_FishEyeCheck);
 	DDX_Control(pDX, IDC_CHECK4, m_EtxCheck);
 	DDX_Control(pDX, IDC_CHECK3, m_Ipv6Check);
@@ -120,7 +120,7 @@ BEGIN_MESSAGE_MAP(MyDialog2, CDialog)
 	ON_BN_CLICKED(IDC_RADIO2, OnEtxRadio2)
 	ON_BN_CLICKED(IDOK, OnOK)
 	ON_BN_CLICKED(IDCANCEL, OnCancel)
-	ON_EN_KILLFOCUS(IDC_EDIT14, OnKillfocusEtxWinSize)
+//	ON_EN_KILLFOCUS(IDC_EDIT14, OnKillfocusEtxWinSize)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -215,7 +215,9 @@ void MyDialog2::OnEtxCheckWorker()
 {
 	BOOL EnaDis = m_EtxCheck.GetCheck();
 
+#if 0
 	m_EtxWindowSize.EnableWindow(EnaDis);
+#endif
 	m_EtxRadio1.EnableWindow(EnaDis);
 	m_EtxRadio2.EnableWindow(EnaDis);
 	m_FishEyeCheck.EnableWindow(EnaDis);
@@ -324,8 +326,10 @@ int MyDialog2::OpenConfigFile(CString PathName)
 
 	m_EtxCheck.SetCheck(Conf->lq_level > 0);
 
+#if 0
 	Conv.Format("%d", Conf->lq_wsize);
 	m_EtxWindowSize.SetWindowText(Conv);
+#endif
 
 	m_EtxRadio1.SetCheck(Conf->lq_level == 1);
 	m_EtxRadio2.SetCheck(Conf->lq_level == 0 || Conf->lq_level == 2);
@@ -538,8 +542,10 @@ int MyDialog2::SaveConfigFile(CString PathName, int Real)
 	else
 		Conf->lq_fish = 1;
 
+#if 0
 	m_EtxWindowSize.GetWindowText(Conv);
 	Conf->lq_wsize = atoi(Conv);
+#endif
 
 	PrevHna = NULL;
 
@@ -688,6 +694,7 @@ void MyDialog2::OnEtxRadio2()
 	m_EtxRadio1.SetCheck(FALSE);
 }
 
+#if 0
 void MyDialog2::OnKillfocusEtxWinSize() 
 {
 	CString Conv;
@@ -705,3 +712,4 @@ void MyDialog2::OnKillfocusEtxWinSize()
 	Conv.Format("%d", WinSize);
 	m_EtxWindowSize.SetWindowText(Conv);
 }
+#endif
