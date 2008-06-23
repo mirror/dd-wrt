@@ -31,7 +31,6 @@ int
 start_httpd (void)
 {
   int ret = 0;
-  stop_httpd();
   if (nvram_invmatch ("http_enable", "0") && !is_exist ("/var/run/httpd.pid"))
     {
       chdir ("/www");
@@ -77,11 +76,11 @@ stop_httpd (void)
       syslog (LOG_INFO, "httpd : http daemon successfully stopped\n");
       ret = killall ("httpd", SIGTERM);
 
+      cprintf ("done\n");
+    }
       unlink ("/var/run/httpd.pid");
 #ifdef HAVE_HTTPS
       unlink ("/var/run/httpsd.pid");
 #endif
-      cprintf ("done\n");
-    }
   return ret;
 }
