@@ -1,3 +1,4 @@
+#define VISUALSOURCE 1
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,6 +31,15 @@ ej_show_status_setting (webs_t wp, int argc, char_t ** argv)
   do_ej ("Status_Router1.asp", wp, NULL);
 
   return;
+}
+char *
+rfctime (const time_t * timep, char *s)
+{
+  struct tm tm;
+  setenv ("TZ", nvram_safe_get ("time_zone"), 1);
+  memcpy (&tm, localtime (timep), sizeof (struct tm));
+  strftime (s, 200, "%a, %d %b %Y %H:%M:%S", &tm);	// spec for linksys
+  return s;
 }
 
 /* Report time in RFC-822 format */
