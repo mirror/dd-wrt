@@ -135,12 +135,8 @@ olsr_event_doing_hna(void *);
  */
 static int set_plugin_double(const char *value, void *data, set_plugin_parameter_addon addon __attribute__((unused)))
 {
-    char *endptr;
-    const double d = strtod(value, &endptr);
-    if (*endptr != '\0' || endptr == value) {
-        OLSR_PRINTF(0, "Illegal double \"%s\"", value);
-        return 1;
-    }
+    double d = 0.0;
+    sscanf(value, "%lf", &d);
     if (data != NULL) {
         double *v = data;
         *v = d;
