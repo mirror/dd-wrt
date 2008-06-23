@@ -85,7 +85,6 @@ static void *call (void *handle,char *func, webs_t stream)	//jimmy, https, 8/4/2
   char *args, *end, *next;
   int argc;
   char *argv[16];
-//  struct ej_handler *handler;
 
   /* Parse out ( args ) */
   if (!(args = strchr (func, '(')))
@@ -103,12 +102,6 @@ static void *call (void *handle,char *func, webs_t stream)	//jimmy, https, 8/4/2
 
   /* Call handler */
 return  call_ej(func,handle,stream,argc,argv);
-/*  for (handler = &ej_handlers[0]; handler->pattern; handler++)
-    {
-      //if (strncmp(handler->pattern, func, strlen(handler->pattern)) == 0)
-      if (strcmp (handler->pattern, func) == 0)
-	handler->output (stream, argc, argv);
-    }*/
 }
 
 
