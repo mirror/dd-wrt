@@ -97,29 +97,28 @@ static chan_info_t chan_info[] = {
 };
 
 
-
-
-
-static int (*httpd_filter_name) (char *old_name, char *new_name, size_t size,
-				 int type);
+void (*do_ej_buffer) (char *buffer, webs_t stream);
+int (*httpd_filter_name) (char *old_name, char *new_name, size_t size,int type);
 char *(*websGetVar) (webs_t wp, char *var, char *d);
 int (*websWrite) (webs_t wp, char *fmt, ...);
-
 struct wl_client_mac *wl_client_macs;
+int *clone_wan_mac;
+int *generate_key;
 
 void
-initWeb (char *(*web) (webs_t wp, char *var, char *d),
-	 int (*filter) (char *old_name, char *new_name, size_t size,
-			int type),struct wl_client_mac *macs,int (*write) (webs_t wp, char *fmt, ...))
-{
-  cprintf ("set web pointer\n");
-  websGetVar = web;
-  cprintf ("set web filter\n");
-  httpd_filter_name = filter;
-  wl_client_macs=macs;
-  websWrite = write;
-  cprintf ("return\n");
+initWeb (struct Webenvironment *env){
+cprintf("set websgetwar\n");
+  websGetVar = env->PwebsGetVar;
+  httpd_filter_name = env->Phttpd_filter_name;
+  wl_client_macs=env->Pwl_client_macs;
+  websWrite = env->PwebsWrite;
+  do_ej_buffer = env->Pdo_ej_buffer;
+  clone_wan_mac = env->Pclone_wan_mac;
+  generate_key = env->Pgenerate_key;
 }
+
+
+
 
 /* Example:
  * ISASCII("", 0); return true;

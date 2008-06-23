@@ -1,4 +1,4 @@
-
+#define VISUALSOURCE 1
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,98 +15,6 @@
 #include <code_pattern.h>
 #include <cy_conf.h>
 
-/* Format:
- * type = SET :  " " => "&nbsp;" , ":" => "&semi;"
- * type = GET :  "&nbsp;" => " " , "&semi;" => ":"
- * Example:
- * name1 = test 123:abc
- * filter_name("name1", new_name, SET); new_name="test&nbsp;123&semi;abc"
- * name2 = test&nbsp;123&semi;abc
- * filter_name("name2", new_name, GET); new_name="test 123:abc"
- */
-int
-httpd_filter_name (char *old_name, char *new_name, size_t size, int type)
-{
-  int i, j, match;
-
-  struct pattern
-  {
-    char ch;
-    char *string;
-  };
-
-  struct pattern patterns[] = {
-    {' ', "&nbsp;"},
-    {':', "&semi;"},
-  };
-
-  struct pattern *v;
-
-  strcpy (new_name, "");
-
-  switch (type)
-    {
-    case SET:
-      for (i = 0; *(old_name + i); i++)
-	{
-	  match = 0;
-	  for (v = patterns; v < &patterns[STRUCT_LEN (patterns)]; v++)
-	    {
-	      if (*(old_name + i) == v->ch)
-		{
-		  if (strlen (new_name) + strlen (v->string) > size)
-		    {		// avoid overflow
-		      cprintf ("%s(): overflow\n", __FUNCTION__);
-		      new_name[strlen (new_name)] = '\0';
-		      return 1;
-		    }
-		  sprintf (new_name + strlen (new_name), "%s", v->string);
-		  match = 1;
-		  break;
-		}
-	    }
-	  if (!match)
-	    {
-	      if (strlen (new_name) + 1 > size)
-		{
-		  cprintf ("%s(): overflow\n", __FUNCTION__);	// avoid overflow
-		  new_name[strlen (new_name)] = '\0';
-		  return 1;
-		}
-	      sprintf (new_name + strlen (new_name), "%c", *(old_name + i));
-	    }
-	}
-
-      break;
-    case GET:
-      for (i = 0, j = 0; *(old_name + j); j++)
-	{
-	  match = 0;
-	  for (v = patterns; v < &patterns[STRUCT_LEN (patterns)]; v++)
-	    {
-	      if (!memcmp (old_name + j, v->string, strlen (v->string)))
-		{
-		  *(new_name + i) = v->ch;
-		  j = j + strlen (v->string) - 1;
-		  match = 1;
-		  break;
-		}
-	    }
-	  if (!match)
-	    *(new_name + i) = *(old_name + j);
-
-	  i++;
-	}
-      *(new_name + i) = '\0';
-      break;
-    default:
-      cprintf ("%s():Invalid type!\n", __FUNCTION__);
-      break;
-    }
-  //cprintf("%s():new_name=[%s]\n", __FUNCTION__, new_name);
-
-  return 1;
-}
 
 void
 ej_compile_date (webs_t wp, int argc, char_t ** argv)

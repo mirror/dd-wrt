@@ -1,3 +1,4 @@
+#define VISUALSOURCE 1
 
 #include <stdio.h>
 #include <string.h>

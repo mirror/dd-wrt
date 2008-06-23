@@ -1,3 +1,4 @@
+#define VISUALSOURCE 1
 
 /*
  * Broadcom Home Gateway Reference Design
@@ -70,36 +71,6 @@ struct lease_table
   char hwaddr[20];
 } *dhcp_lease_table;
 
-extern struct variable variables[];
-																																																																																																																																																																/* channel info structure *///from 11.9
-
-/* Hook to write wl_* default set through to wl%d_* variable set */
-void
-wl_unit (webs_t wp, char *value, struct variable *v)
-{
-  char tmp[100], prefix[] = "wlXXXXXXXXXX_";
-  struct nvram_tuple cur[100], *last = cur, *t;
-
-  /* Do not write through if no interfaces are present */
-  if (atoi (value) < 0)
-    return;
-
-  /* Set prefix */
-  snprintf (prefix, sizeof (prefix), "wl%d_", atoi (value));
-
-  /* Write through to selected variable set */
-  for (; v >= variables && !strncmp (v->name, "wl_", 3); v--)
-    {
-      /* Do not interleave get and set (expensive on Linux) */
-      a_assert (last < &cur[ARRAYSIZE (cur)]);
-      last->name = v->name;
-      last->value = nvram_safe_get (v->name);
-      last++;
-    }
-
-  for (t = cur; t < last; t++)
-    nvram_set (strcat_r (prefix, &t->name[3], tmp), t->value);
-}
 
 char *
 wl_filter_mac_get (char *ifname, char *type, int which)
@@ -296,7 +267,7 @@ dhcp_lease_table_init (void)
   return count;
 }
 
-struct wl_client_mac wl_client_macs[MAX_LEASES];
+extern struct wl_client_mac *wl_client_macs;
 
 void
 get_hostname_ip (char *type, char *filename)
@@ -644,7 +615,7 @@ get_wep_value (char *type, char *_bit, char *prefix)
   char wl_wep[] = "wlX.XX_wep_XXXXXX";
   char temp[256] = "";
 
-  if (nvram_match("generate_key","1"))
+  if (*generate_key)
     {
       snprintf (wl_wep, sizeof (wl_wep), "%s_wep_gen", prefix);
     }
