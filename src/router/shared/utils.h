@@ -598,5 +598,7 @@ struct wl_client_mac
   int check;
 };
 
+int
+endswith (char *str, char *cmp);
 
 #endif
