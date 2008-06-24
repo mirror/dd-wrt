@@ -308,12 +308,12 @@ endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
 #OBJS += crc.o register.c
-REGOBJS = register.c
+REGOBJS = register.c crc.o
 endif
 ifeq ($(CONFIG_SUPERCHANNEL),y)
 CFLAGS += -DHAVE_SUPERCHANNEL
 #OBJS += crc.o register.c
-REGOBJS = register.c
+REGOBJS = register.c crc.o
 endif
 #ifeq ($(HSIAB_SUPPORT),1)
 #CFLAGS += -I$(TOP)/hsiab
