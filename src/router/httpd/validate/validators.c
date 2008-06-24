@@ -910,10 +910,8 @@ validate_portsetup (webs_t wp, char *value, struct variable *v)
   char var[64];
   char eths[256];
   getIfLists (eths, 256);
-//  fprintf(stderr,"validate eths %s\n",eths);
   foreach (var, eths, next)
   {
-//    fprintf(stderr,"validate var %s\n",var);
     char val[64];
     sprintf (val, "%s_bridged", var);
     char *bridged = websGetVar (wp, val, NULL);

@@ -2262,7 +2262,7 @@ ej_show_bridgetable (webs_t wp, int argc, char_t ** argv)
   char brif[16];
   int count = 0;
 
-  system ("brctl show > /tmp/.brtable");
+  system2 ("brctl show > /tmp/.brtable");
 
   if ((f = fopen ("/tmp/.brtable", "r")) != NULL)
     {
