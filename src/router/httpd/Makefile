@@ -545,7 +545,7 @@ httpd: cgi.o ej.o httpd.o broadcom.o \
 validate.so: validators.o webs.o wepkey.o $(REGOBJS)
 	$(CC) --shared -o $@ $^ $(CFLAGS) -DVALIDSOURCE -DGETREGCODE $(LDFLAGS)
 
-visuals.so: dd-wrt.o lib.o ejs.o crc.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o $(REGOBJS) $(VISOBJS)
+visuals.so: dd-wrt.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o $(REGOBJS) $(VISOBJS)
 	$(CC) --shared -o $@ $^ $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
 	
 	
