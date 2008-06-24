@@ -2436,7 +2436,7 @@ ej_show_openvpn_status (webs_t wp, int argc, char_t ** argv)
   websWrite (wp,
 	     "<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.state)</script></legend>\n");
 
-  system ("/etc/openvpnstate.sh > /tmp/.temp");
+  system2 ("/etc/openvpnstate.sh > /tmp/.temp");
   FILE *in = fopen ("/tmp/.temp", "r");
   while (!feof (in))
     {
@@ -2448,7 +2448,7 @@ ej_show_openvpn_status (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "</fieldset>");
   websWrite (wp,
 	     "<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.statu)</script></legend>\n");
-  system ("/etc/openvpnstatus.sh > /tmp/.temp");
+  system2 ("/etc/openvpnstatus.sh > /tmp/.temp");
   in = fopen ("/tmp/.temp", "r");
   while (!feof (in))
     {
@@ -2460,7 +2460,7 @@ ej_show_openvpn_status (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "</fieldset>");
   websWrite (wp,
 	     "<fieldset>\n<legend><script type=\"text/javascript\">Capture(log.legend)</script></legend>\n");
-  system ("/etc/openvpnlog.sh > /tmp/.temp");
+  system2 ("/etc/openvpnlog.sh > /tmp/.temp");
   in = fopen ("/tmp/.temp", "r");
   while (!feof (in))
     {
