@@ -38,16 +38,14 @@ ej_dumpleases (webs_t wp, int argc, char_t ** argv)
   int count = 0;
   int macmask;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%d", &macmask);
-#else
-  if (ejArgs (argc, argv, "%d", &macmask) < 1)
+#ifndef FASTWEB
+  if (argc<1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
-
+macmask = atoi(argv[0]);
   if (nvram_match ("dhcp_dnsmasq", "1"))
     {
       char mac[32];
