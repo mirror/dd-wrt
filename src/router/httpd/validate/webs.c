@@ -167,7 +167,6 @@ validate_filter_tod (webs_t wp)
   {argv:ARGV ("0", "1", "2")},
 
   }, *which;
-  D ("validate filter tod");
 
   char *day_all, *week0, *week1, *week2, *week3, *week4, *week5, *week6;
   char *time_all, *start_hour, *start_min, *end_hour, *end_min;
@@ -351,14 +350,12 @@ void
 validate_filter_policy (webs_t wp, char *value, struct variable *v)
 {
   char *f_id = websGetVar (wp, "f_id", NULL);
-  D ("validate filter policy");
   if (f_id)
     nvram_set ("filter_id", f_id);
   else
     nvram_set ("filter_id", "1");
 
   save_policy (wp);
-  D ("okay");
 }
 
 char *
@@ -398,12 +395,6 @@ validate_services_port (webs_t wp)
   char delim[] = "(&nbsp;)";
   char var[32] = "";
   int index = 0;
-  D ("validate services port");
-//printf("services_array: %s\n", services_array);
-
-//printf("services_length: %s\n", services_length);
-
-//      if(!services_array || !services_length)         return 0;
 
   do
     {
@@ -411,7 +402,6 @@ validate_services_port (webs_t wp)
       svcs = websGetVar (wp, var, NULL);
       if (svcs)
 	strcat (services, svcs);
-//      printf ("services_array%d: %s\n", index, svcs);
 
     }
   while (svcs);
