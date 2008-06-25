@@ -91,6 +91,9 @@ CONFIG_DHCPFORWARD=y
 # CONFIG_SVEASPOT is not set
 #CONFIG_VPND=y
 CONFIG_PPTPD=y
+# For ProFtpd
+# CONFIG_FTP=y
+
 
 #
 # IPSec

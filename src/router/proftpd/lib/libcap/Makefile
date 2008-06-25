@@ -27,8 +27,8 @@ all: $(LIBNAME)
 
 _makenames: _makenames.c cap_names.sed
 	#$(CC) $(CFLAGS) $(LDFLAGS) $< -o $@
-	gcc $(CFLAGS) $(LDFLAGS) $< -o $@
-
+	gcc  $(LDFLAGS) $< -o $@
+# $(CFLAGS)
 cap_names.h: _makenames
 	./_makenames > cap_names.h
 
