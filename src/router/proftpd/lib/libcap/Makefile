@@ -26,7 +26,7 @@ OBJS=$(addsuffix .o, $(FILES))
 all: $(LIBNAME)
 
 _makenames: _makenames.c cap_names.sed
-	 $(LDFLAGS) $< -o $@
+	 gcc $(LDFLAGS) $< -o $@
 
 # $(CC) $(CFLAGS)
 
