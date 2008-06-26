@@ -1,0 +1,98 @@
+<!-- $Id: mod_auth_pam.html,v 1.1 2004/04/24 01:13:05 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_auth_pam.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD module mod_auth_pam</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center>
+<h2><b>ProFTPD module <code>mod_auth_pam</code></b></h2>
+</center>
+<hr><br>
+
+<p>
+PAM stands for <b>P</b>luggable <b>A</b>uthentication <b>M</b>odules,
+and is used to configure ways for authenticating users.  Now
+&quot;authenticating&quot; a user usually means comparing a password they
+give with some other information, and returning a &quotyes/no&quot;-style
+answer.  PAM does <b>not</b> provide all of the other information for a user,
+such as UID, GID, home, and shell.  This means that <code>mod_auth_pam</code>
+cannot be used, by itself, as an auth module for <code>proftpd</code>;
+<code>mod_auth_pam</code> is used to supplement other auth modules by
+providing access to PAM's additional authentication checks.
+
+<p>
+Installation instructions for <code>mod_auth_pam</code> can be found
+<a href="#Installation">here</a>.
+
+<p>
+The most current version of <code>mod_auth_pam</code> can be found in the
+ProFTPD source distribution:
+<pre>
+  <a href="http://www.proftpd.org/">http://www.proftpd.org/</a>
+</pre>
+
+<h2>Directives</h2>
+<ul>
+  <li><a href="#AuthPAM">AuthPAM</a>
+  <li><a href="#AuthPAMConfig">AuthPAMConfig</a>
+</ul>
+
+<hr>
+<h2><a name="AuthPAM">AuthPAM</a></h2>
+<strong>Syntax:</strong> AuthPAM <em>on|off</em><br>
+<strong>Default:</strong> AuthPAM on<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_auth_pam<br>
+<strong>Compatibility:</strong> 1.2.8rc2 and later
+
+<p>
+The <code>AuthPAM</code> directive enables or disables the module's runtime
+PAM check.  If it is set to <em>off</em> this module does not consult PAM
+when authenticating a user.
+
+<p>
+<hr>
+<h2><a name="AuthPAMConfig">AuthPAMConfig</a></h2>
+<strong>Syntax:</strong> AuthPAMConfig <em>service</em><br>
+<strong>Default:</strong> AuthPAMConfig ftp<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_auth_pam<br>
+<strong>Compatibility:</strong> 1.2.8rc2 and later
+
+<p>
+The <code>AuthPAMConfig</code> directive is used to specify the name of
+the service used when performing the PAM check; PAM configurations can
+vary depending on the service.  By default, the &quot;ftp&quot; service
+is used.  Note that on some platforms, <i>e.g.</i> FreeBSD, this may
+need to be set to &quot;ftpd&quot;, depending on the PAM configuration
+involved.
+
+<p>
+Here's an example of changing the <em>service</em> used:
+<pre>
+  &lt;IfModule mod_auth_pam.c&gt;
+    AuthPAMConfig ftpd
+  &lt;/IfModule&gt;
+</pre>
+
+<p>
+<hr>
+<h2><a name="Installation">Installation</a></h2>
+The <code>mod_auth_pam</code> module is automatically included when
+<code>proftpd</code> is built on a system that supports PAM. To disable
+this automatic inclusion, use the <code>--disable-auth-pam</code> configure
+option.
+
+<p>
+<hr>
+Last Updated: <i>$Date: 2004/04/24 01:13:05 $</i><br>
+<hr>
+
+</body>
+</html>
+

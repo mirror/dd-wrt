@@ -1,0 +1,42 @@
+
+POSIX ACLs (File ACLs)
+----------------------
+
+As of 1.3.0rc1, ProFTPD has support for POSIX ACLs.  This is a new feature
+and should be considered experimental.
+
+For more information on what POSIX ACLs are and how they work, see
+"POSIX ACLs on Linux":
+
+    http://www.suse.de/~agruen/acl/linux-acls/online/
+
+POSIX ACLs are supported and implemented differently on Linux, BSD, and
+Solaris.  ProFTPD attempts to work properly with POSIX ACLs on all of
+these platforms.
+
+The configure script automatically checks to see if your system has
+support for POSIX ACLs.  However, proftpd will not make use of any
+POSIX ACL support unless specifically requested:
+
+  ./configure --enable-facl ...
+
+This configure option tells proftpd to compile and link against the proper
+libraries.  However, to make proftpd fully honor any POSIX ACLs on files,
+you will also need the mod_facl module:
+
+  ./configure --enable-facl --with-modules=mod_facl ...
+
+Note that on some systems (notably Red Hat installations), you may encounter
+the following error when compiling proftpd with ACL support:
+
+  libtool: link: cannot find the library `/lib/libattr.la'
+
+This is caused by a bug in the /usr/lib/libacl.la file.  This is a text
+file which mentions /lib/libattr.la, when it should use /usr/lib/libattr.la.
+You may have to manually edit the /usr/lib/libacl.la file to correct
+the problem.
+
+Future work on ProFTPD's support of POSIX ACLs will most likely include
+changing mod_ls so that it displays a '+' symbol when LISTing files,
+denoting a file marked with POSIX ACLs, and perhaps adding support for
+SITE commands for manipulating ACLs (similar to SITE CHMOD).

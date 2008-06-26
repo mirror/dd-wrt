@@ -1,0 +1,195 @@
+<!-- $Id: Chroot.html,v 1.4 2006/06/07 16:50:53 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Chroot.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD mini-HOWTO - Symlinks and chroot()</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center><h2><b><i><code>DefaultRoot</code>, Symlinks and <code>chroot()</code></i></b></h2></center>
+<hr>
+
+<p>
+<b>Restricting Users' Directories</b><br>
+One of the most common questions for new users of ProFTPD is &quot;How do I
+restrict my users to only certain directories?&quot; or, phrased another
+way, &quot;How can I put my users in a chroot jail?&quot;  As a common
+question, it definitely has a place in the
+<a href="http://www.proftpd.org/docs/faq/proftpdfaq-5.html#ss5.12">FAQ</a>.
+Many users, I fear, do not read the FAQ carefully, and so miss that section.
+The answer is ProFTPD's <a href="http://www.proftpd.org/docs/directives/linked/config_ref_DefaultRoot.html"><code>DefaultRoot</code></a> configuration
+directive, which accomplishes this functionality by using the
+<code>chroot(2)</code> function.
+
+<p><a name="GroupExpressions"></a>
+This configuration directive may appear in the <code>&lt;VirtualHost&gt;</code>,
+<code>&lt;Global&gt;</code>, and the &quot;server config&quot; (meaning
+not in any <code>&lt;VirtualHost&gt;</code> or <code>&lt;Global&gt;</code>
+sections) configuration contexts.  The most common configuration requested
+is to restrict users to their home directories, which can be done simply
+by adding the following line to your <code>proftpd.conf</code>:
+<pre>
+  DefaultRoot ~
+</pre>
+The <code>~</code> (tilde) is a Unix-ism that is expanded to the logging-in
+user's home directory.  For slightly more complex setups, administrators
+may want to restrict only a subset of their users into home directories
+(or some other directory), but leave some privileged users unrestricted.
+For example, say you have your privileged users all as members of a group
+called <code>ftp-special</code>.  The <code>DefaultRoot</code>'s optional
+second parameter, a <i>group-expression</i>, can then be used, like so:
+<pre>
+  DefaultRoot ~ !ftp-special
+</pre>
+This says to <code>chroot()</code> every user who is <b>not</b> a member of
+group <code>ftp-special</code> to their respective home directory, and:
+<pre>
+  DefaultRoot /path/to/dir group1,group2
+</pre>
+will <code>chroot()</code> users who are members of <b>both</b>
+<code>group1</code> <b>and</b> <code>group2</code> into
+<code>/path/to/dir</code>.  More complex <i>group-expressions</i> can be used
+as needed.
+
+<p>
+Note that the execute bit (<code>--x</code>) must be on in order to
+<code>chroot()</code> a user into that directory.  This bit is also needed
+for a user to be able to <code>chdir</code> into that directory.
+
+<p><a name="Symlinks"></a>
+<b>Symlinks</b><br>
+There have been many questions on the ProFTPD user mailing list about why
+symlinked directories are not visible to <code>chroot</code>ed users (this
+includes <code>&lt;Anonymous&gt;</code> users as well as users restricted using
+<code>DefaultRoot</code>. This document is intended to clarify the issues and
+discuss some ways of achieving what is commonly desired.
+
+<p>
+These issues are not specific to ProFTPD, but rather to the workings of a
+Unix system.  First, a brief review of how links work, and why
+<code>chroot(2)</code> poses such a problem.  Then a look at ways around
+the issue.
+
+<p>
+<b>How Links Work</b><br>
+There are two types of links in Unix: hard and symbolic.
+
+<p>
+A <i>hard</i> link is a file that is, for all intents and purposes, <i>the</i>
+file to which it is linked.  The difference between a hardlink and the linked
+file is one of placement in the filesystem.  Editing the hardlink edits the
+linked file.  One limitation of hard links is that linked files cannot reside
+on different filesystems.  This means that if <code>/var</code> and
+<code>/home</code> are two different mount points in <code>/etc/fstab</code>
+(or <code>/etc/vfstab</code>), then a file in <code>/var/tmp</code> cannot be
+hardlinked with a file in <code>/home</code>:
+<pre>
+  <b>> pwd</b>
+  /var/tmp
+  <b>> ln /home/tj/tmp/tmpfile tmplink</b>
+  ln: cannot create hard link `tmplink' to `/home/tj/tmp/tmpfile': Invalid cross-device link
+</pre>
+A <i>symbolic</i> link (also referred to as a &quot;symlink&quot;) is a file
+whose contents contain the name of the file to which the symbolic link
+points.  For example:
+<pre>
+  lrwxrwxrwx   1 root     root           11 Mar  2  2000 rmt -> /sbin/rmt
+</pre>
+The file <code>rmt</code> contains the nine characters <code>/sbin/rmt</code>.
+The reason symbolic links fail when <code>chroot(2)</code> is used to
+change the position of the root (<code>/</code>)of the filesystem is that,
+once <code>/</code> is moved, the pointed-to file path changes.  If, for
+example, if <code>chroot(2)</code> is used to change the filesystem root
+to <code>/ftp</code>, then the symlink above would be actually be pointing
+to <code>/ftp/sbin/rmt</code>.  Chances that that link, if
+<code>chroot(2)</code> is used, now points to a path that does not exist.
+Symbolic links that point to nonexistent files are known as <i>dangling</i>
+symbolic links.  Note that symbolic links to files underneath the new
+root, such as symlinks to a file in the same directory:
+<pre>
+  <b>> pwd</b>
+  /var/ftp
+  <b>> ls -l</b>
+  -rw-r--r--   1 root     root            0 Jan 16 11:50 tmpfile
+  lrwxrwxrwx   1 root     root            7 Jan 16 11:50 tmplink -> tmpfile
+</pre>
+will be unaffected; only paths that point outside/above the new root will be
+affected.
+
+<p>
+<b>Filesystem Tricks</b><br>
+A typical scenario is one where &quot;<code>DefaultRoot ~</code>&quot; is
+used to restrict users to their home directories, and where the administrator
+would like to have a shared upload directory, say
+<code>/var/ftp/incoming</code>, in each user's home directory.  Symbolic
+links would normally be used to provide an arrangement like this.  As
+mentioned above, though, when <code>chroot(2)</code> is used (which is what
+the <code>DefaultRoot</code> directive does), symlinks that point outside the
+new root (the user's home directory in this case) will not work.  To get
+around this apparent limitation, it is possible on modern operating systems to
+mount directories at several locations in the filesystem.
+
+<p>
+To have an exact duplicate of the <code>/var/ftp/incoming directory</code>
+available in <code>/home/bob/incoming</code> and
+<code>/home/dave/incoming</code>, use one of these commands:
+<ul>
+  <li>Linux (as of the 2.4.0 kernel):
+<pre>
+  mount --bind /var/ftp/incoming /home/bob/incoming
+  mount --bind /var/ftp/incoming /home/dave/incoming
+</pre>
+or, alternatively:
+<pre>
+  mount -o bind /var/ftp/incoming /home/bob/incoming
+  mount -o bind /var/ftp/incoming /home/dave/incoming
+</pre>
+  </li>
+
+  <li>BSD (as of 4.4BSD):
+<pre>
+  mount_null /var/ftp/incoming /home/bob/incoming
+  mount_null /var/ftp/incoming /home/dave/incoming
+</pre>
+  </li>
+
+  <li>Solaris:
+<pre>
+  mount -F lofs /var/ftp/incoming /home/bob/incoming
+  mount -F lofs /var/ftp/incoming /home/dave/incoming
+</pre>
+  </li>
+</ul>
+The same technique can be used for <code>&lt;Anonymous&gt;</code> directories,
+which also operate in a <code>chroot()</code>ed environment.  Also, it
+should be possible to mount specific <i>files</i> this way, in addition to
+directories, should you need to (a directory is just another file in Unix).
+
+<p>
+As usual, more information can be found by consulting the man pages for
+the appropriate command for your platform.  The commands for other flavors
+of Unix will be added as needed.
+
+<p>
+In order to have these tricks persist, to survive a system reboot, the
+<code>/etc/fstab</code> (or <code>/etc/vfstab</code>) file may need to have
+these mounts added.  Consult your local <code>fstab(5)</code> (or
+<code>vfstab(4)</code> for Solaris) man pages for more information.
+
+<p>
+<b>Chroots and Remote Filesystems</b><br>
+If the chroot directories for your users happen to reside on an NFS
+partition, then you need to make sure that root privileges are <b>not</b>
+blocked (<i>e.g.</i> often referred to as "root squash") by the NFS
+mount.  Otherwise, the chroot will fail.
+
+<p>
+<hr>
+Last Updated: $Date: 2006/06/07 16:50:53 $<br>
+<hr>
+
+</body>
+</html>

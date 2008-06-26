@@ -1,0 +1,440 @@
+<!-- $Id: TLS.html,v 1.14 2007/10/02 22:29:18 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/howto/TLS.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD mini-HOWTO - FTP and SSL/TLS</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center><h2><b>FTP and SSL/TLS</b></h2></center>
+<hr>
+
+<p>
+RFC 4217 defines FTP over SSL/TLS:
+<pre>
+  <a href="http://www.faqs.org/rfcs/rfc4217.html">http://www.faqs.org/rfcs/rfc4217.html</a>
+</pre>
+The <code>mod_tls</code> module for <code>proftpd</code> is an implementation
+of RFC 4217.
+
+<p>
+RFC 2228 defines FTP Security Extensions, of which <code>mod_tls</code> is one implementation:
+</pre>
+  <a href="http://www.faqs.org/rfcs/rfc2228.html">http://www.faqs.org/rfcs/rfc2228.html</a>
+</pre>
+Another such RFC 2228 implementation is the <code>mod_gss</code> module,
+available from SourceForge.
+
+<p>
+Example <a href="http://www.castaglia.org/proftpd/modules/mod_tls.html"><code>mod_tls</code></a> configuration:
+<pre>
+  &lt;IfModule mod_tls.c&gt;
+    TLSEngine on
+    TLSLog /var/ftpd/tls.log
+    TLSProtocol TLSv1
+
+    # Are clients required to use FTP over TLS when talking to this server?
+    TLSRequired off
+
+    # Server's certificate
+    TLSRSACertificateFile /etc/ftpd/server.cert.pem
+    TLSRSACertificateKeyFile /etc/ftpd/server.key.pem
+
+    # CA the server trusts
+    TLSCACertificateFile /etc/ftpd/root.cert.pem
+
+    # Authenticate clients that want to use FTP over TLS?
+    TLSVerifyClient off
+
+    # Allow SSL/TLS renegotiations when the client requests them, but
+    # do not force the renegotations.  Some clients do not support
+    # SSL/TLS renegotiations; when mod_tls forces a renegotiation, these
+    # clients will close the data connection, or there will be a timeout
+    # on an idle data connection.
+    TLSRenegotiate required off
+
+  &lt;/IfModule&gt;
+</pre>
+
+<p><a name="TLSDebugging"></a>
+<b>Debugging</b><br>
+<a href="http://www.rtfm.com/ssldump/"><code>ssldump</code></a>
+
+<p><a name="FAQ"></a>
+<b>Frequently Asked Questions</b><br>
+
+<p><a name="TLSCertificates">
+<font color=red>Question</font>: How do I generate the certificate files used
+by <code>mod_tls</code>?<br>
+<font color=blue>Answer</font>: The <code>mod_tls</code> module uses the
+same certificate files as Apache's <code>mod_ssl</code>.  The
+<code>mod_ssl</code> documentation explains what the files are, how they
+are used, and how to generate your own:
+<pre>
+  <a href="http://www.modssl.org/docs/2.7/ssl_faq.html#ToC24">http://www.modssl.org/docs/2.7/ssl_faq.html</a>
+</pre>
+
+<p><a name="TLSClients">
+<font color=red>Question</font>: Where can I find a list of clients that
+support FTPS?<br>
+<font color=blue>Answer</font>: This page is a good FTPS resource:
+<pre>
+  <a href="http://www.ford-hutchinson.com/~fh-1-pfh/ftps-ext.html">http://www.ford-hutchinson.com/~fh-1-pfh/ftps-ext.html</a>
+</pre>
+including the list of FTPS <a href="http://www.ford-hutchinson.com/~fh-1-pfh/ftps-ext.html#client">clients</a>.  On a related note, there have been some
+reports that Debian's <code>ftp-ssl</code> client has a few bugs; using Peter
+Runestig's <code>ftp-tls</code> is known to work.
+
+<p>
+Note, though, that there are known issues with some FTPS clients:
+<pre>
+  <a href="http://www.runestig.com/osp.html#NOTE1">http://www.runestig.com/osp.html#NOTE1</a>
+</pre>
+
+<p><a name="TLSImplicit">
+<font color=red>Question</font>: How come <code>mod_tls</code> does not support
+&quot;implicit&quot; FTPS (<i>i.e.</i> automatically encrypting sessions on
+port 990)?<br>
+<font color=blue>Answer</font>: The short answer is because the Draft no longer
+specifies support for such a mode.  Here is a <a href="http://www.ford-hutchinson.com/~fh-1-pfh/ftps-ext.html#bad">description</a> of why the alternatives
+to the current mode (client-requested encryption using standard control
+channel) are &quot;bad&quot;.
+
+<p>
+The long answer is covered in Eric Rescorla's excellent book, <a href="http://www.rtfm.com/sslbook/">&quot;SSL and TLS&quot;</a>.  There tend to be two
+different strategies used when adding new features to a protocol: separate
+ports for protocol variants, or upward negotiation.  Port 443 for HTTPS is an
+example of the separate ports strategy.  The drawback to the separate ports
+approach is that there is a finite number of ports available, and so this
+approach does not scale well.  The benefit is that use of separate ports tends
+to require smaller changes to client and server code.  Upward negotiation
+is more flexible, but requires that the protocol support some sort of feature
+negotiation or extension discovery, allowing clients and servers to easily
+agree to negotiate &quot;upward&quot; into a secure channel.  The authors
+of the FTPS Draft felt that upward negotiation was the more appropriate of
+these two approaches for encrypting FTP channels.
+
+<p><a name="TLSPerUser">
+<font color=red>Question</font>: Can I require TLS on a per-user basis?<br>
+<font color=blue>Answer</font>: Prior to ProFTPD 1.2.10rc2, no.  The IETF
+Draft specifying FTP over TLS requires that the TLS handshake occur
+<i>before</i> the client sends the <code>USER</code> command.  This means that
+the server does not know the name of the user that the client will be using
+when the TLS session is established.  It is possible that the client's
+certificate, if one is even presented, may contain information the server may
+use to map that certificate to a user, but such mapping is not currently
+supported by <code>mod_tls</code>.  Note that this is also the reason the
+<code>TLSRequired</code> directive cannot appear in the
+<code>&lt;Anonymous&gt;</code> context: anonymous logins are based on the
+<code>USER</code> command.
+
+<p>
+However, in 1.2.10rc2, the <code>mod_tls</code> module was modified to allow
+such per-user TLS requirements.  To do this, the <code>AllowPerUser</code>
+parameter of the <code>TLSOptions</code> directive is used.  For example,
+the following example <code>mod_tls</code> configuration allows non-SSL
+anonymous sessions, but requires SSL/TLS for all other sessions:
+<pre>
+  &lt;IfModule mod_tls.c&gt;
+    TLSEngine on
+    TLSRSACertificateFile ...
+    TLSCACertificateFile ...
+    TLSOptions AllowPerUser
+    TLSRequired on
+
+    &lt;Anonymous ~ftp&gt;
+      User ftp
+      Group ftp
+      UserAlias anonymous ftp
+
+      RequireValidShell off
+
+      # Note how TLSRequired is set to off here in the &lt;Anonymous&gt; context
+      TLSRequired off
+    &lt;/Anonymous&gt;
+  &lt;/IfModule&gt;
+</pre>
+The modification also allows <code>mod_ifsession</code>-based conditions, so
+that one can have settings like:
+<pre>
+  &lt;IfGroup trusted&gt;
+    TLSRequired off
+  &lt;/IfGroup&gt;
+</pre>
+However, there is a risk involved in using the <code>AllowPerUser</code>
+option: it causes <code>mod_tls</code> not to enforce <code>TLSRequired</code>
+until <i>after</i> the potentially sensitive USER and PASS commands have
+been sent by the client.  This allows clients, even when
+<code>TLSRequired on</code> or <code>TLSRequired ctrl</code> are in effect,
+to send the USER and PASS commands <i>unencrypted</i>.  Depending on your
+site's security needs, the ability to require SSL/TLS on a per-user basis
+may or may not be worth the ability to require SSL/TLS for the USER and PASS
+commands.
+
+<p><a name="TLSFXP">
+<font color=red>Question</font>: Why does <code>mod_tls</code> break FXP
+transfers?<br>
+<font color=blue>Answer</font>: The Draft specifying FTP over SSL explicitly
+omits site-to-site transfers.  A TLS session is established between the client
+and the server on the control channel and, to save on the expensive overhead of
+TLS handshake, that session is reused for encrypting traffic on the data
+channel.  In a site-to-site transfer, the client opens <i>two</i> control
+channels, one with each server, and then arranges for those servers to open a
+data channel between themselves.  However, since the servers have not
+established a TLS session between themselves, that opening of the data channel
+fails.
+
+<p>
+Note that the above happens only if the server requires that TLS be used on data
+connections (<i>e.g.</i> <code>TLSRequired</code> is either <em>on</em> or
+<em>data</em>), of if the client tells the server that the client will be
+using TLS on the data connections (<i>e.g.</i> when it sends the
+<code>AUTH</code> command with an argument of <code>TLS-P</code>).  Without
+these conditions, site-to-site transfers can occur normally, albeit unencrypted.
+Encrypted site-to-site transfers are not supported.
+
+<p><a name="TLSv2">
+<font color=red>Question</font>: How come <code>mod_tls</code> does not support
+SSLv2?<br>
+<font color=blue>Answer</font>: Various defects have been found in the SSLv2
+protocol.  Some legacy sites need to support SSLv2 for their HTTP traffic, in
+spite of its flaws.  Use of FTP over TLS is fairly new, however, and there is
+not much &quot;legacy&quot; in that regard; it was felt that, as
+<code>mod_tls</code> aims to provide strong cryptographic security, supporting
+a known bad protocol is a Bad Idea.
+
+<p><a name="TLSFirewall">
+<font color=red>Question</font>: Using <code>mod_tls</code>, FTP sessions
+through my firewall now no longer work.  What's going on?<br>
+<font color=blue>Answer</font>: The short answer is that FTPS and firewalls
+(and devices performing NAT) do not interact well.  The control connection
+happens on a well-known port, and has no issues; it is the data connection
+that poses problems for FTP-aware firewalls.  In a non-FTPS session, the
+firewall can inspect the FTP server's responses on the control connection to a
+client's <code>PASV</code> or <code>PORT</code> command, and thus know which
+on which ports/addresses the data connection will be established.  In an FTPS
+session, though, those control connection messages are encrypted (that is the
+point of using FTPS, right?), and so the FTP-aware firewall cannot peek.
+Hence, it cannot know which on which ports the data connection will be
+established.  For firewalls that are configured to always allow a certain
+range of ports (such as might be configured using the <code>PassivePorts</code>
+directive), FTPS should function without issue.
+
+<p>
+Unfortunately, this is a rather intractable--and known--issue.  Earlier
+versions of the Draft defining FTPS used to allow something known as
+&quot;implicit&quot; FTPS, by which a client could contact a well-known port
+(akin to port 443 for HTTPS; FTPS used port 990) and the server, simply
+because the client contacted that certain port, would automatically encrypt
+the session.  This approach has several drawbacks (the reason why it was
+removed from later versions of the Draft), but it <i>did</i> allow for simple
+TCP proxying.
+
+<p><a name="TLSCCC">
+To attempt to deal with the above issue, the RFC for FTP over SSL/TLS
+suggests using the <code>CCC</code> FTP command (<b>C</b>lear <b>C</b>ommand <b>C</b>hannel).  The <code>CCC</code> command makes an encrypted control channel
+revert back to an unencrypted channel.  This helps to solve data connection
+problems in situations where network equipment (such as firewalls, routers,
+NAT) peek at the control channel in order to open ports.  By sending the
+<code>CCC</code> command and unecrypting the control channel, the network
+equipment can once again peek at the commands (<i>i.e.</i> <code>PORT</code>
+and <code>EPRT</code>) in the control channel.  Since the CCC command must
+come <em>after</em> the client has logged in, the <code>USER</code> and
+<code>PASS</code> commands on the control channel will still be protected by
+SSL/TLS.
+
+<p>
+Note that in order to configure the <code>mod_tls</code> module to allow use of
+the <code>CCC</code> command by clients, the following must appear in your
+<code>proftpd.conf</code>:
+<pre>
+  TLSRequired auth+data
+</pre>
+See the <a href="../contrib/mod_tls.html#TLSRequired"><code>TLSRequired</code></a> description for more details.
+
+<p><a name="TLSSlow">
+<font color=red>Question</font>: Sometimes my encrypted transfers are slow.
+Is there a way to speed them up?<br>
+<font color=blue>Answer</font>:  There have been reports that increasing the
+tunable buffer size (using the <code>--enable-buffer-size</code> option
+of the <code>configure</code> script) to 8192 increases transfer speeds, most
+notably on very high speed networks.  Increasing the buffer size does not
+appear to affect normal FTP transfers (in fact, it may benefit them as well,
+depending on the client).
+
+<p><a name="TLSDataProtection">
+<font color=red>Question</font>: I can login using FTPS, but I cannot see
+any directories.  Why not?<br>
+<font color=blue>Answer</font>: You have most likely configured
+<code>mod_tls</code> to require SSL/TLS protection for data transfers as
+well as control commands, by using:
+<pre>
+  TLSRequired on
+</pre>
+However, if your FTPS client does not expect to handle encrypted data
+transfers (and directory listings count as data transfers, as they are
+sent over a data channel), you may see your client appear to hang, waiting
+for data it can read.  Make sure your client is prepared to handle the
+security requirements you have configured on the server.
+
+<p>
+You may also see the following appear in the <code>TLSLog</code> on occasion:
+<pre>
+  PROT: unwilling to accept security parameter (C), declining
+</pre>
+The <code>PROT</code> FTP command is used to set the protection level to
+be used for data transfers.  Some clients send a <code>PROT</code> command
+with a security parameter of <code>C</code>, meaning &quot;Clear&quot;,
+which effectively tells the server not to protect data transfers.  The
+<code>mod_tls</code> module will refuse the <code>C</code> security parameter
+if, like above, there is &quot;TLSRequired on&quot in your
+<code>proftpd.conf</code>.  This case also indicates a disagreement between
+the client's security expectations and the security policy you have configured
+on the server.
+
+<p><a name="TLSBuildErrors">
+<font color=red>Question</font>: Why would I see the following errors while attempting to build <code>proftpd</code> with <code>mod_tls</code>?
+<pre>
+  /usr/local/ssl/lib/libcrypto.a(dso_dlfcn.o)(.text+0x35): In function `dlfcn_load': : undefined reference to `dlopen'
+  /usr/local/ssl/lib/libcrypto.a(dso_dlfcn.o)(.text+0x95): In function `dlfcn_load': : undefined reference to `dlclose'
+  /usr/local/ssl/lib/libcrypto.a(dso_dlfcn.o)(.text+0xbc): In function `dlfcn_load': : undefined reference to `dlerror'
+  /usr/local/ssl/lib/libcrypto.a(dso_dlfcn.o)(.text+0x147): In function `dlfcn_bind_var': : undefined reference to `dlsym'
+  /usr/local/ssl/lib/libcrypto.a(dso_dlfcn.o)(.text+0x172): In function `dlfcn_bind_var': : undefined reference to `dlerror'
+  /usr/local/ssl/lib/libcrypto.a(dso_dlfcn.o)(.text+0x237): In function `dlfcn_bind_func': : undefined reference to `dlsym'
+  /usr/local/ssl/lib/libcrypto.a(dso_dlfcn.o)(.text+0x262): In function `dlfcn_bind_func': : undefined reference to `dlerror'
+  /usr/local/ssl/lib/libcrypto.a(dso_dlfcn.o)(.text+0x50b): In function `dlfcn_unload': : undefined reference to `dlclose'
+  collect2: ld returned 1 exit status
+  make: *** [proftpd] Error 1
+</pre>
+<font color=blue>Answer</font>:
+Add <code>-ldl</code> to your configure command, for example:
+<pre>
+  make clean
+  ./configure LDFLAGS=-ldl ...
+  make
+</pre>
+This tells the <code>proftpd</code> build system to add <code>libdl</code>,
+an OS-specific library for handling dynamically loaded code, to the list
+of libraries used when linking <code>proftpd</code>.  On some systems, the
+functions in the <code>libdl</code> library are part of <code>libc</code>, and
+are not in a separate library.
+
+<p>
+I suspect that the reason this build option may be necessary is that OpenSSL
+0.9.8 contained changes regarding how OpenSSL loads "engines", software modules
+that talk to hardware devices that can do specialized cryptographic operations.
+These changes involve being able to dynamically load the "engine" software
+modules.
+
+<p><a name="TLSNoSharedCipher">
+<font color=red>Question</font>: Why would I see a &quot;no shared cipher&quot; error in the TLSLog when attempting to connect with my FTPS client?<br>
+<pre>
+  Jan 10 17:15:18 mod_tls/2.1.1[2212]: TLS/TLS-C requested, starting TLS handshake
+  Jan 10 17:15:18 mod_tls/2.1.1[2212]: unable to accept TLS connection:
+    (1) error:1408A0C1:SSL routines:SSL3_GET_CLIENT_HELLO:no shared cipher
+  Jan 10 17:15:18 mod_tls/2.1.1[2212]: TLS/TLS-C negotiation failed on control channel
+</pre>
+<font color=blue>Answer</font>:
+There are two reasons this might happen.
+
+<p>
+The first is that there is indeed no ciphersuite in common between
+<code>mod_tls</code> and your FTPS client.  The SSL/TLS ciphersuites used by
+<code>mod_tls</code> are configured using the <code>TLSCipherSuite</code>
+directive.  If you have a complex or restrictive <code>TLSCipherSuite</code>
+configured, that could be the culprit.  Try relaxing (or removing outright)
+your <code>TLSCipherSuite</code>, or try to configure your FTPS client to use
+the same SSL/TLS ciphersuites.
+
+<p>
+Another possibility is a misconfiguration.  If your
+<code>TLSCACertificateFile</code> and <code>TLSRSACertificateFile</code>
+directives are in the &quot;server config&quot; context of the
+<code>proftpd.conf</code> file, <i>and</i> you have
+<code>&gt;VirtualHost&lt;</code> sections in your <code>proftpd.conf</code>,
+then you might see the &quot;no shared cipher&quot; error.  The easiest
+thing is to move those <code>TLSCACertificateFile</code> and
+<code>TLSRSACertificateFile</code> directives into a <code>&gt;Global&lt;</code>
+section in your <code>proftpd.conf</code>, so that they apply to all
+vhosts configured.  The virtual hosting <a href="Vhost.html">howto</a>
+describes this in more detail.
+
+<p><a name="TLSRenegotiations">
+<font color=red>Question</font>: My FTPS client sometimes times out after uploading/downloading more than 1 GB of data.  When I turn off SSL/TLS, the upload/download works. Why?<br>
+<font color=blue>Answer</font>:
+The culprit behind this is most likely SSL/TLS renegotiations.  By default,
+<code>mod_tls</code> uses SSL/TLS renegotiations to periodically update the
+session key which protects the data being transferred; see the
+<a href="../contrib/mod_tls.html#TLSRenegotiate"><code>TLSRenegotiate</code></a> documentation for more details, particularly the time-based <i>and</i>
+bytes-based limits at which renegotations are forced.
+
+<p>
+Some FTPS clients, however, do not support server-initiated SSL/TLS
+renegotations.  When the server does try to force a renegotiation, the client
+fails that new handshake, cannot upload/download any more data over the
+protected channel, and the transfer will eventually time out.  Alternatively,
+the transfer could terminate strangely in the middle of the upload/download.
+<b>Note</b>, however, that not <i>all</i> transfer issues will be caused
+by SSL/TLS renegotiations.  Bugs in firewalls and routers can also cause
+these symptoms.
+
+<p>
+Should you suspect that you are having issues with your FTPS client because
+of SSL/TLS renegotiations, you can configure <code>mod_tls</code> to
+accept renegotiations if the client requests one, but not to otherwise force
+them:
+<pre>
+  TLSRenegotiate required off
+</pre>
+
+<p><a name="TLSNoCertRequest">
+<font color=red>Question</font>: My FTPS client has trouble connecting to <code>proftpd</code> using SSL/TLS, with the following error appearing in the <code>TLSLog</code>:
+<pre>
+  Sep 17 11:03:46 mod_tls/2.1.2[9628]: TLS/TLS-C requested, starting TLS handshake
+  Sep 17 11:03:46 mod_tls/2.1.2[9628]: unable to accept TLS connection: received EOF that violates protocol
+  Sep 17 11:03:46 mod_tls/2.1.2[9628]: TLS/TLS-C negotiation failed on control channel
+</pre>
+Is this a bug in <code>mod_tls</code>, in the client, or something else?<br><br>
+<font color=blue>Answer</font>: There might be several different causes for
+this error.  It could be a bug in the OpenSSL library, in <code>mod_tls</code>,
+in the FTPS client, or it could be a transient network issue.
+
+<p>
+Now, one possible thing to try is to use the following in your <code>proftpd.conf</code> file:
+<pre>
+  TLSOptions NoCertRequest
+</pre>
+This option tells the OpenSSL library to <b>not</b> include a message requesting
+the client's certificate in the SSL/TLS handshake messages.  Some older
+SSL implementations seem to have trouble with this certificate request message,
+and react badly.  This includes some Windows FTP clients, as well as some
+FTP clients for the Mac.
+
+<p>
+One user tried using both the <a href="http://www.panic.com/transmit/">Transmit</a> and the <a href="http://www.fetchsoftworks.com/">Fetch</a> applications for
+the Mac; both state that they can handle FTP over SSL/TLS.  Using both of
+these applications, the user saw the above error.  The user, when using
+Transmit, saw the following error message appear from the client:
+<pre>
+  Server said:
+  AUTH TLS successful
+  error:00000000:lib(0):func(0):reason(0)
+</pre>
+And when using Fetch, the error message displayed by that client was:
+<pre> 
+  SSL Error -9844
+  Server responded: "AUTH TLS successful"
+</pre>
+In <b>both</b> causes, using "TLSOptions NoCertRequest" appeared to make
+those clients happy.
+
+<p>
+<hr>
+Last Updated: <i>$Date: 2007/10/02 22:29:18 $</i><br>
+<hr>
+
+</body>
+</html>
