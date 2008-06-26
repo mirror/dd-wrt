@@ -98,7 +98,8 @@ static chan_info_t chan_info[] = {
 
 
 void (*do_ej_buffer) (char *buffer, webs_t stream);
-int (*httpd_filter_name) (char *old_name, char *new_name, size_t size,int type);
+int (*httpd_filter_name) (char *old_name, char *new_name, size_t size,
+			  int type);
 char *(*websGetVar) (webs_t wp, char *var, char *d);
 int (*websWrite) (webs_t wp, char *fmt, ...);
 struct wl_client_mac *wl_client_macs;
@@ -106,11 +107,12 @@ int *clone_wan_mac;
 int *generate_key;
 
 void
-initWeb (struct Webenvironment *env){
-cprintf("set websgetwar\n");
+initWeb (struct Webenvironment *env)
+{
+  cprintf ("set websgetwar\n");
   websGetVar = env->PwebsGetVar;
   httpd_filter_name = env->Phttpd_filter_name;
-  wl_client_macs=env->Pwl_client_macs;
+  wl_client_macs = env->Pwl_client_macs;
   websWrite = env->PwebsWrite;
   do_ej_buffer = env->Pdo_ej_buffer;
   clone_wan_mac = env->Pclone_wan_mac;
@@ -534,7 +536,8 @@ validate_merge_ip_4 (webs_t wp, char *value, struct variable *v)
  * lan_ipaddr_3 = 1
  * get_merge_ipaddr("lan_ipaddr", ipaddr); produces ipaddr="192.168.1.1"
  */
-int get_merge_ipaddr (webs_t wp, char *name, char *ipaddr)
+int
+get_merge_ipaddr (webs_t wp, char *name, char *ipaddr)
 {
   char ipname[30];
   int i;
@@ -585,6 +588,7 @@ validate_merge_ipaddrs (webs_t wp, char *value, struct variable *v)
   if (valid_ipaddr (wp, ipaddr, v))
     nvram_set (v->name, ipaddr);
 }
+
 /* Example:
  * wan_mac_0 = 00
  * wan_mac_1 = 11
@@ -2377,7 +2381,7 @@ validate_aliases (webs_t wp, char *value, struct variable *v)
       which = &alias_variables[0];
       if (strcmp (user, ""))
 	{
-	  if (!valid_name(wp, user, &which[0]))
+	  if (!valid_name (wp, user, &which[0]))
 	    {
 	      continue;
 	    }
@@ -2389,7 +2393,7 @@ validate_aliases (webs_t wp, char *value, struct variable *v)
 
       if (strcmp (pass, ""))
 	{
-	  if (!valid_name(wp, pass, &which[1]))
+	  if (!valid_name (wp, pass, &which[1]))
 	    {
 	      continue;
 	    }
@@ -3443,8 +3447,7 @@ validate_catchall (webs_t wp, char *value, struct variable *v)
 
 
 void save_olsrd (webs_t wp);
-void
-addDeletion (char *word);
+void addDeletion (char *word);
 
 void
 validate_static_route (webs_t wp, char *value, struct variable *v)

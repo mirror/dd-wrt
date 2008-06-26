@@ -115,4 +115,3 @@ protocol_to_num (char *proto)
   else
     return 0;
 }
-
