@@ -534,15 +534,15 @@ alarm_handler (int i)
       (*(event->func)) ((timer_t) event, (int) event->arg);
 
       /* If the event has been cancelled, do NOT put it back on the queue. */
- 		/* Check for TFLAG_QUEUED is to avoid pathologic case, when after
- 		 * dequeueing event handler deletes its own timer and allocates new one
- 		 * which (at least in some cases) gets the same pointer and thus its
- 		 * 'flags' will be rewritten, most notably TFLAG_CANCELLED, and, to
- 		 * complete the disaster, it will be queued. alarm_handler tries to
- 		 * enqueue 'event' (which is on the same memory position as newly
- 		 * allocated timer), which results in queueing the same pointer once
- 		 * more. And this way, loop in event queue is created. */
- 	if ( !(event->flags & TFLAG_CANCELLED) && !(event->flags & TFLAG_QUEUED) ) 
+      /* Check for TFLAG_QUEUED is to avoid pathologic case, when after
+       * dequeueing event handler deletes its own timer and allocates new one
+       * which (at least in some cases) gets the same pointer and thus its
+       * 'flags' will be rewritten, most notably TFLAG_CANCELLED, and, to
+       * complete the disaster, it will be queued. alarm_handler tries to
+       * enqueue 'event' (which is on the same memory position as newly
+       * allocated timer), which results in queueing the same pointer once
+       * more. And this way, loop in event queue is created. */
+      if (!(event->flags & TFLAG_CANCELLED) && !(event->flags & TFLAG_QUEUED))
 	{
 
 	  // if the event is a recurring event, reset the timer and
