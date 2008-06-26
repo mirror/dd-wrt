@@ -1507,13 +1507,14 @@ diag_led (int type, int act)
 {
   int brand = getRouterBrand ();
 
-  if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G3G || brand == ROUTER_WRT300NV11)
+  if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G3G
+      || brand == ROUTER_WRT300NV11)
     return diag_led_4712 (type, act);
   else if (brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
     return diag_led_4702 (type, act);
   else
     if ((brand == ROUTER_WRTSL54GS || brand == ROUTER_WRT350N
-	 || brand == ROUTER_WRT310N 
+	 || brand == ROUTER_WRT310N
 	 || brand == ROUTER_BUFFALO_WZRG144NH) && type == DIAG)
     return diag_led_4704 (type, act);
   else
@@ -1539,17 +1540,10 @@ led_control (int type, int act)
   return 0;
 #else
 
-#ifdef HAVE_GATEWORX
-  int board = getRouterBrand ();
-  char *gpio = "3";
-  if (board == ROUTER_BOARD_GATEWORX_SWAP)
-    gpio = "4";
-#endif
   int use_gpio = 0x0f;
   int gpio_value;
-  char val[4];
-  char enable[16];
-  char disable[16];
+  int enable;
+  int disable;
 
   int power_gpio = 0x0f;
   int diag_gpio = 0x0f;
@@ -1565,6 +1559,12 @@ led_control (int type, int act)
   switch (getRouterBrand ())	//gpio definitions here: 0xYZ, Y=0:normal, Y=1:inverted, Z:gpio number (f=disabled)
     {
 #ifndef HAVE_BUFFALO
+    case ROUTER_BOARD_GATEWORX:
+      connected_gpio = 0x3;
+      break;
+    case ROUTER_BOARD_GATEWORX_SWAP:
+      connected_gpio = 0x4;
+      break;
     case ROUTER_LINKSYS_WRH54G:
       diag_gpio = 0x11;		//power led blink / off to indicate factory defaults
       break;
@@ -1601,11 +1601,11 @@ led_control (int type, int act)
     case ROUTER_LINKSYS_WRT55AG:
       connected_gpio = 0x13;
       break;
-#endif
     case ROUTER_DLINK_DIR330:
       diag_gpio = 0x16;
       connected_gpio = 0x14;
       break;
+#endif
     case ROUTER_BUFFALO_WBR54G:
       diag_gpio = 0x17;
       break;
@@ -1626,31 +1626,6 @@ led_control (int type, int act)
       ses_gpio = 0x11;
       break;
     case ROUTER_BOARD_WHRAG108:
-      diag_gpio = 0x17;
-      bridge_gpio = 0x14;
-      ses_gpio = 0x10;
-      break;
-#ifdef HAVE_DIR300
-    case ROUTER_BOARD_FONERA:
-      diag_gpio = 0x03;
-      bridge_gpio = 0x04;
-      ses_gpio = 0x01;
-      break;
-#endif
-#ifdef HAVE_DIR400
-    case ROUTER_BOARD_FONERA2200:
-      diag_gpio = 0x03;
-      bridge_gpio = 0x04;
-      ses_gpio = 0x01;
-      break;
-#endif
-#ifdef HAVE_WRK54G
-    case ROUTER_BOARD_FONERA:
-      diag_gpio = 0x17;
-      dmz_gpio = 0x05;
-      break;
-#endif
-    case ROUTER_BOARD_TW6600:
       diag_gpio = 0x17;
       bridge_gpio = 0x14;
       ses_gpio = 0x10;
@@ -1676,6 +1651,31 @@ led_control (int type, int act)
       ses_gpio = 0x12;
       break;
 #ifndef HAVE_BUFFALO
+#ifdef HAVE_DIR300
+    case ROUTER_BOARD_FONERA:
+      diag_gpio = 0x03;
+      bridge_gpio = 0x04;
+      ses_gpio = 0x01;
+      break;
+#endif
+#ifdef HAVE_DIR400
+    case ROUTER_BOARD_FONERA2200:
+      diag_gpio = 0x03;
+      bridge_gpio = 0x04;
+      ses_gpio = 0x01;
+      break;
+#endif
+#ifdef HAVE_WRK54G
+    case ROUTER_BOARD_FONERA:
+      diag_gpio = 0x17;
+      dmz_gpio = 0x05;
+      break;
+#endif
+    case ROUTER_BOARD_TW6600:
+      diag_gpio = 0x17;
+      bridge_gpio = 0x14;
+      ses_gpio = 0x10;
+      break;
     case ROUTER_MOTOROLA:
       power_gpio = 0x01;
       diag_gpio = 0x11;		//power led blink / off to indicate factory defaults
@@ -1746,7 +1746,7 @@ led_control (int type, int act)
       break;
     case ROUTER_WRT300NV11:
       ses_gpio = 0x15;
-//      diag_gpio = 0x11;		//power led blink / off to indicate fac.def.
+//      diag_gpio = 0x11;               //power led blink / off to indicate fac.def.
       break;
     case ROUTER_WRT310N:
       connected_gpio = 0x13;
@@ -1830,50 +1830,26 @@ led_control (int type, int act)
       use_gpio = usb_gpio;
       break;
     }
-#ifndef HAVE_XSCALE
   if ((use_gpio & 0x0f) != 0x0f)
     {
       gpio_value = use_gpio & 0x0f;
-      sprintf (val, "%d", gpio_value);
-      sprintf (enable, "%s", (use_gpio & 0x10) == 0 ? "enable" : "disable");
-      sprintf (disable, "%s", (use_gpio & 0x10) == 0 ? "disable" : "enable");
-#endif
+      enable = (use_gpio & 0x10) == 0 ? 1 : 0;
+      disable = (use_gpio & 0x10) == 0 ? 0 : 1;
       switch (act)
 	{
 	case LED_ON:
-#ifdef HAVE_XSCALE
-	  if (type == LED_CONNECTED)
-	    eval ("gpio", "-w", gpio, "0");
-#else
-	  eval ("gpio", enable, val);
-#endif
+	  set_gpio (gpio_value, enable);
 	  break;
 	case LED_OFF:
-#ifdef HAVE_XSCALE
-	  if (type == LED_CONNECTED)
-	    eval ("gpio", "-w", gpio, "1");
-#else
-	  eval ("gpio", disable, val);
-#endif
+	  set_gpio (gpio_value, disable);
 	  break;
 	case LED_FLASH:	//will lit the led for 1 sec.
-#ifdef HAVE_XSCALE
-	  if (type == LED_CONNECTED)
-	    {
-	      eval ("gpio", "-w", gpio, "0");
-	      sleep (1);
-	      eval ("gpio", "-w", gpio, "1");
-	    }
-#else
-	  eval ("gpio", enable, val);
+	  set_gpio (gpio_value, enable);
 	  sleep (1);
-	  eval ("gpio", disable, val);
-#endif
+	  set_gpio (gpio_value, disable);
 	  break;
 	}
-#ifndef HAVE_XSCALE
     }
-#endif
   return 1;
 
 #endif
@@ -1967,7 +1943,9 @@ get_dns_list (void)
   /* if < 3 DNS servers found, try to insert alternates */
   while (dns_list->num_servers < 3 && altdns_index <= 3)
     {
-      char altdnsvar[32] = { 0 };
+      char altdnsvar[32] = {
+	0
+      };
 
       snprintf (altdnsvar, 31, "altdns%d", altdns_index);
 
@@ -2047,7 +2025,9 @@ dns_to_resolv (void)
 int
 get_single_ip (char *ipaddr, int which)
 {
-  int ip[4] = { 0, 0, 0, 0 };
+  int ip[4] = {
+    0, 0, 0, 0
+  };
   int ret;
 
   ret = sscanf (ipaddr, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
@@ -2707,8 +2687,7 @@ set_ip_forward (char c)
 
 
 static char *device_name[] = {
-  "eth0",
-  "qos0"
+  "eth0", "qos0"
 };
 
 char *
@@ -2833,12 +2812,15 @@ get_wl_assoc_mac (int *c)
   count = *c = 0;
 
 #ifdef HAVE_MSSID
-  char assoccmd[4][32] =
-    { "wl assoclist", "wl -i wl0.1 assoclist", "wl -i wl0.2 assoclist",
-"wl -i wl0.3 assoclist" };
+  char assoccmd[4][32] = {
+    "wl assoclist", "wl -i wl0.1 assoclist", "wl -i wl0.2 assoclist",
+    "wl -i wl0.3 assoclist"
+  };
   int ifcnt = 4;
 #else
-  char assoccmd[1][16] = { "wl assoclist" };
+  char assoccmd[1][16] = {
+    "wl assoclist"
+  };
   int ifcnt = 1;
 #endif
   int i;
@@ -2891,19 +2873,24 @@ get_wl_assoc_mac (int *c)
 
 struct mtu_lists mtu_list[] = {
 #ifdef BUFFALO_JP
-  {"pppoe", "576", "1454"},
+  {
+   "pppoe", "576", "1454"},
 #else
-  {"pppoe", "576", "1492"},
+  {
+   "pppoe", "576", "1492"},
 #endif
-
-  {"pptp", "576", "1460"},
-
-  {"l2tp", "576", "1460"},
-
-  {"dhcp", "576", "1500"},
-  {"static", "576", "1500"},
-  {"heartbeat", "576", "1500"},
-  {"default", "576", "1500"},	// The value must be at last
+  {
+   "pptp", "576", "1460"},
+  {
+   "l2tp", "576", "1460"},
+  {
+   "dhcp", "576", "1500"},
+  {
+   "static", "576", "1500"},
+  {
+   "heartbeat", "576", "1500"},
+  {
+   "default", "576", "1500"},	// The value must be at last
 };
 
 struct mtu_lists *
@@ -3220,7 +3207,9 @@ sv_valid_range (char *value, int low, int high)
 int
 sv_valid_statics (char *value)
 {
-  char ip[16] = { 0 }, mac[18] =
+  char ip[16] = {
+    0
+  }, mac[18] =
   {
   0}, hostname[255] =
   {
@@ -3362,8 +3351,7 @@ route_manip (int cmd, char *name, int metric, char *dst, char *gateway,
   close (s);
   return 0;
 
-err:
-  close (s);
+err:close (s);
   perror (name);
   return errno;
 }
@@ -3384,8 +3372,9 @@ route_del (char *name, int metric, char *dst, char *gateway, char *genmask)
 
 
 #ifdef HAVE_MADWIFI
-static char *stalist[] =
-  { "ath0", "ath1", "ath2", "ath3", "ath4", "ath5", "ath6", "ath8", "ath9" };
+static char *stalist[] = {
+  "ath0", "ath1", "ath2", "ath3", "ath4", "ath5", "ath6", "ath8", "ath9"
+};
 char *
 getSTA (void)
 {
@@ -4299,7 +4288,9 @@ getmask (char *nmask)
 {
 
   int loopmask = 0;
-  int ip[4] = { 0, 0, 0, 0 };
+  int ip[4] = {
+    0, 0, 0, 0
+  };
 
   sscanf (nmask, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
 
@@ -4323,7 +4314,7 @@ int
 doMultiCast (void)
 {
   char name[80], *next;
-  int ifcount=0;
+  int ifcount = 0;
   if (nvram_match ("wan_proto", "disabled"))
     return 0;
   if (nvram_match ("block_multicast", "0"))
@@ -4332,7 +4323,8 @@ doMultiCast (void)
     }
   foreach (name, nvram_safe_get ("lan_ifnames"), next)
   {
-    if (nvram_nmatch ("1", "%s_multicast", name) && nvram_nmatch ("0", "%s_bridged", name))
+    if (nvram_nmatch ("1", "%s_multicast", name)
+	&& nvram_nmatch ("0", "%s_bridged", name))
       {
 	ifcount++;
       }

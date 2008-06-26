@@ -534,7 +534,8 @@ extern int find_each (char *name, int len,
 #ifndef VISUALSOURCE
 extern int generate_key;
 extern int clone_wan_mac;
-extern int httpd_filter_name (char *old_name, char *new_name, size_t size,int type);
+extern int httpd_filter_name (char *old_name, char *new_name, size_t size,
+			      int type);
 #else
 extern int *generate_key;
 extern int *clone_wan_mac;
@@ -639,15 +640,17 @@ extern void ej_show_rflowif (webs_t wp, int argc, char_t ** argv);
 
 void ej_showbridgesettings (webs_t wp, int argc, char_t ** argv);
 
-void *start_validator_nofree (char *name, void *handle,webs_t wp, char *value, struct variable *v);
-int start_validator (char *name,webs_t wp, char *value, struct variable *v);
-void start_gozila (char *name,webs_t wp);
+void *start_validator_nofree (char *name, void *handle, webs_t wp,
+			      char *value, struct variable *v);
+int start_validator (char *name, webs_t wp, char *value, struct variable *v);
+void start_gozila (char *name, webs_t wp);
 
 
 #ifdef VISUALSOURCE
 extern void (*do_ej_buffer) (char *buffer, webs_t stream);
 #define do_ej_buffer Udo_ej_buffer
-extern int (*Uhttpd_filter_name) (char *old_name, char *new_name, size_t size,int type);
+extern int (*Uhttpd_filter_name) (char *old_name, char *new_name, size_t size,
+				  int type);
 #define httpd_filter_name Uhttpd_filter_name
 extern char *(*UwebsGetVar) (webs_t wp, char *var, char *d);
 #define websGetVar UwebsGetVar
@@ -677,7 +680,8 @@ extern websRomPageIndexType *UwebsRomPageIndex;
 #ifdef VALIDSOURCE
 extern void (*Udo_ej_buffer) (char *buffer, webs_t stream);
 #define do_ej_buffer Udo_ej_buffer
-extern int (*Uhttpd_filter_name) (char *old_name, char *new_name, size_t size,int type);
+extern int (*Uhttpd_filter_name) (char *old_name, char *new_name, size_t size,
+				  int type);
 #define httpd_filter_name Uhttpd_filter_name
 extern char *(*UwebsGetVar) (webs_t wp, char *var, char *d);
 #define websGetVar UwebsGetVar
