@@ -1,5 +1,5 @@
 extern struct variable variables[];
-																																																																																																																																																																/* channel info structure *///from 11.9
+																																																																																																																																																																			    /* channel info structure *///from 11.9
 
 /* Hook to write wl_* default set through to wl%d_* variable set */
 void
@@ -28,4 +28,3 @@ wl_unit (webs_t wp, char *value, struct variable *v)
   for (t = cur; t < last; t++)
     nvram_set (strcat_r (prefix, &t->name[3], tmp), t->value);
 }
-

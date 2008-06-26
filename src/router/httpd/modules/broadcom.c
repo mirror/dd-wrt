@@ -54,7 +54,7 @@
 
 int gozila_action = 0;
 int debug_value = 0;
-int clone_wan_mac = 0; 
+int clone_wan_mac = 0;
 int generate_key = 0;
 int browser_method = 0;
 
@@ -237,7 +237,7 @@ Initnvramtab ()
 	      while (1)
 		{
 		  tmp = (struct variable *) malloc (sizeof (struct variable));
-		  memset(tmp,0,sizeof (struct variable));
+		  memset (tmp, 0, sizeof (struct variable));
 		  tmp->name = getFileString (in);
 		  if (tmp->name == NULL)
 		    break;
@@ -643,6 +643,7 @@ variables_arraysize (void)
 //      return ARRAYSIZE(variables);
   return varcount;
 }
+
 //and now the tricky part (more dirty as dirty)
 void
 do_filtertable (char *path, webs_t stream, char *query)
@@ -719,7 +720,7 @@ validate_cgi (webs_t wp)
     return;
 #endif
   int alen = variables_arraysize ();
-  void *handle =NULL;
+  void *handle = NULL;
   for (i = 0; i < alen; i++)
     {
       if (variables[i] == NULL)
@@ -734,26 +735,29 @@ validate_cgi (webs_t wp)
 	{
 	  if (variables[i]->validatename)
 	    {
-	    cprintf("call validator_nofree %s\n",variables[i]->validatename);
-	    handle = start_validator_nofree(variables[i]->validatename,handle,wp,value,variables[i]);
-	    }else
-	  if (variables[i]->validate2name)
+	      cprintf ("call validator_nofree %s\n",
+		       variables[i]->validatename);
+	      handle =
+		start_validator_nofree (variables[i]->validatename, handle,
+					wp, value, variables[i]);
+	    }
+	  else if (variables[i]->validate2name)
 	    {
-	    cprintf("call gozila %s\n",variables[i]->validate2name);
-	    start_gozila(variables[i]->validate2name,wp);
+	      cprintf ("call gozila %s\n", variables[i]->validate2name);
+	      start_gozila (variables[i]->validate2name, wp);
 //            fprintf(stderr,"validating %s = %s\n",variables[i]->name,value);
-//	      variables[i]->validate (wp, value, variables[i]);
+//            variables[i]->validate (wp, value, variables[i]);
 	    }
 	  else
 	    {
-//	      variables[i]->validate2 (wp);
+//            variables[i]->validate2 (wp);
 	    }
 	}
 
     }
   cprintf ("close handle\n");
-    if (handle)
-	dlclose(handle);
+  if (handle)
+    dlclose (handle);
   cprintf ("all vars validated\n");
 }
 
@@ -798,7 +802,8 @@ static struct gozila_action gozila_actions[] = {
   {"Status", "Connect_pptp", "start_pptp", 1, RESTART, NULL},
   {"Status", "Disconnect_pptp", "stop_pptp", 2, SYS_RESTART, "stop_ppp"},
   {"Status", "Connect_heartbeat", "start_heartbeat", 1, RESTART, NULL},
-  {"Status", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART,"stop_ppp"},
+  {"Status", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART,
+   "stop_ppp"},
   {"Filters", "save", "filters", 1, REFRESH, "save_policy"},
   {"Filters", "delete", "filters", 1, REFRESH, "single_delete_policy"},
   {"FilterSummary", "delete", "filters", 1, REFRESH, "summary_delete_policy"},
@@ -887,7 +892,8 @@ static struct gozila_action gozila_actions[] = {
   {"Hotspot", "add_iradius", "", 0, REFRESH, "raduser_add"},
 #endif
   {"ForwardSpec", "add_forward_spec", "", 0, REFRESH, "forwardspec_add"},
-  {"ForwardSpec", "remove_forward_spec", "", 0, REFRESH, "forwardspec_remove"},
+  {"ForwardSpec", "remove_forward_spec", "", 0, REFRESH,
+   "forwardspec_remove"},
   {"Triggering", "add_trigger", "", 0, REFRESH, "trigger_add"},
   {"Triggering", "remove_trigger", "", 0, REFRESH, "trigger_remove"},
   {"Port_Services", "save_services", "filters", 2, REFRESH,
@@ -961,7 +967,7 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       action = act->action;
       if (act->goname)
 	{
-	  start_gozila(act->goname,wp);
+	  start_gozila (act->goname, wp);
 	}
     }
   else
@@ -1016,8 +1022,8 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   websDone (wp, 200);
 
   gozila_action = 0;		//reset gozila_action
-  generate_key=0;
-  clone_wan_mac=0;
+  generate_key = 0;
+  clone_wan_mac = 0;
 
   return 1;
 }
@@ -1151,14 +1157,14 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 
   if (!query)
     {
-    goto footer;
+      goto footer;
     }
   if (legal_ip_netmask
       ("lan_ipaddr", "lan_netmask",
        nvram_safe_get ("http_client_ip")) == TRUE)
-       browser_method=USE_LAN;
+    browser_method = USE_LAN;
   else
-       browser_method=USE_WAN;
+    browser_method = USE_WAN;
 
   /**********   get all webs var **********/
 
@@ -1202,7 +1208,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	  action = act->action;
 
 	  if (act->goname)
-	    start_gozila(act->goname,wp);
+	    start_gozila (act->goname, wp);
 	}
       else
 	{
@@ -1264,10 +1270,10 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 
 footer:
 
-  if (nvram_match("do_reboot","1"))
+  if (nvram_match ("do_reboot", "1"))
     {
-    nvram_set("do_reboot","0");
-    action = REBOOT;
+      nvram_set ("do_reboot", "0");
+      action = REBOOT;
     }
   /* The will let PC to re-get a new IP Address automatically */
   if (need_reboot)
@@ -1280,25 +1286,25 @@ footer:
 
   if (action != REBOOT)
     {
-	if (my_next_page[0] != '\0')
-	  sprintf (path, "%s", my_next_page);
-	else
-	  {
-	    next_page = websGetVar (wp, "next_page", NULL);
-	    if (next_page)
-	      sprintf (path, "%s", next_page);
-	    else
-	      sprintf (path, "%s.asp", submit_button);
-	  }
+      if (my_next_page[0] != '\0')
+	sprintf (path, "%s", my_next_page);
+      else
+	{
+	  next_page = websGetVar (wp, "next_page", NULL);
+	  if (next_page)
+	    sprintf (path, "%s", next_page);
+	  else
+	    sprintf (path, "%s.asp", submit_button);
+	}
 
-	cprintf ("refresh to %s\n", path);
-	if (!strncmp (path, "WL_FilterTable", strlen ("WL_FilterTable")))
-	  do_filtertable (path, wp, NULL);	//refresh
-	else if (!strncmp (path, "Wireless_WDS", strlen ("Wireless_WDS")))
-	  do_wds (path, wp, NULL);	//refresh
-	else
-	  do_ej (path, wp, NULL);	//refresh
-	websDone (wp, 200);
+      cprintf ("refresh to %s\n", path);
+      if (!strncmp (path, "WL_FilterTable", strlen ("WL_FilterTable")))
+	do_filtertable (path, wp, NULL);	//refresh
+      else if (!strncmp (path, "Wireless_WDS", strlen ("Wireless_WDS")))
+	do_wds (path, wp, NULL);	//refresh
+      else
+	do_ej (path, wp, NULL);	//refresh
+      websDone (wp, 200);
     }
   else
     {
@@ -1438,57 +1444,57 @@ do_stylecss (char *url, webs_t stream, char *query)
 
   long blue[30] =
     { 0x36f, 0xfff, 0x68f, 0x24d, 0x24d, 0x68f, 0x57f, 0xccf, 0x78f, 0x35d,
-0x35c, 0x78f,
+    0x35c, 0x78f,
     0x78f, 0xfff, 0x9af, 0x46e, 0x46e, 0x9af, 0x36f, 0xccf, 0xfff, 0x69f,
-      0xfff, 0xfff,
+    0xfff, 0xfff,
     0x999, 0x69f, 0x69f, 0xccf, 0x78f, 0xfff
   };
 
   long cyan[30] =
     { 0x099, 0xfff, 0x3bb, 0x066, 0x066, 0x3bb, 0x3bb, 0xcff, 0x4cc, 0x1aa,
-0x1aa, 0x4cc,
+    0x1aa, 0x4cc,
     0x6cc, 0xfff, 0x8dd, 0x5bb, 0x5bb, 0x8dd, 0x099, 0xcff, 0xfff, 0x3bb,
-      0xfff, 0xfff,
+    0xfff, 0xfff,
     0x999, 0x3bb, 0x3bb, 0xcff, 0x6cc, 0xfff
   };
 
   long elegant[30] =
     { 0x30519c, 0xfff, 0x496fc7, 0x496fc7, 0x496fc7, 0x496fc7, 0x496fc7,
-0xfff, 0x6384cf, 0x6384cf, 0x6384cf, 0x6384cf,
+    0xfff, 0x6384cf, 0x6384cf, 0x6384cf, 0x6384cf,
     0x6384cf, 0xfff, 0x849dd9, 0x849dd9, 0x849dd9, 0x849dd9, 0x30519c, 0xfff,
-      0xfff, 0x496fc7, 0xfff, 0xfff,
+    0xfff, 0x496fc7, 0xfff, 0xfff,
     0x999, 0x496fc7, 0x496fc7, 0xfff, 0x6384cf, 0xfff
   };
 
   long green[30] =
     { 0x090, 0xfff, 0x3b3, 0x060, 0x060, 0x3b3, 0x3b3, 0xcfc, 0x4c4, 0x1a1,
-0x1a1, 0x4c4,
+    0x1a1, 0x4c4,
     0x6c6, 0xfff, 0x8d8, 0x5b5, 0x5b5, 0x8d8, 0x090, 0xcfc, 0xfff, 0x3b3,
-      0xfff, 0xfff,
+    0xfff, 0xfff,
     0x999, 0x3b3, 0x3b3, 0xcfc, 0x6c6, 0xfff
   };
 
   long orange[30] =
     { 0xf26522, 0xfff, 0xff8400, 0xff8400, 0xff8400, 0xff8400, 0xff8400,
-0xfff, 0xfeb311, 0xfeb311, 0xfeb311, 0xfeb311,
+    0xfff, 0xfeb311, 0xfeb311, 0xfeb311, 0xfeb311,
     0xff9000, 0xfff, 0xffa200, 0xffa200, 0xffa200, 0xffa200, 0xf26522, 0xfff,
-      0xfff, 0xff8400, 0xfff, 0xfff,
+    0xfff, 0xff8400, 0xfff, 0xfff,
     0x999, 0xff8400, 0xff8400, 0xfff, 0xff9000, 0xfff
   };
 
   long red[30] =
     { 0xc00, 0xfff, 0xe33, 0x800, 0x800, 0xe33, 0xd55, 0xfcc, 0xe77, 0xc44,
-0xc44, 0xe77,
+    0xc44, 0xe77,
     0xe77, 0xfff, 0xf99, 0xd55, 0xd55, 0xf99, 0xc00, 0xfcc, 0xfff, 0xd55,
-      0xfff, 0xfff,
+    0xfff, 0xfff,
     0x999, 0xd55, 0xd55, 0xfcc, 0xe77, 0xfff
   };
 
   long yellow[30] =
     { 0xcc0, 0x000, 0xee3, 0x880, 0x880, 0xee3, 0xdd5, 0x660, 0xee7, 0xbb4,
-0xbb4, 0xee7,
+    0xbb4, 0xee7,
     0xee7, 0x000, 0xff9, 0xcc5, 0xcc5, 0xff9, 0x990, 0x660, 0x000, 0xdd5,
-      0x000, 0xfff,
+    0x000, 0xfff,
     0x999, 0xdd5, 0xdd5, 0x660, 0xee7, 0x000
   };
 
@@ -1569,16 +1575,14 @@ static void
 do_stylecss_ie (char *url, webs_t stream, char *query)
 {
   websWrite (stream, ".submitFooter input {\n"
-  "padding:.362em .453em;\n"
-  "}\n"
-  "fieldset {\n"
-  "padding-top:0;\n"
-  "}\n"
-  "fieldset legend {\n"
-  "margin-left:-9px;\n" 
-  "margin-bottom:8px;\n" 
-  "padding:0 .09em;\n" 
-  "}\n");
+	     "padding:.362em .453em;\n"
+	     "}\n"
+	     "fieldset {\n"
+	     "padding-top:0;\n"
+	     "}\n"
+	     "fieldset legend {\n"
+	     "margin-left:-9px;\n"
+	     "margin-bottom:8px;\n" "padding:0 .09em;\n" "}\n");
 }
 
 /*
@@ -1727,16 +1731,18 @@ do_ttgraph (char *url, webs_t stream, char *query)
   int i = 0;
   char months[12][12] =
     { "share.jan", "share.feb", "share.mar", "share.apr", "share.may",
-"share.jun",
+    "share.jun",
     "share.jul", "share.aug", "share.sep", "share.oct", "share.nov",
-      "share.dec"
+    "share.dec"
   };
   unsigned long rcvd[31] =
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0 };
+    0, 0, 0, 0, 0, 0, 0
+  };
   unsigned long sent[31] =
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-0, 0, 0, 0, 0, 0, 0 };
+    0, 0, 0, 0, 0, 0, 0
+  };
   unsigned long max = 5, smax = 5, f = 1;
   unsigned long totin = 0;
   unsigned long totout = 0;
@@ -2076,7 +2082,7 @@ int
 httpd_filter_name (char *old_name, char *new_name, size_t size, int type)
 {
   int i, j, match;
-  cprintf("httpd_filter_name\n");
+  cprintf ("httpd_filter_name\n");
 
   struct pattern
   {
@@ -2435,6 +2441,3 @@ struct ej_handler ej_handlers[] = {
 };
 
 #endif
-
-
-

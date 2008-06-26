@@ -850,15 +850,16 @@ handle_request (void)
 	}
       int changepassword = 0;
 #ifdef HAVE_REGISTER
-  if (!registered)
-    {
-      if (endswith (file, ".asp"))
-	file = "register.asp";
-      else if (endswith (file, ".htm"))
-	file = "register.asp";
-      else if (endswith (file, ".html"))
-	file = "register.asp";
-    }else
+      if (!registered)
+	{
+	  if (endswith (file, ".asp"))
+	    file = "register.asp";
+	  else if (endswith (file, ".htm"))
+	    file = "register.asp";
+	  else if (endswith (file, ".html"))
+	    file = "register.asp";
+	}
+      else
 #endif
 	{
 	  if ((nvram_match ("http_username", DEFAULT_USER)
@@ -877,12 +878,12 @@ handle_request (void)
 	  else
 	    {
 	      if (endswith (file, "changepass.asp"))
-	  		{
-	    if (nvram_invmatch ("status_auth", "0"))
-	      file = "Info.htm";
-	    else
-	      file = "index.asp";
-	  		}
+		{
+		  if (nvram_invmatch ("status_auth", "0"))
+		    file = "Info.htm";
+		  else
+		    file = "index.asp";
+		}
 	    }
 	}
       for (handler = &mime_handlers[0]; handler->pattern; handler++)
@@ -1622,6 +1623,3 @@ check_cipher (void)
 	      SSL_CIPHER_get_version (ciph), SSL_CIPHER_get_name (ciph));
 }
 #endif
-
-
-

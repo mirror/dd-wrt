@@ -140,43 +140,45 @@ extern char *live_translate (char *tran);
 
 
 
-static int initWeb(void *handle)
+static int
+initWeb (void *handle)
 {
-struct Webenvironment *env;
-env = (struct Webenvironment *)malloc(sizeof(struct Webenvironment));
-void (*init) (struct Webenvironment *env);
+  struct Webenvironment *env;
+  env = (struct Webenvironment *) malloc (sizeof (struct Webenvironment));
+  void (*init) (struct Webenvironment * env);
 
-  init = (void (*)(struct Webenvironment *env)) dlsym (handle, "initWeb");
+  init = (void (*)(struct Webenvironment * env)) dlsym (handle, "initWeb");
   if (!init)
     {
       fprintf (stderr, "error, initWeb not found\n");
       return -1;
     }
-env->PwebsGetVar = websGetVar;
-env->PwebsWrite = websWrite;
-cprintf("httpd_filter_name %p:%d\n",httpd_filter_name,sizeof(struct Webenvironment));
-env->Phttpd_filter_name = httpd_filter_name;
-env->Pwl_client_macs = wl_client_macs;
-env->Pdo_ej_buffer = do_ej_buffer;
-env->Pdo_ej = do_ej;
+  env->PwebsGetVar = websGetVar;
+  env->PwebsWrite = websWrite;
+  cprintf ("httpd_filter_name %p:%d\n", httpd_filter_name,
+	   sizeof (struct Webenvironment));
+  env->Phttpd_filter_name = httpd_filter_name;
+  env->Pwl_client_macs = wl_client_macs;
+  env->Pdo_ej_buffer = do_ej_buffer;
+  env->Pdo_ej = do_ej;
 #ifdef HAVE_HTTPS
-env->Pdo_ssl = do_ssl;
+  env->Pdo_ssl = do_ssl;
 #endif
-env->PejArgs = ejArgs;
-env->PgetWebsFile = getWebsFile;
-env->Pwfputc = wfputc;
-env->Pwfputs = wfputs;
-env->Pwfflush = wfflush;
-env->PwebsRomPageIndex = websRomPageIndex;
-env->Pgozila_action = gozila_action;
-env->Pbrowser_method = browser_method;
-env->Pclone_wan_mac = &clone_wan_mac;
-env->Pgenerate_key = &generate_key;
-env->Plive_translate = live_translate;
-cprintf("call initWeb\n");
-init (env);
-free(env);
-return 0;
+  env->PejArgs = ejArgs;
+  env->PgetWebsFile = getWebsFile;
+  env->Pwfputc = wfputc;
+  env->Pwfputs = wfputs;
+  env->Pwfflush = wfflush;
+  env->PwebsRomPageIndex = websRomPageIndex;
+  env->Pgozila_action = gozila_action;
+  env->Pbrowser_method = browser_method;
+  env->Pclone_wan_mac = &clone_wan_mac;
+  env->Pgenerate_key = &generate_key;
+  env->Plive_translate = live_translate;
+  cprintf ("call initWeb\n");
+  init (env);
+  free (env);
+  return 0;
 }
 
 void
@@ -190,9 +192,9 @@ start_gozila (char *name, webs_t wp)
     {
       return;
     }
-  if (initWeb(handle)!=0)
+  if (initWeb (handle) != 0)
     {
-    return;
+      return;
     }
 
 
@@ -220,9 +222,9 @@ start_validator (char *name, webs_t wp, char *value, struct variable *v)
       return FALSE;
     }
 
-  if (initWeb(handle)!=0)
+  if (initWeb (handle) != 0)
     {
-    return FALSE;
+      return FALSE;
     }
   int ret = FALSE;
 
@@ -264,10 +266,10 @@ start_validator_nofree (char *name, void *handle, webs_t wp, char *value,
   sprintf (service, "%s", name);
   if (nohandle)
     {
-  if (initWeb(handle)!=0)
-    {
-    return handle;
-    }
+      if (initWeb (handle) != 0)
+	{
+	  return handle;
+	}
     }
   cprintf ("resolving %s\n", service);
   fptr =
@@ -283,36 +285,37 @@ start_validator_nofree (char *name, void *handle, webs_t wp, char *value,
 }
 
 
-void *call_ej (char *name,void *handle,webs_t wp, int argc, char_t ** argv)
+void *
+call_ej (char *name, void *handle, webs_t wp, int argc, char_t ** argv)
 {
 //  fprintf (stderr,"call_ej %s\n", name);
   char service[64];
   int nohandle = 0;
   if (!handle)
     {
-      cprintf("load visual_service\n");
+      cprintf ("load visual_service\n");
       handle = load_visual_service (name);
       nohandle = 1;
     }
   if (handle == NULL)
     {
-      cprintf("handle null\n");
+      cprintf ("handle null\n");
       return NULL;
     }
-  cprintf("pointer init\n");
-  void (*fptr) (webs_t wp, int argc,char_t **argv);
+  cprintf ("pointer init\n");
+  void (*fptr) (webs_t wp, int argc, char_t ** argv);
   sprintf (service, "ej_%s", name);
   if (nohandle)
     {
-      cprintf("init web\n");
-  if (initWeb(handle)!=0)
-    {
-    return handle;
-    }
+      cprintf ("init web\n");
+      if (initWeb (handle) != 0)
+	{
+	  return handle;
+	}
     }
   cprintf ("resolving %s\n", service);
-  fptr = (void (*)(webs_t wp, int argc,char_t **argv)) dlsym (handle,
-								   service);
+  fptr = (void (*)(webs_t wp, int argc, char_t ** argv)) dlsym (handle,
+								service);
   cprintf ("found. pointer is %p\n", fptr);
   if (fptr)
     (*fptr) (wp, argc, argv);

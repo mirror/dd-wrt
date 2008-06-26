@@ -20,7 +20,7 @@
 #endif
 static char *get_arg (char *args, char **next);
 //static void call(char *func, FILE *stream);
-static void *call (void *handle,char *func, webs_t stream);
+static void *call (void *handle, char *func, webs_t stream);
 #define PATTERN_BUFFER 1000
 
 #define LOG(a)			//fprintf(stderr,"%s\n",a);
@@ -80,7 +80,8 @@ get_arg (char *args, char **next)
 
   return arg;
 }
-static void *call (void *handle,char *func, webs_t stream)	//jimmy, https, 8/4/2003
+static void *
+call (void *handle, char *func, webs_t stream)	//jimmy, https, 8/4/2003
 {
   char *args, *end, *next;
   int argc;
@@ -101,7 +102,7 @@ static void *call (void *handle,char *func, webs_t stream)	//jimmy, https, 8/4/2
     }
 
   /* Call handler */
-return  call_ej(func,handle,stream,argc,argv);
+  return call_ej (func, handle, stream, argc, argv);
 }
 
 
@@ -276,7 +277,7 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		  *end++ = '\0';
 
 		  /* Call function */
-		  handle = call (handle,func, stream);
+		  handle = call (handle, func, stream);
 		}
 	      asp = NULL;
 	      len = 0;
@@ -292,7 +293,7 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
     }
   free (pattern);
   if (handle)
-    dlclose(handle);
+    dlclose (handle);
 }
 
 

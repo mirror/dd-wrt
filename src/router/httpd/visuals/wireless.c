@@ -305,7 +305,7 @@ get_hostname_ip (char *type, char *filename)
   fclose (fp);
 }
 
-int nv_count=0;
+int nv_count = 0;
 void
 save_hostname_ip (void)
 {
@@ -1015,5 +1015,3 @@ ej_wme_match_op (webs_t wp, int argc, char_t ** argv)
 
   return;
 }
-
-
