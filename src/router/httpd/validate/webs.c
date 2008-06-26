@@ -1054,6 +1054,7 @@ ping_wol (webs_t wp)
   sysprintf ("%s > %s 2>&1 &", wol_cmd, PING_TMP);
 
 }
+
 void
 diag_ping_start (webs_t wp)
 {
@@ -3413,6 +3414,7 @@ save_macmode (webs_t wp)
   return;
 
 }
+
 // handle UPnP.asp requests / added 10
 void
 tf_upnp (webs_t wp)

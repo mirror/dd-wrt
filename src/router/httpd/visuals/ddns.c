@@ -67,4 +67,3 @@ ej_show_ddns_status (webs_t wp, int argc, char_t ** argv)
 
   return;
 }
-

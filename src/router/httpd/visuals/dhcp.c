@@ -39,13 +39,13 @@ ej_dumpleases (webs_t wp, int argc, char_t ** argv)
   int macmask;
 
 #ifndef FASTWEB
-  if (argc<1)
+  if (argc < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
-macmask = atoi(argv[0]);
+  macmask = atoi (argv[0]);
   if (nvram_match ("dhcp_dnsmasq", "1"))
     {
       char mac[32];
@@ -236,7 +236,3 @@ macmask = atoi(argv[0]);
     }
   return;
 }
-
-
-
-
