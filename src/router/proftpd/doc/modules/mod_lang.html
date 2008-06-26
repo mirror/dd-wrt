@@ -1,0 +1,137 @@
+<!-- $Id: mod_lang.html,v 1.1 2006/09/09 01:15:05 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_lang.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD module mod_lang</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center>
+<h2><b>ProFTPD module <code>mod_lang</code></b></h2>
+</center>
+<hr><br>
+
+<p>
+<b>Internalization and Localization</b><br>
+RFC2640, LANG, NLS (Native Language Support)
+
+<p>
+The <code>mod_lang</code> module is ProFTPD's module for handling the LANG
+command.  This module is contained in the <code>mod_lang.c</code> file for
+ProFTPD 1.3.<i>x</i>, and is compiled in whenever the <code>--enable-nls</code>
+configure option is used.  Installation instructions are discussed
+<a href="#Installation">here</a>.
+
+<p>
+The most current version of <code>mod_lang</code> can be found in the
+ProFTPD source distribution:
+<pre>
+  <a href="http://www.proftpd.org/">http://www.proftpd.org/</a>
+</pre>
+
+<h2>Directives</h2>
+<ul>
+  <li><a href="#LangDefault">LangDefault</a>
+  <li><a href="#LangEngine">LangEngine</a>
+  <li><a href="#LangPath">LangPath</a>
+</ul>
+
+<p>
+<hr>
+<h2><a name="LangDefault">LangDefault</a></h2>
+<strong>Syntax:</strong> LangDefault <em>language</em><br>
+<strong>Default:</strong> LangDefault en<br>
+<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_lang<br>
+<strong>Compatibility:</strong> 1.3.1rc1
+
+<p>
+The <code>LangDefault</code> directive is used to specify the default
+language of specific server configuration.
+
+<p>
+Example:
+<pre>
+  # Set the default to be Italian
+  LangDefault it_IT
+</pre>
+
+<p>
+<hr>
+<h2><a name="LangEngine">LangEngine</a></h2>
+<strong>Syntax:</strong> LangEngine <em>on|off</em><br>
+<strong>Default:</strong> LangEngine on<br>
+<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_lang<br>
+<strong>Compatibility:</strong> 1.3.1rc1
+
+<p>
+The <code>LangEngine</code> directive enables or disables the module's
+handling of the LANG command.  If it is set to <em>off</em> this module does no
+localization of responses.
+
+<p>
+<hr>
+<h2><a name="LangPath">LangPath</a></h2>
+<strong>Syntax:</strong> LangPath <em>>path</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Module:</strong> mod_lang<br>
+<strong>Compatibility:</strong> 1.3.1rc1
+
+<p>
+The <code>LangPath</code> directive is used to configure an alternative
+directory from which <code>mod_lang</code> will load locale files.  By
+default, <code>mod_lang</code> uses <em>$prefix</em>/<code>locale/</code>,
+where <em>$prefix</em> is where you installed <code>proftpd</code>,
+<i>e.g.</i> <code>/usr/local/</code>.
+
+<p>
+The <em>path</em> parameter must be an absolute path.
+
+<p>
+Example:
+<pre>
+  LangPath /etc/proftpd/locale
+</pre>
+
+<p>
+Example:
+<pre>
+  LangPath /path/to/ftpd/locale
+</pre>
+
+<p>
+<hr>
+<h2><a name="Installation">Installation</a></h2>
+The <code>mod_lang</code> module is distributed with ProFTPD.  To enable use
+of DSO modules, use the <code>--enable-nls</code> configure option:
+<pre>
+  ./configure --enable-nls
+  make
+  make install
+</pre>
+This option causes <code>mod_lang</code> to be compiled into
+<code>proftpd</code>.
+
+<p>
+<hr><br>
+
+Author: <i>$Author: castaglia $</i><br>
+Last Updated: <i>$Date: 2006/09/09 01:15:05 $</i><br>
+
+<br><hr>
+
+<font size=2><b><i>
+&copy; Copyright 2006 TJ Saunders<br>
+ All Rights Reserved<br>
+</i></b></font>
+
+<hr><br>
+
+</body>
+</html>
+

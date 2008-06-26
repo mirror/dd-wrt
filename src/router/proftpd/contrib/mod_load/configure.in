@@ -1,0 +1,30 @@
+AC_INIT(./mod_load.c.in)
+
+AC_CANONICAL_SYSTEM
+
+ostype=`echo $build_os | sed 's/\..*$//g' | sed 's/-.*//g' | tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ`
+
+AC_PROG_CC
+AC_PROG_CPP
+AC_AIX
+AC_ISC_POSIX
+AC_MINIX
+
+AC_HEADER_STDC
+AC_CHECK_HEADERS(stdlib.h unistd.h limits.h fcntl.h)
+
+MODULE_LIBS=
+if test "$ostype" = "SOLARIS" ; then
+  MODULE_LIBS="-lkstat"
+fi
+AC_SUBST(MODULE_LIBS)
+
+dnl _Must_ come before AC_FUNC_GETLOADAVG
+AC_CHECK_LIB(kstat, kstat_open)
+
+dnl Supposedly in AC_FUNC_GETLOADAVG, but...?
+AC_CHECK_FUNCS(pstat_getdynamic)
+AC_FUNC_GETLOADAVG
+
+AC_CONFIG_HEADER(mod_load.h)
+AC_OUTPUT(Makefile mod_load.c)

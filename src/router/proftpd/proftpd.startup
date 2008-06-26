@@ -1,0 +1,8 @@
+#!/bin/sh
+if [ -z "$(nvram get proftpd_enable)" ]; then
+	mkdir /tmp/proftpd/etc
+	mkdir /tmp/proftpd/var
+	cp /etc/config/proftp.config /tmp/proftpd/etc
+
+
+fi

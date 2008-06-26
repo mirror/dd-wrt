@@ -1,0 +1,7 @@
+/var/log/xferlog {
+	missingok
+	notifempty
+	postrotate
+		/usr/bin/kill -HUP `cat /var/run/proftpd.pid 2>/dev/null` 2>/dev/null || true
+	endscript
+}
