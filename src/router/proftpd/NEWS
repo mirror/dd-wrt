@@ -1,0 +1,1753 @@
+$Id: NEWS,v 1.839 2007/10/04 02:25:03 castaglia Exp $
+
+-----------------------------------------------------------------------------
+  More details on the bugs listed below can be found by using the bug number
+  indicated in the following URL:
+
+    http://bugs.proftpd.org/show_bug.cgi?id=N
+
+  where `N' is the bug number.
+-----------------------------------------------------------------------------
+
+1.3.1 - Released 5-Oct-2007
+--------------------------------
+- Bug 2944 - mod_sql_mysql fails to compile due to missing quotation.
+- Bug 2946 - Anonymous logins fail if the mod_facl module is enabled.
+- Bug 2947 - SIGBUS on Mac OS X when dynamically loading shared libs.
+- Bug 2950 - Hostname with multiple IP addresses might cause "ai_family not
+  supported" error if IPv6 support enabled.
+- Bug 2955 - Undeclared identifier MAP_FAILED for mod_delay on AIX.
+- Bug 2958 - mod_wrap2 does not handle multiple rules in access files.
+- Bug 2963 - Use of -A option for LIST/NLST commands not cleared for
+  subsequent commands.
+- Bug 2964 - Building RPM fails because of *snprintf trying to be redefined.
+  This is actually caused by a particular combination of compiler flags
+  (-O2 and -Wp,-D_FORTIFY_SOURCE=2), which are used by the `rpmbuild'
+  command in some Linux releases.
+- Bug 2974 - Install error if multiple modules, using their own build script,
+  are built as shared modules.
+- Bug 2981 - Command-line long options --ipv4 and --ipv6 do not work.
+- Bug 2795 - Improvements to RPM .spec file to build more of the modules, plus
+  better optional packaging organization.
+
+1.3.1rc3 - Released 04-Jul-2007
+--------------------------------
+- Bug 2875 - Malformed getopt checks cause compilation errors in getopt.c.
+- Bug 2877 - ServerType 'inetd' results in "getnameinfo error: ai_family not
+  supported" errors in log.
+- Bug 2878 - Error compiling proftpd on Solaris 2.9 using --with-lastlog.
+- Bug 2881 - ProFTPD does not support OPTS UTF8 command when --enable-nls is
+  used.
+- Bug 2883 - Problem with locale and SQL database queries.
+- Bug 2893 - ProFTPD can use the wrong group data if the user name changes.
+- Bug 2897 - mod_quotatab subtracts size of deleted file from bytes-transferred
+  tally.
+- Bug 2902 - Stack read overrun in mod_xfer on 32bit platform.  Use an
+  explicit compiler cast to ensure that the proper data type size is used
+  in the arguments for a variadic function.
+- Bug 2906 - RewriteCondition backreferences not properly substituted.
+- Bug 2913 - TYPE command does not clear ASCII flag from LIST/NLST commands.
+- Bug 2911 - NLST on a nonexistent path, followed by an NLST on an existing
+  file, causes segfault.
+- Bug 2922 - Auth API allows one auth module to authenticate user data provided
+  by a different auth module.
+- Bug 2921 - NLST fails if using POSIX ACLs.  The mod_ls module, when
+  handling the NLST command, was using an unnecessary access(2) check.
+- Bug 2864 - DisplayLogin should work regardless of chroot.  This now works
+  for DisplayQuit and DisplayTransferFiles as well.
+- Bug 2920 - ABOR command not handled during data transfer.
+- Bug 2924 - DeleteAbortedStores doesn't work when the ABOR command is used.
+- Bug 2890 - SystemLog permission errors on SIGHUP when mod_tls is enabled.
+- Bug 2932 - Syslog contains "error setting IPV6_V6ONLY: Protocol not
+  available".  Check the IPV6_V6ONLY socket option first, and only attempt
+  to disable it if needed.  Also use the IPPROTO_IPV6 socket level.
+- Bug 2934 - Function perm_copy_fd() not in older Linux libacl versions.
+- Bug 2923 - ftptop display flickers if delay is greater than 25 seconds.
+- Bug 2900 - Some kernels incorrectly reuse IPv6 ports for EPSV command.
+- Bug 2935 - DELE command doesn't check file stat result before logging.
+- Bug 2938 - mod_wrap2 does not honor WrapTables for <Anonymous> logins.
+- Bug 2939 - Anonymous restrictions apply after a failed anonymous login
+  followed by a successful normal user login.
+- Bug 2942 - BanLog directive does not accept "none" parameter.
+
+1.3.1rc2 - Released 12-Jan-2007
+--------------------------------
+- Bug 2856 - Support for RADIUS NAS-Identifier attribute.
+- Bug 2849 - Error msg "Not owner" returned by "SIZE in ASCII mode" is
+  misleading.
+- Bug 2857 - Failure to properly unregister event handlers leads to segfault
+  after restarts.
+- Bug 2869 - mod_sql botches WHERE clauses.
+- Bug 2872 - CreateHome doesn't recreate symlinks from skeleton properly.
+
+1.3.1rc1 - Released 12-Dec-2006
+--------------------------------
+- Bug 2766 - Support for automatic stack trace if SIGSEGV is received.
+- Bug 2714 - mod_auth_file munges AuthUserFile, AuthGroupFile records.
+- Bug 2721 - mod_auth_unix does not behave properly when first in AuthOrder.
+- Bug 2535 - Compare directives using integer comparisons when possible to
+  improve performance.
+- Bug 2753 - CCC not closing SSL/TLS connection correctly.
+- Bug 2654 - FEAT command should be subject to <Limit>.
+- Bug 2740 - TYPE command not allowed before USER/PASS, causes problem for
+  `ftp -n'.
+- Bug 2777 - ProFTPD does handle data sockets properly on FreeBSD 6.
+- Bug 2664 - Add 'delay info' ftpdctl action for showing DelayTable values.
+  This patch also added a 'delay reset' ftpdctl action, for clearing the
+  DelayTable.
+- Bug 2769 - mod_auth_pam needs a patch to allow pam_group to work.
+- Bug 2599 - Support for using OpenSSL "engines".
+- Bug 2611 - CreateHome should allow non-root-owned parent directories.
+- Bug 2686 - Allow CCC command but still require SSL/TLS protection during
+  authentication.
+- Bug 2628 - SQLHomedirOnDemand should be deprecated.  The CreateHome
+  directive should be used instead.
+- Bug 2627 - Support for RADIUS quotatab module.  The mod_quotatab_radius
+  module has been added to the contrib/ directory.  See README.modules
+  and doc/contrib/mod_quotatab_radius.html for more information.
+- Bug 2651 - LogFormat should support variable for logging the response
+  message.  A new %S logging variable has been added.
+- Bug 2447 - HAVE_OPENSSL should be managed by configure.  There is a
+  new configure option, --enable-openssl, which is honored by mod_ldap
+  and mod_sql.  This configure option can be used instead of using
+  the HAVE_OPENSSL CFLAGS variable, although HAVE_OPENSSL will still work.
+- Bug 2733 - IP TOS not being set for data transfers.  Other socket-level
+  options were not being properly honored for data transfers, too.
+- Added mod_ban.  See doc/contrib/mod_ban.html for more details.
+- Enhanced the mod_sql API to allow other modules (such as mod_conf_sql)
+  to make fuller use of SQL databases via mod_sql.
+- Bug 2713 - Ability to check a user's existing disk bytes/files usage and
+  update tally accordingly.  The mod_quotatab module now has a QuotaOptions
+  directive, one of whose parameters is ScanOnLogin, which directs the
+  module to update existing tallies after scanning the user's home
+  directory.
+- Bug 2786 - REST in ASCII mode returns error but leaves session in
+  inconsistent state.
+- Bug 2785 - IPv4-mapped IPv6 network ACLs not matched properly against
+  IPv4 connections.
+- Bug 2732 - Support for DisplayChdir, rather than DisplayFirstChdir.
+- Bug 2506 - Better ability to configure what sort of debug output to generate.
+  This is done via the new Trace and TraceLog directives.
+- Bug 2514 - Trouble with mod_tls and DSA certificates.
+- Bug 2792 - ProFTPD fails after SIGHUP signal when Controls support is
+  enabled.
+- Bug 2775 - Support for DisplayFileTransfer directive.
+- Bug 2793 - LogFormat variable for the ProFTPD version.  This adds a
+  "%{version}" variable to the LogFormat directive.
+- Bug 2797 - Add ability to force cleaning the scoreboard.  This can now
+  be done using "ftpctl scoreboard scrub".
+- Bug 2800 - free_proc_title() in developer build tries to free strings from
+  pool allocated by mod_tls.
+- Bug 2801 - Error compiling proftpd on NetBSD 3.0/sparc64.
+- Bug 2687 - Support for more efficient group table schema.  A new
+  directive, SQLOptions, has been added.  One possible parameter of this
+  directive is 'useNormalizedGroupSchema', in which case mod_sql will
+  process the group info table in a more efficient manner.
+- Bug 2798 - MDTM should return time in GMT.  MDTM responses now always use GMT.
+- Bug 2784 - Ability to specify MySQL Unix domain socket path.
+- Bug 2610 - Support for logging to /var/log/lastlog.  See the RELEASE_NOTES
+  for more details on how to use this feature.
+- Bug 2710 - ProFTPD should install its header files into the installation
+  location.  The `make install' target now causes proftpd header files,
+  including config.h, to be installed into a include/proftpd/ directory
+  in the installation location.
+- Bug 2626 - ERROR macro collision can cause compiler errors on HP-UX.
+  The ERROR, DECLINED, and HANDLED macros have been renamed PR_ERROR,
+  PR_DECLINED, and PR_HANDLED, respectively.  Compatibility macros for
+  older contrib modules are available.
+- Bug 2807 - mod_sql processes SQLLog QUIT query twice.  This bug is a
+  consequence of Bug 1965.
+- Bug 2810 - Incorrect use of assignment instead of comparison in mod_wrap.
+- Bug 2803 - mod_auth_file does not properly iterate through AuthUserFile
+  entries.
+- Bug 2809 - conf.h should be included before mysql.h in mod_sql_mysql.c.
+- Bug 2774 - Idle clients exhibit excessive usage of system resources.
+  This occurs because of interrupted system calls, which trigger tightly
+  spinning retry loops within the process.  The ability to tune the delay
+  used in these retry loops has been added to address this behavior.
+- Added mod_wrap2, mod_wrap2_file, and mod_wrap2_sql.  See
+  doc/contrib/mod_wrap2.html for more details.
+- Bug 2825 - SSL/TLS CRLs are not working properly.
+- Bug 2835 - Group quotas not honored for supplemental group membership.
+- Bug 2837 - Defines improperly persist across daemon restarts.
+- Bug 2839 - ProFTPD seems to re-read the file two times in RETR command.
+  The problem was one where sendfile() was being used, and the sendfile()
+  called failed for some reason.  In that case, proftpd would fall back
+  to transmitting the data via normal, non-sendfile() means.  If the
+  sendfile() call had actually sent data to the client already, this
+  fallback attempt would result in the client receiving too much data.
+  Now, if there was an error using sendfile(), proftpd logs the error
+  and considers it a failed transfer due to an I/O error.
+- Bug 2756 - Support for TLSPassPhraseProvider.
+- Bug 2799 - SQLNamedQuery should support environment variables.  SQL
+  queries defined using the SQLNamedQuery directive can now use
+  "%{env:VAR}" to have the environment variable VAR substituted into the
+  query.
+- Bug 2828 - Support variables in SQL Where directives.  Now the variables
+  supported for SQLNamedQuery statements, except for "%{n}" numeric
+  references, are also supported for the SQLGroupWhereClause and
+  SQLUserWhereClause directives.
+- Bug 2842 - Filesystem statcache is not correctly caching return value of
+  stat().
+- Bug 2817 - Ability to disable IPv6 support at runtime.  You can now
+  configure "UseIPv6 off" in your proftpd.conf to disable IPv6 support
+  (assuming proftpd was compiled using --enable-ipv6).
+- Bug 2847 - HiddenStores files not properly removed if data transfer times
+  out.
+- Bug 2848 - Unable to properly parse config files using Windows-style line
+  endings.  Such line endings can appear in the proftpd.conf if the file
+  is transferred using Windows machines, or using FTP clients that do not
+  properly translate CRLF to LF when handling ASCII files.
+- Bug 2850 - Small event pool allocation on 64-bit machine leads to segfault
+  on startup.
+- Bug 2860 - Failure to check for data length in mod_tls could lead to remote
+  buffer overwriting.
+- Bug 2863 - LIST of nonexistent file causes RST on data channel.
+- Bug 2862 - NLST / returns a listing of the current directory.
+- Bug 2867 - Local authorized user buffer overflow in Controls request
+  handling.
+
+1.3.0a - Released 27-Nov-2006
+--------------------------------
+- Bug 2858 - CVE-2006-5815: remote code execution in ProFTPD.
+
+1.3.0 - Released 16-Apr-2006
+--------------------------------
+- Bug 2733 - libtool requires sh/bash.
+- Bug 2770 - FreeBSD compiler warning that "__GLIBC__" is not defined.
+- Bug 2771 - FreeBSD compiler warning about undeclared fgetpwent/fgetgrent
+  functions.
+- Bug 2772 - FreeBSD compiler warning that "_FILE_OFFSET_BITS" is not defined.
+
+1.3.0rc5 - Released 18-Mar-2006
+--------------------------------
+- Bug 2757 - Add support for quota modules to RPM spec.
+- Bug 2759 - Adding --with-includes to configure can cause problems when
+  building with other packages.  Fixed so that CPPFLAGS and LDFLAGS are
+  restored to their original settings after running the configure
+  script.  This was a regression (of sorts) from fixing Bug #2708.
+- Bug 2764 - REST command does not return an error for negative numbers.
+- Bug 2717 - Wrong timestamp in logs for chrooted processes.  Ultimately
+  this behavior looks to be a glibc bug.  In the meantime, the workaround
+  is to manually set the TZ environment variable, if it is not already
+  set, before calling chroot().  This bug appears to be specific to
+  glibc, thus the workaround is only enabled on platforms using glibc-2.3
+  or later.
+- Bug 2765 - Child process segfaults while handling a SIGTERM.
+- Bug 2723 - mod_delay causes process to hang on OS X when proftpd exits.
+
+1.3.0rc4 - Released 01-Mar-2006
+--------------------------------
+- Bug 2703 - Disk quota exceeded for small files not being triggered.
+- Bug 2706 - utmp/wtmp logging on NetBSD needs some tweaks.
+- Bug 2708 - configure cannot detect some headers.  The configure
+  script now adds the directories mentioned via the --with-includes
+  and --with-libraries options to the CPPFLAGS and LDFLAGS environment
+  variables.
+- Bug 2711 - Controls socket detection broken.
+- Bug 2712 - DisplayFirstChdir directive does not work.
+- Bug 2705 - proftpd fails to log anything to syslog after dropping privs
+  on Solaris.  This happens because of the default permissions on /dev/log
+  on Solaris.
+- Portability tweaks for Mac OS 10.4.
+- Bug 2729 - Authorative PAM authentication doesn't work.  The mod_auth_pam
+  module still had code for supporting the deprecated AuthPAMAuthoritative
+  directive.  As per Bug #2440, however, the AuthOrder directive should
+  be used for configuring authoritativeness.  This fixes mod_auth_pam
+  to behave properly using the new AuthOrder setting.
+- Bug 2709 - mod_sql improperly strips spaces from names, allowing for
+  confusing authentication.
+- Bug 2735 - Allow REST 0 in ASCII mode.
+- Bug 2746 - Data transfer function does not return error condition in case of
+  read errors.
+- Bug 2752 - FEAT reply not RFC 2389 compliant.
+
+1.3.0rc3 - Released 31-Oct-2005
+--------------------------------
+- Bug 2660 - Add mod_facl in rpm spec file.
+- Bug 2662 - OpenSolaris/Solaris 11 has TCP_CORK but not SOL_TCP.
+- Bug 2667 - mod_tls handles SIGHUP badly.
+- Bug 2668 - mod_ctrls fails to open socket during SIGHUP.
+- Bug 2669 - mod_radius segfaults if PASS command sent with no USER command.
+- Bug 2674 - mod_sql string escape problem during group lookups.
+- Bug 2676 - configure option --disable-ipv6 enables IPv6.
+- Bug 2685 - ListOptions' max parameters cannot be set higher than 255.
+- Bug 2689 - Parser does not complain about unclosed configuration sections.
+- Bug 2695 - Client IP/host is not logged when client exits.
+- Bug 2697 - Improper SSL session shutdown sequence used for some FTPS clients.
+- Bug 2682 - Signals can interrupt privilege switching.
+- Bug 2692 - R_DUP response messages can break the FTP protocol responses.
+
+1.3.0rc2 - Released 24-Jul-2005
+--------------------------------
+- Bug 2584 - mod_sql_postgres missing end-of-comment character.
+- Bug 2587 - HideNoAccess does not work for DefaultRoot/<Anonymous> logins.
+- Bug 2590 - AIX uses unsigned int for ULONG_MAX, causing printf format warning.
+- Bug 2591 - wrong argument type in call to pr_log_debug in mod_delay.c on AIX.
+- Bug 2593 - `make install-modules' does not honour DESTDIR enviroment variable.
+- Bug 2596 - STAT command can cause segfault.
+- Bug 2588 - AIX requires _USE_IRS #define to use hstrerror().
+- Bug 2582 - ProFTPD on Tru64 with SIA does not call sia_ses_estab().
+- Added new 'dns' control to mod_ctrls_admin, for enabling/disabling
+  UseReverseDNS configuration at runtime.  See doc/contrib/mod_ctrls_admin.html
+  for details.
+- Bug 2605 - Compiler warnings/errors about missing typecasts on HP-UX.
+- Bug 2589 - Makefile in modules/ directory is not portable.
+- Bug 2598 - Build system should check for duplicate module requests.
+- Bug 2585 - Proftpd does not write RFC 3164 compliant messages into /dev/log.
+- Bug 2601 - mod_delay sometimes delays for a long time.
+- Bug 2622 - Segfault seen randomly in mod_delay.
+- Bug 2578 - ProFTPD does not listen on IPv6 addresses on FreeBSD.
+- Bug 2624 - "fh_data" macro collision causes compiler error on Tru64 V5.1A.
+- Bug 2250 - Add ports, compiling info to FreeBSD README.
+- Bug 2631 - Segfault when using RadiusAcctServer.
+- Bug 2632 - Invalid application of `sizeof' to an incomplete type on AIX.
+- Bug 2637 - <Limit STAT> does not work.
+- Bug 2636 - Data connection failure when handling STOR does not trigger
+  error response.
+- Bug 2639 - HiddenStores does not work.
+- Bug 2630 - Use of mmap in mod_delay may be problematic on HP-UX.  This
+  change adds locking of the DelayTable, which may (or may not) also
+  help on other platforms.
+- Bug 2644 - mod_sql_mysql should handle old MySQL password format more
+  gracefully.  Starting with MySQL 4.1.1, the format for passwords stored
+  using the MySQL PASSWORD() function changed.  This format change causes
+  issues for sites that have passwords stored in the older format.  Users
+  of mod_sql+mod_sql_mysql would see this as users being unable to login.
+  Now, if compiled against MySQL 4.1.1 or later, mod_sql_mysql will first
+  check the password using the current MySQL format; if that fails it
+  will fall back to checking the old format.  Note that this only affects
+  sites which have "SQLAuthTypes Backend" in their proftpd.conf.
+- Bug 2647 - Improper "socklen_t" redefine for HP-UX when using X/Open.
+- Fixed mod_sql bug where using SQLLog and SQLNamedQuery with the %L or
+  %a variables, and logging the EXIT pseudo-command, would cause a segfault.
+- Bug 2375 - Slow directory listing with several blank .ftpaccess files.
+- Bug 2646 - ftpshut format string vulnerability.
+- Bug 2645 - SQLShowInfo format string vulnerability.
+- Bug 2560 - Reporting errors when user filesystem quota is exceeded.
+- Bug 2653 - When MaxStoreFileSize is reached, error should be EDQUOT rather
+  than EPERM.
+- Bug 2657 - Segfault in tls_get_error() function in mod_tls.
+- Bug 2658 - Segfault in mod_radius when using long password.
+
+1.3.0rc1 - Released 10-Apr-2005
+--------------------------------
+- Bug 2449 - ProFTPD silently ignores extra command-line parameters
+- Bug 2457 - Directory listing provides bad info when path ends with /.
+- Bug 2458 - Bad handling of CreateHome parameters.
+- Bug 2463 - mod_xfer doesn't check how many bytes it has written to disk.
+- Bug 2476 - Incorrect detection of symbolic link loop across devices.
+- Add support for a -V command-line option, which displays various
+  compile-time settings.
+- Bug 2455 - Allow fine-tuning of how often mod_xfer updates the scoreboard.
+  This adds an --enable-scoreboard-updates configure option.
+- Bug 2389 - 64-bit compilation warnings.
+- Bug 2468 - Ability to disable address/port collision checking.  A new
+  command-line option, -N, can be used to disable proftpd's checks for
+  <VirtualHost> address/port collisions.
+- Bug 2488 - Wrong order of privs calls on HP generates "unable to setregid()"
+  error (Bug #2317 revisited).
+- Bug 2392 - mod_sql needs better handling of its backend modules.
+- Daniel Weuthen <dw@megabit.net> contributed a SuSE-specific init.d script
+  for ProFTPD.
+- Bug 2485 - SQL backend modules close all open connections too early.
+  This fixes a bug where a "signal 11" would be reported, when a session
+  ends, if the "EXIT" SQLLog command was configured.
+- New mod_ldap version 2.8.13
+- Bug 2490 - <Limit ALL> affects PORT command.  When the EPRT, EPSV, PASV,
+  and PORT commands became <Limit>able (see Bug #2086), they became
+  affected by <Limit ALL> as well, which breaks older configurations.
+  Using the following configuration:
+
+    <Limit PORT PASV>
+      AllowAll
+    </Limit>
+
+  is a way to workaround this bug in 1.2.10 installations.
+- Bug 2492 - Off-by-one error in FreeBSD PAM username length check.
+- Bug 2496 - NLST off-by-one bug when handling relative paths in a chrooted
+  session.
+- Bug 2494 - ABOR problem with Cisco routers copy ftp flash.
+- Bug 2499 - make_cmd() does not NULL-terminate cmd->argv[].
+- Bug 2497 - Users can login without password if pam_start() fails.
+- Bug 2273 - Ability to limit number of unauthenticated clients from a single
+  host.  There is a new MaxConnectionsPerHost directive for configuring
+  the maximum number of connections from a single host at the same time.
+- Bug 1965 - Change timing of handling of QUIT command.  The actual ending
+  of the session is now done by LOG_CMD/LOG_CMD_ERR handlers for the QUIT
+  command.  This allows modules that wish to do POST_CMD processing of
+  QUIT, like mod_sql, a chance to see the command.
+- Bug 2484 - Better ftptop formatting.
+- Bug 2071 - Add Variables API.
+- Added DSO support.  See the README.DSO file for more information.
+- Bug 2509 - sendfile() usage fails with > 2GB files.
+- Bug 2480 - Remote users discovery. Leon Juranic described an information
+  leak via timing differences in the handling of the USER command for
+  valid versus invalid users.  The mod_delay module was added to address
+  this timing difference.  See doc/modules/mod_delay.html for details.
+- Bug 2518 - Ability to log SSL/TLS commands in an ExtendedLog.  A
+  new "SEC" logging class has been added for use in ExtendedLog directives,
+  e.g 'ExtendedLog /path/to/rfc2228.log SEC'.
+- Bug 2507 - Enable use of sendfile by default.  Use the new UseSendfile
+  directive to disable, e.g. 'UseSendfile off'.
+- Bug 2471 - Restart command (REST) is not working correctly for text files.
+  When in ASCII mode, ProFTPD now refuses to handle REST.  This behavior
+  is documented in doc/howto/ASCII.html.
+- Bug 2454 - Extend <VirtualHost> to honor multiple addresses.  With this
+  change, the Bind directive is now deprecated.  See the RELEASE_NOTES
+  for more details.
+- Bug 2516 - Getting "421 Login Timeout" immediately upon connect.
+- Bug 2520 - Turning on AuthAliasOnly disables MaxClientsPerHost.
+- Bug 2510 - Use of ExportCertData TLSOption leads to segfault.
+- Bug 2528 - Incorrect username 'and' parsing in AllowUser.
+- Bug 2170 - Add byte count variables, similar to the file count Display
+  variables.  The added variable names are:
+
+     %{total_bytes_in}
+     %{total_bytes_out}
+     %{total_bytes_xfer}
+
+  In addition, variables of a similar syntax can be used for display
+  file counts, instead of the already-existing variables:
+
+     %{total_files_in}
+     %{total_files_out}
+     %{total_files_xfer}
+
+- Bug 2027 - Add log message for timed out passive transfers.
+- Bug 2406 - Add a SQLEngine directive.  See the mod_sql documentation
+  for details.
+- Bug 2229 - NLST and LIST behave differently e.g. when listing an empty
+  directory.
+- Bug 2534 - Add suport for -S ListOption, for sorting files by file size.
+- Bug 2536 - mod_ifsession does not properly merge in all directives.
+- Bug 2540 - Fails to disable mod_delay if no DelayTable file exists.
+- Bug 2541 - <Directory ~user> path resolved at startup time, rather than at
+  session time.
+- Bug 2549 - Allow contrib modules to be built from multiple source files.
+- Bug 1651 - Add contrib module to limit connection acceptance based on system
+  load.  mod_load is now one of the provided contrib/ modules.
+- Bug 2503 - Bundled libcap library does not compile on IA64 machine.
+- Bug 2556 - Rename of directory across devices fails.  The solution is to
+  prevent renaming of directories.  Proper support for copying of directories
+  will require module support.
+- Bug 2563 - Linking fails on Solaris with libz and libmysqlclient.  The
+  linker in question was Solaris ld, not GNU ld; the Solaris linker is
+  more particular about the order of specified libraries.  GNU ld is
+  less strict.
+- Bug 2331 - ProFTPD should honor POSIX ACLs.  Please read the README.facl
+  file for more information on POSIX ACL support in ProFTPD.
+- Bug 2573 - TLSProtocol directive in proftpd.conf is ignored.  By fixing
+  this bug, sites may find that a mod_tls configuration which worked
+  prior to 1.3.0rc1 now does not work, failing with an error like
+  "wrong version number" appearing in the TLSLog.  To restore the previous
+  behavior, these sites can use "TLSProtocol SSLv23" in proftpd.conf.
+- Bug 2559 - IPv6 socket option should be set for ServerType inetd.
+- Bug 2164 - Support non-PASS response codes (i.e. 232).
+- Bug 2515 - mod_quotatab should enforce hard limits at the filesystem level.
+- Bug 2567 - Segmentation fault with 64-bit binary due to structure layout
+  difference.
+- Bug 2551 - Recursive LIST with symlinked directories gives duplicate results.
+- Bug 2576 - PWD command does not handle " character properly.
+- Bug 2493 - mod_tls should support CCC command.
+- Bug 2580 - ProFTPD on Tru64 with SIA allows login with blank password.
+- Bug 2554 - mod_delay gets segfault-signal on several logins.
+
+1.2.10 - Released 04-Sep-2004
+--------------------------------
+- Bug 2440 - Unable to use PAM authentication properly.  Use a "*" after
+  the module name in an AuthOrder directive to indicate that an auth
+  module is authoritative.
+- Bug 2441 - AIX5 portability bug with mod_auth_unix, mod_auth_file.
+- Bug 2442 - Segfault in FreeBSD PAM library with long login names.
+- Bug 2445 - AuthUserFile in <Global> context overrides <VirtualHost> setting.
+- Bug 2444 - Use of sendfile() does not interoperate well with RFC2228
+  security mechanisms.  Using sendfile(2) to send data bypasses the handling
+  of the data by RFC2228 security mechanisms (such as those provided by
+  mod_tls).  So if security mechanisms are detected, do not use sendfile().
+- Scrub the ScoreboardFile for stale sessions in inetd mode.
+- Bug 2427 - proftpd gets a memory fault when run from ssh batch mode.
+
+1.2.10rc3 - Released 13-Jul-2004
+--------------------------------
+- Fixed typo that prevented 1.2.10rc2 from compiling.
+
+1.2.10rc2 - Released 13-Jul-2004
+---------------------------------
+- Bug 2396 - NLST command doesn't understand options.  This was caused by
+  the solution for Bug 2322.  However, it is not a popular solution, so
+  NLST will once again handle options, but only the relevant options.
+- Bug 2034 - Add support for a "graceful shutdown" signal. See
+  contrib/mod_ctrls_admin.html#shutdown for details.
+- Bug 2400 - <Class> search order is wrong.  The documentation correctly
+  stated that <Class> sections are matched in order of definition, but the
+  code has the match order in the reverse order of definition.
+- Bug 2401 - MaxClientsPerClass only checks first directive in config file.
+- Bug 2399 - Rename start/stop control actions to up/down.
+- Bug 2082 - Add mod_rewrite "replaceall" builtin function.  See the
+  RewriteMap documentation for more details.
+- Bug 2403 - Sending SIGHUP to proftpd stops it when using Classes.  The fix
+  for Bug #2400 could result in an infinite loop during a SIGHUP.
+- Bug 2405 - "LIST *" should not list dotfiles.
+- Bug 2366 - Add support for -h LIST option.
+- Bug 2332 - SO_OOBINLINE error after upgrading proftpd from 1.2.6 to 1.2.9.
+  This is due mostly to a change in the logging; a check for error values
+  and logging of them was added.  The setting of this particular socket option
+  has been moved earlier in the session, as it was found that short-lived
+  TCP connections, as from monitoring systems, would cause this error.
+- Bug 2407 - mod_auth_file does not allow for proper cascading of "end" and
+  "set" auth requests.
+- Bug 2410 - CreateHome always copies skel directory.
+- Bug 2336 - Use of /dev/log on Solaris leads to kernel memory leak.
+  ProFTPD's use of the /dev/log device on Solaris was tickling a Solaris
+  kernel bug that caused the Solaris kernel to leak memory.
+- Added a TimeoutLinger directive to complement the --enable-timeout-linger
+  configure option.
+- Bug 2125 - -vv command line switch should list versions of modules.
+- Bug 2420 - Name field is not escaped before querying database.
+  The mod_quotatab module was not properly escaping the name string it
+  used when looking up records from SQL databases.
+- Bug 2424 - SQLDefaultHomedir overrides column value.
+- Bug 2411 - Caching effects cause RNTO to fail if AllowOverwrite is off and
+  target path does not exist.
+- Bug 2422 - %v not working in SQLNamedQuery.
+- Bug 2418 - chmod returns 550 with filename containing multiple spaces.
+- Bug 2431 - mod_sql does not use UID/GID properly in cache lookups.
+- Bug 2303 - Problem evaluating multiple <Class> rules.
+- Bug 2419 - Ability to disable TLSRequired on per-user basis (e.g. for
+  anonymous logins).
+- Bug 2438 - Display variable %z not expanded properly.
+- Bug 2439 - <Limit CWD> doesn't work.
+
+1.2.10rc1 - Released 28-Apr-2004
+---------------------------------
+- Bug 2135 - Add ability to handle passphrase-protected server keys.  mod_tls
+  can now properly prompt for passphrases for protected server certificate
+  keys when the daemon is starting up.
+- Bug 2086 - Add limits for PORT, PASV.  This means that now one can use
+  <Limit> to place access controls on the PORT and PASV commands.  This
+  applies to the EPRT and EPSV commands as well.
+- Bug 2174 - mod_auth_unix should not act authoritatively.  This was causing
+  problems when using mod_auth_unix.c and the AuthOrder configuration
+  directive.
+- Bug 2098 - Added SetEnv and UnsetEnv configuration directives.
+- Bug 2271 - Improper autoconf check for getaddrinfo() on Tru64 UNIX 5.1.
+  The getaddrinfo symbol is a macro, not a function, on that platform.
+- Bug 2255 - RADIUS Service-Type should reflect attribute expectations.
+- Added Event API.
+- Bug 2272 - Address/port collision check needs to handle DefaultAddress.
+- Bug 2072 - Add Controls API.
+  This API includes a new program, ftpdctl, that is used to communicate
+  directly with the proftpd daemon via a new core module, mod_ctrls.  For
+  this new functionality to be used, proftpd must be configured using the
+  added --enable-ctrls option.
+- Bug 2015 - Add AND, OR keywords to Allow/DenyUser directives.
+  The AllowUser, DenyUser, AllowGroup, and DenyGroup directives now take
+  an optional keyword that indicates what type of expression they are:
+  AND, OR, or regex.  By default, AllowUser and DenyUser are OR expressions,
+  and AllowGroup and DenyGroup are AND expressions.  For example:
+
+    AllowUser regex ^ftp
+    DenyUser AND dave,bob
+    AllowGroup OR web,doc
+
+  These demonstrate that the optional keyword modifier must be the first
+  parameter in the configuration directive.
+- Bug 2046 - Change RFNR and RNTO logging class to WRITE.  This means that
+  ExtendedLogs that use the WRITE logging class will now include the
+  RNFR and RNTO commands.
+- Mac OS X 10.3 portability fixes.
+- Bug 2274 - Default server only binds to one IP address of host if
+  the --enable-ipv6 configure option is used.  ProFTPD will now properly
+  bind to all addresses for the default "server config" server.
+- Bug 2048 - Add ability to get configuration file values from environment.
+  For example, you can now have the following in your proftpd.conf:
+
+    DefaultAddress %{env:PR_DEFAULT_ADDR}
+
+  which indicates to ProFTPD's configuration parser to get the value of
+  the PR_DEFAULT_ADDR environment variable, and substitute it in, e.g.:
+
+    PR_DEFAULT_ADDR=1.2.3.4 ./proftpd ...
+
+  If the indicated environment variable is not present, the value is
+  substituted with the empty string.
+- Bug 1635 - Older systems' chown(1) does not support -h option.  The solution
+  is to prevent this error from stopping the 'make install' process, as it
+  is a harmless error on such systems.
+- Bug 2290 - gmtime() static storage may be overwritten by modules.
+- Bug 2288 - ServerFQDN set to 255.255.255.255 and not hostname.
+- Added mod_quotatab to the contrib area.
+- Bug 2300 - poll() returns 1 and read returns 0, resulting in an infinite
+  loop.  The actual bug was caused by a goto that was being inappropriately
+  used; a return value was not being checked to see if it was an error value.
+- Bug 2305 - Compile Problems since > 1.2.9
+  Fix the build under Solaris - ftpdctl needs to be linked against libsocket
+  and libnsl.
+- Bug 2267 - Broken IP subnet matching. Added new ACL parsing/matching code.
+- Bug 2307 - MySQL 4.1.1 API change causes mod_sql_mysql compilation failure.
+- Bug 2319 - Build scripts have owner-only execute permission.  This was
+  causing problems whenever a user other than the owner of the files
+  attempted to build proftpd.
+- Bug 2320 - autoconf check for socklen_t doesn't work on FreeBSD 4.8-RELEASE.
+  The fix is to include <sys/types.h>, if present, sooner in the check.
+- Bug 1925 - Clean up of Class code.  The Class and Classes directives are
+  now deprecated.  See README.classes for more details.
+- Bug 2295 - mod_tls returns multiline response to AUTH commands.
+- Bug 2322 - NLST -a returns listing formatted for LIST -a.  RFC959 does not
+  explicitly allow dash-style options for LIST or NLST, although many clients
+  attempt to use them.  De facto FTP server behaviors handle options for LIST;
+  options for NLST will be explicitly rejected.
+- Bug 2315 - Overlapping virtual server causes error.  If a <VirtualHost>
+  was configured to handle the same IP address and port as the "server config"
+  server, the wrong server configuration was being removed.
+- Bug 2324 - Directories whose names contain whitespace are inaccessible.
+- Bug 2306 - ftpcount output should handle case of no users.  When no clients
+  are connected, ftpcount now displays "0 users".
+- Bug 2337 - TLSRenegotiate parameters not processed correctly.
+- Bug 2340 - Problem with parallel builds.  Proper dependencies added when
+  building ftpwho and ftptop.
+- Bug 2327 - SQLNegativeCache causes unnecessary errors in server logging.
+- Bug 2237 - HiddenStores does not check for existing file in edge case.
+- Bug 2171 - Add delete options to ftpasswd.  The ftpasswd script now
+  supports the --delete-user and --delete-group options.
+- Bug 2105 - Remove Authoritative directives.  The AuthPAMAuthoritative
+  directive, and the "*" syntax of SQLAuthenticate, have been deprecated.
+- Bug 1696 - Include directive should support directories.  The Include
+  directive now functions just like Apache's Include directive, including
+  handling glob characters.
+- Bug 2311 - MaxClients counts unauthenticated users.  According to the
+  documentation, the MaxClients configuration directive should only count
+  authenticated clients.
+- Bug 2339 - STAT command doesn't follow RFC959.  Previously, ProFTPD did
+  not support use of the STAT command during file transfers.  This
+  functionality is now implemented.  Sites wishing to prevent this can
+  limit use of the STAT command by using <Limit STAT>.
+- Bug 2257 - Add SITE SYMLINK command to mod_site.  Rather than adding
+  this command to the mod_site module, a new module, mod_site_misc, has
+  been added to the contrib area.  The mod_site_misc module implements
+  SITE SYMLINK, and a few other SITE commands.  See contrib/mod_site_misc.html
+  for details.
+- Bug 2355 - Send error message to client when 'TLSRequired on' is in effect.
+  Previously, if SSL/TLS was configured to be required for both control
+  and data channels, if the client did not perform the SSL/TLS handshake for
+  a data transfer, the connection would hang.  Now, an error message is sent
+  to the client if no handshake is done.
+- Bug 2353 - REST doesn't handle offsets greater than 2 GB.
+- Bug 2357 - ftptop should use COLS for determining display width.
+- Bug 2321 - FTP permission checks inconsistent for DELE and RMD/XRMD when
+  symlink is in directory path.  This bug affected the RNFR command as well.
+- Bug 2361 - Second USER command causes problems with chrooted session.
+- Bug 2363 - ABOR response RFC 959 compliance.  The 226 response was being
+  sent before closing the data connection; RFC 959 implies that the data
+  connection is closed first.
+- Bug 2369 - EPSV should not send network address when MasqueradeAddress is
+  used.  RFC 2428 does not address the case where a server may wish to
+  return an address in the EPSV response that differs from the control
+  connection address, as is done in a PASV response for forwarding devices
+  (e.g. NAT, firewall).  Until the proper behavior can be determined,
+  do not honor MasqueradeAddress for EPSV.
+- Bug 2367 - LIST *.* strange behaviour.  The builtin listing mechanism
+  was inadvertently recursing into globbed directories when recursion was
+  not actually requested.
+- Bug 2371 - ftpasswd should have option to compare password against value
+  in passwd file.  ftpasswd now supports a --not-previous-password option.
+- Added a `howto' directory under `doc/', for mini-HOWTOs.
+- Bug 2221 - proftpd on hp-ux 11.22.  The default data type of socklen_t
+  on HP-UX 11 is problematic; many system calls expect an int, and the
+  default type is a size_t.  This mismatch causes problems for 64-bit
+  builds.
+- Bug 2385 - Renames fail with error "Invalid cross-device link".
+- Bug 2383 - mod_ctrls.c: ctrls_listen(): Invalid size in bind() argument.
+  The size of struct sockaddr_un is not consistent across platforms.
+- Bug 2387 - PRIVS_USER macro should set effective GID to user's primary GID.
+- Added a `modules/' directory under `doc/', for core module documentation.
+  Currently there are HTML docs for mod_auth_file, mod_cap, and mod_ctrls.
+- Bug 2317 - Wrong order of privs calls on HP generates "unable to setregid()"
+  error.
+
+1.2.9 - Released 31-Oct-2003
+---------------------------------
+- Bug 2181 - The prior fix for Bug#2181, handling of the PORT command when the
+  --enable-ipv6 configure option is used, was not quite correct.  A problem
+  still existed when an IPv4 client used the PORT command when talking to
+  an IPv4-only vhost (as opposed to an IPv4 and IPv6 vhost).  Now PORT is
+  properly handled in all cases.
+- Bug 2204 - On systems that use the gethostbyname2() function, IPv4 clients
+  were not being properly resolved to their DNS names.
+- Bug 2242 - proftpd reread included additional config as user nobody instead
+  of root.  The bug was caused by configuration directive handlers
+  (specifically, SyslogFacility and SystemLog) that would incorrectly change
+  the process privileges; depending on the order of configuration in
+  proftpd.conf, some Included files might not be parseable due to permissions
+  problems.
+- Bug 2197 - The RPM .spec has been updated for easy RPM builds from CVS
+  snapshots.
+- Check for excessive length of symlink directory listing entries (submitted
+  by Michael Hendrickx <michael@scanit.be>)
+- Two memory leaks, seen mostly during recursive directory listings, have
+  been fixed.
+
+1.2.9rc3 - Released 15-Oct-2003
+---------------------------------
+- Bug 2167 - getnameinfo() on FreeBSD doesn't support IP address lookups.
+- Bug 2176 - getnameinfo() error on Cygwin during startup.
+  The sa_family member of the address was not being properly initialized
+  in some instances.
+- Bug 2179 - ROOT_UID instead of ROOT_GID used in setegid() call.
+  This affects Cygwin installations.
+- Fixed ASCII file remote exploit discovered by X-Force at ISS:
+    http://xforce.iss.net/xforce/alerts/id/154
+- Bug 2181 - IPv4 active transfers don't work when using --enable-ipv6.
+  IPv4-mapped IPv6 addresses were not being properly compared for active
+  data transfers.
+- Bug 2200 - Correct segfaults with xlate_ascii_write() on IRIX.
+- Bug 2024 - DefaultServer not functioning properly.
+  The addition of the Bindings API in 1.2.8rc1 inadvertently caused the
+  DefaultServer directive to not be properly honored in some configurations.
+- Bug 2183 - Directory configuration lookups broken in 1.2.9rc2 (same as
+  Bug 2165).
+- Bug 2191 - Segfault in mod_sql_mysql when using 'Backend' SQLAuthType.
+  This happens only with MySQL 4.1.  In MySQL 4.1, the way in which MySQL
+  handles its passwords changed, and mod_sql_mysql was using the new
+  interface incorrectly.
+- Bug 2202 - AllowLogSymlinks check is flawed.
+  Calling open(2) on a path that is a symlink will follow that symlink;
+  the AllowLogSymlink check assumed that open() did not follow the symlink.
+  The fix is to use the O_NOFOLLOW flag when opening log file paths.  However,
+  this flag does not exist on Solaris machines, and so there still exists
+  a race condition on Solaris when checking that a log path is not a symlink.
+- Bug 2188 - Wildcard sockets not properly handled on FreeBSD.
+  Similar to bugs 2167, the sin_len/sin6_len members of socket structures
+  were not being properly set for wildcard sockets.
+- Bug 2204 - Reverse DNS lookups not happening properly on connected clients
+  on FreeBSD.  The gethostbyname2() function needs to be used on FreeBSD.
+- Bug 2222 - Overlapping vhosts should warn instead of die.
+  Prior to 1.2.9rc1, it was possible to have multiple vhosts configured that
+  resolved to the same IP address/port combination.  This typically occurs
+  when DNS names are used, and different DNS names resolve to the same IP
+  address.  In 1.2.9rc1, these collisions are scanned for, and such collisions
+  are treated as a fatal error.  With this change, such colliding vhosts
+  are handled similar to vhosts that have unresolvable names: they are
+  logged, then removed from the in-memory list of vhosts.
+
+1.2.9rc2 - Released 11-Sep-2003
+---------------------------------
+- Bug 2051 - freebytes in TransferRate does not work properly.
+- Bug 2043 - Proftpd converts LF to CRLF on PUT on Cygwin.  This turned out
+  to be caused by the Cygwin layer.  The fix was to use the Cygwin-specific
+  O_BINARY open() flag when opening binary files on Cygwin.
+- Bug 1804 - Permit selection of additional contrib modules when building
+  the RPM
+- Bug 2074 - MaxStoreFileSize restriction capabilities ignored.  This bug
+  was affecting MaxRetrieveFileSize as well.
+- Bug 2075 - LIST / fails under Cygwin.  This was due to the addition of
+  an additional path separator character; Cygwin treats paths that start
+  with "//" differently than paths that start with "/".
+- Bug 2076 - The --enable-transfer-buffer-size configure option doesn't work
+  properly.  It was overriding the --enable-buffer-size option, rather than
+  the corresponding tunable buffer size.
+- Bug 2069 - Long MKD path causes truncated server response.
+- Fixed handling of %N/%y in DisplayConnect files.
+- Bug 2083 - "550 Access denied" on group permission with AuthGroupFile.  This
+  was caused by a strictly linear search in the AuthGroupFile from the
+  current file pointer to end of file, which (depending on the ordering of
+  entries in the file) might have skipped necessary group entries.
+- Bug 2088 - proftpd -t segfault.  A very specific configuration would cause
+  a segfault in the configuration parser: if the first sub-context in a given
+  context (e.g. a <Limit> context within a <Directory> context) was empty,
+  the removal of that empty context from the internal structures by the
+  parser would inadvertently trigger a segfault later.  This has been
+  fixed by using a better memory pool, with a longer lifetime, for allocating
+  the internal configuration structures.
+- Bug 2090 - mod_rewrite doesn't compile on Solaris 8.  The FIONREAD macro
+  was undefined, due to a strange necessity in the Solaris system headers
+  for a missing flag.
+- Bug 2100 - Invalid domain in <VirtualHost> tag causes segmentation fault.
+- Fixed handling of mod_tls' TLSCertificateChainFile directive.
+- Bug 2103 - AuthAliasOnly in server context causes hang.
+- Bug 2110 - Segfault if gethostname(2) returns NULL.
+- Bug 2113 - mod_sql default uses mysql keyword "password".  The default
+  has been changed to "passwd".
+- Bug 2115 - ftptop depends on snprintf but doesn't link in lib/libsupp.a
+  on snprintf-less platforms
+- Corrected handling of mod_tls' TLSCACertificateFile and TLSCACertificatePath
+  directives so that they are properly allowed in <VirtualHost> and <Global>
+  contexts.
+- Bug 2119 - FEAT response format does not conform to RFC2389.  Extraneous
+  leading whitespace removed.
+- Fixed file descriptor leaks that occur if mod_tls encounters errors when
+  handling CA certificate files.
+- Bug 2118 - mod_sql's %F doesn't work for DELE command; %f is inconsistent.
+  mod_sql's handling of cookies is now updated to match mod_log.
+- Bug 1711 - IPv6 support.  Support for EPRT and EPSV added.  To enable IPv6
+  support, use the new --enable-ipv6 configure option.
+- Bug 2130 - %y in DisplayLogin is not updated correctly.
+- Bug 2137 - NLST and IgnoreHidden causes segfault.
+- Bug 2142 - sstrncpy() not available to lib/vsnprintf.c.  sstrncpy() is now
+  implemented in the support library (libsupp.a).
+- Bug 2144 - Rework autoconf handling of --enable-sia option.
+- Bug 2147 - Segmentation fault processing file in ASCII mode.
+- Fixed mod_ifsession's handling of multiple configuration sets.
+- Bug 2148 - Enforce PR_TUNABLE_LOGIN_MAX.
+- Bug 2141 - Glob Allow/Deny parameters cause extraneous log messages when
+  comparing addresses.
+- Bug 1804 - RPM spec file improvements
+  The spec file now has xinetd support, builds under newer version of RPM,
+  installs standalone support with the main proftpd RPM, and accepts --with
+  mod_modname arguments during the build process.
+- Bug 2127 - Entry in the file section
+  The RPM spec's %files section now honors the install prefix.
+- Bug 2108 - IgnoreHidden should not hide dotfiles
+  Dotfiles are now displayed when the -a argument is supplied, even when the
+  IgnoreHidden directive is enabled. To replicate the old behavior of hiding
+  dotfiles no matter what, use either of the following directives:
+    ListOptions "" strict
+    HideFiles ^\..*
+- Bug 2146 - DNS names not handled properly when --enable-ipv6 is used
+  DNS names with both A and AAAA records were not being properly handled;
+  listening sockets for both the IPv4 and IPv6 addresses were not being
+  established.
+- Bug 2007 - autoconf header detection problem.
+  On FreeBSD and other platforms, changes in autoconf require that headers
+  be included in the proper order during configure's check.
+- Bug 2153 - Small error in handling PR_AUTH_RFC2228 authentication code
+- Bug 2154 - SQL query loses shell information.
+  An index was not being properly incremented in some cases when retrieving
+  user information.
+- Bug 2161 - Duplicate autoconf check for sia.h.
+- Bug 2122 - EAGAIN on Solaris can cause an infinite loop.
+  Under certain conditions, when reading from a descriptor on Solaris,
+  EAGAIN can be returned, which proftpd did not handle properly.
+
+1.2.9rc1 - Released 15-May-2003
+---------------------------------
+- Bug 1828 - mod_sql can only find mysql.sock if in /tmp.  This was caused
+  by the fact that mod_sql_mysql did not load/read the MySQL .cnf
+  configuration files.  Now, when starting, mod_sql_mysql will read .cnf
+  files for "client" sections.
+- Bug 1960 - Add removed file size by DELE command to xferlog.
+- Bug 1967 - Add display of uptime to ftpwho, ftptop.
+- Added AnonRejectPasswords directive.
+- Added ftpshut -R command-line option, for deleting the ftpshut shutdown
+  file.
+- Bug 1972 - %T not correctly shows time at performance of a command "rename".
+  This was due to improper use of uninitialized data.
+- Bug 1794 - Scoreboard format changes.
+- Bug 1979 - Add TLSTimeoutHandshake directive.  This adds a directive to
+  configure a timer when SSL/TLS handshakes are occurring, to prevent
+  a malicious client from attempting to DOS a TLS-enabled server.  The default
+  timeout is 5 minutes.
+- Bug 1869 - Add option "-S/--server" to ftpcount, ftptop, ftpwho.  This
+  option can be used to specify a ServerName; the utilities will then
+  display information for that specific server.
+- Bug 1980 - Login with incorrect password possible when using mod_radius.
+  This was caused by the retaining of the OK state when a user authenticated
+  via RADIUS, but the login process later fails (e.g. home directory
+  inaccessible or something similar); subsequent logging in as a different
+  user would succeed because the OK flag was not cleared.
+- Added contrib module mod_ifsession-0.9rc6.
+- Bug 1932 - Make Max* checks a PASS POST_CMD handler.  One of the consequences
+  of this change is that the Max* limits will always be enforced after the
+  PASS command has been sent, not after the USER command (as used to be done).
+  Also, MaxHostsPerUser and MaxClientsPerUser limits will be determined using
+  the locally resolved username, not using any user aliases.
+- ProFTPD now checks for IP address/port collisions in the configuration
+  file, and will refuse to start unless all configured server contexts
+  have unique IP address/port combinations.
+- Bug 1969 - Add scoreboard-scrubbing timer.  The scoreboard will be scanned
+  now every 30 seconds for entries with invalid PIDs; this timer can be
+  adjusted using the PR_TUNABLE_SCOREBOARD_SCRUB_TIMER #define.
+- Bug 1921 - Socket-level performance tweaks.  This change deprecates the
+  tcpReceiveWindow and tcpSendWindow configuration directives, replacing
+  them with a single SocketOptions configuration directive.  This new
+  directive can be used to tune the TCP send and receive window sizes as well
+  as the TCP max segment size.  A new configure option,
+  --enable-transfer-buffer-size, is also added, to be used for tuning the
+  size of internal buffers used for file transfers.  Using this option to
+  configure an 8K buffer size often results in higher transfer speeds.
+- Bug 1849 - Compile can have trouble finding mysql.h.  The MySQL backend
+  module was assuming that mysql.h would be found in a directory named
+  "mysql"; for some distributions this is not the case.  Similarly for
+  the Postgres backend module and the libpq-fe.h file.  Users may need to
+  alter the --with-includes configure option used when building mod_sql.
+- Bug 1915 - Unsafe pointer usage in scoreboard file format.
+- Bug 1983 - Filenames beginning with '#' fail to upload/download.
+- Bug 1985 - mod_rewrite fails to build on platforms without flock().
+- Bug 1730 - mod_sql_mysql logging of long transfers fails.  This turned out
+  to be caused by the default MySQL timeouts on non-interactive sessions
+  (8 hours).  The fix involves marking mod_sql_mysql sessions as interactive;
+  this means that users may use the 'interactive-timeout' option in their
+  .cnf files to override the default interactive session timeout (also 8 hours).
+- Bug 1989 - SQLLog '*' doesn't match any commands.
+- Bug 1986 - mod_rewrite backreferences not zero-based (use $1 not $0?). The
+  bug here turned out to be an off-by-one offset; mod_rewrite was starting
+  at 1 when examining matched groups, rather than 0.  Most of the time $0 will
+  not be what is desired, however, for $0 refers to the original string being
+  matched.
+- Bug 1987 - mod_rewrite seems not to handle more than one backreference.
+- By default, mod_tls will now turn manually turn RSA blinding on, when
+  OpenSSL older than 0.9.7b is used, in order to thwart certain timing attacks
+  possible against RSA operations. The following URL contains more information:
+  http://www.openssl.org/news/secadv_20030317.txt
+- Bug 1995 - incorrect handling of curses/ncurses header and libraries in
+  ftptop
+- New mod_radius directives: RadiusGroupInfo, RadiusVendor.  mod_radius
+  now looks for custom response information in Vendor-Specific Attributes
+  (VSAs) rather than the normal RADIUS attributes; VSAs are more flexible.
+- Fixed a bug with mod_tls' use of SSL_shutdown(), to prevent it from hanging
+  when interacting with some buggy FTPS clients (e.g FlashFXP, SmartFTP)
+- Bug 1935 - mod_ls memory leak.  When a recursive directory listing is
+  requested (and allowed), proftpd would use its memory pool system,
+  allocating memory for every file to be listed.  For large/deep directory
+  structures, this memory usage could grow quite large.  And, due to the
+  way in which the underlying memory allocator (the C library, usually)
+  works, that memory is never really released back to the operating system.
+  This means that tools like ps and top reporting a never-shrinking memory
+  footprint for the process.  To help alleviate this, proftpd has been
+  altered to use malloc/realloc when providing recursive directory listings,
+  making the memory footprint a little smaller.  The caching behavior of
+  the underlying memory allocator cannot be changed, though.
+- Bug 1997 - UnixWare 7.1.3 & port 20.
+- Bug 1998 - Add ListOptions for setting limits on -R listings.  New
+  keywords have been added to the ListOptions directive: maxdepth, maxdirs,
+  and maxfiles.
+- Bug 2011 - No "FTP session closed." msgs written to logfile.  This affected
+  only inetd-run servers.
+- Added two new configure options, --disable-curses and --disable-ncurses.
+  By default, ftptop will use ncurses if available, then curses (if available).
+  In some cases, both curses and ncurses may be present, and yet the admin
+  would prefer ftptop to use curses.  Using the above options, one can
+  disable ftptop's use of ncurses or curses, as needed.
+- Bug 2016 - man pages should be autogenerated to reflect the --prefix used.
+- Bug 2018 - Incorrect caching of TransferRate values.
+- Bug 1813 - configure code: mistake in BSD sendfile semantic detection.
+- Bug 2019 - proftpd support for Solaris 8/9 native sendfile
+- Bug 2002 - Per-<Directory> PathAllowFilter/PathDenyFilter.
+- Added RootRevoke directive.
+- Bug 2021 - Inetd mode and scoreboard format changes.
+- Bug 1532 - Human readable disk free cookie.  Display* files can now make
+  use of a %f magic cookie for displaying the available disk space with
+  units (i.e. KB, MB, GB, etc).  This compliments the currently available
+  %F cookie, used to display the number of bytes of available space (without
+  units).
+- Bug 2003 - mod_auth.c does not compile for cygwin on W2K.
+- Bug 2029 - Rewrite rule may execute more than once if multiple
+  RewriteConditions exist.  This turned out to be caused by mod_rewrite's
+  merging down of its directives, and the way in which multiple occurrences
+  of directives are handled.  Now, even for merged-down mod_rewrite directives,
+  a given RewriteRule will only be processed once.
+- Fixed minor fd leak where listening socket descriptors were not being
+  properly closed in a session process, when the session is first starting.
+- Cygwin compilation/portability fixes.
+- Fixed bug where AllowForeignAddress was not properly blocking "bounce"
+  attacks in some cases.  Patch contributed by Patrick Hardy <kaber@trash.net>.
+- Bug 2032 - AuthOrder not working when first option is mod_auth_file.c.  This
+  was caused by mod_auth_file's returning of an ERROR condition, rather than
+  DECLINED, when the module could not obtain the user's encrypted password
+  for verification.
+- Bug 2047 - 1024 or more chars in .ftpaccess causes lockup.  Certain conditions
+  allowed for parsing of configuration files to enter an infinite loop.
+- Bug 2031 - Add support for flags for RewriteCondition, RewriteRule
+  (a la Apache's mod_rewrite).  mod_rewrite now supports various tests that
+  can be used in RewriteConditions, the NC and OR flags for RewriteConditions,
+  and the NC and L flags for RewriteRules.
+- Bug 1977 - Add %u variable support in configuration file.  With this feature,
+  one can configure DefaultRoot paths such as /home/%u/public_ftp, and the
+  %u variable will be expanded to the logged in user name.
+
+1.2.8 - Released 04-Mar-2003
+---------------------------------
+- Bug 1863 - Unable to build under UnixWare 7
+- Bug 1943 - Unable to install on FreeBSD 5.0.  FreeBSD 5.0's header files
+  have been rewritten, and glibc's glob.h collided with the new files.  The
+  fix was simply to use size_t, rather than trying to determine and use
+  __size_t (glob.h was intended to be used during library compilation, not
+  during application compilation).
+- Bug 1950 - OSX setgrent(3) returns int, causing compiler warning.  Unlike
+  most other Unix flavours (but like FreeBSD), OSX's setgrent(3) returns
+  int, rather than void.  A configure check was written to test for this. 
+- Bug 1949 - Compiler warns of 'long double' usage on OSX.  Typecasts have
+  been added to quell some warnings, and an autoconf check added for compiler
+  support for -Wno-long-double to quell others.
+- Bug 1952 - Umask Bug: Server Not Honoring VirtualHost Umask.  This was
+  a statcache caching effect bug.
+- Bug 1916 - Transfers hang with strange transfertime in logfile.  This
+  appears to have been due to use of an uninitialized value.
+- Bug 1948 - mod_xfer relinquishes privs before chmod takes place.  In
+  places where UserOwner is used to "give away" files, the chmod() attempt
+  that follows the chown() (used to preserve permissions sometimes altered
+  by the operating system's chown(2) call) did not use root privs, and thus
+  the client did not have permission to write the file.
+- Added FTPS FEAT responses, as per Section 5 of the FTPS Draft.
+- Bug 1956 - Upload transfer rate broken.  The wrong variable was being used.
+- Bug 1941 - SCO OpenServer 5.0.5 issues.  Fixing this bug required adding
+  more autoconf portability checks.
+- Bug 1958 - ftpwho -o oneline has newlines when client is idle.
+- Bug 1908 - ExtendedLog to work properly again in <Anonymous> context.
+- Bug 1966 - SCO OpenServer 5.0.5 and inetd.
+- Bug 1953 - STAT -R does not work.  There were some variable initialization
+  issues in the handling of options for the STAT command.
+- Bug 1970 - Transfer time wraps around and causes problems with transfer
+  speed calculation.  This was a reporting problem, mostly.  An internal
+  variable was storing time in microseconds; now using milliseconds.
+- Bug 1937 - Transfer hangs when using TransferRate limits on a resumed
+  download.  This turned out to be a misuse of the resumed file position
+  when calculating the TransferRate.
+- Bug 1964 - When uploading to an NFS mounted file system in passive mode
+  read() get EAGAIN and closes connection.  This turned out to be caused
+  by control messages in the STREAMS device (and thus relevant only to
+  systems that use STREAMS).
+- Portability fixes for FreeBSD-5.0.
+- Bug 1976 - Login hangs, spawned process runs in endless loop in mod_auth.
+  This was caused by a combination of "AuthAliasOnly on" and UserAlias
+  directives in which the alias and the username were identical.  Different
+  alias and username in a UserAlias directive is now required.
+
+1.2.8rc2 - Released 29-Jan-2003
+---------------------------------
+- Bug 1894 - Double chdir into self-referencing symlink fails with
+  "No such file or directory".  The errno value has been changed from
+   ENOENT to ELOOP.
+- Bug 1272 - Requested Addition: DenyFilter by User or DenyFilter by Directory.
+  AllowFilter and DenyFilter are now extended to <Directory> and .ftpaccess
+  contexts.
+- Bug 1671 - new directive SQLLogFile.
+- mod_linuxprivs has been renamed to mod_cap and is now built into ProFTPD
+  by default if the host OS (Linux) supports it. autoconf detection code
+  based on a submission by Mihai RUSU <dizzy@roedu.net>.  The mod_cap
+  directives are CapabilitiesEngine and CapabilitiesSet.
+- Bug 1893 - Apple likes to move things. PAM support works on OS X again.
+  Submitted by: thesin@users.sourceforge.net (Justin F. Hallett)
+- Bug 1826 - Makefiles are a bit icky
+- Bug 1904 - Tru64 UNIX 4.0D and sstrncpy()
+- Bug 1891 - SGI syslog isn't being written to.  Turns out that /dev/log on
+  SGI is a STREAMS device, just as for Solaris.  The fix for this bug works
+  for IRIX6; earlier versions of IRIX may still see this bug.
+- Bug 1919 - <Directory> section already configured for $dir needs
+  clarification.  This has been resolved by adding a debug statement (level 2)
+  to the <Directory> handler that reports on the given/resolved paths used.
+- Bug 1910 - ProFTPD hangs on SIGHUP.  This was triggered by mixing stdio
+  and regular I/O library calls related to password and group entries.
+- Add -Wundef and -Wfloat-equal to CFLAGS (Suggested by Steve Grubb
+  <linux_4ever@yahoo.com>)
+- Fixed broken tcpReceiveWindow and tcpSendWindow configuration directives.
+  The setsockopt(2) function was being called at the wrong time during the
+  establishment of the data connection.
+- %f for DELE commands was not being properly expanded.
+- Bug 1923 - %N magic cookie reports incorrectly.  This was an off-by-one
+  bug.
+- %L was reporting the remote IP address, rather than the local IP address.
+- Bug 1922 - Server allows RNTO an existing file even with AllowOverwrite
+  turned off.  Now, RNTOs to existing files are denied unless AllowOverwrite
+  is on.
+- ftptop now displays transfer rates in it's "transfer speed" display mode.
+  Use the 't' key to toggle between ftptop display modes.
+- Bug 1926 - AuthOrder doesn't work
+- Bug 1918 - AuthUserFile not works normally.
+- Bug 1241 - Additional functionality: HomedirOnDemand.  This has been added
+  as a new configuration directive, CreateHome.
+- Bug 1734 - Cygwin - Unable to set uid
+- Bug 1938 - upload to root directory fails.  This was caused by caching
+  effects.
+- Bug 1939 - RLimitMemory seems broken.  The problem turned out to be bad
+  handling of the case where sizes were used without specifying units.
+- Bug 1911 - NLST is not being Limited in DIRS.  The issue was that directory
+  paths were not being properly expanded, for purposes of looking up <Limit>s,
+  in the handling of NLST.
+
+1.2.8rc1 - Released 28-Dec-2002
+---------------------------------
+- Bug 1597 - Problems with HP-UX 10/11 trusted systems, mod_pam, and mod_unixpw.
+- Bug 1482 - Add new %U meta to LogFormat, for logging original username.
+- Bug 1683 - Handling of VirtualHosts on startup.  Now, rather than dying
+  when unable to resolve a <VirtualHost> DNS hostname when starting up, the
+  daemon will log the error, and skip the bad <VirtualHost>.
+- Bug 1825 - AUTH macro namespace cleanup.  A "PR_" prefix has been added to
+  the AUTH_* macros, to help prevent namespace collisions.  This means that
+  some third-party auth modules may need to be updated.
+- Bug 1806 - Add RFC2389 support.
+- Bug 1833 - Add ability to have add'l module initialization callback.
+- Bug 1743 - No magic cookie for number of files transfered.  New cookies
+  added for Display* files: "%i" for total number of files uploaded (read "in")
+  during a session, "%o" for total number of files download (written "out")
+  during a session, and "%t" for total number of files transferred (both
+  uploaded and downloaded).
+- Bug 1653 - Complete the FS API abstraction implementation.  The Developer
+  Guide will have the complete details on using this API.
+- Bug 1712 - TLS support.  mod_tls-2.0.5 has been added to the distribution.
+  Many, many thanks to Peter Runestig for his work on this, and for maintaining
+  his code through so many versions of ProFTPD.
+- Bug 1788 - Add ability to configure auth module checking order.  This is
+  now configurable via the new AuthOrder directive.
+- Bug 1205 - Add debug option to SystemLog.  Actually, this feature request
+  has been resolved by adding a new DebugLevel configuration directive, so
+  that a debugging verbosity can be set in the configuration file as well
+  as on the command line.
+- Added mod_rewrite to distribution.
+- Bug 1403 - per-server system logs via ServerLog directive.
+- Bug 1605 - MKD and RMD do not log filepaths with %f or %F option in
+  ExtendedLog.
+- Removing the RateRead* and RateWrite* configuration directives, and replacing
+  them with a single new directive, TransferRate.
+- Bug 1789 - Add ability to block recursive directory listings.  The
+  LsDefaultOptions configuration directive has been deprecated in favor of
+  the more feature-rich ListOptions directive.
+- Added Bindings API
+- Bug 1515 - Enable mod_log to log into default log / syslog.  The ExtendedLog
+  directive can now take a "path" of the form: "syslog:level", where the
+  "syslog:" prefix tells mod_log to log that ExtendedLog data via syslog,
+  and the "level" informs mod_log of which syslog level to use.
+- AIX sendfile support. Thanks to Andy Igoshin <ai@vsu.ru> for the patch.
+- 1858 - move "session closed" logging from graceful quit to child exit
+  sequence.  This allows for better log reporting, with respect to sessions
+  ended through means such as catastrophic death of client, or segfaults.
+- Added --enable-devel configure option, for enabling code of interest to
+  developers
+- Bug 1507 - regex pattern matching in [Allow/Deny][User/Group].  This has
+  been implemented by adding a "regex" optional parameter to the AllowGroup,
+  DenyGroup, AllowUser, and DenyUser directives.  The documentation will
+  be adjusted accordingly.
+- Bug 1882 - SITE chmod 777 file<space>name.  The patch for this works
+  for filename parameters to the SITE CHGRP command as well.
+- Bug 1881 - Bug in Function MaxClients.  This was caused by an off-by-one
+  bug in the handling of non-anonymous settings.
+- Bug 1886 - Ftpwho uses too many lines when authenticating.
+- Bug 1875 - same radius packet id for start- and stop-accounting record.
+- Bug 1883 - socklen_t patch. Thanks to Andy Igoshin <ai@vsu.ru> for the
+  patch.
+- Bug 1885 - -q/--quiet option for use with the -n/--nodaemon flag. Useful
+  for running proftpd from inittab or with daemontools.
+- Bug 1677 - Integrate ProFTPD with C2/SIA on Tru64 Unix.  The --enable-sia
+  configure option has been added.
+- Bug 1837 - Add module specifically for handling Auth*Files, providing
+  finer-grained control.  The new mod_auth_file module is compiled in by
+  default, and can be disabled using the --disable-auth-file configure option.
+  For consistency, mod_unixpw.c has been renamed to mod_auth_unix (and now
+  has a --disable-auth-unix configure option), and mod_pam.c has been renamed
+  to mod_auth_pam.c (with an explicit --enable-auth-pam configure option).
+- Bug 1900 - ftpwho's output on uploads.  ftpwho now reports "n/a" rather than
+  "0%" on uploads, for the server does not know how large of a file is being
+  uploaded in advance, and cannot determine a "percentage done" value.
+- Bug 1888 - Increase mod_linuxprivs configurability.  Two new directives,
+  LinuxPrivsEngine and LinuxPrivsCapabilities, are added.
+- Bug 1905 - AIX needs "config.h" included before *anything* else.
+- Bug 1903 - ftpwho depends on snprintf but doesn't link in lib/libsupp.a
+  Primarily of issue under Solaris 2.5 and Tru64 4.0D.
+- Bug 1863 - Unable to build under UnixWare 7
+- Bug 1906 - Add description strings to AC_DEFINE
+
+1.2.7 - Released 05-Dec-2002
+----------------------------
+- Bug 1840 - Problem with syslog default destination on HP-UX.  HPUX uses
+  a default device of /dev/log.un rather than /dev/log.
+- Bug 1844 - DisplayLogin %y macro is off by 1.  Consequence of scoreboarding
+  code changes.
+- Bug 1838 - Since 1.2.6: in add_useralias() setting flag CF_MERGEDOWN breaks
+  aliased anonymous functionality.  The fix was to set the CF_MERGEDOWN flag
+  only if the UserAlias directive is not being used in the <Anonymous>
+  context.
+- Bug 1812 - Double logging lines for ExtendedLog.  No need to merge this
+  particular directive down.
+- Bug 1848 - undefined reference to `halfdelay'. curses does not seem to
+  provide this function, as ncurses does.  The patch works around this by
+  using halfdelay() if linking against ncurses, and using nodelay() and sleep()
+  if linking against curses.
+- Bug 1839 - undefined reference to `get_fs_size'. Expand BSD
+  statfs()/statvfs() support beyond FreeBSD.
+- Bug 1680 - Error in startup script. Add /usr/local/sbin/ to the included
+  rc script's $PATH
+- Bug 1852 - Proftpd gets signal 11 on "quote site".  The mod_site module
+  was not properly checking the number of parameters for SITE commands.
+- Bug 1856 - TimesGMT acts like default is 'off'.  The default for this
+  directive was inadvertently set to "off", rather than the documented default
+  setting of "on".
+- Bug 1853 - SyslogFacility: unable to open syslog.  This turned out to be
+  due to the fact that /dev/log on Solaris (and other platforms?) is a
+  STREAMS device, which requires open() and putmsg(), rather than connect()
+  and send().
+- 1846 - File overwrites fail.  Tracked down by Sergei Rozinov to involve
+  uninitialized stack data.
+- Bug 1861 - 'ftpwho -v -o oneline' print all connections in one line.  This
+  bug appeared in 1.2.7rc3, a consequnce of Bug#1815.
+- Bug 1868 - Wrong cmdopts in ftpcount.c.
+- Added custom memory scrubber routine to deal with the issue mentioned in
+  this Bugtraq thread: http://online.securityfocus.com/archive/1/298598
+
+1.2.7rc3 - Released 15-Nov-2002
+-------------------------------
+- Fixed configure script detection and handling of ncurses (HAVE_LIBNCURSES
+  was not being properly defined).
+- Added --enable-scoreboard-buffer-size option to configure script, for
+  tuning the size of some scoreboard fields (e.g. the full client command
+  and the current working directory).
+- Bug 1287 - Error compile with autoshadow option.  AIX does not have
+  traditional shadow support, and uses other mechanisms.  This means that
+  the --enable-autoshadow and --enable-shadow configure options should not
+  be used when configuring proftpd for AIX.  The configure script has been
+  updated to detect when these options are used on AIX, and to automatically
+  disable them.
+- Bug 1722 - Can't work magic cookie %F on FreeBSD.
+- Make sure session.xfer uses cleared memory so unset structure members
+  won't contain random values.
+- Fixed handling of AuthAliasOnly, broken slightly by Bug#1567.
+- Bug 1800 - Proftpd child segfaults when using a PASS without no USER first.
+  mod_wrap was making a bad assumption about the USER name being available.
+  This assumption has been corrected.
+- Bug 1803 - Check for SIZEOF_UNSIGNED_LONG_LONG to determine LFS support
+  breaks some Linux installations
+- Bug 1805 - PAM support under Mac OS X
+- Bug 1772 - Docs fixup in RPM spec file
+- Bug 1398 - there is no log rotate for /var/log/xferlog
+- Bug 1814 - class names are truncated in scoreboard entry
+- ftptop can now use either curses or ncurses
+- Bug 1818 - proftpd doesn't compile on hpux11
+- Bug 1760 - AllowOverwrite not operational.
+- Bug 1703 - mod_sql_mysql compile error.  This was eventually tracked down
+  to an overlap between ProFTPD's bundled getopt implementation, and
+  MySQL's bundled getopt implementation.  To prevent this problem, a new
+  --without-getopt configure option has been added, which tells the ProFTPD
+  build process to explicitly not use the ProFTPD bundled getopt
+  implementation.
+- Only link ftptop with lib{n,}curses - it isn't needed in any other
+  binaries
+- Bug 1815 - Patch to add class information to ftpwho (with verbose on)
+- Bug 1810 - Wrong permissions assigned to uploaded file.  This turned out
+  to be related to the addition of the statcache code, and its interaction
+  with the UserOwner and GroupOwner configuration directives.
+- Bug 1830 - MaxClientsPerHost (small) Bug.  Off-by-one error in the handling
+  of the MaxClientsPerHost directive, introduced by the change in timing of
+  scoreboard modifications of the new scoreboarding code.
+- ftpasswd now exits with different values, depending on the problem cause.
+  Thanks to Graham Dunn <gdunn@inscriber.com> for these changes.
+
+1.2.7rc2 - Released 22-Oct-2002
+-------------------------------
+- Bug 1757 - non-ANSI Syntax in netio.c
+- Bug 1735 - Proftpd 1.2.6 compiled on FreeBSD 4.6.2 exits on signal 11
+- Bug 1759 - ftpwho shows much more connections than really is.  This bug
+             only occurred for those daemons running in inetd mode.
+- Bug 1769 - Lack of supplemental groups can cause segfault.  This bug is
+             a result of the fix for Bug 1666.
+- Bug 1770 - Forgetting to check for no IP in string.
+- Moved the switching to the User/Group for a vhost up in the order, to occur
+  before any modules' session initialization callback is invoked.
+- Bug 1644 - LogFormat local IP and FQDN tags missing.  Added %L to LogFormat
+             meta sequences for logging local server IP address, and %V for
+             logging local server FQDN.
+- Bug 1785 - Bad handling of symlinks.  This bug appeared as a consequence
+             of Bug#1486's fix, which involved caching of struct stats in
+             order to effect a speed-up of directory listings.
+- Bug 1778 - 1.2.7rc1 fails to link on OpenBSD 3.2-current.  The ftptop
+             utility was not properly utilizing the macro detecting the
+             presence (or absence) of the ncurses library.
+- Adding new configure options (see configure --help) for setting some of
+  the "tunable" values in options.h via the configure command.
+
+1.2.7rc1 - Released 01-Oct-2002
+-------------------------------
+- Bug 1649 - setproctitle() prepends and appends process name
+- Bug 1666 - Auth modules can return duplicate supplemental groups
+- Bug 1654 - Add DESTDIR in Makefile
+- Bug 1682 - Broken SyslogFacility requires custom syslog code
+- Bug 1076 - Toggle parsing of .ftpaccess files with a AllowOverride
+- Bug 1724 - AuthPAM off does not work beginning 1.2.5
+- Bug 1593 - mod_sql doesn't cache failed uid lookups
+- Bug 1719 - Add RFC2228 stuff to distribution
+- Bug 1663 - Add SITE CHGRP command
+- Bug 1725 - disconnect when specify multiple ranges on Allow
+- Bug 1253 - No ability to configure address for main server
+- Bug 1432 - Pedantic handling of leading whitespace in FTP commands
+- Bug 1652 - Add connection-rate limiting mechanism
+- Bug 1662 - Define _GNU_SOURCE
+- Bug 1486 - mod_ls is extremly slow
+- Bug 1669 - Filename meta (%f) not correctly expanded for some commands
+             in WRITE logging class
+- Bug 1065 - New directives to limit file size on upload and download
+- Bug 1658 - Separate session/daemon resource limit settings
+- Bug 1436 - Feature Enhancement: Timeouts on a <Virtualhost> basis
+- Bug 1737 - Enhance file hiding via regular expressions
+- Bug 1736 - RETR does not handle an inappropriate REST
+- Bug 1745 - multiple similar entries in extended log
+- Added NetIO API
+- Bug 1726 - Cygwin's Makefile inconsistency
+- Bug 1713 - Scoreboard changes
+- Bug 1395 - Check return values in PRIVS calls
+- Bug 1732 - No checking for NULL at inet_ascii and pr_fnmatch
+- Bug 1687 - Add contrib module for RADIUS authentication, accounting
+- Bug 1572 - Need to use pam_end() to close session on Solaris 8
+- Bug 1475 - Minor changes to SITE command handling
+- Bug 1748 - SQLLog doesn't work with DELE (no filename with %f)
+- Bug 1694 - SQLLog QUIT doesn't execute on connection close
+- Bug 1675 - add new MaxClientsPerUser configuration option
+
+1.2.6 - Released 04-Sep-2002
+----------------------------
+New mod_ldap (2.8.10)
+- Fixed bug in matching of IP addresses introduced by Bug#1701
+
+1.2.6rc2 - Released 15-Aug-2002
+-------------------------------
+- Bug 1681 - Fixed bug made when adding <IfDefine>, <IfModule> support
+- Bug 1645 - Changed ordering of close() of HiddenStor files slightly
+- Bug 1674 - Changed timing of allocation of dynamic buffer (to avoid segfaults)
+             in the supplied fgetgrent() function, which is used for
+             AuthGroupFiles under FreeBSD.
+- Bug 1697 - Fixed memory leak involving allocated regex_t *s and SIGHUP
+- Bug 1701 - Fixed/enhanced name/IP matching function by adding matching of
+             ip1/ip2 to function; it was just name1/name2, name1/ip2 matching.
+
+1.2.6rc1 - Released 02-July-2002
+--------------------------------
+- Bug 1407 - Removed unnecessary check for prior PORT/PASV in STOR
+             PRE_CMD handler (RETR PRE_CMD handler did not have these checks)
+- Added new Define, <IfDefine>, <IfModule> configuration directives, new
+  command-line option -D (a la Apache)
+- Bug 1556 - Restructuring the way signals are handled, so that signal handling
+             functions are executed synchronously, not asynchronously
+- Bug 1463 - Added reporting of dispatching to auth handlers at debug level 6
+- Bug 1258 - Added STOU command handler
+- Bug 1534 - Added LFS support
+- Bug 1647 - Changed unnecessary use of umode_t to mode_t in mod_ls.
+- Bug 1650 - Mergedown bug with LsDefaultOptions directive fixed.
+- Bug 1306 - Added a TimeoutSession directive that can be used to set a maximum
+             time limit on an entire session.
+- Bug 1643 - Cleaned up several source code files.
+- Bug 1569 - Cygwin support, added README.cygwin
+- Bug 1171 - Added handling backslash-escaped newlines in configuration files,
+             so that a directive can be split across multiple lines using
+             a trailing \ before the newline character.
+- Removed the deprecated AllowChmod and ShowDotFiles configuration directives.
+- Bug 1655 - Added support for a -n option when listing directories.
+- Bug 1502 - Added a lingering_close function.  As discussed in the bug
+             report, this may cause issues with some clients; keep an eye
+             for this, as the timeout (ten minutes) may be too long or short.
+- Bug 1664 - Changed mod_sql to decline UID-to-name resolution if a UID
+             field has been configured to NULL; similarly for GID.
+- Removed mod_quota.c due to bugs, lack of maintainership.  Consult
+  http://bugs.proftpd.org for a list of the mod_quota bugs.
+- Bug 1667 - Moved definition of USE_SHADOW, AUTO_SHADOW macros from command
+             line into config.h, with the other macros.
+- Bug 1628 - Added getgroups auth handler to mod_sql.  The lack of this was
+             causing some DefaultRoot directives (those that relied on
+             group-expressions) not be correctly honored, as mod_sql was
+             not supplying the groups for the users.
+- Bug 1543 - Change mod_sql to not remove embedded whitespace within a
+             username, just to strip leading and trailing whitespace.
+
+1.2.5 - Released 08-Jun-2002
+----------------------------
+New mod_sql (4.08)
+- Bug 1379 - Changed mod_sql.c to use memset() instead of bzero()
+- Bug 1576 - Checks for a NULL pointer in a border case involving use of
+             SQLHomedirOnDemand
+- Bug 1586 - Fixed bad assumption concerning row count involving SQL-provided
+             group information
+- Bug 1625 - Adds compatibility fix to mod_sql_mysql for older MySQL libraries
+             (a function name changed in MySQL 3.23.14)
+
+1.2.5rc3 - Released 30-May-2002
+-------------------------------
+New mod_ldap (2.8.6)
+- Bug 1612 - Fixed logging of RFC931 usernames in xferlog
+- Bug 1595 - Transfers that result in error conditions no longer cause
+             the data connection to be closed prematurely via data_cleanup()
+- Bug 1627 - Fixed bug in timer code where timers were being blocked
+             indefinitely, manifesting as non-functioning idle timeouts
+- Bug 1521 - Cleanup of function prototypes
+- Bug 1379 - Changing remaining bzero/bcopy occurrences to memset/memcpy
+- Bug 1394 - ftpstats program is not working
+
+1.2.5rc2 - Released 13-May-2002
+-------------------------------
+- Added Andrew Houghton to the credits
+- Added in the new format FAQ
+- Bug 1580 - Minor additions to the RPM spec file to allow RPMs to be built
+             by non-root users.
+- Bug 1546 - PF_ARGV_WRITABLE, PF_ARGV_WRITEABLE are used mixed.  Fixed to
+             use PF_ARGV_WRITEABLE consistently (less changes to make).
+- Bug 1608 - src/dirtree.c produces two unnecessary warnings.  Fixed to
+             cast to mode_t for initialization of variables.
+- Bug 1610 - compiling mod_core.c gives an unneeded/dazzling msg
+- Removed legacy documentation, updated licence template, licence update
+  in ftp.h to include the SSL clause.  Updated CREDITS (ML)
+- New mod_ldap (2.8.3)
+- Bug 1544 - Daemon does not switch to configured User/Group identity in
+             <VirtualHost> as documented
+- Bug 1581 - Changed Hide{User,Group} directive to use pointers for
+             proper handling of uid_t/gid_t types
+- Migrated to the new form of the directive list from the pdd sgml sources
+  (ML)
+- Bug 1563 - Moved checking for bad address lookup up, to prevent segfault
+             when using MasqueradeAddress
+- Bug 1567 - Fixed parsing of AuthAliasOnly to honor Boolean parameter
+- Bug 1579 - the contrib RPM init.d script make inappropriate use of
+             ftpshut in a few cases
+- Bug 1588 - Examined return value of inet_get_conn_info() to prevent
+             segfaults for ephemeral TCP connections
+- Bug 1570 - Changed MasqueradeAddress context checks in code to match
+             docs
+- Bug 1601 - RNTO handler did not properly cleanup after itself in an
+             error condition, tickling a later segfault
+- Bug 1523 - Amended fix for this bug to include a pool that should prevent
+             memory leaks for long-running daemons
+- Bug 1566 - Changed OpenBSD-specific macro checks to allow for proper
+             use of sockets
+- Bug 1578 - RootLogin's configuration directive handler did not properly
+             set the mergedown flag
+- New mod_wrap (1.2.3)
+- Bug 1509 - removed contrib/genuser.pl (per TJ)
+- Bug 1509 - added contrib/ftpasswd utility script (contributed by TJ)
+- Bug 1318 - sendfile() semantics incorrect under Linux
+- Bug 1450 - Timers removed immediately/alarm() return no longer used for
+             timing
+- Bug 1446 - DefaultServer overrides SocketBindTight
+- Bug 1378 - Replace alloca stuff in glibc-glob.c with something more standard
+- Bug 1498 - <Limit LOGIN> block failing with mod_ldap
+- Bug 1381 - include/glibc-glob.h fix for Tru64 UNIX
+- Bug 1465 - can't bind to port that hasn't been closed by forked child
+             process
+- Bug 1379 - replace bzero/bcopy with memset/memcpy
+- Bug 1476 - doc updates
+- Bug 1520 - security checks for TransferLogs
+- Bug 1435 - AccessDenyMsg for <Anonymous> not working
+- Bug 1492 - Bad interaction between HiddenStor and UserOwner
+- Bug 1493 - incorrect parsing of AuthUserFile
+- Bug 1485 - Adds CF_MERGEDOWN_MULTI config_rec flag
+- Bug 1459 - server fails to send response in some cases
+- Bug 1533 - use memset correctly
+- Bug 1517 - doc update
+- Bug 1461 - modules/mod_unixpw.c pw_getgroups() makes dangerous assumption
+- Bug 1512 - Minor credentials cleanups
+- Bug 1516 - wrong response to CDUP/XCUP/XCWD
+- Bug 1451 - add_config_param_str() no longer uses permanent_pool
+- Bug 1523 - umask allocation in <Global> moved to permanent_pool
+- Bug 1380 - updated getopt library for Tru64/AIX
+- Bug 1468 - segfault with empty .ftpaccess
+- Bug 1445 - PID file contents change when attempting to start
+             the daemon a second time
+- Bug 1539 - losing SGID bit on created directories w/ {User,Group}Owner
+             in effect
+- Bug 1537 - doc update
+
+1.2.5rc1 - Released 18-Dec-2001
+-------------------------------
+- New mod_sql (4.07)
+- New mod_wrap (1.2.2)
+- New mod_ldap (2.8.1)
+- New Directive: UseGlobbing, allows glibc-based filepath globbing
+  to be disabled.
+- Bug 1113 - Make.rules for HPUX incorrectly generated
+- Bug 1334 - (should have been in 1.2.4, but was missed somehow)
+             MaxClients none in VirtualHost forbids connect
+- Bug 1368 - umask bug is hopefully squashed for good
+- Bug 1389 - fixed hang on PWD
+- Bug 1355 - Added POST_CMD_ERR handler to API
+- Bug 1396 - DenyFilter works only in server config scope
+- Bug 1410 - SIGIO now conditionally compiled
+- Bug 1281 - Improper checking of server context
+- Bug 1364 - Immediate chown() after file creation
+- Bug 1415 - Change allowed contexts for Include
+- Bug 1430 - Possible bad handling of Directory contexts
+- Bug 1426 - sigsegv on `ls ///////////'
+- Bug 1360 - Add getgroups abstraction for auth modules
+- Bug 1289 - Increase information passed to timer callbacks
+- Bug 1341 - Bad tracking of forked processes
+- Bug 1400 - Improper use of MODRET_HASDATA macro
+- Bug 1416 - PidFile in <Global> context is unnecessary, even wasteful
+- Bug 1429 - Trivial fixes to dispatch reporting
+- Bug 1419 - Remove unnecessary colons from PRIVS_ macros
+- Bug 1418 - Slight change to exithandler handling to allow module
+             finalization slot
+- Bug 1392 - Added LOG_CMD_ERR cleanup handler for LIST/NLST/RETR/
+             STOR/APPE/STOU, to defer clearing of transfer counters.
+- Bug 1391 - ABOR handler now clears session.xfer
+- Check retr_file for validity when RESToring
+
+1.2.4 - Released 19-Oct-2001
+----------------------------
+Ooops.  1.2.3 was released with a bug that breaks Umask on
+certain platforms.  This results in files being mode 0.
+- Bug 1348 - Fix for mode 0 problem
+
+1.2.3 - Released 18-Oct-2001
+----------------------------
+PASS argument now intentionally hidden in the proctitle.
+- Bug 1242 - More verbose logging of regex evaluations
+- Bug 1343 - Better reporting of command dispatching
+- Bug 1335 - Documentation patch
+- Bug 1334 - MaxClients none in <VirtualHost> now works
+- Bug 1344 - QUIT now properly logged.
+- Bug 1247 - Allow/Deny now bahave as in <1.2.2 (multiple lines work)
+- Bug 1327 - AllowForeignAddress now merges down
+- Bug 1280 - datatype fixups
+- Bug 1311 - DirFake* can no longer raise sigsegv
+- Bug 1331 - Reverse DNS is now forward checked for security
+- Bug 1305 - limits.h is now included if present
+
+1.2.2 - Released 17-Aug-2001
+----------------------------
+README.mod_sql update from author
+new mod_sql from author
+- Bug 1285 - Documentation updates
+- Bug 1278 - pedantic fix to access_check()
+- Bug 1266 - Use of APPEnd could corrupt files
+- Bug 1286 - mod_ls displays set[ug]id bits
+- Bug 1145 - DirFakeUser now applies to STAT
+- Bug 1216 - xferlog man page update
+- Bug 1111 - INSTALL update
+- Bug 1262 - Doc update
+- Bug 1217 - Doc update
+- Bug 1187 - Upstream update to mod_quota
+- Bug 1232 - UserOwner no longer performs chgrp
+- Bug 1219 - compilation fix under gcc 3.0
+- Bug 1230 - Portability fix for Sol 8 (sparcv9)
+- Bug 1169 - Fix bug introduced by 1098, breaking DefaultRoot other
+  than "~*"
+- Bug 1234 - ABOR now always returns 226 (as per RFC959)
+- New mod_sql from upstream maintainer
+
+1.2.2rc3 - Released 19-Jun-2001
+-------------------------------
+- Bugs 1164,1020,1134,1190,1207
+  Documentation updates
+- Bug 1215 - Removed setpgid()/setpgrp() from fork_server()
+- Bug 1145 - DirFakeUser can display current logged in user
+- Bug 1210 - Possible silent truncation in net-ascii mode
+- Bug 1212 - special files (devices, etc) didn't show up in directory
+  listings.
+- Bug 1189 - (again) <Directory> dups allowed in <Anonymous>
+- Bug 1155 - non rfc behavior on filenames with spaces
+- Bug 1193 - Error "~" processing while renaming files
+- Bug 1203 - negation ('!') notation in Allow/Deny ACL broken
+- Bug 1161 - %F magic cookie now displays free space on cwd
+- Bug 1151 - Allow <Limit> searching in vhost or main server conf
+- Copyright/License updated to allow linking to OpenSSL
+- Bug 1183 - Removed duplicate find_class() call
+- Bug 1189 - <Directory> duping checked for
+- Bug 1185 - symlinks in homedirs now resolved at login
+- Bug 1149 - Patch to contrib RPM init script
+- Bug 1132 - Compilation fix for glibc 2.0
+- Bug 1201 - Modifications to contrib/xferstats.holger-preiss
+- Bug 1090 - {Allow,Deny}Filter Errors now *really* logged
+- New mod_sql (and friends) from upstream maintainer
+- Bug 1175 - GNU HURD portability
+- Bug 1176 - PWD/XPWD can now be <Limit>ed
+- Bug 1177 - mod_readme moved to contrib/
+- Bug 1155 - HPUX portability cleanup
+- Bug 1172 - Compiler clean for getopt code.
+- Bug 1170 - Compiler cleanup for pr_fnmatch code.
+- Bug 1169 - Better handling of DefaultRoot/DefaultChdir
+- Bug 1168 - variable definitions moved from proftpd.h to main.c
+- Bug 1160 - BSD root socket semantics needed for svr4.2mp;UX/4800
+- Bug 1156 - USER command now takes an argument with spaces in it
+- Bug 1152 - Off-by-one in the PassivePorts code
+- Bug 1137 - NLST displayed hidden files
+
+1.2.2rc2 - Released 20-Apr-2001
+-------------------------------
+The `AllowChmod' directive has been deprecated, and will not work
+consistantly.  Use <Limit SITE_CHMOD> instead.
+
+- Bug 1112 - Compilation fix for IRIX 6.2.
+- Bug 1128 - Fixed possibled Linux sendfile() corruption issue.
+- Bug 1093 - Checking for world writable log files and symlinks.
+- Bug 1094 - AuthUserFile/AuthGroupFile disallow relative paths.
+- Bug 1096 - Case sensitivity issues in config, better checking of
+  RLimit* directive arguments.
+- Bug 1090 - AllowFilter/DenyFilter now logs correctly.
+- Bug 1119 - glibc-glob compilation issue on IRIX6.
+- Bug 1090 - ExtendedLog should now report ALL events (even errors)
+
+1.2.2rc1 - Released 24-Mar-2001
+-------------------------------
+- Bug 1085 - Better logging of "User is not a UserAlias" and "Can't find
+  user."
+- Bug 1043 - Fixed possible infinite loop in bandwidth throttling code.
+- New RLimit* directives used to control resource usage on support platforms.
+- Bug 1075 - Sub-contexts (<Directory>, etc) weren't being fully copied from
+  <Global> to vhosts.
+- Bug 1049 - New User/Groups weren't being seen after startup w/out a SIGHUP.
+- Bug 1066 - new GNU glob() and friends, which properly limits recursion and
+  avoids DoS issues.  Built-in glob support is now always compiled in to
+  proftpd regardless of libc support on build platform.
+- New directive "MasqueradeAddress", used to emit a "fake" (non-interface) IP
+  in server ident, magic cookies and PASV commands.  Useful for firewalled or
+  NAT'd networks that are not FTP aware.
+- Bug 1044 - New directive "AccessDenyMsg", works just like AccessAllowMsg,
+  but does the obvious.
+- Bug 1055 - Not really a bug, but still .. ftpwho/ftpcount now attempt to
+  scan proftpd.conf looking for ScoreboardPath, if all else fails
+- Bug 1042 - <Directory /> arbitrarily not matching.
+
+1.2.1 - Released 01-Mar-2001
+----------------------------
+- A relatively major issue was discovered with session.groups which may cause
+  any group-expressions inside of <Limit> (DenyGroup, etc) to malfunction.
+  This is the primary reason for the 1.2.1 release.
+- Default CFLAGS changed from "-g3 -O6" to "-O2" because it is reported
+  that -O6 is highly experimental, and including debugging really isn't all
+  the useful, as someone _really_ interested in debugging can edit Make.rules.
+- Defining classes without an explicit "Classes On" now generates a log
+  warning.
+- New mod_sql and mod_ldap from their respective maintainers.
+
+1.2.0-final - Released 26-Feb-2001
+----------------------------------
+- Numerous additional bug fixes from Bugzilla.  See http://bugs.proftpd.org
+  for more info.
+- New and updated README.* and INSTALL.
+- initgroups() support has been removed, it will be re-added in 1.3 after we
+  have proper modular support in authentication modules.
+- mod_sql.c, mod_sql_mysql.c and mod_sql_postgres.c back in, with a new
+  maintainer (replacements for mod_sqlpw and friends).
+- instead of using kill(pid,SIGCONT) to determine if scoreboard pids are
+  correct, proftpd now uses kill(pid,0) which should be a lot lighter on
+  heavy-load systems.  Thanks to Rob Schulhof <rrs@digisle.net> for pointing
+  out that kill(pid,0) is both valid AND useful. ;) Also removed some
+  completely useless and redundant /proc stat code which did the same thing
+  as kill(pid,0) on linux systems.
+- logging to file (via SystemLog) is now done with a single write instead of
+  two in order to be atomic.
+
+1.2.0rc3 - Released: 05-Feb-2001
+--------------------------------
+- mod_sqlpw.c, mod_mysql.c and mod_pgsql.c have been REMOVED from the
+  distribution.  They are currently unmaintained and have numerous bugs.
+  If any kind soul <grin> is interested in maintaining them, they may be
+  brought back into a future version of proftpd.
+- sendfile now defaults to off, use --enable-sendfile at configure
+  time to enable.  Additionally, sendfile is probably fixed.
+- initgroups/getgroups new defaults to off, use --enable-initgroups at
+  configure time to enable (mainly useful for large systems).  Be careful,
+  though, as initgroups/getgroups breaks module handling and will not work
+  in conjunction with other third-party modules (mod_sqlpw, etc).
+- Passive FTP works properly now (was broken in RC2).
+- Compilation problems fixed on some obscure platforms.
+- PAM authentication finally works again on Solaris (due to an annoying bug in
+  Solaris).
+- Added the DeleteAbortedStores directive.
+- Fixed a minor bug in SITE HELP.
+- Eliminated a race when logging in with MaxClients.
+- AllowChmod defaults to 'on' now for simplicity and compatibility.
+- Honor ExtendedLog NONE.
+- Added SyslogLevel directive.
+- Added --with-includes option to configure.
+- Added --with-libraries option to configure.
+- On systems with wtmpx, don't use wtmp at all.
+- Handle files that begin with ~ properly.
+- Documentation updated for PAM on FreeBSD operating systems.
+- NUMEROUS other bug fixes, including many security issues
+
+1.2.0RC2 - Released: 27-Jul-2000
+--------------------------------
+- Made sure ServerUseReverseDNS was honored.
+- Compile problems on various problems.
+- Added descriptions for more errors to be more RFC compliant.
+- UID/GID handling is more portable now on systems with unusual UID/GID sizes.
+- PAM handles should be persistent across jailed environments.
+- Various additions to configure to make it more portable and correct.
+- AllowChmod works properly now.
+- HP/UX sendfile support.
+- Cleaned up configure and supporting files.
+
+1.2.0RCl - Released: 11-Jul-2000
+--------------------------------
+- Fixed a bug in mod_ls that could cause a crash.
+- Fixed a minor bug related to group permissions.
+- Fixed a bug in calculating file system size when using statvfs.
+- Fixed a bug when a 'TYPE L' directive is passed improperly.
+- Fixed Umask directive handling in directories.
+- Changed bandwidth throttling to use select() instead of usleep() to work
+  better across platforms.
+- Updated mod_ldap to 2.5.2.
+- Environment is now preserved before trying anything fancy with set_proc_title.
+- Warn a user if an invalid class is specified in ExtendedLog.
+- Logging of transfer times is more precise now.
+- mod_quota now comes with ProFTPD in the contrib directory.
+- FreeBSD 4.0 support.
+- Unixware support.
+- Updated config.guess and config.sub to reflect new platforms.
+- Added a %k directive to DisplayQuit that shows a more user-friendly count of
+  data transferred (ie: 23MB, 1.2GB, etc.).
+- Added a -t option to ProFTPD to allow syntax testing of a config file.
+- Made config file errors more useful by giving the filename and line number of
+  the error.
+- Added %A, %F, and %m directives to LogFormat to allow for the creation of
+  CLF-style logs.
+- Portability fixes to mod_tar.
+- Timezone is preserved across jailed environments now.
+- Slightly optimized directory listing/sorting in mod_ls as an interim measure.
+  mod_ls will be rewritten entirely in 1.3.
+- Added a -L option to mod_ls, so things like mirror work properly with
+  symbolic links.
+- Fixed the 'password shows up where username should be' problem with MySQL
+  authentication.
+- Fixed a potential security problem in setproctitle-enabled systems.
+- Documented a buffer issue with CustomLog -- This will be entirely rewritten
+  in 1.3.
+- Fixed a potential buffer problem in mod_ls.
+- Clarified syslog message information in INSTALL.
+- ProFTPD will now generate a PID file in standalone operation.
+- DisplayReadme now accepts patterns.
+- Added AllowChmod directive.
+- Allow comments and blank lines in password files.
+- *snprintf emulation was incomplete on Solaris and other platforms with no
+  *snprintf implementation.
+- PAM now properly registers and closes a session, conforming closer to the PAM
+  specification.
+- More documentation updates.
+- Fix a permissions display problem under certain circumstances.
+- Minor fixes to classes support.
+- AllowForeignAddress now applies to passive connections as well.
+- Major performance upgrade to groups initialization.  Those that have large
+  groups shouldn't see the 'hangs forever on login' problems.
+- Fixed GroupOwner's semantics and added the related UserOwner directive.
+- Added SQLKey, SQLKeyField, and SQLAuthoritative to mod_sql.
+- Fixed access checks for LIST and NLST.
+- Cleaned up use of '.' and '..' in mod_ls.
+- Fixed a case where ServerUseReverseDNS wasn't being honored.
+
+1.2.0pre10 - Released: 17-Jan-2000
+----------------------------------
+- sendfile() handles errors and non-optimal conditions The Right Way(tm).
+- install_group works right in warped cases of having more than one GID 0
+  group defined.  No, don't ask. :)
+- sendfile() doesn't log spurious messages unless it's in debug mode now.
+- A meaningful error is now generated with bad group files.
+- Complex group permissions work correctly now, where they did not in a
+  rare case.
+- Updated included version of mod_ldap.
+- Bandwidth and sendfile() use are now mutually exclusive.
+- Corrected minor log issues.
+- Fixed various compilation issues on various platforms (isn't this vague :)).
+- More informative error messages.
+- Minor semi-Y2K issue in mod_readme fixed (don't ask...look at the code :)).
+- Corrected error messages on most commands in cases where an invalid number
+  of arguments are specified.
+- An error message is now generated when ~ expansion is meaningless.
+- Invalid host entries don't show up as (null) anymore.
+
+1.2.0pre9 - Released: 27-Oct-1999
+---------------------------------
+- New support for BSD sendfile() semantics.
+- sendfile() deprecates politely on Linux 2.0.x.
+- AuthPAMAuthoritative now defaults to False.  This should clear up any
+  confusion on using PAM with AuthUserFile and friends.
+- Removed Bandwidth from the documentation.
+- Fixed a rare segfault in mod_auth.
+- Logging has changed slightly to be more informative and more consistent.
+    All messages that get logged are now preceded with
+    <virtualhost> (remote host[remote ip]).
+- mod_ldap for authentication against LDAP directories is now in place.
+- ftpwho/ftpcount -- a grammatical error corrected, and they now build
+    as seperate binaries.
+- Fixed the 'no names, just UIDs' bug.
+- Added genuser.pl to facilitate AuthUserFile entry creation.
+- Umask now takes an optional second argument, specifying a directory umask.
+- Work around FreeBSD's broken setpassent(), and a new option to override
+    this in fixed versions of FreeBSD's libc (--enable-force-setpassent).
+- Generate RPMs for both inetd and standalone versions of ProFTPD.
+- Added AuthUsingAlias to allow for more fine-grain control of anonymous
+    logins.
+- Added support for 'TYPE L 8' and 'TYPE L 7' per RFC 959.

@@ -1,0 +1,483 @@
+<!-- $Id: SQL.html,v 1.10 2007/08/29 17:47:42 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/howto/SQL.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD mini-HOWTO - SQL and mod_sql</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center><h2><b>SQL and <code>mod_sql</code></b></h2></center>
+<hr>
+
+<p>
+<b>Compiling with <code>mod_sql</code></b><br>
+To compile <code>proftpd</code> with the <code>mod_sql</code> SQL module, you
+will need to have the libraries and header files of a SQL database installed;
+the <code>mysql.h</code> and <code>libmysqlclient.a</code> files for MySQL,
+the <code>libpq-fe.h</code> and <code>libpq.a</code> files for Postgres.
+
+<p>
+<code>mod_sql</code> is the module that provides a generic interface between
+the <code>proftpd</code> daemon and the underlying SQL database(s);
+<code>mod_sql</code> relies on backend modules to handle the database-specific
+operations.  For MySQL database, the backend module is
+<code>mod_sql_mysql</code>; <code>mod_sql_postgres</code> is to be used when
+dealing with Postgres databases.  Then, to build a <code>proftpd</code>
+daemon to use <code>mod_sql</code>, use the <code>--with-modules</code> option
+of the <code>configure</code> script, specifying both <code>mod_sql</code> and
+the backed module, <i>e.g.</i>:
+<pre>
+  ./configure --with-modules=mod_sql:mod_sql_mysql
+</pre>
+Sometimes the necessary header and library files for building in SQL support
+are in non-standard locations; the <code>configure</code> script needs to be
+told about these non-standard locations so that it can find the necessary files,
+and build the daemon properly.  The <code>--with-includes</code> option (for
+header file locations) and <code>--with-libraries</code> option (for library
+file locations) are used for informing <code>configure</code> of such things.
+For example, if you had installed MySQL using a prefix of
+<code>/usr/local/mysql</code>, so that the path the header file was:
+<pre>
+  /usr/local/mysql/include/mysql/mysql.h
+</pre>
+and the path the library was:
+<pre>
+  /usr/local/mysql/lib/mysql/libmysqlclient.a
+</pre>
+then, the above <code>configure</code> line would be changed to look like:
+<pre>
+  ./configure \
+    --with-modules=mod_sql:mod_sql_mysql \
+    --with-includes=/usr/local/mysql/include/mysql \
+    --with-libraries=/usr/local/mysql/lib/mysql
+</pre>
+The same options can be used similarly for specifying Postgres file locations.
+(<b>NOTE: Postgres 7.2 or higher should be used; earlier versions of Postgres
+lacked a string-escaping function that allowed for an SQL injection
+vulnerability.  Use the <code>mod_sql_postgres</code> from proftpd 1.2.9rc1
+or later in conjunction with a newer Postgres library to fix the bug.</b>)
+
+<p>
+<code>mod_sql</code> is capable of using OpenSSL for different ways of
+encrypting passwords stored in database tables.  The <code>configure</code>
+options for building an OpenSSL-capable <code>mod_sql</code> might look
+something like this:
+<pre>
+  CFLAGS=-DHAVE_OPENSSL LIBS=-lcrypto ./configure \
+    --with-modules=mod_sql:mod_sql_mysql \
+    --with-includes=/usr/local/mysql/include/mysql:/usr/local/openssl/include \
+    --with-libraries=/usr/local/mysql/lib/mysql:/usr/local/openssl/lib
+</pre>
+Note that this example assumes that you have installed OpenSSL using a prefix
+of <code>/usr/local/openssl</code>.
+
+<p>
+<b>Configuring <code>mod_sql</code></b><br>
+Now that a <code>proftpd</code> daemon has been compiled for SQL support,
+you can begin the task of configuring it so that <code>mod_sql</code> can
+access your SQL database tables.  At a very minimum, <code>mod_sql</code>
+assumes that it has access to a table with two columns, one for user names, the
+other for passwords.  For more complete functionality, tables providing
+full user and group information are needed.  The full information that can
+be provided is described below.
+
+<p>
+<b>User Information Table</b><sub>1</sub>
+<table border=1>
+  <tr>
+    <td><i>Column</i></td>
+    <td><i>Type</i></td>
+    <td><i>Required?</i></td>
+    <td><i>Duplicates?</i></td>
+    <td><i>Null?</i></td>
+    <td><i>Purpose</i></td>
+  </tr>
+
+  <tr>
+    <td>userid</td>
+    <td>text</td>
+    <td>yes</td>
+    <td>no</td>
+    <td>no</td>
+    <td>user's login</td>
+  </tr>
+
+  <tr>
+    <td>passwd</td>
+    <td>text</td>
+    <td>yes</td>
+    <td>yes</td>
+    <td>no</td>
+    <td>user's password</td>
+  </tr>
+
+  <tr>
+    <td>uid</td>
+    <td>number</td>
+    <td>yes</td>
+    <td>no<sub>2</sub></td>
+    <td>yes</td>
+    <td>user's UID</td>
+  </tr>
+
+  <tr>
+    <td>gid</td>
+    <td>number</td>
+    <td>no</td>
+    <td>yes</td>
+    <td>yes</td>
+    <td>user's GID</td>
+  </tr>
+
+  <tr>
+    <td>home<sub>3</sub></td>
+    <td>text</td>
+    <td>no</td>
+    <td>yes</td>
+    <td>yes</td>
+    <td>user's home</td>
+  </tr>
+
+  <tr>
+    <td>shell<sub>4</sub></td>
+    <td>text</td>
+    <td>no</td>
+    <td>yes</td>
+    <td>yes</td>
+    <td>user's shell</td>
+  </tr>
+</table>
+<i>Notes</i>:
+<ol type=number>
+  <li>The user table <b>MUST</b> exist.
+
+  <p>
+  <li>Nothing in <code>proftpd</code> or <code>mod_sql</code> prevents you
+    from using duplicate UIDs, from given multiple users the same UID.  Hower,
+    this is should be done <i>only if you are certain you know what you are
+    doing</i>.
+
+  <p>
+  <li>See the <code>SQLDefaultHomedir</code> and <code>SQLUserInfo</code>
+    configuration directives.
+
+  <p>
+  <li>See the <code>RequireValidShell</code> configuration directive.
+</ol>
+
+<p>
+<b>Group Information Table</b><sub>1</sub>
+<table border=1>
+  <tr>
+    <td><i>Column</i></td>
+    <td><i>Type</i></td>
+    <td><i>Required?</i></td>
+    <td><i>Null?</i></td>
+    <td><i>Purpose</i></td>
+  </tr>
+
+  <tr>
+    <td>groupname</td>
+    <td>text</td>
+    <td>yes</td>
+    <td>no</td>
+    <td>group's name</td>
+  </tr>
+
+  <tr>
+    <td>gid</td>
+    <td>number</td>
+    <td>yes</td>
+    <td>no</td>
+    <td>group's GID</td>
+  </tr>
+
+  <tr>
+    <td>members<sub>2</sub></td>
+    <td>text</td>
+    <td>yes</td>
+    <td>yes</td>
+    <td>group's members</td>
+  </tr>
+</table>
+<i>Notes</i>:
+<ol type=number>
+  <li><code>mod_sql</code> will normally concatenate all matching group rows;
+    you can have multiple rows for each group with only one member per group,
+    or have a single row with multiple groups, or a mixing of the two.  However,
+    if you use the <em>fast</em> option for <em>groupset</em> of the
+    <code>SQLAuthenticate</code> directive, you may <i>not</i> have multiple
+    rows per group.
+
+  <p>
+  <li>Multiple members per group are formatted as comma-separated names
+    (no contained whitespace) in the text for this column.
+</ol>
+
+<p>
+The two SQL statements below should work for any ANSI SQL compliant databases,
+and are known to work for MySQL and PostgreSQL.  They both fully specify the
+tables as described above, with reasonable defaults for field length and data
+type.  More stringent definitions are suggested: if you plan on keeping home
+directory or shell information in the database, those fields could be defined
+as <code>NOT NULL</code>, or even <code>UNIQUE</code> for home directory.
+Similarly, if you plan on being able to use the <em>groupsetfast</em> argument
+to the <code>SQLAuthenticate</code> directive, you should create both the
+<em>groupname</em> and <em>gid</em> fields as <code>UNIQUE</code>.
+
+<p>
+To create a user table:
+<pre>
+  CREATE TABLE users (
+    userid VARCHAR(30) NOT NULL UNIQUE,
+    passwd VARCHAR(80) NOT NULL,
+    uid INTEGER UNIQUE,
+    gid INTEGER,
+    homedir VARCHAR(255),
+    shell VARCHAR(255)
+  )
+</pre>
+(<i>Note</i>: if you plan to reuse the same UID for multiple users, then you
+will need to remove the <code>UNIQUE</code> from the <code>uid</code> column
+description).  To create a group table:
+<pre>
+  CREATE TABLE groups (
+    groupname VARCHAR(30) NOT NULL,
+    gid INTEGER NOT NULL,
+    members VARCHAR(255)
+  )
+</pre>
+
+<p>
+The key configuration directives for <code>mod_sql</code> are:
+<ul>
+  <li><code>SQLConnectInfo</code>, for setting the information for connecting
+     to the database server
+  <li><code>SQLAuthenticate</code>, for controlling how the module will
+     perform its authentication lookups
+  <li><code>SQLAuthTypes</code>, for defining which authentication methods to
+     use
+  <li><code>SQLUserInfo</code>, for modifying the names of the columns using
+    which the module will lookup values from the user table
+  <li><code>SQLGroupInfo</code>, for modifying the names of the columns using
+    which the module will lookup values from the group table
+</ul>
+A list of <code>mod_sql</code> configuration directives can be found here:
+<pre>
+  <a href="http://www.castaglia.org/proftpd/modules/mod_sql.html">http://www.castaglia.org/proftpd/modules/mod_sql.html</a>
+</pre>
+
+<p><a name="FAQ">
+<b>Frequently Asked Questions</b><br>
+Whenever questions arise about problems using <code>mod_sql</code>, the first
+place to look will be the server debugging output and in a
+<code>SQLLogFile</code>.  <code>mod_sql</code> is <i>very</i> verbose with its
+debugging information, and you can see everything it is doing.  However, there
+are times when there is too much information in the debugging output, and you
+are unsure of how to remedy the problem.  These are some of the frequent
+questions.
+
+<p><a name="SQLAuthoritative"></a>
+<font color=red>Question</font>: Why is <code>proftpd</code> only looking in
+my SQL tables when a user logs in?<br>
+<font color=blue>Answer</font>: You probably configured <code>mod_sql</code>
+to be &quot;authoritative&quot; in your <code>SQLAuthenticate</code> setting by
+using the <em>*</em> option.  Conversely, if you actually want
+<code>proftpd</code> to only authenticate SQL-defined users, the <em>*</em>
+&quot;authoritative&quot; suffix is what you would want to use.
+
+<p><a name="SQLDefaultID"></a>
+<font color=red>Question</font>: Why does my SQL user not use the UID/GID I
+configured for her in my SQL table?<br>
+<font color=blue>Answer</font>: More than likely, you gave this user a UID
+that is below the default <code>SQLMinUserUID</code> (999), or a GID that is
+below the default <code>SQLMinUserGID</code> (999).  Use the
+<code>SQLMinUserUID</code>, <code>SQLMinUserGID</code>, and/or
+<code>SQLMinID</code> configuration directives to set these limits lower as
+needed.
+
+<p><a name="SQLShell"></a>
+<font color=red>Question</font>: Do I have to configure a real shell for my
+SQL-defined users?<br>
+<font color=blue>Answer</font>: No. The <code>proftpd</code> daemon only checks
+the shell for a user in order to provide compatibilty with other FTP daemons,
+which do the same check; <code>proftpd</code> itself does not spawn the shell.
+See the <code>RequireValidShell</code> configuration directive for turning this
+check off.
+
+<p><a name="SQLLogQUIT"></a>
+<font color=red>Question</font>: How come my <code>SQLLog QUIT</code> is not
+run if the session aborts or dies?<br>
+<font color=blue>Answer</font>: Not all FTP clients are polite and issue the
+<code>QUIT</code> before the session ends.  Perhaps their session is timed out,
+or dropped due to network problems.  Use <code>EXIT</code> as the FTP command
+in your <code>SQLLog</code> directive, rather than <code>QUIT</code>, as
+mentioned in the <code>SQLLog</code> documentation.
+
+<p><a name="SQLFaster"></a>
+<font color=red>Question</font>: How can I make <code>mod_sql</code> go
+faster?<br>
+<font color=blue>Answer</font>: There are a couple of things you might try.
+First, if using a version of <code>mod_sql</code> from ProFTPD-1.2.7rc1 or
+later, make use of the <code>SQLNegativeCache</code> configuration directive.
+
+<p>
+Other forms of this question are &quot;Why does <code>mod_sql</code> iterate
+through every user in the database?&quot;, or &quot;Why is <code>mod_sql</code>
+so slow during logins?&quot;  Here's the reason: <code>mod_sql</code> is
+designed to handle all authentication functions that the daemon throws at it.
+This includes the functions that iterate through all users
+(<code>setpwent()</code>, <code>getpwent()</code>, <code>endpwent()</code>) and
+the functions that iterate through all groups (<code>setgrent()</code>,
+<code>getgrent()</code>, <code>endgrent()</code>).
+
+<p>
+When you see <code>mod_sql</code> iterating through all groups or users, it is
+doing so because it has been asked to do so by the daemon.  Since there is no
+good way to keep an open query around without adding more to the various
+backend modules than we already have, <code>mod_sql</code> pre-caches all
+users when <code>setpwent()</code> is called, and pre-caches all groups when
+<code>setgrent()</code> is called.  This allows the <code>getpwent()</code> and
+<code>getgrent()</code> calls to be simple, at the cost of more time during
+login.
+
+<p>
+In simple situations, these functions are never called.  When you start
+limiting access to directories, files, or various FTP commands based on user or
+group, that is when the daemon needs to iterate through the users and groups to
+check permissions.  A basic FTP server, including virtual and anonymous
+servers, will never make the (potentially, very) expensive user iteration
+calls, but may iterate through all groups.
+
+<p>
+The <code>SQLAuthenticate</code> directive provides a method to tune
+<code>mod_sql</code>; by default, <code>mod_sql</code> will handle the various
+*<code>pwent()</code> and *<code>grent()</code> calls. When
+<code>SQLAuthenticate</code> is told not to handle <em>userset</em> or
+<em>groupset</em>, <code>mod_sql</code> simply passes the request on to
+whatever authentication handlers exist in the system.  Keep in mind that
+using <code>SQLAuthenticate</code> in this way means that the
+<code>proftpd</code> daemon is <b>not</b> using the same information to
+authenticate the user as it is to control the user's actions during their
+session.
+
+<p>
+For those of you who have used <code>mod_sql</code> in the past, these lookups
+should probably be set to <em>off</em>.  Versions of <code>mod_sql</code> prior
+to 3.2.0 (or thereabouts) did not handle the
+<code>{set|get|end}{pw|gr}ent</code> functions at all, so by setting these
+lookups to <em>off</em>, you lose no functionality.  Those of you new to
+<code>mod_sql</code> should to consider your needs: is the cost of iterating
+through every user stored in the database worth the ability to limit access
+based on users/groups from the database?  If not, you will need to re-evaluate
+the way you are using the database, and where you should be storing your
+user/group information.
+
+<p><a name="SQLOpenSSLSQLAuthType"></a>
+<font color=red>Question</font>: When I use an <code>SQLAuthTypes</code> that
+includes &quot;OpenSSL&quot;, what do the values in the database need to
+look like?<br>
+<font color=blue>Answer</font>: The value that <code>mod_sql</code> expects
+is the base64-encoded value of the digested password string.  To get a list
+of the message digest algorithms supported by your OpenSSL installation, you
+can execute the following command:
+<pre>
+  openssl list-message-digest-commands
+</pre>
+To generate the string to put into the SQL tables, using MD5 as the digest
+algorithm and &quot;password&quot; as the password:
+<pre>
+  /bin/echo &quot;{md5}&quot;`/bin/echo -n &quot;password&quot; | openssl dgst -binary -md5 | openssl enc -base64`
+</pre>
+The &quot;{md5}&quot; prefix is necessary, so that <code>mod_sql</code> knows
+what digest algorithm was used.
+
+<p>
+Here's a quick and dirty example of generating database-ready strings using
+every digest algorithm supported by the installed OpenSSL:
+<pre>
+  for c in `openssl list-message-digest-commands`; do
+    /bin/echo "{$c}"`/bin/echo -n "password" | openssl dgst -binary -$c | openssl enc -base64`
+  done
+</pre>
+which generates:
+<pre>
+  {md2}8DiBqIxuORNfDsxg79YJuQ==
+  {md4}ip0JPxT4cB3xdzKyuxgsdA==
+  {md5}X03MO1qnZdYdgyfeuILPmQ==
+  {mdc2}HA0SCu32vhW+exItsGK4lQ==
+  {rmd160}LAjo9YhHUKe5n28vNC/GONsl/zE=
+  {sha}gAclaL6zshAjJesgP20P+S9c744=
+  {sha1}W6ph5Mm5Pz8GgiULbPgzG37mj9g=
+</pre>
+
+<p>
+<b>Note</b>: the <code>{digest}</code> prefix syntax is <b>only</b> needed for
+passwords that will be handled as OpenSSL-style passwords.  This prefix
+is <b>not</b> needed for any of the other <code>SQLAuthType</code> types.
+
+<p>
+There are a lot of PHP applications which might want to generate passwords
+suitable for use with <code>mod_sql</code>.  For example, to generate
+a base64-encoded MD5 password with PHP, which can then be read by
+<code>mod_sql</code>, use the following PHP code:
+<pre>
+  // $password contains the cleartext password before
+  $password = "{md5}".base64_encode(pack("H*", md5($password)));
+
+  // $password now contains the encrypted, encoded password
+</pre>
+Or if you're using Python, you might try the following:
+<pre>
+  password = "{md5}" + base64.b64encode(md5.new("password").digest())
+</pre>
+
+<p><a name="SQLScoreboardError"></a>
+<font color=red>Question</font>: Why do I see &quot;error deleting scoreboard entry: Invalid argument&quot?<br>
+<font color=blue>Answer</font>: This log message almost always denotes use
+of <code>mod_sql</code>, and a problem in the <code>mod_sql</code>
+configuration.  To debug the problem, define an <a href="http://www.castaglia.org/proftpd/modules/mod_sql.html#SQLLogFile"><code>SQLLogFile</code></a>
+(making sure the path is <b>not</b> in a world-writable directory), to which
+<code>mod_sql</code> will write debugging information.
+
+<p><a name="SQLZlibError"></a>
+<font color=red>Question</font>: I am trying to compile <code>proftpd</code> with MySQL support, and get the following error when I run <code>make</code>.  Why?<br>
+<pre>
+  /usr/bin/ld: cannot find -lz
+  collect2: ld returned 1 exit status
+  make: *** [proftpd] Error 1
+</pre>
+<font color=blue>Answer</font>: This error means that the linker cannot find
+the <code>libz</code> library.  For many systems, this library is provided by
+the <code>zlib</code> package; you may need to install this zlib package.
+The <code>libz</code> library is required by the MySQL client libraries.
+
+<p><a name="SQLLoaderError"></a>
+<font color=red>Question</font>: I was able to compile <code>proftpd</code> with <code>mod_sql</code> without problems, but now when I try to start <code>proftpd</code>, I get the following error.  Why?<br>
+<pre>
+  proftpd: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+</pre>
+<font color=blue>Answer</font>:  Errors about "loading shared libraries",
+especially when they happen when starting <code>proftpd</code>, come from
+the dynamic/shared library loader.  The linker was able to find that library
+at compile time, but not at run time.  If you were to look for the specified
+library, you would see it.  So why can't the shared library loader find it?
+
+<p>
+Updating the directories searched automatically by the shared library loader
+is a platform-specific task.  On Linux, for example, you will need to
+edit your <code>/etc/ld.so.conf</code> file to include the directory containing
+the SQL client libraries; then run <code>/sbin/ldconfig</code> in order
+update the shared library loader cache file.  Once the shared library loader
+has been updated, <code>proftpd</code> should start without problems.
+
+<p>
+<hr>
+Last Updated: <i>$Date: 2007/08/29 17:47:42 $</i><br>
+<hr>
+
+</body>
+</html>
